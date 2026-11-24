@@ -25,6 +25,11 @@ monoidal natural transformations. The pointwise dagger of a monoidal natural tra
 between them is again monoidal, so this category is itself a dagger category, whose unitary
 arrows are exactly the monoidal natural transformations with unitary components.
 
+## Implementation notes
+
+The bundled category `DaggerTensorFunctor` follows Mathlib's `CategoryTheory.LaxBraidedFunctor`
+in `Mathlib/CategoryTheory/Monoidal/Braided/Basic.lean`.
+
 ## References
 
 * P. Selinger, *Dagger compact closed categories and completely positive maps*,
@@ -108,30 +113,6 @@ variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [DaggerCategor
 @[simp] theorem isUnitary_rightUnitor_inv (X : C) : IsUnitary (ρ_ X).inv := by
   simpa using (isUnitary_rightUnitor X).dagger
 
-namespace IsUnitary
-
-variable {X Y Z : C}
-
-/-- Left whiskering preserves unitary arrows. -/
-theorem whiskerLeft (X : C) {f : Y ⟶ Z} (hf : IsUnitary f) : IsUnitary (X ◁ f) := by
-  rw [isUnitary_iff, dagger_whiskerLeft, ← MonoidalCategory.whiskerLeft_comp,
-    ← MonoidalCategory.whiskerLeft_comp, hf.hom_dagger_id, hf.dagger_hom_id]
-  simp
-
-/-- Right whiskering preserves unitary arrows. -/
-theorem whiskerRight {f : X ⟶ Y} (hf : IsUnitary f) (Z : C) : IsUnitary (f ▷ Z) := by
-  rw [isUnitary_iff, dagger_whiskerRight, ← MonoidalCategory.comp_whiskerRight,
-    ← MonoidalCategory.comp_whiskerRight, hf.hom_dagger_id, hf.dagger_hom_id]
-  simp
-
-/-- Tensor products of unitary arrows are unitary. -/
-theorem tensorHom {X₁ Y₁ X₂ Y₂ : C} {f : X₁ ⟶ Y₁} {g : X₂ ⟶ Y₂} (hf : IsUnitary f)
-    (hg : IsUnitary g) : IsUnitary (f ⊗ₘ g) := by
-  rw [tensorHom_def]
-  exact (hf.whiskerRight X₂).comp (hg.whiskerLeft Y₁)
-
-end IsUnitary
-
 end TauCeti
 
 namespace CategoryTheory
@@ -150,6 +131,33 @@ instance (X : C) : (tensorRight X).PreservesDagger where
   map_dagger f := by simp
 
 end CategoryTheory
+
+namespace TauCeti
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [DaggerCategory C]
+  [DaggerMonoidalCategory C]
+
+namespace IsUnitary
+
+variable {X Y Z : C}
+
+/-- Left whiskering preserves unitary arrows. -/
+theorem whiskerLeft (X : C) {f : Y ⟶ Z} (hf : IsUnitary f) : IsUnitary (X ◁ f) := by
+  simpa using (tensorLeft X).map_isUnitary hf
+
+/-- Right whiskering preserves unitary arrows. -/
+theorem whiskerRight {f : X ⟶ Y} (hf : IsUnitary f) (Z : C) : IsUnitary (f ▷ Z) := by
+  simpa using (tensorRight Z).map_isUnitary hf
+
+/-- Tensor products of unitary arrows are unitary. -/
+theorem tensorHom {X₁ Y₁ X₂ Y₂ : C} {f : X₁ ⟶ Y₁} {g : X₂ ⟶ Y₂} (hf : IsUnitary f)
+    (hg : IsUnitary g) : IsUnitary (f ⊗ₘ g) := by
+  rw [tensorHom_def]
+  exact (hf.whiskerRight X₂).comp (hg.whiskerLeft Y₁)
+
+end IsUnitary
+
+end TauCeti
 
 namespace CategoryTheory.Functor
 
@@ -259,16 +267,13 @@ variable {F G : C ⥤ D} [F.LaxMonoidal] [G.LaxMonoidal] [F.IsUnitaryMonoidal]
 monoidal functors is monoidal. -/
 instance IsMonoidal.dagger (α : F ⟶ G) [α.IsMonoidal] : α.dagger.IsMonoidal where
   unit := by
-    have h := congrArg TauCeti.dagger (IsMonoidal.unit (τ := α))
-    rw [TauCeti.dagger_comp] at h
-    rw [dagger_app, ← cancel_mono (TauCeti.dagger (ε F)), Category.assoc, h,
-      (Functor.isUnitary_ε G).hom_dagger_id, (Functor.isUnitary_ε F).hom_dagger_id]
+    rw [← cancel_mono (TauCeti.dagger (ε F))]
+    simp only [dagger_app, Category.assoc, ← TauCeti.dagger_comp]
+    simp
   tensor X Y := by
-    have h := congrArg TauCeti.dagger (IsMonoidal.tensor (τ := α) X Y)
-    rw [TauCeti.dagger_comp, TauCeti.dagger_comp, dagger_tensorHom] at h
-    rw [dagger_app, dagger_app, dagger_app, ← cancel_mono (TauCeti.dagger (μ F X Y)),
-      Category.assoc, h, (Functor.isUnitary_μ G X Y).hom_dagger_id_assoc, Category.assoc,
-      (Functor.isUnitary_μ F X Y).hom_dagger_id, Category.comp_id]
+    rw [← cancel_mono (TauCeti.dagger (μ F X Y))]
+    simp only [dagger_app, Category.assoc, ← TauCeti.dagger_comp]
+    simp
 
 end CategoryTheory.NatTrans
 
@@ -368,7 +373,7 @@ lemma dagger_hom_hom {F G : DaggerTensorFunctor C D} (α : F ⟶ G) :
 
 /-- A morphism of dagger tensor functors is unitary exactly when all its components are
 unitary: the unitary arrows are the unitary monoidal natural isomorphisms. -/
-theorem isUnitary_iff {F G : DaggerTensorFunctor C D} (α : F ⟶ G) :
+theorem isUnitary_iff_isUnitary_app {F G : DaggerTensorFunctor C D} (α : F ⟶ G) :
     IsUnitary α ↔ ∀ X : C, IsUnitary (α.hom.hom.app X) := by
   constructor
   · intro h X
