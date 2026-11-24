@@ -44,7 +44,7 @@ other way with an existing one: for instance, a `2`-morphism between specified a
 * `TauCeti.Bicategory.Co.instBicategory`: its bicategory structure.
 * `TauCeti.Bicategory.Co.unop_whiskerLeft`, `TauCeti.Bicategory.Co.op_whiskerLeft` and their
   right-hand versions: whiskering in `Co B` is whiskering in `B`.
-* `TauCeti.Bicategory.Co.associator_hom_unop`, `TauCeti.Bicategory.Co.op_associator_hom` and
+* `TauCeti.Bicategory.Co.unop_associator_hom`, `TauCeti.Bicategory.Co.op_associator_hom` and
   their analogues for the unitors and the inverse `2`-morphisms: the coherence isomorphisms of
   `Co B` are the inverses of those of `B`, read as reversed `2`-morphisms.
 * `TauCeti.Bicategory.Co.instStrict`: the 2-cell dual of a strict bicategory is strict.
@@ -122,19 +122,17 @@ section Hom
 variable {a b c : Co B}
 
 @[simp]
-lemma unop_id (a : Co B) : unop (𝟙 a) = 𝟙 a.unco :=
+lemma unop_id₁ (a : Co B) : unop (𝟙 a) = 𝟙 a.unco :=
   rfl
 
 @[simp]
-lemma unop_comp (f : a ⟶ b) (g : b ⟶ c) : unop (f ≫ g) = unop f ≫ unop g :=
+lemma unop_comp₁ (f : a ⟶ b) (g : b ⟶ c) : unop (f ≫ g) = unop f ≫ unop g :=
   rfl
 
-@[simp]
-lemma op_id (a : B) : (op (𝟙 a) : co a ⟶ co a) = 𝟙 (co a) :=
+lemma op_id₁ (a : B) : (op (𝟙 a) : co a ⟶ co a) = 𝟙 (co a) :=
   rfl
 
-@[simp]
-lemma op_comp {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
+lemma op_comp₁ {a b c : B} (f : a ⟶ b) (g : b ⟶ c) :
     (op (f ≫ g) : co a ⟶ co c) = CategoryStruct.comp (obj := Co B) (op f) (op g) :=
   rfl
 
@@ -218,29 +216,29 @@ lemma unop_rightUnitor (f : a ⟶ b) : Iso.unop (ρ_ f) = (ρ_ (unop f)).symm :=
   rfl
 
 @[simp]
-lemma associator_hom_unop (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
+lemma unop_associator_hom (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
     (α_ f g h).hom.unop = (α_ (unop f) (unop g) (unop h)).inv :=
   rfl
 
 @[simp]
-lemma associator_inv_unop (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
+lemma unop_associator_inv (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
     (α_ f g h).inv.unop = (α_ (unop f) (unop g) (unop h)).hom :=
   rfl
 
 @[simp]
-lemma leftUnitor_hom_unop (f : a ⟶ b) : (λ_ f).hom.unop = (λ_ (unop f)).inv :=
+lemma unop_leftUnitor_hom (f : a ⟶ b) : (λ_ f).hom.unop = (λ_ (unop f)).inv :=
   rfl
 
 @[simp]
-lemma leftUnitor_inv_unop (f : a ⟶ b) : (λ_ f).inv.unop = (λ_ (unop f)).hom :=
+lemma unop_leftUnitor_inv (f : a ⟶ b) : (λ_ f).inv.unop = (λ_ (unop f)).hom :=
   rfl
 
 @[simp]
-lemma rightUnitor_hom_unop (f : a ⟶ b) : (ρ_ f).hom.unop = (ρ_ (unop f)).inv :=
+lemma unop_rightUnitor_hom (f : a ⟶ b) : (ρ_ f).hom.unop = (ρ_ (unop f)).inv :=
   rfl
 
 @[simp]
-lemma rightUnitor_inv_unop (f : a ⟶ b) : (ρ_ f).inv.unop = (ρ_ (unop f)).hom :=
+lemma unop_rightUnitor_inv (f : a ⟶ b) : (ρ_ f).inv.unop = (ρ_ (unop f)).hom :=
   rfl
 
 end Coherence
