@@ -77,7 +77,7 @@ open Nat
 
 namespace TauCeti
 
-open _root_.Module
+open Module
 
 variable {n : ℕ}
 

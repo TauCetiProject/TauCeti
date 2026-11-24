@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.BaseChange.NoetherDeuring
+public import TauCeti.RepresentationTheory.BaseChange.Intertwiner
 public import TauCeti.RepresentationTheory.Symmetric.Specht.AbsoluteIrreducibility
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Character
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Completeness
@@ -73,7 +73,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory _root_.Module
+open CategoryTheory Module
 open scoped MonoidAlgebra
 
 variable {n : ℕ}

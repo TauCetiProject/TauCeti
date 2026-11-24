@@ -42,9 +42,9 @@ the trace of a base-changed endomorphism is the image of the trace
 The **intertwiner space** between two representations of a finite monoid commutes with flat scalar
 extension of commutative rings when the source is finite free. An intertwiner is a linear map killed
 by the finite family of conditions `σ g ∘ₗ f = f ∘ₗ ρ g`, so its space is a kernel, and flat
-extension commutes with that kernel (`LinearMap.tensorKerEquiv`). Over a base field, extension
-to any nontrivial commutative algebra preserves its dimension; in particular an endomorphism space
-of dimension one retains that dimension.
+extension commutes with that kernel (`LinearMap.tensorKerEquiv`). The version for any monoid and a
+free coefficient algebra, and the resulting invariance of intertwiner dimensions over a field, are
+in `TauCeti.RepresentationTheory.BaseChange.Intertwiner`.
 
 For a finite group, the whole invariant submodule also commutes with a flat scalar extension.
 Indeed, invariants are the kernel of the finite family of maps `ρ(g) - 1`; flatness preserves that
@@ -79,6 +79,9 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `FDRep.character_baseChange`: the same for the scalar extension of an object of `FDRep`.
 * `TauCeti.ClassFunction.ofFDRep_baseChange`: the same as class functions, the coefficients changed
   along `algebraMap K L`.
+* `Representation.intertwiningDefectAt`: the intertwining defect `σ g ∘ₗ f - f ∘ₗ ρ g` at `g`, with
+  `Representation.intertwiningDefectAt_baseChange` and
+  `Representation.intertwiningDefectAt_homBaseChangeEquiv`: it commutes with scalar extension.
 * `Representation.intertwiningMapBaseChangeEquiv`: flat scalar extension of commutative rings
   commutes with intertwiner spaces for finite monoids and finite free source modules.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
@@ -546,13 +549,14 @@ def intertwiningDefectAt (ρ : Representation K G V) (σ : Representation K G W)
     (V →ₗ[K] W) →ₗ[K] V →ₗ[K] W :=
   LinearMap.llcomp K V W W (σ g) - LinearMap.lcomp K W (ρ g)
 
+@[simp]
 theorem intertwiningDefectAt_apply (ρ : Representation K G V) (σ : Representation K G W) (g : G)
     (f : V →ₗ[K] W) : intertwiningDefectAt ρ σ g f = σ g ∘ₗ f - f ∘ₗ ρ g :=
   (rfl)
 
-/-- **The intertwining defect of a base-changed map is the base change of its defect**: base
-change is compatible with composition and subtraction, and the base-changed representations act
-by the base-changed operators. -/
+/-- **The intertwining defect of a base-changed map is the base change of its defect**: the
+intertwining defect at `g` of `f.baseChange L` for the base-changed representations is the base
+change of the defect of `f`. -/
 theorem intertwiningDefectAt_baseChange (ρ : Representation K G V) (σ : Representation K G W)
     (g : G) (f : V →ₗ[K] W) :
     intertwiningDefectAt (baseChange L ρ) (baseChange L σ) g (f.baseChange L)
@@ -568,17 +572,13 @@ private def intertwiningDefect (ρ : Representation K G V) (σ : Representation 
     (V →ₗ[K] W) →ₗ[K] (G → (V →ₗ[K] W)) :=
   LinearMap.pi (intertwiningDefectAt ρ σ)
 
-private theorem intertwiningDefect_apply (ρ : Representation K G V)
-    (σ : Representation K G W) (f : V →ₗ[K] W) (g : G) :
-    intertwiningDefect ρ σ f g = σ g ∘ₗ f - f ∘ₗ ρ g :=
-  rfl
-
 private theorem mem_ker_intertwiningDefect {ρ : Representation K G V}
     {σ : Representation K G W} {f : V →ₗ[K] W} :
     f ∈ LinearMap.ker (intertwiningDefect ρ σ) ↔ ∀ g, f ∘ₗ ρ g = σ g ∘ₗ f := by
   rw [LinearMap.mem_ker, funext_iff]
   refine forall_congr' fun g => ?_
-  rw [intertwiningDefect_apply, Pi.zero_apply, sub_eq_zero, eq_comm]
+  rw [intertwiningDefect, LinearMap.pi_apply, intertwiningDefectAt_apply, Pi.zero_apply,
+    sub_eq_zero, eq_comm]
 
 /-- The intertwiner space is the kernel of the intertwining defect. -/
 private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
@@ -591,11 +591,24 @@ private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
   left_inv _ := rfl
   right_inv _ := rfl
 
-private theorem intertwiningDefect_baseChange (ρ : Representation K G V)
-    (σ : Representation K G W) (f : V →ₗ[K] W) (g : G) :
-    intertwiningDefect (baseChange L ρ) (baseChange L σ) (f.baseChange L) g
-      = (intertwiningDefect ρ σ f g).baseChange L :=
-  intertwiningDefectAt_baseChange ρ σ g f
+/-- The identification `L ⊗[K] Hom_K(V, W) ≃ Hom_L(L ⊗ V, L ⊗ W)` carries the scalar extension
+of the intertwining defect at `g` to the intertwining defect at `g` of the base-changed
+representations. -/
+theorem intertwiningDefectAt_homBaseChangeEquiv [Module.Projective K V] [Module.Finite K V]
+    (ρ : Representation K G V) (σ : Representation K G W) (g : G) (x : L ⊗[K] (V →ₗ[K] W)) :
+    intertwiningDefectAt (baseChange L ρ) (baseChange L σ) g
+        ((LinearMap.isBaseChange_baseChangeHom K L V W).equiv x) =
+      (LinearMap.isBaseChange_baseChangeHom K L V W).equiv
+        ((intertwiningDefectAt ρ σ g).lTensor L x) := by
+  induction x with
+  | tmul a h =>
+    rw [LinearMap.lTensor_tmul, IsBaseChange.equiv_tmul, IsBaseChange.equiv_tmul,
+      LinearMap.baseChangeHom_apply, LinearMap.baseChangeHom_apply,
+      ← intertwiningDefectAt_baseChange, intertwiningDefectAt_apply, intertwiningDefectAt_apply,
+      LinearMap.comp_smul, LinearMap.smul_comp]
+    exact (smul_sub a (_ : L ⊗[K] V →ₗ[L] L ⊗[K] W) _).symm
+  | add x y hx hy =>
+    simp only [map_add, ← hx, ← hy]
 
 variable [Module.Free K V] [Module.Finite K V]
 
@@ -615,7 +628,7 @@ private theorem intertwiningDefect_homBaseChangeEquiv [Fintype G] [DecidableEq G
     -- the defect is linear, so both sides are `a • (intertwiningDefect ρ σ f g)`
     -- base-changed to `L`
     simp only [IsBaseChange.equiv_tmul, LinearMap.baseChangeHom_apply, map_smul,
-      Pi.smul_apply, intertwiningDefect_baseChange,
+      intertwiningDefect, LinearMap.pi_apply, intertwiningDefectAt_baseChange,
       TensorProduct.AlgebraTensorModule.lTensor_tmul, LinearEquiv.trans_apply,
       LinearEquiv.piCongrRight_apply, TensorProduct.piRight_apply,
       TensorProduct.piRightHom_tmul]
