@@ -81,6 +81,18 @@ theorem mono (h : V.IsRelativelyBounded A a b) (ha : a ≤ a') (hb : b ≤ b') :
   domain_le := h.domain_le
   norm_apply_le x := (h.norm_apply_le x).trans (by gcongr)
 
+/-- A relative bound with constants `a, b` bounds `‖V x‖` by `(|a| + |b|)` times the larger of
+`‖x‖` and `‖A x‖`. -/
+theorem norm_apply_le_abs_add_abs_mul_max (h : V.IsRelativelyBounded A a b) (x : A.domain) :
+    ‖V ⟨x, h.domain_le x.property⟩‖ ≤ (|a| + |b|) * max ‖(x : E)‖ ‖A x‖ := by
+  have h₁ : a * ‖(x : E)‖ ≤ |a| * max ‖(x : E)‖ ‖A x‖ :=
+    (mul_le_mul_of_nonneg_right (le_abs_self a) (norm_nonneg _)).trans
+      (mul_le_mul_of_nonneg_left (le_max_left _ _) (abs_nonneg a))
+  have h₂ : b * ‖A x‖ ≤ |b| * max ‖(x : E)‖ ‖A x‖ :=
+    (mul_le_mul_of_nonneg_right (le_abs_self b) (norm_nonneg _)).trans
+      (mul_le_mul_of_nonneg_left (le_max_right _ _) (abs_nonneg b))
+  linarith [h.norm_apply_le x]
+
 /-- If `V` is relatively bounded with respect to `A`, then `A + V` has the same domain as `A`. -/
 theorem domain_add {V : E →ₛₗ.[τ] F} (h : V.IsRelativelyBounded A a b) :
     (A + V).domain = A.domain :=
@@ -130,8 +142,10 @@ theorem isRelativelyBounded_self_add {V : E →ₛₗ.[τ] F} (h : V.IsRelativel
       rw [hAV]
       exact norm_le_add_norm_add _ _
     have h₂ : (1 - b) * ‖A y‖ ≤ a * ‖(x : E)‖ + ‖(A + V) x‖ := by linarith
-    rw [div_eq_mul_inv, mul_comm a, mul_assoc, ← mul_add, ← div_eq_inv_mul,
-      le_div_iff₀' (by linarith)]
+    have hb' : 0 < 1 - b := by linarith
+    have hsum : a / (1 - b) * ‖(x : E)‖ + (1 - b)⁻¹ * ‖(A + V) x‖ =
+        (a * ‖(x : E)‖ + ‖(A + V) x‖) / (1 - b) := by ring
+    rw [hsum, le_div_iff₀' hb']
     exact h₂
 
 end IsRelativelyBounded
@@ -216,14 +230,7 @@ theorem exists_dual_apply_eq_of_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V :
     refine (f.le_opNorm _).trans ?_
     rw [mul_assoc]
     gcongr
-    refine (hV.norm_apply_le x).trans ?_
-    have h₁ : a * ‖(x : E)‖ ≤ |a| * max ‖(x : E)‖ ‖A x‖ :=
-      (mul_le_mul_of_nonneg_right (le_abs_self a) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left (le_max_left _ _) (abs_nonneg a))
-    have h₂ : b * ‖A x‖ ≤ |b| * max ‖(x : E)‖ ‖A x‖ :=
-      (mul_le_mul_of_nonneg_right (le_abs_self b) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left (le_max_right _ _) (abs_nonneg b))
-    linarith
+    exact hV.norm_apply_le_abs_add_abs_mul_max x
   obtain ⟨g, hg, -⟩ := exists_extension_norm_eq (LinearMap.range L) (ψ.mkContinuous _ hbound)
   refine ⟨g, fun x ↦ ?_⟩
   rw [← hψ, ← LinearMap.mkContinuous_apply ψ _ hbound, ← hg]

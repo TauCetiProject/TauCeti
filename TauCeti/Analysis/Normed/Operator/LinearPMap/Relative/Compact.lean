@@ -159,13 +159,9 @@ theorem of_isRelativelyBounded (hW : W.IsRelativelyCompact A) {B : E →ₛₗ.[
     refine ⟨K, hK, fun x hx ↦ hKW ⟨x, hA.domain_le x.property⟩ ?_⟩
     have hx₀ : ‖(x : E)‖ ≤ C₀ := le_max_of_le_left (by linarith [norm_nonneg (B x)])
     have hBx : ‖B x‖ ≤ C₀ := le_max_of_le_left (by linarith [norm_nonneg (x : E)])
-    have hAx := hA.norm_apply_le x
-    have h₁ : a * ‖(x : E)‖ ≤ |a| * C₀ :=
-      (mul_le_mul_of_nonneg_right (le_abs_self a) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left hx₀ (abs_nonneg a))
-    have h₂ : b * ‖B x‖ ≤ |b| * C₀ :=
-      (mul_le_mul_of_nonneg_right (le_abs_self b) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left hBx (abs_nonneg b))
+    have hAx := hA.norm_apply_le_abs_add_abs_mul_max x
+    have hmax := mul_le_mul_of_nonneg_left (max_le hx₀ hBx)
+      (add_nonneg (abs_nonneg a) (abs_nonneg b))
     simp only at hAx ⊢
     nlinarith
 
@@ -263,8 +259,10 @@ theorem IsRelativelyCompact.exists_isRelativelyBounded_const (hV : V.IsRelativel
     (normSeminorm 𝕜 E).comp A.domain.subtype + (normSeminorm 𝕜₃ F).comp A.toFun
   let q : Seminorm 𝕜 A.domain :=
     (normSeminorm 𝕜₂ G).comp (V.toFun ∘ₛₗ Submodule.inclusion hV.domain_le)
-  have hp (x : A.domain) : p x = ‖(x : E)‖ + ‖A x‖ := rfl
-  have hq (x : A.domain) : q x = ‖V ⟨x, hV.domain_le x.property⟩‖ := rfl
+  have hp (x : A.domain) : p x = ‖(x : E)‖ + ‖A x‖ := by
+    simp [p, Seminorm.comp_apply, coe_normSeminorm]
+  have hq (x : A.domain) : q x = ‖V ⟨x, hV.domain_le x.property⟩‖ := by
+    simp [q, Seminorm.comp_apply, coe_normSeminorm, Submodule.inclusion_apply]
   have hqM (x : A.domain) (hx : p x ≤ 1) : q x ≤ M := hM _ (hKV x hx)
   refine ⟨M * ‖c‖, hV.domain_le, fun x ↦ ?_⟩
   rw [← hq, ← mul_add, ← hp]
