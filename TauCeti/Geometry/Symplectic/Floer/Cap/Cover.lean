@@ -635,9 +635,9 @@ private theorem exists_ofMul_fundamentalGroupLoopSpaceMulEquiv_eq (a : Additive 
 cover of `p` by the loop of contractible free loops traced by `β`, acting on the universal cover. -/
 private theorem RawCap.toCapCover_vadd_mk (β : Ω (Ω X x) (Path.refl x))
     (p : Path γ (Path.refl x)) :
-    (Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
+    RawCap.toCapCover ω c (Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β))) +ᵥ
-          (show RawCap γ from Path.Homotopic.Quotient.mk p)).toCapCover ω c =
+          FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk p)) =
       Quotient.mk'' (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (sphereLoopPath β)) •
         UniversalCover.mk
           ⟨γ.toCircle, toCircle_mem_contractibleLoops (Path.Homotopic.Quotient.mk p)⟩
@@ -645,8 +645,8 @@ private theorem RawCap.toCapCover_vadd_mk (β : Ω (Ω X x) (Path.refl x))
             (capCoverPath (toCircle_mem_contractibleLoops (Path.Homotopic.Quotient.mk p)) p))) := by
   have hvadd : Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β))) +ᵥ
-          (show RawCap γ from Path.Homotopic.Quotient.mk p) =
-        (show RawCap γ from Path.Homotopic.Quotient.mk (p.trans β)) := by
+          FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk p) =
+        FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk (p.trans β)) := by
     rw [RawCap.vadd_def, toMul_ofMul, MulEquiv.symm_apply_apply, FundamentalGroupoid.comp_eq,
       Path.Homotopic.Quotient.mk_trans]
   rw [hvadd, RawCap.toCapCover_mk, capCoverPath_trans, UniversalCover.smul_mk,
@@ -717,52 +717,52 @@ theorem toCapCover_vadd (g : SphericalPeriodGroup ω c) (q : SphericalCapClass �
   | h D => rw [ofHomotopyGroup_vadd_mk, toCapCover_mk, toCapCover_mk, RawCap.toCapCover_vadd]
 
 /-- The point of the cap cover of a cap class, as a point of the fibre over `γ`. -/
-private def toCapCoverFiber (hγ : γ.toCircle ∈ contractibleLoops X)
-    (q : SphericalCapClass ω c γ) : capCoverProj ω c x ⁻¹' {⟨γ.toCircle, hγ⟩} :=
+private def toCapCoverFiber [h : Nonempty (RawCap γ)] (q : SphericalCapClass ω c γ) :
+    capCoverProj ω c x ⁻¹' {⟨γ.toCircle, h.elim RawCap.toCircle_mem_contractibleLoops⟩} :=
   ⟨toCapCover ω c q, capCoverProj_toCapCover q⟩
 
-private theorem toCapCoverFiber_vadd (hγ : γ.toCircle ∈ contractibleLoops X)
-    (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
-    toCapCoverFiber hγ (g +ᵥ q) = g +ᵥ toCapCoverFiber hγ q :=
+private theorem toCapCoverFiber_vadd [Nonempty (RawCap γ)] (g : SphericalPeriodGroup ω c)
+    (q : SphericalCapClass ω c γ) : toCapCoverFiber (g +ᵥ q) = g +ᵥ toCapCoverFiber q :=
   Subtype.ext ((toCapCover_vadd g q).trans
-    (CapCover.coe_vadd_fiber (x := x) _ (toCapCoverFiber hγ q)).symm)
+    (CapCover.coe_vadd_fiber (x := x) _ (toCapCoverFiber q)).symm)
 
 /-- Sending a cap class to its point of the fibre of the cap cover is a bijection: both are torsors
 under the spherical period group, and the map is equivariant. -/
-private theorem bijective_toCapCoverFiber (hγ : γ.toCircle ∈ contractibleLoops X)
-    [Nonempty (RawCap γ)] : Function.Bijective (toCapCoverFiber (ω := ω) (c := c) hγ) := by
+private theorem bijective_toCapCoverFiber [Nonempty (RawCap γ)] :
+    Function.Bijective (toCapCoverFiber (ω := ω) (c := c) (γ := γ)) := by
   refine ⟨fun q q' h ↦ ?_, fun e ↦ ?_⟩
   · -- `q'` is `q` recapped by `q' -ᵥ q`, which therefore acts trivially on the fibre.
-    have h' : (q' -ᵥ q) +ᵥ toCapCoverFiber hγ q =
-        (0 : SphericalPeriodGroup ω c) +ᵥ toCapCoverFiber hγ q := by
+    have h' : (q' -ᵥ q) +ᵥ toCapCoverFiber q =
+        (0 : SphericalPeriodGroup ω c) +ᵥ toCapCoverFiber q := by
       rw [← toCapCoverFiber_vadd, vsub_vadd, zero_vadd, h]
     exact (vsub_eq_zero_iff_eq.1 ((vadd_right_cancel_iff _).1 h')).symm
   · -- Recapping a cap class by the difference reaches any point of the fibre.
     obtain ⟨q₀⟩ : Nonempty (SphericalCapClass ω c γ) := inferInstance
-    exact ⟨(e -ᵥ toCapCoverFiber hγ q₀) +ᵥ q₀, by rw [toCapCoverFiber_vadd, vsub_vadd]⟩
+    exact ⟨(e -ᵥ toCapCoverFiber q₀) +ᵥ q₀, by rw [toCapCoverFiber_vadd, vsub_vadd]⟩
 
 variable (ω c) in
 /-- **The fibre of the cap cover over a contractible loop at `x` is its set of cap classes.** For a
 loop `γ` at `x` with a raw cap, sending a cap class to its point of the cap cover is a bijection
 onto the fibre of the cap cover over `γ`. It intertwines the actions of the spherical period group
-(`TauCeti.Floer.SphericalCapClass.capCoverFiberEquiv_vadd`). -/
-def capCoverFiberEquiv (hγ : γ.toCircle ∈ contractibleLoops X) [Nonempty (RawCap γ)] :
-    SphericalCapClass ω c γ ≃ capCoverProj ω c x ⁻¹' {⟨γ.toCircle, hγ⟩} :=
-  Equiv.ofBijective (toCapCoverFiber hγ) (bijective_toCapCoverFiber hγ)
+(`TauCeti.Floer.SphericalCapClass.capCoverFiberEquiv_vadd`). The raw cap makes `γ` a contractible
+free loop (`TauCeti.Floer.RawCap.toCircle_mem_contractibleLoops`). -/
+def capCoverFiberEquiv [h : Nonempty (RawCap γ)] :
+    SphericalCapClass ω c γ ≃
+      capCoverProj ω c x ⁻¹' {⟨γ.toCircle, h.elim RawCap.toCircle_mem_contractibleLoops⟩} :=
+  Equiv.ofBijective toCapCoverFiber bijective_toCapCoverFiber
 
 /-- The fibre equivalence sends a cap class to its point of the cap cover. -/
 @[simp]
-theorem coe_capCoverFiberEquiv_apply (hγ : γ.toCircle ∈ contractibleLoops X)
-    [Nonempty (RawCap γ)] (q : SphericalCapClass ω c γ) :
-    (capCoverFiberEquiv ω c hγ q : CapCover ω c x) = toCapCover ω c q := by
+theorem coe_capCoverFiberEquiv_apply [Nonempty (RawCap γ)] (q : SphericalCapClass ω c γ) :
+    (capCoverFiberEquiv ω c q : CapCover ω c x) = toCapCover ω c q := by
   rfl
 
 /-- **The fibre equivalence intertwines recapping with the deck action**: recapping a cap class by
 `g` moves its point of the cap cover by `g`. -/
-theorem capCoverFiberEquiv_vadd (hγ : γ.toCircle ∈ contractibleLoops X) [Nonempty (RawCap γ)]
-    (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
-    capCoverFiberEquiv ω c hγ (g +ᵥ q) = g +ᵥ capCoverFiberEquiv ω c hγ q :=
-  toCapCoverFiber_vadd hγ g q
+theorem capCoverFiberEquiv_vadd [Nonempty (RawCap γ)] (g : SphericalPeriodGroup ω c)
+    (q : SphericalCapClass ω c γ) :
+    capCoverFiberEquiv ω c (g +ᵥ q) = g +ᵥ capCoverFiberEquiv ω c q :=
+  toCapCoverFiber_vadd g q
 
 end SphericalCapClass
 
