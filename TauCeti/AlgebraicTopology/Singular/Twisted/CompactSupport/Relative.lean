@@ -109,7 +109,7 @@ lemma restrictPreimagePairTwistedChainComplexMap_comp_twistedChainComplexMap (h 
         twistedChainComplexMap (TopCat.restrictPreimagePairMap π A T) L =
       twistedChainComplexMap (TopCat.restrictPreimagePairMap π A S) L := by
   rw [twistedChainComplexMap_congr L
-      (TopCat.ofInclusionMap_inclusion_comp_restrictPreimagePairMap π A h).symm,
+      (congrArg Hom.fst (TopCat.ofInclusionMap_inclusion_comp_restrictPreimagePairMap π A h).symm),
     twistedChainComplexMap_comp (restrictPreimagePairInclusion A π h)
       (TopCat.restrictPreimagePairMap π A T) L,
     restrictPreimagePairTwistedChainComplexMap, twistedChainComplexCoefficientMap_comp]

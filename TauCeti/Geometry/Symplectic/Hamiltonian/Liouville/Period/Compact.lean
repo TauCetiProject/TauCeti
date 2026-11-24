@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Lattice
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 

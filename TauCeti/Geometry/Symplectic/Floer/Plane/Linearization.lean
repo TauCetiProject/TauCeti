@@ -224,23 +224,17 @@ private theorem continuous_floerLinearization_perturbation (ω : SymplecticForm 
   set D := ω.floerLinearization (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u ξ
-  -- Off the support of `ξ` the section vanishes near each point, and so does `D ξ`.
-  have hzero {z : ℝ × ℝ} (hz : z ∉ tsupport ξ) : D =ᶠ[𝓝 z] 0 := by
-    filter_upwards [isOpen_compl_iff.2 (isClosed_tsupport ξ) |>.mem_nhds hz] with z' hz'
-    rw [Pi.zero_apply, ← ω.floerLinearization_zero
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z']
-    exact ω.floerLinearization_congr_of_eventuallyEq _ _ _ u
-      (notMem_tsupport_iff_eventuallyEq.1 hz')
+  -- The support of `D ξ` lies in that of `ξ`.
+  have hsupp : tsupport D ⊆ tsupport ξ := ω.tsupport_floerLinearization_subset _ _ _ u ξ
   have hD : Continuous D := continuous_iff_continuousAt.2 fun z ↦ by
     by_cases hz : z ∈ tsupport ξ
     · exact ω.continuousAt_floerLinearization (hJ z (hξΩ hz))
         ((contDiff_uncurry_perturbation (p := p) hH hHs 1).contDiffAt)
         ((contDiff_uncurry_perturbation (p := p) hH hHs Complex.I).contDiffAt) (hu z (hξΩ hz))
         hξ.contDiffAt
-    · exact continuousAt_const.congr (hzero hz).symm
-  exact ⟨hD, hξc.mono' fun z hz ↦ by_contra fun h ↦ hz (hzero h).eq_of_nhds⟩
+    · exact continuousAt_const.congr
+        (notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hsupp h)).symm
+  exact ⟨hD, hξc.mono' ((subset_tsupport _).trans hsupp)⟩
 
 /-- **The half-cylinder estimate at the end of a PSS plane.** Under the convergence hypotheses of
 `exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization`, there are `C₁`,

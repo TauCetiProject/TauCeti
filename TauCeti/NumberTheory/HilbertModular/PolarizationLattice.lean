@@ -34,6 +34,8 @@ Its `ℤ`-dual for `ψ₁` is `c ⊕ 𝔡⁻¹ = c L_c`, which determines the le
 ## Main definitions
 
 * `TauCeti.HilbertModular.polarizationLattice c`: the lattice `L_c = 𝓞_K ⊕ c⁻¹𝔡⁻¹`.
+* `TauCeti.HilbertModular.polarizationCoordinateIdeal c`: the second coordinate ideal as a
+  fractional ideal unit for nonzero `c`.
 * `TauCeti.HilbertModular.polarizationLatticeEquivProd c`: `L_c` is the product of its two
   coordinate fractional ideals.
 * `TauCeti.HilbertModular.integralTraceWedgeForm c`: the `ℤ`-linear family `a ↦ ψ_{c, a}` of
@@ -85,6 +87,18 @@ theorem mem_polarizationLattice {c : FractionalIdeal (𝓞 K)⁰ K} {x : Fin 2 �
       x 1 ∈ c⁻¹ * dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
   simp only [polarizationLattice, Submodule.mem_pi, Set.mem_univ, true_implies,
     Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, mem_coeToSubmodule]
+
+/-- The nonzero second coordinate ideal `J = c⁻¹𝔡⁻¹` of the polarization lattice. -/
+noncomputable def polarizationCoordinateIdeal (c : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    (FractionalIdeal (𝓞 K)⁰ K)ˣ :=
+  c⁻¹ * dualEquiv ℤ ℚ 1
+
+@[simp]
+theorem coe_polarizationCoordinateIdeal (c : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    (polarizationCoordinateIdeal c : FractionalIdeal (𝓞 K)⁰ K) =
+      c.val⁻¹ * dual ℤ ℚ 1 := by
+  simp only [polarizationCoordinateIdeal, Units.val_mul, Units.val_inv_eq_inv_val,
+    coe_dualEquiv, Units.val_one]
 
 /-- For `c ≠ 0`, the second coordinate ideal `c⁻¹𝔡⁻¹` of `L_c` is nonzero. -/
 private theorem inv_mul_dual_one_ne_zero {c : FractionalIdeal (𝓞 K)⁰ K} (hc : c ≠ 0) :
