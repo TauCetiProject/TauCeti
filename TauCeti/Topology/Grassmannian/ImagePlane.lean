@@ -50,6 +50,8 @@ immersion (L. Simon, *Lectures on Geometric Measure Theory*, §38 and §39).
   given subspace form a closed set.
 * `LinearIsometry.exists_comp_comp_adjoint_eq`: every point of `G(F, k)` whose plane lies in
   `range U` is `U P U†` for some `P ∈ G(E, k)`.
+* `LinearIsometry.coe_grassmannianHomeomorph_apply_eq_imagePlane`: `U P U†` is the image-plane
+  map at `(U, P)`, the projection onto `U (range P)`.
 -/
 
 public section
@@ -215,6 +217,21 @@ theorem coe_grassmannianHomeomorph_apply (P : grassmannian E k) :
     ((U.grassmannianHomeomorph k P : grassmannian F k) : F →L[ℝ] F) =
       U.toContinuousLinearMap ∘L (P : E →L[ℝ] E) ∘L adjoint U.toContinuousLinearMap :=
   (rfl)
+
+/-- `LinearIsometry.grassmannianHomeomorph` agrees with the image-plane map at `(U, P)`: `U P U†`
+is the orthogonal projection onto `U (range P)`. -/
+theorem coe_grassmannianHomeomorph_apply_eq_imagePlane (P : grassmannian E k) :
+    (U.grassmannianHomeomorph k P : grassmannian F k) =
+      grassmannian.imagePlane E F k ⟨(U.toContinuousLinearMap, P), U.injective.injOn⟩ :=
+  Subtype.ext <| comp_comp_adjoint_eq_starProjection_range_comp U.isometry
+    (grassmannian.isStarProjection P.property)
+
+/-- The plane of `LinearIsometry.grassmannianHomeomorph` at `P` is `U (range P)`. -/
+theorem range_coe_grassmannianHomeomorph_apply (P : grassmannian E k) :
+    ((U.grassmannianHomeomorph k P : grassmannian F k) : F →L[ℝ] F).range =
+      (P : E →L[ℝ] E).range.map U.toLinearMap := by
+  rw [coe_grassmannianHomeomorph_apply_eq_imagePlane]
+  exact grassmannian.range_coe_imagePlane_apply _
 
 /-- The inverse of `LinearIsometry.grassmannianHomeomorph` sends `Q` to `U† Q U`. -/
 @[simp]
