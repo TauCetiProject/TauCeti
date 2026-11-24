@@ -85,7 +85,7 @@ end
 `St(R) →* GL_∞(R)` equals the image of `(toStableGL R).ker.subtype : K₂(R) →* St(R)`. -/
 theorem mulExact_subtype_toStableGL :
     Function.MulExact (SteinbergGroup.toStableGL R).ker.subtype (SteinbergGroup.toStableGL R) :=
-  MonoidHom.mulExact_ker_subtype _
+  MonoidHom.mulExact_subtype_ker_map _
 
 variable {R} {S T : Type*} [Ring S] [Ring T]
 

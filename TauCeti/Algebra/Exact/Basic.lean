@@ -11,8 +11,8 @@ public import Mathlib.Algebra.Exact.Basic
 # Exact pairs for group homomorphisms
 
 For a monoid homomorphism `f : G →* M` out of a group `G`, the kernel inclusion `f.ker.subtype`
-and `f` form an exact pair (`MonoidHom.mulExact_ker_subtype`), with additive counterpart
-`AddMonoidHom.exact_ker_subtype`.
+and `f` form an exact pair (`MonoidHom.mulExact_subtype_ker_map`), with additive counterpart
+`AddMonoidHom.exact_subtype_ker_map`.
 -/
 
 public section
@@ -22,7 +22,7 @@ namespace MonoidHom
 /-- The kernel inclusion `f.ker.subtype` and `f` form an exact pair. -/
 @[to_additive
   /-- The kernel inclusion `f.ker.subtype` and `f` form an exact pair. -/]
-theorem mulExact_ker_subtype {G M : Type*} [Group G] [MulOneClass M] (f : G →* M) :
+theorem mulExact_subtype_ker_map {G M : Type*} [Group G] [MulOneClass M] (f : G →* M) :
     Function.MulExact f.ker.subtype f :=
   fun y ↦ ⟨fun hy ↦ ⟨⟨y, hy⟩, rfl⟩, fun ⟨x, hx⟩ ↦ hx ▸ x.property⟩
 
