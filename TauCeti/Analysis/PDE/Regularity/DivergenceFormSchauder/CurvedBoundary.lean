@@ -111,61 +111,11 @@ variable {Ω U' U : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {Φ Ψ : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
   {ν : EuclideanSpace ℝ (Fin (n + 1))} {c₀ : ℝ}
 
-/-- A flattening chart maps the closed half-space part of its domain into the closure of the
-domain `Ω`. -/
-private theorem mapsTo_closure_of_image_eq (hν : ν ≠ 0) (hΦc : Continuous Φ)
-    (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = (Ω : Set _) ∩ U) :
-    MapsTo Φ ({y | c₀ ≤ ⟪y, ν⟫_ℝ} ∩ U') (closure Ω) := fun y hy => by
-  have h := map_mem_closure hΦc (mem_closure_setOf_lt_inner_inter hν hy.1 U'.isOpen hy.2)
-    (mapsTo_image _ _)
-  rw [himage] at h
-  exact closure_mono inter_subset_left h
-
-/-- The inverse of a flattening chart maps the closure of `Ω`, near the boundary portion, into the
-closed half-space. -/
-private theorem mapsTo_setOf_le_inner_of_image_eq (hΨc : Continuous Ψ)
-    (hΨΦ : ∀ y, Ψ (Φ y) = y)
-    (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = (Ω : Set _) ∩ U) :
-    MapsTo Ψ (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) ∩ U) {y | c₀ ≤ ⟪y, ν⟫_ℝ} :=
-  fun x hx => by
-  have hx' : x ∈ closure ((Ω : Set _) ∩ U) := by
-    rw [inter_comm]
-    exact U.isOpen.inter_closure ⟨hx.2, hx.1⟩
-  rw [← himage] at hx'
-  have hΨim : Ψ '' (Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U')) ⊆ {y | c₀ ≤ ⟪y, ν⟫_ℝ} := by
-    rintro _ ⟨_, ⟨y, hy, rfl⟩, rfl⟩
-    rw [mem_inter_iff, mem_ofPred_eq] at hy
-    rw [hΨΦ, mem_ofPred_eq]
-    exact hy.1.le
-  exact closure_minimal hΨim (isClosed_le continuous_const (continuous_id.inner continuous_const))
-    (map_mem_closure hΨc hx' (mapsTo_image _ _))
-
 /-! ### The flattened weak equation -/
 
 section Equation
 
 variable {L : ℝ}
-
-/-- Restricting to `D` and then flattening agrees with flattening and then restricting to the
-part `B ⊓ H` of the flat side that `Φ` maps onto `D`. -/
-private theorem w1pCompL_restrictL_eq_restrictL_w1pCompL
-    {W B V D H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (hVW : V ≤ W) (hDW : D ≤ W)
-    (hΦB : Wkp.IsChangeOfVariables 1 B V Φ L 1) (hΦD : Wkp.IsChangeOfVariables 1 (B ⊓ H) D Φ L 1)
-    (u : W1p volume W 2) :
-    hΦD.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hDW u) =
-      W1p.restrictL inf_le_left (hΦB.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hVW u)) := by
-  refine W1p.ext_value (Lp.ext ?_)
-  have hBH : ((B ⊓ H : Opens _) : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ B :=
-    SetLike.coe_subset_coe.mpr inf_le_left
-  filter_upwards [hΦD.value_w1pCompL_ae ENNReal.ofNat_ne_top (W1p.restrictL hDW u),
-    hΦD.ae_comp (W1p.value_restrictL_ae hDW u),
-    W1p.value_restrictL_ae inf_le_left
-      (hΦB.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hVW u)),
-    ae_restrict_of_ae_restrict_of_subset hBH
-      (hΦB.value_w1pCompL_ae ENNReal.ofNat_ne_top (W1p.restrictL hVW u)),
-    ae_restrict_of_ae_restrict_of_subset hBH (hΦB.ae_comp (W1p.value_restrictL_ae hVW u))]
-    with y h1 h2 h3 h4 h5
-  rw [h1, h2, h3, h4, h5]
 
 /-- **The flattened weak equation.** Let `Φ` map the flat piece `B ⊓ H` onto `D ⊆ W ⊓ Ω`, with
 inverse `Ψ`, both changes of variables with Jacobian determinant one. If `u` solves
@@ -215,7 +165,8 @@ private theorem energyFormH1_restrictL_w1pCompL_eq
     hΨD.mapsTo hΨD.norm_fderiv_le hΨD.pos hΨD.le_abs_det (fun y _ => hΨΦ y) (fun x _ => hΦΨ x)
     (b := 0) (c := 0) hD ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
   rw [pullbackDrift_zero, pullbackDensity_zero] at h
-  have hcomp := w1pCompL_restrictL_eq_restrictL_w1pCompL hVW (hDWΩ.trans inf_le_left) hΦB hΦD u
+  have hcomp := hΦB.w1pCompL_restrictL_eq_restrictL_w1pCompL hΦD inf_le_left ENNReal.ofNat_ne_top
+    hVW (hDWΩ.trans inf_le_left) u
   simp only [Wkp.IsChangeOfVariables.w1pCompL] at hcomp
   rw [← hcomp, h, add_comm]
   congr 1
@@ -232,24 +183,6 @@ end Equation
 /-! ### Bounds on the flat side -/
 
 section Flat
-
-/-- The gradient of `v ∈ H¹(B)` agrees almost everywhere on `B ∩ H` with its precise
-representative for the Lebesgue measure on `H`. -/
-private theorem ae_eq_preciseRepresentative_restrict_gradient
-    {B H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (v : W1p volume B 2) :
-    ∀ᵐ z ∂volume.restrict ((B : Set (EuclideanSpace ℝ (Fin (n + 1)))) ∩ H),
-      (W1p.gradient v : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) z =
-        MeasureTheory.preciseRepresentative (volume.restrict (H : Set (EuclideanSpace ℝ
-          (Fin (n + 1))))) (W1p.gradient v) z := by
-  have hBm := B.isOpen.measurableSet
-  have hli : LocallyIntegrable (W1p.gradient v : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))) (volume.restrict ((B : Set _) ∩ H)) :=
-    ((Lp.memLp (W1p.gradient v)).mono_measure
-      (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable (by norm_num)
-  filter_upwards [MeasureTheory.ae_eq_preciseRepresentative_of_hasBesicovitchCovering hli,
-    ae_restrict_mem (hBm.inter H.isOpen.measurableSet)] with z hz hzBH
-  rw [hz, ← Measure.restrict_restrict hBm,
-    MeasureTheory.preciseRepresentative_restrict_of_mem_nhds (B.isOpen.mem_nhds hzBH.1)]
 
 /-- **Sup bound for the precise representative of a gradient at a flat boundary.** If the
 precise representative `P` of `∇v` for the Lebesgue measure on the half-space `H` is `β`-Hölder
@@ -291,7 +224,10 @@ private theorem norm_preciseRepresentative_le_of_holderOnWith {H B : Opens
   have h := norm_le_add_sqrt_of_ae_eq (measurableSet_closedBall.inter H.isOpen.measurableSet) hA0
     hAt ((Lp.memLp (W1p.gradient v)).mono_measure
       (Measure.restrict_mono (hAB'.trans inter_subset_left) le_rfl))
-    (ae_restrict_of_ae_restrict_of_subset hAB' (ae_eq_preciseRepresentative_restrict_gradient v))
+    (ae_restrict_of_ae_restrict_of_subset hAB'
+      (MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
+        (((Lp.memLp (W1p.gradient v)).mono_measure
+          (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable (by norm_num))))
     (y := y) (M := K * R ^ (β : ℝ)) (C := ‖W1p.gradient v‖ ^ 2) (by positivity)
     (fun z hz => by
       rw [← dist_eq_norm]
@@ -812,7 +748,8 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
   -- The pieces of the chart: `Φ` maps `B` onto `V ⊆ W`, and `B ∩ H` onto `D' ⊆ V ∩ Ω`.
   set t := closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) ∩ ball (Φ y₀) ρ
   have hst : MapsTo Φ (ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) t := fun y hy =>
-    ⟨mapsTo_closure_of_image_eq hν hΦc himage ⟨hy.2, hrU' hy.1⟩, hΦball hy.1⟩
+    ⟨mapsTo_closure_of_image_eq hν U'.isOpen hΦc.continuousOn himage ⟨hy.2, hrU' hy.1⟩,
+      hΦball hy.1⟩
   have hy₀s : y₀ ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ} := ⟨mem_ball_self hr, hy₀ν.ge⟩
   obtain ⟨V, D', hVB, hDV, hDΩ, hD'U, hsubD, hΦB, hΦD, hΨD⟩ :=
     exists_opens_of_isChangeOfVariables hΦ hΨ hΨΦ hΨc himage hH (B := B) hrU'
@@ -886,7 +823,8 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
   have hTU : T ⊆ U := fun x hx => hρ'U hx.2
   have hΨT : MapsTo Ψ T (closedBall y₀ (r / 4) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) := fun x hx =>
     ⟨ball_subset_closedBall (hΨball hx.2),
-      mapsTo_setOf_le_inner_of_image_eq hΨc hΨΦ himage ⟨hx.1, hρ'U hx.2⟩⟩
+      mapsTo_setOf_le_inner_of_image_eq U.isOpen hΨc.continuousOn (fun y _ => hΨΦ y) himage
+        ⟨hx.1, hρ'U hx.2⟩⟩
   have hTD : ∀ x ∈ T, ∀ x' ∈ T, edist x x' ≤ D := fun x hx x' hx' => by
     rw [edist_dist, ← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (by positivity)]
     refine ENNReal.ofReal_le_ofReal ((dist_triangle_right x x' (Φ y₀)).trans ?_)
@@ -902,7 +840,9 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
     hsubD x ⟨hx.1, hρ'U hx.2⟩ (ball_subset_ball (by linarith : r / 4 ≤ r) (hΨball hx.2))
   exact ae_restrict_of_ae_restrict_of_subset hsub
     (ae_gradient_eq_adjoint_fderiv_apply hΦ hΨ hΨΦ hΦΨ hVW hD'U hΦB hΨD u
-      (ae_eq_preciseRepresentative_restrict_gradient v))
+      (MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
+        (((Lp.memLp (W1p.gradient v)).mono_measure
+          (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable (by norm_num))))
 
 /-- **Schauder estimate near a `C^{1,α}` boundary for divergence-form equations.** Suppose that in
 rigid coordinates `e` centred at `x₀ = e⁻¹ 0`, inside the normal cylinder of half-height `h₀` and

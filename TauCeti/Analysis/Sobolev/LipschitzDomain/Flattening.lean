@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 
 /-!
 # Flattening a `Cᵏ` boundary graph by a change of variables
@@ -48,6 +49,9 @@ compactness, which bounds those of the shear.
 * `TauCeti.exists_isChangeOfVariables_halfSpace_of_contDiff_graph`: the flattening chart fixes the
   boundary point, which lies in the closure of the flat half-space, and maps the part of a
   neighbourhood in that half-space onto the domain near the boundary point.
+* `TauCeti.mapsTo_closure_of_image_eq` and `TauCeti.mapsTo_setOf_le_inner_of_image_eq`: a
+  flattening chart maps the closed half-space part of its domain into the closure of the domain,
+  and its inverse maps the closure of the domain back into the closed half-space.
 
 ## References
 
@@ -310,5 +314,38 @@ theorem exists_isChangeOfVariables_halfSpace_of_contDiff_graph [FiniteDimensiona
   · exact (hHν _).1 (by simpa using half_pos hε)
   · rw [dist_comm, e.symm.dist_map, dist_zero_right]
     simpa [WithLp.prod_norm_eq_of_L2, abs_of_pos hε] using half_lt_self hε
+
+
+/-- **A flattening chart on the closed half-space.** If `Φ` is continuous on an open set `U'` and
+maps the part of `U'` in the open half-space `{c₀ < ⟪y, ν⟫}` onto `Ω ∩ U`, then it maps the part
+of `U'` in the closed half-space `{c₀ ≤ ⟪y, ν⟫}` into the closure of `Ω`. -/
+theorem mapsTo_closure_of_image_eq {Omega U U' : Set F} {Φ : F → F} {ν : F} {c₀ : ℝ}
+    (hν : ν ≠ 0) (hU' : IsOpen U') (hΦc : ContinuousOn Φ U')
+    (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = Omega ∩ U) :
+    MapsTo Φ ({y | c₀ ≤ ⟪y, ν⟫_ℝ} ∩ U') (closure Omega) := fun y hy => by
+  have h := mem_closure_image (hΦc.continuousAt (hU'.mem_nhds hy.2))
+    (mem_closure_setOf_lt_inner_inter hν hy.1 hU' hy.2)
+  rw [himage] at h
+  exact closure_mono inter_subset_left h
+
+/-- **The inverse of a flattening chart on the closure of the domain.** If `Φ` maps the part of
+`U'` in the open half-space `{c₀ < ⟪y, ν⟫}` onto `Ω ∩ U`, with `U` open, and `Ψ` is continuous on
+`U` and a left inverse of `Φ` there, then `Ψ` maps `closure Ω ∩ U` into the closed half-space
+`{c₀ ≤ ⟪y, ν⟫}`. -/
+theorem mapsTo_setOf_le_inner_of_image_eq {Omega U U' : Set F} {Φ Ψ : F → F} {ν : F} {c₀ : ℝ}
+    (hU : IsOpen U) (hΨc : ContinuousOn Ψ U) (hΨΦ : LeftInvOn Ψ Φ ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U'))
+    (himage : Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U') = Omega ∩ U) :
+    MapsTo Ψ (closure Omega ∩ U) {y | c₀ ≤ ⟪y, ν⟫_ℝ} := fun x hx => by
+  have hx' : x ∈ closure (Omega ∩ U) := by
+    rw [inter_comm]
+    exact hU.inter_closure ⟨hx.2, hx.1⟩
+  rw [← himage] at hx'
+  have hΨim : Ψ '' (Φ '' ({y | c₀ < ⟪y, ν⟫_ℝ} ∩ U')) ⊆ {y | c₀ ≤ ⟪y, ν⟫_ℝ} := by
+    rintro _ ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+    rw [hΨΦ hy, mem_ofPred_eq]
+    rw [mem_inter_iff, mem_ofPred_eq] at hy
+    exact hy.1.le
+  exact closure_minimal hΨim (isClosed_le continuous_const (continuous_id.inner continuous_const))
+    (mem_closure_image (hΨc.continuousAt (hU.mem_nhds hx.2)) hx')
 
 end TauCeti
