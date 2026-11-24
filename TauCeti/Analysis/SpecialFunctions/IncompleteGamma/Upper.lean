@@ -90,12 +90,20 @@ theorem upperIncompleteGamma_def (a z : ℂ) :
       _root_.Complex.exp (-z) *
         ∫ t in Ioi (0 : ℝ), (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)) := (rfl)
 
-/-- Absolute convergence of the horizontal-ray integrand on the slit plane, for every
-complex parameter `a`. -/
+/-- Absolute convergence of the horizontal-ray integrand
+`(z + t) ^ (a - 1) * exp (-(z + t))` of `Complex.upperIncompleteGamma_eq_integral` on the slit
+plane, for every complex parameter `a`. -/
 theorem integrableOn_upperIncompleteGamma_integrand (a : ℂ) {z : ℂ}
     (hz : z ∈ _root_.Complex.slitPlane) :
-    IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)))
+    IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(z + t)))
       (Ioi 0) := by
+  -- The integrand with the constant factor `exp (-z)` taken out.
+  suffices h : IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)))
+      (Ioi 0) by
+    refine IntegrableOn.congr_fun (h.const_mul (_root_.Complex.exp (-z))) (fun t _ => ?_)
+      measurableSet_Ioi
+    rw [neg_add, _root_.Complex.exp_add]
+    ring
   have hi : IntegrableOn (fun t : ℝ => Real.exp (-t) * t ^ (a - 1).re) (Ioi 1) :=
     integrable_of_isBigO_exp_neg one_half_pos
       (continuousOn_id.neg.rexp.mul (continuousOn_id.rpow_const (by grind)))
@@ -172,8 +180,12 @@ theorem hasDerivAt_upperIncompleteGamma {z : ℂ} (hz : z ∈ slitPlane) (a : �
     HasDerivAt (upperIncompleteGamma a) (-(z ^ (a - 1) * cexp (-z))) z := by
   -- the ray integrand in the product order of the parametric-integral API
   have hint (b : ℂ) : IntegrableOn (fun t : ℝ => cexp (-(t : ℂ)) * ((t : ℂ) + z) ^ b) (Ioi 0) := by
-    simpa only [add_sub_cancel_right, mul_comm, add_comm] using
-      integrableOn_upperIncompleteGamma_integrand (b + 1) hz
+    -- the integrand of `upperIncompleteGamma_eq_integral` times the constant `e^z`
+    refine IntegrableOn.congr_fun
+      ((integrableOn_upperIncompleteGamma_integrand (b + 1) hz).const_mul (cexp z))
+      (fun t _ => ?_) measurableSet_Ioi
+    rw [add_sub_cancel_right, neg_add, exp_add, exp_neg z, add_comm z]
+    field_simp
   have hfun : upperIncompleteGamma a =
       fun w => cexp (-w) * ∫ t in Ioi (0 : ℝ), cexp (-(t : ℂ)) * ((t : ℂ) + w) ^ (a - 1) := by
     funext w
@@ -234,10 +246,18 @@ theorem differentiable_upperIncompleteGamma_left {z : ℂ} (hz : z ∈ slitPlane
   set K := Real.exp (Real.pi * (|(a₀ - 1).im| + 1))
   set p₁ := (a₀ - 1).re - 1
   set p₂ := (a₀ - 1).re + 1
+  -- the integrand of the defining ray integral: that of `upperIncompleteGamma_eq_integral` times
+  -- the constant `e^z`
+  have hint (b : ℂ) : IntegrableOn (fun t : ℝ => (z + t) ^ (b - 1) * cexp (-(t : ℂ))) (Ioi 0) := by
+    refine IntegrableOn.congr_fun
+      ((integrableOn_upperIncompleteGamma_integrand b hz).const_mul (cexp z))
+      (fun t _ => ?_) measurableSet_Ioi
+    rw [neg_add, exp_add, exp_neg z]
+    field_simp
   -- the weights `‖t + z‖ ^ p e^{−t}` are the norms of the ray integrands at `a = p + 1`
   have hnorm (p : ℝ) : IntegrableOn (fun t : ℝ => ‖(t : ℂ) + z‖ ^ p * Real.exp (-t)) (Ioi 0) := by
     have h : IntegrableOn (fun t : ℝ => ‖(z + t) ^ ((p : ℂ) + 1 - 1) * cexp (-(t : ℂ))‖)
-        (Ioi 0) := (integrableOn_upperIncompleteGamma_integrand ((p : ℂ) + 1) hz).norm
+        (Ioi 0) := (hint ((p : ℂ) + 1)).norm
     refine h.congr_fun (fun t _ => ?_) measurableSet_Ioi
     dsimp only
     rw [norm_mul, add_sub_cancel_right, norm_cpow_real, add_comm z, ← ofReal_neg,
@@ -249,7 +269,7 @@ theorem differentiable_upperIncompleteGamma_left {z : ℂ} (hz : z ∈ slitPlane
     (w₀ := a₀) (bound := fun t : ℝ =>
       K * (‖(t : ℂ) + z‖ ^ p₁ * Real.exp (-t) + ‖(t : ℂ) + z‖ ^ p₂ * Real.exp (-t)))
     Metric.isOpen_ball (Metric.mem_ball_self one_pos)
-    (fun b _ => (integrableOn_upperIncompleteGamma_integrand b hz).aestronglyMeasurable)
+    (fun b _ => (hint b).aestronglyMeasurable)
     ?_ hB ?_
   · exact (key.differentiableAt.const_mul (cexp (-z))).congr_of_eventuallyEq
       (.of_forall fun b => upperIncompleteGamma_def b z)
