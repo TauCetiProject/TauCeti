@@ -25,8 +25,11 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 
 ## Main declarations
 
+* `Complex.analyticAt_Gammaℝ_of_ne_zero`, `Complex.analyticAt_Gammaℂ_of_ne_zero`: both factors
+  are analytic wherever they are nonzero.
 * `Complex.Gammaℂ_eq_zero_iff`: total zeros of `Gammaℂ` occur at `-(n : ℂ)` (`n : ℕ`),
-  complementing `Complex.Gammaℝ_eq_zero_iff`.
+  complementing `Complex.Gammaℝ_eq_zero_iff`; this identifies the exceptional values in finite
+  products of shifted gamma factors.
 * `Complex.two_mul_Gammaℝ_two_mul`: twice the real factor at `2 * z` is `2 ^ z` times `Gammaℂ z`,
   everywhere on `ℂ` including at the poles where both totalized values vanish.
 * `Complex.Gammaℂ_natCast_add_one`, `Complex.Gammaℝ_two_mul_natCast_add_two`: the values
@@ -37,8 +40,7 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 * `Complex.Gammaℝ_one_sub_two_mul_natCast_ne_zero`: `Gammaℝ` does not vanish at the odd integers
   `1 - 2k`.
 * `Complex.differentiableAt_Gammaℝ`, `Complex.differentiableAt_Gammaℂ`,
-  `Complex.analyticAt_Gammaℝ`, `Complex.analyticAt_Gammaℂ`, `Complex.continuousAt_Gammaℝ`,
-  `Complex.continuousAt_Gammaℂ`: regularity away from the poles.
+  `Complex.continuousAt_Gammaℝ`, `Complex.continuousAt_Gammaℂ`: regularity away from the poles.
 * `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`, `Complex.log_norm_Gammaℝ`,
   `Complex.log_norm_Gammaℂ`: norm and log-norm identities.
 
@@ -52,6 +54,18 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 public section
 
 namespace Complex
+
+/-- The real-place gamma factor is analytic wherever it is nonzero. -/
+theorem analyticAt_Gammaℝ_of_ne_zero {s : ℂ} (hs : Gammaℝ s ≠ 0) :
+    AnalyticAt ℂ Gammaℝ s := by
+  simpa only [Pi.inv_def, inv_inv] using
+    (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
+
+/-- The complex-place gamma factor is analytic wherever it is nonzero. -/
+theorem analyticAt_Gammaℂ_of_ne_zero {s : ℂ} (hs : Gammaℂ s ≠ 0) :
+    AnalyticAt ℂ Gammaℂ s := by
+  simpa only [Pi.inv_def, inv_inv] using
+    (differentiable_Gammaℂ_inv.analyticAt s).inv (inv_ne_zero hs)
 
 /-- The total zero values of the complex archimedean factor occur at the nonpositive integers. -/
 theorem Gammaℂ_eq_zero_iff (z : ℂ) : Gammaℂ z = 0 ↔ ∃ n : ℕ, z = -(n : ℂ) := by
@@ -119,16 +133,6 @@ theorem differentiableAt_Gammaℝ {z : ℂ} (hz : Gammaℝ z ≠ 0) : Differenti
 @[fun_prop]
 theorem differentiableAt_Gammaℂ {z : ℂ} (hz : Gammaℂ z ≠ 0) : DifferentiableAt ℂ Gammaℂ z := by
   simpa only [inv_inv] using (differentiable_Gammaℂ_inv z).fun_inv (inv_ne_zero hz)
-
-/-- `Gammaℝ` is analytic wherever its total value is nonzero. -/
-theorem analyticAt_Gammaℝ {s : ℂ} (hs : Gammaℝ s ≠ 0) : AnalyticAt ℂ Gammaℝ s := by
-  simpa only [Pi.inv_def, inv_inv] using
-    (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
-
-/-- `Gammaℂ` is analytic wherever its total value is nonzero. -/
-theorem analyticAt_Gammaℂ {s : ℂ} (hs : Gammaℂ s ≠ 0) : AnalyticAt ℂ Gammaℂ s := by
-  simpa only [Pi.inv_def, inv_inv] using
-    (differentiable_Gammaℂ_inv.analyticAt s).inv (inv_ne_zero hs)
 
 /-- `Gammaℝ` is continuous wherever its total value is nonzero. -/
 @[fun_prop]

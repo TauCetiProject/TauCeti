@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CoherentHomotopy
+public import TauCeti.AlgebraicTopology.Singular.Cubical.Deformation
 public import TauCeti.Topology.Homotopy.Extension.Cube
 
 /-!
@@ -425,27 +426,15 @@ variable (n x) in
 singular cube `c`, with time as the first coordinate, starting at `c` and ending at a cube sending
 the `(n - 1)`-skeleton to `x`. The homotopies are compatible with faces and degeneracies, and fix
 the cubes that are already `n`-based. -/
-structure BasedCubeDeformation where
-  /-- The homotopy deforming the singular cube `c`. -/
-  homotopy {m : ℕ} (c : SingularCube X m) : C(I × (Fin m → I), X)
-  /-- The homotopy of `c` starts at `c`. -/
-  homotopy_zero {m : ℕ} (c : SingularCube X m) (y : Fin m → I) : homotopy c (0, y) = c y
+structure BasedCubeDeformation extends CubeDeformation X where
   /-- The homotopy of `c` ends at an `n`-based cube. -/
   isBased_curry_one {m : ℕ} (c : SingularCube X m) :
     SingularCube.IsBased n x ((homotopy c).curry 1)
-  /-- The homotopy of a face of `c` is the restriction of the homotopy of `c` to that face. -/
-  homotopy_insertNth {m : ℕ} (c : SingularCube X (m + 1)) (i : Fin (m + 1)) {t : I}
-    (ht : t = 0 ∨ t = 1) (s : I) (z : Fin m → I) :
-    homotopy c (s, i.insertNth t z) = homotopy (SingularCube.face i t c) (s, z)
-  /-- If `c` does not depend on a coordinate, then neither does its homotopy at any time. -/
-  isDegenerateAt_curry {m : ℕ} {c : SingularCube X m} {i : Fin m} (hc : c.IsDegenerateAt i)
-    (s : I) : SingularCube.IsDegenerateAt ((homotopy c).curry s) i
   /-- The homotopy of an `n`-based cube is constant. -/
   homotopy_of_isBased {m : ℕ} {c : SingularCube X m} (hc : c.IsBased n x) (s : I)
     (y : Fin m → I) : homotopy c (s, y) = c y
 
-attribute [simp] BasedCubeDeformation.homotopy_zero BasedCubeDeformation.homotopy_insertNth
-  BasedCubeDeformation.homotopy_of_isBased
+attribute [simp] BasedCubeDeformation.homotopy_of_isBased
 
 /-- **Every singular cube of an `(n - 1)`-connected space deforms into an `n`-based cube.** If
 `π_k(X, x)` is trivial for every `k < n` (for `k = 0`, if `X` is path connected), then there is a

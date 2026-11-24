@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.LinearCombination
-import TauCeti.RingTheory.Idempotents.Jacobson
+import TauCeti.RingTheory.Ideal.Quotient.Defs
 
 /-!
 # Idempotents modulo an ideal from coprime factorizations

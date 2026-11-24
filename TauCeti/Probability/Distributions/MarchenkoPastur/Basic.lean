@@ -41,6 +41,10 @@ integrals of `g` against the semicircle law. In particular
   `TauCeti.Probability.zero_mem_support_marchenkoPastur_iff`: its exact topological support is
   `[(1 - √y)², (1 + √y)²]` for `y ≤ 1` and `{0} ∪ [(1 - √y)², (1 + √y)²]` for `1 ≤ y`, and `0`
   belongs to the support iff `1 ≤ y`.
+* `TauCeti.Probability.Icc_subset_support_marchenkoPastur`,
+  `TauCeti.Probability.one_sub_sqrt_sq_mem_support_marchenkoPastur`,
+  `TauCeti.Probability.one_add_sqrt_sq_mem_support_marchenkoPastur`: the bulk interval, and with it
+  both edges, lies in the support for every `y`.
 * `TauCeti.Probability.withDensity_ofReal_marchenkoPastur`: its size-biased law is a semicircle.
 * `TauCeti.Probability.memLp_id_marchenkoPastur`,
   `TauCeti.Probability.integrable_pow_marchenkoPastur`: it has moments of all orders.
@@ -242,6 +246,24 @@ theorem support_marchenkoPastur (y : ℝ≥0) :
   split_ifs with hy
   · exact support_marchenkoPastur_of_le_one hy
   · exact support_marchenkoPastur_of_one_le (le_of_not_ge hy)
+
+/-- The bulk interval `[(1 - √y)², (1 + √y)²]` lies in the topological support of `MP_y`; in
+particular both edges do. -/
+theorem Icc_subset_support_marchenkoPastur (y : ℝ≥0) :
+    Icc ((1 - √y) ^ 2) ((1 + √y) ^ 2) ⊆ (marchenkoPastur y).support := by
+  rcases le_total y 1 with hy | hy
+  · exact (support_marchenkoPastur_of_le_one hy).ge
+  · exact (support_marchenkoPastur_of_one_le hy).ge.trans' (subset_insert _ _)
+
+/-- The lower edge `(1 - √y)²` lies in the topological support of `MP_y`. -/
+theorem one_sub_sqrt_sq_mem_support_marchenkoPastur (y : ℝ≥0) :
+    (1 - √y) ^ 2 ∈ (marchenkoPastur y).support :=
+  Icc_subset_support_marchenkoPastur y (left_mem_Icc.2 (by nlinarith [sqrt_nonneg (y : ℝ)]))
+
+/-- The upper edge `(1 + √y)²` lies in the topological support of `MP_y`. -/
+theorem one_add_sqrt_sq_mem_support_marchenkoPastur (y : ℝ≥0) :
+    (1 + √y) ^ 2 ∈ (marchenkoPastur y).support :=
+  Icc_subset_support_marchenkoPastur y (right_mem_Icc.2 (by nlinarith [sqrt_nonneg (y : ℝ)]))
 
 /-- The topological support of `MP_1` is `[0, 4]`. -/
 @[simp]

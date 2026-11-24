@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Analysis.Sobolev.Circle.Derivative
+public import TauCeti.Analysis.Sobolev.Circle.FourierMultiplier
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 import TauCeti.Analysis.Fredholm.CompactPerturbation
@@ -49,6 +50,14 @@ lower-order term in the elliptic estimate.
   (`CircleSobolev.norm_le_mul_norm_laplacian_of_coeff_zero_eq_zero`).
 * *Elliptic regularity.* If `a ∈ H^t` and `Δ a ∈ H^s`, then `a ∈ H^(s + 2)`
   (`CircleSobolev.exists_inclusion_eq_of_laplacian_eq_inclusion`).
+* *The general theory.* The symbol `λₙ = (2πn/T)²` (`CircleSobolev.laplacianSymbol`), which is
+  `n²` on the circle of length `2π`, is elliptic of order `2`
+  (`CircleSobolev.isTheta_laplacianSymbol`), so `Δ` and `G` are the elliptic Fourier multipliers
+  of `TauCeti/Analysis/Sobolev/Circle/FourierMultiplier.lean` with symbols `λₙ` and `λₙ⁻¹`
+  (`CircleSobolev.laplacian_eq_fourierMultiplier`,
+  `CircleSobolev.greenOperator_eq_fourierMultiplier`), whose zero-mode projection is the
+  projection onto the constants (`CircleSobolev.indicator_setOf_laplacianSymbol_eq_zero`).
+  Note that `Δ = -∂²` here, so `λₙ ≥ 0` has the opposite sign to `TauCeti.laplacianSymbol`.
 
 ## Main definitions
 
@@ -57,6 +66,7 @@ lower-order term in the elliptic estimate.
 * `TauCeti.CircleSobolev.greenOperator T`: the Green operator `H^s → H^(s + 2)`.
 * `TauCeti.CircleSobolev.laplacianAddInclusionEquiv T`: the isomorphism
   `1 + Δ : H^(s + 2) ≃ H^s`, written `Δ + inclusion` between the two spaces.
+* `TauCeti.CircleSobolev.laplacianSymbol T n = (2πn/T)²`: the symbol of `Δ`.
 
 ## References
 
@@ -100,7 +110,7 @@ private theorem weight_mul_norm_laplacianSymbol_le (h : s + 2 ≤ t) (n : ℤ) :
 for `s + 2 ≤ t`: the Fourier multiplier with symbol `(2πn/T)²` (`CircleSobolev.coeff_laplacian`).
 It is minus the second derivative (`CircleSobolev.laplacian_apply`). -/
 def laplacian (h : s + 2 ≤ t) : CircleSobolev t E →L[ℂ] CircleSobolev s E :=
-  fourierMultiplier (fun n ↦ (((2 * π * n / T) ^ 2 : ℝ) : ℂ))
+  fourierMultiplierOfBound (fun n ↦ (((2 * π * n / T) ^ 2 : ℝ) : ℂ))
     (weight_mul_norm_laplacianSymbol_le T h)
 
 omit hT in
@@ -108,7 +118,7 @@ omit hT in
 @[simp]
 theorem coeff_laplacian (h : s + 2 ≤ t) (a : CircleSobolev t E) (n : ℤ) :
     (laplacian T h a).coeff n = (((2 * π * n / T) ^ 2 : ℝ) : ℂ) • a.coeff n :=
-  coeff_fourierMultiplier _ a n
+  coeff_fourierMultiplierOfBound _ a n
 
 /-- The Laplacian is minus the second derivative: `Δ a = -(a'')`. -/
 theorem laplacian_apply (h : s + 2 ≤ t) (a : CircleSobolev t E) :
@@ -124,7 +134,7 @@ omit hT in
 @[simp]
 theorem laplacian_single (h : s + 2 ≤ t) (n : ℤ) (x : E) :
     laplacian T h (single n x) = single n ((((2 * π * n / T) ^ 2 : ℝ) : ℂ) • x) :=
-  fourierMultiplier_single _ n x
+  fourierMultiplierOfBound_single _ n x
 
 omit hT in
 @[simp]
@@ -182,7 +192,7 @@ with symbol `(T/(2πn))² = (2πn/T)⁻²` for `n ≠ 0` and `0` for `n = 0`. It
 on the functions of mean zero and vanishes on the constants
 (`CircleSobolev.laplacian_greenOperator`, `CircleSobolev.greenOperator_laplacian`). -/
 def greenOperator : CircleSobolev s E →L[ℂ] CircleSobolev (s + 2) E :=
-  fourierMultiplier (fun n ↦ ((((T / (2 * π * n)) ^ 2 : ℝ)) : ℂ))
+  fourierMultiplierOfBound (fun n ↦ ((((T / (2 * π * n)) ^ 2 : ℝ)) : ℂ))
     (weight_mul_norm_greenSymbol_le T)
 
 omit hT in
@@ -191,19 +201,19 @@ for `n = 0`. -/
 @[simp]
 theorem coeff_greenOperator (b : CircleSobolev s E) (n : ℤ) :
     (greenOperator T b).coeff n = ((((T / (2 * π * n)) ^ 2 : ℝ)) : ℂ) • b.coeff n :=
-  coeff_fourierMultiplier _ b n
+  coeff_fourierMultiplierOfBound _ b n
 
 omit hT in
 @[simp]
 theorem greenOperator_single (n : ℤ) (x : E) :
     greenOperator T (single (s := s) n x) = single n ((((T / (2 * π * n)) ^ 2 : ℝ) : ℂ) • x) :=
-  fourierMultiplier_single _ n x
+  fourierMultiplierOfBound_single _ n x
 
 omit hT in
 /-- The Green operator gains two orders, with norm at most `(T/π)²`. -/
 theorem norm_greenOperator_le (b : CircleSobolev s E) :
     ‖greenOperator T b‖ ≤ (T / π) ^ 2 * ‖b‖ :=
-  norm_fourierMultiplier_le _ b
+  norm_fourierMultiplierOfBound_le _ b
 
 omit hT in
 /-- The product of the Laplacian eigenvalue and the Green symbol is `1` off the constant mode. -/
@@ -304,15 +314,15 @@ Fourier coefficient by `1 + (2πn/T)² ≥ 1`, and its inverse multiplies it by 
 one. -/
 def laplacianAddInclusionEquiv : CircleSobolev (s + 2) E ≃L[ℂ] CircleSobolev s E :=
   ContinuousLinearEquiv.ofContinuousLinearMap (laplacian T le_rfl + inclusion (by linarith))
-    (fourierMultiplier (fun n ↦ ((((1 + (2 * π * n / T) ^ 2)⁻¹ : ℝ)) : ℂ))
+    (fourierMultiplierOfBound (fun n ↦ ((((1 + (2 * π * n / T) ^ 2)⁻¹ : ℝ)) : ℂ))
       (weight_mul_norm_resolventSymbol_le T hT.out.ne'))
     (ContinuousLinearMap.ext fun b ↦ CircleSobolev.ext (funext fun n ↦ by
       rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
-        coeff_laplacian_add_inclusion, coeff_fourierMultiplier, smul_smul, mul_comm,
+        coeff_laplacian_add_inclusion, coeff_fourierMultiplierOfBound, smul_smul, mul_comm,
         inv_mul_one_add_eigenvalue, one_smul]))
     (ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (funext fun n ↦ by
       rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
-        coeff_fourierMultiplier, coeff_laplacian_add_inclusion, smul_smul,
+        coeff_fourierMultiplierOfBound, coeff_laplacian_add_inclusion, smul_smul,
         inv_mul_one_add_eigenvalue, one_smul]))
 
 @[simp]
@@ -325,7 +335,7 @@ theorem laplacianAddInclusionEquiv_apply (a : CircleSobolev (s + 2) E) :
 theorem coeff_laplacianAddInclusionEquiv_symm (b : CircleSobolev s E) (n : ℤ) :
     ((laplacianAddInclusionEquiv T).symm b).coeff n =
       ((((1 + (2 * π * n / T) ^ 2)⁻¹ : ℝ)) : ℂ) • b.coeff n :=
-  coeff_fourierMultiplier _ b n
+  coeff_fourierMultiplierOfBound _ b n
 
 /-! ### The Fredholm property -/
 
@@ -432,6 +442,108 @@ theorem exists_inclusion_eq_of_laplacian_eq_inclusion (h : r + 2 ≤ t) (hts : t
   refine ⟨greenOperator T b + single 0 (a.coeff 0), CircleSobolev.ext ?_⟩
   rw [coeff_inclusion, coeff_add, ← hcoeff, coeff_sub]
   simp
+
+/-! ### The Laplacian as an elliptic Fourier multiplier -/
+
+section Symbol
+
+open Asymptotics Filter
+
+/-- The symbol `(2πn/T)²` of the Laplacian `Δ = -∂²` on `AddCircle T`: the factor by which `Δ`
+multiplies the Fourier monomial `e^{2πinx/T}`. With the sign convention `Δ = -∂²` of this file it
+is nonnegative, the opposite sign to `TauCeti.laplacianSymbol`. -/
+def laplacianSymbol (n : ℤ) : ℂ := (((2 * π * n / T) ^ 2 : ℝ) : ℂ)
+
+omit hT in
+theorem laplacianSymbol_def (n : ℤ) : laplacianSymbol T n = (((2 * π * n / T) ^ 2 : ℝ) : ℂ) :=
+  (rfl)
+
+omit hT in
+/-- On the circle of length `2π` the Laplacian symbol is `n²`. -/
+@[simp]
+theorem laplacianSymbol_two_pi (n : ℤ) : laplacianSymbol (2 * π) n = (n : ℂ) ^ 2 := by
+  rw [laplacianSymbol_def, mul_div_cancel_left₀ _ (by positivity : (2 * π : ℝ) ≠ 0)]
+  push_cast
+  rfl
+
+@[simp]
+theorem laplacianSymbol_eq_zero_iff (n : ℤ) : laplacianSymbol T n = 0 ↔ n = 0 := by
+  have := hT.out.ne'
+  simp [laplacianSymbol_def, Real.pi_ne_zero, this]
+
+theorem setOf_laplacianSymbol_eq_zero : {n | laplacianSymbol T n = 0} = {0} :=
+  Set.ext fun n ↦ laplacianSymbol_eq_zero_iff T n
+
+omit hT in
+private theorem norm_laplacianSymbol (n : ℤ) :
+    ‖laplacianSymbol T n‖ = (2 * π / T) ^ 2 * |(n : ℝ)| ^ 2 := by
+  rw [laplacianSymbol_def, norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), sq_abs]
+  ring
+
+/-- The Laplacian symbol is elliptic of order `2`: `(2πn/T)²` is comparable to `(1 + |n|)²` at
+every frequency `n ≠ 0`. -/
+theorem isTheta_laplacianSymbol : laplacianSymbol T =Θ[cofinite] weight 2 := by
+  have hk : 0 < 2 * π / T := div_pos (by positivity) hT.out
+  refine ⟨IsBigO.of_bound ((2 * π / T) ^ 2) (Eventually.of_forall fun n ↦ ?_),
+    IsBigO.of_bound (4 * ((2 * π / T) ^ 2)⁻¹)
+      ((Set.finite_singleton (0 : ℤ)).eventually_cofinite_notMem.mono fun n hn ↦ ?_)⟩
+  · rw [norm_laplacianSymbol, norm_weight, weight_ofNat]
+    have : |(n : ℝ)| ^ 2 ≤ (1 + |(n : ℝ)|) ^ 2 := by
+      gcongr
+      linarith
+    exact mul_le_mul_of_nonneg_left this (by positivity)
+  · rw [norm_laplacianSymbol, norm_weight, weight_ofNat]
+    have hn1 : (1 : ℝ) ≤ |(n : ℝ)| := by
+      rw [← Int.cast_abs]
+      exact_mod_cast Int.one_le_abs (by simpa using hn)
+    rw [show 4 * ((2 * π / T) ^ 2)⁻¹ * ((2 * π / T) ^ 2 * |(n : ℝ)| ^ 2) = 4 * |(n : ℝ)| ^ 2 by
+      field_simp [hk.ne', hT.out.ne']]
+    nlinarith
+
+/-- The Laplacian is minus the square of the derivative, through any intermediate order. -/
+theorem laplacian_eq_neg_derivative_comp_derivative {u : ℝ} (h₁ : s + 1 ≤ u) (h₂ : u + 1 ≤ t) :
+    laplacian T (by linarith) =
+      -(derivative T h₁).comp (derivative T h₂ : CircleSobolev t E →L[ℂ] _) := by
+  refine ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (funext fun n ↦ ?_)
+  rw [coeff_laplacian, neg_apply, ContinuousLinearMap.comp_apply, coeff_neg,
+    Pi.neg_apply, coeff_derivative, coeff_derivative, smul_smul, ← neg_smul]
+  congr 1
+  push_cast
+  linear_combination ((2 * π * n / T : ℂ) ^ 2) * I_sq
+
+/-- The Laplacian is the Fourier multiplier with the elliptic symbol `laplacianSymbol T` of order
+`2`, so the general results on elliptic Fourier multipliers apply to it. -/
+theorem laplacian_eq_fourierMultiplier (h : s + 2 ≤ t) :
+    (laplacian T h : CircleSobolev t E →L[ℂ] CircleSobolev s E) =
+      fourierMultiplier (laplacianSymbol T) (isTheta_laplacianSymbol T).isBigO h :=
+  ContinuousLinearMap.ext fun a ↦ CircleSobolev.ext (funext fun n ↦ by
+    rw [coeff_laplacian, coeff_fourierMultiplier, laplacianSymbol_def])
+
+/-- The Green operator is the Fourier multiplier with the inverse symbol `(laplacianSymbol T)⁻¹`
+of order `-2`, the parametrix of the general theory. -/
+theorem greenOperator_eq_fourierMultiplier :
+    (greenOperator T : CircleSobolev s E →L[ℂ] CircleSobolev (s + 2) E) =
+      fourierMultiplier (fun n ↦ (laplacianSymbol T n)⁻¹)
+        (isBigO_inv (isTheta_laplacianSymbol T).isBigO_symm) (by linarith) :=
+  ContinuousLinearMap.ext fun b ↦ CircleSobolev.ext (funext fun n ↦ by
+    rw [coeff_greenOperator, coeff_fourierMultiplier, laplacianSymbol_def, ← ofReal_inv,
+      ← inv_pow, inv_div])
+
+/-- The frequency projection onto the zero modes of the Laplacian is the projection onto the
+constants. -/
+theorem indicator_setOf_laplacianSymbol_eq_zero (a : CircleSobolev s E) :
+    indicator {n | laplacianSymbol T n = 0} a = single 0 (a.coeff 0) := by
+  rw [setOf_laplacianSymbol_eq_zero]
+  exact CircleSobolev.ext (funext fun n ↦ by
+    rcases eq_or_ne n 0 with rfl | hn <;> simp [*])
+
+/-- The elements supported off the zero modes of the Laplacian are the mean-zero elements. -/
+theorem mem_supported_compl_setOf_laplacianSymbol_eq_zero_iff (a : CircleSobolev s E) :
+    a ∈ supported s E {n | laplacianSymbol T n = 0}ᶜ ↔ a.coeff 0 = 0 := by
+  rw [setOf_laplacianSymbol_eq_zero, mem_supported']
+  simp
+
+end Symbol
 
 end CircleSobolev
 

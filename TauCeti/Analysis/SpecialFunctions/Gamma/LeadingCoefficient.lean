@@ -107,7 +107,7 @@ theorem Gammaℝ_two_mul_natCast_div_meromorphicTrailingCoeffAt (k : ℕ) :
       neg_add_rev, add_re, neg_re, one_re] at this
     linarith [(k.cast_nonneg : (0 : ℝ) ≤ k), (j.cast_nonneg : (0 : ℝ) ≤ j)]
   have hne := Gammaℝ_one_sub_two_mul_natCast_ne_zero k
-  rw [(analyticAt_Gammaℝ hne).meromorphicTrailingCoeffAt_of_ne_zero hne,
+  rw [(analyticAt_Gammaℝ_of_ne_zero hne).meromorphicTrailingCoeffAt_of_ne_zero hne,
     Gammaℝ_div_Gammaℝ_one_sub hodd,
     show (π : ℂ) * (2 * k) / 2 = ((k * π : ℝ) : ℂ) by push_cast; ring, ← ofReal_cos,
     cos_nat_mul_pi]

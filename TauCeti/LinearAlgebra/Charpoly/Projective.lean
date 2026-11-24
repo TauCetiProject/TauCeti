@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
+public import Mathlib.RingTheory.Polynomial.Subring
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.LinearAlgebra.Determinant.Projective
@@ -14,6 +16,9 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Trace.Projective
 import Mathlib.RingTheory.LocalProperties.Basic
 import Mathlib.RingTheory.Localization.BaseChange
+-- `baseChangeTowerAlgEquiv` and its comparison with `rTensor` are used only in the proof of
+-- `AlgHom.projectiveCharpolyRev_lmul_rTensor`.
+import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # The reversed characteristic polynomial on a finite projective module
@@ -57,6 +62,13 @@ The last statement turns a norm into an integral equation: an element of a finit
 `R`-algebra is a root of a monic polynomial whose coefficients are those of the reversed
 characteristic polynomial of multiplication by it. This is how integrality over rings of
 invariants is proved for finite locally free group actions and equivalence relations.
+
+For multiplication in a finite projective algebra, the reversed characteristic polynomial is
+invariant under algebra isomorphisms (`AlgEquiv.projectiveCharpolyRev_lmul`) and commutes with
+maps of the scalar algebra of a scalar extension (`AlgHom.projectiveCharpolyRev_lmul_rTensor`).
+If its coefficients for `t f` are equalized by `algebraMap A B` and an injective `t : A →+* B`,
+then `f` is integral over that equalizer
+(`RingHom.isIntegral_of_coeff_projectiveCharpolyRev_mem_eqLocus`).
 
 ## Main definitions
 
@@ -362,3 +374,96 @@ theorem aeval_reverse_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le {f : Modul
   aeval_reflect_projectiveCharpolyRev_eq_zero_of_rankAtStalk_le hd f
 
 end LinearMap
+
+open scoped TensorProduct
+
+namespace AlgEquiv
+
+variable {R S T : Type*} [CommRing R] [Ring S] [Ring T] [Algebra R S] [Algebra R T]
+  [Module.Finite R S] [Module.Projective R S] [Module.Finite R T] [Module.Projective R T]
+
+/-- The reversed characteristic polynomial of multiplication is invariant under an algebra
+isomorphism of finite projective algebras. -/
+theorem projectiveCharpolyRev_lmul (e : S ≃ₐ[R] T) (x : S) :
+    LinearMap.projectiveCharpolyRev (Algebra.lmul R T (e x)) =
+      LinearMap.projectiveCharpolyRev (Algebra.lmul R S x) := by
+  simpa using LinearMap.projectiveCharpolyRev_eq_map_of_comp_eq e.toLinearEquiv
+    (f := Algebra.lmul R S x) (g := Algebra.lmul R T (e x)) (fun y ↦ by simp)
+
+end AlgEquiv
+
+namespace AlgHom
+
+variable {R S A A' : Type*} [CommRing R] [Ring S] [Algebra R S]
+  [Module.Finite R S] [Module.Projective R S] [CommRing A] [Algebra R A]
+  [CommRing A'] [Algebra R A']
+
+/-- The reversed characteristic polynomial of multiplication on a scalar extension commutes
+with an arbitrary map of the scalar algebra. The norm analogue is
+`Algebra.projectiveNorm_rTensor`. It is stated with `LinearMap.mul`, the simp normal form of
+`Algebra.lmul`. -/
+@[simp]
+theorem projectiveCharpolyRev_lmul_rTensor (φ : A →ₐ[R] A') (x : A ⊗[R] S) :
+    LinearMap.projectiveCharpolyRev
+        (LinearMap.mul A' (A' ⊗[R] S) (Algebra.TensorProduct.rTensor S φ x)) =
+      (LinearMap.projectiveCharpolyRev (LinearMap.mul A (A ⊗[R] S) x)).map φ := by
+  rw [← Algebra.coe_lmul_eq_mul, ← Algebra.coe_lmul_eq_mul]
+  let := φ.toRingHom.toAlgebra
+  have : IsScalarTower R A A' := .of_algHom φ
+  have hφ : IsScalarTower.toAlgHom R A A' = φ := AlgHom.ext fun a ↦ by
+    rw [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom]
+  -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`
+  rw [← AlgEquiv.projectiveCharpolyRev_lmul
+      (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv R A S A').symm,
+    ← hφ, Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor,
+    ← Algebra.baseChange_lmul, LinearMap.projectiveCharpolyRev_baseChange,
+    IsScalarTower.coe_toAlgHom]
+
+end AlgHom
+
+namespace RingHom
+
+variable {A B : Type*} [CommRing A] [Ring B] [Algebra A B] [Module.Finite A B]
+  [Module.Projective A B]
+
+/-- **Integrality from invariant characteristic coefficients.** Let `B` be a finite projective
+`A`-algebra and `t : A →+* B` an injective ring homomorphism. If the coefficients of the reversed
+characteristic polynomial of multiplication by `t f` on `B` lie in the equalizer
+`{a : algebraMap A B a = t a}`, then `f` is integral over that equalizer: by Cayley–Hamilton, a
+monic reflection of this polynomial has invariant coefficients and kills `f`. -/
+theorem isIntegral_of_coeff_projectiveCharpolyRev_mem_eqLocus (t : A →+* B)
+    (ht : Function.Injective t) (f : A)
+    (hf : ∀ i, (LinearMap.projectiveCharpolyRev (Algebra.lmul A B (t f))).coeff i ∈
+      (algebraMap A B).eqLocus t) :
+    _root_.IsIntegral ((algebraMap A B).eqLocus t) f := by
+  set Q := LinearMap.projectiveCharpolyRev (Algebra.lmul A B (t f))
+  -- by Cayley–Hamilton, a monic reflection `p = Q.reflect n` of `Q` kills `t f`
+  obtain ⟨n, hn, hQn⟩ :=
+    LinearMap.exists_aeval_reflect_projectiveCharpolyRev_eq_zero (Algebra.lmul A B (t f))
+  have h1 : aeval (t f) (Q.reflect n) = 0 := by
+    have h1 := congr($hQn 1)
+    rw [Polynomial.aeval_algHom_apply, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply', mul_one]
+      at h1
+    exact h1
+  -- the coefficients of `p` are invariants
+  have hS : ((Q.reflect n).coeffs : Set A) ⊆ (algebraMap A B).eqLocus t := by
+    intro c hc
+    obtain ⟨i, -, rfl⟩ := mem_coeffs_iff.mp hc
+    rw [coeff_reflect]
+    exact hf _
+  -- so `t (p f) = p (t f) = 0`, and `p f = 0` since `t` is injective
+  have hp : (Q.reflect n).map t = (Q.reflect n).map (algebraMap A B) := by
+    ext i
+    rw [coeff_map, coeff_map, coeff_reflect]
+    exact (mem_eqLocus.mp (hf _)).symm
+  have h2 : eval f (Q.reflect n) = 0 := by
+    apply ht
+    rw [map_zero, ← h1, aeval_def, ← eval_map, ← hp, eval_map, eval₂_at_apply]
+  refine ⟨(Q.reflect n).toSubring _ hS,
+    (monic_toSubring _ _ _).mpr (LinearMap.monic_reflect_projectiveCharpolyRev _ hn), ?_⟩
+  rw [← eval_map]
+  convert h2
+  exact map_toSubring _ _ _
+
+end RingHom

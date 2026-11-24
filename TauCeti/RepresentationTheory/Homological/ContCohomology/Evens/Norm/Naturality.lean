@@ -264,7 +264,7 @@ variable [Fintype (G ⧸ U.toSubgroup)] [Fintype (H ⧸ V.toSubgroup)]
 
 /-- The comparison of the tensor-induced total resolutions preserves the total degree. -/
 private theorem isHomogeneous_resolutionComparison :
-    TauCeti.LinearMap.IsHomogeneous
+    LinearMap.IsHomogeneous
       (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom.toLinearMap
       (smoothTensorInducedGradedResolutionPiece U.toSubgroup U.isOpen' (s.map (φ : H →* G) e he)
         (coeffs U.toSubgroup))
@@ -281,7 +281,7 @@ private theorem isHomogeneous_resolutionComparison :
   rw [Finset.sum_const_zero] at h2
   have h := h2.comp h1
   rw [add_zero] at h
-  exact TauCeti.LinearMap.isHomogeneous_def.2 fun p x hx ↦
+  exact LinearMap.isHomogeneous_def.2 fun p x hx ↦
     (congrArg (· ∈ _) (tensorComparisonHom_apply φ ψ hψ he s _ x)).mpr (h.map_mem hx)
 
 /-- The comparison of the tensor-induced total resolutions commutes with the differentials: both
