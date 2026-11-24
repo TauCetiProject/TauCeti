@@ -45,6 +45,8 @@ supported continuous function on `W × G(E, k)`). In the degenerate dimensions, 
 ## Main definitions
 
 * `Euclidean.tangentialDivergence X x P`: the tangential divergence `tr (P ∘ DX(x))`.
+* `Euclidean.tangentialDivergenceCc X`: the integrand `(x, P) ↦ div_P X (x)` of a `C¹` test
+  vector field, as a compactly supported continuous function on `W × G(E, k)`.
 * `Euclidean.firstVariation V`: the first variation `δV : 𝓓^{1}(W, E) →L[ℝ] ℝ` of a varifold `V`
   on `W`. It is `0` by convention when `V` is not finite on compact sets.
 
@@ -178,39 +180,38 @@ section FirstVariation
 variable [MeasurableSpace E] [BorelSpace E] {W : Opens E} {V V₁ V₂ : Measure (W × grassmannian E k)}
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- The pairs whose base point lies in a compact `K ⊆ W` form a compact subset of
-`W × G(E, k)`. -/
-private theorem isCompact_setOf_coe_fst_mem {K : Set E} (hK : IsCompact K) (hKW : K ⊆ W) :
-    IsCompact {p : W × grassmannian E k | (p.1 : E) ∈ K} := by
-  have hK' : IsCompact ((↑) ⁻¹' K : Set W) :=
-    Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKW)
-  have h := hK'.prod (isCompact_univ (X := grassmannian E k))
-  rw [prod_univ] at h
-  exact h
-
-omit [MeasurableSpace E] [BorelSpace E] in
 /-- For a vector field with compact support in `W`, the tangential divergence has compact support
 as a function on `W × G(E, k)`. -/
 theorem hasCompactSupport_tangentialDivergence {X : E → E} (hX : HasCompactSupport X)
     (hXW : tsupport X ⊆ W) :
     HasCompactSupport fun p : W × grassmannian E k ↦ tangentialDivergence X p.1 p.2 :=
-  HasCompactSupport.intro (isCompact_setOf_coe_fst_mem hX hXW) fun _ hp ↦
+  HasCompactSupport.intro (isProperMap_fst_of_compactSpace.isCompact_preimage
+    (Topology.IsInducing.subtypeVal.isCompact_preimage' hX (by simpa using hXW))) fun _ hp ↦
     tangentialDivergence_eq_zero_of_notMem_tsupport hp _
 
 /-- The tangential divergence of a `C¹` test vector field, as a compactly supported continuous
-function on `W × G(E, k)`. -/
-private def tangentialDivergenceCc (X : 𝓓^{1}(W, E)) : C_c(W × grassmannian E k, ℝ) where
+function on `W × G(E, k)`, the test function through which varifold convergence acts on the first
+variation. -/
+@[expose] def tangentialDivergenceCc (X : 𝓓^{1}(W, E)) : C_c(W × grassmannian E k, ℝ) where
   toFun p := tangentialDivergence X p.1 p.2
   continuous_toFun := (continuous_tangentialDivergence X.contDiff).comp
     ((continuous_subtypeVal.comp continuous_fst).prodMk
       (continuous_subtypeVal.comp continuous_snd))
   hasCompactSupport' := hasCompactSupport_tangentialDivergence X.hasCompactSupport X.tsupport_subset
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The compactly supported function `tangentialDivergenceCc X` is `(x, P) ↦ div_P X (x)`. -/
+@[simp]
+theorem coe_tangentialDivergenceCc (X : 𝓓^{1}(W, E)) :
+    ⇑(tangentialDivergenceCc (k := k) X) = fun p ↦ tangentialDivergence X p.1 p.2 :=
+  rfl
+
 /-- The integrand of the first variation of a `C¹` test vector field is integrable. -/
 theorem integrable_tangentialDivergence [IsFiniteMeasureOnCompacts V] (X : 𝓓^{1}(W, E)) :
-    Integrable (fun p : W × grassmannian E k ↦ tangentialDivergence X p.1 p.2) V :=
-  (tangentialDivergenceCc X).continuous.integrable_of_hasCompactSupport
-    (tangentialDivergenceCc X).hasCompactSupport
+    Integrable (fun p : W × grassmannian E k ↦ tangentialDivergence X p.1 p.2) V := by
+  simpa only [coe_tangentialDivergenceCc] using
+    (map_continuous (tangentialDivergenceCc X)).integrable_of_hasCompactSupport (μ := V)
+      (tangentialDivergenceCc X).hasCompactSupport
 
 omit [BorelSpace E] in
 /-- The order-one bound on the integral of the tangential divergence. -/
@@ -223,8 +224,10 @@ private theorem abs_integral_tangentialDivergence_le [IsFiniteMeasureOnCompacts 
     setIntegral_eq_integral_of_forall_compl_eq_zero fun p hp ↦
       tangentialDivergence_eq_zero_of_notMem_tsupport (fun h ↦ hp (hXK h)) _
   rw [← hS, ← Real.norm_eq_abs]
-  refine (norm_setIntegral_le_of_norm_le_const (C := k * c)
-    (isCompact_setOf_coe_fst_mem hK hKW).measure_lt_top fun p _ ↦ ?_).trans_eq (by ring)
+  have hSc : IsCompact S := isProperMap_fst_of_compactSpace.isCompact_preimage
+    (Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKW))
+  refine (norm_setIntegral_le_of_norm_le_const (C := k * c) hSc.measure_lt_top
+    fun p _ ↦ ?_).trans_eq (by ring)
   exact (abs_tangentialDivergence_le p.2.property _ _).trans
     (mul_le_mul_of_nonneg_left (hc _) (Nat.cast_nonneg _))
 
@@ -240,6 +243,12 @@ private def firstVariationLinearMap (V : Measure (W × grassmannian E k))
   map_smul' c X := by
     simp [← integral_const_mul]
 
+/-- The linear first variation integrates the tangential divergence against the varifold. -/
+private theorem firstVariationLinearMap_apply (V : Measure (W × grassmannian E k))
+    [IsFiniteMeasureOnCompacts V] (X : 𝓓^{1}(W, E)) :
+    firstVariationLinearMap V X = ∫ p, tangentialDivergence X p.1 p.2 ∂V :=
+  rfl
+
 /-- The first variation is continuous on `𝓓^{1}(W, E)`: on the tests supported in a compact `K`
 it is bounded by the seminorm `sup ‖DX‖`. -/
 private theorem continuous_firstVariationLinearMap (V : Measure (W × grassmannian E k))
@@ -249,7 +258,9 @@ private theorem continuous_firstVariationLinearMap (V : Measure (W × grassmanni
   set C := k * V.real {p : W × grassmannian E k | (p.1 : E) ∈ K}
   have hL (ψ : 𝓓^{1}_{K}(E, E)) :
       ‖L ψ‖ ≤ C * (({1} : Finset ℕ).sup fun i ↦ N[ℝ]_{K, 1, i}) ψ := by
-    rw [Finset.sup_singleton, Real.norm_eq_abs]
+    simp only [L, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+      TestFunction.coe_ofSupportedInCLM, firstVariationLinearMap_apply,
+      TestFunction.coe_ofSupportedIn, Finset.sup_singleton, Real.norm_eq_abs]
     refine abs_integral_tangentialDivergence_le K.isCompact hK ψ.tsupport_subset fun x ↦ ?_
     rw [← norm_iteratedFDeriv_one]
     exact ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm ℝ le_rfl
@@ -270,8 +281,7 @@ def firstVariation (V : Measure (W × grassmannian E k)) : 𝓓^{1}(W, E) →L[�
 @[simp]
 theorem firstVariation_apply [IsFiniteMeasureOnCompacts V] (X : 𝓓^{1}(W, E)) :
     firstVariation V X = ∫ p, tangentialDivergence X p.1 p.2 ∂V := by
-  rw [firstVariation, dite_eq_left ‹_›]
-  rfl
+  rw [firstVariation, dite_eq_left ‹_›, ContinuousLinearMap.coe_mk', firstVariationLinearMap_apply]
 
 /-- A measure that is not finite on compact sets has first variation `0` by convention. -/
 theorem firstVariation_of_not_isFiniteMeasureOnCompacts (hV : ¬IsFiniteMeasureOnCompacts V) :
@@ -338,8 +348,7 @@ theorem tendsto_firstVariation {ι : Type*} {l : Filter ι} {V : ι → Measure 
     (h : ∀ f : C_c(W × grassmannian E k, ℝ),
       Tendsto (fun i ↦ ∫ p, f p ∂V i) l (𝓝 (∫ p, f p ∂V₀)))
     (X : 𝓓^{1}(W, E)) : Tendsto (fun i ↦ firstVariation (V i) X) l (𝓝 (firstVariation V₀ X)) := by
-  simp_rw [firstVariation_apply]
-  exact h (tangentialDivergenceCc X)
+  simpa only [firstVariation_apply, coe_tangentialDivergenceCc] using h (tangentialDivergenceCc X)
 
 end FirstVariation
 
