@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Integral changes of coordinates on standard real tori
@@ -87,10 +88,10 @@ theorem realCoordChange_apply (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (x : �
 @[simp]
 theorem realCoordChange_intCast (b : Basis ι ℤ Λ) (c : Basis κ ℤ Λ) (l : Λ) :
     realCoordChange b c (fun i ↦ (b.repr l i : ℝ)) = fun j ↦ (c.repr l j : ℝ) := by
-  have h := (Int.castRingHom ℝ).map_mulVec (c.toMatrix b) (b.repr l)
+  have h := Matrix.map_intCast_mulVec (R := ℝ) (c.toMatrix b) (b.repr l)
   rw [toMatrix_mulVec_repr] at h
   ext j
-  simpa [realCoordChange_apply, Function.comp_def] using (h j).symm
+  simpa [realCoordChange_apply] using congrFun h j
 
 /-- The real coordinate change from a basis to itself is the identity. -/
 @[simp]

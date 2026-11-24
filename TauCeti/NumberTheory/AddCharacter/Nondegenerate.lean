@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Finite.Trace
 public import Mathlib.NumberTheory.AddCharacter.Trace
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
-public import TauCeti.Algebra.Group.AddChar
+public import TauCeti.Algebra.Group.AddChar.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter.Nondegenerate
 public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 

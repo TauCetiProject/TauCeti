@@ -9,6 +9,10 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 
+import Mathlib.RingTheory.DedekindDomain.Basic
+import Mathlib.RingTheory.Flat.Stability
+import Mathlib.RingTheory.Flat.TorsionFree
+
 /-!
 # `ℂ` as an algebra over a number field through a complex embedding
 
@@ -19,6 +23,11 @@ carrying the `K`-algebra (and `𝓞 K`-algebra) structure given by `σ`, identif
 formed for every `σ` at once. The complex fibres of `E × F` and of `E ⊗[𝓞 K] F` are the product
 and the complex tensor product of those of `E` and `F` (`Codomain.prodEquiv`,
 `Codomain.tensorProductEquiv`).
+
+Complex conjugation is `𝓞 K`-linear from `Codomain σ` to `Codomain (conjugate σ)`
+(`NumberField.ComplexEmbedding.Codomain.conj`), and `Codomain σ` is flat over `𝓞 K` when `K` is a
+number field, so the complex fibres of injective maps are injective
+(`NumberField.ComplexEmbedding.Codomain.baseChange_injective`).
 -/
 
 public noncomputable section
@@ -68,6 +77,36 @@ theorem tmul_eq_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (c : Codom
   -- `equiv σ` is the identity of `ℂ`, and `ℂ` acts on `Codomain σ` by multiplication.
   rw [TensorProduct.smul_tmul']
   exact congrArg (· ⊗ₜ[𝓞 K] x) (mul_one (M := ℂ) c).symm
+
+/-- Complex conjugation `ℂ → ℂ` from `Codomain σ` to `Codomain (conjugate σ)`; it is `𝓞 K`-linear
+since `conj (σ a * z) = (conj σ) a * conj z`. -/
+def conj : Codomain σ →ₗ[𝓞 K] Codomain (conjugate σ) where
+  toFun z := (equiv (conjugate σ)).symm (starRingEnd ℂ (equiv σ z))
+  map_add' z w := by simp only [map_add]
+  map_smul' a z := by
+    apply (equiv (conjugate σ)).injective
+    simp only [AlgEquiv.apply_symm_apply, Algebra.smul_def, map_mul, RingHom.id_apply,
+      equiv_algebraMap_ringOfIntegers, conjugate_coe_eq]
+
+/-- `Codomain.conj σ` is complex conjugation. -/
+@[simp]
+theorem equiv_conj (z : Codomain σ) :
+    equiv (conjugate σ) (conj σ z) = starRingEnd ℂ (equiv σ z) :=
+  AlgEquiv.apply_symm_apply _ _
+
+@[simp]
+theorem conj_one : conj σ 1 = 1 := by
+  apply (equiv (conjugate σ)).injective
+  simp
+
+/-- The complex fibre `f_σ` of an injective `𝓞 K`-linear map is injective, since `ℂ` is flat over
+`𝓞 K`. -/
+theorem baseChange_injective [NumberField K] {E F : Type*} [AddCommGroup E] [Module (𝓞 K) E]
+    [AddCommGroup F] [Module (𝓞 K) F] {f : F →ₗ[𝓞 K] E} (hf : Function.Injective f) :
+    Function.Injective (f.baseChange (Codomain σ)) := by
+  have : Module.Flat (𝓞 K) (Codomain σ) := Module.Flat.trans (𝓞 K) K (Codomain σ)
+  rw [LinearMap.baseChange_eq_lTensor]
+  exact Module.Flat.lTensor_preserves_injective_linearMap f hf
 
 variable {E F : Type*} [AddCommGroup E] [Module (𝓞 K) E] [AddCommGroup F] [Module (𝓞 K) F]
 

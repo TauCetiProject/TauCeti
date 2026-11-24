@@ -109,7 +109,7 @@ lemma restrictPreimagePairTwistedChainComplexMap_comp_twistedChainComplexMap (h 
         twistedChainComplexMap (TopCat.restrictPreimagePairMap π A T) L =
       twistedChainComplexMap (TopCat.restrictPreimagePairMap π A S) L := by
   rw [twistedChainComplexMap_congr L
-      (TopCat.ofInclusionMap_inclusion_comp_restrictPreimagePairMap π A h).symm,
+      (congrArg Hom.fst (TopCat.ofInclusionMap_inclusion_comp_restrictPreimagePairMap π A h).symm),
     twistedChainComplexMap_comp (restrictPreimagePairInclusion A π h)
       (TopCat.restrictPreimagePairMap π A T) L,
     restrictPreimagePairTwistedChainComplexMap, twistedChainComplexCoefficientMap_comp]
@@ -167,7 +167,8 @@ theorem exists_isCompact_forall_mem_range_twistedChainComplexMap_restrictPreimag
         ((twistedChainComplexMap (TopCat.restrictPreimagePairMap π A S) L).f k).hom := by
   obtain ⟨c, rfl⟩ := (ofSubset A).twistedChainComplexπ_f_surjective L c
   obtain ⟨K, hK, hc⟩ :=
-    LocalCoefficientSystem.exists_isCompact_forall_mem_range_twistedChainComplexMap_f L c
+    LocalCoefficientSystem.exists_isCompact_forall_subset_iff_mem_range_twistedChainComplexMap_f
+      L c
   refine ⟨K, hK, fun S hS ↦ ?_⟩
   -- the ambient chain is supported in `π⁻¹ S`, the range of the ambient inclusion
   have hrange : Set.range (Hom.fst (TopCat.restrictPreimagePairMap π A S)) = π ⁻¹' S := by
@@ -182,7 +183,7 @@ theorem exists_isCompact_forall_mem_range_twistedChainComplexMap_restrictPreimag
     -- the two supports agree by `hrange`; `rw [hrange]` is not used because the ambient space of
     -- the pair `(X, A)` is `X` only up to unfolding, which the rewrite's motive check rejects
     convert (LocalCoefficientSystem.range_twistedChainComplexMap_subtypeVal_f L _ k).le
-      (hc _ hS) using 3
+      ((hc _).1 hS) using 3
     exact Iff.of_eq (congrArg (fun s ↦ c ∈ L.smallTwistedChains (fun _ : Unit ↦ s) k) hrange)
   obtain ⟨y, rfl⟩ := hc'
   exact ⟨((ofInclusion _).twistedChainComplexπ _).f k y,

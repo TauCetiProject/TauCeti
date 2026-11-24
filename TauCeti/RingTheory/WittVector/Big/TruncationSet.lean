@@ -65,6 +65,10 @@ theorem mem_carrier : n ∈ S.carrier ↔ n ∈ S :=
 theorem coe_mk (s : Set ℕ) (h₁ h₂) : ((⟨s, h₁, h₂⟩ : TruncationSet) : Set ℕ) = s :=
   rfl
 
+@[simp]
+theorem mem_mk (s : Set ℕ) (h₁ h₂) : n ∈ (⟨s, h₁, h₂⟩ : TruncationSet) ↔ n ∈ s :=
+  Iff.rfl
+
 @[ext]
 theorem ext (h : ∀ n, n ∈ S ↔ n ∈ T) : S = T :=
   SetLike.ext h
@@ -168,6 +172,10 @@ instance : HDiv TruncationSet ℕ TruncationSet where
 @[simp]
 theorem mem_div : e ∈ S / n ↔ n * e ∈ S :=
   Iff.rfl
+
+@[simp]
+theorem coe_div (S : TruncationSet) (n : ℕ) : ((S / n : TruncationSet) : Set ℕ) = {e | n * e ∈ S} :=
+  rfl
 
 theorem div_div (S : TruncationSet) (n k : ℕ) : S / n / k = S / (n * k) := by
   ext; simp [mul_assoc]

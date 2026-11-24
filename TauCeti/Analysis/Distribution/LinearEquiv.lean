@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Distributions under linear changes of variables
@@ -41,6 +42,8 @@ transforms under them.
 * `Distribution.compCLMOfContinuousLinearEquiv_delta`: `e^* δ_y = |det e|⁻¹ δ_{e⁻¹ y}`.
 * `Distribution.compCLMOfContinuousLinearEquiv_trans`,
   `Distribution.compCLMOfContinuousLinearEquiv_symm_apply_apply`: functoriality.
+* `Distribution.mapCLM_compCLMOfContinuousLinearEquiv`: the pullback commutes with continuous
+  linear maps of the values.
 * `Distribution.complexPairing_compCLMOfContinuousLinearEquiv`: the complex-linear extension of
   `e^* T` to complex test functions is computed by the same formula.
 * `Distribution.transportCLM e h`: for a continuous linear equivalence `e : E' ≃L[ℝ] E` between
@@ -116,6 +119,16 @@ theorem compCLMOfContinuousLinearEquiv_symm_apply_apply (e : E ≃L[ℝ] E) (hVO
     ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm, smul_smul, hdet,
     one_smul]
 
+/-- The pullback `e^* T` commutes with applying a continuous linear map to the values. -/
+@[simp]
+theorem mapCLM_compCLMOfContinuousLinearEquiv {F' : Type*} [AddCommGroup F'] [Module ℝ F']
+    [TopologicalSpace F'] [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F'] (A : F →L[ℝ] F')
+    (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM A (compCLMOfContinuousLinearEquiv e hVO T) =
+      compCLMOfContinuousLinearEquiv e hVO (mapCLM A T) := by
+  ext φ
+  simp
+
 end General
 
 /-- The pullback of the point mass at `y` along `e` is `|det e|⁻¹` times the point mass at
@@ -136,14 +149,11 @@ theorem compCLMOfContinuousLinearEquiv_ofFun [MeasurableSpace E] [BorelSpace E]
   ext φ
   rw [compCLMOfContinuousLinearEquiv_apply, ofFun_apply hf,
     ofFun_apply (hf.comp_continuousLinearEquiv_of_mapsTo e hVO)]
-  -- Change variables `y = e x`: the image of `μ` under `e` is `|det e|⁻¹ • μ`.
-  have hmap : μ.map e = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
-    Measure.map_linearMap_addHaar_eq_smul_addHaar μ (LinearEquiv.isUnit_det' _).ne_zero
-  have hcov := integral_map_equiv (μ := μ) e.toHomeomorph.toMeasurableEquiv
-    fun y ↦ φ (e.symm y) • f y
-  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph,
+  -- Change variables `y = e x`.
+  have hcov := Measure.integral_comp_linearMap μ (fun y ↦ φ (e.symm y) • f y) (e : E →ₗ[ℝ] E)
+  simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
     ContinuousLinearEquiv.symm_apply_apply] at hcov
-  rw [← hcov, hmap, integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
+  rw [hcov]
   simp only [ContinuousLinearEquiv.transportTestFunction_apply]
 
 /-- The complex-linear extension of the pullback `e^* T` of a complex distribution pairs a

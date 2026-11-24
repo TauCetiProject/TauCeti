@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Calculus.TangentCone.Pi
@@ -36,8 +37,12 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 * `HasFDerivWithinAt.mapsTo_posTangentConeAt`: a differential carries positive tangent cones into
   positive tangent cones.
+* `ContinuousLinearEquiv.mem_posTangentConeAt_image_iff`: a continuous linear equivalence carries
+  positive tangent cones onto positive tangent cones.
 * `HasDerivWithinAt.mem_posTangentConeAt`: the right derivative of a curve which frequently lies
   in a set, just after the base time, is a positive tangent vector of that set.
+* `TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt`: a map fixing a set has derivative the
+  identity on the tangent cone of that set.
 -/
 
 public section
@@ -141,6 +146,15 @@ theorem HasFDerivWithinAt.mapsTo_posTangentConeAt {E F : Type*} [NormedAddCommGr
   · exact hds.mono fun n hn ↦ ⟨x + d n, hn, by simp⟩
   · exact h.lim hd₀ hds hcd
 
+/-- A continuous linear equivalence `e` identifies the positive tangent cone of `e '' s` at `e x`
+with the image of the positive tangent cone of `s` at `x`. -/
+@[simp]
+theorem ContinuousLinearEquiv.mem_posTangentConeAt_image_iff {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (e : E ≃L[ℝ] F) {s : Set E}
+    {x y : E} : e y ∈ posTangentConeAt (e '' s) (e x) ↔ y ∈ posTangentConeAt s x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ e.hasFDerivAt.hasFDerivWithinAt.mapsTo_posTangentConeAt h⟩
+  simpa [e.symm_image_image] using e.symm.hasFDerivAt.hasFDerivWithinAt.mapsTo_posTangentConeAt h
+
 /-- If a curve `x` has right derivative `w` at `t` and lies in `s` at times arbitrarily close to
 `t` from the right, then `w` is a positive tangent vector of `s` at `x t`. -/
 theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
@@ -152,3 +166,11 @@ theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
       fun τ ⟨h, hτ⟩ ↦ ⟨le_of_lt hτ, h⟩
   refine posTangentConeAt_mono ((image_mono inter_subset_right).trans (image_preimage_subset x s))
     (by simpa using (hx.mono inter_subset_left).hasFDerivWithinAt.mapsTo_posTangentConeAt h1)
+
+/-- A map that is differentiable at `x ∈ s` and fixes every point of `s` has derivative the
+identity on the tangent cone of `s` at `x`. -/
+theorem TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {s : Set E} {r : E → E} {x v : E} (hr : DifferentiableAt 𝕜 r x)
+    (hrs : EqOn r id s) (hx : x ∈ s) (hv : v ∈ tangentConeAt 𝕜 s x) : fderiv 𝕜 r x v = v :=
+  hr.hasFDerivAt.hasFDerivWithinAt.unique_on
+    ((hasFDerivWithinAt_id x s).congr (fun _ hy ↦ hrs hy) (hrs hx)) hv

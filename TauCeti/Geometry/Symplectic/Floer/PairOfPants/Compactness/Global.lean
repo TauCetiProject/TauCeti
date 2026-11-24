@@ -155,8 +155,7 @@ private theorem isOpen_window (T : ℝ) (i : Option (Puncture × ℕ × Bool)) :
 /-- The core window lies in the compact truncation `S_{T + 2}`. -/
 private theorem window_none_subset (T : ℝ) :
     window T none ⊆ equivRealProdCLM.symm ⁻¹' truncation (T + 2) :=
-  subset_preimage_truncation_of_isOpen (isOpen_window T none) fun z hz q ↦ by
-    rw [← fst_positiveEndCoord]; exact (hz.2 q).le
+  subset_preimage_truncation_of_isOpen (isOpen_window T none) fun _ hz q ↦ (hz.2 q).le
 
 /-- The windows cover `S`. -/
 private theorem iUnion_window {T : ℝ} (hT : 0 ≤ T) :
@@ -408,16 +407,14 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_thricePunc
     filter_upwards [hconc z hz _ (ball_mem_nhds z hε)] with n hn
     have h0 (y : ℝ × ℝ) (hy : y ∈ ball z ε ∩ thricePuncturedSphereReal) :=
       ω.floerEnergyDensity_nonneg (hJt y hy.2 _) (hfl (φ n) y hy.2)
-    have hK' (w : ℂ) : ContDiffOn ℝ 1
-        (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w)
-        (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦
-      (contDiffAt_uncurry_pairOfPantsPerturbation hH (fun q ↦ (hHs q).of_le (by norm_num)) hp.1
-        p.2 w).contDiffWithinAt
     exact TauCeti.MeasureTheory.le_setIntegral_of_ofReal_le_withDensity measurableSet_ball
       isOpen_thricePuncturedSphereReal.measurableSet
       (ω.integrableOn_and_setIntegral_floerEnergyDensity_le isOpen_thricePuncturedSphereReal
         (measurableSet_ball.inter isOpen_thricePuncturedSphereReal.measurableSet)
-        inter_subset_right ((hu _).of_le (by norm_num)) (hK' 1) (hK' I) h0 (hE 0).1
+        inter_subset_right ((hu _).of_le (by norm_num))
+        (contDiffOn_uncurry_pairOfPantsPerturbation hH (fun q ↦ (hHs q).of_le (by norm_num)) 1)
+        (contDiffOn_uncurry_pairOfPantsPerturbation hH (fun q ↦ (hHs q).of_le (by norm_num)) I)
+        h0 (hE 0).1
         (hE _).2).1 h0 hn
   · exact hconv.continuousOn (Eventually.of_forall fun n ↦
       ((hu (φ n)).continuousOn).mono sdiff_subset).frequently

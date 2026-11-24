@@ -191,8 +191,9 @@ private theorem prod_erase_sub_eigenvalues_ne_zero {A : Matrix n n 𝕜} (hA : A
 /-! ### Smoothness and first variation -/
 
 omit [DecidableEq n] in
-/-- The coordinate form `∑ a b, conj (u a) * u b * L_{ab} v` of `⟪u, (L v) u⟫`. -/
-private theorem sum_sum_smul_apply (u : n → 𝕜) (L : n → n → E →L[ℝ] 𝕜) (v : E) :
+/-- The coordinate form `∑ a b, conj (u a) * u b * L_{ab} v` of `⟪u, (L v) u⟫`, for a matrix `L` of
+continuous linear maps such as the entrywise derivative of a matrix family. -/
+theorem sum_sum_smul_apply (u : n → 𝕜) (L : n → n → E →L[ℝ] 𝕜) (v : E) :
     (∑ a, ∑ b, (star (u a) * u b) • L a b) v = star u ⬝ᵥ (of (fun a b ↦ L a b v) *ᵥ u) := by
   simp only [sum_apply, smul_apply, smul_eq_mul,
     dotProduct, mulVec, of_apply, Pi.star_apply, Finset.mul_sum]
