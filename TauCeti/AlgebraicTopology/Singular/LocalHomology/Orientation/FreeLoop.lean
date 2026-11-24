@@ -27,15 +27,9 @@ independent of the base point (`TauCeti.orientationCharacter_fundamentalGroupMul
 statement for loops parametrized by the unit interval is
 `TauCeti.orientationCharacter_eq_of_joined_toCircle`.
 
-The sign is recorded as the exponent `w(γ)` of the source (§4.1): `0` when `γ` preserves the local
-orientations and `-1` when it reverses them (`TauCeti.MooreFreeLoopSpace.orientationExponent`).
-This exponent enters the degree-zero twist of the Viterbo isomorphism for cotangent bundles, whose
-orientation part is the local system `ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w})` on the free loop space.
-
 ## Main definitions
 
 * `TauCeti.MooreFreeLoopSpace.orientationSign`: the orientation character of a free loop.
-* `TauCeti.MooreFreeLoopSpace.orientationExponent`: the exponent `w(γ) ∈ {0, -1}`.
 
 ## Main results
 
@@ -53,8 +47,6 @@ orientation part is the local system `ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w})` o
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 3.3.
-* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §4.1.
 -/
 
 public section
@@ -131,31 +123,6 @@ theorem orientationSign_const (x : M) : orientationSign hd (const x) = 1 := by
   have h : (const x).toMooreLoop = 1 :=
     MooreLoopSpace.eq_one_of_length_eq_zero (by rw [length_toMooreLoop, length_const])
   rw [orientationSign_def, h, map_one, map_one]
-
-/-- The exponent `w(γ)` of a free loop `γ` in the degree-zero twist of the Viterbo isomorphism:
-`0` when `γ` preserves the local orientations and `-1` when it reverses them. -/
-def orientationExponent (γ : MooreFreeLoopSpace M) : ℤ :=
-  if orientationSign hd γ = 1 then 0 else -1
-
-/-- A loop preserving the orientation has exponent `0`. -/
-theorem orientationExponent_of_orientationSign_eq_one {γ : MooreFreeLoopSpace M}
-    (h : orientationSign hd γ = 1) : orientationExponent hd γ = 0 := by
-  simp [orientationExponent, h]
-
-/-- A loop reversing the orientation has exponent `-1`. -/
-theorem orientationExponent_of_orientationSign_ne_one {γ : MooreFreeLoopSpace M}
-    (h : orientationSign hd γ ≠ 1) : orientationExponent hd γ = -1 := by
-  simp [orientationExponent, h]
-
-/-- The exponent is constant on the path components of the free loop space. -/
-theorem orientationExponent_eq_of_joined {γ γ' : MooreFreeLoopSpace M} (h : Joined γ γ') :
-    orientationExponent hd γ = orientationExponent hd γ' := by
-  rw [orientationExponent, orientationExponent, orientationSign_eq_of_joined hd h]
-
-/-- Constant loops have exponent `0`. -/
-@[simp]
-theorem orientationExponent_const (x : M) : orientationExponent hd (const x) = 0 :=
-  orientationExponent_of_orientationSign_eq_one hd (orientationSign_const hd x)
 
 end MooreFreeLoopSpace
 

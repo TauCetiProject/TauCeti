@@ -50,6 +50,7 @@ identification `i_M^* η₀ ≃ o_M` of the twist along the constant loops.
 
 ## Main definitions
 
+* `TauCeti.MooreFreeLoopSpace.orientationExponent`: the exponent `w(γ) ∈ {0, -1}`.
 * `TauCeti.RankOneLocalSystem.viterboOrientationTwist`: the orientation part
   `ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w})` of the Viterbo twist.
 
@@ -87,6 +88,35 @@ open MooreFreeLoopSpace
 variable {M E : Type w} [TopologicalSpace M] [T2Space M]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {d : ℕ}
   (R : Type*) [CommRing R] (hd : finrank ℝ E = d)
+
+namespace MooreFreeLoopSpace
+
+/-- The exponent `w(γ)` of a free loop `γ` in the degree-zero twist of the Viterbo isomorphism:
+`0` when `γ` preserves the local orientations and `-1` when it reverses them. -/
+def orientationExponent (γ : MooreFreeLoopSpace M) : ℤ :=
+  if orientationSign hd γ = 1 then 0 else -1
+
+/-- A loop preserving the orientation has exponent `0`. -/
+theorem orientationExponent_of_orientationSign_eq_one {γ : MooreFreeLoopSpace M}
+    (h : orientationSign hd γ = 1) : orientationExponent hd γ = 0 := by
+  simp [orientationExponent, h]
+
+/-- A loop reversing the orientation has exponent `-1`. -/
+theorem orientationExponent_of_orientationSign_ne_one {γ : MooreFreeLoopSpace M}
+    (h : orientationSign hd γ ≠ 1) : orientationExponent hd γ = -1 := by
+  simp [orientationExponent, h]
+
+/-- The exponent is constant on the path components of the free loop space. -/
+theorem orientationExponent_eq_of_joined {γ γ' : MooreFreeLoopSpace M} (h : Joined γ γ') :
+    orientationExponent hd γ = orientationExponent hd γ' := by
+  rw [orientationExponent, orientationExponent, orientationSign_eq_of_joined hd h]
+
+/-- Constant loops have exponent `0`. -/
+@[simp]
+theorem orientationExponent_const (x : M) : orientationExponent hd (const x) = 0 :=
+  orientationExponent_of_orientationSign_eq_one hd (orientationSign_const hd x)
+
+end MooreFreeLoopSpace
 
 namespace RankOneLocalSystem
 
