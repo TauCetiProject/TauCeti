@@ -156,21 +156,12 @@ theorem exists_isIso_comp_eq_SpecMap_constantCoeff {R : Type max u v} {σ : Type
   obtain ⟨ψ, rfl⟩ := Spec.map_surjective p
   rw [← Spec.map_comp, ← Spec.map_id, Spec.map_inj] at hp
   have hψ (r : R) : ψ (MvPolynomial.C r) = r := congr($hp r)
-  -- the translations `p ↦ p(X + a)`, on the spectrum
-  let t (a : σ → R) := Spec.map (CommRingCat.ofHom (MvPolynomial.taylor a).toRingHom)
-  have ht (a b : σ → R) : t a ≫ t b = t (a + b) := by
-    rw [← Spec.map_comp]
-    exact congrArg Spec.map
-      (CommRingCat.hom_ext (RingHom.ext fun q ↦ by simp [MvPolynomial.taylor_taylor]))
-  have ht0 : t 0 = 𝟙 _ := by
-    rw [← Spec.map_id]
-    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext fun q ↦ by simp))
   let a : σ → R := fun i ↦ ψ (MvPolynomial.X i)
-  refine ⟨t (-a), ⟨t a, ?_, ?_⟩, ?_, ?_⟩
-  · rw [ht, neg_add_cancel, ht0]
-  · rw [ht, add_neg_cancel, ht0]
+  refine ⟨Spec.map (MvPolynomial.taylorEquiv (-a)).toRingEquiv.toCommRingCatIso.hom,
+    inferInstance, ?_, ?_⟩
   · rw [← Spec.map_comp]
-    exact congrArg Spec.map (CommRingCat.hom_ext (MvPolynomial.taylor _).comp_algebraMap)
+    exact congrArg Spec.map
+      (CommRingCat.hom_ext (RingHom.ext (MvPolynomial.taylorEquiv (-a)).commutes))
   · rw [← Spec.map_comp]
     refine congrArg Spec.map
       (CommRingCat.hom_ext (MvPolynomial.ringHom_ext (fun r ↦ ?_) fun i ↦ ?_))
