@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Logic.Function.Const
 import TauCeti.LinearAlgebra.Dimension.Submodule
