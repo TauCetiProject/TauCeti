@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.Algebra.Category.ModuleCat.Stalk
 public import Mathlib.Topology.Sheaves.CommRingCat
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 
 /-!
 # Module structures on scheme-module stalks
@@ -18,11 +19,15 @@ The stalk of an `𝒪_X`-module carries the action of the original commutative l
 For a point `x` of an open `U`, the stalk `M_x` is also a `Γ(X, U)`-module through the germ map
 `Γ(X, U) ⟶ 𝒪_{X,x}` (`AlgebraicGeometry.Scheme.Modules.moduleSectionStalk`), and the germ map
 `Γ(M, U) → M_x` is `Γ(X, U)`-linear (`AlgebraicGeometry.Scheme.Modules.germₗ`).
+
+A morphism of `𝒪_X`-modules which is surjective on sections over every open contained in `U` has
+a cokernel with zero stalks at the points of `U`
+(`AlgebraicGeometry.Scheme.Modules.Hom.subsingleton_stalk_cokernel_of_surjective_app`).
 -/
 
 public section
 
-open CategoryTheory AlgebraicGeometry Opposite
+open CategoryTheory Limits AlgebraicGeometry Opposite
 
 universe u
 
@@ -77,5 +82,35 @@ lemma germₗ_apply (m : Γ(M, U)) : M.germₗ x m = M.presheaf.germ U x x.prope
   (rfl)
 
 end Section
+
+/-- If a morphism of `𝒪_X`-modules is surjective on sections over every open contained in `U`, its
+cokernel has zero stalks at the points of `U`. -/
+theorem Hom.subsingleton_stalk_cokernel_of_surjective_app {X : Scheme.{u}} {M N : X.Modules}
+    (φ : M ⟶ N) {U : X.Opens} {x : X} (hx : x ∈ U)
+    (hφ : ∀ W ≤ U, Function.Surjective (φ.app W)) :
+    Subsingleton ((cokernel φ).presheaf.stalk x) := by
+  refine subsingleton_of_forall_eq 0 fun a ↦ ?_
+  obtain ⟨W, hxW, τ, rfl⟩ := (cokernel φ).presheaf.exists_germ_eq a
+  -- The cokernel map is locally surjective, so near `x` the section `τ` lifts to `N`.
+  let F := TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X
+  have : Sheaf.IsLocallySurjective (F.map (cokernel.π φ)) :=
+    (Sheaf.isLocallySurjective_iff_epi' (φ := _)).mpr inferInstance
+  obtain ⟨V, j, ⟨m, hm⟩, hxV⟩ := Presheaf.imageSieve_mem (Opens.grothendieckTopology X)
+    (F.map (cokernel.π φ)).hom τ x hxW
+  -- On `V ⊓ U` the lift is in the image of `φ`, so `τ` vanishes there.
+  let k : V ⊓ U ⟶ V := homOfLE inf_le_left
+  obtain ⟨b, hb⟩ := hφ (V ⊓ U) inf_le_right (N.presheaf.map k.op m)
+  have hzero : (cokernel φ).presheaf.map (k ≫ j).op τ = 0 := by
+    have hnat : (cokernel.π φ).app (V ⊓ U) (N.presheaf.map k.op m) =
+        (cokernel φ).presheaf.map k.op ((cokernel.π φ).app V m) :=
+      (cokernel.π φ).mapPresheaf.naturality_apply k.op m
+    have hcomp : (cokernel.π φ).app (V ⊓ U) (φ.app (V ⊓ U) b) = 0 := by
+      rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, cokernel.condition]
+      simp
+    rw [← hb, hcomp] at hnat
+    -- `hm` says that the lift `m` maps to the restriction of `τ` to `V`.
+    have hm' : (cokernel.π φ).app V m = (cokernel φ).presheaf.map j.op τ := hm
+    rw [op_comp, Functor.map_comp, ConcreteCategory.comp_apply, ← hm', ← hnat]
+  rw [← (cokernel φ).presheaf.germ_res_apply (k ≫ j) x ⟨hxV, hx⟩, hzero, map_zero]
 
 end AlgebraicGeometry.Scheme.Modules

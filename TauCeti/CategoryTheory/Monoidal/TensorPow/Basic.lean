@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
+public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
 
 /-!
@@ -34,7 +35,9 @@ identity.
   isomorphisms and their associativity;
 * `TauCeti.tensorPowSuccIso`: appending a factor on the right, with its compatibilities
   `TauCeti.tensorPowSuccIso_hom_whiskerRight_tensorPowAddIso_hom` and
-  `TauCeti.tensorPowAddIso_hom_whiskerRight_tensorPowSuccIso_hom`.
+  `TauCeti.tensorPowAddIso_hom_whiskerRight_tensorPowSuccIso_hom`;
+* `CategoryTheory.ObjectProperty.prop_tensorPow`: an object property containing the unit and
+  stable under tensor products is stable under tensor powers.
 -/
 
 public section
@@ -351,5 +354,13 @@ theorem tensorPowSuccIso_hom_naturality {X Y : C} (f : X ⟶ Y) (n : ℕ) :
     Category.assoc, Category.assoc]
 
 end Map
+
+/-- An object property containing the unit and stable under tensor products contains every tensor
+power of each object it contains. -/
+theorem _root_.CategoryTheory.ObjectProperty.prop_tensorPow (P : ObjectProperty C)
+    [P.ContainsUnit] [P.TensorLE P P] {X : C} (hX : P X) (n : ℕ) : P (tensorPow X n) := by
+  induction n with
+  | zero => exact P.prop_unit
+  | succ n ih => exact ObjectProperty.prop_tensor hX ih
 
 end TauCeti

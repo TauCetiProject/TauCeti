@@ -121,9 +121,8 @@ theorem IsEffective.genericPoint_mem_nonvanishingLocus (hD : D.IsEffective) :
     intro hr0
     have hs : s = 0 := by
       rw [Scheme.Modules.eq_trivializationCoordinate_smul_map_trivializationGenerator
-        D.sheaf t (𝟙 V) s]
-      change r • _ = 0
-      rw [hr0, zero_smul]
+        D.sheaf t (𝟙 V) s,
+        show Scheme.Modules.trivializationCoordinate D.sheaf t (𝟙 V) s = 0 from hr0, zero_smul]
     have h1 := hD.rationalFunctionsEquiv_sheafι_app_map_canonicalSection V
     -- `s` is by definition the restriction of `s_D` to `V` in `𝒪_X(D) = D.sheaf`.
     change rationalFunctionsEquiv V (Scheme.Modules.Hom.app D.sheafι V s) = 1 at h1
@@ -167,8 +166,6 @@ theorem IsEffective.inv_mem_range_of_mem_nonvanishingLocus (hD : D.IsEffective) 
   -- Read in rational functions, `a • s_D = f⁻¹` says that `a` is the rational function `f⁻¹`.
   simp only [Scheme.Modules.Hom.app_smul, map_smul, sheafι_app_sectionMk, g,
     LinearEquiv.apply_symm_apply] at ha'
-  change a • rationalFunctionsEquiv W (Scheme.Modules.Hom.app D.sheafι W
-    (D.sheaf.presheaf.map j.op hD.canonicalSection)) = _ at ha'
   rw [hD.rationalFunctionsEquiv_sheafι_app_map_canonicalSection, Algebra.smul_def, mul_one,
     RingHom.algebraMap_toAlgebra] at ha'
   rw [← ha', ← Scheme.algebraMap_germ_eq_germToFunctionField X hxW]
@@ -188,13 +185,11 @@ private lemma exists_isEffective_isLocalEquationAt_inv_notMem {y : X}
     ∃ G : CartierDivisor X, G.IsEffective ∧ ∃ f : X.functionFieldˣ, G.IsLocalEquationAt y f ∧
       ((f⁻¹ : X.functionFieldˣ) : X.functionField) ∉
         (algebraMap (X.presheaf.stalk y) X.functionField).range := by
-  have hdim : topologicalKrullDim X ≤ 1 := by
-    rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
-    exact iSup_le fun x ↦ by exact_mod_cast hX x
+  have hdim : topologicalKrullDim X ≤ 1 :=
+    TauCeti.topologicalKrullDim_le_of_forall_coheight_le hX
   obtain ⟨A, hA, hyA, -⟩ := exists_isAffineOpen_mem_and_subset (Opens.mem_top y)
   have : Nonempty A := ⟨⟨y, hyA⟩⟩
-  have hηA : genericPoint X ∈ A :=
-    ((genericPoint_spec X).mem_open_set_iff A.isOpen).mpr ⟨y, trivial, hyA⟩
+  have hηA : genericPoint X ∈ A := Scheme.genericPoint_mem A
   -- The point `y` is closed, so `A ∖ {y}` is an open neighbourhood of the generic point, and
   -- contains a basic open neighbourhood `D(b)` of it.
   let W : X.Opens := A ⊓ ⟨{y}ᶜ, (Scheme.isClosed_singleton_of_ne_genericPoint hdim hy).isOpen_compl⟩
@@ -222,14 +217,9 @@ theorem exists_isEffective_nonvanishingLocus_le (V : X.Opens) [Nonempty V] :
     ∃ (D : CartierDivisor X) (hD : D.IsEffective),
       D.sheaf.nonvanishingLocus hD.canonicalSection ≤ V := by
   classical
-  have hdim : topologicalKrullDim X ≤ 1 := by
-    rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
-    exact iSup_le fun x ↦ by exact_mod_cast hX x
-  have hηV : genericPoint X ∈ V := by
-    by_contra h
-    obtain ⟨⟨x, hx⟩⟩ := ‹Nonempty V›
-    rw [Scheme.eq_bot_of_genericPoint_notMem h] at hx
-    exact hx
+  have hdim : topologicalKrullDim X ≤ 1 :=
+    TauCeti.topologicalKrullDim_le_of_forall_coheight_le hX
+  have hηV : genericPoint X ∈ V := Scheme.genericPoint_mem V
   -- The complement of `V` is a finite set of points other than the generic point.
   have hZ : ((V : Set X)ᶜ).Finite :=
     Scheme.finite_of_isClosed_of_genericPoint_notMem hdim V.isOpen.isClosed_compl

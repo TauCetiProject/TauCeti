@@ -27,6 +27,8 @@ a basis.
   finite limits and finite colimits;
 * `AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv`, the `Γ(X, U)`-linear equivalence of
   sections over `U` induced by an isomorphism of `𝒪_X`-modules;
+* `AlgebraicGeometry.Scheme.Modules.Hom.bijective_app_comp`: bijectivity on sections over `U` is
+  stable under composition;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
   `𝒪_X`-modules stays short exact after forgetting the module structures;
 * `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis`: a morphism of
@@ -102,6 +104,15 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.Hom.app_apply {M N : X.Modules} (�
     (U : X.Opens) (x : Γ(M, U)) :
     φ.app U x = φ.val.app (Opposite.op U) x :=
   (rfl)
+
+variable {X} in
+/-- A composite of morphisms of `𝒪_X`-modules that are bijective on sections over `U` is bijective
+on sections over `U`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.bijective_app_comp {M N P : X.Modules}
+    {f : M ⟶ N} {g : N ⟶ P} {U : X.Opens} (hf : Function.Bijective (f.app U))
+    (hg : Function.Bijective (g.app U)) : Function.Bijective ((f ≫ g).app U) := by
+  rw [Scheme.Modules.Hom.comp_app, ConcreteCategory.coe_comp]
+  exact hg.comp hf
 
 /-- The forgetful functor from `𝒪_X`-modules to sheaves of abelian groups on `X`.
 

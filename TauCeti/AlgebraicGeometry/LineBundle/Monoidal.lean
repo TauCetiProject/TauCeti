@@ -78,10 +78,8 @@ instance isMonoidal_isInvertible (X : Scheme.{u}) : (isInvertible X).IsMonoidal 
 
 /-- The tensor powers `M^{⊗n}` of an invertible sheaf `M` in `X.Modules` are invertible. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.isInvertible_tensorPow {X : Scheme.{u}}
-    (M : X.Modules) [isInvertible X M] (n : ℕ) : isInvertible X (tensorPow M n) := by
-  induction n with
-  | zero => exact ObjectProperty.prop_unit _
-  | succ n ih => exact ObjectProperty.prop_tensor ‹_› ih
+    (M : X.Modules) [isInvertible X M] (n : ℕ) : isInvertible X (tensorPow M n) :=
+  (isInvertible X).prop_tensorPow ‹_› n
 
 end SheafOfModules
 

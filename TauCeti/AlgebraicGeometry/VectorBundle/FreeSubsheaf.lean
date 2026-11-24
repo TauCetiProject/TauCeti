@@ -14,6 +14,10 @@ public import TauCeti.AlgebraicGeometry.Modules.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
+import TauCeti.AlgebraicGeometry.Modules.Sections
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
+import TauCeti.AlgebraicGeometry.Modules.Stalk
+import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # Full-rank trivial subsheaves of twisted vector bundles on curves
@@ -41,11 +45,6 @@ sheaves, as for the degree of a tensor product,
 
 ## Main results
 
-* `Scheme.Modules.Hom.mono_of_injective_app_of_genericPoint_mem` and
-  `Scheme.Modules.Hom.subsingleton_stalk_cokernel_of_surjective_app`: a morphism of `𝒪_X`-modules
-  on an irreducible scheme which is bijective on sections near the generic point, out of a sheaf
-  whose restriction maps to nonempty opens are injective, is a monomorphism whose cokernel vanishes
-  at the generic point.
 * `FiniteLocallyFreeSheaf.FixedRank.exists_mono_free_twist_finite_support`: some twist `E ⊗ L`
   contains `𝒪_X^r` with finitely supported quotient.
 
@@ -72,105 +71,6 @@ open _root_.AlgebraicGeometry
 
 variable {X : Scheme.{u}}
 
-namespace Scheme.Modules
-
-variable {M N : X.Modules} {U : X.Opens}
-
-/-- A morphism of `𝒪_X`-modules on an irreducible scheme which is injective on sections over every
-open contained in a neighbourhood `U` of the generic point is a monomorphism, provided the
-restriction maps of its source to nonempty opens are injective, as they are for a vector bundle on
-an integral scheme. -/
-theorem
-    _root_.AlgebraicGeometry.Scheme.Modules.Hom.mono_of_injective_app_of_genericPoint_mem
-    [IrreducibleSpace X] (φ : M ⟶ N)
-    (hU : genericPoint X ∈ U)
-    (hφ : ∀ W ≤ U, Function.Injective (Scheme.Modules.Hom.app φ W))
-    (hM : ∀ (W W' : X.Opens) (i : W' ⟶ W), genericPoint X ∈ W' →
-      Function.Injective (M.presheaf.map i.op)) :
-    Mono φ := by
-  refine (_root_.SheafOfModules.forget _).mono_of_mono_map
-    (PresheafOfModules.mono_of_injective fun W ↦ ?_)
-  induction W with | op W => ?_
-  change Function.Injective (Scheme.Modules.Hom.app φ W)
-  rw [injective_iff_map_eq_zero]
-  intro a ha
-  by_cases hη : genericPoint X ∈ W
-  · -- Restrict to `W ⊓ U`, where `φ` is injective.
-    let i : W ⊓ U ⟶ W := homOfLE inf_le_left
-    have hnat : Scheme.Modules.Hom.app φ (W ⊓ U) (M.presheaf.map i.op a) =
-        N.presheaf.map i.op (Scheme.Modules.Hom.app φ W a) :=
-      (Scheme.Modules.Hom.mapPresheaf φ).naturality_apply i.op a
-    rw [ha, map_zero] at hnat
-    exact hM W (W ⊓ U) i ⟨hη, hU⟩ ((hφ _ inf_le_right (hnat.trans (map_zero _).symm)).trans
-      (map_zero _).symm)
-  · have : IsEmpty W := ⟨fun x ↦ hη ((genericPoint_specializes x.val).mem_open W.isOpen x.property)⟩
-    exact Scheme.Modules.section_ext_of_isEmpty a 0
-
-/-- If a morphism of `𝒪_X`-modules is surjective on sections over every open contained in `U`, its
-cokernel has zero stalks at the points of `U`. -/
-theorem
-    _root_.AlgebraicGeometry.Scheme.Modules.Hom.subsingleton_stalk_cokernel_of_surjective_app
-    (φ : M ⟶ N) {x : X} (hx : x ∈ U)
-    (hφ : ∀ W ≤ U, Function.Surjective (Scheme.Modules.Hom.app φ W)) :
-    Subsingleton ((cokernel φ).presheaf.stalk x) := by
-  refine subsingleton_of_forall_eq 0 fun a ↦ ?_
-  obtain ⟨W, hxW, τ, rfl⟩ := (cokernel φ).presheaf.exists_germ_eq a
-  -- The cokernel map is locally surjective, so near `x` the section `τ` lifts to `N`.
-  have : Sheaf.IsLocallySurjective ((toSheaf X).map (cokernel.π φ)) :=
-    (Sheaf.isLocallySurjective_iff_epi' (φ := _)).mpr inferInstance
-  obtain ⟨V, j, ⟨m, hm⟩, hxV⟩ := Presheaf.imageSieve_mem (Opens.grothendieckTopology X)
-    ((toSheaf X).map (cokernel.π φ)).hom τ x hxW
-  -- On `V ⊓ U` the lift is in the image of `φ`, so `τ` vanishes there.
-  let k : V ⊓ U ⟶ V := homOfLE inf_le_left
-  obtain ⟨b, hb⟩ := hφ (V ⊓ U) inf_le_right (N.presheaf.map k.op m)
-  have hzero : (cokernel φ).presheaf.map (k ≫ j).op τ = 0 := by
-    have hnat : Scheme.Modules.Hom.app (cokernel.π φ) (V ⊓ U) (N.presheaf.map k.op m) =
-        (cokernel φ).presheaf.map k.op (Scheme.Modules.Hom.app (cokernel.π φ) V m) :=
-      (Scheme.Modules.Hom.mapPresheaf (cokernel.π φ)).naturality_apply k.op m
-    have hcomp : Scheme.Modules.Hom.app (cokernel.π φ) (V ⊓ U)
-        (Scheme.Modules.Hom.app φ (V ⊓ U) b) = 0 := by
-      rw [← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app, cokernel.condition]
-      rfl
-    rw [← hb, hcomp] at hnat
-    -- `hm` says that the lift `m` maps to the restriction of `τ` to `V`.
-    have hm' : Scheme.Modules.Hom.app (cokernel.π φ) V m = (cokernel φ).presheaf.map j.op τ := hm
-    rw [op_comp, Functor.map_comp, ConcreteCategory.comp_apply, ← hm', ← hnat]
-  rw [← (cokernel φ).presheaf.germ_res_apply (k ≫ j) x ⟨hxV, hx⟩, hzero, map_zero]
-
-end Scheme.Modules
-
-/-- Reindexing a family along an equivalence preserves the bijectivity of its linear combination
-map. -/
-private lemma bijective_linearCombination_comp_equiv {R M ι κ : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [Fintype ι] [Fintype κ] (e : κ ≃ ι) {v : ι → M}
-    (hv : Function.Bijective (Fintype.linearCombination R v)) :
-    Function.Bijective (Fintype.linearCombination R (v ∘ e)) := by
-  have heq : ⇑(Fintype.linearCombination R (v ∘ e)) =
-      ⇑(Fintype.linearCombination R v) ∘ fun c ↦ c ∘ e.symm := by
-    funext c
-    exact Fintype.sum_equiv e _ _ fun k ↦ by simp
-  rw [heq]
-  exact hv.comp (Equiv.arrowCongr e (Equiv.refl R)).bijective
-
-/-- A composite of morphisms of `𝒪_X`-modules that are bijective on sections over `W` is bijective
-on sections over `W`. -/
-private lemma bijective_app_comp {A B C : X.Modules} (f : A ⟶ B) (g : B ⟶ C) (W : X.Opens)
-    (hf : Function.Bijective (Scheme.Modules.Hom.app f W))
-    (hg : Function.Bijective (Scheme.Modules.Hom.app g W)) :
-    Function.Bijective (Scheme.Modules.Hom.app (f ≫ g) W) := by
-  have h : ⇑(Scheme.Modules.Hom.app (f ≫ g) W) =
-      ⇑(Scheme.Modules.Hom.app g W) ∘ ⇑(Scheme.Modules.Hom.app f W) :=
-    funext fun a ↦ by rw [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply]; rfl
-  rw [h]
-  exact hg.comp hf
-
-/-- An isomorphism of `𝒪_X`-modules is bijective on sections. -/
-private lemma bijective_app_hom {A B : X.Modules} (e : A ≅ B) (W : X.Opens) :
-    Function.Bijective (Scheme.Modules.Hom.app e.hom W) := by
-  have h := (Scheme.Modules.sectionsLinearEquiv e W).bijective
-  rwa [show ⇑(Scheme.Modules.sectionsLinearEquiv e W) = Scheme.Modules.Hom.app e.hom W from
-    funext (Scheme.Modules.sectionsLinearEquiv_apply e W)] at h
-
 /-- Let `t` be a local frame of `F` over `V`, `s` a global section of an invertible sheaf `L` whose
 nonvanishing locus `X_s` lies in `V`, and `t'` global sections of `F ⊗ Lⁿ` restricting to
 `t k ⊗ sⁿ` on `X_s`. Then the morphism `𝒪_X^ι ⟶ F ⊗ Lⁿ` defined by `t'` is bijective on sections
@@ -196,6 +96,8 @@ private lemma bijective_app_freeHomEquiv_symm {F L : X.Modules}
       show W.leTop = i ≫ homOfLE (L.nonvanishingLocus_le s) from rfl, op_comp,
       Functor.map_comp_apply, ht' k, Scheme.Modules.map_tmulRight_tensorPowSection]
     simp only [← Functor.map_comp_apply, ← op_comp]
+    -- Both sides restrict `s` along a morphism `W ⟶ ⊤` of the thin category `X.Opens`, and any two
+    -- such morphisms are equal.
     rfl
   let B := TauCeti.SheafOfModules.freeBasis (R := X.sheaf) ι (op W)
   -- Through the standard basis `B`, the morphism is `c ↦ (∑ c k • t k) ⊗ sⁿ`.
@@ -208,6 +110,7 @@ private lemma bijective_app_freeHomEquiv_symm {F L : X.Modules}
       map_sum, map_smul]
     refine (TauCeti.SheafOfModules.freeHomEquiv_symm_val_app_sum_smul (R := X.ringCatSheaf)
       (fun k ↦ (F ⊗ tensorPow L n).sectionsEquivTop.symm (t' k)) (op W) c).trans ?_
+    -- `PresheafOfModules.sections.eval σ` is the abbreviation `σ.val`.
     exact Finset.sum_congr rfl fun k _ ↦ by rw [← himg k]; rfl
   -- Both factors are bijective: `t` is a frame over `W`, and `sⁿ` is a basis of `Lⁿ` there.
   have hcomp := (Scheme.Modules.bijective_tmulRight_tensorPowSection_of_le_nonvanishingLocus F sW
@@ -242,7 +145,7 @@ theorem exists_mono_free_twist_finite_support (hX : ∀ x : X, Order.coheight x 
   let e : ULift.{u} (Fin r) ≃ ι := Fintype.equivOfCardEq (by simp [hι])
   have ht₀ (W : X.Opens) (i : W ⟶ V) : Function.Bijective (Fintype.linearCombination Γ(X, W)
       fun k ↦ E.obj.obj.presheaf.map i.op (t (e k))) :=
-    bijective_linearCombination_comp_equiv e (ht W i)
+    (Fintype.bijective_linearCombination_comp_equiv_iff e).mpr (ht W i)
   have : Nonempty V := ⟨⟨_, hηV⟩⟩
   -- An effective divisor `D` whose canonical section `s` vanishes nowhere on `X_s ⊆ V`, and an `n`
   -- such that every `t k ⊗ sⁿ` over `X_s` extends to a global section `t' k` of `E ⊗ 𝒪_X(D)ⁿ`.
@@ -255,18 +158,19 @@ theorem exists_mono_free_twist_finite_support (hX : ∀ x : X, Order.coheight x 
   let L : InvertibleSheaf X := ⟨tensorPow D.sheaf n, inferInstance⟩
   have h₁ : (free X r).obj.obj =
       _root_.SheafOfModules.free (R := X.ringCatSheaf) (ULift.{u} (Fin r)) := by
-    rw [free_obj]
-    rfl
+    rw [free_obj, FiniteLocallyFreeSheaf.free_obj]
   -- The morphism `𝒪_X^r ⟶ E ⊗ 𝒪_X(D)ⁿ` sending the standard basis to the sections `t' k`.
   let φ : (free X r).obj.obj ⟶ (E.twist L).obj.obj := eqToHom h₁ ≫
     (E.obj.obj ⊗ tensorPow D.sheaf n).freeHomEquiv.symm
       (fun k ↦ (E.obj.obj ⊗ tensorPow D.sheaf n).sectionsEquivTop.symm (t' k)) ≫
     eqToHom (twist_obj_obj E L).symm
   have hφ (W : X.Opens) (hW : W ≤ D.sheaf.nonvanishingLocus hD.canonicalSection) :
-      Function.Bijective (Scheme.Modules.Hom.app φ W) :=
-    bijective_app_comp _ _ W (bijective_app_hom (eqToIso h₁) W) (bijective_app_comp _ _ W
-      (bijective_app_freeHomEquiv_symm _ (homOfLE hDV) _ ht₀ t' ht' W hW)
-      (bijective_app_hom (eqToIso (twist_obj_obj E L).symm) W))
+      Function.Bijective (Scheme.Modules.Hom.app φ W) := by
+    -- The two `eqToHom` factors are isomorphisms, hence bijective on sections.
+    have hiso {A B : X.Modules} (h : A = B) : Function.Bijective ((eqToHom h).app W) :=
+      ConcreteCategory.bijective_of_isIso _
+    exact Scheme.Modules.Hom.bijective_app_comp (hiso h₁) (Scheme.Modules.Hom.bijective_app_comp
+      (bijective_app_freeHomEquiv_symm _ (homOfLE hDV) _ ht₀ t' ht' W hW) (hiso _))
   have hη := hD.genericPoint_mem_nonvanishingLocus
   refine ⟨L, φ, φ.mono_of_injective_app_of_genericPoint_mem hη
     (fun W hW ↦ (hφ W hW).1) fun W W' i hW' ↦ ?_, ?_⟩
@@ -278,9 +182,8 @@ theorem exists_mono_free_twist_finite_support (hX : ∀ x : X, Order.coheight x 
   · -- The cokernel is coherent and vanishes at the generic point, so it has finite support.
     have : (cokernel φ).IsQuasicoherent := Scheme.Modules.isQuasicoherent_cokernel φ
     have : (cokernel φ).IsFiniteType := Scheme.Modules.isFiniteType_of_epi (cokernel.π φ)
-    have hdim : topologicalKrullDim X ≤ 1 := by
-      rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
-      exact iSup_le fun x ↦ by exact_mod_cast hX x
+    have hdim : topologicalKrullDim X ≤ 1 :=
+      TauCeti.topologicalKrullDim_le_of_forall_coheight_le hX
     exact Scheme.Modules.finite_setOf_nontrivial_stalk_of_subsingleton_stalk_genericPoint
       (cokernel φ) (fun A ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ A.val A.property) hdim
       (φ.subsingleton_stalk_cokernel_of_surjective_app hη fun W hW ↦ (hφ W hW).2)
