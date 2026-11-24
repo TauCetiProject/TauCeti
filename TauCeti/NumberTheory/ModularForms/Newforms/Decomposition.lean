@@ -39,6 +39,8 @@ one, and the others lie in nebentypus spaces meeting `S_k(N, χ_f)` only in `0`.
 ## Main results
 
 * `HeckeRing.GL2.Newform.span_levelRaise_eq_top`: the level-raised newforms span `S_k(Γ₁(N))`.
+* `HeckeRing.GL2.Newform.iSup_range_levelRaise_le_span_levelRaise`: every cusp form raised to level
+  `N` from `S_k(Γ₁(M))` lies in the span of the level-raised newforms of levels dividing `M`.
 * `HeckeRing.GL2.Newform.mem_span_levelRaise_of_forall_heckeTCuspNat_eq_smul`: a simultaneous
   eigenvector of the good `Tₚ` lies in the span of the level-raised newforms with its
   eigenvalues.
@@ -113,6 +115,31 @@ theorem span_levelRaise_eq_top (N : ℕ) [NeZero N] (k : ℤ) :
     have hf' := hnew N 1 h (Submodule.mem_map_of_mem hf)
     rwa [CuspForm.levelRaiseₗ_apply, _root_.CuspForm.levelRaise_one_self] at hf'
 
+/-- **Every cusp form raised along `d * M ∣ N` from `S_k(Γ₁(M))` is a linear combination of
+level-raised newforms of levels dividing `M`**: `∑_{d * M ∣ N} V_d S_k(Γ₁(M))` lies in the span of
+`V_c g'` with `c * M' ∣ N` and `M' ∣ M`, refining `span_levelRaise_eq_top` by applying it at level
+`M` and composing `V_d ∘ V_e = V_{e * d}`. -/
+theorem iSup_range_levelRaise_le_span_levelRaise {M : ℕ} [NeZero N] [NeZero M] :
+    (⨆ (d : ℕ) (hd : d * M ∣ N),
+      haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hd)
+      LinearMap.range
+        (CuspForm.levelRaiseₗ (k := k) d (Gamma1_map_le_conjAct_scaleGL_of_dvd hd))) ≤
+    Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
+      ∃ (M' c : ℕ) (_ : NeZero M') (_ : NeZero c) (hc : c * M' ∣ N),
+        M' ∣ M ∧ ∃ g' : Newform M' k,
+          CuspForm.levelRaise c (Gamma1_map_le_conjAct_scaleGL_of_dvd hc) g'.toCuspForm = G} := by
+  refine iSup_le fun d ↦ iSup_le fun hd ↦ ?_
+  have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hd)
+  rw [← Submodule.map_top, ← span_levelRaise_eq_top M k, Submodule.map_span, Submodule.span_le]
+  rintro _ ⟨_, ⟨M', e, _, _, he, g', rfl⟩, rfl⟩
+  have hed : (e * d) * M' ∣ N := by
+    rw [mul_comm e d, mul_assoc]
+    exact (mul_dvd_mul_left d he).trans hd
+  have : NeZero (e * d) := ⟨mul_ne_zero (NeZero.ne e) (NeZero.ne d)⟩
+  rw [CuspForm.levelRaiseₗ_apply, CuspForm.levelRaise_levelRaise]
+  exact Submodule.subset_span ⟨M', e * d, inferInstance, inferInstance, hed,
+    dvd_of_mul_left_dvd he, g', rfl⟩
+
 /-- **A simultaneous eigenvector of the good Hecke operators lies in the span of the level-raised
 newforms with its eigenvalues.** If a cusp form `F` of level `Γ₁(N)` satisfies `Tₚ F = aₚ F` at
 every prime `p ∤ N`, then `F` is a combination of forms `V_d g`, `d * M ∣ N`, with `g` a newform
@@ -130,11 +157,11 @@ theorem mem_span_levelRaise_of_forall_heckeTCuspNat_eq_smul [NeZero N]
   -- prescribed eigenvalue system on them
   let ι := {p : ℕ // p.Prime ∧ Nat.Coprime p N}
   let T : ι → Module.End ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := fun p ↦
-    heckeTCuspNat k p.1 (_hn := ⟨p.2.1.ne_zero⟩)
+    heckeTCuspNat k p.val (_hn := ⟨p.property.1.ne_zero⟩)
   let S : (ι → ℂ) → Submodule ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := fun χ ↦
     Submodule.span ℂ {G | ∃ (M d : ℕ) (_ : NeZero M) (_ : NeZero d) (h : d * M ∣ N)
-      (g : Newform M k), (∀ p : ι, g.eigenvalue ⟨p.1, p.2.1.pos⟩
-        (p.2.2.coprime_dvd_right (dvd_of_mul_left_dvd h)) = χ p) ∧
+      (g : Newform M k), (∀ p : ι, g.eigenvalue ⟨p.val, p.property.1.pos⟩
+        (p.property.2.coprime_dvd_right (dvd_of_mul_left_dvd h)) = χ p) ∧
       CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd h) g.toCuspForm = G}
   -- each `V_d g` is a simultaneous eigenvector, with the eigenvalues of `g`
   have hS (χ : ι → ℂ) : S χ ≤ ⨅ p, (T p).eigenspace (χ p) := by
@@ -142,22 +169,23 @@ theorem mem_span_levelRaise_of_forall_heckeTCuspNat_eq_smul [NeZero N]
     rintro _ ⟨M, d, _, _, h, g, hg, rfl⟩
     refine Submodule.mem_iInf _ |>.mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr ?_
     simp only [T]
-    rw [g.heckeTCuspNat_levelRaise_eq_eigenvalue_smul h p.2.1 p.2.2, hg p]
+    rw [g.heckeTCuspNat_levelRaise_eq_eigenvalue_smul h p.property.1 p.property.2, hg p]
   -- the spaces `S χ` together span everything
   have htop : ⨆ χ, S χ = ⊤ := by
     refine eq_top_iff.mpr ((span_levelRaise_eq_top N k).ge.trans (Submodule.span_le.mpr ?_))
     rintro _ ⟨M, d, _, _, h, g, rfl⟩
-    exact Submodule.mem_iSup_of_mem (fun p : ι ↦ g.eigenvalue ⟨p.1, p.2.1.pos⟩
-      (p.2.2.coprime_dvd_right (dvd_of_mul_left_dvd h)))
+    exact Submodule.mem_iSup_of_mem (fun p : ι ↦ g.eigenvalue ⟨p.val, p.property.1.pos⟩
+      (p.property.2.coprime_dvd_right (dvd_of_mul_left_dvd h)))
       (Submodule.subset_span ⟨M, d, inferInstance, inferInstance, h, g, fun _ ↦ rfl, rfl⟩)
   -- split off the component of `F` with the eigenvalues `a`; the rest is an eigenvector for `a`
   -- lying in the span of the other joint eigenspaces, hence zero
-  let a' : ι → ℂ := fun p ↦ a p.1 p.2.1 p.2.2
+  let a' : ι → ℂ := fun p ↦ a p.val p.property.1 p.property.2
   have hFmem : F ∈ ⨆ χ, S χ := htop ▸ Submodule.mem_top
   rw [iSup_split_single S a'] at hFmem
   obtain ⟨s, hs, t, ht, rfl⟩ := Submodule.mem_sup.mp hFmem
   have hsF : s + t ∈ ⨅ p, (T p).eigenspace (a' p) :=
-    Submodule.mem_iInf _ |>.mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr (hF p.1 p.2.1 p.2.2)
+    Submodule.mem_iInf _ |>.mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr
+        (hF p.val p.property.1 p.property.2)
   have ht' : t ∈ ⨅ p, (T p).eigenspace (a' p) := by
     simpa using Submodule.sub_mem _ hsF (hS a' hs)
   have ht0 : t = 0 := (Submodule.disjoint_def.mp (iSupIndep_iInf_eigenspace T a')) t ht'

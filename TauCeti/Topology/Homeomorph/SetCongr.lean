@@ -29,14 +29,14 @@ variable {X : Type*} [TopologicalSpace X]
 of Mathlib's `Set.equivOfEq_apply`, which does not match through the homeomorphism constructor. -/
 @[simp]
 theorem setCongr_apply {s t : Set X} (h : s = t) (x : s) :
-    setCongr h x = ⟨x, h ▸ x.2⟩ :=
+    setCongr h x = ⟨x, h ▸ x.property⟩ :=
   rfl
 
 /-- The inverse of `Homeomorph.setCongr` retypes a point without moving it. This is the
 homeomorphism counterpart of Mathlib's `Set.equivOfEq_symm_apply`. -/
 @[simp]
 theorem setCongr_symm_apply {s t : Set X} (h : s = t) (x : t) :
-    (setCongr h).symm x = ⟨x, h.symm ▸ x.2⟩ :=
+    (setCongr h).symm x = ⟨x, h.symm ▸ x.property⟩ :=
   rfl
 
 end Homeomorph

@@ -60,7 +60,7 @@ theorem exists_card_filter_lt_card_filter [PartialOrder ι] [DecidableLE ι]
 elements `j ≤ i` of `σ` of the number of values equal to `j`. -/
 theorem card_filter_le_eq_sum_card_filter_eq [Preorder ι] [DecidableEq ι] [DecidableLE ι]
     {σ : Finset ι} {u : α → ι} (hu : ∀ l, u l ∈ σ) (i : σ) :
-    #{l | u l ≤ i.1} = ∑ j ∈ ({j | j ≤ i} : Finset σ), #{l | u l = j.1} := by
+    #{l | u l ≤ i.val} = ∑ j ∈ ({j | j ≤ i} : Finset σ), #{l | u l = j.val} := by
   rw [card_eq_sum_card_fiberwise (f := fun l => (⟨u l, hu l⟩ : σ)) (t := {j | j ≤ i})
     fun l hl => by simpa [← Subtype.coe_le_coe] using hl]
   refine sum_congr rfl fun j hj => ?_

@@ -95,27 +95,25 @@ theorem map_centralizerHopfIdeal_eq_of_injective (φ : H →ₐc[k] K)
     CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
   exact φ.centralizerHopfIdeal_le_ker_mapDomain_iff hφ x A g
 
-/-- The coordinate-ring map of the homomorphism `C_Spec K(x) → C_Spec H(dφ(x))`.
-It exists even when the differential is not injective. -/
+/-- The coordinate-ring map of the homomorphism `C_Spec K(x) → C_Spec H(dφ(x))`: the quotient
+morphism `CommHopfAlgCat.quotientMap` along `φ`, which exists because `φ` maps the centralizer
+ideal into the centralizer ideal. It exists even when the differential is not injective. -/
 noncomputable def centralizerMap (φ : H →ₐc[k] K)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     (H ⧸ (centralizerHopfIdeal H (dualCotangentMap φ x)).toIdeal) →ₐc[k]
       (K ⧸ (centralizerHopfIdeal K x).toIdeal) :=
-  Bialgebra.Quotient.liftBialgHom
-    (centralizerHopfIdeal H (dualCotangentMap φ x)).toIdeal
-    ((Bialgebra.Quotient.mkBialgHom (centralizerHopfIdeal K x).toIdeal).comp φ)
-    (by
-      intro a ha
-      exact Ideal.Quotient.eq_zero_iff_mem.mpr
-        ((HopfIdeal.map_le_iff.mp (φ.map_centralizerHopfIdeal_le x)) ha))
+  (_root_.CommHopfAlgCat.quotientMap (H := _root_.CommHopfAlgCat.of k H)
+    (K := _root_.CommHopfAlgCat.of k K) _ _ (_root_.CommHopfAlgCat.ofHom φ)
+    (φ.map_centralizerHopfIdeal_le x)).hom
 
 /-- The centralizer coordinate map is induced by the ambient coordinate map. -/
 @[simp]
 theorem centralizerMap_mk (φ : H →ₐc[k] K)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) (a : H) :
     φ.centralizerMap x (Ideal.Quotient.mk _ a) =
-      Ideal.Quotient.mk (centralizerHopfIdeal K x).toIdeal (φ a) := by
-  exact Bialgebra.Quotient.liftBialgHom_mk _ _ _ a
+      Ideal.Quotient.mk (centralizerHopfIdeal K x).toIdeal (φ a) :=
+  CommHopfAlgCat.quotientMap_mk (H := _root_.CommHopfAlgCat.of k H)
+    (K := _root_.CommHopfAlgCat.of k K) _ _ (_root_.CommHopfAlgCat.ofHom φ) _ a
 
 /-- The centralizer coordinate map commutes with the ambient quotient maps. -/
 @[simp]
@@ -123,7 +121,8 @@ theorem centralizerMap_comp_mkBialgHom (φ : H →ₐc[k] K)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     (φ.centralizerMap x).comp
         (Bialgebra.Quotient.mkBialgHom (centralizerHopfIdeal H (dualCotangentMap φ x)).toIdeal) =
-      (Bialgebra.Quotient.mkBialgHom (centralizerHopfIdeal K x).toIdeal).comp φ :=
-  Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom _ _ _
+      (Bialgebra.Quotient.mkBialgHom (centralizerHopfIdeal K x).toIdeal).comp φ := by
+  ext a
+  exact φ.centralizerMap_mk x a
 
 end BialgHom

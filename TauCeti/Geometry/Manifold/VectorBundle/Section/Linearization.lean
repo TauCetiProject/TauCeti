@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
 /-!
@@ -151,6 +152,28 @@ theorem continuousLinearMapAt_comp_sectionLinearization
   ext v
   simp only [ContinuousLinearMap.comp_apply, e.continuousLinearMapAt_symmL he]
 
+/-- On a manifold modelled on its model space, the fiber coordinates of a section at a zero, read
+in the preferred chart, have Fréchet derivative the intrinsic linearization read in the
+trivialization. -/
+theorem hasFDerivAt_comp_chartAt_symm_sectionLinearization {N : Type*} [TopologicalSpace N]
+    [ChartedSpace EM N] {b : N → B} {s : ∀ y, E (b y)} {x : N}
+    (hb : ContinuousAt b x) (he : b x ∈ e.baseSet)
+    (hs : MDifferentiableAt 𝓘(𝕜, EM) 𝓘(𝕜, F) (fun y ↦ (e ⟨b y, s y⟩).2) x) (hzero : s x = 0) :
+    HasFDerivAt ((fun y ↦ (e ⟨b y, s y⟩).2) ∘ (chartAt EM x).symm)
+      ((e.continuousLinearMapAt 𝕜 (b x)).comp (sectionLinearization (F := F) 𝓘(𝕜, EM) b s x))
+      (chartAt EM x x) := by
+  -- `MDifferentiableAt.differentiableAt_comp_extChartAt_symm` is stated with `extChartAt`; for
+  -- the model with corners `𝓘(𝕜, EM)` the extended chart and its inverse are the chart and its
+  -- inverse, which these two rewriting lemmas record.
+  have hd : DifferentiableAt 𝕜 ((fun y ↦ (e ⟨b y, s y⟩).2) ∘ (chartAt EM x).symm)
+      (chartAt EM x x) := by
+    simpa only [extChartAt_model_symm_eq_chartAt_symm, extChartAt_model_apply_eq_chartAt_apply]
+      using hs.differentiableAt_comp_extChartAt_symm
+  have h := hd.hasFDerivAt
+  rw [fderiv_comp_chartAt_symm, ← continuousLinearMapAt_comp_sectionLinearization hb he hs hzero]
+    at h
+  exact h
+
 /-- A zero is regular for the intrinsic linearization exactly when its coordinate derivative
 is surjective. -/
 theorem surjective_sectionLinearization_iff
@@ -161,6 +184,33 @@ theorem surjective_sectionLinearization_iff
   rw [sectionLinearization_eq_symmL_comp hb he hs hzero,
     ← e.symm_continuousLinearEquivAt_eq' he]
   exact Function.Surjective.of_comp_iff' (e.continuousLinearEquivAt 𝕜 (b x) he).symm.bijective _
+
+/-- When the model space of the source and the fiber have the same finite dimension, a surjective
+linearization is a continuous linear equivalence. -/
+theorem exists_continuousLinearEquiv_eq_sectionLinearization_of_surjective [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 EM] [FiniteDimensional 𝕜 F]
+    (hfin : Module.finrank 𝕜 EM = Module.finrank 𝕜 F)
+    (hreg : Function.Surjective (sectionLinearization (F := F) IM b s x)) :
+    ∃ D : TangentSpace IM x ≃L[𝕜] E (b x),
+      (D : TangentSpace IM x →L[𝕜] E (b x)) = sectionLinearization (F := F) IM b s x := by
+  let := VectorBundle.finiteDimensional 𝕜 F E (b x)
+  let : FiniteDimensional 𝕜 (TangentSpace IM x) := inferInstanceAs (FiniteDimensional 𝕜 EM)
+  set A := sectionLinearization (F := F) IM b s x
+  have hinj : Function.Injective A :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (hfin.trans (VectorBundle.finrank_eq 𝕜 F E (b x)).symm) (f := A.toLinearMap)).2 hreg
+  -- Read in the preferred trivialization `t` at `b x`, `A` is a linear isomorphism onto the
+  -- normed space `F`, hence a continuous linear equivalence.
+  set t := trivializationAt F E (b x)
+  have ht : b x ∈ t.baseSet := mem_baseSet_trivializationAt F E (b x)
+  let B : TangentSpace IM x →L[𝕜] F :=
+    (t.continuousLinearEquivAt 𝕜 (b x) ht : E (b x) →L[𝕜] F).comp A
+  have hB : Function.Bijective B :=
+    ⟨(t.continuousLinearEquivAt 𝕜 (b x) ht).injective.comp hinj,
+      (t.continuousLinearEquivAt 𝕜 (b x) ht).surjective.comp hreg⟩
+  exact ⟨(LinearEquiv.ofBijective B.toLinearMap hB).toContinuousLinearEquiv.trans
+      (t.continuousLinearEquivAt 𝕜 (b x) ht).symm, ContinuousLinearMap.ext fun v ↦
+    (t.continuousLinearEquivAt 𝕜 (b x) ht).symm_apply_apply (A v)⟩
 
 /-- At a zero, the intrinsic linearization has the same kernel as the derivative of any
 differentiable fiber-coordinate expression. -/
@@ -288,5 +338,54 @@ theorem sectionLinearization_comp {g : N → M} {y : N}
       (mvfderiv IN ((fun z ↦
         (trivializationAt F E (b (g y)) ⟨b z, s z⟩).2) ∘ g) y) = _
   rw [mvfderiv_comp y hs hg, ContinuousLinearMap.comp_assoc]
+
+section LinearizationChart
+
+variable {𝕜 X M F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [TopologicalSpace M] [ChartedSpace X M]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : M → Type*}
+  [TopologicalSpace (TotalSpace F E)] [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  {s : ∀ x, E x}
+
+/-- **A section has derivative the identity in the chart given by its linearization.** Let `z` be
+a zero of `s` whose fibre coordinate in a trivialization `e` is differentiable at `z`, and let
+`Λ : X ≃ F` agree with the linearization of `s` at `z` read in `e`. Then in the chart
+`Λ ∘ chartAt X z` the fibre coordinate of `s` has derivative the identity at the image of `z`. -/
+theorem
+  _root_.Bundle.Trivialization.hasFDerivAt_comp_chartAt_transHomeomorph_symm_sectionLinearization_id
+    (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {z : M} (hze : z ∈ e.baseSet) (hz : s z = 0)
+    (hg : MDifferentiableAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e ⟨y, s y⟩).2) z) (Λ : X ≃L[𝕜] F)
+    (hΛ : ∀ v, Λ v = e.continuousLinearMapAt 𝕜 z (sectionLinearization (F := F) 𝓘(𝕜, X) id s z v)) :
+    HasFDerivAt (fun y ↦ (e (TotalSpace.mk' F
+        (((chartAt X z).transHomeomorph Λ.toHomeomorph).symm y)
+        (s (((chartAt X z).transHomeomorph Λ.toHomeomorph).symm y)))).2)
+      (ContinuousLinearMap.id 𝕜 F) ((chartAt X z).transHomeomorph Λ.toHomeomorph z) := by
+  set φ := (chartAt X z).transHomeomorph Λ.toHomeomorph
+  -- The derivative in `chartAt X z` is the linearization read in `e`, so precomposing with
+  -- `Λ⁻¹` gives the identity.
+  have hgc := hasFDerivAt_comp_chartAt_symm_sectionLinearization continuousAt_id hze hg hz
+  have hpt : chartAt X z z = Λ.symm (φ z) := (Λ.symm_apply_apply _).symm
+  rw [hpt] at hgc
+  have h₂ := hgc.comp (φ z) Λ.symm.hasFDerivAt
+  convert h₂ using 1
+  · ext v
+    rw [OpenPartialHomeomorph.transHomeomorph_symm_apply,
+      ContinuousLinearEquiv.coe_symm_toHomeomorph, Function.comp_apply, Function.comp_apply,
+      Function.comp_apply]
+    -- The two sides differ only by the base map `id` of the linearization.
+    rfl
+  ext v
+  -- The composite passes through `TangentSpace 𝓘(𝕜, X) z`, which is `X` only after unfolding,
+  -- so its topology instance differs syntactically from that of `X` and
+  -- `ContinuousLinearMap.comp_apply` fails to rewrite. `change` evaluates the two compositions
+  -- at `v` definitionally, and drops the coercion of `Λ.symm` to a continuous linear map.
+  change v = e.continuousLinearMapAt 𝕜 z
+    (sectionLinearization (F := F) 𝓘(𝕜, X) id s z (Λ.symm v))
+  rw [← hΛ]
+  exact (Λ.apply_symm_apply v).symm
+
+end LinearizationChart
 
 end TauCeti

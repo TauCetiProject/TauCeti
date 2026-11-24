@@ -259,7 +259,7 @@ theorem ae_limsup_le_and_le_liminf_euclideanHausdorffMeasure_inter_closedBall_di
   have hψ₁' : AntilipschitzWith a (G'.domRestrict ψ) :=
     AntilipschitzWith.of_le_mul_dist fun x y => by
       simpa only [Subtype.dist_eq, domRestrict_apply] using
-        hψ'.le_mul_dist ⟨x, hG'G x.2⟩ ⟨y, hG'G y.2⟩
+        hψ'.le_mul_dist ⟨x, hG'G x.property⟩ ⟨y, hG'G y.property⟩
   have hdens := ae_iff.1 (hι.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div
     (hG'G.trans hGι))
   -- The image of the points of `G'` where `G'` does not have density one is null.

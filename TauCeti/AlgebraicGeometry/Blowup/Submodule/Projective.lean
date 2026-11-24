@@ -75,7 +75,7 @@ theorem projectiveEmbedding_preimage_basicOpen (f : F) :
     projectiveEmbedding C F ⁻¹ᵁ
         Proj.basicOpen (SymmetricAlgebra.homogeneousSubmodule C (F →₀ C))
           (_root_.SymmetricAlgebra.ι C (F →₀ C) (Finsupp.single f 1)) =
-      Proj.basicOpen (gradedRing C F) (monomialDegreeOne C f.2) := by
+      Proj.basicOpen (gradedRing C F) (monomialDegreeOne C f.property) := by
   rw [projectiveEmbedding, Proj.map_preimage_basicOpen, presentation_ι_single, one_smul]
 
 /-- The projective embedding commutes with the specified structure maps to `Spec C`. -/

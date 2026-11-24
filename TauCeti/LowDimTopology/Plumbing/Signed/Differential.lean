@@ -154,8 +154,8 @@ private def directionPairEquiv (C : PlumbingCube V) :
       ⟨p.1.property, Finset.mem_of_mem_erase p.2.property,
         (Finset.ne_of_mem_erase p.2.property).symm⟩⟩
   invFun p :=
-    ⟨⟨p.1.1, (Finset.mem_offDiag.mp p.property).1⟩,
-      ⟨p.1.2, Finset.mem_erase_of_ne_of_mem
+    ⟨⟨p.val.1, (Finset.mem_offDiag.mp p.property).1⟩,
+      ⟨p.val.2, Finset.mem_erase_of_ne_of_mem
         (Finset.mem_offDiag.mp p.property).2.2.symm
         (Finset.mem_offDiag.mp p.property).2.1⟩⟩
   left_inv p := by
@@ -171,9 +171,9 @@ mixed corners with sign `-`. -/
 private noncomputable def latticeTwoDirectionFaces
     (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V)
     (p : {p // p ∈ C.directions.offDiag}) : PlumbingCube V →₀ R[X] :=
-  let v := p.1.1
-  let w := p.1.2
-  let hp := Finset.mem_offDiag.mp p.2
+  let v := p.val.1
+  let w := p.val.2
+  let hp := Finset.mem_offDiag.mp p.property
   let hv := hp.1
   let hw := hp.2.1
   let hvw := hp.2.2
@@ -200,13 +200,13 @@ private noncomputable def latticeTwoDirectionFaces
 the first direction in the cube and of the second one in the face. -/
 private def directionPairSign (C : PlumbingCube V) (p : {p // p ∈ C.directions.offDiag}) :
     ℕ :=
-  C.directionIndex p.1.1 + (C.eraseDirection p.1.1).directionIndex p.1.2
+  C.directionIndex p.val.1 + (C.eraseDirection p.val.1).directionIndex p.val.2
 
 /-- Reversing an ordered off-diagonal pair of cube directions. -/
 private def swapOffDiag (C : PlumbingCube V)
     (p : {p // p ∈ C.directions.offDiag}) :
     {p // p ∈ C.directions.offDiag} :=
-  ⟨p.1.swap, by
+  ⟨p.val.swap, by
     have hp := Finset.mem_offDiag.mp p.property
     exact Finset.mem_offDiag.mpr ⟨hp.2.1, hp.1, hp.2.2.symm⟩⟩
 
@@ -317,7 +317,7 @@ private theorem sum_latticeTwoDirectionFaces_eq_zero
     simp [swapOffDiag]
   · intro p _
     apply Subtype.ext
-    exact Prod.swap_swap p.1
+    exact Prod.swap_swap p.val
 
 /-- Expanding the differential twice on a cube gives the signed sum of the four-face
 contributions over ordered pairs of distinct directions. -/

@@ -48,11 +48,9 @@ renames the surviving variables by the column transposition. -/
 noncomputable def simplyBlockedCommutationMap :
     GridChainHat R n i →ₛₗ[((simplyBlockedRenameEquiv R σ i).toRingEquiv :
       MvPolynomial {c : Fin n // c ≠ i} R →+* S)] GridChainHat R n (σ i) :=
-  (Finsupp.linearCombination S fun x : GridState n =>
-    simplyBlockedSpecialization R (σ i) (G.commutationMap R C (Finsupp.single x 1))).comp
-      (Finsupp.mapRange.linearMap
-        ((simplyBlockedRenameEquiv R σ i).toRingEquiv :
-          MvPolynomial {c : Fin n // c ≠ i} R →+* S).toSemilinearMap)
+  simplyBlockedMap R (σ i) i
+    ((simplyBlockedRenameEquiv R σ i).toRingEquiv :
+      MvPolynomial {c : Fin n // c ≠ i} R →+* S) (G.commutationMap R C)
 
 /-- On a generator, the specialized map reads the pentagon coefficient with the transported
 blocked variable set to zero. -/
@@ -61,9 +59,7 @@ theorem simplyBlockedCommutationMap_single_apply (x y : GridState n)
     G.simplyBlockedCommutationMap R C i (Finsupp.single x p) y =
       simplyBlockedRenameEquiv R σ i p *
         simplyBlockedRingHom R (σ i) (G.commutationPentagonCoefficient R C x y) := by
-  simp only [simplyBlockedCommutationMap, LinearMap.comp_apply,
-    Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single,
-    RingHom.coe_toSemilinearMap, Finsupp.linearCombination_single,
+  simp only [simplyBlockedCommutationMap, simplyBlockedMap_single,
     Finsupp.smul_apply, smul_eq_mul, simplyBlockedSpecialization_apply,
     G.commutationMap_single_apply, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
     simplyBlockedRingHom_apply]
@@ -74,13 +70,11 @@ theorem simplyBlockedCommutationMap_apply_apply (c : GridChainHat R n i) (y : Gr
     G.simplyBlockedCommutationMap R C i c y = c.sum fun x p =>
       simplyBlockedRenameEquiv R σ i p *
         simplyBlockedRingHom R (σ i) (G.commutationPentagonCoefficient R C x y) := by
-  induction c using Finsupp.induction_linear with
-  | zero => rw [map_zero, Finsupp.zero_apply, Finsupp.sum_zero_index]
-  | add c d hc hd =>
-    rw [map_add, Finsupp.add_apply, hc, hd, Finsupp.sum_add_index'] <;>
-      simp [add_mul]
-  | single x p =>
-    rw [simplyBlockedCommutationMap_single_apply, Finsupp.sum_single_index (by simp)]
+  simpa only [simplyBlockedCommutationMap, RingHom.coe_coe, AlgEquiv.coe_toRingEquiv,
+    G.commutationMap_single_apply] using
+    simplyBlockedMap_apply_apply R (σ i) i
+      ((simplyBlockedRenameEquiv R σ i).toRingEquiv :
+        MvPolynomial {c : Fin n // c ≠ i} R →+* S) (G.commutationMap R C) c y
 
 /-- Coefficient specialization intertwines the unblocked and simply blocked pentagon maps,
 including when the blocked column is one of the commuted columns. -/
@@ -88,21 +82,10 @@ including when the blocked column is one of the commuted columns. -/
 theorem simplyBlockedCommutationMap_simplyBlockedSpecialization (c : GridChainMinus R n) :
     G.simplyBlockedCommutationMap R C i (simplyBlockedSpecialization R i c) =
       simplyBlockedSpecialization R (σ i) (G.commutationMap R C c) := by
-  induction c using Finsupp.induction_linear with
-  | zero => rw [map_zero, map_zero, map_zero, map_zero]
-  | add c d hc hd => rw [map_add, map_add, map_add, map_add, hc, hd]
-  | single x p =>
-    apply Finsupp.ext
-    intro y
-    rw [simplyBlockedSpecialization_single, simplyBlockedCommutationMap_single_apply,
-      simplyBlockedSpecialization_apply, ← Finsupp.smul_single_one x p, map_smulₛₗ,
-      Finsupp.smul_apply, smul_eq_mul]
-    rw [map_mul, G.commutationMap_single_apply]
-    simpa only [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, renameEquiv_apply,
-      simplyBlockedRingHom_apply] using
-      congrArg (· * simplyBlockedRingHom R (σ i)
-        (G.commutationPentagonCoefficient R C x y))
-          (simplyBlockedRingHom_rename R σ i p).symm
+  apply simplyBlockedMap_simplyBlockedSpecialization
+  intro p
+  simpa only [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, renameEquiv_apply] using
+    (simplyBlockedRingHom_rename R σ i p).symm
 
 variable [CharP R 2]
 
@@ -112,12 +95,9 @@ theorem simplyBlockedCommutationMap_simplyBlockedDifferential (c : GridChainHat 
     G.simplyBlockedCommutationMap R C i (G.simplyBlockedDifferential R i c) =
       (G.swapColumns C.column (finRotate n C.column)).simplyBlockedDifferential R (σ i)
         (G.simplyBlockedCommutationMap R C i c) := by
-  obtain ⟨c, rfl⟩ := simplyBlockedSpecialization_surjective R i c
-  rw [← simplyBlockedSpecialization_unblockedDifferential,
-    simplyBlockedCommutationMap_simplyBlockedSpecialization,
-    simplyBlockedCommutationMap_simplyBlockedSpecialization,
-    ← simplyBlockedSpecialization_unblockedDifferential]
-  exact congrArg (simplyBlockedSpecialization R (σ i))
-    (LinearMap.congr_fun (G.commutationMap_comp_unblockedDifferential C R) c)
+  apply map_simplyBlockedDifferential_of_simplyBlockedSpecialization
+  · exact G.simplyBlockedCommutationMap_simplyBlockedSpecialization R C i
+  · intro c
+    exact LinearMap.congr_fun (G.commutationMap_comp_unblockedDifferential C R) c
 
 end TauCeti.GridDiagram

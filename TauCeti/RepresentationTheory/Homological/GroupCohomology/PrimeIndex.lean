@@ -143,7 +143,7 @@ theorem natCard_groupCohomology_two_dvd_natCard_of_prime_index [Finite G] (A : R
   classical
   -- one Sylow subgroup for each prime factor of `#G`
   have hprime (p : (Nat.card G).primeFactors) : Fact (p : ℕ).Prime :=
-    ⟨Nat.prime_of_mem_primeFactors p.2⟩
+    ⟨Nat.prime_of_mem_primeFactors p.property⟩
   let P (p : (Nat.card G).primeFactors) : Sylow p G := Classical.arbitrary _
   -- the restrictions to these Sylow subgroups, which are jointly injective
   let Φ : groupCohomology A 2 →+

@@ -10,10 +10,10 @@ public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.RingTheory.Ideal.Operations
+import Mathlib.Algebra.Module.Projective
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.Algebra.Module.Projective.LinearMap
 import TauCeti.Algebra.Module.Projective.Reduction
-import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective
@@ -138,8 +138,8 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd (hG : ¬p ∣
     (h : Nonempty ((M ⊗[ℤ_[p]] ℚ_[p]) ≃ₗ[A] (N ⊗[ℤ_[p]] ℚ_[p]))) :
     Nonempty (M ≃ₗ[A] N) := by
   -- Projective `ℤ_p[G]`-modules are projective, hence torsion-free, over `ℤ_p`.
-  have : Module.Projective ℤ_[p] M := .trans A M
-  have : Module.Projective ℤ_[p] N := .trans A N
+  have : Module.Projective ℤ_[p] M := .trans ℤ_[p] A M
+  have : Module.Projective ℤ_[p] N := .trans ℤ_[p] A N
   -- Work with the radical quotients, which are finite and semisimple; the radical is `(p)`.
   have hJ := jacobson_padicInt_monoidAlgebra_eq_span_p p hG
   have : IsArtinianRing (A ⧸ Ring.jacobson A) := isArtinian_of_finite

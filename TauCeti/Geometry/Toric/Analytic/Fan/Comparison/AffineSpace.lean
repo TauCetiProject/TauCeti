@@ -65,8 +65,8 @@ open AlgebraicComplexPoint
 affine space, whose coordinate `j` is the pullback of the coordinate function `j`. -/
 noncomputable def affineSpaceAlgebraicComplexPointEquiv :
     (affineSpace b hi).AlgebraicComplexPoint ≃ (ι → ℂ) :=
-  ({ toFun p := ⟨p.1 ≫ (affineSpaceAlgebraicIso b hi).hom, by have := p.2; infer_instance⟩
-     invFun q := ⟨q.1 ≫ (affineSpaceAlgebraicIso b hi).inv, by have := q.2; infer_instance⟩
+  ({ toFun p := ⟨p.val ≫ (affineSpaceAlgebraicIso b hi).hom, by have := p.property; infer_instance⟩
+     invFun q := ⟨q.val ≫ (affineSpaceAlgebraicIso b hi).inv, by have := q.property; infer_instance⟩
      left_inv p := by simp
      right_inv q := by simp } :
     (affineSpace b hi).AlgebraicComplexPoint ≃
@@ -80,14 +80,14 @@ theorem affineSpaceAlgebraicComplexPointEquiv_apply (p : (affineSpace b hi).Alge
     (j : ι) :
     affineSpaceAlgebraicComplexPointEquiv b hi p j =
       (Scheme.ΓSpecIso (.of ℂ)).hom
-        ((p.1 ≫ (affineSpaceAlgebraicIso b hi).hom).appTop (AffineSpace.coord _ j)) :=
+        ((p.val ≫ (affineSpaceAlgebraicIso b hi).hom).appTop (AffineSpace.coord _ j)) :=
   (rfl)
 
 /-- The complex point of the toric scheme of the fan of affine space with coordinates `z` is the
 morphism `Spec ℂ ⟶ 𝔸(ι; Spec ℂ)` with coordinate functions `z j`, followed by the inverse of
 `affineSpaceAlgebraicIso`. -/
 theorem coe_affineSpaceAlgebraicComplexPointEquiv_symm_apply (z : ι → ℂ) :
-    ((affineSpaceAlgebraicComplexPointEquiv b hi).symm z).1 =
+    ((affineSpaceAlgebraicComplexPointEquiv b hi).symm z).val =
       AffineSpace.homOfVector (Spec (.of ℂ) ↘ Spec (.of ℂ))
           (fun j ↦ (Scheme.ΓSpecIso (.of ℂ)).inv (z j)) ≫
         (affineSpaceAlgebraicIso b hi).inv :=
@@ -97,7 +97,7 @@ theorem coe_affineSpaceAlgebraicComplexPointEquiv_symm_apply (z : ι → ℂ) :
 the monomial of the coordinate character `b.coord j`. -/
 private theorem affineSpaceAlgebraicComplexPointEquiv_ofAffinePoint
     (x : AffineSemigroupComplexPoint
-      (dualSemigroup (affineSpace b hi).lattice (affineSpaceMaximalCone b hi).1)) (j : ι) :
+      (dualSemigroup (affineSpace b hi).lattice (affineSpaceMaximalCone b hi).val)) (j : ι) :
     affineSpaceAlgebraicComplexPointEquiv b hi (ofAffinePoint (affineSpaceMaximalCone b hi) x) j =
       x (MonoidAlgebra.single (ofAdd ⟨(b.coord j).toAddMonoidHom,
         coord_mem_dualSemigroup_affineSpace b hi j (affineSpaceMaximalCone b hi)⟩) 1) := by
@@ -119,7 +119,7 @@ theorem affineSpaceAlgebraicComplexPointEquiv_apply_eq_character
         (coord_mem_dualSemigroup_affineSpace b hi j) p := by
   obtain ⟨σ, x, rfl⟩ := exists_ofAffinePoint_eq p
   -- Every cone of the fan of affine space is a face of the orthant.
-  have hσ : σ.1.IsFaceOf (affineSpaceMaximalCone b hi).1 := (mem_ofCone_cones hi _).1 σ.2
+  have hσ : σ.val.IsFaceOf (affineSpaceMaximalCone b hi).val := (mem_ofCone_cones hi _).1 σ.property
   rw [← ofAffinePoint_faceAffinePointMap hσ, affineSpaceAlgebraicComplexPointEquiv_ofAffinePoint,
     character_ofAffinePoint]
 

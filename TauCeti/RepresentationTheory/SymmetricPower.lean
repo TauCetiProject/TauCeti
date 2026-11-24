@@ -12,7 +12,9 @@ public import TauCeti.LinearAlgebra.SymmetricPower.Basic
 # Symmetric powers of representations
 
 This file equips each symmetric power of a representation with the induced diagonal action.
-Intertwining maps and equivalences pass functorially to symmetric powers.
+Intertwining maps and equivalences pass functorially to symmetric powers. A pure symmetric tensor
+of eigenvectors is an eigenvector, for the product of their eigenvalues
+(`Representation.symmetricPower_apply_tprod_of_apply_eq_smul`).
 
 ## Main definitions
 
@@ -65,6 +67,15 @@ This is intentionally not a simp lemma: `symmetricPower_apply` followed by
 theorem symmetricPower_apply_tprod (ρ : Representation R G M) (d : ℕ) (g : G) (m : Fin d → M) :
     ρ.symmetricPower d g (⨂ₛ[R] i, m i) = ⨂ₛ[R] i, ρ g (m i) := by
   rw [symmetricPower_apply, SymmetricPower.map_tprod]
+
+/-- A pure symmetric tensor of eigenvectors of `ρ g` is an eigenvector of the symmetric-power
+action of `g`, whose eigenvalue is the product of the eigenvalues of its factors. -/
+theorem symmetricPower_apply_tprod_of_apply_eq_smul (ρ : Representation R G M) {d : ℕ} {g : G}
+    {c : Fin d → R} {m : Fin d → M} (hm : ∀ i, ρ g (m i) = c i • m i) :
+    ρ.symmetricPower d g (⨂ₛ[R] i, m i) = (∏ i, c i) • ⨂ₛ[R] i, m i := by
+  rw [symmetricPower_apply_tprod]
+  simp_rw [hm]
+  exact (SymmetricPower.tprod R).map_smul_univ c m
 
 end CommSemiring
 

@@ -59,7 +59,7 @@ variable {N N' V V' : Type u} [AddCommGroup N] [AddCommGroup N']
 /-- The boundary component of a product ray `ρ × 0` is the preimage of the component of `ρ` times
 the whole second factor. -/
 theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_prod_univ {ρ : Φ.Ray}
-    {ξ : (Φ.prod Ψ).Ray} (h : ξ.toCone.1 = ρ.toCone.1.prod ⊥) :
+    {ξ : (Φ.prod Ψ).Ray} (h : ξ.toCone.val = ρ.toCone.val.prod ⊥) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ ⁻¹' (Φ.analyticBoundaryComponent hΦ ρ ×ˢ univ) =
       (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ) ξ := by
   ext x
@@ -72,7 +72,7 @@ theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_prod_univ {ρ 
 /-- The boundary component of a product ray `0 × ρ` is the preimage of the whole first factor
 times the component of `ρ`. -/
 theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_univ_prod {ρ : Ψ.Ray}
-    {ξ : (Φ.prod Ψ).Ray} (h : ξ.toCone.1 = (⊥ : PointedCone ℝ V).prod ρ.toCone.1) :
+    {ξ : (Φ.prod Ψ).Ray} (h : ξ.toCone.val = (⊥ : PointedCone ℝ V).prod ρ.toCone.val) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ ⁻¹' (univ ×ˢ Ψ.analyticBoundaryComponent hΨ ρ) =
       (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ) ξ := by
   ext x
@@ -86,7 +86,7 @@ theorem preimage_analyticProdHomeomorph_analyticBoundaryComponent_univ_prod {ρ 
 boundary component of a product ray `ρ × 0` onto the component of `ρ` times the whole second
 factor. -/
 theorem image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_prod_bot {ρ : Φ.Ray}
-    {ξ : (Φ.prod Ψ).Ray} (h : ξ.toCone.1 = ρ.toCone.1.prod ⊥) :
+    {ξ : (Φ.prod Ψ).Ray} (h : ξ.toCone.val = ρ.toCone.val.prod ⊥) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ ''
         (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ) ξ =
       Φ.analyticBoundaryComponent hΦ ρ ×ˢ univ := by
@@ -97,7 +97,7 @@ theorem image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_prod_bot {�
 boundary component of a product ray `0 × ρ` onto the whole first factor times the component of
 `ρ`. -/
 theorem image_analyticProdHomeomorph_analyticBoundaryComponent_of_eq_bot_prod {ρ : Ψ.Ray}
-    {ξ : (Φ.prod Ψ).Ray} (h : ξ.toCone.1 = (⊥ : PointedCone ℝ V).prod ρ.toCone.1) :
+    {ξ : (Φ.prod Ψ).Ray} (h : ξ.toCone.val = (⊥ : PointedCone ℝ V).prod ρ.toCone.val) :
     Φ.analyticProdHomeomorph Ψ hΦ hΨ ''
         (Φ.prod Ψ).analyticBoundaryComponent (Fan.IsRegular.prod Φ Ψ hΦ hΨ) ξ =
       univ ×ˢ Ψ.analyticBoundaryComponent hΨ ρ := by

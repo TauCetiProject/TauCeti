@@ -52,6 +52,8 @@ The shift closure is the home of the matrix entries of one-sided twisted complex
 * `TauCeti.DGShiftClosure.homComplexData`: its explicit Hom-complex data.
 * `TauCeti.DGShiftClosure.dgHomEquiv`: degree-`n` morphisms `X[r] ⟶ Y[s]` are degree-`n + s - r`
   morphisms `X ⟶ Y`.
+* `TauCeti.DGShiftClosure.dgHomComplexIso`: the isomorphism
+  `Hom(X[r], Y[s]) ≅ Hom(X, Y)[s - r]` of Hom complexes.
 * `TauCeti.DGShiftClosure.ι`: the DG functor `X ↦ X[0]`.
 * `TauCeti.DGShiftClosure.shiftFunctor`: the DG functor `X[r] ↦ X[r + n]`.
 * `TauCeti.DGShiftClosure.toShift` and `TauCeti.DGShiftClosure.fromShift`: the closed comparison
@@ -198,6 +200,18 @@ theorem dgHomEquiv_dgDifferential {X Y : DGShiftClosure C} (n : ℤ) (f : DGHom 
   exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
     (CochainComplex.shiftFunctor_obj_d' (dgHomComplex R X.obj Y.obj) (Y.shift - X.shift) n
       (n + 1))) f
+
+/-- The Hom complex `Hom(X[r], Y[s])` of the shift closure is the shifted Hom complex
+`Hom(X, Y)[s - r]`, as an isomorphism which is degreewise `TauCeti.DGShiftClosure.dgHomEquiv`. -/
+noncomputable def dgHomComplexIso (X Y : DGShiftClosure C) :
+    dgHomComplex R X Y ≅ (dgHomComplex R X.obj Y.obj)⟦Y.shift - X.shift⟧ :=
+  eqToIso (dgHomComplex_eq R X Y)
+
+/-- The isomorphism `TauCeti.DGShiftClosure.dgHomComplexIso` is
+`TauCeti.DGShiftClosure.dgHomEquiv` in each degree. -/
+theorem dgHomComplexIso_hom_f_apply (X Y : DGShiftClosure C) (n : ℤ) (f : DGHom R n X Y) :
+    ((dgHomComplexIso R X Y).hom.f n).hom f = dgHomEquiv R X Y n f :=
+  (rfl)
 
 /-- Composition in the shift closure: a degree-`p` morphism `f : X[r] ⟶ Y[s]` followed by
 `g : Y[s] ⟶ Z[t]` is the composite of the underlying morphisms of `C`, with the sign

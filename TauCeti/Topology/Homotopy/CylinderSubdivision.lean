@@ -62,14 +62,14 @@ theorem exists_continuous_cylinder_subdivision {W : Set (X × I × I)} (hW : IsO
     -- The minimum with t already clips at 1, so the native endpoint clipping disappears.
     rw [hτ, (Set.mono_coe I).map_min]
     simp only [p, Icc.coe_addNSMul zero_le_one (hstep x).le, zero_add, nsmul_eq_mul,
-      ← min_assoc, min_eq_left t.2.2]
+      ← min_assoc, min_eq_left t.property.2]
     congr 1
     dsimp [step]
     ring
   refine ⟨δ, τ, hδ, hδW, hformula, ?_, ?_, ?_⟩
   · intro x t
     apply Subtype.ext
-    simpa [hformula] using min_eq_right t.2.1
+    simpa [hformula] using min_eq_right t.property.1
   · intro n x t
     have hpn : p n x ≤ p (n + 1) x :=
       Icc.monotone_addNSMul zero_le_one (hstep x).le (Nat.le_succ n)

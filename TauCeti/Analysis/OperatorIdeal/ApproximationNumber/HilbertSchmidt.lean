@@ -98,7 +98,7 @@ theorem hilbertSchmidtEnergy_le_tsum_singularValue_sq (T : E →L[𝕜] F) (b : 
   set c := OrthonormalBasis.span b.orthonormal s
   set C : V →L[𝕜] W := W.orthogonalProjectionOnto.comp (T.comp V.subtypeL)
   have hC (i : s) : ‖C (c i)‖ₑ = ‖T (b i)‖ₑ := by
-    have hW : T (c i : E) ∈ W := Submodule.mem_map_of_mem (c i).2
+    have hW : T (c i : E) ∈ W := Submodule.mem_map_of_mem (c i).property
     rw [← ofReal_norm, ← ofReal_norm, comp_apply, comp_apply, Submodule.subtypeL_apply,
       W.norm_orthogonalProjectionOnto_apply hW, OrthonormalBasis.span_apply]
   calc ∑ i ∈ s, ‖T (b i)‖ₑ ^ 2 = C.hilbertSchmidtEnergy c.toHilbertBasis := by

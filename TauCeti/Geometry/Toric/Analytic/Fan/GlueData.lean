@@ -144,7 +144,7 @@ nonempty, and the charts cover the realization. -/
 @[simp]
 theorem isEmpty_analyticRealization_iff : IsEmpty (Φ.analyticRealization hΦ) ↔ IsEmpty Φ.cones :=
   ⟨fun _ ↦ ⟨fun σ ↦ isEmptyElim (Φ.analyticAffineChartι hΦ σ
-      (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)))⟩,
+      (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)))⟩,
     fun _ ↦ ⟨fun x ↦ isEmptyElim (Φ.exists_analyticAffineChartι_apply_eq hΦ x).choose⟩⟩
 
 /-- The analytic realization of a fan with no cones, such as the empty subfan of any fan, is
@@ -186,7 +186,7 @@ theorem analyticAffineChartι_eq_analyticAffineChartι_iff {σ τ : Φ.cones}
     erw [analyticGlueData_t, analyticOverlapTransition_apply, analyticOverlapHomeomorph_apply]
   constructor
   · rintro ⟨v, hx, hy⟩
-    obtain ⟨z, hz⟩ := (Φ.mem_analyticOverlapOpens hΦ σ τ v.1).1 v.2
+    obtain ⟨z, hz⟩ := (Φ.mem_analyticOverlapOpens hΦ σ τ v.val).1 v.property
     obtain rfl : v = ⟨Φ.analyticOverlapLeft σ τ z, Φ.analyticOverlapLeft_mem hΦ σ τ z⟩ :=
       Subtype.ext hz.symm
     exact ⟨z, hx, (key z _).symm.trans hy⟩
@@ -217,11 +217,11 @@ inclusion, for any face inclusion in a regular fan. -/
 theorem analyticAffineChartι_faceAffinePointMap {τ σ : Φ.cones} (h : τ ≤ σ)
     (x : (Φ.analyticAffineChartDiagram).obj τ) :
     Φ.analyticAffineChartι hΦ σ
-        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h) x) =
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property h) x) =
       Φ.analyticAffineChartι hΦ τ x := by
   let f : τ ⟶ σ := homOfLE h
   have hface : (Φ.analyticAffineChartDiagram).map f x =
-      faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 h) x :=
+      faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property h) x :=
     Φ.analyticFaceMap_apply f x
   exact (congrArg (Φ.analyticAffineChartι hΦ σ) hface).symm.trans
     (ConcreteCategory.congr_hom
@@ -232,9 +232,9 @@ analytic realization of the fan. -/
 theorem analyticAffineChartι_faceAffinePointMap_eq {υ σ τ : Φ.cones}
     (hυσ : υ ≤ σ) (hυτ : υ ≤ τ) (x : (Φ.analyticAffineChartDiagram).obj υ) :
     Φ.analyticAffineChartι hΦ σ
-        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.2 υ.2 hυσ) x) =
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le σ.property υ.property hυσ) x) =
       Φ.analyticAffineChartι hΦ τ
-        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le τ.2 υ.2 hυτ) x) :=
+        (faceAffinePointMap Φ.lattice (Φ.isFaceOf_of_le τ.property υ.property hυτ) x) :=
   (Φ.analyticAffineChartι_faceAffinePointMap hΦ hυσ x).trans
     (Φ.analyticAffineChartι_faceAffinePointMap hΦ hυτ x).symm
 

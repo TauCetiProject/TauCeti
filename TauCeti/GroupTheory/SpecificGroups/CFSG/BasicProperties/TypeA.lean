@@ -74,8 +74,8 @@ while the standard fixed subgroup is the finite special linear group by the coef
 identification. Both transports are the general group-theoretic ones. -/
 def specialLinearEquivFixedPoints (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.A r q).Valid) :
-    SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
-      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent) ≃*
+    SpecialLinearGroup (Fin ((ofA r q hv).val.rank + 1))
+      (GaloisField (ofA r q hv).val.characteristic (ofA r q hv).val.fieldExponent) ≃*
       (ofA r q hv).FixedPoints := by
   let d := ofA r q hv
   have hintertwine : d.carrierEquivSpecialLinear.toMonoidHom.comp d.steinberg =
@@ -84,24 +84,24 @@ def specialLinearEquivFixedPoints (r : ℕ) (q : PrimePower)
   let e := TauCeti.fixedSubgroupCongr d.carrierEquivSpecialLinear hintertwine
   have hF := specialLinearSteinberg_ofA r q hv
   let eF : ↥(fixedSubgroup d.specialLinearSteinberg) ≃*
-      fixedSubgroup (SpecialLinearGroup.map (n := Fin (d.1.rank + 1))
-        (iterateFrobenius d.1.Closure d.1.characteristic d.1.fieldExponent)) :=
+      fixedSubgroup (SpecialLinearGroup.map (n := Fin (d.val.rank + 1))
+        (iterateFrobenius d.val.Closure d.val.characteristic d.val.fieldExponent)) :=
     MulEquiv.subgroupCongr (congrArg fixedSubgroup hF)
-  exact (ValidLieTypeIndex.specialLinearEquivFrobeniusFixedPoints d.1
-    (Fin (d.1.rank + 1))).trans (eF.symm.trans e.symm)
+  exact (ValidLieTypeIndex.specialLinearEquivFrobeniusFixedPoints d.val
+    (Fin (d.val.rank + 1))).trans (eF.symm.trans e.symm)
 
 /-- The isomorphism to the finite special linear group sends a finite-field matrix to the fixed
 point whose image under the carrier equivalence is that matrix read over the closure. -/
 @[simp]
 theorem specialLinearEquivFixedPoints_apply (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.A r q).Valid)
-    (g : SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
-      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent)) :
+    (g : SpecialLinearGroup (Fin ((ofA r q hv).val.rank + 1))
+      (GaloisField (ofA r q hv).val.characteristic (ofA r q hv).val.fieldExponent)) :
     ((specialLinearEquivFixedPoints r q hv g : (ofA r q hv).FixedPoints) :
         (ofA r q hv).AmbientGroup) =
       (ofA r q hv).carrierEquivSpecialLinear.symm
-        (ValidLieTypeIndex.specialLinearEquivFrobeniusFixedPoints (ofA r q hv).1
-          (Fin ((ofA r q hv).1.rank + 1)) g) := by
+        (ValidLieTypeIndex.specialLinearEquivFrobeniusFixedPoints (ofA r q hv).val
+          (Fin ((ofA r q hv).val.rank + 1)) g) := by
   unfold specialLinearEquivFixedPoints
   simp only [MulEquiv.trans_apply]
   erw [TauCeti.coe_fixedSubgroupCongr_symm_apply]
@@ -129,8 +129,8 @@ this holds over every field, and a valid `A₁(q)` has `q ≥ 4`. The validity p
 exactly the two nonperfect groups `SL₂(𝔽₂)` and `SL₂(𝔽₃)`. -/
 theorem commutator_specialLinearGroup_eq_top (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.A r q).Valid) :
-    commutator (SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
-      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent)) = ⊤ := by
+    commutator (SpecialLinearGroup (Fin ((ofA r q hv).val.rank + 1))
+      (GaloisField (ofA r q hv).val.characteristic (ofA r q hv).val.fieldExponent)) = ⊤ := by
   obtain ⟨hr, hq⟩ := one_le_and_four_le_card_of_valid hv
   rcases hr.eq_or_lt with rfl | hr
   · apply SpecialLinearGroup.commutator_eq_top_of_four_le_natCard
@@ -149,8 +149,8 @@ That group is perfect on every valid index, so its derived subgroup is the whole
 derived central quotient is its quotient by the centre. -/
 def projectiveSpecialLinearEquivGroup (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.A r q).Valid) :
-    ProjectiveSpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
-      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent) ≃*
+    ProjectiveSpecialLinearGroup (Fin ((ofA r q hv).val.rank + 1))
+      (GaloisField (ofA r q hv).val.characteristic (ofA r q hv).val.fieldExponent) ≃*
       (ofA r q hv).Group :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect (commutator_specialLinearGroup_eq_top r q hv)
     (specialLinearEquivFixedPoints r q hv)
@@ -160,11 +160,11 @@ the class of the corresponding fixed point. -/
 @[simp]
 theorem projectiveSpecialLinearEquivGroup_mk (r : ℕ) (q : PrimePower)
     (hv : (LieTypeIndex.A r q).Valid)
-    (x : commutator (SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
-      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent))) :
+    (x : commutator (SpecialLinearGroup (Fin ((ofA r q hv).val.rank + 1))
+      (GaloisField (ofA r q hv).val.characteristic (ofA r q hv).val.fieldExponent))) :
     projectiveSpecialLinearEquivGroup r q hv (QuotientGroup.mk (s := Subgroup.center _)
-        (x : Matrix.SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
-          (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent))) =
+        (x : Matrix.SpecialLinearGroup (Fin ((ofA r q hv).val.rank + 1))
+          (GaloisField (ofA r q hv).val.characteristic (ofA r q hv).val.fieldExponent))) =
       ((MulEquiv.commutatorCongr (specialLinearEquivFixedPoints r q hv) x :
         commutator (ofA r q hv).FixedPoints) : (ofA r q hv).Group) :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
@@ -173,7 +173,7 @@ theorem projectiveSpecialLinearEquivGroup_mk (r : ℕ) (q : PrimePower)
 which is simple by Iwasawa's criterion because `SL_{r+1}(𝔽_q)` is perfect. -/
 theorem isSimpleGroup_group_ofA (r : ℕ) (q : PrimePower) (hv : (LieTypeIndex.A r q).Valid) :
     IsSimpleGroup (ofA r q hv).Group :=
-  have : Nontrivial (Fin ((ofA r q hv).1.rank + 1)) :=
+  have : Nontrivial (Fin ((ofA r q hv).val.rank + 1)) :=
     Fin.nontrivial_iff_two_le.mpr (by
       simpa [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType] using
         (one_le_and_four_le_card_of_valid hv).1)

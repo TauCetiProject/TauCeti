@@ -42,6 +42,8 @@ square matrix is still one after mutation, so mutation acts on exchange matrices
   relabelling of rows and columns.
 * `TauCeti.matrixMutation_fromBlocks_inl`, `TauCeti.matrixMutation_fromBlocks_inr`: mutation
   of a block diagonal matrix mutates one block and fixes the other.
+* `Matrix.IsSkewSymmetrizer.matrixMutation_apply_of_row_nonneg_or_nonpos`: source or sink
+  mutation reverses only incident entries.
 * `Matrix.IsSkewSymmetrizer.matrixMutation`: a skew-symmetrizer of a square matrix is a
   skew-symmetrizer of each of its mutations.
 * `TauCeti.ExchangeMatrix.mutation_mutation`: mutation of exchange matrices is an involution.
@@ -134,6 +136,44 @@ theorem matrixMutation_matrixMutation (row : K ↪ I) (B : Matrix I K ℤ) (k : 
 theorem matrixMutation_involutive (row : K ↪ I) (k : K) :
     Function.Involutive fun B ↦ matrixMutation row B k :=
   fun B ↦ matrixMutation_matrixMutation row B k
+
+/-- Mutations in two directions with zero entries between them commute, for any rectangular
+integer matrix, including matrices with nonzero diagonal. -/
+theorem matrixMutation_matrixMutation_comm (row : K ↪ I) (B : Matrix I K ℤ) (k l : K)
+    (hkl : B (row k) l = 0) (hlk : B (row l) k = 0) :
+    matrixMutation row (matrixMutation row B k) l =
+      matrixMutation row (matrixMutation row B l) k := by
+  by_cases h : k = l
+  · subst l
+    rfl
+  have hrow : row k ≠ row l := row.injective.ne h
+  have rk (j : K) : matrixMutation row B l (row k) j = B (row k) j :=
+    matrixMutation_apply_of_apply_col_eq_zero hrow hkl j
+  have ck (i : I) : matrixMutation row B l i k = B i k :=
+    matrixMutation_apply_of_apply_row_eq_zero h hlk i
+  have rl (j : K) : matrixMutation row B k (row l) j = B (row l) j :=
+    matrixMutation_apply_of_apply_col_eq_zero (Ne.symm hrow) hlk j
+  have cl (i : I) : matrixMutation row B k i l = B i l :=
+    matrixMutation_apply_of_apply_row_eq_zero (Ne.symm h) hkl i
+  ext i j
+  conv_lhs => rw [matrixMutation_apply]
+  conv_rhs => rw [matrixMutation_apply]
+  simp only [rk, ck, rl, cl]
+  by_cases hik : i = row k
+  · subst i
+    by_cases hj : j = l <;> simp [matrixMutation_apply, hrow, hkl, hj]
+  by_cases hil : i = row l
+  · subst i
+    by_cases hj : j = k <;> simp [matrixMutation_apply, Ne.symm hrow, hlk, hj]
+  by_cases hjk : j = k
+  · subst j
+    simp [matrixMutation_apply, h, hik, hil, hlk]
+  by_cases hjl : j = l
+  · subst j
+    simp [matrixMutation_apply, Ne.symm h, hik, hil, hkl]
+  simp only [hik, hil, hjk, hjl, false_or, ite_false]
+  rw [matrixMutation_apply_of_ne hik hjk, matrixMutation_apply_of_ne hil hjl]
+  ring
 
 /-- Mutation commutes with negation of the matrix. -/
 @[simp]
@@ -257,6 +297,31 @@ theorem matrixMutation_refl_apply_of_ne {i j : K} (hi : i ≠ k) (hj : j ≠ k) 
       B i j + (B i k)⁺ * (B k j)⁺ - (B i k)⁻ * (B k j)⁻ :=
   matrixMutation_apply_of_ne hi hj
 
+/-- Away from its incident row and column, mutation at a nonnegative row fixes entries. -/
+theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation_apply_of_row_nonneg
+    (h : B.IsSkewSymmetrizer s) {k i j : K}
+    (hk : ∀ l, 0 ≤ B k l) (hi : i ≠ k) (hj : j ≠ k) :
+    TauCeti.matrixMutation (Function.Embedding.refl K) B k i j = B i j := by
+  have hcol : B i k ≤ 0 := by
+    exact le_of_not_gt fun hi ↦ (not_lt_of_ge (hk i)) (h.apply_pos_iff.mp hi)
+  rw [TauCeti.matrixMutation_apply_of_ne hi hj]
+  simp [posPart_eq_zero.mpr hcol, negPart_eq_zero.mpr (hk j)]
+
+/-- Source or sink mutation only reverses the incident entries. -/
+theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation_apply_of_row_nonneg_or_nonpos
+    (h : B.IsSkewSymmetrizer s) (k i j : K)
+    (hk : (∀ l, 0 ≤ B k l) ∨ ∀ l, B k l ≤ 0) :
+    TauCeti.matrixMutation (Function.Embedding.refl K) B k i j =
+      if i = k ∨ j = k then -B i j else B i j := by
+  split_ifs with hij
+  · simp [TauCeti.matrixMutation_apply, hij]
+  · obtain ⟨hi, hj⟩ := not_or.mp hij
+    rcases hk with hk | hk
+    · exact h.matrixMutation_apply_of_row_nonneg hk hi hj
+    · have hneg : ∀ l, 0 ≤ (-B) k l := fun l ↦ neg_nonneg.mpr (hk l)
+      have heq := h.neg.matrixMutation_apply_of_row_nonneg hneg hi hj
+      simpa only [TauCeti.matrixMutation_neg, Matrix.neg_apply, neg_inj] using heq
+
 /-- A skew-symmetrizer of a square matrix is a skew-symmetrizer of each of its mutations. -/
 protected theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation (h : B.IsSkewSymmetrizer s)
     (k : K) : (matrixMutation (Function.Embedding.refl K) B k).IsSkewSymmetrizer s where
@@ -274,6 +339,17 @@ protected theorem _root_.Matrix.IsSkewSymmetrizer.matrixMutation (h : B.IsSkewSy
       (B k i)⁺ * h.mul_negPart k j
 
 end square
+
+/-- Matrix mutation preserves skew-symmetry of the principal block of a rectangular matrix. -/
+theorem matrixMutation_skew [DecidableEq I] [DecidableEq K] {row : K ↪ I} {B : Matrix I K ℤ}
+    (hB : ∀ i j, B (row i) j = -B (row j) i) (k : K) :
+    ∀ i j, matrixMutation row B k (row i) j = -matrixMutation row B k (row j) i := by
+  have hs : (B.submatrix row id).IsSkewSymmetrizer (fun _ ↦ 1) :=
+    ⟨fun _ ↦ by decide, fun i j ↦ by simpa using hB i j⟩
+  have hm := hs.matrixMutation k
+  rw [matrixMutation_refl_submatrix_row] at hm
+  intro i j
+  simpa using hm.mul_apply i j
 
 /-- The matrix with rows `(0, 1)` and `(-2, 0)` is negated by mutation in its first direction. -/
 example :
@@ -343,6 +419,16 @@ theorem mutation_mutation (k : K) : (B.mutation k).mutation k = B := by
 theorem mutation_involutive (k : K) :
     Function.Involutive fun B : ExchangeMatrix row ↦ B.mutation k :=
   fun B ↦ B.mutation_mutation k
+
+/-- Mutations at nonadjacent mutable indices commute. A single zero entry suffices because
+the principal block is skew-symmetrizable. -/
+theorem mutation_mutation_comm {row : K ↪ I} (B : ExchangeMatrix row) (k l : K)
+    (hkl : B.matrix (row k) l = 0) : (B.mutation k).mutation l = (B.mutation l).mutation k := by
+  ext : 1
+  · simp only [mutation_matrix]
+    exact matrixMutation_matrixMutation_comm row B.matrix k l hkl
+      ((B.isSkewSymmetrizer.apply_eq_zero_iff).mp hkl)
+  · simp
 
 /-- Mutation of exchange matrices commutes with injective restriction and relabelling of the
 rows and columns. -/

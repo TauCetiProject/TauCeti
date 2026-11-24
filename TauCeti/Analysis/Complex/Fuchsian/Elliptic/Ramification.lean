@@ -72,7 +72,7 @@ theorem ellipticRamificationIndex_def (h : Δ ≤ Γ) (z : ℍ) :
 /-- The relative stabilizer index depends only on the source orbit. -/
 theorem ellipticRamificationIndex_smul (h : Δ ≤ Γ) (g : Δ) (z : ℍ) :
     ellipticRamificationIndex h (g • z) = ellipticRamificationIndex h z := by
-  let gΓ : Γ := ⟨g.1, h g.2⟩
+  let gΓ : Γ := ⟨g.val, h g.property⟩
   have hgΓ : gΓ • z = g • z := by
     simp only [Subgroup.smul_def, gΓ]
   calc
@@ -246,7 +246,7 @@ theorem map_mem_stabilizerBallQuotientChart_source
       obtain ⟨g, hg⟩ := (mem_stabilizerBallQuotientChart_source_iff hε hopenΔ).1 hq
       rw [TauCeti.Setoid.map_of_le_mk]
       exact (mem_stabilizerBallQuotientChart_source_iff hε hopenΓ).2
-        ⟨⟨g.1, h g.2⟩, hg⟩
+        ⟨⟨g.val, h g.property⟩, hg⟩
 
 /-- On the entire source of a common elliptic chart, the quotient map is the power map
 of degree equal to the elliptic ramification index. -/

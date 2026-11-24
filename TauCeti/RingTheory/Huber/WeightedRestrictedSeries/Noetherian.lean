@@ -51,7 +51,7 @@ variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [Nonarchimedean
 private noncomputable def weightedVarHom :
     MvPolynomial (Σ i, T i) P.ringOfDefinition →+* P.weightedRingOfDefinition hT :=
   MvPolynomial.eval₂Hom (P.weightedRingOfDefinitionC hT)
-    fun s ↦ ⟨_, P.weightedC_mul_weightedX_mem_weightedRingOfDefinition hT s.2.2⟩
+    fun s ↦ ⟨_, P.weightedC_mul_weightedX_mem_weightedRingOfDefinition hT s.2.property⟩
 
 /-- Modulo the ideal of definition `I⟨X⟩_T`, every element of `A₀⟨X⟩_T` is a polynomial over `A₀`
 in the weighted variables `t Xᵢ`, `t ∈ Tᵢ`: all but finitely many coefficients of a restricted
@@ -64,7 +64,7 @@ private theorem surjective_mk_comp_weightedVarHom :
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
   -- truncate `f` to a polynomial whose coefficients still meet the `A₀` bound
   obtain ⟨p, hp, hfp⟩ := exists_mvPolynomial_sub_mem_weightedNhd_of_mem_weightedSubring hT
-    ((P.weightedRingOfDefinition_def hT).le f.2) ⟨P.idealImage 1, P.isOpen_idealImage 1⟩
+    ((P.weightedRingOfDefinition_def hT).le f.property) ⟨P.idealImage 1, P.isOpen_idealImage 1⟩
   obtain ⟨q, hq⟩ : weightedPolynomialHom T hT p ∈ R := by
     rw [p.as_sum, map_sum]
     exact sum_mem fun ν _ ↦ weightedPolynomialHom_monomial_mem_of_mem_weightMul hT (Q := R)

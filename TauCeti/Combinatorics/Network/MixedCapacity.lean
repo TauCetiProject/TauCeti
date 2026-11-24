@@ -372,9 +372,9 @@ than `t` carries the value entering that vertex. -/
 def Flow.mixedSplitEquiv (hst : s ≠ t) :
     {f : Flow cap s t // f.RespectsVertexCapacity c} ≃
       Flow (assignment cap (mixedSplitCapacity cap c s t)) (s, true) (t, false) where
-  toFun f := toSplitFlow f.1 f.2
+  toFun f := toSplitFlow f.val f.property
   invFun := ofSplitFlow hst
-  left_inv f := Subtype.ext (Flow.ext (originalAssignment_assignment f.1.toFun _))
+  left_inv f := Subtype.ext (Flow.ext (originalAssignment_assignment f.val.toFun _))
   right_inv g := by
     refine Flow.ext (assignment_ext (originalAssignment_assignment _ _) fun v ↦ ?_)
     -- The split arrow of `v` carries the value forced by conservation at a copy of `v`.
@@ -394,31 +394,31 @@ variable (hst : s ≠ t)
 @[simp]
 theorem Flow.originalAssignment_mixedSplitEquiv_apply
     (f : {f : Flow cap s t // f.RespectsVertexCapacity c}) :
-    originalAssignment (Flow.mixedSplitEquiv hst f).toFun = f.1.toFun :=
+    originalAssignment (Flow.mixedSplitEquiv hst f).toFun = f.val.toFun :=
   originalAssignment_assignment _ _
 
 /-- The split arrow of a vertex other than the sink carries the value entering that vertex. -/
 theorem Flow.mixedSplitEquiv_apply_split (f : {f : Flow cap s t // f.RespectsVertexCapacity c})
     {v : V} (hv : v ≠ t) :
-    (Flow.mixedSplitEquiv hst f).toFun (split v) = arrowSum f.1.toFun univ {v} :=
+    (Flow.mixedSplitEquiv hst f).toFun (split v) = arrowSum f.val.toFun univ {v} :=
   (assignment_split _ _ v).trans (splitValue_of_ne _ hv)
 
 /-- The split arrow of the sink carries the value leaving it. -/
 theorem Flow.mixedSplitEquiv_apply_split_self
     (f : {f : Flow cap s t // f.RespectsVertexCapacity c}) :
-    (Flow.mixedSplitEquiv hst f).toFun (split t) = arrowSum f.1.toFun {t} univ :=
+    (Flow.mixedSplitEquiv hst f).toFun (split t) = arrowSum f.val.toFun {t} univ :=
   (assignment_split _ _ t).trans (splitValue_self _)
 
 @[simp]
 theorem Flow.mixedSplitEquiv_symm_apply_toFun
     (g : Flow (assignment cap (mixedSplitCapacity cap c s t)) (s, true) (t, false)) :
-    ((Flow.mixedSplitEquiv hst).symm g).1.toFun = originalAssignment g.toFun :=
+    ((Flow.mixedSplitEquiv hst).symm g).val.toFun = originalAssignment g.toFun :=
   (rfl)
 
 /-- The correspondence preserves values. -/
 @[simp]
 theorem Flow.val_mixedSplitEquiv (f : {f : Flow cap s t // f.RespectsVertexCapacity c}) :
-    (Flow.mixedSplitEquiv hst f).val = f.1.val := by
+    (Flow.mixedSplitEquiv hst f).val = f.val.val := by
   rw [BoundedFlow.val_def, BoundedFlow.val_def, excessAt_entrance,
     Flow.mixedSplitEquiv_apply_split_self, Flow.originalAssignment_mixedSplitEquiv_apply,
     excessAt_eq_arrowSum_sub]
@@ -480,7 +480,7 @@ theorem Flow.exists_respectsVertexCapacity_val_eq_mem (hst : s ≠ t) (hcap : 0 
       assignment cap (mixedSplitCapacity cap c s t) e ∈ H := by
     rcases x with ⟨v, _ | _⟩ <;> rcases y with ⟨w, _ | _⟩
     · exact e.elim
-    · obtain rfl : v = w := e.2
+    · obtain rfl : v = w := e.property
       rw [eq_split e, assignment_split]
       exact (hsplit v).2
     · obtain ⟨e, rfl⟩ := exists_original e
@@ -490,7 +490,7 @@ theorem Flow.exists_respectsVertexCapacity_val_eq_mem (hst : s ≠ t) (hcap : 0 
   obtain ⟨g, hg, hgH⟩ := Flow.exists_isMaximum_mem (s := (s, true)) (t := (t, false)) hsplit₀ H
     hsplitH
   obtain ⟨S, hs, ht, hval⟩ := hg.exists_val_eq_arrowSum (by simp)
-  refine ⟨((Flow.mixedSplitEquiv hst).symm g).1, ((Flow.mixedSplitEquiv hst).symm g).2,
+  refine ⟨((Flow.mixedSplitEquiv hst).symm g).val, ((Flow.mixedSplitEquiv hst).symm g).property,
     fun _ _ e ↦ ?_, cutVertices S, cutArrows Q S, isMixedSeparator_cutVertices_cutArrows hst hs ht,
     ?_⟩
   · rw [Flow.mixedSplitEquiv_symm_apply_toFun, originalAssignment_apply]

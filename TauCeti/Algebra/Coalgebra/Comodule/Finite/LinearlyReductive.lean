@@ -73,7 +73,8 @@ theorem isSplitMono_of_isCompletelyReducible {M : FGComoduleCat.{u, v, w} k C}
     apply Subtype.ext
     exact (Comodule.Hom.codRestrict_apply P W hP (W.subtype x)).trans
       ((hfix (W.subtype x)
-        (by simpa only [Subcomodule.subtype_apply] using x.property)).trans
+        (by simpa only [Subcomodule.subtype_apply, Subcomodule.mem_toSubmodule]
+          using x.property)).trans
           (Subcomodule.subtype_apply W x))
   exact IsSplitMono.mk' ⟨p ≫ inv e, by
     rw [← hei, Category.assoc, ← Category.assoc i, hip]
@@ -96,13 +97,14 @@ theorem isCompletelyReducible_of_forall_isSplitMono {M : FGComoduleCat.{u, v, w}
   let r' : Comodule.Hom k C M W := r.hom
   refine ⟨W.subtype.comp r', ?_, ?_⟩
   · intro x
-    simpa only [Comodule.Hom.comp_apply, Subcomodule.subtype_apply] using (r' x).property
+    simpa only [Comodule.Hom.coe_toLinearMap, Comodule.Hom.comp_apply, Subcomodule.subtype_apply,
+      Subcomodule.mem_toSubmodule] using (r' x).property
   · intro x hx
     have h : r' (W.subtype ⟨x, hx⟩) = ⟨x, hx⟩ :=
       congrArg (fun g : of (R := k) (C := C) W ⟶
         of (R := k) (C := C) W ↦ (g.hom : Comodule.Hom k C W W) ⟨x, hx⟩) hr
-    simpa only [Comodule.Hom.comp_apply, Subcomodule.subtype_apply] using
-      congrArg Subtype.val h
+    simpa only [Comodule.Hom.coe_toLinearMap, Comodule.Hom.comp_apply,
+      Subcomodule.subtype_apply] using congrArg Subtype.val h
 
 /-- A finite comodule over a flat coalgebra over a Noetherian ring is completely reducible exactly
 when every monomorphism into it admits a retraction. -/

@@ -24,7 +24,7 @@ Selmer group `K(S, n)`, the power classes whose `v`-adic valuation is divisible 
 `v ∉ S` (`TauCeti.kummerMap_mem_unramifiedOutsideKummerCohomology_iff`). Indeed restriction to
 `K_v` carries the Kummer class of `a ∈ Kˣ` to the Kummer class of its image in `K_v`
 (`TauCeti.explicitMap1_kummerMap`), which is unramified exactly when `n` divides the normalized
-valuation of `a` at `v` (`TauCeti.explicitRes1_kummerMap_eq_zero_iff`, using that `v` does not
+valuation of `a` at `v` (`TauCeti.kummerMap_mem_unramifiedH1_iff`, using that `v` does not
 divide `n`). In particular, under these hypotheses the condition does not depend on the chosen
 embeddings `τ`.
 
@@ -35,7 +35,7 @@ unramified outside a finite `S`; see
 ## Main definitions
 
 * `TauCeti.unramifiedOutsideKummerCohomology τ S n`: the classes of `H¹(G_K, μₙ)` whose restriction
-  to every `K_v` with `v ∉ S` vanishes on inertia.
+  to every `K_v` with `v ∉ S` is unramified.
 
 ## Main results
 
@@ -66,35 +66,29 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R]
   (S : Set (HeightOneSpectrum R)) (n : ℕ)
 
 /-- **The Kummer classes unramified outside `S`**: the classes of `H¹(G_K, μₙ)` whose restriction
-to the completion `K_v` along `τ v`, for every prime `v ∉ S`, vanishes on the inertia subgroup of
-`K_v`. -/
+to the completion `K_v` along `τ v`, for every prime `v ∉ S`, lies in `unramifiedH1`. -/
 def unramifiedOutsideKummerCohomology :
     AddSubgroup (H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :=
   ⨅ (v : HeightOneSpectrum R) (_ : v ∉ S),
-    ((explicitRes1 (AbsoluteGaloisGroup (v.adicCompletion K)) (KummerCoeff (v.adicCompletion K) n)
-      ((inertiaSubgroup (v.adicCompletion K)).map
-        (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K)).toMonoidHom)).comp
+    (unramifiedH1 (v.adicCompletion K) (KummerCoeff (v.adicCompletion K) n)).comap
       (explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K n)
         (AbsoluteGaloisGroup (v.adicCompletion K)) (KummerCoeff (v.adicCompletion K) n)
         (absoluteGaloisGroupMap (τ v)) (kummerCoeffBaseChange n (τ v))
-        continuous_of_discreteTopology (kummerCoeffBaseChange_smul n (τ v)))).ker
+        continuous_of_discreteTopology (kummerCoeffBaseChange_smul n (τ v)))
 
 variable {τ S n}
 
 /-- A class is unramified outside `S` exactly when, at every `v ∉ S`, its restriction to `K_v`
-vanishes on inertia. -/
+is unramified. -/
 theorem mem_unramifiedOutsideKummerCohomology_iff
     {c : H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)} :
     c ∈ unramifiedOutsideKummerCohomology τ S n ↔ ∀ v ∉ S,
-      explicitRes1 (AbsoluteGaloisGroup (v.adicCompletion K)) (KummerCoeff (v.adicCompletion K) n)
-        ((inertiaSubgroup (v.adicCompletion K)).map
-          (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K)).toMonoidHom)
-        (explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K n)
-          (AbsoluteGaloisGroup (v.adicCompletion K)) (KummerCoeff (v.adicCompletion K) n)
-          (absoluteGaloisGroupMap (τ v)) (kummerCoeffBaseChange n (τ v))
-          continuous_of_discreteTopology (kummerCoeffBaseChange_smul n (τ v)) c) = 0 := by
-  simp only [unramifiedOutsideKummerCohomology, AddSubgroup.mem_iInf, AddMonoidHom.mem_ker,
-    AddMonoidHom.comp_apply]
+      explicitMap1 (AbsoluteGaloisGroup K) (KummerCoeff K n)
+        (AbsoluteGaloisGroup (v.adicCompletion K)) (KummerCoeff (v.adicCompletion K) n)
+        (absoluteGaloisGroupMap (τ v)) (kummerCoeffBaseChange n (τ v))
+        continuous_of_discreteTopology (kummerCoeffBaseChange_smul n (τ v)) c ∈
+        unramifiedH1 (v.adicCompletion K) (KummerCoeff (v.adicCompletion K) n) := by
+  simp only [unramifiedOutsideKummerCohomology, AddSubgroup.mem_iInf, AddSubgroup.mem_comap]
 
 /-- **Kummer classes unramified outside `S` are the Selmer group `K(S, n)`.** If `n` is invertible
 in `K` and no prime outside `S` divides `n`, the Kummer class of `a ∈ Kˣ` is unramified outside
@@ -116,7 +110,7 @@ theorem kummerMap_mem_unramifiedOutsideKummerCohomology_iff (hn : IsUnit (n : K)
     rw [← HeightOneSpectrum.valuationOfNeZero_eq, ← WithZero.coe_inv, WithZero.coe_inj] at h
     rw [h, toAdd_inv]
   rw [explicitMap1_kummerMap n (τ v) hn a,
-    explicitRes1_kummerMap_eq_zero_iff (v.adicCompletion K) _
+    kummerMap_mem_unramifiedH1_iff (v.adicCompletion K) _
       (mt v.ringChar_residueField_adicCompletion_dvd_iff.1 (hS v hv)),
     hval, Int.dvd_neg, HeightOneSpectrum.valuationOfNeZeroMod_mk_eq_one_iff]
 

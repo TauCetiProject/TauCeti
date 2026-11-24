@@ -44,13 +44,13 @@ variable (F : C ⥤ Type*)
 the action map `Γ₁ ×_{Γ₀} Z → Z` of the family. -/
 def act (q : (Quiver.Total.left : Quiver.Total C → C).Pullback (Functor.Elements.obj (F := F))) :
     F.Elements :=
-  .mk (F.map (eqToHom q.2.symm ≫ q.1.1.hom) q.1.2.val)
+  .mk (F.map (eqToHom q.property.symm ≫ q.val.1.hom) q.val.2.val)
 
 /-- The translate of a point by an arrow lies over the target of the arrow. -/
 @[simp]
 theorem act_obj
     (q : (Quiver.Total.left : Quiver.Total C → C).Pullback (Functor.Elements.obj (F := F))) :
-    (act F q).obj = q.1.1.right := (rfl)
+    (act F q).obj = q.val.1.right := (rfl)
 
 /-- The translate of a point `z` over `x` by an arrow `g : x ⟶ y` is `F.map g z`. -/
 @[simp]
@@ -63,7 +63,7 @@ of the total space lying over its source. -/
 def totalEquiv : Quiver.Total F.Elements ≃
     (Quiver.Total.left : Quiver.Total C → C).Pullback (Functor.Elements.obj (F := F)) where
   toFun a := ⟨(⟨a.left.obj, a.right.obj, a.hom.hom⟩, a.left), rfl⟩
-  invFun q := ⟨q.1.2, act F q, homMk (eqToHom q.2.symm ≫ q.1.1.hom) rfl⟩
+  invFun q := ⟨q.val.2, act F q, homMk (eqToHom q.property.symm ≫ q.val.1.hom) rfl⟩
   left_inv := by
     rintro ⟨x, y, f⟩
     have hy : act F ⟨(⟨x.obj, y.obj, f.hom⟩, x), rfl⟩ = y := by
@@ -90,7 +90,7 @@ theorem totalEquiv_apply (a : Quiver.Total F.Elements) :
 @[simp]
 theorem totalEquiv_symm_apply_left
     (q : (Quiver.Total.left : Quiver.Total C → C).Pullback (Functor.Elements.obj (F := F))) :
-    ((totalEquiv F).symm q).left = q.1.2 := (rfl)
+    ((totalEquiv F).symm q).left = q.val.2 := (rfl)
 
 /-- The target of the total arrow corresponding to `(g, z)` is the translate of `z` by `g`. -/
 @[simp]
@@ -111,7 +111,7 @@ the original anchor. This uses the native precomposition functor on categories o
 def precompEquiv : (K ⋙ F).Elements ≃
     K.obj.Pullback (Functor.Elements.obj (F := F)) where
   toFun z := ⟨(z.obj, (precomp K F).obj z), rfl⟩
-  invFun q := { obj := q.1.1, val := F.map (eqToHom q.2.symm) q.1.2.val }
+  invFun q := { obj := q.val.1, val := F.map (eqToHom q.property.symm) q.val.2.val }
   left_inv z := by
     cases z
     simp
@@ -129,13 +129,13 @@ theorem precompEquiv_apply (z : (K ⋙ F).Elements) :
 /-- The anchor of the point reconstructed from fiber-product coordinates. -/
 @[simp]
 theorem precompEquiv_symm_apply_obj (q : K.obj.Pullback (Functor.Elements.obj (F := F))) :
-    ((precompEquiv F K).symm q).obj = q.1.1 := (rfl)
+    ((precompEquiv F K).symm q).obj = q.val.1 := (rfl)
 
 /-- The original point is recovered by forgetting the new base coordinate. -/
 @[simp]
 theorem precomp_obj_precompEquiv_symm (q : K.obj.Pullback (Functor.Elements.obj (F := F))) :
-    (precomp K F).obj ((precompEquiv F K).symm q) = q.1.2 := by
-  exact congrArg (fun p => p.1.2) ((precompEquiv F K).apply_symm_apply q)
+    (precomp K F).obj ((precompEquiv F K).symm q) = q.val.2 := by
+  exact congrArg (fun p => p.val.2) ((precompEquiv F K).apply_symm_apply q)
 
 end BaseChange
 
