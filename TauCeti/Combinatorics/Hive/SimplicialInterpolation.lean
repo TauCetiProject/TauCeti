@@ -65,115 +65,122 @@ variable {R : Type*} [AddCommGroup R]
 
 /-- The zero-sum triple of finite differences of `f : Vertex n → R` on a unit triangle
 `T : UnitTriangle n` along the fixed outer-perimeter directions `A → B` (`s = 0`, `(-1, 1, 0)`),
-`B → C` (`s = 1`, `(0, -1, 1)`), and `C → A` (`s = 2`, `(1, 0, -1)`). Both upward and downward
-vertex cycles `vertex 0 → vertex 1 → vertex 2` run clockwise in the plane: on `up b`, each edge
-`vertex s → vertex (s + 1)` matches the `s`-th perimeter direction
-(`f (vertex (s + 1)) - f (vertex s)`); on `down b`, each indexed edge `vertex s → vertex (s + 1)`
-points opposite to the `s`-th perimeter direction, giving `f (vertex s) - f (vertex (s + 1))`. -/
-def triangleGradient (f : Vertex n → R) : UnitTriangle n → Fin 3 → R
-  | .up b, s => f ((UnitTriangle.up b).vertex (s + 1)) - f ((UnitTriangle.up b).vertex s)
-  | .down b, s => f ((UnitTriangle.down b).vertex s) - f ((UnitTriangle.down b).vertex (s + 1))
+`B → C` (`s = 1`, `(0, -1, 1)`), and `C → A` (`s = 2`, `(1, 0, -1)`), bundled as an `S`-linear
+map in `f`. Both upward and downward vertex cycles `vertex 0 → vertex 1 → vertex 2` run
+clockwise in the plane: on `up b`, each edge `vertex s → vertex (s + 1)` matches the `s`-th
+perimeter direction (`f (vertex (s + 1)) - f (vertex s)`); on `down b`, each indexed edge
+`vertex s → vertex (s + 1)` points opposite to the `s`-th perimeter direction, giving
+`f (vertex s) - f (vertex (s + 1))`. -/
+def triangleGradient (S : Type*) {n : ℕ} {R : Type*} [Semiring S] [AddCommGroup R]
+    [Module S R] : (Vertex n → R) →ₗ[S] (UnitTriangle n → Fin 3 → R) :=
+  LinearMap.pi fun T => LinearMap.pi fun s => match T with
+    | .up b => LinearMap.proj (R := S) (φ := fun _ => R) ((UnitTriangle.up b).vertex (s + 1)) -
+        LinearMap.proj (R := S) (φ := fun _ => R) ((UnitTriangle.up b).vertex s)
+    | .down b => LinearMap.proj (R := S) (φ := fun _ => R) ((UnitTriangle.down b).vertex s) -
+        LinearMap.proj (R := S) (φ := fun _ => R) ((UnitTriangle.down b).vertex (s + 1))
 
-@[simp] theorem triangleGradient_up (f : Vertex (m + 1) → R) (b : Vertex m) (s : Fin 3) :
-    triangleGradient f (UnitTriangle.up b) s =
+@[simp] theorem triangleGradient_up (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex (m + 1) → R) (b : Vertex m) (s : Fin 3) :
+    triangleGradient S f (UnitTriangle.up b) s =
       f ((UnitTriangle.up b).vertex (s + 1)) - f ((UnitTriangle.up b).vertex s) := (rfl)
-@[simp] theorem triangleGradient_down (f : Vertex (m + 2) → R) (b : Vertex m) (s : Fin 3) :
-    triangleGradient f (UnitTriangle.down b) s =
+@[simp] theorem triangleGradient_down (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex (m + 2) → R) (b : Vertex m) (s : Fin 3) :
+    triangleGradient S f (UnitTriangle.down b) s =
       f ((UnitTriangle.down b).vertex s) - f ((UnitTriangle.down b).vertex (s + 1)) := (rfl)
-@[simp] theorem sum_triangleGradient (f : Vertex n → R) (T : UnitTriangle n) :
-    ∑ s : Fin 3, triangleGradient f T s = 0 := by
+@[simp] theorem sum_triangleGradient (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex n → R) (T : UnitTriangle n) :
+    ∑ s : Fin 3, triangleGradient S f T s = 0 := by
   have h1 : (0 : Fin 3) + 1 = 1 := rfl
   have h2 : (1 : Fin 3) + 1 = 2 := rfl
   have h3 : (2 : Fin 3) + 1 = 0 := rfl
   cases T <;> simp only [triangleGradient_up, triangleGradient_down, Fin.sum_univ_three,
     h1, h2, h3] <;> abel
-@[simp] theorem triangleGradient_zero (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (0 : Vertex n → R) T s = 0 := by cases T <;> simp
-theorem triangleGradient_add (f g : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (f + g) T s = triangleGradient f T s + triangleGradient g T s := by
-  cases T <;> simp only [triangleGradient_up, triangleGradient_down, Pi.add_apply] <;> abel
-theorem triangleGradient_neg (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (-f) T s = -triangleGradient f T s := by
-  cases T <;> simp only [triangleGradient_up, triangleGradient_down, Pi.neg_apply] <;> abel
-theorem triangleGradient_sub (f g : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (f - g) T s = triangleGradient f T s - triangleGradient g T s := by
-  cases T <;> simp only [triangleGradient_up, triangleGradient_down, Pi.sub_apply] <;> abel
-theorem triangleGradient_smul {S : Type*} [Semiring S] [Module S R] (c : S) (f : Vertex n → R)
+@[simp] theorem triangleGradient_const (S : Type*) [Semiring S] [Module S R]
+    (c : R) (T : UnitTriangle n) (s : Fin 3) :
+    triangleGradient S (fun _ : Vertex n => c) T s = 0 := by cases T <;> simp
+theorem triangleGradient_comp (S : Type*) {R' F : Type*} [Semiring S] [AddCommGroup R']
+    [Module S R'] [FunLike F R R'] [AddMonoidHomClass F R R'] (φ : F) (f : Vertex n → R)
     (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (c • f) T s = c • triangleGradient f T s := by cases T <;> simp [smul_sub]
-@[simp] theorem triangleGradient_const (c : R) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (fun _ : Vertex n => c) T s = 0 := by cases T <;> simp
-theorem triangleGradient_comp {S F : Type*} [AddCommGroup S] [FunLike F R S]
-    [AddMonoidHomClass F R S] (φ : F) (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (φ ∘ f) T s = φ (triangleGradient f T s) := by cases T <;> simp
-@[simp] theorem triangleGradient_map [PartialOrder R] {S : Type*} [AddCommGroup S] [PartialOrder S]
-    (φ : R →+o S) (h : Hive n R) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (h.map φ) T s = φ (triangleGradient h T s) := by cases T <;> simp
-@[simp] theorem triangleGradient_ofInt (R : Type*) [Ring R] [PartialOrder R] [IsOrderedRing R]
-    (h : IntegerHive n) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (ofInt R h) T s = ((triangleGradient h T s : ℤ) : R) := by cases T <;> simp
-@[simp high] theorem triangleGradient_barycentricLinear (c₀ α β γ : R) (T : UnitTriangle n) :
-    triangleGradient (barycentricLinear c₀ α β γ) T = ![β - α, γ - β, α - γ] := by
+    triangleGradient S (φ ∘ f) T s = φ (triangleGradient ℤ f T s) := by cases T <;> simp
+@[simp] theorem triangleGradient_map (S : Type*) [PartialOrder R] {R' : Type*} [AddCommGroup R']
+    [PartialOrder R'] [Semiring S] [Module S R'] (φ : R →+o R') (h : Hive n R)
+    (T : UnitTriangle n) (s : Fin 3) :
+    triangleGradient S (h.map φ) T s = φ (triangleGradient ℤ h T s) := by cases T <;> simp
+@[simp] theorem triangleGradient_ofInt (S R : Type*) [Semiring S] [Ring R] [PartialOrder R]
+    [IsOrderedRing R] [Module S R] (h : IntegerHive n) (T : UnitTriangle n) (s : Fin 3) :
+    triangleGradient S (ofInt R h) T s = ((triangleGradient ℤ h T s : ℤ) : R) := by
+  cases T <;> simp
+@[simp high] theorem triangleGradient_barycentricLinear (S : Type*) [Semiring S] [Module S R]
+    (c₀ α β γ : R) (T : UnitTriangle n) :
+    triangleGradient S (barycentricLinear c₀ α β γ) T = ![β - α, γ - β, α - γ] := by
   ext s; cases T <;> fin_cases s <;> simp [add_nsmul] <;> abel
-@[simp high] theorem triangleGradient_affine [Preorder R] (β γ : R)
-    (T : UnitTriangle n) : triangleGradient (affine n β γ) T = ![β, γ - β, -γ] := by
+@[simp high] theorem triangleGradient_affine (S : Type*) [Preorder R] [Semiring S] [Module S R]
+    (β γ : R) (T : UnitTriangle n) :
+    triangleGradient S (affine n β γ) T = ![β, γ - β, -γ] := by
   have hcoe : ⇑(affine n β γ) = barycentricLinear 0 0 β γ := funext fun _ => by simp
   simp [hcoe]
-theorem triangleGradient_comp_add (f : Vertex (m + k) → R) (p : Vertex m) (T : UnitTriangle k)
-    (s : Fin 3) :
-    triangleGradient (fun q => f (p.add q)) T s = triangleGradient f (T.addLeft p) s := by
+theorem triangleGradient_comp_add (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex (m + k) → R) (p : Vertex m) (T : UnitTriangle k) (s : Fin 3) :
+    triangleGradient S (fun q => f (p.add q)) T s = triangleGradient S f (T.addLeft p) s := by
   cases T <;> simp only [triangleGradient_up, triangleGradient_down, UnitTriangle.addLeft_up,
     UnitTriangle.addLeft_down, ← UnitTriangle.vertex_addLeft]
-@[simp] theorem triangleGradient_subtriangle [PartialOrder R] [IsOrderedAddMonoid R]
-    (h : Hive (m + k) R) (p : Vertex m) (T : UnitTriangle k) (s : Fin 3) :
-    triangleGradient (h.subtriangle p) T s = triangleGradient h (T.addLeft p) s := by
+@[simp] theorem triangleGradient_subtriangle (S : Type*) [PartialOrder R] [IsOrderedAddMonoid R]
+    [Semiring S] [Module S R] (h : Hive (m + k) R) (p : Vertex m) (T : UnitTriangle k)
+    (s : Fin 3) :
+    triangleGradient S (h.subtriangle p) T s = triangleGradient S h (T.addLeft p) s := by
   rw [show ⇑(h.subtriangle p) = (fun q => h (p.add q)) - fun _ => h (p.add (Vertex.cornerA k))
-    from funext fun _ => subtriangle_apply _ _ _, triangleGradient_sub,
-    triangleGradient_comp_add, triangleGradient_const, sub_zero]
-theorem triangleGradient_comp_rotate (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (fun p => f p.rotate) T s = triangleGradient f T.rotate (s + 1) := by
+    from funext fun _ => subtriangle_apply _ _ _, map_sub]
+  simp [triangleGradient_comp_add]
+theorem triangleGradient_comp_rotate (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
+    triangleGradient S (fun p => f p.rotate) T s = triangleGradient S f T.rotate (s + 1) := by
   cases T <;> simp
-@[simp] theorem triangleGradient_rotate [PartialOrder R] [IsOrderedAddMonoid R] (h : Hive n R)
-    (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient h.rotate T s = triangleGradient h T.rotate (s + 1) := by
+@[simp] theorem triangleGradient_rotate (S : Type*) [PartialOrder R] [IsOrderedAddMonoid R]
+    [Semiring S] [Module S R] (h : Hive n R) (T : UnitTriangle n) (s : Fin 3) :
+    triangleGradient S h.rotate T s = triangleGradient S h T.rotate (s + 1) := by
   rw [show ⇑h.rotate = (fun p => h p.rotate) - fun _ => h (Vertex.cornerA n).rotate
-    from funext fun _ => rotate_apply _ _, triangleGradient_sub, triangleGradient_comp_rotate,
-    triangleGradient_const, sub_zero]
-theorem triangleGradient_comp_reflect (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
-    triangleGradient (fun p => f p.reflect) T s = -triangleGradient f T.reflect s.rev := by
+    from funext fun _ => rotate_apply _ _, map_sub]
+  simp [triangleGradient_comp_rotate]
+theorem triangleGradient_comp_reflect (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
+    triangleGradient S (fun p => f p.reflect) T s = -triangleGradient S f T.reflect s.rev := by
   have h1 : -(s + 1) = s.rev := by fin_cases s <;> rfl
   have h2 : -s = s.rev + 1 := by fin_cases s <;> rfl
   cases T <;> simp only [triangleGradient_up, triangleGradient_down, UnitTriangle.reflect_up,
     UnitTriangle.reflect_down, ← UnitTriangle.vertex_reflect, h1, h2] <;> abel
-@[simp] theorem triangleGradient_reflect [PartialOrder R] (h : Hive n R) (T : UnitTriangle n)
-    (s : Fin 3) : triangleGradient h.reflect T s = -triangleGradient h T.reflect s.rev := by
-  rw [coe_reflect]; exact triangleGradient_comp_reflect h T s
-@[simp] theorem triangleGradient_adjacentUp (f : Vertex (m + 2) → R) (s : Vertex m) (i j : Fin 3) :
-    triangleGradient f (adjacentUp s i) j =
+@[simp] theorem triangleGradient_reflect (S : Type*) [PartialOrder R] [Semiring S] [Module S R]
+    (h : Hive n R) (T : UnitTriangle n) (s : Fin 3) :
+    triangleGradient S h.reflect T s = -triangleGradient S h T.reflect s.rev := by
+  rw [coe_reflect]; exact triangleGradient_comp_reflect S h T s
+@[simp] theorem triangleGradient_adjacentUp (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex (m + 2) → R) (s : Vertex m) (i j : Fin 3) :
+    triangleGradient S f (adjacentUp s i) j =
       f ((adjacentUp s i).vertex (j + 1)) - f ((adjacentUp s i).vertex j) := by
   rw [adjacentUp_def, triangleGradient_up, ← adjacentUp_def]
 
 /-- Across the shared edge of `down s` and `adjacentUp s i` opposite `(down s).vertex i`, the
 `(i + 1)`-coordinate of `triangleGradient` is constant. -/
-theorem triangleGradient_adjacentUp_add_one (f : Vertex (m + 2) → R) (s : Vertex m) (i : Fin 3) :
-    triangleGradient f (adjacentUp s i) (i + 1) =
-      triangleGradient f (UnitTriangle.down s) (i + 1) := by
+theorem triangleGradient_adjacentUp_add_one (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex (m + 2) → R) (s : Vertex m) (i : Fin 3) :
+    triangleGradient S f (adjacentUp s i) (i + 1) =
+      triangleGradient S f (UnitTriangle.down s) (i + 1) := by
   rw [triangleGradient_adjacentUp, triangleGradient_down, (by fin_cases i <;> rfl : i + 1 + 1 =
     i + 2), vertex_adjacentUp_add_two, vertex_adjacentUp_add_one]
 /-- Across the shared edge of `down s` and `adjacentUp s i` opposite `(down s).vertex i`, the
 `i`-th coordinate of `triangleGradient` jumps by the unit-rhombus slack. -/
-theorem triangleGradient_adjacentUp_sub_down_self (f : Vertex (m + 2) → R) (s : Vertex m)
-    (i : Fin 3) :
-    triangleGradient f (adjacentUp s i) i - triangleGradient f (UnitTriangle.down s) i =
+theorem triangleGradient_adjacentUp_sub_down_self (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex (m + 2) → R) (s : Vertex m) (i : Fin 3) :
+    triangleGradient S f (adjacentUp s i) i - triangleGradient S f (UnitTriangle.down s) i =
       rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
         ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) := by
   rw [triangleGradient_adjacentUp, triangleGradient_down, rhombusSlack_def,
     vertex_adjacentUp_add_one]; abel
 /-- Across the shared edge of `down s` and `adjacentUp s i` opposite `(down s).vertex i`, the
 `(i + 2)`-th coordinate of `triangleGradient` jumps by minus the unit-rhombus slack. -/
-theorem triangleGradient_adjacentUp_sub_down_add_two (f : Vertex (m + 2) → R) (s : Vertex m)
-    (i : Fin 3) :
-    triangleGradient f (adjacentUp s i) (i + 2) - triangleGradient f (UnitTriangle.down s) (i + 2) =
+theorem triangleGradient_adjacentUp_sub_down_add_two (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex (m + 2) → R) (s : Vertex m) (i : Fin 3) :
+    triangleGradient S f (adjacentUp s i) (i + 2) -
+        triangleGradient S f (UnitTriangle.down s) (i + 2) =
       -rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
         ((UnitTriangle.down s).vertex (i + 1)) ((UnitTriangle.down s).vertex i) := by
   rw [triangleGradient_adjacentUp, triangleGradient_down, (by fin_cases i <;> rfl : i + 2 + 1 = i),
@@ -192,17 +199,20 @@ theorem isRhombusConcave_iff_adjacent [PartialOrder R] [IsOrderedAddMonoid R]
   rcases hac with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rcases hbd with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
     simpa [rhombusSlack_def, add_comm] using hadj s i
 
-/-- Along side `s` of the perimeter, the `s`-th coordinate of `triangleGradient f` on the upward
-perimeter triangle `up (edgePoint m s i)` equals `boundaryLinear ℤ (m + 1) R f s i`. -/
-theorem triangleGradient_up_edgePoint (f : Vertex (m + 1) → R) (s : Fin 3) (i : Fin (m + 1)) :
-    triangleGradient f (UnitTriangle.up (Vertex.edgePoint m s i)) s =
-      boundaryLinear ℤ (m + 1) R f s i := by
+/-- Along side `s` of the perimeter, the `s`-th coordinate of `triangleGradient` on the upward
+perimeter triangle `up (edgePoint m s i)` equals `boundaryLinear S (m + 1) R f s i`. -/
+theorem triangleGradient_up_edgePoint (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex (m + 1) → R) (s : Fin 3) (i : Fin (m + 1)) :
+    triangleGradient S f (UnitTriangle.up (Vertex.edgePoint m s i)) s =
+      boundaryLinear S (m + 1) R f s i := by
   fin_cases s <;> rw [triangleGradient_up, boundaryLinear_apply] <;>
     congr 2 <;> ext <;> simp <;> omega
 /-- At size `1`, the zero-sum gradient of the unique unit triangle equals the clockwise boundary
 `(λ₁, μ₁, ν₁)` of `f`. -/
-theorem triangleGradient_up_cornerA_zero (f : Vertex 1 → R) (s : Fin 3) :
-    triangleGradient f (UnitTriangle.up (Vertex.cornerA 0)) s = boundaryLinear ℤ 1 R f s 0 := by
+theorem triangleGradient_up_cornerA_zero (S : Type*) [Semiring S] [Module S R]
+    (f : Vertex 1 → R) (s : Fin 3) :
+    triangleGradient S f (UnitTriangle.up (Vertex.cornerA 0)) s =
+      boundaryLinear S 1 R f s 0 := by
   rw [Subsingleton.elim (Vertex.cornerA 0) (Vertex.edgePoint 0 s 0), triangleGradient_up_edgePoint]
 
 end
@@ -299,9 +309,9 @@ theorem sum_unitStepVec (s : Fin 3) : ∑ i : Fin 3, unitStepVec s i = 0 := by
   simp [unitStepVec, Finset.sum_pi_single']
 
 /-- The directional derivative of `triangleAffine T f` along `unitStepVec s` equals the
-combinatorial edge slope `triangleGradient f T s`. -/
+combinatorial edge slope `triangleGradient ℝ f T s`. -/
 @[simp] theorem triangleAffine_contLinear_unitStepVec (f : Vertex n → ℝ) (T : UnitTriangle n)
-    (s : Fin 3) : (triangleAffine T f).contLinear (unitStepVec s) = triangleGradient f T s := by
+    (s : Fin 3) : (triangleAffine T f).contLinear (unitStepVec s) = triangleGradient ℝ f T s := by
   cases T <;> fin_cases s <;>
     simp [triangleAffine, Fintype.linearCombination_apply, Fin.sum_univ_three] <;> ring
 

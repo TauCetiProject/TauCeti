@@ -17,6 +17,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Convex.StdSimplex
 
 /-!
 # Unit triangles and the simplicial subdivision of the hive triangle
@@ -53,7 +54,7 @@ Unit triangles `TauCeti.Hive.UnitTriangle n` have two orientations (`UnitTriangl
 public section
 
 open Set
-open scoped BigOperators
+open scoped BigOperators Pointwise
 
 namespace TauCeti.Hive
 
@@ -99,20 +100,39 @@ theorem convex_barycentricSimplex (n : ℕ) : Convex ℝ (barycentricSimplex n) 
 theorem isClosed_barycentricSimplex (n : ℕ) : IsClosed (barycentricSimplex n) :=
   (isConvexPolyhedron_barycentricSimplex n).isClosed
 
+private theorem barycentricSimplex_one_eq_convexHull :
+    barycentricSimplex 1 = convexHull ℝ (Set.range fun i : Fin 3 => Pi.single i (1 : ℝ)) := by
+  ext x
+  rw [← Set.image_univ, mem_convexHull_pi_single_iff]
+  simp
+
+private theorem barycentricSimplex_eq_smul (n : ℕ) :
+    barycentricSimplex n = (n : ℝ) • barycentricSimplex 1 := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [Nat.cast_zero, barycentricSimplex_zero]
+    rw [Set.zero_smul_set ⟨Pi.single 0 1, barycentricSimplex_one_eq_convexHull ▸
+      subset_convexHull ℝ _ ⟨0, rfl⟩⟩]
+    rfl
+  · have hn0 : (0 : ℝ) < n := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
+    ext x
+    refine ⟨fun hx => ⟨(n : ℝ)⁻¹ • x, ⟨fun i => mul_nonneg (inv_nonneg.mpr hn0.le) (hx.1 i), ?_⟩,
+        smul_inv_smul₀ hn0.ne' x⟩, ?_⟩
+    · simp [← Finset.mul_sum, hx.2, inv_mul_cancel₀ hn0.ne']
+    · rintro ⟨y, hy, rfl⟩
+      exact ⟨fun i => mul_nonneg hn0.le (hy.1 i), by simp [← Finset.mul_sum, hy.2]⟩
+
 /-- `barycentricSimplex n` is the convex hull of the three perimeter corners `(n, 0, 0)`,
 `(0, n, 0)`, `(0, 0, n)`. -/
 theorem barycentricSimplex_eq_convexHull_corners (n : ℕ) : barycentricSimplex n =
     convexHull ℝ (Set.range fun s : Fin 3 => (Vertex.edgePoint n s 0).barycentric) := by
-  refine Subset.antisymm (fun x hx => ?_) (convexHull_min
-    (fun _ ⟨_, h⟩ => h ▸ barycentric_mem_barycentricSimplex _) (convex_barycentricSimplex _))
-  rcases eq_or_ne n 0 with rfl | hn
-  · exact (mem_singleton_iff.mp (barycentricSimplex_zero ▸ hx)) ▸
-      subset_convexHull ℝ _ ⟨0, by simp [Vertex.barycentric_cornerA_zero]⟩
-  · have hn' : (0 : ℝ) < n := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
-    have hcomb : ∑ s : Fin 3, (x s / n) • (Vertex.edgePoint n s 0).barycentric = x := by
-      ext i; fin_cases i <;> simp [Fin.sum_univ_three, div_mul_cancel₀ _ hn'.ne']
-    exact hcomb ▸ (convex_convexHull ℝ _).sum_mem (fun s _ => div_nonneg (hx.1 s) hn'.le)
-      (by rw [← Finset.sum_div, hx.2, div_self hn'.ne']) fun s _ => subset_convexHull ℝ _ ⟨s, rfl⟩
+  rw [barycentricSimplex_eq_smul, barycentricSimplex_one_eq_convexHull, ← convexHull_smul]
+  congr 1; ext x
+  simp only [Set.mem_smul_set, Set.mem_range]
+  constructor
+  · rintro ⟨_, ⟨s, rfl⟩, rfl⟩
+    exact ⟨s, by ext i; fin_cases s <;> fin_cases i <;> simp⟩
+  · rintro ⟨s, rfl⟩
+    exact ⟨Pi.single s 1, ⟨s, rfl⟩, by ext i; fin_cases s <;> fin_cases i <;> simp⟩
 
 theorem barycentricSimplex_eq_convexHull (n : ℕ) :
     barycentricSimplex n = convexHull ℝ (Set.range (Vertex.barycentric (n := n))) :=
@@ -376,11 +396,46 @@ theorem convex_cell (T : UnitTriangle n) : Convex ℝ T.cell := T.isConvexPolyhe
 theorem isClosed_cell (T : UnitTriangle n) : IsClosed T.cell := T.isConvexPolyhedron_cell.isClosed
 /-- Each unit-triangle cell is the convex hull of its three lattice vertices. -/
 theorem cell_eq_convexHull (T : UnitTriangle n) :
-    T.cell = convexHull ℝ (Set.range fun i => (T.vertex i).barycentric) :=
-  Subset.antisymm (fun _ hx => T.sum_weight_smul_vertex hx.1.2 ▸
-      (convex_convexHull ℝ _).sum_mem (fun i _ => hx.2 i) (T.sum_weight hx.1.2)
-        fun i _ => subset_convexHull ℝ _ ⟨i, rfl⟩)
-    (convexHull_min (by rintro _ ⟨i, rfl⟩; exact T.barycentric_vertex_mem_cell i) T.convex_cell)
+    T.cell = convexHull ℝ (Set.range fun i => (T.vertex i).barycentric) := by
+  cases T with
+  | up base =>
+    let A : (Fin 3 → ℝ) →ᵃ[ℝ] (Fin 3 → ℝ) :=
+      AffineMap.const ℝ (Fin 3 → ℝ) base.barycentric + AffineMap.id ℝ (Fin 3 → ℝ)
+    have hcell : (up base).cell = A '' barycentricSimplex 1 := by
+      ext x
+      refine ⟨fun hx => ⟨x - base.barycentric, ⟨fun i => by simpa using hx.2 i, ?_⟩, ?_⟩, ?_⟩
+      · simp [Finset.sum_sub_distrib, hx.1.2, -Vertex.barycentric_apply, base.sum_barycentric]
+      · simp [A]
+      · rintro ⟨w, hw, rfl⟩
+        exact ⟨add_mem_barycentricSimplex (barycentric_mem_barycentricSimplex base) hw,
+          fun i => by simpa [A] using hw.1 i⟩
+    rw [hcell, barycentricSimplex_one_eq_convexHull, AffineMap.image_convexHull, ← Set.range_comp]
+    exact congrArg (convexHull ℝ) (congrArg Set.range (funext fun i => by
+      ext j; fin_cases i <;> fin_cases j <;> simp [A]))
+  | down base =>
+    let A : (Fin 3 → ℝ) →ᵃ[ℝ] (Fin 3 → ℝ) :=
+      AffineMap.const ℝ (Fin 3 → ℝ) (base.barycentric + 1) - AffineMap.id ℝ (Fin 3 → ℝ)
+    have hcell : (down base).cell = A '' barycentricSimplex 1 := by
+      ext x
+      refine ⟨fun hx => ⟨base.barycentric + 1 - x, ⟨fun i => ?_, ?_⟩, ?_⟩, ?_⟩
+      · simpa [sub_nonneg] using hx.2 i
+      · simp [Finset.sum_sub_distrib, Finset.sum_add_distrib, -Vertex.barycentric_apply,
+          base.sum_barycentric, hx.1.2]
+        ring
+      · simp [A]
+      · rintro ⟨w, hw, rfl⟩
+        have hle (i : Fin 3) : w i ≤ 1 :=
+          (by simpa using hw.2 : ∑ j, w j = 1) ▸
+            Finset.single_le_sum (fun j _ => hw.1 j) (Finset.mem_univ i)
+        refine ⟨⟨fun i => ?_, ?_⟩, fun i => ?_⟩
+        · simp [A]; linarith [base.barycentric_nonneg i, hle i]
+        · simp [A, Finset.sum_sub_distrib, Finset.sum_add_distrib, -Vertex.barycentric_apply,
+            base.sum_barycentric, hw.2]
+          ring
+        · simpa [A] using hw.1 i
+    rw [hcell, barycentricSimplex_one_eq_convexHull, AffineMap.image_convexHull, ← Set.range_comp]
+    exact congrArg (convexHull ℝ) (congrArg Set.range (funext fun i => by
+      ext j; fin_cases i <;> fin_cases j <;> simp [A]))
 /-- At size `1`, the single upward unit triangle covers all of `barycentricSimplex 1`. -/
 @[simp] theorem cell_up_cornerA_zero : (up (Vertex.cornerA 0)).cell = barycentricSimplex 1 := by
   ext x; simp only [mem_cell_iff, mem_barycentricSimplex_iff, weight_up_apply, and_iff_left_iff_imp]
