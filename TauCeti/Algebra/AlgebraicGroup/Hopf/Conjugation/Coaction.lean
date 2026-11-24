@@ -241,21 +241,12 @@ theorem mem_conjugationInvariants {f : H} :
   exact ComoduleAlgebra.mem_coinvariants
 
 /-- A conjugation invariant is a unit of the invariants exactly when it is a unit of `H`: the
-inverse of an invariant unit is again invariant. -/
+inverse of an invariant unit is again invariant (`TauCeti.ComoduleAlgebra.isUnit_coinvariants_iff`).
+-/
 theorem isUnit_conjugationInvariants_iff {f : conjugationInvariants R H} :
-    IsUnit f ↔ IsUnit (f : H) := by
-  refine ⟨fun h ↦ h.map (conjugationInvariants R H).val, fun ⟨v, hv⟩ ↦ ?_⟩
-  have hinv : (↑v⁻¹ : H) ∈ conjugationInvariants R H := by
-    rw [mem_conjugationInvariants]
-    have h0 := mem_conjugationInvariants.1 f.property
-    have key : Units.map (conjugationCoactAlgHom R H).toMonoidHom v =
-        Units.map
-          (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toMonoidHom v :=
-      Units.ext (by simpa [hv] using h0)
-    simpa using congrArg (fun w ↦ ((w⁻¹ : (H ⊗[R] H)ˣ) : H ⊗[R] H)) key
-  refine ⟨⟨f, ⟨_, hinv⟩, Subtype.ext ?_, Subtype.ext ?_⟩, rfl⟩
-  · simp [← hv]
-  · simp [← hv]
+    IsUnit f ↔ IsUnit (f : H) :=
+  letI := conjugationComoduleAlgebra (R := R) (H := H)
+  ComoduleAlgebra.isUnit_coinvariants_iff
 
 /-- **An invariant function is constant on conjugacy classes of points**: for every commutative
 `R`-algebra `A` and all `A`-points `g` and `x`, `f(g * x * g⁻¹) = f(x)`. -/

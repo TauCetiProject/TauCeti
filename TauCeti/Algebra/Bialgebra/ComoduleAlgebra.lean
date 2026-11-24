@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
 public import TauCeti.Algebra.Coalgebra.Comodule.Fixed
 public import TauCeti.Algebra.HopfAlgebra.TensorShear
+import Mathlib.Algebra.Group.Submonoid.Units
 
 /-!
 # Comodule algebras and Hopf–Galois extensions
@@ -64,6 +65,8 @@ trivial torsor `G ⟶ Spec R`.
 
 ## Main results
 
+* `TauCeti.ComoduleAlgebra.isUnit_coinvariants_iff`: a coinvariant is a unit of the coinvariants
+  exactly when it is a unit of `A`.
 * `TauCeti.ComoduleAlgebra.eqLocus_coactAlgHom`: the coinvariants are the equalizer of the
   projection and the action `Spec (A ⊗[R] H) ⇉ Spec A`.
 * `TauCeti.ComoduleAlgebra.coinvariants_eq_range`: if `A` is faithfully flat over `B` and the
@@ -148,6 +151,16 @@ variable {R H A}
 theorem mem_coinvariants {a : A} :
     a ∈ coinvariants R H A ↔ Comodule.coact (R := R) (C := H) a = a ⊗ₜ[R] 1 := by
   simp [coinvariants, AlgHom.mem_equalizer]
+
+/-- A coinvariant is a unit of the coinvariants exactly when it is a unit of `A`: the
+coinvariants are the equalizer of two multiplicative maps, so the inverse of a coinvariant unit
+is coinvariant. -/
+theorem isUnit_coinvariants_iff {a : coinvariants R H A} : IsUnit a ↔ IsUnit (a : A) := by
+  have h : (coinvariants R H A).toSubmonoid = (coactAlgHom R H A).toMonoidHom.eqLocusM
+      (Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] H).toMonoidHom :=
+    Submonoid.ext fun _ ↦ AlgHom.mem_equalizer _ _ _
+  exact (MulEquiv.isUnit_map (MulEquiv.submonoidCongr h)).symm.trans
+    (MonoidHom.isUnit_eqLocusM_mk_iff _ _ (AlgHom.mem_equalizer _ _ _ |>.1 a.property))
 
 theorem coe_coinvariants :
     (coinvariants R H A : Set A) = Comodule.fixedSubcomodule R H A := by
