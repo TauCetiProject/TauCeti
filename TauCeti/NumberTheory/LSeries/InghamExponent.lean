@@ -33,6 +33,7 @@ nonnegative on `[3, ∞)` and `x ≥ 1`, where the infimum is bounded below by `
 
 * `TauCeti.exists_inghamExponent_eq`: for continuous `η` the infimum is attained.
 * `TauCeti.monotoneOn_inghamExponent`: the exponent is nondecreasing in `x`.
+* `TauCeti.le_inghamExponent`: `c ≤ ω_η(x)` whenever `c ≤ η(t) log x + log t` for every `t ≥ 3`.
 * `TauCeti.log_three_le_inghamExponent`, `TauCeti.inghamExponent_le`: the bounds
   `log 3 ≤ ω_η(x) ≤ η(t) log x + log t` for every `t ≥ 3`, in particular for `t = 3`.
 * `TauCeti.le_inghamExponent_of_mul_log_rpow_le`: if `η(t) ≥ a₀ (log t)^{-A}` then
@@ -74,11 +75,17 @@ private lemma bddBelow_range (hη : ∀ t, 3 ≤ t → 0 ≤ η t) (hx : 1 ≤ x
     exact (Real.log_le_log (by norm_num) t.property).trans
       (log_le_mul_log_add_log hη hx t.property)⟩
 
+/-- **Lower bounds for `ω_η(x)`.** If `c ≤ η(t) log x + log t` for every `t ≥ 3`, then
+`c ≤ ω_η(x)`. -/
+theorem le_inghamExponent {c : ℝ} (h : ∀ t, 3 ≤ t → c ≤ η t * Real.log x + Real.log t) :
+    c ≤ inghamExponent η x :=
+  le_ciInf fun t ↦ h t t.property
+
 /-- **`log 3 ≤ ω_η(x)`** for `η` nonnegative on `[3, ∞)` and `x ≥ 1`. -/
 theorem log_three_le_inghamExponent (hη : ∀ t, 3 ≤ t → 0 ≤ η t) (hx : 1 ≤ x) :
     Real.log 3 ≤ inghamExponent η x :=
-  le_ciInf fun t ↦ (Real.log_le_log (by norm_num) t.property).trans
-    (log_le_mul_log_add_log hη hx t.property)
+  le_inghamExponent fun _ ht ↦ (Real.log_le_log (by norm_num) ht).trans
+    (log_le_mul_log_add_log hη hx ht)
 
 /-- **`ω_η(x) ≤ η(t) log x + log t`** for every `t ≥ 3`, for `η` nonnegative on `[3, ∞)` and
 `x ≥ 1`. At `t = 3` this is the upper bound `ω_η(x) ≤ η(3) log x + log 3`. -/
@@ -103,7 +110,7 @@ theorem exists_inghamExponent_eq (hηc : ContinuousOn η (Ici 3)) (hη : ∀ t, 
       _ ≤ Real.log t := Real.log_le_log (Real.exp_pos _) ht
       _ ≤ f t := log_le_mul_log_add_log hη hx h3
   obtain ⟨t, ht, hmin⟩ := hfc.exists_isMinOn' isClosed_Ici self_mem_Ici hc
-  exact ⟨t, ht, le_antisymm (inghamExponent_le hη hx ht) (le_ciInf fun s ↦ hmin s.property)⟩
+  exact ⟨t, ht, le_antisymm (inghamExponent_le hη hx ht) (le_inghamExponent fun _ hs ↦ hmin hs)⟩
 
 /-- **`ω_η(x)` is nondecreasing in `x ≥ 1`** for `η` nonnegative on `[3, ∞)`. -/
 theorem monotoneOn_inghamExponent (hη : ∀ t, 3 ≤ t → 0 ≤ η t) :
@@ -125,17 +132,18 @@ theorem inghamExponent_mono {η' : ℝ → ℝ} (hη : ∀ t, 3 ≤ t → 0 ≤ 
 
 /-- **Lower bound from a lower bound on the width.** If `η(t) ≥ a₀ (log t)^{-A}` on `[3, ∞)`
 with `a₀ ≥ 0` and `A ≥ 0`, then `ω_η(x) ≥ a₀^{1/(1+A)} (log x)^{1/(1+A)}` for `x ≥ 1`. For
-`η(t) = c₀ / log t` this gives `ω_η(x) ≥ √(c₀ log x)`, half the exact value `2 √(c₀ log x)`. -/
+`η(t) = c₀ / log t` this gives `ω_η(x) ≥ √(c₀ log x)`, half the exact value `2 √(c₀ log x)` that
+`ω_η(x)` takes once `√(c₀ log x) ≥ log 3`. -/
 theorem le_inghamExponent_of_mul_log_rpow_le {a₀ A : ℝ} (ha₀ : 0 ≤ a₀) (hA : 0 ≤ A)
     (hη : ∀ t, 3 ≤ t → a₀ * Real.log t ^ (-A) ≤ η t) (hx : 1 ≤ x) :
     a₀ ^ (1 / (1 + A)) * Real.log x ^ (1 / (1 + A)) ≤ inghamExponent η x := by
   have hL : 0 ≤ Real.log x := Real.log_nonneg hx
   rw [← Real.mul_rpow ha₀ hL]
   set M := (a₀ * Real.log x) ^ (1 / (1 + A))
-  refine le_ciInf fun t ↦ ?_
-  have hu : 0 < Real.log (t : ℝ) := Real.log_pos (by linarith [mem_Ici.1 t.property])
+  refine le_inghamExponent fun t ht ↦ ?_
+  have hu : 0 < Real.log t := Real.log_pos (by linarith)
   have hηt : a₀ * Real.log x * Real.log t ^ (-A) ≤ η t * Real.log x := by
-    rw [mul_right_comm]; exact mul_le_mul_of_nonneg_right (hη t t.property) hL
+    rw [mul_right_comm]; exact mul_le_mul_of_nonneg_right (hη t ht) hL
   have hηt0 : 0 ≤ η t * Real.log x :=
     (by positivity : 0 ≤ a₀ * Real.log x * Real.log t ^ (-A)).trans hηt
   rcases le_or_gt M (Real.log t) with hMu | huM
