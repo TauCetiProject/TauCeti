@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.WittVector.Frobenius
 public import TauCeti.RingTheory.WittVector.Primitive.Basic
 -- Proof-only: `ε ^ (1 / p) - 1` is a `p`-th root of `ε - 1`.
-import TauCeti.FieldTheory.Perfect
+import TauCeti.RingTheory.Perfect.Basic
 
 /-!
 # Cyclotomic period elements of Witt vectors
