@@ -293,6 +293,14 @@ theorem pointSpectralSubspace_mono (h : Ω ⊆ Ω') :
 theorem pointSpectralSubspace_empty : A.pointSpectralSubspace ∅ = ⊥ := by
   simp [pointSpectralSubspace]
 
+/-- The point-spectral subspace selected by `Ω` vanishes exactly when `A` has no eigenvalue in
+`Ω`. -/
+@[simp]
+theorem pointSpectralSubspace_eq_bot_iff :
+    A.pointSpectralSubspace Ω = ⊥ ↔ ∀ μ ∈ Ω, ¬A.HasEigenvalue (μ : 𝕜) := by
+  rw [← le_bot_iff, pointSpectralSubspace_le_iff]
+  simp only [le_bot_iff, hasEigenvalue_iff, not_not]
+
 /-- The point-spectral subspace of a union is the sum of the two point-spectral subspaces. -/
 @[simp]
 theorem pointSpectralSubspace_union :

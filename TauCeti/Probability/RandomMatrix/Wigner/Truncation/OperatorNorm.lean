@@ -13,6 +13,7 @@ import TauCeti.Probability.RandomMatrix.Wigner.Diagonal.OperatorNorm
 import TauCeti.Probability.RandomMatrix.Wigner.Centering.Basic
 import TauCeti.Probability.RandomMatrix.Wigner.Truncation.HardThreshold
 import TauCeti.Probability.RandomMatrix.Wigner.Truncation.RowCount
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Operator-norm truncation of Wigner corners
@@ -94,15 +95,9 @@ theorem ae_tendsto_l2_opNorm_wignerMatrix_sub_wignerMatrix_centeredTruncation
   filter_upwards [ae_tendsto_l2_opNorm_wignerMatrix_zero_hardThreshold hind hid hX ha]
     with ω htail
   have hquot : Tendsto (fun n : ℕ ↦ Real.sqrt (n + 1 : ℕ) / ((((n + 1 : ℕ) : ℝ) ^ a) ^ 3))
-      atTop (𝓝 0) := by
-    refine ((tendsto_rpow_neg_atTop (by linarith : 0 < 3 * a - 1 / 2)).comp
-      (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))).congr fun n ↦ ?_
-    have hN : 0 < ((n + 1 : ℕ) : ℝ) := by positivity
-    rw [Function.comp_apply, Function.comp_apply, Real.sqrt_eq_rpow,
-      ← Real.rpow_mul_natCast hN.le, ← Real.rpow_sub hN]
-    congr 1
-    push_cast
-    ring
+      atTop (𝓝 0) :=
+    (tendsto_sqrt_div_rpow_pow_atTop_nhds_zero (k := 3) (by push_cast; linarith)).comp
+      (tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 1))
   have hcenterLimit := hX.tendsto_mul_norm_integral_indicator_setOf_norm_le_nhds_zero
     (k := 3) hmean hquot
   refine squeeze_zero (fun n ↦ norm_nonneg _) (fun n ↦ ?_)

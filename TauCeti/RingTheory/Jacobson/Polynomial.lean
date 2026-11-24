@@ -9,8 +9,8 @@ public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.Algebra.Polynomial.FieldDivision
-import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Derivative
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # Values of polynomials on the Jacobson radical
@@ -38,12 +38,9 @@ namespace Polynomial
 theorem isUnit_eval_of_isUnit_coeff_zero_of_mem_jacobson {R : Type*} [CommRing R] {P : R[X]}
     (hP : IsUnit (P.coeff 0)) {x : R} (hx : x ∈ Ring.jacobson R) : IsUnit (P.eval x) := by
   obtain ⟨r, hr⟩ := sub_dvd_eval_sub x 0 P
-  rw [← coeff_zero_eq_eval_zero, sub_zero, sub_eq_iff_eq_add] at hr
-  obtain ⟨u, hu⟩ := hP
-  -- `P(x) = x r + u = (x (r u⁻¹) + 1) u`, and `x (r u⁻¹) + 1` is a unit.
-  have h : P.eval x = (x * (r * ↑u⁻¹) + 1) * u := by
-    linear_combination hr - hu - x * r * u.inv_mul
-  exact h ▸ (Ring.mem_jacobson_iff.mp hx _).mul u.isUnit
+  rw [← coeff_zero_eq_eval_zero, sub_zero, sub_eq_iff_eq_add, add_comm] at hr
+  rw [hr, TauCeti.Ring.isUnit_add_iff_of_mem_jacobson (Ideal.mul_mem_right _ _ hx)]
+  exact hP
 
 /-- If `b - a` lies in the Jacobson radical of `R` and `f'(a)` is a unit, then `f(b) - f(a)` lies
 in an ideal `K` exactly when `b - a` does: by monic division,

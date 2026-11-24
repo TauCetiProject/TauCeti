@@ -67,6 +67,7 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
 * `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
+* `IsPrimitiveRoot.one_add_add_sq`: a primitive cube root of unity is a root of `1 + X + X²`.
 * `IsPrimitiveRoot.sum_pow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_pow_eq`: orthogonality of
   the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables, together with
   `IsPrimitiveRoot.sum_zpow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_mul_inv_pow_eq` in a field.
@@ -223,6 +224,13 @@ of `-1`: its square is a primitive square root of unity. -/
 theorem _root_.IsPrimitiveRoot.sq_eq_neg_one [NoZeroDivisors R] {ζ : R}
     (hζ : IsPrimitiveRoot ζ 4) : ζ ^ 2 = -1 :=
   (hζ.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
+
+/-- In a commutative ring without zero divisors, a primitive cube root of unity is a root of
+`1 + X + X²`. -/
+theorem _root_.IsPrimitiveRoot.one_add_add_sq [NoZeroDivisors R] {ζ : R}
+    (hζ : IsPrimitiveRoot ζ 3) : 1 + ζ + ζ ^ 2 = 0 := by
+  have h : (ζ - 1) * (1 + ζ + ζ ^ 2) = 0 := by linear_combination hζ.pow_eq_one
+  exact (mul_eq_zero.mp h).resolve_left (sub_ne_zero.mpr (hζ.ne_one (by norm_num)))
 
 /-- **Orthogonality of characters.** In a domain, the sum of the powers `(ζ ^ e) ^ a` over `a < m`
 of a primitive `m`-th root of unity `ζ` is `m` if `m` divides `e`, and zero otherwise. -/

@@ -612,9 +612,8 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
   have hca' : (c : I → ℤ) + a ≠ 0 := fun h ↦
     hcb (Subtype.ext ((eq_neg_of_add_eq_zero_left h).trans hbv.symm))
   -- The pairing `d = ⟪a, c⟫` lies in `{-1, 0, 1}` and decides which of the two sums is a root.
-  have hle := hB.dotProduct_mulVec_le_one a.property c.property (Subtype.coe_injective.ne hca.symm)
-  have hge := hB.neg_one_le_dotProduct_mulVec a.property c.property fun h ↦
-    hcb (Subtype.ext (by rw [hbv, h, neg_neg]))
+  have hcases := hB.dotProduct_mulVec_cases a.property c.property
+    (Subtype.coe_injective.ne hca.symm) fun h ↦ hcb (Subtype.ext (by rw [hbv, h, neg_neg]))
   have hmbc : (b : I → ℤ) + c ∈ B.normTwoShell ↔ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 1 := by
     rw [hS.add_mem_normTwoShell_iff b.property c.property, hbv, neg_dotProduct, neg_inj]
   have hmca : (c : I → ℤ) + a ∈ B.normTwoShell ↔ (a : I → ℤ) ⬝ᵥ B *ᵥ c = -1 := by
@@ -627,8 +626,7 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
   rw [root_lie_rootBracket hbc, root_lie_rootBracket hca', rootBracket_of_add_eq_zero hab,
     ShellLieAlgebra.lie_units_smul, root_lie_cartan, habc, hbca, rootOf_coe]
   simp only [hc0, ↓reduceIte, add_zero]
-  rcases (by omega : (a : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∨
-      (a : I → ℤ) ⬝ᵥ B *ᵥ c = 1) with hd | hd | hd
+  rcases hcases with hd | hd | hd
   · have hsign : (B.orderedSignForm c a).negOnePow * (B.orderedSignForm b (c + a)).negOnePow =
         -(B.orderedSignForm a b).negOnePow := by
       rw [← Int.negOnePow_add, ← Int.negOnePow_succ, Int.negOnePow_eq_iff, Int.even_iff]
@@ -640,9 +638,9 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
     simp
   · have hsign : (B.orderedSignForm b c).negOnePow * (B.orderedSignForm a (b + c)).negOnePow =
         (B.orderedSignForm a b).negOnePow := by
-      rw [← Int.negOnePow_add, Int.negOnePow_eq_iff, Int.even_iff]
-      simp only [hbv, map_add, map_neg, LinearMap.neg_apply]
-      omega
+      rw [← Int.negOnePow_add]
+      congr 1
+      simp [hbv, map_add]
     rw [ite_eq_left (hmbc.2 hd), ite_eq_right (by rw [hmca]; omega), hsign, hd]
     simp
 
