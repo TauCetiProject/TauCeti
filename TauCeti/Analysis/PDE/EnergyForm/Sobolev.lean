@@ -102,6 +102,8 @@ estimates do not see the boundary.
   terms is the integral of `⟨a ∇u, ∇v⟩`.
 * `TauCeti.PDE.energyFormH1_add_const_left`: with no mass term, shifting the left argument by a
   constant does not change the form.
+* `TauCeti.PDE.energyFormH1_const_right`: with no drift and no mass term, a constant right
+  argument has zero energy.
 * `TauCeti.PDE.energyFormH1_comm_of_isSymm_ae`: symmetry of the drift-free energy form under an
   almost everywhere symmetric principal coefficient.
 * `TauCeti.PDE.energyFormH1L` and `TauCeti.PDE.energyFormH1L0`: the energy form bundled as a
@@ -140,6 +142,9 @@ estimates do not see the boundary.
   lower bound `λ‖∇u‖²_{L²} ≤ a(u, u)` when the drift vanishes, and
   `TauCeti.PDE.UniformlyEllipticOn.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift`: the
   corresponding `H¹`-norm lower bound for any function satisfying a Poincaré inequality.
+* `TauCeti.PDE.mul_norm_gradient_sq_le_energyFormH1_self_of_ae_lower_bound`: the same lower
+  bound `λ‖∇u‖²_{L²} ≤ a(u, u)` with no drift and no mass, from an almost-everywhere ellipticity
+  floor and essentially bounded coefficients.
 * `TauCeti.PDE.abs_energyFormH1_sub_energyFormH1_le`: `|B(u, v) - B'(u, v)| ≤ (Λ + β + γ) ‖u‖ ‖v‖`
   when the coefficient differences are bounded by `Λ, β, γ`.
 * `TauCeti.PDE.norm_energyFormH1L_le_of_bounds`: the bundled form's operator-norm bound, stated
@@ -619,6 +624,20 @@ theorem energyFormH1_add_const_left [IsFiniteMeasure (mu.restrict Omega)]
     energyFormH1 a b 0 (u + W1p.const δ) v = energyFormH1 a b 0 u v := by
   simp [energyFormH1_def, driftForm_apply, massForm_apply]
 
+/-- **Constants have no energy.** On a domain of finite measure, an energy form with no drift and
+no mass term vanishes against a constant: `a(u, δ) = 0`, since the gradient of a constant is `0`
+and the gradient is the only part of the right argument that the principal term involves. -/
+@[simp]
+theorem energyFormH1_const_right [IsFiniteMeasure (mu.restrict Omega)]
+    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (u : W1p mu Omega 2) (δ : ℝ) :
+    energyFormH1 a 0 0 u (W1p.const δ) = 0 := by
+  rw [energyFormH1_def]
+  refine integral_eq_zero_of_ae ?_
+  filter_upwards [Lp.coeFn_zero (EuclideanSpace ℝ ι) 2
+    (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))] with x hx
+  rw [jetField_apply (W1p.const δ), W1p.gradient_const, hx]
+  simp
+
 /-- Homogeneity of the Sobolev energy form in its right argument. -/
 @[simp]
 theorem energyFormH1_smul_right (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
@@ -707,6 +726,21 @@ theorem integrable_energyIntegrand_jetField
     (Lp.memLp (jetLpL v))).congr ?_
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
+
+/-- **The energy dominates the Dirichlet energy under an ellipticity floor.** If the coefficient
+field is essentially bounded and `λ‖ξ‖² ≤ ξ · a(x) ξ` for almost every `x ∈ Ω`, then the energy
+form with no drift and no mass term satisfies `λ‖∇u‖²_{L²} ≤ a(u, u)` for every `u ∈ H¹(Ω)`. Only
+this almost-everywhere lower bound is assumed, not uniform ellipticity on `Ω`. -/
+theorem mul_norm_gradient_sq_le_energyFormH1_self_of_ae_lower_bound
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
+    (u : W1p mu Omega 2) : lam * ‖W1p.gradient u‖ ^ 2 ≤ energyFormH1 a 0 0 u u := by
+  have key := integral_mul_norm_snd_sq_le_energyFormIntegral_zero_drift_self
+    (μ := mu.restrict Omega) (a := a) (c := 0) (U := jetField u) ha
+    (ae_of_all _ fun _ => le_rfl) ((integrable_norm_jetField_snd_sq u).const_mul lam)
+    (integrable_energyIntegrand_jetField (b := 0) (c := 0) hcoeff u u)
+  rw [← integral_norm_jetField_snd_sq_eq_norm_gradient_sq u, ← integral_const_mul]
+  exact key.trans_eq ((energyFormIntegral_def _ _ _ _ _ _).trans (energyFormH1_def _ _ _ _ _).symm)
 
 /-- Adding an essentially bounded function `c'` to the mass coefficient adds the weighted `L²`
 pairing `∫_Ω c' u v` to the Sobolev energy form. No boundary or coercivity assumption is needed. -/

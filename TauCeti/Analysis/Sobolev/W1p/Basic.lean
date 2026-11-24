@@ -16,6 +16,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # First-order weak Sobolev spaces
@@ -74,6 +75,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   (`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed`).
 * `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
   `W^{1,p}(Ω)` with weak gradient `0`.
+* `TauCeti.W1p.setIntegralL`: the integral over a set of finite measure, as a continuous linear
+  functional on `W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn`: an `Lᵖ` function with an `Lᵖ`
   weak derivative is an element of `W^{1,p}(Ω)` whose weak gradient is dual to that derivative.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_contDiffOn`: a `C¹` function on `Ω` with `u` and
@@ -106,7 +109,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace
+open _root_.MeasureTheory TopologicalSpace
 open scoped Distributions InnerProductSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
@@ -770,6 +773,15 @@ theorem W1p.tendsto_iff_value_gradient {I : Type*} {l : Filter I}
   simpa only [← W1p.valueL_apply, ← W1p.gradientL_apply, map_sub] using
     W1p.norm_le_norm_value_add_norm_gradient (v i - u)
 
+/-- The integral over `S` of a Sobolev function, as a continuous linear functional on
+`W^{1,p}(Ω)`. Its value is `∫_S u ∂(μ|_Ω)`, which is `∫_S u ∂μ` for `S ⊆ Ω`. -/
+def W1p.setIntegralL (S : Set E) (hS : mu.restrict Omega S < ⊤) : W1p mu Omega p →L[ℝ] ℝ :=
+  (Set.setIntegralLp (𝕜 := ℝ) S hS).comp W1p.valueL
+
+theorem W1p.setIntegralL_apply {S : Set E} (hS : mu.restrict Omega S < ⊤) (u : W1p mu Omega p) :
+    W1p.setIntegralL S hS u = ∫ x in S, W1p.value u x ∂mu.restrict Omega := by
+  rw [W1p.setIntegralL, ContinuousLinearMap.comp_apply, Set.setIntegralLp_apply, W1p.valueL_apply]
+
 /-! ### Identification with weak Fréchet derivatives -/
 
 section WeakDerivIdentification
@@ -983,6 +995,18 @@ def W1p.const (c : ℝ) : W1p mu Omega p :=
 theorem W1p.value_const (c : ℝ) :
     W1p.value (W1p.const c : W1p mu Omega p) = Lp.const p (mu.restrict Omega) c :=
   W1p.value_mk _ _ _
+
+/-- The constant Sobolev function `c` is almost everywhere equal to `c` on `Ω`. -/
+theorem W1p.value_const_ae (c : ℝ) :
+    ⇑(W1p.value (W1p.const c : W1p mu Omega p)) =ᵐ[mu.restrict Omega] fun _ => c := by
+  rw [W1p.value_const]
+  exact Lp.coeFn_const p _ c
+
+/-- The integral over `S` of the constant Sobolev function `c` is `μ(S ∩ Ω) c`. -/
+theorem W1p.setIntegralL_const {S : Set E} (hS : mu.restrict Omega S < ⊤) (c : ℝ) :
+    W1p.setIntegralL S hS (W1p.const c : W1p mu Omega p) = (mu.restrict Omega).real S * c := by
+  rw [W1p.setIntegralL_apply, integral_congr_ae (ae_restrict_of_ae (W1p.value_const_ae c)),
+    setIntegral_const, smul_eq_mul]
 
 /-- The weak gradient of a constant Sobolev function is `0`. -/
 @[simp]

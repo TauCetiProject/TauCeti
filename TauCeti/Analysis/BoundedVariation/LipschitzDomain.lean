@@ -11,13 +11,10 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.Analysis.BoundedVariation.Space
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.BoundedVariation.Compactness
-import TauCeti.Analysis.BoundedVariation.Isometry
 import TauCeti.Analysis.BoundedVariation.W1p
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
-import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 
 /-!
 # Global `L¹` compactness of BV functions and sets of finite perimeter on bounded Lipschitz domains
@@ -113,54 +110,10 @@ theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith_image {L : ℝ≥0
     (f : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
     (hΩ : (f '' (Ω : Set F)).IsLipschitzDomainWith L) (hb : IsBounded (Ω : Set F)) :
     IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) := by
-  let e : F ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) := f.linearIsometryEquiv
-  let ι : E →ₗᵢ[ℝ] F :=
-    { toLinearMap := e.symm.toLinearEquiv.toLinearMap.comp
-        ((WithLp.linearEquiv 2 ℝ (ℝ × E)).symm.toLinearMap.comp (LinearMap.inr ℝ ℝ E))
-      norm_map' y := by simp }
-  let _ : InnerProductSpace ℝ E :=
-    { inner x y := inner ℝ (ι x) (ι y)
-      norm_sq_eq_re_inner x := by simp
-      conj_inner_symm x y := by simp [real_inner_comm]
-      add_left x y z := by simp [inner_add_left]
-      smul_left x y r := by simp [inner_smul_left] }
-  have _ : FiniteDimensional ℝ E := Module.Finite.of_injective ι.toLinearMap ι.injective
-  let _ : MeasurableSpace E := borel E
-  have _ : BorelSpace E := ⟨rfl⟩
-  have heΩ : (e '' (Ω : Set F)).IsLipschitzDomainWith L := by
-    have himg : AffineIsometryEquiv.constVAdd ℝ (WithLp 2 (ℝ × E)) (-f 0) '' (f '' (Ω : Set F)) =
-        e '' (Ω : Set F) := by
-      rw [← Set.image_comp]
-      refine Set.image_congr fun x _ => ?_
-      have hfx : f x = e x + f 0 := by simpa [e] using f.map_vadd 0 x
-      simp [hfx]
-    exact himg ▸ hΩ.image_affineIsometryEquiv
-      (AffineIsometryEquiv.constVAdd ℝ (WithLp 2 (ℝ × E)) (-f 0))
-  let W : Opens (WithLp 2 (ℝ × E)) := ⟨e '' (Ω : Set F), ((isLipschitzDomainWith_iff _ _).1 heΩ).1⟩
-  have hOW : (Ω : Set F) = e ⁻¹' W := (e.toEquiv.preimage_image _).symm
-  have hvol : IsCompactOperator (BV.toL1CLM (μ := volume) (Ω := Ω)) :=
-    BV.isCompactOperator_toL1CLM_of_linearIsometryEquiv e.measurePreserving hOW
-      (BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith heΩ
-        (e.lipschitzWith.isBounded_image hb))
   rw [Measure.isAddLeftInvariant_eq_smul μ volume]
-  exact BV.isCompactOperator_toL1CLM_smul_measure _ hvol
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- On a bounded open set with empty frontier (`Ω = ∅`, or `Ω = univ` when `F` is zero-dimensional),
-`closure Ω ⊆ Ω` is compact, so local Rellich–Kondrachov compactness makes `BV.toL1CLM` compact. -/
-private theorem isCompactOperator_toL1CLM_of_frontier_eq_empty
-    (hb : IsBounded (Ω : Set F)) (hfr : frontier (Ω : Set F) = ∅) :
-    IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) := by
-  have hcl : closure (Ω : Set F) ⊆ (Ω : Set F) :=
-    (isClopen_iff_frontier_eq_empty.mpr hfr).isClosed.closure_subset
-  have hW1 : IsCompactOperator
-      ((W1p.valueL (mu := μ) (Omega := Ω) (p := 1)).comp (W1p.restrictL le_rfl)) :=
-    W1p.isCompactOperator_valueL_restrictL hb.isCompact_closure hcl
-  have heq : W1p.valueL (mu := μ) (Omega := Ω) (p := 1) =
-      (W1p.valueL (mu := μ) (Omega := Ω) (p := 1)).comp (W1p.restrictL le_rfl) := by
-    ext1 u
-    simp
-  exact BV.isCompactOperator_toL1CLM_iff_isCompactOperator_valueL.mpr (heq ▸ hW1)
+  exact BV.isCompactOperator_toL1CLM_smul_measure _
+    (BV.isCompactOperator_toL1CLM_iff_isCompactOperator_valueL.mpr
+      (W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image f hΩ hb))
 
 /-- **Global `L¹` compactness of `BV` on bounded Lipschitz domains.** Let `F` be a
 finite-dimensional real inner product space, `μ` an additive Haar measure on `F`, and `Ω ⊆ F` a
@@ -173,16 +126,9 @@ No inner-product, finite-dimensionality, or measurability instances are assumed 
 boundary chart embeds `E` linearly and isometrically into `F`. -/
 theorem BV.isCompactOperator_toL1CLM_of_isLipschitzDomain
     (hΩ : (Ω : Set F).IsLipschitzDomain E) (hb : IsBounded (Ω : Set F)) :
-    IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) := by
-  rcases (frontier (Ω : Set F)).eq_empty_or_nonempty with hfr | ⟨x₀, hx₀⟩
-  · exact isCompactOperator_toL1CLM_of_frontier_eq_empty hb hfr
-  obtain ⟨g, -, -, -, -, -, -⟩ := isLipschitzDomain_iff_exists_mem_normalCylinder.mp hΩ x₀ hx₀
-  have hfr_cpt : IsCompact (frontier (g '' (Ω : Set F))) := by
-    rw [← g.coe_toHomeomorph, ← g.toHomeomorph.image_frontier]
-    exact (hb.isCompact_closure.of_isClosed_subset isClosed_frontier frontier_subset_closure).image
-      g.continuous
-  obtain ⟨L, hL⟩ := (hΩ.image g).exists_isLipschitzDomainWith hfr_cpt
-  exact BV.isCompactOperator_toL1CLM_of_isLipschitzDomainWith_image g hL hb
+    IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω)) :=
+  BV.isCompactOperator_toL1CLM_iff_isCompactOperator_valueL.mpr
+    (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb)
 
 /-- **Sequential `L¹` compactness for bounded sequences in `BV` on a bounded Lipschitz domain.** -/
 theorem BV.exists_subseq_tendsto_toL1_of_isLipschitzDomain
@@ -261,11 +207,13 @@ Haar measure `μ`, `BV.toL1CLM` is a compact operator. -/
 theorem BV.isCompactOperator_toL1CLM_ball (c : F) (r : ℝ) :
     IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := ⟨ball c r, isOpen_ball⟩)) := by
   rcases le_or_gt r 0 with hr | hr
-  · exact isCompactOperator_toL1CLM_of_frontier_eq_empty isBounded_ball
-      (by simp [ball_eq_empty.mpr hr])
+  · exact BV.isCompactOperator_toL1CLM_iff_isCompactOperator_valueL.mpr
+      (W1p.isCompactOperator_valueL_of_frontier_eq_empty isBounded_ball
+        (by simp [ball_eq_empty.mpr hr]))
   rcases subsingleton_or_nontrivial F with hsub | _
-  · exact isCompactOperator_toL1CLM_of_frontier_eq_empty isBounded_ball
-      (by simp [Subsingleton.eq_univ_of_nonempty (nonempty_ball.mpr hr)])
+  · exact BV.isCompactOperator_toL1CLM_iff_isCompactOperator_valueL.mpr
+      (W1p.isCompactOperator_valueL_of_frontier_eq_empty isBounded_ball
+        (by simp [Subsingleton.eq_univ_of_nonempty (nonempty_ball.mpr hr)]))
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
   let ν : F := ‖v‖⁻¹ • v
   have hν : ‖ν‖ = 1 := by simp [ν, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv)]

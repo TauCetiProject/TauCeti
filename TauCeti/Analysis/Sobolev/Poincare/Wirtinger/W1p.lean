@@ -67,6 +67,8 @@ measure, and letting `q → ∞` (`TauCeti.tendsto_eLpNorm_atTop`).
   for a ball contained in `Ω` and any `u ∈ W^{1,p}(Ω)`.
 * `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`: on a preconnected `Ω`, a Sobolev
   function with vanishing weak gradient is almost everywhere constant.
+* `TauCeti.W1p.exists_eq_const_of_gradient_eq_zero`: on a preconnected `Ω` of finite measure, such
+  a function is the constant Sobolev function `TauCeti.W1p.const c`.
 * `TauCeti.W1p.eq_zero_of_gradient_eq_zero`: for `p < ∞`, a Sobolev function on the whole of a
   nontrivial space with vanishing weak gradient is zero.
 * `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected `Ω`, a Sobolev
@@ -549,6 +551,15 @@ theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
   obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
   obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
   exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
+
+/-- **A Sobolev function with vanishing gradient on a connected domain is a constant.** If `Ω` is
+preconnected and of finite measure and the weak gradient of `u ∈ W^{1,p}(Ω)` vanishes, then `u` is
+the constant Sobolev function `W1p.const c` for some `c : ℝ`. -/
+theorem W1p.exists_eq_const_of_gradient_eq_zero [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} (hu : W1p.gradient u = 0) :
+    ∃ c : ℝ, u = W1p.const c := by
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hconn hu
+  exact ⟨c, W1p.ext_value (Lp.ext (Filter.EventuallyEq.trans hc (W1p.value_const_ae c).symm))⟩
 
 /-- **A Sobolev function on the whole space with vanishing gradient is zero.** For `p < ∞` and a
 nontrivial space `E`, if the weak gradient of `u ∈ W^{1,p}(E)` vanishes, then `u = 0`: it is

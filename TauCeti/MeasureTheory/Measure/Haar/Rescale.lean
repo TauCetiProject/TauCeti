@@ -60,15 +60,16 @@ every additive Haar measure `μ` is carried to any other additive Haar measure `
 `x ↦ t • x` with `t > 0`. -/
 theorem exists_pos_map_smul_eq [Nontrivial E] (μ ν : Measure E) [μ.IsAddHaarMeasure]
     [ν.IsAddHaarMeasure] : ∃ t : ℝ, 0 < t ∧ Measure.map (t • ·) μ = ν := by
-  set c := μ.addHaarScalarFactor ν
-  have hc : 0 < c := addHaarScalarFactor_pos_of_isAddHaarMeasure μ ν
-  have hn : Module.finrank ℝ E ≠ 0 := Module.finrank_pos.ne'
-  refine ⟨(c : ℝ) ^ ((Module.finrank ℝ E : ℝ)⁻¹), by positivity, ?_⟩
-  rw [isAddLeftInvariant_eq_smul μ ν, Measure.map_smul, map_addHaar_smul ν (by positivity),
-    Real.rpow_inv_natCast_pow c.coe_nonneg hn, abs_of_pos (by positivity),
-    ENNReal.ofReal_inv_of_pos (by positivity), ENNReal.ofReal_coe_nnreal, ENNReal.smul_def,
-    smul_smul, ENNReal.mul_inv_cancel (by exact_mod_cast hc.ne') ENNReal.coe_ne_top, one_smul]
-  exact (measurable_const_smul _).aemeasurable
+  obtain ⟨c, hc, hμ⟩ : ∃ c : NNReal, 0 < c ∧ μ = c • ν :=
+    ⟨_, addHaarScalarFactor_pos_of_isAddHaarMeasure μ ν, isAddLeftInvariant_eq_smul μ ν⟩
+  -- The dilation by `t = c ^ (1 / d)` scales volumes by `t ^ d = c`.
+  have htd : ((c : ℝ) ^ (Module.finrank ℝ E : ℝ)⁻¹) ^ Module.finrank ℝ E = c :=
+    Real.rpow_inv_natCast_pow c.coe_nonneg Module.finrank_pos.ne'
+  refine ⟨(c : ℝ) ^ (Module.finrank ℝ E : ℝ)⁻¹, by positivity, ?_⟩
+  rw [hμ, Measure.map_smul, map_addHaar_smul ν (by positivity), htd, ← smul_assoc,
+    abs_of_pos (by positivity)]
+  · simp [ENNReal.smul_def, ENNReal.ofReal_inv_of_pos, hc, ENNReal.mul_inv_cancel, hc.ne']
+  · exact (measurable_const_smul _).aemeasurable
 
 end MeasureTheory.Measure
 

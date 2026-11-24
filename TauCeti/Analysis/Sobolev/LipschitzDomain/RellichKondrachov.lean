@@ -61,6 +61,8 @@ Lipschitz-domain predicate `Set.IsLipschitzDomain`, such as a bounded Lipschitz 
   compactness of `W^{1,p}(Ω) → L^q(Ω)` for every subcritical `q`.
 * `TauCeti.W1p.isCompactOperator_valueL_of_measurePreserving`: compactness of the value map
   transported along a change of variables.
+* `TauCeti.W1p.isCompactOperator_valueL_of_frontier_eq_empty`: compactness of the value map on a
+  bounded open set with empty frontier.
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image` and
   `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomain`: Rellich–Kondrachov compactness on
   isometric copies of Lipschitz domains and for the intrinsic predicate.
@@ -280,7 +282,7 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith_image
 
 /-- With empty frontier, a bounded open set has compact closure inside itself, so the value map is
 compact by local Rellich–Kondrachov compactness. -/
-private theorem W1p.isCompactOperator_valueL_of_frontier_eq_empty {μ : Measure F}
+theorem W1p.isCompactOperator_valueL_of_frontier_eq_empty {μ : Measure F}
     [μ.IsAddHaarMeasure] (hb : IsBounded (Ω : Set F)) (hfr : frontier (Ω : Set F) = ∅) :
     IsCompactOperator (W1p.valueL (mu := μ) (Omega := Ω) (p := p)) := by
   have hcl : closure (Ω : Set F) ⊆ (Ω : Set F) :=
