@@ -12,7 +12,7 @@ import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!

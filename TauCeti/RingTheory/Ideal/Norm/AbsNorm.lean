@@ -25,6 +25,9 @@ cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute no
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
 
+In a torsion-free module, the multiples of `a • s` have index `#(R ⧸ (a))` in the multiples of a
+nonzero `s`, so the index `Submodule.cardQuot` is multiplicative along this chain.
+
 ## Main results
 
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
@@ -43,6 +46,8 @@ have nonnegative product generate principal ideals with congruent absolute norms
   `|n|`.
 * `Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem`: congruent elements whose norms have
   nonnegative product generate ideals with absolute norms congruent modulo `m`.
+* `Submodule.cardQuot_span_singleton_smul`: `#(M ⧸ R • (a • s)) = #(R ⧸ (a)) * #(M ⧸ R • s)` for
+  `s ≠ 0` in a torsion-free module `M`.
 -/
 
 public section
@@ -184,3 +189,22 @@ theorem Ideal.natCast_absNorm_span_singleton_eq_of_sub_mem [IsDedekindDomain S]
   exact ZMod.natCast_natAbs_eq_of_mul_nonneg hab (Algebra.intCast_norm_eq_of_sub_mem_span_natCast h)
 
 end AbsNormCongruence
+
+namespace Submodule
+
+variable {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
+  [Module.IsTorsionFree R M]
+
+/-- **The index of the multiples of `a • s`** in a torsion-free module is the index of `(a)` in `R`
+times the index of the multiples of `s`, for `s ≠ 0`: the multiples of `s` form a copy of `R` in
+which those of `a • s` are the ideal `(a)`. Both sides are `0` when an index is infinite. -/
+theorem cardQuot_span_singleton_smul (a : R) {s : M} (hs : s ≠ 0) :
+    (span R {a • s}).cardQuot = (Ideal.span {a}).cardQuot * (span R {s}).cardQuot := by
+  let f := LinearMap.toSpanSingleton R M s
+  have hmap : span R {a • s} = Submodule.map f (Ideal.span {a}) := by
+    rw [← Ideal.submodule_span_eq, map_span, Set.image_singleton, LinearMap.toSpanSingleton_apply]
+  rw [cardQuot, cardQuot, cardQuot, hmap, map_toAddSubgroup, ← LinearMap.range_toSpanSingleton,
+    LinearMap.range_toAddSubgroup]
+  exact AddSubgroup.index_map_of_injective _ (smul_left_injective R hs)
+
+end Submodule
