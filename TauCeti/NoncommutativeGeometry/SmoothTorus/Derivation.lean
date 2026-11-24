@@ -389,6 +389,15 @@ theorem fundamentalCocycle_apply (a : Fin 3 → SmoothNoncommutativeTorus θ) :
             (derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) (a 2))) := by
   simp [fundamentalCocycle]
 
+/-- As a multilinear map, `φ` is `(2πi)⁻¹` times the cyclic cochain
+`TauCeti.traceDerivationPairCochain` of the canonical trace and the basic derivations. -/
+theorem coe_fundamentalCocycle :
+    ((fundamentalCocycle θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 2) :
+      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) =
+      (2 * π * I)⁻¹ • traceDerivationPairCochain (trace θ) (derivation₁ θ) (derivation₂ θ) := by
+  ext a
+  simp
+
 /-- On monomials, `φ (c₀ U^x, c₁ U^y, c₂ U^z) = 2πi (y₁ z₂ - y₂ z₁) τ (c₀ U^x c₁ U^y c₂ U^z)`. -/
 theorem fundamentalCocycle_apply_single (x y z : ℤ × ℤ) (c₀ c₁ c₂ : ℂ) :
     ((fundamentalCocycle θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 2) :
@@ -416,7 +425,7 @@ theorem fundamentalCocycle_apply_star_U₁_mul_U₂ :
       MultilinearMap (RingHom.id ℂ) (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ)
         ![star ((U₁ θ : SmoothNoncommutativeTorus θ) * U₂ θ), U₁ θ, U₂ θ] = 2 * π * I := by
   have hu : star ((U₁ θ : SmoothNoncommutativeTorus θ) * U₂ θ) * (U₁ θ * U₂ θ) = 1 :=
-    Unitary.star_mul_self_of_mem (U₁ θ * U₂ θ).2
+    Unitary.star_mul_self_of_mem (U₁ θ * U₂ θ).property
   simp only [fundamentalCocycle_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons, derivation₁_U₁, derivation₁_U₂,
     derivation₂_U₁, derivation₂_U₂, mul_zero, sub_zero, smul_mul_assoc,

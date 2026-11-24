@@ -52,7 +52,7 @@ theorem isCellular_ι {c : Cocone T.diagram} (hc : IsColimit c) (k : ℕ) :
       (TopCat.ofHom ((c.ι.app k).hom.restrictPreimage univ)) :=
   letI := T.cwComplexOfIsColimit hc; letI := T.t2Space_of_isColimit hc
   isCellular_univ_of_cwComplex_of_map_eq fun n i ↦
-    ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).1,
+    ⟨(T.cwComplexOfIsColimitCellEquiv hc n).symm ((T.stageCellEquiv k n).symm i).val,
       fun _ hx ↦ T.ι_map_eq_map hc k n i hx⟩
 
 /-- Each stage inclusion `T.incl k : W k → T.Union` is cellular. -/

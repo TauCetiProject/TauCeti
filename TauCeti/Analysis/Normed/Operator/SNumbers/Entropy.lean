@@ -112,14 +112,14 @@ closed `ε`-balls in `F`. Indexing starts at zero, so `e₀(T)` uses a single ba
 noncomputable def entropyNumber (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
   ⨅ ε : {ε : ℝ≥0 // ∃ N : Finset F, N.card ≤ 2 ^ n ∧
       (T : E → F) '' closedBall 0 1 ⊆ ⋃ y ∈ (N : Set F), closedBall y ε},
-    ε.1
+    ε.val
 
 /-- Defining infimum formula for the `n`-th entropy number. -/
 theorem entropyNumber_def (T : E →L[𝕜] F) (n : ℕ) :
     T.entropyNumber n =
       ⨅ ε : {ε : ℝ≥0 // ∃ N : Finset F, N.card ≤ 2 ^ n ∧
           (T : E → F) '' closedBall 0 1 ⊆ ⋃ y ∈ (N : Set F), closedBall y ε},
-        ε.1 := (rfl)
+        ε.val := (rfl)
 
 private instance (T : E →L[𝕜] F) (n : ℕ) :
     Nonempty {ε : ℝ≥0 // ∃ N : Finset F, N.card ≤ 2 ^ n ∧
@@ -134,7 +134,7 @@ theorem entropyNumber_le_of_subset_biUnion (T : E →L[𝕜] F) {n : ℕ} {ε : 
     T.entropyNumber n ≤ ε := by
   rw [entropyNumber_def]
   exact ciInf_le (f := fun x : {ε : ℝ≥0 // ∃ N : Finset F, N.card ≤ 2 ^ n ∧
-      (T : E → F) '' closedBall 0 1 ⊆ ⋃ y ∈ (N : Set F), closedBall y ε} ↦ x.1)
+      (T : E → F) '' closedBall 0 1 ⊆ ⋃ y ∈ (N : Set F), closedBall y ε} ↦ x.val)
     (OrderBot.bddBelow _) ⟨ε, N, hcard, hcov⟩
 
 /-- Any `ε`-cover of `T '' closedBall 0 1` of cardinality at most `2 ^ n` bounds `eₙ(T)`. -/
@@ -188,7 +188,7 @@ at most `2 ^ n`. -/
 theorem entropyNumber_eq_iInf_externalCoveringNumber (T : E →L[𝕜] F) (n : ℕ) :
     T.entropyNumber n =
       ⨅ ε : {ε : ℝ≥0 // externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n},
-        ε.1 := by
+        ε.val := by
   have hcov_le {ε : ℝ≥0} {N : Finset F} (hcard : N.card ≤ 2 ^ n)
       (hcov : IsCover ε ((T : E → F) '' closedBall 0 1) N) :
       externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n := by
@@ -199,10 +199,10 @@ theorem entropyNumber_eq_iInf_externalCoveringNumber (T : E →L[𝕜] F) (n : �
   have : Nonempty {ε : ℝ≥0 // externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n} :=
     ⟨⟨_, hcov_le hcard₀ hcov₀⟩⟩
   refine le_antisymm ?_ ?_
-  · refine le_ciInf fun ε ↦ T.entropyNumber_le_of_externalCoveringNumber_le ε.2
+  · refine le_ciInf fun ε ↦ T.entropyNumber_le_of_externalCoveringNumber_le ε.property
   · refine le_entropyNumber_iff_isCover.mpr fun ε N hcard hcov ↦ ?_
     exact ciInf_le (f := fun x : {ε : ℝ≥0 //
-        externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n} ↦ x.1)
+        externalCoveringNumber ε ((T : E → F) '' closedBall 0 1) ≤ 2 ^ n} ↦ x.val)
       (OrderBot.bddBelow _) ⟨ε, hcov_le hcard hcov⟩
 
 /-! ### Monotonicity, norm bound, additivity, and Lipschitz continuity -/
@@ -243,8 +243,8 @@ theorem entropyNumber_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
   -- Cover `S(B_E)` and `T(B_E)` separately, then take pairwise sums of centers.
   rw [entropyNumber_def S, entropyNumber_def T]
   refine NNReal.le_iInf_add_iInf fun ε₁ ε₂ ↦ ?_
-  obtain ⟨N₁, hN₁, hcov₁⟩ := ε₁.2
-  obtain ⟨N₂, hN₂, hcov₂⟩ := ε₂.2
+  obtain ⟨N₁, hN₁, hcov₁⟩ := ε₁.property
+  obtain ⟨N₂, hN₂, hcov₂⟩ := ε₂.property
   refine (S + T).entropyNumber_le_of_subset_biUnion
     (N := Finset.image₂ (· + ·) N₁ N₂) ?_ ?_
   · exact (Finset.card_image₂_le _ _ _).trans
@@ -294,8 +294,8 @@ theorem entropyNumber_comp_le_left (B : F →L[𝕜] G) (T : E →L[𝕜] F) (n 
   classical
   rw [entropyNumber_def T, NNReal.mul_iInf]
   refine le_ciInf fun ε ↦ ?_
-  obtain ⟨N, hcard, hcov⟩ := ε.2
-  have hcovB : IsCover (‖B‖₊ * ε.1) ((B ∘L T : E → G) '' closedBall 0 1) (N.image B) := by
+  obtain ⟨N, hcard, hcov⟩ := ε.property
+  have hcovB : IsCover (‖B‖₊ * ε.val) ((B ∘L T : E → G) '' closedBall 0 1) (N.image B) := by
     simpa [Finset.coe_image, coe_comp, image_comp] using
       (IsCover.of_subset_iUnion_closedBall hcov).image_lipschitz B.lipschitzWith
   exact (B ∘L T).entropyNumber_le_of_isCover (Finset.card_image_le.trans hcard) hcovB
@@ -394,7 +394,7 @@ theorem div_two_le_entropyNumber_of_le_dist {T : E →L[𝕜] F} {n : ℕ} {s : 
     (hs : (s : Set E) ⊆ closedBall 0 1)
     (hsep : (s : Set E).Pairwise fun x y ↦ δ ≤ dist (T x) (T y)) (hcard : 2 ^ n < s.card) :
     δ / 2 ≤ T.entropyNumber n :=
-  div_two_le_entropyNumber_of_pairwise_le_dist (ι := s) (f := Subtype.val) (fun x ↦ hs x.2)
+  div_two_le_entropyNumber_of_pairwise_le_dist (ι := s) (f := Subtype.val) (fun x ↦ hs x.property)
     (fun _ _ hne ↦ hsep (Subtype.prop _) (Subtype.prop _) (Subtype.coe_ne_coe.mpr hne))
     (by simpa only [Fintype.card_coe] using hcard)
 
@@ -540,16 +540,16 @@ theorem entropyNumber_comp_add_le_mul (B : F →L[𝕜] G) (S : E →L[𝕜] F) 
   refine le_ciInf fun ε₁ ↦ ?_
   rw [entropyNumber_def S, NNReal.mul_iInf]
   refine le_ciInf fun ε₂ ↦ ?_
-  obtain ⟨N₁, hN₁, hcov₁⟩ := ε₁.2
-  obtain ⟨N₂, hN₂, hcov₂⟩ := ε₂.2
+  obtain ⟨N₁, hN₁, hcov₁⟩ := ε₁.property
+  obtain ⟨N₂, hN₂, hcov₂⟩ := ε₂.property
   -- For any `r > ε₂`, pick a scalar `c` with `ε₂ < ‖c‖₊ < r` to rescale `ε₂`-balls into `B_F`.
-  have key : ∀ r : ℝ≥0, ε₂.1 < r → (B ∘L S).entropyNumber (m + n) ≤ ε₁.1 * r := by
+  have key : ∀ r : ℝ≥0, ε₂.val < r → (B ∘L S).entropyNumber (m + n) ≤ ε₁.val * r := by
     intro r hr
     obtain ⟨c, hc₁, hc₂⟩ := NormedField.exists_lt_nnNorm_lt 𝕜 hr
     have hc0 : c ≠ 0 := nnNorm_pos.mp (zero_le.trans_lt hc₁)
     have hcov : (B ∘L S : E → G) '' closedBall 0 1 ⊆
         ⋃ w ∈ (Finset.image₂ (fun z y ↦ B y + c • z) N₁ N₂ : Set G),
-          closedBall w ↑(ε₁.1 * ‖c‖₊) := by
+          closedBall w ↑(ε₁.val * ‖c‖₊) := by
       rintro _ ⟨x, hx, rfl⟩
       obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.mp (hcov₂ ⟨x, hx, rfl⟩)
       -- Rescale `S x - y` by `c⁻¹` so it lands inside the closed unit ball of `F`.
@@ -568,21 +568,21 @@ theorem entropyNumber_comp_add_le_mul (B : F →L[𝕜] G) (S : E →L[𝕜] F) 
         have hSu : S x = y + c • u := by simp [u, smul_inv_smul₀ hc0]
         rw [hSu, map_add, map_smul, add_sub_add_left_eq_sub, ← smul_sub]
       rw [mem_closedBall, dist_eq_norm, comp_apply, hdecomp, norm_smul, NNReal.coe_mul,
-        coe_nnNorm, mul_comm (ε₁.1 : ℝ)]
+        coe_nnNorm, mul_comm (ε₁.val : ℝ)]
       exact mul_le_mul_of_nonneg_left
         (dist_eq_norm (B u) z ▸ mem_closedBall.mp huz) (norm_nonneg c)
     have hcard : (Finset.image₂ (fun z y ↦ B y + c • z) N₁ N₂).card ≤ 2 ^ (m + n) :=
       (Finset.card_image₂_le _ _ _).trans
         ((Nat.mul_le_mul hN₁ hN₂).trans_eq (pow_add 2 m n).symm)
     exact ((B ∘L S).entropyNumber_le_of_subset_biUnion hcard hcov).trans
-      (mul_le_mul_right hc₂.le ε₁.1)
-  rcases eq_or_ne ε₁.1 0 with hε₁ | hε₁
-  · simpa [hε₁] using key (ε₂.1 + 1) (lt_add_one _)
+      (mul_le_mul_right hc₂.le ε₁.val)
+  rcases eq_or_ne ε₁.val 0 with hε₁ | hε₁
+  · simpa [hε₁] using key (ε₂.val + 1) (lt_add_one _)
   · refine le_of_forall_pos_le_add fun η hη ↦ ?_
-    have hpos : 0 < η / ε₁.1 := div_pos hη (pos_iff_ne_zero.mpr hε₁)
+    have hpos : 0 < η / ε₁.val := div_pos hη (pos_iff_ne_zero.mpr hε₁)
     calc (B ∘L S).entropyNumber (m + n)
-        ≤ ε₁.1 * (ε₂.1 + η / ε₁.1) := key _ (lt_add_of_pos_right _ hpos)
-      _ = ε₁.1 * ε₂.1 + η := by rw [mul_add, mul_div_cancel₀ _ hε₁]
+        ≤ ε₁.val * (ε₂.val + η / ε₁.val) := key _ (lt_add_of_pos_right _ hpos)
+      _ = ε₁.val * ε₂.val + η := by rw [mul_add, mul_div_cancel₀ _ hε₁]
 
 /-- Precomposition scales entropy numbers by at most the operator norm over a densely normed
 field. -/

@@ -11,11 +11,12 @@ public import TauCeti.Algebra.QuadraticAlgebra.Etale
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
-public import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+public import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.BaseChange.Unramified
 public import TauCeti.RingTheory.Etale.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.Basic
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
+import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Tests for unramified, tamely and totally ramified extensions of a discrete valuation ring
@@ -223,11 +224,9 @@ theorem test_cyclotomic_three (hv : (3 : ℤ) ∈ v.asIdeal) {ζ : L} (hζ : IsP
   have hπ : Irreducible (-3 : A) := (show Associated (3 : A) (-3) from ⟨-1, by simp⟩).irreducible
     (by simpa using
       v.irreducible_natCast_localizationAtPrime Nat.prime_three (by exact_mod_cast hv))
-  have hζ₃ : 1 + ζ + ζ ^ 2 = 0 := by
-    simpa [Finset.sum_range_succ] using hζ.geom_sum_eq_zero (by norm_num)
   have hα : (2 * ζ + 1) ^ 2 = algebraMap A L (-3) := by
     rw [map_neg, map_ofNat]
-    linear_combination 4 * hζ₃
+    linear_combination 4 * hζ.one_add_add_sq
   have hgen' : ℚ⟮2 * ζ + 1⟯ = ⊤ := by
     rw [eq_top_iff, ← hgen, adjoin_simple_le_iff]
     have h : algebraMap ℚ L (1 / 2) * (2 * ζ + 1 - 1) ∈ ℚ⟮2 * ζ + 1⟯ :=

@@ -240,7 +240,7 @@ def typeBDiagonalEquiv : (ι → K) ≃ₗ[K] typeBDiagonalCartan K ι where
   invFun A i := (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) (.inr (.inl i)) (.inr (.inl i))
   left_inv d := by simp [typeBDiagonalMatrix]
   right_inv A := by
-    obtain ⟨d, hd⟩ := A.2
+    obtain ⟨d, hd⟩ := A.property
     have hcoord : (fun i =>
         (A : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K)
           (.inr (.inl i)) (.inr (.inl i))) = d := by
@@ -271,8 +271,8 @@ theorem typeBDiagonalEquiv_symm_apply (A : typeBDiagonalCartan K ι) (i : ι) :
 
 instance : IsLieAbelian (typeBDiagonalCartan K ι) where
   trivial A B := by
-    obtain ⟨d, hd⟩ := A.2
-    obtain ⟨e, he⟩ := B.2
+    obtain ⟨d, hd⟩ := A.property
+    obtain ⟨e, he⟩ := B.property
     apply Subtype.ext
     apply Subtype.ext
     exact lie_eq_zero_of_isDiag (hd ▸ isDiag_diagonal _) (he ▸ isDiag_diagonal _)
@@ -382,7 +382,7 @@ theorem typeBDiagonalCartan_normalizer_eq_self (h2 : IsRegular (2 : K)) :
   obtain ⟨d, hd⟩ := exists_isRegular_typeBDiagonalValue_sub (K := K) h2 a b hab
   have hbracket := ((typeBDiagonalCartan K ι).mem_normalizer_iff X).mp hX
     (typeBDiagonalEquiv (K := K) (ι := ι) d)
-    (typeBDiagonalEquiv (K := K) (ι := ι) d).2
+    (typeBDiagonalEquiv (K := K) (ι := ι) d).property
   obtain ⟨e, he⟩ := hbracket
   have hzero :
       ((⁅X, (typeBDiagonalEquiv (K := K) (ι := ι) d : typeBDiagonalCartan K ι)⁆ :

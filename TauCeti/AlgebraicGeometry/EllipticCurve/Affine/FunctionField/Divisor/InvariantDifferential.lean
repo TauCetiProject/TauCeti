@@ -253,7 +253,7 @@ theorem weilDifferentialDivisor_invariantDifferential :
     weilDifferentialDivisor W.isFunctionField (isIntegrallyClosedIn_functionField W)
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating W.isFunctionField
           (isIntegrallyClosedIn_functionField W) (transcendental_genericX W)
-          (invariantDifferential W)).2
+          (invariantDifferential W)).property
         (kaehlerDifferentialEquivWeilDifferentialOfSeparating_invariantDifferential_ne_zero W) =
       0 := by
   let _ := weilDifferentialSpaceModule W.isFunctionField
@@ -264,7 +264,7 @@ theorem weilDifferentialDivisor_invariantDifferential :
   let z : W.FunctionFieldˣ := Units.mk0 (invariantDifferentialDenom W)⁻¹
     (inv_ne_zero (invariantDifferentialDenom_ne_zero W))
   have hD := weilDifferentialDivisor_repartitionDualMul hF hex
-    (weilDifferentialOfSeparating hF hx).2
+    (weilDifferentialOfSeparating hF hx).property
     (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) z
   rw [weilDifferentialDivisor_weilDifferentialOfSeparating] at hD
   have hω : ((kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hex hx

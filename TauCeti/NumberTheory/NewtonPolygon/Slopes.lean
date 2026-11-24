@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Convex.Sequence.FiniteSlopeMultiset
 public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.NumberTheory.NewtonPolygon.Basic
 public import TauCeti.RingTheory.Valuation.AddValuation
+import TauCeti.Analysis.Convex.Sequence.Rationality
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -51,11 +52,15 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   polygon is nonempty.
 * `Polynomial.card_newtonSlopes`: if only zero has infinite valuation, a polynomial of degree
   `d` and order of vanishing `a` at zero has `d - a` finite slopes.
-* `Polynomial.sum_newtonSlopes`: their sum is the difference between the valuations of the
-  leading and trailing coefficients.
+* `Polynomial.newtonSlopes_eq_replicate_of_forall_eq`: a polynomial of degree `d` with nonzero
+  constant coefficient and a single finite slope `m` has slope multiset `d` copies of `m`.
+* `Polynomial.sum_newtonSlopes`: the sum of the finite slopes is the difference between the
+  valuations of the leading and trailing coefficients.
 * `Polynomial.den_dvd_card_newtonSlopes`: for a valuation taking integer values on nonzero
   elements, if every finite slope equals the rational `q`, then the denominator of `q` divides
   the number of finite slopes.
+* `Polynomial.exists_rat_of_mem_newtonSlopes`: if every finite value of `v` is rational, every
+  finite slope of `f.newtonPolygon v` is rational.
 * `Polynomial.exists_isFiniteFace_newtonPolygon`: a nonempty Newton polygon has a finite face
   of every real slope.
 * `Polynomial.count_newtonSlopes_of_isFiniteFace`: the multiplicity of a slope `σ` is the
@@ -75,14 +80,16 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   coefficients negates the finite slopes.
 * `Polynomial.newtonSlopes_monomial`: a monomial, in particular a constant, has no finite
   slopes.
-* `Polynomial.newtonSlopes_X_sub_C`: the only finite slope of `X - C α` is `-v α`.
 * `Polynomial.forall_mem_newtonSlopes_eq_iff`: the purity criterion. If the trailing and leading
   coefficients have finite valuation, every finite slope equals `m` exactly when the leading
   point lies on the line of slope `m` through the trailing point and no coefficient point lies
   below that line.
 * `Polynomial.newtonSlopes_eq_replicate_of_eisenstein`: an Eisenstein polynomial of degree `d`
   has `d` finite slopes, all equal to `-1 / d`.
-* `PowerSeries.finite_finiteEdges_newtonPolygon_iff`: conversely, for a power series with
+* `Polynomial.newtonSlopes_X_pow_sub_C` and `Polynomial.newtonSlopes_X_sub_C`: for `c` of finite
+  valuation, `X ^ n - C c` has `n` finite slopes all equal to `-v c / n`, and in particular
+  `X - C α` has the single finite slope `-v α`.
+* `PowerSeries.finite_finiteEdges_newtonPolygon_iff`: for a power series with
   admissible coefficient heights under a valuation that takes `⊤` only at `0`, the Newton polygon
   has finitely many finite unit edges if and only if the series is a polynomial.
 
@@ -165,7 +172,7 @@ theorem newtonSlopes_eq_slopeMultiset {d : FiniteSlopeData ℝ}
     · rintro ⟨⟨h₁, -⟩, -, h₂⟩
       exact ⟨⟨n - d.start, by omega⟩, by dsimp only; omega⟩
     · rintro ⟨i, rfl⟩
-      have := i.2
+      have := i.isLt
       omega
   rw [newtonSlopes_def, hfin, Finset.map_val, Multiset.map_map, d.slopeMultiset_def,
     ← Fin.univ_val_map, ← hd]
@@ -272,6 +279,16 @@ theorem sum_newtonSlopes (hv : ∀ x, v x = ⊤ → x = 0) :
     newtonPolygon_natTrailingDegree]
 
 variable {f v} in
+/-- If only zero has infinite valuation, a polynomial of degree `d` with nonzero constant
+coefficient whose finite slopes all equal `m` has the slope `m` with multiplicity `d`. -/
+theorem newtonSlopes_eq_replicate_of_forall_eq (hv : ∀ x, v x = ⊤ → x = 0)
+    (hf : f.coeff 0 ≠ 0) {m : ℝ} (hm : ∀ s ∈ f.newtonSlopes v, s = m) :
+    f.newtonSlopes v = Multiset.replicate f.natDegree m := by
+  refine Multiset.eq_replicate.mpr ⟨?_, hm⟩
+  rw [card_newtonSlopes f v hv,
+    natTrailingDegree_eq_zero_of_constantCoeff_ne_zero (by simpa using hf), Nat.sub_zero]
+
+variable {f v} in
 /-- If the valuation takes integer values on nonzero elements and every finite slope of `f`
 equals the rational number `q`, then the denominator of `q` divides the number of finite slopes
 of `f`, that is, the horizontal length of its Newton polygon. -/
@@ -290,6 +307,24 @@ theorem den_dvd_card_newtonSlopes (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = 
     rw [mul_comm]
     exact_mod_cast hsum.symm
   exact Int.natCast_dvd_natCast.mp (Rat.den_dvd_of_intCast_eq_mul_intCast q hq)
+
+variable {f v} in
+/-- If every finite value of `v` is rational, then every finite slope of `f.newtonPolygon v` is
+rational. -/
+theorem exists_rat_of_mem_newtonSlopes
+    (hrat : ∀ x : R, v x ≠ ⊤ → ∃ q : ℚ, v x = ((q : ℝ) : WithTop ℝ))
+    {s : ℝ} (hs : s ∈ f.newtonSlopes v) : ∃ q : ℚ, s = q := by
+  obtain ⟨k, hk, rfl⟩ := (mem_newtonSlopes f v).mp hs
+  rw [mem_finiteEdges] at hk
+  have hfin : {n | f.newtonPolygon v n ≠ ⊤}.Finite :=
+    (Set.finite_Iic f.natDegree).subset fun n hn =>
+      Set.mem_Iic.mpr (le_of_not_gt fun h => hn (f.newtonPolygon_eq_top_of_natDegree_lt v h))
+  obtain ⟨q₁, hq₁⟩ := (f.isLowerConvexEnvelope_newtonPolygon v).exists_rat_height_of_finiteDomain
+    (fun n hn => hrat _ hn) hfin hk.1
+  obtain ⟨q₂, hq₂⟩ := (f.isLowerConvexEnvelope_newtonPolygon v).exists_rat_height_of_finiteDomain
+    (fun n hn => hrat _ hn) hfin hk.2
+  refine ⟨q₂ - q₁, ?_⟩
+  rw [unitSlope_def, hq₁, hq₂, WithTop.untop₀_coe, WithTop.untop₀_coe, Rat.cast_sub]
 
 /-! ### Elementary operations -/
 
@@ -384,26 +419,6 @@ theorem newtonSlopes_map_eq_map_mul (φ : R →+* S) {w : AddValuation S (WithTo
     fun n _ => by
       rw [hpoly, id]
       simpa using unitSlope_map (h := f.newtonPolygon v) (AddMonoidHom.mulLeft c) n
-
-/-! ### Linear polynomials -/
-
-/-- The polynomial `X - C α`, whose root `α` has finite valuation, has the single finite slope
-`-v α`. -/
-theorem newtonSlopes_X_sub_C {α : R} (hα : v α ≠ ⊤) :
-    (X - C α).newtonSlopes v = {-(v α).untop₀} := by
-  let d : FiniteSlopeData ℝ :=
-    ⟨0, (v α).untop₀, 1, fun _ => -(v α).untop₀, monotone_const⟩
-  have hd : d.heights = (X - C α).newtonPolygon v := by
-    have ha : (fun n => v ((X - C α).coeff n)) = d.heights := by
-      funext n
-      rcases n with _ | _ | n
-      · simp [d, FiniteSlopeData.heights_def, coeff_X, coeff_C, prefixSum_zero,
-          WithTop.coe_untop₀_of_ne_top hα]
-      · simp [d, FiniteSlopeData.heights_def, coeff_X, prefixSum_succ, prefixSum_zero]
-      · simp [d, FiniteSlopeData.heights_def, coeff_X]
-    rw [newtonPolygon_def, ha, d.isConvexSeq_heights.lowerConvexEnvelope_eq]
-  rw [newtonSlopes_eq_slopeMultiset hd, FiniteSlopeData.slopeMultiset_def]
-  simp [d]
 
 /-! ### Pure polynomials -/
 
@@ -542,6 +557,59 @@ theorem newtonSlopes_eq_replicate_of_eisenstein (hlead : v f.leadingCoeff = 0)
   exact one_add_neg_inv_natDegree_mul_le_addValuation_coeff_of_eisenstein hlead h0 hmem n
 
 end Pure
+
+/-! ### Binomials and linear polynomials -/
+
+/-- For any `c : R` of finite valuation and `n : ℕ`, the binomial `X ^ n - C c` has `n` finite
+slopes with respect to `v`, all equal to `-(v c).untop₀ / n`. -/
+theorem newtonSlopes_X_pow_sub_C (n : ℕ) {c : R} (hc : v c ≠ ⊤) :
+    ((X : R[X]) ^ n - C c).newtonSlopes v = Multiset.replicate n (-(v c).untop₀ / n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [pow_zero, ← map_one C, ← map_sub, newtonSlopes_C, Multiset.replicate_zero]
+  have hc0 : c ≠ 0 := fun h => hc (by rw [h, v.map_zero])
+  have : Nontrivial R := ⟨⟨c, 0, hc0⟩⟩
+  set p : R[X] := (X : R[X]) ^ n - C c
+  have hdeg : p.natDegree = n := natDegree_X_pow_sub_C c
+  have hcoeff_n : p.coeff n = 1 := by simp [p, coeff_X_pow, coeff_C, hn.ne']
+  have hlead : p.leadingCoeff = 1 := by rw [leadingCoeff, hdeg, hcoeff_n]
+  have hcoeff_0 : p.coeff 0 = -c := by simp [p, coeff_X_pow, hn.ne]
+  have hc0' : p.constantCoeff ≠ 0 := by
+    rw [constantCoeff_apply, hcoeff_0]
+    exact neg_ne_zero.mpr hc0
+  have ha : p.natTrailingDegree = 0 := natTrailingDegree_eq_zero_of_constantCoeff_ne_zero hc0'
+  have htrail_v : v p.trailingCoeff = v c := by
+    rw [trailingCoeff, ha, hcoeff_0, v.map_neg]
+  have htr : v p.trailingCoeff ≠ ⊤ := htrail_v ▸ hc
+  have hld : v p.leadingCoeff ≠ ⊤ := by
+    rw [hlead, v.map_one]
+    exact WithTop.zero_ne_top
+  refine Multiset.eq_replicate.mpr ⟨?_, ?_⟩
+  · rw [newtonSlopes_def, Multiset.card_map, Finset.card_val,
+      ← Set.ncard_eq_toFinset_card _ (p.finite_finiteEdges_newtonPolygon v),
+      finiteEdges_newtonPolygon_of_ne_top p v htr hld, Set.ncard_Ico_nat, ha, hdeg, Nat.sub_zero]
+  refine (forall_mem_newtonSlopes_eq_iff htr hld).mpr ⟨?_, fun k => ?_⟩
+  · rw [hlead, v.map_one, WithTop.untop₀_zero, htrail_v, hdeg, ha, Nat.cast_zero, sub_zero]
+    have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+    field_simp
+    ring
+  rw [htrail_v, ha, Nat.cast_zero, sub_zero]
+  rcases eq_or_ne k 0 with rfl | hk0
+  · rw [hcoeff_0, v.map_neg]
+    simp [WithTop.coe_untop₀_of_ne_top hc]
+  by_cases hkn : k = n
+  · rw [hkn, hcoeff_n, v.map_one, ← WithTop.coe_zero, WithTop.coe_le_coe]
+    have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+    have : (v c).untop₀ + -(v c).untop₀ / (n : ℝ) * (n : ℝ) = 0 := by field_simp; ring
+    exact this.le
+  · have hcoeff : p.coeff k = 0 := by simp [p, coeff_X_pow, coeff_C, hk0, hkn]
+    rw [hcoeff, v.map_zero]
+    exact le_top
+
+/-- The polynomial `X - C α`, whose root `α` has finite valuation, has the single finite slope
+`-v α`. -/
+theorem newtonSlopes_X_sub_C {α : R} (hα : v α ≠ ⊤) :
+    (X - C α).newtonSlopes v = {-(v α).untop₀} := by
+  simpa using newtonSlopes_X_pow_sub_C v 1 hα
 
 end Polynomial
 

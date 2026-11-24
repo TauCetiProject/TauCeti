@@ -197,7 +197,7 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
         exact (hy i).trans (pow_le_pow_left₀ (pointNorm_nonneg f)
           (hB.pointNorm_le_supSeminorm y f) _)
     exact (Real.rpow_one_div_natCast_sub_le_iff (supSeminorm_nonneg _) (supSeminorm_nonneg f)
-      i.2).mpr hle
+      i.isLt).mpr hle
 
 /-- **The supremum seminorm is the spectral value of the minimal polynomial.** Let `B` be an
 affinoid algebra which is integral and torsion-free over an integrally closed domain `A`. For
@@ -234,10 +234,10 @@ theorem supSeminorm_smul_of_isTorsionFree (hB : IsAffinoidAlgebra K B) [IsDomain
   have hterm (i : Fin p.natDegree) :
       supSeminorm K ((p.scaleRoots a).coeff i) ^ (1 / (p.natDegree - i : ℝ)) =
         supSeminorm K a * supSeminorm K (p.coeff i) ^ (1 / (p.natDegree - i : ℝ)) := by
-    have hpos : (0 : ℝ) < (p.natDegree : ℝ) - i := sub_pos.mpr (Nat.cast_lt.mpr i.2)
+    have hpos : (0 : ℝ) < (p.natDegree : ℝ) - i := sub_pos.mpr (Nat.cast_lt.mpr i.isLt)
     rw [coeff_scaleRoots, hpow, Real.mul_rpow (supSeminorm_nonneg _)
       (pow_nonneg (supSeminorm_nonneg _) _), ← Real.rpow_natCast (supSeminorm K a),
-      ← Real.rpow_mul (supSeminorm_nonneg _), Nat.cast_sub i.2.le,
+      ← Real.rpow_mul (supSeminorm_nonneg _), Nat.cast_sub i.isLt.le,
       mul_one_div_cancel hpos.ne', Real.rpow_one, mul_comm]
   trans (⨆ i : Fin p.natDegree,
     supSeminorm K ((p.scaleRoots a).coeff i) ^ (1 / (p.natDegree - i : ℝ)))

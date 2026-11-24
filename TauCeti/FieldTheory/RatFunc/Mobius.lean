@@ -61,7 +61,8 @@ invertible `2 × 2` matrix over `k` has nonzero determinant, so the construction
   `Aut(k(X)/k)` infinite.
 * `RatFunc.finite_algEquiv` and `RatFunc.infinite_algEquiv_iff`: over a finite field
   `Aut(k(X)/k) ≅ PGL₂(k)` is finite, so it is infinite exactly when `k` is.
-* `RatFunc.card_algEquiv`: over a field with `q` elements, `Aut(k(X)/k)` has order `q³ - q`.
+* `RatFunc.card_algEquiv`: over a field with `q` elements, `Aut(k(X)/k)` has order `q³ - q`
+  (over an infinite field both sides are `0`).
 
 ## References
 
@@ -104,9 +105,12 @@ theorem mobiusOf_den_ne_zero : C c * X + C d ≠ 0 := fun h ↦ by
   obtain ⟨rfl, rfl⟩ := C_mul_X_add_C_eq_zero_iff.mp h
   exact hdet (by ring)
 
-/-- Clearing the denominator of a linear fractional transformation. -/
-theorem mobiusOf_mul_den : mobiusOf a b c d * (C c * X + C d) = C a * X + C b :=
-  div_mul_cancel₀ _ (mobiusOf_den_ne_zero hdet)
+omit hdet in
+/-- Clearing the denominator of a linear fractional transformation, whenever the denominator is
+nonzero. -/
+theorem mobiusOf_mul_den (hD : (C c * X + C d : RatFunc K) ≠ 0) :
+    mobiusOf a b c d * (C c * X + C d) = C a * X + C b :=
+  div_mul_cancel₀ _ hD
 
 omit hdet in
 /-- The coefficient `a - c · m` scaled by the denominator is the determinant. When the denominator
@@ -128,19 +132,22 @@ theorem sub_mul_mobiusOf_ne_zero : C a - C c * mobiusOf a b c d ≠ 0 := by
   refine ((map_eq_zero_iff C C_injective).not.mpr hdet) ?_
   rw [← sub_mul_mobiusOf_mul_den, h0, zero_mul]
 
-/-- **The inverse coefficient matrix recovers `X`**: `X · (a - c · m) = d · m - b`, both sides
-being the determinant times `X` over the denominator. -/
-theorem X_mul_sub_mul_mobiusOf :
+omit hdet in
+/-- **The adjugate coefficient identity** `X · (a - c · m) = d · m - b`, whenever the denominator
+is nonzero: both sides are the determinant times `X` over the denominator. No hypothesis on the
+determinant is needed; `X_eq_div_mobiusOf` uses it to divide and so recover `X` from `m`. -/
+theorem X_mul_sub_mul_mobiusOf (hD : (C c * X + C d : RatFunc K) ≠ 0) :
     (X : RatFunc K) * (C a - C c * mobiusOf a b c d) = C d * mobiusOf a b c d - C b := by
-  refine mul_right_cancel₀ (mobiusOf_den_ne_zero hdet) ?_
-  have h := mobiusOf_mul_den hdet
+  refine mul_right_cancel₀ hD ?_
+  have h := mobiusOf_mul_den (a := a) (b := b) hD
   linear_combination (-(C c * X + C d)) * h
 
 /-- **`X` is a linear fractional transformation of `m`**, by the inverse coefficient matrix. -/
 theorem X_eq_div_mobiusOf :
     (X : RatFunc K) =
       (C d * mobiusOf a b c d - C b) / (C a - C c * mobiusOf a b c d) :=
-  (eq_div_iff (sub_mul_mobiusOf_ne_zero hdet)).mpr (X_mul_sub_mul_mobiusOf hdet)
+  (eq_div_iff (sub_mul_mobiusOf_ne_zero hdet)).mpr
+    (X_mul_sub_mul_mobiusOf (mobiusOf_den_ne_zero hdet))
 
 /-- **A linear fractional transformation is transcendental**: its inverse formula expresses
 `X` in terms of it and the constants. -/
@@ -184,12 +191,13 @@ theorem mobiusOf_eq_X_iff : mobiusOf a b c d = X ↔ b = 0 ∧ c = 0 ∧ a = d :
       simp at hdet
     simp [mobiusOf_def, (map_eq_zero_iff C C_injective).not.mpr ha]
 
+omit hdet in
 /-- Multiplying a linear expression in a Möbius transformation by its denominator multiplies
-its coefficient row by the coefficient matrix. -/
-theorem mul_mobiusOf_add_mul_den (c' d' : K) :
+its coefficient row by the coefficient matrix, whenever the denominator is nonzero. -/
+theorem mul_mobiusOf_add_mul_den (hD : (C c * X + C d : RatFunc K) ≠ 0) (c' d' : K) :
     (C c' * mobiusOf a b c d + C d') * (C c * X + C d) =
       C (c' * a + d' * c) * X + C (c' * b + d' * d) := by
-  have hm := mobiusOf_mul_den hdet
+  have hm := mobiusOf_mul_den (a := a) (b := b) hD
   simp only [map_add, map_mul]
   linear_combination (C c') * hm
 
@@ -288,7 +296,8 @@ theorem mobiusAutOf_mobiusOf :
   simp only [map_add, map_mul, ← algebraMap_eq_C, AlgEquiv.commutes, mobiusAutOf_X]
   simp only [algebraMap_eq_C]
   rw [← mul_div_mul_right _ _ (mobiusOf_den_ne_zero hdet),
-    mul_mobiusOf_add_mul_den hdet, mul_mobiusOf_add_mul_den hdet, mobiusOf_def]
+    mul_mobiusOf_add_mul_den (mobiusOf_den_ne_zero hdet),
+    mul_mobiusOf_add_mul_den (mobiusOf_den_ne_zero hdet), mobiusOf_def]
 
 end Comp
 
@@ -475,10 +484,16 @@ theorem infinite_algEquiv_iff : Infinite (RatFunc K ≃ₐ[K] RatFunc K) ↔ Inf
   rw [not_infinite_iff_finite] at hK
   exact not_finite (RatFunc K ≃ₐ[K] RatFunc K)
 
-/-- **The order of the automorphism group of `𝔽_q(X)` is `q³ - q`**, the order of `PGL₂(𝔽_q)`. -/
-theorem card_algEquiv [Fintype K] :
-    Nat.card (RatFunc K ≃ₐ[K] RatFunc K) = Fintype.card K ^ 3 - Fintype.card K := by
-  rw [← Nat.card_congr pglEquivAlgEquiv.toEquiv, TauCeti.natCard_PGL_fin_two]
+/-- **The order of the automorphism group of `𝔽_q(X)` is `q³ - q`**, the order of `PGL₂(𝔽_q)`.
+Over an infinite field both sides are `0`, as `Nat.card` of an infinite type is `0`. -/
+theorem card_algEquiv :
+    Nat.card (RatFunc K ≃ₐ[K] RatFunc K) = Nat.card K ^ 3 - Nat.card K := by
+  rcases finite_or_infinite K with hK | hK
+  · have := Fintype.ofFinite K
+    rw [← Nat.card_congr pglEquivAlgEquiv.toEquiv, TauCeti.natCard_PGL_fin_two,
+      Nat.card_eq_fintype_card]
+  · have := infinite_algEquiv (K := K)
+    simp [Nat.card_eq_zero_of_infinite]
 
 end Finite
 

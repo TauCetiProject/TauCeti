@@ -149,7 +149,7 @@ theorem IsContinuous.cofinalValue_of_isTopologicallyNilpotent [ContinuousConstSM
     rw [← hrt, map_div₀, Valuation.embedding_restrict, Valuation.embedding_restrict]
   obtain ⟨n, hn⟩ := exists_pow_lt_of_isTopologicallyNilpotent (v := v)
     ((hv.isOpen_lt_div r ht.ne').mem_nhds
-      (by simpa using zero_lt_iff.mpr (div_ne_zero hr.ne' ht.ne'))) ha
+      (by simpa using pos_iff_ne_zero.mpr (div_ne_zero hr.ne' ht.ne'))) ha
   exact ⟨n, by rw [← map_pow, Valuation.restrict_lt_iff_lt_embedding, hemb, map_pow]; exact hn⟩
 
 /-- A valuation with full characteristic group is continuous if its open unit ball is a
@@ -159,7 +159,7 @@ theorem HasFullCharacteristicGroup.isContinuous [IsTopologicalRing A] {v : Valua
     v.IsContinuous := by
   refine (isContinuous_iff_forall_ne_zero v).mpr fun b hb ↦
     isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
-  obtain ⟨t, ht, htle⟩ := hv.exists_inv_le (zero_lt_iff.mpr
+  obtain ⟨t, ht, htle⟩ := hv.exists_inv_le (pos_iff_ne_zero.mpr
     (fun h ↦ hb (v.restrict_eq_zero_iff.mp h)))
   have ht0 : v t ≠ 0 := fun h ↦ ht (v.restrict_eq_zero_iff.mpr h)
   have hbound : (v t)⁻¹ ≤ v b := by
@@ -237,12 +237,12 @@ theorem exists_pow_lt_of_isIntegral {v : Valuation S Γ₀}
   -- continuity of the pullback makes `v (ι ϖ) ^ n < v (ι a)` for large `n`
   obtain ⟨n, hn⟩ : ∃ n : ℕ, v (ι ϖ) ^ n < v (ι a) := by
     have h0 : (0 : R) ∈ {x | v.comap ι x < v.comap ι a} := by
-      simpa using zero_lt_iff.mpr hVa0
+      simpa using pos_iff_ne_zero.mpr hVa0
     simpa using exists_pow_lt_of_isTopologicallyNilpotent
       ((isContinuous_def.mp hu a).mem_nhds h0) hϖ
   refine ⟨n + m, ?_⟩
   calc v (ι ϖ) ^ (n + m) = v (ι ϖ) ^ n * v (ι ϖ) ^ m := pow_add _ _ _
-    _ < v (ι a) * v (ι ϖ) ^ m := mul_lt_mul_of_pos_right hn (pow_pos (zero_lt_iff.mpr hϖ0) m)
+    _ < v (ι a) * v (ι ϖ) ^ m := mul_lt_mul_of_pos_right hn (pow_pos (pos_iff_ne_zero.mpr hϖ0) m)
     _ = v c * (v (ι ϖ) ^ m * v b') := by rw [hVa, mul_comm (v b'), mul_assoc, mul_comm (v b')]
     _ ≤ v c * 1 := by gcongr
     _ = v c := mul_one _

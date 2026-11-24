@@ -161,7 +161,7 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
     (cup (M ⊗ N) P (p + q) s r h (cup M N p q (p + q) rfl x y) z)
   have hT := congrArg ((p + q).negOnePow • ·)
     (cup_dimensionShiftDownIso_hom (M ⊗ N) P hs h rfl (cup M N p q (p + q) rfl x y) z)
-  rw [negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hT
+  rw [Int.negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hT
   rw [← hL, ← hT, map_zsmul_unit, ih]
   -- On the right, `δ (x ∪ w) = (-1)^p x ∪ δ w` for the split sequence, and
   -- `δ (y ∪ z) = (-1)^q y ∪ δ z` by the definition of the cup product.
@@ -169,8 +169,8 @@ private theorem cup_assoc_of_add_one (M N P : Rep k G) {p q s r₂ r : ℤ} (hs 
     (cup_δ_of_leftInverse M hN hρN (show p + r₂ = r by omega) x (cup N P q s r₂ h₂ y z))
   dsimp only [ShortComplex.map_X₁, ShortComplex.map_X₃, curriedTensor_obj_obj] at hR
   have hTN := congrArg (q.negOnePow • ·) (cup_dimensionShiftDownIso_hom N P hs h₂ rfl y z)
-  rw [negOnePow_smul_negOnePow_smul] at hR
-  rw [negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hTN
+  rw [Int.negOnePow_smul_negOnePow_smul] at hR
+  rw [Int.negOnePow_smul_negOnePow_smul, tensorDimensionShiftDownIso_hom] at hTN
   rw [← hR, ← hTN, map_zsmul_unit, smul_smul, ← Int.negOnePow_add]
 
 /-- Associativity of the Tate cup product when the last class has nonnegative degree. -/

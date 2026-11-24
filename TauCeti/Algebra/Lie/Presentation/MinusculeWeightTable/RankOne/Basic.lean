@@ -51,7 +51,9 @@ open scoped Matrix
 namespace TauCeti.MinusculeWeightTable
 
 variable {B ι : Type*} (T : MinusculeWeightTable B ι)
-variable [Fintype ι] [DecidableEq ι] {R : Type*} [CommRing R]
+variable [DecidableEq ι] {R : Type*} [CommRing R]
+
+/-! ### The block matrix and its entries -/
 
 /-- The two-by-two block action at a simple node: `g` acts on each pair of basis vectors whose
 coordinates at the node are `1` and `-1`, in that order, and fixes the weight-zero basis
@@ -64,7 +66,6 @@ def sl2BlockMatrix (i : B) (g : Matrix (Fin 2) (Fin 2) R) : Matrix ι ι R :=
       g 0 1 * (1 : Matrix ι ι R) a (T.reflection i b) + g 1 1 * (1 : Matrix ι ι R) a b
     else (1 : Matrix ι ι R) a b
 
-omit [Fintype ι] in
 /-- The entries of the block action: a column of weight `1` or `-1` carries the matching column
 of `g` on the weight pair, and a column of weight zero is the identity column. -/
 theorem sl2BlockMatrix_apply (i : B) (g : Matrix (Fin 2) (Fin 2) R) (a b : ι) :
@@ -76,6 +77,90 @@ theorem sl2BlockMatrix_apply (i : B) (g : Matrix (Fin 2) (Fin 2) R) (a b : ι) :
       else (1 : Matrix ι ι R) a b :=
   (rfl)
 
+/-- The block action preserves the identity matrix. -/
+@[simp]
+theorem sl2BlockMatrix_one (i : B) : T.sl2BlockMatrix i (1 : Matrix (Fin 2) (Fin 2) R) = 1 := by
+  ext a b
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with h | h | h
+  all_goals simp [sl2BlockMatrix_apply, h]
+
+/-- A weight of coordinate `-1` at the node makes the block action faithful. -/
+theorem sl2BlockMatrix_injective (i : B) (hi : ∃ a, T.weight a i = -1) :
+    Function.Injective (T.sl2BlockMatrix i : Matrix (Fin 2) (Fin 2) R → Matrix ι ι R) := by
+  obtain ⟨a, ha⟩ := hi
+  have hs : T.weight (T.reflection i a) i = 1 := by simp [ha]
+  have hne : T.reflection i a ≠ a := by
+    intro h
+    rw [h, ha] at hs
+    omega
+  intro g h hgh
+  ext j k
+  have he := congrFun (congrFun hgh (if j = 0 then T.reflection i a else a))
+    (if k = 0 then T.reflection i a else a)
+  fin_cases j <;> fin_cases k <;>
+    simpa [sl2BlockMatrix_apply, ha, hs, Matrix.one_apply, hne, hne.symm] using he
+
+/-- Applying a ring homomorphism entrywise commutes with the block action. -/
+@[simp]
+theorem map_sl2BlockMatrix {S : Type*} [CommRing S] (f : R →+* S) (i : B)
+    (g : Matrix (Fin 2) (Fin 2) R) :
+    (T.sl2BlockMatrix i g).map f = T.sl2BlockMatrix i (g.map f) := by
+  ext a b
+  simp only [sl2BlockMatrix_apply, Matrix.map_apply, Matrix.one_apply]
+  split_ifs <;> simp only [map_add, map_mul, map_zero, map_one]
+
+/-! ### Values on transvections and diagonal matrices -/
+
+/-- The upper transvection of `SL₂` acts by the parameterized raising unipotent. -/
+theorem sl2BlockMatrix_upper_transvection (i : B) (t : R) :
+    T.sl2BlockMatrix i
+        (Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) t :
+          Matrix (Fin 2) (Fin 2) R) =
+      1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R) := by
+  ext a b
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with hb | hb | hb
+  all_goals simp [sl2BlockMatrix_apply, Matrix.SpecialLinearGroup.transvection_coe,
+    Matrix.one_apply, hb, Matrix.smul_apply, smul_eq_mul, add_comm]
+
+/-- The lower transvection of `SL₂` acts by the parameterized lowering unipotent. -/
+theorem sl2BlockMatrix_lower_transvection (i : B) (t : R) :
+    T.sl2BlockMatrix i
+        (Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t :
+          Matrix (Fin 2) (Fin 2) R) =
+      1 + t • (T.loweringMatrix i).map (Int.cast : ℤ → R) := by
+  ext a b
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with hb | hb | hb
+  all_goals simp [sl2BlockMatrix_apply, Matrix.SpecialLinearGroup.transvection_coe,
+    Matrix.one_apply, hb, Matrix.smul_apply, smul_eq_mul]
+
+/-- A diagonal two-by-two matrix acts diagonally according to the three weights. -/
+theorem sl2BlockMatrix_diagonal (i : B) (d : Fin 2 → R) :
+    T.sl2BlockMatrix i (Matrix.diagonal d) = Matrix.diagonal (fun a ↦
+      if T.weight a i = 1 then d 0 else if T.weight a i = -1 then d 1 else 1) := by
+  ext a b
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with hb | hb | hb
+  all_goals by_cases hab : a = b
+  all_goals simp [sl2BlockMatrix_apply, Matrix.one_apply, hb, hab]
+
+/-- A determinant-one unit diagonal acts by the integral minuscule weights. -/
+theorem sl2BlockMatrix_diagonal_unit (i : B) (u : Rˣ) :
+    T.sl2BlockMatrix i (Matrix.diagonal
+      (fun r : Fin 2 ↦ if r = 0 then (u : R) else if r = 1 then ((u⁻¹ : Rˣ) : R) else 1)) =
+      Matrix.diagonal (fun a ↦ ((u ^ T.weight a i : Rˣ) : R)) := by
+  rw [sl2BlockMatrix_diagonal]
+  congr 1
+  funext a
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> simp [h]
+
+/-! ### The block representations
+
+Multiplicativity is a statement about matrix products, so from here on the weight index is
+finite. -/
+
+section Fintype
+
+variable [Fintype ι]
+
 private theorem mul_sl2BlockMatrix_apply (i : B) (g : Matrix (Fin 2) (Fin 2) R)
     (M : Matrix ι ι R) (a b : ι) :
     (M * T.sl2BlockMatrix i g) a b =
@@ -85,14 +170,6 @@ private theorem mul_sl2BlockMatrix_apply (i : B) (g : Matrix (Fin 2) (Fin 2) R)
   rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with h | h | h
   all_goals simp [sl2BlockMatrix_apply, h, Matrix.mul_apply, Matrix.one_apply,
     mul_add, mul_ite, Finset.sum_add_distrib, mul_comm]
-
-omit [Fintype ι] in
-/-- The block action preserves the identity matrix. -/
-@[simp]
-theorem sl2BlockMatrix_one (i : B) : T.sl2BlockMatrix i (1 : Matrix (Fin 2) (Fin 2) R) = 1 := by
-  ext a b
-  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with h | h | h
-  all_goals simp [sl2BlockMatrix_apply, h]
 
 /-- The block action preserves multiplication. -/
 @[simp]
@@ -118,23 +195,6 @@ theorem sl2BlockMatrixHom_apply (i : B) (g : Matrix (Fin 2) (Fin 2) R) :
     T.sl2BlockMatrixHom i g = T.sl2BlockMatrix i g :=
   (rfl)
 
-omit [Fintype ι] in
-/-- A weight of coordinate `-1` at the node makes the block action faithful. -/
-theorem sl2BlockMatrix_injective (i : B) (hi : ∃ a, T.weight a i = -1) :
-    Function.Injective (T.sl2BlockMatrix i : Matrix (Fin 2) (Fin 2) R → Matrix ι ι R) := by
-  obtain ⟨a, ha⟩ := hi
-  have hs : T.weight (T.reflection i a) i = 1 := by simp [ha]
-  have hne : T.reflection i a ≠ a := by
-    intro h
-    rw [h, ha] at hs
-    omega
-  intro g h hgh
-  ext j k
-  have he := congrFun (congrFun hgh (if j = 0 then T.reflection i a else a))
-    (if k = 0 then T.reflection i a else a)
-  fin_cases j <;> fin_cases k <;>
-    simpa [sl2BlockMatrix_apply, ha, hs, Matrix.one_apply, hne, hne.symm] using he
-
 /-- Restriction of the block representation to invertible matrices. -/
 def sl2BlockGL (i : B) : GL (Fin 2) R →* GL ι R :=
   Units.map (T.sl2BlockMatrixHom i)
@@ -150,16 +210,6 @@ faithful. -/
 theorem sl2BlockGL_injective (i : B) (hi : ∃ a, T.weight a i = -1) :
     Function.Injective (T.sl2BlockGL i : GL (Fin 2) R → GL ι R) :=
   Units.map_injective (T.sl2BlockMatrix_injective i hi)
-
-omit [Fintype ι] in
-/-- Applying a ring homomorphism entrywise commutes with the block action. -/
-@[simp]
-theorem map_sl2BlockMatrix {S : Type*} [CommRing S] (f : R →+* S) (i : B)
-    (g : Matrix (Fin 2) (Fin 2) R) :
-    (T.sl2BlockMatrix i g).map f = T.sl2BlockMatrix i (g.map f) := by
-  ext a b
-  simp only [sl2BlockMatrix_apply, Matrix.map_apply, Matrix.one_apply]
-  split_ifs <;> simp only [map_add, map_mul, map_zero, map_one]
 
 /-- Restriction of the block representation to the special linear group. -/
 def sl2BlockSL (i : B) : Matrix.SpecialLinearGroup (Fin 2) R →* GL ι R :=
@@ -191,51 +241,6 @@ theorem sl2BlockSL_injective (i : B) (hi : ∃ a, T.weight a i = -1) :
   rw [sl2BlockSL, MonoidHom.coe_comp]
   exact (T.sl2BlockGL_injective i hi).comp Matrix.SpecialLinearGroup.toGL_injective
 
-omit [Fintype ι] in
-/-- The upper transvection of `SL₂` acts by the parameterized raising unipotent. -/
-theorem sl2BlockMatrix_upper_transvection (i : B) (t : R) :
-    T.sl2BlockMatrix i
-        (Matrix.SpecialLinearGroup.transvection (by decide : (0 : Fin 2) ≠ 1) t :
-          Matrix (Fin 2) (Fin 2) R) =
-      1 + t • (T.raisingMatrix i).map (Int.cast : ℤ → R) := by
-  ext a b
-  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with hb | hb | hb
-  all_goals simp [sl2BlockMatrix_apply, Matrix.SpecialLinearGroup.transvection_coe,
-    Matrix.one_apply, hb, Matrix.smul_apply, smul_eq_mul, add_comm]
-
-omit [Fintype ι] in
-/-- The lower transvection of `SL₂` acts by the parameterized lowering unipotent. -/
-theorem sl2BlockMatrix_lower_transvection (i : B) (t : R) :
-    T.sl2BlockMatrix i
-        (Matrix.SpecialLinearGroup.transvection (by decide : (1 : Fin 2) ≠ 0) t :
-          Matrix (Fin 2) (Fin 2) R) =
-      1 + t • (T.loweringMatrix i).map (Int.cast : ℤ → R) := by
-  ext a b
-  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with hb | hb | hb
-  all_goals simp [sl2BlockMatrix_apply, Matrix.SpecialLinearGroup.transvection_coe,
-    Matrix.one_apply, hb, Matrix.smul_apply, smul_eq_mul]
-
-omit [Fintype ι] in
-/-- A diagonal two-by-two matrix acts diagonally according to the three weights. -/
-theorem sl2BlockMatrix_diagonal (i : B) (d : Fin 2 → R) :
-    T.sl2BlockMatrix i (Matrix.diagonal d) = Matrix.diagonal (fun a ↦
-      if T.weight a i = 1 then d 0 else if T.weight a i = -1 then d 1 else 1) := by
-  ext a b
-  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one b i with hb | hb | hb
-  all_goals by_cases hab : a = b
-  all_goals simp [sl2BlockMatrix_apply, Matrix.one_apply, hb, hab]
-
-omit [Fintype ι] in
-/-- A determinant-one unit diagonal acts by the integral minuscule weights. -/
-theorem sl2BlockMatrix_diagonal_unit (i : B) (u : Rˣ) :
-    T.sl2BlockMatrix i (Matrix.diagonal
-      (fun r : Fin 2 ↦ if r = 0 then (u : R) else if r = 1 then ((u⁻¹ : Rˣ) : R) else 1)) =
-      Matrix.diagonal (fun a ↦ ((u ^ T.weight a i : Rˣ) : R)) := by
-  rw [sl2BlockMatrix_diagonal]
-  congr 1
-  funext a
-  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> simp [h]
-
 /-- A determinant-one unit diagonal acts in the general linear group by the integral weights. -/
 @[simp]
 theorem sl2BlockSL_diag2nUnit (i : B) (u : Rˣ) :
@@ -244,5 +249,7 @@ theorem sl2BlockSL_diag2nUnit (i : B) (u : Rˣ) :
   apply Units.ext
   rw [coe_sl2BlockSL, Matrix.SpecialLinearGroup.diag2nUnit_coe,
     sl2BlockMatrix_diagonal_unit, diagGL_coe]
+
+end Fintype
 
 end TauCeti.MinusculeWeightTable

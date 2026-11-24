@@ -62,8 +62,8 @@ variable {C I : Type*} [Category* C] [Abelian C] {c : ComplexShape I}
 lemma quasiIso_inr_of_mono_of_quasiIso (sq : IsPushout f g i j) [Mono f] [QuasiIso f] :
     QuasiIso j := by
   have : Mono j := Abelian.mono_inr_of_isColimit _ _ sq.isColimit
-  have hIso : IsIso (cokernel.map f j g i sq.w) := isIso_cokernel_map_of_isPushout sq
-  let e := asIso (cokernel.map f j g i sq.w)
+  have hIso : IsIso (cokernel.map f j g i sq.w.symm) := isIso_cokernel_map_of_isPushout sq
+  let e := asIso (cokernel.map f j g i sq.w.symm)
   have h := (TauCeti.cokernelSequence_shortExact f).quasiIso_f_iff.mp ‹QuasiIso f›
   apply (TauCeti.cokernelSequence_shortExact j).quasiIso_f_iff.mpr
   intro n
@@ -83,12 +83,12 @@ quasi-isomorphism. -/
 lemma quasiIso_cokernel_map {K₁ L₁ K₂ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
     (f₂ : K₂ ⟶ L₂) [Mono f₁] [Mono f₂] (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (w : f₁ ≫ b = a ≫ f₂)
     [QuasiIso a] [QuasiIso b] :
-    QuasiIso (cokernel.map f₁ f₂ a b w) :=
+    QuasiIso (cokernel.map f₁ f₂ a b w.symm) :=
   HomologySequence.quasiIso_τ₃
     (S₁ := ShortComplex.cokernelSequence f₁) (S₂ := ShortComplex.cokernelSequence f₂)
     { τ₁ := a
       τ₂ := b
-      τ₃ := cokernel.map f₁ f₂ a b w
+      τ₃ := cokernel.map f₁ f₂ a b w.symm
       comm₁₂ := w.symm
       comm₂₃ := (cokernel.π_desc _ _ _).symm }
     (TauCeti.cokernelSequence_shortExact f₁) (TauCeti.cokernelSequence_shortExact f₂) ‹_› ‹_›

@@ -105,8 +105,8 @@ theorem rep_det_eq_mul_of_structureConstants_ne_zero
       (hD.symm.trans (HeckeCoset.mk_rep _).symm)
   rw [HeckeRing.GLn.det_rep_eq_of_heckeCoset_eq (hDrep.trans hcoset)]
   simp only [GeneralLinearGroup.coe_mul, Matrix.det_mul]
-  have h₁ := HeckeRing.GLn.det_eq_one_of_mem_SLnZ n p.1.out.2
-  have h₂ := HeckeRing.GLn.det_eq_one_of_mem_SLnZ n p.2.out.2
+  have h₁ := HeckeRing.GLn.det_eq_one_of_mem_SLnZ n p.1.out.property
+  have h₂ := HeckeRing.GLn.det_eq_one_of_mem_SLnZ n p.2.out.property
   rw [h₁, h₂]
   ring
 
@@ -147,8 +147,8 @@ private lemma exists_mul_diagonal_mul_diagonal_mul_eq_diagonal {a b c : Fin n �
     exact mem_doubleCoset_self _ _ _
   obtain ⟨x, hx, y, hy, hxy⟩ := mem_doubleCoset.mp hmem
   -- forget the coset representatives, on whose types `p` depends
-  have hu : (p.1.out : GL (Fin n) ℚ) ∈ SLnZ n := p.1.out.2
-  have hv : (p.2.out : GL (Fin n) ℚ) ∈ SLnZ n := p.2.out.2
+  have hu : (p.1.out : GL (Fin n) ℚ) ∈ SLnZ n := p.1.out.property
+  have hv : (p.2.out : GL (Fin n) ℚ) ∈ SLnZ n := p.2.out.property
   generalize (p.1.out : GL (Fin n) ℚ) = u at hxy hu
   generalize (p.2.out : GL (Fin n) ℚ) = v at hxy hv
   obtain ⟨h₁, hh₁, h₂, hh₂, hA⟩ := exists_rep_diagCoset_eq_mul_natDiagGL_mul a

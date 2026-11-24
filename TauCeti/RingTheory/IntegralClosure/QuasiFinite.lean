@@ -36,8 +36,11 @@ hypothesis enters. This is the route to finiteness of the normalization of a fla
 algebra `A` over a possibly non-excellent discrete valuation ring `R` in its generic fibre
 `B = A[1/π]` when `B` is smooth of relative dimension one over the fraction field `K`. Applying
 these results requires constructing, near each point of the special fibre, a coordinate `x ∈ A`
-such that `A` is quasi-finite over `R[x]`, `B` is torsion-free over `R[x]`, and
-`K(x) ⊗[R[x]] B` is étale over `K(x)`. This coordinate construction is not supplied here.
+such that `A` is quasi-finite over `R[x]` at the chosen point, `B` is torsion-free over `R[x]`,
+and `K(x) ⊗[R[x]] B` is étale over `K(x)`. This coordinate is constructed by
+`TauCeti.exists_quasiFiniteAt_and_forall_isSeparable_adjoin`, and
+`TauCeti.finite_integralClosure_of_forall_transcendental_and_finrank_kaehlerDifferential_eq_one`
+applies it.
 
 ## Main results
 
@@ -77,7 +80,7 @@ theorem Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosu
   refine ⟨r, hrq, ?_⟩
   -- The integral closure of `P` in `B` lies in that of `A`, where it spans a finite submodule `N`.
   obtain ⟨s, hs⟩ := Module.Finite.fg_top (R := P) (M := integralClosure P B)
-  let incl (d : integralClosure P B) : integralClosure A B := ⟨d.1, d.2.tower_top⟩
+  let incl (d : integralClosure P B) : integralClosure A B := ⟨d.val, d.property.tower_top⟩
   let N : Submodule A (integralClosure A B) := Submodule.span A (incl '' s)
   have hincl (d : integralClosure P B) : incl d ∈ N := by
     have hd : d ∈ Submodule.span P (s : Set (integralClosure P B)) := hs ▸ Submodule.mem_top
@@ -87,10 +90,10 @@ theorem Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosu
     | add d e _ _ hd he => exact N.add_mem hd he
     | smul p d _ hd =>
       convert N.smul_mem (algebraMap P A p) hd using 1
-      exact Subtype.ext (algebraMap_smul A p d.1).symm
+      exact Subtype.ext (algebraMap_smul A p d.val).symm
   -- Every element of the integral closure of `A` lies in `N` up to a power of `r`.
   have hN (c : integralClosure A B) : ∃ n, r ^ n • c ∈ N := by
-    obtain ⟨n, hn⟩ := c.2.exists_isIntegral_algebraMap_pow_mul H
+    obtain ⟨n, hn⟩ := c.property.exists_isIntegral_algebraMap_pow_mul H
     refine ⟨n, ?_⟩
     convert hincl ⟨_, hn⟩ using 1
     exact Subtype.ext (by simp [incl, Algebra.smul_def])

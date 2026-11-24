@@ -20,23 +20,27 @@ column coordinates of `ContinuousLinearEquiv.finProdCLM`.
 
 Without assuming completeness of the scalar field:
 
-* `homMap` acts contravariantly in the source and covariantly in the target, giving the additive
-  covariant functor `homRightFunctor`;
+* `homMap` acts contravariantly in the source and covariantly in the target, preserves
+  isomorphisms, and gives the additive covariant functor `homRightFunctor`;
 * `homEv` and `homCurry` exhibit `homRightFunctor A` as right adjoint to `tensorLeft A`, making
   `FiniteRankBundleCore 𝕜 B` a `MonoidalClosed` category whose internal Hom `(ihom A).obj D` is
   definitionally `hom A D` and whose precomposition `(MonoidalClosed.pre f).app D` is
-  `homMap f (𝟙 D)`;
+  `homMap f (𝟙 D)`, and `homEv` is dinatural (`whiskerLeft_homMap_homEv`);
 * `homRightFunctor A` and `MonoidalClosed.internalHom.flip.obj D` are additive, so internal Hom
-  distributes over Whitney sums in both variables (`homWhitneySumRightIso`,
-  `homWhitneySumLeftIso`);
+  distributes over Whitney sums in both variables, naturally in all arguments
+  (`homWhitneySumRightIso`, `homWhitneySumLeftIso`);
 * `homTotalSpaceHomeomorph` identifies the reconstructed total space of `hom A D` with Mathlib's
   Hom bundle `TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) (fun x ↦ A.core.Fiber x →L[𝕜]
-  D.core.Fiber x)` over the identity of the base, via `homFiberEquiv` on every fibre;
-* pullback along a continuous base map commutes strictly with `hom` and `homMap`
-  (`pullback_hom`, `pullbackMap_homMap`).
+  D.core.Fiber x)` over the identity of the base, via `homFiberEquiv` on every fibre, naturally in
+  both arguments (`homTotalSpaceHomeomorph_naturality`);
+* pullback along a continuous base map commutes strictly with `hom`, `homMap`, evaluation, and
+  coevaluation (`pullback_hom`, `pullbackMap_homMap`, `pullbackMap_homEv`,
+  `pullbackMap_ihom_coev_app`).
 
 When `𝕜` is complete, so `FiniteRankBundleCore.dual` is available, `A.dual ⊗ D` and `hom A D` have
-identical coordinate data (`dual_tensor_eq_hom`).
+identical coordinate data (`dual_tensor_eq_hom`), giving the natural isomorphism
+`dualTensorIsoHom : A.dual ⊗ D ≅ hom A D` with identity fibre maps, and
+`homUnitIsoDual : hom A (𝟙_ _) ≅ A.dual` via the right Kronecker unitor.
 
 For the Hom bundle and its identification with `E* ⊗ F` see Milnor–Stasheff,
 *Characteristic Classes*, §3, and Atiyah, *K-Theory*, §1.2.
@@ -112,10 +116,10 @@ variable {A A' A'' D D' D'' C C' : FiniteRankBundleCore 𝕜 B}
 Hom cores, given in charts by `homCoordConj`. -/
 noncomputable def homMap (f : A' ⟶ A) (g : D ⟶ D') : hom A D ⟶ hom A' D' where
   operator i j :=
-    ⟨fun x ↦ (f.operator j i ⟨x.1, x.2.2.1, x.2.1.1⟩).homCoordConj
-        (g.operator i j ⟨x.1, x.2.1.2, x.2.2.2⟩),
-      ((f.operator j i).continuous.comp (continuous_subtype_val.subtype_mk _)).clm_homCoordConj
-        ((g.operator i j).continuous.comp (continuous_subtype_val.subtype_mk _))⟩
+    ⟨fun x ↦ (f.operator j i ⟨x.val, x.property.2.1, x.property.1.1⟩).homCoordConj
+        (g.operator i j ⟨x.val, x.property.1.2, x.property.2.2⟩),
+      ((f.operator j i).continuous.comp (continuous_subtypeVal.subtype_mk _)).clm_homCoordConj
+        ((g.operator i j).continuous.comp (continuous_subtypeVal.subtype_mk _))⟩
   compatible i i' j j' x hi hi' hj hj' v := by
     have h : ((A'.core.coordChange j' j x).homCoordConj (D'.core.coordChange j j' x)).comp
         ((f.operator j i ⟨x, hj.1, hi.1⟩).homCoordConj (g.operator i j ⟨x, hi.2, hj.2⟩)) =
@@ -130,8 +134,8 @@ noncomputable def homMap (f : A' ⟶ A) (g : D ⟶ D') : hom A D ⟶ hom A' D' w
 theorem operator_homMap (f : A' ⟶ A) (g : D ⟶ D') (i j : B)
     (x : ↥((hom A D).core.baseSet i ∩ (hom A' D').core.baseSet j)) :
     (homMap f g).operator i j x =
-      (f.operator j i ⟨x.1, x.2.2.1, x.2.1.1⟩).homCoordConj
-        (g.operator i j ⟨x.1, x.2.1.2, x.2.2.2⟩) := (rfl)
+      (f.operator j i ⟨x.val, x.property.2.1, x.property.1.1⟩).homCoordConj
+        (g.operator i j ⟨x.val, x.property.1.2, x.property.2.2⟩) := (rfl)
 
 /-- On every fibre, `homMap f g` conjugates operators by `f.fiberMap x` on the right and
 `g.fiberMap x` on the left. -/
@@ -188,6 +192,10 @@ theorem operator_homMap (f : A' ⟶ A) (g : D ⟶ D') (i j : B)
     homMap f (-g) = -homMap f g :=
   eq_neg_of_add_eq_zero_left <| by rw [← homMap_add, neg_add_cancel, homMap_zero]
 
+/-- `homMap` preserves bundle isomorphisms in both arguments. -/
+instance (f : A' ⟶ A) (g : D ⟶ D') [IsIso f] [IsIso g] : IsIso (homMap f g) :=
+  ⟨homMap (inv f) (inv g), by simp, by simp⟩
+
 /-- Covariant Hom functor `hom A -` for fixed source `A`. -/
 -- Expose the object and morphism maps, which consumers read off as `hom` and `homMap`.
 @[expose, simps]
@@ -216,6 +224,16 @@ noncomputable def homEv (A D : FiniteRankBundleCore 𝕜 B) : A ⊗ hom A D ⟶ 
     (homEv A D).fiberMap x = kroneckerHomEv 𝕜 A.rank D.rank :=
   fiberMap_constHom _ _ _ x
 
+/-- Dinaturality of `homEv`: precomposing in `hom A D` with `f : A' ⟶ A` and postcomposing with
+`g : D ⟶ D'` agrees with applying `f` on the first tensor factor and `g` on the output. -/
+@[reassoc]
+theorem whiskerLeft_homMap_homEv (f : A' ⟶ A) (g : D ⟶ D') :
+    A' ◁ homMap f g ≫ homEv A' D' = f ▷ hom A D ≫ homEv A D ≫ g :=
+  hom_ext fun x ↦ by
+    simp only [fiberMap_comp, fiberMap_whiskerLeft, fiberMap_whiskerRight, fiberMap_homMap,
+      fiberMap_homEv]
+    exact kroneckerHomEv_comp_id_kronecker_homCoordConj (f.fiberMap x) (g.fiberMap x)
+
 private theorem continuous_homCurry_section (f : A ⊗ C ⟶ D) :
     Continuous fun x ↦ TotalSpace.mk' ((Fin C.rank → 𝕜) →L[𝕜] (Fin (hom A D).rank → 𝕜))
       (E := fun y ↦ C.core.Fiber y →L[𝕜] (hom A D).core.Fiber y) x
@@ -229,27 +247,29 @@ private theorem continuous_homCurry_section (f : A ⊗ C ⟶ D) :
       ⟨C.mem_baseSet_self x₀, A.mem_baseSet_self x₀, D.mem_baseSet_self x₀⟩
   have hc : Continuous fun y : ↥U ↦
       kroneckerCurry 𝕜 A.rank C.rank D.rank
-        (f.operator x₀ x₀ ⟨y.1, ⟨y.2.2.1, y.2.1⟩, y.2.2.2⟩) :=
+        (f.operator x₀ x₀ ⟨y.val, ⟨y.property.2.1, y.property.1⟩, y.property.2.2⟩) :=
     (kroneckerCurry 𝕜 A.rank C.rank D.rank).continuous.comp
       ((f.operator x₀ x₀).continuous.comp
-        (Continuous.subtype_mk continuous_subtype_val fun y : ↥U ↦ ⟨⟨y.2.2.1, y.2.1⟩, y.2.2.2⟩))
+        (Continuous.subtype_mk continuous_subtypeVal fun y : ↥U ↦ ⟨⟨y.property.2.1, y.property.1⟩,
+            y.property.2.2⟩))
   refine ⟨continuousAt_id, ContinuousOn.continuousAt (s := U) ?_ hU⟩
   rw [continuousOn_iff_continuous_domRestrict]
   refine hc.congr fun y ↦ ?_
   dsimp only [Set.domRestrict_apply]
-  have hfop := f.operator_eq x₀ x₀ ⟨y.1, ⟨y.2.2.1, y.2.1⟩, y.2.2.2⟩
+  have hfop := f.operator_eq x₀ x₀ ⟨y.val, ⟨y.property.2.1, y.property.1⟩, y.property.2.2⟩
   rw [inChartCoordinates_core] at hfop
   dsimp only [MonoidalCategoryStruct.tensorObj] at hfop
   rw [coordChange_tensor] at hfop
   have hin := C.core.inCoordinates_eq (hom A D).core
-    (kroneckerCurry 𝕜 A.rank C.rank D.rank (f.fiberMap y.1))
-    (by simpa only [C.indexAt_eq] using y.2.1)
+    (kroneckerCurry 𝕜 A.rank C.rank D.rank (f.fiberMap y.val))
+    (by simpa only [C.indexAt_eq] using y.property.1)
     (by simpa only [(hom A D).indexAt_eq, VectorBundleCore.baseSet_at,
-      localTriv_baseSet_hom] using y.2.2)
+      localTriv_baseSet_hom] using y.property.2)
   simp only [C.indexAt_eq, (hom A D).indexAt_eq, coordChange_hom] at hin
   exact (congrArg (kroneckerCurry 𝕜 A.rank C.rank D.rank) hfop).trans <|
-    (kroneckerCurry_comp_kronecker (A.core.coordChange x₀ y.1 y.1)
-      (C.core.coordChange x₀ y.1 y.1) (D.core.coordChange y.1 x₀ y.1) (f.fiberMap y.1)).trans
+    (kroneckerCurry_comp_kronecker (A.core.coordChange x₀ y.val y.val)
+      (C.core.coordChange x₀ y.val y.val) (D.core.coordChange y.val x₀ y.val)
+          (f.fiberMap y.val)).trans
       hin.symm
 
 /-- Currying of a bundle map `A ⊗ C ⟶ D` to a bundle map `C ⟶ hom A D`. -/
@@ -614,6 +634,22 @@ theorem homWhitneySumLeftIso_hom_whitneySnd (A₁ A₂ D : FiniteRankBundleCore 
   (IsLimit.conePointUniqueUpToIso_hom_comp _ _ (Discrete.mk WalkingPair.right)).trans
     (homWhitneyLeftBicone_snd A₁ A₂ D)
 
+/-- Naturality of `homWhitneySumRightIso` in the source and both target summands. -/
+@[reassoc]
+theorem homMap_whitneyMap_homWhitneySumRightIso_hom {D₁ D₂ D₁' D₂' : FiniteRankBundleCore 𝕜 B}
+    (f : A' ⟶ A) (g₁ : D₁ ⟶ D₁') (g₂ : D₂ ⟶ D₂') :
+    homMap f (whitneyMap g₁ g₂) ≫ (homWhitneySumRightIso A' D₁' D₂').hom =
+      (homWhitneySumRightIso A D₁ D₂).hom ≫ whitneyMap (homMap f g₁) (homMap f g₂) :=
+  whitneySum_hom_ext (by simp) (by simp)
+
+/-- Naturality of `homWhitneySumLeftIso` in both source summands and the target. -/
+@[reassoc]
+theorem homMap_whitneyMap_homWhitneySumLeftIso_hom {A₁ A₂ A₁' A₂' : FiniteRankBundleCore 𝕜 B}
+    (f₁ : A₁' ⟶ A₁) (f₂ : A₂' ⟶ A₂) (g : D ⟶ D') :
+    homMap (whitneyMap f₁ f₂) g ≫ (homWhitneySumLeftIso A₁' A₂' D').hom =
+      (homWhitneySumLeftIso A₁ A₂ D).hom ≫ whitneyMap (homMap f₁ g) (homMap f₂ g) :=
+  whitneySum_hom_ext (by simp) (by simp)
+
 end WhitneySum
 
 /-! ### Identification with Mathlib's Hom bundle -/
@@ -652,7 +688,7 @@ private theorem localTriv_homFiberEquiv_symm (A D : FiniteRankBundleCore 𝕜 B)
     (q : TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
       (fun x ↦ A.core.Fiber x →L[𝕜] D.core.Fiber x))
     (hqA : q.proj ∈ A.core.baseSet i) (hqD : q.proj ∈ D.core.baseSet i) :
-    (((hom A D).core.localTriv i) ⟨q.proj, (homFiberEquiv A D q.proj).symm q.2⟩).2 =
+    (((hom A D).core.localTriv i) ⟨q.proj, (homFiberEquiv A D q.proj).symm q.snd⟩).2 =
       (finProdCLM 𝕜 A.rank D.rank).symm
         ((trivializationAt ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
           (fun x ↦ A.core.Fiber x →L[𝕜] D.core.Fiber x) i q).2) := by
@@ -667,8 +703,8 @@ noncomputable def homTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
     (hom A D).core.TotalSpace ≃ₜ
       TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
         (fun x ↦ A.core.Fiber x →L[𝕜] D.core.Fiber x) where
-  toFun p := ⟨p.proj, homFiberEquiv A D p.proj p.2⟩
-  invFun p := ⟨p.proj, (homFiberEquiv A D p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, homFiberEquiv A D p.proj p.snd⟩
+  invFun p := ⟨p.proj, (homFiberEquiv A D p.proj).symm p.snd⟩
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := by
@@ -682,7 +718,7 @@ noncomputable def homTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
     refine ((finProdCLM 𝕜 A.rank D.rank).continuous.continuousAt.comp hc).congr ?_
     filter_upwards [hU] with q hq
     have hq' := ((hom A D).core.mem_localTriv_source p.proj q).1 hq
-    exact (homFiberEquiv_inCoordinates A D p.proj q.proj hq'.1 hq'.2 q.2).symm
+    exact (homFiberEquiv_inCoordinates A D p.proj q.proj hq'.1 hq'.2 q.snd).symm
   continuous_invFun := by
     refine continuous_iff_continuousAt.2 fun p ↦ ?_
     rw [FiberBundle.continuousAt_totalSpace]
@@ -705,12 +741,12 @@ noncomputable def homTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
 
 @[simp] theorem homTotalSpaceHomeomorph_apply (A D : FiniteRankBundleCore 𝕜 B)
     (p : (hom A D).core.TotalSpace) :
-    homTotalSpaceHomeomorph A D p = ⟨p.proj, homFiberEquiv A D p.proj p.2⟩ := (rfl)
+    homTotalSpaceHomeomorph A D p = ⟨p.proj, homFiberEquiv A D p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem homTotalSpaceHomeomorph_symm_apply (A D : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
       (fun x ↦ A.core.Fiber x →L[𝕜] D.core.Fiber x)) :
-    (homTotalSpaceHomeomorph A D).symm p = ⟨p.proj, (homFiberEquiv A D p.proj).symm p.2⟩ := (rfl)
+    (homTotalSpaceHomeomorph A D).symm p = ⟨p.proj, (homFiberEquiv A D p.proj).symm p.snd⟩ := (rfl)
 
 /-- Under `homFiberEquiv`, `homMap f g` acts by precomposing with `f.fiberMap x` and postcomposing
 with `g.fiberMap x`. -/
@@ -720,6 +756,18 @@ theorem homFiberEquiv_fiberMap_homMap (f : A' ⟶ A) (g : D ⟶ D') (x : B)
       (g.fiberMap x).comp ((homFiberEquiv A D x v).comp (f.fiberMap x)) := by
   rw [fiberMap_homMap]
   exact finProdCLM_homCoordConj (f.fiberMap x) (g.fiberMap x) v
+
+/-- `homTotalSpaceHomeomorph` intertwines `homMap f g` on the internal Hom core with precomposition
+by `f.fiberMap` and postcomposition by `g.fiberMap` on Mathlib's Hom bundle. -/
+theorem homTotalSpaceHomeomorph_naturality (f : A' ⟶ A) (g : D ⟶ D')
+    (p : (hom A D).core.TotalSpace) :
+    homTotalSpaceHomeomorph A' D' ((homMap f g).totalSpaceMap p) =
+      ⟨p.proj, (g.fiberMap p.proj).comp
+        (((homTotalSpaceHomeomorph A D p).snd).comp (f.fiberMap p.proj))⟩ := by
+  rcases p with ⟨x, v⟩
+  rw [CoordinateHom.totalSpaceMap_mk, homTotalSpaceHomeomorph_apply, homTotalSpaceHomeomorph_apply]
+  exact congrArg (TotalSpace.mk' ((Fin A'.rank → 𝕜) →L[𝕜] (Fin D'.rank → 𝕜)) x)
+    (homFiberEquiv_fiberMap_homMap f g x v)
 
 /-! ### Dual-tensor comparison over a complete scalar field -/
 
@@ -734,6 +782,71 @@ theorem dual_tensor_eq_hom (A D : FiniteRankBundleCore 𝕜 B) :
   congr 2
   funext i j x
   exact piTranspose_kronecker_eq_homCoordConj _ _
+
+/-- Over a complete scalar field, `A.dual ⊗ D` is isomorphic to `hom A D` by the identity
+coordinate equivalence on every fibre. -/
+noncomputable def dualTensorIsoHom (A D : FiniteRankBundleCore 𝕜 B) :
+    A.dual ⊗ D ≅ hom A D :=
+  constIso (fun _ ↦ subset_rfl) (ContinuousLinearEquiv.refl 𝕜 (Fin (A.rank * D.rank) → 𝕜))
+    fun i j x _ _ ↦ by
+      -- Unfold the unexposed `MonoidalCategoryStruct.tensorObj` projection inside `A.dual ⊗ D`.
+      change (ContinuousLinearMap.id 𝕜 _).comp
+          ((A.core.coordChange j i x).piTranspose.kronecker (D.core.coordChange i j x)) =
+        ((A.core.coordChange j i x).homCoordConj (D.core.coordChange i j x)).comp
+          (ContinuousLinearMap.id 𝕜 _)
+      rw [ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id,
+        piTranspose_kronecker_eq_homCoordConj]
+
+@[simp] theorem fiberMap_dualTensorIsoHom_hom (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (dualTensorIsoHom A D).hom.fiberMap x =
+      ContinuousLinearMap.id 𝕜 (Fin (A.rank * D.rank) → 𝕜) :=
+  fiberMap_constIso_hom _ _ _ x
+
+@[simp] theorem fiberMap_dualTensorIsoHom_inv (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (dualTensorIsoHom A D).inv.fiberMap x =
+      ContinuousLinearMap.id 𝕜 (Fin (A.rank * D.rank) → 𝕜) :=
+  fiberMap_constIso_inv _ _ _ x
+
+/-- Naturality of `dualTensorIsoHom` with respect to `dualMap f ⊗ₘ g` and `homMap f g`. -/
+@[reassoc (attr := simp)]
+theorem dualTensorIsoHom_naturality (f : A' ⟶ A) (g : D ⟶ D') :
+    (dualMap f ⊗ₘ g) ≫ (dualTensorIsoHom A' D').hom =
+      (dualTensorIsoHom A D).hom ≫ homMap f g :=
+  hom_ext fun x ↦ by
+    simp only [fiberMap_comp, fiberMap_tensorHom_monoidal, fiberMap_dualMap,
+      fiberMap_dualTensorIsoHom_hom, fiberMap_homMap]
+    exact (ContinuousLinearMap.id_comp _).trans <|
+      (piTranspose_kronecker_eq_homCoordConj _ _).trans (ContinuousLinearMap.comp_id _).symm
+
+/-- Internal Hom into the monoidal unit `𝟙_ _` is isomorphic to the dual core `A.dual`, via the
+right Kronecker unitor `kroneckerRid`. -/
+noncomputable def homUnitIsoDual (A : FiniteRankBundleCore 𝕜 B) :
+    hom A (𝟙_ (FiniteRankBundleCore 𝕜 B)) ≅ A.dual :=
+  constIso (fun _ ↦ (Set.inter_univ _).le) (kroneckerRid 𝕜 A.rank) fun i j x _ _ ↦ by
+    -- Unfold the unexposed `MonoidalCategoryStruct.tensorUnit` projection inside `𝟙_ _`.
+    change (kroneckerRid 𝕜 A.rank).toContinuousLinearMap.comp
+        ((A.core.coordChange j i x).homCoordConj (ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜))) =
+      (A.core.coordChange j i x).piTranspose.comp (kroneckerRid 𝕜 A.rank).toContinuousLinearMap
+    rw [← piTranspose_kronecker_eq_homCoordConj]
+    exact ContinuousLinearMap.kroneckerRid_comp_kronecker _
+
+@[simp] theorem fiberMap_homUnitIsoDual_hom (A : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (homUnitIsoDual A).hom.fiberMap x = (kroneckerRid 𝕜 A.rank).toContinuousLinearMap :=
+  fiberMap_constIso_hom _ _ _ x
+
+@[simp] theorem fiberMap_homUnitIsoDual_inv (A : FiniteRankBundleCore 𝕜 B) (x : B) :
+    (homUnitIsoDual A).inv.fiberMap x = (kroneckerRid 𝕜 A.rank).symm.toContinuousLinearMap :=
+  fiberMap_constIso_inv _ _ _ x
+
+/-- Naturality of `homUnitIsoDual` with respect to `homMap f (𝟙 _)` and `dualMap f`. -/
+@[reassoc (attr := simp)]
+theorem homUnitIsoDual_naturality (f : A' ⟶ A) :
+    homMap f (𝟙 (𝟙_ (FiniteRankBundleCore 𝕜 B))) ≫ (homUnitIsoDual A').hom =
+      (homUnitIsoDual A).hom ≫ dualMap f :=
+  hom_ext fun x ↦ by
+    simp only [fiberMap_comp, fiberMap_homMap, fiberMap_id, fiberMap_homUnitIsoDual_hom,
+      fiberMap_dualMap, ← piTranspose_kronecker_eq_homCoordConj]
+    exact ContinuousLinearMap.kroneckerRid_comp_kronecker _
 
 end CompleteSpace
 
@@ -757,6 +870,19 @@ variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X] 
     (fiberMap_homMap a b (f x)).trans <| by
       rw [← fiberMap_pullbackMap a f x, ← fiberMap_pullbackMap b f x]
       exact (fiberMap_homMap (pullbackMap a f) (pullbackMap b f) x).symm
+
+/-- Pulling back commutes with the evaluation morphism `homEv`. -/
+@[simp] theorem pullbackMap_homEv (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap (homEv A D) f = homEv (A.pullback f) (D.pullback f) :=
+  hom_ext fun x ↦ (fiberMap_pullbackMap (homEv A D) f x).trans <|
+    (fiberMap_homEv A D (f x)).trans (fiberMap_homEv (A.pullback f) (D.pullback f) x).symm
+
+/-- Pulling back commutes with the coevaluation morphism `(ihom.coev A).app D`. -/
+@[simp] theorem pullbackMap_ihom_coev_app (A D : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    pullbackMap ((ihom.coev A).app D) f = (ihom.coev (A.pullback f)).app (D.pullback f) :=
+  hom_ext fun x ↦ (fiberMap_pullbackMap ((ihom.coev A).app D) f x).trans <|
+    (fiberMap_ihom_coev_app A D (f x)).trans
+      (fiberMap_ihom_coev_app (A.pullback f) (D.pullback f) x).symm
 
 end Pullback
 

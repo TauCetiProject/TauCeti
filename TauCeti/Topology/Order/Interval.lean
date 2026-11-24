@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Topology.Algebra.Order.Group
@@ -20,6 +21,8 @@ The frontier of a closed or half-open interval avoids every set that misses both
 In `ℝ`, an interval with endpoints near a point lies in the ball about that point, and the
 interval from a point of an order-connected set to a nearby point of that set stays in the ball
 about the first point.
+Two points of an order-connected set lie in a closed interval inside the set that is a
+neighbourhood of the second point within the set.
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
@@ -40,6 +43,9 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 
 ## Main results
 
+* `ContinuousOn.piecewise_Iic` — paste continuous maps across a closed cut on any set.
+* `ContinuousOn.piecewise_Iic_Icc` — the adjacent-interval version, with a conditional join.
+
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
 * `TauCeti.disjoint_frontier_Icc`, `TauCeti.disjoint_frontier_Ioc` — the frontier of `[a, b]` or
@@ -48,13 +54,20 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   contained in `ball x ε`.
 * `Set.OrdConnected.uIcc_subset_ball_inter` — in `ℝ`, the interval between a point `x` of an
   order-connected set `s` and a point of `ball x ε ∩ s` lies in `ball x ε ∩ s`.
+* `Set.OrdConnected.exists_Icc_mem_nhdsWithin` — for points `a` and `b` of an order-connected
+  set `I`, a closed interval in `I` contains both and is a neighbourhood of `b` within `I`.
 * `TauCeti.continuousOn_Ici_of_forall_Icc` — continuity on `Ici a` from continuity on `Icc a b`
   for every `b ≥ a`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
+* `TauCeti.exists_Icc_mem_subset_of_mem_nhdsWithin_Icc` — every neighbourhood of `t₀ ∈ [u, v]`
+  (`u < v`) within `[u, v]` contains a nondegenerate closed subinterval `[p, q] ⊆ [u, v]` that is
+  itself a neighbourhood of `t₀` within `[u, v]`.
 * `TauCeti.tendsto_sub_nhdsGT_nhdsWithin_Icc` — the curve `δ ↦ b - δ` tends to `b` within `[a, b]`
   as `δ → 0⁺`.
+* `TauCeti.continuous_neg_Ioo` — negation maps the symmetric open interval `(-a, a)` continuously
+  to itself.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
 * `IsOpen.exists_Ioo_subset_of_uIcc_subset` — an open set containing `[[a, b]]` contains an open
@@ -81,6 +94,36 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
 public section
 
 open Filter Set Topology
+
+/-- Paste two continuous maps across a closed cut. Agreement at the cut is needed only when
+that point belongs to the set on which continuity is asserted. -/
+theorem ContinuousOn.piecewise_Iic {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [TopologicalSpace X] {s : Set α} {b : α} {l₁ l₂ : α → X}
+    [∀ t, Decidable (t ∈ Iic b)] (h₁ : ContinuousOn l₁ (s ∩ Iic b))
+    (h₂ : ContinuousOn l₂ (s ∩ Ici b)) (hjoin : b ∈ s → l₁ b = l₂ b) :
+    ContinuousOn ((Iic b).piecewise l₁ l₂) s := by
+  have hclosure : closure (Iic b)ᶜ ⊆ Ici b := by
+    rw [compl_Iic]
+    exact closure_minimal Ioi_subset_Ici_self isClosed_Ici
+  apply ContinuousOn.piecewise
+  · intro t ht
+    have : t = b := frontier_Iic_subset b ht.2
+    subst t
+    exact hjoin ht.1
+  · exact h₁.mono fun _ ht ↦ ⟨ht.1, isClosed_Iic.closure_subset ht.2⟩
+  · exact h₂.mono fun _ ht ↦ ⟨ht.1, hclosure ht.2⟩
+
+/-- Two maps continuous on adjacent closed intervals have a continuous pasting on the combined
+interval. They need agree at the cut only when it lies in that combined interval; no ordering
+of the three endpoints or separation assumption on the codomain is required. -/
+theorem ContinuousOn.piecewise_Iic_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [TopologicalSpace X] {a b d : α} {l₁ l₂ : α → X}
+    [∀ t, Decidable (t ∈ Iic b)] (h₁ : ContinuousOn l₁ (Icc a b))
+    (h₂ : ContinuousOn l₂ (Icc b d)) (hjoin : b ∈ Icc a d → l₁ b = l₂ b) :
+    ContinuousOn ((Iic b).piecewise l₁ l₂) (Icc a d) :=
+  ContinuousOn.piecewise_Iic (s := Icc a d)
+    (h₁.mono fun _ ht ↦ ⟨ht.1.1, ht.2⟩)
+    (h₂.mono fun _ ht ↦ ⟨ht.2, ht.1.2⟩) hjoin
 
 namespace TauCeti
 
@@ -140,6 +183,35 @@ theorem _root_.Set.OrdConnected.uIcc_subset_ball_inter {s : Set ℝ} (hs : s.Ord
     exact ordConnected_Ioo
   exact (hball.inter hs).uIcc_subset ⟨Metric.mem_ball_self (Metric.pos_of_mem_ball hy.1), hx⟩ hy
 
+/-- For points `a` and `b` of an order-connected set `I`, some closed interval contained in `I`
+contains `a` and `b` and is a neighbourhood of `b` within `I`. -/
+theorem _root_.Set.OrdConnected.exists_Icc_mem_nhdsWithin {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderClosedTopology α] {I : Set α} (hI : I.OrdConnected) {a b : α}
+    (ha : a ∈ I) (hb : b ∈ I) :
+    ∃ c d, Icc c d ⊆ I ∧ a ∈ Icc c d ∧ b ∈ Icc c d ∧ Icc c d ∈ 𝓝[I] b := by
+  obtain ⟨c, hcI, hc, hbc⟩ : ∃ c ∈ I, c ≤ min a b ∧ (c < b ∨ ∀ y ∈ I, c ≤ y) := by
+    by_cases h : ∃ c ∈ I, c < min a b
+    · obtain ⟨c, hcI, hc⟩ := h
+      exact ⟨c, hcI, hc.le, Or.inl (hc.trans_le (min_le_right _ _))⟩
+    · exact ⟨_, min_rec' (· ∈ I) ha hb, le_rfl, Or.inr fun y hy ↦ not_lt.mp fun h' ↦ h ⟨y, hy, h'⟩⟩
+  obtain ⟨d, hdI, hd, hbd⟩ : ∃ d ∈ I, max a b ≤ d ∧ (b < d ∨ ∀ y ∈ I, y ≤ d) := by
+    by_cases h : ∃ d ∈ I, max a b < d
+    · obtain ⟨d, hdI, hd⟩ := h
+      exact ⟨d, hdI, hd.le, Or.inl ((le_max_right _ _).trans_lt hd)⟩
+    · exact ⟨_, max_rec' (· ∈ I) ha hb, le_rfl, Or.inr fun y hy ↦ not_lt.mp fun h' ↦ h ⟨y, hy, h'⟩⟩
+  have hleft : ∀ᶠ y in 𝓝 b, y ∈ I → c ≤ y := by
+    rcases hbc with hbc | hbc
+    · exact (eventually_gt_nhds hbc).mono fun y hy _ ↦ hy.le
+    · exact Eventually.of_forall hbc
+  have hright : ∀ᶠ y in 𝓝 b, y ∈ I → y ≤ d := by
+    rcases hbd with hbd | hbd
+    · exact (eventually_lt_nhds hbd).mono fun y hy _ ↦ hy.le
+    · exact Eventually.of_forall hbd
+  exact ⟨c, d, hI.out hcI hdI, ⟨hc.trans (min_le_left _ _), (le_max_left _ _).trans hd⟩,
+    ⟨hc.trans (min_le_right _ _), (le_max_right _ _).trans hd⟩,
+    mem_nhdsWithin_iff_eventually.mpr
+      ((hleft.and hright).mono fun y hy hyI ↦ ⟨hy.1 hyI, hy.2 hyI⟩)⟩
+
 /-- A function into a topological space that is continuous on `[a, b]` for every `b ≥ a` is
 continuous on `[a, ∞)`. -/
 theorem continuousOn_Ici_of_forall_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
@@ -165,6 +237,38 @@ theorem exists_Icc_subset_uIcc_disjoint {α : Type*} [LinearOrder α] [Topologic
     fun x hx => hsub ⟨hlc.trans_le hx.1, hx.2.trans_lt hdu⟩
   refine ⟨c, d, ⟨hct, htd⟩, fun x hx => Icc_min_max.subset (Ioo_subset_Icc_self (hcd hx).1),
     disjoint_right.mpr fun x hx => (hcd (Ioo_subset_Icc_self hx)).2⟩
+
+/-- Every neighbourhood of `t₀ ∈ [u, v]` (with `u < v`) within `[u, v]` contains a nondegenerate
+closed subinterval `[p, q] ⊆ [u, v]` around `t₀` that is itself a neighbourhood of `t₀` within
+`[u, v]`. -/
+theorem exists_Icc_mem_subset_of_mem_nhdsWithin_Icc {α : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] {u v t₀ : α} {s : Set α}
+    (huv : u < v) (ht₀ : t₀ ∈ Icc u v) (hs : s ∈ 𝓝[Icc u v] t₀) :
+    ∃ p q, u ≤ p ∧ p < q ∧ q ≤ v ∧ t₀ ∈ Icc p q ∧
+      Icc p q ∈ 𝓝[Icc u v] t₀ ∧ Icc p q ⊆ s := by
+  rcases ht₀.1.eq_or_lt with rfl | hut
+  · rw [nhdsWithin_Icc_eq_nhdsGE huv] at hs ⊢
+    obtain ⟨r, hur, hrs⟩ := (nhdsGE_basis_of_exists_gt ⟨v, huv⟩).mem_iff.1
+      (inter_mem hs (Ico_mem_nhdsGE huv))
+    obtain ⟨q, huq, hqr⟩ := exists_between hur
+    exact ⟨u, q, le_rfl, huq, (hrs ⟨huq.le, hqr⟩).2.2.le, ⟨le_rfl, huq.le⟩, Icc_mem_nhdsGE huq,
+      fun x hx ↦ (hrs ⟨hx.1, hx.2.trans_lt hqr⟩).1⟩
+  · rcases ht₀.2.eq_or_lt with rfl | htv
+    · rw [nhdsWithin_Icc_eq_nhdsLE huv] at hs ⊢
+      obtain ⟨l, hlt, hls⟩ := (nhdsLE_basis_of_exists_lt ⟨u, huv⟩).mem_iff.1
+        (inter_mem hs (Ioc_mem_nhdsLE huv))
+      obtain ⟨p, hlp, hpt⟩ := exists_between hlt
+      exact ⟨p, t₀, (hls ⟨hlp, hpt.le⟩).2.1.le, hpt, le_rfl, ⟨hpt.le, le_rfl⟩, Icc_mem_nhdsLE hpt,
+        fun x hx ↦ (hls ⟨hlp.trans_le hx.1, hx.2⟩).1⟩
+    · have hmem : s ∩ Ioo u v ∈ 𝓝 t₀ :=
+        inter_mem (nhdsWithin_eq_nhds.2 (Icc_mem_nhds hut htv) ▸ hs) (Ioo_mem_nhds hut htv)
+      obtain ⟨l, r, ⟨hlt, htr⟩, hlr⟩ := (mem_nhds_iff_exists_Ioo_subset' ⟨u, hut⟩ ⟨v, htv⟩).1 hmem
+      obtain ⟨p, hlp, hpt⟩ := exists_between hlt
+      obtain ⟨q, htq, hqr⟩ := exists_between htr
+      have hsub : Icc p q ⊆ s ∩ Ioo u v := fun x hx ↦ hlr ⟨hlp.trans_le hx.1, hx.2.trans_lt hqr⟩
+      exact ⟨p, q, (hsub ⟨le_rfl, hpt.le.trans htq.le⟩).2.1.le, hpt.trans htq,
+        (hsub ⟨hpt.le.trans htq.le, le_rfl⟩).2.2.le, ⟨hpt.le, htq.le⟩,
+        nhdsWithin_le_nhds (Icc_mem_nhds hpt htq), hsub.trans inter_subset_left⟩
 
 /-- A nonempty compact subset `K` of an open interval `Ioo a b` lies in the interior `Ioo c d` of
 a closed interval `Icc c d ⊆ Ioo a b`. This is the interval form of `exists_compact_between`. -/
@@ -255,12 +359,13 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
   have hcd : c ≤ d := hc ▸ hd ▸ hm.monotoneOn ha hb hab
   subst hc hd
   let g : Icc a b → Icc (f a) (f b) := fun s ↦
-    ⟨f s, hm.monotoneOn ha s.2 s.2.1, hm.monotoneOn s.2 hb s.2.2⟩
+    ⟨f s, hm.monotoneOn ha s.property s.property.1, hm.monotoneOn s.property hb s.property.2⟩
   have hg_cont : Continuous g :=
     Continuous.subtype_mk (continuousOn_iff_continuous_domRestrict.1 hf) _
   have hg_bij : Function.Bijective g := by
-    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.2 s'.2 (congrArg Subtype.val h)), fun r ↦ ?_⟩
-    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.2
+    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.property s'.property (congrArg Subtype.val h)),
+        fun r ↦ ?_⟩
+    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.property
     exact ⟨⟨s, hs⟩, Subtype.ext hsr⟩
   -- `homeoOfEquivCompactToT2` only adds continuity data to the equivalence `Equiv.ofBijective g`,
   -- and Mathlib states no lemma for its coercion.
@@ -268,11 +373,12 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
     hg_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g hg_bij)
   have hF (s : Icc a b) : (F s : β) = f s := rfl
   refine ⟨fun r ↦ F.symm (projIcc (f a) (f b) hcd r),
-    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦ (F.symm _).2,
+    continuous_subtypeVal.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦
+        (F.symm _).property,
     fun r ↦ ?_, fun s hs ↦ ?_⟩
   · rw [← hF, Homeomorph.apply_symm_apply, coe_projIcc, min_comm]
   · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=
-      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
+      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).property)
     simp only [this, Homeomorph.symm_apply_apply]
 
 /-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`
@@ -308,6 +414,13 @@ theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOr
       nhdsWithin_le_nhds
   · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
     exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
+
+/-- Negation `v ↦ -v` maps the symmetric open interval `(-a, a)` continuously to itself. -/
+theorem continuous_neg_Ioo {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+    [TopologicalSpace G] [ContinuousNeg G] (a : G) :
+    Continuous fun v : Ioo (-a) a ↦
+      (⟨-v, neg_lt_neg v.property.2, neg_lt.1 v.property.1⟩ : Ioo (-a) a) :=
+  continuous_subtypeVal.neg.subtype_mk _
 
 /-- A continuous function on `[a, b]` that is injective on `[a, b)` takes different values at the
 two endpoints. -/

@@ -252,7 +252,7 @@ theorem strictLevel_Gamma0 (N : ℕ) : (Gamma0 N).strictLevel = N := by
 @[simp]
 theorem strictLevel_Gamma1 (N : ℕ) : (Gamma1 N).strictLevel = N :=
   Nat.dvd_antisymm (strictLevel_dvd_of_Gamma_le (Gamma_le_Gamma1 N))
-    (by simpa using Subgroup.strictLevel_dvd_of_le (Gamma1_in_Gamma0 N))
+    (by simpa using Subgroup.strictLevel_dvd_of_le (Gamma1_le_Gamma0 N))
 
 /-- Every congruence subgroup of `SL(2, ℤ)` has positive strict level. -/
 theorem IsCongruenceSubgroup.strictLevel_pos {Γ : Subgroup SL(2, ℤ)}

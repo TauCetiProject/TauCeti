@@ -108,13 +108,13 @@ theorem eps_mem_dualNumberGrade_two :
 
 /-- The degree-zero piece of the dual numbers is linearly equivalent to the base ring. -/
 noncomputable def dualNumberGradeZeroEquiv : dualNumberGrade R 0 ≃ₗ[R] R where
-  toFun x := x.1.fst
+  toFun x := x.val.fst
   invFun r := ⟨TrivSqZeroExt.inl r, inl_mem_dualNumberGrade_zero R r⟩
   left_inv x := by
     apply Subtype.ext
     apply TrivSqZeroExt.ext
     · simp
-    · simp [(mem_dualNumberGrade_zero (R := R)).mp x.2]
+    · simp [(mem_dualNumberGrade_zero (R := R)).mp x.property]
   right_inv r := by simp
   map_add' x y := by simp
   map_smul' r x := by simp
@@ -122,7 +122,7 @@ noncomputable def dualNumberGradeZeroEquiv : dualNumberGrade R 0 ≃ₗ[R] R whe
 /-- The degree-zero equivalence reads the scalar coordinate. -/
 @[simp]
 theorem dualNumberGradeZeroEquiv_apply (x : dualNumberGrade R 0) :
-    dualNumberGradeZeroEquiv R x = x.1.fst := by
+    dualNumberGradeZeroEquiv R x = x.val.fst := by
   unfold dualNumberGradeZeroEquiv
   rfl
 
@@ -136,12 +136,12 @@ theorem dualNumberGradeZeroEquiv_symm_apply (r : R) :
 
 /-- The degree-two piece of the dual numbers is linearly equivalent to the base ring. -/
 noncomputable def dualNumberGradeTwoEquiv : dualNumberGrade R 2 ≃ₗ[R] R where
-  toFun x := x.1.snd
+  toFun x := x.val.snd
   invFun r := ⟨TrivSqZeroExt.inr r, inr_mem_dualNumberGrade_two R r⟩
   left_inv x := by
     apply Subtype.ext
     apply TrivSqZeroExt.ext
-    · simp [(mem_dualNumberGrade_two (R := R)).mp x.2]
+    · simp [(mem_dualNumberGrade_two (R := R)).mp x.property]
     · simp
   right_inv r := by simp
   map_add' x y := by simp
@@ -150,7 +150,7 @@ noncomputable def dualNumberGradeTwoEquiv : dualNumberGrade R 2 ≃ₗ[R] R wher
 /-- The degree-two equivalence reads the infinitesimal coordinate. -/
 @[simp]
 theorem dualNumberGradeTwoEquiv_apply (x : dualNumberGrade R 2) :
-    dualNumberGradeTwoEquiv R x = x.1.snd := by
+    dualNumberGradeTwoEquiv R x = x.val.snd := by
   unfold dualNumberGradeTwoEquiv
   rfl
 
@@ -259,7 +259,8 @@ private theorem decompose_coeAddMonoidHom (x : DirectSum ℕ (fun n => dualNumbe
         have hzero : degreeZeroPart R x = 0 := Subtype.ext (by simp [hx])
         have htwo : degreeTwoPart R x = x := Subtype.ext (TrivSqZeroExt.ext (by simp [hx]) rfl)
         simp [decompose, hzero, htwo, DirectSum.lof_eq_of]
-      · obtain rfl : x = 0 := Subtype.ext (by simpa [dualNumberGrade_eq_bot R hn0 hn2] using x.2)
+      · obtain rfl : x = 0 := Subtype.ext (by simpa [dualNumberGrade_eq_bot R hn0 hn2] using
+          x.property)
         simp
 
 /-- The coordinate decomposition of the dual numbers into their degree pieces. -/

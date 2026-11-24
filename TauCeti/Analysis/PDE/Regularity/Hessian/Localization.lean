@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Matrix.Contraction.LpNorm
 
 /-!
 # The localized Calderón–Zygmund estimate on a domain
@@ -37,7 +38,10 @@ inequality for `‖∇u‖`.
 ## The argument
 
 The cutoff `ζ u` lies in `W^{2,p}_0(Ω)` (`TauCeti.Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul`),
-and its extension by zero lies in `W^{2,p}(ℝⁿ)` and vanishes off the support of `ζ`. By the
+and its extension by zero lies in `W^{2,p}(ℝⁿ)` and vanishes off the support of `ζ`. An equation
+`∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼw = g` on `Ω` for `w ∈ W^{2,p}_0(Ω)` becomes, after extension by zero, the equation
+with right side `1_Ω g` on `ℝⁿ`
+(`TauCeti.PDE.ae_contraction_iteratedGradient_extendByZeroₗᵢ_eq_indicator`). By the
 Leibniz rule for the weak Hessian (`TauCeti.Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul`),
 `D²(ζ u) = ζ D²u + T` with `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ`, so
 
@@ -66,6 +70,27 @@ open scoped ENNReal NNReal InnerProductSpace Gradient ContDiff
 
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+/-- Extending `w ∈ W^{2,p}_0(Ω)` by zero to all of `ℝⁿ` turns an equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼw = g`
+almost everywhere on `Ω` into the equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼw = 1_Ω g` almost everywhere on `ℝⁿ`. -/
+theorem ae_contraction_iteratedGradient_extendByZeroₗᵢ_eq_indicator
+    {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+    {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ}
+    {w : Wkp0 (volume : Measure (EuclideanSpace ℝ (Fin n))) Omega p 2}
+    {g : EuclideanSpace ℝ (Fin n) → ℝ}
+    (hg : ∀ᵐ x ∂volume.restrict Omega,
+      Matrix.contraction (a x) (Wkp.iteratedGradient 1 (w : Wkp volume Omega p 2) x) = g x) :
+    ∀ᵐ x, Matrix.contraction (a x)
+        (Wkp.iteratedGradient 1 (Wkp0.extendByZeroₗᵢ le_top 2 w : Wkp volume ⊤ p 2) x) =
+      (Omega : Set (EuclideanSpace ℝ (Fin n))).indicator g x := by
+  have hΩ : MeasurableSet (Omega : Set (EuclideanSpace ℝ (Fin n))) := Omega.isOpen.measurableSet
+  have h1 := Wkp0.iteratedGradient_extendByZeroₗᵢ_ae_eq_indicator le_top 1 w
+  simp only [Opens.coe_top, Measure.restrict_univ] at h1
+  filter_upwards [h1, (ae_restrict_iff' hΩ).1 hg] with x h1 hg
+  rw [h1]
+  by_cases hx : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin n)))
+  · rw [Set.indicator_of_mem hx, Set.indicator_of_mem hx, hg hx]
+  · rw [Set.indicator_of_notMem hx, Set.indicator_of_notMem hx, map_zero]
+
 /-- Extending `w ∈ W^{2,p}_0(Ω)` by zero to all of `ℝⁿ` preserves the vanishing of `w` off a set
 `K`, and turns an equation `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼw = g` on `Ω` into the same equation on `ℝⁿ` with right
 side `g` extended by zero. -/
@@ -83,15 +108,13 @@ private theorem ae_extendByZeroₗᵢ_of_ae {Omega : Opens (EuclideanSpace ℝ (
         extendByZeroLpₗᵢ ℝ volume Omega.isOpen.nullMeasurableSet
           (SetLike.coe_subset_coe.mpr le_top) g x := by
   have hΩ : MeasurableSet (Omega : Set (EuclideanSpace ℝ (Fin n))) := Omega.isOpen.measurableSet
-  have htop : ae ((volume : Measure (EuclideanSpace ℝ (Fin n))).restrict
-      ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n)))) = ae volume := by
-    rw [Opens.coe_top, Measure.restrict_univ]
+  have htop := Measure.ae_restrict_coe_opens_top (volume : Measure (EuclideanSpace ℝ (Fin n)))
   have hsub : (Omega : Set (EuclideanSpace ℝ (Fin n))) ⊆
       ((⊤ : Opens (EuclideanSpace ℝ (Fin n))) : Set (EuclideanSpace ℝ (Fin n))) :=
     SetLike.coe_subset_coe.mpr le_top
-  rw [Wkp0.value_extendByZeroₗᵢ, Wkp0.iteratedGradient_extendByZeroₗᵢ]
   constructor
-  · have h1 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ.nullMeasurableSet hsub
+  · rw [Wkp0.value_extendByZeroₗᵢ]
+    have h1 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ.nullMeasurableSet hsub
       (Wkp.value 2 (w : Wkp volume Omega p 2))
     have h2 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ.nullMeasurableSet hsub
       (Wkp.value 2 (w : Wkp volume Omega p 2))
@@ -100,17 +123,11 @@ private theorem ae_extendByZeroₗᵢ_of_ae {Omega : Opens (EuclideanSpace ℝ (
     by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin n)))
     · rw [h1 hxΩ, hK hxΩ hxK]
     · exact h2 hxΩ
-  · have h1 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ.nullMeasurableSet hsub
-      (Wkp.iteratedGradient 1 (w : Wkp volume Omega p 2))
-    have h2 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ.nullMeasurableSet hsub
-      (Wkp.iteratedGradient 1 (w : Wkp volume Omega p 2))
-    have h3 := ae_extendByZeroLpₗᵢ_eq_of_mem ℝ hΩ.nullMeasurableSet hsub g
-    have h4 := ae_extendByZeroLpₗᵢ_eq_zero_of_notMem ℝ hΩ.nullMeasurableSet hsub g
-    rw [htop] at h1 h2 h3 h4
-    filter_upwards [h1, h2, h3, h4, (ae_restrict_iff' hΩ).1 hg] with x h1 h2 h3 h4 hg
-    by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin n)))
-    · rw [h1 hxΩ, h3 hxΩ, hg hxΩ]
-    · rw [h2 hxΩ, h4 hxΩ, map_zero]
+  · have h := coeFn_extendByZeroLpₗᵢ ℝ hΩ.nullMeasurableSet hsub g
+    rw [Filter.EventuallyEq, htop] at h
+    filter_upwards [ae_contraction_iteratedGradient_extendByZeroₗᵢ_eq_indicator hg, h]
+      with x h1 h2
+    rw [h1, h2]
 
 /-- **The localized Calderón–Zygmund estimate for coefficients of small oscillation.**
 Let `1 < p < ∞`. There are constants `C` and `δ > 0`, depending only on `n` and `p`,
@@ -157,14 +174,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hM₁ hM₂ hwv
   have hζ_top := hζ.continuous.memLp_top_of_hasCompactSupport hcpt (volume.restrict Omega)
   -- The forcing term `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` of the equation for `ζ u`.
-  have hEmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (TL x))
-      (volume.restrict Omega) := by
-    simp only [Matrix.contraction_apply]
-    refine Finset.aestronglyMeasurable_fun_sum _ fun i _ =>
-      Finset.aestronglyMeasurable_fun_sum _ fun j _ => ?_
-    exact ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha_meas).mul
-      (((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)).continuous
-        |>.comp_aestronglyMeasurable (Lp.aestronglyMeasurable TL)).inner aestronglyMeasurable_const)
+  have hEmeas := ha_meas.matrix_contraction (Lp.aestronglyMeasurable TL)
   have hEle : ∀ᵐ x ∂volume.restrict Omega,
       ‖Matrix.contraction (a x) (TL x)‖ ≤ n ^ 2 * Λ * ‖TL x‖ := by
     filter_upwards [hTK, ae_restrict_of_ae haΛ] with x h1 h2
@@ -187,11 +197,8 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
       Matrix.contraction (a x) (Wkp.iteratedGradient 1 w x) = FL x := by
     filter_upwards [hf, hD, Lp.coeFn_add (hζf.toLp _) (hE.toLp _), hζf.coeFn_toLp,
       hE.coeFn_toLp] with x hxf hxD h h' h''
-    -- `hxf` applies the Hessian through the instances of `IteratedGradient`, which unfold to those
-    -- of `ContinuousLinearMap` used by `Matrix.contraction_apply`.
     replace hxf : Matrix.contraction (a x) (Wkp.iteratedGradient 1 u x) = f x := by
-      rw [Matrix.contraction_apply]
-      exact hxf
+      rw [Matrix.contraction_apply, hxf]
     rw [h, Pi.add_apply, h', h'', hxD, map_add, map_smul, smul_eq_mul, ← hxf]
   have hwK : ∀ᵐ x ∂volume.restrict Omega, x ∉ tsupport zeta → Wkp.value 2 w x = 0 := by
     filter_upwards [hwv] with x hx hxs
@@ -199,11 +206,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   obtain ⟨hWzero, hWeq⟩ := ae_extendByZeroₗᵢ_of_ae (w := ⟨w, hw0⟩) hwK hweq
   -- The whole-space estimate, and `ζ D²u = D²(ζ u) - T`.
   have hkey := hCZ hlam hA (isClosed_tsupport zeta) hε ha _ _ hWzero
-    (by
-      -- As for `hxf`, the two sides differ only by unfolding the instances of `IteratedGradient`.
-      filter_upwards [hWeq] with x hx
-      rw [← Matrix.contraction_apply]
-      exact hx)
+    (hWeq.mono fun x hx => by rw [← hx, Matrix.contraction_apply])
   rw [Wkp0.iteratedGradient_extendByZeroₗᵢ, LinearIsometry.norm_map, LinearIsometry.norm_map]
     at hkey
   rw [hζD]

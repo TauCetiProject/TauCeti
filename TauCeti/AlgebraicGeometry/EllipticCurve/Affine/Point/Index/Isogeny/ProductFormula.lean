@@ -7,7 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Tamagawa
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MinimalRealPeriod
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DefectIdeal
+public import TauCeti.RingTheory.FractionalIdeal.Norm
 import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 -- Proof-only: existence of a reduced global minimal equation over `ℚ` in every variable-change
 -- orbit, and the finite-place product formula for normalized absolute values.
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
@@ -31,7 +34,15 @@ up to the pullback scalar of the invariant differential:
 
 Taking the product over all finite primes of a Dedekind domain `R` with finite quotients and
 characteristic-zero fraction field `K` yields a general finite-place relation between
-`WeierstrassCurve.tamagawaProduct` and `∏ᶠ v, φ.finiteKummerRatio v`. Over `ℚ` (`R = ℤ`), the
+`WeierstrassCurve.tamagawaProduct` and `∏ᶠ v, φ.finiteKummerRatio v`. Without assuming global
+minimal equations, and with only `2 ≠ 0` in `K` and `deg φ ≠ 0` in `R`, the choice-free local
+formula `TauCeti.Isogeny.finiteKummerRatio_eq_zpow_obstructionExponentAt_mul_tamagawaNumberAt_div`
+gives the same relation with the valuation factor `∏ᶠ v, (#(R ⧸ v)) ^ (ord_v c + f_v(E₂) - f_v(E₁))`
+in terms of the local obstruction exponents. When `R` is finite and free over `ℤ` and `K` is finite
+over `ℚ`, this factor is evaluated through `FractionalIdeal.absNorm`: for integral models
+`C₁ • E₁` and `C₂ • E₂` over `R` it is `|Norm_{K/ℚ}(c u₂ / u₁)| · Norm(𝔍₂) / Norm(𝔍₁)`, where `𝔍ᵢ`
+is the Weierstrass defect ideal of `Cᵢ • Eᵢ`, and this simplifies to `|Norm_{K/ℚ}(c u₂ / u₁)|` on
+globally minimal equations. Over `ℚ` (`R = ℤ`), the
 product formula `∏ᶠ v, |d|_v = |d|⁻¹` (`TauCeti.finprod_normalizedAbsoluteValue_rat`) cancels the
 real factor `|c u₂ / u₁|` against the finite product of `|c u₂ / u₁|_v`, and
 `WeierstrassCurve.exists_smul_eq_reducedMinimalModel` supplies global minimal equations for
@@ -58,6 +69,13 @@ calculation.
 * `TauCeti.Isogeny.finprod_normalizedAbsoluteValue_mul_tamagawaProduct_mul_finprod`: over a
   Dedekind domain with finite quotients and characteristic-zero fraction field, the product of
   finite local Kummer ratios against `tamagawaProduct`.
+* `finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructionExponentAt_mul` (in
+  namespace `TauCeti.Isogeny`): the choice-free finite-place product over a Dedekind domain with
+  finite quotients, assuming only `2 ≠ 0` in `K` and `deg φ ≠ 0` in `R`; on globally minimal
+  equations it is `finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_mul`.
+* `finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral_smul`
+  and `TauCeti.Isogeny.finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul`: over a
+  number field, the valuation factor via norms and Weierstrass defect ideals of integral models.
 * `TauCeti.Isogeny.finprod_finiteKummerRatio_eq_of_isGlobalMinimal_smul` and
   `TauCeti.Isogeny.finprod_finiteKummerRatio_eq_of_isGlobalMinimal`: over `ℚ`,
   `∏ᶠ v, φ.finiteKummerRatio v = |c u₂ / u₁| · c(E₂) / c(E₁)`.
@@ -249,6 +267,248 @@ theorem finprod_normalizedAbsoluteValue_mul_tamagawaProduct_mul_finprod_of_isGlo
     (isGlobalMinimal_of_eq (one_smul (VariableChange K) E₂) h₂)
 
 end FiniteProduct
+
+section ObstructionProduct
+
+open scoped nonZeroDivisors
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- For nonzero `c : K` and integral models `D₁ • E₁` and `D₂ • E₂` over `R`, the invertible
+fractional ideal `(c · D₂.u / D₁.u) · 𝔍_{D₂ • E₂} · 𝔍_{D₁ • E₁}⁻¹`, whose multiplicity at every
+height-one prime `v` is `(v.valuation K).ord c + f_v(E₂) - f_v(E₁)`. -/
+private noncomputable def obstructionScalingUnit (R : Type*) [CommRing R] [IsDedekindDomain R]
+    [Algebra R K] [IsFractionRing R K]
+    (E₁ E₂ : WeierstrassCurve K) [E₁.IsElliptic] [E₂.IsElliptic]
+    {c : K} (hc0 : c ≠ 0) (D₁ D₂ : VariableChange K)
+    [IsIntegral R (D₁ • E₁)] [IsIntegral R (D₂ • E₂)] : (FractionalIdeal R⁰ K)ˣ :=
+  toPrincipalIdeal R K
+      (Units.mk0 (c * D₂.u / D₁.u) (div_ne_zero (mul_ne_zero hc0 D₂.u.ne_zero) D₁.u.ne_zero)) *
+    Units.mk0 (weierstrassDefectIdeal R (D₂ • E₂) : FractionalIdeal R⁰ K)
+      (FractionalIdeal.coeIdeal_ne_zero.mpr (weierstrassDefectIdeal_ne_bot R (D₂ • E₂))) *
+    (Units.mk0 (weierstrassDefectIdeal R (D₁ • E₁) : FractionalIdeal R⁰ K)
+      (FractionalIdeal.coeIdeal_ne_zero.mpr (weierstrassDefectIdeal_ne_bot R (D₁ • E₁))))⁻¹
+
+private theorem count_obstructionScalingUnit
+    (E₁ E₂ : WeierstrassCurve K) [E₁.IsElliptic] [E₂.IsElliptic]
+    {c : K} (hc0 : c ≠ 0) (D₁ D₂ : VariableChange K)
+    [IsIntegral R (D₁ • E₁)] [IsIntegral R (D₂ • E₂)] (v : HeightOneSpectrum R) :
+    FractionalIdeal.count K v
+        (obstructionScalingUnit R E₁ E₂ hc0 D₁ D₂ : FractionalIdeal R⁰ K) =
+      (v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁ := by
+  have h₁ : weierstrassDefectIdeal R (D₁ • E₁) ≠ ⊥ := by
+    simpa using weierstrassDefectIdeal_ne_bot R (D₁ • E₁)
+  have h₂ : weierstrassDefectIdeal R (D₂ • E₂) ≠ ⊥ := by
+    simpa using weierstrassDefectIdeal_ne_bot R (D₂ • E₂)
+  have hcount (W : WeierstrassCurve K) [W.IsElliptic] [IsIntegral R W] :
+      FractionalIdeal.count K v (weierstrassDefectIdeal R W : FractionalIdeal R⁰ K) =
+        obstructionExponentAt R v W := by
+    rw [FractionalIdeal.count_coeIdeal K v (weierstrassDefectIdeal_ne_bot R W),
+      count_weierstrassDefectIdeal_eq_obstructionExponentAt]
+  simp [obstructionScalingUnit, FractionalIdeal.count_mul, FractionalIdeal.count_inv,
+    FractionalIdeal.count_spanSingleton_eq_neg_log_valuation, hc0, h₁, h₂, hcount,
+    ← Valuation.ord_def]
+  ring
+
+section HasFiniteQuotients
+
+variable [Ring.HasFiniteQuotients R]
+  {E₁ E₂ : WeierstrassCurve K} [E₁.IsElliptic] [E₂.IsElliptic]
+
+/-- If every finite local Kummer ratio is `f v · c_v(E₂) / c_v(E₁)` for a finitely supported `f`,
+then `(∏ᶠ v, φ.finiteKummerRatio v) · c(E₁) = (∏ᶠ v, f v) · c(E₂)`. -/
+private theorem finprod_finiteKummerRatio_mul_tamagawaProduct_of_forall_eq
+    (φ : Isogeny E₁.toAffine E₂.toAffine) (hφK : (φ.degree : K) ≠ 0)
+    (f : HeightOneSpectrum R → ℚ) (hf : Function.HasFiniteMulSupport f)
+    (h : ∀ v, φ.finiteKummerRatio v = f v * E₂.tamagawaNumberAt v / E₁.tamagawaNumberAt v) :
+    (∏ᶠ v : HeightOneSpectrum R, φ.finiteKummerRatio v) * E₁.tamagawaProduct (R := R) =
+      (∏ᶠ v : HeightOneSpectrum R, f v) * E₂.tamagawaProduct (R := R) := by
+  have hcast_tam (E : WeierstrassCurve K) [E.IsElliptic] :
+      (E.tamagawaProduct (R := R) : ℚ) =
+        ∏ᶠ v : HeightOneSpectrum R, (E.tamagawaNumberAt v : ℚ) := by
+    rw [E.tamagawaProduct_def]
+    exact MonoidHom.map_finprod (Nat.castRingHom ℚ).toMonoidHom
+      E.hasFiniteMulSupport_tamagawaNumberAt
+  rw [hcast_tam E₁, hcast_tam E₂,
+    ← finprod_mul_distrib (φ.hasFiniteMulSupport_finiteKummerRatio hφK)
+      (E₁.hasFiniteMulSupport_tamagawaNumberAt.fun_comp Nat.cast_one),
+    ← finprod_mul_distrib hf (E₂.hasFiniteMulSupport_tamagawaNumberAt.fun_comp Nat.cast_one)]
+  refine finprod_congr fun v ↦ ?_
+  rw [h v, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr (E₁.tamagawaNumberAt_pos v).ne')]
+
+/-- **Choice-free global finite-place product of Kummer ratios and Tamagawa numbers.** Assume
+`Ring.HasFiniteQuotients R`. For any elliptic curves `E₁` and `E₂` over `K` and any isogeny
+`φ : E₁ → E₂` with `φ^*ω₂ = c ω₁`, `2 ≠ 0` in `K`, and `deg φ ≠ 0` in `R`, multiplying all finite
+local Kummer ratios by `E₁.tamagawaProduct` yields `E₂.tamagawaProduct` times the product over `v`
+of `(#(R ⧸ v)) ^ (ord_v c + f_v(E₂) - f_v(E₁))`. No global minimal equation is assumed. -/
+theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructionExponentAt_mul
+    (φ : Isogeny E₁.toAffine E₂.toAffine) {c : K}
+    (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
+      c • invariantDifferential E₁.toAffine)
+    (h2 : (2 : K) ≠ 0) (hφ : (φ.degree : R) ≠ 0) :
+    (∏ᶠ v : HeightOneSpectrum R, φ.finiteKummerRatio v) * E₁.tamagawaProduct (R := R) =
+      (∏ᶠ v : HeightOneSpectrum R,
+        (Nat.card (R ⧸ v.asIdeal) : ℚ) ^
+          ((v.valuation K).ord c + obstructionExponentAt R v E₂ - obstructionExponentAt R v E₁)) *
+        E₂.tamagawaProduct (R := R) := by
+  have hφK : (φ.degree : K) ≠ 0 := by simpa using (IsFractionRing.injective R K).ne hφ
+  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul_of_degree_ne_zero hc hφK
+  obtain ⟨D₁, hD₁⟩ := exists_smul_isIntegral R E₁
+  obtain ⟨D₂, hD₂⟩ := exists_smul_isIntegral R E₂
+  refine finprod_finiteKummerRatio_mul_tamagawaProduct_of_forall_eq φ hφK _ ?_
+    fun v ↦ finiteKummerRatio_eq_zpow_obstructionExponentAt_mul_tamagawaNumberAt_div φ v hc h2 hφ
+  simp_rw [← count_obstructionScalingUnit E₁ E₂ hc0 D₁ D₂]
+  exact FractionalIdeal.hasFiniteMulSupport_zpow_count _ _
+
+/-- **Global finite-place product of Kummer ratios and Tamagawa numbers via global minimal
+equations.** Assume `Ring.HasFiniteQuotients R`, `2 ≠ 0` in `K`, and `deg φ ≠ 0` in `R` (so `K` may
+have positive characteristic). When `φ^*ω₂ = c ω₁` and `C₁ • E₁` and `C₂ • E₂` are globally minimal
+over `R`, multiplying all finite local Kummer ratios by the Tamagawa product of `E₁` yields the
+Tamagawa product of `E₂` times the product of the prime-norm powers of `c · C₂.u / C₁.u`. -/
+theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_mul
+    (φ : Isogeny E₁.toAffine E₂.toAffine) {c : K}
+    (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
+      c • invariantDifferential E₁.toAffine)
+    {C₁ C₂ : VariableChange K} (hC₁ : IsGlobalMinimal R (C₁ • E₁))
+    (hC₂ : IsGlobalMinimal R (C₂ • E₂))
+    (h2 : (2 : K) ≠ 0) (hφ : (φ.degree : R) ≠ 0) :
+    (∏ᶠ v : HeightOneSpectrum R, φ.finiteKummerRatio v) * E₁.tamagawaProduct (R := R) =
+      (∏ᶠ v : HeightOneSpectrum R,
+        (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation K (c * C₂.u / C₁.u)))) *
+        E₂.tamagawaProduct (R := R) := by
+  have hφK : (φ.degree : K) ≠ 0 := by simpa using (IsFractionRing.injective R K).ne hφ
+  refine finprod_finiteKummerRatio_mul_tamagawaProduct_of_forall_eq φ hφK _
+    (HeightOneSpectrum.hasFiniteMulSupport_zpow_neg_log_valuation _ _) fun v ↦ ?_
+  have _ := hC₁.isMinimal v
+  have _ := hC₂.isMinimal v
+  exact finiteKummerRatio_eq_zpow_mul_tamagawaNumberAt_div φ v hc C₁ C₂ h2 hφ
+
+/-- **Global finite-place product of Kummer ratios and Tamagawa numbers between global minimal
+equations.** Assume `Ring.HasFiniteQuotients R`, `2 ≠ 0` in `K`, and `deg φ ≠ 0` in `R`, with
+`φ^*ω₂ = c ω₁` and `E₁`, `E₂` globally minimal over `R`. -/
+theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_mul_of_isGlobalMinimal
+    (φ : Isogeny E₁.toAffine E₂.toAffine) {c : K}
+    (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
+      c • invariantDifferential E₁.toAffine)
+    (h₁ : IsGlobalMinimal R E₁) (h₂ : IsGlobalMinimal R E₂)
+    (h2 : (2 : K) ≠ 0) (hφ : (φ.degree : R) ≠ 0) :
+    (∏ᶠ v : HeightOneSpectrum R, φ.finiteKummerRatio v) * E₁.tamagawaProduct (R := R) =
+      (∏ᶠ v : HeightOneSpectrum R,
+        (Nat.card (R ⧸ v.asIdeal) : ℚ) ^ (-WithZero.log (v.valuation K c))) *
+        E₂.tamagawaProduct (R := R) := by
+  simpa [VariableChange.one_def] using
+    finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_mul φ hc
+      (isGlobalMinimal_of_eq (one_smul (VariableChange K) E₁) h₁)
+      (isGlobalMinimal_of_eq (one_smul (VariableChange K) E₂) h₂) h2 hφ
+
+end HasFiniteQuotients
+
+section NumberFieldNorm
+
+variable [Module.Free ℤ R] [Module.Finite ℤ R] [Algebra ℚ K] [Module.Finite ℚ K]
+  {E₁ E₂ : WeierstrassCurve K} [E₁.IsElliptic] [E₂.IsElliptic]
+
+local instance : Ring.HasFiniteQuotients R := .of_module_finite ℤ R
+
+/-- **The finite-place Kummer/Tamagawa identity on integral models over a number field.** Let `R` be
+a Dedekind domain finite and free over `ℤ` with fraction field `K` finite over `ℚ`. If `C₁ • E₁` and
+`C₂ • E₂` are integral over `R` and `φ^*ω₂ = c ω₁`, then
+`(∏_v φ.finiteKummerRatio v) · E₁.tamagawaProduct =
+  (|Norm_{K/ℚ}(c · C₂.u / C₁.u)| · Norm(𝔍_{C₂ • E₂}) / Norm(𝔍_{C₁ • E₁})) · E₂.tamagawaProduct`. -/
+theorem
+    finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral_smul
+    (φ : Isogeny E₁.toAffine E₂.toAffine) {c : K}
+    (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
+      c • invariantDifferential E₁.toAffine)
+    (C₁ C₂ : VariableChange K) [IsIntegral R (C₁ • E₁)] [IsIntegral R (C₂ • E₂)] :
+    (∏ᶠ v : HeightOneSpectrum R, φ.finiteKummerRatio v) * E₁.tamagawaProduct (R := R) =
+      (|Algebra.norm ℚ (c * C₂.u / C₁.u)| *
+        (Ideal.absNorm (weierstrassDefectIdeal R (C₂ • E₂)) : ℚ) /
+        Ideal.absNorm (weierstrassDefectIdeal R (C₁ • E₁))) *
+        E₂.tamagawaProduct (R := R) := by
+  have _ : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ K).injective
+  have h2 : (2 : K) ≠ 0 := two_ne_zero
+  have hφK : (φ.degree : K) ≠ 0 := Nat.cast_ne_zero.mpr φ.degree_pos.ne'
+  have hφ : (φ.degree : R) ≠ 0 := by
+    intro h0
+    exact hφK (by rw [← map_natCast (algebraMap R K), h0, map_zero])
+  have hc0 : c ≠ 0 := φ.ne_zero_of_pullbackDifferential_eq_smul hc
+  rw [finprod_finiteKummerRatio_mul_tamagawaProduct_eq_finprod_zpow_obstructionExponentAt_mul
+    φ hc h2 hφ]
+  congr 1
+  simp_rw [← count_obstructionScalingUnit E₁ E₂ hc0 C₁ C₂]
+  rw [FractionalIdeal.finprod_zpow_count_units_eq_absNorm
+    (obstructionScalingUnit R E₁ E₂ hc0 C₁ C₂)]
+  simp [obstructionScalingUnit, FractionalIdeal.coeIdeal_absNorm, div_eq_mul_inv, Algebra.norm_inv]
+
+/-- **The finite-place Kummer/Tamagawa identity between equations integral over `R`.** Here `R` is a
+Dedekind domain finite and free over `ℤ`, `K` is finite over `ℚ`, `E₁` and `E₂` are integral over
+`R`, and `φ^*ω₂ = c ω₁`. -/
+theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral
+    (φ : Isogeny E₁.toAffine E₂.toAffine) [IsIntegral R E₁] [IsIntegral R E₂] {c : K}
+    (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
+      c • invariantDifferential E₁.toAffine) :
+    (∏ᶠ v : HeightOneSpectrum R, φ.finiteKummerRatio v) * E₁.tamagawaProduct (R := R) =
+      (|Algebra.norm ℚ c| * (Ideal.absNorm (weierstrassDefectIdeal R E₂) : ℚ) /
+        Ideal.absNorm (weierstrassDefectIdeal R E₁)) *
+        E₂.tamagawaProduct (R := R) := by
+  have _ : IsIntegral R ((1 : VariableChange K) • E₁) := by
+    simpa only [one_smul] using (inferInstance : IsIntegral R E₁)
+  have _ : IsIntegral R ((1 : VariableChange K) • E₂) := by
+    simpa only [one_smul] using (inferInstance : IsIntegral R E₂)
+  have h :=
+    finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral_smul
+      (R := R) φ hc 1 1
+  have h₁ : weierstrassDefectIdeal R ((1 : VariableChange K) • E₁) = weierstrassDefectIdeal R E₁ :=
+    by congr! 1; exact one_smul _ _
+  have h₂ : weierstrassDefectIdeal R ((1 : VariableChange K) • E₂) = weierstrassDefectIdeal R E₂ :=
+    by congr! 1; exact one_smul _ _
+  rw [h₁, h₂] at h
+  simpa [VariableChange.one_def] using h
+
+/-- **The finite-place Kummer/Tamagawa identity evaluated via the norm to `ℚ`.** Let `R` be a
+Dedekind domain finite and free over `ℤ` with fraction field `K` finite over `ℚ`. If `C₁ • E₁` and
+`C₂ • E₂` are globally minimal over `R` and `φ^*ω₂ = c ω₁`, then
+`(∏_v φ.finiteKummerRatio v) · E₁.tamagawaProduct = |Norm_{K/ℚ}(c · C₂.u / C₁.u)| ·
+  E₂.tamagawaProduct`. -/
+theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul
+    (φ : Isogeny E₁.toAffine E₂.toAffine) {c : K}
+    (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
+      c • invariantDifferential E₁.toAffine)
+    {C₁ C₂ : VariableChange K} (hC₁ : IsGlobalMinimal R (C₁ • E₁))
+    (hC₂ : IsGlobalMinimal R (C₂ • E₂)) :
+    (∏ᶠ v : HeightOneSpectrum R, φ.finiteKummerRatio v) * E₁.tamagawaProduct (R := R) =
+      |Algebra.norm ℚ (c * C₂.u / C₁.u)| * E₂.tamagawaProduct (R := R) := by
+  have _ := hC₁.isIntegral
+  have _ := hC₂.isIntegral
+  rw [
+    finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_absNorm_div_mul_of_isIntegral_smul
+      φ hc C₁ C₂,
+    (weierstrassDefectIdeal_eq_top_iff_isGlobalMinimal (C₁ • E₁)).mpr hC₁,
+    (weierstrassDefectIdeal_eq_top_iff_isGlobalMinimal (C₂ • E₂)).mpr hC₂,
+    Ideal.absNorm_top]
+  simp
+
+/-- **The finite-place Kummer/Tamagawa identity between global minimal equations.** Let `R` be a
+Dedekind domain finite and free over `ℤ` with fraction field `K` finite over `ℚ`. If `E₁` and `E₂`
+are globally minimal over `R` and `φ^*ω₂ = c ω₁`, then
+`(∏_v φ.finiteKummerRatio v) · E₁.tamagawaProduct = |Norm_{K/ℚ}(c)| · E₂.tamagawaProduct`. -/
+theorem finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul_of_isGlobalMinimal
+    (φ : Isogeny E₁.toAffine E₂.toAffine) {c : K}
+    (hc : φ.pullbackDifferential (invariantDifferential E₂.toAffine) =
+      c • invariantDifferential E₁.toAffine)
+    (h₁ : IsGlobalMinimal R E₁) (h₂ : IsGlobalMinimal R E₂) :
+    (∏ᶠ v : HeightOneSpectrum R, φ.finiteKummerRatio v) * E₁.tamagawaProduct (R := R) =
+      |Algebra.norm ℚ c| * E₂.tamagawaProduct (R := R) := by
+  simpa [VariableChange.one_def] using
+    finprod_finiteKummerRatio_mul_tamagawaProduct_eq_abs_norm_mul φ hc
+      (isGlobalMinimal_of_eq (one_smul (VariableChange K) E₁) h₁)
+      (isGlobalMinimal_of_eq (one_smul (VariableChange K) E₂) h₂)
+
+end NumberFieldNorm
+
+end ObstructionProduct
 
 section GlobalProduct
 

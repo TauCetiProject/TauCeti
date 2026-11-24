@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.BumpFunction
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Global sections with a prescribed value
@@ -28,7 +30,12 @@ Equivalently, evaluation of global `C^n` sections at a point is surjective.
 Every fibre vector is moreover the value of a compactly supported `C^n` section supported in any
 prescribed neighbourhood of its base point
 (`ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset`): a global `C^n` section with that
-value, cut off by a smooth bump function.
+value, cut off by a smooth bump function. More generally, any section that is `C^n` (`n ≤ ∞`) on a
+neighbourhood `U` of a compact set `K` extends to a global compactly supported `C^n` section
+agreeing with it near `K` and supported in `U`
+(`ContMDiffSection.exists_eventuallyEq_isCompact_tsupport_subset`). In the same way, a `C^n`
+section over an open subset agrees near each point of that subset with a global `C^n` section
+(`ContMDiffSection.exists_eventually_eq_of_opens`).
 -/
 
 public section
@@ -299,6 +306,62 @@ theorem exists_apply_eq_isCompact_tsupport_subset (x₀ : M) (v : V x₀) {U : S
   exact ⟨s, by simp [s, htv],
     ρ.hasCompactSupport.isCompact.of_isClosed_subset s.isClosed_tsupport hsρ, hsρ.trans hρ⟩
 
+omit [ContMDiffVectorBundle n F V I] in
+/-- Over a `C^n` manifold, `n ≤ ∞`, a `C^n` section of a vector bundle over an open subset `U`
+agrees near any point of `U` with a global `C^n` section: its product with a smooth bump function
+supported in `U`, extended by zero. -/
+theorem exists_eventually_eq_of_opens {U : TopologicalSpace.Opens M}
+    (s : Cₛ^n⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯) (x : U) :
+    ∃ t : Cₛ^n⟮I; F, V⟯, ∀ᶠ y : U in 𝓝 x, t y = s y := by
+  obtain ⟨ρ, -, hρU⟩ :=
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1
+        (U.isOpen.mem_nhds x.property)
+  let f : C^n⟮I, U; ℝ⟯ :=
+    ⟨(ρ : M → ℝ) ∘ Subtype.val, ρ.contMDiff_of_isManifold.comp contMDiff_subtypeVal⟩
+  have hf : HasCompactSupport f :=
+    (Topology.IsInducing.subtypeVal.isCompact_preimage' ρ.hasCompactSupport.isCompact
+      fun y hy ↦ ⟨⟨y, hρU hy⟩, rfl⟩).of_isClosed_subset (_root_.isClosed_tsupport _)
+      (tsupport_comp_subset_preimage (ρ : M → ℝ) continuous_subtypeVal :)
+  refine ⟨extendByZero ⟨f • s, smul_function_mem_compactlySupported_of_hasCompactSupport f hf s⟩,
+    ?_⟩
+  filter_upwards [(continuous_subtypeVal.tendsto x).eventually ρ.eventuallyEq_one] with y hy
+  rw [extendByZero_apply_of_mem, smul_apply]
+  simp only [f, ContMDiffMap.coeFn_mk, Function.comp_apply, hy, Pi.one_apply]
+  -- The fibre of the pullback bundle over `y` is the fibre of `V` over `y`, with its scalars.
+  exact one_smul ℝ (s y)
+
 end CompactSupport
+
+section LocalExtension
+
+open Set
+open scoped Topology
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [T2Space M] [IsManifold I ∞ M] [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞ω}
+  [ENat.LEInfty n] {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+
+/-- Every section `s` that is `C^n` (`n ≤ ∞`) on a neighbourhood `U` of a compact set `K`
+extends to a global compactly supported `C^n` section agreeing with `s` on a neighbourhood of `K`
+and with closed support contained in `U`. -/
+theorem exists_eventuallyEq_isCompact_tsupport_subset {K U : Set M} (hK : IsCompact K)
+    (hU : U ∈ 𝓝ˢ K) {s : ∀ x, V x} (hs : ContMDiffOn I (I.prod 𝓘(ℝ, F)) n (T% s) U) :
+    ∃ s' : Cₛ^n⟮I; F, V⟯,
+      (∀ᶠ x in 𝓝ˢ K, s' x = s x) ∧ IsCompact s'.tsupport ∧ s'.tsupport ⊆ U := by
+  obtain ⟨σ, hσ, hσ1, hσc, hσU, -⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I
+    isOpen_interior (subset_interior_iff_mem_nhdsSet.2 hU)
+  let s' : Cₛ^n⟮I; F, V⟯ :=
+    ⟨σ • s, (hσ.of_le ENat.LEInfty.out).contMDiffOn.smul_section_of_tsupport
+      isOpen_interior hσU (hs.mono interior_subset)⟩
+  have hs'σ : s'.tsupport ⊆ _root_.tsupport σ :=
+    (tsupport_subset_iff (_root_.isClosed_tsupport _)).2 fun x hx ↦ by
+      simp [s', image_eq_zero_of_notMem_tsupport hx]
+  exact ⟨s', hσ1.mono fun x hx ↦ by simp [s', hx],
+    hσc.isCompact.of_isClosed_subset s'.isClosed_tsupport hs'σ,
+    hs'σ.trans (hσU.trans interior_subset)⟩
+
+end LocalExtension
 
 end ContMDiffSection

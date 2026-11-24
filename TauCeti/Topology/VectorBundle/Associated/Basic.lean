@@ -56,6 +56,12 @@ instance instContinuousConstSMul (b : B) :
     ContinuousConstSMul 𝕜 (AssociatedBundle G P F b) :=
   inferInstanceAs (ContinuousConstSMul 𝕜 F)
 
+/-- Joint scalar multiplication is continuous for the associated fibre's native module and
+topology. -/
+instance instContinuousSMul (b : B) :
+    ContinuousSMul 𝕜 (AssociatedBundle G P F b) :=
+  inferInstanceAs (ContinuousSMul 𝕜 F)
+
 /-- Associated-bundle charts are linear when the structure-group action is linear. -/
 instance localTriv_isLinear (b : B) :
     ((associatedBundleCore G P F).localTriv b).IsLinear 𝕜 where
@@ -154,6 +160,18 @@ theorem mkContinuousLinearEquiv_symm_apply_mk {b : B} (p q : P b) (v : F) :
   apply (mkContinuousLinearEquiv 𝕜 G p).injective
   simp only [ContinuousLinearEquiv.apply_symm_apply, mkContinuousLinearEquiv_apply]
   exact ((mk_eq_mk_iff (p := p) (q := q)).mpr rfl).symm
+
+variable (𝕜 G) in
+/-- An associated fibre with a principal frame has the dimension of the model. -/
+theorem finrank_eq {b : B} (p : P b) :
+    Module.finrank 𝕜 (AssociatedBundle G P F b) = Module.finrank 𝕜 F :=
+  (mkContinuousLinearEquiv 𝕜 G p).toLinearEquiv.finrank_eq.symm
+
+variable (𝕜 G) in
+/-- An associated fibre with a principal frame is finite-dimensional if the model is. -/
+theorem finiteDimensional [FiniteDimensional 𝕜 F] {b : B} (p : P b) :
+    FiniteDimensional 𝕜 (AssociatedBundle G P F b) :=
+  (mkContinuousLinearEquiv 𝕜 G p).toLinearEquiv.finiteDimensional
 
 /-- In a local associated chart the linear transition acts by the principal transition. -/
 theorem coordChangeL_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]

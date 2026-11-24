@@ -108,12 +108,12 @@ private theorem dualCarrierToBilinearOrthogonalQuotient_apply
 /-- A dual vector of `M` has trivial class in `H⊥ / H` exactly when it already lies in `M`. -/
 private theorem dualCarrierToBilinearOrthogonalQuotient_eq_zero_iff
     (y : hM.toIntegralLattice.dualCarrier) :
-    dualCarrierToBilinearOrthogonalQuotient hM y = 0 ↔ (y : V) ∈ M.1 :=
+    dualCarrierToBilinearOrthogonalQuotient hM y = 0 ↔ (y : V) ∈ M.val :=
   (L.discriminantBilinearModule.orthogonalQuotientMk_eq_zero_iff
       (L.discriminantSubgroup M)
       ⟨hM.dualClassHom y, hM.dualClassHom_mem_orthogonalComplement y⟩).trans (by
     -- Remove the exposed discriminant-module carrier and orthogonal-complement subtype projections.
-    change hM.dualClassHom y ∈ L.discriminantSubgroup M ↔ (y : V) ∈ M.1
+    change hM.dualClassHom y ∈ L.discriminantSubgroup M ↔ (y : V) ∈ M.val
     rw [hM.dualClassHom_apply]
     exact L.mk_mem_discriminantSubgroup_iff M _)
 
@@ -154,15 +154,15 @@ private theorem discriminantBilinearOrthogonalQuotientHom_surjective :
   intro q
   obtain ⟨z, rfl⟩ := L.discriminantBilinearModule.orthogonalQuotientMk_surjective
     (L.discriminantSubgroup M) q
-  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective L.carrierInDual z.1
-  have hxdual : (x : V) ∈ (dual M).1 := by
+  obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective L.carrierInDual z.val
+  have hxdual : (x : V) ∈ (dual M).val := by
     refine (L.mk_mem_discriminantSubgroup_iff (dual M) x).mp ?_
     rw [discriminantSubgroup_dual, hx]
-    exact z.2
+    exact z.property
   have hy : (x : V) ∈ hM.toIntegralLattice.dualCarrier := by
     rw [hM.toIntegralLattice_dualCarrier]
     exact hxdual
-  have hclass : hM.dualClassHom ⟨(x : V), hy⟩ = z.1 := by
+  have hclass : hM.dualClassHom ⟨(x : V), hy⟩ = z.val := by
     rw [hM.dualClassHom_apply]
     exact hx
   refine ⟨Submodule.Quotient.mk ⟨(x : V), hy⟩, ?_⟩
@@ -184,8 +184,8 @@ private theorem pairing_dualCarrierToBilinearOrthogonalQuotient
   -- Remove the exposed discriminant-module carrier and orthogonal-complement subtype projections.
   change L.discriminantPairing (hM.dualClassHom y) (hM.dualClassHom z) = _
   rw [hM.dualClassHom_apply, hM.dualClassHom_apply]
-  exact L.discriminantPairing_mk ⟨(y : V), hM.dualCarrier_le y.2⟩
-    ⟨(z : V), hM.dualCarrier_le z.2⟩
+  exact L.discriminantPairing_mk ⟨(y : V), hM.dualCarrier_le y.property⟩
+    ⟨(z : V), hM.dualCarrier_le z.property⟩
 
 /-- The pairing in `A_M` of the classes of two dual vectors of `M` is the ambient form
 modulo `ℤ`. -/

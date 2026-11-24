@@ -157,14 +157,14 @@ private noncomputable def mappingPathReplacementLift (H : (p.comp α).Homotopy (
     ((H.evalAt q.val.1).trans ((⟨q.val.2, q.property, rfl⟩ : Path (p' q.val.1) (q.val.2 1)).map
       h.continuous)).toContinuousMap), Path.source _, Path.target _⟩
   continuous_toFun := by
-    refine ((α.continuous.comp continuous_subtype_val.fst).prodMk <|
-      (continuous_subtype_val.snd.eval continuous_const).prodMk ?_).subtype_mk _
+    refine ((α.continuous.comp continuous_subtypeVal.fst).prodMk <|
+      (continuous_subtypeVal.snd.eval continuous_const).prodMk ?_).subtype_mk _
     exact ContinuousMap.continuous_of_continuous_uncurry _ <| Path.trans_continuous_family
       (fun q : MappingPathSpace p' ↦ H.evalAt q.val.1)
-      (H.continuous.comp (continuous_snd.prodMk (continuous_subtype_val.fst.comp continuous_fst)))
+      (H.continuous.comp (continuous_snd.prodMk (continuous_subtypeVal.fst.comp continuous_fst)))
       (fun q : MappingPathSpace p' ↦
         (⟨q.val.2, q.property, rfl⟩ : Path (p' q.val.1) (q.val.2 1)).map h.continuous)
-      (h.continuous.comp ((continuous_subtype_val.snd.comp continuous_fst).eval continuous_snd))
+      (h.continuous.comp ((continuous_subtypeVal.snd.comp continuous_fst).eval continuous_snd))
 
 private theorem mappingPathReplacementLift_val (H : (p.comp α).Homotopy (h.comp p'))
     (q : MappingPathSpace p') :
@@ -332,7 +332,7 @@ a one-point space `B'` with `h default = b` is homotopy-cartesian if and only if
 `MappingPathFiber.ofFiber p b` is a weak homotopy equivalence. -/
 theorem isHomotopyCartesian_fiber_iff_ofFiber [Unique B']
     {p : C(E, B)} {h : C(B', B)} {b : B} (hb : h default = b) {p' : C(↥(p ⁻¹' {b}), B')}
-    (hcomm : p.comp ⟨Subtype.val, continuous_subtype_val⟩ = h.comp p') :
+    (hcomm : p.comp ⟨Subtype.val, continuous_subtypeVal⟩ = h.comp p') :
     IsHomotopyCartesian hcomm ↔ (MappingPathFiber.ofFiber p b).IsWeakHomotopyEquivalence := by
   subst hb
   rw [isHomotopyCartesian_iff,
@@ -362,12 +362,13 @@ theorem isWeakHomotopyEquivalence_ofPullback_left {p : C(A, B)} (hp : IsHurewicz
   intro c
   let eDom : ↥(p ⁻¹' {g c}) ≃ₜ
       {x : (⇑p).Pullback ⇑g // ContinuousMap.pullbackSnd ⇑p ⇑g x = c} :=
-    { toFun a := ⟨⟨(a.1, c), Set.mem_singleton_iff.mp a.2⟩, by simp [Function.Pullback.snd]⟩
-      invFun x := ⟨x.1.1.1, Set.mem_singleton_iff.mpr <|
-        x.1.2.trans (congrArg g (by simpa [Function.Pullback.snd] using x.2))⟩
+    { toFun a :=
+        ⟨⟨(a.val, c), Set.mem_singleton_iff.mp a.property⟩, by simp [Function.Pullback.snd]⟩
+      invFun x := ⟨x.val.val.1, Set.mem_singleton_iff.mpr <|
+        x.val.property.trans (congrArg g (by simpa [Function.Pullback.snd] using x.property))⟩
       left_inv _ := rfl
       right_inv x := Subtype.ext <| Subtype.ext <| Prod.ext rfl
-        (by simpa [Function.Pullback.snd] using x.2.symm)
+        (by simpa [Function.Pullback.snd] using x.property.symm)
       continuous_toFun := by fun_prop
       continuous_invFun := by fun_prop }
   let eCod : {y // HomotopyPullback.snd p g y = c} ≃ₜ MappingPathFiber p (g c) :=
@@ -378,7 +379,7 @@ theorem isWeakHomotopyEquivalence_ofPullback_left {p : C(A, B)} (hp : IsHurewicz
     ext a : 1; apply Subtype.ext
     simp only [ContinuousMap.comp_apply, ContinuousMap.coe_apply, eCod]
     refine (HomotopyPullback.sndFiberHomeomorph_val p g c _).trans ?_
-    simp [eDom, Set.mem_singleton_iff.mp a.2]
+    simp [eDom, Set.mem_singleton_iff.mp a.property]
   exact (Homeomorph.isWeakHomotopyEquivalence_comp_comp_iff eDom eCod _).mp
     (hconj ▸ hp.isWeakHomotopyEquivalence_ofFiber (g c))
 

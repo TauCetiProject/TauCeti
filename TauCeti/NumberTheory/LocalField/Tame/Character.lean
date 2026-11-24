@@ -9,7 +9,7 @@ public import TauCeti.Algebra.CharP.Lemmas
 public import TauCeti.FieldTheory.Kummer.Character
 public import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.NumberTheory.LocalField.WildInertia
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
@@ -174,11 +174,11 @@ values in the `m`-th roots of unity of `K^{alg}`, where `α` is any root of `X ^
 def inertiaKummerCharacter (m : ℕ) (hm : m.Coprime (ringChar 𝓀[K])) (a : Kˣ) :
     inertiaSubgroup K →* rootsOfUnity m (AlgebraicClosure K) :=
   haveI : NeZero m := ⟨ne_zero_of_coprime_ringChar hm⟩
-  { toFun σ := rootsOfUnity.mkOfPowEq (kummerRatio K m hm a σ.1)
+  { toFun σ := rootsOfUnity.mkOfPowEq (kummerRatio K m hm a σ.val)
       (apply_div_pow_eq_one (ne_zero_of_pow_eq_algebraMap hm (root_pow hm a))
-        (by rw [root_pow]; exact AlgEquiv.commutes σ.1 _))
+        (by rw [root_pow]; exact AlgEquiv.commutes σ.val _))
     map_one' := rootsOfUnity.coe_injective (kummerRatio_one hm a)
-    map_mul' σ τ := rootsOfUnity.coe_injective (kummerRatio_mul hm a σ.2 τ.1) }
+    map_mul' σ τ := rootsOfUnity.coe_injective (kummerRatio_mul hm a σ.property τ.val) }
 
 variable {m : ℕ} {hm : m.Coprime (ringChar 𝓀[K])} {a : Kˣ}
 
@@ -305,7 +305,7 @@ theorem isLocallyConstant_inertiaKummerCharacter :
     (IsLocallyConstant.iff_continuous _).2 hcont
   exact IsLocallyConstant.desc _ (fun ζ : rootsOfUnity m (AlgebraicClosure K) ↦
     ((ζ : (AlgebraicClosure K)ˣ) : AlgebraicClosure K))
-    ((horbit.comp (· / root K m hm a)).comp_continuous continuous_subtype_val)
+    ((horbit.comp (· / root K m hm a)).comp_continuous continuous_subtypeVal)
     rootsOfUnity.coe_injective
 
 variable (m hm) in
@@ -342,11 +342,11 @@ subgroup of `K` to the prime-to-`p` Tate module `ℤ̂^{(p')}(1) = lim_{p ∤ m}
 `K`. -/
 def tameKummerCharacter (a : Kˣ) :
     inertiaSubgroup K →ₜ* PrimeToPTateModule (ringChar 𝓀[K]) (AlgebraicClosure K) where
-  toMonoidHom := PrimeToPTateModule.lift (fun m ↦ inertiaKummerCharacter K m m.2.2 a)
+  toMonoidHom := PrimeToPTateModule.lift (fun m ↦ inertiaKummerCharacter K m m.property.2 a)
     fun _ _ σ h ↦ inertiaKummerCharacter_pow_div _ h σ
   continuous_toFun := PrimeToPTateModule.continuous_iff.2 fun m ↦ by
     simpa only [MonoidHom.toFun_eq_coe, PrimeToPTateModule.proj_lift] using
-      isLocallyConstant_inertiaKummerCharacter m m.2.2 a
+      isLocallyConstant_inertiaKummerCharacter m m.property.2 a
 
 variable {K}
 
@@ -355,7 +355,8 @@ variable {K}
 @[simp]
 theorem proj_tameKummerCharacter_apply (a : Kˣ)
     (m : {m : ℕ // m ≠ 0 ∧ m.Coprime (ringChar 𝓀[K])}) (σ : inertiaSubgroup K) :
-    PrimeToPTateModule.proj m (tameKummerCharacter K a σ) = inertiaKummerCharacter K m m.2.2 a σ :=
+    PrimeToPTateModule.proj m (tameKummerCharacter K a σ) = inertiaKummerCharacter K m m.property.2
+        a σ :=
   PrimeToPTateModule.proj_lift _ _ m σ
 
 /-- The tame Kummer character is multiplicative in `a`. -/
@@ -479,7 +480,7 @@ theorem inertiaKummerCharacter_surjective {π : Kˣ} (hπ : IsUniformizer K π) 
   intro ζ
   set z : AlgebraicClosure K := ((ζ : (AlgebraicClosure K)ˣ) : AlgebraicClosure K)
   have hz : z ^ m = 1 := by
-    simpa [z] using congrArg Units.val ((mem_rootsOfUnity m _).1 ζ.2)
+    simpa [z] using congrArg Units.val ((mem_rootsOfUnity m _).1 ζ.property)
   -- `α` and `z α` are roots of `X ^ m − π`, which is their common minimal polynomial over `E`.
   have hα := root_pow hm π
   have hzα : (z * root K m hm π) ^ m = algebraMap K (AlgebraicClosure K) π := by
@@ -506,7 +507,8 @@ theorem proj_inertiaTameCharacter_surjective (m : {m : ℕ // m ≠ 0 ∧ m.Copr
     Function.Surjective fun σ ↦ PrimeToPTateModule.proj m (inertiaTameCharacter K σ) := by
   obtain ⟨π, hπ⟩ := exists_isUniformizer K
   rw [inertiaTameCharacter_eq_tameKummerCharacter hπ]
-  simpa only [proj_tameKummerCharacter_apply] using inertiaKummerCharacter_surjective hπ m m.2.2
+  simpa only [proj_tameKummerCharacter_apply] using inertiaKummerCharacter_surjective hπ m
+      m.property.2
 
 variable (K) in
 /-- **The tame character is surjective**: `I_K → ℤ̂^{(p')}(1)` is onto, since it is onto at each
@@ -539,10 +541,10 @@ theorem inertiaTameCharacter_eq_one_iff {σ : Gal(AlgebraicClosure K/K)}
       div_eq_one_iff_eq (ne_zero_of_pow_eq_algebraMap hcop hα)] at h'
   · intro h
     refine PrimeToPTateModule.ext fun m ↦ Subtype.ext (Units.ext ?_)
-    have hα := root_pow m.2.2 π
-    have hm : ¬ ringChar 𝓀[K] ∣ m := hp.coprime_iff_not_dvd.1 (Nat.coprime_comm.1 m.2.2)
+    have hα := root_pow m.property.2 π
+    have hm : ¬ ringChar 𝓀[K] ∣ m := hp.coprime_iff_not_dvd.1 (Nat.coprime_comm.1 m.property.2)
     rw [coe_proj_inertiaTameCharacter_apply hσ hπ m hα, h m hm _ hα,
-      div_self (ne_zero_of_pow_eq_algebraMap m.2.2 hα)]
+      div_self (ne_zero_of_pow_eq_algebraMap m.property.2 hα)]
     simp
 
 variable (K) in
@@ -603,8 +605,8 @@ theorem inertiaTameCharacter_conj (g : Gal(AlgebraicClosure K/K)) {σ : Gal(Alge
   refine PrimeToPTateModule.ext fun m ↦ Subtype.ext (Units.ext ?_)
   -- With `α` a root of `X ^ m − π`, so is `g⁻¹ α`, and `g σ g⁻¹ (α) / α = g (σ β / β)` for
   -- `β = g⁻¹ α`.
-  have hα := root_pow m.2.2 π
-  have hβ : (g⁻¹ (root K m m.2.2 π)) ^ (m : ℕ) = algebraMap K (AlgebraicClosure K) π := by
+  have hα := root_pow m.property.2 π
+  have hβ : (g⁻¹ (root K m m.property.2 π)) ^ (m : ℕ) = algebraMap K (AlgebraicClosure K) π := by
     rw [← map_pow, hα, AlgEquiv.commutes]
   refine (coe_proj_inertiaTameCharacter_apply _ hπ m hα).trans ?_
   rw [PrimeToPTateModule.coe_proj_smul, coe_proj_inertiaTameCharacter_apply hσ hπ m hβ,

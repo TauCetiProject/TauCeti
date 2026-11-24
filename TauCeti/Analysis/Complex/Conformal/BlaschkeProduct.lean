@@ -318,7 +318,7 @@ theorem AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq {g : ℂ → ℂ} {r : �
     rw [closedBall_zero, mem_singleton_iff] at hz
     exact hs z (by simp [hz])
   · have hord : ∀ u : closedBall (0 : ℂ) r, meromorphicOrderAt g u ≠ ⊤ := fun u ↦
-      hg.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero hs u.2
+      hg.meromorphicOrderAt_ne_top_of_forall_mem_sphere_ne_zero hs u.property
     obtain ⟨G, D⟩ := hg.meromorphicOn.exists_ecanonicalDecomp hord
     have hdiv_sphere : ∀ v : ℂ, MeromorphicOn.divisor g (sphere 0 r) v = 0 := fun v ↦ by
       by_cases hv : v ∈ sphere 0 r
@@ -330,7 +330,7 @@ theorem AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq {g : ℂ → ℂ} {r : �
     have hd_fin : d.support.Finite := hg.meromorphicOn.divisor_ball_support_finite
     let s : Finset ℂ := hd_fin.toFinset
     have hs_ball : ∀ i : s, (i : ℂ) ∈ ball 0 r := fun i ↦
-      d.supportWithinDomain (hd_fin.mem_toFinset.mp i.2)
+      d.supportWithinDomain (hd_fin.mem_toFinset.mp i.property)
     have hd_nonneg : ∀ u : ℂ, 0 ≤ d u :=
       MeromorphicOn.AnalyticOnNhd.divisor_nonneg (hg.mono ball_subset_closedBall)
     let a : s → ℂ := fun i ↦ (i : ℂ) / r
@@ -363,7 +363,7 @@ theorem AnalyticOnNhd.exists_blaschkeProduct_div_mul_eq {g : ℂ → ℂ} {r : �
       refine Eventually.frequently ?_
       filter_upwards [eventuallyEq_codiscreteWithin_iff_forall_eventually_nhdsNE.mp D.eventuallyEq 0
         h0_mem, nhdsWithin_le_nhds (closedBall_mem_nhds 0 hr)] with x hx hxU
-      simpa only [hdiv_sphere, zpow_zero, finprod_one, mul_one, smul_eq_mul, Pi.mul_apply,
-        ← hd_def, hprod x] using hx hxU
+      simpa only [Function.factorizedRational, hdiv_sphere, zpow_zero, finprod_one, mul_one,
+        smul_eq_mul, Pi.mul_apply, ← hd_def, hprod x] using hx hxU
     exact fun z hz ↦ hg.eqOn_of_preconnected_of_frequently_eq hB_an
       (convex_closedBall 0 r).isPreconnected h0_mem hfreq hz

@@ -59,7 +59,7 @@ example : MulAction.stabilizer (Equiv.Perm (Fin 3))
 
 example (H : OpenAddSubgroup ℝ) : ¬ (H : Set ℝ) ⊆ Ioo (-1) 1 := fun h ↦ by
   have hH : (H : Set ℝ) = univ := (isClopen_iff.1 ⟨H.isClosed, H.isOpen⟩).resolve_left
-    (Set.nonempty_iff_ne_empty.1 ⟨0, H.zero_mem⟩)
+    (Set.ne_empty_iff_nonempty.2 ⟨0, H.zero_mem⟩)
   exact (h (hH ▸ mem_univ (1 : ℝ))).2.false
 
 end TauCeti

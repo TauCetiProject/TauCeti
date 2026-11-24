@@ -16,7 +16,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ConformallyFlat.Chart
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Divergence
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Solvability
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Solvability
 
 /-!
 # The Weyl–Schouten theorem on Riemannian manifolds
@@ -614,6 +614,146 @@ theorem not_isLocallyConformallyFlat_iff_exists_cottonTensor_ne_zero
       (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
         ∃ x, (CovariantDerivative.leviCivitaConnection I M).cottonTensor x ≠ 0) := by
   rw [g.isLocallyConformallyFlat_iff_cottonTensor_eq_zero hn, not_forall]
+
+end Boundaryless
+
+end Bundle.ContMDiffRiemannianMetric
+
+/-! ### Further results -/
+
+public section
+
+open Bundle Filter TauCeti.Manifold
+open scoped ContDiff Manifold Topology
+
+noncomputable section
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+
+/-- **Smooth initial-value family of conformal flattenings around an interior point.** Let `x₀` be
+an interior point of `M` near which the Weyl and Cotton tensors of `g` vanish, in dimension at least
+`3`. Around any `(c₀, ξ₀) : ℝ × TangentSpace I x₀` there exist open neighbourhoods `W` of `x₀` and
+`Q` of `(c₀, ξ₀)` and a smooth family `Φ : M × (ℝ × TangentSpace I x₀) → ℝ` such that for every
+`q ∈ Q`, the slice `y ↦ Φ (y, q)` has value `q.1` and `g`-gradient `q.2` at `x₀`, and the rescaled
+metric `e^(2 Φ(·, q)) g` has vanishing curvature tensor at every point of `W`. -/
+theorem exists_contMDiff_curvatureTensor_rescale_exp_eq_zero_family_of_isInteriorPoint
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : 3 ≤ Module.finrank ℝ E) {x₀ : M} (hx₀ : I.IsInteriorPoint x₀)
+    (hW : ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).weylTensor y) = 0)
+    (hC : ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor y) = 0)
+    (c₀ : ℝ) (ξ₀ : TangentSpace I x₀) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    ∃ (W : Set M) (Q : Set (ℝ × TangentSpace I x₀))
+      (Φ : M × (ℝ × TangentSpace I x₀) → ℝ)
+      (hΦ : ContMDiff (I.prod 𝓘(ℝ, ℝ × TangentSpace I x₀)) 𝓘(ℝ) ∞ Φ),
+      IsOpen W ∧ x₀ ∈ W ∧ IsOpen Q ∧ (c₀, ξ₀) ∈ Q ∧
+      ∀ q ∈ Q, Φ (x₀, q) = q.1 ∧ mgradient I (fun y ↦ Φ (y, q)) x₀ = q.2 ∧
+        ∀ y ∈ W,
+          (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+            ⟨(g.rescale (fun z ↦ Real.exp (2 * Φ (z, q)))
+              (Real.contDiff_exp.comp_contMDiff
+                (contMDiff_const.mul (hΦ.comp (contMDiff_id.prodMk contMDiff_const))))
+              (fun _ ↦ Real.exp_pos _)).toRiemannianMetric⟩;
+            (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 := by
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  have : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
+    ⟨g.inner, g.contMDiff, fun _ _ _ ↦ rfl⟩
+  obtain ⟨W₀, Q, Φ, hW₀_open, hx₀W₀, hQ_open, hq₀Q, hΦ, hsol⟩ :=
+    exists_contMDiff_hessian_eq_family_of_isInteriorPoint hx₀ hW hC c₀ ξ₀
+  obtain ⟨W₁, hW₁_zero, hW₁_open, hx₀W₁⟩ := eventually_nhds_iff.1 hW
+  refine ⟨W₀ ∩ W₁, Q, Φ, hΦ, hW₀_open.inter hW₁_open, ⟨hx₀W₀, hx₀W₁⟩, hQ_open, hq₀Q,
+    fun q hq ↦ ?_⟩
+  obtain ⟨hval, hgrad, hhess⟩ := hsol q hq
+  refine ⟨hval, hgrad, fun y hy ↦ ?_⟩
+  exact (g.curvatureTensor_leviCivitaConnection_rescale_eq_zero_iff
+    (Real.contDiff_exp.comp_contMDiff
+      (contMDiff_const.mul (hΦ.comp (contMDiff_id.prodMk contMDiff_const))))
+    (fun _ ↦ Real.exp_pos _) (fun _ ↦ rfl) hn y).2 ⟨hW₁_zero y hy.2, hhess y hy.1⟩
+
+section Boundaryless
+
+variable [BoundarylessManifold I M]
+
+/-- **Smooth initial-value family of conformal flattenings on a boundaryless manifold.** -/
+theorem exists_contMDiff_curvatureTensor_rescale_exp_eq_zero_family
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : 3 ≤ Module.finrank ℝ E) {x₀ : M}
+    (hW : ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).weylTensor y) = 0)
+    (hC : ∀ᶠ y in 𝓝 x₀, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor y) = 0)
+    (c₀ : ℝ) (ξ₀ : TangentSpace I x₀) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    ∃ (W : Set M) (Q : Set (ℝ × TangentSpace I x₀))
+      (Φ : M × (ℝ × TangentSpace I x₀) → ℝ)
+      (hΦ : ContMDiff (I.prod 𝓘(ℝ, ℝ × TangentSpace I x₀)) 𝓘(ℝ) ∞ Φ),
+      IsOpen W ∧ x₀ ∈ W ∧ IsOpen Q ∧ (c₀, ξ₀) ∈ Q ∧
+      ∀ q ∈ Q, Φ (x₀, q) = q.1 ∧ mgradient I (fun y ↦ Φ (y, q)) x₀ = q.2 ∧
+        ∀ y ∈ W,
+          (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+            ⟨(g.rescale (fun z ↦ Real.exp (2 * Φ (z, q)))
+              (Real.contDiff_exp.comp_contMDiff
+                (contMDiff_const.mul (hΦ.comp (contMDiff_id.prodMk contMDiff_const))))
+              (fun _ ↦ Real.exp_pos _)).toRiemannianMetric⟩;
+            (CovariantDerivative.leviCivitaConnection I M).curvatureTensor y) = 0 :=
+  g.exists_contMDiff_curvatureTensor_rescale_exp_eq_zero_family_of_isInteriorPoint hn
+    BoundarylessManifold.isInteriorPoint hW hC c₀ ξ₀
+
+/-- **Converse of the Weyl–Schouten theorem in dimension at least `4`.** On a boundaryless smooth
+manifold of dimension `n ≥ 4`, a smooth Riemannian metric whose Weyl tensor vanishes everywhere is
+locally conformally flat (Eisenhart 1926, §28; Lee–Parker 1987, p. 43). -/
+theorem isLocallyConformallyFlat_of_weylTensor_eq_zero
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : 4 ≤ Module.finrank ℝ E)
+    (hW : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      ∀ x, (CovariantDerivative.leviCivitaConnection I M).weylTensor x = 0) :
+    g.IsLocallyConformallyFlat :=
+  (g.isLocallyConformallyFlat_iff_weylTensor_eq_zero hn).2 hW
+
+/-- **Converse of the Cotton–Schouten theorem in dimension `3`.** On a boundaryless smooth
+`3`-manifold, a smooth Riemannian metric whose Cotton tensor vanishes everywhere is locally
+conformally flat (Cotton 1899, Chapter III, n° 18, p. 412). -/
+theorem isLocallyConformallyFlat_of_cottonTensor_eq_zero
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hn : Module.finrank ℝ E = 3)
+    (hC : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      ∀ x, (CovariantDerivative.leviCivitaConnection I M).cottonTensor x = 0) :
+    g.IsLocallyConformallyFlat :=
+  (g.isLocallyConformallyFlat_iff_cottonTensor_eq_zero hn).2 hC
+
+/-- **Weyl–Schouten in dimension at least `4` for an installed `RiemannianBundle`.** -/
+theorem isLocallyConformallyFlat_iff_weylTensor_eq_zero_of_riemannianBundle_eq
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) (hn : 4 ≤ Module.finrank ℝ E) :
+    g.IsLocallyConformallyFlat ↔
+      ∀ x, (CovariantDerivative.leviCivitaConnection I M).weylTensor x = 0 := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  exact g.isLocallyConformallyFlat_iff_weylTensor_eq_zero hn
+
+/-- **Cotton–Schouten in dimension `3` for an installed `RiemannianBundle`.** -/
+theorem isLocallyConformallyFlat_iff_cottonTensor_eq_zero_of_riemannianBundle_eq
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) (hn : Module.finrank ℝ E = 3) :
+    g.IsLocallyConformallyFlat ↔
+      ∀ x, (CovariantDerivative.leviCivitaConnection I M).cottonTensor x = 0 := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  exact g.isLocallyConformallyFlat_iff_cottonTensor_eq_zero hn
 
 end Boundaryless
 

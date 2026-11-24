@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Crystal.Component
-public import TauCeti.RepresentationTheory.Crystal.Word
 import Mathlib.Tactic.Linarith
 import TauCeti.Data.Option.Basic
 
@@ -322,16 +321,16 @@ theorem apply_mem_mapConnectedComponent (ψ : SimilarityHom n c d)
 `c.graph` to its image component `ψ.mapConnectedComponent C` in `d.graph`. -/
 def componentHom (ψ : SimilarityHom n c d) (C : c.graph.ConnectedComponent) :
     SimilarityHom n (c.component C) (d.component (ψ.mapConnectedComponent C)) where
-  toFun y := ⟨ψ y.1, ψ.apply_mem_mapConnectedComponent y.2⟩
+  toFun y := ⟨ψ y.val, ψ.apply_mem_mapConnectedComponent y.property⟩
   wt_toFun y := by simp
   ε_toFun j y := by simp
   eIter_toFun j y := Option.unattach_inj.mp <| by
-    rw [Option.unattach_map, ← Option.map_unattach (g := ψ)]
+    rw [Option.unattach_map, ← Option.map_unattach_eq_map_val (g := ψ)]
     simp
 
 @[simp]
 theorem componentHom_apply (ψ : SimilarityHom n c d) (C : c.graph.ConnectedComponent) (y : C) :
-    (ψ.componentHom C y).1 = ψ y.1 := (rfl)
+    (ψ.componentHom C y).val = ψ y.val := (rfl)
 
 theorem componentHom_injective {ψ : SimilarityHom n c d} (hψ : Function.Injective ψ)
     (C : c.graph.ConnectedComponent) : Function.Injective (ψ.componentHom C) :=

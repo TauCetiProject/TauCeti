@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Holder.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
-public import Mathlib.Analysis.Normed.Operator.Banach
+import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Holder.FaaDiBruno
 
 /-!
@@ -71,7 +71,7 @@ theorem exists_holderOnWith_chartIteratedFDeriv_ball (hα : α ≤ 1) {hk : k �
   have hsopen : IsOpen τ.source := I.isOpen_extendCoordChange_source
   have hz₀s : (z₀ : E) ∈ τ.source := by
     rw [hsrc]
-    exact ⟨z₀.2, hz₀⟩
+    exact ⟨z₀.property, hz₀⟩
   have hst : MapsTo τ τ.source (extChartAt I y).target := fun z hz ↦ by
     have h := τ.map_source hz
     rw [hτ, PartialEquiv.trans_target] at h
@@ -229,16 +229,8 @@ variable [LocallyCompactSpace E] [CompleteSpace F]
 /-- For `α ≤ 1`, when the model space is locally compact and `F` is complete, the linear
 equivalence identifying the Hölder spaces of two compact chart atlases is continuous. -/
 theorem continuous_atlasLinearEquiv (hα : α ≤ 1) :
-    Continuous (atlasLinearEquiv A B k α F hα) := by
-  -- By the closed graph theorem: both spaces are Banach, and evaluation at each point is
-  -- continuous on both.
-  refine (atlasLinearEquiv A B k α F hα).toLinearMap.continuous_of_seq_closed_graph
-    fun u f g hu hg ↦ ext fun y ↦ ?_
-  have hg' : Tendsto (fun n ↦ u n y) atTop (𝓝 (g y)) := by
-    simpa [Function.comp_def] using ((evalCLM B k α F y).continuous.tendsto g).comp hg
-  have hf' : Tendsto (fun n ↦ u n y) atTop (𝓝 (f y)) := by
-    simpa [Function.comp_def] using ((evalCLM A k α F y).continuous.tendsto f).comp hu
-  simpa using tendsto_nhds_unique hg' hf'
+    Continuous (atlasLinearEquiv A B k α F hα) :=
+  continuous_of_coe_eq _ (coe_atlasLinearEquiv A B hα)
 
 variable (k α F)
 

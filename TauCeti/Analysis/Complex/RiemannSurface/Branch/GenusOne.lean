@@ -63,11 +63,10 @@ variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
   [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
   [FiniteCWType X] [FiniteCWType Y]
-  (f : FiniteHolomorphicMap X Y) [FiniteCWType ↥f.branchValuesᶜ]
+  (f : FiniteHolomorphicMap X Y)
 
-/-- **Riemann–Hurwitz over a surface of Euler characteristic zero.** If `X`, `Y` and the
-complement of the branch values have finite CW type and `χ(Y) = 0`, then `χ(X) = -R(f)`, where
-`R(f)` is the ramification degree. -/
+/-- **Riemann–Hurwitz over a surface of Euler characteristic zero.** If `X` and `Y` have finite
+CW type and `χ(Y) = 0`, then `χ(X) = -R(f)`, where `R(f)` is the ramification degree. -/
 theorem eulerChar_eq_neg_ramificationDegree (hY : eulerChar Y = 0) :
     eulerChar X = -ramificationDegree f := by
   rw [f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree, hY, mul_zero, zero_sub]

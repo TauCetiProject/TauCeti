@@ -42,7 +42,7 @@ of a meromorphic germ, its Laurent coefficient of order `-(k + 1)`, is the resid
 theorem coeff_principalPart_succ_eq_residue {φ : meromorphicGerms ℂ a} {f : ℂ → ℂ}
     (hφ : (φ : Germ (𝓝[≠] a) ℂ) = f) (k : ℕ) :
     (principalPart φ).coeff (k + 1) = Contour.residue (fun z ↦ (z - a) ^ k * f z) a := by
-  obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.2)
+  obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.property)
   -- Write `f` as `h(z) / (z - a)^(N + k + 1)` with `h` analytic at `a`; both sides are then the
   -- Taylor coefficient of `h` of order `N`. The principal part is computed by
   -- `principalPart_eq_sum_coeff` and the residue by `Contour.residue_eq_of_eventuallyEq_zpow_smul`,
@@ -90,7 +90,7 @@ theorem coeff_principalPart_succ_eq_circleIntegral {φ : meromorphicGerms ℂ a}
       (2 * π * I)⁻¹ * ∮ z in C(a, ρ), (z - a) ^ k * f z := by
   have hF : MeromorphicAt (fun z ↦ (z - a) ^ k * f z) a :=
     ((analyticAt_id.sub analyticAt_const).pow k).meromorphicAt.mul
-      (coe_mem_meromorphicGerms.1 (hφ ▸ φ.2))
+      (coe_mem_meromorphicGerms.1 (hφ ▸ φ.property))
   obtain ⟨ε, hε, hεF⟩ :=
     Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hF.eventually_analyticAt)
   filter_upwards [Ioo_mem_nhdsGT hε] with ρ ⟨hρ, hρε⟩

@@ -126,20 +126,20 @@ theorem zigzagBraidProjectiveTensorCornerEquiv_symm_tmul (i j : V)
       GradedModuleCat.bimoduleModuleTensorTmul Γ Γ (U i) (P j)
         ((zigzagBraidBimoduleFactorsEquiv k G i).symm
           (l ⊗ₜ[k] spanSingletonGenerator (op (e i))))
-        ⟨c, mem_span_singleton_of_mem_cornerSubmodule c.2⟩ := by
+        ⟨c, mem_span_singleton_of_mem_cornerSubmodule c.property⟩ := by
   apply (zigzagBraidProjectiveTensorCornerEquiv k G i j).injective
   rw [LinearEquiv.apply_symm_apply, zigzagBraidProjectiveTensorCornerEquiv_tmul]
   congr 1
   apply Subtype.ext
   rw [coe_spanSingletonBalancedTensorProductEquivCorner_tmul, coe_spanSingletonGenerator, unop_op]
   exact (mul_eq_self_of_mem_cornerSubmodule
-    (isIdempotentElem_zigzagAlgebraBasis_inl k G i) c.2).symm
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G i) c.property).symm
 
 /-! ### Inserting shifted vertex projectives -/
 
 /-- A corner element `c ∈ e_i Z e_j`, read in the vertex projective `P_j = Z e_j`. -/
 private def cornerToProjective {i j : V} (c : cornerSubmodule k (e i) (e j)) : L j :=
-  ⟨c, mem_span_singleton_of_mem_cornerSubmodule c.2⟩
+  ⟨c, mem_span_singleton_of_mem_cornerSubmodule c.property⟩
 
 /-- Insert `P_i` into `U_i ⊗_Z P_j` along a corner element `c`: `z ↦ (z ⊗ e_i) ⊗ c`. -/
 private def insertCorner {i j : V} (c : cornerSubmodule k (e i) (e j)) : P i →ₗ[Z] T i j :=
@@ -317,8 +317,7 @@ theorem isZero_zigzagBraidProjectiveTensor {i j : V} (hij : i ≠ j) (hadj : ¬ 
     rw [cornerSubmodule_zigzagAlgebra_eq_bot_of_ne_of_not_adj k G hij hadj]
     infer_instance
   have := (zigzagBraidProjectiveTensorCornerEquiv k G i j).toEquiv.subsingleton
-  exact (IsZero.iff_id_eq_zero _).mpr
-    (GradedModuleCat.hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _))
+  exact GradedModuleCat.isZero_of_subsingleton _
 
 /-- **`Z ⊗_Z P_j ≅ P_j`**: the regular bimodule acts as the identity on the vertex projective. -/
 def zigzagBraidProjectiveUnitTensorIso (j : V) :

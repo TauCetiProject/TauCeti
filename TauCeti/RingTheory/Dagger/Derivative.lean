@@ -109,7 +109,7 @@ variable (σ R) in
 algebra. -/
 noncomputable def hasseDeriv (d : σ →₀ ℕ) : washnitzerAlgebra σ R →ₗ[R] washnitzerAlgebra σ R :=
   (MvPowerSeries.hasseDeriv d ∘ₗ (washnitzerAlgebra σ R).toSubmodule.subtype).codRestrict
-    (washnitzerAlgebra σ R).toSubmodule fun f ↦ hasseDeriv_mem_washnitzerAlgebra f.2 d
+    (washnitzerAlgebra σ R).toSubmodule fun f ↦ hasseDeriv_mem_washnitzerAlgebra f.property d
 
 /-- The Hasse derivative in `W` is the Hasse derivative of the underlying series. -/
 @[simp]
@@ -138,9 +138,9 @@ variable (σ R) in
 /-- The partial derivative `∂/∂Xᵢ`, as an `R`-derivation of the Monsky–Washnitzer algebra. -/
 noncomputable def pderiv (i : σ) :
     Derivation R (washnitzerAlgebra σ R) (washnitzerAlgebra σ R) where
-  toFun f := ⟨MvPowerSeries.pderiv i f, pderiv_mem_washnitzerAlgebra f.2 i⟩
-  map_add' f g := Subtype.ext (map_add (MvPowerSeries.pderiv i) f.1 g.1)
-  map_smul' r f := Subtype.ext ((MvPowerSeries.pderiv i).map_smul r f.1)
+  toFun f := ⟨MvPowerSeries.pderiv i f, pderiv_mem_washnitzerAlgebra f.property i⟩
+  map_add' f g := Subtype.ext (map_add (MvPowerSeries.pderiv i) f.val g.val)
+  map_smul' r f := Subtype.ext ((MvPowerSeries.pderiv i).map_smul r f.val)
   map_one_eq_zero' := Subtype.ext (MvPowerSeries.pderiv_one (R := R))
   leibniz' f g := Subtype.ext <| by simp [smul_eq_mul]
 
@@ -185,13 +185,13 @@ theorem hasseDeriv_comp (a b : σ →₀ ℕ) :
   LinearMap.ext fun f ↦ Subtype.ext (by
     simpa only [LinearMap.comp_apply, LinearMap.smul_apply, coe_hasseDeriv,
       Subalgebra.coe_smul] using
-      LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comp a b) f.1)
+      LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comp a b) f.val)
 
 /-- Hasse derivatives in `W` commute: `∂^a ∘ ∂^b = ∂^b ∘ ∂^a`. -/
 theorem hasseDeriv_comm (a b : σ →₀ ℕ) :
     (hasseDeriv σ R a).comp (hasseDeriv σ R b) = (hasseDeriv σ R b).comp (hasseDeriv σ R a) :=
   LinearMap.ext fun f ↦ Subtype.ext
-    (LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comm (R := R) a b) f.1)
+    (LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comm (R := R) a b) f.val)
 
 /-- Partial derivatives of overconvergent series commute. -/
 theorem pderiv_comm (i j : σ) (f : washnitzerAlgebra σ R) :
@@ -206,7 +206,7 @@ theorem forall_pderiv_eq_zero_iff [HasUniqueDiv R] (g : washnitzerAlgebra σ R) 
     (∀ i, pderiv σ R i g = 0) ↔ ∃ c : R, algebraMap R (washnitzerAlgebra σ R) c = g := by
   constructor
   · intro hg
-    refine ⟨constantCoeff g.1, Subtype.ext ?_⟩
+    refine ⟨constantCoeff g.val, Subtype.ext ?_⟩
     apply MvPowerSeries.pderiv.ext
     · intro i
       simpa [MvPowerSeries.algebraMap_apply] using
@@ -376,7 +376,7 @@ theorem pderiv_primitive (i : σ) (f : washnitzerAlgebra σ K) :
 theorem pderiv_primitive_of_ne {i j : σ} (hij : i ≠ j) (f : washnitzerAlgebra σ K) :
     pderiv σ K j (primitive σ K i f) = primitive σ K i (pderiv σ K j f) := by
   apply Subtype.ext
-  simpa only [coe_pderiv, coe_primitive] using MvPowerSeries.pderiv_primitive_of_ne hij f.1
+  simpa only [coe_pderiv, coe_primitive] using MvPowerSeries.pderiv_primitive_of_ne hij f.val
 
 end Primitive
 

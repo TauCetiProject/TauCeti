@@ -85,13 +85,12 @@ private theorem continuousOn_preciseRepresentative_real (hp : 2 < p) {u : ℂ �
   have : Fact (1 ≤ p) := ⟨one_le_two.trans hp.le⟩
   obtain ⟨D, hD, -⟩ := hu.exists_weakFDeriv_of_isOpen
   intro x hx
-  obtain ⟨W, hxW, hWΩ, hWc⟩ :=
-    Opens.exists_between_and_isCompact_closure isCompact_singleton (singleton_subset_iff.2 hx)
+  obtain ⟨W, hxW, hWΩ, hWc⟩ := Opens.exists_mem_and_isCompact_closure hx
   obtain ⟨v, hv, -⟩ := hu.exists_w1p hD hWc hWΩ
   have heq : EqOn (preciseRepresentative volume u) (preciseRepresentative volume (W1p.value v))
       W := fun z hz => (preciseRepresentative_congr_ae_nhds (W.isOpen.mem_nhds hz) hv).symm
   exact (((W1p.continuousOn_preciseRepresentative (finrank_real_complex_lt hp) v).congr
-    heq).continuousAt (W.isOpen.mem_nhds (hxW rfl))).continuousWithinAt
+    heq).continuousAt (W.isOpen.mem_nhds hxW)).continuousWithinAt
 
 /-- The real-valued case of `TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le`. -/
 private theorem exists_dist_preciseRepresentative_le_real (hp : 2 < p) :

@@ -93,6 +93,8 @@ noncomputable section
 
 open CategoryTheory Limits Metric Module Set Topology
 open scoped Manifold
+open OpenPartialHomeomorph (mem_refl_source sourceRestrict
+  sourceRestrict_apply sourceRestrict_preimage)
 
 universe w v u
 
@@ -102,11 +104,6 @@ section Model
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-omit [NormedSpace ℝ E] in
-private theorem mem_refl_source (p : E) : p ∈ (OpenPartialHomeomorph.refl E).source := by
-  rw [OpenPartialHomeomorph.refl_source]
-  exact mem_univ p
 
 /-- Radial projection about a point `p` of `K`, on the complement of `K`. -/
 private def complRadial {K : Set E} {p : E} (hp : p ∈ K) : C((Kᶜ : Set E), sphere (0 : E) 1) :=
@@ -124,7 +121,7 @@ private def complRadialHomotopy {K : Set E} (hK : Convex ℝ K) {p q : E} (hp : 
   toContinuousMap := normalizeToSphere
     (fun z : unitInterval × (Kᶜ : Set E) ↦ (z.2 : E) - AffineMap.lineMap p q (z.1 : ℝ))
     (by fun_prop) fun z ↦ sub_ne_zero.2 fun h ↦
-      z.2.2 (h ▸ hK.lineMap_mem hp hq ⟨z.1.2.1, z.1.2.2⟩)
+      z.2.property (h ▸ hK.lineMap_mem hp hq ⟨z.1.property.1, z.1.property.2⟩)
   map_zero_left z := Subtype.ext (by simp [coe_complRadial_apply, NormedSpace.normalize])
   map_one_left z := Subtype.ext (by simp [coe_complRadial_apply, NormedSpace.normalize])
 
@@ -173,17 +170,8 @@ end Model
 
 section ChartPullback
 
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 variable {M : Type w} [TopologicalSpace M] [T1Space M]
   {E : Type w} [TopologicalSpace E] [T1Space E] (φ : OpenPartialHomeomorph M E)
-
-/-- The restriction of a chart to its source, as a continuous map. -/
-private def sourceRestrict : C(φ.source, E) :=
-  ⟨φ.source.domRestrict φ, φ.continuousOn.domRestrict⟩
-
-omit [T1Space M] [T1Space E] in
-private theorem sourceRestrict_apply (z : φ.source) : sourceRestrict φ z = φ z :=
-  (rfl)
 
 omit [T1Space M] [T1Space E] in
 /-- The source of `φ` meets the preimage of a subset `K` of its target in the preimage of
@@ -191,51 +179,7 @@ omit [T1Space M] [T1Space E] in
 private theorem sourceRestrict_preimage_eq {K : Set E} (hKφ : K ⊆ φ.target) :
     sourceRestrict φ ⁻¹' K = ContinuousMap.subtypeVal φ.source ⁻¹' (φ.symm '' K) := by
   ext z
-  simp [φ.symm_image_eq_source_inter_preimage hKφ, sourceRestrict_apply, z.2]
-
-omit [T1Space M] [T1Space E] in
-private theorem sourceRestrict_preimage {a : M} (ha : a ∈ φ.source) :
-    sourceRestrict φ ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal φ.source ⁻¹' {a} :=
-  fun x hx ↦ φ.injOn x.2 ha hx
-
-/-- **The chart isomorphism through the source.** The local homology isomorphism of a chart `φ`
-at `a` is the inverse of the excision isomorphism of the source of `φ`, followed by the map
-induced by `φ` on the source. -/
-private theorem localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom
-    {a : M} (ha : a ∈ φ.source) (k : ℕ) :
-    localHomologyMap R (ContinuousMap.subtypeVal φ.source)
-        (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k ≫
-          (singularHomologyComplSingletonIsoOfChart R φ ha k).hom =
-      localHomologyMap R (sourceRestrict φ) (sourceRestrict_preimage φ ha) k := by
-  have h₁ : localHomologyMap R (ContinuousMap.subtypeVal φ.source)
-      (S := ContinuousMap.subtypeVal φ.source ⁻¹' {a}) (T := {a}) subset_rfl k =
-        TopPair.singularHomologyMap
-        (TopPair.excisionMap (X := TopCat.of M) φ.source {a}ᶜ) R k := by
-    -- The pairs agree only after unfolding the preimages of complements.
-    erw [localHomologyMap_def]
-    congr 1
-    apply TopPair.hom_ext_of_fst
-    ext z
-    erw [TopPair.excisionMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
-    rfl
-  have h₂ : localHomologyMap R (sourceRestrict φ) (sourceRestrict_preimage φ ha) k =
-      TopPair.singularHomologyMap ((TopPair.ofSubsetIso (X := TopCat.of φ.source)
-          (Y := TopCat.of φ.target) φ.toHomeomorphSourceTarget
-          (B := Subtype.val ⁻¹' {a}ᶜ) (B' := Subtype.val ⁻¹' {φ a}ᶜ)
-          fun z ↦ (φ.injOn.eq_iff z.2 ha).not.symm).hom ≫
-        TopPair.excisionMap (X := TopCat.of E) φ.target {φ a}ᶜ) R k := by
-    -- The pairs agree only after unfolding the preimages of complements.
-    erw [localHomologyMap_def]
-    congr 1
-    apply TopPair.hom_ext_of_fst
-    ext z
-    rw [TopPair.Hom.fst_comp]
-    erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.ofSubsetIso_hom,
-      TopPair.ofSubsetMap_fst_apply,
-      TopPair.ofSubsetMap_fst_apply]
-    rfl
-  rw [h₁, h₂, TopPair.singularHomologyMap_comp]
-  exact singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom R φ ha k
+  simp [φ.symm_image_eq_source_inter_preimage hKφ, sourceRestrict_apply, z.property]
 
 end ChartPullback
 
@@ -303,7 +247,7 @@ private theorem localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart {
       localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (sourceRestrict φ)
         (sourceRestrict_preimage φ ha) (n + 1) w := by
     rw [← ConcreteCategory.comp_apply,
-      localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom]
+      localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom _ φ ha]
   rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart] at hw ⊢
   apply (ConcreteCategory.bijective_of_isIso e.hom).1
   rw [Iso.inv_hom_id_apply,
@@ -416,9 +360,10 @@ private theorem exists_localHomologyRestriction_eq_localOrientationOfOrientedCha
   -- Its pullback to `Hₙ₊₁(M, M ∖ φ.symm '' K)` through the source of `φ`.
   have : IsIso (localHomologyMap Z (sourceRestrict φ) (sourceRestrict_preimage_eq φ hKφ).subset
       (n + 1)) :=
-    isIso_localHomologyMap Z (sourceRestrict φ) φ.isOpenEmbedding_restrict
+    isIso_localHomologyMap Z (sourceRestrict φ) (φ.isOpenEmbedding_sourceRestrict)
       (sourceRestrict_preimage_eq φ hKφ) hKc.isClosed
-      (fun z hz ↦ ⟨⟨φ.symm z, φ.map_target (hKφ hz)⟩, φ.right_inv (hKφ hz)⟩) (n + 1)
+      (fun z hz ↦ ⟨⟨φ.symm z, φ.map_target (hKφ hz)⟩,
+        (sourceRestrict_apply φ _).trans (φ.right_inv (hKφ hz))⟩) (n + 1)
   obtain ⟨w, hw⟩ := (ConcreteCategory.bijective_of_isIso (localHomologyMap Z (sourceRestrict φ)
     (sourceRestrict_preimage_eq φ hKφ).subset (n + 1))).2 c
   exact ⟨_, localHomologyRestriction_localHomologyMap_subtypeVal_eq ω hE φ hKφ w hx hxK (hw ▸ hc),
@@ -465,128 +410,59 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
     (hf : HasFDerivAt (χ ∘ f ∘ φ.symm) f' (φ a)) (hdet : f'.det ≠ 0) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (f.restrict U) (S := {⟨a, haU⟩})
         (T := {f a})
-        (fun z hz ↦ mem_singleton_iff.2 (Subtype.ext (hU z z.2 (by simpa using hz)))) (n + 1)
+        (fun z hz ↦ mem_singleton_iff.2 (Subtype.ext (hU z z.property (by simpa using hz)))) (n + 1)
         ((hUo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨a, haU⟩ (n + 1)).symm
           (φ.localOrientationOfOrientedChart haφ ω hE)).val =
       (SignType.sign f'.det : ℤ) • (χ.localOrientationOfOrientedChart haχ ω hE).val := by
-  -- A class `w` on a small neighbourhood `W` of `a` is read in the chart `φ` as the model local
-  -- orientation at `φ a`, hence is the local orientation selected by `φ`. Read in the chart `χ`,
-  -- its image under `f` is computed by the action of `χ ∘ f ∘ φ.symm` on the local homology of
-  -- the model, which is `sign (det f')` times a translation.
   set Z := ModuleCat.of ℤ (ULift.{w} ℤ)
   set s : ℤ := (SignType.sign f'.det : ℤ)
   have hs : s * s = 1 := coe_sign_mul_coe_sign_of_ne_zero hdet
-  -- The map `f` read in the charts, on the open set `V` of the model where it is defined.
-  set V : Set E := φ.target ∩ φ.symm ⁻¹' (U ∩ f ⁻¹' χ.source)
-  have hmemV {z : M} (hz : z ∈ φ.source) (hzU : z ∈ U) (hzχ : f z ∈ χ.source) : φ z ∈ V :=
-    ⟨φ.map_source hz, by rw [mem_preimage, φ.left_inv hz]; exact ⟨hzU, hzχ⟩⟩
-  have hV : V ∈ 𝓝 (φ a) :=
-    (φ.isOpen_inter_preimage_symm (hUo.inter (χ.open_source.preimage f.continuous))).mem_nhds
-      (hmemV haφ haU haχ)
-  have hτc : ContinuousOn (χ ∘ f ∘ φ.symm) V :=
-    χ.continuousOn.comp (f.continuous.comp_continuousOn
-      (φ.continuousOn_symm.mono inter_subset_left)) fun _ hy ↦ hy.2.2
-  have hτinj : ∀ y ∈ V, (χ ∘ f ∘ φ.symm) y = (χ ∘ f ∘ φ.symm) (φ a) → y = φ a := by
-    intro y hy hyτ
-    simp only [Function.comp_apply, φ.left_inv haφ] at hyτ
-    rw [← φ.right_inv hy.1, hU _ hy.2.1 (χ.injOn hy.2.2 haχ hyτ)]
-  have key := localHomologyMap_domRestrict_eq_sign_det_smul_of_hasFDerivAt Z hV hτc hf hdet hτinj
-    (n + 1)
-  -- The open neighbourhood `W` of `a` on which `f` is read in the two charts, and maps out of it.
   set W : Set M := (U ∩ φ.source) ∩ f ⁻¹' χ.source
   have hWo : IsOpen W := (hUo.inter φ.open_source).inter (χ.open_source.preimage f.continuous)
   have haW : a ∈ W := ⟨⟨haU, haφ⟩, haχ⟩
-  let iU : C(W, U) := ContinuousMap.inclusion fun _ hx ↦ hx.1.1
-  let iφ : C(W, φ.source) := ContinuousMap.inclusion fun _ hx ↦ hx.1.2
-  let fχ : C(W, χ.source) :=
-    ⟨fun x ↦ ⟨f x, x.2.2⟩, (f.continuous.comp continuous_subtype_val).subtype_mk _⟩
-  let m : C(W, V) := ⟨fun x ↦ ⟨φ x, hmemV x.2.1.2 x.2.1.1 x.2.2⟩,
-    (φ.continuousOn.comp_continuous continuous_subtype_val fun x ↦ x.2.1.2).subtype_mk _⟩
-  set SW : Set W := ContinuousMap.subtypeVal W ⁻¹' {a}
-  -- A class `w` on `W` which `φ` carries to the local orientation of the model at `φ a`.
-  have hgφ : IsOpenEmbedding ((sourceRestrict φ).comp iφ) :=
-    φ.isOpenEmbedding_restrict.comp
-      (IsOpenEmbedding.inclusion (inter_subset_left.trans inter_subset_right)
-        (hWo.preimage continuous_subtype_val))
-  have hgφS : (sourceRestrict φ).comp iφ ⁻¹' {φ a} = SW := by
-    ext x
-    simp only [mem_preimage, mem_singleton_iff, ContinuousMap.comp_apply, SW]
-    exact ⟨fun h ↦ φ.injOn x.2.1.2 haφ h, fun h ↦ by rw [← h]; rfl⟩
-  have : IsIso (localHomologyMap Z ((sourceRestrict φ).comp iφ) hgφS.subset (n + 1)) :=
-    isIso_localHomologyMap Z _ hgφ hgφS isClosed_singleton
-      (singleton_subset_iff.2 ⟨⟨a, haW⟩, rfl⟩) (n + 1)
-  obtain ⟨w, hw⟩ := (ConcreteCategory.bijective_of_isIso
-    (localHomologyMap Z ((sourceRestrict φ).comp iφ) hgφS.subset (n + 1))).2
-    ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart (mem_refl_source (φ a)) ω
-      hE).val
-  have hiφ : iφ ⁻¹' (ContinuousMap.subtypeVal φ.source ⁻¹' {a}) ⊆ SW := fun _ hx ↦ hx
-  -- On the side of `φ`, the class `w` gives the oriented-chart local orientation of `φ`.
-  have hφ := localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart ω hE φ haφ
-    (localHomologyMap Z iφ hiφ (n + 1) w) (by
-      rw [← ConcreteCategory.comp_apply, localHomologyMap_comp]
-      exact hw)
-  -- So `w`, included into `U`, is the local orientation of `U` at `a` selected by `φ`.
-  have hiU : iU ⁻¹' {⟨a, haU⟩} ⊆ SW := fun x hx ↦ congrArg Subtype.val (mem_singleton_iff.1 hx)
-  have hjU : (⟨Subtype.val, hUo.isOpenEmbedding_subtypeVal.continuous⟩ : C(U, M)).comp iU =
-      (ContinuousMap.subtypeVal φ.source).comp iφ :=
-    rfl
-  have hc : ((hUo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨a, haU⟩ (n + 1)).symm
-      (φ.localOrientationOfOrientedChart haφ ω hE)).val = localHomologyMap Z iU hiU (n + 1) w := by
-    apply (ConcreteCategory.bijective_of_isIso (localHomologyIsoOfIsOpenEmbedding Z
-      hUo.isOpenEmbedding_subtypeVal ⟨a, haU⟩ (n + 1)).hom).1
-    rw [localHomologyIsoOfIsOpenEmbedding_hom,
-      hUo.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm, ← hφ,
-      ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, localHomologyMap_comp,
-      localHomologyMap_comp, localHomologyMap_congr Z hjU]
-  -- On the side of `χ`, the class `w` gives `s` times the model local orientation at `χ (f a)`.
+  have hWU : W ⊆ U := fun _ hx ↦ hx.1.1
+  have hWφ : W ⊆ φ.source := fun _ hx ↦ hx.1.2
+  have hWχ : W ⊆ f ⁻¹' χ.source := fun _ hx ↦ hx.2
+  let fχ := (f.restrictPreimage χ.source).comp (ContinuousMap.inclusion hWχ)
+  let w := ((hWo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨a, haW⟩ (n + 1)).symm
+    (φ.localOrientationOfOrientedChart haφ ω hE)).val
   set b := (χ ∘ f ∘ φ.symm) (φ a)
-  have hb : χ (f a) = b := by simp [b, φ.left_inv haφ]
-  have hSχ : sourceRestrict χ ⁻¹' {b} ⊆ ContinuousMap.subtypeVal χ.source ⁻¹' {f a} := by
+  have hb : χ (f a) = b := by simp only [b, Function.comp_apply, φ.left_inv haφ]
+  have hSχ : χ.sourceRestrict ⁻¹' {b} ⊆ ContinuousMap.subtypeVal χ.source ⁻¹' {f a} := by
     rw [← hb]
-    exact sourceRestrict_preimage χ haχ
-  have hfχ : fχ ⁻¹' (ContinuousMap.subtypeVal χ.source ⁻¹' {f a}) ⊆ SW :=
-    fun x hx ↦ hU x x.2.1.1 hx
-  let τV : C(V, E) := ⟨V.domRestrict (χ ∘ f ∘ φ.symm), hτc.domRestrict⟩
-  let tV : C(V, E) := ⟨fun y : V ↦ b + (y - φ a), by fun_prop⟩
-  let T : C(E, E) := ⟨fun y ↦ b + (y - φ a), by fun_prop⟩
-  have hm : m ⁻¹' {⟨φ a, mem_of_mem_nhds hV⟩} ⊆ SW := fun x hx ↦
-    φ.injOn x.2.1.2 haφ (congrArg Subtype.val (mem_singleton_iff.1 hx))
-  have h₁ : (sourceRestrict χ).comp fχ = τV.comp m := by
-    ext x
-    simp [τV, m, fχ, sourceRestrict_apply, φ.left_inv x.2.1.2]
-  have h₂ : tV.comp m = T.comp ((sourceRestrict φ).comp iφ) := by
-    ext x
-    simp [tV, T, m, iφ, sourceRestrict_apply, ContinuousMap.inclusion]
-  have e₁ : localHomologyMap Z fχ hfχ (n + 1) ≫ localHomologyMap Z (sourceRestrict χ) hSχ (n + 1) =
-      s • (localHomologyMap Z ((sourceRestrict φ).comp iφ) hgφS.subset (n + 1) ≫
-        localHomologyMap Z T (translate_preimage_subset (φ a) b) (n + 1)) := by
-    rw [localHomologyMap_comp, localHomologyMap_congr Z h₁,
-      ← localHomologyMap_comp Z m τV (W := {b}) hm (fun y hy ↦ Subtype.ext (hτinj y y.2 hy)), key,
-      Preadditive.comp_zsmul, localHomologyMap_comp, localHomologyMap_congr Z h₂,
-      ← localHomologyMap_comp]
-  have hχw : localHomologyMap Z (sourceRestrict χ) hSχ (n + 1)
+    exact χ.sourceRestrict_preimage haχ
+  have hfχ : fχ ⁻¹' (ContinuousMap.subtypeVal χ.source ⁻¹' {f a}) ⊆ {⟨a, haW⟩} :=
+    fun x hx ↦ Subtype.ext (hU x (hWU x.property) hx)
+  have key := φ.localHomologyMap_chart_comp_eq_sign_det_smul χ Z f hWo haW hWφ hWχ
+    (fun x hx ↦ hU x (hWU hx)) hf hdet (n + 1)
+  have hχw : localHomologyMap Z χ.sourceRestrict hSχ (n + 1)
       (s • localHomologyMap Z fχ hfχ (n + 1) w) =
       ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart (mem_refl_source b) ω
         hE).val := by
-    have hz (F : localHomology Z SW (n + 1) ⟶ localHomology Z {b} (n + 1)) (x) :
-        (s • F) x = s • F x :=
+    have hz {P Q : ModuleCat.{w} ℤ} (F : P ⟶ Q) (x : P) : (s • F) x = s • F x :=
       congrArg (fun L ↦ L x) (ModuleCat.hom_zsmul s F)
-    rw [map_zsmul, ← ConcreteCategory.comp_apply, e₁, hz, ConcreteCategory.comp_apply, hw,
-      localHomologyMap_translate_localOrientationOfOrientedChart_refl (mem_refl_source (φ a))
-        (mem_refl_source b) (translate_preimage_subset (φ a) b) ω hE, smul_smul, hs,
-      one_smul]
+    rw [map_zsmul, ← ConcreteCategory.comp_apply, key, hz, ConcreteCategory.comp_apply]
+    -- `erw` matches the concrete action across the excision-selected class `w`.
+    erw [φ.localHomologyMap_sourceRestrict_comp_inclusion_localOrientationOfOrientedChart
+      haφ ω hE hWo haW hWφ]
+    rw [localHomologyMap_translate_localOrientationOfOrientedChart_refl (mem_refl_source (φ a))
+        (mem_refl_source b) (translate_preimage_subset (φ a) b) ω hE,
+      smul_smul, hs, one_smul]
   have hχ := localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart_of_eq ω hE χ haχ hb
     _ hSχ hχw
-  -- Both sides come from the class `w` on `W`, on which `f` factors through the source of `χ`.
-  have hfW : (f.restrict U).comp iU = (ContinuousMap.subtypeVal χ.source).comp fχ := rfl
-  have e₂ := ConcreteCategory.congr_hom ((localHomologyMap_comp Z iU (f.restrict U) hiU
-      (fun z hz ↦ mem_singleton_iff.2 (Subtype.ext (hU z z.2 (by simpa using hz)))) (n + 1)).trans
-    ((localHomologyMap_congr Z hfW _ (n + 1)).trans (localHomologyMap_comp Z fχ
-      (ContinuousMap.subtypeVal χ.source) hfχ subset_rfl (n + 1)).symm)) w
-  simp only [ConcreteCategory.comp_apply] at e₂
-  rw [hc]
-  refine e₂.trans ?_
-  rw [← hχ, map_zsmul, smul_smul, hs, one_smul]
+  have hfW : (f.restrict U).comp (ContinuousMap.inclusion hWU) =
+      (ContinuousMap.subtypeVal χ.source).comp fχ := rfl
+  have hiU : ContinuousMap.inclusion hWU ⁻¹' {⟨a, haU⟩} ⊆ {⟨a, haW⟩} := fun x hx ↦
+    Subtype.ext (congrArg (fun y : U ↦ y.val) (mem_singleton_iff.1 hx))
+  have hcomp := (localHomologyMap_comp Z (ContinuousMap.inclusion hWU) (f.restrict U) hiU
+    (fun z hz ↦ Subtype.ext (hU z z.property (by simpa using hz))) (n + 1)).trans
+    ((localHomologyMap_congr Z hfW _ (n + 1)).trans
+      (localHomologyMap_comp Z fχ (ContinuousMap.subtypeVal χ.source) hfχ subset_rfl
+        (n + 1)).symm)
+  rw [← hUo.localHomologyMap_inclusion_localOrientationEquiv_symm hWo hWU haW
+    (φ.localOrientationOfOrientedChart haφ ω hE) hiU, ← ConcreteCategory.comp_apply]
+  refine (ConcreteCategory.congr_hom hcomp w).trans ?_
+  rw [ConcreteCategory.comp_apply, ← hχ, map_zsmul, smul_smul, hs, one_smul]
 
 /-- **Change of oriented chart.** For two charts `φ` and `χ` at `a` whose transition map
 `χ ∘ φ.symm` has an invertible derivative `f'` at `φ a`, the local orientations of `M` at `a`
@@ -979,7 +855,7 @@ private theorem exists_closedBall_sign_eq [I.Boundaryless]
   have hxφ : x ∈ φ.source := by simp [φ]
   set O : Set M :=
     Subtype.val '' {a : (chartAt H x).source | l.sign x a = l.sign x ⟨x, mem_chart_source H x⟩}
-  have hO : IsOpen O := (chartAt H x).open_source.isOpenMap_subtype_val _
+  have hO : IsOpen O := (chartAt H x).open_source.isOpenMap_subtypeVal _
     ((l.locallyConstant_sign x).isOpen_fiber _)
   have hxV : φ x ∈ φ.target ∩ φ.symm ⁻¹' O :=
     ⟨φ.map_source hxφ, by
@@ -1111,7 +987,7 @@ private theorem localOrientationTransport_chartAt {H : Type v} [TopologicalSpace
     rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
     rintro ⟨⟨c⟩, ⟨d⟩, g⟩ -
     induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpath b (γ.map continuous_subtype_val) fun t ↦ (γ t).2
+    exact hpath b (γ.map continuous_subtypeVal) fun t ↦ (γ t).property
   have hf : f ∈ S.arrows x y := hS ▸ trivial
   exact hf
 

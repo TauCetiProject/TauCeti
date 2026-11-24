@@ -38,13 +38,13 @@ variable {k : Type u} {G : Type v} [CommRing k] [Group G]
   {N : Subgroup G} [N.Normal] {A B C : FDRep k N}
 
 private noncomputable def implementersMap (e : A ≅ B) : implementers A →* implementers B where
-  toFun p := ⟨(MulEquiv.subgroupCongr (inertia_congr e) p.1.1,
-    (FDRep.isoToLinearEquiv e).symm.trans (p.1.2.trans (FDRep.isoToLinearEquiv e))), by
+  toFun p := ⟨(MulEquiv.subgroupCongr (inertia_congr e) p.val.1,
+    (FDRep.isoToLinearEquiv e).symm.trans (p.val.2.trans (FDRep.isoToLinearEquiv e))), by
     rw [mem_implementers_iff]
     intro n x
     simpa [FDRep.Iso.conj_ρ e, LinearEquiv.conj_apply] using
       congrArg (FDRep.isoToLinearEquiv e)
-        ((mem_implementers_iff A _).mp p.2 n ((FDRep.isoToLinearEquiv e).symm x))⟩
+        ((mem_implementers_iff A _).mp p.property n ((FDRep.isoToLinearEquiv e).symm x))⟩
   map_one' := by
     ext <;> simp
   map_mul' p q := by
@@ -62,19 +62,19 @@ noncomputable def cliffordImplementersEquiv (e : A ≅ B) : implementers A ≃* 
 /-- Transport preserves the underlying inertia element. -/
 @[simp]
 theorem cliffordImplementersEquiv_fst (e : A ≅ B) (p : implementers A) :
-    ((e.cliffordImplementersEquiv p).1.1 : G) = (p.1.1 : G) := (rfl)
+    ((e.cliffordImplementersEquiv p).val.1 : G) = (p.val.1 : G) := (rfl)
 
 /-- The transported implementing operator is conjugation by the given linear equivalence. -/
 @[simp]
 theorem cliffordImplementersEquiv_snd_apply (e : A ≅ B) (p : implementers A) (x : B) :
-    (e.cliffordImplementersEquiv p).1.2 x =
-      FDRep.isoToLinearEquiv e (p.1.2 ((FDRep.isoToLinearEquiv e).symm x)) := (rfl)
+    (e.cliffordImplementersEquiv p).val.2 x =
+      FDRep.isoToLinearEquiv e (p.val.2 ((FDRep.isoToLinearEquiv e).symm x)) := (rfl)
 
 /-- The inverse of a transported implementing operator is the conjugated inverse. -/
 @[simp]
 theorem cliffordImplementersEquiv_snd_symm_apply (e : A ≅ B) (p : implementers A) (x : B) :
-    (e.cliffordImplementersEquiv p).1.2.symm x =
-      FDRep.isoToLinearEquiv e (p.1.2.symm ((FDRep.isoToLinearEquiv e).symm x)) := (rfl)
+    (e.cliffordImplementersEquiv p).val.2.symm x =
+      FDRep.isoToLinearEquiv e (p.val.2.symm ((FDRep.isoToLinearEquiv e).symm x)) := (rfl)
 
 /-- Transport by the identity leaves implementing pairs unchanged. -/
 @[simp]

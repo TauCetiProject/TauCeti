@@ -81,7 +81,8 @@ the same dimension. Then a point of `A` lies in the frontier of `A` exactly when
 in the frontier of `B`. -/
 theorem coe_apply_mem_frontier_iff_of_boundaryless (e : A ≃ₜ B) (hEF : finrank ℝ E = finrank ℝ F)
     (x : A) : (e x : N) ∈ frontier B ↔ (x : M) ∈ frontier A := by
-  simp only [frontier, mem_sdiff, subset_closure (e x).2, subset_closure x.2, true_and,
+  simp only [frontier, mem_sdiff, subset_closure (e x).property, subset_closure x.property,
+      true_and,
     e.coe_apply_mem_interior_iff_of_boundaryless I J hEF]
 
 include I in

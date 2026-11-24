@@ -46,10 +46,10 @@ noncomputable def weightCoordChangeEquiv (u : ℤ_[p]ˣ) :
     {t : R // Tendsto (t ^ ·) atTop (𝓝 0)} ≃ {t : R // Tendsto (t ^ ·) atTop (𝓝 0)} :=
   let e : {κ : AddChar ℤ_[p] R // Continuous κ} ≃
       {κ : AddChar ℤ_[p] R // Continuous κ} :=
-    { toFun κ := ⟨κ.1.compAddMonoidHom (AddMonoidHom.mulLeft (u : ℤ_[p])),
-        κ.2.comp (continuous_const.mul continuous_id)⟩
-      invFun κ := ⟨κ.1.compAddMonoidHom (AddMonoidHom.mulLeft (↑u⁻¹ : ℤ_[p])),
-        κ.2.comp (continuous_const.mul continuous_id)⟩
+    { toFun κ := ⟨κ.val.compAddMonoidHom (AddMonoidHom.mulLeft (u : ℤ_[p])),
+        κ.property.comp (continuous_const.mul continuous_id)⟩
+      invFun κ := ⟨κ.val.compAddMonoidHom (AddMonoidHom.mulLeft (↑u⁻¹ : ℤ_[p])),
+        κ.property.comp (continuous_const.mul continuous_id)⟩
       left_inv κ := by ext s; simp
       right_inv κ := by ext s; simp }
   (PadicInt.continuousAddCharEquiv p R).symm.trans
@@ -61,20 +61,20 @@ variable {p R}
 theorem coe_weightCoordChangeEquiv_apply (u : ℤ_[p]ˣ)
     (t : {t : R // Tendsto (t ^ ·) atTop (𝓝 0)}) :
     (weightCoordChangeEquiv p R u t : R) =
-      PadicInt.addChar_of_value_at_one t.1 t.2 (u : ℤ_[p]) - 1 := by
+      PadicInt.addChar_of_value_at_one t.val t.property (u : ℤ_[p]) - 1 := by
   rcases t with ⟨t, ht⟩
   simp [weightCoordChangeEquiv, PadicInt.continuousAddCharEquiv_apply]
 
 /-- The binomial character in the new coordinate is the original one evaluated at `u * s`. -/
 theorem addChar_of_value_at_one_weightCoordChangeEquiv (u : ℤ_[p]ˣ)
     (t : {t : R // Tendsto (t ^ ·) atTop (𝓝 0)}) (s : ℤ_[p]) :
-    PadicInt.addChar_of_value_at_one (weightCoordChangeEquiv p R u t).1
-      (weightCoordChangeEquiv p R u t).2 s =
-        PadicInt.addChar_of_value_at_one t.1 t.2 ((u : ℤ_[p]) * s) := by
-  have h := PadicInt.eq_addChar_of_value_at_one (weightCoordChangeEquiv p R u t).2
-    ((PadicInt.continuous_addChar_of_value_at_one t.2).comp
+    PadicInt.addChar_of_value_at_one (weightCoordChangeEquiv p R u t).val
+      (weightCoordChangeEquiv p R u t).property s =
+        PadicInt.addChar_of_value_at_one t.val t.property ((u : ℤ_[p]) * s) := by
+  have h := PadicInt.eq_addChar_of_value_at_one (weightCoordChangeEquiv p R u t).property
+    ((PadicInt.continuous_addChar_of_value_at_one t.property).comp
       (continuous_const.mul continuous_id))
-    (κ := (PadicInt.addChar_of_value_at_one t.1 t.2).compAddMonoidHom
+    (κ := (PadicInt.addChar_of_value_at_one t.val t.property).compAddMonoidHom
       (AddMonoidHom.mulLeft (u : ℤ_[p]))) (by
         simp [coe_weightCoordChangeEquiv_apply])
   exact congrArg (fun κ : AddChar ℤ_[p] R ↦ κ s) h.symm
@@ -85,7 +85,7 @@ theorem weightCoordChangeEquiv_eq_tsum (u : ℤ_[p]ˣ)
     (weightCoordChangeEquiv p R u t : R) =
       (∑' n : ℕ, mahler n (u : ℤ_[p]) • (t : R) ^ n) - 1 := by
   rw [coe_weightCoordChangeEquiv_apply, PadicInt.coe_addChar_of_value_at_one,
-    PadicInt.mahlerSeries_apply t.2]
+    PadicInt.mahlerSeries_apply t.property]
 
 @[simp]
 theorem weightCoordChangeEquiv_one : weightCoordChangeEquiv p R 1 = Equiv.refl _ := by

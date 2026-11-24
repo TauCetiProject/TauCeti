@@ -64,9 +64,9 @@ theorem of_isColimit_cokernelCofork {C : Type*} [Category* C] [HasZeroMorphisms 
     (hg : IsColimit (CokernelCofork.ofπ g w)) (hY : IsZero Y) :
     IsPushout f (0 : X₁ ⟶ Y) g (0 : Y ⟶ X₃) :=
   of_isColimit' ⟨by simp [w]⟩ (PushoutCocone.IsColimit.mk _
-    (fun s ↦ (CokernelCofork.IsColimit.desc' hg s.inl (by simpa using s.condition)).1)
-    (fun _ ↦ (CokernelCofork.IsColimit.desc' hg _ _).2) (fun _ ↦ hY.eq_of_src _ _)
+    (fun s ↦ (CokernelCofork.IsColimit.desc' hg s.inl (by simpa using s.condition)).val)
+    (fun _ ↦ (CokernelCofork.IsColimit.desc' hg _ _).property) (fun _ ↦ hY.eq_of_src _ _)
     (fun _ _ hm _ ↦ Cofork.IsColimit.hom_ext hg
-      (hm.trans (CokernelCofork.IsColimit.desc' hg _ _).2.symm)))
+      (hm.trans (CokernelCofork.IsColimit.desc' hg _ _).property.symm)))
 
 end CategoryTheory.IsPushout

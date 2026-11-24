@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+
 /-!
 # Naturality of reduced forms: maps, symmetries and products
 
@@ -39,13 +41,20 @@ on forms, so that `η` is determined by `i^* σ`.
   `(M, σ)` commuting with the action of `G` and preserving `μ`, restricted to a level, descends
   to an action of `L` on `Q` by smooth maps preserving `η`
   (`TauCeti.SmoothForm.exists_comp_eq_and_mpullback_eq_of_smul`).
+* **Recognizing the reduced space.** Let `η` be nondegenerate, as the reduced symplectic form is.
+  A smooth surjection `Ψ : Z → N` onto a manifold of the dimension of `Q`, with the same fibres as
+  `p` and with `Ψ^* τ = p^* η` for a form `τ` on `N`, descends to a diffeomorphism `Φ : Q → N` with
+  `Φ ∘ p = Ψ` and `Φ^* τ = η` (`TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`).
+  So `(N, τ)` is the reduced space, as for the cotangent bundle of the orbit space in cotangent
+  reduction at zero.
 * **Products.** The product of the data `(i₁, p₁, η₁)` and `(i₂, p₂, η₂)` is reduction data for the
   product form: `(p₁ × p₂)^* (η₁ ⊞ η₂) = (i₁ × i₂)^* (σ₁ ⊞ σ₂)`
   (`TauCeti.SmoothTwoForm.mpullback_prodMap_prod_eq_mpullback_prodMap_prod`). So the reduced form of
   the product is the product of the reduced forms
   (`TauCeti.SmoothTwoForm.eq_prod_of_mpullback_prodMap_eq`).
 
-No statement needs the forms to be closed or nondegenerate, nor `i` to be an immersion.
+Except for the recognition of the reduced space, no statement needs the forms to be closed or
+nondegenerate, and none needs `i` to be an immersion.
 
 ## Main results
 
@@ -56,6 +65,9 @@ No statement needs the forms to be closed or nondegenerate, nor `i` to be an imm
 * `TauCeti.SmoothForm.exists_comp_eq_and_mpullback_eq_of_smul`: an action on the level preserving
   the restricted form and the fibres descends to an action on the reduced space preserving the
   reduced form.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`: a manifold with a form,
+  receiving a surjection from the level with the fibres of the orbit projection which pulls its
+  form back to the restricted form, is the reduced space.
 * `TauCeti.SmoothTwoForm.mpullback_prodMap_prod_eq_mpullback_prodMap_prod`,
   `TauCeti.SmoothTwoForm.eq_prod_of_mpullback_prodMap_eq`: reduction of products.
 
@@ -162,6 +174,60 @@ theorem exists_comp_eq_and_mpullback_eq_of_smul [IZ.Boundaryless] {L : Type*} [M
 end SmoothForm
 
 namespace SmoothTwoForm
+
+section Recognition
+
+variable {EZ HZ Z EQ HQ Q EN HN N : Type*}
+  [NormedAddCommGroup EZ] [NormedSpace ℝ EZ] [TopologicalSpace HZ]
+  {IZ : ModelWithCorners ℝ EZ HZ} [IZ.Boundaryless] [TopologicalSpace Z] [ChartedSpace HZ Z]
+  [IsManifold IZ ∞ Z]
+  [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [FiniteDimensional ℝ EQ] [TopologicalSpace HQ]
+  {IQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q] [IsManifold IQ ∞ Q]
+  [BoundarylessManifold IQ Q]
+  [NormedAddCommGroup EN] [NormedSpace ℝ EN] [FiniteDimensional ℝ EN] [TopologicalSpace HN]
+  {IN : ModelWithCorners ℝ EN HN} [TopologicalSpace N] [ChartedSpace HN N] [IsManifold IN ∞ N]
+  {p : Z → Q} {Ψ : Z → N} {η : SmoothTwoForm IQ Q} {τ : SmoothTwoForm IN N}
+
+/-- **Recognizing a reduced space.** Let `p : Z → Q` be a surjective smooth submersion out of a
+boundaryless manifold and `η` a nondegenerate two-form on `Q`, such as the orbit projection of a
+level onto a reduced space and the reduced symplectic form. Let `Ψ : Z → N` be a smooth surjection
+onto a manifold of the dimension of `Q`, whose fibres are those of `p`, and which pulls a two-form
+`τ` back to `p^* η`. Then `Ψ` descends to a diffeomorphism `Φ : Q → N` with `Φ ∘ p = Ψ` and
+`Φ^* τ = η`. -/
+theorem exists_diffeomorph_comp_eq_and_mpullback_eq (hp : IsSubmersion IZ IQ ∞ p)
+    (hpsurj : Surjective p) (hη : η.IsNondegenerate) (hΨ : ContMDiff IZ IN ∞ Ψ)
+    (hΨsurj : Surjective Ψ) (hfib : ∀ z z', Ψ z = Ψ z' ↔ p z = p z')
+    (hdim : Module.finrank ℝ EQ = Module.finrank ℝ EN)
+    (hpΨ : SmoothForm.mpullback Ψ hΨ τ = SmoothForm.mpullback p hp.contMDiff η) :
+    ∃ Φ : Q ≃ₘ⟮IQ, IN⟯ N, ⇑Φ ∘ p = Ψ ∧ SmoothForm.mpullback Φ Φ.contMDiff τ = η := by
+  obtain ⟨Φ, ⟨hΦ, hΦp⟩, -⟩ :=
+    hp.existsUnique_contMDiff_comp_eq hpsurj le_rfl hΨ fun z z' h ↦ (hfib z z').2 h
+  -- `p^* Φ^* τ = Ψ^* τ = p^* η`, and pulling back along `p` is injective.
+  have hpull : SmoothForm.mpullback Φ hΦ τ = η := by
+    refine SmoothForm.mpullback_injective_of_surjective hp.contMDiff hpsurj
+      (hp.surjective_mfderiv (by simp)) ?_
+    rw [SmoothForm.mpullback_mpullback, ← hpΨ]
+    simp only [hΦp]
+  have hbij : Bijective Φ := by
+    refine ⟨fun y y' hyy' ↦ ?_, fun x ↦ ?_⟩
+    · obtain ⟨z, rfl⟩ := hpsurj y
+      obtain ⟨z', rfl⟩ := hpsurj y'
+      rw [← comp_apply (f := Φ), ← comp_apply (f := Φ), hΦp] at hyy'
+      exact (hfib z z').1 hyy'
+    · obtain ⟨z, rfl⟩ := hΨsurj x
+      exact ⟨p z, congrFun hΦp z⟩
+  -- Since `Φ^* τ = η` is nondegenerate, the differential of `Φ` is injective.
+  have hinj (y : Q) : Injective (mfderiv IQ IN Φ y) := by
+    refine (injective_iff_map_eq_zero _).2 fun v hv ↦
+      isNondegenerate_iff_separatingLeft.1 hη y v fun w ↦ ?_
+    rw [← hpull, SmoothForm.eval₂_mpullback, hv, SmoothBundleForm.eval₂_zero_left]
+  have hloc : IsLocalDiffeomorph IQ IN ∞ Φ := fun y ↦
+    isLocalDiffeomorphAt_of_injective_mfderiv (s := Set.univ) hΦ.contMDiffOn isOpen_univ
+      (Set.mem_univ y) BoundarylessManifold.isInteriorPoint (by simp) (hinj y) hdim
+  refine ⟨hloc.diffeomorphOfBijective hbij, ?_, ?_⟩ <;>
+    simp only [IsLocalDiffeomorph.coe_diffeomorphOfBijective, hΦp, hpull]
+
+end Recognition
 
 variable {E₁ H₁ M₁ EZ₁ HZ₁ Z₁ EQ₁ HQ₁ Q₁ : Type*}
   [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁]

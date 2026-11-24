@@ -57,6 +57,10 @@ operation is introduced.
   `f` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
 * `LaurentSeries.derivative_eq_zero_iff_exists_C`: without additive torsion the kernel of `D`
   consists of the constants.
+* `LaurentSeries.derivative_map_addMonoidHom`: differentiation commutes with applying an additive
+  map to the coefficients.
+* `LaurentSeries.derivative_mapRingHom`: differentiation commutes with coefficient extension along
+  a ring homomorphism.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
   rules over a field.
 * `LaurentSeries.continuous_derivative`: `D` is continuous for the valuation topology.
@@ -335,6 +339,22 @@ theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R
   rintro ⟨c, rfl⟩
   simp
 
+/-- **Coefficient maps commute with differentiation**: differentiation only multiplies
+coefficients by integers, so applying an additive map `g : V → W` to the coefficients of `f'`
+gives the derivative of the image of `f`, for any scalar rings of `V` and `W`. -/
+theorem derivative_map_addMonoidHom {R S V W F : Type*} [Semiring R] [Semiring S]
+    [AddCommGroup V] [AddCommGroup W] [Module R V] [Module S W] [FunLike F V W]
+    [AddMonoidHomClass F V W] (g : F) (f : LaurentSeries V) :
+    derivative S (f.map g) = (derivative R f).map g := by
+  ext n
+  simp only [coeff_derivative, map_coeff, map_zsmul]
+
+/-- **Coefficient extension commutes with differentiation**: for a ring homomorphism
+`φ : R →+* S`, applying `φ` to the coefficients of `f'` gives the derivative of the image of `f`. -/
+theorem derivative_mapRingHom {R S : Type*} [Ring R] [Ring S] (φ : R →+* S) (f : R⸨X⸩) :
+    derivative S (mapRingHom φ f) = mapRingHom φ (derivative R f) := by
+  simpa only [mapRingHom_apply] using derivative_map_addMonoidHom (R := R) φ f
+
 section Ramified
 
 /-- **Chain rule for Laurent expansion**: the derivative of `f (X ^ d)` is
@@ -415,7 +435,7 @@ theorem continuous_derivative : Continuous (derivative K : K⸨X⸩ → K⸨X⸩
   rw [ContinuousAt, map_zero]
   intro s hs
   obtain ⟨γ, hγ⟩ := Valued.mem_nhds_zero.mp hs
-  obtain ⟨k, hk⟩ : ∃ k : ℤ, MonoidWithZeroHom.ValueGroup₀.embedding γ.1 = WithZero.exp k :=
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, MonoidWithZeroHom.ValueGroup₀.embedding γ.val = WithZero.exp k :=
     ⟨_, (WithZero.exp_log (MonoidWithZeroHom.ValueGroup₀.embedding_unit_ne_zero γ)).symm⟩
   -- Series of valuation below `exp (k - 2)` have derivatives of valuation below `exp k`.
   have hU : {x : K⸨X⸩ | Valued.v x < Valued.v (single (2 - k) (1 : K))} ∈ 𝓝 0 :=

@@ -284,7 +284,7 @@ theorem exists_torusFamilyFiber_homotopic_of_affine {Y₀ Y₁ E₀ E₁ : Type*
   have hG : Continuous G := by
     rw [← (IsOpenQuotientMap.id.prodMap AddAction.isOpenQuotientMap_quotientMk).continuous_comp_iff]
     exact continuous_quotient_mk'.comp ((hφ.comp continuous_snd).add
-      ((continuous_subtype_val.comp continuous_fst).smul continuous_const))
+      ((continuous_subtypeVal.comp continuous_fst).smul continuous_const))
   let K : C(unitInterval × _, _) :=
     ⟨fun p ↦ e₁ (G (p.1, e₀.symm p.2)), e₁.continuous.comp
       (hG.comp (continuous_fst.prodMk (e₀.symm.continuous.comp continuous_snd)))⟩

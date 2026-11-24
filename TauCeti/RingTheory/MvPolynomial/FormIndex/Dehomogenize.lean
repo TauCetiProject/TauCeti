@@ -27,7 +27,10 @@ Consequently, over any commutative ring `R`:
   so applying `blockDehomogenize` after the shift causes no cancellation between distinct monomials,
   giving the exact equality
   `formIndex d (fun h ↦ ![-α h, 1]) P = weightedIndex d α (blockDehomogenize P)`
-  (`MvPolynomial.IsMultiHomogeneous.formIndex_eq_weightedIndex_blockDehomogenize`).
+  (`MvPolynomial.IsMultiHomogeneous.formIndex_eq_weightedIndex_blockDehomogenize`). Over a field,
+  rescaling the forms extends this to any forms `M h` with `M h 1 ≠ 0`, at the point
+  `fun h ↦ -M h 0 / M h 1`
+  (`MvPolynomial.IsMultiHomogeneous.formIndex_eq_weightedIndex_blockDehomogenize_of_ne_zero`).
 
 ## References
 
@@ -169,6 +172,21 @@ theorem blockDehomogenize_substFormInv (α : κ → K) (P : MvPolynomial (κ × 
     simp only [AlgHom.comp_apply, Fin.mk_one]
     rw [substFormInv_X_self (M := fun h ↦ ![-α h, 1]) (i₀ := fun _ ↦ 1) h]
     simp [herase, taylor_apply]
+
+/-- **Form index via dehomogenization for general forms.** For a multihomogeneous polynomial `P`
+in two-variable blocks and linear forms `M h` with `M h 1 ≠ 0`, `formIndex d M P` equals the
+weighted index of `blockDehomogenize P` at `fun h ↦ -M h 0 / M h 1`. -/
+theorem IsMultiHomogeneous.formIndex_eq_weightedIndex_blockDehomogenize_of_ne_zero [Fintype κ]
+    [DecidableEq κ] {e : κ → ℕ} {P : MvPolynomial (κ × Fin 2) K} (hP : IsMultiHomogeneous e P)
+    (d : κ → ℕ) {M : κ → Fin 2 → K} (hM : ∀ h, M h 1 ≠ 0) :
+    formIndex d M P = weightedIndex d (fun h ↦ -M h 0 / M h 1) (blockDehomogenize P) := by
+  calc formIndex d M P = formIndex d (fun h ↦ M h 1 • ![-(-M h 0 / M h 1), 1]) P := by
+        congr 1
+        ext h i
+        fin_cases i <;> simp [mul_div_cancel₀ _ (hM h)]
+    _ = formIndex d (fun h ↦ ![-(-M h 0 / M h 1), 1]) P :=
+        formIndex_smul_form (fun h ↦ (hM h).isUnit) d _ P
+    _ = _ := hP.formIndex_eq_weightedIndex_blockDehomogenize d _
 
 end Field
 

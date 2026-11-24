@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Divisor
+public import TauCeti.Analysis.PDE.Vortex.Divisor.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Data.Multiset.Fintype
@@ -55,8 +55,9 @@ variation with `δα = α η`, `η` of class `Cᵏ`, is zero, this map is inject
 
 The `C²` square-integrable kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁`
 (`TauCeti.Vortex.gaugeFixedKernel x`) is such a space: rows `2` and `3` of `L_x y = 0` are the
-holomorphicity rows of the linearized equation, and a kernel element with `δα = α η`, `η` of class
-`C²`, vanishes when `|α| → 1` at infinity
+holomorphicity rows of the linearized equation
+(`TauCeti.Vortex.gaugeFixedKernel_linearizedEquation`), and a kernel element with `δα = α η`, `η`
+of class `C²`, vanishes when `|α| → 1` at infinity
 (`TauCeti.Vortex.eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto`). So at a
 `C²` field satisfying `∂bar_a α = 0` with the degree-`m` end framing, the kernel of `L_x` is finite
 dimensional, of real dimension at most `2 m`
@@ -274,20 +275,20 @@ def principalPartMap {D : Multiset ℂ}
     V →ₗ[ℝ] Multiset.ToType D → ℂ where
   toFun y i := principalPart x ν y i.1 i.2
   map_add' y y' := funext fun i ↦ by
-    obtain ⟨G, hG, H, hH, hy⟩ := hV y y.2
-    obtain ⟨G', hG', H', hH', hy'⟩ := hV y' y'.2
-    rw [Pi.add_apply, principalPart_eq_iteratedDeriv hα hν hG hH hy i.2.2,
-      principalPart_eq_iteratedDeriv hα hν hG' hH' hy' i.2.2,
+    obtain ⟨G, hG, H, hH, hy⟩ := hV y y.property
+    obtain ⟨G', hG', H', hH', hy'⟩ := hV y' y'.property
+    rw [Pi.add_apply, principalPart_eq_iteratedDeriv hα hν hG hH hy i.2.isLt,
+      principalPart_eq_iteratedDeriv hα hν hG' hH' hy' i.2.isLt,
       principalPart_eq_iteratedDeriv hα hν (hG.add hG') (hH.add hH')
         (fun w ↦ by
           simp only [Submodule.coe_add, sectionValue_add, hy w, hy' w, Pi.add_apply]
-          ring) i.2.2,
+          ring) i.2.isLt,
       iteratedDeriv_add hH.contDiff.contDiffAt hH'.contDiff.contDiffAt]
   map_smul' t y := funext fun i ↦ by
-    obtain ⟨G, hG, H, hH, hy⟩ := hV y y.2
+    obtain ⟨G, hG, H, hH, hy⟩ := hV y y.property
     rw [Pi.smul_apply, RingHom.id_apply, Complex.real_smul]
     exact principalPart_eq_mul_of_sectionValue_eq_mul hα hν hG hH hy (t : ℂ)
-      (fun w ↦ by rw [Submodule.coe_smul, sectionValue_smul]) i.2.2
+      (fun w ↦ by rw [Submodule.coe_smul, sectionValue_smul]) i.2.isLt
 
 /-- The principal-part map evaluated at the point `⟨a, j⟩` of `D` is `principalPart x ν y a j`. -/
 @[simp]
@@ -323,7 +324,7 @@ theorem principalPartMap_injective {k : ℕ∞} (hk : 1 ≤ k)
   have hk0 : (k : WithTop ℕ∞) ≠ 0 := by
     exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hk))
   refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
-  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hV y y.2
+  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hV y y.property
   obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul hk hp hq hhol
     (hν.differentiable hk0) hνeq h₁ h₂ h₃ h₄ h₅
   -- If all principal-part data vanish, then `δα = α η` with `η` of class `Cᵏ`.
@@ -332,7 +333,7 @@ theorem principalPartMap_injective {k : ℕ∞} (hk : 1 ≤ k)
     exact congrFun hy ⟨z, ⟨j, hj⟩⟩
   obtain ⟨η, hη, hyη⟩ := ((tfae_exists_sectionValue_eq_mul (y := y) hk hb₁ hb₂ hp hq hhol hα
     hν hG hH hGH).out 3 1).1 hjet
-  exact Subtype.ext (hdiv y y.2 η hη hyη)
+  exact Subtype.ext (hdiv y y.property η hη hyη)
 
 /-- The principal-part map on `V`, for the zero divisor `D` of `α`, which has `m` points. -/
 private theorem exists_injective_linearMap {k : ℕ∞} (hk : 1 ≤ k) {m : ℕ}
@@ -421,7 +422,8 @@ variable (hx : ContDiff ℝ 2 x) (hhol : ∀ w, equation x w 1 = 0 ∧ equation 
 /-- A kernel element of `L_x` has `C²` connection variation and differentiable section variation,
 and satisfies the holomorphicity rows of the linearized equation, which are rows `2` and `3` of
 `L_x y = 0`. -/
-private theorem gaugeFixedKernel_linearizedEquation (y) (hy : y ∈ gaugeFixedKernel x) :
+theorem gaugeFixedKernel_linearizedEquation (y : ℂ → EuclideanSpace ℝ (Fin 4))
+    (hy : y ∈ gaugeFixedKernel x) :
     ContDiff ℝ 2 (fun w ↦ y w 0) ∧ ContDiff ℝ 2 (fun w ↦ y w 1) ∧
       Differentiable ℝ (fun w ↦ y w 2) ∧ Differentiable ℝ (fun w ↦ y w 3) ∧
       ∀ w, linearizedEquation x y w 1 = 0 ∧ linearizedEquation x y w 2 = 0 := by

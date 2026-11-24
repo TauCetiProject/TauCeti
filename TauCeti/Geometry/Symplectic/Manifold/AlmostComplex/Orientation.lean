@@ -60,16 +60,18 @@ variable {E H C : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace C] [ChartedSpace H C]
   [IsManifold I ∞ C] (j : SmoothAlmostComplexStructure I C) {o : Manifold.Orientation I C (Fin 2)}
 
+omit [FiniteDimensional ℝ E] in
 /-- The complex frame `(e, j e)` of a nonzero tangent vector `e` of an almost complex surface `C`,
-as a basis of the tangent plane. The orientation `o` supplies the dimension `2` of the plane. -/
-def complexFrame (o : Manifold.Orientation I C (Fin 2)) {c : C} {e : TangentSpace I c}
-    (he : e ≠ 0) : Basis (Fin 2) ℝ (TangentSpace I c) :=
+as a basis of the two-dimensional tangent plane. -/
+def complexFrame {c : C} {e : TangentSpace I c} (he : e ≠ 0)
+    (hc : finrank ℝ (TangentSpace I c) = 2) : Basis (Fin 2) ℝ (TangentSpace I c) :=
   basisOfLinearIndependentOfCardEqFinrank ((j.almostComplexStructureAt c).linearIndependent_pair he)
-    (by simpa using (o.finrank_tangentSpace_eq c).symm)
+    (by simp [hc])
 
+omit [FiniteDimensional ℝ E] in
 @[simp]
-theorem coe_complexFrame (o : Manifold.Orientation I C (Fin 2)) {c : C} {e : TangentSpace I c}
-    (he : e ≠ 0) : ⇑(j.complexFrame o he) = ![e, j c e] := by
+theorem coe_complexFrame {c : C} {e : TangentSpace I c} (he : e ≠ 0)
+    (hc : finrank ℝ (TangentSpace I c) = 2) : ⇑(j.complexFrame he hc) = ![e, j c e] := by
   rw [complexFrame, coe_basisOfLinearIndependentOfCardEqFinrank, almostComplexStructureAt_apply]
 
 /-- **Top forms nonnegative on complex frames.** Let `j` be an almost complex structure on a
@@ -84,8 +86,8 @@ theorem apply_basis_nonneg_of_forall_nonneg {c : C}
     (b : Basis (Fin 2) ℝ (TangentSpace I c)) (hb : b.orientation = o.orientationAt c) :
     0 ≤ η b := by
   -- The frame `b₀ = (b 0, j (b 0))`.
-  set b₀ := j.complexFrame o (b.ne_zero 0)
-  have hb₀ : ⇑b₀ = ![b 0, j c (b 0)] := j.coe_complexFrame o _
+  set b₀ := j.complexFrame (b.ne_zero 0) (by simpa using o.finrank_tangentSpace_eq c)
+  have hb₀ : ⇑b₀ = ![b 0, j c (b 0)] := j.coe_complexFrame _ _
   -- A top form on the plane is its value on the frame `b₀` times `det_{b₀}`.
   have hη' : η b = η b₀ * b₀.det b := by
     simpa using congrArg (fun f ↦ f b) (η.toAlternatingMap.eq_smul_basis_det b₀)
@@ -110,8 +112,8 @@ theorem integralTopForm_pos_of_forall_nonneg
     rintro rfl
     exact hpos.ne ((η c₀).map_coord_zero 0 rfl).symm
   -- The positive frame `(e₀, j e₀)` at `c₀`.
-  set b₀ := j.complexFrame o he₀
-  have hb₀ : ⇑b₀ = ![e₀, j c₀ e₀] := j.coe_complexFrame o he₀
+  set b₀ := j.complexFrame he₀ (by simpa using o.finrank_tangentSpace_eq c₀)
+  have hb₀ : ⇑b₀ = ![e₀, j c₀ e₀] := j.coe_complexFrame _ _
   exact integralTopForm_pos o hη hc
     (fun c b hb ↦ j.apply_basis_nonneg_of_forall_nonneg (ho c) (hnn c) b hb)
     ⟨c₀, b₀, ho c₀ b₀ (by rw [hb₀]; simp), hb₀ ▸ hpos⟩
@@ -151,10 +153,10 @@ theorem IsPseudoholomorphicAt.isOrientationPreservingAt {c : C}
     rintro rfl
     exact he (map_zero _)
   -- The complex frames `(e, j e)` at `c` and `(du e, J du e)` at `u c`.
-  set b := j.complexFrame o he₀
-  set b' := J.complexFrame o' he
-  have hb : ⇑b = ![e, j c e] := j.coe_complexFrame o he₀
-  have hb' : ⇑b' = ![mfderiv I I' u c e, J (u c) (mfderiv I I' u c e)] := J.coe_complexFrame o' he
+  set b := j.complexFrame he₀ (by simpa using o.finrank_tangentSpace_eq c)
+  set b' := J.complexFrame he (by simpa using o'.finrank_tangentSpace_eq (u c))
+  have hb : ⇑b = ![e, j c e] := j.coe_complexFrame _ _
+  have hb' : ⇑b' = ![mfderiv I I' u c e, J (u c) (mfderiv I I' u c e)] := J.coe_complexFrame _ _
   refine (isOrientationPreservingAt_iff_of_basis b b' fun i ↦ ?_).2
     (iff_of_true (ho b (by rw [hb]; simp)) (ho' b' (by rw [hb']; simp)))
   fin_cases i

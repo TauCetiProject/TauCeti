@@ -89,14 +89,15 @@ noncomputable def hyperbolic (hM : Function.Injective (Module.Dual.eval K M)) :
     ((Submodule.fstEquiv K (Module.Dual K M) M) ≪≫ₗ
       (Submodule.sndEquiv K (Module.Dual K M) M).dualMap)
     (fun y x => by
-      rw [polar_dualProd, Submodule.mem_snd_iff.mp x.2, LinearMap.zero_apply, zero_add,
+      rw [polar_dualProd, Submodule.mem_snd_iff.mp x.property, LinearMap.zero_apply, zero_add,
         LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, Submodule.fstEquiv_apply,
         Submodule.sndEquiv_apply])
     (fun x hx => by
-      refine Subtype.ext (Prod.ext (Submodule.mem_snd_iff.mp x.2)
+      refine Subtype.ext (Prod.ext (Submodule.mem_snd_iff.mp x.property)
         ((injective_iff_map_eq_zero _).mp hM _ (LinearMap.ext fun f => ?_)))
       have := hx ⟨(f, 0), Submodule.mem_fst_iff.mpr rfl⟩
-      rwa [polar_dualProd, Submodule.mem_snd_iff.mp x.2, LinearMap.zero_apply, zero_add] at this)
+      rwa [polar_dualProd, Submodule.mem_snd_iff.mp x.property, LinearMap.zero_apply,
+          zero_add] at this)
 
 variable (hM : Function.Injective (Module.Dual.eval K M))
 

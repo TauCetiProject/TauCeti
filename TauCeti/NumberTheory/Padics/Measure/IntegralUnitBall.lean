@@ -118,11 +118,11 @@ exactly when there is a unique `ℤ_p`-valued measure `μ` with `ν (f) = μ (f)
 `ℤ_p`-valued test function `f`. -/
 theorem existsUnique_integral_iff_norm_le_one (ν : D(ℤ_[p], ℚ_[p])) :
     (∃! μ : D(ℤ_[p], ℤ_[p]), ∀ f : C(ℤ_[p], ℤ_[p]),
-      ν ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtype_val⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
+      ν ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtypeVal⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
         (μ f : ℚ_[p])) ↔ ‖toCLMEquiv ν‖ ≤ 1 :=
   -- The test map `fun x ↦ (x : ℚ_[p])` in the statement is `PadicInt.Coe.ringHom` by definition.
   existsUnique_apply_comp_eq_iff_norm_le_one PadicInt.norm_coe_ringHom_le_one
-    PadicInt.isEmbedding_coe_ringHom PadicInt.closedBall_subset_range_coe_ringHom ν
+    PadicInt.isEmbedding_coe_ringHom TauCeti.range_padicInt_coe_ringHom.superset ν
 
 /-- A `ℚ_p`-valued measure on `ℤ_p` has operator norm at most `1` exactly when its Amice transform
 has coefficients in `ℤ_p`. -/
@@ -131,7 +131,7 @@ theorem norm_toCLMEquiv_le_one_iff_exists_amiceTransform_eq_map (ν : D(ℤ_[p],
       ∃ F : ℤ_[p]⟦X⟧, ν.amiceTransform = PowerSeries.map PadicInt.Coe.ringHom F := by
   refine ⟨fun hν ↦ ?_, fun ⟨F, hF⟩ ↦ ?_⟩
   · obtain ⟨μ, rfl⟩ := (mem_range_extendCoefficients_iff PadicInt.norm_coe_ringHom_le_one
-      PadicInt.isEmbedding_coe_ringHom PadicInt.closedBall_subset_range_coe_ringHom).mpr hν
+      PadicInt.isEmbedding_coe_ringHom TauCeti.range_padicInt_coe_ringHom.superset).mpr hν
     exact ⟨μ.amiceTransform, amiceTransform_extendCoefficients_coe_ringHom μ⟩
   · rw [norm_toCLMEquiv_le_iff_forall_norm_coeff_le, hF]
     intro n
@@ -148,7 +148,7 @@ example (x : ℤ_[p]) : ‖toCLMEquiv (dirac ℚ_[p] x)‖ ≤ 1 :=
 
 example : ¬ ∃! μ : D(ℤ_[p], ℤ_[p]), ∀ f : C(ℤ_[p], ℤ_[p]),
     ((p : ℚ_[p])⁻¹ • dirac ℚ_[p] (0 : ℤ_[p]))
-        ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtype_val⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
+        ((⟨fun x : ℤ_[p] ↦ (x : ℚ_[p]), continuous_subtypeVal⟩ : C(ℤ_[p], ℚ_[p])).comp f) =
       (μ f : ℚ_[p]) := by
   rw [existsUnique_integral_iff_norm_le_one]
   simp only [map_smul, norm_smul, TauCeti.AbstractMeasure.norm_dirac, norm_inv, Padic.norm_p,

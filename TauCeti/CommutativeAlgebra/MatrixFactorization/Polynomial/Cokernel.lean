@@ -73,7 +73,7 @@ theorem cokernelπ_comp_powerXOfLECokernelQuotientIso_hom (hi : i ≤ n) :
     cokernel.map _ (rootPowHom R n i)
       (powerXOfLEBaseChangeDuplexIso R hi).hom.f₀
       (powerXOfLEBaseChangeDuplexIso R hi).hom.f₁
-      (powerXOfLEBaseChangeDuplexIso R hi).hom.comm₀.symm ≫
+      (powerXOfLEBaseChangeDuplexIso R hi).hom.comm₀ ≫
     (rootPowHomCokernelIso R n i).hom = _
   dsimp only [cokernel.map]
   rw [cokernel.π_desc_assoc]

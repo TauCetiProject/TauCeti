@@ -95,9 +95,9 @@ private theorem mycielski_step [EMetricSpace X] [PerfectSpace X] {k : ℕ → �
   -- shrink the children, indexed by the finitely many words of length `j + 1`
   let I := {l : List Bool // l.length = j + 1}
   have : Finite I := (List.finite_length_eq Bool (j + 1)).to_subtype
-  have hlen (l : I) : l.1.tail.length = j := by simp [l.2]
+  have hlen (l : I) : l.val.tail.length = j := by simp [l.property]
   obtain ⟨W', hW'o, hW'ne, hW'W, hW'⟩ := exists_forall_univ_pi_subset
-    (V := fun l : I => W l.1.tail l.1.headI) (fun l => hWo _ (hlen l) _)
+    (V := fun l : I => W l.val.tail l.val.headI) (fun l => hWo _ (hlen l) _)
     (fun l => hWne _ (hlen l) _) (κ := fun c : Fin (j + 1) × Fin (j + 1) => Fin (k c.1))
     (U := fun c => D c.1 c.2) (fun _ => hDo _ _) (fun _ => hDd _ _)
   let S' : List Bool → Set X := fun l => if h : l.length = j + 1 then W' ⟨l, h⟩ else ∅

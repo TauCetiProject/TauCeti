@@ -14,7 +14,7 @@ For a field of covectors `α` on a vector bundle `V` and a section `β` of a vec
 product `(α.smulRight β) v = α v • β` is a field of linear maps from `V` to `W`. It is as regular
 as `α` and `β` (`ContMDiffWithinAt.clm_bundle_smulRight`), along any base map: in bundle
 coordinates it is the image of the pair of coordinates under the fixed continuous bilinear map
-`ContinuousLinearMap.smulRightL`.
+`StrongDual.smulRightL`.
 
 When `β` is a second covector field on `V`, this is the bilinear form `(v, w) ↦ α v * β w`. Such
 products, together with sums and multiples by functions, build fields of bilinear forms, for
@@ -84,7 +84,7 @@ theorem ContMDiffWithinAt.clm_bundle_smulRight
   let _ : NormedSpace 𝕜 (F →L[𝕜] 𝕜) := inferInstance
   let _ : NormedAddCommGroup (F →L[𝕜] F') := inferInstance
   let _ : NormedSpace 𝕜 (F →L[𝕜] F') := inferInstance
-  have hp := ((ContinuousLinearMap.smulRightL 𝕜 F F').contDiff.comp_contMDiffWithinAt
+  have hp := ((StrongDual.smulRightL 𝕜 F F').contDiff.comp_contMDiffWithinAt
     hα.2).clm_apply hβ'
   refine hp.congr_of_eventuallyEq ?_ ?_
   · filter_upwards [hα.1.continuousWithinAt.preimage_mem_nhdsWithin

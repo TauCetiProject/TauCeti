@@ -254,7 +254,8 @@ private theorem mackeyComponent_eq (D : DoubleCoset.Quotient (K : Set G) (H : Se
   have hm : u' * u⁻¹ ∈ (TauCeti.mackeySubgroup D.out H K).subgroupOf K := by
     rw [Subgroup.mem_subgroupOf, TauCeti.mem_mackeySubgroup_iff, Subgroup.coe_mul,
       InvMemClass.coe_inv]
-    exact ⟨K.mul_mem u'.2 (K.inv_mem u.2), hconj ▸ H.mul_mem (H.inv_mem h'.2) h.2⟩
+    exact ⟨K.mul_mem u'.property (K.inv_mem u.property), hconj ▸ H.mul_mem
+        (H.inv_mem h'.property) h.property⟩
   have key := TauCeti.indV_mk_apply_inv
     ((TauCeti.mackeySubgroup D.out H K).subgroupOf K).subtype
     (A.ρ.comp (TauCeti.mackeyToH D.out H K)) ⟨_, hm⟩ u (A.ρ h'⁻¹ a)
@@ -286,7 +287,8 @@ private theorem mackeyDecompAux_eq (D : DoubleCoset.Quotient (K : Set G) (H : Se
         (fun D ↦ (mackeySummand H K D.out A : Type u)) D
         (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u (A.ρ h⁻¹ a)) := by
   have hD : DoubleCoset.mk K H ((h : G) * D.out⁻¹ * u)⁻¹ = D :=
-    ((DoubleCoset.eq.mpr ⟨(u : G)⁻¹, K.inv_mem u.2, (h : G)⁻¹, H.inv_mem h.2, by group⟩).symm).trans
+    ((DoubleCoset.eq.mpr ⟨(u : G)⁻¹, K.inv_mem u.property, (h : G)⁻¹, H.inv_mem h.property,
+        by group⟩).symm).trans
       (DoubleCoset.out_eq' D)
   -- Generalize the double coset of `g⁻¹` so that it can be identified with `D`.
   have key : ∀ (D' : DoubleCoset.Quotient (K : Set G) (H : Set G)) (_ : D' = D)

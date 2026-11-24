@@ -8,10 +8,11 @@ module
 public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
--- Private: ring involution identities, basis coordinate transport, orthogonal generator and
--- even-bivector identities, functoriality of Clifford involutions, and real-form positivity are
--- used only inside proofs and internal transport constructions.
+-- Private: ring involution identities, `√2 * √2 = 2` in `ℂ`, basis coordinate transport,
+-- orthogonal generator and even-bivector identities, functoriality of Clifford involutions, and
+-- real-form positivity are used only inside proofs and internal transport constructions.
 import TauCeti.Algebra.Ring.Idempotent.Basic
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Basic.Complex.BigOperators
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
@@ -117,17 +118,13 @@ open scoped ComplexConjugate ComplexOrder TensorProduct
 
 namespace TauCeti.TemperleyLieb
 
-/-! ### Arithmetic helpers for `√2` in `ℂ` -/
+/-! ### The self-adjoint loop parameter `√2` -/
 
 /-- Registers `IsSelfAdjoint (Real.sqrt 2 : ℂ)` as a `Fact` so that
 `TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m` carries the analytic adjoint instances
 `TemperleyLieb.instStarRing` and `TemperleyLieb.instStarModule`. -/
 instance : Fact (IsSelfAdjoint (Real.sqrt 2 : ℂ)) :=
   ⟨Complex.conj_ofReal _⟩
-
-private theorem sqrt_two_coe_mul_self :
-    (Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ) = 2 := by
-  exact_mod_cast Real.mul_self_sqrt zero_le_two
 
 /-! ### The quadratic form, even Clifford carrier, and Majorana generators -/
 
@@ -171,7 +168,7 @@ theorem isOrthoᵢ_associated_cliffordForm (m : ℕ) :
 /-- The standard sum-of-squares form `cliffordForm m` is nondegenerate for every `m`. -/
 theorem nondegenerate_cliffordForm (m : ℕ) : (cliffordForm m).Nondegenerate := by
   rw [cliffordForm_eq_weightedSumSquares]
-  exact QuadraticMap.nondegenerate_weightedSumSquares fun _ ↦ isRegular_one
+  exact QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun _ ↦ isRegular_one
 
 /-- The **even complex Clifford algebra** `Cl_m⁰` of `cliffordForm m`. -/
 noncomputable abbrev EvenClifford (m : ℕ) : Subalgebra ℂ (CliffordAlgebra (cliffordForm m)) :=
@@ -450,7 +447,7 @@ theorem cliffordAdjoint_mem_even_iff (m : ℕ) {a : CliffordAlgebra (cliffordFor
 /-- Restriction of `cliffordAdjoint m` to the even Clifford subalgebra `EvenClifford m`. -/
 noncomputable def evenCliffordAdjoint (m : ℕ) :
     EvenClifford m →ₗ⋆[ℂ] EvenClifford m where
-  toFun x := ⟨cliffordAdjoint m x, cliffordAdjoint_mem_even m x.2⟩
+  toFun x := ⟨cliffordAdjoint m x, cliffordAdjoint_mem_even m x.property⟩
   map_add' x y := Subtype.ext (by simp)
   map_smul' z x := Subtype.ext (by simp)
 
@@ -586,13 +583,13 @@ theorem scalarTrace_cliffordAdjoint_mul_self_eq_zero_iff (m : ℕ)
 noncomputable def cliffordProjection (m : ℕ) (j : Fin (m - 1)) :
     CliffordAlgebra (cliffordForm m) :=
   (2 : ℂ)⁻¹ •
-    (1 + Complex.I • (majorana m ⟨j.1, by omega⟩ * majorana m ⟨j.1 + 1, by omega⟩))
+    (1 + Complex.I • (majorana m ⟨j.val, by omega⟩ * majorana m ⟨j.val + 1, by omega⟩))
 
 /-- Explicit Majorana formula for `cliffordProjection`. -/
 theorem cliffordProjection_def (m : ℕ) (j : Fin (m - 1)) :
     cliffordProjection m j =
       (2 : ℂ)⁻¹ •
-        (1 + Complex.I • (majorana m ⟨j.1, by omega⟩ * majorana m ⟨j.1 + 1, by omega⟩)) :=
+        (1 + Complex.I • (majorana m ⟨j.val, by omega⟩ * majorana m ⟨j.val + 1, by omega⟩)) :=
   (rfl)
 
 /-- Each Clifford projection lies in `EvenClifford m`. -/
@@ -606,7 +603,7 @@ theorem cliffordProjection_mem_even (m : ℕ) (j : Fin (m - 1)) :
 @[simp]
 theorem scalarTrace_cliffordProjection (m : ℕ) (j : Fin (m - 1)) :
     CliffordAlgebra.scalarTrace (cliffordForm m) (cliffordProjection m j) = (2 : ℂ)⁻¹ := by
-  have hne : (⟨j.1, by omega⟩ : Fin m) ≠ ⟨j.1 + 1, by omega⟩ :=
+  have hne : (⟨j.val, by omega⟩ : Fin m) ≠ ⟨j.val + 1, by omega⟩ :=
     ne_of_apply_ne Fin.val (by dsimp; omega)
   simp [cliffordProjection_def, hne]
 
@@ -633,7 +630,7 @@ private theorem smul_I_majorana_anticommute {m : ℕ} {a b c d : Fin m}
 @[simp]
 theorem cliffordAdjoint_cliffordProjection (m : ℕ) (j : Fin (m - 1)) :
     cliffordAdjoint m (cliffordProjection m j) = cliffordProjection m j := by
-  have hne : (⟨j.1, by omega⟩ : Fin m) ≠ ⟨j.1 + 1, by omega⟩ :=
+  have hne : (⟨j.val, by omega⟩ : Fin m) ≠ ⟨j.val + 1, by omega⟩ :=
     ne_of_apply_ne Fin.val (by dsimp; omega)
   simp [cliffordProjection_def, majorana_mul_majorana_comm_of_ne hne.symm, smul_neg, smul_add,
     map_ofNat]
@@ -642,10 +639,10 @@ theorem cliffordAdjoint_cliffordProjection (m : ℕ) (j : Fin (m - 1)) :
 @[simp]
 theorem cliffordProjection_mul_self (m : ℕ) (j : Fin (m - 1)) :
     cliffordProjection m j * cliffordProjection m j = cliffordProjection m j := by
-  have hne : (⟨j.1, by omega⟩ : Fin m) ≠ ⟨j.1 + 1, by omega⟩ :=
+  have hne : (⟨j.val, by omega⟩ : Fin m) ≠ ⟨j.val + 1, by omega⟩ :=
     ne_of_apply_ne Fin.val (by dsimp; omega)
   rw [cliffordProjection_def]
-  set u := Complex.I • (majorana m ⟨j.1, by omega⟩ * majorana m ⟨j.1 + 1, by omega⟩)
+  set u := Complex.I • (majorana m ⟨j.val, by omega⟩ * majorana m ⟨j.val + 1, by omega⟩)
   have hu : u * u = 1 := I_smul_majorana_mul_majorana_mul_self_of_ne hne
   rw [smul_mul_smul_comm, TauCeti.one_add_mul_self_of_mul_self_eq_one hu, ← two_smul ℂ, smul_smul]
   norm_num
@@ -655,11 +652,11 @@ theorem cliffordProjection_mul_cliffordProjection_mul_cliffordProjection {m : �
     {i j : Fin (m - 1)} (h : (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) :
     cliffordProjection m i * cliffordProjection m j * cliffordProjection m i =
       (2 : ℂ)⁻¹ • cliffordProjection m i := by
-  have hi_ne : (⟨i.1, by omega⟩ : Fin m) ≠ ⟨i.1 + 1, by omega⟩ :=
+  have hi_ne : (⟨i.val, by omega⟩ : Fin m) ≠ ⟨i.val + 1, by omega⟩ :=
     ne_of_apply_ne Fin.val (by dsimp; omega)
   rw [cliffordProjection_def m i, cliffordProjection_def m j]
-  set u := Complex.I • (majorana m ⟨i.1, by omega⟩ * majorana m ⟨i.1 + 1, by omega⟩)
-  set v := Complex.I • (majorana m ⟨j.1, by omega⟩ * majorana m ⟨j.1 + 1, by omega⟩)
+  set u := Complex.I • (majorana m ⟨i.val, by omega⟩ * majorana m ⟨i.val + 1, by omega⟩)
+  set v := Complex.I • (majorana m ⟨j.val, by omega⟩ * majorana m ⟨j.val + 1, by omega⟩)
   have hu : u * u = 1 := I_smul_majorana_mul_majorana_mul_self_of_ne hi_ne
   have huv : u * v + v * u = 0 := by
     rcases h with hij | hji
@@ -684,8 +681,8 @@ theorem commute_cliffordProjection {m : ℕ} {i j : Fin (m - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     Commute (cliffordProjection m i) (cliffordProjection m j) := by
   have hpair : Commute
-      (majorana m ⟨i.1, by omega⟩ * majorana m ⟨i.1 + 1, by omega⟩)
-      (majorana m ⟨j.1, by omega⟩ * majorana m ⟨j.1 + 1, by omega⟩) := by
+      (majorana m ⟨i.val, by omega⟩ * majorana m ⟨i.val + 1, by omega⟩)
+      (majorana m ⟨j.val, by omega⟩ * majorana m ⟨j.val + 1, by omega⟩) := by
     refine commute_majorana_mul_majorana_of_ne ?_ ?_ ?_ ?_ <;>
       exact ne_of_apply_ne Fin.val (by dsimp; omega)
   rw [cliffordProjection_def, cliffordProjection_def]
@@ -711,7 +708,7 @@ noncomputable def evenCliffordHom (m : ℕ) :
     (fun {i j} h ↦ Subtype.ext <| by
       simp only [Subalgebra.coe_mul, evenCliffordGenerator, smul_mul_assoc, mul_smul_comm,
         cliffordProjection_mul_cliffordProjection_mul_cliffordProjection h, smul_smul]
-      rw [sqrt_two_coe_mul_self]
+      rw [Complex.mul_self_ofReal_sqrt zero_le_two]
       norm_num)
     (fun {i j} h ↦ Subtype.ext <| by
       simp only [Subalgebra.coe_mul, evenCliffordGenerator]
@@ -764,7 +761,7 @@ private theorem majorana_mul_succ_mem_range_ambient {m : ℕ} (j : ℕ) (hj : j 
       (Real.sqrt 2 : ℂ) • cliffordProjection m i :=
     coe_evenCliffordHom_e m i
   have hscale : ((Real.sqrt 2 : ℂ) * (Real.sqrt 2 : ℂ)) * (2 : ℂ)⁻¹ = 1 := by
-    rw [sqrt_two_coe_mul_self]
+    rw [Complex.mul_self_ofReal_sqrt zero_le_two]
     norm_num
   rw [map_smul, map_sub, map_smul, he, cliffordProjection_def, smul_smul, smul_smul, hscale]
   simp [smul_smul, i]
@@ -800,11 +797,11 @@ private theorem majorana_mul_mem_range_ambient_of_lt {m : ℕ} :
 private theorem majorana_mul_majorana_mem_range_ambient_of_lt {m : ℕ} {j k : Fin m}
     (hjk : j < k) :
     majorana m j * majorana m k ∈ (ambientEvenCliffordHom m).range := by
-  have hj_eq : (⟨j.1, by omega⟩ : Fin m) = j := Fin.ext rfl
-  have hk_eq : (⟨j.1 + (k.1 - j.1 - 1) + 1, by omega⟩ : Fin m) = k :=
+  have hj_eq : (⟨j.val, by omega⟩ : Fin m) = j := Fin.ext rfl
+  have hk_eq : (⟨j.val + (k.val - j.val - 1) + 1, by omega⟩ : Fin m) = k :=
     Fin.ext (by dsimp; omega)
   simpa only [hj_eq, hk_eq] using
-    majorana_mul_mem_range_ambient_of_lt (m := m) (d := k.1 - j.1 - 1) (j := j.1) (by omega)
+    majorana_mul_mem_range_ambient_of_lt (m := m) (d := k.val - j.val - 1) (j := j.val) (by omega)
 
 /-- Every Majorana pair `c_j * c_k` lies in `(ambientEvenCliffordHom m).range`. -/
 private theorem majorana_mul_majorana_mem_range_ambient (m : ℕ) (j k : Fin m) :

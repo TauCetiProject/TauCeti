@@ -113,7 +113,7 @@ variable {U V W : Subgroup G}
 /-- Invariants grow as the subgroup shrinks: a vector fixed by `U` is fixed by every `V ≤ U`. -/
 theorem invariants_le (hVU : V ≤ U) :
     invariants (A.ρ.comp U.subtype) ≤ invariants (A.ρ.comp V.subtype) :=
-  fun _ hm v => hm ⟨v.1, hVU v.2⟩
+  fun _ hm v => hm ⟨v.val, hVU v.property⟩
 
 /-- The coefficient half of a transition pair of the finite-quotient system: the inclusion
 `A^U ↪ A^V` for `V ≤ U`. -/

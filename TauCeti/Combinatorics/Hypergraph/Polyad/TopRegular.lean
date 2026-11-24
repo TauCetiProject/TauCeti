@@ -284,8 +284,8 @@ def IsVertexBoxRegularOverPolyad (ε : ℝ) : Prop :=
 written as a filter of the support of `P`. -/
 theorem isVertexBoxRegularOverPolyad_iff {ε : ℝ} : H.IsVertexBoxRegularOverPolyad P ε ↔
     ∀ (c : κ), ∀ a₀ ⊆ P.c₀, ∀ a₁ ⊆ P.c₁, ∀ a₂ ⊆ P.c₂,
-      ε * #P.support ≤ #{x ∈ P.support | x.1 0 ∈ a₀ ∧ x.1 1 ∈ a₁ ∧ x.1 2 ∈ a₂} →
-        |(H.relDensityOn c {x ∈ P.support | x.1 0 ∈ a₀ ∧ x.1 1 ∈ a₁ ∧ x.1 2 ∈ a₂} : ℝ) -
+      ε * #P.support ≤ #{x ∈ P.support | x.val 0 ∈ a₀ ∧ x.val 1 ∈ a₁ ∧ x.val 2 ∈ a₂} →
+        |(H.relDensityOn c {x ∈ P.support | x.val 0 ∈ a₀ ∧ x.val 1 ∈ a₁ ∧ x.val 2 ∈ a₂} : ℝ) -
           H.relativeDensity c P| ≤ ε := by
   simp only [IsVertexBoxRegularOverPolyad, support_ofSubcells]
 

@@ -214,7 +214,7 @@ def toCovariantRepresentation (P : CentralCovariantPair H α 1) :
     { toFun s := (P.unitaryMap s : H →L[ℂ] H)
       map_one' := by simp
       map_mul' s t := by simpa using (P.projective s t).symm }
-  isUnitary := (ContRepresentation.isUnitary_iff_mem_unitary _).2 fun s => (P.unitaryMap s).2
+  isUnitary := (ContRepresentation.isUnitary_iff_mem_unitary _).2 fun s => (P.unitaryMap s).property
   continuous_orbit := P.strong_continuous
   covariance s a v := P.unitaryMap_apply_pi_apply s a v
 

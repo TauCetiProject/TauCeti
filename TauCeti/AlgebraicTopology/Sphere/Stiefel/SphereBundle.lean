@@ -91,7 +91,7 @@ def stiefelBundleSphereFamily : C(StiefelBundle F E 3, C(Sphere2, sphereBundle F
         -- are the coordinates of the standard two-sphere.
         have hc (i : Fin 3) : Continuous fun q : StiefelBundle F E 3 × Sphere2 ↦
             (standardStiefelSphereMap q.2 : EuclideanSpace ℝ (Fin 3)) i :=
-          (PiLp.continuous_apply 2 _ i).comp (continuous_subtype_val.comp
+          (PiLp.continuous_apply 2 _ i).comp (continuous_subtypeVal.comp
             (standardStiefelSphereMap.continuous.comp continuous_snd))
         have hv (i : Fin 3) : Continuous fun q : StiefelBundle F E 3 × Sphere2 ↦
             TotalSpace.mk' F q.1.proj
@@ -150,7 +150,7 @@ sphere fibre. -/
 theorem stiefelBundleSphereFamily_fiberIncl_stiefelFrameIncl (b : B) (p : sphere (0 : E b) 1)
     (y : stiefel (ℝ ∙ (p : E b))ᗮ 2) :
     stiefelBundleSphereFamily F E (StiefelBundle.fiberIncl F E 3 b (stiefelFrameIncl p 2 y)) =
-      (BasedMap.map (sphereBundleFiberIncl F E b) rfl (stiefelSphereFamilyFiber p y)).1 := by
+      (BasedMap.map (sphereBundleFiberIncl F E b) rfl (stiefelSphereFamilyFiber p y)).val := by
   refine ContinuousMap.ext fun w ↦ ?_
   rw [stiefelBundleSphereFamily_fiberIncl, ContinuousMap.comp_apply,
     stiefelSphereFamily_stiefelFrameIncl, BasedMap.map_apply]

@@ -244,7 +244,7 @@ theorem IsLocalDiffeomorph.exists_smoothForm_mpullback_eq_iff [IsManifold I ∞ 
       ∀ i, SmoothForm.mpullback (σ i) (hσ i) α = α := by
   simp only [Subtype.ext_iff, SmoothForm.coe_mpullback]
   rw [← hf.exists_mpullback_eq_iff (by simp) (fun i ↦ (hσ i).mdifferentiable (by simp)) hfσ hσf]
-  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.1, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
+  refine ⟨fun ⟨β, hβ⟩ ↦ ⟨β.val, hβ⟩, fun ⟨β, hβ⟩ ↦ ⟨⟨β, ?_⟩, hβ⟩⟩
   -- The descended rough form is smooth because its pullback `α` is.
   exact IsSmoothForm.mem_smoothBundleForms
     ((hf.isSmoothForm_mpullback_iff hsurj (by simp)).mp (hβ ▸ α.isSmoothForm))

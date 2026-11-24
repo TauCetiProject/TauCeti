@@ -91,6 +91,6 @@ theorem antipode_subgroupCharSum {k G : Type*} [CommSemiring k] [Group G] (χ : 
     HopfAlgebra.antipode k (subgroupCharSum χ H) = subgroupCharSum χ H := by
   rw [subgroupCharSum_def, map_sum]
   refine Fintype.sum_equiv (Equiv.inv H) _ _ fun h => ?_
-  simp [MonoidAlgebra.of_apply, hχ h h.2]
+  simp [MonoidAlgebra.of_apply, hχ h h.property]
 
 end TauCeti
