@@ -27,7 +27,8 @@ form is also used to construct measurable tangent projections in `Rectifiable.Ta
 The measure-theoretic counterpart, used for approximate tangent planes of rectifiable sets, is the
 cone-density condition `TauCeti.DensityZeroOutsideCones`: the part of a set `S` outside every cone
 about the affine subspace `x + P` has `k`-dimensional density zero at `x`. It passes to subsets,
-depends only on the set near `x`, and holds trivially for the whole space `P = ⊤`.
+depends only on the set near `x`, and holds trivially for the whole space `P = ⊤` and, for every
+`P`, at isolated points of `S`.
 
 ## References
 
@@ -149,5 +150,19 @@ theorem densityZeroOutsideCones_inter_iff {S B : Set V} {x : V} {P : Submodule �
   simp only [mem_inter_iff, and_congr_left_iff]
   intro _ hz
   exact and_iff_left (hB (closedBall_subset_closedBall hr.le hz))
+
+/-- At an isolated point `x` of `S`, the cone-density condition holds for every subspace: near `x`
+the only point of `S` is `x` itself, which lies in every cone about `x + P`. -/
+theorem densityZeroOutsideCones_of_inter_closedBall_subset {S : Set V} {x : V} {δ : ℝ}
+    (hδ : 0 < δ) (hS : S ∩ closedBall x δ ⊆ {x}) (P : Submodule ℝ V) :
+    DensityZeroOutsideCones k S x P := by
+  refine (densityZeroOutsideCones_inter_iff hδ subset_rfl).1 fun ε _ ↦
+    tendsto_const_nhds.congr fun r ↦ ?_
+  have hempty : {z ∈ S ∩ closedBall x δ ∩ closedBall x r |
+      ε * dist z x < infDist (z - x) (P : Set V)} = ∅ := by
+    refine eq_empty_of_forall_notMem fun z hz ↦ ?_
+    obtain rfl : z = x := hS hz.1.1
+    simp [infDist_zero_of_mem P.zero_mem] at hz
+  rw [hempty, measure_empty, ENNReal.zero_div]
 
 end TauCeti

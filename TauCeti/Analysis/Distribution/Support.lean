@@ -33,9 +33,9 @@ subset of `Ω`, `augmentation T c` is the junk value zero. On an infinite-dimens
 test function is zero, so every augmentation is zero. The augmentation of an additive map is
 additive in `c`, and that of a linear map is homogeneous in `c`. The augmentation is homogeneous in
 the map, and on maps whose supports are compact subsets of `Ω` it is also additive in the map. When
-`E` is finite-dimensional it sends the point evaluation `φ ↦ ℓ (φ x)` to `ℓ c`. It vanishes on the
-boundary `T ∘ d` of a current, because the exterior derivative of a cutoff equal to one vanishes
-near the support.
+`E` is finite-dimensional it sends a finite sum of point evaluations `φ ↦ ∑ x ∈ s, ℓ x (φ x)`, with
+`s ⊆ Ω`, to `∑ x ∈ s, ℓ x c`. It vanishes on the boundary `T ∘ d` of a current, because the
+exterior derivative of a cutoff equal to one vanishes near the support.
 
 ## Main declarations
 
@@ -73,6 +73,9 @@ near the support.
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_eq_zero_of_not_finiteDimensional`: on an infinite-dimensional `E`
   every augmentation is zero.
+* `Distribution.dsupport_sum_apply_apply_subset`, `Distribution.augmentation_sum_apply_apply`: a
+  finite sum `φ ↦ ∑ x ∈ s, ℓ x (φ x)` of point evaluations is supported in `s`, and for `s ⊆ Ω`
+  its augmentation at `c` is `∑ x ∈ s, ℓ x c`.
 * `Distribution.augmentation_comp_extDerivCLM`,
   `Distribution.not_exists_comp_extDerivCLM_eq_of_augmentation_ne_zero`,
   `Distribution.not_exists_comp_extDerivCLM_eq_comp_evalCLM`: the augmentation of a boundary is
@@ -161,6 +164,16 @@ theorem dsupport_apply_apply_subset [AddZeroClass V] {x : E} (ℓ : F →+ V) :
   rw [mem_compl_iff, notMem_dsupport_iff]
   refine ⟨{x}ᶜ, fun φ hφ ↦ ?_, isOpen_compl_singleton, hy⟩
   simp [image_eq_zero_of_notMem_tsupport fun h ↦ hφ h rfl]
+
+/-- The support of a finite sum of point evaluations `φ ↦ ∑ x ∈ s, ℓ x (φ x)`, each followed by an
+additive map, lies in the finite set `s`. -/
+theorem dsupport_sum_apply_apply_subset [AddCommMonoid V] (s : Finset E) (ℓ : E → F →+ V) :
+    dsupport (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) ⊆ s := by
+  refine compl_subset_compl.1 fun y hy ↦ ?_
+  rw [mem_compl_iff, notMem_dsupport_iff]
+  refine ⟨(s : Set E)ᶜ, fun φ hφ ↦ Finset.sum_eq_zero fun x hx ↦ ?_,
+    s.finite_toSet.isClosed.isOpen_compl, hy⟩
+  simp [image_eq_zero_of_notMem_tsupport fun h ↦ hφ h hx]
 
 /-- The distributional support of a point evaluation `φ ↦ ℓ (φ x)` followed by an additive map is
 compact. -/
@@ -567,18 +580,26 @@ theorem augmentation_sub (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
 
 variable [FiniteDimensional ℝ E]
 
+/-- **The augmentation of a finite sum of point evaluations.** For a finite set `s ⊆ Ω` and
+additive maps `ℓ x`, the map `φ ↦ ∑ x ∈ s, ℓ x (φ x)` has augmentation `∑ x ∈ s, ℓ x c` at `c`.
+For a finite sum of weighted degree-zero point currents and the unit `0`-form it is the sum of the
+weights. -/
+theorem augmentation_sum_apply_apply {s : Finset E} (hs : (s : Set E) ⊆ Ω) (ℓ : E → F →+ V)
+    (c : F) : augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ∑ x ∈ s, ℓ x (φ x)) c = ∑ x ∈ s, ℓ x c := by
+  let A : 𝓓^{n}(Ω, F) →+ V :=
+    { toFun φ := ∑ x ∈ s, ℓ x (φ x), map_zero' := by simp,
+      map_add' φ ψ := by simp [Finset.sum_add_distrib] }
+  have hA : dsupport A ⊆ s := dsupport_sum_apply_apply_subset s ℓ
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) s.finite_toSet.isCompact hs
+  refine (augmentation_eq A (hχ.filter_mono (nhdsSet_mono hA)) c).trans ?_
+  exact Finset.sum_congr rfl fun x hx ↦ by simp [hχ.self_of_nhdsSet x hx]
+
 /-- **The augmentation of a point evaluation.** For `x ∈ Ω` and an additive map `ℓ`, the
 evaluation `φ ↦ ℓ (φ x)` has augmentation `ℓ c` at `c`. For the degree-zero point current and the
 unit `0`-form it is one. -/
 theorem augmentation_apply_apply {x : E} (hx : x ∈ Ω) (ℓ : F →+ V) (c : F) :
     augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x)) c = ℓ c := by
-  let A : 𝓓^{n}(Ω, F) →+ V :=
-    { toFun φ := ℓ (φ x), map_zero' := by simp, map_add' φ ψ := by simp }
-  have hA : dsupport A ⊆ {x} := dsupport_apply_apply_subset ℓ
-  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) isCompact_singleton
-    (singleton_subset_iff.2 hx)
-  have hχx : χ x = 1 := hχ.self_of_nhdsSet x rfl
-  exact (augmentation_eq A (hχ.filter_mono (nhdsSet_mono hA)) c).trans (by simp [A, hχx])
+  simpa using augmentation_sum_apply_apply (n := n) (s := {x}) (by simpa using hx) (fun _ ↦ ℓ) c
 
 /-- For `x ∈ Ω` and a continuous linear map `ℓ`, the point evaluation `φ ↦ ℓ (φ x)` has
 augmentation `ℓ c` at `c`. -/
