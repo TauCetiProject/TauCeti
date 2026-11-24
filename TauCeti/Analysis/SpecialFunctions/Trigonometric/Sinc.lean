@@ -14,9 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 `sinc` is nonnegative on `[-π, π]`, complementing Mathlib's `Real.sinc_pos` on `(-π, π)`. Near
 zero it is quadratically close to one, `|sinc x - 1| ≤ x² / 6`, and it factors the remainder of
-the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently the real-line Fejér kernel
-`T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` while `|y| ≤ T⁻¹`
-(`TauCeti.div_four_le_mul_sinc_sq`).
+the cosine, `1 - cos x = (x² / 2) sinc (x / 2)²`. Consequently `sinc x ^ 2` is at least
+`(23 / 24) ^ 2` while `|x| ≤ 1 / 2` (`TauCeti.sq_le_sinc_sq_of_abs_le_half`).
 
 For `ω ≠ 0` the function `t ↦ t sinc (ω t)` is `t ↦ sin (ω t) / ω`, and for `ω = 0` it is the
 identity. Either way its derivative is `t ↦ cos (ω t)`, so it is the solution of
@@ -102,26 +101,13 @@ namespace TauCeti
 
 open Real
 
-/-- The kernel `T / 2 * sinc (T * y / 2) ^ 2` is at least `T / 4` when `|y| ≤ T⁻¹`. -/
-theorem div_four_le_mul_sinc_sq {T y : ℝ} (hy : |y| ≤ T⁻¹) :
-    T / 4 ≤ T / 2 * sinc (T * y / 2) ^ 2 := by
-  rcases le_or_gt T 0 with hT | hT
-  · -- For `T ≤ 0` the hypothesis forces `T⁻¹ = 0`, hence `T = 0`.
-    have hT₀ : T = 0 := inv_eq_zero.1 (le_antisymm (inv_nonpos.2 hT) ((abs_nonneg y).trans hy))
-    simp [hT₀]
-  -- Multiplying `|y| ≤ T⁻¹` by `T > 0` gives `T * |y| ≤ 1`.
-  have hTy₁ : T * |y| ≤ 1 := by
-    simpa [hT.ne'] using mul_le_mul_of_nonneg_left hy hT.le
-  have hTy : |T * y / 2| ≤ 1 / 2 := by
-    rw [abs_div, abs_mul, abs_of_pos hT, abs_two]
-    linarith
-  have hsq : (T * y / 2) ^ 2 ≤ (1 / 2) ^ 2 := sq_le_sq.2 (hTy.trans (le_abs_self _))
-  -- Since `|T * y / 2| ≤ 1 / 2`, `sinc (T * y / 2)` is at least `3 / 4`.
-  have hlow : 3 / 4 ≤ sinc (T * y / 2) := by
-    linarith [(abs_le.1 (abs_sinc_sub_one_le (T * y / 2))).1]
-  have hsinc : 1 / 2 ≤ sinc (T * y / 2) ^ 2 :=
-    le_trans (by norm_num) (pow_le_pow_left₀ (by norm_num) hlow 2)
-  calc T / 4 = T / 2 * (1 / 2) := by ring
-    _ ≤ T / 2 * sinc (T * y / 2) ^ 2 := by gcongr
+/-- On `[-1 / 2, 1 / 2]`, `sinc x ^ 2` is at least `(23 / 24) ^ 2`, since
+`|sinc x - 1| ≤ x² / 6`. -/
+theorem sq_le_sinc_sq_of_abs_le_half {x : ℝ} (hx : |x| ≤ 1 / 2) :
+    (23 / 24 : ℝ) ^ 2 ≤ sinc x ^ 2 := by
+  have hsq : x ^ 2 ≤ (1 / 2) ^ 2 := sq_le_sq.2 (hx.trans (le_abs_self _))
+  have hlow : 23 / 24 ≤ sinc x := by
+    linarith [(abs_le.1 (abs_sinc_sub_one_le x)).1]
+  exact pow_le_pow_left₀ (by norm_num) hlow 2
 
 end TauCeti
