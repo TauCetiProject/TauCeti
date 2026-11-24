@@ -9,6 +9,8 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Topology.Order.OrderClosed
+import Mathlib.Order.Cofinal
+import Mathlib.Topology.Order.LiminfLimsup
 
 /-!
 # Bounds in ordered topological spaces
@@ -41,6 +43,10 @@ unchanged, since the escaping branch is eventually dominated by the convergent o
   meeting `closure C` to pointwise distinct or strictly monotone boundary sections on `B`.
 * `TauCeti.exists_mem_Ioo_of_Ioo_subset_closure_range`: a family whose values are dense in a
   nonempty open interval of a densely ordered space takes a value in it.
+* `TauCeti.not_tendsto_nhds_of_forall_exists_le`: an unbounded-above sequence `ℕ → α` converges to
+  no limit in `α`.
+* `TauCeti.not_tendsto_nhds_of_continuousAt_comp_eq`: a sequence `ℕ → β` whose image under a
+  continuous map `β → α` is unbounded above converges to no limit in `β`.
 -/
 
 public section
@@ -170,5 +176,24 @@ theorem exists_mem_Ioo_of_Ioo_subset_closure_range {α ι : Type*} [LinearOrder 
   obtain ⟨y, hy⟩ := Set.nonempty_Ioo.2 hab
   obtain ⟨_, hy', i, rfl⟩ := mem_closure_iff.1 (h hy) _ isOpen_Ioo hy
   exact ⟨i, hy'⟩
+
+/-- An unbounded-above sequence `ℕ → α` converges to no limit in `α`. -/
+theorem not_tendsto_nhds_of_forall_exists_le {α : Type*} [LinearOrder α] [NoMaxOrder α]
+    [TopologicalSpace α] [ClosedIciTopology α] {u : ℕ → α}
+    (hu : ∀ B : α, ∃ n : ℕ, B ≤ u n) (a : α) : ¬ Tendsto u atTop (𝓝 a) := by
+  intro h
+  have hc : IsCofinal (Set.range u) := fun B ↦ by
+    obtain ⟨n, hn⟩ := hu B
+    exact ⟨u n, ⟨n, rfl⟩, hn⟩
+  exact hc.not_bddAbove h.bddAbove_range
+
+/-- If `g : β → α` is continuous at `b` and `g (v n) = u n` is unbounded above in `α`, then `v`
+converges to no limit `b` in `β`. -/
+theorem not_tendsto_nhds_of_continuousAt_comp_eq {α β : Type*}
+    [LinearOrder α] [NoMaxOrder α] [TopologicalSpace α] [ClosedIciTopology α]
+    [TopologicalSpace β] {g : β → α} {b : β} (hg : ContinuousAt g b) {v : ℕ → β} {u : ℕ → α}
+    (huv : ∀ n, g (v n) = u n) (hu : ∀ B : α, ∃ n : ℕ, B ≤ u n) :
+    ¬ Tendsto v atTop (𝓝 b) :=
+  fun h ↦ not_tendsto_nhds_of_forall_exists_le hu (g b) ((hg.tendsto.comp h).congr huv)
 
 end TauCeti
