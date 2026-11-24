@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.SplitModel
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Topology.PartialHomeomorph.Defs
+import TauCeti.Topology.Algebra.Order.Field
 
 /-!
 # Passage of the split hyperbolic flow past the origin
@@ -68,7 +69,8 @@ the `L²` product norm carried by `WithLp 2` plays no role.
   explicit form, and `TauCeti.fst_splitPassage_symm`, `TauCeti.snd_splitPassage_symm`,
   `TauCeti.norm_snd_splitPassage_symm`: that of its inverse.
 * `TauCeti.tendsto_splitExitTime_atTop`, `TauCeti.tendsto_fst_splitPassage_nhds_zero`: breaking.
-* `TauCeti.tendsto_splitPassage_toLp_smul`: the linear λ-lemma.
+* `TauCeti.tendsto_splitPassage_toLp_smul`: the linear λ-lemma, along gluing parameters
+  `r → 0⁺`.
 * `TauCeti.toLp_smul_mem_splitPassage_source`, `TauCeti.splitPassage_toLp_smul`,
   `TauCeti.splitPassage_symm_toLp_smul`, `TauCeti.setOf_mem_splitPassage_source_eq_image`: gluing.
 
@@ -505,9 +507,7 @@ theorem tendsto_splitPassage_toLp_smul {x : ℝ → Eₛ} {y₀ : Eᵤ}
   refine Tendsto.congr' hpass ((WithLp.prod_continuous_toLp 2 Eₛ Eᵤ).continuousAt.tendsto.comp
     (Tendsto.prodMk_nhds ?_ tendsto_const_nhds))
   refine tendsto_zero_iff_norm_tendsto_zero.2 ?_
-  have h : Tendsto (fun r : ℝ ↦ r * ε) (𝓝[>] 0) (𝓝 0) :=
-    tendsto_nhdsWithin_of_tendsto_nhds (by simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).mul_const ε)
-  refine h.congr' ?_
+  refine (tendsto_mul_const_nhdsGT_zero ε).congr' ?_
   filter_upwards [self_mem_nhdsWithin, hx] with r hr hxr
   rw [norm_smul, Real.norm_of_nonneg (le_of_lt hr), hxr]
 
