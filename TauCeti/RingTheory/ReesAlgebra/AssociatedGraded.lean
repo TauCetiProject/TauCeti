@@ -55,6 +55,8 @@ the quotient.
 * `Ideal.ReesQuotient.coeff_of_self`, `Ideal.ReesQuotient.coeff_of_of_ne`,
   `Ideal.ReesQuotient.ext_coeff` and `Ideal.ReesQuotient.sum_of_coeff`: the coefficient maps
   retract the inclusions, kill the other degrees, detect equality and reconstruct every element.
+* `Ideal.ReesQuotient.sum_of_coeff_quotientMk`: reconstruction over the support of a polynomial
+  representative, without deciding which quotient coefficients vanish.
 * `Ideal.ReesQuotient.range_of`: the image of the degree-`n` inclusion is the degree-`n` piece of
   the quotient grading.
 
@@ -214,6 +216,12 @@ abbrev ReesQuotient : Type u :=
   reesAlgebra I ⧸ I.map (algebraMap R (reesAlgebra I))
 
 namespace ReesQuotient
+
+/-- The ordinary Rees quotient is graded by the images of the homogeneous Rees components. -/
+noncomputable instance instGradedAlgebra :
+    GradedAlgebra (TauCeti.GradedAlgebra.quotientPiece (reesAlgebra.grade I)
+      (I.map (algebraMap R (reesAlgebra I)))) :=
+  TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece _ _ (reesAlgebra.isHomogeneous_map_algebraMap I)
 
 /-- The class `[x tⁿ]` in the Rees quotient of an element `x ∈ Iⁿ`, placed in degree `n`. -/
 noncomputable def mk (n : ℕ) : ↥(I ^ n) →ₗ[R] I.ReesQuotient :=
@@ -377,6 +385,15 @@ theorem sum_of_coeff [∀ n (x : I.GradedPiece n), Decidable (x ≠ 0)] (q : I.R
   apply (equivAssociatedGraded I).injective
   simp_rw [map_sum, equivAssociatedGraded_of, coeff_apply]
   exact DirectSum.sum_support_of _
+
+/-- The class of a Rees polynomial can be reconstructed from its quotient coefficients by summing
+over the support of the polynomial itself. -/
+theorem sum_of_coeff_quotientMk (f : reesAlgebra I) :
+    ∑ n ∈ (f : R[X]).support, of I n (coeff I n (Ideal.Quotient.mk _ f)) =
+      Ideal.Quotient.mk _ f := by
+  simp only [coeff_quotientMk, of_mk, mk_apply]
+  simpa only [map_sum] using congrArg (Ideal.Quotient.mk
+    (I.map (algebraMap R (reesAlgebra I)))) (reesAlgebra.as_sum_support f).symm
 
 variable (I) in
 /-- The image of the class map in degree `n` is the degree-`n` piece of the grading that the

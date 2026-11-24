@@ -11,11 +11,14 @@ public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Floer.Continuation
+import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
+import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
-# The index of the linearized Floer operator depends only on the asymptotic orbits
+# The index of the linearized Floer operator depends only on the asymptotic data
 
 Let `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` be the Sobolev realization
 (`TauCeti.SymplecticForm.floerSobolevOperator`) of the linearized Floer operator
@@ -23,14 +26,24 @@ Let `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` be the Sobolev realiza
 finite-dimensional symplectic inner product space `V`, for Floer data that are cylindrical near
 the ends (`TauCeti.Floer.IsCylindricalNearEnds`) and `C¹` on the whole cylinder (with `C²`
 Hamiltonians), with almost complex structures compatible with `ω`. This file shows that the
-Fredholm property and the index of `D_u` do not depend on `u` beyond its asymptotic orbits.
+Fredholm property and the index of `D_u` do not depend on `u` beyond its asymptotic orbits, nor on
+the Floer data beyond their end data.
 
-* **Invariance.** Let `u` and `u'` be `C¹` maps whose loops converge uniformly to the same
-  nondegenerate one-periodic orbits `x₋` at `-∞` and `x₊` at `+∞`, with slice defects
+* **Invariance under the map.** Let `u` and `u'` be `C¹` maps whose loops converge uniformly to the
+  same nondegenerate one-periodic orbits `x₋` at `-∞` and `x₊` at `+∞`, with slice defects
   `∂t u - X_{H±_t}(u)` tending uniformly to zero at the ends. Then `D_u` is Fredholm exactly when
   `D_{u'}` is (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_iff_of_cylindrical`), and
   then the two have the same index
   (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical`).
+* **Invariance under the data.** Let `(J, K_s, K_t)` and `(J', K'_s, K'_t)` be Floer data with the
+  same end data `(J₋_t, H₋_t)` and `(J₊_t, H₊_t)`, possibly cylindrical from different radii on.
+  Then along the same map `u` the operator of the first data is Fredholm exactly when that of the
+  second data is
+  (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_iff_of_cylindrical_data`), and then the
+  two have the same index
+  (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_of_cylindrical_data`). For instance, the
+  index along a continuation cylinder does not depend on the choice of the homotopy between its
+  end Hamiltonians or between its end almost complex structures.
 * **Equal ends.** In a unitary trivialization, where `V = F` is a finite-dimensional complex inner
   product space with `ω = Im ⟪·, ·⟫`, take the `s`-independent Floer data `(i, 0, H_t)` of a
   Hamiltonian `H`: complex structure `J = i`, `K_s = 0` and `K_t = H_t`. The linearized operator for
@@ -40,16 +53,29 @@ Fredholm property and the index of `D_u` do not depend on `u` beyond its asympto
   zero (`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt`). This
   holds for any `C¹` map `u` whose loops converge uniformly to `x` at both ends, with slice defects
   tending uniformly to zero there; `u` need not solve the Floer equation (it may be, for instance,
-  a pre-glued map).
+  a pre-glued map). By the invariance under the data, the same holds for all Floer data with the
+  data `(i, 0, H_t)` at both ends, such as those of a continuation cylinder from `H` to itself.
+  For such data, the Fredholm property and index zero are
+`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical`
+  and
+`TauCeti.SymplecticForm.index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical`
+  respectively.
 
-The proof deforms `u` into `u'` along the segment `u_λ = u + λ (u' - u)`. Every `u_λ` has the
-same asymptotic orbits, so the semi-Fredholm estimate
+The proof of the invariance under the map deforms `u` into `u'` along the segment
+`u_λ = u + λ (u' - u)`. Every `u_λ` has the same asymptotic orbits, so the semi-Fredholm estimate
 (`TauCeti.SymplecticForm.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical`) holds along
 the whole segment. The coefficient field of `D_{u_λ}` at `z` is a continuous function of
 `(z, u_λ z, ∂t u_λ z)`, which only depends on `z` through a compact set because the data are
 cylindrical near the ends, and `u_λ` and `∂t u_λ` are bounded on the strip. So the coefficient
 fields depend continuously on `λ` in `L^∞`, and the Fredholm property and the index are constant
 along the segment (`TauCeti.CylinderSobolev.isFredholm_and_index_eq_of_hasSemiFredholmEstimate`).
+The proof of the invariance under the data deforms the data instead, keeping `u`: the Hamiltonians
+along the segment `K_λ = K + λ (K' - K)`, and the almost complex structures along the continuation
+homotopy `TauCeti.Floer.continuationAlmostComplex` from `J` to `J'`, whose Cayley coordinates
+relative to a fixed compatible structure run along the segment between those of `J` and `J'`, so
+that the structures stay compatible. Every
+`(J_λ, K_λ)` is cylindrical near the ends with the same end data, and the coefficient field of the
+data at `λ` is a continuous function of `(λ, z, u z, ∂t u z)`, so the same argument applies.
 At a stationary cylinder over a nondegenerate orbit, `D_u` is invertible in a unitary
 trivialization
 (`TauCeti.SymplecticForm.isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt`), which
@@ -62,6 +88,8 @@ gives the case of equal ends.
   only on the asymptotic operators.
 * J. Robbin and D. Salamon, *The spectral flow and the Maslov index*, Bull. London Math. Soc. 27
   (1995), 1–33, on the homotopy invariance of the index of operators with fixed limits.
+* D. McDuff and D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Section 2.5, on the
+  Cayley transform and the convexity of the space of compatible structures.
 -/
 
 public section
@@ -74,16 +102,17 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (stripMeasure)
+open StripSobolev (stripMeasure tendsto_eLpNorm_sub_of_forall_dist_lt)
 
 section Coefficient
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- The coefficient field of the linearized Floer operator at `z`, as a function of `z`, the value
-`y = u z` and the slice velocity `d = ∂t u z` of the map. -/
-private def jetCoeffAt (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
-    (p : (ℝ × ℝ) × V × V) : V × V × V →L[ℝ] V :=
+`y = u z` and the slice velocity `d = ∂t u z` of the map. The data are indexed by a parameter
+`p.1 ∈ P`: the point `z` itself, or `z` together with the parameter of a family of data. -/
+private def jetCoeffAt {P : Type*} (ω : SymplecticForm V) (J : P → V → V →L[ℝ] V)
+    (Ks Kt : P → V → ℝ) (p : P × V × V) : V × V × V →L[ℝ] V :=
   (fst ℝ V V).comp (snd ℝ V (V × V)) +
     (J p.1 p.2.1).comp ((snd ℝ V V).comp (snd ℝ V (V × V))) +
     ((fderiv ℝ (J p.1) p.2.1).flip (p.2.2 - ω.hamiltonianVectorField (Kt p.1) p.2.1) -
@@ -99,23 +128,24 @@ private theorem floerJetCoeff_eq_jetCoeffAt (ω : SymplecticForm V) (J : ℝ × 
   refine ContinuousLinearMap.ext fun v ↦ ?_
   simp [floerJetCoeff_apply, floerLinearizationCoeff_apply, jetCoeffAt, stdComplexLineImag_eq]
 
-/-- `jetCoeffAt` is continuous when the data are `C¹` (with `C²` Hamiltonians) on the whole
-cylinder. -/
-private theorem continuous_jetCoeffAt (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
-    {Ks Kt : ℝ × ℝ → V → ℝ} (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ J p.1 p.2)
+/-- `jetCoeffAt` is continuous when the data are `C¹` (with `C²` Hamiltonians) jointly in the
+parameter and the target point. -/
+private theorem continuous_jetCoeffAt {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    (ω : SymplecticForm V) {J : P → V → V →L[ℝ] V} {Ks Kt : P → V → ℝ}
+    (hJ : ContDiff ℝ 1 fun p : P × V ↦ J p.1 p.2)
     (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt)) :
     Continuous (jetCoeffAt ω J Ks Kt) := by
-  have hπ : Continuous fun p : (ℝ × ℝ) × V × V ↦ (p.1, p.2.1) :=
+  have hπ : Continuous fun p : P × V × V ↦ (p.1, p.2.1) :=
     continuous_fst.prodMk continuous_snd.fst
   have hXs := (continuous_fderiv_slice_right (f := fun z ↦ ω.hamiltonianVectorField (Ks z))
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKs)).comp hπ
   have hXt := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKt
   have hdXt := (continuous_fderiv_slice_right
     (f := fun z ↦ ω.hamiltonianVectorField (Kt z)) hXt).comp hπ
-  have hJp : Continuous fun p : (ℝ × ℝ) × V × V ↦ J p.1 p.2.1 := hJ.continuous.comp hπ
-  have hXtp : Continuous fun p : (ℝ × ℝ) × V × V ↦ ω.hamiltonianVectorField (Kt p.1) p.2.1 :=
+  have hJp : Continuous fun p : P × V × V ↦ J p.1 p.2.1 := hJ.continuous.comp hπ
+  have hXtp : Continuous fun p : P × V × V ↦ ω.hamiltonianVectorField (Kt p.1) p.2.1 :=
     hXt.continuous.comp hπ
-  have hflip : Continuous fun p : (ℝ × ℝ) × V × V ↦
+  have hflip : Continuous fun p : P × V × V ↦
       (fderiv ℝ (J p.1) p.2.1).flip (p.2.2 - ω.hamiltonianVectorField (Kt p.1) p.2.1) :=
     ((flipₗᵢ ℝ V V V).continuous.comp ((continuous_fderiv_slice_right hJ).comp hπ)).clm_apply
       (continuous_snd.snd.sub hXtp)
@@ -234,26 +264,219 @@ private theorem tendsto_eLpNorm_floerJetCoeff_add_smul_sub (ω : SymplecticForm 
       (ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           (u + μ • (u' - u)) -
         ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
-          (u + lam • (u' - u))) ∞ stripMeasure) (𝓝 lam) (𝓝 0) := by
-  -- The coefficient fields along the segment are continuous, hence measurable.
-  have hcont (μ : ℝ) := ω.continuous_floerJetCoeff
+          (u + lam • (u' - u))) ∞ stripMeasure) (𝓝 lam) (𝓝 0) :=
+  have hM (μ : ℝ) := ω.continuous_floerJetCoeff
     (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (u := u + μ • (u' - u))
     (fun _ ↦ hJ.contDiffAt) (fun _ ↦ hKs.contDiffAt) (fun _ ↦ hKt.contDiffAt)
     (hu.add ((hu'.sub hu).const_smul μ))
-  rw [ENNReal.tendsto_nhds_zero]
-  intro ε hε
-  obtain ⟨r, -, hr, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
-  obtain ⟨η, hη, h⟩ := exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt ω hcyl hJ hKs hKt
-    (hu.differentiable one_ne_zero) (hu'.differentiable one_ne_zero) hB lam
-    (ENNReal.ofReal_pos.1 hr)
-  filter_upwards [Metric.ball_mem_nhds lam hη] with μ hμ
-  rw [mem_ball, Real.dist_eq] at hμ
-  refine le_trans ?_ hrε.le
-  rw [eLpNorm_exponent_top ((hcont μ).sub (hcont lam)).aestronglyMeasurable]
-  refine eLpNormEssSup_le_of_ae_bound ?_
-  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
-  rw [Pi.sub_apply, ← dist_eq_norm]
-  exact (h μ hμ z hz.2).le
+  tendsto_eLpNorm_sub_of_forall_dist_lt
+    (.of_forall fun μ ↦ ((hM μ).sub (hM lam)).aestronglyMeasurable) fun _ hr ↦ by
+      obtain ⟨η, hη, h⟩ := exists_pos_forall_dist_floerJetCoeff_add_smul_sub_lt ω hcyl hJ hKs hKt
+        (hu.differentiable one_ne_zero) (hu'.differentiable one_ne_zero) hB lam hr
+      exact Metric.eventually_nhds_iff.2 ⟨η, hη, fun μ hμ ↦ h μ hμ⟩
+
+/-- The coefficient field at `z` of the data at parameter `μ` of a family of data is `jetCoeffAt`
+of the family at `((μ, z), y, d)`. -/
+private theorem jetCoeffAt_family (ω : SymplecticForm V) (J : ℝ × (ℝ × ℝ) → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × (ℝ × ℝ) → V → ℝ) (μ : ℝ) (p : (ℝ × ℝ) × V × V) :
+    jetCoeffAt ω (fun w ↦ J (μ, w)) (fun w ↦ Ks (μ, w)) (fun w ↦ Kt (μ, w)) p =
+      jetCoeffAt ω J Ks Kt ((μ, p.1), p.2) :=
+  rfl
+
+/-- **Uniform closeness of the coefficient fields along a family of data.** Let
+`(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data, `C¹` jointly in the parameter `μ`, the point
+of the cylinder and the target point (with `C²` Hamiltonians), all cylindrical near the ends with
+a common radius, and let `u` be bounded on the strip `ℝ × [0, 1]` together with its derivative in
+`t`. Then the coefficient fields of the linearized Floer operators of the data at `μ` and at `lam`
+along `u` are uniformly close on the strip for `μ` close to `lam`. -/
+private theorem exists_pos_forall_dist_floerJetCoeff_family_lt (ω : SymplecticForm V)
+    {J : ℝ × (ℝ × ℝ) → V → AlmostComplexStructure V} {Ks Kt : ℝ × (ℝ × ℝ) → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : ∀ μ, Floer.IsCylindricalNearEnds (fun w ↦ J (μ, w)) (fun w ↦ Ks (μ, w))
+      (fun w ↦ Kt (μ, w)) Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × (ℝ × ℝ)) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt)) {B : ℝ}
+    (hB : ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t)‖ ≤ B ∧ ‖fderiv ℝ u (s, t) (0, 1)‖ ≤ B) (lam : ℝ)
+    {r : ℝ} (hr : 0 < r) :
+    ∃ η > 0, ∀ μ, |μ - lam| < η → ∀ z : ℝ × ℝ, z.2 ∈ Icc (0 : ℝ) 1 →
+      dist (ω.floerJetCoeff (fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap)
+          (fun w ↦ Ks (μ, w)) (fun w ↦ Kt (μ, w)) u z)
+        (ω.floerJetCoeff (fun w y ↦ (J (lam, w) y).toLinearMap.toContinuousLinearMap)
+          (fun w ↦ Ks (lam, w)) (fun w ↦ Kt (lam, w)) u z) < r := by
+  -- For `|μ - lam| ≤ 1`, the arguments `((μ, (projIcc (-|R|) |R| _ z.1, z.2)), u z, ∂t u z)` of
+  -- `jetCoeffAt` on the strip lie in the compact set `K`, on which `jetCoeffAt` is uniformly
+  -- continuous.
+  set K : Set ((ℝ × (ℝ × ℝ)) × V × V) :=
+    (Icc (lam - 1) (lam + 1) ×ˢ (Icc (-|R|) |R| ×ˢ Icc (0 : ℝ) 1)) ×ˢ
+      (closedBall 0 B ×ˢ closedBall 0 B)
+  have hK : IsCompact K := (isCompact_Icc.prod (isCompact_Icc.prod isCompact_Icc)).prod
+    ((isCompact_closedBall 0 B).prod (isCompact_closedBall 0 B))
+  have hval (μ : ℝ) (z : ℝ × ℝ) :
+      ω.floerJetCoeff (fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap)
+          (fun w ↦ Ks (μ, w)) (fun w ↦ Kt (μ, w)) u z =
+        jetCoeffAt ω (fun q y ↦ (J q y).toLinearMap.toContinuousLinearMap) Ks Kt
+          ((μ, ((projIcc (-|R|) |R| (neg_le_self (abs_nonneg R)) z.1 : ℝ), z.2)), u z,
+            fderiv ℝ u z (0, 1)) := by
+    rw [floerJetCoeff_eq_jetCoeffAt, jetCoeffAt_projIcc ω (hcyl μ)]
+    exact jetCoeffAt_family ω (fun q y ↦ (J q y).toLinearMap.toContinuousLinearMap) Ks Kt μ _
+  have hmem {μ : ℝ} (hμ : |μ - lam| ≤ 1) {z : ℝ × ℝ} (hz : z.2 ∈ Icc (0 : ℝ) 1) :
+      ((μ, ((projIcc (-|R|) |R| (neg_le_self (abs_nonneg R)) z.1 : ℝ), z.2)), u z,
+        fderiv ℝ u z (0, 1)) ∈ K := by
+    obtain ⟨h₁, h₂⟩ := hB z.1 z.2 hz
+    obtain ⟨hμ₁, hμ₂⟩ := abs_le.1 hμ
+    exact ⟨⟨⟨by linarith, by linarith⟩, Subtype.prop _, hz⟩, mem_closedBall_zero_iff.2 h₁,
+      mem_closedBall_zero_iff.2 h₂⟩
+  obtain ⟨δ, hδ, hΦ⟩ := Metric.uniformContinuousOn_iff.1 (hK.uniformContinuousOn_of_continuous
+    (continuous_jetCoeffAt ω (J := fun q y ↦ (J q y).toLinearMap.toContinuousLinearMap) hJ hKs
+      hKt).continuousOn) r hr
+  refine ⟨min 1 δ, lt_min one_pos hδ, fun μ hμ z hz ↦ ?_⟩
+  rw [lt_min_iff] at hμ
+  rw [hval, hval]
+  refine hΦ _ (hmem hμ.1.le hz) _ (hmem (by simp) hz) ?_
+  -- The two points differ only in the parameter.
+  simpa [Prod.dist_eq, Real.dist_eq] using hμ.2
+
+/-- **Continuity of the coefficient fields along a family of data in `L^∞`.** Under the
+hypotheses of `exists_pos_forall_dist_floerJetCoeff_family_lt`, with `u` of class `C¹`, the
+coefficient field of the linearized Floer operator of the data at `μ` along `u` depends
+continuously on `μ` in `L^∞` of the strip. -/
+private theorem tendsto_eLpNorm_floerJetCoeff_family (ω : SymplecticForm V)
+    {J : ℝ × (ℝ × ℝ) → V → AlmostComplexStructure V} {Ks Kt : ℝ × (ℝ × ℝ) → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : ∀ μ, Floer.IsCylindricalNearEnds (fun w ↦ J (μ, w)) (fun w ↦ Ks (μ, w))
+      (fun w ↦ Kt (μ, w)) Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × (ℝ × ℝ)) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt)) (hu : ContDiff ℝ 1 u)
+    {B : ℝ} (hB : ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, ‖u (s, t)‖ ≤ B ∧ ‖fderiv ℝ u (s, t) (0, 1)‖ ≤ B)
+    (lam : ℝ) :
+    Tendsto (fun μ : ℝ ↦ eLpNorm
+      (ω.floerJetCoeff (fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap)
+          (fun w ↦ Ks (μ, w)) (fun w ↦ Kt (μ, w)) u -
+        ω.floerJetCoeff (fun w y ↦ (J (lam, w) y).toLinearMap.toContinuousLinearMap)
+          (fun w ↦ Ks (lam, w)) (fun w ↦ Kt (lam, w)) u) ∞ stripMeasure) (𝓝 lam) (𝓝 0) :=
+  have hM (μ : ℝ) := ω.continuous_floerJetCoeff
+    (J := fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (u := u)
+    (hcyl μ).contDiffAt_almostComplex (hcyl μ).contDiffAt_hamiltonianS
+    (hcyl μ).contDiffAt_hamiltonianT hu
+  tendsto_eLpNorm_sub_of_forall_dist_lt
+    (.of_forall fun μ ↦ ((hM μ).sub (hM lam)).aestronglyMeasurable) fun _ hr ↦ by
+      obtain ⟨η, hη, h⟩ :=
+        exists_pos_forall_dist_floerJetCoeff_family_lt ω hcyl hJ hKs hKt hB lam hr
+      exact Metric.eventually_nhds_iff.2 ⟨η, hη, fun μ hμ ↦ h μ hμ⟩
+
+/-- The path of almost complex structures from `J` to `J'`: at `(μ, z)` and `y` it is the
+continuation homotopy, relative to `J₀`, from `J z y` to `J' z y` at time `μ`. It is `J` for
+`μ ≤ 0` and `J'` for `μ ≥ 1`. -/
+private def pathAlmostComplex {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+    (h₀ : ω.Compatible J₀) {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hJ : ∀ z y, ω.Tames (J z y)) (hJ' : ∀ z y, ω.Tames (J' z y)) (p : ℝ × (ℝ × ℝ)) (y : V) :
+    AlmostComplexStructure V :=
+  Floer.continuationAlmostComplex h₀ (fun _ q ↦ J q.1 q.2) (fun _ q ↦ J' q.1 q.2)
+    (fun _ q ↦ hJ q.1 q.2) (fun _ q ↦ hJ' q.1 q.2) (p.1, 0) (p.2, y)
+
+/-- The segment of Hamiltonians from `K` to `K'`, with parameter `μ`: the linear homotopy with
+profile `id` from `K` to `K'`, viewed as time-independent Hamiltonians on `(ℝ × ℝ) × V`. -/
+private def pathHamiltonian (K K' : ℝ × ℝ → V → ℝ) (p : ℝ × (ℝ × ℝ)) (y : V) : ℝ :=
+  Floer.linearHomotopy id (fun _ q ↦ K q.1 q.2) (fun _ q ↦ K' q.1 q.2) (p.1, 0) (p.2, y)
+
+/-- The path of almost complex structures is `J` at `μ = 0`. -/
+private theorem pathAlmostComplex_zero {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+    (h₀ : ω.Compatible J₀) {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hJt : ∀ z y, ω.Tames (J z y)) (hJ't : ∀ z y, ω.Tames (J' z y)) (z : ℝ × ℝ) (y : V) :
+    pathAlmostComplex h₀ hJt hJ't (0, z) y = J z y := by
+  rw [pathAlmostComplex]
+  exact Floer.continuationAlmostComplex_of_nonpos h₀ (z := ((0 : ℝ), (0 : ℝ))) le_rfl (z, y)
+
+/-- The path of almost complex structures is `J'` at `μ = 1`. -/
+private theorem pathAlmostComplex_one {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+    (h₀ : ω.Compatible J₀) {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hJt : ∀ z y, ω.Tames (J z y)) (hJ't : ∀ z y, ω.Tames (J' z y)) (z : ℝ × ℝ) (y : V) :
+    pathAlmostComplex h₀ hJt hJ't (1, z) y = J' z y := by
+  rw [pathAlmostComplex]
+  exact Floer.continuationAlmostComplex_of_one_le h₀ (z := ((1 : ℝ), (0 : ℝ))) le_rfl (z, y)
+
+/-- The path of almost complex structures between `ω`-compatible structures is `ω`-compatible. -/
+private theorem compatible_pathAlmostComplex {ω : SymplecticForm V}
+    {J₀ : AlmostComplexStructure V} (h₀ : ω.Compatible J₀)
+    {J J' : ℝ × ℝ → V → AlmostComplexStructure V} (hJc : ∀ z y, ω.Compatible (J z y))
+    (hJ'c : ∀ z y, ω.Compatible (J' z y)) (p : ℝ × (ℝ × ℝ)) (y : V) :
+    ω.Compatible (pathAlmostComplex h₀ (fun z y ↦ (hJc z y).tames) (fun z y ↦ (hJ'c z y).tames)
+      p y) := by
+  rw [pathAlmostComplex]
+  exact Floer.compatible_continuationAlmostComplex h₀
+    (fun (_ : ℝ) (q : (ℝ × ℝ) × V) ↦ hJc q.1 q.2) (fun (_ : ℝ) (q : (ℝ × ℝ) × V) ↦ hJ'c q.1 q.2)
+    _ _
+
+/-- The path of almost complex structures is `C¹` when its endpoints are. -/
+private theorem contDiff_pathAlmostComplex {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+    (h₀ : ω.Compatible J₀) {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hJt : ∀ z y, ω.Tames (J z y)) (hJ't : ∀ z y, ω.Tames (J' z y))
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ' : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap) :
+    ContDiff ℝ 1 fun p : (ℝ × (ℝ × ℝ)) × V ↦
+      (pathAlmostComplex h₀ hJt hJ't p.1 p.2).toLinearMap.toContinuousLinearMap :=
+  (Floer.contDiff_continuationAlmostComplex (F := (ℝ × ℝ) × V) h₀ (hJ.comp contDiff_snd)
+    (hJ'.comp contDiff_snd)).comp
+      ((contDiff_fst.fst.prodMk contDiff_const).prodMk (contDiff_fst.snd.prodMk contDiff_snd))
+
+omit [FiniteDimensional ℝ V] in
+/-- The segment of Hamiltonians is `C²` when its endpoints are. -/
+private theorem contDiff_pathHamiltonian {K K' : ℝ × ℝ → V → ℝ} (hK : ContDiff ℝ 2 (uncurry K))
+    (hK' : ContDiff ℝ 2 (uncurry K')) : ContDiff ℝ 2 (uncurry (pathHamiltonian K K')) :=
+  (Floer.contDiff_uncurry_linearHomotopy (n := 2)
+    (H₀ := fun (_ : ℝ) (q : (ℝ × ℝ) × V) ↦ K q.1 q.2)
+    (H₁ := fun (_ : ℝ) (q : (ℝ × ℝ) × V) ↦ K' q.1 q.2) contDiff_id (hK.comp contDiff_snd)
+    (hK'.comp contDiff_snd)).comp
+      ((contDiff_fst.fst.prodMk contDiff_const).prodMk (contDiff_fst.snd.prodMk contDiff_snd))
+
+/-- Two sets of Floer data cylindrical near the ends with the same end data, with radii `R` and
+`R'`, are joined by a path of data all cylindrical near the ends with the radius `max R R'`. -/
+private theorem isCylindricalNearEnds_path {ω : SymplecticForm V}
+    {J₀ : AlmostComplexStructure V} (h₀ : ω.Compatible J₀)
+    {J J' : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R R' : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hcyl' : Floer.IsCylindricalNearEnds J' Ks' Kt' Jm Jp Hm Hp R' u)
+    (hJt : ∀ z y, ω.Tames (J z y)) (hJ't : ∀ z y, ω.Tames (J' z y))
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ' : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKs' : ContDiff ℝ 2 (uncurry Ks'))
+    (hKt : ContDiff ℝ 2 (uncurry Kt)) (hKt' : ContDiff ℝ 2 (uncurry Kt')) (μ : ℝ) :
+    Floer.IsCylindricalNearEnds (fun w ↦ pathAlmostComplex h₀ hJt hJ't (μ, w))
+      (fun w ↦ pathHamiltonian Ks Ks' (μ, w)) (fun w ↦ pathHamiltonian Kt Kt' (μ, w)) Jm Jp Hm Hp
+      (max R R') u := by
+  have h₁ := hcyl.mono (le_max_left R R')
+  have h₂ := hcyl'.mono (le_max_right R R')
+  -- Where both data equal the same end data, so does every point of the path.
+  have hJeq {z : ℝ × ℝ} (e : V → AlmostComplexStructure V) (he : J z = e) (he' : J' z = e) :
+      (fun y ↦ pathAlmostComplex h₀ hJt hJ't (μ, z) y) = e := by
+    funext y
+    rw [pathAlmostComplex, Floer.continuationAlmostComplex_of_eq h₀ (by simp [he, he'])]
+    simp [he]
+  have hKeq {K K' : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} (e : V → ℝ) (he : K z = e) (he' : K' z = e) :
+      pathHamiltonian K K' (μ, z) = e := by
+    funext y
+    simp [pathHamiltonian, Floer.linearHomotopy_def, he, he']
+  exact
+    { almostComplex_eq_of_le_neg := fun z hz ↦ hJeq _
+        (h₁.almostComplex_eq_of_le_neg z hz) (h₂.almostComplex_eq_of_le_neg z hz)
+      almostComplex_eq_of_le := fun z hz ↦ hJeq _
+        (h₁.almostComplex_eq_of_le z hz) (h₂.almostComplex_eq_of_le z hz)
+      hamiltonianS_eq_zero := fun z hz ↦ hKeq _ (h₁.hamiltonianS_eq_zero z hz)
+        (h₂.hamiltonianS_eq_zero z hz)
+      hamiltonianT_eq_of_le_neg := fun z hz ↦ hKeq _ (h₁.hamiltonianT_eq_of_le_neg z hz)
+        (h₂.hamiltonianT_eq_of_le_neg z hz)
+      hamiltonianT_eq_of_le := fun z hz ↦ hKeq _ (h₁.hamiltonianT_eq_of_le z hz)
+        (h₂.hamiltonianT_eq_of_le z hz)
+      contDiffAt_almostComplex := fun z ↦
+        ((contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ').comp
+          ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt
+      contDiffAt_hamiltonianS := fun z ↦
+        ((contDiff_pathHamiltonian hKs hKs').comp
+          ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt
+      contDiffAt_hamiltonianT := fun z ↦
+        ((contDiff_pathHamiltonian hKt hKt').comp
+          ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt }
 
 end Coefficient
 
@@ -440,6 +663,169 @@ theorem index_floerSobolevOperator_eq_of_cylindrical (ω : SymplecticForm V)
   (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm hδm
     hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).2
 
+/-- The Fredholm property and the index pass from the data `(J, K_s, K_t)` to the data
+`(J', K'_s, K'_t)` with the same end data, along the path of data joining them. -/
+private theorem isFredholm_and_index_eq_of_cylindrical_data (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R R' : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hcyl' : Floer.IsCylindricalNearEnds J' Ks' Kt' Jm Jp Hm Hp R' u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJ' : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs' : ContDiff ℝ 2 (uncurry Ks')) (hKt' : ContDiff ℝ 2 (uncurry Kt'))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hJ'c : ∀ z y, ω.Compatible (J' z y))
+    (hu : ContDiff ℝ 1 u)
+    {Km : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm)) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    {Kp : ℝ≥0} (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    (h : (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      u).IsFredholm) :
+    (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+        u).IsFredholm ∧
+      (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+          u).index =
+        (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+          u).index := by
+  have hR := le_abs_self R
+  have hR' : -|R| ≤ -R := by linarith
+  -- The data of the ends are the data of the cylinder at `s = ∓|R|`.
+  obtain ⟨hJm, hHm, hJxm⟩ := endData_of_eq ω (-|R|)
+    (fun t ↦ hcyl.almostComplex_eq_of_le_neg (_, t) hR')
+    (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (_, t) hR') hJ hKt hJc
+  obtain ⟨hJp, hHp, hJxp⟩ := endData_of_eq ω |R| (fun t ↦ hcyl.almostComplex_eq_of_le (_, t) hR)
+    (fun t ↦ hcyl.hamiltonianT_eq_of_le (_, t) hR) hJ hKt hJc
+  -- The path of data from `(J, K_s, K_t)` at `μ = 0` to `(J', K'_s, K'_t)` at `μ = 1`.
+  have h₀ := hJc 0 0
+  have hJt (z : ℝ × ℝ) (y : V) := (hJc z y).tames
+  have hJ't (z : ℝ × ℝ) (y : V) := (hJ'c z y).tames
+  have hcylμ := isCylindricalNearEnds_path h₀ hcyl hcyl' hJt hJ't hJ hJ' hKs hKs' hKt hKt'
+  have hJu (μ : ℝ) (z : ℝ × ℝ) : ω.Compatible (pathAlmostComplex h₀ hJt hJ't (μ, z) (u z)) :=
+    compatible_pathAlmostComplex h₀ hJc hJ'c _ _
+  set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦ ω.floerJetCoeff
+    (fun w y ↦ (pathAlmostComplex h₀ hJt hJ't (μ, w) y).toLinearMap.toContinuousLinearMap)
+    (fun w ↦ pathHamiltonian Ks Ks' (μ, w)) (fun w ↦ pathHamiltonian Kt Kt' (μ, w)) u
+  have hM (μ : ℝ) : MemLp (M μ) ∞ stripMeasure :=
+    ω.memLp_floerJetCoeff_of_cylindrical (hcylμ μ) hu hHm hJm huxm hδm hHp hJp huxp hδp
+  have hest (μ : ℝ) : ∃ C T, HasSemiFredholmEstimate (M μ) C T :=
+    ω.exists_hasSemiFredholmEstimate_floerJetCoeff_of_cylindrical (hcylμ μ) hu (hJu μ) hXm hHm
+      hxm hndm hJm (fun t ↦ hJxm t _) huxm hδm hXp hHp hxp hndp hJp (fun t ↦ hJxp t _) huxp hδp
+  -- `u` and its derivative in `t` are bounded on the strip.
+  obtain ⟨B, hB⟩ := exists_forall_norm_le_and_norm_fderiv_apply_le_of_sliceDefect
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hHm).continuous
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hHp).continuous hu
+    (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
+    (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) huxm hδm huxp hδp
+  have hcont (μ : ℝ) (_ : μ ∈ univ) :
+      Tendsto (fun ν ↦ eLpNorm (M ν - M μ) ∞ stripMeasure) (𝓝[univ] μ) (𝓝 0) := by
+    rw [nhdsWithin_univ]
+    exact tendsto_eLpNorm_floerJetCoeff_family ω hcylμ
+      (contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ') (contDiff_pathHamiltonian hKs hKs')
+      (contDiff_pathHamiltonian hKt hKt') hu hB μ
+  -- The path starts at the first data and ends at the second.
+  have hM₀ : M 0 = ω.floerJetCoeff (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
+      := by
+    simp [M, pathAlmostComplex_zero, pathHamiltonian.eq_unfold]
+  have hM₁ : M 1 =
+      ω.floerJetCoeff (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt' u := by
+    simp [M, pathAlmostComplex_one, pathHamiltonian.eq_unfold]
+  have key := isFredholm_and_index_eq_of_hasSemiFredholmEstimate isPreconnected_univ
+    (fun μ _ ↦ hM μ) hcont (fun μ _ ↦ hest μ) (mem_univ 0) (mem_univ 1)
+    (by simpa only [hM₀, ← floerSobolevOperator_def] using h)
+  simpa only [hM₀, hM₁, ← floerSobolevOperator_def] using key
+
+/-- **The Fredholm property of the linearized Floer operator depends only on the end data.** Let
+`(J, K_s, K_t)` and `(J', K'_s, K'_t)` be Floer data that are `C¹` (with `C²` Hamiltonians) on the
+whole cylinder, compatible with `ω`, and cylindrical near the ends with the same end data: both
+equal to `(J₋_t, 0, H₋_t)` for `s` near `-∞` and to `(J₊_t, 0, H₊_t)` for `s` near `+∞`, possibly
+with different radii. Let `u` be a `C¹` map whose loops converge uniformly to nondegenerate
+one-periodic orbits `x₋` of `H₋` at `-∞` and `x₊` of `H₊` at `+∞`, with slice defects
+`∂t u - X_{H±_t}(u)` tending uniformly to zero at the corresponding end. Then the realization
+`D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator of the first data is
+Fredholm if and only if that of the second data is. -/
+theorem isFredholm_floerSobolevOperator_iff_of_cylindrical_data (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R R' : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hcyl' : Floer.IsCylindricalNearEnds J' Ks' Kt' Jm Jp Hm Hp R' u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJ' : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs' : ContDiff ℝ 2 (uncurry Ks')) (hKt' : ContDiff ℝ 2 (uncurry Kt'))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hJ'c : ∀ z y, ω.Compatible (J' z y))
+    (hu : ContDiff ℝ 1 u)
+    {Km : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm)) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    {Kp : ℝ≥0} (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u).IsFredholm ↔
+      (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+        u).IsFredholm :=
+  ⟨fun h ↦ (isFredholm_and_index_eq_of_cylindrical_data ω hcyl hcyl' hJ hKs hKt hJ' hKs' hKt' hJc
+      hJ'c hu hXm hxm hndm huxm hδm hXp hxp hndp huxp hδp h).1,
+    fun h ↦ (isFredholm_and_index_eq_of_cylindrical_data ω hcyl' hcyl hJ' hKs' hKt' hJ hKs hKt
+      hJ'c hJc hu hXm hxm hndm huxm hδm hXp hxp hndp huxp hδp h).1⟩
+
+/-- **The index of the linearized Floer operator depends only on the end data.** Under the
+hypotheses of `TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_iff_of_cylindrical_data`,
+if the realization `D_u` of the linearized Floer operator of the first data is Fredholm, then that
+of the second data has the same index. -/
+theorem index_floerSobolevOperator_eq_of_cylindrical_data (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    {Hm Hp : ℝ → V → ℝ} {Jm Jp : ℝ → V → AlmostComplexStructure V} {R R' : ℝ} {u : ℝ × ℝ → V}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hcyl' : Floer.IsCylindricalNearEnds J' Ks' Kt' Jm Jp Hm Hp R' u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+    (hJ' : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs' : ContDiff ℝ 2 (uncurry Ks')) (hKt' : ContDiff ℝ 2 (uncurry Kt'))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hJ'c : ∀ z y, ω.Compatible (J' z y))
+    (hu : ContDiff ℝ 1 u)
+    {Km : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm)) {xm : ℝ → V}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    {Kp : ℝ≥0} (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp)) {xp : ℝ → V}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1))
+    (h : (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      u).IsFredholm) :
+    (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+        u).index =
+      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u).index :=
+  (isFredholm_and_index_eq_of_cylindrical_data ω hcyl hcyl' hJ hKs hKt hJ' hKs' hKt' hJc hJ'c hu
+    hXm hxm hndm huxm hδm hXp hxp hndp huxp hδp h).2
+
 end Invariance
 
 section Unitary
@@ -535,6 +921,73 @@ theorem index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt
         (fun _ _ ↦ 0) (fun w ↦ H w.2) u).index = 0 :=
   (isFredholm_floerSobolevOperator_and_index_eq_zero ω hX hH hHp hx hxp hu hum hδm hup hδp hω
     hnd).2
+
+section EqualEnds
+
+variable {J : ℝ × ℝ → F → AlmostComplexStructure F} {Ks Kt : ℝ × ℝ → F → ℝ} {R : ℝ}
+  (hcyl : Floer.IsCylindricalNearEnds J Ks Kt
+    (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+    (fun _ _ ↦ AlmostComplexStructure.ofComplexModule F) H H R u)
+  (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+  (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 2 (uncurry Kt))
+  (hJc : ∀ z y, ω.Compatible (J z y))
+
+include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
+/-- The Fredholm property and index zero of the linearized Floer operator for data with equal ends,
+compared with the `s`-independent data `(i, 0, H_t)`. -/
+private theorem isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u).IsFredholm ∧
+      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        u).index = 0 := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
+  obtain ⟨h₀, hi₀⟩ :=
+    isFredholm_floerSobolevOperator_and_index_eq_zero ω hX hH hHp hx hxp hu hum hδm hup hδp hω hnd
+  obtain ⟨h, hi⟩ := isFredholm_and_index_eq_of_cylindrical_data ω
+    (Floer.isCylindricalNearEnds_comp_snd (J := fun _ _ ↦ AlmostComplexStructure.ofComplexModule F)
+      (R := 0) contDiff_const hH₂ u) hcyl contDiff_const contDiff_const
+    (hH₂.comp (contDiff_fst.snd.prodMk contDiff_snd)) hJ hKs hKt
+    (fun _ _ ↦ ω.compatible_ofComplexModule_of_forall_eq_im_inner hω) hJc hu hX hx hnd hum hδm hX
+    hx hnd hup hδp h₀
+  exact ⟨h, hi.trans hi₀⟩
+
+include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
+/-- **The linearized Floer operator for data with equal ends is Fredholm.** Let `F` be a
+finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, and let
+`x` be a one-periodic orbit of a one-periodic, jointly `C³` time-dependent Hamiltonian `H` whose
+suspended vector field is globally Lipschitz, with `x(0)` a nondegenerate fixed point of the
+time-one map. Let `(J, K_s, K_t)` be Floer data, `C¹` (with `C²` Hamiltonians) on the whole
+cylinder and compatible with `ω`, which are cylindrical near the ends with the data `(i, 0, H_t)`
+at both ends, such as the data of a continuation cylinder from `H` to itself. Let `u` be a `C¹` map
+whose loops converge uniformly to `x` at both ends, with slice defect `∂t u - X_{H_t}(u)` tending
+uniformly to zero at both ends. Then the realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of
+the linearized Floer operator of these data is Fredholm. -/
+theorem isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      u).IsFredholm :=
+  (isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical ω hX hH hHp hx hxp hu hum hδm
+    hup hδp hcyl hJ hKs hKt hJc hω hnd).1
+
+include hH hHp hx hxp hu hum hδm hup hδp hcyl hJ hKs hKt hJc in
+/-- **The linearized Floer operator for data with equal ends has index zero.** Under the
+hypotheses of
+`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt_of_cylindrical`,
+the realization `D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` of the linearized Floer operator has
+index zero. -/
+theorem index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      u).index = 0 :=
+  (isFredholm_floerSobolevOperator_and_index_eq_zero_of_cylindrical ω hX hH hHp hx hxp hu hum hδm
+    hup hδp hcyl hJ hKs hKt hJc hω hnd).2
+
+end EqualEnds
 
 end Unitary
 

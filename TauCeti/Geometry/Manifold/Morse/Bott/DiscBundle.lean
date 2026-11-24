@@ -515,10 +515,6 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
     fun a ↦ (i a).normalSpaceFiberBundle hn (hdim a)
   let : ∀ a, VectorBundle ℝ (P a) fun s ↦ (i a).NormalSpace s hn :=
     fun a ↦ (i a).normalSpaceVectorBundle hn (hdim a)
-  have (a : ι) : LocallyCompactSpace (ModelProd (H' a) (P a)) :=
-    ((J a).prod 𝓘(ℝ, P a)).locallyCompactSpace
-  have (a : ι) : LocallyCompactSpace (TotalSpace (P a) fun s ↦ (i a).NormalSpace s hn) :=
-    ChartedSpace.locallyCompactSpace (ModelProd (H' a) (P a)) _
   -- The Morse–Bott lemma on each normal bundle.
   have hΘ := fun a ↦ (h a).exists_morseBott_partialDiffeomorph_normalBundle hn
     (k := ⊤) (by simp) (hdim a) isOpen_univ (subset_univ _) (hfs.contMDiffOn.of_le (by simp))
@@ -640,9 +636,6 @@ theorem isCompact_negativeDiscBundle [T2Space S] [CompactSpace S]
     IsCompact (h.negativeDiscBundle hn P g.toRiemannianMetric ε) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  have : LocallyCompactSpace (ModelProd H' P) := (J.prod 𝓘(ℝ, P)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace P fun s ↦ i.NormalSpace s hn) :=
-    ChartedSpace.locallyCompactSpace (ModelProd H' P) _
   obtain ⟨hs, ht, hσ⟩ := h.contMDiff_negSq_posSq_rescale hn hfs hdim g
   set gR := g.toRiemannianMetric
   -- The rays `a ↦ (a u, a w)`, `a ∈ [0, 1]`, join each normal vector to the compact zero section.
