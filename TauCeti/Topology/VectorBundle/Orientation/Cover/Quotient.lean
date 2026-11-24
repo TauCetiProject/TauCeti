@@ -133,6 +133,16 @@ theorem neg_one_smul_eq_deck (p : VectorBundleOrientationCover F E ι) : (-1 : �
   refine congrArg (mk p.proj) (Module.Ray.units_smul_of_neg _ ?_ _)
   simp
 
+/-- The action of `ℤˣ` on the orientation double cover is continuous: `-1` acts by the deck
+involution. -/
+instance : ContinuousConstSMul ℤˣ (VectorBundleOrientationCover F E ι) where
+  continuous_const_smul u := by
+    rcases Int.units_eq_one_or u with rfl | rfl
+    · simp_rw [one_smul]
+      exact continuous_id
+    · simp_rw [neg_one_smul_eq_deck]
+      exact (deck (F := F) (E := E) (ι := ι)).continuous
+
 /-- Each unit acts on the orientation double cover as the identity or as the deck involution. -/
 private theorem smul_eq_or (u : ℤˣ) :
     (u • · : VectorBundleOrientationCover F E ι → _) = id ∨

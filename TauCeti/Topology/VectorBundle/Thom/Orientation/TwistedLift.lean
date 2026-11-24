@@ -152,20 +152,6 @@ theorem thomPairSndMulAction_continuousConstSMul : ContinuousConstSMul ℤˣ
 attribute [local instance] thomPairSndMulAction_continuousConstSMul
 
 omit [Fintype ι] in
-/-- The action of `ℤˣ` on the orientation cover is continuous: `-1` acts by the deck involution.
-
-The statements below use it as a local instance. -/
-theorem continuousConstSMul : ContinuousConstSMul ℤˣ (VectorBundleOrientationCover F E ι) where
-  continuous_const_smul u := by
-    rcases Int.units_eq_one_or u with rfl | rfl
-    · simp_rw [one_smul]
-      exact continuous_id
-    · simp_rw [neg_one_smul_eq_deck]
-      exact (deck (F := F) (E := E) (ι := ι)).continuous
-
-attribute [local instance] continuousConstSMul
-
-omit [Fintype ι] in
 /-- The unit `-1` acts on the total space of the pulled-back bundle by the lift of the deck
 involution, as a morphism of topological spaces. -/
 theorem neg_one_smul_eq_deckThomPairMap_fst :
