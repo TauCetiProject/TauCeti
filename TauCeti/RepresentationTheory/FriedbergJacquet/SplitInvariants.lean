@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.ConjInvariants
 
 /-!
 # Invariant polynomials of the split Friedberg–Jacquet representation
@@ -39,8 +40,9 @@ evaluated through `Sum.elim (fun p => A p.1 p.2) (fun p => B p.1 p.2)`.
   conjugation (`TauCeti.FriedbergJacquet.eval_contractionPullback_mul_mul_inv`).
 * **The quotient by both groups.** Consequently a polynomial is invariant under both groups
   exactly when it is the pullback of a conjugation-invariant polynomial function on matrices
-  (`TauCeti.FriedbergJacquet.mem_invariants_iff`), so pulling back along the signed contraction
-  is an isomorphism from the conjugation invariants onto the invariants of both groups
+  (`TauCeti.FriedbergJacquet.mem_invariants_iff_exists_contractionPullback`), so pulling back
+  along the signed contraction is an isomorphism from the conjugation invariants
+  `Matrix.conjInvariants` onto the invariants of both groups
   (`TauCeti.FriedbergJacquet.invariantsEquiv`). This reduces the quotient to the adjoint
   quotient of `gl_n`.
 
@@ -63,8 +65,6 @@ invariant, and `A` is not a polynomial in `A * B`. Over `ℤ`, where `GL₁ = {�
 * `TauCeti.FriedbergJacquet.sectionPullback`: the pullback along its section `Z ↦ (-Z, 1)`.
 * `TauCeti.FriedbergJacquet.rightInvariants`, `TauCeti.FriedbergJacquet.invariants`: the
   polynomials invariant under the second group, and under both groups.
-* `TauCeti.FriedbergJacquet.conjInvariants`: the polynomial functions on matrices invariant
-  under conjugation.
 * `TauCeti.FriedbergJacquet.rightInvariantsEquiv`: the isomorphism from polynomial functions on
   matrices onto the invariants of the second group.
 * `TauCeti.FriedbergJacquet.invariantsEquiv`: the isomorphism from the conjugation invariants
@@ -78,8 +78,9 @@ invariant, and `A` is not a polynomial in `A * B`. Over `ℤ`, where `GL₁ = {�
   exactly the pullbacks along the signed contraction.
 * `TauCeti.FriedbergJacquet.contractionPullback_mem_invariants_iff`,
   `TauCeti.FriedbergJacquet.map_contractionPullback_conjInvariants` and
-  `TauCeti.FriedbergJacquet.mem_invariants_iff`: the invariants of both groups are exactly the
-  pullbacks of conjugation-invariant polynomial functions on matrices.
+  `TauCeti.FriedbergJacquet.mem_invariants_iff_exists_contractionPullback`: the invariants of
+  both groups are exactly the pullbacks of conjugation-invariant polynomial functions on
+  matrices.
 
 ## References
 
@@ -201,16 +202,6 @@ def invariants : Subalgebra R (MvPolynomial (n × n ⊕ n × n) R) where
   add_mem' hP hQ g h A B := by simp only [map_add, hP g h A B, hQ g h A B]
   algebraMap_mem' c g h A B := by simp
 
-/-- The polynomial functions on square matrices that are invariant under conjugation
-`g • Z = g * Z * g⁻¹` by `GL n R`. -/
-def conjInvariants : Subalgebra R (MvPolynomial (n × n) R) where
-  carrier := {Q | ∀ (g : GL n R) (Z : Matrix n n R),
-    eval (fun p => ((g : Matrix n n R) * Z * (g⁻¹ : GL n R)) p.1 p.2) Q =
-      eval (fun p => Z p.1 p.2) Q}
-  mul_mem' hP hQ g Z := by simp only [map_mul, hP g Z, hQ g Z]
-  add_mem' hP hQ g Z := by simp only [map_add, hP g Z, hQ g Z]
-  algebraMap_mem' c g Z := by simp
-
 variable {R n}
 
 /-- Membership in `TauCeti.FriedbergJacquet.rightInvariants`, unfolded. -/
@@ -222,18 +213,11 @@ theorem mem_rightInvariants_iff {P : MvPolynomial (n × n ⊕ n × n) R} :
   Iff.rfl
 
 /-- Membership in `TauCeti.FriedbergJacquet.invariants`, unfolded. -/
-theorem mem_invariants_iff_forall {P : MvPolynomial (n × n ⊕ n × n) R} :
+theorem mem_invariants_iff {P : MvPolynomial (n × n ⊕ n × n) R} :
     P ∈ invariants R n ↔ ∀ (g h : GL n R) (A B : Matrix n n R),
       eval (Sum.elim (fun p => ((g : Matrix n n R) * A * (h⁻¹ : GL n R)) p.1 p.2)
         fun p => ((h : Matrix n n R) * B * (g⁻¹ : GL n R)) p.1 p.2) P =
           eval (Sum.elim (fun p => A p.1 p.2) fun p => B p.1 p.2) P :=
-  Iff.rfl
-
-/-- Membership in `TauCeti.FriedbergJacquet.conjInvariants`, unfolded. -/
-theorem mem_conjInvariants_iff {Q : MvPolynomial (n × n) R} :
-    Q ∈ conjInvariants R n ↔ ∀ (g : GL n R) (Z : Matrix n n R),
-      eval (fun p => ((g : Matrix n n R) * Z * (g⁻¹ : GL n R)) p.1 p.2) Q =
-        eval (fun p => Z p.1 p.2) Q :=
   Iff.rfl
 
 /-- Invariance under both groups implies invariance under the second. -/
@@ -261,7 +245,8 @@ theorem contractionPullback_mem_rightInvariants (Q : MvPolynomial (n × n) R) :
 /-- A pullback along the signed contraction is invariant under both groups exactly when the
 original polynomial function on matrices is invariant under conjugation. -/
 theorem contractionPullback_mem_invariants_iff {Q : MvPolynomial (n × n) R} :
-    contractionPullback R n Q ∈ invariants R n ↔ Q ∈ conjInvariants R n := by
+    contractionPullback R n Q ∈ invariants R n ↔ Q ∈ Matrix.conjInvariants R n := by
+  rw [Matrix.mem_conjInvariants_iff]
   refine ⟨fun hQ g Z ↦ ?_, fun hQ g h A B ↦ ?_⟩
   · have := hQ g g (-Z) 1
     rw [eval_contractionPullback_mul_mul_inv, eval_contractionPullback] at this
@@ -285,9 +270,9 @@ theorem contractionPullback_sectionPullback_of_mem_rightInvariants [Infinite K]
   set A : Matrix n n K := Matrix.of fun i j => x (Sum.inl (i, j))
   set B : Matrix n n K := Matrix.of fun i j => x (Sum.inr (i, j))
   have hx : x = Sum.elim (fun p => A p.1 p.2) fun p => B p.1 p.2 := by
-    ext (p | p) <;> rfl
+    ext (p | p) <;> simp [A, B]
   rw [map_mul, map_mul, eval_rename, Matrix.eval_det_mvPolynomialX]
-  change B.det * _ = B.det * _
+  simp only [Function.comp_apply]
   by_cases hB : B.det = 0
   · rw [hB, zero_mul, zero_mul]
   congr 1
@@ -330,8 +315,9 @@ theorem rightInvariantsEquiv_symm_apply [Infinite K] (P : rightInvariants K n) :
 square matrices is invariant under `(g, h) • (A, B) = (g * A * h⁻¹, h * B * g⁻¹)` exactly when it
 is the pullback along the signed contraction of a polynomial function on matrices invariant under
 conjugation. -/
-theorem mem_invariants_iff [Infinite K] {P : MvPolynomial (n × n ⊕ n × n) K} :
-    P ∈ invariants K n ↔ ∃ Q ∈ conjInvariants K n, contractionPullback K n Q = P := by
+theorem mem_invariants_iff_exists_contractionPullback [Infinite K]
+    {P : MvPolynomial (n × n ⊕ n × n) K} :
+    P ∈ invariants K n ↔ ∃ Q ∈ Matrix.conjInvariants K n, contractionPullback K n Q = P := by
   refine ⟨fun hP ↦ ?_, ?_⟩
   · have hPQ := contractionPullback_sectionPullback_of_mem_rightInvariants
       (invariants_le_rightInvariants hP)
@@ -344,20 +330,20 @@ theorem mem_invariants_iff [Infinite K] {P : MvPolynomial (n × n ⊕ n × n) K}
 /-- Over an infinite field, the image of the conjugation invariants under the pullback along the
 signed contraction is the subalgebra of invariants of both groups. -/
 theorem map_contractionPullback_conjInvariants [Infinite K] :
-    (conjInvariants K n).map (contractionPullback K n) = invariants K n := by
+    (Matrix.conjInvariants K n).map (contractionPullback K n) = invariants K n := by
   ext P
-  simp [mem_invariants_iff]
+  simp [mem_invariants_iff_exists_contractionPullback]
 
 variable (K n) in
 /-- Over an infinite field, pulling back along the signed contraction is an isomorphism from the
 conjugation-invariant polynomial functions on square matrices onto the polynomial functions on
 pairs invariant under `(g, h) • (A, B) = (g * A * h⁻¹, h * B * g⁻¹)`. -/
-noncomputable def invariantsEquiv [Infinite K] : conjInvariants K n ≃ₐ[K] invariants K n :=
-  ((conjInvariants K n).equivMapOfInjective _ contractionPullback_injective).trans
+noncomputable def invariantsEquiv [Infinite K] : Matrix.conjInvariants K n ≃ₐ[K] invariants K n :=
+  ((Matrix.conjInvariants K n).equivMapOfInjective _ contractionPullback_injective).trans
     (Subalgebra.equivOfEq _ _ map_contractionPullback_conjInvariants)
 
 @[simp]
-theorem coe_invariantsEquiv_apply [Infinite K] (Q : conjInvariants K n) :
+theorem coe_invariantsEquiv_apply [Infinite K] (Q : Matrix.conjInvariants K n) :
     (invariantsEquiv K n Q : MvPolynomial (n × n ⊕ n × n) K) = contractionPullback K n Q := by
   simp [invariantsEquiv]
 
