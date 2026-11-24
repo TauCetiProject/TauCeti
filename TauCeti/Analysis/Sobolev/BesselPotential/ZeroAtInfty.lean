@@ -12,6 +12,8 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.ZeroAtInftyRepresentative
+import TauCeti.Analysis.Calculus.ContDiff.OperatorFamily
+import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
 /-!
 # The bounded Sobolev embeddings of `H^s(ℝⁿ)` into `C₀` and `C^k`
@@ -36,6 +38,12 @@ bounded operators.
 
 For a finite-dimensional fibre `F` the second operator is compact
 (`BesselPotentialSpace.isCompactOperator_smulLeftContDiffMapSupportedIn`).
+
+Along a `Cⁿ` family `U : P → H^s(E, F)` with `s > n + dim E / 2`, the continuous representatives
+are `Cⁿ` jointly in the parameter and the point: `p ↦ u_p (g p)` is `Cⁿ` for every `Cⁿ` map `g`
+(`ContDiff.toZeroAtInfty_apply`). This follows from the regularity of evaluation on spaces of
+`C^n` functions with derivatives bounded by the norm
+(`TauCeti.contDiffOn_apply_of_forall_norm_iteratedFDeriv_le`).
 
 ## References
 
@@ -257,5 +265,32 @@ theorem coe_smulLeftContDiffMapSupportedIn (hk : finrank ℝ E + 2 * k < 2 * s)
   ext x
   simp [smulLeftContDiffMapSupportedIn, smulLeftContDiffMapSupportedInₗ,
     ContDiffMapSupportedIn.coe_of_support_subset]
+
+/-! ### The Sobolev embedding along smooth families -/
+
+/-- **The Sobolev embedding is jointly smooth along smooth families.** Let `s > n + dim E / 2`.
+If `U : P → H^s(E, F)` and `g : P → E` are `Cⁿ`, then so is `p ↦ u_p (g p)`, where `u_p` is the
+continuous representative of `U p` (`BesselPotentialSpace.toZeroAtInfty`). In particular, for a
+`Cⁿ` family `U`, the map `(p, x) ↦ u_p x` is `Cⁿ` jointly in the parameter and the point. -/
+theorem _root_.ContDiff.toZeroAtInfty_apply {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : ℕ} (hn : finrank ℝ E + 2 * n < 2 * s) {U : P → H^{s}(E, F)} {g : P → E}
+    (hU : ContDiff ℝ n U) (hg : ContDiff ℝ n g) :
+    ContDiff ℝ n fun p ↦ toZeroAtInfty (by linarith) (U p) (g p) := by
+  have hs : finrank ℝ E < 2 * s := by linarith
+  -- Evaluation of the embedding at a point, a family of bounded functionals on `H^s` whose
+  -- derivatives in the point are bounded by multiples of the `H^s` norm.
+  let Φ : E → H^{s}(E, F) →L[ℝ] F := fun y ↦
+    (ZeroAtInftyContinuousMap.evalCLM ℝ y).comp ((toZeroAtInfty hs).restrictScalars ℝ)
+  have hΦ (u : H^{s}(E, F)) : (fun y ↦ Φ y u) = toZeroAtInfty hs u := by
+    ext y
+    simp [Φ]
+  obtain ⟨C, -, hC⟩ := exists_norm_iteratedFDeriv_toZeroAtInfty_le (F := F) hn
+  have h := TauCeti.contDiffOn_apply_of_forall_norm_iteratedFDeriv_le (Φ := Φ) isOpen_univ
+    (fun u ↦ by rw [hΦ]; exact (contDiff_toZeroAtInfty hn u).contDiffOn)
+    fun m hm _ _ ↦ ⟨C, Filter.Eventually.of_forall fun z u ↦ by rw [hΦ]; exact hC u m hm z⟩
+  rw [univ_prod_univ, contDiffOn_univ] at h
+  convert h.comp (hU.prodMk hg) using 1
+  ext p
+  simp [Φ]
 
 end BesselPotentialSpace
