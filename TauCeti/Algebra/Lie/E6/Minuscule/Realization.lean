@@ -138,6 +138,7 @@ theorem chevalleyDatum_rootSubgroup_simpleIndex_comp_eqToHom_groupScheme
       eqToHom chevalleyDatum_groupScheme = rootSubgroup (.inl i) := by
   apply (cancel_mono carrierι).1
   rw [Category.assoc, eqToHom_chevalleyDatum_groupScheme_comp_carrierι]
+  -- The ambient `GL` dimension is `chevalleyDatum.dim`, definitionally `27`.
   erw [ChevalleyDatum.rootSubgroup_simpleIndex_comp_groupSchemeι, rootSubgroup_comp_carrierι]
   exact kostantRootSubgroup_eq_of_operator_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ (rootAction_eq (.inl i))
 
@@ -151,6 +152,7 @@ theorem chevalleyDatum_rootSubgroup_neg_simpleIndex_comp_eqToHom_groupScheme
       eqToHom chevalleyDatum_groupScheme = rootSubgroup (.inr i) := by
   apply (cancel_mono carrierι).1
   rw [Category.assoc, eqToHom_chevalleyDatum_groupScheme_comp_carrierι]
+  -- The ambient `GL` dimension is `chevalleyDatum.dim`, definitionally `27`.
   erw [ChevalleyDatum.rootSubgroup_reflectionPerm_simpleIndex_comp_groupSchemeι,
     rootSubgroup_comp_carrierι]
   exact kostantRootSubgroup_eq_of_operator_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ (rootAction_eq (.inr i))

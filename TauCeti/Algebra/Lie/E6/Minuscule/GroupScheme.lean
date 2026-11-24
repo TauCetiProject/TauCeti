@@ -336,30 +336,25 @@ theorem coe_rootSubgroupPoints_inr (i : Fin 6) (A : Type v) [CommRing A]
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u))
 
 /-- **Every numbered simple-root subgroup of the type-`E₆` minuscule carrier is injective**, over
-every commutative ring. Each simple root moves some minuscule weight `b` to its reflection, and
-the entry of `xₖ(u)` at that pair of basis vectors is `u`. -/
+every commutative ring. Each simple root moves some minuscule weight to its reflection, so its
+matrix `1 + uEᵢ` or `1 + uFᵢ` determines `u`. -/
 theorem rootSubgroupPoints_injective (k : Fin 6 ⊕ Fin 6) (A : Type v) [CommRing A] :
     Function.Injective (rootSubgroupPoints k A) := by
   intro u v huv
   have hmat := congrArg (fun g : points A =>
     ((g : _root_.Matrix.GeneralLinearGroup (Fin 27) A) : Matrix (Fin 27) (Fin 27) A)) huv
-  -- A weight with nonzero `i`-th coordinate is moved by the `i`-th simple reflection.
-  have hne (i : Fin 6) (b : Fin 27) (hb : e6MinusculeWeight b i ≠ 0) :
-      e6MinusculeReflection i b ≠ b := fun h => by
-    have := e6MinusculeWeight_reflection_apply_self i b
-    rw [h] at this
-    lia
+  apply Multiplicative.toAdd.injective
   cases k with
   | inl i =>
-      obtain ⟨b, hb⟩ := (by decide : ∀ i : Fin 6, ∃ b, e6MinusculeWeight b i = -1) i
       rw [coe_rootSubgroupPoints_inl, coe_rootSubgroupPoints_inl] at hmat
-      simpa [Matrix.one_apply_ne (hne i b (by rw [hb]; decide)), hb] using
-        congrFun (congrFun hmat (e6MinusculeReflection i b)) b
+      refine weightTable.one_add_smul_raisingMatrix_map_injective i ?_ hmat
+      rw [weightTable_weight]
+      exact (by decide : ∀ i : Fin 6, ∃ b, e6MinusculeWeight b i = -1) i
   | inr i =>
-      obtain ⟨b, hb⟩ := (by decide : ∀ i : Fin 6, ∃ b, e6MinusculeWeight b i = 1) i
       rw [coe_rootSubgroupPoints_inr, coe_rootSubgroupPoints_inr] at hmat
-      simpa [Matrix.one_apply_ne (hne i b (by rw [hb]; decide)), hb] using
-        congrFun (congrFun hmat (e6MinusculeReflection i b)) b
+      refine weightTable.one_add_smul_loweringMatrix_map_injective i ?_ hmat
+      rw [weightTable_weight]
+      exact (by decide : ∀ i : Fin 6, ∃ b, e6MinusculeWeight b i = 1) i
 
 /-- The split weight torus on matrix-valued points of the type-`E₆` carrier. -/
 noncomputable def weightTorusPoints (A : Type v) [CommRing A] :
