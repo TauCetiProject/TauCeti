@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.CategoryTheory.Elements
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # Topological action groupoids of equivariant families
