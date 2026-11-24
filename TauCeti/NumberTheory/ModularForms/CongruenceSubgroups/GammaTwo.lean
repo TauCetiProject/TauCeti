@@ -21,8 +21,8 @@ function on the upper half-plane is invariant under `Γ(2)` as soon as it is inv
 The proof is read off from the Farey symbol of `Γ(2)`: by
 `TauCeti.FareySymbol.comap_group_gammaTwo`, `Γ(2)` is the preimage of the group of
 `TauCeti.FareySymbol.gammaTwo`, whose two free generators are `-T²` and `-(3 -2; 2 -1) = T² T′⁻²`,
-and `TauCeti.FareySymbol.comap_group_le` puts that preimage inside any subgroup containing `-1`
-and these generators up to sign.
+and `TauCeti.FareySymbol.comap_group_gammaTwo_le` puts that preimage inside any subgroup
+containing `-1` and these two generators.
 
 ## Main results
 
@@ -65,19 +65,7 @@ theorem Gamma_two_eq_closure :
       simp [sq, Matrix.mul_apply, Fin.sum_univ_two, ModularGroup.coe_T, Matrix.adjugate_fin_two]
   refine le_antisymm ?_ hle
   rw [← comap_group_gammaTwo]
-  refine comap_group_le hneg1 ?_
-  intro x hx
-  obtain ⟨⟨i, hi⟩, h⟩ := mem_orderedGeneratorSet_iff.mp hx; have : i < 4 := by simpa using hi
-  rcases h with ⟨hlab, rfl⟩ | ⟨hlab, rfl⟩ | ⟨⟨j, hj⟩, l, hij, hli, hlj, rfl⟩
-  · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
-  · rw [Fin.getElem_fin] at hlab; interval_cases i <;> simp at hlab
-  · rw [Fin.getElem_fin] at hli hlj; rw [Fin.mk_lt_mk] at hij; have : j < 4 := by simpa using hj
-    interval_cases i <;> interval_cases j <;> try omega
-    all_goals simp only [gammaTwo_labels, List.getElem_cons_zero, List.getElem_cons_succ,
-      TauCeti.SideLabel.free.injEq] at hli hlj
-    all_goals try omega
-    · exact ⟨-1 * T ^ 2, mul_mem hneg1 hT,
-        by rw [freeSideSL_gammaTwo_outer, neg_one_mul]; rfl⟩
-    · exact ⟨T ^ 2 * (tPrime ^ 2)⁻¹, mul_mem hT (inv_mem hT'), by rw [hinner]; rfl⟩
+  exact comap_group_gammaTwo_le hneg1 (neg_eq_neg_one_mul (T ^ 2) ▸ mul_mem hneg1 hT)
+    (hinner ▸ mul_mem hT (inv_mem hT'))
 
 end CongruenceSubgroup
