@@ -53,6 +53,9 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
+* `TauCeti.continuousOn_prod_extChartAt_symm`, `TauCeti.isOpen_preimage_prod_extChartAt_symm`, and
+  `TauCeti.contMDiffOn_prod_extChartAt_symm`: continuity, open preimages, and `C^n` regularity of
+  the inverse-chart pullback `q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))` on `P × (Q × E)`.
 -/
 
 public section
@@ -311,5 +314,47 @@ theorem coe_extChartAtDiffeomorph_symm_apply [I.Boundaryless] [IsManifold I n M]
     (z : extChartTargetOpens I x) :
     ((extChartAtDiffeomorph (I := I) n x).symm z : M) = (extChartAt I x).symm z :=
   (rfl)
+
+section ProdExtChartAt
+
+/-- The inverse-chart pullback map `q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))` is
+continuous where `q.2.2 ∈ (extChartAt I α).target`. -/
+theorem continuousOn_prod_extChartAt_symm {P Q : Type*} [TopologicalSpace P] [TopologicalSpace Q]
+    (α : M) :
+    ContinuousOn (fun q : P × (Q × E) ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)))
+      {q | q.2.2 ∈ (extChartAt I α).target} :=
+  continuousOn_fst.prodMk ((continuous_fst.comp continuous_snd).continuousOn.prodMk
+    ((continuousOn_extChartAt_symm α).comp (continuous_snd.comp continuous_snd).continuousOn
+      fun _ hq ↦ hq))
+
+/-- Lifting an open set `W ⊆ P × (Q × M)` through the chart at `α` yields an open subset of
+`P × (Q × E)`. -/
+theorem isOpen_preimage_prod_extChartAt_symm [I.Boundaryless] {P Q : Type*} [TopologicalSpace P]
+    [TopologicalSpace Q] (α : M) {W : Set (P × (Q × M))} (hW : IsOpen W) :
+    IsOpen {q : P × (Q × E) |
+      q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} :=
+  (continuousOn_prod_extChartAt_symm (I := I) α).isOpen_inter_preimage
+    ((isOpen_extChartAt_target α).preimage (continuous_snd.comp continuous_snd)) hW
+
+/-- The inverse-chart pullback map `q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))` is `C^k` on
+`{q | q.2.2 ∈ (extChartAt I α).target}` when `M` is `C^n` and `k ≤ n`. -/
+theorem contMDiffOn_prod_extChartAt_symm {P Q : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P]
+    [NormedAddCommGroup Q] [NormedSpace 𝕜 Q] [IsManifold I n M]
+    {k : WithTop ℕ∞} (hk : k ≤ n) (α : M) :
+    ContMDiffOn 𝓘(𝕜, P × (Q × E)) (𝓘(𝕜, P).prod (𝓘(𝕜, Q).prod I)) k
+      (fun q : P × (Q × E) ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)))
+      {q | q.2.2 ∈ (extChartAt I α).target} := by
+  have heq : (extChartAt (𝓘(𝕜, P).prod (𝓘(𝕜, Q).prod I)) ((0 : P), ((0 : Q), α))).symm =
+      fun q : P × (Q × E) ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) := by
+    funext q
+    rw [extChartAt_prod_symm_apply, extChartAt_prod_symm_apply]
+    simp
+  rw [← heq]
+  refine ((contMDiffOn_extChartAt_symm (I := 𝓘(𝕜, P).prod (𝓘(𝕜, Q).prod I)) (n := n)
+    ((0 : P), ((0 : Q), α))).of_le hk).mono fun q (hq : q.2.2 ∈ (extChartAt I α).target) ↦ ?_
+  simpa only [extChartAt_prod_target, extChartAt_model_space_eq_id, PartialEquiv.refl_target,
+    Set.mem_prod, Set.mem_univ, true_and] using hq
+
+end ProdExtChartAt
 
 end TauCeti

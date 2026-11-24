@@ -93,10 +93,13 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   overlap between two inherited extended charts under `ModelWithCorners.extendCoordChange`.
 * `TauCeti.isOpen_setOf_extChartAt_symm_mem`: openness in an inherited chart target of the points
   represented in a relatively open subset of another inherited chart target.
-* `TauCeti.exists_finite_precompact_chart_cover` and
-  `TauCeti.exists_finite_precompact_chart_cover_of_isOpen_cover`: finite open chart covers (and
-  refinements of open covers) with compact coordinate bounds for compact subsets of manifolds
-  modelled on a locally compact space.
+* `TauCeti.exists_finite_precompact_chart_cover`,
+  `TauCeti.exists_finite_precompact_chart_cover_of_isOpen_cover`, and
+  `TauCeti.exists_finite_precompact_chart_cover_of_isOpen_prod`: finite open chart covers (and
+  refinements of open covers or product tubes) with compact coordinate bounds for compact subsets
+  of manifolds modelled on a locally compact space;
+  `TauCeti.isCompact_inter_preimage_extChartAt_symm` intersects a compact target piece with the
+  preimage of a closed set under the inverse chart.
 * `TauCeti.exists_finite_compact_chart_cover` and
   `TauCeti.exists_finite_compact_chart_cover_of_opens_cover`: a compact manifold modelled on a
   locally compact space is covered by the relative interiors of finitely many compact coordinate
@@ -817,6 +820,44 @@ theorem exists_finite_precompact_chart_cover [LocallyCompactSpace H] {s : Set M}
     (fun x _ ↦ Set.mem_iUnion.mpr ⟨(), Set.mem_univ x⟩)
   exact ⟨n, α, u, b, fun i ↦ ⟨(h i).2.1, (h i).2.2.2.1, (h i).2.2.2.2.1, (h i).2.2.2.2.2.1,
     (h i).2.2.2.2.2.2.2⟩, hs'⟩
+
+/-- For a compact subset `S` of an extended chart target and a closed subset `K` of the manifold,
+the points of `S` mapped into `K` by the inverse chart form a compact set. -/
+theorem isCompact_inter_preimage_extChartAt_symm (α : M) {S : Set E} {K : Set M}
+    (hS : IsCompact S) (hSt : S ⊆ (extChartAt I α).target) (hK : IsClosed K) :
+    IsCompact (S ∩ (extChartAt I α).symm ⁻¹' K) :=
+  hS.of_isClosed_subset
+    (((continuousOn_extChartAt_symm α).mono hSt).preimage_isClosed_of_isClosed hS.isClosed hK)
+    Set.inter_subset_left
+
+/-- Given compact sets `C ⊆ X` and `K ⊆ M` with `C ×ˢ K ⊆ W` for an open set `W ⊆ X × M`, and an
+open set `V ⊆ M` containing `K`, there is a finite open chart cover
+`u i ⊆ V ∩ (extChartAt I (α i)).source` of `K` with compact coordinate bounds
+`b i ⊆ (extChartAt I (α i)).target` such that `(extChartAt I (α i)).symm '' b i ⊆ V` and
+`C ×ˢ ((extChartAt I (α i)).symm '' b i) ⊆ W`. -/
+theorem exists_finite_precompact_chart_cover_of_isOpen_prod [LocallyCompactSpace H]
+    {X : Type*} [TopologicalSpace X] {C : Set X} {K : Set M} {W : Set (X × M)} {V : Set M}
+    (hC : IsCompact C) (hK : IsCompact K) (hW : IsOpen W) (hCKW : C ×ˢ K ⊆ W)
+    (hV : IsOpen V) (hKV : K ⊆ V) :
+    ∃ (n : ℕ) (α : Fin n → M) (u : Fin n → Set M) (b : Fin n → Set E),
+      (∀ i, IsOpen (u i) ∧ u i ⊆ V ∧ u i ⊆ (extChartAt I (α i)).source ∧
+        IsCompact (b i) ∧ b i ⊆ (extChartAt I (α i)).target ∧
+        (extChartAt I (α i)).symm '' b i ⊆ V ∧
+        C ×ˢ ((extChartAt I (α i)).symm '' b i) ⊆ W ∧
+        (extChartAt I (α i)) '' u i ⊆ b i) ∧
+      K ⊆ ⋃ i, u i := by
+  obtain ⟨U₁, U₂, -, hU₂, hCU₁, hKU₂, hprod⟩ := generalized_tube_lemma hC hK hW hCKW
+  obtain ⟨n, -, α, u, b, hcov, hsK⟩ := exists_finite_precompact_chart_cover_of_isOpen_cover (I := I)
+    hK (V := fun _ : Unit ↦ U₂ ∩ V) (fun _ ↦ hU₂.inter hV)
+    fun x hx ↦ Set.mem_iUnion.2 ⟨(), hKU₂ hx, hKV hx⟩
+  refine ⟨n, α, u, b, fun i ↦ ?_, hsK⟩
+  have hi := hcov i
+  refine ⟨hi.2.1, hi.2.2.1.trans Set.inter_subset_right, hi.2.2.2.1, hi.2.2.2.2.1,
+    hi.2.2.2.2.2.1, ?_, ?_, hi.2.2.2.2.2.2.2⟩
+  · rintro _ ⟨y, hy, rfl⟩
+    exact (hi.2.2.2.2.2.2.1 hy).2
+  · rintro ⟨p, _⟩ ⟨hp, y, hy, rfl⟩
+    exact hprod ⟨hCU₁ hp, (hi.2.2.2.2.2.2.1 hy).1⟩
 
 /-- The points of a chart source whose coordinates lie in a relatively open subset of the chart
 target form an open subset of the manifold. -/

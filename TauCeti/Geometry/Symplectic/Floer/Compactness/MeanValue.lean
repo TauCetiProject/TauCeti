@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
@@ -281,15 +282,12 @@ private theorem IsNondegenerate.exists_euclidean_chart_mvi [I.Boundaryless]
   let LP := ContinuousLinearEquiv.refl ℝ P
   have hXsM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKs
   have hXtM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKt
-  let g : P × (ℂ × EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) → P × ((ℝ × ℝ) × E) :=
-    fun q ↦ (LP.symm q.1, (eℂ q.2.1, L.symm q.2.2))
-  have hg : ContDiff ℝ 2 g := (LP.symm.contDiff.comp contDiff_fst).prodMk
-    ((eℂ.contDiff.comp (contDiff_fst.comp contDiff_snd)).prodMk
-      (L.symm.contDiff.comp (contDiff_snd.comp contDiff_snd)))
   have hW' : IsOpen {q : P × (ℂ × EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) |
       L.symm q.2.2 ∈ e.target ∧
-        (LP.symm q.1, (eℂ q.2.1, e.symm (L.symm q.2.2))) ∈ W} :=
-    (Floer.isOpen_preimage_prod_extChartAt_symm (I := I) α hW).preimage hg.continuous
+        (LP.symm q.1, (eℂ q.2.1, e.symm (L.symm q.2.2))) ∈ W} := by
+    simpa only [preimage_ofPred_eq, Floer.chartTransportEquiv_apply] using
+      (isOpen_preimage_prod_extChartAt_symm (I := I) α hW).preimage
+        (Floer.chartTransportEquiv LP L).continuous
   have hJ' := Floer.contDiffOn_transportedAlmostComplexInChartAt (n := 2) (by simp) α LP L hJ
   have hX' :=
     ω.contDiffOn_transportedHamiltonianOneFormInChartAt (n := 2) (by simp) α LP L hXsM hXtM
@@ -305,6 +303,102 @@ private theorem IsNondegenerate.exists_euclidean_chart_mvi [I.Boundaryless]
       rcases hx with ⟨y, hy, rfl⟩
       exact Floer.transportedAlmostComplexInChartAt_apply_apply α LP L J p
         ((L.symm_apply_apply y).symm ▸ hKαt hy) v
+
+omit [FiniteDimensional ℝ E] in
+/-- Transporting `v : ℝ × ℝ → E` via `L : E ≃L[ℝ] F` and `Complex.equivRealProdCLM` bounds
+`‖∂ₛ(L ∘ v ∘ eℂ)‖²` by `‖L‖² * ‖dv‖²`. -/
+private theorem norm_fderiv_euclidean_one_sq_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (L : E ≃L[ℝ] F) (v : ℝ × ℝ → E) (y : ℂ) :
+    ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y'))) y 1‖ ^ 2 ≤
+      ‖(L : E →L[ℝ] F)‖ ^ 2 * ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖ ^ 2 := by
+  have hfw : fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y'))) y 1 =
+      L (fderiv ℝ v (Complex.equivRealProdCLM y) stdComplexLineReal) :=
+    (congrArg (fun f : ℂ →L[ℝ] F ↦ f 1)
+      (L.comp_fderiv (f := v ∘ Complex.equivRealProdCLM) (x := y))).trans
+      (congrArg L (fderiv_comp_equivRealProdCLM_one v y))
+  have h1 : ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y'))) y 1‖ ≤
+      ‖(L : E →L[ℝ] F)‖ * ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖ := by
+    have h2 : ‖fderiv ℝ v (Complex.equivRealProdCLM y) stdComplexLineReal‖ ≤
+        ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖ := by
+      simpa [stdComplexLineReal] using
+        (fderiv ℝ v (Complex.equivRealProdCLM y)).le_opNorm stdComplexLineReal
+    rw [hfw]
+    exact (L.toContinuousLinearMap.le_opNorm _).trans
+      (mul_le_mul_of_nonneg_left h2 (norm_nonneg _))
+  calc ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y'))) y 1‖ ^ 2
+      ≤ (‖(L : E →L[ℝ] F)‖ * ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖) ^ 2 := by gcongr
+    _ = ‖(L : E →L[ℝ] F)‖ ^ 2 * ‖fderiv ℝ v (Complex.equivRealProdCLM y)‖ ^ 2 := by rw [mul_pow]
+
+omit [FiniteDimensional ℝ E] in
+/-- Inverse coordinate comparison: `‖∂ₛv(c)‖²` is bounded by `‖L.symm‖²` times
+`‖∂ₛ(L ∘ v ∘ eℂ)(eℂ.symm c)‖²`. -/
+private theorem norm_fderiv_stdComplexLineReal_sq_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (L : E ≃L[ℝ] F) (v : ℝ × ℝ → E) (c : ℝ × ℝ) :
+    ‖fderiv ℝ v c stdComplexLineReal‖ ^ 2 ≤
+      ‖(L.symm : F →L[ℝ] E)‖ ^ 2 *
+        ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+          (Complex.equivRealProdCLM.symm c) 1‖ ^ 2 := by
+  have hfw : fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+        (Complex.equivRealProdCLM.symm c) 1 =
+      L (fderiv ℝ v c stdComplexLineReal) := by
+    have h1 := congrArg (fun f : ℂ →L[ℝ] F ↦ f 1)
+      (L.comp_fderiv (f := v ∘ Complex.equivRealProdCLM) (x := Complex.equivRealProdCLM.symm c))
+    simpa only [Function.comp_def, ContinuousLinearEquiv.apply_symm_apply] using
+      h1.trans (congrArg L (fderiv_comp_equivRealProdCLM_one v (Complex.equivRealProdCLM.symm c)))
+  have h2 : ‖fderiv ℝ v c stdComplexLineReal‖ ≤
+      ‖(L.symm : F →L[ℝ] E)‖ *
+        ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+          (Complex.equivRealProdCLM.symm c) 1‖ := by
+    have h1 : fderiv ℝ v c stdComplexLineReal =
+        L.symm (fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+          (Complex.equivRealProdCLM.symm c) 1) := by
+      rw [hfw, ContinuousLinearEquiv.symm_apply_apply]
+    rw [h1]
+    exact L.symm.toContinuousLinearMap.le_opNorm _
+  calc ‖fderiv ℝ v c stdComplexLineReal‖ ^ 2
+      ≤ (‖(L.symm : F →L[ℝ] E)‖ *
+          ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+            (Complex.equivRealProdCLM.symm c) 1‖) ^ 2 := by gcongr
+    _ = ‖(L.symm : F →L[ℝ] E)‖ ^ 2 *
+          ‖fderiv ℝ (fun y' ↦ L (v (Complex.equivRealProdCLM y')))
+            (Complex.equivRealProdCLM.symm c) 1‖ ^ 2 := by rw [mul_pow]
+
+/-- Integral comparison between `‖∂ₛw‖²` on `ball y₀ r ⊆ eℂ⁻¹(ball c r)` and `f` on `ball c r`. -/
+private theorem setIntegral_norm_fderiv_one_sq_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {w : ℂ → F} {f : ℝ × ℝ → ℝ} {y₀ : ℂ} {c : ℝ × ℝ} {r A₁ B₁ : ℝ}
+    (hr : 0 ≤ r) (hA₁ : 0 ≤ A₁)
+    (hball : ball y₀ r ⊆ Complex.equivRealProdCLM ⁻¹' ball c r)
+    (hw_int : IntegrableOn (fun y ↦ ‖fderiv ℝ w y 1‖ ^ 2) (ball y₀ r))
+    (hf_int : IntegrableOn f (ball c r)) (hf_nn : ∀ z ∈ ball c r, 0 ≤ f z)
+    (hpt : ∀ y ∈ ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2 ≤ A₁ * f (Complex.equivRealProdCLM y) + B₁) :
+    ∫ y in ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2 ≤ B₁ * (π * r ^ 2) + A₁ * ∫ z in ball c r, f z := by
+  have heℂ_int : IntegrableOn (fun y ↦ f (Complex.equivRealProdCLM y))
+      (Complex.equivRealProdCLM ⁻¹' ball c r) :=
+    (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
+      equivRealProdCLM.toHomeomorph.measurableEmbedding).2 hf_int
+  have hvol : volume.real (ball y₀ r) = π * r ^ 2 := Complex.volume_real_ball y₀ hr
+  calc ∫ y in ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2
+      ≤ ∫ y in ball y₀ r, (A₁ * f (Complex.equivRealProdCLM y) + B₁) :=
+        setIntegral_mono_on hw_int
+          (((heℂ_int.mono_set hball).const_mul A₁).fun_add
+            (integrableOn_const measure_ball_lt_top.ne))
+          measurableSet_ball hpt
+    _ = A₁ * (∫ y in ball y₀ r, f (Complex.equivRealProdCLM y)) + B₁ * (π * r ^ 2) := by
+        rw [integral_add ((heℂ_int.mono_set hball).const_mul A₁)
+          (integrableOn_const measure_ball_lt_top.ne), integral_const_mul, setIntegral_const,
+          smul_eq_mul, hvol, mul_comm (π * r ^ 2)]
+    _ ≤ B₁ * (π * r ^ 2) + A₁ * ∫ y in Complex.equivRealProdCLM ⁻¹' ball c r,
+          f (Complex.equivRealProdCLM y) := by
+        have hmono := setIntegral_mono_set heℂ_int
+          (ae_restrict_of_forall_mem
+            (isOpen_ball.preimage Complex.equivRealProdCLM.continuous).measurableSet
+            fun y hy ↦ hf_nn _ hy)
+          hball.eventuallySubset
+        nlinarith
+    _ = B₁ * (π * r ^ 2) + A₁ * ∫ z in ball c r, f z :=
+        congrArg (fun x ↦ B₁ * (π * r ^ 2) + A₁ * x)
+          (Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
+            equivRealProdCLM.toHomeomorph.measurableEmbedding _ _)
 
 /-- **Intrinsic chart mean-value inequality over a compact parameter window.** For a chart at `α`
 and a compact set `K_α` of chart coordinates whose image lies in `W` over `C × D`, there exist
@@ -399,30 +493,14 @@ theorem IsNondegenerate.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_in
   have hw_cont : ContinuousOn (fun y ↦ fderiv ℝ w y 1) (closedBall y₀ r) :=
     ((hcdU.continuousOn_fderiv_of_isOpen hU₀ (by norm_num)).clm_apply
       continuousOn_const).mono hsubU
-  have hfw (y : ℂ) : fderiv ℝ w y 1 = L (fderiv ℝ (e ∘ u) (eℂ y) stdComplexLineReal) := by
-    have h1 := congrArg (fun f : ℂ →L[ℝ] _ ↦ f 1) (L.comp_fderiv (f := (e ∘ u) ∘ eℂ) (x := y))
-    exact h1.trans (congrArg L (fderiv_comp_equivRealProdCLM_one (e ∘ u) y))
   have hdiff (z : ℝ × ℝ) (hz : z ∈ closedBall c r) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z :=
     (hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (hΩ.mem_nhds (hcr hz))
   have hpt_le (y : ℂ) (hy : y ∈ closedBall y₀ r) :
       ‖fderiv ℝ w y 1‖ ^ 2 ≤ A₁ * ω.floerEnergyDensity (Ks p) (Kt p) u (eℂ y) + B₁ := by
     have hzc : eℂ y ∈ closedBall c r := hcl_sub hy
     have h1 := (hbd hp (hΩD (hcr hzc)) (huK hzc).1 (huK hzc).2 (hdiff _ hzc) (hfl _ hzc)).1
-    have h2 : ‖fderiv ℝ (e ∘ u) (eℂ y) stdComplexLineReal‖ ≤ ‖fderiv ℝ (e ∘ u) (eℂ y)‖ := by
-      simpa [stdComplexLineReal] using (fderiv ℝ (e ∘ u) (eℂ y)).le_opNorm stdComplexLineReal
-    have h3 : ‖fderiv ℝ w y 1‖ ≤
-        ‖(L : E →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))‖ *
-          ‖fderiv ℝ (e ∘ u) (eℂ y) stdComplexLineReal‖ := by
-      rw [hfw y]; exact L.toContinuousLinearMap.le_opNorm _
-    have h4 : ‖fderiv ℝ w y 1‖ ^ 2 ≤ cL * ‖fderiv ℝ (e ∘ u) (eℂ y)‖ ^ 2 := by
-      have h3' : ‖fderiv ℝ w y 1‖ ≤
-          ‖(L : E →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))‖ *
-            ‖fderiv ℝ (e ∘ u) (eℂ y)‖ :=
-        h3.trans (mul_le_mul_of_nonneg_left h2 (norm_nonneg _))
-      calc ‖fderiv ℝ w y 1‖ ^ 2
-          ≤ (‖(L : E →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))‖ *
-              ‖fderiv ℝ (e ∘ u) (eℂ y)‖) ^ 2 := by gcongr
-        _ = cL * ‖fderiv ℝ (e ∘ u) (eℂ y)‖ ^ 2 := by rw [mul_pow]
+    have h4 : ‖fderiv ℝ w y 1‖ ^ 2 ≤ cL * ‖fderiv ℝ (e ∘ u) (eℂ y)‖ ^ 2 :=
+      norm_fderiv_euclidean_one_sq_le L (e ∘ u) y
     have h5 := he_nn _ hzc
     have hcL_nn : 0 ≤ cL := by positivity
     dsimp only [A₁, B₁]
@@ -430,36 +508,11 @@ theorem IsNondegenerate.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_in
   have hw_int : IntegrableOn (fun y ↦ ‖fderiv ℝ w y 1‖ ^ 2) (ball y₀ r) :=
     ((hw_cont.norm.pow 2).integrableOn_compact (isCompact_closedBall y₀ r)).mono_set
       ball_subset_closedBall
-  have heℂ_int : IntegrableOn (fun y ↦ ω.floerEnergyDensity (Ks p) (Kt p) u (eℂ y))
-      (eℂ ⁻¹' ball c r) :=
-    (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
-      equivRealProdCLM.toHomeomorph.measurableEmbedding).2 he_int
   have hint_le : ∫ y in ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2 ≤
-      B₁ * (π * r ^ 2) + A₁ * ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z := by
-    have hvol : volume.real (ball y₀ r) = π * r ^ 2 := Complex.volume_real_ball y₀ hr
-    calc ∫ y in ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2
-        ≤ ∫ y in ball y₀ r, (A₁ * ω.floerEnergyDensity (Ks p) (Kt p) u (eℂ y) + B₁) :=
-          setIntegral_mono_on hw_int
-            (((heℂ_int.mono_set hball_sub).const_mul A₁).fun_add
-              (integrableOn_const measure_ball_lt_top.ne))
-            measurableSet_ball fun y hy ↦ hpt_le y (ball_subset_closedBall hy)
-      _ = A₁ * (∫ y in ball y₀ r, ω.floerEnergyDensity (Ks p) (Kt p) u (eℂ y)) +
-            B₁ * (π * r ^ 2) := by
-          rw [integral_add ((heℂ_int.mono_set hball_sub).const_mul A₁)
-            (integrableOn_const measure_ball_lt_top.ne), integral_const_mul, setIntegral_const,
-            smul_eq_mul, hvol, mul_comm (π * r ^ 2)]
-      _ ≤ B₁ * (π * r ^ 2) +
-            A₁ * ∫ y in eℂ ⁻¹' ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u (eℂ y) := by
-          have hA₁_nn : 0 ≤ A₁ := by positivity
-          have hmono := setIntegral_mono_set heℂ_int
-            (ae_restrict_of_forall_mem (isOpen_ball.preimage eℂ.continuous).measurableSet
-              fun y hy ↦ he_nn (eℂ y) (ball_subset_closedBall hy))
-            hball_sub.eventuallySubset
-          nlinarith
-      _ = B₁ * (π * r ^ 2) + A₁ * ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z :=
-          congrArg (fun x ↦ B₁ * (π * r ^ 2) + A₁ * x)
-            (Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-              equivRealProdCLM.toHomeomorph.measurableEmbedding _ _)
+      B₁ * (π * r ^ 2) + A₁ * ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z :=
+    setIntegral_norm_fderiv_one_sq_le hr (by positivity) hball_sub hw_int he_int
+      (fun z hz ↦ he_nn z (ball_subset_closedBall hz))
+      fun y hy ↦ hpt_le y (ball_subset_closedBall hy)
   -- Apply the Euclidean chart MVI and convert `‖∂ₛw(y₀)‖²` back to `e(u)(c)`.
   have hmvi_w := hmvi (p := p) (w := w) (y₀ := y₀) (r := r) hp hr
     (hball_sub.trans (preimage_mono (ball_subset_closedBall.trans (hcr.trans hΩD))))
@@ -475,16 +528,8 @@ theorem IsNondegenerate.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_in
   have hc_mem : c ∈ closedBall c r := mem_closedBall_self hr
   have hup := (hbd hp (hΩD (hcr hc_mem)) (huK hc_mem).1 (huK hc_mem).2 (hdiff c hc_mem)
     (hfl c hc_mem)).2
-  have hre_w : ‖fderiv ℝ (e ∘ u) c stdComplexLineReal‖ ^ 2 ≤ cLs * ‖fderiv ℝ w y₀ 1‖ ^ 2 := by
-    have h1 : fderiv ℝ (e ∘ u) c stdComplexLineReal = L.symm (fderiv ℝ w y₀ 1) := by
-      rw [hfw y₀]; simp [y₀, eℂ]
-    have h2 : ‖fderiv ℝ (e ∘ u) c stdComplexLineReal‖ ≤
-        ‖(L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) →L[ℝ] E)‖ * ‖fderiv ℝ w y₀ 1‖ := by
-      rw [h1]; exact L.symm.toContinuousLinearMap.le_opNorm _
-    calc ‖fderiv ℝ (e ∘ u) c stdComplexLineReal‖ ^ 2
-        ≤ (‖(L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) →L[ℝ] E)‖ *
-            ‖fderiv ℝ w y₀ 1‖) ^ 2 := by gcongr
-      _ = cLs * ‖fderiv ℝ w y₀ 1‖ ^ 2 := by rw [mul_pow]
+  have hre_w : ‖fderiv ℝ (e ∘ u) c stdComplexLineReal‖ ^ 2 ≤ cLs * ‖fderiv ℝ w y₀ 1‖ ^ 2 :=
+    norm_fderiv_stdComplexLineReal_sq_le L (e ∘ u) c
   have hint_nn : 0 ≤ ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z :=
     setIntegral_nonneg measurableSet_ball fun z hz ↦ he_nn z (ball_subset_closedBall hz)
   have hπr_nn : 0 ≤ π * r ^ 2 := by positivity

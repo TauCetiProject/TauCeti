@@ -71,14 +71,20 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
       (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
         (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
-    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hCDKW : C ×ˢ (D ×ˢ K) ⊆ W)
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K)
     (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, (hω.symplecticFormAt x).Tames (J p z x))
     {W_emb : TopologicalSpace.Opens M} {N : ℕ}
     (emb : SmoothEmbedding I 𝓘(ℝ, EuclideanSpace ℝ (Fin N)) (⊤ : ℕ∞) W_emb
       (EuclideanSpace ℝ (Fin N)))
     {eM : M → EuclideanSpace ℝ (Fin N)} (hKW : K ⊆ (W_emb : Set M))
     (heM_eq : ∀ x (hx : x ∈ (W_emb : Set M)), eM x = emb ⟨x, hx⟩)
-    (heM_cmd : ContMDiffOn I 𝓘(ℝ, EuclideanSpace ℝ (Fin N)) (⊤ : ℕ∞) eM W_emb) :
+    (heM_cmd : ContMDiffOn I 𝓘(ℝ, EuclideanSpace ℝ (Fin N)) (⊤ : ℕ∞) eM W_emb)
+    {n : ℕ} {α : Fin n → M} {u_cov : Fin n → Set M} {b : Fin n → Set E}
+    (hcov : ∀ i, IsOpen (u_cov i) ∧ u_cov i ⊆ (W_emb : Set M) ∧
+      u_cov i ⊆ (extChartAt I (α i)).source ∧ IsCompact (b i) ∧
+      b i ⊆ (extChartAt I (α i)).target ∧ (extChartAt I (α i)).symm '' b i ⊆ (W_emb : Set M) ∧
+      C ×ˢ (D ×ˢ ((extChartAt I (α i)).symm '' b i)) ⊆ W ∧ extChartAt I (α i) '' u_cov i ⊆ b i)
+    (hsK_cov : K ⊆ ⋃ i, u_cov i) :
     ∃ η > 0, ∃ δ_mvi > 0, ∃ M₁ > 0, ∃ M₂ > 0, ∃ M₃ ≥ 0,
       ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃c : ℝ × ℝ⦄ ⦃r : ℝ⦄,
         IsOpen Ω → Ω ⊆ D → p ∈ C → 0 ≤ r → closedBall c r ⊆ Ω →
@@ -91,22 +97,13 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
         π * r ^ 2 * ω.floerEnergyDensity (Ks p) (Kt p) u c ≤
           M₃ * (π * r ^ 2 + ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z) := by
   classical
-  have hW_swap : IsOpen ((fun q : (P × (ℝ × ℝ)) × M ↦ (q.1.1, (q.1.2, q.2))) ⁻¹' W) :=
-    hW.preimage ((continuous_fst.comp continuous_fst).prodMk
-      ((continuous_snd.comp continuous_fst).prodMk continuous_snd))
-  obtain ⟨U₁, U₂, -, hU₂, hCDU₁, hKU₂, hprod⟩ :=
-    generalized_tube_lemma (hC.prod hD) hK hW_swap fun ⟨⟨p, z⟩, x⟩ ⟨⟨hp, hz⟩, hx⟩ ↦
-      hCDKW ⟨hp, hz, hx⟩
-  let : LocallyCompactSpace H := I.isClosedEmbedding.locallyCompactSpace
-  obtain ⟨n, -, α, u_cov, b, hcov, hsK_cov⟩ :=
-    exists_finite_precompact_chart_cover_of_isOpen_cover (I := I) hK
-      (V := fun _ : Unit ↦ U₂ ∩ W_emb) (fun _ ↦ hU₂.inter W_emb.isOpen)
-      fun x hx ↦ mem_iUnion.2 ⟨(), hKU₂ hx, hKW hx⟩
+  -- Step 1: Handle the vacuous empty cover (`K = ∅`).
   rcases isEmpty_or_nonempty (Fin n) with hn | hn
   · exact ⟨1, one_pos, 1, one_pos, 1, one_pos, 1, one_pos, 0, le_rfl,
       fun _ _ _ _ _ _ _ _ hr hcr _ huK _ _ _ ↦ by
         obtain ⟨i, -⟩ := mem_iUnion.1 (hsK_cov (huK (hcr (mem_closedBall_self hr))))
         exact (hn.false i).elim⟩
+  -- Step 2: Obtain uniform MVI constants on each cover chart `i : Fin n` and aggregate them.
   have hchart : ∀ i : Fin n,
       ∃ δ_i > 0, ∃ M₁_i > 0, ∃ M₂_i > 0, ∃ M₃_i ≥ 0,
         ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃c : ℝ × ℝ⦄ ⦃r' : ℝ⦄,
@@ -120,19 +117,13 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
           π * r' ^ 2 * ω.floerEnergyDensity (Ks p) (Kt p) u c ≤
             M₃_i * (π * r' ^ 2 + ∫ z in ball c r', ω.floerEnergyDensity (Ks p) (Kt p) u z) := by
     intro i
-    have hi := hcov i
+    obtain ⟨_, _, hu_src, hb_comp, hb_tgt, _, hb_W, hu_im⟩ := hcov i
     let Kα : Set E := b i ∩ (extChartAt I (α i)).symm ⁻¹' K
-    have hKα_comp : IsCompact Kα := by
-      have hcl : IsClosed Kα :=
-        ((continuousOn_extChartAt_symm (α i)).mono
-          hi.2.2.2.2.2.1).preimage_isClosed_of_isClosed hi.2.2.2.2.1.isClosed hK.isClosed
-      exact hi.2.2.2.2.1.of_isClosed_subset hcl inter_subset_left
-    have hKα_tgt : Kα ⊆ (extChartAt I (α i)).target :=
-      inter_subset_left.trans hi.2.2.2.2.2.1
-    have hKα_W : C ×ˢ (D ×ˢ ((extChartAt I (α i)).symm '' Kα)) ⊆ W := by
-      rintro ⟨p, z, _⟩ ⟨hp, hz, y, hy, rfl⟩
-      exact @hprod ((p, z), (extChartAt I (α i)).symm y)
-        ⟨hCDU₁ ⟨hp, hz⟩, (hi.2.2.2.2.2.2.1 hy.1).1⟩
+    have hKα_comp : IsCompact Kα :=
+      isCompact_inter_preimage_extChartAt_symm (α i) hb_comp hb_tgt hK.isClosed
+    have hKα_tgt : Kα ⊆ (extChartAt I (α i)).target := inter_subset_left.trans hb_tgt
+    have hKα_W : C ×ˢ (D ×ˢ ((extChartAt I (α i)).symm '' Kα)) ⊆ W :=
+      (prod_mono_right (prod_mono_right (image_mono inter_subset_left))).trans hb_W
     have hKα_tame : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ Kα,
         (hω.symplecticFormAt ((extChartAt I (α i)).symm y)).Tames
           (J p z ((extChartAt I (α i)).symm y)) :=
@@ -144,8 +135,8 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
       fun Ω p u c r' hΩ hΩD hp hr' hcr hu huK huV hfl hsmall ↦ ?_⟩
     refine hmvi_i hΩ hΩD hp hr' hcr hu hfl (fun z hz ↦ ?_) hsmall
     have hzi := huV hz
-    exact ⟨hi.2.2.2.1 hzi, hi.2.2.2.2.2.2.2 (mem_image_of_mem _ hzi), by
-      rw [mem_preimage, (extChartAt I (α i)).left_inv (hi.2.2.2.1 hzi)]; exact huK (hcr hz)⟩
+    exact ⟨hu_src hzi, hu_im (mem_image_of_mem _ hzi), by
+      rw [mem_preimage, (extChartAt I (α i)).left_inv (hu_src hzi)]; exact huK (hcr hz)⟩
   choose δ_i hδi M₁_i hM₁i M₂_i hM₂i M₃_i hM₃i hmvi_i using hchart
   set δ_mvi := (Finset.univ : Finset (Fin n)).inf' Finset.univ_nonempty δ_i
   set M₁ := (Finset.univ : Finset (Fin n)).sup' Finset.univ_nonempty M₁_i
@@ -158,9 +149,11 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
     obtain ⟨i⟩ := hn; exact (hM₂i i).trans_le (Finset.le_sup' M₂_i (Finset.mem_univ i))
   have hM₃_nn : 0 ≤ M₃ := by
     obtain ⟨i⟩ := hn; exact (hM₃i i).trans (Finset.le_sup' M₃_i (Finset.mem_univ i))
+  -- Step 3: Push the open cover to `eM '' K` via `emb` and apply the Lebesgue number lemma.
   have hO_ex : ∀ i : Fin n, ∃ O : Set (EuclideanSpace ℝ (Fin N)),
-      IsOpen O ∧ emb ⁻¹' O = ((↑) : W_emb → M) ⁻¹' u_cov i := fun i ↦
-    emb.isEmbedding.isInducing.isOpen_iff.1 ((hcov i).2.1.preimage continuous_subtypeVal)
+      IsOpen O ∧ emb ⁻¹' O = ((↑) : W_emb → M) ⁻¹' u_cov i := fun i ↦ by
+    obtain ⟨hu_open, -⟩ := hcov i
+    exact emb.isEmbedding.isInducing.isOpen_iff.1 (hu_open.preimage continuous_subtypeVal)
   choose O hO_open hO_eq using hO_ex
   have heMK_comp : IsCompact (eM '' K) := hK.image_of_continuousOn (heM_cmd.continuousOn.mono hKW)
   have heMK_cov : eM '' K ⊆ ⋃ i : Fin n, O i := by
@@ -227,11 +220,12 @@ theorem exists_pos_forall_eventually_le_setIntegral_ball_of_tendsto_floerEnergyD
         δ ≤ ∫ y in ball z₀ ε ∩ Ω, ω.floerEnergyDensity (Ks (p k)) (Kt (p k)) (u k) y := by
   have hXsM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKs
   have hXtM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKt
-  obtain ⟨W_emb, N, emb, eM, hKW, heM_eq, heM_cmd, A_e, hAe, B_e, hBe, hbd_e⟩ :=
-    hω.exists_opens_smoothEmbedding_norm_fderiv_sq_le hW hJ.continuousOn hXsM.continuousOn
-      hXtM.continuousOn hC hD hK hCDKW hJt
+  obtain ⟨W_emb, N, emb, eM, n, α, u_cov, b, hKW, heM_eq, heM_cmd, hcov, hsK_cov,
+      A_e, hAe, B_e, hBe, hbd_e⟩ :=
+    hω.exists_opens_smoothEmbedding_chart_cover_norm_fderiv_sq_le hW hJ.continuousOn
+      hXsM.continuousOn hXtM.continuousOn hC hD hK hCDKW hJt
   obtain ⟨η, hη, δ_mvi, hδmvi, M₁, -, M₂, hM₂, M₃, hM₃, hmvi⟩ :=
-    hω.exists_localized_mvi hW hKs hKt hJ hC hD hK hCDKW hJt emb hKW heM_eq heM_cmd
+    hω.exists_localized_mvi hW hKs hKt hJ hC hD hK hJt emb hKW heM_eq heM_cmd hcov hsK_cov
   set c₀ := η / (4 * √A_e)
   have hc₀ : 0 < c₀ := by positivity
   set δ := min (δ_mvi / (2 * M₂)) ((π * c₀ ^ 2) / (2 * (M₃ + 1)))

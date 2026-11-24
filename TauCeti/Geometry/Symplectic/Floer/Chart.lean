@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
@@ -75,7 +76,7 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   two vector fields together form the Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`
   read in the chart (`TauCeti.SmoothTwoForm.hamiltonianOneFormInChartAt`), the one-form of this
   coordinate equation.
-* `TauCeti.Floer.transportedAlmostComplexInChartAt` and
+* `TauCeti.Floer.chartTransportEquiv`, `TauCeti.Floer.transportedAlmostComplexInChartAt` and
   `TauCeti.SmoothTwoForm.transportedHamiltonianOneFormInChartAt` transport chart data along
   linear equivalences on parameters and model spaces and complex identification on the domain, with
   shared regularity (`contDiffOn_transportedAlmostComplexInChartAt`,
@@ -255,46 +256,6 @@ theorem almostComplexInChartAt_almostComplexStructureAt (J : P → SmoothAlmostC
   ext v
   rw [LinearMap.coe_toContinuousLinearMap']
   exact (J p.1).almostComplexStructureAt_apply _ v
-
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] in
-/-- The inverse-chart pullback map `q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))` is
-continuous where `q.2.2 ∈ (extChartAt I α).target`. -/
-theorem continuousOn_prod_extChartAt_symm {P Q : Type*} [TopologicalSpace P] [TopologicalSpace Q]
-    (α : M) :
-    ContinuousOn (fun q : P × (Q × E) ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)))
-      {q | q.2.2 ∈ (extChartAt I α).target} :=
-  continuousOn_fst.prodMk ((continuous_fst.comp continuous_snd).continuousOn.prodMk
-    ((continuousOn_extChartAt_symm α).comp (continuous_snd.comp continuous_snd).continuousOn
-      fun _ hq ↦ hq))
-
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] in
-/-- Lifting an open set `W ⊆ P × (Q × M)` through the chart at `α` yields an open subset of
-`P × (Q × E)`. -/
-theorem isOpen_preimage_prod_extChartAt_symm [I.Boundaryless] {P Q : Type*} [TopologicalSpace P]
-    [TopologicalSpace Q] (α : M) {W : Set (P × (Q × M))} (hW : IsOpen W) :
-    IsOpen {q : P × (Q × E) |
-      q.2.2 ∈ (extChartAt I α).target ∧ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) ∈ W} :=
-  (continuousOn_prod_extChartAt_symm (I := I) α).isOpen_inter_preimage
-    ((isOpen_extChartAt_target α).preimage (continuous_snd.comp continuous_snd)) hW
-
-omit [FiniteDimensional ℝ E] in
-/-- The inverse-chart pullback map `q ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2))` is `C^n` on
-`{q | q.2.2 ∈ (extChartAt I α).target}` for `n ≤ ⊤`. -/
-theorem contMDiffOn_prod_extChartAt_symm {P Q : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [NormedAddCommGroup Q] [NormedSpace ℝ Q] {n : WithTop ℕ∞} (hn : n ≤ (⊤ : ℕ∞)) (α : M) :
-    ContMDiffOn 𝓘(ℝ, P × (Q × E)) (𝓘(ℝ, P).prod (𝓘(ℝ, Q).prod I)) n
-      (fun q : P × (Q × E) ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)))
-      {q | q.2.2 ∈ (extChartAt I α).target} := by
-  have heq : (extChartAt (𝓘(ℝ, P).prod (𝓘(ℝ, Q).prod I)) ((0 : P), ((0 : Q), α))).symm =
-      fun q : P × (Q × E) ↦ (q.1, (q.2.1, (extChartAt I α).symm q.2.2)) := by
-    funext q
-    rw [extChartAt_prod_symm_apply, extChartAt_prod_symm_apply]
-    simp
-  rw [← heq]
-  refine ((contMDiffOn_extChartAt_symm (I := 𝓘(ℝ, P).prod (𝓘(ℝ, Q).prod I))
-    ((0 : P), ((0 : Q), α))).of_le hn).mono fun q (hq : q.2.2 ∈ (extChartAt I α).target) ↦ ?_
-  simpa only [extChartAt_prod_target, extChartAt_model_space_eq_id, PartialEquiv.refl_target,
-    mem_prod, mem_univ, true_and] using hq
 
 /-- **Chart continuity of a parametrized family of almost complex structures.** If `J` is jointly
 continuous on a set `W ⊆ P × ((ℝ × ℝ) × M)` as a map into the tangent endomorphism bundle for a
@@ -621,21 +582,6 @@ theorem contDiffOn_hamiltonianOneFormInChartAt {Q : Type*} [NormedAddCommGroup Q
   (contDiffOn_const.smulRight hXs).add (contDiffOn_const.smulRight hXt)
 
 omit [FiniteDimensional ℝ E] in
-/-- **Joint regularity of a parametrized Hamiltonian one-form in a chart.** If the coordinate
-Hamiltonian vector fields of `Ks, Kt` are jointly `C^n` on a set `W ⊆ P × ((ℝ × ℝ) × E)`, then so
-is `hamiltonianOneFormInChartAt`. -/
-theorem contDiffOn_hamiltonianOneFormInChartAt_param {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace ℝ P] {n : WithTop ℕ∞} {Ks Kt : P → ℝ × ℝ → M → ℝ}
-    {W : Set (P × ((ℝ × ℝ) × E))}
-    (hXs : ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × E) ↦
-      ω.hamiltonianVectorFieldInChartAt α (Ks q.1) q.2) W)
-    (hXt : ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × E) ↦
-      ω.hamiltonianVectorFieldInChartAt α (Kt q.1) q.2) W) :
-    ContDiffOn ℝ n (fun q : P × ((ℝ × ℝ) × E) ↦
-      ω.hamiltonianOneFormInChartAt α (Ks q.1) (Kt q.1) q.2) W :=
-  (contDiffOn_const.smulRight hXs).add (contDiffOn_const.smulRight hXt)
-
-omit [FiniteDimensional ℝ E] in
 /-- **Chart continuity of a parametrized family of Hamiltonian vector fields.** If the Hamiltonian
 vector fields of `K` form a jointly continuous map into `TangentBundle I M` on
 `W ⊆ P × ((ℝ × ℝ) × M)` for a topological parameter space `P`, then their coordinate expressions in
@@ -655,7 +601,7 @@ theorem continuousOn_hamiltonianVectorFieldInChartAt {P : Type*} [TopologicalSpa
       fun _ hq ↦ e.mem_source.2 hq.2)).congr fun _ hq ↦
         e.continuousLinearMapAt_apply_of_mem (R := ℝ) hq.2 _
   refine hG.comp
-    ((Floer.continuousOn_prod_extChartAt_symm (I := I) (P := P) (Q := ℝ × ℝ) α).mono ?_) ?_
+    ((continuousOn_prod_extChartAt_symm (I := I) (P := P) (Q := ℝ × ℝ) α).mono ?_) ?_
   · exact fun _ hq ↦ hq.1
   · exact fun _ hq ↦ ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
 
@@ -686,7 +632,7 @@ theorem contDiffOn_hamiltonianVectorFieldInChartAt {P : Type*} [NormedAddCommGro
       (fun q hq ↦ e.mem_source.2 hq.2)).1 (hX.mono inter_subset_left)
     exact h.2.congr fun q hq ↦ e.continuousLinearMapAt_apply_of_mem (R := ℝ) hq.2 _
   refine contMDiffOn_iff_contDiffOn.1 (hG.comp
-    ((Floer.contMDiffOn_prod_extChartAt_symm (I := I) (P := P) (Q := ℝ × ℝ) hn α).mono ?_) ?_)
+    ((contMDiffOn_prod_extChartAt_symm (I := I) (P := P) (Q := ℝ × ℝ) hn α).mono ?_) ?_)
   · exact fun _ hq ↦ hq.1
   · exact fun _ hq ↦ ⟨hq.2, TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1⟩
 
@@ -799,6 +745,20 @@ variable {P P' E' : Type*}
 
 namespace Floer
 
+/-- Product linear equivalence transporting parameters, domain coordinates, and model-space chart
+coordinates along `LP.symm`, `Complex.equivRealProdCLM`, and `L.symm`. -/
+def chartTransportEquiv (LP : P ≃L[ℝ] P') (L : E ≃L[ℝ] E') :
+    (P' × (ℂ × E')) ≃L[ℝ] (P × ((ℝ × ℝ) × E)) :=
+  LP.symm.prodCongr (Complex.equivRealProdCLM.prodCongr L.symm)
+
+omit [FiniteDimensional ℝ E] in
+/-- Evaluating `chartTransportEquiv` applies `LP.symm`, `Complex.equivRealProdCLM`, and `L.symm`
+componentwise. -/
+@[simp]
+theorem chartTransportEquiv_apply (LP : P ≃L[ℝ] P') (L : E ≃L[ℝ] E') (q : P' × (ℂ × E')) :
+    chartTransportEquiv LP L q = (LP.symm q.1, (Complex.equivRealProdCLM q.2.1, L.symm q.2.2)) := by
+  simp [chartTransportEquiv]
+
 /-- Almost complex structures `J` read in the chart at `α` and transported along linear
 equivalences `LP : P ≃L[ℝ] P'` on the parameter space and `L : E ≃L[ℝ] E'` on the model space,
 together with `Complex.equivRealProdCLM` on the domain. -/
@@ -841,16 +801,11 @@ theorem contDiffOn_transportedAlmostComplexInChartAt {n : WithTop ℕ∞} (hn : 
     ContDiffOn ℝ n (Function.uncurry (transportedAlmostComplexInChartAt I α LP L J))
       {q : P' × (ℂ × E') | L.symm q.2.2 ∈ (extChartAt I α).target ∧
         (LP.symm q.1, (Complex.equivRealProdCLM q.2.1, (extChartAt I α).symm (L.symm q.2.2))) ∈
-          W} := by
-  let g : P' × (ℂ × E') → P × ((ℝ × ℝ) × E) :=
-    fun q ↦ (LP.symm q.1, (Complex.equivRealProdCLM q.2.1, L.symm q.2.2))
-  have hg : ContDiff ℝ n g :=
-    (LP.symm.contDiff.comp contDiff_fst).prodMk
-      ((Complex.equivRealProdCLM.contDiff.comp (contDiff_fst.comp contDiff_snd)).prodMk
-        (L.symm.contDiff.comp (contDiff_snd.comp contDiff_snd)))
-  exact contDiffOn_const.clm_comp
-    (((contDiffOn_almostComplexInChartAt hn α hJ).comp hg.contDiffOn
-      (mapsTo_preimage _ _)).clm_comp contDiffOn_const)
+          W} :=
+  contDiffOn_const.clm_comp
+    (((contDiffOn_almostComplexInChartAt hn α hJ).comp
+      (chartTransportEquiv LP L).contDiff.contDiffOn (mapsTo_preimage _ _)).clm_comp
+      contDiffOn_const)
 
 end Floer
 
@@ -905,18 +860,12 @@ theorem contDiffOn_transportedHamiltonianOneFormInChartAt {n : WithTop ℕ∞} (
     ContDiffOn ℝ n (Function.uncurry (ω.transportedHamiltonianOneFormInChartAt α LP L Ks Kt))
       {q : P' × (ℂ × E') | L.symm q.2.2 ∈ (extChartAt I α).target ∧
         (LP.symm q.1, (Complex.equivRealProdCLM q.2.1, (extChartAt I α).symm (L.symm q.2.2))) ∈
-          W} := by
-  let g : P' × (ℂ × E') → P × ((ℝ × ℝ) × E) :=
-    fun q ↦ (LP.symm q.1, (Complex.equivRealProdCLM q.2.1, L.symm q.2.2))
-  have hg : ContDiff ℝ n g :=
-    (LP.symm.contDiff.comp contDiff_fst).prodMk
-      ((Complex.equivRealProdCLM.contDiff.comp (contDiff_fst.comp contDiff_snd)).prodMk
-        (L.symm.contDiff.comp (contDiff_snd.comp contDiff_snd)))
-  exact contDiffOn_const.clm_comp
-    (((ω.contDiffOn_hamiltonianOneFormInChartAt_param
-        (ω.contDiffOn_hamiltonianVectorFieldInChartAt hn α hXs)
-        (ω.contDiffOn_hamiltonianVectorFieldInChartAt hn α hXt)).comp hg.contDiffOn
-      (mapsTo_preimage _ _)).clm_comp contDiffOn_const)
+          W} :=
+  contDiffOn_const.clm_comp
+    ((((contDiffOn_const.smulRight (ω.contDiffOn_hamiltonianVectorFieldInChartAt hn α hXs)).add
+        (contDiffOn_const.smulRight (ω.contDiffOn_hamiltonianVectorFieldInChartAt hn α hXt))).comp
+      (Floer.chartTransportEquiv LP L).contDiff.contDiffOn (mapsTo_preimage _ _)).clm_comp
+      contDiffOn_const)
 
 /-- **Coordinate Floer equation under linear chart transport.** For any map `v : ℝ × ℝ → E`, its
 transported coordinate expression `w = fun z ↦ L (v (Complex.equivRealProdCLM z))` satisfies the

@@ -39,7 +39,9 @@ respect to `e`: `c ‖d e v‖² ≤ ω(v, J v)` for a constant `c > 0`.
   embedding `emb : W_emb → ℝ^N` with extension `eM : M → ℝ^N` satisfying
   `‖d (eM ∘ u)‖² ≤ A_e ρ + B_e`
   (`TauCeti.SmoothTwoForm.`
-  `IsNondegenerate.exists_opens_smoothEmbedding_norm_fderiv_sq_le`).
+  `IsNondegenerate.exists_opens_smoothEmbedding_norm_fderiv_sq_le`, and with the supporting chart
+  cover in `TauCeti.SmoothTwoForm.`
+  `IsNondegenerate.exists_opens_smoothEmbedding_chart_cover_norm_fderiv_sq_le`).
 * **Lipschitz bounds where the energy density is bounded.** On a convex set where the density is at
   most `A`, the map `e ∘ u` is Lipschitz with constant `2 (√(A / c) + B)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.lipschitzOnWith_comp_of_floerEnergyDensity_le`).
@@ -315,11 +317,8 @@ private theorem IsNondegenerate.exists_chart_embedding_bound [I.Boundaryless] [T
           (ω.perturbedMFDeriv (Ks p) (Kt p) u z).toLinearMap →
         ‖fderiv ℝ (eM ∘ u) z‖ ^ 2 ≤ A_α * ω.floerEnergyDensity (Ks p) (Kt p) u z + B_α_c := by
   let Kα : Set E := B_α ∩ (extChartAt I α).symm ⁻¹' K
-  have hKα_comp : IsCompact Kα := by
-    have hcl : IsClosed Kα :=
-      ((continuousOn_extChartAt_symm α).mono hB_tgt).preimage_isClosed_of_isClosed
-        hB_comp.isClosed hK.isClosed
-    exact hB_comp.of_isClosed_subset hcl inter_subset_left
+  have hKα_comp : IsCompact Kα :=
+    isCompact_inter_preimage_extChartAt_symm α hB_comp hB_tgt hK.isClosed
   have hKα_tgt : Kα ⊆ (extChartAt I α).target := inter_subset_left.trans hB_tgt
   have hKα_W : C ×ˢ (D ×ˢ ((extChartAt I α).symm '' Kα)) ⊆ W :=
     (prod_mono_right (prod_mono_right (image_mono inter_subset_left))).trans hB_W
@@ -372,6 +371,111 @@ private theorem IsNondegenerate.exists_chart_embedding_bound [I.Boundaryless] [T
   nlinarith [sq_nonneg M_e, norm_nonneg (fderiv ℝ (eM ∘ u) z),
     norm_nonneg (fderiv ℝ (extChartAt I α ∘ u) z)]
 
+/-- **Smooth Euclidean embedding, finite chart cover, and global energy-to-derivative estimate.**
+Refines `TauCeti.SmoothTwoForm.IsNondegenerate.exists_opens_smoothEmbedding_norm_fderiv_sq_le` by
+also exposing the finite precompact chart cover `(α i, u i, b i)` of `K` inside `W_emb` and `W`
+used to construct the bound. -/
+theorem IsNondegenerate.exists_opens_smoothEmbedding_chart_cover_norm_fderiv_sq_le
+    [I.Boundaryless] [T2Space M] (hω : ω.IsNondegenerate)
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {Ks Kt : P → ℝ × ℝ → M → ℝ} {W : Set (P × ((ℝ × ℝ) × M))}
+    {C : Set P} {D : Set (ℝ × ℝ)} {K : Set M} (hW : IsOpen W)
+    (hJ : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+      (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
+    (hXs : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      (⟨q.2.2, ω.hamiltonianVectorField (Ks q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W)
+    (hXt : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      (⟨q.2.2, ω.hamiltonianVectorField (Kt q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W)
+    (hC : IsCompact C) (hD : IsCompact D) (hK : IsCompact K) (hCDKW : C ×ˢ (D ×ˢ K) ⊆ W)
+    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ x ∈ K, (hω.symplecticFormAt x).Tames (J p z x)) :
+    ∃ (W_emb : TopologicalSpace.Opens M) (N : ℕ)
+      (emb : SmoothEmbedding I 𝓘(ℝ, EuclideanSpace ℝ (Fin N)) (⊤ : ℕ∞) W_emb
+        (EuclideanSpace ℝ (Fin N)))
+      (eM : M → EuclideanSpace ℝ (Fin N))
+      (n : ℕ) (α : Fin n → M) (u : Fin n → Set M) (b : Fin n → Set E),
+      K ⊆ (W_emb : Set M) ∧
+      (∀ x (hx : x ∈ (W_emb : Set M)), eM x = emb ⟨x, hx⟩) ∧
+      ContMDiffOn I 𝓘(ℝ, EuclideanSpace ℝ (Fin N)) (⊤ : ℕ∞) eM W_emb ∧
+      (∀ i, IsOpen (u i) ∧ u i ⊆ (W_emb : Set M) ∧ u i ⊆ (extChartAt I (α i)).source ∧
+        IsCompact (b i) ∧ b i ⊆ (extChartAt I (α i)).target ∧
+        (extChartAt I (α i)).symm '' b i ⊆ (W_emb : Set M) ∧
+        C ×ˢ (D ×ˢ ((extChartAt I (α i)).symm '' b i)) ⊆ W ∧
+        extChartAt I (α i) '' u i ⊆ b i) ∧
+      K ⊆ ⋃ i, u i ∧
+      ∃ A_e > 0, ∃ B_e ≥ 0,
+        ∀ ⦃p : P⦄ ⦃u_sol : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄,
+          p ∈ C → z ∈ D → u_sol z ∈ K → MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u_sol z →
+          IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u_sol z))
+            (ω.perturbedMFDeriv (Ks p) (Kt p) u_sol z).toLinearMap →
+          ‖fderiv ℝ (eM ∘ u_sol) z‖ ^ 2 ≤
+            A_e * ω.floerEnergyDensity (Ks p) (Kt p) u_sol z + B_e := by
+  classical
+  obtain ⟨W_emb, hKW, -, N, ⟨emb⟩⟩ := hK.exists_opens_nonempty_smoothEmbedding_euclidean (I := I)
+  let eM : M → EuclideanSpace ℝ (Fin N) :=
+    fun x ↦ if hx : x ∈ (W_emb : Set M) then emb ⟨x, hx⟩ else 0
+  have heM_eq (x : M) (hx : x ∈ (W_emb : Set M)) : eM x = emb ⟨x, hx⟩ := by
+    simp only [eM, hx, ↓reduceDIte]
+  have heM_cmd : ContMDiffOn I 𝓘(ℝ, EuclideanSpace ℝ (Fin N)) (⊤ : ℕ∞) eM W_emb := by
+    intro x hx
+    have hsub : (fun y : W_emb ↦ eM y) = emb := funext fun y ↦ heM_eq y.val y.property
+    exact (contMDiffAt_subtype_iff (U := W_emb) (x := ⟨x, hx⟩) |>.1
+      (hsub ▸ emb.contMDiff.contMDiffAt)).contMDiffWithinAt
+  let : LocallyCompactSpace H := I.isClosedEmbedding.locallyCompactSpace
+  have hW_swap : IsOpen ((fun q : (P × (ℝ × ℝ)) × M ↦ (q.1.1, (q.1.2, q.2))) ⁻¹' W) :=
+    hW.preimage ((continuous_fst.comp continuous_fst).prodMk
+      ((continuous_snd.comp continuous_fst).prodMk continuous_snd))
+  obtain ⟨n, α, u, b, hcov, hsK_cov⟩ :=
+    exists_finite_precompact_chart_cover_of_isOpen_prod (I := I) (hC.prod hD) hK hW_swap
+      (fun ⟨⟨p, z⟩, x⟩ ⟨⟨hp, hz⟩, hx⟩ ↦ hCDKW ⟨hp, hz, hx⟩) W_emb.isOpen hKW
+  have hcov' : ∀ i, IsOpen (u i) ∧ u i ⊆ (W_emb : Set M) ∧ u i ⊆ (extChartAt I (α i)).source ∧
+      IsCompact (b i) ∧ b i ⊆ (extChartAt I (α i)).target ∧
+      (extChartAt I (α i)).symm '' b i ⊆ (W_emb : Set M) ∧
+      C ×ˢ (D ×ˢ ((extChartAt I (α i)).symm '' b i)) ⊆ W ∧
+      extChartAt I (α i) '' u i ⊆ b i := fun i ↦ by
+    obtain ⟨hu_open, hu_V, hu_src, hb_comp, hb_tgt, hb_V, hb_W, hu_im⟩ := hcov i
+    refine ⟨hu_open, hu_V, hu_src, hb_comp, hb_tgt, hb_V, ?_, hu_im⟩
+    rintro ⟨p, z, _⟩ ⟨hp, hz, y, hy, rfl⟩
+    exact hb_W (a := ((p, z), (extChartAt I (α i)).symm y))
+      ⟨⟨hp, hz⟩, mem_image_of_mem (extChartAt I (α i)).symm hy⟩
+  rcases isEmpty_or_nonempty (Fin n) with hn | hn
+  · refine ⟨W_emb, N, emb, eM, n, α, u, b, hKW, heM_eq, heM_cmd, hcov', hsK_cov,
+      1, one_pos, 0, le_rfl, fun _ _ _ _ _ huzK _ _ ↦ ?_⟩
+    obtain ⟨i, -⟩ := mem_iUnion.1 (hsK_cov huzK)
+    exact (hn.false i).elim
+  have hchart : ∀ i : Fin n,
+      ∃ A_i > 0, ∃ B_i ≥ 0,
+        ∀ ⦃p : P⦄ ⦃u_sol : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄,
+          p ∈ C → z ∈ D → u_sol z ∈ K →
+          u_sol z ∈ (extChartAt I (α i)).source → extChartAt I (α i) (u_sol z) ∈ b i →
+          MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u_sol z →
+          IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u_sol z))
+            (ω.perturbedMFDeriv (Ks p) (Kt p) u_sol z).toLinearMap →
+          ‖fderiv ℝ (eM ∘ u_sol) z‖ ^ 2 ≤
+            A_i * ω.floerEnergyDensity (Ks p) (Kt p) u_sol z + B_i := fun i ↦ by
+    obtain ⟨_, _, _, hb_comp, hb_tgt, hb_V, hb_W, _⟩ := hcov' i
+    exact hω.exists_chart_embedding_bound hJ hXs hXt hC hD hK hJt heM_cmd (α i)
+      hb_comp hb_tgt hb_V hb_W
+  choose A_i hAi B_i hBi hbd_i using hchart
+  set A_e := (Finset.univ : Finset (Fin n)).sup' Finset.univ_nonempty A_i
+  set B_e := (Finset.univ : Finset (Fin n)).sup' Finset.univ_nonempty B_i
+  have hAe_pos : 0 < A_e := by
+    obtain ⟨i⟩ := hn
+    exact (hAi i).trans_le (Finset.le_sup' A_i (Finset.mem_univ i))
+  have hBe_nn : 0 ≤ B_e := by
+    obtain ⟨i⟩ := hn
+    exact (hBi i).trans (Finset.le_sup' B_i (Finset.mem_univ i))
+  refine ⟨W_emb, N, emb, eM, n, α, u, b, hKW, heM_eq, heM_cmd, hcov', hsK_cov,
+    A_e, hAe_pos, B_e, hBe_nn, fun p u_sol z hp hz huzK hdiff_u hfl ↦ ?_⟩
+  obtain ⟨i, huzi⟩ := mem_iUnion.1 (hsK_cov huzK)
+  obtain ⟨_, _, hu_src, _, _, _, _, hu_im⟩ := hcov' i
+  have h1 := hbd_i i hp hz huzK (hu_src huzi) (hu_im (mem_image_of_mem _ huzi)) hdiff_u hfl
+  have he_nn : 0 ≤ ω.floerEnergyDensity (Ks p) (Kt p) u_sol z :=
+    floerEnergyDensity_nonneg hω (hJt p hp z hz (u_sol z) huzK) hfl
+  have hA_le : A_i i ≤ A_e := Finset.le_sup' A_i (Finset.mem_univ i)
+  have hB_le : B_i i ≤ B_e := Finset.le_sup' B_i (Finset.mem_univ i)
+  nlinarith
+
 /-- **Smooth Euclidean embedding and global energy-to-derivative estimate.** For a compact subset
 `K ⊆ M` and a compact parameter window `C × D × K ⊆ W` with jointly continuous `J`, `X_{K_s}`,
 `X_{K_t}` on the open set `W`, there exist an open neighbourhood `W_emb ⊇ K`, a smooth embedding
@@ -405,71 +509,9 @@ theorem IsNondegenerate.exists_opens_smoothEmbedding_norm_fderiv_sq_le [I.Bounda
           IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u z))
             (ω.perturbedMFDeriv (Ks p) (Kt p) u z).toLinearMap →
           ‖fderiv ℝ (eM ∘ u) z‖ ^ 2 ≤ A_e * ω.floerEnergyDensity (Ks p) (Kt p) u z + B_e := by
-  classical
-  obtain ⟨W_emb, hKW, -, N, ⟨emb⟩⟩ := hK.exists_opens_nonempty_smoothEmbedding_euclidean (I := I)
-  let eM : M → EuclideanSpace ℝ (Fin N) :=
-    fun x ↦ if hx : x ∈ (W_emb : Set M) then emb ⟨x, hx⟩ else 0
-  have heM_eq (x : M) (hx : x ∈ (W_emb : Set M)) : eM x = emb ⟨x, hx⟩ := by
-    simp only [eM, hx, ↓reduceDIte]
-  have heM_cmd : ContMDiffOn I 𝓘(ℝ, EuclideanSpace ℝ (Fin N)) (⊤ : ℕ∞) eM W_emb := by
-    intro x hx
-    have hsub : (fun y : W_emb ↦ eM y) = emb := funext fun y ↦ heM_eq y.val y.property
-    exact (contMDiffAt_subtype_iff (U := W_emb) (x := ⟨x, hx⟩) |>.1
-      (hsub ▸ emb.contMDiff.contMDiffAt)).contMDiffWithinAt
-  have hW_swap : IsOpen ((fun q : (P × (ℝ × ℝ)) × M ↦ (q.1.1, (q.1.2, q.2))) ⁻¹' W) :=
-    hW.preimage ((continuous_fst.comp continuous_fst).prodMk
-      ((continuous_snd.comp continuous_fst).prodMk continuous_snd))
-  obtain ⟨U₁, U₂, -, hU₂, hCDU₁, hKU₂, hprod⟩ :=
-    generalized_tube_lemma (hC.prod hD) hK hW_swap fun ⟨⟨p, z⟩, x⟩ ⟨⟨hp, hz⟩, hx⟩ ↦
-      hCDKW ⟨hp, hz, hx⟩
-  let : LocallyCompactSpace H := I.isClosedEmbedding.locallyCompactSpace
-  obtain ⟨n, -, α, u, b, hcov, hsK_cov⟩ :=
-    exists_finite_precompact_chart_cover_of_isOpen_cover (I := I) hK
-      (V := fun _ : Unit ↦ U₂ ∩ W_emb) (fun _ ↦ hU₂.inter W_emb.isOpen)
-      fun x hx ↦ mem_iUnion.2 ⟨(), hKU₂ hx, hKW hx⟩
-  rcases isEmpty_or_nonempty (Fin n) with hn | hn
-  · refine ⟨W_emb, N, emb, eM, hKW, heM_eq, heM_cmd, 1, one_pos, 0, le_rfl,
-      fun _ _ _ _ _ huzK _ _ ↦ ?_⟩
-    obtain ⟨i, -⟩ := mem_iUnion.1 (hsK_cov huzK)
-    exact (hn.false i).elim
-  have hchart : ∀ i : Fin n,
-      ∃ A_i > 0, ∃ B_i ≥ 0,
-        ∀ ⦃p : P⦄ ⦃u_sol : ℝ × ℝ → M⦄ ⦃z : ℝ × ℝ⦄,
-          p ∈ C → z ∈ D → u_sol z ∈ K →
-          u_sol z ∈ (extChartAt I (α i)).source → extChartAt I (α i) (u_sol z) ∈ b i →
-          MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u_sol z →
-          IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u_sol z))
-            (ω.perturbedMFDeriv (Ks p) (Kt p) u_sol z).toLinearMap →
-          ‖fderiv ℝ (eM ∘ u_sol) z‖ ^ 2 ≤
-            A_i * ω.floerEnergyDensity (Ks p) (Kt p) u_sol z + B_i := by
-    intro i
-    have hi := hcov i
-    refine hω.exists_chart_embedding_bound hJ hXs hXt hC hD hK hJt heM_cmd (α i)
-      hi.2.2.2.2.1 hi.2.2.2.2.2.1 ?_ ?_
-    · rintro _ ⟨y, hy, rfl⟩
-      exact (hi.2.2.2.2.2.2.1 hy).2
-    · rintro ⟨p, z, _⟩ ⟨hp, hz, y, hy, rfl⟩
-      exact @hprod ((p, z), (extChartAt I (α i)).symm y)
-        ⟨hCDU₁ ⟨hp, hz⟩, (hi.2.2.2.2.2.2.1 hy).1⟩
-  choose A_i hAi B_i hBi hbd_i using hchart
-  set A_e := (Finset.univ : Finset (Fin n)).sup' Finset.univ_nonempty A_i
-  set B_e := (Finset.univ : Finset (Fin n)).sup' Finset.univ_nonempty B_i
-  have hAe_pos : 0 < A_e := by
-    obtain ⟨i⟩ := hn
-    exact (hAi i).trans_le (Finset.le_sup' A_i (Finset.mem_univ i))
-  have hBe_nn : 0 ≤ B_e := by
-    obtain ⟨i⟩ := hn
-    exact (hBi i).trans (Finset.le_sup' B_i (Finset.mem_univ i))
-  refine ⟨W_emb, N, emb, eM, hKW, heM_eq, heM_cmd, A_e, hAe_pos, B_e, hBe_nn,
-    fun p u_sol z hp hz huzK hdiff_u hfl ↦ ?_⟩
-  obtain ⟨i, huzi⟩ := mem_iUnion.1 (hsK_cov huzK)
-  have h1 := hbd_i i hp hz huzK ((hcov i).2.2.2.1 huzi)
-    ((hcov i).2.2.2.2.2.2.2 (mem_image_of_mem _ huzi)) hdiff_u hfl
-  have he_nn : 0 ≤ ω.floerEnergyDensity (Ks p) (Kt p) u_sol z :=
-    floerEnergyDensity_nonneg hω (hJt p hp z hz (u_sol z) huzK) hfl
-  have hA_le : A_i i ≤ A_e := Finset.le_sup' A_i (Finset.mem_univ i)
-  have hB_le : B_i i ≤ B_e := Finset.le_sup' B_i (Finset.mem_univ i)
-  nlinarith
+  obtain ⟨W_emb, N, emb, eM, _, _, _, _, hKW, heM_eq, heM_cmd, -, -, hbd⟩ :=
+    hω.exists_opens_smoothEmbedding_chart_cover_norm_fderiv_sq_le hW hJ hXs hXt hC hD hK hCDKW hJt
+  exact ⟨W_emb, N, emb, eM, hKW, heM_eq, heM_cmd, hbd⟩
 
 end SmoothEmbedding
 

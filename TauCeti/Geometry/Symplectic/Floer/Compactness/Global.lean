@@ -8,11 +8,11 @@ module
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.EnergyQuantization
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
-import TauCeti.Geometry.Manifold.ExtChartAt.CompactConvergence
 import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence.Manifold
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Topology.ContinuousMap.Ascoli
+import TauCeti.Topology.ContinuousMap.CompactConvergence.Basic
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -73,6 +73,15 @@ section Compactness
 
 variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
 
+/-- From `‖d‖ ^ 2 ≤ A * ρ + B` and `ρ ≤ M`, deduces `‖d‖ ≤ √(A * max M 0 + B)`. -/
+private theorem norm_le_sqrt_of_sq_le_add {F : Type*} [NormedAddCommGroup F] {d : F}
+    {A B ρ M : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (hd : ‖d‖ ^ 2 ≤ A * ρ + B) (hρ : ρ ≤ M) :
+    ‖d‖ ≤ √(A * max M 0 + B) := by
+  have hM : ρ ≤ max M 0 := hρ.trans (le_max_left _ _)
+  have hsq : ‖d‖ ^ 2 ≤ (√(A * max M 0 + B)) ^ 2 := by
+    rw [Real.sq_sqrt (by positivity)]; nlinarith
+  nlinarith [norm_nonneg d, Real.sqrt_nonneg (A * max M 0 + B)]
+
 /-- Eventual uniform derivative bound in a chart `extChartAt I α` on a compact `C' ⊆ U₀` mapped by
 `v` into `(extChartAt I α).source`, from compact-open convergence in `C(U₀, M)` and energy-density
 bounds. -/
@@ -128,9 +137,8 @@ private theorem chart_eventually_norm_fderiv_le [I.Boundaryless] [T2Space M]
     exact hn (x := ⟨y, hC'U₀ hy⟩) hy
   -- Intersect `Sα` with `e.symm ⁻¹' K` to apply the parametric chart energy–derivative bound.
   let Kα' : Set E := Sα ∩ e.symm ⁻¹' K
-  have hKα'_comp : IsCompact Kα' := hSα_comp.of_isClosed_subset
-    (((continuousOn_extChartAt_symm α).mono hSα_tgt).preimage_isClosed_of_isClosed
-      hSα_comp.isClosed hK.isClosed) inter_subset_left
+  have hKα'_comp : IsCompact Kα' :=
+    isCompact_inter_preimage_extChartAt_symm α hSα_comp hSα_tgt hK.isClosed
   have hKα'_tgt : Kα' ⊆ e.target := inter_subset_left.trans hSα_tgt
   have hXsM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKs
   have hXtM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKt
@@ -154,12 +162,8 @@ private theorem chart_eventually_norm_fderiv_le [I.Boundaryless] [T2Space M]
     ((hu n).mdifferentiableOn (by norm_num)).mdifferentiableAt (hΩ.mem_nhds hyΩ)
   have hmemKα' : e (u n y) ∈ Kα' :=
     ⟨hUα_Sα _ (hn hy), by rw [mem_preimage, e.left_inv (hn hy).1]; exact huK n hyΩ⟩
-  have h1 := (hcbd (hpC n) (hΩD hyΩ) (hn hy).1 hmemKα' hdiff (hfl n y hyΩ)).1
-  have h2 : ω.floerEnergyDensity (Ks (p n)) (Kt (p n)) (u n) y ≤ max Me 0 :=
-    (hMe n y hy).trans (le_max_left _ _)
-  have hsq : ‖fderiv ℝ (e ∘ u n) y‖ ^ 2 ≤ (√(A_α * max Me 0 + B_α)) ^ 2 := by
-    rw [Real.sq_sqrt (by positivity)]; nlinarith
-  nlinarith [norm_nonneg (fderiv ℝ (e ∘ u n) y), Real.sqrt_nonneg (A_α * max Me 0 + B_α)]
+  exact norm_le_sqrt_of_sq_le_add hAα.le hBα
+    (hcbd (hpC n) (hΩD hyΩ) (hn hy).1 hmemKα' hdiff (hfl n y hyΩ)).1 (hMe n y hy)
 
 /-- **Global Gromov–Floer compactness on a manifold over a compact parameter window.** Let `ω` be
 a nondegenerate two-form on a Hausdorff boundaryless manifold `M` modelled on a finite-dimensional
@@ -272,13 +276,12 @@ theorem exists_pos_forall_tendsto_subseq_off_finset_of_isCompact
     refine equicontinuousOn_of_forall_isCompact_norm_fderiv_le hU₀ heM_diff fun C' hC' hC'U₀ ↦ ?_
     obtain ⟨M₀, hM₀⟩ := he_bd C' hC' hC'U₀
     refine ⟨√(A_e * max M₀ 0 + B_e), fun n y hy ↦ ?_⟩
-    have h1 := hbd_e (hpC (ψ₁ n)) (hΩD (hC'U₀ hy).1) (huK (ψ₁ n) (hC'U₀ hy).1)
-      (((hu (ψ₁ n)).mdifferentiableOn (by norm_num)).mdifferentiableAt (hΩ.mem_nhds (hC'U₀ hy).1))
-      (hfl (ψ₁ n) y (hC'U₀ hy).1)
-    have h2 : e (ψ₁ n) y ≤ max M₀ 0 := (hM₀ (χ₁ n) y hy).trans (le_max_left _ _)
-    have hsq : ‖fderiv ℝ (eM ∘ u (ψ₁ n)) y‖ ^ 2 ≤ (√(A_e * max M₀ 0 + B_e)) ^ 2 := by
-      rw [Real.sq_sqrt (by positivity)]; nlinarith
-    nlinarith [norm_nonneg (fderiv ℝ (eM ∘ u (ψ₁ n)) y), Real.sqrt_nonneg (A_e * max M₀ 0 + B_e)]
+    exact norm_le_sqrt_of_sq_le_add hAe.le hBe
+      (hbd_e (hpC (ψ₁ n)) (hΩD (hC'U₀ hy).1) (huK (ψ₁ n) (hC'U₀ hy).1)
+        (((hu (ψ₁ n)).mdifferentiableOn (by norm_num)).mdifferentiableAt
+          (hΩ.mem_nhds (hC'U₀ hy).1))
+        (hfl (ψ₁ n) y (hC'U₀ hy).1))
+      (hM₀ (χ₁ n) y hy)
   have he_cont_K : ContinuousOn eM K := heM_cmd.continuousOn.mono hKW
   obtain ⟨χ₂, hχ₂, G, hGc, hconvG⟩ :=
     TauCeti.exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hU₀ hequi
@@ -331,8 +334,9 @@ theorem exists_pos_forall_tendsto_subseq_off_finset_of_isCompact
   refine ⟨φ, p₀, Z, v, hvc, hφ, hp₀, hplim₁.comp hχ₂.tendsto_atTop, hZΩ, hcard,
     fun z hz ε hε ↦ (hχ₁.comp hχ₂).tendsto_atTop.eventually (hconc z hz ε hε),
     he_bd_φ, hvK, hlim_M, hpt, fun α C' hC' hC'U₀ hvα ↦ ?_⟩
-  refine ⟨ContinuousMap.tendstoUniformlyOn_extChartAt_comp_of_tendsto_domRestrict
-    (fun n ↦ (hu (φ n)).continuousOn.mono sdiff_subset) hvc hlim_M α hC' hC'U₀ hvα, ?_⟩
+  refine ⟨ContinuousMap.tendstoUniformlyOn_comp_of_tendsto_domRestrict
+    (fun n ↦ (hu (φ n)).continuousOn.mono sdiff_subset) hvc hlim_M (isOpen_extChartAt_source α)
+    (continuousOn_extChartAt α) hC' hC'U₀ hvα, ?_⟩
   exact hω.chart_eventually_norm_fderiv_le hW hKs hKt hJ hC hD hK hCDKW hJt hΩ hΩD sdiff_subset
     (fun n ↦ hpC (φ n)) (fun n ↦ hu (φ n)) (fun n ↦ hfl (φ n)) (fun n ↦ huK (φ n)) hvc hlim_M
     he_bd_φ α hC' hC'U₀ hvα

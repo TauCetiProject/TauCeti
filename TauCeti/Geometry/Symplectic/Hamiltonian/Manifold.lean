@@ -811,7 +811,9 @@ theorem contMDiffOn_hamiltonianVectorField_prod {E₁ H₁ P E₂ H₂ Q : Type*
   have hH' : ContMDiffOn ((J₁.prod J₂).prod I) 𝓘(ℝ) (n + 1)
       (Function.uncurry (fun pq : P × Q ↦ H pq.1 pq.2)) (a ⁻¹' W) :=
     (hH.comp a.contMDiff.contMDiffOn (Set.mapsTo_preimage (⇑a) W)).congr
-      (fun q _ ↦ by simp [a]; rfl)
+      (fun q _ ↦ by
+        dsimp only [Function.comp_apply, Function.uncurry_def, a]
+        rw [Diffeomorph.prodAssocOfModels_apply])
   refine ((h.contMDiffOn_hamiltonianVectorField_uncurry (J := J₁.prod J₂) hn
       (hW.preimage a.continuous) hH').comp
       (a.symm.contMDiff.of_le le_self_add).contMDiffOn

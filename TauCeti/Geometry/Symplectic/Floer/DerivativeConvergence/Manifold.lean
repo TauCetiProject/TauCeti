@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.Topology.UniformSpace.CompactConvergence
 import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 
 /-!
@@ -101,16 +102,12 @@ private theorem chart_c1_on_ball {P : Type*} [NormedAddCommGroup P] [NormedSpace
   have hXtM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 1) (by simp) hW hKt
   let LP : P ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ P)) := toEuclidean
   let LE : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := toEuclidean
-  let g : EuclideanSpace ℝ (Fin (Module.finrank ℝ P)) ×
-      (ℂ × EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) → P × ((ℝ × ℝ) × E) :=
-    fun q ↦ (LP.symm q.1, (eℂ q.2.1, LE.symm q.2.2))
-  have hg : ContDiff ℝ 1 g := (LP.symm.contDiff.comp contDiff_fst).prodMk
-    ((eℂ.contDiff.comp (contDiff_fst.comp contDiff_snd)).prodMk
-      (LE.symm.contDiff.comp (contDiff_snd.comp contDiff_snd)))
   have hW' : IsOpen {q : EuclideanSpace ℝ (Fin (Module.finrank ℝ P)) ×
       (ℂ × EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) | LE.symm q.2.2 ∈ e.target ∧
-        (LP.symm q.1, (eℂ q.2.1, e.symm (LE.symm q.2.2))) ∈ W} :=
-    (Floer.isOpen_preimage_prod_extChartAt_symm (I := I) α hW).preimage hg.continuous
+        (LP.symm q.1, (eℂ q.2.1, e.symm (LE.symm q.2.2))) ∈ W} := by
+    simpa only [preimage_ofPred_eq, Floer.chartTransportEquiv_apply] using
+      (isOpen_preimage_prod_extChartAt_symm (I := I) α hW).preimage
+        (Floer.chartTransportEquiv LP LE).continuous
   have hJ' := Floer.contDiffOn_transportedAlmostComplexInChartAt (n := 1) (by simp) α LP LE hJ
   have hX' :=
     ω.contDiffOn_transportedHamiltonianOneFormInChartAt (n := 1) (by simp) α LP LE hXsM hXtM
