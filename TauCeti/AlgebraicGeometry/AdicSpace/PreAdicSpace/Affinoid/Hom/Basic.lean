@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Plus
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Stalk.GlobalSections
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Integral
 public import Mathlib.CategoryTheory.HomCongr
@@ -25,8 +26,12 @@ No sheaf condition is required for this direction of the correspondence.
 More generally, a morphism `f : X ⟶ Spa(A,A⁺)` from any object of `𝒱^pre` has a global-sections
 map `A → 𝒪_X(X)` (`TauCeti.ValuationSpectrum.presentationLimitAppTop`). For an affinoid source
 `X = Spa(B,B⁺)` it is the recovered map `A → B` up to the identification of `B` with the global
-sections, so the two have the same kernel. This is the form in which the factorisation property of
-closed immersions is stated for sources that are not affinoid.
+sections, so the two have the same kernel. This is the form in which the factorisation property
+of closed immersions is stated for sources that are not affinoid.
+
+The global-sections map is natural in the source (`presentationLimitAppTop_comp`) and carries
+`A⁺` into the integral sections `𝒪_X⁺(X)` (`presentationLimitAppTop_mem_plus`). Conversely, an
+integral global section of `Spa(B,B⁺)` lies in `B⁺` (`presentationLimitPreAdicSpaceTopIso_hom_mem`).
 
 ## References
 
@@ -74,6 +79,16 @@ theorem presentationLimitPreAdicSpaceTopIso_inv :
     (presentationLimitPresheaf_obj P Aplus (Opposite.op ⊤)).symm]
   rfl
 
+/-- The global-sections isomorphism of `Spa(A, A⁺)` followed by its inverse, applied through the
+underlying ring maps, is the identity. -/
+theorem presentationLimitPreAdicSpaceTopIso_hom_inv_id_apply
+    (s : ((presentationLimitPreAdicSpace P Aplus hAplus hP).toPresheafedSpace.presheaf.obj
+      (Opposite.op ⊤)).obj) :
+    (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv.val
+      ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).hom.val s) = s :=
+  -- The underlying ring map `.val` of a `TopCommRingCat` morphism is its coercion to a function.
+  Iso.hom_inv_id_apply (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP) s
+
 -- This equality compares the native topological-ring isomorphism with the coefficient map
 -- used by the stalk-valuation API; the presheaf-object equalities supply the transports.
 private theorem topIso_inv_comp_germ
@@ -112,18 +127,32 @@ theorem presentationLimitAppTop_def
           (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).val :=
   (rfl)
 
-/-- The global-sections map of `h ≫ f` is that of `f` followed by restriction of sections
-along `h`. -/
+/-- The global-sections map of a morphism `f` into `Spa(A, A⁺)` is `f^♯` precomposed with the
+identification of `A` with the global sections of `Spa(A, A⁺)`. -/
+theorem presentationLimitAppTop_eq_appTop_comp
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) :
+    presentationLimitAppTop P Aplus hAplus hP f =
+      f.appTop.comp (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv.val := by
+  rw [presentationLimitAppTop_def, PreAdicSpace.Hom.appTop_def]
+  -- A composite in `TopCommRingCat` is by definition the composite of the underlying ring maps.
+  rfl
+
+/-- The global-sections map of `h ≫ f` is that of `f` followed by `h^♯`. -/
 @[simp]
-theorem presentationLimitAppTop_comp_apply {W : PreAdicSpace.{u}} (h : W ⟶ X)
-    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (a : A) :
-    presentationLimitAppTop P Aplus hAplus hP (h ≫ f) a =
-      (TopCommRingCat.isCompleteSeparated.ι.map
-        (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map h).op)).val
-        (presentationLimitAppTop P Aplus hAplus hP f a) :=
-  congrArg (fun k ↦ ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫ k).val a)
-    ((PreAdicSpace.forgetToPresheafedSpace.op ⋙ PresheafedSpace.Γ ⋙
-      TopCommRingCat.isCompleteSeparated.ι).map_comp f.op h.op)
+theorem presentationLimitAppTop_comp {W : PreAdicSpace.{u}} (h : W ⟶ X)
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) :
+    presentationLimitAppTop P Aplus hAplus hP (h ≫ f) =
+      h.appTop.comp (presentationLimitAppTop P Aplus hAplus hP f) := by
+  rw [presentationLimitAppTop_eq_appTop_comp, presentationLimitAppTop_eq_appTop_comp,
+    PreAdicSpace.Hom.appTop_comp, RingHom.comp_assoc]
+
+/-- The identification of `A` with the global sections of `Spa(A, A⁺)` is the global-sections
+map of the identity. -/
+@[simp]
+theorem presentationLimitAppTop_id :
+    presentationLimitAppTop P Aplus hAplus hP (𝟙 _) =
+      (presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv.val := by
+  rw [presentationLimitAppTop_eq_appTop_comp, PreAdicSpace.Hom.appTop_id, RingHom.id_comp]
 
 /-- Precomposing a morphism into `Spa(A, A⁺)` with any morphism `h : W ⟶ X` can only enlarge the
 kernel of its global-sections map, since the global-sections map of `h ≫ f` is that of `f`
@@ -134,7 +163,7 @@ theorem ker_presentationLimitAppTop_le_comp {W : PreAdicSpace.{u}} (h : W ⟶ X)
       RingHom.ker (presentationLimitAppTop P Aplus hAplus hP (h ≫ f)) := by
   intro a ha
   rw [RingHom.mem_ker] at ha ⊢
-  rw [presentationLimitAppTop_comp_apply, ha]
+  rw [presentationLimitAppTop_comp, RingHom.comp_apply, ha]
   exact map_zero _
 
 /-- Taking the germ of the global pullback of a coefficient is the same as pulling back its
@@ -179,6 +208,30 @@ theorem base_eq_comap_presentationLimitAppTop
       rw [← presentationLimitAppTop_comp_germ]
       exact congrFun (comap_comp (presentationLimitAppTop P Aplus hAplus hP f)
         (X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom) (X.stalkValuation x)
+
+/-- A coefficient has value at most `1` at the image of a point `x` exactly when the germ at `x`
+of its global pullback has stalk value at most `1`. -/
+theorem base_vle_one_iff_germ_presentationLimitAppTop
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) (x : X) (a : A) :
+    (f.base x : spa Aplus).val.toValuativeRel.vle a 1 ↔
+      (X.stalkValuation x).toValuativeRel.vle
+        ((X.toRingPresheafedSpace.presheaf.germ ⊤ x (Opens.mem_top x)).hom
+          (presentationLimitAppTop P Aplus hAplus hP f a)) 1 := by
+  rw [base_eq_comap_presentationLimitAppTop, comap_vle]
+  -- The source section ring is also the section ring of its ring-valued presheaf, but `rw`
+  -- does not unfold the forgetful functor enough to identify the carrier of the inner comap.
+  -- The two sides then differ only in that carrier.
+  erw [comap_vle, map_one, map_one]
+  exact Iff.rfl
+
+/-- Pullback on global sections carries the plus ring of the target pair into the integral
+sections of the source. No sheaf condition on either space is required. -/
+theorem presentationLimitAppTop_mem_plus
+    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) {a : A} (ha : a ∈ Aplus) :
+    presentationLimitAppTop P Aplus hAplus hP f a ∈ X.plusSubring ⊤ :=
+  PreAdicSpace.mem_plusSubring_iff.mpr fun x _ ↦
+    (base_vle_one_iff_germ_presentationLimitAppTop P Aplus hAplus hP f x a).mp
+      (((mem_spa_iff Aplus (f.base x : spa Aplus).val).mp (f.base x : spa Aplus).property).2 a ha)
 
 end AppTop
 
@@ -353,6 +406,26 @@ theorem presentationLimitHomRingHom_comp
   exact congrArg (fun k ↦ ((forget₂ _root_.TopCommRingCat CommRingCat).map k).hom) htop
 
 variable [IsHuberRing B]
+
+/-- **Integral global sections of `Spa(B, B⁺)` lie in `B⁺`**: a global section of the
+spectrum of a complete Hausdorff Huber pair whose value at every point is at most `1` is, under
+the identification of the global sections with `B`, an element of `B⁺`. -/
+theorem presentationLimitPreAdicSpaceTopIso_hom_mem
+    (hopen : IsOpen (Bplus : Set B)) [IsIntegrallyClosedIn Bplus B]
+    {s : ((presentationLimitPreAdicSpace P' Bplus hBplus hP').toPresheafedSpace.presheaf.obj
+      (Opposite.op ⊤)).obj}
+    (hs : s ∈ (presentationLimitPreAdicSpace P' Bplus hBplus hP').plusSubring ⊤) :
+    (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').hom.val s ∈ Bplus := by
+  apply mem_of_forall_vle_one hopen
+  intro v hv
+  let x : presentationLimitPreAdicSpace P' Bplus hBplus hP' := ⟨v, hv⟩
+  have hx := PreAdicSpace.mem_plusSubring_iff.mp hs x (Opens.mem_top x)
+  rw [← presentationLimitPreAdicSpaceTopIso_hom_inv_id_apply P' Bplus hBplus hP' s,
+    ← presentationLimitAppTop_id] at hx
+  -- The identity acts trivially on points and the point `x` has underlying valuation `v`, so the
+  -- left side of `base_vle_one_iff_germ_presentationLimitAppTop` at `𝟙 _` and `x` is the goal.
+  exact (base_vle_one_iff_germ_presentationLimitAppTop P' Bplus hBplus hP' (𝟙 _) x _).mpr hx
+
 /-- The recovered ring map carries the source plus ring into the target plus ring when the
 latter is open and integrally closed. -/
 theorem presentationLimitHomRingHom_mem_plus
@@ -360,13 +433,9 @@ theorem presentationLimitHomRingHom_mem_plus
     (f : presentationLimitPreAdicSpace P' Bplus hBplus hP' ⟶
       presentationLimitPreAdicSpace P Aplus hAplus hP) {a : A} (ha : a ∈ Aplus) :
     presentationLimitHomRingHom P Aplus hAplus hP P' Bplus hBplus hP' f a ∈ Bplus := by
-  apply mem_of_forall_vle_one hopen
-  intro v hv
-  let x : presentationLimitPreAdicSpace P' Bplus hBplus hP' := ⟨v, hv⟩
-  have hx := ((mem_spa_iff Aplus (f.base x : spa Aplus).val).mp (f.base x : spa Aplus).property).2 a
-      ha
-  rw [base_eq_comap_presentationLimitHomRingHom, comap_vle, map_one] at hx
-  exact hx
+  rw [presentationLimitHomRingHom_eq_comp_presentationLimitAppTop, RingHom.comp_apply]
+  exact presentationLimitPreAdicSpaceTopIso_hom_mem P' Bplus hBplus hP' hopen
+    (presentationLimitAppTop_mem_plus P Aplus hAplus hP f ha)
 
 variable [IsHuberRing A]
 /-- A morphism between the pre-adic spectra of complete Hausdorff Huber pairs determines a
