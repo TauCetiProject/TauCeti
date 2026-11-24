@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.RelativeNorm
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.UnitProOrder
+import TauCeti.Algebra.Module.NatInt
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -45,7 +46,9 @@ Bernstein's notes onto `V^U`.
   `e_K (σ k v) = e_K v` and `σ k (e_K v) = e_K v`.
 * `Representation.ker_smoothAverage`: the kernel of `e_K` is the span of the vectors `σ k x - x`.
 * `Representation.IntertwiningMap.map_smoothAverage`: `e_K` commutes with intertwining maps.
-* `Representation.smoothAverage_comp_smoothAverage_subgroup`,
+* `Representation.smoothAverage_smoothAverage_subgroup`,
+  `Representation.smoothAverage_subgroup_smoothAverage`,
+  `Representation.smoothAverage_comp_smoothAverage_subgroup`,
   `Representation.smoothAverage_subgroup_comp_smoothAverage`: for a compact subgroup `H` of
   invertible pro-order, `e_K e_H = e_H e_K = e_K`.
 * `Representation.smoothAverage_eq_averageMap`: for a finite group of invertible order (with any
@@ -65,11 +68,6 @@ namespace Representation
 
 variable {A K V W : Type*} [CommRing A] [Group K] [AddCommGroup V] [Module A V]
   [AddCommGroup W] [Module A W]
-
-/-- Dividing `n • v` by a natural number `n` that is a unit of `A` gives back `v`. -/
-private theorem inverse_natCast_smul_nsmul {n : ℕ} (hn : IsUnit (n : A)) (v : V) :
-    Ring.inverse (n : A) • n • v = v := by
-  rw [← Nat.cast_smul_eq_nsmul A, smul_smul, Ring.inverse_mul_cancel _ hn, one_smul]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
@@ -163,7 +161,7 @@ theorem smoothAverage_apply_of_mem_invariants {v : V} (hv : v ∈ invariants σ)
     σ.smoothAverage hK v = v := by
   have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
   rw [σ.smoothAverage_apply_eq_relNorm hK hH le_rfl, relNorm_apply_of_forall_apply_eq σ hv,
-    inverse_natCast_smul_nsmul (hK.isUnit_index hH)]
+    Ring.inverse_natCast_smul_nsmul (hK.isUnit_index hH)]
 
 /-- The averaging projector is a projection onto the invariants. -/
 theorem isProj_smoothAverage : LinearMap.IsProj (invariants σ) (σ.smoothAverage hK) :=
@@ -197,7 +195,7 @@ theorem smoothAverage_apply_sub_mem_ker (v : V) :
   have hH := IsSmooth.isOpen_stabilizer (ρ := σ) v
   have h := Submodule.smul_mem _ (Ring.inverse ((σ.stabilizer v).index : A))
     (relNorm_sub_index_nsmul_mem (ρ := σ) (H := σ.stabilizer v) v)
-  rwa [smul_sub, inverse_natCast_smul_nsmul (hK.isUnit_index hH),
+  rwa [smul_sub, Ring.inverse_natCast_smul_nsmul (hK.isUnit_index hH),
     ← σ.smoothAverage_apply_eq_relNorm hK hH le_rfl] at h
 
 /-- The kernel of the averaging projector is the span of the vectors `σ k x - x`. -/
@@ -221,11 +219,10 @@ theorem IntertwiningMap.map_smoothAverage {ρ : Representation A K W} [IsSmooth 
 /-- **Nested averages.** For a compact subgroup `H` of invertible pro-order, averaging over `H` and
 then over `K` is averaging over `K`. -/
 @[simp]
-theorem smoothAverage_comp_smoothAverage_subgroup (H : Subgroup K) [CompactSpace H]
-    (hH : TauCeti.HasUnitProOrder A H) :
-    σ.smoothAverage hK ∘ₗ smoothAverage (σ.comp H.subtype) hH = σ.smoothAverage hK := by
-  ext v
-  rw [LinearMap.comp_apply, ← sub_eq_zero, ← map_sub, ← LinearMap.mem_ker, ker_smoothAverage]
+theorem smoothAverage_smoothAverage_subgroup (H : Subgroup K) [CompactSpace H]
+    (hH : TauCeti.HasUnitProOrder A H) (v : V) :
+    σ.smoothAverage hK (smoothAverage (σ.comp H.subtype) hH v) = σ.smoothAverage hK v := by
+  rw [← sub_eq_zero, ← map_sub, ← LinearMap.mem_ker, ker_smoothAverage]
   refine Submodule.span_mono ?_ (smoothAverage_apply_sub_mem_ker (σ.comp H.subtype) hH v)
   rintro _ ⟨⟨h, x⟩, rfl⟩
   exact ⟨⟨h, x⟩, rfl⟩
@@ -233,12 +230,25 @@ theorem smoothAverage_comp_smoothAverage_subgroup (H : Subgroup K) [CompactSpace
 /-- **Nested averages.** For a compact subgroup `H` of invertible pro-order, averaging over `K` and
 then over `H` is averaging over `K`. -/
 @[simp]
+theorem smoothAverage_subgroup_smoothAverage (H : Subgroup K) [CompactSpace H]
+    (hH : TauCeti.HasUnitProOrder A H) (v : V) :
+    smoothAverage (σ.comp H.subtype) hH (σ.smoothAverage hK v) = σ.smoothAverage hK v :=
+  smoothAverage_apply_of_mem_invariants (σ.comp H.subtype) hH
+    fun h ↦ σ.smoothAverage_apply_mem_invariants hK v h
+
+/-- **Nested averages**, as an identity of linear maps: `e_K ∘ e_H = e_K`. -/
+@[simp]
+theorem smoothAverage_comp_smoothAverage_subgroup (H : Subgroup K) [CompactSpace H]
+    (hH : TauCeti.HasUnitProOrder A H) :
+    σ.smoothAverage hK ∘ₗ smoothAverage (σ.comp H.subtype) hH = σ.smoothAverage hK :=
+  LinearMap.ext (σ.smoothAverage_smoothAverage_subgroup hK H hH)
+
+/-- **Nested averages**, as an identity of linear maps: `e_H ∘ e_K = e_K`. -/
+@[simp]
 theorem smoothAverage_subgroup_comp_smoothAverage (H : Subgroup K) [CompactSpace H]
     (hH : TauCeti.HasUnitProOrder A H) :
-    smoothAverage (σ.comp H.subtype) hH ∘ₗ σ.smoothAverage hK = σ.smoothAverage hK := by
-  ext v
-  exact smoothAverage_apply_of_mem_invariants (σ.comp H.subtype) hH
-    fun h ↦ σ.smoothAverage_apply_mem_invariants hK v h
+    smoothAverage (σ.comp H.subtype) hH ∘ₗ σ.smoothAverage hK = σ.smoothAverage hK :=
+  LinearMap.ext (σ.smoothAverage_subgroup_smoothAverage hK H hH)
 
 end Compact
 

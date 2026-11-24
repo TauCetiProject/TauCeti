@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.Algebra.Module.NatInt
 import TauCeti.GroupTheory.Coset.Basic
 
 /-!
@@ -215,8 +216,11 @@ theorem relNorm_apply_eq_relIndex_nsmul_relNorm_apply {H' : Subgroup G} [Fintype
   have key := Subgroup.sum_out_smul_eq_relIndex_nsmul hle (m := x) fun h hh ↦
     (hsmul h x).trans (hx ⟨h, hh⟩)
   simp only [hsmul] at key
-  rw [relNorm_apply, relNorm_apply]
-  convert key
+  -- `key` sums over the instances `Subgroup.fintypeQuotientOfFiniteIndex`; any two `Fintype`
+  -- instances on a type are equal, so replace the given ones by them.
+  have e' : ‹Fintype (G ⧸ H')› = Subgroup.fintypeQuotientOfFiniteIndex := Subsingleton.elim _ _
+  have e : ‹Fintype (G ⧸ H)› = Subgroup.fintypeQuotientOfFiniteIndex := Subsingleton.elim _ _
+  rw [relNorm_apply, relNorm_apply, e', e, key]
 
 end FixedVectors
 
@@ -282,11 +286,10 @@ the same vector for `H'` and for `H`. -/
 theorem inverse_index_smul_relNorm_apply_of_le (hle : H' ≤ H) (hu : IsUnit (H'.index : R))
     {x : V} (hx : ∀ h : H, ρ h x = x) :
     Ring.inverse (H'.index : R) • relNorm ρ H' x = Ring.inverse (H.index : R) • relNorm ρ H x := by
-  rw [relNorm_apply_eq_relIndex_nsmul_relNorm_apply ρ hle hx, ← Subgroup.relIndex_mul_index hle,
-    Nat.cast_mul] at *
+  rw [← Subgroup.relIndex_mul_index hle, Nat.cast_mul] at hu
   have hr := (IsUnit.mul_iff.1 hu).1
-  rw [← Nat.cast_smul_eq_nsmul R, smul_smul, Ring.inverse_mul (Or.inl hr),
-    Ring.inverse_mul_cancel_right _ _ hr]
+  rw [relNorm_apply_eq_relIndex_nsmul_relNorm_apply ρ hle hx, ← Subgroup.relIndex_mul_index hle,
+    Nat.cast_mul, Ring.inverse_mul (Or.inl hr), mul_smul, Ring.inverse_natCast_smul_nsmul hr]
 
 end Tower
 
