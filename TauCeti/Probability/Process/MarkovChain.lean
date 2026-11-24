@@ -57,7 +57,8 @@ along it, so no canonical sample space is imposed on users.
   `TauCeti.Probability.markovChainLaw_dirac_ae_apply_zero` — started at `a₀`, it is almost surely
   at `a₀` at time zero.
 * `MeasureTheory.Measure.markovChainLaw_eq_comp` — the path law with initial law `ν` is the path-law
-  kernel integrated against `ν`.
+  kernel integrated against `ν`. Consequently the path law is additive in a countable sum of initial
+  measures (`MeasureTheory.Measure.markovChainLaw_sum`).
 * `MeasureTheory.Measure.markovChainLaw_map_eval` — the state at time `n` has law `(κ ^ n) ∘ₘ ν`;
   `ProbabilityTheory.Kernel.markovChainKernel_map_eval` is the kernel form, and
   `MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp` evaluates it at a singleton.
@@ -198,6 +199,13 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_eq_comp :
   rw [markovChainLaw, Kernel.trajMeasure,
     Measure.bind_map (MeasurableEquiv.measurable _).aemeasurable (Kernel.aemeasurable _),
     Kernel.markovChainKernel, Kernel.coe_comap, Function.comp_def]
+
+/-- The path law of a countable sum of initial measures is the sum of their path laws. This
+extends statements about finite initial measures to s-finite ones through `sum_sfiniteSeq`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_sum {ι : Type*} (μ : ι → Measure α) :
+    markovChainLaw (Measure.sum μ) κ = Measure.sum fun i => markovChainLaw (μ i) κ := by
+  simp_rw [Measure.markovChainLaw_eq_comp]
+  exact Measure.bind_sum _ _ κ.markovChainKernel.aemeasurable
 
 /-- The path-law kernel evaluated at a state `x` is the law of the chain started at `x`. -/
 @[simp]
