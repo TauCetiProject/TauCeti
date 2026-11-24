@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 public import TauCeti.RingTheory.MvPolynomial.Basic
@@ -21,9 +22,11 @@ on the affine space `𝔸^σ` in which `D(G)` scales the `i`th coordinate by the
 `G = Multiplicative ℤ`, so that `D(G)` is the multiplicative group `𝔾ₘ`, these are the linear
 actions of `𝔾ₘ` on affine space with weights `w`.
 
-A monomial `X^s` is a weight vector of weight `∏ i, w i ^ s i`
+A monomial `X^s` is a weight vector of weight `∏ i, w i ^ s i`, which is Mathlib's
+`Finsupp.weight` read multiplicatively
 (`TauCeti.ComoduleAlgebra.mvPolynomialWeight_coact_monomial`), and a polynomial is invariant
-exactly when every monomial in its support has weight `1`
+exactly when every monomial in its support has weight `1`, that is, when it is weighted
+homogeneous of degree `0`
 (`TauCeti.ComoduleAlgebra.mem_coinvariants_mvPolynomialWeight_iff`). For `𝔾ₘ` acting on `𝔸²`
 with weights `1` and `-1`, the invariants are the polynomials in `x y`
 (`TauCeti.QuotientExamples.coinvariants_gm_one_neg_one`).
@@ -35,7 +38,7 @@ with weights `1` and `-1`, the invariants are the polynomials in `x y`
   `MvPolynomial σ R` over `R[G]` given by the weights `w`.
 * `TauCeti.ComoduleAlgebra.mvPolynomialWeight_coact_monomial`: monomials are weight vectors.
 * `TauCeti.ComoduleAlgebra.mem_coinvariants_mvPolynomialWeight_iff`: the invariants are the
-  polynomials supported on monomials of weight `1`.
+  weighted homogeneous polynomials of degree `0`.
 -/
 
 public section
@@ -48,31 +51,13 @@ open _root_.MvPolynomial
 
 variable {R σ G : Type*} [CommSemiring R] [CommMonoid G]
 
-/-- The weight `∏ i, w i ^ s i` of the monomial with exponent `s`. -/
+/-- The weight `∏ i, w i ^ s i` of the monomial with exponent `s`: Mathlib's `Finsupp.weight`
+with weights `w`, read multiplicatively through `Additive G`. -/
 noncomputable def monomialWeight (w : σ → G) (s : σ →₀ ℕ) : G :=
-  s.prod fun i n ↦ w i ^ n
+  (Finsupp.weight (Additive.ofMul ∘ w) s).toMul
 
 theorem monomialWeight_def (w : σ → G) (s : σ →₀ ℕ) :
-    monomialWeight w s = s.prod fun i n ↦ w i ^ n := (rfl)
-
-@[simp]
-theorem monomialWeight_zero (w : σ → G) : monomialWeight w 0 = 1 :=
-  Finsupp.prod_zero_index
-
-@[simp]
-theorem monomialWeight_add (w : σ → G) (s t : σ →₀ ℕ) :
-    monomialWeight w (s + t) = monomialWeight w s * monomialWeight w t :=
-  Finsupp.prod_add_index' (by simp) (by simp [pow_add])
-
-@[simp]
-theorem monomialWeight_single (w : σ → G) (i : σ) (n : ℕ) :
-    monomialWeight w (Finsupp.single i n) = w i ^ n :=
-  Finsupp.prod_single_index (by simp)
-
-/-- For finitely many variables, the weight of a monomial is the product over all variables. -/
-theorem monomialWeight_eq_prod [Fintype σ] (w : σ → G) (s : σ →₀ ℕ) :
-    monomialWeight w s = ∏ i, w i ^ s i :=
-  Finsupp.prod_fintype _ _ (by simp)
+    monomialWeight w s = (Finsupp.weight (Additive.ofMul ∘ w) s).toMul := (rfl)
 
 /-- The coaction with weights `w`, as an algebra homomorphism: it sends `X i` to `X i ⊗ [w i]`. -/
 noncomputable def mvPolynomialWeightCoact (w : σ → G) :
@@ -92,11 +77,12 @@ theorem mvPolynomialWeightCoact_monomial (w : σ → G) (s : σ →₀ ℕ) (c :
   classical
   induction s using Finsupp.induction with
   | zero =>
-    simp [mvPolynomialWeightCoact, Algebra.TensorProduct.algebraMap_apply, MonoidAlgebra.one_def]
+    simp [mvPolynomialWeightCoact, monomialWeight_def, Algebra.TensorProduct.algebraMap_apply,
+      MonoidAlgebra.one_def]
   | single_add i n s _ _ ih =>
     rw [monomial_single_add, map_mul, map_pow, mvPolynomialWeightCoact_X, ih,
       Algebra.TensorProduct.tmul_pow, Algebra.TensorProduct.tmul_mul_tmul]
-    simp [MonoidAlgebra.single_pow]
+    simp [monomialWeight_def, MonoidAlgebra.single_pow, Finsupp.weight_single]
 
 /-- The diagonal comodule on the monomial basis has coaction `mvPolynomialWeightCoact w`. -/
 theorem ofWeights_basisMonomials_coact (w : σ → G) :
@@ -144,15 +130,17 @@ theorem mvPolynomialWeight_coact_monomial (w : σ → G) (s : σ →₀ ℕ) (c 
   rw [mvPolynomialWeight_coact, mvPolynomialWeightCoact_monomial]
 
 /-- **The invariants of a diagonal action** are the polynomials all of whose monomials have
-weight `1`. -/
+weight `1`: the weighted homogeneous polynomials of degree `0` for the weights `w`, read
+additively. -/
 theorem mem_coinvariants_mvPolynomialWeight_iff (w : σ → G) {p : MvPolynomial σ R} :
     letI := mvPolynomialWeight (R := R) w
     p ∈ coinvariants R (MonoidAlgebra R G) (MvPolynomial σ R) ↔
-      ∀ s ∈ p.support, monomialWeight w s = 1 := by
+      p.IsWeightedHomogeneous (Additive.ofMul ∘ w) 0 := by
   let := mvPolynomialWeight (R := R) w
   -- An invariant is a vector of weight `1`.
   rw [mem_coinvariants, MonoidAlgebra.one_def, ← Comodule.mem_weightSpace,
     Comodule.mem_weightSpace_ofWeights_iff (basisMonomials σ R)]
-  simp only [Finsupp.mem_support_iff, basisMonomials_repr_apply, mem_support_iff]
+  simp only [Finsupp.mem_support_iff, basisMonomials_repr_apply, monomialWeight_def,
+    toMul_eq_one, IsWeightedHomogeneous]
 
 end TauCeti.ComoduleAlgebra

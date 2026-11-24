@@ -60,20 +60,19 @@ theorem coinvariants_gm_one_neg_one :
   let := mvPolynomialWeight (R := R)
     (![Multiplicative.ofAdd 1, Multiplicative.ofAdd (-1)] : Fin 2 → Multiplicative ℤ)
   have hw (s : Fin 2 →₀ ℕ) :
-      monomialWeight (![Multiplicative.ofAdd 1, Multiplicative.ofAdd (-1)] :
-        Fin 2 → Multiplicative ℤ) s = Multiplicative.ofAdd ((s 0 : ℤ) - s 1) := by
-    rw [monomialWeight_eq_prod, Fin.prod_univ_two]
-    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, ← ofAdd_nsmul,
-      ← ofAdd_add]
-    congr 1
+      Finsupp.weight (Additive.ofMul ∘ (![Multiplicative.ofAdd 1, Multiplicative.ofAdd (-1)] :
+        Fin 2 → Multiplicative ℤ)) s = Additive.ofMul (Multiplicative.ofAdd ((s 0 : ℤ) - s 1)) := by
+    rw [Finsupp.weight_eq_sum, Fin.sum_univ_two]
+    apply Additive.toMul.injective
+    apply Multiplicative.toAdd.injective
     simp [sub_eq_add_neg]
   refine le_antisymm (fun p hp ↦ ?_) ?_
   · rw [mem_coinvariants_mvPolynomialWeight_iff] at hp
     rw [p.as_sum]
     refine Subalgebra.sum_mem _ fun s hs ↦ ?_
     have hs' : s 0 = s 1 := by
-      have := hp s hs
-      rw [hw, ofAdd_eq_one, sub_eq_zero] at this
+      have := hp (mem_support_iff.1 hs)
+      rw [hw, ofMul_eq_zero, ofAdd_eq_one, sub_eq_zero] at this
       exact_mod_cast this
     have hmon : monomial s (p.coeff s) = MvPolynomial.C (p.coeff s) * (X 0 * X 1) ^ s 0 := by
       rw [monomial_eq, Finsupp.prod_fintype _ _ (by simp), Fin.prod_univ_two, ← hs', mul_pow]
@@ -87,7 +86,7 @@ theorem coinvariants_gm_one_neg_one :
         monomial (Finsupp.single 0 1 + Finsupp.single 1 1) 1 := by
       rw [X, X, monomial_mul_monomial, one_mul]
     rw [hX] at hs
-    rw [Finset.mem_singleton.1 (support_monomial_subset hs), hw]
+    rw [Finset.mem_singleton.1 (support_monomial_subset (mem_support_iff.2 hs)), hw]
     simp
 
 end Gm
