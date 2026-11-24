@@ -18,7 +18,7 @@ supremum of its vertex degrees.
 
 This file proves Kőnig's theorem for arbitrary bipartite simple graphs — without finiteness or
 decidability assumptions on the vertex or edge sets — together with its locally finite (`degree`
-and `ncard`) and finite (`edgeColorable_maxDegree`) specializations:
+and `ncard`) and finite (`maxDegree`) specializations:
 
 1. **Locally finite regular bipartite graphs** (`SimpleGraph.IsRegularOfDegree.edgeColorable` and
    `SimpleGraph.IsRegularOfDegree.chromaticIndex_eq`): on a locally finite `k`-regular bipartite
@@ -31,7 +31,8 @@ and `ncard`) and finite (`edgeColorable_maxDegree`) specializations:
    `G.chromaticIndex = ⨆ v, (G.neighborSet v).encard`. Specialising yields the `degree` formulation
    under `[G.LocallyFinite]`, the `ncard` formulation under `[∀ v : V, Finite (G.neighborSet v)]`
    (which requires no `Fintype` or `DecidableRel` instances and automatically covers both
-   `[G.LocallyFinite]` and `[Finite V]`), and `G.EdgeColorable G.maxDegree` on finite graphs.
+   `[G.LocallyFinite]` and `[Finite V]`), and the `G.maxDegree` equivalence and chromatic-index
+   formula on finite graphs.
 
 As applications, we compute the chromatic index of `completeBipartiteGraph V W` (for arbitrary
 nonempty `V` and `W`, finite or infinite), even `cycleGraph n`, and `pathGraph n`.
@@ -62,8 +63,9 @@ finite theorem, from which the unrestricted `encard` theorem follows because a f
 * `SimpleGraph.IsBipartite.edgeColorable_iff_forall_ncard_neighborSet_le` and
   `SimpleGraph.IsBipartite.chromaticIndex_eq_iSup_ncard_neighborSet`: `ncard` formulations under
   `[∀ v : V, Finite (G.neighborSet v)]`.
-* `SimpleGraph.IsBipartite.edgeColorable_maxDegree`: every finite bipartite simple graph is
-  `(G.maxDegree)`-edge-colourable.
+* `SimpleGraph.IsBipartite.edgeColorable_iff_maxDegree_le`,
+  `SimpleGraph.IsBipartite.edgeColorable_maxDegree`, and
+  `SimpleGraph.IsBipartite.chromaticIndex_eq_maxDegree`: finite `maxDegree` formulations.
 * `SimpleGraph.CompleteBipartiteGraph.chromaticIndex`,
   `SimpleGraph.chromaticIndex_cycleGraph_of_even`, and `SimpleGraph.chromaticIndex_pathGraph`:
   chromatic indices of complete bipartite, even cycle, and path graphs.
@@ -309,10 +311,24 @@ theorem chromaticIndex_eq_iSup_ncard_neighborSet [∀ v : V, Finite (G.neighborS
   rw [hbip.chromaticIndex_eq_iSup_encard_neighborSet]
   exact iSup_congr fun v ↦ (G.neighborSet v).toFinite.cast_ncard_eq.symm
 
+/-- **Kőnig's edge-colouring theorem for finite simple graphs.** A finite bipartite simple graph is
+`k`-edge-colourable if and only if its maximum degree is at most `k`. -/
+theorem edgeColorable_iff_maxDegree_le [Fintype V] [DecidableRel G.Adj] (hbip : G.IsBipartite) :
+    G.EdgeColorable k ↔ G.maxDegree ≤ k := by
+  rw [hbip.edgeColorable_iff_forall_degree_le]
+  exact ⟨G.maxDegree_le_of_forall_degree_le k, fun hk v ↦ (G.degree_le_maxDegree v).trans hk⟩
+
 /-- Every finite bipartite simple graph is `(G.maxDegree)`-edge-colourable. -/
 theorem edgeColorable_maxDegree [Fintype V] [DecidableRel G.Adj] (hbip : G.IsBipartite) :
     G.EdgeColorable G.maxDegree :=
-  hbip.edgeColorable_iff_forall_degree_le.2 G.degree_le_maxDegree
+  hbip.edgeColorable_iff_maxDegree_le.2 le_rfl
+
+/-- **Kőnig's line-colouring theorem.** The chromatic index of a finite bipartite simple graph is
+its maximum degree (`0` when `V` is empty). -/
+theorem chromaticIndex_eq_maxDegree [Fintype V] [DecidableRel G.Adj] (hbip : G.IsBipartite) :
+    G.chromaticIndex = G.maxDegree :=
+  le_antisymm (G.chromaticIndex_le_iff_edgeColorable.2 hbip.edgeColorable_maxDegree)
+    G.maxDegree_le_chromaticIndex
 
 end IsBipartite
 

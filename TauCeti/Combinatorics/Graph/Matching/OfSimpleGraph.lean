@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import TauCeti.Combinatorics.Graph.Matching.Basic
+public import TauCeti.Combinatorics.Graph.Matching.Coloring
 
 /-!
 # Matchings under the simple-graph to multigraph conversion
@@ -15,7 +16,8 @@ This file identifies matchings of a simple graph in Mathlib's subgraph represent
 of matching edge identities in the corresponding multigraph `Graph.ofSimpleGraph H`.  The
 canonical subgraph attached to an edge set has exactly the selected edges and their endpoints, so
 it contains no artificial isolated vertices.  The identification preserves perfect matchings and
-the cardinality of the selected edge set.
+the cardinality of the selected edge set, and commutes with the edge-colouring equivalence
+`SimpleGraph.edgeColoringEquivOfSimpleGraph` on colour classes and matching partitions.
 
 ## Main declarations
 
@@ -25,6 +27,15 @@ the cardinality of the selected edge set.
   matching subgraphs.
 * `SimpleGraph.matchingSubgraph_isPerfectMatching_iff`: the identification preserves perfect
   matchings.
+* `SimpleGraph.colorClass_edgeColoringEquivOfSimpleGraph`,
+  `SimpleGraph.colorClassSubgraph_edgeColoringEquivOfSimpleGraph_symm`,
+  `SimpleGraph.matchingEquiv_colorClass`, and
+  `SimpleGraph.matchingEquiv_symm_colorClassSubgraph`: compatibility of colour classes with
+  `SimpleGraph.matchingEquiv` across `SimpleGraph.edgeColoringEquivOfSimpleGraph`.
+* `SimpleGraph.edgeColoringEquivOfSimpleGraph_ofMatchings` and
+  `SimpleGraph.edgeColoringEquivOfSimpleGraph_symm_ofMatchings`: compatibility of
+  `SimpleGraph.EdgeColoring.ofMatchings` and `Graph.EdgeColoring.ofMatchings` with
+  `SimpleGraph.edgeColoringEquivOfSimpleGraph`.
 -/
 
 public section
@@ -32,7 +43,7 @@ public section
 open Set
 open scoped Graph
 
-universe u
+universe u w
 
 namespace SimpleGraph
 
@@ -218,5 +229,104 @@ theorem matchingEquiv_isPerfectMatching_iff (M :
     (matchingEquiv H M).val.IsPerfectMatching ↔
       (Graph.ofSimpleGraph H).IsPerfectMatching M :=
   by rw [matchingEquiv_apply, matchingSubgraph_isPerfectMatching_iff]
+
+/-! ### Compatibility with edge-colourings -/
+
+variable {C : Type w}
+
+/-- The `i`-th colour class of `H.edgeColoringEquivOfSimpleGraph C c` is the set of actual edges
+selected by `c.colorClassSubgraph i`. -/
+@[simp]
+theorem colorClass_edgeColoringEquivOfSimpleGraph (c : H.EdgeColoring C) (i : C) :
+    (H.edgeColoringEquivOfSimpleGraph C c).colorClass i =
+      (c.colorClassSubgraph i).toGraphEdgeSet := by
+  ext e
+  rw [Subgraph.mem_toGraphEdgeSet, EdgeColoring.edgeSet_colorClassSubgraph]
+  simp only [Coloring.colorClass, mem_ofPred_eq, edgeColoringEquivOfSimpleGraph_apply]
+  constructor
+  · intro he
+    exact ⟨Graph.lineGraphOfSimpleGraphIso H e, he, Graph.coe_lineGraphOfSimpleGraphIso_apply H e⟩
+  · rintro ⟨e', he', hee'⟩
+    have heq : Graph.lineGraphOfSimpleGraphIso H e = e' :=
+      Subtype.ext ((Graph.coe_lineGraphOfSimpleGraphIso_apply H e).trans hee'.symm)
+    exact (congrArg c heq).trans he'
+
+/-- Transporting a multigraph edge-colouring of `Graph.ofSimpleGraph H` back to `H` sends its
+`i`-th colour class to `H.matchingSubgraph (c.colorClass i)`. -/
+@[simp]
+theorem colorClassSubgraph_edgeColoringEquivOfSimpleGraph_symm
+    (c : (Graph.ofSimpleGraph H).EdgeColoring C) (i : C) :
+    ((H.edgeColoringEquivOfSimpleGraph C).symm c).colorClassSubgraph i =
+      H.matchingSubgraph (c.colorClass i) := by
+  refine Subgraph.IsMatching.injOn_edgeSet
+    (((H.edgeColoringEquivOfSimpleGraph C).symm c).isMatching_colorClassSubgraph i)
+    ((H.matchingSubgraph_isMatching_iff (c.colorClass i)).2 (c.isMatching_colorClass i)) ?_
+  ext p
+  rw [EdgeColoring.edgeSet_colorClassSubgraph, edgeSet_matchingSubgraph]
+  constructor
+  · rintro ⟨e, he, rfl⟩
+    simp only [Coloring.colorClass, mem_ofPred_eq, edgeColoringEquivOfSimpleGraph_symm_apply] at he
+    exact ⟨(Graph.lineGraphOfSimpleGraphIso H).symm e, he,
+      Graph.coe_lineGraphOfSimpleGraphIso_symm_apply H e⟩
+  · rintro ⟨e, he, rfl⟩
+    refine ⟨Graph.lineGraphOfSimpleGraphIso H e, ?_, Graph.coe_lineGraphOfSimpleGraphIso_apply H e⟩
+    simp only [Coloring.colorClass, mem_ofPred_eq, edgeColoringEquivOfSimpleGraph_symm_apply,
+      RelIso.symm_apply_apply]
+    exact he
+
+/-- Under `SimpleGraph.matchingEquiv`, the `i`-th colour class of a multigraph edge-colouring `c`
+maps to the `i`-th colour-class subgraph of `(H.edgeColoringEquivOfSimpleGraph C).symm c`. -/
+theorem matchingEquiv_colorClass (c : (Graph.ofSimpleGraph H).EdgeColoring C) (i : C) :
+    H.matchingEquiv ⟨c.colorClass i, c.isMatching_colorClass i⟩ =
+      ⟨((H.edgeColoringEquivOfSimpleGraph C).symm c).colorClassSubgraph i,
+        ((H.edgeColoringEquivOfSimpleGraph C).symm c).isMatching_colorClassSubgraph i⟩ :=
+  Subtype.ext ((H.matchingEquiv_apply _).trans
+    (colorClassSubgraph_edgeColoringEquivOfSimpleGraph_symm c i).symm)
+
+/-- Under `(SimpleGraph.matchingEquiv H).symm`, the `i`-th colour-class subgraph of a simple-graph
+edge-colouring `c` maps to the `i`-th colour class of `H.edgeColoringEquivOfSimpleGraph C c`. -/
+theorem matchingEquiv_symm_colorClassSubgraph (c : H.EdgeColoring C) (i : C) :
+    (H.matchingEquiv).symm ⟨c.colorClassSubgraph i, c.isMatching_colorClassSubgraph i⟩ =
+      ⟨(H.edgeColoringEquivOfSimpleGraph C c).colorClass i,
+        (H.edgeColoringEquivOfSimpleGraph C c).isMatching_colorClass i⟩ :=
+  Subtype.ext ((H.matchingEquiv_symm_apply _).trans
+    (colorClass_edgeColoringEquivOfSimpleGraph c i).symm)
+
+/-- Transporting `SimpleGraph.EdgeColoring.ofMatchings` along
+`SimpleGraph.edgeColoringEquivOfSimpleGraph` agrees with `Graph.EdgeColoring.ofMatchings` on the
+selected actual edge sets. -/
+theorem edgeColoringEquivOfSimpleGraph_ofMatchings
+    (M : C → H.Subgraph) (hM : ∀ i, (M i).IsMatching)
+    (hpart : ∀ e : H.edgeSet, ∃! i, (e : Sym2 V) ∈ (M i).edgeSet)
+    (hpart' : ∀ e : E(Graph.ofSimpleGraph H), ∃! i, e ∈ (M i).toGraphEdgeSet) :
+    H.edgeColoringEquivOfSimpleGraph C (EdgeColoring.ofMatchings M hM hpart) =
+      Graph.EdgeColoring.ofMatchings (fun i ↦ (M i).toGraphEdgeSet)
+        (fun i ↦ by
+          rw [← H.matchingSubgraph_isMatching_iff, (M i).matchingSubgraph_toGraphEdgeSet (hM i)]
+          exact hM i) hpart' := by
+  ext e
+  symm
+  rw [Graph.EdgeColoring.ofMatchings_apply_eq_iff, edgeColoringEquivOfSimpleGraph_apply,
+    Subgraph.mem_toGraphEdgeSet, ← Graph.coe_lineGraphOfSimpleGraphIso_apply H e]
+  exact (EdgeColoring.ofMatchings_apply_eq_iff M hM hpart _ _).1 rfl
+
+/-- Transporting `Graph.EdgeColoring.ofMatchings` along
+`(SimpleGraph.edgeColoringEquivOfSimpleGraph H C).symm` agrees with
+`SimpleGraph.EdgeColoring.ofMatchings` on the traced matching subgraphs. -/
+theorem edgeColoringEquivOfSimpleGraph_symm_ofMatchings
+    (M : C → Set E(Graph.ofSimpleGraph H))
+    (hM : ∀ i, (Graph.ofSimpleGraph H).IsMatching (M i))
+    (hpart : ∀ e, ∃! i, e ∈ M i)
+    (hpart' : ∀ e : H.edgeSet, ∃! i, (e : Sym2 V) ∈ (H.matchingSubgraph (M i)).edgeSet) :
+    (H.edgeColoringEquivOfSimpleGraph C).symm (Graph.EdgeColoring.ofMatchings M hM hpart) =
+      EdgeColoring.ofMatchings (fun i ↦ H.matchingSubgraph (M i))
+        (fun i ↦ (H.matchingSubgraph_isMatching_iff (M i)).2 (hM i)) hpart' := by
+  ext e
+  symm
+  rw [EdgeColoring.ofMatchings_apply_eq_iff, edgeColoringEquivOfSimpleGraph_symm_apply,
+    edgeSet_matchingSubgraph]
+  exact ⟨(Graph.lineGraphOfSimpleGraphIso H).symm e,
+    (Graph.EdgeColoring.ofMatchings_apply_eq_iff M hM hpart _ _).1 rfl,
+    Graph.coe_lineGraphOfSimpleGraphIso_symm_apply H e⟩
 
 end SimpleGraph

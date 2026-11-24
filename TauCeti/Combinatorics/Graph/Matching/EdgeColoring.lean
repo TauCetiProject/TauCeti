@@ -20,9 +20,9 @@ The proof embeds the graph in a finite `k`-regular bipartite multigraph, decompo
 into `k` perfect matchings, colours by the matching indices, and restricts the colouring back to
 the original graph. The matching-partition and chromatic-number formulations are included as
 equivalent interfaces. Consequently the least number of colours is the largest number of edges at
-a vertex, which is zero for the empty graph; for a simple graph this is its maximum degree.
-For a finite bipartite simple graph the theorem is also stated through colourings of Mathlib's
-`SimpleGraph.lineGraph`.
+a vertex, which is zero for the empty graph. For the corresponding Kőnig edge-colouring and
+chromatic-index theorems on bipartite simple graphs, see
+`TauCeti.Combinatorics.SimpleGraph.Coloring.Bipartite`.
 
 ## References
 
@@ -108,33 +108,3 @@ theorem chromaticNumber_lineGraph_eq_sup_incidenceCount [Finite E(G)]
 end IsBipartition
 
 end Graph
-
-namespace SimpleGraph
-
-variable {α : Type u} {k : ℕ}
-
-/-- **Kőnig's line-colouring theorem.** The chromatic index of a finite bipartite simple graph
-is its maximum degree. Both are zero when the vertex type is empty. -/
-theorem IsBipartite.chromaticIndex_eq_maxDegree {H : SimpleGraph α} [Fintype α]
-    [DecidableRel H.Adj] (hH : H.IsBipartite) :
-    H.chromaticIndex = H.maxDegree := by
-  obtain ⟨L, R, hLR⟩ := hH.exists_isBipartition_ofSimpleGraph
-  rw [← Graph.chromaticNumber_lineGraph_ofSimpleGraph]
-  apply le_antisymm
-  · exact (hLR.chromaticNumber_lineGraph_le_iff_forall_incidenceCount_le).2
-      fun x _ ↦ by simpa using H.degree_le_maxDegree x
-  · cases isEmpty_or_nonempty α with
-    | inl => simp
-    | inr =>
-      obtain ⟨x, hx⟩ := H.exists_maximal_degree_vertex
-      rw [hx, ← Graph.incidenceCount_ofSimpleGraph]
-      exact Graph.incidenceCount_le_chromaticNumber_lineGraph _ x
-
-/-- **Kőnig's edge-colouring theorem.** A finite bipartite simple graph is edge-colourable by
-`k` colours exactly when its maximum degree is at most `k`. -/
-theorem IsBipartite.edgeColorable_iff_maxDegree_le {H : SimpleGraph α} [Fintype α]
-    [DecidableRel H.Adj] (hH : H.IsBipartite) :
-    H.EdgeColorable k ↔ H.maxDegree ≤ k := by
-  rw [← chromaticIndex_le_iff_edgeColorable, hH.chromaticIndex_eq_maxDegree, Nat.cast_le]
-
-end SimpleGraph
