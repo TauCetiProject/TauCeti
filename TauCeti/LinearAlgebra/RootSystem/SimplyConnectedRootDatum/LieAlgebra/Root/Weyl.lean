@@ -157,6 +157,53 @@ theorem eq_chevalleyWeylSign_iff {α β : Fin t.numRoots} {ε : ℤˣ} :
     smul_eq_zero, Int.cast_eq_zero, sub_eq_zero, Units.val_inj] at h
   exact (h.resolve_right (t.isSl2Triple_chevalleySystem ht _).e_ne_zero).symm
 
+/-- Negating the second root argument leaves `chevalleyWeylSign` unchanged:
+`chevalleyWeylSign α (-β) = chevalleyWeylSign α β`. -/
+theorem chevalleyWeylSign_reflectionPerm_self (α β : Fin t.numRoots) :
+    t.chevalleyWeylSign ht α ((t.simplyConnectedRootDatum ht).reflectionPerm β β) =
+      t.chevalleyWeylSign ht α β := by
+  let ω := (t.chevalleyInvolution ht).toLieHom
+  have hω (z : t.lieAlgebra ht) : ω z = t.chevalleyInvolution ht z :=
+    congrFun (LieEquiv.coe_toLieHom (t.chevalleyInvolution ht)) z
+  have hωf :
+      ω (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm α α)) =
+        -t.chevalleySystem ht α := by
+    rw [hω, t.chevalleyInvolution_chevalleySystem, RootPairing.reflectionPerm_reflectionPerm_self]
+  have hcomm := ω.map_weylAut (t.isSl2Triple_chevalleySystem ht α)
+    (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+    (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+    (t.chevalleyInvolution_chevalleySystem ht α) hωf (t.chevalleySystem ht β)
+  have hidx :
+      (t.simplyConnectedRootDatum ht).reflectionPerm α
+          ((t.simplyConnectedRootDatum ht).reflectionPerm β β) =
+        (t.simplyConnectedRootDatum ht).reflectionPerm
+          ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
+          ((t.simplyConnectedRootDatum ht).reflectionPerm α β) :=
+    (t.simplyConnectedRootDatum ht).reflectionPerm_reflectionPerm_self_right α β
+  have hL :
+      ω (TauCeti.weylAut (t.isSl2Triple_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+          (t.chevalleySystem ht β)) =
+        -((t.chevalleyWeylSign ht α β : ℤ) •
+          t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm
+            ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
+            ((t.simplyConnectedRootDatum ht).reflectionPerm α β))) := by
+    rw [t.weylAut_chevalleySystem ht α β, map_zsmul, hω,
+      t.chevalleyInvolution_chevalleySystem, smul_neg]
+  have hR :
+      TauCeti.weylAut (t.isSl2Triple_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+          (ω (t.chevalleySystem ht β)) =
+        -TauCeti.weylAut (t.isSl2Triple_chevalleySystem ht α)
+          (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero
+          (t.isNilpotent_ad_chevalleySystem ht _).exists_pow_apply_eq_zero
+          (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm β β)) := by
+    rw [hω, t.chevalleyInvolution_chevalleySystem, map_neg]
+  rw [hL, hR, neg_inj, ← hidx] at hcomm
+  exact (eq_chevalleyWeylSign_iff.mpr hcomm.symm).symm
+
 /-! ## The Weyl automorphisms of the simple roots -/
 
 section Simple
