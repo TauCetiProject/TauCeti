@@ -229,9 +229,9 @@ theorem schatten_apply_le_columnSchatten_inf_rowSchatten (a : ι → E →ₗ[�
   have hle : (schatten 𝕜 E F p).toSeminorm.comp
       (LinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ E →ₗ[𝕜] F) k) ≤
       columnSchatten p ⊓ rowSchatten p :=
-    le_inf (fun b ↦ schatten_apply_le_columnSchatten p b k)
-      fun b ↦ schatten_apply_le_rowSchatten p b k
-  exact hle a
+    le_inf (fun b ↦ by simpa using schatten_apply_le_columnSchatten p b k)
+      fun b ↦ by simpa using schatten_apply_le_rowSchatten p b k
+  simpa using hle a
 
 /-- The sum norm `inf_{a = b + c} (C_p(b) + R_p(c))` is a norm: it vanishes only at `a = 0`. -/
 theorem columnSchatten_inf_rowSchatten_apply_eq_zero_iff {a : ι → E →ₗ[𝕜] F} :
@@ -249,6 +249,7 @@ theorem columnSchatten_smul_le (a : ι → E →ₗ[𝕜] F) {α : ι → 𝕜} 
   · rw [Subsingleton.elim (fun k ↦ α k • a k) 0, Subsingleton.elim a 0]
     simp
   have hc : 0 ≤ c := (norm_nonneg _).trans (hα k₀)
+  rw [columnSchatten_apply, columnSchatten_apply]
   refine (schatten 𝕜 E _ p).map_le_mul_of_norm_apply_le fun x ↦ ?_
   rw [← sq_le_sq₀ (norm_nonneg _) (by positivity), mul_pow, norm_blockColumn_apply_sq,
     norm_blockColumn_apply_sq, Finset.mul_sum]
