@@ -108,7 +108,8 @@ theorem iteratedDerivWithin_one_sinc {a t : ℝ} (ha : 0 < a) (ht : t ∈ Ioi a)
   exact (hd.ofReal_comp.congr_of_eventuallyEq hev).deriv
 
 /-- For `0 < a`, the derivative of `q(t) = sin t / t` within `[a, ∞)` is not integrable on
-`(a, ∞)`, although `q` tends to zero and its Fourier integral converges there. -/
+`(a, ∞)`, although `q` tends to zero and its Fourier integral `∫ e^{ixt} q(t) dt` converges
+there for every frequency `x > 1`. -/
 theorem not_integrableOn_iteratedDerivWithin_one_sinc {a : ℝ} (ha : 0 < a) :
     ¬ IntegrableOn (iteratedDerivWithin 1 (fun t : ℝ => ((Real.sinc t : ℝ) : ℂ)) (Ici a))
       (Ioi a) := by

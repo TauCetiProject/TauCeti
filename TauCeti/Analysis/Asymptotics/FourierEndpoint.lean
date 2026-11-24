@@ -39,6 +39,8 @@ it exists at two different frequencies (`Asymptotics.eq_zero_of_tendsto_cexp_smu
 * `Asymptotics.norm_integral_cexp_smul_sub_sum_le`: the remainder bound on a compact interval.
 * `Asymptotics.isBigO_integral_cexp_smul_sub_sum`: the expansion 2.3.4.
 * `Asymptotics.exists_tendsto_integral_cexp_smul`: existence of the improper integral.
+* `Asymptotics.tendsto_cexp_smul_atTop_zero`: vanishing of the boundary terms at infinity.
+* `Asymptotics.eq_sum_add_of_tendsto_integral_cexp_smul`: the exact formula on a half-line.
 * `Asymptotics.hasAsymptoticExpansion_of_tendsto_integral_cexp_smul`: the expansion 2.3.5.
 * `Asymptotics.norm_sub_sum_le_of_tendsto_integral_cexp_smul`: the remainder bound on a half-line.
 * `Asymptotics.norm_integral_cexp_smul_le_of_hasDerivAt`,
@@ -87,31 +89,24 @@ theorem integral_cexp_smul_eq_of_hasDerivAt {u u' : ℝ → E} {a b x : ℝ} (ha
       (I / x) • (cexp (((x * a : ℝ) : ℂ) * I) • u a - cexp (((x * b : ℝ) : ℂ) * I) • u b) +
         (I / x) • ∫ t in a..b, cexp (((x * t : ℝ) : ℂ) * I) • u' t := by
   have hec := continuous_cexp_mul_I x
-  have hH : ∀ t ∈ Ioo a b, HasDerivAt (fun t => cexp (((x * t : ℝ) : ℂ) * I) • u t)
-      (((x : ℂ) * I) • (cexp (((x * t : ℝ) : ℂ) * I) • u t) +
-        cexp (((x * t : ℝ) : ℂ) * I) • u' t) t := fun t ht => by
-    have h := (hasDerivAt_cexp_mul_I x t).fun_smul (hu' t ht)
-    rwa [add_comm, ← smul_smul] at h
-  have h1 : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) • u t) volume a b :=
-    (hec.continuousOn.smul hu).intervalIntegrable_of_Icc hab
-  have h2 : IntervalIntegrable (fun t => cexp (((x * t : ℝ) : ℂ) * I) • u' t) volume a b :=
-    hint.continuousOn_smul hec.continuousOn
-  have h3 : IntervalIntegrable (fun t => ((x : ℂ) * I) • (cexp (((x * t : ℝ) : ℂ) * I) • u t))
-      volume a b := h1.smul _
-  have hFTC := integral_eq_sub_of_hasDerivAt_of_le
-    (f := fun t => cexp (((x * t : ℝ) : ℂ) * I) • u t) hab (hec.continuousOn.smul hu) hH
-    (h3.add h2)
-  rw [intervalIntegral.integral_add h3 h2, intervalIntegral.integral_smul] at hFTC
-  have hxC : (x : ℂ) ≠ 0 := ofReal_ne_zero.2 hx
+  have hibp := integral_smul_deriv_eq_deriv_smul_of_hasDerivAt
+    (u := fun t => cexp (((x * t : ℝ) : ℂ) * I)) (v := u) hec.continuousOn (uIcc_of_le hab ▸ hu)
+    (fun t _ => hasDerivAt_cexp_mul_I x t)
+    (fun t ht => hu' t (by rwa [min_eq_left hab, max_eq_right hab] at ht))
+    ((hec.const_smul ((x : ℂ) * I)).intervalIntegrable a b) hint
+  have hsm : ∫ t in a..b, ((x : ℂ) * I * cexp (((x * t : ℝ) : ℂ) * I)) • u t =
+      ((x : ℂ) * I) • ∫ t in a..b, cexp (((x * t : ℝ) : ℂ) * I) • u t := by
+    rw [← intervalIntegral.integral_smul]
+    simp only [smul_smul]
+  rw [hsm] at hibp
   have hk : (I / (x : ℂ)) * ((x : ℂ) * I) = -1 := by
-    field_simp
+    field_simp [ofReal_ne_zero.2 hx]
     simp
-  have hxA := eq_sub_of_add_eq hFTC
   calc ∫ t in a..b, cexp (((x * t : ℝ) : ℂ) * I) • u t
       = -((I / (x : ℂ)) • (((x : ℂ) * I) • ∫ t in a..b, cexp (((x * t : ℝ) : ℂ) * I) • u t)) := by
         rw [smul_smul, hk, neg_smul, one_smul, neg_neg]
     _ = _ := by
-        rw [hxA]
+        rw [hibp]
         simp only [smul_sub]
         abel
 
@@ -299,7 +294,7 @@ private theorem exists_forall_norm_le_of_tendsto {r : ℝ → E} {a x₀ : ℝ}
 
 /-- If the Fourier integrals of `g₀` and of its derivative `g₁` converge at infinity at two
 different nonzero frequencies, the boundary term `e^{ixT} g₀(T)` tends to `0`. -/
-private theorem tendsto_cexp_smul_atTop_zero {g₀ g₁ : ℝ → E} {a x y : ℝ}
+theorem tendsto_cexp_smul_atTop_zero {g₀ g₁ : ℝ → E} {a x y : ℝ}
     (h₀ : ContinuousOn g₀ (Ici a)) (h₁ : ContinuousOn g₁ (Ici a))
     (hd : ∀ t ∈ Ioi a, HasDerivAt g₀ (g₁ t) t) (hx : x ≠ 0) (hy : y ≠ 0) (hxy : x ≠ y)
     {A₀ A₁ B₀ B₁ : E}
@@ -328,7 +323,7 @@ private theorem tendsto_cexp_smul_atTop_zero {g₀ g₁ : ℝ → E} {a x y : �
 
 /-- The exact formula on the half-line, given the convergence of the integrals and the vanishing
 of the boundary terms at infinity. -/
-private theorem eq_sum_add_of_tendsto {g : ℕ → ℝ → E} {a x : ℝ} (hx : x ≠ 0) {n : ℕ}
+theorem eq_sum_add_of_tendsto_integral_cexp_smul {g : ℕ → ℝ → E} {a x : ℝ} (hx : x ≠ 0) {n : ℕ}
     (hcont : ∀ i ≤ n, ContinuousOn (g i) (Ici a))
     (hderiv : ∀ i < n, ∀ t ∈ Ioi a, HasDerivAt (g i) (g (i + 1) t) t) {F G : E}
     (hF : Tendsto (fun T : ℝ => ∫ t in a..T, cexp (((x * t : ℝ) : ℂ) * I) • g 0 t) atTop (𝓝 F))
@@ -386,8 +381,9 @@ private theorem eventually_exists_tendsto_and_eq_sum {q : ℝ → E} {a : ℝ} {
     obtain ⟨B₁, hB₁⟩ := hlim (i + 1) hi (x + 1) (by linarith [hxi (i + 1) hi])
     exact tendsto_cexp_smul_atTop_zero (hc i hi.le) (hc _ hi) (hd i hi) hx.ne' (by positivity)
       (by simp) hA₀ hA₁ hB₀ hB₁
-  have h := eq_sum_add_of_tendsto (g := fun i => iteratedDerivWithin i q (Ici a)) hx.ne'
-    (n := n) hc hd (by simpa using hF) hG hbdry
+  have h := eq_sum_add_of_tendsto_integral_cexp_smul
+    (g := fun i => iteratedDerivWithin i q (Ici a)) hx.ne' (n := n) hc hd (by simpa using hF) hG
+    hbdry
   rw [h]
   congr 1
   refine Finset.sum_congr rfl fun s _ => ?_
