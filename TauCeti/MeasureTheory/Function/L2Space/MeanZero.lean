@@ -36,6 +36,9 @@ by centering along this projection shows that bounded mean-zero functions are de
 * `MeasureTheory.Measure.mem_meanZeroL2_iff`: `f ∈ P.meanZeroL2 𝕜 ↔ ∫ x, f x ∂P = 0`.
 * `MeasureTheory.Measure.isClosed_meanZeroL2`, `MeasureTheory.Measure.completeSpace_meanZeroL2`:
   `L²₀(P)` is closed and complete.
+* `MeasureTheory.Measure.hasOrthogonalProjection_range_constₗ`,
+  `MeasureTheory.Measure.starProjection_range_constₗ`: the constant functions admit an
+  orthogonal projection equal to the `P`-average.
 * `MeasureTheory.Measure.isCompl_range_constₗ_meanZeroL2`: `Lp E 2 P` splits into the constant
   functions and `L²₀(P)`.
 * `MeasureTheory.Measure.starProjection_meanZeroL2_eq_sub_const_average`,
@@ -104,13 +107,27 @@ theorem sub_const_average_mem_meanZeroL2 {P : Measure X} [IsFiniteMeasure P] {�
   rw [mem_meanZeroL2_iff, integral_congr_ae (Lp.coeFn_sub_const f (⨍ x, f x ∂P))]
   exact integral_sub_average P (f : X → E)
 
+/-- The subspace of constant functions in `Lp E 2 P` admits an orthogonal projection. -/
+instance hasOrthogonalProjection_range_constₗ (P : Measure X) [IsFiniteMeasure P] (𝕜 : Type*)
+    {E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedSpace ℝ E] :
+    (LinearMap.range (Lp.constₗ 2 P 𝕜 : E →ₗ[𝕜] Lp E 2 P)).HasOrthogonalProjection :=
+  ⟨fun f ↦ ⟨Lp.const 2 P (⨍ x, f x ∂P), ⟨_, rfl⟩, sub_const_average_mem_meanZeroL2 f⟩⟩
+
+/-- On a finite measure space, the orthogonal projection onto the constant functions is the
+`P`-average. -/
+theorem starProjection_range_constₗ {P : Measure X} [IsFiniteMeasure P]
+    {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedSpace ℝ E] (f : Lp E 2 P) :
+    (LinearMap.range (Lp.constₗ 2 P 𝕜 : E →ₗ[𝕜] Lp E 2 P)).starProjection f =
+      Lp.const 2 P (⨍ x, f x ∂P) :=
+  Submodule.eq_starProjection_of_mem_orthogonal ⟨_, rfl⟩ (sub_const_average_mem_meanZeroL2 f)
+
 /-- `Lp E 2 P` decomposes as the direct sum of the constant functions and `L²₀(P)`. -/
 theorem isCompl_range_constₗ_meanZeroL2 (P : Measure X) [IsFiniteMeasure P] (𝕜 : Type*)
     {E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     [NormedSpace ℝ E] :
     IsCompl (LinearMap.range (Lp.constₗ 2 P 𝕜 : E →ₗ[𝕜] Lp E 2 P)) (meanZeroL2 P 𝕜) := by
-  have : (LinearMap.range (Lp.constₗ 2 P 𝕜 : E →ₗ[𝕜] Lp E 2 P)).HasOrthogonalProjection :=
-    ⟨fun f ↦ ⟨Lp.const 2 P (⨍ x, f x ∂P), ⟨_, rfl⟩, sub_const_average_mem_meanZeroL2 f⟩⟩
   rw [meanZeroL2_def]
   exact Submodule.isCompl_orthogonal _
 
@@ -136,9 +153,9 @@ theorem starProjection_meanZeroL2_eq_sub_const_average {P : Measure X} [IsFinite
     {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
     [NormedSpace ℝ E] (f : Lp E 2 P) :
     (meanZeroL2 P 𝕜).starProjection f = f - Lp.const 2 P (⨍ x, f x ∂P) := by
-  refine Submodule.eq_starProjection_of_mem_orthogonal (sub_const_average_mem_meanZeroL2 f) ?_
-  rw [sub_sub_cancel]
-  exact Submodule.le_orthogonal_orthogonal _ ⟨⨍ x, f x ∂P, rfl⟩
+  -- `Submodule.HasOrthogonalProjection` is a `Prop`, so `simp_rw` unifies the projection instances.
+  simp_rw [meanZeroL2_def]
+  rw [Submodule.starProjection_orthogonal_val, starProjection_range_constₗ]
 
 /-- On a probability space, subtracting the mean yields an element of `L²₀(P)`. -/
 theorem sub_const_integral_mem_meanZeroL2 {P : Measure X} [IsProbabilityMeasure P] {𝕜 E : Type*}

@@ -209,6 +209,7 @@ theorem starProjection_tangentSpace_union_of_isOrtho {P : Measure X} {T T' : Set
         (tangentSpace P T').toSubmodule.starProjection := by
   let := h.hasOrthogonalProjection_sup
   rw [← h.starProjection_sup]
+  -- `Submodule.HasOrthogonalProjection` is a `Prop`, so `simp_rw` unifies the projection instances.
   simp_rw [toSubmodule_tangentSpace_union_of_isOrtho h]
 
 end TangentSpace
@@ -368,12 +369,11 @@ theorem efficientInformationMatrix_eq_gram_iff {P : Measure X} {ι : Type*}
     efficientInformationMatrix P N ℓ = Matrix.gram ℝ ℓ ↔
       ∀ i, ∀ g ∈ N, ⟪g, ℓ i⟫_ℝ = 0 := by
   refine ⟨fun h i ↦ ?_, fun h ↦ ?_⟩
-  · have hzero : (Matrix.gram ℝ ℓ - efficientInformationMatrix P N ℓ) i i = 0 := by
-      rw [h, sub_self, Matrix.zero_apply]
-    rw [gram_sub_efficientInformationMatrix_eq_gram, Matrix.gram_apply,
-      inner_self_eq_zero, Submodule.starProjection_apply_eq_zero_iff,
-      mem_orthogonal_tangentSpace_iff] at hzero
-    exact hzero
+  · have hzero :
+        Matrix.gram ℝ (fun i ↦ (tangentSpace P N).toSubmodule.starProjection (ℓ i)) i i = 0 := by
+      rw [← gram_sub_efficientInformationMatrix_eq_gram, h, sub_self, Matrix.zero_apply]
+    rw [← efficientScore_eq_self_iff, efficientScore_eq_sub_starProjection, sub_eq_self]
+    simpa [Matrix.gram_apply] using hzero
   · ext i j
     simp only [efficientInformationMatrix_def, Matrix.gram_apply,
       (efficientScore_eq_self_iff N (ℓ i)).mpr (h i),
@@ -408,6 +408,7 @@ theorem starProjection_tangentSpace_range_eq {H : Type*} [NormedAddCommGroup H]
   let := ContinuousLinearMap.hasOrthogonalProjection_range_of_isUnit_adjoint_comp hA
   rw [← ContinuousLinearMap.gramLeftInverse_def A,
     ← ContinuousLinearMap.starProjection_range_eq hA]
+  -- `Submodule.HasOrthogonalProjection` is a `Prop`, so `simp_rw` unifies the projection instances.
   simp_rw [tangentSpace_range_eq_range A hclosed]
 
 end ScoreOperators
