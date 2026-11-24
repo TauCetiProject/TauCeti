@@ -7,12 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.OneHypercoverDense
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Localization
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
-public import TauCeti.CategoryTheory.Galois.Sheaf
 
 /-!
 # Étale sheaves on a field as sheaves on finite étale schemes
@@ -21,14 +18,17 @@ Let `K` be a field. A scheme étale over `Spec K` is covered by affine opens, an
 étale over a field is finite over it. Hence the finite étale `K`-schemes form a dense subsite of
 the small étale site of `Spec K` (`TauCeti.FiniteEtaleScheme.toEtale`), and restriction is an
 equivalence between étale sheaves on `Spec K` and sheaves on finite étale `K`-schemes for the
-induced topology (`TauCeti.FiniteEtaleScheme.fieldSheafEquiv`). Transporting that topology along
-Galois theory for finite étale schemes, `TauCeti.FiniteEtaleScheme.galoisEquivalence K Ω`, gives
-étale sheaves on `Spec K` as sheaves on finite continuous `Gal(Ω/K)`-sets
-(`TauCeti.FiniteEtaleScheme.galoisSheafEquiv`). The coefficient category only needs limits of
-size `u`, so sheaves of sets, abelian groups and modules are covered.
+induced topology (`TauCeti.FiniteEtaleScheme.fieldSheafEquiv`). The coefficient category only
+needs limits of size `u`, so sheaves of sets, abelian groups and modules are covered. Transporting
+that topology along Galois theory for finite étale schemes,
+`TauCeti.FiniteEtaleScheme.galoisEquivalence K Ω`, gives the topology
+`TauCeti.FiniteEtaleScheme.galoisTopology K Ω` on finite continuous `Gal(Ω/K)`-sets, whose
+coverings are described here.
 
 This is the first half of the description of all étale sheaves on a field as continuous discrete
-Galois sets and modules (SGA 4, Exposé VIII, §2): the second half identifies sheaves on finite
+Galois sets and modules (SGA 4, Exposé VIII, §2). The file
+`TauCeti.AlgebraicGeometry.FiniteEtale.Galois.SmoothSheaf` identifies `galoisTopology K Ω` with
+the jointly surjective topology and composes with the identification of sheaves on finite
 continuous `G`-sets with continuous discrete `G`-sets.
 
 ## Main definitions
@@ -39,8 +39,6 @@ continuous `G`-sets with continuous discrete `G`-sets.
   are sheaves on finite étale `K`-schemes.
 * `TauCeti.FiniteEtaleScheme.galoisTopology K Ω`: the topology on finite continuous
   `Gal(Ω/K)`-sets transported from `fieldTopology K`.
-* `TauCeti.FiniteEtaleScheme.galoisSheafEquiv K A Ω`: étale sheaves on `Spec K` with values in
-  `A` are sheaves on finite continuous `Gal(Ω/K)`-sets.
 
 ## Main results
 
@@ -51,10 +49,6 @@ continuous `G`-sets with continuous discrete `G`-sets.
 * `TauCeti.FiniteEtaleScheme.ofArrows_mem_galoisTopology_iff`: the coverings for
   `galoisTopology K Ω` are the families whose corresponding finite étale `K`-scheme morphisms are
   jointly surjective.
-* `TauCeti.FiniteEtaleScheme.nonempty_fiberFunctor_obj_iff`: a finite Galois set is nonempty
-  exactly when the corresponding finite étale `K`-scheme is.
-* `TauCeti.FiniteEtaleScheme.galoisTopology_le_jointlySurjectiveTopology`: coverings for
-  `galoisTopology K Ω` are jointly surjective.
 * `TauCeti.FiniteEtaleScheme.subcanonical_fieldTopology`,
   `TauCeti.FiniteEtaleScheme.subcanonical_galoisTopology`: these topologies are subcanonical, being
   induced from the subcanonical small étale topology of `Spec K`.
@@ -67,7 +61,7 @@ continuous `G`-sets with continuous discrete `G`-sets.
 
 public section
 
-open CategoryTheory Limits AlgebraicGeometry PreGaloisCategory FintypeCatDiscrete
+open CategoryTheory Limits AlgebraicGeometry FintypeCatDiscrete
 
 universe v u
 
@@ -162,71 +156,10 @@ theorem ofArrows_mem_galoisTopology_iff {X : ContAction FintypeCat.{u} Gal(Ω/K)
   rw [Functor.mem_inducedTopology_iff_of_isCoverDense, Sieve.functorPushforward_ofArrows]
   exact ofArrows_mem_fieldTopology_iff K _
 
-variable {K Ω} in
-/-- A finite continuous `Gal(Ω/K)`-set is nonempty if and only if the corresponding finite étale
-`K`-scheme is nonempty. -/
-theorem nonempty_fiberFunctor_obj_iff (T : ContAction FintypeCat.{u} Gal(Ω/K)) :
-    Nonempty ((ContAction.fiberFunctor Gal(Ω/K)).obj T) ↔
-      Nonempty ((galoisEquivalence K Ω).inverse.obj T).obj.left := by
-  -- Both sides say that `T` is not initial.
-  rw [← not_isEmpty_iff, ← not_isEmpty_iff, ← isInitial_iff_isEmpty]
-  refine not_congr ((initial_iff_fiber_empty
-    (forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}) T).symm.trans
-      ⟨fun ⟨h⟩ ↦ ⟨h.isInitialObj _ _⟩, fun ⟨h⟩ ↦ ⟨?_⟩⟩)
-  exact (h.isInitialObj (galoisEquivalence K Ω).functor _).ofIso
-    ((galoisEquivalence K Ω).counitIso.app T)
-
-/-- **Galois coverings are jointly surjective.** A covering sieve of a finite continuous
-`Gal(Ω/K)`-set for the topology transported from the small étale site of `Spec K` is jointly
-surjective on underlying sets. -/
-theorem galoisTopology_le_jointlySurjectiveTopology :
-    galoisTopology K Ω ≤ ContAction.jointlySurjectiveTopology Gal(Ω/K) := by
-  -- Every point lies in the image of a Galois object `A`; the sieve pulled back to `A` covers the
-  -- nonempty scheme corresponding to `A`, so it contains a map from a nonempty Galois set to the
-  -- connected `A`, which is surjective.
-  intro X R hR
-  rw [ContAction.mem_jointlySurjectiveTopology_iff]
-  intro s
-  obtain ⟨A, a, a₀, hA, rfl⟩ := exists_hom_from_galois_of_fiber
-    (forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}) X s
-  have hRA := (galoisTopology K Ω).pullback_stable a hR
-  rw [Functor.mem_inducedTopology_iff_of_isCoverDense,
-    Functor.mem_inducedTopology_iff_of_isCoverDense, Scheme.mem_smallEtaleTopology_iff] at hRA
-  obtain ⟨x⟩ := (nonempty_fiberFunctor_obj_iff A).1 ⟨a₀⟩
-  obtain ⟨Y, f, y, ⟨Z, g, h, ⟨T, t, k, ht, rfl⟩, rfl⟩, -⟩ := hRA x
-  obtain ⟨t₀⟩ := (nonempty_fiberFunctor_obj_iff T).2 ⟨k.hom.left (h.left y)⟩
-  have : Nonempty ((forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}).obj T) := ⟨t₀⟩
-  obtain ⟨t₁, ht₁⟩ := surjective_of_nonempty_fiber_of_isConnected
-    (forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}) t a₀
-  exact ⟨T, t ≫ a, ht, t₁, by simp [ht₁]⟩
-
 /-- The topology on finite continuous `Gal(Ω/K)`-sets transported from the small étale site of
 `Spec K` is subcanonical. -/
 instance subcanonical_galoisTopology : (galoisTopology K Ω).Subcanonical :=
   GrothendieckTopology.subcanonical_of_full_of_faithful (galoisEquivalence K Ω).inverse _
     (fieldTopology K)
-
-/-- **Étale sheaves on a field are sheaves on finite Galois sets.** For a separable closure `Ω` of
-`K`, étale sheaves on `Spec K` are sheaves on finite continuous `Gal(Ω/K)`-sets for
-`galoisTopology K Ω`. -/
-noncomputable def galoisSheafEquiv :
-    Sheaf (Scheme.smallEtaleTopology (Spec (.of K))) A ≌ Sheaf (galoisTopology K Ω) A :=
-  (fieldSheafEquiv K A).trans
-    ((galoisEquivalence K Ω).sheafCongr (fieldTopology K) (galoisTopology K Ω) A)
-
-/-- The functor of `galoisSheafEquiv` restricts a sheaf to finite étale `K`-schemes and
-transports it along `galoisEquivalence K Ω`. -/
-@[simp] theorem galoisSheafEquiv_functor :
-    (galoisSheafEquiv K A Ω).functor = (fieldSheafEquiv K A).functor ⋙
-      ((galoisEquivalence K Ω).sheafCongr (fieldTopology K) (galoisTopology K Ω) A).functor :=
-  (rfl)
-
-/-- The underlying presheaf of `(galoisSheafEquiv K A Ω).functor.obj F` is that of `F` restricted
-to finite étale `K`-schemes and composed with `galoisEquivalence K Ω`: both functors in
-`galoisSheafEquiv` act on underlying presheaves by precomposition. -/
-theorem galoisSheafEquiv_functor_obj_obj (F : Sheaf (Scheme.smallEtaleTopology (Spec (.of K))) A) :
-    ((galoisSheafEquiv K A Ω).functor.obj F).obj =
-      (galoisEquivalence K Ω).inverse.op ⋙ (toEtale _).op ⋙ F.obj :=
-  (rfl)
 
 end TauCeti.FiniteEtaleScheme

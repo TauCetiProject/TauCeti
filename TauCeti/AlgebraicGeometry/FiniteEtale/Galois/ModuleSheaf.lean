@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.FieldSheaf
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.SmoothSheaf
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
 public import TauCeti.CategoryTheory.Galois.ModuleSheaf
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
@@ -17,10 +17,8 @@ public import TauCeti.RingTheory.Etale.Field
 Let `K` be a field with separable closure `Ω`, and let `ρ` be a representation of `Gal(Ω/K)` on a
 `Λ`-module `M`. On finite continuous `Gal(Ω/K)`-sets, `Gal(Ω/K)`-maps into `M` form a sheaf of
 `Λ`-modules for the jointly surjective topology (`ContAction.isSheaf_modulePresheaf`). The
-topology `TauCeti.FiniteEtaleScheme.galoisTopology K Ω` transported from the small étale site of
-`Spec K` is coarser (`TauCeti.FiniteEtaleScheme.galoisTopology_le_jointlySurjectiveTopology`): a
-covering family of finite étale `K`-schemes is jointly surjective on geometric fibres. Hence the
-equivalence `TauCeti.FiniteEtaleScheme.galoisSheafEquiv` turns `ρ` into an étale sheaf of
+equivalence `TauCeti.FiniteEtaleScheme.jointlySurjectiveSheafEquiv` between étale sheaves on
+`Spec K` and sheaves for the jointly surjective topology turns `ρ` into an étale sheaf of
 `Λ`-modules on `Spec K` (`TauCeti.FiniteEtaleScheme.galoisModuleSheaf`), whose sections over a
 finite étale `K`-scheme `X` are the `Gal(Ω/K)`-maps from the `Ω`-points of `X` into `M`, naturally
 in `X` (`TauCeti.FiniteEtaleScheme.galoisModuleSheafObjIso`). In particular its sections over
@@ -75,11 +73,12 @@ variable {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M] [Module Λ M]
   (ρ : Representation Λ Gal(Ω/K) M)
 
 /-- The `Gal(Ω/K)`-maps into a representation `ρ`, as a sheaf on finite continuous
-`Gal(Ω/K)`-sets for `galoisTopology K Ω`. -/
-noncomputable def galoisSetModuleSheaf : Sheaf (galoisTopology K Ω) (ModuleCat.{u} Λ) :=
-  ⟨ContAction.modulePresheaf ρ, fun E ↦ Presieve.isSheaf_of_le _
-    (galoisTopology_le_jointlySurjectiveTopology K Ω) (ContAction.isSheaf_modulePresheaf ρ E)⟩
+`Gal(Ω/K)`-sets for the jointly surjective topology. -/
+noncomputable def galoisSetModuleSheaf :
+    Sheaf (ContAction.jointlySurjectiveTopology Gal(Ω/K)) (ModuleCat.{u} Λ) :=
+  ⟨ContAction.modulePresheaf ρ, ContAction.isSheaf_modulePresheaf ρ⟩
 
+omit [IsSepClosed Ω] [IsGalois K Ω] in
 /-- The underlying presheaf of `galoisSetModuleSheaf K Ω ρ` is `ContAction.modulePresheaf ρ`. -/
 @[simp]
 theorem galoisSetModuleSheaf_obj :
@@ -87,11 +86,11 @@ theorem galoisSetModuleSheaf_obj :
   (rfl)
 
 /-- **The étale sheaf of a Galois representation.** For a representation `ρ` of `Gal(Ω/K)` on a
-`Λ`-module, the étale sheaf of `Λ`-modules on `Spec K` corresponding under `galoisSheafEquiv` to
-the sheaf of `Gal(Ω/K)`-maps into `ρ`. -/
+`Λ`-module, the étale sheaf of `Λ`-modules on `Spec K` corresponding under
+`jointlySurjectiveSheafEquiv` to the sheaf of `Gal(Ω/K)`-maps into `ρ`. -/
 noncomputable def galoisModuleSheaf :
     Sheaf (Scheme.smallEtaleTopology (Spec (.of K))) (ModuleCat.{u} Λ) :=
-  (galoisSheafEquiv K (ModuleCat.{u} Λ) Ω).inverse.obj (galoisSetModuleSheaf K Ω ρ)
+  (jointlySurjectiveSheafEquiv K Ω (ModuleCat.{u} Λ)).inverse.obj (galoisSetModuleSheaf K Ω ρ)
 
 /-- **Sections of the étale sheaf of a Galois representation over Galois sets.** Over the finite
 étale `K`-scheme corresponding to a finite continuous `Gal(Ω/K)`-set, the sections of
@@ -99,9 +98,9 @@ noncomputable def galoisModuleSheaf :
 noncomputable def galoisModuleSheafInverseIso :
     (galoisEquivalence K Ω).inverse.op ⋙ (toEtale _).op ⋙ (galoisModuleSheaf K Ω ρ).obj ≅
       ContAction.modulePresheaf ρ :=
-  -- This is the counit of `galoisSheafEquiv`.
-  eqToIso (galoisSheafEquiv_functor_obj_obj K _ Ω _).symm ≪≫
-    (sheafToPresheaf _ _).mapIso ((galoisSheafEquiv K (ModuleCat.{u} Λ) Ω).counitIso.app
+  -- This is the counit of `jointlySurjectiveSheafEquiv`.
+  eqToIso (jointlySurjectiveSheafEquiv_functor_obj_obj K Ω _ _).symm ≪≫
+    (sheafToPresheaf _ _).mapIso ((jointlySurjectiveSheafEquiv K Ω (ModuleCat.{u} Λ)).counitIso.app
       (galoisSetModuleSheaf K Ω ρ))
 
 /-- **Sections of the étale sheaf of a Galois representation over a Galois set.** Over the finite
