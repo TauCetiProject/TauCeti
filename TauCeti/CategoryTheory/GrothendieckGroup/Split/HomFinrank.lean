@@ -80,7 +80,7 @@ variable (k) in
 @[simp]
 theorem homFinrank_biprod (σ τ : C) [∀ X : C, Module.Free k (σ ⟶ X)]
     [∀ X : C, Module.Finite k (σ ⟶ X)] [∀ X : C, Module.Free k (τ ⟶ X)]
-    [∀ X : C, Module.Finite k (τ ⟶ X)] [∀ X : C, Module.Free k (σ ⊞ τ ⟶ X)] :
+    [∀ X : C, Module.Finite k (τ ⟶ X)] :
     homFinrank.{w} k (σ ⊞ τ) = homFinrank k σ + homFinrank k τ :=
   hom_ext fun X ↦ by
     rw [AddMonoidHom.add_apply, homFinrank_of, homFinrank_of, homFinrank_of,

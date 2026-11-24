@@ -171,6 +171,16 @@ instance moduleFinite_homTo_biprod [Module.Finite k (Z ⟶ A)] [Module.Finite k 
     Module.Finite k (Z ⟶ A ⊞ B) :=
   .equiv (homToBiprodLinearEquiv k Z A B).symm
 
+/-- Free Hom modules out of both summands give a free Hom module out of a binary biproduct. -/
+instance moduleFree_hom_biprod [Module.Free k (A ⟶ Z)] [Module.Free k (B ⟶ Z)] :
+    Module.Free k (A ⊞ B ⟶ Z) :=
+  .of_equiv (homBiprodLinearEquiv k Z A B).symm
+
+/-- Free Hom modules into both summands give a free Hom module into a binary biproduct. -/
+instance moduleFree_homTo_biprod [Module.Free k (Z ⟶ A)] [Module.Free k (Z ⟶ B)] :
+    Module.Free k (Z ⟶ A ⊞ B) :=
+  .of_equiv (homToBiprodLinearEquiv k Z A B).symm
+
 variable (k) in
 /-- The rank of Hom out of a binary biproduct is the sum of the ranks from its summands, when
 these are finite free modules. -/
