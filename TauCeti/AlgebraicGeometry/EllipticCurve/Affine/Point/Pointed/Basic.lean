@@ -25,7 +25,20 @@ Changes of variables preserve ellipticity over any commutative ring
 isomorphism, so they also preserve the order of the marked point. The pointed elliptic curves whose
 marked point has exact order `N` therefore form a sub-action
 (`TauCeti.PointedWeierstrassCurve.exactOrder`); its orbits are the isomorphism classes of elliptic
-curves with a point of exact order `N`, the moduli problem of the congruence subgroup `Γ₁(N)`.
+curves with a point of exact order `N`. Here `exactOrder F 0` marks points of infinite order.
+For `N > 0`, such a point is a constant cyclic marking `ℤ/Nℤ ↪ E[N]`, sending `1` to the point.
+This differs from the μ-markings `μ_N ↪ E[N]` of the moduli problem of `Γ₁(N)`; over ℂ, choosing
+a primitive `N`-th root of unity `ζ_N` identifies the two, the marking `α` corresponding to the
+point `α(ζ_N)`.
+Multiplying the marked point by an integer commutes with changes of variables.
+For `M ≠ 0`, the map `P ↦ M • P` lowers exact order from `N * M`
+to `N`; at `N = 0` it preserves infinite order. At positive levels over ℂ, level lowering
+corresponds to the inclusion `Γ₁(N M) ≤ Γ₁(N)`.
+
+The unit action on marked curves is in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Units`; its induced action on
+isomorphism classes is in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Pointed.Quotient`.
 
 ## Main definitions
 
@@ -33,6 +46,8 @@ curves with a point of exact order `N`, the moduli problem of the congruence sub
 * `TauCeti.PointedWeierstrassCurve.instMulActionVariableChange`: the action of changes of variables.
 * `TauCeti.PointedWeierstrassCurve.exactOrder F N`: over a field `F`, the elliptic curves with a
   marked point of exact order `N`, as a sub-action.
+* `TauCeti.PointedWeierstrassCurve.nsmulExactOrder N M`: multiplying the marked point by `M`, as
+  an equivariant map from exact order `N * M` to exact order `N`.
 
 ## Main results
 
@@ -42,6 +57,8 @@ curves with a point of exact order `N`, the moduli problem of the congruence sub
   affine pointed curves, in coordinates.
 * `TauCeti.PointedWeierstrassCurve.addOrderOf_smul_point`: over a field, changes of variables
   preserve the order of the marked point.
+* `TauCeti.PointedWeierstrassCurve.smul_mk_zsmul_point`: over a field, changes of variables
+  commute with multiplying the marked point by `n`.
 -/
 
 public section
@@ -171,6 +188,85 @@ def exactOrder (N : ℕ) : SubMulAction (VariableChange F) (PointedWeierstrassCu
 theorem mem_exactOrder_iff {N : ℕ} :
     X ∈ exactOrder F N ↔ X.curve.IsElliptic ∧ addOrderOf X.point = N :=
   Iff.rfl
+
+/-- Over a field, a change of variables commutes with multiplying the marked point by `n`. -/
+theorem smul_mk_zsmul_point (n : ℤ) :
+    C • (⟨X.curve, n • X.point⟩ : PointedWeierstrassCurve F) =
+      ⟨(C • X).curve, n • (C • X).point⟩ := by
+  -- The curves agree by `smul_curve`, which `rw` cannot apply under the dependent point.
+  rw [smul_mk]
+  refine mk_inj.mpr ?_
+  rw [smul_point, ← coe_addEquivVariableChange_symm, map_zsmul]
+
+variable {N : ℕ}
+
+/-- Multiplying a marked point of exact order `N * M` by `M ≠ 0` gives a point of exact order
+`N`. -/
+theorem mk_nsmul_point_mem_exactOrder_of_mem_mul {M : ℕ} (hM : M ≠ 0)
+    (hX : X ∈ exactOrder F (N * M)) :
+    (⟨X.curve, M • X.point⟩ : PointedWeierstrassCurve F) ∈ exactOrder F N := by
+  obtain ⟨hE, hN⟩ := (mem_exactOrder_iff X).mp hX
+  refine (mem_exactOrder_iff _).mpr ⟨hE, ?_⟩
+  rw [addOrderOf_nsmul_of_dvd hM (hN ▸ dvd_mul_left M N), hN, Nat.mul_div_cancel _ (by omega)]
+
+variable (N) in
+/-- **Lowering the level**: for `M ≠ 0`, multiplying the marked point by `M` sends an elliptic
+curve with a point of exact order `N * M` to one with a point of exact order `N`. For `N > 0`,
+these points specify constant cyclic markings. Over ℂ at positive levels, the map corresponds to
+`Γ₁(N M) ≤ Γ₁(N)`. Choosing compatible primitive roots `ζ_N = ζ_{NM}^M` identifies the source
+marking `P` with the embedding `α : μ_{NM} ↪ E[NM]` with `α(ζ_{NM}) = P`, and the target
+marking `M • P` with its restriction `μ_N ↪ E[N]`, since `α(ζ_N) = M • P`. The point operation
+commutes with changes of variables also at `N = 0`, where it preserves infinite order. -/
+def nsmulExactOrder (M : ℕ) [NeZero M] :
+    exactOrder F (N * M) →[VariableChange F] exactOrder F N where
+  toFun X := ⟨⟨X.val.curve, M • X.val.point⟩,
+    mk_nsmul_point_mem_exactOrder_of_mem_mul X.val (NeZero.ne M) X.property⟩
+  map_smul' C X := Subtype.ext <| by
+    dsimp only [id_eq]
+    rw [SubMulAction.val_smul, SubMulAction.val_smul]
+    have h := smul_mk_zsmul_point C X.val M
+    simp only [natCast_zsmul] at h
+    exact h.symm
+
+/-- After coercion to a pointed curve, level lowering leaves the curve unchanged and replaces
+the marked point `P` by `M • P`. -/
+@[simp]
+theorem val_nsmulExactOrder_apply (M : ℕ) [NeZero M] (X : exactOrder F (N * M)) :
+    (nsmulExactOrder N M X : PointedWeierstrassCurve F) =
+      ⟨X.val.curve, M • X.val.point⟩ :=
+  (rfl)
+
+/-- Lowering by `1` is the identity equivariant map after transporting its source level
+along `Nat.mul_one`. -/
+@[simp]
+theorem nsmulExactOrder_one :
+    (cast (congrArg (fun L ↦ exactOrder F L →[VariableChange F] exactOrder F N)
+      (Nat.mul_one N)) (nsmulExactOrder N 1)) = MulActionHom.id _ := by
+  have h (L : ℕ) (hL : N * 1 = L) (X : exactOrder F L) :
+      ((cast (congrArg (fun L ↦ exactOrder F L →[VariableChange F] exactOrder F N) hL)
+        (nsmulExactOrder N 1)) X : PointedWeierstrassCurve F) = X.val := by
+    subst L
+    rw [cast_eq, val_nsmulExactOrder_apply, one_smul]
+  exact MulActionHom.ext fun X ↦ Subtype.ext (h N (Nat.mul_one N) X)
+
+/-- Lowering first by `K` and then by `M` agrees with lowering by `M * K`, after
+transporting the source level along `Nat.mul_assoc`. -/
+@[simp]
+theorem nsmulExactOrder_comp (M K : ℕ) [NeZero M] [NeZero K] :
+    cast (congrArg (fun L ↦ exactOrder F L →[VariableChange F] exactOrder F N)
+      (Nat.mul_assoc N M K)) ((nsmulExactOrder N M).comp (nsmulExactOrder (N * M) K)) =
+      nsmulExactOrder N (M * K) := by
+  have h (L : ℕ) (hL : (N * M) * K = L) (X : exactOrder F L) :
+      ((cast (congrArg (fun L ↦ exactOrder F L →[VariableChange F] exactOrder F N) hL)
+        ((nsmulExactOrder N M).comp (nsmulExactOrder (N * M) K))) X :
+          PointedWeierstrassCurve F) = ⟨X.val.curve, (M * K) • X.val.point⟩ := by
+    subst L
+    rw [cast_eq, MulActionHom.comp_apply, val_nsmulExactOrder_apply,
+      val_nsmulExactOrder_apply, mul_smul]
+  apply MulActionHom.ext
+  intro X
+  apply Subtype.ext
+  rw [h _ (Nat.mul_assoc N M K), val_nsmulExactOrder_apply]
 
 end Field
 

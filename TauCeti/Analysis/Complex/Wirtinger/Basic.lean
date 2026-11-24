@@ -86,6 +86,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `TauCeti.conjWirtingerDeriv_comp_eq_conj_smul` writes it as `\bar∂(φ ∘ g) = \bar{g'} \bar∂φ`.
 * `ContinuousLinearMap.conjWirtingerDeriv_comp_left`: the chain rule `\bar∂(L ∘ g) = L ∘ \bar∂g`
   after a continuous complex-linear map `L`.
+* `ContinuousLinearEquiv.conjWirtingerDeriv_comp_left_apply`: the chain rule after a complex-linear
+  isomorphism, for maps into a space with any compatible real structure.
 * `ContinuousLinearMap.wirtingerDeriv_comp_right`,
   `ContinuousLinearMap.conjWirtingerDeriv_comp_right`: the chain rules
   `∂(f ∘ L)(x) = ∂f(L x) ∘ L` and `\bar∂(f ∘ L)(x) = \bar∂f(L x) ∘ L` before a complex-linear
@@ -556,6 +558,22 @@ theorem _root_.ContinuousLinearMap.conjWirtingerDeriv_comp_left {X : Type*} [Nor
     [NormedSpace ℂ X] (L : W →L[ℂ] X) {g : V → W} {x : V} (hg : DifferentiableAt ℝ g x) :
     conjWirtingerDeriv (fun y ↦ L (g y)) x = L.comp (conjWirtingerDeriv g x) := by
   rw [← Function.comp_def, TauCeti.conjWirtingerDeriv_comp L.differentiableAt hg, L.fderiv]
+
+/-- **The chain rule for the conjugate Wirtinger derivative** after a complex-linear isomorphism,
+for a map `u` into a complex normed space `X` whose real structure is any one compatible with the
+complex structure: `\bar∂(e ∘ u)(x) v = e ((Du(x))^{0,1} v)`, where `(Du(x))^{0,1}` is the
+complex-antilinear part `ContinuousLinearMap.complexAntilinearPartL` of the real derivative. No
+differentiability is needed, since `e` is an isomorphism. -/
+theorem _root_.ContinuousLinearEquiv.conjWirtingerDeriv_comp_left_apply {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedSpace ℂ X] [IsScalarTower ℝ ℂ X]
+    (e : X ≃L[ℂ] W) (u : V → X) (x v : V) :
+    conjWirtingerDeriv (fun y ↦ e (u y)) x v =
+      e (ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ u x) v) := by
+  have h := (e.restrictScalars' ℝ).comp_fderiv (f := u) (x := x)
+  rw [ContinuousLinearEquiv.coe_restrictScalars', Function.comp_def] at h
+  rw [conjWirtingerDeriv_apply, h, ContinuousLinearMap.complexAntilinearPartL_apply_apply,
+    RCLike.real_smul_eq_coe_smul (K := ℂ) (E := X), e.map_smul, e.map_add, e.map_smul]
+  simp [ContinuousLinearEquiv.coe_restrictScalars']
 
 section Mul
 

@@ -232,8 +232,7 @@ theorem finiteDimensional_fieldOfModuli [IsGalois ℚ k] (c : IsoClass k) :
 moduli of a class over `ℚ` is its true orbit size. -/
 theorem finrank_fieldOfModuli_eq_trueOrbitSize [IsGalois ℚ k] (c : IsoClass k) :
     Module.finrank ℚ c.fieldOfModuli = c.trueOrbitSize := by
-  rw [IntermediateField.finrank_eq_fixingSubgroup_index, fieldOfModuli_def,
-    InfiniteGalois.fixingSubgroup_fixedField ⟨_, Subgroup.isClosed_of_isOpen _ c.isOpen_stabilizer⟩,
+  rw [fieldOfModuli_def, IntermediateField.finrank_fixedField_of_isOpen c.isOpen_stabilizer,
     trueOrbitSize_eq_index]
 
 /-- **Galois orbits are finite**: over a field `k` algebraic over `ℚ`, such as

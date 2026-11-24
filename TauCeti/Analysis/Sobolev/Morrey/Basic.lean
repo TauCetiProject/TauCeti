@@ -10,10 +10,13 @@ public import Mathlib.Analysis.Convex.Star
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Integral.Average
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Topology.MetricSpace.Holder
 
 import Mathlib.Analysis.Normed.Affine.AddTorsor
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.RieszPotential.Bounded
@@ -60,6 +63,11 @@ inequality, bounds `u` itself by its `W^{1,p}` norm.
   two points, for `u` that is `C¹` on the ball of radius `‖x - y‖` about their midpoint.
 * `TauCeti.dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt`: the same as a real-valued bound,
   given a bound `N` on that `Lᵖ` norm, with the factor `2 ^ (1 - n / p)` in the constant.
+* `TauCeti.edist_le_of_contDiffOn_cthickening_of_finrank_lt`: Morrey's inequality between a point
+  `x` of a set `S` and a point `y` with `2 ‖x - y‖ ≤ δ`, for `u` that is `C¹` on the closed
+  `δ`-thickening of `S`, in terms of the `Lᵖ` norm of the derivative on that thickening.
+* `TauCeti.exists_edist_le_of_contDiffOn_cthickening_of_two_lt`: the same in the plane `ℂ`, with
+  exponent `1 - 2 / p` and a constant depending only on `p`.
 * `TauCeti.enorm_sub_le_of_contDiff_of_finrank_lt`: Morrey's inequality on the whole space.
 * `TauCeti.holderWith_of_contDiff_of_finrank_lt`: a `C¹` function with derivative in `Lᵖ`,
   `p > n`, is Hölder continuous of exponent `1 - n / p`.
@@ -371,6 +379,56 @@ theorem dist_le_of_contDiffOn_ball_midpoint_of_finrank_lt [CompleteSpace F] {x y
     Real.mul_rpow zero_le_two (norm_nonneg _), ← dist_eq_norm]
   congr 1
   ring
+
+/-- **Morrey's inequality near a set.** If `u` is `C¹` on the closed `δ`-thickening of a set `S`,
+`p` exceeds the dimension `n` of the space, `x ∈ S` and `2 ‖x - y‖ ≤ δ`, then `edist (u x) (u y)`
+is at most `2 ^ (n + 1) / (n ω) * K ^ (1 - 1 / p) * 2 ^ (1 - n / p) * edist x y ^ (1 - n / p)`
+times the `Lᵖ` norm of the derivative of `u` on that thickening, where `ω = μ(B(0, 1))` and
+`K = n ω (p - 1) / (p - n)`. -/
+theorem edist_le_of_contDiffOn_cthickening_of_finrank_lt [CompleteSpace F] {S : Set E} {δ : ℝ}
+    {y : E} (hu : ContDiffOn ℝ 1 u (cthickening δ S)) (hp : (finrank ℝ E : ℝ≥0) < p) (hx : x ∈ S)
+    (hxy : 2 * dist x y ≤ δ) :
+    edist (u x) (u y) ≤
+      ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / (finrank ℝ E * μ.real (ball 0 1)) *
+        (finrank ℝ E * μ.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^ (1 - 1 / (p : ℝ)) *
+          2 ^ (1 - finrank ℝ E / (p : ℝ))) * edist x y ^ (1 - finrank ℝ E / (p : ℝ)) *
+        eLpNorm (fderiv ℝ u) p (μ.restrict (cthickening δ S)) := by
+  have hball := ball_midpoint_subset_cthickening hx hxy
+  have hα : 0 ≤ 1 - finrank ℝ E / (p : ℝ) :=
+    sub_nonneg.2 ((div_le_one (zero_le.trans_lt hp)).2 (by exact_mod_cast hp.le))
+  rw [eDist_eq_eNorm_sub]
+  refine (enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := μ) (hu.mono hball)
+    hp).trans ?_
+  -- The factor `(2 ‖x - y‖) ^ (1 - n / p)` splits off `‖x - y‖ ^ (1 - n / p)`.
+  rw [Real.mul_rpow zero_le_two (norm_nonneg _), ← mul_assoc,
+    ENNReal.ofReal_mul' (Real.rpow_nonneg (norm_nonneg _) _), ← dist_eq_norm,
+    ← ENNReal.ofReal_rpow_of_nonneg dist_nonneg hα, ← edist_dist]
+  gcongr
+  rwa [dist_eq_norm]
+
+/-- **Morrey's inequality near a set in the plane.** Let `2 < p`. There is a constant `c` such
+that for every set `S ⊆ ℂ`, every map `u` that is `C¹` on the closed `δ`-thickening of `S`, with
+values in a real Banach space, and all `x ∈ S` and `y` with `2 |x - y| ≤ δ`,
+
+`‖u x - u y‖ ≤ c |x - y| ^ (1 - 2 / p) ‖Du‖_{Lᵖ}`,
+
+the `Lᵖ` norm being taken over that thickening. -/
+theorem exists_edist_le_of_contDiffOn_cthickening_of_two_lt [CompleteSpace F] (hp : 2 < p) :
+    ∃ c : ℝ≥0, ∀ {S : Set ℂ} {δ : ℝ} {u : ℂ → F} {x y : ℂ},
+      ContDiffOn ℝ 1 u (cthickening δ S) → x ∈ S → 2 * dist x y ≤ δ →
+      edist (u x) (u y) ≤ c * edist x y ^ ((1 - 2 / p : ℝ≥0) : ℝ) *
+        eLpNorm (fderiv ℝ u) p (volume.restrict (cthickening δ S)) := by
+  have hp₂ : (finrank ℝ ℂ : ℝ≥0) < p := by simpa using hp
+  have hα : ((1 - 2 / p : ℝ≥0) : ℝ) = 1 - (finrank ℝ ℂ : ℝ) / (p : ℝ) := by
+    rw [Complex.finrank_real_complex, NNReal.coe_sub ((div_le_one₀ (zero_lt_two.trans hp)).2
+      hp.le), NNReal.coe_div]
+    norm_num
+  have hC := morreyConstant_nonneg _ ((volume : Measure ℂ).real (ball 0 1)) p measureReal_nonneg
+    hp₂
+  -- The constant is Morrey's constant for `ℂ`, packaged with its nonnegativity.
+  refine ⟨NNReal.mk _ hC, fun hu hx hxy ↦ ?_⟩
+  rw [hα, ← ENNReal.ofReal_eq_coe_nnreal hC]
+  exact edist_le_of_contDiffOn_cthickening_of_finrank_lt hu hp₂ hx hxy
 
 /-- **Morrey's inequality, Hölder form.** If `u` is `C¹` on the whole space, `p` exceeds the
 dimension `n` of the space, and the derivative of `u` lies in `Lᵖ`, then `u` is Hölder continuous

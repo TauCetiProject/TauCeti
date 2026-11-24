@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Ideal.Operations
 public import TauCeti.RingTheory.Jacobson.Module
 
+import Mathlib.LinearAlgebra.Quotient.Basic
+
 /-!
 # Superfluous submodules
 
@@ -52,6 +54,8 @@ contained in the radical `Module.jacobson`.
   `TauCeti.isSuperfluous_jacobson` records that the radical itself is then superfluous.
 * `TauCeti.isSuperfluous_smul_top_of_isNilpotent`: the form of Nakayama's lemma that needs no
   hypothesis on the module at all — a nilpotent ideal times any module is superfluous in it.
+* `TauCeti.IsSuperfluous.finite_of_finite_quotient`: a module is finitely generated when its
+  quotient by a superfluous submodule is.
 
 ## References
 
@@ -337,6 +341,23 @@ runs on. -/
 theorem isSuperfluous_jacobson [IsCoatomic (Submodule R M)] :
     IsSuperfluous (Module.jacobson R M) :=
   isSuperfluous_of_le_jacobson le_rfl
+
+/-- **Finite generation lifts across a superfluous submodule.** If `N` is superfluous in `M` and
+`M ⧸ N` is finitely generated, then `M` is finitely generated. With
+`TauCeti.isSuperfluous_smul_top_of_isNilpotent` this is Nakayama's lemma for a nilpotent ideal
+`I` in the form that needs no finiteness of `M`: `M` is finitely generated as soon as `M ⧸ I • M`
+is. -/
+theorem IsSuperfluous.finite_of_finite_quotient {N : Submodule R M} (hN : IsSuperfluous N)
+    [Module.Finite R (M ⧸ N)] : Module.Finite R M := by
+  classical
+  obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := R) (M := M ⧸ N)
+  choose t ht using fun i ↦ N.mkQ_surjective (s i)
+  -- Lifts of generators of `M ⧸ N` span a supplement of `N`, which is everything.
+  refine ⟨⟨Finset.univ.image t, hN.eq_top_of_sup_eq_top ?_⟩⟩
+  rw [← Submodule.map_mkQ_eq_top, Submodule.map_span, ← hs]
+  congr 1
+  ext
+  simp [← ht]
 
 end Ring
 

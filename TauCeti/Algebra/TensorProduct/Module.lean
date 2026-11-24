@@ -152,6 +152,30 @@ noncomputable def tensorPairAction : A ⊗[R] B →ₐ[R] Module.End R (M ⊗[R]
     tensorPairAction R M N (a ⊗ₜ[R] b) (m ⊗ₜ[R] n) =
       (a • m) ⊗ₜ[R] (b • n) := (rfl)
 
+/-- The element `a ⊗ 1` acts on `M ⊗[R] N` through the left factor. -/
+@[simp]
+theorem tensorPairAction_tmul_one (a : A) (x : M ⊗[R] N) :
+    tensorPairAction R M N (a ⊗ₜ[R] (1 : B)) x = a • x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul m n => simp [TensorProduct.smul_tmul']
+  | add x y hx hy => rw [map_add, smul_add, hx, hy]
+
+/-- The element `1 ⊗ b` acts on `M ⊗[R] N` through the right factor. -/
+@[simp]
+theorem tensorPairAction_one_tmul (b : B) (x : M ⊗[R] N) :
+    tensorPairAction R M N ((1 : A) ⊗ₜ[R] b) x = (Algebra.lsmul R R N b).lTensor M x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul m n => simp
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+
+/-- The element `1 ⊗ b` acts on `M ⊗[R] N` through the right factor, which is the left factor
+of `N ⊗[R] M`. -/
+theorem comm_tensorPairAction_one_tmul (b : B) (x : M ⊗[R] N) :
+    TensorProduct.comm R M N (tensorPairAction R M N ((1 : A) ⊗ₜ[R] b) x) =
+      b • TensorProduct.comm R M N x := by
+  rw [tensorPairAction_one_tmul, ← LinearMap.rTensor_comm,
+    TensorProduct.AlgebraTensorModule.smul_eq_lsmul_rTensor]
+
 variable {M' N' : Type*}
 variable [AddCommMonoid M'] [Module R M'] [Module A M'] [IsScalarTower R A M']
 variable [AddCommMonoid N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
