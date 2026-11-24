@@ -18,10 +18,14 @@ public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Interval.Finset.Fin
 public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.Order.SuccPred.IntervalSucc
+public import Mathlib.SetTheory.Cardinal.Finite
 
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Group.Fin.Basic
+import Mathlib.Data.Fintype.Prod
+-- Non-public: `Nat.card_eq_fintype_card` converts the count of `Fin.natCard_pairs_lt`.
+import Mathlib.SetTheory.Cardinal.NatCard
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -62,6 +66,7 @@ range, so the value is a `dite` rather than a plain application.
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
 * `Fin.sum_val_eq_choose_two`: the sum of the values of `Fin n` is `n.choose 2`.
+* `Fin.natCard_pairs_lt`: the number of pairs `i < j` of `Fin n` is `n.choose 2`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
 * `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
@@ -244,6 +249,16 @@ theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
 /-- The sum of the positions `0, 1, …, n - 1` is `n.choose 2`. -/
 theorem sum_val_eq_choose_two (n : ℕ) : ∑ i : Fin n, (i : ℕ) = n.choose 2 := by
   rw [Fin.sum_univ_eq_sum_range (fun i ↦ i) n, Finset.sum_range_id, Nat.choose_two_right]
+
+/-- The number of pairs `i < j` of `Fin n` is `n.choose 2`. -/
+theorem natCard_pairs_lt (n : ℕ) :
+    Nat.card {p : Fin n × Fin n // p.1 < p.2} = n.choose 2 := by
+  classical
+  calc Nat.card {p : Fin n × Fin n // p.1 < p.2}
+      = (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2).card := by
+        rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
+    _ = (Fintype.card (Fin n)).choose 2 := Fintype.card_product_filter_lt
+    _ = n.choose 2 := by rw [Fintype.card_fin]
 
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
 theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
