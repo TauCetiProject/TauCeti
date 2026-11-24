@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.IntegralClosure.AbsolutelyIntegrallyClosed
 
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import TauCeti.FieldTheory.IsAlgClosed.Cardinal
+import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
 # Absolutely integrally closed valuation rings
@@ -31,22 +32,22 @@ them within a fixed universe.
 
 The subring `V₀` is the trace `V ∩ L` of `V` on an algebraically closed subfield `L` of the
 fraction field of `V`. For any subfield `L` of a field containing `V`, this trace is a valuation
-ring whose inclusion into `V` is local, and it is absolutely integrally closed when `L` is
-algebraically closed and contained in the fraction field; the last fact only uses that `V` is
-integrally closed.
+ring whose inclusion into `V` is local (`Subfield.valuationRing_comap` and
+`Subfield.isLocalHom_subtype_comap`, in `TauCeti.RingTheory.Valuation.ValuationRing`). It is
+absolutely integrally closed when `L` is algebraically closed and contained in the fraction field;
+this only uses that `V` is integrally closed.
 
 ## Main results
 
 * `ValuationSubring.isAbsolutelyIntegrallyClosed`: a valuation subring of an algebraically closed
   field is absolutely integrally closed.
-* `Subfield.valuationRing_comap`, `Subfield.isLocalHom_subtype_comap`,
-  `Subfield.isAbsolutelyIntegrallyClosed_comap`: the trace of a ring on a subfield of a field
-  containing it.
+* `Subfield.isAbsolutelyIntegrallyClosed_comap`: the trace of an integrally closed domain on an
+  algebraically closed subfield of its fraction field is absolutely integrally closed.
 * `TauCeti.exists_injective_isLocalHom_isAbsolutelyIntegrallyClosed`: every local domain has an
   injective local homomorphism to an absolutely integrally closed valuation domain.
-* `TauCeti.exists_subset_valuationRing_subring_mk_le`: a small absolutely integrally closed
+* `TauCeti.exists_subset_valuationRing_subring_cardinalMk_le`: a small absolutely integrally closed
   valuation subring containing a given subset.
-* `RingHom.exists_range_le_valuationRing_subring_lift_mk_le`: the factorization of a ring
+* `RingHom.exists_range_le_valuationRing_subring_lift_cardinalMk_le`: the factorization of a ring
   homomorphism through a small absolutely integrally closed valuation subring.
 
 ## References
@@ -73,41 +74,6 @@ end ValuationSubring
 namespace Subfield
 
 variable {V K : Type*} [CommRing V] [Field K] [Algebra V K] (L : Subfield K)
-
-/-- If `a * c = b` in `V` with `a ≠ 0`, and `a` and `b` lie in the trace of `V` on a subfield `L` of
-a field containing `V`, then so does `c`. -/
-private theorem mem_comap_of_mul_eq [FaithfulSMul V K] {a b c : V}
-    (ha : a ∈ L.toSubring.comap (algebraMap V K)) (hb : b ∈ L.toSubring.comap (algebraMap V K))
-    (ha0 : a ≠ 0) (h : a * c = b) : c ∈ L.toSubring.comap (algebraMap V K) := by
-  have ha0' : algebraMap V K a ≠ 0 :=
-    (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective V K)).mpr ha0
-  have hc : algebraMap V K c = algebraMap V K b / algebraMap V K a := by
-    rw [eq_div_iff ha0', ← h, map_mul, mul_comm]
-  simpa [Subring.mem_comap, hc] using L.div_mem hb ha
-
-/-- The trace `V ∩ L` of a valuation ring `V` on a subfield `L` of a field containing `V` is a
-valuation ring. -/
-instance valuationRing_comap [IsDomain V] [ValuationRing V] [FaithfulSMul V K] :
-    ValuationRing (L.toSubring.comap (algebraMap V K)) where
-  cond' a b := by
-    obtain ⟨c, hc | hc⟩ := ValuationRing.cond (a : V) b
-    · by_cases ha : (a : V) = 0
-      · exact ⟨0, .inl (Subtype.ext (by simp [← hc, ha]))⟩
-      · exact ⟨⟨c, mem_comap_of_mul_eq L a.property b.property ha hc⟩, .inl (Subtype.ext hc)⟩
-    · by_cases hb : (b : V) = 0
-      · exact ⟨0, .inr (Subtype.ext (by simp [← hc, hb]))⟩
-      · exact ⟨⟨c, mem_comap_of_mul_eq L b.property a.property hb hc⟩, .inr (Subtype.ext hc)⟩
-
-/-- The inclusion into `V` of the trace `V ∩ L` of `V` on a subfield `L` of a field `K` is a local
-homomorphism: an element of `V ∩ L` invertible in `V` has its inverse in `L`. -/
-theorem isLocalHom_subtype_comap : IsLocalHom (L.toSubring.comap (algebraMap V K)).subtype where
-  map_nonunit x hx := by
-    obtain ⟨y, hy⟩ := isUnit_iff_exists_inv.mp hx
-    have hy' : algebraMap V K y = (algebraMap V K x)⁻¹ :=
-      eq_inv_of_mul_eq_one_right (by simpa using congrArg (algebraMap V K) hy)
-    have hyL : y ∈ L.toSubring.comap (algebraMap V K) := by
-      simpa [Subring.mem_comap, hy'] using L.inv_mem x.property
-    exact isUnit_iff_exists_inv.mpr ⟨⟨y, hyL⟩, Subtype.ext hy⟩
 
 /-- The trace `V ∩ L` of an integrally closed domain `V`, for instance a valuation ring, on an
 algebraically closed subfield `L` of its fraction field is absolutely integrally closed. -/
@@ -158,15 +124,15 @@ theorem exists_injective_isLocalHom_isAbsolutelyIntegrallyClosed (V : Type u) [C
 integrally closed valuation subring `V₀` of `V` with `#V₀ ≤ max #s ℵ₀`, whose inclusion into `V` is
 a local homomorphism. The subring is the trace of `V` on an algebraically closed subfield of the
 fraction field of `V` containing `s`. -/
-theorem exists_subset_valuationRing_subring_mk_le (V : Type*) [CommRing V] [IsDomain V]
+theorem exists_subset_valuationRing_subring_cardinalMk_le (V : Type*) [CommRing V] [IsDomain V]
     [ValuationRing V] [IsAbsolutelyIntegrallyClosed V] (s : Set V) :
     ∃ V₀ : Subring V, s ⊆ V₀ ∧ ValuationRing V₀ ∧ IsAbsolutelyIntegrallyClosed V₀ ∧
       IsLocalHom V₀.subtype ∧ #V₀ ≤ max #s ℵ₀ := by
   let K := FractionRing V
   have := IsAbsolutelyIntegrallyClosed.isAlgClosed (A := V) K
-  obtain ⟨L, hsL, hL, hcard⟩ := exists_isAlgClosed_subfield_mk_le K (algebraMap V K '' s)
+  obtain ⟨L, hsL, hL, hcard⟩ := exists_isAlgClosed_subfield_cardinalMk_le K (algebraMap V K '' s)
   refine ⟨L.toSubring.comap (algebraMap V K), fun x hx ↦ hsL ⟨x, hx, rfl⟩, inferInstance,
-    inferInstance, L.isLocalHom_subtype_comap, ?_⟩
+    inferInstance, inferInstance, ?_⟩
   -- `V ∩ L` embeds into `L`, whose cardinality is bounded by that of `s`.
   calc #(L.toSubring.comap (algebraMap V K)) ≤ #L :=
         mk_le_of_injective (f := fun x ↦ (⟨algebraMap V K x, x.property⟩ : L)) fun x y h ↦
@@ -183,11 +149,13 @@ open TauCeti
 /-- Every ring homomorphism `f : A →+* V` to an absolutely integrally closed valuation domain
 factors through an absolutely integrally closed valuation subring `V₀` of `V` with
 `#V₀ ≤ max #A ℵ₀`, whose inclusion into `V` is a local homomorphism. -/
-theorem exists_range_le_valuationRing_subring_lift_mk_le {A : Type u} {V : Type v} [CommRing A]
-    [CommRing V] [IsDomain V] [ValuationRing V] [IsAbsolutelyIntegrallyClosed V] (f : A →+* V) :
+theorem exists_range_le_valuationRing_subring_lift_cardinalMk_le {A : Type u} {V : Type v}
+    [CommRing A] [CommRing V] [IsDomain V] [ValuationRing V] [IsAbsolutelyIntegrallyClosed V]
+    (f : A →+* V) :
     ∃ V₀ : Subring V, f.range ≤ V₀ ∧ ValuationRing V₀ ∧ IsAbsolutelyIntegrallyClosed V₀ ∧
       IsLocalHom V₀.subtype ∧ lift.{u} #V₀ ≤ max (lift.{v} #A) ℵ₀ := by
-  obtain ⟨V₀, hs, h₁, h₂, h₃, hcard⟩ := exists_subset_valuationRing_subring_mk_le V (Set.range f)
+  obtain ⟨V₀, hs, h₁, h₂, h₃, hcard⟩ :=
+    exists_subset_valuationRing_subring_cardinalMk_le V (Set.range f)
   refine ⟨V₀, fun x hx ↦ hs (f.mem_range.mp hx), h₁, h₂, h₃, ?_⟩
   calc lift.{u} #V₀ ≤ lift.{u} (max #(Set.range f) ℵ₀) := lift_le.mpr hcard
     _ ≤ max (lift.{v} #A) ℵ₀ := by

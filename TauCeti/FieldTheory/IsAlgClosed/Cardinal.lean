@@ -23,8 +23,8 @@ algebraically closed test objects by ones of bounded size.
 
 ## Main results
 
-* `TauCeti.exists_isAlgClosed_subfield_mk_le`: an algebraically closed subfield containing `s`, of
-  cardinality at most `max #s ℵ₀`.
+* `TauCeti.exists_isAlgClosed_subfield_cardinalMk_le`: an algebraically closed subfield containing
+  `s`, of cardinality at most `max #s ℵ₀`.
 -/
 
 public section
@@ -36,14 +36,19 @@ namespace TauCeti
 /-- Every subset `s` of an algebraically closed field `K` lies in an algebraically closed subfield
 of cardinality at most `max #s ℵ₀`: the relative algebraic closure in `K` of the subfield generated
 by `s`. -/
-theorem exists_isAlgClosed_subfield_mk_le (K : Type*) [Field K] [IsAlgClosed K] (s : Set K) :
+theorem exists_isAlgClosed_subfield_cardinalMk_le (K : Type*) [Field K] [IsAlgClosed K]
+    (s : Set K) :
     ∃ L : Subfield K, s ⊆ L ∧ IsAlgClosed L ∧ #L ≤ max #s ℵ₀ := by
   set F := Subfield.closure s
+  -- Mathlib defines the carrier and the `Field` instance of an intermediate field through its
+  -- `toSubfield`, so `↥(algebraicClosure F K)` and `↥(algebraicClosure F K).toSubfield` are the
+  -- same field by definition, and `IsAlgClosure.isAlgClosed` applies to the latter as stated.
   refine ⟨(algebraicClosure F K).toSubfield, fun x hx ↦
     (algebraicClosure F K).algebraMap_mem ⟨x, Subfield.subset_closure hx⟩,
     IsAlgClosure.isAlgClosed (R := F) (K := algebraicClosure F K), ?_⟩
   calc #(algebraicClosure F K).toSubfield = #{x : K // IsAlgebraic F x} :=
-        mk_congr (Equiv.subtypeEquivRight fun _ ↦ mem_algebraicClosure_iff)
+        mk_congr (Equiv.subtypeEquivRight fun _ ↦
+          (IntermediateField.mem_toSubfield _ _).trans mem_algebraicClosure_iff)
     _ ≤ max #F ℵ₀ := Algebraic.cardinalMk_le_max F K
     _ ≤ max #s ℵ₀ := by
         simpa using max_le_max_right ℵ₀ (Subfield.cardinalMk_closure_le_max s)
