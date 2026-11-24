@@ -122,6 +122,9 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
 * `TauCeti.SectionChartData.hasWeakFDerivOn_chartValueL`: the chart data of an order-one tuple are
   weakly differentiable on the chart image, with weak derivative
   `TauCeti.SectionChartData.chartDerivL` assembled from the weak gradients of the components.
+* `TauCeti.SectionChartData.norm_le_mul_norm_chartValueL_add_norm_chartDerivL`: the `W^{1,p}` norm
+  of a chart component of an order-one tuple is controlled by the chart data and their weak
+  derivative.
 * `TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`: continuous linear maps
   into the chartwise Sobolev spaces whose values are those of the components of a Sobolev section
   assemble into a continuous linear map between spaces of Sobolev sections keeping the section.
@@ -1056,6 +1059,38 @@ theorem hasWeakFDerivOn_chartValueL (i : Fin C.n) (w : C.SobolevData μ p 1) :
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     ext v
     simp
+
+/-- **The components are controlled by the chart data and their derivative.** The `W^{1,p}` norm of
+the `j`-th chart-`i` component of an order-one tuple is at most the norm of the `j`-th coordinate
+functional of `Module.finBasis ℝ F` times the sum of the `Lᵖ` norms of the chart data and of their
+weak derivative. -/
+theorem norm_le_mul_norm_chartValueL_add_norm_chartDerivL (i : Fin C.n)
+    (w : C.SobolevData μ p 1) (j : Fin (finrank ℝ F)) :
+    ‖w i j‖ ≤ ‖LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)‖ *
+      (‖C.chartValueL μ p 1 i w‖ + ‖C.chartDerivL μ p i w‖) := by
+  set c := LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)
+  have hv : ‖W1p.value (w i j)‖ ≤ ‖c‖ * ‖C.chartValueL μ p 1 i w‖ := by
+    refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+    filter_upwards [C.chartValueL_apply_ae μ p 1 i w] with y hy
+    have : c (C.chartValueL μ p 1 i w y) = W1p.value (w i j) y := by
+      rw [hy]
+      simp [c, Finsupp.single_apply]
+    rw [← this]
+    exact c.le_opNorm _
+  have hg : ‖W1p.gradient (w i j)‖ ≤ ‖c‖ * ‖C.chartDerivL μ p i w‖ := by
+    refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
+    filter_upwards [C.chartDerivL_apply_ae μ p i w] with y hy
+    have : c.comp (C.chartDerivL μ p i w y) = innerSL ℝ (W1p.gradient (w i j) y) := by
+      rw [hy]
+      ext v
+      simp [c, Finsupp.single_apply]
+    rw [← innerSL_apply_norm ℝ, ← this]
+    exact c.opNorm_comp_le _
+  calc ‖w i j‖ ≤ ‖W1p.value (w i j)‖ + ‖W1p.gradient (w i j)‖ :=
+        W1p.norm_le_norm_value_add_norm_gradient _
+    _ ≤ ‖c‖ * (‖C.chartValueL μ p 1 i w‖ + ‖C.chartDerivL μ p i w‖) := by
+        rw [mul_add]
+        exact add_le_add hv hg
 
 end ChartDeriv
 

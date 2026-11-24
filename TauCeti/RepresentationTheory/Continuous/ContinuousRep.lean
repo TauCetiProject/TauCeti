@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
 import TauCeti.RepresentationTheory.BaseChange.Charpoly
 
@@ -934,15 +935,14 @@ base change of `ofCharacter χ` to `B` is the line `B` on which `g` acts by the 
 in `Bˣ`, through `TensorProduct.AlgebraTensorModule.rid`. -/
 def baseChangeOfCharacterIso (χ : Γ →ₜ* Aˣ) :
     Iso ((ofCharacter χ).baseChange B)
-      (ofCharacter (ContinuousMonoidHom.comp
-        ⟨Units.map (algebraMap A B : A →* B), Continuous.units_map _ (continuous_algebraMap A B)⟩
-        χ)) :=
+      (ofCharacter ((ContinuousMonoidHom.unitsMap
+        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ)) :=
   .ofEquiv (.mk (TensorProduct.AlgebraTensorModule.rid A B B) fun g => by
     -- The extended character takes the value `algebraMap A B (χ g)` at `g`.
-    have hχ : (ContinuousMonoidHom.comp
-        ⟨Units.map (algebraMap A B : A →* B), Continuous.units_map _ (continuous_algebraMap A B)⟩
-        χ g : B) = algebraMap A B (χ g) :=
-      Units.coe_map _ _
+    have hχ : ((ContinuousMonoidHom.unitsMap
+        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ g : B) =
+        algebraMap A B (χ g) :=
+      ContinuousMonoidHom.coe_unitsMap_apply _ _
     ext
     simpa [Algebra.smul_def] using hχ.symm)
 

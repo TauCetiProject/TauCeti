@@ -55,8 +55,9 @@ diagonal embedding `b ↦ diag(b, …, b)` and the matrix units `eᵢⱼ` of `M_
   `CStarMatrix.norm_matrixUnit` (`‖eᵢⱼ‖ = 1`).
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
-* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
-  `1 × 1` C⋆-matrices, with `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
+* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`, `CStarMatrix.reindexₐ_apply_apply`:
+  entries of finite sums, of `1 × 1` C⋆-matrices and of reindexed matrices, with
+  `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
   `CStarMatrix.norm_map_toOneByOne_linearMap`: `‖[φ a]‖ = ‖φ a‖` for a linear map `φ`.
 * `CStarMatrix.norm_map_reindexₐ_linearMap`: reindexing preserves the norm of the entrywise
   image under a linear map.
@@ -278,6 +279,16 @@ theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
 theorem toOneByOne_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star A] [Module R A]
     (a : A) (i j : n) : toOneByOne n R A a i j = a :=
   rfl
+
+/-- The entries of a reindexed C⋆-matrix. Mathlib's `CStarMatrix.reindexₐ_apply` has right-hand
+side `Matrix.reindex e e M i j` with `M` a `CStarMatrix`, which is not type-correct at instance
+transparency, so neither `simp` nor `rw` can continue from it to `Matrix.reindex_apply`; this
+states the entry directly, and `simp` tries it first. -/
+@[simp high]
+theorem reindexₐ_apply_apply {m : Type*} [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A]
+    [Mul A] [Star A] [Module R A] (e : m ≃ n) (M : CStarMatrix m m A) (i j : n) :
+    reindexₐ R A e M i j = M (e.symm i) (e.symm j) :=
+  (rfl)
 
 variable (R) in
 /-- The transpose of C⋆-matrices, as a linear map. -/
