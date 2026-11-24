@@ -52,6 +52,8 @@ is at most `2 b`.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
   `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
   nonzero.
+* `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
+  `L^(p * c)` is `p`, for `c` finite and nonzero.
 -/
 
 public section
@@ -268,5 +270,12 @@ theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} 
   rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
   congr 1
   field_simp
+
+/-- **Equal Hölder exponents.** For `c` finite and nonzero, `c` reciprocal exponents
+`(p * c)⁻¹` add up to the reciprocal exponent `p⁻¹`. -/
+theorem inv_mul_inv_mul_cancel {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ∞) (p : ℝ≥0∞) :
+    (c * (p * c)⁻¹)⁻¹ = p := by
+  rw [ENNReal.mul_inv (.inr hc) (.inr hc₀), mul_left_comm, ENNReal.mul_inv_cancel hc₀ hc, mul_one,
+    inv_inv]
 
 end ENNReal
