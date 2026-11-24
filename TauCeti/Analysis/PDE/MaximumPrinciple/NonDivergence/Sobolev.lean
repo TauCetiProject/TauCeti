@@ -230,8 +230,7 @@ theorem exists_contDiff_sub_le_and_le_sum_mul_fderiv_fderiv_of_wkp {p : ℝ≥0�
   set h : EuclideanSpace ℝ ι → ℝ := fun x ↦ -(f x)⁻ - e x
   have hww : ∀ x, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ w) x
       (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = L x := fun x ↦ by
-    have hfd : fderiv ℝ w = fderiv ℝ v := funext fun _ ↦ fderiv_sub_const _
-    simp only [L, hfd]
+    simp only [w, sub_eq_add_neg, sum_mul_fderiv_fderiv_add_const, L]
   -- Off a null set of `S`, `-(f⁻ + e) ≤ L` and `-(f⁻ + e) ≤ 0`.
   have hae : (fun x ↦ (min (L x) (h x))⁻) =ᵐ[mu.restrict S] (fun x ↦ (f x)⁻) + e := by
     filter_upwards [hf, hve] with x hfx hx
@@ -284,8 +283,8 @@ theorem exists_contDiff_le_and_le_add_and_sum_mul_fderiv_fderiv_le_of_wkp {p : �
     hg.trans (by gcongr; exact half_le_self hη.le)⟩
   · have h := abs_le.1 (hvK y hy)
     constructor <;> linarith
-  · have hfd : (fderiv ℝ fun y ↦ v y + η / 2) = fderiv ℝ v := funext fun _ ↦ fderiv_add_const _
-    simpa only [hfd] using hvg x hx
+  · rw [sum_mul_fderiv_fderiv_add_const]
+    exact hvg x hx
 
 /-- **Approximation of a two-sided strong inequality by classical ones.** Let `u ∈ W^{2,p}(Ω)`,
 `p < ∞`, have a representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and
@@ -352,8 +351,8 @@ theorem exists_contDiff_le_and_le_add_and_abs_sum_mul_fderiv_fderiv_le_of_wkp {p
     hg.trans (by gcongr; exact half_le_self hη.le)⟩
   · have h := abs_le.1 (hvK y hy)
     constructor <;> linarith
-  · have hfd : (fderiv ℝ fun y ↦ v y + η / 2) = fderiv ℝ v := funext fun _ ↦ fderiv_add_const _
-    simpa only [hfd] using hvg x hx
+  · rw [sum_mul_fderiv_fderiv_add_const]
+    exact hvg x hx
 
 /-- **Rescaled approximation of a strong supersolution.** Let `u ∈ W^{2,p}(Ω)`, `p < ∞`, have a
 representative `ū` continuous on `Ω`, let `K ⊆ Ω` be compact and `S ⊆ K`, and suppose that
@@ -398,8 +397,7 @@ theorem exists_contDiff_div_le_and_sum_mul_fderiv_fderiv_le_of_wkp {p : ℝ≥0�
     exact ⟨mul_le_mul_of_nonneg_left (by linarith) (inv_pos.2 hσ).le,
       mul_le_mul_of_nonneg_left (by linarith) (inv_pos.2 hσ).le⟩
   · -- The principal part of `w` is that of `v` divided by `σ`.
-    have hfd : (fderiv ℝ fun y ↦ v y + ζ) = fderiv ℝ v := funext fun _ ↦ fderiv_add_const _
-    rw [sum_mul_fderiv_fderiv_const_mul, hfd]
+    rw [sum_mul_fderiv_fderiv_const_mul, sum_mul_fderiv_fderiv_add_const]
     exact mul_le_mul_of_nonneg_left (hvg x hx) (inv_pos.2 hσ).le
   have hpos : (fun x ↦ (σ⁻¹ * g x)⁺) = σ⁻¹ • fun x ↦ (g x)⁺ := by
     funext x
