@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Kernel.Projection
+public import TauCeti.Analysis.PDE.Vortex.Kernel.Decay
+public import TauCeti.Analysis.PDE.Vortex.WeakKernel
 public import TauCeti.Analysis.PDE.Vortex.UniformDerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 
