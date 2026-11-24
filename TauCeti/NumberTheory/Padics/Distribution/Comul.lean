@@ -53,7 +53,8 @@ including torsion modules.
 * `TauCeti.AnalyticStage.norm_comul`: `‖comul S c‖ = ‖c‖`.
 * `TauCeti.AnalyticStage.congrLeft_prodComm_comul`: cocommutativity under `Homeomorph.prodComm`.
 * `TauCeti.AnalyticStage.eval_eval_comulCurried`: compatibility with addition `(x, y) ↦ x + y`.
-* `TauCeti.AnalyticStage.eval_curryEquiv_prodMul`: stage evaluation of a curried outer product.
+* `TauCeti.AnalyticStage.eval_curryEquiv_prodSMul`: stage evaluation of a curried elementary
+  tensor.
 * `TauCeti.AnalyticStage.transition_compLeft_transition_comulCurried`: compatibility with
   `transition`.
 * `TauCeti.AnalyticStage.comulCurried_comulCurried`: coassociativity of `comulCurried`.
@@ -487,13 +488,23 @@ end Structural
 
 end Comul
 
-/-- Stage evaluation of a curried outer product `curryEquiv R R (prodMul a b)` at `x` scales the
-second factor `b` by `eval R a x`. -/
+/-- Stage evaluation of a curried elementary tensor `curryEquiv S E (prodSMul a b)` at `x` scales
+the second factor `b` by `eval R a x`, for any complete ultrametric normed `ℤ_p`-algebra `R` acting
+boundedly and `ℤ_p`-compatibly on `E`. -/
 @[simp]
-theorem eval_curryEquiv_prodMul {h : ℕ} {R : Type*} [NormedRing R] [Algebra ℤ_[p] R]
-    [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
-    (a b : AnalyticStage p h R) (x : ℤ_[p]) :
-    eval R (curryEquiv R R (prodMul a b)) x = eval R a x • b := by
-  rw [curryEquiv_prodMul_eq_compLeft, eval_compLeft R, ContinuousLinearMap.toSpanSingleton_apply]
+theorem eval_curryEquiv_prodSMul {h k : ℕ} {R E : Type*}
+    [NormedRing R] [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R]
+    [CompleteSpace R]
+    [NormedAddCommGroup E] [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E]
+    [Module R E] [IsBoundedSMul R E] [IsScalarTower ℤ_[p] R E]
+    [IsUltrametricDist E] [CompleteSpace E]
+    (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
+    (a : AnalyticStage p h R) (b : AnalyticStage p k E) (x : ℤ_[p]) :
+    eval S (curryEquiv S E (prodSMul a b)) x = eval R a x • b := by
+  have hcur : curryEquiv S E (prodSMul a b) = curryEquiv ℤ_[p] E (prodSMul a b) := by
+    ext i j; simp
+  rw [eval_eq_eval_padicInt S, eval_eq_eval_padicInt R, hcur,
+    curryEquiv_prodSMul_eq_compLeft (S := ℤ_[p]), eval_compLeft ℤ_[p],
+    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply]
 
 end TauCeti.AnalyticStage

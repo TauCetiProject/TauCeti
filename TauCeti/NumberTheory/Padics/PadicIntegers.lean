@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
 public import TauCeti.Analysis.Normed.Ring.Units
+import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
@@ -52,7 +53,9 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   ideal.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
-* `PadicInt.dvd_of_norm_le`: in `ℤ_[p]`, `y ∣ x` whenever `‖x‖ ≤ ‖y‖`.
+* `PadicInt.dvd_of_norm_le`, `PadicInt.norm_le_of_dvd`, `PadicInt.dvd_iff_norm_le`: in `ℤ_[p]`,
+  `y ∣ x` holds exactly when `‖x‖ ≤ ‖y‖`; in particular `‖x ^ n - y ^ n‖ ≤ ‖x - y‖`
+  (`PadicInt.norm_pow_sub_pow_le`).
 * `PadicInt.mem_span_singleton_iff_norm_le`: the `ℤ_p`-line through `y` in `ℚ_p` is the ball
   `‖x‖ ≤ ‖y‖`, so lines are compared by the norms of their generators
   (`PadicInt.span_singleton_le_span_singleton_iff_norm_le`,
@@ -316,6 +319,20 @@ theorem dvd_of_norm_le {x y : ℤ_[p]} (h : ‖x‖ ≤ ‖y‖) : y ∣ x := by
   rw [Ideal.mem_span_singleton] at hx
   have := (Units.mul_left_dvd (u := unitCoeff hy)).2 hx
   rwa [← unitCoeff_spec hy] at this
+
+/-- In `ℤ_p`, divisibility implies the reverse inequality on norms: `y ∣ x → ‖x‖ ≤ ‖y‖`. -/
+theorem norm_le_of_dvd {x y : ℤ_[p]} (h : y ∣ x) : ‖x‖ ≤ ‖y‖ := by
+  obtain ⟨c, rfl⟩ := h
+  rw [norm_mul]
+  exact mul_le_of_le_one_right (norm_nonneg y) (norm_le_one c)
+
+/-- Divisibility in `ℤ_p` is comparison of norms: `y ∣ x ↔ ‖x‖ ≤ ‖y‖`. -/
+theorem dvd_iff_norm_le {x y : ℤ_[p]} : y ∣ x ↔ ‖x‖ ≤ ‖y‖ :=
+  ⟨norm_le_of_dvd, dvd_of_norm_le⟩
+
+/-- Taking powers in `ℤ_p` is `1`-Lipschitz: `‖x ^ n - y ^ n‖ ≤ ‖x - y‖`. -/
+theorem norm_pow_sub_pow_le (x y : ℤ_[p]) (n : ℕ) : ‖x ^ n - y ^ n‖ ≤ ‖x - y‖ :=
+  norm_le_of_dvd (sub_dvd_pow_sub_pow x y n)
 
 /-- A `p`-adic number lies in the `ℤ_p`-line through `y` exactly when its norm is at most `‖y‖`.
 For `y = 0` both sides say `x = 0`. -/

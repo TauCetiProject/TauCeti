@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Padics.Distribution.Comul
 public import TauCeti.NumberTheory.Padics.Distribution.Dual
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Bilinear
 import TauCeti.NumberTheory.Padics.Measure.Pushforward
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Point masses and additive convolution of locally analytic distributions on `ℤ_p`
@@ -22,7 +23,8 @@ pairing `ZeroAtInftyContinuousMap.prodFunctional`, this file equips the space
 
 * `TauCeti.LocallyAnalyticDistribution.dirac`: the point-mass distribution `δ_x` at `x ∈ ℤ_p`,
   evaluating locally analytic functions at `x`, with `stageSeminorm h (dirac x) = 1` at every
-  analytic level `h`;
+  analytic level `h` and discwise Lipschitz continuity in `stageSeminorm h`
+  (`stageSeminorm_dirac_sub_le`, `tendsto_stageSeminorm_dirac_sub`);
 * `One (LocallyAnalyticDistribution p K)` and `Mul (LocallyAnalyticDistribution p K)`: the unit
   `1 = dirac 0` and the additive convolution `μ * ν`, defined on each analytic stage `LA_h(K)` by
   `(stage h μ ⊗ stage h ν) ∘ comul`;
@@ -49,11 +51,17 @@ pairing `ZeroAtInftyContinuousMap.prodFunctional`, this file equips the space
 
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm_dirac`: every point mass has stage seminorm
   `1` at every level.
+* `TauCeti.LocallyAnalyticDistribution.stageSeminorm_dirac_sub_le` and
+  `TauCeti.LocallyAnalyticDistribution.tendsto_stageSeminorm_dirac_sub`: `x ↦ dirac x` is discwise
+  Lipschitz and continuous in every `stageSeminorm h`.
 * `TauCeti.LocallyAnalyticDistribution.dirac_injective`: `dirac` is injective.
 * `TauCeti.LocallyAnalyticDistribution.stage_mul`: stage restriction of `μ * ν` is
   `prodFunctional (stage h μ) (stage h ν) _ ∘L comul K`.
 * `TauCeti.LocallyAnalyticDistribution.stageSeminorm_mul_le`: stage seminorms are submultiplicative.
-* `TauCeti.LocallyAnalyticDistribution.dirac_add`: `dirac (x + y) = dirac x * dirac y`.
+* `TauCeti.LocallyAnalyticDistribution.dirac_add` and
+  `TauCeti.LocallyAnalyticDistribution.tendsto_stageSeminorm_dirac_one_pow_appr_sub`:
+  `dirac (x + y) = dirac x * dirac y`, and every `dirac x` is approximated in `stageSeminorm h` by
+  the natural convolution powers `dirac 1 ^ x.appr k`.
 * `TauCeti.LocallyAnalyticDistribution.ofMeasure_map_add_prodMk'`: `ofMeasure` intertwines
   pushforward product-measure convolution along `+ : ℤ_p × ℤ_p → ℤ_p` with distribution
   convolution.
@@ -147,6 +155,74 @@ theorem dirac_injective : Function.Injective (dirac (p := p) (K := K)) := by
 @[simp]
 theorem dirac_inj {x y : ℤ_[p]} : dirac (p := p) (K := K) x = dirac y ↔ x = y :=
   dirac_injective.eq_iff
+
+/-- On `LA_h(K)`, `dirac x` restricts to point evaluation at `x` composed with
+`AnalyticStage.eval K`. -/
+theorem stage_dirac (h : ℕ) (x : ℤ_[p]) :
+    stage h (dirac (p := p) (K := K) x) =
+      (ContinuousMap.evalCLM K x).comp (AnalyticStage.eval K) := by
+  ext c
+  simp
+
+/-- On `a + pʰℤ_p`, `stage h (dirac (a.val + pʰ w))` evaluates the power series on disc `a`. -/
+theorem stage_dirac_natCast_val_add_mul (h : ℕ) (a : ZMod (p ^ h)) (w : ℤ_[p])
+    (c : AnalyticStage p h K) :
+    stage h (dirac (K := K) ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w)) c =
+      ∑' n, w ^ n • c (a, n) := by
+  rw [stage_dirac_apply, eval_natCast_val_add_mul]
+
+/-- On a single disc `a + pʰℤ_p`, `stage h (dirac ·)` is `1`-Lipschitz in the disc coordinate. -/
+theorem stageSeminorm_dirac_natCast_val_add_mul_sub_le (h : ℕ) (a : ZMod (p ^ h)) (u v : ℤ_[p]) :
+    stageSeminorm h
+      (dirac (p := p) (K := K) ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * u) -
+        dirac ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * v)) ≤ ‖u - v‖ := by
+  rw [stageSeminorm_apply]
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun c ↦ ?_
+  have hu := hasSum_eval_natCast_val_add_mul K c a u
+  have hv := hasSum_eval_natCast_val_add_mul K c a v
+  simp only [stage_apply, Submodule.coe_sub, LinearMap.sub_apply, coe_dirac_apply, eval_ofStage,
+    ← (hu.sub hv).tsum_eq]
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
+    (mul_nonneg (norm_nonneg _) (norm_nonneg _)) fun n ↦ ?_
+  rw [← sub_smul]
+  exact (norm_smul_le _ _).trans (mul_le_mul (PadicInt.norm_pow_sub_pow_le u v n)
+    (c.norm_coe_le_norm _) (norm_nonneg _) (norm_nonneg _))
+
+/-- **Discwise Lipschitz continuity of `dirac` in `stageSeminorm h`** when `x ≡ y [ZMOD pʰ]`. -/
+theorem stageSeminorm_dirac_sub_le {h : ℕ} {x y : ℤ_[p]}
+    (hxy : PadicInt.toZModPow h x = PadicInt.toZModPow h y) :
+    stageSeminorm h (dirac (p := p) (K := K) x - dirac y) ≤
+      ‖x - y‖ / ‖(p : ℤ_[p])‖ ^ h := by
+  set a := PadicInt.toZModPow h x
+  set u := ((PadicInt.discHomeomorph p h).symm x).2
+  set v := ((PadicInt.discHomeomorph p h).symm y).2
+  have hx := PadicInt.natCast_val_toZModPow_add_mul_snd_discHomeomorph_symm h x
+  have hy := PadicInt.natCast_val_toZModPow_add_mul_snd_discHomeomorph_symm h y
+  rw [← hxy] at hy
+  have hp0 : 0 < ‖(p : ℤ_[p])‖ ^ h :=
+    pow_pos (norm_pos_iff.mpr (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)) h
+  have hsub : x - y = (p : ℤ_[p]) ^ h * (u - v) := by linear_combination hy - hx
+  have huv : ‖u - v‖ = ‖x - y‖ / ‖(p : ℤ_[p])‖ ^ h := by
+    rw [hsub, norm_mul, norm_pow, mul_div_cancel_left₀ _ hp0.ne']
+  rw [← huv]
+  conv_lhs => rw [← hx, ← hy]
+  exact stageSeminorm_dirac_natCast_val_add_mul_sub_le h a u v
+
+/-- Continuity of `y ↦ dirac y` at `x` with respect to `stageSeminorm h`. -/
+theorem tendsto_stageSeminorm_dirac_sub (h : ℕ) (x : ℤ_[p]) :
+    Filter.Tendsto (fun y ↦ stageSeminorm h (dirac (p := p) (K := K) y - dirac x))
+      (nhds x) (nhds 0) := by
+  have hnhds : {y : ℤ_[p] | PadicInt.toZModPow h y = PadicInt.toZModPow h x} ∈ nhds x :=
+    ((isOpen_discrete {PadicInt.toZModPow h x}).preimage
+      (PadicInt.continuous_toZModPow h)).mem_nhds rfl
+  have hcont : Continuous (fun y : ℤ_[p] ↦ ‖y - x‖ / ‖(p : ℤ_[p])‖ ^ h) :=
+    ((continuous_id.sub continuous_const).norm).div_const _
+  have hlim : Filter.Tendsto (fun y : ℤ_[p] ↦ ‖y - x‖ / ‖(p : ℤ_[p])‖ ^ h)
+      (nhds x) (nhds 0) := by
+    simpa [sub_self, zero_div] using hcont.tendsto x
+  refine squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ apply_nonneg (stageSeminorm h) _)
+    ?_ hlim
+  filter_upwards [hnhds] with y hy using stageSeminorm_dirac_sub_le hy
 
 /-! ### Stage-by-stage additive convolution and `CommRing` / `Algebra` structure -/
 
@@ -328,6 +404,30 @@ noncomputable def diracHom : Multiplicative ℤ_[p] →* LocallyAnalyticDistribu
 @[simp]
 theorem diracHom_apply (x : Multiplicative ℤ_[p]) :
     diracHom (p := p) (K := K) x = dirac x.toAdd := (rfl)
+
+/-- `diracHom` sends `Multiplicative.ofAdd x` to `dirac x`. -/
+theorem diracHom_ofAdd (x : ℤ_[p]) :
+    diracHom (p := p) (K := K) (Multiplicative.ofAdd x) = dirac x := (rfl)
+
+/-- `dirac` sends `n • x` to `(dirac x) ^ n`. -/
+theorem dirac_nsmul (n : ℕ) (x : ℤ_[p]) :
+    dirac (p := p) (K := K) (n • x) = dirac x ^ n := by
+  rw [← diracHom_ofAdd, ofAdd_nsmul, map_pow, diracHom_ofAdd]
+
+/-- `dirac` sends a natural number `n : ℤ_p` to `(dirac 1) ^ n`. -/
+theorem dirac_natCast (n : ℕ) :
+    dirac (p := p) (K := K) (n : ℤ_[p]) = dirac 1 ^ n := by
+  simpa using dirac_nsmul (p := p) (K := K) n 1
+
+/-- **Approximation of point masses by natural convolution powers of `dirac 1`.** Along the
+canonical `p`-adic truncations `x.appr k`, `dirac 1 ^ x.appr k` converges to `dirac x` in every
+stage seminorm `stageSeminorm h`. -/
+theorem tendsto_stageSeminorm_dirac_one_pow_appr_sub (h : ℕ) (x : ℤ_[p]) :
+    Filter.Tendsto
+      (fun k ↦ stageSeminorm h (dirac (p := p) (K := K) 1 ^ x.appr k - dirac x))
+      Filter.atTop (nhds 0) := by
+  simp_rw [← dirac_natCast]
+  exact (tendsto_stageSeminorm_dirac_sub h x).comp x.tendsto_appr
 
 /-! ### Comparison with native convolution of measures -/
 

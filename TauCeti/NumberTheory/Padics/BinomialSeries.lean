@@ -6,23 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.MahlerBasis
+public import TauCeti.RingTheory.PowerSeries.OpenDisc.Basic
 public import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
-# The `p`-adic binomial series depends continuously on its exponent
+# The `p`-adic binomial series depends continuously on its exponent and converges on the open disc
 
 For a `p`-adic integer `u`, the binomial series `(1 + X) ^ u = ∑ₖ (u choose k) Xᵏ` is a power
 series over any semiring `A` with a scalar action of `ℤ_[p]`. Its coefficients
 `u ↦ (u choose k) • 1` are continuous functions of `u` (`PadicInt.continuous_choose`) as soon as
 the scalar action is continuous, so for the product topology on `A⟦X⟧` the series itself depends
-continuously on `u`. This is the continuity that lets an identity between `(1 + X) ^ u` and a
-`p`-adic power, valid for natural exponents, be extended to all `p`-adic exponents by density of
-`ℕ` in `ℤ_[p]`.
+continuously on `u`. When `A` is a normed ring with a bounded `ℤ_[p]`-action, the coefficient
+bound `‖u choose k‖ ≤ 1` ensures that `binomialSeries A u` converges on the open unit disc
+(`PadicInt.onOpenDisc_binomialSeries`).
 
 ## Main results
 
 * `PadicInt.continuous_binomialSeries`: `u ↦ binomialSeries A u` is continuous for the product
   topology on `A⟦X⟧`.
+* `PadicInt.onOpenDisc_binomialSeries`: `binomialSeries R u` converges on the open unit disc for
+  every `u ∈ ℤ_[p]` and normed ring `R` with bounded `ℤ_[p]`-action.
 * `Continuous.powerSeries_subst_binomialSeries_sub_one`: binomial substitution depends
   continuously on both the exponent and the outer series, in any topological p-adic algebra
   with continuous scalar action. This permits dilation identities to extend from natural to
@@ -47,6 +50,17 @@ theorem continuous_binomialSeries {A : Type*} [Semiring A] [SMul ℤ_[p] A] [Top
     (WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
   simp only [binomialSeries_coeff]
   exact ((continuous_choose n).smul continuous_const).continuousAt
+
+/-- **The `p`-adic binomial series `(1 + X) ^ u` for `u ∈ ℤ_[p]` converges on the open unit disc**
+over any normed ring `R` with a bounded `ℤ_[p]`-action, since every binomial coefficient
+`Ring.choose u n` has `p`-adic norm at most `1`. -/
+theorem onOpenDisc_binomialSeries {R : Type*} [NormedRing R] [SMulZeroClass ℤ_[p] R]
+    [IsBoundedSMul ℤ_[p] R] (u : ℤ_[p]) :
+    (binomialSeries R u).OnOpenDisc 1 :=
+  PowerSeries.onOpenDisc_of_bddAbove_norm_coeff ⟨‖(1 : R)‖, Set.forall_mem_range.mpr fun n ↦ by
+    rw [binomialSeries_coeff]
+    exact (norm_smul_le (Ring.choose u n) (1 : R)).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (norm_le_one _))⟩
 
 end PadicInt
 
