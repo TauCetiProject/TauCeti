@@ -70,9 +70,9 @@ private theorem coordinate_ae_abs_le_one (ij : strictLowerTriangle p) :
 private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
     (ij : strictLowerTriangle p) :
     ∫ x, partialCorrelationCholeskyEntryFactor i k ij x ^ 2 ∂coordinateLaw η ij =
-      (if ij.1.1 = i ∧ ij.1.2 = k then
+      (if ij.val.1 = i ∧ ij.val.2 = k then
         1 / (2 * lkjPartialCorrelationShape p η ij + 1) else 1) *
-      (if ij.1.1 = i ∧ ij.1.2 < k then
+      (if ij.val.1 = i ∧ ij.val.2 < k then
         (2 * lkjPartialCorrelationShape p η ij) /
           (2 * lkjPartialCorrelationShape p η ij + 1) else 1) := by
   let a := lkjPartialCorrelationShape p η ij
@@ -89,10 +89,10 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
   have hint : Integrable (fun x : ℝ ↦ x ^ 2) (coordinateLaw η ij) :=
     ((integrable_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure_iff (r := 0) ha 2).2
       (by simpa using ha)).congr (by simp)
-  by_cases hr : ij.1.1 = i
-  · by_cases he : ij.1.2 = k
+  by_cases hr : ij.val.1 = i
+  · by_cases he : ij.val.2 = k
     · simpa [hr, he, a] using hsq
-    · by_cases hl : ij.1.2 < k
+    · by_cases hl : ij.val.2 < k
       · simp_rw [partialCorrelationCholeskyEntryFactor_of_eq_of_lt i k ij _ hr hl]
         simp only [hr, true_and, he, ↓reduceIte, hl, one_mul]
         rw [integral_congr_ae ((coordinate_ae_abs_le_one (η := η) ij).mono
@@ -107,18 +107,18 @@ private theorem integral_entryFactor_sq (hη : 0 < η) (i k : Fin p)
 
 private theorem twice_shape_add_one (ij : strictLowerTriangle p) :
     2 * lkjPartialCorrelationShape p η ij + 1 =
-      2 * η + p - 1 - ij.1.2.val := by
-  have h : (p - 1 - ij.1.2.val : ℕ) + ij.1.2.val + 1 = p := by
-    have := ij.2
-    have := ij.1.1.isLt
+      2 * η + p - 1 - ij.val.2.val := by
+  have h : (p - 1 - ij.val.2.val : ℕ) + ij.val.2.val + 1 = p := by
+    have := ij.property
+    have := ij.val.1.isLt
     omega
-  have hr : ((p - 1 - ij.1.2.val : ℕ) : ℝ) + ij.1.2.val + 1 = p := by
+  have hr : ((p - 1 - ij.val.2.val : ℕ) : ℝ) + ij.val.2.val + 1 = p := by
     exact_mod_cast h
   rw [lkjPartialCorrelationShape_def]
   linarith
 
 private theorem residual_moment_product (hη : 0 < η) (i k : Fin p) (hk : k ≤ i) :
-    (∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < k,
+    (∏ ij : strictLowerTriangle p with ij.val.1 = i ∧ ij.val.2 < k,
       (2 * lkjPartialCorrelationShape p η ij) /
         (2 * lkjPartialCorrelationShape p η ij + 1)) =
       (2 * η + p - 1 - k.val) / (2 * η + p - 1) := by
@@ -144,7 +144,7 @@ private theorem residual_moment_product (hη : 0 < η) (i k : Fin p) (hk : k ≤
       field_simp
       ring
   rw [← hprefix k.val (by exact_mod_cast hk)]
-  apply Finset.prod_bij (fun ij _ ↦ ij.1.2.val)
+  apply Finset.prod_bij (fun ij _ ↦ ij.val.2.val)
   · intro ij hij
     simpa using (Finset.mem_filter.mp hij).2.2
   · intro ij hij lm hlm he
@@ -160,7 +160,7 @@ private theorem residual_moment_product (hη : 0 < η) (i k : Fin p) (hk : k ≤
     · exact Finset.mem_filter.mpr ⟨Finset.mem_univ _, rfl, hnk⟩
   · intro ij _
     have ht := twice_shape_add_one (η := η) ij
-    have hn : 2 * lkjPartialCorrelationShape p η ij = D - ij.1.2.val - 1 := by
+    have hn : 2 * lkjPartialCorrelationShape p η ij = D - ij.val.2.val - 1 := by
       dsimp only [D]
       linarith
     rw [ht, hn]
@@ -183,7 +183,7 @@ private theorem integral_cholesky_sq (hη : 0 < η) (i k : Fin p) (hk : k ≤ i)
   simp_rw [integral_entryFactor_sq hη]
   rw [Finset.prod_mul_distrib]
   have hr : (∏ ij : strictLowerTriangle p,
-      if ij.1.1 = i ∧ ij.1.2 < k then
+      if ij.val.1 = i ∧ ij.val.2 < k then
         (2 * lkjPartialCorrelationShape p η ij) /
           (2 * lkjPartialCorrelationShape p η ij + 1) else 1) =
       (2 * η + p - 1 - k.val) / (2 * η + p - 1) := by
@@ -192,7 +192,7 @@ private theorem integral_cholesky_sq (hη : 0 < η) (i k : Fin p) (hk : k ≤ i)
   by_cases hki : k < i
   · simp only [hki, ↓reduceIte]
     have heq (ij : strictLowerTriangle p) :
-        (ij.1.1 = i ∧ ij.1.2 = k) ↔ ij = ⟨(i, k), hki⟩ := by
+        (ij.val.1 = i ∧ ij.val.2 = k) ↔ ij = ⟨(i, k), hki⟩ := by
       simp only [Subtype.ext_iff, Prod.ext_iff]
     simp_rw [heq]
     simp only [Finset.prod_ite_eq', Finset.mem_univ, ↓reduceIte]
@@ -204,9 +204,9 @@ private theorem integral_cholesky_sq (hη : 0 < η) (i k : Fin p) (hk : k ≤ i)
     field_simp
   · have he : k = i := le_antisymm hk (le_of_not_gt hki)
     subst k
-    have hnone : ∀ ij : strictLowerTriangle p, ¬(ij.1.1 = i ∧ ij.1.2 = i) := by
+    have hnone : ∀ ij : strictLowerTriangle p, ¬(ij.val.1 = i ∧ ij.val.2 = i) := by
       intro ij h
-      have := ij.2
+      have := ij.property
       simp_all
     simp [hnone]
 
@@ -235,8 +235,8 @@ private theorem integral_cholesky_sq_mul_sq (hη : 0 < η) {i j : Fin p} (hij : 
         (∫ x, partialCorrelationCholeskyEntryFactor i k ij x ^ 2 ∂coordinateLaw η ij) *
           (∫ x, partialCorrelationCholeskyEntryFactor j k ij x ^ 2
             ∂coordinateLaw η ij) := by
-    by_cases hi : ij.1.1 = i
-    · have hj : ij.1.1 ≠ j := hi ▸ hij
+    by_cases hi : ij.val.1 = i
+    · have hj : ij.val.1 ≠ j := hi ▸ hij
       simp [partialCorrelationCholeskyEntryFactor_of_row_ne j k ij hj]
     · simp [partialCorrelationCholeskyEntryFactor_of_row_ne i k ij hi]
   simp_rw [hf]

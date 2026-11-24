@@ -7,37 +7,33 @@ module
 
 public import TauCeti.Combinatorics.PlanarMatching.DyckWord
 public import TauCeti.Combinatorics.TreeWalk.Basic
-import TauCeti.Data.Fin.Basic
+import Mathlib.Data.Fintype.Fin
 
 /-!
-# Edge pairings of closed tree walks
+# Step pairings of closed tree walks
 
-Closed tree walks of length `2 * k` represent, up to first-visit vertex relabeling, the
-double-traversal closed walks that dominate expected trace expansions of Wigner matrices, while
-noncrossing pair partitions of `Fin (2 * k)` govern the moments of Wigner's semicircle law. In any
-closed tree walk `w` of length `2 * k`, every unordered edge `s(w i, w (i + 1))` is traversed
-twice, once in each direction; pairing each step `i : Fin (2 * k)` with the unique other step
-`j ≠ i` traversing the same unordered edge gives a canonical bijection between these two families.
+In a closed tree walk `w` of length `2 * k`, every unordered edge is traversed by exactly two steps,
+once as an up step and once in the opposite direction as a down step, and no two equal-edge step
+pairs interleave. Grouping the `2 * k` steps `Fin (2 * k)` by their unordered edge
+`s(w a, w (a + 1))` therefore defines a noncrossing pair partition of `Fin (2 * k)` and,
+equivalently, a planar matching of `2 * k` boundary points.
 
-Under this edge pairing `σ`, an arc `{i, σ i}` opens at `i` (`i < σ i`) if and only if step `i`
-discovers a new vertex (`w (i + 1) = i + 1`). Consequently `PlanarMatching.toDyckWord` sends the
-edge pairing to the discovery-step Dyck word of `closedTreeWalkEquiv`, yielding explicit
-equivalences between `ClosedTreeWalk k`, `PlanarMatching (2 * k)`, and noncrossing pair partitions
-of `Fin (2 * k)`.
+An arc of this planar matching opens at step `a` (`a < σ a`) precisely when step `a` is an up step
+of `w`, so the Dyck word of the planar matching coincides with the Dyck word of `w` under
+`closedTreeWalkEquiv`. Composing with the Dyck-word characterization of planar matchings yields
+explicit equivalences between `ClosedTreeWalk k`, `PlanarMatching (2 * k)`, and noncrossing
+pairings of `Fin (2 * k)`.
 
 ## Main definitions
 
-* `TauCeti.TreeWalk.closedTreeWalkPlanarMatchingEquiv`: the equivalence
-  `ClosedTreeWalk k ≃ PlanarMatching (2 * k)` pairing the two steps along each tree edge.
-* `TauCeti.TreeWalk.closedTreeWalkNoncrossingPairingEquiv`: the induced equivalence with
-  noncrossing pair partitions of `Fin (2 * k)`.
-
-## Main results
-
-* `TauCeti.TreeWalk.closedTreeWalkPlanarMatchingEquiv_apply_eq_iff`: `j` is the matched partner of
-  `i` if and only if `j ≠ i` and steps `i` and `j` traverse the same unordered edge.
-* `TauCeti.TreeWalk.toDyckWord_closedTreeWalkPlanarMatchingEquiv`: the planar matching's Dyck word
-  agrees with the tree walk's discovery-step Dyck word.
+* `TauCeti.TreeWalk.ClosedTreeWalk.toNoncrossingPairing`: the noncrossing pair partition of
+  `Fin (2 * k)` into the two-element unordered-edge fibers of a closed tree walk.
+* `TauCeti.TreeWalk.ClosedTreeWalk.toPlanarMatching`: the planar matching sending each step of a
+  closed tree walk to the unique other step traversing the same unordered edge.
+* `TauCeti.TreeWalk.ClosedTreeWalk.planarMatchingEquiv`: equivalence between `ClosedTreeWalk k` and
+  `PlanarMatching (2 * k)`.
+* `TauCeti.TreeWalk.ClosedTreeWalk.noncrossingPairingEquiv`: equivalence between `ClosedTreeWalk k`
+  and `{P : NoncrossingPartition (Finset.univ : Finset (Fin (2 * k))) // P.val.IsPairing}`.
 
 ## References
 
@@ -47,182 +43,248 @@ of `Fin (2 * k)`.
 
 public section
 
-open Finset Equiv
+open Finset
 
-namespace TauCeti.TreeWalk
-
-section EdgeMatching
+namespace TauCeti.TreeWalk.ClosedTreeWalk
 
 variable {k : ℕ}
 
-private theorem existsUnique_partnerStep (w : ClosedTreeWalk k) (i : Fin (2 * k)) :
-    ∃! j : Fin (2 * k), j ∈ univ ∧ (j ≠ i ∧ s(w.1 j, w.1 (j + 1)) = s(w.1 i, w.1 (i + 1))) := by
-  obtain ⟨j, hjne, -, -, hfib, -⟩ := w.2.1.exists_partner_step i
-  exact ⟨j, ⟨mem_univ j, hjne, (hfib j).mpr (.inr rfl)⟩,
-    fun y ⟨_, hyne, hye⟩ ↦ (hfib y).mp hye |>.resolve_left hyne⟩
+/-- Partition the `2 * k` steps of a closed tree walk into the two-element fibers of the unordered
+edge map `a ↦ s(w a, w (a + 1))`. -/
+def toNoncrossingPairing (w : ClosedTreeWalk k) :
+    {P : NoncrossingPartition (univ : Finset (Fin (2 * k))) // P.val.IsPairing} :=
+  let r : Setoid (Fin (2 * k)) := Setoid.ker fun a : Fin (2 * k) ↦ s(w.val a, w.val ((a : ℕ) + 1))
+  letI : DecidableRel r := fun a b ↦ decEq (s(w.val a, w.val ((a : ℕ) + 1)))
+    (s(w.val b, w.val ((b : ℕ) + 1)))
+  let P : Finpartition (univ : Finset (Fin (2 * k))) := Finpartition.ofSetoid r
+  have hnc : P.IsNoncrossing := by
+    rw [Finpartition.isNoncrossing_iff_part]
+    intro a _ b _ c hc d hd hab hbc hcd
+    rw [Finpartition.mem_part_ofSetoid_iff_rel] at hc hd
+    exact (w.property.1.sym2_ne_of_lt_of_lt_of_lt_of_sym2_eq (Fin.lt_def.mp hab) (Fin.lt_def.mp hbc)
+      (Fin.lt_def.mp hcd) d.isLt hc hd).elim
+  have hpair : P.IsPairing := by
+    rw [Finpartition.isPairing_iff_part]
+    intro a _
+    refine Eq.trans ?_ (w.property.1.card_edge a a.isLt)
+    rw [← Finset.image_fin_univ, filter_image, card_image_of_injective _ Fin.val_injective]
+    refine congrArg card (ext fun b ↦ ?_)
+    simp [P, r, Finpartition.mem_part_ofSetoid_iff_rel, eq_comm]
+  ⟨⟨P, hnc⟩, hpair⟩
 
-/-- The partner step traversing the same edge as step `i` in `w : ClosedTreeWalk k`. -/
-private def partnerStep (w : ClosedTreeWalk k) (i : Fin (2 * k)) : Fin (2 * k) :=
-  univ.choose (fun j ↦ j ≠ i ∧ s(w.1 j, w.1 (j + 1)) = s(w.1 i, w.1 (i + 1)))
-    (existsUnique_partnerStep w i)
-
-private theorem partnerStep_eq_iff (w : ClosedTreeWalk k) (i j : Fin (2 * k)) :
-    partnerStep w i = j ↔ j ≠ i ∧ s(w.1 j, w.1 (j + 1)) = s(w.1 i, w.1 (i + 1)) := by
-  simpa [partnerStep] using univ.choose_eq_iff _ (existsUnique_partnerStep w i) (a := j)
-
-private theorem partnerStep_spec (w : ClosedTreeWalk k) (i : Fin (2 * k)) :
-    partnerStep w i ≠ i ∧ w.1 (partnerStep w i) = w.1 (i + 1) ∧
-      w.1 ((partnerStep w i : ℕ) + 1) = w.1 i ∧
-      (∀ t : Fin (2 * k), s(w.1 t, w.1 (t + 1)) = s(w.1 i, w.1 (i + 1)) ↔
-        t = i ∨ t = partnerStep w i) ∧
-      (i < partnerStep w i ↔ w.1 (i + 1) = i + 1) := by
-  obtain ⟨j, hjne, hj1, hj2, hfib, hlt⟩ := w.2.1.exists_partner_step i
-  rw [(partnerStep_eq_iff w i j).mpr ⟨hjne, (hfib j).mpr (.inr rfl)⟩]
-  exact ⟨hjne, hj1, hj2, hfib, hlt⟩
-
-private theorem partnerStep_involutive (w : ClosedTreeWalk k) :
-    Function.Involutive (partnerStep w) := fun i ↦ by
-  obtain ⟨hneq, -, -, hfib, -⟩ := partnerStep_spec w i
-  exact (partnerStep_eq_iff w (partnerStep w i) i).mpr ⟨hneq.symm, ((hfib _).mpr (.inr rfl)).symm⟩
-
-/-- The perfect matching of `Fin (2 * k)` pairing the two steps along each edge of `w`. -/
-private def edgePerfectMatching (w : ClosedTreeWalk k) : PerfectMatching (Fin (2 * k)) :=
-  PerfectMatching.ofInvolutive (partnerStep_involutive w) fun i ↦ (partnerStep_spec w i).1
-
-private theorem val_finRotate_eq_succ (w : ClosedTreeWalk k) (j : Fin (2 * k)) :
-    w.1 (finRotate (2 * k) j) = w.1 (j + 1) := by
-  rw [Fin.coe_finRotate_eq_ite]; split_ifs with hj
-  · rw [hj, w.2.1.root, w.2.1.closed]
-  · rfl
-
-private theorem card_image_fin_eq (w : ClosedTreeWalk k) [NeZero k] :
-    #(univ.image fun i : Fin (2 * k) ↦ w.1 i) = k + 1 := by
-  rw [← w.2.1.card_vertices]; congr 1; ext x
-  simp only [mem_image, mem_univ, true_and, mem_filter, mem_range]
-  refine ⟨fun ⟨i, hi⟩ ↦ hi ▸ ⟨(w.2.1.le_self i i.isLt.le).trans_lt (by omega),
-    w.2.1.idem i.isLt.le⟩, fun ⟨hx, hfix⟩ ↦ ?_⟩
-  rcases eq_or_lt_of_le (Nat.lt_succ_iff.mp hx) with rfl | hlt
-  · exact ⟨⟨0, by have := NeZero.ne k; omega⟩, by simpa [w.2.1.root, w.2.1.closed] using hfix⟩
-  · exact ⟨⟨x, hlt⟩, hfix⟩
-
-private theorem isNoncrossingMatching_edgePerfectMatching (w : ClosedTreeWalk k) :
-    (edgePerfectMatching w).val.IsNoncrossingMatching := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · exact Perm.isNoncrossingMatching_iff.mpr fun a ↦ Fin.elim0 a
-  have : NeZero k := ⟨hk⟩
-  let τ : Perm (Fin (2 * k)) := finRotate (2 * k) * (edgePerfectMatching w).val
-  have hinv_step (i : Fin (2 * k)) : w.1 (τ i) = w.1 i := by
-    simp only [τ, Perm.mul_apply, edgePerfectMatching, PerfectMatching.ofInvolutive_apply]
-    rw [val_finRotate_eq_succ w (partnerStep w i), (partnerStep_spec w i).2.2.1]
-  let g : Quotient (Perm.SameCycle.setoid τ) → ↥(univ.image fun i : Fin (2 * k) ↦ w.1 i) :=
-    Quotient.lift (fun i ↦ ⟨w.1 i, mem_image_of_mem _ (mem_univ i)⟩) fun i _ hij ↦
-      Subtype.ext <| Perm.sameCycle_one.mp <|
-        hij.map_of_forall_sameCycle_apply (π := 1) fun j ↦ Perm.sameCycle_one.mpr (hinv_step j).symm
-  have hsurj : Function.Surjective g := fun ⟨_, hy⟩ ↦
-    let ⟨i, _, hi⟩ := mem_image.mp hy; ⟨⟦i⟧, Subtype.ext hi⟩
-  have hge : k + 1 ≤ orbitCount τ := by
-    simpa only [Nat.card_eq_fintype_card, Fintype.card_coe, card_image_fin_eq w, ← orbitCount_def]
-      using Nat.card_le_card_of_surjective g hsurj
-  exact (edgePerfectMatching w).2.orbitCount_finRotate_mul_eq_iff.mp
-    (le_antisymm (edgePerfectMatching w).2.orbitCount_finRotate_mul_le hge)
-
-/-- The planar matching pairing the two traversals of every edge of `w`. -/
-private def edgePlanarMatching (w : ClosedTreeWalk k) : PlanarMatching (2 * k) :=
-  ⟨edgePerfectMatching w, isNoncrossingMatching_edgePerfectMatching w⟩
-
-private theorem toDyckWord_edgePlanarMatching (w : ClosedTreeWalk k) :
-    (edgePlanarMatching w).toDyckWord = (closedTreeWalkEquiv k w).1 := by
-  ext1; rw [PlanarMatching.toList_toDyckWord, closedTreeWalkEquiv_apply_coe]
-  refine List.ofFn_inj.mpr (funext fun i ↦ ?_)
-  have hU : (edgePlanarMatching w).dyckStep i = DyckStep.U ↔ upSteps k w.1 i = true := by
-    rw [PlanarMatching.dyckStep_eq_U_iff, upSteps_eq_true_iff]
-    simp [edgePlanarMatching, edgePerfectMatching, (partnerStep_spec w i).2.2.2.2, i.isLt]
-  cases hstep : (edgePlanarMatching w).dyckStep i <;>
-    cases hup : upSteps k w.1 i <;> simp_all
-
-/-- **Equivalence between closed tree walks and planar matchings.** Pairing each step of a closed
-tree walk of length `2 * k` with the unique other step traversing the same unordered edge gives an
-equivalence with `PlanarMatching (2 * k)`. -/
-def closedTreeWalkPlanarMatchingEquiv (k : ℕ) : ClosedTreeWalk k ≃ PlanarMatching (2 * k) where
-  toFun := edgePlanarMatching
-  invFun x := (closedTreeWalkEquiv k).symm (PlanarMatching.dyckWordEquiv k x)
-  left_inv w := (closedTreeWalkEquiv k).injective <| by
-    rw [Equiv.apply_symm_apply]; exact Subtype.ext (by simp [toDyckWord_edgePlanarMatching])
-  right_inv x := (PlanarMatching.dyckWordEquiv k).injective <| Subtype.ext <| by
-    simp [PlanarMatching.coe_dyckWordEquiv_apply, toDyckWord_edgePlanarMatching]
-
-/-- Inverse of `closedTreeWalkPlanarMatchingEquiv` via `PlanarMatching.dyckWordEquiv` and
-`closedTreeWalkEquiv`. -/
-theorem closedTreeWalkPlanarMatchingEquiv_symm_apply (x : PlanarMatching (2 * k)) :
-    (closedTreeWalkPlanarMatchingEquiv k).symm x =
-      (closedTreeWalkEquiv k).symm (PlanarMatching.dyckWordEquiv k x) := (rfl)
-
-/-- Two steps are paired by `closedTreeWalkPlanarMatchingEquiv` if and only if they are distinct
-and traverse the same unordered edge of the walk. -/
-theorem closedTreeWalkPlanarMatchingEquiv_apply_eq_iff (w : ClosedTreeWalk k)
-    (i j : Fin (2 * k)) :
-    (closedTreeWalkPlanarMatchingEquiv k w).1.val i = j ↔
-      j ≠ i ∧ s(w.1 j, w.1 (j + 1)) = s(w.1 i, w.1 (i + 1)) := by
-  simpa [closedTreeWalkPlanarMatchingEquiv, edgePlanarMatching, edgePerfectMatching] using
-    partnerStep_eq_iff w i j
-
-/-- The partner of step `i` starts at the endpoint `w (i + 1)` of step `i`. -/
+/-- Two steps belong to the same block of `w.toNoncrossingPairing` precisely when they traverse the
+same unordered edge. -/
 @[simp]
-theorem val_closedTreeWalkPlanarMatchingEquiv_apply (w : ClosedTreeWalk k) (i : Fin (2 * k)) :
-    w.1 ((closedTreeWalkPlanarMatchingEquiv k w).1.val i) = w.1 (i + 1) := by
-  simpa [closedTreeWalkPlanarMatchingEquiv, edgePlanarMatching, edgePerfectMatching] using
-    (partnerStep_spec w i).2.1
+theorem mem_part_toNoncrossingPairing (w : ClosedTreeWalk k) (a b : Fin (2 * k)) :
+    b ∈ w.toNoncrossingPairing.val.val.part a ↔
+      s(w.val b, w.val ((b : ℕ) + 1)) = s(w.val a, w.val ((a : ℕ) + 1)) := by
+  simp only [toNoncrossingPairing, Finpartition.mem_part_ofSetoid_iff_rel]
+  exact eq_comm
 
-/-- The partner of step `i` ends at the start `w i` of step `i`. -/
+/-- Each block of `w.toNoncrossingPairing` is the unordered-edge fiber of its representative. -/
+theorem part_toNoncrossingPairing (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
+    w.toNoncrossingPairing.val.val.part a =
+      {b : Fin (2 * k) | s(w.val b, w.val ((b : ℕ) + 1)) = s(w.val a, w.val ((a : ℕ) + 1))} := by
+  ext b
+  simp
+
+/-- The planar matching of `Fin (2 * k)` sending each step of a closed tree walk to the unique
+other step traversing the same unordered edge. -/
+def toPlanarMatching (w : ClosedTreeWalk k) : PlanarMatching (2 * k) :=
+  PerfectMatching.noncrossingPairingEquiv.symm w.toNoncrossingPairing
+
+/-- `w.toPlanarMatching` is the planar matching corresponding to `w.toNoncrossingPairing` under
+`PerfectMatching.noncrossingPairingEquiv`. -/
+theorem toPlanarMatching_def (w : ClosedTreeWalk k) :
+    w.toPlanarMatching = PerfectMatching.noncrossingPairingEquiv.symm w.toNoncrossingPairing :=
+  (rfl)
+
+/-- Applying `PerfectMatching.noncrossingPairingEquiv` to `w.toPlanarMatching` recovers
+`w.toNoncrossingPairing`. -/
 @[simp]
-theorem val_closedTreeWalkPlanarMatchingEquiv_apply_succ (w : ClosedTreeWalk k) (i : Fin (2 * k)) :
-    w.1 (((closedTreeWalkPlanarMatchingEquiv k w).1.val i : ℕ) + 1) = w.1 i := by
-  simpa [closedTreeWalkPlanarMatchingEquiv, edgePlanarMatching, edgePerfectMatching] using
-    (partnerStep_spec w i).2.2.1
+theorem perfectMatching_noncrossingPairingEquiv_toPlanarMatching (w : ClosedTreeWalk k) :
+    PerfectMatching.noncrossingPairingEquiv w.toPlanarMatching = w.toNoncrossingPairing :=
+  PerfectMatching.noncrossingPairingEquiv.apply_symm_apply w.toNoncrossingPairing
 
-/-- An arc of `closedTreeWalkPlanarMatchingEquiv k w` opens at step `i` if and only if step `i`
-discovers a new vertex. -/
+/-- The partner of step `a` in `w.toPlanarMatching` is characterized as the unique step `b ≠ a`
+traversing the same unordered edge. -/
+theorem toPlanarMatching_apply_eq_iff (w : ClosedTreeWalk k) (a b : Fin (2 * k)) :
+    w.toPlanarMatching.val.val a = b ↔
+      b ≠ a ∧ s(w.val b, w.val ((b : ℕ) + 1)) = s(w.val a, w.val ((a : ℕ) + 1)) := by
+  rw [toPlanarMatching_def, PerfectMatching.noncrossingPairingEquiv_symm_apply_val,
+    Finpartition.IsPairing.toPerfectMatching_apply_eq_iff, mem_part_toNoncrossingPairing, and_comm]
+
+/-- Every step and its partner in `w.toPlanarMatching` traverse the same unordered edge. -/
+theorem sym2_toPlanarMatching_apply (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
+    s(w.val (w.toPlanarMatching.val.val a), w.val ((w.toPlanarMatching.val.val a : ℕ) + 1)) =
+      s(w.val a, w.val ((a : ℕ) + 1)) :=
+  ((w.toPlanarMatching_apply_eq_iff a _).mp rfl).2
+
+/-- The partner step in `w.toPlanarMatching` starts at the endpoint of step `a`. -/
 @[simp]
-theorem lt_closedTreeWalkPlanarMatchingEquiv_apply_iff (w : ClosedTreeWalk k) (i : Fin (2 * k)) :
-    i < (closedTreeWalkPlanarMatchingEquiv k w).1.val i ↔ w.1 (i + 1) = i + 1 := by
-  simpa [closedTreeWalkPlanarMatchingEquiv, edgePlanarMatching, edgePerfectMatching] using
-    (partnerStep_spec w i).2.2.2.2
+theorem val_toPlanarMatching_apply (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
+    w.val (w.toPlanarMatching.val.val a) = w.val ((a : ℕ) + 1) := by
+  obtain ⟨hne, heq⟩ := (w.toPlanarMatching_apply_eq_iff a _).mp rfl
+  exact (w.property.1.eq_and_eq_of_ne_of_sym2_eq (w.toPlanarMatching.val.val a).isLt a.isLt
+    (Fin.val_ne_of_ne hne) heq).1
 
-/-- `PlanarMatching.toDyckWord` intertwines `closedTreeWalkPlanarMatchingEquiv` with
+/-- The partner step in `w.toPlanarMatching` ends at the starting vertex of step `a`. -/
+@[simp]
+theorem val_toPlanarMatching_apply_add_one (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
+    w.val ((w.toPlanarMatching.val.val a : ℕ) + 1) = w.val a := by
+  obtain ⟨hne, heq⟩ := (w.toPlanarMatching_apply_eq_iff a _).mp rfl
+  exact (w.property.1.eq_and_eq_of_ne_of_sym2_eq (w.toPlanarMatching.val.val a).isLt a.isLt
+    (Fin.val_ne_of_ne hne) heq).2
+
+/-- An arc of `w.toPlanarMatching` opens at step `a` precisely when step `a` is an up step of `w`.
+-/
+theorem lt_toPlanarMatching_apply_iff (w : ClosedTreeWalk k) (a : Fin (2 * k)) :
+    a < w.toPlanarMatching.val.val a ↔ w.val ((a : ℕ) + 1) = (a : ℕ) + 1 := by
+  set b := w.toPlanarMatching.val.val a
+  obtain ⟨hne, heq⟩ := (w.toPlanarMatching_apply_eq_iff a b).mp rfl
+  constructor
+  · intro hab
+    exact (w.property.1.up_and_down_of_lt_of_sym2_eq (Fin.lt_def.mp hab) b.isLt heq.symm).1
+  · intro hup
+    rcases lt_or_gt_of_ne hne with hlt | hgt
+    · obtain ⟨_, _, ha1⟩ :=
+        w.property.1.up_and_down_of_lt_of_sym2_eq (Fin.lt_def.mp hlt) a.isLt heq
+      have hle := w.property.1.le_self b b.isLt.le
+      have := Fin.lt_def.mp hlt
+      omega
+    · exact hgt
+
+/-- The Dyck word of `w.toPlanarMatching` agrees with the Dyck word of `w` under
 `closedTreeWalkEquiv`. -/
 @[simp]
-theorem toDyckWord_closedTreeWalkPlanarMatchingEquiv (w : ClosedTreeWalk k) :
-    (closedTreeWalkPlanarMatchingEquiv k w).toDyckWord = (closedTreeWalkEquiv k w).1 :=
-  toDyckWord_edgePlanarMatching w
+theorem toDyckWord_toPlanarMatching (w : ClosedTreeWalk k) :
+    w.toPlanarMatching.toDyckWord = (closedTreeWalkEquiv k w).val := by
+  ext1
+  rw [PlanarMatching.toList_toDyckWord, closedTreeWalkEquiv_apply_coe]
+  refine congrArg List.ofFn (funext fun a ↦ ?_)
+  by_cases h : a < w.toPlanarMatching.val.val a
+  · have hup : upSteps k w.val a = true :=
+      upSteps_eq_true_iff.mpr ⟨a.isLt, (w.lt_toPlanarMatching_apply_iff a).mp h⟩
+    simpa [hup] using h
+  · have hup : upSteps k w.val a = false :=
+      Bool.eq_false_iff.mpr fun ht ↦
+        h ((w.lt_toPlanarMatching_apply_iff a).mpr (upSteps_eq_true_iff.mp ht).2)
+    simpa [hup] using (not_lt.mp h).lt_of_ne (w.toPlanarMatching.val.apply_ne a)
 
-/-- **Equivalence between closed tree walks and noncrossing pair partitions.** Each two-element
-block consists of the forward and backward traversals of one edge of the tree walk. -/
-def closedTreeWalkNoncrossingPairingEquiv (k : ℕ) :
+/-- Under `PlanarMatching.dyckWordEquiv`, `w.toPlanarMatching` maps to `closedTreeWalkEquiv k w`.
+-/
+@[simp]
+theorem dyckWordEquiv_toPlanarMatching (w : ClosedTreeWalk k) :
+    PlanarMatching.dyckWordEquiv k w.toPlanarMatching = closedTreeWalkEquiv k w := by
+  ext1
+  simp
+
+/-- Closed tree walks of length `2 * k` are in bijection with planar matchings of `2 * k` points:
+forward by matching equal-edge steps, backward by taking the tree walk of the matching's Dyck word.
+-/
+def planarMatchingEquiv (k : ℕ) : ClosedTreeWalk k ≃ PlanarMatching (2 * k) where
+  toFun := toPlanarMatching
+  invFun x := (closedTreeWalkEquiv k).symm ⟨x.toDyckWord, x.semilength_toDyckWord⟩
+  left_inv w := by
+    dsimp only
+    have h : (⟨w.toPlanarMatching.toDyckWord, w.toPlanarMatching.semilength_toDyckWord⟩ :
+        {p : DyckWord // p.semilength = k}) = closedTreeWalkEquiv k w :=
+      Subtype.ext w.toDyckWord_toPlanarMatching
+    rw [h, Equiv.symm_apply_apply]
+  right_inv x := PlanarMatching.toDyckWord_injective <| by
+    rw [toDyckWord_toPlanarMatching, Equiv.apply_symm_apply]
+
+/-- The forward map of `planarMatchingEquiv` is `toPlanarMatching`. -/
+@[simp]
+theorem planarMatchingEquiv_apply (k : ℕ) (w : ClosedTreeWalk k) :
+    planarMatchingEquiv k w = w.toPlanarMatching :=
+  (rfl)
+
+/-- The inverse of `planarMatchingEquiv` reconstructs the closed tree walk from the Dyck word of
+the planar matching. -/
+theorem planarMatchingEquiv_symm_apply (k : ℕ) (x : PlanarMatching (2 * k)) :
+    (planarMatchingEquiv k).symm x =
+      (closedTreeWalkEquiv k).symm ⟨x.toDyckWord, x.semilength_toDyckWord⟩ :=
+  (rfl)
+
+/-- The planar matching of the closed tree walk reconstructed from `x` is `x`. -/
+@[simp]
+theorem toPlanarMatching_planarMatchingEquiv_symm_apply (k : ℕ) (x : PlanarMatching (2 * k)) :
+    ((planarMatchingEquiv k).symm x).toPlanarMatching = x :=
+  (planarMatchingEquiv k).apply_symm_apply x
+
+/-- Reconstructing a closed tree walk from `w.toPlanarMatching` recovers `w`. -/
+@[simp]
+theorem planarMatchingEquiv_symm_toPlanarMatching (w : ClosedTreeWalk k) :
+    (planarMatchingEquiv k).symm w.toPlanarMatching = w :=
+  (planarMatchingEquiv k).symm_apply_apply w
+
+/-- A closed tree walk is determined by its planar step matching. -/
+theorem toPlanarMatching_injective : Function.Injective (toPlanarMatching (k := k)) :=
+  (planarMatchingEquiv k).injective
+
+/-- Two closed tree walks are equal precisely when their planar step matchings are equal. -/
+@[simp]
+theorem toPlanarMatching_inj {w₁ w₂ : ClosedTreeWalk k} :
+    w₁.toPlanarMatching = w₂.toPlanarMatching ↔ w₁ = w₂ :=
+  toPlanarMatching_injective.eq_iff
+
+/-- `planarMatchingEquiv k` factors through Dyck words as the composition of
+`closedTreeWalkEquiv k` with `(PlanarMatching.dyckWordEquiv k).symm`. -/
+theorem planarMatchingEquiv_eq_trans (k : ℕ) :
+    planarMatchingEquiv k =
+      (closedTreeWalkEquiv k).trans (PlanarMatching.dyckWordEquiv k).symm :=
+  Equiv.ext fun _ ↦ (PlanarMatching.dyckWordEquiv k).injective (by simp)
+
+/-- Closed tree walks of length `2 * k` are in bijection with noncrossing pair partitions of
+`Fin (2 * k)`, sending each walk to its partition into two-element unordered-edge fibers. -/
+def noncrossingPairingEquiv (k : ℕ) :
     ClosedTreeWalk k ≃
       {P : NoncrossingPartition (univ : Finset (Fin (2 * k))) // P.val.IsPairing} :=
-  (closedTreeWalkPlanarMatchingEquiv k).trans PerfectMatching.noncrossingPairingEquiv
+  (planarMatchingEquiv k).trans PerfectMatching.noncrossingPairingEquiv
 
-/-- `closedTreeWalkNoncrossingPairingEquiv` is the composition of
-`closedTreeWalkPlanarMatchingEquiv` and `PerfectMatching.noncrossingPairingEquiv`. -/
-theorem closedTreeWalkNoncrossingPairingEquiv_def (k : ℕ) :
-    closedTreeWalkNoncrossingPairingEquiv k =
-      (closedTreeWalkPlanarMatchingEquiv k).trans PerfectMatching.noncrossingPairingEquiv := (rfl)
+/-- `noncrossingPairingEquiv k` is the composition of `planarMatchingEquiv k` with
+`PerfectMatching.noncrossingPairingEquiv`. -/
+theorem noncrossingPairingEquiv_def (k : ℕ) :
+    noncrossingPairingEquiv k =
+      (planarMatchingEquiv k).trans PerfectMatching.noncrossingPairingEquiv :=
+  (rfl)
 
-/-- Underlying `Finpartition` of `closedTreeWalkNoncrossingPairingEquiv k w`. -/
+/-- The forward map of `noncrossingPairingEquiv` is `toNoncrossingPairing`. -/
 @[simp]
-theorem closedTreeWalkNoncrossingPairingEquiv_apply_coe (w : ClosedTreeWalk k) :
-    (closedTreeWalkNoncrossingPairingEquiv k w).val.val =
-      (closedTreeWalkPlanarMatchingEquiv k w).val.toFinpartition := by
-  simp [closedTreeWalkNoncrossingPairingEquiv]
+theorem noncrossingPairingEquiv_apply (k : ℕ) (w : ClosedTreeWalk k) :
+    noncrossingPairingEquiv k w = w.toNoncrossingPairing := by
+  simp [noncrossingPairingEquiv_def]
 
-/-- Inverse of `closedTreeWalkNoncrossingPairingEquiv` in terms of
-`closedTreeWalkPlanarMatchingEquiv` and `PerfectMatching.noncrossingPairingEquiv`. -/
-theorem closedTreeWalkNoncrossingPairingEquiv_symm_apply
+/-- The inverse of `noncrossingPairingEquiv` maps a noncrossing pairing to the closed tree walk of
+its planar matching. -/
+theorem noncrossingPairingEquiv_symm_apply (k : ℕ)
     (P : {P : NoncrossingPartition (univ : Finset (Fin (2 * k))) // P.val.IsPairing}) :
-    (closedTreeWalkNoncrossingPairingEquiv k).symm P =
-      (closedTreeWalkPlanarMatchingEquiv k).symm
-        (PerfectMatching.noncrossingPairingEquiv.symm P) := (rfl)
+    (noncrossingPairingEquiv k).symm P =
+      (planarMatchingEquiv k).symm (PerfectMatching.noncrossingPairingEquiv.symm P) :=
+  (rfl)
 
-end EdgeMatching
+/-- The noncrossing pairing of the closed tree walk reconstructed from `P` is `P`. -/
+@[simp]
+theorem toNoncrossingPairing_noncrossingPairingEquiv_symm_apply (k : ℕ)
+    (P : {P : NoncrossingPartition (univ : Finset (Fin (2 * k))) // P.val.IsPairing}) :
+    ((noncrossingPairingEquiv k).symm P).toNoncrossingPairing = P := by
+  rw [← noncrossingPairingEquiv_apply, Equiv.apply_symm_apply]
 
-end TauCeti.TreeWalk
+/-- Reconstructing a closed tree walk from `w.toNoncrossingPairing` recovers `w`. -/
+@[simp]
+theorem noncrossingPairingEquiv_symm_toNoncrossingPairing (w : ClosedTreeWalk k) :
+    (noncrossingPairingEquiv k).symm w.toNoncrossingPairing = w := by
+  rw [← noncrossingPairingEquiv_apply, Equiv.symm_apply_apply]
+
+/-- A closed tree walk is determined by its noncrossing unordered-edge step pairing. -/
+theorem toNoncrossingPairing_injective : Function.Injective (toNoncrossingPairing (k := k)) :=
+  fun _ _ h ↦ (noncrossingPairingEquiv k).injective (by simpa using h)
+
+/-- Two closed tree walks are equal precisely when their noncrossing step pairings are equal. -/
+@[simp]
+theorem toNoncrossingPairing_inj {w₁ w₂ : ClosedTreeWalk k} :
+    w₁.toNoncrossingPairing = w₂.toNoncrossingPairing ↔ w₁ = w₂ :=
+  toNoncrossingPairing_injective.eq_iff
+
+end TauCeti.TreeWalk.ClosedTreeWalk

@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Huber.Kaehler.Basic
+import TauCeti.RingTheory.Huber.Kaehler.Generators
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 /-!
 # Examples of continuous differentials
 
 The degenerate cases of `Ωᶜ[B⁄A]`: the continuous differentials of a complete Hausdorff Huber
 ring over itself vanish, and the derivation `d` kills the image of the base ring. The comparison
-with Mathlib's Kähler differentials sends `d` to `d`.
+with Mathlib's Kähler differentials sends `d` to `d`. Over a base of noetherian type, the continuous
+differentials of the restricted power series `A⟨X₁, …, Xₖ⟩` are finitely generated.
 
 ## References
 
@@ -66,3 +68,21 @@ example (x : CompletedTensor A B B) (hx : x ∈ ContinuousKaehlerDifferential.id
     ContinuousKaehlerDifferential.mem_ideal_iff.mp hx, zero_smul]
 
 end Generic
+
+section RestrictedPowerSeries
+
+variable (k : ℕ) (A : Type*) [CommRing A] [UniformSpace A] [IsUniformAddGroup A]
+  [IsTopologicalRing A] [IsHuberRing A] [IsNoetherianType A]
+
+-- `Ωᶜ[A⟨X₁, …, Xₖ⟩⁄A]` is a finitely generated `A⟨X₁, …, Xₖ⟩`-module; `A` need not be complete.
+example :
+    haveI : IsAdicHom (algebraMap A (restrictedMvPowerSeriesCompletion k A)) :=
+      (isStrictlyTopologicallyFiniteType_algebraMap k).isTopologicallyFiniteType.isAdicHom
+    Module.Finite (restrictedMvPowerSeriesCompletion k A)
+      (ContinuousKaehlerDifferential A (restrictedMvPowerSeriesCompletion k A)) :=
+  have h := (isStrictlyTopologicallyFiniteType_algebraMap (A := A) k).isTopologicallyFiniteType
+  haveI : IsAdicHom (algebraMap A (restrictedMvPowerSeriesCompletion k A)) := h.isAdicHom
+  haveI := IsNoetherianType.of_isTopologicallyFiniteType h
+  ContinuousKaehlerDifferential.finite h
+
+end RestrictedPowerSeries

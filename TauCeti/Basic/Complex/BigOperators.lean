@@ -11,21 +11,13 @@ public import Mathlib.Basic.Complex.Basic
 import Mathlib.Basic.Complex.BigOperators
 
 /-!
-# Finite sums of complex numbers
-
-## Weighted sums of squared absolute values
+# Weighted sums of squared absolute values
 
 A finitely supported family of complex numbers `f` and real weights `w` give the real sum
 `∑ₛ |f s|² w s`, which is the weighted Hermitian sum `∑ₛ conj (f s) * w s * f s`
 (`Finsupp.ofReal_sum_normSq_mul`). For nonnegative weights this sum is nonnegative
 (`Finsupp.sum_normSq_mul_nonneg`) and vanishes exactly when `f` vanishes at every index of nonzero
 weight (`Finsupp.sum_normSq_mul_eq_zero_iff`).
-
-## Real parts of squared scaled sums
-
-For any real scalar `c` and finite family `f : ι → ℂ`, expanding the square of
-`(c : ℂ) * ∑ i ∈ s, f i` and pulling out the real factor `c ^ 2` expresses its real part as
-`c ^ 2 * (∑ p ∈ s ×ˢ s, f p.1 * f p.2).re` (`Complex.re_ofReal_mul_sum_sq`).
 -/
 
 public section
@@ -64,14 +56,3 @@ theorem sum_normSq_mul_eq_zero_iff {α : Type*} (f : α →₀ ℂ) {w : α → 
     · simp [h s hs]
 
 end Finsupp
-
-namespace Complex
-
-/-- The real part of the square of a real-scaled complex finite sum `(c : ℂ) * ∑ i ∈ s, f i`
-equals `c ^ 2 * (∑ p ∈ s ×ˢ s, f p.1 * f p.2).re`. -/
-theorem re_ofReal_mul_sum_sq {ι : Type*} (s : Finset ι) (c : ℝ) (f : ι → ℂ) :
-    (((c : ℂ) * ∑ i ∈ s, f i) ^ 2).re = c ^ 2 * (∑ p ∈ s ×ˢ s, f p.1 * f p.2).re := by
-  rw [mul_pow, sq (∑ i ∈ s, f i), Finset.sum_mul_sum, ← Finset.sum_product',
-    ← ofReal_pow, re_ofReal_mul]
-
-end Complex

@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import TauCeti.Geometry.Manifold.Boundary.BicollarSide
 public import TauCeti.Geometry.Manifold.Instances.Torus
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 
 /-!
@@ -86,7 +86,7 @@ theorem knotExterior_sdiff_range (Φ : SolidTorus → X) :
   have hunion : {p : SolidTorus | ‖(p.1 : ℂ)‖ < 1} ∪ range SolidTorus.boundaryInclusion = univ := by
     rw [SolidTorus.range_boundaryInclusion, eq_univ_iff_forall]
     intro p
-    exact (mem_closedBall_zero_iff.mp p.1.2).lt_or_eq
+    exact (mem_closedBall_zero_iff.mp p.1.property).lt_or_eq
   rw [knotExterior, range_comp, sdiff_eq, ← compl_union, ← image_union, hunion, image_univ]
 
 section Topology
@@ -185,7 +185,7 @@ namespace SolidTorus
 /-- The solid torus of half the radius inside the solid torus: `(w, z) ↦ (w / 2, z)`. -/
 noncomputable def halve (p : SolidTorus) : SolidTorus :=
   (⟨(2⁻¹ : ℝ) • (p.1 : ℂ), by
-    have hp := mem_closedBall_zero_iff.mp p.1.2
+    have hp := mem_closedBall_zero_iff.mp p.1.property
     rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg (by norm_num)]
     linarith⟩, p.2)
 
@@ -200,7 +200,7 @@ theorem halve_snd (p : SolidTorus) : (halve p).2 = p.2 :=
 /-- Halving the radius is an embedding of the solid torus into itself. -/
 theorem isEmbedding_halve : IsEmbedding halve := by
   have h : IsEmbedding fun w : closedBall (0 : ℂ) 1 => (halve (w, 1)).1 := by
-    refine IsEmbedding.of_comp (by unfold halve; fun_prop) continuous_subtype_val ?_
+    refine IsEmbedding.of_comp (by unfold halve; fun_prop) continuous_subtypeVal ?_
     exact (Homeomorph.smulOfNeZero (2⁻¹ : ℝ) (by norm_num)).isEmbedding.comp
       IsEmbedding.subtypeVal
   exact h.prodMap IsEmbedding.id
@@ -255,7 +255,7 @@ theorem comp_halve (h : IsSolidTorusNeighborhood f Φ) :
       isOpen_lt (by fun_prop) continuous_const
     have := h.isOpenEmbedding_comp hO.isOpenEmbedding_subtypeVal (by
       rintro _ ⟨p, rfl⟩
-      exact (mem_ofPred_eq.mp p.2).trans (by norm_num))
+      exact (mem_ofPred_eq.mp p.property).trans (by norm_num))
     have hopen := this.isOpen_range
     rwa [range_comp, Subtype.range_coe] at hopen
 
@@ -312,7 +312,7 @@ theorem isBicollar_halveBicollar (h : IsSolidTorusNeighborhood f Φ) :
       mem_closedBall_zero_iff.mpr ((norm_sigmoidPolar q).trans_le (Real.sigmoid_le_one _))) := by
     refine ⟨isOpenEmbedding_sigmoidPolar.isEmbedding.codRestrict _ _, ?_⟩
     rw [range_codRestrict]
-    exact isOpenEmbedding_sigmoidPolar.isOpen_range.preimage continuous_subtype_val
+    exact isOpenEmbedding_sigmoidPolar.isOpen_range.preimage continuous_subtypeVal
   have hb := h.isOpenEmbedding_comp ((hι.prodMap IsOpenEmbedding.id).comp e.isOpenEmbedding) (by
     rintro _ ⟨q, rfl⟩
     exact (norm_sigmoidPolar _).trans_lt (Real.sigmoid_lt_one _))

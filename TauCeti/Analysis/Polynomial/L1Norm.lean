@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Analysis.MvPolynomial.L1Norm
 import TauCeti.Algebra.Polynomial.Homogenize
+import TauCeti.Algebra.Polynomial.Coeff.ToMvPolynomial
 
 /-!
 # The coefficient l¹-norm of a polynomial
@@ -26,7 +28,8 @@ coefficients.
 
 ## Main results
 
-* `Polynomial.l1Norm_add_le` and `Polynomial.l1Norm_mul_le`: the triangle and product bounds.
+* `Polynomial.l1Norm_add_le`, `Polynomial.l1Norm_mul_le` and `Polynomial.l1Norm_prod_le`: the
+  triangle and product bounds.
 * `Polynomial.norm_eval_le_l1Norm_mul`: the evaluation bound, and
   `Polynomial.norm_eval_le_add_one_mul_supNorm_mul`: its form in terms of the sup norm.
 * `Polynomial.l1Norm_comp_le` and `Polynomial.l1Norm_comp_X_add_C_le`: the composition and
@@ -39,6 +42,8 @@ coefficients.
   quotient of a polynomial by a power of `X - a`.
 * `Polynomial.l1Norm_aeval_homogenize_le`: the bound `‖p‖∞ (‖g‖₁ + ‖h‖₁) ^ n` after substituting
   `g` and `h` into the homogenization of degree `n` of `p`.
+* `Polynomial.l1Norm_toMvPolynomial`: embedding a polynomial as a polynomial in one variable of
+  a multivariate polynomial ring preserves its coefficient l¹-norm.
 
 ## References
 
@@ -114,6 +119,13 @@ theorem l1Norm_X [NormOneClass R] : (X : R[X]).l1Norm = 1 := by
 @[simp]
 theorem l1Norm_X_pow [NormOneClass R] (n : ℕ) : (X ^ n : R[X]).l1Norm = 1 := by
   rw [← monomial_one_right_eq_X_pow, l1Norm_monomial, norm_one]
+
+/-- The linear polynomial `X - C a` has coefficient l¹-norm `1 + ‖a‖` when the coefficient norm
+preserves one. -/
+@[simp]
+theorem l1Norm_X_sub_C [NormOneClass R] (a : R) : (X - C a).l1Norm = 1 + ‖a‖ := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  simp [l1Norm_eq_sum_range, Finset.sum_range_succ, coeff_X, coeff_C, add_comm]
 
 /-- Negating a polynomial does not change its coefficient l¹-norm. -/
 @[simp]
@@ -264,6 +276,17 @@ theorem l1Norm_pow_le [NormOneClass R] (P : R[X]) (n : ℕ) :
   · simp only [pow_zero, l1Norm_one, le_refl]
   · exact P.l1Norm_pow_le_of_ne_zero hn
 
+/-- The coefficient l¹-norm of a finite product is at most the product of the coefficient
+l¹-norms. -/
+theorem l1Norm_prod_le {A : Type*} [SeminormedCommRing A] [NormOneClass A] {ι : Type*}
+    (s : Finset ι) (P : ι → A[X]) : (∏ i ∈ s, P i).l1Norm ≤ ∏ i ∈ s, (P i).l1Norm := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.prod_insert ha]
+    exact (l1Norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (l1Norm_nonneg _))
+
 /-- The coefficient l¹-norm of a composition `P.comp Q` is at most that of `P` times
 `max 1 Q.l1Norm ^ P.natDegree`. -/
 theorem l1Norm_comp_le (P Q : R[X]) :
@@ -406,6 +429,18 @@ theorem l1Norm_aeval_homogenize_le (p : A[X]) (n : ℕ) (g h : A[X]) :
         have h1 : (1 : ℝ) ≤ n.choose k := by
           exact_mod_cast Nat.choose_pos (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
         exact le_mul_of_one_le_right (by positivity) h1
+
+/-- Embedding a polynomial as a polynomial in the variable `Xᵢ` of a multivariate polynomial ring
+preserves its coefficient l¹-norm. -/
+@[simp]
+theorem l1Norm_toMvPolynomial {σ : Type*} (i : σ) (p : A[X]) :
+    (p.toMvPolynomial i).l1Norm = p.l1Norm := by
+  -- Both sums run over the supports of the coefficient vectors, which the placement reindexes
+  -- along `Finsupp.single i`.
+  rw [MvPolynomial.l1Norm_def, l1Norm_eq_sum_support, Polynomial.support,
+    ← MvPolynomial.finsupp_support_eq_support, coeff_toMvPolynomial_eq_embDomain,
+    Finsupp.support_embDomain, Finset.sum_map]
+  simp only [Finsupp.embDomain_apply_self]
 
 end CommRing
 

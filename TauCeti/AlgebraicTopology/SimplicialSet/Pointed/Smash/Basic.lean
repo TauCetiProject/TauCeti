@@ -301,7 +301,7 @@ lemma isPushout_smashProj :
     fun s m h _ ↦ (cancel_epi (smashProj X Y)).1
       (h.trans (smashProj_comp_smashLift (Z := Under.mk s.inr) s.inl _ _).symm))
   ext n w
-  exact (smashMk_eq_point_iff.2 ((mem_wedge_iff w.1).1 w.2)).trans
+  exact (smashMk_eq_point_iff.2 ((mem_wedge_iff w.val).1 w.property)).trans
     (hom_app _ n ((SSet.stdSimplex.isTerminalObj₀.from _).app n w)).symm
 
 end PointedSSet

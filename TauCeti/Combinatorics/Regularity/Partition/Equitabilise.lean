@@ -109,10 +109,10 @@ theorem IsEquipartition.exists_refining_equipartition_card_eq_mul (hP : P.IsEqui
   · rw [card_bind, sum_const_nat (m := a) fun A _ ↦ ?_, card_attach, mul_comm]
     -- The pieces are nonempty since `1 ≤ q`.
     have hq : q ≠ 0 := by
-      have hk : 0 < #P.parts := card_pos.2 ⟨A, A.2⟩
+      have hk : 0 < #P.parts := card_pos.2 ⟨A, A.property⟩
       refine (Nat.div_pos ?_ (Nat.pos_of_ne_zero ha)).ne'
       rwa [Nat.le_div_iff_mul_le hk]
-    have hA := (hcard A A.2).2
+    have hA := (hcard A A.property).2
     rw [mul_add, mul_one] at hA
     rw [card_parts_equitabilise _ _ hq]
     omega
@@ -125,18 +125,18 @@ theorem IsEquipartition.exists_refining_equipartition_card_eq_mul (hP : P.IsEqui
     calc #{x ∈ s | ¬Q.part x ⊆ R.part x}
         ≤ ∑ A ∈ P.parts, #{x ∈ A | ¬Q.part x ⊆ R.part x} :=
           (card_le_card hsub).trans card_biUnion_le
-      _ ≤ ∑ A ∈ P.parts.attach, #(R.restrict (P.le A.2)).parts * q := by
+      _ ≤ ∑ A ∈ P.parts.attach, #(R.restrict (P.le A.property)).parts * q := by
         rw [← sum_attach P.parts (fun A ↦ #{x ∈ A | ¬Q.part x ⊆ R.part x})]
         exact sum_le_sum fun A _ ↦ by
           have hlocal := card_filter_not_part_equitabilise_subset_part_le
-            (R.restrict (P.le A.2)) (hsplit A A.2)
-          have heq : {x ∈ A.1 | ¬Q.part x ⊆ R.part x} =
-              {x ∈ A.1 | ¬(E A A.2).part x ⊆ (R.restrict (P.le A.2)).part x} := by
+            (R.restrict (P.le A.property)) (hsplit A A.property)
+          have heq : {x ∈ A.val | ¬Q.part x ⊆ R.part x} =
+              {x ∈ A.val | ¬(E A A.property).part x ⊆ (R.restrict (P.le A.property)).part x} := by
             apply filter_congr
             intro x hx
-            simp only [Q, part_bind A.2 hx, part_restrict _ _ hx,
+            simp only [Q, part_bind A.property hx, part_restrict _ _ hx,
               inter_eq_left.2 ((part_mono hRP x).trans
-                (le_of_eq (P.part_eq_of_mem A.2 hx)))]
+                (le_of_eq (P.part_eq_of_mem A.property hx)))]
           rw [heq]
           exact hlocal
       _ = #R.parts * q := by

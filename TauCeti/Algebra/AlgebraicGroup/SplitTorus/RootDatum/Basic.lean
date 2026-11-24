@@ -47,7 +47,7 @@ reflecting root. The construction is independent of any choice of an enumeration
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), Sections 16.1 and 26.3.
 
 The ordered-pair construction and its proof plan are adapted from the formal template in
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`.
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic`.
 
 This is the coordinate-lattice construction used by the diagonal-torus root datum of `GL_n`.
 -/
@@ -74,7 +74,7 @@ noncomputable def coordinatePermRootIndex (e : Equiv.Perm σ) :
 /-- A coordinate permutation acts componentwise on an ordered root index. -/
 @[simp]
 theorem coordinatePermRootIndex_coe (e : Equiv.Perm σ) (p : CoordinateRootIndex σ) :
-    (coordinatePermRootIndex e p).1 = (e p.1.1, e p.1.2) := by
+    (coordinatePermRootIndex e p).val = (e p.val.1, e p.val.2) := by
   rw [coordinatePermRootIndex]
   simp only [Equiv.subtypeEquiv_apply, Equiv.prodCongr_apply]
   -- `Equiv.prodCongr` uses `Prod.map`, whose application reduces definitionally.
@@ -131,7 +131,7 @@ theorem coordinatePermRootIndexHom_injective :
   by_cases hi : ∃ j, i ≠ j
   · obtain ⟨j, hij⟩ := hi
     have hp := congrArg (fun g : Equiv.Perm (CoordinateRootIndex σ) =>
-      (g ⟨(i, j), hij⟩).1.1) h
+      (g ⟨(i, j), hij⟩).val.1) h
     simpa only [coordinatePermRootIndexHom_apply, coordinatePermRootIndex_coe] using hp
   · have hsub : Subsingleton σ := ⟨fun a b => (not_not.mp (not_exists.mp hi a)).symm.trans
         (not_not.mp (not_exists.mp hi b))⟩
@@ -182,26 +182,26 @@ theorem dotPairing_coordinateRoot_coordinateCoroot (i j a b : σ) :
   simp [dotPairing_apply, coordinateCoroot_apply]
 
 private theorem coordinateRoot_coroot_two (p : CoordinateRootIndex σ) :
-    dotPairing (coordinateRoot p.1.1 p.1.2) (coordinateCoroot p.1.1 p.1.2) = 2 := by
+    dotPairing (coordinateRoot p.val.1 p.val.2) (coordinateCoroot p.val.1 p.val.2) = 2 := by
   classical
   rw [dotPairing_coordinateRoot_coordinateCoroot]
-  simp [p.2, Ne.symm p.2]
+  simp [p.property, Ne.symm p.property]
 
 private theorem coordinateRoot_injective :
-    Injective (fun p : CoordinateRootIndex σ ↦ coordinateRoot p.1.1 p.1.2) := by
+    Injective (fun p : CoordinateRootIndex σ ↦ coordinateRoot p.val.1 p.val.2) := by
   classical
   intro p q hpq
-  have hroot : coordinateRoot p.1.1 p.1.2 = coordinateRoot q.1.1 q.1.2 := hpq
-  have htwo : dotPairing (coordinateRoot q.1.1 q.1.2)
-      (coordinateCoroot p.1.1 p.1.2) = 2 := by
+  have hroot : coordinateRoot p.val.1 p.val.2 = coordinateRoot q.val.1 q.val.2 := hpq
+  have htwo : dotPairing (coordinateRoot q.val.1 q.val.2)
+      (coordinateCoroot p.val.1 p.val.2) = 2 := by
     rw [← hroot]
     exact coordinateRoot_coroot_two p
   rw [dotPairing_coordinateRoot_coordinateCoroot] at htwo
-  have hq := q.2
+  have hq := q.property
   refine Subtype.ext (Prod.ext ?_ ?_) <;> (split_ifs at htwo <;> simp_all)
 
 private theorem coordinateCoroot_injective :
-    Injective (fun p : CoordinateRootIndex σ ↦ coordinateCoroot p.1.1 p.1.2) := by
+    Injective (fun p : CoordinateRootIndex σ ↦ coordinateCoroot p.val.1 p.val.2) := by
   intro p q hpq
   apply coordinateRoot_injective
   apply DFunLike.coe_injective
@@ -209,25 +209,25 @@ private theorem coordinateCoroot_injective :
 
 /-- The injective root family used internally to construct `coordinateRootDatum`. -/
 private def coordinateRootEmbedding : CoordinateRootIndex σ ↪ σ →₀ ℤ :=
-  ⟨fun p ↦ coordinateRoot p.1.1 p.1.2, coordinateRoot_injective⟩
+  ⟨fun p ↦ coordinateRoot p.val.1 p.val.2, coordinateRoot_injective⟩
 
 @[simp]
 private theorem coordinateRootEmbedding_apply (p : CoordinateRootIndex σ) :
-    coordinateRootEmbedding p = coordinateRoot p.1.1 p.1.2 :=
+    coordinateRootEmbedding p = coordinateRoot p.val.1 p.val.2 :=
   rfl
 
 /-- The injective coroot family used internally to construct `coordinateRootDatum`. -/
 private def coordinateCorootEmbedding : CoordinateRootIndex σ ↪ σ → ℤ :=
-  ⟨fun p ↦ coordinateCoroot p.1.1 p.1.2, coordinateCoroot_injective⟩
+  ⟨fun p ↦ coordinateCoroot p.val.1 p.val.2, coordinateCoroot_injective⟩
 
 @[simp]
 private theorem coordinateCorootEmbedding_apply (p : CoordinateRootIndex σ) :
-    coordinateCorootEmbedding p = coordinateCoroot p.1.1 p.1.2 :=
+    coordinateCorootEmbedding p = coordinateCoroot p.val.1 p.val.2 :=
   rfl
 
 private theorem coordinatePairing_comm (p q : CoordinateRootIndex σ) :
-    dotPairing (coordinateRoot p.1.1 p.1.2) (coordinateCoroot q.1.1 q.1.2) =
-      dotPairing (coordinateRoot q.1.1 q.1.2) (coordinateCoroot p.1.1 p.1.2) := by
+    dotPairing (coordinateRoot p.val.1 p.val.2) (coordinateCoroot q.val.1 q.val.2) =
+      dotPairing (coordinateRoot q.val.1 q.val.2) (coordinateCoroot p.val.1 p.val.2) := by
   classical
   rw [dotPairing_coordinateRoot_coordinateCoroot,
     dotPairing_coordinateRoot_coordinateCoroot]
@@ -236,26 +236,26 @@ private theorem coordinatePairing_comm (p q : CoordinateRootIndex σ) :
 
 private theorem coordinateRoot_reflection [DecidableEq σ]
     (p q : CoordinateRootIndex σ) :
-    preReflection (coordinateRoot p.1.1 p.1.2)
-        (dotPairing.flip (coordinateCoroot p.1.1 p.1.2))
-        (coordinateRoot q.1.1 q.1.2) =
-      coordinateRoot (coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q).1.1
-        (coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q).1.2 := by
+    preReflection (coordinateRoot p.val.1 p.val.2)
+        (dotPairing.flip (coordinateCoroot p.val.1 p.val.2))
+        (coordinateRoot q.val.1 q.val.2) =
+      coordinateRoot (coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q).val.1
+        (coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q).val.2 := by
   cases Subsingleton.elim ‹DecidableEq σ› (Classical.decEq σ)
   classical
   rw [preReflection_apply, LinearMap.flip_apply,
     dotPairing_coordinateRoot_coordinateCoroot]
   simp only [coordinateRoot, coordinatePermRootIndex_coe]
-  rw [apply_swap_eq (fun i : σ ↦ Finsupp.single i (1 : ℤ)) p.1.1 p.1.2 q.1.1,
-    apply_swap_eq (fun i : σ ↦ Finsupp.single i (1 : ℤ)) p.1.1 p.1.2 q.1.2]
+  rw [apply_swap_eq (fun i : σ ↦ Finsupp.single i (1 : ℤ)) p.val.1 p.val.2 q.val.1,
+    apply_swap_eq (fun i : σ ↦ Finsupp.single i (1 : ℤ)) p.val.1 p.val.2 q.val.2]
   module
 
 private theorem coordinateCoroot_reflection [DecidableEq σ]
     (p q : CoordinateRootIndex σ) :
-    preReflection (coordinateCoroot p.1.1 p.1.2) (dotPairing (coordinateRoot p.1.1 p.1.2))
-        (coordinateCoroot q.1.1 q.1.2) =
-      coordinateCoroot (coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q).1.1
-        (coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q).1.2 := by
+    preReflection (coordinateCoroot p.val.1 p.val.2) (dotPairing (coordinateRoot p.val.1 p.val.2))
+        (coordinateCoroot q.val.1 q.val.2) =
+      coordinateCoroot (coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q).val.1
+        (coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q).val.2 := by
   cases Subsingleton.elim ‹DecidableEq σ› (Classical.decEq σ)
   classical
   ext a
@@ -273,11 +273,11 @@ noncomputable def coordinateRootDatum (σ : Type*) [Finite σ] :
     RootDatum (CoordinateRootIndex σ) (σ →₀ ℤ) (σ → ℤ) :=
   RootPairing.mk' dotPairing coordinateRootEmbedding coordinateCorootEmbedding
     coordinateRoot_coroot_two
-    (fun p _ ⟨q, hq⟩ ↦ ⟨coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q, by
+    (fun p _ ⟨q, hq⟩ ↦ ⟨coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q, by
       rw [coordinateRootEmbedding_apply] at hq ⊢
       rw [← hq]
       exact (coordinateRoot_reflection p q).symm⟩)
-    (fun p _ ⟨q, hq⟩ ↦ ⟨coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q, by
+    (fun p _ ⟨q, hq⟩ ↦ ⟨coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q, by
       rw [coordinateCorootEmbedding_apply] at hq ⊢
       rw [← hq]
       exact (coordinateCoroot_reflection p q).symm⟩)
@@ -294,7 +294,7 @@ theorem coordinateRootDatum_toLinearMap [Finite σ] :
 /-- The roots of the coordinate root datum are the vectors `e_i - e_j`. -/
 @[simp]
 theorem coordinateRootDatum_root [Finite σ] (p : CoordinateRootIndex σ) :
-    (coordinateRootDatum σ).root p = coordinateRoot p.1.1 p.1.2 :=
+    (coordinateRootDatum σ).root p = coordinateRoot p.val.1 p.val.2 :=
   by
     -- Mathlib currently provides no projection simp lemmas for `RootPairing.mk'`.
     rw [coordinateRootDatum]
@@ -303,7 +303,7 @@ theorem coordinateRootDatum_root [Finite σ] (p : CoordinateRootIndex σ) :
 /-- The coroots of the coordinate root datum are the vectors `e_i - e_j`. -/
 @[simp]
 theorem coordinateRootDatum_coroot [Finite σ] (p : CoordinateRootIndex σ) :
-    (coordinateRootDatum σ).coroot p = coordinateCoroot p.1.1 p.1.2 :=
+    (coordinateRootDatum σ).coroot p = coordinateCoroot p.val.1 p.val.2 :=
   by
     -- Mathlib currently provides no projection simp lemmas for `RootPairing.mk'`.
     rw [coordinateRootDatum]
@@ -313,7 +313,7 @@ theorem coordinateRootDatum_coroot [Finite σ] (p : CoordinateRootIndex σ) :
 lemma; `coordinateRootDatum_pairing_apply` is the normal-form simp theorem. -/
 theorem coordinateRootDatum_pairing [Finite σ] (p q : CoordinateRootIndex σ) :
     (coordinateRootDatum σ).pairing p q =
-      dotPairing (coordinateRoot p.1.1 p.1.2) (coordinateCoroot q.1.1 q.1.2) :=
+      dotPairing (coordinateRoot p.val.1 p.val.2) (coordinateCoroot q.val.1 q.val.2) :=
   by
     rw [← RootPairing.root_coroot_eq_pairing, coordinateRootDatum_root,
       coordinateRootDatum_coroot, coordinateRootDatum_toLinearMap]
@@ -323,8 +323,8 @@ open Classical in
 @[simp]
 theorem coordinateRootDatum_pairing_apply [Finite σ] (p q : CoordinateRootIndex σ) :
     (coordinateRootDatum σ).pairing p q =
-      (if p.1.1 = q.1.1 then 1 else 0) - (if p.1.1 = q.1.2 then 1 else 0) -
-        ((if p.1.2 = q.1.1 then 1 else 0) - (if p.1.2 = q.1.2 then 1 else 0)) := by
+      (if p.val.1 = q.val.1 then 1 else 0) - (if p.val.1 = q.val.2 then 1 else 0) -
+        ((if p.val.2 = q.val.1 then 1 else 0) - (if p.val.2 = q.val.2 then 1 else 0)) := by
   rw [coordinateRootDatum_pairing, dotPairing_coordinateRoot_coordinateCoroot]
 
 /-- The root--coroot pairing of the coordinate root datum is symmetric. -/
@@ -343,12 +343,12 @@ of two of its coordinates.
 Not `@[simp]`: `RootPairing.coroot'` is an `abbrev`, so `simp` would unfold the left-hand side
 before this lemma could fire. -/
 theorem coordinateRootDatum_coroot'_apply [Finite σ] (p : CoordinateRootIndex σ) (x : σ →₀ ℤ) :
-    (coordinateRootDatum σ).coroot' p x = x p.1.1 - x p.1.2 := by
+    (coordinateRootDatum σ).coroot' p x = x p.val.1 - x p.val.2 := by
   classical
   let _ := Fintype.ofFinite σ
   rw [RootPairing.coroot', LinearMap.flip_apply, coordinateRootDatum_coroot,
     coordinateRootDatum_toLinearMap, dotPairing_apply,
-    x.sum_fintype (fun i c ↦ c * coordinateCoroot p.1.1 p.1.2 i) (by simp)]
+    x.sum_fintype (fun i c ↦ c * coordinateCoroot p.val.1 p.val.2 i) (by simp)]
   simp [coordinateCoroot_apply, mul_sub, mul_ite]
 
 open Classical in
@@ -357,11 +357,11 @@ transposition of the two coordinates of `p`. -/
 @[simp]
 theorem coordinateRootDatum_reflection_apply [Finite σ] (p : CoordinateRootIndex σ)
     (x : σ →₀ ℤ) (a : σ) :
-    (coordinateRootDatum σ).reflection p x a = x ((Equiv.swap p.1.1 p.1.2) a) := by
+    (coordinateRootDatum σ).reflection p x a = x ((Equiv.swap p.val.1 p.val.2) a) := by
   rw [RootPairing.reflection_apply, coordinateRootDatum_coroot'_apply, coordinateRootDatum_root]
   simp only [Finsupp.sub_apply, Finsupp.smul_apply, smul_eq_mul, coordinateRoot_apply]
   simpa only [smul_eq_mul, mul_comm] using
-    (apply_swap_eq (fun b : σ ↦ x b) p.1.1 p.1.2 a).symm
+    (apply_swap_eq (fun b : σ ↦ x b) p.val.1 p.val.2 a).symm
 
 open Classical in
 /-- Coreflection in the coordinate root indexed by `p` precomposes an arbitrary cocharacter with
@@ -369,25 +369,25 @@ the transposition of the two coordinates of `p`. -/
 @[simp]
 theorem coordinateRootDatum_coreflection_apply [Finite σ] (p : CoordinateRootIndex σ)
     (x : σ → ℤ) (a : σ) :
-    (coordinateRootDatum σ).coreflection p x a = x ((Equiv.swap p.1.1 p.1.2) a) := by
+    (coordinateRootDatum σ).coreflection p x a = x ((Equiv.swap p.val.1 p.val.2) a) := by
   rw [RootPairing.coreflection_apply]
   simp only [RootPairing.root', coordinateRootDatum_root, coordinateRootDatum_coroot,
     coordinateRootDatum_toLinearMap, Pi.sub_apply, Pi.smul_apply, smul_eq_mul,
     coordinateCoroot_apply]
-  have hpairing : dotPairing (coordinateRoot p.1.1 p.1.2) x =
-      x p.1.1 - x p.1.2 := by
+  have hpairing : dotPairing (coordinateRoot p.val.1 p.val.2) x =
+      x p.val.1 - x p.val.2 := by
     classical
     simp [dotPairing_apply, coordinateRoot]
   rw [hpairing]
   simpa only [smul_eq_mul, mul_comm] using
-    (apply_swap_eq x p.1.1 p.1.2 a).symm
+    (apply_swap_eq x p.val.1 p.val.2 a).symm
 
 /-- Reflections in the coordinate root datum transpose both coordinates of the root index. -/
 @[simp]
 theorem coordinateRootDatum_reflectionPerm [Finite σ] [DecidableEq σ]
     (p q : CoordinateRootIndex σ) :
     (coordinateRootDatum σ).reflectionPerm p q =
-      coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q := by
+      coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q := by
   cases Subsingleton.elim ‹DecidableEq σ› (Classical.decEq σ)
   classical
   apply (coordinateRootDatum σ).root.injective

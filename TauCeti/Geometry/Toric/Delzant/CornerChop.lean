@@ -68,6 +68,10 @@ dimension hypothesis is needed.
   `TauCeti.Toric.none_mem_activeSet_cornerChop_iff`: its old and new facets.
 * `TauCeti.Toric.notMem_facetPolyhedron_cornerChop`: the chopped corner is removed.
 * `TauCeti.Toric.IsSmoothVertex.exists_coord`: coordinates relative to a smooth vertex.
+* `TauCeti.Toric.IsSmoothVertex.eventually_forall_mem_facetPolyhedron`: the small simplex at a
+  smooth vertex lies in the polyhedron.
+* `TauCeti.Toric.IsSmoothVertex.eventually_forall_lt_apply`: the constraints inactive at a smooth
+  vertex stay inactive on the small simplex there.
 * `TauCeti.Toric.IsDelzant.eventually_isDelzant_cornerChop`: small corner chops of a Delzant
   polytope at a vertex are Delzant polytopes.
 
@@ -222,6 +226,21 @@ theorem IsSmoothVertex.exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
   rw [sum_mul_apply_eq hw _ hk, hvs k hk]
   ring
 
+/-- **Small depths.** At a point `v` of the polyhedron with active facets `s`, every sufficiently
+small `ε` is small compared with the slack of every constraint inactive at `v`, which is
+positive. -/
+private theorem eventually_mul_sum_abs_lt [Finite ι] (hvP : v ∈ facetPolyhedron i u c)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝 (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
+  refine eventually_all.2 fun k ↦ ?_
+  by_cases hk : k ∈ s
+  · exact Eventually.of_forall fun _ h ↦ absurd hk h
+  have hslack : 0 < v (i (u k)) - c k := by
+    refine sub_pos.2 ((mem_facetPolyhedron.1 hvP k).lt_of_ne fun h ↦ hk ?_)
+    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply, h]
+  exact ((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
+    hslack |>.mono fun ε hε _ ↦ hε
+
 variable (hx : ∀ x : StrongDual ℝ V, x = v + ∑ j ∈ s, (x (i (u j)) - c j) • w j)
 include hx
 
@@ -266,6 +285,38 @@ private theorem lt_apply_of_sum_le
   linarith [hε k hk]
 
 end Coordinates
+
+/-- **The small simplex at a smooth vertex.** Let `v` be a smooth vertex of the polyhedron
+`Δ = {x | c j ≤ ⟨x, u j⟩}` in an integral lattice, at which the facets indexed by `s` meet. Then for
+every sufficiently small `ε`, the simplex `{y j ≥ 0, ∑ j, y j ≤ ε}` in the coordinates
+`y j = ⟨x, u j⟩ - c j`, `j ∈ s`, relative to `v` lies in `Δ`: the constraints inactive at `v` stay
+inactive on it. -/
+theorem IsSmoothVertex.eventually_forall_mem_facetPolyhedron [Finite ι] (hi : IsIntegralLattice i)
+    {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v) (hvP : v ∈ facetPolyhedron i u c)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝 0, ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) →
+      ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε → x ∈ facetPolyhedron i u c := by
+  classical
+  obtain ⟨w, -, hx⟩ := hv.exists_coord hi hs
+  filter_upwards [eventually_mul_sum_abs_lt (w := w) hvP hs] with ε hε x hxs hxε
+  refine mem_facetPolyhedron.2 fun k ↦ ?_
+  by_cases hk : k ∈ s
+  · exact hxs k hk
+  · exact (lt_apply_of_sum_le hx hε hxs hxε hk).le
+
+/-- **Slack near a smooth vertex.** Let `v` be a smooth vertex of the polyhedron
+`Δ = {x | c j ≤ ⟨x, u j⟩}` in an integral lattice, at which the facets indexed by `s` meet. Then for
+every sufficiently small `ε`, the constraints inactive at `v` stay inactive on the simplex
+`{y j ≥ 0, ∑ j, y j ≤ ε}` in the coordinates `y j = ⟨x, u j⟩ - c j`, `j ∈ s`, relative to `v`. -/
+theorem IsSmoothVertex.eventually_forall_lt_apply [Finite ι] (hi : IsIntegralLattice i)
+    {v : StrongDual ℝ V} (hv : IsSmoothVertex i u c v) (hvP : v ∈ facetPolyhedron i u c)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) :
+    ∀ᶠ ε in 𝓝 0, ∀ x : StrongDual ℝ V, (∀ j ∈ s, c j ≤ x (i (u j))) →
+      ∑ j ∈ s, (x (i (u j)) - c j) ≤ ε → ∀ k ∉ s, c k < x (i (u k)) := by
+  classical
+  obtain ⟨w, -, hx⟩ := hv.exists_coord hi hs
+  filter_upwards [eventually_mul_sum_abs_lt (w := w) hvP hs] with ε hε x hxs hxε k hk
+  exact lt_apply_of_sum_le hx hε hxs hxε hk
 
 /-! ### Vertices of the chopped polytope -/
 
@@ -450,7 +501,6 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
   have hsA (j) : j ∈ s ↔ v (i (u j)) = c j := by
     rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply]
   have hvs (j) (hj : j ∈ s) : v (i (u j)) = c j := (hsA j).1 hj
-  have hvP := mem_facetPolyhedron.1 (extremePoints_subset hv)
   have hcard : s.card = Module.finrank ℤ N := by
     rw [← hsv.ncard_activeSet, ← hs, ncard_coe_finset]
   have hcard2 : 2 ≤ s.card := hcard ▸ hi.finrank_eq ▸ hV
@@ -464,17 +514,10 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
     have : s = {j} := Finset.coe_injective (by rw [hs, ← hyv, hyj j, Finset.coe_singleton])
     rw [this, Finset.card_singleton] at hcard2
     omega
-  -- The constraints inactive at the corner have positive slack there.
-  have hslack (k) (hk : k ∉ s) : 0 < v (i (u k)) - c k :=
-    sub_pos.2 ((hvP k).lt_of_ne fun h ↦ hk ((hsA k).2 h.symm))
   have h₁ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ j, ε < ∑ k ∈ s, (y j (i (u k)) - c k) :=
     eventually_all.2 fun j ↦ (eventually_lt_nhds (hdepth j)).filter_mono nhdsWithin_le_nhds
-  have h₂ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ k ∉ s, ε * ∑ j ∈ s, |w j (i (u k))| < v (i (u k)) - c k := by
-    refine eventually_all.2 fun k ↦ ?_
-    by_cases hk : k ∈ s
-    · exact Eventually.of_forall fun _ h ↦ absurd hk h
-    refine (((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const
-      (hslack k hk)).filter_mono nhdsWithin_le_nhds |>.mono fun ε hε _ ↦ hε
+  have h₂ := (eventually_mul_sum_abs_lt (w := w) (extremePoints_subset hv) hs).filter_mono
+    (nhdsWithin_le_nhds (s := Ioi 0))
   filter_upwards [self_mem_nhdsWithin, h₁, h₂] with ε (hε0 : 0 < ε) hεy hε
   refine ⟨hΔ.isBounded.subset facetPolyhedron_cornerChop_subset, fun x hx' ↦ ?_, fun o ↦ ?_⟩
   · by_cases hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε

@@ -124,16 +124,39 @@ theorem lyapunovPerronIntegral_def (A P : X →L[ℝ] X) (g : ℝ → X) (t : �
     lyapunovPerronIntegral A P g t = (∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))) -
       ∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s)) := (rfl)
 
-variable [CompleteSpace X]
+section NoCompleteSpace
 
-variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g g₁ g₂ : ℝ → X} {t : ℝ}
+variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g : ℝ → X} {t : ℝ}
 
-section Estimates
+/-- The Lyapunov--Perron integral is homogeneous in its forcing term. -/
+@[simp]
+theorem lyapunovPerronIntegral_smul (c : ℝ) (g : ℝ → X) (t : ℝ) :
+    lyapunovPerronIntegral A P (c • g) t =
+      c • lyapunovPerronIntegral A P g t := by
+  simp only [lyapunovPerronIntegral, Pi.smul_apply, map_smul, ← smul_sub,
+    intervalIntegral.integral_smul, integral_smul]
+
+/-- When `P` is idempotent and commutes with `A`, the integral terms of the Lyapunov--Perron
+equation have vanishing `P`-component at time `0`: there only the backward integral of the parts
+`g s - P (g s)` survives. -/
+theorem apply_lyapunovPerronIntegral_zero (hP : IsIdempotentElem P) (hAP : Commute A P) :
+    P (lyapunovPerronIntegral A P g 0) = 0 := by
+  rw [lyapunovPerronIntegral, intervalIntegral.integral_same, zero_sub, map_neg, neg_eq_zero]
+  by_cases hX : CompleteSpace X
+  · by_cases hint : IntegrableOn (fun s ↦ exp ((0 - s) • A) (g s - P (g s))) (Ioi 0)
+    · rw [← P.integral_comp_comm hint]
+      refine integral_eq_zero_of_ae (ae_of_all _ fun s ↦ ?_)
+      dsimp only [Pi.zero_apply]
+      rw [← mul_apply_eq_comp, ((hAP.symm.smul_right _).exp_right).eq, mul_apply_eq_comp, map_sub,
+        ← mul_apply_eq_comp P P, hP.eq, sub_self, map_zero]
+    · rw [integral_undef hint, map_zero]
+  · rw [integral_of_not_completeSpace hX, map_zero]
+
+section UnstableEstimates
 
 variable (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
 include hu
 
-omit [CompleteSpace X] in
 /-- The pointwise exponential bound on the unstable integrand. -/
 private theorem norm_unstable_integrand_le {s : ℝ} (hs : t < s) (hgs : ‖g s‖ ≤ M) :
     ‖exp ((t - s) • A) (g s - P (g s))‖ ≤
@@ -144,21 +167,6 @@ private theorem norm_unstable_integrand_le {s : ℝ} (hs : t < s) (hgs : ‖g s�
     _ = K * M * Real.exp (α * t) * Real.exp (-α * s) := by
       rw [mul_sub, sub_eq_add_neg, Real.exp_add, neg_mul]; ring
 
-/-- Under the backward exponential estimate, a forcing term that is continuous and bounded by `M`
-on `(t, ∞)` makes the unstable integrand of the Lyapunov--Perron equation integrable there. -/
-theorem integrableOn_lyapunovPerron_unstable (hα : 0 < α) (t : ℝ) (hg : ContinuousOn g (Ioi t))
-    (hgM : ∀ s ∈ Ioi t, ‖g s‖ ≤ M) :
-    IntegrableOn (fun s ↦ exp ((t - s) • A) (g s - P (g s))) (Ioi t) := by
-  have hbound : IntegrableOn (fun s ↦ K * M * Real.exp (α * t) * Real.exp (-α * s)) (Ioi t) :=
-    (integrableOn_exp_mul_Ioi (neg_neg_of_pos (NNReal.coe_pos.2 hα)) t).const_mul _
-  refine hbound.mono' ?_ ?_
-  · exact ((((differentiable_exp_smul_const ℝ A).continuous.comp
-      (continuous_const.sub continuous_id)).continuousOn.clm_apply
-        (hg.sub (P.continuous.comp_continuousOn' hg))).aestronglyMeasurable measurableSet_Ioi)
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with s hs
-    exact norm_unstable_integrand_le hu hs (hgM s hs)
-
-omit [CompleteSpace X] in
 /-- Under the backward exponential estimate, the unstable integral of a forcing term bounded by
 `M exp (-β s)` on `(t, ∞)` is bounded by `K M exp (-β t) / (α + β)`, provided `α + β > 0`. -/
 theorem norm_setIntegral_lyapunovPerron_unstable_le_mul_exp {β : ℝ} (hαβ : 0 < α + β) (t : ℝ)
@@ -189,7 +197,6 @@ theorem norm_setIntegral_lyapunovPerron_unstable_le_mul_exp {β : ℝ} (hαβ : 
         ← hsplit]
       ring
 
-omit [CompleteSpace X] in
 /-- Under the backward exponential estimate, the unstable integral of a forcing term bounded by
 `M` on `(t, ∞)` is bounded by `K M / α`. -/
 theorem norm_setIntegral_lyapunovPerron_unstable_le (hα : 0 < α) (t : ℝ)
@@ -198,9 +205,8 @@ theorem norm_setIntegral_lyapunovPerron_unstable_le (hα : 0 < α) (t : ℝ)
   simpa using norm_setIntegral_lyapunovPerron_unstable_le_mul_exp hu (β := 0)
     (by simpa using hα) t (by simpa using hgM)
 
-end Estimates
+end UnstableEstimates
 
-omit [CompleteSpace X] in
 /-- Under the forward exponential estimate, the stable integral of a forcing term bounded by
 `M exp (-β s)` on `[0, t]` is bounded by `K M exp (-β t) / (α - β)` in forward time, provided
 `β < α`. -/
@@ -243,7 +249,6 @@ theorem norm_intervalIntegral_lyapunovPerron_stable_le_mul_exp
       field_simp
     _ ≤ K * M / (α - β) * Real.exp (-β * t) := by gcongr
 
-omit [CompleteSpace X] in
 /-- Under the forward exponential estimate, the stable integral of a forcing term bounded by `M`
 on `[0, t]` is bounded by `K M / α` in forward time. -/
 theorem norm_intervalIntegral_lyapunovPerron_stable_le
@@ -253,7 +258,6 @@ theorem norm_intervalIntegral_lyapunovPerron_stable_le
   simpa using norm_intervalIntegral_lyapunovPerron_stable_le_mul_exp hs (β := 0)
     (by simpa using hα) ht (by simpa using hgM)
 
-omit [CompleteSpace X] in
 /-- Under the forward and backward exponential estimates, the integral terms of the
 Lyapunov--Perron equation with a forcing term bounded by `M exp (-β s)` in forward time are
 bounded by `2 K M exp (-β t) / (α - β)` in forward time, for a rate `0 ≤ β < α`. -/
@@ -278,7 +282,6 @@ theorem norm_lyapunovPerronIntegral_le_mul_exp
         add_le_add h₁ (h₂.trans h₃)
     _ = 2 * K * M / (α - β) * Real.exp (-β * t) := by ring
 
-omit [CompleteSpace X] in
 /-- Under the forward and backward exponential estimates, the integral terms of the
 Lyapunov--Perron equation with a forcing term bounded by `M` are bounded by `2 K M / α` in
 forward time. -/
@@ -290,10 +293,27 @@ theorem norm_lyapunovPerronIntegral_le
   simpa using norm_lyapunovPerronIntegral_le_mul_exp hs hu le_rfl (β := 0)
     (by simpa using hα) (by simpa using fun s _ ↦ hgM s) ht
 
+end NoCompleteSpace
+
 section Derivative
 
-variable (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
+variable [CompleteSpace X] {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g g₁ g₂ : ℝ → X}
+  (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
 include hu
+
+/-- Under the backward exponential estimate, a forcing term that is continuous and bounded by `M`
+on `(t, ∞)` makes the unstable integrand of the Lyapunov--Perron equation integrable there. -/
+theorem integrableOn_lyapunovPerron_unstable (hα : 0 < α) (t : ℝ) (hg : ContinuousOn g (Ioi t))
+    (hgM : ∀ s ∈ Ioi t, ‖g s‖ ≤ M) :
+    IntegrableOn (fun s ↦ exp ((t - s) • A) (g s - P (g s))) (Ioi t) := by
+  have hbound : IntegrableOn (fun s ↦ K * M * Real.exp (α * t) * Real.exp (-α * s)) (Ioi t) :=
+    (integrableOn_exp_mul_Ioi (neg_neg_of_pos (NNReal.coe_pos.2 hα)) t).const_mul _
+  refine hbound.mono' ?_ ?_
+  · exact ((((differentiable_exp_smul_const ℝ A).continuous.comp
+      (continuous_const.sub continuous_id)).continuousOn.clm_apply
+        (hg.sub (P.continuous.comp_continuousOn' hg))).aestronglyMeasurable measurableSet_Ioi)
+  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with s hs
+    exact norm_unstable_integrand_le hu hs (hgM s hs)
 
 /-- The integral terms of the Lyapunov--Perron equation are linear in the forcing term. -/
 theorem lyapunovPerronIntegral_sub (hα : 0 < α) (hg₁ : Continuous g₁) (hg₁M : ∀ s, ‖g₁ s‖ ≤ M)
@@ -317,15 +337,6 @@ theorem lyapunovPerronIntegral_sub (hα : 0 < α) (hg₁ : Continuous g₁) (hg�
     integral_sub (integrableOn_lyapunovPerron_unstable hu hα t hg₁.continuousOn fun s _ ↦ hg₁M s)
       (integrableOn_lyapunovPerron_unstable hu hα t hg₂.continuousOn fun s _ ↦ hg₂M s)]
   abel
-
-omit [CompleteSpace X] hu in
-/-- The Lyapunov--Perron integral is homogeneous in its forcing term. -/
-@[simp]
-theorem lyapunovPerronIntegral_smul (c : ℝ) (g : ℝ → X) (t : ℝ) :
-    lyapunovPerronIntegral A P (c • g) t =
-      c • lyapunovPerronIntegral A P g t := by
-  simp only [lyapunovPerronIntegral, Pi.smul_apply, map_smul, ← smul_sub,
-    intervalIntegral.integral_smul, integral_smul]
 
 /-- Under the backward exponential estimate, the integral terms of the Lyapunov--Perron equation
 solve the forced linear equation `y' = A y + g`. -/
@@ -381,7 +392,10 @@ theorem hasDerivAt_lyapunovPerronIntegral (hα : 0 < α) (hg : Continuous g)
 
 end Derivative
 
-omit [CompleteSpace X] in
+section Continuity
+
+variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g : ℝ → X}
+
 /-- Under the backward exponential estimate, the integral terms of the Lyapunov--Perron equation
 are continuous in time. -/
 theorem continuous_lyapunovPerronIntegral
@@ -397,22 +411,9 @@ theorem continuous_lyapunovPerronIntegral
     rw [this]
     exact continuous_const
 
-omit [CompleteSpace X] in
-/-- When `P` is idempotent and commutes with `A`, the integral terms of the Lyapunov--Perron
-equation have vanishing `P`-component at time `0`: there only the backward integral of the parts
-`g s - P (g s)` survives. -/
-theorem apply_lyapunovPerronIntegral_zero (hP : IsIdempotentElem P) (hAP : Commute A P) :
-    P (lyapunovPerronIntegral A P g 0) = 0 := by
-  rw [lyapunovPerronIntegral, intervalIntegral.integral_same, zero_sub, map_neg, neg_eq_zero]
-  by_cases hX : CompleteSpace X
-  · by_cases hint : IntegrableOn (fun s ↦ exp ((0 - s) • A) (g s - P (g s))) (Ioi 0)
-    · rw [← P.integral_comp_comm hint]
-      refine integral_eq_zero_of_ae (ae_of_all _ fun s ↦ ?_)
-      dsimp only [Pi.zero_apply]
-      rw [← mul_apply_eq_comp, ((hAP.symm.smul_right _).exp_right).eq, mul_apply_eq_comp, map_sub,
-        ← mul_apply_eq_comp P P, hP.eq, sub_self, map_zero]
-    · rw [integral_undef hint, map_zero]
-  · rw [integral_of_not_completeSpace hX, map_zero]
+end Continuity
+
+variable [CompleteSpace X] {A P : X →L[ℝ] X} {K α : ℝ≥0}
 
 /-- Under the backward exponential estimate, a vector `v` with `P v = 0` whose forward orbit
 `t ↦ exp (t A) v` stays bounded is zero, provided `P` commutes with `A`.
@@ -477,12 +478,12 @@ def lyapunovPerronMap (ξ : X) (γ : ℝ≥0 →ᵇ X) : ℝ≥0 →ᵇ X :=
     (K * ‖ξ‖ + 2 * K * (‖N 0‖ + ε * ‖γ‖) / α)
     fun t ↦ by
       refine (norm_add_le _ _).trans (add_le_add ?_
-        (norm_lyapunovPerronIntegral_le hs hu hα hgM t.2))
-      calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.2 ξ
+        (norm_lyapunovPerronIntegral_le hs hu hα hgM t.property))
+      calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.property ξ
         _ ≤ K * 1 * ‖ξ‖ := by
           gcongr
           exact Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg
-            (neg_nonpos.2 α.coe_nonneg) t.2)
+            (neg_nonpos.2 α.coe_nonneg) t.property)
         _ = K * ‖ξ‖ := by ring
 
 variable {A P N}
@@ -511,7 +512,7 @@ theorem dist_lyapunovPerronMap_le (ξ : X) (γ η : ℝ≥0 →ᵇ X) :
   rw [lyapunovPerronMap_apply, lyapunovPerronMap_apply, dist_eq_norm, add_sub_add_left_eq_sub,
     lyapunovPerronIntegral_sub hu hα (hcontinuous γ) (hbound γ)
       (hcontinuous η) (hbound η)]
-  calc _ ≤ 2 * K * (ε * dist γ η) / α := norm_lyapunovPerronIntegral_le hs hu hα hdiff t.2
+  calc _ ≤ 2 * K * (ε * dist γ η) / α := norm_lyapunovPerronIntegral_le hs hu hα hdiff t.property
     _ = 2 * K * ε / α * dist γ η := by ring
 
 /-- When `2 K ε < α`, the Lyapunov--Perron operator is a contraction. -/
@@ -527,11 +528,11 @@ theorem dist_lyapunovPerronMap_lyapunovPerronMap_le (ξ ζ : X) (γ : ℝ≥0 �
   refine (BoundedContinuousFunction.dist_le (by positivity)).2 fun t ↦ ?_
   rw [lyapunovPerronMap_apply, lyapunovPerronMap_apply, dist_eq_norm, add_sub_add_right_eq_sub,
     ← map_sub, ← map_sub, dist_eq_norm]
-  calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.2 _
+  calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.property _
     _ ≤ K * 1 * ‖ξ - ζ‖ := by
       gcongr
       exact Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg
-        (neg_nonpos.2 α.coe_nonneg) t.2)
+        (neg_nonpos.2 α.coe_nonneg) t.property)
     _ = K * ‖ξ - ζ‖ := by ring
 
 variable (A P N)
@@ -663,7 +664,7 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
   have hy_cont : ContinuousOn y (Ici 0) := hy.continuousOn
   -- The restriction of `y` to `[0, ∞)`, as a bounded continuous function.
   let γ : ℝ≥0 →ᵇ X := BoundedContinuousFunction.ofNormedAddCommGroup (fun t : ℝ≥0 ↦ y t)
-    (hy_cont.comp_continuous NNReal.continuous_coe fun t ↦ t.2) B fun t ↦ hB t t.2
+    (hy_cont.comp_continuous NNReal.continuous_coe fun t ↦ t.property) B fun t ↦ hB t t.property
   have hγ (t : ℝ) (ht : 0 ≤ t) : γ t.toNNReal = y t := by
     simp [γ, Real.coe_toNNReal t ht]
   set g : ℝ → X := fun s ↦ N (γ s.toNNReal)
@@ -707,9 +708,9 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
         _ = K * ‖y 0‖ := by ring
   have hsol : γ = lyapunovPerronSolution A P N hs hu hα hN hsmall (y 0) := by
     refine eq_lyapunovPerronSolution hs hu hα hN hsmall fun t ↦ ?_
-    have h := hz_exp t t.2
+    have h := hz_exp t t.property
     rw [hz0, map_zero] at h
-    have hγt : γ t = y t := by simpa using hγ t t.2
+    have hγt : γ t = y t := by simpa using hγ t t.property
     exact hγt.trans (sub_eq_zero.1 h)
   intro t ht
   rw [← hsol]
@@ -769,14 +770,14 @@ theorem norm_lyapunovPerronMap_sub_le_mul_exp {β : ℝ} (hβ : 0 ≤ β) (hβα
     rw [dist_eq_norm]
     simpa [Real.coe_toNNReal s hs0] using hγη s.toNNReal
   have hlin : ‖exp ((t : ℝ) • A) (P (ξ - ζ))‖ ≤ K * ‖ξ - ζ‖ * Real.exp (-β * t) := by
-    calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.2 _
+    calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.property _
       _ ≤ K * Real.exp (-β * t) * ‖ξ - ζ‖ := by gcongr
       _ = K * ‖ξ - ζ‖ * Real.exp (-β * t) := by ring
   rw [lyapunovPerronMap_apply, lyapunovPerronMap_apply, add_sub_add_comm, ← map_sub, ← map_sub,
     lyapunovPerronIntegral_sub hu hα (hcont γ) (hbound γ) (hcont η) (hbound η)]
   calc _ ≤ K * ‖ξ - ζ‖ * Real.exp (-β * t) + 2 * K * (ε * R) / (α - β) * Real.exp (-β * t) :=
         (norm_add_le _ _).trans
-          (add_le_add hlin (norm_lyapunovPerronIntegral_le_mul_exp hs hu hβ hβα hdiff t.2))
+          (add_le_add hlin (norm_lyapunovPerronIntegral_le_mul_exp hs hu hβ hβα hdiff t.property))
     _ = _ := by ring
 
 /-- **Weighted bound for the difference of Lyapunov--Perron solutions.** For `β ≥ 0` with

@@ -46,13 +46,13 @@ def realRestriction (a : ι → ℝ) :
   map_zero' := Germ.const_compTendsto 0 _
   map_one' := Germ.const_compTendsto 1 _
   map_add' φ ψ := by
-    obtain ⟨f, _, hφ⟩ := mem_analyticGerms_iff.1 φ.2
-    obtain ⟨g, _, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
+    obtain ⟨f, _, hφ⟩ := mem_analyticGerms_iff.1 φ.property
+    obtain ⟨g, _, hψ⟩ := mem_analyticGerms_iff.1 ψ.property
     simp only [← hφ, ← hψ, Subring.coe_add, ← Germ.coe_add, Germ.coe_compTendsto]
     rfl
   map_mul' φ ψ := by
-    obtain ⟨f, _, hφ⟩ := mem_analyticGerms_iff.1 φ.2
-    obtain ⟨g, _, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
+    obtain ⟨f, _, hφ⟩ := mem_analyticGerms_iff.1 φ.property
+    obtain ⟨g, _, hψ⟩ := mem_analyticGerms_iff.1 ψ.property
     simp only [← hφ, ← hψ, Subring.coe_mul, ← Germ.coe_mul, Germ.coe_compTendsto]
     rfl
 
@@ -81,7 +81,7 @@ theorem realRestriction_injective (a : ι → ℝ) : Injective (realRestriction 
 private theorem exists_complexify (φ : analyticGerms ℝ a) :
     ∃ ψ : analyticGerms ℂ (fun i ↦ (a i : ℂ)),
       realRestriction a ψ = Germ.map (fun t : ℝ ↦ (t : ℂ)) (φ : Germ (𝓝 a) ℝ) := by
-  obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.2
+  obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.property
   obtain ⟨r, hr, F, hF, hFr, _⟩ := hf.exists_complexification
   refine ⟨ofAnalyticAt F (hF _ (mem_ball_self hr)), ?_⟩
   rw [realRestriction_ofAnalyticAt, ← hφ, Germ.map_coe, Germ.coe_eq]

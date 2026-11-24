@@ -21,8 +21,6 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
 
 * `TauCeti.tendsto_nhds_zero_of_le_enorm_mul`: a quantity dominated near `0` by `‖h‖ₑ` times a
   finite constant vanishes as `h → 0`.
-* `TauCeti.tendsto_nhds_zero_of_eventually_le_ofReal`: an `ℝ≥0∞`-valued family eventually bounded
-  above by `ENNReal.ofReal (v i)` vanishes along any filter on which `v` tends to `0`.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
 * `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds
@@ -34,6 +32,12 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   `a ≤ b + c`.
 * `TauCeti.truncated_cost_le_add_of_label_eq`: an `ℝ≥0∞`-valued cost truncated at `M` on a
   rectangle varies by at most `η` between points with the same labels.
+* `ENNReal.ofReal_truncateToReal_le`: the truncation `truncateToReal t x` of `x` at `t`, read back
+  in `ℝ≥0∞`, is at most `x`.
+* `Continuous.ennreal_toReal`: a continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous
+  real projection `fun z ↦ (c z).toReal`.
+* `Continuous.exists_forall_le_coe_of_ne_top`: on a compact space, a continuous `ℝ≥0∞`-valued
+  function that avoids `∞` is bounded above by a finite `ℝ≥0` constant.
 -/
 
 public section
@@ -53,14 +57,6 @@ theorem tendsto_nhds_zero_of_le_enorm_mul {G : E → ℝ≥0∞} {C : ℝ≥0∞
     continuous_eNorm.tendsto' 0 0 (by simp)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
     (by simpa using ENNReal.Tendsto.mul_const h0 (Or.inr hC)) (.of_forall fun _ => zero_le) hG
-
-/-- An `ℝ≥0∞`-valued family eventually bounded above by `ENNReal.ofReal (v i)` tends to `0`
-along any filter on which `v` tends to `0`. -/
-theorem tendsto_nhds_zero_of_eventually_le_ofReal {ι : Type*} {l : Filter ι} {u : ι → ℝ≥0∞}
-    {v : ι → ℝ} (hv : Filter.Tendsto v l (𝓝 0)) (h : ∀ᶠ i in l, u i ≤ ENNReal.ofReal (v i)) :
-    Filter.Tendsto u l (𝓝 0) :=
-  tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (by simpa using ENNReal.tendsto_ofReal hv) (.of_forall fun _ ↦ zero_le) h
 
 /-- In `ℝ≥0∞`, a family that is within `wᵢ` of a fixed value `b` from both sides converges to `b`
 when `wᵢ → 0`. -/
@@ -171,5 +167,28 @@ theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGr
     simpa [Function.comp_def] using
       (ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto (0 : F)).comp h0) (Or.inr hM))
   simpa using h1.add h2
+
+/-- The truncation `truncateToReal t x = (min t x).toReal` of `x` at `t`, read back in `ℝ≥0∞`, is
+at most `x`. -/
+theorem _root_.ENNReal.ofReal_truncateToReal_le (t x : ℝ≥0∞) :
+    ENNReal.ofReal (ENNReal.truncateToReal t x) ≤ x := by
+  rw [ENNReal.truncateToReal]
+  exact ENNReal.ofReal_toReal_le.trans (min_le_right t x)
+
+/-- A continuous `ℝ≥0∞`-valued function that avoids `∞` has continuous real projection
+`fun z ↦ (c z).toReal`. -/
+theorem _root_.Continuous.ennreal_toReal {Z : Type*} [TopologicalSpace Z] {c : Z → ℝ≥0∞}
+    (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) : Continuous fun z ↦ (c z).toReal :=
+  ENNReal.continuousOn_toReal.comp_continuous hc hfin
+
+/-- On a compact space, a continuous `ℝ≥0∞`-valued function that avoids `∞` is bounded above by a
+finite `ℝ≥0` constant. -/
+theorem _root_.Continuous.exists_forall_le_coe_of_ne_top {Z : Type*} [TopologicalSpace Z]
+    [CompactSpace Z] {c : Z → ℝ≥0∞} (hc : Continuous c) (hfin : ∀ z, c z ≠ ∞) :
+    ∃ B : ℝ≥0, ∀ z, c z ≤ B := by
+  obtain ⟨M, hM⟩ := (isCompact_range (hc.ennreal_toReal hfin)).bddAbove
+  refine ⟨Real.toNNReal M, fun z ↦ ?_⟩
+  rw [← ENNReal.ofReal_toReal (hfin z), ← ENNReal.ofReal_coe_nnreal]
+  exact ENNReal.ofReal_le_ofReal ((hM (Set.mem_range_self z)).trans (Real.le_coe_toNNReal M))
 
 end TauCeti

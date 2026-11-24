@@ -77,13 +77,13 @@ private theorem one_div_natCard_residueField_pow_mul_one_sub_ne_top :
 weighted count `∑_{L ∈ σ_K(n)} q ^ (-c(L))` of the mass formula. -/
 theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_add_one_mul :
     ∑' L : totallyRamifiedOfDegree K n,
-      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (L.1.discriminantExponent + 1) *
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (L.val.discriminantExponent + 1) *
         (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) *
-        ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent := by
+        ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent := by
   rw [← ENNReal.tsum_mul_left]
   refine tsum_congr fun L ↦ ?_
-  rw [← IntermediateField.wildExponent_add_eq_discriminantExponent_add_one L.2, pow_add,
+  rw [← IntermediateField.wildExponent_add_eq_discriminantExponent_add_one L.property, pow_add,
     one_div, ENNReal.mul_inv (.inr (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))
       (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]
   simp only [one_div]
@@ -96,9 +96,9 @@ on the integer box. By `TauCeti.tsum_lintegral_rootCount_eq_of_normalized`, the 
 once each root-count integral over the Eisenstein region is evaluated as
 `q ^ (-(d(L) + 1)) · (1 - q⁻¹)`. -/
 theorem tsum_one_div_natCard_residueField_pow_wildExponent_eq_iff :
-    ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = n ↔
+    ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent = n ↔
       ∑' L : totallyRamifiedOfDegree K n,
-        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (L.1.discriminantExponent + 1) *
+        1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (L.val.discriminantExponent + 1) *
           (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) =
         n * (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞))) := by
   rw [tsum_one_div_natCard_residueField_pow_discriminantExponent_add_one_mul, mul_comm (n : ℝ≥0∞),
@@ -117,8 +117,8 @@ private theorem coe_one_div_natCard_residueField_pow (k : ℕ) :
 relates the mass formula to its real-valued restatement. -/
 theorem hasSum_one_div_natCard_residueField_pow_wildExponent_iff {s : ℝ≥0} :
     HasSum (fun L : totallyRamifiedOfDegree K n ↦
-      1 / (Nat.card 𝓀[K] : ℝ) ^ L.1.wildExponent) s ↔
-      ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent = s := by
+      1 / (Nat.card 𝓀[K] : ℝ) ^ L.val.wildExponent) s ↔
+      ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent = s := by
   simp only [← coe_one_div_natCard_residueField_pow, ← CompleteLattice.summable.hasSum_iff,
     ENNReal.hasSum_coe, ← NNReal.hasSum_coe, NNReal.coe_div, NNReal.coe_one, NNReal.coe_pow,
     NNReal.coe_natCast]
@@ -128,8 +128,8 @@ mass formula, this makes the real series `∑_{L ∈ σ_K(n)} q ^ (-c(L))` conve
 is infinite. -/
 theorem summable_one_div_natCard_residueField_pow_wildExponent_iff :
     Summable (fun L : totallyRamifiedOfDegree K n ↦
-      1 / (Nat.card 𝓀[K] : ℝ) ^ L.1.wildExponent) ↔
-      ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.1.wildExponent ≠ ∞ := by
+      1 / (Nat.card 𝓀[K] : ℝ) ^ L.val.wildExponent) ↔
+      ∑' L : totallyRamifiedOfDegree K n, 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.wildExponent ≠ ∞ := by
   simp only [← coe_one_div_natCard_residueField_pow, ENNReal.tsum_coe_ne_top_iff_summable_coe,
     NNReal.coe_div, NNReal.coe_one, NNReal.coe_pow, NNReal.coe_natCast]
 

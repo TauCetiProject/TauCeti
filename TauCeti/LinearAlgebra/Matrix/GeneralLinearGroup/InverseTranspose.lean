@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
 import Mathlib.Algebra.Group.Units.Opposite
 import Mathlib.Algebra.Group.Equiv.Opposite
 
@@ -31,6 +32,8 @@ part of the pinned type-`A` graph automorphism.
 * `TauCeti.inverseTranspose_diagGL`: action on diagonal matrices.
 * `TauCeti.inverseTranspose_permutationGL`: permutation matrices are fixed.
 * `TauCeti.inverseTranspose_transvectionUnit`: action on elementary transvections.
+* `TauCeti.mem_unitarySubgroup_GL_iff_inverseTranspose_eq`: over a commutative star ring, an
+  invertible matrix is unitary exactly when its inverse transpose is its entrywise star.
 
 ## Formalization source
 
@@ -115,5 +118,20 @@ theorem inverseTranspose_transvectionUnit [CommRing A] {i j : n} (hij : i ≠ j)
   rw [Matrix.GeneralLinearGroup.coe_inverseTranspose, transvectionUnit_inv,
     coe_transvectionUnit, coe_transvectionUnit]
   simp [Matrix.transvection, Matrix.transpose_add, Matrix.transpose_single]
+
+/-- Over a commutative star ring, an invertible matrix is unitary exactly when its inverse
+transpose is its entrywise star. -/
+theorem mem_unitarySubgroup_GL_iff_inverseTranspose_eq [CommRing A] [StarRing A] (g : GL n A) :
+    g ∈ unitarySubgroup (GL n A) ↔
+      Matrix.GeneralLinearGroup.inverseTranspose g =
+        Matrix.GeneralLinearGroup.map (starRingEnd A) g := by
+  have hstar : (Matrix.GeneralLinearGroup.map (starRingEnd A) g : Matrix n n A)ᵀ =
+      star (g : Matrix n n A) := by
+    ext i j
+    simp [Matrix.star_apply, starRingEnd_apply]
+  rw [mem_unitarySubgroup_GL_iff_mem_unitaryGroup, Matrix.mem_unitaryGroup_iff, Units.ext_iff,
+    Matrix.GeneralLinearGroup.coe_inverseTranspose, ← Matrix.transpose_inj (A := _ᵀ),
+    Matrix.transpose_transpose, hstar]
+  exact ⟨Units.inv_eq_of_mul_eq_one_right, fun h ↦ h ▸ Units.mul_inv g⟩
 
 end TauCeti

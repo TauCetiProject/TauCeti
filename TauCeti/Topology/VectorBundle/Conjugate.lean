@@ -66,8 +66,8 @@ instance instTopologicalSpaceTotalSpace :
 identity of the base. -/
 def toConjHomeomorph :
     TotalSpace F E ≃ₜ TotalSpace (Conjugate F) (ConjugateBundle E) where
-  toFun p := ⟨p.proj, toConj p.2⟩
-  invFun p := ⟨p.proj, ofConj p.2⟩
+  toFun p := ⟨p.proj, toConj p.snd⟩
+  invFun p := ⟨p.proj, ofConj p.snd⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_id
@@ -76,10 +76,10 @@ def toConjHomeomorph :
 variable {F E}
 
 @[simp] theorem toConjHomeomorph_apply (p : TotalSpace F E) :
-    toConjHomeomorph F E p = ⟨p.proj, toConj p.2⟩ := (rfl)
+    toConjHomeomorph F E p = ⟨p.proj, toConj p.snd⟩ := (rfl)
 
 @[simp] theorem toConjHomeomorph_symm_apply (p : TotalSpace (Conjugate F) (ConjugateBundle E)) :
-    (toConjHomeomorph F E).symm p = ⟨p.proj, ofConj p.2⟩ := (rfl)
+    (toConjHomeomorph F E).symm p = ⟨p.proj, ofConj p.snd⟩ := (rfl)
 
 theorem proj_toConjHomeomorph (p : TotalSpace F E) :
     (toConjHomeomorph F E p).proj = p.proj := (rfl)
@@ -238,8 +238,8 @@ variable (F : Type*) (E : B → Type*) [TopologicalSpace (TotalSpace F E)]
 def doubleConjugateHomeomorph :
     TotalSpace (Conjugate (Conjugate F)) (ConjugateBundle (ConjugateBundle E)) ≃ₜ
       TotalSpace F E where
-  toFun p := ⟨p.proj, ofConj (ofConj p.2)⟩
-  invFun p := ⟨p.proj, toConj (toConj p.2)⟩
+  toFun p := ⟨p.proj, ofConj (ofConj p.snd)⟩
+  invFun p := ⟨p.proj, toConj (toConj p.snd)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_id
@@ -249,10 +249,10 @@ variable {F E}
 
 @[simp] theorem doubleConjugateHomeomorph_apply
     (p : TotalSpace (Conjugate (Conjugate F)) (ConjugateBundle (ConjugateBundle E))) :
-    doubleConjugateHomeomorph F E p = ⟨p.proj, ofConj (ofConj p.2)⟩ := (rfl)
+    doubleConjugateHomeomorph F E p = ⟨p.proj, ofConj (ofConj p.snd)⟩ := (rfl)
 
 @[simp] theorem doubleConjugateHomeomorph_symm_apply (p : TotalSpace F E) :
-    (doubleConjugateHomeomorph F E).symm p = ⟨p.proj, toConj (toConj p.2)⟩ := (rfl)
+    (doubleConjugateHomeomorph F E).symm p = ⟨p.proj, toConj (toConj p.snd)⟩ := (rfl)
 
 /-- On each fibre, the identification of the double conjugate with `E` is the complex-linear
 equivalence `TauCeti.Conjugate.doubleConjugateL`. -/
@@ -272,8 +272,8 @@ variable (F₁ : Type*) (E₁ : B → Type*) [TopologicalSpace (TotalSpace F₁ 
 def prodHomeomorph :
     TotalSpace (Conjugate (F₁ × F₂)) (ConjugateBundle (E₁ ×ᵇ E₂)) ≃ₜ
       TotalSpace (Conjugate F₁ × Conjugate F₂) (ConjugateBundle E₁ ×ᵇ ConjugateBundle E₂) where
-  toFun p := ⟨p.proj, (toConj (ofConj p.2).1, toConj (ofConj p.2).2)⟩
-  invFun p := ⟨p.proj, toConj (ofConj p.2.1, ofConj p.2.2)⟩
+  toFun p := ⟨p.proj, (toConj (ofConj p.snd).1, toConj (ofConj p.snd).2)⟩
+  invFun p := ⟨p.proj, toConj (ofConj p.snd.1, ofConj p.snd.2)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_id
@@ -283,12 +283,12 @@ variable {F₁ E₁ F₂ E₂}
 
 @[simp] theorem prodHomeomorph_apply
     (p : TotalSpace (Conjugate (F₁ × F₂)) (ConjugateBundle (E₁ ×ᵇ E₂))) :
-    prodHomeomorph F₁ E₁ F₂ E₂ p = ⟨p.proj, (toConj (ofConj p.2).1, toConj (ofConj p.2).2)⟩ :=
+    prodHomeomorph F₁ E₁ F₂ E₂ p = ⟨p.proj, (toConj (ofConj p.snd).1, toConj (ofConj p.snd).2)⟩ :=
   (rfl)
 
 @[simp] theorem prodHomeomorph_symm_apply
     (p : TotalSpace (Conjugate F₁ × Conjugate F₂) (ConjugateBundle E₁ ×ᵇ ConjugateBundle E₂)) :
-    (prodHomeomorph F₁ E₁ F₂ E₂).symm p = ⟨p.proj, toConj (ofConj p.2.1, ofConj p.2.2)⟩ := (rfl)
+    (prodHomeomorph F₁ E₁ F₂ E₂).symm p = ⟨p.proj, toConj (ofConj p.snd.1, ofConj p.snd.2)⟩ := (rfl)
 
 /-- On each fibre, the identification of the conjugate of a direct sum is the complex-linear
 equivalence `TauCeti.Conjugate.prodL`. -/

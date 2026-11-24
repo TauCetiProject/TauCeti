@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 public import TauCeti.Analysis.Sobolev.W1p.LevelSet
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # De Giorgi's isoperimetric inequality
@@ -75,8 +75,9 @@ private theorem exists_w1p_one_truncation [IsFiniteMeasure (mu.restrict (Omega :
           (fun x ↦ ‖W1p.gradient u x‖ₑ) x := by
   set nu := mu.restrict (Omega : Set E)
   set v : W1p mu Omega 1 := W1p.ofExponentLE Fact.out u
-  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := W1p.value_ofExponentLE_ae _ u
-  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u := W1p.gradient_ofExponentLE_ae _ u
+  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := (W1p.coeFn_value_ofExponentLE _ u).eventuallyEq
+  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u :=
+    (W1p.coeFn_gradient_ofExponentLE _ u).eventuallyEq
   have hmem : ∀ j : ℝ, MemLp (fun x ↦ max (W1p.value v x - j) 0) 1 nu := fun j ↦
     ((Lp.memLp (W1p.value v)).sub (memLp_const j)).pos_part
   set wk : W1p mu Omega 1 := W1p.posPartAboveOfMemLp ENNReal.one_ne_top k v (hmem k)
@@ -88,10 +89,7 @@ private theorem exists_w1p_one_truncation [IsFiniteMeasure (mu.restrict (Omega :
       W1p.value_posPartAboveOfMemLp_ae ENNReal.one_ne_top k v (hmem k),
       W1p.value_posPartAboveOfMemLp_ae ENNReal.one_ne_top l v (hmem l)] with x h1 h2 h3 h4
     rw [h1, Pi.sub_apply, h3, h4, h2]
-  · have hsub : ⇑(W1p.gradient (wk - wl)) =ᵐ[nu]
-        ⇑(W1p.gradient wk) - ⇑(W1p.gradient wl) := by
-      simpa only [← W1p.gradientL_apply, map_sub] using Lp.coeFn_sub _ _
-    filter_upwards [hsub, hv, hgv,
+  · filter_upwards [W1p.gradient_sub_ae wk wl, hv, hgv,
       W1p.gradient_posPartAboveOfMemLp_ae ENNReal.one_ne_top k v (hmem k),
       W1p.gradient_posPartAboveOfMemLp_ae ENNReal.one_ne_top l v (hmem l),
       W1p.gradient_ae_eq_zero_on_level_set ENNReal.one_ne_top v l] with x h1 h2 h3 h4 h5 h6
@@ -197,8 +195,8 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_convex
   -- The Poincaré–Wirtinger inequality for `w`, with the mean over `{u ≤ k}`.
   have hPW : eLpNorm (W1p.value w) 1 nu ≤
       ENNReal.ofReal (K / mu.real S) * ‖W1p.gradient w‖ₑ := by
-    have h := W1p.eLpNorm_value_sub_setAverage_le_of_convex (S := S) ENNReal.one_ne_top hconv hb
-      (hB.inter Omega.isOpen.measurableSet).nullMeasurableSet inter_subset_right hS0 w
+    have h := W1p.eLpNorm_value_sub_setAverage_le_of_convex (S := S) hconv hb inter_subset_right
+      hS0 w
     rw [havg] at h
     simpa only [sub_zero] using h
   have hkey := (ofReal_mul_measure_le_eLpNorm_value_truncation u hkl hA hwval).trans
@@ -303,7 +301,7 @@ theorem W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset {c : E} {R 
   -- Cauchy–Schwarz on the strip `S`, where `∇u = ∇w`.
   have hmem : MemLp (fun x => ‖W1p.gradient u x‖) 2 nu :=
     ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono_set mu hball)).norm
-  have hCS := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
+  have hCS := TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq
     (μ := nu) (fun x => ‖W1p.gradient u x‖) S (measure_ne_top _ _)
     hmem.integrable_sq.integrableOn
   have hstrip : ∫ x in S, ‖W1p.gradient u x‖ ^ 2 ∂nu ≤

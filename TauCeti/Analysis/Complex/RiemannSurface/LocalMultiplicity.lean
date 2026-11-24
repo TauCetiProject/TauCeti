@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.Chart
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.RegularValue
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import Mathlib.Data.ENat.Monoid
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -53,6 +57,10 @@ the degree is part of this file.
   under composition.
 * `TauCeti.RiemannSurface.localMultiplicity_eq_one_iff`: it is `1` exactly when `f` is
   injective near `x`.
+* `TauCeti.RiemannSurface.localMultiplicity_eq_one_iff_isRegularPoint` and
+  `TauCeti.RiemannSurface.localMultiplicity_eq_one_iff_isLocalDiffeomorphAt`: it is `1` exactly
+  when the complex derivative of `f` at `x` is nonzero, that is, when `f` is a local
+  biholomorphism at `x`.
 * `TauCeti.RiemannSurface.eventually_localMultiplicity_eq_one`: near a point where `f` is not
   locally constant, it is `1` at every other point, so ramification points are isolated.
 * `TauCeti.RiemannSurface.localMultiplicity_pow_zero`: the power map `z ↦ z ^ m` has local
@@ -320,6 +328,40 @@ theorem localMultiplicity_eq_one_iff (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt
           (c'.open_source.mem_nhds hc'fx)),
       fun z₁ hz₁ z₂ hz₂ h ↦ ?_⟩
     exact c.symm.injOn hz₁.1.1 hz₂.1.1 (hinj hz₁.1.2 hz₂.1.2 (c'.injOn hz₁.2 hz₂.2 h))
+
+/-- **Multiplicity one means a regular point.** A map holomorphic near `x` has local multiplicity
+`1` at `x` exactly when its complex derivative at `x` is surjective, that is, nonzero. -/
+theorem localMultiplicity_eq_one_iff_isRegularPoint
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
+    localMultiplicity f x = 1 ↔ IsRegularPoint 𝓘(ℂ) 𝓘(ℂ) f x := by
+  -- Both conditions say that the representative of `f` in the preferred charts has nonzero
+  -- derivative.
+  have h :=
+    (analyticAt_chartAt_comp_comp_chartAt_symm hf).analyticOrderAt_sub_eq_one_iff_deriv_ne_zero
+  rw [(chartAt ℂ x).left_inv (mem_chart_source ℂ x)] at h
+  rw [localMultiplicity_def, analyticOrderNatAt, ENat.toNat_eq_iff one_ne_zero, Nat.cast_one, h,
+    Ne, ← mfderiv_eq_zero_iff_deriv_chartAt_comp_comp_chartAt_symm_eq_zero hf.self_of_nhds,
+    isRegularPoint_iff]
+  -- A linear functional on `ℂ` is surjective exactly when it is nonzero. The tangent spaces
+  -- `TangentSpace 𝓘(ℂ) x` and `TangentSpace 𝓘(ℂ) (f x)` are by definition the model space `ℂ`,
+  -- so `@id` reads `mfderiv 𝓘(ℂ) 𝓘(ℂ) f x` as a map `ℂ →L[ℂ] ℂ` without changing it.
+  exact (ContinuousLinearMap.surjective_iff_ne_zero
+    (f := @id (ℂ →L[ℂ] ℂ) (mfderiv 𝓘(ℂ) 𝓘(ℂ) f x))).symm
+
+/-- **Multiplicity one means a local biholomorphism.** A map holomorphic near `x` has local
+multiplicity `1` at `x` exactly when it is a local biholomorphism at `x`. -/
+theorem localMultiplicity_eq_one_iff_isLocalDiffeomorphAt
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y) :
+    localMultiplicity f x = 1 ↔ IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) 1 f x := by
+  refine ⟨fun hx ↦ ?_, fun h ↦ (localMultiplicity_eq_one_iff_isRegularPoint hf).2
+    ((isRegularPoint_iff_isInvertible_mfderiv rfl).2 (h.isInvertible_mfderiv one_ne_zero))⟩
+  -- The inverse function theorem at a point of invertible derivative.
+  obtain ⟨s, hs, hso, hxs⟩ := eventually_nhds_iff.1 hf
+  obtain ⟨e, he⟩ := (isRegularPoint_iff_isInvertible_mfderiv rfl).1
+    ((localMultiplicity_eq_one_iff_isRegularPoint hf).1 hx)
+  exact isLocalDiffeomorphAt_of_mfderiv_eq
+    (MDifferentiableOn.contMDiffOn (fun y hy ↦ (hs y hy).mdifferentiableWithinAt) hso) hso hxs
+    BoundarylessManifold.isInteriorPoint le_rfl he
 
 /-- **Ramification points are isolated.** A map holomorphic and not constant near `x` has local
 multiplicity `1` at every point of a punctured neighbourhood of `x`. -/

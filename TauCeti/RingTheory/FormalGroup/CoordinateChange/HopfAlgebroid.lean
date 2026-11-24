@@ -96,28 +96,28 @@ composable pairs `F → φ • F → ψ • (φ • F)` of strict isomorphisms. 
 def tensorLift :
     {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C} ≃ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) where
-  toFun p := eval₂Hom p.1.1 (p.1.2 ∘ X)
+  toFun p := eval₂Hom p.val.1 (p.val.2 ∘ X)
   invFun k := ⟨(k.comp C, k.comp (map rightUnit)), by
     rw [RingHom.comp_assoc, RingHom.comp_assoc, map_comp_C]⟩
   left_inv p := by
     refine Subtype.ext (Prod.ext (RingHom.ext (eval₂Hom_C _ _)) ?_)
     refine ringHom_ext' ?_ fun i ↦ by simp
     ext r
-    simpa using RingHom.congr_fun p.2 r
+    simpa using RingHom.congr_fun p.property r
   right_inv k := ringHom_ext' (RingHom.ext fun r ↦ by simp) fun i ↦ by simp
 
 /-- The left component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
 left factor `C`. -/
 @[simp]
 theorem tensorLift_symm_apply_fst (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
-    (tensorLift.symm k).1.1 = k.comp C :=
+    (tensorLift.symm k).val.1 = k.comp C :=
   (rfl)
 
 /-- The right component of the pair classified by `k : Γ ⊗_L Γ →+* R` is its restriction along the
 right factor `MvPolynomial.map η_R`. -/
 @[simp]
 theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing) →+* R) :
-    (tensorLift.symm k).1.2 = k.comp (map rightUnit) :=
+    (tensorLift.symm k).val.2 = k.comp (map rightUnit) :=
   (rfl)
 
 /-- `tensorLift (f, g)` restricts to `f` on the left factor. -/
@@ -125,23 +125,23 @@ theorem tensorLift_symm_apply_snd (k : MvPolynomial ℕ+ (MvPolynomial ℕ+ Laza
 theorem tensorLift_comp_C
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) :
-    (tensorLift p).comp C = p.1.1 :=
-  congrArg (fun q ↦ q.1.1) (tensorLift.left_inv p)
+    (tensorLift p).comp C = p.val.1 :=
+  congrArg (fun q ↦ q.val.1) (tensorLift.left_inv p)
 
 /-- `tensorLift (f, g)` restricts to `g` on the right factor. -/
 @[simp]
 theorem tensorLift_comp_map_rightUnit
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) :
-    (tensorLift p).comp (map rightUnit) = p.1.2 :=
-  congrArg (fun q ↦ q.1.2) (tensorLift.left_inv p)
+    (tensorLift p).comp (map rightUnit) = p.val.2 :=
+  congrArg (fun q ↦ q.val.2) (tensorLift.left_inv p)
 
 /-- `tensorLift (f, g)` agrees with `f` on the left factor. -/
 @[simp]
 theorem tensorLift_C
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
-    tensorLift p (C x) = p.1.1 x :=
+    tensorLift p (C x) = p.val.1 x :=
   RingHom.congr_fun (tensorLift_comp_C p) x
 
 /-- `tensorLift (f, g)` agrees with `g` on the right factor. -/
@@ -149,7 +149,7 @@ theorem tensorLift_C
 theorem tensorLift_map_rightUnit
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (x : MvPolynomial ℕ+ LazardRing) :
-    tensorLift p (map rightUnit x) = p.1.2 x :=
+    tensorLift p (map rightUnit x) = p.val.2 x :=
   RingHom.congr_fun (tensorLift_comp_map_rightUnit p) x
 
 /-- `tensorLift (f, g)` agrees with `g` on the generators of the right factor. -/
@@ -157,7 +157,7 @@ theorem tensorLift_map_rightUnit
 theorem tensorLift_X
     (p : {p : (MvPolynomial ℕ+ LazardRing →+* R) × (MvPolynomial ℕ+ LazardRing →+* R) //
       p.1.comp rightUnit = p.2.comp C}) (i : ℕ+) :
-    tensorLift p (X i) = p.1.2 (X i) := by
+    tensorLift p (X i) = p.val.2 (X i) := by
   simpa using tensorLift_map_rightUnit p (X i)
 
 /-- A ring homomorphism out of `Γ ⊗_L Γ` is determined by its restrictions to both factors. -/
@@ -273,21 +273,10 @@ theorem coproduct_coassoc :
       RingHom.comp_assoc, coproduct_comp_C, RingHom.comp_assoc]
   · -- Both sides are the triple composite `χ₃ * χ₂ * χ₁` of the strict coordinates of the three
     -- factors.
-    rw [map_comp_coproduct_universalStrictCoordinate, map_comp_coproduct_universalStrictCoordinate,
-      tensorLift_comp_map_rightUnit, tensorLift_comp_C, tensorLift_comp_map_rightUnit,
-      tensorLift_comp_C,
-      map_comp_coproduct_universalStrictCoordinate
-        (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing))) C,
-      map_comp_coproduct_universalStrictCoordinate
-        (R := MvPolynomial ℕ+ (MvPolynomial ℕ+ (MvPolynomial ℕ+ LazardRing)))
-        (map (map (σ := ℕ+) rightUnit))]
-    -- Reduce the projections `p.1.1`, `p.1.2` of the explicit pairs passed to `tensorLift`, so
-    -- that the rewrites below see the factor maps themselves.
-    dsimp only
     have h : (map (map (σ := ℕ+) rightUnit)).comp (map (σ := ℕ+) rightUnit) =
         map ((map rightUnit).comp rightUnit) :=
       RingHom.ext fun p ↦ map_map rightUnit (map rightUnit) p
-    rw [map_comp_C (map (σ := ℕ+) rightUnit), mul_assoc, h]
+    simp [map_comp_coproduct_universalStrictCoordinate, mul_assoc, h]
 
 /-! ### The conjugation -/
 

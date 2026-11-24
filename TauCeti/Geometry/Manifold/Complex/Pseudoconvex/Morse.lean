@@ -92,8 +92,11 @@ namespace TauCeti
 section CriticalCount
 
 variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  [FiniteDimensional ℂ E] [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) 2 M]
-  {f : M → ℝ}
+  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) 2 M] {f : M → ℝ}
+
+section StronglyPseudoconvex
+
+variable [FiniteDimensional ℂ E]
 
 /-- A real `C²` function on a complex manifold of complex dimension `n` which is strongly
 `q`-pseudoconvex at each of its critical points has no critical points of real Morse index larger
@@ -126,27 +129,36 @@ theorem sum_criticalCount_eq_totalCriticalCount_of_isManifoldStronglyPseudoconve
     rw [Finset.mem_range, not_lt] at hj
     exact criticalCount_eq_zero_of_finrank_lt (by omega)
 
+end StronglyPseudoconvex
+
 /-- A real `C²` function on a complex manifold of complex dimension `n` which is strictly
 plurisubharmonic at each of its critical points has no critical points of real Morse index larger
-than `n`. -/
+than `n`. In infinite dimensions both `manifoldMorseIndex` and `finrank ℂ E` are `0` by
+convention. -/
 theorem criticalCount_eq_zero_of_isManifoldStrictlyPlurisubharmonicAt {j : ℕ}
     (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 2 f)
     (hpos : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, IsManifoldStrictlyPlurisubharmonicAt E f x)
     (hj : finrank ℂ E < j) :
-    criticalCount 𝓘(ℝ, E) f j = 0 :=
-  criticalCount_eq_zero_of_isManifoldStronglyPseudoconvexAt (q := 0) hf
-    (fun x hx ↦ (hpos x hx).isManifoldStronglyPseudoconvexAt 0) (by simpa using hj)
+    criticalCount 𝓘(ℝ, E) f j = 0 := by
+  rw [criticalCount_def, encard_eq_zero, eq_empty_iff_forall_notMem]
+  rintro x ⟨hx, rfl⟩
+  exact (((hpos x hx).manifoldMorseIndex_le (hf x) (mem_criticalPoints.mp hx)).trans_lt hj).false
 
 /-- For a real `C²` function on a complex manifold of complex dimension `n` which is strictly
 plurisubharmonic at each of its critical points, the critical counts in indices `0, …, n` add up to
-the total number of critical points. -/
+the total number of critical points. In infinite dimensions both `manifoldMorseIndex` and
+`finrank ℂ E` are `0` by convention. -/
 theorem sum_criticalCount_eq_totalCriticalCount_of_isManifoldStrictlyPlurisubharmonicAt
     (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 2 f)
     (hpos : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, IsManifoldStrictlyPlurisubharmonicAt E f x) :
     ∑ j ∈ Finset.range (finrank ℂ E + 1), criticalCount 𝓘(ℝ, E) f j =
-      totalCriticalCount 𝓘(ℝ, E) f :=
-  sum_criticalCount_eq_totalCriticalCount_of_isManifoldStronglyPseudoconvexAt (q := 0) hf
-    fun x hx ↦ (hpos x hx).isManifoldStronglyPseudoconvexAt 0
+      totalCriticalCount 𝓘(ℝ, E) f := by
+  by_cases hE : FiniteDimensional ℂ E
+  · exact sum_criticalCount_eq_totalCriticalCount_of_isManifoldStronglyPseudoconvexAt (q := 0) hf
+      fun x hx ↦ (hpos x hx).isManifoldStronglyPseudoconvexAt 0
+  · have hR : ¬ FiniteDimensional ℝ E := fun _ ↦ hE (.of_restrictScalars_finite ℝ ℂ E)
+    simpa [finrank_of_not_finite hE, finrank_of_not_finite hR] using
+      sum_criticalCount_eq_totalCriticalCount (I := 𝓘(ℝ, E)) (f := f)
 
 end CriticalCount
 

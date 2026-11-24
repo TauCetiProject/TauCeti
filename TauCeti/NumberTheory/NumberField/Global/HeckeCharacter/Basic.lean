@@ -67,7 +67,7 @@ variable (K : Type*) [Field K] [NumberField K]
 
 /-- A **Hecke character** of `K`: a continuous homomorphism from the idele class group of `K` to
 the complex units.  Hecke characters form a commutative group under pointwise multiplication. -/
-abbrev HeckeCharacter := ContinuousMonoidHom (IdeleClassGroup (𝓞 K) K) ℂˣ
+abbrev HeckeCharacter : Type _ := ContinuousMonoidHom (IdeleClassGroup (𝓞 K) K) ℂˣ
 
 variable {K}
 
