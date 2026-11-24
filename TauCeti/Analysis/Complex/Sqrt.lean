@@ -21,6 +21,11 @@ half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative rea
 squares back to it, and packages the principal square root of a nonzero complex number as a unit,
 `Complex.sqrtUnit`. A complex unit of absolute value one has a square root of absolute value one,
 `Complex.exists_sq_eq_and_star_mul_self_eq_one`.
+
+The real square root of a positive real, cast to `ℂ`, is nonzero, and that of a nonnegative
+real `x` squares to `x` (`Complex.sq_ofReal_sqrt`), so its inverse squares to `x⁻¹`
+(`Complex.inv_ofReal_sqrt_mul_self`). Together with `1 + i ≠ 0` (`Complex.one_add_I_ne_zero`),
+these at `x = 2` are the arithmetic facts behind `e^{π i / 4} = (1 + i) / √2`.
 -/
 
 public section
@@ -138,5 +143,23 @@ theorem exists_sq_eq_and_star_mul_self_eq_one {z : ℂˣ} (hz : normSq z = 1) :
   simp only [Units.val_mul, Units.coe_star, val_sqrtUnit, Units.val_one, star_def]
   rw [← normSq_eq_conj_mul_self, ofReal_eq_one,
     ← pow_eq_one_iff_of_nonneg (normSq_nonneg _) two_ne_zero, ← map_pow, sq_sqrt, hz]
+
+/-- The real square root of a positive real, cast to `ℂ`, is nonzero. -/
+theorem ofReal_sqrt_ne_zero {x : ℝ} (hx : 0 < x) : (√x : ℂ) ≠ 0 := by
+  exact_mod_cast (Real.sqrt_pos.mpr hx).ne'
+
+/-- The real square root of a nonnegative real, cast to `ℂ`, squares back to it:
+`(√x : ℂ) ^ 2 = x`. -/
+theorem sq_ofReal_sqrt {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) ^ 2 = x := by
+  exact_mod_cast Real.sq_sqrt hx
+
+/-- The inverse of the real square root of a nonnegative real `x`, cast to `ℂ`, times itself is
+`x⁻¹`. -/
+theorem inv_ofReal_sqrt_mul_self {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ)⁻¹ * (√x : ℂ)⁻¹ = (x : ℂ)⁻¹ := by
+  rw [← mul_inv, mul_self_ofReal_sqrt hx]
+
+/-- The complex number `1 + i` is nonzero. -/
+theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
+  simpa using congrArg re h
 
 end Complex
