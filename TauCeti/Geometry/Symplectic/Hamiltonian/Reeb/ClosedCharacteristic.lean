@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.IntervalIntegral.Periodic
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Reparam
 import TauCeti.Topology.Homotopy.AddCircle
+import TauCeti.Topology.Order.IntermediateValue
 
 /-!
 # Closed Reeb orbits are closed characteristics
@@ -31,11 +32,11 @@ set `W`:
 
 * a periodic Reeb orbit whose loop through `ι` is contractible in a set `W` is, after a change of
   time, a closed characteristic of `K⁻¹(c)` contractible in `W`
-  (`IsNondegenerate.hasContractibleClosedCharacteristic_of_reebVectorField`);
+  (`IsNondegenerate.hasContractibleClosedCharacteristic_of_isMIntegralCurve_reebVectorField`);
 * conversely, when `S` is compact, `ι` is injective and the level `K⁻¹(c)` is the image of `ι`,
   every closed characteristic of the level contractible in `W` is traced by a periodic Reeb orbit
-  whose loop through `ι` is contractible in `W`
-  (`IsNondegenerate.hasContractibleClosedCharacteristic_iff_exists_reebVectorField`).
+  whose loop through `ι` is contractible in `W`, see
+  `IsNondegenerate.hasContractibleClosedCharacteristic_iff_exists_isMIntegralCurve_reebVectorField`.
 
 The change of time has speed `θ(X_K)` along the orbit, which has a constant sign on it. When the
 sign is negative, replacing `K` by `-K` reverses the Hamiltonian field and makes it positive. For
@@ -52,10 +53,11 @@ existence on a hypersurface of contact type, become statements about closed Reeb
 
 All in the namespace `TauCeti.SmoothTwoForm`:
 
-* `IsNondegenerate.hasContractibleClosedCharacteristic_of_reebVectorField`: a contractible closed
-  Reeb orbit gives a contractible closed characteristic.
-* `IsNondegenerate.hasContractibleClosedCharacteristic_iff_exists_reebVectorField`: on a compact
-  embedded level, contractible closed characteristics are contractible closed Reeb orbits.
+* `IsNondegenerate.hasContractibleClosedCharacteristic_of_isMIntegralCurve_reebVectorField`: a
+  contractible closed Reeb orbit gives a contractible closed characteristic.
+* `IsNondegenerate.hasContractibleClosedCharacteristic_iff_exists_isMIntegralCurve_reebVectorField`:
+  on a compact embedded level, contractible closed characteristics are contractible closed Reeb
+  orbits.
 
 ## References
 
@@ -123,10 +125,10 @@ private theorem isMIntegralCurve_comp_reebVectorField (hσ : σ.IsNondegenerate)
   exact hγ.map_of_mfderiv_eq (fun t _ ↦ (hι _).mdifferentiableAt (by simp))
     fun t _ ↦ hσ.mfderiv_reebVectorField_mpullback hι hα (hdθ _) (hK _)
 
-/-- The case of `hasContractibleClosedCharacteristic_of_reebVectorField` where the speed
-`θ(X_K)` is positive along the orbit: the inverse of `t ↦ ∫₀ᵗ 1 / θ(X_K)` turns the orbit into a
-closed characteristic. -/
-private theorem hasContractibleClosedCharacteristic_of_reebVectorField_of_pos
+/-- The case of `hasContractibleClosedCharacteristic_of_isMIntegralCurve_reebVectorField` where the
+speed `θ(X_K)` is positive along the orbit: the inverse of `t ↦ ∫₀ᵗ 1 / θ(X_K)` turns the orbit into
+a closed characteristic. -/
+private theorem hasContractibleClosedCharacteristic_of_isMIntegralCurve_reebVectorField_of_pos
     (hσ : σ.IsNondegenerate) (hι : ContMDiff J I ∞ ι)
     (hα : (SmoothForm.mpullback ι hι θ).IsContactForm)
     (hdθ : ∀ s, mextDeriv θ.val (ι s) = -σ.val (ι s)) (hKs : ContMDiff I 𝓘(ℝ) 1 K)
@@ -143,8 +145,8 @@ private theorem hasContractibleClosedCharacteristic_of_reebVectorField_of_pos
     (continuous_apply_hamiltonianVectorField hσ hKs).comp (hι.continuous.comp hγ.continuous)
   have hne (t : ℝ) : h t ≠ 0 := hσ.apply_hamiltonianVectorField_ne_zero hι hα (hdθ _) (hK _)
   -- It vanishes nowhere, so it keeps its sign at `0`.
-  have hhpos (t : ℝ) : 0 < h t := sign_eq_one_iff.1 <| (isPreconnected_univ.sign_eq_of_continuousOn
-    hcont.continuousOn (fun t _ ↦ hne t) trivial trivial).trans (sign_pos hpos)
+  have hhpos (t : ℝ) : 0 < h t := isPreconnected_univ.forall_lt_of_lt continuousOn_const
+    hcont.continuousOn (.inr fun t _ ↦ (hne t).symm) trivial hpos t trivial
   have hhP : Periodic h P := fun t ↦ congrArg (fun s ↦ θ.val (ι s) ![X (ι s)]) (hper t)
   obtain ⟨ψ, hψ0, ⟨T, -, hψT⟩, hψd⟩ := hhP.exists_homeomorph_hasDerivAt_of_pos hP hcont hhpos
   have hψmono : StrictMono ψ := strictMono_of_hasDerivAt_pos hψd fun s ↦ hhpos _
@@ -182,7 +184,7 @@ restriction `ι^* θ` is a contact form, then a `P`-periodic orbit `γ` of its R
 whose loop `ι ∘ γ : ℝ ⧸ Pℤ → W` is contractible in `W`, makes the level `K⁻¹(c)` carry a closed
 characteristic contractible in `W`: after a change of time, `ι ∘ γ` is an orbit of the Hamiltonian
 field `X_K`. -/
-theorem IsNondegenerate.hasContractibleClosedCharacteristic_of_reebVectorField
+theorem IsNondegenerate.hasContractibleClosedCharacteristic_of_isMIntegralCurve_reebVectorField
     (hσ : σ.IsNondegenerate) (hι : ContMDiff J I ∞ ι)
     (hα : (SmoothForm.mpullback ι hι θ).IsContactForm)
     (hdθ : ∀ s, mextDeriv θ.val (ι s) = -σ.val (ι s)) (hKs : ContMDiff I 𝓘(ℝ) 1 K)
@@ -194,12 +196,12 @@ theorem IsNondegenerate.hasContractibleClosedCharacteristic_of_reebVectorField
   rcases (hσ.apply_hamiltonianVectorField_ne_zero hι hα (hdθ (γ 0)) (hK (γ 0))).lt_or_gt
     with hneg | hpos
   swap
-  · exact hasContractibleClosedCharacteristic_of_reebVectorField_of_pos hσ hι hα hdθ hKs hK hKι
-      hγ hP hper hg hpos
+  · exact hasContractibleClosedCharacteristic_of_isMIntegralCurve_reebVectorField_of_pos hσ hι hα
+      hdθ hKs hK hKι hγ hP hper hg hpos
   -- For a negative speed, `-K` has the opposite Hamiltonian field and a positive speed.
-  have h := hasContractibleClosedCharacteristic_of_reebVectorField_of_pos (K := -K) hσ hι hα hdθ
-    hKs.neg (range_mfderiv_eq_ker_mvfderiv_neg hK) (c := -c) (fun s ↦ by simp [hKι]) hγ hP hper
-    hg (by rw [apply_hamiltonianVectorField_neg]; exact neg_pos.2 hneg)
+  have h := hasContractibleClosedCharacteristic_of_isMIntegralCurve_reebVectorField_of_pos (K := -K)
+    hσ hι hα hdθ hKs.neg (range_mfderiv_eq_ker_mvfderiv_neg hK) (c := -c) (fun s ↦ by simp [hKι])
+    hγ hP hper hg (by rw [apply_hamiltonianVectorField_neg]; exact neg_pos.2 hneg)
   exact h.of_hamiltonianVectorField_eq_smul (a := -1) (by norm_num) (fun x hx ↦ by
     simpa using congrArg Neg.neg hx) fun x _ ↦ by simp
 
@@ -213,7 +215,8 @@ variable [IsManifold J ∞ S] [J.Boundaryless] [FiniteDimensional ℝ E'] [Compa
 /-- The converse for one closed characteristic `δ` along which the speed `θ(X_K)` is positive: the
 Reeb orbit through the point of `S` over `δ 0`, pushed to the level and reparametrized into an
 orbit of `X_K`, is `δ` itself, so it closes up. -/
-private theorem exists_reebVectorField_of_pos (hσ : σ.IsNondegenerate) (hι : ContMDiff J I ∞ ι)
+private theorem exists_isMIntegralCurve_reebVectorField_of_pos (hσ : σ.IsNondegenerate)
+    (hι : ContMDiff J I ∞ ι)
     (hα : (SmoothForm.mpullback ι hι θ).IsContactForm)
     (hdθ : ∀ s, mextDeriv θ.val (ι s) = -σ.val (ι s)) (hKs : ContMDiff I 𝓘(ℝ) 2 K)
     (hK : ∀ s, (mfderiv J I ι s).range = (mvfderiv I K (ι s)).ker) (hinj : Injective ι)
@@ -239,9 +242,8 @@ private theorem exists_reebVectorField_of_pos (hσ : σ.IsNondegenerate) (hι : 
     (continuous_apply_hamiltonianVectorField hσ (hKs.of_le one_le_two)).comp hι.continuous
   have hne (s : S) : k s ≠ 0 := hσ.apply_hamiltonianVectorField_ne_zero hι hα (hdθ _) (hK _)
   have hk0 : 0 < k (γ 0) := by rw [hγ0]; rwa [← hs₀] at hpos
-  have hkpos (t : ℝ) : 0 < (k ∘ γ) t := sign_eq_one_iff.1 <|
-    (isPreconnected_univ.sign_eq_of_continuousOn (hk.comp hγ.continuous).continuousOn
-      (fun t _ ↦ hne _) trivial trivial).trans (sign_pos hk0)
+  have hkpos (t : ℝ) : 0 < (k ∘ γ) t := isPreconnected_univ.forall_lt_of_lt continuousOn_const
+    (hk.comp hγ.continuous).continuousOn (.inr fun t _ ↦ (hne _).symm) trivial hk0 t trivial
   obtain ⟨C, hC⟩ := (isCompact_range hk).bddAbove
   obtain ⟨ψ, hψ0, hψ⟩ := (isMIntegralCurve_comp_reebVectorField hσ hι hα hdθ hK
     hγ).exists_orderIso_isMIntegralCurve_comp (hk.comp hγ.continuous) hkpos
@@ -255,9 +257,8 @@ private theorem exists_reebVectorField_of_pos (hσ : σ.IsNondegenerate) (hι : 
   -- So the Reeb orbit returns to `s₀` at the time `P = ψ T > 0`, and is `P`-periodic.
   have hP : 0 < ψ T := hψ0 ▸ ψ.strictMono hT
   have hγP : γ (ψ T) = s₀ := hinj <| by rw [heq', hper.eq, ← heq', hψ0, hγ0]
-  have hγper : Periodic γ (ψ T) := fun t ↦ by
-    simp only [γ, Flow.map_add]
-    rw [show hα.reebFlow hc (ψ T) s₀ = s₀ from hγP]
+  simp only [γ] at hγP
+  have hγper : Periodic γ (ψ T) := fun t ↦ by simp only [γ, Flow.map_add, hγP]
   -- Its loop is the loop of `δ` after a monotone change of time.
   obtain ⟨g, hg, hgδ⟩ := hg
   have hW (t : ℝ) : ι (γ t) ∈ W := by
@@ -282,7 +283,8 @@ onto the level `K⁻¹(c)` of a `C²` function `K`, whose tangent image at each 
 `dK`. If the restriction `ι^* θ` is a contact form, then the level `K⁻¹(c)` carries a closed
 characteristic contractible in `W` exactly when the Reeb field of `ι^* θ` has a `P`-periodic orbit
 `γ`, `P > 0`, whose loop `ι ∘ γ : ℝ ⧸ Pℤ → W` is contractible in `W`. -/
-theorem IsNondegenerate.hasContractibleClosedCharacteristic_iff_exists_reebVectorField
+theorem
+    IsNondegenerate.hasContractibleClosedCharacteristic_iff_exists_isMIntegralCurve_reebVectorField
     (hσ : σ.IsNondegenerate) (hι : ContMDiff J I ∞ ι)
     (hα : (SmoothForm.mpullback ι hι θ).IsContactForm)
     (hdθ : ∀ s, mextDeriv θ.val (ι s) = -σ.val (ι s)) (hKs : ContMDiff I 𝓘(ℝ) 2 K)
@@ -294,21 +296,23 @@ theorem IsNondegenerate.hasContractibleClosedCharacteristic_iff_exists_reebVecto
         ∃ g : C(AddCircle P, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = ι (γ t) := by
   have hcι (x : M) (hx : K x = c) : x ∈ range ι := hKι ▸ hx
   refine ⟨fun h ↦ ?_, fun ⟨P, γ, hP, hγ, hper, hg⟩ ↦
-    hσ.hasContractibleClosedCharacteristic_of_reebVectorField hι hα hdθ (hKs.of_le one_le_two) hK
-      (fun s ↦ (hKι.symm ▸ mem_range_self s : ι s ∈ K ⁻¹' {c})) hγ hP hper hg⟩
+    hσ.hasContractibleClosedCharacteristic_of_isMIntegralCurve_reebVectorField hι hα hdθ
+      (hKs.of_le one_le_two) hK (fun s ↦ (hKι.symm ▸ mem_range_self s : ι s ∈ K ⁻¹' {c})) hγ hP
+      hper hg⟩
   obtain ⟨T, δ, hT, hδ, hper, -, hlev, hg⟩ := hasContractibleClosedCharacteristic_iff.1 h
   obtain ⟨s, hs⟩ := hcι _ (hlev 0)
   have hne := hσ.apply_hamiltonianVectorField_ne_zero hι hα (hdθ s) (hK s)
   rw [hs] at hne
   rcases hne.lt_or_gt with hneg | hpos
   swap
-  · exact exists_reebVectorField_of_pos hσ hι hα hdθ hKs hK hinj hcι hT hδ hper hlev hg hpos
+  · exact exists_isMIntegralCurve_reebVectorField_of_pos hσ hι hα hdθ hKs hK hinj hcι hT hδ hper
+      hlev hg hpos
   -- For a negative speed, run the closed characteristic backwards as one of `-K`.
   obtain ⟨g, hg, hgδ⟩ := hg
   let n : C(AddCircle T, AddCircle T) := ⟨Neg.neg, continuous_neg⟩
-  refine exists_reebVectorField_of_pos (K := -K) (c := -c) (δ := fun t ↦ δ (-t)) hσ hι hα hdθ
-    hKs.neg (range_mfderiv_eq_ker_mvfderiv_neg hK) hinj (fun x hx ↦ hcι x (neg_inj.1 hx)) hT
-    ?_ (fun t ↦ by simp only [neg_add, ← sub_eq_add_neg, hper.sub_eq]) (fun t ↦ by simp [hlev])
+  refine exists_isMIntegralCurve_reebVectorField_of_pos (K := -K) (c := -c) (δ := fun t ↦ δ (-t)) hσ
+    hι hα hdθ hKs.neg (range_mfderiv_eq_ker_mvfderiv_neg hK) hinj (fun x hx ↦ hcι x (neg_inj.1 hx))
+    hT ?_ (fun t ↦ by simp only [neg_add, ← sub_eq_add_neg, hper.sub_eq]) (fun t ↦ by simp [hlev])
     ⟨g.comp n, hg.comp_left n, fun t ↦ by simpa [n] using hgδ (-t)⟩
     (by rw [neg_zero, apply_hamiltonianVectorField_neg]; exact neg_pos.2 hneg)
   have hδ' := hδ.comp_mul (-1)
