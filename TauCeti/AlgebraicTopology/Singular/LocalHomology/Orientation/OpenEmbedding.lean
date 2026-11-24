@@ -122,10 +122,9 @@ lemma localOrientationEquiv_neg (hj : IsOpenEmbedding j) (x : M) {d : ℕ}
 /-- The identity identifies the local orientations at `x` with themselves. -/
 @[simp]
 lemma localOrientationEquiv_id [T1Space M] (x : M) (d : ℕ) :
-    IsOpenEmbedding.id.localOrientationEquiv x d = Equiv.refl _ :=
-  Equiv.ext fun z ↦ Subtype.ext <| by
-    rw [coe_localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_id]
-    rfl
+    IsOpenEmbedding.id.localOrientationEquiv x d = Equiv.refl _ := by
+  rw [localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_id,
+    LocalOrientation.equivOfIso_refl]
 
 /-- The correspondences of local orientations along open embeddings are functorial. -/
 @[simp]

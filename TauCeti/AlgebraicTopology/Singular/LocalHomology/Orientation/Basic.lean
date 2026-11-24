@@ -151,7 +151,8 @@ lemma LocalOrientation.coe_equivOfIso {M N : Type w} [TopologicalSpace M] [Topol
     (equivOfIso e z).val = e.hom z.val :=
   (rfl)
 
-@[simp]
+/-- The inverse identification acts on classes by the inverse isomorphism. This is not a simp
+lemma: simp reaches it through `equivOfIso_symm` and `coe_equivOfIso`. -/
 lemma LocalOrientation.coe_equivOfIso_symm {M N : Type w} [TopologicalSpace M]
     [TopologicalSpace N] {x : M} {y : N} {d d' : ℕ}
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
@@ -179,6 +180,22 @@ lemma LocalOrientation.equivOfIso_trans {M N P : Type w} [TopologicalSpace M]
     (e' : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d' ≅
       localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({p} : Set P) d'') :
     (equivOfIso e).trans (equivOfIso e') = equivOfIso (e ≪≫ e') :=
+  (rfl)
+
+/-- The identity isomorphism identifies the local orientations at `x` with themselves. -/
+@[simp]
+lemma LocalOrientation.equivOfIso_refl {M : Type w} [TopologicalSpace M] {x : M} {d : ℕ} :
+    equivOfIso (Iso.refl (localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+      ({x} : Set M) d)) = Equiv.refl _ :=
+  (rfl)
+
+/-- The identification by the inverse isomorphism is the inverse identification. -/
+@[simp]
+lemma LocalOrientation.equivOfIso_symm {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
+    {x : M} {y : N} {d d' : ℕ}
+    (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d') :
+    (equivOfIso e).symm = equivOfIso e.symm :=
   (rfl)
 
 /-- An isomorphism of pairs `(M, M ∖ {x}) ≅ (N, N ∖ {y})` carries local orientations at `x` to
