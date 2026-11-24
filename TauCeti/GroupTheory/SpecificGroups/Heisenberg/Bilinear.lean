@@ -338,7 +338,7 @@ theorem extensionCongr_symm (e : B.IsometryEquiv D) :
 
 @[simp]
 theorem extensionCongr_refl : (IsometryEquiv.refl B).extensionCongr = MulEquiv.refl _ := by
-  ext p <;> simp [← coe_toLinearEquiv, toLinearEquiv_refl]
+  ext p <;> simp
 
 /-- The isomorphism induced by a composite isometry `e.trans f`, which applies `e` first, is the
 composite of the induced isomorphisms in the same order. -/
