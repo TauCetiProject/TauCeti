@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
@@ -16,16 +16,25 @@ the words in that family whose total degree is exactly the degree of the piece. 
 commutativity of the algebra, or positivity of the grading is required.
 
 This reduces questions about a graded piece to words of a prescribed total degree, so that bounds
-on the degrees of the generators control the lengths of those words.
+on the degrees of the generators control the lengths of those words. In particular, an algebra
+map out of such an algebra is graded as soon as it sends each generator into the piece of the
+generator's degree.
 
 ## Main results
 
 * `TauCeti.GradedAlgebra.grade_eq_span_list_prod_map`: a homogeneous generating family spans each
   graded piece by its words of that total degree.
+* `TauCeti.GradedAlgebra.grade_le_of_adjoin_eq_top` and
+  `TauCeti.GradedAlgebra.grade_le_of_adjoin_range_eq_top`: graded induction from algebra generators
+  for any family of submodules `ℬ : Γ → Submodule R A` closed under `1` and graded multiplication.
+* `AlgHom.map_mem_of_adjoin_range_eq_top`: an algebra map preserving the degrees of a homogeneous
+  generating family preserves the degree of every homogeneous element.
+* `GradedAlgHom.ofAdjoinRangeEqTop`: such an algebra map, as a graded algebra map.
 
 ## Attribution
 
-Adapted from `Mei/RingTheory/GradedAlgebra/Generators.lean` in
+`TauCeti.GradedAlgebra.grade_eq_span_list_prod_map` is adapted from
+`Mei/RingTheory/GradedAlgebra/Generators.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0). Original copyright and author credit
 are retained.
@@ -36,6 +45,8 @@ public section
 namespace TauCeti.GradedAlgebra
 
 open _root_.GradedAlgebra
+
+section Words
 
 variable {Γ R A S : Type*} [AddMonoid Γ] [DecidableEq Γ]
   [CommSemiring R] [Semiring A] [Algebra R A]
@@ -85,4 +96,100 @@ theorem grade_eq_span_list_prod_map (e : S → A) (deg : S → Γ)
     rintro a ⟨l, hl, rfl⟩
     exact hl ▸ hword l
 
+end Words
+
+section Induction
+
+variable {Γ R A : Type*} [AddMonoid Γ] [DecidableEq Γ]
+  [CommSemiring R] [Semiring A] [Algebra R A]
+  (𝒜 : Γ → Submodule R A) [_root_.GradedAlgebra 𝒜]
+
+/-- **Graded induction from algebra generators.** If a family of submodules `ℬ : Γ → Submodule R A`
+contains `1` in degree `0`, is closed under products of homogeneous elements, and an
+algebra-generating set `S` lies in `⨆ i, 𝒜 i ⊓ ℬ i`, then `𝒜 n ≤ ℬ n` for every `n`. -/
+theorem grade_le_of_adjoin_eq_top {ℬ : Γ → Submodule R A}
+    (h1 : (1 : A) ∈ ℬ 0)
+    (hmul : ∀ {i j : Γ} {a b : A},
+      a ∈ 𝒜 i → a ∈ ℬ i → b ∈ 𝒜 j → b ∈ ℬ j → a * b ∈ ℬ (i + j))
+    {S : Set A} (hadj : Algebra.adjoin R S = ⊤)
+    (hS : S ⊆ (⨆ i : Γ, 𝒜 i ⊓ ℬ i : Submodule R A)) (n : Γ) :
+    𝒜 n ≤ ℬ n := by
+  let F : Γ → Submodule R A := fun i ↦ 𝒜 i ⊓ ℬ i
+  let P : Submodule R A := ⨆ i, F i
+  have h1P : (1 : A) ∈ P := le_iSup F 0 ⟨SetLike.GradedOne.one_mem, h1⟩
+  have hmulP : ∀ a b, a ∈ P → b ∈ P → a * b ∈ P := fun a b ha hb ↦ by
+    refine Submodule.iSup_induction F (motive := fun a ↦ a * b ∈ P) ha
+      (fun i a ha ↦ ?_) (by simp) fun a₁ a₂ h₁ h₂ ↦ by rw [add_mul]; exact add_mem h₁ h₂
+    refine Submodule.iSup_induction F (motive := fun b ↦ a * b ∈ P) hb
+      (fun j b hb ↦ ?_) (by simp) fun b₁ b₂ h₁ h₂ ↦ by rw [mul_add]; exact add_mem h₁ h₂
+    exact le_iSup F (i + j) ⟨SetLike.GradedMul.mul_mem ha.1 hb.1, hmul ha.1 ha.2 hb.1 hb.2⟩
+  have htop : (⊤ : Subalgebra R A) ≤ P.toSubalgebra h1P hmulP :=
+    hadj ▸ Algebra.adjoin_le fun x hx ↦ Submodule.mem_toSubalgebra.2 (hS hx)
+  have hproj : P ≤ (ℬ n).comap (proj 𝒜 n) := iSup_le fun i x hx ↦ by
+    rw [Submodule.mem_comap, proj_apply]
+    by_cases hin : i = n
+    · subst hin
+      simpa [DirectSum.decompose_of_mem_same 𝒜 hx.1] using hx.2
+    · simp [DirectSum.decompose_of_mem_ne 𝒜 hx.1 hin]
+  intro a ha
+  have haP : a ∈ P := Submodule.mem_toSubalgebra.1 (htop Algebra.mem_top)
+  simpa only [Submodule.mem_comap, proj_apply, DirectSum.decompose_of_mem_same 𝒜 ha] using hproj haP
+
+/-- If a linear map `g : V →ₗ[R] A` has algebra-generating image, `𝒱` spans `V`, and `g` maps
+each `𝒱 i` into `𝒜 i ⊓ ℬ i`, then under the closure hypotheses of
+`TauCeti.GradedAlgebra.grade_le_of_adjoin_eq_top`, `𝒜 n ≤ ℬ n` for every `n`. -/
+theorem grade_le_of_adjoin_range_eq_top {V : Type*} [AddCommMonoid V] [Module R V]
+    {𝒱 : Γ → Submodule R V} {ℬ : Γ → Submodule R A}
+    (h1 : (1 : A) ∈ ℬ 0)
+    (hmul : ∀ {i j : Γ} {a b : A},
+      a ∈ 𝒜 i → a ∈ ℬ i → b ∈ 𝒜 j → b ∈ ℬ j → a * b ∈ ℬ (i + j))
+    {g : V →ₗ[R] A} (hadj : Algebra.adjoin R (Set.range g) = ⊤) (h𝒱 : ⨆ i, 𝒱 i = ⊤)
+    (hg : ∀ {i : Γ} {x : V}, x ∈ 𝒱 i → g x ∈ 𝒜 i)
+    (hℬ : ∀ {i : Γ} {x : V}, x ∈ 𝒱 i → g x ∈ ℬ i) (n : Γ) :
+    𝒜 n ≤ ℬ n := by
+  refine grade_le_of_adjoin_eq_top 𝒜 h1 hmul hadj ?_ n
+  rintro _ ⟨v, rfl⟩
+  have hle : (⊤ : Submodule R V) ≤ (⨆ i : Γ, 𝒜 i ⊓ ℬ i).comap g := by
+    rw [← h𝒱]
+    exact iSup_le fun i x hx ↦
+      le_iSup (fun k ↦ 𝒜 k ⊓ ℬ k) i ⟨hg hx, hℬ hx⟩
+  exact hle Submodule.mem_top
+
+end Induction
+
 end TauCeti.GradedAlgebra
+
+section AlgHom
+
+variable {Γ R A B S : Type*} [AddMonoid Γ] [DecidableEq Γ]
+  [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
+  {𝒜 : Γ → Submodule R A} [GradedAlgebra 𝒜] {e : S → A} {deg : S → Γ}
+
+/-- An algebra map out of a graded algebra generated by homogeneous elements `e s` of degrees
+`deg s` sends every element of degree `n` to an element of degree `n`, provided it sends each
+`e s` to an element of degree `deg s`. -/
+theorem AlgHom.map_mem_of_adjoin_range_eq_top {ℬ : Γ → Submodule R B}
+    [SetLike.GradedMonoid ℬ] (φ : A →ₐ[R] B) (he : Algebra.adjoin R (Set.range e) = ⊤)
+    (hhom : ∀ s, e s ∈ 𝒜 (deg s)) (hφ : ∀ s, φ (e s) ∈ ℬ (deg s)) {n : Γ} {a : A}
+    (ha : a ∈ 𝒜 n) : φ a ∈ ℬ n := by
+  rw [TauCeti.GradedAlgebra.grade_eq_span_list_prod_map 𝒜 e deg he hhom n] at ha
+  refine (Submodule.span_le (p := (ℬ n).comap φ.toLinearMap)).mpr ?_ ha
+  rintro _ ⟨l, rfl, rfl⟩
+  rw [SetLike.mem_coe, Submodule.mem_comap, AlgHom.toLinearMap_apply, map_list_prod,
+    List.map_map]
+  exact SetLike.list_prod_map_mem_graded l deg (φ ∘ e) fun s _ ↦ hφ s
+
+/-- An algebra map out of a graded algebra generated by homogeneous elements `e s` of degrees
+`deg s`, sending each `e s` to an element of degree `deg s`, as a graded algebra map. -/
+def GradedAlgHom.ofAdjoinRangeEqTop {ℬ : Γ → Submodule R B} [GradedAlgebra ℬ]
+    (φ : A →ₐ[R] B) (he : Algebra.adjoin R (Set.range e) = ⊤) (hhom : ∀ s, e s ∈ 𝒜 (deg s))
+    (hφ : ∀ s, φ (e s) ∈ ℬ (deg s)) : 𝒜 →ₐᵍ[R] ℬ where
+  toAlgHom := φ
+  map_mem := φ.map_mem_of_adjoin_range_eq_top he hhom hφ
+
+@[simp]
+theorem GradedAlgHom.coe_ofAdjoinRangeEqTop {ℬ : Γ → Submodule R B} [GradedAlgebra ℬ]
+    (φ : A →ₐ[R] B) (he : Algebra.adjoin R (Set.range e) = ⊤) (hhom : ∀ s, e s ∈ 𝒜 (deg s))
+    (hφ : ∀ s, φ (e s) ∈ ℬ (deg s)) : ⇑(ofAdjoinRangeEqTop φ he hhom hφ) = φ := (rfl)
+
+end AlgHom

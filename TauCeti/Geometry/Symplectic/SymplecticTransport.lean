@@ -35,6 +35,8 @@ transport. The underlying form transport reuses Mathlib's `LinearMap.BilinForm.c
   `ω₂(e v, e w) = ω₁(v, w)`, together with its pointwise and transport characterizations.
 * `TauCeti.SymplecticForm.IsSymplectomorphism.exists_iff_of_forall_apply_eq`: endomorphisms
   conjugate by a symplectomorphism have Hamiltonians `v ↦ ω(A v, v)` with the same values.
+* `TauCeti.SymplecticForm.apply_apply_of_leftInverse`: in finite dimension, a left inverse of a
+  linear map preserving `ω` preserves `ω`.
 * `TauCeti.SymplecticForm.Invariant.transport`, `Tames.transport`, `Compatible.transport`:
   invariance, tameness, and compatibility of a pair `(ω, J)` transport along `e` to the pair
   `(ω.transport e, J.transport e)`.
@@ -175,6 +177,15 @@ theorem IsSymplectomorphism.exists_iff_of_forall_apply_eq {A : Module.End ℝ V}
     (hAB : ∀ v, e (A v) = B (e v)) (P : ℝ → Prop) : (∃ v, P (ω₁ (A v) v)) ↔ ∃ w, P (ω₂ (B w) w) :=
   ⟨fun ⟨v, hv⟩ ↦ ⟨e v, by rwa [← hAB, he.apply]⟩,
     fun ⟨w, hw⟩ ↦ ⟨e.symm w, by rwa [← he.apply, hAB, e.apply_symm_apply]⟩⟩
+
+/-- A left inverse `f'` of a linear map `f` preserving `ω` preserves `ω`, since in finite
+dimension it is also a right inverse. -/
+theorem apply_apply_of_leftInverse [FiniteDimensional ℝ V] (ω : SymplecticForm V)
+    {f f' : V →ₗ[ℝ] V} (hf : ∀ u v, ω (f u) (f v) = ω u v) (hf' : ∀ u, f' (f u) = u)
+    (u v : V) : ω (f' u) (f' v) = ω u v := by
+  have hff' (w : V) : f (f' w) = w :=
+    LinearMap.congr_fun ((LinearMap.comp_eq_id_comm ℝ V).1 (LinearMap.ext hf')) w
+  rw [← hf, hff', hff']
 
 section Compatible
 

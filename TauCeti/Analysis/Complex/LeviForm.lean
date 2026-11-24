@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.RCLike.Extend
-public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.Calculus.DerivativeTest
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.SecondDerivative
@@ -15,6 +14,7 @@ public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Complex.LeviForm
 
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
+import TauCeti.Topology.MetricSpace.ContinuousRadius
 
 /-!
 # The Levi form of a real function on a complex vector space
@@ -54,6 +54,8 @@ function.
 ## Main definitions
 
 * `TauCeti.leviForm f x`: the Levi form of `f : V → ℝ` at `x`.
+* `TauCeti.imLeviFormCLM f x`: the imaginary part of the Levi form of `f` at `x`, as a continuous
+  real bilinear form.
 
 ## Main results
 
@@ -64,6 +66,9 @@ function.
 * `TauCeti.isSymm_leviForm`: the Levi form of a `C²` function is Hermitian.
 * `TauCeti.leviForm_add`, `TauCeti.leviForm_sum`, `TauCeti.leviForm_neg`,
   `TauCeti.leviForm_smul`: the Levi form is real linear in the function.
+* `TauCeti.imLeviFormCLM_add`, `TauCeti.imLeviFormCLM_neg`, `TauCeti.imLeviFormCLM_smul`: so is
+  its imaginary part.
+* `TauCeti.leviForm_I_smul_I_smul`: the Levi form is invariant under `I • ·` in both arguments.
 * `TauCeti.leviForm_mul_apply`: the product rule
   `L(f g) = f L g + g L f + (conj (∂f) ⊗ ∂g + conj (∂g) ⊗ ∂f)`.
 * `TauCeti.leviForm_scalar_comp_apply`: the composition rule
@@ -139,6 +144,43 @@ theorem im_leviForm_apply (f : V → ℝ) (x v w : V) :
       (fderiv ℝ (fderiv ℝ f) x (I • v) w - fderiv ℝ (fderiv ℝ f) x v (I • w)) / 4 := by
   simp [leviForm_def]
 
+/-- The imaginary part `(v, w) ↦ Im L_f(x)(v, w)` of the Levi form of `f : V → ℝ` at `x`, as a
+continuous real bilinear form: `(D²f(I • v, w) - D²f(v, I • w)) / 4`. -/
+noncomputable def imLeviFormCLM (f : V → ℝ) (x : V) : V →L[ℝ] V →L[ℝ] ℝ :=
+  (4 : ℝ)⁻¹ • ((fderiv ℝ (fderiv ℝ f) x).comp (ContinuousLinearMap.lsmul ℝ ℂ I) -
+    ((fderiv ℝ (fderiv ℝ f) x).flip.comp (ContinuousLinearMap.lsmul ℝ ℂ I)).flip)
+
+/-- The bilinear form `TauCeti.imLeviFormCLM f x` is the imaginary part of the Levi form. -/
+@[simp]
+theorem imLeviFormCLM_apply (f : V → ℝ) (x v w : V) :
+    imLeviFormCLM f x v w = (leviForm f x v w).im := by
+  rw [im_leviForm_apply]
+  simp [imLeviFormCLM]
+  ring
+
+/-- On an open set where `f` is `C²`, the imaginary part of its Levi form depends continuously on
+the point. -/
+theorem continuousOn_imLeviFormCLM {s : Set V} (hs : IsOpen s) (hf : ContDiffOn ℝ 2 f s) :
+    ContinuousOn (imLeviFormCLM f) s := by
+  have hD : ContinuousOn (fun x ↦ fderiv ℝ (fderiv ℝ f) x) s :=
+    (hf.fderiv_of_isOpen hs (by norm_num)).continuousOn_fderiv_of_isOpen hs le_rfl
+  have hflip := (ContinuousLinearMap.flipₗᵢ ℝ V V ℝ).continuous
+  have hJ : ContinuousOn (fun _ : V ↦ (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)) s :=
+    continuousOn_const
+  have h1 : ContinuousOn (fun x ↦ (fderiv ℝ (fderiv ℝ f) x).comp
+      (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)) s :=
+    hD.clm_comp hJ
+  have h2 : ContinuousOn (fun x ↦ ((fderiv ℝ (fderiv ℝ f) x).flip.comp
+      (ContinuousLinearMap.lsmul ℝ ℂ I : V →L[ℝ] V)).flip) s :=
+    hflip.comp_continuousOn ((hflip.comp_continuousOn hD).clm_comp hJ)
+  exact (h1.sub h2).const_smul (4 : ℝ)⁻¹
+
+/-- The imaginary part of the Levi form of a constant function vanishes. -/
+@[simp]
+theorem imLeviFormCLM_const (c : ℝ) (x : V) : imLeviFormCLM (fun _ : V ↦ c) x = 0 := by
+  ext v w
+  simp [imLeviFormCLM]
+
 /-- **The diagonal of the Levi form.** For a `C²` function, `leviForm f x v v` is the real number
 `(Hess f(v, v) + Hess f(I • v, I • v)) / 4`. -/
 theorem leviForm_apply_self (hf : ContDiffAt ℝ 2 f x) (v : V) :
@@ -169,12 +211,8 @@ theorem leviForm_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) : leviForm f x =
 /-- **The sum rule.** -/
 theorem leviForm_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
     leviForm (f + g) x = leviForm f x + leviForm g x := by
-  have h2 (v w : V) : fderiv ℝ (fderiv ℝ (f + g)) x v w =
-      fderiv ℝ (fderiv ℝ f) x v w + fderiv ℝ (fderiv ℝ g) x v w := by
-    simpa [iteratedFDeriv_two_apply] using
-      congr($(iteratedFDeriv_add_apply (i := 2) hf hg) ![v, w])
   ext v w
-  apply Complex.ext <;> simp [h2] <;> ring
+  apply Complex.ext <;> simp [fderiv_fderiv_add hf hg] <;> ring
 
 /-- Negating a function negates its Levi form. -/
 @[simp]
@@ -191,6 +229,31 @@ theorem leviForm_smul (a : ℝ) (f : V → ℝ) (x : V) :
     leviForm (a • f) x = (a : ℂ) • leviForm f x := by
   rw [leviForm_def, leviForm_def, fderiv_fderiv_const_smul, ← LinearMap.BilinForm.leviForm_smul]
   exact congrArg _ (map_smul ContinuousLinearMap.toLinearMap₁₂ a _)
+
+/-- The Levi form is invariant under applying the complex structure `I • ·` to both arguments,
+because it is sesquilinear. -/
+theorem leviForm_I_smul_I_smul (f : V → ℝ) (x v w : V) :
+    leviForm f x (I • v) (I • w) = leviForm f x v w := by
+  simp [← mul_assoc]
+
+/-- **The sum rule** for the imaginary part of the Levi form. -/
+theorem imLeviFormCLM_add (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
+    imLeviFormCLM (f + g) x = imLeviFormCLM f x + imLeviFormCLM g x := by
+  ext v w
+  simp [leviForm_add hf hg]
+
+/-- Negating a function negates the imaginary part of its Levi form. -/
+@[simp]
+theorem imLeviFormCLM_neg (f : V → ℝ) (x : V) : imLeviFormCLM (-f) x = -imLeviFormCLM f x := by
+  ext v w
+  simp
+
+/-- The imaginary part of the Levi form is real homogeneous in the function. -/
+@[simp]
+theorem imLeviFormCLM_smul (a : ℝ) (f : V → ℝ) (x : V) :
+    imLeviFormCLM (a • f) x = a • imLeviFormCLM f x := by
+  ext v w
+  simp
 
 /-- **The sum rule** for finite sums. -/
 theorem leviForm_sum {ι : Type*} (s : Finset ι) {f : ι → V → ℝ}
@@ -405,22 +468,12 @@ theorem exists_continuousOn_pos_forall_re_leviForm_pos [FiniteDimensional ℂ V]
   simp only [leviForm_def] at hpos ⊢
   set S := {B : V →L[ℝ] V →L[ℝ] ℝ | ∀ v, v ≠ 0 → 0 < (B.toBilinForm.leviForm v v).re}
   have hS : IsOpen S := isOpen_setOf_forall_re_leviForm_toBilinForm_pos
-  have hmem (x : V) : x ∈ U → fderiv ℝ (fderiv ℝ f) x ∈ S := hpos x
-  rcases Sᶜ.eq_empty_or_nonempty with hempty | hne
-  · -- Every form has positive definite Levi form, so any tolerance works.
-    refine ⟨fun _ ↦ 1, continuousOn_const, fun _ _ ↦ one_pos, fun g x _ _ ↦ ?_⟩
-    have h : fderiv ℝ (fderiv ℝ g) x ∈ S := by simp [compl_empty_iff.1 hempty]
-    exact h
-  -- Take the distance from the second derivative of `f` to the closed complement of `S`.
-  refine ⟨fun x ↦ infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ,
-    (continuous_infDist_pt _).comp_continuousOn hf,
-    fun x hx ↦ (hS.isClosed_compl.notMem_iff_infDist_pos hne).1 (not_not.2 (hmem x hx)),
-    fun g x _ hlt ↦ ?_⟩
-  have hdist : dist (fderiv ℝ (fderiv ℝ f) x) (fderiv ℝ (fderiv ℝ g) x) <
-      infDist (fderiv ℝ (fderiv ℝ f) x) Sᶜ :=
-    (dist_comm _ _).trans_lt
-      ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)
-  exact not_not.1 (notMem_of_dist_lt_infDist hdist)
+  -- A margin of the open set `S` along the second derivative of `f`.
+  obtain ⟨ε, hε, -, hεpos, hεS⟩ :=
+    hS.exists_continuousOn_forall_dist_lt (G := fun x ↦ fderiv ℝ (fderiv ℝ f) x) hf
+  exact ⟨ε, hε, fun x hx ↦ hεpos x (hpos x hx), fun g x _ hlt ↦
+    hεS x (fderiv ℝ (fderiv ℝ g) x)
+      ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)⟩
 
 /-! ### Inertia of a Levi-flat function -/
 

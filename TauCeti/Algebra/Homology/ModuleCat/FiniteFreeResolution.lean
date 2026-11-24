@@ -229,9 +229,9 @@ private lemma quasiIsoAt_toComplex (k : ℕ) : QuasiIsoAt (toComplex K hK) k := 
   have hp : (ComplexShape.down ℕ).prev k = k + 1 := ChainComplex.prev ℕ k
   -- homology classes of cycles, as elements of the kernels of the differentials
   let cL := L.moduleCatHomologyClass hm (LinearMap.ker (L.d k m).hom).subtype
-    fun z ↦ LinearMap.mem_ker.1 z.2
+    fun z ↦ LinearMap.mem_ker.1 z.property
   let cK := K.moduleCatHomologyClass hm (LinearMap.ker (K.d k m).hom).subtype
-    fun z ↦ LinearMap.mem_ker.1 z.2
+    fun z ↦ LinearMap.mem_ker.1 z.property
   let φZ := (φ.f k).hom.restrict fun x (hx : x ∈ LinearMap.ker (L.d k m).hom) ↦
     LinearMap.mem_ker.2 (φ.d_apply_eq_zero_of_d_apply_eq_zero k m x hx)
   have hnat (z) : HomologicalComplex.homologyMap φ k (cL z) = cK (φZ z) :=
@@ -246,7 +246,7 @@ private lemma quasiIsoAt_toComplex (k : ℕ) : QuasiIsoAt (toComplex K hK) k := 
   · -- a cycle `z` of `L` whose image is a boundary of `K` is a boundary of `L`
     obtain ⟨z, rfl⟩ := hLsurj h
     obtain ⟨y, hy⟩ := (K.moduleCatHomologyClass_eq_zero_iff hm _ _ hp _).1 ((hnat z).symm.trans hh)
-    obtain ⟨w, hw⟩ := E.mem_range z.1 ((mem_Z_iff K hK k z.1).2 z.2) y hy
+    obtain ⟨w, hw⟩ := E.mem_range z.val ((mem_Z_iff K hK k z.val).2 z.property) y hy
     -- `w` lies in `L.X (k + 1)`, the free module on the basis `E.ι` of `stage K hK (k + 1)`
     exact (L.moduleCatHomologyClass_eq_zero_iff hm _ _ hp _).2
       ⟨w, (resolution_d_apply K hK k w).trans hw⟩

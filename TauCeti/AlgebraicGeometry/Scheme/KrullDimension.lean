@@ -100,10 +100,8 @@ universe u
 /-- The Krull dimension of an affine scheme `Spec R` equals `ringKrullDim R`. -/
 @[simp]
 theorem topologicalKrullDim_Spec (R : CommRingCat.{u}) :
-    topologicalKrullDim (Spec R) = ringKrullDim R := by
-  rw [topologicalKrullDim_eq_iSup_coheight, ← Order.krullDim_eq_iSup_coheight,
-    Order.krullDim_eq_of_orderIso (specOrderIsoPrimeSpectrum R), Order.krullDim_orderDual,
-    ringKrullDim]
+    topologicalKrullDim (Spec R) = ringKrullDim R :=
+  PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim R
 
 /-- The Krull dimension of a scheme is the supremum of the Krull dimensions of the members of an
 open cover. -/
@@ -135,7 +133,7 @@ theorem topologicalKrullDim_ne_top_of_locallyOfFiniteType {K : Type u} [Field K]
   let 𝒰 := X.affineOpenCover.openCover.finiteSubcover
   -- Each member of the finite cover is the spectrum of a finitely generated `K`-algebra.
   have hchart (i : 𝒰.I₀) : topologicalKrullDim (𝒰.X i) ≠ ⊤ := by
-    let j := X.affineOpenCover.openCover.idx i.1
+    let j := X.affineOpenCover.openCover.idx i.val
     have hft : LocallyOfFiniteType (X.affineOpenCover.openCover.f j ≫ f) := inferInstance
     obtain ⟨φ, hφ⟩ : ∃ φ, Spec.map φ = X.affineOpenCover.openCover.f j ≫ f :=
       ⟨_, Spec.map_preimage _⟩
@@ -211,12 +209,12 @@ theorem topologicalKrullDim_inter_eq_of_locallyOfFiniteType {K : Type u} [Field 
   have he (i : 𝒰.I₀) : IsOpenEmbedding (𝒰.f i) := (𝒰.f i).isOpenEmbedding
   -- `Z` is covered by its preimages in the affine charts that meet it.
   let ι := {i : 𝒰.I₀ // (Z ∩ Set.range (𝒰.f i)).Nonempty}
-  rw [topologicalKrullDim_eq_iSup_of_isOpenEmbedding (Y := fun i : ι ↦ (𝒰.f i.1) ⁻¹' Z)
-    (fun i ↦ Z.restrictPreimage (𝒰.f i.1)) (fun i ↦ (he i.1).restrictPreimage Z) ?_]
+  rw [topologicalKrullDim_eq_iSup_of_isOpenEmbedding (Y := fun i : ι ↦ (𝒰.f i.val) ⁻¹' Z)
+    (fun i ↦ Z.restrictPreimage (𝒰.f i.val)) (fun i ↦ (he i.val).restrictPreimage Z) ?_]
   swap
   · intro z
-    obtain ⟨i, y, hy⟩ := 𝒰.exists_eq z.1
-    exact ⟨⟨i, z.1, z.2, y, hy⟩, ⟨y, by simp [hy]⟩, Subtype.ext (by simp [hy])⟩
+    obtain ⟨i, y, hy⟩ := 𝒰.exists_eq z.val
+    exact ⟨⟨i, z.val, z.property, y, hy⟩, ⟨y, by simp [hy]⟩, Subtype.ext (by simp [hy])⟩
   refine iSup_le fun ⟨i, hi⟩ ↦ ?_
   -- Reduce the projection `↑⟨i, hi⟩` to `i`.
   dsimp only
@@ -235,7 +233,7 @@ theorem topologicalKrullDim_inter_eq_of_locallyOfFiniteType {K : Type u} [Field 
           ⟨x, hxZ, hxU⟩).symm
     _ ≤ topologicalKrullDim ↥(Z ∩ U) :=
         (((he i).isEmbedding.comp IsEmbedding.subtypeVal).codRestrict (Z ∩ U)
-          fun y ↦ y.2).isInducing.topologicalKrullDim_le
+          fun y ↦ y.property).isInducing.topologicalKrullDim_le
 
 /-- A nonempty open subspace of an irreducible scheme locally of finite type over a field has
 the Krull dimension of the scheme. -/
@@ -327,25 +325,26 @@ theorem topologicalKrullDim_closure_of_isLocallyClosed {K : Type u} [Field K]
     (IsEmbedding.inclusion (subset_closure (s := s))).isInducing.topologicalKrullDim_le
   rw [topologicalKrullDim_eq_iSup_irreducibleComponents]
   refine iSup_le fun C ↦ ?_
-  let Z : Set X := Subtype.val '' C.1
-  have hZ : IsIrreducible Z := C.2.1.image _ continuous_subtype_val.continuousOn
+  let Z : Set X := Subtype.val '' C.val
+  have hZ : IsIrreducible Z := C.property.1.image _ continuous_subtypeVal.continuousOn
   have hZc : IsClosed Z := isClosed_closure.isClosedEmbedding_subtypeVal.isClosedMap _
-    (isClosed_of_mem_irreducibleComponents _ C.2)
+    (isClosed_of_mem_irreducibleComponents _ C.property)
   have hd : Dense ((Subtype.val : closure s → X) ⁻¹' s) := by
     rw [Subtype.dense_iff, Subtype.image_preimage_coe,
       Set.inter_eq_right.mpr (subset_closure (s := s))]
   obtain ⟨V, hV, hVne, hVC⟩ :=
-    TopologicalSpace.NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C.1 C.2
+    TopologicalSpace.NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent C.val
+        C.property
   obtain ⟨y, hyV, hys⟩ := hd.inter_open_nonempty V hV hVne
   have hZU : (Z ∩ coborder s).Nonempty :=
-    ⟨y.1, ⟨y, hVC hyV, rfl⟩, subset_coborder hys⟩
+    ⟨y.val, ⟨y, hVC hyV, rfl⟩, subset_coborder hys⟩
   have hsub : Z ∩ coborder s ⊆ s := by
     rintro x ⟨⟨z, _, rfl⟩, hx⟩
-    have hz : z.1 ∈ coborder s ∩ closure s := ⟨hx, z.2⟩
+    have hz : z.val ∈ coborder s ∩ closure s := ⟨hx, z.property⟩
     simpa only [coborder_inter_closure] using hz
   calc
-    topologicalKrullDim C.1 = topologicalKrullDim Z :=
-      IsEmbedding.subtypeVal.homeomorphImage C.1 |>.isHomeomorph.topologicalKrullDim_eq
+    topologicalKrullDim C.val = topologicalKrullDim Z :=
+      IsEmbedding.subtypeVal.homeomorphImage C.val |>.isHomeomorph.topologicalKrullDim_eq
     _ = topologicalKrullDim ↥(Z ∩ coborder s) :=
       (topologicalKrullDim_inter_eq_of_locallyOfFiniteType f hZ hZc hs.isOpen_coborder hZU).symm
     _ ≤ topologicalKrullDim s := (IsEmbedding.inclusion hsub).isInducing.topologicalKrullDim_le

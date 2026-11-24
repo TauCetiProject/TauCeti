@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Fintype.EquivFin
+import Mathlib.Data.Int.Cast.Basic
 
 /-!
 # Finite products and sums against `Pi.single`
@@ -25,6 +27,8 @@ coordinate `i` to another coordinate.
   or sum of `Pi.mulSingle i (Pi.mulSingle j (f i j))` / `Pi.single i (Pi.single j (f i j))` equals
   `f`.
 * `Fintype.prod_pow_pi_single`: `∏ j, f j ^ Pi.single i a j = f i ^ a`.
+* `Fintype.sum_intCast_sub_pi_single_mul`: lowering the integer weight at `i` by `c` lowers
+  `∑ j, χ j g j` by `c g i`.
 * `Pi.exists_eq_add_single_one`: an exponent vector with a positive `i`-th entry is `γ + e_i`.
 * `Pi.eq_single_of_apply_eq_sum`: an exponent vector of degree `d` with `i`-th entry `d` is
   `Pi.single i d`.
@@ -32,6 +36,7 @@ coordinate `i` to another coordinate.
   degree has another positive entry.
 * `Pi.induction_on_single_of_sum_eq`: induction over the exponent vectors of degree `d`, starting
   from `Pi.single i d` and moving one unit at a time from the coordinate `i` to another coordinate.
+* `TauCeti.multiIndex_induction_add_single`: induction on exponent vectors by adding unit vectors.
 -/
 
 public section
@@ -65,6 +70,13 @@ theorem Fintype.prod_pow_pi_single [Fintype ι] [DecidableEq ι] {M : Type*} [Co
     (f : ι → M) (i : ι) (a : ℕ) : ∏ j, f j ^ Pi.single (M := fun _ ↦ ℕ) i a j = f i ^ a := by
   rw [prod_eq_single i (fun j _ hj ↦ by simp [hj]) (by simp)]
   simp
+
+/-- Lowering the integer weight `χ i` by `c` lowers the weighted sum `∑ j, χ j g j` by `c g i`. -/
+theorem Fintype.sum_intCast_sub_pi_single_mul [Fintype ι] [DecidableEq ι] {R : Type*} [Ring R]
+    (χ : ι → ℤ) (i : ι) (c : ℤ) (g : ι → R) :
+    ∑ j, ((χ j - Pi.single (M := fun _ ↦ ℤ) i c j : ℤ) : R) * g j =
+      ∑ j, (χ j : R) * g j - c * g i := by
+  simp [sub_mul, Finset.sum_sub_distrib, Pi.single_apply]
 
 /-- An exponent vector with a positive `i`-th entry is of the form `γ + e_i`. -/
 theorem Pi.exists_eq_add_single_one [DecidableEq ι] {β : ι → ℕ} {i : ι} (h : 0 < β i) :
@@ -115,3 +127,25 @@ theorem Pi.induction_on_single_of_sum_eq [Fintype ι] [DecidableEq ι] {d : ℕ}
     refine step β j hji hα (ih (by simp [sum_add_distrib, hα]) ?_)
     simp [hji.symm] at hm ⊢
     omega
+
+namespace TauCeti
+
+/-- **Induction on multi-indices.** To prove a property of every multi-index `α : ι → ℕ`, it
+suffices to prove it for `0` and to show that it passes from `α` to `α + eᵢ`. -/
+@[elab_as_elim]
+theorem multiIndex_induction_add_single [Finite ι] [DecidableEq ι] {P : (ι → ℕ) → Prop}
+    (zero : P 0) (add_single : ∀ α i, P α → P (α + Pi.single i 1)) (α : ι → ℕ) : P α := by
+  have := Fintype.ofFinite ι
+  induction h : ∑ i, α i generalizing α with
+  | zero =>
+    obtain rfl : α = 0 := funext fun i ↦ (sum_eq_zero_iff.1 h) i (mem_univ i)
+    exact zero
+  | succ n ih =>
+    obtain ⟨i, hi⟩ : ∃ i, 0 < α i := by
+      by_contra! h'
+      simp [Nat.le_zero.mp (h' _)] at h
+    obtain ⟨β, rfl⟩ := Pi.exists_eq_add_single_one hi
+    refine add_single β i (ih β ?_)
+    simpa [sum_add_distrib] using h
+
+end TauCeti

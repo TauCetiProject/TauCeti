@@ -30,8 +30,9 @@ import TauCeti.RingTheory.MvPolynomial.Ideal
   origin has Krull dimension `1`, witnessed by the quadratic polynomial `z = x₀² + x₀ x₁ + x₁²`
   which is algebraically independent over `𝔽₂` and makes `A` module-finite over `𝔽₂[Z]` (since
   `xᵢ³ - z xᵢ = 0` for `i = 0, 1`). However, `A` admits *no* `𝔽₂`-linear Noether normalization
-  `(d, C)` in any dimension `d : ℕ`, because every `𝔽₂`-linear form vanishes identically along one
-  of the three lines `X₀ = 0`, `X₁ = 0`, or `X₀ + X₁ = 0`.
+  `(d, C)` in any dimension `d : ℕ`: any such normalization would satisfy `ringKrullDim A = d`,
+  forcing `d = 1`, and a single `𝔽₂`-linear form `c₀ x₀ + c₁ x₁` vanishes identically along one of
+  the three lines `X₀ = 0`, `X₁ = 0`, or `X₀ + X₁ = 0`, so `A` is not integral over it.
 
 ## References
 
@@ -71,7 +72,7 @@ example (k : Type*) [Field k] :
       AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim k = (0 : ℕ) := by
   dsimp only
   have hadj : Algebra.adjoin k (Set.range (![0] : Fin 1 → k)) = ⊤ :=
-    eq_top_iff.mpr fun a _ ↦ Subalgebra.algebraMap_mem _ a
+    eq_top_iff.mpr fun a _ ↦ by simp
   have hind : AlgebraicIndependent k
       (fun i : Fin 0 ↦ ∑ j : Fin 1, (0 : Matrix (Fin 0) (Fin 1) k) i j • (![0] : Fin 1 → k) j) :=
     algebraicIndependent_empty_type_iff.mpr (algebraMap k k).injective
@@ -329,8 +330,8 @@ example :
     simpa using ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial (k := ZMod 2)
       (aeval (R := ZMod 2) fun i ↦ ∑ j, C i j • threeLinesGen j).toRingHom
       (algebraicIndependent_iff_injective_aeval.mp hind) hfin.to_isIntegral
-  obtain rfl : d = 1 := by
-    exact_mod_cast hdim.symm.trans quadratic_normalization_threeLines.2.2
+  obtain ⟨-, -, hdim1⟩ := quadratic_normalization_threeLines
+  obtain rfl : d = 1 := by exact_mod_cast hdim.symm.trans hdim1
   have hy : (fun i : Fin 1 ↦ ∑ j : Fin 2, C i j • threeLinesGen j) =
       ![C 0 0 • threeLinesGen 0 + C 0 1 • threeLinesGen 1] :=
     funext <| Fin.forall_fin_one.mpr (Fin.sum_univ_two _)

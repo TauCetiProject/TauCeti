@@ -305,8 +305,8 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
     refine (eq_mul_inv_iff_mul_eq.2 ?_)
     refine Units.ext ?_
     rw [Units.val_mul, htorus, htriple 1 (-1) hone, htriple (u : A) _ hunit]
-    exact Sl2.torus_mul_triple_product_of_mul_self_eq_zero (E := E')
-      hE'E' hF'F' hE'F'E' hF'E'F' _ _
+    simpa only [mul_one, mul_neg_one] using Sl2.torus_mul_triple_product_of_mul_self_eq_zero
+      (E := E') hE'E' hF'F' hE'F'E' hF'E'F' (u : A) ((u⁻¹ : Aˣ) : A) 1 (-1)
   rw [hfactor]
   refine mul_mem (mul_mem (mul_mem ?_ ?_) ?_) (inv_mem (mul_mem (mul_mem ?_ ?_) ?_)) <;>
     exact kostantRootSubgroupParam_mem_kostantElementarySubgroup e h ρ M hM hnil A _ _

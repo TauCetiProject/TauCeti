@@ -14,8 +14,8 @@ import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 # Geometric linear Noether normalization
 
 Combining `AlgebraicGeometry.AffineSpace.linearMap` and `AlgebraicGeometry.AffineSpace.homOfAlgebra`
-with `TauCeti.exists_linear_normalization_fintype_of_finite` yields the geometric forms of linear
-Noether normalization:
+with `TauCeti.exists_linear_normalization_of_finite` yields the geometric forms of linear Noether
+normalization:
 
 * For any nontrivial `k`-algebra `A` over an infinite field `k` and any finite family `x : n → A`
   such that `MvPolynomial.aeval x` is module-finite, there exist `d ≤ Fintype.card n` and a matrix
@@ -72,7 +72,7 @@ theorem exists_linear_normalization_of_finite {k A : Type u} [Field k] [Infinite
         linearMap (Spec (.of k)) (C.map (Scheme.ΓSpecIso (.of k)).inv)
       IsFinite π ∧ Surjective π ∧ (∀ q, (π ⁻¹' {q}).Finite) ∧ ringKrullDim A = d := by
   obtain ⟨d, hd, C₀, hy_ind, hy_fin, hdim⟩ :=
-    TauCeti.exists_linear_normalization_fintype_of_finite x hx
+    TauCeti.exists_linear_normalization_of_finite x hx
   let C : Matrix (ULift.{u} (Fin d)) n k := C₀.submatrix ULift.down id
   let y : Fin d → A := fun i ↦ ∑ j, C₀ i j • x j
   have hπ : homOfAlgebra k x ≫
