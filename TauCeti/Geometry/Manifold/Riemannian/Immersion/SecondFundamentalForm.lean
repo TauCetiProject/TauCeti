@@ -217,7 +217,7 @@ theorem neg_immersionShapeOperator_add_immersionNormalConnection (ν : Π x : M,
 /-- The shape operator is additive in its direction argument, which enters only through its value
 at the point. -/
 @[simp]
-theorem immersionShapeOperator_add_left (ν : Π x : M, TangentSpace J (f x))
+theorem immersionShapeOperator_add_right (ν : Π x : M, TangentSpace J (f x))
     (X X' : Π x : M, TangentSpace I x) (x : M) :
     immersionShapeOperator cov f ν (X + X') x =
       immersionShapeOperator cov f ν X x + immersionShapeOperator cov f ν X' x := by
@@ -225,7 +225,7 @@ theorem immersionShapeOperator_add_left (ν : Π x : M, TangentSpace J (f x))
 
 /-- The shape operator is `C^∞(M)`-linear in its direction argument. -/
 @[simp]
-theorem immersionShapeOperator_smul_left (ν : Π x : M, TangentSpace J (f x)) (g : M → ℝ)
+theorem immersionShapeOperator_smul_right (ν : Π x : M, TangentSpace J (f x)) (g : M → ℝ)
     (X : Π x : M, TangentSpace I x) (x : M) :
     immersionShapeOperator cov f ν (g • X) x = g x • immersionShapeOperator cov f ν X x := by
   simp only [immersionShapeOperator_def, Pi.smul_apply', map_smul, smul_neg]
@@ -233,7 +233,7 @@ theorem immersionShapeOperator_smul_left (ν : Π x : M, TangentSpace J (f x)) (
 /-- The normal connection is additive in its direction argument, which enters only through its
 value at the point. -/
 @[simp]
-theorem immersionNormalConnection_add_left (ν : Π x : M, TangentSpace J (f x))
+theorem immersionNormalConnection_add_right (ν : Π x : M, TangentSpace J (f x))
     (X X' : Π x : M, TangentSpace I x) (x : M) :
     immersionNormalConnection cov f ν (X + X') x =
       immersionNormalConnection cov f ν X x + immersionNormalConnection cov f ν X' x := by
@@ -241,7 +241,7 @@ theorem immersionNormalConnection_add_left (ν : Π x : M, TangentSpace J (f x))
 
 /-- The normal connection is `C^∞(M)`-linear in its direction argument. -/
 @[simp]
-theorem immersionNormalConnection_smul_left (ν : Π x : M, TangentSpace J (f x)) (g : M → ℝ)
+theorem immersionNormalConnection_smul_right (ν : Π x : M, TangentSpace J (f x)) (g : M → ℝ)
     (X : Π x : M, TangentSpace I x) (x : M) :
     immersionNormalConnection cov f ν (g • X) x = g x • immersionNormalConnection cov f ν X x := by
   simp only [immersionNormalConnection_def, Pi.smul_apply', map_smul]
