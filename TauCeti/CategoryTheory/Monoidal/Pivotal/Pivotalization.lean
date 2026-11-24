@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Transport
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
@@ -46,7 +47,8 @@ arbitrary monoidal `e`, and proves nothing specific to the Radford isomorphism.
 * `TauCeti.Pivotalization`: the pivotalization of `C` along `e`, with its faithful forgetful
   functor `TauCeti.Pivotalization.forget` and the constructor `TauCeti.Pivotalization.isoMk` for
   isomorphisms;
-* the instances `MonoidalCategory (Pivotalization e)`, `(Pivotalization.forget e).Monoidal`,
+* the instances `MonoidalCategory (Pivotalization e)`, induced along the forgetful functor by
+  `TauCeti.Pivotalization.forgetInducingFunctorData`, `(Pivotalization.forget e).Monoidal`,
   `RightRigidCategory (Pivotalization e)`, `RigidCategory (Pivotalization e)` and
   `PivotalCategory (Pivotalization e)`, whose structure is computed in `C` by the `simp` lemmas
   of this file;
@@ -318,26 +320,34 @@ theorem rightUnitor_hom_hom (X : Pivotalization e) : (ρ_ X).hom.hom = (ρ_ X.ob
 theorem rightUnitor_inv_hom (X : Pivotalization e) : (ρ_ X).inv.hom = (ρ_ X.obj).inv :=
   (rfl)
 
+variable (e) in
+/-- The forgetful functor from the pivotalization to `C` preserves the tensor products, unit,
+associators and unitors on the nose. -/
+noncomputable def forgetInducingFunctorData : Monoidal.InducingFunctorData (forget e) where
+  μIso _ _ := Iso.refl _
+  -- The identity comparisons are typed only up to unfolding the tensor products of the
+  -- pivotalization, so the default `cat_disch` cannot remove them; the equations are given as
+  -- terms, which unify up to unfolding.
+  whiskerLeft_eq _ _ _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+  whiskerRight_eq _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+  tensorHom_eq _ _ := ((Category.id_comp _).trans (Category.comp_id _)).symm
+  εIso := Iso.refl _
+  associator_eq _ _ _ := Eq.symm <|
+    ((((Category.id_comp _).trans (id_tensorHom_id _ _)) =≫ _).trans (Category.id_comp _)).trans
+      ((_ ≫= (Category.comp_id _).trans (id_tensorHom_id _ _)).trans (Category.comp_id _))
+  leftUnitor_eq _ := Eq.symm <|
+    (((Category.id_comp _).trans (id_tensorHom_id _ _)) =≫ _).trans (Category.id_comp _)
+  rightUnitor_eq _ := Eq.symm <|
+    (((Category.id_comp _).trans (id_tensorHom_id _ _)) =≫ _).trans (Category.id_comp _)
+
 /-- The pivotalization is a monoidal category, with tensor products, unit, associators and
 unitors computed in `C`. -/
-noncomputable instance : MonoidalCategory (Pivotalization e) where
-  tensorHom_def f g := hom_ext (tensorHom_def f.hom g.hom)
-  id_tensorHom_id X Y := hom_ext (id_tensorHom_id X.obj Y.obj)
-  tensorHom_comp_tensorHom f₁ f₂ g₁ g₂ :=
-    hom_ext (tensorHom_comp_tensorHom f₁.hom f₂.hom g₁.hom g₂.hom)
-  whiskerLeft_id X Y := hom_ext (MonoidalCategory.whiskerLeft_id X.obj Y.obj)
-  id_whiskerRight X Y := hom_ext (id_whiskerRight X.obj Y.obj)
-  associator_naturality f₁ f₂ f₃ := hom_ext (associator_naturality f₁.hom f₂.hom f₃.hom)
-  leftUnitor_naturality f := hom_ext (leftUnitor_naturality f.hom)
-  rightUnitor_naturality f := hom_ext (rightUnitor_naturality f.hom)
-  pentagon W X Y Z := hom_ext (pentagon W.obj X.obj Y.obj Z.obj)
-  triangle X Y := hom_ext (triangle X.obj Y.obj)
+noncomputable instance : MonoidalCategory (Pivotalization e) :=
+  Monoidal.induced (forget e) (forgetInducingFunctorData e)
 
 /-- The forgetful functor from the pivotalization to `C` is strict monoidal. -/
 noncomputable instance : (forget e).Monoidal :=
-  Functor.CoreMonoidal.toMonoidal
-    { εIso := Iso.refl _
-      μIso _ _ := Iso.refl _ }
+  Monoidal.fromInducedMonoidal (forget e) (forgetInducingFunctorData e)
 
 /-- The unit comparison of the forgetful functor is the identity. -/
 @[simp]
