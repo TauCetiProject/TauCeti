@@ -129,8 +129,7 @@ private theorem integrableOn_cexp_neg_mul_smul_ofReal_of_eventually_hasLaplace {
   have hσint : Integrable (fun u : ℝ ↦ Complex.exp (-(σ : ℂ) * u) • (f u : ℂ))
       (volume.restrict (Ioi 0)) :=
     hc.congr (.of_forall fun u ↦ by
-      push_cast [smul_eq_mul, Complex.ofReal_exp]
-      rfl)
+      simp only [smul_eq_mul, Complex.ofReal_mul, Complex.ofReal_exp, Complex.ofReal_neg])
   exact hσint.hasLaplace.integrableOn_of_re_le (by rw [Complex.ofReal_re])
 
 /-- **Landau's theorem for Laplace transforms**, convergence. Let `f` be nonnegative at almost
