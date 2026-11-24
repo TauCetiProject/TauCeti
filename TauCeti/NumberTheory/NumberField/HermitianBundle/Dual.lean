@@ -93,9 +93,6 @@ with the complex dual of the fibre of `E`; it is
 def dualPairingEquiv [Module.Finite (𝓞 K) E] [Module.Projective (𝓞 K) E] :
     Codomain σ ⊗[𝓞 K] Module.Dual (𝓞 K) E ≃ₗ[ℂ] Module.Dual ℂ (Codomain σ ⊗[𝓞 K] E) :=
   LinearEquiv.ofBijective (dualPairing E σ) <| by
-    have hc (c : Codomain σ) : algebraMap ℂ (Codomain σ) (Codomain.equiv σ c) = c := by
-      rw [← (Codomain.equiv σ).symm.commutes, Algebra.algebraMap_self_apply,
-        AlgEquiv.symm_apply_apply]
     refine ⟨fun a b hab ↦ (TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := 𝓞 K) (M := E)
       (A := Codomain σ)).injective (LinearMap.ext fun w ↦ ?_), fun φ ↦ ?_⟩
     · simpa only [TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply, dualPairing_apply,
@@ -104,8 +101,8 @@ def dualPairingEquiv [Module.Finite (𝓞 K) E] [Module.Projective (𝓞 K) E] :
       { toFun w := (Codomain.equiv σ).symm (φ w)
         map_add' _ _ := by simp only [map_add]
         map_smul' c w := by
-          rw [← hc c, RingHom.id_apply, algebraMap_smul (Codomain σ) _ w, map_smul, map_smul,
-            algebraMap_smul (Codomain σ)] }
+          rw [← Codomain.algebraMap_equiv σ c, RingHom.id_apply, algebraMap_smul (Codomain σ) _ w,
+            map_smul, map_smul, algebraMap_smul (Codomain σ)] }
     refine ⟨(TauCeti.Module.Dual.baseChangeEvaluationEquiv (R := 𝓞 K) (M := E)
       (A := Codomain σ)).symm ψ, LinearMap.ext fun w ↦ ?_⟩
     rw [dualPairing_apply, ← TauCeti.Module.Dual.baseChangeEvaluationEquiv_apply,
@@ -198,7 +195,6 @@ private theorem form_conjFiber (u v : Codomain σ ⊗[𝓞 K] E) :
 /-- On a finite-dimensional complex fibre, the positive definite form `h_σ` identifies the fibre
 conjugate-linearly with its complex dual, `u ↦ h_σ(u, ·)`. -/
 theorem form_bijective [Module.Finite (𝓞 K) E] : Function.Bijective (h.form σ) := by
-  have : Module.Finite ℂ (Codomain σ) := inferInstanceAs (Module.Finite ℂ ℂ)
   have : Module.Finite ℂ (Codomain σ ⊗[𝓞 K] E) := Module.Finite.trans (Codomain σ) _
   exact LinearMap.bijective_of_apply_self_ne_zero fun _ hu h0 ↦ hu (h.form_self_eq_zero_iff.1 h0)
 

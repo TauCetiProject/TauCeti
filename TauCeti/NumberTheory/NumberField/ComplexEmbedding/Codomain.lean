@@ -60,6 +60,11 @@ instance : SMulCommClass (𝓞 K) ℂ (Codomain σ) where
 /-- The identification of `Codomain σ` with `ℂ`, as `ℂ`-algebras. -/
 def equiv : Codomain σ ≃ₐ[ℂ] ℂ := AlgEquiv.refl
 
+instance : Module.Finite ℂ (Codomain σ) := .equiv (equiv σ).symm.toLinearEquiv
+
+@[simp]
+theorem algebraMap_equiv (c : Codomain σ) : algebraMap ℂ (Codomain σ) (equiv σ c) = c := (rfl)
+
 @[simp]
 theorem equiv_algebraMap (x : K) : equiv σ (algebraMap K (Codomain σ) x) = σ x := (rfl)
 
