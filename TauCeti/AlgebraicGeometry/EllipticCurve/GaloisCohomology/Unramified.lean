@@ -9,8 +9,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Ba
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Inertia
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.LocalField
+import TauCeti.Data.Nat.Cast.IsUnit
 
 /-!
 # Unramified Kummer classes at integral elliptic models

@@ -90,7 +90,7 @@ theorem isUnit_natCast_add_one (K : Type*) {A : Type*} [Semifield K] [CharZero K
 to a unit. -/
 theorem isUnit_natCast_of_not_dvd {K : Type*} [DivisionSemiring K] [CharZero K] {p n : ℕ}
     (hpn : ¬ p ∣ n) : IsUnit (n : K) :=
-  (Nat.cast_ne_zero.mpr fun (h : n = 0) ↦ hpn (h ▸ dvd_zero p)).isUnit
+  (Nat.cast_ne_zero.mpr fun (h : n = 0) ↦ hpn (h ▸ Nat.dvd_zero p)).isUnit
 
 /-- Multiplying by a natural number `m` and by the image of `m⁻¹ : K` cancel in an algebra over a
 semifield `K`, provided `m` is nonzero in `K`. -/

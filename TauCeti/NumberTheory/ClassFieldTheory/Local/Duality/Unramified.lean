@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.Algebra.Module.ZMod.Annihilator
+import TauCeti.Data.Nat.Cast.IsUnit
 import TauCeti.NumberTheory.ClassFieldTheory.FiniteCohomology.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Local.EulerCharacteristic.Theorem
 
