@@ -57,12 +57,12 @@ Letting `N → ∞`, it is a limit of compact operators in operator norm, hence 
 
 * `TauCeti.WeakDerivStep.isCompactOperator_restrictBaseL_compLpL`: the restriction of `ι ∘ u` to
   a bounded open interval in `Ω` is a compact operator on the graph space.
-* `TauCeti.WeakDerivStep.norm_le_mul_norm_restrictBaseL`: on the line, for `p = 2`, an `L²` path
-  bounded pointwise by `c ‖ι (u s)‖` and vanishing off a window `(-b, b)` has norm at most `c`
-  times that of the restriction of `ι ∘ u` to the window.
-* `TauCeti.WeakDerivStep.isCompactOperator_of_ae_norm_le`: on the line, for `p = 2`, an operator
-  from the graph space to `L²(ℝ, H)` bounded pointwise by `c ‖ι (u s)‖` and vanishing off a window
-  `(-b, b)` is compact.
+* `TauCeti.WeakDerivStep.norm_le_mul_norm_restrictBaseL`: an `Lᵖ(Ω, H)` path bounded pointwise by
+  `c ‖ι (u s)‖` and vanishing off a bounded open interval `(a, b) ⊆ Ω` has norm at most `c` times
+  that of the restriction of `ι ∘ u` to `(a, b)`.
+* `TauCeti.WeakDerivStep.isCompactOperator_of_ae_norm_le`: an operator from the graph space to
+  `Lᵖ(Ω, H)` bounded pointwise by `c ‖ι (u s)‖` and vanishing off a bounded open interval
+  `(a, b) ⊆ Ω` is compact.
 
 ## References
 
@@ -328,47 +328,48 @@ theorem isCompactOperator_restrictBaseL_compLpL (hι : IsCompactOperator ι)
   exact (dist_eq_norm (E := WeakDerivStep volume Omega p base →L[ℝ]
     Lp H p (volume.restrict (Ioo a b))) _ _).trans_lt (hle.trans_lt hlt)
 
-/-! ### Operators dominated by the window restriction on the line -/
-
-section Line
-
-local notation "μ₀" => (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
+/-! ### Operators dominated by the window restriction -/
 
 omit [CompleteSpace D] in
-/-- An `L²` path bounded pointwise by `c ‖ι (u s)‖` and vanishing off the window `(-b, b)` has norm
-at most `c` times the `L²` norm of `ι ∘ u` on the window. -/
+/-- An `Lᵖ(Ω, H)` path bounded pointwise by `c ‖ι (u s)‖` and vanishing off a bounded open
+interval `(a, b) ⊆ Ω` has norm at most `c` times the `Lᵖ` norm of `ι ∘ u` on `(a, b)`. -/
 theorem norm_le_mul_norm_restrictBaseL {c : ℝ} (hc : 0 ≤ c)
-    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) {f : Lp H 2 μ₀}
-    (hf : ∀ᵐ s ∂volume, ‖f s‖ ≤ c * ‖ι (prev _ u s)‖)
-    (hf₀ : ∀ᵐ s ∂volume, s ∉ Ioo (-b) b → f s = 0) :
-    ‖f‖ ≤ c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
-  have hμW : Measure.restrict μ₀ (Ioo (-b) b) = volume.restrict (Ioo (-b) b) := by simp
-  -- The `L²` norm of `f` is its `L²` norm on the window, where it is dominated by `ι ∘ u`.
-  have hR : ∀ᵐ s ∂volume.restrict (Ioo (-b) b), ‖f s‖ ≤
-      c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u s‖ := by
-    have h₂ := ae_restrict_of_ae (s := Ioo (-b) b) (ι.coeFn_compLpL (μ := μ₀) (prev _ u))
-    rw [hμW] at h₂
-    filter_upwards [restrictBaseL_apply_ae (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) _ le_top u, h₂,
-      ae_restrict_of_ae hf] with s h₁ h₂ h₃
+    (hΩ : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ Omega)
+    (u : WeakDerivStep volume Omega p (ι.compLpL p (volume.restrict (Omega : Set ℝ))))
+    {f : Lp H p (volume.restrict (Omega : Set ℝ))}
+    (hf : ∀ᵐ s ∂volume.restrict (Omega : Set ℝ), ‖f s‖ ≤ c * ‖ι (prev _ u s)‖)
+    (hf₀ : ∀ᵐ s ∂volume.restrict (Omega : Set ℝ), s ∉ Ioo a b → f s = 0) :
+    ‖f‖ ≤ c * ‖restrictBaseL (ι.compLpL p (volume.restrict (Omega : Set ℝ))) hΩ u‖ := by
+  have hμW : (volume.restrict (Omega : Set ℝ)).restrict (Ioo a b) =
+      volume.restrict (Ioo a b) := by
+    rw [Measure.restrict_restrict measurableSet_Ioo, inter_eq_left.2 (show Ioo a b ⊆ Omega from hΩ)]
+  -- The `Lᵖ` norm of `f` is its `Lᵖ` norm on the window, where it is dominated by `ι ∘ u`.
+  have hR : ∀ᵐ s ∂volume.restrict (Ioo a b), ‖f s‖ ≤
+      c * ‖restrictBaseL (ι.compLpL p (volume.restrict (Omega : Set ℝ))) hΩ u s‖ := by
+    have h₂ := ae_restrict_of_ae (s := Ioo a b) (ι.coeFn_compLpL (prev _ u))
+    have h₃ := ae_restrict_of_ae (s := Ioo a b) hf
+    rw [hμW] at h₂ h₃
+    filter_upwards [restrictBaseL_apply_ae _ hΩ u, h₂, h₃] with s h₁ h₂ h₃
     rwa [h₁, h₂]
   have hle := eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-    ((Lp.aestronglyMeasurable f).restrict.mono_measure (by rw [hμW])) hR 2
+    ((Lp.aestronglyMeasurable f).restrict.mono_measure (by rw [hμW])) hR p
   rw [Lp.norm_def, Lp.norm_def, ← eLpNorm_restrict_eq_of_ae_compl_eq_zero
-    measurableSet_Ioo.nullMeasurableSet (by simpa using hf₀), hμW]
+    measurableSet_Ioo.nullMeasurableSet hf₀, hμW]
   refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top _))
     hle).trans_eq ?_
   rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal hc]
 
-/-- An operator from the graph space to `L²(ℝ, H)` that is bounded pointwise by `c ‖ι (u s)‖` and
-vanishes off a bounded window `(-b, b)` is compact, by the Aubin–Lions lemma. -/
+/-- An operator from the graph space to `Lᵖ(Ω, H)` that is bounded pointwise by `c ‖ι (u s)‖` and
+vanishes off a bounded open interval `(a, b) ⊆ Ω` is compact, by the Aubin–Lions lemma. -/
 theorem isCompactOperator_of_ae_norm_le (hι : IsCompactOperator ι)
-    {T : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] Lp H 2 μ₀} {c : ℝ} (hc : 0 ≤ c)
-    (hT : ∀ u, ∀ᵐ s ∂volume, ‖T u s‖ ≤ c * ‖ι (prev _ u s)‖)
-    (hT₀ : ∀ u, ∀ᵐ s ∂volume, s ∉ Ioo (-b) b → T u s = 0) : IsCompactOperator T :=
+    (hΩ : (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ Omega)
+    {T : WeakDerivStep volume Omega p (ι.compLpL p (volume.restrict (Omega : Set ℝ))) →L[ℝ]
+      Lp H p (volume.restrict (Omega : Set ℝ))} {c : ℝ} (hc : 0 ≤ c)
+    (hT : ∀ u, ∀ᵐ s ∂volume.restrict (Omega : Set ℝ), ‖T u s‖ ≤ c * ‖ι (prev _ u s)‖)
+    (hT₀ : ∀ u, ∀ᵐ s ∂volume.restrict (Omega : Set ℝ), s ∉ Ioo a b → T u s = 0) :
+    IsCompactOperator T :=
   IsCompactOperator.of_norm_le_mul_norm (C := c)
-    (isCompactOperator_restrictBaseL_compLpL (p := 2) hι le_top)
-    fun u ↦ norm_le_mul_norm_restrictBaseL hc u (hT u) (hT₀ u)
-
-end Line
+    (isCompactOperator_restrictBaseL_compLpL (p := p) hι hΩ)
+    fun u ↦ norm_le_mul_norm_restrictBaseL hc hΩ u (hT u) (hT₀ u)
 
 end TauCeti.WeakDerivStep

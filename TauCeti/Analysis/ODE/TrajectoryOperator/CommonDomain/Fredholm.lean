@@ -110,7 +110,8 @@ private def mulGraph (ι : D →L[ℝ] H) (β : ℝ → ℝ) (hβ : ContDiff ℝ
     {L : ℝ} (hβ₁ : ∀ s, |deriv β s| ≤ L) :
     WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) :=
   smulLeftCLM β hβ.contDiffOn ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hβ₀ s)⟩
-    (exists_forall_norm_fderiv_le_of_abs_deriv_le hβ₁) ι.compLpL_multiplicationOperator
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hβ₁ s)
+    ι.compLpL_multiplicationOperator
 
 /-! ### The error terms -/
 
@@ -188,8 +189,8 @@ private theorem isCompactOperator_coeffL [CompleteSpace D] (hι : IsCompactOpera
     (hC : ∀ s, |φ s| ≤ 1) {b c : ℝ} (hc₀ : 0 ≤ c)
     (h : ∀ᵐ s ∂μ₀, φ s ≠ 0 → ∀ x, ‖(AL s - B) x‖ ≤ c * ‖ι x‖)
     (hφ₀ : ∀ s ∉ Ioo (-b) b, φ s = 0) : IsCompactOperator (coeffL ι AL B φ hφ hC) := by
-  refine isCompactOperator_of_ae_norm_le hι (b := b) hc₀ (fun u ↦ ?_) (fun u ↦ ?_) <;>
-    rw [show ae (volume : Measure ℝ) = ae μ₀ by simp]
+  refine isCompactOperator_of_ae_norm_le hι (a := -b) (b := b) le_top hc₀ (fun u ↦ ?_)
+    (fun u ↦ ?_)
   · filter_upwards [coeffL_ae AL B hφ hC u, h] with s hs hsc
     rw [hs, norm_smul, Real.norm_eq_abs]
     exact abs_mul_norm_le (hC s) (mul_nonneg hc₀ (norm_nonneg _)) fun hφs ↦ hsc hφs _
@@ -200,8 +201,8 @@ private theorem isCompactOperator_coeffL [CompleteSpace D] (hι : IsCompactOpera
 private theorem isCompactOperator_commL [CompleteSpace D] (hι : IsCompactOperator ι) {φ : ℝ → ℝ}
     (hφ : Continuous φ) {L b : ℝ} (hC : ∀ s, |φ s| ≤ L) (hφ₀ : ∀ s ∉ Ioo (-b) b, φ s = 0) :
     IsCompactOperator (commL ι φ hφ hC) := by
-  refine isCompactOperator_of_ae_norm_le hι (b := b) ((abs_nonneg _).trans (hC 0))
-    (fun u ↦ ?_) (fun u ↦ ?_) <;> rw [show ae (volume : Measure ℝ) = ae μ₀ by simp]
+  refine isCompactOperator_of_ae_norm_le hι (a := -b) (b := b) le_top
+    ((abs_nonneg _).trans (hC 0)) (fun u ↦ ?_) (fun u ↦ ?_)
   · filter_upwards [commL_ae hφ hC u] with s hs
     rw [hs, norm_smul, Real.norm_eq_abs]
     exact mul_le_mul_of_nonneg_right (hC s) (norm_nonneg _)
@@ -229,7 +230,7 @@ private theorem familyDomainTrajectoryOperator_comp_mulGraph (AL : Lp (D →L[�
   simp only [ContinuousLinearMap.comp_apply, add_apply]
   filter_upwards [familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hβ.contDiffOn
       ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hβ₀ s)⟩
-      (exists_forall_norm_fderiv_le_of_abs_deriv_le hβ₁) v,
+      (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hβ₁ s) v,
     familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι AL B v,
     Lp.coeFn_sub (familyDomainTrajectoryOperator ι AL v) (domainTrajectoryOperator ι B v),
     mulLp_ae hγ hγ₀ f, coeffL_ae AL B hβ.continuous hβ₀ v,
@@ -538,8 +539,9 @@ theorem index_familyDomainTrajectoryOperator_eq (hι : IsCompactOperator ι)
 
 /-- **Equal limits give index zero.** If `A(s)` converges to the same invertible `ι`-symmetric
 operator `B` at `-∞` and at `∞`, and differs from `B` on every bounded interval by an operator
-bounded through `ι`, then for compact `ι` the operator `u ↦ (ι ∘ u)' + A u` is Fredholm of index
-zero, the index of the autonomous operator `u ↦ (ι ∘ u)' + B u`. -/
+bounded through `ι`, then for compact `ι` the operator `u ↦ (ι ∘ u)' + A u` has index zero, the
+index of the autonomous operator `u ↦ (ι ∘ u)' + B u`. It is Fredholm by
+`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`. -/
 theorem index_familyDomainTrajectoryOperator_eq_zero (hι : IsCompactOperator ι) {B : D →L[ℝ] H}
     (hSymm : ∀ x y : D, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) (hB : B.IsInvertible) (hAL : AL =ᵐ[μ₀] A)
     (hbot : Tendsto A atBot (𝓝 B)) (htop : Tendsto A atTop (𝓝 B))

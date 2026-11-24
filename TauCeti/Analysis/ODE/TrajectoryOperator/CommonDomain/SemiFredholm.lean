@@ -151,7 +151,7 @@ theorem norm_familyDomainTrajectoryOperator_smulLeftCLM_le {χ : ℝ → ℝ}
         ae_top_iff.1 (familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hχ h₀ h₁ u),
         ae_top_iff.1 hm] with s h₁ h₂ h₃
       rw [h₁, Pi.sub_apply, h₂, h₃, add_sub_cancel_left]
-    refine norm_le_mul_norm_restrictBaseL hC₁ u ?_ ?_
+    refine norm_le_mul_norm_restrictBaseL hC₁ le_top u (ae_top_iff.2 ?_) (ae_top_iff.2 ?_)
     · filter_upwards [hfm] with s hs
       rw [hs, norm_smul, Real.norm_eq_abs]
       exact mul_le_mul_of_nonneg_right (hχ₁ s) (norm_nonneg _)
@@ -196,7 +196,7 @@ private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫
       c * ‖restrictBaseL (ι.compLpL 2 μ₀) (V := ⟨Ioo (-b) b, isOpen_Ioo⟩) le_top u‖ := by
     have hm := ae_top_iff.1
       (familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι AL B w)
-    refine norm_le_mul_norm_restrictBaseL hc₀ u ?_ ?_
+    refine norm_le_mul_norm_restrictBaseL hc₀ le_top u (ae_top_iff.2 ?_) (ae_top_iff.2 ?_)
     · filter_upwards [hm, ae_top_iff.1 hAL, hc, hw] with s h₁ h₂ h₃ h₄
       rw [h₁, h₂, h₄, map_smul, norm_smul, Real.norm_eq_abs]
       by_cases hsW : s ∈ Ioo (-b) b
@@ -274,13 +274,17 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
     · exact Or.inl (by linarith)
     · exact Or.inr (by linarith)
   set wtop := smulLeftCLM βp hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩
-    (exists_forall_norm_fderiv_le_of_abs_deriv_le hpL) ι.compLpL_multiplicationOperator u
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hpL s)
+    ι.compLpL_multiplicationOperator u
   set wbot := smulLeftCLM βm hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩
-    (exists_forall_norm_fderiv_le_of_abs_deriv_le hmL) ι.compLpL_multiplicationOperator u
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hmL s)
+    ι.compLpL_multiplicationOperator u
   have hptop := ae_top_iff.1 (prev_smulLeftCLM_ae hpc.contDiffOn ⟨1, fun s _ ↦ hp1 s⟩
-    (exists_forall_norm_fderiv_le_of_abs_deriv_le hpL) ι.compLpL_multiplicationOperator u)
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hpL s)
+    ι.compLpL_multiplicationOperator u)
   have hpbot := ae_top_iff.1 (prev_smulLeftCLM_ae hmc.contDiffOn ⟨1, fun s _ ↦ hm1 s⟩
-    (exists_forall_norm_fderiv_le_of_abs_deriv_le hmL) ι.compLpL_multiplicationOperator u)
+    (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hmL s)
+    ι.compLpL_multiplicationOperator u)
   -- The two ends `w₊ = βp u` and `w₋ = βm u`.
   have hDtop : ‖familyDomainTrajectoryOperator ι AL wtop‖ ≤ N + L * R :=
     (norm_familyDomainTrajectoryOperator_smulLeftCLM_le _ _ _ hp1 hpL
