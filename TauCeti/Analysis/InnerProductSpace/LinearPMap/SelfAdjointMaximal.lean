@@ -55,9 +55,8 @@ theorem eq_of_le_of_isSelfAdjoint {A B : H →ₗ.[𝕜] H}
 open scoped ComplexConjugate in
 /-- **Deficiency spaces of an operator with a self-adjoint extension.** Let `B` be a self-adjoint
 extension of a densely defined `A` and `c` a nonreal scalar. If `ker (A† - c) = 0`, then
-`ker (A† - conj c) = 0`. Indeed `B = B† ≤ A†`; for `e` with `A† e = conj c • e`, surjectivity of
-`c - B` gives `x` in the domain of `B` with `(c - B) x = (c - A†) e`, so `e - x ∈ ker (A† - c)`
-vanishes, and `e = x` is an eigenvector of the symmetric `B` for the nonreal `conj c`. -/
+`ker (A† - conj c) = 0`. So an operator whose deficiency spaces `ker (A† - c)` and
+`ker (A† - conj c)` do not vanish together has no self-adjoint extension. -/
 theorem _root_.IsSelfAdjoint.ker_subScalar_adjoint_conj_eq_bot {A B : H →ₗ.[𝕜] H}
     (hB : IsSelfAdjoint B) (hAB : A ≤ B) (hA : Dense (A.domain : Set H)) {c : 𝕜}
     (hc : RCLike.im c ≠ 0) (h : (A†.subScalar c).ker = ⊥) : (A†.subScalar (conj c)).ker = ⊥ := by

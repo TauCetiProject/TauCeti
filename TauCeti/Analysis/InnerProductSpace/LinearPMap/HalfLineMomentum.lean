@@ -15,12 +15,14 @@ import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjointMaximal
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The momentum operator on the half-line
@@ -58,7 +60,10 @@ prequantum operators can fail when the Hamiltonian flow is incomplete.
   densely defined and symmetric.
 * `TauCeti.ker_subScalar_I_adjoint_halfLineMomentum_eq_bot`: the deficiency space `ker (P† - i)`
   is `0`.
-* `TauCeti.mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff` and
+* `TauCeti.halfLineMomentumDeficiencyVector`: the class of `e^{-q/ℏ}` in `L²(0, ∞)`, with
+  squared norm `ℏ / 2` (`TauCeti.norm_halfLineMomentumDeficiencyVector_sq`).
+* `TauCeti.mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff`,
+  `TauCeti.ker_subScalar_neg_I_adjoint_halfLineMomentum_eq_span` and
   `TauCeti.finrank_ker_subScalar_neg_I_adjoint_halfLineMomentum`: the deficiency space
   `ker (P† + i)` consists of the multiples of `e^{-q/ℏ}`, and is a line.
 * `TauCeti.not_isSelfAdjoint_of_halfLineMomentum_le` and
@@ -104,6 +109,11 @@ private theorem setIntegral_conj_ofReal_mul {h : ℝ → ℝ} (hh : ∀ x ∉ Io
     (f : ℝ → ℂ) : ∫ x in Ioi 0, conj ((h x : ℂ)) * f x = ∫ x, h x • f x := by
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by simp [hh x hx]]
   simp_rw [conj_ofReal, real_smul]
+
+/-- A real test function on `(0, ∞)`, viewed as a complex test function, has the same values. -/
+private theorem postcompCLM_ofRealCLM_apply (g : 𝓓(Ω₊, ℝ)) (x : ℝ) :
+    TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM g x = g x := by
+  rw [TestFunction.postcompCLM_apply, Function.comp_apply, ofRealCLM_apply]
 
 /-! ### The operator -/
 
@@ -187,7 +197,7 @@ theorem dense_domain_halfLineMomentum :
     isOpen_Ioi.ae_eq_zero_of_integral_contDiff_smul_eq_zero
       (Lp.locallyIntegrableOn u (by norm_num)) fun g hg hgc hgs ↦ ?_
   set φ : 𝓓(Ω₊, ℂ) := TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM ⟨g, hg, hgc, hgs⟩
-  have hφ (x : ℝ) : φ x = g x := rfl
+  have hφ (x : ℝ) : φ x = g x := postcompCLM_ofRealCLM_apply _ x
   have h := (Submodule.mem_orthogonal _ _).mp hu (ι₊ φ) ⟨_, rfl⟩
   simp only [inner_ambientToLp_Ioi, hφ] at h
   rwa [setIntegral_conj_ofReal_mul fun x hx ↦
@@ -252,7 +262,7 @@ private theorem integral_deriv_add_mul_smul_eq_zero (hℏ : ℏ ≠ 0) {c : ℝ}
     (hg : ContDiff ℝ ∞ g) (hgc : HasCompactSupport g) (hgs : tsupport g ⊆ Ioi 0) :
     ∫ x, (deriv g x + c * g x) • u x = 0 := by
   set φ : 𝓓(Ω₊, ℂ) := TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM ⟨g, hg, hgc, hgs⟩
-  have hφg (x : ℝ) : φ x = g x := rfl
+  have hφg (x : ℝ) : φ x = g x := postcompCLM_ofRealCLM_apply _ x
   have hsymm : ⟪ι₊ (momentumTest ℏ φ), u⟫_ℂ = ⟪ι₊ φ, ((c : ℂ) * ℏ * I) • u⟫_ℂ := by
     rw [← halfLineMomentum_ambientToLp, ← hAu]
     exact (LinearPMap.adjoint_isFormalAdjoint dense_domain_halfLineMomentum).symm
@@ -371,39 +381,76 @@ theorem mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff (hℏ : 0 < ℏ) {u
     exact LinearPMap.mem_ker_subScalar_iff.mpr
       ⟨hdom, LinearPMap.adjoint_apply_eq dense_domain_halfLineMomentum _ hcond⟩
 
+private theorem memLp_ofReal_exp_neg_div (hℏ : 0 < ℏ) :
+    MemLp (fun q : ℝ ↦ (Real.exp (-q / ℏ) : ℂ)) 2 (volume.restrict (Ioi (0 : ℝ))) := by
+  refine (memLp_two_iff_integrable_sq_norm (by fun_prop)).2 ?_
+  refine (exp_neg_integrableOn_Ioi 0 (by positivity : (0 : ℝ) < 2 / ℏ)).congr_fun
+    (fun x _ ↦ ?_) measurableSet_Ioi
+  beta_reduce
+  rw [norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, sq, ← Real.exp_add]
+  congr 1
+  ring
+
+/-- **The deficiency vector of the half-line momentum**: for `ℏ > 0`, the class in `L²(0, ∞)` of
+the decaying exponential `q ↦ e^{-q/ℏ}`, which spans the deficiency space `ker (P† + i)`. -/
+def halfLineMomentumDeficiencyVector (hℏ : 0 < ℏ) : L²₊ :=
+  (memLp_ofReal_exp_neg_div hℏ).toLp _
+
+/-- A representative of the deficiency vector of the half-line momentum is `q ↦ e^{-q/ℏ}`. -/
+theorem coeFn_halfLineMomentumDeficiencyVector (hℏ : 0 < ℏ) :
+    halfLineMomentumDeficiencyVector hℏ =ᵐ[volume.restrict (Ioi (0 : ℝ))]
+      fun q ↦ (Real.exp (-q / ℏ) : ℂ) :=
+  (memLp_ofReal_exp_neg_div hℏ).coeFn_toLp
+
+/-- The squared `L²(0, ∞)` norm of the deficiency vector `e^{-q/ℏ}` of the half-line momentum
+is `ℏ / 2`. -/
+theorem norm_halfLineMomentumDeficiencyVector_sq (hℏ : 0 < ℏ) :
+    ‖halfLineMomentumDeficiencyVector hℏ‖ ^ 2 = ℏ / 2 := by
+  rw [halfLineMomentumDeficiencyVector, MemLp.norm_toLp_sq]
+  have h (x : ℝ) : ‖(Real.exp (-x / ℏ) : ℂ)‖ ^ 2 = Real.exp (-(2 / ℏ) * x) := by
+    rw [norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, sq, ← Real.exp_add]
+    congr 1
+    ring
+  simp_rw [h]
+  rw [integral_exp_mul_Ioi (by simpa using hℏ) 0]
+  field_simp
+  simp
+
+/-- The deficiency vector of the half-line momentum is nonzero. -/
+theorem halfLineMomentumDeficiencyVector_ne_zero (hℏ : 0 < ℏ) :
+    halfLineMomentumDeficiencyVector hℏ ≠ 0 := by
+  intro he0
+  have h := (coeFn_halfLineMomentumDeficiencyVector hℏ).symm.trans
+    (Lp.eq_zero_iff_ae_eq_zero.mp he0)
+  have : (ae (volume.restrict (Ioi (0 : ℝ)))).NeBot :=
+    ae_restrict_neBot.2 (by simp [Real.volume_Ioi])
+  obtain ⟨x, hx⟩ := h.exists
+  exact ofReal_ne_zero.2 (Real.exp_pos _).ne' hx
+
+/-- **The deficiency space `ker (P† + i)` of the half-line momentum** is the line spanned by the
+deficiency vector `e^{-q/ℏ}`. -/
+theorem ker_subScalar_neg_I_adjoint_halfLineMomentum_eq_span (hℏ : 0 < ℏ) :
+    ((halfLineMomentum ℏ)†.subScalar (-I)).ker = ℂ ∙ halfLineMomentumDeficiencyVector hℏ := by
+  ext u
+  rw [mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff hℏ, Submodule.mem_span_singleton]
+  constructor
+  · rintro ⟨v, hv⟩
+    refine ⟨v, Lp.ext ?_⟩
+    filter_upwards [Lp.coeFn_smul v (halfLineMomentumDeficiencyVector hℏ),
+      coeFn_halfLineMomentumDeficiencyVector hℏ, hv] with x h1 h2 h3
+    rw [h1, Pi.smul_apply, h2, h3, smul_eq_mul, real_smul, mul_comm]
+  · rintro ⟨v, rfl⟩
+    refine ⟨v, ?_⟩
+    filter_upwards [Lp.coeFn_smul v (halfLineMomentumDeficiencyVector hℏ),
+      coeFn_halfLineMomentumDeficiencyVector hℏ] with x h1 h2
+    rw [h1, Pi.smul_apply, h2, smul_eq_mul, real_smul, mul_comm]
+
 /-- **The deficiency space `ker (P† + i)` of the half-line momentum is a line.** Together with
 `ker_subScalar_I_adjoint_halfLineMomentum_eq_bot`, the deficiency indices are `(0, 1)`. -/
 theorem finrank_ker_subScalar_neg_I_adjoint_halfLineMomentum (hℏ : 0 < ℏ) :
     Module.finrank ℂ ((halfLineMomentum ℏ)†.subScalar (-I)).ker = 1 := by
-  have hmem : MemLp (fun q : ℝ ↦ (Real.exp (-q / ℏ) : ℂ)) 2 (volume.restrict (Ioi (0 : ℝ))) := by
-    refine (memLp_two_iff_integrable_sq_norm (by fun_prop)).2 ?_
-    refine (exp_neg_integrableOn_Ioi 0 (by positivity : (0 : ℝ) < 2 / ℏ)).congr_fun
-      (fun x _ ↦ ?_) measurableSet_Ioi
-    beta_reduce
-    rw [norm_real, Real.norm_of_nonneg (Real.exp_pos _).le, sq, ← Real.exp_add]
-    congr 1
-    ring
-  set e : L²₊ := hmem.toLp _
-  have he : e ≠ 0 := by
-    intro he0
-    have h := hmem.coeFn_toLp.symm.trans (Lp.eq_zero_iff_ae_eq_zero.mp he0)
-    have : (ae (volume.restrict (Ioi (0 : ℝ)))).NeBot :=
-      ae_restrict_neBot.2 (by simp [Real.volume_Ioi])
-    obtain ⟨x, hx⟩ := h.exists
-    exact ofReal_ne_zero.2 (Real.exp_pos _).ne' hx
-  have hker : ((halfLineMomentum ℏ)†.subScalar (-I)).ker = ℂ ∙ e := by
-    ext u
-    rw [mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff hℏ, Submodule.mem_span_singleton]
-    constructor
-    · rintro ⟨v, hv⟩
-      refine ⟨v, Lp.ext ?_⟩
-      filter_upwards [Lp.coeFn_smul v e, hmem.coeFn_toLp, hv] with x h1 h2 h3
-      rw [h1, Pi.smul_apply, h2, h3, smul_eq_mul, real_smul, mul_comm]
-    · rintro ⟨v, rfl⟩
-      refine ⟨v, ?_⟩
-      filter_upwards [Lp.coeFn_smul v e, hmem.coeFn_toLp] with x h1 h2
-      rw [h1, Pi.smul_apply, h2, smul_eq_mul, real_smul, mul_comm]
-  rw [hker, finrank_span_singleton he]
+  rw [ker_subScalar_neg_I_adjoint_halfLineMomentum_eq_span hℏ,
+    finrank_span_singleton (halfLineMomentumDeficiencyVector_ne_zero hℏ)]
 
 /-- **The half-line momentum has no self-adjoint extension**: its deficiency spaces
 `ker (P† - i) = 0` and `ker (P† + i) ≅ ℂ` would have to vanish together. -/

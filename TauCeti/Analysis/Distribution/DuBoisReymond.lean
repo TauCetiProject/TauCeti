@@ -258,8 +258,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
 /-- **Weak solutions of `f' = c f` on a half-line.** A function locally integrable on `(a, ∞)`
 with `∫ x, (deriv φ x + c φ x) • f x = 0` for every compactly supported test function `φ` on
 `(a, ∞)`, that is, a distributional solution of `f' = c f`, is almost everywhere equal to
-`x ↦ e^{c x} • v` on `(a, ∞)` for some vector `v`. The vectors given on the intervals
-`(a, a + N + 1)` by the interval version agree, by comparison on `(a, a + 1)`. -/
+`x ↦ e^{c x} • v` on `(a, ∞)` for some vector `v`. -/
 theorem exists_ae_eq_exp_smul_Ioi_of_integral_deriv_add_mul_smul_eq_zero
     {a : ℝ} {f : ℝ → F} (hf : LocallyIntegrableOn f (Ioi a)) (c : ℝ)
     (h : ∀ φ : ℝ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ → tsupport φ ⊆ Ioi a →
