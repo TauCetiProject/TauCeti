@@ -111,13 +111,19 @@ theorem span_traceDual_one_eq_traceDual_one_integralClosure (P : Place k F)
 if `B` is a Dedekind affine model of `F` contained in `𝒪_P`, `C` is its integral closure in `F'`,
 and `f : C →+* 𝒪'_P` is compatible with the inclusions into `F'`, then extending
 `differentIdeal B C` along `f` yields `differentIdeal 𝒪_P 𝒪'_P`. -/
-theorem map_differentIdeal_eq_differentIdeal_integralClosure [IsDedekindDomain C]
-    [Module.IsTorsionFree B C] (P : Place k F)
+theorem map_differentIdeal_eq_differentIdeal_integralClosure (P : Place k F)
     (hB : ∀ b : B, algebraMap B F b ∈ P.integers)
     (f : C →+* integralClosure P.integers F')
     (hf : ∀ c : C, algebraMap (integralClosure P.integers F') F' (f c) = algebraMap C F' c) :
+    let _ : IsDomain C :=
+      Function.Injective.isDomain (algebraMap C F') (IsIntegralClosure.algebraMap_injective C B F')
+    let _ : IsDedekindDomain C := IsIntegralClosure.isDedekindDomain B F F' C
+    let _ : Module.IsTorsionFree B C :=
+      let _ : Module.IsTorsionFree B F' := .trans_faithfulSMul B F F'
+      IsIntegralClosure.isTorsionFree B F'
     (differentIdeal B C).map f =
       differentIdeal P.integers (integralClosure P.integers F') := by
+  intro _ _ _
   have := IsIntegralClosure.isFractionRing_of_finite_extension B F F' C
   let _ : Algebra C (integralClosure P.integers F') := f.toAlgebra
   have : IsScalarTower C (integralClosure P.integers F') F' :=

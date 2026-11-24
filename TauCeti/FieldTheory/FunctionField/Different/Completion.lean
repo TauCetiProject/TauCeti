@@ -52,6 +52,7 @@ structures `TauCeti.Place.completionExtensionAlgebra` and `completionIntegersExt
 
 * J.-P. Serre, *Local Fields*, GTM 67, Springer, 1979, Chapter II, §3 and Chapter III, §§2–4.
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, 2009, I.7 and III.4–5.
+* J. Neukirch, *Algebraic Number Theory*, Chapter III, Proposition (2.2).
 -/
 
 public section
@@ -222,9 +223,9 @@ theorem map_differentIdeal_eq_differentIdeal_completionIntegers (P : Place k F) 
     (P.extended_dual_one_eq_dual_one_completionIntegers P' hP)
 
 variable (k' F') in
-/-- **The different ideal across the semilocal product above `P`.** Extending
-`differentIdeal 𝒪_P 𝒪'_P` diagonally to `∏_{Q' ∣ P} 𝒪̂_{Q'}` yields the product of the completed
-different ideals `differentIdeal 𝒪̂_P 𝒪̂_{Q'}`. -/
+/-- **The different ideal across the semilocal product above `P`** (Neukirch, Chapter III,
+Proposition (2.2)). Extending `differentIdeal 𝒪_P 𝒪'_P` diagonally to `∏_{Q' ∣ P} 𝒪̂_{Q'}` yields
+the product of the completed different ideals `differentIdeal 𝒪̂_P 𝒪̂_{Q'}`. -/
 theorem map_differentIdeal_pi_eq_pi_differentIdeal_completionIntegers (P : Place k F) :
     letI := fun Q' : {Q' : Place k' F' // Q'.restrict k F = P} ↦
       P.completionIntegersExtensionAlgebra Q'.val Q'.property
@@ -512,14 +513,20 @@ a Dedekind affine model of `F`, `C` is its integral closure in `F'`, and `P'` is
 then extending `differentIdeal B C` along `C →+* 𝒪̂_{P'}` yields
 `differentIdeal 𝒪̂_P 𝒪̂_{P'}`. -/
 theorem map_differentIdeal_eq_differentIdeal_completionIntegers_of_forall_mem_integers
-    [IsDedekindDomain C] [Module.IsTorsionFree B C]
     (P : Place k F) (P' : Place k' F') (hP : P'.restrict k F = P)
     (hC : ∀ c : C, algebraMap C F' c ∈ P'.integers) :
     letI := P.completionIntegersExtensionAlgebra P' hP
+    let _ : IsDomain C :=
+      Function.Injective.isDomain (algebraMap C F') (IsIntegralClosure.algebraMap_injective C B F')
+    let _ : IsDedekindDomain C := IsIntegralClosure.isDedekindDomain B F F' C
+    let _ : Module.IsTorsionFree B C :=
+      let _ : Module.IsTorsionFree B F' := .trans_faithfulSMul B F F'
+      IsIntegralClosure.isTorsionFree B F'
     (differentIdeal B C).map
         (P'.completionIntegersEmbedding.toRingHom.comp
           ((algebraMap C F').codRestrict P'.integers hC)) =
       differentIdeal P.completionPlace.integers P'.completionPlace.integers := by
+  intro _ _ _
   let _ := P.completionIntegersExtensionAlgebra P' hP
   have hB : ∀ b : B, algebraMap B F b ∈ P.integers :=
     hP ▸ algebraMap_mem_integers_restrict k F P' hC
