@@ -165,8 +165,8 @@ is the support of the module cut down by the zero locus of the prefix. -/
 theorem isSecant_iff_of_support_eq [Module.Finite R M] [Module.Finite R N]
     (h : support R M = support R N) {rs : List R} : IsSecant M rs ↔ IsSecant N rs := by
   have hdim (ts : List R) :
-      supportDim R (prefixQuotient M ts) = supportDim R (prefixQuotient N ts) := by
-    rw [supportDim, supportDim, support_quotient, support_quotient, h]
+      supportDim R (prefixQuotient M ts) = supportDim R (prefixQuotient N ts) :=
+    supportDim_eq_of_support_eq (by rw [support_quotient, support_quotient, h])
   simp only [isSecant_iff, hdim]
 
 /-- Replacing an entry of a list by a positive power of itself does not affect secancy for a
@@ -177,11 +177,9 @@ theorem isSecant_append_pow_cons_iff [Module.Finite R M] (rs qs : List R) (r : R
       support R (QuotSMulTop r (prefixQuotient M rs)) := by
     rw [support_quotSMulTop, support_quotSMulTop,
       PrimeSpectrum.zeroLocus_singleton_pow _ _ (Nat.pos_of_ne_zero hn)]
-  have hdim : supportDim R (QuotSMulTop (r ^ n) (prefixQuotient M rs)) =
-      supportDim R (QuotSMulTop r (prefixQuotient M rs)) := by
-    rw [supportDim, supportDim, hsupp]
   rw [isSecant_append_iff, isSecant_append_iff, isSecant_cons_iff, isSecant_cons_iff,
-    (maximalIdeal.isMaximal R).isPrime.pow_mem_iff_mem n (Nat.pos_of_ne_zero hn), hdim,
+    (maximalIdeal.isMaximal R).isPrime.pow_mem_iff_mem n (Nat.pos_of_ne_zero hn),
+    supportDim_eq_of_support_eq hsupp,
     isSecant_iff_of_support_eq hsupp]
 
 section Noetherian

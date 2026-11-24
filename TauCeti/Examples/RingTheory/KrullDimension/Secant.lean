@@ -38,7 +38,7 @@ example {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
     [Module.Finite R M] : ¬ IsSecant M [(0 : R)] := by
   have hsupp : support R (QuotSMulTop (0 : R) M) = support R M := by
     simp [support_quotSMulTop]
-  rw [isSecant_singleton_iff, supportDim, hsupp]
+  rw [isSecant_singleton_iff, supportDim_eq_of_support_eq hsupp]
   exact fun h ↦ lt_irrefl _ h.2
 
 /-- `[1]` is never secant, since `1 ∉ 𝔪`. -/
@@ -54,7 +54,7 @@ example {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
   rintro ⟨-, -, -, h⟩
   have hsupp : support R (QuotSMulTop r (QuotSMulTop r M)) = support R (QuotSMulTop r M) := by
     simp [support_quotSMulTop]
-  rw [supportDim, hsupp] at h
+  rw [supportDim_eq_of_support_eq hsupp] at h
   exact lt_irrefl _ h
 
 /-- Only the empty list is secant for the zero module. -/

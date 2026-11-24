@@ -30,6 +30,8 @@ embedded primes.
 
 ## Main results
 
+* `Module.supportDim_eq_of_support_eq`: modules with the same support have the same support
+  dimension.
 * `Module.supportDim_eq_of_surjective`: restriction along a surjective scalar map preserves the
   support dimension of a module.
 * `Module.exists_supportDim_eq_natCast`: a nonzero module over a ring of finite Krull dimension,
@@ -49,6 +51,11 @@ open IsLocalRing
 namespace Module
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- The support dimension of a module depends only on its support. -/
+theorem supportDim_eq_of_support_eq {N : Type*} [AddCommGroup N] [Module R N]
+    (h : support R M = support R N) : supportDim R M = supportDim R N := by
+  rw [supportDim, supportDim, h]
 
 /-- Restriction of scalars along a surjective ring homomorphism preserves the support dimension
 of a module: contraction gives an order isomorphism between the two supports. -/
