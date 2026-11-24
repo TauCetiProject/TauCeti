@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 public import TauCeti.Algebra.Torsor.Basic
+public import Mathlib.Algebra.Torsor.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -285,13 +286,14 @@ theorem val_smul_A (a : A) (x : TorsorCarrier f) : (a • x).val = a * x.val :=
 theorem sdiv_def (x y : TorsorCarrier f) : x /ₛ y = x.val / y.val :=
   (rfl)
 
-/-- The torsor of a cocycle is an `A`-torsor under left multiplication, as `A` is over itself. -/
-instance instTorsor : Torsor A (TorsorCarrier f) where
-  one_smul x := TorsorCarrier.ext (by simp)
-  mul_smul a b x := TorsorCarrier.ext (by simp [mul_assoc])
-  nonempty := ⟨⟨1⟩⟩
-  sdiv_smul' x y := TorsorCarrier.ext (by simp)
-  smul_sdiv' a x := by simp
+instance : Nonempty (TorsorCarrier f) :=
+  ⟨⟨1⟩⟩
+
+/-- The torsor of a cocycle is an `A`-torsor under left multiplication, pulled back from `A`
+as a torsor over itself. -/
+instance instTorsor : Torsor A (TorsorCarrier f) :=
+  Function.Injective.torsor TorsorCarrier.val (fun _ _ ↦ TorsorCarrier.ext) (fun _ _ ↦ rfl)
+    (fun _ _ ↦ rfl)
 
 /-- `g : G` acts on the torsor of `f` by `x ↦ (g • x) * (f g)⁻¹`. -/
 instance instSMulG : SMul G (TorsorCarrier f) where
