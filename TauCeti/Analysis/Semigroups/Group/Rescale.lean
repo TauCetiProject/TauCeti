@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Group.Generator
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Analysis.Semigroups.Identity
 
 /-!
 # Rescaling the time of a strongly continuous group
@@ -106,23 +107,24 @@ theorem reflect_rescale (U : StronglyContinuousGroup X) (s : ℝ) :
     (U.rescale s).reflect = U.rescale (-s) :=
   ext fun t => by rw [reflect_apply, rescale_apply, rescale_apply, mul_neg, neg_mul]
 
+/-- The constant group `U.rescale 0`, restricted to nonnegative times, is the identity
+semigroup. -/
+private theorem rescale_zero_toSemigroup (U : StronglyContinuousGroup X) :
+    (U.rescale 0).toSemigroup = StronglyContinuousSemigroup.id X :=
+  StronglyContinuousSemigroup.ext fun t => by
+    rw [toSemigroup_apply, rescale_apply, zero_mul, U.map_zero,
+      StronglyContinuousSemigroup.id_apply]
+
 /-- The generator of the constant group `U.rescale 0` is the zero operator, defined on the whole
 space. -/
 @[simp]
 theorem rescale_zero_generator (U : StronglyContinuousGroup X) : (U.rescale 0).generator = 0 := by
-  -- Every orbit of `U.rescale 0` is constant, hence differentiable with derivative `0`.
-  have hderiv (x : X) : HasDerivAt (fun t : ℝ => U.rescale 0 t x) 0 0 := by
-    simpa only [rescale_apply, zero_mul, U.map_zero_apply] using hasDerivAt_const (0 : ℝ) x
-  refine LinearPMap.ext ?_ fun x _ _ => ?_
-  · rw [generator_domain, LinearPMap.zero_domain, eq_top_iff]
-    exact fun x _ => (U.rescale 0).mem_domain_of_hasDerivAt_zero (hderiv x)
-  · rw [LinearPMap.zero_apply]
-    exact (U.rescale 0).generator_eq_of_hasDerivAt_zero (hderiv x)
+  rw [generator_def, rescale_zero_toSemigroup, StronglyContinuousSemigroup.id_generator_eq_zero]
 
 /-- The generator domain of the constant group `U.rescale 0` is the whole space. -/
 @[simp]
 theorem rescale_zero_domain (U : StronglyContinuousGroup X) : (U.rescale 0).domain = ⊤ := by
-  rw [← generator_domain, rescale_zero_generator, LinearPMap.zero_domain]
+  rw [domain_def, rescale_zero_toSemigroup, StronglyContinuousSemigroup.id_domain_eq_top]
 
 variable [CompleteSpace X]
 
