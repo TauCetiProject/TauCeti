@@ -326,6 +326,16 @@ theorem toWalk_open (P : OpenEar S) : (Ear.open P).toWalk = P.toWalk :=
 theorem toWalk_closed (P : ClosedEar S) : (Ear.closed P).toWalk = P.toWalk :=
   (rfl)
 
+/-- The first vertex of either kind of directed ear is an old vertex. -/
+theorem source_mem (P : Ear S) : P.toWalk.1 ∈ S.vertexSet := by
+  cases P with
+  | «open» P =>
+    cases P
+    simpa only [toWalk_open, OpenEar.toWalk_mk] using ‹_ ∈ S.vertexSet›
+  | closed P =>
+    cases P
+    simpa only [toWalk_closed, ClosedEar.toWalk_mk] using ‹_ ∈ S.vertexSet›
+
 /-- Ears over `S` are determined by their endpoint-indexed walk; distinctness vs. equality of the
 walk's endpoints distinguishes open ears from closed ears. -/
 @[ext]
@@ -545,6 +555,43 @@ def walkAt (D : EarDecomposition T) (i : Fin D.length) : Σ s t : V, ArrowWalk N
 theorem walkAt_def (D : EarDecomposition T) (i : Fin D.length) :
     D.walkAt i = (D.ear i).toWalk :=
   (rfl)
+
+/-- A decomposition of a fixed subnetwork is determined by its sequence of endpoint-indexed
+walks: these recover the initial vertex, every stage, and every ear. -/
+theorem ext_walkAt {D E : EarDecomposition T} (hlength : D.length = E.length)
+    (hwalk : ∀ i : Fin D.length, D.walkAt i = E.walkAt (Fin.cast hlength i)) : D = E := by
+  cases D with | mk n x stage ear hz hs hl => ?_
+  cases E with | mk m y stage' ear' hz' hs' hl' => ?_
+  cases hlength
+  simp only [walkAt, Fin.cast_eq_self] at hwalk
+  have hinitial : x = y := by
+    cases n with
+    | zero =>
+      have h := congrArg Subnetwork.vertexSet
+        (hz.symm.trans (hl.trans (hl'.symm.trans hz')))
+      exact Set.singleton_injective (by simpa only [Subnetwork.vertexSet_singleton] using h)
+    | succ n =>
+      have hx : (ear 0).toWalk.1 = x := by
+        simpa only [Fin.castSucc_zero, hz, Subnetwork.vertexSet_singleton,
+          Set.mem_singleton_iff] using (ear 0).source_mem
+      have hy : (ear' 0).toWalk.1 = y := by
+        simpa only [Fin.castSucc_zero, hz', Subnetwork.vertexSet_singleton,
+          Set.mem_singleton_iff] using (ear' 0).source_mem
+      exact hx.symm.trans ((congrArg Sigma.fst (hwalk 0)).trans hy)
+  cases hinitial
+  have hstage : stage = stage' := by
+    funext i
+    induction i using Fin.induction with
+    | zero => exact hz.trans hz'.symm
+    | succ i ih =>
+      rw [hs i, hs' i, Ear.adjoin_def, Ear.adjoin_def]
+      exact congrArg₂ (· ⊔ ·) ih
+        (by simpa only [Ear.toSubnetwork_eq_toWalk] using
+          congrArg (fun p : Σ s t, ArrowWalk N.Hom s t ↦ p.2.2.toSubnetwork) (hwalk i))
+  cases hstage
+  have hears := funext fun i ↦ Ear.ext (hwalk i)
+  cases hears
+  rfl
 
 /-- Reindex the final subnetwork of an ear decomposition along an equality. -/
 @[expose]

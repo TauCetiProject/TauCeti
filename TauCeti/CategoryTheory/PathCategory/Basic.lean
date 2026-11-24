@@ -8,33 +8,55 @@ module
 public import Mathlib.CategoryTheory.PathCategory.Basic
 
 /-!
-# Path categories of explicitly supplied quivers
+# The path category of an explicit quiver, on the original objects
 
-Mathlib's path category `CategoryTheory.Paths.categoryPaths` and paths of length one
-`Quiver.Hom.toPath` take the quiver structure as an instance argument. When one type carries
-several quivers, as the objects of an implicit double category carry a horizontal and a vertical
-generating quiver, the quiver has to be named explicitly. This file supplies those two
-constructions with the quiver as an explicit argument.
+Mathlib's free category `Paths.categoryPaths` on a quiver `Q` is a category structure on the
+type synonym `Paths O`. When several quivers on the same objects `O` are in play at once, for
+instance the horizontal and the vertical generating quivers of an implicit double category, it
+is convenient to read the free category as a category structure on `O` itself, supplied
+explicitly rather than found by instance search. `TauCeti.pathCategory O Q` is this category
+structure; its identities are empty paths and its composition is concatenation of paths.
 
 ## Main declarations
 
-* `Quiver.pathCategory`: the category of paths of an explicitly supplied quiver.
-* `Quiver.Hom.toPathOf`: the path of length one on a generator of an explicitly supplied quiver.
+* `TauCeti.pathCategory`: the free category on an explicitly supplied quiver, on its objects.
+* `Quiver.pathCategory_id` and `Quiver.pathCategory_comp`: its identities and composition, as
+  operations on `Quiver.Path`.
 -/
 
-@[expose] public section
+public section
 
 universe u h
 
+namespace TauCeti
+
 open CategoryTheory
 
-/-- The category of paths of an explicitly supplied quiver `Q` on `O`. Its morphisms are the
-paths `Quiver.Path`, its composition is concatenation and its identities are the empty paths. -/
-abbrev Quiver.pathCategory (O : Type u) (Q : Quiver.{h} O) : Category.{max u h} O :=
+/-- The free category on an explicitly supplied quiver `Q` on `O`: its morphisms are the paths
+of `Q`, composed by concatenation. It is Mathlib's path category `Paths.categoryPaths`, read as a
+category structure on `O` itself, and it is not installed as an instance. -/
+abbrev pathCategory (O : Type u) (Q : Quiver.{h} O) : Category.{max u h} O :=
   @Paths.categoryPaths O Q
 
-/-- The path of length one on a generator `f` of an explicitly supplied quiver `Q`: this is
-`Quiver.Hom.toPath` with the quiver given explicitly. -/
-abbrev Quiver.Hom.toPathOf {O : Type u} (Q : Quiver.{h} O) {a b : O} (f : @Quiver.Hom O Q a b) :
-    @Quiver.Path O Q a b :=
-  @Quiver.Hom.toPath O Q a b f
+end TauCeti
+
+namespace Quiver
+
+open CategoryTheory TauCeti
+
+variable {O : Type u}
+
+/-- The identity morphism of the path category is the empty path. -/
+@[simp]
+theorem pathCategory_id (Q : Quiver.{h} O) (a : O) :
+    CategoryStruct.id (self := (pathCategory O Q).toCategoryStruct) a = @Path.nil O Q a :=
+  rfl
+
+/-- Composition in the path category is concatenation of paths. -/
+@[simp]
+theorem pathCategory_comp (Q : Quiver.{h} O) {a b c : O} (p : @Path O Q a b)
+    (q : @Path O Q b c) :
+    CategoryStruct.comp (self := (pathCategory O Q).toCategoryStruct) p q = p.comp q :=
+  rfl
+
+end Quiver

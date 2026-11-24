@@ -61,7 +61,8 @@ theorem exists_linearMap_quotient_end
       infer_instance)
   -- A morphism of `I` is not an isomorphism, so `ψ` descends to `(C/I)(X, X)`.
   refine ⟨(I.homSubmodule R X X).liftQ ψ (fun c hc ↦ LinearMap.mem_ker.mpr (hψ c (by
-      simpa using I.not_isIso_of_mem hX ((MorphismIdeal.mem_homSubmodule R I c).mp hc)))) ∘ₗ
+      simpa using fun _ : IsIso c ↦ I.not_isSplitMono_of_mem hX
+        ((MorphismIdeal.mem_homSubmodule R I c).mp hc) inferInstance))) ∘ₗ
     (I.homLinearEquiv R X X).symm.toLinearMap, ?_, fun c hc ↦ ?_⟩
   · rw [LinearMap.comp_apply, LinearEquiv.coe_coe,
       MorphismIdeal.homLinearEquiv_symm_quotientFunctor_map, Submodule.liftQ_apply]

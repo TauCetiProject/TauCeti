@@ -44,11 +44,6 @@ composition and cancellation laws of this transport, its comparison with heterog
 and its interaction with both pastings and both identity cells, so that the laws can be used by
 rewriting without manipulating heterogeneous equalities.
 
-The transpose `TauCeti.StrictDoubleCategory.transpose` of a strict double category exchanges the
-horizontal and vertical directions: its horizontal edges, identity cells and pasting are the
-vertical ones of the original, and conversely. A statement about the horizontal direction applied
-to the transpose gives the corresponding statement about the vertical direction.
-
 ## Main declarations
 
 * `TauCeti.DoubleCategoryStruct`: boundary-indexed cells with identities and both pastings.
@@ -56,8 +51,6 @@ to the transpose gives the corresponding statement about the vertical direction.
   boundary edges.
 * `TauCeti.StrictDoubleCategory`: the laws of a strict double category, including
   `TauCeti.StrictDoubleCategory.interchange` and `TauCeti.StrictDoubleCategory.hId_id`.
-* `TauCeti.StrictDoubleCategory.transpose`: the transpose of a strict double category, exchanging
-  its horizontal and vertical directions.
 
 ## References
 
@@ -169,6 +162,15 @@ theorem _root_.TauCeti.DoubleCategoryStruct.Cell.eq_cast_iff_heq
     (α : D.Cell p q l r) (β : D.Cell p' q' l' r') : β = α.cast hp hq hl hr ↔ β ≍ α := by
   subst hp hq hl hr
   exact heq_iff_eq.symm
+
+/-- Move a boundary transport across an equality using its inverse, without introducing
+heterogeneous equality in the statement. -/
+theorem _root_.TauCeti.DoubleCategoryStruct.Cell.cast_eq_iff
+    (hp : p = p') (hq : q = q') (hl : l = l') (hr : r = r')
+    (α : D.Cell p q l r) (β : D.Cell p' q' l' r') :
+    α.cast hp hq hl hr = β ↔ α = β.cast hp.symm hq.symm hl.symm hr.symm := by
+  subst hp hq hl hr
+  rfl
 
 /-- Transport of cells along equalities of boundaries is injective. -/
 @[simp]
@@ -340,71 +342,26 @@ namespace StrictDoubleCategory
 
 attribute [simp] hId_hComp hComp_hId vId_vComp vComp_vId
 
-end StrictDoubleCategory
-
-namespace DoubleCategoryStruct
-
 variable {O : Type u} {H : Category.{h} O} {V : Category.{v} O}
+  (D : StrictDoubleCategory.{s} O H V)
 
-/-- The transpose of the data of a double category: its horizontal and vertical edges are the
-vertical and horizontal edges of `D`, a cell with boundary `(p, q, l, r)` is a cell of `D` with
-boundary `(l, r, p, q)`, and horizontal and vertical identity cells and pastings are exchanged. -/
-@[simps hId vId hComp vComp]
-def transpose (D : DoubleCategoryStruct.{s} O H V) : DoubleCategoryStruct.{s} O V H where
-  Cell p q l r := D.Cell l r p q
-  hId := D.vId
-  vId := D.hId
-  hComp := D.vComp
-  vComp := D.hComp
-
-variable {D : DoubleCategoryStruct.{s} O H V}
-
-/-- A cell of the transpose with boundary `(p, q, l, r)` is a cell with boundary `(l, r, p, q)`. -/
-theorem transpose_cell {a b c d : O} (p : Edge V a b) (q : Edge V c d) (l : Edge H a c)
-    (r : Edge H b d) : D.transpose.Cell p q l r = D.Cell l r p q :=
-  rfl
-
-/-- Transport of a cell of the transpose is transport in the original double category, with the
-horizontal and vertical boundary equalities exchanged. -/
+/-- The vertical identity cell on an identity horizontal edge is a left unit for horizontal
+pasting, since it is the horizontal identity cell on the identity vertical edge. -/
 @[simp]
-theorem transpose_cast {a b c d : O} {p p' : Edge V a b} {q q' : Edge V c d} {l l' : Edge H a c}
-    {r r' : Edge H b d} (hp : p = p') (hq : q = q') (hl : l = l') (hr : r = r')
-    (α : D.transpose.Cell p q l r) :
-    Cell.cast (D := D.transpose) hp hq hl hr α = Cell.cast (D := D) hl hr hp hq α := by
-  subst hp hq hl hr
-  rfl
+theorem vId_edgeId_hComp {a b d : O} {p : Edge H a b} {q : Edge H a d} {r : Edge V b d}
+    (α : D.Cell p q (edgeId V a) r) :
+    D.hComp (D.vId (edgeId H a)) α = α.cast (Category.id_comp (self := H) p).symm
+      (Category.id_comp (self := H) q).symm rfl rfl := by
+  rw [← hId_id, hId_hComp]
 
+/-- The vertical identity cell on an identity horizontal edge is a right unit for horizontal
+pasting, since it is the horizontal identity cell on the identity vertical edge. -/
 @[simp]
-theorem transpose_transpose : D.transpose.transpose = D :=
-  rfl
-
-end DoubleCategoryStruct
-
-namespace StrictDoubleCategory
-
-variable {O : Type u} {H : Category.{h} O} {V : Category.{v} O}
-
-/-- The transpose of a strict double category, exchanging the roles of horizontal and vertical
-edges, of horizontal and vertical identity cells, and of horizontal and vertical pasting. A
-statement about the horizontal direction of a strict double category gives the corresponding
-statement about the vertical direction when applied to its transpose. -/
-@[simps! toDoubleCategoryStruct]
-def transpose (D : StrictDoubleCategory.{s} O H V) : StrictDoubleCategory.{s} O V H where
-  toDoubleCategoryStruct := D.toDoubleCategoryStruct.transpose
-  hId_hComp α := (D.vId_vComp α).trans (transpose_cast _ _ _ _ α).symm
-  hComp_hId α := (D.vComp_vId α).trans (transpose_cast _ _ _ _ α).symm
-  vId_vComp α := (D.hId_hComp α).trans (transpose_cast _ _ _ _ α).symm
-  vComp_vId α := (D.hComp_hId α).trans (transpose_cast _ _ _ _ α).symm
-  hComp_assoc α β γ := (D.vComp_assoc α β γ).trans (transpose_cast _ _ _ _ _).symm
-  vComp_assoc α β γ := (D.hComp_assoc α β γ).trans (transpose_cast _ _ _ _ _).symm
-  interchange α β γ δ := (D.interchange α γ β δ).symm
-  hId_comp := D.vId_comp
-  vId_comp := D.hId_comp
-  hId_id a := (D.hId_id a).symm
-
-@[simp]
-theorem transpose_transpose (D : StrictDoubleCategory.{s} O H V) : D.transpose.transpose = D :=
-  rfl
+theorem hComp_vId_edgeId {a b c : O} {p : Edge H a b} {q : Edge H c b} {l : Edge V a c}
+    (α : D.Cell p q l (edgeId V b)) :
+    D.hComp α (D.vId (edgeId H b)) = α.cast (Category.comp_id (self := H) p).symm
+      (Category.comp_id (self := H) q).symm rfl rfl := by
+  rw [← hId_id, hComp_hId]
 
 end StrictDoubleCategory
 

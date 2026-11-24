@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Section
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Topology.FiberBundle.Countable
+import TauCeti.Topology.FiberBundle.LocallyCompact
 import TauCeti.Topology.FiberBundle.Separation
 import TauCeti.Topology.LocallyFinite.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -402,15 +403,12 @@ theorem exists_parametric_morse_partialDiffeomorph (hW : IsOpen W)
     exact ⟨fun x ↦ isEmptyElim x, (Diffeomorph.refl _ (TotalSpace F E) n).toPartialDiffeomorph,
       fun b ↦ isEmptyElim b, fun x _ ↦ isEmptyElim x, fun x ↦ isEmptyElim x,
       fun x _ ↦ isEmptyElim x, fun b ↦ isEmptyElim b, fun x _ ↦ isEmptyElim x⟩
-  have : LocallyCompactSpace (ModelProd HB F) := (IB.prod 𝓘(ℝ, F)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace F E) :=
-    ChartedSpace.locallyCompactSpace (ModelProd HB F) _
+  have : LocallyCompactSpace HB := IB.locallyCompactSpace
+  have : LocallyCompactSpace B := ChartedSpace.locallyCompactSpace HB B
   have : MetrizableSpace (TotalSpace F E) := Manifold.metrizableSpace (IB.prod 𝓘(ℝ, F)) _
   have : Nonempty (TotalSpace F E) := hB.map (zeroSection F E)
   -- Over each base point `b`, use the coordinate of the chart at a member `j b` of a locally
   -- finite closed cover containing `b`.
-  have : LocallyCompactSpace HB := IB.locallyCompactSpace
-  have : LocallyCompactSpace B := ChartedSpace.locallyCompactSpace HB B
   obtain ⟨K, hKc, hKcov, hKlf, hKsub⟩ := precise_closed_refinement
     (fun i : B ↦ (trivializationAt F E i).baseSet ∩ (extChartAt IB i).source)
     (fun i ↦ (trivializationAt F E i).open_baseSet.inter (isOpen_extChartAt_source i))
