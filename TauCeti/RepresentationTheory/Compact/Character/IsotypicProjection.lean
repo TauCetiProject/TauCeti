@@ -42,6 +42,8 @@ Mathlib's `isotypicComponent` of type `sigma`.
   an irreducible subrepresentation of `rho` of the selected isomorphism type.
 * `ContRepresentation.isotypicProjector_apply_subtype_of_not_equiv`: it vanishes on an irreducible
   subrepresentation of `rho` of every other isomorphism type.
+* `ContRepresentation.isotypicProjector_apply_of_mem_isotypicComponent_of_not_equiv`: hence it
+  vanishes on the isotypic component of every irreducible of another isomorphism type.
 * `ContRepresentation.range_isotypicProjector`: the range of the projector is precisely Mathlib's
   `isotypicComponent`.
 * `ContRepresentation.isotypicProjector_idempotent`: the projector is idempotent.
@@ -326,6 +328,39 @@ theorem isotypicProjector_apply_subtype_of_not_equiv
     rw [isotypicKernel, integratedOperator_smul, hzero, smul_zero]
   rw [isotypicProjector_apply_coe rho hrho sigma hsigma hblock, zero_apply,
     ZeroMemClass.coe_zero]
+
+omit [FiniteDimensional k W'] [IsAlgClosed k] in
+/-- The isotypic projector vanishes on the isotypic component of an inequivalent irreducible. -/
+theorem isotypicProjector_apply_of_mem_isotypicComponent_of_not_equiv
+    (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
+    (hirr : Representation.IsIrreducible sigma.toRepresentation)
+    (tau : ContRepresentation k G W') (htau : Representation.IsIrreducible tau.toRepresentation)
+    (hne : IsEmpty (tau.toRepresentation.asModule ≃ₗ[k[G]] sigma.toRepresentation.asModule))
+    (v : V)
+    (hv : rho.toRepresentation.asModuleEquiv.symm v ∈
+      isotypicComponent k[G] rho.toRepresentation.asModule tau.toRepresentation.asModule) :
+    isotypicProjector rho hrho sigma hsigma v = 0 := by
+  let _ : IsSimpleModule k[G] tau.toRepresentation.asModule :=
+    (Representation.irreducible_iff_isSimpleModule_asModule _).mp htau
+  have hle : isotypicComponent k[G] rho.toRepresentation.asModule tau.toRepresentation.asModule ≤
+      LinearMap.ker (Representation.IntertwiningMap.equivLinearMapAsModule _ _
+        (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap) := by
+    refine sSup_le fun m hm x hx ↦ ?_
+    let t : Subrepresentation rho.toRepresentation := Subrepresentation.ofSubmodule' m
+    have ht : IsAtom t := Subrepresentation.isSimpleModule_asSubmodule_iff.mp
+      (IsSimpleModule.congr hm.some)
+    have hne' : IsEmpty (t.asSubmodule ≃ₗ[k[G]] sigma.toRepresentation.asModule) :=
+      ⟨fun e ↦ hne.false (hm.some.symm.trans e)⟩
+    exact ((Representation.IntertwiningMap.equivLinearMapAsModule_apply
+      (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap x).trans
+      (ContIntertwiningMap.toIntertwiningMap_apply (isotypicProjector rho hrho sigma hsigma)
+        (x : V))).trans
+        (isotypicProjector_apply_subtype_of_not_equiv rho hrho sigma hsigma hirr ht hne'
+          (⟨x, hx⟩ : t.toSubmodule))
+  exact (ContIntertwiningMap.toIntertwiningMap_apply (isotypicProjector rho hrho sigma hsigma)
+    v).symm.trans ((Representation.IntertwiningMap.equivLinearMapAsModule_apply
+      (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap _).symm.trans
+        (LinearMap.mem_ker.mp (hle hv)))
 
 /-- The character projector sends every simple submodule of `rho` into the isotypic component. -/
 private lemma equivLinearMapAsModule_isotypicProjector_mem_isotypicComponent
