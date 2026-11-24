@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RigidMotion
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.AffineIsometry
+import TauCeti.MeasureTheory.Integral.Bochner.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 
 /-!
@@ -71,74 +72,30 @@ variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace �
 
 /-! ### Moving fields by an affine isometry of the plane
 
-Smooth test fields are moved pointwise by `motion`; square-integrable classes are moved by
-`MeasureTheory.Lp.rigidMotionₗᵢ`, which is almost everywhere `motion`
-(`MeasureTheory.Lp.coeFn_rigidMotionₗᵢ`). -/
+Smooth test fields `v` are moved pointwise to `R ∘ v ∘ g`; square-integrable classes are moved by
+`MeasureTheory.Lp.rigidMotionₗᵢ`, which is almost everywhere `R ∘ f ∘ g`
+(`MeasureTheory.Lp.coeFn_rigidMotionₗᵢ`). Pairings of moved fields are compared by
+`MeasureTheory.MeasurePreserving.integral_inner_comp_comp`. -/
 
-/-- The field `z ↦ R (v (g z))`: `v` pulled back by the affine isometry `g` of the plane, with
-values moved by the linear isometry `R`. -/
-private def motion (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4))
-    (g : ℂ ≃ᵃⁱ[ℝ] ℂ) (v : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : EuclideanSpace ℝ (Fin 4) :=
-  R (v (g z))
-
-private theorem motion_apply (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4))
-    (g : ℂ ≃ᵃⁱ[ℝ] ℂ) (v : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    motion R g v z = R (v (g z)) := (rfl)
-
-private theorem rotateField_translateField_eq_motion (u : Circle) (a : ℂ)
-    (v : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    rotateField u (translateField a v) = motion (fieldRotation u) (u.rigidMotion a) v :=
-  funext fun z ↦ by
-    rw [rotateField_apply_eq_fieldRotation, translateField_apply, motion_apply,
-      Circle.rigidMotion_apply]
-
-private theorem rotateTarget_translateField_eq_motion (u : Circle) (a : ℂ)
+private theorem rotateTarget_translateField_eq_comp (u : Circle) (a : ℂ)
     (η : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    rotateTarget u (translateField a η) = motion (targetRotation u) (u.rigidMotion a) η :=
+    rotateTarget u (translateField a η) = targetRotation u ∘ η ∘ u.rigidMotion a :=
   funext fun z ↦ by
-    rw [rotateTarget_apply_eq_targetRotation, translateField_apply, motion_apply,
-      Circle.rigidMotion_apply]
-
-private theorem motion_motion_symm (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4))
-    (g : ℂ ≃ᵃⁱ[ℝ] ℂ) (v : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    motion R g (motion R.symm g.symm v) = v :=
-  funext fun z ↦ by simp only [motion_apply, AffineIsometryEquiv.symm_apply_apply,
-    LinearIsometryEquiv.apply_symm_apply]
-
-private theorem contDiff_motion {n : WithTop ℕ∞}
-    (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
-    {v : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : ContDiff ℝ n v) : ContDiff ℝ n (motion R g v) :=
-  R.toContinuousLinearEquiv.contDiff.comp
-    (hv.comp g.toAffineIsometry.toContinuousAffineMap.contDiff)
-
-private theorem hasCompactSupport_motion
-    (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
-    {v : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : HasCompactSupport v) :
-    HasCompactSupport (motion R g v) :=
-  (hv.comp_homeomorph g.toHomeomorph).comp_left (g := R) (map_zero R)
-
-/-- Moving both fields by the same motion preserves their `L²` pairing. -/
-private theorem integral_inner_motion
-    (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
-    {v w v' w' : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : v' =ᵐ[μ] motion R g v)
-    (hw : w' =ᵐ[μ] motion R g w) :
-    ∫ z, ⟪v' z, w' z⟫ ∂μ = ∫ z, ⟪v z, w z⟫ ∂μ := by
-  refine (integral_congr_ae ?_).trans ((g.measurePreserving_addHaar μ).integral_comp
-    g.toHomeomorph.measurableEmbedding fun z ↦ ⟪v z, w z⟫)
-  filter_upwards [hv, hw] with z h₁ h₂
-  rw [h₁, h₂, motion_apply, motion_apply, LinearIsometryEquiv.inner_map_map]
+    rw [rotateTarget_apply_eq_targetRotation, translateField_apply, Function.comp_apply,
+      Function.comp_apply, Circle.rigidMotion_apply]
 
 /-- The formal adjoint at the moved field of the moved target of a `C¹` test field is the moved
 formal adjoint. -/
 private theorem gaugeFixedAdjoint_rotateField_translateField (u : Circle) (a : ℂ)
     (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 1 η) :
     gaugeFixedAdjoint (rotateField u (translateField a x)) (rotateTarget u (translateField a η)) =
-      motion (fieldRotation u) (u.rigidMotion a) (gaugeFixedAdjoint x η) := by
+      fieldRotation u ∘ gaugeFixedAdjoint x η ∘ u.rigidMotion a := by
   funext z
   have hd (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ translateField a η w i) (u * z) :=
     (contDiff_euclidean.1 (contDiff_translateField a hη) i).differentiable_one _
   rw [gaugeFixedAdjoint_rotateField (hd 2) (hd 3), rotateField_apply_eq_fieldRotation,
-    gaugeFixedAdjoint_translateField, motion_apply, Circle.rigidMotion_apply]
+    gaugeFixedAdjoint_translateField, Function.comp_apply, Function.comp_apply,
+    Circle.rigidMotion_apply]
 
 /-! ### Weak solutions -/
 
@@ -154,8 +111,15 @@ theorem isGaugeFixedWeakSolution_rotateField_translateField_iff (u : Circle) (a 
         (Lp.rigidMotionₗᵢ μ 2 (targetRotation u) (u.rigidMotion a) f)
         (Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y) ↔
       IsGaugeFixedWeakSolution μ x f y := by
-  have hf := Lp.coeFn_rigidMotionₗᵢ (targetRotation u) (u.rigidMotion a) f
-  have hy := Lp.coeFn_rigidMotionₗᵢ (fieldRotation u) (u.rigidMotion a) y
+  have hg := (u.rigidMotion a).measurePreserving_addHaar μ
+  have hge := (u.rigidMotion a).toHomeomorph.measurableEmbedding
+  -- Pairing a moved class with a moved test field is pairing the class with the test field.
+  have pair {R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)}
+      {v' v : ℂ → EuclideanSpace ℝ (Fin 4)} (hv : v' =ᵐ[μ] fun z ↦ R (v (u.rigidMotion a z)))
+      (w : ℂ → EuclideanSpace ℝ (Fin 4)) :
+      ∫ z, ⟪v' z, (R ∘ w ∘ u.rigidMotion a) z⟫ ∂μ = ∫ z, ⟪v z, w z⟫ ∂μ :=
+    (integral_congr_ae (hv.comp₂ _ .rfl)).trans
+      (hg.integral_inner_comp_comp hge R.toLinearIsometry v w)
   -- Testing at `x'` against the moved target of `η` is testing at `x` against `η`.
   have key {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) :
       (∫ z, ⟪Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a) y z,
@@ -165,19 +129,29 @@ theorem isGaugeFixedWeakSolution_rotateField_translateField_iff (u : Circle) (a 
           rotateTarget u (translateField a η) z⟫ ∂μ) ↔
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ := by
     rw [gaugeFixedAdjoint_rotateField_translateField u a x (hη.of_le one_le_two),
-      rotateTarget_translateField_eq_motion, integral_inner_motion _ _ hy .rfl,
-      integral_inner_motion _ _ hf .rfl]
+      rotateTarget_translateField_eq_comp, pair (Lp.coeFn_rigidMotionₗᵢ _ _ y),
+      pair (Lp.coeFn_rigidMotionₗᵢ _ _ f)]
+  -- A moved test field is a test field.
+  have hmove (R : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4)) (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
+      {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+      ContDiff ℝ 2 (R ∘ η ∘ g) ∧ HasCompactSupport (R ∘ η ∘ g) :=
+    ⟨R.toContinuousLinearEquiv.contDiff.comp
+        (hη.comp g.toAffineIsometry.toContinuousAffineMap.contDiff),
+      (hηc.comp_homeomorph g.toHomeomorph).comp_left (g := R) (map_zero R)⟩
   rw [isGaugeFixedWeakSolution_iff, isGaugeFixedWeakSolution_iff]
   refine ⟨fun h η hη hηc ↦ (key hη).1 ?_, fun h ν hν hνc ↦ ?_⟩
-  · have h' := h _ (contDiff_motion (targetRotation u) (u.rigidMotion a) hη)
-      (hasCompactSupport_motion _ _ hηc)
-    rwa [← rotateTarget_translateField_eq_motion] at h'
+  · obtain ⟨hη', hηc'⟩ := hmove (targetRotation u) (u.rigidMotion a) hη hηc
+    rw [rotateTarget_translateField_eq_comp]
+    exact h _ hη' hηc'
   · -- The test field `ν` at `x'` is the moved target of a test field at `x`.
     have hT : rotateTarget u (translateField a
-        (motion (targetRotation u).symm (u.rigidMotion a).symm ν)) = ν := by
-      rw [rotateTarget_translateField_eq_motion, motion_motion_symm]
-    have hη := contDiff_motion (targetRotation u).symm (u.rigidMotion a).symm hν
-    have h' := (key hη).2 (h _ hη (hasCompactSupport_motion _ _ hνc))
+        ((targetRotation u).symm ∘ ν ∘ (u.rigidMotion a).symm)) = ν := by
+      rw [rotateTarget_translateField_eq_comp]
+      funext z
+      simp only [Function.comp_apply, AffineIsometryEquiv.symm_apply_apply,
+        LinearIsometryEquiv.apply_symm_apply]
+    obtain ⟨hη, hηc⟩ := hmove (targetRotation u).symm (u.rigidMotion a).symm hν hνc
+    have h' := (key hη).2 (h _ hη hηc)
     rwa [hT] at h'
 
 /-- The rigid motions on weak solutions: if `y` is a weak solution of `L_x y = f`, then the moved
@@ -222,7 +196,10 @@ theorem isMinimalGaugeFixedWeakSolution_rotateField_translateField_iff (u : Circ
   rw [(Lp.rigidMotionₗᵢ μ 2 (fieldRotation u) (u.rigidMotion a)).surjective.forall]
   refine forall_congr' fun w ↦ ?_
   rw [isGaugeFixedWeakSolution_zero_rotateField_translateField_iff u a,
-    integral_inner_motion _ _ (Lp.coeFn_rigidMotionₗᵢ _ _ y) (Lp.coeFn_rigidMotionₗᵢ _ _ w)]
+    (integral_congr_ae
+        ((Lp.coeFn_rigidMotionₗᵢ _ _ y).comp₂ _ (Lp.coeFn_rigidMotionₗᵢ _ _ w))).trans
+      (((u.rigidMotion a).measurePreserving_addHaar μ).integral_inner_comp_comp
+        (u.rigidMotion a).toHomeomorph.measurableEmbedding (fieldRotation u).toLinearIsometry y w)]
 
 /-- The rigid motions on minimal weak solutions: if `y` is a minimal weak solution of `L_x y = f`,
 then the moved `y` is a minimal weak solution at `rotateField u (translateField a x)` with the
