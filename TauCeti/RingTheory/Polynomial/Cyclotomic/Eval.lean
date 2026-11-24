@@ -49,10 +49,10 @@ divisors.
 * `TauCeti.natCast_le_homogeneousCyclotomic_prime`,
   `TauCeti.natCast_lt_homogeneousCyclotomic_prime`: `p ≤ Φ_p(a, b)` for `a, b ≥ 1`, strictly if
   `a > 1`, in an ordered commutative ring.
-* `TauCeti.natCast_le_homogeneousCyclotomic_prime_pow`,
-  `TauCeti.natCast_lt_homogeneousCyclotomic_prime_pow`: the same bounds for `Φ_{p ^ k}(a, b)`,
+* `Nat.Prime.natCast_le_homogeneousCyclotomic_prime_pow`,
+  `Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow`: the same bounds for `Φ_{p ^ k}(a, b)`,
   `k ≠ 0`.
-* `TauCeti.natCast_lt_homogeneousCyclotomic_of_two_le_sub`: `p < Φ_n(a, b)` for every prime
+* `Nat.Prime.natCast_lt_homogeneousCyclotomic_of_two_le_sub_real`: `p < Φ_n(a, b)` for every prime
   `p ∣ n ≠ 0` and real bases `0 < b` with `2 ≤ a - b`.
 
 ## References
@@ -142,8 +142,8 @@ theorem pow_sub_pow_div_add_pow_totient_lt_homogeneousCyclotomic {p m : ℕ} (hp
 
 /-- For a prime `p` dividing `n ≠ 0` and real `0 < b` with `2 ≤ a - b`, `p < Φ_n(a, b)`
 (Birkhoff–Vandiver 1904, p. 178). The hypothesis `2 ≤ a - b` is needed: `Φ_6(2, 1) = 3`. -/
-theorem natCast_lt_homogeneousCyclotomic_of_two_le_sub {p n : ℕ} (hp : p.Prime) (hpn : p ∣ n)
-    (hn : n ≠ 0) {a b : ℝ} (hb : 0 < b) (hab : 2 ≤ a - b) :
+theorem _root_.Nat.Prime.natCast_lt_homogeneousCyclotomic_of_two_le_sub_real {p n : ℕ}
+    (hp : p.Prime) (hpn : p ∣ n) (hn : n ≠ 0) {a b : ℝ} (hb : 0 < b) (hab : 2 ≤ a - b) :
     (p : ℝ) < homogeneousCyclotomic n a b := by
   have htot : p - 1 ≤ n.totient := by
     rw [← Nat.totient_prime hp]
@@ -186,16 +186,18 @@ theorem natCast_lt_homogeneousCyclotomic_prime {p : ℕ} (hp : p.Prime) {a b : R
 
 /-- For a prime `p`, `k ≠ 0` and `a, b ≥ 1` in an ordered commutative ring,
 `p ≤ Φ_{p ^ k}(a, b)`. -/
-theorem natCast_le_homogeneousCyclotomic_prime_pow {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0)
-    {a b : R} (ha : 1 ≤ a) (hb : 1 ≤ b) : (p : R) ≤ homogeneousCyclotomic (p ^ k) a b := by
+theorem _root_.Nat.Prime.natCast_le_homogeneousCyclotomic_prime_pow {p k : ℕ} (hp : p.Prime)
+    (hk : k ≠ 0) {a b : R} (ha : 1 ≤ a) (hb : 1 ≤ b) :
+    (p : R) ≤ homogeneousCyclotomic (p ^ k) a b := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
   rw [homogeneousCyclotomic_prime_pow hp]
   exact natCast_le_homogeneousCyclotomic_prime hp (one_le_pow₀ ha) (one_le_pow₀ hb)
 
 /-- For a prime `p`, `k ≠ 0`, `1 < a` and `1 ≤ b` in an ordered commutative ring,
 `p < Φ_{p ^ k}(a, b)`. -/
-theorem natCast_lt_homogeneousCyclotomic_prime_pow {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0)
-    {a b : R} (ha : 1 < a) (hb : 1 ≤ b) : (p : R) < homogeneousCyclotomic (p ^ k) a b := by
+theorem _root_.Nat.Prime.natCast_lt_homogeneousCyclotomic_prime_pow {p k : ℕ} (hp : p.Prime)
+    (hk : k ≠ 0) {a b : R} (ha : 1 < a) (hb : 1 ≤ b) :
+    (p : R) < homogeneousCyclotomic (p ^ k) a b := by
   obtain ⟨e, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk
   rw [homogeneousCyclotomic_prime_pow hp]
   exact natCast_lt_homogeneousCyclotomic_prime hp
@@ -257,8 +259,8 @@ where `Φ_6(2, 1) = 3`; at `b = 0` it fails for `(a, b, n, p) = (2, 0, 2, 2)`, w
 theorem natCast_lt_homogeneousCyclotomic_of_two_le_sub {p n : ℕ} (hp : p.Prime)
     (hpn : p ∣ n) (hn : n ≠ 0) {a b : ℤ} (hb : 0 < b) (hab : 2 ≤ a - b) :
     (p : ℤ) < homogeneousCyclotomic n a b := by
-  exact_mod_cast TauCeti.natCast_lt_homogeneousCyclotomic_of_two_le_sub hp hpn hn (a := a)
-    (b := b) (by exact_mod_cast hb) (by exact_mod_cast hab)
+  exact_mod_cast hp.natCast_lt_homogeneousCyclotomic_of_two_le_sub_real hpn hn (a := a) (b := b)
+    (by exact_mod_cast hb) (by exact_mod_cast hab)
 
 /-- For a prime `p`, `e ≠ 0`, `m ≠ 0` and integers `0 < b < a`, `p < Φ_{p ^ (e + 1) m}(a, b)`
 (Birkhoff–Vandiver 1904, pp. 178–179). Every hypothesis is sharp: `e = 0` fails at
