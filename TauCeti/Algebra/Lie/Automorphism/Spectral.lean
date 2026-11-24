@@ -35,6 +35,8 @@ bracket preservation follow directly from the multiplicative property of eigenva
 
 * `LieEquiv.eigenvalue_ne_zero_of_apply_basis`: eigenvalues of a Lie algebra automorphism on a
   basis vector are nonzero.
+* `Matrix.toLin_diagonal_apply_basis`: evaluating a diagonal matrix endomorphism on a basis
+  vector scales that vector by the corresponding diagonal entry.
 * `Matrix.toLin_diagonal_rpow_comp`: composition law for diagonal real powers on a real module.
 * `LieEquiv.toLin_diagonal_rpow_map_lie`: bracket preservation for diagonal real powers.
 * `LieEquiv.rpowLieEquiv_apply`, `LieEquiv.rpowLieEquiv_symm_apply`, `LieEquiv.rpowLieEquiv_one`,
@@ -47,6 +49,18 @@ bracket preservation follow directly from the multiplicative property of eigenva
 public section
 
 open LieAlgebra Module
+
+section DiagonalMatrix
+
+variable {ι R V : Type*} [Fintype ι] [DecidableEq ι] [CommSemiring R]
+  [AddCommMonoid V] [Module R V]
+
+/-- A diagonal matrix in a basis `B` scales each basis vector `B i` by `d i`. -/
+theorem _root_.Matrix.toLin_diagonal_apply_basis (B : Basis ι R V) (d : ι → R) (i : ι) :
+    Matrix.toLin B B (Matrix.diagonal d) (B i) = d i • B i := by
+  simp [Matrix.diagonal_apply]
+
+end DiagonalMatrix
 
 section DiagonalRpow
 
@@ -110,7 +124,7 @@ private theorem toLin_diagonal_comp_lie_basis (B : Basis ι ℝ L) {lam : ι →
     Matrix.toLin B B (Matrix.diagonal (fun k ↦ g (lam k))) ⁅B i, B j⁆ =
       g (lam i * lam j) • ⁅B i, B j⁆ :=
   B.apply_eq_smul_of_apply_basis (f := (P : L →ₗ[ℝ] L)) hB
-    (fun k ↦ by simp [Matrix.diagonal_apply]) (apply_lie_basis_of_apply_basis B hB i j)
+    (Matrix.toLin_diagonal_apply_basis B _) (apply_lie_basis_of_apply_basis B hB i j)
     fun _ hk ↦ congrArg g hk
 
 /-- Diagonal real powers of a positively diagonalizable Lie automorphism preserve the bracket. -/
@@ -124,10 +138,8 @@ theorem toLin_diagonal_rpow_map_lie (B : Basis ι ℝ L)
     (Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s)))
     (Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s))) 0 0 (fun i j ↦ by
       rw [toLin_diagonal_comp_lie_basis B hB (· ^ s),
-        show Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s)) (B i) = lam i ^ s • B i by
-          simp [Matrix.diagonal_apply],
-        show Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s)) (B j) = lam j ^ s • B j by
-          simp [Matrix.diagonal_apply],
+        Matrix.toLin_diagonal_apply_basis B (fun i ↦ lam i ^ s) i,
+        Matrix.toLin_diagonal_apply_basis B (fun i ↦ lam i ^ s) j,
         LinearMap.zero_apply, LinearMap.zero_apply, lie_zero, add_zero, smul_lie, lie_smul,
         smul_smul, Real.mul_rpow (hlam i).le (hlam j).le]) x y
   simpa using h
@@ -173,7 +185,9 @@ theorem rpowLieEquiv_one (B : Basis ι ℝ L)
     rpowLieEquiv B hlam hB 1 y = P y := by
   suffices h : Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ (1 : ℝ))) = (P : L →ₗ[ℝ] L) from
     congr($h y)
-  exact B.ext fun i ↦ by simp [Matrix.diagonal_apply, hB]
+  exact B.ext fun i ↦ by
+    rw [Matrix.toLin_diagonal_apply_basis, Real.rpow_one]
+    exact (hB i).symm
 
 /-- `P ^ s (P ^ t y) = P ^ (s + t) y`. -/
 theorem rpowLieEquiv_add (B : Basis ι ℝ L)
@@ -195,10 +209,8 @@ theorem toLin_diagonal_log_leibniz (B : Basis ι ℝ L)
     (Matrix.toLin B B (Matrix.diagonal (Real.log ∘ lam))) LinearMap.id (fun i j ↦ by
       dsimp only [Function.comp_def]
       rw [toLin_diagonal_comp_lie_basis B hB Real.log,
-        show Matrix.toLin B B (Matrix.diagonal (fun k ↦ Real.log (lam k))) (B i) =
-          Real.log (lam i) • B i by simp [Matrix.diagonal_apply],
-        show Matrix.toLin B B (Matrix.diagonal (fun k ↦ Real.log (lam k))) (B j) =
-          Real.log (lam j) • B j by simp [Matrix.diagonal_apply],
+        Matrix.toLin_diagonal_apply_basis B (fun k ↦ Real.log (lam k)) i,
+        Matrix.toLin_diagonal_apply_basis B (fun k ↦ Real.log (lam k)) j,
         LinearMap.id_apply, LinearMap.id_apply,
         Real.log_mul (eigenvalue_ne_zero_of_apply_basis B (hB i))
           (eigenvalue_ne_zero_of_apply_basis B (hB j)),
@@ -224,15 +236,20 @@ theorem rpowLieEquiv_apply_of_log_eq_smul (B : Basis ι ℝ L)
     (hy : s • logLieDerivation B hB y = μ • y) :
     rpowLieEquiv B hlam hB s y = Real.exp μ • y := by
   have hlin : Matrix.toLin B B (Matrix.diagonal (fun i ↦ s * Real.log (lam i))) y = μ • y := by
+    have hdiag : (fun i ↦ s * Real.log (lam i)) = s • (Real.log ∘ lam) := by
+      ext i
+      simp [Pi.smul_apply]
     have heq : Matrix.toLin B B (Matrix.diagonal (fun i ↦ s * Real.log (lam i))) =
         s • Matrix.toLin B B (Matrix.diagonal (Real.log ∘ lam)) := by
-      rw [← map_smul, ← Matrix.diagonal_smul]
-      rfl
+      rw [hdiag, Matrix.diagonal_smul, map_smul]
     simpa [heq, logLieDerivation_apply] using hy
   exact B.apply_eq_smul_of_apply_basis
     (a := fun i ↦ s * Real.log (lam i)) (c := fun i ↦ lam i ^ s)
-    (fun i ↦ by simp [Matrix.diagonal_apply])
-    (fun i ↦ by simp [rpowLieEquiv_apply, Matrix.diagonal_apply]) hlin fun i hi ↦ by
+    (Matrix.toLin_diagonal_apply_basis B _)
+    (fun i ↦ by
+      simp only [LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, rpowLieEquiv_apply,
+        Matrix.toLin_diagonal_apply_basis])
+    hlin fun i hi ↦ by
       rw [Real.rpow_def_of_pos (hlam i), mul_comm, hi]
 
 end Real

@@ -139,7 +139,7 @@ theorem map_exp_of_isTopologicalRing {𝕜 𝔸 𝔹 : Type*}
     (f : F) (hf : Continuous f) (x : 𝔸) :
     f (exp x) = exp (f x) := by
   have h := ((exp_series_hasSum_exp' (𝕂 := 𝕜) x).map (f : 𝔸 →+ 𝔹) hf).tsum_eq.symm
-  change f (exp x) = _ at h
+  simp only [AddMonoidHom.coe_ofClass, Function.comp_apply] at h
   rw [h, exp_eq_tsum 𝕜]
   congr 1
   ext n

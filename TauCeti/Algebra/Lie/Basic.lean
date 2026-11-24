@@ -67,6 +67,8 @@ This file supplies general constructions for Lie modules that are missing from M
 * `TauCeti.iInf_ker_ad_eq_of_forall_lt`: a maximal abelian subspace is its own centralizer.
 * `LieEquiv.apply_mem_center`: a Lie algebra isomorphism maps central elements to central
   elements.
+* `LieEquiv.trans_symm_trans_trans_symm`: double conjugation of a Lie algebra automorphism by an
+  equivalence cancels.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
 * `LieHom.lieIdealComap_injective`: the restriction of an injective Lie homomorphism to the
@@ -539,6 +541,12 @@ theorem _root_.LieEquiv.apply_mem_center (e : L ≃ₗ⁅R⁆ L') {z : L}
   obtain ⟨y, rfl⟩ := e.surjective y
   simp only [LieEquiv.coe_toLieHom]
   rw [← e.map_lie, hz y, map_zero]
+
+/-- Double conjugation of a Lie algebra automorphism by an equivalence cancels. -/
+@[simp]
+theorem _root_.LieEquiv.trans_symm_trans_trans_symm (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ L') :
+    e.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ :=
+  LieEquiv.ext fun x ↦ by simp
 
 /-- Adjoint nilpotence descends along a surjective Lie homomorphism. In particular it descends
 to a quotient by any Lie ideal, without a finiteness or characteristic hypothesis. -/

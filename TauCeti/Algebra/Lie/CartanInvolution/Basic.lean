@@ -81,19 +81,6 @@ open LieAlgebra LieModule Module
 
 namespace LieEquiv
 
-section
-
-variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-  [LieRing L'] [LieAlgebra R L']
-
-/-- Double conjugation of a Lie algebra automorphism by an equivalence cancels. -/
-@[simp]
-theorem trans_symm_trans_trans_symm (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ L') :
-    e.trans ((e.symm.trans (θ.trans e)).trans e.symm) = θ :=
-  LieEquiv.ext fun x ↦ by simp
-
-end
-
 /-! ### Cartan involutions over a partially ordered commutative ring -/
 
 section PartialOrder

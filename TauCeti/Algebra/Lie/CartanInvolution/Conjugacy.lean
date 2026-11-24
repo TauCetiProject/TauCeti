@@ -56,6 +56,22 @@ section RealConjugacy
 
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
 
+/-- For two involutive automorphisms `θ` and `θ'`, `θ.trans θ'` is symmetric with respect to
+`θ.twistedKillingForm`. -/
+private theorem twistedKillingForm_trans_apply {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (x y : L) :
+    θ.twistedKillingForm ((θ.trans θ') x) y = θ.twistedKillingForm x ((θ.trans θ') y) := by
+  simp only [twistedKillingForm_apply, trans_apply]
+  congr 1
+  calc
+    killingForm ℝ L (θ' (θ x)) (θ y)
+      = killingForm ℝ L (θ' (θ' (θ x))) (θ' (θ y)) :=
+          (LieAlgebra.killingForm_of_equiv_apply θ' (θ' (θ x)) (θ y)).symm
+    _ = killingForm ℝ L (θ x) (θ' (θ y)) := by rw [hθ']
+    _ = killingForm ℝ L (θ (θ x)) (θ (θ' (θ y))) :=
+          (LieAlgebra.killingForm_of_equiv_apply θ (θ x) (θ' (θ y))).symm
+    _ = killingForm ℝ L x (θ (θ' (θ y))) := by rw [hθ]
+
 /-- For two Cartan involutions `θ` and `θ'` of a real Lie algebra, `P = (θ' ∘ θ)²` admits a
 basis of eigenvectors with strictly positive eigenvalues. -/
 private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
@@ -66,17 +82,8 @@ private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   have := hθ.finiteDimensional
   let ω : L ≃ₗ⁅ℝ⁆ L := θ.trans θ'
   let P : L ≃ₗ⁅ℝ⁆ L := ω.trans ω
-  have hω_symm_form (x y : L) : θ.twistedKillingForm (ω x) y = θ.twistedKillingForm x (ω y) := by
-    simp only [twistedKillingForm_apply, ω, trans_apply]
-    congr 1
-    calc
-      killingForm ℝ L (θ' (θ x)) (θ y)
-        = killingForm ℝ L (θ' (θ' (θ x))) (θ' (θ y)) :=
-            (LieAlgebra.killingForm_of_equiv_apply θ' (θ' (θ x)) (θ y)).symm
-      _ = killingForm ℝ L (θ x) (θ' (θ y)) := by rw [hθ'.involutive]
-      _ = killingForm ℝ L (θ (θ x)) (θ (θ' (θ y))) :=
-            (LieAlgebra.killingForm_of_equiv_apply θ (θ x) (θ' (θ y))).symm
-      _ = killingForm ℝ L x (θ (θ' (θ y))) := by rw [hθ.involutive]
+  have hω_symm_form (x y : L) : θ.twistedKillingForm (ω x) y = θ.twistedKillingForm x (ω y) :=
+    twistedKillingForm_trans_apply hθ.involutive hθ'.involutive x y
   have hP_symm_form (x y : L) : θ.twistedKillingForm (P x) y = θ.twistedKillingForm x (P y) := by
     simp only [P, trans_apply, hω_symm_form]
   have hP_pos_form {x : L} (hx : x ≠ 0) : 0 < θ.twistedKillingForm (P x) x := by
@@ -104,8 +111,6 @@ private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   · have h2 := congrArg e (hP_E_symm.apply_eigenvectorBasis hn i)
     rw [hP_E_apply, map_smul] at h2
     simpa [b, P, ω] using h2
-
-
 
 /-- Applying `θ` sends a `c`-eigenvector of `(θ' ∘ θ)²` to a `c⁻¹`-eigenvector. -/
 private theorem trans_sq_apply_involutive {θ θ' : L ≃ₗ⁅ℝ⁆ L}
@@ -137,8 +142,8 @@ private theorem rpowLieEquiv_apply_involutive {ι : Type*} [Fintype ι] [Decidab
     (g₁ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s)))
     (g₂ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ (-s))))
     (φ := (θ : L →ₗ[ℝ] L)) (c₁ := fun i ↦ lam i ^ s) (c₂ := fun i ↦ lam i ^ (-s)) hB
-    (fun i ↦ by simp [Matrix.diagonal_apply])
-    (fun i ↦ by simp [Matrix.diagonal_apply])
+    (Matrix.toLin_diagonal_apply_basis B _)
+    (Matrix.toLin_diagonal_apply_basis B _)
     (·⁻¹) (fun i ↦ trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i))
     fun i j hj ↦ by rw [hj, Real.inv_rpow (hlam i).le, Real.rpow_neg (hlam i).le]
   simpa only [rpowLieEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
@@ -157,8 +162,8 @@ private theorem rpowLieEquiv_comm_trans {ι : Type*} [Fintype ι] [DecidableEq �
     (g₂ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ lam i ^ s)))
     (φ := ((θ.trans θ' : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L))
     (c₁ := fun i ↦ lam i ^ s) (c₂ := fun i ↦ lam i ^ s) hB
-    (fun i ↦ by simp [Matrix.diagonal_apply])
-    (fun i ↦ by simp [Matrix.diagonal_apply])
+    (Matrix.toLin_diagonal_apply_basis B _)
+    (Matrix.toLin_diagonal_apply_basis B _)
     id
     (fun i ↦ by
       simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
@@ -169,6 +174,51 @@ private theorem rpowLieEquiv_comm_trans {ι : Type*} [Fintype ι] [DecidableEq �
     fun i j hj ↦ by rw [hj, id_eq]
   simpa only [rpowLieEquiv_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
     coe_toLinearEquiv] using congr($h y).symm
+
+/-- Intertwining `θ' (P^s y) = P^{-s} (θ' y)` for `P = (θ' ∘ θ)²`. -/
+private theorem rpowLieEquiv_apply_involutive' {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : Basis ι ℝ L) {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
+    (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i)
+    (s : ℝ) (y : L) :
+    θ' (rpowLieEquiv B hlam hB s y) = rpowLieEquiv B hlam hB (-s) (θ' y) := by
+  have hθ'_eq (z : L) : θ' z = (θ.trans θ') (θ z) := by simp only [trans_apply, hθ z]
+  have hθP : θ (rpowLieEquiv B hlam hB s y) = rpowLieEquiv B hlam hB (-s) (θ y) := by
+    simpa only [neg_neg] using (rpowLieEquiv_apply_involutive B hθ hθ' hlam hB (-s) y).symm
+  rw [hθ'_eq (rpowLieEquiv B hlam hB s y), hθP, rpowLieEquiv_comm_trans, ← hθ'_eq]
+
+/-- For `P = (θ' ∘ θ)²` and `φ = P^{1/4}`, `θ'` commutes with `φ⁻¹ ∘ θ ∘ φ`. -/
+private theorem commute_conj_rpowLieEquiv_quarter {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : Basis ι ℝ L) {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
+    (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i) (y : L) :
+    let φ := rpowLieEquiv B hlam hB (1 / 4)
+    θ' ((φ.symm.trans (θ.trans φ)) y) = (φ.symm.trans (θ.trans φ)) (θ' y) := by
+  let Ppow (s : ℝ) : L ≃ₗ⁅ℝ⁆ L := rpowLieEquiv B hlam hB s
+  let ω : L ≃ₗ⁅ℝ⁆ L := θ.trans θ'
+  have hθ''_apply (z : L) :
+      ((Ppow (1 / 4)).symm.trans (θ.trans (Ppow (1 / 4)))) z = Ppow (1 / 2) (θ z) := by
+    simp only [trans_apply, Ppow, rpowLieEquiv_symm_apply]
+    rw [← rpowLieEquiv_apply_involutive B hθ hθ' hlam hB (1 / 4) z, rpowLieEquiv_add]
+    norm_num
+  have hω_eq : ω y = Ppow 1 (ω.symm y) := by
+    rw [rpowLieEquiv_one]
+    simp [ω]
+  have hω_symm : ω.symm y = θ (θ' y) := by
+    rw [LieEquiv.symm_apply_eq]
+    simp [ω, hθ _, hθ' _]
+  calc
+    θ' (((Ppow (1 / 4)).symm.trans (θ.trans (Ppow (1 / 4)))) y)
+      = θ' (Ppow (1 / 2) (θ y)) := by rw [hθ''_apply]
+    _ = Ppow (-(1 / 2)) (θ' (θ y)) :=
+          rpowLieEquiv_apply_involutive' B hθ hθ' hlam hB (1 / 2) (θ y)
+    _ = Ppow (-(1 / 2)) (Ppow 1 (ω.symm y)) := by rw [← trans_apply θ θ' y, hω_eq]
+    _ = Ppow (1 / 2) (ω.symm y) := by dsimp only [Ppow]; rw [rpowLieEquiv_add]; norm_num
+    _ = Ppow (1 / 2) (θ (θ' y)) := by rw [hω_symm]
+    _ = ((Ppow (1 / 4)).symm.trans (θ.trans (Ppow (1 / 4)))) (θ' y) :=
+          (hθ''_apply (θ' y)).symm
 
 /-- `log P` anticommutes with `θ` for `P = (θ' ∘ θ)²`. -/
 private theorem logLieDerivation_apply_involutive {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -182,16 +232,18 @@ private theorem logLieDerivation_apply_involutive {ι : Type*} [Fintype ι] [Dec
     (g₂ := Matrix.toLin B B (Matrix.diagonal (fun i ↦ -Real.log (lam i))))
     (φ := (θ : L →ₗ[ℝ] L))
     (c₁ := Real.log ∘ lam) (c₂ := fun i ↦ -Real.log (lam i)) hB
-    (fun i ↦ by simp [Matrix.diagonal_apply])
-    (fun i ↦ by simp [Matrix.diagonal_apply])
+    (Matrix.toLin_diagonal_apply_basis B _)
+    (Matrix.toLin_diagonal_apply_basis B _)
     (·⁻¹)
     (fun i ↦ trans_sq_apply_involutive hθ hθ' (eigenvalue_ne_zero_of_apply_basis B (hB i))
       (hB i))
     fun i j hj ↦ by simp only [Function.comp_apply, hj, Real.log_inv]
   have hneg : Matrix.toLin B B (Matrix.diagonal (fun i ↦ -Real.log (lam i))) =
       -Matrix.toLin B B (Matrix.diagonal (Real.log ∘ lam)) := by
-    rw [← map_neg, ← Matrix.diagonal_neg]
-    rfl
+    rw [← map_neg]
+    congr 1
+    ext i j
+    by_cases hij : i = j <;> simp [hij]
   rw [hneg, LinearMap.comp_neg] at h
   simpa only [logLieDerivation_apply, LinearMap.comp_apply, LinearMap.neg_apply,
     LinearEquiv.coe_coe, coe_toLinearEquiv] using congr($h y)
@@ -222,46 +274,17 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
         ∀ (μ : ℝ) (y : L), ⁅Z, y⁆ = μ • y → φ y = Real.exp μ • y := by
   have := hθ.isKilling
   have := hθ.finiteDimensional
-  let ω : L ≃ₗ⁅ℝ⁆ L := θ.trans θ'
   obtain ⟨B, lam, hlam_pos, hB_eig⟩ := exists_pos_eigenbasis_trans_sq hθ hθ'
-  let Ppow (s : ℝ) : L ≃ₗ⁅ℝ⁆ L := rpowLieEquiv B hlam_pos hB_eig s
-  let D : LieDerivation ℝ L L := logLieDerivation B hB_eig
-  have hθ_Ppow (s : ℝ) (y : L) : Ppow s (θ y) = θ (Ppow (-s) y) :=
-    rpowLieEquiv_apply_involutive B hθ.involutive hθ'.involutive hlam_pos hB_eig s y
-  have hω_Ppow (s : ℝ) (y : L) : ω (Ppow s y) = Ppow s (ω y) :=
-    rpowLieEquiv_comm_trans B hlam_pos hB_eig s y
-  have hθ'_Ppow (s : ℝ) (y : L) : θ' (Ppow s y) = Ppow (-s) (θ' y) := by
-    have hθ'_eq (z : L) : θ' z = ω (θ z) := by simp only [ω, trans_apply, hθ.involutive z]
-    have hθP : θ (Ppow s y) = Ppow (-s) (θ y) := by
-      simpa only [neg_neg] using (hθ_Ppow (-s) y).symm
-    rw [hθ'_eq (Ppow s y), hθP, hω_Ppow, ← hθ'_eq]
   -- `φ = P^{1/4}` conjugates `θ` to a Cartan involution commuting with `θ'`, hence `θ'`.
-  let φ : L ≃ₗ⁅ℝ⁆ L := Ppow (1 / 4)
-  let θ'' : L ≃ₗ⁅ℝ⁆ L := φ.symm.trans (θ.trans φ)
-  have hθ''_apply (y : L) : θ'' y = Ppow (1 / 2) (θ y) := by
-    simp only [θ'', trans_apply, φ, Ppow, rpowLieEquiv_symm_apply]
-    rw [← hθ_Ppow (1 / 4) y, rpowLieEquiv_add]
-    norm_num
-  have hcomm_θ' : ∀ y, θ' (θ'' y) = θ'' (θ' y) := fun y ↦ by
-    have hω_eq : ω y = Ppow 1 (ω.symm y) := by
-      rw [rpowLieEquiv_one]
-      simp [ω]
-    have hω_symm : ω.symm y = θ (θ' y) := by
-      rw [LieEquiv.symm_apply_eq]
-      simp [ω, hθ.involutive _, hθ'.involutive _]
-    calc
-      θ' (θ'' y) = θ' (Ppow (1 / 2) (θ y)) := by rw [hθ''_apply]
-      _ = Ppow (-(1 / 2)) (θ' (θ y)) := hθ'_Ppow (1 / 2) (θ y)
-      _ = Ppow (-(1 / 2)) (Ppow 1 (ω.symm y)) := by rw [← trans_apply θ θ' y, hω_eq]
-      _ = Ppow (1 / 2) (ω.symm y) := by dsimp only [Ppow]; rw [rpowLieEquiv_add]; norm_num
-      _ = Ppow (1 / 2) (θ (θ' y)) := by rw [hω_symm]
-      _ = θ'' (θ' y) := (hθ''_apply (θ' y)).symm
-  have hθ'_eq_θ'' : θ' = θ'' :=
-    hθ'.eq_of_commute (hθ.conj φ) hcomm_θ'
+  let φ : L ≃ₗ⁅ℝ⁆ L := rpowLieEquiv B hlam_pos hB_eig (1 / 4)
+  have hθ'_eq : θ' = φ.symm.trans (θ.trans φ) :=
+    hθ'.eq_of_commute (hθ.conj φ)
+      (commute_conj_rpowLieEquiv_quarter B hθ.involutive hθ'.involutive hlam_pos hB_eig)
   have hφ_intertwine (y : L) : θ' (φ y) = φ (θ y) := by
-    rw [hθ'_eq_θ'']
-    simp [θ'']
-  -- Since `L` is Killing, `D = ad Z₀` for some `Z₀ ∈ θ.cartanP`; take `Z = (1/4) • Z₀`.
+    rw [hθ'_eq]
+    simp
+  -- Since `L` is Killing, `log P = ad Z₀` for some `Z₀ ∈ θ.cartanP`; take `Z = (1/4) • Z₀`.
+  let D : LieDerivation ℝ L L := logLieDerivation B hB_eig
   obtain ⟨Z₀, hZ₀⟩ := LieDerivation.IsKilling.exists_eq_ad D
   have hZ₀_apply (y : L) : ⁅Z₀, y⁆ = D y := by
     simpa using congrArg (fun d : LieDerivation ℝ L L ↦ d y) hZ₀
@@ -274,13 +297,12 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   exact rpowLieEquiv_apply_of_log_eq_smul B hlam_pos hB_eig hy
 
 /-- **Conjugacy of Cartan involutions (operator exponential form)** (Knapp, Ch. VI, Cor. 6.19):
-for any two Cartan involutions `θ` and `θ'` of a real Lie algebra `L` equipped with Hausdorff
-topological vector space structures on `L` and `L →L[ℝ] L` (with topological ring multiplication
-on `L →L[ℝ] L`), there exists `Z ∈ θ.cartanP` such that `exp (ad Z)` conjugates `θ` to `θ'`. -/
+for any two Cartan involutions `θ` and `θ'` of a Hausdorff topological vector space real Lie
+algebra `L` whose continuous endomorphism ring `L →L[ℝ] L` is a topological ring, there exists
+`Z ∈ θ.cartanP` such that `exp (ad Z)` conjugates `θ` to `θ'`. -/
 theorem exists_conj_exp_ad
     [TopologicalSpace L] [IsTopologicalAddGroup L] [ContinuousSMul ℝ L] [T2Space L]
-    [TopologicalSpace (L →L[ℝ] L)] [IsTopologicalRing (L →L[ℝ] L)]
-    [ContinuousSMul ℝ (L →L[ℝ] L)] [T2Space (L →L[ℝ] L)]
+    [IsTopologicalRing (L →L[ℝ] L)]
     {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution) :
     let _ : FiniteDimensional ℝ L := hθ.finiteDimensional
     ∃ Z ∈ θ.cartanP, ∀ y : L,

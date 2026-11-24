@@ -255,14 +255,14 @@ namespace NormedSpace
 
 /-- **Conjugation invariance of the operator exponential**: if conjugation by a continuous linear
 equivalence `e : E ≃L[𝕜] F` from a Banach space `E` to a topological vector space `F` is continuous
-into a Hausdorff topological-ring topology on `F →L[𝕜] F`, then `NormedSpace.exp` commutes with
-conjugation by `e`. -/
+when `F →L[𝕜] F` is a Hausdorff topological ring, then `NormedSpace.exp` commutes with conjugation
+by `e`. -/
 theorem exp_conj_continuousLinearEquiv {𝕜 E F : Type*}
     [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
     [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
     [ContinuousConstSMul 𝕜 F]
-    [TopologicalSpace (F →L[𝕜] F)] [IsTopologicalRing (F →L[𝕜] F)] [T2Space (F →L[𝕜] F)]
+    [IsTopologicalRing (F →L[𝕜] F)] [T2Space (F →L[𝕜] F)]
     (e : E ≃L[𝕜] F)
     (hcont : Continuous fun S : E →L[𝕜] E ↦
       e.toContinuousLinearMap.comp (S.comp e.symm.toContinuousLinearMap))
@@ -275,14 +275,14 @@ theorem exp_conj_continuousLinearEquiv {𝕜 E F : Type*}
 /-- **Conjugation invariance of the operator exponential in finite dimension**: for a continuous
 linear equivalence `e : E ≃L[𝕜] F` from a finite-dimensional normed space `E` over a complete
 nontrivially normed field `𝕜` of characteristic zero to a topological vector space `F`,
-`NormedSpace.exp` commutes with conjugation by `e` for any Hausdorff topological-ring and
-topological-module topology on `F →L[𝕜] F`. -/
+`NormedSpace.exp` commutes with conjugation by `e` whenever `F →L[𝕜] F` is a Hausdorff
+topological ring and topological `𝕜`-module. -/
 theorem exp_conj_continuousLinearEquiv_of_finiteDimensional {𝕜 E F : Type*}
     [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
     [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
     [ContinuousConstSMul 𝕜 F]
-    [TopologicalSpace (F →L[𝕜] F)] [IsTopologicalRing (F →L[𝕜] F)]
+    [IsTopologicalRing (F →L[𝕜] F)]
     [ContinuousSMul 𝕜 (F →L[𝕜] F)] [T2Space (F →L[𝕜] F)]
     (e : E ≃L[𝕜] F) (B : E →L[𝕜] E) :
     exp (e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap)) =
@@ -298,13 +298,11 @@ namespace ContinuousLinearMap
 
 /-- **Eigenvectors of the operator exponential in a finite-dimensional TVS.** For a continuous
 endomorphism `A` of a finite-dimensional Hausdorff topological vector space `F` over `ℝ` or `ℂ`
-whose endomorphism ring carries a Hausdorff topological-ring and topological-module topology,
-if `A w = μ • w` then `exp A w = exp μ • w`. -/
+whose endomorphism ring is a topological ring, if `A w = μ • w` then `exp A w = exp μ • w`. -/
 theorem exp_apply_of_apply_eq_smul_of_finiteDimensional {𝕜 F : Type*} [RCLike 𝕜]
     [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
     [ContinuousSMul 𝕜 F] [T2Space F] [FiniteDimensional 𝕜 F]
-    [TopologicalSpace (F →L[𝕜] F)] [IsTopologicalRing (F →L[𝕜] F)]
-    [ContinuousSMul 𝕜 (F →L[𝕜] F)] [T2Space (F →L[𝕜] F)]
+    [IsTopologicalRing (F →L[𝕜] F)]
     (A : F →L[𝕜] F) {w : F} {μ : 𝕜} (hw : A w = μ • w) :
     exp A w = exp μ • w := by
   let e : EuclideanSpace 𝕜 (Fin (Module.finrank 𝕜 F)) ≃L[𝕜] F :=

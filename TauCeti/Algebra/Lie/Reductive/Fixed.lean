@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Reductive.Basic
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 public import Mathlib.Algebra.Lie.Prod
-import Mathlib.LinearAlgebra.Projection
+import TauCeti.Algebra.Lie.Prod
 
 /-!
 # Central and derived parts of fixed reductive Lie algebras
@@ -25,8 +25,8 @@ This keeps the fixed central summand separate from a presentation of the remaini
 algebra. The latter is the fixed part of the **ambient** derived ideal, not by definition the
 derived ideal of the fixed algebra. No finite-order hypothesis on the automorphism is needed.
 
-The construction uses Mathlib's `Submodule.prodEquivOfIsCompl` for the unique linear
-decomposition.
+The construction uses `TauCeti.idealProdEquivOfIsCompl` for the direct-product Lie algebra
+identification.
 
 ## References
 
@@ -60,22 +60,19 @@ noncomputable def fixedCenterDerivedEquiv (e : L ≃ₗ⁅R⁆ L)
       map_lie' := by
         intro p q
         ext
-        have hz (z : center R L) (y : L) : ⁅y, (z : L)⁆ = 0 :=
-          (LieModule.mem_maxTrivSubmodule R L L z).mp z.property y
-        have hcross : ⁅(p.1 : L), (q.2 : L)⁆ = 0 := by
-          rw [← lie_skew, hz ⟨(p.1 : L), p.1.property.2⟩, neg_zero]
-        simp [lie_add, add_lie, hz ⟨(q.1 : L), q.1.property.2⟩, hcross] }
+        have hlie := (TauCeti.idealProdEquivOfIsCompl hc).map_lie
+          (⟨(p.1 : L), p.1.property.2⟩, ⟨(p.2 : L), p.2.property.2⟩)
+          (⟨(q.1 : L), q.1.property.2⟩, ⟨(q.2 : L), q.2.property.2⟩)
+        simpa [TauCeti.idealProdEquivOfIsCompl_apply] using hlie }
     (by
       constructor
       · intro p q hpq
-        have hc' := LieSubmodule.isCompl_toSubmodule.mpr hc
         have h : ((⟨(p.1 : L), p.1.property.2⟩ : center R L),
             (⟨(p.2 : L), p.2.property.2⟩ : derivedSeries R L 1)) =
             (⟨(q.1 : L), q.1.property.2⟩, ⟨(q.2 : L), q.2.property.2⟩) := by
-          apply (Submodule.prodEquivOfIsCompl (center R L).toSubmodule
-            (derivedSeries R L 1).toSubmodule hc').injective
-          simp only [Submodule.coe_prodEquivOfIsCompl']
-          exact congrArg Subtype.val hpq
+          apply (TauCeti.idealProdEquivOfIsCompl hc).injective
+          simpa [LieEquiv.coe_toLieHom, TauCeti.idealProdEquivOfIsCompl_apply] using
+            congrArg Subtype.val hpq
         apply Prod.ext <;> apply Subtype.ext
         · exact congrArg (fun r => (r.1 : L)) h
         · exact congrArg (fun r => (r.2 : L)) h
