@@ -88,8 +88,8 @@ def ratToRealNumericalClasses : RatNumericalClasses k x →ₗ[ℚ] RealNumerica
 @[simp]
 theorem ratToRealNumericalClasses_tmul (q : ℚ)
     (α : Additive (LineBundleClass X ⧸ numericallyTrivialClasses k x)) :
-    ratToRealNumericalClasses k x (q ⊗ₜ α) = (q : ℝ) ⊗ₜ α :=
-  (rfl)
+    ratToRealNumericalClasses k x (q ⊗ₜ α) = (q : ℝ) ⊗ₜ α := by
+  simp [ratToRealNumericalClasses]
 
 /-- **`Num(X/k)` embeds in `N¹(X/k)_ℚ`**, since `Num(X/k)` is torsion-free, hence flat over
 `ℤ`. -/
@@ -174,8 +174,8 @@ def ratToRealRelNumericalClasses : RelRatNumericalClasses f →ₗ[ℚ] RelRealN
 @[simp]
 theorem ratToRealRelNumericalClasses_tmul (q : ℚ)
     (α : Additive (LineBundleClass X ⧸ relNumericallyTrivialClasses f)) :
-    ratToRealRelNumericalClasses f (q ⊗ₜ α) = (q : ℝ) ⊗ₜ α :=
-  (rfl)
+    ratToRealRelNumericalClasses f (q ⊗ₜ α) = (q : ℝ) ⊗ₜ α := by
+  simp [ratToRealRelNumericalClasses]
 
 /-- **`Num(X/S)` embeds in `N¹(X/S)_ℚ`**, since `Num(X/S)` is torsion-free, hence flat over
 `ℤ`. -/
