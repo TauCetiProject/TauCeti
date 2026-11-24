@@ -146,6 +146,10 @@ orthogonal sum metric. -/
   carrier := E × F
   metric := E.metric.prod F.metric
 
+theorem prod_metric (E F : HermitianBundle.{u, v} K) :
+    (E.prod F).metric = E.metric.prod F.metric :=
+  (rfl)
+
 /-- The rank of an orthogonal sum is the sum of the ranks. -/
 @[simp]
 theorem rank_prod (E F : HermitianBundle.{u, v} K) : (E.prod F).rank = E.rank + F.rank := by

@@ -232,6 +232,10 @@ tensor product metric. -/
   carrier := E ⊗[𝓞 K] F
   metric := E.metric.tmul F.metric
 
+theorem tmul_metric (E F : HermitianBundle.{u, v} K) :
+    (E.tmul F).metric = E.metric.tmul F.metric :=
+  (rfl)
+
 /-- The rank of a tensor product is the product of the ranks. -/
 @[simp]
 theorem rank_tmul (E F : HermitianBundle.{u, v} K) : (E.tmul F).rank = E.rank * F.rank := by
