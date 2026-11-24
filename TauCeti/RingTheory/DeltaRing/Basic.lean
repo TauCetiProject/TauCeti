@@ -319,6 +319,16 @@ theorem frobenius_sub_pow (x : A) : frobenius p A x - x ^ p = p * delta p x := b
 theorem natCast_dvd_frobenius_sub_pow (x : A) : (p : A) ∣ frobenius p A x - x ^ p :=
   ⟨delta p x, frobenius_sub_pow x⟩
 
+/-- For a radical ideal `m` containing `p`, the Frobenius preserves and reflects membership in
+`m`, as `φ x ≡ x ^ p` modulo `p`. -/
+theorem frobenius_mem_iff_of_natCast_mem {m : Ideal A} (hm : m.IsRadical) (hpm : (p : A) ∈ m)
+    {x : A} : frobenius p A x ∈ m ↔ x ∈ m := by
+  have h : frobenius p A x - x ^ p ∈ m := by
+    rw [frobenius_sub_pow]
+    exact m.mul_mem_right _ hpm
+  refine ⟨fun hx ↦ hm ⟨p, by simpa using m.sub_mem hx h⟩, fun hx ↦ ?_⟩
+  simpa using m.add_mem h (m.pow_mem_of_mem hx p (Fact.out : p.Prime).pos)
+
 variable (p A) in
 /-- The Frobenius of a `δ`-ring is a Frobenius lift. -/
 @[simp]
