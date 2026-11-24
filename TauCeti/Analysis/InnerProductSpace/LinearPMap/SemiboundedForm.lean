@@ -108,9 +108,22 @@ the shifted form `q u v + α ⟪u, v⟫_𝕜` is an inner product. -/
 def IsAdmissibleShift (α : ℝ) : Prop :=
   ∃ γ, q.IsLowerBound γ ∧ -γ < α
 
+/-- Unfolding `TauCeti.SemiboundedForm.IsLowerBound`. -/
+theorem isLowerBound_iff {γ : ℝ} :
+    q.IsLowerBound γ ↔ ∀ u : q.domain, γ * ‖(u : H)‖ ^ 2 ≤ re (q.form u u) :=
+  Iff.rfl
+
+/-- Unfolding `TauCeti.SemiboundedForm.IsAdmissibleShift`. -/
+theorem isAdmissibleShift_iff {α : ℝ} : q.IsAdmissibleShift α ↔ ∃ γ, q.IsLowerBound γ ∧ -γ < α :=
+  Iff.rfl
+
+/-- Every semibounded form has a lower bound. -/
+theorem exists_isLowerBound : ∃ γ, q.IsLowerBound γ :=
+  q.exists_lowerBound
+
 /-- Every semibounded form has an admissible shift. -/
 theorem exists_isAdmissibleShift : ∃ α, q.IsAdmissibleShift α :=
-  let ⟨γ, hγ⟩ := q.exists_lowerBound
+  let ⟨γ, hγ⟩ := q.exists_isLowerBound
   ⟨1 - γ, γ, hγ, by linarith⟩
 
 /-! ### The shifted inner product -/
@@ -149,8 +162,8 @@ theorem re_shiftedInner_self_le {γ α : ℝ} (hγ : q.IsLowerBound γ) (hα : -
   have hpos : 0 < γ + α := by linarith
   have h1 := q.add_mul_norm_sq_le_re_shiftedInner_self hγ α u
   have h2 : |β - α| * ‖(u : H)‖ ^ 2 ≤ |β - α| / (γ + α) * re (q.shiftedInner α u u) := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ hpos, mul_assoc, mul_comm (‖(u : H)‖ ^ 2)]
-    exact mul_le_mul_of_nonneg_left h1 (abs_nonneg _)
+    rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
+    nlinarith [mul_le_mul_of_nonneg_left h1 (abs_nonneg (β - α))]
   have h3 : (β - α) * ‖(u : H)‖ ^ 2 ≤ |β - α| * ‖(u : H)‖ ^ 2 :=
     mul_le_mul_of_nonneg_right (le_abs_self _) (sq_nonneg _)
   rw [re_shiftedInner_self] at h1 h2
@@ -200,12 +213,9 @@ def innerProductCore : InnerProductSpace.Core 𝕜 (q.FormSpace α hα) where
     have hpos : 0 < γ + α := by linarith
     have h := q.add_mul_norm_sq_le_re_shiftedInner_self hγ α ((q.toFormSpace hα).symm x)
     rw [hx, map_zero] at h
-    have h0 : ‖(((q.toFormSpace hα).symm x : q.domain) : H)‖ ^ 2 ≤ 0 := by
-      nlinarith [sq_nonneg ‖(((q.toFormSpace hα).symm x : q.domain) : H)‖, hpos]
-    have : (q.toFormSpace hα).symm x = 0 := by
-      ext
-      simpa using pow_eq_zero_iff (n := 2) two_ne_zero |>.mp (le_antisymm h0 (sq_nonneg _))
-    simpa using this
+    have h0 := nonpos_of_mul_nonpos_right h hpos
+    refine (q.toFormSpace hα).symm.map_eq_zero_iff.mp (Subtype.ext ?_)
+    exact norm_eq_zero.mp (sq_eq_zero_iff.mp (le_antisymm h0 (sq_nonneg _)))
 
 /-- The form norm on the form space, `x ↦ (re (q x x) + α * ‖x‖ ^ 2) ^ (1 / 2)`. -/
 instance instNormedAddCommGroupFormSpace : NormedAddCommGroup (q.FormSpace α hα) :=
@@ -242,7 +252,8 @@ private theorem norm_coe_le {γ : ℝ} (hγ : q.IsLowerBound γ) (hγα : -γ < 
   rw [← norm_sq_eq_re_shiftedInner] at h
   rw [← Real.sqrt_inv]
   refine Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg _) ?_
-  rwa [inv_mul_eq_div, le_div_iff₀ hpos, mul_comm]
+  rw [inv_mul_eq_div, le_div_iff₀ hpos]
+  linarith
 
 /-- The **inclusion of the form space into `H`**, continuous with norm at most
 `(γ + α) ^ (-1 / 2)` for every lower bound `γ` with `-γ < α`. -/
@@ -381,20 +392,31 @@ def operator (hd : Dense (q.domain : Set H)) : H →ₗ.[𝕜] H :=
     (q.inclusion_injective _) (q.denseRange_inclusion _ hd)
     (q.formCLM q.exists_isAdmissibleShift.choose_spec)
 
-private theorem mem_graph_closedFormOperator_iff' (hd : Dense (q.domain : Set H)) {x h : H} :
-    (x, h) ∈ (ContinuousLinearMap.closedFormOperator (q.inclusion hα) (q.inclusion_injective hα)
-      (q.denseRange_inclusion hα hd) (q.formCLM hα)).graph ↔
+/-- The graph of `ContinuousLinearMap.closedFormOperator` for a model `(V, p, j)` identified with
+`q` through a linear equivalence `e` of the form domain with `V`. -/
+private theorem mem_graph_closedFormOperator_iff_of_linearEquiv {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] {j : V →L[𝕜] H} (hj : Function.Injective j)
+    (hdense : DenseRange j) {p : V →L⋆[𝕜] V →L[𝕜] 𝕜} (e : q.domain ≃ₗ[𝕜] V)
+    (hje : ∀ u, j (e u) = u) (hpe : ∀ u v, p (e u) (e v) = q.form u v) {x h : H} :
+    (x, h) ∈ (ContinuousLinearMap.closedFormOperator j hj hdense p).graph ↔
       ∃ u : q.domain, (u : H) = x ∧ ∀ v : q.domain, q.form u v = ⟪h, (v : H)⟫_𝕜 := by
   rw [ContinuousLinearMap.mem_graph_closedFormOperator_iff]
   constructor
-  · rintro ⟨y, hy, hyv⟩
-    obtain ⟨u, rfl⟩ := (q.toFormSpace hα).surjective y
-    refine ⟨u, by simpa using hy, fun v ↦ ?_⟩
-    simpa using hyv (q.toFormSpace hα v)
+  · rintro ⟨w, hw : j w = x, hwv : ∀ v, p w v = ⟪h, j v⟫_𝕜⟩
+    obtain ⟨u, rfl⟩ := e.surjective w
+    refine ⟨u, by rw [← hw, hje], fun v ↦ ?_⟩
+    rw [← hpe, hwv, hje]
   · rintro ⟨u, hu, huv⟩
-    refine ⟨q.toFormSpace hα u, hu, fun y ↦ ?_⟩
-    obtain ⟨v, rfl⟩ := (q.toFormSpace hα).surjective y
-    rw [formCLM_toFormSpace, huv, inclusion_toFormSpace]
+    refine ⟨e u, by rw [hje, hu], fun w ↦ ?_⟩
+    obtain ⟨v, rfl⟩ := e.surjective w
+    rw [hpe, huv, hje]
+
+private theorem mem_graph_closedFormOperator_iff' (hd : Dense (q.domain : Set H)) {x h : H} :
+    (x, h) ∈ (ContinuousLinearMap.closedFormOperator (q.inclusion hα) (q.inclusion_injective hα)
+      (q.denseRange_inclusion hα hd) (q.formCLM hα)).graph ↔
+      ∃ u : q.domain, (u : H) = x ∧ ∀ v : q.domain, q.form u v = ⟪h, (v : H)⟫_𝕜 :=
+  q.mem_graph_closedFormOperator_iff_of_linearEquiv _ _ (q.toFormSpace hα)
+    (q.inclusion_toFormSpace hα) (q.formCLM_toFormSpace hα)
 
 /-- **Graph of the represented operator.** -/
 theorem mem_graph_operator_iff (hd : Dense (q.domain : Set H)) {x h : H} :
@@ -572,18 +594,10 @@ theorem operator_ofModel (hdense : DenseRange j) :
     (ofModel j hj p hp hb).operator (dense_ofModel_domain j hj p hp hb hdense) =
       ContinuousLinearMap.closedFormOperator j hj hdense p :=
   ContinuousLinearMap.eq_closedFormOperator_of_mem_graph_iff _ _ _ _ fun x h ↦ by
-    rw [mem_graph_operator_iff]
-    constructor
-    · rintro ⟨y, hu, huv⟩
-      obtain ⟨w, rfl⟩ := (toOfModel j hj p hp hb).surjective y
-      refine ⟨w, hu, fun v ↦ ?_⟩
-      have := huv (toOfModel j hj p hp hb v)
-      rwa [ofModel_form_toOfModel, coe_toOfModel] at this
-    · rintro ⟨w, hu, huv⟩
-      refine ⟨toOfModel j hj p hp hb w, hu, fun y ↦ ?_⟩
-      obtain ⟨v, rfl⟩ := (toOfModel j hj p hp hb).surjective y
-      rw [ofModel_form_toOfModel, coe_toOfModel]
-      exact huv v
+    rw [mem_graph_operator_iff, ← mem_graph_closedFormOperator_iff_of_linearEquiv _ hj hdense
+      (toOfModel j hj p hp hb).symm (fun u ↦ congrArg Subtype.val
+        ((toOfModel j hj p hp hb).apply_symm_apply u)) fun u v ↦ (ofModel_form_apply ..).symm,
+      ContinuousLinearMap.mem_graph_closedFormOperator_iff]
 
 end Model
 
