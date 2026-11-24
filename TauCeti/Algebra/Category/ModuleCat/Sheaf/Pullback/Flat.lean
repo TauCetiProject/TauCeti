@@ -52,6 +52,12 @@ variable {X Y : TopCat.{u}} {𝒪X : Sheaf (Opens.grothendieckTopology X) CommRi
     ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).obj (ringCatSheaf 𝒪Y))
   [(_root_.SheafOfModules.pushforward.{u} φ).IsRightAdjoint]
 
+/-- Pullback of sheaves of modules along a morphism of ringed spaces is additive. -/
+instance _root_.SheafOfModules.additive_pullback :
+    (_root_.SheafOfModules.pullback φ).Additive :=
+  have := preservesBinaryBiproducts_of_preservesBinaryCoproducts (_root_.SheafOfModules.pullback φ)
+  Functor.additive_of_preservesBinaryBiproducts _
+
 /-- **Flat pullback preserves monomorphisms.** If every stalk map `𝒪_{X,f(y)} → 𝒪_{Y,y}` of a
 morphism of ringed spaces `(f, φ)` is flat, then pullback of sheaves of modules along `(f, φ)`
 preserves monomorphisms. -/
@@ -86,8 +92,6 @@ homology. -/
 theorem preservesHomology_pullback_of_flat (hφ : ∀ y, (ringStalkMap φ y).hom.Flat) :
     (_root_.SheafOfModules.pullback φ).PreservesHomology :=
   have := preservesMonomorphisms_pullback_of_flat φ hφ
-  have := preservesBinaryBiproducts_of_preservesBinaryCoproducts (_root_.SheafOfModules.pullback φ)
-  have := Functor.additive_of_preservesBinaryBiproducts (_root_.SheafOfModules.pullback φ)
   Functor.preservesHomology_of_preservesMonos_and_cokernels _
 
 /-- If every stalk map `𝒪_{X,f(y)} → 𝒪_{Y,y}` of a morphism of ringed spaces `(f, φ)` is flat,
@@ -95,8 +99,6 @@ then pullback of sheaves of modules along `(f, φ)` preserves finite limits. -/
 theorem preservesFiniteLimits_pullback_of_flat (hφ : ∀ y, (ringStalkMap φ y).hom.Flat) :
     PreservesFiniteLimits (_root_.SheafOfModules.pullback φ) :=
   have := preservesHomology_pullback_of_flat φ hφ
-  have := preservesBinaryBiproducts_of_preservesBinaryCoproducts (_root_.SheafOfModules.pullback φ)
-  have := Functor.additive_of_preservesBinaryBiproducts (_root_.SheafOfModules.pullback φ)
   Functor.preservesFiniteLimits_of_preservesHomology _
 
 end SheafOfModules

@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Flat
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 
 /-!
 # Exactness of flat pullback
@@ -65,21 +66,15 @@ private lemma flat_ringStalkMap (x : X) :
 
 /-- Pullback along a flat morphism of schemes preserves monomorphisms of sheaves of modules. -/
 instance preservesMonomorphisms_pullback_of_flat : (pullback f).PreservesMonomorphisms :=
-  have : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-    (pullbackPushforwardAdjunction f).isRightAdjoint
   TauCeti.SheafOfModules.preservesMonomorphisms_pullback_of_flat _ (flat_ringStalkMap f)
 
 /-- Pullback along a flat morphism of schemes preserves homology: it is an exact functor on
 sheaves of modules. -/
 instance preservesHomology_pullback_of_flat : (pullback f).PreservesHomology :=
-  have : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-    (pullbackPushforwardAdjunction f).isRightAdjoint
   TauCeti.SheafOfModules.preservesHomology_pullback_of_flat _ (flat_ringStalkMap f)
 
 /-- Pullback along a flat morphism of schemes preserves finite limits of sheaves of modules. -/
 instance preservesFiniteLimits_pullback_of_flat : PreservesFiniteLimits (pullback f) :=
-  have : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-    (pullbackPushforwardAdjunction f).isRightAdjoint
   TauCeti.SheafOfModules.preservesFiniteLimits_pullback_of_flat _ (flat_ringStalkMap f)
 
 end Scheme.Modules
