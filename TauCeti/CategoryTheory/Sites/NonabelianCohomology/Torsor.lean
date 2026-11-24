@@ -256,12 +256,9 @@ lemma nonempty_sections_of_isTerminal (P : Torsor G) {T : C} (hT : IsTerminal T)
     (hJ : ∀ S ∈ J T, S (𝟙 T)) : P.sheaf.obj.sections.Nonempty := by
   obtain ⟨⟨i, ⟨p⟩⟩, ⟨f⟩⟩ := hJ _ (P.coversTop T)
   refine ⟨fun U ↦ P.sheaf.obj.map (hT.from U.unop ≫ f).op p, fun {U V} g ↦ ?_⟩
-  dsimp only
-  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-  congr 3
-  apply Quiver.Hom.unop_inj
-  rw [unop_comp, Quiver.Hom.unop_op, Quiver.Hom.unop_op, ← Category.assoc,
-    hT.hom_ext (g.unop ≫ hT.from _) (hT.from _)]
+  have : g.unop ≫ hT.from U.unop = hT.from V.unop := hT.hom_ext _ _
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← g.op_unop, ← op_comp, ← Category.assoc,
+    this]
 
 /-- A `G`-invariant morphism from a torsor `P` to a sheaf of sets `F` is constant: its values
 are those of a global section of `F`. -/

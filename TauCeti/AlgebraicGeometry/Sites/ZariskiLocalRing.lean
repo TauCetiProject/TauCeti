@@ -36,7 +36,7 @@ namespace CategoryTheory.Sheaf.NonabelianH1
 /-- On the small Zariski site of the spectrum of a local ring, every torsor under a sheaf of
 groups is trivial: a covering of the whole space has a member containing the closed point, and
 that member is the whole space. -/
-theorem subsingleton_of_isLocalRing (A : Type u) [CommRing A] [IsLocalRing A]
+instance subsingleton_of_isLocalRing (A : Type u) [CommRing A] [IsLocalRing A]
     (G : Sheaf (Opens.grothendieckTopology (PrimeSpectrum A)) GrpCat.{w}) :
     Subsingleton (NonabelianH1 G) :=
   subsingleton_of_isTerminal Limits.isTerminalTop fun S hS ↦ by
