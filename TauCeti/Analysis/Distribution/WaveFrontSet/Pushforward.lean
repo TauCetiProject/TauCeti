@@ -12,6 +12,7 @@ import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Fourier.FourierCharDeriv
 import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Normed.Operator.Prod
@@ -204,13 +205,6 @@ private theorem mul_norm_pairCovector_le {Γ : Set E} {c M : ℝ} (hc : 0 < c) (
   have := norm_pairCovector_le m η
   nlinarith
 
-omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ E] in
-/-- The phase factor `x ↦ 𝐞 (-⟪Φ x, η⟫)` is smooth wherever `Φ` is. -/
-private theorem contDiffOn_fourierChar_neg_inner {Φ : E → E'} (hΦ : ContDiffOn ℝ ∞ Φ Ω)
-    (η : E') : ContDiffOn ℝ ∞ (fun x ↦ (𝐞 (-⟪Φ x, η⟫) : ℂ)) Ω :=
-  ((TauCeti.contDiff_fourierAtom η).comp_contDiffOn hΦ).congr fun _ _ ↦
-    (TauCeti.fourierAtom_eq_fourierChar _ _).symm
-
 omit [FiniteDimensional ℝ E'] in
 /-- A smooth map `Ψ` on all of `E` agreeing with `Φ` near a compact set `K ⊆ Ω`, written as an
 oscillatory phase `x ↦ (x, Ψ x)`: the Fourier coefficients of `χ (𝐞 (-⟪Φ ·, η⟫))` on the support
@@ -357,7 +351,7 @@ theorem exists_one_add_norm_pow_mul_norm_complexPairing_le_of_phase {T : 𝓓'(�
     exists_forall_one_add_pow_mul_norm_le hdecay hχ hχc hχUΩ hΦ hc hΓ' κ r N
   refine ⟨C * ∑' m : L, ((1 + ‖(m : E)‖) ^ r)⁻¹, fun η hη ψ hψ ↦ ?_⟩
   -- Sum the bounds of the terms over `L`.
-  have hs := hsum (contDiffOn_fourierChar_neg_inner hΦ η) hψ 0
+  have hs := hsum (hΦ.inner ℝ contDiffOn_const).neg.fourierChar hψ 0
   rw [localFourier_at_zero] at hs
   have hp : 0 < (1 + ‖η‖) ^ N := by positivity
   have hbound := hs.norm_le_of_bounded ((hr.hasSum.mul_left C).div_const ((1 + ‖η‖) ^ N))
@@ -440,7 +434,7 @@ private theorem one_add_pow_mul_norm_complexPairing_le_sum {T : 𝓓'(Ω, ℂ)} 
     {ψ : 𝓓(Ω, ℂ)} (hψ : ∀ y, ψ y = φ y * 𝐞 (-⟪Φ y, η⟫)) :
     (1 + ‖η‖) ^ N * ‖T.complexPairing ψ‖ ≤ ∑ i, C i := by
   have hmul (φ' : 𝓓(Ω, ℂ)) : ∃ ψ' : 𝓓(Ω, ℂ), ∀ y, ψ' y = φ' y * 𝐞 (-⟪Φ y, η⟫) :=
-    (exists_coe_eq_smul_of_contDiffOn (contDiffOn_fourierChar_neg_inner hΦ η) φ').imp
+    (exists_coe_eq_smul_of_contDiffOn (hΦ.inner ℝ contDiffOn_const).neg.fourierChar φ').imp
       fun _ h y ↦ (congrFun h y).trans (mul_comm _ _)
   obtain ⟨ψ₀, hψ₀⟩ := hmul φ₀
   choose ψs hψs using fun i ↦ hmul (φs i)
@@ -541,7 +535,8 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {T : 𝓓'(Ω, ℂ)} {y η :
   obtain ⟨C, hC⟩ := hdecay ψ₀ hψ₀ N
   refine ⟨C, fun η' hη' ↦ ?_⟩
   -- The localized Fourier transform is `T` paired with `ψ₀ 𝐞 (-⟪Φ ·, η'⟫)`.
-  obtain ⟨ψ, hψ⟩ := exists_coe_eq_smul_of_contDiffOn (contDiffOn_fourierChar_neg_inner hΦ η') ψ₀
+  obtain ⟨ψ, hψ⟩ :=
+    exists_coe_eq_smul_of_contDiffOn (hΦ.inner ℝ contDiffOn_const).neg.fourierChar ψ₀
   have hψ' (x : E) : ψ x = ψ₀ x * 𝐞 (-⟪Φ x, η'⟫) := (congrFun hψ x).trans (mul_comm _ _)
   rw [localFourier_cutoffPushforwardCLM_eq_complexPairing T f η' hψ']
   exact hC η' hη' _ hψ'
