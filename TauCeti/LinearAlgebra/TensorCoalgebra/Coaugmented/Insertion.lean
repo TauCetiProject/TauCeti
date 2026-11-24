@@ -231,15 +231,15 @@ theorem letter_reducedProjection_insertions (a : M) (t : ℕ) (w : TensorWords R
     (fun t ↦ ?_) (fun x w _ t ↦ ?_) t) w |>.trans (by split_ifs <;> simp)
   · rcases t with _ | _ | t
     · simp
-    · simp [letter_reducedProjection_cons]
-    · simp [pow_succ', mul_apply_eq_comp, letter_reducedProjection_cons]
+    · simp
+    · simp [pow_succ', mul_apply_eq_comp]
   · have hterm (i l : ℕ) : ReducedTensorWords.letter R M (reducedProjection R M
         ((cons R M a ^ (i + 1)) (cons R M x (insertions R a l w)))) = 0 := by
       rw [pow_succ', mul_apply_eq_comp, letter_reducedProjection_cons, counit_cons_pow_cons,
         zero_smul]
     rcases t with _ | _ | t <;>
       simp [insertions_cons, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk,
-        Finset.sum_range_succ', hterm, letter_reducedProjection_cons]
+        Finset.sum_range_succ', hterm]
 
 /-- Inserting letters commutes with applying a linear map to every letter. -/
 theorem map_insertions (f : M →ₗ[R] N) (a : M) (t : ℕ) (w : TensorWords R M) :
@@ -254,24 +254,6 @@ theorem map_insertions (f : M →ₗ[R] N) (a : M) (t : ℕ) (w : TensorWords R 
 /-- Inserting `t` letters into a word of length `n` gives a word of length `n + t`. -/
 theorem insertions_of_mem_range (a : M) (t : ℕ) {n : ℕ} (z : TensorPower R n M) :
     insertions R a t (of R M n z) ∈ LinearMap.range (of R M (n + t)) := by
-  -- Prepending a letter lengthens a word by one.
-  have hcons (x : M) {m : ℕ} {v : TensorWords R M} (hv : v ∈ LinearMap.range (of R M m)) :
-      cons R M x v ∈ LinearMap.range (of R M (m + 1)) := by
-    obtain ⟨z, rfl⟩ := hv
-    induction z using PiTensorProduct.induction_on with
-    | smul_tprod r y =>
-      rw [map_smul, map_smul, cons_of_tprod]
-      exact Submodule.smul_mem _ _ ⟨_, rfl⟩
-    | add z z' hz hz' =>
-      rw [map_add, map_add]
-      exact add_mem hz hz'
-  have hpow (k : ℕ) {m : ℕ} {v : TensorWords R M} (hv : v ∈ LinearMap.range (of R M m)) :
-      (cons R M a ^ k) v ∈ LinearMap.range (of R M (m + k)) := by
-    induction k with
-    | zero => simpa using hv
-    | succ k ih =>
-      rw [pow_succ', mul_apply_eq_comp, ← add_assoc]
-      exact hcons a ih
   induction z using PiTensorProduct.induction_on with
   | smul_tprod r y =>
     rw [map_smul, map_smul]
@@ -279,12 +261,12 @@ theorem insertions_of_mem_range (a : M) (t : ℕ) {n : ℕ} (z : TensorPower R n
     induction n generalizing t with
     | zero =>
       rw [Subsingleton.elim y fun i ↦ i.elim0, ← one_eq_of_zero, insertions_apply_one]
-      exact hpow t (v := 1) ⟨_, (one_eq_of_zero R M).symm⟩
+      exact cons_pow_mem_range_of a t (w := 1) ⟨_, (one_eq_of_zero R M).symm⟩
     | succ n ih =>
       rw [← Fin.cons_self_tail y, ← cons_of_tprod, insertions_cons]
       refine Submodule.sum_mem _ fun p hp ↦ ?_
       rw [Finset.mem_antidiagonal] at hp
-      have h := hpow p.1 (hcons (y 0) (ih p.2 (Fin.tail y)))
+      have h := cons_pow_mem_range_of a p.1 (cons_mem_range_of (y 0) (ih p.2 (Fin.tail y)))
       rwa [show n + p.2 + 1 + p.1 = n + 1 + t by omega] at h
   | add z z' hz hz' =>
     rw [map_add, map_add]
@@ -342,13 +324,13 @@ theorem counit_twistedInsert (τ : M →ₗ[R] M) (c : M) (w : TensorWords R M) 
     (by simp) fun x w _ ↦ by simp [twistedInsert_cons]) w
 
 /-- The letter component of a twisted insertion is the inserted letter times the counit. -/
+@[simp]
 theorem letter_reducedProjection_twistedInsert (τ : M →ₗ[R] M) (c : M) (w : TensorWords R M) :
     ReducedTensorWords.letter R M (reducedProjection R M (twistedInsert R τ c w)) =
       counit R M w • c := by
   refine LinearMap.congr_fun (linearMap_ext_cons'
     (f := ReducedTensorWords.letter R M ∘ₗ reducedProjection R M ∘ₗ twistedInsert R τ c)
-    (g := (counit R M).smulRight c) (by simp [letter_reducedProjection_cons])
-    fun x w _ ↦ by simp [twistedInsert_cons, letter_reducedProjection_cons]) w
+    (g := (counit R M).smulRight c) (by simp) fun x w _ ↦ by simp [twistedInsert_cons]) w
 
 /-- **The co-Leibniz rule of twisted insertion**: cutting `τx₁ ⋯ τxᵢ c xᵢ₊₁ ⋯ xₙ` puts `c` in
 the left half, or in the right half after the twisted left half. -/
@@ -407,16 +389,6 @@ theorem insertions_mem_gradedPiece {a : M} {p : ℤ} (ha : a ∈ G.piece p) (t :
     insertions R a t w ∈ gradedPiece G (D + t * p) := by
   have hdeg {E E' : ℤ} {v : TensorWords R M} (h : E = E') (hv : v ∈ gradedPiece G E) :
       v ∈ gradedPiece G E' := h ▸ hv
-  have hpow (k : ℕ) {E : ℤ} {v : TensorWords R M} (hv : v ∈ gradedPiece G E) :
-      (cons R M a ^ k) v ∈ gradedPiece G (E + k * p) := by
-    induction k with
-    | zero => simpa using hv
-    | succ k ih =>
-      rw [pow_succ', mul_apply_eq_comp]
-      exact hdeg (by push_cast; ring) (cons_mem_gradedPiece ha ih)
-  have h₁ : (1 : TensorWords R M) ∈ gradedPiece G 0 := by
-    simpa [← one_eq_of_zero] using
-      mem_gradedPiece_of_tprod G (fun i : Fin 0 ↦ (i.elim0 : M)) (fun i ↦ i.elim0) (fun i ↦ i.elim0)
   have key (n : ℕ) : ∀ (𝒟 : Fin n → ℤ) (x : Fin n → M), (∀ i, x i ∈ G.piece (𝒟 i)) →
       ∀ t : ℕ, insertions R a t (of R M n (PiTensorProduct.tprod R x)) ∈
         gradedPiece G (∑ i, 𝒟 i + t * p) := by
@@ -425,12 +397,12 @@ theorem insertions_mem_gradedPiece {a : M} {p : ℤ} (ha : a ∈ G.piece p) (t :
       intro 𝒟 x _ t
       rw [Subsingleton.elim x fun i ↦ i.elim0, ← one_eq_of_zero, insertions_apply_one,
         Finset.univ_eq_empty, Finset.sum_empty]
-      simpa using hpow t h₁
+      simpa using cons_pow_mem_gradedPiece ha t (one_mem_gradedPiece G)
     | succ n ih =>
       intro 𝒟 x hx t
       rw [← Fin.cons_self_tail x, ← cons_of_tprod, insertions_cons, Fin.sum_univ_succ]
-      refine Submodule.sum_mem _ fun k hk ↦ hdeg ?_ (hpow k.1 (cons_mem_gradedPiece (hx 0)
-        (ih (Fin.tail 𝒟) (Fin.tail x) (fun i ↦ hx i.succ) k.2)))
+      refine Submodule.sum_mem _ fun k hk ↦ hdeg ?_ (cons_pow_mem_gradedPiece ha k.1
+        (cons_mem_gradedPiece (hx 0) (ih (Fin.tail 𝒟) (Fin.tail x) (fun i ↦ hx i.succ) k.2)))
       rw [← Finset.mem_antidiagonal.1 hk]
       push_cast
       simp only [Fin.tail]
@@ -526,7 +498,7 @@ private theorem isGradedCoderivation_sub_of_deconcatenation {a : M}
     Finset.sum_eq_zero fun i hi ↦ by
       rw [hLK (t - (i + 1)) (by have := Finset.mem_range.1 hi; omega),
         TensorProduct.map_zero_right, LinearMap.zero_apply]]
-  simp [LinearMap.rTensor, LinearMap.lTensor, TensorProduct.map_map]
+  simp [LinearMap.rTensor_def, LinearMap.lTensor_def, TensorProduct.map_map]
 
 /-- **Graded coderivations pass through the insertions.**  Let `D` and the `E v` be graded
 coderivations, and suppose that the Taylor map of `E v` is the Taylor map of `D` after inserting

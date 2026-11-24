@@ -328,6 +328,28 @@ theorem consRec_cons (e : N) (S : M →ₗ[R] TensorWords R M →ₗ[R] N) (Θ :
       LinearMap.add_apply, LinearMap.comp_apply, toModule_of]
   exact LinearMap.congr_fun h w
 
+/-- Prepending a letter lengthens a word by one. -/
+theorem cons_mem_range_of (x : M) {m : ℕ} {w : TensorWords R M}
+    (hw : w ∈ LinearMap.range (of R M m)) : cons R M x w ∈ LinearMap.range (of R M (m + 1)) := by
+  obtain ⟨z, rfl⟩ := hw
+  induction z using PiTensorProduct.induction_on with
+  | smul_tprod r y =>
+    rw [map_smul, map_smul, cons_of_tprod]
+    exact Submodule.smul_mem _ _ ⟨_, rfl⟩
+  | add z z' hz hz' =>
+    rw [map_add, map_add]
+    exact add_mem hz hz'
+
+/-- Prepending `k` copies of a letter lengthens a word by `k`. -/
+theorem cons_pow_mem_range_of (a : M) (k : ℕ) {m : ℕ} {w : TensorWords R M}
+    (hw : w ∈ LinearMap.range (of R M m)) :
+    (cons R M a ^ k) w ∈ LinearMap.range (of R M (m + k)) := by
+  induction k with
+  | zero => simpa using hw
+  | succ k ih =>
+    rw [pow_succ', mul_apply_eq_comp, ← add_assoc]
+    exact cons_mem_range_of a ih
+
 /-- The deconcatenation of `a ⋯ a w`: the cuts inside the initial block of `k` letters `a`, and the
 cuts of `w`. -/
 theorem deconcatenation_cons_pow (a : M) (k : ℕ) (w : TensorWords R M) :
@@ -355,6 +377,7 @@ theorem deconcatenation_cons_pow (a : M) (k : ℕ) (w : TensorWords R M) :
     abel
 
 /-- The letter component of a word starting with `x` is `x` times the counit of the rest. -/
+@[simp]
 theorem letter_reducedProjection_cons (x : M) (w : TensorWords R M) :
     ReducedTensorWords.letter R M (reducedProjection R M (cons R M x w)) = counit R M w • x := by
   conv_lhs => rw [← reducedInclusion_reducedProjection_add_algebraMap_counit R M w]
@@ -401,6 +424,18 @@ theorem prepend_mem_gradedPiece {G : InternalGrading R M ℤ} {p D : ℤ} {a : M
 theorem cons_mem_gradedPiece {G : InternalGrading R M ℤ} {p D : ℤ} {x : M} (hx : x ∈ G.piece p)
     {w : TensorWords R M} (hw : w ∈ gradedPiece G D) : cons R M x w ∈ gradedPiece G (p + D) :=
   mem_gradedPiece_of_reducedInclusion (prepend_mem_gradedPiece hx hw)
+
+/-- Prepending `k` copies of a letter of degree `p` raises the total degree by `k * p`. -/
+theorem cons_pow_mem_gradedPiece {G : InternalGrading R M ℤ} {p D : ℤ} {x : M}
+    (hx : x ∈ G.piece p) (k : ℕ) {w : TensorWords R M} (hw : w ∈ gradedPiece G D) :
+    (cons R M x ^ k) w ∈ gradedPiece G (D + k * p) := by
+  induction k with
+  | zero => simpa using hw
+  | succ k ih =>
+    rw [pow_succ', mul_apply_eq_comp]
+    convert cons_mem_gradedPiece hx ih using 2
+    push_cast
+    ring
 
 /-- Uncurried prepending preserves total degrees: it is homogeneous of degree zero from the
 tensor-product grading of `M ⊗ Tᶜ(M)` to the total-letter-degree grading of the reduced words. -/
