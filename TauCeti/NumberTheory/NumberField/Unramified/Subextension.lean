@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.FieldTheory.IntermediateField.Lift
 import TauCeti.RingTheory.Unramified.AlgEquiv
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
 
@@ -42,12 +43,6 @@ namespace IntermediateField
 
 variable {K Ω : Type*} [Field K] [NumberField K] [Field Ω] [Algebra K Ω]
 
-omit [NumberField K] in
-/-- Restriction to an intermediate field `E` containing `L₁` and `L₂` preserves their compositum. -/
-private theorem restrict_sup {L₁ L₂ E : IntermediateField K Ω} (h₁ : L₁ ≤ E) (h₂ : L₂ ≤ E)
-    (h : L₁ ⊔ L₂ ≤ E) : restrict h = restrict h₁ ⊔ restrict h₂ :=
-  lift_injective _ (by rw [lift_sup, lift_restrict, lift_restrict, lift_restrict])
-
 /-- Unramifiedness in a compositum, inside a Galois extension `Ω / K`: the three fields are compared
 inside the normal closure of `L₁ ⊔ L₂`, a finite Galois extension of `K`, where unramifiedness is
 read on inertia groups. -/
@@ -62,7 +57,7 @@ private theorem isUnramifiedIn_sup_iff_of_isGalois [IsGalois K Ω] (L₁ L₂ : 
   have h₂ : L₂ ≤ M := le_sup_right.trans h
   rw [(mapAlgEquiv (restrictAlgEquiv h)).isUnramifiedIn_iff,
     (mapAlgEquiv (restrictAlgEquiv h₁)).isUnramifiedIn_iff,
-    (mapAlgEquiv (restrictAlgEquiv h₂)).isUnramifiedIn_iff, restrict_sup h₁ h₂ h,
+    (mapAlgEquiv (restrictAlgEquiv h₂)).isUnramifiedIn_iff, restrict_sup h₁ h₂,
     Ideal.isUnramifiedIn_sup_iff]
 
 /-- **Unramifiedness in a compositum.** For finite subextensions `L₁` and `L₂` of `Ω / K`, an
@@ -84,7 +79,7 @@ theorem isUnramifiedIn_sup_iff (L₁ L₂ : IntermediateField K Ω)
   have : FiniteDimensional K ((restrict h₂).map ι) := (e h₂).toLinearEquiv.finiteDimensional
   rw [(mapAlgEquiv (e (le_refl E))).isUnramifiedIn_iff,
     (mapAlgEquiv (e h₁)).isUnramifiedIn_iff, (mapAlgEquiv (e h₂)).isUnramifiedIn_iff,
-    restrict_sup h₁ h₂ (le_refl E),
+    restrict_sup h₁ h₂,
     IntermediateField.map_sup, isUnramifiedIn_sup_iff_of_isGalois]
 
 /-- **Unramifiedness descends to subextensions.** For `L ≤ E` with `E` finite over `K`, an ideal of
