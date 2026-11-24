@@ -46,6 +46,7 @@ localizations and completions.
 
 ## Main definitions
 
+* `Cubic.polynomialAction M P`: the form `f((u, v) M)`, for an arbitrary `2 × 2` matrix `M`.
 * The instance `MulAction (GL (Fin 2) R) (Cubic R)`: the twisted action
   `(g • f)(u, v) = det(g)⁻¹ f((u, v) g)`.
 
@@ -62,6 +63,12 @@ localizations and completions.
 * `Cubic.scalar_smul`: the scalar matrix `u • 1` acts by multiplying every coefficient by `u`.
 * `Cubic.smul_map`: mapping coefficients along a ring homomorphism is equivariant for
   `Matrix.GeneralLinearGroup.map`.
+* `Cubic.homogenize_toPoly_polynomialAction`: on binary forms the substitution
+  `Cubic.polynomialAction M` is `TauCeti.polynomialAction M`.
+* `Cubic.polynomialAction_mul`: substitution is a left action of the monoid of `2 × 2` matrices.
+* `Cubic.discr_polynomialAction`: `disc (f ∘ M) = (det M)⁶ disc f`, a polynomial identity over
+  every commutative ring.
+* The instance `FaithfulSMul (GL (Fin 2) R) (Cubic R)`: only the identity fixes every form.
 
 ## References
 
@@ -113,6 +120,75 @@ theorem isHomogeneous_iff_exists_homogenize_toPoly {p : MvPolynomial (Fin 2) R} 
     (congrArg Subtype.val (equiv.apply_symm_apply ⟨_, hdeg⟩)).symm⟩
 
 end BinaryForm
+
+section LinearSubstitution
+
+variable {R S : Type*} [CommSemiring R] [CommSemiring S]
+
+/-- The linear substitution `v ↦ P (v ᵥ* M)` of the binary cubic form `P` by the `2 × 2` matrix
+`M`, computed on coefficients: with `(u, v) M = (M₀₀ u + M₁₀ v, M₀₁ u + M₁₁ v)`, it expands
+`P (M₀₀ u + M₁₀ v, M₀₁ u + M₁₁ v)`. -/
+def polynomialAction (M : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) : Cubic R where
+  a := P.a * M 0 0 ^ 3 + P.b * M 0 0 ^ 2 * M 0 1 + P.c * M 0 0 * M 0 1 ^ 2 + P.d * M 0 1 ^ 3
+  b := 3 * P.a * M 0 0 ^ 2 * M 1 0 + P.b * (M 0 0 ^ 2 * M 1 1 + 2 * M 0 0 * M 1 0 * M 0 1) +
+    P.c * (2 * M 0 0 * M 0 1 * M 1 1 + M 1 0 * M 0 1 ^ 2) + 3 * P.d * M 0 1 ^ 2 * M 1 1
+  c := 3 * P.a * M 0 0 * M 1 0 ^ 2 + P.b * (2 * M 0 0 * M 1 0 * M 1 1 + M 1 0 ^ 2 * M 0 1) +
+    P.c * (M 0 0 * M 1 1 ^ 2 + 2 * M 1 0 * M 0 1 * M 1 1) + 3 * P.d * M 0 1 * M 1 1 ^ 2
+  d := P.a * M 1 0 ^ 3 + P.b * M 1 0 ^ 2 * M 1 1 + P.c * M 1 0 * M 1 1 ^ 2 + P.d * M 1 1 ^ 3
+
+@[simp]
+theorem polynomialAction_a (M : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) :
+    (polynomialAction M P).a =
+      P.a * M 0 0 ^ 3 + P.b * M 0 0 ^ 2 * M 0 1 + P.c * M 0 0 * M 0 1 ^ 2 + P.d * M 0 1 ^ 3 :=
+  (rfl)
+
+@[simp]
+theorem polynomialAction_b (M : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) :
+    (polynomialAction M P).b =
+      3 * P.a * M 0 0 ^ 2 * M 1 0 + P.b * (M 0 0 ^ 2 * M 1 1 + 2 * M 0 0 * M 1 0 * M 0 1) +
+        P.c * (2 * M 0 0 * M 0 1 * M 1 1 + M 1 0 * M 0 1 ^ 2) + 3 * P.d * M 0 1 ^ 2 * M 1 1 :=
+  (rfl)
+
+@[simp]
+theorem polynomialAction_c (M : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) :
+    (polynomialAction M P).c =
+      3 * P.a * M 0 0 * M 1 0 ^ 2 + P.b * (2 * M 0 0 * M 1 0 * M 1 1 + M 1 0 ^ 2 * M 0 1) +
+        P.c * (M 0 0 * M 1 1 ^ 2 + 2 * M 1 0 * M 0 1 * M 1 1) + 3 * P.d * M 0 1 * M 1 1 ^ 2 :=
+  (rfl)
+
+@[simp]
+theorem polynomialAction_d (M : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) :
+    (polynomialAction M P).d =
+      P.a * M 1 0 ^ 3 + P.b * M 1 0 ^ 2 * M 1 1 + P.c * M 1 0 * M 1 1 ^ 2 + P.d * M 1 1 ^ 3 :=
+  (rfl)
+
+/-- `Cubic.polynomialAction M` is the substitution `X₀ ↦ M₀₀ X₀ + M₁₀ X₁`, `X₁ ↦ M₀₁ X₀ + M₁₁ X₁`
+of the binary form, that is `TauCeti.polynomialAction M`. -/
+theorem homogenize_toPoly_polynomialAction (M : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) :
+    (polynomialAction M P).toPoly.homogenize 3 =
+      TauCeti.polynomialAction M (P.toPoly.homogenize 3) := by
+  simp only [homogenize_toPoly, map_add, map_mul, map_pow, TauCeti.polynomialAction_X,
+    Fin.sum_univ_two, algHom_C, algebraMap_eq, polynomialAction_a, polynomialAction_b,
+    polynomialAction_c, polynomialAction_d, map_ofNat]
+  ring
+
+@[simp]
+theorem polynomialAction_one (P : Cubic R) : polynomialAction 1 P = P := by
+  ext <;> simp
+
+/-- Substitution by `M * N` substitutes by `N` and then by `M`: `P ((v M) N) = P (v (M N))`, so
+linear substitution is a left action of the monoid of `2 × 2` matrices. -/
+theorem polynomialAction_mul (M N : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) :
+    polynomialAction (M * N) P = polynomialAction M (polynomialAction N P) := by
+  ext <;> simp only [polynomialAction_a, polynomialAction_b, polynomialAction_c,
+    polynomialAction_d, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+
+/-- Linear substitution commutes with base change of the coefficients. -/
+theorem map_polynomialAction (φ : R →+* S) (M : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) :
+    (polynomialAction M P).map φ = polynomialAction (φ.mapMatrix M) (P.map φ) := by
+  ext <;> simp [map, map_ofNat]
+
+end LinearSubstitution
 
 variable {R : Type*} [CommRing R]
 
@@ -202,6 +278,16 @@ end Substitution
 
 section Discriminant
 
+/-- **Discriminant covariance of linear substitution.** For every `2 × 2` matrix `M`,
+`disc (P ∘ M) = (det M)⁶ disc P`. This is a polynomial identity in the coefficients of `P` and the
+entries of `M`, so it holds over every commutative ring. -/
+@[simp]
+theorem discr_polynomialAction (M : Matrix (Fin 2) (Fin 2) R) (P : Cubic R) :
+    (polynomialAction M P).discr = M.det ^ 6 * P.discr := by
+  simp only [discr, polynomialAction_a, polynomialAction_b, polynomialAction_c, polynomialAction_d,
+    det_fin_two]
+  ring
+
 /-- **Covariance of the discriminant.** The discriminant of a binary cubic form is a relative
 invariant of weight two for the twisted action: `disc(g • f) = det(g)² disc(f)`. -/
 @[simp]
@@ -245,6 +331,40 @@ theorem smul_map {S : Type*} [CommRing S] (f : R →+* S) (g : GL (Fin 2) R) (P 
       f ↑(GeneralLinearGroup.det g)⁻¹ := by
     simp [GeneralLinearGroup.map_det]
   ext <;> simp [map, hdet, map_ofNat]
+
+/-- An element of `GL₂(R)` fixing every binary cubic form is the identity. -/
+private theorem eq_one_of_forall_smul_eq (g : GL (Fin 2) R) (h : ∀ P : Cubic R, g • P = P) :
+    g = 1 := by
+  -- The forms `u³` and `v³` make the diagonal entries units; `u² v` and `u v²` then kill the
+  -- off-diagonal entries and pin the diagonal ones to `1`.
+  set u : R := ↑(GeneralLinearGroup.det g)⁻¹
+  have hu : u * (g 0 0 * g 1 1 - g 0 1 * g 1 0) = 1 := by
+    rw [← det_fin_two, ← GeneralLinearGroup.val_det_apply]
+    exact Units.inv_mul _
+  have h₁ := congrArg Cubic.a (h ⟨1, 0, 0, 0⟩)
+  have h₂ := congrArg Cubic.d (h ⟨0, 0, 0, 1⟩)
+  have h₃ := congrArg Cubic.a (h ⟨0, 1, 0, 0⟩)
+  have h₄ := congrArg Cubic.b (h ⟨0, 1, 0, 0⟩)
+  have h₅ := congrArg Cubic.d (h ⟨0, 0, 1, 0⟩)
+  have h₆ := congrArg Cubic.c (h ⟨0, 0, 1, 0⟩)
+  simp only [smul_a, smul_b, smul_c, smul_d, zero_mul, one_mul, zero_add,
+    add_zero] at h₁ h₂ h₃ h₄ h₅ h₆
+  have h01 : g 0 1 = 0 := by linear_combination g 0 0 * h₃ - g 0 1 * h₁
+  have h10 : g 1 0 = 0 := by linear_combination g 1 1 * h₅ - g 1 0 * h₂
+  rw [h01, h10] at hu h₄ h₆
+  ext i j
+  fin_cases i <;> fin_cases j
+  · simpa using (by linear_combination h₄ - g 0 0 * hu : g 0 0 = 1)
+  · simpa using h01
+  · simpa using h10
+  · simpa using (by linear_combination h₆ - g 1 1 * hu : g 1 1 = 1)
+
+/-- The twisted action is faithful over every commutative ring, including finite fields where
+distinct forms can define the same function. -/
+instance instFaithfulSMulGeneralLinearGroup : FaithfulSMul (GL (Fin 2) R) (Cubic R) where
+  eq_of_smul_eq_smul {g₁ g₂} h := by
+    have := eq_one_of_forall_smul_eq (g₂⁻¹ * g₁) fun P => by rw [mul_smul, h, inv_smul_smul]
+    rwa [inv_mul_eq_one, eq_comm] at this
 
 section Examples
 
