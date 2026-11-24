@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.NovikovModule.Tensor
-public import TauCeti.RingTheory.NovikovModule.TensorProduct
+public import TauCeti.RingTheory.NovikovModule.Tensor.Basic
+public import TauCeti.RingTheory.NovikovModule.Topology
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
 
 /-!
@@ -227,14 +227,6 @@ changes. -/
 @[simp]
 theorem mapRange_tensor (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
     mapRange ρ (tensor a b) = tensor (mapRange ρ a) (mapRange ρ b) := by
-  ext q
-  simp
-
-/-- Coefficient change of a completed external product is the external product of the
-coefficient changes. -/
-@[simp]
-theorem mapRange_externalProduct (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
-    mapRange ρ (externalProduct a b) = externalProduct (mapRange ρ a) (mapRange ρ b) := by
   ext q
   simp
 

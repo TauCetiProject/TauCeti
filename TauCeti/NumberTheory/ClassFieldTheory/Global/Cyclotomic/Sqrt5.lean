@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Prime
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Five
 import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Subfields
 import TauCeti.NumberTheory.NumberField.Frobenius
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
@@ -83,9 +84,7 @@ private lemma globalArtinMap_Qsqrt5_prime_apply_eq_self_iff (ι : E →ₐ[ℚ] 
   have := Multiquadratic.isMulCommutative_of_adjoin_eq_top (d := fun _ : Unit ↦ (5 : ℚ))
     (fun _ ↦ by rw [hs, map_ofNat]) htop
   obtain ⟨p, hpv⟩ : ∃ p, Ideal.absNorm v.asIdeal = p := ⟨_, rfl⟩
-  have : Fact p.Prime := ⟨by
-    rw [← hpv, Rat.HeightOneSpectrum.absNorm_asIdeal]
-    exact Rat.HeightOneSpectrum.prime_natGenerator v⟩
+  have : Fact p.Prime := ⟨hpv ▸ Rat.HeightOneSpectrum.prime_absNorm_asIdeal v⟩
   have hp5 : ¬ (p : ℤ) ∣ 5 := by
     have := mt (Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd v (n := 5)).mpr
       (by exact_mod_cast hv)
@@ -170,34 +169,13 @@ theorem globalArtinMap_zeta5_restrict_Qsqrt5 (ι : E →ₐ[ℚ] SeparableClosur
     (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) = .ofMul (Group.Abelianization.of
         σ)) :
     (∀ x ∈ M, σ x = x) ↔ Ideal.absNorm v.asIdeal % 5 = 1 ∨ Ideal.absNorm v.asIdeal % 5 = 4 := by
-  rw [← IntermediateField.mem_fixingSubgroup_iff]
-  have hH : M.fixingSubgroup.index = 2 :=
-    (IntermediateField.finrank_eq_fixingSubgroup_index E M).symm.trans hM
+  rw [← IntermediateField.mem_fixingSubgroup_iff,
+    IntermediateField.mem_fixingSubgroup_zeta5_iff hM]
   have hval : (Rat.galEquivZMod 5 E σ : ZMod 5).val = Ideal.absNorm v.asIdeal % 5 := by
     rw [galEquivZMod_globalArtinMap_prime ι v hv hσ, ZMod.val_natCast]
-  rw [← hval, ← (by decide : ∀ c : (ZMod 5)ˣ,
-    (c = 1 ∨ c = -1) ↔ ((c : ZMod 5).val = 1 ∨ (c : ZMod 5).val = 4)) _]
-  constructor
-  · -- An element of `(ℤ/5ℤ)ˣ` other than `±1` generates it, so the fixing group would be
-    -- everything, of index one.
-    intro hσH
-    by_contra hc
-    rw [not_or] at hc
-    have hgen : ∀ d : (ZMod 5)ˣ, ∃ k < 4, d = Rat.galEquivZMod 5 E σ ^ k :=
-      (by decide : ∀ c : (ZMod 5)ˣ, c ≠ 1 → c ≠ -1 → ∀ d, ∃ k < 4, d = c ^ k) _ hc.1 hc.2
-    have htop : M.fixingSubgroup = ⊤ := (Subgroup.eq_top_iff' _).mpr fun τ ↦ by
-      obtain ⟨k, -, hk⟩ := hgen (Rat.galEquivZMod 5 E τ)
-      have hτ : τ = σ ^ k := (Rat.galEquivZMod 5 E).injective (by rw [map_pow]; exact hk)
-      exact hτ ▸ pow_mem hσH k
-    rw [htop, Subgroup.index_top] at hH
-    exact absurd hH (by norm_num)
-  · -- `±1` are squares in `(ℤ/5ℤ)ˣ`, and a subgroup of index two contains every square.
-    intro hc
-    obtain ⟨d, hd⟩ := (by decide : ∀ c : (ZMod 5)ˣ, c = 1 ∨ c = -1 → ∃ d : (ZMod 5)ˣ, c = d ^ 2)
-      _ hc
-    have hσd : σ = ((Rat.galEquivZMod 5 E).symm d) ^ 2 := (Rat.galEquivZMod 5 E).injective
-      (by rw [map_pow, MulEquiv.apply_symm_apply]; exact hd)
-    exact hσd ▸ Subgroup.sq_mem_of_index_two hH _
+  rw [← hval]
+  exact (by decide : ∀ c : (ZMod 5)ˣ,
+    (c = 1 ∨ c = -1) ↔ ((c : ZMod 5).val = 1 ∨ (c : ZMod 5).val = 4)) _
 
 end Zeta5
 

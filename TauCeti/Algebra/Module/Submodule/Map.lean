@@ -44,6 +44,8 @@ is a surjection rather than an isomorphism.
   inclusion.
 * `Submodule.mem_submoduleOf`: an element of `q` lies in `p.submoduleOf q` iff its ambient value
   lies in `p`.
+* `Submodule.map_equiv_eq_iff`: a semilinear equivalence carries `p` onto `q` exactly when it
+  maps a vector into `q` precisely when the vector lies in `p`.
 * `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
   carries the trace of `A` in `B` onto the trace of `A.map f` in `B.map f`.
 -/
@@ -61,7 +63,7 @@ vectors. -/
 theorem map_eq_span_of_span_eq_top (p : Submodule R M) {v : ι → p}
     (hv : span R (Set.range v) = ⊤) (f : M →ₛₗ[σ₁₂] M₂) :
     p.map f = span R₂ (Set.range fun i ↦ f (v i)) := by
-  conv_lhs => rw [← (span_range_subtype_eq_top_iff p fun i ↦ (v i).2).1 hv]
+  conv_lhs => rw [← (span_range_subtype_eq_top_iff p fun i ↦ (v i).property).1 hv]
   rw [map_span, ← Set.range_comp, Function.comp_def]
 
 /-- The image of the line spanned by `x` is the line spanned by `f x`. -/
@@ -83,6 +85,20 @@ theorem mapIic_symm_apply (p : Submodule R M) (N : Set.Iic p) :
 theorem mem_submoduleOf {p q : Submodule R M} {x : q} : x ∈ p.submoduleOf q ↔ (x : M) ∈ p := by
   rw [submoduleOf, mem_comap, subtype_apply]
 
+section Equiv
+
+variable {τ₁₂ : R →+* R₂} {τ₂₁ : R₂ →+* R} [RingHomInvPair τ₁₂ τ₂₁] [RingHomInvPair τ₂₁ τ₁₂]
+
+/-- A semilinear equivalence `e` carries `p` onto `q` exactly when `e x ∈ q ↔ x ∈ p` for
+every `x`. -/
+theorem map_equiv_eq_iff {e : M ≃ₛₗ[τ₁₂] M₂} {p : Submodule R M} {q : Submodule R₂ M₂} :
+    p.map (e : M →ₛₗ[τ₁₂] M₂) = q ↔ ∀ x, e x ∈ q ↔ x ∈ p := by
+  rw [SetLike.ext_iff, e.surjective.forall]
+  simp only [mem_map_equiv, LinearEquiv.symm_apply_apply]
+  exact forall_congr' fun _ ↦ Iff.comm
+
+end Equiv
+
 end Submodule
 
 namespace LinearMap
@@ -98,9 +114,9 @@ submodules of the source containing the kernel. -/
 def submoduleComapOrderIsoOfSurjective (f : V →ₛₗ[σ] W) (hf : Function.Surjective f) :
     Submodule B W ≃o Set.Ici (LinearMap.ker f) where
   toFun Q := ⟨Q.comap f, f.ker_le_comap⟩
-  invFun P := P.1.map f
+  invFun P := P.val.map f
   left_inv Q := Submodule.map_comap_eq_of_surjective hf Q
-  right_inv P := Subtype.ext (Submodule.comap_map_eq_self P.2)
+  right_inv P := Subtype.ext (Submodule.comap_map_eq_self P.property)
   map_rel_iff' := Submodule.comap_le_comap_iff_of_surjective hf
 
 /-- The correspondence along a surjection takes inverse images. -/
@@ -114,7 +130,7 @@ theorem coe_submoduleComapOrderIsoOfSurjective (f : V →ₛₗ[σ] W) (hf : Fun
 @[simp]
 theorem submoduleComapOrderIsoOfSurjective_symm_apply (f : V →ₛₗ[σ] W) (hf : Function.Surjective f)
     (P : Set.Ici (LinearMap.ker f)) :
-    (submoduleComapOrderIsoOfSurjective f hf).symm P = P.1.map f :=
+    (submoduleComapOrderIsoOfSurjective f hf).symm P = P.val.map f :=
   (rfl)
 
 end Correspondence

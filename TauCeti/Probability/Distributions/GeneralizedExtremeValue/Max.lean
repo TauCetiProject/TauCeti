@@ -56,7 +56,7 @@ private theorem cdf_generalizedExtremeValueMeasure_max {n : ℕ} (hn : 0 < n)
       rw [← Real.rpow_mul hnR.le]
       have hexponent : ξ * (-1 / ξ) = -1 := by field_simp
       rw [hexponent, Real.rpow_neg_one]
-    rw [Real.div_rpow hx.le ha.le, hpower, div_inv_eq_mul, ← Real.exp_nat_mul]
+    rw [Real.div_rpow hx.le ha.le, hpower, div_inv_eq_mul, ← Real.exp_natCast_mul]
     congr 1
     ring
   · simp [hn.ne']
