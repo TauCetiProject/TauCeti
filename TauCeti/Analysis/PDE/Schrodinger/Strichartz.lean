@@ -129,11 +129,10 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le_of_finrank_eq_one
     (E := V) (X := E) (μ := volume) (r := ∞) (r' := 1) (by norm_num : (2 : ℝ≥0) < 4)
     holderConjugate_four_div_three_four
   refine ⟨C * (ENNReal.ofReal ((4 * Real.pi) ^ (-(2⁻¹ : ℝ))) ^ (2⁻¹ : ℝ)).toNNReal,
-    fun F hF hSF => ?_⟩
+    fun F hF _ => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
   simpa only [adjoint_phasePropagator] using hC (schrodingerPropagator V) _
     (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le_of_finrank_eq_one hE hst g) F hF
-    (by simpa only [adjoint_phasePropagator] using hSF)
 
 /-- **The Strichartz estimate for the Schrödinger equation on the line**, at the admissible pair
 `(4, ∞)`, in weak form. There is `C` such that for every `f ∈ L²(E, V)` on a one-dimensional space
@@ -275,11 +274,10 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le (hq : 2 < q)
   obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le (𝕜 := ℂ) (H := Lp ℂ 2 (volume : Measure E))
     (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq hpq
   refine ⟨C * (ENNReal.ofReal ((4 * Real.pi) ^ (-(2 / q : ℝ))) ^ (2⁻¹ : ℝ)).toNNReal,
-    fun F hF hSF => ?_⟩
+    fun F hF _ => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
   simpa only [adjoint_phasePropagator] using hC (schrodingerPropagator ℂ) _
     (fun s t hst g ↦ eLpNorm_schrodingerPropagator_adjoint_le hq hqr hst g) F hF
-    (by simpa only [adjoint_phasePropagator] using hSF)
 
 /-- **The Strichartz estimate for the Schrödinger equation** in every dimension `n`, in weak
 form, at a non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` and

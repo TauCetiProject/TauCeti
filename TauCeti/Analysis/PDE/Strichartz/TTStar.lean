@@ -289,21 +289,26 @@ theorem enorm_integral_le_sqrt_mul_of_enorm_integral_inner_le {u : ℝ → H} (h
 /-- **The dual homogeneous `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
 `U(t) : H → L²(X, μ)` be bounded operators with
 `‖U(s) U(t)* g‖_r ≤ A |s - t| ^ (-2 / q) ‖g‖_{r'}` for `s ≠ t`. Then for every almost everywhere
-strongly measurable `F : ℝ → L²(X, μ)` for which `s ↦ U(s)* F(s)` is integrable,
+strongly measurable `F : ℝ → L²(X, μ)`,
 
 `‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^p L^{r'}}`,
 
-with `C` independent of the family `U`, of `A` and of `F`. -/
+with `C` independent of the family `U`, of `A` and of `F`. No integrability of `s ↦ U(s)* F(s)` is
+assumed: without it the Bochner integral is `0`. -/
 theorem exists_enorm_integral_adjoint_le {p q : ℝ≥0} (hq : 2 < q) (hpq : p.HolderConjugate q) :
     ∃ C : ℝ≥0, ∀ (U : ℝ → H →L[𝕜] Lp E 2 μ) (A : ℝ≥0∞),
       (∀ s t, s ≠ t → ∀ g : Lp E 2 μ,
         eLpNorm (U s (((U t)†) g)) r μ ≤ A * ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' μ) →
-      ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F → Integrable (fun s ↦ ((U s)†) (F s)) →
+      ∀ F : ℝ → Lp E 2 μ, AEStronglyMeasurable F →
         ‖∫ s, ((U s)†) (F s)‖ₑ ≤
           C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p := by
   obtain ⟨C, hC⟩ := exists_lintegral_lintegral_enorm_inner_adjoint_le (𝕜 := 𝕜) (H := H)
     (E := E) (μ := μ) (r := r) (r' := r') hq hpq
-  refine ⟨NNReal.sqrt C, fun U A hU F hF hUF => ?_⟩
+  refine ⟨NNReal.sqrt C, fun U A hU F hF => ?_⟩
+  by_cases hUF : Integrable fun s ↦ ((U s)†) (F s)
+  swap
+  · rw [integral_undef hUF, eNorm_zero]
+    exact zero_le
   set a := eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p
   have hA : A ^ (2⁻¹ : ℝ) * A ^ (2⁻¹ : ℝ) = A := by
     rw [← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
@@ -347,7 +352,7 @@ theorem exists_enorm_integral_inner_apply_le {p q : ℝ≥0} (hq : 2 < q)
   calc _ ≤ ‖f‖ₑ * ‖∫ t, ((U t)†) (G t)‖ₑ := eNorm_inner_le_eNorm _ _
     _ ≤ ‖f‖ₑ * (C * A ^ (2⁻¹ : ℝ) * eLpNorm (fun t ↦ eLpNorm (G t) r' μ) p) := by
         gcongr
-        exact hC U A hU G hG hUG
+        exact hC U A hU G hG
     _ = _ := by ring
 
 /-- **The dual `TT*` estimate at `q = ∞`.** Let `U(t) : H → L²(X, μ)` be bounded operators with

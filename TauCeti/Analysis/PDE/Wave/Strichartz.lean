@@ -415,13 +415,7 @@ theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_le
   obtain ⟨C, hC⟩ := exists_enorm_integral_adjoint_le (𝕜 := ℂ) (H := Lp ℂ 2 (volume : Measure E))
     (E := ℂ) (X := E) (μ := volume) (r := r) (r' := r') hq hpq
   refine ⟨C * (√A).toNNReal, fun j m hm F hF ↦ ?_⟩
-  by_cases hPF : Integrable fun s ↦
-      Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-s) (F s))
-  swap
-  · rw [integral_undef hPF, eNorm_zero]
-    exact zero_le
   have h := hC (fun t ↦ halfWavePropagator ℂ t ∘L Lp.fourierMultiplierCLM ℂ m) _ (hA j m hm) F hF
-    (by simpa only [adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply] using hPF)
   simp only [adjoint_halfWavePropagator_comp_fourierMultiplierCLM_apply] at h
   refine h.trans_eq ?_
   rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),

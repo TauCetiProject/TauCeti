@@ -456,7 +456,6 @@ private theorem exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt {p q r
     ∃ C : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
       ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
-        Integrable (fun s ↦ halfWavePropagator ℂ (-s) (Lp.fourierMultiplierCLM ℂ m (F s))) →
         ‖∫ s, halfWavePropagator ℂ (-s) (Lp.fourierMultiplierCLM ℂ m (F s))‖ₑ ≤
           C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal)) *
@@ -466,7 +465,7 @@ private theorem exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt {p q r
     obtain rfl : p = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ⊤ p).1 rfl
     obtain ⟨C, hC⟩ :=
       φ.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_eLpNorm_one (r' := r') hr
-    exact ⟨C, fun j m hm F hF _ ↦ by simpa using hC j m hm F hF⟩
+    exact ⟨C, fun j m hm F hF ↦ by simpa using hC j m hm F hF⟩
   -- For `q < ∞` pass to the real exponents `q.toNNReal` and `p.toNNReal`.
   obtain ⟨hq2, hqr⟩ := waveAdmissible_toNNReal hq hqtop hqr
   have hptop : p ≠ ⊤ :=
@@ -475,7 +474,7 @@ private theorem exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt {p q r
     (ENNReal.HolderConjugate.toNNReal (p := q) (q := p) (one_lt_two.trans hq2)).symm
   obtain ⟨C, hC⟩ :=
     φ.exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le (r' := r') hq2 hpq hqr
-  refine ⟨C, fun j m hm F hF _ ↦ ?_⟩
+  refine ⟨C, fun j m hm F hF ↦ ?_⟩
   have h := hC j m hm F hF
   rw [ENNReal.coe_toNNReal hptop, ENNReal.coe_toNNReal_eq_toReal, ← ENNReal.toReal_inv] at h
   exact h
@@ -521,9 +520,9 @@ private theorem exists_enorm_integral_adjoint_halfWavePropagator_comp_le (hq : 2
             eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
   obtain ⟨C, hC⟩ :=
     φ.exists_enorm_integral_halfWavePropagator_neg_le_of_two_lt (p := p) (r' := r') hq hr hqr
-  refine ⟨C, fun j m hm F hF hUF ↦ ?_⟩
-  simp only [φ.adjoint_halfWavePropagator_comp_apply hm] at hUF ⊢
-  exact hC j m hm F hF hUF
+  refine ⟨C, fun j m hm F hF _ ↦ ?_⟩
+  simp only [φ.adjoint_halfWavePropagator_comp_apply hm]
+  exact hC j m hm F hF
 
 /-- **The Christ–Kiselev step for two admissible pairs.** If operators `U(t)` on `L²(E)` satisfy
 the dual estimates along `(q₁, r₁)` and `(q, r)`, `2 < q, q₁`, with the constants `C₁ 2^{jγ₁}`
