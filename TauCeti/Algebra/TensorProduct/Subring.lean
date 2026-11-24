@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.Domain
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.TensorProduct.Maps
-import TauCeti.Algebra.TensorProduct.Subalgebra
+public import TauCeti.Algebra.TensorProduct.Subalgebra
 
 /-!
 # Tensor squares of subrings
@@ -18,7 +18,10 @@ to the tensor square of the ambient algebra, together with its range and basic m
 
 ## Main definitions and results
 
-* `Subring.tensorSquareMap`: the canonical map from the integral tensor square.
+* `Subring.tensorSquareMap`: the canonical map from the integral tensor square, the
+  `Subalgebra.tensorSquareMap` of `subalgebraOfSubring S` (`Subring.tensorSquareMap_eq`).
+* `Subring.subalgebraOfSubringEquiv`: the `ℤ`-linear equivalence between `subalgebraOfSubring S`
+  and `S`.
 * `Subring.tensorSquareMap_injective_of_flat`: the canonical map is injective when the subring is
   flat over `ℤ` and the base ring acts compatibly on the integral tensor square.
 * `Subring.tensorSquareMap_injective`: over a rational algebra, the canonical map is
@@ -41,34 +44,44 @@ universe u v
 variable (R : Type u) {A : Type v} [CommRing R] [Ring A] [Algebra R A]
 
 /-- The canonical map from the integral tensor square of a subring to the tensor square of the
-ambient algebra. On pure tensors, it applies the subring inclusion in both factors. -/
+ambient algebra. On pure tensors, it applies the subring inclusion in both factors. It is
+`Subalgebra.tensorSquareMap` for the `ℤ`-subalgebra `subalgebraOfSubring S`. -/
 noncomputable def _root_.Subring.tensorSquareMap (S : Subring A) : S ⊗[ℤ] S →ₐ[ℤ] A ⊗[R] A :=
-  Algebra.TensorProduct.lift
-    ((Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] A).restrictScalars ℤ |>.comp
-      S.subtype.toIntAlgHom)
-    ((Algebra.TensorProduct.includeRight : A →ₐ[R] A ⊗[R] A).restrictScalars ℤ |>.comp
-      S.subtype.toIntAlgHom)
-    fun x y => by
-      simp only [AlgHom.comp_apply, RingHom.toIntAlgHom_apply, Subring.coe_subtype]
-      exact (Commute.one_right _).tmul (Commute.one_left _)
+  Subalgebra.tensorSquareMap R (subalgebraOfSubring S)
+
+/-- The canonical tensor-square map of a subring is that of the corresponding `ℤ`-subalgebra. -/
+theorem _root_.Subring.tensorSquareMap_eq (S : Subring A) :
+    Subring.tensorSquareMap R S = Subalgebra.tensorSquareMap R (subalgebraOfSubring S) :=
+  (rfl)
 
 /-- The canonical tensor-square map sends a pure tensor to the pure tensor of the underlying
 ambient elements. -/
 @[simp]
 theorem _root_.Subring.tensorSquareMap_tmul (S : Subring A) (x y : S) :
     Subring.tensorSquareMap R S (x ⊗ₜ[ℤ] y) = (x : A) ⊗ₜ[R] (y : A) := by
-  simp [Subring.tensorSquareMap]
+  rw [Subring.tensorSquareMap_eq]
+  exact Subalgebra.tensorSquareMap_tmul (subalgebraOfSubring S) x y
+
+/-- A subring and the corresponding `ℤ`-subalgebra are isomorphic as abelian groups. -/
+noncomputable def _root_.Subring.subalgebraOfSubringEquiv (S : Subring A) :
+    subalgebraOfSubring S ≃ₗ[ℤ] S :=
+  AddEquiv.toIntLinearEquiv
+    { toFun x := ⟨x, mem_subalgebraOfSubring.1 x.property⟩
+      invFun x := ⟨x, mem_subalgebraOfSubring.2 x.property⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_add' _ _ := rfl }
 
 /-- If a subring `S` of an `R`-algebra `A` is flat over `ℤ`, and `R`-scalars can be moved across
 `A ⊗[ℤ] A`, then the canonical map from the integral tensor square of `S` to `A ⊗[R] A` is
 injective. The second condition holds when `R` is `ℤ` or `ℚ`, and for a localization of `ℤ` by
 `IsLocalization.tensorProduct_compatibleSMul`. -/
--- This is `Subalgebra.tensorSquareMap_injective` for the `ℤ`-subalgebra `subalgebraOfSubring S`,
--- whose tensor-square map is `Subring.tensorSquareMap R S` by definition.
 theorem _root_.Subring.tensorSquareMap_injective_of_flat {R : Type u} [CommRing R] [Algebra R A]
     [TensorProduct.CompatibleSMul ℤ R A A] (S : Subring A) [Module.Flat ℤ S] :
     Function.Injective (Subring.tensorSquareMap R S) := by
-  have : Module.Flat ℤ (subalgebraOfSubring S) := ‹Module.Flat ℤ S›
+  have : Module.Flat ℤ (subalgebraOfSubring S) :=
+    Module.Flat.of_linearEquiv S.subalgebraOfSubringEquiv
+  rw [Subring.tensorSquareMap_eq]
   exact Subalgebra.tensorSquareMap_injective (R := ℤ) (K := R) (subalgebraOfSubring S)
 
 section Rational

@@ -49,7 +49,7 @@ variable (K) in
 /-- The canonical map from the tensor square over `R` of an `R`-subalgebra `A` of a `K`-algebra
 `H` to the tensor square of `H` over `K`. On pure tensors it applies the inclusion of `A` in both
 factors. -/
-@[expose] noncomputable def tensorSquareMap (A : Subalgebra R H) : A ⊗[R] A →ₐ[R] H ⊗[K] H :=
+noncomputable def tensorSquareMap (A : Subalgebra R H) : A ⊗[R] A →ₐ[R] H ⊗[K] H :=
   Algebra.TensorProduct.lift
     ((Algebra.TensorProduct.includeLeft : H →ₐ[K] H ⊗[K] H).restrictScalars R |>.comp A.val)
     ((Algebra.TensorProduct.includeRight : H →ₐ[K] H ⊗[K] H).restrictScalars R |>.comp A.val)
