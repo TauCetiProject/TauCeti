@@ -41,7 +41,7 @@ definitions accept every `k : ℕ`, but only `k ≥ 1` gives a discrete series o
   basis, with `TauCeti.isSl2Triple_compactCartan`.
 * `TauCeti.compactRep k μ`: the Lie algebra homomorphism `𝔤𝔩₂(ℂ) → End(ℤ →₀ ℂ)` given by the
   formulas above, and `TauCeti.CompactWeightModule k μ`, the resulting module.
-* `TauCeti.weightVector k μ ℓ`: the weight vector `v_ℓ`.
+* `TauCeti.CompactWeightModule.weightVector k μ ℓ`: the weight vector `v_ℓ`.
 * `TauCeti.discreteSeries k μ`: `D_k(μ)`, with the rays `TauCeti.positiveDiscreteSeries k μ` and
   `TauCeti.negativeDiscreteSeries k μ`.
 * `TauCeti.CompactWeightModule.reflection k μ`: `v_ℓ ↦ v_{-ℓ}`.
@@ -107,21 +107,21 @@ theorem lie_compactCartanX_compactCartanY :
     ⁅compactCartanX, compactCartanY⁆ = compactCartanH := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [compactCartanX, compactCartanY, compactCartanH, Ring.lie_def] <;> ring_nf
+    simp [compactCartanX, compactCartanY, compactCartanH, Ring.lie_def] <;> grind [I_sq]
 
 /-- `[H_c, X_c] = 2 X_c`. -/
 theorem lie_compactCartanH_compactCartanX :
     ⁅compactCartanH, compactCartanX⁆ = (2 : ℂ) • compactCartanX := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [compactCartanX, compactCartanH, Ring.lie_def] <;> ring_nf <;> simp [I_sq]
+    simp [compactCartanX, compactCartanH, Ring.lie_def] <;> grind [I_sq]
 
 /-- `[H_c, Y_c] = -2 Y_c`. -/
 theorem lie_compactCartanH_compactCartanY :
     ⁅compactCartanH, compactCartanY⁆ = -((2 : ℂ) • compactCartanY) := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [compactCartanY, compactCartanH, Ring.lie_def] <;> ring_nf <;> simp [I_sq]
+    simp [compactCartanY, compactCartanH, Ring.lie_def] <;> grind [I_sq]
 
 
 /-! ### Coordinates in the compact Cartan basis -/
@@ -174,7 +174,8 @@ theorem compactCoordOne_apply (M : Matrix (Fin 2) (Fin 2) ℂ) :
 /-- The `H_c`-coordinate of `H_c` is `1`. -/
 @[simp]
 theorem compactCoordH_compactCartanH : compactCoordH compactCartanH = 1 := by
-  simp [compactCoordH_apply, compactCartanH]; ring_nf; simp [I_sq]
+  simp [compactCoordH_apply, compactCartanH]
+  linear_combination -I_sq
 
 /-- The `H_c`-coordinate of `X_c` is `0`. -/
 @[simp]
@@ -199,7 +200,7 @@ theorem compactCoordX_compactCartanH : compactCoordX compactCartanH = 0 := by
 /-- The `X_c`-coordinate of `X_c` is `1`. -/
 @[simp]
 theorem compactCoordX_compactCartanX : compactCoordX compactCartanX = 1 := by
-  simp [compactCoordX_apply, compactCartanX]; ring_nf
+  simp [compactCoordX_apply, compactCartanX]; ring
 
 /-- The `X_c`-coordinate of `Y_c` is `0`. -/
 @[simp]
@@ -224,7 +225,7 @@ theorem compactCoordY_compactCartanX : compactCoordY compactCartanX = 0 := by
 /-- The `Y_c`-coordinate of `Y_c` is `1`. -/
 @[simp]
 theorem compactCoordY_compactCartanY : compactCoordY compactCartanY = 1 := by
-  simp [compactCoordY_apply, compactCartanY]; ring_nf
+  simp [compactCoordY_apply, compactCartanY]; ring
 
 /-- The `Y_c`-coordinate of `1` is `0`. -/
 @[simp]
@@ -257,7 +258,7 @@ theorem compactCoordH_lie (M N : Matrix (Fin 2) (Fin 2) ℂ) :
       compactCoordX M * compactCoordY N - compactCoordY M * compactCoordX N := by
   simp only [compactCoordH_apply, compactCoordX_apply, compactCoordY_apply, Ring.lie_def,
     Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_two]
-  ring_nf
+  ring
 
 /-- The `X_c`-coordinate of a bracket. -/
 theorem compactCoordX_lie (M N : Matrix (Fin 2) (Fin 2) ℂ) :
@@ -265,9 +266,7 @@ theorem compactCoordX_lie (M N : Matrix (Fin 2) (Fin 2) ℂ) :
       2 * (compactCoordH M * compactCoordX N - compactCoordX M * compactCoordH N) := by
   simp only [compactCoordH_apply, compactCoordX_apply, Ring.lie_def, Matrix.sub_apply,
     Matrix.mul_apply, Fin.sum_univ_two]
-  ring_nf
-  simp only [I_sq]
-  ring
+  linear_combination (M 0 1 * N 1 0 - M 1 0 * N 0 1) * I_sq
 
 /-- The `Y_c`-coordinate of a bracket. -/
 theorem compactCoordY_lie (M N : Matrix (Fin 2) (Fin 2) ℂ) :
@@ -275,9 +274,7 @@ theorem compactCoordY_lie (M N : Matrix (Fin 2) (Fin 2) ℂ) :
       -(2 * (compactCoordH M * compactCoordY N - compactCoordY M * compactCoordH N)) := by
   simp only [compactCoordH_apply, compactCoordY_apply, Ring.lie_def, Matrix.sub_apply,
     Matrix.mul_apply, Fin.sum_univ_two]
-  ring_nf
-  simp only [I_sq]
-  ring
+  linear_combination (M 0 1 * N 1 0 - M 1 0 * N 0 1) * I_sq
 
 /-- A bracket has no component along the identity. -/
 theorem compactCoordOne_lie (M N : Matrix (Fin 2) (Fin 2) ℂ) :
@@ -293,7 +290,7 @@ theorem eq_compactCoord (M : Matrix (Fin 2) (Fin 2) ℂ) :
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [compactCoordH_apply, compactCoordX_apply, compactCoordY_apply, compactCoordOne_apply,
-      compactCartanH, compactCartanX, compactCartanY] <;> ring_nf <;> simp [I_sq]
+      compactCartanH, compactCartanX, compactCartanY] <;> grind [I_sq]
 
 /-! ### The operators on weight vectors -/
 
@@ -461,14 +458,16 @@ theorem lie_compactWeightModule (M : Matrix (Fin 2) (Fin 2) ℂ) (v : CompactWei
       compactRep k μ M (CompactWeightModule.equivFinsupp k μ v) :=
   (rfl)
 
+namespace CompactWeightModule
+
 variable (k μ) in
 /-- The weight vector `v_ℓ`. -/
 def weightVector (ℓ : ℤ) : CompactWeightModule k μ := Finsupp.single ℓ 1
 
 /-- The coordinates of `v_ℓ`. -/
 @[simp]
-theorem CompactWeightModule.equivFinsupp_weightVector (ℓ : ℤ) :
-    CompactWeightModule.equivFinsupp k μ (weightVector k μ ℓ) = Finsupp.single ℓ 1 :=
+theorem equivFinsupp_weightVector (ℓ : ℤ) :
+    equivFinsupp k μ (weightVector k μ ℓ) = Finsupp.single ℓ 1 :=
   (rfl)
 
 variable (k μ) in
@@ -479,6 +478,10 @@ def weightBasis : Module.Basis ℤ ℂ (CompactWeightModule k μ) := Finsupp.bas
 @[simp]
 theorem weightBasis_apply (ℓ : ℤ) : weightBasis k μ ℓ = weightVector k μ ℓ :=
   (rfl)
+
+end CompactWeightModule
+
+open CompactWeightModule (weightVector weightBasis weightBasis_apply)
 
 /-- `H_c v_ℓ = ℓ v_ℓ`. -/
 @[simp]
@@ -602,8 +605,6 @@ theorem one_lie_lieSubmodule
   ext
   simp
 
-end CompactWeightModule
-
 /-! ### Lie submodules spanned by weight vectors -/
 
 variable (k μ) in
@@ -614,18 +615,6 @@ def weightLieSubmodule (S : Set ℤ) (hX : ∀ ℓ ∈ S, ℓ + 2 ∉ S → k + 
     LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) (CompactWeightModule k μ) where
   toSubmodule := (Finsupp.supported ℂ ℂ S).comap (CompactWeightModule.equivFinsupp k μ).toLinearMap
   lie_mem {M v} hv := by
-    -- An operator `v_ℓ ↦ c_ℓ v_{s ℓ}` preserves the vectors supported on `S` when `c_ℓ = 0`
-    -- whenever it moves `ℓ ∈ S` out of `S`.
-    have key (f : Module.End ℂ (ℤ →₀ ℂ)) (c : ℤ → ℂ) (s : ℤ → ℤ)
-        (hf : ∀ ℓ, f (Finsupp.single ℓ 1) = c ℓ • Finsupp.single (s ℓ) 1)
-        (hcs : ∀ ℓ ∈ S, s ℓ ∉ S → c ℓ = 0) {w : ℤ →₀ ℂ} (hw : w ∈ Finsupp.supported ℂ ℂ S) :
-        f w ∈ Finsupp.supported ℂ ℂ S := by
-      refine Finsupp.map_mem_supported_of_forall_single_mem ℂ f (fun ℓ hℓ x ↦ ?_) hw
-      rw [← Finsupp.smul_single_one, map_smul, hf, smul_smul]
-      by_cases h : s ℓ ∈ S
-      · exact Submodule.smul_mem _ _ (Finsupp.single_mem_supported ℂ _ h)
-      · rw [hcs ℓ hℓ h, mul_zero, zero_smul]
-        exact zero_mem _
     replace hv := Submodule.mem_comap.1 hv
     refine Submodule.mem_comap.2 ?_
     rw [LinearEquiv.coe_coe] at hv ⊢
@@ -633,20 +622,22 @@ def weightLieSubmodule (S : Set ℤ) (hX : ∀ ℓ ∈ S, ℓ + 2 ∉ S → k + 
     simp only [LinearMap.add_apply, LinearMap.smul_apply, one_apply_eq_self]
     refine add_mem (add_mem (add_mem (Submodule.smul_mem _ _ ?_) (Submodule.smul_mem _ _ ?_))
       (Submodule.smul_mem _ _ ?_)) (Submodule.smul_mem _ _ hv)
-    · exact key _ (fun ℓ ↦ ℓ) id compactWeightOp_single (fun ℓ hℓ h ↦ absurd hℓ h) hv
-    · exact key _ _ (· + 2) (compactRaiseOp_single k) (fun ℓ hℓ h ↦ by rw [hX ℓ hℓ h, zero_div])
-        hv
-    · exact key _ _ (· - 2) (compactLowerOp_single k) (fun ℓ hℓ h ↦ by rw [hY ℓ hℓ h, zero_div])
-        hv
+    · exact Finsupp.map_mem_supported_of_map_single_eq_smul_single ℂ _ (fun ℓ : ℤ ↦ (ℓ : ℂ)) id
+        compactWeightOp_single (fun ℓ hℓ h ↦ absurd hℓ h) hv
+    · exact Finsupp.map_mem_supported_of_map_single_eq_smul_single ℂ _ _ (· + 2)
+        (compactRaiseOp_single k) (fun ℓ hℓ h ↦ by rw [hX ℓ hℓ h, zero_div]) hv
+    · exact Finsupp.map_mem_supported_of_map_single_eq_smul_single ℂ _ _ (· - 2)
+        (compactLowerOp_single k) (fun ℓ hℓ h ↦ by rw [hY ℓ hℓ h, zero_div]) hv
 
-/-- The underlying submodule of `TauCeti.weightLieSubmodule`. -/
+/-- The underlying submodule of `TauCeti.CompactWeightModule.weightLieSubmodule`. -/
 theorem toSubmodule_weightLieSubmodule {S : Set ℤ} {hX : ∀ ℓ ∈ S, ℓ + 2 ∉ S → k + ℓ = 0}
     {hY : ∀ ℓ ∈ S, ℓ - 2 ∉ S → k - ℓ = 0} :
     (weightLieSubmodule k μ S hX hY).toSubmodule =
       (Finsupp.supported ℂ ℂ S).comap (CompactWeightModule.equivFinsupp k μ).toLinearMap :=
   (rfl)
 
-/-- Membership in `TauCeti.weightLieSubmodule`: the coordinates are supported on `S`. -/
+/-- Membership in `TauCeti.CompactWeightModule.weightLieSubmodule`: the coordinates are supported
+on `S`. -/
 theorem mem_weightLieSubmodule {S : Set ℤ} {hX : ∀ ℓ ∈ S, ℓ + 2 ∉ S → k + ℓ = 0}
     {hY : ∀ ℓ ∈ S, ℓ - 2 ∉ S → k - ℓ = 0} {v : CompactWeightModule k μ} :
     v ∈ weightLieSubmodule k μ S hX hY ↔
@@ -658,6 +649,11 @@ theorem weightVector_mem_weightLieSubmodule {S : Set ℤ} {hX : ∀ ℓ ∈ S, �
     {hY : ∀ ℓ ∈ S, ℓ - 2 ∉ S → k - ℓ = 0} {ℓ : ℤ} (hℓ : ℓ ∈ S) :
     weightVector k μ ℓ ∈ weightLieSubmodule k μ S hX hY :=
   mem_weightLieSubmodule.2 (Finsupp.single_mem_supported ℂ _ hℓ)
+
+end CompactWeightModule
+
+open CompactWeightModule (weightLieSubmodule toSubmodule_weightLieSubmodule
+  weightVector_mem_weightLieSubmodule)
 
 /-! ### The discrete series `D_k(μ)` -/
 
@@ -698,59 +694,52 @@ theorem discreteSeriesWeights_eq_union (k : ℕ) :
     mem_negativeDiscreteSeriesWeights, Set.mem_union]
   rcases abs_cases ℓ with ⟨h, _⟩ | ⟨h, _⟩ <;> rw [h] <;> omega
 
-private theorem discreteSeriesWeights_raise {k : ℕ} :
-    ∀ ℓ ∈ discreteSeriesWeights k, ℓ + 2 ∉ discreteSeriesWeights k → (k : ℂ) + ℓ = 0 := by
-  intro ℓ hℓ h
-  rw [discreteSeriesWeights_eq_union] at hℓ h
-  simp only [mem_positiveDiscreteSeriesWeights, mem_negativeDiscreteSeriesWeights, Set.mem_union]
-    at hℓ h
-  have : (k : ℤ) + ℓ = 0 := by omega
-  exact_mod_cast this
+private theorem natCast_add_intCast_eq_zero {k : ℕ} {ℓ : ℤ} (h : (k : ℤ) + ℓ = 0) :
+    (k : ℂ) + ℓ = 0 :=
+  mod_cast h
 
-private theorem discreteSeriesWeights_lower {k : ℕ} :
-    ∀ ℓ ∈ discreteSeriesWeights k, ℓ - 2 ∉ discreteSeriesWeights k → (k : ℂ) - ℓ = 0 := by
-  intro ℓ hℓ h
-  rw [discreteSeriesWeights_eq_union] at hℓ h
-  simp only [mem_positiveDiscreteSeriesWeights, mem_negativeDiscreteSeriesWeights, Set.mem_union]
-    at hℓ h
-  have : (k : ℤ) - ℓ = 0 := by omega
-  exact_mod_cast this
+private theorem natCast_sub_intCast_eq_zero {k : ℕ} {ℓ : ℤ} (h : (k : ℤ) - ℓ = 0) :
+    (k : ℂ) - ℓ = 0 :=
+  mod_cast h
 
 private theorem positiveDiscreteSeriesWeights_raise {k : ℕ} :
     ∀ ℓ ∈ positiveDiscreteSeriesWeights k, ℓ + 2 ∉ positiveDiscreteSeriesWeights k →
-      (k : ℂ) + ℓ = 0 := by
-  intro ℓ hℓ h
-  simp only [mem_positiveDiscreteSeriesWeights] at hℓ h
-  omega
+      (k : ℂ) + ℓ = 0 := fun ℓ hℓ h ↦
+  natCast_add_intCast_eq_zero (by rw [mem_positiveDiscreteSeriesWeights] at hℓ h; omega)
 
 private theorem positiveDiscreteSeriesWeights_lower {k : ℕ} :
     ∀ ℓ ∈ positiveDiscreteSeriesWeights k, ℓ - 2 ∉ positiveDiscreteSeriesWeights k →
-      (k : ℂ) - ℓ = 0 := by
-  intro ℓ hℓ h
-  simp only [mem_positiveDiscreteSeriesWeights] at hℓ h
-  have : (k : ℤ) - ℓ = 0 := by omega
-  exact_mod_cast this
+      (k : ℂ) - ℓ = 0 := fun ℓ hℓ h ↦
+  natCast_sub_intCast_eq_zero (by rw [mem_positiveDiscreteSeriesWeights] at hℓ h; omega)
 
 private theorem negativeDiscreteSeriesWeights_raise {k : ℕ} :
     ∀ ℓ ∈ negativeDiscreteSeriesWeights k, ℓ + 2 ∉ negativeDiscreteSeriesWeights k →
-      (k : ℂ) + ℓ = 0 := by
-  intro ℓ hℓ h
-  simp only [mem_negativeDiscreteSeriesWeights] at hℓ h
-  have : (k : ℤ) + ℓ = 0 := by omega
-  exact_mod_cast this
+      (k : ℂ) + ℓ = 0 := fun ℓ hℓ h ↦
+  natCast_add_intCast_eq_zero (by rw [mem_negativeDiscreteSeriesWeights] at hℓ h; omega)
 
 private theorem negativeDiscreteSeriesWeights_lower {k : ℕ} :
     ∀ ℓ ∈ negativeDiscreteSeriesWeights k, ℓ - 2 ∉ negativeDiscreteSeriesWeights k →
-      (k : ℂ) - ℓ = 0 := by
-  intro ℓ hℓ h
-  simp only [mem_negativeDiscreteSeriesWeights] at hℓ h
-  omega
+      (k : ℂ) - ℓ = 0 := fun ℓ hℓ h ↦
+  natCast_sub_intCast_eq_zero (by rw [mem_negativeDiscreteSeriesWeights] at hℓ h; omega)
+
+private theorem discreteSeriesWeights_raise {k : ℕ} :
+    ∀ ℓ ∈ discreteSeriesWeights k, ℓ + 2 ∉ discreteSeriesWeights k → (k : ℂ) + ℓ = 0 := by
+  simp only [discreteSeriesWeights_eq_union, Set.mem_union, not_or]
+  rintro ℓ (hℓ | hℓ) ⟨hP, hN⟩
+  exacts [positiveDiscreteSeriesWeights_raise ℓ hℓ hP, negativeDiscreteSeriesWeights_raise ℓ hℓ hN]
+
+private theorem discreteSeriesWeights_lower {k : ℕ} :
+    ∀ ℓ ∈ discreteSeriesWeights k, ℓ - 2 ∉ discreteSeriesWeights k → (k : ℂ) - ℓ = 0 := by
+  simp only [discreteSeriesWeights_eq_union, Set.mem_union, not_or]
+  rintro ℓ (hℓ | hℓ) ⟨hP, hN⟩
+  exacts [positiveDiscreteSeriesWeights_lower ℓ hℓ hP, negativeDiscreteSeriesWeights_lower ℓ hℓ hN]
 
 /-- **The discrete series `D_k(μ)`** of `GL₂(ℝ)` (`k ≥ 2`), and its limit at `k = 1`, as an explicit
 `𝔤𝔩₂(ℂ)`-module: the finitely supported vectors on the weights `|ℓ| ≥ k`, `ℓ ≡ k mod 2`, with
 `H_c v_ℓ = ℓ v_ℓ`, `X_c v_ℓ = (k + ℓ) / 2 v_{ℓ + 2}`, `Y_c v_ℓ = (k - ℓ) / 2 v_{ℓ - 2}`, central
 scalar `μ` and Casimir `k (k - 2) / 4`. Only `k ≥ 1` is meant: for `k = 0` this is the module on all
-even weights, which is reducible (`v_0` spans a trivial submodule) and not a discrete series. -/
+even weights, which is reducible and not a discrete series: `v_0` spans a one-dimensional submodule
+killed by `H_c`, `X_c` and `Y_c`, on which the identity matrix acts by `μ`. -/
 def discreteSeries (k : ℕ) (μ : ℂ) :
     LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) (CompactWeightModule (k : ℂ) μ) :=
   weightLieSubmodule (k : ℂ) μ (discreteSeriesWeights k) discreteSeriesWeights_raise
@@ -794,10 +783,9 @@ theorem mem_negativeDiscreteSeries_iff {k : ℕ} {v : CompactWeightModule (k : �
 theorem discreteSeries_eq_sup (k : ℕ) :
     discreteSeries k μ = positiveDiscreteSeries k μ ⊔ negativeDiscreteSeries k μ := by
   refine LieSubmodule.toSubmodule_injective ?_
-  rw [LieSubmodule.sup_toSubmodule, discreteSeries, positiveDiscreteSeries, negativeDiscreteSeries,
-    toSubmodule_weightLieSubmodule, toSubmodule_weightLieSubmodule, toSubmodule_weightLieSubmodule,
-    discreteSeriesWeights_eq_union, Finsupp.supported_union, Submodule.comap_equiv_eq_map_symm,
-    Submodule.comap_equiv_eq_map_symm, Submodule.comap_equiv_eq_map_symm, Submodule.map_sup]
+  simp only [discreteSeries, positiveDiscreteSeries, negativeDiscreteSeries,
+    discreteSeriesWeights_eq_union, LieSubmodule.sup_toSubmodule, toSubmodule_weightLieSubmodule]
+  simp [Finsupp.supported_union, Submodule.comap_equiv_eq_map_symm, Submodule.map_sup]
 
 /-- `v_ℓ ∈ D_k(μ)` for every allowed weight. -/
 theorem weightVector_mem_discreteSeries {k : ℕ} {ℓ : ℤ} (hℓ : ℓ ∈ discreteSeriesWeights k) :
@@ -878,7 +866,10 @@ def reflection : CompactWeightModule k μ ≃ₗ[ℂ] CompactWeightModule k μ :
 @[simp]
 theorem equivFinsupp_reflection_apply (v : CompactWeightModule k μ) (ℓ : ℤ) :
     equivFinsupp k μ (reflection k μ v) ℓ = equivFinsupp k μ v (-ℓ) :=
-  (rfl)
+  -- `equivFinsupp` is the identity of `ℤ →₀ ℂ` and `reflection` is `Finsupp.domLCongr`, whose
+  -- `_apply` lemmas do not fire syntactically on the type synonym, so this unfolds both to cite
+  -- `Finsupp.equivMapDomain_apply`.
+  Finsupp.equivMapDomain_apply (Equiv.neg ℤ) (equivFinsupp k μ v) ℓ
 
 /-- The reflection sends `v_ℓ` to `v_{-ℓ}`. -/
 @[simp]
