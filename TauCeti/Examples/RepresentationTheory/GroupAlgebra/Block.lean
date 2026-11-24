@@ -67,13 +67,6 @@ private theorem coeff_one_center {k G : Type*} [CommSemiring k] [Group G] [Decid
   rw [OneMemClass.coe_one, coeff_one_apply]
   simp only [eq_comm]
 
-/-- The sum of two orthogonal block idempotents is not a block idempotent. -/
-private theorem not_isBlockIdempotent_add {k G : Type*} [CommSemiring k] [Monoid G]
-    {e f : Subalgebra.center k (MonoidAlgebra k G)} (he : IsBlockIdempotent e)
-    (hf : IsBlockIdempotent f) (hef : e * f = 0) : ¬ IsBlockIdempotent (e + f) := fun h ↦
-  (h.eq_zero_or_eq_zero_of_add he.isIdempotentElem hf.isIdempotentElem hef
-    (by rw [mul_comm, hef]) rfl).elim he.ne_zero hf.ne_zero
-
 /-! ### The cyclic group of order `2` -/
 
 /-- The cyclic group `C₂` of order `2`. -/
@@ -164,8 +157,8 @@ theorem not_isBlockIdempotent_one_zmod_three_c₂ :
   have hsum := hc.complete
   rw [Fin.sum_univ_two] at hsum
   rw [← hsum]
-  exact not_isBlockIdempotent_add isBlockIdempotent_ePlus isBlockIdempotent_eMinus
-    (hc.ortho (by decide))
+  exact not_isPrimitiveIdempotent_add isBlockIdempotent_ePlus isBlockIdempotent_eMinus
+    (hc.ortho (by decide)) (hc.ortho (by decide))
 
 /-! ### The cyclic group of order `3` -/
 
@@ -289,10 +282,12 @@ theorem not_isBlockIdempotent_centerMapRingHom_r_add_r_sq (hα : α ^ 2 + α + 1
     ¬ IsBlockIdempotent (centerMapRingHom C₃ (ZMod.castHom (dvd_refl 2) K)
         (toCenter (of (ZMod 2) C₃ r + of (ZMod 2) C₃ (r ^ 2)))) := by
   rw [centerMapRingHom_r_add_r_sq hα]
-  refine not_isBlockIdempotent_add (isBlockIdempotent_eOne hα) (isBlockIdempotent_eTwo hα)
-    (Subtype.ext ?_)
-  rw [Subalgebra.coe_mul, coe_toCenter, coe_toCenter, ZeroMemClass.coe_zero]
-  exact eOne_mul_eTwo hα
+  have h : toCenter (eOne α) * toCenter (eTwo α) = 0 := by
+    refine Subtype.ext ?_
+    rw [Subalgebra.coe_mul, coe_toCenter, coe_toCenter, ZeroMemClass.coe_zero]
+    exact eOne_mul_eTwo hα
+  exact not_isPrimitiveIdempotent_add (isBlockIdempotent_eOne hα) (isBlockIdempotent_eTwo hα) h
+    ((mul_comm _ _).trans h)
 
 end ScalarExtension
 
