@@ -10,8 +10,10 @@ public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 public import Mathlib.RingTheory.Regular.Category
+public import TauCeti.Algebra.Module.Torsion.LTensor
 public import TauCeti.Algebra.Module.Torsion.Map
 public import TauCeti.CategoryTheory.Monoidal.Tor
+public import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # `Tor` against the quotient by a regular element
@@ -60,18 +62,12 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Submodule
-open scoped Pointwise
 
 universe u
 
 namespace ModuleCat
 
 variable {R : Type u} [CommRing R] {f : R}
-
-/-- The quotient `R ⧸ f • R` of `ModuleCat.smulShortComplex` is `R ⧸ (f)`. -/
-private def quotSMulTopIso (f : R) :
-    (smulShortComplex (of R R) f).X₃ ≅ of R (R ⧸ Ideal.span {f}) :=
-  (quotEquivOfEq _ _ (by rw [← ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top])).toModuleIso
 
 private instance (f : R) : Projective (smulShortComplex (of R R) f).X₁ :=
   projective_of_free (Module.Free.chooseBasis R R)
@@ -85,27 +81,18 @@ private theorem shortExact_smulShortComplex (hf : IsSMulRegular R f) :
     (smulShortComplex (of R R) f).ShortExact :=
   IsSMulRegular.smulShortComplex_shortExact (M := of R R) hf
 
-/-- The cycles of `X ⊗ R → X ⊗ R`, multiplication by `f` on the right factor, are the `f`-torsion
-of `X`: the right unitor `X ⊗ R ≃ X` commutes with multiplication by `f`. -/
-private def kerLTensorLsmulEquiv (X : ModuleCat.{u} R) (f : R) :
-    LinearMap.ker ((LinearMap.lsmul R R f).lTensor X) ≃ₗ[R] torsionBy R X f :=
-  (TensorProduct.rid R X).ofSubmodules _ _ <| by
-    have key : (LinearMap.lsmul R R f).lTensor X = (TensorProduct.rid R X).symm.toLinearMap ∘ₗ
-        (DistribSMul.toLinearMap R X f ∘ₗ (TensorProduct.rid R X).toLinearMap) :=
-      TensorProduct.ext' fun x r => by
-        simp only [LinearMap.lTensor_tmul, LinearMap.lsmul_apply, LinearMap.coe_comp,
-          LinearEquiv.coe_coe, Function.comp_apply, TensorProduct.rid_tmul,
-          DistribSMul.toLinearMap_apply, TensorProduct.rid_symm_apply, smul_smul]
-        rw [← smul_eq_mul, TensorProduct.smul_tmul, smul_eq_mul (f • r), mul_one]
-    rw [key, LinearEquiv.ker_comp, LinearMap.ker_comp,
-      map_comap_eq_of_surjective (TensorProduct.rid R X).surjective]
-    rfl
+/-- `QuotSMulTop.equivQuotSpanSingleton` with its domain written as the last object of
+`ModuleCat.smulShortComplex`, so that it composes syntactically with
+`CategoryTheory.ShortComplex.ShortExact.torOneIsoKernel` in the rewrites below. -/
+private def quotSMulTopIso (f : R) :
+    (smulShortComplex (of R R) f).X₃ ≅ of R (R ⧸ Ideal.span {f}) :=
+  (QuotSMulTop.equivQuotSpanSingleton f).toModuleIso
 
 private theorem kerLTensorLsmulEquiv_hom_subtype (X : ModuleCat.{u} R) (f : R) :
-    (kerLTensorLsmulEquiv X f).toModuleIso.hom ≫ ofHom (torsionBy R X f).subtype =
+    (TauCeti.kerLTensorLsmulEquiv X f).toModuleIso.hom ≫ ofHom (torsionBy R X f).subtype =
       ofHom (LinearMap.ker ((LinearMap.lsmul R R f).lTensor X)).subtype ≫
         ofHom (TensorProduct.rid R X).toLinearMap :=
-  rfl
+  hom_ext <| LinearMap.ext <| TauCeti.coe_kerLTensorLsmulEquiv_apply X f
 
 /-- **`Tor₁` against `R ⧸ (f)`.** For an element `f` of `R` regular on `R`, `Tor₁^R(X, R ⧸ (f))`
 is the `f`-torsion `X[f]` of `X`. -/
@@ -114,7 +101,7 @@ def torOneQuotientSpanSingletonIso (hf : IsSMulRegular R f) (X : ModuleCat.{u} R
       of R (torsionBy R X f) :=
   ((Tor (ModuleCat.{u} R) 1).obj X).mapIso (quotSMulTopIso f).symm ≪≫
     (shortExact_smulShortComplex hf).torOneIsoKernel X ≪≫ kernelIsoKer _ ≪≫
-      (kerLTensorLsmulEquiv X f).toModuleIso
+      (TauCeti.kerLTensorLsmulEquiv X f).toModuleIso
 
 /-- The identification `Tor₁^R(X, R ⧸ (f)) ≅ X[f]` is natural in `X`: a map `g : X ⟶ Y` acts on
 `Tor₁` as it acts on `f`-torsion, by restriction (`TauCeti.torsionByMap`). -/

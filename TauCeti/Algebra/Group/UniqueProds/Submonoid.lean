@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Algebra.Group.UniqueProds.Basic
 public import Mathlib.Algebra.Group.Submonoid.Defs
+public import Mathlib.Algebra.Group.Subgroup.Defs
 
 /-!
-# Unique products in submonoids
+# Unique products in submonoids and subgroups
 
-Submonoids inherit unique products and two unique products from the ambient monoid.
-The additive instances allow unique-sum results to apply directly to additive submonoids.
+Submonoids and subgroups inherit unique products and two unique products from the ambient monoid
+or group. The additive instances allow unique-sum results to apply directly to additive submonoids
+and additive subgroups.
 -/
 
 public section
@@ -30,3 +32,17 @@ instance instTwoUniqueProds [TwoUniqueProds M] (S : Submonoid M) : TwoUniqueProd
   TwoUniqueProds.of_injective_mulHom S.subtype.toMulHom Subtype.val_injective inferInstance
 
 end Submonoid
+
+namespace Subgroup
+
+variable {G : Type*} [Group G]
+
+@[to_additive]
+instance instUniqueProds [UniqueProds G] (H : Subgroup G) : UniqueProds H :=
+  UniqueProds.of_injective_mulHom H.subtype.toMulHom Subtype.val_injective inferInstance
+
+@[to_additive]
+instance instTwoUniqueProds [TwoUniqueProds G] (H : Subgroup G) : TwoUniqueProds H :=
+  TwoUniqueProds.of_injective_mulHom H.subtype.toMulHom Subtype.val_injective inferInstance
+
+end Subgroup

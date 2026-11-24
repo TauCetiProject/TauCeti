@@ -224,12 +224,6 @@ theorem twistedHatDifferential_circleTimesSphere_zero
   fin_cases b <;> simp [twistedHatCoefficient_circleTimesSphere_zero,
     (circleTimesSphereGenerator_bijective 0).1.eq_iff]
 
-/-- The periodic domains of the genus-one diagram of `S¹ × S²`, a subgroup of `Fin 3 → ℤ`, have
-unique sums, so their group ring has no zero divisors. -/
-private instance : UniqueSums (circleTimesSphere 0).periodicDomains :=
-  UniqueSums.of_injective_addHom (circleTimesSphere 0).periodicDomains.subtype.toAddHom
-    Subtype.val_injective inferInstance
-
 /-- The coefficient `1 + t` of the twisted hat differential of the genus-one diagram of `S¹ × S²` is
 not zero. -/
 theorem one_add_single_circleTimesSpherePeriodicDomain_ne_zero :
@@ -304,14 +298,14 @@ theorem lTensor_twistedHatDifferential_circleTimesSphere_zero_tmul_eq_zero_iff
       x ∈ Submodule.torsionBy
         (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) X
         (1 + single (Multiplicative.ofAdd circleTimesSpherePeriodicDomain) 1) := by
-  rw [LinearMap.lTensor_tmul, twistedHatDifferential_circleTimesSphere_zero,
-    Finsupp.single_eq_same, one_mul, Submodule.mem_torsionBy_iff,
-    ← (TensorProduct.finsuppScalarRight
-      (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains))
-      (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) X
-      (circleTimesSphere 0).Generator).map_eq_zero_iff,
-    TensorProduct.finsuppScalarRight_apply_tmul, Finsupp.sum_single_index (by simp),
-    Finsupp.single_eq_zero]
+  -- Reading off coefficients, `X ⊗_R (Generator →₀ R) ≃ (Generator →₀ X)`, detects zero.
+  have h := (TensorProduct.finsuppScalarRight
+    (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains))
+    (MonoidAlgebra (ZMod 2) (Multiplicative (circleTimesSphere 0).periodicDomains)) X
+    (circleTimesSphere 0).Generator).injective
+  rw [← map_eq_zero_iff _ h, Finsupp.ext_iff]
+  simp [twistedHatDifferential_circleTimesSphere_zero, Finsupp.single_apply, ite_smul,
+    Submodule.mem_torsionBy_iff, add_smul, ite_add_ite]
 
 open CategoryTheory in
 /-- **The extra class of the augmented complex.** For the twisted hat complex of the genus-one
