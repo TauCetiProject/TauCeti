@@ -48,7 +48,7 @@ private noncomputable def holCurryAux :
     E →L[ℂ] (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F :=
   (2 : ℝ) • ContinuousLinearMap.complexLinearPart (E := E)
     (F := (E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
-    (curryLeftLI (𝕜 := ℝ) (E := E) (F := F) (n := k)).toContinuousLinearMap.flip
+    (curryLeftFlipL (𝕜 := ℝ) (E := E) (F := F) (n := k))
 
 private theorem holCurryAux_apply (v : E) (φ : E [⋀^Fin (k + 1)]→L[ℝ] F) :
     holCurryAux v φ = φ.curryLeft v - I • φ.curryLeft (I • v) := by
@@ -89,10 +89,7 @@ theorem alternatizeUncurryFin_holCurry_comp
     alternatizeUncurryFin ((holCurry v).restrictScalars ℝ ∘L L) =
       -holCurry v (alternatizeUncurryFin L) := by
   have hsplit : (holCurry v).restrictScalars ℝ ∘L L =
-      (curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-        (n := k)).toContinuousLinearMap.flip v ∘L L -
-      I • (curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
-        (n := k)).toContinuousLinearMap.flip (I • v) ∘L L := by
+      curryLeftFlipL v ∘L L - I • curryLeftFlipL (I • v) ∘L L := by
     ext u : 1
     simp [holCurry_apply]
   have hcartan (y : E) := eq_sub_of_add_eq
