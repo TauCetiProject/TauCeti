@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.IdealSheaf.MayerVietoris
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.IdealSheaf.TensorProduct
 import Mathlib.CategoryTheory.Abelian.DiagramLemmas.Four
+import Mathlib.CategoryTheory.Abelian.Refinements
 
 /-!
 # The exact sequence of a product of ideal sheaves
@@ -22,11 +23,14 @@ and the kernel of the restriction `𝒪_{V(I * J)} ⟶ 𝒪_{V(J)}` is `J ⧸ I 
 (`Scheme.IdealSheafData.mulSequence` and `Scheme.IdealSheafData.shortExact_mulSequence`), whose
 first map is multiplication by local functions of `J`
 (`Scheme.IdealSheafData.mulPushforwardSubscheme`) and whose second map is restriction of
-functions. When `I` and `J` are the ideal sheaves of effective Cartier divisors `E` and `D`, so
-that `V(I * J)` is the divisor `D + E` and `J = 𝒪_X(-D)` is invertible, this is the sequence
-`0 ⟶ 𝒪_E(-D) ⟶ 𝒪_{D + E} ⟶ 𝒪_D ⟶ 0`, through which Euler characteristics, and hence degrees of
-line bundles, on the nonreduced curve `D + E` are computed from those on `D` and `E`. No
-hypothesis on `X`, `I` or `J` is needed.
+functions. The sequence is exact with no hypothesis on `X`, `I` or `J`.
+
+When `I` and `J` are the ideal sheaves of effective Cartier divisors `E` and `D`, so that
+`V(I * J)` is the possibly nonreduced divisor `D + E` and `J = 𝒪_X(-D)` is invertible, this is the
+sequence `0 ⟶ 𝒪_E(-D) ⟶ 𝒪_{D + E} ⟶ 𝒪_D ⟶ 0`. Through it Euler characteristics, and hence degrees
+of line bundles, on `D + E` are computed from those on `D` and `E`; that step needs finiteness and
+vanishing hypotheses on the cohomology of `D` and `E`
+(`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.eulerCharBelow_pullback_subschemeι_mul`).
 
 The first map is a monomorphism because multiplication `I ⊗ J ⟶ I * J` is an epimorphism
 (`Scheme.IdealSheafData.epi_sheafMul`): a local function of `J` restricting to zero on
@@ -74,7 +78,11 @@ private abbrev tensorMul : J.sheaf ⊗ 𝟙_ X.Modules ⟶ 𝟙_ X.Modules :=
 private lemma braiding_sheafMul_sheafιUnit :
     (β_ J.sheaf I.sheaf).hom ≫ sheafMul I J ≫ (I * J).sheafιUnit =
       (tensorIdealSequence I J).f ≫ tensorMul J := by
-  rw [sheafMul_sheafιUnit, ← BraidedCategory.braiding_naturality_assoc, braiding_leftUnitor,
+  have h : sheafMul I J ≫ (I * J).sheafιUnit =
+      (I.sheafιUnit ⊗ₘ J.sheafιUnit) ≫ (λ_ (𝟙_ X.Modules)).hom := by
+    rw [sheafιUnit_def, sheafιUnit_def, sheafιUnit_def]
+    exact sheafMul_sheafι I J
+  rw [h, ← BraidedCategory.braiding_naturality_assoc, braiding_leftUnitor,
     tensorHom_def', Category.assoc, rightUnitor_naturality, tensorIdealSequence_f]
 
 private lemma tensorIdealSequence_f_tensorMul_toPushforwardSubscheme :

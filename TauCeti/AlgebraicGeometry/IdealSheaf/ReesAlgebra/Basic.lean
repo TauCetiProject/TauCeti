@@ -132,7 +132,9 @@ lemma reesMul_sheafιUnit (i j : ℕ) :
       ((I ^ i).sheafιUnit ⊗ₘ (I ^ j).sheafιUnit) ≫ (λ_ (𝟙_ X.Modules)).hom :=
   (Category.assoc _ _ _).trans
     ((congrArg (sheafMul (I ^ i) (I ^ j) ≫ ·) (eqToHom_sheafιUnit (pow_add I i j).symm)).trans
-      (sheafMul_sheafιUnit (I ^ i) (I ^ j)))
+      (by
+        rw [sheafιUnit_def, sheafιUnit_def, sheafιUnit_def]
+        exact sheafMul_sheafι (I ^ i) (I ^ j)))
 
 /-- The multiplication of the Rees algebra, followed by the inclusion `Iⁱ⁺ʲ ⟶ 𝒪_X`, is the
 inclusion `Iⁱ ⊗ Iʲ ⟶ 𝒪_X ⊗ 𝒪_X` followed by the multiplication of `𝒪_X`. -/

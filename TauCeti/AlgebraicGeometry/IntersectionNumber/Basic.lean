@@ -84,6 +84,8 @@ off-diagonal entries of the intersection matrix.
 * `LineBundleClass.intersectionNumber_eq_zero_of_eq_comp`: every class has intersection number
   zero with a curve contracted to a point; combined with `intersectionNumber_pullback` applied to
   `ι ≫ g`, so does every pullback along a morphism `g` contracting the curve;
+* `LineBundleClass.intersectionNumber_eq_zero_of_isEmpty`: every class has intersection number
+  zero with an empty scheme;
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf`: `(-D · C) = -dim_k Γ(D ∩ C)` for an
   effective Cartier divisor `D` meeting a proper curve `C` properly;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum`: `(D · C)` is the sum
@@ -199,6 +201,15 @@ theorem intersectionNumber_eq_zero_of_eq_comp {T : Scheme.{u}} (h : C ⟶ T) (j 
     intersectionNumber k ι a = 0 := by
   rw [intersectionNumber_def, w, ← pullback_comp, eq_one_of_forall_specializes ht (pullback j a),
     pullback_one, eulerDegree_one]
+
+/-- **Empty curves.** Every class has intersection number zero with an empty scheme, on which every
+sheaf of modules has trivial cohomology. -/
+theorem intersectionNumber_eq_zero_of_isEmpty [IsEmpty C] (a : LineBundleClass X) :
+    intersectionNumber k ι a = 0 := by
+  have (M : C.Modules) (j : ℕ) := subsingleton_cohomology_of_isEmpty M j
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [intersectionNumber_mk, InvertibleSheaf.eulerDegree_eq_finrank_sub]
+  simp only [Module.finrank_zero_of_subsingleton, Nat.cast_zero, sub_self]
 
 section Effective
 

@@ -40,7 +40,7 @@ nonvanishing locus of that functional, `M ⊗ I → M` is not surjective on glob
   `𝒪_X`, and an epimorphism (`Scheme.IdealSheafData.epi_sheafMul`) because `tensorPresheafHom`
   is locally surjective (`Scheme.IdealSheafData.isLocallySurjective_tensorPresheafHom`);
 * `Scheme.IdealSheafData.sheafιUnit`: the inclusion `I ⟶ 𝒪_X` read as a morphism to the monoidal
-  unit of `X.Modules`, with `sheafMul_sheafιUnit` restating `sheafMul_sheafι` in this form;
+  unit of `X.Modules`;
 * `Scheme.Modules.imageIdealSheaf_le_of_tensorLift`: a tensor lift places the functional's
   image ideal in the given ideal sheaf;
 * `Scheme.Modules.not_surjective_app_tensorIdeal`: an ideal meeting the nonvanishing locus of
@@ -169,31 +169,39 @@ lemma tensorPresheafHom_app_tmul (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
     (tensorPresheafHom I J).app (op U) (s ⊗ₜ t) = sectionsMul I J U s t :=
   (rfl)
 
-/-- **Multiplication of ideal sheaves is locally surjective.** Over an affine open `V` the sections
+/-- Over an affine open `V`, multiplication `I ⊗ J ⟶ I * J` is surjective on sections: the sections
 of `I * J` form the ideal `I(V) J(V)`, whose elements are sums of products of sections of `I` and
-of `J`; so every section of `I * J` is, locally, the image of a section of the sectionwise tensor
-product under `tensorPresheafHom`. -/
+of `J`. -/
+private lemma tensorPresheafHom_app_surjective {V : X.Opens} (hV : IsAffineOpen V) :
+    Function.Surjective ((tensorPresheafHom I J).app (op V)) := by
+  -- The products of sections of `I` and of `J` over `V`, and so their sums, have preimages.
+  have key (t : Γ(X, V)) (ht : t ∈ I.ideal ⟨V, hV⟩ * J.ideal ⟨V, hV⟩) :
+      ∃ w, Scheme.Modules.Hom.app (I * J).sheafι V ((tensorPresheafHom I J).app (op V) w) =
+        t := by
+    refine Submodule.mul_induction_on ht (fun a ha b hb ↦ ?_) fun s t ⟨w, hw⟩ ⟨w', hw'⟩ ↦
+      -- Sums of sections of `𝒪_X` over `V`, as a module over itself, are sums in `Γ(X, V)`.
+      ⟨w + w', (congrArg _ (map_add _ w w')).trans ((map_add _ _ _).trans (by rw [hw, hw']; rfl))⟩
+    rw [← I.sections_eq_ideal ⟨V, hV⟩] at ha
+    rw [← J.sections_eq_ideal ⟨V, hV⟩] at hb
+    refine ⟨I.sectionMk a ha ⊗ₜ J.sectionMk b hb, ?_⟩
+    rw [tensorPresheafHom_app_tmul, sectionsMul_sectionMk, sheafι_app_sectionMk]
+  intro z
+  have hz := (I * J).sheafι_app_mem V z
+  rw [(I * J).sections_eq_ideal ⟨V, hV⟩, ideal_mul, Pi.mul_apply] at hz
+  obtain ⟨w, hw⟩ := key _ hz
+  exact ⟨w, (I * J).sheafι_app_injective V hw⟩
+
+/-- **Multiplication of ideal sheaves is locally surjective**, being surjective on sections over
+affine opens. -/
 lemma isLocallySurjective_tensorPresheafHom :
     Presheaf.IsLocallySurjective (Opens.grothendieckTopology X)
       ((PresheafOfModules.toPresheaf X.ringCatSheaf.obj).map (tensorPresheafHom I J)) where
   imageSieve_mem {U} z x hx := by
     obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
       X.isBasis_affineOpens.exists_subset_of_mem_open hx U.isOpen
-    -- The products of sections of `I` and of `J` over `V`, and so their sums, have preimages.
-    have key (t : Γ(X, V)) (ht : t ∈ I.ideal ⟨V, hV⟩ * J.ideal ⟨V, hV⟩) :
-        ∃ w, Scheme.Modules.Hom.app (I * J).sheafι V ((tensorPresheafHom I J).app (op V) w) =
-          t := by
-      refine Submodule.mul_induction_on ht (fun a ha b hb ↦ ?_) fun s t ⟨w, hw⟩ ⟨w', hw'⟩ ↦
-        -- Sums of sections of `𝒪_X` over `V`, as a module over itself, are sums in `Γ(X, V)`.
-        ⟨w + w', (congrArg _ (map_add _ w w')).trans ((map_add _ _ _).trans (by rw [hw, hw']; rfl))⟩
-      rw [← I.sections_eq_ideal ⟨V, hV⟩] at ha
-      rw [← J.sections_eq_ideal ⟨V, hV⟩] at hb
-      refine ⟨I.sectionMk a ha ⊗ₜ J.sectionMk b hb, ?_⟩
-      rw [tensorPresheafHom_app_tmul, sectionsMul_sectionMk, sheafι_app_sectionMk]
-    have hz := (I * J).sheafι_app_mem V ((I * J).sheaf.presheaf.map (homOfLE hVU).op z)
-    rw [(I * J).sections_eq_ideal ⟨V, hV⟩, ideal_mul, Pi.mul_apply] at hz
-    obtain ⟨w, hw⟩ := key _ hz
-    exact ⟨V, homOfLE hVU, ⟨w, (I * J).sheafι_app_injective V hw⟩, hxV⟩
+    obtain ⟨w, hw⟩ := tensorPresheafHom_app_surjective I J hV
+      ((I * J).sheaf.presheaf.map (homOfLE hVU).op z)
+    exact ⟨V, homOfLE hVU, ⟨w, hw⟩, hxV⟩
 
 section SheafMul
 
@@ -270,28 +278,14 @@ theorem sheafMul_sheafι :
   exact tensorPresheafHom_comp_sheafι I J
 
 /-- **Multiplication of ideal sheaves is an epimorphism.** Multiplication of local functions
-`I ⊗ J ⟶ I * J` is an epimorphism of `𝒪_X`-modules, for all ideal sheaves `I` and `J`. -/
+`I ⊗ J ⟶ I * J` is an epimorphism of `𝒪_X`-modules, for all ideal sheaves `I` and `J`, as it is
+surjective on sections over affine opens. -/
 theorem epi_sheafMul : Epi (sheafMul I J) := by
-  have h := isLocallySurjective_tensorPresheafHom I J
-  rw [← forget_μ_comp_sheafMul] at h
-  -- The composite is formed among presheaves of modules over the ring sheaf of `X.sheaf`, whose
-  -- category structure agrees with that over `X.ringCatSheaf` only up to unfolding, so
-  -- `Functor.map_comp` is applied with `erw`.
-  erw [Functor.map_comp] at h
-  -- The underlying presheaf map of `sheafMul` is that of its image in abelian sheaves.
-  have h' : Presheaf.IsLocallySurjective (Opens.grothendieckTopology X)
-      ((PresheafOfModules.toPresheaf X.ringCatSheaf.obj).map
-        (Functor.LaxMonoidal.μ (SheafOfModules.forget
-          (TauCeti.SheafOfModules.ringCatSheaf X.sheaf)) I.sheaf J.sheaf) ≫
-        ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map (sheafMul I J)).hom) := h
-  have : Sheaf.IsLocallySurjective
-      ((TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map (sheafMul I J)) :=
-    Presheaf.isLocallySurjective_of_isLocallySurjective _
-      ((PresheafOfModules.toPresheaf X.ringCatSheaf.obj).map
-        (Functor.LaxMonoidal.μ (SheafOfModules.forget
-          (TauCeti.SheafOfModules.ringCatSheaf X.sheaf)) I.sheaf J.sheaf)) _
-  exact (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).epi_of_epi_map
-    (Sheaf.epi_of_isLocallySurjective _)
+  refine Scheme.Modules.Hom.epi_of_surjective_on_affineOpens _ fun V hV z ↦ ?_
+  obtain ⟨w, rfl⟩ := tensorPresheafHom_app_surjective I J hV z
+  -- On sections, `sheafMul` after the comparison of tensor products is `tensorPresheafHom`.
+  exact ⟨_, ConcreteCategory.congr_hom
+    (congrArg (fun φ ↦ φ.app (op V)) (forget_μ_comp_sheafMul I J)) w⟩
 
 end SheafMul
 
@@ -311,14 +305,6 @@ theorem sheafιUnit_def (J : X.IdealSheafData) : J.sheafιUnit = J.sheafι :=
 /-- The inclusion `J ⟶ 𝒪_X`, read as a morphism to the monoidal unit, is a monomorphism. -/
 instance mono_sheafιUnit (J : X.IdealSheafData) : Mono J.sheafιUnit :=
   inferInstanceAs (Mono J.sheafι)
-
-/-- `sheafMul_sheafι` for the inclusions read as morphisms to the monoidal unit: multiplication
-`I ⊗ J ⟶ I * J` followed by the inclusion into `𝒪_X` is the product of the inclusions. -/
-@[reassoc]
-theorem sheafMul_sheafιUnit :
-    sheafMul I J ≫ (I * J).sheafιUnit =
-      (I.sheafιUnit ⊗ₘ J.sheafιUnit) ≫ (λ_ (𝟙_ X.Modules)).hom :=
-  sheafMul_sheafι I J
 
 end SheafιUnit
 
