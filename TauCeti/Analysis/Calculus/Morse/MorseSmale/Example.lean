@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Manifold
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.Calculus.Morse.MorseSmale.Fredholm
 
 /-!
 # A Morse–Smale function on the plane
@@ -14,13 +15,10 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 The function `f(x, y) = cos x + y² / 2` on `ℝ²` has globally Lipschitz gradient
 `∇f(x, y) = (-sin x, y)`. Its critical points are the points `(kπ, 0)`, `k ∈ ℤ`, all nondegenerate:
 saddles of Morse index `1` for even `k` and minima of Morse index `0` for odd `k`. Its
-negative-gradient flow is Morse–Smale. Along an orbit the second coordinate is `y₀ e^{-t}`, so an
-unstable set lies on the `x`-axis; the first coordinate solves `x' = sin x`, for which the saddle
-values `2πm` are repelling, so the stable set of a saddle is the vertical line through it. Hence
-the unstable set of a saddle `p` and the stable set of a saddle `q` meet only if `p = q`, and then
-only at that saddle. There the unstable set is tangent to the horizontal direction and the stable
-set is the vertical line, so the tangent spaces are the horizontal and vertical directions. The
-stable set of a minimum has two-dimensional tangent spaces at each of its points.
+negative-gradient flow is Morse–Smale. By `TauCeti.IsMorseSmale.of_forall_ne_of_morseIndex_ne`,
+only trajectories between distinct critical points neither of which is a minimum need to be
+examined; such points are saddles, all of value `1`, and there are no such trajectories, since a
+trajectory between distinct critical points lowers the value.
 
 For a saddle `p` and a minimum `q` (for instance `(0, 0)` and `(π, 0)`), the set of points on
 trajectories from `p` to `q` is a manifold of dimension `1`, and its level slices are manifolds of
@@ -281,204 +279,27 @@ theorem morseIndex_cosAddHalfSq_of_cos_eq_one {z : EuclideanSpace ℝ (Fin 2)}
 /-- The negative-gradient flow of `cos x + y² / 2`. -/
 local notation "Φ" => negativeGradientFlow cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq
 
-/-- Along an orbit, the second coordinate is `y₀ e^{-t}`. -/
-private theorem orbit_apply_one (z : EuclideanSpace ℝ (Fin 2)) (t : ℝ) :
-    Φ t z 1 = z 1 * Real.exp (-t) := by
-  have hd : ∀ s, HasDerivAt (fun s ↦ Real.exp s * Φ s z 1) 0 s := fun s ↦ by
-    refine ((Real.hasDerivAt_exp s).mul
-      (hasDerivAt_negativeGradientFlow_apply _ _ z 1 s)).congr_deriv ?_
-    simp only [gradient_cosAddHalfSq_apply_one]
-    ring
-  have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt) (fun s ↦ (hd s).deriv)
-    t 0
-  simp only [Real.exp_zero, one_mul, Flow.map_zero_apply] at hc
-  rw [← hc, mul_comm (Real.exp t), mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero,
-    mul_one]
-
-/-- A point of an unstable set of a critical point lies on the `x`-axis. -/
-private theorem apply_one_eq_zero_of_mem_unstableSet {p z : EuclideanSpace ℝ (Fin 2)}
-    (hp : p 1 = 0) (hz : z ∈ Flow.unstableSet Φ p) : z 1 = 0 := by
-  rw [Flow.mem_unstableSet] at hz
-  have h0 : (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ (Fin 2) → ℝ) p = 0 := by
-    simpa using hp
-  have h1 := ((EuclideanSpace.proj (1 : Fin 2) :
-    EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).continuous.tendsto p).comp hz
-  rw [h0] at h1
-  have hlim : Tendsto (fun t ↦ |z 1 * Real.exp (-t)|) atBot (𝓝 0) := by
-    have h2 := h1.abs
-    rw [abs_zero] at h2
-    refine h2.congr fun t ↦ ?_
-    simp [orbit_apply_one]
-  have hge : ∀ᶠ t in atBot, |z 1| ≤ |z 1 * Real.exp (-t)| := by
-    filter_upwards [eventually_le_atBot 0] with t ht
-    rw [abs_mul, Real.abs_exp]
-    exact le_mul_of_one_le_right (abs_nonneg _) (Real.one_le_exp (by linarith))
-  have := ge_of_tendsto hlim hge
-  exact abs_nonpos_iff.1 this
-
-/-- The vertical line `{x = a}` through a zero of `sin` is invariant, with explicit orbits. -/
-private theorem orbit_vertical {a : ℝ} (ha : Real.sin a = 0) (y s : ℝ) :
-    Φ s (a • e₀ + y • e₁) = a • e₀ + (y * Real.exp (-s)) • e₁ := by
-  set c : ℝ → EuclideanSpace ℝ (Fin 2) := fun s ↦ a • e₀ + (y * Real.exp (-s)) • e₁
-  have hc : IsIntegralCurve c fun _ w ↦ -∇ cosAddHalfSq w := fun s ↦ by
-    rw [gradient_cosAddHalfSq]
-    have hy := (((Real.hasDerivAt_exp (-s)).comp s (hasDerivAt_neg s)).const_mul y).smul_const e₁
-    have h0 : HasDerivAt c (0 + (y * (Real.exp (-s) * -1)) • e₁) s :=
-      (hasDerivAt_const s (a • e₀)).add hy
-    refine h0.congr_deriv ?_
-    beta_reduce
-    ext i
-    fin_cases i <;> simp [c, gradField_eq, ha]
-  have := eq_negativeGradientFlow cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq hc s
-  simpa [c] using this.symm
-
-/-- **The stable set of a saddle lies on a vertical line.** A point of the stable set of a critical
-point `q` with `cos (q 0) = 1` has first coordinate `q 0`: for `x' = sin x` the value `q 0` is
-repelling. -/
-private theorem apply_zero_eq_of_mem_stableSet {q z : EuclideanSpace ℝ (Fin 2)}
-    (hs : Real.sin (q 0) = 0) (hc : Real.cos (q 0) = 1) (hz : z ∈ Flow.stableSet Φ q) :
-    z 0 = q 0 := by
-  rw [Flow.mem_stableSet] at hz
-  set D : ℝ → ℝ := fun t ↦ Φ t z 0 - q 0 with hDdef
-  have hD' : ∀ t, HasDerivAt D (Real.sin (D t)) t := fun t ↦ by
-    refine ((hasDerivAt_negativeGradientFlow_apply _ _ z 0 t).sub_const (q 0)).congr_deriv ?_
-    simp only [gradient_cosAddHalfSq_apply_zero, neg_neg, hDdef, Real.sin_sub, hs, hc]
-    ring
-  have hD : Tendsto D atTop (𝓝 0) := by
-    have h1 := ((EuclideanSpace.proj (0 : Fin 2) :
-      EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).continuous.tendsto q).comp hz
-    have h2 : Tendsto D atTop
-        (𝓝 ((EuclideanSpace.proj (0 : Fin 2) : EuclideanSpace ℝ (Fin 2) → ℝ) q - q 0)) :=
-      h1.sub_const (q 0)
-    simpa using h2
-  obtain ⟨T₀, hT₀⟩ := eventually_atTop.1 (hD.eventually (Ioo_mem_nhds (by norm_num : (-1 : ℝ) < 0)
-    (by norm_num : (0 : ℝ) < 1)))
-  -- `D²` is nondecreasing on `[T₀, ∞)`, since `D sin D ≥ 0` for `|D| < 1`.
-  have hmono : MonotoneOn (fun t ↦ D t ^ 2) (Ici T₀) := by
-    refine monotoneOn_of_hasDerivWithinAt_nonneg (f' := fun t ↦ 2 * D t * Real.sin (D t))
-      (convex_Ici T₀) ((continuous_iff_continuousAt.2 fun t ↦ (hD' t).continuousAt).pow 2
-        |>.continuousOn) (fun t _ ↦ ?_) fun t ht ↦ ?_
-    · have := ((hD' t).pow 2).hasDerivWithinAt (s := interior (Ici T₀))
-      convert this using 1
-      ring
-    · rw [interior_Ici] at ht
-      obtain ⟨h1, h2⟩ := hT₀ t (le_of_lt ht)
-      have hπ := Real.two_le_pi
-      rcases le_total 0 (D t) with h | h
-      · exact mul_nonneg (by linarith) (Real.sin_nonneg_of_nonneg_of_le_pi h (by linarith))
-      · exact mul_nonneg_of_nonpos_of_nonpos (by linarith)
-          (Real.sin_nonpos_of_nonpos_of_neg_pi_le h (by linarith))
-  have hT : D T₀ ^ 2 ≤ 0 := by
-    have hlim : Tendsto (fun t ↦ D t ^ 2) atTop (𝓝 0) := by simpa using hD.pow 2
-    refine ge_of_tendsto hlim ?_
-    filter_upwards [eventually_ge_atTop T₀] with t ht
-    exact hmono (Set.mem_Ici.2 le_rfl) ht ht
-  have hDT : D T₀ = 0 := pow_eq_zero_iff (n := 2) (by norm_num) |>.1 (le_antisymm hT (sq_nonneg _))
-  -- From time `T₀` on, the orbit runs along the vertical line through `q`.
-  have hw : Φ T₀ z = q 0 • e₀ + Φ T₀ z 1 • e₁ := by
-    have h0 : Φ T₀ z 0 = q 0 := by simpa [hDdef, sub_eq_zero] using hDT
-    ext i
-    fin_cases i <;> simp [h0]
-  have hv := orbit_vertical hs (Φ T₀ z 1) (-T₀)
-  rw [← hw, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at hv
-  simpa using congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0) hv
-
-/-- A critical point is fixed by the flow. -/
-private theorem orbit_eq_self {z : EuclideanSpace ℝ (Fin 2)} (hz : fderiv ℝ cosAddHalfSq z = 0)
-    (t : ℝ) : Φ t z = z := by
-  refine (forall_negativeGradientFlow_eq_self_iff _ _ z).2 ?_ t
-  simp [gradient, hz]
-
-/-- **Transversality at a saddle.** At a critical point `q` with `cos (q 0) = 1`, the span of the
-tangent cone of the unstable set lies in the `x`-axis (and is a line), and the tangent cone of the
-stable set contains the vertical direction, so together the two spans are the whole plane. -/
-private theorem span_sup_span_eq_top_of_saddle {q : EuclideanSpace ℝ (Fin 2)}
-    (hq : fderiv ℝ cosAddHalfSq q = 0) (hc : Real.cos (q 0) = 1) :
-    Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet Φ q) q) ⊔
-      Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet Φ q) q) = ⊤ := by
-  have hqc := fderiv_cosAddHalfSq_eq_zero_iff.1 hq
-  have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hq
-  set U := Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet Φ q) q)
-  set K := LinearMap.ker (EuclideanSpace.proj (1 : Fin 2) :
-    EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).toLinearMap
-  have hqu : q ∈ Flow.unstableSet Φ q := Flow.self_mem_unstableSet_iff.2 (orbit_eq_self hq)
-  -- The unstable set lies on the `x`-axis `K`, so `U ≤ K`, and `U` is a line.
-  have hUK : U ≤ K := by
-    refine Submodule.span_le.2 ?_
-    have hsub : Flow.unstableSet Φ q ⊆ (K : Set (EuclideanSpace ℝ (Fin 2))) := fun z hz ↦ by
-      simpa [K] using apply_one_eq_zero_of_mem_unstableSet hqc.2 hz
-    have hKc : IsClosed (K : Set (EuclideanSpace ℝ (Fin 2))) :=
-      (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).isClosed_ker
-    have hqK : q ∈ K := by simpa [K] using hqc.2
-    calc tangentConeAt ℝ (Flow.unstableSet Φ q) q
-        ⊆ tangentConeAt ℝ (K : Set (EuclideanSpace ℝ (Fin 2))) q := tangentConeAt_mono hsub
-      _ = K := Submodule.tangentConeAt_eq K hKc hqK
-  have hUdim : Module.finrank ℝ U = 1 := by
-    rw [hnd.finrank_span_tangentConeAt_unstableSet contDiff_cosAddHalfSq
-      lipschitzWith_gradient_cosAddHalfSq hqu, morseIndex_cosAddHalfSq_of_cos_eq_one hc]
-  -- The vertical direction is tangent to the stable set.
-  have he₁ : e₁ ∈ Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet Φ q) q) := by
-    have hq' : q = q 0 • e₀ + (0 : ℝ) • e₁ := by
-      ext i
-      fin_cases i <;> simp [hqc.2]
-    have hmem : ∀ s : ℝ, q 0 • e₀ + s • e₁ ∈ Flow.stableSet Φ q := fun s ↦ by
-      rw [Flow.mem_stableSet]
-      simp only [orbit_vertical hqc.1]
-      have h := (tendsto_const_nhds (x := q 0 • e₀)).add
-        ((Real.tendsto_exp_neg_atTop_nhds_zero.const_mul s).smul_const e₁)
-      rwa [mul_zero, ← hq'] at h
-    have hγ : HasDerivAt (fun s : ℝ ↦ q 0 • e₀ + s • e₁) e₁ 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e₁).const_add (q 0 • e₀)
-    have := hγ.mem_tangentConeAt (S := Flow.stableSet Φ q) (Eventually.of_forall hmem)
-    beta_reduce at this
-    rw [← hq'] at this
-    exact Submodule.subset_span this
-  -- `U` and the vertical line together span the plane.
-  have hinf : U ⊓ ℝ ∙ e₁ = ⊥ := by
-    refine (Submodule.eq_bot_iff _).2 fun v ⟨hvU, hv₁⟩ ↦ ?_
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hv₁
-    have := hUK hvU
-    simp [K] at this
-    simp [this]
-  have hsup : U ⊔ ℝ ∙ e₁ = ⊤ :=
-    Submodule.eq_top_of_disjoint U (ℝ ∙ e₁)
-      (by rw [hUdim, finrank_span_singleton (by simp), finrank_euclideanSpace_fin])
-      (disjoint_iff.2 hinf)
-  exact top_unique (hsup ▸ sup_le_sup_left (Submodule.span_le.2 (by simpa using he₁)) U)
-
 /-- **`cos x + y² / 2` is Morse–Smale.** For all critical points `p` and `q`, the unstable set of
 `p` and the stable set of `q` of its negative-gradient flow are transverse at every common
 point. -/
 theorem isMorseSmale_cosAddHalfSq :
     IsMorseSmale cosAddHalfSq lipschitzWith_gradient_cosAddHalfSq := by
-  refine IsMorseSmale.of_forall fun p q y hp hq ⟨hyu, hys⟩ ↦ ?_
-  replace hp := hp.fderiv_eq_zero
-  replace hq := hq.fderiv_eq_zero
-  have hpc := fderiv_cosAddHalfSq_eq_zero_iff.1 hp
-  have hqc := fderiv_cosAddHalfSq_eq_zero_iff.1 hq
-  have hcos : Real.cos (q 0) = 1 ∨ Real.cos (q 0) = -1 := Real.sin_eq_zero_iff_cos_eq.1 hqc.1
-  rcases hcos with hc | hc
-  · -- `q` is a saddle: then `y = q`, and `p = q`.
-    have hy0 := apply_zero_eq_of_mem_stableSet hqc.1 hc hys
-    have hy1 := apply_one_eq_zero_of_mem_unstableSet hpc.2 hyu
-    have hyq : y = q := by
-      ext i
-      fin_cases i
-      · exact hy0
-      · simpa [hqc.2] using hy1
-    subst hyq
-    have hpy : p = y := by
-      rw [Flow.mem_unstableSet] at hyu
-      simp only [orbit_eq_self hq] at hyu
-      exact (tendsto_nhds_unique tendsto_const_nhds hyu).symm
-    subst hpy
-    exact span_sup_span_eq_top_of_saddle hp hc
-  · -- `q` is a minimum: its stable set has full-dimensional tangent spaces.
-    have hnd := isNondegenerateCriticalPoint_cosAddHalfSq hq
-    have h := hnd.finrank_span_tangentConeAt_stableSet_add_morseIndex contDiff_cosAddHalfSq
-      lipschitzWith_gradient_cosAddHalfSq hys
-    rw [morseIndex_cosAddHalfSq_of_cos_eq_neg_one hc, add_zero] at h
-    rw [Submodule.eq_top_of_finrank_eq h, sup_top_eq]
+  refine .of_forall_ne_of_morseIndex_ne contDiff_cosAddHalfSq
+    fun p q y hp hq hpq hp0 _ hq0 _ hy ↦ absurd ?_ (lt_irrefl (1 : ℝ))
+  -- A critical point which is not a minimum is a saddle, of value `1`; but a trajectory between
+  -- distinct critical points lowers the value.
+  have hsaddle {z : EuclideanSpace ℝ (Fin 2)} (hz : IsNondegenerateCriticalPoint cosAddHalfSq z)
+      (h0 : morseIndex cosAddHalfSq z ≠ 0) : cosAddHalfSq z = 1 := by
+    have hzc := fderiv_cosAddHalfSq_eq_zero_iff.1 hz.fderiv_eq_zero
+    rcases Real.sin_eq_zero_iff_cos_eq.1 hzc.1 with hc | hc
+    · simp [hc, hzc.2]
+    · exact absurd (morseIndex_cosAddHalfSq_of_cos_eq_neg_one hc) h0
+  have hfs : ContDiff ℝ 1 cosAddHalfSq := contDiff_cosAddHalfSq
+  have hlt := (isNegativeGradient_negativeGradientFlow _
+    lipschitzWith_gradient_cosAddHalfSq).value_lt_of_mem_unstableSet_inter_stableSet
+    (fun _ ↦ hfs.differentiable one_ne_zero _) hfs.continuous.continuousAt
+    hfs.continuous.continuousAt hpq hy
+  rwa [hsaddle hp hp0, hsaddle hq hq0] at hlt
 
 variable {p q : EuclideanSpace ℝ (Fin 2)}
 
