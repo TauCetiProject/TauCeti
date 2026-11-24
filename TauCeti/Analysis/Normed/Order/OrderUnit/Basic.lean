@@ -616,7 +616,7 @@ theorem pi {ι : Type*} [Fintype ι] [Nonempty ι] {E : ι → Type*}
   norm_le_iff x r hr := by
     rw [pi_norm_le_iff_of_nonneg hr]
     simp_rw [(he _).norm_le_iff _ r hr, Pi.le_def, Pi.smul_apply]
-    exact ⟨fun h => ⟨fun i => (h i).1, fun i => (h i).2⟩, fun ⟨h1, h2⟩ i => ⟨h1 i, h2 i⟩⟩
+    exact forall_and
 
 /-- Transport of `IsOrderUnitNorm` along a unital linear isometric order equivalence. -/
 theorem map_linearIsometryEquiv {E F : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [LE E]
@@ -693,8 +693,7 @@ theorem continuousMap_one {K : Type*} [TopologicalSpace K] [CompactSpace K] [Non
   norm_le_iff f r hr := by
     rw [ContinuousMap.norm_le f hr]
     simp only [Real.norm_eq_abs, abs_le, ContinuousMap.le_def, ContinuousMap.coe_smul,
-      Pi.smul_apply, ContinuousMap.coe_one, Pi.one_apply, smul_eq_mul, mul_one]
-    exact ⟨fun h => ⟨fun x => (h x).1, fun x => (h x).2⟩, fun ⟨h1, h2⟩ x => ⟨h1 x, h2 x⟩⟩
+      Pi.smul_apply, ContinuousMap.coe_one, Pi.one_apply, smul_eq_mul, mul_one, forall_and]
 
 /-- `K →ᵇ ℝ` for nonempty `K` with pointwise order and supremum norm is an order-unit space with
 unit `1`. -/
@@ -705,8 +704,7 @@ theorem boundedContinuousFunction_one {K : Type*} [TopologicalSpace K] [Nonempty
     rw [BoundedContinuousFunction.norm_le hr]
     have hle : ∀ g h : K →ᵇ ℝ, g ≤ h ↔ ∀ x, g x ≤ h x := fun _ _ => Iff.rfl
     simp only [Real.norm_eq_abs, abs_le, hle, FunLike.coe_smul, Pi.smul_apply, FunLike.coe_one,
-      Pi.one_apply, smul_eq_mul, mul_one]
-    exact ⟨fun h => ⟨fun x => (h x).1, fun x => (h x).2⟩, fun ⟨h1, h2⟩ x => ⟨h1 x, h2 x⟩⟩
+      Pi.one_apply, smul_eq_mul, mul_one, forall_and]
 
 /-- The self-adjoint part `selfAdjoint A` of a unital star-ordered normed algebra with
 `‖(1 : A)‖ = 1` (`NormOneClass A`), isometric real continuous functional calculus, and nonnegative
@@ -726,8 +724,7 @@ theorem selfAdjoint_one {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra �
     simp only [Set.subset_def, Set.mem_Icc, ← Subtype.coe_le_coe, selfAdjoint.val_smul,
       selfAdjoint.val_one, ← Algebra.algebraMap_eq_smul_one]
     rw [algebraMap_le_iff_le_spectrum ha, le_algebraMap_iff_spectrum_le ha]
-    exact ⟨fun h => ⟨fun x hx => (h x hx).1, fun x hx => (h x hx).2⟩,
-      fun ⟨h1, h2⟩ x hx => ⟨h1 x hx, h2 x hx⟩⟩
+    exact forall₂_and
 
 end IsOrderUnitNorm
 
