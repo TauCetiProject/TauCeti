@@ -27,7 +27,7 @@ kernel `K : Kernel S X`.
 It builds directly on Mathlib's `MeasureTheory.Measure.compProd`,
 `MeasureTheory.Measure.integral_compProd`, and `MeasureTheory.Measure.withDensity_compProd`,
 together with Tau Ceti's `MeasureTheory.Measure.map_withDensity_comp` and
-`MeasureTheory.Measure.integrable_integral_compProd`.
+`MeasureTheory.Integrable.integral_measure_compProd`.
 
 ## Main statements
 
@@ -125,7 +125,7 @@ theorem integral_eq_integral_integral_of_map_prodMk_eq_compProd (hT : Measurable
     (integrable_map_measure hfm hpair.aemeasurable).mpr hf
   have hf_cp : Integrable f (μ.map T ⊗ₘ K) := h ▸ hf_map
   have hinner : AEStronglyMeasurable (fun s ↦ ∫ y, f (s, y) ∂K s) (μ.map T) :=
-    (Measure.integrable_integral_compProd hf_cp).aestronglyMeasurable
+    hf_cp.integral_measure_compProd.aestronglyMeasurable
   rw [← MeasureTheory.integral_map hpair.aemeasurable hfm, h, Measure.integral_compProd hf_cp,
     MeasureTheory.integral_map hT.aemeasurable hinner]
 
@@ -185,7 +185,7 @@ theorem condExp_ae_eq_integral_of_map_prodMk_eq_compProd [CompleteSpace F]
       rw [Measure.integrable_compProd_snd_iff (hcomp.symm ▸ hφ'int.aestronglyMeasurable)]
       rwa [hcomp]
     exact (integrable_map_measure hφ'm.integral_kernel.aestronglyMeasurable hT.aemeasurable).mp
-      (Measure.integrable_integral_compProd hφ'cp)
+      hφ'cp.integral_measure_compProd
   refine (ae_eq_condExp_of_forall_setIntegral_eq hT.comap_le hφ
     (fun _ _ _ ↦ hg_int.integrableOn) (fun A hA _ ↦ ?_)
     hgm.aestronglyMeasurable).symm.trans hinner_ae
@@ -231,7 +231,7 @@ theorem setIntegral_fst_map_prodMk_eq_measureReal_of_condExp_ae_eq {Y : Type*}
     _ = ∫ x in T ⁻¹' A, (e ⁻¹' B).indicator (fun _ ↦ (1 : ℝ)) x ∂μ :=
         setIntegral_condExp hT.comap_le hφint ⟨A, hA, rfl⟩
     _ = μ.real (T ⁻¹' A ∩ e ⁻¹' B) := by
-        rw [setIntegral_indicator (he hB), setIntegral_const, smul_eq_mul, mul_one]
+        rw [setIntegral_indicator (he hB), setIntegral_one_eq_measureReal]
     _ = (μ.map (fun x ↦ (T x, e x))).real (A ×ˢ B) := by
         rw [Measure.real, Measure.real,
           Measure.map_apply (hT.prodMk he) (hA.prod hB), Set.mk_preimage_prod]

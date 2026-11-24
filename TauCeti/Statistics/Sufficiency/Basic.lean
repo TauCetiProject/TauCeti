@@ -40,8 +40,9 @@ and develops the conditional-expectation characterization of sufficiency:
 * `TauCeti.IsMinimalSufficientStatistic.{u, v, w, r} P T`: `T` is sufficient and factors
   `P θ`-almost everywhere through every sufficient statistic `U : X → S'` whose codomain
   `S' : Type r` lies in the explicit universe parameter `r`, via a measurable map `φ : S' → S`.
-* `TauCeti.IsMinimalSufficientStatistic.exists_ae_eq_comp_ulift`: elimination of minimal
-  sufficiency at universe `max r r'` against sufficient statistics with codomain in `Type r'`.
+* `TauCeti.IsMinimalSufficientStatistic.exists_ae_eq_comp_of_max_universe`: elimination of
+  minimal sufficiency at universe `max r r'` against sufficient statistics with codomain in
+  `Type r'`.
 * `TauCeti.isSufficientStatistic_iff_exists_condExp_ae_eq`: on a nonempty standard Borel space `X`,
   a measurable statistic `T` is sufficient for a family of finite measures `P` if and only if
   every bounded measurable `φ : X → ℝ` admits a single measurable `ψ : S → ℝ` with
@@ -144,7 +145,7 @@ theorem IsSufficientStatistic.sFinite {P : Θ → Measure X} {T : X → S}
 theorem isSufficientStatistic_id (P : Θ → Measure X) [∀ θ, SFinite (P θ)] :
     IsSufficientStatistic P id := by
   refine ⟨measurable_id, Kernel.id, inferInstance, fun θ ↦ ?_⟩
-  rw [Measure.map_id, Kernel.id, Measure.compProd_deterministic measurable_id]
+  rw [Measure.map_id, Measure.compProd_id, Function.diag_def]
   simp only [id_eq]
 
 /-- The identity statistic is sufficient for a family `P` if and only if every measure `P θ` is
@@ -287,9 +288,9 @@ theorem IsMinimalSufficientStatistic.exists_ae_eq_comp.{u, v, w, r} {Θ : Type u
 /-- A minimal sufficient statistic `IsMinimalSufficientStatistic.{u, v, w, max r r'} P T`
 factors almost everywhere through any sufficient statistic `U : X → S'` whose codomain
 `S' : Type r'` lies in the smaller universe `r'`, by lifting `S'` via `MeasurableEquiv.ulift`. -/
-theorem IsMinimalSufficientStatistic.exists_ae_eq_comp_ulift.{u, v, w, r, r'} {Θ : Type u}
-    {X : Type v} {S : Type w} [MeasurableSpace X] [MeasurableSpace S] {P : Θ → Measure X}
-    {T : X → S} (h : IsMinimalSufficientStatistic.{u, v, w, max r r'} P T)
+theorem IsMinimalSufficientStatistic.exists_ae_eq_comp_of_max_universe.{u, v, w, r, r'}
+    {Θ : Type u} {X : Type v} {S : Type w} [MeasurableSpace X] [MeasurableSpace S]
+    {P : Θ → Measure X} {T : X → S} (h : IsMinimalSufficientStatistic.{u, v, w, max r r'} P T)
     {S' : Type r'} [MeasurableSpace S'] {U : X → S'} (hU : IsSufficientStatistic P U) :
     ∃ φ : S' → S, Measurable φ ∧ ∀ θ, T =ᵐ[P θ] φ ∘ U := by
   let e : S' ≃ᵐ ULift.{r, r'} S' := (MeasurableEquiv.ulift.{r', r}).symm

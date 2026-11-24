@@ -32,7 +32,7 @@ density `k` of `P.map φ` with respect to `μ.map φ`.
 
 ## Main results
 
-* `TauCeti.hasDensity_def`, `TauCeti.hasDensity_of_measure_apply`,
+* `TauCeti.hasDensity_def`, `TauCeti.hasDensity_of_measure_apply_eq_setLIntegral`,
   `TauCeti.hasDensity_toReal_rnDeriv`: unfolding and introduction lemmas for `HasDensity`.
 * `TauCeti.HasDensity.congr_ae`, `TauCeti.HasDensity.ae_eq`,
   `TauCeti.HasDensity.ae_eq_of_sigmaFinite`, `TauCeti.HasDensity.ae_eq_toReal_rnDeriv`: a
@@ -91,7 +91,7 @@ theorem hasDensity_def :
 /-- A measurable, almost everywhere nonnegative function `f` whose set Lebesgue integrals
 `∫⁻ x in s, ENNReal.ofReal (f x) ∂μ` equal `P s` for all measurable sets `s` is a density of `P`
 with respect to `μ`. -/
-theorem hasDensity_of_measure_apply (hf : Measurable f) (hf₀ : 0 ≤ᵐ[μ] f)
+theorem hasDensity_of_measure_apply_eq_setLIntegral (hf : Measurable f) (hf₀ : 0 ≤ᵐ[μ] f)
     (happly : ∀ {s : Set X}, MeasurableSet s → P s = ∫⁻ x in s, ENNReal.ofReal (f x) ∂μ) :
     HasDensity P μ f := by
   refine ⟨hf, hf₀, ?_⟩

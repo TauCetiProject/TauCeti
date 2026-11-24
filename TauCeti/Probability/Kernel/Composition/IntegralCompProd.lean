@@ -17,7 +17,7 @@ s-finite measure `μ : Measure α` and an s-finite kernel `κ : Kernel α β`, c
 
 ## Main statements
 
-* `MeasureTheory.Measure.integrable_integral_compProd`: if `f : α × β → E` is integrable with
+* `MeasureTheory.Integrable.integral_measure_compProd`: if `f : α × β → E` is integrable with
   respect to `μ ⊗ₘ κ`, then `a ↦ ∫ b, f (a, b) ∂κ a` is integrable with respect to `μ`.
 -/
 
@@ -27,17 +27,17 @@ noncomputable section
 
 open ProbabilityTheory
 
-namespace MeasureTheory.Measure
+namespace MeasureTheory.Integrable
 
 /-- If `f` is integrable with respect to `μ ⊗ₘ κ`, then the fiberwise integral
 `a ↦ ∫ b, f (a, b) ∂κ a` is integrable with respect to `μ`.
 
 This is the measure-level counterpart of Mathlib's `MeasureTheory.Integrable.integral_compProd`. -/
-theorem integrable_integral_compProd {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
+theorem integral_measure_compProd {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
     [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure α} [SFinite μ] {κ : Kernel α β}
     [IsSFiniteKernel κ] {f : α × β → E} (hf : Integrable f (μ ⊗ₘ κ)) :
     Integrable (fun a ↦ ∫ b, f (a, b) ∂κ a) μ := by
   rw [← Kernel.const_compProd_prodMkLeft_apply Unit μ κ ()] at hf
   simpa [Kernel.prodMkLeft_apply, Kernel.const_apply] using hf.integral_compProd
 
-end MeasureTheory.Measure
+end MeasureTheory.Integrable
