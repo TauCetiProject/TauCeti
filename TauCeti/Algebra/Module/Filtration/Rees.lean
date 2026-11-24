@@ -19,9 +19,9 @@ public import Mathlib.Data.Int.Interval
 Let `F : ℤ → Submodule R M` be an increasing filtration. Its Rees module is
 `R_F M = ⊕_p F_p M z^p`, the module of Laurent polynomials `∑ m_p z^p` with coefficients in `M`
 whose `p`-th coefficient lies in `F_p M`. This is Mathlib's submodule `Finsupp.submodule F` of
-`ℤ →₀ M`, and the operations on it live in the namespace `TauCeti.reesModule`: the Rees
-parameter `z` acts by the shift `TauCeti.reesModule.shift`, `(z x)_p = x_{p-1}`. A filtered map
-`u` induces `TauCeti.reesModule.map u`, applying `u` to every coefficient. Mathlib's
+`ℤ →₀ M`, and the operations on it live in the namespace `TauCeti.ReesModule`: the Rees
+parameter `z` acts by the shift `TauCeti.ReesModule.shift`, `(z x)_p = x_{p-1}`. A filtered map
+`u` induces `TauCeti.ReesModule.map u`, applying `u` to every coefficient. Mathlib's
 `Ideal.Filtration.submodule` is the analogous construction for decreasing `ℕ`-indexed `I`-adic
 filtrations inside `PolynomialModule R M`; the filtrations here are increasing and indexed by `ℤ`,
 so the Rees module consists of Laurent polynomials.
@@ -37,24 +37,24 @@ Hodge modules treats strictness of filtered `D`-modules by `z`-torsion of Rees m
 
 ## Main definitions
 
-* `TauCeti.reesModule.shift hF`: multiplication by the Rees parameter `z`.
-* `TauCeti.reesModule.map u hu`: the Rees map `R u` of a filtered linear map `u`.
-* `TauCeti.reesModule.evalOne F`: specialization at `z = 1`, `∑ m_p z^p ↦ ∑ m_p`.
-* `TauCeti.reesModule.symbol F`: specialization at `z = 0`, sending `∑ m_p z^p` to the classes of
+* `TauCeti.ReesModule.shift hF`: multiplication by the Rees parameter `z`.
+* `TauCeti.ReesModule.map u hu`: the Rees map `R u` of a filtered linear map `u`.
+* `TauCeti.ReesModule.evalOne F`: specialization at `z = 1`, `∑ m_p z^p ↦ ∑ m_p`.
+* `TauCeti.ReesModule.symbol F`: specialization at `z = 0`, sending `∑ m_p z^p` to the classes of
   its coefficients in the graded pieces `TauCeti.GradedPiece F p`.
 
 ## Main results
 
-* `TauCeti.reesModule.ker_evalOne`, `TauCeti.reesModule.range_evalOne`,
-  `TauCeti.reesModule.quotShiftSubIdEquiv`: `R_F M / (z - 1) R_F M ≅ M` for an exhaustive
+* `TauCeti.ReesModule.ker_evalOne`, `TauCeti.ReesModule.range_evalOne`,
+  `TauCeti.ReesModule.quotShiftSubIdEquiv`: `R_F M / (z - 1) R_F M ≅ M` for an exhaustive
   filtration.
-* `TauCeti.reesModule.ker_symbol`, `TauCeti.reesModule.symbol_surjective`,
-  `TauCeti.reesModule.quotShiftEquiv`: `R_F M / z R_F M ≅ gr^F M`.
-* `TauCeti.reesModule.mem_range_map_iff`: an element of `R_G N` lies in the image of `R u`
+* `TauCeti.ReesModule.ker_symbol`, `TauCeti.ReesModule.symbol_surjective`,
+  `TauCeti.ReesModule.quotShiftEquiv`: `R_F M / z R_F M ≅ gr^F M`.
+* `TauCeti.ReesModule.mem_range_map_iff`: an element of `R_G N` lies in the image of `R u`
   exactly when each coefficient lies in the image of the corresponding filtration step.
-* `TauCeti.reesModule.isStrict_iff_injective_mapQ_shift`: a filtered map is strict exactly when
+* `TauCeti.ReesModule.isStrict_iff_injective_mapQ_shift`: a filtered map is strict exactly when
   `z` acts injectively on the cokernel of its Rees map.
-* `TauCeti.reesModule.exact_map_iff`: a pair of filtered maps is exact on every filtration step
+* `TauCeti.ReesModule.exact_map_iff`: a pair of filtered maps is exact on every filtration step
   exactly when the pair of Rees maps is exact.
 
 ## References
@@ -76,7 +76,7 @@ variable {R M N P : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommM
 
 variable {F : ℤ → Submodule R M} {G : ℤ → Submodule R N} {H : ℤ → Submodule R P}
 
-namespace reesModule
+namespace ReesModule
 
 /-- The coefficients of an element of the Rees module lie in the filtration steps. -/
 theorem coe_apply_mem (x : Finsupp.submodule F) (p : ℤ) : (x : ℤ →₀ M) p ∈ F p := x.property p
@@ -207,8 +207,7 @@ theorem exact_map_iff (f : M →ₗ[R] N) (g : N →ₗ[R] P) (hf : ∀ p, F p �
   have hstep (p : ℤ) (n : G p) :
       ((g.restrict fun _ hx ↦ hg p hx) n = 0 ↔ n ∈ Set.range (f.restrict fun _ hx ↦ hf p hx)) ↔
         (g n = 0 ↔ (n : N) ∈ (F p).map f) := by
-    rw [← LinearMap.coe_range, SetLike.mem_coe, LinearMap.range_restrict, Submodule.mem_comap,
-      Submodule.subtype_apply, ← Submodule.coe_eq_zero, LinearMap.coe_restrict_apply]
+    simp [← LinearMap.coe_range, LinearMap.range_restrict, ← Submodule.coe_eq_zero]
   refine ⟨fun h p n ↦ (hstep p n).mpr ?_, fun h y ↦ ?_⟩
   · have hy := h ⟨Finsupp.single p (n : N), (Finsupp.comap_lsingle_submodule G p).ge n.property⟩
     rw [map_apply_eq_zero_iff, ← LinearMap.coe_range, SetLike.mem_coe, mem_range_map_iff] at hy
@@ -244,7 +243,8 @@ theorem evalOne_single {p : ℤ} {m : M} (hm : m ∈ F p) :
     evalOne F ⟨Finsupp.single p m, (Finsupp.comap_lsingle_submodule F p).ge hm⟩ = m := by
   simp [evalOne_apply]
 
-/-- The image of the specialization at `z = 1` is the union `⋃_p F_p M`. -/
+/-- The image of the specialization at `z = 1` is the supremum `⨆_p F_p M` (the union when `F` is
+increasing). -/
 theorem range_evalOne : LinearMap.range (evalOne F) = ⨆ p, F p := by
   refine le_antisymm ?_ (iSup_le fun p m hm ↦ ⟨_, evalOne_single hm⟩)
   rintro _ ⟨x, rfl⟩
@@ -253,6 +253,12 @@ theorem range_evalOne : LinearMap.range (evalOne F) = ⨆ p, F p := by
 
 theorem evalOne_surjective (hex : ⨆ p, F p = ⊤) : Function.Surjective (evalOne F) := by
   rw [← LinearMap.range_eq_top, range_evalOne, hex]
+
+/-- Specialization at `z = 1` is natural in the filtered map: `evalOne ∘ R u = u ∘ evalOne`. -/
+@[simp]
+theorem evalOne_map (u : M →ₗ[R] N) (hu : ∀ p, F p ≤ (G p).comap u) (x : Finsupp.submodule F) :
+    evalOne G (map u hu x) = u (evalOne F x) := by
+  simp [evalOne_apply, map_finsuppSum, map, Finsupp.sum_mapRange_index]
 
 @[simp]
 theorem evalOne_shift (hF : Monotone F) (x : Finsupp.submodule F) :
@@ -266,7 +272,7 @@ theorem evalOne_shift (hF : Monotone F) (x : Finsupp.submodule F) :
 
 end EvalOne
 
-end reesModule
+end ReesModule
 
 end Semiring
 
@@ -275,7 +281,7 @@ section Ring
 variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {F : ℤ → Submodule R M} {G : ℤ → Submodule R N}
 
-namespace reesModule
+namespace ReesModule
 
 /-- A filtered map `u` is strict exactly when the Rees parameter `z` acts injectively on the
 cokernel `R_G N / R u (R_F M)` of its Rees map, that is when this cokernel has no `z`-torsion.
@@ -328,8 +334,8 @@ private theorem partialSum_sub (x : ℤ →₀ M) (p : ℤ) :
   · rfl
   · exact (Finsupp.notMem_support_iff.mp hp).symm
 
-private theorem partialSum_eq_zero (x : ℤ →₀ M) (hx : (x.sum fun _ m ↦ m) = 0) {p : ℤ}
-    (hp : partialSum x p ≠ 0) :
+private theorem mem_biUnion_Ico_of_partialSum_ne_zero (x : ℤ →₀ M) (hx : (x.sum fun _ m ↦ m) = 0)
+    {p : ℤ} (hp : partialSum x p ≠ 0) :
     p ∈ (x.support ×ˢ x.support).biUnion fun ab ↦ Finset.Ico ab.1 ab.2 := by
   classical
   simp only [Finset.mem_biUnion, Finset.mem_product, Finset.mem_Ico, Prod.exists]
@@ -353,7 +359,7 @@ theorem ker_evalOne (hF : Monotone F) :
   refine le_antisymm (fun x hx ↦ ?_) ?_
   · rw [LinearMap.mem_ker, evalOne_apply] at hx
     let y : ℤ →₀ M := Finsupp.onFinset _ (partialSum (x : ℤ →₀ M))
-      fun p hp ↦ partialSum_eq_zero _ hx hp
+      fun p hp ↦ mem_biUnion_Ico_of_partialSum_ne_zero _ hx hp
     have hy : y ∈ Finsupp.submodule F := fun p ↦ by
       simp only [y, Finsupp.onFinset_apply, partialSum]
       refine neg_mem (Submodule.sum_mem _ fun q hq ↦ ?_)
@@ -381,7 +387,7 @@ theorem quotShiftSubIdEquiv_mk (hF : Monotone F) (hex : ⨆ p, F p = ⊤) (x : F
 
 section Symbol
 
-/-- The underlying function of `TauCeti.reesModule.symbol`. -/
+/-- The underlying function of `TauCeti.ReesModule.symbol`. -/
 private noncomputable def symbolFun (x : Finsupp.submodule F) : ⨁ p, GradedPiece F p :=
   DirectSum.mk (GradedPiece F) (x : ℤ →₀ M).support
     fun p ↦ Submodule.Quotient.mk ⟨(x : ℤ →₀ M) p, coe_apply_mem x p⟩
@@ -401,14 +407,10 @@ noncomputable def symbol : Finsupp.submodule F →ₗ[R] ⨁ p, GradedPiece F p 
   toFun := symbolFun
   map_add' x y := by
     ext p
-    rw [DirectSum.add_apply, symbolFun_apply, symbolFun_apply, symbolFun_apply,
-      ← Submodule.Quotient.mk_add]
-    congr 1
+    simp [symbolFun_apply, ← Submodule.Quotient.mk_add]
   map_smul' c x := by
     ext p
-    rw [DirectSum.smul_apply, symbolFun_apply, symbolFun_apply, RingHom.id_apply,
-      ← Submodule.Quotient.mk_smul]
-    congr 1
+    simp [DirectSum.smul_apply, symbolFun_apply, ← Submodule.Quotient.mk_smul]
 
 @[simp]
 theorem symbol_apply (x : Finsupp.submodule F) (p : ℤ) :
@@ -442,7 +444,7 @@ theorem symbol_surjective : Function.Surjective (symbol F) := by
     obtain ⟨y, rfl⟩ := hb
     exact ⟨x + y, map_add _ _ _⟩
 
-/-- The map `R_F M / z R_F M → gr^F M` induced by `TauCeti.reesModule.symbol`. -/
+/-- The map `R_F M / z R_F M → gr^F M` induced by `TauCeti.ReesModule.symbol`. -/
 private noncomputable def symbolQuot (hF : Monotone F) :
     (Finsupp.submodule F ⧸ LinearMap.range (shift hF)) →ₗ[R] ⨁ p, GradedPiece F p :=
   -- Built with `liftQ`: `quotKerEquivOfSurjective` would compare the two instance paths on
@@ -451,20 +453,17 @@ private noncomputable def symbolQuot (hF : Monotone F) :
 
 private theorem symbolQuot_mk (hF : Monotone F) (x : Finsupp.submodule F) :
     symbolQuot hF (Submodule.Quotient.mk x) = symbol F x :=
-  rfl
-
-private theorem symbolQuot_bijective (hF : Monotone F) : Function.Bijective (symbolQuot hF) := by
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_, fun c ↦ ?_⟩
-  · obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-    rw [symbolQuot_mk, ← LinearMap.mem_ker, ker_symbol hF] at hc
-    exact (Submodule.Quotient.mk_eq_zero _).mpr hc
-  · obtain ⟨x, hx⟩ := symbol_surjective c
-    exact ⟨Submodule.Quotient.mk x, (symbolQuot_mk hF x).trans hx⟩
+  Submodule.liftQ_apply _ _ _
 
 /-- Specialization at `z = 0`: `R_F M / z R_F M ≅ gr^F M = ⊕_p F_p M / F_{p-1} M`. -/
 noncomputable def quotShiftEquiv (hF : Monotone F) :
     (Finsupp.submodule F ⧸ LinearMap.range (shift hF)) ≃ₗ[R] ⨁ p, GradedPiece F p :=
-  LinearEquiv.ofBijective (symbolQuot hF) (symbolQuot_bijective hF)
+  LinearEquiv.ofBijective (symbolQuot hF) (show Function.Bijective (symbolQuot hF) from
+    ⟨LinearMap.ker_eq_bot.mp (Submodule.ker_liftQ_eq_bot' _ _ (ker_symbol hF).symm),
+      -- `Submodule.range_liftQ` is stated with the `AddCommGroup` instance path on
+      -- `⨁ p, GradedPiece F p`, and unifying it with the `AddCommMonoid` one times out.
+      fun c ↦ let ⟨x, hx⟩ := symbol_surjective c
+        ⟨Submodule.Quotient.mk x, (symbolQuot_mk hF x).trans hx⟩⟩)
 
 @[simp]
 theorem quotShiftEquiv_mk (hF : Monotone F) (x : Finsupp.submodule F) :
@@ -473,7 +472,7 @@ theorem quotShiftEquiv_mk (hF : Monotone F) (x : Finsupp.submodule F) :
 
 end Symbol
 
-end reesModule
+end ReesModule
 
 end Ring
 
