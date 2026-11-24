@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticStatistics.ArithmeticFamily.Basic
+public import Mathlib.Algebra.Order.BigOperators.Expect
 public import Mathlib.Topology.Algebra.Order.LiminfLimsup
 public import Mathlib.Topology.Algebra.Ring.Real
 
@@ -49,6 +50,7 @@ averages at the same `X` do differ.
 public section
 
 open Filter Topology
+open scoped BigOperators
 
 namespace TauCeti
 
@@ -58,85 +60,77 @@ variable {ι : Type*} (F : ArithmeticFamily ι)
 
 /-! ### Finite-cutoff averages -/
 
-/-- The average of `φ` over the members of height strictly below `X`: the sum of `φ` over the
-strict carrier divided by the strict count of the family, read as `0` when the carrier is
-empty. -/
+/-- The average of `φ` over the members of height strictly below `X`: the expectation
+`𝔼 i ∈ F.heightLT X, φ i` over the strict carrier, which is `0` when the carrier is empty. -/
 noncomputable def average (φ : ι → ℝ) (X : ℝ) : ℝ :=
-  (∑ i ∈ F.heightLT X, φ i) / F.countLT Set.univ X
+  𝔼 i ∈ F.heightLT X, φ i
 
 /-- A finite-cutoff average is the sum over the strict carrier divided by the strict count. -/
 theorem average_apply (φ : ι → ℝ) (X : ℝ) :
     F.average φ X = (∑ i ∈ F.heightLT X, φ i) / F.countLT Set.univ X := by
-  rw [average]
+  rw [average, Finset.expect_eq_sum_div_card, card_heightLT]
 
 /-- A finite-cutoff average is the sum over the strict carrier divided by its cardinality. -/
 theorem average_eq_sum_div_card (φ : ι → ℝ) (X : ℝ) :
-    F.average φ X = (∑ i ∈ F.heightLT X, φ i) / (F.heightLT X).card := by
-  rw [average_apply, card_heightLT]
+    F.average φ X = (∑ i ∈ F.heightLT X, φ i) / (F.heightLT X).card :=
+  Finset.expect_eq_sum_div_card _ _
 
 /-- The average times the strict count is the sum over the strict carrier; both sides vanish
 when the carrier is empty. -/
 theorem average_mul_countLT (φ : ι → ℝ) (X : ℝ) :
     F.average φ X * F.countLT Set.univ X = ∑ i ∈ F.heightLT X, φ i := by
-  rcases (F.countLT Set.univ X).eq_zero_or_pos with hX | hX
-  · simp [hX, Finset.card_eq_zero.mp (card_heightLT F X ▸ hX)]
-  · rw [average_apply]
-    exact div_mul_cancel₀ _ (by exact_mod_cast hX.ne')
+  rw [mul_comm, ← card_heightLT, average, Finset.card_mul_expect]
 
 /-- At a cutoff below every height the average is `0`. -/
-theorem average_eq_zero_of_le (φ : ι → ℝ) {X : ℝ} (hX : ∀ i, X ≤ F.height i) :
+theorem average_eq_zero_of_forall_le (φ : ι → ℝ) {X : ℝ} (hX : ∀ i, X ≤ F.height i) :
     F.average φ X = 0 := by
   have : F.heightLT X = ∅ :=
     Finset.eq_empty_of_forall_notMem fun i hi ↦ ((mem_heightLT F).mp hi).not_ge (hX i)
-  simp [average_apply, this]
+  rw [average, this, Finset.expect_empty]
 
 /-- The zero function has average `0` at every cutoff. -/
 @[simp]
-theorem average_zero (X : ℝ) : F.average 0 X = 0 := by
-  simp [average_apply]
+theorem average_zero (X : ℝ) : F.average 0 X = 0 :=
+  Finset.expect_const_zero _
 
 /-- Finite-cutoff averages are additive in the function. -/
 theorem average_add (φ ψ : ι → ℝ) (X : ℝ) :
-    F.average (φ + ψ) X = F.average φ X + F.average ψ X := by
-  simp [average_apply, Finset.sum_add_distrib, add_div]
+    F.average (φ + ψ) X = F.average φ X + F.average ψ X :=
+  Finset.expect_add_distrib _ _ _
 
 /-- Finite-cutoff averages commute with multiplication by a constant. -/
 theorem average_const_mul (c : ℝ) (φ : ι → ℝ) (X : ℝ) :
-    F.average (fun i ↦ c * φ i) X = c * F.average φ X := by
-  simp [average_apply, ← Finset.mul_sum, mul_div_assoc]
+    F.average (fun i ↦ c * φ i) X = c * F.average φ X :=
+  (Finset.mul_expect _ _ _).symm
 
 /-- Finite-cutoff averages commute with negation. -/
-theorem average_neg (φ : ι → ℝ) (X : ℝ) : F.average (-φ) X = -F.average φ X := by
-  simp [average_apply, neg_div]
+theorem average_neg (φ : ι → ℝ) (X : ℝ) : F.average (-φ) X = -F.average φ X :=
+  Finset.expect_neg_distrib _ _
 
 /-- Finite-cutoff averages are compatible with subtraction. -/
 theorem average_sub (φ ψ : ι → ℝ) (X : ℝ) :
-    F.average (φ - ψ) X = F.average φ X - F.average ψ X := by
-  rw [sub_eq_add_neg, average_add, average_neg, ← sub_eq_add_neg]
+    F.average (φ - ψ) X = F.average φ X - F.average ψ X :=
+  Finset.expect_sub_distrib _ _ _
 
 /-- At a cutoff with some member strictly below it, a constant function averages to itself. -/
 theorem average_const (c : ℝ) {X : ℝ} (hX : 0 < F.countLT Set.univ X) :
-    F.average (fun _ ↦ c) X = c := by
-  rw [average_apply, Finset.sum_const, nsmul_eq_mul, card_heightLT]
-  exact mul_div_cancel_left₀ _ (by exact_mod_cast hX.ne')
+    F.average (fun _ ↦ c) X = c :=
+  Finset.expect_const (Finset.card_pos.mp (card_heightLT F X ▸ hX)) c
 
 /-- Finite-cutoff averages are monotone in the function. -/
-theorem average_mono {φ ψ : ι → ℝ} (h : φ ≤ ψ) (X : ℝ) : F.average φ X ≤ F.average ψ X := by
-  rw [average_apply, average_apply]
-  gcongr with i
-  exact h i
+theorem average_mono {φ ψ : ι → ℝ} (h : φ ≤ ψ) (X : ℝ) : F.average φ X ≤ F.average ψ X :=
+  Finset.expect_le_expect fun i _ ↦ h i
 
 /-- A nonnegative function has nonnegative finite-cutoff averages. -/
-theorem average_nonneg {φ : ι → ℝ} (h : 0 ≤ φ) (X : ℝ) : 0 ≤ F.average φ X := by
-  simpa using F.average_mono h X
+theorem average_nonneg {φ : ι → ℝ} (h : 0 ≤ φ) (X : ℝ) : 0 ≤ F.average φ X :=
+  Finset.expect_nonneg fun i _ ↦ h i
 
 /-- A finite-cutoff average of a function bounded above by `M ≥ 0` is at most `M`. -/
 theorem average_le_of_forall_le {φ : ι → ℝ} {M : ℝ} (hM : 0 ≤ M) (h : ∀ i, φ i ≤ M) (X : ℝ) :
     F.average φ X ≤ M := by
-  refine (F.average_mono (ψ := fun _ ↦ M) h X).trans ?_
-  rcases (F.countLT Set.univ X).eq_zero_or_pos with hX | hX
-  · simpa [average_apply, hX] using hM
-  · exact (F.average_const M hX).le
+  rcases (F.heightLT X).eq_empty_or_nonempty with hX | hX
+  · rwa [average, hX, Finset.expect_empty]
+  · exact Finset.expect_le hX fun i _ ↦ h i
 
 /-- A constant function eventually averages to itself over a nonempty family. -/
 theorem eventually_average_const [Nonempty ι] (c : ℝ) :
