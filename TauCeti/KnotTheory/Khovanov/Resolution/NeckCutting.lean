@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Khovanov.Resolution.Edge
-import TauCeti.KnotTheory.Khovanov.Mark
+import TauCeti.KnotTheory.Khovanov.Mark.Basic
 
 /-!
 # Reverse saddles and neck cutting

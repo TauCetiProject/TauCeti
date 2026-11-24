@@ -9,6 +9,9 @@ public import TauCeti.Algebra.Homology.Cube.Homotopy
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Mark.Basic
 
+import TauCeti.Data.Finset.Basic
+import TauCeti.KnotTheory.Khovanov.Resolution.NeckCutting
+
 /-!
 # Sliding a mark across a crossing
 
@@ -16,9 +19,11 @@ Let `c` be a crossing of a link diagram and let `p` and `q` be the arc marks on 
 local strand through `c`: for a slot `k : Fin 4`, `p` lies on `D.crossing c k` and `q` lies on
 `D.crossing c (oppositeCrossingSlot k)`. Each local smoothing at `c` joins every slot to one of its
 neighbours and never to its opposite slot, so in every smoothing state `s` the circles selected by
-`p` and `q` are the two circles through slots `0` and `2` in some order. In particular,
+`p` and `q` are the two circles through slots `0` and `2` in some order
+(`TauCeti.PDCode.CrossingCircle.mk_crossing_oppositeCrossingSlot_pair`). In particular,
 `X_p + X_q = X_0 + X_2` on every state, and when only one circle of `s` meets `c` the marks `p` and
-`q` select the same circle.
+`q` select the same circle
+(`PDCode.Mark.resolvedCircle_onArc_crossing_eq_oppositeCrossingSlot_of_card_circlesAt_eq_one`).
 
 Reversing the saddle map along the edges in direction `c` gives a bidegree-`(-1, -2)` homotopy `H`
 on the Khovanov complex (`TauCeti.OrientedPDCode.khovanovComplexMarkSlideHom`): on a state `S`
@@ -28,14 +33,14 @@ cube Koszul sign `(-1) ^ #{b ∈ S \ {c} | b < c}`, and on a state with `c ∉ S
 All mixed squares formed by the reverse saddle at `c` and a forward saddle at another crossing
 `a ≠ c` commute by `TauCeti.PDCode.resolutionEdgeMap_comp_resolutionEdgeMap_comm`, so their signed
 contributions to `d ≫ H + H ≫ d` cancel by `CategoryTheory.Functor.cubeReverseEdgeHomotopyZero`.
-What remains on each state is the round-trip saddle composite at `c` alone:
+What remains on each state is the round-trip saddle composite at `c` alone
+(`TauCeti.PDCode.resolutionEdgeMap_reverse_resolutionEdgeMap`):
 
 * when two circles of the state pass through `c`, the composite is `Δ ∘ m = X ⊗ 1 + 1 ⊗ X` on the
-  two circles at `c` (`TauCeti.PDCode.resolutionSplitMap_comp_resolutionMergeMap`), which is
-  `X_p + X_q`;
+  two circles at `c` (`TauCeti.PDCode.resolutionSplitMap_resolutionMergeMap`), which is `X_p + X_q`;
 * when one circle of the state passes through `c`, the composite is `m ∘ Δ = 2 • X` on that circle
-  (`TauCeti.PDCode.resolutionMergeMap_comp_resolutionSplitMap`), which again equals `X_p + X_q`
-  because `p` and `q` lie on that same circle.
+  (`TauCeti.PDCode.resolutionMergeMap_resolutionSplitMap`), which again equals `X_p + X_q` because
+  `p` and `q` lie on that same circle.
 
 Hence `d ≫ H + H ≫ d = X_p + X_q`, so `X_p` is chain homotopic to `-X_q` and sliding a mark across
 one crossing negates the induced `X` action on Khovanov cohomology
@@ -57,8 +62,8 @@ whereas the differential `d` also contains edges at `a ≠ c` that need not iden
 
 ## Main results
 
-* `TauCeti.PDCode.resolutionSplitMap_comp_resolutionMergeMap`: `Δ ∘ m = X_0 + X_2`.
-* `TauCeti.PDCode.resolutionMergeMap_comp_resolutionSplitMap`: `m ∘ Δ = 2 • X_0`.
+* `TauCeti.PDCode.resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX`: composing a
+  saddle at `c` with its reverse equals `X_p + X_q` for opposite arc marks `p` and `q` at `c`.
 * `TauCeti.PDCode.resolutionEdgeMap_circleX_oppositeCrossingSlot`: every saddle at `c` carries `X_p`
   to `X_q`.
 * `OrientedPDCode.d_comp_khovanovComplexMarkSlideHom_add_khovanovComplexMarkSlideHom_comp_d`:
@@ -80,7 +85,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Finset PiTensorProduct DualNumber
+open CategoryTheory Limits Finset
 
 namespace TauCeti.PDCode
 
@@ -88,50 +93,7 @@ universe u
 
 variable {n : ℕ}
 
-/-! ### Opposite slots at a crossing and their resolved circles -/
-
-private theorem slotSmoothing_oppositeCrossingSlot_cases (b : Bool) (k : Fin 4) :
-    (k = 0 ∧ oppositeCrossingSlot k = 2) ∨
-      (k = 2 ∧ oppositeCrossingSlot k = 0) ∨
-      (slotSmoothing b k = 0 ∧ slotSmoothing b (oppositeCrossingSlot k) = 2) ∨
-      (slotSmoothing b k = 2 ∧ slotSmoothing b (oppositeCrossingSlot k) = 0) := by
-  rw [oppositeCrossingSlot_eq_swap_mul_swap]
-  revert k
-  cases b <;> simp only [slotSmoothing_false, slotSmoothing_true] <;> decide
-
-/-- At any crossing `c` and slot `k`, the circles of `k` and its opposite slot
-`oppositeCrossingSlot k` in a smoothed diagram are the circles of slots `0` and `2`, in one of the
-two orders. -/
-theorem CrossingCircle.mk_crossing_oppositeCrossingSlot_pair {D : PDCode n} {s : Fin n → Bool}
-    (c : Fin n) (k : Fin 4) :
-    ((⟦D.crossing c k⟧ : D.CrossingCircle s) = ⟦D.crossing c 0⟧ ∧
-      (⟦D.crossing c (oppositeCrossingSlot k)⟧ : D.CrossingCircle s) = ⟦D.crossing c 2⟧) ∨
-    ((⟦D.crossing c k⟧ : D.CrossingCircle s) = ⟦D.crossing c 2⟧ ∧
-      (⟦D.crossing c (oppositeCrossingSlot k)⟧ : D.CrossingCircle s) = ⟦D.crossing c 0⟧) := by
-  rcases slotSmoothing_oppositeCrossingSlot_cases (D.smoothingChoice s c) k with
-    ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-  · exact .inl ⟨by rw [h₁], by rw [h₂]⟩
-  · exact .inr ⟨by rw [h₁], by rw [h₂]⟩
-  · refine .inl ⟨?_, ?_⟩
-    · rw [← CrossingCircle.mk_crossing_slotSmoothing, h₁]
-    · rw [← CrossingCircle.mk_crossing_slotSmoothing, h₂]
-  · refine .inr ⟨?_, ?_⟩
-    · rw [← CrossingCircle.mk_crossing_slotSmoothing, h₁]
-    · rw [← CrossingCircle.mk_crossing_slotSmoothing, h₂]
-
-/-- When only one circle of `s` passes through `c`, the arc marks at a slot `k` of `c` and at its
-opposite slot select the same resolved circle. -/
-theorem Mark.resolvedCircle_onArc_crossing_eq_oppositeCrossingSlot_of_card_circlesAt_eq_one
-    (D : PDCode n) {s : Fin n → Bool} {c : Fin n} (hs : #(D.circlesAt s c) = 1) (k : Fin 4) :
-    (Mark.onArc D (D.crossing c k)).resolvedCircle s =
-      (Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle s := by
-  have h02 : (⟦D.crossing c 0⟧ : D.CrossingCircle s) = ⟦D.crossing c 2⟧ :=
-    (D.card_circlesAt_eq_one_iff s c).mp hs
-  rw [Mark.resolvedCircle_onArc, Mark.resolvedCircle_onArc]
-  rcases CrossingCircle.mk_crossing_oppositeCrossingSlot_pair (D := D) (s := s) c k with
-    ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-  · rw [h₁, h₂, h02]
-  · rw [h₁, h₂, h02]
+/-! ### Opposite-slot `X` actions and saddle identities -/
 
 /-- In any state `s`, the sum of the `X` actions at the two opposite slots `k` and
 `oppositeCrossingSlot k` of `c` equals the sum of the `X` actions on the circles through slots `0`
@@ -149,87 +111,10 @@ theorem circleX_resolvedCircle_onArc_add_oppositeCrossingSlot (D : PDCode n)
   · rw [h₁, h₂]
   · rw [h₁, h₂, add_comm]
 
-/-! ### Local Frobenius round-trip and intertwining identities at a saddle -/
-
 section Saddle
 
 variable (D : PDCode n) {s t : Fin n → Bool} {c : Fin n}
   (hst : ∀ j, j ≠ c → s j = t j) (hc : s c ≠ t c) (R : Type u) [CommSemiring R]
-
-/-- **Merging two circles at `c` and splitting the result back (`Δ ∘ m = X ⊗ 1 + 1 ⊗ X`).** On a
-state `s` with two circles through `c`, merging along `s → t` and splitting back along `t → s` acts
-as the sum of the `X` actions on the two circles of `s` through slots `0` and `2` of `c`, and as the
-identity on every other factor. -/
-theorem resolutionSplitMap_comp_resolutionMergeMap (hs : #(D.circlesAt s c) = 2) :
-    D.resolutionSplitMap (fun j hj ↦ (hst j hj).symm) hc.symm hs R ∘ₗ
-        (D.resolutionMergeMap hst hc hs R).toLinearMap =
-      Khovanov.circleX R (.inl ⟦D.crossing c 0⟧) +
-        Khovanov.circleX R (.inl ⟦D.crossing c 2⟧) := by
-  have hts : ∀ j, j ≠ c → t j = s j := fun j hj ↦ (hst j hj).symm
-  refine LinearMap.ext fun x ↦ ?_
-  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, LinearMap.add_apply]
-  have hproj :
-      D.resolutionSplitMap hts hc.symm hs R (D.resolutionMergeMap hst hc hs R x) =
-        x * D.resolutionSplitMap hts hc.symm hs R 1 := by
-    rw [resolutionSplitMap_def, resolutionMergeMap_def,
-      ← mul_one (fiberwiseMul (A := fun _ ↦ R[ε]) _ x)]
-    exact Khovanov.fiberwiseSplit_fiberwiseMul_mul _ x 1
-  rw [hproj, D.resolutionSplitMap_one, NonUnitalNonAssocSemiring.left_distrib,
-    CommMagma.mul_comm x, CommMagma.mul_comm x, ← Khovanov.circleX_apply, ← Khovanov.circleX_apply]
-
-/-- **Splitting one circle at `c` and merging the two pieces back (`m ∘ Δ = 2 • X`).** On a state
-`s` with one circle through `c` (so two circles of `t` pass through `c`), splitting along `s → t`
-and merging back along `t → s` acts as `2 • X` on the circle of `s` through `c`. -/
-theorem resolutionMergeMap_comp_resolutionSplitMap (ht : #(D.circlesAt t c) = 2) :
-    (D.resolutionMergeMap (fun j hj ↦ (hst j hj).symm) hc.symm ht R).toLinearMap ∘ₗ
-        D.resolutionSplitMap hst hc ht R =
-      2 • Khovanov.circleX R (.inl ⟦D.crossing c 0⟧) := by
-  have hts : ∀ j, j ≠ c → t j = s j := fun j hj ↦ (hst j hj).symm
-  have hs : #(D.circlesAt s c) = 1 :=
-    D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hts hc.symm ht
-  have hf : Function.Surjective (D.saddleResolvedCircleMap hts hs) :=
-    D.saddleResolvedCircleMap_surjective hts hs
-  have hf0 : D.saddleResolvedCircleMap hts hs (.inl ⟦D.crossing c 0⟧) = .inl ⟦D.crossing c 0⟧ :=
-    (D.saddleResolvedCircleMap_eq_crossing_iff hts hs _).mpr (.inl rfl)
-  have hf2 : D.saddleResolvedCircleMap hts hs (.inl ⟦D.crossing c 2⟧) = .inl ⟦D.crossing c 0⟧ :=
-    (D.saddleResolvedCircleMap_eq_crossing_iff hts hs _).mpr (.inr rfl)
-  rw [two_smul]
-  refine LinearMap.ext fun x ↦ ?_
-  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, LinearMap.add_apply]
-  have hsplit :
-      D.resolutionSplitMap hst hc ht R x =
-        fiberwiseMul (A := fun _ ↦ R[ε]) (Function.surjInv hf) x *
-          D.resolutionSplitMap hst hc ht R 1 := by
-    rw [resolutionSplitMap_def]
-    exact Khovanov.fiberwiseSplit_eq_fiberwiseMul_surjInv_mul hf x
-  rw [hsplit, resolutionMergeMap_def, map_mul, fiberwiseMul_fiberwiseMul_surjInv hf x,
-    D.resolutionSplitMap_one, map_add, fiberwiseMul_singleAlgHom, fiberwiseMul_singleAlgHom,
-    hf0, hf2, NonUnitalNonAssocSemiring.left_distrib, CommMagma.mul_comm x,
-    ← Khovanov.circleX_apply]
-
-/-- **The round-trip saddle identity in either direction.** Composing the saddle map `s → t` at `c`
-with the reverse saddle map `t → s` at `c` always equals the sum of the `X` actions on the circles
-through slots `0` and `2` of `c`: it is `Δ ∘ m = X_0 + X_2` when `s` has two circles at `c`, and
-`m ∘ Δ = 2 • X_0 = X_0 + X_2` when `s` has one circle at `c` (where slots `0` and `2` lie on the
-same circle). -/
-theorem resolutionEdgeMap_comp_resolutionEdgeMap_self
-    (h : #(D.circlesAt s c) = 2 ∨ #(D.circlesAt t c) = 2) :
-    D.resolutionEdgeMap (fun j hj ↦ (hst j hj).symm) hc.symm h.symm R ∘ₗ
-        D.resolutionEdgeMap hst hc h R =
-      Khovanov.circleX R (.inl ⟦D.crossing c 0⟧) +
-        Khovanov.circleX R (.inl ⟦D.crossing c 2⟧) := by
-  by_cases hs : #(D.circlesAt s c) = 2
-  · rw [D.resolutionEdgeMap_eq_resolutionMergeMap hst hc h R hs,
-      D.resolutionEdgeMap_eq_resolutionSplitMap _ _ _ R hs]
-    exact D.resolutionSplitMap_comp_resolutionMergeMap hst hc R hs
-  · have ht : #(D.circlesAt t c) = 2 := h.resolve_left hs
-    have hs1 : #(D.circlesAt s c) = 1 :=
-      D.card_circlesAt_eq_one_of_card_circlesAt_eq_two (fun j hj ↦ (hst j hj).symm) hc.symm ht
-    have h02 : (⟦D.crossing c 0⟧ : D.CrossingCircle s) = ⟦D.crossing c 2⟧ :=
-      (D.card_circlesAt_eq_one_iff s c).mp hs1
-    rw [D.resolutionEdgeMap_eq_resolutionSplitMap hst hc h R ht,
-      D.resolutionEdgeMap_eq_resolutionMergeMap _ _ _ R ht,
-      D.resolutionMergeMap_comp_resolutionSplitMap hst hc R ht, ← h02, two_smul]
 
 /-- Composing a saddle map at `c` with its reverse equals `X_p + X_q` for the two opposite arc marks
 at any slot `k` of `c`. -/
@@ -240,8 +125,9 @@ theorem resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX
       Khovanov.circleX R ((Mark.onArc D (D.crossing c k)).resolvedCircle s) +
         Khovanov.circleX R
           ((Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle s) := by
-  rw [D.resolutionEdgeMap_comp_resolutionEdgeMap_self hst hc R h,
-    D.circleX_resolvedCircle_onArc_add_oppositeCrossingSlot R s c k]
+  refine LinearMap.ext fun x ↦ ?_
+  rw [LinearMap.comp_apply, D.resolutionEdgeMap_reverse_resolutionEdgeMap hst hc R h x,
+    ← LinearMap.add_apply, D.circleX_resolvedCircle_onArc_add_oppositeCrossingSlot R s c k]
 
 /-- **Every saddle at `c` intertwines `X` on opposite slots of `c`.** Because one of `s` or `t` has
 a single circle passing through `c` (on which `k` and `oppositeCrossingSlot k` select the same
@@ -343,7 +229,7 @@ theorem isCubeReverseEdgeCompatible_resolutionCubeReverseSaddle (hj : j' = j - 2
   intro S hc a ha
   have haS : a ∉ S := fun haS ↦ ha (mem_insert_of_mem haS)
   have hc' : c ∉ insert a S := fun hc' ↦ ha (by
-    rcases mem_insert.1 hc' with rfl | hmem
+    rcases mem_insert.mp hc' with rfl | hmem
     · exact mem_insert_self c S
     · exact absurd hmem hc)
   have hst₁ : ∀ i, i ≠ c → cubeState (insert c S) i = cubeState S i :=
@@ -497,7 +383,7 @@ theorem khovanovComplexMarkSlideHom_of_ne (hj : j' = j - 2) {i l : ℤ} (hil : l
 /-- On a state summand avoiding `c`, the mark-slide homotopy at `c` vanishes. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexι_khovanovComplexMarkSlideHom_of_notMem (hj : j' = j - 2) {i l : ℤ}
-    (U : {U : Finset (Fin n) // (#U : ℤ) = i + D.negativeCrossingCount}) (hc : c ∉ U.1) :
+    (U : {U : Finset (Fin n) // (#U : ℤ) = i + D.negativeCrossingCount}) (hc : c ∉ U.val) :
     D.khovanovComplexι hD R j U ≫ D.khovanovComplexMarkSlideHom c hD R hj i l = 0 := by
   rw [khovanovComplexι_def, khovanovComplexMarkSlideHom, Category.assoc, eqToHom_trans_assoc,
     eqToHom_refl, Category.id_comp, Functor.ι_cubeReverseEdgeHom_of_notMem_assoc _ _ _ _ U hc,
@@ -507,13 +393,13 @@ theorem khovanovComplexι_khovanovComplexMarkSlideHom_of_notMem (hj : j' = j - 2
 saddle into `S` with Koszul sign `(-1) ^ #{b ∈ S | b < c}`. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexι_khovanovComplexMarkSlideHom_insert (hj : j' = j - 2) {i : ℤ}
-    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) (hc : c ∉ S.1) :
-    D.khovanovComplexι hD R j ⟨insert c S.1, by
-        rw [card_insert_of_notMem hc, Nat.cast_succ, S.2]
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) (hc : c ∉ S.val) :
+    D.khovanovComplexι hD R j ⟨insert c S.val, by
+        rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]
         omega⟩ ≫
       D.khovanovComplexMarkSlideHom c hD R hj (i + 1) i =
-    ((-1 : ℤ) ^ #{b ∈ S.1 | b < c}) •
-      (D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega) S.1 hc ≫
+    ((-1 : ℤ) ^ #{b ∈ S.val | b < c}) •
+      (D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega) S.val hc ≫
         D.khovanovComplexι hD R j' S) := by
   let F := D.toPDCode.resolutionCube hD R
     (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
@@ -523,13 +409,13 @@ theorem khovanovComplexι_khovanovComplexMarkSlideHom_insert (hj : j' = j - 2) {
   rw [khovanovComplexι_def, khovanovComplexMarkSlideHom, Category.assoc, eqToHom_trans_assoc,
     eqToHom_refl, Category.id_comp]
   have hι :
-      F.cubeComplexι (r := i + 1 + D.negativeCrossingCount) ⟨insert c S.1, by
-          rw [card_insert_of_notMem hc, Nat.cast_succ, S.2]; omega⟩ =
-        F.cubeComplexι (r := i + D.negativeCrossingCount + 1) ⟨insert c S.1, by
-          rw [card_insert_of_notMem hc, Nat.cast_succ, S.2]⟩ ≫
+      F.cubeComplexι (r := i + 1 + D.negativeCrossingCount) ⟨insert c S.val, by
+          rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]; omega⟩ =
+        F.cubeComplexι (r := i + D.negativeCrossingCount + 1) ⟨insert c S.val, by
+          rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩ ≫
           (F.cubeComplex.XIsoOfEq he.symm).hom :=
     (F.cubeComplexι_comp_XIsoOfEq_hom he.symm
-      ⟨insert c S.1, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.2]⟩).symm
+      ⟨insert c S.val, by rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]⟩).symm
   have hH :
       (F.cubeComplex.XIsoOfEq he.symm).hom ≫
           Functor.cubeReverseEdgeHom F G c
@@ -550,7 +436,7 @@ theorem khovanovComplexι_khovanovComplexMarkSlideHom_insert (hj : j' = j - 2) {
 /-- Projecting the mark-slide homotopy at `c` onto a state containing `c` gives `0`. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexMarkSlideHom_khovanovComplexπ_of_mem (hj : j' = j - 2) {i l : ℤ}
-    (T : {T : Finset (Fin n) // (#T : ℤ) = l + D.negativeCrossingCount}) (hc : c ∈ T.1) :
+    (T : {T : Finset (Fin n) // (#T : ℤ) = l + D.negativeCrossingCount}) (hc : c ∈ T.val) :
     D.khovanovComplexMarkSlideHom c hD R hj i l ≫ D.khovanovComplexπ hD R j' T = 0 := by
   rw [khovanovComplexMarkSlideHom, khovanovComplexπ_def, Category.assoc, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
@@ -560,24 +446,18 @@ theorem khovanovComplexMarkSlideHom_khovanovComplexπ_of_mem (hj : j' = j - 2) {
 projection onto `insert c S` followed by the reverse saddle with sign `(-1) ^ #{b ∈ S | b < c}`. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexMarkSlideHom_khovanovComplexπ_of_notMem (hj : j' = j - 2) {i : ℤ}
-    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) (hc : c ∉ S.1) :
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) (hc : c ∉ S.val) :
     D.khovanovComplexMarkSlideHom c hD R hj (i + 1) i ≫ D.khovanovComplexπ hD R j' S =
-      ((-1 : ℤ) ^ #{b ∈ S.1 | b < c}) •
-        (D.khovanovComplexπ hD R j ⟨insert c S.1, by
-            rw [card_insert_of_notMem hc, Nat.cast_succ, S.2]
+      ((-1 : ℤ) ^ #{b ∈ S.val | b < c}) •
+        (D.khovanovComplexπ hD R j ⟨insert c S.val, by
+            rw [card_insert_of_notMem hc, Nat.cast_succ, S.property]
             omega⟩ ≫
-          D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega) S.1 hc) := by
+          D.toPDCode.resolutionCubeReverseSaddle c hD R (by omega) S.val hc) := by
   refine D.khovanovComplex_hom_ext hD R j fun U ↦ ?_
-  by_cases hcU : c ∈ U.1
-  · have hcard : (#(U.1.erase c) : ℤ) = i + D.negativeCrossingCount := by
-      have := card_erase_add_one hcU
-      have := U.2
-      omega
-    let V : {V : Finset (Fin n) // (#V : ℤ) = i + D.negativeCrossingCount} := ⟨U.1.erase c, hcard⟩
-    have hcV : c ∉ V.1 := notMem_erase c U.1
-    have hU : U = ⟨insert c V.1, by rw [card_insert_of_notMem hcV, Nat.cast_succ, V.2]; omega⟩ :=
-      Subtype.ext (insert_erase hcU).symm
-    rw [hU, khovanovComplexι_khovanovComplexMarkSlideHom_insert_assoc D c hD R hj V hcV,
+  by_cases hcU : c ∈ U.val
+  · obtain ⟨V, hcV, rfl⟩ :=
+      exists_notMem_insert_eq_of_mem (add_right_comm i (D.negativeCrossingCount : ℤ) 1) U hcU
+    rw [khovanovComplexι_khovanovComplexMarkSlideHom_insert_assoc D c hD R hj V hcV,
       Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc]
     by_cases hVS : V = S
     · subst hVS
@@ -587,13 +467,13 @@ theorem khovanovComplexMarkSlideHom_khovanovComplexπ_of_notMem (hj : j' = j - 2
       intro hins
       apply hVS
       apply Subtype.ext
-      have hErase := congrArg (fun X ↦ X.1.erase c) hins
+      have hErase := congrArg (fun X ↦ X.val.erase c) hins
       dsimp only at hErase
       rwa [erase_insert hcV, erase_insert hc] at hErase
   · rw [khovanovComplexι_khovanovComplexMarkSlideHom_of_notMem_assoc D c hD R hj U hcU, zero_comp,
       Preadditive.comp_zsmul, khovanovComplexι_π_of_ne_assoc, zero_comp, smul_zero]
     intro hins
-    exact hcU (congrArg Subtype.val hins ▸ mem_insert_self c S.1)
+    exact hcU (congrArg Subtype.val hins ▸ mem_insert_self c S.val)
 
 /-- **The mark-slide homotopy squares to zero (`H² = 0`).** Its image lies in state summands
 avoiding `c`, on which a second application of `H` vanishes. -/
@@ -768,23 +648,17 @@ def khovanovComplexMarkSlideHomotopyNeg (k : Fin 4) (hj : j' = j - 2) :
       (D.khovanovComplexMarkX (PDCode.Mark.onArc D.toPDCode (D.toPDCode.crossing c k)) hD R hj)
       (-D.khovanovComplexMarkX
         (PDCode.Mark.onArc D.toPDCode (D.toPDCode.crossing c (PDCode.oppositeCrossingSlot k)))
-        hD R hj) where
-  hom := D.khovanovComplexMarkSlideHom c hD R hj
-  zero _ _ hil := D.khovanovComplexMarkSlideHom_of_ne c hD R hj hil
-  comm i := by
-    have hzero := (D.khovanovComplexMarkSlideHomotopyZero c hD R k hj).comm i
-    have hhom : (D.khovanovComplexMarkSlideHomotopyZero c hD R k hj).hom =
-        D.khovanovComplexMarkSlideHom c hD R hj := rfl
-    rw [hhom, HomologicalComplex.add_f_apply, HomologicalComplex.zero_f, add_zero] at hzero
-    rw [HomologicalComplex.neg_f_apply]
-    exact eq_add_neg_of_add_eq hzero
+        hD R hj) :=
+  Homotopy.equivSubZero.symm <|
+    (Homotopy.ofEq (sub_neg_eq_add _ _)).trans
+      (D.khovanovComplexMarkSlideHomotopyZero c hD R k hj)
 
 /-- The components of `khovanovComplexMarkSlideHomotopyNeg` are `khovanovComplexMarkSlideHom`. -/
 @[simp]
 theorem khovanovComplexMarkSlideHomotopyNeg_hom (k : Fin 4) (hj : j' = j - 2) (i l : ℤ) :
     (D.khovanovComplexMarkSlideHomotopyNeg c hD R k hj).hom i l =
       D.khovanovComplexMarkSlideHom c hD R hj i l :=
-  (rfl)
+  zero_add _
 
 /-- **Sliding a mark across one crossing negates the induced `X` map on Khovanov homology.** For
 opposite arc marks `p` and `q` at slot `k` and `oppositeCrossingSlot k` of crossing `c`, the maps

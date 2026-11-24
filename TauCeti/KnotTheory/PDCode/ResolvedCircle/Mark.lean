@@ -19,8 +19,10 @@ Every complete smoothing selects a resolved circle through the mark. This select
 with smoothing equivalences and with the native saddle correspondence towards a state having
 one circle at the changed crossing. Thus a marked circle can be followed through both a merge
 and the reverse correspondence of a split. These are the circle-selection data for the based
-Frobenius action and the reduced complex. No geometric point, mark slide across a crossing, or
-transport through a crossing-changing Reidemeister move is asserted here.
+Frobenius action and the reduced complex. At any crossing, opposite slots select the two circles
+through slots `0` and `2` in some order, and marks on opposite slots coincide whenever only one
+circle passes through the crossing. No geometric point or transport through a crossing-changing
+Reidemeister move is asserted here.
 
 ## References
 
@@ -129,6 +131,49 @@ theorem saddleResolvedCircleMap_resolvedCircle (p : D.Mark) {s t : Fin n → Boo
   induction p using Mark.induction_on <;> simp
 
 end Mark
+
+private theorem slotSmoothing_oppositeCrossingSlot_cases (b : Bool) (k : Fin 4) :
+    (k = 0 ∧ oppositeCrossingSlot k = 2) ∨
+      (k = 2 ∧ oppositeCrossingSlot k = 0) ∨
+      (slotSmoothing b k = 0 ∧ slotSmoothing b (oppositeCrossingSlot k) = 2) ∨
+      (slotSmoothing b k = 2 ∧ slotSmoothing b (oppositeCrossingSlot k) = 0) := by
+  rw [oppositeCrossingSlot_eq_swap_mul_swap]
+  revert k
+  cases b <;> simp only [slotSmoothing_false, slotSmoothing_true] <;> decide
+
+/-- At any crossing `c` and slot `k`, the circles of `k` and its opposite slot
+`oppositeCrossingSlot k` in a smoothed diagram are the circles of slots `0` and `2`, in one of the
+two orders. -/
+theorem CrossingCircle.mk_crossing_oppositeCrossingSlot_pair {D : PDCode n} {s : Fin n → Bool}
+    (c : Fin n) (k : Fin 4) :
+    ((⟦D.crossing c k⟧ : D.CrossingCircle s) = ⟦D.crossing c 0⟧ ∧
+      (⟦D.crossing c (oppositeCrossingSlot k)⟧ : D.CrossingCircle s) = ⟦D.crossing c 2⟧) ∨
+    ((⟦D.crossing c k⟧ : D.CrossingCircle s) = ⟦D.crossing c 2⟧ ∧
+      (⟦D.crossing c (oppositeCrossingSlot k)⟧ : D.CrossingCircle s) = ⟦D.crossing c 0⟧) := by
+  rcases slotSmoothing_oppositeCrossingSlot_cases (D.smoothingChoice s c) k with
+    ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+  · exact .inl ⟨by rw [h₁], by rw [h₂]⟩
+  · exact .inr ⟨by rw [h₁], by rw [h₂]⟩
+  · refine .inl ⟨?_, ?_⟩
+    · rw [← CrossingCircle.mk_crossing_slotSmoothing, h₁]
+    · rw [← CrossingCircle.mk_crossing_slotSmoothing, h₂]
+  · refine .inr ⟨?_, ?_⟩
+    · rw [← CrossingCircle.mk_crossing_slotSmoothing, h₁]
+    · rw [← CrossingCircle.mk_crossing_slotSmoothing, h₂]
+
+/-- When only one circle of `s` passes through `c`, the arc marks at a slot `k` of `c` and at its
+opposite slot select the same resolved circle. -/
+theorem Mark.resolvedCircle_onArc_crossing_eq_oppositeCrossingSlot_of_card_circlesAt_eq_one
+    (D : PDCode n) {s : Fin n → Bool} {c : Fin n} (hs : (D.circlesAt s c).card = 1) (k : Fin 4) :
+    (Mark.onArc D (D.crossing c k)).resolvedCircle s =
+      (Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle s := by
+  have h02 : (⟦D.crossing c 0⟧ : D.CrossingCircle s) = ⟦D.crossing c 2⟧ :=
+    (D.card_circlesAt_eq_one_iff s c).mp hs
+  rw [Mark.resolvedCircle_onArc, Mark.resolvedCircle_onArc]
+  rcases CrossingCircle.mk_crossing_oppositeCrossingSlot_pair (D := D) (s := s) c k with
+    ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+  · rw [h₁, h₂, h02]
+  · rw [h₁, h₂, h02]
 
 /-- There is one mark for each of the `2 * n` arcs and each labelled crossing-free circle. -/
 theorem card_mark (D : PDCode n) :
