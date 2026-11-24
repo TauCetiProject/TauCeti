@@ -16,8 +16,10 @@ inverse of `g`, then `(x, y) ↦ f x + l y` is a bijection `M × P → N`
 inverse of `f`, then `y ↦ (l y, g y)` is a bijection `N → M × P`
 (`Function.Exact.bijective_prod_of_comp_eq_id`).
 
-These are the bijectivity statements behind Mathlib's `Function.Exact.splitSurjectiveEquiv` and
-`Function.Exact.splitInjectiveEquiv`, which prove them inside their definitions.
+Both are read off from Mathlib's `Function.Exact.splitSurjectiveEquiv` and
+`Function.Exact.splitInjectiveEquiv`, whose underlying linear equivalences are
+`LinearEquiv.ofBijective` of these maps (up to `symm`); the lemmas record this once so that callers
+do not depend on how those equivalences are built.
 -/
 
 public section
@@ -30,27 +32,14 @@ variable {R M N P : Type*} [Semiring R] [AddCommGroup M] [AddCommGroup N] [AddCo
 /-- If `M --f--> N --g--> P` is exact, `f` is injective and `l` is a right inverse of `g`, then
 `(x, y) ↦ f x + l y` is a bijection `M × P → N`. -/
 theorem bijective_coprod_of_comp_eq_id (h : Exact f g) (hf : Injective f) {l : P →ₗ[R] N}
-    (hl : g ∘ₗ l = LinearMap.id) : Bijective (f.coprod l) := by
-  have hgl (y : P) : g (l y) = y := LinearMap.congr_fun hl y
-  refine ⟨fun a b hab ↦ ?_, fun z ↦ ?_⟩
-  · rw [LinearMap.coprod_apply, LinearMap.coprod_apply] at hab
-    have h₂ : a.2 = b.2 := by simpa [h.apply_apply_eq_zero, hgl] using congr(g $hab)
-    exact Prod.ext (hf (by rwa [h₂, add_left_inj] at hab)) h₂
-  · obtain ⟨x, hx⟩ := (h (z - l (g z))).1 (by simp [hgl])
-    exact ⟨(x, g z), by simp [hx]⟩
+    (hl : g ∘ₗ l = LinearMap.id) : Bijective (f.coprod l) :=
+  -- `f.coprod l` is by definition `f ∘ₗ fst + l ∘ₗ snd`, the map Mathlib inverts.
+  (h.splitSurjectiveEquiv hf ⟨l, hl⟩).val.symm.bijective
 
 /-- If `M --f--> N --g--> P` is exact, `g` is surjective and `l` is a left inverse of `f`, then
 `y ↦ (l y, g y)` is a bijection `N → M × P`. -/
 theorem bijective_prod_of_comp_eq_id (h : Exact f g) (hg : Surjective g) {l : N →ₗ[R] M}
-    (hl : l ∘ₗ f = LinearMap.id) : Bijective (l.prod g) := by
-  have hlf (x : M) : l (f x) = x := LinearMap.congr_fun hl x
-  refine ⟨fun a b hab ↦ ?_, fun ⟨x, y⟩ ↦ ?_⟩
-  · simp only [LinearMap.prod_apply, Function.prod_apply, Prod.mk.injEq] at hab
-    obtain ⟨c, hc⟩ := (h (a - b)).1 (by simp [hab.2])
-    -- Applying the left inverse `l` to `f c = a - b` gives `c = l a - l b = 0`.
-    have hc₀ : c = 0 := by simpa [hlf, hab.1] using congr(l $hc)
-    rw [← sub_eq_zero, ← hc, hc₀, map_zero]
-  · obtain ⟨z, rfl⟩ := hg y
-    exact ⟨f x + z - f (l z), by simp [hlf, h.apply_apply_eq_zero]⟩
+    (hl : l ∘ₗ f = LinearMap.id) : Bijective (l.prod g) :=
+  (h.splitInjectiveEquiv hg ⟨l, hl⟩).val.bijective
 
 end Function.Exact
