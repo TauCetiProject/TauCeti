@@ -12,6 +12,8 @@ public import Mathlib.Algebra.Central.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.Noetherian.Basic
 
+import Mathlib.Algebra.Algebra.Subalgebra.Tower
+
 /-!
 # Transporting and decomposing the center of an algebra
 
@@ -277,18 +279,12 @@ of `B` over `k` has the dimension of `Z` over `k`. -/
 theorem finrank_center_eq_of_isCentral (k : Type*) [Field k] {B : Type*} [Ring B] [Algebra k B]
     (Z : Type*) [Field Z] [Algebra k Z] [Algebra Z B] [IsScalarTower k Z B]
     [Algebra.IsCentral Z B] [Nontrivial B] :
-    Module.finrank k (Subalgebra.center k B) = Module.finrank k Z := by
-  let f : Z →ₗ[k] Subalgebra.center k B :=
-    { toFun z := ⟨algebraMap Z B z,
-        Subalgebra.mem_center_iff.mpr fun y ↦ (Algebra.commutes z y).symm⟩
-      map_add' x y := by ext; simp
-      map_smul' r x := by ext; simp [Algebra.smul_def, IsScalarTower.algebraMap_apply k Z B] }
-  have hf : Function.Bijective f := by
-    refine ⟨fun x y h ↦ (algebraMap Z B).injective (congrArg Subtype.val h), fun x ↦ ?_⟩
-    have hx : (x : B) ∈ Subalgebra.center Z B := Subalgebra.mem_center_iff.mpr
-      (Subalgebra.mem_center_iff.mp x.property)
-    obtain ⟨z, hz⟩ := Algebra.mem_bot.mp (Algebra.IsCentral.out hx)
-    exact ⟨z, Subtype.ext hz⟩
-  exact (LinearEquiv.ofBijective f hf).finrank_eq.symm
+    Module.finrank k (Subalgebra.center k B) = Module.finrank k Z :=
+  have : FaithfulSMul Z B :=
+    (faithfulSMul_iff_algebraMap_injective Z B).2 (algebraMap Z B).injective
+  ((Subalgebra.equivOfEq _ _ (SetLike.ext fun _ ↦ by
+      simp only [Subalgebra.mem_restrictScalars, Subalgebra.mem_center_iff] :
+      Subalgebra.center k B = (Subalgebra.center Z B).restrictScalars k)).toLinearEquiv.trans
+    ((centerAlgEquivOfIsCentral Z B).toLinearEquiv.restrictScalars k)).finrank_eq
 
 end TauCeti
