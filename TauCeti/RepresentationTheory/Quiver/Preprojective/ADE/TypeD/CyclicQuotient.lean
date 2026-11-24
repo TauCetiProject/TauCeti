@@ -103,9 +103,9 @@ local notation "π" => signlessPreprojectiveMk k (DoubledQuiver G)
 omit hn in
 /-- The backtrack from the branch node into a leaf rotates into the backtrack at the leaf, which
 vanishes. -/
-private theorem forkTurn_mem_commutatorSubmodule {l : ℕ} (hl : c < l) (hln : l < n) :
+private theorem forkTurn_mem_commutatorSubmodule {l : ℕ} (hl : c < l) :
     forkTurn k G c l ∈ commutatorSubmodule k Π := by
-  rw [forkTurn, mul_mem_commutatorSubmodule_comm, signlessArrow_mul_signlessArrow_leaf k hG hl hln]
+  rw [forkTurn, mul_mem_commutatorSubmodule_comm, signlessArrow_mul_signlessArrow_leaf k hG hl]
   exact zero_mem _
 
 /-- The positive powers of the sum of the two leaf backtracks, which is minus the backtrack into
@@ -114,17 +114,17 @@ private theorem forkTurn_add_pow_succ_mem_commutatorSubmodule (t : ℕ) :
     (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (t + 1) ∈ commutatorSubmodule k Π := by
   rw [forkTurn_add_eq_neg_forkDown_mul_forkUp k hn hG, neg_pow]
   exact neg_one_pow_mul_mem_commutatorSubmodule (pow_d_mul_u_mem_commutatorSubmodule k
-    (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG) t.succ_pos) (t + 1)
+    (forkDown_mul_forkUp_add k hG) (forkUp_self_eq_zero k hG) t.succ_pos) (t + 1)
 
 /-- If `2` is a unit, every element of a positive power of the span of the two leaf backtracks
 is a sum of commutators. -/
 private theorem mem_commutatorSubmodule_of_mem_forkSpan_pow (h2 : IsUnit (2 : k)) {t : ℕ}
     (ht : 0 < t) {w : Π} (hw : w ∈ forkSpan k G c ^ t) : w ∈ commutatorSubmodule k Π := by
   obtain ⟨t, rfl⟩ : ∃ t', t = t' + 1 := ⟨t - 1, by omega⟩
-  have hx := forkTurn_mul_self k hG (l := c + 1) (by omega) (by omega)
-  have hy := forkTurn_mul_self k hG (l := c + 2) (by omega) (by omega)
-  have hx₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 1) (by omega) (by omega)
-  have hy₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 2) (by omega) (by omega)
+  have hx := forkTurn_mul_self k hG (l := c + 1) (by omega)
+  have hy := forkTurn_mul_self k hG (l := c + 2) (by omega)
+  have hx₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 1) (by omega)
+  have hy₀ := forkTurn_mem_commutatorSubmodule k hG (l := c + 2) (by omega)
   have hs := forkTurn_add_pow_succ_mem_commutatorSubmodule k hn hG
   obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp ((span_pair_pow_succ (R := ℤ) hx hy t).le hw)
   refine add_mem (zsmul_mem ?_ α) (zsmul_mem ?_ β)
@@ -164,7 +164,7 @@ private theorem ladderValley_mul_mul_forkEntry_mem_commutatorSubmodule (h2 : IsU
       ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) =
         ((-1 : ℤ) ^ ((h + 1).choose 2 + (h + 1))) •
           (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1) := by
-    rw [ladderValley_mul_ladderValley_zero_eq_pow (forkDown_mul_forkUp_add k hn hG),
+    rw [ladderValley_mul_ladderValley_zero_eq_pow (forkDown_mul_forkUp_add k hG),
       eq_neg_of_add_eq_zero_left (forkDown_mul_forkUp_add_forkTurn k hn hG),
       neg_pow (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)), ← mul_assoc, ← pow_add]
     simp [zsmul_eq_mul]
@@ -266,7 +266,7 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
       rw [forkDown, signlessArrow_mul_vertexIdempotent, ite_eq_left (by omega)]
     rw [hz, ← ladderValley_mul_d, mul_assoc, hd, ladderValley_mul_d]
     exact zsmul_mem (ladderValley_mem_commutatorSubmodule_of_u_eq_zero k
-      (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG) m s.succ_pos) ε
+      (forkDown_mul_forkUp_add k hG) (forkUp_self_eq_zero k hG) m s.succ_pos) ε
   · exact ofPath_mem_commutatorSubmodule_of_branch_of_le k hn hG h2 p hp hw hj hz hD
   · exact ofPath_mem_commutatorSubmodule_of_branch_of_gt k hn hG h2 p hw hj hz hD
   · -- The empty path at a leaf has length zero.

@@ -65,6 +65,6 @@ theorem pair_of_continuous (a : H →L[ℂ] H) [IsStarNormal a]
     a.integral_diagMeasure_eq_inner_cfcHom (ξ + Complex.I • ψ) f,
     a.integral_diagMeasure_eq_inner_cfcHom (ξ - ψ) f,
     a.integral_diagMeasure_eq_inner_cfcHom (ξ - Complex.I • ψ) f]
-  exact inner_polarization (cfcHom (a := a) ‹_› f) ψ ξ
+  exact LinearMap.inner_polarization (cfcHom (a := a) ‹_› f) ψ ξ
 
 end ContinuousLinearMap

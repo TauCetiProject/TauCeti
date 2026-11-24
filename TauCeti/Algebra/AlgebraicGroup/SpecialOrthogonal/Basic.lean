@@ -240,8 +240,8 @@ private noncomputable def pointsSubgroupToSpecialOrthogonalGroup
     (g : CommHopfAlgCat.quotientPointsSubgroup
       (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
       (CommAlgCat.of R A)) : Matrix.specialOrthogonalGroup (Fin n) A :=
-  ⟨(GeneralLinear.pointsMulEquiv n g.1 : Matrix (Fin n) (Fin n) A),
-    (mem_definingPointsSubgroup_iff R n g.1).mp g.2⟩
+  ⟨(GeneralLinear.pointsMulEquiv n g.val : Matrix (Fin n) (Fin n) A),
+    (mem_definingPointsSubgroup_iff R n g.val).mp g.property⟩
 
 /-- Regard a special orthogonal matrix as a point in the cut-out ambient subgroup, through the
 unit `Unitary.toUnits` its orthogonal part defines in the matrix ring. -/
@@ -252,11 +252,11 @@ private noncomputable def specialOrthogonalGroupToPointsSubgroup
       (CommAlgCat.of R A) :=
   ⟨(GeneralLinear.pointsMulEquiv (R := R) (A := A) n).symm
       (Unitary.toUnits (⟨(g : Matrix (Fin n) (Fin n) A),
-          (Matrix.mem_specialOrthogonalGroup_iff.mp g.2).1⟩ :
+          (Matrix.mem_specialOrthogonalGroup_iff.mp g.property).1⟩ :
         Matrix.orthogonalGroup (Fin n) A)),
     (mem_definingPointsSubgroup_iff R n _).mpr (by
       rw [MulEquiv.apply_symm_apply, Unitary.val_toUnits_apply]
-      exact g.2)⟩
+      exact g.property)⟩
 
 /-- The subgroup of `GL n (A)` cut out by the special orthogonal Hopf ideal is
 `Matrix.specialOrthogonalGroup (Fin n) A`. -/
@@ -280,7 +280,7 @@ private noncomputable def definingPointsSubgroupMulEquiv :
     exact Unitary.val_toUnits_apply _
   map_mul' g h :=
     Subtype.ext (congrArg (fun M : GL (Fin n) A => (M : Matrix (Fin n) (Fin n) A))
-      (map_mul (GeneralLinear.pointsMulEquiv (R := R) (A := A) n) g.1 h.1))
+      (map_mul (GeneralLinear.pointsMulEquiv (R := R) (A := A) n) g.val h.val))
 
 /-- **The points identification**: the group of algebra-valued points of the special orthogonal
 coordinate Hopf algebra is the special orthogonal group of the value algebra. -/
@@ -359,7 +359,7 @@ theorem quotientPointsHom_pointsMulEquiv_symm (g : Matrix.specialOrthogonalGroup
         (CommAlgCat.of R A) ((pointsMulEquiv R n (A := A)).symm g) =
       (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).symm
         (Unitary.toUnits (⟨(g : Matrix (Fin n) (Fin n) A),
-            (Matrix.mem_specialOrthogonalGroup_iff.mp g.2).1⟩ :
+            (Matrix.mem_specialOrthogonalGroup_iff.mp g.property).1⟩ :
           Matrix.orthogonalGroup (Fin n) A)) := by
   apply (GeneralLinear.pointsMulEquiv (R := R) (A := A) n).injective
   apply Units.ext

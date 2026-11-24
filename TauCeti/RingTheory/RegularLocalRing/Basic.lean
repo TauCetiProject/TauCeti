@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Localization.LocalizationLocalization
 public import Mathlib.RingTheory.Localization.Submodule
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.LocalProperties.Reduced
+import TauCeti.RingTheory.Ideal.Quotient.IsPrincipal
 
 /-!
 # Regular local rings are domains, and localizations of regular rings
@@ -38,7 +39,7 @@ is a regular ring, so that every `Localization M` of a regular ring, including
   contains an element outside `𝔪²`, also used by the one-element criterion;
 * `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`: the quotient by such a
   parameter is a domain, so the ideal the parameter generates is prime, the hypothesis the
-  statements for an irreducible first equation of `TauCeti.RingTheory.Intersection` take;
+  statements for an irreducible first equation of `TauCeti.RingTheory.Intersection.Basic` take;
 * `TauCeti.IsRegularLocalRing.apply_mem_nonZeroDivisors_of_ker_eq_span`: such a parameter `x` is
   a nonzerodivisor modulo any `g ∉ (x)`;
 * `TauCeti.IsRegularLocalRing.of_maximalIdeal_eq_span_singleton`: a Noetherian local ring whose
@@ -148,16 +149,8 @@ ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_notMem_minimalPrime
     -- a minimal prime `P ⊆ (x)` satisfies `P = x P`, hence vanishes by Nakayama's lemma
     obtain ⟨P, hP, hPx⟩ := exists_minimalPrimes_le (bot_le : ⊥ ≤ span {x})
     have hPprime : P.IsPrime := IsMinimalPrime.isPrime hP
-    have hP0 : P = ⊥ := by
-      refine Submodule.eq_bot_of_le_smul_of_le_jacobson (span {x}) P
-        P.fg_of_isNoetherianRing (fun y hy ↦ ?_) ?_
-      · obtain ⟨z, rfl⟩ := mem_span_singleton'.mp (hPx hy)
-        have hz : z ∈ P := (hPprime.mem_or_mem hy).resolve_right (hmin P hP)
-        rw [mul_comm, ← smul_eq_mul]
-        exact Submodule.smul_mem_smul (mem_span_singleton_self x) hz
-      · rw [← Ideal.jacobson_bot, jacobson_eq_maximalIdeal ⊥ bot_ne_top,
-          span_singleton_le_iff_mem]
-        exact hxm
+    have hP0 := hPprime.eq_bot_of_le_span_singleton P.fg_of_isNoetherianRing
+      (by rwa [jacobson_eq_maximalIdeal ⊥ bot_ne_top]) (hmin P hP) hPx
     have : (⊥ : Ideal R).IsPrime := hP0 ▸ hPprime
     exact IsDomain.of_bot_isPrime R
 
@@ -224,8 +217,8 @@ quotient `R ⧸ (f)` is a regular local ring by
 `TauCeti.IsRegularLocalRing.quotient_span_singleton`, hence a domain by
 `TauCeti.IsRegularLocalRing.isDomain`, and `Ideal.Quotient.isDomain_iff_prime` reads that back as
 the primality of `(f)`, the hypothesis the statements for an irreducible first equation of
-`TauCeti.RingTheory.Intersection` take. A consumer needing the domain instance itself obtains it
-from the primality, as `(Ideal.Quotient.isDomain_iff_prime _).mp` of it.
+`TauCeti.RingTheory.Intersection.Basic` take. A consumer needing the domain instance itself
+obtains it from the primality, as `(Ideal.Quotient.isDomain_iff_prime _).mp` of it.
 
 In a ring of Krull dimension two that curve is a discrete valuation ring as well, being a regular
 local ring of dimension one by `TauCeti.ringKrullDim_quotient_span_singleton_eq_one` and therefore

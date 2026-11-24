@@ -134,7 +134,7 @@ theorem mem_range_trivialSection_of_mem_spvOfIdeal_top {v : Spv A}
   rcases eq_or_ne (v.valuation a) 0 with h0 | h0
   · exact Or.inl h0.le
   refine Or.inr ⟨?_, h1 a⟩
-  have hpos : 0 < v.valuation.restrict a := zero_lt_iff.mpr fun h ↦
+  have hpos : 0 < v.valuation.restrict a := pos_iff_ne_zero.mpr fun h ↦
     h0 (v.valuation.restrict_eq_zero_iff.mp h)
   obtain ⟨b, hinv, hle⟩ := Valuation.hasFullCharacteristicGroup_iff.mp hfull _ hpos
   have hb : v.valuation.restrict b ≤ 1 := by

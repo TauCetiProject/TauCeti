@@ -66,15 +66,16 @@ theorem induction_on_isCompact_isQuasiSeparated {X : Scheme.{u}} {P : X.Opens �
       (hW : IsCompact (W : Set X)) : P W := by
     obtain ⟨s, hsW⟩ := hV.exists_finset_sup_basicOpen_eq hW hWV
     rw [← hsW]
-    exact hfin hV s fun i ↦ i.1
+    exact hfin hV s fun i ↦ i.val
   revert hU'
   refine compact_open_induction_on
     (P := fun V ↦ IsQuasiSeparated (V : Set X) → P V) U hU
     (fun _ ↦ h_aff _ (isAffineOpen_bot X)) ?_
   intro V hV W ih hVW
-  refine h_sup V W hV W.2.isCompact hVW
-    (ih (hVW.of_subset Set.subset_union_left)) (h_aff _ W.2) (hcpt W.2 inf_le_right ?_)
+  refine h_sup V W hV W.property.isCompact hVW
+    (ih (hVW.of_subset Set.subset_union_left)) (h_aff _ W.property) (hcpt W.property inf_le_right
+        ?_)
   exact hVW _ _ Set.subset_union_left V.isOpen hV
-    Set.subset_union_right W.1.isOpen W.2.isCompact
+    Set.subset_union_right W.val.isOpen W.property.isCompact
 
 end AlgebraicGeometry.Scheme.Opens

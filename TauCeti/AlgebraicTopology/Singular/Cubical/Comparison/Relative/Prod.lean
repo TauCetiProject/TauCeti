@@ -28,10 +28,14 @@ is a monomorphism (`TopPair.mono_cubicalChainComplexMap_prodLeftMap`): a normali
 is short exact (`TopPair.shortExact_cubicalChainComplexProdShortComplex`). The complex is
 functorial in both pairs (`TopPair.cubicalChainComplexProdMap`).
 
-No hypothesis is placed on the subspaces. When the interiors of `A × Y` and `X × B` cover
-`A × Y ∪ X × B`, for instance when `A` and `B` are open, the small-chain theorem identifies the
-homology of `N(P × Q)` with the relative homology of `(X × Y, A × Y ∪ X × B)`; that comparison is
-not made here.
+No hypothesis is placed on the subspaces. When `A × Y` and `X × B` form an excisive couple, for
+instance when `A` and `B` are open, the homology of `N(P × Q)` is the relative homology of
+`(X × Y, A × Y ∪ X × B)`
+(`TopPair.quasiIso_cubicalChainComplexProdComparison_of_isIso`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Excisive`). When `A` and `B` are
+open, this is the relative singular homology of `(X × Y, A × Y ∪ X × B)`
+(`TauCeti.quasiIso_cubicalChainComplexProdToSingular`, in
+`TauCeti.AlgebraicTopology.Singular.Cubical.Kunneth.Excisive`).
 
 ## Main definitions
 
@@ -96,9 +100,7 @@ instance mono_cubicalChainComplexMap_prodLeftMap :
   obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective _).1 h₁.epi_g x
   set f := Hom.fst (prodLeftMap (𝟙 Q) P.map)
   have hf : Topology.IsEmbedding f := P.isEmbedding_map.prodMap Topology.IsEmbedding.id
-  have hz := ConcreteCategory.congr_hom
-    (congrArg (fun φ ↦ φ.f n) (π_cubicalChainComplexMap k (prodLeftMap (𝟙 Q) P.map))) z
-  rw [comp_f, comp_f, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hz
+  have hz := π_cubicalChainComplexMap_f_apply k (prodLeftMap (𝟙 Q) P.map) n z
   -- The image of `z` in the chains of `X × Y` is supported in `X × B` and in `A × Y`.
   obtain ⟨w, hw⟩ := (ShortComplex.moduleCat_exact_iff _).1 h₂.exact _ (hz.symm.trans hx)
   have hz₁ : NormalizedCubicalChain.map k f.hom n z ∈
@@ -153,7 +155,7 @@ def cubicalChainComplexProdMap {P' Q' : TopPair.{u}} (f : P ⟶ P') (g : Q ⟶ Q
     P.cubicalChainComplexProd k Q ⟶ P'.cubicalChainComplexProd k Q' :=
   cokernel.map _ _ (cubicalChainComplexMap k (prodLeftMap g (Hom.snd f)))
     (cubicalChainComplexMap k (prodLeftMap g (Hom.fst f)))
-    (cubicalChainComplexMap_prodLeftMap_comm k P Q f g)
+    (cubicalChainComplexMap_prodLeftMap_comm k P Q f g).symm
 
 /-- The map of chains of products of pairs is induced by the map of relative chains
 `N(X × Y, X × B) ⟶ N(X' × Y', X' × B')`. -/

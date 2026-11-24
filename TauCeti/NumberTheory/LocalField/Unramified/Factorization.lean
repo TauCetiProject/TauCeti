@@ -36,8 +36,9 @@ local field on `E` compatible with `K`; `L` is then a valuative extension of `E`
   of unity, then `f ∣ f(L/K)`.
 * `TauCeti.eq_unramifiedExtension_inertiaDegree_iff`: `L₀` is the unique intermediate field
   which is unramified over `K` and over which `L` is totally ramified.
-* `TauCeti.IsUnramified.unramifiedExtension_inertiaDegree_eq_top`: `L₀ = L` when `L/K` is
-  unramified.
+* `TauCeti.IsUnramified.unramifiedExtension_inertiaDegree_eq_top` and
+  `TauCeti.IsUnramified.isGalois`: `L₀ = L` when `L/K` is unramified, so every unramified
+  extension of local fields is Galois.
 * `TauCeti.isTotallyRamified_unramifiedExtension_inertiaDegree`,
   `TauCeti.ramificationIndex_unramifiedExtension_inertiaDegree` and
   `TauCeti.finrank_unramifiedExtension_inertiaDegree_eq_ramificationIndex`: `L/L₀` is totally
@@ -203,6 +204,11 @@ theorem IsUnramified.unramifiedExtension_inertiaDegree_eq_top [IsUnramified K L]
   refine IntermediateField.eq_of_le_of_finrank_eq le_top ?_
   rw [finrank_unramifiedExtension_inertiaDegree, IntermediateField.finrank_top',
     IsUnramified.inertiaDegree_eq_finrank]
+
+/-- **Every unramified extension of nonarchimedean local fields is Galois.** -/
+theorem IsUnramified.isGalois [IsUnramified K L] : IsGalois K L :=
+  IsGalois.of_algEquiv ((IntermediateField.equivOfEq
+    (IsUnramified.unramifiedExtension_inertiaDegree_eq_top K L)).trans IntermediateField.topEquiv)
 
 section Tower
 

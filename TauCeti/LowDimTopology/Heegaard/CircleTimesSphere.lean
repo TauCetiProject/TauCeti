@@ -116,9 +116,9 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   alpha _ := 0
   beta _ := 0
   alphaNext := Equiv.swap 0 1
-  alphaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
+  alphaNext_isCycleOn := isCycleOn_swap_fiber (by decide) _
   betaNext := Equiv.swap 0 1
-  betaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
+  betaNext_isCycleOn := isCycleOn_swap_fiber (by decide) _
   alphaLeft := ![1, 0]
   alphaRight := ![0, 2]
   betaLeft := ![0, 2]
@@ -126,6 +126,7 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   regionNonempty := inferInstance
   crossingCompatible := by
     intro p
+    rw [isCrossingCompatible_iff]
     fin_cases p
     · left
       simp
@@ -360,9 +361,10 @@ theorem maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains (a : Fin 2) {P
 /-- With the basepoint in the annulus, the relative grading of `p₀` over `p₁` is one, computed
 from either bigon. -/
 theorem relativeGrading_circleTimesSphere_zero :
-    (circleTimesSphere 0).relativeGrading ![0, 1, 1] () (circleTimesSphereGenerator 0 0)
+    (circleTimesSphere 0).relativeGrading ![0, 1, 1] (circleTimesSphereGenerator 0 0)
       (circleTimesSphereGenerator 0 1) = 1 := by
-  rw [(isDomainBetween_circleTimesSphere_single_one 0).relativeGrading_eq () (by decide)
+  rw [(isDomainBetween_circleTimesSphere_single_one 0).relativeGrading_eq
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide))
     fun _ => maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains 0,
     maslovIndex_circleTimesSphere_single_one]
   simp
@@ -456,10 +458,11 @@ theorem finite_setOf_isDomainBetween_circleTimesSphere_one (x : (circleTimesSphe
 /-- With the basepoint in the bigon `B₁`, the relative grading of `p₀` over `p₁` is one modulo
 two: the bigons give `-1` and `1`, which agree modulo the periodic Maslov indices. -/
 theorem coe_relativeGrading_circleTimesSphere_one :
-    ((circleTimesSphere 1).relativeGrading ![0, 1, 1] () (circleTimesSphereGenerator 1 0)
+    ((circleTimesSphere 1).relativeGrading ![0, 1, 1] (circleTimesSphereGenerator 1 0)
       (circleTimesSphereGenerator 1 1) : ℚ ⧸ AddSubgroup.zmultiples (2 : ℚ)) = (1 : ℚ) := by
   rw [← periodicMaslovIndices_circleTimesSphere_one 0,
-    (isDomainBetween_circleTimesSphere_single_two 1).coe_relativeGrading_eq () (by decide),
+    (isDomainBetween_circleTimesSphere_single_two 1).coe_relativeGrading_eq
+      (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide)),
     maslovIndex_circleTimesSphere_single_two]
   simp
 
@@ -468,6 +471,12 @@ theorem coe_relativeGrading_circleTimesSphere_one :
 theorem circleTimesSphereGenerator_snd_zero (r : Fin 3) (x : (circleTimesSphere r).Generator) :
     circleTimesSphereGenerator r (x.2 0) = x :=
   HeegaardIntersectionSystem.point_injective _ (funext fun i => by simp [Subsingleton.elim i 0])
+
+/-- The generators of `circleTimesSphere r` are exactly `p₀` and `p₁`. -/
+theorem circleTimesSphereGenerator_bijective (r : Fin 3) :
+    Function.Bijective (circleTimesSphereGenerator r) :=
+  ⟨fun a b h => by simpa using congrFun (congrArg (circleTimesSphere r).point h) 0,
+    fun x => ⟨_, circleTimesSphereGenerator_snd_zero r x⟩⟩
 
 /-- With the basepoint in the annulus, the domains counted by the hat differential from `p₀` to
 `p₁` are the two bigons. -/

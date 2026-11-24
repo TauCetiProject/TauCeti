@@ -53,7 +53,8 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : 
   -- Bump functions at the points of `K` supported in `W`; finitely many of the open sets where
   -- one of them is `1` cover `K`.
   choose ρ hρ using fun x : K ↦
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hW.mem_nhds (hKW x.2))
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hW.mem_nhds
+        (hKW x.property))
   obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ interior {y | ρ ⟨x, hx⟩ y = 1})
     fun x hx ↦ interior_mem_nhds.2 (ρ ⟨x, hx⟩).eventuallyEq_one
   -- Smoothing the sum of these bumps by a smooth step function gives a cutoff which is `1` where
@@ -91,10 +92,10 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
   -- Bump functions at the points of `K` supported in `U`; finitely many of the open sets where
   -- one of them is `1` cover `K`.
   choose ρ hρ using fun x : K ↦
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hU x x.2)
+    (SmoothBumpFunction.nhds_basis_tsupport (I := I) (x : M)).mem_iff.1 (hU x x.property)
   obtain ⟨t, ht⟩ := hK.elim_nhds_subcover' (fun x hx ↦ interior {y | ρ ⟨x, hx⟩ y = 1})
     fun x hx ↦ interior_mem_nhds.2 (ρ ⟨x, hx⟩).eventuallyEq_one
-  refine ⟨t, inferInstance, ⟨fun i ↦ i.1, fun i ↦ ρ i.1, fun i ↦ i.1.2,
-    locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.1).2⟩
+  refine ⟨t, inferInstance, ⟨fun i ↦ i.val, fun i ↦ ρ i.val, fun i ↦ i.val.property,
+    locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.val).2⟩
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩

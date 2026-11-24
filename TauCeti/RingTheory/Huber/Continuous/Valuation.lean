@@ -73,7 +73,7 @@ theorem isContinuous_iff_forall_exists_idealImage_subset (P : PairOfDefinition A
   rw [Valuation.isContinuous_iff_forall_ne_zero]
   refine ⟨fun h b hb ↦ ?_, fun h b hb ↦ ?_⟩
   · obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp
-      ((h b hb).mem_nhds (by simpa using zero_lt_iff.mpr hb))
+      ((h b hb).mem_nhds (by simpa using pos_iff_ne_zero.mpr hb))
     exact ⟨n, hn⟩
   · obtain ⟨n, hn⟩ := h b hb
     -- the sublevel set is an additive subgroup, by the strict triangle inequality

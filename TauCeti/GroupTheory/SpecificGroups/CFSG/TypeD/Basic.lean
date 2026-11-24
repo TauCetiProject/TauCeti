@@ -155,7 +155,7 @@ family's own branch is instead built on the tripled carrier, in
 pinning or maximality statement is attached to it, and it is not identified with the points of the
 pinned simply connected `Dₙ` group scheme, as the module docstring describes. -/
 abbrev AmbientGroup : Type :=
-  TypeDSpinCarrier.points d.1.rank d.four_le_rank d.1.Closure
+  TypeDSpinCarrier.points d.val.rank d.four_le_rank d.val.Closure
 
 /-- The classification recipe runs its fixed-point and quotient construction inside this group, so
 it carries a group structure; the carrier being a subgroup of a general linear group supplies
@@ -165,8 +165,8 @@ example : Group d.AmbientGroup := inferInstance
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the `Dₙ` diagram. It is
 the carrier's numbered raising subgroup at the same node, the index type `Fin d.1.rank` being the
 upstream Bourbaki index type of the index's own Dynkin type and the carrier's own rank. -/
-def simpleRootSubgroup (i : Fin d.1.rank) : Multiplicative d.1.Closure →* d.AmbientGroup :=
-  TypeDSpinCarrier.rootSubgroupPoints d.1.rank d.four_le_rank (.inl i) d.1.Closure
+def simpleRootSubgroup (i : Fin d.val.rank) : Multiplicative d.val.Closure →* d.AmbientGroup :=
+  TypeDSpinCarrier.rootSubgroupPoints d.val.rank d.four_le_rank (.inl i) d.val.Closure
 
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding node.
 This is the equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`,
@@ -175,9 +175,9 @@ whose definition itself stays sealed.
 It is deliberately not a `simp` lemma: `frobenius_simpleRootSubgroup` is the normal form the pinned
 equations of this file are stated against, and unfolding to
 `TauCeti.TypeDSpinCarrier.rootSubgroupPoints` would keep it from firing. -/
-theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
+theorem simpleRootSubgroup_def (i : Fin d.val.rank) :
     d.simpleRootSubgroup i =
-      TypeDSpinCarrier.rootSubgroupPoints d.1.rank d.four_le_rank (.inl i) d.1.Closure :=
+      TypeDSpinCarrier.rootSubgroupPoints d.val.rank d.four_le_rank (.inl i) d.val.Closure :=
   (rfl)
 
 /-- **The simple-root subgroups sit at the simple roots of the type-`Dₙ` root datum.** The
@@ -190,10 +190,10 @@ being constructed for it.
 The character itself is `TauCeti.TypeDStd.rootGeneratorWeight`, which
 `TauCeti.TypeDSpinCarrier.weightTorusPoints_conj_rootSubgroupPoints` exhibits as the one conjugation
 by the carrier's split torus rescales the parameter by. -/
-theorem rootGeneratorWeight_eq_root_simpleIndex (i j : Fin d.1.rank) :
-    TypeDStd.rootGeneratorWeight d.1.rank (.inl i) j =
-      (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).root
-        (d.1.dynkinType.simpleIndex d.1.dynkinType_valid i) j := by
+theorem rootGeneratorWeight_eq_root_simpleIndex (i j : Fin d.val.rank) :
+    TypeDStd.rootGeneratorWeight d.val.rank (.inl i) j =
+      (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).root
+        (d.val.dynkinType.simpleIndex d.val.dynkinType_valid i) j := by
   -- Both sides are read as entries of the type-`D` Cartan matrix, the carrier's by the upstream
   -- `TypeDStd.rootGeneratorWeight_inl` and the datum's by the uniform
   -- `DynkinType.root_simpleIndex`, leaving the stated index transport
@@ -211,8 +211,8 @@ not: there the Steinberg map is `γ ∘ Frob_q` for a nontrivial diagram permuta
 factor that composite composes with, as `TauCeti.TypeTwistedDLieIndex.steinberg_def` records on the
 graph-twisted family. -/
 def frobenius : d.AmbientGroup →* d.AmbientGroup :=
-  TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic d.1.fieldExponent
-    d.1.Closure
+  TypeDSpinCarrier.frobenius d.val.rank d.four_le_rank d.val.characteristic d.val.fieldExponent
+    d.val.Closure
 
 /-- The Frobenius of an index on a type-`D` diagram is the carrier's Frobenius at the exponent the
 index records. This is its unfolding lemma; the definition itself stays sealed.
@@ -222,32 +222,32 @@ the normal forms the pinned equations of this file are stated against, and unfol
 `TauCeti.TypeDSpinCarrier.frobenius` would keep them from firing. -/
 theorem frobenius_def :
     d.frobenius =
-      TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic d.1.fieldExponent
-        d.1.Closure :=
+      TypeDSpinCarrier.frobenius d.val.rank d.four_le_rank d.val.characteristic d.val.fieldExponent
+        d.val.Closure :=
   (rfl)
 
 /-- The Frobenius acts on the ambient group by raising every matrix entry to the `q`-th power. -/
 @[simp]
 theorem coe_frobenius_apply (g : d.AmbientGroup)
-    (r c : Fin (TypeDSpinCarrier.dimension d.1.rank)) :
+    (r c : Fin (TypeDSpinCarrier.dimension d.val.rank)) :
     ((d.frobenius g :
-        Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) :
-        Matrix (Fin (TypeDSpinCarrier.dimension d.1.rank))
-          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) r c =
-      ((g : Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) :
-        Matrix (Fin (TypeDSpinCarrier.dimension d.1.rank))
-          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) r c ^ d.1.fieldOrder := by
-  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+        Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) :
+        Matrix (Fin (TypeDSpinCarrier.dimension d.val.rank))
+          (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) :
+        Matrix (Fin (TypeDSpinCarrier.dimension d.val.rank))
+          (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) r c ^ d.val.fieldOrder := by
+  rw [frobenius_def, d.val.fieldOrder_eq_characteristic_pow]
   exact TypeDSpinCarrier.coe_frobenius_apply _ _ _ _ _ g r c
 
 /-- **The Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises its parameter
 to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. The diagram permutation of a
 twisted family enters through the graph factor of its Steinberg map, and not through this one. -/
 @[simp]
-theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem frobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.frobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [frobenius_def, simpleRootSubgroup_def, TypeDSpinCarrier.frobenius_rootSubgroupPoints,
     ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
@@ -255,40 +255,40 @@ theorem frobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.
 `p`-power map for `p` the defining characteristic. The `q`-power Frobenius is its `e`-th power, for
 `e` the field exponent the index records, by `frobenius_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic 1 d.1.Closure
+  TypeDSpinCarrier.frobenius d.val.rank d.four_le_rank d.val.characteristic 1 d.val.Closure
 
 /-- The prime-field Frobenius is the spin carrier's Frobenius at exponent one. -/
 -- Not a `simp` lemma, for the reason `frobenius_def` is not.
 theorem primeFrobenius_def :
     d.primeFrobenius =
-      TypeDSpinCarrier.frobenius d.1.rank d.four_le_rank d.1.characteristic 1 d.1.Closure :=
+      TypeDSpinCarrier.frobenius d.val.rank d.four_le_rank d.val.characteristic 1 d.val.Closure :=
   (rfl)
 
 /-- The prime-field Frobenius acts on the ambient group by raising every matrix entry to the
 `p`-th power, for `p` the defining characteristic. -/
 @[simp]
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
-    (r c : Fin (TypeDSpinCarrier.dimension d.1.rank)) :
+    (r c : Fin (TypeDSpinCarrier.dimension d.val.rank)) :
     ((d.primeFrobenius g :
-        Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) :
-        Matrix (Fin (TypeDSpinCarrier.dimension d.1.rank))
-          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) r c =
+        Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) :
+        Matrix (Fin (TypeDSpinCarrier.dimension d.val.rank))
+          (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) r c =
       ((g : Matrix.GeneralLinearGroup
-          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) :
-        Matrix (Fin (TypeDSpinCarrier.dimension d.1.rank))
-          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) r c ^
-            d.1.characteristic := by
+          (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) :
+        Matrix (Fin (TypeDSpinCarrier.dimension d.val.rank))
+          (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) r c ^
+            d.val.characteristic := by
   rw [primeFrobenius_def]
-  simpa only [pow_one] using TypeDSpinCarrier.coe_frobenius_apply d.1.rank d.four_le_rank
-    d.1.characteristic 1 d.1.Closure g r c
+  simpa only [pow_one] using TypeDSpinCarrier.coe_frobenius_apply d.val.rank d.four_le_rank
+    d.val.characteristic 1 d.val.Closure g r c
 
 /-- **The prime-field Frobenius fixes the Bourbaki numbering of a simple-root subgroup and raises
 its parameter to the `p`-th power**, that is, `Frob_p (x_i(u)) = x_i(u ^ p)`. -/
 @[simp]
-theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem primeFrobenius_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.primeFrobenius (d.simpleRootSubgroup i u) =
       d.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.characteristic)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.characteristic)) := by
   rw [primeFrobenius_def, simpleRootSubgroup_def, TypeDSpinCarrier.frobenius_rootSubgroupPoints,
     pow_one]
 
@@ -298,7 +298,7 @@ theorem primeFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative
 /-- **The `q`-power Frobenius is the `e`-th power of the prime-field Frobenius**, for `e` the field
 exponent the index records. -/
 theorem frobenius_eq_primeFrobenius_pow :
-    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.1.fieldExponent := by
+    d.frobenius = (show Monoid.End _ from d.primeFrobenius) ^ d.val.fieldExponent := by
   rw [primeFrobenius_def, frobenius_def, TypeDSpinCarrier.frobenius_pow, Nat.one_mul]
 
 /-- **A point of the ambient group is fixed by the Frobenius exactly when all of its matrix entries
@@ -313,12 +313,12 @@ rejects the annotation. -/
 theorem mem_fixedSubgroup_frobenius_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.frobenius ↔
       ∀ r c, ((g :
-          Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) :
-        Matrix (Fin (TypeDSpinCarrier.dimension d.1.rank))
-          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) r c ∈ d.1.fixedField := by
+          Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) :
+        Matrix (Fin (TypeDSpinCarrier.dimension d.val.rank))
+          (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) r c ∈ d.val.fixedField := by
   rw [mem_fixedSubgroup, frobenius_def, TypeDSpinCarrier.frobenius_eq_self_iff]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
-    d.1.fieldOrder_eq_characteristic_pow]
+    d.val.fieldOrder_eq_characteristic_pow]
 
 end
 
@@ -353,10 +353,10 @@ theorem steinberg_def : d.steinberg = d.toTypeDDiagramLieIndex.frobenius := (rfl
 parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`, the pinned equation of
 an untwisted family. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.steinberg (d.toTypeDDiagramLieIndex.simpleRootSubgroup i u) =
       d.toTypeDDiagramLieIndex.simpleRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def]
   exact d.toTypeDDiagramLieIndex.frobenius_simpleRootSubgroup i u
 
@@ -366,9 +366,9 @@ on below is the group of points of the spin carrier whose entries lie in `𝔽_q
 theorem mem_fixedSubgroup_steinberg_iff (g : d.toTypeDDiagramLieIndex.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
       ∀ r c, ((g :
-          Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) :
-        Matrix (Fin (TypeDSpinCarrier.dimension d.1.rank))
-          (Fin (TypeDSpinCarrier.dimension d.1.rank)) d.1.Closure) r c ∈ d.1.fixedField := by
+          Matrix.GeneralLinearGroup (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) :
+        Matrix (Fin (TypeDSpinCarrier.dimension d.val.rank))
+          (Fin (TypeDSpinCarrier.dimension d.val.rank)) d.val.Closure) r c ∈ d.val.fixedField := by
   rw [steinberg_def]
   exact d.toTypeDDiagramLieIndex.mem_fixedSubgroup_frobenius_iff g
 
@@ -402,7 +402,7 @@ diagram on the spin carrier. It sends the Bourbaki-numbered simple-root subgroup
 at `σ i`, for `σ` the diagram permutation the index carries, without changing its parameter, and
 it is the left-hand factor `γ₂` of the Steinberg map `γ₂ ∘ Frob_q` of the family. -/
 def graphAut : MulAut d.toTypeDDiagramLieIndex.AmbientGroup :=
-  TypeDSpinCarrier.graphAutPoints d.1.rank d.toTypeDDiagramLieIndex.four_le_rank d.1.Closure
+  TypeDSpinCarrier.graphAutPoints d.val.rank d.toTypeDDiagramLieIndex.four_le_rank d.val.Closure
 
 /-- The graph automorphism of a `²Dₙ` index is the spin carrier's graph automorphism on points at
 the index's rank, over its closure. This is its unfolding lemma; the definition itself stays
@@ -412,8 +412,8 @@ sealed. -/
 -- `TauCeti.TypeDSpinCarrier.graphAutPoints` would keep them from firing.
 theorem graphAut_def :
     d.graphAut =
-      TypeDSpinCarrier.graphAutPoints d.1.rank d.toTypeDDiagramLieIndex.four_le_rank
-        d.1.Closure :=
+      TypeDSpinCarrier.graphAutPoints d.val.rank d.toTypeDDiagramLieIndex.four_le_rank
+        d.val.Closure :=
   (rfl)
 
 /-- **The graph automorphism has the pinned action on every simple-root subgroup**: it sends
@@ -421,7 +421,7 @@ theorem graphAut_def :
 exchange. The parameter is carried across unchanged, with neither a field power nor a sign; on a
 general root the equation would acquire a sign forced by the Chevalley structure constants. -/
 @[simp]
-theorem graphAut_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem graphAut_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.graphAut (d.toTypeDDiagramLieIndex.simpleRootSubgroup i u) =
       d.toTypeDDiagramLieIndex.simpleRootSubgroup
         (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i) u := by
@@ -492,11 +492,11 @@ theorem steinberg_eq_frobenius_comp_graphAut :
 to `x_{σ i}(u ^ q)`, where `σ` is the diagram permutation the index carries, the fork exchange, and
 `q` is its recorded field order. -/
 @[simp]
-theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+theorem steinberg_simpleRootSubgroup (i : Fin d.val.rank) (u : Multiplicative d.val.Closure) :
     d.steinberg (d.toTypeDDiagramLieIndex.simpleRootSubgroup i u) =
       d.toTypeDDiagramLieIndex.simpleRootSubgroup
         (d.toTypeDDiagramLieIndex.toGraphTwistedIndex.diagramPerm i)
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.fieldOrder)) := by
   rw [steinberg_def, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     TypeDDiagramLieIndex.frobenius_simpleRootSubgroup, graphAut_simpleRootSubgroup]
 

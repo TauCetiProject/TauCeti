@@ -72,7 +72,7 @@ private theorem homeomorph_symm_apply_eq (x : B × G) :
 private theorem nonempty_fibres (τ : GlobalTrivialization G P) : ∀ b, Nonempty (P b) := by
   intro b
   obtain ⟨p, _, hp⟩ := τ.toTrivialization.proj_surjOn_baseSet (τ.mem_baseSet b)
-  exact hp ▸ ⟨p.2⟩
+  exact hp ▸ ⟨p.snd⟩
 
 /-- Restriction of the native trivialization to a fibre. -/
 def equivAt (b : B) : P b ≃ G :=
@@ -88,7 +88,7 @@ theorem equivAt_apply (b : B) (p : P b) :
 /-- The homeomorphism records the base point and the group coordinate. -/
 @[simp]
 theorem homeomorph_apply (p : TotalSpace G P) :
-    τ.homeomorph p = (p.proj, τ.equivAt p.proj p.2) := by
+    τ.homeomorph p = (p.proj, τ.equivAt p.proj p.snd) := by
   rw [equivAt_apply]
   exact congrArg (Bundle.Trivial.homeomorphProd B G)
     (τ.toTrivialization.homeomorphTrivial_apply τ.baseSet_eq_univ p)
@@ -111,7 +111,7 @@ theorem ext (h : ∀ b p, τ.equivAt b p = υ.equivAt b p) : τ = υ := by
         apply Prod.ext
         · exact (τ.toTrivialization.coe_fst' (τ.mem_baseSet p.proj)).trans
             (υ.toTrivialization.coe_fst' (υ.mem_baseSet p.proj)).symm
-        · exact (τ.equivAt_apply _ _).symm.trans ((h p.proj p.2).trans (υ.equivAt_apply _ _))
+        · exact (τ.equivAt_apply _ _).symm.trans ((h p.proj p.snd).trans (υ.equivAt_apply _ _))
       · intro x
         simpa only [homeomorph_symm_apply_eq] using
           DFunLike.congr_fun (congrArg Homeomorph.symm hh) x
@@ -124,7 +124,7 @@ theorem ext (h : ∀ b p, τ.equivAt b p = υ.equivAt b p) : τ = υ := by
 
 /-- Continuity of the global product coordinates. -/
 theorem continuous_toFun :
-    Continuous fun p : TotalSpace G P ↦ (p.proj, τ.equivAt p.proj p.2) := by
+    Continuous fun p : TotalSpace G P ↦ (p.proj, τ.equivAt p.proj p.snd) := by
   simpa only [← homeomorph_apply] using τ.homeomorph.continuous
 
 /-- Joint continuity of the inverse fibre coordinates. -/
@@ -142,11 +142,11 @@ theorem equivAt_op_smul (b : B) (p : P b) (g : G) :
 /-- Assemble global coordinates from equivariant fibre equivalences with jointly continuous
 forward and inverse maps. -/
 def ofEquiv (e : ∀ b, P b ≃ G)
-    (hc : Continuous fun p : TotalSpace G P ↦ (p.proj, e p.proj p.2))
+    (hc : Continuous fun p : TotalSpace G P ↦ (p.proj, e p.proj p.snd))
     (hi : Continuous fun x : B × G ↦ (⟨x.1, (e x.1).symm x.2⟩ : TotalSpace G P))
     (he : ∀ b (p : P b) (g : G), e b (op g • p) = e b p * g) :
     GlobalTrivialization G P where
-  toFun p := (p.proj, e p.proj p.2)
+  toFun p := (p.proj, e p.proj p.snd)
   invFun x := ⟨x.1, (e x.1).symm x.2⟩
   source := Set.univ
   target := Set.univ
@@ -169,7 +169,7 @@ def ofEquiv (e : ∀ b, P b ≃ G)
 /-- The assembled global trivialization has the prescribed fibre coordinates. -/
 @[simp]
 theorem equivAt_ofEquiv (e : ∀ b, P b ≃ G)
-    (hc : Continuous fun p : TotalSpace G P ↦ (p.proj, e p.proj p.2))
+    (hc : Continuous fun p : TotalSpace G P ↦ (p.proj, e p.proj p.snd))
     (hi : Continuous fun x : B × G ↦ (⟨x.1, (e x.1).symm x.2⟩ : TotalSpace G P))
     (he : ∀ b (p : P b) (g : G), e b (op g • p) = e b p * g) (b : B) (p : P b) :
     (ofEquiv e hc hi he).equivAt b p = e b p :=
@@ -244,20 +244,20 @@ theorem ofSection_sectionValue : ofSection τ.sectionValue τ.continuous_section
 def sectionEquiv : GlobalTrivialization G P ≃
     {σ : ∀ b, P b // Continuous fun b ↦ (⟨b, σ b⟩ : TotalSpace G P)} where
   toFun τ := ⟨τ.sectionValue, τ.continuous_sectionValue⟩
-  invFun σ := ofSection σ.1 σ.2
+  invFun σ := ofSection σ.val σ.property
   left_inv τ := τ.ofSection_sectionValue
-  right_inv σ := Subtype.ext (funext (sectionValue_ofSection σ.1 σ.2))
+  right_inv σ := Subtype.ext (funext (sectionValue_ofSection σ.val σ.property))
 
 /-- The section correspondence selects the identity-coordinate section. -/
 @[simp]
-theorem sectionEquiv_apply : (sectionEquiv τ).1 = τ.sectionValue :=
+theorem sectionEquiv_apply : (sectionEquiv τ).val = τ.sectionValue :=
   (rfl)
 
 /-- The inverse section correspondence uses division coordinates. -/
 @[simp]
 theorem sectionEquiv_symm_apply
     (σ : {σ : ∀ b, P b // Continuous fun b ↦ (⟨b, σ b⟩ : TotalSpace G P)}) :
-    sectionEquiv.symm σ = ofSection σ.1 σ.2 :=
+    sectionEquiv.symm σ = ofSection σ.val σ.property :=
   (rfl)
 
 end Sections

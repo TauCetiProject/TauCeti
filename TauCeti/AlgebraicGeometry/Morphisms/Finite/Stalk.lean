@@ -58,9 +58,9 @@ theorem finite_stalkMap_of_unique_preimage {X Y : Scheme.{u}} (f : X ⟶ Y) [IsF
     let z : V := hV.isoSpec.inv ⟨q', hq'⟩
     have hz : hV.primeIdealOf z = ⟨q', hq'⟩ := by
       exact Scheme.inv_hom_apply hV.isoSpec ⟨q', hq'⟩
-    have hfz : hU.primeIdealOf ⟨f z, z.2⟩ = hU.primeIdealOf ⟨f x, hxU⟩ := by
+    have hfz : hU.primeIdealOf ⟨f z, z.property⟩ = hU.primeIdealOf ⟨f x, hxU⟩ := by
       apply PrimeSpectrum.ext
-      rw [← IsAffineOpen.comap_primeIdealOf_appLE U hU V hV e z.2]
+      rw [← IsAffineOpen.comap_primeIdealOf_appLE U hU V hV e z.property]
       simp only [Subtype.eta]
       rw [hz]
       exact (q'.over_def p).symm

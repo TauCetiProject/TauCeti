@@ -153,7 +153,7 @@ private lemma add_mem_preimage_starProjection_iff (V : Submodule ℝ E) (w : V�
     (w : E) + v ∈ Vᗮ.starProjection ⁻¹' closedBall 0 ε ↔ w ∈ closedBall (0 : Vᗮ) ε := by
   have hv : Vᗮ.starProjection (v : E) = 0 := by
     rw [Submodule.starProjection_apply, Submodule.orthogonalProjectionOnto_eq_zero_iff.2
-      (V.le_orthogonal_orthogonal v.2), ZeroMemClass.coe_zero]
+      (V.le_orthogonal_orthogonal v.property), ZeroMemClass.coe_zero]
   simp only [mem_preimage, map_add, hv, add_zero, Submodule.starProjection_mem_subspace_eq_self,
     mem_closedBall_zero_iff, Submodule.norm_coe]
 
@@ -170,13 +170,13 @@ private lemma lintegral_closedBall_eq_lintegral_lintegral_indicator (V : Submodu
   have hsplit (w : Vᗮ) (v : V) : g (w + v) = g w * g v := by
     simp only [g]
     rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add, ← mul_add, norm_add_sq_real,
-      V.inner_left_of_mem_orthogonal v.2 w.2, mul_zero, add_zero]
+      V.inner_left_of_mem_orthogonal v.property w.property, mul_zero, add_zero]
   rw [← lintegral_indicator measurableSet_closedBall]
   refine lintegral_congr fun w ↦ ?_
   by_cases hw : w ∈ closedBall (0 : Vᗮ) ε
   · rw [indicator_of_mem hw]
     simp only [indicator_apply, add_mem_preimage_starProjection_iff, hw, ↓reduceIte, hsplit]
-    rw [lintegral_const_mul _ (f := fun v : V ↦ g v) (hg.comp measurable_subtype_coe)]
+    rw [lintegral_const_mul _ (f := fun v : V ↦ g v) (hg.comp measurable_subtypeVal)]
     simp only [g, Submodule.norm_coe, lintegral_ofReal_exp_neg_pi_mul_sq_norm, mul_one]
   · rw [indicator_of_notMem hw]
     simp only [indicator_apply, add_mem_preimage_starProjection_iff, hw, ↓reduceIte,

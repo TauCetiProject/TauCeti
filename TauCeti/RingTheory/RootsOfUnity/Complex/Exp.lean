@@ -34,7 +34,7 @@ namespace TauCeti
 /-- The `e`-th power of `exp(2πi / d)` is `exp(2πi * (e / d))`. -/
 theorem exp_two_pi_I_div_pow (d : ℂ) (e : ℕ) :
     exp (2 * π * I / d) ^ e = exp (2 * π * I * (e / d)) := by
-  rw [← Complex.exp_nat_mul, mul_div_left_comm]
+  rw [← Complex.exp_natCast_mul, mul_div_left_comm]
 
 /-- The complex numbers `exp(2πi / m)` are compatible along the power maps: for `n ∣ m` with
 `m ≠ 0`, `exp(2πi / m) ^ (m / n) = exp(2πi / n)`. -/

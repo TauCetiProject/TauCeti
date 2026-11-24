@@ -161,9 +161,9 @@ theorem edgeFinset_extend {a b : α} (hab : a ≠ b)
         · exact extend_apply_left hab E
         · exact extend_apply_right hab E
       · rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-        · exact extend_apply_of_mem hab E u.2
+        · exact extend_apply_of_mem hab E u.property
         · apply (extend hab E).apply_eq_comm.mpr
-          exact extend_apply_of_mem hab E u.2
+          exact extend_apply_of_mem hab E u.property
 
 /-- Restricting away a matched pair erases exactly that edge. -/
 theorem image_edgeFinset_restrict (D : PerfectMatching α) {a b : α} (hab : D.val a = b) :
@@ -174,7 +174,7 @@ theorem image_edgeFinset_restrict (D : PerfectMatching α) {a b : α} (hab : D.v
     obtain ⟨e, _, he⟩ := mem_image.mp h
     have ha := Sym2.mem_map.mp (he.symm ▸ Sym2.mem_mk_left a b)
     obtain ⟨x, _, hx⟩ := ha
-    exact x.2.1 hx
+    exact x.property.1 hx
   have hext := edgeFinset_extend (fun h ↦ D.apply_ne a (hab.trans h.symm)) (D.restrict hab)
   rw [extend_restrict] at hext
   rw [hext, erase_insert hnot]

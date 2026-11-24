@@ -120,38 +120,38 @@ with the generalized loop `t ↦ (s ↦ p (s, t))` in the space of paths from `A
 def pathSpaceHomeo : RelGenLoop N X ≃ₜ Ω^ N X.pathSpace X.pathSpaceBase where
   toFun p := ⟨⟨toPathSpace p, continuous_toPathSpace p⟩, fun t ht => Subtype.ext <|
     ContinuousMap.ext fun s => apply_of_mem_boundary p s ht⟩
-  invFun γ := mk ⟨fun y => (γ y.2).1 y.1, by
-      have := (continuous_subtype_val.comp (map_continuous (γ : C(I^N, X.pathSpace))))
+  invFun γ := mk ⟨fun y => (γ y.2).val y.1, by
+      have := (continuous_subtypeVal.comp (map_continuous (γ : C(I^N, X.pathSpace))))
       exact continuous_eval.comp ((this.comp continuous_snd).prodMk continuous_fst)⟩
-    (fun t => (γ t).2.1) fun s t h => by
+    (fun t => (γ t).property.1) fun s t h => by
       rcases h with rfl | ht
-      · exact (γ t).2.2
-      · exact congrArg (fun c : X.pathSpace => c.1 s) (GenLoop.boundary γ t ht)
+      · exact (γ t).property.2
+      · exact congrArg (fun c : X.pathSpace => c.val s) (GenLoop.boundary γ t ht)
   left_inv p := by ext y; exact mk_apply _ _ _ y
   right_inv γ := by ext t s; exact mk_apply _ _ _ (s, t)
   continuous_toFun := by
     refine Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ ?_) _
     refine Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ ?_) _
     exact continuous_eval.comp
-      ((continuous_subtype_val.comp (continuous_fst.comp continuous_fst)).prodMk
+      ((continuous_subtypeVal.comp (continuous_fst.comp continuous_fst)).prodMk
         (continuous_snd.prodMk (continuous_snd.comp continuous_fst)))
   continuous_invFun := by
     refine Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ ?_) _
     simp only [coe_mk]
     have hγ :
-        Continuous fun z : Ω^ N X.pathSpace X.pathSpaceBase × (I × (I^N)) => (z.1 z.2.2).1 :=
-      continuous_subtype_val.comp
+        Continuous fun z : Ω^ N X.pathSpace X.pathSpaceBase × (I × (I^N)) => (z.1 z.2.2).val :=
+      continuous_subtypeVal.comp
         (continuous_eval.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))
     exact continuous_eval.comp (hγ.prodMk (continuous_fst.comp continuous_snd))
 
 @[simp]
 theorem pathSpaceHomeo_apply_apply (p : RelGenLoop N X) (t : I^N) (s : I) :
-    (pathSpaceHomeo p t).1 s = p (s, t) :=
+    (pathSpaceHomeo p t).val s = p (s, t) :=
   (rfl)
 
 @[simp]
 theorem pathSpaceHomeo_symm_apply (γ : Ω^ N X.pathSpace X.pathSpaceBase) (y : I × (I^N)) :
-    pathSpaceHomeo.symm γ y = (γ y.2).1 y.1 :=
+    pathSpaceHomeo.symm γ y = (γ y.2).val y.1 :=
   mk_apply _ _ _ y
 
 @[simp]
@@ -161,7 +161,7 @@ theorem pathSpaceHomeo_const :
 
 /-- Homotopy through relative cubes is path connectedness in the space of relative cubes. -/
 theorem homotopic_iff_joined {p q : RelGenLoop N X} : Homotopic p q ↔ Joined p q :=
-  homotopic_iff.trans (ContinuousMap.homotopicWith_iff_joined p.2 q.2)
+  homotopic_iff.trans (ContinuousMap.homotopicWith_iff_joined p.property q.property)
 
 /-- Currying relative cubes into generalized loops in the path space preserves and reflects
 homotopy. -/
