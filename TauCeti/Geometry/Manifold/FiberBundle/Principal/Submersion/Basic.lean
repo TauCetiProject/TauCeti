@@ -44,10 +44,9 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
    diffeomorphism `ManifoldTotalSpace G (MapFiber p) ≃ₘ^n P` over `B`, and `C^n` regularity of
    `actionDivisionOrOne` (`contMDiffWithinAt_actionDivisionOrOne`).
 2. **Finite-dimensional `C^n` criterion (`1 ≤ n`, over `[RCLike 𝕜]`):** injectivity of
-   `d(g ↦ op g • x)_1` and `P → finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the
-   vertical-range condition by rank-nullity
-   (`ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq`), and
-   `contMDiffOn_sectionCoord_of_finrank_eq` gives local `C^n` smoothness of `sectionCoord`.
+   `d(g ↦ op g • x)_1` and `finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the
+   vertical-range condition by rank-nullity (`range_mfderiv_op_smul_one_eq_ker_of_finrank_eq`),
+   and `contMDiffOn_sectionCoord_of_finrank_eq` gives local `C^n` smoothness of `sectionCoord`.
 
 ## Main definitions and results
 
@@ -70,9 +69,8 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
   `contMDiffAt_actionDivisionOrOne`, `contMDiffOn_actionDivisionOrOne`,
   `contMDiff_actionDivisionOrOne`: `C^n` regularity of
   `actionDivisionOrOne` for a `C^n` Lie group `G`.
-* `TauCeti.PrincipalBundle.contMDiffOn_sectionCoord_of_finrank_eq`,
-  `ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq`: finite-dimensional `C^n` section
-  smoothness and vertical-range reduction.
+* `TauCeti.PrincipalBundle.contMDiffOn_sectionCoord_of_finrank_eq`: finite-dimensional `C^n`
+  section smoothness.
 
 ## References
 
@@ -677,21 +675,6 @@ theorem contMDiffOn_sectionCoord_of_finrank_eq [BoundarylessManifold IP P] (hn :
       (isRegularPoint_of_contMDiffOn_section (ENat.one_le_iff_ne_zero_withTop.mp hn)
         hU hs_smooth hs hb (hp (s b)))
       (fun g ↦ apply_op_smul_eq_of_orbit_eq_fiber horbit g (s b)) (hinj b hb) (hdim b hb)).ge
-
-omit [IP.Boundaryless] [IsManifold IP n P] [FiniteDimensional 𝕜 EB] [IsManifold IB n B]
-  [FiniteDimensional 𝕜 EG] [ContMDiffMul IG n G] in
-/-- In finite dimensions over `[RCLike 𝕜]`, if `p : P → B` is a `C^n` submersion (`1 ≤ n`), the
-right `G`-orbits equal the fibres of `p`, `d(g ↦ op g • x)_1` is injective, and
-`finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG`, then `ker (dp_x) ≤ range (d(g ↦ op g • x)_1)`. -/
-theorem ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq (hn : 1 ≤ n)
-    {p : P → B} (hsub : IsSubmersion IP IB n p)
-    (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
-    (hinj : ∀ x : P, Injective (mfderiv IG IP (fun g : G ↦ op g • x) 1))
-    (hdim : P → finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG) (x : P) :
-    (mfderiv IP IB p x).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • x) 1).range :=
-  (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
-    (isRegularPoint_iff.2 (hsub.surjective_mfderiv (ENat.one_le_iff_ne_zero_withTop.mp hn) x))
-    (fun g ↦ apply_op_smul_eq_of_orbit_eq_fiber horbit g x) (hinj x) (hdim x)).ge
 
 end FiniteDimensional
 

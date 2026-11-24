@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.FiberBundle.Principal.Submersion.Basic
 import TauCeti.Geometry.Lie.FundamentalVectorField.Right
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.RegularValue.Section
 import TauCeti.Geometry.Manifold.Sard.Basic
 
@@ -183,9 +182,12 @@ private theorem ker_mfderiv_le_range_of_lieGroup (hn : 3 ≤ n)
     (hfree : ∀ (x : P) (g : G), op g • x = x → g = 1)
     (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y) (x : P) :
     (mfderiv IP IB p x).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • x) 1).range :=
-  ker_mfderiv_le_range_mfderiv_op_smul_one_of_finrank_eq (one_le_of_three_le hn) hsub horbit
-    (injective_mfderiv_op_smul_one hn hsmul hfree)
-    (finrank_eq_add_finrank_of_isSubmersion_of_orbit_eq_fiber hn hsmul hsub hfree horbit) x
+  (range_mfderiv_op_smul_one_eq_ker_of_finrank_eq
+    (isRegularPoint_iff.2
+      (hsub.surjective_mfderiv (ENat.one_le_iff_ne_zero_withTop.mp (one_le_of_three_le hn)) x))
+    (fun g ↦ apply_op_smul_eq_of_orbit_eq_fiber horbit g x)
+    (injective_mfderiv_op_smul_one hn hsmul hfree x)
+    (finrank_eq_add_finrank_of_isSubmersion_of_orbit_eq_fiber hn hsmul hsub hfree horbit x)).ge
 
 /-- Under the Lie-group submersion hypotheses (`3 ≤ n`, finite-dimensional real `C^n` manifolds
 with `[IP.Boundaryless]`, `C^n` submersion `p : P → B`, and free orbit-exact `C^n` right action of
