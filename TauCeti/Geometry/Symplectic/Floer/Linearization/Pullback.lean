@@ -466,8 +466,7 @@ theorem setIntegral_norm_floerLinearization_perturbationPullback_sq_le (ω : Sym
     ((((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hs hφ' hinj _).1
       hint).const_mul (1 + M ^ 2))) ((ae_restrict_iff' hs).2 (Eventually.of_forall fun w hw ↦ ?_))
   dsimp only
-  rw [smul_eq_mul, abs_of_nonneg (by
-      rw [ContinuousLinearMap.det, (hφJ w hw).det_eq_sq_add_sq]; positivity), ← mul_assoc]
+  rw [smul_eq_mul, ContinuousLinearMap.det, abs_of_nonneg (hφJ w hw).det_nonneg, ← mul_assoc]
   exact ω.norm_floerLinearization_perturbationPullback_sq_le (hφ w hw) (hφJ w hw) (hu w hw)
     (hξ w hw) (hKs w hw) (hKt w hw) (hXs w hw) (hXt w hw) (hF w hw) (hM w hw)
 
@@ -506,8 +505,7 @@ theorem setIntegral_image_norm_floerLinearization_sq_le (ω : SymplecticForm V) 
   refine integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ by positivity)
     (hint.const_mul (1 + M ^ 2)) ((ae_restrict_iff' hs).2 (Eventually.of_forall fun w hw ↦ ?_))
   dsimp only
-  rw [smul_eq_mul, abs_of_nonneg (by
-    rw [ContinuousLinearMap.det, (hφJ w hw).det_eq_sq_add_sq]; positivity)]
+  rw [smul_eq_mul, ContinuousLinearMap.det, abs_of_nonneg (hφJ w hw).det_nonneg]
   exact ω.det_mul_norm_floerLinearization_sq_le (hφ w hw) (hφJ w hw) (hu w hw) (hξ w hw)
     (hKs w hw) (hKt w hw) (hXs w hw) (hXt w hw) (hF w hw) (hM w hw)
 
