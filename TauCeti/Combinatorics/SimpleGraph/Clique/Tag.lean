@@ -135,39 +135,25 @@ theorem exists_isNClique_three_mem_cliqueTag_iff (hH : H.CliqueFree 3)
 /-- The only tag vertex adjacent to the original vertex `v` is `⟨v, 0⟩`. -/
 theorem cliqueTag_adj_inl_and_isRight_iff {w : V ⊕ Σ x : V, Fin (κ x + 3)} :
     (H.cliqueTag κ).Adj (.inl v) w ∧ w.isRight ↔ w = .inr ⟨v, 0⟩ := by
+  refine ⟨fun ⟨h, hw⟩ ↦ ?_, by rintro rfl; simp⟩
   rcases w with u | ⟨x, i⟩
-  · simp
-  · simp only [cliqueTag_adj_inl_inr, Sum.isRight_inr, and_true, Sum.inr.injEq,
-      Sigma.mk.injEq]
-    constructor
-    · rintro ⟨rfl, hi⟩
-      exact ⟨rfl, heq_of_eq hi⟩
-    · rintro ⟨rfl, h⟩
-      exact ⟨rfl, eq_of_heq h⟩
+  · simp at hw
+  · obtain ⟨rfl, hi : i = 0⟩ := h
+    simp [hi]
 
 /-- The tag vertex `⟨v, 0⟩` has exactly `κ v + 2` neighbours among the tag vertices: the rest of
 the clique attached to `v`. -/
 theorem ncard_setOf_cliqueTag_adj_inr_zero_and_isRight (v : V) :
     {w | (H.cliqueTag κ).Adj (.inr ⟨v, 0⟩) w ∧ w.isRight}.ncard = κ v + 2 := by
-  classical
   have : {w | (H.cliqueTag κ).Adj (.inr ⟨v, 0⟩) w ∧ w.isRight} =
-      ((Finset.univ.erase 0).image fun i : Fin (κ v + 3) ↦
-        (Sum.inr ⟨v, i⟩ : V ⊕ Σ x : V, Fin (κ x + 3)) : Set _) := by
+      (Sum.inr ∘ Sigma.mk v) '' {0}ᶜ := by
     ext (u | ⟨x, i⟩)
     · simp
-    · simp only [Set.mem_ofPred_eq, cliqueTag_adj_inr_inr, Sum.isRight_inr, and_true,
-        Finset.coe_image, Finset.coe_erase, Finset.coe_univ, Set.mem_image, Set.mem_sdiff,
-        Set.mem_univ, Set.mem_singleton_iff, true_and, Sum.inr.injEq]
-      constructor
-      · rintro ⟨rfl, h⟩
-        exact ⟨i, fun hi ↦ h (hi ▸ rfl), rfl⟩
-      · rintro ⟨j, hj, h⟩
-        obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
-        obtain rfl := eq_of_heq h
-        exact ⟨rfl, fun h ↦ hj (eq_of_heq (Sigma.mk.inj_iff.1 h).2).symm⟩
-  rw [this, Set.ncard_coe_finset, Finset.card_image_of_injective _ (fun i j h ↦ ?_)]
-  · simp
-  · simpa using h
+    · rcases eq_or_ne v x with rfl | h
+      · simp [eq_comm (a := (0 : Fin _))]
+      · simp [h]
+  rw [this, Set.ncard_image_of_injective _ (Sum.inr_injective.comp sigma_mk_injective)]
+  simp [Set.ncard_compl]
 
 /-- A colour-preserving isomorphism of coloured graphs induces an isomorphism of their tagged
 graphs. -/
@@ -204,8 +190,7 @@ theorem exists_iso_of_iso_cliqueTag {H' : SimpleGraph V'} {κ' : V' → ℕ} (hH
     have hN : {w | (H.cliqueTag κ).Adj (.inr ⟨v, 0⟩) w ∧ w.isRight} ≃
         {w | (H'.cliqueTag κ').Adj (ψ (.inr ⟨v, 0⟩)) w ∧ w.isRight} :=
       ψ.toEquiv.subtypeEquiv fun w ↦ by simp [hR, ψ.map_adj_iff]
-    rw [← h0, ← Nat.card_coe_set_eq, ← Nat.card_congr hN, Nat.card_coe_set_eq,
-      ncard_setOf_cliqueTag_adj_inr_zero_and_isRight] at hc
+    rw [← h0, ← Set.ncard_congr' hN, ncard_setOf_cliqueTag_adj_inr_zero_and_isRight] at hc
     exact (Nat.add_right_cancel hc).symm
 
 /-- **Clique tags.** Two triangle-free coloured graphs have isomorphic tagged graphs exactly when

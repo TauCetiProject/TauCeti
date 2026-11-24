@@ -12,16 +12,18 @@ public import Mathlib.Combinatorics.SimpleGraph.Maps
 # Vertices lying in cliques
 
 Two facts about the vertices of a graph that lie in a clique, missing from Mathlib's clique API.
-A vertex lies in a triangle exactly when it has two adjacent neighbours, and a graph isomorphism
-maps `n`-cliques to `n`-cliques, so that lying in an `n`-clique is an isomorphism invariant of a
-vertex. Such invariants let an isomorphism of graphs be recognised to respect a distinguished set
-of vertices, for instance the vertices of gadgets attached to a graph.
+A vertex lies in a triangle exactly when it has two adjacent neighbours, and a copy of a graph
+(an injective homomorphism, such as an isomorphism) maps `n`-cliques to `n`-cliques, so that
+lying in an `n`-clique is an isomorphism invariant of a vertex. Such invariants let an isomorphism
+of graphs be recognised to respect a distinguished set of vertices, for instance the vertices of
+gadgets attached to a graph.
 
 ## Main results
 
 * `SimpleGraph.exists_isNClique_three_mem_iff`: a vertex lies in a triangle exactly when it has
   two adjacent neighbours.
-* `SimpleGraph.IsNClique.map_iso`: a graph isomorphism maps `n`-cliques to `n`-cliques.
+* `SimpleGraph.IsNClique.map_copy`: a copy of a graph, for instance a graph isomorphism, maps
+  `n`-cliques to `n`-cliques.
 * `SimpleGraph.Iso.exists_isNClique_mem_iff`: a graph isomorphism maps the vertices lying in an
   `n`-clique to the vertices lying in an `n`-clique.
 -/
@@ -47,19 +49,21 @@ theorem exists_isNClique_three_mem_iff {v : V} :
   · rintro ⟨a, b, ha, hb, hab⟩
     exact ⟨{v, a, b}, is3Clique_triple_iff.2 ⟨ha, hb, hab⟩, Finset.mem_insert_self _ _⟩
 
-/-- A graph isomorphism maps `n`-cliques to `n`-cliques. -/
-theorem IsNClique.map_iso {n : ℕ} {s : Finset V} (hs : G.IsNClique n s) (ψ : G ≃g G') :
-    G'.IsNClique n (s.map ψ.toEquiv.toEmbedding) := by
+/-- A copy of `G` in `G'`, that is an injective graph homomorphism, maps `n`-cliques to
+`n`-cliques. -/
+theorem IsNClique.map_copy {n : ℕ} {s : Finset V} (hs : G.IsNClique n s) (f : Copy G G') :
+    G'.IsNClique n (s.map f.toEmbedding) := by
   refine ⟨?_, by simp [hs.card_eq]⟩
   rw [Finset.coe_map]
   rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
-  exact ψ.map_adj_iff.2 (hs.isClique ha hb (ne_of_apply_ne _ hab))
+  exact f.toHom.map_adj (hs.isClique ha hb (ne_of_apply_ne _ hab))
 
 /-- A graph isomorphism maps the vertices lying in an `n`-clique to the vertices lying in an
 `n`-clique. -/
 theorem Iso.exists_isNClique_mem_iff (ψ : G ≃g G') {n : ℕ} {v : V} :
     (∃ s, G'.IsNClique n s ∧ ψ v ∈ s) ↔ ∃ s, G.IsNClique n s ∧ v ∈ s :=
-  ⟨fun ⟨_, hs, hv⟩ ↦ ⟨_, hs.map_iso ψ.symm, Finset.mem_map_equiv.2 hv⟩,
-    fun ⟨_, hs, hv⟩ ↦ ⟨_, hs.map_iso ψ, Finset.mem_map_of_mem _ hv⟩⟩
+  ⟨fun ⟨_, hs, hv⟩ ↦
+      ⟨_, hs.map_copy ψ.symm.toCopy, Finset.mem_map.2 ⟨_, hv, ψ.symm_apply_apply v⟩⟩,
+    fun ⟨_, hs, hv⟩ ↦ ⟨_, hs.map_copy ψ.toCopy, Finset.mem_map_of_mem _ hv⟩⟩
 
 end SimpleGraph
