@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
-import TauCeti.MeasureTheory.Integral.Bochner.UniformConvergence
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
@@ -19,12 +19,13 @@ import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 Let `(V, ω)` be a finite-dimensional symplectic vector space, `H` a `C²` Hamiltonian and `J_t(x)` a
 `C¹` family of almost complex structures, both `1`-periodic in time. Let `u_k` be smooth Floer
 trajectories, solutions of `∂_s u + J_t(u) (∂_t u - X_{H_t}(u)) = 0` with `1`-periodic loops, whose
-derivatives are bounded on compact sets uniformly in `k`. When such a sequence breaks, its
-translates converge locally uniformly to the *levels* of the broken limit
-(`TauCeti.Geometry.Symplectic.Floer.Trajectory.Breaking`,
-`TauCeti.Geometry.Symplectic.Floer.Trajectory.BrokenLimit`). There the levels are only continuous
-limits. This file shows that such a limit `g` is again a Floer trajectory, and computes its
-energy.
+derivatives are bounded on compact sets uniformly in `k`. When a breaking sequence of
+trajectories converges, its translates converge locally uniformly to the *levels* of the broken
+limit (`TauCeti.Geometry.Symplectic.Floer.Trajectory.Breaking`,
+`TauCeti.Geometry.Symplectic.Floer.Trajectory.BrokenLimit`). There the trajectories need only be
+`C²` or `C³`, and the levels are only continuous limits. This file shows that a locally uniform
+limit `g` of *smooth* Floer trajectories as above is again a Floer trajectory, and computes its
+energy; so it applies to the levels of a breaking sequence of smooth trajectories.
 
 * **Regularity.** By periodicity the Floer equation of a trajectory on the fundamental strip
   `ℝ × [0, 1]` holds on the whole plane
@@ -32,7 +33,7 @@ energy.
   of the derivatives of Floer solutions
   (`TauCeti.SymplecticForm.tendstoLocallyUniformlyOn_fderiv_of_floer`) shows that `g` is
   `C¹`, that `du_k → dg` locally uniformly, and that `g` solves the Floer equation
-  (`TauCeti.SymplecticForm.contDiff_and_tendstoLocallyUniformly_fderiv_of_tendsto`).
+  (`TauCeti.SymplecticForm.tendstoLocallyUniformly_fderiv_of_floer_of_periodic`).
 * **Energy of windows.** The loops of the `u_k` converge in `C¹` to those of `g`, so their actions
   converge (`TauCeti.SymplecticForm.tendsto_hamiltonianAction` and
   `TauCeti.SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly`), and the
@@ -50,11 +51,11 @@ energy.
   is `A_H(x₁) - A_H(x₀)`
   (`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendstoUniformly`).
 
-Consequently, in a broken limit whose consecutive levels `g_1, …, g_m` meet at orbits
-`x_1, …, x_{m - 1}` and whose first and last levels start at `x_0` and end at `x_m`, the energies
-of the levels are `A_H(x_i) - A_H(x_{i - 1})`, and they add up to `A_H(x_m) - A_H(x_0)`, the energy
-of each trajectory between `x_0` and `x_m`: no energy is lost along the necks. Under the uniform
-derivative bound assumed here no bubbling occurs.
+The results here do not sum the energies of the levels of a broken limit. Showing that no energy
+is lost along the necks, i.e. that these energies add up to the energy of each trajectory, would
+in addition need taming of `J` along every level, `C¹` neck orbits, uniform end convergence of
+the first and last levels, the energy identity for the `u_k` themselves, and consecutive levels
+meeting at an orbit rather than being translates of each other; this is not formalized here.
 
 ## References
 
@@ -84,7 +85,7 @@ in time. Let `u_k` be smooth solutions of the Floer equation
 derivatives are bounded on each compact set uniformly in `k`, and which converge pointwise to a map
 `g` with `(t, g(s, t)) ∈ W`. Then `g` is `C¹`, the derivatives of the `u_k` converge locally
 uniformly to that of `g`, and `g` solves the Floer equation at every point. -/
-theorem contDiff_and_tendstoLocallyUniformly_fderiv_of_tendsto (hH : ContDiff ℝ 2 (uncurry H))
+theorem tendstoLocallyUniformly_fderiv_of_floer_of_periodic (hH : ContDiff ℝ 2 (uncurry H))
     (hHper : Periodic H 1) (hW : IsOpen W)
     (hJ : ContDiffOn ℝ 1 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
     (hJper : Periodic J 1) (hu : ∀ k, ContDiff ℝ (⊤ : ℕ∞) (u k))
@@ -140,7 +141,7 @@ theorem tendsto_hamiltonianAction_slice_of_tendstoLocallyUniformly (hH : Continu
   exact hdunif.congr (hv.mono fun i hi t _ ↦ by simp [hd hi])
 
 /-- **The energy identity for limits of Floer trajectories.** In the situation of
-`TauCeti.SymplecticForm.contDiff_and_tendstoLocallyUniformly_fderiv_of_tendsto`, suppose that the
+`TauCeti.SymplecticForm.tendstoLocallyUniformly_fderiv_of_floer_of_periodic`, suppose that the
 `u_k` converge to `g` locally uniformly. Then for `a ≤ b` the Floer energy of the `C¹` limit `g`
 over the rectangle `[a, b] × [0, 1]` is the change `A_H(g(b, ·)) - A_H(g(a, ·))` of the action of
 its loops. -/
@@ -157,7 +158,7 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto
     (hab : a ≤ b) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) g z =
       ω.hamiltonianAction H (fun t ↦ g (b, t)) - ω.hamiltonianAction H (fun t ↦ g (a, t)) := by
-  obtain ⟨hg, hdlim, -⟩ := contDiff_and_tendstoLocallyUniformly_fderiv_of_tendsto hH hHper hW hJ
+  obtain ⟨hg, hdlim, -⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW hJ
     hJper hu hper hfloer hbd hgW fun z ↦ hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le one_le_two
   have hKt := (contDiff_uncurry_cylindrical hH1).contDiffOn (s := univ ×ˢ (univ : Set V))
@@ -239,7 +240,7 @@ theorem lintegral_floerEnergyDensity_eq_of_tendstoUniformly (hH : ContDiff ℝ 2
       ENNReal.ofReal (ω.hamiltonianAction H x₁ - ω.hamiltonianAction H x₀) := by
   have hbd : ∀ C, IsCompact C → ∃ M, ∀ k, ∀ z ∈ C, ‖fderiv ℝ (u k) z‖ ≤ M :=
     fun _ _ ↦ ⟨L, fun k _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (hL k)⟩
-  obtain ⟨hg, hdlim, hgeq⟩ := contDiff_and_tendstoLocallyUniformly_fderiv_of_tendsto hH hHper hW
+  obtain ⟨hg, hdlim, hgeq⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW
     hJ hJper hu hper hfloer hbd hgW fun z ↦ hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le one_le_two
   -- The limit has closed loops and derivative bounded by `L`.

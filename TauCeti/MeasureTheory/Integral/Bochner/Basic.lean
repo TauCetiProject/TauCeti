@@ -164,6 +164,8 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose
 * `tendsto_integral_smul_of_tendstoUniformlyOn`: integrals against a compactly supported weight,
   continuous on its support, pass to limits of maps, eventually continuous on the support of the
   weight, that converge uniformly on that support.
+* `TendstoUniformlyOn.tendsto_setIntegral_of_continuousOn`: integrals over a compact measurable
+  set pass to uniform limits of maps eventually continuous on that set.
 * `norm_integral_smul_sub_integral_smul_le` bounds the change of such an integral when the weight
   is perturbed uniformly on a set of finite measure.
 
@@ -916,6 +918,24 @@ theorem tendsto_integral_smul_of_tendstoUniformlyOn {X F ι : Type*} [Topologica
     (Eventually.of_forall hB') (Eventually.of_forall fun x hx ↦ image_eq_zero_of_notMem_tsupport hx)
     (hf.mono fun i hi ↦ hint hi) (hint (hlim.continuousOn hf.frequently)).aestronglyMeasurable
     (hlim.tendsto_setLIntegral_enorm_sub hac.measure_lt_top.ne)
+
+/-- **Set integrals of uniformly convergent continuous functions converge.** If maps `f i`,
+eventually continuous on a compact measurable set `s`, converge uniformly on `s` to `g`, then their
+integrals over `s` converge to the integral of `g` over `s`, for any measure finite on compact
+sets. This is the set-integral analogue of Mathlib's
+`TendstoUniformlyOn.tendsto_intervalIntegral_of_continuousOn`. -/
+theorem _root_.TendstoUniformlyOn.tendsto_setIntegral_of_continuousOn {X F ι : Type*}
+    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {l : Filter ι}
+    {f : ι → X → F} {g : X → F} {s : Set X} (hs : IsCompact s) (hs' : MeasurableSet s)
+    (hf : ∀ᶠ i in l, ContinuousOn (f i) s) (hlim : TendstoUniformlyOn f g l s) :
+    Tendsto (fun i ↦ ∫ x in s, f i x ∂μ) l (𝓝 (∫ x in s, g x ∂μ)) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · exact tendsto_bot
+  exact tendsto_integral_of_L1 (μ := μ.restrict s) g
+    ((hlim.continuousOn hf.frequently).integrableOn_compact' hs hs').aestronglyMeasurable
+    (hf.mono fun i hi ↦ hi.integrableOn_compact' hs hs')
+    (hlim.tendsto_setLIntegral_enorm_sub hs.measure_lt_top.ne)
 
 /-- If functions `fᵢ` with values in a space `𝕜` acting boundedly on the codomain `G` of `w`
 converge uniformly to `f` along any filter, then `∫ fᵢ w → ∫ f w` for every integrable `w` such
