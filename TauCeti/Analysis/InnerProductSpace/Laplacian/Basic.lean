@@ -511,36 +511,19 @@ theorem laplacian_norm_sq (x : E) :
   rw [laplacian_eq_traceL, fderiv_fderiv_norm_sq, map_nsmul, traceL_innerSL, nsmul_eq_mul,
     Nat.cast_ofNat]
 
-open Filter Gradient Topology in
+open Gradient in
 /-- **The Leibniz rule for the Laplacian.** For scalar functions twice differentiable at `x`,
 `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf` at `x`. -/
 theorem _root_.ContDiffAt.laplacian_fun_mul {f g : E → ℝ} {x : E} (hf : ContDiffAt ℝ 2 f x)
     (hg : ContDiffAt ℝ 2 g x) :
     Δ (fun y ↦ f y * g y) x = f x * Δ g x + 2 * ⟪∇ f x, ∇ g x⟫_ℝ + g x * Δ f x := by
-  have hfd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y :=
-    (hf.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
-  have hgd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ g y :=
-    (hg.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
-  have hfg : fderiv ℝ (fun y ↦ f y * g y) =ᶠ[𝓝 x]
-      fun y ↦ f y • fderiv ℝ g y + g y • fderiv ℝ f y := by
-    filter_upwards [hfd, hgd] with y hfy hgy
-    exact fderiv_mul hfy hgy
-  have hf' : DifferentiableAt ℝ (fderiv ℝ f) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hg' : DifferentiableAt ℝ (fderiv ℝ g) x :=
-    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- Each diagonal Hessian entry of the product, by differentiating the product rule once more.
+  -- Each diagonal Hessian entry of the product, by the second-order product rule.
   have hterm : ∀ v, iteratedFDeriv ℝ 2 (fun y ↦ f y * g y) x ![v, v] =
       f x * iteratedFDeriv ℝ 2 g x ![v, v] + 2 * (fderiv ℝ f x v * fderiv ℝ g x v) +
         g x * iteratedFDeriv ℝ 2 f x ![v, v] := by
     intro v
-    have h1 : DifferentiableAt ℝ (fun y ↦ f y • fderiv ℝ g y) x := hfd.self_of_nhds.smul hg'
-    have h2 : DifferentiableAt ℝ (fun y ↦ g y • fderiv ℝ f y) x := hgd.self_of_nhds.smul hf'
-    rw [iteratedFDeriv_two_apply, hfg.fderiv_eq, fderiv_fun_add h1 h2,
-      fderiv_fun_smul hfd.self_of_nhds hg', fderiv_fun_smul hgd.self_of_nhds hf',
-      iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
-    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-      add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul]
+    simp only [iteratedFDeriv_two_apply, Fin.isValue, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one, fderiv_fderiv_fun_mul_apply hf hg]
     ring
   set b := stdOrthonormalBasis ℝ E
   -- The mixed first-order terms assemble into the inner product of the gradients.
@@ -553,7 +536,7 @@ theorem _root_.ContDiffAt.laplacian_fun_mul {f g : E → ℝ} {x : E} (hf : Cont
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis g b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
 
-open Complex Filter Topology in
+open Complex in
 /-- The product rule on the complex plane, with the mixed gradient term expressed in the
 orthonormal directions `1` and `I`, for functions with values in a normed commutative `ℝ`-algebra
 (such as `ℝ` or `ℂ`). Only twice differentiability at the point is needed. -/
@@ -562,37 +545,13 @@ theorem _root_.ContDiffAt.laplacian_fun_mul_complex {𝔸 : Type*} [NormedCommRi
     (hg : ContDiffAt ℝ 2 g x) :
     Δ (fun y ↦ f y * g y) x = f x * Δ g x + g x * Δ f x +
       2 * (fderiv ℝ f x 1 * fderiv ℝ g x 1 + fderiv ℝ f x I * fderiv ℝ g x I) := by
-  have hfd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y :=
-    (hf.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
-  have hgd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ g y :=
-    (hg.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
-  have hf' : DifferentiableAt ℝ (fderiv ℝ f) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hg' : DifferentiableAt ℝ (fderiv ℝ g) x :=
-    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hfg' : DifferentiableAt ℝ (fderiv ℝ (fun y ↦ f y * g y)) x :=
-    ((hf.mul hg).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- Each diagonal Hessian entry of the product, by differentiating the product rule once more
-  -- along `v`.
+  -- Each diagonal Hessian entry of the product, by the second-order product rule.
   have hterm : ∀ v, iteratedFDeriv ℝ 2 (fun y ↦ f y * g y) x ![v, v] =
       f x * iteratedFDeriv ℝ 2 g x ![v, v] + g x * iteratedFDeriv ℝ 2 f x ![v, v] +
         2 * (fderiv ℝ f x v * fderiv ℝ g x v) := by
     intro v
-    have hfg : (fun y ↦ fderiv ℝ (fun y ↦ f y * g y) y v) =ᶠ[𝓝 x]
-        fun y ↦ f y * fderiv ℝ g y v + g y * fderiv ℝ f y v := by
-      filter_upwards [hfd, hgd] with y hfy hgy
-      rw [fderiv_fun_mul hfy hgy, add_apply, smul_apply, smul_apply, smul_eq_mul, smul_eq_mul]
-    have hgv : DifferentiableAt ℝ (fun y ↦ fderiv ℝ g y v) x :=
-      hg'.clm_apply (differentiableAt_const v)
-    have hfv : DifferentiableAt ℝ (fun y ↦ fderiv ℝ f y v) x :=
-      hf'.clm_apply (differentiableAt_const v)
-    rw [iteratedFDeriv_two_apply, iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
-    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
-    rw [← fderiv_clm_apply_const_apply hfg', hfg.fderiv_eq,
-      fderiv_fun_add (hfd.self_of_nhds.fun_mul hgv) (hgd.self_of_nhds.fun_mul hfv),
-      fderiv_fun_mul hfd.self_of_nhds hgv, fderiv_fun_mul hgd.self_of_nhds hfv,
-      ← fderiv_clm_apply_const_apply hf', ← fderiv_clm_apply_const_apply hg']
-    simp only [add_apply, smul_apply, smul_eq_mul]
+    simp only [iteratedFDeriv_two_apply, Fin.isValue, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one, fderiv_fderiv_fun_mul_apply hf hg]
     ring
   simp only [laplacian_eq_iteratedFDeriv_complexPlane, hterm]
   ring

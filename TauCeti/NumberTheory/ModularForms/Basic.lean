@@ -62,8 +62,7 @@ AINTLIB `LeanModularForms` project
 * `MDifferentiableAt.slash`: the slash preserves holomorphy at a point.
 * `ModularForm.slash_comp_ofComplex_eventuallyEq`: for `det g > 0`, read through
   `UpperHalfPlane.ofComplex`, the slash `f ∣[k] g` is locally the automorphy factor times
-  `f ∘ ofComplex` composed with the Möbius transformation, which
-  `UpperHalfPlane.comp_ofComplex_comp_coe_smul_ofComplex` identifies with `τ ↦ f (g • τ)`.
+  `f ∘ ofComplex` composed with the Möbius transformation.
 * `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
   under the weight-`k` slash action.
 * `SlashAction.slash_eq_of_rightCoset_eq`: slashing a `H₁`-invariant element by `x` depends
@@ -308,15 +307,6 @@ theorem _root_.MDifferentiableAt.slash {f : ℍ → ℂ} {g : GL (Fin 2) ℝ} {�
       simpa using hg
     · rwa [← mul_smul, ← mul_assoc, ← sq, J_sq, one_mul]
   · exact mdifferentiableAt_slash_of_det_pos k hg hf
-
-/-- Composing `f ∘ ofComplex` with the Möbius transformation `w ↦ g • ofComplex w`, read through
-`ofComplex`, gives `τ ↦ f (g • τ)` read through `ofComplex`. -/
-theorem _root_.UpperHalfPlane.comp_ofComplex_comp_coe_smul_ofComplex {g : GL (Fin 2) ℝ}
-    (f : ℍ → ℂ) :
-    (f ∘ ofComplex) ∘ (fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) =
-      (fun τ ↦ f (g • τ)) ∘ ofComplex := by
-  funext w
-  simp [ofComplex_apply]
 
 /-- **The slash read through `ofComplex`**: near each point of `ℍ`, `(f ∣[k] g) ∘ ofComplex` is the
 product of the automorphy factor `|det g|^(k - 1) (cw + d)^(-k)` and `f ∘ ofComplex` composed with

@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Complex.Conformal.Laplacian
+import TauCeti.Analysis.Complex.UpperHalfPlane.SmulDeriv
 import TauCeti.Analysis.Complex.Wirtinger.Laplacian
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
