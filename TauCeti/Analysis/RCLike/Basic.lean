@@ -22,6 +22,7 @@ public import Mathlib.Analysis.RCLike.Basic
   jointly continuous `K`-scalar multiplication.
 * `RCLike.re_mem_Ioo_of_mem_ball`: for `z ∈ Metric.ball z₀ δ`,
   `re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ)`.
+* `RCLike.one_sub_re_le_norm_sub_one`: `1 - re z ≤ ‖z - 1‖`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
 -/
 
@@ -71,6 +72,10 @@ theorem re_mem_Ioo_of_mem_ball {z z₀ : K} {δ : ℝ} (hz : z ∈ Metric.ball z
     re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ) := by
   simpa only [Real.ball_eq_Ioo, NNReal.coe_one, one_mul] using
     lipschitzWith_re.mapsTo_ball one_ne_zero z₀ δ hz
+
+/-- The real part of a scalar falls short of `1` by at most its distance to `1`. -/
+theorem one_sub_re_le_norm_sub_one (z : K) : 1 - re z ≤ ‖z - 1‖ := by
+  simpa [norm_sub_rev] using re_le_norm (1 - z)
 
 end RCLike
 
