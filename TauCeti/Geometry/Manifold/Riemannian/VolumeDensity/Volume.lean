@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Measure
 public import TauCeti.MeasureTheory.Measure.Glue
 import Mathlib.MeasureTheory.Measure.Dirac.Basic
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
@@ -268,17 +267,6 @@ theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω
 
 end Coordinates
 
-/-- The Haar measure on `EuclideanSpace ℝ (Fin m)` normalized by `Module.finBasis` is
-`TauCeti.stdChartDetFactor m` times Lebesgue volume. -/
-theorem finBasis_addHaar_eq_stdChartDetFactor_smul_volume (m : ℕ) :
-    (Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).addHaar =
-      ENNReal.ofReal (stdChartDetFactor m) • (volume : Measure (EuclideanSpace ℝ (Fin m))) := by
-  let stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
-  let finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
-  rw [← Module.Basis.addHaar_reindex _ finσ, Module.Basis.addHaar_eq_smul_of_basis stdB,
-    stdChartDetFactor_def]
-  simp only [stdB, finσ, OrthonormalBasis.addHaar_eq_volume, abs_inv]
-
 /-- **Integration in coordinates** against the Riemannian volume using Lebesgue measure on
 `EuclideanSpace ℝ (Fin m)` and `TauCeti.stdChartVolumeDensity`. -/
 theorem setIntegral_riemannianVolume_std_of_subset {m : ℕ} {H : Type*} [TopologicalSpace H]
@@ -299,8 +287,9 @@ theorem setIntegral_riemannianVolume_std_of_subset {m : ℕ} {H : Type*} [Topolo
         chartVolumeDensity (I := I) α ((extChartAt I α).symm z) • φ ((extChartAt I α).symm z))
       (@extChartAtMeasurableSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance
       (@extChartAtBorelSpaceE (EuclideanSpace ℝ (Fin m)) _) inferInstance,
-    finBasis_addHaar_eq_stdChartDetFactor_smul_volume m, Measure.restrict_smul,
-    integral_smul_measure, ENNReal.toReal_ofReal (stdChartDetFactor_pos m).le, ← integral_smul]
+    EuclideanSpace.finBasis_addHaar_eq_smul_volume m, Measure.restrict_smul,
+    integral_smul_measure, ENNReal.toReal_ofReal (EuclideanSpace.finBasisAddHaarFactor_pos m).le,
+    ← integral_smul]
   simp_rw [smul_smul, stdChartVolumeDensity_def]
 
 /-- The Riemannian volume is locally finite: every point has a neighbourhood of finite volume. In

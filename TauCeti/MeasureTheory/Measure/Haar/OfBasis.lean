@@ -6,10 +6,9 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The additive Haar measure of the standard basis
@@ -151,5 +150,44 @@ end Module.Basis
 theorem Complex.addHaar_basisOneI : Complex.basisOneI.addHaar = (volume : Measure ℂ) := by
   rw [← Complex.toBasis_orthonormalBasisOneI]
   exact Complex.orthonormalBasisOneI.addHaar_eq_volume
+
+namespace EuclideanSpace
+
+/-- The constant rescaling factor `|det ((finBasis).reindex _)|⁻¹` relating
+`(Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).addHaar` to Lebesgue measure `volume` on
+`EuclideanSpace ℝ (Fin m)`. -/
+noncomputable def finBasisAddHaarFactor (m : ℕ) : ℝ :=
+  |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+    ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+      (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹
+
+/-- The defining formula for `EuclideanSpace.finBasisAddHaarFactor`. -/
+theorem finBasisAddHaarFactor_def (m : ℕ) :
+    finBasisAddHaarFactor m =
+      |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
+        ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
+          (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ :=
+  (rfl)
+
+/-- `EuclideanSpace.finBasisAddHaarFactor m` is strictly positive. -/
+theorem finBasisAddHaarFactor_pos (m : ℕ) : 0 < finBasisAddHaarFactor m :=
+  inv_pos.2 <| abs_pos.2 ((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.isUnit_det _).ne_zero
+
+/-- `EuclideanSpace.finBasisAddHaarFactor m` is nonzero. -/
+theorem finBasisAddHaarFactor_ne_zero (m : ℕ) : finBasisAddHaarFactor m ≠ 0 :=
+  (finBasisAddHaarFactor_pos m).ne'
+
+/-- The Haar measure on `EuclideanSpace ℝ (Fin m)` normalized by `Module.finBasis` is
+`EuclideanSpace.finBasisAddHaarFactor m` times Lebesgue volume. -/
+theorem finBasis_addHaar_eq_smul_volume (m : ℕ) :
+    (Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).addHaar =
+      ENNReal.ofReal (finBasisAddHaarFactor m) • (volume : Measure (EuclideanSpace ℝ (Fin m))) := by
+  let stdB := (EuclideanSpace.basisFun (Fin m) ℝ).toBasis
+  let finσ := finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m))
+  rw [← Module.Basis.addHaar_reindex _ finσ, Module.Basis.addHaar_eq_smul_of_basis stdB,
+    finBasisAddHaarFactor_def]
+  simp only [stdB, finσ, OrthonormalBasis.addHaar_eq_volume, abs_inv]
+
+end EuclideanSpace
 
 end

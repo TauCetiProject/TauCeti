@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.InnerProductSpace.Gram.VolumeDensity
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -150,39 +150,15 @@ variable {m : ℕ} {H : Type*} [TopologicalSpace H]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-/-- The constant rescaling factor `|det ((finBasis).reindex _)|⁻¹` relating
-`TauCeti.stdChartVolumeDensity` to `TauCeti.chartVolumeDensity`, and `(Module.finBasis ℝ _).addHaar`
-to Lebesgue measure `volume` on `EuclideanSpace ℝ (Fin m)`. -/
-def stdChartDetFactor (m : ℕ) : ℝ :=
-  |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
-    ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
-      (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹
-
-/-- The defining formula for `TauCeti.stdChartDetFactor`. -/
-theorem stdChartDetFactor_def (m : ℕ) :
-    stdChartDetFactor m =
-      |((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.det
-        ((Module.finBasis ℝ (EuclideanSpace ℝ (Fin m))).reindex
-          (finCongr (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := m)))))|⁻¹ :=
-  (rfl)
-
-/-- `TauCeti.stdChartDetFactor m` is strictly positive. -/
-theorem stdChartDetFactor_pos (m : ℕ) : 0 < stdChartDetFactor m :=
-  inv_pos.2 <| abs_pos.2 ((EuclideanSpace.basisFun (Fin m) ℝ).toBasis.isUnit_det _).ne_zero
-
-/-- `TauCeti.stdChartDetFactor m` is nonzero. -/
-theorem stdChartDetFactor_ne_zero (m : ℕ) : stdChartDetFactor m ≠ 0 :=
-  (stdChartDetFactor_pos m).ne'
-
 /-- The Riemannian volume density in the chart frame induced by `EuclideanSpace.basisFun`. -/
 def stdChartVolumeDensity (α x : M) : ℝ :=
-  stdChartDetFactor m * chartVolumeDensity (I := I) α x
+  EuclideanSpace.finBasisAddHaarFactor m * chartVolumeDensity (I := I) α x
 
 /-- Defining relation expressing `TauCeti.stdChartVolumeDensity` as a rescaling of
 `TauCeti.chartVolumeDensity`. -/
 theorem stdChartVolumeDensity_def (α x : M) :
     stdChartVolumeDensity (I := I) α x =
-      stdChartDetFactor m * chartVolumeDensity (I := I) α x := (rfl)
+      EuclideanSpace.finBasisAddHaarFactor m * chartVolumeDensity (I := I) α x := (rfl)
 
 /-- On the trivialization base set, `stdChartVolumeDensity` equals the square root of the Gram
 determinant of the standard Euclidean basis chart frame. -/
@@ -212,7 +188,8 @@ theorem stdChartVolumeDensity_eq_sqrt_det_gram (α : M) {y : M}
   have hcov := Module.Basis.metricVolumeDensity_change_basis B_std B_fin (innerSL ℝ)
   rw [hmat, ← Module.Basis.det_apply, ← hchart] at hcov
   rw [stdChartVolumeDensity_def, hcov, B_std.metricVolumeDensity_innerSL_eq_sqrt_det_gram,
-    stdChartDetFactor_def, inv_mul_cancel_left₀ (abs_ne_zero.2 (stdB.isUnit_det _).ne_zero)]
+    EuclideanSpace.finBasisAddHaarFactor_def,
+    inv_mul_cancel_left₀ (abs_ne_zero.2 (stdB.isUnit_det _).ne_zero)]
 
 /-- A `C^n` metric has a `C^n` standard-frame volume density on every chart source of a `C^(n+1)`
 manifold. -/

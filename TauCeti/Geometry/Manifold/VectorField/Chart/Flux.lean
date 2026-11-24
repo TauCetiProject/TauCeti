@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Density-weighted chart fluxes of a vector field
@@ -120,9 +119,10 @@ theorem contDiffOn_chartFlux [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] {k 
   by_cases hz : z ∈ (extChartAt I α).target
   · have hy : (extChartAt I α).symm z ∈ (chartAt H α).source := by
       rw [← extChartAt_source (I := I)]; exact (extChartAt I α).map_target hz
-    have hcoeff := (trivializationAt E (TangentSpace I) α).contMDiffOn_mul_localFrameCoeff b
+    have hcoeff := ContMDiffOn.mul
       (by simpa only [TangentBundle.trivializationAt_baseSet] using hρ)
-      (by simpa only [TangentBundle.trivializationAt_baseSet] using hX) i
+      (contMDiffOn_baseSet_localFrameCoeff (e := trivializationAt E (TangentSpace I) α) b
+        (by simpa only [TangentBundle.trivializationAt_baseSet] using hX) i)
     have hg : ContDiffWithinAt 𝕜 k _ (range I) z := contMDiffWithinAt_iff_contDiffWithinAt.1
       ((hcoeff.contMDiffAt
         (by simpa only [TangentBundle.trivializationAt_baseSet] using
