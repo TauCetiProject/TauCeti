@@ -41,7 +41,8 @@ valuation; here `V` is any `p`-adically complete domain.
 
 ## Main results
 
-* `PreTilt.untilt_eq_zero_iff`: for reduced `V`, `x♯ = 0` if and only if `x = 0`.
+* `PreTilt.untilt_eq_zero_iff`, `PreTilt.untilt_ne_zero_iff`: for reduced `V`, `x♯ = 0` if and
+  only if `x = 0`.
 * `PreTilt.instIsDomain`: the tilt of a `p`-adically complete domain is a domain.
 * `PreTilt.untilt_dvd_untilt_iff`: for an integrally closed domain `V`, `x♯ ∣ y♯` if and only if
   `x ∣ y`.
@@ -72,6 +73,10 @@ theorem untilt_eq_zero_iff [IsReduced V] {x : PreTilt V p} : x.untilt = 0 ↔ x 
   have hn : untilt (((frobeniusEquiv (PreTilt V p) p).symm^[n]) x) = 0 :=
     IsReduced.eq_zero _ ⟨p ^ n, by rw [untilt_iterate_frobeniusEquiv_symm_pow, h]⟩
   rw [coeff_eq_mk_untilt_iterate, hn, map_zero, map_zero]
+
+/-- For reduced `V`, `x♯ ≠ 0` if and only if `x ≠ 0`. -/
+theorem untilt_ne_zero_iff [IsReduced V] {x : PreTilt V p} : x.untilt ≠ 0 ↔ x ≠ 0 :=
+  untilt_eq_zero_iff.not
 
 /-- **The tilt of a `p`-adically complete domain is a domain.** -/
 instance instIsDomain [IsDomain V] : IsDomain (PreTilt V p) :=
@@ -135,7 +140,7 @@ noncomputable def untiltFraction : K →*₀ L :=
   (IsLocalization.toLocalizationMap (nonZeroDivisors (PreTilt V p)) K).lift₀
     ((algebraMap V L : V →*₀ L).comp { untilt with map_zero' := untilt_zero })
     fun y ↦ IsUnit.mk0 _ <| (map_ne_zero_iff _ (IsFractionRing.injective V L)).mpr <|
-      untilt_eq_zero_iff.not.mpr (nonZeroDivisors.ne_zero y.property)
+      untilt_ne_zero_iff.mpr (nonZeroDivisors.ne_zero y.property)
 
 /-- `PreTilt.untiltFraction` extends the sharp map. -/
 @[simp]
@@ -170,6 +175,9 @@ theorem valueGroupMap_valuation (z : K) :
     valueGroupMap V p K L (ValuationRing.valuation (PreTilt V p) K z) =
       ValuationRing.valuation V L (untiltFraction V p K L z) := by
   rw [ValuationRing.valuation_apply, ValuationRing.valuation_apply]
+  -- `rfl` holds because the underlying function of `valueGroupMap` is, by its definition,
+  -- `Quotient.map' (untiltFraction V p K L)`, and `Quotient.map' f h (Quotient.mk'' z)` reduces to
+  -- `Quotient.mk'' (f z)` (this is `Quotient.map'_mk''`).
   rfl
 
 /-- **The sharp map on value groups is an order embedding.** -/
@@ -183,8 +191,8 @@ theorem valueGroupMap_le_valueGroupMap_iff {a b : ValuationRing.ValueGroup (PreT
   have hy₀ := nonZeroDivisors.ne_zero hy
   have hy₀' := nonZeroDivisors.ne_zero hy'
   simp only [valueGroupMap_valuation, map_div₀ (untiltFraction V p K L), untiltFraction_algebraMap]
-  rw [    ValuationRing.valuation_div_le_valuation_div_iff_dvd (untilt_eq_zero_iff.not.mpr hy₀)
-      (untilt_eq_zero_iff.not.mpr hy₀'),
+  rw [ValuationRing.valuation_div_le_valuation_div_iff_dvd (untilt_ne_zero_iff.mpr hy₀)
+      (untilt_ne_zero_iff.mpr hy₀'),
     ValuationRing.valuation_div_le_valuation_div_iff_dvd hy₀ hy₀', ← map_mul, ← map_mul,
     untilt_dvd_untilt_iff]
 
