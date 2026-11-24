@@ -25,7 +25,7 @@ space, whether or not `E` and `F` are complete. This file develops the operators
 
 * The pure tensors `x ⊗ₜ y` span a dense subspace (`TensorProduct.dense_span_coe_tmul`), so a
   bounded (semi)linear operator out of `E ⊗̂ F` is determined by its values on them
-  (`TensorProduct.completion_ext`, `TensorProduct.continuousLinearMap_ext_completion`), a vector
+  (`TensorProduct.completion_ext`, `TensorProduct.completion_ext_iff`), a vector
   orthogonal to all of them vanishes (`TensorProduct.eq_zero_of_forall_inner_coe_tmul`), and a
   bounded operator maps `E ⊗̂ F` into a closed submodule if it maps every pure tensor there
   (`TensorProduct.apply_mem_of_forall_apply_coe_tmul_mem`). The bounded bilinear pure-tensor
@@ -129,15 +129,24 @@ theorem dense_span_coe_tmul :
   exact h ▸ Completion.denseRange_coe.topologicalClosure_map_submodule
     (top_unique (Submodule.le_topologicalClosure _))
 
-/-- Two bounded operators from the completed tensor product of `E` and `F` to a Hausdorff space
-agree when they agree on pure tensors. -/
-theorem completion_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M] [T2Space M]
-    {l l' : Completion (E ⊗[𝕜] F) →L[𝕜] M}
-    (h : ∀ x y, l (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = l' (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)) : l = l' := by
-  have h' : l ∘L Completion.toComplL = l' ∘L Completion.toComplL :=
-    ContinuousLinearMap.coe_inj.1 <| TensorProduct.ext' fun x y ↦ by simpa using h x y
-  exact DFunLike.coe_injective <|
-    Completion.ext l.continuous l'.continuous fun u ↦ by simpa using congr($h' u)
+/-- Two continuous semilinear maps from the completed tensor product of `E` and `F` to a Hausdorff
+space agree when they agree on pure tensors. -/
+theorem completion_ext {𝕜₂ M : Type*} [Semiring 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
+    [AddCommMonoid M] [Module 𝕜₂ M] [TopologicalSpace M] [T2Space M]
+    {l l' : Completion (E ⊗[𝕜] F) →SL[σ] M}
+    (h : ∀ (x : E) (y : F), l (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = l' (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)) : l = l' := by
+  refine DFunLike.coe_injective <| Completion.ext l.continuous l'.continuous fun z ↦ ?_
+  induction z using TensorProduct.inductionOn with
+  | tmul x y => exact h x y
+  | add _ _ hz₁ hz₂ => rw [Completion.coe_add, map_add, map_add, hz₁, hz₂]
+
+/-- Two continuous semilinear maps from the completed tensor product of `E` and `F` to a Hausdorff
+space agree if and only if they agree on pure tensors. -/
+theorem completion_ext_iff {𝕜₂ M : Type*} [Semiring 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
+    [AddCommMonoid M] [Module 𝕜₂ M] [TopologicalSpace M] [T2Space M]
+    {l l' : Completion (E ⊗[𝕜] F) →SL[σ] M} :
+    l = l' ↔ ∀ (x : E) (y : F), l (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = l' (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) :=
+  ⟨fun h _ _ ↦ h ▸ rfl, completion_ext⟩
 
 /-- A vector of the completed tensor product that is orthogonal to every pure tensor vanishes. -/
 theorem eq_zero_of_forall_inner_coe_tmul {w : Completion (E ⊗[𝕜] F)}
@@ -807,29 +816,12 @@ end ContinuousLinearMap
 
 namespace TensorProduct
 
-/-! ### Semilinear extensionality, pure-tensor creation maps, and rank-one operators -/
-
-/-- Two continuous semilinear maps from `Completion (E ⊗[𝕜] F)` into a Hausdorff space agree if
-they agree on completed pure tensors `(x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)`. -/
-theorem continuousLinearMap_ext_completion {𝕜₂ M : Type*} [Semiring 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
-    [AddCommMonoid M] [Module 𝕜₂ M] [TopologicalSpace M] [T2Space M]
-    {l l' : Completion (E ⊗[𝕜] F) →SL[σ] M}
-    (h : ∀ (x : E) (y : F), l (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = l' (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)) : l = l' := by
-  refine DFunLike.coe_injective <| Completion.ext l.continuous l'.continuous fun z ↦ ?_
-  induction z using TensorProduct.inductionOn with
-  | tmul x y => exact h x y
-  | add _ _ hz₁ hz₂ => rw [Completion.coe_add, map_add, map_add, hz₁, hz₂]
-
-theorem continuousLinearMap_ext_completion_iff {𝕜₂ M : Type*} [Semiring 𝕜₂] {σ : 𝕜 →+* 𝕜₂}
-    [AddCommMonoid M] [Module 𝕜₂ M] [TopologicalSpace M] [T2Space M]
-    {l l' : Completion (E ⊗[𝕜] F) →SL[σ] M} :
-    l = l' ↔ ∀ (x : E) (y : F), l (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) = l' (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F) :=
-  ⟨fun h _ _ ↦ h ▸ rfl, continuousLinearMap_ext_completion⟩
+/-! ### Inner-product extensionality, pure-tensor creation maps, and rank-one operators -/
 
 /-- Vectors in `Completion (E ⊗[𝕜] F)` are determined by right inner products with pure tensors. -/
 theorem ext_iff_completion_inner_tmul_right {u v : Completion (E ⊗[𝕜] F)} :
     u = v ↔ ∀ (x : E) (y : F), ⟪u, (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)⟫_𝕜 = ⟪v, (x ⊗ₜ[𝕜] y : E ⊗[𝕜] F)⟫_𝕜 := by
-  rw [← innerSL_inj (𝕜 := 𝕜), continuousLinearMap_ext_completion_iff]; simp
+  rw [← innerSL_inj (𝕜 := 𝕜), completion_ext_iff]; simp
 
 /-- Vectors in `Completion (E ⊗[𝕜] F)` are determined by left inner products with pure tensors. -/
 theorem ext_iff_completion_inner_tmul_left {u v : Completion (E ⊗[𝕜] F)} :

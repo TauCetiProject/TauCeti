@@ -42,7 +42,7 @@ when endomorphisms are identified with tensors, without adding an instance on th
   bounded operators has norm `‖f‖ * ‖g‖` and preserves dense range;
   `ContinuousLinearMap.norm_rTensor` and `ContinuousLinearMap.norm_lTensor` (`rTensorₗᵢ`,
   `lTensorₗᵢ`, `rTensor_inj`, `lTensor_inj`) are the cases `f ⊗ 1` and `1 ⊗ g` for a nonzero other
-  factor (`rTensor_eq_zero`, `lTensor_eq_zero` on subsingletons).
+  factor (`rTensor_of_subsingleton`, `lTensor_of_subsingleton` on subsingletons).
 * `TensorProduct.inner_mapL_left`: if `f'` and `g'` are formal adjoints of `f` and `g`, then
   `mapL f' g'` is a formal adjoint of `mapL f g`.
 * `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
@@ -279,30 +279,20 @@ theorem lTensor_inj [Nontrivial X₀] {f g : Y₀ →L[𝕜] Y₁} :
 
 /-- Tensoring on the right with a subsingleton space produces the zero operator. -/
 @[simp]
-theorem rTensor_eq_zero [Subsingleton Y₀] (f : X₀ →L[𝕜] X₁) : f.rTensor Y₀ = 0 :=
+theorem rTensor_of_subsingleton [Subsingleton Y₀] (f : X₀ →L[𝕜] X₁) : f.rTensor Y₀ = 0 :=
   Subsingleton.elim _ _
 
 /-- Tensoring on the left with a subsingleton space produces the zero operator. -/
 @[simp]
-theorem lTensor_eq_zero [Subsingleton X₀] (g : Y₀ →L[𝕜] Y₁) : g.lTensor X₀ = 0 :=
+theorem lTensor_of_subsingleton [Subsingleton X₀] (g : Y₀ →L[𝕜] Y₁) : g.lTensor X₀ = 0 :=
   Subsingleton.elim _ _
 
 variable (Y₀) in
-/-- If `f` has dense range then so does `f ⊗ 1`: the pure tensors `c ⊗ₜ y` span `X₁ ⊗[𝕜] Y₀`, and
-each lies in the closure of the range of `f ⊗ 1`. -/
+/-- If `f` has dense range then so does `f ⊗ 1`. -/
 theorem denseRange_rTensor {f : X₀ →L[𝕜] X₁} (hf : DenseRange f) :
     DenseRange (f.rTensor Y₀) := by
-  let T := LinearMap.range (f.rTensor Y₀).toLinearMap
-  have htmul (c : X₁) (y : Y₀) : c ⊗ₜ[𝕜] y ∈ T.topologicalClosure := by
-    induction c using hf.induction_on with
-    | hp =>
-      exact T.isClosed_topologicalClosure.preimage
-        ((TensorProduct.mkL 𝕜 X₁ Y₀).flip y).continuous
-    | ih x => exact T.le_topologicalClosure ⟨x ⊗ₜ[𝕜] y, by simp⟩
-  have hT : T.topologicalClosure = ⊤ := eq_top_iff.2 <|
-    (TensorProduct.span_tmul_eq_top 𝕜 X₁ Y₀).ge.trans <|
-      Submodule.span_le.2 fun _ ⟨c, y, h⟩ ↦ h ▸ htmul c y
-  exact Submodule.dense_iff_topologicalClosure_eq_top.2 hT
+  rw [rTensor_eq_mapL]
+  exact TensorProduct.denseRange_mapL hf denseRange_id
 
 variable (X₀) in
 /-- If `g` has dense range then so does `1 ⊗ g`. -/

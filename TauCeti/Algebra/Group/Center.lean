@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Group.Units.Defs
 
 Basic lemmas for `Set.centralizer`:
 
-* `Set.image_centralizer` (and its additive counterpart `Set.image_addCentralizer`): multiplicative
+* `Set.centralizer_image` (and its additive counterpart `Set.addCentralizer_image`): multiplicative
   equivalences commute with taking centralizers.
 * `Set.conj_mem_centralizer`: if conjugation by the inverse of a unit `u` maps a set `S` of a
   monoid into itself, then conjugation by `u` maps the centralizer of `S` into itself. Applying
@@ -31,10 +31,10 @@ namespace Set
 
 /-- A multiplicative equivalence maps the centralizer of a set onto the centralizer of its
 image. -/
-@[to_additive image_addCentralizer
+@[to_additive addCentralizer_image
   /-- An additive equivalence maps the additive centralizer of a set onto the additive centralizer
   of its image. -/]
-theorem image_centralizer {A B F : Type*} [Mul A] [Mul B] [EquivLike F A B]
+theorem centralizer_image {A B F : Type*} [Mul A] [Mul B] [EquivLike F A B]
     [MulEquivClass F A B] (e : F) (s : Set A) : (e '' s).centralizer = e '' s.centralizer := by
   ext b; refine ⟨fun hb ↦ ?_, ?_⟩
   · obtain ⟨c, rfl⟩ := EquivLike.surjective e b

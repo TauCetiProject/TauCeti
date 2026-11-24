@@ -85,7 +85,7 @@ private noncomputable def mapLinearIsometryEquivAux (U : H₁ ≃ₗᵢ[ℂ] H�
       (congrArg (⇑U.conjStarAlgEquiv '' ·) (coe_toStarSubalgebra M))
     have hcc : (⇑U.conjStarAlgEquiv '' (M : Set _)).centralizer.centralizer =
         ⇑U.conjStarAlgEquiv '' (M : Set _) := by
-      rw [Set.image_centralizer, Set.image_centralizer, M.centralizer_centralizer]
+      rw [Set.centralizer_image, Set.centralizer_image, M.centralizer_centralizer]
     -- The carrier is the coercion of the star subalgebra to a set, up to unfolding `SetLike.coe`.
     exact (congrArg (fun S : Set (H₂ →L[ℂ] H₂) ↦ S.centralizer.centralizer) h).trans
       (hcc.trans h.symm)
@@ -134,7 +134,7 @@ theorem mapLinearIsometryEquiv_trans (U : H₁ ≃ₗᵢ[ℂ] H₂) (V : H₂ �
 /-- Unitary transport commutes with taking commutants. -/
 @[simp] theorem mapLinearIsometryEquiv_commutant (U : H₁ ≃ₗᵢ[ℂ] H₂) (M : VonNeumannAlgebra H₁) :
     mapLinearIsometryEquiv U M.commutant = (mapLinearIsometryEquiv U M).commutant :=
-  SetLike.coe_injective <| by simp [coe_commutant, Set.image_centralizer]
+  SetLike.coe_injective <| by simp [coe_commutant, Set.centralizer_image]
 /-- Spatial conjugation restricts to a `⋆`-algebra equivalence between `M` and its transported
 von Neumann algebra `mapLinearIsometryEquiv U M`. -/
 noncomputable def equivMapLinearIsometryEquiv (U : H₁ ≃ₗᵢ[ℂ] H₂) (M : VonNeumannAlgebra H₁) :
