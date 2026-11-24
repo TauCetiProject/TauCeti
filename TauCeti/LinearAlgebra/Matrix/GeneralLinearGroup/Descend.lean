@@ -59,28 +59,24 @@ section Descend
 variable {R : Type*} [CommRing R] (ρ : Γ →* GL n K) (f : R →+* K)
 
 /-- The matrix over `R` whose entries are preimages under `f` of the entries of `ρ g`. -/
-noncomputable def descendMatrix (g : Γ) : Matrix n n R :=
+private noncomputable def descendMatrix (g : Γ) : Matrix n n R :=
   Matrix.of fun i j ↦ Function.invFun f ((ρ g : Matrix n n K) i j)
-
-@[simp]
-theorem descendMatrix_apply (g : Γ) (i j : n) :
-    descendMatrix ρ f g i j = Function.invFun f ((ρ g : Matrix n n K) i j) :=
-  (rfl)
 
 variable {ρ f}
 
-theorem map_descendMatrix (h : entries ρ ⊆ Set.range f) (g : Γ) :
+private theorem map_descendMatrix (h : entries ρ ⊆ Set.range f) (g : Γ) :
     (descendMatrix ρ f g).map f = ρ g := by
   ext i j
   exact Function.invFun_eq (h (mem_entries ρ g i j))
 
-theorem descendMatrix_one (hf : Function.Injective f) (h : entries ρ ⊆ Set.range f) :
+private theorem descendMatrix_one (hf : Function.Injective f) (h : entries ρ ⊆ Set.range f) :
     descendMatrix ρ f 1 = 1 :=
   Matrix.map_injective hf <| by
     dsimp only
     rw [map_descendMatrix h, map_one, Units.val_one, Matrix.map_one _ f.map_zero f.map_one]
 
-theorem descendMatrix_mul (hf : Function.Injective f) (h : entries ρ ⊆ Set.range f) (g g' : Γ) :
+private theorem descendMatrix_mul (hf : Function.Injective f) (h : entries ρ ⊆ Set.range f)
+    (g g' : Γ) :
     descendMatrix ρ f g * descendMatrix ρ f g' = descendMatrix ρ f (g * g') :=
   Matrix.map_injective hf <| by
     dsimp only
@@ -99,17 +95,15 @@ noncomputable def descend (hf : Function.Injective f) (h : entries ρ ⊆ Set.ra
   map_one' := Units.ext (descendMatrix_one hf h)
   map_mul' g g' := Units.ext (descendMatrix_mul hf h g g').symm
 
-theorem coe_descend (hf : Function.Injective f) (h : entries ρ ⊆ Set.range f) (g : Γ) :
-    (descend hf h g : Matrix n n R) = descendMatrix ρ f g :=
-  (rfl)
-
-theorem coe_inv_descend (hf : Function.Injective f) (h : entries ρ ⊆ Set.range f) (g : Γ) :
-    (((descend hf h g)⁻¹ : GL n R) : Matrix n n R) = descendMatrix ρ f g⁻¹ :=
-  (rfl)
-
+@[simp]
 theorem map_coe_descend (hf : Function.Injective f) (h : entries ρ ⊆ Set.range f) (g : Γ) :
     (descend hf h g : Matrix n n R).map f = ρ g :=
   map_descendMatrix h g
+
+@[simp]
+theorem map_descend_apply (hf : Function.Injective f) (h : entries ρ ⊆ Set.range f) (g : Γ)
+    (i j : n) : f ((descend hf h g : Matrix n n R) i j) = (ρ g : Matrix n n K) i j :=
+  congrFun (congrFun (map_coe_descend hf h g) i) j
 
 /-- `ρ` is the composite of `descend` with `GL_n(R) → GL_n(K)`. -/
 @[simp]

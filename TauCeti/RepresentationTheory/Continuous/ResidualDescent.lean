@@ -67,10 +67,12 @@ theorem continuous_descend {R : Type*} [CommRing R] [TopologicalSpace R]
     continuous_pi fun i ↦ continuous_pi fun j ↦ ?_⟩
   · refine ((continuous_of_discreteTopology (f := Function.invFun f)).comp
       (continuous_entry hρ i j)).congr fun g ↦ ?_
-    rw [Function.comp_apply, Function.comp_apply, coe_descend, descendMatrix_apply]
+    rw [Function.comp_apply, Function.comp_apply, ← map_descend_apply hf h,
+      Function.leftInverse_invFun hf]
   · refine ((continuous_of_discreteTopology (f := Function.invFun f)).comp
       (((Units.continuous_coe_inv (M := Matrix n n K)).comp hρ).matrix_elem i j)).congr fun g ↦ ?_
-    rw [Function.comp_apply, Function.comp_apply, coe_inv_descend, descendMatrix_apply, map_inv]
+    rw [Function.comp_apply, Function.comp_apply, ← map_inv, ← map_inv (descend hf h),
+      ← map_descend_apply hf h, Function.leftInverse_invFun hf]
 
 variable [CompactSpace Γ]
 
