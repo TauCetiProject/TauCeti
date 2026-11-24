@@ -208,13 +208,8 @@ theorem apply_eq_apply_iff {s t : ℝ} : χ s = χ t ↔ (s : AddCircle χ.perio
 /-- The derivative of the boundary parametrization agrees at parameters with the same boundary
 point. -/
 theorem deriv_eq_deriv_of_apply_eq {s t : ℝ} (h : χ s = χ t) : deriv χ s = deriv χ t := by
-  obtain ⟨k, hk⟩ := (QuotientAddGroup.eq (s := AddSubgroup.zmultiples χ.period)).1
-    (χ.apply_eq_apply_iff.1 h)
   have hper : Periodic (deriv χ) χ.period := χ.deriv_add_period
-  have ht : t = s + k * χ.period := by
-    simp only [zsmul_eq_mul] at hk
-    linarith
-  rw [ht, hper.int_mul k s]
+  simpa using congrArg hper.lift (χ.apply_eq_apply_iff.1 h)
 
 /-- States with the same base point and the same tangential component have the same outgoing
 velocity. -/

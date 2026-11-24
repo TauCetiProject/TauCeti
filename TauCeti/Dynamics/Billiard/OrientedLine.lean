@@ -80,15 +80,6 @@ theorem orientedLine_snd (s v : ℝ) :
     (χ.orientedLine s v).2 = o.areaForm (χ.outgoingDir s v) (χ s) :=
   (rfl)
 
-theorem norm_orientedLine_fst {s v : ℝ} (hv : v ∈ Icc (-1) 1) : ‖(χ.orientedLine s v).1‖ = 1 :=
-  χ.norm_outgoingDir hv
-
-/-- The tangential component of a state is read off from its oriented line:
-`v = ⟪χ'(s), u⟫`. -/
-theorem inner_deriv_orientedLine_fst (s v : ℝ) :
-    inner ℝ (deriv χ s) (χ.orientedLine s v).1 = v :=
-  χ.inner_deriv_outgoingDir s v
-
 /-- The next collision point lies on the oriented line of the state. -/
 theorem areaForm_orientedLine_fst_apply_nextParam {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
     o.areaForm (χ.orientedLine s v).1 (χ (χ.nextParam s v)) = (χ.orientedLine s v).2 := by
