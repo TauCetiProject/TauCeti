@@ -151,6 +151,7 @@ theorem collisionFamily_ne_zero (i : Fin 3) : collisionFamily i ≠ 0 := by
 /-- The coefficient-one binomial `U - W`, a relation among the leading exponents of
 `collisionFamily` but not among its leading terms, takes the value `-(x + y)` at `collisionFamily`.
 -/
+@[simp]
 theorem aeval_collisionFamily_X_zero_sub_X_two :
     aeval collisionFamily (X 0 - X 2 : MvPolynomial (Fin 3) ℚ) = -(X 0 + X 1) := by
   simp [collisionFamily, map_ofNat C 2]
@@ -158,6 +159,7 @@ theorem aeval_collisionFamily_X_zero_sub_X_two :
 
 /-- The coefficient-one binomial `V - W`, a relation among the leading exponents of
 `collisionFamily` but not among its leading terms, takes the value `-x` at `collisionFamily`. -/
+@[simp]
 theorem aeval_collisionFamily_X_one_sub_X_two :
     aeval collisionFamily (X 1 - X 2 : MvPolynomial (Fin 3) ℚ) = -X 0 := by
   simp [collisionFamily, map_ofNat C 2]
@@ -248,12 +250,14 @@ theorem lex_degree_normalizedCollisionFamily (i : Fin 3) :
 
 /-- The relation `U - W` among the leading exponents (and leading terms) of the monic family
 `normalizedCollisionFamily` takes the value `-y/2` at it. -/
+@[simp]
 theorem aeval_normalizedCollisionFamily_X_zero_sub_X_two :
     aeval normalizedCollisionFamily (X 0 - X 2 : MvPolynomial (Fin 3) ℚ) = -(C (1 / 2) * X 1) := by
   simp [normalizedCollisionFamily_def]
 
 /-- The relation `V - W` among the leading exponents (and leading terms) of the monic family
 `normalizedCollisionFamily` takes the value `y/2` at it. -/
+@[simp]
 theorem aeval_normalizedCollisionFamily_X_one_sub_X_two :
     aeval normalizedCollisionFamily (X 1 - X 2 : MvPolynomial (Fin 3) ℚ) = C (1 / 2) * X 1 := by
   simp only [map_sub, aeval_X, normalizedCollisionFamily_def, Matrix.cons_val]
