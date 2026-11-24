@@ -272,8 +272,8 @@ theorem mem_range_scalar_of_commute_sp (M : Matrix (l ⊕ l) (l ⊕ l) R)
     | inr i => exact ((diag_eq_of_commute_single (hp i)).symm.trans (hd i)).symm
   · simp [scalar_apply, diagonal_apply_ne _ hab, hoff a b hab]
 
-/-- **A scalar symplectic Lie matrix is zero** over a ring without zero divisors in which `2 ≠ 0`:
-the diagonal entries `c` at `n + i` and at `i` are negatives of each other, so `2 c = 0`. -/
+/-- **A scalar matrix lies in `sp l R` iff it is zero**, over a ring without zero divisors in
+which `2 ≠ 0`. -/
 theorem scalar_mem_sp_iff [NoZeroDivisors R] [NeZero (2 : R)] (c : R) :
     scalar (l ⊕ l) c ∈ LieAlgebra.Symplectic.sp l R ↔ scalar (l ⊕ l) c = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ zero_mem _⟩

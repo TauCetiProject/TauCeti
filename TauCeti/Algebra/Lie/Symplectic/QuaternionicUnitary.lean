@@ -181,8 +181,8 @@ theorem conjTranspose_mem_quaternionicUnitaryLieAlgebra
         rw [Matrix.mul_assoc, Matrix.mul_assoc, quaternionicUnitaryGram_mul_quaternionicUnitaryGram,
           Matrix.mul_one]
 
-/-- A matrix commuting with `𝔰𝔭(p, q)` commutes with the whole complex symplectic Lie algebra:
-`2 Y = A - i B` with `A = Y - K Yᴴ K` and `B = i (Y + K Yᴴ K)` in `𝔰𝔭(p, q)`. -/
+/-- A matrix commuting with every element of `𝔰𝔭(p, q)` commutes with every element of the
+complex symplectic Lie algebra `𝔰𝔭_{2(p+q)}(ℂ)`. -/
 theorem commute_of_forall_mem_quaternionicUnitaryLieAlgebra
     {Z Y : Matrix ((p ⊕ q) ⊕ (p ⊕ q)) ((p ⊕ q) ⊕ (p ⊕ q)) ℂ}
     (hZ : ∀ X ∈ quaternionicUnitaryLieAlgebra p q, Commute Z X) (hY : Y ∈ sp (p ⊕ q) ℂ) :

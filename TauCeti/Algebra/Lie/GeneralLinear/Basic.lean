@@ -52,8 +52,6 @@ sits *inside* the derived ideal and the two are not complementary.
   `TauCeti.derivedSeries_one_toLieSubalgebra_eq_sl` reads this as `LieAlgebra.SpecialLinear.sl n R`.
 * `LieAlgebra.SpecialLinear.mem_sl_iff`: membership in `LieAlgebra.SpecialLinear.sl n R` is the
   vanishing of the trace.
-* `LieAlgebra.SpecialLinear.transpose_mem_sl` and `LieAlgebra.SpecialLinear.neg_transpose_mem_sl`:
-  `LieAlgebra.SpecialLinear.sl n R` is stable under `A ↦ Aᵀ` and `A ↦ -Aᵀ`.
 * `TauCeti.isCompl_center_derivedSeries_one_matrix`: when `Fintype.card n` is invertible in `R`,
   the centre and the derived ideal are complementary submodules of `gl n R`.
 * `TauCeti.exists_sl_add_smul_one_eq`: every matrix is a trace-zero matrix plus a scalar matrix
@@ -235,18 +233,6 @@ theorem _root_.LieAlgebra.SpecialLinear.mem_sl_iff {A : Matrix n n R} :
     A ∈ LieAlgebra.SpecialLinear.sl n R ↔ A.trace = 0 := by
   rw [← slIdeal_toLieSubalgebra_eq_sl R n]
   exact mem_slIdeal_iff
-
-/-- Mathlib's special linear Lie algebra `sl n R` is stable under transposition. -/
-theorem _root_.LieAlgebra.SpecialLinear.transpose_mem_sl {A : Matrix n n R}
-    (hA : A ∈ LieAlgebra.SpecialLinear.sl n R) : Aᵀ ∈ LieAlgebra.SpecialLinear.sl n R := by
-  rw [LieAlgebra.SpecialLinear.mem_sl_iff] at hA ⊢
-  rwa [Matrix.trace_transpose]
-
-/-- Mathlib's special linear Lie algebra `sl n R` is stable under the Cartan involution
-`A ↦ -Aᵀ`. -/
-theorem _root_.LieAlgebra.SpecialLinear.neg_transpose_mem_sl {A : Matrix n n R}
-    (hA : A ∈ LieAlgebra.SpecialLinear.sl n R) : -Aᵀ ∈ LieAlgebra.SpecialLinear.sl n R :=
-  neg_mem (LieAlgebra.SpecialLinear.transpose_mem_sl hA)
 
 /-! ### The derived ideal of `gl n R` -/
 
