@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Differential operators between sections of vector bundles
@@ -184,12 +185,8 @@ theorem mem_differentialOperators_zero_iff_exists_eq_mapLinearMap
   let ϕ (x : M) : V x →ₗ[ℝ] W x := smoothSectionFiberMap x P'
   have hϕ (s : Cₛ^∞⟮I; F, V⟯) (x : M) : ϕ x (s x) = P s x := smoothSectionFiberMap_apply x P' s
   -- The fibres of `W` are topological vector spaces, as the model fibre `F'` is.
-  have (x : M) : IsTopologicalAddGroup (W x) :=
-    (VectorBundle.continuousLinearEquivAt ℝ F' W x).toHomeomorph.isInducing.isTopologicalAddGroup
-      (VectorBundle.continuousLinearEquivAt ℝ F' W x)
-  have (x : M) : ContinuousSMul ℝ (W x) :=
-    (VectorBundle.continuousLinearEquivAt ℝ F' W x).toHomeomorph.isInducing.continuousSMul
-      continuous_id fun {c v} ↦ (VectorBundle.continuousLinearEquivAt ℝ F' W x).map_smul c v
+  have := VectorBundle.isTopologicalAddGroup ℝ F' W
+  have := VectorBundle.continuousSMul ℝ F' W
   -- The same fibre maps as continuous linear maps, through the finite-dimensional model fibre.
   let A (x : M) : V x →L[ℝ] W x :=
     let e := VectorBundle.continuousLinearEquivAt ℝ F V x
