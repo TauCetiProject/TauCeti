@@ -12,6 +12,8 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Trace
+import TauCeti.Algebra.BigOperators.Ring.List
+import TauCeti.Data.Matrix.Basic
 import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.ExtensionBasis
 import TauCeti.LinearAlgebra.Matrix.Triangular.OrderedProduct

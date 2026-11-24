@@ -17,10 +17,7 @@ the fact that `N_t` maps the `t + 1`-st space of the standard flag into the `t`-
 
 For upper-triangular matrices `M₀, …, M_{n-1}` with diagonal entries `d_t = M_t t t`, taking
 `N_t = M_t - d_t • 1` shows that `(M₀ - d₀) ⋯ (M_{n-1} - d_{n-1}) = 0`: these are the
-ordered-product equations of a simultaneously triangularized representation. A ring
-homomorphism carries such an ordered product `(M₀ - c₀ • 1) ⋯ (M_{m-1} - c_{m-1} • 1)` to the
-ordered product of the images, as for the change of coefficients `RingHom.mapMatrix`, which sends
-the scalar matrix `a • 1` to `f a • 1`.
+ordered-product equations of a simultaneously triangularized representation.
 
 ## Main results
 
@@ -29,9 +26,6 @@ the scalar matrix `a • 1` to `f a • 1`.
   factors reach the last index.
 * `Matrix.list_prod_ofFn_eq_zero_of_isUpperTriangular`: the ordered product `N₀ * ⋯ * N_{n-1}`
   vanishes when `N_t` vanishes at the `t`-th diagonal entry.
-* `TauCeti.map_list_prod_ofFn_sub_smul_one`: a ring homomorphism sending each `c i • 1` to
-  `d i • 1` maps `∏ (M i - c i • 1)` to `∏ (φ (M i) - d i • 1)`, in order.
-* `RingHom.mapMatrix_smul_one`: `f.mapMatrix` sends `a • 1` to `f a • 1`.
 -/
 
 public section
@@ -73,18 +67,3 @@ theorem list_prod_ofFn_eq_zero_of_isUpperTriangular {N : Fin n → Matrix (Fin n
 
 end Matrix
 
-/-- A ring homomorphism `φ` sending each `c i • 1` to `d i • 1` sends the ordered product
-`(M₀ - c₀ • 1) * ⋯ * (M_{m-1} - c_{m-1} • 1)` to
-`(φ M₀ - d₀ • 1) * ⋯ * (φ M_{m-1} - d_{m-1} • 1)`. -/
-theorem TauCeti.map_list_prod_ofFn_sub_smul_one {R S B C Φ : Type*} [Ring R] [Ring S] [SMul B R]
-    [SMul C S] [FunLike Φ R S] [RingHomClass Φ R S] (φ : Φ) {m : ℕ} (M : Fin m → R)
-    {c : Fin m → B} {d : Fin m → C} (hφ : ∀ i, φ (c i • 1) = d i • 1) :
-    φ (List.ofFn fun i ↦ M i - c i • 1).prod = (List.ofFn fun i ↦ φ (M i) - d i • 1).prod := by
-  simp only [map_list_prod, List.map_ofFn, Function.comp_def, map_sub, hφ]
-
-/-- `f.mapMatrix` sends the scalar matrix `a • 1` to `f a • 1`. -/
-theorem RingHom.mapMatrix_smul_one {m α β : Type*} [Fintype m] [DecidableEq m]
-    [NonAssocSemiring α] [NonAssocSemiring β] (f : α →+* β) (a : α) :
-    f.mapMatrix (a • (1 : Matrix m m α)) = f a • 1 := by
-  rw [f.mapMatrix_apply, Matrix.map_smul' _ _ _ (map_mul f),
-    Matrix.map_one _ (map_zero f) (map_one f)]
