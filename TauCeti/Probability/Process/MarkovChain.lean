@@ -89,9 +89,9 @@ along it, so no canonical sample space is imposed on users.
 * `TauCeti.Probability.hasLaw_markovChainLaw_iff_prefixLaw_singleton` — on a countable state space,
   a process has path law `markovChainLaw ν κ` exactly when its finite path masses are given by the
   product formula.
-* `ProbabilityTheory.HasLaw.eval_markovChainLaw`,
-  `ProbabilityTheory.HasLaw.pair_succ_markovChainLaw` — the time-`n` and one-step laws of such a
-  process.
+* `ProbabilityTheory.HasLaw.eval_markovChainLaw` — the time-`n` law of such a process. The joint
+  law of `(X n, X (n + k))` is `ProbabilityTheory.HasLaw.pair_add_markovChainLaw` in
+  `TauCeti.Probability.MarkovChain.Cylinder`.
 
 ## References
 
@@ -674,15 +674,6 @@ theorem _root_.ProbabilityTheory.HasLaw.eval_markovChainLaw
     HasLaw (X n) ((κ ^ n : Kernel α α) ∘ₘ ν) μ := by
   rw [← Measure.markovChainLaw_map_eval]
   exact (hasLaw_map (measurable_pi_apply n).aemeasurable).comp h
-
-/-- **The one-step transition law of a Markov chain.** If the path of `X` has law
-`markovChainLaw ν κ`, then the pair `(X n, X (n + 1))` has law `((κ ^ n) ∘ₘ ν) ⊗ₘ κ`. -/
-theorem _root_.ProbabilityTheory.HasLaw.pair_succ_markovChainLaw [SFinite ν]
-    (h : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ) (n : ℕ) :
-    HasLaw (fun ω => (X n ω, X (n + 1) ω)) (((κ ^ n : Kernel α α) ∘ₘ ν) ⊗ₘ κ) μ := by
-  rw [← Measure.markovChainLaw_map_eval, ← markovChainLaw_map_pair_succ]
-  exact (hasLaw_map
-    ((measurable_pi_apply n).prodMk (measurable_pi_apply (n + 1))).aemeasurable).comp h
 
 end Process
 
