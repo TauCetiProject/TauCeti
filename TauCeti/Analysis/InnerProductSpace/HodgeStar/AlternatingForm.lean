@@ -367,11 +367,9 @@ theorem alternatingFormInner_wedge_curryLeft_add_formHodgeStar (hkk : 2 + 2 = fi
         alternatingFormInner V 2 F (o.formHodgeStar hkk F) / 2 := by
   obtain ⟨x, rfl⟩ := (alternatingFormEquiv V 2).surjective F
   rw [← alternatingFormEquiv_ιMulti_twoVectorContraction, ← alternatingFormEquiv_ιMulti_pair,
-    formHodgeStar_alternatingFormEquiv, ← map_add, alternatingFormInner_alternatingFormEquiv,
-    alternatingFormInner_alternatingFormEquiv, alternatingFormInner_alternatingFormEquiv,
-    o.inner_ιMulti_twoVectorContraction_add_hodgeStar hkk hT x,
-    real_inner_comm (o.hodgeStar hkk x), inner_hodgeStar_apply, inner_ιMulti_ιMulti,
-    Matrix.det_fin_one]
-  simp
+    formHodgeStar_alternatingFormEquiv, ← map_add]
+  simp only [alternatingFormInner_alternatingFormEquiv,
+    o.inner_ιMulti_twoVectorContraction_add_hodgeStar hkk hT x, inner_ιMulti_ιMulti]
+  simp [real_inner_comm (o.hodgeStar hkk x), inner_hodgeStar_apply]
 
 end Orientation
