@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.MeanValue
-public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import Mathlib.Topology.MetricSpace.Lipschitz
 
 /-!
@@ -31,8 +31,6 @@ zero derivative but is not continuous across `0`.
 * `Convex.norm_image_sub_le_of_norm_fderiv_le_sdiff_singleton`: the mean value inequality on
   `s ∖ {p}`.
 * `Convex.lipschitzOnWith_sdiff_singleton_of_nnnorm_fderiv_le`: the Lipschitz form.
-* `Convex.exists_lipschitzWith_eqOn_sdiff_singleton_of_nnnorm_fderiv_le`: the Lipschitz extension
-  of a real-valued function across the puncture.
 
 ## References
 
@@ -70,12 +68,8 @@ theorem Convex.norm_image_sub_le_of_norm_fderiv_le_sdiff_singleton (hs : Convex 
     refine Submodule.mem_span_singleton.2 ⟨θ⁻¹, ?_⟩
     rw [← hθ, add_sub_cancel_left, smul_smul, inv_mul_cancel₀ hθ0, one_smul]
   by_cases hseg : p ∈ segment ℝ x y
-  · obtain ⟨v, hv⟩ : ∃ v, v ∉ Submodule.span ℝ {p - x} := by
-      by_contra! h
-      have htop : Submodule.span ℝ {p - x} = ⊤ := eq_top_iff.2 fun v _ ↦ h v
-      have h1 := rank_span_le (R := ℝ) ({p - x} : Set E)
-      rw [htop, rank_top, Cardinal.mk_singleton] at h1
-      exact absurd hE (not_lt.2 h1)
+  · obtain ⟨v, hv⟩ := Submodule.exists_smul_notMem_of_rank_lt
+      (N := Submodule.span ℝ {p - x}) ((rank_span_le _).trans_lt (by simpa using hE))
     have hyx := hspan y hseg
     have hc : Tendsto (fun t : ℝ ↦ y + t • v) (𝓝[≠] 0) (𝓝 y) := by
       have h : Tendsto (fun t : ℝ ↦ y + t • v) (𝓝 0) (𝓝 (y + (0 : ℝ) • v)) :=
@@ -84,10 +78,9 @@ theorem Convex.norm_image_sub_le_of_norm_fderiv_le_sdiff_singleton (hs : Convex 
       exact h.mono_left nhdsWithin_le_nhds
     have hev : ∀ᶠ t in 𝓝[≠] (0 : ℝ), ‖f (y + t • v) - f x‖ ≤ C * ‖y + t • v - x‖ := by
       filter_upwards [hc.eventually (hso.mem_nhds hy.1), self_mem_nhdsWithin] with t hts ht0
-      refine key _ hts fun hp ↦ hv ?_
+      refine key _ hts fun hp ↦ hv t ht0 ?_
       have h := sub_mem (hspan _ hp) hyx
-      rw [show y + t • v - x - (y - x) = t • v by abel] at h
-      exact (Submodule.smul_mem_iff _ ht0).1 h
+      convert h using 1; abel
     exact le_of_tendsto_of_tendsto
       (((hf y hy).continuousAt.tendsto.comp hc).sub_const (f x)).norm
       ((hc.sub_const x).norm.const_mul C) hev
@@ -99,17 +92,8 @@ a function differentiable on `s ∖ {p}`, with `s` convex and open, and with `�
 theorem Convex.lipschitzOnWith_sdiff_singleton_of_nnnorm_fderiv_le (hs : Convex ℝ s)
     (hso : IsOpen s) (hE : 1 < Module.rank ℝ E) {C : ℝ≥0}
     (hf : ∀ z ∈ s \ {p}, DifferentiableAt ℝ f z) (bound : ∀ z ∈ s \ {p}, ‖fderiv ℝ f z‖₊ ≤ C) :
-    LipschitzOnWith C f (s \ {p}) :=
-  LipschitzOnWith.of_dist_le_mul fun x hx y hy ↦ by
-    rw [dist_eq_norm, dist_eq_norm]
-    exact hs.norm_image_sub_le_of_norm_fderiv_le_sdiff_singleton hso hE hf
-      (fun z hz ↦ (bound z hz : _)) hy hx
-
-/-- **Lipschitz extension across a puncture.** In a real normed space of dimension greater than
-one, a real function differentiable on `s ∖ {p}`, with `s` convex and open, and with
-`‖Df‖₊ ≤ C` there, agrees on `s ∖ {p}` with a `C`-Lipschitz function on the whole space. -/
-theorem Convex.exists_lipschitzWith_eqOn_sdiff_singleton_of_nnnorm_fderiv_le (hs : Convex ℝ s)
-    (hso : IsOpen s) (hE : 1 < Module.rank ℝ E) {C : ℝ≥0} {f : E → ℝ}
-    (hf : ∀ z ∈ s \ {p}, DifferentiableAt ℝ f z) (bound : ∀ z ∈ s \ {p}, ‖fderiv ℝ f z‖₊ ≤ C) :
-    ∃ g : E → ℝ, LipschitzWith C g ∧ EqOn f g (s \ {p}) :=
-  (hs.lipschitzOnWith_sdiff_singleton_of_nnnorm_fderiv_le hso hE hf bound).extend_real
+    LipschitzOnWith C f (s \ {p}) := by
+  rw [lipschitzOnWith_iff_norm_sub_le]
+  intro x hx y hy
+  exact hs.norm_image_sub_le_of_norm_fderiv_le_sdiff_singleton hso hE hf
+    (fun z hz ↦ NNReal.coe_le_coe.2 (bound z hz)) hy hx
