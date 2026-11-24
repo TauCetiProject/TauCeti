@@ -900,6 +900,20 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_measure_
   exact h.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le ha hb hc he hb_bound
     hc_bound he_bound hsign hq hsob hk hboundary hu
 
+omit [DecidableEq ι] in
+/-- For a bounded measurable vector field `e`, the divergence-form lower-order term is linear in
+the function: `∫ (u - v) ⟪e, ∇w⟫ = ∫ u ⟪e, ∇w⟫ - ∫ v ⟪e, ∇w⟫` for `u, v, w ∈ H¹(Ω)`. -/
+theorem integral_value_sub_mul_inner_gradient (he : AEStronglyMeasurable e (mu.restrict Omega))
+    (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma) (u v w : W1p mu Omega 2) :
+    ∫ x in Omega, W1p.value (u - v) x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu =
+      (∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu) -
+        ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient w x⟫_ℝ ∂mu := by
+  rw [← integral_sub (integrable_value_mul_inner_gradient he he_bound u w)
+    (integrable_value_mul_inner_gradient he he_bound v w)]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.value_sub_ae u v] with x hx
+  rw [hx, Pi.sub_apply, sub_mul]
+
 /-- **The comparison principle with lower-order terms in divergence form**, under a Sobolev
 inequality (Gilbarg–Trudinger, Theorem 8.1). Under the hypotheses of
 `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le`,
@@ -935,16 +949,7 @@ theorem UniformlyEllipticOn.value_le_of_forall_integral_nonneg_of_forall_eLpNorm
   have hsub := h.value_le_const_of_forall_integral_nonneg_of_forall_eLpNorm_le ha hb hc he
     hb_bound hc_bound he_bound hsign hq hsob le_rfl (u := u - v)
     (by rwa [W1p.posPartAbove_zero]) fun φ hφ ↦ by
-      have hint : ∫ x in Omega, W1p.value (u - v) x *
-            ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu =
-          (∫ x in Omega, W1p.value u x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu) -
-            ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu := by
-        rw [← integral_sub (integrable_value_mul_inner_gradient he he_bound u _)
-          (integrable_value_mul_inner_gradient he he_bound v _)]
-        refine integral_congr_ae ?_
-        filter_upwards [W1p.value_sub_ae u v] with x hx
-        rw [hx, Pi.sub_apply, sub_mul]
-      rw [energyFormH1_sub_left hcoeff, hint]
+      rw [energyFormH1_sub_left hcoeff, integral_value_sub_mul_inner_gradient he he_bound]
       linarith [huv φ hφ]
   filter_upwards [hsub, W1p.value_sub_ae u v] with x hx hval
   rw [hval, Pi.sub_apply] at hx

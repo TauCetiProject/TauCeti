@@ -334,52 +334,40 @@ theorem W1p.exists_forall_eLpNorm_value_le_mul_enorm_gradient_of_measure_ne_top 
 
 /-- **The Sobolev inequality on `W^{1,2}_0(Ω)` dual to an exponent `r > max(2, n)`.** If `Ω` has
 finite measure, `n ≥ 1` and `max(2, n) < r < ∞`, then the exponent `q` with `1/r + 1/q = 1/2`
-admits a constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖₂` for every `u ∈ W^{1,2}_0(Ω)`. Hölder's
-inequality with the exponents `r`, `2` and `q` then bounds `∫ |b| |∇w| |u|` for `b ∈ Lʳ(Ω)`,
-`w ∈ W^{1,2}(Ω)` and `u ∈ W^{1,2}_0(Ω)`. This is the case `δ = 1/r` of
+admits a constant `S` with `‖u‖_{L^q} ≤ S ‖∇u‖₂` for every `u ∈ W^{1,2}_0(Ω)`. The hypothesis
+`n < r.toReal` already forces `r < ∞`. Hölder's inequality with the exponents `r`, `2` and `q`
+then bounds `∫ |b| |∇w| |u|` for `b ∈ Lʳ(Ω)`, `w ∈ W^{1,2}(Ω)` and `u ∈ W^{1,2}_0(Ω)`. This is
+the case `δ = 1/r` of
 `TauCeti.W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt`. -/
 theorem W1p.exists_inv_add_inv_eq_and_forall_eLpNorm_value_le_of_measure_ne_top [Nontrivial E]
-    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0∞} (hr : r ≠ ∞) (hr2 : 2 < r)
+    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0∞} (hr2 : 2 < r)
     (hn : (finrank ℝ E : ℝ) < r.toReal) :
     ∃ q : ℝ≥0∞, r⁻¹ + q⁻¹ = 2⁻¹ ∧ ∃ S : ℝ≥0, ∀ u ∈ w1p0Submodule mu Omega 2,
       eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤ S * ‖W1p.gradient u‖ₑ := by
-  have hr2' : 2 < r.toReal := by
-    simpa using (ENNReal.toReal_lt_toReal ENNReal.ofNat_ne_top hr).2 hr2
-  have hd : 0 < 2⁻¹ - r.toReal⁻¹ := sub_pos.2 (inv_strictAnti₀ two_pos hr2')
-  -- The exponent `q = (1/2 - 1/r)⁻¹`, computed in `ℝ`.
-  set q : ℝ≥0 := Real.toNNReal (2⁻¹ - r.toReal⁻¹)⁻¹
-  have hq : (q : ℝ) = (2⁻¹ - r.toReal⁻¹)⁻¹ := Real.coe_toNNReal _ (inv_pos.2 hd).le
-  have hq0 : (q : ℝ≥0∞) ≠ 0 := by
-    rw [ENNReal.coe_ne_zero, ← NNReal.coe_ne_zero, hq]
-    exact (inv_pos.2 hd).ne'
-  refine ⟨q, ?_, ?_⟩
-  · -- Both sides are finite, and their real parts agree: `1/r + (1/2 - 1/r) = 1/2`.
-    have hr0 : r ≠ 0 := (zero_lt_two.trans hr2).ne'
-    rw [← ENNReal.toReal_eq_toReal_iff' (ENNReal.add_ne_top.2
-        ⟨ENNReal.inv_ne_top.2 hr0, ENNReal.inv_ne_top.2 hq0⟩) (ENNReal.inv_ne_top.2 two_ne_zero),
-      ENNReal.toReal_add (ENNReal.inv_ne_top.2 hr0) (ENNReal.inv_ne_top.2 hq0),
-      ENNReal.toReal_inv, ENNReal.toReal_inv, ENNReal.toReal_inv, ENNReal.coe_toReal, hq, inv_inv,
-      ENNReal.toReal_ofNat]
+  have hle : r⁻¹ ≤ 2⁻¹ := ENNReal.inv_le_inv.2 hr2.le
+  have hd : 2⁻¹ - r⁻¹ ≠ 0 := (tsub_pos_of_lt (ENNReal.inv_lt_inv.2 hr2)).ne'
+  -- The exponent `q = (1/2 - 1/r)⁻¹`, which is finite since `1/r < 1/2`.
+  set q : ℝ≥0 := ((2⁻¹ - r⁻¹)⁻¹ : ℝ≥0∞).toNNReal
+  have hq : (q : ℝ≥0∞) = (2⁻¹ - r⁻¹)⁻¹ := ENNReal.coe_toNNReal (ENNReal.inv_ne_top.2 hd)
+  refine ⟨q, by rw [hq, inv_inv, add_tsub_cancel_of_le hle], ?_⟩
+  have h2q : (2 : ℝ≥0∞) ≤ q := by
+    rw [hq, ← ENNReal.inv_le_inv, inv_inv]
+    exact tsub_le_self
+  have hδ : (2 : ℝ≥0∞).toReal⁻¹ - (q : ℝ)⁻¹ = r.toReal⁻¹ := by
+    rw [← ENNReal.coe_toReal, hq, ← ENNReal.toReal_inv (2⁻¹ - r⁻¹)⁻¹, inv_inv,
+      ENNReal.toReal_sub_of_le hle (by simp), ENNReal.toReal_inv, ENNReal.toReal_inv]
     ring
-  · have h2q : (2 : ℝ≥0∞) ≤ q := by
-      have h : (2 : ℝ) ≤ q := by
-        rw [hq]
-        exact (le_inv_comm₀ two_pos hd).2 (sub_le_self _ (inv_nonneg.2 (by linarith)))
-      exact_mod_cast h
-    have hδ : (2 : ℝ≥0∞).toReal⁻¹ - (q : ℝ)⁻¹ = r.toReal⁻¹ := by
-      rw [hq, inv_inv, ENNReal.toReal_ofNat]
-      ring
-    have hδn : r.toReal⁻¹ < (finrank ℝ E : ℝ)⁻¹ :=
-      inv_strictAnti₀ (by exact_mod_cast finrank_pos) hn
-    set C : ℝ≥0∞ := ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ *
-      mu.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
-      ((1 - r.toReal⁻¹) / ((finrank ℝ E : ℝ)⁻¹ - r.toReal⁻¹)) ^ (1 - r.toReal⁻¹)) *
-      mu Omega ^ ((finrank ℝ E : ℝ)⁻¹ - r.toReal⁻¹)
-    have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hδn.le) hOmega)
-    refine ⟨C.toNNReal, fun u hu ↦ ?_⟩
-    rw [ENNReal.coe_toNNReal hC]
-    exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega h2q hδ hδn hu
+  have hδn : r.toReal⁻¹ < (finrank ℝ E : ℝ)⁻¹ :=
+    inv_strictAnti₀ (by exact_mod_cast finrank_pos) hn
+  set C : ℝ≥0∞ := ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ *
+    mu.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
+    ((1 - r.toReal⁻¹) / ((finrank ℝ E : ℝ)⁻¹ - r.toReal⁻¹)) ^ (1 - r.toReal⁻¹)) *
+    mu Omega ^ ((finrank ℝ E : ℝ)⁻¹ - r.toReal⁻¹)
+  have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hδn.le) hOmega)
+  refine ⟨C.toNNReal, fun u hu ↦ ?_⟩
+  rw [ENNReal.coe_toNNReal hC]
+  exact W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt hOmega h2q hδ hδn hu
 
 /-- **The Poincaré inequality on `W^{1,p}_0(Ω)` for `Ω` of finite measure.** In dimension
 `n ≥ 1` and for `p < ∞`, there is a constant `C` with `‖u‖_{W^{1,p}} ≤ C ‖∇u‖_{Lᵖ}` for every
