@@ -9,8 +9,6 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Projective.Basic
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.SelfConvolution
 import Mathlib.RingTheory.MvPowerSeries.Inverse
-import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
-import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # The `w`-expansion of a Weierstrass curve
