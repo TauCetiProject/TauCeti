@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedDeriv.Indicator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
-import TauCeti.Analysis.Complex.SectorBounds
+import TauCeti.Analysis.Complex.Sector.Bounds
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
