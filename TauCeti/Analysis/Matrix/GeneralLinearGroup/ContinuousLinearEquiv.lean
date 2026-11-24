@@ -16,7 +16,8 @@ public import Mathlib.Topology.Instances.Matrix
 Over a topological commutative ring `R`, an invertible square matrix `g` acts on `ι → R` by
 `Matrix.mulVec` as a continuous linear automorphism
 (`Matrix.GeneralLinearGroup.toContinuousLinearEquiv`). This is `Matrix.GeneralLinearGroup.toLin`
-with the continuity of `Matrix.mulVec`. Products of matrices act by composition, the first factor
+with the continuity of `Matrix.mulVec`, bundled as a monoid hom into the automorphism group
+`ContinuousLinearEquiv.automorphismGroup`: products of matrices act by composition, the first factor
 acting last, and inverses act by the inverse automorphism. This is how the general linear group
 acts on frames `𝕜ⁿ ≃ V` by precomposition.
 
@@ -37,33 +38,21 @@ variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [TopologicalS
   [IsTopologicalRing R]
 
 /-- The continuous linear automorphism of `ι → R` given by an invertible matrix, acting by
-`Matrix.mulVec`. -/
-def toContinuousLinearEquiv (g : GL ι R) : (ι → R) ≃L[R] (ι → R) where
-  toLinearEquiv := (toLin g).toLinearEquiv
-  continuous_toFun := continuous_const.matrix_mulVec continuous_id
-  continuous_invFun := continuous_const.matrix_mulVec continuous_id
+`Matrix.mulVec`. As a monoid hom into the automorphism group, a product `g * h` acts by applying `h`
+first and then `g`. -/
+def toContinuousLinearEquiv : GL ι R →* ((ι → R) ≃L[R] (ι → R)) where
+  toFun g :=
+    { toLinearEquiv := (toLin g).toLinearEquiv
+      continuous_toFun := continuous_const.matrix_mulVec continuous_id
+      continuous_invFun := continuous_const.matrix_mulVec continuous_id }
+  map_one' := ContinuousLinearEquiv.ext <| funext Matrix.one_mulVec
+  map_mul' g h := ContinuousLinearEquiv.ext <| funext fun w ↦
+    (Matrix.mulVec_mulVec w (g : Matrix ι ι R) h).symm
 
 @[simp]
 theorem toContinuousLinearEquiv_apply (g : GL ι R) (w : ι → R) :
-    g.toContinuousLinearEquiv w = (g : Matrix ι ι R) *ᵥ w :=
+    toContinuousLinearEquiv g w = (g : Matrix ι ι R) *ᵥ w :=
   (rfl)
-
-@[simp]
-theorem toContinuousLinearEquiv_one :
-    (1 : GL ι R).toContinuousLinearEquiv = ContinuousLinearEquiv.refl R (ι → R) :=
-  ContinuousLinearEquiv.ext <| funext fun w ↦ by simp
-
-/-- The product `g * h` acts by applying `h` first and then `g`. -/
-@[simp]
-theorem toContinuousLinearEquiv_mul (g h : GL ι R) :
-    (g * h).toContinuousLinearEquiv = h.toContinuousLinearEquiv.trans g.toContinuousLinearEquiv :=
-  ContinuousLinearEquiv.ext <| funext fun w ↦ by simp [Matrix.mulVec_mulVec]
-
-@[simp]
-theorem toContinuousLinearEquiv_inv (g : GL ι R) :
-    g⁻¹.toContinuousLinearEquiv = g.toContinuousLinearEquiv.symm :=
-  ContinuousLinearEquiv.ext <| funext fun w ↦ by
-    simp [ContinuousLinearEquiv.eq_symm_apply, Matrix.mulVec_mulVec]
 
 end Matrix.GeneralLinearGroup
 
@@ -86,5 +75,26 @@ theorem toMatrixCLE_apply (σ : F ≃L[𝕜] (ι → 𝕜)) (φ : (ι → 𝕜) 
 theorem toMatrixCLE_symm_apply (σ : F ≃L[𝕜] (ι → 𝕜)) (M : Matrix ι ι 𝕜) (w : ι → 𝕜) :
     σ.toMatrixCLE.symm M w = σ.symm (M *ᵥ w) := by
   simp [toMatrixCLE, ContinuousLinearEquiv.arrowCongr_symm, Matrix.toLin'_apply]
+
+/-- The matrix of `σ ∘ φ` acts on `𝕜ⁿ` as `σ ∘ φ`. -/
+@[simp]
+theorem toMatrixCLE_mulVec (σ : F ≃L[𝕜] (ι → 𝕜)) (φ : (ι → 𝕜) →L[𝕜] F) (w : ι → 𝕜) :
+    σ.toMatrixCLE φ *ᵥ w = σ (φ w) := by
+  simp [toMatrixCLE_apply, LinearMap.toMatrix'_mulVec]
+
+/-- Precomposing with the action of an invertible matrix multiplies the matrix on the right. -/
+theorem toMatrixCLE_comp_toContinuousLinearEquiv (σ : F ≃L[𝕜] (ι → 𝕜))
+    (φ : (ι → 𝕜) →L[𝕜] F) (g : GL ι 𝕜) :
+    σ.toMatrixCLE (φ ∘L (Matrix.GeneralLinearGroup.toContinuousLinearEquiv g :
+      (ι → 𝕜) →L[𝕜] (ι → 𝕜))) = σ.toMatrixCLE φ * (g : Matrix ι ι 𝕜) := by
+  refine σ.toMatrixCLE.symm.injective <| ContinuousLinearMap.ext fun w ↦ ?_
+  simp [← Matrix.mulVec_mulVec]
+
+/-- The inverse of `σ` has the identity matrix. -/
+@[simp]
+theorem toMatrixCLE_symm_self (σ : F ≃L[𝕜] (ι → 𝕜)) :
+    σ.toMatrixCLE (σ.symm : (ι → 𝕜) →L[𝕜] F) = 1 := by
+  refine σ.toMatrixCLE.symm.injective <| ContinuousLinearMap.ext fun w ↦ ?_
+  simp
 
 end ContinuousLinearEquiv

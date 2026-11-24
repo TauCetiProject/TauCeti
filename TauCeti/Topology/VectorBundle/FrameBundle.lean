@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.ContinuousLinearEquiv
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Topology.FiberBundle.MapFiber
+public import TauCeti.Topology.FiberBundle.Trivial
 public import TauCeti.Topology.VectorBundle.Hom
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.VectorBundle.Constructions
@@ -79,6 +80,7 @@ public section
 noncomputable section
 
 open Bundle Set Function MulOpposite TopologicalSpace
+open Matrix.GeneralLinearGroup (toContinuousLinearEquiv toContinuousLinearEquiv_apply)
 open scoped Matrix Matrix.Norms.Operator
 
 attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
@@ -86,14 +88,6 @@ attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 namespace TauCeti
-
-/-- The trivialization of a trivial bundle belongs to its atlas. The trivializations of the bundle
-`Hom(B × 𝕜ⁿ, E)` used below are built from that of the trivial bundle `B × 𝕜ⁿ`. -/
-theorem memTrivializationAtlas_trivialization (B F : Type*) [TopologicalSpace B]
-    [TopologicalSpace F] : MemTrivializationAtlas (Trivial.trivialization B F) :=
-  ⟨mem_singleton _⟩
-
-attribute [local instance] memTrivializationAtlas_trivialization
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] (n : ℕ)
   {B : Type*} [TopologicalSpace B]
@@ -190,20 +184,24 @@ theorem mk_inj {x : B} {f f' : (Fin n → 𝕜) ≃L[𝕜] E x} :
 /-- The general linear group acts on frames on the right, by precomposition: `f • g = f ∘ g`. -/
 instance : MulAction (GL (Fin n) 𝕜)ᵐᵒᵖ (FrameBundle 𝕜 n F E) where
   smul g v := ⟨⟨v.val.proj, v.val.snd ∘L
-      (g.unop.toContinuousLinearEquiv : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜))⟩,
+      (toContinuousLinearEquiv g.unop : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜))⟩,
     mem_frameBundleOpens.2 <|
-      (ContinuousLinearMap.isInvertible_comp_equiv (e := g.unop.toContinuousLinearEquiv)).2
+      (ContinuousLinearMap.isInvertible_comp_equiv (e := toContinuousLinearEquiv g.unop)).2
         v.isInvertible⟩
   one_smul v := Subtype.ext <| TotalSpace.ext rfl <| heq_of_eq <|
     ContinuousLinearMap.ext fun w ↦ congrArg v.val.snd
-      (show (unop 1 : GL (Fin n) 𝕜).toContinuousLinearEquiv w = w by simp)
+      (show toContinuousLinearEquiv (unop 1 : GL (Fin n) 𝕜) w = w by
+        simp only [toContinuousLinearEquiv_apply]
+        simp)
   mul_smul g h v := Subtype.ext <| TotalSpace.ext rfl <| heq_of_eq <|
     ContinuousLinearMap.ext fun w ↦ congrArg v.val.snd
-      (show (unop (g * h)).toContinuousLinearEquiv w =
-        (unop h).toContinuousLinearEquiv ((unop g).toContinuousLinearEquiv w) by simp)
+      (show toContinuousLinearEquiv (unop (g * h)) w =
+          toContinuousLinearEquiv (unop h) (toContinuousLinearEquiv (unop g) w) by
+        simp only [toContinuousLinearEquiv_apply]
+        simp [Matrix.mulVec_mulVec])
 
 theorem smul_def (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (v : FrameBundle 𝕜 n F E) :
-    g • v = mk v.proj (g.unop.toContinuousLinearEquiv.trans v.frameEquiv) :=
+    g • v = mk v.proj ((toContinuousLinearEquiv g.unop).trans v.frameEquiv) :=
   Subtype.ext <| TotalSpace.ext rfl <| heq_of_eq <| ContinuousLinearMap.ext fun _ ↦
     (frameEquiv_apply v _).symm
 
@@ -214,16 +212,16 @@ theorem proj_smul (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (v : FrameBundle 𝕜 n F E) 
 @[simp]
 theorem smul_apply (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (v : FrameBundle 𝕜 n F E) (w : Fin n → 𝕜) :
     (g • v).val.snd w = v.val.snd ((g.unop : Matrix (Fin n) (Fin n) 𝕜) *ᵥ w) :=
-  congrArg v.val.snd (g.unop.toContinuousLinearEquiv_apply w)
+  congrArg v.val.snd (toContinuousLinearEquiv_apply g.unop w)
 
 theorem smul_mk (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (x : B) (f : (Fin n → 𝕜) ≃L[𝕜] E x) :
-    g • (mk x f : FrameBundle 𝕜 n F E) = mk x (g.unop.toContinuousLinearEquiv.trans f) :=
+    g • (mk x f : FrameBundle 𝕜 n F E) = mk x ((toContinuousLinearEquiv g.unop).trans f) :=
   (rfl)
 
 /-- The isomorphism underlying `v • g` is that of `v` precomposed with `g`. -/
 @[simp]
 theorem frameEquiv_smul (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (v : FrameBundle 𝕜 n F E) :
-    (g • v).frameEquiv = g.unop.toContinuousLinearEquiv.trans v.frameEquiv :=
+    (g • v).frameEquiv = (toContinuousLinearEquiv g.unop).trans v.frameEquiv :=
   ContinuousLinearEquiv.ext <| funext fun w ↦ by simp
 
 end FrameBundle
@@ -235,8 +233,6 @@ end TauCeti
 namespace Bundle.Trivialization
 
 open TauCeti TauCeti.FrameBundle
-
-attribute [local instance] memTrivializationAtlas_trivialization
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {n : ℕ}
   {B : Type*} [TopologicalSpace B]
@@ -274,11 +270,10 @@ theorem matrixIn_mk (x : B) (f : (Fin n → 𝕜) ≃L[𝕜] E x) :
 /-- The matrix of a frame changes by right multiplication under the action. -/
 theorem matrixIn_smul (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (v : FrameBundle 𝕜 n F E) :
     e.matrixIn σ (g • v) = e.matrixIn σ v * (g.unop : Matrix (Fin n) (Fin n) 𝕜) := by
-  rw [smul_def, matrixIn_mk, matrixIn, σ.toMatrixCLE_apply, σ.toMatrixCLE_apply,
-    ← LinearMap.toMatrix'_toLin' (g.unop : Matrix (Fin n) (Fin n) 𝕜), ← LinearMap.toMatrix'_comp]
+  rw [smul_def, matrixIn_mk, matrixIn, ← σ.toMatrixCLE_comp_toContinuousLinearEquiv]
   congr 1
-  refine LinearMap.ext fun w ↦ ?_
-  simp [Matrix.toLin'_apply]
+  ext w
+  simp
 
 open Classical in
 /-- The invertible matrix of a frame in the local frame of `e`, over the base set of `e`; it is
@@ -311,9 +306,9 @@ theorem frameAt_of_mem {x : B} (hx : x ∈ e.baseSet) :
 /-- The local frame has the identity matrix in its own trivialization. -/
 theorem matrixIn_frameAt {x : B} (hx : x ∈ e.baseSet) :
     e.matrixIn σ (e.frameAt σ x) = 1 := by
-  rw [e.frameAt_of_mem σ hx, matrixIn_mk, σ.toMatrixCLE_apply, ← LinearMap.toMatrix'_id]
+  rw [e.frameAt_of_mem σ hx, matrixIn_mk, ← σ.toMatrixCLE_symm_self]
   congr 1
-  ext w i
+  ext w
   simp [e.coe_linearMapAt_of_mem hx, e.apply_mk_symm hx]
 
 /-- A frame over the base set of `e` is the local frame of `e` acted on by its matrix. -/
@@ -322,9 +317,7 @@ theorem smul_frameAt {v : FrameBundle 𝕜 n F E} (hv : v.proj ∈ e.baseSet) :
   conv_rhs => rw [← mk_frameEquiv v]
   rw [e.frameAt_of_mem σ hv, smul_mk, mk_inj, unop_op]
   refine ContinuousLinearEquiv.ext <| funext fun w ↦ ?_
-  simpa [e.coe_unitIn σ hv, matrixIn, σ.toMatrixCLE_apply, ← Matrix.toLin'_apply,
-    e.symm_continuousLinearEquivAt_eq hv] using
-    e.symmL_continuousLinearMapAt (R := 𝕜) hv (v.val.snd w)
+  simp [e.coe_unitIn σ hv, matrixIn, e.symm_linearMapAt hv]
 
 end MatrixIn
 
