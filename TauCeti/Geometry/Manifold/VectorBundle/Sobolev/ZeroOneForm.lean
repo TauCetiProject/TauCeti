@@ -447,7 +447,8 @@ variable (A μ p k) in
 `zeroOneSobolevSections A μ p k`. -/
 def zeroOneContMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ) :
     zeroOneSobolevSections A μ p k →L[ℝ] zeroOneSobolevSections A μ p k :=
-  (SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k hφ).restrict fun _ ↦
+  SectionChartData.antilinearRestrictL
+    (SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k hφ) fun _ ↦
     (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
       (SobolevSection.chartValueL_contMDiffSMulL_ae hφ)
 
@@ -456,48 +457,36 @@ theorem coe_zeroOneContMDiffSMulL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ 
     (w : zeroOneSobolevSections A μ p k) :
     (zeroOneContMDiffSMulL A μ p k hφ w : SobolevSection (A.tangentHom 𝓘(ℝ, ℂ)) μ p k) =
       SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p k hφ w :=
-  ContinuousLinearMap.coe_restrict_apply _ w
+  SectionChartData.coe_antilinearRestrictL _ _ w
 
 @[simp]
 theorem zeroOneContMDiffSMulL_const (c : ℝ) :
-    zeroOneContMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ := by
-  ext1 w
-  apply Subtype.ext
-  simp only [smul_apply, ContinuousLinearMap.id_apply, Submodule.coe_smul,
-    coe_zeroOneContMDiffSMulL]
-  exact DFunLike.congr_fun (SobolevSection.contMDiffSMulL_const c) w.val
+    zeroOneContMDiffSMulL A μ p k (contMDiff_const (c := c)) = c • ContinuousLinearMap.id ℝ _ :=
+  SectionChartData.antilinearRestrictL_eq_smul_id (SobolevSection.contMDiffSMulL_const c)
 
 theorem zeroOneContMDiffSMulL_add (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ) :
     zeroOneContMDiffSMulL A μ p k (hφ.add hψ) =
-      zeroOneContMDiffSMulL A μ p k hφ + zeroOneContMDiffSMulL A μ p k hψ := by
-  ext1 w
-  apply Subtype.ext
-  simp only [add_apply, Submodule.coe_add, coe_zeroOneContMDiffSMulL]
-  exact DFunLike.congr_fun (SobolevSection.contMDiffSMulL_add hφ hψ) w.val
+      zeroOneContMDiffSMulL A μ p k hφ + zeroOneContMDiffSMulL A μ p k hψ :=
+  SectionChartData.antilinearRestrictL_eq_add (SobolevSection.contMDiffSMulL_add hφ hψ)
 
 theorem zeroOneContMDiffSMulL_mul (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ ψ) :
     zeroOneContMDiffSMulL A μ p k (hφ.mul hψ) =
-      (zeroOneContMDiffSMulL A μ p k hφ).comp (zeroOneContMDiffSMulL A μ p k hψ) := by
-  ext1 w
-  apply Subtype.ext
-  simp only [ContinuousLinearMap.comp_apply, coe_zeroOneContMDiffSMulL]
-  exact DFunLike.congr_fun (SobolevSection.contMDiffSMulL_mul hφ hψ) w.val
+      (zeroOneContMDiffSMulL A μ p k hφ).comp (zeroOneContMDiffSMulL A μ p k hψ) :=
+  SectionChartData.antilinearRestrictL_eq_comp (SobolevSection.contMDiffSMulL_mul hφ hψ)
 
 /-- Smooth real multiplication commutes with forgetting derivatives on `(0,1)`-forms. -/
 theorem zeroOneLowerOrdersL_zeroOneContMDiffSMulL (d : ℕ) (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)
     (w : zeroOneSobolevSections A μ p (k + d)) :
     zeroOneLowerOrdersL A μ p k d (zeroOneContMDiffSMulL A μ p (k + d) hφ w) =
-      zeroOneContMDiffSMulL A μ p k hφ (zeroOneLowerOrdersL A μ p k d w) := by
-  induction d with
-  | zero => simp
-  | succ d ih =>
-    rw [zeroOneLowerOrdersL_succ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
-    refine (congrArg (zeroOneLowerOrdersL A μ p k d) (Subtype.ext ?_)).trans (ih _)
-    simp only [coe_zeroOneLowerOrdersL, coe_zeroOneContMDiffSMulL,
-      SectionChartData.lowerOrdersL_one]
-    exact SobolevSection.lowerOrderL_contMDiffSMulL hφ w.val
+      zeroOneContMDiffSMulL A μ p k hφ (zeroOneLowerOrdersL A μ p k d w) :=
+  SectionChartData.antilinearLowerOrdersL_antilinearRestrictL d
+    (fun m ↦ SobolevSection.contMDiffSMulL (A.tangentHom 𝓘(ℝ, ℂ)) μ p m hφ)
+    (fun _ _ ↦
+      (A.tangentHom 𝓘(ℝ, ℂ)).sectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
+        (SobolevSection.chartValueL_contMDiffSMulL_ae hφ))
+    (fun _ ↦ SobolevSection.lowerOrderL_contMDiffSMulL hφ) w
 
 /-- Smooth real multiplication commutes with the `(0,1)`-projection. -/
 theorem zeroOneContMDiffSMulL_zeroOnePartSobolevL (hφ : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ) ∞ φ)

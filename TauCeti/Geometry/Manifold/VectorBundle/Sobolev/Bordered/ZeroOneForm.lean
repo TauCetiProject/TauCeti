@@ -456,7 +456,8 @@ variable (A p k) in
 `(0,1)`-forms `borderedZeroOneSobolevSections A p k`. -/
 def borderedZeroOneContMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ) :
     borderedZeroOneSobolevSections A p k →L[ℝ] borderedZeroOneSobolevSections A p k :=
-  (BorderedSobolevSection.contMDiffSMulL _ p k hφ).restrict fun _ ↦
+  SectionChartData.antilinearRestrictL
+    (BorderedSobolevSection.contMDiffSMulL _ p k hφ) fun _ ↦
     SectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
       (BorderedSobolevSection.chartValueL_contMDiffSMulL_ae hφ)
 
@@ -466,35 +467,25 @@ theorem coe_borderedZeroOneContMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneM
     (borderedZeroOneContMDiffSMulL A p k hφ w :
         BorderedSobolevSection (A.tangentHom closedUpperHalfPlaneModel) p k) =
       BorderedSobolevSection.contMDiffSMulL (A.tangentHom closedUpperHalfPlaneModel) p k hφ w :=
-  ContinuousLinearMap.coe_restrict_apply _ w
+  SectionChartData.coe_antilinearRestrictL _ _ w
 
 @[simp]
 theorem borderedZeroOneContMDiffSMulL_const (c : ℝ) :
     borderedZeroOneContMDiffSMulL A p k (contMDiff_const (c := c)) =
-      c • ContinuousLinearMap.id ℝ _ := by
-  ext1 w
-  apply Subtype.ext
-  simp only [smul_apply, ContinuousLinearMap.id_apply, Submodule.coe_smul,
-    coe_borderedZeroOneContMDiffSMulL]
-  exact DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_const c) w.val
+      c • ContinuousLinearMap.id ℝ _ :=
+  SectionChartData.antilinearRestrictL_eq_smul_id (BorderedSobolevSection.contMDiffSMulL_const c)
 
 theorem borderedZeroOneContMDiffSMulL_add (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     borderedZeroOneContMDiffSMulL A p k (hφ.add hψ) =
-      borderedZeroOneContMDiffSMulL A p k hφ + borderedZeroOneContMDiffSMulL A p k hψ := by
-  ext1 w
-  apply Subtype.ext
-  simp only [add_apply, Submodule.coe_add, coe_borderedZeroOneContMDiffSMulL]
-  exact DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_add hφ hψ) w.val
+      borderedZeroOneContMDiffSMulL A p k hφ + borderedZeroOneContMDiffSMulL A p k hψ :=
+  SectionChartData.antilinearRestrictL_eq_add (BorderedSobolevSection.contMDiffSMulL_add hφ hψ)
 
 theorem borderedZeroOneContMDiffSMulL_mul (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (hψ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ ψ) :
     borderedZeroOneContMDiffSMulL A p k (hφ.mul hψ) =
-      (borderedZeroOneContMDiffSMulL A p k hφ).comp (borderedZeroOneContMDiffSMulL A p k hψ) := by
-  ext1 w
-  apply Subtype.ext
-  simp only [ContinuousLinearMap.comp_apply, coe_borderedZeroOneContMDiffSMulL]
-  exact DFunLike.congr_fun (BorderedSobolevSection.contMDiffSMulL_mul hφ hψ) w.val
+      (borderedZeroOneContMDiffSMulL A p k hφ).comp (borderedZeroOneContMDiffSMulL A p k hψ) :=
+  SectionChartData.antilinearRestrictL_eq_comp (BorderedSobolevSection.contMDiffSMulL_mul hφ hψ)
 
 /-- Smooth real multiplication up to the boundary commutes with forgetting derivatives on
 `(0,1)`-forms. -/
@@ -502,16 +493,13 @@ theorem borderedZeroOneLowerOrdersL_borderedZeroOneContMDiffSMulL (d : ℕ)
     (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)
     (w : borderedZeroOneSobolevSections A p (k + d)) :
     borderedZeroOneLowerOrdersL A p k d (borderedZeroOneContMDiffSMulL A p (k + d) hφ w) =
-      borderedZeroOneContMDiffSMulL A p k hφ (borderedZeroOneLowerOrdersL A p k d w) := by
-  induction d with
-  | zero => simp
-  | succ d ih =>
-    rw [borderedZeroOneLowerOrdersL_succ, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply]
-    refine (congrArg (borderedZeroOneLowerOrdersL A p k d) (Subtype.ext ?_)).trans (ih _)
-    simp only [coe_borderedZeroOneLowerOrdersL, coe_borderedZeroOneContMDiffSMulL,
-      SectionChartData.lowerOrdersL_one]
-    exact BorderedSobolevSection.lowerOrderL_contMDiffSMulL hφ w.val
+      borderedZeroOneContMDiffSMulL A p k hφ (borderedZeroOneLowerOrdersL A p k d w) :=
+  SectionChartData.antilinearLowerOrdersL_antilinearRestrictL d
+    (fun m ↦ BorderedSobolevSection.contMDiffSMulL _ p m hφ)
+    (fun _ _ ↦
+      SectionChartData.mem_antilinearSobolevSections_of_chartValueL_ae_smul
+        (BorderedSobolevSection.chartValueL_contMDiffSMulL_ae hφ))
+    (fun _ ↦ BorderedSobolevSection.lowerOrderL_contMDiffSMulL hφ) w
 
 /-- Smooth real multiplication up to the boundary commutes with the `(0,1)`-projection. -/
 theorem borderedZeroOneContMDiffSMulL_borderedZeroOnePartSobolevL
