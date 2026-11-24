@@ -805,11 +805,19 @@ theorem cechAugmentation_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) :
           cechAugmentation U hT Q).f 0) =≫ _)
 
 /-- The augmentation `P(T) ⟶ Č(U, P)` of the Čech complex for `U`, as a natural transformation in
-the presheaf `P` (`TauCeti.CategoryTheory.cechAugmentation_naturality`). -/
+the presheaf `P` (`TauCeti.CategoryTheory.cechAugmentation_naturality`). Its body is exposed so
+that its whiskerings and opposites reduce to the augmentation downstream. -/
 @[expose] def cechAugmentationNatTrans :
     (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A ⟶ cechComplexFunctor (A := A) U where
   app Q := cechAugmentation U hT Q
   naturality _ _ α := (cechAugmentation_naturality U hT _ α).symm
+
+/-- The component of `cechAugmentationNatTrans` at `Q` is the augmentation of the Čech complex
+of `Q`. -/
+@[simp]
+theorem cechAugmentationNatTrans_app (Q : Cᵒᵖ ⥤ A) :
+    (cechAugmentationNatTrans U hT).app Q = cechAugmentation U hT Q :=
+  (rfl)
 
 /-! ### The augmentation in degree `0`
 
@@ -941,7 +949,8 @@ theorem quasiIso_cechAugmentation_iff_of_iso {Q : Cᵒᵖ ⥤ A} (e : P ≅ Q) :
 theorem quasiIso_cechAugmentation_of_retract {Q : Cᵒᵖ ⥤ A} (h : Retract P Q)
     (hQ : QuasiIso (cechAugmentation U hT Q)) : QuasiIso (cechAugmentation U hT P) :=
   -- the augmentation is natural in the presheaf, so retracts of presheaves give retracts of arrows
-  have : QuasiIso ((cechAugmentationNatTrans U hT).app Q) := hQ
+  have : QuasiIso ((cechAugmentationNatTrans U hT).app Q) := by
+    rwa [cechAugmentationNatTrans_app]
   quasiIso_of_retractArrow (NatTrans.retractArrowApp (cechAugmentationNatTrans U hT) h)
 
 end TauCeti.CategoryTheory
