@@ -269,7 +269,7 @@ theorem exists_pos_mul_prod_one_add_div_le_sum_moebius_sq_mul_div (k : ℝ) :
   have hB : 1 ≤ B := by
     have : 0 ≤ k' * Real.exp 1 * (1 + (Real.log 4 + 4) / Real.log 2) := by positivity
     linarith
-  obtain ⟨K, hK⟩ := exists_sum_sdiff_primesLE_inv_le hB
+  obtain ⟨K, hK⟩ := exists_sum_sdiff_primesLE_inv_le (zero_lt_one.trans_le hB)
   refine ⟨2⁻¹ * (Real.exp (k' * K))⁻¹, by positivity, fun f hf hf0 hfk z hz ↦ ?_⟩
   have hfk' : ∀ p : ℕ, p.Prime → f p ≤ k' := fun p hp ↦ (hfk p hp).trans (le_max_left _ _)
   have hyz : Real.exp (Real.log z / B) ≤ z :=
