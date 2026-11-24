@@ -656,6 +656,11 @@ instance {S : Type*} [CommSemiring S] [Algebra S R] :
 theorem coe_algebraMap_isRestrictedSubring (r : R) :
     (algebraMap R (IsRestricted.subring (R := R) c) r : MvPowerSeries σ R) = C r := (rfl)
 
+/-- The coefficient algebra map sends `r` to the constant restricted series `C r`. -/
+theorem algebraMap_isRestrictedSubring_eq_mk_C (r : R) :
+    algebraMap R (IsRestricted.subring (R := R) c) r = ⟨C r, isRestricted_C c r⟩ :=
+  Subtype.ext (coe_algebraMap_isRestrictedSubring r)
+
 /-- Without variables every restricted series is a constant. -/
 theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
     Function.Surjective (algebraMap R (IsRestricted.subring (R := R) c)) := fun g ↦
@@ -712,9 +717,7 @@ noncomputable instance instNormedCommRingIsRestrictedSubring :
 @[simp]
 theorem norm_algebraMap_isRestrictedSubring (r : R) :
     ‖algebraMap R (IsRestricted.subring (R := R) c) r‖ = ‖r‖ := by
-  have h : algebraMap R (IsRestricted.subring (R := R) c) r = ⟨C r, isRestricted_C c r⟩ :=
-    Subtype.ext (coe_algebraMap_isRestrictedSubring r)
-  rw [h, norm_C]
+  rw [algebraMap_isRestrictedSubring_eq_mk_C, norm_C]
 
 /-- The coefficient ring acts boundedly for the Gauss norm, without a field hypothesis. -/
 instance : IsBoundedSMul R (IsRestricted.subring (R := R) c) :=

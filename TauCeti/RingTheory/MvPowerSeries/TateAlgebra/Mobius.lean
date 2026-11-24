@@ -32,9 +32,9 @@ main identity is the composition law `w_g(w_δ) = w_{g δ}`
 (`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobius`), proved by analytic substitution in the
 Tate algebra, together with the cocycle law of the denominators
 `(c w_δ + d) (c' X + d') = c'' X + d''` for `g δ = !![a'', b''; c'', d'']`
-(`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul`) and its numerator analogue
-(`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusNum_mul`). Neither uses evaluation at
-points, so both hold over nonreduced and integral coefficient rings.
+(`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul_mobiusDenom`) and its numerator
+analogue (`TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusNum_mul_mobiusDenom`). Neither uses
+evaluation at points, so both hold over nonreduced and integral coefficient rings.
 
 Together they make `γ ↦ (w_γ, ∏ᵢ (cᵢ Xᵢ + dᵢ) ^ nᵢ)` a restricted automorphy factor
 (`TauCeti.MvPowerSeries.mobiusAutomorphyFactor`), whose slash action
@@ -56,9 +56,9 @@ norm-nonincreasing operators on `R⟨X⟩`.
   the denominator is a multiplicative unit of norm one.
 * `TauCeti.MvPowerSeries.mobius_mul_mobiusDenom`, `TauCeti.MvPowerSeries.norm_mobius_le`: the
   Möbius series is the quotient `(a Xᵢ + b) / (c Xᵢ + d)` and lies in the closed unit ball.
-* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul`,
-  `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusNum_mul`: the cocycle laws of the
-  denominators and numerators.
+* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusDenom_mul_mobiusDenom`,
+  `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobiusNum_mul_mobiusDenom`: the cocycle laws of
+  the denominators and numerators.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_mobius`: the composition law of Möbius series.
 * `TauCeti.MvPowerSeries.norm_mobiusAutomorphyFactor_factor`: the weight-`n` factor has norm one,
   so its slash operators do not increase norms.
@@ -230,9 +230,8 @@ variable [CompleteSpace R] [NormOneClass R] {i : Fin k} {g : Matrix (Fin 2) (Fin
 /-- The denominator differs from its constant term `d` by `c Xᵢ`, of norm less than one. -/
 private theorem norm_mobiusDenom_sub_C_lt (hg : g ∈ mobiusSubmonoid R) :
     ‖mobiusDenom i g - ⟨C (g 1 1), isRestricted_C _ (g 1 1)⟩‖ < ‖g 1 1‖ := by
-  change ‖mobiusDenom i g - algebraMap R _ (g 1 1)‖ < _
-  rw [mobiusDenom_def, add_sub_cancel_right, norm_smul_X, mul_one,
-    norm_lowerRight_eq_one_of_mem_mobiusSubmonoid hg]
+  rw [← algebraMap_isRestrictedSubring_eq_mk_C, mobiusDenom_def, add_sub_cancel_right,
+    norm_smul_X, mul_one, norm_lowerRight_eq_one_of_mem_mobiusSubmonoid hg]
   exact norm_lowerLeft_lt_one_of_mem_mobiusSubmonoid hg
 
 /-- For `g ∈ mobiusSubmonoid R` the denominator `c Xᵢ + d` is a multiplicative unit of the
@@ -312,7 +311,8 @@ theorem restrictedAnalyticSubst_row_mul_mobiusDenom (hδ : ∀ j, δ j ∈ mobiu
 /-- **The cocycle law of the numerators.** Substituting the Möbius series `w_δ` of the matrices
 `δⱼ ∈ mobiusSubmonoid R` into the numerator of `g` and multiplying by the denominator of `δᵢ`
 gives the numerator of `g δᵢ`: `(a w_δ + b) (c' Xᵢ + d') = a'' Xᵢ + b''`. -/
-theorem restrictedAnalyticSubst_mobiusNum_mul (hδ : ∀ j, δ j ∈ mobiusSubmonoid R) :
+theorem restrictedAnalyticSubst_mobiusNum_mul_mobiusDenom
+    (hδ : ∀ j, δ j ∈ mobiusSubmonoid R) :
     restrictedAnalyticSubst (fun j ↦ mobius j (δ j)) (fun j ↦ norm_mobius_le (hδ j))
         (mobiusNum i g) * mobiusDenom i (δ i) = mobiusNum i (g * δ i) :=
   restrictedAnalyticSubst_row_mul_mobiusDenom hδ 0
@@ -320,7 +320,8 @@ theorem restrictedAnalyticSubst_mobiusNum_mul (hδ : ∀ j, δ j ∈ mobiusSubmo
 /-- **The cocycle law of the denominators.** Writing `w_δ` for the Möbius series of the matrices
 `δⱼ ∈ mobiusSubmonoid R`, substituting `w_δ` into the denominator of `g` and multiplying by the
 denominator of `δᵢ` gives the denominator of `g δᵢ`: `(c w_δ + d) (c' Xᵢ + d') = c'' Xᵢ + d''`. -/
-theorem restrictedAnalyticSubst_mobiusDenom_mul (hδ : ∀ j, δ j ∈ mobiusSubmonoid R) :
+theorem restrictedAnalyticSubst_mobiusDenom_mul_mobiusDenom
+    (hδ : ∀ j, δ j ∈ mobiusSubmonoid R) :
     restrictedAnalyticSubst (fun j ↦ mobius j (δ j)) (fun j ↦ norm_mobius_le (hδ j))
         (mobiusDenom i g) * mobiusDenom i (δ i) = mobiusDenom i (g * δ i) :=
   restrictedAnalyticSubst_row_mul_mobiusDenom hδ 1
@@ -333,8 +334,9 @@ theorem restrictedAnalyticSubst_mobius (hg : g ∈ mobiusSubmonoid R)
     restrictedAnalyticSubst (fun j ↦ mobius j (δ j)) (fun j ↦ norm_mobius_le (hδ j))
       (mobius i g) = mobius i (g * δ i) := by
   rw [mobius_def (g := g * δ i), Ring.eq_mul_inverse_iff_mul_eq _ _ _
-    (isUnit_mobiusDenom (mul_mem hg (hδ i))), ← restrictedAnalyticSubst_mobiusDenom_mul hδ,
-    ← mul_assoc, ← map_mul, mobius_mul_mobiusDenom hg, restrictedAnalyticSubst_mobiusNum_mul hδ]
+    (isUnit_mobiusDenom (mul_mem hg (hδ i))),
+    ← restrictedAnalyticSubst_mobiusDenom_mul_mobiusDenom hδ, ← mul_assoc, ← map_mul,
+    mobius_mul_mobiusDenom hg, restrictedAnalyticSubst_mobiusNum_mul_mobiusDenom hδ]
 
 end Mobius
 
@@ -358,7 +360,7 @@ noncomputable def mobiusAutomorphyFactor (n : Fin k → ℕ) :
   factor_one := by simp
   factor_mul γ δ := by
     simp only [Pi.mul_apply, Submonoid.coe_mul, map_prod, map_pow, ← Finset.prod_mul_distrib,
-      ← mul_pow, restrictedAnalyticSubst_mobiusDenom_mul fun j ↦ (δ j).property]
+      ← mul_pow, restrictedAnalyticSubst_mobiusDenom_mul_mobiusDenom fun j ↦ (δ j).property]
 
 variable (n : Fin k → ℕ)
 
