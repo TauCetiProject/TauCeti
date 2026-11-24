@@ -34,7 +34,10 @@ description of algebraic `K₀`:
 Equivalence of idempotents is an equivalence relation, preserved by relabelling indices,
 conjugation, block sums and ring homomorphisms. The range for the block-diagonal matrix
 `Matrix.fromBlocks e 0 0 f` is the product of the ranges, so direct sums of modules correspond to
-block sums of idempotents, and `f ⊕ (1 - f)` is equivalent to the identity matrix.
+block sums of idempotents, and `f ⊕ (1 - f)` is equivalent to the identity matrix. Padding by a
+zero block does not change the class of an idempotent, and over a ring equivalence becomes
+similarity after padding: `e ∼ f` exactly when `e ⊕ 0` and `0 ⊕ f` are conjugate by an
+invertible matrix.
 
 Right modules are left modules over the opposite ring. The image of the action `v ↦ e *ᵥ v` of a
 matrix `e` on column vectors, a right `A`-module, is identified with the range of the row action
@@ -52,6 +55,11 @@ modules exactly when the matrices are equivalent.
   `Matrix.IdempotentEquivalent.fromBlocks`, `Matrix.IdempotentEquivalent.map`: invariance under
   relabelling, conjugation, block sums and ring homomorphisms.
 * `Matrix.idempotentEquivalent_fromBlocks_one_sub`: `f ⊕ (1 - f)` is equivalent to `1`.
+* `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero` and
+  `IsIdempotentElem.idempotentEquivalent_zero_fromBlocks`: `e` is equivalent to `e ⊕ 0` and to
+  `0 ⊕ e`.
+* `Matrix.idempotentEquivalent_iff_exists_mul_fromBlocks_mul_inv`: `e ∼ f` exactly when `e ⊕ 0`
+  and `0 ⊕ f` are conjugate by an invertible matrix.
 * `IsIdempotentElem.mem_range_vecMulLinear_iff`: the range of an idempotent matrix consists of its
   fixed row vectors.
 * `IsIdempotentElem.projective_range_vecMulLinear`: this range is a projective module.
@@ -251,6 +259,26 @@ theorem IdempotentEquivalent.fromBlocks {e : Matrix ι ι A} {f : Matrix κ κ A
   refine ⟨Matrix.fromBlocks x 0 0 x', Matrix.fromBlocks y 0 0 y', ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp [fromBlocks_multiply, *]
 
+/-- **Padding by zero.** An idempotent matrix `e` is equivalent to `e ⊕ 0` for a zero block of any
+size, through the row of blocks `(e 0)` and the column of blocks `(e 0)ᵀ`. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_fromBlocks_zero {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) :
+    IdempotentEquivalent e (Matrix.fromBlocks e 0 0 (0 : Matrix κ κ A)) := by
+  refine (idempotentEquivalent_iff_exists_mul_eq he (he.fromBlocks_zero₁₂_zero₂₁ .zero)).2
+    ⟨fromCols e 0, fromRows e 0, ?_, ?_⟩
+  · rw [fromCols_mul_fromRows, he.eq, Matrix.zero_mul, add_zero]
+  · rw [fromRows_mul_fromCols, he.eq, Matrix.mul_zero, Matrix.zero_mul, Matrix.zero_mul]
+
+/-- **Padding by zero.** An idempotent matrix `e` is equivalent to `0 ⊕ e` for a zero block of any
+size, through the row of blocks `(0 e)` and the column of blocks `(0 e)ᵀ`. -/
+theorem _root_.IsIdempotentElem.idempotentEquivalent_zero_fromBlocks {e : Matrix ι ι A}
+    (he : IsIdempotentElem e) :
+    IdempotentEquivalent e (Matrix.fromBlocks (0 : Matrix κ κ A) 0 0 e) := by
+  refine (idempotentEquivalent_iff_exists_mul_eq he (IsIdempotentElem.zero.fromBlocks_zero₁₂_zero₂₁
+    he)).2 ⟨fromCols 0 e, fromRows 0 e, ?_, ?_⟩
+  · rw [fromCols_mul_fromRows, he.eq, Matrix.zero_mul, zero_add]
+  · rw [fromRows_mul_fromCols, he.eq, Matrix.mul_zero, Matrix.zero_mul, Matrix.mul_zero]
+
 /-- **Ring homomorphisms.** Applying a ring homomorphism to the entries preserves equivalence of
 idempotents. -/
 theorem IdempotentEquivalent.map {B : Type*} [Semiring B] {e : Matrix ι ι A} {f : Matrix κ κ A}
@@ -267,6 +295,34 @@ theorem idempotentEquivalent_fromBlocks_one_sub {A : Type*} [Ring A] [DecidableE
     .one).2 ⟨fromRows f (1 - f), fromCols f (1 - f), ?_, ?_⟩
   · rw [fromRows_mul_fromCols, hf.eq, hf.mul_one_sub_self, hf.one_sub_mul_self, hf.one_sub.eq]
   · rw [fromCols_mul_fromRows, hf.eq, hf.one_sub.eq, add_sub_cancel]
+
+/-- **Stabilized conjugacy.** Equivalent idempotents become conjugate after stabilization: if `x`
+and `y` implement `e ∼ f`, the involution `!![1 - e, x; y, 1 - f]` conjugates `e ⊕ 0` to
+`0 ⊕ f`. -/
+theorem IdempotentEquivalent.exists_mul_fromBlocks_mul_inv {A : Type*} [Ring A] [DecidableEq ι]
+    [DecidableEq κ] {e : Matrix ι ι A} {f : Matrix κ κ A} (h : IdempotentEquivalent e f) :
+    ∃ u : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ,
+      (u : Matrix (ι ⊕ κ) (ι ⊕ κ) A) * Matrix.fromBlocks e 0 0 0 *
+          (↑u⁻¹ : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = Matrix.fromBlocks 0 0 0 f := by
+  obtain ⟨x, y, hxy, hyx, hex, -, -, hye⟩ := h
+  have hu := fromBlocks_one_sub_mul_self_of_mul_eq hxy hyx hex hye
+  exact ⟨⟨_, _, hu, hu⟩, fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq hxy hyx
+    hye⟩
+
+/-- **Stabilized conjugacy.** An idempotent matrix `e` is equivalent to a square matrix `f` exactly
+when `e ⊕ 0` and `0 ⊕ f` are conjugate by an invertible matrix. -/
+theorem idempotentEquivalent_iff_exists_mul_fromBlocks_mul_inv {A : Type*} [Ring A]
+    [DecidableEq ι] [DecidableEq κ] {e : Matrix ι ι A} {f : Matrix κ κ A}
+    (he : IsIdempotentElem e) :
+    IdempotentEquivalent e f ↔ ∃ u : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ,
+      (u : Matrix (ι ⊕ κ) (ι ⊕ κ) A) * Matrix.fromBlocks e 0 0 0 *
+          (↑u⁻¹ : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = Matrix.fromBlocks 0 0 0 f := by
+  refine ⟨IdempotentEquivalent.exists_mul_fromBlocks_mul_inv, fun ⟨u, hu⟩ ↦ ?_⟩
+  have h := (he.idempotentEquivalent_fromBlocks_zero (κ := κ)).trans
+    (idempotentEquivalent_conj (he.fromBlocks_zero₁₂_zero₂₁ .zero) u)
+  rw [hu] at h
+  have hf := (isIdempotentElem_fromBlocks_zero₁₂_zero₂₁_iff.1 h.isIdempotentElem_right).2
+  exact h.trans (hf.idempotentEquivalent_zero_fromBlocks (κ := ι)).symm
 
 /-- **Opposite rings.** Equivalent idempotents stay equivalent after transposing and passing to
 the opposite ring, which turns the column action of `e` into the row action of `eᵀ` over `Aᵐᵒᵖ`.
