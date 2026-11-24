@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.MellinBarnes
 import Mathlib.Analysis.Meromorphic.Complex
+import TauCeti.Analysis.Contour.ConnectorLimit
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
@@ -272,40 +273,26 @@ private theorem re_ne_of_pole {a b t : ℂ} {σ : ℝ} (ha : ∀ n : ℕ, a.re +
   · exact fun h ↦ ha k (by simp at h; linarith)
   · exact fun h ↦ hb k (by simp at h; linarith)
 
-/-- For `σ₁ ≤ σ₂ < 0`, with the line `Re t = σ₁` avoiding the poles of `Γ(a + t) Γ(b + t)`, the
-integrand of Barnes's integral is holomorphic on an open neighbourhood of the strip
-`σ₁ ≤ Re t ≤ σ₂` except at the poles of `Γ(a + t) Γ(b + t)` with `σ₁ < Re t`, `Re t ≤ σ₂`. -/
-private theorem exists_differentiableOn_hypergeometricMellinBarnesIntegrand (a b c : ℂ) {z : ℂ}
-    (hz : z ≠ 0) {σ₁ σ₂ : ℝ} (hσ₂ : σ₂ < 0) (ha₁ : ∀ n : ℕ, a.re + σ₁ ≠ -n)
-    (hb₁ : ∀ n : ℕ, b.re + σ₁ ≠ -n) :
-    ∃ U : Set ℂ, IsOpen U ∧ {t : ℂ | σ₁ ≤ t.re ∧ t.re ≤ σ₂} ⊆ U ∧
-      DifferentiableOn ℂ (hypergeometricMellinBarnesIntegrand a b c z) (U \
-        ↑((gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
-          (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂))) := by
-  set P := (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
-    (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)
-  -- Remove the finitely many poles with `σ₁ - 1 < Re t` that are not in `P`.
-  set Q := gammaPolesRightOf a (σ₁ - 1) ∪ gammaPolesRightOf b (σ₁ - 1)
-  refine ⟨{t : ℂ | σ₁ - 1 < t.re ∧ t.re < 0} \ ↑(Q \ P),
-    ((isOpen_lt continuous_const continuous_re).inter
-      (isOpen_lt continuous_re continuous_const)).sdiff (Finset.finite_toSet _).isClosed, ?_, ?_⟩
-  · rintro t ⟨h₁, h₂⟩
-    refine ⟨⟨by linarith, by linarith⟩, fun ht ↦ ?_⟩
-    rw [Finset.coe_sdiff, Set.mem_sdiff, Finset.mem_coe, Finset.mem_coe,
-      mem_gammaPolesRightOf_union] at ht
-    obtain ⟨⟨-, hk⟩, hnot⟩ := ht
-    refine hnot (Finset.mem_sdiff.mpr ⟨mem_gammaPolesRightOf_union.mpr ⟨?_, hk⟩, fun h ↦ ?_⟩)
-    · exact lt_of_le_of_ne h₁ (re_ne_of_pole ha₁ hb₁ hk).symm
-    · exact absurd (mem_gammaPolesRightOf_union.mp h).1 (not_lt.mpr h₂)
-  · rintro t ⟨⟨⟨h₁, h₂⟩, hU⟩, hP⟩
-    have hpole {w : ℂ} (hw : ∀ m : ℕ, w + t = -m → t ∈ Q) : ∀ m : ℕ, w + t ≠ -m :=
-      fun m hm ↦ hU (by rw [Finset.coe_sdiff]; exact ⟨Finset.mem_coe.mpr (hw m hm), hP⟩)
-    refine (differentiableAt_hypergeometricMellinBarnesIntegrand hz
-      (hpole fun m hm ↦ mem_gammaPolesRightOf_union.mpr ⟨h₁, m, .inl (by linear_combination hm)⟩)
-      (hpole fun m hm ↦ mem_gammaPolesRightOf_union.mpr ⟨h₁, m, .inr (by linear_combination hm)⟩)
-      fun m hm ↦ ?_).differentiableWithinAt
-    have : t.re = m := by simpa using congrArg re (neg_injective hm)
-    linarith [m.cast_nonneg' (α := ℝ)]
+/-- For `σ₂ < 0`, with the line `Re t = σ₁` avoiding the poles of `Γ(a + t) Γ(b + t)`, the
+integrand of Barnes's integral is holomorphic at every point of the strip `σ₁ ≤ Re t ≤ σ₂` other
+than the poles of `Γ(a + t) Γ(b + t)` with `σ₁ < Re t`, `Re t ≤ σ₂`. -/
+private theorem differentiableAt_hypergeometricMellinBarnesIntegrand_of_mem_strip (a b c : ℂ)
+    {z : ℂ} (hz : z ≠ 0) {σ₁ σ₂ : ℝ} (hσ₂ : σ₂ < 0) (ha₁ : ∀ n : ℕ, a.re + σ₁ ≠ -n)
+    (hb₁ : ∀ n : ℕ, b.re + σ₁ ≠ -n) {t : ℂ} (h₁ : σ₁ ≤ t.re) (h₂ : t.re ≤ σ₂)
+    (hP : t ∉ (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
+      (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)) :
+    DifferentiableAt ℂ (hypergeometricMellinBarnesIntegrand a b c z) t := by
+  have hpole {w : ℂ} (hw : ∀ m : ℕ, w + t = -m → ∃ k : ℕ, t = -a - k ∨ t = -b - k) :
+      ∀ m : ℕ, w + t ≠ -m := fun m hm ↦ by
+    have hk := hw m hm
+    refine hP (Finset.mem_sdiff.mpr ⟨mem_gammaPolesRightOf_union.mpr
+      ⟨lt_of_le_of_ne h₁ (re_ne_of_pole ha₁ hb₁ hk).symm, hk⟩, fun h ↦ ?_⟩)
+    exact absurd (mem_gammaPolesRightOf_union.mp h).1 (not_lt.mpr h₂)
+  refine differentiableAt_hypergeometricMellinBarnesIntegrand hz
+    (hpole fun m hm ↦ ⟨m, .inl (by linear_combination hm)⟩)
+    (hpole fun m hm ↦ ⟨m, .inr (by linear_combination hm)⟩) fun m hm ↦ ?_
+  have : t.re = m := by simpa using congrArg re (neg_injective hm)
+  linarith [m.cast_nonneg' (α := ℝ)]
 
 /-- The line shift for Barnes's integral, for `σ₁ ≤ σ₂`. -/
 private theorem hypergeometricMellinBarnes_eq_of_le (a b c : ℂ) {z : ℂ} (hz : -z ∈ slitPlane)
@@ -324,12 +311,15 @@ private theorem hypergeometricMellinBarnes_eq_of_le (a b c : ℂ) {z : ℂ} (hz 
     rw [Finset.mem_sdiff, mem_gammaPolesRightOf_union, mem_gammaPolesRightOf_union] at hp
     obtain ⟨⟨h₁, hk⟩, h₂⟩ := hp
     exact ⟨h₁, lt_of_le_of_ne (not_lt.mp fun h ↦ h₂ ⟨h, hk⟩) (re_ne_of_pole ha₂ hb₂ hk)⟩
-  obtain ⟨U, hU, hstrip, hF⟩ := exists_differentiableOn_hypergeometricMellinBarnesIntegrand a b c
-    (by simpa using slitPlane_ne_zero hz) hσ₂ ha₁ hb₁
+  have hF {t : ℂ} (h₁ : σ₁ ≤ t.re) (h₂ : t.re ≤ σ₂) (ht : t ∉ P) :=
+    differentiableAt_hypergeometricMellinBarnesIntegrand_of_mem_strip a b c
+      (by simpa using slitPlane_ne_zero hz) hσ₂ ha₁ hb₁ h₁ h₂ ht
   have hhor := (tendsto_hypergeometricMellinBarnesIntegrand_strip a b c hz σ₁ σ₂)
   rw [← uIcc_of_le hle] at hhor
-  have hshift := TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue _ hle hU hstrip
-    P hP hF (fun p _ ↦ meromorphicAt_hypergeometricMellinBarnesIntegrand a b c z p)
+  have hshift := TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue _ hle P hP
+    (fun t ht ↦ (hF ht.1.1 ht.1.2 ht.2).continuousAt.continuousWithinAt)
+    (fun t ht ↦ (hF ht.1.1.le ht.1.2.le ht.2).differentiableWithinAt)
+    (fun p _ ↦ meromorphicAt_hypergeometricMellinBarnesIntegrand a b c z p)
     (integrable_hypergeometricMellinBarnesIntegrand a b c hz ha₂ hb₂
       fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)])
     (integrable_hypergeometricMellinBarnesIntegrand a b c hz ha₁ hb₁
