@@ -152,19 +152,6 @@ private theorem norm_sum_filter_not_window_le {s : ℂ} (hs : -1 ≤ s.re) (Z : 
       (one_le_norm_sub_of_riemannZeta_eq_zero hs hζ (Finset.mem_filter.mp hz).2)
   · simp [analyticOrderAt_eq_zero.mpr (Or.inr hζ)]
 
-/-- A point `z` with `0 < Re z < 1` and `|Im z - Im s₀| ≤ 1` is within distance `4` of a centre
-`s₀` on the line `Re s₀ = 2`. -/
-private theorem norm_sub_le_four_of_mem_window {z s₀ : ℂ} (hs₀ : s₀.re = 2) (h0 : 0 < z.re)
-    (h1 : z.re < 1) (him : |z.im - s₀.im| ≤ 1) : ‖z - s₀‖ ≤ 4 := by
-  have hre : |(z - s₀).re| ≤ 2 := by
-    rw [sub_re, hs₀, abs_le]
-    constructor <;> linarith
-  rw [← sub_im] at him
-  rw [← sq_le_sq₀ (norm_nonneg _) (by norm_num), ← Complex.normSq_eq_norm_sq,
-    Complex.normSq_apply, ← sq, ← sq]
-  nlinarith [sq_abs (z - s₀).re, sq_abs (z - s₀).im, abs_nonneg (z - s₀).re,
-    abs_nonneg (z - s₀).im]
-
 /-- **The window form of the local expansion of `ζ′/ζ`.** There is a constant `C` such that for
 every `s ≠ 1` with `-1 ≤ Re s ≤ 2` and `ζ(s) ≠ 0`, `ζ′/ζ(s) + 1/(s - 1)` differs from
 `∑ m(ρ)/(s - ρ)` over the zeros `ρ` of `ζ` with `0 < Re ρ < 1` and `|Im ρ - Im s| ≤ 1`, counted
@@ -189,9 +176,12 @@ theorem riemannZeta_logDeriv_window :
   -- the zeros of `ζ` in the disc of radius `4` about `s₀`
   set Z := riemannZetaZerosClosedBall s₀ 4
   set W : ℂ → Prop := fun z ↦ 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1
-  have hWZ (z : ℂ) (hz : W z) (hζz : riemannZeta z = 0) : z ∈ Z :=
-    mem_riemannZetaZerosClosedBall.mpr
-      ⟨norm_sub_le_four_of_mem_window hs₀ hz.1 hz.2.1 (hs₀im ▸ hz.2.2), hζz⟩
+  have hWZ (z : ℂ) (hz : W z) (hζz : riemannZeta z = 0) : z ∈ Z := by
+    refine mem_riemannZetaZerosClosedBall.mpr
+      ⟨(Complex.norm_le_abs_re_add_abs_im _).trans ?_, hζz⟩
+    rw [sub_re, sub_im, hs₀, hs₀im]
+    have hre : |z.re - 2| ≤ 2 := abs_le.mpr ⟨by linarith [hz.1], by linarith [hz.2.1]⟩
+    linarith [hz.2.2]
   set f : ℂ → ℂ := fun z ↦ ((analyticOrderAt riemannZeta z).toNat : ℂ) / (s - z)
   have hwin : ∑ᶠ ρ : {z : ℂ // 0 < z.re ∧ z.re < 1 ∧ |z.im - s.im| ≤ 1 ∧ riemannZeta z = 0},
       f ρ = ∑ z ∈ Z with W z, f z := by
