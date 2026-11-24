@@ -41,6 +41,8 @@ For a finite bundle atlas `A`, every chart image has compact closure, so it has 
 * `TauCeti.SectionChartData.ofExponentLEL_self`,
   `TauCeti.SectionChartData.ofExponentLEL_ofExponentLEL`: the identity at `p = q` and
   transitivity.
+* `TauCeti.SectionChartData.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow`: the norms are
+  logarithmically convex in `1 / p`, as for the scalar Sobolev spaces.
 * `TauCeti.SectionChartData.ofExponentLEL_ofComponents`,
   `TauCeti.SobolevSection.ofExponentLEL_ofContMDiffSection`: compatibility with the Sobolev sections
   with given components, in particular those of `Cᵏ` sections.
@@ -148,6 +150,30 @@ theorem lowerOrdersL_ofExponentLEL (d : ℕ) (hpq : p ≤ q)
   apply C.chartValuesL_injective μ p k
   funext i
   simp only [chartValuesL_apply, chartValueL_lowerOrdersL, chartValueL_ofExponentLEL]
+
+/-- **Logarithmic convexity of the norms of Sobolev sections.** If `p, q ≤ r` and
+`1 / q = (1 - θ) / p + θ / r` with `0 ≤ θ ≤ 1`, then the `W^{k,q}` norm of a Sobolev section of
+exponent `r` is at most its `W^{k,p}` norm to the power `1 - θ` times its `W^{k,r}` norm to the
+power `θ`. -/
+theorem norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (hpr : p ≤ r) (hqr : q ≤ r) {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * p⁻¹ + ENNReal.ofReal θ * r⁻¹)
+    (w : C.sobolevSections μ r k) :
+    ‖C.ofExponentLEL μ k hqr w‖ ≤ ‖C.ofExponentLEL μ k hpr w‖ ^ (1 - θ) * ‖w‖ ^ θ := by
+  -- The norm is the maximum of the norms of the chartwise components, each of which satisfies
+  -- the scalar bound.
+  have hle {s : ℝ≥0∞} [Fact (1 ≤ s)] (v : C.sobolevSections μ s k) (i : Fin C.n)
+      (j : Fin (finrank ℝ F)) : ‖(v : C.SobolevData μ s k) i j‖ ≤ ‖v‖ := by
+    rw [← Submodule.norm_coe v]
+    exact (norm_le_pi_norm _ j).trans (norm_le_pi_norm (v : C.SobolevData μ s k) i)
+  rw [← Submodule.norm_coe]
+  refine (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦
+    (pi_norm_le_iff_of_nonneg (by positivity)).2 fun j ↦ ?_
+  rw [ofExponentLEL_apply]
+  refine (Wkp.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow hpr hqr hθ hq k _).trans ?_
+  rw [← ofExponentLEL_apply]
+  exact mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) (hle _ i j) (sub_nonneg.2 hθ.2))
+    (Real.rpow_le_rpow (norm_nonneg _) (hle w i j) hθ.1) (by positivity) (by positivity)
 
 variable {T : Type*} [AddCommGroup T] [Module ℝ T] (ι : T →ₗ[ℝ] S)
 

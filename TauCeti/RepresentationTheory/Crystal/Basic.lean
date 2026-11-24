@@ -131,11 +131,8 @@ theorem wt_of_f_eq_some (h : c.f i x = some y) : c.wt y = c.wt x - P.root i := b
   rw [c.wt_of_e_eq_some (c.f_eq_some_iff.1 h), add_sub_cancel_right]
 
 /-- No raising operator fixes an element, since it changes the weight by a simple root. -/
-theorem e_ne_some_self : c.e i x ≠ some x := by
-  intro h
-  have hwt := c.wt_of_e_eq_some h
-  have h0 : P.root i = 0 := by simpa using hwt
-  exact P.ne_zero i h0
+theorem e_ne_some_self : c.e i x ≠ some x :=
+  fun h => P.ne_zero i (by simpa using c.wt_of_e_eq_some h)
 
 /-- No lowering operator fixes an element. -/
 theorem f_ne_some_self : c.f i x ≠ some x :=
@@ -160,12 +157,9 @@ theorem φ_of_f_eq_some (h : c.f i x = some y) : c.φ i y + 1 = c.φ i x :=
 /-- A map commuting with the raising operators preserves the lengths of raising strings. -/
 theorem ε_apply_eq_of_e_map (d : NormalCrystal P b B') {g : B → B'}
     (hg : ∀ x, d.e i (g x) = (c.e i x).map g) (x : B) : d.ε i (g x) = c.ε i x := by
-  suffices ∀ n x, c.ε i x = n → d.ε i (g x) = n from this _ x rfl
-  intro n
-  induction n with
-  | zero => intro x hn; rw [d.ε_eq_zero_iff, hg, c.ε_eq_zero_iff.1 hn, Option.map_none]
+  induction hn : c.ε i x generalizing x with
+  | zero => rw [d.ε_eq_zero_iff, hg, c.ε_eq_zero_iff.1 hn, Option.map_none]
   | succ n ih =>
-    intro x hn
     obtain ⟨y, hy⟩ :=
       Option.ne_none_iff_exists'.1 ((c.e_ne_none_iff (i := i) (x := x)).2 (by omega))
     have hdy : d.e i (g x) = some (g y) := by rw [hg, hy, Option.map_some]
@@ -299,19 +293,16 @@ theorem fIter_add (m n : ℕ) (x : B) :
 theorem eIter_succ' (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.eIter i n x).bind (c.e i) :=
   Option.iterate_succ' (c.e i) n x
 
-@[simp]
-theorem dual_eIter : c.dual.eIter = c.fIter := by
-  funext i n x
-  induction n generalizing x with
-  | zero => rfl
-  | succ n ih => simp only [eIter_succ, fIter_succ, dual_e, ih]
+theorem fIter_succ' (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.fIter i n x).bind (c.f i) :=
+  Option.iterate_succ' (c.f i) n x
 
 @[simp]
-theorem dual_fIter : c.dual.fIter = c.eIter := by
-  simpa using c.dual.dual_eIter.symm
+theorem dual_eIter : c.dual.eIter = c.fIter :=
+  funext fun i => by simp only [eIter, fIter, dual_e]
 
-theorem fIter_succ' (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.fIter i n x).bind (c.f i) := by
-  simpa using c.dual.eIter_succ' n x
+@[simp]
+theorem dual_fIter : c.dual.fIter = c.eIter :=
+  funext fun i => by simp only [eIter, fIter, dual_f]
 
 /-- Raising `n` times adds `n` copies of the simple root to the weight. -/
 theorem wt_of_eIter_eq_some (h : c.eIter i n x = some y) : c.wt y = c.wt x + n • P.root i := by
@@ -346,13 +337,6 @@ theorem isSome_eIter_iff : (c.eIter i n x).isSome ↔ n ≤ c.ε i x := by
 theorem eIter_eq_none_iff : c.eIter i n x = none ↔ c.ε i x < n := by
   rw [← Option.not_isSome_iff_eq_none, c.isSome_eIter_iff, not_le]
 
-/-- Lowering `n` times subtracts `n` copies of the simple root from the weight. -/
-theorem wt_of_fIter_eq_some (h : c.fIter i n x = some y) : c.wt y = c.wt x - n • P.root i := by
-  rw [← dual_eIter] at h
-  have := c.dual.wt_of_eIter_eq_some h
-  simp only [dual_wt] at this
-  rw [sub_eq_add_neg, ← neg_neg (c.wt y), this, neg_add, neg_neg]
-
 /-- Lowering `n` times shortens the lowering string by `n`. -/
 theorem φ_of_fIter_eq_some (h : c.fIter i n x = some y) : c.φ i y + n = c.φ i x := by
   rw [← dual_eIter] at h
@@ -375,14 +359,17 @@ theorem fIter_eq_some_iff : c.fIter i n x = some y ↔ c.eIter i n y = some x :=
     simp only [fIter_succ, eIter_succ', Option.bind_eq_some_iff, ih, c.f_eq_some_iff]
     exact ⟨fun ⟨z, hz, hy⟩ => ⟨z, hy, hz⟩, fun ⟨z, hy, hz⟩ => ⟨z, hz, hy⟩⟩
 
+/-- Lowering `n` times subtracts `n` copies of the simple root from the weight. -/
+theorem wt_of_fIter_eq_some (h : c.fIter i n x = some y) : c.wt y = c.wt x - n • P.root i :=
+  eq_sub_of_add_eq (c.wt_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
+
 /-- Lowering `n` times lengthens the raising string by `n`. -/
 theorem ε_of_fIter_eq_some (h : c.fIter i n x = some y) : c.ε i y = c.ε i x + n :=
   (c.ε_of_eIter_eq_some (c.fIter_eq_some_iff.mp h)).symm
 
 /-- Raising `n` times lengthens the lowering string by `n`. -/
-theorem φ_of_eIter_eq_some (h : c.eIter i n x = some y) : c.φ i y = c.φ i x + n := by
-  have := c.dual.ε_of_fIter_eq_some (by simpa using h)
-  simpa using this
+theorem φ_of_eIter_eq_some (h : c.eIter i n x = some y) : c.φ i y = c.φ i x + n :=
+  (c.φ_of_fIter_eq_some (c.fIter_eq_some_iff.mpr h)).symm
 
 end Strings
 

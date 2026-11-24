@@ -16,7 +16,11 @@ given by `TauCeti.tensorPow`, with `L^{⊗0} = 𝒪_X` and `L^{⊗(n+1)} = L ⊗
 These powers retain invertibility as bundled line bundles and provide the objects used in
 global generation and ample twisting. They use the inherited monoidal product, so their
 underlying sheaves are the same tensor powers used for powers of sections.
-The comparisons below assert existence of isomorphisms; they do not specify coherent morphisms.
+An isomorphism `e : L ≅ K` induces the isomorphism `TauCeti.tensorPowMapIso e n` of tensor powers,
+functorial in `e`, and the powers of the trivial line bundle are trivial by a specified
+isomorphism. These are the operations on tensor powers needed to compare `n`-th roots
+`M^{⊗n} ≅ L` of a line bundle. The exponent laws and the compatibility with pullback below are
+still only stated as the existence of isomorphisms.
 
 Ported from `roed-math/TauCeti-w2-fresh`, branch
 `lookahead/StableReduction/relative-ampleness`, commit `efa6fc8f3735`.
@@ -27,7 +31,9 @@ Ported from `roed-math/TauCeti-w2-fresh`, branch
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_tensorPow`: the class of `L^{⊗n}` is the `n`-th
   power of the class of `L` in the Picard group.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_obj_iso`: tensor powers of
-  isomorphic line bundles are isomorphic.
+  isomorphic line bundles are isomorphic, via `TauCeti.tensorPowMapIso`.
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.tensorPowTrivialIso X n`: the isomorphism
+  `𝒪_X^{⊗n} ≅ 𝒪_X`.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_add_iso` and
   `TauCeti.AlgebraicGeometry.InvertibleSheaf.nonempty_tensorPow_tensorPow_iso`: the exponent laws
   `L^{⊗(m + n)} ≅ L^{⊗m} ⊗ L^{⊗n}` and `(L^{⊗m})^{⊗n} ≅ L^{⊗(m * n)}`.
@@ -51,6 +57,17 @@ universe u
 
 variable {X Y : Scheme.{u}}
 
+namespace InvertibleSheaf
+
+variable (X) in
+/-- The `n`-th tensor power of the trivial line bundle is the trivial line bundle: transport to
+the monoidal unit and remove its tensor powers with `TauCeti.tensorPowUnitIso`. -/
+noncomputable def tensorPowTrivialIso (n : ℕ) : TauCeti.tensorPow (trivial X) n ≅ trivial X :=
+  TauCeti.tensorPowMapIso (trivialIsoTensorUnit X) n ≪≫ TauCeti.tensorPowUnitIso n ≪≫
+    (trivialIsoTensorUnit X).symm
+
+end InvertibleSheaf
+
 namespace LineBundleClass
 
 /-- The class of the tensor power `L^{⊗n}` is the `n`-th power of the class of `L`. -/
@@ -67,9 +84,9 @@ namespace InvertibleSheaf
 /-- The underlying sheaves of `L^{⊗n}` and `K^{⊗n}` are isomorphic whenever the underlying sheaves
 of `L` and `K` are. -/
 theorem nonempty_tensorPow_obj_iso {L K : InvertibleSheaf X} (h : Nonempty (L.obj ≅ K.obj))
-    (n : ℕ) : Nonempty ((TauCeti.tensorPow L n).obj ≅ (TauCeti.tensorPow K n).obj) := by
-  rw [← LineBundleClass.mk_eq_mk_iff] at h ⊢
-  simp [h]
+    (n : ℕ) : Nonempty ((TauCeti.tensorPow L n).obj ≅ (TauCeti.tensorPow K n).obj) :=
+  h.map fun e ↦ (SheafOfModules.isInvertible X).ι.mapIso
+    (TauCeti.tensorPowMapIso (ObjectProperty.isoMk _ e) n)
 
 /-- The tensor power `L^{⊗(m + n)}` is isomorphic to `L^{⊗m} ⊗ L^{⊗n}`. -/
 theorem nonempty_tensorPow_add_iso (L : InvertibleSheaf X) (m n : ℕ) :

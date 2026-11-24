@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.SpecificFunctions.Basic
-import Mathlib.Analysis.Normed.Module.Convex
+import TauCeti.Analysis.Convex.StrictConvexSpace
 
 /-!
 # Four-point inequalities for convex functions
@@ -73,12 +73,7 @@ theorem abs_sub_rpow_add_abs_sub_rpow_le {p x₁ x₂ y₁ y₂ : ℝ} (hp : 1 �
     (hx : x₁ ≤ x₂) (hy : y₁ ≤ y₂) :
     |x₁ - y₁| ^ p + |x₂ - y₂| ^ p ≤ |x₁ - y₂| ^ p + |x₂ - y₁| ^ p := by
   have hf : ConvexOn ℝ Set.univ (fun x : ℝ ↦ |x| ^ p) := by
-    refine ⟨convex_univ, fun x _ y _ a b ha hb hab ↦ ?_⟩
-    have hnorm := (convexOn_univ_norm (E := ℝ)).2 (Set.mem_univ x) (Set.mem_univ y)
-      ha hb hab
-    have hpow := (convexOn_rpow hp).2 (abs_nonneg x) (abs_nonneg y) ha hb hab
-    simp only [Real.norm_eq_abs, smul_eq_mul] at hnorm hpow ⊢
-    exact (Real.rpow_le_rpow (abs_nonneg _) hnorm (zero_le_one.trans hp)).trans hpow
+    simpa only [Real.norm_eq_abs] using convexOn_norm_rpow (E := ℝ) hp
   exact add_sub_le_add_sub_of_convexOn hf hx hy (Set.mem_univ _) (Set.mem_univ _)
 
 end TauCeti

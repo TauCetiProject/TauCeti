@@ -141,16 +141,6 @@ private theorem sum_mul_innerSumCLM_fibre {g : SimpleFunc α E} (hg : Integrable
 
 end Pairing
 
-/-! ### Exponents -/
-
-/-- The interpolation of the boundary bounds: the exponents `βⱼ = 1 + (j - θ) κ` satisfy
-`(1 - θ) β₀ + θ β₁ = 1`, so `(a N ^ β₀) ^ (1 - θ) (a N ^ β₁) ^ θ = a N` for `a, N ≥ 0`. -/
-private theorem rpow_mul_rpow_interp {a N θ κ : ℝ} (ha : 0 ≤ a) (hN : 0 ≤ N) :
-    (a * N ^ (1 + (0 - θ) * κ)) ^ (1 - θ) * (a * N ^ (1 + (1 - θ) * κ)) ^ θ = a * N := by
-  have hsum : (1 + (0 - θ) * κ) * (1 - θ) + (1 + (1 - θ) * κ) * θ = 1 := by ring
-  rw [Real.mul_rpow_one_sub_mul_mul_rpow ha, ← Real.rpow_mul hN, ← Real.rpow_mul hN,
-    ← Real.rpow_add' hN (by rw [hsum]; exact one_ne_zero), hsum, Real.rpow_one]
-
 /-! ### The analytic family -/
 
 section Family
@@ -324,8 +314,12 @@ private theorem norm_integral_inner_le_of_isStripFunction {q : ℝ≥0∞} (hθ 
   -- The three-lines theorem at `θ`.
   have h3 := norm_le_interp_of_mem_verticalClosedStrip₀₁' _ (z := θ)
     (by simpa [verticalClosedStrip] using hθ') hd hB ha hb
+  -- The boundary exponents `βⱼ = 1 + (j - θ) κ` interpolate to `(1 - θ) β₀ + θ β₁ = 1`.
+  have hβ : (1 + (0 - θ) * κ) * (1 - θ) + (1 + (1 - θ) * κ) * θ = 1 := by ring
   rw [pairingFamily_ofReal, ofReal_re,
-    rpow_mul_rpow_interp (norm_nonneg _) ENNReal.toReal_nonneg] at h3
+    Real.mul_rpow_mul_mul_rpow_of_add_eq_one (norm_nonneg _) (sub_add_cancel 1 θ),
+    Real.rpow_rpow_mul_rpow_rpow_of_add_eq ENNReal.toReal_nonneg one_ne_zero hβ,
+    Real.rpow_one] at h3
   exact h3
 
 end ThreeLines

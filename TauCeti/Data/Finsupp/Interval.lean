@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Data.Finsupp.Antidiagonal
 public import Mathlib.Data.Finsupp.Interval
 public import Mathlib.Data.Pi.Interval
-public import Mathlib.Order.Filter.Cofinite
 public import Mathlib.Order.Interval.Finset.Nat
 
 /-!
@@ -21,8 +20,6 @@ A finite set of multi-indices `m : σ →₀ ℕ` with `mᵢ ≤ rᵢ` for every
 `C ≥ 0` is therefore at most `∏ᵢ (rᵢ + 1) C`. This is how the monomials of a polynomial with
 partial degrees `degreeOf i P ≤ r i` are counted.
 
-Since the boxes `Iic m` are finite, subtracting a fixed multi-index has finite fibres.
-
 In finitely many variables, a sum over the antidiagonal of `m`, the pairs `(a, b)` with
 `a + b = m`, is a sum over the box `Iic m` of the corresponding functions `σ → ℕ`. This
 translates Cauchy products of formal power series into multi-index sums over boxes.
@@ -31,7 +28,6 @@ translates Cauchy products of formal power series into multi-index sums over box
 
 * `Finsupp.card_le_prod_of_forall_le`: `#s ≤ ∏ᵢ (rᵢ + 1)`.
 * `Finsupp.sum_le_prod_mul_of_forall_le`: `∑ m ∈ s, f m ≤ ∏ᵢ (rᵢ + 1) C` when `f ≤ C` on `s`.
-* `Finsupp.tendsto_sub_cofinite`: `n ↦ n - d` maps the cofinite filter into itself.
 * `Finsupp.sum_antidiagonal_eq_sum_Iic_coe`: a sum over the antidiagonal of `m` is the sum over
   `Iic ⇑m` of the corresponding pairs of functions.
 -/
@@ -49,13 +45,9 @@ elements. -/
 theorem card_le_prod_of_forall_le {s : Finset (σ →₀ ℕ)} {r : σ → ℕ}
     (h : ∀ m ∈ s, ∀ i, m i ≤ r i) : #s ≤ ∏ i, (r i + 1) := by
   classical
-  set f : σ →₀ ℕ := equivFunOnFinite.symm r
-  have hs : s ⊆ Iic f := fun m hm ↦ mem_Iic.2 fun i ↦ by simpa [f] using h m hm i
-  have hf : #(Iic f) = ∏ i, (r i + 1) := by
-    rw [card_Iic, prod_subset (subset_univ _) fun i _ hi ↦ by
-      simp [f, notMem_support_iff.1 hi]]
-    simp [f]
-  exact (card_le_card hs).trans hf.le
+  calc #s ≤ #(Iic r) := card_le_card_of_injOn (⇑) (fun m hm ↦ mem_Iic.2 fun i ↦ h m hm i)
+        DFunLike.coe_injective.injOn
+    _ = ∏ i, (r i + 1) := by simp [Pi.card_Iic]
 
 /-- A sum of terms bounded by `C ≥ 0` over a set of multi-indices bounded coordinatewise by `r`
 is at most `∏ᵢ (rᵢ + 1) C`. -/
@@ -73,33 +65,16 @@ the box `Iic ⇑m` of functions `σ → ℕ`, the second index being `⇑m - b`.
 theorem sum_antidiagonal_eq_sum_Iic_coe {M : Type*} [AddCommMonoid M] [DecidableEq σ]
     (F : (σ → ℕ) → (σ → ℕ) → M) (m : σ →₀ ℕ) :
     ∑ p ∈ antidiagonal m, F p.1 p.2 = ∑ b ∈ Iic (m : σ → ℕ), F b (m - b) := by
-  refine sum_nbij' (fun p ↦ p.1) (fun b ↦ (equivFunOnFinite.symm b, m - equivFunOnFinite.symm b))
-    (fun p hp ↦ ?_) (fun b hb ↦ ?_) (fun p hp ↦ ?_) (fun b _ ↦ by simp) (fun p hp ↦ ?_)
-  · rw [mem_antidiagonal] at hp
-    simp [← hp]
-  · rw [mem_Iic] at hb
-    rw [mem_antidiagonal]
-    exact add_tsub_cancel_of_le fun i ↦ by simpa using hb i
-  · rw [mem_antidiagonal] at hp
-    simp [← hp]
-  · rw [mem_antidiagonal] at hp
-    rw [← hp]
-    congr 1
-    ext i
-    simp
-
-end Finsupp
-
-namespace Finsupp
-
-open Filter
-
-/-- Subtracting a fixed multi-index `d` has finite fibres: if `n - d = m` then `n ≤ m + d`. -/
-theorem tendsto_sub_cofinite {σ : Type*} (d : σ →₀ ℕ) :
-    Tendsto (fun n : σ →₀ ℕ ↦ n - d) cofinite cofinite := by
-  classical
-  exact Tendsto.cofinite_of_finite_preimage_singleton fun m ↦
-    ((Set.finite_Iic (m + d)).subset fun _ hn ↦
-      tsub_le_iff_right.1 (le_of_eq hn)).to_subtype
+  refine sum_nbij' (·.1) (fun b ↦ (equivFunOnFinite.symm b, m - equivFunOnFinite.symm b)) ?_
+    (fun b hb ↦ mem_antidiagonal.2 <| add_tsub_cancel_of_le fun i ↦ by simpa using mem_Iic.1 hb i)
+    ?_ (fun b _ ↦ by simp) ?_
+  -- The remaining goals concern a pair `(a, b)` in the antidiagonal, so `m = a + b`.
+  all_goals
+    rintro ⟨a, b⟩ h
+    rw [mem_antidiagonal] at h
+    subst h
+  · simp
+  · simp
+  · rw [← coe_tsub, add_tsub_cancel_left]
 
 end Finsupp

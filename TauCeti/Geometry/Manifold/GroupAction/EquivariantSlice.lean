@@ -47,6 +47,8 @@ proved here.
 
 ## Main results
 
+* `TauCeti.isSemisimpleRepresentation_tangentRepresentation_of_isCompact_stabilizer`: the tangent
+  representation of a compact stabilizer is semisimple.
 * `TauCeti.exists_isCompl_orbitTangent_of_isCompact_stabilizer`: the orbit tangent space at a
   point with compact stabilizer has a complement invariant under the stabilizer.
 * `TauCeti.exists_equivariant_contMDiff_chart_of_isCompact_stabilizer`: a smooth chart at such
@@ -83,6 +85,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [ContMDiffSMul I I' ∞ G M]
 
 variable (I) in
+include I in
+/-- **The tangent representation of a compact stabilizer is semisimple.** If the stabilizer `G_x`
+of `x` is compact, its tangent representation `h ↦ dh_x` on `T_x M` is continuous, hence completely
+reducible. -/
+theorem isSemisimpleRepresentation_tangentRepresentation_of_isCompact_stabilizer
+    [FiniteDimensional ℝ E'] {x : M} (hx : IsCompact (stabilizer G x : Set G))
+    (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I' I' (fun y : M ↦ g • y) x) :
+    (tangentRepresentation hd).toRepresentation.IsSemisimpleRepresentation := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have : CompactSpace (stabilizer G x) := isCompact_iff_compactSpace.mp hx
+  -- The tangent representation, read on the model space `E'` of `T_x M`, which carries the norm.
+  let ρ : ContRepresentation ℝ (stabilizer G x) E' := tangentRepresentation hd
+  exact ρ.isSemisimpleRepresentation_of_continuous (continuous_tangentRepresentation I hd)
+
+variable (I) in
 /-- **Invariant complements of orbit tangent spaces.** If the stabilizer `G_x` of `x` is compact,
 the orbit tangent space `𝔤 · x` has a complement `V` in `T_x M` that is invariant under the
 tangent representation `h ↦ dh_x` of `G_x`. -/
@@ -98,12 +115,9 @@ theorem exists_isCompl_orbitTangent_of_isCompact_stabilizer [CompleteSpace E]
       (by simp)
   -- The tangent representation, on the model space `E'` of `T_x M`.
   let ρ : ContRepresentation ℝ (stabilizer G x) E' := tangentRepresentation hd
-  have hρ : Continuous ρ := continuous_tangentRepresentation I hd
   -- The tangent representation of the compact group `G_x` is completely reducible.
   have hss : ρ.toRepresentation.IsSemisimpleRepresentation :=
-    Representation.isSemisimpleRepresentation_of_continuous ρ.toRepresentation fun f v ↦
-      (LinearMap.continuous_of_finiteDimensional (f : E' →ₗ[ℝ] ℝ)).comp
-        (hρ.clm_apply continuous_const)
+    isSemisimpleRepresentation_tangentRepresentation_of_isCompact_stabilizer I hx hd
   -- The orbit tangent space is a subrepresentation.
   let W : Subrepresentation ρ.toRepresentation :=
     { toSubmodule := (InfinitesimalAction.fundamental I G I' M).orbitTangent x

@@ -57,7 +57,8 @@ rank.
   `TauCeti.topologicalGeneratorRank_quotient_le`: a continuous surjection does not raise the rank.
 * `TauCeti.topologicalGeneratorRank_lt_aleph0_iff`: the rank is finite exactly under topological
   finite generation.
-* `TauCeti.topologicalGeneratorRank_eq_zero_iff`: the rank vanishes exactly on the trivial group.
+* `TauCeti.topologicalGeneratorRank_eq_zero_iff`: the rank vanishes exactly on the trivial group;
+  `TauCeti.topologicalGeneratorRankNat_of_subsingleton` is the accessor form of one direction.
 * `TauCeti.topologicalGeneratorRankNat_le_of_surjective`,
   `TauCeti.topologicalGeneratorRankNat_congr`: the accessor does not increase along a continuous
   surjection and is invariant under a topological group isomorphism.
@@ -289,6 +290,13 @@ theorem topologicalGeneratorRankNat_le (h : IsTopologicallyFinitelyGenerated G) 
     topologicalGeneratorRankNat G h ≤ s.card := by
   rw [topologicalGeneratorRankNat_def]
   exact Nat.sInf_le ⟨s, rfl, hs⟩
+
+/-- The natural-number topological generator rank of the trivial group is `0`: the empty set
+generates it. -/
+@[simp]
+theorem topologicalGeneratorRankNat_of_subsingleton [Subsingleton G]
+    (h : IsTopologicallyFinitelyGenerated G) : topologicalGeneratorRankNat G h = 0 :=
+  Nat.le_zero.mp (topologicalGeneratorRankNat_le h (s := ∅) (Subsingleton.elim _ _))
 
 /-- The infimum defining the natural-number topological generator rank is **attained**: some
 finite topological generating set has exactly that cardinality. -/

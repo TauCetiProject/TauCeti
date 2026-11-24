@@ -63,6 +63,8 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   polynomial have the same spectral measure;
 * `Matrix.spectralMeasure_units_conj`, `Matrix.eigenvalueMeasure_units_conj` — both measures are
   invariant under conjugation by an invertible matrix;
+* `Matrix.IsHermitian.spectralMeasure_pos_iff` — the spectral measure charges a set if and only if
+  some eigenvalue lies in it;
 * `Matrix.eigenvalueMeasure_apply` — the eigenvalue measure of a set is the proportion of
   characteristic roots in it, counted with algebraic multiplicity;
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
@@ -125,6 +127,14 @@ theorem spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀ (A : Matrix 
     (hA : A.IsHermitian) :
     A.spectralMeasure hA = empiricalMeasureOfFintype hA.eigenvalues₀ :=
   empiricalMeasureOfFintype_comp_equiv _ hA.eigenvalues₀
+
+/-- The empirical spectral measure of a Hermitian matrix charges a set if and only if some
+eigenvalue lies in it. The set need not be measurable. -/
+theorem IsHermitian.spectralMeasure_pos_iff {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    {s : Set ℝ} :
+    0 < (A.spectralMeasure hA : Measure ℝ) s ↔ ∃ k, hA.eigenvalues₀ k ∈ s := by
+  rw [spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
+    empiricalMeasureOfFintype_pos_iff]
 
 /-- Applying a real star-algebra homomorphism entrywise preserves the spectral measure of a
 Hermitian matrix. In particular, real symmetric matrices have the same spectral measure when

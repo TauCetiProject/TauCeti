@@ -131,7 +131,7 @@ variable (R : Type u) [CommRing R]
 
 /-- An actual resolution split has quantum degree `-1`. -/
 theorem isHomogeneous_resolutionSplitMap :
-    TauCeti.LinearMap.IsHomogeneous (D.resolutionSplitMap hst hc ht R)
+    LinearMap.IsHomogeneous (D.resolutionSplitMap hst hc ht R)
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
       (Khovanov.circleQuantumGrading R (D.ResolvedCircle t)).piece (-1) := by
   have hts : ∀ j, j ≠ c → t j = s j := fun j hj ↦ (hst j hj).symm
