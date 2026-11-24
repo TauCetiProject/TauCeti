@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Evaluation
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Contour integrals of parameter-dependent symbols
@@ -27,22 +28,27 @@ homogeneity of the class, in which a spectral parameter counts as two frequency 
 Let `a` be a parameter-dependent symbol of order `m` on an open set `Λ` of spectral parameters, let
 `γ : ℝ → ℂ` be a continuous path in `Λ` going to infinity at least linearly,
 `1 + |t| ≤ c (1 + ‖γ t‖)`, and let `g : ℝ → ℂ` be a measurable weight with
-`‖g t‖ ≤ C (1 + |t|) ^ σ`. If `-1 < σ` and `m + 2 σ + 2 < 0`, then
+`‖g t‖ ≤ C (|t| ^ σ + (1 + |t|) ^ σ)`. If `-1 < σ` and `m + 2 σ + 2 < 0`, then
 
 `(x, ξ) ↦ ∫ g(t) a(x, ξ, γ(t)) dt`
 
-is a symbol of order `m + 2 σ + 2` (`TauCeti.ParameterSymbol.contourIntegral`). For a contour
+is a symbol of order `m + 2 σ + 2` (`TauCeti.ParameterSymbol.contourIntegral`). For `σ ≥ 0` the
+bound on `g` is the growth bound `‖g t‖ ≤ C' (1 + |t|) ^ σ`; for `-1 < σ < 0` it also allows the
+integrable singularity `|t| ^ σ` at `t = 0`. For a contour
 integral `∫_γ f(λ) a(x, ξ, λ) dλ` the weight is `g(t) = f(γ t) γ'(t)`; for `f(λ) = λ^s` along a
 path with bounded speed and `‖γ t‖` bounded below by a positive constant and comparable to
 `1 + |t|`, and a branch of `λ^s` with bounded argument, the exponent is `σ = Re s`. For the
 resolvent parametrix (`m = -2`) the conditions are `-1 < Re s < 0`, and the integral has order
-`2 Re s`: this is the strip of negative powers in which Seeley's integral converges.
+`2 Re s`: this is the strip of negative powers in which Seeley's integral converges. Along the
+negative real axis, `γ(t) = -|t|` and `g(t) = t ^ (-σ)` for `t > 0` (and `0` otherwise) give
+Balakrishnan's real-axis form of this integral (`TauCeti.ParameterSymbol.balakrishnanIntegral`);
+there the singularity of the weight at `t = 0` is needed.
 
 The estimates come from the symbol estimates of `a` uniformly in the spectral parameter
 (`TauCeti.ParameterSymbol.exists_norm_mixedDeriv_coefficient_le`): the weight
 `1 + ‖ξ‖ + ‖γ t‖ ^ (1 / 2)` is at least a multiple of `⟨ξ⟩ + (1 + |t|) ^ (1 / 2)`, and
 
-`∫ (1 + |t|) ^ σ (⟨ξ⟩ + (1 + |t|) ^ (1 / 2)) ^ μ dt ≤ K ⟨ξ⟩ ^ (μ + 2 σ + 2)`
+`∫ (|t| ^ σ + (1 + |t|) ^ σ) (⟨ξ⟩ + (1 + |t|) ^ (1 / 2)) ^ μ dt ≤ K ⟨ξ⟩ ^ (μ + 2 σ + 2)`
 
 for `-1 < σ`, `μ ≤ 0` and `μ + 2 σ + 2 < 0`, by the substitution `t = ⟨ξ⟩² v`. The derivatives of
 the integral are the integrals of the derivatives
@@ -85,38 +91,14 @@ namespace ParameterSymbol
 
 section Weight
 
-/-- The weight `(1 + |t|) ^ σ (√B + √(1 + |t|)) ^ μ` whose integral governs the order of a contour
-integral; `B = ⟨ξ⟩²`. -/
+/-- The weight `(|t| ^ σ + (1 + |t|) ^ σ) (√B + √(1 + |t|)) ^ μ` whose integral governs the order of
+a contour integral; `B = ⟨ξ⟩²`. -/
 private def lineWeight (σ μ B t : ℝ) : ℝ :=
-  (1 + |t|) ^ σ * (Real.sqrt B + Real.sqrt (1 + |t|)) ^ μ
+  (|t| ^ σ + (1 + |t|) ^ σ) * (Real.sqrt B + Real.sqrt (1 + |t|)) ^ μ
 
 private theorem lineWeight_nonneg (σ μ B t : ℝ) : 0 ≤ lineWeight σ μ B t := by
   unfold lineWeight
   positivity
-
-/-- The weight is at most `(1 + |t|) ^ (σ + μ / 2)`. -/
-private theorem lineWeight_le {σ μ : ℝ} (B : ℝ) (hμ : μ ≤ 0) (t : ℝ) :
-    lineWeight σ μ B t ≤ (1 + |t|) ^ (σ + μ / 2) := by
-  have ht : 0 < 1 + |t| := by positivity
-  have hs : 0 < Real.sqrt (1 + |t|) := Real.sqrt_pos.2 ht
-  have h : (Real.sqrt B + Real.sqrt (1 + |t|)) ^ μ ≤ (1 + |t|) ^ (μ / 2) := by
-    calc (Real.sqrt B + Real.sqrt (1 + |t|)) ^ μ ≤ Real.sqrt (1 + |t|) ^ μ :=
-          Real.rpow_le_rpow_of_nonpos hs (le_add_of_nonneg_left (Real.sqrt_nonneg B)) hμ
-      _ = (1 + |t|) ^ (μ / 2) := (Real.rpow_div_two_eq_sqrt μ ht.le).symm
-  calc lineWeight σ μ B t ≤ (1 + |t|) ^ σ * (1 + |t|) ^ (μ / 2) :=
-        mul_le_mul_of_nonneg_left h (by positivity)
-    _ = (1 + |t|) ^ (σ + μ / 2) := (Real.rpow_add ht _ _).symm
-
-private theorem integrable_lineWeight {σ μ : ℝ} (B : ℝ) (hμ : μ ≤ 0) (hσμ : σ + μ / 2 < -1) :
-    Integrable (lineWeight σ μ B) := by
-  have hi : Integrable fun t : ℝ ↦ (1 + ‖t‖) ^ (-(-(σ + μ / 2))) :=
-    integrable_one_add_norm (by simp; linarith)
-  have hmeas : Measurable (lineWeight σ μ B) := by
-    unfold lineWeight
-    fun_prop
-  refine hi.mono' hmeas.aestronglyMeasurable (.of_forall fun t ↦ ?_)
-  rw [Real.norm_of_nonneg (lineWeight_nonneg σ μ B t), neg_neg, Real.norm_eq_abs]
-  exact lineWeight_le B hμ t
 
 /-- The rescaled weight `(v ^ σ + (1 + v) ^ σ) (1 + √v) ^ μ` on `(0, ∞)`, which dominates the weight
 after the substitution `t = B v`. -/
@@ -172,11 +154,15 @@ private theorem integrableOn_scaledWeight {σ μ : ℝ} (hσ : -1 < σ) (hμ : �
   ring
 
 /-- **The substitution `t = B v`.** For `t = B v > 0` and `B ≥ 1` the weight is at most
-`B ^ (σ + μ / 2)` times the rescaled weight at `v`. -/
+`2 B ^ (σ + μ / 2)` times the rescaled weight at `v`. -/
 private theorem lineWeight_le_scaledWeight {σ μ B : ℝ} (hμ : μ ≤ 0) (hB : 1 ≤ B) {v : ℝ}
-    (hv : 0 < v) : lineWeight σ μ B (B * v) ≤ B ^ (σ + μ / 2) * scaledWeight σ μ v := by
+    (hv : 0 < v) : lineWeight σ μ B (B * v) ≤ 2 * B ^ (σ + μ / 2) * scaledWeight σ μ v := by
   have hB0 : 0 < B := one_pos.trans_le hB
   have hBv : 0 < B * v := mul_pos hB0 hv
+  -- The factor `|B v| ^ σ` is `B ^ σ v ^ σ`.
+  have h₀ : |B * v| ^ σ ≤ B ^ σ * (v ^ σ + (1 + v) ^ σ) := by
+    rw [abs_of_pos hBv, Real.mul_rpow hB0.le hv.le]
+    exact mul_le_mul_of_nonneg_left (le_add_of_nonneg_right (by positivity)) (by positivity)
   -- The factor `(1 + B v) ^ σ` is at most `B ^ σ (v ^ σ + (1 + v) ^ σ)`, whatever the sign of `σ`.
   have h₁ : (1 + |B * v|) ^ σ ≤ B ^ σ * (v ^ σ + (1 + v) ^ σ) := by
     rw [abs_of_pos hBv]
@@ -203,48 +189,75 @@ private theorem lineWeight_le_scaledWeight {σ μ B : ℝ} (hμ : μ ≤ 0) (hB 
       _ = B ^ (μ / 2) * (1 + Real.sqrt v) ^ μ := by
           rw [Real.mul_rpow (Real.sqrt_nonneg B) (by positivity),
             ← Real.rpow_div_two_eq_sqrt μ hB0.le]
-  calc lineWeight σ μ B (B * v) ≤ (B ^ σ * (v ^ σ + (1 + v) ^ σ)) *
+  calc lineWeight σ μ B (B * v) ≤ (2 * (B ^ σ * (v ^ σ + (1 + v) ^ σ))) *
         (B ^ (μ / 2) * (1 + Real.sqrt v) ^ μ) :=
-        mul_le_mul h₁ h₂ (by positivity) (by positivity)
-    _ = B ^ (σ + μ / 2) * scaledWeight σ μ v := by
+        mul_le_mul (by linarith) h₂ (by positivity) (by positivity)
+    _ = 2 * B ^ (σ + μ / 2) * scaledWeight σ μ v := by
         rw [Real.rpow_add hB0, scaledWeight]
         ring
 
-/-- **The weighted integral on the line.** For `-1 < σ`, `μ ≤ 0` and `σ + μ / 2 < -1` there is
-`K` with `∫ (1 + |t|) ^ σ (√B + √(1 + |t|)) ^ μ dt ≤ K B ^ (σ + μ / 2 + 1)` for every `B ≥ 1`. -/
-private theorem exists_integral_lineWeight_le {σ μ : ℝ} (hσ : -1 < σ) (hμ : μ ≤ 0)
-    (hσμ : σ + μ / 2 < -1) :
-    ∃ K, ∀ B, 1 ≤ B → ∫ t, lineWeight σ μ B t ≤ K * B ^ (σ + μ / 2 + 1) := by
-  refine ⟨2 * ∫ v in Ioi 0, scaledWeight σ μ v, fun B hB ↦ ?_⟩
+/-- The weight `lineWeight σ μ B` is the even extension of this function on `(0, ∞)`. -/
+private def halfLineWeight (σ μ B t : ℝ) : ℝ :=
+  (t ^ σ + (1 + t) ^ σ) * (Real.sqrt B + Real.sqrt (1 + t)) ^ μ
+
+private theorem lineWeight_eq_halfLineWeight (σ μ B t : ℝ) :
+    lineWeight σ μ B t = halfLineWeight σ μ B |t| :=
+  rfl
+
+/-- On `(0, ∞)` the weight is dominated by `2 B ^ (σ + μ / 2)` times the rescaled weight at
+`B⁻¹ t`, and is integrable. -/
+private theorem halfLineWeight_le_and_integrableOn {σ μ B : ℝ} (hσ : -1 < σ) (hμ : μ ≤ 0)
+    (hσμ : σ + μ / 2 < -1) (hB : 1 ≤ B) :
+    (∀ t, 0 < t → halfLineWeight σ μ B t ≤ 2 * B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t)) ∧
+      IntegrableOn (fun t ↦ 2 * B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t)) (Ioi 0) ∧
+      IntegrableOn (halfLineWeight σ μ B) (Ioi 0) := by
   have hB0 : 0 < B := one_pos.trans_le hB
-  have hS := integrableOn_scaledWeight hσ hμ hσμ
-  -- By symmetry the integral is twice the integral over `(0, ∞)`.
-  have habs : ∫ t, lineWeight σ μ B t =
-      2 * ∫ t in Ioi 0, (1 + t) ^ σ * (Real.sqrt B + Real.sqrt (1 + t)) ^ μ :=
-    integral_comp_abs (f := fun t ↦ (1 + t) ^ σ * (Real.sqrt B + Real.sqrt (1 + t)) ^ μ)
-  have hscaled : IntegrableOn (fun t ↦ B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t)) (Ioi 0) := by
+  have hle (t : ℝ) (ht : 0 < t) :
+      halfLineWeight σ μ B t ≤ 2 * B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t) := by
+    have h := lineWeight_le_scaledWeight (σ := σ) hμ hB (mul_pos (inv_pos.2 hB0) ht)
+    rwa [mul_inv_cancel_left₀ hB0.ne', lineWeight_eq_halfLineWeight, abs_of_pos ht] at h
+  have hscaled : IntegrableOn (fun t ↦ 2 * B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t))
+      (Ioi 0) := by
     refine Integrable.const_mul ?_ _
     have := (integrableOn_Ioi_comp_mul_left_iff (scaledWeight σ μ) 0 (inv_pos.2 hB0)).2
     rw [mul_zero] at this
-    exact this hS
-  have hle : ∫ t in Ioi 0, (1 + t) ^ σ * (Real.sqrt B + Real.sqrt (1 + t)) ^ μ ≤
-      ∫ t in Ioi 0, B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t) := by
-    refine setIntegral_mono_on ?_ hscaled measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
-    · refine ((integrable_lineWeight B hμ hσμ).integrableOn (s := Ioi 0)).congr_fun
-        (fun t (ht : 0 < t) ↦ ?_) measurableSet_Ioi
-      simp [lineWeight, abs_of_pos ht]
-    · have h := lineWeight_le_scaledWeight (σ := σ) hμ hB (mul_pos (inv_pos.2 hB0) ht)
-      rwa [mul_inv_cancel_left₀ hB0.ne', lineWeight, abs_of_pos ht] at h
+    exact this (integrableOn_scaledWeight hσ hμ hσμ)
+  refine ⟨hle, hscaled, hscaled.mono' (Measurable.aestronglyMeasurable ?_)
+    ((ae_restrict_iff' measurableSet_Ioi).2 (.of_forall fun t (ht : 0 < t) ↦ ?_))⟩
+  · unfold halfLineWeight
+    fun_prop
+  · rw [Real.norm_of_nonneg (by unfold halfLineWeight; positivity)]
+    exact hle t ht
+
+private theorem integrable_lineWeight {σ μ B : ℝ} (hσ : -1 < σ) (hμ : μ ≤ 0)
+    (hσμ : σ + μ / 2 < -1) (hB : 1 ≤ B) : Integrable (lineWeight σ μ B) :=
+  TauCeti.MeasureTheory.integrable_comp_abs (halfLineWeight_le_and_integrableOn hσ hμ hσμ hB).2.2
+
+/-- **The weighted integral on the line.** For `-1 < σ`, `μ ≤ 0` and `σ + μ / 2 < -1` there is
+`K` with `∫ (|t| ^ σ + (1 + |t|) ^ σ) (√B + √(1 + |t|)) ^ μ dt ≤ K B ^ (σ + μ / 2 + 1)` for every
+`B ≥ 1`. -/
+private theorem exists_integral_lineWeight_le {σ μ : ℝ} (hσ : -1 < σ) (hμ : μ ≤ 0)
+    (hσμ : σ + μ / 2 < -1) :
+    ∃ K, ∀ B, 1 ≤ B → ∫ t, lineWeight σ μ B t ≤ K * B ^ (σ + μ / 2 + 1) := by
+  refine ⟨4 * ∫ v in Ioi 0, scaledWeight σ μ v, fun B hB ↦ ?_⟩
+  have hB0 : 0 < B := one_pos.trans_le hB
+  obtain ⟨hle, hscaled, hint⟩ := halfLineWeight_le_and_integrableOn hσ hμ hσμ hB
+  -- By symmetry the integral is twice the integral over `(0, ∞)`.
+  have habs : ∫ t, lineWeight σ μ B t = 2 * ∫ t in Ioi 0, halfLineWeight σ μ B t :=
+    integral_comp_abs (f := halfLineWeight σ μ B)
+  have hmono : ∫ t in Ioi 0, halfLineWeight σ μ B t ≤
+      ∫ t in Ioi 0, 2 * B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t) :=
+    setIntegral_mono_on hint hscaled measurableSet_Ioi hle
   -- Undo the substitution in the dominating integral.
-  have hsub : ∫ t in Ioi 0, B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t) =
-      B ^ (σ + μ / 2) * (B * ∫ v in Ioi 0, scaledWeight σ μ v) := by
+  have hsub : ∫ t in Ioi 0, 2 * B ^ (σ + μ / 2) * scaledWeight σ μ (B⁻¹ * t) =
+      2 * B ^ (σ + μ / 2) * (B * ∫ v in Ioi 0, scaledWeight σ μ v) := by
     rw [integral_const_mul, integral_comp_mul_left_Ioi _ _ (inv_pos.2 hB0), mul_zero, inv_inv,
       smul_eq_mul]
   rw [habs]
-  calc 2 * ∫ t in Ioi 0, (1 + t) ^ σ * (Real.sqrt B + Real.sqrt (1 + t)) ^ μ
-      ≤ 2 * (B ^ (σ + μ / 2) * (B * ∫ v in Ioi 0, scaledWeight σ μ v)) :=
-        mul_le_mul_of_nonneg_left (hle.trans_eq hsub) zero_le_two
-    _ = 2 * (∫ v in Ioi 0, scaledWeight σ μ v) * B ^ (σ + μ / 2 + 1) := by
+  calc 2 * ∫ t in Ioi 0, halfLineWeight σ μ B t
+      ≤ 2 * (2 * B ^ (σ + μ / 2) * (B * ∫ v in Ioi 0, scaledWeight σ μ v)) :=
+        mul_le_mul_of_nonneg_left (hmono.trans_eq hsub) zero_le_two
+    _ = 4 * (∫ v in Ioi 0, scaledWeight σ μ v) * B ^ (σ + μ / 2 + 1) := by
         rw [Real.rpow_add_one hB0.ne']
         ring
 
@@ -335,7 +348,7 @@ private theorem aestronglyMeasurable_iteratedFDeriv_smul_coefficient (k : ℕ)
   exact hg.smul (a.continuous_iteratedFDeriv_coefficient hγ hγΛ k q).aestronglyMeasurable
 
 variable (hγc : ∃ c, ∀ t, 1 + |t| ≤ c * (1 + ‖γ t‖))
-  (hgσ : ∃ C, ∀ t, ‖g t‖ ≤ C * (1 + |t|) ^ σ) (hσ : -1 < σ) (hm : m + 2 * σ + 2 < 0)
+  (hgσ : ∃ C, ∀ t, ‖g t‖ ≤ C * (|t| ^ σ + (1 + |t|) ^ σ)) (hσ : -1 < σ) (hm : m + 2 * σ + 2 < 0)
 include hγc hgσ hσ hm
 
 omit hγ hg in
@@ -355,7 +368,7 @@ private theorem exists_bound_iteratedFDeriv_smul_coefficient
   set M := ∑ w, D w
   have hM : 0 ≤ M := Finset.sum_nonneg fun w _ ↦ hD0 w
   refine ⟨fun t ↦ C * M * (1 + Real.sqrt c) ^ (-m) * lineWeight σ m 1 t,
-    (integrable_lineWeight 1 hm0 (by linarith)).const_mul _, fun t p hp ↦ ?_⟩
+    (integrable_lineWeight hσ hm0 (by linarith) le_rfl).const_mul _, fun t p hp ↦ ?_⟩
   have hpK : p.1 ∈ Metric.closedBall p₀.1 1 := by
     rw [Metric.mem_closedBall]
     exact (le_max_left _ _).trans (Metric.mem_ball.1 hp).le
@@ -375,10 +388,10 @@ private theorem exists_bound_iteratedFDeriv_smul_coefficient
       (Real.rpow_le_rpow_of_nonpos (by positivity) ?_ hm0) (by positivity))
     gcongr
     simp
-  have hgt : ‖g t‖ ≤ C * (1 + |t|) ^ σ := hC t
+  have hgt : ‖g t‖ ≤ C * (|t| ^ σ + (1 + |t|) ^ σ) := hC t
   rw [iteratedFDeriv_smul_coefficient, norm_smul]
   calc ‖g t‖ * ‖iteratedFDeriv ℝ k (fun q ↦ a.coefficient (q, γ t)) p‖
-      ≤ (C * (1 + |t|) ^ σ) * (M * ((1 + Real.sqrt c) ^ (-m) *
+      ≤ (C * (|t| ^ σ + (1 + |t|) ^ σ)) * (M * ((1 + Real.sqrt c) ^ (-m) *
           (Real.sqrt 1 + Real.sqrt (1 + |t|)) ^ m)) :=
         mul_le_mul hgt (hsum.trans (mul_le_mul_of_nonneg_left hweight hM)) (norm_nonneg _)
           ((norm_nonneg _).trans hgt)
@@ -466,9 +479,9 @@ private theorem exists_norm_mixedDeriv_integral_smul_coefficient_le {K : Set (Co
   obtain ⟨D, hD0, hD⟩ := a.exists_norm_mixedDeriv_coefficient_le hK α β
   obtain ⟨L, hL⟩ := exists_integral_lineWeight_le hσ hμ hσμ
   have hC0 : 0 ≤ C := by
-    have h := hC 0
-    rw [abs_zero, add_zero, Real.one_rpow, mul_one] at h
-    exact (norm_nonneg _).trans h
+    have h := (norm_nonneg _).trans (hC 0)
+    rw [abs_zero, add_zero, Real.one_rpow] at h
+    exact nonneg_of_mul_nonneg_left h (by positivity)
   set E := C * D * (1 + Real.sqrt c) ^ (-μ)
   have hE : 0 ≤ E := by positivity
   have hL0 : 0 ≤ L := by
@@ -482,7 +495,7 @@ private theorem exists_norm_mixedDeriv_integral_smul_coefficient_le {K : Set (Co
       E * lineWeight σ μ B t := fun t ↦ by
     rw [norm_smul]
     calc ‖g t‖ * ‖mixedDeriv α β (fun q ↦ a.coefficient (q, γ t)) x ξ‖
-        ≤ (C * (1 + |t|) ^ σ) * (D * ((1 + Real.sqrt c) ^ (-μ) *
+        ≤ (C * (|t| ^ σ + (1 + |t|) ^ σ)) * (D * ((1 + Real.sqrt c) ^ (-μ) *
             (Real.sqrt B + Real.sqrt (1 + |t|)) ^ μ)) :=
           mul_le_mul (hC t) ((hD x hx ξ (γ t) (hγΛ t)).trans (mul_le_mul_of_nonneg_left
             (parameterWeight_rpow_le hc hμ ξ t) hD0)) (norm_nonneg _)
@@ -492,7 +505,7 @@ private theorem exists_norm_mixedDeriv_integral_smul_coefficient_le {K : Set (Co
           ring
   calc ‖∫ t, g t • mixedDeriv α β (fun q ↦ a.coefficient (q, γ t)) x ξ‖
       ≤ ∫ t, E * lineWeight σ μ B t :=
-        norm_integral_le_of_norm_le ((integrable_lineWeight B hμ hσμ).const_mul E)
+        norm_integral_le_of_norm_le ((integrable_lineWeight hσ hμ hσμ hB).const_mul E)
           (.of_forall hbound)
     _ = E * ∫ t, lineWeight σ μ B t := integral_const_mul E _
     _ ≤ E * (L * B ^ (σ + μ / 2 + 1)) := mul_le_mul_of_nonneg_left (hL B hB) hE
@@ -502,7 +515,7 @@ private theorem exists_norm_mixedDeriv_integral_smul_coefficient_le {K : Set (Co
 
 /-- **Contour integrals of parameter-dependent symbols.** Let `a` be a parameter-dependent symbol
 of order `m`, `γ` a continuous path in `Λ` with `1 + |t| ≤ c (1 + ‖γ t‖)`, and `g` a measurable
-weight with `‖g t‖ ≤ C (1 + |t|) ^ σ`, where `-1 < σ` and `m + 2 σ + 2 < 0`. Then
+weight with `‖g t‖ ≤ C (|t| ^ σ + (1 + |t|) ^ σ)`, where `-1 < σ` and `m + 2 σ + 2 < 0`. Then
 `(x, ξ) ↦ ∫ g(t) a(x, ξ, γ(t)) dt` is a symbol of order `m + 2 σ + 2`. For `g(t) = f(γ t) γ'(t)` it
 is the contour integral `∫_γ f(λ) a(x, ξ, λ) dλ`. -/
 def contourIntegral : Symbol n V W (m + 2 * σ + 2) where
