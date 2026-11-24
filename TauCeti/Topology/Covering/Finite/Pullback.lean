@@ -13,6 +13,9 @@ public import TauCeti.Topology.Covering.Pullback
 
 The pullback of a finite covering map along a continuous map remains a finite cover. This
 supplies the finite cover of a hypersurface obtained by pulling back an ambient finite cover.
+
+Adapted from Riccardo Brasca's `ForTauCeti` formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/e965b7833fd9d435ce18a25c7624dc8866c7acf2/ForTauCeti/Topology/Covering/FinitePullback.lean).
 -/
 
 public section

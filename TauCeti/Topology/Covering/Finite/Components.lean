@@ -15,6 +15,9 @@ A covering map with finite fibres over a space with finitely many connected comp
 finitely many connected components in its total space. This reduces componentwise arguments to
 finitely many connected pieces, without compactness assumptions. The base may be disconnected,
 and the map need not be surjective; no piece is asserted to cover the whole base surjectively.
+
+Adapted from Riccardo Brasca's `ForTauCeti` formalization in
+[ColdingMinicozziTheory](https://github.com/riccardobrasca/ColdingMinicozziTheory/blob/e965b7833fd9d435ce18a25c7624dc8866c7acf2/ForTauCeti/Topology/Covering/FiniteComponents.lean).
 -/
 
 public section
