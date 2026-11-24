@@ -32,7 +32,7 @@ quotient norm `1`, and the family `(aₙ / n)` has quotient norm `0`.
 * `lp.norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one`, `lp.norm_mk_c0Ideal_one`: a family of
   norm-one elements, such as the unit, has quotient norm `1`.
 * `lp.nontrivial_quotient_c0Ideal`: over an infinite index type the quotient by the `c₀` ideal of
-  a bounded product of normed rings whose units have norm one is nonzero.
+  a bounded product of normed rings with `‖1‖ = 1` is nonzero.
 
 ## References
 
@@ -169,13 +169,13 @@ namespace lp
 variable {ι : Type*} {A : ι → Type*} [∀ i, NormedRing (A i)] [∀ i, NormOneClass (A i)]
   [Infinite ι]
 
-/-- The unit of a bounded product of normed rings whose units have norm one has quotient norm
-one modulo the `c₀` ideal. -/
+/-- Over an infinite index type, the unit of a bounded product of normed rings with `‖1‖ = 1` has
+quotient norm one modulo the `c₀` ideal. -/
 theorem norm_mk_c0Ideal_one : ‖TwoSidedIdeal.Quotient.mk (c0Ideal A) 1‖ = 1 :=
   norm_mk_c0Ideal_eq_one_of_forall_norm_eq_one 1 fun _ ↦ by simp
 
-/-- The quotient of a bounded product of normed rings whose units have norm one, over an infinite
-index type, by the `c₀` ideal is nonzero. -/
+/-- The quotient of a bounded product of normed rings with `‖1‖ = 1`, over an infinite index type,
+by the `c₀` ideal is nonzero. -/
 instance nontrivial_quotient_c0Ideal : Nontrivial (lp A ∞ ⧸ c0Ideal A) :=
   nontrivial_of_ne (TwoSidedIdeal.Quotient.mk (c0Ideal A) 1) 0 fun h ↦ by
     simpa [h] using (norm_mk_c0Ideal_one (A := A)).symm

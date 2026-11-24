@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
-public import TauCeti.Analysis.CStarAlgebra.BoundedProduct
-public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.Normed.Lp.C0Ideal
 
 /-!
