@@ -172,4 +172,20 @@ noncomputable def abutmentMapHomologicalFunctorSpectralObjectIso (X : C) (n : �
     rw [Abelian.SpectralObject.abutment, mapHomologicalFunctor_spectralObject_H_obj_mk₁,
       eTruncLT_obj_top, eTruncGE_obj_bot, Functor.id_obj, Functor.id_obj])
 
+/-- The abutment identification is natural in `X`: the component at `⊥ ≤ ⊤` of the morphism
+of spectral objects induced by `f : X ⟶ X'` corresponds to `(H.shift n).map f`. -/
+@[reassoc]
+lemma abutmentMapHomologicalFunctorSpectralObjectIso_hom_naturality {X X' : C}
+    (f : X ⟶ X') (n : ℤ) :
+    (((SpectralObject.mapHomologicalFunctorFunctor H EInt).map
+        (t.spectralObjectFunctor.map f)).hom n).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (t.abutmentMapHomologicalFunctorSpectralObjectIso H X' n).hom =
+      (t.abutmentMapHomologicalFunctorSpectralObjectIso H X n).hom ≫ (H.shift n).map f := by
+  dsimp only [abutmentMapHomologicalFunctorSpectralObjectIso, eqToIso.hom]
+  rw [mapHomologicalFunctorFunctor_map_spectralObjectFunctor_map_hom_app_mk₁,
+    Functor.congr_hom t.eTruncGE_obj_bot, Functor.congr_hom t.eTruncLT_obj_top]
+  simp only [Functor.id_map, eqToHom_refl, Category.comp_id, Category.id_comp]
+  exact Category.comp_id _
+
 end CategoryTheory.Triangulated.TStructure
