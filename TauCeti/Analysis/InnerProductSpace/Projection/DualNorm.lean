@@ -16,11 +16,9 @@ same bound on the norm of the orthogonal projection onto that subspace.
 
 public section
 
-namespace Submodule
-
-section RCLike
-
 open scoped InnerProductSpace
+
+namespace Submodule
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -39,32 +37,21 @@ theorem norm_starProjection_le_iff_forall_norm_inner_le (K : Submodule 𝕜 E)
     by_cases hz : K.starProjection x = 0
     · simpa [hz] using hc
     have hbound := h (K.starProjection x) (K.starProjection_apply_mem x)
-    rw [← he _ (K.starProjection_apply_mem x), inner_self_eq_norm_sq_to_K, norm_pow,
-      RCLike.norm_ofReal, abs_norm, pow_two] at hbound
+    rw [← he _ (K.starProjection_apply_mem x), ← inner_self_re_eq_norm,
+      inner_self_eq_norm_mul_norm] at hbound
     exact le_of_mul_le_mul_right hbound (norm_pos_iff.mpr hz)
-
-end RCLike
-
-section Real
-
-open scoped RealInnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- For a contrast subspace inside the fitted subspace, projecting the fit's error onto the
 contrasts gives the same norm bound as projecting the original error. -/
-theorem forall_abs_inner_starProjection_sub_le_iff (S : Submodule ℝ E) {L : Submodule ℝ E}
+theorem forall_norm_inner_starProjection_sub_le_iff (S : Submodule 𝕜 E) {L : Submodule 𝕜 E}
     [S.HasOrthogonalProjection] [L.HasOrthogonalProjection] (hSL : S ≤ L) (x m : E)
     {c : ℝ} (hc : 0 ≤ c) :
-    (∀ u ∈ S, |⟪u, L.starProjection x - m⟫| ≤ c * ‖u‖) ↔
+    (∀ u ∈ S, ‖⟪u, L.starProjection x - m⟫_𝕜‖ ≤ c * ‖u‖) ↔
       ‖S.starProjection (x - m)‖ ≤ c := by
-  simp only [← Real.norm_eq_abs]
   rw [← S.norm_starProjection_le_iff_forall_norm_inner_le _ hc, map_sub, map_sub]
-  have h := congrArg (fun f : E →L[ℝ] E ↦ f x)
+  have h := congrArg (fun f : E →L[𝕜] E ↦ f x)
     (Submodule.starProjection_comp_starProjection_of_le hSL)
   simp only [ContinuousLinearMap.comp_apply] at h
   rw [h]
-
-end Real
 
 end Submodule
