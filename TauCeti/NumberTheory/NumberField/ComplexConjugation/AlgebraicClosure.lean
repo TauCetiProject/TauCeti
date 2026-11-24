@@ -55,6 +55,11 @@ open NumberField NumberField.InfinitePlace NumberField.ComplexEmbedding
 
 namespace TauCeti.NumberField
 
+/-- A subfield of a field algebraic over `ℚ` is algebraic over `ℚ`. -/
+instance isIntegral_subfield {L : Type*} [Field L] [CharZero L] [Algebra.IsIntegral ℚ L]
+    (F : Subfield L) : Algebra.IsIntegral ℚ F :=
+  Algebra.IsIntegral.of_injective F.subtype.toRatAlgHom F.subtype_injective
+
 section General
 
 variable {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K]
@@ -161,11 +166,11 @@ theorem complexConjugations_nonempty : (complexConjugations Ω).Nonempty :=
 
 variable {F : Type*} [Field F] [CharZero F]
 
-/-- If products of two complex conjugations fix `τ(F)`, then every complex conjugation maps
-`τ(F)` into itself. -/
-theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω}
-    (h : ∀ c₁ ∈ complexConjugations Ω, ∀ c₂ ∈ complexConjugations Ω, ∀ x, c₁ (c₂ (τ x)) = τ x)
-    {c : Gal(Ω/ℚ)} (hc : c ∈ complexConjugations Ω) (x : F) :
+/-- If every complex conjugation `d` sends `c (τ x)` back to `τ x`, then the complex conjugation
+`c` maps `τ x` into `τ(F)`. -/
+theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω} {c : Gal(Ω/ℚ)}
+    (hc : c ∈ complexConjugations Ω) {x : F}
+    (h : ∀ d ∈ complexConjugations Ω, d (c (τ x)) = τ x) :
     c (τ x) ∈ τ.toRatAlgHom.fieldRange := by
   have : IsGalois ℚ Ω := ⟨⟩
   rw [← InfiniteGalois.fixedField_fixingSubgroup τ.toRatAlgHom.fieldRange,
@@ -179,7 +184,7 @@ theorem apply_mem_fieldRange_of_forall_mul {τ : F →+* Ω}
   -- `h` this is `c (τ x)`.
   have hcx : (g * c * g⁻¹) (τ x) = c (τ x) :=
     ((Function.Involutive.eq_iff (apply_apply_of_mem_complexConjugations hc')).mp
-      (h _ hc' _ hc x)).symm
+      (h _ hc')).symm
   calc g (c (τ x)) = (g * c * g⁻¹) (τ x) := by
         rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, hginv]
     _ = c (τ x) := hcx
@@ -214,8 +219,9 @@ private theorem apply_restrictOfApplyMem (τ : F →+* Ω) {c : Gal(Ω/ℚ)}
     have := AlgHom.equivFieldRange_apply_coe τ.toRatAlgHom (τ.toRatAlgHom.equivFieldRange.symm z)
     rw [AlgEquiv.apply_symm_apply] at this
     exact this.symm
-  rw [restrictOfApplyMem, AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply, h]
-  rfl
+  simp only [restrictOfApplyMem, AlgEquiv.trans_apply, h, IntermediateField.equivOfEq_apply,
+    IntermediateField.coe_equivMap_apply, AlgHom.equivFieldRange_apply_coe,
+    AlgEquiv.coe_toAlgHom, RingHom.toRatAlgHom_apply]
 
 /-- **Milne's criterion (Milne, *Complex Multiplication*, I, Proposition 1.4).** A field `F`
 embedded in `Ω` by `τ` (hence algebraic over `ℚ`) is totally real or CM if and only if every
@@ -231,7 +237,7 @@ theorem isTotallyReal_or_isCMField_iff (τ : F →+* Ω) :
         IsCMField.complexConj_apply_apply]
   · intro h
     obtain ⟨c₀, hc₀⟩ := complexConjugations_nonempty Ω
-    have hmem := apply_mem_fieldRange_of_forall_mul h hc₀
+    have hmem x := apply_mem_fieldRange_of_forall_mul hc₀ fun d hd ↦ h d hd c₀ hc₀ x
     have hs' := apply_restrictOfApplyMem τ hc₀ hmem
     set s := restrictOfApplyMem τ hc₀ hmem
     have hs : ∀ φ : F →+* ℂ, IsConj φ s := fun φ ↦ by

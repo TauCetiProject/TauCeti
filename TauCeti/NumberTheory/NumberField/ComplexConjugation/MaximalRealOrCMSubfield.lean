@@ -16,7 +16,8 @@ import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 Every field `K` algebraic over `ℚ` has a largest subfield `E_K` that is totally real or CM,
 `TauCeti.NumberField.maximalRealOrCMSubfield K`. It contains Mathlib's maximal real subfield
 `K⁺ = NumberField.maximalRealSubfield K`, and it is CM exactly when `K` has a CM subfield (and then
-it is the maximal CM subfield of `K`). When `K⁺` is finite over `ℚ`, `[E_K : K⁺] ≤ 2`.
+it is the maximal CM subfield of `K`). It is an algebra over `K⁺` through the inclusion, and
+`[E_K : K⁺] ≤ 2`.
 
 The construction uses a normal extension `Ω` of `ℚ` containing a copy of `K`, such as an algebraic
 closure of `ℚ`, and its complex conjugations. Let `H` be
@@ -48,9 +49,11 @@ on the restriction of `τ` to `E_K`, and satisfies `2 • m(τ) = w` when `K` ha
   if and only if `K`
   has a CM subfield, if and only if `E_K ≠ K⁺`.
 * `TauCeti.NumberField.map_maximalRealSubfield_maximalRealOrCMSubfield`: the maximal real
-  subfield of `E_K` is `K⁺`, and `TauCeti.NumberField.finrank_maximalRealOrCMSubfield`:
-  `[E_K : ℚ]` is `[K⁺ : ℚ]` or `2 [K⁺ : ℚ]`, so `[E_K : K⁺]` is `1` or `2` when `K⁺` is finite
-  over `ℚ`.
+  subfield of `E_K` is `K⁺`, and
+  `TauCeti.NumberField.finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two`:
+  `[E_K : K⁺]` is `1` or `2`, so
+  (`TauCeti.NumberField.finrank_maximalRealOrCMSubfield_eq_or_eq_two_mul`) `[E_K : ℚ]` is
+  `[K⁺ : ℚ]` or `2 [K⁺ : ℚ]`.
 * `TauCeti.NumberField.maximalRealOrCMSubfield_eq_top_iff`: `E_K = K` if and only if `K` is
   totally real or CM, and
   `TauCeti.NumberField.maximalRealOrCMSubfield_eq_maximalRealSubfield_of_odd`: `E_K = K⁺` in odd
@@ -146,13 +149,6 @@ def maximalRealOrCMSubfield : Subfield K :=
 end Def
 
 variable {K : Type*} [Field K]
-
-/-- A subfield of a field algebraic over `ℚ` is algebraic over `ℚ`. -/
-private theorem isIntegral_subfield {L : Type*} [Field L] [CharZero L] [Algebra.IsIntegral ℚ L]
-    (F : Subfield L) : Algebra.IsIntegral ℚ F :=
-  Algebra.IsIntegral.of_injective F.subtype.toRatAlgHom F.subtype_injective
-
-attribute [local instance] isIntegral_subfield
 
 section Algebraic
 
@@ -275,29 +271,79 @@ theorem map_maximalRealSubfield_maximalRealOrCMSubfield :
     rw [← ComplexEmbedding.lift_algebraMap_apply K φ]
     exact hx (ComplexEmbedding.lift K φ)
 
-/-- **`[E_K : ℚ]` is `[K⁺ : ℚ]` or `2 [K⁺ : ℚ]`.** When `K⁺` is finite over `ℚ`, this says that
-`[E_K : K⁺]` is `1` or `2`; when `K⁺` is infinite over `ℚ` both degrees are `0` and it says
-nothing. Over `K⁺` itself, `E_K` is `K⁺` or a quadratic extension of its maximal real subfield
-(Mathlib's `Algebra.IsQuadraticExtension` for a CM field), which is `K⁺` by
-`map_maximalRealSubfield_maximalRealOrCMSubfield`. -/
-theorem finrank_maximalRealOrCMSubfield :
+variable (K) in
+/-- `E_K` is an algebra over `K⁺` through the inclusion
+`maximalRealSubfield_le_maximalRealOrCMSubfield`. -/
+instance algebraMaximalRealSubfieldMaximalRealOrCMSubfield :
+    Algebra (maximalRealSubfield K) (maximalRealOrCMSubfield K) :=
+  (Subfield.inclusion (maximalRealSubfield_le_maximalRealOrCMSubfield K)).toAlgebra
+
+/-- The algebra map `K⁺ → E_K` is the inclusion. -/
+@[simp]
+theorem coe_algebraMap_maximalRealSubfield_maximalRealOrCMSubfield
+    (x : maximalRealSubfield K) :
+    (algebraMap (maximalRealSubfield K) (maximalRealOrCMSubfield K) x : K) = x :=
+  rfl
+
+variable (K) in
+/-- The inclusions `K⁺ ≤ E_K ≤ K` form a scalar tower. -/
+instance isScalarTower_maximalRealSubfield_maximalRealOrCMSubfield :
+    IsScalarTower (maximalRealSubfield K) (maximalRealOrCMSubfield K) K :=
+  .of_algebraMap_eq fun _ ↦ rfl
+
+/-- The image of `K⁺` in `E_K` is the maximal real subfield of `E_K`. -/
+private theorem fieldRange_algebraMap_maximalRealSubfield :
+    (algebraMap (maximalRealSubfield K) (maximalRealOrCMSubfield K)).fieldRange =
+      maximalRealSubfield (maximalRealOrCMSubfield K) := by
+  ext y
+  rw [RingHom.mem_fieldRange]
+  constructor
+  · rintro ⟨x, rfl⟩
+    have hx : (x : K) ∈ ((maximalRealSubfield (maximalRealOrCMSubfield K)).map
+        (maximalRealOrCMSubfield K).subtype) := by
+      rw [map_maximalRealSubfield_maximalRealOrCMSubfield]
+      exact x.property
+    obtain ⟨z, hz, hzx⟩ := Subfield.mem_map.mp hx
+    rwa [show z = algebraMap _ _ x from Subtype.ext hzx] at hz
+  · intro hy
+    have hy' : (y : K) ∈ maximalRealSubfield K := by
+      rw [← map_maximalRealSubfield_maximalRealOrCMSubfield]
+      exact Subfield.mem_map.mpr ⟨y, hy, rfl⟩
+    exact ⟨⟨y, hy'⟩, rfl⟩
+
+/-- **`[E_K : K⁺]` is `1` or `2`**, for the algebra structure given by the inclusion
+`K⁺ ≤ E_K`: `E_K` is `K⁺` if it is totally real, and a quadratic extension of its maximal real
+subfield, which is `K⁺` (`map_maximalRealSubfield_maximalRealOrCMSubfield`), if it is CM. -/
+theorem finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two :
+    Module.finrank (maximalRealSubfield K) (maximalRealOrCMSubfield K) = 1 ∨
+      Module.finrank (maximalRealSubfield K) (maximalRealOrCMSubfield K) = 2 := by
+  set E := maximalRealOrCMSubfield K
+  rcases isTotallyReal_or_isCMField_maximalRealOrCMSubfield K with hE | hE
+  · -- `E_K = K⁺`, so the algebra map is bijective.
+    have hsurj : Function.Surjective (algebraMap (maximalRealSubfield K) E) := fun y ↦
+      ⟨⟨y, isTotallyReal_iff_le_maximalRealSubfield.mp hE y.property⟩, rfl⟩
+    let i : maximalRealSubfield K ≃+* E := .ofBijective _ ⟨RingHom.injective _, hsurj⟩
+    rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) (RingHom.ext fun _ ↦ rfl),
+      Module.finrank_self]
+    exact .inl rfl
+  · -- `K⁺` is identified with the maximal real subfield of `E_K`, over which `E_K` is quadratic.
+    let i : maximalRealSubfield K ≃+* maximalRealSubfield E :=
+      (algebraMap (maximalRealSubfield K) E).rangeRestrictFieldEquiv.trans
+        (RingEquiv.subfieldCongr fieldRange_algebraMap_maximalRealSubfield)
+    rw [Algebra.finrank_eq_of_equiv_equiv i (RingEquiv.refl E) (RingHom.ext fun _ ↦ rfl)]
+    exact .inr (Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield E) E)
+
+/-- **`[E_K : ℚ]` is `[K⁺ : ℚ]` or `2 [K⁺ : ℚ]`**, by the tower law and
+`finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two`. When `K⁺` is infinite over
+`ℚ` both degrees are `0`. -/
+theorem finrank_maximalRealOrCMSubfield_eq_or_eq_two_mul :
     Module.finrank ℚ (maximalRealOrCMSubfield K) = Module.finrank ℚ (maximalRealSubfield K) ∨
       Module.finrank ℚ (maximalRealOrCMSubfield K) =
         2 * Module.finrank ℚ (maximalRealSubfield K) := by
-  rcases isTotallyReal_or_isCMField_maximalRealOrCMSubfield K with hE | hE
-  · left
-    rw [le_antisymm (isTotallyReal_iff_le_maximalRealSubfield.mp hE)
-      (maximalRealSubfield_le_maximalRealOrCMSubfield K)]
-  · right
-    set E := maximalRealOrCMSubfield K
-    rw [← Module.finrank_mul_finrank ℚ (maximalRealSubfield E) E,
-      Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield E) E, mul_comm,
-      ← map_maximalRealSubfield_maximalRealOrCMSubfield (K := K),
-      -- Mathlib has no `Subfield.equivMapOfInjective`; the `Subring` version lands in
-      -- `F.toSubring.map f`, which is the subfield `F.map f` as a type.
-      (show (maximalRealSubfield E) ≃+* (maximalRealSubfield E).map E.subtype from
-        (maximalRealSubfield E).toSubring.equivMapOfInjective _
-          E.subtype_injective).toRatAlgEquiv.toLinearEquiv.finrank_eq]
+  rw [← Module.finrank_mul_finrank ℚ (maximalRealSubfield K) (maximalRealOrCMSubfield K)]
+  rcases finrank_maximalRealSubfield_maximalRealOrCMSubfield_eq_one_or_eq_two (K := K) with h | h
+  · exact .inl (by rw [h, mul_one])
+  · exact .inr (by rw [h, mul_comm])
 
 omit [Algebra.IsIntegral ℚ K] in
 /-- **`E_K` is preserved by field isomorphisms**, between fields algebraic over `ℚ`. -/
@@ -346,7 +392,8 @@ private theorem exists_comp_eq_of_eqOn {τ τ' : K →+* Ω} {P : Subgroup Gal(�
     ∃ g ∈ P, (g : Ω →+* Ω).comp τ = τ' := by
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq Gal(Ω/ℚ) τ.toRatAlgHom τ'.toRatAlgHom
   obtain rfl : (g : Ω →+* Ω).comp τ = τ' := RingHom.ext fun x ↦ by
-    simpa using congr($hg x)
+    simpa only [RingHom.comp_apply, RingHom.coe_coe, AlgEquiv.smul_algHom_apply,
+      RingHom.toRatAlgHom_apply] using congr($hg x)
   have hg := mem_of_isClosed hP (hH.trans le_sup_left) le_sup_right fun x hx ↦ (h x hx).symm
   rw [← SetLike.mem_coe, Subgroup.normal_mul] at hg
   obtain ⟨a, ha, b, hb, rfl⟩ := hg
@@ -426,11 +473,11 @@ section ArtinWeil
 /-! ### The Artin–Weil factorization -/
 
 variable [NumberField K] {Ω : Type*} [Field Ω] [CharZero Ω] [Normal ℚ Ω]
-  {A : Type*} [AddCancelMonoid A] {m : (K →+* Ω) → A} {w : A}
+  {A : Type*} {m : (K →+* Ω) → A} {w : A}
 
 omit [NumberField K] [Normal ℚ Ω] in
 /-- A function on embeddings with the conjugation relation is invariant under `cmSubgroup Ω`. -/
-private theorem apply_comp_eq_of_mem_cmSubgroup
+private theorem apply_comp_eq_of_mem_cmSubgroup [Add A] [IsRightCancelAdd A]
     (hm : ∀ c ∈ complexConjugations Ω, ∀ τ, m ((c : Ω →+* Ω).comp τ) + m τ = w)
     {g : Gal(Ω/ℚ)} (hg : g ∈ cmSubgroup Ω) (τ : K →+* Ω) : m ((g : Ω →+* Ω).comp τ) = m τ := by
   have hmul (x y : Gal(Ω/ℚ)) : ((x * y : Gal(Ω/ℚ)) : Ω →+* Ω) = (x : Ω →+* Ω).comp y :=
@@ -443,7 +490,8 @@ private theorem apply_comp_eq_of_mem_cmSubgroup
     have h₂ := hm c₂ hc₂ ((c₂ : Ω →+* Ω).comp τ)
     rw [← RingHom.comp_assoc] at h₁ h₂
     rw [← hmul, mul_self_of_mem_complexConjugations hc₂] at h₂
-    have h1 : ((1 : Gal(Ω/ℚ)) : Ω →+* Ω).comp τ = τ := RingHom.ext fun _ ↦ rfl
+    have h1 : ((1 : Gal(Ω/ℚ)) : Ω →+* Ω).comp τ = τ := RingHom.ext fun _ ↦ by
+      simp only [RingHom.comp_apply, RingHom.coe_coe, AlgEquiv.one_apply]
     rw [h1] at h₂
     rw [hmul]
     exact add_right_cancel (h₁.trans h₂.symm)
@@ -459,7 +507,7 @@ private theorem apply_comp_eq_of_mem_cmSubgroup
 /-- **Artin–Weil factorization (Milne, *Complex Multiplication*, I, proof of Proposition 4.9).**
 For a number field `K`, if `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c` and every
 embedding `τ : K →+* Ω`, then `m(τ)` depends only on the restriction of `τ` to `E_K`. -/
-theorem apply_eq_apply_of_eqOn_maximalRealOrCMSubfield
+theorem apply_eq_apply_of_eqOn_maximalRealOrCMSubfield [Add A] [IsRightCancelAdd A]
     (hm : ∀ c ∈ complexConjugations Ω, ∀ τ, m ((c : Ω →+* Ω).comp τ) + m τ = w)
     {τ τ' : K →+* Ω} (h : ∀ x ∈ maximalRealOrCMSubfield K, τ x = τ' x) : m τ = m τ' := by
   obtain ⟨g, hg, rfl⟩ := (exists_mem_cmSubgroup_iff_eqOn_maximalRealOrCMSubfield τ τ').mpr h
@@ -468,7 +516,8 @@ theorem apply_eq_apply_of_eqOn_maximalRealOrCMSubfield
 /-- **Without a CM subfield the conjugation relation forces `2 • m = w`.** If a number field `K`
 has no CM subfield and `m(c ∘ τ) + m(τ) = w` for every complex conjugation `c` and every
 embedding `τ`, then `2 • m(τ) = w`. -/
-theorem two_nsmul_eq_of_forall_not_isCMField (hK : ∀ F : Subfield K, ¬ IsCMField F)
+theorem two_nsmul_eq_of_forall_not_isCMField [AddRightCancelMonoid A]
+    (hK : ∀ F : Subfield K, ¬ IsCMField F)
     (hm : ∀ c ∈ complexConjugations Ω, ∀ τ, m ((c : Ω →+* Ω).comp τ) + m τ = w)
     (τ : K →+* Ω) : 2 • m τ = w := by
   have hE : IsTotallyReal (maximalRealOrCMSubfield K) :=
@@ -477,7 +526,8 @@ theorem two_nsmul_eq_of_forall_not_isCMField (hK : ∀ F : Subfield K, ¬ IsCMFi
   obtain ⟨c, hc⟩ := complexConjugations_nonempty Ω
   have : m ((c : Ω →+* Ω).comp τ) = m τ :=
     apply_eq_apply_of_eqOn_maximalRealOrCMSubfield hm fun x hx ↦ by
-      simpa using apply_eq_of_isTotallyReal hc (τ.comp (maximalRealOrCMSubfield K).subtype) ⟨x, hx⟩
+      simpa only [RingHom.comp_apply, RingHom.coe_coe, Subfield.subtype_apply] using
+        apply_eq_of_isTotallyReal hc (τ.comp (maximalRealOrCMSubfield K).subtype) ⟨x, hx⟩
   rw [two_nsmul, ← hm c hc τ, this]
 
 end ArtinWeil
