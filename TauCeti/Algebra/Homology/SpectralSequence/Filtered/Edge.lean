@@ -16,15 +16,17 @@ such that `H^{n+1}(F_q)` and the piece `F_q H^n` of the induced filtration of `H
 happens for the lowest nonzero piece `F_{q+1}` of a filtration bounded below. The first page of
 the spectral sequence at `(p, q)`, `n = p + q`, is `H^n(F_{q+1}/F_q)`
 (`CochainComplex.spectralSequenceFirstPageXIsoCokernel`), and it maps onto the limit object
-`E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`, which is the bottom piece `F_{q+1} H^n` of `H^n(K)`. This edge map is
-computed on the classes coming from `H^n(F_{q+1})`: composed with the map
-`H^n(F_{q+1}) ⟶ H^n(F_{q+1}/F_q)`, it is the map `H^n(F_{q+1}) ⟶ H^n(K)` induced by the
-inclusion (`CochainComplex.homologyMap_comp_spectralSequencePageXToEInfty_EInftyToAbutment`).
+`E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)`, which is the bottom piece `F_{q+1} H^n` of `H^n(K)`. The resulting edge
+map into `H^n(K)` has image this bottom piece `F_{q+1} H^n`. It is computed on the classes coming
+from `H^n(F_{q+1})`: composed with the map `H^n(F_{q+1}) ⟶ H^n(F_{q+1}/F_q)`, it is the map
+`H^n(F_{q+1}) ⟶ H^n(K)` induced by the inclusion
+(`CochainComplex.homologyMap_comp_spectralSequencePageXToEInfty_EInftyToAbutment`).
 
 ## Main results
 
 * `CochainComplex.homologyMap_comp_spectralSequencePageXToEInfty_EInftyToAbutment`: the edge map
-  from the first page onto `H^n(K)`, on the classes coming from `H^n(F_{q+1})`.
+  from the first page into `H^n(K)`, whose image is the bottom piece `F_{q+1} H^n` of the
+  filtration, on the classes coming from `H^n(F_{q+1})`.
 -/
 
 public section

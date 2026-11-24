@@ -21,16 +21,17 @@ of `F(P)` in degree `0`, through the identification of `H₀(F(P))` with `(F.lef
 is sent to its image under `F(P.π.f 0) : F(P.X 0) ⟶ F(X)`
 (`CategoryTheory.ProjectiveResolution.homologyπ_isoLeftDerivedObj_inv_fromLeftDerivedZero_app`).
 
-For a monoidal abelian category whose tensor product is right exact in the second variable, this
-gives the isomorphism `CategoryTheory.torZeroIso X Y : Tor₀(X, Y) ≅ X ⊗ Y` and its computation on
-a projective resolution of `Y` (`CategoryTheory.homologyπ_isoLeftDerivedObj_inv_torZeroIso_hom`).
+In a monoidal abelian category, for an object `X` such that `X ⊗ -` is right exact, this gives
+the isomorphism `CategoryTheory.torZeroIso X Y : Tor₀(X, Y) ≅ X ⊗ Y` and its computation on a
+projective resolution of `Y` (`CategoryTheory.homologyπ_isoLeftDerivedObj_inv_torZeroIso_hom`).
 For graded objects indexed by `ℕ`, the sums `⨁_{i + j = n} Tor₀(Xᵢ, Yⱼ)` and
-`⨁_{i + j = n} Xᵢ ⊗ Yⱼ` are identified summandwise
+`⨁_{i + j = n} Xᵢ ⊗ Yⱼ` are identified summandwise when each `Xᵢ ⊗ -` is right exact
 (`CategoryTheory.GradedObject.mapBifunctorMapObjTorZeroIso`).
 
 When `Y` has projective dimension at most one, `Torₙ(X, Y)` vanishes for `n ≥ 2`
 (`CategoryTheory.isZero_Tor_add_two_of_hasProjectiveDimensionLE_one`), as computed on the
-projective presentation `0 ⟶ ker π ⟶ P ⟶ Y ⟶ 0` of `Y`, whose kernel is then projective.
+projective presentation `0 ⟶ ker π ⟶ P ⟶ Y ⟶ 0` of `Y`, whose kernel is then projective. Only
+`Y` is assumed to have projective dimension at most one.
 
 ## Main definitions and results
 
@@ -73,16 +74,17 @@ lemma ProjectiveResolution.homologyπ_isoLeftDerivedObj_inv_fromLeftDerivedZero_
 end LeftDerived
 
 variable {C : Type*} [Category* C] [MonoidalCategory C] [Abelian C] [MonoidalPreadditive C]
-  [HasProjectiveResolutions C] [∀ X : C, PreservesFiniteColimits ((tensoringLeft C).obj X)]
+  [HasProjectiveResolutions C]
 
-/-- **`Tor₀` is the tensor product**: `Tor₀(X, Y) ≅ X ⊗ Y` when the tensor product is right exact
-in the second variable, `Tor` being derived in the second variable. -/
-def torZeroIso (X Y : C) : ((Tor C 0).obj X).obj Y ≅ X ⊗ Y :=
+/-- **`Tor₀` is the tensor product**: `Tor₀(X, Y) ≅ X ⊗ Y` when `X ⊗ -` is right exact, `Tor` being
+derived in the second variable. -/
+def torZeroIso (X Y : C) [PreservesFiniteColimits ((tensoringLeft C).obj X)] :
+    ((Tor C 0).obj X).obj Y ≅ X ⊗ Y :=
   ((tensoringLeft C).obj X).leftDerivedZeroIsoSelf.app Y
 
 /-- The isomorphism `CategoryTheory.torZeroIso` is the comparison
 `((tensoringLeft C).obj X).fromLeftDerivedZero`. -/
-lemma torZeroIso_hom (X Y : C) :
+lemma torZeroIso_hom (X Y : C) [PreservesFiniteColimits ((tensoringLeft C).obj X)] :
     (torZeroIso X Y).hom = ((tensoringLeft C).obj X).fromLeftDerivedZero.app Y :=
   (rfl)
 
@@ -90,8 +92,8 @@ lemma torZeroIso_hom (X Y : C) :
 a cycle of `X ⊗ P` in degree `0`, identified with a class of `Tor₀(X, Y)`, is sent by
 `CategoryTheory.torZeroIso` to its image under `X ◁ P.π.f 0 : X ⊗ P.X 0 ⟶ X ⊗ Y`. -/
 @[reassoc]
-lemma homologyπ_isoLeftDerivedObj_inv_torZeroIso_hom (X : C) {Y : C}
-    (P : ProjectiveResolution Y) :
+lemma homologyπ_isoLeftDerivedObj_inv_torZeroIso_hom (X : C)
+    [PreservesFiniteColimits ((tensoringLeft C).obj X)] {Y : C} (P : ProjectiveResolution Y) :
     ((((tensoringLeft C).obj X).mapHomologicalComplex _).obj P.complex).homologyπ 0 ≫
         (P.isoLeftDerivedObj ((tensoringLeft C).obj X) 0).inv ≫ (torZeroIso X Y).hom =
       ((((tensoringLeft C).obj X).mapHomologicalComplex _).obj P.complex).iCycles 0 ≫
@@ -100,19 +102,22 @@ lemma homologyπ_isoLeftDerivedObj_inv_torZeroIso_hom (X : C) {Y : C}
   -- `(tensoringLeft C).obj X` sends `f` to `X ◁ f` by definition
   rfl
 
-omit [∀ X : C, PreservesFiniteColimits ((tensoringLeft C).obj X)] in
 /-- **`Tor` against an object of projective dimension at most one** vanishes in degrees `≥ 2`. -/
 lemma isZero_Tor_add_two_of_hasProjectiveDimensionLE_one (X Y : C) [EnoughProjectives C]
-    [∀ Z : C, HasProjectiveDimensionLE Z 1] (n : ℕ) : IsZero (((Tor C (n + 2)).obj X).obj Y) :=
-  have : Projective (Projective.kernelShortComplex Y).X₁ :=
-    projective_of_mono_of_hasProjectiveDimensionLE_one (kernel.ι (Projective.π Y))
+    [HasProjectiveDimensionLE Y 1] (n : ℕ) : IsZero (((Tor C (n + 2)).obj X).obj Y) :=
+  -- the kernel of the projective cover `P ⟶ Y` has projective dimension `< 1`, as `P` is projective
+  -- and `Y` has projective dimension `< 2`
+  have : HasProjectiveDimensionLT (Projective.kernelShortComplex Y).X₁ 1 :=
+    (Projective.kernelShortComplex_shortExact Y).hasProjectiveDimensionLT_X₁ 1
+      inferInstance ‹_›
   (Projective.kernelShortComplex_shortExact Y).isZero_Tor_add_two X n
 
 namespace GradedObject
 
 attribute [local instance] Abelian.hasFiniteBiproducts
 
-variable (X Y : GradedObject ℕ C) (n : ℕ)
+variable (X Y : GradedObject ℕ C) [∀ i, PreservesFiniteColimits ((tensoringLeft C).obj (X i))]
+  (n : ℕ)
 
 /-- **`⨁_{i + j = n} Tor₀(Xᵢ, Yⱼ) ≅ ⨁_{i + j = n} Xᵢ ⊗ Yⱼ`**, summandwise by
 `CategoryTheory.torZeroIso`. -/
