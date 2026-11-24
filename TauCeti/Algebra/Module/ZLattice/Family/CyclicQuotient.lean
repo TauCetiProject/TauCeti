@@ -56,6 +56,8 @@ and translation sections and `n = ω`, `Q` is a complex manifold and `t : Q → 
   centre of the disc.
 * `TauCeti.range_torusFamilyCyclicQuotientProjection`: for `0 ≤ r`, its image is the disc of
   radius `r ^ m`.
+* `TauCeti.continuous_torusFamilyCyclicQuotientProjection`: it is continuous, so the punctured
+  part `{t ≠ 0}` of the cyclic quotient is open.
 * `TauCeti.contMDiff_torusFamilyCyclicQuotientProjection`: for a free action with `C^n` data it is
   `C^n`; for holomorphic data it is holomorphic.
 
@@ -174,17 +176,27 @@ theorem range_torusFamilyCyclicQuotientProjection (hr : 0 ≤ r) :
     | h x =>
       rw [torusFamilyCyclicQuotientProjection_mk]
       exact mem_image_of_mem _
-        (mem_ball_zero_iff.2 (mem_rootsOfUnityBall.1 (torusFamilyProjection P x).2))
+        (mem_ball_zero_iff.2 (mem_rootsOfUnityBall.1 (torusFamilyProjection P x).property))
   · rintro ⟨u, hu, rfl⟩
     obtain ⟨x, hx⟩ := torusFamilyProjection_surjective P
       ⟨u, mem_rootsOfUnityBall.2 (mem_ball_zero_iff.1 hu)⟩
     exact ⟨Quotient.mk _ x, by rw [torusFamilyCyclicQuotientProjection_mk, hx]⟩
 
+/-- The coordinate `t` is continuous for the quotient topology of the cyclic quotient. In
+particular its punctured part `{t ≠ 0}` is open. -/
+theorem continuous_torusFamilyCyclicQuotientProjection [TopologicalSpace E] :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    Continuous (torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul) := by
+  rw [torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift]
+  exact continuous_torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
+    (continuous_subtypeVal.pow m)
+
 /-! ### Holomorphy of the coordinate `t` -/
 
 section Manifold
 
-variable [Module.Free ℤ Λ] [Module.Finite ℤ Λ] {E : Type*} [NormedAddCommGroup E]
+variable {E : Type*} [NormedAddCommGroup E]
   [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   (R : rootsOfUnity m ℂ → rootsOfUnityBall m r → E →+ E)
   (hone : ∀ (z : rootsOfUnityBall m r) (v : E), R 1 z v = v)
@@ -212,7 +224,6 @@ variable [Module.Free ℤ Λ] [Module.Finite ℤ Λ] {E : Type*} [NormedAddCommG
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The coordinate `t` is holomorphic.** If the cyclic affine action on the `C^n` family of tori
 `X` over the rotated disc is free, the map `X / C_m → ℂ` descended from `[z, v] ↦ z ^ m` is `C^n`
 for the quotient manifold structure (`TauCeti.isManifold_torusFamilyAffineQuotient`); with

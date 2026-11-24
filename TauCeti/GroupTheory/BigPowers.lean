@@ -293,15 +293,15 @@ private theorem exists_forall_conjProd_ne_one (hBP : IsBP G) (hG : IsCSA G) {u :
   obtain ⟨n, hn⟩ : ∃ n, L.length = n + 1 :=
     Nat.exists_eq_succ_of_ne_zero (by simpa using hL)
   let w : G × ℤ → G := fun p => p.1 * u ^ p.2 * p.1⁻¹
-  obtain ⟨N, hN⟩ := hBP (fun i : Fin (n + 1) => w (L[i.1]'(by omega)))
+  obtain ⟨N, hN⟩ := hBP (fun i : Fin (n + 1) => w (L[i.val]'(by omega)))
     (fun i => by
       simpa [w, conj_eq_one_iff, IsMulTorsionFree.zpow_eq_one_iff] using
         ⟨hu, he _ (List.getElem_mem _)⟩)
     (fun i => hG.not_commute_conj_zpow (he _ (List.getElem_mem _))
-      (he _ (List.getElem_mem _)) (List.isChain_iff_getElem.1 hc i.1 (by omega)))
+      (he _ (List.getElem_mem _)) (List.isChain_iff_getElem.1 hc i.val (by omega)))
   refine ⟨N, fun k hk => ?_⟩
   have h := hN (fun _ => k) (fun _ => hk)
-  have key : (List.ofFn fun i : Fin (n + 1) => w (L[i.1]'(by omega)) ^ k) =
+  have key : (List.ofFn fun i : Fin (n + 1) => w (L[i.val]'(by omega)) ^ k) =
       L.map fun p => p.1 * u ^ ((k : ℤ) * p.2) * p.1⁻¹ := by
     rw [List.ofFn_congr hn.symm]
     simp only [Fin.val_cast]

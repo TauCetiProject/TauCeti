@@ -134,49 +134,73 @@ structure IsValidAt (r : PassportRecord n) (t : ConnectedTriple n) : Prop where
   /-- The stored degree is the degree. -/
   deg_eq : r.deg = n
   /-- The reference triple is one of the stored triples. -/
-  mem_triples : t.1 ∈ r.triples
+  mem_triples : t.val ∈ r.triples
   /-- Every stored triple is connected and lies in the passport of the reference triple. -/
   hasPassport_of_mem_triples :
     ∀ s ∈ r.triples, ∃ hs : s.IsConnected, PassportSpec.HasPassport ⟨s, hs⟩ t.passportOf
   /-- The stored partitions are the ordered full cycle data. -/
-  lambdas_eq : r.lambdas = t.1.cycleData
+  lambdas_eq : r.lambdas = t.val.cycleData
   /-- The stored orders are the order triple, positionally. -/
-  abc_eq : r.abc = t.1.orderTriple
+  abc_eq : r.abc = t.val.orderTriple
   /-- The stored search triple is the stored order triple sorted ascending. -/
   sortedAbc_eq :
     [r.sortedAbc.1, r.sortedAbc.2.1, r.sortedAbc.2.2] =
       ({r.abc.1, r.abc.2.1, r.abc.2.2} : Multiset ℕ).sort
   /-- The stored genus is the genus. -/
-  g_eq : r.g = t.1.genus
+  g_eq : r.g = t.val.genus
   /-- The stored geometry type is the geometry type. -/
-  geomtype_eq : r.geomtype = t.1.geometryType
+  geomtype_eq : r.geomtype = t.val.geometryType
   /-- The stored group number displays a transitive-group label of the monodromy group. -/
   exists_transitiveGroupLabel :
     ∃ j : TransitiveGroupIndex n, (j : ℕ) + 1 = r.group ∧
-      TransitiveGroupLabel j t.1.monodromyGroup
+      TransitiveGroupLabel j t.val.monodromyGroup
   /-- The stored passport size is the passport size. -/
   passSize_eq : r.passSize = t.passportOf.passportSize
   /-- The stored primitivity flag is set exactly for a primitive triple. -/
-  isPrimitive_eq_true_iff : r.isPrimitive = true ↔ t.1.IsPrimitive
+  isPrimitive_eq_true_iff : r.isPrimitive = true ↔ t.val.IsPrimitive
   /-- The primitivization block is a block of the monodromy action. -/
   isBlock_primitivizationBlock :
-    IsBlock t.1.monodromyGroup (r.primitivizationBlock : Set (Fin n))
+    IsBlock t.val.monodromyGroup (r.primitivizationBlock : Set (Fin n))
   /-- The primitivization block is nonempty. -/
   primitivizationBlock_nonempty : r.primitivizationBlock.Nonempty
   /-- The primitivization block is proper, unless the degree is one. -/
   deg_eq_one_of_primitivizationBlock_eq_univ : r.primitivizationBlock = Finset.univ → n = 1
   /-- No block lies strictly between the primitivization block and the set of all sheets. -/
   eq_or_eq_univ_of_primitivizationBlock_subset :
-    ∀ C : Set (Fin n), IsBlock t.1.monodromyGroup C →
+    ∀ C : Set (Fin n), IsBlock t.val.monodromyGroup C →
       (r.primitivizationBlock : Set (Fin n)) ⊆ C →
         C = r.primitivizationBlock ∨ C = Set.univ
   /-- The automorphism-group generators generate the automorphism group. -/
   closure_autGroupGenerators :
-    Subgroup.closure {τ | τ ∈ r.autGroupGenerators} = t.1.automorphismGroup
+    Subgroup.closure {τ | τ ∈ r.autGroupGenerators} = t.val.automorphismGroup
 
 namespace IsValidAt
 
 variable {r : PassportRecord n} {t : ConnectedTriple n}
+
+/-- A valid passport row has a one-sheet primitivization block exactly when its stored
+primitivity flag is set. -/
+theorem card_primitivizationBlock_eq_one_iff {n : ℕ} {r : PassportRecord n}
+    {t : ConnectedTriple n} (hr : r.IsValidAt t) :
+    r.primitivizationBlock.card = 1 ↔ r.isPrimitive = true := by
+  have := t.property.isPretransitive
+  rw [hr.isPrimitive_eq_true_iff, isPrimitive_iff]
+  constructor
+  · intro hcard
+    obtain ⟨x, hx⟩ := Finset.card_eq_one.mp hcard
+    refine IsPreprimitive.of_isTrivialBlock_base x fun {C} hxC hC ↦ ?_
+    rcases hr.eq_or_eq_univ_of_primitivizationBlock_subset C hC
+      (by simpa [hx] using hxC) with h | h
+    · exact Or.inl (h ▸ by simp [hx])
+    · exact Or.inr h
+  · intro hprim
+    rcases hprim.isTrivialBlock_of_isBlock hr.isBlock_primitivizationBlock with hsub | huniv
+    · obtain ⟨x, hx⟩ := hr.primitivizationBlock_nonempty
+      rw [Finset.card_eq_one]
+      exact ⟨x, Finset.coe_injective (by simpa using hsub.eq_singleton_of_mem hx)⟩
+    · have huniv : r.primitivizationBlock = Finset.univ := Finset.coe_eq_univ.mp huniv
+      rw [huniv, Finset.card_univ, Fintype.card_fin]
+      exact hr.deg_eq_one_of_primitivizationBlock_eq_univ huniv
 
 /-- Each stored order is the least common multiple of the stored partition at the same branch
 point. -/
@@ -256,24 +280,24 @@ variable {P : PassportSpec n} {t' : ConnectedTriple n}
 /-- The stored partitions are the ordered full cycle data of every triple in a passport containing
 the reference triple. -/
 theorem lambdas_eq_cycleData (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
-    (ht' : PassportSpec.HasPassport t' P) : r.lambdas = t'.1.cycleData :=
+    (ht' : PassportSpec.HasPassport t' P) : r.lambdas = t'.val.cycleData :=
   h.lambdas_eq.trans (PassportSpec.cycleData_eq_of_hasPassport hP ht')
 
 /-- The stored orders are the order triple of every triple in a passport containing the reference
 triple. -/
 theorem abc_eq_orderTriple (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
-    (ht' : PassportSpec.HasPassport t' P) : r.abc = t'.1.orderTriple :=
+    (ht' : PassportSpec.HasPassport t' P) : r.abc = t'.val.orderTriple :=
   h.abc_eq.trans (PassportSpec.orderTriple_eq_of_hasPassport hP ht')
 
 /-- The stored genus is the genus of every triple in a passport containing the reference triple. -/
 theorem g_eq_genus (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
-    (ht' : PassportSpec.HasPassport t' P) : r.g = t'.1.genus :=
+    (ht' : PassportSpec.HasPassport t' P) : r.g = t'.val.genus :=
   h.g_eq.trans (PassportSpec.genus_eq_of_hasPassport hP ht')
 
 /-- The stored geometry type is the geometry type of every triple in a passport containing the
 reference triple. -/
 theorem geomtype_eq_geometryType (h : r.IsValidAt t) (hP : PassportSpec.HasPassport t P)
-    (ht' : PassportSpec.HasPassport t' P) : r.geomtype = t'.1.geometryType :=
+    (ht' : PassportSpec.HasPassport t' P) : r.geomtype = t'.val.geometryType :=
   h.geomtype_eq.trans (PassportSpec.geometryType_eq_of_hasPassport hP ht')
 
 /-- The stored group number displays a transitive-group label of the monodromy group of every
@@ -281,7 +305,7 @@ triple in a passport containing the reference triple. -/
 theorem exists_transitiveGroupLabel_of_hasPassport (h : r.IsValidAt t)
     (hP : PassportSpec.HasPassport t P) (ht' : PassportSpec.HasPassport t' P) :
     ∃ j : TransitiveGroupIndex n, (j : ℕ) + 1 = r.group ∧
-      TransitiveGroupLabel j t'.1.monodromyGroup := by
+      TransitiveGroupLabel j t'.val.monodromyGroup := by
   obtain ⟨L, hL, -, hlabel⟩ := h.exists_hasLabel hP
   rw [PassportLabel.groupNumber_def] at hL
   exact ⟨L.group, hL, ((PassportSpec.hasLabel_iff_of_hasPassport ht' L).mp hlabel).1⟩
@@ -290,7 +314,7 @@ theorem exists_transitiveGroupLabel_of_hasPassport (h : r.IsValidAt t)
 triple is primitive. -/
 theorem isPrimitive_eq_true_iff_of_hasPassport (h : r.IsValidAt t)
     (hP : PassportSpec.HasPassport t P) (ht' : PassportSpec.HasPassport t' P) :
-    r.isPrimitive = true ↔ t'.1.IsPrimitive :=
+    r.isPrimitive = true ↔ t'.val.IsPrimitive :=
   h.isPrimitive_eq_true_iff.trans (PassportSpec.isPrimitive_iff_of_hasPassport hP ht')
 
 end IsValidAt

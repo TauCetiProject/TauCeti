@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.LValues
+public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.QExpansion
-import TauCeti.NumberTheory.DirichletCharacter.GaussSum
+import TauCeti.NumberTheory.DirichletCharacter.LValues
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
@@ -28,7 +28,9 @@ coefficient is `δ_{u = 1} · (-Bₖ,φ / (2k))`.
 The raised series `E₂^{ψ,φ,t}(z) = E₂^{ψ,φ}(t z)`, at any level `N` with `t u v ∣ N`, lies in
 `M₂(N, ψφ)`; it has the same constant coefficient, and at `n = t m > 0` its coefficient is
 `σ₁^{ψ,φ}(m)`, the other positive coefficients being zero. For the trivial pair the weight-two
-series is not modular, and `TauCeti.EisensteinSeries.correctedE2` takes its place.
+series is not modular, and for `t > 1` `TauCeti.EisensteinSeries.correctedE2` takes its place;
+Mathlib's `E₂` has constant term one, and `correctedE2 t = E₂(z) - t E₂(t z)` has constant term
+`1 - t` and, for `t > 1`, first coefficient `-24` (for `t = 1` it is `0`).
 
 ## Main definitions
 
@@ -59,7 +61,7 @@ public section
 
 noncomputable section
 
-open Complex AddChar ZMod ModularForm Matrix.SpecialLinearGroup CongruenceSubgroup
+open Complex ZMod ModularForm Matrix.SpecialLinearGroup CongruenceSubgroup
 open UpperHalfPlane hiding I
 
 open scoped Real
@@ -162,31 +164,17 @@ theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠
   · subst u
     have hψ (a : ZMod 1) : ψ a = 1 := by
       rw [Subsingleton.elim a 1, map_one]
-    have hφpar : φ (-1) = 1 := by
-      simpa only [hψ, one_mul] using hpar
-    have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-    rw [hψ, one_mul, inv_mul_eq_iff_eq_mul₀ (normalizedCharG2_scale_ne_zero φ
-      (DirichletCharacter.gaussSum_inv_ne_zero_of_isPrimitive hφ (isPrimitive_stdAddChar v)))]
-    have hτ : gaussSum φ stdAddChar ≠ 0 :=
-      DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hφ (isPrimitive_stdAddChar v)
-    apply mul_left_cancel₀ hτ
-    -- the row sum is a generalized Bernoulli number, and `g(φ) g(φ⁻¹) = φ(-1) v = v`
-    have hB := φ.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli hφ le_rfl
-    have hprod :=
-      DirichletCharacter.gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive hφ
-        (isPrimitive_stdAddChar v)
-    rw [ZMod.card, hφpar, one_mul] at hprod
-    push_cast [Nat.factorial_two] at hB
-    rw [hB]
-    calc
-      _ = (2 * π * I) ^ 2 * -φ.generalizedBernoulli 2 / (2 * v) := by
-        field_simp
-      _ = -8 * π ^ 2 / v ^ 2 * (gaussSum φ stdAddChar * gaussSum φ⁻¹ stdAddChar) *
-          (-φ.generalizedBernoulli 2 / 4) := by
-        rw [hprod, mul_pow, mul_pow, I_sq]
-        field_simp
-        ring
-      _ = _ := by ring
+    have hB := φ.inv_normalization_mul_tsum_eq_generalizedBernoulli (k := 2) le_rfl hφ
+    have hscale : (2 * (-2 * π * I) ^ 2 / (((2 - 1).factorial : ℂ) * (v : ℂ) ^ 2) *
+        gaussSum φ⁻¹ ZMod.stdAddChar) = -8 * π ^ 2 / v ^ 2 * gaussSum φ⁻¹ stdAddChar := by
+      push_cast [Nat.factorial_one]
+      rw [mul_pow, mul_pow, I_sq]
+      ring
+    rw [hψ, one_mul]
+    push_cast at hB
+    rw [hscale] at hB
+    norm_num only at hB
+    exact hB
   · rw [ψ.map_zero' hu, zero_mul, mul_zero]
 
 /-- When `ψ` and `φ` are not both trivial and `ψ(-1) φ(-1) = 1`, a normalized weight-two
@@ -231,7 +219,7 @@ def normalizedCharG2MFRaise (t : ℕ) (htuv : t * (u * v) ∣ N) :
 
 /-- The raised normalized series is the degeneracy image of the normalized series at its
 natural level. -/
-theorem normalizedCharG2MFRaise_eq_levelRaise (t : ℕ) (htuv : t * (u * v) ∣ N) :
+theorem normalizedCharG2MFRaise_eq_levelRaise {t : ℕ} (htuv : t * (u * v) ∣ N) :
     haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
     haveI : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
     normalizedCharG2MFRaise ψ φ t htuv =
@@ -297,7 +285,6 @@ theorem qExpansion_normalizedCharG2MFRaise (htuv : t * (u * v) ∣ N) :
 
 /-- The `q`-expansion of `E₂^{ψ,φ,t}` is supported on the multiples of `t`. -/
 theorem isSupportedOnDvd_qExpansion_normalizedCharG2MFRaise (htuv : t * (u * v) ∣ N) :
-    haveI : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
     PowerSeries.IsSupportedOnDvd t (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)) := by
   let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
@@ -337,6 +324,8 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff_self_of_gaussSum_ne_zero [NeZer
   exact qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero ψ φ dvd_rfl h hpar hg
 
 /-- The coefficient of `E₂^{ψ,φ,t}` at `t` is `1`. -/
+-- Rewrite before simplification turns the q-expansion into `expand t (...)`.
+@[simp↓]
 theorem qExpansion_normalizedCharG2MFRaise_coeff_self (htuv : t * (u * v) ∣ N)
     (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
     (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)).coeff t = 1 :=

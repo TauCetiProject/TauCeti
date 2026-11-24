@@ -92,7 +92,7 @@ def rightAlexanderWhitneyDiagonal (P : TopPair.{w}) (u : T ⟶ R ⊗ S) :
   (CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkSingularChainComplex T)
     (P.fst.alexanderWhitneyDiagonal u ≫
       ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S))
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerLeft P u)).1
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerLeft P u)).val
 
 /-- The right relative Alexander–Whitney diagonal of a pair `(X, A)` is the descent of the
 Alexander–Whitney diagonal of `X`, followed by the quotient map on the second factor. -/
@@ -102,7 +102,7 @@ lemma singularChainComplexπ_rightAlexanderWhitneyDiagonal (P : TopPair.{w}) (u 
       P.fst.alexanderWhitneyDiagonal u ≫
         ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S) :=
   (CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkSingularChainComplex T) _
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerLeft P u)).2
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerLeft P u)).property
 
 /-- The right relative Alexander–Whitney diagonal is natural in maps of pairs. -/
 @[reassoc]
@@ -220,7 +220,7 @@ def relativeAlexanderWhitneyDiagonal (U V : Set X) (u : T ⟶ R ⊗ S) :
     (X.alexanderWhitneyDiagonal u ≫
       ((TopPair.ofSubset U).singularChainComplexπ R ⊗ₘ
         (TopPair.ofSubset V).singularChainComplexπ S))
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom U V u)).1
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom U V u)).val
 
 /-- The relative Alexander–Whitney diagonal is the descent of the Alexander–Whitney diagonal of
 `X`, followed by the quotient maps on both factors. -/
@@ -233,7 +233,7 @@ lemma chainComplexπ_relativeAlexanderWhitneyDiagonal (U V : Set X) (u : T ⟶ R
           (TopPair.ofSubset V).singularChainComplexπ S) :=
   (CokernelCofork.IsColimit.desc'
     ((X.smallSingularSubcomplex ![U, V]).pair.isColimitCokernelCoforkChainComplex T) _
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom U V u)).2
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom U V u)).property
 
 /-- The relative Alexander–Whitney diagonal is natural in maps `f : X ⟶ Y` carrying `U` into `U'`
 and `V` into `V'`. -/

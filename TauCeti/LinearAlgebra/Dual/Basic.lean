@@ -14,6 +14,9 @@ The dual coannihilator of the span of a family of functionals is their common
 kernel. This relates equations defining a submodule to the span of its conormals,
 without finiteness assumptions on either the family or the ambient module.
 
+The file also records that evaluation at `m` after the dual map of `f` is evaluation at
+`f m` (`Module.Dual.eval_comp_dualMap`).
+
 ## Attribution
 
 Adapted from `Mei/LinearAlgebra/Dual/Basic.lean` in
@@ -43,3 +46,16 @@ theorem dualCoannihilator_span_range {R M : Type*} {ι : Sort*}
   rw [dualCoannihilator_span, iInf_range]
 
 end Submodule
+
+namespace Module.Dual
+
+/-- Evaluating the pullback of a functional along `f` at `m` is evaluating the functional at
+`f m`. -/
+@[simp]
+theorem eval_comp_dualMap {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) (m : M) :
+    (eval R M m).comp f.dualMap = eval R N (f m) := by
+  ext φ
+  simp
+
+end Module.Dual

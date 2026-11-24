@@ -395,7 +395,7 @@ theorem isNilpotent_kostantSubsystemSubgroup {N : ℕ} (hbdd : ∀ i ∈ S, ht i
     rw [commutatorElement_def]
     push_cast
     rw [← commutatorElement_def]
-    exact Subgroup.commutator_le.1 (hcomm m) _ hx _ g.2
+    exact Subgroup.commutator_le.1 (hcomm m) _ hx _ g.property
   · have htop : heightLevel S ht (N + 1) = ∅ := by
       ext i
       simp only [mem_heightLevel, Set.mem_empty_iff_false, iff_false, not_and, Nat.not_le]

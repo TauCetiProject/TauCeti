@@ -203,7 +203,7 @@ private theorem exists_closedBall_subset_posDef_bounds (B : Matrix (Fin p) (Fin 
   have hKc : IsCompact K := isCompact_closedBall A₀ r
   -- Each quantity is continuous on the compact set `K`, the inverse because `K` lies in the cone.
   have hdet : Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
-      (A : Matrix (Fin p) (Fin p) ℝ).det := continuous_subtype_val.matrix_det
+      (A : Matrix (Fin p) (Fin p) ℝ).det := continuous_subtypeVal.matrix_det
   obtain ⟨A₁, hA₁K, hA₁min⟩ :=
     hKc.exists_isMinOn (Metric.nonempty_closedBall.2 hr0.le) hdet.continuousOn
   obtain ⟨D, hD⟩ := hKc.exists_bound_of_continuousOn hdet.continuousOn
@@ -214,12 +214,12 @@ private theorem exists_closedBall_subset_posDef_bounds (B : Matrix (Fin p) (Fin 
     have hinv : ContinuousAt (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         (A : Matrix (Fin p) (Fin p) ℝ)⁻¹) A :=
       (continuousAt_matrix_inv _ (NormedRing.inverse_continuousAt hu.unit)).comp
-        continuous_subtype_val.continuousAt
+        continuous_subtypeVal.continuousAt
     exact ((continuous_const.dotProduct
       (continuous_id.matrix_mulVec continuous_const)).continuousAt.comp hinv).continuousWithinAt
   obtain ⟨c, hc⟩ := hKc.exists_bound_of_continuousOn hw
   obtain ⟨τ, hτ⟩ := hKc.exists_bound_of_continuousOn
-    ((continuous_const.matrix_mul continuous_subtype_val).matrix_trace.continuousOn :
+    ((continuous_const.matrix_mul continuous_subtypeVal).matrix_trace.continuousOn :
       ContinuousOn (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         (B * (A : Matrix (Fin p) (Fin p) ℝ)).trace) K)
   exact ⟨A₀, r, hr0, by linarith [min_le_right (ε / 2) (δ / 3)], hKP,

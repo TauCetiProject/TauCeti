@@ -63,11 +63,11 @@ noncomputable def totalEquiv [IsGroupoid A] :
         p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right} where
   toFun f := ⟨(f.left, ⟨_, _, f.hom.left⟩, ⟨_, _, f.hom.right⟩), rfl, rfl⟩
   invFun p :=
-    ⟨p.1.1, ⟨p.1.2.1.right, p.1.2.2.right,
-      L.map (inv (eqToHom p.2.1.symm ≫ p.1.2.1.hom)) ≫ p.1.1.hom ≫
-        R.map (eqToHom p.2.2.symm ≫ p.1.2.2.hom)⟩,
-      { left := eqToHom p.2.1.symm ≫ p.1.2.1.hom
-        right := eqToHom p.2.2.symm ≫ p.1.2.2.hom
+    ⟨p.val.1, ⟨p.val.2.1.right, p.val.2.2.right,
+      L.map (inv (eqToHom p.property.1.symm ≫ p.val.2.1.hom)) ≫ p.val.1.hom ≫
+        R.map (eqToHom p.property.2.symm ≫ p.val.2.2.hom)⟩,
+      { left := eqToHom p.property.1.symm ≫ p.val.2.1.hom
+        right := eqToHom p.property.2.symm ≫ p.val.2.2.hom
         w := by simp [← Functor.map_comp_assoc] }⟩
   left_inv := by
     rintro ⟨X, ⟨l, r, h⟩, ⟨α, β, w⟩⟩
@@ -92,7 +92,7 @@ theorem totalEquiv_apply_coe [IsGroupoid A] (f : Quiver.Total (Comma L R)) :
 theorem totalEquiv_symm_apply_left [IsGroupoid A]
     (p : {p : Comma L R × Quiver.Total A × Quiver.Total B //
       p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) :
-    (totalEquiv.symm p).left = p.1.1 := (rfl)
+    (totalEquiv.symm p).left = p.val.1 := (rfl)
 
 /-- The target of the arrow with prescribed source and components. Its structure arrow is the
 composite `L α⁻¹ ≫ X.hom ≫ R β` forced by commutativity of the square. -/
@@ -100,16 +100,16 @@ composite `L α⁻¹ ≫ X.hom ≫ R β` forced by commutativity of the square. 
 theorem totalEquiv_symm_apply_right [IsGroupoid A]
     (p : {p : Comma L R × Quiver.Total A × Quiver.Total B //
       p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) :
-    (totalEquiv.symm p).right = ⟨p.1.2.1.right, p.1.2.2.right,
-      L.map (inv (eqToHom p.2.1.symm ≫ p.1.2.1.hom)) ≫ p.1.1.hom ≫
-        R.map (eqToHom p.2.2.symm ≫ p.1.2.2.hom)⟩ := (rfl)
+    (totalEquiv.symm p).right = ⟨p.val.2.1.right, p.val.2.2.right,
+      L.map (inv (eqToHom p.property.1.symm ≫ p.val.2.1.hom)) ≫ p.val.1.hom ≫
+        R.map (eqToHom p.property.2.symm ≫ p.val.2.2.hom)⟩ := (rfl)
 
 /-- The arrow with prescribed source and components has that left component. -/
 @[simp]
 theorem totalEquiv_symm_apply_hom_left [IsGroupoid A]
     (p : {p : Comma L R × Quiver.Total A × Quiver.Total B //
       p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) :
-    (⟨_, _, (totalEquiv.symm p).hom.left⟩ : Quiver.Total A) = p.1.2.1 := by
+    (⟨_, _, (totalEquiv.symm p).hom.left⟩ : Quiver.Total A) = p.val.2.1 := by
   obtain ⟨⟨X, ⟨a, a', α⟩, ⟨b, b', β⟩⟩, ha, hb⟩ := p
   dsimp only at ha hb
   subst ha hb
@@ -120,7 +120,7 @@ theorem totalEquiv_symm_apply_hom_left [IsGroupoid A]
 theorem totalEquiv_symm_apply_hom_right [IsGroupoid A]
     (p : {p : Comma L R × Quiver.Total A × Quiver.Total B //
       p.2.1.left = p.1.left ∧ p.2.2.left = p.1.right}) :
-    (⟨_, _, (totalEquiv.symm p).hom.right⟩ : Quiver.Total B) = p.1.2.2 := by
+    (⟨_, _, (totalEquiv.symm p).hom.right⟩ : Quiver.Total B) = p.val.2.2 := by
   obtain ⟨⟨X, ⟨a, a', α⟩, ⟨b, b', β⟩⟩, ha, hb⟩ := p
   dsimp only at ha hb
   subst ha hb

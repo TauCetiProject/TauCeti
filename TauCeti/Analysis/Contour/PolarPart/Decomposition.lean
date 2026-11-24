@@ -137,23 +137,23 @@ end PolarPartDecomposition
 parts. -/
 def meromorphicPolarPartTotal {f : ℂ → ℂ} {S : Finset ℂ}
     (hMero : ∀ s ∈ S, MeromorphicAt f s) (z : ℂ) : ℂ :=
-  ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.1 s.2) z
+  ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.val s.property) z
 
 /-- The total polar part, unfolded to the sum of the canonical per-point polar parts. -/
 theorem meromorphicPolarPartTotal_eq_sum {f : ℂ → ℂ} {S : Finset ℂ}
     (hMero : ∀ s ∈ S, MeromorphicAt f s) (z : ℂ) :
     meromorphicPolarPartTotal hMero z =
-      ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.1 s.2) z := by
+      ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.val s.property) z := by
   unfold meromorphicPolarPartTotal
   rfl
 
 /-- The polar parts of the other poles are analytic at `s`. -/
 private theorem otherPolar_analyticAt {f : ℂ → ℂ} {S : Finset ℂ}
     (hMero : ∀ s ∈ S, MeromorphicAt f s) (s : ℂ) :
-    AnalyticAt ℂ (fun z => ∑ s' ∈ S.attach.filter (fun s' => s'.1 ≠ s),
-      meromorphicPolarPartAt (hMero s'.1 s'.2) z) s := by
+    AnalyticAt ℂ (fun z => ∑ s' ∈ S.attach.filter (fun s' => s'.val ≠ s),
+      meromorphicPolarPartAt (hMero s'.val s'.property) z) s := by
   refine Finset.analyticAt_fun_sum _ fun s' hs' => ?_
-  exact meromorphicPolarPartAt_analyticAt_of_ne (hMero s'.1 s'.2)
+  exact meromorphicPolarPartAt_analyticAt_of_ne (hMero s'.val s'.property)
     ((Finset.mem_filter.mp hs').2).symm
 
 /-- Near each pole, `f` minus the total polar part has an analytic germ: the per-point analytic
@@ -163,8 +163,8 @@ private theorem exists_analyticAt_sub_polarPartTotal {f : ℂ → ℂ} {S : Fins
     ∃ g : ℂ → ℂ, AnalyticAt ℂ g s ∧
       ∀ᶠ z in 𝓝[≠] s, f z - meromorphicPolarPartTotal hMero z = g z := by
   refine ⟨fun z => meromorphicAnalyticPartAt (hMero s hs) z -
-      ∑ s' ∈ S.attach.filter (fun s' => s'.1 ≠ s),
-        meromorphicPolarPartAt (hMero s'.1 s'.2) z,
+      ∑ s' ∈ S.attach.filter (fun s' => s'.val ≠ s),
+        meromorphicPolarPartAt (hMero s'.val s'.property) z,
     (meromorphicAnalyticPartAt_analyticAt (hMero s hs)).sub
       (otherPolar_analyticAt hMero s), ?_⟩
   filter_upwards [eventuallyEq_meromorphicAnalyticPartAt_add_meromorphicPolarPartAt
@@ -172,14 +172,14 @@ private theorem exists_analyticAt_sub_polarPartTotal {f : ℂ → ℂ} {S : Fins
   rw [hz]
   suffices h_total : meromorphicPolarPartTotal hMero z =
       meromorphicPolarPartAt (hMero s hs) z +
-        ∑ s' ∈ S.attach.filter (fun s' => s'.1 ≠ s),
-          meromorphicPolarPartAt (hMero s'.1 s'.2) z by
+        ∑ s' ∈ S.attach.filter (fun s' => s'.val ≠ s),
+          meromorphicPolarPartAt (hMero s'.val s'.property) z by
     rw [h_total]
     ring
   unfold meromorphicPolarPartTotal
-  rw [← Finset.sum_filter_add_sum_filter_not S.attach (fun s' => s'.1 = s)]
+  rw [← Finset.sum_filter_add_sum_filter_not S.attach (fun s' => s'.val = s)]
   congr 1
-  rw [show S.attach.filter (fun s' => s'.1 = s) = {⟨s, hs⟩} from by
+  rw [show S.attach.filter (fun s' => s'.val = s) = {⟨s, hs⟩} from by
     ext s'
     simp only [Finset.mem_filter, Finset.mem_attach, true_and, Finset.mem_singleton]
     exact ⟨fun h => Subtype.ext h, fun h => by rw [h]⟩]
@@ -265,9 +265,9 @@ noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
     (hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ))) (hMero : ∀ s ∈ S, MeromorphicAt f s) :
     PolarPartDecomposition f S U where
   order s := meromorphicPolarOrderAt f s
-  coeff s k := meromorphicPolarCoeffAt (hMero s s.2) k
-  polarPart s z := meromorphicPolarPartAt (hMero s s.2) z
-  polarPart_eq s z := meromorphicPolarPartAt_eq_sum (hMero s s.2) z
+  coeff s k := meromorphicPolarCoeffAt (hMero s s.property) k
+  polarPart s z := meromorphicPolarPartAt (hMero s s.property) z
+  polarPart_eq s z := meromorphicPolarPartAt_eq_sum (hMero s s.property) z
   residue_eq s := by
     rcases Nat.eq_zero_or_pos (meromorphicPolarOrderAt f s) with h0 | hpos
     · rw [dite_eq_right (by omega)]
@@ -276,7 +276,7 @@ noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
       rw [h0] at hle
       simpa using hle
     · rw [dite_eq_left hpos]
-      exact (meromorphicPolarCoeffAt_zero_eq_residue (hMero s s.2) hpos).symm
+      exact (meromorphicPolarCoeffAt_zero_eq_residue (hMero s s.property) hpos).symm
   analyticRemainder := fun z => if z ∈ (↑S : Set ℂ) then
       limUnder (𝓝[≠] z) (fun u => f u - meromorphicPolarPartTotal hMero u)
     else f z - meromorphicPolarPartTotal hMero z
@@ -294,8 +294,8 @@ noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
           (fun w => f w - meromorphicPolarPartTotal hMero w) U z := by
         refine hfU.sub (DifferentiableAt.differentiableWithinAt ?_)
         refine DifferentiableAt.fun_sum fun s' _ => ?_
-        exact (meromorphicPolarPartAt_analyticAt_of_ne (hMero s'.1 s'.2)
-          (fun h => hzS (by rw [h]; exact Finset.mem_coe.mpr s'.2))).differentiableAt
+        exact (meromorphicPolarPartAt_analyticAt_of_ne (hMero s'.val s'.property)
+          (fun h => hzS (by rw [h]; exact Finset.mem_coe.mpr s'.property))).differentiableAt
       exact h_diff.congr_of_eventuallyEq
         ((remainder_eventuallyEq_off hMero hzS).filter_mono nhdsWithin_le_nhds)
         (remainder_eventuallyEq_off hMero hzS).eq_of_nhds
@@ -318,13 +318,13 @@ variable {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
 identification `ofMeromorphic_order`. -/
 @[simp] theorem ofMeromorphic_coeff (s : S) (k : Fin ((ofMeromorphic hf hMero).order s)) :
     (ofMeromorphic hf hMero).coeff s k =
-      meromorphicPolarCoeffAt (hMero s s.2) (Fin.cast (ofMeromorphic_order s) k) := by
+      meromorphicPolarCoeffAt (hMero s s.property) (Fin.cast (ofMeromorphic_order s) k) := by
   unfold ofMeromorphic
   rfl
 
 /-- The constructed polar part is the canonical polar part. -/
 @[simp] theorem ofMeromorphic_polarPart (s : S) (z : ℂ) :
-    (ofMeromorphic hf hMero).polarPart s z = meromorphicPolarPartAt (hMero s s.2) z := by
+    (ofMeromorphic hf hMero).polarPart s z = meromorphicPolarPartAt (hMero s s.property) z := by
   unfold ofMeromorphic
   rfl
 

@@ -59,7 +59,7 @@ theorem infinite_stabilizer_of_isParabolic {R : Type*} [CommRing R] [IsAddTorsio
   have hdet (r : ℤ) : (1 + r • H).det = 1 := by
     simp [det_fin_two, H, zsmul_eq_mul]
     linear_combination -(r : R) ^ 2 * hd
-  let U (r : ℤ) : SL(2, R) := ⟨1 + r • H, hdet r⟩
+  let U (r : ℤ) : SL(2, R) := .mk (1 + r • H) (hdet r)
   have hcomm (r : ℤ) : (U r : Matrix (Fin 2) (Fin 2) R) * M = M * U r := by
     ext i j
     fin_cases i <;> fin_cases j <;>

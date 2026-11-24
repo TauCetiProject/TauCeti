@@ -159,7 +159,7 @@ theorem exists_geckWeylRootIndex_eq (k : Fin t.numRoots) :
   obtain ⟨j, hj, w, hw⟩ := exists_mem_support_weylGroupToPerm_eq (t.simplyConnectedBase ht) k
   obtain ⟨l, rfl⟩ := t.geckWeylWordProd_surjective ht w
   refine ⟨l, (t.simpleSupportEquivSimplyConnectedBase ht).symm ⟨j, hj⟩, ?_⟩
-  rw [geckWeylRootIndex, ← coe_simpleSupportEquivSimplyConnectedBase, Equiv.apply_symm_apply]
+  rw [geckWeylRootIndex, ← coe_simpleSupportEquivSimplyConnectedBase_apply, Equiv.apply_symm_apply]
   exact hw
 
 /-- The map sending a Weyl word and a node to their root index is surjective. -/
@@ -195,7 +195,7 @@ theorem geckWeylRootIndex_geckRootSubgroupPresentation (k : Fin t.numRoots) :
   split_ifs with hk
   · rw [geckWeylRootIndex_nil]
     apply Fin.ext
-    exact t.simpleIndex_val ht ⟨k, hk⟩
+    exact t.val_simpleIndex ht ⟨k, hk⟩
   · exact Function.surjInv_eq (t.geckWeylRootIndex_surjective ht) k
 
 /-! ## The root subgroup attached to a word and a node -/

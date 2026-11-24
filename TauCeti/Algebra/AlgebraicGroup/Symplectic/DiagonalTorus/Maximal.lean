@@ -36,9 +36,10 @@ diagonal torus in `TauCeti.Algebra.AlgebraicGroup.Symplectic.DiagonalTorus.Close
 
 * J. S. Milne, *Algebraic Groups* (2017), §17 and §23.
 * J. E. Humphreys, *Linear Algebraic Groups* (1975), §16.1 and §26.3.
-* The Hopf-ideal organization and the point-subgroup comparison follow the formal template in
-  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal`, with which this module
-  shares the maximality descent lemma `TauCeti.HopfIdeal.isMaximalTorus_of_baseChange`.
+* The Hopf-ideal organization follows the formal template in
+  `TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal`.
+* Maximality descends from an algebraic closure by
+  `TauCeti.HopfIdeal.isMaximalTorus_of_baseChange`.
 * The matrix centralizer input is
   `TauCeti.GLSymplecticFin.centralizer_diagonalTorus`.
 -/

@@ -78,9 +78,9 @@ private noncomputable def sigmaInertiaNeOneEquivPseudoreflections
   have hfix (H : ρ.reflectingHyperplanes) (g : I H) :
       H.val ≤ (ρ g).fixedSubmodule := by
     rw [← hker H]
-    exact (ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 g.2
+    exact (ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 g.property
   have hneq (H : ρ.reflectingHyperplanes) (g : {g : I H // g ≠ 1}) : (g.val : G) ≠ 1 :=
-    fun h ↦ g.2 (Subtype.ext h)
+    fun h ↦ g.property (Subtype.ext h)
   have hfixed (H : ρ.reflectingHyperplanes) (g : {g : I H // g ≠ 1}) :
       (ρ g.val).fixedSubmodule = H.val :=
     ρ.fixedSubmodule_eq_of_mem_reflectingHyperplanes H.property

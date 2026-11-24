@@ -41,7 +41,7 @@ variable (R : Type u) [CommRing R] {H : Type u} [CommRing H] [HopfAlgebra R H]
 
 /-- The equations cutting out Hopf ideals in the Grassmannian chart at `x`. -/
 def ideal : Ideal (ChartAlgebra R x) :=
-  ((chartHomEquiv R x _ (AlgHom.id R _)).1).hopfIdealLocus
+  ((chartHomEquiv R x _ (AlgHom.id R _)).val).hopfIdealLocus
 
 -- A nominal type keeps instance search from choosing the module structure from the inner
 -- quotient defining `ChartAlgebra` when forming tensor products over `R`.
@@ -89,7 +89,7 @@ theorem ideal_le_ker_iff {A : Type u} [CommRing A] [Algebra R A]
     (f : ChartAlgebra R x →ₐ[R] A) :
     ideal R x ≤ RingHom.ker f ↔
       ∃ I : Ideal (A ⊗[R] H),
-        I.restrictScalars A = (chartHomEquiv R x A f).1.toSubmodule ∧ I.IsHopfIdeal A := by
+        I.restrictScalars A = (chartHomEquiv R x A f).val.toSubmodule ∧ I.IsHopfIdeal A := by
   rw [ideal, hopfIdealLocus_le_ker_iff]
   have h := chartHomEquiv_comp x f (AlgHom.id R _)
   rw [AlgHom.comp_id] at h
@@ -103,7 +103,7 @@ theorem ideal_le_ker_iff {A : Type u} [CommRing A] [Algebra R A]
 /-- The Hopf equations evaluated at a chart point are the image of the universal equations. -/
 @[simp]
 theorem ideal_map {A : Type u} [CommRing A] [Algebra R A] (f : ChartAlgebra R x →ₐ[R] A) :
-    Ideal.map f (ideal R x) = (chartHomEquiv R x A f).1.hopfIdealLocus := by
+    Ideal.map f (ideal R x) = (chartHomEquiv R x A f).val.hopfIdealLocus := by
   have h := chartHomEquiv_comp x f (AlgHom.id R _)
   rw [AlgHom.comp_id] at h
   rw [h, hopfIdealLocus_map]
@@ -116,23 +116,23 @@ def universalPoint : chart (CoordinateRing R x) (fun i ↦ (1 : CoordinateRing R
   chartHomEquiv R x _ (mk R x)
 
 /-- The universal point lies on the Hopf-ideal locus. -/
-theorem hopfIdealLocus_universalPoint : (universalPoint R x).1.hopfIdealLocus = ⊥ := by
+theorem hopfIdealLocus_universalPoint : (universalPoint R x).val.hopfIdealLocus = ⊥ := by
   rw [universalPoint, ← ideal_map]
   exact (Ideal.map_eq_bot_iff_le_ker _).2 (ker_mk R x).ge
 
 /-- The universal Hopf ideal in the base change of `H` to the closed chart. -/
 def universalIdeal : Ideal (CoordinateRing R x ⊗[R] H) :=
-  (universalPoint R x).1.hopfIdeal (hopfIdealLocus_universalPoint R x)
+  (universalPoint R x).val.hopfIdeal (hopfIdealLocus_universalPoint R x)
 
 /-- The universal ideal has the underlying submodule classified by the universal point. -/
 @[simp]
 theorem universalIdeal_restrictScalars :
     (universalIdeal R x).restrictScalars (CoordinateRing R x) =
-      (universalPoint R x).1.toSubmodule :=
+      (universalPoint R x).val.toSubmodule :=
   restrictScalars_hopfIdeal _ _
 
 instance : (universalIdeal R x).IsHopfIdeal (CoordinateRing R x) :=
-  inferInstanceAs (((universalPoint R x).1.hopfIdeal _).IsHopfIdeal _)
+  inferInstanceAs (((universalPoint R x).val.hopfIdeal _).IsHopfIdeal _)
 
 /-- The universal finite free Hopf quotient on the chart. -/
 abbrev Quotient := (CoordinateRing R x ⊗[R] H) ⧸ universalIdeal R x
@@ -140,7 +140,7 @@ abbrev Quotient := (CoordinateRing R x ⊗[R] H) ⧸ universalIdeal R x
 /-- The images of `1 ⊗ x i` identify the universal quotient with a free module of rank `k`. -/
 def quotientEquiv : (Fin k → CoordinateRing R x) ≃ₗ[CoordinateRing R x] Quotient R x :=
   (chartQuotEquiv (universalPoint R x)).trans
-    (Submodule.quotEquivOfEq (universalPoint R x).1.toSubmodule
+    (Submodule.quotEquivOfEq (universalPoint R x).val.toSubmodule
       ((universalIdeal R x).restrictScalars (CoordinateRing R x))
       (universalIdeal_restrictScalars R x).symm)
 
@@ -190,13 +190,13 @@ variable {R x}
 def homEquiv (A : Type u) [CommRing A] [Algebra R A] :
     (CoordinateRing R x →ₐ[R] A) ≃
       {N : chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i) //
-        ∃ I : Ideal (A ⊗[R] H), I.restrictScalars A = N.1.toSubmodule ∧ I.IsHopfIdeal A} where
+        ∃ I : Ideal (A ⊗[R] H), I.restrictScalars A = N.val.toSubmodule ∧ I.IsHopfIdeal A} where
   toFun f := ⟨chartHomEquiv R x A (f.comp (mk R x)),
     (ideal_le_ker_iff _).mp fun a ha ↦ by
       have hz : mk R x a = 0 := RingHom.mem_ker.mp (by rwa [ker_mk])
       exact (congrArg f hz).trans (map_zero f)⟩
-  invFun N := lift ((chartHomEquiv R x A).symm N.1)
-    ((ideal_le_ker_iff _).mpr (by simpa using N.2))
+  invFun N := lift ((chartHomEquiv R x A).symm N.val)
+    ((ideal_le_ker_iff _).mpr (by simpa using N.property))
   left_inv f := by
     apply Ideal.Quotient.algHom_ext R
     exact (lift_comp_mk _ _).trans (Equiv.symm_apply_apply _ _)
@@ -207,7 +207,7 @@ def homEquiv (A : Type u) [CommRing A] [Algebra R A] :
 /-- Forgetting the Hopf condition in `homEquiv` gives the ambient chart point. -/
 @[simp]
 theorem homEquiv_apply {A : Type u} [CommRing A] [Algebra R A] (f : CoordinateRing R x →ₐ[R] A) :
-    (homEquiv A f).1 = chartHomEquiv R x A (f.comp (mk R x)) :=
+    (homEquiv A f).val = chartHomEquiv R x A (f.comp (mk R x)) :=
   (rfl)
 
 /-- The inverse universal correspondence evaluates the ambient chart coordinates at the
@@ -215,16 +215,16 @@ linear quotient map attached to the given Hopf ideal. -/
 @[simp]
 theorem homEquiv_symm_apply_mk {A : Type u} [CommRing A] [Algebra R A]
     (N : {N : chart A (fun i ↦ (1 : A) ⊗ₜ[R] x i) //
-      ∃ I : Ideal (A ⊗[R] H), I.restrictScalars A = N.1.toSubmodule ∧ I.IsHopfIdeal A})
+      ∃ I : Ideal (A ⊗[R] H), I.restrictScalars A = N.val.toSubmodule ∧ I.IsHopfIdeal A})
     (a : ChartAlgebra R x) :
     (homEquiv A).symm N (mk R x a) =
-      (chartHomEquiv R x A).symm N.1 a :=
+      (chartHomEquiv R x A).symm N.val a :=
   (rfl)
 
 /-- The universal correspondence commutes with arbitrary changes of the test algebra. -/
 theorem homEquiv_comp {A B : Type u} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
     (f : A →ₐ[R] B) (g : CoordinateRing R x →ₐ[R] A) :
-    (homEquiv B (f.comp g)).1.1 = map f (homEquiv A g).1.1 := by
+    (homEquiv B (f.comp g)).val.val = map f (homEquiv A g).val.val := by
   simp only [homEquiv_apply, AlgHom.comp_assoc, chartHomEquiv_comp]
 
 /-- The Hopf-ideal equations agree on overlaps under the ambient Grassmannian transitions.

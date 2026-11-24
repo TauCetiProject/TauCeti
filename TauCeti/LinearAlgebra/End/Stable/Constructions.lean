@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.End.Stable.Basic
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Pi.Map
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.Projection
 import TauCeti.LinearAlgebra.Submodule.Prod
@@ -288,7 +289,7 @@ theorem IsStableAt.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : 
     (hf : f ∘ₗ T_M = T_N ∘ₗ f) {c : ℕ} (hM : T_M.IsStableAt c) (hN : T_N.IsStableAt c) :
     IsStableAt (T_M.restrict (mapsTo_ker_of_comp_eq hf)) c := by
   let TK := T_M.restrict (mapsTo_ker_of_comp_eq hf)
-  have hrange_ge : ∀ x : ↥(LinearMap.ker f), x.1 ∈ LinearMap.range (T_M ^ c) →
+  have hrange_ge : ∀ x : ↥(LinearMap.ker f), x.val ∈ LinearMap.range (T_M ^ c) →
       x ∈ LinearMap.range (TK ^ c) := by
     rintro x ⟨y, hy⟩
     have hyM : y ∈ LinearMap.ker (T_M ^ c) ⊔ LinearMap.range (T_M ^ c) := by
@@ -297,9 +298,9 @@ theorem IsStableAt.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : 
     have hfv_ker : f v ∈ LinearMap.ker (T_N ^ c) := by
       rw [LinearMap.mem_ker, ← LinearMap.comp_apply,
         Module.End.commute_pow_left_of_commute hf.symm c, LinearMap.comp_apply]
-      have hTMv : (T_M ^ c) v = x.1 := by
+      have hTMv : (T_M ^ c) v = x.val := by
         rw [← hy, map_add, LinearMap.mem_ker.mp hu, zero_add]
-      rw [hTMv, LinearMap.mem_ker.mp x.2]
+      rw [hTMv, LinearMap.mem_ker.mp x.property]
     have hfv0 : f v = 0 := Submodule.disjoint_def.mp hN.isCompl_ker_pow_range_pow.disjoint _
       hfv_ker (map_range_pow_le_of_comp_eq hf c ⟨v, hv, rfl⟩)
     refine ⟨⟨v, LinearMap.mem_ker.mpr hfv0⟩, Subtype.ext ?_⟩
@@ -309,17 +310,17 @@ theorem IsStableAt.restrict_ker_of_comp_eq {T_M : End R M} {T_N : End R N} {f : 
   refine ⟨hM.one_le, Submodule.disjoint_def.mpr fun x hxk hxr ↦ ?_,
     Submodule.codisjoint_iff_exists_add_eq.mpr fun x ↦ ?_⟩
   · obtain ⟨z, rfl⟩ := hxr
-    have hxk' : (T_M ^ c) ((TK ^ c) z).1 = 0 := by
+    have hxk' : (T_M ^ c) ((TK ^ c) z).val = 0 := by
       simpa [TK, pow_restrict c] using congrArg Subtype.val (LinearMap.mem_ker.mp hxk)
-    have hzM : ((TK ^ c) z).1 ∈ LinearMap.range (T_M ^ c) :=
-      ⟨z.1, by simp [TK, pow_restrict c]⟩
+    have hzM : ((TK ^ c) z).val ∈ LinearMap.range (T_M ^ c) :=
+      ⟨z.val, by simp [TK, pow_restrict c]⟩
     exact Subtype.ext (Submodule.disjoint_def.mp hM.isCompl_ker_pow_range_pow.disjoint _
       (LinearMap.mem_ker.mpr hxk') hzM)
-  · have hxM : x.1 ∈ LinearMap.ker (T_M ^ c) ⊔ LinearMap.range (T_M ^ c) := by
+  · have hxM : x.val ∈ LinearMap.ker (T_M ^ c) ⊔ LinearMap.range (T_M ^ c) := by
       rw [hM.isCompl_ker_pow_range_pow.codisjoint.eq_top]; exact Submodule.mem_top
     obtain ⟨u, hu, v, hv, huv⟩ := Submodule.mem_sup.mp hxM
     have hfu_eq : f u = -f v := eq_neg_of_add_eq_zero_left <| by
-      rw [← map_add, huv, LinearMap.mem_ker.mp x.2]
+      rw [← map_add, huv, LinearMap.mem_ker.mp x.property]
     have hfu0 : f u = 0 := Submodule.disjoint_def.mp hN.isCompl_ker_pow_range_pow.disjoint _
       (map_ker_pow_le_of_comp_eq hf c ⟨u, hu, rfl⟩)
       (hfu_eq ▸ neg_mem (map_range_pow_le_of_comp_eq hf c ⟨v, hv, rfl⟩))

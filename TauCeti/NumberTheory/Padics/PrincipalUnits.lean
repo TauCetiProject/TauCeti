@@ -619,7 +619,7 @@ theorem isProP_unitsPrincipal {f : ℕ} (hf : 0 < f) : IsProP p (unitsPrincipal 
   -- `u ∈ U^(f)`.
   obtain ⟨k, -, hk⟩ := (hasBasis_nhds_one_unitsPrincipal p).mem_iff.mp
     (U.isOpen.mem_nhds (one_mem _))
-  obtain ⟨u, hu, hgu⟩ := Subgroup.mem_map.mp g.2
+  obtain ⟨u, hu, hgu⟩ := Subgroup.mem_map.mp g.property
   refine ⟨k, Subtype.ext ?_⟩
   rw [Subgroup.coe_pow, OneMemClass.coe_one, ← hgu, ← map_pow, QuotientGroup.mk'_apply,
     QuotientGroup.eq_one_iff]

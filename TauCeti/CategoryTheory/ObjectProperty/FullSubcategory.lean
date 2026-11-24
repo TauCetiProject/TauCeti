@@ -20,6 +20,11 @@ leaves underlying objects and morphisms unchanged, commutes with the inclusions,
 linear whenever the ambient category is linear. No closure under isomorphisms is needed.
 
 The construction uses Mathlib's `ObjectProperty.lift` and `ObjectProperty.ιOfLE`.
+
+The file also records `CategoryTheory.ObjectProperty.lift_comp_ι`: a lift through a full
+subcategory, followed by the inclusion, is the original functor; and
+`CategoryTheory.ObjectProperty.map_hom_of_comp_ι_eq`: a functor `G` with `G ⋙ P.ι = F` acts on
+morphisms as `F`, up to the identifications of the underlying objects.
 -/
 
 public section
@@ -31,6 +36,27 @@ variable {C : Type*} [Category* C] (P Q : ObjectProperty C)
 /-- A full subcategory of a groupoid is a groupoid, without any closure condition on objects. -/
 instance FullSubcategory.isGroupoid [IsGroupoid C] : IsGroupoid P.FullSubcategory :=
   isGroupoid_of_reflects_iso P.ι
+
+/-- The lift of a functor through a full subcategory, followed by the inclusion, is the original
+functor. This is the equality form of Mathlib's isomorphism
+`CategoryTheory.ObjectProperty.liftCompιIso`. Use it where an isomorphism does not suffice: to
+rewrite a composite of functors, or to supply the hypothesis of
+`CategoryTheory.ObjectProperty.map_hom_of_comp_ι_eq` for a functor defined as a lift. -/
+theorem lift_comp_ι {E : Type*} [Category* E] (F : E ⥤ C) (hF : ∀ A, P (F.obj A)) :
+    P.lift F hF ⋙ P.ι = F :=
+  Functor.ext (P.ι_obj_lift_obj F hF) fun _ _ f ↦ by
+    rw [Functor.comp_map, P.ι_obj_lift_map F hF f]
+    simp
+
+variable {P} in
+/-- A functor `G` lifting `F` through a full subcategory, in the sense that `G ⋙ P.ι = F`, acts
+on morphisms as `F`, up to the identifications `hA` and `hB` of the underlying objects. For
+`G = P.lift F hF`, or a functor defined as such a lift, the hypothesis is `lift_comp_ι`. -/
+theorem map_hom_of_comp_ι_eq {E : Type*} [Category* E] {F : E ⥤ C} {G : E ⥤ P.FullSubcategory}
+    (hG : G ⋙ P.ι = F) {A B : E} (f : A ⟶ B) (hA : (G.obj A).obj = F.obj A)
+    (hB : (G.obj B).obj = F.obj B) :
+    (G.map f).hom = eqToHom hA ≫ F.map f ≫ eqToHom hB.symm := by
+  simpa only [Functor.comp_map, Functor.comp_obj, ι_map, ι_obj] using Functor.congr_hom hG f
 
 /-- Two successive full-subcategory restrictions agree with restriction to the intersection.
 The comparison and its inverse leave the underlying objects and morphisms unchanged. -/

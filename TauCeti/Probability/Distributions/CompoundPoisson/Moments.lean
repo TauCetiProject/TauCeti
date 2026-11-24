@@ -60,7 +60,7 @@ theorem memLp_id_compoundPoissonMeasure {p : ℝ≥0∞} (hp_top : p ≠ ∞)
   have hp_real : 0 < p.toReal := ENNReal.toReal_pos hp hp_top
   rw [← integrable_norm_rpow_iff hmeas hp hp_top]
   simp only [id_eq]
-  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete
+  rw [compoundPoissonMeasure_def, Measure.integrable_bind_iff Measurable.of_discrete.aemeasurable
     (by simpa only [compoundPoissonMeasure_def, id_eq] using
       (hmeas.norm.aemeasurable.pow_const p.toReal).aestronglyMeasurable)]
   simp only [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)]

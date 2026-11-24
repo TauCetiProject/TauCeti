@@ -132,7 +132,7 @@ theorem linearIndepOn_weightOneForm {S : Set (CharIndex N 1)} (hS : ∀ a ∈ S,
       (one_mem_strictPeriods_Gamma1_map N) 1)) ?_
   convert linearIndepOn_twistedDivisorSum_zero fun a ha has ↦ (hS a ha has).elim using 1
   ext a n
-  simp [qExpansion_weightOneForm_coeff _ n.2]
+  simp [qExpansion_weightOneForm_coeff _ n.property]
 
 /-- **The linear relations among the weight-one Eisenstein series**: two indices have the same
 weight-one series exactly when they are equal or exchanged. -/
@@ -238,13 +238,13 @@ variable {N : ℕ} [NeZero N] (χ : (ZMod N)ˣ →* ℂˣ)
 series `E₁^{ψ,φ,t}` of the indices of nebentypus `χ`. -/
 def weightOneEisensteinSubspace : Submodule ℂ (modFormCharSpace 1 χ) :=
   Submodule.span ℂ (Set.range fun a : {a : CharIndex N 1 // a.nebentypus = χ} ↦
-    a.1.weightOneInCharSpace a.2)
+    a.val.weightOneInCharSpace a.property)
 
 /-- The defining span of the weight-one Eisenstein subspace. -/
 theorem weightOneEisensteinSubspace_def :
     weightOneEisensteinSubspace χ =
       Submodule.span ℂ (Set.range fun a : {a : CharIndex N 1 // a.nebentypus = χ} ↦
-        a.1.weightOneInCharSpace a.2) :=
+        a.val.weightOneInCharSpace a.property) :=
   (rfl)
 
 /-- The weight-one series of an index of nebentypus `χ` belongs to the weight-one Eisenstein
@@ -258,7 +258,7 @@ combination of the weight-one series of the indices of nebentypus `χ`. -/
 theorem mem_weightOneEisensteinSubspace_iff (f : modFormCharSpace 1 χ) :
     f ∈ weightOneEisensteinSubspace χ ↔
       ∃ c : {a : CharIndex N 1 // a.nebentypus = χ} →₀ ℂ,
-        c.sum (fun a z ↦ z • a.1.weightOneInCharSpace a.2) = f :=
+        c.sum (fun a z ↦ z • a.val.weightOneInCharSpace a.property) = f :=
   Finsupp.mem_span_range_iff_exists_finsupp
 
 /-- Elimination rule for the weight-one Eisenstein subspace: a subspace containing the weight-one

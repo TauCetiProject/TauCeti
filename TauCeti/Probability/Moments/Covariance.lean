@@ -238,7 +238,7 @@ theorem covarianceBilin_eq_smul_innerSL [IsFiniteMeasure μ]
   -- Invariance under `-1` makes the mean vanish, so covariance is the second-moment form.
   have hm : ∫ x, x ∂μ = 0 := by
     have : μ.IsNegInvariant := ⟨hμ (LinearIsometryEquiv.neg ℝ)⟩
-    exact integral_eq_zero_of_odd fun x ↦ rfl
+    exact integral_eq_zero_of_odd (Filter.Eventually.of_forall fun _ ↦ rfl)
   set Q : E → ℝ := fun x ↦ covarianceBilin μ x x
   set d := Module.finrank ℝ E
   have hd : (d : ℝ) ≠ 0 := by exact_mod_cast Module.finrank_pos.ne'

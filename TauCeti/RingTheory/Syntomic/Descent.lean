@@ -166,15 +166,15 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
     Module.exists_finset_card_le_finrank_and_smul_mem_span (R := P.Ring) (M := P.ker) (F := F)
   let ϕ : P.Ring →ₐ[k] A := MvPolynomial.aeval P.val
   have hker : RingHom.ker ϕ = P.ker := P.ker_eq_ker_aeval_val.symm
-  have hk : ∀ l : s, (l : P.ker).1 ∈ RingHom.ker ϕ := fun l ↦ by
+  have hk : ∀ l : s, (l : P.ker).val ∈ RingHom.ker ϕ := fun l ↦ by
     rw [hker]
-    exact (l : P.ker).2
-  have hg : ∀ x ∈ RingHom.ker ϕ, r * x ∈ Ideal.span (Set.range fun l : s ↦ (l : P.ker).1) := by
+    exact (l : P.ker).property
+  have hg : ∀ x ∈ RingHom.ker ϕ, r * x ∈ Ideal.span (Set.range fun l : s ↦ (l : P.ker).val) := by
     intro x hx
     rw [hker] at hx
     have := Submodule.mem_map_of_mem (f := P.ker.subtype) (hrs ⟨x, hx⟩)
     rw [Submodule.map_span] at this
-    have hrange : (Set.range fun l : s ↦ (l : P.ker).1) = P.ker.subtype '' s := by
+    have hrange : (Set.range fun l : s ↦ (l : P.ker).val) = P.ker.subtype '' s := by
       ext
       simp
     rw [hrange]

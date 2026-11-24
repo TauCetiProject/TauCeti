@@ -14,7 +14,9 @@ import TauCeti.Algebra.Algebra.Hom
 A subgroup of `GLₙ(A)` presented by a fixed integral Hopf ideal inherits entrywise maps of
 value rings and a representing equivalence with points of the quotient coordinate algebra.
 `IntegralPointsPresentation` records the subgroup and its presentation. Its API supplies these
-constructions uniformly, including their functoriality and naturality.
+constructions uniformly, including their functoriality and naturality. An equivalence of value
+rings induces an equivalence of presented point groups, using the identity and composition laws
+of `IntegralPointsPresentation.map`.
 
 A family of presentations over commutative rings determines a group-valued functor on
 commutative `ℤ`-algebras. The quotient coordinate Hopf algebra represents this functor.
@@ -113,6 +115,110 @@ theorem map_injective (P : IntegralPointsPresentation n I A)
     Function.Injective (P.map Q f) :=
   mapHopfIdealPointsSubgroupCongr_injective n I P.property Q.property
     (φ := f.toIntAlgHom) (by rwa [RingHom.toIntAlgHom_coe])
+
+/-- An equivalence of value rings induces an equivalence of presented point groups. -/
+def mapEquiv (P : IntegralPointsPresentation n I A) (Q : IntegralPointsPresentation n I B)
+    (e : A ≃+* B) : P.val ≃* Q.val :=
+  (P.map Q e.toRingHom).toMulEquiv (Q.map P e.symm.toRingHom)
+    (by rw [← P.map_comp Q P, RingEquiv.symm_toRingHom_comp_toRingHom, map_id])
+    (by rw [← Q.map_comp P Q, RingEquiv.toRingHom_comp_symm_toRingHom, map_id])
+
+/-- The forward map of the value-ring equivalence is the usual map of points. -/
+@[simp]
+theorem mapEquiv_apply (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) (g : P.val) :
+    P.mapEquiv Q e g = P.map Q (e : A →+* B) g :=
+  (rfl)
+
+/-- The underlying homomorphism of the value-ring equivalence is the usual map of points. -/
+@[simp]
+theorem toMonoidHom_mapEquiv (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) :
+    (P.mapEquiv Q e : P.val →* Q.val) = P.map Q (e : A →+* B) :=
+  MonoidHom.ext (P.mapEquiv_apply Q e)
+
+/-- Inverting the value-ring equivalence inverts the induced point-group equivalence. -/
+@[simp]
+theorem mapEquiv_symm (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) :
+    (P.mapEquiv Q e).symm = Q.mapEquiv P e.symm := by
+  ext g
+  simp [mapEquiv]
+
+/-- The inverse value-ring map cancels the forward map on presented points. -/
+@[simp↓]
+theorem map_symm_map (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) (g : P.val) :
+    Q.map P (e.symm : B →+* A) (P.map Q (e : A →+* B) g) = g := by
+  simpa only [mapEquiv_symm, mapEquiv_apply] using (P.mapEquiv Q e).symm_apply_apply g
+
+/-- The forward value-ring map cancels the inverse map on presented points. -/
+@[simp↓]
+theorem map_map_symm (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) (g : Q.val) :
+    P.map Q (e : A →+* B) (Q.map P (e.symm : B →+* A) g) = g := by
+  simpa only [mapEquiv_symm, mapEquiv_apply] using (P.mapEquiv Q e).apply_symm_apply g
+
+/-- The inverse and forward value-ring maps compose to the identity homomorphism on points. -/
+@[simp]
+theorem map_symm_comp_map (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) :
+    (Q.map P (e.symm : B →+* A)).comp (P.map Q (e : A →+* B)) = MonoidHom.id _ := by
+  ext1 g
+  exact P.map_symm_map Q e g
+
+/-- The forward and inverse value-ring maps compose to the identity homomorphism on points. -/
+@[simp]
+theorem map_comp_map_symm (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) :
+    (P.map Q (e : A →+* B)).comp (Q.map P (e.symm : B →+* A)) = MonoidHom.id _ := by
+  ext1 g
+  exact P.map_map_symm Q e g
+
+/-- The inverse and forward induced point equivalences compose to the identity function. -/
+@[simp]
+theorem coe_mapEquiv_symm_comp_coe_mapEquiv (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) :
+    ⇑(Q.mapEquiv P e.symm) ∘ ⇑(P.mapEquiv Q e) = id := by
+  funext g
+  simp only [Function.comp_apply, mapEquiv_apply, map_symm_map, id_eq]
+
+/-- The forward and inverse induced point equivalences compose to the identity function. -/
+@[simp]
+theorem coe_mapEquiv_comp_coe_mapEquiv_symm (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) :
+    ⇑(P.mapEquiv Q e) ∘ ⇑(Q.mapEquiv P e.symm) = id := by
+  funext g
+  simp only [Function.comp_apply, mapEquiv_apply, map_map_symm, id_eq]
+
+/-- The inverse induced point equivalence cancels the forward equivalence. -/
+@[simp↓]
+theorem mapEquiv_symm_apply_apply (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) (g : P.val) :
+    (P.mapEquiv Q e).symm (P.mapEquiv Q e g) = g :=
+  (P.mapEquiv Q e).symm_apply_apply g
+
+/-- The forward induced point equivalence cancels the inverse equivalence. -/
+@[simp↓]
+theorem mapEquiv_apply_symm_apply (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (e : A ≃+* B) (g : Q.val) :
+    P.mapEquiv Q e ((P.mapEquiv Q e).symm g) = g :=
+  (P.mapEquiv Q e).apply_symm_apply g
+
+/-- The identity ring equivalence induces the identity on points. -/
+@[simp]
+theorem mapEquiv_refl (P : IntegralPointsPresentation n I A) :
+    P.mapEquiv P (RingEquiv.refl A) = MulEquiv.refl P.val := by
+  ext g
+  simp
+
+/-- Composing value-ring equivalences composes the induced point-group equivalences. -/
+theorem mapEquiv_trans (P : IntegralPointsPresentation n I A)
+    (Q : IntegralPointsPresentation n I B) (S : IntegralPointsPresentation n I C)
+    (e : A ≃+* B) (f : B ≃+* C) :
+    P.mapEquiv S (e.trans f) = (P.mapEquiv Q e).trans (Q.mapEquiv S f) := by
+  ext g
+  simp [RingEquiv.toRingHom_trans, map_comp P Q S]
 
 section Representation
 

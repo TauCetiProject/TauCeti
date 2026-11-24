@@ -52,7 +52,7 @@ variable (d : GraphTwistedIndex)
 /-- The diagram permutation of a graph-twisted index is a symmetry of the Cartan matrix of its
 Dynkin type, which is the form in which `TauCeti.DynkinType.diagramAut` consumes it. -/
 theorem diagramPerm_mem_diagramSymmetry :
-    d.diagramPerm ∈ d.1.dynkinType.diagramSymmetry :=
+    d.diagramPerm ∈ d.val.dynkinType.diagramSymmetry :=
   DynkinType.mem_diagramSymmetry_iff.mpr d.cartanMatrix_diagramPerm
 
 noncomputable section
@@ -61,21 +61,21 @@ noncomputable section
 index: the automorphism realizing its pinned diagram permutation. It is the identity on an untwisted
 family, where that permutation is the identity. -/
 def datumGraphAut :
-    (d.1.dynkinType.simplyConnectedRootDatum d.1.dynkinType_valid).Aut :=
-  DynkinType.diagramAut d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry
+    (d.val.dynkinType.simplyConnectedRootDatum d.val.dynkinType_valid).Aut :=
+  DynkinType.diagramAut d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry
 
 /-- **The defining equation of the root-datum graph automorphism.** The body of `datumGraphAut` is
 not exposed, so this is what lets a consumer rewrite it into `TauCeti.DynkinType.diagramAut` and
 then apply the general lemmas about that construction at `σ = d.diagramPerm`. -/
 theorem datumGraphAut_def : d.datumGraphAut =
-    DynkinType.diagramAut d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry := by
+    DynkinType.diagramAut d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry := by
   rw [datumGraphAut]
 
 /-- **The order relation of the root-datum graph automorphism.** This is `γ ^ 2 = 1` for `²Aₙ`,
 `²Dₙ` and `²E₆`, `γ ^ 3 = 1` for `³D₄`, and the trivial relation on an untwisted family, all read
 off the twist order recorded by the index. -/
 @[simp] theorem datumGraphAut_pow_twistOrder : d.datumGraphAut ^ d.twistOrder = 1 :=
-  DynkinType.diagramAut_pow_eq_one d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry
+  DynkinType.diagramAut_pow_eq_one d.val.dynkinType_valid d.diagramPerm_mem_diagramSymmetry
     d.diagramPerm_pow_twistOrder
 
 end

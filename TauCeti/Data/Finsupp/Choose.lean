@@ -19,7 +19,7 @@ derivative `∂^d` scales the monomial `X^m`.
 
 ## Main results
 
-* `Finsupp.prod_choose_eq_zero`: the coefficient vanishes unless `d ≤ m`.
+* `Finsupp.prod_choose_eq_zero_iff`: the coefficient vanishes if and only if `¬d ≤ m`.
 * `Finsupp.prod_choose_add_single`: Pascal's rule in a single coordinate `i`.
 * `Finsupp.prod_choose_add_comm`: `∏ⱼ (aⱼ + bⱼ choose aⱼ)` is symmetric in `a` and `b`.
 * `Finsupp.prod_choose_le_two_pow_degree`: the coefficient is at most `2 ^ |m|`.
@@ -31,11 +31,13 @@ namespace Finsupp
 
 variable {σ : Type*}
 
-/-- The multi-index binomial coefficient `∏ⱼ (mⱼ choose dⱼ)` vanishes unless `d ≤ m`. -/
-theorem prod_choose_eq_zero {d m : σ →₀ ℕ} (h : ¬d ≤ m) :
-    (d.prod fun j k ↦ (m j).choose k) = 0 := by
-  obtain ⟨j, hj⟩ : ∃ j, m j < d j := by simpa [Finsupp.le_def] using h
-  exact Finset.prod_eq_zero (Finsupp.mem_support_iff.2 (by omega)) (Nat.choose_eq_zero_of_lt hj)
+/-- The multi-index binomial coefficient `∏ⱼ (mⱼ choose dⱼ)` vanishes if and only if
+`¬d ≤ m`. -/
+theorem prod_choose_eq_zero_iff {d m : σ →₀ ℕ} :
+    (d.prod fun j k ↦ (m j).choose k) = 0 ↔ ¬d ≤ m := by
+  simp only [prod_eq_zero_iff, mem_support_iff, Nat.choose_eq_zero_iff, le_def, not_forall,
+    not_le]
+  exact ⟨fun ⟨j, _, hj⟩ ↦ ⟨j, hj⟩, fun ⟨j, hj⟩ ↦ ⟨j, by omega, hj⟩⟩
 
 /-- Pascal's rule for the multi-index binomial coefficient, in the coordinate `i`:
 raising `nᵢ` by one adds the coefficient with `dᵢ` lowered by one, when `dᵢ ≠ 0`. -/
@@ -44,20 +46,17 @@ theorem prod_choose_add_single (n d : σ →₀ ℕ) (i : σ) :
       (d.prod fun j k ↦ (n j).choose k) +
         if d i = 0 then 0 else (d - single i 1).prod fun j k ↦ (n j).choose k := by
   classical
-  rw [Finsupp.prod_of_support_subset d subset_rfl
-      (fun j k ↦ ((n + single i 1 : σ →₀ ℕ) j).choose k)
-      (fun _ _ ↦ Nat.choose_zero_right _),
-    Finsupp.prod_of_support_subset d subset_rfl (fun j k ↦ (n j).choose k)
-      (fun _ _ ↦ Nat.choose_zero_right _)]
+  -- each product may be taken over `d.support`, since `choose · 0 = 1`
+  have h0 (f : σ → ℕ) : ∀ j ∈ d.support, (f j).choose 0 = 1 := fun _ _ ↦ Nat.choose_zero_right _
+  rw [prod_of_support_subset d subset_rfl _ (h0 _), prod_of_support_subset d subset_rfl _ (h0 _)]
   split_ifs with hi
   · rw [add_zero]
     refine Finset.prod_congr rfl fun j hj ↦ ?_
-    have hij : i ≠ j := fun h ↦ Finsupp.mem_support_iff.1 (h ▸ hj) hi
+    have hij : i ≠ j := fun h ↦ mem_support_iff.1 (h ▸ hj) hi
     simp [hij]
-  · replace hi := Finsupp.mem_support_iff.2 hi
-    rw [Finsupp.prod_of_support_subset _ support_tsub (fun j k ↦ (n j).choose k)
-        (fun _ _ ↦ Nat.choose_zero_right _),
-      ← Finset.mul_prod_erase _ _ hi,
+  · obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero hi
+    replace hi := mem_support_iff.2 hi
+    rw [prod_of_support_subset _ support_tsub _ (h0 _), ← Finset.mul_prod_erase _ _ hi,
       ← Finset.mul_prod_erase _ _ hi, ← Finset.mul_prod_erase _ _ hi]
     have h1 : ∏ j ∈ d.support.erase i, ((n + single i 1 : σ →₀ ℕ) j).choose (d j) =
         ∏ j ∈ d.support.erase i, (n j).choose (d j) :=
@@ -66,10 +65,9 @@ theorem prod_choose_add_single (n d : σ →₀ ℕ) (i : σ) :
         ∏ j ∈ d.support.erase i, (n j).choose (d j) :=
       Finset.prod_congr rfl fun j hj ↦ by simp [Finset.ne_of_mem_erase hj]
     rw [h1, h2, ← add_mul]
-    obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero (Finsupp.mem_support_iff.1 hi)
     congr 1
-    rw [Finsupp.add_apply, tsub_apply, single_eq_same, hk, Nat.add_sub_cancel,
-      Nat.choose_succ_succ', add_comm]
+    -- at `i`, this is Pascal's rule `(nᵢ + 1).choose (k + 1) = nᵢ.choose k + nᵢ.choose (k + 1)`
+    simpa [hk, add_comm] using Nat.choose_succ_succ' (n i) k
 
 /-- The multi-index binomial coefficient `∏ⱼ (aⱼ + bⱼ choose aⱼ)` is symmetric in `a` and `b`. -/
 theorem prod_choose_add_comm (a b : σ →₀ ℕ) :
@@ -84,16 +82,14 @@ theorem prod_choose_add_comm (a b : σ →₀ ℕ) :
 /-- The multi-index binomial coefficient `∏ⱼ (mⱼ choose dⱼ)` is at most `2 ^ |m|`, where
 `|m| = ∑ⱼ mⱼ` is the degree of `m`. -/
 theorem prod_choose_le_two_pow_degree (d m : σ →₀ ℕ) :
-    (d.prod fun j k ↦ (m j).choose k) ≤ 2 ^ m.degree := by
-  by_cases hdm : d ≤ m
-  · calc (d.prod fun j k ↦ (m j).choose k)
-        ≤ ∏ j ∈ d.support, 2 ^ m j :=
-          Finset.prod_le_prod fun j _ ↦ Nat.choose_le_two_pow (m j) (d j)
-      _ ≤ ∏ j ∈ m.support, 2 ^ m j :=
-          Finset.prod_le_prod_of_subset_of_one_le (support_mono hdm)
-            fun _ _ _ ↦ Nat.one_le_two_pow
-      _ = 2 ^ m.degree := by rw [Finset.prod_pow_eq_pow_sum, degree_apply]
-  · rw [prod_choose_eq_zero hdm]
-    exact Nat.zero_le _
+    (d.prod fun j k ↦ (m j).choose k) ≤ 2 ^ m.degree :=
+  calc (d.prod fun j k ↦ (m j).choose k)
+      ≤ ∏ j ∈ d.support, 2 ^ m j :=
+        Finset.prod_le_prod fun j _ ↦ Nat.choose_le_two_pow (m j) (d j)
+    _ = 2 ^ ∑ j ∈ d.support, m j := Finset.prod_pow_eq_pow_sum _ _ _
+    _ ≤ 2 ^ m.degree := by
+      rw [degree_apply]
+      exact Nat.pow_le_pow_right two_pos
+        (Finset.sum_le_sum_of_ne_zero fun j _ hj ↦ mem_support_iff.2 hj)
 
 end Finsupp

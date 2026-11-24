@@ -285,7 +285,7 @@ the discrete topology. The carrier is exposed so its points and morphisms retain
     refine ⟨R, inferInstance, inferInstance, inferInstance, inferInstance,
       e'.inv ≫ j, inferInstance, ?_⟩
     exact (LocallyRingedSpace.range_iso_inv_comp e' j).ge
-      ⟨⟨x, U.2⟩, rfl⟩
+      ⟨⟨x, U.property⟩, rfl⟩
 
 @[simp]
 theorem toFormalScheme_toLocallyRingedSpace (X : Scheme.{u}) :

@@ -79,29 +79,29 @@ variable (Fᵤ Fₛ Eᵤ Eₛ) in
 sum `Eᵤ ×ᵇ Eₛ`, together with the disc bundle `{‖u‖² ≤ ε, v = 0}` of radius `√ε` of `Eᵤ`: the
 vectors whose fibre components lie in `TauCeti.quadraticSublevelUnionCell ε`. -/
 def bundleQuadraticSublevelUnionCell (ε : ℝ) : Set (TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) :=
-  {z | z.2 ∈ quadraticSublevelUnionCell ε}
+  {z | z.snd ∈ quadraticSublevelUnionCell ε}
 
 /-- A vector lies in `TauCeti.bundleQuadraticSublevelUnionCell` exactly when its fibre components
 lie in `TauCeti.quadraticSublevelUnionCell`. -/
 theorem mem_bundleQuadraticSublevelUnionCell_iff_snd_mem :
-    z ∈ bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε ↔ z.2 ∈ quadraticSublevelUnionCell ε :=
+    z ∈ bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε ↔ z.snd ∈ quadraticSublevelUnionCell ε :=
   Iff.rfl
 
 @[simp]
 theorem mem_bundleQuadraticSublevelUnionCell :
     z ∈ bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε ↔
-      -‖z.2.1‖ ^ 2 + ‖z.2.2‖ ^ 2 ≤ -ε ∨ ‖z.2.1‖ ^ 2 ≤ ε ∧ z.2.2 = 0 :=
+      -‖z.snd.1‖ ^ 2 + ‖z.snd.2‖ ^ 2 ≤ -ε ∨ ‖z.snd.1‖ ^ 2 ≤ ε ∧ z.snd.2 = 0 :=
   mem_quadraticSublevelUnionCell
 
 /-- A vector lies in the lower quadratic sublevel with the negative disc bundle attached exactly
 when its positive component has norm at most `√(‖u‖² - ε)`. -/
 theorem mem_bundleQuadraticSublevelUnionCell_iff_norm_le :
-    z ∈ bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε ↔ ‖z.2.2‖ ≤ √(‖z.2.1‖ ^ 2 - ε) :=
+    z ∈ bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε ↔ ‖z.snd.2‖ ≤ √(‖z.snd.1‖ ^ 2 - ε) :=
   mem_quadraticSublevelUnionCell_iff_norm_le
 
 variable [TopologicalSpace (TotalSpace Fᵤ Eᵤ)] [TopologicalSpace (TotalSpace Fₛ Eₛ)]
-  (hᵤ : Continuous fun u : TotalSpace Fᵤ Eᵤ ↦ ‖u.2‖)
-  (hₛ : Continuous fun v : TotalSpace Fₛ Eₛ ↦ ‖v.2‖)
+  (hᵤ : Continuous fun u : TotalSpace Fᵤ Eᵤ ↦ ‖u.snd‖)
+  (hₛ : Continuous fun v : TotalSpace Fₛ Eₛ ↦ ‖v.snd‖)
 
 include hᵤ hₛ in
 /-- The lower quadratic sublevel with the negative disc bundle attached is closed when the fibre
@@ -112,7 +112,7 @@ theorem isClosed_bundleQuadraticSublevelUnionCell (ε : ℝ) :
   have hv := hₛ.comp (FiberBundle.Prod.continuous_totalSpaceSnd (F₁ := Fᵤ) (E₁ := Eᵤ))
   simp only [Function.comp_def] at hu hv
   have h : bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε =
-      {z | ‖z.2.2‖ ≤ √(‖z.2.1‖ ^ 2 - ε)} :=
+      {z | ‖z.snd.2‖ ≤ √(‖z.snd.1‖ ^ 2 - ε)} :=
     Set.ext fun _ ↦ mem_bundleQuadraticSublevelUnionCell_iff_norm_le
   rw [h]
   exact isClosed_le hv (by fun_prop)
@@ -127,25 +127,25 @@ include hᵤ hₛ in
 jointly continuous in the time and the vector. -/
 private theorem continuous_quadraticHandleDeformation_totalSpace (ε : ℝ) :
     Continuous fun p : I × TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ) ↦
-      (⟨p.2.proj, quadraticHandleDeformation ε (p.1, p.2.2)⟩ :
+      (⟨p.2.proj, quadraticHandleDeformation ε (p.1, p.2.snd)⟩ :
         TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) := by
   rw [(FiberBundle.Prod.isInducing_diag Fᵤ Eᵤ Fₛ Eₛ).continuous_iff]
   simp only [Function.comp_def, quadraticHandleDeformation_apply_eq_smul]
   refine (FiberBundle.Prod.continuous_totalSpaceFst.comp continuous_snd).prodMk ?_
   -- The positive component is `v` rescaled by a scalar in `[0, 1]`, continuous where `v ≠ 0`.
-  have hu : Continuous fun p : I × TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ) ↦ ‖p.2.2.1‖ :=
+  have hu : Continuous fun p : I × TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ) ↦ ‖p.2.snd.1‖ :=
     hᵤ.comp (FiberBundle.Prod.continuous_totalSpaceFst.comp continuous_snd)
-  have hv : Continuous fun p : I × TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ) ↦ ‖p.2.2.2‖ :=
+  have hv : Continuous fun p : I × TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ) ↦ ‖p.2.snd.2‖ :=
     hₛ.comp (FiberBundle.Prod.continuous_totalSpaceSnd.comp continuous_snd)
   refine (FiberBundle.Prod.continuous_totalSpaceSnd.comp
     continuous_snd).smul_totalSpace_of_norm_le (C := 1) (fun p ↦ ?_) fun p hp ↦ ?_
-  · obtain ⟨h₀, h₁⟩ := mem_Icc_quadraticHandleDeformation_scalar ε p.1 p.2.2
+  · obtain ⟨h₀, h₁⟩ := mem_Icc_quadraticHandleDeformation_scalar ε p.1 p.2.snd
     rwa [Real.norm_of_nonneg h₀]
-  · have hp' : ‖p.2.2.2‖ ≠ 0 := norm_ne_zero_iff.2 hp
-    exact (((continuous_const.sub continuous_subtype_val.fst').continuousAt.mul
+  · have hp' : ‖p.2.snd.2‖ ≠ 0 := norm_ne_zero_iff.2 hp
+    exact (((continuous_const.sub continuous_subtypeVal.fst').continuousAt.mul
       (continuousAt_const.min
         (((hu.pow 2).sub continuous_const).sqrt.continuousAt.div hv.continuousAt hp'))).add
-      continuous_subtype_val.fst'.continuousAt)
+      continuous_subtypeVal.fst'.continuousAt)
 
 include hᵤ hₛ in
 /-- **Milnor's retraction in a sum of vector bundles**: in each fibre of `Eᵤ ×ᵇ Eₛ` it keeps `u`
@@ -153,7 +153,7 @@ and retracts `v` radially onto the closed ball of radius `√(‖u‖² - ε)`, 
 space onto `TauCeti.bundleQuadraticSublevelUnionCell`. -/
 def bundleQuadraticHandleRetraction (ε : ℝ) :
     C(TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ), TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) where
-  toFun z := (⟨z.proj, quadraticHandleRetraction ε z.2⟩ : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ))
+  toFun z := (⟨z.proj, quadraticHandleRetraction ε z.snd⟩ : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ))
   continuous_toFun := by
     have h := (continuous_quadraticHandleDeformation_totalSpace hᵤ hₛ ε).comp
       (continuous_const.prodMk continuous_id :
@@ -163,7 +163,7 @@ def bundleQuadraticHandleRetraction (ε : ℝ) :
 @[simp]
 theorem bundleQuadraticHandleRetraction_apply (z : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) :
     bundleQuadraticHandleRetraction hᵤ hₛ ε z =
-      (⟨z.proj, quadraticHandleRetraction ε z.2⟩ : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) :=
+      (⟨z.proj, quadraticHandleRetraction ε z.snd⟩ : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) :=
   (rfl)
 
 /-- The retraction takes values in the lower quadratic sublevel with the negative disc bundle
@@ -171,7 +171,7 @@ attached. -/
 theorem bundleQuadraticHandleRetraction_mem (z : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) :
     bundleQuadraticHandleRetraction hᵤ hₛ ε z ∈
       bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε :=
-  quadraticHandleRetraction_mem ε z.2
+  quadraticHandleRetraction_mem ε z.snd
 
 /-- The fixed points of the retraction are exactly the vectors of the lower quadratic sublevel with
 the negative disc bundle attached. -/
@@ -192,7 +192,7 @@ def bundleQuadraticHandleDeformation (ε : ℝ) :
     (bundleQuadraticHandleRetraction hᵤ hₛ ε).HomotopyRel
       (ContinuousMap.id (TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)))
       (bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε) where
-  toFun p := ⟨p.2.proj, quadraticHandleDeformation ε (p.1, p.2.2)⟩
+  toFun p := ⟨p.2.proj, quadraticHandleDeformation ε (p.1, p.2.snd)⟩
   continuous_toFun := continuous_quadraticHandleDeformation_totalSpace hᵤ hₛ ε
   map_zero_left z := by simp
   map_one_left z := by simp
@@ -203,7 +203,7 @@ def bundleQuadraticHandleDeformation (ε : ℝ) :
 @[simp]
 theorem bundleQuadraticHandleDeformation_apply (t : I) (z : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) :
     bundleQuadraticHandleDeformation hᵤ hₛ ε (t, z) =
-      (⟨z.proj, quadraticHandleDeformation ε (t, z.2)⟩ : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) :=
+      (⟨z.proj, quadraticHandleDeformation ε (t, z.snd)⟩ : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) :=
   (rfl)
 
 /-- The deformation preserves every set `X` whose fibres `{v | (u, v) ∈ X}` over each base point
@@ -214,9 +214,9 @@ theorem bundleQuadraticHandleDeformation_mem_of_starConvex
       StarConvex ℝ 0 {v : Eₛ x | (⟨x, (u, v)⟩ : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)) ∈ X})
     (ε : ℝ) (t : I) (hz : z ∈ X) :
     bundleQuadraticHandleDeformation hᵤ hₛ ε (t, z) ∈ X := by
-  obtain ⟨s, hs, h⟩ := exists_quadraticHandleDeformation_apply_eq_smul ε t z.2
+  obtain ⟨s, hs, h⟩ := exists_quadraticHandleDeformation_apply_eq_smul ε t z.snd
   rw [bundleQuadraticHandleDeformation_apply, h]
-  exact starConvex_zero_iff.1 (hX z.proj z.2.1) (by simpa using hz) hs.1 hs.2
+  exact starConvex_zero_iff.1 (hX z.proj z.snd.1) (by simpa using hz) hs.1 hs.2
 
 include hᵤ hₛ in
 /-- **Milnor's handle retraction in a sum of vector bundles.** If every fibre
@@ -241,14 +241,14 @@ theorem exists_inter_bundleQuadraticSublevelUnionCell_deformation
           bundleQuadraticSublevelUnionCell Fᵤ Fₛ Eᵤ Eₛ ε}) := by
   set H := bundleQuadraticHandleDeformation hᵤ hₛ ε
   have hmem (x : X) : bundleQuadraticHandleRetraction hᵤ hₛ ε x ∈ X := by
-    simpa [H] using bundleQuadraticHandleDeformation_mem_of_starConvex hᵤ hₛ hX ε 0 x.2
+    simpa [H] using bundleQuadraticHandleDeformation_mem_of_starConvex hᵤ hₛ hX ε 0 x.property
   refine ⟨⟨fun x ↦ ⟨bundleQuadraticHandleRetraction hᵤ hₛ ε x, hmem x,
       bundleQuadraticHandleRetraction_mem hᵤ hₛ _⟩, by fun_prop⟩,
-    fun x ↦ Subtype.ext ((bundleQuadraticHandleRetraction_eq_self_iff hᵤ hₛ).2 x.2.2),
+    fun x ↦ Subtype.ext ((bundleQuadraticHandleRetraction_eq_self_iff hᵤ hₛ).2 x.property.2),
     fun x ↦ rfl, ⟨?_⟩⟩
   exact
     { toFun p := ⟨H (p.1, p.2),
-        bundleQuadraticHandleDeformation_mem_of_starConvex hᵤ hₛ hX ε p.1 p.2.2⟩
+        bundleQuadraticHandleDeformation_mem_of_starConvex hᵤ hₛ hX ε p.1 p.2.property⟩
       continuous_toFun := by fun_prop
       map_zero_left x := Subtype.ext (H.apply_zero (x : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)))
       map_one_left x := Subtype.ext (H.apply_one (x : TotalSpace (Fᵤ × Fₛ) (Eᵤ ×ᵇ Eₛ)))

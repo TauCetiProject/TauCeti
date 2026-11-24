@@ -208,7 +208,7 @@ one of `Bₙ`, `Cₙ`, or `F₄`. -/
 theorem existsUnique_dynkinType_of_apply_mul_apply_eq_two (b : P.Base)
     {u v : b.support} (huv : b.cartanMatrix u v * b.cartanMatrix v u = 2) :
     ∃! t : DynkinType, t.Valid ∧ HasCartanType P b t := by
-  have : Nonempty ι := ⟨u.1⟩
+  have : Nonempty ι := ⟨u.val⟩
   obtain ⟨t, ⟨ht, e, he⟩, -⟩ :=
     (isFiniteType_cartanMatrix b).existsUnique_dynkinType_of_apply_mul_apply_eq_two
       (connected_diagramGraph_cartanMatrix b).preconnected huv

@@ -117,7 +117,7 @@ theorem pureRelativeDimension_comp_iff_of_injective (f : X ⟶ Y) (g : Y ⟶ Z)
   by_cases hz : z ∈ Set.range g
   · obtain ⟨y, rfl⟩ := hz
     exact hpre y ▸ h y
-  · have : IsEmpty ((f ≫ g) ⁻¹' {z}) := ⟨fun x ↦ hz ⟨f x, by simpa using x.2⟩⟩
+  · have : IsEmpty ((f ≫ g) ⁻¹' {z}) := ⟨fun x ↦ hz ⟨f x, by simpa using x.property⟩⟩
     exact isPureDimensional_of_isEmpty _ _
 
 namespace PureRelativeDimension
@@ -189,7 +189,7 @@ instance isZariskiLocalAtTarget (d : ℕ) :
       exact isPureDimensional_preimage y
     · -- A point of `f ⁻¹ᵁ U` maps into `U`, so nothing in it lies over `y`.
       have : IsEmpty (((f ⁻¹ᵁ U).ι ≫ f) ⁻¹' {y}) :=
-        ⟨fun x ↦ hy (by simpa [Set.preimage_comp] using x.2 ▸ x.1.2)⟩
+        ⟨fun x ↦ hy (by simpa [Set.preimage_comp] using x.property ▸ x.val.property)⟩
       exact isPureDimensional_of_isEmpty _ _
   have : RelativeDimensionLE d f :=
     IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (hf i).toRelativeDimensionLE
@@ -252,8 +252,8 @@ theorem pureRelativeDimension_iff_of_openCover (f : X ⟶ Y) [LocallyOfFiniteTyp
     rw [← Set.preimage_comp, ← TopCat.coe_comp, ← Scheme.Hom.comp_base]
     exact (h i).isPureDimensional_preimage y
   · intro p
-    obtain ⟨i, z, hz⟩ := 𝒰.exists_eq (f.fiberHomeo y p).1
-    refine ⟨i, ⟨z, by simpa [hz] using (f.fiberHomeo y p).2⟩, ?_⟩
+    obtain ⟨i, z, hz⟩ := 𝒰.exists_eq (f.fiberHomeo y p).val
+    refine ⟨i, ⟨z, by simpa [hz] using (f.fiberHomeo y p).property⟩, ?_⟩
     apply (f.fiberHomeo y).injective
     ext
     simpa using hz

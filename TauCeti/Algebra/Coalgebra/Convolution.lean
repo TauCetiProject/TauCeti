@@ -51,6 +51,8 @@ contraction of comultiplication.
 * `TauCeti.Bialgebra.toConv_comp_comulAlgHom`: the functorial form of the previous identity,
   after post-composing with an arbitrary algebra map out of the tensor square.
 * `TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom`: the identity base-valued point is the counit.
+* `TauCeti.Bialgebra.map_comp_comulAlgHom_of_mul`: an algebra map into a commutative bialgebra
+  respects the comultiplications when pre-composition with it is multiplicative on points.
 * `WithConv.mulTensor`: the exterior convolution product, with its
   normalization rules and `WithConv.mulTensor_convMul`.
 * `AlgHom.toConv_toLinearMap_comp_mul'`: an algebra map composed with
@@ -190,6 +192,23 @@ theorem comulPoint_eq_include_mul :
         (R := R) (A := H) (B := H)) := by
   simpa only [AlgHom.id_comp] using
     toConv_comp_comulAlgHom (phi := AlgHom.id R (H ⊗[R] H))
+
+/-- **A criterion for respecting comultiplication.** An `R`-algebra map `φ : A →ₐ[R] B` of
+bialgebras, with `B` commutative, respects the comultiplications as soon as pre-composition with
+`φ` is multiplicative on the convolution monoid of points of `B` with values in `B ⊗[R] B`, where
+the comultiplication of `B` is the product of the two tensor inclusions
+(`TauCeti.Bialgebra.comulPoint_eq_include_mul`). In particular it suffices that pre-composition
+with `φ` is multiplicative on points with values in every commutative `R`-algebra. -/
+theorem map_comp_comulAlgHom_of_mul {A B : Type*} [Semiring A] [CommSemiring B]
+    [_root_.Bialgebra R A] [_root_.Bialgebra R B] (φ : A →ₐ[R] B)
+    (hmul : ∀ f g : WithConv (B →ₐ[R] B ⊗[R] B),
+      toConv ((f * g).ofConv.comp φ) = toConv (f.ofConv.comp φ) * toConv (g.ofConv.comp φ)) :
+    (Algebra.TensorProduct.map φ φ).comp (Bialgebra.comulAlgHom R A) =
+      (Bialgebra.comulAlgHom R B).comp φ := by
+  refine WithConv.toConv_injective ?_
+  rw [toConv_comp_comulAlgHom, Algebra.TensorProduct.map_comp_includeLeft,
+    Algebra.TensorProduct.map_comp_includeRight, ← hmul, ← comulPoint_eq_include_mul,
+    ofConv_toConv]
 
 end Bialgebra
 

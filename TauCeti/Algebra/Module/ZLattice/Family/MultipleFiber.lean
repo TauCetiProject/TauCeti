@@ -235,7 +235,7 @@ section Regularity
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCommGroup EY]
   [NormedSpace 𝕜 EY] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 EY H}
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y] [T2Space Y] [LocallyCompactSpace Y]
-  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace 𝕜 E]
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
@@ -258,8 +258,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCo
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
   {y : Y} (hy : ∀ g : Γ, g • y = y)
 
-omit [T2Space Y] [LocallyCompactSpace Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
-  [∀ y, IsZLattice ℝ (LinearMap.range (P y))] [IsManifold I n Y] [ProperlyDiscontinuousSMul Γ Y] in
+omit [T2Space Y] [LocallyCompactSpace Y] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+  [IsManifold I n Y] [ProperlyDiscontinuousSMul Γ Y] in
 include hR in
 /-- The action on the fibre over a fixed point is by `C^n` maps of the torus `T_y` when the
 linear-part evaluations of the affine action are `C^n`: on representatives, `g` acts by
@@ -275,7 +275,7 @@ theorem contMDiffConstSMul_torusFamilyFiberMulAction :
   rw [comp_apply, torusFamilyFiberMulAction_smul, AddEquiv.affineEquiv_apply,
     torusFamilyFiberLinearPart_mk, ← hβ, comp_apply, Submodule.orbitRelQuotient_mk_add]
 
-omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
+omit [IsManifold I n Y] in
 /-- The orbit map `T_y → T_y / Γ` is a `C^n` local diffeomorphism, and `T_y / Γ` is a `C^n`
 manifold. -/
 private theorem isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold :
@@ -301,7 +301,7 @@ private theorem isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold :
   have := contMDiffConstSMul_torusFamilyFiberMulAction P R ρ hequiv b hb hone hmul hbmul hR hy
   exact ⟨isLocalDiffeomorph_quotientMk, instIsManifoldQuotient⟩
 
-omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
+omit [IsManifold I n Y] in
 /-- **The orbit space of the fibre over a fixed point is a manifold.** Let `Γ` act properly
 discontinuously on `Y`, fixing `y`, and freely on the family of tori `X = (Y × E)/Λ` of a `C^n`
 family of full lattices by an affine cocycle with `C^n` linear-part evaluations and translation
@@ -318,7 +318,7 @@ theorem isManifold_torusFamilyFiberQuotient :
   (isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
     hmul hbmul hR hbc hfree hy).2
 
-omit [IsManifold I n Y] [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
+omit [IsManifold I n Y] in
 /-- **The orbit map of the fibre over a fixed point is a local diffeomorphism.** Under the
 hypotheses of `TauCeti.isManifold_torusFamilyFiberQuotient`, the orbit map `T_y → T_y / Γ` is a
 `C^n` local diffeomorphism. -/
@@ -333,7 +333,6 @@ theorem isLocalDiffeomorph_torusFamilyFiberQuotient_mk :
   (isLocalDiffeomorph_torusFamilyFiberQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
     hmul hbmul hR hbc hfree hy).1
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The fibre over a fixed point maps smoothly to the quotient.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyFiberQuotient`, the map `T_y / Γ → X / Γ`, `[[v]] ↦ [[y, v]]`, is
 `C^n`; over `ℂ` with holomorphic data and `n = ω`, it is holomorphic. -/
@@ -373,7 +372,7 @@ section Embedding
 variable {𝕜 : Type*} [RCLike 𝕜] {EY : Type*} [NormedAddCommGroup EY] [NormedSpace 𝕜 EY]
   [FiniteDimensional 𝕜 EY] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 EY H}
   [I.Boundaryless] {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y] [T2Space Y]
-  [LocallyCompactSpace Y] {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  [LocallyCompactSpace Y] {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace 𝕜 E]
   [FiniteDimensional 𝕜 E] (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
@@ -396,7 +395,6 @@ variable {𝕜 : Type*} [RCLike 𝕜] {EY : Type*} [NormedAddCommGroup EY] [Norm
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
   {y : Y} (hy : ∀ g : Γ, g • y = y)
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The fibre over a fixed point immerses into the quotient.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyFiberQuotient`, over `ℝ` or `ℂ`, for a boundaryless
 finite-dimensional model of `Y` and `n ≥ 1`, the map `T_y / Γ → X / Γ`, `[[v]] ↦ [[y, v]]`, is a
@@ -439,7 +437,6 @@ theorem isImmersion_orbitRelQuotientMap_torusFamilyFiberMulActionHom (hn : 1 ≤
     (isLocalDiffeomorph_torusFamilyFiberQuotient_mk P hinj hP R ρ hequiv b hb hone hmul hbmul
       hR hbc hfree hy z)).1 (himm.isImmersionAt z)
 
-omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The fibre over a fixed point embeds into the quotient.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyFiberQuotient`, over `ℝ` or `ℂ`, for a boundaryless
 finite-dimensional model of `Y` and `n ≥ 1`, the map `T_y / Γ → X / Γ`, `[[v]] ↦ [[y, v]]`, is a

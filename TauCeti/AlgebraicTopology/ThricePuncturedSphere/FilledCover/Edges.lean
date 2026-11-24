@@ -139,13 +139,13 @@ private def radialPoint (w : 𝔻*) (k : ℕ) : 𝔻* :=
     have hscale : 0 < 1 / (k + 1 : ℝ) := by positivity
     constructor
     · rw [Metric.mem_ball, dist_zero_right, norm_smul, Real.norm_eq_abs, abs_of_pos hscale]
-      have hw := (mem_ball_zero_iff.1 w.2.1)
+      have hw := (mem_ball_zero_iff.1 w.property.1)
       have hle : 1 / (k + 1 : ℝ) ≤ 1 := by
         rw [div_le_one hk]
         norm_num
       nlinarith [norm_nonneg (w : ℂ)]
     · simp only [mem_singleton_iff]
-      exact smul_ne_zero (ne_of_gt hscale) w.2.2⟩
+      exact smul_ne_zero (ne_of_gt hscale) w.property.2⟩
 
 @[simp]
 private theorem coe_radialPoint (w : 𝔻*) (k : ℕ) :
@@ -153,7 +153,7 @@ private theorem coe_radialPoint (w : 𝔻*) (k : ℕ) :
   by simp [radialPoint]
 
 private theorem tendsto_radialPoint_zero (w : 𝔻*) :
-    Tendsto (fun k ↦ (⟨radialPoint w k, (radialPoint w k).2.1⟩ : 𝔻)) atTop (𝓝 0) := by
+    Tendsto (fun k ↦ (⟨radialPoint w k, (radialPoint w k).property.1⟩ : 𝔻)) atTop (𝓝 0) := by
   rw [tendsto_subtype_rng]
   convert (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℂ)).mul_const (w : ℂ) using 1 <;>
     simp [coe_radialPoint]
@@ -186,20 +186,21 @@ theorem exists_mk_eq_of_coe_eq_ofReal_mul {q : Puncture} {φ : 𝔻* → E} {e :
         ConnectedComponents.mk ⟨φ w, hw⟩ := by
   -- The scalars `c t = (1 - t) + t * s` interpolate between `1` and `s`, and stay positive.
   have hc (t : unitInterval) : 0 < (1 - t : ℝ) + t * s := by
-    rcases t.2.2.lt_or_eq with ht | ht
-    · nlinarith [mul_nonneg t.2.1 hs.le]
+    rcases t.property.2.lt_or_eq with ht | ht
+    · nlinarith [mul_nonneg t.property.1 hs.le]
     · rw [ht]
       linarith
   have hmem (t : unitInterval) :
       (((1 - t : ℝ) + t * s : ℝ) : ℂ) * w ∈ Metric.ball (0 : ℂ) 1 \ {0} := by
-    have hw1 : ‖(w : ℂ)‖ < 1 := mem_ball_zero_iff.1 w.2.1
+    have hw1 : ‖(w : ℂ)‖ < 1 := mem_ball_zero_iff.1 w.property.1
     have hw'1 : s * ‖(w : ℂ)‖ < 1 := by
-      have := mem_ball_zero_iff.1 w'.2.1
+      have := mem_ball_zero_iff.1 w'.property.1
       rwa [hww', norm_mul, norm_real, Real.norm_of_nonneg hs.le] at this
-    refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (ofReal_ne_zero.2 (hc t).ne') w.2.2⟩
+    refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (ofReal_ne_zero.2 (hc t).ne') w.property.2⟩
     rw [norm_mul, norm_real, Real.norm_of_nonneg (hc t).le]
-    rcases t.2.2.lt_or_eq with ht | ht
-    · nlinarith [mul_pos (sub_pos.2 ht) (sub_pos.2 hw1), mul_nonneg t.2.1 (sub_pos.2 hw'1).le]
+    rcases t.property.2.lt_or_eq with ht | ht
+    · nlinarith [mul_pos (sub_pos.2 ht) (sub_pos.2 hw1), mul_nonneg t.property.1
+        (sub_pos.2 hw'1).le]
     · rw [ht]
       linarith
   -- Positive scalings of a point over `(0, 1)` lie over `(0, 1)`.
@@ -248,7 +249,7 @@ private theorem center_mem_closure_component_iff (hp : IsCoveringMap p)
     exact ⟨w, hx, hc⟩
   · rintro ⟨w, hw, hc⟩
     let f : ℕ → FilledCover p := PunctureFilling.disc (chart p) j ∘
-      fun k ↦ (⟨radialPoint w k, (radialPoint w k).2.1⟩ : 𝔻)
+      fun k ↦ (⟨radialPoint w k, (radialPoint w k).property.1⟩ : 𝔻)
     refine mem_closure_of_tendsto (f := f) (b := atTop) ?_ (.of_forall fun k ↦ ?_)
     · have hlim := (PunctureFilling.continuous_disc (φ := chart p) j).continuousAt.tendsto.comp
         (tendsto_radialPoint_zero w)

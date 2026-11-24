@@ -50,7 +50,7 @@ variable (r : ℕ) {K : Type u} [Field K]
 `SL_{r+1}`.** Both directions preserve the underlying matrix. -/
 noncomputable def specialLinearMulEquiv :
     points r K ≃* Matrix.SpecialLinearGroup (Fin (r + 1)) K where
-  toFun g := ⟨g.1.1, by
+  toFun g := ⟨g.val.val, by
     simpa only [Matrix.GeneralLinearGroup.val_det_apply, Units.val_one] using
       congrArg Units.val
         ((mem_points_iff_det_eq_one (K := K) r (g :

@@ -171,7 +171,7 @@ theorem IsStableAt.of_bijective {T : End R M} (hT : Function.Bijective T) {c : �
   · rw [hker]
     exact isCompl_bot_top
   · refine ⟨fun x y hxy ↦ Subtype.ext (hT.injective (congrArg Subtype.val hxy)), fun y ↦ ?_⟩
-    obtain ⟨x, hx⟩ := hT.surjective y.1
+    obtain ⟨x, hx⟩ := hT.surjective y.val
     exact ⟨⟨x, Submodule.mem_top⟩, Subtype.ext hx⟩
 
 /-- A bijective endomorphism is stable. -/
@@ -231,9 +231,9 @@ theorem IsStableAt.range_pow_succ_eq {T : End R M} {c : ℕ} (h : T.IsStableAt c
   rintro y ⟨x, rfl⟩
   obtain ⟨z, hz⟩ :=
     h.bijective_restrict_range_pow.surjective ⟨(T ^ c) x, LinearMap.mem_range_self _ x⟩
-  obtain ⟨w, hw⟩ := z.2
+  obtain ⟨w, hw⟩ := z.property
   refine ⟨w, ?_⟩
-  have hz' : T z.1 = (T ^ c) x := congrArg Subtype.val hz
+  have hz' : T z.val = (T ^ c) x := congrArg Subtype.val hz
   rw [pow_succ', mul_apply_eq_comp, hw, hz']
 
 /-- If `T` is stable at `c`, `LinearMap.ker (T ^ d) = LinearMap.ker (T ^ c)` for every `d ≥ c`. -/
@@ -286,12 +286,12 @@ theorem isStableAt_iff_isCompl_ker_pow_range_pow {T : End R M} {c : ℕ} :
     constructor
     · rw [← LinearMap.ker_eq_bot, eq_bot_iff]
       intro y hy
-      have hTy : T y.1 = 0 := congrArg Subtype.val (LinearMap.mem_ker.mp hy)
+      have hTy : T y.val = 0 := congrArg Subtype.val (LinearMap.mem_ker.mp hy)
       exact Subtype.ext
-        (Submodule.disjoint_def.mp hcompl.disjoint y.1
-          (T.iterateKer.monotone hc (by simpa using hTy)) y.2)
+        (Submodule.disjoint_def.mp hcompl.disjoint y.val
+          (T.iterateKer.monotone hc (by simpa using hTy)) y.property)
     · intro y
-      obtain ⟨x, hy⟩ := y.2
+      obtain ⟨x, hy⟩ := y.property
       have hx : x ∈ LinearMap.ker (T ^ c) ⊔ LinearMap.range (T ^ c) := by
         rw [hcompl.codisjoint.eq_top]
         exact Submodule.mem_top
@@ -339,7 +339,7 @@ theorem isStable_iff_isCompl_and_isNilpotent_and_bijective {T : End R M} :
     · refine ⟨c, ?_⟩
       rw [Module.End.pow_restrict c]
       ext x
-      have hx : x.1 ∈ LinearMap.ker (T ^ c) := hc.iSup_ker_pow_eq ▸ x.2
+      have hx : x.val ∈ LinearMap.ker (T ^ c) := hc.iSup_ker_pow_eq ▸ x.property
       exact LinearMap.mem_ker.mp hx
   · rintro ⟨hcompl, ⟨c, hnil⟩, hbij⟩
     have hker_eq : (⨆ n, LinearMap.ker (T ^ n)) = LinearMap.ker (T ^ (c + 1)) := by
@@ -389,14 +389,14 @@ theorem IsStable.bijective_toIterateDirectLimit_comp_subtype {T : End R M} (h : 
     rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.coe_subtype,
       ← LinearMap.mem_ker, T.ker_toIterateDirectLimit] at hx
     exact Subtype.ext
-      (Submodule.disjoint_def.mp h.isCompl_iSup_ker_pow_iInf_range_pow.disjoint x.1 hx x.2)
+      (Submodule.disjoint_def.mp h.isCompl_iSup_ker_pow_iInf_range_pow.disjoint x.val hx x.property)
   · intro z
     obtain ⟨i, x, rfl⟩ := T.exists_ofIterateDirectLimitStage z
     let w : ↥(⨅ n, LinearMap.range (T ^ n)) :=
       ⟨(T ^ c) x, hc.iInf_range_pow_eq.symm ▸ LinearMap.mem_range_self (T ^ c) x⟩
     obtain ⟨v, hv⟩ := h.bijective_restrict_iInf_range_pow.surjective.iterate (i + c) w
     rw [← pow_apply_eq_iterate, Module.End.pow_restrict (i + c)] at hv
-    have hv_val : (T ^ (i + c)) v.1 = (T ^ c) x := congrArg Subtype.val hv
+    have hv_val : (T ^ (i + c)) v.val = (T ^ c) x := congrArg Subtype.val hv
     refine ⟨v, ?_⟩
     rw [LinearMap.comp_apply, Submodule.coe_subtype, ← T.ofIterateDirectLimitStage_pow (i + c),
       hv_val, T.ofIterateDirectLimitStage_add_pow i c x]
@@ -414,7 +414,7 @@ underlying vector. -/
 @[simp]
 theorem IsStable.iInfRangePowEquivIterateDirectLimit_apply {T : End R M} (h : T.IsStable)
     (x : ↥(⨅ n, LinearMap.range (T ^ n))) :
-    h.iInfRangePowEquivIterateDirectLimit x = T.toIterateDirectLimit x.1 :=
+    h.iInfRangePowEquivIterateDirectLimit x = T.toIterateDirectLimit x.val :=
   (rfl)
 
 /-- `IsStable.iInfRangePowEquivIterateDirectLimit` intertwines the restriction of `T` to
