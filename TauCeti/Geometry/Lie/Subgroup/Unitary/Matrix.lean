@@ -48,6 +48,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
 
 ## Main definitions
 
+* `ClosedSubgroup.toGL`: the subgroup of the general linear group carried by a closed subgroup of
+  `U(n)`.
 * `ClosedSubgroup.matrixLieAlgebra`: the Lie algebra of a closed subgroup of `U(n)`.
 * `ClosedSubgroup.matrixAdjointRepresentation`: its adjoint representation `X ↦ g X g⁻¹`.
 * `ClosedSubgroup.matrixTraceForm`: the trace form `⟨X, Y⟩ = -Re tr (X Y)`.
@@ -104,6 +106,12 @@ theorem isCompact_image_coe_matrix (G : ClosedSubgroup (Matrix.unitaryGroup n �
     IsCompact (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) :=
   (isCompact_coe G).image continuous_subtypeVal
 
+/-- The subgroup of the general linear group carried by a closed subgroup of `U(n)`, its image
+under `Unitary.toUnits`. -/
+@[expose]
+def toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) : Subgroup (Matrix n n 𝕜)ˣ :=
+  (G : Subgroup (Matrix.unitaryGroup n 𝕜)).map Unitary.toUnits
+
 section Transport
 
 open TauCeti TauCeti.Lie
@@ -113,10 +121,6 @@ open scoped Matrix.Norms.Operator
 attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
 
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
-
-/-- The closed subgroup of the general linear group carried by a closed subgroup of `U(n)`. -/
-private def toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) : Subgroup (Matrix n n 𝕜)ˣ :=
-  (G : Subgroup (Matrix.unitaryGroup n 𝕜)).map Unitary.toUnits
 
 /-- The subgroup of units determined by `G` is closed, being the compact image of `G`. -/
 private theorem isClosed_toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :

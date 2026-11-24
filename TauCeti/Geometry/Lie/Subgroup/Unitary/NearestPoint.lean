@@ -125,17 +125,13 @@ private abbrev frobeniusTopologicalSpace : TopologicalSpace (Matrix n n 𝕜) :=
 
 attribute [local instance] frobeniusTopologicalSpace
 
-/-- The closed subgroup of the units of the matrices carried by `G`. -/
-private def toUnits : Subgroup (Matrix n n 𝕜)ˣ :=
-  (G : Subgroup (Matrix.unitaryGroup n 𝕜)).map Unitary.toUnits
-
-private theorem isCompact_toUnits : IsCompact (G.toUnits : Set (Matrix n n 𝕜)ˣ) :=
+private theorem isCompact_toGL : IsCompact (G.toGL : Set (Matrix n n 𝕜)ˣ) :=
   G.isClosed'.isCompact.image <| by
     rw [show frobeniusTopologicalSpace = _ from Matrix.frobeniusTopologicalSpace_eq n n 𝕜]
     exact Unitary.continuous_toUnits
 
 /-- The inclusion of the units of `G` into the matrices. -/
-private def coeUnits (k : G.toUnits) : Matrix n n 𝕜 :=
+private def coeUnits (k : G.toGL) : Matrix n n 𝕜 :=
   ((k : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜)
 
 private theorem range_coeUnits :
@@ -151,32 +147,32 @@ private theorem injective_coeUnits : Injective G.coeUnits :=
   fun _ _ h ↦ Subtype.ext (Units.ext h)
 
 /-- The closed-subgroup charts on `G`, as a subgroup of the units of the matrices. -/
-private def chartData : TauCeti.Lie.EmbeddedLieSubgroupData 𝓘(ℝ, Matrix n n 𝕜) G.toUnits
-    (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) G.toUnits).toSubmodule :=
-  TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed G.isCompact_toUnits.isClosed
+private def chartData : TauCeti.Lie.EmbeddedLieSubgroupData 𝓘(ℝ, Matrix n n 𝕜) G.toGL
+    (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) G.toGL).toSubmodule :=
+  TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed G.isCompact_toGL.isClosed
 
-private instance instChartedSpaceToUnits :
+private instance instChartedSpaceToGL :
     ChartedSpace (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
-      G.toUnits).toSubmodule G.toUnits :=
+      G.toGL).toSubmodule G.toGL :=
   G.chartData.chartedSpace
 
-private instance instLieGroupToUnits :
+private instance instLieGroupToGL :
     LieGroup 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
-      G.toUnits).toSubmodule) ∞ G.toUnits :=
+      G.toGL).toSubmodule) ∞ G.toGL :=
   G.chartData.lieGroup
 
-private instance instCompactSpaceToUnits : CompactSpace G.toUnits :=
-  isCompact_iff_compactSpace.mp G.isCompact_toUnits
+private instance instCompactSpaceToGL : CompactSpace G.toGL :=
+  isCompact_iff_compactSpace.mp G.isCompact_toGL
 
 private theorem contMDiff_coeUnits :
     ContMDiff 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
-      G.toUnits).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) ∞ G.coeUnits :=
+      G.toGL).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) ∞ G.coeUnits :=
   (Units.contMDiff_val (𝕜 := ℝ)).comp G.chartData.contMDiff_subtypeVal
 
-private theorem injective_mfderiv_coeUnits (k : G.toUnits) :
+private theorem injective_mfderiv_coeUnits (k : G.toGL) :
     Injective (mfderiv 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
-      G.toUnits).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) G.coeUnits k) := by
-  have hcomp : G.coeUnits = Units.val ∘ fun x : G.toUnits ↦ (x : (Matrix n n 𝕜)ˣ) := rfl
+      G.toGL).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) G.coeUnits k) := by
+  have hcomp : G.coeUnits = Units.val ∘ fun x : G.toGL ↦ (x : (Matrix n n 𝕜)ˣ) := rfl
   rw [hcomp, mfderiv_comp k ((Units.contMDiff_val (𝕜 := ℝ) (n := ∞)).mdifferentiableAt (by simp))
     (G.chartData.contMDiff_subtypeVal.mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
   obtain ⟨L, hL⟩ := Units.isInvertible_mfderiv_val (𝕜 := ℝ) (k : (Matrix n n 𝕜)ˣ)
@@ -187,13 +183,13 @@ private theorem injective_mfderiv_coeUnits (k : G.toUnits) :
 private theorem mem_normalSubspace_of_mem_orthogonal (g : G) {v : Matrix n n 𝕜}
     (hv : v ∈ (G.matrixTangentSpace g)ᗮ) :
     v ∈ TauCeti.normalSubspace 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup
-      (I := 𝓘(ℝ, Matrix n n 𝕜)) G.toUnits).toSubmodule) G.coeUnits
+      (I := 𝓘(ℝ, Matrix n n 𝕜)) G.toGL).toSubmodule) G.coeUnits
         ⟨Unitary.toUnits g, g, g.property, rfl⟩ := by
-  let k : G.toUnits := ⟨Unitary.toUnits g, g, g.property, rfl⟩
+  let k : G.toGL := ⟨Unitary.toUnits g, g, g.property, rfl⟩
   let D : (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
-      G.toUnits).toSubmodule →L[ℝ] Matrix n n 𝕜 :=
+      G.toGL).toSubmodule →L[ℝ] Matrix n n 𝕜 :=
     mfderiv 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
-      G.toUnits).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) G.coeUnits k
+      G.toGL).toSubmodule) 𝓘(ℝ, Matrix n n 𝕜) G.coeUnits k
   have htan (u) : D u ∈ G.matrixTangentSpace g := by
     have hmaps := HasMFDerivWithinAt.mapsTo_mtangentConeAt (s := univ)
       (G.contMDiff_coeUnits.mdifferentiableAt (x := k) (by simp)).hasMFDerivAt.hasMFDerivWithinAt
@@ -223,7 +219,7 @@ theorem exists_pos_contDiffOn_matrixNearestPoint :
       ∀ g : G, ∀ v ∈ (G.matrixTangentSpace g)ᗮ, ‖v‖ < ε →
         G.matrixNearestPoint ((g : Matrix n n 𝕜) + v) = g := by
   have : IsManifold 𝓘(ℝ, (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
-      G.toUnits).toSubmodule) (∞ + 1) G.toUnits := IsManifold.of_le (n := ∞) (by simp)
+      G.toGL).toSubmodule) (∞ + 1) G.toGL := IsManifold.of_le (n := ∞) (by simp)
   have hf := G.contMDiff_coeUnits
   obtain ⟨ε, hε, hemb⟩ := TauCeti.exists_isOpenEmbedding_normalTube (hf.of_le (by simp))
     G.injective_mfderiv_coeUnits G.injective_coeUnits
