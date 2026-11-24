@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Algebra.BigOperators.Fin
+import TauCeti.Algebra.Algebra.Basic
 import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
@@ -29,7 +30,9 @@ sees coordinate `i` of that vector. In particular such a matrix maps the coordin
 Subtracting a matrix from a constant diagonal matrix turns its eigenvector equation into a
 homogeneous linear system, with no multiplicative identity needed. An eigenvector of a matrix is an
 eigenvector of each of its powers, with the eigenvalue in any monoid of scalars whose action
-commutes with multiplication of the entries.
+commutes with multiplication of the entries. So when `X ^ m` is a scalar matrix `c • 1`, every
+eigenvalue `ν` of `X` satisfies `ν ^ m = c`. If `A B = ζ • (B A)`, then `B` maps eigenvectors of
+`A` to eigenvectors, multiplying the eigenvalue by `ζ`.
 
 For a matrix `Q` and a multiplicative map `σ`, the pairing `(σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by
 `σ c * c` along a line. When `σ` is also additive, such as a ring endomorphism, this pairing is
@@ -55,6 +58,10 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.diagonal_const_sub_mulVec_eq_zero_iff`: `(a - A) v = 0` for a constant diagonal `a`
   is the eigenvector equation `A v = a • v`.
 * `Matrix.pow_mulVec_eq_pow_smul`: if `A v = μ • v`, then `A ^ k v = μ ^ k • v`.
+* `Matrix.mulVec_pow_mulVec_of_mul_eq_smul_mul`: if `A B = ζ • (B A)` and `A v = μ • v`, then
+  `A (B ^ m v) = (μ ζ ^ m) • B ^ m v`.
+* `Matrix.pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul`: if `X ^ m = c • 1` and `X v = ν • v`
+  with `v ≠ 0`, then `ν ^ m = c`.
 * `Matrix.mulVec_mono` and `Matrix.mulVec_nonneg`: multiplication by an entrywise nonnegative
   matrix is monotone and preserves nonnegativity.
 * `Matrix.le_dotProduct_of_one_le`: a coordinate of a nonnegative vector is at most its dot
@@ -127,6 +134,23 @@ theorem pow_mulVec_eq_pow_smul [DecidableEq n] {R S : Type*} [Semiring R] [Monoi
   induction k with
   | zero => simp
   | succ k ih => rw [pow_succ, ← mulVec_mulVec, h, mulVec_smul, ih, smul_smul, ← pow_succ']
+
+/-- **Twisted commutation shifts eigenvalues.** If `A B = ζ • (B A)` and `v` is an eigenvector of
+`A` with eigenvalue `μ`, then `B ^ m v` is an eigenvector of `A` with eigenvalue `μ ζ ^ m`. -/
+theorem mulVec_pow_mulVec_of_mul_eq_smul_mul [DecidableEq n] {R : Type*} [CommSemiring R]
+    {A B : Matrix n n R} {ζ μ : R} (h : A * B = ζ • (B * A)) {v : n → R} (hv : A *ᵥ v = μ • v)
+    (m : ℕ) : A *ᵥ (B ^ m *ᵥ v) = (μ * ζ ^ m) • (B ^ m *ᵥ v) := by
+  rw [mulVec_mulVec, TauCeti.mul_pow_of_mul_eq_smul_mul h m, smul_mulVec, ← mulVec_mulVec, hv,
+    mulVec_smul, smul_smul, mul_comm]
+
+/-- If a power `X ^ m` of a square matrix is the scalar matrix `c • 1`, every eigenvalue `ν` of
+`X` satisfies `ν ^ m = c`. -/
+theorem pow_eq_of_pow_eq_smul_one_of_mulVec_eq_smul {R : Type*} [CommRing R] [NoZeroDivisors R]
+    [DecidableEq n] {X : Matrix n n R} {m : ℕ} {c ν : R} {x : n → R} (hX : X ^ m = c • 1)
+    (hx : X *ᵥ x = ν • x) (hx0 : x ≠ 0) : ν ^ m = c := by
+  have h := pow_mulVec_eq_pow_smul hx m
+  rw [hX, smul_mulVec, one_mulVec] at h
+  exact smul_left_injective R hx0 h.symm
 
 /-- For a multiplicative map `σ`, the pairing `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)` scales by `σ c * c`
 along a line: `h(c v, c v) = σ c * c * h(v, v)`. When `σ` is also additive, such as a ring

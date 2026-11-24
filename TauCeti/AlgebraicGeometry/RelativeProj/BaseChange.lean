@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.BaseChange
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
+public import TauCeti.AlgebraicGeometry.RelativeProj.Basic
+public import TauCeti.AlgebraicGeometry.Sites.SmallAffineZariski
 
 /-!
-# Affine charts of relative Proj under base change
+# Base change of relative Proj
 
 Let `g : X ⟶ Y` be a morphism of schemes and `A = ⨁ₙ Aₙ` a graded quasicoherent algebra on `Y`.
 For affine opens `U` of `Y` and `V ≤ g⁻¹ U` of `X`, the graded sections of `g^* A` over `V`
@@ -21,9 +22,11 @@ change for projective spectra give cartesian squares
 
 `Proj (⨁ n, Γ(g^* Aₙ, V)) ⟶ Proj (⨁ n, Γ(Aₙ, U))`, `Spec Γ(X, V) ⟶ Spec Γ(Y, U)`.
 
-These are the affine charts needed to compare the relative Proj of `g^* A` with the base change
-of the relative Proj of `A`. There is no flatness, finite-generation or degree-one-generation
-hypothesis, and the degree-zero component of `A` need not be the structure sheaf.
+The chart morphisms commute with restrictions and glue to
+`relativeProjPullbackHom : Proj_X(g^* A) ⟶ Proj_Y(A)`. The resulting square over `g` is
+cartesian (`isPullback_relativeProjPullbackHom`). There is no flatness, finite-generation or
+degree-one-generation hypothesis, and the degree-zero component of `A` need not be the structure
+sheaf.
 
 ## Main declarations
 
@@ -31,14 +34,21 @@ hypothesis, and the degree-zero component of `A` need not be the structure sheaf
   ideal of the pulled-back graded sections is contained in the image ideal, so `Proj.map` exists.
 * `GradedQuasicoherentAlgebra.isPullback_proj_pullbackGradedSections`: the square of projective
   spectra and coefficient spectra is cartesian.
+* `GradedQuasicoherentAlgebra.relativeProjPullbackHom`: the projection from the relative Proj of
+  the pulled-back algebra, characterized on charts by
+  `relativeProjCover_f_relativeProjPullbackHom`.
+* `GradedQuasicoherentAlgebra.relativeProj_pullback_hom_ext`: morphisms out of the relative Proj of
+  the pulled-back algebra agree once they agree on the charts over affine pairs.
+* `GradedQuasicoherentAlgebra.isPullback_relativeProjPullbackHom`: relative Proj commutes with
+  arbitrary base change.
 
 ## References
 
 * [The Stacks Project, Lemma 27.16.10](https://stacks.math.columbia.edu/tag/01O3).
 
-The chart comparison is adapted from split 2 of the relative Proj base-change formalization in
-`roed-math/TauCeti-w2-fresh`, at
-`lookahead/SchemeAndStackFoundations/relative-proj-base-change`.
+The chart comparison and its gluing are adapted from the
+[relative Proj base-change formalization](https://github.com/roed-math/TauCeti-w2-fresh/tree/8bf602f6c2bed52e7e390df1ba2c2de30f8a6dfb)
+by `roed-math`.
 -/
 
 public section
@@ -47,13 +57,15 @@ open CategoryTheory DirectSum
 
 namespace TauCeti.AlgebraicGeometry
 
-open _root_.AlgebraicGeometry
+open _root_.AlgebraicGeometry Scheme.AffineZariskiSite
 
 universe u
 
 noncomputable section
 
 namespace GradedQuasicoherentAlgebra
+
+section
 
 variable {X Y : Scheme.{u}} (A : GradedQuasicoherentAlgebra Y) (g : X ⟶ Y) {U : Y.Opens}
   {V : X.Opens} (hV : V ≤ g ⁻¹ᵁ U)
@@ -89,6 +101,220 @@ theorem isPullback_proj_pullbackGradedSections (hU : IsAffineOpen U) (hV' : IsAf
   have := isScalarTower_pullbackGradedSections g A hV
   exact Proj.isPullback_map_of_isBaseChange _ _ _
     (isBaseChange_pullbackGradedSections g A hV hU hV')
+
+end
+
+section
+
+variable {X Y : Scheme.{u}} (A : GradedQuasicoherentAlgebra Y) (g : X ⟶ Y)
+
+/-- The morphisms from the charts of the relative `Proj` of `g^* A` to the chart
+`Proj (⨁ n, Γ(Aₙ, U))` commute with the transition maps of the relative `Proj` of `g^* A`. -/
+@[reassoc]
+theorem relativeProjGluingData_functor_map_comp_proj_map {U : Y.Opens} (hU : IsAffineOpen U)
+    {V' V : X.AffineZariskiSite} (i : V' ⟶ V) (hV : V.toOpens ≤ g ⁻¹ᵁ U) :
+    ((pullback g).obj A).obj.relativeProjGluingData.functor.map i ≫
+        Proj.map (pullbackGradedSectionsGradedHom g A hV)
+          (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g hV hU V.property) =
+      Proj.map (pullbackGradedSectionsGradedHom g A ((leOfHom ((toOpensFunctor X).map i)).trans hV))
+        (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g _ hU V'.property) := by
+  rw [CommMon.relativeProjGluingData_functor_map]
+  exact (Proj.map_comp ..).symm.trans (Proj.map_congr
+    (restrictGradedSectionsGradedHom_comp_pullbackGradedSectionsGradedHom g A hV _) _ _)
+
+/-- The morphisms from a chart `Proj (⨁ n, Γ(g^* Aₙ, V))` of the relative `Proj` of `g^* A` to the
+charts of the relative `Proj` of `A` commute with the transition maps of the relative `Proj`
+of `A`. -/
+@[reassoc]
+theorem proj_map_comp_relativeProjGluingData_functor_map {U' U : Y.AffineZariskiSite} (j : U' ⟶ U)
+    {V : X.Opens} (hV' : IsAffineOpen V) (hV : V ≤ g ⁻¹ᵁ U'.toOpens) :
+    Proj.map (pullbackGradedSectionsGradedHom g A hV)
+        (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g hV U'.property hV') ≫
+        A.obj.relativeProjGluingData.functor.map j =
+      Proj.map (pullbackGradedSectionsGradedHom g A
+          (hV.trans fun _ hx ↦ leOfHom ((toOpensFunctor Y).map j) hx))
+        (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g _ U.property hV') := by
+  rw [CommMon.relativeProjGluingData_functor_map]
+  exact (Proj.map_comp ..).symm.trans (Proj.map_congr
+    (pullbackGradedSectionsGradedHom_comp_restrictGradedSectionsGradedHom g A _ hV) _ _)
+
+/-- The morphisms `Proj (⨁ n, Γ(g^* Aₙ, V)) ⟶ Proj (⨁ n, Γ(Aₙ, U)) ⟶ Proj_Y(A)` induced by pullback
+of sections, over the pairs of affine opens `V ≤ g⁻¹ U`, commute with the transition maps of the
+relative `Proj` of `g^* A`. -/
+private theorem relativeProjGluingData_functor_map_comp_proj_map_comp_relativeProjCover_f
+    {V V' : X.AffineZariskiSite} {U U' : Y.AffineZariskiSite} (hVV' : V ≤ V') (hUU' : U ≤ U')
+    (hV : V.toOpens ≤ g ⁻¹ᵁ U.toOpens) (hV' : V'.toOpens ≤ g ⁻¹ᵁ U'.toOpens) :
+    ((pullback g).obj A).obj.relativeProjGluingData.functor.map (homOfLE hVV') ≫
+        Proj.map (pullbackGradedSectionsGradedHom g A hV')
+          (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g hV' U'.property V'.property) ≫
+        A.obj.relativeProjCover.f U' =
+      Proj.map (pullbackGradedSectionsGradedHom g A hV)
+          (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g hV U.property V.property) ≫
+        A.obj.relativeProjCover.f U := by
+  exact (relativeProjGluingData_functor_map_comp_proj_map_assoc A g U'.property _ hV' _).trans
+    ((proj_map_comp_relativeProjGluingData_functor_map_assoc A g (homOfLE hUU')
+      V.property hV _).symm.trans (congrArg (_ ≫ ·)
+        (A.obj.relativeProjGluingData_functor_map_comp_relativeProjCover_f (homOfLE hUU'))))
+
+private noncomputable def relativeProjPullbackCover :
+    ((pullback g).obj A).obj.relativeProj.OpenCover :=
+  Scheme.Cover.copy (g.affinePairCover.openCover.pullback₁
+      ((pullback g).obj A).obj.relativeProjToBase)
+    {p : X.AffineZariskiSite × Y.AffineZariskiSite // p.1.toOpens ≤ g ⁻¹ᵁ p.2.toOpens}
+    (fun p ↦ ((pullback g).obj A).obj.relativeProjCover.X p.val.1)
+    (fun p ↦ ((pullback g).obj A).obj.relativeProjCover.f p.val.1) (Equiv.refl _)
+    (fun p ↦
+      (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec p.val.1).flip.isoPullback)
+    (fun p ↦ (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec p.val.1).flip
+      |>.isoPullback_hom_fst.symm.trans <| congrArg (_ ≫ ·) <|
+        (PreZeroHypercover.pullback₁_f ((pullback g).obj A).obj.relativeProjToBase
+          g.affinePairCover.openCover.toPreZeroHypercover p).symm)
+
+private instance : Preorder (relativeProjPullbackCover A g).I₀ :=
+  inferInstanceAs <| Preorder
+    {p : X.AffineZariskiSite × Y.AffineZariskiSite // p.1.toOpens ≤ g ⁻¹ᵁ p.2.toOpens}
+
+private theorem exists_relativeProjPullbackCover_refinement
+    {i j : (relativeProjPullbackCover A g).I₀}
+    (x : (Limits.pullback ((relativeProjPullbackCover A g).f i)
+      ((relativeProjPullbackCover A g).f j)).carrier) :
+    ∃ (k : (relativeProjPullbackCover A g).I₀) (hki : k ⟶ i) (hkj : k ⟶ j)
+      (y : (relativeProjPullbackCover A g).X k),
+      Limits.pullback.lift
+        (((pullback g).obj A).obj.relativeProjGluingData.functor.map
+          (homOfLE (leOfHom hki).1))
+        (((pullback g).obj A).obj.relativeProjGluingData.functor.map
+          (homOfLE (leOfHom hkj).1))
+        ((CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).trans
+          (CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).symm)
+        y = x := by
+  obtain ⟨k, hki, hkj, y, rfl⟩ : ∃ (k : X.AffineZariskiSite)
+      (hki : k ⟶ i.val.1) (hkj : k ⟶ j.val.1)
+      (y : ((pullback g).obj A).obj.relativeProjCover.X k),
+      Limits.pullback.lift (((pullback g).obj A).obj.relativeProjGluingData.functor.map hki)
+        (((pullback g).obj A).obj.relativeProjGluingData.functor.map hkj)
+        ((CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).trans
+          (CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).symm) y = x :=
+    Scheme.Cover.LocallyDirected.directed
+      (𝒰 := ((pullback g).obj A).obj.relativeProjGluingData.cover) (i := i.val.1) (j := j.val.1) x
+  have hk : ((pullback g).obj A).obj.relativeProjCover.f k y ∈
+      ((pullback g).obj A).obj.relativeProjToBase ⁻¹ᵁ k.toOpens := by
+    rw [CommMon.relativeProjToBase_preimage _ k]
+    exact ⟨y, rfl⟩
+  obtain ⟨l, hl, hlk, hli, hlj⟩ :=
+    g.exists_affinePair_le (leOfHom hki) (leOfHom hkj) hk
+  obtain ⟨z, hz⟩ : ((pullback g).obj A).obj.relativeProjCover.f k y ∈
+      (((pullback g).obj A).obj.relativeProjCover.f l.val.1).opensRange := by
+    rw [← CommMon.relativeProjToBase_preimage _ l.val.1]
+    exact hl
+  have hlk : l.val.1 ⟶ k := homOfLE hlk
+  refine ⟨l, homOfLE hli, homOfLE hlj, z, ?_⟩
+  obtain rfl : ((pullback g).obj A).obj.relativeProjGluingData.functor.map hlk z = y :=
+    (((pullback g).obj A).obj.relativeProjCover.f k).isOpenEmbedding.injective (by
+      rw [← hz,
+        ← ((pullback g).obj A).obj.relativeProjGluingData_functor_map_comp_relativeProjCover_f hlk]
+      exact (Scheme.Hom.comp_apply _ _ _).symm)
+  -- the lift at the refined pair is the lift at `k` precomposed with the transition map
+  have hlift {a b c d : X.AffineZariskiSite} (f : a ⟶ b) (p : b ⟶ c) (q : b ⟶ d) :
+      Limits.pullback.lift (((pullback g).obj A).obj.relativeProjGluingData.functor.map (f ≫ p))
+        (((pullback g).obj A).obj.relativeProjGluingData.functor.map (f ≫ q))
+        ((CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).trans
+          (CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).symm) =
+        ((pullback g).obj A).obj.relativeProjGluingData.functor.map f ≫
+          Limits.pullback.lift (((pullback g).obj A).obj.relativeProjGluingData.functor.map p)
+            (((pullback g).obj A).obj.relativeProjGluingData.functor.map q)
+            ((CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).trans
+              (CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _).symm) := by
+    -- the charts `relativeProjCover.X` are the objects of the gluing diagram only up to unfolding,
+    -- so `Limits.pullback.lift_fst` is applied as a term rather than rewritten
+    refine Limits.pullback.hom_ext ?_ ?_
+    · exact (Limits.pullback.lift_fst _ _ _).trans <| (Functor.map_comp _ _ _).trans <|
+        (congrArg (_ ≫ ·) (Limits.pullback.lift_fst _ _ _).symm).trans (Category.assoc _ _ _).symm
+    · exact (Limits.pullback.lift_snd _ _ _).trans <| (Functor.map_comp _ _ _).trans <|
+        (congrArg (_ ≫ ·) (Limits.pullback.lift_snd _ _ _).symm).trans (Category.assoc _ _ _).symm
+  exact (congrArg (fun f ↦ f z) (hlift hlk hki hkj)).trans (Scheme.Hom.comp_apply _ _ z)
+
+private noncomputable instance : (relativeProjPullbackCover A g).LocallyDirected where
+  trans {i j} hij := ((pullback g).obj A).obj.relativeProjGluingData.functor.map
+    (homOfLE (leOfHom hij).1)
+  trans_id i := CategoryTheory.Functor.map_id _ _
+  trans_comp hij hjk := CategoryTheory.Functor.map_comp _ _ _
+  w hij := CommMon.relativeProjGluingData_functor_map_comp_relativeProjCover_f _ _
+  directed x := by exact exists_relativeProjPullbackCover_refinement A g x
+  property_trans hij := by
+    -- the transition maps of the cover are by definition those of the relative `Proj` of `g^* A`;
+    -- instance search does not unfold the index type of the cover
+    change IsOpenImmersion (((pullback g).obj A).obj.relativeProjGluingData.functor.map
+      (homOfLE (leOfHom hij).1 : (_ : X.AffineZariskiSite) ⟶ _))
+    infer_instance
+
+/-- **The projection from the relative `Proj` of `g^* A` to that of `A`.** On the chart
+`Proj (⨁ n, Γ(g^* Aₙ, V))` over an affine open `V ≤ g⁻¹ U` of `X`, with `U` an affine open of `Y`,
+it is the morphism `Proj (⨁ n, Γ(g^* Aₙ, V)) ⟶ Proj (⨁ n, Γ(Aₙ, U))` induced by pullback of
+sections, followed by the chart of the relative `Proj` of `A` over `U`. -/
+noncomputable def relativeProjPullbackHom :
+    ((pullback g).obj A).obj.relativeProj ⟶ A.obj.relativeProj :=
+  (relativeProjPullbackCover A g).glueMorphismsOfLocallyDirected
+    (fun i ↦ Proj.map (pullbackGradedSectionsGradedHom g A i.property)
+      (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g i.property
+        i.val.2.property i.val.1.property) ≫
+        A.obj.relativeProjCover.f i.val.2) fun {i j} hij ↦
+    relativeProjGluingData_functor_map_comp_proj_map_comp_relativeProjCover_f A g
+      (leOfHom hij).1 (leOfHom hij).2 i.property j.property
+
+/-- On the chart `Proj (⨁ n, Γ(g^* Aₙ, V))` over an affine open `V ≤ g⁻¹ U`, the projection
+`relativeProjPullbackHom` is induced by pullback of sections from `U`. -/
+@[reassoc]
+theorem relativeProjCover_f_relativeProjPullbackHom (V : X.AffineZariskiSite)
+    (U : Y.AffineZariskiSite) (hV : V.toOpens ≤ g ⁻¹ᵁ U.toOpens) :
+    ((pullback g).obj A).obj.relativeProjCover.f V ≫ relativeProjPullbackHom A g =
+      Proj.map (pullbackGradedSectionsGradedHom g A hV)
+          (A.irrelevant_le_map_pullbackGradedSectionsGradedHom g hV U.property V.property) ≫
+        A.obj.relativeProjCover.f U :=
+  (relativeProjPullbackCover A g).map_glueMorphismsOfLocallyDirected _
+    (fun hij ↦ relativeProjGluingData_functor_map_comp_proj_map_comp_relativeProjCover_f A g
+      (leOfHom hij).1 (leOfHom hij).2 _ _) ⟨(V, U), hV⟩
+
+/-- Two morphisms out of the relative `Proj` of `g^* A` agree once they agree on the charts
+`Proj (⨁ n, Γ(g^* Aₙ, V))` over the affine opens `V` of `X` with `V ≤ g⁻¹ U` for some affine open
+`U` of `Y`. -/
+theorem relativeProj_pullback_hom_ext {Z : Scheme.{u}}
+    {f₁ f₂ : ((pullback g).obj A).obj.relativeProj ⟶ Z}
+    (h : ∀ (V : X.AffineZariskiSite) (U : Y.AffineZariskiSite), V.toOpens ≤ g ⁻¹ᵁ U.toOpens →
+      ((pullback g).obj A).obj.relativeProjCover.f V ≫ f₁ =
+        ((pullback g).obj A).obj.relativeProjCover.f V ≫ f₂) :
+    f₁ = f₂ :=
+  (relativeProjPullbackCover A g).hom_ext _ _ fun p ↦ h p.val.1 p.val.2 p.property
+
+/-- **The relative `Proj` of `g^* A` is the base change of the relative `Proj` of `A`**: the
+square formed by the projection `relativeProjPullbackHom`, the structure morphisms and `g` is
+cartesian. -/
+theorem isPullback_relativeProjPullbackHom :
+    IsPullback ((pullback g).obj A).obj.relativeProjToBase (relativeProjPullbackHom A g) g
+      A.obj.relativeProjToBase := by
+  refine Scheme.isPullback_of_openCover _ _ _ _
+    g.affinePairCover.openCover fun i ↦ ?_
+  obtain ⟨⟨V, U⟩, hV⟩ := i
+  have hchart := (((pullback g).obj A).obj.isPullback_relativeProjCover_fromSpec V).flip
+  have hQ := ((A.isPullback_proj_pullbackGradedSections g hV U.property V.property).paste_horiz
+    (A.obj.isPullback_relativeProjCover_fromSpec U).flip).flip
+  rw [← relativeProjCover_f_relativeProjPullbackHom A g V U hV,
+    IsAffineOpen.SpecMap_appLE_fromSpec g U.property V.property hV] at hQ
+  dsimp only [Scheme.Cover.pullbackHom, Precoverage.ZeroHypercover.pullback₁_toPreZeroHypercover,
+    PreZeroHypercover.pullback₁_f]
+  exact hQ.of_iso hchart.isoPullback (.refl _) (.refl _) (.refl _)
+    ((Category.comp_id _).trans hchart.isoPullback_hom_snd.symm)
+    ((Category.comp_id _).trans (hchart.isoPullback_hom_fst_assoc _).symm)
+    (Category.id_comp _).symm (by simp)
+
+/-- The projection `relativeProjPullbackHom` lies over `g`. -/
+@[reassoc (attr := simp)]
+theorem relativeProjPullbackHom_relativeProjToBase :
+    relativeProjPullbackHom A g ≫ A.obj.relativeProjToBase =
+      ((pullback g).obj A).obj.relativeProjToBase ≫ g :=
+  (A.isPullback_relativeProjPullbackHom g).w.symm
+
+end
 
 end GradedQuasicoherentAlgebra
 
