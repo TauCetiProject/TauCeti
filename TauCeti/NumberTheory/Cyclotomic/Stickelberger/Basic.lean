@@ -141,6 +141,6 @@ theorem lift_stickelberger_eq_generalizedBernoulli {R : Type*} [CommRing R] [Alg
   · refine Finset.sum_congr rfl fun a _ ↦ ?_
     simp [MulChar.inv_apply, mul_comm]
   · have ha' : ¬ IsUnit a := fun ⟨u, hu⟩ ↦ ha (by simp [← hu])
-    simp [MulChar.map_nonunit _ (show ¬ IsUnit a from ha')]
+    simp [MulChar.map_nonunit _ ha']
 
 end TauCeti

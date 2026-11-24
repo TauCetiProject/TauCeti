@@ -142,11 +142,15 @@ theorem smoothedStickelberger_mul (b : ℕ) {d : ℕ} (hd : d.Coprime m) :
         single (ZMod.unitOfCoprime d hd) 1 * smoothedStickelberger m b := by
   ext c
   set v := ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val
-  -- The representative of `c⁻¹ d` is `d v mod m`; write `d v = m q + r` with `r = d v mod m`.
+  -- The representative of `c⁻¹ d` is `d v mod m`; split `d v = m (d v / m) + d v % m` in the
+  -- floor of `b d v / m`.
   simp only [coeff_smoothedStickelberger, coeff_add, Finsupp.add_apply, coeff_natCast_mul,
     coeff_single_mul_apply, mul_inv_rev, inv_inv, ZMod.val_mul_unitOfCoprime, one_mul]
-  conv_lhs => rw [mul_assoc, ← Nat.div_add_mod (d * v) m, mul_add, ← mul_assoc, mul_comm b m,
-    mul_assoc, Nat.mul_add_div (NeZero.pos m)]
+  have h : b * d * v / m = b * (d * v / m) + b * (d * v % m) / m := by
+    rw [mul_assoc]
+    nth_rw 1 [← Nat.div_add_mod (d * v) m]
+    rw [mul_add, mul_left_comm, Nat.mul_add_div (NeZero.pos m)]
+  rw [h]
   push_cast
   ring
 
