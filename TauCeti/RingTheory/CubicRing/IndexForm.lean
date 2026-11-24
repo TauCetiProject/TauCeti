@@ -191,15 +191,8 @@ theorem indexForm_eq_of_sub_mem_range (hb : b 0 = 1) {b' : Basis (Fin 3) R A} (h
     rw [b.det_eq_of_apply_zero_eq_one hb hb', ← hr, ← hs]
     simp [Algebra.algebraMap_eq_smul_one, ← hb]
   have h1 : b.repr 1 = Finsupp.single 0 1 := by rw [← hb, repr_self]
-  ext
-  all_goals simp only [indexForm_a, indexForm_b, indexForm_c, indexForm_d, hdet,
-    b.det_vecCons_one hb, ← hr, ← hs]
-  all_goals simp only [Algebra.algebraMap_eq_smul_one, sq, add_mul, mul_add, smul_mul_assoc,
-    mul_smul_comm, one_mul, mul_one, map_add, map_smul, Finsupp.add_apply, Finsupp.smul_apply,
-    smul_eq_mul, h1, repr_self]
-  all_goals simp only [Finsupp.single_eq_same, Finsupp.single_eq_of_ne, ne_eq, one_ne_zero,
-    Fin.reduceEq, not_false_eq_true, one_mul, mul_one, mul_zero, zero_mul, add_zero, sub_zero]
-  all_goals ring
+  ext <;> simp [hdet, b.det_vecCons_one hb, ← hr, ← hs, Algebra.algebraMap_eq_smul_one, sq,
+    add_mul, mul_add, h1] <;> ring
 
 /-- **The index of `ℤ[u]` is the value of the index form.** Let `b` be a `ℤ`-basis of a
 commutative ring `A` with `b 0 = 1`, and let `u ∈ A` have coordinates `x, y` along `b 1, b 2`.

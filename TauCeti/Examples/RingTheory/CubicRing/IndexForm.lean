@@ -88,10 +88,7 @@ example {A : Type*} [CommRing A] [Algebra ℚ A] (b b' : Basis (Fin 3) ℚ A) (h
         b.indexForm.d * y ^ 3) := by
   have hc := b.det_mul_indexForm_eq_indexForm hb b' x y
   rw [b.det_eq_of_apply_zero_eq_one hb hb'] at hc
-  simp only [h₁, h₂, map_smul, Basis.repr_self, Finsupp.smul_apply, smul_eq_mul] at hc
-  simp only [Basis.indexForm_a, Basis.indexForm_b, Basis.indexForm_c, Basis.indexForm_d] at hc ⊢
-  simp only [Finsupp.single_eq_same, Finsupp.single_eq_of_ne, ne_eq, Fin.reduceEq,
-    not_false_eq_true, mul_one, mul_zero, sub_zero, add_zero, zero_add] at hc
+  simp [h₁, h₂] at hc ⊢
   linear_combination hc / 4
 
 /-- Negating `b 1` and `b 2` negates the index form. -/
@@ -101,9 +98,6 @@ example {R A : Type*} [CommRing R] [CommRing A] [Algebra R A] (b b' : Basis (Fin
   have hdet : b'.det = b.det := Basis.det_eq_det_of_det_eq_one <| by
     rw [b.det_eq_of_apply_zero_eq_one hb hb', h₁, h₂]
     simp
-  ext <;> simp only [Basis.indexForm_a, Basis.indexForm_b, Basis.indexForm_c, Basis.indexForm_d,
-    hdet, b.det_vecCons_one hb, h₁, h₂, sq, mul_neg, neg_mul, neg_neg, map_neg, Basis.repr_self,
-    Finsupp.coe_neg, Pi.neg_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne, ne_eq,
-    Fin.reduceEq, not_false_eq_true, neg_zero, zero_mul, one_mul, sub_zero] <;> ring
+  ext <;> simp [hdet, b.det_vecCons_one hb, h₁, h₂, sq] <;> ring
 
 end TauCeti.IndexFormChecks
