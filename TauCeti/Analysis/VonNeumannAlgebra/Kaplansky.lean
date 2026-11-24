@@ -42,7 +42,7 @@ strong operator closed. For the inclusion `⊇`:
   self-adjoint elements `r • cfc kaplanskyFun yᵢ` of norm at most `r` converge strongly to `x`.
   They lie in the norm closure of `S`, whose self-adjoint elements of norm at most `r` are norm
   limits of self-adjoint elements of norm at most `r` of `S`
-  (`StarSubalgebra.closure_selfAdjoint_closedBall`).
+  (`TauCeti.closure_inter_selfAdjoint_inter_closedBall`).
 * *Positive part.* For `0 ≤ x` in the unit ball of `S''`, approximate `√x` by self-adjoint
   contractions `yᵢ ∈ S`; multiplication is strongly continuous on bounded sets, so the positive
   contractions `yᵢ²` converge strongly to `x`.
@@ -77,10 +77,9 @@ private theorem isClosed_image_toPointwiseConvergenceCLM_inter (S : Set (H →L[
   have hball : {x : H →L[ℂ] H | ‖x‖ ≤ r} = Metric.closedBall 0 r := by
     ext x; simp
   rw [Set.ofPred_and, Set.ofPred_and, Set.ofPred_mem_eq, Set.ofPred_mem_eq, hball,
-    Set.image_inter ContinuousLinearMapWOT.ofCLM_injective,
     Set.image_inter ContinuousLinearMapWOT.ofCLM_injective]
   exact S.centralizer.isClosed_image_ofCLM_centralizer.inter
-    (hP.inter (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed)
+    (ContinuousLinearMapWOT.isCompact_image_ofCLM_inter_closedBall_of_isClosed hP 0 r).isClosed
 
 /-- **The Kaplansky density theorem for self-adjoint parts.** For a unital star subalgebra `S` of
 `B(H)`, the strong operator closure of the self-adjoint elements of norm at most `r` of `S` is the
@@ -103,13 +102,12 @@ theorem closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centrali
   -- Rescale `x` to the self-adjoint contraction `z = r⁻¹ • x` of `S''`.
   set z := ((r⁻¹ : ℝ) : ℂ) • x
   have hxz : (r : ℂ) • z = x := by
-    rw [smul_smul, ← Complex.ofReal_mul, mul_inv_cancel₀ hr.ne', Complex.ofReal_one, one_smul]
+    simp only [z, Complex.ofReal_inv]
+    exact smul_inv_smul₀ (Complex.ofReal_ne_zero.mpr hr.ne') x
   have hz : z ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer := Set.smul_mem_centralizer _ hx
   have hzsa : IsSelfAdjoint z := IsSelfAdjoint.smul (Complex.conj_ofReal _) hxsa
   have hz₁ : ‖z‖ ≤ 1 := by
-    rw [norm_smul, Complex.norm_real, Real.norm_of_nonneg (inv_nonneg.mpr hr.le),
-      inv_mul_le_iff₀ hr, mul_one]
-    exact hxr
+    simpa [z, norm_smul, abs_of_pos hr] using inv_mul_le_one_of_le₀ hxr hr.le
   -- `z = cfc kaplanskyFun y` for the self-adjoint element `y = cfc kaplanskyFunInv z` of `S''`.
   set y := cfc kaplanskyFunInv z
   have hy : y ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer :=
@@ -141,8 +139,14 @@ theorem closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centrali
   -- These are norm, hence strong, limits of self-adjoint elements of norm at most `r` of `S`.
   refine closure_minimal ?_ isClosed_closure hclos
   rintro _ ⟨w, ⟨hw, hwsa, hwr⟩, rfl⟩
-  exact image_closure_subset_closure_image q.continuous
-    ⟨w, S.closure_selfAdjoint_closedBall r ▸ ⟨hw, hwsa, hwr⟩, rfl⟩
+  have hw' : w ∈ closure ((S : Set (H →L[ℂ] H)) ∩ selfAdjoint (H →L[ℂ] H) ∩
+      Metric.closedBall 0 r) := by
+    rw [TauCeti.closure_inter_selfAdjoint_inter_closedBall ℂ S r]
+    exact ⟨⟨hw, hwsa⟩, mem_closedBall_zero_iff.mpr hwr⟩
+  refine closure_mono (Set.image_mono ?_)
+    (image_closure_subset_closure_image q.continuous ⟨w, hw', rfl⟩)
+  rintro a ⟨⟨ha, hasa⟩, har⟩
+  exact ⟨ha, hasa, mem_closedBall_zero_iff.mp har⟩
 
 /-- **The Kaplansky density theorem for positive parts.** For a unital star subalgebra `S` of
 `B(H)`, the strong operator closure of the positive contractions of `S` is the set of positive
