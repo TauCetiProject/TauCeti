@@ -16,16 +16,19 @@ public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 Mathlib's `HomologicalComplex.monoidalCategory` totalizes the degreewise tensor product of
 complexes, with the tensor signs `ε₁ = 1` and `ε₂ (p, q) = (-1)^p`.  This file records the
 resulting differential on a homogeneous summand, `d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y` for `x` of
-degree `p`: as a single rewrite rule for cochain complexes of modules indexed by `ℤ`, and as its two
-parts `HomologicalComplex.mapBifunctor.D₁` and `HomologicalComplex.mapBifunctor.D₂` for chain
-complexes indexed by `ℕ` in any monoidal preadditive category, where a part vanishes on a summand
-whose factor of degree zero it would differentiate.
+degree `p`: as a single rewrite rule for cochain complexes indexed by `ℤ` in any monoidal
+preadditive category, and as its two parts `HomologicalComplex.mapBifunctor.D₁` and
+`HomologicalComplex.mapBifunctor.D₂` for chain complexes indexed by `ℕ`, where a part vanishes on a
+summand whose factor of degree zero it would differentiate.
 
 ## Main results
 
-* `HomologicalComplex.ι_tensorObj_d`: the differential of `X ⊗ Y` restricted to the summand
-  `X.X p ⊗ Y.X q`, for cochain complexes of modules, and `HomologicalComplex.ι_tensorObj_d'`,
-  the same formula with arbitrary names for the successor degrees.
+* `CochainComplex.ιTensorObj_d`: the differential of `HomologicalComplex.tensorObj X Y` restricted
+  to the summand `X.X p ⊗ Y.X q`, for cochain complexes in any monoidal preadditive category in
+  which this tensor product exists.
+* `HomologicalComplex.ι_tensorObj_d` and `HomologicalComplex.ι_tensorObj_d'`: the same formula for
+  cochain complexes of modules, stated for the monoidal product `X ⊗ Y` so that it rewrites goals
+  written with `⊗`.
 * `ChainComplex.ιTensorObj_D₁_succ`, `ChainComplex.ιTensorObj_D₁_zero`,
   `ChainComplex.ιTensorObj_D₂_succ` and `ChainComplex.ιTensorObj_D₂_zero`: the two parts of the
   differential of `K₁ ⊗ K₂` on a homogeneous summand, for chain complexes indexed by `ℕ`.
@@ -43,6 +46,31 @@ open CategoryTheory Limits MonoidalCategory
 
 universe v
 
+namespace CochainComplex
+
+open HomologicalComplex
+
+variable {C : Type*} [Category* C] [Preadditive C] [MonoidalCategory C] [MonoidalPreadditive C]
+  (X Y : CochainComplex C ℤ) [X.HasTensor Y]
+
+/-- The differential of a tensor product of cochain complexes on the summand `X^p ⊗ Y^q` is
+`d (x ⊗ y) = d x ⊗ y + (-1)^p x ⊗ d y`, with arbitrary indices `p'`, `q'` and `j'` for the
+successors of `p`, `q` and `j`. -/
+@[reassoc]
+lemma ιTensorObj_d {p q j p' q' j' : ℤ} (hpq : p + q = j) (hp : p + 1 = p') (hq : q + 1 = q')
+    (hj : j + 1 = j') :
+    ιTensorObj X Y p q j hpq ≫ (tensorObj X Y).d j j' =
+      (X.d p p' ▷ Y.X q) ≫ ιTensorObj X Y p' q j' (by omega) +
+        p.negOnePow • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' (by omega)) := by
+  subst hp hq hj
+  rw [mapBifunctor.d_eq, Preadditive.comp_add, mapBifunctor.ι_D₁,
+    mapBifunctor.d₁_eq _ _ _ _ (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega),
+    mapBifunctor.ι_D₂,
+    mapBifunctor.d₂_eq _ _ _ _ p (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
+  simp [ComplexShape.ε₁_def, ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ]
+
+end CochainComplex
+
 namespace HomologicalComplex
 
 variable {R : Type v} [CommRing R]
@@ -57,32 +85,18 @@ lemma ι_tensorObj_d (X Y : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ)
         ιTensorObj X Y (p + 1) q (j + 1) (by omega) +
       p.negOnePow •
         ((curriedTensor (ModuleCat.{v} R)).obj (X.X p)).map (Y.d q (q + 1)) ≫
-          ιTensorObj X Y p (q + 1) (j + 1) (by omega) := by
-  have hd : (X ⊗ Y).d j (j + 1) =
-      mapBifunctor.D₁ X Y (curriedTensor (ModuleCat.{v} R))
-          (ComplexShape.up ℤ) j (j + 1) +
-        mapBifunctor.D₂ X Y (curriedTensor (ModuleCat.{v} R))
-          (ComplexShape.up ℤ) j (j + 1) :=
-    mapBifunctor.d_eq _ _ _ _ j (j + 1)
-  rw [hd, Preadditive.comp_add,
-    mapBifunctor.ι_D₁,
-    mapBifunctor.d₁_eq _ _ _ _
-      (ComplexShape.up_mk p (p + 1) rfl) q (j + 1) (by dsimp; omega),
-    mapBifunctor.ι_D₂,
-    mapBifunctor.d₂_eq _ _ _ _ p
-      (ComplexShape.up_mk q (q + 1) rfl) (j + 1) (by dsimp; omega)]
-  simp only [ComplexShape.ε₁_def, one_smul, ComplexShape.ε₂_def, ComplexShape.ε_up_ℤ]
+          ιTensorObj X Y p (q + 1) (j + 1) (by omega) :=
+  CochainComplex.ιTensorObj_d X Y hpq rfl rfl rfl
 
-/-- `HomologicalComplex.ι_tensorObj_d` with arbitrary indices `p'`, `q'` and `j'` for the
-successors of `p`, `q` and `j`, in whiskered form. -/
+/-- `CochainComplex.ιTensorObj_d` for cochain complexes of modules, stated for the monoidal
+product `X ⊗ Y`, in whiskered form. -/
 @[reassoc]
 lemma ι_tensorObj_d' (X Y : CochainComplex (ModuleCat.{v} R) ℤ) {p q j p' q' j' : ℤ}
     (hpq : p + q = j) (hp : p + 1 = p') (hq : q + 1 = q') (hj : j + 1 = j') :
     ιTensorObj X Y p q j hpq ≫ (X ⊗ Y).d j j' =
       (X.d p p' ▷ Y.X q) ≫ ιTensorObj X Y p' q j' (by omega) +
-        p.negOnePow • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' (by omega)) := by
-  subst hp hq hj
-  simp
+        p.negOnePow • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' (by omega)) :=
+  CochainComplex.ιTensorObj_d X Y hpq hp hq hj
 
 end HomologicalComplex
 
