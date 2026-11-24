@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Trace
 public import TauCeti.NumberTheory.HurwitzClassNumber
+import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.ClassNumber
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Hyperbolic
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Parabolic
 import TauCeti.NumberTheory.Divisors
@@ -75,12 +76,11 @@ private lemma fibreWeight_pair_of_sq_le (n : ℕ) (hn : 0 < n) (t : ℤ)
           -((4 * (n : ℤ) - t ^ 2).toNat : ℤ))]
     ring
   · -- At the boundary the two fibre weights sum to 2 = -24 H(0).
-    have hnp : (0 : ℤ) < n := by exact_mod_cast hn
     have ht : t ≠ 0 := by rintro rfl; omega
     have hzero : 4 * (n : ℤ) - t ^ 2 = 0 := by omega
     rw [fibreWeight_cast, fibreWeight_cast,
-      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero hnp (by omega),
-      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero hnp (by nlinarith), hzero]
+      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero (by omega),
+      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero (by nlinarith), hzero]
     by_cases htpos : 0 < t
     · simp only [htpos, ite_true, Int.toNat_zero, hurwitzClassNumber_zero,
         ite_eq_right (by omega : ¬0 < -t)]
@@ -106,11 +106,11 @@ private lemma fibreWeight_pair_of_factorPair (n : ℕ) (hn : 0 < n) (p : ℕ × 
   simp [hspos]
 
 private lemma fibreWeight_pair_of_not_isSquare (n : ℕ) (t : ℤ)
-    (hD : 4 * (n : ℤ) < t ^ 2) (hnsq : ¬IsSquare (t ^ 2 - 4 * (n : ℤ))) :
+    (hD : 4 * (n : ℤ) ≤ t ^ 2) (hnsq : ¬IsSquare (t ^ 2 - 4 * (n : ℤ))) :
     fibreWeight t n + fibreWeight (-t) n = 0 := by
   rw [fibreWeight_cast, fibreWeight_cast,
-    PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by omega) hnsq,
-    PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by nlinarith)
+    PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_not_isSquare hD hnsq,
+    PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (by nlinarith)
       (by simpa using hnsq)]
   norm_num
 

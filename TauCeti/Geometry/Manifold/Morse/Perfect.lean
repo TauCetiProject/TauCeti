@@ -14,7 +14,6 @@ public import TauCeti.Geometry.Manifold.Morse.Polynomial
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Morse.Torus
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Perfect Morse functions
@@ -302,13 +301,9 @@ function on `ℂℙⁿ` is a perfect Morse function for every division ring of c
 critical points all have even index. -/
 theorem isPerfectMorse_projectiveMomentFunction_complex (hw : Function.Injective w) (k : Type)
     [DivisionRing k] :
-    IsPerfectMorse 𝓘(ℝ, Fin n → ℂ) k (projectiveMomentFunction ℂ w) := by
-  refine (isMorse_projectiveMomentFunction hw).isPerfectMorse_of_forall_ne_add_one ?_
-  rw [criticalPoints_projectiveMomentFunction hw]
-  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-  rw [manifoldMorseIndex_projectiveMomentFunction, manifoldMorseIndex_projectiveMomentFunction,
-    Complex.finrank_real_complex]
-  omega
+    IsPerfectMorse 𝓘(ℝ, Fin n → ℂ) k (projectiveMomentFunction ℂ w) :=
+  (isMorse_projectiveMomentFunction hw).isPerfectMorse_of_forall_ne_add_one
+    (manifoldMorseIndex_projectiveMomentFunction_complex_ne_add_one hw)
 
 /-- **The moment function on `ℝPⁿ` is perfect in characteristic two.** For pairwise distinct
 weights, the moment function on `ℝPⁿ` has one critical point of each index `0, …, n`, and it is a
