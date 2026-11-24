@@ -56,8 +56,9 @@ For the differential symbol of order `m`:
   of temperate growth whose symbol has compact spatial support, the extension of the quantization
   to the Bessel-potential space `H^r` is the differential operator acting on tempered
   distributions;
-* `TauCeti.ClassicalSymbol.toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id`:
-  its `H^{r,p}` counterpart for `1 < p < ∞` and smooth compactly supported scalar coefficients;
+* `toDistr_quantizeUniformBesselPotentialSpace_ofDifferentialSymbol_smul_id` in the namespace
+  `TauCeti.ClassicalSymbol`: its `H^{r,p}` counterpart for `1 < p < ∞` and smooth compactly
+  supported scalar coefficients;
 * `TauCeti.ClassicalSymbol.ofDifferentialOperator`: the classical symbol of a differential
   operator `D` of order at most `m` on the smooth real functions on `ℝⁿ` in Grothendieck's sense
   (`TauCeti.differentialOperators`, defined by iterated commutators with multiplication operators,
@@ -322,14 +323,14 @@ variable [FiniteDimensional ℂ V] [CompleteSpace V] {p : ℝ≥0∞} [Fact (1 �
 `H^{r,p} → H^{r - m,p}` given by the quantization of its classical symbol is the differential
 operator acting on tempered distributions. This is the `H^{r,p}` counterpart of
 `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol`. -/
-theorem toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id
+theorem toDistr_quantizeUniformBesselPotentialSpace_ofDifferentialSymbol_smul_id
     {β : ι → CoordinateSpace n → ℂ} (hβ : ∀ i ∈ s, ContDiff ℝ ∞ (β i))
     (hβc : ∀ i ∈ s, HasCompactSupport (β i)) (r : ℝ) (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
     (u : H^{r, p}(CoordinateSpace n, V)) :
     ((ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ V)
-        (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.quantizeBesselPotentialSpace
+        (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.quantizeUniformBesselPotentialSpace
       (hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol m s v _ _ hk
-        fun i hi ↦ (hβc i hi).smul_right) r p u).toDistr =
+        fun i hi ↦ (hβc i hi).smul_right).isUniform r p u).toDistr =
       ∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) (∂^{v i} u.toDistr) := by
   set a := (ofDifferentialSymbol m s v (fun i x ↦ β i x • ContinuousLinearMap.id ℂ V)
     (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol
@@ -347,18 +348,16 @@ theorem toDistr_quantizeBesselPotentialSpace_ofDifferentialSymbol_smul_id
     refine Finset.sum_congr rfl fun i hi ↦ ?_
     rw [SchwartzMap.smulLeftCLM_apply_apply (hgr i hi)]
     simp
-  have key : BesselPotentialSpace.toDistrCLM _ V _ p ∘L a.quantizeBesselPotentialSpace ha r p =
-      (∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
-        iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
-        BesselPotentialSpace.toDistrCLM _ V r p := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun w ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply,
-      Symbol.quantizeBesselPotentialSpace_toBesselPotentialSpaceCLM ha r hp hp_top, hq,
-      SchwartzMap.toDistr_toBesselPotentialSpaceCLM, sum_apply, map_sum,
-      iteratedLineDerivOpCLM_apply,
-      TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
-      TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
-  simpa using congrArg (fun L ↦ L u) key
+  simpa using (ha.hasBesselPotentialSpaceExtension hp
+    hp_top).toDistr_quantizeUniformBesselPotentialSpace_eq_of_forall hp_top
+    ((∑ i ∈ s, TemperedDistribution.smulLeftCLM V (β i) ∘L
+      iteratedLineDerivOpCLM ℂ 𝓢'(CoordinateSpace n, V) (v i)) ∘L
+      BesselPotentialSpace.toDistrCLM _ V r p) (fun w ↦ by
+      simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistrCLM_apply, hq,
+        SchwartzMap.toDistr_toBesselPotentialSpaceCLM, sum_apply, map_sum,
+        iteratedLineDerivOpCLM_apply,
+        TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
+        TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]) u
 
 end BesselPotentialSpace
 

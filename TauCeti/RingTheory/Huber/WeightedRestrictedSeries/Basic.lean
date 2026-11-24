@@ -1037,14 +1037,22 @@ theorem weightedPolynomialHom_X [NonarchimedeanRing A] {T : Fin k → Set A}
     weightedPolynomialHom T hT (MvPolynomial.X i) = weightedX T hT i :=
   Subtype.ext (by simp)
 
+/-- A polynomial lies in `U⟨X⟩` exactly when each of its coefficients `aν` lies in `Tν · U`, for any
+additive subgroup `U`. -/
+theorem weightedPolynomialHom_mem_weightedNhd [NonarchimedeanRing A] {T : Fin k → Set A}
+    {hT : IsWeightFamily T} {U : AddSubgroup A} {p : MvPolynomial (Fin k) A} :
+    weightedPolynomialHom T hT p ∈ weightedNhd T hT U ↔ ∀ ν, p.coeff ν ∈ weightMul T ν U := by
+  simp only [mem_weightedNhd, coe_weightedPolynomialHom, MvPolynomial.coeff_coe]
+
 /-- A monomial `a Xν` lies in `U⟨X⟩` exactly when `a ∈ Tν · U`. -/
 @[simp 1100] theorem weightedPolynomialHom_monomial_mem_weightedNhd [NonarchimedeanRing A]
     {T : Fin k → Set A} {hT : IsWeightFamily T} {U : AddSubgroup A} {ν : Fin k →₀ ℕ} {a : A} :
     weightedPolynomialHom T hT (MvPolynomial.monomial ν a) ∈ weightedNhd T hT U ↔
       a ∈ weightMul T ν U := by
-  simp only [mem_weightedNhd, coe_weightedPolynomialHom, MvPolynomial.coe_monomial,
-    MvPowerSeries.coeff_monomial]
+  classical
+  rw [weightedPolynomialHom_mem_weightedNhd]
   refine ⟨fun h ↦ by simpa using h ν, fun h μ ↦ ?_⟩
+  rw [MvPolynomial.coeff_monomial]
   split_ifs with hμ
   · exact hμ ▸ h
   · exact zero_mem _
@@ -1149,9 +1157,8 @@ theorem dense_weightedPolynomials [NonarchimedeanRing A] {T : Fin k → Set A}
   refine hU ?_
   have hxp : x - weightedPolynomialHom T hT p ∈ weightedNhd T hT U.toAddSubgroup := fun ν ↦ by
     simpa only [AddSubgroupClass.coe_sub, coe_weightedPolynomialHom] using hp ν
-  have hneg : (weightedPolynomialHom T hT p) - x ∈ weightedNhd T hT U.toAddSubgroup := by
-    simpa only [neg_sub] using (weightedNhd T hT U.toAddSubgroup).neg_mem hxp
-  simpa only [SetLike.mem_coe, sub_eq_add_neg] using hneg
+  rw [SetLike.mem_coe]; dsimp only; rw [← sub_eq_add_neg, ← neg_sub]
+  exact (weightedNhd T hT U.toAddSubgroup).neg_mem hxp
 
 /-- **Agreement on the generators propagates to the polynomials.** Two ring homomorphisms out of
 `A⟨X⟩_T` that agree on every constant series and every variable agree on the whole polynomial
@@ -1204,13 +1211,11 @@ instance discreteTopology_weightedRestrictedSubring [NonarchimedeanRing A] [Disc
 
 /-- Over a discrete ring the restricted series are exactly the polynomials. -/
 theorem weightedPolynomials_eq_top [NonarchimedeanRing A] [DiscreteTopology A]
-    {T : Fin k → Set A} {hT : IsWeightFamily T} : weightedPolynomials T hT = ⊤ := by
-  rw [Subring.eq_top_iff']
-  intro f
-  rw [mem_weightedPolynomials_iff]
-  have h := (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f.property))
-    ⟨⊥, isOpen_discrete _⟩
-  simpa [weightMul_bot, Filter.eventually_cofinite] using h
+    {T : Fin k → Set A} {hT : IsWeightFamily T} : weightedPolynomials T hT = ⊤ :=
+  (Subring.eq_top_iff' _).mpr fun f ↦ mem_weightedPolynomials_iff.mpr <| by
+    simpa [weightMul_bot, Filter.eventually_cofinite] using
+      (isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f.property))
+        ⟨⊥, isOpen_discrete _⟩
 
 /-- Over a discrete ring, the coefficientwise inclusion of the polynomials into `A⟨X⟩_T` is a
 ring isomorphism. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Order.GroupWithZero.Canonical
 public import Mathlib.Order.Filter.AtTopBot.Defs
+public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
 import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
@@ -24,6 +25,7 @@ prime.
 ## Main results
 
 * `TauCeti.lt_one_iff_le_exp_neg_one`: `t < 1 ↔ t ≤ exp (-1)`.
+* `TauCeti.zpowers_mk0_exp_neg_one_eq_top`: `exp (-1)` generates the units of `ℤᵐ⁰`.
 * `TauCeti.eq_one_of_exp_neg_one_le_sq`: an integral value whose square is at least `exp (-1)`
   is `1`.
 * `TauCeti.eq_one_and_forall_eq_one_of_exp_neg_one_le_prod`: in a weighted product of integral
@@ -52,6 +54,15 @@ namespace TauCeti
 /-- In `ℤᵐ⁰`, an element is below `1` exactly when it is at most `exp (-1)`. -/
 theorem lt_one_iff_le_exp_neg_one {t : ℤᵐ⁰} : t < 1 ↔ t ≤ exp (-1) := by
   rw [← lt_mul_exp_iff_le exp_ne_zero, ← exp_add, neg_add_cancel, exp_zero]
+
+/-- `exp (-1)` generates the units of `ℤᵐ⁰`: under `WithZero.unitsWithZeroEquiv`, its inverse
+corresponds to the generator `Multiplicative.ofAdd (1 : ℤ)` of `Multiplicative ℤ`. -/
+@[simp]
+theorem zpowers_mk0_exp_neg_one_eq_top :
+    Subgroup.zpowers (Units.mk0 (exp (-1) : ℤᵐ⁰) exp_ne_zero) = ⊤ := by
+  rw [← Subgroup.zpowers_inv]
+  exact unitsWithZeroEquiv.zpowers_eq_top_of_apply_eq_ofAdd_one
+    (coe_injective <| by simp [← exp_eq_coe_ofAdd])
 
 /-- The product of two elements of `ℤᵐ⁰` below `1` is below `exp (-1)`. -/
 theorem mul_lt_exp_neg_one {s t : ℤᵐ⁰} (hs : s < 1) (ht : t < 1) : s * t < exp (-1) :=

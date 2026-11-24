@@ -42,6 +42,8 @@ than selected by a typeclass.
   `A⁺` at the elements of `A⁺` which are units of the ambient ring.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
+* `TauCeti.Huber.IsRingOfIntegralElements.comap_subtype`: `A⁺ ∩ S` is a ring of integral
+  elements of every subring `S`.
 * `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
   `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.instPerfectRingPlus`: the plus ring of a Huber pair on a perfect ring is
@@ -170,6 +172,24 @@ theorem IsRingOfIntegralElements.map {B : Type*} [CommRing B] [TopologicalSpace 
   le_powerBoundedSubring := by
     rw [← map_powerBoundedSubring e he he']
     exact (Subring.gc_map_comap _).monotone_l h.le_powerBoundedSubring
+
+/-- **A ring of integral elements restricts to every subring.** If `A⁺` is a ring of integral
+elements of `A`, then `A⁺ ∩ S` is a ring of integral elements of any subring `S` with the subspace
+topology: it is open by continuity of the inclusion, integrally closed in `S` because `A⁺` is
+integrally closed in `A`, and power-bounded in `S` because power-boundedness descends to a
+subspace. -/
+theorem IsRingOfIntegralElements.comap_subtype [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) (S : Subring A) [NonarchimedeanRing S] :
+    IsRingOfIntegralElements (Aplus.comap S.subtype) where
+  isOpen := h.isOpen.preimage continuous_subtypeVal
+  isIntegrallyClosedIn := by
+    have := h.isIntegrallyClosedIn
+    infer_instance
+  le_powerBoundedSubring x hx := by
+    refine mem_powerBoundedSubring.mpr <| isPowerBounded_iff.mpr <|
+      (S.isBounded_preimage_subtype (isPowerBounded_iff.mp (h.isPowerBounded_of_mem hx))).subset ?_
+    rintro _ ⟨n, rfl⟩
+    exact ⟨n, (SubmonoidClass.coe_pow x n).symm⟩
 
 variable (A) [IsTopologicalRing A] in
 /-- A *Huber pair* `(A, A⁺)`: a Huber ring together with a ring of integral elements. Only the

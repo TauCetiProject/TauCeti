@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # The continued Dedekind zeta function

@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FiniteType
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.TargetLocally
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.WeaklyFiniteType
-public import TauCeti.RingTheory.Huber.Pair.Finite
+public import TauCeti.RingTheory.Huber.Pair.Finite.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Basic
 
 /-!

@@ -17,6 +17,7 @@ import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.RationalPoint.Affine
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.RingTheory.TotallySplit
 
 /-!
@@ -64,6 +65,8 @@ point factors through `κ`, so the base change `L ⊗[A] B` is the base change o
 Étaleness of a morphism is local on the target
 (`TauCeti.AlgebraicGeometry.isZariskiLocalAtTarget_etale`); this is recorded as an instance because
 instance search does not derive it from Mathlib's ring-map description of `Etale`.
+Since étaleness is also local on the source, a morphism out of a binary coproduct is étale when its
+restrictions to both summands are (`TauCeti.AlgebraicGeometry.etale_coprodDesc`).
 
 ## Main results
 
@@ -77,6 +80,7 @@ instance search does not derive it from Mathlib's ring-map description of `Etale
   `Spec.algebraMap R A` is étale.
 * `TauCeti.AlgebraicGeometry.etaleSpecAlgebraMapHomEquiv`: morphisms in `(Spec (.of R)).Etale`
   between affine étale `R`-schemes `Spec A` and `Spec B` correspond to `B →ₐ[R] A`.
+* `TauCeti.AlgebraicGeometry.etale_coprodDesc`: `coprod.desc f g` is étale when `f` and `g` are.
 * `AlgebraicGeometry.Scheme.etaleEquivOfIsEmpty`: equivalence `X.Etale ≌ Discrete PUnit` when `X`
   is empty.
 * `AlgebraicGeometry.Scheme.Hom.etale_of_finrank_le_natCard`: a finite morphism `f : X ⟶ Spec K`
@@ -302,6 +306,14 @@ this from Mathlib's ring-map description of `Etale`, so it is recorded here. -/
 instance isZariskiLocalAtTarget_etale :
     AlgebraicGeometry.IsZariskiLocalAtTarget @AlgebraicGeometry.Etale.{u} :=
   AlgebraicGeometry.HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Etale)
+
+/-- A morphism out of a binary coproduct is étale when its restrictions to both summands are. -/
+instance etale_coprodDesc {A B Y : _root_.AlgebraicGeometry.Scheme.{u}} (f : A ⟶ Y) (g : B ⟶ Y)
+    [_root_.AlgebraicGeometry.Etale f] [_root_.AlgebraicGeometry.Etale g] :
+    _root_.AlgebraicGeometry.Etale (CategoryTheory.Limits.coprod.desc f g) :=
+  have : _root_.AlgebraicGeometry.IsZariskiLocalAtSource @_root_.AlgebraicGeometry.Etale.{u} :=
+    _root_.AlgebraicGeometry.HasRingHomProperty.instIsZariskiLocalAtSource (Q := RingHom.Etale)
+  _root_.AlgebraicGeometry.IsZariskiLocalAtSource.coprodDesc ‹_› ‹_›
 
 section ClosedFibre
 

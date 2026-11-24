@@ -35,6 +35,9 @@ spaces and morphisms of complete Hausdorff Huber pairs
 * `TauCeti.ValuationSpectrum.presentationLimitHomPairHom_presentationLimitPreAdicSpacePairComap`,
   `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpacePairComap_presentationLimitHomPairHom`:
   the two inverse identities for complete Hausdorff Huber pairs.
+* `TauCeti.ValuationSpectrum.presentationLimitAppTop_pairComap`,
+  `TauCeti.ValuationSpectrum.presentationLimitAppTop_comp_pairComap`: the global-sections map of
+  the induced morphism, and naturality of global-sections maps in the Huber pair.
 * `TauCeti.ValuationSpectrum.presentationLimitPreAdicSpace_hom_ext_pairHom`: morphisms between
   complete Hausdorff affinoid spectra with sheafy source are determined by their induced morphism of
   Huber pairs.
@@ -236,6 +239,35 @@ theorem presentationLimitHomPairHom_presentationLimitPreAdicSpacePairComap (φ :
     P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hS
     P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hT
     φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus hsheaf
+
+/-- The global-sections map of the morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by a morphism of
+Huber pairs `χ` is `χ` followed by the identification of `B` with the global sections. -/
+@[simp]
+theorem presentationLimitAppTop_pairComap (χ : Pair.Hom S T) :
+    presentationLimitAppTop P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hS
+        (presentationLimitPreAdicSpacePairComap P P' hS hT hsheaf χ) =
+      (presentationLimitPreAdicSpaceTopIso P' T.plus
+        T.isRingOfIntegralElements.isPowerBounded_of_mem hT).inv.val.comp χ.toRingHom := by
+  have h := congrArg Pair.Hom.toRingHom
+    (presentationLimitHomPairHom_presentationLimitPreAdicSpacePairComap P P' S T hS hT hsheaf χ)
+  rw [presentationLimitHomPairHom_toRingHom,
+    presentationLimitHomRingHom_eq_comp_presentationLimitAppTop] at h
+  rw [← h]
+  ext a
+  exact (presentationLimitPreAdicSpaceTopIso_hom_inv_id_apply P' T.plus
+    T.isRingOfIntegralElements.isPowerBounded_of_mem hT _).symm
+
+/-- **Naturality in the Huber pair**: composing a morphism `f : X ⟶ Spa(B, B⁺)` with the
+morphism induced by `χ : (A, A⁺) → (B, B⁺)` precomposes the global-sections map with `χ`. -/
+theorem presentationLimitAppTop_comp_pairComap {X : PreAdicSpace.{u}} (χ : Pair.Hom S T)
+    (f : X ⟶ presentationLimitPreAdicSpace P' T.plus
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hT) :
+    presentationLimitAppTop P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hS
+        (f ≫ presentationLimitPreAdicSpacePairComap P P' hS hT hsheaf χ) =
+      (presentationLimitAppTop P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hT
+        f).comp χ.toRingHom := by
+  rw [presentationLimitAppTop_comp, presentationLimitAppTop_pairComap,
+    presentationLimitAppTop_eq_appTop_comp, RingHom.comp_assoc]
 
 /-- **Every morphism into a complete Hausdorff affinoid spectrum is induced by its pair morphism**:
 for complete Hausdorff `A` and `B` and sheafy `Spa(B, B⁺)`, a pre-adic morphism

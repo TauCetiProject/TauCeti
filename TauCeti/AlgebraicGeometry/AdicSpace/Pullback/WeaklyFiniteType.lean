@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Pullback.Cover
 public import TauCeti.AlgebraicGeometry.AdicSpace.Pullback.OpenImmersion
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Sheafy
+import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Mono
 import TauCeti.RingTheory.Huber.TensorProduct.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 
@@ -512,10 +513,7 @@ private theorem chartLocally_of_isPullback
     rw [Category.assoc, Category.assoc, Iso.hom_inv_id_assoc, Iso.hom_inv_id_assoc, hg_W_fac]
   have hpull_aff : IsPullback (πC ≫ eU.inv) (πB ≫ eW.inv)
       (X.ofRestrict U ≫ f) (Y.ofRestrict W ≫ g) := by
-    have hbot : IsPullback (eW.hom ≫ g₀ ≫ eV.inv) (𝟙 _) (S.ofRestrict V) (Y.ofRestrict W ≫ g) :=
-      IsPullback.of_vert_isIso_mono
-        ⟨by simpa only [Category.id_comp, Category.assoc] using hfac_g'⟩
-    simpa only [Category.comp_id, Category.assoc, hfac_f'] using hpull₁.paste_vert hbot
+    simpa only [Category.assoc, hfac_f', hfac_g'] using hpull₁.comp_mono (S.ofRestrict V)
   -- 4. Identify `Z.restrict O` (`O = p⁻¹(U) ∩ q⁻¹(W)`) with `Spa(WE)` via `isoIsPullback`.
   let O : Opens Z.obj := (Opens.map p.hom.base).obj U ⊓ (Opens.map q.hom.base).obj W
   have hzO : z ∈ O := ⟨hzpU, hzqW⟩
