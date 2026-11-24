@@ -556,41 +556,30 @@ theorem rotationNumber_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
       ring
   rw [IsInvariantGraph.rotationNumber_def, this, CircleDeg1Lift.translationNumber_translate]
 
-/-- For `r ∈ (0, 1)`, the height `cos (π r)` lies in `(-1, 1)`. -/
-private theorem cos_pi_mul_mem_Ioo {r : ℝ} (hr : r ∈ Ioo 0 1) : Real.cos (π * r) ∈ Ioo (-1) 1 := by
-  have h₀ : 0 < π * r := mul_pos pi_pos hr.1
-  have h₁ : π * r < π := mul_lt_of_lt_one_right pi_pos hr.2
-  refine ⟨?_, ?_⟩
-  · rw [← Real.cos_pi]
-    exact Real.strictAntiOn_cos ⟨h₀.le, h₁.le⟩ ⟨pi_pos.le, le_rfl⟩ h₁
-  · rw [← Real.cos_zero]
-    exact Real.strictAntiOn_cos ⟨le_rfl, pi_pos.le⟩ ⟨h₀.le, h₁.le⟩ h₀
-
 /-- The rotation number `c ↦ arccos c / π` of the constant invariant graphs of the circular table,
 as a homeomorphism from `(-1, 1)` onto `(0, 1)`, with inverse `r ↦ cos (π r)`. -/
-def circleRotationNumberHomeomorph : Ioo (-1 : ℝ) 1 ≃ₜ Ioo (0 : ℝ) 1 where
-  toFun c := ⟨Real.arccos c / π, div_pos (Real.arccos_pos.2 c.property.2) pi_pos,
-    (div_lt_one pi_pos).2 (Real.arccos_lt_pi.2 c.property.1)⟩
-  invFun r := ⟨Real.cos (π * r), cos_pi_mul_mem_Ioo r.property⟩
-  left_inv c := Subtype.ext <| by
-    simp only [mul_div_cancel₀ _ pi_ne_zero, Real.cos_arccos c.property.1.le c.property.2.le]
-  right_inv r := Subtype.ext <| by
-    simp only [Real.arccos_cos (mul_pos pi_pos r.property.1).le
-      (mul_le_of_le_one_right pi_pos.le r.property.2.le), mul_div_cancel_left₀ _ pi_ne_zero]
-  continuous_toFun :=
-    ((Real.continuous_arccos.comp continuous_subtypeVal).div_const _).subtype_mk _
-  continuous_invFun :=
-    (Real.continuous_cos.comp (continuous_const.mul continuous_subtypeVal)).subtype_mk _
+def circleRotationNumberHomeomorph : Ioo (-1 : ℝ) 1 ≃ₜ Ioo (0 : ℝ) 1 :=
+  Real.cosPartialHomeomorph.toHomeomorphSourceTarget.symm.trans <|
+    ((Homeomorph.mulLeft₀ π pi_ne_zero).subtype (p := (· ∈ Ioo (0 : ℝ) 1))
+      (q := (· ∈ Ioo 0 π)) fun _ ↦ and_congr (mul_pos_iff_of_pos_left pi_pos).symm
+        (mul_lt_iff_lt_one_right pi_pos).symm).symm
 
 @[simp]
 theorem coe_circleRotationNumberHomeomorph_apply (c : Ioo (-1 : ℝ) 1) :
     (circleRotationNumberHomeomorph c : ℝ) = Real.arccos c / π :=
-  (rfl)
+  inv_mul_eq_div _ _
 
 @[simp]
 theorem coe_circleRotationNumberHomeomorph_symm_apply (r : Ioo (0 : ℝ) 1) :
     (circleRotationNumberHomeomorph.symm r : ℝ) = Real.cos (π * r) :=
   (rfl)
+
+/-- The rotation number `c ↦ arccos c / π` of the circular table is strictly antitone. -/
+theorem strictAnti_circleRotationNumberHomeomorph : StrictAnti circleRotationNumberHomeomorph :=
+  fun c c' hlt ↦ by
+    simpa only [← Subtype.coe_lt_coe, coe_circleRotationNumberHomeomorph_apply] using
+      div_lt_div_of_pos_right (Real.strictAntiOn_arccos ⟨c.property.1.le, c.property.2.le⟩
+        ⟨c'.property.1.le, c'.property.2.le⟩ hlt) pi_pos
 
 /-- The rotation number of the constant graph `v = c` of the circular table is the value of
 `circleRotationNumberHomeomorph` at `c`. -/
@@ -607,82 +596,58 @@ theorem IsInvariantGraph.apply_add_circle {ψ : ℝ → ℝ} (h : (circle hR).Is
     nextTangential_circle (h.mem_Ioo s)]
 
 /-- An invariant graph of the circular table that takes a value `c` with `arccos c / π`
-irrational is the constant graph `v = c`: the level set of `c` contains the forward orbit of a
-point under the rotation by `2 R arccos c`, which is dense modulo the period. -/
+irrational is the constant graph `v = c`. -/
 private theorem IsInvariantGraph.eq_const_circle_of_irrational {ψ : ℝ → ℝ}
     (h : (circle hR).IsInvariantGraph ψ) {s₀ : ℝ} (hirr : Irrational (Real.arccos (ψ s₀) / π)) :
     ψ = fun _ ↦ ψ s₀ := by
-  set c := ψ s₀
-  set d := 2 * R * Real.arccos c
-  have hL : 0 < 2 * π * R := by positivity
-  have : Fact (0 < 2 * π * R) := ⟨hL⟩
-  have horbit (n : ℕ) : ψ (s₀ + n * d) = c := by
-    induction n with
-    | zero => simp [c]
-    | succ n ih =>
-      have := h.apply_add_circle hR (s₀ + n * d)
-      rw [ih] at this
-      rw [Nat.cast_succ, add_one_mul, ← add_assoc]
-      exact this
-  have hdense := (AddCircle.denseRange_nsmul_coe_iff (p := 2 * π * R) (x := d)).2 <| by
-    rw [show d / (2 * π * R) = Real.arccos c / π by simp only [d]; field_simp]
-    exact hirr
-  funext t
-  by_contra hne
-  have hU : IsOpen ((↑) '' {u : ℝ | ψ (u + s₀) ≠ c} : Set (AddCircle (2 * π * R))) :=
-    QuotientAddGroup.isOpenMap_coe _ <|
-      isOpen_ne_fun (h.continuous.comp (continuous_id.add continuous_const)) continuous_const
-  obtain ⟨n, u, hu, hun⟩ := hdense.exists_mem_open hU ⟨_, t - s₀, by simpa using hne, rfl⟩
-  rw [← AddCircle.coe_nsmul, ← sub_eq_zero, ← AddCircle.coe_sub,
-    AddCircle.coe_eq_zero_iff] at hun
-  obtain ⟨k, hk⟩ := hun
-  have hper := (h.periodic.int_mul k) (s₀ + n * d)
-  rw [period_circle, horbit] at hper
-  refine hu ?_
-  rw [show u + s₀ = s₀ + n * d + k * (2 * π * R) by
-    rw [zsmul_eq_mul, nsmul_eq_mul] at hk
-    linarith]
-  exact hper
+  have : Fact (0 < 2 * π * R) := ⟨by positivity⟩
+  have hper : Periodic ψ (2 * π * R) := period_circle (hR := hR) ▸ h.periodic
+  -- The level set of `ψ s₀` descends to a nonempty closed subset of the circle that the rotation
+  -- by `2 R arccos (ψ s₀)` maps into itself; that rotation is minimal.
+  have hS := AddCircle.eq_univ_of_isClosed_of_mapsTo_add
+    (a := ((2 * R * Real.arccos (ψ s₀) : ℝ) : AddCircle (2 * π * R)))
+    (AddCircle.denseRange_nsmul_iff.1 <| AddCircle.denseRange_nsmul_coe_iff.2 <| by
+      rwa [show 2 * R * Real.arccos (ψ s₀) / (2 * π * R) = Real.arccos (ψ s₀) / π by
+        field_simp])
+    (s := hper.lift ⁻¹' {ψ s₀})
+    (isClosed_eq (h.continuous.quotient_liftOn' _) continuous_const) ⟨s₀, rfl⟩ <| by
+      intro x hx
+      induction x using QuotientAddGroup.induction_on with | H u => ?_
+      have hu : ψ u = ψ s₀ := hx
+      simp only [mem_preimage, mem_singleton_iff, ← AddCircle.coe_add, hper.lift_coe]
+      rw [add_comm, ← hu]
+      exact h.apply_add_circle hR u
+  exact funext fun t ↦ (eq_univ_iff_forall.1 hS t : _)
 
 /-- **The invariant graphs of the circular table are the constant graphs.** Every invariant graph
-`ψ` of the circular table is constant. If `ψ a ≠ ψ b`, some level `c` between them has
-`arccos c / π` irrational, and `ψ` takes it by the intermediate value theorem. -/
+`ψ` of the circular table is a constant graph `v = c` with `c ∈ (-1, 1)`. -/
 theorem IsInvariantGraph.exists_eq_const_circle {ψ : ℝ → ℝ}
     (h : (circle hR).IsInvariantGraph ψ) : ∃ c ∈ Ioo (-1) 1, ψ = fun _ ↦ c := by
   refine ⟨ψ 0, h.mem_Ioo 0, funext fun t ↦ ?_⟩
   by_contra hne
-  -- Order the two values and find an irrational rotation number between their angles.
+  -- If `ψ a < ψ b`, some level `c` between them has an irrational rotation number, and `ψ` takes
+  -- it by the intermediate value theorem, so `ψ` is constant.
   obtain ⟨a, b, hab⟩ : ∃ a b, ψ a < ψ b := by
     rcases lt_or_gt_of_ne hne with h' | h'
     · exact ⟨t, 0, h'⟩
     · exact ⟨0, t, h'⟩
-  have ha := h.mem_Ioo a
-  have hb := h.mem_Ioo b
-  have hlt : Real.arccos (ψ b) / π < Real.arccos (ψ a) / π :=
-    div_lt_div_of_pos_right (Real.strictAntiOn_arccos ⟨ha.1.le, ha.2.le⟩ ⟨hb.1.le, hb.2.le⟩ hab)
-      pi_pos
-  obtain ⟨r, hr, hbr, hra⟩ := exists_irrational_btwn hlt
-  have hr₀ : 0 < π * r := mul_pos pi_pos
-    ((div_nonneg (Real.arccos_nonneg _) pi_pos.le).trans_lt hbr)
-  have hr₁ : π * r < π := by
-    rw [lt_div_iff₀ pi_pos, mul_comm] at hra
-    exact hra.trans (Real.arccos_lt_pi.2 ha.1)
-  have hca : ψ a < Real.cos (π * r) := by
-    rw [← Real.cos_arccos ha.1.le ha.2.le]
-    refine Real.strictAntiOn_cos ⟨hr₀.le, hr₁.le⟩
-      ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩ ?_
-    rwa [lt_div_iff₀ pi_pos, mul_comm] at hra
-  have hcb : Real.cos (π * r) < ψ b := by
-    rw [← Real.cos_arccos hb.1.le hb.2.le]
-    refine Real.strictAntiOn_cos ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩
-      ⟨hr₀.le, hr₁.le⟩ ?_
-    rwa [div_lt_iff₀ pi_pos, mul_comm] at hbr
+  have hφ := strictAnti_circleRotationNumberHomeomorph
+  let A : Ioo (-1 : ℝ) 1 := ⟨ψ a, h.mem_Ioo a⟩
+  let B : Ioo (-1 : ℝ) 1 := ⟨ψ b, h.mem_Ioo b⟩
+  obtain ⟨r, hr, hBr, hrA⟩ := exists_irrational_btwn (hφ (show A < B from hab))
+  let C := circleRotationNumberHomeomorph.symm
+    ⟨r, (circleRotationNumberHomeomorph B).property.1.trans hBr,
+      hrA.trans (circleRotationNumberHomeomorph A).property.2⟩
+  have hC : (circleRotationNumberHomeomorph C : ℝ) = r := by simp [C]
+  have hAC : A < C := hφ.lt_iff_gt.1 <| show circleRotationNumberHomeomorph C < _ by
+    rw [← Subtype.coe_lt_coe, hC]; exact hrA
+  have hCB : C < B := hφ.lt_iff_gt.1 <| show _ < circleRotationNumberHomeomorph C by
+    rw [← Subtype.coe_lt_coe, hC]; exact hBr
   obtain ⟨s₀, -, hs₀⟩ := intermediate_value_uIcc h.continuous.continuousOn
-    (Set.mem_uIcc.2 (Or.inl ⟨hca.le, hcb.le⟩))
+    (Set.mem_uIcc.2 (Or.inl ⟨le_of_lt hAC, le_of_lt hCB⟩))
   have hconst := h.eq_const_circle_of_irrational hR (s₀ := s₀) <| by
-    rwa [hs₀, Real.arccos_cos hr₀.le hr₁.le, mul_div_cancel_left₀ _ pi_ne_zero]
-  have h₁ : ψ a = ψ s₀ := congrFun hconst a
-  linarith
+    rwa [hs₀, ← coe_circleRotationNumberHomeomorph_apply, hC]
+  exact hAC.ne <| Subtype.ext <| (congrFun hconst a).trans hs₀
 
 /-- The invariant graphs of the circular table are exactly the constant graphs `v = c`,
 `c ∈ (-1, 1)`. -/
