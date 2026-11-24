@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.GNS.Uniqueness
+public import TauCeti.Algebra.Order.Module.PositiveLinearMap
 
 /-!
 # Naturality of the GNS construction
@@ -58,8 +59,6 @@ theorem inner_gnsVector_gnsStarAlgHom_comp (a : A) :
     ⟪τ.gnsVector, (τ.gnsStarAlgHom.comp θ).toNonUnitalStarAlgHom a τ.gnsVector⟫_ℂ =
       (τ.comp (PositiveLinearMap.ofClass θ)) a := by
   simp
-  -- Mathlib has no simp lemma for `PositiveLinearMap.ofClass θ a`; it is `θ a` by definition.
-  rfl
 
 /-- **Naturality of GNS.** For a surjective unital star homomorphism `θ : A →⋆ₐ[ℂ] B` and a
 positive functional `τ` on `B`, the GNS space of `τ ∘ θ` is unitarily equivalent to that of `τ`
