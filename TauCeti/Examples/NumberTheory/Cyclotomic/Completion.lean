@@ -41,8 +41,12 @@ example (v : HeightOneSpectrum (𝓞 (complexField 3)))
     4 ≤ Nat.card (ResidueField (v.adicCompletionIntegers (complexField 3))) := by
   set O := v.adicCompletionIntegers (complexField 3)
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have h3 : IsUnit ((3 : ℕ) : O) :=
-    v.isUnit_natCast_adicCompletionIntegers 2 (mod_cast hv) (by norm_num)
+  have h3v : ((3 : ℕ) : 𝓞 (complexField 3)) ∉ v.asIdeal := fun h ↦ v.isPrime.ne_top <| by
+    rw [Ideal.eq_top_iff_one, show (1 : 𝓞 (complexField 3)) = (3 : ℕ) - 2 by norm_num]
+    exact sub_mem h hv
+  have h3 : IsUnit ((3 : ℕ) : O) := by
+    rw [← map_natCast (algebraMap (𝓞 (complexField 3)) O)]
+    exact (v.isUnit_algebraMap_adicCompletionIntegers_iff _).2 h3v
   have hr := (isPrimitiveRoot_algebraMap_zetaInteger v).map_residue h3
   have hcard := hr.card_rootsOfUnity
   have hle : Nat.card (rootsOfUnity 3 (ResidueField O)) ≤ Nat.card (ResidueField O)ˣ :=
@@ -52,8 +56,9 @@ example (v : HeightOneSpectrum (𝓞 (complexField 3)))
 
 example (e : ℕ) [NeZero e] (v : HeightOneSpectrum (𝓞 (complexField e)))
     (ζ : rootsOfUnity e (complexField e)) :
-    ((rootsOfUnityEquivAdicCompletion v ζ : (v.adicCompletion (complexField e))ˣ) :
-        v.adicCompletion (complexField e)) =
+    ((rootsOfUnityEquivOfPrimitiveRoots (FinitePlace.embedding v).injective
+        ⟨_, (mem_primitiveRoots (NeZero.pos e)).2 (complexField.isPrimitiveRoot_zeta e)⟩ ζ :
+        (v.adicCompletion (complexField e))ˣ) : v.adicCompletion (complexField e)) =
       FinitePlace.embedding v ((ζ : (complexField e)ˣ) : complexField e) :=
   val_rootsOfUnityEquivOfPrimitiveRoots_apply_coe _ _ ζ
 

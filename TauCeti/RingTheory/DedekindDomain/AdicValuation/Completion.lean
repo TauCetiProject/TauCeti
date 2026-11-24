@@ -63,9 +63,7 @@ Everything here concerns one completion. The comparison of two completions along
   representative, and `residue_algebraMap_adicCompletionIntegers_surjective` (in the same
   namespace) states that `R` maps onto the residue field of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.charP_residueField_adicCompletionIntegers`: when `v`
-  contains the prime `p`, the residue field of `𝒪_v` has characteristic `p`, and
-  `isUnit_natCast_adicCompletionIntegers` (in the same namespace) states that a natural number
-  prime to `p` is a unit of `𝒪_v`.
+  contains the prime `p`, the residue field of `𝒪_v` has characteristic `p`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
   an element of `K` of valuation one maps to a unit of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersSubmodule`: `𝒪_v` as an
@@ -586,15 +584,6 @@ theorem charP_residueField_adicCompletionIntegers (p : ℕ) [Fact p.Prime]
     rw [← Ideal.mem_comap, ← Ideal.under_def, under_maximalIdeal_adicCompletionIntegers]
     exact hp
   simpa using (IsLocalRing.residue_eq_zero_iff _).2 this
-
-/-- At a height-one prime `v` containing the prime `p`, a natural number prime to `p` is a unit
-of the completed integers. -/
-theorem isUnit_natCast_adicCompletionIntegers (p : ℕ) [Fact p.Prime] (hp : (p : R) ∈ v.asIdeal)
-    {n : ℕ} (hn : n.Coprime p) : IsUnit (n : v.adicCompletionIntegers K) := by
-  have := v.charP_residueField_adicCompletionIntegers (K := K) p hp
-  rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast]
-  exact fun h ↦ (Nat.Prime.coprime_iff_not_dvd Fact.out).1 hn.symm
-    ((CharP.cast_eq_zero_iff _ p n).1 h)
 
 end SingleCompletion
 

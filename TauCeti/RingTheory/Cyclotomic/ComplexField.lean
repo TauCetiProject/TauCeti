@@ -46,10 +46,10 @@ theorem complexField_one : complexField 1 = ⊥ := by
   exact one_mem _
 
 /-- The generator `complexRoot e` of `complexField e`. -/
-@[expose] def complexField.zeta : complexField e := ⟨complexRoot e, complexRoot_mem_complexField e⟩
+def complexField.zeta : complexField e := ⟨complexRoot e, complexRoot_mem_complexField e⟩
 
 @[simp]
-theorem complexField.coe_zeta : (complexField.zeta e : ℂ) = complexRoot e := rfl
+theorem complexField.coe_zeta : (complexField.zeta e : ℂ) = complexRoot e := (rfl)
 
 variable [NeZero e]
 
@@ -64,12 +64,19 @@ theorem complexField.isPrimitiveRoot_zeta : IsPrimitiveRoot (complexField.zeta e
   IsPrimitiveRoot.coe_submonoidClass_iff.mp isPrimitiveRoot_complexRoot
 
 /-- The generator `complexRoot e` of `complexField e`, as an algebraic integer. -/
-@[expose] def complexField.zetaInteger : 𝓞 (complexField e) :=
+def complexField.zetaInteger : 𝓞 (complexField e) :=
   (complexField.isPrimitiveRoot_zeta e).toInteger
 
+theorem complexField.zetaInteger_eq_toInteger :
+    complexField.zetaInteger e = (complexField.isPrimitiveRoot_zeta e).toInteger := (rfl)
+
 @[simp]
+theorem complexField.coe_zetaInteger_eq_zeta :
+    (complexField.zetaInteger e : complexField e) = complexField.zeta e := (rfl)
+
 theorem complexField.coe_zetaInteger :
-    ((complexField.zetaInteger e : complexField e) : ℂ) = complexRoot e := rfl
+    ((complexField.zetaInteger e : complexField e) : ℂ) = complexRoot e := by
+  simp
 
 theorem complexField.coe_zetaInteger_pow (k : ℕ) :
     ((complexField.zetaInteger e ^ k : 𝓞 (complexField e)) : ℂ) = complexRoot e ^ k := by
@@ -86,9 +93,8 @@ of `e` prime to `p`, is the power of `complexField.zetaInteger e` by the `p`-par
 theorem zetaInteger_pow_ordProj (p : ℕ) {x : 𝓞 (complexField e)}
     (hx : ((x : complexField e) : ℂ) = complexRoot (ordCompl[p] e)) :
     complexField.zetaInteger e ^ ordProj[p] e = x := by
-  apply Subtype.val_injective.comp RingOfIntegers.coe_injective
-  simp only [Function.comp_apply]
-  rw [← RingOfIntegers.coe_eq_algebraMap, ← RingOfIntegers.coe_eq_algebraMap,
-    complexField.coe_zetaInteger_pow, hx, complexRoot_pow_ordProj]
+  apply RingOfIntegers.ext
+  apply Subtype.ext
+  rw [complexField.coe_zetaInteger_pow, hx, complexRoot_pow_ordProj]
 
 end TauCeti.Cyclotomic
