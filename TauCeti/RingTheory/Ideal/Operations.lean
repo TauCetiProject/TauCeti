@@ -102,6 +102,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   (products of) spanned ideals on a submodule by checking generators.
 * `Submodule.map_subtype_smul_top_inf_comap`: for submodules `N₀` and `L` and a left ideal `J`,
   pushing `J • ⊤ ⊓ L.comap N₀.subtype` forward along the inclusion `N₀ → M` gives `J • N₀ ⊓ L`.
+* `Submodule.comap_subtype_smul`: inside a submodule `N`, the preimage of `I • N` is `I • ⊤`.
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal left
   ideal additively span the ambient algebra, and the subalgebra contains a generator of the
   ideal, then the same holds with the ideal replaced by any power.
@@ -376,6 +377,12 @@ theorem map_subtype_smul_top_inf_comap (N₀ : Submodule R M) (J : Ideal R) (L :
   -- `map_inf_eq_map_inf_comap` pulls `⊓ L` out of the pushforward, and `map_smul''`,
   -- `map_top`, `range_subtype` carry `J • ⊤` to `J • N₀`
   simp [← Submodule.map_inf_eq_map_inf_comap]
+
+/-- Inside a submodule `N`, the preimage of `I • N` is `I • ⊤`. -/
+theorem comap_subtype_smul (I : Ideal R) (N : Submodule R M) :
+    (I • N).comap N.subtype = I • ⊤ := by
+  rw [← comap_map_eq_of_injective N.subtype_injective (I • ⊤), map_smul'', map_top,
+    range_subtype]
 
 end Submodule
 
