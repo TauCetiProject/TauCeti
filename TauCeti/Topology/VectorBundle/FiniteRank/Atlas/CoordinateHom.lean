@@ -264,11 +264,8 @@ private theorem continuous_inv_of_bijective {A D : FiniteRankAtlas 𝕜 X}
       CoordinateHom.invOfBijectivePi _ _ (fwd m n) (hbij m n)).continuous_totalSpaceMap.congr
     fun p ↦ congrArg (TotalSpace.mk p.proj) ?_
   apply (LinearEquiv.ofBijective (f.fiberMap p.proj) (hf p.proj)).injective
-  rw [LinearEquiv.apply_symm_apply, LinearEquiv.ofBijective_apply, fiberMap_ofStratumCoordinateHom,
-    ContinuousLinearMap.coe_coe, CoordinateHom.fiberMap_invOfBijectivePi, hfwd,
-    stratumFiberCLM_self]
-  exact (f.fiberCLM_apply p.proj _).symm.trans
-    (((f.fiberCLM p.proj).isInvertible_of_bijective_pi (hf' p.proj)).self_apply_inverse p.snd)
+  simpa [hfwd] using
+    ((f.fiberCLM p.proj).isInvertible_of_bijective_pi (hf' p.proj)).self_apply_inverse p.snd
 
 /-- A morphism in `FiniteRankAtlas 𝕜 X` is an isomorphism iff it is bijective on every fibre. -/
 theorem isIso_iff_bijective {A D : FiniteRankAtlas 𝕜 X} (f : A ⟶ D) :
@@ -297,8 +294,8 @@ def ofCore (C : FiniteRankBundleCore 𝕜 X) : FiniteRankAtlas 𝕜 X where
 
 @[simp] theorem charts_ofCore_self (C : FiniteRankBundleCore 𝕜 X) :
     (ofCore C).charts C.rank = (C.pullback (⟨Subtype.val, continuous_subtypeVal⟩ :
-      C({x : X // (ofCore C).rank x = C.rank}, X))).core := by
-  simp only [ofCore, ↓reduceDIte]; rfl
+      C({x : X // (ofCore C).rank x = C.rank}, X))).core :=
+  dite_eq_left (rfl : C.rank = C.rank)
 
 /-- The reconstructed total space of `ofCore C` is homeomorphic over `X` to `C.core.TotalSpace`. -/
 def ofCoreHomeomorph (C : FiniteRankBundleCore 𝕜 X) :
@@ -320,8 +317,8 @@ def ofCoreHomeomorph (C : FiniteRankBundleCore 𝕜 X) :
     exact (hsigma.comp (ofCore C).totalSpaceHomeomorph.symm.continuous).congr fun p ↦ by
       dsimp only [Function.comp_apply]
       rw [(ofCore C).totalSpaceHomeomorph_symm_apply]
-      simp only [Fin.cast_refl]
-      rfl
+      exact congrArg (TotalSpace.mk' (Fin C.rank → 𝕜) p.proj)
+        (funext fun i ↦ congrArg p.snd (Fin.cast_eq_self i))
   continuous_invFun := by
     let inc : C({x : X // (ofCore C).rank x = C.rank}, X) := ⟨Subtype.val, continuous_subtypeVal⟩
     refine ((ofCore C).continuous_mk_iff_rankStrata C.core.continuous_proj

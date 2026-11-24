@@ -18,6 +18,7 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Topology.FiberBundle.Sigma
 import TauCeti.Topology.VectorBundle.IsEmpty
 import TauCeti.Topology.VectorBundle.Smul
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -177,17 +178,9 @@ theorem range_stratum (n : ℕ) :
 
 /-- Inclusion of `E.Fiber x` into `TotalSpace Unit E.Fiber` is inducing. -/
 theorem isInducing_mk (x : X) :
-    IsInducing (fun v : E.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit E.Fiber)) := by
-  rw [← E.totalSpaceHomeomorph.symm.isInducing.of_comp_iff]
-  have hcomp :
-      E.totalSpaceHomeomorph.symm ∘ (fun v : E.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit E.Fiber)) =
-        Sigma.mk (E.rank x) ∘
-          fun v : E.Fiber x ↦
-            (⟨⟨x, rfl⟩, v⟩ : TotalSpace (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x))) :=
-    funext fun v ↦ E.totalSpaceHomeomorph_symm_apply ⟨x, v⟩
-  rw [hcomp]
-  exact IsEmbedding.sigmaMk.isInducing.comp
-    (FiberBundle.totalSpaceMk_isInducing (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x)) ⟨x, rfl⟩)
+    IsInducing (fun v : E.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit E.Fiber)) :=
+  FiberBundle.isInducing_of_comp_eq_sigmaMk_totalSpaceMk (E.rank x) ⟨x, rfl⟩
+    E.totalSpaceHomeomorph.symm.isInducing fun v ↦ E.totalSpaceHomeomorph_symm_apply ⟨x, v⟩
 
 section Continuity
 
@@ -556,33 +549,35 @@ private theorem fiberBundleStratum_ofBundle_self :
          (isInducing_constStratum_pullback 𝕜 n V)) :=
   constStratumFiberBundle_self 𝕜 n V
 
+private theorem trivializationAt_ofBundle_self
+    (b : {x : X // (ofBundle 𝕜 n V).rank x = n}) :
+    trivializationAt (Fin n → 𝕜) ((ofBundle 𝕜 n V).StratumFiber n) b =
+      (letI := constStratumTopology 𝕜 n V n
+       (trivializationAt (Fin n → 𝕜) ((constStratumInclusion n : _ → X) *ᵖ V) ⟨b.val, b.property⟩)
+         |>.compContinuousLinearEquiv (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
+           (isInducing_constStratum_pullback 𝕜 n V)) :=
+  (congrArg (fun inst ↦ @trivializationAt _ (Fin n → 𝕜) _ _ _ _ _ inst b)
+      (fiberBundleStratum_ofBundle_self 𝕜 n V)).trans <|
+    letI := constStratumTopology 𝕜 n V n
+    FiberBundle.trivializationAt_ofContinuousLinearEquiv (Fin n → 𝕜)
+      (E := (constStratumInclusion n : _ → X) *ᵖ V)
+      (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
+      (isInducing_constStratum_pullback 𝕜 n V) ⟨b.val, b.property⟩
+
 /-- On the `n`th rank stratum of `ofBundle 𝕜 n V`, the preferred trivialization's fibrewise inverse
 at `b` agrees with that of `V` at `b.1`. -/
 @[simp] theorem trivializationAt_ofBundle_symm
     (b : {x : X // (ofBundle 𝕜 n V).rank x = n}) (v : Fin n → 𝕜) :
     (trivializationAt (Fin n → 𝕜) ((ofBundle 𝕜 n V).StratumFiber n) b).symm b v =
       (trivializationAt (Fin n → 𝕜) V b.val).symm b.val v := by
-  let b' : {x : X // (LocallyConstant.const X n) x = n} := b
-  have ht : trivializationAt (Fin n → 𝕜) ((ofBundle 𝕜 n V).StratumFiber n) b =
-      (letI := constStratumTopology 𝕜 n V n
-       (trivializationAt (Fin n → 𝕜) ((constStratumInclusion n : _ → X) *ᵖ V) b')
-         |>.compContinuousLinearEquiv (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
-           (isInducing_constStratum_pullback 𝕜 n V)) := by
-    let := constStratumTopology 𝕜 n V n
-    change FiberBundle.trivializationAt' (self := (ofBundle 𝕜 n V).fiberBundleStratum n) b' = _
-    rw [fiberBundleStratum_ofBundle_self]
-    exact FiberBundle.trivializationAt_ofContinuousLinearEquiv (Fin n → 𝕜)
-      (E := (constStratumInclusion n : _ → X) *ᵖ V)
-      (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
-      (isInducing_constStratum_pullback 𝕜 n V) b'
-  rw [ht]
+  rw [trivializationAt_ofBundle_self]
   refine (letI := constStratumTopology 𝕜 n V n
     Trivialization.compContinuousLinearEquiv_symm
-      (trivializationAt (Fin n → 𝕜) ((constStratumInclusion n : _ → X) *ᵖ V) b')
+      (trivializationAt (Fin n → 𝕜) ((constStratumInclusion n : _ → X) *ᵖ V) ⟨b.val, b.property⟩)
       (fun x ↦ ContinuousLinearEquiv.refl 𝕜 (V x.val))
       (isInducing_constStratum_pullback 𝕜 n V)
       (FiberBundle.mem_baseSet_trivializationAt (Fin n → 𝕜)
-        ((constStratumInclusion n : _ → X) *ᵖ V) b') v).trans ?_
+        ((constStratumInclusion n : _ → X) *ᵖ V) ⟨b.val, b.property⟩) v).trans ?_
   simp only [FiberBundle.pullback_trivializationAt']
   exact Trivialization.symm_apply ((trivializationAt (Fin n → 𝕜) V b.val).pullback
     (constStratumInclusion n)) (FiberBundle.mem_baseSet_trivializationAt (Fin n → 𝕜) V b.val) v

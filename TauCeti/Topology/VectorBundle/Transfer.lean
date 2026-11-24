@@ -145,11 +145,7 @@ equivalences leaves their coordinate-change operator `coordChangeL` unchanged. -
       (t₂.compContinuousLinearEquiv e h_ind) b = t₁.coordChangeL 𝕜 t₂ b := by
   ext v
   by_cases hb : b ∈ t₁.baseSet ∩ t₂.baseSet
-  · rw [Trivialization.coordChangeL_apply' _ _ (by simpa using hb),
-      Trivialization.coordChangeL_apply' _ _ hb, compContinuousLinearEquiv_symm_apply,
-      compContinuousLinearEquiv_apply,
-      ← TauCeti.totalSpaceHomeomorphOfContinuousLinearEquiv_apply F e h_ind,
-      Homeomorph.apply_symm_apply]
+  · simp [Trivialization.coordChangeL_apply', hb]
   · simp [Trivialization.coordChangeL, hb]
 
 end ContinuousLinearEquiv
