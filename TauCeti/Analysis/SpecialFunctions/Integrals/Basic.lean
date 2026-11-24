@@ -54,6 +54,10 @@ Interval integrals of elementary functions in closed form or as series, continui
   `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.norm_integral_cexp_le`, `TauCeti.norm_integral_cexp_le_of_ne_zero`: the integral
+  `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`, and at most `2 / |u|` for `u ≠ 0`.
+* `TauCeti.tendsto_average_integral_cexp`: the averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to
+  `1` at `u = 0` and to `0` elsewhere as `T → ∞`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
@@ -366,6 +370,47 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
       Complex.exp_eq_exp_iff_exists_int.mpr ⟨k, by push_cast; ring⟩
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
+
+/-- The interval integral `∫ t in a..b, exp (t u i)` has modulus at most `|b - a|`. -/
+theorem norm_integral_cexp_le (u a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ |b - a| := by
+  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b) (C := 1)
+    (f := fun t ↦ Complex.exp (↑(t * u) * Complex.I))
+    fun t _ ↦ (Complex.norm_exp_ofReal_mul_I _).le
+  rwa [one_mul] at h
+
+/-- For `u ≠ 0` the interval integral `∫ t in a..b, exp (t u i)` has modulus at most `2 / |u|`,
+uniformly in `a` and `b`. -/
+theorem norm_integral_cexp_le_of_ne_zero {u : ℝ} (hu : u ≠ 0) (a b : ℝ) :
+    ‖∫ t in a..b, Complex.exp (↑(t * u) * Complex.I)‖ ≤ 2 / |u| := by
+  have hc : (u : ℂ) * Complex.I ≠ 0 := mul_ne_zero (Complex.ofReal_ne_zero.2 hu) Complex.I_ne_zero
+  have h : ∫ t in a..b, Complex.exp (↑(t * u) * Complex.I) =
+      (Complex.exp (↑(b * u) * Complex.I) - Complex.exp (↑(a * u) * Complex.I)) /
+        (u * Complex.I) := by
+    simp_rw [show ∀ t : ℝ, (↑(t * u) : ℂ) * Complex.I = u * Complex.I * t from fun t ↦ by
+      push_cast; ring]
+    rw [integral_exp_mul_complex hc]
+  rw [h, norm_div, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
+  gcongr
+  exact (norm_sub_le _ _).trans (by simp_rw [Complex.norm_exp_ofReal_mul_I]; norm_num)
+
+open Filter Topology in
+/-- The averages `T⁻¹ ∫ t in 0..T, exp (t u i)` tend to `1` at `u = 0` and to `0` elsewhere as
+`T → ∞`. -/
+theorem tendsto_average_integral_cexp (u : ℝ) :
+    Tendsto (fun T : ℝ ↦ (T : ℂ)⁻¹ * ∫ t in (0 : ℝ)..T, Complex.exp (↑(t * u) * Complex.I))
+      atTop (𝓝 (({0} : Set ℝ).indicator 1 u)) := by
+  rcases eq_or_ne u 0 with rfl | hu
+  · refine tendsto_const_nhds.congr' ?_
+    filter_upwards [eventually_ne_atTop 0] with T hT
+    simp [hT]
+  · rw [Set.indicator_of_notMem (by simpa using hu)]
+    refine squeeze_zero_norm' ?_ ((tendsto_inv_atTop_zero.const_mul (2 / |u|)).trans
+      (by rw [mul_zero]))
+    filter_upwards [eventually_gt_atTop 0] with T hT
+    rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hT.le, mul_comm]
+    gcongr
+    exact norm_integral_cexp_le_of_ne_zero hu 0 T
 
 /-- The binomial expansion of `cosᵏ θ exp (n θ i)` into the Fourier characters
 `exp ((2m - k + n) θ i)`. -/
