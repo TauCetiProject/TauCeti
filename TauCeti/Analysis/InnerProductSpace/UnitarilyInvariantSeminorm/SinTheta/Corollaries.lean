@@ -18,6 +18,10 @@ The Davis–Kahan bounds for an arbitrary unitarily invariant seminorm specializ
 operator norm, the Frobenius norm and every Ky Fan norm, with constant `1` under
 interval/exterior spectral separation.
 
+For a single trial vector `x` and a real number `m`, the residual bound in the operator norm
+reads `δ ‖P_{Uᗮ} x‖ ≤ ‖A x - m x‖`: it is the residual bound with the one-dimensional trial
+space `𝕜`, the map `X = (t ↦ t x)` and `M = m`.
+
 The Frobenius and Ky Fan bounds include both the residual form, for a trial map `X`, and the
 perturbation form, for invariant subspaces of two self-adjoint operators. The reverse
 interval/exterior orientation is also available for these two norms. The operator-norm
@@ -29,6 +33,8 @@ These specialize the general bounds in `UnitarilyInvariantSeminorm.SinTheta.Basi
 
 * `Submodule.mul_norm_sinThetaMap_le_norm_sub_of_pointIntervalExteriorGap`:
   the operator-norm perturbation bound for the directed sine map.
+* `LinearMap.IsSymmetric.mul_norm_starProjection_orthogonal_le_norm_apply_sub_smul`:
+  the residual bound for a single trial vector, `δ ‖P_{Uᗮ} x‖ ≤ ‖A x - m x‖`.
 
 The following declarations are in the `TauCeti.UnitarilyInvariantSeminorm` namespace.
 
@@ -152,3 +158,38 @@ theorem mul_norm_sinThetaMap_le_norm_sub_of_pointIntervalExteriorGap
       (TauCeti.UnitarilyInvariantSeminorm.opNorm 𝕜 E E) hA hB hU hV hgap)
 
 end Submodule
+
+namespace LinearMap.IsSymmetric
+
+variable {𝕜 E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- **Residual `sin Θ` bound for a trial vector.** If `U` is invariant under a symmetric `A` and
+the eigenvalues of `A` on `Uᗮ` lie outside `(m - δ, m + δ)`, then
+`δ ‖P_{Uᗮ} x‖ ≤ ‖A x - m x‖` for every `x`. -/
+theorem mul_norm_starProjection_orthogonal_le_norm_apply_sub_smul {A : E →L[𝕜] E}
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) {U : Submodule 𝕜 E} (hU : ∀ x ∈ U, A x ∈ U) {m δ : ℝ}
+    (h : Module.End.PointSpectrumIn (A : E →ₗ[𝕜] E) Uᗮ (Set.Ioo (m - δ) (m + δ))ᶜ) (x : E) :
+    δ * ‖Uᗮ.starProjection x‖ ≤ ‖A x - (m : 𝕜) • x‖ := by
+  set M : 𝕜 →L[𝕜] 𝕜 := (m : 𝕜) • ContinuousLinearMap.id 𝕜 𝕜
+  have hM : (M : 𝕜 →ₗ[𝕜] 𝕜).IsSymmetric := LinearMap.IsSymmetric.id.smul (RCLike.conj_ofReal m)
+  have hgap : Module.End.PointIntervalExteriorGap (M : 𝕜 →ₗ[𝕜] 𝕜) ⊤ (A : E →ₗ[𝕜] E) Uᗮ m m δ := by
+    refine ⟨Module.End.pointSpectrumIn_iff.mpr fun y _ hy0 μ hy ↦ ?_, h⟩
+    have hμ : (m : 𝕜) = μ :=
+      mul_right_cancel₀ hy0 (by simpa [M, RCLike.real_smul_eq_coe_mul] using hy)
+    simp [RCLike.ofReal_inj.mp hμ]
+  have h₁ : Uᗮ.starProjection ∘L ContinuousLinearMap.toSpanSingleton 𝕜 x =
+      ContinuousLinearMap.toSpanSingleton 𝕜 (Uᗮ.starProjection x) :=
+    ContinuousLinearMap.comp_toSpanSingleton _ _
+  have h₂ : A.sylvester M (ContinuousLinearMap.toSpanSingleton 𝕜 x) =
+      ContinuousLinearMap.toSpanSingleton 𝕜 (A x - (m : 𝕜) • x) := by
+    ext
+    simp [M]
+  have h := TauCeti.UnitarilyInvariantSeminorm.mul_map_starProjection_comp_le_map_sylvester_apply
+    (TauCeti.UnitarilyInvariantSeminorm.opNorm 𝕜 𝕜 E) hA hM hU hgap
+    (ContinuousLinearMap.toSpanSingleton 𝕜 x)
+  simp only [h₁, h₂, TauCeti.UnitarilyInvariantSeminorm.opNorm_apply,
+    LinearMap.toContinuousLinearMap_coe, ContinuousLinearMap.norm_toSpanSingleton] at h
+  exact h
+
+end LinearMap.IsSymmetric
