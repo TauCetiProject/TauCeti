@@ -202,8 +202,12 @@ theorem coverThomPairMap_fst_apply
     TopPair.Hom.fst (coverThomPairMap F E ι) v = Pullback.lift _ v :=
   pullbackThomPairMap_fst_apply F E _ v
 
+-- Not a simp lemma, for the same reason as `lift_deckThomPairMap_fst`: simp rewrites the coercion
+-- of the bundled projection in the pull-back on the left-hand side, so it is not in simp normal
+-- form.
 /-- The fibre of `E'` over a point `q` of the orientation cover is included in the Thom pair of `E`
 as the fibre over `q.proj`. -/
+@[reassoc]
 theorem fiberThomPairMap_comp_coverThomPairMap (q : VectorBundleOrientationCover F E ι) :
     fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q ≫
       coverThomPairMap F E ι = fiberThomPairMap F E q.proj :=

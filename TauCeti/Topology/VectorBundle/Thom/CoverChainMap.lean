@@ -458,28 +458,27 @@ private theorem thomPairSignChainMap_fiber_coefficients (q : VectorBundleOrienta
   have key {X Y Z W : ModuleCat.{0} R} (a : X = Y) (b : Y = Z) (c : Z = W) (x : X) :
       (eqToHom c).hom ((eqToHom b).hom ((eqToHom a).hom x)) =
         (eqToHom (a.trans (b.trans c))).hom x := by
-    subst a b c; rfl
-  have hl {a b : B} (hab : a = b) (Y : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk a) =
-      (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) (z) (hb : q.proj = b) :
-      liftFiberEquiv hι q hb ((eqToHom Y).hom z) = liftFiberEquiv hι q (hb.trans hab.symm) z := by
-    subst hab; rfl
-  have hlift (e e' : VectorBundleOrientationCover F E ι) (h : e = e') {x : B} (he : e.proj = x)
-      (he' : e'.proj = x) : liftFiberEquiv (R := R) hι e he = liftFiberEquiv hι e' he' := by
-    subst h; rfl
+    rw [← LinearMap.comp_apply, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+      ← ModuleCat.hom_comp, eqToHom_trans, eqToHom_trans]
   have hw : (TopPair.Hom.fst f v).proj = q :=
     congrArg TotalSpace.proj (fiberThomPairMap_fst_apply F
       ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q v :)
   have hab : (TopPair.Hom.fst (coverThomPairMap F E ι) (TopPair.Hom.fst f v)).proj =
       (TopPair.Hom.fst (fiberThomPairMap F E q.proj) v).proj :=
     congrArg (fun g : _ ⟶ thomPair F E ↦ (TopPair.Hom.fst g v : TotalSpace F E).proj) hfg
-  -- `change`: the transports are the components of `eqToHom`s, applied to the inverse of the
-  -- trivialization over `f v`.
+  -- `change`, not `rw`/`simp`: the goal applies `fiberThomPairMap F E q.proj` to `v`, a point of
+  -- the fibre pair of `E'` over `q`, which is the fibre pair of `E` over `q.proj` only after
+  -- unfolding the pull-back. So the goal is not type-correct at instance transparency:
+  -- `rw [Function.comp_apply]` fails and `simp only [Function.comp_apply]` does nothing. `change`
+  -- restates it with the transports as the components of `eqToHom`s, applied to the inverse of
+  -- the trivialization over `f v`; for the same reason the rest of the proof is in term mode.
   change liftFiberEquiv hι q hv ((eqToHom hD).hom ((eqToHom (C := ModuleCat.{0} R) _).hom
     ((eqToHom (C := ModuleCat.{0} R) _).hom
       (((pullbackThomPairSignLocalSystemIso F E hι R).inv.app _).hom r)))) = r
   refine (congrArg (liftFiberEquiv hι q hv) (key _ _ _ _)).trans ?_
-  refine (hl hab _ _ hv).trans ((LinearEquiv.congr_fun (hlift q _ hw.symm _
-    ((congrArg VectorBundleOrientationCover.proj hw).trans (hv.trans hab.symm))) _).trans
+  refine (liftFiberEquiv_eqToHom_apply hι hab _ _ hv _).trans ((LinearEquiv.congr_fun
+    (liftFiberEquiv_congr hι hw.symm _
+      ((congrArg VectorBundleOrientationCover.proj hw).trans (hv.trans hab.symm))) _).trans
     ((VectorBundleOrientationCover.liftFiberEquiv_apply hι _ _ _).trans
       (signLocalSystemObjEquiv_pullbackThomPairSignLocalSystemIso_inv_app_apply hι R
         (TopPair.Hom.fst f v) r)))
@@ -562,15 +561,8 @@ private theorem homologyMap_thomPairSignChainMap_singularHomologyMap_fiberThomPa
       (fiberThomPairMap F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) q)
       (ModuleCat.of K K)) (thomPairSignChainMap F E hι K) (finrank ℝ F))).symm.trans
     (h.trans ?_)
-  -- `change`: the right-hand side is the composite of the three maps on homology, applied to `y`.
-  change _ = ((TopPair.twistedHomologyConstantIso
-      (TopPair.ofSubset (X := TopCat.of (E q.proj)) ({0}ᶜ : Set (E q.proj)))
-      (ModuleCat.of K K) (finrank ℝ F)).inv ≫
-    TopPair.twistedHomologyCoefficientMap
-      (TopPair.ofSubset (X := TopCat.of (E q.proj)) ({0}ᶜ : Set (E q.proj)))
-      (fiberThomPairSignLocalSystemIso F E K hι q.proj q.orientation).inv (finrank ℝ F) ≫
-    TopPair.twistedHomologyMap (fiberThomPairMap F E q.proj) (thomPairSignLocalSystem F E K hι)
-      (finrank ℝ F)).hom y
+  -- The right-hand side is the composite of the three maps on homology, applied to `y`.
+  rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply]
   exact congrArg (ModuleCat.Hom.hom · y) ((HomologicalComplex.homologyMap_comp _ _ _).trans
     (congrArg₂ (· ≫ ·) (TopPair.twistedHomologyConstantIso_inv _ _ _).symm
       (HomologicalComplex.homologyMap_comp _ _ _)))
