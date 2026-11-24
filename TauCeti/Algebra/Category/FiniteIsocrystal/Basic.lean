@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
-public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.CategoryTheory.Preadditive.Endomorphism
 
@@ -46,8 +45,6 @@ map again, while multiplying by an arbitrary scalar from `L` does not. So the mo
 
 * `TauCeti.FiniteIsocrystal.isIso_iff_bijective`: a morphism is an isomorphism iff its
   underlying linear map is bijective.
-* `TauCeti.FiniteIsocrystal.epi_iff_surjective`: an epimorphism is a surjection on underlying
-  vector spaces.
 * `TauCeti.FiniteIsocrystal.isZero_iff_subsingleton`: the zero objects are the isocrystals on the
   zero space.
 * The category is `E`-linear and has finite biproducts, and the forgetful functor to
@@ -277,57 +274,6 @@ instance : Module E (D ⟶ D') where
 instance : Linear E (FiniteIsocrystal.{u} σ) where
   smul_comp _ _ _ _ _ _ := by ext; simp
   comp_smul _ _ _ _ _ _ := by ext; simp
-
-/-! ### Kernels and epimorphisms -/
-
-section
-
-local instance : RingHomInvPair (σ : L →+* L) (σ.symm : L →+* L) :=
-  RingHomInvPair.of_ringEquiv σ.toRingEquiv
-
-local instance : RingHomInvPair (σ.symm : L →+* L) (σ : L →+* L) :=
-  RingHomInvPair.of_ringEquiv_symm σ.toRingEquiv
-
-/-- Frobenius induces a semilinear automorphism of the kernel of an isocrystal morphism. -/
-noncomputable def kerFrobenius (g : D ⟶ D') :
-    g.hom.ker ≃ₛₗ[(σ : L →+* L)] g.hom.ker := by
-  let Φ := LinearEquiv.ofBijective D.frobenius D.frobenius_bijective
-  have hker : g.hom.ker.comap Φ.toLinearMap = g.hom.ker := by
-    change g.hom.ker.comap D.frobenius = g.hom.ker
-    have hcomm : g.hom.comp D.frobenius = D'.frobenius.comp g.hom :=
-      LinearMap.ext g.hom_frobenius
-    rw [← LinearMap.ker_comp, hcomm,
-      LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot_of_injective D'.frobenius_injective)]
-  exact (LinearEquiv.ofEq _ _ hker.symm).trans (Φ.ofSubmodule' g.hom.ker)
-
-@[simp]
-theorem kerFrobenius_apply (g : D ⟶ D') (x : g.hom.ker) :
-    (kerFrobenius g x : D) = D.frobenius x := by
-  rw [kerFrobenius, LinearEquiv.trans_apply, LinearEquiv.ofSubmodule'_apply,
-    LinearEquiv.coe_ofEq_apply, LinearEquiv.ofBijective_apply]
-
-/-- A morphism of finite isocrystals is an epimorphism iff its underlying map is surjective. -/
-theorem epi_iff_surjective (g : D ⟶ D') : Epi g ↔ Function.Surjective g.hom := by
-  refine ⟨fun _ => ?_, ConcreteCategory.epi_of_surjective g⟩
-  let Φ' := LinearEquiv.ofBijective D'.frobenius D'.frobenius_bijective
-  have hcomm : D'.frobenius.comp g.hom = g.hom.comp D.frobenius :=
-    LinearMap.ext fun x => (g.hom_frobenius x).symm
-  have hrange : g.hom.range.map D'.frobenius = g.hom.range := by
-    rw [← LinearMap.range_comp, hcomm,
-      LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr D.frobenius_surjective)]
-  let ΦQ := Submodule.Quotient.equiv g.hom.range g.hom.range Φ' hrange
-  let Q := of σ (D' ⧸ g.hom.range) ΦQ.toLinearMap ΦQ.bijective
-  let π : D' ⟶ Q := ofHom g.hom.range.mkQ fun x =>
-    (Submodule.mapQ_apply _ _ D'.frobenius (h := Submodule.map_le_iff_le_comap.mp hrange.le) x).symm
-  have hπ : g ≫ π = g ≫ 0 := hom_ext (by
-    simpa only [hom_comp, π, hom_ofHom, hom_zero, LinearMap.zero_comp] using
-      LinearMap.range_mkQ_comp g.hom)
-  have hzero : π = 0 := (cancel_epi g).mp hπ
-  apply LinearMap.range_eq_top.mp
-  have hmkQ : g.hom.range.mkQ = 0 := congrArg Hom.hom hzero
-  rw [← Submodule.ker_mkQ g.hom.range, hmkQ, LinearMap.ker_zero]
-
-end
 
 /-! ### Zero objects -/
 

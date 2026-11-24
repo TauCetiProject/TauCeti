@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.FiniteIsocrystal.Basic
+public import TauCeti.Algebra.Category.FiniteIsocrystal.Abelian
 public import TauCeti.RingTheory.LaurentSeries.DifferenceEquation
 
 import TauCeti.GroupTheory.FixedSubgroup.Lang
@@ -65,8 +65,9 @@ theorem isSplitEpi_of_epi (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobe
   let Φ' := LinearEquiv.ofBijective D'.frobenius D'.frobenius_bijective
   let F : (D' →ₗ[k⸨X⸩] D) ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] _ := Φ'.arrowCongr Φ
   let F' : (D' →ₗ[k⸨X⸩] D') ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)] _ := Φ'.arrowCongr Φ'
-  let Ψ : (D' →ₗ[k⸨X⸩] g.hom.ker) ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)]
-      (D' →ₗ[k⸨X⸩] g.hom.ker) := Φ'.arrowCongr (kerFrobenius g)
+  let K := D.sub g.hom.ker (fun _ => frobenius_mem_ker g)
+  let Ψ : (D' →ₗ[k⸨X⸩] K) ≃ₛₗ[(σ : k⸨X⸩ →+* k⸨X⸩)]
+      (D' →ₗ[k⸨X⸩] K) := Φ'.arrowCongr (LinearEquiv.ofBijective K.frobenius K.frobenius_bijective)
   let post := (LinearMap.compRight k⸨X⸩ (M := D') g.hom).toAddMonoidHom.toMultiplicative
   let incl := (LinearMap.compRight k⸨X⸩ (M := D') g.hom.ker.subtype).toAddMonoidHom.toMultiplicative
   have hker : incl.range = post.ker := by
@@ -84,9 +85,7 @@ theorem isSplitEpi_of_epi (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobe
         LinearEquiv.ofBijective_apply] using g.hom_frobenius (t (Φ'.symm x))
   have hincl (t : D' →ₗ[k⸨X⸩] g.hom.ker) :
       F (g.hom.ker.subtype.comp t) = g.hom.ker.subtype.comp (Ψ t) :=
-    LinearMap.ext fun x => by
-      simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.arrowCongr_apply,
-        Φ, F, Ψ, LinearEquiv.ofBijective_apply, kerFrobenius_apply]
+    LinearMap.ext fun _ => rfl
   have hid : F' LinearMap.id = LinearMap.id := LinearMap.ext fun x => by
     simpa only [F', LinearEquiv.arrowCongr_apply, LinearMap.id_apply] using Φ'.apply_symm_apply x
   obtain ⟨s, hfix, hsection⟩ := post.exists_fixed_lift_of_surjective_commutatorMap incl hker
