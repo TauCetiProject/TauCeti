@@ -166,7 +166,8 @@ elements are bounded below for every exponent `2 ≤ q ≤ pₙ`. -/
 theorem bddBelow_image_subcriticalYamabeQuotient {q : ℝ} (hq : 2 ≤ q)
     (hqp : q ≤ criticalExponent (finrank ℝ E)) :
     BddBelow (subcriticalYamabeQuotient I q '' {w : SobolevH1 I M | w ≠ 0}) := by
-  obtain ⟨K, hK, hS⟩ := exists_nonneg_forall_neg_le_scalarCurvature I M
+  obtain ⟨K, hK, hS⟩ :=
+    (CovariantDerivative.leviCivitaConnection I M).exists_nonneg_forall_neg_le_scalarCurvature
   exact ⟨_, fun _ ⟨w, _, h⟩ ↦ h ▸ neg_mul_rpow_le_subcriticalYamabeQuotient hq hqp hK hS w⟩
 
 /-- **Negative subcritical Yamabe constants.** For `2 ≤ q ≤ pₙ`, the constant

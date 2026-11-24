@@ -43,7 +43,7 @@ finite, norm-continuous, and positive away from `0`. We establish:
   `weakYamabeQuotient_eq_of_energyForm_eq`);
 * **Coercivity** (`isCoercive_energyForm_of_forall_mul_norm_toLp_sq_le`): a lower bound
   `E_g(w, w) ≥ μ ‖w‖²_{L²}` with `μ > 0` makes `E_g` coercive on `H¹(M)`, since `Scal_g` is
-  bounded below (`exists_nonneg_forall_neg_le_scalarCurvature`,
+  bounded below (`CovariantDerivative.exists_nonneg_forall_neg_le_scalarCurvature`,
   `neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul`);
 * **Absolute values** (`energyForm_self_le_of_toLp_eq_abs`,
   `weakYamabeQuotient_le_of_toLp_eq_abs`, `exists_toLp_eq_abs_and_weakYamabeQuotient_le`,
@@ -198,18 +198,6 @@ theorem energyForm_self_nonneg_of_scalarCurvature_nonneg (w : SobolevH1 I M)
   dsimp only [Pi.zero_apply]; rw [mul_assoc]
   exact mul_nonneg (hS x) (mul_self_nonneg (SobolevH1.toLp w x))
 
-variable (I M) in
-omit [MeasurableSpace M] [BorelSpace M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
-/-- On a compact manifold the scalar curvature is bounded below: `-K ≤ Scal_g` for some `K ≥ 0`. -/
-theorem exists_nonneg_forall_neg_le_scalarCurvature :
-    ∃ K : ℝ, 0 ≤ K ∧
-      ∀ x, -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x := by
-  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.continuousOn
-  exact ⟨max C 0, le_max_right C 0, fun x ↦ neg_le_of_abs_le <|
-    (Real.norm_eq_abs _ ▸ hC x (mem_univ x)).trans (le_max_left C 0)⟩
-
 /-- If `Scal_g ≥ -K`, then the scalar-curvature term of `E_g(w, w)` is at least `-K ‖w‖²_{L²}`. -/
 theorem neg_mul_norm_toLp_sq_le_integral_scalarCurvature_mul {K : ℝ}
     (hS : ∀ x, -K ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x)
@@ -240,7 +228,8 @@ theorem isCoercive_energyForm_of_forall_mul_norm_toLp_sq_le (hn : 2 < finrank �
     (hμ : 0 < μ) (h : ∀ w : SobolevH1 I M, μ * ‖SobolevH1.toLp w‖ ^ 2 ≤ energyForm I w w) :
     IsCoercive (energyForm I (M := M)) := by
   -- The scalar curvature is bounded below, so `E_g` controls the Dirichlet energy.
-  obtain ⟨K, hK0, hS⟩ := exists_nonneg_forall_neg_le_scalarCurvature I M
+  obtain ⟨K, hK0, hS⟩ :=
+    (CovariantDerivative.leviCivitaConnection I M).exists_nonneg_forall_neg_le_scalarCurvature
   have ha := conformalCoefficient_pos hn
   set B := (1 + K / μ) / conformalCoefficient (finrank ℝ E) + 1 / μ
   refine ⟨B⁻¹, inv_pos.2 (by positivity), fun w ↦ ?_⟩
