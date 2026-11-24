@@ -487,8 +487,8 @@ every point of `A` lies within distance `D` of every point of `P`. For `s > -dim
 `p ↦ ∫ x in A, ‖x - p‖ ^ s dν` of `ν` restricted to `A` has integral over `P` at most
 `n μ(B(0, 1)) D ^ (n + s) / (n + s)` times `ν A`. For `s = -k` with `k < n`, the kernel
 `‖x - p‖ ^ (-k)` is, up to a constant, the `k`-th power of the local Lipschitz constant at `x` of a
-radial projection from `p` (`TauCeti.lipschitzOnWith_radialProjection_ball`), so this averages
-that power over the centre. -/
+radial projection from `p` (`TauCeti.lipschitzOnWith_frontierRadialProjection_ball`), so this
+averages that power over the centre. -/
 theorem lintegral_setLIntegral_enorm_sub_rpow_le {s : ℝ}
     (hs : -(Module.finrank ℝ E : ℝ) < s) (ν : Measure E) [SFinite ν] {A P : Set E} {D : ℝ}
     (hAP : ∀ x ∈ A, P ⊆ closedBall x D) :
