@@ -31,7 +31,8 @@ argument.
   comparison map `φ : K ⟶ I` to an injective resolution, `Γ(φ)` is a quasi-isomorphism.
 * `CategoryTheory.Sheaf.rightDerivedΓObjIsoOfIsFlasque`: `RⁿΓ(F) ≅ Hⁿ(Γ(K))` for a flasque
   resolution `K` of `F`, characterized through any injective resolution and comparison map by
-  `CategoryTheory.Sheaf.rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap`.
+  `CategoryTheory.Sheaf.rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap`, and in degree `0`
+  by `CategoryTheory.Sheaf.toRightDerivedZero_app_comp_rightDerivedΓObjIsoOfIsFlasque_hom`.
 * `CategoryTheory.Sheaf.rightDerivedΓIsoOfIsFlasque`: the natural isomorphism for a functorial
   flasque resolution.
 
@@ -109,6 +110,21 @@ lemma rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap (n : ℕ) (I : Inject
           (I.isoRightDerivedObj (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)) n).hom :=
   Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap _ _ _ _ _ ι
     (fun n ↦ isFlasque_iff.mpr (hK n)) n I φ hφ
+
+/-- In degree `0`, the comparison `rightDerivedΓObjIsoOfIsFlasque` sends a global section of `F`,
+viewed in `R⁰Γ(F)`, to the cohomology class of its image in `Γ(K⁰)`. -/
+@[reassoc]
+lemma toRightDerivedZero_app_comp_rightDerivedΓObjIsoOfIsFlasque_hom :
+    (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).toRightDerivedZero.app F ≫
+        (rightDerivedΓObjIsoOfIsFlasque ι hK 0).hom =
+      (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
+        K).liftCycles ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
+          (fromSingle₀Equiv K F ι).val) 1 (by simp)
+          ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map_fromSingle₀Equiv_val_comp_d ι) ≫
+        (((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _).obj
+          K).homologyπ 0 :=
+  Functor.toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom _ _ _ _ _ ι
+    (fun n ↦ isFlasque_iff.mpr (hK n))
 
 /-- A functorial flasque resolution computes the native right derived functors of global
 sections, naturally in the sheaf. No injectivity of the terms of the resolution is assumed. -/

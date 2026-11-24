@@ -53,6 +53,9 @@ with no condition on the lower parameters.
 
 ## Main results
 
+* `Complex.hasSum_regularizedHGFun_of_mem_eball`,
+  `Complex.summable_norm_regularizedHGFun_of_mem_eball` — `HasSum` and absolute convergence on the
+  formal convergence ball of `regularizedHGFunSeries`.
 * `Complex.hasSum_regularizedHGFun` — the power series of `regularizedHGFun a b` converges to it
   everywhere when `a.card ≤ b.card`, absolutely by `Complex.summable_norm_regularizedHGFun`.
 * `Complex.differentiable_regularizedHGFun_of_card_le` — `regularizedHGFun a b` is entire when
@@ -62,8 +65,12 @@ with no condition on the lower parameters.
   `₀F₁(; b + 1; z)`, the `a = 0`, `b = {b}` case of Mathlib's `Complex.hasDerivAt_regularizedHGFun`.
 * `Complex.regularizedHGFun_of_zero_mem` — when `0 ∈ a`, `regularizedHGFun a b` is constant and
   equals `(b.map Gamma).prod⁻¹`.
-* `Complex.hasSum_regularizedGaussHGFun` — the power series of `regularizedGaussHGFun a b c`
-  converges to it on the open unit disk `‖z‖ < 1`.
+* `Complex.hasSum_regularizedHGFun_of_card_eq_add_one`,
+  `Complex.summable_norm_regularizedHGFun_of_card_eq_add_one` — unit-disk `HasSum` and absolute
+  convergence when `a.card = b.card + 1`.
+* `Complex.hasSum_regularizedGaussHGFun`, `Complex.summable_norm_regularizedGaussHGFun` —
+  the power series of `regularizedGaussHGFun a b c` converges to it (and absolutely) on the open
+  unit disk `‖z‖ < 1`.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.sum_regularizedHGFunCoeff_zero_singleton_mul` and
@@ -79,11 +86,20 @@ with no condition on the lower parameters.
   when `b > -1`, and `₀F₁(; b; y) > 0` when `b > 0`.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
 * `Complex.hasDerivAt_regularizedHGFun_zero_singleton_ofReal_re` — the derivative in `y`.
-* `Complex.regularizedHGFun_eq_sum_range_of_neg_natCast_mem`,
+* `Complex.hasSum_regularizedHGFun_of_neg_natCast_mem`,
+  `Complex.regularizedHGFun_eq_sum_range_of_neg_natCast_mem`,
   `Complex.exists_natDegree_le_regularizedHGFun_of_neg_natCast_mem` — if an upper parameter is a
-  nonpositive integer `-n`, the series terminates and the function is a polynomial of degree at
-  most `n`.
-* `Complex.regularizedGaussHGFun_zero` — the origin value `(Gamma c)⁻¹` at `z = 0`.
+  nonpositive integer `-n`, the series terminates, converges at every `z`, and is a polynomial of
+  degree at most `n`.
+* `Complex.regularizedGaussHGFun_zero`, `Complex.regularizedGaussHGFun_zero_left`,
+  `Complex.regularizedGaussHGFun_zero_right`, `Complex.coeff_regularizedGaussHGFunSeries_zero` —
+  origin and zero-parameter values `(Gamma c)⁻¹`.
+* `Complex.hasSum_regularizedGaussHGFun_neg_natCast`,
+  `Complex.regularizedGaussHGFun_neg_natCast_eq_sum`, `Complex.regularizedGaussHGFun_neg_natCast`,
+  `Complex.regularizedGaussHGFun_neg_natCast_succ_eq_sub`,
+  `Complex.regularizedGaussHGFun_neg_natCast_succ_eq_add` — all-argument `HasSum`, finite-sum
+  formulas (regularized form of DLMF 15.2.4), and parameter-lowering recurrences for
+  `regularizedGaussHGFun (-n) b c z`.
 * `Complex.hasFPowerSeriesOnBall_regularizedGaussHGFun`, `Complex.analyticAt_regularizedGaussHGFun`,
   `Complex.analyticOnNhd_regularizedGaussHGFun` — power-series representation and analyticity of
   `regularizedGaussHGFun` on the open unit disk.
@@ -145,33 +161,74 @@ theorem regularizedHGFun_of_zero_mem {a b : Multiset ℂ} (h : (0 : ℂ) ∈ a) 
   · intro n hn
     simp [regularizedHGFunCoeff_eq_zero_left a b n 0 (by simpa using h) (Nat.pos_of_ne_zero hn)]
 
+private theorem regularizedHGFunCoeff_pair_singleton (a b c : ℂ) (k : ℕ) :
+    regularizedHGFunCoeff {a, b} {c} k = (regularizedGaussHGFunSeries a b c).coeff k := by
+  rw [regularizedGaussHGFunSeries, regularizedHGFunSeries_coeff]
+
+/-- Inside the convergence ball of `regularizedHGFunSeries a b`, the regularized hypergeometric
+series converges to `regularizedHGFun a b z`. -/
+theorem hasSum_regularizedHGFun_of_mem_eball {a b : Multiset ℂ} {z : ℂ}
+    (hz : z ∈ Metric.eball (0 : ℂ) (regularizedHGFunSeries a b).radius) :
+    HasSum (fun n => regularizedHGFunCoeff a b n * z ^ n) (regularizedHGFun a b z) := by
+  simpa [regularizedHGFun, regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq,
+    mul_comm] using (regularizedHGFunSeries a b).hasSum hz
+
+/-- Inside the convergence ball of `regularizedHGFunSeries a b`, the regularized hypergeometric
+series converges absolutely. -/
+theorem summable_norm_regularizedHGFun_of_mem_eball {a b : Multiset ℂ} {z : ℂ}
+    (hz : z ∈ Metric.eball (0 : ℂ) (regularizedHGFunSeries a b).radius) :
+    Summable fun n => ‖regularizedHGFunCoeff a b n * z ^ n‖ := by
+  simpa [regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using
+    (regularizedHGFunSeries a b).summable_norm_apply hz
+
 /-- When there are at most as many upper as lower parameters, the regularized hypergeometric
 series converges to `regularizedHGFun a b z` at every `z`. -/
 theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
-    HasSum (fun n => regularizedHGFunCoeff a b n * z ^ n) (regularizedHGFun a b z) := by
-  have := (regularizedHGFunSeries a b).hasSum (x := z)
-    (by simp [radius_regularizedHGFunSeries_eq_top h])
-  simpa [regularizedHGFun, regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq,
-    mul_comm] using this
+    HasSum (fun n => regularizedHGFunCoeff a b n * z ^ n) (regularizedHGFun a b z) :=
+  hasSum_regularizedHGFun_of_mem_eball (by simp [radius_regularizedHGFunSeries_eq_top h])
+
+/-- When there is one more upper than lower parameter, the regularized hypergeometric series
+converges to `regularizedHGFun a b z` on the open unit disk `‖z‖ < 1`. -/
+theorem hasSum_regularizedHGFun_of_card_eq_add_one {a b : Multiset ℂ}
+    (h : a.card = b.card + 1) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun n => regularizedHGFunCoeff a b n * z ^ n) (regularizedHGFun a b z) :=
+  hasSum_regularizedHGFun_of_mem_eball <|
+    Metric.eball_subset_eball (radius_regularizedHGFunSeries_ge_one h) <| by
+      rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+
+/-- When there is one more upper than lower parameter, the regularized hypergeometric series
+converges absolutely on the open unit disk `‖z‖ < 1`. -/
+theorem summable_norm_regularizedHGFun_of_card_eq_add_one {a b : Multiset ℂ}
+    (h : a.card = b.card + 1) {z : ℂ} (hz : ‖z‖ < 1) :
+    Summable fun n => ‖regularizedHGFunCoeff a b n * z ^ n‖ :=
+  summable_norm_regularizedHGFun_of_mem_eball <|
+    Metric.eball_subset_eball (radius_regularizedHGFunSeries_ge_one h) <| by
+      rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
 
 /-- On the open unit disk `‖z‖ < 1`, the regularized Gauss hypergeometric power series converges
 to `regularizedGaussHGFun a b c z`. -/
 theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     HasSum (fun n : ℕ => (regularizedGaussHGFunSeries a b c).coeff n * z ^ n)
       (regularizedGaussHGFun a b c z) := by
-  have hmem : z ∈ Metric.eball (0 : ℂ) (regularizedGaussHGFunSeries a b c).radius :=
-    Metric.eball_subset_eball (radius_regularizedGaussHGFunSeries_ge_one a b c) <| by
-      rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
-  simpa only [regularizedGaussHGFun, FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_eq_mul,
-    mul_comm] using (regularizedGaussHGFunSeries a b c).hasSum hmem
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun]
+  simpa only [regularizedHGFunSeries_coeff] using
+    hasSum_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c})
+      (by rw [Multiset.card_pair, Multiset.card_singleton]) hz
+
+/-- On the open unit disk `‖z‖ < 1`, the regularized Gauss hypergeometric power series converges
+absolutely. -/
+theorem summable_norm_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    Summable fun n : ℕ => ‖(regularizedGaussHGFunSeries a b c).coeff n * z ^ n‖ := by
+  rw [regularizedGaussHGFunSeries]
+  simpa only [regularizedHGFunSeries_coeff] using
+    summable_norm_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c})
+      (by rw [Multiset.card_pair, Multiset.card_singleton]) hz
 
 /-- When there are at most as many upper as lower parameters, the regularized hypergeometric
 series converges absolutely at every `z`. -/
 theorem summable_norm_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
-    Summable fun n => ‖regularizedHGFunCoeff a b n * z ^ n‖ := by
-  have := (regularizedHGFunSeries a b).summable_norm_apply (x := z)
-    (by simp [radius_regularizedHGFunSeries_eq_top h])
-  simpa [regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using this
+    Summable fun n => ‖regularizedHGFunCoeff a b n * z ^ n‖ :=
+  summable_norm_regularizedHGFun_of_mem_eball (by simp [radius_regularizedHGFunSeries_eq_top h])
 
 /-- When there are at most as many upper as lower parameters, `regularizedHGFun a b` is entire. -/
 @[fun_prop]
@@ -420,6 +477,14 @@ theorem hasSum_regularizedHGFun_zero_singleton_ofReal_re_mul (a b y : ℝ) :
   rw [hc, ha, hb, heval, Gamma_ofReal, Gamma_ofReal]
   norm_cast
 
+/-- If `-n` is an upper parameter, the regularized hypergeometric series converges to
+`regularizedHGFun a b z` at every complex `z`. -/
+theorem hasSum_regularizedHGFun_of_neg_natCast_mem {a b : Multiset ℂ} {n : ℕ}
+    (ha : -(n : ℂ) ∈ a) (z : ℂ) :
+    HasSum (fun k => regularizedHGFunCoeff a b k * z ^ k) (regularizedHGFun a b z) :=
+  hasSum_regularizedHGFun_of_mem_eball
+    (by simp [radius_regularizedHGFunSeries_eq_top_of_finite ha rfl])
+
 /-- If `-n` is an upper parameter, the regularized hypergeometric series terminates at
 degree `n`: `regularizedHGFun a b z` is the sum of its first `n + 1` terms. -/
 theorem regularizedHGFun_eq_sum_range_of_neg_natCast_mem {a b : Multiset ℂ} {n : ℕ}
@@ -458,8 +523,13 @@ theorem hasFPowerSeriesOnBall_regularizedGaussHGFun (a b c : ℂ) :
 /-- For any complex parameters `a`, `b`, `c`, `regularizedGaussHGFun a b c` is analytic at every
 point of the open unit disk. -/
 theorem analyticAt_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
-    AnalyticAt ℂ (regularizedGaussHGFun a b c) z :=
-  analyticAt_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c}) rfl hz
+    AnalyticAt ℂ (regularizedGaussHGFun a b c) z := by
+  have hfun : regularizedGaussHGFun a b c = regularizedHGFun {a, b} {c} := by
+    ext w
+    rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, regularizedHGFun]
+  rw [hfun]
+  exact analyticAt_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c})
+    (by rw [Multiset.card_pair, Multiset.card_singleton]) hz
 
 /-- For any complex parameters `a`, `b`, `c`, `regularizedGaussHGFun a b c` is analytic on the open
 unit disk. -/
@@ -478,17 +548,158 @@ complex parameters `a`, `b`, `c`. -/
 @[simp]
 theorem regularizedGaussHGFun_zero (a b c : ℂ) :
     regularizedGaussHGFun a b c 0 = (Gamma c)⁻¹ := by
-  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun,
-    regularizedHGFun_zero]
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun, regularizedHGFun_zero]
   simp [regularizedHGFunCoeff]
 
 /-- On the open unit disk, the power series of `regularizedGaussHGFun a b c` is summable. -/
 theorem summable_coeff_regularizedGaussHGFunSeries_mul_pow (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     Summable fun n : ℕ => (regularizedGaussHGFunSeries a b c).coeff n * z ^ n := by
-  have hmem : z ∈ Metric.eball (0 : ℂ) 1 := by
-    rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
-  have hs := (hasFPowerSeriesOnBall_regularizedGaussHGFun a b c).hasSum (y := z) hmem
-  simpa [mul_comm] using hs.summable
+  simpa only [← regularizedHGFunCoeff_pair_singleton] using
+    (summable_norm_regularizedHGFun_of_card_eq_add_one (a := {a, b}) (b := {c})
+      (by rw [Multiset.card_pair, Multiset.card_singleton]) hz).of_norm
+
+/-- When the first upper parameter is a nonpositive integer `-n`, the regularized Gauss
+hypergeometric series terminates after `n + 1` terms. -/
+theorem regularizedGaussHGFun_neg_natCast_eq_sum (b c z : ℂ) (n : ℕ) :
+    regularizedGaussHGFun (-n) b c z =
+      ∑ k ∈ Finset.range (n + 1),
+        (ascPochhammer ℂ k).eval (-(n : ℂ)) * (ascPochhammer ℂ k).eval b /
+          (k ! * Gamma (c + k)) * z ^ k := by
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun]
+  simpa only [regularizedHGFunCoeff_pair_singleton, coeff_regularizedGaussHGFunSeries] using
+    regularizedHGFun_eq_sum_range_of_neg_natCast_mem (a := {-(n : ℂ), b}) (b := {c}) (by simp) z
+
+/-- Binomial-coefficient form of the terminating regularized Gauss hypergeometric polynomial
+(regularized form of DLMF 15.2.4). -/
+theorem regularizedGaussHGFun_neg_natCast (b c z : ℂ) (n : ℕ) :
+    regularizedGaussHGFun (-n) b c z =
+      ∑ k ∈ Finset.range (n + 1),
+        (-1) ^ k * n.choose k * (ascPochhammer ℂ k).eval b / Gamma (c + k) * z ^ k := by
+  rw [regularizedGaussHGFun_neg_natCast_eq_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  have hfac : (k ! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr k.factorial_ne_zero
+  rw [TauCeti.ascPochhammer_eval_neg_natCast]
+  field_simp
+
+/-- With first upper parameter `0`, `regularizedGaussHGFun 0 b c z` reduces to `(Gamma c)⁻¹` at
+every complex argument `z`. -/
+@[simp]
+theorem regularizedGaussHGFun_zero_left (b c z : ℂ) :
+    regularizedGaussHGFun 0 b c z = (Gamma c)⁻¹ := by
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun,
+    regularizedHGFun_of_zero_mem (by simp)]
+  simp
+
+/-- With second upper parameter `0`, `regularizedGaussHGFun a 0 c z` reduces to `(Gamma c)⁻¹` at
+every complex argument `z`. -/
+@[simp]
+theorem regularizedGaussHGFun_zero_right (a c z : ℂ) :
+    regularizedGaussHGFun a 0 c z = (Gamma c)⁻¹ := by
+  rw [funext_iff.mp (regularizedGaussHGFun_symm a 0 c) z, regularizedGaussHGFun_zero_left]
+
+/-- When the first upper parameter is a nonpositive integer `-n`, the regularized Gauss
+hypergeometric series converges to `regularizedGaussHGFun (-n) b c z` at every complex `z`. -/
+theorem hasSum_regularizedGaussHGFun_neg_natCast (b c z : ℂ) (n : ℕ) :
+    HasSum (fun k : ℕ => (regularizedGaussHGFunSeries (-n) b c).coeff k * z ^ k)
+      (regularizedGaussHGFun (-n) b c z) := by
+  rw [regularizedGaussHGFun, regularizedGaussHGFunSeries, ← regularizedHGFun]
+  simpa only [regularizedHGFunSeries_coeff] using
+    hasSum_regularizedHGFun_of_neg_natCast_mem (a := {-(n : ℂ), b}) (b := {c}) (n := n)
+      (by simp) z
+
+/-- The zeroth coefficient of `regularizedGaussHGFunSeries a b c` is `(Gamma c)⁻¹`. -/
+@[simp]
+theorem coeff_regularizedGaussHGFunSeries_zero (a b c : ℂ) :
+    (regularizedGaussHGFunSeries a b c).coeff 0 = (Gamma c)⁻¹ := by
+  simp [coeff_regularizedGaussHGFunSeries]
+
+private theorem coeff_regularizedGaussHGFunSeries_c_shift (a b c : ℂ) (k : ℕ) :
+    (regularizedGaussHGFunSeries a b c).coeff k =
+      (c - a) * (regularizedGaussHGFunSeries a b (c + 1)).coeff k +
+        a * (regularizedGaussHGFunSeries (a + 1) b (c + 1)).coeff k := by
+  have hap : a * (ascPochhammer ℂ k).eval (a + 1) = (a + k) * (ascPochhammer ℂ k).eval a := by
+    rw [ascPochhammer_eval_succ, mul_comm]
+  have hΓ := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c + k)
+  simp only [coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
+  rw [add_right_comm c 1 (k : ℂ), hΓ]
+  linear_combination
+    (ascPochhammer ℂ k).eval b * (k ! : ℂ)⁻¹ * (Gamma (c + k + 1))⁻¹ * (-hap)
+
+private theorem coeff_regularizedGaussHGFunSeries_b_shift (a b c : ℂ) (k : ℕ) :
+    (regularizedGaussHGFunSeries a b c).coeff (k + 1) =
+      (regularizedGaussHGFunSeries a (b + 1) c).coeff (k + 1) -
+        a * (regularizedGaussHGFunSeries (a + 1) (b + 1) (c + 1)).coeff k := by
+  have hb₁ := (ascPochhammer_succ_eval k b).trans (ascPochhammer_eval_succ k b).symm
+  have ha₁ := (ascPochhammer_succ_eval k a).trans (ascPochhammer_eval_succ k a).symm
+  have hb₂ := ascPochhammer_succ_eval k (b + 1)
+  have hn : (k : ℂ) + 1 ≠ 0 := mod_cast Nat.succ_ne_zero k
+  have hc : c + ((k : ℂ) + 1) = c + 1 + k := by ring
+  rw [coeff_regularizedGaussHGFunSeries, coeff_regularizedGaussHGFunSeries,
+    coeff_regularizedGaussHGFunSeries, hb₁, ha₁, hb₂, Nat.factorial_succ, Nat.cast_mul,
+    Nat.cast_add, Nat.cast_one, hc]
+  field_simp
+  ring
+
+private theorem regularizedGaussHGFun_eq_sub_mul_add_mul_of_summable {a b c z : ℂ}
+    (hs₁ : Summable fun k : ℕ => (regularizedGaussHGFunSeries a b (c + 1)).coeff k * z ^ k)
+    (hs₂ : Summable fun k : ℕ => (regularizedGaussHGFunSeries (a + 1) b (c + 1)).coeff k * z ^ k) :
+    regularizedGaussHGFun a b c z =
+      (c - a) * regularizedGaussHGFun a b (c + 1) z +
+        a * regularizedGaussHGFun (a + 1) b (c + 1) z := by
+  simp_rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow, ← tsum_mul_left,
+    ← (hs₁.mul_left (c - a)).tsum_add (hs₂.mul_left a)]
+  refine tsum_congr fun k => ?_
+  rw [coeff_regularizedGaussHGFunSeries_c_shift]
+  ring
+
+private theorem regularizedGaussHGFun_eq_sub_mul_mul_of_summable {a b c z : ℂ}
+    (hs₀ : Summable fun k : ℕ => (regularizedGaussHGFunSeries a b c).coeff k * z ^ k)
+    (hs₁ : Summable fun k : ℕ => (regularizedGaussHGFunSeries a (b + 1) c).coeff k * z ^ k)
+    (hs₂ : Summable fun k : ℕ =>
+      (regularizedGaussHGFunSeries (a + 1) (b + 1) (c + 1)).coeff k * z ^ k) :
+    regularizedGaussHGFun a b c z =
+      regularizedGaussHGFun a (b + 1) c z -
+        a * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z := by
+  rw [eq_sub_iff_add_eq]
+  simp_rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow]
+  rw [← tsum_mul_left, hs₀.tsum_eq_zero_add, hs₁.tsum_eq_zero_add, add_assoc,
+    ← ((summable_nat_add_iff 1).2 hs₀).tsum_add (hs₂.mul_left (a * z))]
+  simp only [coeff_regularizedGaussHGFunSeries_zero, pow_zero, mul_one]
+  congr 1
+  refine tsum_congr fun k => ?_
+  rw [coeff_regularizedGaussHGFunSeries_b_shift, pow_succ]
+  ring
+
+/-- Recurrence relating `regularizedGaussHGFun (-(n + 1 : ℕ)) b c z` to lower-parameter values at
+`c + 1`, valid at all complex parameters including nonpositive integer values of `c`. -/
+theorem regularizedGaussHGFun_neg_natCast_succ_eq_sub (b c z : ℂ) (n : ℕ) :
+    regularizedGaussHGFun (-((n + 1 : ℕ) : ℂ)) b c z =
+      (c + n + 1) * regularizedGaussHGFun (-((n + 1 : ℕ) : ℂ)) b (c + 1) z -
+        (n + 1) * regularizedGaussHGFun (-n) b (c + 1) z := by
+  have hshift : -((n + 1 : ℕ) : ℂ) + 1 = -(n : ℂ) := by push_cast; ring
+  have hs₂ := (hasSum_regularizedGaussHGFun_neg_natCast b (c + 1) z n).summable
+  rw [← hshift] at hs₂
+  have h := regularizedGaussHGFun_eq_sub_mul_add_mul_of_summable
+    (hasSum_regularizedGaussHGFun_neg_natCast b (c + 1) z (n + 1)).summable hs₂
+  rw [hshift] at h
+  push_cast at h ⊢
+  linear_combination h
+
+/-- Recurrence relating `regularizedGaussHGFun (-(n + 1 : ℕ)) b c z` to shifted-parameter values at
+`b + 1`, valid at all complex parameters including nonpositive integer values of `c`. -/
+theorem regularizedGaussHGFun_neg_natCast_succ_eq_add (b c z : ℂ) (n : ℕ) :
+    regularizedGaussHGFun (-((n + 1 : ℕ) : ℂ)) b c z =
+      regularizedGaussHGFun (-((n + 1 : ℕ) : ℂ)) (b + 1) c z +
+        (n + 1) * z * regularizedGaussHGFun (-n) (b + 1) (c + 1) z := by
+  have hshift : -((n + 1 : ℕ) : ℂ) + 1 = -(n : ℂ) := by push_cast; ring
+  have hs₂ := (hasSum_regularizedGaussHGFun_neg_natCast (b + 1) (c + 1) z n).summable
+  rw [← hshift] at hs₂
+  have h := regularizedGaussHGFun_eq_sub_mul_mul_of_summable
+    (hasSum_regularizedGaussHGFun_neg_natCast b c z (n + 1)).summable
+    (hasSum_regularizedGaussHGFun_neg_natCast (b + 1) c z (n + 1)).summable hs₂
+  rw [hshift] at h
+  push_cast at h ⊢
+  linear_combination h
 
 /-- The coefficients `C(m + i, m) 𝐅ₘ₊ᵢ` of `regularizedGaussHGFunSeries a b c` are
 `(a)ₘ (b)ₘ / m!` times the coefficients of `regularizedGaussHGFunSeries (a + m) (b + m) (c + m)`,
@@ -624,19 +835,10 @@ theorem hasDerivAt_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ <
 theorem regularizedGaussHGFun_eq_sub_mul_add_mul (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
     regularizedGaussHGFun a b c z =
       (c - a) * regularizedGaussHGFun a b (c + 1) z +
-        a * regularizedGaussHGFun (a + 1) b (c + 1) z := by
-  have hs₁ := (summable_coeff_regularizedGaussHGFunSeries_mul_pow a b (c + 1) hz).mul_left (c - a)
-  have hs₂ :=
-    (summable_coeff_regularizedGaussHGFunSeries_mul_pow (a + 1) b (c + 1) hz).mul_left a
-  simp_rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow, ← tsum_mul_left, ← hs₁.tsum_add hs₂]
-  refine tsum_congr fun n => ?_
-  have hap : a * (ascPochhammer ℂ n).eval (a + 1) = (a + n) * (ascPochhammer ℂ n).eval a := by
-    rw [ascPochhammer_eval_succ, mul_comm]
-  have hΓ := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c + n)
-  simp only [coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
-  rw [add_right_comm c 1 (n : ℂ), hΓ]
-  linear_combination
-    (ascPochhammer ℂ n).eval b * (n ! : ℂ)⁻¹ * (Gamma (c + n + 1))⁻¹ * z ^ n * (-hap)
+        a * regularizedGaussHGFun (a + 1) b (c + 1) z :=
+  regularizedGaussHGFun_eq_sub_mul_add_mul_of_summable
+    (summable_coeff_regularizedGaussHGFunSeries_mul_pow a b (c + 1) hz)
+    (summable_coeff_regularizedGaussHGFunSeries_mul_pow (a + 1) b (c + 1) hz)
 
 /-- Regularized Gauss contiguous shift in `b` on the open unit disk (DLMF 15.5.16_5):
 `𝐅(a, b; c; z) = 𝐅(a, b + 1; c; z) - a z 𝐅(a + 1, b + 1; c + 1; z)`. -/
@@ -644,27 +846,11 @@ theorem regularizedGaussHGFun_eq_regularizedGaussHGFun_sub_mul_mul (a b c : ℂ)
     (hz : ‖z‖ < 1) :
     regularizedGaussHGFun a b c z =
       regularizedGaussHGFun a (b + 1) c z -
-        a * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z := by
-  rw [eq_sub_iff_add_eq]
-  have hs₀ := summable_coeff_regularizedGaussHGFunSeries_mul_pow a b c hz
-  have hs₁ := (summable_coeff_regularizedGaussHGFunSeries_mul_pow
-    (a + 1) (b + 1) (c + 1) hz).mul_left (a * z)
-  have hs₂ := summable_coeff_regularizedGaussHGFunSeries_mul_pow a (b + 1) c hz
-  simp_rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow]
-  rw [← tsum_mul_left, hs₀.tsum_eq_zero_add, hs₂.tsum_eq_zero_add, add_assoc,
-    ← ((summable_nat_add_iff 1).2 hs₀).tsum_add hs₁]
-  simp only [coeff_regularizedGaussHGFunSeries, ascPochhammer_zero, Polynomial.eval_one, mul_one,
-    Nat.factorial_zero, Nat.cast_one, one_mul, Nat.cast_zero, add_zero, pow_zero]
-  congr 1
-  refine tsum_congr fun n => ?_
-  have hb₁ := (ascPochhammer_succ_eval n b).trans (ascPochhammer_eval_succ n b).symm
-  have ha₁ := (ascPochhammer_succ_eval n a).trans (ascPochhammer_eval_succ n a).symm
-  have hb₂ := ascPochhammer_succ_eval n (b + 1)
-  have hn : (n : ℂ) + 1 ≠ 0 := mod_cast Nat.succ_ne_zero n
-  have hc : c + ((n : ℂ) + 1) = c + 1 + n := by ring
-  rw [hb₁, ha₁, hb₂, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one, hc, pow_succ]
-  field_simp
-  ring
+        a * z * regularizedGaussHGFun (a + 1) (b + 1) (c + 1) z :=
+  regularizedGaussHGFun_eq_sub_mul_mul_of_summable
+    (summable_coeff_regularizedGaussHGFunSeries_mul_pow a b c hz)
+    (summable_coeff_regularizedGaussHGFunSeries_mul_pow a (b + 1) c hz)
+    (summable_coeff_regularizedGaussHGFunSeries_mul_pow (a + 1) (b + 1) (c + 1) hz)
 
 /-- Regularized differential-contiguous relation lowering `c` on the open unit disk (DLMF 15.5.4):
 `z * deriv (𝐅(a, b; c + 1)) z + c * 𝐅(a, b; c + 1; z) = 𝐅(a, b; c; z)`. -/
