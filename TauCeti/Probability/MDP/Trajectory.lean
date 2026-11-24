@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.MDP.HistoryPolicy
 public import TauCeti.Probability.Kernel.IonescuTulcea.Traj
+import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 
 /-!
 # State-action trajectories under a history-dependent policy
@@ -136,5 +137,39 @@ theorem condDistrib_action_succ [StandardBorelSpace A] [Nonempty A] (n : ℕ) :
       =ᵐ[(π.trajLaw κ s).map (fun x ↦ (frestrictLe n x, (x (n + 1)).1))] π.next n :=
   condDistrib_ae_eq_of_measure_eq_compProd_of_measurable (by fun_prop) (by fun_prop)
     (π.trajLaw_map_history_state_action_succ κ s n)
+
+/-- The trajectory starts at the initial state almost surely. -/
+theorem trajLaw_ae_state_zero [MeasurableSingletonClass S] :
+    ∀ᵐ x ∂π.trajLaw κ s, (x 0).1 = s :=
+  HasLaw.ae_eq_of_dirac ⟨(measurable_fst.comp (measurable_pi_apply 0)).aemeasurable,
+    π.trajLaw_map_state_zero κ s⟩
+
+/-- The joint law of the pair at time `n` and the state at time `n + 1` is the law of that pair
+followed by the transition kernel. -/
+theorem trajLaw_map_eval_state_succ (n : ℕ) :
+    (π.trajLaw κ s).map (fun x ↦ (x n, (x (n + 1)).1)) =
+      (π.trajLaw κ s).map (fun x ↦ x n) ⊗ₘ κ := by
+  have hlast : Measurable fun h : (i : Iic n) → S × A ↦ h ⟨n, mem_Iic.2 le_rfl⟩ :=
+    measurable_pi_apply _
+  have h := congrArg (Measure.map (Prod.map (fun h : (i : Iic n) → S × A ↦
+    h ⟨n, mem_Iic.2 le_rfl⟩) (id : S → S))) (π.trajLaw_map_history_state_succ κ s n)
+  rwa [Measure.map_map (hlast.prodMap measurable_id) (by fun_prop),
+    Measure.map_prodMap_compProd_comap _ _ hlast,
+    Measure.map_map hlast (measurable_frestrictLe n)] at h
+
+/-- Under the Markov policy `ofMarkov π`, the pair at time `n + 1` has the law of the state at
+time `n + 1` followed by `π (n + 1)`: given that state, the action is drawn from `π (n + 1)`. -/
+theorem trajLaw_ofMarkov_map_eval_succ [Countable S] [MeasurableSingletonClass S]
+    {π : ℕ → S → PMF A} (n : ℕ) :
+    ((ofMarkov π).trajLaw κ s).map (fun x ↦ x (n + 1)) =
+      ((ofMarkov π).trajLaw κ s).map (fun x ↦ (x (n + 1)).1) ⊗ₘ Kernel.ofPMF (π (n + 1)) := by
+  have hmeas : Measurable
+      fun x : ℕ → S × A ↦ ((frestrictLe n x, (x (n + 1)).1), (x (n + 1)).2) := by
+    fun_prop
+  have h := congrArg (Measure.map (Prod.map Prod.snd id))
+    ((ofMarkov π).trajLaw_map_history_state_action_succ κ s n)
+  rwa [Measure.map_map (measurable_snd.prodMap measurable_id) hmeas, ofMarkov_next,
+    Measure.map_prodMap_compProd_comap _ _ measurable_snd,
+    Measure.map_map measurable_snd (by fun_prop)] at h
 
 end TauCeti.HistoryPolicy

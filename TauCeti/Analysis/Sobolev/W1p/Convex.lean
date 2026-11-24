@@ -214,10 +214,10 @@ theorem W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le {p : �
     (((W1p.hasWeakFDerivOn (W1p.restrictL hV u)).congr_ae hv.coeFn_toLp.symm).congr_ae_deriv
       (hg.coeFn_toLp.symm.mono fun x hx => congrArg (fun v => innerSL ℝ v) hx))
   have hw : ‖W1p.gradient w‖₊ ≤ M := by
-    rw [← NNReal.coe_le_coe, coe_nnNorm, W1p.gradient_mk, Lp.norm_toLp,
-      eLpNorm_exponent_top]
-    · exact ENNReal.toReal_le_of_le_ofReal M.coe_nonneg (eLpNormEssSup_le_of_ae_bound hgM)
-    · exact Lp.aestronglyMeasurable _
+    rw [← NNReal.coe_le_coe, coe_nnNorm, W1p.gradient_mk]
+    refine Lp.norm_le_of_ae_bound_top M.coe_nonneg ?_
+    filter_upwards [hg.coeFn_toLp, hgM] with x hx hxM
+    rwa [hx]
   -- On `V` the precise representatives of `w` and `u` agree.
   have heq : ∀ x ∈ (V : Set E), preciseRepresentative μ (W1p.value w) x =
       preciseRepresentative μ (W1p.value u) x := fun x hx => by

@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.Topology.Sheaves.Presheaf
 import Mathlib.Analysis.Complex.ReImTopology
+import Mathlib.Topology.Separation.Regular
 
 /-!
 # One-dimensional hyperfunctions as boundary values of holomorphic functions
@@ -40,6 +41,8 @@ Restriction to a smaller open multiplies by the indicator function
 * `TauCeti.Hyperfunction.nonRealOpen`: the open set `ℂ ∖ ℝ`, which is dense
   (`TauCeti.Hyperfunction.dense_nonRealOpen`);
 * `TauCeti.Hyperfunction.complexNeighborhood U`: the open set `W(U) = ℂ ∖ (ℝ ∖ U)`;
+* `TauCeti.Hyperfunction.realAxis`: the real axis as a closed subset of `ℂ`, whose complement is
+  `ℂ ∖ ℝ` (`TauCeti.Hyperfunction.compl_realAxis`);
 * `TauCeti.Hyperfunction.throughReal U`: the holomorphic functions on `ℂ ∖ ℝ` that extend
   holomorphically to `W(U)`;
 * `TauCeti.Hyperfunction.OneDimBoundaryQuotient U`: the quotient `O(ℂ ∖ ℝ) / O(W(U))`, and
@@ -58,6 +61,9 @@ Restriction to a smaller open multiplies by the indicator function
   uniqueness half of the sheaf property. The existence half needs the vanishing of the first
   cohomology of the sheaf of holomorphic functions on open subsets of `ℂ` (a Cousin problem) and is
   not proved here.
+* `TauCeti.Hyperfunction.eq_of_forall_oneDimBoundaryRestrict_eq`: a one-dimensional hyperfunction
+  on `U` is determined by its restrictions to the open sets whose closure is a compact subset
+  of `U`.
 
 ## References
 
@@ -154,6 +160,25 @@ theorem nonRealOpen_le_complexNeighborhood (U : Opens ℝ) :
 /-- The set `W(U)` grows with `U`. -/
 theorem complexNeighborhood_mono : Monotone complexNeighborhood := fun _ _ h =>
   sup_le_sup_left (fun _ hz => h hz) _
+
+/-- The real axis `{z | z.im = 0}`, as a closed subset of `ℂ`. -/
+def realAxis : Closeds ℂ :=
+  ⟨{z | z.im = 0}, isClosed_eq Complex.continuous_im continuous_const⟩
+
+@[simp]
+theorem mem_realAxis_iff {z : ℂ} : z ∈ realAxis ↔ z.im = 0 :=
+  Iff.rfl
+
+/-- The complement of the real axis is `ℂ ∖ ℝ`. -/
+theorem compl_realAxis : realAxis.compl = nonRealOpen := by
+  ext z
+  simp [Closeds.compl]
+
+/-- Removing the real axis from `W(U) = ℂ ∖ (ℝ ∖ U)` leaves `ℂ ∖ ℝ`. -/
+theorem complexNeighborhood_inf_compl_realAxis (U : Opens ℝ) :
+    complexNeighborhood U ⊓ realAxis.compl = nonRealOpen := by
+  rw [compl_realAxis]
+  exact inf_eq_right.2 (nonRealOpen_le_complexNeighborhood U)
 
 /-! ### Functions extending across a real open set -/
 
@@ -286,6 +311,22 @@ theorem eq_of_oneDimBoundaryRestrict_eq {ι : Sort*} {U : ι → Opens ℝ} {V :
     q₁ = q₂ :=
   sub_eq_zero.mp <| eq_zero_of_oneDimBoundaryRestrict_eq_zero hUV hV fun i => by
     rw [map_sub, hq i, sub_self]
+
+/-- **Hyperfunctions are determined on relatively compact open sets.** Two one-dimensional
+hyperfunctions on `U` with the same restrictions to all open sets whose closure is a compact
+subset of `U` are equal. -/
+theorem eq_of_forall_oneDimBoundaryRestrict_eq {U : Opens ℝ} {q₁ q₂ : OneDimBoundaryQuotient U}
+    (h : ∀ (V : Opens ℝ) (hVU : V ≤ U), IsCompact (closure (V : Set ℝ)) →
+      closure (V : Set ℝ) ⊆ U → oneDimBoundaryRestrict hVU q₁ = oneDimBoundaryRestrict hVU q₂) :
+    q₁ = q₂ := by
+  let ι := {V : Opens ℝ // IsCompact (closure (V : Set ℝ)) ∧ closure (V : Set ℝ) ⊆ U}
+  have hle (V : ι) : V.val ≤ U := fun _ hx ↦ V.property.2 (subset_closure hx)
+  refine eq_of_oneDimBoundaryRestrict_eq (U := fun V : ι ↦ V.val) hle (fun x hx ↦ ?_)
+    fun V ↦ h V.val (hle V) V.property.1 V.property.2
+  obtain ⟨V, hV, hxV, hVU, hVc⟩ :=
+    exists_open_between_and_isCompact_closure isCompact_singleton U.isOpen
+      (singleton_subset_iff.2 hx)
+  exact Opens.mem_iSup.2 ⟨⟨⟨V, hV⟩, hVc, hVU⟩, hxV rfl⟩
 
 /-- The presheaf of complex vector spaces `U ↦ O(ℂ ∖ ℝ) / O(W(U))` on `ℝ`, whose sections are the
 one-dimensional hyperfunctions. -/

@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.Beltrami.Chart
 public import TauCeti.Analysis.Holder.Rescaling
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import TauCeti.Analysis.Normed.Operator.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Complex.Beltrami.HigherHolder

@@ -367,9 +367,8 @@ theorem fixedField_zpowers_maximalUnramifiedFrobenius_pow (f : ℕ+) :
   refine le_antisymm ?_ ((le_fixedField_iff_le_fixingSubgroup _ _).2 ?_)
   · -- The closed subgroup fixing the fixed field of `H` contains the closure of `H`.
     rw [← InfiniteGalois.fixedField_fixingSubgroup E, fixingSubgroup_comap_unramifiedExtension]
-    exact (le_fixedField_iff_le_fixingSubgroup _ _).2 (Subgroup.topologicalClosure_minimal _
-      ((le_fixedField_iff_le_fixingSubgroup _ _).1 le_rfl)
-      (InfiniteGalois.fixingSubgroup_isClosed _))
+    exact (le_fixedField_iff_le_fixingSubgroup _ _).2
+      (fixingSubgroup_fixedField_eq_topologicalClosure H).ge
   · rw [fixingSubgroup_comap_unramifiedExtension]
     exact Subgroup.le_topologicalClosure H
 
