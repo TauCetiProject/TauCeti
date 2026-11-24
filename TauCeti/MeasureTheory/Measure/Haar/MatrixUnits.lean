@@ -40,6 +40,20 @@ open scoped ENNReal
 
 namespace Matrix
 
+/-- In a field, `∏_{i=0}^{n-1} (q^n - q^i) / q^{n²} = ∏_{i=1}^n (1 - q^{-i})` for `q ≠ 0`. -/
+private theorem prod_pow_sub_pow_div_pow {K : Type*} [Field K] {q : K} (hq : q ≠ 0) (n : ℕ) :
+    (∏ i ∈ Finset.range n, (q ^ n - q ^ i)) / q ^ (n * n) =
+      ∏ i ∈ Finset.range n, (1 - q⁻¹ ^ (i + 1)) := calc
+  _ = ∏ i ∈ Finset.range n, (q ^ n - q ^ i) / q ^ n := by
+    rw [Finset.prod_div_distrib, Finset.prod_const, Finset.card_range, ← pow_mul]
+  _ = ∏ i ∈ Finset.range n, (1 - q⁻¹ ^ (n - i)) := Finset.prod_congr rfl fun i hi => by
+    rw [inv_pow, ← pow_sub_mul_pow q (Finset.mem_range.1 hi).le]
+    field_simp
+  _ = ∏ i ∈ Finset.range n, (1 - q⁻¹ ^ (i + 1)) := by
+    rw [← Finset.prod_range_reflect (fun i => 1 - q⁻¹ ^ (i + 1)) n]
+    exact Finset.prod_congr rfl fun i hi => by
+      rw [show n - 1 - i + 1 = n - i by have := Finset.mem_range.1 hi; omega]
+
 variable {R : Type*} [CommRing R] [IsLocalRing R] [MeasurableSpace R] [MeasurableAdd R]
   [Finite (ResidueField R)] (n : ℕ)
 
@@ -71,9 +85,10 @@ theorem measure_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
     exact (isUnit_map_iff (residue R) M).symm
   have hGL : Nat.card {N : Matrix (Fin n) (Fin n) k | IsUnit N} =
       ∏ i : Fin n, (Nat.card k ^ n - Nat.card k ^ (i : ℕ)) := by
-    rw [show Nat.card {N : Matrix (Fin n) (Fin n) k | IsUnit N} = Nat.card (GL (Fin n) k) from
-      (Nat.card_congr (Equiv.ofInjective _ Units.val_injective)).symm, card_GL_field,
-      Nat.card_eq_fintype_card (α := k)]
+    have e : GL (Fin n) k ≃ {N : Matrix (Fin n) (Fin n) k | IsUnit N} :=
+      (Equiv.ofInjective _ Units.val_injective).trans <| Equiv.subtypeEquivRight fun _ =>
+        ⟨fun ⟨u, hu⟩ => hu ▸ u.isUnit, fun h => ⟨h.unit, h.unit_spec⟩⟩
+    rw [← Nat.card_congr e, card_GL_field, Nat.card_eq_fintype_card (α := k)]
   have hM : Nat.card (Matrix (Fin n) (Fin n) k) = Nat.card k ^ (n * n) := by
     rw [card_matrix, Nat.card_fin]
   rw [hset, measure_preimage_addMonoidHom μ φ hφ hker, hGL, hM]
@@ -97,14 +112,7 @@ theorem measureReal_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
     refine Finset.prod_congr rfl fun i _ => ?_
     rw [Nat.cast_sub (Nat.pow_le_pow_right Nat.card_pos i.isLt.le), Nat.cast_pow, Nat.cast_pow]
   simp only [ENNReal.toReal_natCast]
-  rw [hcast, Nat.cast_pow]
-  have hden : ((q : ℝ) ^ n) ^ n = ∏ _j ∈ Finset.range n, (q : ℝ) ^ n := by simp
-  rw [Fin.prod_univ_eq_prod_range (fun i => (q : ℝ) ^ n - (q : ℝ) ^ i), mul_comm n n, pow_mul,
-    hden, ← Finset.prod_div_distrib]
-  refine Eq.trans ?_ (Finset.prod_range_reflect (fun i => 1 - ((q : ℝ)⁻¹) ^ (i + 1)) n)
-  refine Finset.prod_congr rfl fun j hj => ?_
-  have hj : j < n := Finset.mem_range.1 hj
-  rw [show n - 1 - j + 1 = n - j by omega, ← pow_sub_mul_pow (q : ℝ) hj.le, inv_pow]
-  field_simp
+  rw [hcast, Nat.cast_pow, Fin.prod_univ_eq_prod_range (fun i => (q : ℝ) ^ n - (q : ℝ) ^ i),
+    prod_pow_sub_pow_div_pow hq]
 
 end Matrix
