@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # Pointwise products of square-integrable functions on a product measure
@@ -42,13 +43,9 @@ theorem eLpNorm_mul_prod_le {f : α → 𝕜} {g : β → 𝕜}
       eLpNorm f 2 μ * eLpNorm g 2 ν := by
   have hmeas : AEStronglyMeasurable (fun p : α × β => f p.1 * g p.2) (μ.prod ν) :=
     hf.comp_fst.mul hg.comp_snd
-  have hprod := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hmeas
-  have hf2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hf
-  have hg2 := eLpNorm_nnreal_pow_eq_lintegral (p := 2) two_ne_zero hg
-  simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat] at hprod hf2 hg2
-  rw [← ENNReal.rpow_le_rpow_iff (by positivity : 0 < (2 : ℝ)),
-    ENNReal.mul_rpow_of_nonneg _ _ (by positivity), hprod, hf2, hg2]
-  simp only [ENNReal.rpow_two]
+  rw [← ENNReal.pow_le_pow_left_iff two_ne_zero, mul_pow,
+    TauCeti.eLpNorm_two_sq_eq_lintegral hmeas, TauCeti.eLpNorm_two_sq_eq_lintegral hf,
+    TauCeti.eLpNorm_two_sq_eq_lintegral hg]
   calc
     ∫⁻ p : α × β, ‖f p.1 * g p.2‖ₑ ^ 2 ∂(μ.prod ν)
         ≤ ∫⁻ p : α × β, ‖f p.1‖ₑ ^ 2 * ‖g p.2‖ₑ ^ 2 ∂(μ.prod ν) := by

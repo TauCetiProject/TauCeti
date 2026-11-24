@@ -158,7 +158,7 @@ theorem isSemicircular_iff_freeCumulant_const (hφ : φ 1 = 1) :
   rw [card_univ, Fintype.card_fin] at hm hc
   rw [hm, ← hc]
   exact sum_congr rfl fun π _ =>
-    prod_congr rfl fun B hB => hκ B (π.1.nonempty_of_mem_parts hB)
+    prod_congr rfl fun B hB => hκ B (π.val.nonempty_of_mem_parts hB)
 
 /-- For a normalised `φ`, `a + algebraMap R A c` is semicircular of variance `v` if and only if
 `φ a + c = 0`, `κ₂(a, a) = v`, and `κ_n(a, …, a) = 0` for every `n > 2`. -/

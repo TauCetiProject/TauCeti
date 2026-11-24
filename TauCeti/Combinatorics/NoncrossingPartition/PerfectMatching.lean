@@ -68,4 +68,16 @@ theorem card_isNoncrossingMatching_eq_catalan {n : ℕ} (hn : Fintype.card α = 
   rw [Nat.card_congr (noncrossingPairingEquiv (α := α)), Nat.card_eq_fintype_card]
   exact NoncrossingPartition.card_isPairing_eq_catalan (by simpa using hn)
 
+/-- Summing `∏_{a < D a} K a (D a)` over noncrossing perfect matchings of a finite linear order
+computes the directed-arc product sum over noncrossing pairings, without requiring symmetry of
+`K`. -/
+theorem sum_isNoncrossingMatching_prod_eq_sum_isPairing {M : Type*} [CommSemiring M]
+    (K : α → α → M) :
+    (∑ D : {D : PerfectMatching α // D.val.IsNoncrossingMatching},
+        ∏ a ∈ univ with a < D.val.val a, K a (D.val.val a)) =
+      ∑ P : {P : NoncrossingPartition (univ : Finset α) // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, K p.1 p.2 := by
+  refine Fintype.sum_equiv noncrossingPairingEquiv _ _ fun D => ?_
+  rw [noncrossingPairingEquiv_apply_coe, prod_orderedPairs_toFinpartition]
+
 end TauCeti.PerfectMatching

@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Combinatorics.Additive.Convolution
-public import Mathlib.LinearAlgebra.Matrix.PosDef
-import Mathlib.Analysis.InnerProductSpace.GramMatrix
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!

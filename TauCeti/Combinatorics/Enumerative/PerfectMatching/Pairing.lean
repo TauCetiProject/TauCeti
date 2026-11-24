@@ -116,9 +116,7 @@ theorem isPairing_toFinpartition (D : PerfectMatching α) : D.toFinpartition.IsP
 @[simp]
 theorem toPerfectMatching_toFinpartition (D : PerfectMatching α) :
     D.isPairing_toFinpartition.toPerfectMatching = D := by
-  apply Subtype.ext
-  apply Equiv.ext
-  intro a
+  ext a
   exact (D.isPairing_toFinpartition.toPerfectMatching_apply_eq_iff a _).mpr
     ⟨by simp, D.apply_ne a⟩
 
@@ -135,9 +133,9 @@ theorem _root_.Finpartition.IsPairing.toFinpartition_toPerfectMatching
 on the finite underlying type. -/
 def pairingEquiv : PerfectMatching α ≃ {P : Finpartition (univ : Finset α) // P.IsPairing} where
   toFun D := ⟨D.toFinpartition, D.isPairing_toFinpartition⟩
-  invFun P := P.2.toPerfectMatching
+  invFun P := P.property.toPerfectMatching
   left_inv := toPerfectMatching_toFinpartition
-  right_inv P := Subtype.ext P.2.toFinpartition_toPerfectMatching
+  right_inv P := Subtype.ext P.property.toFinpartition_toPerfectMatching
 
 /-- The forward conversion of the equivalence is the orbit partition. -/
 @[simp]
@@ -147,8 +145,39 @@ theorem pairingEquiv_apply_coe (D : PerfectMatching α) :
 /-- The inverse conversion sends each point to its distinct block partner. -/
 @[simp]
 theorem pairingEquiv_symm_apply (P : {P : Finpartition (univ : Finset α) // P.IsPairing}) :
-    pairingEquiv.symm P = P.2.toPerfectMatching := (rfl)
+    pairingEquiv.symm P = P.property.toPerfectMatching := (rfl)
 
 end Finite
+
+section LinearOrder
+
+variable {α M : Type*} [Fintype α] [LinearOrder α] [CommMonoid M]
+
+/-- For a perfect matching `D` on a finite linear order, the product of an ordered-pair weight `K`
+over `D.toFinpartition.orderedPairs` equals the product of `K a (D.val a)` over the left endpoints
+`a < D.val a`. No symmetry of `K` is required. -/
+@[to_additive /-- For a perfect matching `D` on a finite linear order, the sum of an ordered-pair
+weight `K` over `D.toFinpartition.orderedPairs` equals the sum of `K a (D.val a)` over the left
+endpoints `a < D.val a`. No symmetry of `K` is required. -/]
+theorem prod_orderedPairs_toFinpartition (D : PerfectMatching α) (K : α → α → M) :
+    ∏ p ∈ D.toFinpartition.orderedPairs, K p.1 p.2 =
+      ∏ a ∈ univ with a < D.val a, K a (D.val a) := by
+  symm
+  refine prod_bij (fun a _ => (a, D.val a))
+    (fun a ha => Finpartition.mem_orderedPairs.mpr ⟨(mem_filter.mp ha).right,
+      part_toFinpartition D a ▸ D.toFinpartition.part_mem.mpr (mem_univ a)⟩)
+    (fun _ _ _ _ h => (Prod.mk.inj h).left) ?_ (fun _ _ => rfl)
+  rintro ⟨a, b⟩ hp
+  obtain ⟨hab, hpart⟩ := Finpartition.mem_orderedPairs.mp hp
+  have hmem : b ∈ D.toFinpartition.part a :=
+    D.toFinpartition.part_eq_of_mem hpart (mem_insert_self a {b}) ▸
+      mem_insert_of_mem (mem_singleton_self b)
+  rcases (part_toFinpartition D a ▸ hmem : b ∈ ({a, D.val a} : Finset α)) |> mem_insert.mp with
+    rfl | hb
+  · exact (lt_irrefl b hab).elim
+  · rw [mem_singleton.mp hb] at hab ⊢
+    exact ⟨a, mem_filter.mpr ⟨mem_univ a, hab⟩, rfl⟩
+
+end LinearOrder
 
 end TauCeti.PerfectMatching

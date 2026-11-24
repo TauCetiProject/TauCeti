@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Field.Fin.Tuple
+public import TauCeti.Algebra.GroupWithZero.Fin.Tuple
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.Nullstellensatz
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Dehomogenization and the affine gradient criterion
@@ -104,12 +105,12 @@ theorem eval_dehomogenize (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R)
 /-- Dehomogenization does not increase the total degree. -/
 theorem totalDegree_dehomogenize_le (i : Fin (n + 1)) (p : MvPolynomial (Fin (n + 1)) R) :
     (dehomogenize i p).totalDegree ≤ p.totalDegree := by
-  conv_lhs => rw [p.as_sum]
-  rw [map_sum]
-  refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun s hs ↦ ?_)
-  rw [dehomogenize_monomial]
-  refine (totalDegree_monomial_le _ _).trans (le_trans ?_ (le_totalDegree hs))
-  simp [Finsupp.sum_fintype, Fin.sum_univ_succAbove _ i]
+  rw [dehomogenize]
+  refine (totalDegree_aeval_le p fun j _ ↦ ?_).trans_eq (mul_one _)
+  refine Fin.succAboveCases i ?_ (fun l ↦ ?_) j
+  · simp
+  · rw [Fin.insertNth_apply_succAbove]
+    exact totalDegree_X_le l
 
 /-- For a homogeneous `p` of degree `d` and an exponent `s` of total degree `d`, the coefficient
 of `p` at `s` is the coefficient of the affine equation at the restriction of `s` to the retained
@@ -165,6 +166,13 @@ theorem dehomogenize_injOn (i : Fin (n + 1)) (d : ℕ) :
   · rw [← coeff_dehomogenize_of_isHomogeneous hp i hs,
       ← coeff_dehomogenize_of_isHomogeneous hq i hs, h]
   · rw [hp.coeff_eq_zero hs, hq.coeff_eq_zero hs]
+
+/-- Dehomogenizing a nonzero homogeneous polynomial in any standard affine chart produces a nonzero
+polynomial. -/
+theorem dehomogenize_ne_zero_of_isHomogeneous {d : ℕ} (i : Fin (n + 1))
+    {p : MvPolynomial (Fin (n + 1)) R} (hp : p.IsHomogeneous d) (hne : p ≠ 0) :
+    dehomogenize i p ≠ 0 := fun hzero ↦
+  hne <| dehomogenize_injOn i d hp (isHomogeneous_zero _ _ _) (by simpa using hzero)
 
 /-- **Homogenization**: every polynomial `p` in `n` variables of total degree at most `N` is the
 equation in the `i`-th standard affine chart of a homogeneous polynomial of degree `N` in `n + 1`

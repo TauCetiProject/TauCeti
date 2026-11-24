@@ -5,51 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.NoncrossingPartition.PerfectMatching
-public import TauCeti.Data.Finset.Sort
+public import TauCeti.Combinatorics.NoncrossingPartition.Catalan
+import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
-# Pair-weighted sums over noncrossing pairings
+# Weighted sums over noncrossing pairings
 
-Let `K : α → α → M` be a kernel on a linear order `α`, assigning the weight `K a b` to each
-ordered pair `(a, b)` with `a < b`. Extending `K` to finite subsets `B : Finset α` by
-`pairWeight K {a, b} = K a b` for `a < b` and `pairWeight K B = 0` when `#B ≠ 2` turns sums over
-all noncrossing partitions of `s` into sums over the noncrossing pairings of `s`:
+In a noncrossing pairing of a nonempty finite set `s` of positions in a linear order, the first
+position `m = s.min' hs` is paired with some position `x ∈ s` strictly after `m`, and no arc joins
+an interior position `m < y < x` to a position after `x`. Weighting each two-element part or each
+directed arc `(i, j)` (`i < j`) multiplicatively therefore gives a quadratic recurrence by the
+partner `x` of `m`:
 
-`∑ P ∈ NC(s), ∏ B ∈ P, pairWeight K B = ∑ P ∈ NC₂(s), ∏ B ∈ P, pairWeight K B`.
+`∑_{P ∈ NC₂(s)} ∏_{(i, j) ∈ P} w i j =`
+`  ∑_{x ∈ s, m < x} w m x * (∑_{M ∈ NC₂(s ∩ (m, x))} ∏ M) * (∑_{R ∈ NC₂(s_{>x})} ∏ R)`.
 
-These sums are the combinatorial right-hand side of the free Wick formula for semicircular
-systems, where `K i j = C i j` is the covariance (for instance `⟪h i, h j⟫_𝕜` on a full Fock
-space, which is Hermitian rather than symmetric over `ℂ`, so the ordered-pair convention `a < b` is
-essential).
+This is the combinatorial recurrence underlying both the Fock-space vacuum Wick formula for sums
+of creation and annihilation operators and the moment formula for semicircular systems, where a
+directed arc `(i, j)` with `i < j` carries a possibly nonsymmetric covariance `w i j`.
 
-Splitting a noncrossing pairing of a nonempty set `s` at the partner `x > m` of the first position
-`m = s.min' hs` gives the weighted partner recurrence
-(`TauCeti.NoncrossingPartition.sum_isPairing_prod_pairWeight_eq_sum`): the total pair weight on `s`
-is the sum over `x ∈ s` with `m < x` of `K m x` times the total pair weight on `{y ∈ s | m < y < x}`
-times the total pair weight on `{y ∈ s | x < y}`.
-
-## Main definitions
-
-* `TauCeti.NoncrossingPartition.pairWeight K B` — `K a b` when `B = {a, b}` with `a < b`, and `0`
-  when `#B ≠ 2`.
+The recurrence is deduced by applying the general first-block weighted recurrence
+`TauCeti.NoncrossingPartition.sum_mul_prod_eq_sum_mul_sum` twice—first on `s`, then on
+`{y ∈ s | y < x}`—with weights supported on blocks of size two.
 
 ## Main results
 
-* `TauCeti.NoncrossingPartition.sum_prod_pairWeight_eq_sum_isPairing` — only noncrossing pairings
-  contribute to `∑ P : NoncrossingPartition s, ∏ B ∈ P.1.parts, pairWeight K B`.
-* `TauCeti.NoncrossingPartition.sum_prod_pairWeight_eq_sum`,
-  `TauCeti.NoncrossingPartition.sum_isPairing_prod_pairWeight_eq_sum` — the weighted recurrence by
-  the partner of the first position `s.min' hs`.
-* `TauCeti.PerfectMatching.prod_pairWeight_toFinpartition`,
-  `TauCeti.PerfectMatching.sum_isNoncrossingMatching_prod_eq_sum_isPairing` — reformulation in
-  terms of noncrossing perfect matchings via `noncrossingPairingEquiv`, without assuming symmetry
-  of `K`.
+* `TauCeti.NoncrossingPartition.sum_prod_ite_card_eq_two_eq_sum_isPairing` — a multiplicative sum
+  over `NC(s)` whose block weights vanish off blocks of size two reduces to `NC₂(s)`.
+* `TauCeti.NoncrossingPartition.sum_prod_eq_sum_isPairing_prod_orderedPairs` — a multiplicative
+  sum over `NC(s)` whose block weights vanish off size-two blocks and equal `w i j` on `{i, j}`
+  (`i < j`) reduces to the directed-arc sum over `NC₂(s)`.
+* `TauCeti.NoncrossingPartition.sum_isPairing_prod_eq_sum` and
+  `TauCeti.NoncrossingPartition.sum_isPairing_prod_orderedPairs_eq_sum` — the weighted recurrence
+  of noncrossing pairings by the partner of the first position, for block weights and directed-arc
+  weights.
+* `TauCeti.NoncrossingPartition.sum_isPairing_eq_zero` — any sum over `NC₂(s)` vanishes when `#s`
+  is odd.
 
 ## References
 
-* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lecture 8
-  (Wick formula for semicircular families) and Lecture 9.
+* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lectures 7–9.
 -/
 
 public section
@@ -58,286 +53,211 @@ open Finset
 
 namespace TauCeti.NoncrossingPartition
 
-section PairWeight
+variable {α M : Type*} [LinearOrder α] {s : Finset α}
 
-variable {α β M : Type*} [LinearOrder α] [LinearOrder β]
+/-- The empty partition is the unique noncrossing pairing of `∅`. -/
+instance instUniqueIsPairingEmpty :
+    Unique {P : NoncrossingPartition (∅ : Finset α) // P.val.IsPairing} where
+  default := ⟨⊥, Finpartition.isPairing_iff.2 fun B hB => by simp at hB⟩
+  uniq P := Subtype.ext (Subsingleton.elim P.val ⊥)
 
-/-- The weight of a finite set `B` under an ordered-pair kernel `K`: for a two-element set `{a, b}`
-with `a < b` it is `K a b`, and for a set of any other size it is `0`. -/
-def pairWeight [Zero M] (K : α → α → M) (B : Finset α) : M :=
-  match B.sort with
-  | [a, b] => K a b
-  | _ => 0
+/-- A finite set of odd size has no noncrossing pairing. -/
+theorem isEmpty_isPairing (hs : Odd #s) :
+    IsEmpty {P : NoncrossingPartition s // P.val.IsPairing} :=
+  ⟨fun P => Nat.not_even_iff_odd.2 hs P.property.even_card⟩
 
-theorem pairWeight_def [Zero M] (K : α → α → M) (B : Finset α) :
-    pairWeight K B = match B.sort with | [a, b] => K a b | _ => 0 :=
-  (rfl)
-
-@[simp]
-theorem pairWeight_pair [Zero M] (K : α → α → M) {a b : α} (hab : a < b) :
-    pairWeight K {a, b} = K a b := by
-  rw [pairWeight, sort_pair _ hab.le hab.ne]
-
-@[simp]
-theorem pairWeight_pair_of_gt [Zero M] (K : α → α → M) {a b : α} (hba : b < a) :
-    pairWeight K {a, b} = K b a := by
-  rw [pair_comm, pairWeight_pair K hba]
-
-theorem pairWeight_eq_zero_of_card_ne_two [Zero M] (K : α → α → M) {B : Finset α}
-    (hB : #B ≠ 2) : pairWeight K B = 0 := by
-  rw [pairWeight]
-  split
-  · rename_i a b h
-    have hlen := congrArg List.length h
-    rw [length_sort] at hlen
-    exact absurd hlen hB
-  · rfl
-
-@[simp]
-theorem pairWeight_empty [Zero M] (K : α → α → M) : pairWeight K (∅ : Finset α) = 0 := by
-  simp [pairWeight]
-
-@[simp]
-theorem pairWeight_singleton [Zero M] (K : α → α → M) (a : α) : pairWeight K {a} = 0 := by
-  simp [pairWeight]
-
-/-- `pairWeight` of the zero function `(0 : α → α → M)` is `0`. -/
-@[simp]
-theorem pairWeight_zero [Zero M] (B : Finset α) : pairWeight (0 : α → α → M) B = 0 := by
-  rw [pairWeight_def]
-  split <;> rfl
-
-/-- `pairWeight` of the constant-zero kernel `fun _ _ => 0` is `0`. Kept as a separate `@[simp]`
-lemma alongside `pairWeight_zero` because `simp` and `rw` do not match `fun _ _ => 0` against
-`(0 : α → α → M)` (paralleling Mathlib's `integral_zero` and `integral_zero'`). -/
-@[simp]
-theorem pairWeight_const_zero [Zero M] (B : Finset α) :
-    pairWeight (fun _ _ : α => (0 : M)) B = 0 :=
-  pairWeight_zero B
-
-/-- Applying a zero-preserving map commutes with `pairWeight`. -/
-theorem apply_pairWeight {N : Type*} [Zero M] [Zero N] {f : M → N} (hf : f 0 = 0)
-    (K : α → α → M) (B : Finset α) :
-    f (pairWeight K B) = pairWeight (fun a b => f (K a b)) B := by
-  rw [pairWeight_def, pairWeight_def]
-  generalize B.sort = l
-  rcases l with _ | ⟨a, _ | ⟨b, _ | ⟨c, l⟩⟩⟩ <;> simp [hf]
-
-@[simp]
-theorem map_pairWeight {F N : Type*} [Zero M] [Zero N] [FunLike F M N] [ZeroHomClass F M N]
-    (f : F) (K : α → α → M) (B : Finset α) :
-    f (pairWeight K B) = pairWeight (fun a b => f (K a b)) B :=
-  apply_pairWeight (map_zero f) K B
-
-/-- On a two-element set `B`, `pairWeight K B` evaluates `K` at `(B.min', B.max')`. -/
-theorem pairWeight_eq_min'_max' [Zero M] (K : α → α → M) {B : Finset α} (hB : #B = 2) :
-    pairWeight K B = K (B.min' (card_pos.1 (by omega))) (B.max' (card_pos.1 (by omega))) := by
-  obtain ⟨a, b, hne, rfl⟩ := card_eq_two.1 hB
-  rcases lt_or_gt_of_ne hne with hab | hba
-  · rw [pairWeight_pair K hab, min'_pair, max'_pair, min_eq_left hab.le, max_eq_right hab.le]
-  · rw [pairWeight_pair_of_gt K hba, min'_pair, max'_pair, min_eq_right hba.le, max_eq_left hba.le]
-
-/-- `pairWeight` commutes with strictly monotone embeddings of the index order. -/
-@[simp]
-theorem pairWeight_map_orderEmbedding [Zero M] (e : α ↪o β) (K : β → β → M) (B : Finset α) :
-    pairWeight K (B.map e.toEmbedding) = pairWeight (fun x y => K (e x) (e y)) B := by
-  have hsort : (B.map e.toEmbedding).sort = B.sort.map e := by
-    simpa using (e.strictMono.strictMonoOn B).map_finsetSort.symm
-  rw [pairWeight_def, pairWeight_def, hsort]
-  generalize B.sort = l
-  rcases l with _ | ⟨a, _ | ⟨b, _ | ⟨c, l⟩⟩⟩ <;> rfl
-
-/-- Constant pair weight `v` recovers the indicator `if #B = 2 then v else 0`. -/
-theorem pairWeight_const [Zero M] (v : M) (B : Finset α) :
-    pairWeight (fun _ _ : α => v) B = if #B = 2 then v else 0 := by
-  split_ifs with hB
-  · exact pairWeight_eq_min'_max' _ hB
-  · exact pairWeight_eq_zero_of_card_ne_two _ hB
-
-/-- The product of `pairWeight K` over the parts of a partition that is not a pairing vanishes. -/
-theorem prod_pairWeight_eq_zero_of_not_isPairing [CommMonoidWithZero M] {s : Finset α}
-    {P : Finpartition s} (hP : ¬P.IsPairing) (K : α → α → M) :
-    ∏ B ∈ P.parts, pairWeight K B = 0 := by
-  rw [Finpartition.isPairing_iff] at hP
-  push Not at hP
-  obtain ⟨B, hB, hcard⟩ := hP
-  exact prod_eq_zero hB (pairWeight_eq_zero_of_card_ne_two K hcard)
-
-end PairWeight
-
-section Sum
-
-variable {α M : Type*} [LinearOrder α] [CommSemiring M] {s : Finset α}
-
-/-- Only the noncrossing pairings contribute to the sum of `∏ B ∈ P.1.parts, pairWeight K B` over
-all noncrossing partitions of `s`. -/
-theorem sum_prod_pairWeight_eq_sum_isPairing (s : Finset α) (K : α → α → M) :
-    (∑ P : NoncrossingPartition s, ∏ B ∈ P.1.parts, pairWeight K B) =
-      ∑ P : {P : NoncrossingPartition s // P.1.IsPairing}, ∏ B ∈ P.1.1.parts, pairWeight K B := by
-  rw [← sum_subtype (univ.filter fun P : NoncrossingPartition s => P.1.IsPairing)
-    (p := fun P => P.1.IsPairing) (fun _ => by simp) (fun P => ∏ B ∈ P.1.parts, pairWeight K B),
-    sum_filter]
-  refine sum_congr rfl fun P _ => ?_
-  split_ifs with hP
-  · rfl
-  · exact prod_pairWeight_eq_zero_of_not_isPairing hP K
-
-theorem sum_empty_prod_pairWeight (K : α → α → M) :
-    (∑ P : NoncrossingPartition (∅ : Finset α), ∏ B ∈ P.1.parts, pairWeight K B) = 1 := by
-  rw [Fintype.sum_unique]
-  simp [Unique.default_eq ⊥]
-
-@[simp]
-theorem sum_isPairing_empty_prod_pairWeight (K : α → α → M) :
-    (∑ P : {P : NoncrossingPartition (∅ : Finset α) // P.1.IsPairing},
-      ∏ B ∈ P.1.1.parts, pairWeight K B) = 1 := by
-  rw [← sum_prod_pairWeight_eq_sum_isPairing, sum_empty_prod_pairWeight]
-
-/-- On a set of odd cardinality, the pair-weighted sum over noncrossing pairings vanishes. -/
-theorem sum_isPairing_prod_pairWeight_eq_zero (hs : Odd #s) (K : α → α → M) :
-    (∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
-      ∏ B ∈ P.1.1.parts, pairWeight K B) = 0 := by
-  have : IsEmpty {P : NoncrossingPartition s // P.1.IsPairing} :=
-    ⟨fun P => Nat.not_even_iff_odd.2 hs P.2.even_card⟩
+/-- Any sum over the noncrossing pairings of a set of odd size vanishes. -/
+theorem sum_isPairing_eq_zero [AddCommMonoid M] (hs : Odd #s)
+    (f : {P : NoncrossingPartition s // P.val.IsPairing} → M) :
+    ∑ P, f P = 0 := by
+  have := isEmpty_isPairing hs
   simp
 
-theorem sum_prod_pairWeight_eq_zero (hs : Odd #s) (K : α → α → M) :
-    (∑ P : NoncrossingPartition s, ∏ B ∈ P.1.parts, pairWeight K B) = 0 := by
-  rw [sum_prod_pairWeight_eq_sum_isPairing, sum_isPairing_prod_pairWeight_eq_zero hs]
+/-- On the empty set, the sum over noncrossing pairings of any empty product of block weights is
+`1`. -/
+theorem sum_isPairing_prod_empty [AddCommMonoid M] [CommMonoid M] (F : Finset α → M) :
+    (∑ P : {P : NoncrossingPartition (∅ : Finset α) // P.val.IsPairing},
+        ∏ B ∈ P.val.val.parts, F B) = 1 := by
+  rw [univ_unique, sum_singleton]
+  have hbot : (default : {P : NoncrossingPartition (∅ : Finset α) // P.val.IsPairing}).val = ⊥
+      := rfl
+  simp [hbot]
 
-private theorem sum_before_pairWeight_insert_eq (hs : s.Nonempty) (K : α → α → M) (x : α) :
+/-- On the empty set, the sum over noncrossing pairings of any empty product of directed-arc
+weights is `1`. -/
+theorem sum_isPairing_prod_orderedPairs_empty [AddCommMonoid M] [CommMonoid M] (w : α → α → M) :
+    (∑ P : {P : NoncrossingPartition (∅ : Finset α) // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, w p.1 p.2) = 1 := by
+  rw [univ_unique, sum_singleton]
+  have hbot : (default : {P : NoncrossingPartition (∅ : Finset α) // P.val.IsPairing}).val = ⊥
+      := rfl
+  simp [hbot]
+
+variable [CommSemiring M]
+
+/-- Weighting blocks of size two by `F` and all other blocks by `0`, only the noncrossing pairings
+contribute to the sum over `NC(s)`. -/
+theorem sum_prod_ite_card_eq_two_eq_sum_isPairing (s : Finset α) (F : Finset α → M) :
+    (∑ P : NoncrossingPartition s, ∏ B ∈ P.val.parts, if #B = 2 then F B else 0) =
+      ∑ P : {P : NoncrossingPartition s // P.val.IsPairing}, ∏ B ∈ P.val.val.parts, F B := by
+  have hterm (P : NoncrossingPartition s) :
+      (∏ B ∈ P.val.parts, if #B = 2 then F B else 0) =
+        if P.val.IsPairing then ∏ B ∈ P.val.parts, F B else 0 := by
+    by_cases hP : P.val.IsPairing
+    · simp only [hP, ↓reduceIte]
+      exact prod_congr rfl fun B hB => ite_eq_left (Finpartition.isPairing_iff.1 hP B hB)
+    · simp only [hP, ↓reduceIte]
+      rw [Finpartition.isPairing_iff, not_forall] at hP
+      obtain ⟨B, hB, hcard⟩ := by simpa only [not_imp] using hP
+      exact prod_eq_zero hB (ite_eq_right hcard)
+  simp_rw [hterm, ← sum_filter]
+  exact sum_subtype _ (p := fun P : NoncrossingPartition s => P.val.IsPairing)
+    (fun _ => by simp) fun P => ∏ B ∈ P.val.parts, F B
+
+/-- If a block weight `κ` on subsets of `s` vanishes on every nonempty block of size other than two
+and agrees with `w i j` on `{i, j}` whenever `i < j`, then the multiplicative sum of `κ` over
+`NC(s)` equals the directed-arc sum of `w` over `NC₂(s)`. -/
+theorem sum_prod_eq_sum_isPairing_prod_orderedPairs {κ : Finset α → M} (w : α → α → M)
+    (hpair : ∀ {i j}, i ∈ s → j ∈ s → i < j → κ {i, j} = w i j)
+    (hne : ∀ B ⊆ s, B.Nonempty → #B ≠ 2 → κ B = 0) :
+    (∑ P : NoncrossingPartition s, ∏ B ∈ P.val.parts, κ B) =
+      ∑ P : {P : NoncrossingPartition s // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, w p.1 p.2 := by
+  have hκ (P : NoncrossingPartition s) :
+      ∏ B ∈ P.val.parts, κ B =
+        ∏ B ∈ P.val.parts, if #B = 2 then κ B else 0 :=
+    prod_congr rfl fun B hB => by
+      split_ifs with hcard
+      · rfl
+      · exact hne B (P.val.le hB) (P.val.nonempty_of_mem_parts hB) hcard
+  simp_rw [hκ]
+  rw [sum_prod_ite_card_eq_two_eq_sum_isPairing]
+  refine sum_congr rfl fun P _ => ?_
+  rw [← P.property.prod_orderedPairs]
+  exact prod_congr rfl fun p hp =>
+    hpair (Finpartition.fst_mem_of_mem_orderedPairs hp)
+      (Finpartition.snd_mem_of_mem_orderedPairs hp) (Finpartition.lt_of_mem_orderedPairs hp)
+
+/-- Evaluating the first-block recurrence on `{y ∈ s | y < x}` for weights supported on blocks of
+size two leaves only the partner `z = s.min' hs`, since any `m < z < x` puts at least the three
+positions `m`, `z`, `x` in the first block. -/
+private theorem sum_lt_partner_eq (hs : s.Nonempty) {x : α} (hmx : s.min' hs < x)
+    (F : Finset α → M) :
     (∑ L : NoncrossingPartition {y ∈ s | y < x},
-        pairWeight K (insert x (L.1.part (s.min' hs))) *
-          ∏ B ∈ L.1.parts with s.min' hs ∉ B, pairWeight K B) =
-      if s.min' hs < x then
-        K (s.min' hs) x *
-          ∑ M : NoncrossingPartition {y ∈ s | s.min' hs < y ∧ y < x},
-            ∏ B ∈ M.1.parts, pairWeight K B
-      else 0 := by
+        (if #(insert x (L.val.part (s.min' hs))) = 2 then F (insert x (L.val.part
+            (s.min' hs))) else 0)
+          * ∏ B ∈ L.val.parts with s.min' hs ∉ B, if #B = 2 then F B else 0) =
+      F {s.min' hs, x} *
+        ∑ M : {M : NoncrossingPartition {y ∈ s | s.min' hs < y ∧ y < x} // M.val.IsPairing},
+          ∏ B ∈ M.val.val.parts, F B := by
   set m := s.min' hs
-  split_ifs with hmx
-  · have hmt : m ∈ {y ∈ s | y < x} := mem_filter.2 ⟨s.min'_mem hs, hmx⟩
-    -- Only partitions `L` in which `{m}` is a singleton part make `insert x (L.1.part m)` a pair.
-    have hterm (L : NoncrossingPartition {y ∈ s | y < x}) :
-        pairWeight K (insert x (L.1.part m)) *
-            (∏ B ∈ L.1.parts with m ∉ B, pairWeight K B) =
-          if {m} ∈ L.1.parts then
-            K m x * ∏ B ∈ L.1.parts.erase {m}, pairWeight K B
-          else 0 := by
-      split_ifs with hmL
-      · have hpart : L.1.part m = {m} := L.1.part_eq_of_mem hmL (mem_singleton_self m)
-        have herase_parts : {B ∈ L.1.parts | m ∉ B} = L.1.parts.erase {m} := by
-          ext B
-          rw [mem_filter, mem_erase]
-          exact ⟨fun ⟨hB, hmB⟩ => ⟨fun h => hmB (h ▸ mem_singleton_self m), hB⟩,
-            fun ⟨hBne, hB⟩ => ⟨hB, fun hmB => hBne ((L.1.part_eq_of_mem hB hmB).symm.trans hpart)⟩⟩
-        rw [herase_parts, hpart, pair_comm x m, pairWeight_pair K hmx]
-      · have hxL : x ∉ L.1.part m := fun h =>
-          (mem_filter.1 (L.1.part_subset m h)).2.false
-        have hcard1 : #(L.1.part m) ≠ 1 := fun hc1 => by
-          obtain ⟨z, hz⟩ := card_eq_one.1 hc1
-          have hmz : m = z := mem_singleton.1 (hz ▸ L.1.mem_part_self.2 hmt)
-          exact hmL (hmz ▸ hz ▸ L.1.part_mem.2 hmt)
-        have hcard2 : #(insert x (L.1.part m)) ≠ 2 := by
-          rw [card_insert_of_notMem hxL]
-          omega
-        rw [pairWeight_eq_zero_of_card_ne_two K hcard2, zero_mul]
-    have herase : ({y ∈ s | y < x}).erase m = {y ∈ s | m < y ∧ y < x} := by
+  set F' : Finset α → M := fun B => if #B = 2 then F B else 0
+  set t := {y ∈ s | y < x}
+  have hmt : m ∈ t := mem_filter.2 ⟨s.min'_mem hs, hmx⟩
+  have ht : t.Nonempty := ⟨m, hmt⟩
+  have htmin : t.min' ht = m :=
+    le_antisymm (t.min'_le m hmt) (s.min'_le _ (mem_filter.1 (t.min'_mem ht)).1)
+  have hrec := sum_mul_prod_eq_sum_mul_sum ht (fun C => F' (insert x C)) F'
+  rw [htmin] at hrec
+  rw [hrec, sum_eq_single m]
+  · -- At `z = m`, `{y ∈ t | y < m}` is empty, so `A = ⊥` is its unique partition.
+    have hempty : {y ∈ t | y < m} = ∅ := eq_empty_of_forall_notMem fun y hy =>
+      (s.min'_le y (mem_filter.1 (mem_filter.1 hy).1).1).not_gt (mem_filter.1 hy).2
+    have hA : (∑ A : NoncrossingPartition {y ∈ t | y < m},
+        F' (insert x (insert m (A.val.part m))) * ∏ B ∈ A.val.parts with m ∉ B, F' B) = F {m, x}
+            := by
+      rw [sum_eq_single ⊥ _ (fun h => absurd (mem_univ ⊥) h)]
+      · have hpart : ((⊥ : Finpartition {y ∈ t | y < m}).part m) = ∅ :=
+          Finpartition.part_eq_empty _ |>.2 (by simp [hempty])
+        simp [F', coe_bot, hpart, hempty, pair_comm x m, card_pair hmx.ne]
+      · exact fun A _ hA => absurd (eq_bot_of_eq_empty hempty A) hA
+    have hmid : {y ∈ t | m < y} = {y ∈ s | m < y ∧ y < x} := by
       ext y
-      simp only [mem_erase, mem_filter]
-      exact ⟨fun ⟨hym, hys, hyx⟩ => ⟨hys, (s.min'_le y hys).lt_of_ne hym.symm, hyx⟩,
-        fun ⟨hys, hmy, hyx⟩ => ⟨hmy.ne', hys, hyx⟩⟩
-    rw [← herase, sum_congr rfl fun L _ => hterm L, ← sum_filter,
-      sum_subtype (p := fun L : NoncrossingPartition {y ∈ s | y < x} => {m} ∈ L.1.parts) _
-        (fun _ => by simp),
-      mul_sum]
-    refine Fintype.sum_equiv (singletonPartEquiv hmt) _ _ fun L => ?_
-    simp
-  · refine sum_eq_zero fun L _ => ?_
-    have hempty : L.1.part m = ∅ :=
-      L.1.part_eq_empty.2 fun h =>
-        hmx ((s.min'_le _ (mem_filter.1 h).1).trans_lt (mem_filter.1 h).2)
-    rw [hempty, insert_empty_eq, pairWeight_singleton, zero_mul]
+      simp only [t, mem_filter]
+      tauto
+    have hM : (∑ M : NoncrossingPartition {y ∈ t | m < y}, ∏ B ∈ M.val.parts, F' B) =
+        ∑ M : NoncrossingPartition {y ∈ s | m < y ∧ y < x}, ∏ B ∈ M.val.parts, F' B :=
+      congrArg (fun u : Finset α => ∑ M : NoncrossingPartition u, ∏ B ∈ M.val.parts, F' B) hmid
+    rw [hA, hM, sum_prod_ite_card_eq_two_eq_sum_isPairing]
+  · -- Any `z ∈ t` with `z ≠ m` satisfies `m < z < x`, putting three distinct elements in the block.
+    intro z hz hzm
+    have hmz : m < z := (s.min'_le z (mem_filter.1 hz).1).lt_of_ne (Ne.symm hzm)
+    have hzx : z < x := (mem_filter.1 hz).2
+    have hzero : (∑ A : NoncrossingPartition {y ∈ t | y < z},
+        F' (insert x (insert z (A.val.part m))) * ∏ B ∈ A.val.parts with m ∉ B, F' B) = 0 := by
+      refine sum_eq_zero fun A _ => ?_
+      have hmA : m ∈ A.val.part m := A.val.mem_part_self.2 (mem_filter.2 ⟨hmt, hmz⟩)
+      have hcard : 2 < #(insert x (insert z (A.val.part m))) :=
+        Finset.two_lt_card_iff.2 ⟨m, z, x,
+          mem_insert_of_mem (mem_insert_of_mem hmA),
+          mem_insert_of_mem (mem_insert_self _ _),
+          mem_insert_self _ _, hmz.ne, hmx.ne, hzx.ne⟩
+      simp [F', hcard.ne']
+    rw [hzero, zero_mul]
+  · exact fun hm => absurd hmt hm
 
-/-- **Weighted partner recurrence for noncrossing partitions.** Weighting two-element parts by
-`pairWeight K` and all other parts by `0`, the sum over `NC(s)` for nonempty `s` splits by the
-partner `x > s.min' hs` of the first position `s.min' hs`. -/
-theorem sum_prod_pairWeight_eq_sum (hs : s.Nonempty) (K : α → α → M) :
-    (∑ P : NoncrossingPartition s, ∏ B ∈ P.1.parts, pairWeight K B) =
-      ∑ x ∈ s with s.min' hs < x, K (s.min' hs) x *
-        (∑ M : NoncrossingPartition {y ∈ s | s.min' hs < y ∧ y < x},
-          ∏ B ∈ M.1.parts, pairWeight K B) *
-        ∑ R : NoncrossingPartition {y ∈ s | x < y}, ∏ B ∈ R.1.parts, pairWeight K B := by
-  rw [sum_congr rfl fun P _ => P.1.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) _,
-    sum_mul_prod_eq_sum_mul_sum hs, sum_filter]
-  refine sum_congr rfl fun x _ => ?_
-  rw [sum_before_pairWeight_insert_eq hs K x]
-  split_ifs <;> simp
+/-- *Weighted recurrence of noncrossing pairings* (block-weight form): summing a multiplicative
+block weight `F` over the noncrossing pairings of a nonempty set `s` decomposes by the partner
+`x > m` of `m = s.min' hs` into `F {m, x}` times the pairing sums strictly between `m` and `x` and
+strictly after `x`. -/
+theorem sum_isPairing_prod_eq_sum (hs : s.Nonempty) (F : Finset α → M) :
+    (∑ P : {P : NoncrossingPartition s // P.val.IsPairing}, ∏ B ∈ P.val.val.parts, F B) =
+      ∑ x ∈ s with s.min' hs < x,
+        F {s.min' hs, x} *
+          (∑ M : {M : NoncrossingPartition {y ∈ s | s.min' hs < y ∧ y < x} // M.val.IsPairing},
+            ∏ B ∈ M.val.val.parts, F B) *
+          ∑ R : {R : NoncrossingPartition {y ∈ s | x < y} // R.val.IsPairing},
+            ∏ B ∈ R.val.val.parts, F B := by
+  set m := s.min' hs
+  let F' : Finset α → M := fun B => if #B = 2 then F B else 0
+  rw [← sum_prod_ite_card_eq_two_eq_sum_isPairing,
+    sum_congr rfl fun P _ => P.val.prod_parts_eq_mul_prod_filter_notMem (s.min'_mem hs) F',
+    sum_mul_prod_eq_sum_mul_sum hs F' F', sum_filter]
+  refine sum_congr rfl fun x hx => ?_
+  split_ifs with hmx
+  · rw [sum_lt_partner_eq hs hmx F, sum_prod_ite_card_eq_two_eq_sum_isPairing]
+  · -- When `¬ m < x`, `x = m` and `insert m (L.1.part m) = {m}` has size `1 ≠ 2`.
+    obtain rfl : x = m := le_antisymm (not_lt.1 hmx) (s.min'_le x hx)
+    have hzero : (∑ L : NoncrossingPartition {y ∈ s | y < m},
+        F' (insert m (L.val.part m)) * ∏ B ∈ L.val.parts with m ∉ B, F' B) = 0 := by
+      refine sum_eq_zero fun L _ => ?_
+      have hpart : L.val.part m = ∅ := L.val.part_eq_empty.2 fun h => (mem_filter.1 h).2.false
+      simp [F', hpart]
+    rw [hzero, zero_mul]
 
-/-- **Weighted partner recurrence for noncrossing pairings.** For nonempty `s`, the sum over
-noncrossing pairings `NC₂(s)` splits by the partner `x > s.min' hs` of `s.min' hs` into a
-noncrossing pairing of `{y ∈ s | s.min' hs < y ∧ y < x}` and one of `{y ∈ s | x < y}`. -/
-theorem sum_isPairing_prod_pairWeight_eq_sum (hs : s.Nonempty) (K : α → α → M) :
-    (∑ P : {P : NoncrossingPartition s // P.1.IsPairing},
-        ∏ B ∈ P.1.1.parts, pairWeight K B) =
-      ∑ x ∈ s with s.min' hs < x, K (s.min' hs) x *
-        (∑ M : {M : NoncrossingPartition {y ∈ s | s.min' hs < y ∧ y < x} // M.1.IsPairing},
-          ∏ B ∈ M.1.1.parts, pairWeight K B) *
-        ∑ R : {R : NoncrossingPartition {y ∈ s | x < y} // R.1.IsPairing},
-          ∏ B ∈ R.1.1.parts, pairWeight K B := by
-  simp_rw [← sum_prod_pairWeight_eq_sum_isPairing]
-  exact sum_prod_pairWeight_eq_sum hs K
-
-end Sum
+/-- *Weighted recurrence of noncrossing pairings* (directed-arc form): for any two-argument weight
+`w : α → α → M`, the sum over `NC₂(s)` of `∏_{(i, j) ∈ P} w i j` decomposes by the partner `x > m`
+of `m = s.min' hs`. -/
+theorem sum_isPairing_prod_orderedPairs_eq_sum (hs : s.Nonempty) (w : α → α → M) :
+    (∑ P : {P : NoncrossingPartition s // P.val.IsPairing},
+        ∏ p ∈ P.val.val.orderedPairs, w p.1 p.2) =
+      ∑ x ∈ s with s.min' hs < x,
+        w (s.min' hs) x *
+          (∑ M : {M : NoncrossingPartition {y ∈ s | s.min' hs < y ∧ y < x} // M.val.IsPairing},
+            ∏ p ∈ M.val.val.orderedPairs, w p.1 p.2) *
+          ∑ R : {R : NoncrossingPartition {y ∈ s | x < y} // R.val.IsPairing},
+            ∏ p ∈ R.val.val.orderedPairs, w p.1 p.2 := by
+  let F : Finset α → M := fun B => if h : B.Nonempty then w (B.min' h) (B.max' h) else 1
+  have hF {a b : α} (hab : a < b) : F {a, b} = w a b := by
+    have hne : ({a, b} : Finset α).Nonempty := insert_nonempty a {b}
+    have hmin : ({a, b} : Finset α).min' hne = a := by
+      refine le_antisymm (min'_le _ _ (mem_insert_self _ _)) (le_min' _ _ _ fun y hy => ?_)
+      rcases mem_insert.1 hy with rfl | hy
+      · exact le_rfl
+      · exact (mem_singleton.1 hy ▸ hab).le
+    have hmax : ({a, b} : Finset α).max' hne = b := by
+      refine le_antisymm (max'_le _ _ _ fun y hy => ?_)
+        (le_max' _ _ (mem_insert_of_mem (mem_singleton_self _)))
+      rcases mem_insert.1 hy with rfl | hy
+      · exact hab.le
+      · exact (mem_singleton.1 hy).le
+    simp [F, hne, hmin, hmax]
+  have hprod {t : Finset α} (P : {P : NoncrossingPartition t // P.val.IsPairing}) :
+      (∏ p ∈ P.val.val.orderedPairs, w p.1 p.2) = ∏ B ∈ P.val.val.parts, F B := by
+    rw [← P.property.prod_orderedPairs]
+    exact prod_congr rfl fun p hp => (hF (Finpartition.lt_of_mem_orderedPairs hp)).symm
+  simp_rw [hprod]
+  rw [sum_isPairing_prod_eq_sum hs F]
+  exact sum_congr rfl fun x hx => by rw [hF (mem_filter.1 hx).2]
 
 end TauCeti.NoncrossingPartition
-
-namespace TauCeti.PerfectMatching
-
-section PairWeight
-
-variable {α M : Type*} [Fintype α] [LinearOrder α]
-
-/-- For a perfect matching `D` on a finite linear order, the product of `pairWeight K` over the
-two-element orbits of `D` is the product of `K a (D.val a)` over the left endpoints `a < D.val a`.
-No symmetry of `K` is required. -/
-theorem prod_pairWeight_toFinpartition [CommMonoid M] [Zero M] (D : PerfectMatching α)
-    (K : α → α → M) :
-    ∏ B ∈ D.toFinpartition.parts, NoncrossingPartition.pairWeight K B =
-      ∏ a ∈ univ with a < D.val a, K a (D.val a) := by
-  symm
-  refine prod_bij (fun a _ => D.toFinpartition.part a)
-    (fun a _ => D.toFinpartition.part_mem.2 (mem_univ a)) ?_ ?_ ?_
-  · intro a₁ ha₁ a₂ ha₂ hpart
-    have ha₁' := (mem_filter.1 ha₁).2
-    have ha₂' := (mem_filter.1 ha₂).2
-    have hmem : a₂ ∈ ({a₁, D.val a₁} : Finset α) := by
-      rw [← part_toFinpartition, hpart, part_toFinpartition]
-      simp
-    rcases mem_insert.1 hmem with rfl | h
-    · rfl
-    · rw [mem_singleton.1 h, D.apply_apply] at ha₂'
-      exact absurd (ha₁'.trans ha₂') (lt_irrefl _)
-  · intro B hB
-    obtain ⟨x, hx⟩ := D.toFinpartition.nonempty_of_mem_parts hB
-    have hBx : D.toFinpartition.part x = B := D.toFinpartition.part_eq_of_mem hB hx
-    rcases lt_or_gt_of_ne (D.apply_ne x).symm with hlt | hgt
-    · exact ⟨x, mem_filter.2 ⟨mem_univ x, hlt⟩, hBx⟩
-    · refine ⟨D.val x, mem_filter.2 ⟨mem_univ _, by simpa using hgt⟩, ?_⟩
-      rw [part_toFinpartition, D.apply_apply, pair_comm, ← part_toFinpartition, hBx]
-  · intro a ha
-    rw [part_toFinpartition, NoncrossingPartition.pairWeight_pair K (mem_filter.1 ha).2]
-
-/-- Summing `∏_{a < D a} K a (D a)` over noncrossing perfect matchings of a finite linear order
-computes the pair-weighted sum over noncrossing pairings. -/
-theorem sum_isNoncrossingMatching_prod_eq_sum_isPairing [CommSemiring M] (K : α → α → M) :
-    (∑ D : {D : PerfectMatching α // D.val.IsNoncrossingMatching},
-        ∏ a ∈ univ with a < D.val.val a, K a (D.val.val a)) =
-      ∑ P : {P : NoncrossingPartition (univ : Finset α) // P.val.IsPairing},
-        ∏ B ∈ P.1.1.parts, NoncrossingPartition.pairWeight K B := by
-  refine Fintype.sum_equiv noncrossingPairingEquiv _ _ fun D => ?_
-  rw [noncrossingPairingEquiv_apply_coe, prod_pairWeight_toFinpartition]
-
-end PairWeight
-
-end TauCeti.PerfectMatching

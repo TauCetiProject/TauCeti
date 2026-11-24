@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
+public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.Topology.Instances.AddCircle.Flow
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -32,6 +33,8 @@ the time-`(p⁻¹ * q) t` translation of `AddCircle q`.
 ## Main definitions
 
 * `AddCircle.timeVectorField p`: the unit vector field `∂_t` of `AddCircle p`.
+* `AddCircle.timeDerivation p`: differentiation along `∂_t`, as a derivation of the smooth
+  functions on `AddCircle p`; it is nonzero (`AddCircle.timeDerivation_ne_zero`).
 
 ## Main results
 
@@ -119,6 +122,31 @@ theorem globalFlow_timeVectorField :
     simpa using TauCeti.globalFlow_eq_of_isMIntegralCurve
       ((contMDiff_timeVectorField p).of_le le_top) (isCompleteVectorField_timeVectorField p)
       (isMIntegralCurve_translationFlow p x) t
+
+/-! ### The derivation `∂_t` -/
+
+/-- Differentiation `∂_t` along the unit vector field, as a derivation of the smooth functions on
+the circle `AddCircle p`. -/
+def timeDerivation : Derivation ℝ C^∞⟮𝓘(ℝ), AddCircle p; ℝ⟯ C^∞⟮𝓘(ℝ), AddCircle p; ℝ⟯ :=
+  TauCeti.vectorFieldDerivation ⟨timeVectorField p, contMDiff_timeVectorField p⟩
+
+/-- The derivation `∂_t` differentiates a smooth function along the vector `1`. -/
+@[simp]
+theorem timeDerivation_apply (f : C^∞⟮𝓘(ℝ), AddCircle p; ℝ⟯) (x : AddCircle p) :
+    timeDerivation p f x = mvfderiv 𝓘(ℝ) f x (1 : ℝ) :=
+  ContMDiffSection.vectorFieldDerivation_apply_apply _ f x
+
+/-- The vector field of the derivation `∂_t` is the unit vector field. -/
+@[simp]
+theorem vectorField_timeDerivation (x : AddCircle p) :
+    (timeDerivation p).vectorField x = timeVectorField p x :=
+  ContMDiffSection.vectorField_vectorFieldDerivation _ x
+
+/-- The derivation `∂_t` of the circle is not zero. -/
+theorem timeDerivation_ne_zero : timeDerivation p ≠ 0 := fun h ↦ by
+  have h₀ := vectorField_timeDerivation p 0
+  rw [h, Derivation.vectorField_zero, timeVectorField_apply] at h₀
+  exact zero_ne_one (α := ℝ) h₀
 
 /-! ### Compatibility with maps of circles -/
 

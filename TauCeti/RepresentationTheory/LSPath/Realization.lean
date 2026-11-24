@@ -80,11 +80,8 @@ theorem timed_injective (hlam : lam ∈ dominantChamber P b)
         have hseg := congrArg Prod.snd (congrFun hentry j)
         have hd : ((time j.succ - time j.castSucc : ℚ) : 𝕜) ≠ 0 := by
           exact Rat.cast_ne_zero.mpr (sub_pos.mpr (hmono j.castSucc_lt_succ)).ne'
-        have hweight : f ((dir j).1 • lam) = f ((dir' j).1 • lam) := by
-          rw [← htime] at hseg
-          exact (smul_right_injective _ hd) hseg
-        exact Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam (dir j).2 (dir' j).2
-          (hf ⟨_, rfl⟩ ⟨_, rfl⟩ hweight))
+        rw [← htime] at hseg
+        exact eq_of_isMinimalCosetRep_of_smul_apply_smul_eq hlam hf hd hseg
       subst dir'
       subst time'
       rfl

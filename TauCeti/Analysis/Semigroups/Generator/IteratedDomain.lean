@@ -85,6 +85,7 @@ private theorem smul_resolventFun_sub_self (hb : S.HasGrowthBound omega M) {lamb
     rw [S.generator_resolvent_eq hb hlt, S.resolventFun_of_lt hb hlt]
   rw [← heq, LinearPMap.resolvent_apply_comm hres ⟨x, hxd⟩, LinearPMap.apply_resolvent hres x]
 
+omit [CompleteSpace X] in
 /-- Beyond `2 |omega| + 1` the scaled resolvent `lambda R(lambda)` is bounded by `2 M`. The
 factor `2` absorbs the difference between `lambda` and `lambda - omega`. -/
 private theorem norm_smul_resolventFun_le (hb : S.HasGrowthBound omega M) {lambda : ℝ}
