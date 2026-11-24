@@ -62,6 +62,9 @@ is bounded on `x ≥ 0`.
   `0 < y`.
 * `TauCeti.exp_neg_mul_mul_le`: `x exp (-r x) ≤ (2 / δ) exp (-(δ / 2) x)` for `0 < δ ≤ r`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
+* `TauCeti.exists_le_and_le_exp_mul`, `TauCeti.exists_le_and_le_exp_mul_and_lt`: existence of
+  `a ≥ T₀` with `r ≤ exp (c * a)` for `0 < c`, and with `a < b` for any `c` when `T₀ < b` and
+  `r < exp (c * b)`.
 -/
 
 public section
@@ -372,5 +375,24 @@ times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp 
 theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
+
+/-- For `0 < c`, given `r` and `T₀`, there is `a ≥ T₀` with `r ≤ exp (c * a)`. -/
+theorem exists_le_and_le_exp_mul {c : ℝ} (hc : 0 < c) (r T₀ : ℝ) :
+    ∃ a : ℝ, T₀ ≤ a ∧ r ≤ exp (c * a) := by
+  have h := tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop hc)
+  exact ((eventually_ge_atTop T₀).and (h.eventually_ge_atTop r)).exists
+
+/-- Given `T₀ < b` and `r < exp (c * b)`, there is `a` with `T₀ ≤ a`, `r ≤ exp (c * a)`, and
+`a < b`. -/
+theorem exists_le_and_le_exp_mul_and_lt {c r T₀ b : ℝ} (hb : T₀ < b)
+    (hbr : r < exp (c * b)) :
+    ∃ a : ℝ, T₀ ≤ a ∧ r ≤ exp (c * a) ∧ a < b := by
+  have hne : (𝓝[<] b).NeBot := nhdsLT_neBot b
+  have hmem : {a | r < exp (c * a)} ∩ Set.Ico T₀ b ∈ 𝓝[<] b :=
+    inter_mem (nhdsWithin_le_nhds
+      (((continuous_exp.comp (continuous_const.mul continuous_id)).continuousAt).eventually
+        (lt_mem_nhds hbr))) (Ico_mem_nhdsLT hb)
+  obtain ⟨a, har, haT, hab⟩ := hne.nonempty_of_mem hmem
+  exact ⟨a, haT, har.le, hab⟩
 
 end TauCeti

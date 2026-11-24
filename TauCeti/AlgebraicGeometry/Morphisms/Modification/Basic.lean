@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Birational.Birational
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 
 /-!
 # Modifications
@@ -25,6 +26,9 @@ target.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Hom.birationalOver_of_isIso_morphismRestrict`: a morphism
+  `f : X ⟶ Y` that is an isomorphism over a dense open with dense preimage is birational over any
+  base of `Y`, without any properness assumption.
 * `TauCeti.AlgebraicGeometry.IsModification.of_isIso`: isomorphisms are modifications.
 * `TauCeti.AlgebraicGeometry.IsModification.birationalOver`: a modification `f : X ⟶ Y` is
   birational over `Y`, comparing `f` with the identity of `Y`.
@@ -40,6 +44,18 @@ target.
 public section
 
 open CategoryTheory AlgebraicGeometry
+
+namespace AlgebraicGeometry
+
+/-- A morphism `f : X ⟶ Y` that is an isomorphism over a dense open `U ⊆ Y` with dense preimage is
+birational over any base `sY : Y ⟶ S`: restricting `f` over `U` gives a partial isomorphism from
+`X` to `Y` lying over `S`. -/
+theorem Scheme.Hom.birationalOver_of_isIso_morphismRestrict {X Y S : Scheme} (f : X ⟶ Y)
+    (sY : Y ⟶ S) (U : Y.Opens) (hU : Dense (U : Set Y)) (hfU : Dense (f ⁻¹ᵁ U : Set X))
+    [IsIso (f ∣_ U)] : Scheme.BirationalOver (f ≫ sY) sY :=
+  ⟨⟨f ⁻¹ᵁ U, hfU, U, hU, asIso (f ∣_ U)⟩, by simp [Scheme.PartialIso.IsOver]⟩
+
+end AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -65,23 +81,17 @@ instance (priority := 100) of_isIso (f : X ⟶ Y) [IsIso f] : IsModification f w
 gives a partial isomorphism from `X` to `Y` lying over `Y`. -/
 theorem birationalOver (f : X ⟶ Y) [IsModification f] : Scheme.BirationalOver f (𝟙 Y) := by
   obtain ⟨U, hU, hfU, _⟩ := exists_isIso_morphismRestrict (f := f)
-  exact ⟨⟨f ⁻¹ᵁ U, hfU, U, hU, asIso (f ∣_ U)⟩, by simp [Scheme.PartialIso.IsOver]⟩
+  simpa using f.birationalOver_of_isIso_morphismRestrict (𝟙 Y) U hU hfU
 
 /-- The source and target of a modification are birational. -/
 theorem birational (f : X ⟶ Y) [IsModification f] : X.Birational Y :=
   ⟨(birationalOver f).choose⟩
 
-/-- Every modification `f : X ⟶ Y` is dominant: it restricts to an isomorphism over a dense open of
-`Y`, whose image therefore lies in the range of `f`. -/
+/-- Every modification `f : X ⟶ Y` is dominant: it restricts to an isomorphism, hence a dominant
+morphism, over a dense open of `Y`. -/
 instance isDominant (f : X ⟶ Y) [IsModification f] : IsDominant f := by
-  rw [isDominant_iff]
   obtain ⟨U, hU, -, _⟩ := exists_isIso_morphismRestrict (f := f)
-  have := Opens.isDominant_ι hU
-  have hd : DenseRange ((f ⁻¹ᵁ U).ι ≫ f) := by
-    rw [← morphismRestrict_ι]
-    exact (inferInstance : IsDominant (f ∣_ U ≫ U.ι)).denseRange
-  rw [DenseRange] at hd ⊢
-  exact hd.mono (by rintro _ ⟨z, rfl⟩; exact ⟨(f ⁻¹ᵁ U).ι z, Scheme.Hom.comp_apply _ _ z⟩)
+  exact (isDominant_morphismRestrict_iff f hU).mp inferInstance
 
 end IsModification
 

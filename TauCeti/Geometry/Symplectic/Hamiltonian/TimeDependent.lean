@@ -445,7 +445,7 @@ one-periodic Hamiltonian `H` and a continuous one-periodic loop `x`, any fixed v
 linearized return map of `-H_{-t}` along `x` is also fixed by the linearized return map of `H`
 along `t ↦ x(-t)`: the linearization is `S'_t = -S_{-t}`, so `t ↦ Ψ'(-t) v` turns a periodic
 solution of `ζ' = S'_t ζ` into one of `ζ' = S_t ζ` starting at `v`. -/
-theorem dysonSeriesLeft_fderiv_hamiltonianVectorField_reverse_apply_eq_self
+theorem dysonSeriesLeft_fderiv_hamiltonianVectorField_apply_eq_self_of_reverse
     (omega : SymplecticForm V) {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (uncurry H))
     (hHp : Periodic H 1) {x : ℝ → V} (hxc : Continuous x) (hxp : Periodic x 1) {v : V}
     (hv : dysonSeriesLeft
@@ -492,7 +492,7 @@ theorem eq_zero_of_dysonSeriesLeft_reverse_apply_eq_self (omega : SymplecticForm
   omega.eq_zero_of_dysonSeriesLeft_apply_eq_self hX hH
     (omega.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_reverse hx)
     (by simpa only [neg_zero] using hnd)
-    (omega.dysonSeriesLeft_fderiv_hamiltonianVectorField_reverse_apply_eq_self hH hHp
+    (omega.dysonSeriesLeft_fderiv_hamiltonianVectorField_apply_eq_self_of_reverse hH hHp
       (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt) hxp hv)
 
 end Nondegenerate

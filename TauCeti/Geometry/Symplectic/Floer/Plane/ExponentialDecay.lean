@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Convergence
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
@@ -33,11 +34,11 @@ changing variables back via
 `TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_positive_Ici_eq` shows that
 for a `C²` solution on `{‖w‖ > r}` with uniformly tame almost complex structures on the end, the
 Floer energy over `{‖w‖ ≥ exp (2πR)}` is eventually at most `C exp (-κ R)`
-(`exists_pos_eventually_setLIntegral_floerEnergyDensity_of_eq_smul_endAngularForm_le_exp`). On the
+(`exists_pos_eventually_setLIntegral_floerEnergyDensity_le_exp_of_eq_smul_endAngularForm`). On the
 negative plane, fixed vectors of the linearized return map of `-H(-t)` along `t ↦ x(-t)` transfer to
-`H` along `x` (`dysonSeriesLeft_fderiv_hamiltonianVectorField_reverse_apply_eq_self`). Under a bound
-on `∂_s(u ∘ realChart φ)`, `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp` gives
-`‖ℓ_R(t) - x(t)‖ ≤ C exp (-κ R)`
+`H` along `x` (`dysonSeriesLeft_fderiv_hamiltonianVectorField_apply_eq_self_of_reverse`). Under a
+bound on `∂_s(u ∘ realChart φ)`, `TauCeti.SymplecticForm.exists_pos_eventually_norm_sub_le_exp`
+gives `‖ℓ_R(t) - x(t)‖ ≤ C exp (-κ R)`
 (`exists_pos_eventually_norm_sub_le_exp_of_eq_smul_endAngularForm`).
 
 **Cylindrical ends and `C¹` exponential convergence.** When `H` and `u` are `C³` and the almost
@@ -74,7 +75,7 @@ to `p.perturbation H` with fixed-point nondegeneracy
 public section
 
 open Set Real Function Filter MeasureTheory
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
+open TauCeti.Complex (realChart realChart_apply realChart_mk contDiff_realChart)
 open scoped ENNReal NNReal Topology Manifold
 
 namespace TauCeti.SymplecticForm
@@ -86,6 +87,53 @@ section NormedSpace
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {H : ℝ → V → ℝ} {T₀ : ℝ}
   {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ}
+
+/-- Shared `C²` half-cylinder setup on `(a, ∞)` for the positive PSS plane. -/
+private theorem floer_positive_of_tendstoUniformly
+    (h𝔎 : ∀ w x, w ≠ 0 → T₀ ≤ (positive.endCoord w).re →
+      𝔎 w x = H (positive.endCoord w).im x • positive.endAngularForm w)
+    (hH : Periodic H 1) (hHs : ContDiff ℝ 2 (uncurry H)) {r b : ℝ}
+    (hu : ContDiffOn ℝ 2 u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
+    (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv
+          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
+    {x : ℝ → V}
+    (hconv : TendstoUniformly (fun R t ↦ u (Complex.equivRealProdCLM
+      (positive.cylindricalEndLift (↑(positive.endSign * R) + ↑t * Complex.I)))) x atTop)
+    (hJc : ∀ z : ℝ × ℝ, b < z.1 →
+      ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (realChart positive.cylindricalEndLift z) v))
+    (hJM : ∀ z : ℝ × ℝ, b < z.1 →
+      ∀ v, ‖J (realChart positive.cylindricalEndLift z) v‖ ≤ M * ‖v‖) :
+    ∃ a : ℝ, T₀ ≤ a ∧ r ≤ Real.exp (2 * π * a) ∧ (∀ z : ℝ × ℝ, a < z.1 → b < z.1) ∧
+      ContDiffOn ℝ 2 (u ∘ realChart positive.cylindricalEndLift) (Ioi a ×ˢ univ) ∧
+      (∀ s, a < s → Periodic (fun t ↦ (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1) ∧
+      (∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
+        c * ‖v‖ ^ 2 ≤ ω v ((J ∘ realChart positive.cylindricalEndLift) z v)) ∧
+      (∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
+        ‖(J ∘ realChart positive.cylindricalEndLift) z v‖ ≤ M * ‖v‖) ∧
+      (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        ((J ∘ realChart positive.cylindricalEndLift) z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
+          (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+      ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ ∧
+      TendstoUniformly (fun R t ↦ (u ∘ realChart positive.cylindricalEndLift) (R, t)) x atTop := by
+  obtain ⟨a, ha, hr⟩ := exists_le_and_le_exp_mul Real.two_pi_pos r (max T₀ b)
+  have haT : T₀ ≤ a := (le_max_left _ _).trans ha
+  have hab (z : ℝ × ℝ) (hz : a < z.1) : b < z.1 := ((le_max_right _ _).trans ha).trans_lt hz
+  obtain ⟨hu', hper', -, hfloer', hE'⟩ :=
+    ω.floer_comp_realChart_positive_of_eq_smul_endAngularForm h𝔎 hH
+      (fun t ↦ (hHs.of_uncurry_left t).differentiable two_ne_zero) two_ne_zero haT hr hu
+      (fun _ _ ↦ mem_univ _) hfloer hE
+  refine ⟨a, haT, hr, hab, hu', hper', fun z hz v ↦ hJc z (hab z hz.1) v,
+    fun z hz v ↦ hJM z (hab z hz.1) v, hfloer', hE', ?_⟩
+  simpa only [comp_apply, realChart_mk, endSign_positive, one_mul] using hconv
 
 /-- Exterior energy exponential decay on the positive PSS plane. -/
 private theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_positive_le_exp
@@ -119,30 +167,39 @@ private theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_positive_l
           (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≤
         ENNReal.ofReal (C * Real.exp (-(κ * R))) := by
-  obtain ⟨a, ha, hr⟩ := exists_le_and_le_exp r (max T₀ b)
-  have haT : T₀ ≤ a := (le_max_left _ _).trans ha
-  have hab {z : ℝ × ℝ} (hz : a < z.1) : b < z.1 := ((le_max_right _ _).trans ha).trans_lt hz
-  have hHd : ∀ t, Differentiable ℝ (H t) := fun t ↦
-    (hHs.differentiable two_ne_zero).comp ((differentiable_const t).prodMk differentiable_id)
-  obtain ⟨hu', hper', -, hfloer', hE'⟩ :=
-    ω.floer_comp_realChart_positive_of_eq_smul_endAngularForm h𝔎 hH hHd two_ne_zero haT hr hu
-      (fun _ _ ↦ mem_univ _) hfloer hE
-  have hconv' : TendstoUniformly (fun R t ↦ (u ∘ realChart positive.cylindricalEndLift) (R, t))
-      x atTop := by simpa only [comp_apply, realChart_positive_mk] using hconv
+  obtain ⟨a, haT, hr, -, hu', hper', hJc', hJM', hfloer', hE', hconv'⟩ :=
+    floer_positive_of_tendstoUniformly h𝔎 hH hHs hu hfloer hE hconv hJc hJM
   obtain ⟨κ, hκ, C, hdecay⟩ := exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
-    (a := a) (J := J ∘ realChart positive.cylindricalEndLift) hHs hH hu' hper' hc
-    (fun z hz v ↦ hJc z (hab hz.1) v) (fun z hz v ↦ hJM z (hab hz.1) v) hfloer' hE'
-    hxper hx hnd hconv'
+    (a := a) hHs hH hu' hper' hc hJc' hJM' hfloer' hE' hxper hx hnd hconv'
   refine ⟨κ, hκ, C, (hdecay.and (eventually_gt_atTop a)).mono fun R ⟨hR, hRa⟩ ↦ ?_⟩
   have hrR : r < Real.exp (2 * π * R) :=
     hr.trans_lt (Real.exp_lt_exp.2 (mul_lt_mul_of_pos_left hRa Real.two_pi_pos))
   have hopen : IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
     isOpen_lt continuous_const (by fun_prop)
-  rw [← ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_Ici_eq h𝔎 hH hHd
+  rw [← ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_Ici_eq h𝔎 hH
+    (fun t ↦ (hHs.of_uncurry_left t).differentiable two_ne_zero)
     (haT.trans hRa.le) fun z hz ↦
       ((hu.differentiableOn two_ne_zero) z (hrR.trans_le hz)).differentiableAt
         (hopen.mem_nhds (hrR.trans_le hz))]
   exact hR
+
+omit [FiniteDimensional ℝ V] in
+/-- Transfers uniform tameness bounds on `J ∘ realChart negative.cylindricalEndLift` over
+`{z | b < negative.endSign * z.1}` to `J ∘ realChart positive.cylindricalEndLift` over
+`{z | b < z.1}`. -/
+private theorem tame_comp_realChart_positive_of_negative {b : ℝ}
+    (hJc : ∀ z : ℝ × ℝ, b < negative.endSign * z.1 →
+      ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (realChart negative.cylindricalEndLift z) v))
+    (hJM : ∀ z : ℝ × ℝ, b < negative.endSign * z.1 →
+      ∀ v, ‖J (realChart negative.cylindricalEndLift z) v‖ ≤ M * ‖v‖) :
+    (∀ z : ℝ × ℝ, b < z.1 →
+      ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J (realChart positive.cylindricalEndLift z) v)) ∧
+    ∀ z : ℝ × ℝ, b < z.1 →
+      ∀ v, ‖J (realChart positive.cylindricalEndLift z) v‖ ≤ M * ‖v‖ := by
+  refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩ <;>
+    rw [← neg_neg z, ← realChart_cylindricalEndLift_negative]
+  · exact hJc (-z) (by simpa [endSign_negative] using hz)
+  · exact hJM (-z) (by simpa [endSign_negative] using hz)
 
 /-- Time reversal transfers a nondegenerate `1`-periodic orbit `x` of `H` along which the negative
 end of `u` converges to the `1`-periodic orbit `t ↦ x(-t)` of `-H(-t)` along which the positive end
@@ -163,17 +220,14 @@ private theorem reverse_orbit_negative (hH : Periodic H 1) (hHs : ContDiff ℝ 2
       (positive.cylindricalEndLift (↑(positive.endSign * R) + ↑t * Complex.I))))
       (fun t ↦ x (-t)) atTop := by
   have hx' (t : ℝ) : HasDerivAt (fun s ↦ x (-s))
-      (ω.hamiltonianVectorField (fun y ↦ -H (-t) y) (x (-t))) t := by
-    have h := (hx (-t)).scomp t (hasDerivAt_neg t)
-    have hX : ω.hamiltonianVectorField (fun y ↦ -H (-t) y) (x (-t)) =
-        -ω.hamiltonianVectorField (H (-t)) (x (-t)) := by
-      simpa only [Pi.neg_def] using ω.hamiltonianVectorField_neg (H (-t)) (x (-t))
-    rwa [neg_one_smul, ← hX] at h
+      (ω.hamiltonianVectorField (fun y ↦ -H (-t) y) (x (-t))) t :=
+    ω.hasDerivAt_comp_neg_of_hasDerivAt_hamiltonianVectorField_neg (G := fun y ↦ -H (-t) y)
+      (by simpa only [neg_neg, Pi.neg_def] using hx (-t))
   have hxc : Continuous fun t ↦ x (-t) :=
     (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt).comp continuous_neg
   refine ⟨hx', fun v hv ↦ hnd v ?_, ?_⟩
   · simpa only [neg_neg] using
-      ω.dysonSeriesLeft_fderiv_hamiltonianVectorField_reverse_apply_eq_self hHs hH hxc
+      ω.dysonSeriesLeft_fderiv_hamiltonianVectorField_apply_eq_self_of_reverse hHs hH hxc
         hxper.comp_neg hv
   · simpa only [Function.comp_def, cylindricalEndLift_negative_endSign_mul, neg_neg] using
       hconv.comp fun t : ℝ ↦ -t
@@ -187,7 +241,7 @@ half-cylinder `ε s > b` the almost complex structures are uniformly tame, and t
 `t ↦ u(φ(ε R + i t))` converge uniformly as `R → ∞` to a `1`-periodic orbit `x` of `H` whose
 linearized return map fixes no nonzero vector. Then the Floer energy of `u` over
 `{‖w‖ ≥ exp (2πR)}` is eventually at most `C exp (-κ R)`, for some `κ > 0`. -/
-theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_of_eq_smul_endAngularForm_le_exp
+theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_le_exp_of_eq_smul_endAngularForm
     (p : PSSPlane)
     (h𝔎 : ∀ w x, w ≠ 0 → T₀ ≤ p.endSign * (p.endCoord w).re →
       𝔎 w x = H (p.endCoord w).im x • p.endAngularForm w)
@@ -225,21 +279,12 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_of_eq_smul_endAngu
       hxper hx hnd hconv hc
       (fun z hz ↦ hJc z (by simpa [endSign_positive] using hz))
       (fun z hz ↦ hJM z (by simpa [endSign_positive] using hz))
-  obtain ⟨hH', hHs'⟩ := periodic_contDiff_reverse hH hHs
   obtain ⟨hx', hnd', hconv'⟩ := reverse_orbit_negative hH hHs hxper hx hnd hconv
-  have hchart (z : ℝ × ℝ) :
-      realChart positive.cylindricalEndLift z =
-        realChart negative.cylindricalEndLift ((-1 : ℝ) • z) := by
-    simp [realChart_apply, cylindricalEndLift_negative]
+  obtain ⟨hJc', hJM'⟩ := tame_comp_realChart_positive_of_negative hJc hJM
   exact exists_pos_eventually_setLIntegral_floerEnergyDensity_positive_le_exp
     (fun w y hw hz ↦ eq_smul_endAngularForm_positive_of_negative h𝔎 y hw hz)
-    hH' hHs' hu hfloer hE hxper.comp_neg hx' hnd' hconv' hc
-    (fun z hz ↦ by
-      rw [hchart, neg_one_smul]
-      exact hJc (-z) (by simpa [endSign_negative] using hz))
-    (fun z hz ↦ by
-      rw [hchart, neg_one_smul]
-      exact hJM (-z) (by simpa [endSign_negative] using hz))
+    (hH.comp_neg.comp Neg.neg) hHs.uncurry_comp_neg.neg hu hfloer hE hxper.comp_neg hx' hnd' hconv'
+    hc hJc' hJM'
 
 /-- Conditional `C⁰` exponential convergence on the positive PSS plane. -/
 private theorem exists_pos_eventually_norm_sub_le_exp_positive_of_eq_smul
@@ -274,25 +319,15 @@ private theorem exists_pos_eventually_norm_sub_le_exp_positive_of_eq_smul
       ‖u (Complex.equivRealProdCLM
           (positive.cylindricalEndLift (↑(positive.endSign * R) + ↑t * Complex.I))) - x t‖ ≤
         C * Real.exp (-(κ * R)) := by
-  obtain ⟨a, ha, hr⟩ := exists_le_and_le_exp r (max T₀ b)
-  have haT : T₀ ≤ a := (le_max_left _ _).trans ha
-  have hab {z : ℝ × ℝ} (hz : a < z.1) : b < z.1 := ((le_max_right _ _).trans ha).trans_lt hz
-  have hHd : ∀ t, Differentiable ℝ (H t) := fun t ↦
-    (hHs.differentiable two_ne_zero).comp ((differentiable_const t).prodMk differentiable_id)
-  obtain ⟨hu', hper', -, hfloer', hE'⟩ :=
-    ω.floer_comp_realChart_positive_of_eq_smul_endAngularForm h𝔎 hH hHd two_ne_zero haT hr hu
-      (fun _ _ ↦ mem_univ _) hfloer hE
-  have hconv' : TendstoUniformly (fun R t ↦ (u ∘ realChart positive.cylindricalEndLift) (R, t))
-      x atTop := by simpa only [comp_apply, realChart_positive_mk] using hconv
+  obtain ⟨a, -, -, hab, hu', hper', hJc', hJM', hfloer', hE', hconv'⟩ :=
+    floer_positive_of_tendstoUniformly h𝔎 hH hHs hu hfloer hE hconv hJc hJM
   obtain ⟨κ, hκ, C, hdecay⟩ := exists_pos_eventually_norm_sub_le_exp (a := a) (L := L)
-    (J := J ∘ realChart positive.cylindricalEndLift) hHs hH hu' hper' hc
-    (fun z hz v ↦ hJc z (hab hz.1) v) (fun z hz v ↦ hJM z (hab hz.1) v) hfloer' hE'
-    (fun z hz ↦ hL z (hab hz.1)) hxper hx hnd hconv'
+    hHs hH hu' hper' hc hJc' hJM' hfloer' hE' (fun z hz ↦ hL z (hab z hz.1)) hxper hx hnd hconv'
   refine ⟨κ, hκ, C, hdecay.mono fun R hR t ↦ ?_⟩
-  simpa only [comp_apply, realChart_positive_mk] using hR t
+  simpa only [comp_apply, realChart_mk, endSign_positive, one_mul] using hR t
 
 /-- **Conditional `C⁰` exponential convergence of the end of a PSS plane.** Under the hypotheses of
-`exists_pos_eventually_setLIntegral_floerEnergyDensity_of_eq_smul_endAngularForm_le_exp`, if
+`exists_pos_eventually_setLIntegral_floerEnergyDensity_le_exp_of_eq_smul_endAngularForm`, if
 moreover `∂_s(u ∘ realChart φ)` is bounded on `ε s > b`, then the end loops
 `t ↦ u(φ(ε R + i t))` converge to `x` exponentially fast: eventually
 `‖u(φ(ε R + i t)) - x(t)‖ ≤ C exp (-κ R)` for every `t`. -/
@@ -335,28 +370,16 @@ theorem exists_pos_eventually_norm_sub_le_exp_of_eq_smul_endAngularForm
       hxper hx hnd hconv (fun z hz ↦ hL z (by simpa [endSign_positive] using hz)) hc
       (fun z hz ↦ hJc z (by simpa [endSign_positive] using hz))
       (fun z hz ↦ hJM z (by simpa [endSign_positive] using hz))
-  obtain ⟨hH', hHs'⟩ := periodic_contDiff_reverse hH hHs
   obtain ⟨hx', hnd', hconv'⟩ := reverse_orbit_negative hH hHs hxper hx hnd hconv
-  have hchart (z : ℝ × ℝ) :
-      realChart positive.cylindricalEndLift z =
-        realChart negative.cylindricalEndLift ((-1 : ℝ) • z) := by
-    simp [realChart_apply, cylindricalEndLift_negative]
+  obtain ⟨hJc', hJM'⟩ := tame_comp_realChart_positive_of_negative hJc hJM
   have hL' (z : ℝ × ℝ) (hz : b < z.1) :
       ‖fderiv ℝ (u ∘ realChart positive.cylindricalEndLift) z (1, 0)‖ ≤ L := by
-    have hcomp : u ∘ realChart positive.cylindricalEndLift =
-        fun w ↦ (u ∘ realChart negative.cylindricalEndLift) ((-1 : ℝ) • w) :=
-      funext fun w ↦ by simp only [comp_apply, hchart]
-    rw [hcomp, fderiv_comp_smul, neg_one_smul, neg_one_smul, neg_apply, norm_neg]
+    rw [fderiv_comp_realChart_cylindricalEndLift_positive, neg_apply, norm_neg]
     exact hL (-z) (by simpa [endSign_negative] using hz)
   obtain ⟨κ, hκ, C, hdecay⟩ := exists_pos_eventually_norm_sub_le_exp_positive_of_eq_smul
     (fun w y hw hz ↦ eq_smul_endAngularForm_positive_of_negative h𝔎 y hw hz)
-    hH' hHs' hu hfloer hE hxper.comp_neg hx' hnd' hconv' hL' hc
-    (fun z hz ↦ by
-      rw [hchart, neg_one_smul]
-      exact hJc (-z) (by simpa [endSign_negative] using hz))
-    (fun z hz ↦ by
-      rw [hchart, neg_one_smul]
-      exact hJM (-z) (by simpa [endSign_negative] using hz))
+    (hH.comp_neg.comp Neg.neg) hHs.uncurry_comp_neg.neg hu hfloer hE hxper.comp_neg hx' hnd' hconv'
+    hL' hc hJc' hJM'
   refine ⟨κ, hκ, C, hdecay.mono fun R hR t ↦ ?_⟩
   simpa only [cylindricalEndLift_negative_endSign_mul, neg_neg] using hR (-t)
 
@@ -381,14 +404,10 @@ private theorem norm_fderiv_comp_realChart_negative_sub_smulRight (u : ℝ × �
       ‖fderiv ℝ (u ∘ realChart positive.cylindricalEndLift) (s, -t) -
         (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight
           (ω.hamiltonianVectorField (fun y ↦ -H (-(-t)) y) (x (-(-t))))‖ := by
-  have h : u ∘ realChart negative.cylindricalEndLift =
-      fun z ↦ (u ∘ realChart positive.cylindricalEndLift) ((-1 : ℝ) • z) := by
-    funext z
-    simp [realChart_apply, cylindricalEndLift_negative]
   have hX : ω.hamiltonianVectorField (fun y ↦ -H (-(-t)) y) (x (-(-t))) =
       -ω.hamiltonianVectorField (H t) (x t) := by
     simpa only [neg_neg, Pi.neg_def] using ω.hamiltonianVectorField_neg (H t) (x t)
-  rw [h, fderiv_comp_smul, neg_one_smul, hX, ← norm_neg]
+  rw [fderiv_comp_realChart_cylindricalEndLift_negative, hX, ← norm_neg]
   congr 1
   ext <;> simp [add_comm]
 
@@ -435,45 +454,29 @@ theorem exists_pos_eventually_norm_fderiv_comp_realChart_sub_smulRight_le_exp_of
       ‖fderiv ℝ (u ∘ realChart p.cylindricalEndLift) (p.endSign * R, t) -
         (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
         C * Real.exp (-(κ * R)) := by
-  obtain ⟨a, haT, hr⟩ := exists_le_and_le_exp r T₀
+  obtain ⟨a, haT, hr⟩ := exists_le_and_le_exp_mul Real.two_pi_pos r T₀
   cases p
   · obtain ⟨hu', hper', huK', hfloer', hE'⟩ :=
       ω.floer_comp_realChart_positive_of_cylindrical
         (fun w y hw hz ↦ h𝔎 w y hw (by simpa [endSign_positive] using hz)) hH
-        (fun t ↦ (hHs.differentiable (by norm_num)).comp
-          ((differentiable_const t).prodMk differentiable_id)) (by norm_num) haT hr hu huK hfloer hE
-        fun s t hs ↦ by simpa [endSign_positive] using hJ s t hs
+        (fun t ↦ (hHs.of_uncurry_left t).differentiable (by norm_num)) (by norm_num) haT hr hu huK
+        hfloer hE fun s t hs ↦ by simpa [endSign_positive] using hJ s t hs
     have hconv' : TendstoUniformly (fun R t ↦ (u ∘ realChart positive.cylindricalEndLift) (R, t))
-        x atTop := by simpa only [comp_apply, realChart_positive_mk] using hconv
+        x atTop := by simpa only [comp_apply, realChart_mk, endSign_positive, one_mul] using hconv
     obtain ⟨κ, hκ, C, hdecay⟩ := exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp hHs hH hW
       hJq hJqper hK hKW hJqt hu' hper' huK' hfloer' hE' hxper hx hnd hconv'
     exact ⟨κ, hκ, C, hdecay.mono fun R hR t ↦ by simpa only [endSign_positive, one_mul] using hR t⟩
   -- Reduce the negative plane to `(Jq (-t), -H(-t))` along `t ↦ x(-t)`.
-  obtain ⟨hH', hHs'⟩ := periodic_contDiff_reverse hH hHs
   obtain ⟨hx', hnd', hconv₀⟩ :=
     reverse_orbit_negative hH (hHs.of_le (by norm_num)) hxper hx hnd hconv
-  have hneg : Continuous fun q : ℝ × V ↦ (-q.1, q.2) := by fun_prop
-  have hchart (s t : ℝ) :
-      realChart positive.cylindricalEndLift (s, t) =
-        realChart negative.cylindricalEndLift (negative.endSign * s, -t) := by
-    have hsymm : -Complex.equivRealProdCLM.symm (-s, -t) = Complex.equivRealProdCLM.symm (s, t) :=
-      by rw [← map_neg]; simp
-    rw [realChart_apply, realChart_apply, endSign_negative, neg_one_mul,
-      cylindricalEndLift_negative, hsymm]
-  obtain ⟨hu', hper', huK', hfloer', hE'⟩ :=
-    ω.floer_comp_realChart_positive_of_cylindrical (Jq := fun t ↦ Jq (-t))
-      (fun w y hw hz ↦ eq_smul_endAngularForm_positive_of_negative h𝔎 y hw hz) hH'
-      (fun t ↦ (hHs'.differentiable (by norm_num)).comp
-        ((differentiable_const t).prodMk differentiable_id)) (by norm_num) haT hr hu huK hfloer hE
-      fun s t hs ↦ by rw [hchart, hJ s (-t) hs]
+  obtain ⟨hH', hHs', hW', hJq', hJqper', hKW', hJqt', hu', hper', huK', hfloer', hE'⟩ :=
+    ω.floer_comp_realChart_negative_of_cylindrical h𝔎 hH hHs (by norm_num) haT hr hu huK hfloer hE
+      hW hJq hJqper hKW hJqt hJ
   have hconv' : TendstoUniformly (fun R t ↦ (u ∘ realChart positive.cylindricalEndLift) (R, t))
-      (fun t ↦ x (-t)) atTop := by simpa only [comp_apply, realChart_positive_mk] using hconv₀
-  obtain ⟨κ, hκ, C, hdecay⟩ := exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp
-    (W := (fun q : ℝ × V ↦ (-q.1, q.2)) ⁻¹' W) (J := fun t ↦ Jq (-t)) hHs' hH' (hW.preimage hneg)
-    (hJq.comp (f := fun q : ℝ × V ↦ (-q.1, q.2)) (by fun_prop : ContDiff ℝ 2 _).contDiffOn
-      fun q hq ↦ hq)
-    hJqper.comp_neg hK (fun q hq ↦ hKW ⟨mem_univ _, hq.2⟩) (fun t ↦ hJqt (-t)) hu' hper' huK'
-    hfloer' hE' hxper.comp_neg hx' hnd' hconv'
+      (fun t ↦ x (-t)) atTop := by
+    simpa only [comp_apply, realChart_mk, endSign_positive, one_mul] using hconv₀
+  obtain ⟨κ, hκ, C, hdecay⟩ := exists_pos_eventually_norm_fderiv_sub_smulRight_le_exp hHs' hH' hW'
+    hJq' hJqper' hK hKW' hJqt' hu' hper' huK' hfloer' hE' hxper.comp_neg hx' hnd' hconv'
   exact ⟨κ, hκ, C, hdecay.mono fun R hR t ↦
     (norm_fderiv_comp_realChart_negative_sub_smulRight u x R t).trans_le (hR (-t))⟩
 
@@ -533,11 +536,7 @@ theorem exists_pos_eventually_norm_sub_and_fderiv_comp_realChart_le_exp_of_cylin
         obtain ⟨δ, hδ, hiso⟩ :=
           exists_pos_forall_periodic_eq_of_nondegenerate hHs2 hyper hy (hnd y hyper hy hyK)
         exact ⟨δ, hδ, fun z hzper hz _ hzy ↦ hiso z hzper hz hzy⟩
-  obtain ⟨a, -, hr⟩ := exists_le_and_le_exp r 0
-  have hchart_mk (R t : ℝ) :
-      Complex.equivRealProdCLM (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)) =
-        realChart p.cylindricalEndLift (p.endSign * R, t) := by
-    rw [realChart_apply, Complex.equivRealProdCLM_symm_apply]
+  obtain ⟨a, -, hr⟩ := exists_le_and_le_exp_mul Real.two_pi_pos r 0
   have hmem {R : ℝ} (hR : a < R) (t : ℝ) :
       r < ‖Complex.equivRealProdCLM.symm
         (realChart p.cylindricalEndLift (p.endSign * R, t))‖ :=
@@ -545,7 +544,7 @@ theorem exists_pos_eventually_norm_sub_and_fderiv_comp_realChart_le_exp_of_cylin
       (by simpa [← mul_assoc] using hR))
   have hxK (t : ℝ) : x t ∈ K :=
     hK.isClosed.mem_of_tendsto (hconv.tendsto_at t)
-      ((eventually_gt_atTop a).mono fun R hR ↦ by rw [hchart_mk]; exact huK _ (hmem hR t))
+      ((eventually_gt_atTop a).mono fun R hR ↦ by rw [← realChart_mk]; exact huK _ (hmem hR t))
   have hndx := hnd x hxper hx hxK
   obtain ⟨κ₀, hκ₀, C₀, h₀⟩ := exists_pos_eventually_norm_sub_le_exp_of_eq_smul_endAngularForm p h𝔎
     hH hHs2 (hu.of_le (by norm_num)) hfloer hE hxper hx hndx hconv
@@ -555,7 +554,7 @@ theorem exists_pos_eventually_norm_sub_and_fderiv_comp_realChart_le_exp_of_cylin
   obtain ⟨κ₁, hκ₁, C₁, h₁⟩ :=
     exists_pos_eventually_norm_fderiv_comp_realChart_sub_smulRight_le_exp_of_cylindrical p h𝔎 hH hHs
       hu hK huK hfloer hE hW hJq hJqper hKW hJqt hJ hxper hx hndx hconv
-  simp_rw [hchart_mk] at h₀
+  simp_rw [← realChart_mk, ← comp_apply (f := u)] at h₀
   obtain ⟨κ, hκ, C, h⟩ := exists_pos_eventually_forall_le_mul_exp (ι := Bool)
     (f := fun i R t ↦ bif i then
       ‖fderiv ℝ (u ∘ realChart p.cylindricalEndLift) (p.endSign * R, t) -
@@ -669,7 +668,7 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
             ‖fderiv ℝ (u ∘ realChart p.cylindricalEndLift) (p.endSign * s, t) -
               (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖ ≤
           A * Real.exp (-(κ * s)) := by
-  obtain ⟨a, ha2, hr⟩ := exists_le_and_le_exp r 2
+  obtain ⟨a, ha2, hr⟩ := exists_le_and_le_exp_mul Real.two_pi_pos r 2
   have hJcyl (s t : ℝ) (hs : a + 1 ≤ s) :
       J (realChart p.cylindricalEndLift (p.endSign * s, t)) =
         Jq t (u (realChart p.cylindricalEndLift (p.endSign * s, t))) := by
@@ -687,10 +686,7 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
         ω.eq_zero_of_dysonSeriesLeft_apply_eq_self hL (hHs.of_le (by norm_num)) hy
           (hnd y hyper hy hyK) hv
   refine ⟨x, hxper, hx, κ, hκ, C + C, h.mono fun s hs t ↦ ?_⟩
-  have hmk : Complex.equivRealProdCLM (p.cylindricalEndLift (↑(p.endSign * s) + ↑t * Complex.I)) =
-      (realChart p.cylindricalEndLift) (p.endSign * s, t) := by
-    rw [realChart_apply, Complex.equivRealProdCLM_symm_apply]
-  rw [hmk, add_mul]
+  rw [← realChart_mk, add_mul]
   exact add_le_add (hs t).2.1 (hs t).2.2
 
 /-- **Exponential convergence at the end of a PSS plane.** Under the hypotheses of

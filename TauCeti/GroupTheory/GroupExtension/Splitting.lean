@@ -23,6 +23,10 @@ of an extension element `e` in terms of `S.rightHom e` and `e * (s (S.rightHom e
 
 public section
 
+/- `SemidirectProduct.right_splitting` computes the second coordinate of any splitting of a
+semidirect product extension, so it is a simp lemma. -/
+attribute [simp] SemidirectProduct.right_splitting
+
 namespace GroupExtension
 
 variable {N E G : Type*} [Group N] [Group E] [Group G]
