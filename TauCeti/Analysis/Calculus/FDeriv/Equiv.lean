@@ -50,6 +50,8 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   `p` of the source and its image `e p`.
 * `OpenPartialHomeomorph.isInvertible_fderiv`, `OpenPartialHomeomorph.inverse_fderiv`: hence the
   derivative at such a point is invertible, with inverse the derivative of `e.symm` at `e p`.
+* `OpenPartialHomeomorph.isInvertible_fderiv_of_contDiffOn`: for an open partial homeomorphism
+  that is `C^n`, `n ≠ 0`, in both directions, the derivative is invertible on the source.
 * `OpenPartialHomeomorph.det_fderiv_ne_zero`: for an open partial homeomorphism of a space to
   itself, the derivative at such a point has nonzero determinant.
 * `OpenPartialHomeomorph.det_fderiv_mul_det_fderiv_symm`: for an open partial homeomorphism of a
@@ -70,6 +72,9 @@ open set `U` and mapping it into an open set `V`, with an inverse `Ψ` different
   derivative of an open partial homeomorphism at a point of its source and of the derivative of
   its inverse at the image point are mutually inverse, when both are differentiable there, in
   particular when both are `C^n`.
+* `OpenPartialHomeomorph.adjoint_apply_eq_adjoint_fderiv_symm_apply_iff`: in the coordinates of
+  such an open partial homeomorphism `e`, the covector identity `(A ∘ De(x))ᵀ η = ξ` reads
+  `Aᵀ η = De⁻¹(e x)ᵀ ξ`.
 * `OpenPartialHomeomorph.hasFDerivAt_transHomeomorph_iff`: postcomposing charts with continuous
   linear equivalences conjugates the Fréchet derivative of a map read in those charts.
 * `TauCeti.fderiv_comp_fderiv_eq_id_of_invOn`: `DΦ(y) ∘ DΨ(Φ y) = id`.
@@ -220,6 +225,14 @@ theorem differentiableAt_and_differentiableAt_symm_of_contDiffOn (e : OpenPartia
   ⟨(he.differentiableOn hn).differentiableAt (e.open_source.mem_nhds hx),
     (hes.differentiableOn hn).differentiableAt (e.open_target.mem_nhds (e.map_source hx))⟩
 
+/-- An open partial homeomorphism that is `C^n`, `n ≠ 0`, on its source, with inverse `C^n` on its
+target, has an invertible derivative at every point of its source. -/
+theorem isInvertible_fderiv_of_contDiffOn (e : OpenPartialHomeomorph E F) {n : WithTop ℕ∞}
+    (he : ContDiffOn 𝕜 n e e.source) (hes : ContDiffOn 𝕜 n e.symm e.target) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ e.source) : (fderiv 𝕜 e x).IsInvertible :=
+  have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
+  e.isInvertible_fderiv hx hd.1 hd.2
+
 /-- An open partial homeomorphism of a space to itself that is `C^n`, `n ≠ 0`, on its source,
 with inverse `C^n` on its target, has a derivative with nonzero determinant at every point of its
 source. -/
@@ -327,6 +340,18 @@ theorem adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn
     ((fderiv 𝕜 e.symm (e x))†) (((fderiv 𝕜 e x)†) η) = η :=
   have hd := e.differentiableAt_and_differentiableAt_symm_of_contDiffOn he hes hn hx
   e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hx hd.1 hd.2 η
+
+/-- For an open partial homeomorphism differentiable at a point `x` of its source, with inverse
+differentiable at `e x`, and a continuous linear map `A`, the covector identity
+`(A ∘ De(x))ᵀ η = ξ` reads `Aᵀ η = De⁻¹(e x)ᵀ ξ` in the coordinates of `e`. -/
+theorem adjoint_apply_eq_adjoint_fderiv_symm_apply_iff (e : OpenPartialHomeomorph E F) {x : E}
+    (hx : x ∈ e.source) (hd : DifferentiableAt 𝕜 e x) (hds : DifferentiableAt 𝕜 e.symm (e x))
+    {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+    (A : F →L[𝕜] G) (η : G) (ξ : E) :
+    (A†) η = ((fderiv 𝕜 e.symm (e x))†) ξ ↔ ((A.comp (fderiv 𝕜 e x))†) η = ξ := by
+  rw [ContinuousLinearMap.adjoint_comp, ContinuousLinearMap.comp_apply]
+  refine ⟨fun h ↦ by rw [h, e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply hx hd hds], fun h ↦ ?_⟩
+  rw [← h, e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply hx hd hds]
 
 end OpenPartialHomeomorph
 

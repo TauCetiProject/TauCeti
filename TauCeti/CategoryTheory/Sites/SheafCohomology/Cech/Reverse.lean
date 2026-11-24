@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Ordered.HomotopyEquiv
 import TauCeti.Data.Fin.Rev
@@ -30,8 +31,9 @@ commutes with the maps induced by morphisms of families, such as refinements of 
 
 For a family in a thin category, for instance a family of open subsets of a topological space,
 `τ` is homotopic to the identity (`cechReverseHomotopy`), so it induces the identity on Čech
-cohomology (`homologyMap_cechReverse_app`). The homotopy comes from the ordered Čech complex:
-after choosing a well-ordering of `ι`, every cochain is homotopic to its alternation
+cohomology (`homologyMap_cechReverse_app`) and fixes the class of every cocycle of a presheaf of
+modules (`homologyπ_moduleCatCyclesMk_cechReverse`). The homotopy comes from the ordered Čech
+complex: after choosing a well-ordering of `ι`, every cochain is homotopic to its alternation
 (`strictMonoCechComplexHomotopyEquiv`), and alternating cochains are fixed by `τ`, because the
 inversion signs of a tuple and of its reversal differ by the sign of the reversal
 (`fromStrictMonoCechComplex_comp_cechReverse`).
@@ -59,6 +61,8 @@ are cohomologous.
 * `TauCeti.CategoryTheory.cechComplexMap_comp_cechReverse_app`: compatibility with refinements.
 * `TauCeti.CategoryTheory.homologyMap_cechReverse_app`: in a thin category, `τ` is the identity on
   cohomology.
+* `TauCeti.CategoryTheory.homologyπ_moduleCatCyclesMk_cechReverse`: in a thin category, a cocycle
+  of a presheaf of modules and its reversal have the same class.
 * `TauCeti.CategoryTheory.cechComponent_cechReverse`, `TauCeti.CategoryTheory.cechFace_cechReverse`:
   the factors and restrictions of `τ c` for a presheaf of algebras.
 * `TauCeti.CategoryTheory.cechReverse_cechCup_cechReverse`: `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b`
@@ -332,6 +336,21 @@ cohomology. -/
 theorem homologyMap_cechReverse_app [CategoryWithHomology A] (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     HomologicalComplex.homologyMap ((cechReverse A U).app P) n = 𝟙 _ := by
   rw [(cechReverseHomotopy U P).homologyMap_eq, HomologicalComplex.homologyMap_id]
+
+/-- **The order-reversing operator fixes classes.** For a family in a thin category and a presheaf
+of `R`-modules, the reversal `τ c` of a Čech cocycle `c` has the same class as `c`. -/
+@[simp]
+theorem homologyπ_moduleCatCyclesMk_cechReverse {R : Type u''} [Ring R]
+    {P : Cᵒᵖ ⥤ ModuleCat.{w} R} {p : ℕ} (c : ((cechComplexFunctor U).obj P).X p) (m : ℕ)
+    (hm : (ComplexShape.up ℕ).next p = m) (hc : (((cechComplexFunctor U).obj P).d p m).hom c = 0) :
+    (((cechComplexFunctor U).obj P).homologyπ p).hom
+        (((cechComplexFunctor U).obj P).moduleCatCyclesMk
+          ((((cechReverse (ModuleCat.{w} R) U).app P).f p).hom c) m hm
+          (by rw [HomologicalComplex.Hom.comm_apply, hc, map_zero])) =
+      (((cechComplexFunctor U).obj P).homologyπ p).hom
+        (((cechComplexFunctor U).obj P).moduleCatCyclesMk c m hm hc) := by
+  rw [← HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk, homologyMap_cechReverse_app,
+    ModuleCat.id_apply]
 
 end Thin
 

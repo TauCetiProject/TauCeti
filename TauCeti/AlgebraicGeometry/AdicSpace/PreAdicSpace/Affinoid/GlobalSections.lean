@@ -6,16 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Sheaves.Functors
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Hom
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Plus
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Hom.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Sheaf
 
 /-!
 # Global sections determine maps into affinoid spectra
 
 For an arbitrary pre-adic space `X`, a morphism `X → Spa(A, A⁺)` induces a continuous ring map
-`A → 𝒪_X(X)` carrying `A⁺` into `𝒪_X⁺(X)`. Its composite with the germ at a point recovers the
-valuation of the image point, without choosing a representative value group.
+`A → 𝒪_X(X)` carrying `A⁺` into `𝒪_X⁺(X)`; this map and its basic properties are in
+`Affinoid/Hom/Basic.lean`. Its composite with the germ at a point recovers the valuation of the
+image point, without choosing a representative value group.
 
 If the structure presheaf of `X` is a sheaf, this global-sections map determines the entire
 morphism, not just its map on points. On each rational open of the target, the universal property
@@ -24,8 +24,9 @@ The sheaf property of the source then gives equality on all opens. In particular
 to every adic source, without affinoidness or quasi-compactness assumptions.
 
 This proves the injectivity direction of the correspondence between morphisms into affinoids
-and continuous, integral-section-preserving maps on global sections. It does not construct a
-morphism from such a ring map.
+and continuous, integral-section-preserving maps on global sections. The converse construction of
+a morphism from such a ring map, for an adic source, is `TauCeti.AdicSpace.homSpaEquiv` in
+`Affinoid/Hom/Spa.lean`.
 
 ## References
 
@@ -59,20 +60,6 @@ theorem continuous_presentationLimitAppTop
   exact ((presentationLimitPreAdicSpaceTopIso P Aplus hAplus hP).inv ≫
     TopCommRingCat.isCompleteSeparated.ι.map
       (PresheafedSpace.Γ.map (PreAdicSpace.forgetToPresheafedSpace.map f).op)).property
-
-/-- Pullback on global sections carries the plus ring of the target pair into the integral
-sections of the source. No sheaf condition on either space is required. -/
-theorem presentationLimitAppTop_mem_plus
-    (f : X ⟶ presentationLimitPreAdicSpace P Aplus hAplus hP) {a : A} (ha : a ∈ Aplus) :
-    presentationLimitAppTop P Aplus hAplus hP f a ∈ X.plusSubring ⊤ := by
-  refine PreAdicSpace.mem_plusSubring_iff.mpr fun x _ ↦ ?_
-  have hx := ((mem_spa_iff Aplus (f.base x : spa Aplus).val).mp (f.base x : spa Aplus).property).2 a
-      ha
-  rw [base_eq_comap_presentationLimitAppTop, comap_vle] at hx
-  -- The source section ring is also the section ring of its ring-valued presheaf, but `rw`
-  -- does not unfold the forgetful functor enough to identify the carrier of the inner comap.
-  erw [comap_vle, map_one, map_one] at hx
-  exact hx
 
 /-- Equal coefficient pullbacks give equal components on the whole target spectrum. -/
 private theorem Γ_map_eq_of_presentationLimitAppTop_eq
