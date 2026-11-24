@@ -84,6 +84,8 @@ with no condition on the lower parameters.
   `Complex.mul_deriv_regularizedGaussHGFun_add_mul_eq_mul`,
   `Complex.mul_one_sub_mul_deriv_regularizedGaussHGFun` — parameter-shift and first-order
   contiguous-derivative identities on `‖z‖ < 1` (DLMF §15.5).
+* `Complex.coeff_regularizedGaussHGFunSeries_eq_sub_mul_add_mul` — the shift of DLMF 15.5.15 for
+  the coefficients of the series, which holds for every `z`.
 * `Complex.analyticAt_uncurry_regularizedGaussHGFun`, `AnalyticAt.regularizedGaussHGFun`,
   `DifferentiableAt.regularizedGaussHGFun`, `DifferentiableWithinAt.regularizedGaussHGFun`,
   `DifferentiableOn.regularizedGaussHGFun`, `Differentiable.regularizedGaussHGFun` — joint
@@ -473,6 +475,21 @@ theorem hasDerivAt_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ <
   rw [← deriv_regularizedGaussHGFun a b c hz]
   exact (analyticAt_regularizedGaussHGFun a b c hz).differentiableAt.hasDerivAt
 
+/-- The coefficients of the regularized Gauss series satisfy the contiguous shift in `c` and `a`
+of DLMF 15.5.15, for all complex parameters: the `n`-th coefficient of `𝐅(a, b; c; ·)` is
+`c − a` times that of `𝐅(a, b; c + 1; ·)` plus `a` times that of `𝐅(a + 1, b; c + 1; ·)`. -/
+theorem coeff_regularizedGaussHGFunSeries_eq_sub_mul_add_mul (a b c : ℂ) (n : ℕ) :
+    (regularizedGaussHGFunSeries a b c).coeff n =
+      (c - a) * (regularizedGaussHGFunSeries a b (c + 1)).coeff n +
+        a * (regularizedGaussHGFunSeries (a + 1) b (c + 1)).coeff n := by
+  have hap : a * (ascPochhammer ℂ n).eval (a + 1) = (a + n) * (ascPochhammer ℂ n).eval a := by
+    rw [ascPochhammer_eval_succ, mul_comm]
+  have hΓ := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c + n)
+  simp only [coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
+  rw [add_right_comm c 1 (n : ℂ), hΓ]
+  linear_combination
+    (ascPochhammer ℂ n).eval b * (n ! : ℂ)⁻¹ * (Gamma (c + n + 1))⁻¹ * (-hap)
+
 /-- Regularized Gauss contiguous shift in `c` and `a` on the open unit disk (DLMF 15.5.15):
 `𝐅(a, b; c; z) = (c - a) 𝐅(a, b; c + 1; z) + a 𝐅(a + 1, b; c + 1; z)`. -/
 theorem regularizedGaussHGFun_eq_sub_mul_add_mul (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
@@ -484,13 +501,8 @@ theorem regularizedGaussHGFun_eq_sub_mul_add_mul (a b c : ℂ) {z : ℂ} (hz : �
     (summable_coeff_regularizedGaussHGFunSeries_mul_pow (a + 1) b (c + 1) hz).mul_left a
   simp_rw [regularizedGaussHGFun_eq_tsum_coeff_mul_pow, ← tsum_mul_left, ← hs₁.tsum_add hs₂]
   refine tsum_congr fun n => ?_
-  have hap : a * (ascPochhammer ℂ n).eval (a + 1) = (a + n) * (ascPochhammer ℂ n).eval a := by
-    rw [ascPochhammer_eval_succ, mul_comm]
-  have hΓ := one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (c + n)
-  simp only [coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
-  rw [add_right_comm c 1 (n : ℂ), hΓ]
-  linear_combination
-    (ascPochhammer ℂ n).eval b * (n ! : ℂ)⁻¹ * (Gamma (c + n + 1))⁻¹ * z ^ n * (-hap)
+  rw [coeff_regularizedGaussHGFunSeries_eq_sub_mul_add_mul]
+  ring
 
 /-- Regularized Gauss contiguous shift in `b` on the open unit disk (DLMF 15.5.16_5):
 `𝐅(a, b; c; z) = 𝐅(a, b + 1; c; z) - a z 𝐅(a + 1, b + 1; c + 1; z)`. -/
