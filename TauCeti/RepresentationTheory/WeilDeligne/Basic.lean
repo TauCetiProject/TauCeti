@@ -7,8 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.RepresentationTheory.Intertwining
-public import Mathlib.Topology.Constructions
-public import TauCeti.LinearAlgebra.JordanChevalley.Multiplicative
+public import Mathlib.Topology.Defs.Basic
 
 /-!
 # Raw Weil–Deligne parameters
@@ -30,7 +29,8 @@ Frobenius semisimplicity is a separate predicate on the same fields: every `r(w)
 `deg w ≠ 0` is semisimple. Morphisms of parameters are linear maps intertwining both `r` and `N`,
 and isomorphisms are invertible morphisms. A parameter can be transported along a linear
 equivalence `e : V ≃ₗ[E] V'`, which conjugates both `r` and `N` by `e`; every isomorphism of
-parameters is such a transport (`WeilDeligneParameter.Iso.eq_transport`).
+parameters is such a transport (`WeilDeligneParameter.Iso.eq_transport`). Unramified parameters
+are in `TauCeti.RepresentationTheory.WeilDeligne.Unramified`.
 
 ## Main definitions
 
@@ -41,7 +41,6 @@ parameters is such a transport (`WeilDeligneParameter.Iso.eq_transport`).
   isomorphisms, extending Mathlib's `Representation.IntertwiningMap` and
   `Representation.Equiv`.
 * `TauCeti.WeilDeligneParameter.transport`: transport along a linear equivalence.
-* `TauCeti.WeilDeligneParameter.unramified`: the parameter with `r(w) = A ^ deg w` and `N = 0`.
 
 ## Main results
 
@@ -51,11 +50,6 @@ parameters is such a transport (`WeilDeligneParameter.Iso.eq_transport`).
   transport of `D` along its underlying linear equivalence.
 * `TauCeti.WeilDeligneParameter.Iso.isFrobeniusSemisimple_iff`: Frobenius semisimplicity is
   invariant under isomorphism.
-* `TauCeti.WeilDeligneParameter.isFrobeniusSemisimple_unramified_iff`: the unramified parameter of
-  `A` is Frobenius semisimple exactly when the degree is trivial or `A` is semisimple.
-* `TauCeti.WeilDeligneParameter.not_isFrobeniusSemisimple_unramified_of_isUnipotent_of_ne_one`:
-  for a nontrivial degree, an unramified parameter whose Frobenius acts by a nontrivial unipotent
-  automorphism, such as the Jordan block `[[1, 1], [0, 1]]`, is not Frobenius semisimple.
 
 ## References
 
@@ -72,8 +66,6 @@ noncomputable section
 namespace TauCeti
 
 open Module
-
-open LinearMap (GeneralLinearGroup)
 
 /-- **A raw Weil–Deligne parameter** `(V, r, N)` for a topological group `W` with arithmetic degree
 `deg : W →* Multiplicative ℤ` and a natural number `q`: a linear representation `r` of `W` on `V`
@@ -103,9 +95,9 @@ variable {E W V V' V'' V''' : Type*} [Field E] [Group W] [TopologicalSpace W]
 
 /-- The conjugation relation in the form `r(w) N = q ^ deg w • N r(w)`. -/
 theorem r_mul_N (D : WeilDeligneParameter E W V deg q) (w : W) :
-    D.r w * D.N = (q : E) ^ (deg w).toAdd • (D.N * D.r w) := by
-  rw [← smul_mul_assoc, ← D.conj_N, mul_assoc _ (D.r w⁻¹), ← map_mul, inv_mul_cancel, map_one,
-    mul_one]
+    D.r w * D.N = (q : E) ^ (deg w).toAdd • (D.N * D.r w) :=
+  calc D.r w * D.N = D.r w * D.N * D.r w⁻¹ * D.r w := by simp [mul_assoc, ← map_mul]
+    _ = (q : E) ^ (deg w).toAdd • (D.N * D.r w) := by rw [D.conj_N, smul_mul_assoc]
 
 /-- The conjugation relation evaluated at a vector: `r(w) (N v) = q ^ deg w • N (r(w) v)`. -/
 theorem r_apply_N_apply (D : WeilDeligneParameter E W V deg q) (w : W) (v : V) :
@@ -189,8 +181,8 @@ def id : Hom D D where
 def comp (f : Hom D' D'') (g : Hom D D') : Hom D D'' where
   toIntertwiningMap := f.toIntertwiningMap.comp g.toIntertwiningMap
   comp_N := by
-    rw [Representation.IntertwiningMap.comp_toLinearMap, LinearMap.comp_assoc, g.comp_N,
-      ← LinearMap.comp_assoc, f.comp_N, LinearMap.comp_assoc]
+    ext v
+    simp [map_N_apply]
 
 theorem id_toIntertwiningMap : (id D).toIntertwiningMap = .id D.r :=
   (rfl)
@@ -309,7 +301,9 @@ theorem coe_toHom (f : Iso D D') : ⇑f.toHom = f :=
 /-- The isomorphism given by a morphism whose underlying map is bijective. -/
 def ofBijective (f : Hom D D') (hf : Function.Bijective f) : Iso D D' where
   toRepresentationEquiv := f.toIntertwiningMap.ofBijective hf
-  comp_N := f.comp_N
+  comp_N := by
+    ext v
+    simpa using f.map_N_apply v
 
 theorem ofBijective_toRepresentationEquiv (f : Hom D D') (hf : Function.Bijective f) :
     (ofBijective f hf).toRepresentationEquiv = f.toIntertwiningMap.ofBijective hf :=
@@ -336,9 +330,11 @@ variable (D) in
 @[symm] def symm (f : Iso D D') : Iso D' D where
   toRepresentationEquiv := f.toRepresentationEquiv.symm
   comp_N := by
-    rw [Representation.Equiv.toLinearMap_symm, LinearEquiv.toLinearMap_symm_comp_eq,
-      ← LinearMap.comp_assoc, LinearEquiv.eq_comp_toLinearMap_symm]
-    exact f.comp_N.symm
+    ext v
+    apply f.injective
+    simp only [Representation.Equiv.toLinearMap_symm, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      LinearEquiv.apply_symm_apply, coe_toLinearEquiv, map_N_apply]
+    rw [← coe_toLinearEquiv, LinearEquiv.apply_symm_apply]
 
 /-- The composition of isomorphisms of parameters. -/
 @[trans] def trans (f : Iso D D') (g : Iso D' D'') : Iso D D'' where
@@ -466,9 +462,7 @@ def transport (D : WeilDeligneParameter E W V deg q) (e : V ≃ₗ[E] V') :
   isOpen_ker := by
     convert D.isOpen_ker using 2
     ext w
-    simp only [MonoidHom.mem_ker, MonoidHom.coe_comp, MonoidHom.coe_ofClass,
-      Function.comp_apply]
-    exact map_eq_one_iff _ (e.conjAlgEquiv E).injective
+    simp
   N := e.conjAlgEquiv E D.N
   isNilpotent_N := D.isNilpotent_N.map (e.conjAlgEquiv E)
   conj_N w := by
@@ -514,6 +508,10 @@ def transportIso : Iso D (D.transport e) where
   toRepresentationEquiv := .mk e fun w ↦ by ext v; simp
   comp_N := by ext v; simp
 
+theorem transportIso_toRepresentationEquiv :
+    (D.transportIso e).toRepresentationEquiv = .mk e fun w ↦ by ext v; simp :=
+  (rfl)
+
 @[simp]
 theorem transportIso_toLinearEquiv : (D.transportIso e).toLinearEquiv = e :=
   (rfl)
@@ -524,7 +522,7 @@ theorem coe_transportIso : ⇑(D.transportIso e) = e :=
 
 @[simp]
 theorem coe_transportIso_symm : ⇑(D.transportIso e).symm = e.symm := by
-  rw [← Iso.coe_toLinearEquiv, Iso.symm_toLinearEquiv, transportIso_toLinearEquiv]
+  rw [← Iso.coe_toLinearEquiv_symm, transportIso_toLinearEquiv]
 
 variable {D} in
 /-- **Isomorphisms are transports**: an isomorphism `f : D ≅ D'` exhibits `D'` as the transport of
@@ -533,11 +531,9 @@ theorem Iso.eq_transport {D' : WeilDeligneParameter E W V' deg q} (f : Iso D D')
     D' = D.transport f.toLinearEquiv := by
   ext1
   · ext w v
-    rw [transport_r_apply, Iso.coe_toLinearEquiv_symm, Iso.coe_toLinearEquiv, f.map_r_apply,
-      Iso.apply_symm_apply]
+    simp [f.map_r_apply]
   · ext v
-    rw [transport_N_apply, Iso.coe_toLinearEquiv_symm, Iso.coe_toLinearEquiv, f.map_N_apply,
-      Iso.apply_symm_apply]
+    simp [f.map_N_apply]
 
 variable {D} in
 /-- **Frobenius semisimplicity is invariant under isomorphism.** -/
@@ -550,61 +546,6 @@ theorem Iso.isFrobeniusSemisimple_iff {D' : WeilDeligneParameter E W V' deg q} (
 theorem isFrobeniusSemisimple_transport :
     (D.transport e).IsFrobeniusSemisimple ↔ D.IsFrobeniusSemisimple :=
   (D.transportIso e).isFrobeniusSemisimple_iff.symm
-
-/-! ### Unramified parameters -/
-
-variable (q) in
-/-- **The unramified parameter** of a linear automorphism `A` of `V`, for a continuous degree map:
-`r(w) = A ^ deg w` and `N = 0`. Elements of degree `0` act trivially. -/
-def unramified (hdeg : Continuous deg) (A : GeneralLinearGroup E V) :
-    WeilDeligneParameter E W V deg q where
-  r := (Units.coeHom _).comp ((zpowersHom _ A).comp deg)
-  isOpen_ker := by
-    rw [← MonoidHom.comp_assoc, MonoidHom.coe_ker, MonoidHom.coe_comp, Set.preimage_comp]
-    exact hdeg.isOpen_preimage _ (isOpen_discrete _)
-  N := 0
-  isNilpotent_N := .zero
-  conj_N _ := by simp
-
-@[simp]
-theorem unramified_r (hdeg : Continuous deg) (A : GeneralLinearGroup E V) (w : W) :
-    (unramified q hdeg A).r w =
-      ((A ^ (deg w).toAdd : GeneralLinearGroup E V) : Module.End E V) := by
-  simp [unramified]
-
-@[simp]
-theorem unramified_N (hdeg : Continuous deg) (A : GeneralLinearGroup E V) :
-    (unramified q hdeg A).N = 0 :=
-  (rfl)
-
-/-- **Frobenius semisimplicity of an unramified parameter**: the unramified parameter of `A` is
-Frobenius semisimple exactly when the degree is trivial or `A` is semisimple. -/
-theorem isFrobeniusSemisimple_unramified_iff [CharZero E] [FiniteDimensional E V]
-    (hdeg : Continuous deg)
-    (A : GeneralLinearGroup E V) :
-    (unramified q hdeg A).IsFrobeniusSemisimple ↔
-      deg = 1 ∨ LinearMap.GeneralLinearGroup.IsSemisimple A := by
-  simp_rw [isFrobeniusSemisimple_def, unramified_r,
-    ← LinearMap.GeneralLinearGroup.isSemisimple_def]
-  refine ⟨fun h ↦ or_iff_not_imp_left.2 fun hd ↦ ?_, ?_⟩
-  · obtain ⟨w, hw⟩ : ∃ w, deg w ≠ 1 := by
-      by_contra! h'
-      exact hd (MonoidHom.ext h')
-    have hn : (deg w).toAdd ≠ 0 := by simpa using hw
-    exact (LinearMap.GeneralLinearGroup.isSemisimple_zpow_iff (Int.cast_ne_zero.2 hn) A).1 (h w hn)
-  · rintro (hd | hA) w hw
-    · simp [hd] at hw
-    · exact hA.zpow _
-
-/-- **A nontrivial unipotent Frobenius is not semisimple**: for a nontrivial degree, if `A ≠ 1` is
-unipotent, as for the Jordan block `[[1, 1], [0, 1]]`, then the unramified parameter of `A` is not
-Frobenius semisimple. -/
-theorem not_isFrobeniusSemisimple_unramified_of_isUnipotent_of_ne_one [CharZero E]
-    [FiniteDimensional E V] (hdeg : Continuous deg)
-    {A : GeneralLinearGroup E V} (hA : LinearMap.GeneralLinearGroup.IsUnipotent A) (hA₁ : A ≠ 1)
-    (hd : deg ≠ 1) : ¬ (unramified q hdeg A).IsFrobeniusSemisimple := by
-  rw [isFrobeniusSemisimple_unramified_iff, or_iff_right hd]
-  exact fun hss ↦ hA₁ (hss.eq_one_of_isUnipotent hA)
 
 end WeilDeligneParameter
 
