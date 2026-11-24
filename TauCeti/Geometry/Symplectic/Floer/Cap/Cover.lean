@@ -487,6 +487,7 @@ private theorem map_subtypeVal_capCoverPath (hγ : γ.toCircle ∈ contractibleL
 
 /-- At time `t`, the path of contractible free loops of a disc `p` is the free loop of
 `p (σ t)`. -/
+@[simp]
 theorem coe_capCoverPath_apply (hγ : γ.toCircle ∈ contractibleLoops X)
     (p : Path γ (Path.refl x)) (t : I) :
     (capCoverPath hγ p t : C(Circle, X)) = (p (σ t)).toCircle := by
@@ -604,19 +605,15 @@ theorem RawCap.toCapCover_vadd (hγ : γ.toCircle ∈ contractibleLoops X) (a : 
     (a +ᵥ D).toCapCover ω c hγ =
       ((torusHurewiczSign : ℤ) • SphericalPeriodGroup.ofHomotopyGroup ω c x a) +ᵥ
         D.toCapCover ω c hγ := by
-  -- Represent `a` by a double loop `β` and `D` by a disc `p`.
-  obtain ⟨β, hβ⟩ : ∃ β : Ω (Ω X x) (Path.refl x), Path.Homotopic.Quotient.mk β =
-      (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.symm a.toMul).toPath :=
-    Path.Homotopic.Quotient.ind (motive := fun q ↦ ∃ β, Path.Homotopic.Quotient.mk β = q)
-      (fun β ↦ ⟨β, rfl⟩) _
-  have ha : a = Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
-      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β))) := by
-    rw [hβ]
-    exact (MulEquiv.apply_symm_apply _ a.toMul).symm
-  subst ha
-  obtain ⟨p, rfl⟩ : ∃ p : Path γ (Path.refl x), Path.Homotopic.Quotient.mk p = D :=
-    Path.Homotopic.Quotient.ind (motive := fun q ↦ ∃ p, Path.Homotopic.Quotient.mk p = q)
-      (fun p ↦ ⟨p, rfl⟩) D
+  -- Represent `a` by a double loop `β` and `D` by a disc `p`. An element of the fundamental group
+  -- is `FundamentalGroup.fromPath` of its `toPath` by structure eta for `CategoryTheory.End.of`.
+  have hfrom : Function.Surjective (FundamentalGroup.fromPath (x := (Path.refl x : Ω X x))) :=
+    fun g ↦ ⟨g.toPath, rfl⟩
+  obtain ⟨β, rfl⟩ := Additive.ofMul.surjective.comp
+    (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.surjective.comp
+      (hfrom.comp Path.Homotopic.Quotient.mk_surjective)) a
+  dsimp only [Function.comp_apply]
+  obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective D
   have hvadd : Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β))) +ᵥ
           (show RawCap γ from Path.Homotopic.Quotient.mk p) =
@@ -687,13 +684,12 @@ private theorem bijective_toCapCoverFiber (hγ : γ.toCircle ∈ contractibleLoo
         (0 : SphericalPeriodGroup ω c) +ᵥ toCapCoverFiber hγ q := by
       rw [← toCapCoverFiber_vadd, vsub_vadd, zero_vadd, h]
     have h0 : q' -ᵥ q = 0 := by
-      rw [← one_smul ℤ (q' -ᵥ q), ← Int.units_coe_mul_self torusHurewiczSign, ← smul_smul,
-        (vadd_right_cancel_iff _).1 h', smul_zero]
+      rw [← torusHurewiczSign_smul_smul (q' -ᵥ q), (vadd_right_cancel_iff _).1 h', smul_zero]
     exact (vsub_eq_zero_iff_eq.1 h0).symm
   · -- Recapping a cap class by the sign times the difference reaches any point of the fibre.
     obtain ⟨q₀⟩ : Nonempty (SphericalCapClass ω c γ) := inferInstance
     refine ⟨((torusHurewiczSign : ℤ) • (e -ᵥ toCapCoverFiber hγ q₀)) +ᵥ q₀, ?_⟩
-    rw [toCapCoverFiber_vadd, smul_smul, Int.units_coe_mul_self, one_smul, vsub_vadd]
+    rw [toCapCoverFiber_vadd, torusHurewiczSign_smul_smul, vsub_vadd]
 
 variable (ω c) in
 /-- **The fibre of the cap cover over a contractible loop at `x` is its set of cap classes.** For a

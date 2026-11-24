@@ -610,6 +610,12 @@ theorem freeLoopTorusClassHom_eq_torusHurewiczSign_smul {x : Q} (β : Ω (Ω Q x
           (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β)))) :=
   exists_forall_freeLoopTorusClassHom_eq_units_smul_hurewiczIntHom.choose_spec Q x β Λ hβ
 
+/-- Multiplying twice by the torus–Hurewicz sign is the identity, since it is a unit of `ℤ`. -/
+@[simp]
+theorem torusHurewiczSign_smul_smul {G : Type*} [AddCommGroup G] (g : G) :
+    (torusHurewiczSign : ℤ) • (torusHurewiczSign : ℤ) • g = g := by
+  rw [smul_smul, Int.units_coe_mul_self, one_smul]
+
 end Singular
 
 end TauCeti
