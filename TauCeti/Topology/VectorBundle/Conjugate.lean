@@ -28,7 +28,8 @@ covering the identity of the base, conjugate-linear on each fibre
 (`TauCeti.ConjugateBundle.toConjHomeomorph`). Conjugating twice gives back `E`, by a homeomorphism
 that is complex-linear on each fibre (`TauCeti.ConjugateBundle.doubleConjugateHomeomorph`), and
 the conjugate of a direct sum is the direct sum of the conjugates
-(`TauCeti.ConjugateBundle.prodHomeomorph`).
+(`TauCeti.ConjugateBundle.prodHomeomorph`). Pullback commutes with conjugation through
+`TauCeti.ConjugateBundle.pullbackHomeomorph`, which preserves every base point and fibre entry.
 
 The conjugate bundle is the second piece of the doubled bundle of a bundle pair over a bordered
 Riemann surface: `E` over the surface is glued to its conjugate over the reflected copy, along the
@@ -157,12 +158,6 @@ def _root_.Bundle.Trivialization.conjugate (e : Trivialization F (π F E)) :
 @[simp] theorem _root_.Bundle.Trivialization.baseSet_conjugate (e : Trivialization F (π F E)) :
     e.conjugate.baseSet = e.baseSet := (rfl)
 
-/-- Membership in the base of a conjugated chart is membership in the original chart base. -/
-theorem _root_.Bundle.Trivialization.mem_baseSet_conjugate
-    (e : Trivialization F (π F E)) {x : B} :
-    x ∈ e.conjugate.baseSet ↔ x ∈ e.baseSet := by
-  rw [Trivialization.baseSet_conjugate]
-
 @[simp] theorem _root_.Bundle.Trivialization.source_conjugate (e : Trivialization F (π F E)) :
     e.conjugate.source = toConjHomeomorph F E '' e.source :=
   (Equiv.image_eq_preimage_symm _ _).symm ▸ rfl
@@ -206,6 +201,7 @@ theorem _root_.Bundle.Trivialization.conjugate_pullback_apply
       (p.proj, toConj (e ⟨f p.proj, ofConj p.snd⟩).2) := by
   rw [Trivialization.pullback_apply, Trivialization.conjugate_apply,
     toConjHomeomorph_symm_apply]
+  -- `Pullback.lift` changes only the base point; its fibre entry is the same pair projection.
   rfl
 
 end PullbackCoordinates
@@ -268,7 +264,7 @@ theorem _root_.Bundle.Trivialization.coordChangeL_conjugate (e e' : Trivializati
 /-- The fibre linear coordinates of a conjugated chart are the conjugate linear coordinates. -/
 theorem _root_.Bundle.Trivialization.linearEquivAt_conjugate
     (e : Trivialization F (π F E)) [e.IsLinear ℂ] {x : B} (hx : x ∈ e.baseSet) :
-    (e.conjugate.linearEquivAt ℂ x ((Trivialization.mem_baseSet_conjugate e).mpr hx)).toLinearMap =
+    (e.conjugate.linearEquivAt ℂ x (e.baseSet_conjugate.symm ▸ hx)).toLinearMap =
       (e.linearEquivAt ℂ x hx).toLinearMap.conjugate := by
   ext v
   simp only [LinearMap.conjugate_apply, LinearEquiv.coe_toLinearMap,
@@ -318,7 +314,7 @@ theorem _root_.Bundle.Trivialization.linearEquivAt_conjugate_pullback
       (by simpa only [ePB, Trivialization.pullback_baseSet,
         Trivialization.baseSet_conjugate] using hy)).toLinearMap =
       ((e.pullback f).conjugate.linearEquivAt ℂ y
-        ((Trivialization.mem_baseSet_conjugate (e.pullback f)).mpr hy)).toLinearMap := by
+        ((e.pullback f).baseSet_conjugate.symm ▸ hy)).toLinearMap := by
   let : ∀ x, AddCommGroup (((f : X → B) *ᵖ E) x) := fun x =>
     inferInstanceAs (AddCommGroup (E (f x)))
   let : ∀ x, Module ℂ (((f : X → B) *ᵖ E) x) := fun x =>

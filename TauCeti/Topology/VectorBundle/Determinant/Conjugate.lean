@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Topology.FiberBundle.Pullback
+
 public import TauCeti.LinearAlgebra.ExteriorPower.Conjugate
 public import TauCeti.Topology.VectorBundle.Conjugate
 public import TauCeti.Topology.VectorBundle.Determinant
@@ -277,7 +279,7 @@ theorem chartCoord_conjugateLinearEquiv (e : Trivialization F (π F E)) [e.IsLin
     (v : DetBundle ℂ (Conjugate F) (ConjugateBundle E) x) :
     toConj (chartCoord e hx (ofConj (conjugateLinearEquiv (F := F) (E := E) x v))) =
       conjugateModelEquiv (F := F) (chartCoord e.conjugate
-        ((Trivialization.mem_baseSet_conjugate e).mpr hx) v) := by
+        (e.baseSet_conjugate.symm ▸ hx) v) := by
   have h := exteriorPower.conjugateEquiv_ofEq_map (finrank_complex (V := F))
     (e.linearEquivAt ℂ x hx).toLinearMap
     (linearEquiv ℂ (Conjugate F) (ConjugateBundle E) x v)
@@ -291,7 +293,7 @@ theorem chartCoord_conjugateLinearEquiv (e : Trivialization F (π F E)) [e.IsLin
     LinearEquiv.coe_toLinearMap,
     ← LinearEquiv.coe_toLinearMap ((e.linearEquivAt ℂ x hx).exteriorPower (finrank ℂ F)),
     ← LinearEquiv.coe_toLinearMap ((e.conjugate.linearEquivAt ℂ x
-      ((Trivialization.mem_baseSet_conjugate e).mpr hx)).exteriorPower
+      (e.baseSet_conjugate.symm ▸ hx)).exteriorPower
         (finrank ℂ (Conjugate F))), LinearEquiv.exteriorPower_toLinearMap] using h'.symm
 
 /-- The inverse chart formula retains the inverse of the actual model comparison. -/
@@ -299,7 +301,7 @@ theorem chartCoord_conjugateLinearEquiv_symm
     (e : Trivialization F (π F E)) [e.IsLinear ℂ] {x : B} (hx : x ∈ e.baseSet)
     (w : Conjugate (DetBundle ℂ F E x)) :
     chartCoord e.conjugate
-      ((Trivialization.mem_baseSet_conjugate e).mpr hx)
+      (e.baseSet_conjugate.symm ▸ hx)
       ((conjugateLinearEquiv (F := F) (E := E) x).symm w) =
     (conjugateModelEquiv (F := F)).symm (toConj (chartCoord e hx (ofConj w))) := by
   apply (conjugateModelEquiv (F := F)).injective
@@ -338,7 +340,7 @@ theorem continuous_conjugate :
     have hxe : x ∈ e.baseSet := by
       simpa only [eS, trivialization_baseSet, Trivialization.baseSet_conjugate] using hxS
     have hxc : x ∈ e.conjugate.baseSet :=
-      (Trivialization.mem_baseSet_conjugate e).mpr hxe
+      e.baseSet_conjugate.symm ▸ hxe
     simp only [eS, eT, Trivialization.conjugate_apply,
       ConjugateBundle.toConjHomeomorph_symm_apply, conjugateEquiv_apply]
     rw [trivialization_apply_mk e hxe, trivialization_apply_mk e.conjugate hxc]
@@ -472,23 +474,19 @@ def pulledConjugateHomeomorph (f : X → B) :
     apply TotalSpace.mk_inj.mpr
     exact (conjugateEquiv (F := F) (E := E) (f x)).apply_symm_apply v
   continuous_toFun := by
-    apply (inducing_pullbackTotalSpaceEmbedding (Conjugate ℂ)
-      (ConjugateBundle (DetBundle ℂ F E)) f).continuous_iff.mpr
-    have h := (Pullback.continuous_proj ℂ
-      (DetBundle ℂ (Conjugate F) (ConjugateBundle E)) f).prodMk
-      ((conjugateHomeomorph (F := F) (E := E)).continuous.comp
-        (Pullback.continuous_lift ℂ (DetBundle ℂ (Conjugate F) (ConjugateBundle E)) f))
-    simpa only [pullbackTotalSpaceEmbedding, Pullback.lift, Function.comp_def,
-      conjugateHomeomorph_apply] using h
+    apply Pullback.continuous_iff.mpr
+    refine ⟨Pullback.continuous_proj ℂ
+      (DetBundle ℂ (Conjugate F) (ConjugateBundle E)) f, ?_⟩
+    simpa only [Pullback.lift, Function.comp_def, conjugateHomeomorph_apply] using
+      (conjugateHomeomorph (F := F) (E := E)).continuous.comp
+        (Pullback.continuous_lift ℂ (DetBundle ℂ (Conjugate F) (ConjugateBundle E)) f)
   continuous_invFun := by
-    apply (inducing_pullbackTotalSpaceEmbedding ℂ
-      (DetBundle ℂ (Conjugate F) (ConjugateBundle E)) f).continuous_iff.mpr
-    have h := (Pullback.continuous_proj (Conjugate ℂ)
-      (ConjugateBundle (DetBundle ℂ F E)) f).prodMk
-      ((conjugateHomeomorph (F := F) (E := E)).symm.continuous.comp
-        (Pullback.continuous_lift (Conjugate ℂ) (ConjugateBundle (DetBundle ℂ F E)) f))
-    simpa only [pullbackTotalSpaceEmbedding, Pullback.lift, Function.comp_def,
-      conjugateHomeomorph_symm_apply] using h
+    apply Pullback.continuous_iff.mpr
+    refine ⟨Pullback.continuous_proj (Conjugate ℂ)
+      (ConjugateBundle (DetBundle ℂ F E)) f, ?_⟩
+    simpa only [Pullback.lift, Function.comp_def, conjugateHomeomorph_symm_apply] using
+      (conjugateHomeomorph (F := F) (E := E)).symm.continuous.comp
+        (Pullback.continuous_lift (Conjugate ℂ) (ConjugateBundle (DetBundle ℂ F E)) f)
 
 @[simp] theorem pulledConjugateHomeomorph_apply (f : X → B)
     (p : TotalSpace ℂ (f *ᵖ (DetBundle ℂ (Conjugate F) (ConjugateBundle E)))) :
@@ -552,7 +550,7 @@ private theorem chartCoord_conjugate_pullback
       (by simpa only [ePB, Trivialization.pullback_baseSet,
         Trivialization.baseSet_conjugate] using hy) v =
     chartCoord (e.pullback f).conjugate
-      ((Trivialization.mem_baseSet_conjugate (e.pullback f)).mpr hy) v := by
+      ((e.pullback f).baseSet_conjugate.symm ▸ hy) v := by
   dsimp only
   let ePB : Trivialization (Conjugate F)
     (π (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E))) := e.conjugate.pullback f
@@ -561,6 +559,8 @@ private theorem chartCoord_conjugate_pullback
   dsimp only at h
   have h' := congrArg (fun g => exteriorPower.map (finrank ℂ (Conjugate F)) g
     (linearEquiv ℂ (Conjugate F) (ConjugateBundle ((f : X → B) *ᵖ E)) y v)) h
+  -- The reindexed original AddCommGroup/Module dictionaries and generic pullback
+  -- AddCommMonoid/Module dictionaries agree here; `erw` aligns this chart instantiation.
   erw [chartCoord_apply (𝕜 := ℂ) (F := Conjugate F)
     (E := ConjugateBundle ((f : X → B) *ᵖ E)) ePB]
   simpa only [chartCoord_apply (𝕜 := ℂ) (F := Conjugate F)
@@ -582,7 +582,7 @@ private theorem chartCoord_conjugateLinearEquiv_pullback
   have hx : f y ∈ e.baseSet := by
     simpa only [Trivialization.pullback_baseSet, Set.mem_preimage] using hy
   have hxc : f y ∈ e.conjugate.baseSet :=
-    (Trivialization.mem_baseSet_conjugate e).mpr hx
+    e.baseSet_conjugate.symm ▸ hx
   -- Pullback's AddCommMonoid/Module instances and the original fibre's AddCommGroup
   -- must use the same Module dictionary here. Fix both families through E (f x).
   let : ∀ x, AddCommGroup (((f : X → B) *ᵖ E) x) := fun x =>
@@ -601,7 +601,7 @@ private theorem chartCoord_conjugateLinearEquiv_pullback
     (f : X → B) y v
   have hs : chartCoord (𝕜 := ℂ) (F := Conjugate F)
       (E := ConjugateBundle ((f : X → B) *ᵖ E)) (e.pullback f).conjugate
-      ((Trivialization.mem_baseSet_conjugate (e.pullback f)).mpr hy) u =
+      ((e.pullback f).baseSet_conjugate.symm ▸ hy) u =
       chartCoord (𝕜 := ℂ) (F := Conjugate F) (E := ConjugateBundle E)
         e.conjugate hxc v :=
     (chartCoord_conjugate_pullback e f hy u).symm.trans

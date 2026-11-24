@@ -297,16 +297,7 @@ theorem _root_.ContinuousLinearMap.conjugate_conjugate (f : V →L[ℂ] W) :
       W →L[ℂ] Conjugate (Conjugate W)) ∘L f ∘L
         (doubleConjugateL : Conjugate (Conjugate V) ≃L[ℂ] V) := by
   ext v
-  apply (doubleConjugateL (V := W)).injective
-  have h := LinearMap.congr_fun (doubleConjugateLinearEquiv_naturality f.toLinearMap) v
-  rw [← ContinuousLinearMap.conjugate_toLinearMap f,
-    ← ContinuousLinearMap.conjugate_toLinearMap f.conjugate,
-    ← doubleConjugateL_toLinearEquiv (V := W),
-    ← doubleConjugateL_toLinearEquiv (V := V)] at h
-  simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-    ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
-    ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using h
+  simp
 
 /-- The conjugate of a product is the product of the conjugates. -/
 def prodL : Conjugate (V × W) ≃L[ℂ] Conjugate V × Conjugate W where
