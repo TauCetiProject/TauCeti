@@ -19,7 +19,7 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 import TauCeti.CategoryTheory.Limits.Lattice
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
-import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.LinearAlgebra.Finsupp.Supported
 import TauCeti.LinearAlgebra.Matrix.Determinant.TupleSign
 import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
@@ -979,38 +979,6 @@ private lemma sum_negPart_cechπ {z : (laurentCech (R := R) (κ := κ) m).X (n +
   simp only [val_cechπ_d, map_sum, map_zsmul] at h
   exact h.trans (by rw [map_zero]; rfl)
 
-/-- Inserting `i.castSucc` at position `i.succ.succ` into `id : Fin (n + 2) → Fin (n + 2)` and then
-deleting position `i.castSucc.castSucc` swaps `i.castSucc` and `i.succ`. -/
-private lemma insertNth_comp_succAbove_eq_swap {n : ℕ} (i : Fin (n + 1)) :
-    (i.succ.succ.insertNth (α := fun _ ↦ Fin (n + 2)) i.castSucc id) ∘
-      i.castSucc.castSucc.succAbove = Equiv.swap i.castSucc i.succ := by
-  let p₀ : Fin (n + 3) := i.castSucc.castSucc
-  let p₂ : Fin (n + 3) := i.succ.succ
-  funext j
-  rcases lt_trichotomy j i.castSucc with hj | rfl | hj
-  · have hlt : (j : ℕ) < i := by simpa [Fin.lt_def] using hj
-    have h1 : p₀.succAbove j = p₂.succAbove j := by
-      rw [Fin.succAbove_of_castSucc_lt p₀ j (by simp [p₀, Fin.lt_def]; omega),
-        Fin.succAbove_of_castSucc_lt p₂ j (by simp [p₂, Fin.lt_def]; omega)]
-    rw [Function.comp_apply, h1, Fin.insertNth_apply_succAbove, id_eq,
-      Equiv.swap_apply_of_ne_of_ne hj.ne (hj.trans (Fin.castSucc_lt_succ (i := i))).ne]
-  · have h1 : p₀.succAbove i.castSucc = p₂.succAbove i.succ := by
-      rw [Fin.succAbove_of_le_castSucc p₀ i.castSucc le_rfl,
-        Fin.succAbove_of_castSucc_lt p₂ i.succ (by simp [p₂, Fin.lt_def])]
-      exact Fin.ext (by simp)
-    rw [Function.comp_apply, h1, Fin.insertNth_apply_succAbove, id_eq, Equiv.swap_apply_left]
-  · have hgt : (i : ℕ) < j := by simpa [Fin.lt_def] using hj
-    rcases eq_or_lt_of_le (show i.succ ≤ j by simp [Fin.le_def]; omega) with rfl | hj'
-    · have h1 : p₀.succAbove i.succ = p₂ :=
-        Fin.succAbove_of_le_castSucc p₀ i.succ (by simp [p₀, Fin.le_def])
-      rw [Function.comp_apply, h1, Fin.insertNth_apply_same, Equiv.swap_apply_right]
-    · have hgt' : (i : ℕ) + 1 < j := by simpa [Fin.lt_def] using hj'
-      have h1 : p₀.succAbove j = p₂.succAbove j := by
-        rw [Fin.succAbove_of_le_castSucc p₀ j (by simp [p₀, Fin.le_def]; omega),
-          Fin.succAbove_of_le_castSucc p₂ j (by simp [p₂, Fin.le_def]; omega)]
-      rw [Function.comp_apply, h1, Fin.insertNth_apply_succAbove, id_eq,
-        Equiv.swap_apply_of_ne_of_ne hj.ne' hj'.ne']
-
 include e in
 /-- The coefficients of a cocycle of top degree at the monomials with all exponents negative
 change sign when two adjacent entries of the tuple are swapped: this is the cocycle condition at
@@ -1021,25 +989,22 @@ private lemma negPart_cechπ_comp_swap {z : (laurentCech (R := R) (κ := κ) m).
         := by
   let p₀ : Fin (n + 3) := i.castSucc.castSucc
   let p₂ : Fin (n + 3) := i.succ.succ
-  let s : Fin (n + 3) → Fin (n + 2) := p₂.insertNth (α := fun _ ↦ Fin (n + 2)) i.castSucc id
+  let c' : Fin (n + 3) → κ := p₂.insertNth (α := fun _ ↦ κ) (c i.castSucc) c
   have hp₀ : p₂.succAbove i.castSucc = p₀ :=
     Fin.succAbove_of_castSucc_lt p₂ i.castSucc (by simp [p₂, Fin.lt_def])
-  have h₀ : c ∘ s ∘ p₀.succAbove = c ∘ Equiv.swap i.castSucc i.succ :=
-    congrArg (c ∘ ·) (insertNth_comp_succAbove_eq_swap i)
-  have h₂ : c ∘ s ∘ p₂.succAbove = c :=
-    funext fun j ↦ congrArg c (Fin.insertNth_apply_succAbove (α := fun _ ↦ Fin (n + 2))
-      p₂ i.castSucc id j)
+  have h₀ : c' ∘ p₀.succAbove = c ∘ Equiv.swap i.castSucc i.succ :=
+    Fin.insertNth_comp_succAbove_eq_comp_swap i c
+  have h₂ : c' ∘ p₂.succAbove = c :=
+    funext (Fin.insertNth_apply_succAbove (α := fun _ ↦ κ) p₂ (c i.castSucc) c)
   have hzero (p : Fin (n + 3)) (hp : p ≠ p₀ ∧ p ≠ p₂) :
-      (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m ((c ∘ s) ∘ p.succAbove) z).val = 0 := by
+      (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m (c' ∘ p.succAbove) z).val = 0 := by
     obtain ⟨j₀, hj₀⟩ := Fin.exists_succAbove_eq hp.1.symm
     obtain ⟨j₂, hj₂⟩ := Fin.exists_succAbove_eq hp.2.symm
     rw [negPart_cechπ_eq_zero m (fun hsurj ↦ ?_) z, smul_zero]
     have hinj := (Finite.injective_iff_surjective_of_equiv e.symm).2 hsurj
     have hj : j₀ = j₂ := hinj (by
-      simp only [Function.comp_apply, hj₀, hj₂]
-      exact congrArg c (by
-        dsimp only [s]
-        rw [← hp₀, Fin.insertNth_apply_succAbove, id_eq, Fin.insertNth_apply_same]))
+      simp only [Function.comp_apply, hj₀, hj₂, c']
+      rw [← hp₀, Fin.insertNth_apply_succAbove, Fin.insertNth_apply_same])
     have hval := congrArg Fin.val (hj₀.symm.trans (hj ▸ hj₂))
     simp only [p₀, p₂, Fin.val_castSucc, Fin.val_succ] at hval
     omega
@@ -1050,9 +1015,8 @@ private lemma negPart_cechπ_comp_swap {z : (laurentCech (R := R) (κ := κ) m).
   have hsign : (-1 : ℤ) ^ (p₂ : ℕ) = (-1 : ℤ) ^ (p₀ : ℕ) := by
     simp only [p₀, p₂, Fin.val_castSucc, Fin.val_succ, pow_succ]
     ring
-  have hsum := sum_negPart_cechπ m hz (c ∘ s)
-  rw [Fintype.sum_eq_add p₀ p₂ hp₀₂ hzero, Function.comp_assoc, Function.comp_assoc, h₀, h₂,
-    hsign, ← smul_add] at hsum
+  have hsum := sum_negPart_cechπ m hz c'
+  rw [Fintype.sum_eq_add p₀ p₂ hp₀₂ hzero, h₀, h₂, hsign, ← smul_add] at hsum
   exact eq_neg_of_add_eq_zero_left (((isUnit_neg_one (α := ℤ)).pow _).smul_eq_zero.1 hsum)
 
 /-- The coefficients of a cocycle of top degree at the monomials with all exponents negative are
