@@ -21,6 +21,8 @@ both defined through Tricomi's entire function `γ*` of
 
 * `Complex.lowerIncompleteGamma_eq_integral`: DLMF 8.2.1, `γ(a, z) = z^a ∫₀¹ s^{a−1} e^{−zs} ds`
   for `0 < Re a`;
+* `Complex.lowerIncompleteGamma_eq_regularizedHGFun`: the Kummer representation DLMF 8.5.1,
+  `γ(a, z) = a⁻¹ z^a Γ(a + 1) 𝐌(a, a + 1, −z)`;
 * `TauCeti.intervalIntegral_cpow_mul_exp_neg_mul`: DLMF 8.2.1 rescaled,
   `∫₀ˣ t^{a−1} e^{−rt} dt = r^{−a} γ(a, rx)` for `0 < Re a`, `r ≠ 0`, `0 ≤ x`;
 * `Complex.tendsto_mul_lowerIncompleteGamma`: for `z ≠ 0`, `γ(·, z)` has simple poles at
@@ -39,7 +41,7 @@ At the poles `a ∈ −ℕ`, `γ(a, z)` takes the value given by Mathlib's junk 
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §§8.2, 8.4, <https://dlmf.nist.gov/8.2>.
+* NIST Digital Library of Mathematical Functions, §§8.2, 8.4, 8.5, <https://dlmf.nist.gov/8.2>.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMF/IncompleteGamma/ContinuedProperties.lean`, and restated on Tricomi's `γ*`.
@@ -94,6 +96,18 @@ theorem lowerIncompleteGamma_eq_integral {a : ℂ} (ha : 0 < a.re) (z : ℂ) :
   rw [lowerIncompleteGamma_def, regularizedGamma_def, tricomiIncompleteGamma_eq_integral ha]
   have hG := Gamma_ne_zero_of_re_pos ha
   field_simp
+
+/-- **Kummer representation** of the lower incomplete Gamma function (DLMF 8.5.1):
+`γ(a, z) = a⁻¹ z^a Γ(a + 1) 𝐌(a, a + 1, −z)`. DLMF states it for `a ∉ −ℕ`; with Mathlib's junk
+values `0⁻¹ = 0` and `Γ(−n) = 0`, both sides vanish at `a ∈ −ℕ`, so it holds for every `a`. -/
+theorem lowerIncompleteGamma_eq_regularizedHGFun (a z : ℂ) :
+    lowerIncompleteGamma a z =
+      a⁻¹ * z ^ a * Gamma (a + 1) * regularizedHGFun {a} {a + 1} (-z) := by
+  rw [lowerIncompleteGamma_def, regularizedGamma_def, tricomiIncompleteGamma_eq_regularizedHGFun]
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  · rw [Gamma_add_one a ha]
+    field_simp
 
 /-- For `z ≠ 0`, `P(·, z)` is entire. -/
 theorem differentiable_regularizedGamma_left {z : ℂ} (hz : z ≠ 0) :
