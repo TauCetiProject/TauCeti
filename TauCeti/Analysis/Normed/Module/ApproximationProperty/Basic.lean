@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.Topology.UniformSpace.Ascoli
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.RCLike.Basic
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 import TauCeti.Analysis.Convex.TotallyBounded
 import TauCeti.Analysis.Normed.Module.Convex
 
@@ -26,6 +27,11 @@ A uniformly bounded net of finite-rank operators converging pointwise to the ide
 bounded approximation property. The compact-uniform convergence needed here follows from
 Mathlib's equicontinuity criterion for bounded families of operators and its Ascoli theorem.
 This criterion applies to finite projections of Schauder bases.
+
+Evaluating bounded operators along a null sequence `x` gives a linear map
+`TauCeti.evalNullSeq` into `C₀(ℕ, F)`. If the identity lies in the closure of the evaluations of a
+family of operators, then members of the family approximate the identity uniformly along `x`
+(`TauCeti.exists_mem_forall_norm_sub_lt_of_mem_closure`).
 
 Over `ℝ` or `ℂ`, the finite-rank operators of norm at most `r` form a real-convex set
 (`TauCeti.convex_setOf_hasFiniteRange_norm_le`). By Grothendieck's compactness lemma, every totally
@@ -45,7 +51,7 @@ over a field is equivalent to finite-dimensional range.
 public section
 
 open Filter Set
-open scoped NNReal Topology
+open scoped NNReal Topology ZeroAtInfty
 
 namespace TauCeti
 
@@ -151,6 +157,42 @@ theorem hasMetricApproximationProperty_of_finiteDimensional [FiniteDimensional �
   intro K _ ε hε
   exact ⟨ContinuousLinearMap.id 𝕜 E, .of_finite_dom, ContinuousLinearMap.norm_id_le,
     fun x _ => by simpa using hε⟩
+
+section NullSequence
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {x : ℕ → E}
+
+variable (𝕜 F) in
+/-- Evaluation of bounded operators `E →L[𝕜] F` along a null sequence `x`, as a linear map
+`(E →L[𝕜] F) →ₗ[𝕜] C₀(ℕ, F)`. -/
+noncomputable def evalNullSeq (hx : Tendsto x atTop (𝓝 0)) : (E →L[𝕜] F) →ₗ[𝕜] C₀(ℕ, F) where
+  toFun T := ZeroAtInftyContinuousMap.mkOfDiscrete (fun n ↦ T (x n)) <| by
+    rw [Nat.cofinite_eq_atTop, ← map_zero T]
+    exact (T.continuous.tendsto 0).comp hx
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+
+@[simp]
+theorem evalNullSeq_apply (hx : Tendsto x atTop (𝓝 0)) (T : E →L[𝕜] F) (n : ℕ) :
+    evalNullSeq 𝕜 F hx T n = T (x n) := by
+  simp [evalNullSeq]
+
+/-- If the identity, evaluated along a null sequence `x`, lies in the closure of the evaluations
+of a set `P` of operators, then for every `δ > 0` some `R ∈ P` is within `δ` of the identity
+uniformly along `x`. -/
+theorem exists_mem_forall_norm_sub_lt_of_mem_closure (hx : Tendsto x atTop (𝓝 0))
+    {P : Set (E →L[𝕜] E)}
+    (h : evalNullSeq 𝕜 E hx (ContinuousLinearMap.id 𝕜 E) ∈ closure (evalNullSeq 𝕜 E hx '' P))
+    {δ : ℝ} (hδ : 0 < δ) : ∃ R ∈ P, ∀ n, ‖R (x n) - x n‖ < δ := by
+  obtain ⟨_, ⟨R, hR, rfl⟩, hdist⟩ := Metric.mem_closure_iff.1 h δ hδ
+  refine ⟨R, hR, fun n ↦ ?_⟩
+  rw [dist_comm, dist_eq_norm, ← map_sub] at hdist
+  simpa using
+    (ZeroAtInftyContinuousMap.norm_coe_le_norm
+      (evalNullSeq 𝕜 E hx (R - ContinuousLinearMap.id 𝕜 E)) n).trans_lt hdist
+
+end NullSequence
 
 section RCLike
 

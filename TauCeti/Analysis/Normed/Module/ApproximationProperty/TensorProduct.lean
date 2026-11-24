@@ -12,7 +12,7 @@ import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.TensorProduct.Associator
 import TauCeti.Analysis.Normed.Module.TensorProduct.IntegralBilinearForm
 import TauCeti.Analysis.Normed.Module.TensorProduct.Series
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
+import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 
 /-!
 # The approximation property and completed tensor products
@@ -76,11 +76,9 @@ characterizations.
   `TauCeti.hasApproximationProperty_iff_tsum_apply_eq_zero`: for a Banach space `E`, the
   canonical-operator, nuclear-trace, and nuclear-series characterizations of the approximation
   property.
-* `TauCeti.evalNullSeq`, `TauCeti.exists_mem_forall_norm_sub_lt_of_mem_closure`, and
-  `TauCeti.CompletedProjectiveTensor.summable_coe_comp_singleCLM_tmul`: the evaluation of operators
-  along a null sequence `x` into `C₀(ℕ, E)`, uniform approximation along `x` from membership in a
-  closure there, and the summable series `∑ n, fₙ ⊗ x n` built from the coordinate functionals
-  `fₙ` of a functional on `C₀(ℕ, E)`.
+* `TauCeti.CompletedProjectiveTensor.summable_coe_comp_singleCLM_tmul`: for a null sequence `x`,
+  the summable series `∑ n, fₙ ⊗ x n` built from the coordinate functionals `fₙ` of a functional on
+  `C₀(ℕ, E)`.
 
 ## References
 
@@ -229,42 +227,6 @@ end TauCeti.CompletedProjectiveTensor
 /-! ### Grothendieck's tensor and trace characterizations -/
 
 namespace TauCeti
-
-section NullSequence
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {x : ℕ → E}
-
-variable (𝕜 F) in
-/-- Evaluation of bounded operators `E →L[𝕜] F` along a null sequence `x`, as a linear map
-`(E →L[𝕜] F) →ₗ[𝕜] C₀(ℕ, F)`. -/
-noncomputable def evalNullSeq (hx : Tendsto x atTop (𝓝 0)) : (E →L[𝕜] F) →ₗ[𝕜] C₀(ℕ, F) where
-  toFun T := ZeroAtInftyContinuousMap.mkOfDiscrete (fun n ↦ T (x n)) <| by
-    rw [Nat.cofinite_eq_atTop, ← map_zero T]
-    exact (T.continuous.tendsto 0).comp hx
-  map_add' _ _ := by ext; simp
-  map_smul' _ _ := by ext; simp
-
-@[simp]
-theorem evalNullSeq_apply (hx : Tendsto x atTop (𝓝 0)) (T : E →L[𝕜] F) (n : ℕ) :
-    evalNullSeq 𝕜 F hx T n = T (x n) := by
-  simp [evalNullSeq]
-
-/-- If the identity, evaluated along a null sequence `x`, lies in the closure of the evaluations
-of a set `P` of operators, then for every `δ > 0` some `R ∈ P` is within `δ` of the identity
-uniformly along `x`. -/
-theorem exists_mem_forall_norm_sub_lt_of_mem_closure (hx : Tendsto x atTop (𝓝 0))
-    {P : Set (E →L[𝕜] E)}
-    (h : evalNullSeq 𝕜 E hx (ContinuousLinearMap.id 𝕜 E) ∈ closure (evalNullSeq 𝕜 E hx '' P))
-    {δ : ℝ} (hδ : 0 < δ) : ∃ R ∈ P, ∀ n, ‖R (x n) - x n‖ < δ := by
-  obtain ⟨_, ⟨R, hR, rfl⟩, hdist⟩ := Metric.mem_closure_iff.1 h δ hδ
-  refine ⟨R, hR, fun n ↦ ?_⟩
-  rw [dist_comm, dist_eq_norm, ← map_sub] at hdist
-  simpa using
-    (ZeroAtInftyContinuousMap.norm_coe_le_norm
-      (evalNullSeq 𝕜 E hx (R - ContinuousLinearMap.id 𝕜 E)) n).trans_lt hdist
-
-end NullSequence
 
 section Normed
 

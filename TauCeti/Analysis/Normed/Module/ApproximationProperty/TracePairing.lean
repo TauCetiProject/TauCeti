@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.TensorProduct.Approximable
 public import TauCeti.Analysis.Normed.Module.TensorProduct.IntegralBilinearForm
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Normed.Module.ApproximationProperty.TensorProduct
+import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.Analysis.Normed.Module.TensorProduct.Series
 import TauCeti.Analysis.Normed.Operator.Completion
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
@@ -151,14 +152,6 @@ theorem tracePairing_apply_coe_comm (u : CompletedProjectiveTensor 𝕜 (StrongD
         _root_.add_apply, hv, hv']
   exact congr($h u)
 
-/-- The injective norm of `comm v ∈ E ⊗ E*` is the operator norm of the finite-rank operator
-represented by `v ∈ E* ⊗ E`. -/
-private theorem norm_coe_comm (v : StrongDual 𝕜 E ⊗[𝕜] E) :
-    ‖((⟨TensorProduct.comm 𝕜 (StrongDual 𝕜 E) E v⟩ : InjectiveTensor 𝕜 E (StrongDual 𝕜 E)) :
-      CompletedInjectiveTensor 𝕜 E (StrongDual 𝕜 E))‖ = ‖TensorProduct.toOperator v‖ := by
-  rw [UniformSpace.Completion.norm_coe, InjectiveTensor.norm_def,
-    TensorProduct.injectiveSeminorm_comm, TensorProduct.injectiveSeminorm_eq_norm_toOperator]
-
 /-- The trace of `u` composed with a finite-rank operator `T` is bounded by `‖Θ_E u‖ * ‖T‖`. -/
 theorem norm_trace_mapL_le_of_hasFiniteRange
     (u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) {T : E →L[𝕜] E}
@@ -168,7 +161,8 @@ theorem norm_trace_mapL_le_of_hasFiniteRange
   simp only [LinearIsometry.coe_toLinearMap, InjectiveTensor.toOperator_mk] at hv
   subst hv
   rw [← tracePairing_apply_coe_comm]
-  exact ((tracePairing 𝕜 E u).le_opNorm _).trans_eq (by rw [norm_coe_comm])
+  exact ((tracePairing 𝕜 E u).le_opNorm _).trans_eq
+    (by rw [UniformSpace.Completion.norm_coe, InjectiveTensor.norm_mk_comm])
 
 /-- A bound `C` on the real part of the trace of `u` composed with every finite-rank contraction is
 nonnegative, since the zero operator is one. -/
@@ -196,12 +190,12 @@ private theorem norm_trace_mapL_le_of_forall_re_le
   -- Rescale `T` to a contraction `c • T` with `tr ((1 ⊗ c • T) u) = ‖z‖ / ‖T‖ ≥ 0`.
   have hTn : 0 < ‖T‖ := norm_pos_iff.2 hT0
   set c : 𝕜 := (starRingEnd 𝕜) z / ((‖z‖ * ‖T‖ : ℝ) : 𝕜)
-  have hS := h (c • T) (by simpa using hT.smul c) (by
-    rw [norm_smul, norm_div, RCLike.norm_conj, RCLike.norm_ofReal, abs_of_pos (by positivity),
-      div_mul_eq_mul_div, div_self (by positivity)])
+  have hS := h (c • T) (by simpa using hT.smul c) (le_of_eq <| by
+    simp [c, norm_smul]
+    field_simp)
   have hcz : c * z = ((‖z‖ / ‖T‖ : ℝ) : 𝕜) := by
-    rw [div_mul_eq_mul_div, RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_div]
-    congr 1
+    simp only [c, div_mul_eq_mul_div, RCLike.conj_mul]
+    push_cast
     field_simp
   rw [mapL_smul_right, _root_.smul_apply, map_smul, smul_eq_mul, hcz, RCLike.ofReal_re] at hS
   rwa [div_le_iff₀ hTn] at hS
@@ -221,9 +215,10 @@ theorem norm_tracePairing_le_of_forall_re_le
     obtain ⟨w⟩ := w
     set v := TensorProduct.comm 𝕜 E (StrongDual 𝕜 E) w
     have hw : TensorProduct.comm 𝕜 (StrongDual 𝕜 E) E v = w := by simp [v]
-    have := norm_trace_mapL_le_of_forall_re_le h (T := TensorProduct.toOperator v) (by
+    rw [← hw, UniformSpace.Completion.norm_coe, InjectiveTensor.norm_mk_comm,
+      tracePairing_apply_coe_comm]
+    exact norm_trace_mapL_le_of_forall_re_le h (by
       simpa using InjectiveTensor.hasFiniteRange_toOperator (E := E) (F := E) ⟨v⟩)
-    rwa [← tracePairing_apply_coe_comm, ← norm_coe_comm, hw] at this
 
 end TauCeti.CompletedProjectiveTensor
 
@@ -270,7 +265,7 @@ theorem HasMetricApproximationProperty.norm_trace_mapL_le
       (by simpa using hR.comp_right T.toLinearMap)).trans ?_
     gcongr
     have hR1' : ‖R‖ ≤ 1 := by simpa using hR1
-    exact (R.opNorm_comp_le T).trans (by nlinarith [norm_nonneg R, norm_nonneg T])
+    exact (R.opNorm_comp_le T).trans (mul_le_of_le_one_left (norm_nonneg _) hR1')
   have hδS : δ * S < ε := by
     rw [hδ_def, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
     nlinarith [(tsum_nonneg fun n ↦ norm_nonneg (f n) : 0 ≤ S)]
@@ -361,26 +356,10 @@ theorem HasMetricApproximationProperty.norm_tracePairing_eq
   obtain ⟨φ, hφ1, hφu⟩ := exists_dual_vector'' 𝕜 u
   set B := (liftIsometry 𝕜 (StrongDual 𝕜 E) E 𝕜).symm φ
   have hB : ‖B‖ ≤ 1 := by rwa [LinearIsometryEquiv.norm_map]
-  let e : E ≃ₗᵢ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E) :=
-    LinearIsometryEquiv.ofSurjective (NormedSpace.inclusionInDoubleDualLi 𝕜) hJ
-  let T : E →L[𝕜] E := e.symm.toLinearIsometry.toContinuousLinearMap ∘L B.flip
-  have he (y : E) (f : StrongDual 𝕜 E) : e y f = f y := by
-    simp [e, NormedSpace.inclusionInDoubleDualLi]
-  have hTx (f : StrongDual 𝕜 E) (x : E) : f (T x) = B f x := by
-    have h : e (T x) = B.flip x := e.apply_symm_apply _
-    rw [← he, h, ContinuousLinearMap.flip_apply]
-  have hT : ‖T‖ ≤ 1 := by
-    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ ?_
-    rw [← e.norm_map, one_mul]
-    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg x) fun f ↦ ?_
-    calc ‖e (T x) f‖ = ‖B f x‖ := by rw [he, hTx]
-      _ ≤ ‖B‖ * ‖f‖ * ‖x‖ := B.le_opNorm₂ f x
-      _ ≤ 1 * ‖f‖ * ‖x‖ := by gcongr
-      _ = ‖x‖ * ‖f‖ := by ring
-  have hφ : φ = trace 𝕜 E ∘L mapL (.id 𝕜 _) T := by
-    refine continuousLinearMap_ext fun f x ↦ ?_
-    rw [ContinuousLinearMap.comp_apply, mapL_coe, ProjectiveTensor.mapL_tmul, trace_coe_tmul,
-      ContinuousLinearMap.id_apply, hTx, ← liftIsometry_symm_apply_apply]
+  obtain ⟨T, hTx, hTB⟩ := exists_apply_eq_and_norm_le_of_surjective_inclusionInDoubleDual hJ B
+  have hT : ‖T‖ ≤ 1 := hTB.trans hB
+  have hφ : φ = trace 𝕜 E ∘L mapL (.id 𝕜 _) T :=
+    continuousLinearMap_ext fun f x ↦ by simp [hTx, B, liftIsometry_symm_apply_apply]
   have h := (hE.norm_trace_mapL_le u T).trans (mul_le_of_le_one_right (norm_nonneg _) hT)
   rwa [← ContinuousLinearMap.comp_apply, ← hφ, hφu, RCLike.norm_ofReal,
     abs_of_nonneg (norm_nonneg u)] at h
