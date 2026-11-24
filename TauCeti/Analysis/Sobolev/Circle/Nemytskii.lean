@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Algebra
 public import Mathlib.Analysis.Analytic.Basic
 import TauCeti.Analysis.Complex.PowerSeries.Polydisc
 import TauCeti.GroupTheory.Perm.FiberSubgroup
+import TauCeti.Algebra.Order.Antidiag.Pi
 import TauCeti.Analysis.Fourier.Decay
 
 /-!
@@ -29,7 +30,7 @@ The proof expands `F` in its multi-index Taylor series around a nearby family `p
 trigonometric polynomials. A trigonometric polynomial extends to an entire periodic function,
 which maps a thin strip around the real axis close to the values of `p`. Composed with the Taylor
 coefficients `z ↦ mvTaylorCoeff F z α`, which are holomorphic in `z`
-(`DifferentiableOn.mvTaylorCoeff`) and bounded by `M ε⁻¹ ^ |α|` by Cauchy's inequality on a
+(`AnalyticOnNhd.mvTaylorCoeff`) and bounded by `M ε⁻¹ ^ |α|` by Cauchy's inequality on a
 polydisc (`DifferentiableOn.norm_mvTaylorCoeff_le`), it stays holomorphic and bounded on that
 strip. So the Fourier coefficients of the Taylor coefficients along `p` decay exponentially
 (`TauCeti.norm_fourierCoeff_le_of_differentiableOn_strip`), and they lie in `H^s` with norms at
@@ -322,7 +323,8 @@ private theorem exists_taylor_coeff {F : (Fin n → ℂ) → ℂ} {U : Set (Fin 
       ‖mvTaylorCoeff F z α‖ ≤ M * ε⁻¹ ^ (∑ i, α i) := by
     have hball : Metric.closedBall z ε ⊆ Metric.cthickening (3 * ε) R :=
       (hthick (by positivity) hε.le hz).trans_eq (by ring_nf)
-    exact hF.norm_mvTaylorCoeff_le hU hε (hball.trans h3) (fun w hw ↦ hM w (hball hw)) α
+    exact (hF.mono (Metric.ball_subset_closedBall.trans (hball.trans h3))).norm_mvTaylorCoeff_le hε
+      (fun w hw ↦ hM w (hball (Metric.ball_subset_closedBall hw))) α
   -- The entire extension of `p` maps a strip into the closed `2ε`-neighbourhood of `R`, which
   -- gives `w α` with continuous representative `z ↦ mvTaylorCoeff F z α` composed with `p`.
   obtain ⟨δ, hδ, hmaps⟩ := exists_strip_mem_cthickening T hs.out S c hε
@@ -332,7 +334,8 @@ private theorem exists_taylor_coeff {F : (Fin n → ℂ) → ℂ} {U : Set (Fin 
     (G := fun z ↦ mvTaylorCoeff F z α) hδ (fun z hz ↦ (Metric.cthickening_subset_of_subset ε
       (Set.range_subset_iff.2 hp)).trans
         ((Metric.cthickening_cthickening_subset hε.le hε.le R).trans_eq (by ring_nf)) (hmaps z hz))
-    ((hF.mvTaylorCoeff hU α).mono (h2.trans h3)) (hcauchy α)
+    (((hF.analyticOnNhd_of_finiteDimensional hU).mvTaylorCoeff α).differentiableOn.mono
+      (h2.trans h3)) (hcauchy α)
   refine ⟨w, M * √(∑' m, weight (2 * s) m * Real.exp (-(4 * π * δ / T * |(m : ℝ)|))),
     fun α ↦ (hwn α).trans_eq (by ring), fun y x hy ↦ ?_⟩
   -- Taylor's formula for `F` around `p x`, evaluated at `(p + y) x`.
@@ -344,7 +347,7 @@ private theorem exists_taylor_coeff {F : (Fin n → ℂ) → ℂ} {U : Set (Fin 
   refine ⟨hball ?_, ?_⟩
   · rw [Metric.mem_closedBall, dist_eq_norm, hadd, add_sub_cancel_left]
     exact hy.le
-  · convert hF.hasSum_mvTaylorCoeff hU hball hy using 1
+  · convert (hF.mono (Metric.ball_subset_closedBall.trans hball)).hasSum_mvTaylorCoeff hy using 1
     · funext α
       rw [hw α x, smul_eq_mul]
     · rw [hadd]
@@ -507,19 +510,6 @@ private theorem mvSeries_apply_const (w : (Fin n → ℕ) → CircleSobolev s �
     (hαk.trans (Fintype.card_fin k).symm)).choose_spec y
 
 omit hT in
-/-- There are at most `n ^ k` multi-indices of total degree `k` in `n` variables. -/
-private theorem card_piAntidiag_le (k : ℕ) :
-    ((Finset.univ : Finset (Fin n)).piAntidiag k).card ≤ n ^ k := by
-  classical
-  have h := Finset.card_le_card_of_surjOn
-    (s := (Finset.univ : Finset (Fin k → Fin n)))
-    (fun g i ↦ (Finset.univ.filter fun j ↦ g j = i).card) fun α hα ↦ by
-      obtain ⟨g, hg⟩ := exists_forall_card_filter_eq (α := Fin k)
-        ((Finset.mem_piAntidiag.1 hα).1.trans (Fintype.card_fin k).symm)
-      exact ⟨g, Finset.mem_coe.2 (Finset.mem_univ g), funext hg⟩
-  simpa using h
-
-omit hT in
 /-- The series `mvSeries w` has radius at least `ρ` when
 `‖w α‖ ≤ B ((n + 1) mulConst s ρ)⁻¹ ^ |α|`. -/
 private theorem le_radius_mvSeries {w : (Fin n → ℕ) → CircleSobolev s ℂ} {ρ B : ℝ}
@@ -546,7 +536,7 @@ private theorem le_radius_mvSeries {w : (Fin n → ℕ) → CircleSobolev s ℂ}
         refine (norm_sum_le _ _).trans ((Finset.sum_le_sum hterm).trans ?_)
         rw [Finset.sum_const, nsmul_eq_mul]
         gcongr
-        exact_mod_cast card_piAntidiag_le k
+        exact_mod_cast Fintype.card_fin n ▸ Finset.card_piAntidiag_univ_le (ι := Fin n) k
     _ = C * B * (n / (n + 1)) ^ k := by
         rw [div_pow, inv_pow, mul_pow, mul_pow]
         field_simp
@@ -584,15 +574,8 @@ private theorem exists_hasFPowerSeriesOnBall_nemytskiiPi {F : (Fin n → ℂ) �
         F (fun i ↦ toContinuousMap T hs.out (p i + y i) x) := by
       refine ((hsum.mapL (toContinuousMap T hs.out)).mapL (ContinuousMap.evalCLM ℂ x)).unique ?_
       -- Group the pointwise multi-index expansion by total degree.
-      let e : (Σ k : ℕ, {α // α ∈ (Finset.univ : Finset (Fin n)).piAntidiag k}) ≃ (Fin n → ℕ) :=
-        { toFun := fun a ↦ a.2.val
-          invFun := fun α ↦ ⟨∑ i, α i, ⟨α, Finset.mem_piAntidiag.2 ⟨rfl, by simp⟩⟩⟩
-          left_inv := by
-            rintro ⟨_, α, hα⟩
-            obtain ⟨rfl, -⟩ := Finset.mem_piAntidiag.1 hα
-            rfl
-          right_inv := fun _ ↦ rfl }
-      refine (e.hasSum_iff.2 (h y hy x).2).sigma fun k ↦ ?_
+      refine ((Finset.sigmaPiAntidiagUnivEquiv (Fin n) ℕ).hasSum_iff.2 (h y hy x).2).sigma
+        fun k ↦ ?_
       have hprod (α : Fin n → ℕ) : toContinuousMap T hs.out (∏ i, y i ^ α i) x =
           ∏ i, toContinuousMap T hs.out (y i) x ^ α i := by
         simp only [← coe_toContinuousMapAlgHom T, map_prod, map_pow, ContinuousMap.coe_prod,
@@ -706,6 +689,24 @@ theorem hasFDerivAt_nemytskiiPi {F : (Fin n → ℂ) → ℂ} {U : Set (Fin n �
     toContinuousMap_convolution_apply, toContinuousMap_nemytskiiPi T hU (hpart i) hu,
     ContinuousLinearMap.mul_apply', ux, vx]
 
+/-- A function `F` holomorphic on an open set `U ⊆ ℂ` gives the function `z ↦ F (z 0)` on
+`Fin 1 → ℂ`, holomorphic on the open preimage of `U`: the one-variable case of the
+several-variable hypotheses. -/
+private theorem isOpen_and_differentiableOn_comp_apply_zero {F : ℂ → ℂ} {U : Set ℂ}
+    (hU : IsOpen U) (hF : DifferentiableOn ℂ F U) :
+    IsOpen ((fun z : Fin 1 → ℂ ↦ z 0) ⁻¹' U) ∧
+      DifferentiableOn ℂ (fun z : Fin 1 → ℂ ↦ F (z 0)) ((fun z : Fin 1 → ℂ ↦ z 0) ⁻¹' U) :=
+  ⟨hU.preimage (continuous_apply 0),
+    hF.comp (differentiable_apply 0).differentiableOn fun _ hz ↦ hz⟩
+
+omit hT in
+/-- The scalar Nemytskii map is the Nemytskii map of one variable composed with the diagonal
+embedding `H^s → (Fin 1 → H^s)`. -/
+private theorem nemytskii_eq_comp (F : ℂ → ℂ) :
+    nemytskii F = nemytskiiPi (fun z : Fin 1 → ℂ ↦ F (z 0)) ∘
+      ContinuousLinearMap.pi (fun _ ↦ ContinuousLinearMap.id ℂ (CircleSobolev s ℂ)) :=
+  funext fun u ↦ nemytskii_eq_nemytskiiPi F u
+
 /-- **Holomorphic functions act on `H^s`, `s > 1/2`.** If `F` is holomorphic on an open set `U`
 and the continuous representative of `u ∈ H^s` takes values in `U`, then `F ∘ u` is the continuous
 representative of `nemytskii F u ∈ H^s`. -/
@@ -713,11 +714,9 @@ theorem toContinuousMap_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U
     (hF : DifferentiableOn ℂ F U) {u : CircleSobolev s ℂ}
     (hu : ∀ x, toContinuousMap T hs.out u x ∈ U) (x : AddCircle T) :
     toContinuousMap T hs.out (nemytskii F u) x = F (toContinuousMap T hs.out u x) := by
+  obtain ⟨hU₁, hF₁⟩ := isOpen_and_differentiableOn_comp_apply_zero hU hF
   rw [nemytskii_eq_nemytskiiPi]
-  exact toContinuousMap_nemytskiiPi T (U := (fun z : Fin 1 → ℂ ↦ z 0) ⁻¹' U)
-    (hU.preimage (continuous_apply 0))
-    (hF.comp (differentiable_apply 0).differentiableOn fun _ hz ↦ hz) (u := fun _ ↦ u)
-    (fun x ↦ hu x) x
+  exact toContinuousMap_nemytskiiPi T hU₁ hF₁ (u := fun _ ↦ u) (fun x ↦ hu x) x
 
 /-- **The holomorphic Nemytskii map is holomorphic.** If `F` is holomorphic on an open set `U`,
 then `u ↦ nemytskii F u` is analytic on the open subset of `H^s`, `s > 1/2`, of elements with
@@ -726,17 +725,10 @@ theorem analyticOnNhd_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
     (hF : DifferentiableOn ℂ F U) :
     AnalyticOnNhd ℂ (nemytskii F)
       {u : CircleSobolev s ℂ | ∀ x, toContinuousMap T hs.out u x ∈ U} := by
-  let diag : CircleSobolev s ℂ →L[ℂ] Fin 1 → CircleSobolev s ℂ :=
-    ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id ℂ _
-  have h := (analyticOnNhd_nemytskiiPi T (U := (fun z : Fin 1 → ℂ ↦ z 0) ⁻¹' U)
-    (hU.preimage (continuous_apply 0))
-    (hF.comp (differentiable_apply 0).differentiableOn fun _ hz ↦ hz)).comp
-      (diag.analyticOnNhd {u : CircleSobolev s ℂ | ∀ x, toContinuousMap T hs.out u x ∈ U})
-      fun u hu x ↦ hu x
-  have hcomp : nemytskii F = nemytskiiPi (fun z : Fin 1 → ℂ ↦ F (z 0)) ∘ diag :=
-    funext fun u ↦ nemytskii_eq_nemytskiiPi F u
-  rw [hcomp]
-  exact h
+  obtain ⟨hU₁, hF₁⟩ := isOpen_and_differentiableOn_comp_apply_zero hU hF
+  rw [nemytskii_eq_comp]
+  exact (analyticOnNhd_nemytskiiPi T hU₁ hF₁).comp (ContinuousLinearMap.analyticOnNhd _ _)
+    fun u hu x ↦ hu x
 
 /-- The Nemytskii map of an entire function is analytic on all of `H^s`, `s > 1/2`. -/
 theorem analyticAt_nemytskii {F : ℂ → ℂ} (hF : Differentiable ℂ F) (u : CircleSobolev s ℂ) :
@@ -757,34 +749,18 @@ theorem hasFDerivAt_nemytskii {F : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
     (hF : DifferentiableOn ℂ F U) {u : CircleSobolev s ℂ}
     (hu : ∀ x, toContinuousMap T hs.out u x ∈ U) :
     HasFDerivAt (nemytskii F) (convolution hs.out (.mul ℂ ℂ) (nemytskii (deriv F) u)) u := by
-  have hD := (analyticOnNhd_nemytskii T hU hF u hu).differentiableAt.hasFDerivAt
-  convert hD using 1
-  refine ContinuousLinearMap.ext fun v ↦ toContinuousMap_injective T hs.out <|
-    ContinuousMap.ext fun x ↦ ?_
-  -- Both sides are the derivative at `t = 0` of `t ↦ F (u x + t v x)`.
-  set ev : CircleSobolev s ℂ →L[ℂ] ℂ := (ContinuousMap.evalCLM ℂ x).comp (toContinuousMap T hs.out)
-  have hline : HasDerivAt (fun t : ℂ ↦ u + t • v) v 0 := by
-    simpa using ((hasDerivAt_id (0 : ℂ)).smul_const v).const_add u
-  have h₁ : HasDerivAt (ev ∘ nemytskii F ∘ fun t : ℂ ↦ u + t • v)
-      (ev (fderiv ℂ (nemytskii F) u v)) 0 :=
-    ev.hasFDerivAt.comp_hasDerivAt 0 (hD.comp_hasDerivAt_of_eq 0 hline (by simp))
-  have hmem : ∀ᶠ t : ℂ in 𝓝 0, ∀ y, toContinuousMap T hs.out (u + t • v) y ∈ U :=
-    hline.continuousAt.preimage_mem_nhds
-      ((isOpen_setOf_forall_toContinuousMap_mem T hs.out hU).mem_nhds (by simpa using hu))
-  have hl : HasDerivAt (fun t : ℂ ↦ toContinuousMap T hs.out u x + t * toContinuousMap T hs.out v x)
-      (toContinuousMap T hs.out v x) 0 := by
-    simpa using ((hasDerivAt_id (0 : ℂ)).mul_const (toContinuousMap T hs.out v x)).const_add
-      (toContinuousMap T hs.out u x)
-  have h₂ : HasDerivAt (ev ∘ nemytskii F ∘ fun t : ℂ ↦ u + t • v)
-      (deriv F (toContinuousMap T hs.out u x) * toContinuousMap T hs.out v x) 0 := by
-    refine ((hF.differentiableAt (hU.mem_nhds (hu x))).hasDerivAt.comp_of_eq 0 hl
-      (by simp)).congr_of_eventuallyEq ?_
-    filter_upwards [hmem] with t ht
-    simp [ev, toContinuousMap_nemytskii T hU hF ht]
-  have h := h₂.unique h₁
-  simp only [ev, ContinuousLinearMap.comp_apply, ContinuousMap.evalCLM_apply] at h
-  rw [← h, toContinuousMap_convolution_apply, toContinuousMap_nemytskii T hU (hF.deriv hU) hu,
-    ContinuousLinearMap.mul_apply']
+  obtain ⟨hU₁, hF₁⟩ := isOpen_and_differentiableOn_comp_apply_zero hU hF
+  -- The partial derivative of `z ↦ F (z 0)` is `F'` at `z 0`.
+  have hderiv (z : Fin 1 → ℂ) :
+      fderiv ℂ (fun z : Fin 1 → ℂ ↦ F (z 0)) z (Pi.single 0 1) = deriv F (z 0) := by
+    simpa [Function.comp_def] using congr($((ContinuousLinearEquiv.funUnique (Fin 1) ℂ ℂ
+      ).comp_right_fderiv (f := F) (x := z)) (Pi.single 0 1))
+  have hdiag := (ContinuousLinearMap.pi fun _ : Fin 1 ↦
+    ContinuousLinearMap.id ℂ (CircleSobolev s ℂ)).hasFDerivAt (x := u)
+  rw [nemytskii_eq_comp]
+  convert (hasFDerivAt_nemytskiiPi T hU₁ hF₁ (u := fun _ ↦ u) fun x ↦ hu x).comp u hdiag using 1
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp [hderiv, nemytskii_eq_nemytskiiPi]
 
 /-- At the zero function, the derivative of the Nemytskii map of `F` is multiplication by the
 scalar `F'(0)`. -/

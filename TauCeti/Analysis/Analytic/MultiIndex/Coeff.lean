@@ -580,12 +580,7 @@ theorem exists_hasFPowerSeriesOnBall_of_hasSum {f : (ι → 𝕜) → F} {x : ι
       simpa only [mem_eball_zero_iff, eNorm_eq_nnNorm, ENNReal.coe_lt_coe] using hy
     exact_mod_cast h
   -- Sum the given expansion fiberwise by total degree; each fiber is finite.
-  let e : (Σ k : ℕ, {α // α ∈ univ.piAntidiag k}) ≃ (ι → ℕ) :=
-    { toFun := fun x ↦ x.2.val
-      invFun := fun α ↦ ⟨∑ i, α i, ⟨α, mem_piAntidiag.2 ⟨rfl, by simp⟩⟩⟩
-      left_inv := by rintro ⟨_, α, hα⟩; obtain ⟨rfl, -⟩ := mem_piAntidiag.1 hα; rfl
-      right_inv := fun _ ↦ rfl }
-  refine (e.hasSum_iff.2 (hf y hynorm)).sigma fun k ↦ ?_
+  refine ((sigmaPiAntidiagUnivEquiv ι ℕ).hasSum_iff.2 (hf y hynorm)).sigma fun k ↦ ?_
   rw [p.apply_eq_sum_mvCoeff k y]
   simp_rw [hpc, ← sum_coe_sort (univ.piAntidiag k)]
   exact hasSum_fintype _
