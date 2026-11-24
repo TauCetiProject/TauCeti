@@ -48,8 +48,8 @@ exchanges them, so it inverts the element
 (`CoxeterSystem.diagramAut_bipartiteCoxeterElement_of_forall_eq` and
 `CoxeterSystem.diagramAut_bipartiteCoxeterElement_of_forall_eq_not`). Outside `Aₙ` and `Dₙ` with `n`
 odd, every diagram automorphism therefore fixes it
-(`TauCeti.AffineDynkinType.diagramAut_bipartiteCoxeterElement`), for a Coxeter matrix on any finite
-index type whose Coxeter graph is isomorphic to the diagram.
+(`TauCeti.AffineDynkinType.diagramAut_bipartiteCoxeterElement_eq_self`), for a Coxeter matrix on
+any finite index type whose Coxeter graph is isomorphic to the diagram.
 
 ## Main definitions
 
@@ -68,8 +68,8 @@ index type whose Coxeter graph is isomorphic to the diagram.
   colour-exchanging automorphism exactly when it is `Aₙ` or `Dₙ` with `n` odd, and
   `TauCeti.AffineDynkinType.coloring_iso_eq` says that otherwise every automorphism preserves the
   colours.
-* `TauCeti.AffineDynkinType.diagramAut_bipartiteCoxeterElement`: outside those cases every diagram
-  automorphism fixes the bipartite Coxeter element.
+* `TauCeti.AffineDynkinType.diagramAut_bipartiteCoxeterElement_eq_self`: outside those cases every
+  diagram automorphism fixes the bipartite Coxeter element.
 
 ## References
 
@@ -295,7 +295,7 @@ valid affine diagram other than these, as for the affine Weyl group of that type
 automorphism of `M` preserves the colours of a two-colouring, so it fixes the bipartite Coxeter
 element; for `Aₙ` and `Dₙ` with `n` odd, a colour-exchanging one inverts it instead
 (`CoxeterSystem.diagramAut_bipartiteCoxeterElement_of_forall_eq_not`). -/
-theorem diagramAut_bipartiteCoxeterElement {t : AffineDynkinType} (ht : t.Valid)
+theorem diagramAut_bipartiteCoxeterElement_eq_self {t : AffineDynkinType} (ht : t.Valid)
     (h : ¬∃ n, Odd n ∧ (t = A n ∨ t = D n)) {B : Type*} [Fintype B] {M : CoxeterMatrix B}
     (ψ : M.graph ≃g t.graph) {W : Type*} [Group W] (cs : CoxeterSystem M W)
     (c : M.graph.Coloring Bool) (e : B ≃ B) (he : ∀ i i', M (e i) (e i') = M i i') :
