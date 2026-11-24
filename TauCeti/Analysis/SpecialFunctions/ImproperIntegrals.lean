@@ -95,16 +95,14 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
     (hGrowth : ∀ᶠ x in Filter.comap abs Filter.atTop, c * log |x| ≤ V x) :
     Integrable (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) volume := by
   let q : ℝ := p - a * c
-  have hq' : q < -1 := hq
-  have hTail : ∀ᶠ x in Filter.comap abs Filter.atTop, c * log |x| ≤ V x := hGrowth
-  rw [Filter.eventually_comap] at hTail
-  obtain ⟨R, hR⟩ := Filter.eventually_atTop.1 hTail
+  rw [Filter.eventually_comap] at hGrowth
+  obtain ⟨R, hR⟩ := Filter.eventually_atTop.1 hGrowth
   let R' : ℝ := max R 1
   have hR' : 1 ≤ R' := le_max_right _ _
   have hRbound (x : ℝ) (hx : R' ≤ |x|) : c * log |x| ≤ V x := by
     exact hR _ (le_trans (le_max_left _ _) hx) x rfl
   have hpowPos : IntegrableOn (fun x : ℝ => x ^ q) (Ioi R') volume :=
-    integrableOn_Ioi_rpow_of_lt hq' (lt_of_lt_of_le zero_lt_one hR')
+    integrableOn_Ioi_rpow_of_lt hq (lt_of_lt_of_le zero_lt_one hR')
   have hpowNeg : IntegrableOn (fun x : ℝ => (-x) ^ q) (Iio (-R')) volume := by
     rw [← (Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
       (Homeomorph.neg ℝ).measurableEmbedding]
@@ -119,45 +117,50 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), Real.norm_eq_abs,
       abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) q)]
     exact one_add_abs_rpow_mul_exp_neg_le hp ha (hR'.trans hx) (hRbound x hx)
+  have hbig : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.comap abs atTop]
+      (fun x : ℝ => |x| ^ q) := by
+    apply Asymptotics.IsBigO.of_bound (2 ^ p)
+    filter_upwards [Filter.tendsto_comap.eventually (Filter.eventually_ge_atTop R')] with x hx
+    exact hdom x hx
   have hneg : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atBot]
       (fun x : ℝ => (-x) ^ q) := by
-    apply Asymptotics.IsBigO.of_bound (2 ^ p)
-    filter_upwards [Filter.eventually_lt_atBot (-R')] with x hx
-    have hnegx : R' < -x := by linarith
-    have habs : |x| = -x := abs_of_nonpos (by linarith)
-    simpa only [habs] using hdom x (by rw [habs]; exact le_of_lt hnegx)
+    have h := hbig.mono (Filter.tendsto_comap_iff.mpr tendsto_abs_atBot_atTop)
+    refine h.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
+    filter_upwards [Filter.eventually_le_atBot (0 : ℝ)] with x hx
+    rw [abs_of_nonpos hx]
   have hpos : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atTop]
       (fun x : ℝ => x ^ q) := by
-    apply Asymptotics.IsBigO.of_bound (2 ^ p)
-    filter_upwards [Filter.eventually_gt_atTop R'] with x hx
-    have habs : |x| = x := abs_of_nonneg (by linarith)
-    simpa only [habs] using hdom x (by rw [habs]; exact le_of_lt hx)
+    have h := hbig.mono (Filter.tendsto_comap_iff.mpr tendsto_abs_atTop_atTop)
+    refine h.congr' (Filter.Eventually.of_forall fun _ => rfl) ?_
+    filter_upwards [Filter.eventually_ge_atTop (0 : ℝ)] with x hx
+    rw [abs_of_nonneg hx]
   exact hg.locallyIntegrable.integrable_of_isBigO_atBot_atTop hneg
     ⟨Iio (-R'), Filter.Iio_mem_atBot _, hpowNeg⟩ hpos
     ⟨Ioi R', Filter.Ioi_mem_atTop _, hpowPos⟩
 
-/-- Every fixed positive threshold is eventually below `x² / (2 log |x|)`
+/-- Every fixed threshold is eventually below `x² / (2 log |x|)`
 as `|x|` tends to infinity. -/
-theorem eventually_quadratic_div_log_abs_gt (c : ℝ) (hc : 0 < c) :
+theorem eventually_quadratic_div_log_abs_gt (c : ℝ) :
     ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
       c < (x ^ 2 / 2) / log |x| := by
   rw [Filter.eventually_comap]
   apply Filter.eventually_atTop.2
-  refine ⟨max (2 * c + 1) 2, ?_⟩
+  refine ⟨max (2 * max c 0 + 1) 2, ?_⟩
   intro t ht x hxt
-  have htA : 2 * c + 1 ≤ t := le_trans (le_max_left _ _) ht
+  have htA : 2 * max c 0 + 1 ≤ t := le_trans (le_max_left _ _) ht
   have htB : 2 ≤ t := le_trans (le_max_right _ _) ht
   have htpos : 0 < t := by linarith
   have htgt : 1 < t := lt_of_lt_of_le one_lt_two htB
   have hlogpos : 0 < log t := Real.log_pos htgt
   have hlogle : log t ≤ t :=
     (Real.log_le_sub_one_of_pos htpos).trans (by linarith)
-  have hmargin : 0 < t / 2 - c := by linarith
-  have hquad : c * t < t ^ 2 / 2 := by
+  have hmargin : 0 < t / 2 - max c 0 := by linarith
+  have hquad : max c 0 * t < t ^ 2 / 2 := by
     have := mul_pos htpos hmargin
     nlinarith
   rw [← sq_abs, hxt, lt_div_iff₀ hlogpos]
-  exact (mul_le_mul_of_nonneg_left hlogle hc.le).trans_lt hquad
+  exact (mul_le_mul_of_nonneg_right (le_max_left c 0) hlogpos.le).trans_lt
+    ((mul_le_mul_of_nonneg_left hlogle (le_max_right _ _)).trans_lt hquad)
 
 /-- For `0 < alpha < 1`, the function `x ↦ x ^ (-(alpha + 1)) * sin x` is integrable on the
 positive half-line. -/

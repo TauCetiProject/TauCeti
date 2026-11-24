@@ -125,14 +125,12 @@ private theorem twoParticleGaussianBetaGasPartitionFunction_eq {β : ℝ} (hβ :
 
 private theorem gaussianBetaGasWeight_two_eq (β : ℝ) (x : Fin 2 → ℝ) :
     gaussianBetaGasWeight 2 β x = twoParticleGaussianBetaGasWeight β (x 0, x 1) := by
-  rw [gaussianBetaGasWeight_eq_exp_mul_prod, twoParticleGaussianBetaGasWeight_def,
-    Finset.prod_finset_product (betaGasPairs 2) Finset.univ
-      (fun i => Finset.Ioi i) (by intro z; simp)]
-  simp only [Fin.sum_univ_two, Nat.cast_ofNat]
-  have hlast : Finset.Ioi (1 : Fin 2) = ∅ := by
-    convert Finset.Ioi_top (α := Fin 2) using 1; decide
-  rw [Fin.prod_univ_two, hlast, Finset.prod_empty, mul_one,
-    Fin.prod_Ioi_zero, Fin.prod_univ_one]
+  have hpairs : betaGasPairs 2 = {(0, 1)} := by
+    ext ⟨i, j⟩
+    simp only [mem_betaGasPairs, Finset.mem_singleton]
+    fin_cases i <;> fin_cases j <;> decide
+  rw [gaussianBetaGasWeight_eq_exp_mul_prod, twoParticleGaussianBetaGasWeight_def, hpairs]
+  simp only [Fin.sum_univ_two, Nat.cast_ofNat, Finset.prod_singleton]
   congr 2
   ring
 
@@ -142,8 +140,7 @@ private theorem gaussianBetaGasPartitionFunction_two_eq_pair (β : ℝ) :
     ← (volume_preserving_finTwoArrow ℝ).integral_comp' (twoParticleGaussianBetaGasWeight β)]
   apply integral_congr_ae
   filter_upwards with x
-  change gaussianBetaGasWeight 2 β x = twoParticleGaussianBetaGasWeight β (x 0, x 1)
-  exact gaussianBetaGasWeight_two_eq β x
+  simpa [MeasurableEquiv.finTwoArrow] using gaussianBetaGasWeight_two_eq β x
 
 /-- The Gaussian beta-gas partition function at `n = 2`, for positive inverse temperature. -/
 theorem gaussianBetaGasPartitionFunction_two_eq {β : ℝ} (hβ : 0 < β) :

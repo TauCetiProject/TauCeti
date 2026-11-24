@@ -7,6 +7,7 @@ module
 
 import TauCeti.Probability.Distributions.BetaGas.Normalizability
 import TauCeti.Probability.Distributions.BetaGas.PartitionFunction
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 
 /-!
@@ -25,6 +26,10 @@ variable (hliminf :
   ((2 * β' / β : ℝ) : EReal) <
     Filter.liminf (fun x : ℝ => ((V x / log |x| : ℝ) : EReal))
       (Filter.comap (fun x : ℝ => |x|) Filter.atTop))
+
+example : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+    (-1 : ℝ) < (x ^ 2 / 2) / log |x| :=
+  TauCeti.eventually_quadratic_div_log_abs_gt (-1)
 
 example (hint : Integrable (betaGasWeight n β V)
     (volume : Measure (Fin n → ℝ))) :

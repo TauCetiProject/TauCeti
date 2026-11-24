@@ -148,26 +148,23 @@ def betaGasPDFReal (n : ℕ) (β : ℝ) (V : ℝ → ℝ) (x : Fin n → ℝ) : 
 theorem betaGasPDFReal_def (n : ℕ) (β : ℝ) (V : ℝ → ℝ) (x : Fin n → ℝ) :
     betaGasPDFReal n β V x = betaGasWeight n β V x / betaGasPartitionFunction n β V := (rfl)
 
+private theorem betaGasPDFReal_eq (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
+    betaGasPDFReal n β V =
+      fun x => betaGasWeight n β V x / betaGasPartitionFunction n β V :=
+  funext (betaGasPDFReal_def n β V)
+
 /-- A measurable potential gives a measurable normalized density. -/
 @[fun_prop]
 theorem measurable_betaGasPDFReal (n : ℕ) (β : ℝ) {V : ℝ → ℝ}
     (hV : Measurable V) : Measurable (betaGasPDFReal n β V) := by
-  have hdens : betaGasPDFReal n β V =
-      fun x => betaGasWeight n β V x / betaGasPartitionFunction n β V := by
-    funext x
-    exact betaGasPDFReal_def n β V x
-  rw [hdens]
+  rw [betaGasPDFReal_eq]
   exact (measurable_betaGasWeight n β hV).div_const _
 
 /-- A continuous potential gives a continuous density when `β` is nonnegative. -/
 @[fun_prop]
 theorem continuous_betaGasPDFReal (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) {V : ℝ → ℝ}
     (hV : Continuous V) : Continuous (betaGasPDFReal n β V) := by
-  have hdens : betaGasPDFReal n β V =
-      fun x => betaGasWeight n β V x / betaGasPartitionFunction n β V := by
-    funext x
-    exact betaGasPDFReal_def n β V x
-  rw [hdens]
+  rw [betaGasPDFReal_eq]
   exact (continuous_betaGasWeight n hβ hV).div_const _
 
 /-- The beta-gas density is nonnegative. -/
@@ -189,10 +186,7 @@ theorem integrable_betaGasPDFReal (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
       (volume : Measure (Fin n → ℝ)) := by
   by_cases hint : Integrable (betaGasWeight n β V)
       (volume : Measure (Fin n → ℝ))
-  · have hdens : betaGasPDFReal n β V =
-        fun x => betaGasWeight n β V x / betaGasPartitionFunction n β V :=
-      funext (betaGasPDFReal_def n β V)
-    rw [hdens]
+  · rw [betaGasPDFReal_eq]
     exact hint.div_const _
   · rw [betaGasPDFReal_eq_zero_of_not_integrable n β V hint]
     exact integrable_zero _ _ _

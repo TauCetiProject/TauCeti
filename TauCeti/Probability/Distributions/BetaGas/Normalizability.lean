@@ -225,8 +225,7 @@ theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     dsimp [β']
     exact lt_of_lt_of_le one_lt_two (le_max_right _ _)
   have hββ' : β ≤ β' := le_max_left _ _
-  have hc : 0 < 2 * β' / β := by positivity
-  have hRatio := eventually_quadratic_div_log_abs_gt (2 * β' / β) hc
+  have hRatio := eventually_quadratic_div_log_abs_gt (2 * β' / β)
   rw [gaussianBetaGasWeight_eq_betaGasWeight]
   exact integrable_betaGasWeight_of_eventually_lt_div_log n hβ hβ' hββ' (by fun_prop) (by
     simpa [β'] using hRatio)
