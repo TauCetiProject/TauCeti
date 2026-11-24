@@ -232,6 +232,8 @@ theorem pullback_id (n : ℕ) :
   -- `(AlgHom.id A B).toRingHom` is definitionally `RingHom.id B`.
   (pullback_unique (AlgHom.id A B) n (φ := (LinearMap.id : Forms A B n →ₗ[B] Forms A B n))
     fun c v => by
+      -- `rw [LinearMap.id_apply]` / `simp` fail: `LinearMap.id` has type `→ₗ[B]` (`RingHom.id B`),
+      -- whereas `pullback_unique` applies `DFunLike.coe` at `→ₛₗ[(AlgHom.id A B).toRingHom]`.
       change elementary A c v = _
       simp only [AlgHom.id_apply, Function.comp_def]).symm
 
