@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Friedrichs.Basic
 public import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
-# The Friedrichs extension is maximal in form order
+# Embedding of Friedrichs form completions for `S ≤ T`
 
 Let `S ≤ T` be partial linear operators on a Hilbert space `E`, both symmetric with the same lower
 bound `γ`. The form completion `LinearPMap.FriedrichsSpace` of `S` embeds isometrically into that
@@ -18,14 +18,16 @@ of `T` (`LinearPMap.friedrichsSpaceMap`): on the domain of `S`, the form inner p
 (`LinearPMap.FriedrichsPre.inner_ofDomain_inclusion`). The embedding is compatible with the
 inclusions into `E` and carries the closed form of `S` to that of `T`.
 
-When `T` is densely defined and self-adjoint it is its own Friedrichs extension
-(`LinearPMap.eq_friedrichsExtension_of_isSelfAdjoint` applied to `T ≤ T`, with the witnesses
-`LinearPMap.friedrichsInclusion_toFriedrichsSpace`), so its closed form `q_T` is
-`LinearPMap.friedrichsForm` of `T`. The embedding then says that `T ≤ S_F` in form order, for the
-Friedrichs extension `S_F` of `S`: the form domain of `S_F` lies in that of `T`
-(`LinearPMap.range_friedrichsInclusion_subset`), and `q_T = q_(S_F)` on it
-(`LinearPMap.friedrichsForm_friedrichsSpaceMap`). This is the form-order half of the extremal
-property of the Friedrichs extension (Krein's theorem).
+Informal consequence, not formalized here: no declaration in this file mentions
+`LinearPMap.friedrichsExtension` or self-adjointness. Suppose in addition that `T` is densely
+defined and self-adjoint with the same lower bound `γ` as `S`. Then `T` is its own Friedrichs
+extension (`LinearPMap.eq_friedrichsExtension_of_isSelfAdjoint` applied to `T ≤ T`), so its
+closed form `q_T` is `LinearPMap.friedrichsForm` of `T`. Through this identification the
+results here say that `T ≤ S_F` in form order for the Friedrichs extension `S_F` of `S`: the form
+domain of `S_F` lies in that of `T` (`LinearPMap.range_friedrichsInclusion_subset`), and
+`q_T = q_(S_F)` on it (`LinearPMap.friedrichsForm_friedrichsSpaceMap`). This is the form-order
+step towards the extremal property of the Friedrichs extension (Krein's theorem), which is
+usually stated for all semibounded self-adjoint extensions, without the same-`γ` restriction.
 
 ## Main declarations
 
