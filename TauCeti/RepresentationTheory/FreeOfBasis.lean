@@ -20,7 +20,7 @@ generator `single i (single h 1)` of `Representation.free k G ι` corresponds to
 (`Representation.freeEquivOfBasis`).
 
 When `G` is a group and `ρ g` only sends each `b ⟨i, h⟩` to a scalar multiple of `b ⟨i, g * h⟩`,
-the group laws force those scalars to be units (`Representation.unitOfApplyBasisEqSmul`).
+the group laws force those scalars to be units (`Representation.unitOfApplyBasisEqSMul`).
 Rescaling the basis vector at `⟨i, h⟩` to `ρ h (b ⟨i, 1⟩)` therefore produces a new basis freely
 permuted by `G` without scalars, so `ρ` is still equivalent to the free representation on `ι`, with
 the generator `single i (single h 1)` corresponding to `ρ h (b ⟨i, 1⟩)`
@@ -30,7 +30,7 @@ the generator `single i (single h 1)` corresponding to `ρ h (b ⟨i, 1⟩)`
 
 * `Representation.freeEquivOfBasis`: a basis freely permuted by the action identifies the
   representation with the free representation on the labels.
-* `Representation.unitOfApplyBasisEqSmul`: packages a scalar by which a group element carries one
+* `Representation.unitOfApplyBasisEqSMul`: packages a scalar by which a group element carries one
   basis vector to another, together with the scalar for its inverse, as a unit in `kˣ`.
 * `Representation.monomialRescaledBasis`: rescaling a monomial basis along group translates so
   that the group permutes the rescaled basis without scalars.
@@ -95,7 +95,7 @@ section Monomial
 
 /-- **Scalars of a monomial group action on a basis are units.** If `ρ g` sends `b x` to `c • b y`
 and `ρ g⁻¹` sends `b y` to `d • b x`, this packages `c` with inverse `d` as a unit in `kˣ`. -/
-def unitOfApplyBasisEqSmul {k G V X : Type*} [Semiring k] [Group G]
+def unitOfApplyBasisEqSMul {k G V X : Type*} [Semiring k] [Group G]
     [AddCommMonoid V] [Module k V] (ρ : Representation k G V) (b : Module.Basis X k V)
     {g : G} {x y : X} {c d : k} (hxy : ρ g (b x) = c • b y) (hyx : ρ g⁻¹ (b y) = d • b x) :
     kˣ where
@@ -112,20 +112,20 @@ def unitOfApplyBasisEqSmul {k G V X : Type*} [Semiring k] [Group G]
     rw [hyx, map_smul, hxy, ← mul_smul] at h
     simpa [one_smul] using h
 
-/-- The underlying scalar of `Representation.unitOfApplyBasisEqSmul` is `c`. -/
+/-- The underlying scalar of `Representation.unitOfApplyBasisEqSMul` is `c`. -/
 @[simp]
-theorem val_unitOfApplyBasisEqSmul {k G V X : Type*} [Semiring k] [Group G]
+theorem val_unitOfApplyBasisEqSMul {k G V X : Type*} [Semiring k] [Group G]
     [AddCommMonoid V] [Module k V] (ρ : Representation k G V) (b : Module.Basis X k V)
     {g : G} {x y : X} {c d : k} (hxy : ρ g (b x) = c • b y) (hyx : ρ g⁻¹ (b y) = d • b x) :
-    (ρ.unitOfApplyBasisEqSmul b hxy hyx : k) = c :=
+    (ρ.unitOfApplyBasisEqSMul b hxy hyx : k) = c :=
   (rfl)
 
-/-- The inverse scalar of `Representation.unitOfApplyBasisEqSmul` is `d`. -/
+/-- The inverse scalar of `Representation.unitOfApplyBasisEqSMul` is `d`. -/
 @[simp]
-theorem val_inv_unitOfApplyBasisEqSmul {k G V X : Type*} [Semiring k] [Group G]
+theorem val_inv_unitOfApplyBasisEqSMul {k G V X : Type*} [Semiring k] [Group G]
     [AddCommMonoid V] [Module k V] (ρ : Representation k G V) (b : Module.Basis X k V)
     {g : G} {x y : X} {c d : k} (hxy : ρ g (b x) = c • b y) (hyx : ρ g⁻¹ (b y) = d • b x) :
-    (↑(ρ.unitOfApplyBasisEqSmul b hxy hyx)⁻¹ : k) = d :=
+    (↑(ρ.unitOfApplyBasisEqSMul b hxy hyx)⁻¹ : k) = d :=
   (rfl)
 
 section Rescale
@@ -157,7 +157,7 @@ def monomialRescaledBasis : Module.Basis X k V :=
         b.repr (ρ (e.symm x).2⁻¹ (b x)) (e ⟨(e.symm x).1, 1⟩) • b (e ⟨(e.symm x).1, 1⟩) := by
       have h := apply_basis_eq_repr_smul ρ b e hb (e.symm x).2⁻¹ (e.symm x).2 (e.symm x).1
       rwa [inv_mul_cancel, _root_.Equiv.apply_symm_apply] at h
-    ρ.unitOfApplyBasisEqSmul b h1 h2
+    ρ.unitOfApplyBasisEqSMul b h1 h2
 
 /-- The rescaled basis `Representation.monomialRescaledBasis` sends `e ⟨i, h⟩` to
 `ρ h (b (e ⟨i, 1⟩))`. -/
@@ -165,7 +165,7 @@ def monomialRescaledBasis : Module.Basis X k V :=
 theorem monomialRescaledBasis_apply (i : ι) (h : G) :
     ρ.monomialRescaledBasis b e hb (e ⟨i, h⟩) = ρ h (b (e ⟨i, 1⟩)) := by
   rw [monomialRescaledBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
-    val_unitOfApplyBasisEqSmul, e.symm_apply_apply]
+    val_unitOfApplyBasisEqSMul, e.symm_apply_apply]
   have h1 := apply_basis_eq_repr_smul ρ b e hb h 1 i
   rw [mul_one] at h1
   exact h1.symm
