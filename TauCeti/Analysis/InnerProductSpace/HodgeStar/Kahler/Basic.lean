@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
 /-!
@@ -58,6 +59,8 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
+* `twoVectorContraction_kahlerForm`: the contraction by `ω` is `J`, `v ⌟ ω = J v`.
+* `sum_ιMulti_apply_eq_two_smul_kahlerForm`: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` in every orthonormal basis.
 * `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
   (`norm_kahlerForm_sq_eq_two`).
 * `norm_ιMulti_apply_sq`: `‖v ∧ J v‖² = ‖v‖⁴`.
@@ -67,12 +70,15 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   (`lieMap_add_smul_lieMap_lieMap`).
 * `inner_lieMap_lieMap_ιMulti`: `⟪D_J² η, u ∧ w⟫ = 2 (η(J u, J w) - η(u, w))`.
 * `norm_lieMap_lieMap_le`: `‖D_J² η‖ ≤ 4 ‖η‖` for an orthogonal `J`.
+* `lieMap_eq_zero_iff_forall_inner_ιMulti_apply`: `D_J η = 0` exactly when
+  `η(J u, J w) = η(u, w)`.
 * `toLinearMap_eq_twoVectorContraction`: a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` is the
   contraction by `F`; it is orthogonal (`inner_apply_apply_of_inner_eq`) and `F` is its Kähler
   two-vector (`kahlerForm_eq_of_inner_eq`).
 * `repr_apply`: the coordinates of `J v` in a unitary frame.
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
+* `inner_ιMulti_of_antiinvariant`: the frame coordinates of an anti-`J`-invariant two-vector.
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
 * `inner_kahlerForm_hodgeStar`: `⟪ω, ⋆F⟫ = ⟪ω, F⟫`.
 * `exists_orthonormalBasis_apply_zero_eq`: every unit vector starts a positively oriented unitary
@@ -82,8 +88,10 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `lieMap_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
+* `hodgeStar_ιMulti_apply`: `⋆(x ∧ J x) = ‖x‖² ω - x ∧ J x` for the complex orientation.
 * `eq_smul_kahlerForm_add_of_lieMap_eq_zero`: a `J`-invariant `η` is
-  `(⟪ω, η⟫ / 2) ω + (η - ⋆η) / 2`.
+  `(⟪ω, η⟫ / 2) ω + (η - ⋆η) / 2`; conversely, `D_J η = 0` when `η + ⋆η` is a multiple of `ω`
+  (`lieMap_eq_zero_of_add_hodgeStar_eq_smul`).
 
 The supporting norm-preservation and four-frame construction lemmas live in
 `TauCeti.Geometry.Symplectic.Complex.InnerProductSpace` and
@@ -162,22 +170,38 @@ omit [FiniteDimensional ℝ V] in
 theorem inner_apply_left (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
   J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
 
+/-- In any orthonormal basis `b`, `⟪∑ᵢ bᵢ ∧ J bᵢ, u ∧ w⟫ = 2 ⟪J u, w⟫`. -/
+private theorem inner_sum_ιMulti_apply {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
+    (u w : V) : ⟪∑ i, ιMulti ℝ 2 ![b i, J (b i)], ιMulti ℝ 2 ![u, w]⟫ = 2 * ⟪J u, w⟫ := by
+  -- Expanding in the orthonormal basis `b`, each sum is `±⟪J u, w⟫`.
+  have hsum (x y : V) : ∑ i, ⟪b i, x⟫ * ⟪J (b i), y⟫ = ⟪J x, y⟫ := by
+    rw [inner_apply_left hJ x, ← b.sum_inner_mul_inner x (J y), ← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [inner_apply_left hJ, real_inner_comm x]
+    ring
+  simp only [sum_inner, inner_ιMulti_two, Finset.sum_sub_distrib, hsum]
+  rw [inner_apply_left hJ w u, real_inner_comm w (J u)]
+  ring
+
 /-- **The Kähler two-vector represents the Kähler form**: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`. -/
 @[simp]
 theorem inner_kahlerForm_ιMulti (u w : V) :
     ⟪J.kahlerForm, ιMulti ℝ 2 ![u, w]⟫ = ⟪J u, w⟫ := by
-  -- Expanding in the orthonormal basis `b`, each sum is `±⟪J u, w⟫`.
-  have hsum (x y : V) : ∑ i, ⟪stdOrthonormalBasis ℝ V i, x⟫ *
-      ⟪J (stdOrthonormalBasis ℝ V i), y⟫ = ⟪J x, y⟫ := by
-    rw [inner_apply_left hJ x, ← (stdOrthonormalBasis ℝ V).sum_inner_mul_inner x (J y),
-      ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [inner_apply_left hJ, real_inner_comm x]
-    ring
-  simp only [kahlerForm, real_inner_smul_left, sum_inner, inner_ιMulti_two,
-    Finset.sum_sub_distrib, hsum]
-  rw [inner_apply_left hJ w u, real_inner_comm w (J u)]
+  rw [kahlerForm, real_inner_smul_left, inner_sum_ιMulti_apply hJ]
   ring
+
+/-- **The contraction by the Kähler two-vector is `J`**: `v ⌟ ω = J v`. -/
+@[simp]
+theorem twoVectorContraction_kahlerForm (v : V) : twoVectorContraction J.kahlerForm v = J v :=
+  ext_inner_right ℝ fun w ↦ by rw [inner_twoVectorContraction_apply, inner_kahlerForm_ιMulti hJ]
+
+/-- **The Kähler two-vector in any orthonormal basis**: `∑ᵢ bᵢ ∧ J bᵢ = 2 ω` for an orthogonal
+`J`, as in the definition of `ω` through the standard orthonormal basis. -/
+theorem sum_ιMulti_apply_eq_two_smul_kahlerForm {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ V) :
+    ∑ i, ιMulti ℝ 2 ![b i, J (b i)] = (2 : ℝ) • J.kahlerForm :=
+  ext_inner_ιMulti_two fun u w ↦ by
+    rw [inner_sum_ιMulti_apply hJ, real_inner_smul_left, inner_kahlerForm_ιMulti hJ]
 
 /-- `⟪ω, ω⟫ = dim V / 2`: in a unitary frame `ω = e₁ ∧ e₂ + e₃ ∧ e₄ + ⋯` is a sum of
 `dim V / 2` orthonormal two-vectors. -/
@@ -202,14 +226,6 @@ theorem norm_ιMulti_apply_sq (v : V) : ‖ιMulti ℝ 2 ![v, J v]‖ ^ 2 = ‖v
   rw [← real_inner_self_eq_norm_sq, inner_ιMulti_two, hJ, real_inner_comm, inner_apply_self hJ,
     real_inner_self_eq_norm_sq]
   ring
-
-/-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. -/
-@[simp]
-theorem lieMap_kahlerForm :
-    exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
-  simp [inner_add_right, inner_kahlerForm_ιMulti hJ, hJ]
 
 /-- A complex-linear linear isometry equivalence between orthogonal almost complex inner product
 spaces transports the Kähler two-vector. -/
@@ -262,7 +278,46 @@ theorem norm_lieMap_lieMap_le (η : ⋀[ℝ]^2 V) :
   rw [h₂'] at h₁ ⊢
   nlinarith [norm_nonneg (D η), norm_nonneg η]
 
+/-- **The `J`-invariant two-forms are the kernel of `D_J`**: for an orthogonal `J`, `D_J η = 0`
+exactly when `η(J u, J w) = η(u, w)` for all `u` and `w`, where `η(u, w) = ⟪η, u ∧ w⟫`. -/
+theorem lieMap_eq_zero_iff_forall_inner_ιMulti_apply (η : ⋀[ℝ]^2 V) :
+    lieMap 2 J.toLinearMap η = 0 ↔
+      ∀ u w, ⟪η, ιMulti ℝ 2 ![J u, J w]⟫ = ⟪η, ιMulti ℝ 2 ![u, w]⟫ := by
+  set D := lieMap 2 J.toLinearMap
+  refine ⟨fun h u w ↦ ?_, fun h ↦ ?_⟩
+  · have h2 := inner_lieMap_lieMap_ιMulti hJ η u w
+    rw [h, map_zero, inner_zero_left] at h2
+    linarith
+  · -- `D_J² η = 0` on every wedge, and `‖D_J η‖² = -⟪η, D_J² η⟫` since `D_J` is skew-adjoint.
+    have h2 : D (D η) = 0 := ext_inner_ιMulti_two fun u w ↦ by
+      rw [inner_lieMap_lieMap_ιMulti hJ, h, sub_self, mul_zero, inner_zero_left]
+    have h1 : ‖D η‖ ^ 2 = 0 := by
+      rw [← real_inner_self_eq_norm_sq, inner_lieMap_left (inner_apply_left hJ), h2,
+        inner_zero_right, neg_zero]
+    exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 h1)
+
 end Orthogonal
+
+/-- The derivation action of `J` kills each complex line `v ∧ J v`:
+`D_J (v ∧ J v) = J v ∧ J v + v ∧ J (J v) = J v ∧ J v - v ∧ v = 0`. No orthogonality of `J` is
+needed, nor any inner product on the underlying real module. -/
+theorem lieMap_ιMulti_apply {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (J : AlmostComplexStructure W) (v : W) :
+    exteriorPower.lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![v, J v]) = 0 := by
+  have h : ∀ x : W, ιMulti ℝ 2 ![x, x] = 0 := fun x ↦
+    (ιMulti ℝ 2).map_eq_zero_of_eq _ (i := 0) (j := 1) (by simp) (by decide)
+  have h' : ∀ x : W, ιMulti ℝ 2 ![x, -x] = 0 := fun x ↦ by
+    rw [← neg_one_smul ℝ x, ιMulti_two_smul_right, h, smul_zero]
+  rw [lieMap_two_apply_ιMulti]
+  simp [AlmostComplexStructure.apply_apply, h, h']
+
+/-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. Each summand
+`b ∧ J b` is killed by `lieMap_ιMulti_apply`; no orthogonality of `J` is needed. -/
+@[simp]
+theorem lieMap_kahlerForm (J : AlmostComplexStructure V) :
+    exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
+  simp only [kahlerForm_def, map_smul, map_sum, lieMap_ιMulti_apply, Finset.sum_const_zero,
+    smul_zero]
 
 /-! ### Almost complex structures represented by a two-vector -/
 
@@ -343,6 +398,27 @@ theorem kahlerForm_eq_ιMulti_add_ιMulti :
     repr_apply h₀ h₂, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
   ring
+
+include h₀ h₂ in
+/-- **The frame coordinates of an anti-`J`-invariant two-vector.** If
+`⟪x, J a ∧ J b⟫ = -⟪x, a ∧ b⟫` for all `a`, `b`, then in a unitary frame, with
+`xᵢⱼ = ⟪x, eᵢ ∧ eⱼ⟫`, `x₀₁ = x₂₃ = 0`, `x₁₃ = -x₀₂` and `x₁₂ = x₀₃`. -/
+theorem inner_ιMulti_of_antiinvariant {x : ⋀[ℝ]^2 V}
+    (hx : ∀ a b, ⟪x, ιMulti ℝ 2 ![J a, J b]⟫ = -⟪x, ιMulti ℝ 2 ![a, b]⟫) :
+    ⟪x, ιMulti ℝ 2 ![e 0, e 1]⟫ = 0 ∧ ⟪x, ιMulti ℝ 2 ![e 2, e 3]⟫ = 0 ∧
+      ⟪x, ιMulti ℝ 2 ![e 1, e 3]⟫ = -⟪x, ιMulti ℝ 2 ![e 0, e 2]⟫ ∧
+      ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ = ⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ := by
+  have h₁ : J (e 1) = -e 0 := by rw [← h₀, J.apply_apply]
+  have h₃ : J (e 3) = -e 2 := by rw [← h₂, J.apply_apply]
+  have h01 := hx (e 0) (e 1)
+  have h23 := hx (e 2) (e 3)
+  have h02 := hx (e 0) (e 2)
+  have h03 := hx (e 0) (e 3)
+  rw [h₀, h₁, ιMulti_two_neg_right, ιMulti_two_swap, neg_neg] at h01
+  rw [h₂, h₃, ιMulti_two_neg_right, ιMulti_two_swap, neg_neg] at h23
+  rw [h₀, h₂] at h02
+  rw [h₀, h₃, ιMulti_two_neg_right, inner_neg_right] at h03
+  refine ⟨by linarith, by linarith, h02, by linarith⟩
 
 variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
   (he : e.toBasis.orientation = o)
@@ -480,6 +556,20 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
   ring
 
 include he h₀ h₂ in
+/-- **The star of a complex line**: for the complex orientation, `⋆(x ∧ J x) = ‖x‖² ω - x ∧ J x`.
+For a unit vector `x` this is the complex line `u ∧ J u` orthogonal to `x` and `J x`, since
+`ω = x ∧ J x + u ∧ J u` in a unitary frame starting with `x`. -/
+theorem hodgeStar_ιMulti_apply (x : V) :
+    o.hodgeStar hkl (ιMulti ℝ 2 ![x, J x]) = ‖x‖ ^ 2 • J.kahlerForm - ιMulti ℝ 2 ![x, J x] := by
+  have h := ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he x x
+  have hz : ιMulti ℝ 2 ![x, J x] - ιMulti ℝ 2 ![J x, x] = (2 : ℝ) • ιMulti ℝ 2 ![x, J x] :=
+    ext_inner_ιMulti_two fun u w ↦ by
+      rw [inner_sub_left, real_inner_smul_left, inner_ιMulti_two, inner_ιMulti_two]
+      ring
+  rw [hz, map_smul, real_inner_self_eq_norm_sq, ← smul_add, mul_smul] at h
+  exact eq_sub_of_add_eq' (smul_right_injective (⋀[ℝ]^2 V) two_ne_zero h)
+
+include he h₀ h₂ in
 /-- **A `J`-invariant two-form is a multiple of `ω` plus an anti-self-dual form**: for
 `D_J η = 0`, `η = (⟪ω, η⟫ / 2) ω + (η - ⋆η) / 2`. -/
 theorem eq_smul_kahlerForm_add_of_lieMap_eq_zero {η : ⋀[ℝ]^2 V}
@@ -504,6 +594,21 @@ theorem eq_smul_kahlerForm_add_of_lieMap_eq_zero {η : ⋀[ℝ]^2 V}
     _ = _ := by
       congr 1
       linear_combination (norm := module) (4⁻¹ : ℝ) • h2
+
+include he h₀ h₂ in
+/-- **A two-form whose self-dual part is a multiple of `ω` is `J`-invariant**: if
+`η + ⋆η = c ω`, then `D_J η = 0`, so `η` has no `(2,0) + (0,2)` part. This is the converse of
+`eq_smul_kahlerForm_add_of_lieMap_eq_zero`: `η` is `(c / 2) ω` plus its anti-self-dual part, and
+both are `J`-invariant. -/
+theorem lieMap_eq_zero_of_add_hodgeStar_eq_smul {η : ⋀[ℝ]^2 V} {c : ℝ}
+    (hη : η + o.hodgeStar hkl η = c • J.kahlerForm) : lieMap 2 J.toLinearMap η = 0 := by
+  set m := (2⁻¹ : ℝ) • (η - o.hodgeStar hkl η)
+  have hm : o.hodgeStar hkl m = -m := o.hodgeStar_smul_sub_hodgeStar even_two hkl η
+  have hpm : η = (2⁻¹ * c : ℝ) • J.kahlerForm + m := by
+    rw [mul_smul, ← hη]
+    module
+  rw [hpm, map_add, map_smul, lieMap_kahlerForm, smul_zero, zero_add,
+    lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hm]
 
 end Frame
 

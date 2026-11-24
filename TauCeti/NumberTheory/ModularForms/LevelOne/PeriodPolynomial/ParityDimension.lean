@@ -213,7 +213,7 @@ private lemma parity_eq_neg_swap (P : periodPolynomials K w) :
     rw [← map_mul, ← op_mul]
     congr 2
     decide
-  have hS := eq_neg_of_add_eq_zero_right (mem_periodPolynomials_iff.mp P.2).1
+  have hS := eq_neg_of_add_eq_zero_right (mem_periodPolynomials_iff.mp P.property).1
   rw [← h, mul_apply_eq_comp, hS, map_neg]
 
 omit [CharZero K] in
@@ -224,7 +224,7 @@ private lemma finrank_ker_one_add_swapOnPeriods (hw : Even w) :
       (evenPeriodPolynomials K w).comap (periodPolynomials K w).subtype := by
     ext P
     rw [LinearMap.mem_ker, Submodule.mem_comap, Submodule.subtype_apply,
-      mem_evenPeriodPolynomials_iff, and_iff_right P.2, parity_eq_neg_swap]
+      mem_evenPeriodPolynomials_iff, and_iff_right P.property, parity_eq_neg_swap]
     rw [← Subtype.val_inj]
     simp only [LinearMap.add_apply, one_apply_eq_self, Submodule.coe_add,
       ZeroMemClass.coe_zero, swapOnPeriods, LinearMap.coe_restrict_apply]

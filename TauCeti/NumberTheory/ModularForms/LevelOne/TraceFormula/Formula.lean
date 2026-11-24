@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Trace
 public import TauCeti.NumberTheory.HurwitzClassNumber
+import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.ClassNumber
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Hyperbolic
 import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.Parabolic
 import TauCeti.NumberTheory.Divisors
@@ -55,10 +56,10 @@ open scoped ArithmeticFunction.sigma
 namespace TauCeti.TraceFormulaMatrixModule
 
 private noncomputable def fibreWeight (t n : ℤ) : ℚ :=
-  ∑ᶠ A : traceDetFiber (Fin 2) t n, (PopaZagier.weight A.1 : ℚ)
+  ∑ᶠ A : traceDetFiber (Fin 2) t n, (PopaZagier.weight A.val : ℚ)
 
 private lemma fibreWeight_cast (t n : ℤ) :
-    fibreWeight t n = (∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.1 : ℤ) := by
+    fibreWeight t n = (∑ᶠ A : traceDetFiber (Fin 2) t n, PopaZagier.weight A.val : ℤ) := by
   exact (map_finsum (Int.castAddHom ℚ) (PopaZagier.finite_support_weight_traceDetFiber t n)).symm
 
 private lemma fibreWeight_pair_of_sq_le (n : ℕ) (hn : 0 < n) (t : ℤ)
@@ -75,12 +76,11 @@ private lemma fibreWeight_pair_of_sq_le (n : ℕ) (hn : 0 < n) (t : ℤ)
           -((4 * (n : ℤ) - t ^ 2).toNat : ℤ))]
     ring
   · -- At the boundary the two fibre weights sum to 2 = -24 H(0).
-    have hnp : (0 : ℤ) < n := by exact_mod_cast hn
     have ht : t ≠ 0 := by rintro rfl; omega
     have hzero : 4 * (n : ℤ) - t ^ 2 = 0 := by omega
     rw [fibreWeight_cast, fibreWeight_cast,
-      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero hnp (by omega),
-      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero hnp (by nlinarith), hzero]
+      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero (by omega),
+      PopaZagier.finsum_weight_traceDetFiber_of_discrim_eq_zero (by nlinarith), hzero]
     by_cases htpos : 0 < t
     · simp only [htpos, ite_true, Int.toNat_zero, hurwitzClassNumber_zero,
         ite_eq_right (by omega : ¬0 < -t)]
@@ -106,11 +106,11 @@ private lemma fibreWeight_pair_of_factorPair (n : ℕ) (hn : 0 < n) (p : ℕ × 
   simp [hspos]
 
 private lemma fibreWeight_pair_of_not_isSquare (n : ℕ) (t : ℤ)
-    (hD : 4 * (n : ℤ) < t ^ 2) (hnsq : ¬IsSquare (t ^ 2 - 4 * (n : ℤ))) :
+    (hD : 4 * (n : ℤ) ≤ t ^ 2) (hnsq : ¬IsSquare (t ^ 2 - 4 * (n : ℤ))) :
     fibreWeight t n + fibreWeight (-t) n = 0 := by
   rw [fibreWeight_cast, fibreWeight_cast,
-    PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by omega) hnsq,
-    PopaZagier.finsum_weight_traceDetFiber_of_not_isSquare (by nlinarith)
+    PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_not_isSquare hD hnsq,
+    PopaZagier.finsum_weight_traceDetFiber_eq_zero_of_not_isSquare (by nlinarith)
       (by simpa using hnsq)]
   norm_num
 
@@ -219,7 +219,7 @@ private lemma sum_split_trace_mul_dickson (n w : ℕ) (hw : Even w) (p : ℕ × 
   rw [Finset.sum_congr rfl (fun t _ ↦ hind t), Finset.sum_add_distrib]
   simp only [Finset.sum_ite_eq', hmem, hmem', ite_true]
   have hPneg (t : ℤ) : P (-t) = P t := by
-    simpa only [P, Int.cast_neg] using dickson_eval_neg_of_even 2 (n : ℚ) (t : ℚ) hw
+    simp only [P, Int.cast_neg, dickson_eval_neg, hw.neg_one_pow, one_mul]
   rw [hPneg]
   have hm' : (p.2 : ℚ) * p.1 = n := by exact_mod_cast (mul_comm _ _).trans hm
   have hroot := dickson_two_eval_add_mul_sub hm' w
@@ -239,7 +239,7 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
   let I := Finset.Icc (-4 * (n : ℤ)) (4 * n)
   let P (t : ℤ) : ℚ := (dickson 2 (n : ℚ) w).eval t
   have hPneg (t : ℤ) : P (-t) = P t := by
-    simpa only [P, Int.cast_neg] using dickson_eval_neg_of_even 2 (n : ℚ) (t : ℚ) hw
+    simp only [P, Int.cast_neg, dickson_eval_neg, hw.neg_one_pow, one_mul]
   let s := n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)
   have hneg : ∑ t ∈ I, fibreWeight (-t) n * P t = ∑ t ∈ I, fibreWeight t n * P t := by
     apply Finset.sum_bij (fun t _ ↦ -t)

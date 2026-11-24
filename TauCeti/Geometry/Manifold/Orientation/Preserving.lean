@@ -26,8 +26,11 @@ point either preserves or reverses orientations there
 The inverse of a diffeomorphism preserves orientation wherever the diffeomorphism does
 (`IsOrientationPreservingAt.diffeomorph_symm`), so a diffeomorphism of `M` preserving an
 orientation everywhere has all its integer powers orientation preserving
-(`isOrientationPreservingAt_zpow`). The same holds for the inverse of a partial diffeomorphism, such
-as a chart, at the points of its target (`IsOrientationPreservingAt.partialDiffeomorph_symm`).
+(`isOrientationPreservingAt_zpow`). These diffeomorphisms form the subgroup
+`Diffeomorph.orientationPreservingSubgroup hn o` of the group of `Cⁿ` diffeomorphisms, for any
+`n ≠ 0`. Likewise,
+the inverse of a partial diffeomorphism, such as a chart, preserves orientation at the points of its
+target where the partial diffeomorphism does (`IsOrientationPreservingAt.partialDiffeomorph_symm`).
 
 For orientation lifts whose model orientations correspond under a linear equivalence of the model
 spaces, the chart signs of the lifts compensate the sign of the coordinate Jacobian of an
@@ -40,13 +43,18 @@ real number by which the derivative multiplies. In particular, translations of `
 standard orientation (`isOrientationPreservingAt_add_const`).
 
 On the model space `E` itself, every orientation is constant once the tangent spaces are identified
-with `E` (`orientationAt_eq_orientationAt`), so a continuous linear automorphism of `E` preserves
-or reverses every orientation of `E` according to the sign of its determinant
+with `E` (`orientationAt_eq_orientationAt`). So the derivatives at two points of a map into `E`
+preserving orientations there identify the two tangent spaces, carrying the orientation of the
+source at one point to that at the other (`exists_linearEquiv_map_orientationAt`). Likewise a
+continuous linear automorphism of `E` preserves or reverses every orientation of `E` according to
+the sign of its determinant
 (`isOrientationPreservingAt_of_det_pos`, `isOrientationReversingAt_of_det_neg`). In particular
 precomposing with an automorphism of negative determinant exchanges preservation and reversal
 (`isOrientationPreservingAt_comp_of_det_neg`, `isOrientationReversingAt_comp_of_det_neg`).
 More generally, a map with negative derivative determinant reverses orientations at that point
-(`isOrientationReversingAt_of_det_fderiv_neg`).
+(`isOrientationReversingAt_of_det_fderiv_neg`), and such a map of `E`, read in a model `H` through
+`I` near interior points of the range of `I`, reverses the constant model orientation
+(`isOrientationReversingAt_modelWithCorners_symm_comp_comp_of_det_neg`).
 
 If the derivative carries a tangent basis `b` onto a basis `b'`, then, whether `b` is positively
 or negatively oriented, preservation (reversal) means that `b` and `b'` have equal (opposite)
@@ -91,6 +99,22 @@ theorem isOrientationPreservingAt_iff [IsManifold I 1 M] [IsManifold I' 1 M']
         (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x ∧
           _root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x) = o'.orientationAt (f x) :=
   Iff.rfl
+
+/-- An orientation-preserving map preserves the actual empty-basis sign of a rank-zero tangent
+orientation, even when its source and target use different normed models. -/
+theorem IsOrientationPreservingAt.orientationAt_eq_positiveOrientation_iff
+    [IsManifold I 1 M] [IsManifold I' 1 M'] [IsEmpty ι]
+    {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {f : M → M'} {x : M} (h : IsOrientationPreservingAt o o' f x) :
+    o.orientationAt x = positiveOrientation ↔ o'.orientationAt (f x) = positiveOrientation := by
+  obtain ⟨e, _, he⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 h
+  have hp := _root_.Orientation.map_positiveOrientation_of_isEmpty (ι := ι) e.toLinearEquiv
+  constructor
+  · intro hx
+    exact he.symm.trans ((congrArg (_root_.Orientation.map ι e.toLinearEquiv) hx).trans hp)
+  · intro hx
+    exact (_root_.Orientation.map ι e.toLinearEquiv).injective
+      (he.trans (hx.trans hp.symm))
 
 /-- A map reverses orientations at `x` when its manifold derivative is an equivalence that maps
 `o`'s tangent orientation at `x` to the opposite of `o'`'s tangent orientation at `f x`. -/
@@ -180,6 +204,22 @@ theorem isOrientationPreservingAt_iff_map_eq [IsManifold I 1 M] [IsManifold I' 1
   rw [hmap]
   exact ((trivializationAt E' (TangentSpace I') b).mapOrientation ι hp).injective.eq_iff.symm
 
+/-- Read through a map `g` preserving the orientations `o` and `o'` at `x`, a linear isomorphism
+`F` onto the tangent space at `x` carries an orientation `ov` to that of `M` exactly when its
+composite with the derivative of `g` carries `ov` to that of `M'`. -/
+theorem IsOrientationPreservingAt.exists_map_eq_orientationAt_iff [IsManifold I 1 M]
+    [IsManifold I' 1 M'] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι}
+    {g : M → M'} {x : M} (hg : IsOrientationPreservingAt o o' g x) {V : Type*} [AddCommGroup V]
+    [Module ℝ V] (F : V ≃ₗ[ℝ] TangentSpace I x) (ov : _root_.Orientation ℝ V ι) :
+    ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (g x),
+      (e : TangentSpace I x →L[ℝ] TangentSpace I' (g x)) = mfderiv I I' g x ∧
+      (_root_.Orientation.map ι F ov = o.orientationAt x ↔
+        _root_.Orientation.map ι (F.trans e.toLinearEquiv) ov = o'.orientationAt (g x)) := by
+  obtain ⟨e, he, hmap⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hg
+  refine ⟨e, he, ?_⟩
+  rw [_root_.Orientation.map_trans, ← hmap]
+  exact (_root_.Orientation.map ι e.toLinearEquiv).injective.eq_iff.symm
+
 /-- If the derivative at `x` carries a basis `b` of the tangent space at `x` to the basis `b'` of
 the tangent space at `f x`, then `f` preserves orientations at `x` exactly when `b` and `b'` are
 both positively or both negatively oriented. -/
@@ -194,13 +234,14 @@ theorem isOrientationPreservingAt_iff_of_basis [IsManifold I 1 M] [IsManifold I'
   have hmap : _root_.Orientation.map ι e.toLinearEquiv b.orientation = b'.orientation := by
     rw [← Module.Basis.orientation_map, hbe]
   rw [isOrientationPreservingAt_iff_of_coe_eq o o' f x e he]
-  rcases (o.orientationAt x).eq_or_eq_neg b.orientation (o.finrank_tangentSpace_eq x).symm with
-    h | h
+  rcases (o.orientationAt x).eq_or_eq_neg b.orientation
+    (Nat.card_eq_fintype_card.trans (o.finrank_tangentSpace_eq x).symm) with h | h
   · rw [h, hmap, iff_true_left rfl]
   · rw [h, _root_.Orientation.map_neg, hmap,
       neg_eq_iff_eq_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) ι),
       iff_false_left (Module.Ray.ne_neg_self _),
-      ← _root_.Orientation.ne_iff_eq_neg _ _ (o'.finrank_tangentSpace_eq (f x)).symm, Ne]
+      ← _root_.Orientation.ne_iff_eq_neg _ _
+        (Nat.card_eq_fintype_card.trans (o'.finrank_tangentSpace_eq (f x)).symm), Ne]
 
 /-- Given a continuous linear equivalence representing the derivative, every map is either
 orientation-preserving or orientation-reversing at the point. -/
@@ -209,8 +250,8 @@ theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
     (f : M → M') (x : M) (e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x))
     (he : (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x) :
     IsOrientationPreservingAt o o' f x ∨ IsOrientationReversingAt o o' f x := by
-  have hcard : Fintype.card ι = Module.finrank ℝ (TangentSpace I' (f x)) := by
-    simpa only [TauCeti.finrank_tangentSpace] using o'.card_eq
+  have hcard : Nat.card ι = Module.finrank ℝ (TangentSpace I' (f x)) := by
+    simpa only [Nat.card_eq_fintype_card, TauCeti.finrank_tangentSpace] using o'.card_eq
   rcases _root_.Orientation.eq_or_eq_neg
     (_root_.Orientation.map ι e.toLinearEquiv (o.orientationAt x))
     (o'.orientationAt (f x)) hcard with h | h
@@ -339,6 +380,26 @@ theorem isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id [IsManifold I 1 M
     (o : Manifold.Orientation I M ι) (x : M) :
     IsOrientationPreservingAt (I := I) (I' := I) (M' := M) o o id x :=
   isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o rfl mfderiv_id
+
+/-- Reindexing both orientations along the same equivalence of index types does not change
+whether a map preserves them. -/
+theorem IsOrientationPreservingAt.reindex [IsManifold I 1 M] [IsManifold I' 1 M'] {ι' : Type*}
+    [Fintype ι'] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι} {f : M → M'}
+    {x : M} (h : IsOrientationPreservingAt o o' f x) (σ : ι ≃ ι') :
+    IsOrientationPreservingAt (o.reindex σ) (o'.reindex σ) f x := by
+  obtain ⟨e, he, hmap⟩ := h
+  exact ⟨e, he, by rw [orientationAt_reindex, orientationAt_reindex,
+    _root_.Orientation.map_reindex, hmap]⟩
+
+/-- Reindexing both orientations along the same equivalence of index types does not change
+whether a map reverses them. -/
+theorem IsOrientationReversingAt.reindex [IsManifold I 1 M] [IsManifold I' 1 M'] {ι' : Type*}
+    [Fintype ι'] {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation I' M' ι} {f : M → M'}
+    {x : M} (h : IsOrientationReversingAt o o' f x) (σ : ι ≃ ι') :
+    IsOrientationReversingAt (o.reindex σ) (o'.reindex σ) f x := by
+  obtain ⟨e, he, hmap⟩ := h
+  exact ⟨e, he, by rw [orientationAt_reindex, orientationAt_reindex,
+    _root_.Orientation.map_reindex, hmap, _root_.Orientation.reindex_neg]⟩
 
 /-- The identity map reverses an orientation when its target is given the opposite orientation. -/
 theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]
@@ -545,22 +606,15 @@ private theorem modelOrientationAt_neg (o : Manifold.Orientation 𝓘(ℝ, E) E 
     modelOrientationAt (-o) x = -modelOrientationAt o x := by
   rw [modelOrientationAt, modelOrientationAt, orientationAt_neg, _root_.Orientation.map_neg]
 
-/-- Read in `E`, the constant model orientation is the orientation it is built from. -/
-private theorem modelOrientationAt_model (o : _root_.Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) (x : E) :
-    modelOrientationAt (model (I := 𝓘(ℝ, E)) o hι) x = o := by
-  rw [modelOrientationAt, orientationAt_model]
-  -- `NormedSpace.fromTangentSpace x` is the identity of `E`, as the tangent space is `E`.
-  exact congrArg (· o) (_root_.Orientation.map_refl (R := ℝ) (M := E) ι)
-
 /-- An orientation of the connected model space `E`, read in `E`, has the same tangent
 orientation at any two points. -/
 private theorem modelOrientationAt_eq (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (x y : E) :
     modelOrientationAt o x = modelOrientationAt o y := by
   obtain h | h := o.eq_or_eq_neg (model (I := 𝓘(ℝ, E)) (modelOrientationAt o x) o.card_eq)
-  · rw [h, modelOrientationAt_model, modelOrientationAt_model]
-  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg, modelOrientationAt_model,
-      modelOrientationAt_model]
+  · rw [h]
+    simp only [modelOrientationAt, map_orientationAt_model]
+  · rw [h, modelOrientationAt_neg, modelOrientationAt_neg]
+    simp only [modelOrientationAt, map_orientationAt_model]
 
 /-- **An orientation of the model space is constant.** An orientation of the connected model space
 `E` has the same tangent orientation at any two points, the tangent spaces of `E` all being `E`. -/
@@ -570,6 +624,26 @@ theorem orientationAt_eq_orientationAt (o : Manifold.Orientation 𝓘(ℝ, E) E 
   -- of `E`, so the right side of `modelOrientationAt_eq` is also read through the former.
   (_root_.Orientation.map ι (NormedSpace.fromTangentSpace x).toLinearEquiv).injective
     (modelOrientationAt_eq o x y)
+
+/-- **Transporting the orientation of `M` through a map into the model space.** If a map `g` into
+the model space preserves the orientations `o` and `oE` at two points `y` and `z`, the derivatives
+of `g` there give a linear isomorphism of the tangent spaces at `y` and `z` which carries `o` at
+`y` to `o` at `z`. -/
+theorem exists_linearEquiv_map_orientationAt [IsManifold I 1 M] {o : Manifold.Orientation I M ι}
+    {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {g : M → E} {y z : M}
+    (hy : IsOrientationPreservingAt o oE g y) (hz : IsOrientationPreservingAt o oE g z) :
+    ∃ e : TangentSpace I y ≃ₗ[ℝ] TangentSpace I z,
+      (∀ v, mfderiv I 𝓘(ℝ, E) g z (e v) = mfderiv I 𝓘(ℝ, E) g y v) ∧
+      _root_.Orientation.map ι e (o.orientationAt y) = o.orientationAt z := by
+  obtain ⟨ey, hey, hy⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hy
+  obtain ⟨ez, hez, hz⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hz
+  refine ⟨ey.toLinearEquiv.trans ez.toLinearEquiv.symm, fun v ↦ ?_, ?_⟩
+  · rw [← hey, ← hez]
+    exact ez.apply_symm_apply (ey v)
+  · have h := _root_.Orientation.map_trans (ι := ι) ey.toLinearEquiv ez.toLinearEquiv.symm
+      (o.orientationAt y)
+    rw [h, hy, orientationAt_eq_orientationAt oE (g y) (g z), ← hz]
+    exact _root_.Orientation.map_symm_map _ _
 
 /-- The derivative of a continuous linear automorphism `L` of `E` at `x`, as an equivalence of
 tangent spaces: `L` itself, read through the identifications of the tangent spaces with `E`. -/
@@ -634,6 +708,30 @@ theorem isOrientationReversingAt_of_det_fderiv_neg (o : Manifold.Orientation �
     exact (fderiv ℝ f v).coe_toContinuousLinearEquivOfDetNeZero hdet.ne
   · rw [orientationAt_eq_orientationAt o (f v) v]
     exact (_root_.Orientation.map_eq_neg_iff_det_neg _ _ o.card_eq).mpr hdet
+
+/-- A map `f` of `E` with derivative `R` of negative determinant at `I z`, read in the model `H`
+through `I`, reverses the constant orientation of the model at `z` when `I z` and `f (I z)` lie in
+the interior of the range of `I`. -/
+theorem isOrientationReversingAt_modelWithCorners_symm_comp_comp_of_det_neg
+    (μ : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) {f : E → E}
+    {R : E ≃L[ℝ] E} {z : H} (hf : HasFDerivAt f (R : E →L[ℝ] E) (I z))
+    (hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0)
+    (hz : I z ∈ interior (Set.range I)) (hfz : f (I z) ∈ interior (Set.range I)) :
+    IsOrientationReversingAt (model (I := I) μ hι) (model (I := I) μ hι) (I.symm ∘ f ∘ I) z := by
+  have hz' := mem_interior_iff_mem_nhds.1 hz
+  have hfz' := mem_interior_iff_mem_nhds.1 hfz
+  have hg : MDifferentiableAt I I (I.symm ∘ f ∘ I) z :=
+    ((I.contMDiffOn_symm (n := 1)).contMDiffAt hfz' |>.mdifferentiableAt one_ne_zero).comp z
+      (hf.differentiableAt.mdifferentiableAt.comp z I.mdifferentiableAt)
+  have heq : I ∘ (I.symm ∘ f ∘ I) ∘ I.symm =ᶠ[𝓝 (I z)] f := by
+    filter_upwards [hz', hf.continuousAt.preimage_mem_nhds hfz'] with v hv hfv
+    simp only [Function.comp_apply, I.right_inv hv, I.right_inv hfv]
+  have hR' : fderivWithin ℝ (I ∘ (I.symm ∘ f ∘ I) ∘ I.symm) (Set.range I) (I z) = R := by
+    rw [fderivWithin_of_mem_nhds hz', heq.fderiv_eq, hf.fderiv]
+  refine (isOrientationReversingAt_iff _ _ _ _).2 ⟨R, ?_, ?_⟩
+  · exact (hg.mfderiv_eq_fderivWithin_self.trans hR').symm
+  · rw [orientationAt_model, orientationAt_model]
+    exact (_root_.Orientation.map_eq_neg_iff_det_neg μ R.toLinearEquiv hι).2 hR
 
 /-- Precomposing a map which reverses orientations at `L x` with a continuous linear automorphism
 `L` of `E` of negative determinant gives a map which preserves them at `x`. -/
@@ -793,3 +891,36 @@ theorem signAt_mul_signAt_mul_det_pos
       (tangentCoordChange I β x x).det) * ((c : ℝ) * c * ha' + hc')
 
 end TauCeti.Manifold.OrientationLift
+
+namespace Diffeomorph
+
+open scoped ContDiff
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+variable {ι : Type*} [Fintype ι] {n : ℕ∞ω}
+
+/-- The subgroup of `Cⁿ` self-diffeomorphisms of `M`, for `n ≠ 0`, preserving the orientation `o`
+at every point. -/
+def orientationPreservingSubgroup (hn : n ≠ 0) (o : TauCeti.Manifold.Orientation I M ι) :
+    Subgroup (TauCeti.Diff I M n) where
+  carrier := {f | ∀ x, TauCeti.Manifold.Orientation.IsOrientationPreservingAt o o f x}
+  mul_mem' {f g} hf hg x := by
+    rw [coe_mul]
+    exact (hf (g x)).comp (hg x)
+  one_mem' x := TauCeti.Manifold.Orientation.isOrientationPreservingAt_id o x
+  inv_mem' {f} hf y := by
+    rw [coe_inv]
+    exact (hf (f.symm y)).diffeomorph_symm hn
+
+/-- Membership in the orientation-preserving subgroup is preservation of `o` at every point. -/
+@[simp]
+theorem mem_orientationPreservingSubgroup_iff {hn : n ≠ 0}
+    {o : TauCeti.Manifold.Orientation I M ι} {f : TauCeti.Diff I M n} :
+    f ∈ orientationPreservingSubgroup hn o ↔
+      ∀ x, TauCeti.Manifold.Orientation.IsOrientationPreservingAt o o f x :=
+  Iff.rfl
+
+end Diffeomorph

@@ -106,18 +106,22 @@ theorem apply_mem_puncture (w : E) : s' w ∈ ConnectedSum.puncture s := by
   rw [ConnectedSum.mem_puncture, ← mem_compl_singleton_iff, ← h.range_eq]
   exact mem_range_self w
 
+omit [T1Space N] in
 include h in
 /-- A ball admitting a complementary ball is injective: away from its centre it is the
 complementary ball read through the inversion, which misses the centre. -/
 theorem injective : Injective s := by
+  have hne : ∀ x, s' x ≠ s 0 := fun x ↦ by
+    have : s' x ∈ range s' := mem_range_self x
+    rwa [h.range_eq] at this
   have key : ∀ w ≠ 0, s w = s' (inversion 0 1 w) := fun w hw ↦ by
     rw [h.apply_eq_inversion _ fun h0 ↦ hw ((inversion_eq_center one_ne_zero).1 h0),
       inversion_inversion _ one_ne_zero]
   intro w w' hww'
   rcases eq_or_ne w 0 with rfl | hw <;> rcases eq_or_ne w' 0 with rfl | hw'
   · rfl
-  · exact absurd hww'.symm (by rw [key w' hw']; exact mem_puncture.1 (h.apply_mem_puncture _))
-  · exact absurd hww' (by rw [key w hw]; exact mem_puncture.1 (h.apply_mem_puncture _))
+  · exact absurd hww'.symm (by rw [key w' hw']; exact hne _)
+  · exact absurd hww' (by rw [key w hw]; exact hne _)
   · rw [key w hw, key w' hw'] at hww'
     exact inversion_injective 0 one_ne_zero (h.isOpenEmbedding.injective hww')
 
@@ -178,15 +182,15 @@ theorem connectedSumMap_comp_mk : h.connectedSumMap e ∘ ConnectedSum.mk e s =
 variable {e}
 
 theorem continuous_connectedSumMap (he : Continuous e) : Continuous (h.connectedSumMap e) :=
-  continuous_lift _ _ _ continuous_subtype_val (he.comp h.homeomorphPuncture.symm.continuous)
+  continuous_lift _ _ _ continuous_subtypeVal (he.comp h.homeomorphPuncture.symm.continuous)
 
 theorem connectedSumMap_injective (he : Injective e) : Injective (h.connectedSumMap e) := by
   -- A point of the punctured `M` and a point `s' w` of the punctured `N` with the same image
   -- `e w` are glued, since `w ≠ 0` and `s' w = s (inversion 0 1 w)`.
   have key : ∀ (x : puncture e) (w : E), (x : M) = e w →
       ConnectedSum.inl e s x = ConnectedSum.inr e s (h.homeomorphPuncture w) := fun x w hxw ↦ by
-    have hw : w ≠ 0 := by rintro rfl; exact mem_puncture.1 x.2 hxw
-    rw [inl_eq_inr_iff he h.injective]
+    have hw : w ≠ 0 := by rintro rfl; exact mem_puncture.1 x.property hxw
+    rw [inl_eq_inr_iff he]
     exact ⟨w, hw, hxw.symm, by simp [h.apply_eq_inversion w hw]⟩
   intro p q hpq
   obtain ⟨x | y, rfl⟩ := ConnectedSum.mk_surjective e s p <;>
@@ -210,7 +214,7 @@ theorem connectedSumMap_surjective : Surjective (h.connectedSumMap e) := fun x �
 theorem isOpenMap_connectedSumMap (he : IsOpenEmbedding e) :
     IsOpenMap (h.connectedSumMap e) := fun U hU ↦ by
   rw [← (ConnectedSum.mk_surjective e s).image_preimage U, ← image_comp, connectedSumMap_comp_mk]
-  exact ((puncture e).isOpen.isOpenMap_subtype_val.sumElim
+  exact ((puncture e).isOpen.isOpenMap_subtypeVal.sumElim
     (he.isOpenMap.comp h.homeomorphPuncture.symm.isOpenMap)) _
     (hU.preimage (ConnectedSum.continuous_mk e s))
 
@@ -251,7 +255,7 @@ punctured summand. -/
 theorem contMDiff_homeomorphPuncture_symm (ds' : IsLocalDiffeomorph 𝓘(ℝ, E) I n s') :
     ContMDiff I 𝓘(ℝ, E) n h.homeomorphPuncture.symm := by
   refine ContMDiff.of_comp_isLocalDiffeomorph ds' h.homeomorphPuncture.symm.continuous ?_
-  convert contMDiff_subtype_val (I := I) (n := n) (U := puncture s) using 1
+  convert contMDiff_subtypeVal (I := I) (n := n) (U := puncture s) using 1
   ext y
   obtain ⟨w, rfl⟩ := h.homeomorphPuncture.surjective y
   simp
@@ -285,7 +289,7 @@ def connectedSumDiffeomorph :
       rw [Homeomorph.coe_toEquiv, coe_connectedSumHomeomorph,
         ← hmk.contMDiff_comp_iff (ConnectedSum.mk_surjective e s) le_rfl,
         connectedSumMap_comp_mk]
-      exact contMDiff_subtype_val.sumElim
+      exact contMDiff_subtypeVal.sumElim
         (de.contMDiff.comp (h.contMDiff_homeomorphPuncture_symm ds'))
     contMDiff_invFun := fun x ↦ by
       -- Near `e 0` the inverse is read through the ball `e`, and elsewhere through the inclusion

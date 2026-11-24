@@ -180,6 +180,13 @@ theorem epi_hom_hom_of_epi_degree_map {A B : GradedQuasicoherentAlgebra X} (f : 
   -- `.hom` of its quasicoherent-sheaf morphism gives `f.hom.hom.hom n` definitionally.
   h
 
+/-- An isomorphism of graded quasicoherent algebras is an isomorphism in every degree. -/
+instance isIso_hom_hom_hom {A B : GradedQuasicoherentAlgebra X} (f : A ⟶ B) [IsIso f] (n : ℕ) :
+    IsIso (f.hom.hom.hom n) :=
+  -- The `map` field of `degree` is the degree-`n` component by construction, so the image of
+  -- `f` under `degree n` followed by the inclusion into modules is `f.hom.hom.hom n`.
+  inferInstanceAs (IsIso ((degree (X := X) n ⋙ ObjectProperty.ι _).map f))
+
 /-- Extract the degree-one component of a graded quasicoherent algebra. This is the component
 that generates a free graded algebra and therefore the coefficient sheaf of a linear scheme. -/
 abbrev degreeOne : GradedQuasicoherentAlgebra X ⥤ QuasicoherentSheaf X :=

@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The energy identity and Gårding inequality for the gauge-fixed vortex operator
@@ -53,13 +55,20 @@ For every `a < 1 / 4` this gives a Gårding inequality with a compact remainder
 
 `∫ (|∇b|² + |∇_a ψ|²) + a ∫ |y|² ≤ ∫ |L_x y|² + K ∫_{|z| ≤ R} |y|²`.
 
+Without asymptotic hypotheses, the same pointwise bound for the potential gives a Gårding
+inequality on a disc (`TauCeti.Vortex.exists_integral_norm_fderiv_sq_le`): for variations `u`
+supported in a fixed closed disc, on whose support the vortex equation holds,
+`∫ |Du|² ≤ C (∫ |L_x u|² + ∫ |u|²)`.
+
 For variations vanishing on the disc of radius `R` it gives the exterior bound
 `TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`, and in addition it
-controls the covariant gradient of the variation. Combined with the compactness of `H¹ → L²` on
-the disc, an estimate of this form gives finite-dimensionality of the kernel and closedness of
-the range of `L_x` on the completed spaces. The radius and the constant depend on the vortex and
-on `a`. These are classical test-field estimates; no completed Fredholm realization is
-constructed here.
+controls the covariant gradient of the variation, which bounds the flat gradient up to the term
+`2 (A₁² + A₂²) ‖y‖²` given by the connection coefficients of the field
+(`TauCeti.Vortex.sum_norm_gradient_sq_le`).
+Combined with the compactness of `H¹ → L²` on the disc, an estimate of this form gives
+finite-dimensionality of the kernel and closedness of the range of `L_x` on the completed spaces.
+The radius and the constant depend on the vortex and on `a`. These are classical test-field
+estimates; no completed Fredholm realization is constructed here.
 
 ## References
 
@@ -77,7 +86,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex MeasureTheory Filter Metric
-open scoped Topology
+open scoped Topology Gradient
 
 /-- The covariant gradient density `|∇b|² + |∇_a ψ|²` of a variation `y = (b₁, b₂, p, q)` at the
 field `x`, where `ψ = p + i q` is differentiated with the connection `a = i (A₁ ds + A₂ dt)` of
@@ -130,6 +139,33 @@ theorem gaugeFixedGradientDensity_nonneg (x y : ℂ → EuclideanSpace ℝ (Fin 
     0 ≤ gaugeFixedGradientDensity x y z := by
   rw [gaugeFixedGradientDensity_def]
   positivity
+
+/-- The covariant gradient density controls the flat gradient of a variation `y`, up to the term
+`2 (A₁² + A₂²) ‖y z‖²` given by the connection coefficients of the field, where
+`a = i (A₁ ds + A₂ dt)`. -/
+theorem sum_norm_gradient_sq_le (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ∑ j : Fin 4, ‖∇ (fun w ↦ y w j) z‖ ^ 2 ≤
+      2 * gaugeFixedGradientDensity x y z + 2 * (x z 0 ^ 2 + x z 1 ^ 2) * ‖y z‖ ^ 2 := by
+  simp only [Fin.sum_univ_four, norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq,
+    gaugeFixedGradientDensity_def, EuclideanSpace.real_norm_sq_eq]
+  nlinarith [sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z 1 - 2 * x z 0 * y z 3),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z 1 + 2 * x z 0 * y z 2),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 2) z I - 2 * x z 1 * y z 3),
+    sq_nonneg (fderiv ℝ (fun w ↦ y w 3) z I + 2 * x z 1 * y z 2),
+    mul_nonneg (add_nonneg (sq_nonneg (x z 0)) (sq_nonneg (x z 1)))
+      (add_nonneg (sq_nonneg (y z 0)) (sq_nonneg (y z 1)))]
+
+/-- The squared derivative of a variation is controlled by its covariant gradient density and
+the connection coefficients of the field:
+`|Dy|² ≤ 4 (|∇b|² + |∇_a ψ|²) + 4 (A₁² + A₂²) |y|²`, where `a = i (A₁ ds + A₂ dt)`. -/
+theorem norm_fderiv_sq_le_gaugeFixedGradientDensity_add (x y : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) :
+    ‖fderiv ℝ y z‖ ^ 2 ≤
+      4 * gaugeFixedGradientDensity x y z + 4 * (x z 0 ^ 2 + x z 1 ^ 2) * ‖y z‖ ^ 2 := by
+  have h := sum_norm_gradient_sq_le x y z
+  have hD := norm_fderiv_sq_le_two_mul_sum_sq y z
+  simp only [Fin.sum_univ_four, norm_gradient_sq_eq_fderiv_one_sq_add_fderiv_I_sq] at h hD
+  linarith
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -225,6 +261,26 @@ theorem integrable_gaugeFixedGradientDensity (hx : Continuous x) (hy : ContDiff 
     fun_prop
   · simp [gaugeFixedGradientDensity_def, (hy.differentiable one_ne_zero z).fderiv_piLp_apply,
       fderiv_of_notMem_tsupport ℝ hz, image_eq_zero_of_notMem_tsupport hz]
+
+/-- The integrated form of `norm_fderiv_sq_le_gaugeFixedGradientDensity_add`: if the connection
+coefficients of `x` satisfy `A₁² + A₂² ≤ M` wherever the compactly supported `C¹` variation `y`
+is nonzero, then `∫ |Dy|² ≤ 4 ∫ (|∇b|² + |∇_a ψ|²) + 4 M ∫ |y|²`. -/
+theorem integral_norm_fderiv_sq_le_gaugeFixedGradientDensity_add (hx : Continuous x)
+    (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y) {M : ℝ}
+    (hM : ∀ z, y z ≠ 0 → x z 0 ^ 2 + x z 1 ^ 2 ≤ M) :
+    ∫ z, ‖fderiv ℝ y z‖ ^ 2 ∂μ ≤
+      4 * (∫ z, gaugeFixedGradientDensity x y z ∂μ) + 4 * M * ∫ z, ‖y z‖ ^ 2 ∂μ := by
+  have hG := integrable_gaugeFixedGradientDensity (μ := μ) hx hy hyc
+  have hn := hy.continuous.integrable_norm_sq_of_hasCompactSupport (μ := μ) hyc
+  rw [← integral_const_mul, ← integral_const_mul, ← integral_add (hG.const_mul _)
+    (hn.const_mul _)]
+  refine integral_mono ((hy.continuous_fderiv one_ne_zero).integrable_norm_sq_of_hasCompactSupport
+    (hyc.fderiv (𝕜 := ℝ))) ((hG.const_mul _).add (hn.const_mul _)) fun z ↦
+      (norm_fderiv_sq_le_gaugeFixedGradientDensity_add x y z).trans ?_
+  by_cases hz : y z = 0
+  · simp [hz]
+  · gcongr
+    exact hM z hz
 
 /-- The Jacobian form of the two partial derivatives of a compactly supported `C¹` variation is
 integrable. -/
@@ -337,9 +393,16 @@ private theorem min_sub_mul_le_potential {s cr ci n v₀ v₁ v₂ v₃ : ℝ} (
 
 /-- The coefficient `min (|φ|², (12 |φ|² - 1) / 8) - |∇₁ α|` bounding the potential from below
 at a vortex (`vortexMass_mul_norm_sq_le_gaugeFixedPotential`). -/
-private def vortexMass (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
+def vortexMass (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) -
     ‖covariantDerivative x z 1‖
+
+/-- The defining formula of `vortexMass`. -/
+theorem vortexMass_def (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    vortexMass x z =
+      min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) -
+        ‖covariantDerivative x z 1‖ :=
+  (rfl)
 
 /-- At a point where the vortex equation holds, `κ = -(1 - |α|²) / 8` and `∂bar_a α = 0`, so the
 potential is `|φ|² |b|² + (3 |φ|² / 2 - 1 / 8) |ψ|²` plus a coupling through `∇₁ α` alone. -/
@@ -366,7 +429,7 @@ theorem gaugeFixedPotential_eq_of_equation_eq_zero {z : ℂ} (hx : Differentiabl
 
 /-- At a point where the vortex equation holds, the potential is bounded below by
 `min (|φ|², (12 |φ|² - 1) / 8) - |∇₁ α|` times `|v|²`. -/
-private theorem vortexMass_mul_norm_sq_le_gaugeFixedPotential {z : ℂ}
+theorem vortexMass_mul_norm_sq_le_gaugeFixedPotential {z : ℂ}
     (hx : DifferentiableAt ℝ x z) (hsol : equation x z = 0) (v : EuclideanSpace ℝ (Fin 4)) :
     vortexMass x z * ‖v‖ ^ 2 ≤ gaugeFixedPotential x z v := by
   have hn : ‖covariantDerivative x z 1‖ ^ 2 =
@@ -448,5 +511,86 @@ theorem exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le
     integral_indicator measurableSet_closedBall] at hlow
   rw [integral_norm_sq_gaugeFixedOperator hx hy hyc]
   linarith
+
+/-! ### The Gårding inequality on a disc -/
+
+/-- The integrand of the energy identity `integral_norm_sq_gaugeFixedOperator`: the covariant
+gradient density of `u` plus the zeroth-order potential. -/
+private def energyIntegrand (x u : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
+  gaugeFixedGradientDensity x u z + gaugeFixedPotential x z (u z)
+
+/-- Where the vortex equation holds or the value `v` of a variation vanishes, the potential is
+at least `-(1 / 8 + |∇₁ α|) |v|²`. -/
+private theorem neg_mul_norm_sq_le_gaugeFixedPotential {z : ℂ} (hx : DifferentiableAt ℝ x z)
+    {v : EuclideanSpace ℝ (Fin 4)} (hsol : v ≠ 0 → equation x z = 0) :
+    -(1 / 8 + ‖covariantDerivative x z 1‖) * ‖v‖ ^ 2 ≤ gaugeFixedPotential x z v := by
+  by_cases hv : v = 0
+  · simp [gaugeFixedPotential_def, hv]
+  refine le_trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
+    (vortexMass_mul_norm_sq_le_gaugeFixedPotential hx (hsol hv) v)
+  have hs : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
+  have hm : -(1 / 8) ≤ min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) :=
+    le_min (by linarith) (by linarith)
+  rw [vortexMass_def]
+  linarith
+
+/-- **The Gårding inequality for the gauge-fixed vortex operator on a disc.** For a `C¹` field `x`
+and a radius `r`, there is a constant `C` such that every `C²` variation `u` vanishing outside the
+closed disc of radius `r`, on whose support the vortex equation holds, satisfies
+`∫ |Du|² ≤ C (∫ |L_x u|² + ∫ |u|²)`. -/
+theorem exists_integral_norm_fderiv_sq_le (hx : ContDiff ℝ 1 x) (r : ℝ) :
+    ∃ C, ∀ u : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 u → (∀ z, r < ‖z‖ → u z = 0) →
+      (∀ z, u z ≠ 0 → equation x z = 0) →
+      ∫ z, ‖fderiv ℝ u z‖ ^ 2 ≤
+        C * ((∫ z, ‖gaugeFixedOperator x u z‖ ^ 2) + ∫ z, ‖u z‖ ^ 2) := by
+  have hxi (i : Fin 4) : Continuous fun z ↦ x z i :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).continuous.comp hx.continuous
+  -- Bound the coefficient of the zeroth-order term on the disc.
+  obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : ℂ) r).exists_bound_of_continuousOn
+    (f := fun z ↦ x z 0 ^ 2 + x z 1 ^ 2 + ‖covariantDerivative x z 1‖ + 2)
+    (((((hxi 0).pow 2).add ((hxi 1).pow 2)).add
+      (continuous_covariantDerivative hx 1).norm).add continuous_const).continuousOn
+  refine ⟨4 * max M 1, fun u hu hr hsol ↦ ?_⟩
+  have hc : HasCompactSupport u :=
+    HasCompactSupport.intro (isCompact_closedBall 0 r) fun z hz ↦ hr z (by simpa using hz)
+  have hG := integrable_gaugeFixedGradientDensity (μ := volume) hx.continuous
+    (hu.of_le one_le_two) hc
+  have hV := integrable_gaugeFixedPotential (μ := volume) hx hu.continuous hc
+  have hQi : Integrable (energyIntegrand x u) := hG.add hV
+  have hE : ∫ z, ‖gaugeFixedOperator x u z‖ ^ 2 = ∫ z, energyIntegrand x u z := by
+    rw [integral_norm_sq_gaugeFixedOperator hx hu hc, ← integral_add hG hV]
+    rfl
+  have hn : Integrable fun z ↦ ‖u z‖ ^ 2 :=
+    Continuous.integrable_of_hasCompactSupport (f := fun z ↦ ‖u z‖ ^ 2)
+      (hu.continuous.norm.pow 2) (hc.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp))
+  have hfi : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2 :=
+    Continuous.integrable_of_hasCompactSupport (f := fun z ↦ ‖fderiv ℝ u z‖ ^ 2)
+      ((hu.continuous_fderiv two_ne_zero).norm.pow 2)
+      ((hc.fderiv (𝕜 := ℝ)).comp_left (g := fun L ↦ ‖L‖ ^ 2) (by simp))
+  -- Pointwise, `|Du|² ≤ 4 G(u) + 4 (A₁² + A₂²) |u|² ≤ 4 E + 4 M |u|²` for the energy integrand
+  -- `E = G(u) + V_x(u)`.
+  have hpt (z : ℂ) :
+      ‖fderiv ℝ u z‖ ^ 2 ≤ 4 * energyIntegrand x u z + 4 * max M 1 * ‖u z‖ ^ 2 := by
+    have hD := norm_fderiv_sq_le_gaugeFixedGradientDensity_add x u z
+    have hV := neg_mul_norm_sq_le_gaugeFixedPotential (hx.differentiable one_ne_zero z) (hsol z)
+    have hMu : (x z 0 ^ 2 + x z 1 ^ 2 + ‖covariantDerivative x z 1‖ + 2) * ‖u z‖ ^ 2 ≤
+        max M 1 * ‖u z‖ ^ 2 := by
+      by_cases hz : r < ‖z‖
+      · simp [hr z hz]
+      · refine mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
+        exact (le_abs_self _).trans ((hM z (by simpa using hz)).trans (le_max_left _ _))
+    rw [energyIntegrand]
+    linarith [sq_nonneg ‖u z‖]
+  have hE0 : 0 ≤ ∫ z, energyIntegrand x u z := hE ▸ integral_nonneg fun z ↦ sq_nonneg _
+  rw [hE]
+  calc ∫ z, ‖fderiv ℝ u z‖ ^ 2
+      ≤ ∫ z, (4 * energyIntegrand x u z + 4 * max M 1 * ‖u z‖ ^ 2) :=
+        integral_mono hfi ((hQi.const_mul 4).add (hn.const_mul _)) hpt
+    _ = 4 * (∫ z, energyIntegrand x u z) + 4 * max M 1 * ∫ z, ‖u z‖ ^ 2 := by
+        rw [integral_add (hQi.const_mul 4) (hn.const_mul _), integral_const_mul,
+          integral_const_mul]
+    _ ≤ 4 * max M 1 * ((∫ z, energyIntegrand x u z) + ∫ z, ‖u z‖ ^ 2) := by
+        have : 1 ≤ max M 1 := le_max_right _ _
+        nlinarith
 
 end TauCeti.Vortex

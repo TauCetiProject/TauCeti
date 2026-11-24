@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
 
 /-!
@@ -159,6 +159,14 @@ theorem pushBoundary_indicator [DecidableEq α] {M : α → β} {S : Finset α} 
     exact ⟨rfl, ha⟩
   · rw [card_eq_zero.2 (filter_eq_empty_iff.2 fun x _ h ↦ hb (mem_image.2 ⟨x, h.2, h.1⟩)),
       Nat.cast_zero]
+
+/-- `M_*` does not see a reindexing of the points: reading both the matching and the boundary
+through a bijection `e` gives the same sums over the fibres. -/
+theorem pushBoundary_comp_equiv {γ : Type*} [Fintype γ] (e : γ ≃ α) (M : α → β) (δ : α → ℤ) :
+    pushBoundary (M ∘ e) (δ ∘ e) = pushBoundary M δ := by
+  ext b
+  simp only [pushBoundary_apply, Function.comp_apply]
+  exact sum_equiv e (by simp) fun _ _ ↦ rfl
 
 /-- A boundary carried to `0` by `M_*` has total sum zero. -/
 theorem sum_eq_zero_of_pushBoundary_eq_zero {M : α → β} {δ : α → ℤ}
@@ -484,7 +492,7 @@ theorem nonempty (hM : Function.Surjective M) (s₀ : Finset β) :
   refine ⟨⟨fun s ↦ StrandGradingGroup.mk ((∑ x, (δ s x : ℚ) ^ 2) / 4) (δ s),
     fun s ↦ mem_gPrime_iff_sum_sq.2 ⟨⟨0, by simp⟩, ?_⟩, fun s ↦ ?_⟩⟩
   · simp only [δ, mk_boundary, Pi.sub_apply, sum_sub_distrib, sum_boole, filter_mem_eq_inter,
-      univ_inter, card_image_of_injective _ hσ, s.2, sub_self]
+      univ_inter, card_image_of_injective _ hσ, s.property, sub_self]
   · rw [mk_boundary, map_sub, pushBoundary_indicator (hinj _), pushBoundary_indicator (hinj _),
       himage, himage]
 
@@ -502,6 +510,11 @@ def gradedPart (g : StrandGradingGroup α) : Submodule R (StrandsAlgebra R α) :
   gradedPartBy R ψ.grading g
 
 variable {R}
+
+/-- The part of refined grading `g` is the part of degree `g` for the function `ψ.grading`. -/
+theorem gradedPart_eq_gradedPartBy (g : StrandGradingGroup α) :
+    ψ.gradedPart R g = gradedPartBy R ψ.grading g := by
+  rw [gradedPart]
 
 /-- An element has refined grading `g` exactly when every strand diagram in its support has
 refined grading `g`. -/

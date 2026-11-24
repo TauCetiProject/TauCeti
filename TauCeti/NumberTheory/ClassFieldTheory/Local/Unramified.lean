@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
 public import TauCeti.NumberTheory.LocalField.Unramified.Coordinate
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Cup.Cyclic
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.UnitsLayer
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # Finite unramified local reciprocity
@@ -207,7 +207,7 @@ private def layerPeriodicClass (ι : L →ₐ[K] SeparableClosure K) (a : Kˣ) :
     ⟨layerGroundInvariant K L a, by
       rw [LinearMap.mem_ker]
       simpa [Rep.sub_hom, sub_eq_zero] using
-        (layerGroundInvariant K L a).2 (layerFrobenius K L ι)⟩
+        (layerGroundInvariant K L a).property (layerFrobenius K L ι)⟩
   exact Rep.FiniteCyclicGroup.groupCohomologyπEven A (layerFrobenius K L ι)
     (mem_zpowers_layerFrobenius K L ι) 2 even_two z
 
@@ -240,7 +240,7 @@ private theorem layerCohomologyEquiv_layerPeriodicClass
     ⟨layerGroundInvariant K L a, by
       rw [LinearMap.mem_ker]
       simpa [Rep.sub_hom, sub_eq_zero] using
-        (layerGroundInvariant K L a).2 (layerFrobenius K L ι)⟩
+        (layerGroundInvariant K L a).property (layerFrobenius K L ι)⟩
   rw [layerPeriodicClass, layerCohomologyEquiv_apply]
   have hmap := Rep.FiniteCyclicGroup.map_groupCohomologyπEven_two
     (A := Rep.ofMulDistribMulAction Gal(L/K) Lˣ) (B := A)
@@ -283,9 +283,10 @@ private theorem layerCharacterCupTate_eq (ι : L →ₐ[K] SeparableClosure K) (
       (Rep.applyAsHom A (layerFrobenius K L ι) - (𝟙 A : A ⟶ A)).hom.toLinearMap :=
     ⟨x, by
       rw [LinearMap.mem_ker]
-      simpa [Rep.sub_hom, sub_eq_zero] using x.2 (layerFrobenius K L ι)⟩
-  rw [layerCharacterCupTate, layerPeriodicClass, NormalLayer.characterConnectingClass_def,
-    NormalLayer.tateHIsoH_def]
+      simpa [Rep.sub_hom, sub_eq_zero] using x.property (layerFrobenius K L ι)⟩
+  rw [layerCharacterCupTate, layerPeriodicClass]
+  dsimp only
+  rw [NormalLayer.characterConnectingClass_def, NormalLayer.tateHIsoH_def]
   exact TauCeti.TateCohomology.cup_characterConnectingClass_eq_groupCohomologyπEven
     (mem_zpowers_layerFrobenius K L ι) (layerFrobeniusCharacter K L ι)
       (layerFrobeniusCharacter_frobenius K L ι) A x z rfl
@@ -417,7 +418,7 @@ theorem unramifiedCoordinate_artinMap (x : Kˣ) :
   apply AlgEquiv.ext
   intro y
   apply Subtype.ext
-  obtain ⟨f, _, hy⟩ := mem_maximalUnramifiedExtension_iff.1 y.2
+  obtain ⟨f, _, hy⟩ := mem_maximalUnramifiedExtension_iff.1 y.property
   let L := unramifiedExtension K (AlgebraicClosure K) f
   let _ := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L
   let _ := finiteIntermediateFieldTopology K (AlgebraicClosure K) L

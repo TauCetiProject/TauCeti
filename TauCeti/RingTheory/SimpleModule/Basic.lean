@@ -7,6 +7,11 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
+public import Mathlib.RingTheory.SimpleRing.Defs
+public import TauCeti.Algebra.Module.Generator
+-- Private: `isSimpleRing_iff_isTwoSided_imp` is used only inside the proof of
+-- `TauCeti.Module.IsGenerator.of_isSimpleRing`.
+import Mathlib.RingTheory.SimpleRing.Congr
 
 /-!
 # Simple and semisimple modules: commuting scalars, products, linear maps, idempotents
@@ -28,6 +33,8 @@ Over a semisimple ring, the torsion ideal of an element is a direct summand of t
 element generates a copy of the projective left ideal `R f` for an idempotent `f`. Minimal graded
 projective covers over an algebra with semisimple degree-zero part are assembled from such
 idempotents.
+The regular module over a semisimple ring also detects every nonzero module, with no
+finite-generation hypothesis.
 
 ## Main results
 
@@ -40,6 +47,10 @@ idempotents.
   sends `w` to `x` if and only if the torsion ideal of `w` is contained in that of `x`.
 * `IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff`: over a semisimple ring,
   every cyclic submodule `R ∙ v` is isomorphic to `R f` for an idempotent `f` fixing `v`.
+* `IsSemisimpleRing.subsingleton_of_subsingleton_linearMap`: vanishing of all linear maps
+  to the regular module detects the zero module over a semisimple ring.
+* `TauCeti.Module.IsGenerator.of_isSimpleRing`: every nontrivial module over a simple semisimple
+  ring is a generator of the module category.
 -/
 
 public section
@@ -130,5 +141,42 @@ theorem _root_.IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff [IsSemi
   · rintro ⟨r, rfl⟩
     rw [mul_assoc, hu.eq]
   · exact fun hc => ⟨c, hc.symm⟩
+
+/-- The regular module over a semisimple ring detects nonzero modules: if every linear map
+from `M` to `R` is zero, then `M` is zero. No finite-generation hypothesis is needed. -/
+theorem _root_.IsSemisimpleRing.subsingleton_of_subsingleton_linearMap [IsSemisimpleRing R]
+    (h : Subsingleton (M →ₗ[R] R)) : Subsingleton M := by
+  refine subsingleton_of_forall_eq 0 fun x => ?_
+  obtain ⟨e, -, hex, he⟩ :=
+    IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff (R := R) x
+  obtain ⟨f, hf⟩ := (IsSemisimpleModule.exists_apply_eq_iff (R := R) (w := x) (x := e)).2
+    (fun a ha => (he a).1 ha)
+  have he0 : e = 0 := by simpa only [h.elim f 0, LinearMap.zero_apply] using hf.symm
+  simpa only [he0, zero_smul] using hex.symm
+
+/-- **Every nontrivial module over a simple semisimple ring is a generator.** Its trace ideal
+`⨆ f : M →ₗ[R] R, range f` is a nonzero two-sided ideal of `R` (by
+`IsSemisimpleRing.subsingleton_of_subsingleton_linearMap`), hence equals `⊤` by simplicity of `R`.
+-/
+instance Module.IsGenerator.of_isSimpleRing [IsSimpleRing R] [IsSemisimpleRing R] [Nontrivial M] :
+    Module.IsGenerator R M := by
+  rw [Module.isGenerator_iff_iSup_range_eq_top]
+  let I : Ideal R := ⨆ f : M →ₗ[R] R, LinearMap.range f
+  have htwo : I.IsTwoSided := ⟨fun b ha ↦
+    Submodule.iSup_induction (p := fun f : M →ₗ[R] R ↦ LinearMap.range f)
+      (motive := fun y ↦ y * b ∈ I) ha
+      (fun f _ ⟨m, hm⟩ ↦ hm ▸ Submodule.mem_iSup_of_mem ((LinearMap.mulRight R b).comp f) ⟨m, rfl⟩)
+      (by rw [zero_mul]; exact I.zero_mem)
+      (fun _ _ h₁ h₂ ↦ by rw [add_mul]; exact I.add_mem h₁ h₂)⟩
+  have hne : I ≠ ⊥ := by
+    intro hbot
+    have hsub : Subsingleton (M →ₗ[R] R) := subsingleton_of_forall_eq 0 fun f ↦ by
+      ext m
+      have hf : f m ∈ I :=
+        Submodule.mem_iSup_of_mem (p := fun g : M →ₗ[R] R ↦ LinearMap.range g) f ⟨m, rfl⟩
+      rw [hbot] at hf
+      exact Ideal.mem_bot.mp hf
+    exact not_subsingleton M (IsSemisimpleRing.subsingleton_of_subsingleton_linearMap hsub)
+  exact ((isSimpleRing_iff_isTwoSided_imp.mp ‹_›).2 I htwo).resolve_left hne
 
 end TauCeti

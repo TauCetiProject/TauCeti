@@ -9,10 +9,13 @@ public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Factorial
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Pullback
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Stalk
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.RiemannRoch.Space
+import TauCeti.AlgebraicGeometry.Curves.Normalization
 import TauCeti.AlgebraicGeometry.IdealSheaf.Rank
+import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
 
 /-!
 # Intersection numbers of line bundles with curves
@@ -40,6 +43,16 @@ scheme-theoretic intersection: on a proper curve `C` over `k` with finite-dimens
 
 `(-D · C) = -dim_k Γ(D ∩ C, 𝒪_{D ∩ C})`.
 
+The finite scheme `D ∩ C` has finitely many points, and its degree over `k` is the sum of the local
+intersection multiplicities of `D` and `C` at them, the lengths `ℓ(𝒪_{D ∩ C, z})` of the Artinian
+local rings of the intersection, weighted by the residue degrees `[κ(z) : k]`:
+
+`(D · C) = Σ_{z ∈ D ∩ C} [κ(z) : k] · ℓ(𝒪_{D ∩ C, z})`.
+
+When `C` is a closed subscheme of `X` with ideal sheaf `I_C`, the local ring of `D ∩ C` at a point
+`x` is `𝒪_{X,x} ⧸ (I_D + I_C)_x`, so that the local intersection multiplicity at `x` is the length
+of `𝒪_{X,x} ⧸ (I_D + I_C)_x`, as in the classical definition for divisors on a surface.
+
 On such a curve, singular, reducible or nonreduced as it may be, twisting by `D` is additive:
 `(L(-D) · C) = (L · C) + (-D · C)` and `(L(D) · C) = (L · C) + (D · C)` for every line bundle `L`
 whose restriction to `C` has finite-dimensional `H⁰` and `H¹`, and
@@ -63,7 +76,8 @@ off-diagonal entries of the intersection matrix.
 ## Main declarations
 
 * `LineBundleClass.intersectionNumber k ι a`: the intersection number `(a · C)` of a line-bundle
-  class `a` on `X` with `ι : C ⟶ X`;
+  class `a` on `X` with `ι : C ⟶ X`, equal to `χ(C, ι^* L) - χ(C, ι^* 𝒪_X)` for the class of `L`
+  (`LineBundleClass.intersectionNumber_mk_eq_eulerCharBelow_sub`);
 * `LineBundleClass.intersectionNumber_pullback`: compatibility with pullback along a morphism
   `g : X ⟶ Y`, `(g^* a · C) = (a · (ι ≫ g))` with `C` mapping to `Y` by `ι ≫ g`; when `C` maps
   finitely and flatly onto a curve, the projection formula with the degree of `C` over that curve
@@ -73,6 +87,12 @@ off-diagonal entries of the intersection matrix.
   `ι ≫ g`, so does every pullback along a morphism `g` contracting the curve;
 * `LineBundleClass.intersectionNumber_mk_toInvertibleSheaf`: `(-D · C) = -dim_k Γ(D ∩ C)` for an
   effective Cartier divisor `D` meeting a proper curve `C` properly;
+* `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum`: `(D · C)` is the sum
+  over `y : C` of `[κ(y) : k] · ℓ(𝒪_{C,y} ⧸ I_{ι(y)}𝒪_{C,y})`;
+* `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_isClosedImmersion`:
+  for a closed curve, the local lengths are computed as `ℓ(𝒪_{X,ι(y)} ⧸ (I_D + I_C)_{ι(y)})`;
+* `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_residueDegree_eq`:
+  the ambient sum over `x : X` with compatible residue degrees;
 * `LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf`: `(D · C) = dim_k Γ(D ∩ C)` for
   an effective Cartier divisor `D` meeting a proper curve `C` properly, so that `(D · C) ≥ 0`
   (`LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg`), with equality exactly
@@ -86,6 +106,13 @@ off-diagonal entries of the intersection matrix.
   possibly singular, with `LineBundleClass.intersectionNumber_pow_of_isIntegral`,
   `LineBundleClass.intersectionNumber_zpow_of_isIntegral` and
   `LineBundleClass.intersectionNumber_prod_of_isIntegral` for powers and finite products;
+* `LineBundleClass.intersectionNumber_mul_of_isClosedImmersion`,
+  `LineBundleClass.intersectionNumber_inv_of_isClosedImmersion` and
+  `LineBundleClass.intersectionNumber_pow_of_isClosedImmersion`: additivity on an integral closed
+  curve, possibly singular, of a proper scheme over `k`;
+* `LineBundleClass.intersectionNumber_eq_eulerDegree_of_isClosedImmersion`: on an integral scheme
+  of dimension at most one, the only integral closed curve is the scheme itself, so the
+  intersection number with it is the degree;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
   additivity on a regular proper integral curve, bundled as
   `LineBundleClass.intersectionNumberHom k ι : Pic X →+ ℤ`; for powers
@@ -104,7 +131,9 @@ off-diagonal entries of the intersection matrix.
   [Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), where the intersection numbers of the
   components of the special fibre of a regular model are the degrees `deg(𝒪_X(Cᵢ)|_{Cⱼ})`.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1, on intersection numbers of
-  divisors with vertical curves on arithmetic surfaces.
+  divisors with vertical curves on arithmetic surfaces, defined there as sums over closed points of
+  local intersection multiplicities weighted by residue degrees and compared with the degrees of
+  restrictions of line bundles.
 * The statements of `LineBundleClass.intersectionNumber_pow` and
   `LineBundleClass.intersectionNumber_zpow` are adapted from split 11 of the Tau Ceti lookahead
   branch `lookahead/StableReduction/relative-ampleness` of `roed-math/TauCeti-w2-fresh`, at
@@ -147,6 +176,18 @@ lemma intersectionNumber_mk (L : InvertibleSheaf X) :
 @[simp]
 lemma intersectionNumber_one : intersectionNumber k ι (1 : LineBundleClass X) = 0 := by
   rw [intersectionNumber_def, pullback_one, eulerDegree_one]
+
+/-- The intersection number of the class of `L` with `ι : C ⟶ X` is
+`χ(C, ι^* L) - χ(C, ι^* 𝒪_X)`, with `χ = dim H⁰ - dim H¹`. -/
+lemma intersectionNumber_mk_eq_eulerCharBelow_sub (L : InvertibleSheaf X) :
+    intersectionNumber k ι (mk L) =
+      Scheme.Modules.eulerCharBelow k C ((InvertibleSheaf.pullback ι).obj L).obj 2 -
+        Scheme.Modules.eulerCharBelow k C
+          ((InvertibleSheaf.pullback ι).obj (InvertibleSheaf.trivial X)).obj 2 := by
+  have h := intersectionNumber_one k ι
+  rw [← mk_trivial, intersectionNumber_mk, InvertibleSheaf.eulerDegree_def] at h
+  rw [intersectionNumber_mk, InvertibleSheaf.eulerDegree_def]
+  linarith
 
 /-- **Compatibility with pullback.** The intersection number of the pullback of a class `a` along
 `g : X ⟶ Y` with `ι : C ⟶ X` is the intersection number of `a` with `ι ≫ g`. -/
@@ -196,6 +237,65 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf {I : X.IdealSheafData}
   have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
   rw [intersectionNumber_def, pullback_inv, hI.pullback_mk_toInvertibleSheaf hI']
   exact hI'.eulerDegree_inv_mk_toInvertibleSheaf k _ s
+
+/-- **The intersection number is a sum of local intersection multiplicities.** For an effective
+Cartier divisor `D` with ideal sheaf `I` meeting the proper curve `C` properly, `(D · C)` is
+`Σ_y [κ(y) : k] · ℓ(𝒪_{C,y} ⧸ I_{ι(y)}𝒪_{C,y})`. Only the finitely many points of `D ∩ C`
+contribute to the sum over `C`. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) :
+    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ y : C,
+      ((C ↘ Spec (.of k)).residueDegree y : ℤ) *
+        (Module.length (C.presheaf.stalk y)
+          (C.presheaf.stalk y ⧸ (I.stalkIdeal (ι y)).map (ι.stalkMap y).hom)).toNat := by
+  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
+  rw [intersectionNumber_def, pullback_inv, hI.pullback_mk_toInvertibleSheaf hI',
+    hI'.eulerDegree_inv_mk_toInvertibleSheaf_eq_finsum k _]
+  apply finsum_congr
+  intro y
+  rw [Scheme.IdealSheafData.stalkIdeal_comap]
+
+/-- For a closed curve immersion `ι`, the local intersection multiplicity is the length of
+`𝒪_{X,ι(y)} ⧸ (I_{ι(y)} + ker(ι)_{ι(y)})` over the ambient local ring. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_isClosedImmersion
+    [IsClosedImmersion ι] {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hI' : (I.comap ι).IsEffectiveCartier) :
+    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ y : C,
+      ((C ↘ Spec (.of k)).residueDegree y : ℤ) *
+        (Module.length (X.presheaf.stalk (ι y))
+          (X.presheaf.stalk (ι y) ⧸
+            (I.stalkIdeal (ι y) ⊔ ι.ker.stalkIdeal (ι y)))).toNat := by
+  rw [intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum k ι hI hI']
+  apply finsum_congr
+  intro y
+  rw [← Scheme.Hom.ker_stalkMap_of_isClosedImmersion ι y,
+    Ideal.length_quotient_map_of_surjective _ (ι.stalkMap_surjective y)]
+
+/-- The ambient-point formula for a closed curve: if `f` computes its residue degrees over
+`k`, the intersection number is the sum over `X` of the ambient local quotient lengths
+weighted by `f.residueDegree`. Points outside the curve contribute zero. -/
+theorem intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_residueDegree_eq
+    [IsClosedImmersion ι] {S : Scheme.{u}} (f : X ⟶ S)
+    (hf : ∀ y, (C ↘ Spec (.of k)).residueDegree y = f.residueDegree (ι y))
+    {I : X.IdealSheafData} (hI : I.IsEffectiveCartier)
+    (hI' : (I.comap ι).IsEffectiveCartier) :
+    intersectionNumber k ι (mk hI.toInvertibleSheaf)⁻¹ = ∑ᶠ x : X,
+      (f.residueDegree x : ℤ) * (Module.length (X.presheaf.stalk x)
+        (X.presheaf.stalk x ⧸ (I.stalkIdeal x ⊔ ι.ker.stalkIdeal x))).toNat := by
+  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
+  rw [intersectionNumber_inv_mk_toInvertibleSheaf k ι hI hI' default,
+    Scheme.Hom.finrank_eq_finsum_of_isClosedImmersion _ ((I.comap ι).subschemeι ≫ ι) f
+      (fun z ↦ by
+        rw [Scheme.Hom.residueDegree_comp,
+          Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks (I.comap ι).subschemeι z,
+          mul_one, hf,
+          Scheme.Hom.comp_apply])]
+  rw [← Scheme.IdealSheafData.map, Scheme.IdealSheafData.map_comap_of_isClosedImmersion]
+  refine ((Nat.castAddMonoidHom ℤ).map_finsum_of_injective Nat.cast_injective _).trans ?_
+  apply finsum_congr
+  intro x
+  rw [Scheme.IdealSheafData.stalkIdeal_sup]
+  exact Nat.cast_mul _ _
 
 /-- **Effective Cartier divisors meeting a curve properly meet it nonnegatively.** Let `D` be an
 effective Cartier divisor on `X` with ideal sheaf `I = 𝒪_X(-D)`, and let `C` be a proper curve
@@ -317,6 +417,68 @@ theorem intersectionNumber_prod_of_isIntegral {α : Type*} (s : Finset α)
     rw [Finset.prod_insert hi, Finset.sum_insert hi, intersectionNumber_mul_of_isIntegral, ih]
 
 end Integral
+
+section ClosedImmersion
+
+variable [IsIntegral C] [IsClosedImmersion ι] {x : X ⟶ Spec (.of k)} [IsProper x]
+
+/-- **Additivity on closed curves.** The intersection number with an integral closed curve `C` of
+a proper `k`-scheme is additive; `C` may be singular. -/
+theorem intersectionNumber_mul_of_isClosedImmersion (hι : C ↘ Spec (.of k) = ι ≫ x)
+    (hC : topologicalKrullDim C = 1) (a b : LineBundleClass X) :
+    intersectionNumber k ι (a * b) = intersectionNumber k ι a + intersectionNumber k ι b := by
+  have : IsProper (C ↘ Spec (.of k)) := hι ▸ inferInstance
+  have : RelativeDimensionLE 1 (C ↘ Spec (.of k)) :=
+    (relativeDimensionLE_iff_of_field _).mpr hC.le
+  have := Scheme.Modules.finiteDimensional_cohomology_trivial_of_topologicalKrullDim_le_one k
+    (X := C) hC.le
+  exact intersectionNumber_mul_of_isIntegral k ι a b
+
+/-- The intersection number with an integral closed curve of a proper `k`-scheme changes sign
+under inversion. -/
+theorem intersectionNumber_inv_of_isClosedImmersion (hι : C ↘ Spec (.of k) = ι ≫ x)
+    (hC : topologicalKrullDim C = 1) (a : LineBundleClass X) :
+    intersectionNumber k ι a⁻¹ = -intersectionNumber k ι a := by
+  have h := intersectionNumber_mul_of_isClosedImmersion k ι hι hC a⁻¹ a
+  rw [inv_mul_cancel, intersectionNumber_one] at h
+  omega
+
+/-- The intersection number of a power of a class with an integral closed curve of a proper
+`k`-scheme is the corresponding multiple. -/
+theorem intersectionNumber_pow_of_isClosedImmersion (hι : C ↘ Spec (.of k) = ι ≫ x)
+    (hC : topologicalKrullDim C = 1) (a : LineBundleClass X) (n : ℕ) :
+    intersectionNumber k ι (a ^ n) = n * intersectionNumber k ι a := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, intersectionNumber_mul_of_isClosedImmersion k ι hι hC, ih]
+    push_cast
+    ring
+
+end ClosedImmersion
+
+section Curve
+
+variable [IrreducibleSpace C] [IsClosedImmersion ι] [X.Over (Spec (.of k))] [IsIntegral X]
+
+/-- **Curves on a curve.** On an integral `k`-scheme `X` of dimension at most one, the
+intersection number of a class with an irreducible closed curve `C` over `k` is the degree of
+the class on `X`: the curve is all of `X`. -/
+theorem intersectionNumber_eq_eulerDegree_of_isClosedImmersion
+    (hX : topologicalKrullDim X ≤ 1) (hι : C ↘ Spec (.of k) = ι ≫ (X ↘ Spec (.of k)))
+    (hC : topologicalKrullDim C = 1) (a : LineBundleClass X) :
+    intersectionNumber k ι a = eulerDegree k a := by
+  have : Nontrivial C := by
+    by_contra h
+    have : Subsingleton C := not_nontrivial_iff_subsingleton.mp h
+    have h₀ := topologicalKrullDim_zero_of_discreteTopology C
+    rw [hC] at h₀
+    exact absurd h₀ (by decide)
+  have := Scheme.surjective_of_isClosedImmersion hX ι
+  have := isIso_of_isClosedImmersion_of_surjective ι
+  rw [intersectionNumber_def, eulerDegree_pullback_of_isIso ι hι.symm]
+
+end Curve
 
 section Regular
 
@@ -464,7 +626,7 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne
       (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj 1)] :
     0 ≤ intersectionNumber k (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι
       (mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-        hX η'.2).toInvertibleSheaf)⁻¹ :=
+        hX η'.property).toInvertibleSheaf)⁻¹ :=
   intersectionNumber_inv_mk_toInvertibleSheaf_nonneg k _ _
     (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX hne)
 

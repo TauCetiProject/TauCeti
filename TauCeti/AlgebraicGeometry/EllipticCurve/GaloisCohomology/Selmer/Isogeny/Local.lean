@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Real
@@ -54,8 +54,11 @@ the indices of the dual isogeny `φ̂` at every finite place and at the real pla
   (`WeierstrassCurve.mul_index_range_nsmul_eq_natCard_torsionBy`). Over `ℂ` the Kummer image is
   trivial (`TauCeti.Isogeny.natCard_range_kummerMap_of_isSepClosed`).
 
-The individual local factors at the places dividing `deg φ`, which involve the formal group, are
-not computed here.
+The individual local factor at every finite place `v`, including those dividing `deg φ`, is
+`|c|_v⁻¹ · c_v(E₂) / c_v(E₁)` for minimal equations over `O_v` with `φ^*ω₂ = c ω₁` and
+Tamagawa numbers `c_v`, when `2 ≠ 0` in `K_v` and `deg φ` is nonzero in the Dedekind domain:
+combine `TauCeti.Isogeny.natCard_range_kummerMap` with
+`TauCeti.Isogeny.kummerRatio_eq_of_isMinimal`, which is proved on the formal groups.
 
 ## Main results
 
@@ -109,7 +112,8 @@ theorem natCard_localCondition_selmerStructure
     (i : ι) [DecidableEq (L i)] :
     Nat.card ((φ.selmerStructure τ).localCondition i) =
       (ofIsogeny (φ.baseChange (L i))).pointMapHom.range.index := by
-  rw [selmerStructure_localCondition, ← range_kummerMap, natCard_range_kummerMap]
+  rw [selmerStructure_localCondition, ← range_kummerMap,
+    natCard_range_kummerMap]
 
 end Field
 

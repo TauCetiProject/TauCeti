@@ -13,11 +13,11 @@ import TauCeti.Algebra.TensorProduct.Ideal
 /-!
 # Unramifiedness and étaleness of Weil restrictions
 
-Weil restriction along a finite projective algebra sends a finitely presented, formally unramified
-algebra to a formally unramified algebra. Combined with the preservation of finite presentation
-(`WeilRestriction.instFinitePresentation`) and formal smoothness
-(`WeilRestriction.instFormallySmooth`), Weil restriction along a finite projective algebra
-preserves unramifiedness, formal étaleness, and étaleness.
+Weil restriction along a finite projective algebra preserves formal unramifiedness. Combined
+with preservation of finite type (`WeilRestriction.instFiniteType`), finite presentation
+(`WeilRestriction.instFinitePresentation`), and formal smoothness
+(`WeilRestriction.instFormallySmooth`), this shows that Weil restriction preserves
+unramifiedness, formal étaleness, and étaleness.
 
 For uniqueness of infinitesimal lifts through `WeilRestriction.homEquiv`, tensoring a quotient map
 by a square-zero ideal with the base algebra yields a homomorphism whose kernel is again
@@ -37,10 +37,8 @@ namespace TauCeti.Algebra.WeilRestriction
 
 variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra B C] [Module.Finite A B] [Module.Projective A B]
-  [FinitePresentation B C]
 
-/-- Weil restriction of a formally unramified finitely presented algebra along a finite
-projective algebra is formally unramified. -/
+/-- Weil restriction along a finite projective algebra preserves formal unramifiedness. -/
 instance instFormallyUnramified [FormallyUnramified B C] :
     FormallyUnramified A (WeilRestriction A B C) := by
   rw [FormallyUnramified.iff_comp_injective]
@@ -54,12 +52,10 @@ instance instFormallyUnramified [FormallyUnramified B C] :
   refine FormallyUnramified.lift_unique' q ⟨2, hker⟩ _ _ ?_
   rw [← homEquiv_comp, ← homEquiv_comp, h]
 
-/-- Weil restriction of a finitely presented unramified algebra along a finite projective algebra
-is unramified. -/
+/-- Weil restriction along a finite projective algebra preserves unramifiedness. -/
 instance instUnramified [Unramified B C] : Unramified A (WeilRestriction A B C) where
 
-/-- Weil restriction of a formally étale finitely presented algebra along a finite projective
-algebra is formally étale. -/
+/-- Weil restriction along a finite projective algebra preserves formal étaleness. -/
 instance instFormallyEtale [FormallyEtale B C] :
     FormallyEtale A (WeilRestriction A B C) :=
   .of_formallyUnramified_and_formallySmooth

@@ -5,19 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Examples of frequency-only symbols
 
 A smooth coefficient `b(ξ)` with `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order `m`
-(`TauCeti.Symbol.ofFrequency`). This file constructs two such symbols on `ℝⁿ`:
+(`TauCeti.Symbol.ofFrequency`). This file constructs frequency symbols on `ℝⁿ`:
 
 * `TauCeti.Symbol.besselPotential`: the Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular
-  frequency `ξ`, a uniform symbol of order `s`;
+  frequency `ξ`, a uniform symbol of order `s`, unfolded to `TauCeti.Symbol.ofFrequency` by
+  `TauCeti.Symbol.besselPotential_eq_ofFrequency`. Composing with it is additive in `s`
+  (`TauCeti.Symbol.besselPotential_comp_besselPotential`,
+  `TauCeti.Symbol.coefficient_comp_besselPotential_comp_besselPotential`) and trivial for `s = 0`
+  (`TauCeti.Symbol.coefficient_comp_besselPotential_zero`);
+* `TauCeti.Symbol.ofSchwartzFrequency`: a Schwartz coefficient as a uniform symbol of every real
+  order, hence a smoothing symbol;
 * `TauCeti.Symbol.ofInner`: the linear coefficient `⟪ξ, v⟫`, a uniform symbol of order `1`. For
   `v ≠ 0` and a nontrivial fibre it has no smaller order
   (`TauCeti.Symbol.not_exists_coefficient_eq_ofInner_coefficient`).
@@ -33,7 +42,7 @@ Their quantizations, Mathlib's Bessel potential and the derivative `-i ∂_v`, a
 
 public section
 
-open scoped RealInnerProductSpace ContDiff
+open scoped RealInnerProductSpace ContDiff SchwartzMap
 open Real
 
 noncomputable section
@@ -52,6 +61,26 @@ private theorem exists_norm_iteratedFDeriv_besselWeight_le (s : ℝ) (k : ℕ) :
   rw [sub_div]
   exact exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le (by positivity) (s / 2) k
 
+/-- The Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)`, as a multiple of the identity, is smooth. -/
+theorem contDiff_besselWeight_smul_id (s : ℝ) :
+    ContDiff ℝ ∞ fun ξ : CoordinateSpace n ↦
+      (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V :=
+  (Complex.ofRealCLM.contDiff.comp
+    (Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1).smul contDiff_const
+
+/-- The Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)`, as a multiple of the identity, satisfies the
+symbol estimates of order `s`. -/
+theorem exists_norm_iteratedFDeriv_besselWeight_smul_id_le (s : ℝ) (k : ℕ) :
+    ∃ C, ∀ ξ : CoordinateSpace n,
+      ‖iteratedFDeriv ℝ k (fun ξ : CoordinateSpace n ↦
+        (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((s - k) / 2) := by
+  simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
+    ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
+      (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
+      ((Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1.of_le (mod_cast le_top))
+      (exists_norm_iteratedFDeriv_besselWeight_le s k)
+
 /-- The Bessel weight `⟨ξ / 2π⟩ ^ s = (1 + ‖ξ / 2π‖²) ^ (s / 2)` in the angular frequency, a
 uniform symbol of order `s` (`TauCeti.Symbol.isUniform_besselPotential`). Its quantization is
 Mathlib's Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the frequency `ζ = ξ / 2π`
@@ -59,15 +88,15 @@ Mathlib's Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the frequency `ζ =
 Mathlib's Bessel potential `TemperedDistribution.besselPotential`
 (`TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`). -/
 def besselPotential (s : ℝ) : Symbol n V V s :=
-  ofFrequency (fun ξ ↦ (((1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V)
-    ((Complex.ofRealCLM.contDiff.comp
-      (Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1).smul contDiff_const)
-    fun k ↦ by
-      simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
-        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
-          (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V))
-          ((Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow _ _).1.of_le (mod_cast le_top))
-          (exists_norm_iteratedFDeriv_besselWeight_le s k)
+  ofFrequency _ (contDiff_besselWeight_smul_id s)
+    (exists_norm_iteratedFDeriv_besselWeight_smul_id_le s)
+
+/-- `TauCeti.Symbol.besselPotential` is the frequency-only symbol of the Bessel weight. -/
+theorem besselPotential_eq_ofFrequency (s : ℝ) :
+    (besselPotential s : Symbol n V V s) =
+      ofFrequency _ (contDiff_besselWeight_smul_id s)
+        (exists_norm_iteratedFDeriv_besselWeight_smul_id_le s) := by
+  rfl
 
 @[simp]
 theorem coefficient_besselPotential (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
@@ -78,6 +107,33 @@ theorem coefficient_besselPotential (s : ℝ) (p : CoordinateSpace n × Coordina
 theorem isUniform_besselPotential (s : ℝ) : (besselPotential s : Symbol n V V s).IsUniform :=
   isUniform_ofFrequency _ _
 
+/-- The pointwise composition of the Bessel weights of orders `s` and `t` is the Bessel weight of
+order `s + t`. -/
+@[simp]
+theorem besselPotential_comp_besselPotential (s t : ℝ) :
+    (besselPotential s : Symbol n V V s).comp (besselPotential t) = besselPotential (s + t) := by
+  ext1
+  funext p
+  simp only [coefficient_comp, coefficient_besselPotential, ContinuousLinearMap.comp_smul,
+    ContinuousLinearMap.comp_id, smul_smul, ← Complex.ofReal_mul]
+  rw [← Real.rpow_add (by positivity), add_div, add_comm (t / 2)]
+
+/-- Multiplying a symbol by `⟨ξ / 2π⟩ ^ t` and then by `⟨ξ / 2π⟩ ^ t'` multiplies it by
+`⟨ξ / 2π⟩ ^ (t + t')`. -/
+@[simp]
+theorem coefficient_comp_besselPotential_comp_besselPotential {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℂ W] (a : Symbol n V W m) (t t' : ℝ) :
+    ((a.comp (besselPotential t)).comp (besselPotential t')).coefficient =
+      (a.comp (besselPotential (t + t'))).coefficient := by
+  rw [comp_assoc, coefficient_inclusion, besselPotential_comp_besselPotential]
+
+/-- Multiplying a symbol by `⟨ξ / 2π⟩ ^ 0 = 1` does not change its coefficient. -/
+@[simp]
+theorem coefficient_comp_besselPotential_zero {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℂ W] (a : Symbol n V W m) :
+    (a.comp (besselPotential 0)).coefficient = a.coefficient := by
+  ext1 p
+  simp [coefficient_comp]
 
 /-- The linear function `⟪ξ, v⟫` satisfies the symbol estimates of order `1`. -/
 private theorem exists_norm_iteratedFDeriv_inner_le (v : CoordinateSpace n) (k : ℕ) :
@@ -98,7 +154,7 @@ def ofInner (v : CoordinateSpace n) : Symbol n V V 1 :=
     ((Complex.ofRealCLM.contDiff.comp (contDiff_id.inner ℝ contDiff_const)).smul contDiff_const)
     fun k ↦ by
       simpa only [ContinuousLinearMap.smulRight_apply, Complex.ofRealCLM_apply] using
-        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
+        ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le
           (Complex.ofRealCLM.smulRight (ContinuousLinearMap.id ℂ V)) (g := fun ξ ↦ ⟪ξ, v⟫)
           ((contDiff_id.inner ℝ contDiff_const).of_le (mod_cast le_top))
           (exists_norm_iteratedFDeriv_inner_le v k)
@@ -109,8 +165,34 @@ theorem coefficient_ofInner (v : CoordinateSpace n) (p : CoordinateSpace n × Co
       ((⟪p.2, v⟫ : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V :=
   coefficient_ofFrequency _ _ p
 
+/-- The coefficient `⟪ξ, eⱼ⟫ • 1` of the frequency coordinate `ofInner eⱼ` is `ξⱼ • 1`. -/
+theorem coefficient_ofInner_single (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
+    (ofInner (EuclideanSpace.single j 1) : Symbol n V V 1).coefficient p =
+      p.2 j • ContinuousLinearMap.id ℂ V := by
+  simp [EuclideanSpace.inner_single_right]
+
 theorem isUniform_ofInner (v : CoordinateSpace n) : (ofInner v : Symbol n V V 1).IsUniform :=
   isUniform_ofFrequency _ _
+
+/-- `⟪ξ, v⟫` does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_ofInner (v : CoordinateSpace n) (j : Fin n) :
+    spatialDeriv j (ofInner v : Symbol n V V 1) = 0 :=
+  spatialDeriv_ofFrequency _ _ j
+
+/-- The frequency derivative `∂_{ξⱼ} ⟪ξ, v⟫` is the constant `vⱼ`. -/
+theorem coefficient_frequencyDeriv_ofInner (v : CoordinateSpace n) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    (frequencyDeriv j (ofInner v : Symbol n V V 1)).coefficient (x, ξ) =
+      ((v j : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
+  have h : (fun η : CoordinateSpace n ↦ (ofInner v : Symbol n V V 1).coefficient (x, η)) =
+      ⇑((innerSL ℝ v).smulRight (ContinuousLinearMap.id ℂ V)) := by
+    funext η
+    rw [coefficient_ofInner, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
+      real_inner_comm, Complex.coe_smul]
+  rw [coefficient_frequencyDeriv, h, ContinuousLinearMap.coordinateDeriv_singleton,
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, EuclideanSpace.inner_single_right,
+    one_mul, conj_trivial, Complex.coe_smul]
 
 /-- `⟪ξ, v⟫` has no order below `1`: for `v ≠ 0`, a nonzero fibre and `m < 1`, no symbol of
 order `m` has this coefficient, since along the ray `ξ = t v` it grows like `t`, faster than
@@ -142,7 +224,7 @@ theorem not_exists_coefficient_eq_ofInner_coefficient [Nontrivial V] {v : Coordi
           Real.rpow_le_rpow_of_exponent_le (by nlinarith) (by linarith [le_max_left m 0])
       _ ≤ (1 + S / 2) ^ m₀ := by
           simpa [abs_of_nonneg hS0.le] using
-            one_add_norm_sq_rpow_half_le_one_add_norm_rpow (S / 2) (le_max_right m 0)
+            one_add_norm_sq_rpow_le_one_add_norm_rpow (S / 2) (le_max_right m 0)
       _ ≤ S ^ m₀ := Real.rpow_le_rpow (by positivity) (by linarith) (le_max_right m 0)
   have hbound : C * (1 + (S / 2) ^ 2) ^ (m / 2) ≤ |C| * S ^ m₀ :=
     (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity)).trans
@@ -154,6 +236,56 @@ theorem not_exists_coefficient_eq_ofInner_coefficient [Nontrivial V] {v : Coordi
           rw [mul_right_comm, ← Real.rpow_add hS0, sub_add_cancel, Real.rpow_one]
   linarith
 
+section SchwartzFrequency
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+
+/-- A genuine Schwartz multiplier is a native symbol of every real order. -/
+def ofSchwartzFrequency (m : ℝ) (f : 𝓢(CoordinateSpace n, V →L[ℂ] W)) :
+    Symbol n V W m :=
+  Symbol.ofFrequency f (f.smooth (⊤ : ℕ∞)) fun k ↦ by
+    let N := ⌈(k : ℝ) - m⌉₊
+    let C := 2 ^ N * (Finset.Iic (N, k)).sup (fun p ↦ SchwartzMap.seminorm ℝ p.1 p.2) f
+    refine ⟨C, fun ξ ↦ ?_⟩
+    have hb := SchwartzMap.one_add_le_sup_seminorm_apply (𝕜 := ℝ)
+      (m := (N, k)) le_rfl le_rfl f ξ
+    have hw : (1 + ‖ξ‖ ^ 2) ^ (((k : ℝ) - m) / 2) ≤ (1 + ‖ξ‖) ^ N := by
+      calc _ ≤ (1 + ‖ξ‖ ^ 2) ^ ((N : ℝ) / 2) :=
+            Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖])
+              (by linarith [Nat.le_ceil ((k : ℝ) - m)])
+        _ ≤ _ := by
+          simpa only [Real.rpow_natCast] using
+            one_add_norm_sq_rpow_le_one_add_norm_rpow ξ (Nat.cast_nonneg N)
+    have hmul : (1 + ‖ξ‖ ^ 2) ^ (((k : ℝ) - m) / 2) *
+        ‖iteratedFDeriv ℝ k f ξ‖ ≤ C :=
+      (mul_le_mul_of_nonneg_right hw (norm_nonneg _)).trans hb
+    rw [show (m - k) / 2 = -(((k : ℝ) - m) / 2) by ring,
+      Real.rpow_neg (by positivity), ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+    simpa only [mul_comm] using hmul
+
+/-- Evaluation retains the original Schwartz frequency coefficient. -/
+@[simp]
+theorem coefficient_ofSchwartzFrequency (m : ℝ)
+    (f : 𝓢(CoordinateSpace n, V →L[ℂ] W)) (x ξ : CoordinateSpace n) :
+    (ofSchwartzFrequency m f).coefficient (x, ξ) = f ξ := by
+  rw [ofSchwartzFrequency, Symbol.coefficient_ofFrequency]
+
+/-- A Schwartz frequency coefficient gives uniform estimates at every real order. -/
+theorem isUniform_ofSchwartzFrequency (m : ℝ) (f : 𝓢(CoordinateSpace n, V →L[ℂ] W)) :
+    (ofSchwartzFrequency m f).IsUniform := by
+  unfold ofSchwartzFrequency
+  exact isUniform_ofFrequency _ _
+
+/-- A Schwartz frequency coefficient is smoothing in the original native symbol sense. -/
+theorem isSmoothing_ofSchwartzFrequency (m : ℝ) (f : 𝓢(CoordinateSpace n, V →L[ℂ] W)) :
+    (ofSchwartzFrequency m f).IsSmoothing := by
+  apply isSmoothing_iff.2
+  intro r
+  refine ⟨ofSchwartzFrequency r f, ?_⟩
+  funext ⟨x, ξ⟩
+  simp only [coefficient_ofSchwartzFrequency]
+
+end SchwartzFrequency
 
 end Symbol
 

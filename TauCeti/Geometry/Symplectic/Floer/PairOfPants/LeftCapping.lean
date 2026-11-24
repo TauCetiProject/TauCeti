@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Capping the input at `0` along the input-exchange family
@@ -30,7 +31,11 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
 * near the capped puncture `0` it is the capping datum at `0`
   (`TauCeti.Floer.cappedExchangePerturbation_of_lt_re_endCoord`), and it vanishes on the image of
   the pole disc of the plane (`TauCeti.Floer.cappedExchangePerturbation_eq_zero`); elsewhere it is
-  the input-exchange datum (`TauCeti.Floer.cappedExchangePerturbation_of_re_endCoord_le`). The
+  the input-exchange datum (`TauCeti.Floer.cappedExchangePerturbation_of_re_endCoord_le`). For
+  `L > 2` and `R ≥ L - 1`, outside the truncation
+  `TauCeti.ThricePuncturedSphere.exchangeTruncation c R` the capped datum is the input-exchange
+  datum with `H_0` replaced by `0`
+  (`TauCeti.Floer.cappedExchangePerturbation_of_notMem_exchangeTruncation`). The
   translated output datum and the capped part have disjoint supports: the datum is the capped part
   near `c` (`TauCeti.Floer.cappedExchangePerturbation_of_norm_sub_le`) and the translated output
   datum away from it (`TauCeti.Floer.cappedExchangePerturbation_of_le_norm_sub`);
@@ -39,21 +44,35 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
   output end recentred at `c`
   (`TauCeti.Floer.cappedExchangePerturbation_add_cylindricalEndLift_inf`);
 * it is jointly `C^n` in `c`, the point of the capped domain `ℂ ∖ {1}` and the target point
-  (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`);
-* for a symplectic vector space target and `|H_q| ≤ B_q`, its integrated curvature along any map
-  is at most `B_0 + (B_0 + B_1 + B_∞)`, uniformly in `c` and in the neck length
-  (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`).
+  (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`); for `C^n` Hamiltonians on a normed
+  space, each member is `C^n` jointly in the point of `ℂ ∖ {1}`, in real coordinates, and the
+  target point (`TauCeti.Floer.contDiffAt_uncurry_cappedExchangePerturbation`);
+* for a manifold target with a two-form `ω` and `|H_q| ≤ B_q`, its integrated curvature along any
+  map is at most `B_0 + (B_0 + B_1 + B_∞)`, uniformly in `c` and in the neck length
+  (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`);
+  the symplectic vector space case is
+  `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`;
+* for a manifold target with a two-form `ω` and `R ≥ max (L - 1) 2`, its curvature vanishes on
+  `ℂ ∖ {1}` outside the truncation `TauCeti.ThricePuncturedSphere.exchangeTruncation c R`
+  (`TauCeti.SmoothTwoForm.hamiltonianCurvature_cappedExchangePerturbation_eq_zero`); the
+  symplectic vector space case is
+  `TauCeti.SymplecticForm.hamiltonianCurvature_cappedExchangePerturbation_eq_zero`.
 
 At `c = 0` it is the capping family at `0`
-(`TauCeti.Floer.cappedExchangePerturbation_zero`). At `c = 1` it is the pullback along the
-exchange `σ(w) = 1 - w` of the capping family at `1` of the pair of pants with exchanged inputs
-(`TauCeti.Floer.cappedExchangePerturbation_one`), since `σ` carries the plumbing at `0` to the
-plumbing at `1`. As `σ` carries the end lift of `1` to the end lift of `0`, in the cylinder
-coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder datum of the
+(`TauCeti.Floer.cappedExchangePerturbation_zero`), which is cylindrical on all three ends: beyond
+the height `L` of each end it is `H_1(t) dt`, `H_∞(t) dt` or, on the capped end at `0`, zero
+(`TauCeti.Floer.cappedExchangePerturbation_zero_eq_smul_endAngularForm`). At `c = 1` it is the
+pullback along the exchange `σ(w) = 1 - w` of the capping family at `1` of the pair of pants with
+exchanged inputs (`TauCeti.Floer.cappedExchangePerturbation_one`), since `σ` carries the plumbing
+at `0` to the plumbing at `1`. As `σ` carries the end lift of `1` to the end lift of `0`, in the
+cylinder coordinates of the end lift `φ_1` the datum at `c = 1` is the capped cylinder datum of the
 exchanged Hamiltonians (`TauCeti.Floer.cappedCylinderComponent_exchangeEndData`). It is
 therefore `H_1(t) dt` for `s ≥ 2` and `H_∞(t + 1/2) dt` for `s ≤ -3`, like a continuation datum on
 the standard cylinder, and the energy identity and action bounds of
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder` apply to it.
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder` apply to it. For a symplectic
+vector space target, the energy identity and the action bounds of every member of the family,
+uniform in `c` and in the neck length, are in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.LeftCapping`.
 
 ## References
 
@@ -87,13 +106,6 @@ theorem cappedExchangePerturbation_def (H : Puncture → ℝ → M → ℝ) (L c
       plumbedPerturbation (Pi.single inf (H zero)) (update H inf 0) zero L w x +
         negativePlanePerturbation (H inf) (w - c) x :=
   (rfl)
-
-/-- For `L ≥ 2`, at distance at least `1/2` from `0` the longitudinal coordinate of the end at `0`
-is at most `L / 2`, so the plumbing at `0` leaves the receiving datum unchanged there. -/
-private theorem re_endCoord_zero_le_half (hL : 2 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) :
-    (zero.endCoord w).re ≤ L / 2 := by
-  have h : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  linarith [re_endCoord_zero_le_one (w := w) (by linarith)]
 
 /-- The translated output datum vanishes within distance `1/2` of `0`, for `0 ≤ c ≤ 1`. -/
 private theorem negativePlanePerturbation_sub_eq_zero_of_norm_le {H : ℝ → M → ℝ} (hc₀ : 0 ≤ c)
@@ -247,6 +259,77 @@ theorem cappedExchangePerturbation_eq_zero (hL : 2 < L) (hc₀ : 0 ≤ c) (hc₁
     plumbedPerturbation_single_inf_eq_zero (by decide) hL (by simpa using hw),
     negativePlanePerturbation_sub_eq_zero_of_norm_le hc₀ hc₁ hn, add_zero]
 
+/-- For `L ≥ 0`, away from the disc of radius `1/2` about `0`, the capped datum is the
+input-exchange datum of the Hamiltonians with `H_0` replaced by `0`: the component of the
+input-exchange datum on the end at `0` is switched off there. -/
+theorem cappedExchangePerturbation_of_le_norm (hL : 0 ≤ L) {w : ℂ} (hw : 1 / 2 ≤ ‖w‖) (x : M) :
+    cappedExchangePerturbation H L c w x = exchangePerturbation (update H zero 0) c w x := by
+  have hre : (zero.endCoord w).re ≤ 0 :=
+    re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rwa [endCenter_zero, sub_zero])
+  have hcut : smoothTransition ((zero.endCoord w).re - 1) = 0 :=
+    smoothTransition.zero_of_nonpos (by linarith)
+  have hinf : inf ≠ zero := by decide
+  rw [cappedExchangePerturbation_of_re_endCoord_le (by linarith), exchangePerturbation_def,
+    exchangePerturbation_def, update_of_ne hinf]
+  simp [pairOfPantsPerturbation_def, Puncture.sum_univ, hcut]
+
+/-- **Off the truncation the capped datum is an input-exchange datum.** For `L > 2`,
+`0 ≤ c ≤ 1` and `R ≥ L - 1`, outside the truncation with recentred output end the capped datum is
+the input-exchange datum of the Hamiltonians with `H_0` replaced by `0`: near the capped puncture
+both vanish, and away from it the plumbed plane does not reach. -/
+theorem cappedExchangePerturbation_of_notMem_exchangeTruncation (hL : 2 < L) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {R : ℝ} (hR : L - 1 ≤ R) {w : ℂ} (hw : w ∉ exchangeTruncation c R) (x : M) :
+    cappedExchangePerturbation H L c w x = exchangePerturbation (update H zero 0) c w x := by
+  have hρ : Real.exp (-(2 * π * R)) ≤ Real.exp (-(2 * π * (L - 1))) :=
+    Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
+  have hρ₁ : Real.exp (-(2 * π * (L - 1))) ≤ 1 :=
+    Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have h₁ : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp (by nlinarith [Real.pi_pos])
+  simp only [mem_exchangeTruncation, not_and_or, not_le] at hw
+  by_cases hw₀ : ‖w‖ < Real.exp (-(2 * π * R)) / 2
+  -- Near the capped puncture both data vanish.
+  · rw [cappedExchangePerturbation_eq_zero (by linarith) hc₀ hc₁ (by linarith),
+      exchangePerturbation_update_zero_eq_zero hc₀ hc₁ (by linarith)]
+  -- Elsewhere off the truncation the point is at distance at least `1/2` from `0`.
+  · refine cappedExchangePerturbation_of_le_norm (by linarith) ?_ x
+    rcases hw with hw | hw | hw
+    · exact absurd hw hw₀
+    · have h := norm_sub_norm_le (1 : ℂ) w
+      rw [norm_one, norm_sub_rev] at h
+      linarith
+    · have h := norm_sub_le w (c : ℂ)
+      rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at h
+      linarith
+
+/-- **The capping datum at `0` is cylindrical on the three ends.** For `L > 2`, beyond the height
+`L` of each end `q` of `ℂ ∖ {0, 1}`, the capping datum at `0` is `H_q(t) dt` for the Hamiltonians
+`H` with the end at `0` set to `0`: it is `H_1(t) dt` and `H_∞(t) dt` on the ends at `1` and `∞`,
+and it vanishes on the end at `0`, the capped one. -/
+theorem cappedExchangePerturbation_zero_eq_smul_endAngularForm (hL : 2 < L)
+    (q : Puncture) (w : ℂ) (x : M) (hw : L ≤ q.endSign * (q.endCoord w).re) :
+    cappedExchangePerturbation H L 0 w x = update H zero 0 q (q.endCoord w).im x •
+      q.endAngularForm w := by
+  rcases eq_or_ne q zero with rfl | hq
+  · -- Beyond the height `L` of the end at `0` lies the pole disc of the plane.
+    rw [update_self, Pi.zero_apply, Pi.zero_apply, zero_smul]
+    rw [endSign_zero, one_mul] at hw
+    refine cappedExchangePerturbation_eq_zero (by linarith) le_rfl zero_le_one ?_ x
+    rcases eq_or_ne w zero.endCenter with rfl | hw₀
+    · rw [endCenter_zero, norm_zero]
+      positivity
+    · have h := (re_endCoord_le_iff (q := zero) (by decide) (r := L - 1) hw₀).not.1
+        (by linarith)
+      rw [endCenter_zero, sub_zero] at h
+      exact (not_le.1 h).le
+  · -- On the other ends the longitudinal coordinate of the end at `0` is nonpositive, where the
+    -- datum is the pair-of-pants datum.
+    have hre : (zero.endCoord w).re ≤ L / 2 := by
+      have h := endSign_mul_re_endCoord_nonpos (q := q) (r := zero) hq (w := w) (by linarith)
+      rw [endSign_zero, one_mul] at h
+      linarith
+    rw [cappedExchangePerturbation_of_re_endCoord_le hre, exchangePerturbation_zero,
+      pairOfPantsPerturbation_eq_smul_endAngularForm (by linarith), update_of_ne hq]
+
 /-- The inserted Hamiltonian of the capped part is the value at `0` of its receiving Hamiltonians
 `update H inf 0`, the form used by the capping-family API. -/
 private theorem update_inf_zero : update H inf 0 zero = H zero :=
@@ -269,33 +352,68 @@ theorem contMDiffAt_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodi
     · exact Or.inl endCenter_zero.symm
     · exact Or.inr ⟨h₀, hw⟩
   have hcap := contMDiffAt_plumbedPerturbation_single_inf (Hb := update H inf 0) (by decide)
-    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
-    ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
-      ⟨contMDiff_const, fun q _ => hHs q⟩) hL hw' x
+    (forall_update_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH inf)
+    (forall_update_zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
+      contMDiff_const hHs inf) hL hw' x
   rw [update_inf_zero] at hcap
   -- The plane part is the smooth plane datum composed with the translation by the parameter.
   exact (hcap.comp (c, (w, x)) contMDiffAt_snd).add
     (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
 
+section VectorSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
+
+/-- **The family is `C^n` in real coordinates.** For period-one `C^n` Hamiltonians on a normed
+space and neck length `L > 4`, the member `c` of the family is `C^n` jointly in the domain point of
+the capped domain `ℂ ∖ {1}`, in real coordinates, and the target point. -/
+theorem contDiffAt_uncurry_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (hL : 4 < L) (c : ℝ) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 1) (x : V) (v : ℂ) :
+    ContDiffAt ℝ n
+      (uncurry fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x v)
+      (z, x) := by
+  have hz' : Complex.equivRealProdCLM.symm z = zero.endCenter ∨
+      Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 := by
+    rcases eq_or_ne (Complex.equivRealProdCLM.symm z) 0 with h | h
+    · exact Or.inl (h.trans endCenter_zero.symm)
+    · exact Or.inr ⟨h, hz⟩
+  -- The capped part, which does not depend on `c`.
+  have hin := contDiffAt_uncurry_plumbedPerturbation_single_inf (q := zero)
+    (Hb := update H inf 0) (by decide)
+    (forall_update_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH inf)
+    (forall_update_zero (P := fun f => ContDiff ℝ n (uncurry f)) contDiff_const hHs inf) hL hz' x v
+  rw [update_inf_zero] at hin
+  -- The output part, the negative plane datum translated by `c`.
+  have hpl :=
+    (contDiff_uncurry_negativePlanePerturbation_sub (hH inf) (hHs inf) c v).contDiffAt (x := (z, x))
+  exact (hin.add hpl).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ by
+    simp [cappedExchangePerturbation_def, uncurry])
+
+end VectorSpace
+
 end TauCeti.Floer
 
-namespace TauCeti.SymplecticForm
+namespace TauCeti.SmoothTwoForm
 
-open Floer
+open Floer Topology
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {H : Puncture → ℝ → V → ℝ} {L : ℝ}
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {H : Puncture → ℝ → M → ℝ} {L : ℝ}
 
-/-- **The integrated curvature of the capped input-exchange family is bounded uniformly.** Let `K`
-be the member `c ∈ [0, 1]` of the input-exchange family capped at `0` along a neck of length
-`L > 4`, for period-one `C¹` Hamiltonians `H_q` with `|H_q| ≤ B_q`, with components
-`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`. Then for
-every map `u` into the target, the integral of `|R_K(z, u(z))|` over the plane is at most
-`B_0 + ∑ q, B_q`, which depends neither on `c` nor on `L`. -/
-theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 4 < L)
+/-- **The integrated curvature of the capped input-exchange family is bounded uniformly**, for a
+manifold target. Let `K` be the member `c ∈ [0, 1]` of the input-exchange family capped at `0`
+along a neck of length `L > 4`, for period-one `C¹` Hamiltonians `H_q` on a manifold `M` with a
+two-form `ω`, with `|H_q| ≤ B_q`, and write its components in the global coordinate `z = s + i t`
+of `ℂ` as `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map `u` into `M`, the integral
+of `|R_K(z, u(z))|` over the plane is at most `B_0 + ∑ q, B_q`, which depends neither on `c` nor
+on `L`. -/
+theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (hL : 4 < L)
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
-    (u : ℝ × ℝ → V) :
+    (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x
@@ -304,14 +422,14 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
   -- The capped part, with bounds `B₀`, `B₁`, `0`, vanishes away from `c`; the plane part has `B_∞`.
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
     (q := zero) (Hb := update H inf 0) (by decide)
-    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
-    ((forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
-      ⟨contDiff_const, fun q _ => hHs q⟩) hL
+    (forall_update_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH inf)
+    (forall_update_zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs inf) hL
     (Bb := update B inf 0) (fun q t x => by
       rcases eq_or_ne q inf with rfl | hq
       · simp
       · simpa [update_of_ne hq] using hB q t x) u
-  have hK (w : ℂ) (hw : 3 ≤ ‖w - c‖) (x : V) :
+  have hK (w : ℂ) (hw : 3 ≤ ‖w - c‖) (x : M) :
       plumbedPerturbation (Pi.single inf (H zero)) (update H inf 0) zero L w x = 0 := by
     have h := cappedExchangePerturbation_of_le_norm_sub (H := H) (L := L) (by linarith) hc₀ hc₁
       (by linarith : 3 / 2 ≤ ‖w - c‖) x
@@ -325,5 +443,92 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
         simpa only [update_inf_zero, update_of_ne (show zero ≠ inf by decide)] using hBin
     _ = ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (B q) := by
         simp [Puncture.sum_univ, add_assoc]
+
+/-- **The curvature of the capped family vanishes outside the truncation.** For period-one `C¹`
+Hamiltonians `H_q` on a manifold `M` with a two-form `ω`, `L > 2`, `0 ≤ c ≤ 1` and
+`R ≥ max (L - 1) 2`, the curvature of the member `c` of the capped family vanishes on the capped
+domain `ℂ ∖ {1}` outside the truncation with recentred output end: near the capped puncture `0`
+the datum vanishes, and elsewhere there it is the input-exchange datum with `H_0` replaced by
+`0`. -/
+theorem hamiltonianCurvature_cappedExchangePerturbation_eq_zero (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (hL : 2 < L)
+    {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {R : ℝ} (hR : L - 1 ≤ R) (hR₂ : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 1)
+    (hzT : Complex.equivRealProdCLM.symm z ∉ exchangeTruncation c R) (x : M) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 := by
+  set e := Complex.equivRealProdCLM
+  rcases eq_or_ne (e.symm z) 0 with h₀ | h₀
+  -- Near the capped puncture the datum vanishes.
+  · have hz₀ : ‖e.symm z‖ < Real.exp (-(2 * π * (L - 1))) / 2 := by
+      rw [h₀, norm_zero]
+      positivity
+    have hev := (continuous_norm.comp e.symm.continuous).continuousAt.eventually (gt_mem_nhds hz₀)
+    refine ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero ?_ ?_ x <;>
+      exact hev.mono fun y hy ↦ funext fun x ↦ by
+        simp [cappedExchangePerturbation_eq_zero (H := H) hL hc₀ hc₁ hy.le x]
+  -- Near `z` the point stays outside the truncation, where the capped datum is the input-exchange
+  -- datum with `H_0` replaced by `0`.
+  have hn : ∀ᶠ y in 𝓝 z, e.symm y ∉ exchangeTruncation c R :=
+    ((isClosed_exchangeTruncation c R).preimage e.symm.continuous).isOpen_compl.mem_nhds hzT
+  have hK (v : ℂ) : (fun y x ↦ cappedExchangePerturbation H L c (e.symm y) x v) =ᶠ[𝓝 z]
+      fun y x ↦ exchangePerturbation (update H zero 0) c (e.symm y) x v :=
+    hn.mono fun y hy ↦ funext fun x ↦ by
+      beta_reduce
+      rw [cappedExchangePerturbation_of_notMem_exchangeTruncation hL hc₀ hc₁ hR hy x]
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I)]
+  exact ω.hamiltonianCurvature_exchangePerturbation_eq_zero
+    (forall_update_zero (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH zero)
+    (forall_update_zero (P := fun f ↦ ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs zero) hc₀ hc₁ hR₂ ⟨h₀, hz⟩ hzT x
+
+end TauCeti.SmoothTwoForm
+
+namespace TauCeti.SymplecticForm
+
+open Floer Topology
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {H : Puncture → ℝ → V → ℝ} {L : ℝ}
+
+/-- **The integrated curvature of the capped input-exchange family is bounded uniformly.** This is
+the vector-space case of
+`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`: for
+the member `c ∈ [0, 1]` of the input-exchange family capped at `0` along a neck of length `L > 4`,
+for period-one `C¹` Hamiltonians `H_q` on a symplectic vector space with `|H_q| ≤ B_q`, and every
+map `u` into it, the integral of `|R_K(z, u(z))|` over the plane is at most `B_0 + ∑ q, B_q`. -/
+theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 4 < L)
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    (u : ℝ × ℝ → V) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x
+          Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (B q) := by
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le hH
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hL hB hc₀ hc₁ u
+
+/-- **The curvature of the capped family vanishes outside the truncation.** This is the
+vector-space case of
+`TauCeti.SmoothTwoForm.hamiltonianCurvature_cappedExchangePerturbation_eq_zero`: for period-one
+`C¹` Hamiltonians, `L > 2`, `0 ≤ c ≤ 1` and `R ≥ max (L - 1) 2`, the curvature of the member `c`
+of the capped family vanishes on the capped domain `ℂ ∖ {1}` outside the truncation with recentred
+output end. -/
+theorem hamiltonianCurvature_cappedExchangePerturbation_eq_zero (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hL : 2 < L)
+    {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {R : ℝ} (hR : L - 1 ≤ R) (hR₂ : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 1)
+    (hzT : Complex.equivRealProdCLM.symm z ∉ exchangeTruncation c R) (x : V) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 := by
+  simpa using ω.constSmooth.hamiltonianCurvature_cappedExchangePerturbation_eq_zero hH
+    (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hL hc₀ hc₁ hR hR₂ hz
+    hzT x
 
 end TauCeti.SymplecticForm

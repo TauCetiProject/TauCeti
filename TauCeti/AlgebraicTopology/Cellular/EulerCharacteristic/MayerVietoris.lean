@@ -106,7 +106,7 @@ theorem eulerChar_union_add_eulerChar_inter {X : Type w} [TopologicalSpace X] {U
   have := eV.finiteCWType
   have := eI.finiteCWType
   rw [← eU.eulerChar_eq, ← eV.eulerChar_eq, ← eI.eulerChar_eq]
-  exact eulerChar_add_eulerChar_inter_of_union_eq_univ (hU.preimage continuous_subtype_val)
-    (hV.preimage continuous_subtype_val) (by rw [← preimage_union, Subtype.coe_preimage_self])
+  exact eulerChar_add_eulerChar_inter_of_union_eq_univ (hU.preimage continuous_subtypeVal)
+    (hV.preimage continuous_subtypeVal) (by rw [← preimage_union, Subtype.coe_preimage_self])
 
 end TauCeti

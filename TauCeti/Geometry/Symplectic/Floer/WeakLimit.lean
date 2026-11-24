@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.UniformLimit
-public import TauCeti.Geometry.Symplectic.Floer.Compactness
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
@@ -21,7 +22,7 @@ Cauchy–Riemann equation of Hamiltonian Floer theory reads
 `∂ₜu - X(z, u) i = J(z, u) (∂ₛu - X(z, u) 1)`,
 
 for a domain-dependent almost complex structure `J` and the Hamiltonian one-form `X`, as in
-`TauCeti.Geometry.Symplectic.Floer.Compactness`. The compactness theorem
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Basic`. The compactness theorem
 `TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset` extracts from a
 sequence of solutions with bounded energy a subsequence that converges locally uniformly off a
 finite set of bubbling points, with derivatives bounded on compact subsets of the complement. It
@@ -38,6 +39,9 @@ almost every point of `Ω`, `v` is differentiable and solves the Floer equation
 In particular the limit produced by the compactness theorem is, off the bubbling points, a locally
 Lipschitz map solving the Floer equation almost everywhere
 (`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_ae`).
+For smooth solutions, `TauCeti.Floer.tendstoLocallyUniformlyOn_fderiv_of_floer` upgrades this to
+convergence in `C¹` to a `C¹` solution
+(`TauCeti.Floer.exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset`).
 
 The equation is linear in the derivative of the map, with coefficients `J(z, u)` and `X(z, u)`
 that converge uniformly on compact sets along the sequence. The derivatives only converge weakly
@@ -72,7 +76,7 @@ there, then `∫ φ • (J(z, uᵢ) - J(z, v)) (∂ₛuᵢ) → 0`. -/
 private theorem tendsto_integral_smul_sub_apply_fderiv_one (hΩ : IsOpen Ω) (hK : IsCompact K)
     (hJ : ContinuousOn J (Ω ×ˢ K)) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
     (huK : ∀ i, MapsTo (u i) Ω K) (hv : ContinuousOn v Ω) (hvK : MapsTo v Ω K) {φ : ℂ → ℝ}
-    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (hφΩ : tsupport φ ⊆ Ω) {M : ℝ}
+    (hφ : ContinuousOn φ (tsupport φ)) (hφc : HasCompactSupport φ) (hφΩ : tsupport φ ⊆ Ω) {M : ℝ}
     (hM : ∀ᶠ i in l, ∀ y ∈ tsupport φ, ‖fderiv ℝ (u i) y‖ ≤ M)
     (hU : TendstoUniformlyOn u v l (tsupport φ)) :
     Tendsto (fun i ↦ ∫ y, φ y • (J (y, u i y) - J (y, v y)) (fderiv ℝ (u i) y 1)) l (𝓝 0) := by
@@ -99,10 +103,10 @@ private theorem tendsto_integral_smul_sub_apply_fderiv_one (hΩ : IsOpen Ω) (hK
       _ < ε := by
         rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
         nlinarith
-  simpa using MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume) hΩ
-    (fun i ↦ ((hJu i).sub hJv).clm_apply
-      (((hu i).continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply continuousOn_const))
-    continuousOn_const hφ hφc hφΩ hsmall
+  simpa using MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume) hφ hφc
+    (Eventually.of_forall fun i ↦ (((hJu i).sub hJv).clm_apply
+      (((hu i).continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply continuousOn_const)).mono
+        hφΩ) hsmall
 
 /-- An equation `∂ₜu - J(z, u) ∂ₛu - Q(z, u) = 0`, tested against a continuous weight `φ` with
 compact support in `Ω`, passes to the limit: `∫ φ • (∂ₜv - J(z, v) ∂ₛv - Q(z, v)) = 0`. The
@@ -133,7 +137,7 @@ private theorem integral_smul_fderiv_I_sub_sub_eq_zero [l.NeBot] (hΩ : IsOpen �
     (hasWeakFDerivOn_iff.1 (hv.hasWeakFDerivOn_fderiv (μ := volume) (Ω := ⟨Ω, hΩ⟩)) w)
       |>.locallyIntegrableOn_deriv
   have hint : ∀ {h : ℂ → V}, LocallyIntegrableOn h Ω → Integrable (fun y ↦ φ y • h y) :=
-    fun hh ↦ hh.integrable_smul_left_of_hasCompactSupport hφ hφc hφΩ
+    fun hh ↦ hh.integrable_smul_left_of_hasCompactSupport hφ.continuousOn hφc hφΩ
   have hint' : ∀ {h : ℂ → V}, ContinuousOn h Ω → Integrable (fun y ↦ φ y • h y) :=
     fun hh ↦ hint (hh.locallyIntegrableOn hΩ.measurableSet)
   obtain ⟨M, hM⟩ := hbd _ hφc hφΩ
@@ -146,10 +150,11 @@ private theorem integral_smul_fderiv_I_sub_sub_eq_zero [l.NeBot] (hΩ : IsOpen �
     hbd hlim (A := fun y ↦ φ y • J (y, v y)) (hφ.continuousOn.smul hJv) hφc.smul_right
     ((tsupport_smul_subset_left _ _).trans hφΩ) 1
   simp only [FunLike.coe_smul, Pi.smul_apply] at L₂
-  have L₃ := tendsto_integral_smul_sub_apply_fderiv_one hΩ hK hJ hu huK hv.continuousOn hvK hφ hφc
-    hφΩ hM hU
-  have L₄ := MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume) hΩ hQu hQv
-    hφ hφc hφΩ (IsCompact.tendstoUniformlyOn_comp_prodMk hφc hK
+  have L₃ := tendsto_integral_smul_sub_apply_fderiv_one hΩ hK hJ hu huK hv.continuousOn hvK
+    hφ.continuousOn hφc hφΩ hM hU
+  have L₄ := MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := volume)
+    hφ.continuousOn hφc (Eventually.of_forall fun i ↦ (hQu i).mono hφΩ)
+    (IsCompact.tendstoUniformlyOn_comp_prodMk hφc hK
       (hQ.mono (prod_mono hφΩ subset_rfl)) (Eventually.of_forall fun i ↦ (huK i).mono_left hφΩ)
       (hvK.mono_left hφΩ) hU)
   -- Along the sequence they add up to zero, since each `uᵢ` solves the equation.
@@ -287,6 +292,52 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_ae
   exact ae_differentiableAt_and_fderiv_I_sub_eq_of_tendstoLocallyUniformlyOn hΩZo hK
     (hJ.continuousOn.mono hsub) (hX.continuousOn.mono hsub) hu'
     (fun n y hy ↦ hCR (φ n) y (hΩZ hy)) (fun n ↦ (huK (φ n)).mono_left hΩZ) hbd' hlim
+
+/-- **Floer solutions converge in `C¹` off finitely many bubbling points.** Let `J` and `X` be
+`C²` on an open set `W ⊆ ℂ × V` containing `D × K` for compact `D ⊆ ℂ` and `K ⊆ V`, with
+`J(z, x)² = -1` on `D × K`, where `V` is a finite-dimensional real inner product space. There is
+a threshold `δ > 0` with the following property. Let `uₖ` be smooth solutions of
+`∂ₜu - X(z, u) i = J(z, u)(∂ₛu - X(z, u) 1)` on an open set `Ω ⊆ D`, with image in `K` and
+energy `∫_Ω ‖∂ₛuₖ‖² ≤ E`. Then there are a subsequence `φ`, a finite set `Z ⊆ Ω` with
+`#Z * δ ≤ E`, and a map `v` with values in `K` on `Ω \ Z`, such that along `φ` every disc about a
+point of `Z` eventually carries energy at least `δ`, the differentials are uniformly bounded on
+every compact subset of `Ω \ Z`, `u_{φ n} → v` and `Du_{φ n} → Dv` locally uniformly on `Ω \ Z`,
+and `v` is a `C¹` solution of the equation on `Ω \ Z`. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
+    {J : ℂ × V → V →L[ℝ] V} {X : ℂ × V → ℂ →L[ℝ] V} {W : Set (ℂ × V)} {D : Set ℂ} {K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) :
+    ∃ δ > 0, ∀ ⦃Ω : Set ℂ⦄ ⦃u : ℕ → ℂ → V⦄ ⦃E : ℝ⦄, IsOpen Ω → Ω ⊆ D →
+      (∀ k, ContDiffOn ℝ (⊤ : ℕ∞) (u k) Ω) →
+      (∀ k, ∀ y ∈ Ω, fderiv ℝ (u k) y I - X (y, u k y) I =
+        J (y, u k y) (fderiv ℝ (u k) y 1 - X (y, u k y) 1)) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, IntegrableOn (fun y ↦ ‖fderiv ℝ (u k) y 1‖ ^ 2) Ω) →
+      (∀ k, ∫ y in Ω, ‖fderiv ℝ (u k) y 1‖ ^ 2 ≤ E) →
+      ∃ (φ : ℕ → ℕ) (Z : Finset ℂ) (v : ℂ → V), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+        (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop,
+          δ ≤ ∫ y in ball z ε ∩ Ω, ‖fderiv ℝ (u (φ n)) y 1‖ ^ 2) ∧
+        (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
+          ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
+        MapsTo v (Ω \ ↑Z) K ∧ ContDiffOn ℝ 1 v (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) ∧
+        TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (u (φ n))) (fderiv ℝ v) atTop (Ω \ ↑Z) ∧
+        ∀ y ∈ Ω \ ↑Z,
+          fderiv ℝ v y I - X (y, v y) I = J (y, v y) (fderiv ℝ v y 1 - X (y, v y) 1) := by
+  obtain ⟨δ, hδ, hconv⟩ := exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hW hJ hX
+    hD hK hDKW hJsq
+  refine ⟨δ, hδ, fun Ω u E hΩ hΩD hu hCR huK hint hE ↦ ?_⟩
+  obtain ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, -, hvK, hlim⟩ := hconv hΩ hΩD
+    (fun k ↦ (hu k).of_le (WithTop.coe_le_coe.2 le_top)) hCR huK hint hE
+  -- Off `Z` the whole subsequence converges in `C¹`.
+  obtain ⟨hv, hdconv, hveq⟩ := tendstoLocallyUniformlyOn_fderiv_of_floer hW
+    (hJ.of_le one_le_two) (hX.of_le one_le_two) (hΩ.sdiff Z.finite_toSet.isClosed)
+    (u := fun n ↦ u (φ n)) (fun y hy ↦ hDKW ⟨hΩD hy.1, hvK hy⟩)
+    (fun n ↦ (hu _).mono sdiff_subset) (fun n y hy ↦ hJsq y (hΩD hy.1) _ (huK _ hy.1))
+    (fun n y hy ↦ hCR _ y hy.1) hbd fun y hy ↦ hlim.tendsto_at hy
+  exact ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, hvK, hv, hlim, hdconv, hveq⟩
 
 end Compactness
 

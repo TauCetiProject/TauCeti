@@ -51,6 +51,10 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
   `LaurentPolynomial.mapDomainAlgHom_mulRight_comp_toAlgHom`: the substitution `T ↦ Tⁿ` sends
   `Tᵐ` to `T^{mn}` and fixes constants.
 * `TauCeti.laurentEval_unique`: an algebra map out of `R[T;T⁻¹]` is determined by its value at `T`.
+* `AlgHom.apply_laurentPolynomial_C` and `AlgHom.apply_laurentPolynomial_T_of_apply_T_one`: an
+  algebra map out of `R[T;T⁻¹]` sends a constant `C x` to `algebraMap R A x`, and, if it sends
+  `T 1` to a unit `u`, sends `T n` to `u ^ n` (`AlgHom.apply_laurentPolynomial_T_neg_one` is the
+  case `n = -1`); `AlgHom.apply_laurentPolynomial_C_self` is the form for a ring mapping to itself.
 * `TauCeti.laurentEval_comp_mapDomainAlgHom_mulRight`: evaluating after `T ↦ Tⁿ` is evaluating
   at the `n`-th power.
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
@@ -62,8 +66,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 * `TauCeti.mul_laurentEval`: an element commuting with a unit `u` up to a scalar `c` moves past
   evaluation at `u` by rescaling by `c`.
 * `TauCeti.eval₂_C_inv_pow_injective`: in particular `T ↦ T⁻ᵏ` is injective for `k ≠ 0`.
-* `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial acts by integer scalar
-  multiplication.
+* `TauCeti.laurentPolynomialC_smul`: a constant Laurent polynomial `C a` acts as the coefficient
+  `a`; over `ℤ`, by integer scalar multiplication.
 * `TauCeti.map_smul_eq_laurentEval_smul`: a linear map turning `T` into a unit turns every
   Laurent scalar into its value at that unit.
 -/
@@ -78,14 +82,14 @@ variable [Algebra R A] [Algebra R B]
 /-- A map of Laurent coefficient algebras maps constant Laurent polynomials coefficientwise. -/
 @[simp]
 theorem mapAlgHom_C (φ : A →ₐ[R] B) (a : A) :
-    (AddMonoidAlgebra.mapAlgHom ℤ φ) (C a) = C (φ a) :=
-  AddMonoidAlgebra.mapAlgHom_single φ (0 : ℤ) a
+    (AddMonoidAlgebra.mapAlgHom ℤ φ) (C a) = C (φ a) := by
+  simp only [← single_eq_C, AddMonoidAlgebra.mapAlgHom_single]
 
 /-- A map of Laurent coefficient algebras fixes every Laurent monomial. -/
 @[simp]
 theorem mapAlgHom_T (φ : A →ₐ[R] B) (n : ℤ) :
-    (AddMonoidAlgebra.mapAlgHom ℤ φ) (T n) = T n :=
-  (AddMonoidAlgebra.mapAlgHom_single φ n 1).trans (by rw [map_one]; rfl)
+    (AddMonoidAlgebra.mapAlgHom ℤ φ) (T n) = T n := by
+  simp only [T, AddMonoidAlgebra.mapAlgHom_single, map_one]
 
 /-- The Laurent monomial of a finite sum of exponents is the product of the monomials. -/
 theorem T_sum {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
@@ -144,16 +148,11 @@ targets are endomorphism rings.  The construction is the universal property of t
 noncomputable def laurentEval (u : Aˣ) : R[T;T⁻¹] →ₐ[R] A :=
   AddMonoidAlgebra.lift R A ℤ ((Units.coeHom A).comp (zpowersHom Aˣ u))
 
+/-- Evaluation at `u` sends the Laurent monomial `T n` to the integer power `u ^ n`. -/
 @[simp]
 lemma laurentEval_T (u : Aˣ) (n : ℤ) : laurentEval (R := R) u (T n) = ((u ^ n : Aˣ) : A) := by
-  rw [laurentEval]
-  simp only [LaurentPolynomial.T, AddMonoidAlgebra.lift_single, one_smul]
-  rfl
-
-@[simp]
-lemma laurentEval_C (u : Aˣ) (r : R) : laurentEval u (C r) = algebraMap R A r := by
-  rw [C_eq_algebraMap]
-  exact (laurentEval u).commutes r
+  simp only [laurentEval, T, AddMonoidAlgebra.lift_single, one_smul, MonoidHom.comp_apply,
+    zpowersHom_apply, toAdd_ofAdd, Units.coeHom_apply]
 
 /-- The generator `T` evaluates to the chosen unit. -/
 lemma laurentEval_T_one (u : Aˣ) : laurentEval (R := R) u (T 1) = (u : A) := by
@@ -166,6 +165,28 @@ theorem laurentEval_unique (u : Aˣ) (f : R[T;T⁻¹] →ₐ[R] A) (hf : f (T 1)
     MonoidHom.ext_mint <| by
       rw [AddMonoidAlgebra.lift_symm_apply, AddMonoidAlgebra.lift_symm_apply]
       exact hf.trans (laurentEval_T_one u).symm
+
+/-- An `R`-algebra map out of `R[T;T⁻¹]` sends a constant `C x` to `algebraMap R A x`. -/
+@[simp]
+theorem _root_.AlgHom.apply_laurentPolynomial_C (φ : R[T;T⁻¹] →ₐ[R] A) (x : R) :
+    φ (C x) = algebraMap R A x := by
+  rw [C_eq_algebraMap, AlgHom.commutes]
+
+/-- An `R`-algebra map out of `R[T;T⁻¹]` sending `T 1` to a unit `u` sends `T n` to `u ^ n`. -/
+theorem _root_.AlgHom.apply_laurentPolynomial_T_of_apply_T_one {φ : R[T;T⁻¹] →ₐ[R] A} {u : Aˣ}
+    (h : φ (T 1) = u) (n : ℤ) : φ (T n) = ↑(u ^ n) := by
+  rw [laurentEval_unique u φ h, laurentEval_T]
+
+/-- An `R`-algebra map from `R[T;T⁻¹]` to `R` fixes constants. -/
+theorem _root_.AlgHom.apply_laurentPolynomial_C_self {K : Type*} [CommSemiring K]
+    (φ : K[T;T⁻¹] →ₐ[K] K) (x : K) : φ (C x) = x := by
+  rw [AlgHom.apply_laurentPolynomial_C, Algebra.algebraMap_self_apply]
+
+/-- An `R`-algebra map out of `R[T;T⁻¹]` sending `T 1` to a unit `u` sends `T (-1)` to the inverse
+unit `u⁻¹`. -/
+theorem _root_.AlgHom.apply_laurentPolynomial_T_neg_one {φ : R[T;T⁻¹] →ₐ[R] A} {u : Aˣ}
+    (h : φ (T 1) = u) : φ (T (-1)) = ↑(u⁻¹) := by
+  rw [AlgHom.apply_laurentPolynomial_T_of_apply_T_one h, zpow_neg_one]
 
 /-- **The Laurent polynomial ring is the free `R`-algebra on one invertible generator**: its
 `R`-algebra maps to `A` are exactly the units of `A`, through evaluation at `T`. -/
@@ -279,6 +300,19 @@ theorem eval₂_C_inv_pow_injective {k : ℕ} (hk : k ≠ 0) :
 
 end Eval
 
+/-- **A constant Laurent polynomial acts through the coefficient action**: for an action of
+`R[T;T⁻¹]` compatible with an action of `R`, `C a` acts as `a`. For `R = ℤ` and a `ℤ[T;T⁻¹]`-module
+`N` the compatibility instance is automatic, and `C a` acts by the integer scalar multiplication
+of the abelian group `N`.
+
+Not `@[simp]`: in that integer case `LaurentPolynomial.C a` is not in simp-normal form, because
+`eq_intCast` rewrites the ring homomorphism `C : ℤ →+* ℤ[T;T⁻¹]` to the integer cast; the normal
+form of the statement there is Mathlib's own `Int.cast_smul_eq_zsmul`. -/
+lemma laurentPolynomialC_smul {R : Type*} [Semiring R] {N : Type*} [MulAction R[T;T⁻¹] N]
+    [SMul R N] [IsScalarTower R R[T;T⁻¹] N] (a : R) (x : N) :
+    (C a : R[T;T⁻¹]) • x = a • x := by
+  rw [← mul_one (C a), ← smul_eq_C_mul, smul_assoc, one_smul]
+
 section ScalarCompatibility
 
 variable {R : Type*} [CommSemiring R] {N : Type*} [AddCommMonoid N]
@@ -310,7 +344,7 @@ theorem map_smul_eq_laurentEval_smul (ε : Sˣ) (f : N →ₗ[R] A)
   induction p using LaurentPolynomial.induction_on' with
   | add p q hp hq => simp [add_smul, hp, hq]
   | C_mul_T n a =>
-      rw [mul_smul, C_eq_algebraMap, algebraMap_smul]
+      rw [mul_smul, laurentPolynomialC_smul]
       simp [hT, mul_smul, algebraMap_smul]
 
 end ScalarCompatibility
@@ -337,23 +371,6 @@ lemma laurentTAut_symm_apply (x : N) :
     val_inv_unitOfInvertible, invOf_T]
 
 end TAut
-
-section Constants
-
-variable {N : Type*} [AddCommGroup N] [Module (LaurentPolynomial ℤ) N]
-
-/-- **A constant Laurent polynomial acts by the integer scalar multiplication** of the underlying
-abelian group of a `ℤ[T;T⁻¹]`-module.
-
-Not `@[simp]`: `LaurentPolynomial.C a` is not in simp-normal form, because `eq_intCast` rewrites
-the ring homomorphism `C : ℤ →+* ℤ[T;T⁻¹]` to the integer cast; the normal form of the statement
-is Mathlib's own `Int.cast_smul_eq_zsmul`. -/
-lemma laurentPolynomialC_smul (a : ℤ) (x : N) :
-    (C a : LaurentPolynomial ℤ) • x = a • x := by
-  rw [C_eq_algebraMap, ← Int.cast_smul_eq_zsmul (LaurentPolynomial ℤ) a x]
-  congr 1
-
-end Constants
 
 end TauCeti
 
@@ -417,11 +434,9 @@ variable {A}
 /-- Rescaling by `c` multiplies the monomial `Tⁿ` by `cⁿ`. -/
 @[simp]
 theorem rescale_T (c : Aˣ) (n : ℤ) : rescale A c (T n) = C ((c ^ n : Aˣ) : A) * T n := by
-  rw [rescale, laurentEval_T, mul_zpow, Units.val_mul, genericUnit_zpow_val, ← map_zpow,
-    Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+  simp [rescale, mul_zpow, ← map_zpow]
 
 /-- Rescaling fixes the constants. -/
-@[simp]
 theorem rescale_C (c : Aˣ) (a : A) : rescale A c (C a) = C a := by
   rw [C_eq_algebraMap, AlgHom.commutes]
 
@@ -454,12 +469,12 @@ theorem _root_.TauCeti.mul_laurentEval {B : Type*} [Semiring B] [Algebra A B] {u
     simpa [SemiconjBy, v, Algebra.smul_def, mul_assoc] using h
   have hpow (n : ℤ) : x * ↑(u ^ n) = ((c ^ n : Aˣ) : A) • (↑(u ^ n) * x) := by
     rw [(hs.units_zpow_right n).eq, hv.mul_zpow, Units.val_mul, mul_assoc, Algebra.smul_def]
-    rw [← map_zpow]
-    rfl
+    simp [v, ← map_zpow]
   induction p using LaurentPolynomial.induction_on' with
   | add p r hp hr => rw [map_add, map_add, map_add, mul_add, add_mul, hp, hr]
   | C_mul_T n a =>
-    simp only [map_mul, rescale_C, rescale_T, laurentEval_C, laurentEval_T, ← Algebra.smul_def,
-      smul_mul_assoc, mul_smul_comm, hpow, smul_smul, mul_comm a]
+    simp only [map_mul, rescale_C, rescale_T]
+    simp only [AlgHom.apply_laurentPolynomial_C, laurentEval_T,
+      ← Algebra.smul_def, smul_mul_assoc, mul_smul_comm, hpow, smul_smul, mul_comm a]
 
 end LaurentPolynomial

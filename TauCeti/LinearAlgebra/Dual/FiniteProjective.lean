@@ -20,6 +20,8 @@ finite projectives, as required when forming the Auslander–Bridger transpose.
 
 ## Main results
 
+* `TauCeti.exists_sum_dual_smul_eq_self`, `TauCeti.exists_sum_dual_smul_eq`: the dual basis
+  lemma, pointwise for projective and uniformly for finite projective modules.
 * `TauCeti.oppositeDual_free`: the opposite dual of a finite free module is free.
 * `TauCeti.oppositeDual_projective`: the opposite dual of a finite projective module is projective.
 * `TauCeti.oppositeDual_finite`: the opposite dual of a finite projective module is finite.
@@ -35,6 +37,19 @@ namespace TauCeti
 
 variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
+/-- **Dual basis lemma, pointwise.** Every element `x` of a projective module is a finite sum
+`x = ∑ⱼ φⱼ(x) • bⱼ` for some elements `bⱼ` and functionals `φⱼ`, which may depend on `x`. For
+finite projective modules they can be chosen uniformly, see `TauCeti.exists_sum_dual_smul_eq`. -/
+theorem exists_sum_dual_smul_eq_self [Module.Projective R M] (x : M) :
+    ∃ (n : ℕ) (b : Fin n → M) (φ : Fin n → Module.Dual R M), ∑ j, φ j x • b j = x := by
+  obtain ⟨s, hs⟩ := Module.projective_def'.1 ‹Module.Projective R M›
+  let e := (s x).support.equivFin
+  refine ⟨_, fun j ↦ e.symm j, fun j ↦ Finsupp.lapply (e.symm j : M) ∘ₗ s, ?_⟩
+  have hx := LinearMap.congr_fun hs x
+  simp only [LinearMap.comp_apply, Finsupp.linearCombination_apply, Finsupp.sum, id_eq,
+    LinearMap.id_apply, ← Finset.sum_coe_sort (s x).support] at hx
+  simpa [e.symm.sum_comp fun m : (s x).support ↦ s x m • (m : M)] using hx
+
 -- The free case transports the coordinates `Module.Basis.oppositeDualEquiv`. The other cases use
 -- `Module.Finite.exists_comp_eq_id_of_projective`, following the retract argument of
 -- `Module.dual_projective` and `Module.dual_finite` for commutative scalars.
@@ -45,6 +60,15 @@ variable [Module.Finite R M]
 instance oppositeDual_free [Module.Free R M] :
     Module.Free Rᵐᵒᵖ (Module.Dual R M) :=
   .of_equiv (Module.Free.chooseBasis R M).oppositeDualEquiv.symm
+
+/-- **Dual basis for a finite projective module.** There are finitely many elements `bⱼ` and
+functionals `φⱼ` with `x = ∑ⱼ φⱼ(x) • bⱼ` for every `x`. -/
+theorem exists_sum_dual_smul_eq [Module.Projective R M] :
+    ∃ (n : ℕ) (b : Fin n → M) (φ : Fin n → Module.Dual R M), ∀ x, ∑ j, φ j x • b j = x := by
+  obtain ⟨n, p, s, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  refine ⟨n, fun j ↦ p (Pi.single j 1), fun j ↦ LinearMap.proj j ∘ₗ s, fun x ↦ ?_⟩
+  simpa only [LinearMap.comp_apply, LinearMap.proj_apply, LinearMap.id_apply, ← map_smul,
+    ← map_sum, ← pi_eq_sum_univ'] using LinearMap.congr_fun hs x
 
 /-- The opposite dual of a finite projective module is a retract of the opposite dual of a
 finite free module. -/

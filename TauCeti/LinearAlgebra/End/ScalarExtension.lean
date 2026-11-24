@@ -69,25 +69,6 @@ theorem rTensor_lcoeff_one_X_smul (t : A ⊗[R] M) :
   | tmul a m => simp [TensorProduct.smul_tmul']
   | add x y hx hy => simp_all [smul_add]
 
-/-- On pure tensors, the comparison maps of scalar extensions intertwine the tensor comparisons
-`(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)` for the two value algebras. -/
-private theorem distribBaseChange_symm_rTensor_tmul
-    (f : A →ₐ[R] B) (u : A ⊗[R] M) (v : A ⊗[R] N) :
-    (TensorProduct.AlgebraTensorModule.distribBaseChange R B M N).symm
-        (LinearMap.rTensor M f.toLinearMap u ⊗ₜ[B] LinearMap.rTensor N f.toLinearMap v) =
-      LinearMap.rTensor (M ⊗[R] N) f.toLinearMap
-        ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm (u ⊗ₜ[A] v)) := by
-  induction u using TensorProduct.inductionOn with
-  | add u₁ u₂ hu₁ hu₂ =>
-      simp only [map_add, TensorProduct.add_tmul, hu₁, hu₂]
-  | tmul a m =>
-      induction v using TensorProduct.inductionOn with
-      | add v₁ v₂ hv₁ hv₂ =>
-          simp only [map_add, TensorProduct.tmul_add, hv₁, hv₂]
-      | tmul b n =>
-          simp only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply,
-            TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul, map_mul]
-
 end TauCeti
 
 namespace Module.End
@@ -299,7 +280,7 @@ theorem distribBaseChange_comp_mapValue (f : A →ₐ[R] B)
     LinearEquiv.coe_coe, TensorProduct.AlgebraTensorModule.distribBaseChange_tmul,
     TensorProduct.map_tmul, mapValue_tmul, one_smul,
     TensorProduct.AlgebraTensorModule.distribBaseChange_symm_tmul, one_mul]
-  rw [distribBaseChange_symm_rTensor_tmul, hmn]
+  rw [AlgHom.distribBaseChange_symm_rTensor_tmul, hmn]
 
 end CommSemiring
 

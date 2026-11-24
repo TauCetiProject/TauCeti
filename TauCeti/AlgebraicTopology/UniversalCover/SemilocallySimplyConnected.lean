@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Covering
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The local hypotheses for existence of a universal cover
