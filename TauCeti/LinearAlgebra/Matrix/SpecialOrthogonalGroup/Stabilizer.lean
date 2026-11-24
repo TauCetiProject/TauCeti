@@ -128,8 +128,10 @@ theorem coe_equivStabilizer_apply (hp : p ⬝ᵥ p = 1) (hu : u ⬝ᵥ u = 1) (h
     ((equivStabilizer hp hu hpu A : specialOrthogonalGroup (Fin 3) R) :
       Matrix (Fin 3) (Fin 3) R) =
       ofFrame p u * (Matrix.SpecialOrthogonalGroup.fromBlocksOne R 1 2 A :
-        Matrix (Fin 3) (Fin 3) R) * (ofFrame p u)ᵀ :=
-  (rfl)
+        Matrix (Fin 3) (Fin 3) R) * (ofFrame p u)ᵀ := by
+  rw [equivStabilizer, MulEquiv.trans_apply, stabilizerEquivStabilizer_apply, MulAut.conj_apply,
+    Submonoid.coe_mul, Submonoid.coe_mul, coe_specialOrthogonalGroup_inv,
+    coe_equivFirstStabilizer_apply]
 
 /-- The rotation of the plane attached to a rotation `g` fixing `p` is the matrix whose columns
 are the coordinates of `g u` and `g (p ⨯₃ u)` in the orthonormal basis `(u, p ⨯₃ u)`. -/
@@ -174,8 +176,9 @@ theorem isCyclic_stabilizer [IsDomain R] [NeZero (2 : R)]
   have hfix (g : stabilizer H p) : Matrix.SpecialOrthogonalGroup.map φ (g : H) ∈
       stabilizer (specialOrthogonalGroup (Fin 3) L) (c • p') := by
     have hg : ((g : H) : Matrix (Fin 3) (Fin 3) R) *ᵥ p = p := by
-      have := MulAction.mem_stabilizer_iff.mp g.property
-      rwa [Subgroup.smul_def, Submonoid.smul_def, smul_eq_mulVec] at this
+      rw [← Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self, mem_stabilizer_iff,
+        ← Subgroup.smul_def]
+      exact mem_stabilizer_iff.mp g.property
     rw [Matrix.SpecialOrthogonalGroup.mem_stabilizer_iff_mulVec_eq_self, mulVec_smul,
       Matrix.SpecialOrthogonalGroup.coe_map]
     congr 1
