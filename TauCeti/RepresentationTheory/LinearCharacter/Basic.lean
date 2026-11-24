@@ -139,6 +139,16 @@ theorem ofLinearCharacterIntCastEquivOfDistribMulAction_apply [CommRing k] (x : 
     ofLinearCharacterIntCastEquivOfDistribMulAction x = x :=
   (rfl)
 
+/-- The kernel of the line of a linear character is the kernel of the character. -/
+@[simp]
+theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
+    (ofLinearCharacter χ).ker = χ.ker := by
+  ext g
+  simp only [MonoidHom.mem_ker]
+  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun a ↦ ?_⟩
+  · simpa using LinearMap.congr_fun h 1
+  · simp [h]
+
 /-- **The trace character of a one-dimensional representation is its multiplicative character.** -/
 @[simp]
 theorem char_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) (g : G) :

@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.Algebra.ZMod
 public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import Mathlib.RingTheory.Henselian
 public import TauCeti.Topology.Algebra.Valued.ResidueField
 import Mathlib.Topology.Algebra.Valued.LocallyCompact
 import TauCeti.NumberTheory.Padics.Basic
+import TauCeti.RingTheory.Henselian.Integral
 import TauCeti.Topology.Algebra.Valued.Integer
 
 /-!
@@ -37,6 +39,8 @@ file proves that `κ` is an algebraic closure of `𝔽_p = ZMod p`, hence non-ca
 * `TauCeti.PadicAlgCl.norm_coeff_minpoly_le_one`: an element of norm at most `1` has minimal
   polynomial over `ℚ_p` with coefficients of norm at most `1`.
 * `TauCeti.PadicAlgCl.isIntegral_padicIntToInteger`: `𝒪[PadicAlgCl p]` is integral over `ℤ_p`.
+* `PadicAlgCl.instHenselianLocalRingInteger`: `𝒪[PadicAlgCl p]` is a henselian local ring, being
+  integral over the henselian ring `ℤ_p`.
 * `PadicAlgCl.instIsAlgebraicZModResidueField`: `𝓀[PadicAlgCl p]` is algebraic over `ZMod p`.
 * `PadicAlgCl.instIsAlgClosureZModResidueField`: `𝓀[PadicAlgCl p]` is an algebraic closure of
   `ZMod p`.
@@ -117,6 +121,13 @@ theorem isIntegral_padicIntToInteger : (padicIntToInteger p).IsIntegral := by
   refine ⟨Q, hQm, Subring.subtype_injective _ ?_⟩
   rw [map_zero, hom_eval₂, hcomp, ← eval₂_map, hQ]
   exact minpoly.aeval ℚ_[p] _
+
+/-- The valuation ring `𝒪[PadicAlgCl p]` is a henselian local ring: it is integral over the
+henselian local ring `ℤ_p` (`TauCeti.PadicAlgCl.isIntegral_padicIntToInteger`). -/
+instance _root_.PadicAlgCl.instHenselianLocalRingInteger : HenselianLocalRing 𝒪[PadicAlgCl p] :=
+  letI := (padicIntToInteger p).toAlgebra
+  haveI : Algebra.IsIntegral ℤ_[p] 𝒪[PadicAlgCl p] := ⟨isIntegral_padicIntToInteger⟩
+  HenselianLocalRing.of_isIntegral ℤ_[p] 𝒪[PadicAlgCl p]
 
 /-- **The residue field of `PadicAlgCl p` is algebraic over `𝔽_p`.** -/
 instance _root_.PadicAlgCl.instIsAlgebraicZModResidueField :

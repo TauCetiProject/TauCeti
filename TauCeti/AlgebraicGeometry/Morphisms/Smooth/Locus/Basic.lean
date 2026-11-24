@@ -29,6 +29,8 @@ localizations of affine source charts as `R`-algebras.
 * `AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_iff_isSmoothAt`: the affine-base chart criterion.
 * `AlgebraicGeometry.Scheme.Hom.smooth_smoothLocus_ι_comp`: the restriction of `f` to its smooth
   locus is smooth.
+* `AlgebraicGeometry.Scheme.Hom.smooth_ι_comp_iff_le_smoothLocus`: `f` is smooth on an open `U`
+  exactly when `U` lies in the smooth locus of `f`.
 * `TauCeti.AlgebraicGeometry.smooth_smoothLocus_over`: the same for the smooth locus of a
   scheme over `S`, regarded as a scheme over `S`.
 * `AlgebraicGeometry.Scheme.Hom.preimage_smoothLocus_le_smoothLocus_pullback_snd`: the preimage
@@ -52,6 +54,13 @@ variable {X S T : Scheme.{u}}
 instance smooth_smoothLocus_ι_comp (f : X ⟶ S) [LocallyOfFinitePresentation f] :
     Smooth (f.smoothLocus.ι ≫ f) := by
   rw [← smoothLocus_eq_top_iff, ← preimage_smoothLocus_eq, Scheme.Opens.ι_preimage_self]
+
+/-- A morphism `f` locally of finite presentation is smooth on an open `U` exactly when `U` lies in
+the smooth locus of `f`. -/
+theorem smooth_ι_comp_iff_le_smoothLocus (f : X ⟶ S) [LocallyOfFinitePresentation f]
+    (U : X.Opens) : Smooth (U.ι ≫ f) ↔ U ≤ f.smoothLocus := by
+  rw [← smoothLocus_eq_top_iff, ← preimage_smoothLocus_eq, ← top_le_iff]
+  exact ⟨fun h x hx ↦ h (Set.mem_univ (⟨x, hx⟩ : U)), fun h x _ ↦ h x.property⟩
 
 /-- **The smooth locus is stable under base change.** For `f : X ⟶ S` locally of finite
 presentation and `g : T ⟶ S`, the preimage of the smooth locus of `f` under the projection

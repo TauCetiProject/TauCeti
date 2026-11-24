@@ -15,6 +15,10 @@ zero, then `p.map φ` vanishes exactly when `p.map ψ` does, and the two have th
 is how the zero pattern of finitely many coefficients fixes the degrees of specialized
 polynomials, for instance at two points of a base set on which a projection set used in
 cylindrical algebraic decomposition is sign-invariant.
+
+At the other extreme, a ring homomorphism sending every coefficient of a monic polynomial below
+the leading one to zero maps it to `X ^ p.natDegree`
+(`Polynomial.Monic.map_eq_X_pow_of_map_coeff_eq_zero`).
 -/
 
 public section
@@ -46,5 +50,15 @@ theorem natDegree_map_eq_of_map_coeff_eq_zero_iff
     (h : ∀ i ≤ p.natDegree, φ (p.coeff i) = 0 ↔ ψ (p.coeff i) = 0) :
     (p.map φ).natDegree = (p.map ψ).natDegree :=
   natDegree_eq_of_degree_eq (degree_map_eq_of_map_coeff_eq_zero_iff h)
+
+/-- If `φ` sends every coefficient of the monic polynomial `p` below the leading one to zero, then
+`p.map φ = X ^ p.natDegree`. -/
+theorem Monic.map_eq_X_pow_of_map_coeff_eq_zero (hp : p.Monic)
+    (h : ∀ i < p.natDegree, φ (p.coeff i) = 0) : p.map φ = X ^ p.natDegree := by
+  ext i
+  rcases lt_trichotomy i p.natDegree with hi | rfl | hi
+  · simp [h i hi, hi.ne]
+  · simp [hp]
+  · simp [coeff_eq_zero_of_natDegree_lt hi, hi.ne']
 
 end Polynomial
