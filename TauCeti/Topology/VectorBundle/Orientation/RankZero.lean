@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
-public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Thom.RankZero
 
@@ -18,14 +16,14 @@ Its Thom pair `(E, E₀)` has empty second member
 (`TauCeti.zeroSectionCompl_eq_empty_of_subsingleton`), and the projection is a homeomorphism
 `E ≅ B` (`TauCeti.isIso_thomPairProj_of_subsingleton`). So the Euler class map
 `Hⁿ(E, E₀) ⟶ Hⁿ(B)`, restriction to `Hⁿ(E)` followed by pull-back along the zero section, is an
-isomorphism in every degree and for all coefficients (`TauCeti.isIso_eulerClass`): in rank zero a
-relative class is the same thing as its Euler class. With coefficients in a commutative ring `K`,
-a degree-zero class restricts to a generator of `H⁰(E_b, E_b ∖ {0}; K) ≅ K` on the fibre over `b`
-exactly when its Euler class takes a unit value at `b`
-(`TauCeti.span_singularCohomologyMap_fiberThomPairMap_eq_top_iff`). Hence the Thom classes of a
-rank-zero bundle are the classes whose Euler classes are units of `H⁰(B; K)`, the functions on
-path components with values in `Kˣ` (`TauCeti.isThomClass_iff_forall_isUnit`). These facts need
-no orientation and live in `TauCeti.Topology.VectorBundle.Thom.RankZero`.
+isomorphism in every degree and for all coefficients
+(`TauCeti.isIso_eulerClass_of_subsingleton`): in rank zero a relative class is the same thing as
+its Euler class. With coefficients in a commutative ring `K`, a degree-zero class restricts to a
+generator of `H⁰(E_b, E_b ∖ {0}; K) ≅ K` on the fibre over `b` exactly when its Euler class takes
+a unit value at `b` (`TauCeti.span_singularCohomologyMap_fiberThomPairMap_eq_top_iff`). Hence the
+Thom classes of a rank-zero bundle are the classes whose Euler classes are units of `H⁰(B; K)`,
+the functions on path components with values in `Kˣ` (`TauCeti.isThomClass_iff_forall_isUnit`).
+These facts need no orientation and live in `TauCeti.Topology.VectorBundle.Thom.RankZero`.
 
 An orientation of a rank-zero bundle is indexed by an empty type `ι`. A zero-dimensional vector
 space has two orientations, the positive orientation `positiveOrientation` (that of its empty
@@ -136,11 +134,15 @@ theorem rankZeroEulerClass_def :
   (rfl)
 
 open scoped Classical in
-private theorem singularCohomologyZeroEval_rankZeroEulerClass (b : B) :
+/-- **The value of the Euler class of an oriented rank-zero bundle** at `b` is the sign of the
+orientation at `b`: `1` if it is positive and `-1` otherwise. When the sign is known, the simp
+lemmas `TauCeti.VectorBundleOrientation.singularCohomologyZeroEval_rankZeroEulerClass_of_eq` and
+`TauCeti.VectorBundleOrientation.singularCohomologyZeroEval_rankZeroEulerClass_of_eq_neg` give the
+value directly. -/
+theorem singularCohomologyZeroEval_rankZeroEulerClass (b : B) :
     singularCohomologyZeroEval b (o.rankZeroEulerClass K) =
       if o b = positiveOrientation then 1 else -1 := by
-  rw [rankZeroEulerClass_def, rankZeroThomClass, ← ConcreteCategory.comp_apply, IsIso.inv_hom_id,
-    ConcreteCategory.id_apply]
+  rw [rankZeroEulerClass_def, rankZeroThomClass, IsIso.inv_hom_id_apply]
   exact (exists_singularCohomologyZeroEval_eq_sign o K).choose_spec b
 
 /-- The Euler class of an oriented rank-zero bundle has the value `1` at a point where the
@@ -160,13 +162,14 @@ theorem singularCohomologyZeroEval_rankZeroEulerClass_of_eq_neg {b : B}
   simp [singularCohomologyZeroEval_rankZeroEulerClass, h, (Module.Ray.ne_neg_self _).symm]
 
 /-- The values `±1` of the Euler class of an oriented rank-zero bundle square to `1`. -/
+@[simp]
 theorem singularCohomologyZeroEval_rankZeroEulerClass_mul_self (b : B) :
     singularCohomologyZeroEval b (o.rankZeroEulerClass K) *
       singularCohomologyZeroEval b (o.rankZeroEulerClass K) = 1 := by
   rcases o.eq_positiveOrientation_or_eq_neg b with h | h <;> simp [h]
 
 /-- **The Thom class is determined by its Euler class**: in rank zero the Euler class map is an
-isomorphism (`TauCeti.isIso_eulerClass`). -/
+isomorphism (`TauCeti.isIso_eulerClass_of_subsingleton`). -/
 theorem eq_rankZeroThomClass_iff
     (u : (thomPair F E).singularCohomology (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0) :
     u = o.rankZeroThomClass K ↔
@@ -196,6 +199,7 @@ theorem rankZeroEulerClass_positive :
 
 /-- The Thom class of the positive orientation of a rank-zero bundle restricts to the unit class
 of the total space. -/
+@[simp]
 theorem singularCohomologyπ_rankZeroThomClass_positive :
     (thomPair F E).singularCohomologyπ (𝟙_ (ModuleCat.{w} K)) K (𝟙_ (ModuleCat.{w} K)) 0
         ((positive F E ι).rankZeroThomClass K) =
