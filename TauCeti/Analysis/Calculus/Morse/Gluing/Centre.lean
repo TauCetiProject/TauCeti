@@ -159,28 +159,30 @@ private theorem smul_comp_smul_mem_closedBall_and_dist_le {ε δ η l₀ : ℝ} 
     (hy : y ∈ closedBall 0 δ) (hy' : y' ∈ closedBall 0 δ) :
     l • k (l • g y) ∈ closedBall (0 : Eᵤ) δ ∧
       dist (l • k (l • g y)) (l • k (l • g y')) ≤ l₀ * (Kk * Kg) * dist y y' := by
+  obtain ⟨hl0, hll₀⟩ := hl
   have hε : 0 ≤ ε := hgε y hy ▸ norm_nonneg _
-  have hlε : l * ε ≤ η := (mul_le_mul_of_nonneg_right hl.2 hε).trans h₁
-  obtain ⟨hgy, hky⟩ := smul_mem_closedBall_and_norm_le hη hgε hk hk₀ hl.1 hlε hy
-  have hgy' := (smul_mem_closedBall_and_norm_le hη hgε hk hk₀ hl.1 hlε hy').1
-  have hl₁ : l ≤ 1 := hl.2.trans hl₀₁
+  have hlε : l * ε ≤ η := (mul_le_mul_of_nonneg_right hll₀ hε).trans h₁
+  obtain ⟨hgy, hky⟩ := smul_mem_closedBall_and_norm_le hη hgε hk hk₀ hl0 hlε hy
+  have hgy' := (smul_mem_closedBall_and_norm_le hη hgε hk hk₀ hl0 hlε hy').1
+  have hl₁ : l ≤ 1 := hll₀.trans hl₀₁
   refine ⟨?_, ?_⟩
-  · rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg hl.1]
-    calc l * ‖k (l • g y)‖ ≤ 1 * (Kk * (l * ε)) := mul_le_mul hl₁ hky (norm_nonneg _) zero_le_one
-      _ ≤ Kk * (l₀ * ε) := by
-          rw [one_mul]
-          exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hl.2 hε) Kk.coe_nonneg
+  · rw [mem_closedBall_zero_iff, norm_smul, Real.norm_of_nonneg hl0]
+    calc l * ‖k (l • g y)‖ ≤ 1 * (Kk * (l₀ * ε)) := by
+          gcongr
+          exact hky.trans (by gcongr)
       _ ≤ δ := by linarith
-  · rw [dist_smul₀, Real.norm_of_nonneg hl.1]
-    calc l * dist (k (l • g y)) (k (l • g y')) ≤ l * (Kk * dist (l • g y) (l • g y')) :=
-          mul_le_mul_of_nonneg_left (hk.dist_le_mul _ hgy _ hgy') hl.1
-      _ = l * (Kk * (l * dist (g y) (g y'))) := by rw [dist_smul₀, Real.norm_of_nonneg hl.1]
-      _ ≤ l * (Kk * (l * (Kg * dist y y'))) :=
-          mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left
-            (mul_le_mul_of_nonneg_left (hg.dist_le_mul _ hy _ hy') hl.1) Kk.coe_nonneg) hl.1
+  · rw [dist_smul₀, Real.norm_of_nonneg hl0]
+    calc l * dist (k (l • g y)) (k (l • g y')) ≤ l * (Kk * dist (l • g y) (l • g y')) := by
+          gcongr
+          exact hk.dist_le_mul _ hgy _ hgy'
+      _ = l * (Kk * (l * dist (g y) (g y'))) := by rw [dist_smul₀, Real.norm_of_nonneg hl0]
+      _ ≤ l * (Kk * (l * (Kg * dist y y'))) := by
+          gcongr
+          exact hg.dist_le_mul _ hy _ hy'
       _ = (l * l) * (Kk * Kg * dist y y') := by ring
-      _ ≤ l₀ * (Kk * Kg * dist y y') :=
-          mul_le_mul_of_nonneg_right ((mul_le_of_le_one_left hl.1 hl₁).trans hl.2) (by positivity)
+      _ ≤ l₀ * (Kk * Kg * dist y y') := by
+          gcongr
+          nlinarith
       _ = l₀ * (Kk * Kg) * dist y y' := by ring
 
 /-- **The contraction of gluing at the centre.** Under the conditions of
@@ -453,6 +455,12 @@ private theorem forall_mem_Icc_norm_splitQuadraticFlow_le (hη : 0 < η) (hε : 
             Kk.coe_nonneg)
       _ ≤ ε := by nlinarith
 
+/-- For every `C` and `c > 0`, the product `l * C` is eventually smaller than `c` as `l → 0⁺`. -/
+private theorem eventually_mul_lt (C : ℝ) {c : ℝ} (hc : 0 < c) :
+    ∀ᶠ l in 𝓝[>] (0 : ℝ), l * C < c :=
+  nhdsWithin_le_nhds (((continuous_mul_const C).tendsto 0).eventually
+    (gt_mem_nhds (by rwa [zero_mul])))
+
 /-- **The compactified gluing arc at the centre of the split box.** Let `y ↦ (g y, y)` be a
 Lipschitz graph in the entrance face `‖x‖ = ε` over the closed ball of radius `δ` of the expanding
 factor, and `x ↦ (x, k x)` a Lipschitz graph through the centre over the closed ball of radius `η`
@@ -480,11 +488,9 @@ theorem eventually_exists_homeomorph_closure_splitCenterGluingPairs [CompleteSpa
       ∀ p ∈ splitCenterGluingPairs δ l₀ g k, ∀ T, splitQuadraticFlow T p.1 = p.2 →
         0 ≤ T ∧ ∀ s ∈ Icc 0 T, ‖(splitQuadraticFlow s p.1).fst‖ ≤ ε ∧
           ‖(splitQuadraticFlow s p.1).snd‖ ≤ ε := by
-  have hsmall (C c : ℝ) (hc : 0 < c) : ∀ᶠ l in 𝓝[>] (0 : ℝ), l * C < c :=
-    nhdsWithin_le_nhds (((continuous_mul_const C).tendsto 0).eventually
-      (gt_mem_nhds (by rwa [zero_mul])))
-  filter_upwards [self_mem_nhdsWithin, hsmall 1 1 one_pos, hsmall ε η hη, hsmall (Kk * ε) δ hδ,
-    hsmall (Kk * Kg) 1 one_pos, hsmall Kk 1 one_pos] with l₀ hl₀ h₀ h₁ h₂ h₃ h₄
+  filter_upwards [self_mem_nhdsWithin, eventually_mul_lt 1 one_pos, eventually_mul_lt ε hη,
+    eventually_mul_lt (Kk * ε) hδ, eventually_mul_lt (Kk * Kg) one_pos,
+    eventually_mul_lt Kk one_pos] with l₀ hl₀ h₀ h₁ h₂ h₃ h₄
   rw [mul_one] at h₀
   obtain ⟨c, hc, himage, hc₀, hnorm⟩ := exists_splitCenterGluingPairs_parametrization hδ hη hε hg
     hgε hk hk₀ hl₀ h₀.le h₁.le h₂.le h₃
@@ -568,11 +574,8 @@ theorem exists_homeomorph_closure_splitCenterGluingPairs_of_hasStrictFDerivAt
     exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ hχ' hχ₀ hV
   have hgε : ∀ y ∈ closedBall 0 δ, ‖g y‖ = ε := fun y hy ↦ (hgpts y hy).1
   refine ⟨δ, hδ, g, k, hg₀, ?_, ?_⟩
-  · have hsmall : ∀ᶠ l₀ in 𝓝[>] (0 : ℝ), l₀ * ε < η :=
-      nhdsWithin_le_nhds (((continuous_mul_const ε).tendsto 0).eventually
-        (gt_mem_nhds (by rwa [zero_mul])))
-    filter_upwards [eventually_exists_homeomorph_closure_splitCenterGluingPairs hδ hη hε hg hgε hk
-      hk₀, hsmall] with l₀ ⟨hl₀, e, hcoord, he₀, hcl, hbox⟩ hl₀η
+  · filter_upwards [eventually_exists_homeomorph_closure_splitCenterGluingPairs hδ hη hε hg hgε hk
+      hk₀, eventually_mul_lt ε hη] with l₀ ⟨hl₀, e, hcoord, he₀, hcl, hbox⟩ hl₀η
     rw [hg₀] at he₀ hcl
     refine ⟨hl₀, e, hcoord, he₀, hcl, fun p hp ↦ ⟨⟨?_, ?_⟩, hbox p hp⟩⟩
     · -- The entrance point lies on the graph of `g`, which consists of entry points of `ψ`.
