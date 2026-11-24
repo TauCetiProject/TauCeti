@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.QuasiAffine
-public import TauCeti.AlgebraicGeometry.LineBundle.Trivial
+public import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 import Mathlib.Topology.Separation.Basic
 
