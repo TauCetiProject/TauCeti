@@ -20,29 +20,30 @@ representation `A`, a retraction of the free representation on the underlying ty
 
 public section
 
-universe u
+universe u v
 
 namespace Rep
 
 open CategoryTheory
 
-variable {k G : Type u} [CommRing k] [Group G]
+variable {k : Type u} {G : Type v} [CommRing k] [Monoid G]
 
 /-- The canonical morphism from the free representation on the underlying type of `A` to `A`,
 sending the generator at `a` to `a`, is an epimorphism. -/
-instance epi_freeLift_id (A : Rep.{u} k G) : Epi (freeLift k G A id) :=
+instance epi_freeLift_id (A : Rep.{max u v} k G) : Epi (freeLift k G A id) :=
   (epi_iff_surjective _).2 fun x ↦ ⟨Finsupp.single x (MonoidAlgebra.single 1 1), by simp⟩
 
 /-- A projective representation is a retract of the free representation on its underlying type,
 by splitting the canonical epimorphism `freeLift id`. -/
-noncomputable def retractFree (A : Rep.{u} k G) [Projective A] : Retract A (free k G A) where
+noncomputable def retractFree (A : Rep.{max u v} k G) [Projective A] :
+    Retract A (free k G A) where
   i := Projective.factorThru (𝟙 A) (freeLift k G A id)
   r := freeLift k G A id
   retract := Projective.factorThru_comp _ _
 
 /-- The retraction of `retractFree A` is the canonical morphism `freeLift id`. -/
 @[simp]
-theorem retractFree_r (A : Rep.{u} k G) [Projective A] :
+theorem retractFree_r (A : Rep.{max u v} k G) [Projective A] :
     (retractFree A).r = freeLift k G A id := by
   rw [retractFree]
 

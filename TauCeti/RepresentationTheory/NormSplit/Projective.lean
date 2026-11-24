@@ -42,18 +42,20 @@ representation on its underlying set (`Rep.retractFree`).
 
 public section
 
-universe u
+universe u v w
 
 namespace Rep
 
 open CategoryTheory
 
-variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
+section Retract
+
+variable {k : Type u} {G : Type v} [CommRing k] [Group G] [Fintype G]
 
 /-- **A norm identity passes to retracts.** If `r ∘ s = id_A` for morphisms of representations
 `s : A ⟶ B` and `r : B ⟶ A`, and `id_B = ∑ g, B.ρ g ∘ β ∘ B.ρ g⁻¹`, then
 `id_A = ∑ g, A.ρ g ∘ (r ∘ β ∘ s) ∘ A.ρ g⁻¹`. -/
-theorem id_mem_range_norm_linHom_of_retract {A B : Rep.{u} k G} (s : A ⟶ B) (r : B ⟶ A)
+theorem id_mem_range_norm_linHom_of_retract {A B : Rep.{w} k G} (s : A ⟶ B) (r : B ⟶ A)
     (hsr : s ≫ r = 𝟙 A)
     (h : LinearMap.id ∈ LinearMap.range (Representation.linHom B.ρ B.ρ).norm) :
     LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm := by
@@ -65,6 +67,10 @@ theorem id_mem_range_norm_linHom_of_retract {A B : Rep.{u} k G} (s : A ⟶ B) (r
   rw [Representation.norm_linHom_apply, LinearMap.id_apply]
   conv_rhs => rw [← hx, ← hβx]
   simp [map_sum, hom_comm_apply]
+
+end Retract
+
+variable {k G : Type u} [CommRing k] [Group G] [Fintype G]
 
 /-- **The identity of a free representation is a norm**: it is the norm of the projection to the
 coefficients at `1 ∈ G`, `f ↦ single 1 (f 1)` in each coordinate. -/
