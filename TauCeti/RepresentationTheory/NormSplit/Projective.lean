@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.NormSplit.Basic
+import TauCeti.RepresentationTheory.Rep.Free
 
 /-!
 # Higman's criterion for projectivity
@@ -22,7 +23,7 @@ no hypothesis on `k`. On the free representation on a type `ι`, the identity is
 projection `α₀` to the coefficients at `1 ∈ G`
 (`Rep.id_mem_range_norm_linHom_free`), and a norm identity passes to retracts
 (`Rep.id_mem_range_norm_linHom_of_retract`); a projective representation is a retract of the free
-representation on its underlying set.
+representation on its underlying set (`Rep.retractFree`).
 
 ## Main results
 
@@ -79,12 +80,9 @@ theorem id_mem_range_norm_linHom_free (ι : Type u) :
 /-- **The identity of a projective representation is a norm**: `id_A = ∑ g, A.ρ g ∘ α ∘ A.ρ g⁻¹`
 for some `k`-linear `α`. -/
 theorem id_mem_range_norm_linHom_of_projective (A : Rep.{u} k G) [Projective A] :
-    LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm := by
-  let r : free k G A.V ⟶ A := freeLift (k := k) (G := G) (A := A) id
-  have : Epi r := (epi_iff_surjective r).2 fun x ↦
-    ⟨Finsupp.single x (MonoidAlgebra.single 1 1), by simp [r]⟩
-  exact id_mem_range_norm_linHom_of_retract (Projective.factorThru (𝟙 A) r) r
-    (Projective.factorThru_comp _ _) (id_mem_range_norm_linHom_free _)
+    LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm :=
+  id_mem_range_norm_linHom_of_retract (retractFree A).i (retractFree A).r (retractFree A).retract
+    (id_mem_range_norm_linHom_free _)
 
 /-- **Higman's criterion.** A representation projective over `k` is projective exactly when its
 identity is a norm for the conjugation action on its `k`-linear endomorphisms. -/
