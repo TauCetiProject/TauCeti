@@ -125,9 +125,9 @@ theorem exists_eq_smulOfUnit_of_unique {R ι : Type*} [CommSemiring R] [Unique �
   · rw [← coe_toLinearMap, ← h1]; exact e'.symm_apply_apply 1
   · ext x i
     rw [Unique.eq_default i]
-    change φ (e x) = _
+    have hval : e x default = φ (e x) := (congrFun (LinearEquiv.funUnique_apply ι R R) (e x)).symm
     have hx : φ (e x) = e' (φ x) := by simp [e']
-    rw [hx]
+    rw [hval, hx]
     exact (h1 (e' : R →ₗ[R] R) (φ x)).trans (by simp [φ, smulOfUnit, mul_comm])
 
 /-- Every `ℤ`-linear automorphism of `ι → ℤ` (`Unique ι`) is `id` or `-id`. -/

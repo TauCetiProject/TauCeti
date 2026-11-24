@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Borel
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 
 /-!
 # Uniqueness in a simple Bruhat cell
@@ -124,7 +125,7 @@ theorem scChevalleyDatum_rootSubgroupPoints_ofAdd_mul_weylElement_mul_borelSubgr
     (t.scChevalleyDatum ht) i A (a₁ := (⟨_, ⟨Multiplicative.ofAdd p.1, rfl⟩⟩, p.2))
     (a₂ := (⟨_, ⟨Multiplicative.ofAdd q.1, rfl⟩⟩, q.2)) h
   have hpq := congrArg (fun z => (z.1 : (t.scChevalleyDatum ht).points A)) he
-  have ha := t.scChevalleyDatum_rootSubgroupPoints_injective ht (t.simpleIndex ht i) A hpq
+  have ha := (t.scChevalleyDatum ht).rootSubgroupPoints_injective A (t.simpleIndex ht i) hpq
   exact Prod.ext (congrArg Multiplicative.toAdd ha) (congrArg (fun z => z.2) he)
 
 /-- Over a field, a simply connected opposite-simple-root-pair/torus word outside the Borel

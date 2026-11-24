@@ -273,6 +273,11 @@ theorem IsStandard.characterMap_eq_of_isCharacterMap (hF : D.IsStandard F)
     {φ : Module.End ℤ (Fin t.rank → ℤ)} (hφ : IsCharacterMap (D.torusPoints K) F φ) :
     hF.characterMap = φ := (hF.existsUnique_characterMap.choose_spec.2 φ hφ).symm
 
+/-- Congruence of `characterMap` along an equality of standard endomorphisms. -/
+theorem IsStandard.characterMap_congr (h : F = F') (hF : D.IsStandard F) (hF' : D.IsStandard F') :
+    hF.characterMap = hF'.characterMap := by
+  subst h; rfl
+
 /-- The character map of a standard endomorphism is injective. -/
 theorem IsStandard.characterMap_injective (hF : D.IsStandard F) :
     Function.Injective hF.characterMap :=
@@ -346,6 +351,11 @@ theorem IsStandard.rootPerm_eq_of_map_range (hF : D.IsStandard F) {α β : Fin t
     hF.rootPerm α = β :=
   D.range_rootSubgroupPoints_injective K ((hF.map_range_rootSubgroupPoints α).symm.trans h)
 
+/-- Congruence of `rootPerm` along an equality of standard endomorphisms. -/
+theorem IsStandard.rootPerm_congr (h : F = F') (hF : D.IsStandard F) (hF' : D.IsStandard F') :
+    hF.rootPerm = hF'.rootPerm := by
+  subst h; rfl
+
 /-- **The additive parameter map `K →+ K` of a standard endomorphism on the `α`-root subgroup**,
 satisfying `x_{hF.rootPerm α}(hF.rootParamHom α u) = F (x_α(u))`. -/
 noncomputable def IsStandard.rootParamHom (hF : D.IsStandard F) (α : Fin t.numRoots) : K →+ K :=
@@ -366,6 +376,11 @@ theorem IsStandard.rootParamHom_eq_of_map_rootSubgroupPoints (hF : D.IsStandard 
     hF.rootParamHom α = f := AddMonoidHom.ext fun u => by
   simpa only [toAdd_ofAdd] using congrArg toAdd
     (D.rootSubgroupPoints_injective K _ ((hF.rootSubgroupPoints_rootParamHom α u).trans (h u)))
+
+/-- Congruence of `rootParamHom` along an equality of standard endomorphisms. -/
+theorem IsStandard.rootParamHom_congr (h : F = F') (hF : D.IsStandard F) (hF' : D.IsStandard F') :
+    hF.rootParamHom = hF'.rootParamHom := by
+  subst h; rfl
 
 /-- Each additive root-parameter map `hF.rootParamHom α` is surjective. -/
 theorem IsStandard.rootParamHom_surjective (hF : D.IsStandard F) (α : Fin t.numRoots) :
@@ -544,6 +559,11 @@ theorem IsStandard.fieldEnd_apply_eq (hF : D.IsStandard F) (α : Fin t.numRoots)
     hF.fieldEnd α u = (hF.rootParamHom α 1)⁻¹ * hF.rootParamHom α u := by
   rw [IsStandard.fieldEnd, AddMonoidHom.toRingHomOfTorusCharacter_apply, AddMonoidHom.mk'_apply]
 
+/-- Congruence of `fieldEnd` along an equality of standard endomorphisms. -/
+theorem IsStandard.fieldEnd_congr (h : F = F') (hF : D.IsStandard F) (hF' : D.IsStandard F') :
+    hF.fieldEnd = hF'.fieldEnd := by
+  subst h; rfl
+
 /-- Each root-subgroup field endomorphism `hF.fieldEnd α` is bijective. -/
 theorem IsStandard.fieldEnd_bijective (hF : D.IsStandard F) (α : Fin t.numRoots) :
     Function.Bijective (hF.fieldEnd α) := ⟨(hF.fieldEnd α).injective, fun y => by
@@ -571,6 +591,11 @@ noncomputable def IsStandard.rootUnit (hF : D.IsStandard F) (α : Fin t.numRoots
 /-- Coercion of `hF.rootUnit α` to `K` equals `hF.rootParamHom α 1`. -/
 @[simp] theorem IsStandard.coe_rootUnit (hF : D.IsStandard F) (α : Fin t.numRoots) :
     (hF.rootUnit α : K) = hF.rootParamHom α 1 := Units.val_mk0 _
+
+/-- Congruence of `rootUnit` along an equality of standard endomorphisms. -/
+theorem IsStandard.rootUnit_congr (h : F = F') (hF : D.IsStandard F) (hF' : D.IsStandard F') :
+    hF.rootUnit = hF'.rootUnit := by
+  subst h; rfl
 
 /-- **Explicit root-subgroup formula**: `F (x_α(u)) = x_{σ α}(c_α * g_α u)`. -/
 theorem IsStandard.map_rootSubgroupPoints (hF : D.IsStandard F) (α : Fin t.numRoots) (u : K) :

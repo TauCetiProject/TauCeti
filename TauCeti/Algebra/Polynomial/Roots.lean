@@ -42,6 +42,17 @@ public section
 
 open Filter Polynomial
 
+private theorem isDomain_of_forall_map_pow_mul_map_pow_eq_one {R S : Type*} [CommRing R]
+    [Nontrivial R] [CommRing S] [Nontrivial S] (g g' : R →+* S) {d n : ℕ} (hd : d ≠ 0)
+    (h : ∀ x : R, x ≠ 0 → g x ^ d * g' x ^ n = 1) : IsDomain R :=
+  let _ : NoZeroDivisors R := ⟨fun {a b} hab => by_contra fun hne => by
+    rw [not_or] at hne
+    have h1 : (g a ^ d * g' a ^ n) * (g b ^ d * g' b ^ n) = 1 := by
+      rw [h a hne.1, h b hne.2, mul_one]
+    rw [mul_mul_mul_comm, ← mul_pow, ← map_mul, hab, map_zero, zero_pow hd, zero_mul] at h1
+    exact zero_ne_one h1⟩
+  NoZeroDivisors.to_isDomain R
+
 namespace TauCeti
 
 /-- A finite enumeration of roots with an eventually constant collision relation has
@@ -66,11 +77,8 @@ theorem eventually_rootMultiplicity_eq_of_roots_eq_map
 theorem not_forall_pow_eq_one {R : Type*} [CommRing R] [Infinite R] {n : ℕ} (hn : n ≠ 0) :
     ¬ ∀ x : R, x ≠ 0 → x ^ n = 1 := fun h => by
   have : Nontrivial R := Infinite.instNontrivial R
-  have : NoZeroDivisors R := ⟨fun {a b} hab => or_iff_not_imp_left.mpr fun ha => by
-    have h1 : a ^ (n - 1) * a = 1 := by
-      rw [← pow_succ, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]; exact h a ha
-    rw [← one_mul b, ← h1, mul_assoc, hab, mul_zero]⟩
-  have : IsDomain R := NoZeroDivisors.to_isDomain R
+  have : IsDomain R := isDomain_of_forall_map_pow_mul_map_pow_eq_one
+    (RingHom.id R) (RingHom.id R) (n := 0) hn fun x hx => by simpa using h x hx
   exact mul_ne_zero (M₀ := R[X]) X_ne_zero
     (fun h1 => by simpa [hn] using congrArg (eval (0 : R)) h1)
     (Polynomial.zero_of_eval_zero (X * (X ^ n - 1) : R[X]) fun c => by
@@ -152,13 +160,7 @@ private theorem not_forall_map_pow_mul_map_pow_eq_one_of_ne_zero {R S : Type*} [
   have : Nontrivial R := Infinite.instNontrivial R
   have hginj : Function.Injective g := (injective_iff_map_eq_zero g).mpr fun x hx => by_contra
     fun hx0 => (zero_ne_one (α := S)) (by simpa [hx, zero_pow hd] using h x hx0)
-  have : NoZeroDivisors R := ⟨fun {a b} hab => by_contra fun hne => by
-    rw [not_or] at hne
-    have h1 : (g a ^ d * g' a ^ n) * (g b ^ d * g' b ^ n) = 1 := by
-      rw [h a hne.1, h b hne.2, mul_one]
-    rw [mul_mul_mul_comm, ← mul_pow, ← map_mul, hab, map_zero, zero_pow hd, zero_mul] at h1
-    exact zero_ne_one h1⟩
-  have : IsDomain R := NoZeroDivisors.to_isDomain R
+  have : IsDomain R := isDomain_of_forall_map_pow_mul_map_pow_eq_one g g' hd h
   rcases eq_or_ne n 0 with rfl | hn
   · exact TauCeti.not_forall_pow_eq_one hd fun x hx => hginj (by simpa [map_pow] using h x hx)
   let Q : R[X] := (X ^ n + 1) ^ d * (X ^ d + 1) ^ n - X ^ (d * n)

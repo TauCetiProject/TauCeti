@@ -195,10 +195,9 @@ variable {D} {K : Type v} [Field K] [Infinite K] [ExpChar K p] [PerfectRing K p]
 @[simp] theorem IsStandard.characterMap_weylFrobenius :
     (D.isStandard_weylFrobenius i p k K).characterMap =
       (p ^ k : ℕ) • D.simpleReflectionCharacterMap i := by
-  change ((D.isStandard_conj_weylElement i K).comp
-    (D.isStandard_frobenius p k)).characterMap = _
-  rw [IsStandard.characterMap_comp (D.isStandard_conj_weylElement i K)
-      (D.isStandard_frobenius p k),
+  rw [IsStandard.characterMap_congr (D.weylFrobenius_def i p k K) _
+      ((D.isStandard_conj_weylElement i K).comp (D.isStandard_frobenius p k)),
+    IsStandard.characterMap_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
     IsStandard.characterMap_conj_weylElement, IsStandard.characterMap_frobenius,
     smul_mul_assoc, one_mul]
 
@@ -206,8 +205,9 @@ variable {D} {K : Type v} [Field K] [Infinite K] [ExpChar K p] [PerfectRing K p]
 @[simp] theorem IsStandard.rootPerm_weylFrobenius :
     (D.isStandard_weylFrobenius i p k K).rootPerm =
       (t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) := by
-  change ((D.isStandard_conj_weylElement i K).comp (D.isStandard_frobenius p k)).rootPerm = _
-  rw [IsStandard.rootPerm_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
+  rw [IsStandard.rootPerm_congr (D.weylFrobenius_def i p k K) _
+      ((D.isStandard_conj_weylElement i K).comp (D.isStandard_frobenius p k)),
+    IsStandard.rootPerm_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
     IsStandard.rootPerm_conj_weylElement, IsStandard.rootPerm_frobenius, mul_one]
 
 /-- The additive root-parameter map of `D.weylFrobenius i p k K` composes
@@ -216,9 +216,9 @@ variable {D} {K : Type v} [Field K] [Infinite K] [ExpChar K p] [PerfectRing K p]
     (D.isStandard_weylFrobenius i p k K).rootParamHom γ =
       (AddMonoidHom.mulLeft ((t.chevalleyWeylSign ht (t.simpleIndex ht i) γ : ℤ) : K)).comp
         (iterateFrobenius K p k).toAddMonoidHom := by
-  change ((D.isStandard_conj_weylElement i K).comp
-    (D.isStandard_frobenius p k)).rootParamHom γ = _
-  rw [IsStandard.rootParamHom_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
+  rw [IsStandard.rootParamHom_congr (D.weylFrobenius_def i p k K) _
+      ((D.isStandard_conj_weylElement i K).comp (D.isStandard_frobenius p k)),
+    IsStandard.rootParamHom_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
     IsStandard.rootPerm_frobenius, Equiv.Perm.one_apply,
     IsStandard.rootParamHom_conj_weylElement, IsStandard.rootParamHom_frobenius]
 
@@ -227,18 +227,18 @@ variable {D} {K : Type v} [Field K] [Infinite K] [ExpChar K p] [PerfectRing K p]
     (D.isStandard_weylFrobenius i p k K).rootUnit γ =
       Units.map (Int.castRingHom K).toMonoidHom
         (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ) := by
-  change ((D.isStandard_conj_weylElement i K).comp
-    (D.isStandard_frobenius p k)).rootUnit γ = _
-  rw [IsStandard.rootUnit_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
+  rw [IsStandard.rootUnit_congr (D.weylFrobenius_def i p k K) _
+      ((D.isStandard_conj_weylElement i K).comp (D.isStandard_frobenius p k)),
+    IsStandard.rootUnit_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
     IsStandard.rootPerm_frobenius, Equiv.Perm.one_apply,
     IsStandard.rootUnit_conj_weylElement, IsStandard.rootUnit_frobenius, map_one, mul_one]
 
 /-- The field endomorphism of `D.weylFrobenius i p k K` is `iterateFrobenius K p k`. -/
 @[simp] theorem IsStandard.fieldEnd_weylFrobenius [RootableBy Kˣ ℕ] (γ : Fin t.numRoots) :
     (D.isStandard_weylFrobenius i p k K).fieldEnd γ = iterateFrobenius K p k := by
-  change ((D.isStandard_conj_weylElement i K).comp
-    (D.isStandard_frobenius p k)).fieldEnd γ = _
-  rw [IsStandard.fieldEnd_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
+  rw [IsStandard.fieldEnd_congr (D.weylFrobenius_def i p k K) _
+      ((D.isStandard_conj_weylElement i K).comp (D.isStandard_frobenius p k)),
+    IsStandard.fieldEnd_comp (D.isStandard_conj_weylElement i K) (D.isStandard_frobenius p k),
     IsStandard.rootPerm_frobenius, Equiv.Perm.one_apply,
     IsStandard.fieldEnd_conj_weylElement, IsStandard.fieldEnd_frobenius, RingHom.id_comp]
 
