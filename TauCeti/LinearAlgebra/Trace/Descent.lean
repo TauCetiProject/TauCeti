@@ -142,7 +142,7 @@ theorem finiteDimensional_of_trace_mem : FiniteDimensional F B := by
 include hspan htr in
 /-- **A spanning subalgebra with traces in `F` is an `F`-form of `End_K(V)`**: the multiplication
 map `K ⊗_F B → End_K(V)` is bijective. -/
-theorem bijective_tensorMulEndAlgHom :
+theorem tensorMulEndAlgHom_bijective :
     Function.Bijective (tensorMulEndAlgHom B) := by
   have := finiteDimensional_of_trace_mem B hspan htr
   have hsurj : Function.Surjective (tensorMulEndAlgHom B) := by
@@ -172,7 +172,7 @@ theorem bijective_tensorMulEndAlgHom :
 `K ⊗_F B ≃ End_K(V)`. -/
 noncomputable def tensorMulEndAlgEquiv : K ⊗[F] B ≃ₐ[K] End K V :=
   AlgEquiv.ofBijective (tensorMulEndAlgHom B)
-    (bijective_tensorMulEndAlgHom B hspan htr)
+    (tensorMulEndAlgHom_bijective B hspan htr)
 
 @[simp]
 theorem tensorMulEndAlgEquiv_tmul (a : K) (x : B) :

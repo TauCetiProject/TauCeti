@@ -47,7 +47,8 @@ universe, as `TauCeti.BrauerGroup.mk_eq_one_iff_isSplittingField` does.
 
 * `Representation.imageAlgebraBaseChangeAlgEquiv`: `K ⊗_{k(ρ)} B(ρ) ≅ End_K(V)`.
 * `Representation.finrank_imageAlgebra`: `dim_{k(ρ)} B(ρ) = n²`.
-* `Representation.isCentral_and_isSimpleRing_imageAlgebra`: `B(ρ)` is central simple over `k(ρ)`.
+* `Representation.isCentral_imageAlgebra`, `Representation.isSimpleRing_imageAlgebra`: `B(ρ)` is
+  central simple over `k(ρ)`.
 * `Representation.schurIndex_dvd_finrank`: `s(ρ) ∣ n`.
 * `Representation.brauerClass_eq_one_iff_schurIndex_eq_one`: `β(ρ) = 1 ↔ s(ρ) = 1`.
 * `Representation.brauerClass_eq_one_of_finite`: `β(ρ) = 1` when `k(ρ)` is finite.
@@ -174,12 +175,6 @@ theorem isSimpleRing_imageAlgebra [Nontrivial V] : IsSimpleRing (ρ.imageAlgebra
     fun _ hx => ρ.trace_mem_characterField k hx
 
 include hρ in
-/-- **The image algebra is central simple** over the character field. -/
-theorem isCentral_and_isSimpleRing_imageAlgebra [Nontrivial V] :
-    Algebra.IsCentral (ρ.characterField k) (ρ.imageAlgebra k) ∧ IsSimpleRing (ρ.imageAlgebra k) :=
-  ⟨isCentral_imageAlgebra hρ, isSimpleRing_imageAlgebra hρ⟩
-
-include hρ in
 /-- The degree of the image algebra over the character field is `n = dim_K V`. -/
 theorem deg_imageAlgebra :
     TauCeti.Algebra.deg (ρ.characterField k) (ρ.imageAlgebra k) = finrank K V :=
@@ -283,7 +278,8 @@ example {k K G V : Type*} [Field k] [Field K] [Algebra k K] [IsAlgClosed K] [Mon
     (h : ρ.IsIrreducible) :
     Algebra.IsCentral (ρ.characterField k) (ρ.imageAlgebra k) ∧ IsSimpleRing (ρ.imageAlgebra k) :=
   have := h.nontrivial
-  isCentral_and_isSimpleRing_imageAlgebra (span_range_eq_top_of_isIrreducible h)
+  ⟨isCentral_imageAlgebra (span_range_eq_top_of_isIrreducible h),
+    isSimpleRing_imageAlgebra (span_range_eq_top_of_isIrreducible h)⟩
 
 /-- Over a finite field `k`, a representation with finite image has trivial Brauer class. -/
 example {k K V G : Type} [Field k] [Finite k] [Field K] [Algebra k K]
