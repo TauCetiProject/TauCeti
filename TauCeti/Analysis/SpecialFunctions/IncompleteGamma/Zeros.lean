@@ -7,11 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
 import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Complementary
-import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Real
-import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.MeasureTheory.Integral.ExpDecay
 
 /-!
 # Zeros of Tricomi's function in its parameter
@@ -444,11 +440,11 @@ private theorem ne_neg_natCast_of_mem_band {n : ℕ} {a : ℝ}
     ⟨by push_cast; linarith [ha.1], by push_cast; linarith [ha.2]⟩ (m + 1) (by push_cast; linarith)
 
 /-- The parameter derivative of the log-gap. -/
-private theorem hasDerivAt_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
-    (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) :
+private theorem hasDerivAt_logGap {x : ℝ} (hx : 0 < x) {a : ℝ}
+    (ha : ∀ m : ℕ, a ≠ -(m : ℝ)) :
     HasDerivAt (logGap x) (logGapDeriv x a) a := by
   have hV := upperMoment_zero_pos hx a
-  have h := (Real.hasDerivAt_log_Gamma (ne_neg_natCast_of_mem_band ha)).sub
+  have h := (Real.hasDerivAt_log_Gamma ha).sub
     ((hasDerivAt_upperMoment hx 0 a).log hV.ne')
   convert h using 1
   · funext b
@@ -458,11 +454,11 @@ private theorem hasDerivAt_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
     ring
 
 /-- The second parameter derivative of the log-gap. -/
-private theorem hasDerivAt_logGapDeriv {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
-    (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) :
+private theorem hasDerivAt_logGapDeriv {x : ℝ} (hx : 0 < x) {a : ℝ}
+    (ha : ∀ m : ℕ, a ≠ -(m : ℝ)) :
     HasDerivAt (logGapDeriv x) (logGapDeriv2 x a) a := by
   have hV := upperMoment_zero_pos hx a
-  have hd := (Real.differentiableAt_digamma (ne_neg_natCast_of_mem_band ha)).hasDerivAt
+  have hd := (Real.differentiableAt_digamma ha).hasDerivAt
   have h := (hd.sub ((hasDerivAt_upperMoment hx 1 a).div (hasDerivAt_upperMoment hx 0 a)
     hV.ne')).sub_const (Real.log x)
   convert h using 1
@@ -527,12 +523,13 @@ private theorem logGapDeriv2_pos {x : ℝ} (hx : 0 < x) {n : ℕ} (hn : 1 ≤ n)
 private theorem strictConvexOn_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} (hn : 1 ≤ n) :
     StrictConvexOn ℝ (Ioo (-2 * (n : ℝ)) (1 - 2 * n)) (logGap x) := by
   refine strictConvexOn_of_deriv2_pos' (convex_Ioo _ _)
-    (fun a ha => (hasDerivAt_logGap hx ha).continuousAt.continuousWithinAt) fun a ha => ?_
+    (fun a ha => (hasDerivAt_logGap hx (ne_neg_natCast_of_mem_band ha)).continuousAt
+      |>.continuousWithinAt) fun a ha => ?_
   have hd : deriv (logGap x) =ᶠ[𝓝 a] logGapDeriv x := by
     filter_upwards [isOpen_Ioo.mem_nhds ha] with b hb
-    exact (hasDerivAt_logGap hx hb).deriv
+    exact (hasDerivAt_logGap hx (ne_neg_natCast_of_mem_band hb)).deriv
   rw [Function.iterate_succ_apply, Function.iterate_one, hd.deriv_eq,
-    (hasDerivAt_logGapDeriv hx ha).deriv]
+    (hasDerivAt_logGapDeriv hx (ne_neg_natCast_of_mem_band ha)).deriv]
   exact logGapDeriv2_pos hx hn ha
 
 open Complex in
@@ -545,8 +542,8 @@ private theorem tricomi_eq_ofReal_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} {a : �
     Real.exp_log (Real.Gamma_pos_of_mem_Ioo ⟨ha.1, by linarith [ha.2]⟩), div_eq_mul_inv]
 
 /-- The parameter derivative of `x^{-a} (1 - e^{-D(a, x)})`. -/
-private theorem hasDerivAt_rpow_mul_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
-    (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) :
+private theorem hasDerivAt_rpow_mul_logGap {x : ℝ} (hx : 0 < x) {a : ℝ}
+    (ha : ∀ m : ℕ, a ≠ -(m : ℝ)) :
     HasDerivAt (fun b => x ^ (-b) * (1 - Real.exp (-logGap x b)))
       (x ^ (-a) * (logGapDeriv x a * Real.exp (-logGap x a) -
         Real.log x * (1 - Real.exp (-logGap x a)))) a := by
@@ -558,8 +555,8 @@ private theorem hasDerivAt_rpow_mul_logGap {x : ℝ} (hx : 0 < x) {n : ℕ} {a :
 
 /-- At a point where `D` and `∂ₐD` vanish, the second parameter derivative of
 `x^{-a} (1 - e^{-D(a, x)})` is `x^{-a} ∂ₐ²D`. -/
-private theorem hasDerivAt_rpow_mul_logGapDeriv {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
-    (ha : a ∈ Ioo (-2 * (n : ℝ)) (1 - 2 * n)) (h0 : logGap x a = 0)
+private theorem hasDerivAt_rpow_mul_logGapDeriv {x : ℝ} (hx : 0 < x) {a : ℝ}
+    (ha : ∀ m : ℕ, a ≠ -(m : ℝ)) (h0 : logGap x a = 0)
     (h1 : logGapDeriv x a = 0) :
     HasDerivAt (fun b => x ^ (-b) * (logGapDeriv x b * Real.exp (-logGap x b) -
         Real.log x * (1 - Real.exp (-logGap x b))))
@@ -620,7 +617,7 @@ private theorem deriv_re_tricomi {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ}
     deriv (fun b : ℝ => (tricomiIncompleteGamma b x).re) a =
       x ^ (-a) * (logGapDeriv x a * Real.exp (-logGap x a) -
         Real.log x * (1 - Real.exp (-logGap x a))) := by
-  rw [← (hasDerivAt_rpow_mul_logGap hx ha).deriv]
+  rw [← (hasDerivAt_rpow_mul_logGap hx (ne_neg_natCast_of_mem_band ha)).deriv]
   refine Filter.EventuallyEq.deriv_eq ?_
   filter_upwards [isOpen_Ioo.mem_nhds ha] with b hb
   exact re_tricomi_eq hx hb
@@ -631,7 +628,7 @@ private theorem deriv_deriv_re_tricomi {x : ℝ} (hx : 0 < x) {n : ℕ} {a : ℝ
     (h1 : logGapDeriv x a = 0) :
     deriv (deriv fun b : ℝ => (tricomiIncompleteGamma b x).re) a =
       x ^ (-a) * logGapDeriv2 x a := by
-  rw [← (hasDerivAt_rpow_mul_logGapDeriv hx ha h0 h1).deriv]
+  rw [← (hasDerivAt_rpow_mul_logGapDeriv hx (ne_neg_natCast_of_mem_band ha) h0 h1).deriv]
   refine Filter.EventuallyEq.deriv_eq ?_
   filter_upwards [isOpen_Ioo.mem_nhds ha] with b hb
   exact deriv_re_tricomi hx hb
@@ -719,10 +716,12 @@ private theorem exists_zeros_of_logGap_neg {x : ℝ} (hx : 0 < x) {n : ℕ} (hn 
   have hD₂ := (re_tricomi_eq_zero_iff hx ha₂I).1 hz₂
   have hconv := (strictConvexOn_logGap hx hn).convexOn
   refine ⟨a₁, a₂, ha₁, ha₂, hD₁, hD₂, ?_, ?_, ?_, ?_⟩
-  · have h := hconv.le_slope_of_hasDerivAt ha₁I ha ha₁.2 (hasDerivAt_logGap hx ha₁I)
+  · have h := hconv.le_slope_of_hasDerivAt ha₁I ha ha₁.2
+      (hasDerivAt_logGap hx (ne_neg_natCast_of_mem_band ha₁I))
     rw [slope_def_field, hD₁, sub_zero] at h
     exact h.trans_lt (div_neg_of_neg_of_pos hneg (sub_pos.2 ha₁.2))
-  · have h := hconv.slope_le_of_hasDerivAt ha ha₂I ha₂.1 (hasDerivAt_logGap hx ha₂I)
+  · have h := hconv.slope_le_of_hasDerivAt ha ha₂I ha₂.1
+      (hasDerivAt_logGap hx (ne_neg_natCast_of_mem_band ha₂I))
     rw [slope_def_field, hD₂, zero_sub] at h
     exact (div_pos (neg_pos.2 hneg) (sub_pos.2 ha₂.1)).trans_le h
   · intro b hb hDb
@@ -929,7 +928,7 @@ private theorem param_zeros_sSup {n : ℕ} (hn : 1 ≤ n) :
       IsMinOn (logGap (sSup (negSet n))) (Ioo (-2 * (n : ℝ)) (1 - 2 * n)) b :=
     fun b hb => isMinOn_iff.2 fun c hc => hb ▸ logGap_sSup_nonneg hn hc
   have hd₀ := ((hmin a₀ hD₀).isLocalMin (isOpen_Ioo.mem_nhds ha₀)).hasDerivAt_eq_zero
-    (hasDerivAt_logGap hx ha₀)
+    (hasDerivAt_logGap hx (ne_neg_natCast_of_mem_band ha₀))
   refine ⟨a₀, ?_, ?_, ?_⟩
   · ext b
     simp only [Set.mem_ofPred_eq, Set.mem_singleton_iff]
