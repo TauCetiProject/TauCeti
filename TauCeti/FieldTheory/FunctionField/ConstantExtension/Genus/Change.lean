@@ -68,6 +68,9 @@ The local quotient `𝒪'_P ⧸ 𝒪_P · k'` and singularity degree `δ_P` come
 * `TauCeti.finrank_le_finsum_singularityDegree_add_one` and
   `TauCeti.isIntegrallyClosedIn_of_forall_constantSpanIntegers_eq`: constant growth is bounded by
   `∑_P δ_P + 1`, so `δ_P = 0` everywhere implies `IsIntegrallyClosedIn k' F'`.
+* `TauCeti.exists_intermediateField_isIntegrallyClosedIn_constantCompositum`: pulling back `E · M`
+  along `k'' → F'` produces an intermediate field `M₁` of `k'' / M` that is exact in `E · M`
+  whenever `k''` is exact in `F'`.
 * `TauCeti.finrank_eq_finrank_of_one_le_genus_of_genus_eq`,
   `TauCeti.forall_constantSpanIntegers_eq_of_one_le_genus_of_genus_eq`, and
   `TauCeti.isIntegrallyClosedIn_of_one_le_genus_of_genus_eq`: for any algebraic constant field
@@ -297,37 +300,26 @@ private theorem exists_divisor_adeleFiltration_sup_eq_of_isAlgebraic
       (E.dim : ℤ) = Divisor.degree E + 1 - genus k F ∧
       ((Divisor.conorm k' F' E).dim : ℤ) =
         Divisor.degree E + finrank k' k'' * (1 - (genus k'' F' : ℤ)) := by
-  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
+  have hF' := hF.of_constantCompositum_eq_top h
   have : FiniteDimensional k' k'' := hF'.finiteDimensional_of_isAlgebraic k''
-  have hF'' : IsFunctionField k'' F' := hF'.of_isAlgebraic
-  obtain ⟨c, hc⟩ := exists_forall_dim_eq_degree_add_one_sub_genus hF'' hex''
+  obtain ⟨c, hc⟩ := exists_forall_dim_eq_degree_add_one_sub_genus hF'.of_isAlgebraic hex''
   obtain ⟨P₀⟩ := Place.nonempty hF
   obtain ⟨m, hm⟩ := Divisor.exists_le_degree_add_nsmul_ofPoint hF 0 P₀ (finrank k' k'' * c)
-  obtain ⟨E, hle, hiE, hEeq⟩ :=
-    exists_adeleFiltration_sup_diagonalRepartitions_eq_repartitionSpace hF hex
-      (0 + m • AlgebraicGeometry.WeilDivisor.ofPoint P₀)
-  have hdeg' : Divisor.degree (Divisor.conorm k' F' E) = Divisor.degree E :=
-    Divisor.degree_conorm_of_finrank_eq_finrank k' F' hF h hn E
+  obtain ⟨E, hle, hiE, hEeq⟩ := exists_adeleFiltration_sup_diagonalRepartitions_eq_repartitionSpace
+    hF hex (0 + m • AlgebraicGeometry.WeilDivisor.ofPoint P₀)
+  have hdeg' := Divisor.degree_conorm_of_finrank_eq_finrank k' F' hF h hn E
   have hdeg'' : (finrank k' k'' : ℤ) *
       Divisor.degree (Divisor.conorm k'' F' (Divisor.conorm k' F' E)) = Divisor.degree E := by
     simpa [hdeg'] using Divisor.finrank_mul_degree_conorm k'' F' hF' (Divisor.conorm k' F' E)
   have hpos : (0 : ℤ) < finrank k' k'' := Nat.cast_pos.2 finrank_pos
   have hc_le : c ≤ Divisor.degree (Divisor.conorm k'' F' (Divisor.conorm k' F' E)) := by
-    have h1 : (finrank k' k'' : ℤ) * c ≤ Divisor.degree E :=
-      hm.trans (Divisor.degree_le_of_le hle)
-    nlinarith
+    have := hm.trans (Divisor.degree_le_of_le hle); nlinarith
   have hdim'' := hc _ hc_le
-  have hdim' : (Divisor.conorm k' F' E).dim =
-      finrank k' k'' * (Divisor.conorm k'' F' (Divisor.conorm k' F' E)).dim :=
-    Divisor.dim_eq_finrank_mul_dim_conorm (Divisor.conorm k' F' E)
-  refine ⟨E, hEeq, ?_, ?_⟩
-  · rw [Divisor.indexOfSpecialty_def] at hiE
-    omega
-  · have : ((Divisor.conorm k' F' E).dim : ℤ) =
-        (finrank k' k'' : ℤ) *
-          ((Divisor.conorm k'' F' (Divisor.conorm k' F' E)).dim : ℤ) := by
-      exact_mod_cast hdim'
-    nlinarith
+  have hdim' : ((Divisor.conorm k' F' E).dim : ℤ) = (finrank k' k'' : ℤ) *
+      ((Divisor.conorm k'' F' (Divisor.conorm k' F' E)).dim : ℤ) :=
+    mod_cast Divisor.dim_eq_finrank_mul_dim_conorm (Divisor.conorm k' F' E)
+  refine ⟨E, hEeq, ?_, by nlinarith⟩
+  rw [Divisor.indexOfSpecialty_def] at hiE; omega
 
 omit hex in
 /-- The `k'`-dimension of the preimage of `L(D) · k'` inside `L(Con D)` equals `D.dim`. -/
@@ -356,8 +348,7 @@ private theorem finrank_ker_pi_localMap_eq_dim (hn : finrank F F' = finrank k k'
   have hker := le_antisymm
     (ker_pi_localMap_le_span h hn (hF.of_constantCompositum_eq_top h) hs0 hs S hreg)
     (span_le_ker_pi_localMap (hF.of_constantCompositum_eq_top h) hs0 hs S)
-  rw [hker]
-  exact finrank_span_comap_eq_dim hF h hn D
+  rw [hker, finrank_span_comap_eq_dim hF h hn D]
 
 /-- The core count with constant growth: on a finite set `S` of places, the local quotients are
 finite-dimensional and `∑_{P ∈ S} δ_P + [k'' : k'] (g(F' / k'') - 1) ≤ g(F / k) - 1`, with
@@ -378,11 +369,8 @@ private theorem sum_singularityDegree_le_and_eq (hn : finrank F F' = finrank k k
   obtain ⟨E, hEeq, hdimE, hdimE'⟩ :=
     exists_divisor_adeleFiltration_sup_eq_of_isAlgebraic hF hex h hn hex''
   choose s hs0 hs using fun P : Place k F ↦ P.exists_ne_zero_ord_eq (E.coeff P)
-  obtain ⟨Φ, hΦ⟩ : ∃ Φ : riemannRochSpace (Divisor.conorm k' F' E) →ₗ[k']
-      ((P : S) → (P : Place k F).singularityQuotient k' F'),
-      Φ = LinearMap.pi fun P : S ↦ localMap hF' hs0 hs (P : Place k F) :=
-    ⟨_, rfl⟩
-  have hsurj : Function.Surjective Φ := hΦ ▸ pi_localMap_surjective h hn hF' hs0 hs hEeq S
+  let Φ := LinearMap.pi fun P : S ↦ localMap hF' hs0 hs (P : Place k F)
+  have hsurj : Function.Surjective Φ := pi_localMap_surjective h hn hF' hs0 hs hEeq S
   have := finiteDimensional_riemannRochSpace hF' (Divisor.conorm k' F' E)
   have hfin (P : S) : FiniteDimensional k' ((P : Place k F).singularityQuotient k' F') :=
     LinearMap.finite_of_surjective_pi Φ hsurj P
@@ -391,16 +379,13 @@ private theorem sum_singularityDegree_le_and_eq (hn : finrank F F' = finrank k k
   simp only [← Place.singularityDegree_def] at hrank
   have hrank' : (∑ P ∈ S, (P.singularityDegree k' F' : ℤ)) + finrank k' (LinearMap.ker Φ) =
       finrank k' (riemannRochSpace (Divisor.conorm k' F' E)) := by
-    rw [← Finset.sum_coe_sort S fun P ↦ (P.singularityDegree k' F' : ℤ)]
-    exact_mod_cast hrank
+    rw [← Finset.sum_coe_sort S fun P ↦ (P.singularityDegree k' F' : ℤ)]; exact_mod_cast hrank
   have hWker : E.dim ≤ finrank k' (LinearMap.ker Φ) := by
     rw [← finrank_span_comap_eq_dim hF h hn E]
-    exact Submodule.finrank_mono (hΦ ▸ span_le_ker_pi_localMap hF' hs0 hs S)
+    exact Submodule.finrank_mono (span_le_ker_pi_localMap hF' hs0 hs S)
   rw [Divisor.dim_def] at hdimE'
   refine ⟨fun P hP ↦ hfin ⟨P, hP⟩, by linarith, fun hreg ↦ ?_⟩
-  have hker_dim : finrank k' (LinearMap.ker Φ) = E.dim :=
-    hΦ ▸ finrank_ker_pi_localMap_eq_dim hF h hn hs0 hs S hreg
-  rw [hker_dim] at hrank'
+  rw [finrank_ker_pi_localMap_eq_dim hF h hn hs0 hs S hreg] at hrank'
   linarith
 
 /-- **The singularity quotient is finite-dimensional**: `𝒪'_P ⧸ 𝒪_P · k'` has finite
@@ -416,8 +401,7 @@ theorem Place.finiteDimensional_singularityQuotient (hn : finrank F F' = finrank
 `F / k` have `𝒪_P ⊗_k k'` not integrally closed in `F'`, without assuming `k'` is exact in `F'`. -/
 theorem finite_setOf_singularityDegree_ne_zero (hn : finrank F F' = finrank k k') :
     {P : Place k F | P.singularityDegree k' F' ≠ 0}.Finite := by
-  have hF' := hF.of_constantCompositum_eq_top h
-  have := hF'.finiteDimensional_algebraicClosure
+  have := (hF.of_constantCompositum_eq_top h).finiteDimensional_algebraicClosure
   by_contra hinf
   obtain ⟨S, hS, hcard⟩ := Set.Infinite.exists_subset_card_eq hinf
     (genus k F + finrank k' (algebraicClosure k' F'))
@@ -425,11 +409,9 @@ theorem finite_setOf_singularityDegree_ne_zero (hn : finrank F F' = finrank k k'
     (isIntegrallyClosedIn_algebraicClosure (k := k') (F := F')) S).2.1
   have hsum : (S.card : ℤ) ≤ ∑ P ∈ S, (P.singularityDegree k' F' : ℤ) := by
     rw [Finset.card_eq_sum_ones, Nat.cast_sum]
-    refine Finset.sum_le_sum fun P hP ↦ ?_
-    exact_mod_cast Nat.pos_of_ne_zero (hS hP)
-  rw [hcard] at hsum
-  push_cast at hsum
-  have hnonneg : (0 : ℤ) ≤ finrank k' (algebraicClosure k' F') *
+    exact Finset.sum_le_sum fun P hP ↦ mod_cast Nat.pos_of_ne_zero (hS hP)
+  rw [hcard] at hsum; push_cast at hsum
+  have : (0 : ℤ) ≤ finrank k' (algebraicClosure k' F') *
       (genus (algebraicClosure k' F') F' : ℤ) := by positivity
   linarith
 
@@ -447,14 +429,10 @@ theorem genus_sub_one_eq_finrank_mul_genus_sub_one_add_finsum_singularityDegree
   have hreg (P : Place k F) (hP : P ∉ hfin.toFinset) :
       P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F' := by
     have := P.finiteDimensional_singularityQuotient hF hex h hn
-    rw [← P.singularityDegree_eq_zero_iff k' F']
-    simpa using hP
+    rw [← P.singularityDegree_eq_zero_iff k' F']; simpa using hP
   have heq := (sum_singularityDegree_le_and_eq hF hex h hn hex'' hfin.toFinset).2.2 hreg
-  have hsupp : (Function.support fun P : Place k F ↦ (P.singularityDegree k' F' : ℤ)) ⊆
-      hfin.toFinset := by
-    intro P hP
-    simpa [Function.mem_support] using hP
-  rw [finsum_eq_sum_of_support_subset _ hsupp]
+  rw [finsum_eq_sum_of_support_subset _ (s := hfin.toFinset)
+    (fun _ hP ↦ by simpa [Function.mem_support] using hP)]
   linarith
 
 /-- **Schröer's genus-change formula in `ℕ`**: subtraction-free form of
@@ -468,14 +446,9 @@ theorem genus_add_finrank_eq_finrank_mul_genus_add_finsum_singularityDegree_add_
   have hfin := finite_setOf_singularityDegree_ne_zero hF hex h hn
   have heq := genus_sub_one_eq_finrank_mul_genus_sub_one_add_finsum_singularityDegree
     hF hex h hn hex''
-  have hsupp₁ : (Function.support fun P : Place k F ↦ P.singularityDegree k' F') ⊆
-      hfin.toFinset := by simp [Function.support]
-  have hsupp₂ : (Function.support fun P : Place k F ↦ (P.singularityDegree k' F' : ℤ)) ⊆
-      hfin.toFinset := by
-    intro P hP
-    simpa [Function.mem_support] using hP
-  rw [finsum_eq_sum_of_support_subset _ hsupp₁]
-  rw [finsum_eq_sum_of_support_subset _ hsupp₂] at heq
+  rw [finsum_eq_sum_of_support_subset _ (s := hfin.toFinset) (by simp [Function.support])]
+  rw [finsum_eq_sum_of_support_subset _ (s := hfin.toFinset)
+    (fun _ hP ↦ by simpa [Function.mem_support] using hP)] at heq
   exact_mod_cast (by linarith : (genus k F : ℤ) + finrank k' k'' =
     finrank k' k'' * genus k'' F' +
       ∑ P ∈ hfin.toFinset, (P.singularityDegree k' F' : ℤ) + 1)
@@ -506,14 +479,10 @@ theorem finrank_le_finsum_singularityDegree_add_one (hn : finrank F F' = finrank
   have hreg (P : Place k F) (hP : P ∉ S) :
       P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F' := by
     have := P.finiteDimensional_singularityQuotient hF hex h hn
-    rw [← P.singularityDegree_eq_zero_iff k' F']
-    simpa [S] using hP
+    rw [← P.singularityDegree_eq_zero_iff k' F']; simpa [S] using hP
   have hs0 : ∀ _ : Place k F, (1 : F) ≠ 0 := fun _ ↦ one_ne_zero
   have hs : ∀ P : Place k F, P.ord (1 : F) = (0 : Divisor k F).coeff P := fun P ↦ P.ord_one
-  obtain ⟨Φ, hΦ⟩ : ∃ Φ : riemannRochSpace (Divisor.conorm k' F' (0 : Divisor k F)) →ₗ[k']
-      ((P : S) → (P : Place k F).singularityQuotient k' F'),
-      Φ = LinearMap.pi fun P : S ↦ localMap hF' hs0 hs (P : Place k F) :=
-    ⟨_, rfl⟩
+  let Φ := LinearMap.pi fun P : S ↦ localMap hF' hs0 hs (P : Place k F)
   have := finiteDimensional_riemannRochSpace hF' (Divisor.conorm k' F' (0 : Divisor k F))
   have (P : S) := (P : Place k F).finiteDimensional_singularityQuotient hF hex h hn
   have hrn := LinearMap.finrank_le_sum_finrank_add_finrank_ker
@@ -521,7 +490,7 @@ theorem finrank_le_finsum_singularityDegree_add_one (hn : finrank F F' = finrank
   simp only [← Place.singularityDegree_def] at hrn
   rw [Finset.sum_coe_sort S fun P ↦ P.singularityDegree k' F'] at hrn
   have hker_dim : finrank k' (LinearMap.ker Φ) = 1 := by
-    rw [hΦ, finrank_ker_pi_localMap_eq_dim hF h hn hs0 hs S hreg,
+    rw [finrank_ker_pi_localMap_eq_dim hF h hn hs0 hs S hreg,
       Divisor.dim_zero_of_isIntegrallyClosedIn hF hex]
   have hdom_dim :
       finrank k' (riemannRochSpace (Divisor.conorm k' F' (0 : Divisor k F))) =
@@ -531,10 +500,8 @@ theorem finrank_le_finsum_singularityDegree_add_one (hn : finrank F F' = finrank
   let f : k'' →ₐ[k'] algebraicClosure k' F' :=
     { toFun := fun c ↦ ⟨algebraMap k'' F' c, mem_algebraicClosure_iff'.2
         ((Algebra.IsIntegral.isIntegral c).map (IsScalarTower.toAlgHom k' k'' F'))⟩
-      map_one' := Subtype.ext (map_one _)
-      map_mul' := fun a b ↦ Subtype.ext (map_mul _ _ _)
-      map_zero' := Subtype.ext (map_zero _)
-      map_add' := fun a b ↦ Subtype.ext (map_add _ _ _)
+      map_one' := Subtype.ext (map_one _), map_mul' := fun _ _ ↦ Subtype.ext (map_mul _ _ _)
+      map_zero' := Subtype.ext (map_zero _), map_add' := fun _ _ ↦ Subtype.ext (map_add _ _ _)
       commutes' := fun r ↦ Subtype.ext (IsScalarTower.algebraMap_apply k' k'' F' r).symm }
   have hk''_le : finrank k' k'' ≤ finrank k' (algebraicClosure k' F') :=
     LinearMap.finrank_le_finrank_of_injective (f := f.toLinearMap) f.injective
@@ -548,8 +515,7 @@ constant field of `F'`. -/
 theorem isIntegrallyClosedIn_of_forall_constantSpanIntegers_eq (hn : finrank F F' = finrank k k')
     (hreg : ∀ P : Place k F, P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F') :
     IsIntegrallyClosedIn k' F' := by
-  have hF' := hF.of_constantCompositum_eq_top h
-  have := hF'.finiteDimensional_algebraicClosure
+  have := (hF.of_constantCompositum_eq_top h).finiteDimensional_algebraicClosure
   have hle := finrank_le_finsum_singularityDegree_add_one hF hex h hn
     (k'' := algebraicClosure k' F')
   have h0 (P : Place k F) : P.singularityDegree k' F' = 0 := by
@@ -567,8 +533,8 @@ private theorem forall_constantSpanIntegers_eq_of_one_le_genus_of_genus_eq_of_fi
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F')
     (hg : genus k'' F' = genus k F) :
     ∀ P : Place k F, P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F' := by
-  have hF' := hF.of_constantCompositum_eq_top h
-  have : FiniteDimensional k' k'' := hF'.finiteDimensional_of_isAlgebraic k''
+  have : FiniteDimensional k' k'' :=
+    (hF.of_constantCompositum_eq_top h).finiteDimensional_of_isAlgebraic k''
   have hfin := finite_setOf_singularityDegree_ne_zero hF hex h hn
   have heq := genus_add_finrank_eq_finrank_mul_genus_add_finsum_singularityDegree_add_one
     hF hex h hn hex''
@@ -634,6 +600,44 @@ end Genus
 
 section GenusAlgebraic
 
+/-- Cutting out the intersection `(E · M) ∩ k''` inside `k''`: when `k''` is exact in `F'`, the
+pullback `M₁` of `E · M` along `k'' → F'` sits as an intermediate field of `k'' / M`, acts
+compatibly on `E · M`, and is exact in `E · M`. -/
+theorem exists_intermediateField_isIntegrallyClosedIn_constantCompositum
+    {E M k'' F' : Type*} [Field E] [Field M] [Field k''] [Field F']
+    [Algebra M k''] [Algebra M F'] [Algebra k'' F'] [Algebra E F'] [IsScalarTower M k'' F']
+    (hex'' : IsIntegrallyClosedIn k'' F') :
+    let EM := constantCompositum E M F'
+    letI := constantCompositumAlgebra E M F'
+    ∃ (M₁ : IntermediateField M k'') (_ : Algebra M₁ EM),
+      IsScalarTower M M₁ EM ∧ IsScalarTower M₁ EM F' ∧ IsIntegrallyClosedIn M₁ EM := by
+  let EM := constantCompositum E M F'
+  let := constantCompositumAlgebra E M F'
+  have := isScalarTower_constantCompositum E M F'
+  have hm_mem (m : M) : algebraMap M k'' m ∈ (EM.toSubfield).comap (algebraMap k'' F') := by
+    rw [Subfield.mem_comap, ← IsScalarTower.algebraMap_apply M k'' F']
+    exact algebraMap_mem_constantCompositum E M F' m
+  let M₁ : IntermediateField M k'' :=
+    ((EM.toSubfield).comap (algebraMap k'' F')).toIntermediateField hm_mem
+  have hmEM (c : M₁) : algebraMap M₁ F' c ∈ EM := by
+    rw [IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
+    exact c.property
+  let _ : Algebra M₁ EM := ((algebraMap M₁ F').codRestrict EM hmEM).toAlgebra
+  have hstEM : IsScalarTower M₁ EM F' := .of_algebraMap_eq fun c ↦ by
+    rw [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
+  have hstM : IsScalarTower M M₁ EM := .of_algebraMap_eq fun m ↦ (algebraMap EM F').injective <| by
+    rw [← IsScalarTower.algebraMap_apply M EM F', ← IsScalarTower.algebraMap_apply M₁ EM F',
+      IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply,
+      IntermediateField.coe_algebraMap_apply, IsScalarTower.algebraMap_apply M k'' F']
+  refine ⟨M₁, inferInstance, hstM, hstEM,
+    isIntegrallyClosedIn_iff.2 ⟨(algebraMap M₁ EM).injective, fun {y} hy ↦ ?_⟩⟩
+  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.1
+    ((hy.map (IsScalarTower.toAlgHom M₁ EM F')).tower_top : IsIntegral k'' (y : F'))
+  refine ⟨⟨c, show algebraMap k'' F' c ∈ EM from hc.symm ▸ y.property⟩, Subtype.ext ?_⟩
+  rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply,
+    IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
+  exact hc
+
 /-- Cutting out the exact constant field `M₁ = (E · M) ∩ k''` inside `k''` over any intermediate
 field `M` of an algebraic constant extension `k' / K`: when `g(F' / k'') = g(E / K)`, both
 `g(E · M / M₁)` and `g(E · M / M)` are sandwiched equal to `g(E / K)`. -/
@@ -655,55 +659,22 @@ private theorem exists_intermediate_exact_genus_eq {K E : Type*} {k'' : Type w} 
   have := isScalarTower_base_constantCompositum K E M F'
   have hEM : constantCompositum E M EM = ⊤ := (constantCompositum_eq_top_iff E M F' EM).2 rfl
   have hFEM : IsFunctionField M EM := hE.of_constantCompositum_eq_top hEM
-  let _ : Algebra K k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap K k'))
-  have : IsScalarTower K k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower K k'' F' := .of_algebraMap_eq fun c ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply K k' F']
-  have : Algebra.IsAlgebraic K k'' := Algebra.IsAlgebraic.trans K k' k''
-  let M₁ : IntermediateField K k'' := (EM.restrictScalars K).comap (IsScalarTower.toAlgHom K k'' F')
-  have hmemM₁ (c : k'') : c ∈ M₁ ↔ algebraMap k'' F' c ∈ EM := Iff.rfl
-  have hM_mem (m : M) : (algebraMap k' k'').comp (algebraMap M k') m ∈ M₁ := by
-    rw [hmemM₁, RingHom.comp_apply, ← IsScalarTower.algebraMap_apply k' k'' F',
-      IntermediateField.algebraMap_apply]
-    exact algebraMap_mem_constantCompositum E M F' m
-  let _ : Algebra M M₁ :=
-    (((algebraMap k' k'').comp (algebraMap M k')).codRestrict M₁ hM_mem).toAlgebra
-  have hmEM (c : M₁) : algebraMap M₁ F' c ∈ EM := by
-    rw [IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
-    exact c.property
-  let _ : Algebra M₁ EM := ((algebraMap M₁ F').codRestrict EM hmEM).toAlgebra
-  have : IsScalarTower M₁ EM F' := .of_algebraMap_eq fun c ↦ by
-    rw [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
-  have hstM : IsScalarTower M M₁ EM := .of_algebraMap_eq fun m ↦ (algebraMap EM F').injective <| by
-    rw [← IsScalarTower.algebraMap_apply M EM F', ← IsScalarTower.algebraMap_apply M₁ EM F',
-      IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply,
-      RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply, RingHom.comp_apply,
-      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply M k' F']
-  have : IsScalarTower K M M₁ := .of_algebraMap_eq fun c ↦ Subtype.ext <| by
-    simp only [IntermediateField.coe_algebraMap_apply, RingHom.algebraMap_toAlgebra,
-      RingHom.codRestrict_apply, RingHom.comp_apply, IntermediateField.algebraMap_apply]
-  have : Algebra.IsAlgebraic K M₁ := Algebra.IsAlgebraic.tower_bot K M₁ k''
-  have halgM₁ : Algebra.IsAlgebraic M M₁ := .tower_top (K := K) M
-  have : Algebra.IsAlgebraic M₁ k'' := .tower_top (K := K) M₁
-  have hexM₁ : IsIntegrallyClosedIn M₁ EM :=
-    isIntegrallyClosedIn_iff.2 ⟨(algebraMap M₁ EM).injective, fun {y} hy ↦ by
-      have hy'' : IsIntegral k'' (y : F') := (hy.map (IsScalarTower.toAlgHom M₁ EM F')).tower_top
-      obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 hy''
-      refine ⟨⟨c, (hmemM₁ c).2 (hc.symm ▸ y.property)⟩, Subtype.ext ?_⟩
-      rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply,
-        IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
-      exact hc⟩
-  have hEMk'' : constantCompositum EM k'' F' = ⊤ := by
-    rw [eq_top_iff, ← constantCompositum_eq_top_of_eq_top E k' F' EM h]
-    refine (constantCompositum_le_iff EM k' F').2 fun c ↦ ?_
-    rw [IsScalarTower.algebraMap_apply k' k'' F']
-    exact algebraMap_mem_constantCompositum EM k'' F' (algebraMap k' k'' c)
-  have hEM_self : constantCompositum EM M₁ EM = ⊤ :=
-    eq_top_iff.2 fun x _ ↦ IntermediateField.algebraMap_mem _ x
-  have hg1 : genus k'' F' ≤ genus M₁ EM :=
-    genus_le_genus_of_constantCompositum_eq_top hFEM.of_isAlgebraic hEMk''
-  have hg2 : genus M₁ EM ≤ genus M EM := genus_le_genus_of_constantCompositum_eq_top hFEM hEM_self
+  let _ : Algebra M k'' :=
+    { algebraMap := (algebraMap k' k'').comp (algebraMap M k'), commutes' := fun _ _ ↦ mul_comm _ _
+      smul_def' := fun m x ↦ Algebra.smul_def (m : k') x }
+  have : IsScalarTower M k' k'' := ⟨fun m x y ↦ smul_assoc (m : k') x y⟩
+  have : IsScalarTower M k'' F' := ⟨fun m x y ↦ smul_assoc (m : k') x y⟩
+  have : Algebra.IsAlgebraic M k' := .tower_top (K := K) M
+  have : Algebra.IsAlgebraic M k'' := Algebra.IsAlgebraic.trans M k' k''
+  obtain ⟨M₁, _, hstM, _, hexM₁⟩ :=
+    exists_intermediateField_isIntegrallyClosedIn_constantCompositum (E := E) (M := M) hex''
+  have halgM₁ : Algebra.IsAlgebraic M M₁ := .tower_bot M M₁ k''
+  have : Algebra.IsAlgebraic M₁ k'' := .tower_top (K := M) M₁
+  have hg1 : genus k'' F' ≤ genus M₁ EM := genus_le_genus_of_constantCompositum_eq_top
+    hFEM.of_isAlgebraic
+    (constantCompositum_eq_top_of_isScalarTower (constantCompositum_eq_top_of_eq_top E k' F' EM h))
+  have hg2 : genus M₁ EM ≤ genus M EM := genus_le_genus_of_constantCompositum_eq_top hFEM
+    (eq_top_iff.2 fun x _ ↦ IntermediateField.algebraMap_mem _ x)
   have hg3 : genus M EM ≤ genus K E := genus_le_genus_of_constantCompositum_eq_top hE hEM
   have hgM₁ : genus M₁ EM = genus K E := by omega
   have hgM : genus M EM = genus K E := by omega
@@ -729,48 +700,39 @@ private theorem finite_exact_and_finrank_eq_of_one_le_genus_aux {k'' : Type*} [F
     refine ⟨hexK.of_constantCompositum_eq_top h, ?_⟩
     rw [← IntermediateField.finrank_top' (F := E) (E := F'), ← h]
     exact finrank_constantCompositum_eq_finrank_of_isSeparable E k' F' hexK
-  simp only [Function.Surjective, not_forall] at hsurj
-  obtain ⟨α, hα⟩ := hsurj
+  obtain ⟨α, hα⟩ := not_forall.1 hsurj
   let L : IntermediateField K k' := K⟮α⟯
   have : FiniteDimensional K L := IntermediateField.adjoin.finiteDimensional
     (Algebra.IsIntegral.isIntegral α)
   have : FiniteDimensional L k' := FiniteDimensional.right K L k'
-  have hKL_ne1 : finrank K L ≠ 1 := fun h1 ↦ by
-    have hmem : α ∈ (⊥ : IntermediateField K k') :=
-      (IntermediateField.finrank_eq_one_iff.1 h1).le (IntermediateField.mem_adjoin_simple_self K α)
-    exact hα (IntermediateField.mem_bot.1 hmem)
+  have hKL_ne1 : finrank K L ≠ 1 := fun h1 ↦ hα <| IntermediateField.mem_bot.1 <|
+    (IntermediateField.finrank_eq_one_iff.1 h1).le (IntermediateField.mem_adjoin_simple_self K α)
   have hlt : finrank L k' < n := by
-    have hmul := finrank_mul_finrank K L k'
-    have : 0 < finrank K L := finrank_pos
-    have : 0 < finrank L k' := finrank_pos
-    have : 2 ≤ finrank K L := by omega
+    have := finrank_mul_finrank K L k'; have := finrank_pos (R := K) (M := L)
+    have := finrank_pos (R := L) (M := k'); have : 2 ≤ finrank K L := by omega
     nlinarith
   let EL := constantCompositum E L F'
   let := constantCompositumAlgebra E L F'
   have := isScalarTower_constantCompositum E L F'
   have := isScalarTower_base_constantCompositum K E L F'
   have hEL : constantCompositum E L EL = ⊤ := (constantCompositum_eq_top_iff E L F' EL).2 rfl
-  have hα_top : K⟮(⟨α, IntermediateField.mem_adjoin_simple_self K α⟩ : L)⟯ = ⊤ := by
-    apply IntermediateField.map_injective L.val
-    rw [IntermediateField.adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map,
-      IntermediateField.fieldRange_val]
-    rfl
+  have hα_top : K⟮(⟨α, IntermediateField.mem_adjoin_simple_self K α⟩ : L)⟯ = ⊤ :=
+    IntermediateField.map_injective L.val <| by
+      rw [IntermediateField.adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map,
+        IntermediateField.fieldRange_val]; rfl
   have hEEL : finrank E EL = finrank K L := by
     rw [← IntermediateField.finrank_top' (F := E) (E := EL), ← hEL]
     exact finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top E L EL hexK
       (Algebra.IsIntegral.isIntegral _) hα_top
-  obtain ⟨L₁, _, _, _, _, _, hexL₁, hgL₁, hgL⟩ :=
-    exists_intermediate_exact_genus_eq hE h hex'' hg L
-  have hexL : IsIntegrallyClosedIn L EL :=
-    isIntegrallyClosedIn_of_one_le_genus_of_genus_eq_of_finrank_eq hE hexK hEL hEEL hg1
-      hexL₁ hgL₁
-  have hFEL : IsFunctionField L EL := hE.of_constantCompositum_eq_top hEL
+  obtain ⟨L₁, _, _, _, _, _, hexL₁, hgL₁, hgL⟩ := exists_intermediate_exact_genus_eq hE h hex'' hg L
+  have hexL := isIntegrallyClosedIn_of_one_le_genus_of_genus_eq_of_finrank_eq hE hexK hEL hEEL hg1
+    hexL₁ hgL₁
   have hEL_top : constantCompositum EL k' F' = ⊤ := constantCompositum_eq_top_of_eq_top E k' F' EL h
-  obtain ⟨hex', hELF'⟩ := ih _ hlt L EL rfl hFEL hexL (hgL.symm ▸ hg1) hEL_top (hg.trans hgL.symm)
+  obtain ⟨hex', hELF'⟩ := ih _ hlt L EL rfl (hE.of_constantCompositum_eq_top hEL) hexL
+    (hgL.symm ▸ hg1) hEL_top (hg.trans hgL.symm)
   have := finiteDimensional_of_constantCompositum_eq_top (k := K) hEL
   have := finiteDimensional_of_constantCompositum_eq_top (k := L) hEL_top
-  refine ⟨hex', ?_⟩
-  rw [← finrank_mul_finrank E EL F', hEEL, hELF', finrank_mul_finrank K L k']
+  exact ⟨hex', by rw [← finrank_mul_finrank E EL F', hEEL, hELF', finrank_mul_finrank K L k']⟩
 
 /-- Universe-polymorphic finite case: for any finite constant field extension `F' = F · k'` with
 `1 ≤ g(F / k)` and `g(F' / k'') = g(F / k)` for an exact algebraic extension `k'' / k'`, `k'` is
@@ -791,8 +753,7 @@ private theorem finite_exact_and_finrank_eq_of_one_le_genus [FiniteDimensional k
   have hbot : E₀ = ⊥ := constantCompositum_bot
   let eK := (IntermediateField.botEquiv k k').symm
   let eF := (IntermediateField.botEquiv F F').symm.trans (IntermediateField.equivOfEq hbot.symm)
-  have hστ (c : k) : eF.toRingEquiv (algebraMap k F c) =
-      algebraMap L₀ E₀ (eK.toRingEquiv c) := by
+  have hστ (c : k) : eF.toRingEquiv (algebraMap k F c) = algebraMap L₀ E₀ (eK.toRingEquiv c) := by
     apply Subtype.ext
     have h1 : eF (algebraMap k F c) = algebraMap F E₀ (algebraMap k F c) := by
       simpa using eF.commutes (algebraMap k F c)
@@ -801,18 +762,17 @@ private theorem finite_exact_and_finrank_eq_of_one_le_genus [FiniteDimensional k
       ← IntermediateField.algebraMap_apply, ← IsScalarTower.algebraMap_apply F E₀ F',
       ← IsScalarTower.algebraMap_apply k F F', ← IntermediateField.algebraMap_apply,
       ← IsScalarTower.algebraMap_apply L₀ E₀ F', ← IsScalarTower.algebraMap_apply k L₀ F']
-  have hex₀ : IsIntegrallyClosedIn L₀ E₀ := hex.of_ringEquiv eK.toRingEquiv eF.toRingEquiv hστ
   have hg₀ : genus L₀ E₀ = genus k F := genus_eq_of_ringEquiv eK.toRingEquiv eF.toRingEquiv hστ
   have : FiniteDimensional L₀ k' := FiniteDimensional.right k L₀ k'
   obtain ⟨hex', hdeg⟩ := finite_exact_and_finrank_eq_of_one_le_genus_aux hex'' _ L₀ E₀ rfl
-    (hF.of_constantCompositum_eq_top hE₀) hex₀ (hg₀.symm ▸ hg1)
-    (constantCompositum_eq_top_of_eq_top F k' F' E₀ h) (hg.trans hg₀.symm)
+    (hF.of_constantCompositum_eq_top hE₀) (hex.of_ringEquiv eK.toRingEquiv eF.toRingEquiv hστ)
+    (hg₀.symm ▸ hg1) (constantCompositum_eq_top_of_eq_top F k' F' E₀ h) (hg.trans hg₀.symm)
   have hE₀_fin : finrank F E₀ = 1 := by rw [hbot]; exact IntermediateField.finrank_bot
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) hE₀
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have : FiniteDimensional E₀ F' := FiniteDimensional.right F E₀ F'
-  refine ⟨hex', ?_⟩
-  rw [← finrank_mul_finrank F E₀ F', hE₀_fin, one_mul, hdeg, IntermediateField.finrank_bot']
+  exact ⟨hex', by rw [← finrank_mul_finrank F E₀ F', hE₀_fin, one_mul, hdeg,
+    IntermediateField.finrank_bot']⟩
 
 /-- **In genus at least `1`, preserving the genus preserves the degree of a finite constant
 extension**: if `k` is the exact constant field of `F`, `F' = F · k'` is a finite constant field
@@ -854,28 +814,20 @@ theorem forall_constantSpanIntegers_eq_of_one_le_genus_of_genus_eq [Algebra.IsAl
   have : IsScalarTower P.integers FM F' := .of_algebraMap_eq fun x ↦ by
     rw [IsScalarTower.algebraMap_apply P.integers F F',
       IsScalarTower.algebraMap_apply P.integers F FM, IsScalarTower.algebraMap_apply F FM F']
-  have hzM_int : IsIntegral P.integers (⟨z, hzM⟩ : FM) :=
-    (isIntegral_algHom_iff (IsScalarTower.toAlgHom P.integers FM F')
-      (algebraMap FM F').injective).1 ((P.mem_integralClosureSubmodule_iff k' F').1 hz)
   have hzM_span : (⟨z, hzM⟩ : FM) ∈ P.constantSpanIntegers M FM := by
     rw [hregM, P.mem_integralClosureSubmodule_iff M FM]
-    exact hzM_int
+    exact (isIntegral_algHom_iff (IsScalarTower.toAlgHom P.integers FM F')
+      (algebraMap FM F').injective).1 ((P.mem_integralClosureSubmodule_iff k' F').1 hz)
   rw [Place.constantSpanIntegers_def] at hzM_span
   refine Submodule.span_induction (p := fun (y : FM) _ ↦ (y : F') ∈ P.constantSpanIntegers k' F')
-    ?_ ?_ ?_ ?_ hzM_span
+    ?_ (zero_mem _) (fun _ _ _ _ ↦ add_mem) (fun c x _ hx ↦ ?_) hzM_span
   · rintro _ ⟨f, hf, rfl⟩
     rw [← IntermediateField.algebraMap_apply, ← IsScalarTower.algebraMap_apply F FM F']
     exact Place.algebraMap_mem_constantSpanIntegers k' F' hf
-  · exact zero_mem _
-  · intro x y _ _ hx hy
-    exact add_mem hx hy
-  · intro c x _ hx
-    have hsmul : ((c • x : FM) : F') = (c : k') • (x : F') := by
-      rw [Algebra.smul_def, Algebra.smul_def, MulMemClass.coe_mul,
-        ← IntermediateField.algebraMap_apply, ← IsScalarTower.algebraMap_apply M FM F',
-        IsScalarTower.algebraMap_apply M k' F', IntermediateField.algebraMap_apply]
-    rw [hsmul]
-    exact Submodule.smul_mem _ _ hx
+  · have hsmul : ((c • x : FM) : F') = (c : k') • (x : F') := by
+      simp [Algebra.smul_def, ← IntermediateField.algebraMap_apply,
+        ← IsScalarTower.algebraMap_apply M FM F', IsScalarTower.algebraMap_apply M k' F']
+    exact hsmul ▸ Submodule.smul_mem _ _ hx
 
 /-- **In genus at least `1`, preserving the genus forces `k'` to stay exact in `F'`**: if `k` is
 the exact constant field of `F`, `F' = F · k'` is an algebraic constant field extension (finite or
@@ -895,12 +847,12 @@ theorem isIntegrallyClosedIn_of_one_le_genus_of_genus_eq [Algebra.IsAlgebraic k 
   let := constantCompositumAlgebra F M F'
   have := isScalarTower_constantCompositum F M F'
   have := isScalarTower_base_constantCompositum k F M F'
-  have hFM : constantCompositum F M FM = ⊤ := (constantCompositum_eq_top_iff F M F' FM).2 rfl
   obtain ⟨M₁, _, _, _, _, _, hexM₁, hgM₁, -⟩ := exists_intermediate_exact_genus_eq hF h hex'' hg M
-  obtain ⟨hexM, -⟩ := finite_exact_and_finrank_eq_of_one_le_genus hF hex hFM hg1 hexM₁ hgM₁
-  have hz_k : IsIntegral k z := isIntegral_trans z hz
+  obtain ⟨hexM, -⟩ := finite_exact_and_finrank_eq_of_one_le_genus hF hex
+    ((constantCompositum_eq_top_iff F M F' FM).2 rfl) hg1 hexM₁ hgM₁
   have hz_FM : IsIntegral k (⟨z, hzM⟩ : FM) :=
-    (isIntegral_algHom_iff (IsScalarTower.toAlgHom k FM F') (algebraMap FM F').injective).1 hz_k
+    (isIntegral_algHom_iff (IsScalarTower.toAlgHom k FM F')
+      (algebraMap FM F').injective).1 (isIntegral_trans z hz)
   obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 (hz_FM.tower_top (A := M))
   refine ⟨c.val, ?_⟩
   have hval := congrArg Subtype.val hc

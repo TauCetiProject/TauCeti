@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
@@ -50,6 +51,8 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
 * `TauCeti.constantCompositumAlgebra`: the `k'`-algebra structure on `F · k'`, with the scalar
   towers `TauCeti.isScalarTower_constantCompositum` and
   `TauCeti.isScalarTower_base_constantCompositum`.
+* `TauCeti.restrictScalarsConstantCompositumEquiv`: the `F`-algebra equivalence
+  `(F · L) · N ≃ₐ[F] F · (N.restrictScalars k)`.
 
 ## Main results
 
@@ -67,9 +70,13 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
 * `TauCeti.constantCompositum_le_of_isScalarTower` and
   `TauCeti.constantCompositum_eq_top_of_isScalarTower`: enlarging `k'` to `k''` compatibly with
   `F'` enlarges `F · k'` and preserves `constantCompositum F _ F' = ⊤`.
-* `TauCeti.restrictScalars_constantCompositum_eq`: the tower identity
+* `TauCeti.restrictScalars_constantCompositum_eq`,
+  `TauCeti.coe_restrictScalarsConstantCompositumEquiv_apply`,
+  `TauCeti.coe_restrictScalarsConstantCompositumEquiv_symm_apply`, and
+  `TauCeti.restrictScalarsConstantCompositumEquiv_algebraMap`: the tower identity
   `((F · L) · N).restrictScalars F = F · (N.restrictScalars k)` for intermediate fields
-  `k ⊆ L ⊆ N ⊆ k'`.
+  `k ⊆ L ⊆ N ⊆ k'`, together with the coercion and `algebraMap` compatibility of
+  `TauCeti.restrictScalarsConstantCompositumEquiv`.
 * `TauCeti.constantCompositum_tower_eq_top`: if `F' = F · k'` and `F'' = F' · k''` in a compatible
   square of extensions, then `F'' = F · k''`.
 * `TauCeti.constantCompositum_eq_top_of_adjoin_eq_top`: `F'` is the compositum `F · k'` as soon
@@ -449,6 +456,60 @@ theorem restrictScalars_constantCompositum_eq (L : IntermediateField k k')
   · rw [IntermediateField.mem_restrictScalars,
       IsScalarTower.algebraMap_apply (N.restrictScalars k) k' F']
     exact algebraMap_mem_constantCompositum FL N F' ⟨c.val, c.property⟩
+
+section
+variable (F F')
+
+/-- The `F`-algebra equivalence `(F · L) · N ≃ₐ[F] F · (N.restrictScalars k)` behind
+`TauCeti.restrictScalars_constantCompositum_eq`. -/
+def restrictScalarsConstantCompositumEquiv (L : IntermediateField k k')
+    (N : IntermediateField L k') :
+    constantCompositum (constantCompositum F L F') N F' ≃ₐ[F]
+      constantCompositum F (N.restrictScalars k) F' :=
+  (IntermediateField.restrictScalarsAlgEquiv F _).symm.trans
+    (IntermediateField.equivOfEq (restrictScalars_constantCompositum_eq L N))
+
+/-- Coercion of `restrictScalarsConstantCompositumEquiv` to `F'` is the identity. -/
+@[simp]
+theorem coe_restrictScalarsConstantCompositumEquiv_apply (L : IntermediateField k k')
+    (N : IntermediateField L k') (x : constantCompositum (constantCompositum F L F') N F') :
+    (restrictScalarsConstantCompositumEquiv F F' L N x : F') = x := by
+  simp [restrictScalarsConstantCompositumEquiv]
+
+/-- Coercion of `(restrictScalarsConstantCompositumEquiv _ _ _ _).symm` to `F'` is the identity. -/
+@[simp]
+theorem coe_restrictScalarsConstantCompositumEquiv_symm_apply (L : IntermediateField k k')
+    (N : IntermediateField L k') (x : constantCompositum F (N.restrictScalars k) F') :
+    ((restrictScalarsConstantCompositumEquiv F F' L N).symm x : F') = x := by
+  simp [restrictScalarsConstantCompositumEquiv]
+
+/-- Compatibility of `restrictScalarsConstantCompositumEquiv` with the constant-field embeddings
+`N → (F · L) · N` and `N.restrictScalars k → F · (N.restrictScalars k)`. -/
+@[simp]
+theorem restrictScalarsConstantCompositumEquiv_algebraMap (L : IntermediateField k k')
+    (N : IntermediateField L k') (c : N) :
+    letI := constantCompositumAlgebra F L F'
+    letI := constantCompositumAlgebra (constantCompositum F L F') N F'
+    letI := constantCompositumAlgebra F (N.restrictScalars k) F'
+    restrictScalarsConstantCompositumEquiv F F' L N
+        (algebraMap N (constantCompositum (constantCompositum F L F') N F') c) =
+      algebraMap (N.restrictScalars k) (constantCompositum F (N.restrictScalars k) F')
+        ((IntermediateField.restrictScalarsAlgEquiv k N).symm c) := by
+  let := constantCompositumAlgebra F L F'
+  let := constantCompositumAlgebra (constantCompositum F L F') N F'
+  let := constantCompositumAlgebra F (N.restrictScalars k) F'
+  have := isScalarTower_constantCompositum (constantCompositum F L F') N F'
+  have := isScalarTower_constantCompositum F (N.restrictScalars k) F'
+  apply Subtype.ext
+  rw [coe_restrictScalarsConstantCompositumEquiv_apply, ← IntermediateField.algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply N _ F', IsScalarTower.algebraMap_apply N k' F',
+    ← IntermediateField.algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply (N.restrictScalars k) _ F',
+    IsScalarTower.algebraMap_apply (N.restrictScalars k) k' F',
+    IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply,
+    IntermediateField.coe_restrictScalarsAlgEquiv_symm_apply]
+
+end
 
 end Tower
 

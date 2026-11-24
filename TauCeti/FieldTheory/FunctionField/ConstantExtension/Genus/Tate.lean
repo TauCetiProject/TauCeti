@@ -72,6 +72,39 @@ universe u u' v v'
 
 section Tate
 
+/-- In a degree-`p` purely inseparable field extension `F' / F` over a field `k` integrally closed
+in `F`, any algebraic enlargement `k'' / k'` inside `F'` (with `k' / k` algebraic) is purely
+inseparable over `k'`. -/
+private theorem isPurelyInseparable_enlargement_of_finrank_eq_prime {k k' F F' : Type*}
+    [Field k] [Field k'] [Field F] [Field F'] [Algebra k k'] [Algebra k F] [Algebra k F']
+    [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+    {p : ℕ} (hp : p.Prime) [CharP k p] [Algebra.IsAlgebraic k k'] [IsPurelyInseparable F F']
+    (hex : IsIntegrallyClosedIn k F) (hFF' : Module.finrank F F' = p) {k'' : Type*} [Field k'']
+    [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F'] [Algebra.IsAlgebraic k' k''] :
+    _root_.IsPurelyInseparable k' k'' := by
+  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hFF' ▸ hp.pos)
+  have : CharP F p := charP_of_injective_algebraMap (algebraMap k F).injective p
+  have : ExpChar F p := .prime hp
+  have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
+  have : ExpChar k' p := .prime hp
+  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
+  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
+    simp [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply _ _ F']
+  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
+  rw [isPurelyInseparable_iff_pow_mem k' p]
+  intro c
+  obtain ⟨y, hy⟩ := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow F F' p (n := 1)
+    (by simp [hFF']) (algebraMap k'' F' c)
+  rw [pow_one] at hy
+  obtain ⟨c₀, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 <|
+    (isIntegral_algHom_iff (IsScalarTower.toAlgHom k F F') (algebraMap F F').injective).1 <| by
+      rw [IsScalarTower.toAlgHom_apply, hy, ← map_pow]
+      exact (Algebra.IsIntegral.isIntegral (R := k) (c ^ p)).map (IsScalarTower.toAlgHom k k'' F')
+  refine ⟨1, algebraMap k k' c₀, (algebraMap k'' F').injective ?_⟩
+  simp only [pow_one, map_pow, ← hy, ← IsScalarTower.algebraMap_apply k F F',
+    ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
+
 /-- Tate's genus-change divisibility for a single purely inseparable constant step of prime degree
 `p`, allowing constant growth into an exact constant field `k''` of `F'`. -/
 private theorem sub_one_dvd_two_mul_genus_sub_genus_of_finrank_eq_prime {k : Type u}
@@ -89,8 +122,8 @@ private theorem sub_one_dvd_two_mul_genus_sub_genus_of_finrank_eq_prime {k : Typ
     have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
     rwa [h, IntermediateField.finrank_top', hk'] at hdeg
   have hn : finrank F F' = finrank k k' := hFF'.trans hk'.symm
-  have hF' := hF.of_constantCompositum_eq_top h
-  have : FiniteDimensional k' k'' := hF'.finiteDimensional_of_isAlgebraic k''
+  have : FiniteDimensional k' k'' :=
+    (hF.of_constantCompositum_eq_top h).finiteDimensional_of_isAlgebraic k''
   have : IsPurelyInseparable F F' := isPurelyInseparable_of_constantCompositum_eq_top (k := k) h
   have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
   have : ExpChar k' p := .prime hp
@@ -100,29 +133,24 @@ private theorem sub_one_dvd_two_mul_genus_sub_genus_of_finrank_eq_prime {k : Typ
   have hfin := finite_setOf_singularityDegree_ne_zero hF hex h hn
   have heq := genus_sub_one_eq_finrank_mul_genus_sub_one_add_finsum_singularityDegree
     hF hex h hn hex''
-  have hsupp : (Function.support fun P : Place k F ↦ (P.singularityDegree k' F' : ℤ)) ⊆
-      hfin.toFinset := fun P hP ↦ by simpa [Function.mem_support] using hP
-  rw [finsum_eq_sum_of_support_subset _ hsupp] at heq
+  rw [finsum_eq_sum_of_support_subset _ (s := hfin.toFinset)
+    (fun _ hP ↦ by simpa [Function.mem_support] using hP)] at heq
   have hgle : genus k'' F' ≤ genus k F := by
-    have hm1 : (1 : ℤ) ≤ finrank k' k'' := by exact_mod_cast (finrank_pos (R := k') (M := k''))
+    have hm1 : (1 : ℤ) ≤ finrank k' k'' := mod_cast finrank_pos (R := k') (M := k'')
     have hsum : (0 : ℤ) ≤ ∑ P ∈ hfin.toFinset, (P.singularityDegree k' F' : ℤ) :=
       Finset.sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
     by_cases hg0 : genus k'' F' = 0 <;> [omega; nlinarith]
-  have hid : (2 * ((genus k F : ℤ) - genus k'' F') : ℤ) =
-      2 * ((finrank k' k'' : ℤ) - 1) * ((genus k'' F' : ℤ) - 1) +
-        ∑ P ∈ hfin.toFinset, (2 * (P.singularityDegree k' F' : ℤ)) := by
-    rw [← Finset.mul_sum]; linarith
-  have hp1 : 1 ≤ p := hp.pos
   have hdvd_z : ((p : ℤ) - 1) ∣ 2 * ((genus k F : ℤ) - genus k'' F') := by
-    rw [hid]
+    rw [show (2 * ((genus k F : ℤ) - genus k'' F') : ℤ) =
+        2 * ((finrank k' k'' : ℤ) - 1) * ((genus k'' F' : ℤ) - 1) +
+          ∑ P ∈ hfin.toFinset, (2 * (P.singularityDegree k' F' : ℤ)) by
+      rw [← Finset.mul_sum]; linarith]
     refine dvd_add ?_ (Finset.dvd_sum fun P _ ↦ ?_)
     · rw [hm, Nat.cast_pow]
       exact (dvd_mul_of_dvd_right (by simpa using sub_dvd_pow_sub_pow (p : ℤ) 1 m) 2).mul_right _
-    · have hdvdP := Int.natCast_dvd_natCast.2
+    · simpa [hp.pos] using Int.natCast_dvd_natCast.2
         (P.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime hk' hF hex h)
-      rwa [Nat.cast_sub hp1, Nat.cast_one, Nat.cast_mul, Nat.cast_ofNat] at hdvdP
-  refine ⟨hgle, (Int.natCast_dvd_natCast.1 ?_)⟩
-  simpa [hp1, hgle] using hdvd_z
+  exact ⟨hgle, Int.natCast_dvd_natCast.1 (by simpa [hp.pos, hgle] using hdvd_z)⟩
 
 /-- Single prime-step decomposition inside a nontrivial finite purely inseparable constant
 extension `K → M` with exact constants on both sides: given an intermediate field `L` of degree `p`
@@ -145,43 +173,17 @@ private theorem exists_step_of_finrank_eq_prime {K M : Type u'} {E F' : Type v'}
   have := isScalarTower_constantCompositum E L F'
   have := isScalarTower_base_constantCompositum K E L F'
   have hEL : constantCompositum E L EL = ⊤ := (constantCompositum_eq_top_iff E L F' EL).2 rfl
-  let L₀ : IntermediateField K M := (EL.restrictScalars K).comap (IsScalarTower.toAlgHom K M F')
-  have hmemL₀ (m : M) : m ∈ L₀ ↔ algebraMap M F' m ∈ EL := Iff.rfl
-  have hLL₀ : L ≤ L₀ := fun m hm ↦ (hmemL₀ m).2 <| by
-    have hmem := algebraMap_mem_constantCompositum E L F' ⟨m, hm⟩
-    rwa [IsScalarTower.algebraMap_apply L M F', IntermediateField.algebraMap_apply] at hmem
-  let L₁ : IntermediateField L M := IntermediateField.extendScalars hLL₀
-  have hmEL (m : L₁) : algebraMap L₁ F' m ∈ EL := by
-    rw [IsScalarTower.algebraMap_apply L₁ M F', IntermediateField.algebraMap_apply]
-    exact (hmemL₀ (m : M)).1 ((IntermediateField.mem_extendScalars hLL₀).1 m.property)
-  let _ : Algebra L₁ EL := ((algebraMap L₁ F').codRestrict EL hmEL).toAlgebra
-  have hst : IsScalarTower L₁ EL F' := .of_algebraMap_eq fun m ↦ by
-    rw [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply]
-  have : IsScalarTower L L₁ EL := .of_algebraMap_eq fun c ↦ (algebraMap EL F').injective <| by
-    rw [← IsScalarTower.algebraMap_apply L EL F', ← IsScalarTower.algebraMap_apply L₁ EL F',
-      ← IsScalarTower.algebraMap_apply L L₁ F']
-  have : FiniteDimensional L M := FiniteDimensional.right K L M
-  have : FiniteDimensional L L₁ := FiniteDimensional.left L L₁ M
-  have : FiniteDimensional L₁ M := FiniteDimensional.right L L₁ M
-  have hexL₁ : IsIntegrallyClosedIn L₁ EL :=
-    isIntegrallyClosedIn_iff.2 ⟨(algebraMap L₁ EL).injective, fun {y} hy ↦ by
-      have hyM : IsIntegral M (y : F') := (hy.map (IsScalarTower.toAlgHom L₁ EL F')).tower_top
-      obtain ⟨m, hm⟩ := IsIntegrallyClosedIn.isIntegral_iff.1 hyM
-      have hm₀ : m ∈ L₀ := (hmemL₀ m).2 (hm.symm ▸ y.property)
-      refine ⟨⟨m, (IntermediateField.mem_extendScalars hLL₀).2 hm₀⟩, Subtype.ext ?_⟩
-      rw [RingHom.algebraMap_toAlgebra, RingHom.codRestrict_apply,
-        IsScalarTower.algebraMap_apply L₁ M F', IntermediateField.algebraMap_apply]
-      exact hm⟩
+  obtain ⟨L₁, _, _, hst, hexL₁⟩ :=
+    exists_intermediateField_isIntegrallyClosedIn_constantCompositum (E := E) (M := L)
+      (k'' := M) (F' := F') hexM
+  have := FiniteDimensional.right K L M
+  have := FiniteDimensional.left L L₁ M; have := FiniteDimensional.right L L₁ M
   obtain ⟨hgle₁, hdvd₁⟩ :=
     sub_one_dvd_two_mul_genus_sub_genus_of_finrank_eq_prime hL hE hexK hEL (k'' := L₁) hexL₁
   have hlt : finrank L₁ M < finrank K M := by
-    have h1 := finrank_mul_finrank K L M
-    have h2 := finrank_mul_finrank L L₁ M
-    have hp : p.Prime := Fact.out
-    have := hp.one_lt
-    have : 0 < finrank L L₁ := finrank_pos
-    have : 0 < finrank L₁ M := finrank_pos
-    nlinarith
+    have := finrank_mul_finrank K L M; have := finrank_mul_finrank L L₁ M
+    have := (Fact.out : p.Prime).one_lt
+    have := finrank_pos (R := L) (M := L₁); have := finrank_pos (R := L₁) (M := M); nlinarith
   exact ⟨L₁, EL, inferInstance, inferInstance, inferInstance, hst, hlt,
     (hE.of_constantCompositum_eq_top hEL).of_isAlgebraic, hexL₁,
     constantCompositum_eq_top_of_eq_top E M F' EL hEM, hgle₁, hdvd₁⟩
@@ -200,9 +202,8 @@ private theorem sub_one_dvd_two_mul_genus_sub_genus_of_isPurelyInseparable_of_fi
   | _ n ih =>
   intro K M E F' _ _ _ _ _ _ _ _ _ _ _ _ _ _ hn hE hexK hEM hexM
   by_cases hsurj : Function.Surjective (algebraMap K M)
-  · have hbij : Function.Bijective (algebraMap K M) := ⟨(algebraMap K M).injective, hsurj⟩
-    have : Algebra.IsSeparable K M :=
-      AlgEquiv.Algebra.isSeparable (AlgEquiv.ofBijective (Algebra.ofId K M) hbij)
+  · have : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable
+      (AlgEquiv.ofBijective (Algebra.ofId K M) ⟨(algebraMap K M).injective, hsurj⟩)
     rw [genus_eq_genus_of_constantCompositum_eq_top hE hexK hEM, Nat.sub_self, mul_zero]
     exact dvd_zero _
   · obtain ⟨L, hL⟩ :=
@@ -211,16 +212,12 @@ private theorem sub_one_dvd_two_mul_genus_sub_genus_of_isPurelyInseparable_of_fi
       exists_step_of_finrank_eq_prime L hL hE hexK hEM hexM
     have : CharP L p := charP_of_injective_algebraMap (algebraMap K L).injective p
     have : CharP L₁ p := charP_of_injective_algebraMap (algebraMap L L₁).injective p
-    have : IsPurelyInseparable L M := IsPurelyInseparable.tower_top K L M
-    have : IsPurelyInseparable L₁ M := IsPurelyInseparable.tower_top L L₁ M
-    have : FiniteDimensional L M := FiniteDimensional.right K L M
-    have : FiniteDimensional L₁ M := FiniteDimensional.right L L₁ M
+    have := IsPurelyInseparable.tower_top K L M; have := IsPurelyInseparable.tower_top L L₁ M
+    have := FiniteDimensional.right K L M; have := FiniteDimensional.right L L₁ M
     have hdvd₂ := ih _ (hn ▸ hlt) L₁ M EL F' rfl hFEL₁ hexL₁ hELM_top hexM
-    have hgle₂ : genus M F' ≤ genus L₁ EL :=
-      genus_le_genus_of_constantCompositum_eq_top hFEL₁ hELM_top
-    have hsplit : 2 * (genus K E - genus M F') =
-        2 * (genus K E - genus L₁ EL) + 2 * (genus L₁ EL - genus M F') := by omega
-    rw [hsplit]
+    have hgle₂ := genus_le_genus_of_constantCompositum_eq_top hFEL₁ hELM_top
+    rw [show 2 * (genus K E - genus M F') =
+      2 * (genus K E - genus L₁ EL) + 2 * (genus L₁ EL - genus M F') by omega]
     exact dvd_add hdvd₁ hdvd₂
 
 /-- Tate's genus-change divisibility for a finite algebraic constant field extension with exact
@@ -238,15 +235,13 @@ private theorem sub_one_dvd_two_mul_genus_sub_genus_of_finite_of_isIntegrallyClo
   have := isScalarTower_constantCompositum F S FM
   have := isScalarTower_base_constantCompositum k F S FM
   have hFS : constantCompositum F S FS = ⊤ := (constantCompositum_eq_top_iff F S FM FS).2 rfl
-  have hFFS : IsFunctionField S FS := hF.of_constantCompositum_eq_top hFS
-  have hexS : IsIntegrallyClosedIn S FS := IsIntegrallyClosedIn.of_constantCompositum_eq_top hex hFS
-  have hgS : genus S FS = genus k F := genus_eq_genus_of_constantCompositum_eq_top hF hex hFS
-  have hFSM : constantCompositum FS M FM = ⊤ := constantCompositum_eq_top_of_eq_top F M FM FS hFM
   have : CharP S p := charP_of_injective_algebraMap (algebraMap k S).injective p
   have : IsPurelyInseparable S M := separableClosure.isPurelyInseparable k M
-  rw [← hgS]
-  exact sub_one_dvd_two_mul_genus_sub_genus_of_isPurelyInseparable_of_finite p (finrank S M)
-    S M FS FM rfl hFFS hexS hFSM hexM
+  rw [← genus_eq_genus_of_constantCompositum_eq_top hF hex hFS]
+  exact sub_one_dvd_two_mul_genus_sub_genus_of_isPurelyInseparable_of_finite p (finrank S M) S M FS
+    FM rfl (hF.of_constantCompositum_eq_top hFS)
+    (IsIntegrallyClosedIn.of_constantCompositum_eq_top hex hFS)
+    (constantCompositum_eq_top_of_eq_top F M FM FS hFM) hexM
 
 variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
@@ -266,9 +261,24 @@ theorem sub_one_dvd_two_mul_genus_sub_genus_of_isIntegrallyClosedIn {p : ℕ} [F
   let := constantCompositumAlgebra F L F'
   have := isScalarTower_constantCompositum F L F'
   have := isScalarTower_base_constantCompositum k F L F'
-  have hFL : constantCompositum F L FL = ⊤ := (constantCompositum_eq_top_iff F L F' FL).2 rfl
   rw [← hgL]
-  exact sub_one_dvd_two_mul_genus_sub_genus_of_finite_of_isIntegrallyClosedIn hF hex hFL hexL
+  exact sub_one_dvd_two_mul_genus_sub_genus_of_finite_of_isIntegrallyClosedIn hF hex
+    ((constantCompositum_eq_top_iff F L F' FL).2 rfl) hexL
+
+private theorem genus_le_and_sub_one_dvd_two_mul_genus_sub_genus {p : ℕ} [Fact p.Prime] [CharP k p]
+    [Algebra.IsAlgebraic k k'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) {k'' : Type*} [Field k''] [Algebra k' k'']
+    [Algebra k'' F'] [IsScalarTower k' k'' F'] [Algebra.IsAlgebraic k' k'']
+    (hex'' : IsIntegrallyClosedIn k'' F') :
+    genus k'' F' ≤ genus k F ∧ (p - 1) ∣ 2 * (genus k F - genus k'' F') := by
+  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
+  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
+    simp [RingHom.algebraMap_toAlgebra, ← IsScalarTower.algebraMap_apply _ _ F']
+  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
+  have htop : constantCompositum F k'' F' = ⊤ := constantCompositum_eq_top_of_isScalarTower h
+  exact ⟨genus_le_genus_of_constantCompositum_eq_top hF htop,
+    sub_one_dvd_two_mul_genus_sub_genus_of_isIntegrallyClosedIn hF hex htop hex''⟩
 
 /-- **Tate's genus-change theorem** (allowing constant growth): for any algebraic constant field
 extension `F' = F · k'` of a function field `F / k` in prime characteristic `p` with `k` exact in
@@ -279,15 +289,8 @@ theorem sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top {p : �
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
     {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F') :
-    (p - 1) ∣ 2 * (genus k F - genus k'' F') := by
-  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
-  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
-  exact sub_one_dvd_two_mul_genus_sub_genus_of_isIntegrallyClosedIn hF hex
-    (constantCompositum_eq_top_of_isScalarTower h) hex''
+    (p - 1) ∣ 2 * (genus k F - genus k'' F') :=
+  (genus_le_and_sub_one_dvd_two_mul_genus_sub_genus hF hex h hex'').2
 
 /-- **Tate's genus-change theorem for `algebraicClosure k' F'`**: specialization of
 `TauCeti.sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top` to
@@ -311,9 +314,8 @@ theorem sub_one_div_two_dvd_genus_sub_genus_of_constantCompositum_eq_top {p : �
     {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F') :
     ((p - 1) / 2) ∣ genus k F - genus k'' F' := by
-  have hp : p.Prime := Fact.out
   have h2 : 2 * ((p - 1) / 2) = p - 1 :=
-    Nat.mul_div_cancel' ((hp.odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
+    Nat.mul_div_cancel' (((Fact.out : p.Prime).odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
   refine (Nat.mul_dvd_mul_iff_left two_pos).1 ?_
   rw [h2]
   exact sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top hF hex h hex''
@@ -328,15 +330,7 @@ theorem genus_eq_genus_of_two_mul_genus_lt_sub_one {p : ℕ} [Fact p.Prime] [Cha
     {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F') :
     genus k'' F' = genus k F := by
-  let _ : Algebra k k'' := RingHom.toAlgebra ((algebraMap k' k'').comp (algebraMap k k'))
-  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
-    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
-      ← IsScalarTower.algebraMap_apply k' k'' F', ← IsScalarTower.algebraMap_apply k k' F']
-  have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
-  have hgle : genus k'' F' ≤ genus k F :=
-    genus_le_genus_of_constantCompositum_eq_top hF (constantCompositum_eq_top_of_isScalarTower h)
-  have hdvd := sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top hF hex h hex''
+  obtain ⟨hgle, hdvd⟩ := genus_le_and_sub_one_dvd_two_mul_genus_sub_genus hF hex h hex''
   have hzero : 2 * (genus k F - genus k'' F') = 0 := Nat.eq_zero_of_dvd_of_lt hdvd (by omega)
   omega
 
@@ -350,9 +344,8 @@ theorem genus_eq_genus_of_genus_lt_sub_one_div_two {p : ℕ} [Fact p.Prime] [Cha
     {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
     [Algebra.IsAlgebraic k' k''] (hex'' : IsIntegrallyClosedIn k'' F') :
     genus k'' F' = genus k F := by
-  have hp : p.Prime := Fact.out
   have h2 : 2 * ((p - 1) / 2) = p - 1 :=
-    Nat.mul_div_cancel' ((hp.odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
+    Nat.mul_div_cancel' (((Fact.out : p.Prime).odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
   exact genus_eq_genus_of_two_mul_genus_lt_sub_one hF hex h (by omega) hex''
 
 /-- **Exactness of constants in small positive genus**: for a function field `F / k` in prime

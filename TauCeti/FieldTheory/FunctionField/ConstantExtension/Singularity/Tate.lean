@@ -93,19 +93,15 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
   let αS : P'.integers := ⟨algebraMap k' F' α, P'.algebraMap_mem_integers α⟩
   let ψ := w.constr P.integers fun i : Fin n ↦ αS ^ (i : ℕ)
   let A := LinearMap.toMatrix w w ψ
-  let pbk : PowerBasis k k' :=
-    PowerBasis.ofAdjoinSimpleEqTop (Algebra.IsIntegral.isIntegral α) hα
+  let pbk := PowerBasis.ofAdjoinSimpleEqTop (Algebra.IsIntegral.isIntegral α) hα
   have hpbk_dim : pbk.dim = n := (pbk.finrank.symm.trans hk').trans hnp.symm
   let bk : Basis (Fin n) k k' := pbk.basis.reindex (finCongr hpbk_dim)
   have hbk (i : Fin n) : bk i = α ^ (i : ℕ) := by simp [bk, pbk]
   let cF : Basis (Fin n) F F' := constantBasisOfFinrankEq h hn bk
   have hcF (i : Fin n) : cF i = (ψ (w i) : F') := by
-    rw [constantBasisOfFinrankEq_apply, hbk, map_pow, w.constr_basis]
-    rfl
+    rw [constantBasisOfFinrankEq_apply, hbk, map_pow, w.constr_basis]; rfl
   let ιP : P'.integers →ₛₗ[algebraMap P.integers F] F' :=
-    { toFun := Subtype.val
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun r x ↦ by
+    { toFun := Subtype.val, map_add' := fun _ _ ↦ rfl, map_smul' := fun r x ↦ by
         rw [Algebra.smul_def, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers,
           ValuationSubring.algebraMap_apply] }
   have hli : LinearIndependent F fun i ↦ ιP (ψ (w i)) :=
@@ -117,24 +113,19 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
     rw [LinearMap.range_eq_map, ← w.span_eq, Submodule.map_span, ← Set.range_comp,
       P'.constantSpanSubmodule_eq_span h hn bk]
     refine congrArg (Submodule.span P.integers) (congrArg Set.range (funext fun i ↦ ?_))
-    rw [Function.comp_apply, w.constr_basis]
-    exact Subtype.ext (by simp [αS, hbk])
+    rw [Function.comp_apply, w.constr_basis]; exact Subtype.ext (by simp [αS, hbk])
   let _ := Place.integersAlgebraBase k P'
   have := Place.isScalarTower_integersAlgebraBase k P'
   have := Place.isScalarTower_integers_restrict k F P'
-  have hord : Ring.ord P.integers A.det = ((P.ord (A.det : F)).toNat : ℕ∞) :=
-    P.ringOrd_integers_eq_toNat_ord hAdetF
-  have hlen : (Module.length P.integers (P'.integers ⧸ P'.constantSpanSubmodule k F)).toNat =
-      (P.ord (A.det : F)).toNat := by
-    rw [← hrange, w.length_quotient_range_eq_length_quotient_range_toMatrix ψ,
-      Matrix.length_quotient_range_mulVecLin_eq_ord_det A hAdet, hord, ENat.toNat_natCast]
-  have hfinrank_k : p * P.singularityDegree k' F' = finrank k (P.singularityQuotient k' F') := by
-    rw [← hk', Place.singularityDegree_def k' F' P,
-      Module.finrank_mul_finrank k k' (P.singularityQuotient k' F')]
   refine ⟨hAdetF, ?_⟩
-  rw [hfinrank_k, ← (P'.singularityQuotientLinearEquiv k F hF').finrank_eq,
+  rw [← hk', Place.singularityDegree_def k' F' P,
+    Module.finrank_mul_finrank k k' (P.singularityQuotient k' F'),
+    ← (P'.singularityQuotientLinearEquiv k F hF').finrank_eq,
     TauCeti.finrank_eq_length_mul_finrank_residueField k P.integers
-      (P'.integers ⧸ P'.constantSpanSubmodule k F), hlen, P.degree_eq_finrank]
+      (P'.integers ⧸ P'.constantSpanSubmodule k F),
+    ← hrange, w.length_quotient_range_eq_length_quotient_range_toMatrix ψ,
+    Matrix.length_quotient_range_mulVecLin_eq_ord_det A hAdet,
+    P.ringOrd_integers_eq_toNat_ord hAdetF, ENat.toNat_natCast, P.degree_eq_finrank]
 
 /-- Triangular-exponent arithmetic translating `det A = dS ^ (p (p - 1) / 2)` into
 `2 e(P' ∣ P) ord_P(det A) = p (p - 1) ord_{P'}(dS)`. -/
@@ -148,10 +139,7 @@ private theorem Place.two_mul_ramificationIdx_mul_toNat_ord_eq {p : ℕ}
     x.property d.property (congrArg Subtype.val hxd)
   have h2 : 2 * (p * (p - 1) / 2) = p * (p - 1) :=
     Nat.mul_div_cancel' (Nat.even_mul_pred_self p).two_dvd
-  calc 2 * Place.ramificationIdx F P' * ((P'.restrict k F).ord (x : F)).toNat
-      = 2 * (Place.ramificationIdx F P' * ((P'.restrict k F).ord (x : F)).toNat) := by ring
-    _ = 2 * (p * (p - 1) / 2) * (P'.ord (d : F')).toNat := by rw [h]; ring
-    _ = p * (p - 1) * (P'.ord (d : F')).toNat := by rw [h2]
+  nlinarith
 
 /-- **Local Tate–Schröer formula**: for a purely inseparable constant field extension `F' = F · k'`
 of prime degree `p` over a function field `F / k` with exact constants, given an `𝒪_P`-power
@@ -183,21 +171,18 @@ theorem Place.two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {p : ℕ
   have : CharP F p := charP_of_injective_algebraMap (algebraMap k F).injective p
   have : ExpChar F p := .prime hp
   have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
-  have : CharP P'.integers p :=
-    charP_of_injective_algebraMap (algebraMap k' P'.integers).injective p
+  have : CharP P'.integers p := charP_of_injective_algebraMap (algebraMap k' _).injective p
   obtain ⟨b₀, hb₀⟩ := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow F F' p (n := 1)
     (by simp [hFF']) (pb.gen : F')
   rw [pow_one] at hb₀
   let b : (P'.restrict k F).integers :=
     ⟨b₀, (Place.mem_integers_iff_of_algebraMap_eq_pow k F P' hp.ne_zero hb₀).1 pb.gen.property⟩
   have hb : algebraMap (P'.restrict k F).integers P'.integers b = pb.gen ^ pb.dim := by
-    rw [hdim]
-    exact Subtype.ext hb₀
+    rw [hdim]; exact Subtype.ext hb₀
   have hfdet := (pb.det_toMatrix_aeval_pow (p := p) (e := 1) (by rw [hdim, pow_one]) hb f).trans
     (by rw [hdim])
-  have hf_int : aeval pb.gen f = ⟨algebraMap k' F' α, P'.algebraMap_mem_integers α⟩ :=
-    Subtype.ext hf
-  rw [hf_int] at hfdet
+  rw [(Subtype.ext hf : aeval pb.gen f = ⟨algebraMap k' F' α, P'.algebraMap_mem_integers α⟩)]
+    at hfdet
   obtain ⟨-, hlen⟩ := P'.mul_singularityDegree_eq_toNat_ord_det_mul_degree hp hk' hF hex h hdim
     pb.basis hα
   have hord_eq := P'.two_mul_ramificationIdx_mul_toNat_ord_eq hfdet
@@ -210,12 +195,10 @@ theorem Place.two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {p : ℕ
   calc p * p * (2 * (P'.restrict k F).singularityDegree k' F')
       = 2 * (Place.ramificationIdx F P' * Place.relativeDegree k F P') *
           (p * (P'.restrict k F).singularityDegree k' F') := by rw [hef]; ring
-    _ = (2 * Place.ramificationIdx F P' * ((P'.restrict k F).ord _).toNat) *
+    _ = 2 * Place.ramificationIdx F P' * ((P'.restrict k F).ord _).toNat *
           (Place.relativeDegree k F P' * (P'.restrict k F).degree) := by rw [hlen]; ring
-    _ = (p * (p - 1) * (P'.ord (aeval pb.gen f.derivative : P'.integers)).toNat) *
-          (p * P'.degree) := by rw [hord_eq, hfdeg]
     _ = p * p * ((p - 1) * (P'.ord (aeval pb.gen f.derivative : P'.integers)).toNat *
-          P'.degree) := by ring
+          P'.degree) := by rw [hord_eq, hfdeg]; ring
 
 /-- **Local Tate–Schröer formula** (existential form): for a purely inseparable constant field
 extension `F' = F · k'` of prime degree `p` over a function field `F / k` with exact constants, at
@@ -248,8 +231,7 @@ theorem Place.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime {p : ℕ
     [IsPurelyInseparable k k'] (hk' : finrank k k' = p) (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) (P : Place k F) :
     (p - 1) ∣ 2 * P.singularityDegree k' F' := by
-  have hp : p.Prime := Fact.out
-  have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ hp.pos)
+  have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ (Fact.out : p.Prime).pos)
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   obtain ⟨P', rfl⟩ := Place.restrict_surjective (hF.of_constantCompositum_eq_top h) P
   obtain ⟨m, hm⟩ := P'.exists_two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime hk' hF hex h
@@ -263,12 +245,10 @@ theorem Place.sub_one_div_two_dvd_singularityDegree_of_finrank_eq_prime {p : ℕ
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (P : Place k F) :
     ((p - 1) / 2) ∣ P.singularityDegree k' F' := by
-  have hp : p.Prime := Fact.out
   have h2 : 2 * ((p - 1) / 2) = p - 1 :=
-    Nat.mul_div_cancel' ((hp.odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
+    Nat.mul_div_cancel' (((Fact.out : p.Prime).odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
   refine (Nat.mul_dvd_mul_iff_left two_pos).1 ?_
-  rw [h2]
-  exact P.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime hk' hF hex h
+  rw [h2]; exact P.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime hk' hF hex h
 
 end LocalFormula
 

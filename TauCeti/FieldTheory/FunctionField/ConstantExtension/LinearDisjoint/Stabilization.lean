@@ -69,13 +69,11 @@ private theorem linearDisjoint_fieldRange_restrictScalars (L : IntermediateField
   have : FiniteDimensional k N := Module.Finite.trans L N
   let eN := (IntermediateField.restrictScalarsAlgEquiv k N).symm
   have hfin : FiniteDimensional k M := eN.toLinearEquiv.finiteDimensional
-  let eF := (IntermediateField.restrictScalarsAlgEquiv F FLN).symm.trans
-    (IntermediateField.equivOfEq (restrictScalars_constantCompositum_eq L N))
+  let eF := restrictScalarsConstantCompositumEquiv F F' L N
   have hσ (c : N) : algebraMap M F' (eN.toRingEquiv c) = algebraMap N F' c := by
     rw [AlgEquiv.coe_toRingEquiv, IsScalarTower.algebraMap_apply M k' F',
       IsScalarTower.algebraMap_apply N k' F', IntermediateField.algebraMap_apply,
-      IntermediateField.algebraMap_apply,
-      IntermediateField.coe_restrictScalarsAlgEquiv_symm_apply]
+      IntermediateField.algebraMap_apply, IntermediateField.coe_restrictScalarsAlgEquiv_symm_apply]
   have hτ (x : FLN) : algebraMap FM F' (eF.toRingEquiv x) = algebraMap FLN F' x := by
     simp [eF, IntermediateField.algebraMap_apply]
   exact ⟨hfin, linearDisjoint_fieldRange_of_ringEquiv eN.toRingEquiv eF.toRingEquiv hσ hτ H⟩
@@ -120,16 +118,13 @@ private theorem exists_finiteDimensional_linearDisjoint_aux (n : ℕ) :
   have := isScalarTower_constantCompositum E M F'
   have := isScalarTower_base_constantCompositum K E M F'
   have hEM : constantCompositum E M EM = ⊤ := (constantCompositum_eq_top_iff E M F' EM).2 rfl
-  have hFEM : IsFunctionField M EM := hE.of_constantCompositum_eq_top hEM
-  have : Algebra.IsAlgebraic M k' := .tower_top (K := K) M
-  have hx' : Transcendental M (algebraMap E EM x) := hx.algebraMap_of_isAlgebraic
   have := hE.finiteDimensional_adjoin hx
   have hlt : Module.finrank M⟮algebraMap E EM x⟯ EM < n :=
     hn ▸ finrank_adjoin_simple_lt_of_finrank_ne (F' := F') hx hM
-  obtain ⟨N, _, HN⟩ :=
-    ih _ hlt M EM hFEM (constantCompositum_eq_top_of_eq_top E k' F' EM h) _ hx' rfl
-  obtain ⟨hfin, H'⟩ := linearDisjoint_fieldRange_restrictScalars M N HN
-  exact ⟨N.restrictScalars K, hfin, H'⟩
+  have : Algebra.IsAlgebraic M k' := .tower_top (K := K) M
+  obtain ⟨N, _, HN⟩ := ih _ hlt M EM (hE.of_constantCompositum_eq_top hEM)
+    (constantCompositum_eq_top_of_eq_top E k' F' EM h) _ (hx.algebraMap_of_isAlgebraic) rfl
+  exact ⟨N.restrictScalars K, linearDisjoint_fieldRange_restrictScalars M N HN⟩
 
 /-- **Linear-disjointness stabilization under an algebraic constant field extension**: if
 `F' = F · k'` for an algebraic extension `k' / k`, finite or not, then there exists a finite
