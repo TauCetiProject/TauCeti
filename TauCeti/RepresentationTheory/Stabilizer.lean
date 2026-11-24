@@ -47,6 +47,7 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Subrepresentation.stabilizer_toRepresentation`
 * `Representation.mem_invariants_comp_subtype_iff`
 * `Representation.stabilizer_ofMulAction_single`
+* `Representation.le_stabilizer_ofMulAction`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
   `Representation.range_orbitMap`
 * `Representation.biInf_stabilizer_span`: pointwise stabilizer of `Submodule.span R s`.
@@ -99,6 +100,19 @@ theorem stabilizer_ofMulAction_single {X : Type*} [MulAction G X] (x : X) {r : A
   ext g
   rw [mem_stabilizer, ofMulAction_single, MonoidAlgebra.single_left_inj hr,
     MulAction.mem_stabilizer_iff]
+
+/-- A subgroup fixing every point of `X` fixes every vector of the permutation representation on
+`A[X]`. -/
+theorem le_stabilizer_ofMulAction {X : Type*} [MulAction G X] {U : Subgroup G}
+    (h : ∀ x : X, U ≤ MulAction.stabilizer G x) (v : MonoidAlgebra A X) :
+    U ≤ (ofMulAction A G X).stabilizer v := by
+  intro g hg
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => exact mem_stabilizer.2 (map_zero _)
+  | add f₁ f₂ h₁ h₂ =>
+    exact mem_stabilizer.2 (by rw [map_add, mem_stabilizer.1 h₁, mem_stabilizer.1 h₂])
+  | single x r =>
+    exact mem_stabilizer.2 (by rw [ofMulAction_single, MulAction.mem_stabilizer_iff.1 (h x hg)])
 
 end Semiring
 

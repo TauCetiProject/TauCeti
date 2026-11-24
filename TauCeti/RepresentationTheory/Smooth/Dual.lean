@@ -18,17 +18,17 @@ smooth vectors of the algebraic dual representation `Representation.dual ρ` on 
 which `g` acts by `λ ↦ λ ∘ ρ(g⁻¹)`. For a locally profinite group, its elements are the linear
 forms fixed by some compact open subgroup.
 
-For smooth `V` and `W`, an intertwining map `V → W^∨` is the same as a `G`-invariant bilinear
-pairing `V × W → A`, and hence the same as an intertwining map `W → V^∨`. Applied to the identity of
+For smooth `V` and `W`, an intertwining map `V → W^∨` is the same as an intertwining map
+`V → W^*`, hence (swapping arguments, `Representation.dualHomEquiv`) the same as a `G`-invariant
+bilinear pairing `V × W → A` and as an intertwining map `W → V^∨`. Applied to the identity of
 `V^∨`, this gives the evaluation map `V → V^∨∨`.
 
 ## Main definitions
 
 * `Representation.smoothDual ρ`: the smooth dual `V^∨`, the smooth vectors of `ρ.dual`.
 * `Representation.IntertwiningMap.smoothDualMap f`: for `f : V → W`, the transpose `W^∨ → V^∨`.
-* `Representation.invariantPairings ρ σ`: the `G`-invariant bilinear pairings `V × W → A`.
-* `Representation.intertwiningMapDualEquiv`: intertwining maps `V → W^*` are the invariant
-  pairings.
+* `Representation.intertwiningMapSmoothDualEquiv`: for smooth `V`, intertwining maps `V → W^∨` are
+  the intertwining maps `V → W^*`.
 * `Representation.smoothDualHomEquiv`: for smooth `V` and `W`, `Hom_G(V, W^∨) ≃ Hom_G(W, V^∨)`.
 * `Representation.smoothDualEval ρ`: for smooth `V`, the evaluation map `V → V^∨∨`.
 
@@ -60,74 +60,6 @@ variable {A G V W : Type*} [CommSemiring A] [Group G]
   [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
   {ρ : Representation A G V} {σ : Representation A G W}
 
-/-! ### Invariant pairings -/
-
-section Pairings
-
-variable (ρ σ) in
-/-- The `G`-invariant `A`-bilinear pairings `B : V × W → A`, those with
-`B (ρ g v) (σ g w) = B v w` for all `g`, `v` and `w`. -/
-@[expose] def invariantPairings : Submodule A (V →ₗ[A] W →ₗ[A] A) where
-  carrier := {B | ∀ g v w, B (ρ g v) (σ g w) = B v w}
-  add_mem' hB hB' g v w := by simp [hB g v w, hB' g v w]
-  zero_mem' := by simp
-  smul_mem' c B hB g v w := by simp [hB g v w]
-
-theorem mem_invariantPairings_iff {B : V →ₗ[A] W →ₗ[A] A} :
-    B ∈ invariantPairings ρ σ ↔ ∀ g v w, B (ρ g v) (σ g w) = B v w :=
-  Iff.rfl
-
-/-- An invariant pairing moves the action from one side to the other:
-`B (ρ g v) w = B v (σ g⁻¹ w)`. -/
-theorem apply_apply_eq_of_mem_invariantPairings {B : V →ₗ[A] W →ₗ[A] A}
-    (hB : B ∈ invariantPairings ρ σ) (g : G) (v : V) (w : W) :
-    B (ρ g v) w = B v (σ g⁻¹ w) := by
-  rw [← hB g v (σ g⁻¹ w)]
-  simp
-
-/-- Swapping the arguments identifies invariant pairings `V × W → A` with invariant pairings
-`W × V → A`. -/
-@[expose] def invariantPairingsFlip : invariantPairings ρ σ ≃ₗ[A] invariantPairings σ ρ where
-  toFun B := ⟨(B : V →ₗ[A] W →ₗ[A] A).flip, fun g w v ↦ B.property g v w⟩
-  invFun B := ⟨(B : W →ₗ[A] V →ₗ[A] A).flip, fun g v w ↦ B.property g w v⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-theorem invariantPairingsFlip_apply_apply (B : invariantPairings ρ σ) (w : W) (v : V) :
-    (invariantPairingsFlip B : W →ₗ[A] V →ₗ[A] A) w v = (B : V →ₗ[A] W →ₗ[A] A) v w :=
-  rfl
-
-variable (ρ σ) in
-/-- **Intertwining maps to a dual are invariant pairings.** An intertwining map `f : V → W^*`
-is the same as the `G`-invariant pairing `(v, w) ↦ f v w`. -/
-@[expose] def intertwiningMapDualEquiv : IntertwiningMap ρ σ.dual ≃ₗ[A] invariantPairings ρ σ where
-  toFun f := ⟨f.toLinearMap, fun g v w ↦ by
-    simp [IntertwiningMap.isIntertwining, Dual.transpose_apply]⟩
-  invFun B :=
-    { toLinearMap := (B : V →ₗ[A] W →ₗ[A] A)
-      isIntertwining' g := LinearMap.ext fun v ↦ LinearMap.ext fun w ↦ by
-        simpa [Dual.transpose_apply] using
-          apply_apply_eq_of_mem_invariantPairings B.property g v w }
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-theorem intertwiningMapDualEquiv_apply_apply (f : IntertwiningMap ρ σ.dual) (v : V) (w : W) :
-    (intertwiningMapDualEquiv ρ σ f : V →ₗ[A] W →ₗ[A] A) v w = f v w :=
-  rfl
-
-@[simp]
-theorem intertwiningMapDualEquiv_symm_apply_apply (B : invariantPairings ρ σ) (v : V) (w : W) :
-    (intertwiningMapDualEquiv ρ σ).symm B v w = (B : V →ₗ[A] W →ₗ[A] A) v w :=
-  rfl
-
-end Pairings
-
 variable [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 /-! ### The smooth dual -/
@@ -143,7 +75,7 @@ abbrev smoothDual : Representation A G ρ.dual.smoothVectors.toSubmodule :=
 
 theorem smoothDual_apply_coe (g : G) (f : ρ.dual.smoothVectors.toSubmodule) (v : V) :
     (ρ.smoothDual g f : Dual A V) v = (f : Dual A V) (ρ g⁻¹ v) :=
-  rfl
+  (rfl)
 
 /-- If an open subgroup `U` fixes every vector, it fixes every linear form, and every linear form
 is smooth. -/
@@ -188,33 +120,29 @@ variable {U : Type*} [AddCommMonoid U] [Module A U] {τ : Representation A G U}
 /-- The transpose of an intertwining map `f : V → W` sends smooth linear forms on `W` to smooth
 linear forms on `V`. -/
 theorem IntertwiningMap.dualMap_mem_smoothVectors (f : IntertwiningMap ρ σ) {l : Dual A W}
-    (hl : l ∈ σ.dual.smoothVectors) : f.toLinearMap.dualMap l ∈ ρ.dual.smoothVectors :=
-  IntertwiningMap.apply_mem_smoothVectors (ρ := σ.dual)
-    ⟨f.toLinearMap.dualMap, fun g ↦ LinearMap.ext fun l ↦ LinearMap.ext fun v ↦ by
-      simp [Dual.transpose_apply, f.isIntertwining]⟩ hl
+    (hl : l ∈ σ.dual.smoothVectors) : f.dualMap l ∈ ρ.dual.smoothVectors :=
+  f.dualMap.apply_mem_smoothVectors hl
 
 /-- The transpose `W^∨ → V^∨` of an intertwining map `f : V → W`, `λ ↦ λ ∘ f`. -/
-@[expose] def IntertwiningMap.smoothDualMap (f : IntertwiningMap ρ σ) :
-    IntertwiningMap σ.smoothDual ρ.smoothDual where
-  toLinearMap := (f.toLinearMap.dualMap ∘ₗ σ.dual.smoothVectors.toSubmodule.subtype).codRestrict
-    ρ.dual.smoothVectors.toSubmodule fun l ↦ f.dualMap_mem_smoothVectors l.property
-  isIntertwining' g := LinearMap.ext fun l ↦ Subtype.ext <| LinearMap.ext fun v ↦ by
-    simp [Dual.transpose_apply, f.isIntertwining]
+def IntertwiningMap.smoothDualMap (f : IntertwiningMap ρ σ) :
+    IntertwiningMap σ.smoothDual ρ.smoothDual :=
+  (f.dualMap.comp σ.dual.smoothVectors.subtype).codRestrict ρ.dual.smoothVectors fun l ↦ by
+    simpa using f.dualMap_mem_smoothVectors l.property
 
 @[simp]
 theorem IntertwiningMap.smoothDualMap_apply_coe (f : IntertwiningMap ρ σ)
     (l : σ.dual.smoothVectors.toSubmodule) (v : V) :
-    (f.smoothDualMap l : Dual A V) v = (l : Dual A W) (f v) :=
-  rfl
+    (f.smoothDualMap l : Dual A V) v = (l : Dual A W) (f v) := by
+  simp [smoothDualMap]
 
 @[simp]
 theorem IntertwiningMap.smoothDualMap_id :
     (IntertwiningMap.id ρ).smoothDualMap = IntertwiningMap.id ρ.smoothDual :=
-  rfl
+  IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext <| LinearMap.ext fun _ ↦ by simp
 
 theorem IntertwiningMap.smoothDualMap_comp (f : IntertwiningMap ρ σ) (f' : IntertwiningMap σ τ) :
     (f'.comp f).smoothDualMap = f.smoothDualMap.comp f'.smoothDualMap :=
-  rfl
+  IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext <| LinearMap.ext fun _ ↦ by simp
 
 end SmoothDualMap
 
@@ -224,57 +152,58 @@ section Hom
 
 /-- For smooth `V`, an intertwining map `V → W^∨` is the same as an intertwining map `V → W^*`:
 the image of a smooth vector is smooth. -/
-@[expose] def intertwiningMapSmoothDualEquiv [IsSmooth ρ] :
+def intertwiningMapSmoothDualEquiv [IsSmooth ρ] :
     IntertwiningMap ρ σ.smoothDual ≃ₗ[A] IntertwiningMap ρ σ.dual where
-  toFun f :=
-    { toLinearMap := σ.dual.smoothVectors.toSubmodule.subtype ∘ₗ f.toLinearMap
-      isIntertwining' g := LinearMap.ext fun v ↦ by simp [f.isIntertwining] }
-  invFun f :=
-    { toLinearMap := f.toLinearMap.codRestrict σ.dual.smoothVectors.toSubmodule fun v ↦
-        f.apply_mem_smoothVectors (IsSmooth.mem_smoothVectors v)
-      isIntertwining' g := LinearMap.ext fun v ↦ Subtype.ext (by simp [f.isIntertwining]) }
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
+  toFun f := σ.dual.smoothVectors.subtype.comp f
+  invFun f := f.codRestrict σ.dual.smoothVectors fun v ↦
+    f.apply_mem_smoothVectors (IsSmooth.mem_smoothVectors v)
+  map_add' _ _ := IntertwiningMap.ext <| LinearMap.ext fun _ ↦ by simp
+  map_smul' _ _ := IntertwiningMap.ext <| LinearMap.ext fun _ ↦ by simp
+  left_inv _ := IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext (by simp)
+  right_inv _ := IntertwiningMap.ext <| LinearMap.ext fun _ ↦ by simp
 
 @[simp]
 theorem intertwiningMapSmoothDualEquiv_apply [IsSmooth ρ] (f : IntertwiningMap ρ σ.smoothDual)
-    (v : V) : intertwiningMapSmoothDualEquiv f v = f v :=
-  rfl
+    (v : V) : intertwiningMapSmoothDualEquiv f v = f v := by
+  simp [intertwiningMapSmoothDualEquiv]
+
+@[simp]
+theorem intertwiningMapSmoothDualEquiv_symm_apply_coe [IsSmooth ρ] (f : IntertwiningMap ρ σ.dual)
+    (v : V) : (intertwiningMapSmoothDualEquiv.symm f v : Dual A W) = f v := by
+  simp [intertwiningMapSmoothDualEquiv]
 
 variable (ρ σ) in
 /-- **Duality for intertwining maps into smooth duals.** For smooth representations `V` and `W`,
 `Hom_G(V, W^∨) ≃ Hom_G(W, V^∨)`, both sides being the `G`-invariant bilinear pairings `V × W → A`:
 `f` corresponds to `w ↦ (v ↦ f v w)`. -/
-@[expose] def smoothDualHomEquiv [IsSmooth ρ] [IsSmooth σ] :
+def smoothDualHomEquiv [IsSmooth ρ] [IsSmooth σ] :
     IntertwiningMap ρ σ.smoothDual ≃ₗ[A] IntertwiningMap σ ρ.smoothDual :=
-  intertwiningMapSmoothDualEquiv ≪≫ₗ intertwiningMapDualEquiv ρ σ ≪≫ₗ invariantPairingsFlip ≪≫ₗ
-    (intertwiningMapDualEquiv σ ρ).symm ≪≫ₗ intertwiningMapSmoothDualEquiv.symm
+  intertwiningMapSmoothDualEquiv ≪≫ₗ dualHomEquiv ρ σ ≪≫ₗ intertwiningMapSmoothDualEquiv.symm
 
 @[simp]
 theorem smoothDualHomEquiv_apply_coe [IsSmooth ρ] [IsSmooth σ]
     (f : IntertwiningMap ρ σ.smoothDual) (w : W) (v : V) :
-    (smoothDualHomEquiv ρ σ f w : Dual A V) v = (f v : Dual A W) w :=
-  rfl
+    (smoothDualHomEquiv ρ σ f w : Dual A V) v = (f v : Dual A W) w := by
+  simp [smoothDualHomEquiv]
 
+@[simp]
 theorem smoothDualHomEquiv_symm [IsSmooth ρ] [IsSmooth σ] :
     (smoothDualHomEquiv ρ σ).symm = smoothDualHomEquiv σ ρ :=
-  rfl
+  LinearEquiv.ext fun _ ↦ by simp [smoothDualHomEquiv]
 
 /-- Naturality of `Hom_G(V, W^∨) ≃ Hom_G(W, V^∨)` in `V`. -/
 theorem smoothDualHomEquiv_comp {V' : Type*} [AddCommMonoid V'] [Module A V']
     {ρ' : Representation A G V'} [IsSmooth ρ] [IsSmooth ρ'] [IsSmooth σ]
     (f : IntertwiningMap ρ σ.smoothDual) (u : IntertwiningMap ρ' ρ) :
     smoothDualHomEquiv ρ' σ (f.comp u) = u.smoothDualMap.comp (smoothDualHomEquiv ρ σ f) :=
-  rfl
+  IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext <| LinearMap.ext fun _ ↦ by simp
 
 /-- Naturality of `Hom_G(V, W^∨) ≃ Hom_G(W, V^∨)` in `W`. -/
 theorem smoothDualHomEquiv_smoothDualMap_comp {W' : Type*} [AddCommMonoid W'] [Module A W']
     {σ' : Representation A G W'} [IsSmooth ρ] [IsSmooth σ] [IsSmooth σ']
     (f : IntertwiningMap ρ σ.smoothDual) (t : IntertwiningMap σ' σ) :
     smoothDualHomEquiv ρ σ' (t.smoothDualMap.comp f) = (smoothDualHomEquiv ρ σ f).comp t :=
-  rfl
+  IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext <| LinearMap.ext fun _ ↦ by simp
 
 end Hom
 
@@ -285,18 +214,18 @@ section Eval
 variable (ρ) in
 /-- The evaluation map `V → V^∨∨`, `v ↦ (λ ↦ λ v)`, for a smooth representation `V`. It
 corresponds to the identity of `V^∨` under `Hom_G(V^∨, V^∨) ≃ Hom_G(V, V^∨∨)`. -/
-@[expose] def smoothDualEval [IsSmooth ρ] : IntertwiningMap ρ ρ.smoothDual.smoothDual :=
+def smoothDualEval [IsSmooth ρ] : IntertwiningMap ρ ρ.smoothDual.smoothDual :=
   smoothDualHomEquiv ρ.smoothDual ρ (IntertwiningMap.id _)
 
 @[simp]
 theorem smoothDualEval_apply_coe [IsSmooth ρ] (v : V) (f : ρ.dual.smoothVectors.toSubmodule) :
-    (ρ.smoothDualEval v : Dual A _) f = (f : Dual A V) v :=
-  rfl
+    (ρ.smoothDualEval v : Dual A _) f = (f : Dual A V) v := by
+  simp [smoothDualEval]
 
 /-- **The evaluation map to the double smooth dual is natural.** -/
 theorem smoothDualEval_comp [IsSmooth ρ] [IsSmooth σ] (f : IntertwiningMap ρ σ) :
     σ.smoothDualEval.comp f = f.smoothDualMap.smoothDualMap.comp ρ.smoothDualEval :=
-  rfl
+  IntertwiningMap.ext <| LinearMap.ext fun _ ↦ Subtype.ext <| LinearMap.ext fun _ ↦ by simp
 
 end Eval
 
@@ -322,7 +251,7 @@ theorem smoothDualEval_surjective_iff [IsSmooth ρ] {U : Subgroup G} (hU : IsOpe
     e₁.symm.dualMap
   have hΦ : ⇑Φ ∘ ⇑ρ.smoothDualEval = Dual.eval k V := by
     ext v f
-    rfl
+    simp [Φ, e₁, LinearEquiv.ofTop_apply]
   have key : Function.Surjective ρ.smoothDualEval ↔ Function.Surjective (Dual.eval k V) := by
     rw [← hΦ]
     exact (Φ.toEquiv.comp_surjective _).symm
