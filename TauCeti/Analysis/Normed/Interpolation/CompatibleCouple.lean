@@ -421,6 +421,7 @@ theorem norm_sumLift_le {𝕜 X₀ X₁ V W : Type*} [NontriviallyNormedField �
 /-- `sumLift T₀ T₁ h` has operator norm exactly `max ‖T₀‖ ‖T₁‖`, because the inclusions of `X₀`
 and `X₁` in the sum are norm-nonincreasing. For functionals this is the isometry
 `(X₀ + X₁)* = X₀* ∩ X₁*` (Bergh–Löfström, Theorem 2.7.1). -/
+@[simp]
 theorem norm_sumLift {𝕜 X₀ X₁ V W : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup X₀] [NormedSpace 𝕜 X₀] [NormedAddCommGroup X₁] [NormedSpace 𝕜 X₁]
     [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [ContinuousAdd V]

@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
-import TauCeti.MeasureTheory.Function.SimpleFunc.Lp
+import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 
 /-!
@@ -181,8 +181,8 @@ theorem dense_lpTwoSubmodule (hp : p ≠ ∞) :
     Dense (lpTwoSubmodule (E := E) (p := p) (μ := μ) : Set (Lp E p μ)) := by
   apply (Lp.simpleFunc.dense (E := E) (p := p) (μ := μ) hp).mono
   intro f hf
-  exact Lp.simpleFunc.memLp_of_ne_zero_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp
-    ⟨f, hf⟩ 2
+  exact (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top (zero_lt_one.trans_le Fact.out).ne' hp 2
+    ⟨f, hf⟩).ae_eq (Lp.simpleFunc.toSimpleFunc_eq_toFun _)
 
 /-- A function `φ`, truncated to `Sₖ = spanningSets μ k ∩ {‖φ‖ ≤ k, |b| ≤ k}`, lies in every
 `Lʳ`, and so does its product with `b`: both are bounded and vanish off a set of finite measure.

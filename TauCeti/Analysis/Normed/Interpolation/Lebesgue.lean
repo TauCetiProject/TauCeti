@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Normed.Interpolation.KFunctional
 public import TauCeti.Analysis.Normed.Interpolation.Regular
 public import TauCeti.MeasureTheory.Function.Lp.L1AddLinfty
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.SimpleFunc.Lp
+import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 
 /-!
 # The Lebesgue couple `(L^{p₀}, L^{p₁})`
@@ -186,15 +186,23 @@ theorem ofReal_kFunctional_lebesgue_le_eLpNorm_add_mul {v : (lebesgue 𝕜 E μ 
 
 section Regular
 
-/-- A function of `L^{p₀}` that also lies in `L^{p₁}` comes from the intersection. -/
-theorem mem_range_lebesgue_interFst {f : Lp E p₀ μ} (hf : MemLp f p₁ μ) :
-    f ∈ Set.range (lebesgue 𝕜 E μ p₀ p₁).interFst :=
-  ⟨⟨(f, hf.toLp f), mem_lebesgue_inter_iff.2 hf.coeFn_toLp.symm⟩, interFst_apply _ _⟩
+/-- A function of `L^{p₀}` comes from the intersection exactly when it also lies in `L^{p₁}`. -/
+theorem mem_range_lebesgue_interFst_iff {f : Lp E p₀ μ} :
+    f ∈ Set.range (lebesgue 𝕜 E μ p₀ p₁).interFst ↔ MemLp f p₁ μ :=
+  ⟨by
+      rintro ⟨x, rfl⟩
+      rw [interFst_apply]
+      exact (Lp.memLp x.val.2).ae_eq (mem_lebesgue_inter_iff.1 x.property).symm,
+    fun hf => ⟨⟨(f, hf.toLp f), mem_lebesgue_inter_iff.2 hf.coeFn_toLp.symm⟩, interFst_apply _ _⟩⟩
 
-/-- A function of `L^{p₁}` that also lies in `L^{p₀}` comes from the intersection. -/
-theorem mem_range_lebesgue_interSnd {f : Lp E p₁ μ} (hf : MemLp f p₀ μ) :
-    f ∈ Set.range (lebesgue 𝕜 E μ p₀ p₁).interSnd :=
-  ⟨⟨(hf.toLp f, f), mem_lebesgue_inter_iff.2 hf.coeFn_toLp⟩, interSnd_apply _ _⟩
+/-- A function of `L^{p₁}` comes from the intersection exactly when it also lies in `L^{p₀}`. -/
+theorem mem_range_lebesgue_interSnd_iff {f : Lp E p₁ μ} :
+    f ∈ Set.range (lebesgue 𝕜 E μ p₀ p₁).interSnd ↔ MemLp f p₀ μ :=
+  ⟨by
+      rintro ⟨x, rfl⟩
+      rw [interSnd_apply]
+      exact (Lp.memLp x.val.1).ae_eq (mem_lebesgue_inter_iff.1 x.property),
+    fun hf => ⟨⟨(hf.toLp f, f), mem_lebesgue_inter_iff.2 hf.coeFn_toLp⟩, interSnd_apply _ _⟩⟩
 
 /-- For finite exponents the Lebesgue couple `(L^{p₀}, L^{p₁})` is regular: the simple functions
 with support of finite measure lie in `L^{p₀} ∩ L^{p₁}` and are dense in `L^{p₀}` and in
@@ -203,11 +211,13 @@ with support of finite measure lie in `L^{p₀} ∩ L^{p₁}` and are dense in `
 from the constant function `1`. -/
 theorem isRegular_lebesgue (hp₀ : p₀ ≠ ∞) (hp₁ : p₁ ≠ ∞) : (lebesgue 𝕜 E μ p₀ p₁).IsRegular :=
   ⟨(Lp.simpleFunc.denseRange hp₀).mono <| Set.range_subset_iff.2 fun g =>
-      mem_range_lebesgue_interFst <| Lp.simpleFunc.memLp_of_ne_zero_of_ne_top
-        (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' hp₀ g p₁,
+      mem_range_lebesgue_interFst_iff.2 <| (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top
+        (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' hp₀ p₁ g).ae_eq
+          (Lp.simpleFunc.toSimpleFunc_eq_toFun g),
     (Lp.simpleFunc.denseRange hp₁).mono <| Set.range_subset_iff.2 fun g =>
-      mem_range_lebesgue_interSnd <| Lp.simpleFunc.memLp_of_ne_zero_of_ne_top
-        (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne' hp₁ g p₀⟩
+      mem_range_lebesgue_interSnd_iff.2 <| (Lp.simpleFunc.memLp_toSimpleFunc_of_ne_top
+        (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne' hp₁ p₀ g).ae_eq
+          (Lp.simpleFunc.toSimpleFunc_eq_toFun g)⟩
 
 end Regular
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
-public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 
 /-!
@@ -18,9 +17,6 @@ element `u c` of `Lᵖ`, then a combination `∑ c, a c • u c` with coefficien
 value is the class of `x ↦ a (f x) • f x` (`MeasureTheory.Lp.coeFn_sum_smul_restrict_const`). This
 is how an analytic family built from the fibres of a simple function, as in the complex
 interpolation of the Lebesgue couple, is evaluated pointwise.
-
-An element of `Lp.simpleFunc E p μ` with `0 < p < ∞` has fibres of finite measure, so it lies in
-`L^q` for every exponent `q` (`MeasureTheory.Lp.simpleFunc.memLp_of_ne_zero_of_ne_top`).
 -/
 
 public section
@@ -46,13 +42,5 @@ theorem coeFn_sum_smul_restrict_const (f : SimpleFunc α E) (a : E → 𝕜) (u 
   filter_upwards [coeFn_finsetSum f.range (fun c => a c • u c), h] with x hx hx'
   rw [hx, Finset.sum_apply, ← SimpleFunc.sum_smul_restrict_const_apply f a x]
   exact Finset.sum_congr rfl hx'
-
-/-- A simple function of `Lᵖ` with `0 < p < ∞` has fibres of finite measure, so it lies in `L^q`
-for every exponent `q`. -/
-theorem simpleFunc.memLp_of_ne_zero_of_ne_top (hp₀ : p ≠ 0) (hp : p ≠ ∞)
-    (f : Lp.simpleFunc E p μ) (q : ℝ≥0∞) : MemLp (f : α → E) q μ :=
-  (SimpleFunc.memLp_of_finite_measure_preimage q
-    (SimpleFunc.measure_preimage_lt_top_of_memLp hp₀ hp _ (Lp.simpleFunc.memLp f))).ae_eq
-    (Lp.simpleFunc.toSimpleFunc_eq_toFun f)
 
 end MeasureTheory.Lp
