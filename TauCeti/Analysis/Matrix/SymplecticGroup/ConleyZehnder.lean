@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 import Mathlib.Topology.Homotopy.Product
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
@@ -679,16 +680,14 @@ private theorem detCircle_graphUnitaryFrame_sq (A : GLSymplectic n ℝ) :
   have hu : (detCircle (graphUnitaryFrame A) : ℂ) = (detCircle T : ℂ) * (r * d) := by
     rw [coe_detCircle, coe_detCircle, graphUnitaryFrame, det_mul, hr, coe_graphFrameUnit]
   -- Both determinants lie on the unit circle.
-  have hconj (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
-    rw [← Circle.coe_inv_eq_conj, ← Circle.coe_mul, mul_inv_cancel, Circle.coe_one]
-  have huu := hconj (detCircle (graphUnitaryFrame A))
+  have huu := Circle.coe_mul_conj (detCircle (graphUnitaryFrame A))
   rw [hu, map_mul, map_mul, conj_ofReal] at huu
   have hd : conj d ≠ 0 := (map_ne_zero _).2 (det_graphFrame_ne_zero A)
   refine Circle.ext ?_
   rw [Circle.coe_pow, Circle.coe_mul, Circle.coe_pow, coe_graphPhase, hu, mul_div_assoc',
     eq_div_iff hd]
   linear_combination ((detCircle T : ℂ) ^ 2 * d) * huu -
-    ((detCircle T : ℂ) ^ 2 * d * r ^ 2 * d * conj d) * hconj (detCircle T)
+    ((detCircle T : ℂ) ^ 2 * d * r ^ 2 * d * conj d) * Circle.coe_mul_conj (detCircle T)
 
 /-- **The Conley–Zehnder index of a loop.** A loop `γ` of symplectic matrices has
 Conley–Zehnder index `-2 μ(γ)`, where `μ` is the Maslov index of loops of symplectic matrices. -/
