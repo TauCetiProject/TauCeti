@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.Topology.Algebra.Projectivization
 import TauCeti.Algebra.Order.Ring.IntMul
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The weighted circle action on `ℂ²` and its ellipsoid quotient

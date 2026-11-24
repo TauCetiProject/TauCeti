@@ -23,6 +23,8 @@ the Laplacian `2 ‖v‖²` of the squared linear functional `⟪v, ·⟫²`.
 
 * `Submodule.laplacian_norm_starProjection_sq`: `Δ ‖P_K y‖² = 2 dim K`.
 * `TauCeti.laplacian_inner_sq`: `Δ ⟪v, y⟫² = 2 ‖v‖²`.
+* `TauCeti.laplacian_inner_sq_sub_inner_sq`: `Δ (⟪v, y⟫² - ⟪w, y⟫²) = 2 ‖v‖² - 2 ‖w‖²`, so this
+  quadratic polynomial is harmonic when `‖v‖ = ‖w‖`.
 -/
 
 public section
@@ -68,7 +70,13 @@ namespace TauCeti
 open InnerProductSpace Laplacian
 open scoped RealInnerProductSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The square of the linear functional `⟪v, ·⟫` is smooth. -/
+theorem contDiff_inner_sq {n : WithTop ℕ∞} (v : E) : ContDiff ℝ n fun y : E ↦ ⟪v, y⟫ ^ 2 :=
+  (innerSL ℝ v).contDiff.pow 2
+
+variable [FiniteDimensional ℝ E]
 
 /-- The Laplacian of the square of the linear functional `⟪v, ·⟫` is `2 ‖v‖²`: up to the factor
 `‖v‖²`, it is the squared norm of the orthogonal projection onto the line `ℝ v`. -/
@@ -88,5 +96,13 @@ theorem laplacian_inner_sq (v x : E) : Δ (fun y : E ↦ ⟪v, y⟫ ^ 2) x = 2 *
     Submodule.laplacian_norm_starProjection_sq, finrank_span_singleton hv, smul_eq_mul]
   push_cast
   ring
+
+/-- The quadratic polynomial `⟪v, ·⟫² - ⟪w, ·⟫²` has the constant Laplacian `2 ‖v‖² - 2 ‖w‖²`, so
+it is harmonic when `‖v‖ = ‖w‖`. -/
+@[simp]
+theorem laplacian_inner_sq_sub_inner_sq (v w x : E) :
+    Δ (fun y : E ↦ ⟪v, y⟫ ^ 2 - ⟪w, y⟫ ^ 2) x = 2 * ‖v‖ ^ 2 - 2 * ‖w‖ ^ 2 := by
+  rw [← laplacian_inner_sq v x, ← laplacian_inner_sq w x]
+  exact (contDiff_inner_sq v).contDiffAt.laplacian_sub (contDiff_inner_sq w).contDiffAt
 
 end TauCeti

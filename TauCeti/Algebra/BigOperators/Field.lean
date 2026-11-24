@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Field.Basic
 public import Mathlib.Algebra.CharZero.Defs
+public import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.NormNum.Basic
 import Mathlib.Tactic.Ring
@@ -39,6 +42,8 @@ one as `w` tends to infinity (`Finset.tendsto_prod_one_sub_mul_inv_pow`).
 * `Finset.sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero`: cyclic cancellation of off-diagonal
   products `(x i - x j)⁻¹ * (x i - x k)⁻¹` (`k ≠ j`) over an injective family on a finite set in any
   field.
+* `Finset.sum_sum_erase_sub_inv_sq`: summing `(x i - x j)⁻¹ ^ 2` over ordered pairs of distinct
+  indices counts every unordered pair twice.
 -/
 
 public section
@@ -127,5 +132,20 @@ theorem sum_sum_sum_erase_sub_inv_mul_sub_inv_eq_zero {ι K : Type*} [DecidableE
     have h_jk := hne (mem_insert_of_mem hj) (mem_insert_of_mem hkt) (ne_of_mem_erase hk).symm
     rw [← neg_sub (x a) (x j), ← neg_sub (x a) (x k), ← neg_sub (x j) (x k)]
     field_simp [h_aj, h_ak, h_jk]; ring
+
+/-- **Symmetrizing the squared inverse gaps.** Summing `(x i - x j)⁻¹ ^ 2` over all ordered pairs
+of distinct indices counts every unordered pair twice. -/
+theorem sum_sum_erase_sub_inv_sq {ι K : Type*} [LinearOrder ι] [Fintype ι]
+    [LocallyFiniteOrderTop ι] [LocallyFiniteOrderBot ι] [Field K] (x : ι → K) :
+    ∑ i, ∑ j ∈ univ.erase i, (x i - x j)⁻¹ ^ 2 = 2 * ∑ i, ∑ j ∈ Ioi i, (x i - x j)⁻¹ ^ 2 :=
+  calc ∑ i, ∑ j ∈ univ.erase i, (x i - x j)⁻¹ ^ 2
+      = ∑ i, ∑ j ∈ ({i}ᶜ : Finset ι), (x i - x j)⁻¹ ^ 2 := by
+        simp_rw [compl_singleton]
+    _ = ∑ i, ∑ j ∈ Ioi i, ((x i - x j)⁻¹ ^ 2 + (x j - x i)⁻¹ ^ 2) :=
+        (sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i : ι ↦ (x i - x j)⁻¹ ^ 2)).symm
+    _ = 2 * ∑ i, ∑ j ∈ Ioi i, (x i - x j)⁻¹ ^ 2 := by
+        have hsym (i j : ι) : (x j - x i)⁻¹ ^ 2 = (x i - x j)⁻¹ ^ 2 := by
+          rw [← neg_sub (x i) (x j), inv_neg, neg_sq]
+        simp_rw [hsym, ← two_mul, ← mul_sum]
 
 end Finset

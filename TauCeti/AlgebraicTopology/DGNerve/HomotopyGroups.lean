@@ -14,7 +14,8 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.ULift
 
 The right mapping spaces of a differential graded nerve are Kan complexes, and their
 positive homotopy groups at zero are the negative cohomology groups of the DG Hom
-complexes. The comparison is a group isomorphism, not just a bijection. In particular,
+complexes. The comparison is a group isomorphism, not just a bijection. Their path
+components are the degree-zero cohomology of the DG Hom complexes. In particular,
 negative cohomology of a Hom complex is retained by the nerve even though it is invisible
 in the ordinary homotopy category.
 
@@ -84,5 +85,22 @@ def rightMappingSpacePiAddEquivHomology (X Y : C) (n : ℕ) :
       (y := z) (rightMappingSpaceZero_doldKan X Y)).trans
     (SSet.KanComplex.π.uliftMulEquiv n z)).toAdditive.trans
       ((dgHomComplex R X Y).doldKanPiAddEquivHomology n)
+
+/-- Path components of the right mapping space in the DG nerve are the degree-zero cohomology
+of the Hom complex, that is, closed degree-zero morphisms modulo boundaries. -/
+def rightMappingSpacePiZeroEquivHomology (X Y : C) :
+    SSet.KanComplex.π 0
+      ((dgNerve R C).rightMappingSpace ((dgNerveEquiv R C).symm X)
+        ((dgNerveEquiv R C).symm Y)) (rightMappingSpaceZero (R := R) X Y) ≃
+      (dgHomComplex R X Y).homology 0 := by
+  -- A typed vertex avoids unfolding the universe-lift functor, as for positive degrees.
+  let z : (SSet.uliftFunctor.{u, v}.obj
+      (Idempotents.DoldKan.Γ.obj
+        ((dgHomComplex R X Y).truncLE' ComplexShape.embeddingDownNat) ⋙
+          forget (ModuleCat R))) _⦋0⦌ := ULift.up 0
+  exact ((SSet.KanComplex.π.equivOfIso (mappingDoldKanIso (R := R) X Y)
+      (y := z) (rightMappingSpaceZero_doldKan X Y)).trans
+    (SSet.KanComplex.π.uliftEquivZero z)).trans
+      (dgHomComplex R X Y).doldKanPiZeroEquivHomology
 
 end TauCeti.dgNerve

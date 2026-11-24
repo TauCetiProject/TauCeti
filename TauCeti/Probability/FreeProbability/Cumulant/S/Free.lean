@@ -51,7 +51,9 @@ the compositional inverse of `Ψ = M_{ab} - 1` turns `u` and `v` into the compos
   and `b` with unit means, over a semiring.
 * `TauCeti.IsFreelyIndependent.sSeries_mul` and
   `TauCeti.IsFreelyIndependentElements.sSeries_mul` — `S_{ab} = S_a S_b` for free `a` and `b`
-  with unit means.
+  with unit means, extended to duplicate-free finite products by
+  `TauCeti.IsFreelyIndependent.sSeries_list_prod` and
+  `TauCeti.IsFreelyIndependentElements.sSeries_list_prod`.
 
 ## References
 
@@ -422,6 +424,47 @@ theorem IsFreelyIndependentElements.sSeries_mul {c : ι → A}
       sSeries φ (c i) hua * sSeries φ (c j) hub :=
   (isFreelyIndependentElements_iff.mp h).sSeries_mul hφ hij
     (Algebra.self_mem_adjoin_singleton R _) (Algebra.self_mem_adjoin_singleton R _) hua hub
+
+/-- *Multiplicativity of the formal S-series on finite products of free variables*: for a
+normalised `φ`, a freely independent family `B`, and a list `l : List (ι × A)` with pairwise
+distinct indices whose letters `p.2 ∈ B p.1` have unit means, the formal S-series of
+`(l.map Prod.snd).prod` is the product of the formal S-series of the letters. -/
+theorem IsFreelyIndependent.sSeries_list_prod {B : ι → Subalgebra R A}
+    (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1) {l : List (ι × A)}
+    (hnodup : (l.map Prod.fst).Nodup) (hl : ∀ p ∈ l, p.2 ∈ B p.1)
+    (hu : ∀ p ∈ l, IsUnit (φ p.2)) :
+    sSeries φ (l.map Prod.snd).prod (h.isUnit_apply_list_prod hφ hnodup hl hu) =
+      (l.attach.map fun p => sSeries φ p.val.2 (hu p.val p.property)).prod := by
+  induction l with
+  | nil => exact (sSeries_congr _ _ (hφ ▸ isUnit_one) (by simp)).trans (sSeries_one hφ _)
+  | cons p l ih =>
+    rw [List.map_cons, List.nodup_cons] at hnodup
+    have hl' : ∀ q ∈ l, q.2 ∈ B q.1 := fun q hq => hl q (List.mem_cons_of_mem p hq)
+    have hu' : ∀ q ∈ l, IsUnit (φ q.2) := fun q hq => hu q (List.mem_cons_of_mem p hq)
+    have hmul := (isFreelyIndependentElements_iff.mpr
+      (h.cond_adjoin_singleton_list_prod hφ hnodup.1
+        (hl p List.mem_cons_self) hl')).sSeries_mul hφ (i := true) (j := false) (by decide)
+      (hu p List.mem_cons_self) (h.isUnit_apply_list_prod hφ hnodup.2 hl' hu')
+    simp only [Bool.cond_true, Bool.cond_false] at hmul
+    refine (sSeries_congr _ _ _ (by simp)).trans (hmul.trans ?_)
+    simp only [List.attach_cons, List.map_cons, List.map_map, Function.comp_def, List.prod_cons]
+    rw [ih hnodup.2 hl' hu']
+
+/-- *Multiplicativity of the formal S-series on finite products of free elements*: for a
+duplicate-free list `l` of indices of a freely independent family `c` with unit means under a
+normalised `φ`, the S-series of `(l.map c).prod` is the product of the S-series of the factors. -/
+theorem IsFreelyIndependentElements.sSeries_list_prod {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {l : List ι} (hnodup : l.Nodup)
+    (hu : ∀ i ∈ l, IsUnit (φ (c i))) :
+    sSeries φ (l.map c).prod (h.isUnit_apply_list_prod hφ hnodup hu) =
+      (l.attach.map fun i => sSeries φ (c i.val) (hu i.val i.property)).prod := by
+  have h1 := (isFreelyIndependentElements_iff.mp h).sSeries_list_prod hφ
+    (l := l.map fun i => (i, c i))
+    (by simpa [Function.comp_def] using hnodup)
+    (by simp [Algebra.self_mem_adjoin_singleton])
+    (by simpa using hu)
+  refine (sSeries_congr _ _ _ (by simp [Function.comp_def])).trans (h1.trans ?_)
+  simp [List.attach_map, Function.comp_def]
 
 end Semiring
 

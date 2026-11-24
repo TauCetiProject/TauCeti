@@ -55,6 +55,8 @@ The detour through length `L + 1` avoids dividing by a length that could be zero
   `MooreLoopSpace X x ≃ₕ Path x x` with Mathlib's loop space.
 * `TauCeti.MooreLoopSpace.posLengthHomeomorph`: the Moore loops of positive length are homeomorphic
   to `(0, ∞) × Path x x`, by the length and `toPath`.
+* `TauCeti.MooreLoopSpace.posLengthMap`: the Moore loop map of a continuous map, restricted to the
+  Moore loops of positive length.
 
 ## Main results
 
@@ -66,6 +68,8 @@ The detour through length `L + 1` avoids dividing by a length that could be zero
   for the other composite preserves the end points.
 * `TauCeti.MooreLoopSpace.homotopyEquivPath_comp_map`: normalization to the unit interval
   intertwines the Moore loop map `MooreLoopSpace.map` with `ContinuousMap.loopMap`.
+* `TauCeti.MooreLoopSpace.posLengthHomeomorph_posLengthMap`: `posLengthHomeomorph` is natural:
+  it intertwines `posLengthMap f hf` with the identity of `(0, ∞)` times the loop map of `f`.
 
 ## References
 
@@ -179,6 +183,16 @@ theorem ofUnitPath_toUnitPath_apply (γ : MoorePath X) (t : ℝ≥0) :
     ofUnitPath γ.toUnitPath t = γ (γ.length * min t 1) := by
   rw [ofUnitPath_apply, toUnitPath_apply, toNNReal_projIcc, Real.toNNReal_coe]
 
+/-- Reparametrizing a Moore path to a nonzero length does not change its path on the unit
+interval. -/
+@[simp]
+theorem toUnitPath_rescale (γ : MoorePath X) {ℓ : ℝ≥0} (hℓ : ℓ ≠ 0) :
+    (γ.rescale ℓ).toUnitPath = γ.toUnitPath :=
+  ContinuousMap.ext fun s ↦ by
+    simp only [toUnitPath_apply, rescale_apply, length_rescale]
+    congr 1
+    field_simp
+
 /-- Sending a Moore path to the unit interval and back reparametrizes it to length one. -/
 theorem ofUnitPath_toUnitPath (γ : MoorePath X) : ofUnitPath γ.toUnitPath = γ.rescale 1 := by
   refine ext (by rw [length_ofUnitPath, length_rescale]) fun t ↦ ?_
@@ -187,6 +201,12 @@ theorem ofUnitPath_toUnitPath (γ : MoorePath X) : ofUnitPath γ.toUnitPath = γ
   · rw [min_eq_left ht]
   · rw [min_eq_right ht, mul_one, γ.apply_of_length_le le_rfl,
       γ.apply_of_length_le (le_mul_of_one_le_right zero_le ht)]
+
+/-- Every Moore path is its reparametrization to the unit interval, run in its own length. -/
+@[simp]
+theorem ofUnitPath_toUnitPath_rescale_length (γ : MoorePath X) :
+    (ofUnitPath γ.toUnitPath).rescale γ.length = γ := by
+  rw [ofUnitPath_toUnitPath, rescale_rescale _ one_ne_zero, rescale_length]
 
 /-! ### The homotopy from `ofUnitPath ∘ toUnitPath` to the identity -/
 
@@ -343,6 +363,11 @@ variable {X : Type*} [TopologicalSpace X] {x y : X}
 def _root_.Path.toMoorePath (p : Path x y) : MoorePath X :=
   MoorePath.ofUnitPath p.toContinuousMap
 
+/-- The Moore path of a path `p` is the Moore path of length one of its underlying map. -/
+theorem _root_.Path.toMoorePath_eq_ofUnitPath (p : Path x y) :
+    p.toMoorePath = MoorePath.ofUnitPath p.toContinuousMap :=
+  (rfl)
+
 /-- The Moore path of a path `p` is `p.extend`. -/
 @[simp]
 theorem _root_.Path.toMoorePath_apply (p : Path x y) (t : ℝ≥0) : p.toMoorePath t = p.extend t :=
@@ -368,6 +393,19 @@ theorem _root_.Path.target_toMoorePath (p : Path x y) : p.toMoorePath.target = y
 theorem _root_.Path.continuous_toMoorePath :
     Continuous (Path.toMoorePath : Path x y → MoorePath X) :=
   MoorePath.continuous_ofUnitPath.comp continuous_induced_dom
+
+/-- Casting the end points of a path does not change its Moore path. -/
+@[simp]
+theorem _root_.Path.toMoorePath_cast (p : Path x y) {x' y' : X} (hx : x' = x) (hy : y' = y) :
+    (p.cast hx hy).toMoorePath = p.toMoorePath :=
+  (rfl)
+
+/-- A path on the unit interval, sent to the Moore paths and back to the unit interval, is
+unchanged. -/
+@[simp]
+theorem _root_.Path.toUnitPath_toMoorePath (p : Path x y) :
+    p.toMoorePath.toUnitPath = p.toContinuousMap := by
+  rw [Path.toMoorePath_eq_ofUnitPath, MoorePath.toUnitPath_ofUnitPath]
 
 namespace MoorePath
 
@@ -588,11 +626,65 @@ theorem toPath_posLengthHomeomorph_symm_apply (q : Set.Ioi (0 : ℝ≥0) × Path
     ((posLengthHomeomorph x).symm q).val.toPath = q.2 :=
   congrArg Prod.snd ((posLengthHomeomorph x).apply_symm_apply q)
 
+/-- A Moore loop of positive length `L` is recovered from `L` and its reparametrization to the unit
+interval by the inverse of `posLengthHomeomorph`. -/
+theorem coe_posLengthHomeomorph_symm_mk_toPath (γ : MooreLoopSpace X x) {L : ℝ≥0} (hL : 0 < L)
+    (hγ : γ.length = L) :
+    ((posLengthHomeomorph x).symm (⟨L, hL⟩, γ.toPath)).val = γ := by
+  subst hγ
+  exact congrArg Subtype.val ((posLengthHomeomorph x).symm_apply_apply ⟨γ, hL⟩)
+
 /-- Reparametrizing to the unit interval commutes with the Moore loop map of a continuous map. -/
 @[simp]
 theorem toPath_map {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (γ : MooreLoopSpace X x) :
     (map f rfl γ).toPath = γ.toPath.map f.continuous :=
   Path.ext (funext fun _ ↦ by simp [toPath_apply])
+
+/-- The Moore loop map of a continuous map preserves the Moore loops of positive length, since it
+preserves lengths. -/
+theorem mapsTo_map_preimage_length_Ioi {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) :
+    MapsTo (map f hf) (length ⁻¹' Ioi 0) (length ⁻¹' Ioi 0) := fun γ hγ ↦ by
+  simpa only [mem_preimage, length_map] using hγ
+
+/-- **The Moore loop map on the Moore loops of positive length**: the restriction of
+`MooreLoopSpace.map f hf` to the Moore loops of positive length at `x` and at `y`. -/
+def posLengthMap {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) :
+    C((length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x)),
+      (length ⁻¹' Ioi 0 : Set (MooreLoopSpace Y y))) :=
+  ⟨(mapsTo_map_preimage_length_Ioi f hf).restrict _ _ _,
+    (map f hf).continuous.restrict (mapsTo_map_preimage_length_Ioi f hf)⟩
+
+/-- The Moore loop underlying `posLengthMap f hf γ` is the image of `γ` under the Moore loop
+map. -/
+@[simp]
+theorem coe_posLengthMap_apply {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) (γ : (length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x))) :
+    (posLengthMap f hf γ : MooreLoopSpace Y y) = map f hf γ :=
+  (rfl)
+
+/-- `posLengthMap` sends the identity to the identity. -/
+@[simp]
+theorem posLengthMap_id :
+    posLengthMap (ContinuousMap.id X) rfl (x := x) = ContinuousMap.id _ :=
+  ContinuousMap.ext fun γ ↦ Subtype.ext (DFunLike.congr_fun map_id γ.val)
+
+/-- `posLengthMap` sends a composite to the composite. -/
+theorem posLengthMap_comp {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z] {y : Y} {z : Z}
+    (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y) :
+    posLengthMap (g.comp f) (by rw [ContinuousMap.comp_apply, hf, hg]) =
+      (posLengthMap g hg).comp (posLengthMap f hf) :=
+  ContinuousMap.ext fun γ ↦ Subtype.ext <| ext <| by simp
+
+/-- **`posLengthHomeomorph` is natural in based maps**: under the identifications of the Moore
+loops of positive length with `(0, ∞) × Path x x`, the Moore loop map of `f` is the identity on
+lengths times the fixed-interval loop map `ContinuousMap.loopMap f hf`. -/
+theorem posLengthHomeomorph_posLengthMap {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) (γ : (length ⁻¹' Ioi 0 : Set (MooreLoopSpace X x))) :
+    posLengthHomeomorph y (posLengthMap f hf γ) =
+      Prod.map id (f.loopMap hf) (posLengthHomeomorph x γ) :=
+  Prod.ext (Subtype.ext (length_map f hf γ.val))
+    (Path.ext (funext fun s ↦ by simp [toPath_apply]))
 
 end MooreLoopSpace
 

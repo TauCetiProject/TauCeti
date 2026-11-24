@@ -32,7 +32,10 @@ but equal ways.
 The product of bases `b` of `M` and `c` of `N` indexed by `Fin m` and `Fin n`, reindexed by
 `Fin (m + n)`, is `(b 0, 0), …, (b (m - 1), 0), (0, c 0), …, (0, c (n - 1))`
 (`Module.Basis.coe_prod_reindex_finSumFinEquiv`), and similarly when it is reindexed by `Fin k`
-for `m + n = k` (`Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr`). After a further
+for `m + n = k` (`Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr`). For the
+coordinate bases of `Fin m → R` and `Fin n → R`, concatenating the two components of its vectors
+gives the coordinate basis of `Fin (m + n) → R`
+(`Module.Basis.addCases_basisFun_prod_reindex_finSumFinEquiv`). After a further
 reindexing it begins with a chosen vector of either factor, followed by the remaining vectors in
 their order
 (`Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
@@ -63,6 +66,8 @@ the first factor before that of the second (`Module.Basis.coe_reindex_prod_finPr
 * `Module.Basis.coe_prod_reindex_finSumFinEquiv`,
   `Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr`: the product basis indexed by
   `Fin (m + n)` or by `Fin k` for `m + n = k`.
+* `Module.Basis.addCases_basisFun_prod_reindex_finSumFinEquiv`: concatenating the components of
+  the product of two coordinate bases gives the coordinate basis.
 * `Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
   `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`: the product basis beginning with the
   first vector of the first or of the second factor.
@@ -97,6 +102,17 @@ theorem coe_prod_reindex_finSumFinEquiv (b : Basis (Fin m) R M) (c : Basis (Fin 
     ⇑((b.prod c).reindex finSumFinEquiv) = Fin.append (fun i ↦ (b i, 0)) (fun j ↦ (0, c j)) := by
   funext i
   induction i using Fin.addCases <;> simp [prod_apply]
+
+/-- Concatenating the two components of the product of the coordinate bases of `Fin m → R` and
+`Fin n → R`, reindexed by `Fin (m + n)`, gives the coordinate basis of `Fin (m + n) → R`. -/
+theorem addCases_basisFun_prod_reindex_finSumFinEquiv (i : Fin (m + n)) :
+    Fin.addCases (motive := fun _ ↦ R)
+        (((Pi.basisFun R (Fin m)).prod (Pi.basisFun R (Fin n))).reindex finSumFinEquiv i).1
+        (((Pi.basisFun R (Fin m)).prod (Pi.basisFun R (Fin n))).reindex finSumFinEquiv i).2 =
+      Pi.basisFun R (Fin (m + n)) i := by
+  funext l
+  induction i using Fin.addCases <;> induction l using Fin.addCases <;>
+    simp [prod_apply, Pi.single_apply, Fin.ext_iff] <;> omega
 
 /-- The product of bases `b` and `c` indexed by `Fin m` and `Fin n`, reindexed by `Fin k` for
 `m + n = k`, is `(b 0, 0), …, (b (m - 1), 0), (0, c 0), …, (0, c (n - 1))` read through
