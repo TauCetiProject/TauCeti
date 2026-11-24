@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.RingTheory.Kaehler.Polynomial
+public import Mathlib.RingTheory.Unramified.Basic
 
 /-!
 # Checks for the comparison map of differentials
@@ -49,8 +50,7 @@ theorem mapBaseChange_cusp_X (i : Fin 2) :
       (1 ⊗ₜ D k (MvPolynomial (Fin 2) k) (MvPolynomial.X i)) =
       (((![2, 3] i : ℕ) : k[X]) * X ^ (![2, 3] i - 1)) • D k k[X] X := by
   have hX : ![X ^ 2, X ^ 3] i = (X : k[X]) ^ ![2, 3] i := by fin_cases i <;> rfl
-  rw [mapBaseChange_tmul, one_smul, map_D, hf, MvPolynomial.aeval_X, hX, Derivation.leibniz_pow,
-    mul_smul, Nat.cast_smul_eq_nsmul]
+  simp [mapBaseChange_tmul, hf, hX, Derivation.leibniz_pow, mul_smul, Nat.cast_smul_eq_nsmul]
 
 /-- **Check.** The cusp sends `dx` to `2t dt`. -/
 example : mapBaseChange k (MvPolynomial (Fin 2) k) k[X]
@@ -78,7 +78,7 @@ end Cusp
 
 /-- **Check.** For the identity of `k[x]`, the comparison map sends `dx` to `dx`. -/
 example : mapBaseChange k k[X] k[X] (1 ⊗ₜ D k k[X] X) = D k k[X] X := by
-  rw [mapBaseChange_tmul, one_smul, map_D, Algebra.algebraMap_self, RingHom.id_apply]
+  simp [mapBaseChange_tmul]
 
 /-- **Check.** `dx ≠ 0` in `Ω[k[x]⁄k]`, so the zero map is not the comparison map of the
 identity. -/
@@ -87,19 +87,18 @@ example : D k k[X] X ≠ 0 := fun h ↦ by
 
 section ClosedPoint
 
--- `k` is a `k[x]`-algebra through a closed point `x ↦ a`.
+-- `k` is a `k[x]`-algebra through a closed point `x ↦ a`. `Ω[k⁄k] = 0` is the instance
+-- `Algebra.FormallyUnramified.subsingleton_kaehlerDifferential`, since `k` is unramified over `k`.
 variable [Algebra k[X] k] [IsScalarTower k k[X] k]
 
 /-- **Check.** For a closed point `k[x] → k`, the comparison map
 `k ⊗[k[x]] Ω[k[x]⁄k] → Ω[k⁄k] = 0` is surjective. -/
-example : Function.Surjective (mapBaseChange k k[X] k) := by
-  have : Subsingleton Ω[k⁄k] := subsingleton_of_surjective k k Function.surjective_id
-  exact fun y ↦ ⟨0, Subsingleton.elim _ _⟩
+example : Function.Surjective (mapBaseChange k k[X] k) :=
+  fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
 
 /-- **Check.** For a closed point `k[x] → k`, the comparison map is not injective: `1 ⊗ dx ≠ 0`
 in `k ⊗[k[x]] Ω[k[x]⁄k]`, which is `k`, while `Ω[k⁄k] = 0`. -/
 example : ¬ Function.Injective (mapBaseChange k k[X] k) := by
-  have : Subsingleton Ω[k⁄k] := subsingleton_of_surjective k k Function.surjective_id
   intro h
   -- `k ⊗[k[x]] Ω[k[x]⁄k] ≃ k ⊗[k[x]] k[x] ≃ k` sends `1 ⊗ dx` to `1`.
   let φ := (TensorProduct.rid k[X] k).toLinearMap ∘ₗ (polynomialEquiv k).toLinearMap.lTensor k
