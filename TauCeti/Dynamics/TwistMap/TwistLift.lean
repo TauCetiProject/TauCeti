@@ -21,6 +21,11 @@ difféomorphismes de l'anneau*, Chapitre I, 1.2, for the differentiable form). A
 lift* is the same with strictly decreasing; for `ℓ ≠ 0` it is described here through its
 inverse.
 
+The geometric case is `ℓ ≠ 0` and `a < b`: then `F` is the lift of a homeomorphism of the closed
+annulus `AddCircle ℓ × [a, b]` preserving its two boundary circles. The predicate itself makes
+sense for every `ℓ`, `a` and `b`; for `a = b` the two endpoint fibres coincide, and for `a > b`
+the strip is empty.
+
 ## Main definitions
 
 * `TauCeti.IsTwistLift ℓ F`: `F` is a positive twist lift with period `ℓ`.
@@ -29,8 +34,9 @@ inverse.
 
 * `TauCeti.IsTwistLift.strictMono_fst_apply_of_mem_boundary`: for `ℓ ≠ 0`, a twist lift is
   strictly increasing along each boundary line, which it preserves
-  (`TauCeti.IsTwistLift.snd_apply_of_mem_boundary`), and the induced homeomorphism of the annulus
-  `Homeomorph.annulusHomeomorphOfLift` maps each boundary circle onto itself
+  (`TauCeti.IsTwistLift.snd_apply_of_mem_boundary`), and the induced homeomorphism
+  `Homeomorph.annulusHomeomorphOfLift` of `AddCircle ℓ × [a, b]` maps each endpoint fibre
+  `{z | z.2 = a}`, `{z | z.2 = b}` onto itself
   (`TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_left`,
   `TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_right`). The general facts about
   homeomorphisms of the strip commuting with the deck translation are in
@@ -95,8 +101,8 @@ theorem strictMono_fst_apply_of_mem_boundary (hℓ : ℓ ≠ 0) {y : Icc a b}
     (hy : (y : ℝ) = a ∨ (y : ℝ) = b) : StrictMono fun x : ℝ => (F (x, y)).1 :=
   strictMono_fst_of_mapsTo_line hℓ hF.apply_add_period (hF.snd_apply_of_mem_boundary hy)
 
-/-- The homeomorphism of the annulus `AddCircle ℓ × [a, b]` induced by a twist lift with nonzero
-period maps the lower boundary circle onto itself. -/
+/-- The homeomorphism of `AddCircle ℓ × [a, b]` induced by a twist lift with nonzero period maps
+the endpoint fibre `{z | z.2 = a}` onto itself: the lower boundary circle when `a < b`. -/
 theorem image_annulusHomeomorphOfLift_eq_left (hℓ : ℓ ≠ 0) :
     F.annulusHomeomorphOfLift hF.apply_add_period '' {z | (z.2 : ℝ) = a} =
       {z | (z.2 : ℝ) = a} :=
@@ -104,8 +110,8 @@ theorem image_annulusHomeomorphOfLift_eq_left (hℓ : ℓ ≠ 0) :
     (p := fun y : Icc a b => (y : ℝ) = a) (fun _ _ h h' => Subtype.ext (h.trans h'.symm))
     fun x y hy => hF.snd_apply_of_eq_left (x, y) hy
 
-/-- The homeomorphism of the annulus `AddCircle ℓ × [a, b]` induced by a twist lift with nonzero
-period maps the upper boundary circle onto itself. -/
+/-- The homeomorphism of `AddCircle ℓ × [a, b]` induced by a twist lift with nonzero period maps
+the endpoint fibre `{z | z.2 = b}` onto itself: the upper boundary circle when `a < b`. -/
 theorem image_annulusHomeomorphOfLift_eq_right (hℓ : ℓ ≠ 0) :
     F.annulusHomeomorphOfLift hF.apply_add_period '' {z | (z.2 : ℝ) = b} =
       {z | (z.2 : ℝ) = b} :=

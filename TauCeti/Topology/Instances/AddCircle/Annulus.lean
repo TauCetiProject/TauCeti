@@ -15,19 +15,20 @@ import TauCeti.Topology.Instances.AddCircle.Lift
 /-!
 # Maps of the strip commuting with the deck translation
 
-The annulus `AddCircle ℓ × Y` is the quotient of the strip `ℝ × Y` by the deck translation
-`(x, y) ↦ (x + ℓ, y)`. This file studies maps `F` of the strip that commute with it,
-`F (x + ℓ, y) = (F₁(x, y) + ℓ, F₂(x, y))`. They commute with every integer power of the deck
-translation, and a homeomorphism of the strip commuting with it induces a homeomorphism of the
-annulus. For a nonzero period, a continuous such map takes every real value in the first
-coordinate along every horizontal line, so a homeomorphism mapping a horizontal line into itself
-maps it onto itself, increasingly.
+The product `AddCircle ℓ × Y` is the quotient of the strip `ℝ × Y` by the deck translation
+`(x, y) ↦ (x + ℓ, y)`; we call it the strip quotient. It is a closed annulus when `ℓ ≠ 0` and `Y`
+is a nondegenerate closed interval, but nothing here assumes this. This file studies maps `F` of
+the strip that commute with the deck translation, `F (x + ℓ, y) = (F₁(x, y) + ℓ, F₂(x, y))`. They
+commute with every integer power of the deck translation, and a homeomorphism of the strip
+commuting with it induces a homeomorphism of the strip quotient. For a nonzero period, a
+continuous such map takes every real value in the first coordinate along every horizontal line, so
+a homeomorphism mapping a horizontal line into itself maps it onto itself, increasingly.
 
 ## Main definitions
 
 * `TauCeti.stripDeck ℓ m Y`: the deck translation `(x, y) ↦ (x + m ℓ, y)` of the strip.
-* `Homeomorph.annulusHomeomorphOfLift F hF`: the homeomorphism of the annulus `AddCircle ℓ × Y`
-  induced by a homeomorphism `F` of the strip commuting with the deck translation.
+* `Homeomorph.annulusHomeomorphOfLift F hF`: the homeomorphism of the strip quotient
+  `AddCircle ℓ × Y` induced by a homeomorphism `F` of the strip commuting with the deck translation.
 
 ## Main results
 
@@ -38,7 +39,7 @@ maps it onto itself, increasingly.
   with the deck translation and mapping a horizontal line into itself restricts to an increasing
   homeomorphism of that line.
 * `Homeomorph.image_annulusHomeomorphOfLift_of_mapsTo_line`: the induced homeomorphism of the
-  annulus then maps the corresponding circle onto itself.
+  strip quotient then maps the image `{z | z.2 = y}` of that line onto itself.
 -/
 
 public section
@@ -80,8 +81,9 @@ theorem surjective_fst_apply_of_apply_add {F : ℝ × Y → ℝ × Y} (hℓ : �
       constructor <;> linarith [neg_abs_le (z - (F (0, y)).1), le_abs_self (z - (F (0, y)).1)])
   exact ⟨x, hx⟩
 
-/-- A map of the strip commuting with the deck translation induces, for each height, a map of the
-strip into the annulus that is periodic in the first coordinate. -/
+/-- For a map `F` of the strip commuting with the deck translation and a fixed height `y`, the
+function of `x : ℝ` sending `x` to `F (x, y)` with its first coordinate reduced modulo `ℓ` is
+`ℓ`-periodic. -/
 theorem periodic_coe_apply_of_apply_add {F : ℝ × Y → ℝ × Y}
     (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (y : Y) :
     Periodic (fun x : ℝ => Prod.map ((↑) : ℝ → AddCircle ℓ) id (F (x, y))) ℓ := by
@@ -161,7 +163,7 @@ theorem snd_symm_apply_of_mapsTo_line {F : ℝ × Y ≃ₜ ℝ × Y} (hℓ : ℓ
   rw [show (x, y) = F (x', y) from Prod.ext hx'.symm (hy x').symm, F.symm_apply_apply]
 
 /-- A continuous map of the strip commuting with the deck translation induces a continuous map
-of the annulus. -/
+of the strip quotient. -/
 private theorem continuous_lift_periodic_coe_apply {G : ℝ × Y → ℝ × Y}
     (hG : ∀ p : ℝ × Y, G (p.1 + ℓ, p.2) = ((G p).1 + ℓ, (G p).2)) (hc : Continuous G) :
     Continuous fun z : AddCircle ℓ × Y => (periodic_coe_apply_of_apply_add hG z.2).lift z.1 := by
@@ -180,9 +182,9 @@ open TauCeti
 
 variable {Y : Type*} [TopologicalSpace Y] {ℓ : ℝ}
 
-/-- The homeomorphism of the annulus `AddCircle ℓ × Y` induced by a homeomorphism `F` of the strip
-`ℝ × Y` commuting with the deck translation `(x, y) ↦ (x + ℓ, y)`: it sends the class of `(x, y)`
-to the class of `F (x, y)` (`Homeomorph.annulusHomeomorphOfLift_coe`). -/
+/-- The homeomorphism of the strip quotient `AddCircle ℓ × Y` induced by a homeomorphism `F` of
+the strip `ℝ × Y` commuting with the deck translation `(x, y) ↦ (x + ℓ, y)`: it sends the class
+of `(x, y)` to the class of `F (x, y)` (`Homeomorph.annulusHomeomorphOfLift_coe`). -/
 def annulusHomeomorphOfLift (F : ℝ × Y ≃ₜ ℝ × Y)
     (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) :
     AddCircle ℓ × Y ≃ₜ AddCircle ℓ × Y where
@@ -202,7 +204,7 @@ def annulusHomeomorphOfLift (F : ℝ × Y ≃ₜ ℝ × Y)
 
 variable {F : ℝ × Y ≃ₜ ℝ × Y}
 
-/-- The induced homeomorphism of the annulus sends the class of `(x, y)` to the class of
+/-- The induced homeomorphism of the strip quotient sends the class of `(x, y)` to the class of
 `F (x, y)`. -/
 @[simp]
 theorem annulusHomeomorphOfLift_coe
@@ -211,7 +213,8 @@ theorem annulusHomeomorphOfLift_coe
       (((F (x, y)).1 : AddCircle ℓ), (F (x, y)).2) :=
   (rfl)
 
-/-- The inverse of the induced homeomorphism of the annulus is induced by the inverse of `F`. -/
+/-- The inverse of the induced homeomorphism of the strip quotient is induced by the inverse of
+`F`. -/
 @[simp]
 theorem annulusHomeomorphOfLift_symm_coe
     (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (x : ℝ) (y : Y) :
@@ -220,7 +223,7 @@ theorem annulusHomeomorphOfLift_symm_coe
   (rfl)
 
 /-- For a nonzero period, if `F` maps the horizontal line at height `y` into itself, the induced
-homeomorphism of the annulus maps the circle at height `y` onto itself. -/
+homeomorphism of the strip quotient maps the image `{z | z.2 = y}` of that line onto itself. -/
 theorem image_annulusHomeomorphOfLift_of_mapsTo_line (hℓ : ℓ ≠ 0)
     (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y}
     (hy : ∀ x : ℝ, (F (x, y)).2 = y) :
@@ -240,8 +243,8 @@ theorem image_annulusHomeomorphOfLift_of_mapsTo_line (hℓ : ℓ ≠ 0)
     exact snd_symm_apply_of_mapsTo_line hℓ hF hy x
 
 /-- For a nonzero period, if at most one height `y` satisfies `p y` and `F` maps the horizontal
-lines at such heights into themselves, the induced homeomorphism of the annulus maps the set of
-points at such heights onto itself. -/
+lines at such heights into themselves, the induced homeomorphism of the strip quotient maps the
+set of points at such heights onto itself. -/
 theorem image_annulusHomeomorphOfLift_setOf_of_subsingleton (hℓ : ℓ ≠ 0)
     (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {p : Y → Prop}
     (hp : ∀ y y', p y → p y' → y = y') (hy : ∀ x y, p y → p (F (x, y)).2) :
