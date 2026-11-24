@@ -116,6 +116,8 @@ private theorem eq_vec (m : SplitOddSpace R 1) :
 
 /-! ### Relations among the generators -/
 
+section Relations
+
 /-- The generator `ι e`. -/
 private noncomputable def cE : CliffordAlgebra (splitOddForm R 1) := ι _ (vecE R)
 /-- The generator `ι f`. -/
@@ -172,13 +174,10 @@ private theorem mul_cU_mul_cF (x : CliffordAlgebra (splitOddForm R 1)) :
     x * cU R * cF R = -(x * cF R * cU R) := by
   rw [mul_assoc, cU_mul_cF, mul_neg, mul_assoc]
 
-private theorem cl_mul_assoc (a b c : CliffordAlgebra (splitOddForm R 1)) :
-    a * (b * c) = a * b * c :=
-  (mul_assoc a b c).symm
-
 attribute [local simp] ι_vecE ι_vecF ι_vecU cE_mul_cE cF_mul_cF cU_mul_cU cF_mul_cE
   cU_mul_cE cU_mul_cF mul_cE_mul_cE mul_cF_mul_cF mul_cU_mul_cU mul_cF_mul_cE mul_cU_mul_cE
-  mul_cU_mul_cF cl_mul_assoc mul_add add_mul mul_sub sub_mul
+  mul_cU_mul_cF mul_add add_mul mul_sub sub_mul
+attribute [local simp ←] mul_assoc
 
 /-- The quaternion basis `i = ef`, `j = eu + fu`, `k = eu` of the even Clifford algebra. -/
 private noncomputable def splitOddOneEvenBasis :
@@ -200,6 +199,14 @@ private noncomputable def splitOddOneEvenBasis :
     apply Subtype.ext
     simp
 
+end Relations
+
+private theorem splitOddOneEvenBasis_liftHom_apply (q : ℍ[R,0,1,-1]) :
+    (splitOddOneEvenBasis R).liftHom q =
+      algebraMap R _ q.re + q.imI • (splitOddOneEvenBasis R).i +
+        q.imJ • (splitOddOneEvenBasis R).j + q.imK • (splitOddOneEvenBasis R).k :=
+  (rfl)
+
 /-- The forward map: the restriction of `splitOddOneCliffordToMatrix` to the even subalgebra. -/
 private noncomputable def splitOddOneEvenToMatrix :
     even (splitOddForm R 1) →ₐ[R] Matrix (Fin 2) (Fin 2) R :=
@@ -213,9 +220,9 @@ private theorem splitOddOneEvenToMatrix_ι (m₁ m₂ : SplitOddSpace R 1) :
 private theorem splitOddOneEvenToMatrix_comp_liftHom :
     (splitOddOneEvenToMatrix R).comp (splitOddOneEvenBasis R).liftHom =
       QuaternionAlgebra.zeroOneNegOneEquivMatrix.toAlgHom := by
-  ext : 1 <;> ext i j <;> fin_cases i <;> fin_cases j <;>
-    simp [_root_.QuaternionAlgebra.Basis.liftHom, _root_.QuaternionAlgebra.Basis.lift,
-      splitOddOneEvenBasis, splitOddOneEvenToMatrix_ι, vecE, vecF, vecU]
+  ext : 1 <;> rw [AlgHom.comp_apply, splitOddOneEvenBasis_liftHom_apply] <;> ext i j <;>
+    fin_cases i <;> fin_cases j <;>
+    simp [splitOddOneEvenBasis, splitOddOneEvenToMatrix_ι, vecE, vecF, vecU]
 
 private theorem liftHom_comp_symm_comp_splitOddOneEvenToMatrix :
     ((splitOddOneEvenBasis R).liftHom.comp
@@ -224,10 +231,11 @@ private theorem liftHom_comp_symm_comp_splitOddOneEvenToMatrix :
   refine even.algHom_ext (splitOddForm R 1)
     (EvenHom.ext (LinearMap.ext₂ fun m₁ m₂ ↦ Subtype.ext ?_))
   simp only [EvenHom.compr₂_bilin, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
-    AlgHom.comp_apply, AlgHom.id_apply, splitOddOneEvenToMatrix_ι]
+    AlgHom.comp_apply, AlgHom.id_apply, splitOddOneEvenToMatrix_ι,
+    splitOddOneEvenBasis_liftHom_apply]
   conv_rhs => rw [eq_vec R m₁, eq_vec R m₂]
-  simp [_root_.QuaternionAlgebra.Basis.liftHom, _root_.QuaternionAlgebra.Basis.lift,
-    splitOddOneEvenBasis, Algebra.algebraMap_eq_smul_one]
+  simp [splitOddOneEvenBasis, Algebra.algebraMap_eq_smul_one, ι_vecE, ι_vecF, ι_vecU, cE_mul_cE,
+    cF_mul_cF, cU_mul_cU, cF_mul_cE, cU_mul_cE, cU_mul_cF]
   module
 
 /-- **The even Clifford algebra of the split ternary form is `M₂(R)`**, over any commutative
