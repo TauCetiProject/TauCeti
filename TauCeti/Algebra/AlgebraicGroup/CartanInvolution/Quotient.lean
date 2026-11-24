@@ -53,8 +53,8 @@ theorem mem_twistedRealPoints_quotientIsoOfComapEq_iff
     (p : H ⧸ I.toIdeal →ₐ[ℝ] ℂ) :
     p ∈ twistedRealPoints (CommHopfAlgCat.quotientIsoOfComapEq θ I hI) ↔
       p.comp (Ideal.Quotient.mkₐ ℝ I.toIdeal) ∈ twistedRealPoints θ := by
-  rw [mem_twistedRealPoints_iff]
-  simp only [mem_twistedRealPoints_iff, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
+  rw [mem_twistedRealPoints_iff, mem_twistedRealPoints_iff]
+  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
   constructor
   · intro hp x
     rw [hp, CommHopfAlgCat.quotientIsoOfComapEq_hom_mk]

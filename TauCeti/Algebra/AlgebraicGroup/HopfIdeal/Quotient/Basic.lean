@@ -76,7 +76,8 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
 * `TauCeti.CommHopfAlgCat.quotientIsoOfComapEq`: an ambient isomorphism pulling one Hopf ideal
   back to another induces an isomorphism of the quotients, computed on classes by
   `TauCeti.CommHopfAlgCat.quotientIsoOfComapEq_hom_mk` and `_inv_mk`; it is an involution when the
-  ambient isomorphism is (`TauCeti.CommHopfAlgCat.quotientIsoOfComapEq_hom_comp_self`), and an
+  ambient isomorphism is (`TauCeti.CommHopfAlgCat.quotientIsoOfComapEq_hom_comp_self` and
+  `TauCeti.CommHopfAlgCat.quotientIsoOfComapEq_symm_eq_self`), and an
   algebra map out of the quotient is fixed by it exactly when its composite with the quotient map
   is fixed by the ambient automorphism
   (`TauCeti.CommHopfAlgCat.comp_quotientIsoOfComapEq_eq_self_iff`).
@@ -407,7 +408,7 @@ noncomputable def quotientIsoOfComapEq (e : H ≅ K) (I : HopfIdeal R K) {J : Ho
 
 /-- The quotient isomorphism induced by an ideal-matching ambient isomorphism commutes with the
 quotient morphisms. -/
-@[simp]
+@[reassoc (attr := simp)]
 lemma mkQuotient_comp_quotientIsoOfComapEq_hom (e : H ≅ K) (I : HopfIdeal R K)
     {J : HopfIdeal R H}
     (hI : I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J) :
@@ -418,7 +419,7 @@ lemma mkQuotient_comp_quotientIsoOfComapEq_hom (e : H ≅ K) (I : HopfIdeal R K)
 
 /-- The inverse of the quotient isomorphism induced by an ideal-matching ambient isomorphism
 commutes with the quotient morphisms. -/
-@[simp]
+@[reassoc (attr := simp)]
 lemma mkQuotient_comp_quotientIsoOfComapEq_inv (e : H ≅ K) (I : HopfIdeal R K)
     {J : HopfIdeal R H}
     (hI : I.comapOfSurjective e.hom.hom (ConcreteCategory.bijective_of_isIso e.hom).2 = J) :
@@ -457,9 +458,16 @@ lemma quotientIsoOfComapEq_hom_comp_self {θ : H ≅ H} (hθ : θ.hom ≫ θ.hom
     (quotientIsoOfComapEq θ I hI).hom ≫ (quotientIsoOfComapEq θ I hI).hom =
       𝟙 (quotient H I) := by
   ext : 1
-  rw [← Category.assoc, mkQuotient_comp_quotientIsoOfComapEq_hom, Category.assoc,
-    mkQuotient_comp_quotientIsoOfComapEq_hom, ← Category.assoc, hθ, Category.id_comp,
-    Category.comp_id]
+  simp [reassoc_of% hθ]
+
+/-- The automorphism of `H ⧸ I` induced by an involution `θ` of `H` is its own inverse. -/
+lemma quotientIsoOfComapEq_symm_eq_self {θ : H ≅ H} (hθ : θ.hom ≫ θ.hom = 𝟙 H)
+    (I : HopfIdeal R H)
+    (hI : I.comapOfSurjective θ.hom.hom (ConcreteCategory.bijective_of_isIso θ.hom).2 = I) :
+    (quotientIsoOfComapEq θ I hI).symm = quotientIsoOfComapEq θ I hI :=
+  Iso.ext <| by
+    rw [Iso.symm_hom, ← cancel_epi (quotientIsoOfComapEq θ I hI).hom, Iso.hom_inv_id,
+      quotientIsoOfComapEq_hom_comp_self hθ]
 
 /-- **Fixed points pass to a stable quotient.** For an automorphism `θ` of `H` mapping the Hopf
 ideal `I` onto itself, an algebra map `p` out of `H ⧸ I` is fixed by the induced automorphism of

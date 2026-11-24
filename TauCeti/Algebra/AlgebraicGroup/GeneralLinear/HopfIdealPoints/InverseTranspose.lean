@@ -28,7 +28,9 @@ the points of `G` with orthogonal matrices.
 
 * `TauCeti.GeneralLinear.comapOfSurjective_inverseTransposeCoordinateIso_eq_iff`: the Hopf ideal
   `I` is stable under inverse transpose exactly when every group of algebra-valued points of the
-  subgroup it cuts out is stable under inverse transpose.
+  subgroup it cuts out is stable under inverse transpose;
+  `TauCeti.GeneralLinear.comapOfSurjective_inverseTransposeCoordinateIso_eq_iff_transpose_mem` is
+  the same criterion for stability under transpose.
 * `TauCeti.GeneralLinear.comp_inverseTransposeQuotientIso_eq_self_iff`: the fixed points of the
   restricted involution are the points of the subgroup with orthogonal matrices.
 -/
@@ -56,7 +58,8 @@ private theorem pointsMulEquiv_symm_inverseTranspose (A : Type v) [CommRing A] [
 /-- **Stability under inverse transpose, in coordinates and on points.** The inverse-transpose
 coordinate automorphism of `GLₙ` maps the Hopf ideal `I` onto itself exactly when, for every
 commutative `R`-algebra `A`, the subgroup of `GLₙ(A)` cut out by `I` is stable under inverse
-transpose. For a subgroup this is the same as stability under transpose. -/
+transpose. For stability under transpose, see
+`comapOfSurjective_inverseTransposeCoordinateIso_eq_iff_transpose_mem`. -/
 theorem comapOfSurjective_inverseTransposeCoordinateIso_eq_iff
     (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
     I.comapOfSurjective (inverseTransposeCoordinateIso R n).hom.hom
@@ -73,7 +76,9 @@ theorem comapOfSurjective_inverseTransposeCoordinateIso_eq_iff
     exact hg _ hx
   · intro h
     -- Test stability on the universal point of the subgroup, the quotient map.
-    have hle (x : coordinateHopfAlgebra R n) (hx : x ∈ I) : θ x ∈ I := by
+    have hle : I.comapOfSurjective θ
+        (ConcreteCategory.bijective_of_isIso (inverseTransposeCoordinateIso R n).hom).2 ≤ I := by
+      intro x hx
       let f : WithConv (coordinateHopfAlgebra R n →ₐ[R] coordinateHopfAlgebra R n ⧸ I.toIdeal) :=
         toConv (Ideal.Quotient.mkₐ R I.toIdeal)
       have hf : pointsMulEquiv n f ∈ hopfIdealPointsSubgroup n I _ := by
@@ -82,14 +87,39 @@ theorem comapOfSurjective_inverseTransposeCoordinateIso_eq_iff
         exact Ideal.Quotient.eq_zero_iff_mem.mpr hy
       have hθf := h _ _ hf
       rw [mem_hopfIdealPointsSubgroup_iff, pointsMulEquiv_symm_inverseTranspose] at hθf
-      have := hθf x hx
+      have := hθf _ (HopfIdeal.mem_comapOfSurjective.mp hx)
+      have hθθ : θ (θ x) = x :=
+        congr($(inverseTransposeCoordinateIso_hom_comp_self (R := R) (n := n)).hom x)
       simp only [AlgHom.comp_apply, f] at this
+      rw [← hθθ]
       exact HopfIdeal.mem_toIdeal.mp (Ideal.Quotient.eq_zero_iff_mem.mp this)
-    refine le_antisymm (fun x hx ↦ ?_) (fun x hx ↦ HopfIdeal.mem_comapOfSurjective.mpr (hle x hx))
-    have hθθ : θ (θ x) = x :=
-      congr($(inverseTransposeCoordinateIso_hom_comp_self (R := R) (n := n)).hom x)
-    rw [← hθθ]
-    exact hle _ (HopfIdeal.mem_comapOfSurjective.mp hx)
+    exact HopfIdeal.comapOfSurjective_eq_of_hom_le_of_inv_le _ I hle
+      (by simpa only [← Iso.symm_hom, inverseTransposeCoordinateIso_symm] using hle)
+
+/-- **Stability under transpose, in coordinates and on points.** The inverse-transpose coordinate
+automorphism of `GLₙ` maps the Hopf ideal `I` onto itself exactly when, for every commutative
+`R`-algebra `A`, the subgroup of `GLₙ(A)` cut out by `I` is stable under transpose. -/
+theorem comapOfSurjective_inverseTransposeCoordinateIso_eq_iff_transpose_mem
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) :
+    I.comapOfSurjective (inverseTransposeCoordinateIso R n).hom.hom
+        (ConcreteCategory.bijective_of_isIso (inverseTransposeCoordinateIso R n).hom).2 = I ↔
+      ∀ (A : Type u) [CommRing A] [Algebra R A], ∀ g ∈ hopfIdealPointsSubgroup (R := R) n I A,
+        (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop ∈
+          hopfIdealPointsSubgroup n I A := by
+  -- Transpose is inverse transpose of the inverse, and the subgroup is closed under inverses.
+  have key (A : Type u) [CommRing A] (g : Matrix.GeneralLinearGroup (Fin n) A) :
+      (Matrix.GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop =
+        Matrix.GeneralLinearGroup.inverseTranspose g⁻¹ :=
+    Units.ext <| by
+      rw [Matrix.GeneralLinearGroup.coe_unop_transposeMulEquiv,
+        Matrix.GeneralLinearGroup.coe_inverseTranspose, inv_inv]
+  rw [comapOfSurjective_inverseTransposeCoordinateIso_eq_iff]
+  constructor
+  · intro h A _ _ g hg
+    rw [key]
+    exact h A _ (inv_mem hg)
+  · intro h A _ _ g hg
+    simpa only [key, inv_inv] using h A _ (inv_mem hg)
 
 section GeneralRing
 
@@ -125,6 +155,12 @@ theorem inverseTransposeQuotientIso_hom_comp_self :
     (inverseTransposeQuotientIso I hI).hom ≫ (inverseTransposeQuotientIso I hI).hom =
       𝟙 (_root_.CommHopfAlgCat.quotient (coordinateHopfAlgebra R n) I) :=
   CommHopfAlgCat.quotientIsoOfComapEq_hom_comp_self inverseTransposeCoordinateIso_hom_comp_self I hI
+
+/-- The restricted inverse transpose is its own inverse. -/
+@[simp]
+theorem inverseTransposeQuotientIso_symm :
+    (inverseTransposeQuotientIso I hI).symm = inverseTransposeQuotientIso I hI :=
+  CommHopfAlgCat.quotientIsoOfComapEq_symm_eq_self inverseTransposeCoordinateIso_hom_comp_self I hI
 
 /-- **The fixed points of the restricted inverse transpose are the orthogonal points.** A point `p`
 of the closed subgroup cut out by `I` is fixed by inverse transpose exactly when the matrix of the
