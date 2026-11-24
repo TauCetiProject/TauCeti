@@ -36,6 +36,14 @@ then obtained by exchanging two quotients of `Q`, and the middle row as a base c
 row along a bicartesian square, followed by the converse of the Noether conflation. The statement
 for the top row follows from the one for the bottom row in the opposite exact category.
 
+The proofs use two definitional unfoldings. The column `D.map ShortComplex.πᵢ` is, by the
+definitions of `ShortComplex.map` and `ShortComplex.πᵢ`, the short complex
+`ShortComplex.mk D.f.τᵢ D.g.τᵢ _`; the proofs restate the column hypotheses in this form with
+`replace`. In the opposite diagram
+`ShortComplex.mk (ShortComplex.opMap D.g) (ShortComplex.opMap D.f)`, the rows are `D.X₃.op`,
+`D.X₂.op`, `D.X₁.op`, and since `(ShortComplex.opMap φ).τᵢ` is `φ.τ₄₋ᵢ.op`, its `i`-th column is
+`(D.map ShortComplex.π₄₋ᵢ).op`.
+
 ## Main results
 
 * `TauCeti.ExactStructure.conflation_of_conflation_comp`: a map whose composite with an
@@ -161,6 +169,7 @@ private theorem exists_threeByThree_cokernel {D : ShortComplex (ShortComplex C)}
       E.Conflation (ShortComplex.mk (D.X₁.f ≫ D.f.τ₂) c hc') ∧
       E.Conflation (ShortComplex.mk α₂ β₂ hαβ₂) ∧ c ≫ β₂ = D.g.τ₂ ∧ c ≫ β₁ = D.X₂.g ∧
       α₂ ≫ β₁ = D.f.τ₃ ∧ β₂ ≫ D.X₃.g = β₁ ≫ D.g.τ₃ := by
+  -- The middle column `D.map π₂` is `mk D.f.τ₂ D.g.τ₂ _` by unfolding `ShortComplex.map` and `π₂`.
   replace h₂ : E.Conflation (ShortComplex.mk D.f.τ₂ D.g.τ₂ (D.map ShortComplex.π₂).zero) := h₂
   have : Epi D.X₁.g := (E.isKernelCokernelPair _ hX₁).epi_g
   obtain ⟨Q, c, hc', hQ'⟩ := (ConflationClass.isInflation_iff _ (D.X₁.f ≫ D.f.τ₂)).1
@@ -186,6 +195,7 @@ theorem conflation_X₃_of_conflation_X₁ {D : ShortComplex (ShortComplex C)}
     (h₁ : E.Conflation (D.map ShortComplex.π₁)) (h₂ : E.Conflation (D.map ShortComplex.π₂))
     (h₃ : E.Conflation (D.map ShortComplex.π₃)) (hX₁ : E.Conflation D.X₁)
     (hX₂ : E.Conflation D.X₂) : E.Conflation D.X₃ := by
+  -- The left column `D.map π₁` is `mk D.f.τ₁ D.g.τ₁ _` by unfolding `ShortComplex.map` and `π₁`.
   replace h₁ : E.Conflation (ShortComplex.mk D.f.τ₁ D.g.τ₁ (D.map ShortComplex.π₁).zero) := h₁
   have : Epi D.g.τ₁ := (E.isKernelCokernelPair _ h₁).epi_g
   -- The two Noether conflations `A'' ⟶ Q ⟶ C` and `C' ⟶ Q ⟶ B''` through the cokernel `Q` of the
@@ -216,17 +226,24 @@ theorem conflation_X₁_of_conflation_X₃ {D : ShortComplex (ShortComplex C)}
     (h₃ : E.Conflation (D.map ShortComplex.π₃)) (hX₃ : E.Conflation D.X₃)
     (hX₂ : E.Conflation D.X₂) : E.Conflation D.X₁ := by
   -- The opposite diagram, with rows `D.X₃.op`, `D.X₂.op`, `D.X₁.op`, has the opposite columns
-  -- in reverse order.
+  -- in reverse order. The zero composites of the columns are those of `D.map πᵢ`, which is
+  -- `mk D.f.τᵢ D.g.τᵢ _` by unfolding `ShortComplex.map` and `πᵢ`.
   have z₁ : D.f.τ₁ ≫ D.g.τ₁ = 0 := (D.map ShortComplex.π₁).zero
   have z₂ : D.f.τ₂ ≫ D.g.τ₂ = 0 := (D.map ShortComplex.π₂).zero
   have z₃ : D.f.τ₃ ≫ D.g.τ₃ = 0 := (D.map ShortComplex.π₃).zero
   let D' : ShortComplex (ShortComplex Cᵒᵖ) :=
     ShortComplex.mk (ShortComplex.opMap D.g) (ShortComplex.opMap D.f) (by
       ext <;> simp [z₁, z₂, z₃])
-  exact (E.op_conflation_op_iff D.X₁).1
-    (conflation_X₃_of_conflation_X₁ (D := D') ((E.op_conflation_op_iff _).2 h₃)
-      ((E.op_conflation_op_iff _).2 h₂) ((E.op_conflation_op_iff _).2 h₁)
-      ((E.op_conflation_op_iff _).2 hX₃) ((E.op_conflation_op_iff _).2 hX₂))
+  -- Since `(opMap φ).τᵢ` is `φ.τ₄₋ᵢ.op`, the `i`-th column `D'.map πᵢ` of `D'` unfolds to the
+  -- opposite `(D.map π₄₋ᵢ).op` of the `(4 - i)`-th column of `D`, and its rows `D'.X₁`, `D'.X₂`,
+  -- `D'.X₃` are `D.X₃.op`, `D.X₂.op`, `D.X₁.op`.
+  have h₁' : E.op.Conflation (D'.map ShortComplex.π₁) := (E.op_conflation_op_iff _).2 h₃
+  have h₂' : E.op.Conflation (D'.map ShortComplex.π₂) := (E.op_conflation_op_iff _).2 h₂
+  have h₃' : E.op.Conflation (D'.map ShortComplex.π₃) := (E.op_conflation_op_iff _).2 h₁
+  have hX₁' : E.op.Conflation D'.X₁ := (E.op_conflation_op_iff _).2 hX₃
+  have hX₂' : E.op.Conflation D'.X₂ := (E.op_conflation_op_iff _).2 hX₂
+  have hX₃' : E.op.Conflation D'.X₃ := conflation_X₃_of_conflation_X₁ h₁' h₂' h₃' hX₁' hX₂'
+  exact (E.op_conflation_op_iff D.X₁).1 hX₃'
 
 /-- **The `3 × 3` lemma for the outer rows.** In a `3 × 3` diagram whose three columns and middle
 row are conflations, the top row is a conflation exactly when the bottom row is. -/
@@ -244,6 +261,7 @@ theorem conflation_X₂_of_conflation_X₁_of_conflation_X₃ {D : ShortComplex 
     (h₁ : E.Conflation (D.map ShortComplex.π₁)) (h₂ : E.Conflation (D.map ShortComplex.π₂))
     (h₃ : E.Conflation (D.map ShortComplex.π₃)) (hX₁ : E.Conflation D.X₁)
     (hX₃ : E.Conflation D.X₃) : E.Conflation D.X₂ := by
+  -- The left column `D.map π₁` is `mk D.f.τ₁ D.g.τ₁ _` by unfolding `ShortComplex.map` and `π₁`.
   replace h₁ : E.Conflation (ShortComplex.mk D.f.τ₁ D.g.τ₁ (D.map ShortComplex.π₁).zero) := h₁
   have hpair₁ := E.isKernelCokernelPair _ h₁
   have : Epi D.g.τ₁ := hpair₁.epi_g
