@@ -57,7 +57,8 @@ opposite wave front covectors over a common point is defined (Hörmander I, Theo
   functions.
 * `Distribution.pullbackInl_ofFun`: for a continuous function satisfying the hypothesis it is the
   restriction to `E × {0}`.
-* `Distribution.pullbackInl_add`, `Distribution.pullbackInl_smul`, `Distribution.pullbackInl_zero`,
+* `Distribution.pullbackInl_add`, `Distribution.pullbackInl_smul`,
+  `Distribution.pullbackInl_smul_of_ne_zero`, `Distribution.pullbackInl_zero`,
   `Distribution.pullbackInl_neg`, `Distribution.pullbackInl_sub`: linearity in `T`.
 
 ## Implementation notes
@@ -82,7 +83,7 @@ limit is continuous by the Banach–Steinhaus theorem (`continuousLinearMapOfTen
 
 For a continuous function `F`, Fubini's theorem writes `∫ (ψ ⊗ ρ_n) F` as the convolution
 `(ρ_n ⋆ g) (0)` of the function `g y = ∫ ψ (x) F (x, -y) dx`, which is continuous near `0`, so it
-tends to `g 0 = ∫ ψ (x) F (x, 0) dx` (`ContDiffBump.convolution_tendsto_right`).
+tends to `g 0 = ∫ ψ (x) F (x, 0) dx` (`ContDiffBump.tendsto_integral_shrinking_normed_smul`).
 
 ## References
 
@@ -555,6 +556,17 @@ theorem pullbackInl_smul (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E
   refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) ?_
   simpa using (tendsto_apply_tensorCLM_pullbackInl T hU hT ψ).const_smul c
 
+/-- **Homogeneity of the pullback in the distribution**, for a nonzero scalar `c`, with the
+hypothesis on the wave front set stated for `c • T`. -/
+@[simp]
+theorem pullbackInl_smul_of_ne_zero (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    {c : ℂ} (hc : c ≠ 0) {T : 𝓓'(W, ℂ)}
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ (c • T).waveFrontSet) :
+    (c • T).pullbackInl hU h = c • T.pullbackInl hU (fun x hx η hη hm ↦
+      h x hx η hη ((waveFrontSet_smul hc T).symm.subset hm)) :=
+  pullbackInl_smul hU c _
+
 /-- The pullback of the zero distribution is zero. -/
 @[simp]
 theorem pullbackInl_zero (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W) :
@@ -564,15 +576,16 @@ theorem pullbackInl_zero (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E
   exact tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) (by simp)
 
 /-- The pullback commutes with negation of the distribution. -/
+@[simp]
 theorem pullbackInl_neg (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     {T : 𝓓'(W, ℂ)}
-    (hT : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
-      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) :
-    (-T).pullbackInl hU (fun x hx η hη hm ↦ hT x hx η hη ((waveFrontSet_neg T).subset hm)) =
-      -T.pullbackInl hU hT := by
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ (-T).waveFrontSet) :
+    (-T).pullbackInl hU h =
+      -T.pullbackInl hU (fun x hx η hη hm ↦ h x hx η hη ((waveFrontSet_neg T).symm.subset hm)) := by
   ext ψ
   refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) ?_
-  simpa using (tendsto_apply_tensorCLM_pullbackInl T hU hT ψ).neg
+  simpa using (tendsto_apply_tensorCLM_pullbackInl T hU _ ψ).neg
 
 /-- The pullback commutes with subtraction of distributions. -/
 theorem pullbackInl_sub (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
@@ -588,60 +601,6 @@ theorem pullbackInl_sub (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E)
   refine tendsto_nhds_unique (tendsto_apply_tensorCLM_pullbackInl _ hU _ ψ) ?_
   simpa using (tendsto_apply_tensorCLM_pullbackInl T hU hT ψ).sub
     (tendsto_apply_tensorCLM_pullbackInl S hU hS ψ)
-
-/-- **The approximate identity in the normal variable.** Let `H` be continuous on `E × ball 0 δ`
-and vanish for `x` outside a compact set. For the normalized bumps `ρ_n` of
-`ContDiffBump.shrinking (δ / 2)`, `∫ ρ_n (y) H (x, y) d(x, y) → ∫ H (x, 0) dx`. This is the
-convergence `ρ_n ⋆ g → g` at `0` (`ContDiffBump.convolution_tendsto_right`) of the function
-`g y = ∫ H (x, -y) dx`, which is continuous near `0`. -/
-private theorem tendsto_integral_shrinking_smul [MeasurableSpace E] [BorelSpace E]
-    [MeasurableSpace D] [BorelSpace D] {H : E × D → ℂ} {k : Set E}
-    (hk : IsCompact k) (hHk : ∀ x y, x ∉ k → H (x, y) = 0) {δ : ℝ} (hδ : 0 < δ)
-    (hH : ContinuousOn H (univ ×ˢ ball (0 : D) δ)) :
-    Tendsto (fun n ↦ ∫ q : E × D,
-      (ContDiffBump.shrinking (c := (0 : D)) (half_pos hδ) n).normed volume q.2 • H q) atTop
-      (𝓝 (∫ x, H (x, 0))) := by
-  set ρ : ℕ → ContDiffBump (0 : D) := ContDiffBump.shrinking (half_pos hδ)
-  have hball : closedBall (0 : D) (δ / 2) ⊆ ball 0 δ := closedBall_subset_ball (half_lt_self hδ)
-  -- `g y = ∫ H (x, -y) dx` is continuous on `closedBall 0 (δ / 2)`.
-  set g : D → ℂ := fun y ↦ ∫ x, H (x, -y)
-  have hg : ContinuousOn g (closedBall 0 (δ / 2)) :=
-    continuousOn_integral_of_compact_support (f := fun y x ↦ H (x, -y)) hk
-      (hH.comp (continuous_snd.prodMk continuous_fst.neg).continuousOn fun q hq ↦
-        ⟨mem_univ _, hball (by simpa using hq.1)⟩) fun y x _ hx ↦ hHk x _ hx
-  set G := (closedBall (0 : D) (δ / 2)).indicator g
-  have hG0 : ContinuousAt G 0 := (hg.continuousAt (closedBall_mem_nhds _ (half_pos hδ))).congr
-    (eventuallyEq_of_mem (closedBall_mem_nhds _ (half_pos hδ)) fun y hy ↦
-      (indicator_of_mem hy g).symm)
-  have hconv := ContDiffBump.convolution_tendsto_right (μ := volume) (φ := ρ) (g := fun _ ↦ G)
-    (k := fun _ ↦ 0) (ContDiffBump.tendsto_rOut_shrinking _) (Eventually.of_forall fun _ ↦
-      (aestronglyMeasurable_indicator_iff measurableSet_closedBall).2
-        (hg.aestronglyMeasurable measurableSet_closedBall)) (hG0.tendsto.comp tendsto_snd)
-    tendsto_const_nhds
-  rw [show G 0 = ∫ x, H (x, 0) by
-    simp only [G, indicator_of_mem (mem_closedBall_self (half_pos hδ).le), g, neg_zero]] at hconv
-  refine hconv.congr fun n ↦ ?_
-  -- By Fubini, `∫ ρ_n (y) H (x, y)` is the convolution `(ρ_n ⋆ G) (0) = ∫ ρ_n (y) G (-y) dy`.
-  have hsupp (y : D) (hy : (ρ n).normed volume y ≠ 0) : -y ∈ closedBall (0 : D) (δ / 2) := by
-    have hy' : y ∈ ball (0 : D) (ρ n).rOut := by
-      rw [← (ρ n).support_normed_eq (μ := volume)]
-      exact hy
-    rw [mem_ball_zero_iff, ContDiffBump.rOut_shrinking] at hy'
-    rw [mem_closedBall_zero_iff, norm_neg]
-    exact hy'.le.trans (div_le_self (half_pos hδ).le (by linarith [n.cast_nonneg (α := ℝ)]))
-  have hint : Integrable (fun q : E × D ↦ (ρ n).normed volume q.2 • H q) := by
-    refine ((((ρ n).continuous_normed.comp continuous_snd).continuousOn.smul
-      (hH.mono (prod_mono (subset_univ _) hball))).integrableOn_compact
-      (hk.prod (isCompact_closedBall _ _))).integrable_of_forall_notMem_eq_zero fun q hq ↦ ?_
-    by_contra hne
-    have hq' : (ρ n).normed volume q.2 ≠ 0 ∧ H q ≠ 0 := by simpa [not_or] using hne
-    exact hq ⟨by_contra fun hx ↦ hq'.2 (hHk _ _ hx), by simpa using hsupp _ hq'.1⟩
-  rw [convolution_def, Measure.volume_eq_prod, integral_prod_symm _ hint]
-  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-  simp only [zero_sub, ContinuousLinearMap.lsmul_apply, integral_smul]
-  by_cases hy : (ρ n).normed volume y = 0
-  · simp [hy]
-  · simp [G, g, indicator_of_mem (hsupp y hy)]
 
 /-- **Agreement with the restriction of continuous functions.** For a function `F` continuous on
 `W` whose wave front set has no covectors conormal to `E × {0}` over `U`, the pullback of `F` to
@@ -676,7 +635,8 @@ theorem pullbackInl_ofFun [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D]
       filter_upwards [continuous_fst.continuousAt.eventually
         (notMem_tsupport_iff_eventuallyEq.1 hx)] with q hq
       simp [H, hq]
-  refine (tendsto_integral_shrinking_smul ψ.hasCompactSupport.isCompact
+  refine (ContDiffBump.tendsto_integral_shrinking_normed_smul (μ := volume) (ν := volume)
+    ψ.hasCompactSupport.isCompact
     (fun x y hx ↦ by simp [H, image_eq_zero_of_notMem_tsupport hx]) hδ hH).congr fun n ↦ ?_
   rw [← (WithLp.volume_preserving_symm_measurableEquiv_toLp_prod E D).symm.integral_comp']
   refine integral_congr_ae (Eventually.of_forall fun q ↦ ?_)
