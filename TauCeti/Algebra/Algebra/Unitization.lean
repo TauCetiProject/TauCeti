@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.Unitization
 public import Mathlib.Algebra.Star.MonoidHom
+public import Mathlib.Algebra.Star.StarProjection
+public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -21,6 +23,9 @@ For a unital algebra `B`, the map `x ↦ 1 + (x - 1_B)` is a unital multiplicati
 `B ⊆ Unitization R B` by multiplication as `x` does, so it carries unitaries of `B` to unitaries
 of the unitization implementing the same conjugation on `B`.
 
+Star projections of a non-unital star algebra `A` that are conjugate by a unitary `u` of its
+unitization are Murray–von Neumann equivalent in `A`, through the partial isometry `u * p ∈ A`.
+
 ## Main declarations
 
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
@@ -33,6 +38,9 @@ of the unitization implementing the same conjugation on `B`.
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
   `x ↦ 1 + (x - 1_B)` from `B` to its unitization.
+* `IsStarProjection.exists_star_mul_self_eq_of_mem_unitary_unitization`: projections of a
+  non-unital star algebra that are conjugate by a unitary of its unitization are Murray–von
+  Neumann equivalent.
 -/
 
 public section
@@ -187,3 +195,29 @@ theorem inr_mul_oneAddInrSubOne (c x : B) :
   simp [mul_add, mul_sub, ← inr_mul]
 
 end Unitization
+
+namespace IsStarProjection
+
+/-- Star projections `p` and `q` of a non-unital star algebra `A` that are conjugate by a unitary
+of its unitization are Murray–von Neumann equivalent in `A`: `v = u * p` lies in `A`, with
+`star v * v = p` and `v * star v = q`. -/
+theorem exists_star_mul_self_eq_of_mem_unitary_unitization {R A : Type*} [CommSemiring R]
+    [StarRing R] [NonUnitalSemiring A] [StarRing A] [Module R A] [IsScalarTower R A A]
+    [SMulCommClass R A A] [StarModule R A] {p q : A} (hp : IsStarProjection p)
+    {u : Unitization R A} (hu : u ∈ unitary (Unitization R A))
+    (hupq : u * (p : Unitization R A) * star u = q) :
+    ∃ v : A, star v * v = p ∧ v * star v = q := by
+  have hv : ((u * (p : Unitization R A)).snd : Unitization R A) = u * p := by
+    ext
+    · rw [Unitization.fst_inr, Unitization.fst_mul, Unitization.fst_inr, mul_zero]
+    · rw [Unitization.snd_inr]
+  refine ⟨(u * (p : Unitization R A)).snd, Unitization.inr_injective (R := R) ?_,
+    Unitization.inr_injective (R := R) ?_⟩
+  · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc (star u),
+      Unitary.star_mul_self_of_mem hu, one_mul, ← Unitization.inr_star, ← Unitization.inr_mul,
+      hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
+  · rw [Unitization.inr_mul, Unitization.inr_star, hv, star_mul, mul_assoc, ← mul_assoc _ (star _),
+      ← Unitization.inr_star, ← Unitization.inr_mul, hp.isSelfAdjoint.star_eq,
+      hp.isIdempotentElem.eq, ← mul_assoc, hupq]
+
+end IsStarProjection

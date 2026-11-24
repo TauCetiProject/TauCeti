@@ -12,9 +12,14 @@ import Mathlib.Tactic.NoncommRing
 # Pairs of idempotents
 
 Let `p` and `q` be idempotents in a ring. The square `(p - q) ^ 2 = p - p * q - q * p + q` of their
-difference commutes with both `p` and `q`, and the element `z = q * p + (1 - q) * (1 - p)`
-intertwines them: `z * p = q * z`. For star projections `z` is the intertwiner whose polar
-decomposition conjugates `p` to `q` when `‖p - q‖ < 1`; see `TauCeti.Algebra.Star.Projection.Pair`.
+difference commutes with both `p` and `q`, and their intertwiner
+`TauCeti.intertwiner p q = q * p + (1 - q) * (1 - p)` carries `p` to `q`:
+`intertwiner p q * p = q * intertwiner p q`. For star projections the polar decomposition of the
+intertwiner conjugates `p` to `q` when `‖p - q‖ < 1`; see `TauCeti.Algebra.Star.Projection.Pair`.
+
+## Main definitions
+
+* `TauCeti.intertwiner p q`: the element `q * p + (1 - q) * (1 - p)`.
 
 ## References
 
@@ -22,6 +27,18 @@ decomposition conjugates `p` to `q` when `‖p - q‖ < 1`; see `TauCeti.Algebra
 -/
 
 public section
+
+namespace TauCeti
+
+/-- The intertwiner `q * p + (1 - q) * (1 - p)` of two elements `p` and `q` of a ring. When `p` and
+`q` are idempotents it carries `p` to `q`, `intertwiner p q * p = q * intertwiner p q`
+(`IsIdempotentElem.intertwiner_mul`). -/
+@[expose] def intertwiner {R : Type*} [Ring R] (p q : R) : R :=
+  q * p + (1 - q) * (1 - p)
+
+end TauCeti
+
+open TauCeti
 
 namespace IsIdempotentElem
 
@@ -56,11 +73,11 @@ theorem commute_sub_sq_right (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
   rw [← neg_sub, neg_sq]
   exact hq.commute_sub_sq_left hp
 
-/-- **Intertwining.** The element `q * p + (1 - q) * (1 - p)` carries the idempotent `p` to the
+/-- **Intertwining.** The intertwiner `q * p + (1 - q) * (1 - p)` carries the idempotent `p` to the
 idempotent `q`. -/
 theorem intertwiner_mul (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
-    (q * p + (1 - q) * (1 - p)) * p = q * (q * p + (1 - q) * (1 - p)) := by
-  rw [add_mul, mul_add, mul_assoc, hp.eq, mul_assoc, hp.one_sub_mul_self, ← mul_assoc, hq.eq,
-    ← mul_assoc, hq.mul_one_sub_self, mul_zero, zero_mul]
+    intertwiner p q * p = q * intertwiner p q := by
+  rw [intertwiner, add_mul, mul_add, mul_assoc, hp.eq, mul_assoc, hp.one_sub_mul_self,
+    ← mul_assoc, hq.eq, ← mul_assoc, hq.mul_one_sub_self, mul_zero, zero_mul]
 
 end IsIdempotentElem

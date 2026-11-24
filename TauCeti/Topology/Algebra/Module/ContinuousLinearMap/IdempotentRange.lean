@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Idempotent
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
-import Mathlib.Tactic.Abel
+import TauCeti.Algebra.Ring.Idempotent.Pair
 
 /-!
 # Ranges of intertwined projections
 
-For idempotent continuous linear maps `p` and `q` on a topological module, the operator
-`U = q * p + (1 - q) * (1 - p)` satisfies `q * U = U * p`. When `U` is invertible, it therefore
-carries the range of `p` isomorphically onto the range of `q`
+For idempotent continuous linear maps `p` and `q` on a topological module, the intertwiner
+`U = TauCeti.intertwiner p q = q * p + (1 - q) * (1 - p)` satisfies `q * U = U * p`. When `U` is
+invertible, it therefore carries the range of `p` isomorphically onto the range of `q`
 (`ContinuousLinearMap.IsIdempotentElem.rangeEquiv`). This is the intertwining operator of a pair
 of projections; it is the local chart of the image bundle of a continuous family of projections,
 and it shows that nearby projections have isomorphic ranges.
@@ -59,6 +59,8 @@ public section
 
 open scoped Ring
 
+open TauCeti
+
 namespace ContinuousLinearMap.IsIdempotentElem
 
 section Semiring
@@ -100,29 +102,17 @@ theorem isUnit_mul_self_add_one_sub_mul_one_sub (hp : IsIdempotentElem p) :
   rw [mul_self_add_one_sub_mul_one_sub hp]
   exact isUnit_one
 
-/-- The operator `q * p + (1 - q) * (1 - p)`, which intertwines `p` with `q`. -/
-private def intertwiner (p q : M →L[R] M) : M →L[R] M :=
-  q * p + (1 - q) * (1 - p)
-
-private theorem mul_intertwiner (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
-    q * intertwiner p q = intertwiner p q * p := by
-  have h := hq.eq
-  have h₀ := hp.eq
-  simp only [intertwiner, mul_add, add_mul, mul_sub, sub_mul, mul_one, one_mul, ← mul_assoc, h]
-  simp only [mul_assoc, h₀]
-  abel
-
 /-- Where the intertwiner is invertible, its inverse intertwines `q` with `p`. -/
 private theorem inverse_intertwiner_mul (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (hU : IsUnit (intertwiner p q)) :
     (intertwiner p q)⁻¹ʳ * q = p * (intertwiner p q)⁻¹ʳ := by
-  have h := congr((intertwiner p q)⁻¹ʳ * $(mul_intertwiner hp hq) * (intertwiner p q)⁻¹ʳ)
+  have h := congr((intertwiner p q)⁻¹ʳ * $((hp.intertwiner_mul hq).symm) * (intertwiner p q)⁻¹ʳ)
   simpa only [mul_assoc, Ring.mul_inverse_cancel _ hU, Ring.inverse_mul_cancel_left _ _ hU,
     mul_one] using h
 
 private theorem apply_intertwiner (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (v : M) :
     q (intertwiner p q v) = intertwiner p q (p v) :=
-  congr($(mul_intertwiner hp hq) v)
+  congr($((hp.intertwiner_mul hq).symm) v)
 
 private theorem inverse_intertwiner_apply (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (hU : IsUnit (intertwiner p q)) (v : M) :

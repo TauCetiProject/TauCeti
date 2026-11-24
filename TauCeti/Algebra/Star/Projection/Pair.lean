@@ -12,8 +12,9 @@ import Mathlib.Tactic.NoncommRing
 /-!
 # Pairs of star projections
 
-Let `p` and `q` be star projections in a star ring. The element `z = q * p + (1 - q) * (1 - p)`
-intertwines them, `z * p = q * z` (`IsIdempotentElem.intertwiner_mul`), and satisfies
+Let `p` and `q` be star projections in a star ring. Their intertwiner
+`z = TauCeti.intertwiner p q = q * p + (1 - q) * (1 - p)` satisfies `z * p = q * z`
+(`IsIdempotentElem.intertwiner_mul`), `star z = intertwiner q p`, and
 
 `star z * z = z * star z = 1 - (p - q) ^ 2` and `z + star z = 2 * (1 - (p - q) ^ 2)`,
 
@@ -31,6 +32,8 @@ part `z * (1 - (p - q) ^ 2) ^ (-1 / 2)` of its polar decomposition conjugates `p
 
 public section
 
+open TauCeti
+
 namespace IsStarProjection
 
 variable {R : Type*} [Ring R] [StarRing R] {p q : R}
@@ -38,12 +41,12 @@ variable {R : Type*} [Ring R] [StarRing R] {p q : R}
 /-- The star of the intertwiner `q * p + (1 - q) * (1 - p)` is the intertwiner
 `p * q + (1 - p) * (1 - q)` in the opposite direction. -/
 theorem star_intertwiner (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    star (q * p + (1 - q) * (1 - p)) = p * q + (1 - p) * (1 - q) := by
-  simp [star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
+    star (intertwiner p q) = intertwiner q p := by
+  simp [intertwiner, star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
 
 /-- For the intertwiner `z = q * p + (1 - q) * (1 - p)`, `star z * z = 1 - (p - q) ^ 2`. -/
 theorem star_intertwiner_mul_intertwiner (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    star (q * p + (1 - q) * (1 - p)) * (q * p + (1 - q) * (1 - p)) = 1 - (p - q) ^ 2 := by
+    star (intertwiner p q) * intertwiner p q = 1 - (p - q) ^ 2 := by
   have hq₁ := hq.isIdempotentElem.one_sub
   -- The compressions `p * q * p` and `(1 - p) * (1 - q) * (1 - p)` in terms of `(p - q) ^ 2`.
   have h₁ : p * q * p = p - p * (p - q) ^ 2 := by
@@ -59,13 +62,13 @@ theorem star_intertwiner_mul_intertwiner (hp : IsStarProjection p) (hq : IsStarP
     rw [mul_assoc, ← mul_assoc q, hq.mul_one_sub_self, zero_mul, mul_zero]
   have hc₂ : (1 - p) * (1 - q) * (q * p) = 0 := by
     rw [mul_assoc, ← mul_assoc (1 - q), hq.one_sub_mul_self, zero_mul, mul_zero]
-  rw [hp.star_intertwiner hq, add_mul, mul_add, mul_add, hpq, hpq₁, hc₁, hc₂, add_zero, zero_add,
-    h₁, h₂]
+  rw [hp.star_intertwiner hq, intertwiner, intertwiner, add_mul, mul_add, mul_add, hpq, hpq₁, hc₁,
+    hc₂, add_zero, zero_add, h₁, h₂]
   noncomm_ring
 
 /-- For the intertwiner `z = q * p + (1 - q) * (1 - p)`, `z * star z = 1 - (p - q) ^ 2`. -/
 theorem intertwiner_mul_star_intertwiner (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    (q * p + (1 - q) * (1 - p)) * star (q * p + (1 - q) * (1 - p)) = 1 - (p - q) ^ 2 := by
+    intertwiner p q * star (intertwiner p q) = 1 - (p - q) ^ 2 := by
   have h := hq.star_intertwiner_mul_intertwiner hp
   rw [hq.star_intertwiner hp, ← neg_sub p q, neg_sq] at h
   rw [hp.star_intertwiner hq]
@@ -73,8 +76,9 @@ theorem intertwiner_mul_star_intertwiner (hp : IsStarProjection p) (hq : IsStarP
 
 /-- For the intertwiner `z = q * p + (1 - q) * (1 - p)`, `z + star z = 2 * (1 - (p - q) ^ 2)`. -/
 theorem intertwiner_add_star_intertwiner (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    q * p + (1 - q) * (1 - p) + star (q * p + (1 - q) * (1 - p)) = 2 * (1 - (p - q) ^ 2) := by
-  rw [hp.star_intertwiner hq, hp.isIdempotentElem.sub_sq hq.isIdempotentElem]
+    intertwiner p q + star (intertwiner p q) = 2 * (1 - (p - q) ^ 2) := by
+  rw [hp.star_intertwiner hq, intertwiner, intertwiner,
+    hp.isIdempotentElem.sub_sq hq.isIdempotentElem]
   noncomm_ring
 
 end IsStarProjection
