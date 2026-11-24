@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Family
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Family
+public import TauCeti.Geometry.Manifold.Riemannian.DirichletEnergy.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.WithMetric.Isometry
@@ -56,6 +57,37 @@ theorem scalarSchrodingerForm_def
     scalarSchrodingerForm g P φ =
       ∫ x : WithMetric g, (‖mgradient I (φ ∘ WithMetric.ofWithMetric) x‖ ^ 2 +
         P x.ofWithMetric * φ x.ofWithMetric ^ 2) ∂riemannianVolume I (WithMetric g) := (rfl)
+
+/-- The scalar Schrödinger form is the Dirichlet energy plus the potential energy when
+both integrands are integrable. -/
+theorem scalarSchrodingerForm_eq_dirichletEnergy_add
+    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _))
+    (P φ : M → ℝ)
+    (hD : Integrable (fun x : WithMetric g ↦
+      ‖mgradient I (φ ∘ WithMetric.ofWithMetric) x‖ ^ 2)
+      (riemannianVolume I (WithMetric g)))
+    (hP : Integrable (fun x : WithMetric g ↦ P x.ofWithMetric * φ x.ofWithMetric ^ 2)
+      (riemannianVolume I (WithMetric g))) :
+    scalarSchrodingerForm g P φ =
+      dirichletEnergy I (φ ∘ (WithMetric.ofWithMetric : WithMetric g → M)) +
+        ∫ x : WithMetric g, P x.ofWithMetric * φ x.ofWithMetric ^ 2
+          ∂riemannianVolume I (WithMetric g) := by
+  rw [scalarSchrodingerForm_def, dirichletEnergy_def, integral_add hD hP]
+
+/-- With zero potential the scalar Schrödinger form is the Dirichlet energy. -/
+@[simp]
+theorem scalarSchrodingerForm_zero_potential
+    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _)) (φ : M → ℝ) :
+    scalarSchrodingerForm g 0 φ =
+      dirichletEnergy I (φ ∘ (WithMetric.ofWithMetric : WithMetric g → M)) := by
+  simp [scalarSchrodingerForm_def, dirichletEnergy_def]
+
+/-- The zero test has zero scalar Schrödinger form for every potential. -/
+@[simp]
+theorem scalarSchrodingerForm_zero
+    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _)) (P : M → ℝ) :
+    scalarSchrodingerForm g P 0 = 0 := by
+  simp [scalarSchrodingerForm_def, Function.comp_def]
 
 /-- Express the scalar Schrödinger form using a fixed reference volume and the relative
 volume density. The gradient on the underlying manifold is computed with the metric `g`. -/
@@ -119,8 +151,7 @@ theorem continuous_scalarSchrodingerForm
   have hzero (a : A) (x : WithMetric r) (hx : x ∉ K) : S (a, x.ofWithMetric) = 0 := by
     let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨(g a).toRiemannianMetric⟩
     have hφx : φ x.ofWithMetric = 0 := image_eq_zero_of_notMem_tsupport hx
-    have hd : mgradient I φ x.ofWithMetric = 0 := mgradient_eq_zero_iff.mpr
-      ((notMem_tsupport_iff_eventuallyEq.mp hx).mvfderiv_eq.trans mvfderiv_zero)
+    have hd : mgradient I φ x.ofWithMetric = 0 := mgradient_eq_zero_of_notMem_tsupport hx
     simp [S, D, hd, hφx]
   convert continuous_integral_of_compact_support
     (F := fun a (x : WithMetric r) ↦ S (a, x.ofWithMetric)) (riemannianVolume I (WithMetric r))

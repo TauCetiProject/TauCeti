@@ -184,7 +184,7 @@ theorem continuousAt_iteratedFDeriv_chartMetric [LocallyCompactSpace E] (x : M) 
 open TauCeti.Manifold in
 /-- Metric tensor evaluation is jointly continuous in the metric and the base point in every
 chart Cᵏ topology. -/
-theorem continuous_metricTensor_chartCk [FiniteDimensional ℝ E] :
+theorem continuous_metricTensor_chartCk [LocallyCompactSpace E] :
     withMetricOperatorNorms E in
     letI := chartCkTopology (I := I) (M := M) k
     Continuous (fun p : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _) × M ↦
@@ -192,7 +192,6 @@ theorem continuous_metricTensor_chartCk [FiniteDimensional ℝ E] :
       (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
       p.2 (p.1.inner p.2)) := by
   let _ := chartCkTopology (I := I) (M := M) k
-  have := FiniteDimensional.proper ℝ E
   refine continuous_iff_continuousAt.mpr fun p ↦
     (continuousAt_hom_bundle (RingHom.id ℝ) _).mpr ⟨continuous_snd.continuousAt, ?_⟩
   have h := continuousAt_iteratedFDeriv_chartMetric (I := I) (k := k) p.2
@@ -215,12 +214,11 @@ theorem continuous_metricTensor_chartCk [FiniteDimensional ℝ E] :
   refine hlocal.congr ?_
   filter_upwards [continuous_snd.continuousAt.preimage_mem_nhds
     (extChartAt_source_mem_nhds (I := I) p.2)] with q hq
-  rw [ContMDiffNondegenerateMetric.chartMetric_def, (extChartAt I p.2).left_inv hq,
-    ContMDiffNondegenerateMetric.inCoordinates_eq_tangentBilinFormInCoordinates,
-    tangentBilinFormInCoordinates_def]
-  congr 1
+  rw [← tangentBilinFormInCoordinates_def]
   ext v w
-  exact toNondegenerateMetric_apply _ _ _ _
+  rw [q.1.toNondegenerateMetric.chartMetric_extChartAt_apply hq,
+    tangentBilinFormInCoordinates_apply p.2 (by simpa only [mem_preimage, extChartAt_source,
+      TangentBundle.trivializationAt_baseSet] using hq), toNondegenerateMetric_apply]
 
 /-- The order-`m` coordinate derivatives of a family of metrics in the chart at `x` converge in
 the compact-open topology exactly when they converge uniformly on every compact subset of the
