@@ -123,10 +123,7 @@ theorem truncatedColumnReflections_apply_of_notMem {s : Finset ι} {i : ι} (hi 
 /-- The unconditional coordinate formula for a simultaneous update. -/
 theorem truncatedColumnReflections_apply (s : Finset ι) (c : ι → ℤ) (i : ι) :
     A.truncatedColumnReflections s c i =
-      if i ∈ s then A.truncatedColumnReflection i c i else c i := by
-  by_cases hi : i ∈ s
-  · rw [truncatedColumnReflections_apply_of_mem A hi, ite_eq_left hi]
-  · rw [truncatedColumnReflections_apply_of_notMem A hi, ite_eq_right hi]
+      if i ∈ s then A.truncatedColumnReflection i c i else c i := by rfl
 
 /-- The empty colour class does nothing. -/
 @[simp]
