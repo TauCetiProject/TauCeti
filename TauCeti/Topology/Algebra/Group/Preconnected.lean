@@ -12,13 +12,16 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 
 This file records a local-to-global principle for monoid homomorphisms from a preconnected
 topological group: two such homomorphisms that agree near the identity agree everywhere.
-An open homomorphism into a preconnected group is surjective.
+An open homomorphism into a preconnected group is surjective, and a discrete normal subgroup of a
+preconnected group is central.
 
 ## Main results
 
 * `MonoidHomClass.eq_of_eventuallyEq_one`: agreement near the identity gives global equality.
 * `MonoidHom.surjective_of_isOpenMap` and `AddMonoidHom.surjective_of_isOpenMap`: an open
   homomorphism into a preconnected group is onto.
+* `Subgroup.le_center_of_discreteTopology`: a discrete normal subgroup of a preconnected group is
+  central.
 -/
 
 public section
@@ -51,3 +54,20 @@ theorem MonoidHom.surjective_of_isOpenMap {G K : Type*} [Group G] [TopologicalSp
   have hclopen : IsClopen (f.range : Set K) := ⟨f.range.isClosed_of_isOpen hopen, hopen⟩
   have hfull := hclopen.eq_univ ⟨1, f.range.one_mem⟩
   exact Set.range_eq_univ.mp hfull
+
+/-- **A discrete normal subgroup of a preconnected topological group is central.** -/
+@[to_additive /-- A discrete normal additive subgroup of a preconnected additive topological group
+is central. -/]
+theorem Subgroup.le_center_of_discreteTopology {G : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousMul G] [ContinuousInv G] [PreconnectedSpace G] (N : Subgroup G) [N.Normal]
+    [DiscreteTopology N] : N ≤ Subgroup.center G := by
+  intro n hn
+  rw [Subgroup.mem_center_iff]
+  intro g
+  -- The conjugates of `n` depend continuously on `g` and lie in the discrete subgroup `N`.
+  let c : G → N := fun g ↦ ⟨g * n * g⁻¹, Subgroup.Normal.conj_mem n hn g⟩
+  have hc : Continuous c := by fun_prop
+  have hconj : g * n * g⁻¹ = n := by
+    simpa [c] using congrArg Subtype.val (hc.isConst_of_preconnectedSpace g 1)
+  calc g * n = g * n * g⁻¹ * g := (inv_mul_cancel_right _ g).symm
+    _ = n * g := by rw [hconj]
