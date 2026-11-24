@@ -8,8 +8,8 @@ module
 public import Mathlib.CategoryTheory.Preadditive.Injective.InjectiveObject
 public import Mathlib.CategoryTheory.Preadditive.Injective.Resolution
 public import TauCeti.Algebra.Homology.CochainComplex.Plus.Basic
-public import TauCeti.Algebra.Homology.Embedding.Extend.Basic
-public import TauCeti.Algebra.Homology.Embedding.Extend.Homology.Basic
+public import TauCeti.Algebra.Homology.Embedding.Extend
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 
 import Mathlib.Algebra.Homology.FullSubcategory
 

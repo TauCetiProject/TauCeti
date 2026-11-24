@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.Injective.Extend
 public import Mathlib.CategoryTheory.Abelian.RightDerived
 public import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Basic
-public import TauCeti.Algebra.Homology.Embedding.Extend.Homology.Basic
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 public import TauCeti.Algebra.Homology.Functor.Extend
 
 /-!

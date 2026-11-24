@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomotopy
-public import TauCeti.Algebra.Homology.Embedding.Extend.Map
+public import TauCeti.Algebra.Homology.Embedding.MapExtend
 
 /-!
 # Opcycles and extension by zero

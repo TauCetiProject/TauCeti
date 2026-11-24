@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ChainComplex
-public import TauCeti.Algebra.Homology.Embedding.Extend.Homology.Sequence
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
-import TauCeti.Algebra.Homology.Embedding.Extend.Subobject
+import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
 /-!
 # The critical-value filtration of the mod-two Morse complex

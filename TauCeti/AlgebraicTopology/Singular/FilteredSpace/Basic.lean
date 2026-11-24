@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.ChainFunctor
 public import TauCeti.AlgebraicTopology.Singular.Triple
-import TauCeti.Algebra.Homology.Embedding.Extend.Subobject
+import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 
 /-!

@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
-public import TauCeti.Algebra.Homology.Embedding.Extend.Homology.Sequence
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Complete
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Indexing
 public import TauCeti.AlgebraicTopology.Cohomology.Triple
 public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.CategoryTheory.Subobject.Cokernel
-import TauCeti.Algebra.Homology.Embedding.Extend.Subobject
+import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
 /-!
 # The cohomology spectral sequence of a filtered space

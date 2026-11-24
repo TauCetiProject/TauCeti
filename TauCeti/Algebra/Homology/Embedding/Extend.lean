@@ -28,7 +28,7 @@ equivalent commutation squares and naturality compatibilities:
 ## References
 
 * Mathlib's `Mathlib/Algebra/Homology/Embedding/Extend.lean`.
-* `TauCeti/Algebra/Homology/Embedding/Extend/Map.lean` for `HomologicalComplex.mapExtendIso` and
+* `TauCeti/Algebra/Homology/Embedding/MapExtend.lean` for `HomologicalComplex.mapExtendIso` and
   `ComplexShape.Embedding.extendFunctorCompMapHomologicalComplexIso`.
 * `TauCeti/Algebra/Homology/Embedding/Restriction/Basic.lean`, the counterpart for
   `e.restrictionFunctor`.

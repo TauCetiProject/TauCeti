@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Embedding.Extend.Homology.Sequence
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Comparison
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
@@ -13,7 +13,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.FirstPage
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 public import TauCeti.Topology.Category.TopPair
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-import TauCeti.Algebra.Homology.Embedding.Extend.Subobject
+import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
 
 /-!
 # The spectral sequence of a filtered space for a chain functor
