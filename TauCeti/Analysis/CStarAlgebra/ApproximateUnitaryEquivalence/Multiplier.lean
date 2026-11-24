@@ -132,7 +132,8 @@ Nondegeneracy is what lets `ρ` extend unitally to `𝓜(ℂ, B)`. -/
 theorem postcomp_multiplier (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ)
     {ρ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)} (hρ : ρ.IsMultiplierNondegenerate) :
     ApproximatelyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) :=
-  ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq h (ρ.extendToMultiplier hρ)
+  ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq h
+    (ρ.extendToMultiplier hρ).toNonUnitalStarAlgHom
     (NonUnitalStarAlgHom.ext fun _ ↦ by simp)
 
 /-- Postcomposition with a nondegenerate star homomorphism `ρ : B → C` preserves the
@@ -201,11 +202,10 @@ theorem multiplierApproximatelyUnitarilyEquivalent_iff_approximatelyUnitarilyEqu
   · intro h
     simpa only [NonUnitalStarAlgHom.id_comp] using
       ApproximatelyUnitarilyEquivalent.postcomp_of_comp_eq (κ := NonUnitalStarAlgHom.id ℂ B) h
-        (DoubleCentralizer.coeStarAlgEquiv ℂ B).symm.toStarAlgHom (by simp)
+        (DoubleCentralizer.coeStarAlgEquiv ℂ B).symm.toNonUnitalStarAlgHom (by simp)
   · intro h
-    simpa only [StarAlgEquiv.toNonUnitalStarAlgHom_toStarAlgHom,
-      DoubleCentralizer.coeStarAlgEquiv_toNonUnitalStarAlgHom] using
+    simpa only [DoubleCentralizer.coeStarAlgEquiv_toNonUnitalStarAlgHom] using
       ApproximatelyUnitarilyEquivalent.postcomp h
-        (DoubleCentralizer.coeStarAlgEquiv ℂ B).toStarAlgHom
+        (DoubleCentralizer.coeStarAlgEquiv ℂ B).toNonUnitalStarAlgHom
 
 end TauCeti
