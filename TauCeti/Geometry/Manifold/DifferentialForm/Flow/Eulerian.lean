@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.Flow.Eulerian
+import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # Lie derivatives of differential forms along smooth isotopies
@@ -211,9 +212,7 @@ theorem contDiff_pathIntegral_interior_eulerianField {m : ℕ∞} {n : ℕ∞ω}
       σ.eval₂ (γ p.2) (eulerianField I φ p.1 (γ p.2)) (Manifold.curveVelocity I γ p.2) := by
     rw [← contMDiff_iff_contDiff]
     intro p
-    have h := σ.contMDiffAt_eval₂ (hX p) (hV p)
-    rw [contMDiffAt_totalSpace_iff] at h
-    simpa [Trivial.fiberBundle_trivializationAt'] using h.2
+    exact (Bundle.Trivial.contMDiffAt_mk_iff.1 (σ.contMDiffAt_eval₂ (hX p) (hV p))).2
   convert hg.parametric_intervalIntegral (a := a) (b := b) (μ := MeasureTheory.volume) using 2
     with t
   rw [pathIntegral_def]
