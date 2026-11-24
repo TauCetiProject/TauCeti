@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Quaternion
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The Möbius action of `SL(2, ℂ)` on hyperbolic three-space
@@ -109,17 +110,11 @@ theorem denom_def (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
       Complex.normSq (A 1 0) * height p ^ 2 :=
   (rfl)
 
-/-- For an upper triangular `A = (a b; 0 d)` of `SL(2, ℂ)`, the determinant is `a d = 1`. -/
-private theorem apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero {A : SL(2, ℂ)}
-    (hc : A 1 0 = 0) : A 0 0 * A 1 1 = 1 := by
-  have hdet := A.det_coe
-  rwa [det_fin_two, hc, mul_zero, sub_zero] at hdet
-
 /-- The denominator `J` of the Möbius action is positive: if `c = 0` then `d ≠ 0`. -/
 theorem denom_pos (A : SL(2, ℂ)) (p : UpperHalfSpace ℂ) : 0 < denom A p := by
   rcases eq_or_ne (A 1 0) 0 with hc | hc
-  · have hd : A 1 1 ≠ 0 :=
-      right_ne_zero_of_mul_eq_one (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)
+  · have hd : A 1 1 ≠ 0 := right_ne_zero_of_mul_eq_one
+      (SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)
     simpa [denom_def, hc] using hd
   · exact add_pos_of_nonneg_of_pos (Complex.normSq_nonneg _)
       (mul_pos (Complex.normSq_pos.2 hc) (pow_pos (height_pos p) 2))
@@ -256,13 +251,11 @@ theorem denom_mul (A B : SL(2, ℂ)) (p : UpperHalfSpace ℂ) :
 /-- The central elements `±1` of `SL(2, ℂ)` act trivially on the upper half-space. -/
 theorem smul_eq_of_mem_center {A : SL(2, ℂ)} (hA : A ∈ Subgroup.center SL(2, ℂ))
     (p : UpperHalfSpace ℂ) : A • p = p := by
-  obtain ⟨r, hr, hrA⟩ := SpecialLinearGroup.mem_center_iff.mp hA
-  have hr' : r * r = 1 := by simpa [sq] using hr
-  have hA' : ∀ i j, A i j = if i = j then r else 0 := fun i j ↦ by
-    rw [← hrA, scalar_apply, diagonal_apply]
-  have hneg : ((-1 : ℂ) : ℍ[ℝ]) = -1 := by ext <;> simp
-  refine toQuaternion_injective ?_
-  rcases mul_self_eq_one_iff.mp hr' with rfl | rfl <;> simp [toQuaternion_smul, hA', hneg]
+  rcases SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hA with rfl | rfl
+  · exact one_smul _ p
+  · have hneg : ((-1 : ℂ) : ℍ[ℝ]) = -1 := by ext <;> simp
+    refine toQuaternion_injective ?_
+    simp [toQuaternion_smul, hneg]
 
 /-- `PSL(2, ℂ)` acts on the upper half-space through representatives in `SL(2, ℂ)`; this is
 well defined because the center `{±1}` acts trivially (`smul_eq_of_mem_center`). -/
@@ -285,7 +278,7 @@ theorem fst_smul_of_apply_one_zero_eq_zero {A : SL(2, ℂ)} (hc : A 1 0 = 0)
     (p : UpperHalfSpace ℂ) :
     ((A • p : UpperHalfSpace ℂ) : WithLp 2 (ℂ × ℝ)).fst =
       A 0 0 * (A 0 0 * (p : WithLp 2 (ℂ × ℝ)).fst + A 0 1) := by
-  have hdet := apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
+  have hdet := SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
   have hd : A 1 1 ≠ 0 := right_ne_zero_of_mul_eq_one hdet
   rw [fst_smul, eq_inv_of_mul_eq_one_left hdet]
   simp only [denom_def, hc, zero_mul, zero_add, map_zero, mul_zero, add_zero]
@@ -296,7 +289,7 @@ theorem fst_smul_of_apply_one_zero_eq_zero {A : SL(2, ℂ)} (hc : A 1 0 = 0)
 /-- An upper triangular `A = (a b; 0 a⁻¹)` multiplies heights by `|a|²`. -/
 theorem height_smul_of_apply_one_zero_eq_zero {A : SL(2, ℂ)} (hc : A 1 0 = 0)
     (p : UpperHalfSpace ℂ) : height (A • p) = Complex.normSq (A 0 0) * height p := by
-  have hdet := apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
+  have hdet := SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
   rw [height_smul, eq_inv_of_mul_eq_one_left hdet, map_inv₀]
   simp [denom_def, hc, div_eq_inv_mul]
 
@@ -395,7 +388,7 @@ theorem mem_center_iff_forall_smul_eq {A : SL(2, ℂ)} :
   have hd : A 1 1 ≠ 0 := left_ne_zero_of_mul_eq_one hdd
   have hb : A 0 1 = 0 := by
     simpa [(map_ne_zero (starRingEnd ℂ)).mpr hd] using f₁
-  have hdet := apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
+  have hdet := SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
   -- `a d = 1` and `d conj d = 1` give `a = conj d`; then `a conj d = 1` gives `conj d = d`
   have ha : A 0 0 = conj (A 1 1) := by
     linear_combination conj (A 1 1) * hdet - A 0 0 * hdd
