@@ -18,9 +18,9 @@ depth is `k.length`. The multiple zeta value of a positive index is the series
 ζ(k₁, …, k_r) = ∑_{n₁ > n₂ > ⋯ > n_r > 0} n₁^(-k₁) n₂^(-k₂) ⋯ n_r^(-k_r),
 ```
 summed over strictly decreasing tuples of positive integers, with `ζ([]) = 1`. The convention is
-the descending one: the first entry `k₁` carries the largest summation variable. Ihara, Kaneko and
-Zagier, and Brown, write indices in increasing order, so their `ζ(k_r, …, k₁)` is our
-`ζ(k₁, …, k_r)`.
+the descending one: the first entry `k₁` carries the largest summation variable. This is the
+convention of Ihara, Kaneko and Zagier; Brown writes indices in increasing order, so his
+`ζ(k_r, …, k₁)` is our `ζ(k₁, …, k_r)`.
 
 A positive index is *admissible* when it is empty or its first entry is at least `2`. The main
 result is that the series of a positive index converges exactly when the index is admissible.
@@ -29,8 +29,9 @@ For an admissible index of depth `r`, every term of the series is at most
 is a product of convergent `p`-series. If `k₁ = 1`, then fixing `n₂, …, n_r` leaves a tail of the
 harmonic series.
 
-Multiple zeta values are the periods of mixed Tate motives over `ℤ`; the shuffle and stuffle
-relations among them are identities between the convergent series introduced here.
+By Brown's theorem, the periods of mixed Tate motives over `ℤ` are `ℚ[(2πi)⁻¹]`-linear
+combinations of multiple zeta values; the shuffle and stuffle relations among multiple zeta values
+are identities between the convergent series introduced here.
 
 ## Main definitions
 
@@ -108,13 +109,18 @@ theorem mem_descendingTuples {r : ℕ} {n : Fin r → ℕ} :
     n ∈ descendingTuples r ↔ (∀ i, 0 < n i) ∧ StrictAnti n :=
   Iff.rfl
 
-/-- The tuple `(r, r - 1, …, 1)` is a strictly decreasing `r`-tuple of positive integers. -/
-theorem sub_mem_descendingTuples (r : ℕ) : (fun i : Fin r ↦ r - (i : ℕ)) ∈ descendingTuples r :=
-  ⟨fun i ↦ by have := i.isLt; simp only; omega, fun i j hij ↦ by
-    have := j.isLt
-    have : (i : ℕ) < j := hij
+/-- The tuple `(N + r, r - 1, …, 1)` is a strictly decreasing `r`-tuple of positive integers. -/
+theorem ite_mem_descendingTuples (N r : ℕ) :
+    (fun i : Fin r ↦ if (i : ℕ) = 0 then N + r else r - (i : ℕ)) ∈ descendingTuples r :=
+  ⟨fun i ↦ by have := i.isLt; simp only; split_ifs <;> omega, fun i j hij ↦ by
+    have := Fin.lt_def.mp hij
     simp only
-    omega⟩
+    split_ifs <;> omega⟩
+
+/-- The tuple `(r, r - 1, …, 1)` is a strictly decreasing `r`-tuple of positive integers. -/
+theorem sub_mem_descendingTuples (r : ℕ) : (fun i : Fin r ↦ r - (i : ℕ)) ∈ descendingTuples r := by
+  convert ite_mem_descendingTuples 0 r using 2 with i
+  split_ifs with hi <;> simp [hi]
 
 /-- The term `∏ i, n_i ^ (-k_i)` of the multiple zeta series of the index `k` at the tuple `n`. -/
 def term (k : List ℕ) (n : Fin k.length → ℕ) : ℝ := ∏ i, ((n i : ℝ) ^ k[i])⁻¹
@@ -157,7 +163,7 @@ private theorem term_le_prod_rpow {k : List ℕ} (hk : Admissible k) (hk0 : k �
   let i₀ : Fin k.length := ⟨0, hr⟩
   have hpos : ∀ i, (1 : ℝ) ≤ n i := fun i ↦ by exact_mod_cast hn.1 i
   have hle : ∀ i, (n i : ℝ) ≤ n i₀ := fun i ↦ by
-    exact_mod_cast hn.2.antitone (show i₀ ≤ i from Nat.zero_le _)
+    exact_mod_cast hn.2.antitone (Fin.le_def.mpr (Nat.zero_le i))
   have hexp : ∀ i : Fin k.length, 1 ≤ k[i] := fun i ↦ hk.1 _ (List.getElem_mem _)
   have hexp₀ : 2 ≤ k[i₀] := hk.2 _ (by rcases k with _ | ⟨a, k⟩ <;> simp_all [i₀])
   rw [term_def, Finset.prod_inv_distrib, Finset.prod_inv_distrib]
@@ -210,15 +216,7 @@ private theorem not_summable_term_cons_one (k : List ℕ) :
   intro h
   set r := (1 :: k).length
   -- The tuple `(N + r, r - 1, …, 1)`.
-  let t : ℕ → descendingTuples r := fun N ↦
-    ⟨fun i ↦ if (i : ℕ) = 0 then N + r else r - i, fun i ↦ by
-      have := i.isLt
-      simp only
-      split_ifs <;> omega,
-      fun i j hij ↦ by
-        have : (i : ℕ) < j := hij
-        simp only
-        split_ifs <;> omega⟩
+  let t : ℕ → descendingTuples r := fun N ↦ ⟨_, ite_mem_descendingTuples N r⟩
   have ht : Function.Injective t := fun N M h ↦ by
     simpa [t] using congrFun (congrArg Subtype.val h) ⟨0, by simp [r]⟩
   set C : ℝ := ∏ i : Fin k.length, (((k.length - i : ℕ) : ℝ) ^ k[i])⁻¹
