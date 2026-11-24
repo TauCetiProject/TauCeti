@@ -157,13 +157,7 @@ theorem isIso_counit_app_iff {W : Rep.{w} A G} :
       asIso ((smoothPartAdjunction A G).counit.app W)
     rw [← Rep.hom_inv_apply _ _ e w]
     simp [e]
-  · refine ⟨Rep.ofHom ((IntertwiningMap.id W.ρ).codRestrict W.ρ.smoothVectors
-      fun _ ↦ Subrepresentation.mem_toSubmodule.2 (IsSmooth.mem_smoothVectors _)), ?_, ?_⟩
-    · ext v
-      apply Subtype.ext
-      simp
-    · ext
-      simp
+  · exact (smoothPartAdjunction A G).isIso_counit_app_of_iso (Y := ⟨W, ‹_›⟩) (Iso.refl _)
 
 /-- The counit `ι (W^∞) ⟶ W` is an isomorphism when `W` is smooth. -/
 instance {W : Rep.{w} A G} [IsSmooth W.ρ] : IsIso ((smoothPartAdjunction A G).counit.app W) :=
