@@ -262,6 +262,8 @@ theorem baseChange_eq_of_baseChange_eq
       (AlgebraTensorModule.cancelBaseChange E E₂ E' E' W).toLinearMap ∘ₗ
         f₂.baseChange E' ∘ₗ
         (AlgebraTensorModule.cancelBaseChange E E₂ E' E' V).symm.toLinearMap := by
+  -- `LinearMap.baseChange_injective` requires `AddCommGroup`, which `E' ⊗[E] _` inherits from
+  -- `[CommRing E']`.
   let : AddCommGroup (E' ⊗[E] V) := Module.addCommMonoidToAddCommGroup E'
   let : AddCommGroup (E' ⊗[E] W) := Module.addCommMonoidToAddCommGroup E'
   apply LinearMap.baseChange_injective (R := E') (A := L)
@@ -303,12 +305,8 @@ theorem cancelBaseChange_comp_sum_smul_baseChange
   | empty => simp
   | cons a s ha ih =>
     simp only [Finset.sum_cons]
-    have hadd :
-        (c a • (g a).baseChange E' + ∑ i ∈ s, c i • (g i).baseChange E').baseChange L =
-          (c a • (g a).baseChange E').baseChange L +
-            (∑ i ∈ s, c i • (g i).baseChange E').baseChange L :=
-      map_add (LinearMap.baseChangeHom E' L (E' ⊗[E] V) (E' ⊗[E] W)) _ _
-    rw [hadd, LinearMap.comp_add, LinearMap.add_comp, ih, cancelBaseChange_comp_smul_baseChange]
+    rw [LinearMap.baseChange_add, LinearMap.comp_add, LinearMap.add_comp, ih,
+      cancelBaseChange_comp_smul_baseChange]
 
 end LinearMap
 

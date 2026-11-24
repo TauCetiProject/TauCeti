@@ -104,9 +104,8 @@ theorem algebraicExtensionNormedFieldTopology_eq (E : IntermediateField ℚ_[p] 
       (inferInstance : TopologicalSpace E) := by
   let nf := TauCeti.algebraicExtensionNormedField ℚ_[p] E
   have hdist (y x : E) : @dist E nf.toDist y x = dist y x := by
-    rw [nf.dist_eq, algebraicExtensionNormedField_norm_eq p E (-y + x), Subtype.dist_eq,
-      dist_eq_norm, neg_add_eq_sub, ← IntermediateField.coe_val, map_sub]
-    exact norm_sub_rev (x : PadicAlgCl p) y
+    simp [nf.dist_eq, algebraicExtensionNormedField_norm_eq, Subtype.dist_eq, dist_eq_norm,
+      neg_add_eq_sub, norm_sub_rev]
   exact congrArg (fun m : PseudoMetricSpace E ↦ m.toUniformSpace.toTopologicalSpace)
     (PseudoMetricSpace.ext (Dist.ext (funext₂ hdist)))
 
@@ -117,12 +116,8 @@ theorem mem_integerRing_algebraicExtension_iff (E : IntermediateField ℚ_[p] (P
     letI := TauCeti.algebraicExtensionValuativeRel ℚ_[p] E
     x ∈ 𝒪[E] ↔ ‖(x : PadicAlgCl p)‖ ≤ 1 := by
   let _ := TauCeti.algebraicExtensionValuativeRel ℚ_[p] E
-  rw [Valuation.mem_integer_iff, ← map_one (ValuativeRel.valuation E),
-    ← (ValuativeRel.valuation E).vle_iff_le,
-    TauCeti.algebraicExtensionValuativeRel_vle_iff (K := ℚ_[p]) (M := E),
-    algebraicExtensionNormedField_norm_eq p E x,
-    algebraicExtensionNormedField_norm_eq p E 1,
-    OneMemClass.coe_one, norm_one]
+  simp [Valuation.mem_integer_iff, ← Valuation.vle_one_iff,
+    TauCeti.algebraicExtensionValuativeRel_vle_iff, algebraicExtensionNormedField_norm_eq]
 
 /-- **A finite intermediate field of `PadicAlgCl p / ℚ_[p]` is a nonarchimedean local field for
 its subspace topology and spectral-norm valuative relation.** -/

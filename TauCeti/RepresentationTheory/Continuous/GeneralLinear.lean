@@ -9,12 +9,12 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Map
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Subfield
 
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import TauCeti.LinearAlgebra.LinearMap.BaseChange
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subfield
 import TauCeti.RepresentationTheory.Intertwining
 
 /-!
@@ -27,15 +27,12 @@ This file connects continuous matrix homomorphisms `Γ →ₜ* GL ι A` with con
   a continuous homomorphism `φ : Γ →ₜ* GL ι A` defines a continuous representation on `ι → A`
   acting by `Matrix.mulVecLin (φ g)`.
 * **Representation-to-matrix** (`TauCeti.ContinuousRep.toGL`,
-  `TauCeti.ContinuousRep.ofGLToGLIso`, `TauCeti.ContinuousRep.toGL_ofGL`): given a continuous
-  representation on a module `V` carrying the `A`-module topology (`IsModuleTopology A V`) and a
-  finite basis `b`, taking matrices in `b` yields a continuous homomorphism `Γ →ₜ* GL ι A` whose
-  associated matrix representation is canonically isomorphic to `ρ`.
-* **Subfield lifting** (`TauCeti.ContinuousRep.liftGL`,
-  `TauCeti.ContinuousRep.map_subtype_liftGL`,
-  `TauCeti.ContinuousRep.continuousMapGL_subtype_comp_liftGL`,
-  `TauCeti.ContinuousRep.liftGL_unique`): a continuous homomorphism `Γ →ₜ* GL ι L` whose entries
-  lie in a subfield `E` lifts uniquely and continuously to `Γ →ₜ* GL ι E`.
+  `TauCeti.ContinuousRep.ofGLToGLIso`, `TauCeti.ContinuousRep.toGL_ofGL`,
+  `TauCeti.ContinuousRep.map_subtype_liftGLOfMem_toGL`): given a continuous representation on a
+  module `V` carrying the `A`-module topology (`IsModuleTopology A V`) and a finite basis `b`,
+  taking matrices in `b` yields a continuous homomorphism `Γ →ₜ* GL ι A` whose associated matrix
+  representation is canonically isomorphic to `ρ`, and subfield lifting via
+  `ContinuousMonoidHom.liftGLOfMem` recovers `LinearMap.toMatrix b b (ρ g)`.
 * **Scalar extension** (`TauCeti.ContinuousRep.baseChangeOfGLIso`): when `B ⊗[A] (ι → A)` carries
   the `B`-module topology, extending scalars of `ofGL φ` from `A` to `B` corresponds via
   `TensorProduct.piScalarRight` to applying `algebraMap A B` entrywise.
@@ -48,21 +45,13 @@ This file connects continuous matrix homomorphisms `Γ →ₜ* GL ι A` with con
 * `TauCeti.ContinuousRep.toGL`: continuous matrix homomorphism `Γ →ₜ* GL ι A` attached to a
   continuous representation and a finite basis.
 * `TauCeti.ContinuousRep.ofGLToGLIso`: canonical isomorphism `Iso (ofGL (toGL ρ b)) ρ`.
-* `TauCeti.ContinuousRep.continuousMapGL`: continuous `GL` map induced by a continuous ring
-  homomorphism.
-* `TauCeti.ContinuousRep.liftGL`: continuous lift of `Γ →ₜ* GL ι L` with entries in a subfield
-  `E` to `Γ →ₜ* GL ι E`.
 * `TauCeti.ContinuousRep.baseChangeOfGLIso`: canonical isomorphism identifying `(ofGL φ).baseChange
   B` with the entrywise image under `algebraMap A B`.
 
 ## Main results
 
 * `TauCeti.ContinuousRep.toGL_ofGL`
-* `TauCeti.ContinuousRep.map_subtype_liftGL`
-* `TauCeti.ContinuousRep.map_subtype_liftGL_matrix`
-* `TauCeti.ContinuousRep.map_subtype_liftGL_toGL`
-* `TauCeti.ContinuousRep.continuousMapGL_subtype_comp_liftGL`
-* `TauCeti.ContinuousRep.liftGL_unique`
+* `TauCeti.ContinuousRep.map_subtype_liftGLOfMem_toGL`
 * `TauCeti.ContinuousRep.baseChangeOfGLIso_apply`
 -/
 
@@ -183,108 +172,22 @@ theorem toGL_ofGL (φ : Γ →ₜ* GL ι A) : toGL (ofGL φ) (Pi.basisFun A ι) 
 
 end ToGL
 
-section MapGL
-
-/-- **Continuous `GL` map induced by a continuous ring homomorphism.** -/
-def continuousMapGL {A B ι : Type*} [CommRing A] [TopologicalSpace A]
-    [CommRing B] [TopologicalSpace B] [Fintype ι] [DecidableEq ι]
-    (f : A →+* B) (hf : Continuous f) : GL ι A →ₜ* GL ι B where
-  toMonoidHom := Matrix.GeneralLinearGroup.map f
-  continuous_toFun := hf.generalLinearGroup_map
-
-/-- Applying `continuousMapGL f hf` agrees with `Matrix.GeneralLinearGroup.map f`. -/
-@[simp]
-theorem continuousMapGL_apply {A B ι : Type*} [CommRing A] [TopologicalSpace A]
-    [CommRing B] [TopologicalSpace B] [Fintype ι] [DecidableEq ι]
-    (f : A →+* B) (hf : Continuous f) (g : GL ι A) :
-    continuousMapGL f hf g = Matrix.GeneralLinearGroup.map f g :=
-  (rfl)
-
-end MapGL
-
 section LiftGL
 
 variable {L S ι : Type*} [Field L] [SetLike S L] [SubfieldClass S L]
   [Fintype ι] [DecidableEq ι]
 
-/-- **Lifting a continuous matrix homomorphism to a subfield.** If every matrix entry of
-`ρ : Γ →ₜ* GL ι L` lies in a subfield `E`, then `ρ` lifts continuously to `Γ →ₜ* GL ι E`. -/
-noncomputable def liftGL {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
-    (ρ : Γ →ₜ* GL ι L) (E : S)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) : Γ →ₜ* GL ι E where
-  toFun g := Matrix.GeneralLinearGroup.liftOfMem E (ρ g) (hE g)
-  map_one' :=
-    Matrix.GeneralLinearGroup.map_injective (f := SubringClass.subtype E) Subtype.val_injective <|
-      by simp only [Matrix.GeneralLinearGroup.map_subtype_liftOfMem, map_one]
-  map_mul' g h :=
-    Matrix.GeneralLinearGroup.map_injective (f := SubringClass.subtype E) Subtype.val_injective <|
-      by simp only [map_mul, Matrix.GeneralLinearGroup.map_subtype_liftOfMem]
-  continuous_toFun :=
-    (Topology.IsInducing.generalLinearGroup_map (n := ι) (f := SubringClass.subtype E)
-      Topology.IsInducing.subtypeVal).continuous_iff.mpr <| by
-        simpa only [Function.comp_def, Matrix.GeneralLinearGroup.map_subtype_liftOfMem] using
-          map_continuous ρ
-
-/-- Pushing `liftGL ρ E hE` forward along `SubringClass.subtype E` recovers `ρ`. -/
-@[simp]
-theorem map_subtype_liftGL {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
-    (ρ : Γ →ₜ* GL ι L) (E : S)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) :
-    Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (liftGL ρ E hE g) = ρ g :=
-  Matrix.GeneralLinearGroup.map_subtype_liftOfMem E (ρ g) (hE g)
-
-/-- Composing `liftGL ρ E hE` with `continuousMapGL (SubringClass.subtype E) continuous_subtypeVal`
-recovers `ρ`. -/
-@[simp]
-theorem continuousMapGL_subtype_comp_liftGL {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ]
-    [TopologicalSpace L] (ρ : Γ →ₜ* GL ι L) (E : S)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) :
-    (continuousMapGL (SubringClass.subtype E) continuous_subtypeVal).comp
-        (liftGL ρ E hE) = ρ := by
-  ext1 g
-  exact map_subtype_liftGL ρ E hE g
-
-/-- The entries of `liftGL ρ E hE g` coerce to the entries of `ρ g`. -/
-@[simp]
-theorem coe_liftGL {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
-    (ρ : Γ →ₜ* GL ι L) (E : S)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) (i j : ι) :
-    ((liftGL ρ E hE g : Matrix ι ι E) i j : L) = (ρ g : Matrix ι ι L) i j :=
-  Matrix.GeneralLinearGroup.coe_liftOfMem_apply E (ρ g) (hE g) i j
-
-/-- Pushing the matrix of `liftGL ρ E hE g` forward along `Subtype.val` recovers `ρ g`. -/
-@[simp]
-theorem map_subtype_liftGL_matrix
-    {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
-    (ρ : Γ →ₜ* GL ι L) (E : S)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) :
-    (liftGL ρ E hE g : Matrix ι ι E).map Subtype.val = (ρ g : Matrix ι ι L) := by
-  ext i j
-  simp only [Matrix.map_apply, coe_liftGL]
-
-/-- Pushing the matrix of `liftGL (toGL ρ b) E hE g` forward along `SubringClass.subtype E`
+/-- Pushing the matrix of `(toGL ρ b).liftGLOfMem E hE g` forward along `SubringClass.subtype E`
 recovers `LinearMap.toMatrix b b (ρ g)`. -/
-theorem map_subtype_liftGL_toGL {Γ V : Type*} [Group Γ] [TopologicalSpace Γ]
+theorem map_subtype_liftGLOfMem_toGL {Γ V : Type*} [Group Γ] [TopologicalSpace Γ]
     [ContinuousInv Γ] [TopologicalSpace L] [IsTopologicalSemiring L]
     [AddCommGroup V] [Module L V] [TopologicalSpace V] [IsModuleTopology L V]
     (ρ : ContinuousRep Γ L V) (b : Module.Basis ι L V) (E : S)
     (hE : ∀ g i j, (toGL ρ b g : Matrix ι ι L) i j ∈ E) (g : Γ) :
-    (liftGL (toGL ρ b) E hE g : Matrix ι ι E).map (SubringClass.subtype E) =
+    ((toGL ρ b).liftGLOfMem E hE g : Matrix ι ι E).map (SubringClass.subtype E) =
       LinearMap.toMatrix b b (ρ g) := by
-  rw [SubringClass.coe_subtype, map_subtype_liftGL_matrix, coe_toGL]
+  rw [SubringClass.coe_subtype, ContinuousMonoidHom.map_subtype_liftGLOfMem_matrix, coe_toGL]
   exact AlgEquiv.ofLinearEquiv_apply ..
-
-/-- **Uniqueness of `liftGL`.** A continuous homomorphism `Γ →ₜ* GL ι E` pushing forward to `ρ`
-along `SubringClass.subtype E` equals `liftGL ρ E hE`. -/
-theorem liftGL_unique {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] [TopologicalSpace L]
-    (ρ : Γ →ₜ* GL ι L) (E : S)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E)
-    {φ : Γ →ₜ* GL ι E}
-    (hφ : ∀ g, Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (φ g) = ρ g) :
-    φ = liftGL ρ E hE := by
-  ext1 g
-  exact Matrix.GeneralLinearGroup.map_injective (f := SubringClass.subtype E)
-    Subtype.val_injective (by rw [hφ g, map_subtype_liftGL])
 
 end LiftGL
 
@@ -304,7 +207,8 @@ the image matrices under `algebraMap A B`, through `TensorProduct.piScalarRight`
 def baseChangeOfGLIso (φ : Γ →ₜ* GL ι A) :
     Iso ((ofGL φ).baseChange B)
       (ofGL (ContinuousMonoidHom.comp
-        (continuousMapGL (algebraMap A B) (continuous_algebraMap A B)) φ)) :=
+        (Matrix.GeneralLinearGroup.continuousMap (algebraMap A B) (continuous_algebraMap A B))
+        φ)) :=
   .ofEquiv (.mk (TensorProduct.piScalarRight A B B ι) fun g ↦ by
     have hrep : (ofGL φ).toRepresentation g = Matrix.mulVecLin (φ g : Matrix ι ι A) :=
       LinearMap.ext fun v ↦ by simp only [coe_toRepresentation, ofGL_apply, Matrix.mulVecLin_apply]
@@ -317,7 +221,7 @@ def baseChangeOfGLIso (φ : Γ →ₜ* GL ι A) :
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, toRepresentation_baseChange,
       Representation.baseChange_apply, hrep, TensorProduct.piScalarRight_baseChange_mulVecLin,
       coe_toRepresentation, ofGL_apply, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      continuousMapGL_apply, hmap])
+      Matrix.GeneralLinearGroup.continuousMap_apply, hmap])
 
 /-- Underlying map of `baseChangeOfGLIso` as `TensorProduct.piScalarRight`. -/
 @[simp]

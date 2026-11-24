@@ -173,8 +173,9 @@ end BaireDescent
 section DiagramDescent
 
 /-- **Single-object descent isomorphism.** Given a continuous representation `ρ` over `L` whose
-matrix entries in a basis `b` lie in `E : IntermediateField K L`, its lift `ofGL (liftGL (toGL ρ b)
-E hmem)` base-changed back to `L` is continuously isomorphic to `ρ`. -/
+matrix entries in a basis `b` lie in `E : IntermediateField K L`, its lift
+`ofGL ((toGL ρ b).liftGLOfMem E hmem)` base-changed back to `L` is continuously isomorphic to
+`ρ`. -/
 private noncomputable def descentObjectIso {Γ K L V ι : Type*}
     [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
     [Field K] [Field L] [Algebra K L] [TopologicalSpace L] [IsTopologicalRing L]
@@ -183,14 +184,14 @@ private noncomputable def descentObjectIso {Γ K L V ι : Type*}
     (ρ : ContinuousRep Γ L V) (b : Module.Basis ι L V) (E : IntermediateField K L)
     (hmem : ∀ (g : Γ) (r c : ι), (toGL ρ b g : Matrix ι ι L) r c ∈ E)
     [TopologicalSpace (L ⊗[E] (ι → E))] [IsModuleTopology L (L ⊗[E] (ι → E))] :
-    ((ofGL (liftGL (toGL ρ b) E hmem)).baseChange L).Iso ρ :=
+    ((ofGL ((toGL ρ b).liftGLOfMem E hmem)).baseChange L).Iso ρ :=
   have hcomp :
       ContinuousMonoidHom.comp
-        (continuousMapGL (algebraMap E L) (continuous_algebraMap E L))
-        (liftGL (toGL ρ b) E hmem) = toGL ρ b := by
+        (Matrix.GeneralLinearGroup.continuousMap (algebraMap E L) (continuous_algebraMap E L))
+        ((toGL ρ b).liftGLOfMem E hmem) = toGL ρ b := by
     ext1 g
     simp [IntermediateField.algebraMap_eq_subtype]
-  ((baseChangeOfGLIso L (liftGL (toGL ρ b) E hmem)).trans (ofGLCongr hcomp)).trans
+  ((baseChangeOfGLIso L ((toGL ρ b).liftGLOfMem E hmem)).trans (ofGLCongr hcomp)).trans
     (ofGLToGLIso ρ b)
 
 private theorem descentObjectIso_apply {Γ K L V ι : Type*}
@@ -208,7 +209,8 @@ private theorem descentObjectIso_apply {Γ K L V ι : Type*}
 
 /-- **Single-morphism descent.** Given a matrix `ME` over `E` lifting the matrix of an intertwining
 map `f : ρ₁ → ρ₂` in bases `b₁`, `b₂`, `Matrix.mulVecLin ME` intertwines the descended matrix
-representations `ofGL (liftGL (toGL ρ₁ b₁) E h₁)` and `ofGL (liftGL (toGL ρ₂ b₂) E h₂)`. -/
+representations `ofGL ((toGL ρ₁ b₁).liftGLOfMem E h₁)` and
+`ofGL ((toGL ρ₂ b₂).liftGLOfMem E h₂)`. -/
 private noncomputable def descentIntertwiningMap {Γ K L V₁ V₂ ι₁ ι₂ : Type*}
     [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
     [Field K] [Field L] [Algebra K L] [TopologicalSpace L] [IsTopologicalRing L]
@@ -224,19 +226,20 @@ private noncomputable def descentIntertwiningMap {Γ K L V₁ V₂ ι₁ ι₂ :
     (ME : Matrix ι₂ ι₁ E)
     (hME : ME.map (algebraMap E L) = LinearMap.toMatrix b₁ b₂ f.toLinearMap) :
     Representation.IntertwiningMap
-      (ofGL (liftGL (toGL ρ₁ b₁) E h₁)).toRepresentation
-      (ofGL (liftGL (toGL ρ₂ b₂) E h₂)).toRepresentation where
+      (ofGL ((toGL ρ₁ b₁).liftGLOfMem E h₁)).toRepresentation
+      (ofGL ((toGL ρ₂ b₂).liftGLOfMem E h₂)).toRepresentation where
   toLinearMap := Matrix.mulVecLin ME
   isIntertwining' g := by
     have hmat :
         ME.map (algebraMap E L) *
-            ((liftGL (toGL ρ₁ b₁) E h₁ g : Matrix ι₁ ι₁ E)).map (algebraMap E L) =
-          ((liftGL (toGL ρ₂ b₂) E h₂ g : Matrix ι₂ ι₂ E)).map (algebraMap E L) *
+            (((toGL ρ₁ b₁).liftGLOfMem E h₁ g : Matrix ι₁ ι₁ E)).map (algebraMap E L) =
+          (((toGL ρ₂ b₂).liftGLOfMem E h₂ g : Matrix ι₂ ι₂ E)).map (algebraMap E L) *
             ME.map (algebraMap E L) := by
-      rw [hME, IntermediateField.algebraMap_eq_subtype, map_subtype_liftGL_toGL,
-        map_subtype_liftGL_toGL, ← LinearMap.toMatrix_comp b₁ b₁ b₂ f.toLinearMap (ρ₁ g),
-        ← LinearMap.toMatrix_comp b₁ b₂ b₂ (ρ₂ g) f.toLinearMap,
-        ← coe_toRepresentation ρ₁, ← coe_toRepresentation ρ₂, f.isIntertwining' g]
+      have hcomm := congrArg (LinearMap.toMatrix b₁ b₂) (f.isIntertwining' g)
+      rw [LinearMap.toMatrix_comp b₁ b₁ b₂, LinearMap.toMatrix_comp b₁ b₂ b₂] at hcomm
+      rw [hME]
+      simpa only [IntermediateField.algebraMap_eq_subtype, map_subtype_liftGLOfMem_toGL,
+        coe_toRepresentation] using hcomm
     exact LinearMap.ext fun v ↦ by
       simpa only [LinearMap.comp_apply, coe_toRepresentation, ofGL_apply,
         Matrix.mulVecLin_apply] using
@@ -293,7 +296,7 @@ theorem exists_descent_family_of_countable {Γ : Type*} [Group Γ] [TopologicalS
       (toGL (ρ a) (b a) g : Matrix _ _ L) r c ∈ E :=
     le_sup_of_le_left (le_sup_of_le_right (le_iSup Eobj a)) (hmemObj a g r c)
   let ρE (a : α) : ContinuousRep Γ E (Fin (Module.finrank L (V a)) → E) :=
-    ofGL (liftGL (toGL (ρ a) (b a)) E (hmemE a))
+    ofGL ((toGL (ρ a) (b a)).liftGLOfMem E (hmemE a))
   -- 3. Lift each intertwining matrix to `E` and verify equivariance topology-freely.
   have hmorE (j : β) : Emor j ≤ E := le_trans (le_iSup Emor j) le_sup_right
   let ME (j : β) : Matrix _ _ E := Matrix.of fun r c ↦
@@ -411,7 +414,7 @@ theorem exists_integral_conj_GL {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
         (P * ρ g * P⁻¹ : Matrix ι ι (PadicAlgCl ℓ)) i j ∈ E ∧
         ‖(P * ρ g * P⁻¹ : Matrix ι ι (PadicAlgCl ℓ)) i j‖ ≤ 1 := by
   obtain ⟨E, -, hfin, hE⟩ := baire_descent ℓ ρ ⊥
-  let ρE : Γ →ₜ* GL ι E := liftGL ρ E hE
+  let ρE : Γ →ₜ* GL ι E := ρ.liftGLOfMem E hE
   -- Equip `E` with its spectral-norm local-field structure, whose topology is the subspace one.
   let : ValuativeRel E := TauCeti.algebraicExtensionValuativeRel ℚ_[ℓ] E
   have : IsNonarchimedeanLocalField E :=
@@ -422,7 +425,7 @@ theorem exists_integral_conj_GL {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
   have hconj : P * ρ g * P⁻¹ =
       Matrix.GeneralLinearGroup.map (algebraMap E (PadicAlgCl ℓ)) (PE * ρE g * PE⁻¹) := by
     simp only [P, map_mul, map_inv, IntermediateField.algebraMap_eq_subtype,
-      map_subtype_liftGL, ρE]
+      ContinuousMonoidHom.map_subtype_liftGLOfMem, ρE]
   have hval : (P * ρ g * P⁻¹ : Matrix ι ι (PadicAlgCl ℓ)) i j =
       (((PE * ρE g * PE⁻¹ : GL ι E) : Matrix ι ι E) i j : PadicAlgCl ℓ) := by
     rw [← Units.val_mul, ← Units.val_mul, hconj]
