@@ -16,7 +16,8 @@ In an abelian category with enough projectives and a uniform finite bound on pro
 dimensions, every isomorphism-closed triangulated subcategory containing the compressions of
 bounded complexes, the gradable objects, is the entire positive-period derived category. This
 is generation by shifts and cones, without taking retracts or passing to an idempotent
-completion. In particular the thick envelope of the image is also the entire category.
+completion. In particular the thick envelope of the gradable objects is also the entire
+category.
 
 The proof uses projective flag resolutions. Every zero-differential layer of such a flag is
 itself the compression of a bounded complex, and degreewise split extensions give distinguished
@@ -41,7 +42,6 @@ universe w v u
 namespace TauCeti.PeriodicComplex
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {n : ℕ} [NeZero n]
-  [HasDerivedCategory.{w} C]
 
 private lemma mem_of_hasProjectiveFlag
     (P : ObjectProperty (DerivedCategory C n)) [P.IsTriangulated]
@@ -88,6 +88,15 @@ theorem eq_top_of_gradable_le (d : ℕ) (hd : ∀ X : C, HasProjectiveDimensionL
   exact P.prop_of_iso (asIso ((DerivedCategory.Qh C n).map φ) ≪≫ e)
     (mem_of_hasProjectiveFlag P hP hF)
 
+/-- In finite global dimension, the thick envelope of the gradable objects is the entire
+positive-period derived category. The stronger shift-and-cone generation statement is
+`eq_top_of_gradable_le`. -/
+theorem triangEnvelope_gradable_eq_top (d : ℕ) (hd : ∀ X : C, HasProjectiveDimensionLT X d) :
+    (gradable C n).triangEnvelope = ⊤ :=
+  eq_top_of_gradable_le d hd _ (ObjectProperty.le_triangEnvelope _)
+
+variable [HasDerivedCategory.{w} C]
+
 /-- The essential image of the derived orbit functor generates the periodic derived category
 under shifts and cones alone. No closure under retracts is required. -/
 theorem eq_top_of_essImage_orbitDerivedCompressionFunctor_le (d : ℕ)
@@ -104,13 +113,7 @@ entire positive-period derived category. The stronger shift-and-cone generation 
 theorem triangEnvelope_essImage_orbitDerivedCompressionFunctor_eq_top (d : ℕ)
     (hd : ∀ X : C, HasProjectiveDimensionLT X d) :
     (orbitDerivedCompressionFunctor (C := C) n).essImage.triangEnvelope = ⊤ := by
-  have : (orbitDerivedCompressionFunctor (C := C) n).essImage.Nonempty :=
-    ObjectProperty.nonempty_of_prop
-      ((orbitDerivedCompressionFunctor n).obj_mem_essImage
-        ⟨(TauCeti.DerivedCategory.Bounded.Qh C).obj
-          ((HomotopyCategory.Bounded.quotient C).obj (boundedGradedLift fun _ : ZMod n ↦
-            (0 : C)))⟩)
-  exact eq_top_of_essImage_orbitDerivedCompressionFunctor_le d hd _
-    (ObjectProperty.le_triangEnvelope _)
+  rw [essImage_orbitDerivedCompressionFunctor]
+  exact triangEnvelope_gradable_eq_top d hd
 
 end TauCeti.PeriodicComplex
