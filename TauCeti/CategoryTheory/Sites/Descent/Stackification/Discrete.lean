@@ -184,8 +184,10 @@ theorem toPlusObj_eq_toPlusObj_iff (hP : Presieve.IsSeparated J P)
   · intro h
     refine ⟨A.cover ⊓ B.cover, homOfLE inf_le_left, homOfLE inf_le_right,
       Meq.ext _ _ fun I ↦ ?_⟩
-    simp only [Meq.refine_apply]
-    exact h _ _ (by simp only [Sieve.ofArrows.fac])
+    obtain ⟨i, a, ha⟩ := Sieve.ofArrows.exists (A.coe_cover ▸ inf_le_left (b := B.cover) _ I.hf)
+    obtain ⟨j, b, hb⟩ := Sieve.ofArrows.exists (B.coe_cover ▸ inf_le_right (a := A.cover) _ I.hf)
+    rw [Meq.refine_apply, Meq.refine_apply, meq_apply A _ a ha.symm, meq_apply B _ b hb.symm]
+    exact h a b (ha.symm.trans hb)
 
 variable [(ofPresheaf.{w'} P).IsPrestack J]
 
