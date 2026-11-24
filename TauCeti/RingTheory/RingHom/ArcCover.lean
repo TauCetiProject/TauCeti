@@ -196,6 +196,9 @@ theorem exists_comp_eq_of_injOn {V : Type*} [CommRing V] [IsDomain V] [Valuation
   have hg : ∀ b : B, ∃ y ∈ I, f y = b * f x := fun b =>
     himage (Ideal.mul_mem_left _ b (Ideal.mem_map_of_mem f hxI))
   choose g hgI hgf using hg
+  -- `g b` is the unique `y ∈ I` with `f y = b * f x`.
+  have hg_eq : ∀ b y, y ∈ I → f y = b * f x → g b = y := fun b y hy h =>
+    hinj (hgI b) hy ((hgf b).trans h.symm)
   -- `φ x` divides `φ (g b)`; otherwise `φ x = φ (g b) * t` for a nonunit `t`, and then every
   -- power of `t` divides `φ x`.
   have hdvd : ∀ b, φ x ∣ φ (g b) := by
@@ -219,7 +222,7 @@ theorem exists_comp_eq_of_injOn {V : Type*} [CommRing V] [IsDomain V] [Valuation
   have hq' : ∀ b c, φ (g b) = φ x * c → q b = c := fun b c h =>
     mul_left_cancel₀ hx ((hq b).symm.trans h)
   refine ⟨{ toFun := q, map_one' := ?_, map_mul' := ?_, map_zero' := ?_, map_add' := ?_ }, ?_⟩
-  · exact hq' 1 1 (by rw [hinj (hgI 1) hxI (by simp [hgf]), mul_one])
+  · exact hq' 1 1 (by rw [hg_eq 1 x hxI (one_mul _).symm, mul_one])
   · intro b c
     have hbc : g (b * c) * x = g b * g c :=
       hinj (I.mul_mem_right _ (hgI _)) (I.mul_mem_right _ (hgI _))
@@ -227,14 +230,14 @@ theorem exists_comp_eq_of_injOn {V : Type*} [CommRing V] [IsDomain V] [Valuation
     refine hq' _ _ (mul_right_cancel₀ hx ?_)
     rw [← map_mul, hbc, map_mul, hq, hq]
     ring
-  · exact hq' 0 0 (by rw [hinj (hgI 0) I.zero_mem (by simp [hgf]), map_zero, mul_zero])
+  · exact hq' 0 0 (by rw [hg_eq 0 0 I.zero_mem (by simp), map_zero, mul_zero])
   · intro b c
     refine hq' _ _ ?_
-    rw [hinj (hgI _) (I.add_mem (hgI b) (hgI c)) (by simp [hgf, add_mul]), map_add, hq, hq,
+    rw [hg_eq _ _ (I.add_mem (hgI b) (hgI c)) (by simp [hgf, add_mul]), map_add, hq, hq,
       mul_add]
   · ext a
     refine hq' _ _ ?_
-    rw [hinj (hgI _) (I.mul_mem_left a hxI) (by simp [hgf]), map_mul, mul_comm]
+    rw [hg_eq _ _ (I.mul_mem_left a hxI) (map_mul f a x), map_mul, mul_comm]
 
 /-- A Milnor square gives an arc-cover: if `f : A →+* B` carries the ideal `I` bijectively onto
 an ideal of `B`, then `A →+* A ⧸ I × B` is an arc-cover. On spectra,

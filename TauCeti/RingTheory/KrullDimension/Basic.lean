@@ -74,7 +74,7 @@ theorem FiniteMultiplicity.of_not_isUnit_of_krullDimLE_one {R : Type*} [CommRing
     have hP0 : P ≠ ⊥ := fun h0 =>
       ha ((Submodule.mem_bot R).mp (h0 ▸ haP (Ideal.mem_span_singleton_self a)))
     have hPm : P ≤ m := fun x hx => by_contra fun hxm =>
-      Set.disjoint_left.mp hPS hx (Submonoid.mem_sup_left (show x ∈ m.primeCompl from hxm))
+      Set.disjoint_left.mp hPS hx (Submonoid.mem_sup_left (Ideal.mem_primeCompl_iff.mpr hxm))
     have hPeq : P = m := (hP.isMaximal_of_ne_bot hP0).eq_of_le hm.ne_top hPm
     exact Set.disjoint_left.mp hPS (hPeq ▸ htm)
       (Submonoid.mem_sup_right (Submonoid.mem_powers t))
