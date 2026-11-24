@@ -85,6 +85,11 @@ def tsupport (s : Cₛ^n⟮I; F, V⟯) : Set M := closure {x | s x ≠ 0}
 /-- The closed support is the closure of the fibrewise nonzero locus. -/
 theorem tsupport_def (s : Cₛ^n⟮I; F, V⟯) : s.tsupport = closure {x | s x ≠ 0} := (rfl)
 
+/-- The closed support of a section of a trivial bundle is the closed support of the underlying
+function. -/
+theorem tsupport_eq_tsupport (s : Cₛ^n⟮I; F, Trivial M F⟯) :
+    s.tsupport = _root_.tsupport fun x ↦ (s x : F) := (rfl)
+
 /-- The closed support is closed in the base. -/
 theorem isClosed_tsupport (s : Cₛ^n⟮I; F, V⟯) : IsClosed s.tsupport :=
   isClosed_closure

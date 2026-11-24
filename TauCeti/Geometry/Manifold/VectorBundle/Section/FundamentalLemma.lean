@@ -23,7 +23,9 @@ supported in that set. The measure must make open sets measurable, be finite on
 compact sets, and charge every nonempty open set. No σ-compactness assumption is
 needed. In particular, after choosing a positive smooth density, this applies to
 real-valued covector fields representing density-valued sources. No metric or
-trivialization of the vector bundle is chosen.
+trivialization of the vector bundle is chosen. On the trivial line bundle this gives the scalar
+fundamental lemma `IsOpen.eq_of_integral_mul_contMDiffMap_eq` for real functions tested against
+compactly supported `C^n` functions.
 
 Continuity of the field is expressed as continuity of its fibrewise evaluation
 on the total space, over the specified open set. The fibre may be infinite-dimensional.
@@ -169,5 +171,34 @@ theorem eq_of_integral_clm_apply_contMDiffSection_eq {η ζ : ∀ x, V x →L[�
   · simp only [sub_apply]
     rw [integral_sub (s.integrable_clm_apply_of_tsupport_subset hU hη hsc hsU)
       (s.integrable_clm_apply_of_tsupport_subset hU hζ hsc hsU), h s hsc hsU, sub_self]
+
+/-- **The scalar fundamental lemma.** On a finite-dimensional Hausdorff smooth manifold, two real
+functions continuous on an open set `U` whose integrals against every `C^n` test function
+compactly supported in `U`, `n ≤ ∞`, agree coincide on `U`. The measure must make open sets
+measurable, be finite on compact sets, and charge every nonempty open set. This is the bundle
+fundamental lemma for the trivial line bundle, whose test sections are the test functions. -/
+theorem eq_of_integral_mul_contMDiffMap_eq {f g : M → ℝ} {U : Set M} (hU : IsOpen U)
+    (hf : ContinuousOn f U) (hg : ContinuousOn g U)
+    (h : ∀ φ : C^n⟮I, M; ℝ⟯, HasCompactSupport φ → tsupport φ ⊆ U →
+      ∫ x, φ x * f x ∂μ = ∫ x, φ x * g x ∂μ) : ∀ x ∈ U, f x = g x := by
+  -- View `f` and `g` as the fields `v ↦ v f` and `v ↦ v g` on the trivial line bundle.
+  have hcont {f : M → ℝ} (hf : ContinuousOn f U) : ContinuousOn
+      (fun p : TotalSpace ℝ (Trivial M ℝ) ↦ ContinuousLinearMap.mul ℝ ℝ (f p.proj) p.snd)
+      (π ℝ (Trivial M ℝ) ⁻¹' U) := by
+    simp only [ContinuousLinearMap.mul_apply']
+    exact (hf.comp (FiberBundle.continuous_proj ℝ (Trivial M ℝ)).continuousOn
+      fun _ hp ↦ hp).mul (Trivial.homeomorphProd M ℝ).continuous.snd.continuousOn
+  have heq := hU.eq_of_integral_clm_apply_contMDiffSection_eq (I := I) (n := n) (μ := μ)
+    (V := Trivial M ℝ) (η := fun y ↦ ContinuousLinearMap.mul ℝ ℝ (f y))
+    (ζ := fun y ↦ ContinuousLinearMap.mul ℝ ℝ (g y)) (hcont hf) (hcont hg) fun s hsc hsU ↦ ?_
+  · intro x hx
+    simpa only [ContinuousLinearMap.mul_apply', mul_one] using congr($(heq x hx) 1)
+  · -- A test section of the trivial line bundle is a compactly supported test function.
+    have hs : ContMDiff I 𝓘(ℝ, ℝ) n fun y ↦ (s y : ℝ) := fun y ↦ by
+      simpa only [contMDiffAt_section_iff, Trivial.fiberBundle_trivializationAt',
+        Trivial.trivialization_apply] using s.contMDiff y
+    rw [s.tsupport_eq_tsupport] at hsc hsU
+    simpa only [ContinuousLinearMap.mul_apply', mul_comm (f _), mul_comm (g _),
+      ContMDiffMap.coeFn_mk] using h ⟨_, hs⟩ hsc hsU
 
 end IsOpen

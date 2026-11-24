@@ -357,32 +357,17 @@ section Unique
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [OpensMeasurableSpace M]
   [IsFiniteMeasureOnCompacts μ] [μ.IsOpenPosMeasure]
 
-open Bundle in
 /-- **Uniqueness of formal transposes.** With respect to a measure that is finite on compact sets
 and positive on open sets of a Hausdorff manifold, a linear operator on `C^∞(M)` has at most one
 formal transpose. -/
 theorem IsFormalTranspose.unique (h₁ : D.IsFormalTranspose D₁ μ) (h₂ : D.IsFormalTranspose D₂ μ) :
     D₁ = D₂ := by
   ext g x
-  -- On the trivial line bundle, the fields `v ↦ v Dᵢ g` have the same integral against every
-  -- compactly supported test section by `h₁` and `h₂`, so they agree by the fundamental lemma.
-  have hcont (c : C^∞⟮I, M; ℝ⟯) : ContinuousOn
-      (fun p : TotalSpace ℝ (Trivial M ℝ) ↦ ContinuousLinearMap.mul ℝ ℝ (c p.proj) p.snd)
-      (π ℝ (Trivial M ℝ) ⁻¹' Set.univ) := by
-    simp only [ContinuousLinearMap.mul_apply']
-    exact ((c.contMDiff.continuous.comp (FiberBundle.continuous_proj ℝ (Trivial M ℝ))).mul
-      (Trivial.homeomorphProd M ℝ).continuous.snd).continuousOn
-  have heq := IsOpen.eq_of_integral_clm_apply_contMDiffSection_eq (I := I) (n := ∞) (μ := μ)
-    (F := ℝ) (V := Trivial M ℝ) (G := ℝ) (η := fun y ↦ ContinuousLinearMap.mul ℝ ℝ (D₁ g y))
-    (ζ := fun y ↦ ContinuousLinearMap.mul ℝ ℝ (D₂ g y)) isOpen_univ (hcont _) (hcont _)
-    (fun s hs _ ↦ ?_) x trivial
-  · simpa only [ContinuousLinearMap.mul_apply', mul_one] using congr($heq 1)
-  · -- A test section of the trivial bundle is a compactly supported smooth function.
-    have hsm : ContMDiff I 𝓘(ℝ, ℝ) ∞ fun y ↦ (s y : ℝ) := fun y ↦ by
-      simpa using (contMDiffAt_section_iff y).1 (s.contMDiff y)
-    rw [s.tsupport_def, ← Function.support, ← tsupport] at hs
-    have h := (h₁ ⟨_, hsm⟩ g (.inl hs)).symm.trans (h₂ ⟨_, hsm⟩ g (.inl hs))
-    simpa only [ContinuousLinearMap.mul_apply', mul_comm, ContMDiffMap.coeFn_mk] using h
+  -- `D₁ g` and `D₂ g` have the same integral against every test function `f`, by `h₁` and `h₂`.
+  refine isOpen_univ.eq_of_integral_mul_contMDiffMap_eq (I := I) (n := ∞) (μ := μ)
+    (D₁ g).contMDiff.continuous.continuousOn (D₂ g).contMDiff.continuous.continuousOn
+    (fun f hf _ ↦ ?_) x trivial
+  exact (h₁ f g (.inl hf)).symm.trans (h₂ f g (.inl hf))
 
 /-- A formal transpose of `D` is `LinearMap.formalTranspose D μ`. -/
 theorem IsFormalTranspose.formalTranspose_eq (h : D.IsFormalTranspose D' μ) :
