@@ -17,7 +17,9 @@ public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint
 
 Let `K` be a field and `Ω` a separably closed field with an algebra map `K → Ω`, giving the
 geometric point `x : Spec Ω ⟶ Spec K`
-(`TauCeti.AlgebraicGeometry.Scheme.galoisGeometricPoint`). Every `σ ∈ Gal(Ω/K)` gives an
+(`TauCeti.AlgebraicGeometry.Scheme.galoisGeometricPoint`, in
+`TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint` with the automorphisms
+`galoisGeometricPointAut`). Every `σ ∈ Gal(Ω/K)` gives an
 automorphism `Spec σ` of `Spec Ω` over `Spec K`, that is an automorphism of this geometric point,
 and automorphisms of a geometric point act on its stalks
 (`TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.stalkAction`). Since `Spec` reverses
@@ -43,10 +45,6 @@ of étale sheaves on a field by discrete continuous `Gal(Ω/K)`-sets (SGA 4, Exp
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.Scheme.galoisGeometricPoint K Ω`: the geometric point
-  `Spec Ω ⟶ Spec K`.
-* `TauCeti.AlgebraicGeometry.Scheme.galoisGeometricPointAut K Ω`: the homomorphism sending
-  `σ ∈ Gal(Ω/K)` to the automorphism `Spec σ` of `galoisGeometricPoint K Ω`.
 * `TauCeti.AlgebraicGeometry.Scheme.galoisStalkMap K Ω A σ`: the endomorphism of stalks at
   `Spec Ω ⟶ Spec K` induced by `σ`, natural in the sheaf.
 * `TauCeti.AlgebraicGeometry.Scheme.galoisStalk K Ω A`: the stalk at `Spec Ω ⟶ Spec K` of an
@@ -79,51 +77,6 @@ section Galois
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω]
 
 variable [IsSepClosed Ω]
-
-/-- The geometric point `Spec Ω ⟶ Spec K` of `Spec K` given by the algebra map `K → Ω`. -/
-noncomputable abbrev galoisGeometricPoint : GeometricPoint (Spec (.of K)) where
-  Ω := Ω
-  hom := Spec.map (CommRingCat.ofHom (algebraMap K Ω))
-
-/-- The automorphism `Spec σ` of the geometric point `Spec Ω ⟶ Spec K` given by `σ ∈ Gal(Ω/K)`. -/
-noncomputable def galoisGeometricPointIso (σ : Gal(Ω/K)) :
-    galoisGeometricPoint K Ω ≅ galoisGeometricPoint K Ω :=
-  GeometricPoint.isoMk (Scheme.Spec.mapIso σ.toRingEquiv.toCommRingCatIso.op)
-    (Spec.map_algHom_comp_map_algebraMap σ)
-
-/-- The automorphism of the geometric point given by `σ` is `Spec σ`. -/
-@[simp]
-theorem galoisGeometricPointIso_hom_hom (σ : Gal(Ω/K)) :
-    (galoisGeometricPointIso K Ω σ).hom.hom = Spec.map (CommRingCat.ofHom (σ : Ω →+* Ω)) :=
-  GeometricPoint.isoMk_hom_hom _ _
-
-/-- The inverse of the automorphism of the geometric point given by `σ` is `Spec σ⁻¹`. -/
-@[simp]
-theorem galoisGeometricPointIso_inv_hom (σ : Gal(Ω/K)) :
-    (galoisGeometricPointIso K Ω σ).inv.hom = Spec.map (CommRingCat.ofHom (σ.symm : Ω →+* Ω)) :=
-  GeometricPoint.isoMk_inv_hom _ _
-
-/-- `σ ↦ Spec σ` as a homomorphism from `Gal(Ω/K)` to the automorphisms of the geometric point
-`Spec Ω ⟶ Spec K`. Since `Spec (σ * τ) = Spec σ ≫ Spec τ` and `Aut` multiplies in the order of
-function composition, it lands in the opposite group. -/
-noncomputable def galoisGeometricPointAut : Gal(Ω/K) →* (Aut (galoisGeometricPoint K Ω))ᵐᵒᵖ where
-  toFun σ := .op (.of (galoisGeometricPointIso K Ω σ))
-  map_one' := by
-    ext1
-    simp only [MulOpposite.unop_op, MulOpposite.unop_one, Aut.one_asIso, Iso.refl_hom,
-      GeometricPoint.id_hom, galoisGeometricPointIso_hom_hom, ← Spec.map_id]
-    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext (AlgEquiv.one_apply (R := K))))
-  map_mul' σ τ := by
-    ext1
-    simp only [MulOpposite.unop_mul, MulOpposite.unop_op, Aut.mul_asIso, Iso.trans_hom,
-      GeometricPoint.comp_hom, galoisGeometricPointIso_hom_hom, ← Spec.map_comp]
-    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext (AlgEquiv.mul_apply σ τ)))
-
-/-- `σ` gives the automorphism `galoisGeometricPointIso K Ω σ` of the geometric point. -/
-@[simp]
-theorem galoisGeometricPointAut_apply (σ : Gal(Ω/K)) :
-    (galoisGeometricPointAut K Ω σ).unop.asIso = galoisGeometricPointIso K Ω σ :=
-  (rfl)
 
 variable (A : Type v) [Category.{w} A] [HasColimitsOfSize.{u, u} A]
 

@@ -91,22 +91,30 @@ theorem exists_finiteDimensional_forall_mem_fixingSubgroup_SpecMap_comp_eq
   have hφ (k : K) : φ (f.residueFieldMap y ((Spec.residueFieldIso (.of K) (f y)).inv
       (algebraMap K (f y).asIdeal.ResidueField k))) = algebraMap K Ω k := by
     simpa only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom] using congr($h k)
-  -- Make `κ(y)` a `K`-algebra through the residue field of `Spec K` at the image of `y`, which is
-  -- finite over `K`. Then `κ(y)` is finite over `K`, because `f` is locally quasi-finite, and `φ`
-  -- is a `K`-algebra map.
-  let ψ : K →+* (Spec (.of K)).residueField (f y) :=
-    (Spec.residueFieldIso (.of K) (f y)).inv.hom.comp (algebraMap K (f y).asIdeal.ResidueField)
-  have hψ : Function.Surjective ψ := by
-    rw [RingHom.coe_comp]
-    exact (ConcreteCategory.bijective_of_isIso
-      (Spec.residueFieldIso (.of K) (f y)).inv).surjective.comp
-        (f y).asIdeal.algebraMap_residueField_surjective
+  -- Make `κ(y)` a `K`-algebra through `ψ`, Mathlib's identification of `K` with the residue field
+  -- of `Spec K` at the image of `y`. Then `κ(y)` is finite over `K`, because `f` is locally
+  -- quasi-finite, and `φ` is a `K`-algebra map.
+  let ψ : K →+* (Spec (.of K)).residueField (f y) := (Spec.residueFieldIsoOfField (f y)).inv.hom
+  have hψeq : (Spec.residueFieldIsoOfField (f y)).inv =
+      CommRingCat.ofHom (algebraMap K (f y).asIdeal.ResidueField) ≫
+        (Spec.residueFieldIso (.of K) (f y)).inv := by
+    rw [Spec.residueFieldIsoOfField_eq]
+    ext a
+    simp [Ideal.algEquivResidueFieldOfField_apply]
+  have hψ : Function.Surjective ψ :=
+    (ConcreteCategory.bijective_of_isIso (Spec.residueFieldIsoOfField (f y)).inv).surjective
   algebraize [ψ, (f.residueFieldMap y).hom, (f.residueFieldMap y).hom.comp ψ]
   have : Module.Finite K ((Spec (.of K)).residueField (f y)) :=
     Module.Finite.of_surjective (Algebra.linearMap K _) hψ
   have : Module.Finite K (X.residueField y) :=
     Module.Finite.trans ((Spec (.of K)).residueField (f y)) _
-  let φ' : X.residueField y →ₐ[K] Ω := { φ.hom with commutes' := hφ }
+  have hcomm (k : K) : φ (f.residueFieldMap y (ψ k)) = algebraMap K Ω k := by
+    have hk : ψ k = (Spec.residueFieldIso (.of K) (f y)).inv
+        (algebraMap K (f y).asIdeal.ResidueField k) := by
+      simpa [ψ] using congr($hψeq k)
+    rw [hk]
+    exact hφ k
+  let φ' : X.residueField y →ₐ[K] Ω := { φ.hom with commutes' := hcomm }
   -- Every `σ` fixing the image of `φ` fixes `t`.
   refine ⟨φ'.fieldRange, φ'.equivFieldRange.toLinearEquiv.finiteDimensional, fun σ hσ ↦ ?_⟩
   rw [← Category.assoc, ← Spec.map_comp]
