@@ -9,8 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Data.ZMod.ValMinAbs
 public import Mathlib.NumberTheory.Harmonic.Defs
 
-import Mathlib.Algebra.Field.GeomSum
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -131,12 +131,8 @@ theorem norm_sum_range_stdAddChar_mul_add_le (a k : ZMod N) (H : ℕ)
     congr 1
     simpa only [nsmul_eq_mul, mul_comm] using
       (stdAddChar (N := N)).map_nsmul_eq_pow j k
-  rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul, geom_sum_eq hz, norm_div]
-  apply div_le_div_of_nonneg_right _ (norm_nonneg _)
-  calc ‖stdAddChar k ^ H - 1‖ ≤ ‖stdAddChar k ^ H‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
-    _ = 2 := by
-      simp only [norm_pow, ZMod.stdAddChar_apply, Circle.norm_coe, one_pow, norm_one]
-      norm_num
+  rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul]
+  exact TauCeti.norm_geom_sum_le (by simp [ZMod.stdAddChar_apply]) hz H
 
 /-- Summing the norms of interval sums of the standard additive character over nonzero
 frequencies is bounded by the modulus times the harmonic number `H_{N-1}`. -/
