@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import TauCeti.Analysis.CStarAlgebra.Module.Adjointable.Compact
 public import TauCeti.Analysis.CStarAlgebra.Module.Gram
+public import TauCeti.Analysis.CStarAlgebra.Module.Synonym
 public import TauCeti.Analysis.CStarAlgebra.Module.Unitary
 
 /-!
@@ -165,10 +166,7 @@ theorem synthesis_single [DecidableEq ι] (x : ι → E) (i : ι) (a : A) :
 /-- Synthesis after analysis is the sum of the rank-one operators `θ_{x i, x i}`. -/
 theorem synthesis_comp_analysis (x : ι → E) :
     (synthesis A x).comp (analysis A x) = ∑ i, rankOne A (x i) (x i) :=
-  ext fun z ↦ by
-    rw [← toContinuousLinearMap_apply (∑ i, _), toContinuousLinearMap_sum,
-      sum_apply]
-    simp
+  ext fun z ↦ by simp
 
 /-- Analysis after synthesis has entries `∑ j, a j * ⟪x i, x j⟫_A`. -/
 theorem analysis_synthesis_apply (x : ι → E) (a : C⋆ᵐᵒᵈ(A, ι → A)) (i : ι) :
@@ -291,15 +289,10 @@ theorem isParsevalFrame_single [DecidableEq ι] :
     IsParsevalFrame A fun i : ι ↦ (WithCStarModule.equiv A (ι → A)).symm (Pi.single i 1) := by
   intro z
   ext j
-  have sum_apply (v : ι → C⋆ᵐᵒᵈ(A, ι → A)) : (∑ i, v i) j = ∑ i, v i j := by
-    simpa only [linearEquiv_apply, equiv_pi_apply, Finset.sum_apply] using
-      congrFun (map_sum (linearEquiv ℂ A (ι → A)) v Finset.univ) j
-  simp only [sum_apply, inner_single_left, WithCStarModule.inner_def, star_one, mul_one,
-    WithCStarModule.smul_apply, equiv_symm_pi_apply, Pi.single_apply, smul_eq_mul, mul_ite,
-    mul_zero]
   -- Mathlib states the coordinates of `C⋆ᵐᵒᵈ(A, ι → A)` as plain function applications, so the
-  -- motive of a rewrite by `Finset.sum_ite_eq_of_mem` is not type-correct; apply it as a term.
-  exact Finset.sum_ite_eq_of_mem _ j (fun i ↦ z i) (Finset.mem_univ j)
+  -- motive of a rewrite by `Finset.sum_ite_eq` is not type-correct; supply it as a term.
+  simpa [WithCStarModule.inner_def, Pi.single_apply] using
+    Finset.sum_ite_eq_of_mem _ j (fun i ↦ z i) (Finset.mem_univ j)
 
 end CStarModule
 
