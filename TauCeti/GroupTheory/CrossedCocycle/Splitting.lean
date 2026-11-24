@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.CrossedCocycle.Basic
-public import TauCeti.GroupTheory.GroupExtension.Basic
+public import TauCeti.GroupTheory.GroupExtension.Splitting
 public import Mathlib.GroupTheory.GroupExtension.Basic
 
 /-!
@@ -46,10 +46,6 @@ cocycle with values in the dual group `H^∨`.
 -/
 
 public section
-
-/- `SemidirectProduct.right_splitting` computes the second coordinate of any splitting of a
-semidirect product, in particular of `TauCeti.CrossedCocycle.toSplitting`. -/
-attribute [simp] SemidirectProduct.right_splitting
 
 namespace TauCeti
 
@@ -95,7 +91,7 @@ def ofSemidirectHom (s : Γ →* H ⋊[β] Q) (hs : rightHom.comp s = η) :
   toFun γ := (s γ).left
   map_mul' γ δ := by
     rw [map_mul, mul_left, ← hs]
-    rfl
+    simp
 
 @[simp]
 theorem ofSemidirectHom_apply (s : Γ →* H ⋊[β] Q) (hs : rightHom.comp s = η) (γ : Γ) :

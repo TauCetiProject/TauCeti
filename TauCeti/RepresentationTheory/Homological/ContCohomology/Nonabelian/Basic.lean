@@ -157,10 +157,10 @@ theorem apply_one (f : Cocycle G A) : f 1 = 1 :=
 theorem apply_inv (f : Cocycle G A) (g : G) : f g⁻¹ = g⁻¹ • (f g)⁻¹ :=
   (f.toCrossedCocycle toMulAut_apply_eq_smul).apply_inv g
 
-/-- The trivial cocycle `g ↦ 1`, the unit crossed cocycle. -/
+/-- The trivial cocycle `g ↦ 1`; its underlying crossed cocycle is the unit crossed cocycle
+(`TauCeti.NonabelianH1.Cocycle.toCrossedCocycle_one`). -/
 instance : One (Cocycle G A) :=
-  ⟨⟨(1 : CrossedCocycle (MulDistribMulAction.toMulAut G A)), continuous_const,
-    (1 : CrossedCocycle (MulDistribMulAction.toMulAut G A)).apply_mul⟩⟩
+  ⟨⟨fun _ ↦ 1, continuous_const, fun g _ ↦ by simp⟩⟩
 
 @[simp]
 theorem one_apply (g : G) : (1 : Cocycle G A) g = 1 :=
@@ -199,8 +199,12 @@ def twist (f : Cocycle G A) (a : A) : Cocycle G A where
   toFun g := a⁻¹ * f g * g • a
   continuous_toFun := by fun_prop
   map_mul' g h := by
-    simpa [smul_inv'] using
-      (a⁻¹ • f.toCrossedCocycle toMulAut_apply_eq_smul).apply_mul g h
+    -- The twist by `a` is pointwise the gauge by `a⁻¹`, whose crossed cocycle identity applies.
+    have hgauge (x : G) : a⁻¹ * f x * x • a =
+        (a⁻¹ • f.toCrossedCocycle toMulAut_apply_eq_smul) x := by
+      rw [CrossedCocycle.smul_apply, coe_toCrossedCocycle, map_inv, inv_inv,
+        toMulAut_apply_eq_smul]
+    rw [hgauge, hgauge, hgauge, CrossedCocycle.apply_mul, toMulAut_apply_eq_smul]
 
 @[simp]
 theorem twist_apply (f : Cocycle G A) (a : A) (g : G) : f.twist a g = a⁻¹ * f g * g • a :=
