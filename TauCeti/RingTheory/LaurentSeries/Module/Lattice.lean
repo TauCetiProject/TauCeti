@@ -62,8 +62,7 @@ open HahnSeries in
 @[simp]
 theorem X_pow_smul_single (k : ℕ) (a : ℤ) (v : V) :
     (PowerSeries.X ^ k : R⟦X⟧) • of R (single a v) = of R (single (a + k) v) := by
-  rw [powerSeries_smul, ofPowerSeries_X_pow, ← one_smul R v, ← single_smul_single_zero,
-    smul_smul, single_mul_single, one_mul, single_smul_single_zero, add_comm]
+  rw [powerSeries_smul, ofPowerSeries_X_pow, single_smul_single, one_smul, add_comm]
 
 end HahnModule
 
@@ -109,6 +108,11 @@ theorem restrictScalars_powerSeriesLattice (a : ℤ) :
 /-- The power-series lattices decrease with their exponent bound. -/
 theorem powerSeriesLattice_antitone : Antitone (powerSeriesLattice R V) :=
   fun _ _ h _ hf ↦ lattice_antitone R V h hf
+
+/-- The series `p v Xⁿ` lies in `U_a(V)` once `a ≤ n`. -/
+theorem powerSeries_smul_of_single_mem_lattice (p : R⟦X⟧) {a n : ℤ} (h : a ≤ n) (v : V) :
+    p • of R (single n v) ∈ lattice R V a :=
+  (powerSeriesLattice R V a).smul_mem p (of_single_mem_lattice R V h v)
 
 end Semiring
 

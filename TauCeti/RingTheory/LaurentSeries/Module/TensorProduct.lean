@@ -69,11 +69,7 @@ private def powerSeriesTensorToHahnModule : R⟦X⟧ ⊗[R] V →ₗ[R⟦X⟧] H
         { toFun := fun v ↦ p • of R (single 0 v)
           map_add' := fun v w ↦ by rw [single_add, of_add, _root_.smul_add]
           map_smul' := fun r v ↦ by
-            have h : of R (single 0 (r • v)) = r • of R (single (0 : ℤ) v) := by
-              apply HahnModule.ext
-              funext g
-              by_cases hg : g = 0 <;> simp [hg]
-            rw [RingHom.id_apply, h, smul_comm] }
+            rw [RingHom.id_apply, of_single_smul, smul_comm] }
       map_add' := fun p q ↦ LinearMap.ext fun v ↦ add_smul p q _
       map_smul' := fun p q ↦ LinearMap.ext fun v ↦ mul_smul p q _ }
 
@@ -120,8 +116,7 @@ private theorem range_powerSeriesTensorToHahnModule [Module.Free R V] [Module.Fi
     induction z using TensorProduct.inductionOn with
     | tmul p v =>
       rw [powerSeriesTensorToHahnModule_tmul]
-      exact (powerSeriesLattice R V 0).smul_mem p ((mem_powerSeriesLattice R V).2
-        ((of_mem_lattice_iff R V).2 (LaurentSeries.single_mem_lattice le_rfl v)))
+      exact (mem_powerSeriesLattice R V).2 (powerSeries_smul_of_single_mem_lattice R V p le_rfl v)
     | add z w hz hw => simpa using add_mem hz hw
   · intro x hx
     let b := Module.Free.chooseBasis R V
@@ -151,8 +146,8 @@ theorem coe_tensorProductPowerSeriesLatticeEquiv_tmul [Module.Free R V] [Module.
       p • of R (single a v) := by
   simp only [tensorProductPowerSeriesLatticeEquiv, LinearEquiv.trans_apply,
     LinearEquiv.coe_ofEq_apply, powerSeriesLatticeShift_apply, LinearEquiv.ofInjective_apply,
-    powerSeriesTensorToHahnModule_tmul, powerSeries_smul, ← mul_smul]
-  rw [mul_comm, mul_smul, single_smul_single_zero, one_smul]
+    powerSeriesTensorToHahnModule_tmul, powerSeries_smul]
+  rw [smul_comm, single_smul_single_zero, one_smul]
 
 /-- At `a = 0` the lattice comparison is the restriction of the scalar-extension comparison
 `R⸨X⸩ ⊗[R] V → V⸨X⸩` along `R⟦X⟧ → R⸨X⸩`. -/
@@ -181,13 +176,10 @@ theorem powerSeriesLatticeShift_tensorProductPowerSeriesLatticeEquiv [Module.Fre
       tensorProductPowerSeriesLatticeEquiv R V (a + k) z := by
   induction z using TensorProduct.inductionOn with
   | tmul p v =>
-    have h : single k (1 : R) • of R (single a v) = of R (single (a + k) v) := by
-      rw [← one_smul R v, ← single_smul_single_zero, smul_smul, single_mul_single, one_mul,
-        single_smul_single_zero, add_comm]
     refine Subtype.ext ?_
     rw [powerSeriesLatticeShift_apply, coe_tensorProductPowerSeriesLatticeEquiv_tmul,
-      coe_tensorProductPowerSeriesLatticeEquiv_tmul, powerSeries_smul, powerSeries_smul, ← h,
-      ← mul_smul, mul_comm, mul_smul]
+      coe_tensorProductPowerSeriesLatticeEquiv_tmul, smul_comm, single_smul_single, one_smul,
+      add_comm]
   | add z w hz hw => rw [map_add, map_add, map_add, hz, hw]
 
 end Lattice
@@ -198,8 +190,7 @@ variable (R V : Type*) [CommRing R] [AddCommGroup V] [Module R V]
 
 /-- The class of `v X ^ a` in the jets `U_a(V) / U_b(V)`. -/
 private def singleLatticeQuotient (a b : ℤ) : V →ₗ[R] latticeQuotient R V a b where
-  toFun v := Submodule.Quotient.mk ⟨of R (single a v),
-    (of_mem_lattice_iff R V).2 (LaurentSeries.single_mem_lattice le_rfl v)⟩
+  toFun v := Submodule.Quotient.mk ⟨of R (single a v), of_single_mem_lattice R V le_rfl v⟩
   map_add' v w := by
     rw [← Submodule.Quotient.mk_add]
     congr 1
@@ -207,10 +198,7 @@ private def singleLatticeQuotient (a b : ℤ) : V →ₗ[R] latticeQuotient R V 
   map_smul' r v := by
     rw [RingHom.id_apply, ← Submodule.Quotient.mk_smul]
     congr 1
-    refine Subtype.ext ?_
-    apply HahnModule.ext
-    funext g
-    by_cases hg : g = a <;> simp [hg]
+    exact Subtype.ext (of_single_smul a r v)
 
 /-- The jet map `(R⟦X⟧ ⧸ (X ^ n)) ⊗[R] V → U_a(V) / U_(a+n)(V)`, `p ⊗ v ↦ p X ^ a v`. -/
 private def tensorProductToLatticeQuotient (a : ℤ) (n : ℕ) :
@@ -224,9 +212,8 @@ private def tensorProductToLatticeQuotient (a : ℤ) (n : ℕ) :
 
 private theorem tensorProductToLatticeQuotient_mk_tmul (a : ℤ) (n : ℕ) (p : R⟦X⟧) (v : V) :
     tensorProductToLatticeQuotient R V a n (Ideal.Quotient.mk _ p ⊗ₜ[R] v) =
-      Submodule.Quotient.mk ⟨p • of R (single a v), (mem_powerSeriesLattice R V).1
-        ((powerSeriesLattice R V a).smul_mem p ((mem_powerSeriesLattice R V).2
-          ((of_mem_lattice_iff R V).2 (LaurentSeries.single_mem_lattice le_rfl v))))⟩ := by
+      Submodule.Quotient.mk ⟨p • of R (single a v),
+        powerSeries_smul_of_single_mem_lattice R V p le_rfl v⟩ := by
   rw [tensorProductToLatticeQuotient, AlgebraTensorModule.lift_tmul]
   exact smul_latticeQuotient_mk R V a (a + n) p _
 
@@ -293,17 +280,15 @@ def tensorProductLatticeQuotientEquiv (a : ℤ) (n : ℕ) :
 @[simp]
 theorem tensorProductLatticeQuotientEquiv_mk_tmul (a : ℤ) (n : ℕ) (p : R⟦X⟧) (v : V) :
     tensorProductLatticeQuotientEquiv R V a n (Ideal.Quotient.mk _ p ⊗ₜ[R] v) =
-      Submodule.Quotient.mk ⟨p • of R (single a v), (mem_powerSeriesLattice R V).1
-        ((powerSeriesLattice R V a).smul_mem p ((mem_powerSeriesLattice R V).2
-          ((of_mem_lattice_iff R V).2 (LaurentSeries.single_mem_lattice le_rfl v))))⟩ :=
+      Submodule.Quotient.mk ⟨p • of R (single a v),
+        powerSeries_smul_of_single_mem_lattice R V p le_rfl v⟩ :=
   tensorProductToLatticeQuotient_mk_tmul R V a n p v
 
 /-- The jet comparison sends `1 ⊗ v` to the jet of `X ^ a v`. -/
 @[simp]
 theorem tensorProductLatticeQuotientEquiv_one_tmul (a : ℤ) (n : ℕ) (v : V) :
     tensorProductLatticeQuotientEquiv R V a n (1 ⊗ₜ[R] v) =
-      Submodule.Quotient.mk ⟨of R (single a v),
-        (of_mem_lattice_iff R V).2 (LaurentSeries.single_mem_lattice le_rfl v)⟩ := by
+      Submodule.Quotient.mk ⟨of R (single a v), of_single_mem_lattice R V le_rfl v⟩ := by
   rw [← map_one (Ideal.Quotient.mk _), tensorProductLatticeQuotientEquiv_mk_tmul]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (one_smul _ _))
 
