@@ -21,10 +21,11 @@ is required.
 
 When `R` is a domain with fraction field `K` and `V = L` is a finite `K`-algebra, this is the
 norm of a lattice `I ⊆ L` used to parametrise orbits of integral forms by ideal classes in orders
-of `L`: a lattice with `N(I) = s R` comes with an oriented basis of determinant `s`. The norm
-transforms by the inverse determinant of a change of basis, and by the algebra norm under
-multiplication by an element of `L`; for a finitely generated `M` it is a fractional ideal, which
-is nonzero exactly when `M` spans `V` over `K`.
+of `L`: when `I` is free over `R` (for instance when `R = ℤ`), the condition `N(I) = s R` means
+that `I` has an oriented basis of determinant `s`. The norm transforms by the inverse
+determinant of a change of basis, and by the algebra norm under multiplication by an element of
+`L`; for a finitely generated `M` it is a fractional ideal, which is nonzero exactly when `M`
+spans `V` over `K`.
 
 ## Main definitions and results
 
