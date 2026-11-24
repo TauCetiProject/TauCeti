@@ -35,7 +35,8 @@ of a profinite group moves a coset of some open normal subgroup
 The file also records basic facts about the underlying sets of finite continuous `G`-sets
 (`ContAction.fiberFunctor`): a finite `G`-set is continuous exactly when its stabilizers are open
 (`Action.isContinuous_iff_isOpen_stabilizer`), morphisms are `G`-maps (`ContAction.fiberHom`),
-and points of underlying sets lift to pullbacks (`ContAction.exists_fiberFunctor_pullback`).
+and points of underlying sets lift to pullbacks (`ContAction.exists_fiberFunctor_pullback`). A
+finite discrete group acts on itself by left multiplication (`ContAction.regular`).
 
 ## Main results
 
@@ -166,6 +167,28 @@ theorem mulActionHom_ext_of_isConnected {A : ContAction FintypeCat.{u} G} [IsCon
   ext b
   obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G a b
   rw [map_smul, map_smul, h]
+
+section Regular
+
+variable (G) [Finite G] [DiscreteTopology G]
+
+/-- The regular action of a finite discrete group `G` on itself by left multiplication, as a
+finite continuous `G`-set; it is continuous since `G` is discrete. -/
+noncomputable def regular : ContAction FintypeCat.{u} G :=
+  have : Fintype G := Fintype.ofFinite G
+  ⟨Action.FintypeCat.ofMulAction G (FintypeCat.of G),
+    (Action.isContinuous_iff_isOpen_stabilizer _).2 fun _ ↦ isOpen_discrete _⟩
+
+/-- The underlying set of the regular `G`-set is `G`. -/
+noncomputable def regularFiberEquiv : (fiberFunctor G).obj (regular G) ≃ G :=
+  Equiv.refl _
+
+/-- `G` acts on the underlying set of the regular `G`-set by left multiplication. -/
+theorem regularFiberEquiv_smul (g : G) (x : (fiberFunctor G).obj (regular G)) :
+    regularFiberEquiv G (g • x) = g * regularFiberEquiv G x :=
+  (rfl)
+
+end Regular
 
 variable [CompactSpace G] [T2Space G] [TotallyDisconnectedSpace G]
 

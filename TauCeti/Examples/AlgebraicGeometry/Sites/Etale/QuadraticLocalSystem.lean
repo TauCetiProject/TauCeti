@@ -22,12 +22,12 @@ corresponding étale sheaf of `ℤ/3`-modules on `Spec ℝ`
 `TauCeti.FiniteEtaleScheme.galoisModuleSheaf`) is finite lisse, because the cover
 `Spec ℂ ⟶ Spec ℝ` is finite étale and surjective. It is not constant
 (`TauCeti.FiniteEtaleScheme.not_isConstant_galoisModuleSheaf`): its sections over `Spec ℝ`
-vanish, since a vector fixed by complex conjugation equals its negative and `2` is invertible in
+are the invariants, which vanish (`TauCeti.AlgebraicGeometry.invariants_signRepresentation`),
+since a vector fixed by complex conjugation equals its negative and `2` is invertible in
 `ℤ/3`, so a constant such sheaf would be zero, while it is nonzero.
 
-This is a Check of EtaleCohomologyFoundations §F.0.1 in TauCetiRoadmap: on `Spec ℝ`, the quadratic
-character yields a nonconstant rank-one `ℤ/3` local system. The identification of its stalk at
-`Spec ℂ` with `ℤ/3`, on which complex conjugation acts by `-1`, is not part of this file.
+The identification of its stalk at `Spec ℂ` with `ℤ/3`, on which complex conjugation acts by
+`-1`, is not part of this file.
 
 ## Main results
 
@@ -42,10 +42,6 @@ open CategoryTheory Limits Opposite AlgebraicGeometry FintypeCatDiscrete Complex
 
 namespace TauCeti.AlgebraicGeometry
 
-private theorem conjAe_ne_one : (conjAe : Gal(ℂ/ℝ)) ≠ 1 := fun h ↦ by
-  have := congrArg (· I) h
-  norm_num [Complex.ext_iff] at this
-
 /-- The quadratic character of `Gal(ℂ/ℝ)` as a representation on `ℤ/3`: the identity acts
 trivially and complex conjugation acts by `-1`. -/
 noncomputable def signRepresentation : Representation (ZMod 3) Gal(ℂ/ℝ) (ZMod 3) :=
@@ -55,7 +51,7 @@ noncomputable def signRepresentation : Representation (ZMod 3) Gal(ℂ/ℝ) (ZMo
 /-- Complex conjugation acts on `signRepresentation` by `-1`. -/
 theorem signRepresentation_conjAe (m : ZMod 3) : signRepresentation conjAe m = -m := by
   simp [signRepresentation,
-    (Algebra.IsQuadraticExtension.quadraticCharacter_eq_neg_one_iff ℝ ℂ).2 conjAe_ne_one]
+    (Algebra.IsQuadraticExtension.quadraticCharacter_eq_neg_one_iff ℝ ℂ).2 TauCeti.conjAe_ne_one]
 
 /-- The étale sheaf of `ℤ/3`-modules on `Spec ℝ` given by the quadratic character of
 `Gal(ℂ/ℝ)`. -/
@@ -68,17 +64,17 @@ cover `Spec ℂ ⟶ Spec ℝ`. -/
 theorem isFiniteLisse_quadraticLocalSystem : quadraticLocalSystem.IsFiniteLisse :=
   isFiniteLisse_galoisModuleSheaf ℝ ℂ _
 
-/-- No nonzero element of `ℤ/3` is fixed by `signRepresentation`: a fixed element equals its
-negative, and `2` is invertible in `ℤ/3`. -/
-theorem eq_zero_of_forall_signRepresentation_eq (m : ZMod 3)
-    (h : ∀ σ : Gal(ℂ/ℝ), signRepresentation σ m = m) : m = 0 := by
+/-- `signRepresentation` has no nonzero invariants: an invariant element equals its negative, and
+`2` is invertible in `ℤ/3`. -/
+theorem invariants_signRepresentation : Representation.invariants signRepresentation = ⊥ := by
   have key : ∀ a : ZMod 3, -a = a → a = 0 := by decide
-  exact key m ((signRepresentation_conjAe m).symm.trans (h conjAe))
+  refine (Submodule.eq_bot_iff _).2 fun m hm ↦ key m ?_
+  exact (signRepresentation_conjAe m).symm.trans ((Representation.mem_invariants _ m).1 hm conjAe)
 
 /-- **The quadratic local system is not constant.** It has no nonzero sections over `Spec ℝ`,
 since `signRepresentation` has no nonzero fixed vector, but it is nonzero. -/
 theorem not_isConstant_quadraticLocalSystem :
     ¬ quadraticLocalSystem.IsConstant (Scheme.smallEtaleTopology (Spec (.of ℝ))) :=
-  not_isConstant_galoisModuleSheaf _ eq_zero_of_forall_signRepresentation_eq
+  not_isConstant_galoisModuleSheaf _ invariants_signRepresentation
 
 end TauCeti.AlgebraicGeometry

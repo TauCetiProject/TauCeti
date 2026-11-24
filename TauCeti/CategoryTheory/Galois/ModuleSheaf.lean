@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Limits
-public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.CategoryTheory.Galois.Sheaf
 
 /-!
@@ -17,19 +17,26 @@ Let `G` be a topological group and `ρ` a representation of `G` on a `Λ`-module
 continuous `G`-set `S`, the `G`-equivariant maps from `S` to `M` form a `Λ`-module
 (`ContAction.equivariantMaps ρ S`), and restriction along `G`-maps makes them a presheaf of
 `Λ`-modules (`ContAction.modulePresheaf ρ`). Its underlying presheaf of sets is the presheaf of
-`G`-maps into the underlying `G`-set of `ρ` (`ContAction.modulePresheafCompForgetIso`), so it is a
-sheaf for the jointly surjective topology (`ContAction.isSheaf_modulePresheaf`). When `Λ` is
-Noetherian and `M` is finitely generated, its values are finitely generated.
+`G`-maps into the underlying `G`-set `Representation.toAction ρ` of `ρ`
+(`ContAction.modulePresheafCompForgetIso`), so it is a sheaf for the jointly surjective topology
+(`ContAction.isSheaf_modulePresheaf`). When `Λ` is Noetherian and `M` is finitely generated, its
+values are finitely generated. Its sections over a point are the invariants of `ρ`
+(`ContAction.modulePresheafObjEquivInvariants`), and for `G` finite discrete and `M ≠ 0` it has a
+nonzero section over the regular `G`-set (`ContAction.nontrivial_modulePresheaf_obj_regular`).
 
 ## Main definitions
 
+* `Representation.toAction ρ`: the `G`-set underlying a representation.
 * `ContAction.equivariantMaps ρ S`: the `Λ`-module of `G`-maps from `S` to `M`.
-* `ContAction.modulePresheaf ρ`: the presheaf of these modules on finite continuous `G`-sets.
+* `ContAction.modulePresheaf ρ`: the presheaf of these modules on finite continuous `G`-sets, with
+  sections `ContAction.modulePresheafObjEquiv`.
+* `ContAction.modulePresheafObjEquivInvariants`: sections over a terminal `G`-set are invariants.
 
 ## Main results
 
 * `ContAction.isSheaf_modulePresheaf`: `G`-maps into a representation form a sheaf of
   `Λ`-modules for the jointly surjective topology.
+* `ContAction.nontrivial_modulePresheaf_obj_regular`: a nonzero section over the regular `G`-set.
 -/
 
 public section
@@ -37,6 +44,28 @@ public section
 open CategoryTheory Limits Opposite FintypeCatDiscrete
 
 universe u
+
+namespace Representation
+
+variable {G : Type u} [Monoid G] {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M]
+  [Module Λ M] (ρ : Representation Λ G M)
+
+/-- The `G`-set underlying a representation `ρ` of `G`: `g` acts on `M` by `ρ g`. -/
+@[expose]
+def toAction : Action (Type u) G where
+  V := M
+  ρ := (TypeCat.endEquiv M).toMonoidHom.comp (MulAction.toEndHom.comp ρ)
+
+/-- The underlying type of `ρ.toAction` is the module of `ρ`. -/
+theorem toAction_V : ρ.toAction.V = M :=
+  (rfl)
+
+/-- In `ρ.toAction`, `g` acts by `ρ g`. -/
+@[simp]
+theorem toAction_ρ_apply (g : G) (m : ρ.toAction.V) : ρ.toAction.ρ g m = ρ g m :=
+  (rfl)
+
+end Representation
 
 namespace ContAction
 
@@ -46,7 +75,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G]
 
 /-- The `Λ`-module of `G`-equivariant maps from the underlying set of a finite continuous `G`-set
 `S` to a representation `ρ` of `G` on `M`. -/
-@[expose]
 def equivariantMaps (S : ContAction FintypeCat.{u} G) :
     Submodule Λ ((fiberFunctor G).obj S → M) where
   carrier := {φ | ∀ (g : G) s, φ (g • s) = ρ g (φ s)}
@@ -54,6 +82,7 @@ def equivariantMaps (S : ContAction FintypeCat.{u} G) :
   zero_mem' g s := by simp
   smul_mem' c φ hφ g s := by simp [hφ g s]
 
+@[simp]
 theorem mem_equivariantMaps {S : ContAction FintypeCat.{u} G}
     (φ : (fiberFunctor G).obj S → M) :
     φ ∈ equivariantMaps ρ S ↔ ∀ (g : G) s, φ (g • s) = ρ g (φ s) :=
@@ -61,41 +90,36 @@ theorem mem_equivariantMaps {S : ContAction FintypeCat.{u} G}
 
 /-- The presheaf of `Λ`-modules of `G`-equivariant maps into a representation `ρ` of `G`, on
 finite continuous `G`-sets; restriction is precomposition. -/
-@[expose]
 def modulePresheaf : (ContAction FintypeCat.{u} G)ᵒᵖ ⥤ ModuleCat.{u} Λ where
   obj S := ModuleCat.of Λ (equivariantMaps ρ S.unop)
   map f := ModuleCat.ofHom
-    { toFun φ := ⟨φ.val ∘ (fiberFunctor G).map f.unop, fun g s ↦ by
-        rw [Function.comp_apply, fiberFunctor_map_smul, φ.property]; rfl⟩
+    { toFun φ := ⟨φ.val ∘ (fiberFunctor G).map f.unop, (mem_equivariantMaps ρ _).2 fun g s ↦ by
+        simp only [Function.comp_apply, fiberFunctor_map_smul,
+          (mem_equivariantMaps ρ _).1 φ.property]⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
 
-/-- Restriction of `G`-equivariant maps is precomposition. -/
-@[simp]
-theorem modulePresheaf_map_apply {S T : ContAction FintypeCat.{u} G} (f : T ⟶ S)
-    (φ : (modulePresheaf ρ).obj (op S)) (t : (fiberFunctor G).obj T) :
-    ((modulePresheaf ρ).map f.op φ).val t = φ.val ((fiberFunctor G).map f t) :=
-  (rfl)
+/-- The sections of `modulePresheaf ρ` over `S` are the `G`-maps from `S` into `ρ`. -/
+noncomputable def modulePresheafObjEquiv (S : ContAction FintypeCat.{u} G) :
+    (modulePresheaf ρ).obj (op S) ≃ₗ[Λ] equivariantMaps ρ S :=
+  LinearEquiv.refl _ _
 
-/-- The `G`-set underlying a representation `ρ` of `G`. -/
-@[expose]
-def representationAction : Action (Type u) G where
-  V := M
-  ρ := (TypeCat.endEquiv _).toMonoidHom.comp
-    { toFun g := (ρ g : M → M)
-      map_one' := funext fun _ ↦ by simp; rfl
-      map_mul' _ _ := funext fun _ ↦ by simp; rfl }
+/-- Restriction of `G`-equivariant maps is precomposition. -/
+theorem modulePresheafObjEquiv_map_apply {S T : ContAction FintypeCat.{u} G} (f : T ⟶ S)
+    (φ : (modulePresheaf ρ).obj (op S)) (t : (fiberFunctor G).obj T) :
+    (modulePresheafObjEquiv ρ T ((modulePresheaf ρ).map f.op φ)).val t =
+      (modulePresheafObjEquiv ρ S φ).val ((fiberFunctor G).map f t) :=
+  (rfl)
 
 /-- The underlying presheaf of sets of `modulePresheaf ρ` is the presheaf of `G`-maps into the
 underlying `G`-set of `ρ`. -/
 noncomputable def modulePresheafCompForgetIso :
     modulePresheaf ρ ⋙ forget₂ (ModuleCat.{u} Λ) AddCommGrpCat.{u} ⋙ forget AddCommGrpCat.{u} ≅
-      (homPresheaf G).obj (representationAction ρ) :=
+      (homPresheaf G).obj ρ.toAction :=
   NatIso.ofComponents (fun S ↦ Equiv.toIso
-    { toFun φ := (⟨φ.val, φ.property⟩ :
-        (fiberFunctor G).obj S.unop →[G] (representationAction ρ).V)
+    { toFun φ := (⟨φ.val, φ.property⟩ : (fiberFunctor G).obj S.unop →[G] ρ.toAction.V)
       invFun φ :=
-        let ψ : (fiberFunctor G).obj S.unop →[G] (representationAction ρ).V := φ
+        let ψ : (fiberFunctor G).obj S.unop →[G] ρ.toAction.V := φ
         ⟨ψ, ψ.map_smul'⟩
       left_inv _ := rfl
       right_inv _ := rfl }) fun _ ↦ rfl
@@ -108,7 +132,7 @@ theorem isSheaf_modulePresheaf [IsTopologicalGroup G] :
   Presheaf.isSheaf_of_isSheaf_comp _ _ (forget₂ (ModuleCat.{u} Λ) AddCommGrpCat.{u})
     (Presheaf.isSheaf_of_isSheaf_comp _ _ (forget AddCommGrpCat.{u})
       ((Presheaf.isSheaf_of_iso_iff (modulePresheafCompForgetIso ρ)).2
-        (isSheaf_homPresheaf (representationAction ρ))))
+        (isSheaf_homPresheaf ρ.toAction)))
 
 /-- The `G`-equivariant maps from a finite `G`-set to a finitely generated module over a
 Noetherian ring form a finitely generated module. -/
@@ -116,5 +140,43 @@ instance instModuleFiniteModulePresheafObj [IsNoetherianRing Λ] [Module.Finite 
     (S : (ContAction FintypeCat.{u} G)ᵒᵖ) : Module.Finite Λ ((modulePresheaf ρ).obj S) :=
   have : Finite ((fiberFunctor G).obj S.unop) := inferInstanceAs (Finite S.unop.obj.V)
   Module.Finite.of_injective (equivariantMaps ρ S.unop).subtype Subtype.val_injective
+
+variable [IsTopologicalGroup G]
+
+/-- **`G`-maps from a point are the invariants.** Over a terminal finite continuous `G`-set `S`,
+whose underlying set is a point, evaluation at that point identifies the `G`-maps from `S` into
+`ρ` with the invariants of `ρ`. -/
+noncomputable def modulePresheafObjEquivInvariants {S : ContAction FintypeCat.{u} G}
+    (hS : IsTerminal S) : (modulePresheaf ρ).obj (op S) ≃ₗ[Λ] Representation.invariants ρ :=
+  letI : Unique ((fiberFunctor G).obj S) :=
+    Types.isTerminalEquivUnique _ (hS.isTerminalObj (fiberFunctor G))
+  { toFun φ := ⟨φ.val default, fun g ↦ by
+      rw [← (mem_equivariantMaps ρ _).1 φ.property, Subsingleton.elim (g • default) default]⟩
+    invFun v := ⟨fun _ ↦ v, (mem_equivariantMaps ρ _).2 fun g _ ↦ (v.property g).symm⟩
+    map_add' _ _ := rfl
+    map_smul' _ _ := rfl
+    left_inv φ := Subtype.ext (funext fun s ↦ by rw [Subsingleton.elim s default])
+    right_inv _ := rfl }
+
+/-- Under `modulePresheafObjEquivInvariants`, a `G`-map from a point is sent to its value. -/
+theorem coe_modulePresheafObjEquivInvariants_apply {S : ContAction FintypeCat.{u} G}
+    (hS : IsTerminal S) (φ : (modulePresheaf ρ).obj (op S)) (s : (fiberFunctor G).obj S) :
+    (modulePresheafObjEquivInvariants ρ hS φ : M) = (modulePresheafObjEquiv ρ S φ).val s := by
+  let : Unique ((fiberFunctor G).obj S) :=
+    Types.isTerminalEquivUnique _ (hS.isTerminalObj (fiberFunctor G))
+  rw [Subsingleton.elim s default]
+  rfl
+
+/-- **`G`-maps from the regular `G`-set.** For a finite discrete group `G` and `M ≠ 0`, there is
+a nonzero `G`-map from the regular `G`-set into `ρ`: the orbit map `g ↦ ρ g m` of a nonzero
+`m`. -/
+theorem nontrivial_modulePresheaf_obj_regular [Finite G] [DiscreteTopology G] [Nontrivial M] :
+    Nontrivial ((modulePresheaf ρ).obj (op (regular G))) := by
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  let φ : equivariantMaps ρ (regular G) :=
+    ⟨fun x ↦ ρ (regularFiberEquiv G x) m, (mem_equivariantMaps ρ _).2 fun g x ↦ by
+      rw [regularFiberEquiv_smul, map_mul, mul_apply_eq_comp]⟩
+  refine (modulePresheafObjEquiv ρ _).nontrivial_congr.2 ⟨φ, 0, fun h ↦ hm ?_⟩
+  simpa [φ] using congr(Subtype.val $h ((regularFiberEquiv G).symm 1))
 
 end ContAction

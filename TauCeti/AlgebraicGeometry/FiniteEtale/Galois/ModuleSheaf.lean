@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Connected
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.FieldSheaf
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Localization
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.CategoryTheory.Galois.ModuleSheaf
 public import TauCeti.RingTheory.Etale.Field
 
@@ -24,24 +23,28 @@ topology `TauCeti.FiniteEtaleScheme.galoisTopology K Ω` transported from the sm
 covering family of finite étale `K`-schemes is jointly surjective on geometric fibres. Hence the
 equivalence `TauCeti.FiniteEtaleScheme.galoisSheafEquiv` turns `ρ` into an étale sheaf of
 `Λ`-modules on `Spec K` (`TauCeti.FiniteEtaleScheme.galoisModuleSheaf`), whose sections over a
-finite étale `K`-scheme `X` are the `Gal(Ω/K)`-maps from the `Ω`-points of `X` into `M`
-(`TauCeti.FiniteEtaleScheme.galoisModuleSheafObjIso`). The topology `galoisTopology K Ω` is also
-subcanonical (`TauCeti.FiniteEtaleScheme.subcanonical_galoisTopology`), being induced from the
-subcanonical small étale topology of `Spec K`.
+finite étale `K`-scheme `X` are the `Gal(Ω/K)`-maps from the `Ω`-points of `X` into `M`, naturally
+in `X` (`TauCeti.FiniteEtaleScheme.galoisModuleSheafObjIso`). In particular its sections over
+`Spec K` are the invariants of `ρ`
+(`TauCeti.FiniteEtaleScheme.galoisModuleSheafObjOfHomIdEquivInvariants`).
 
 When `Ω` is finite over `K`, as `ℂ` is over `ℝ`, the geometric point `Spec Ω ⟶ Spec K` is
 surjective and étale, so the sheaf of a finitely generated module over a Noetherian ring is finite
-lisse (`TauCeti.FiniteEtaleScheme.isFiniteLisse_galoisModuleSheaf`). Its sections over `Spec K`
-are the invariants of `ρ`. The constant sheaf on a module `N` maps to a sheaf exactly as `N` maps
-to its sections over the terminal object `Spec K`, so if `M ≠ 0` has no nonzero invariants, the
-sheaf is not constant (`TauCeti.FiniteEtaleScheme.not_isConstant_galoisModuleSheaf`).
+lisse (`TauCeti.FiniteEtaleScheme.isFiniteLisse_galoisModuleSheaf`). The constant sheaf on a
+module `N` maps to a sheaf exactly as `N` maps to its sections over the terminal object `Spec K`,
+so if `M ≠ 0` has no nonzero invariants, the sheaf is not constant
+(`TauCeti.FiniteEtaleScheme.not_isConstant_galoisModuleSheaf`).
 
 ## Main definitions
 
 * `TauCeti.FiniteEtaleScheme.galoisModuleSheaf K Ω ρ`: the étale sheaf of `Λ`-modules on `Spec K`
   attached to a representation `ρ` of `Gal(Ω/K)`.
-* `TauCeti.FiniteEtaleScheme.regularGaloisSet K Ω`: the regular `Gal(Ω/K)`-set, for `Ω` finite
-  over `K`.
+* `TauCeti.FiniteEtaleScheme.galoisModuleSheafObjIso`,
+  `TauCeti.FiniteEtaleScheme.galoisModuleSheafInverseObjIso`: sections over finite étale
+  `K`-schemes, and over the finite étale `K`-scheme of a finite Galois set; the latter is a
+  component of the natural isomorphism `TauCeti.FiniteEtaleScheme.galoisModuleSheafInverseIso`.
+* `TauCeti.FiniteEtaleScheme.galoisModuleSheafObjOfHomIdEquivInvariants`: sections over `Spec K`
+  are the invariants.
 
 ## Main results
 
@@ -49,11 +52,9 @@ sheaf is not constant (`TauCeti.FiniteEtaleScheme.not_isConstant_galoisModuleShe
   exactly when the corresponding finite étale `K`-scheme is.
 * `TauCeti.FiniteEtaleScheme.galoisTopology_le_jointlySurjectiveTopology`: coverings for
   `galoisTopology K Ω` are jointly surjective.
-* `TauCeti.FiniteEtaleScheme.subcanonical_fieldTopology`,
-  `TauCeti.FiniteEtaleScheme.subcanonical_galoisTopology`: these topologies are subcanonical.
-* `TauCeti.FiniteEtaleScheme.galoisModuleSheafObjIso`,
-  `TauCeti.FiniteEtaleScheme.galoisModuleSheafInverseObjIso`: sections over finite étale
-  `K`-schemes, and over the finite étale `K`-scheme of a finite Galois set.
+* `TauCeti.FiniteEtaleScheme.galoisModuleSheafObjIso_hom_naturality`,
+  `TauCeti.FiniteEtaleScheme.galoisModuleSheafInverseObjIso_hom_naturality`: restriction of
+  sections is precomposition of `Gal(Ω/K)`-maps.
 * `TauCeti.FiniteEtaleScheme.isFiniteLisse_galoisModuleSheaf`: finite lisse when `Ω` is finite
   over `K`.
 * `TauCeti.FiniteEtaleScheme.not_isConstant_galoisModuleSheaf`: not constant when `Ω` is finite
@@ -110,18 +111,6 @@ theorem galoisTopology_le_jointlySurjectiveTopology :
     (forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}) t a₀
   exact ⟨T, t ≫ a, ht, t₁, by simp [ht₁]⟩
 
-/-- The topology on finite étale `K`-schemes induced from the small étale site of `Spec K` is
-subcanonical, as the small étale topology is. -/
-instance subcanonical_fieldTopology : (fieldTopology K).Subcanonical :=
-  GrothendieckTopology.subcanonical_of_full_of_faithful (toEtale _) _
-    (Scheme.smallEtaleTopology _)
-
-/-- The topology on finite continuous `Gal(Ω/K)`-sets transported from the small étale site of
-`Spec K` is subcanonical. -/
-instance subcanonical_galoisTopology : (galoisTopology K Ω).Subcanonical :=
-  GrothendieckTopology.subcanonical_of_full_of_faithful (galoisEquivalence K Ω).inverse _
-    (fieldTopology K)
-
 variable {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M] [Module Λ M]
   (ρ : Representation Λ Gal(Ω/K) M)
 
@@ -139,15 +128,34 @@ noncomputable def galoisModuleSheaf :
   (galoisSheafEquiv K (ModuleCat.{u} Λ) Ω).inverse.obj (galoisSetModuleSheaf K Ω ρ)
 
 /-- **Sections of the étale sheaf of a Galois representation over Galois sets.** Over the finite
+étale `K`-scheme corresponding to a finite continuous `Gal(Ω/K)`-set, the sections of
+`galoisModuleSheaf K Ω ρ` are the `Gal(Ω/K)`-maps from it into `ρ`, naturally: this is the counit
+of `galoisSheafEquiv`. -/
+noncomputable def galoisModuleSheafInverseIso :
+    (galoisEquivalence K Ω).inverse.op ⋙ (toEtale _).op ⋙ (galoisModuleSheaf K Ω ρ).obj ≅
+      ContAction.modulePresheaf ρ :=
+  eqToIso (galoisSheafEquiv_functor_obj_obj K _ Ω _).symm ≪≫
+    (sheafToPresheaf _ _).mapIso ((galoisSheafEquiv K (ModuleCat.{u} Λ) Ω).counitIso.app
+      (galoisSetModuleSheaf K Ω ρ))
+
+/-- **Sections of the étale sheaf of a Galois representation over a Galois set.** Over the finite
 étale `K`-scheme corresponding to a finite continuous `Gal(Ω/K)`-set `X`, the sections of
 `galoisModuleSheaf K Ω ρ` are the `Gal(Ω/K)`-maps from `X` into `ρ`. -/
 noncomputable def galoisModuleSheafInverseObjIso (X : ContAction FintypeCat.{u} Gal(Ω/K)) :
     (galoisModuleSheaf K Ω ρ).obj.obj
         (op ((toEtale _).obj ((galoisEquivalence K Ω).inverse.obj X))) ≅
       (ContAction.modulePresheaf ρ).obj (op X) :=
-  eqToIso (by rw [galoisSheafEquiv_functor, fieldSheafEquiv_functor]; rfl) ≪≫
-    ((sheafToPresheaf _ _).mapIso ((galoisSheafEquiv K (ModuleCat.{u} Λ) Ω).counitIso.app
-      (galoisSetModuleSheaf K Ω ρ))).app (op X)
+  (galoisModuleSheafInverseIso K Ω ρ).app (op X)
+
+/-- Under `galoisModuleSheafInverseObjIso`, restriction of sections of `galoisModuleSheaf K Ω ρ`
+along a map of finite Galois sets is precomposition of `Gal(Ω/K)`-maps. -/
+@[reassoc]
+theorem galoisModuleSheafInverseObjIso_hom_naturality
+    {X Y : ContAction FintypeCat.{u} Gal(Ω/K)} (f : X ⟶ Y) :
+    (galoisModuleSheaf K Ω ρ).obj.map ((toEtale _).map ((galoisEquivalence K Ω).inverse.map f)).op ≫
+        (galoisModuleSheafInverseObjIso K Ω ρ X).hom =
+      (galoisModuleSheafInverseObjIso K Ω ρ Y).hom ≫ (ContAction.modulePresheaf ρ).map f.op :=
+  (galoisModuleSheafInverseIso K Ω ρ).hom.naturality f.op
 
 /-- **Sections of the étale sheaf of a Galois representation.** Over a finite étale `K`-scheme
 `X`, the sections of `galoisModuleSheaf K Ω ρ` are the `Gal(Ω/K)`-maps from the corresponding
@@ -158,6 +166,23 @@ noncomputable def galoisModuleSheafObjIso (X : FiniteEtaleScheme (Spec (.of K)))
   (galoisModuleSheaf K Ω ρ).obj.mapIso
       ((toEtale _).mapIso ((galoisEquivalence K Ω).unitIso.app X)).symm.op ≪≫
     galoisModuleSheafInverseObjIso K Ω ρ ((galoisEquivalence K Ω).functor.obj X)
+
+/-- Under `galoisModuleSheafObjIso`, restriction of sections of `galoisModuleSheaf K Ω ρ` along a
+map of finite étale `K`-schemes is precomposition with the corresponding map of Galois sets. -/
+@[reassoc]
+theorem galoisModuleSheafObjIso_hom_naturality {X Y : FiniteEtaleScheme (Spec (.of K))}
+    (f : X ⟶ Y) :
+    (galoisModuleSheaf K Ω ρ).obj.map ((toEtale _).map f).op ≫
+        (galoisModuleSheafObjIso K Ω ρ X).hom =
+      (galoisModuleSheafObjIso K Ω ρ Y).hom ≫
+        (ContAction.modulePresheaf ρ).map ((galoisEquivalence K Ω).functor.map f).op := by
+  simp only [galoisModuleSheafObjIso, Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom,
+    Iso.symm_hom, Functor.mapIso_inv, Iso.app_inv, Category.assoc,
+    ← galoisModuleSheafInverseObjIso_hom_naturality, ← Functor.map_comp_assoc, ← op_comp,
+    ← Functor.map_comp]
+  have h := (galoisEquivalence K Ω).unitIso.inv.naturality f
+  simp only [Functor.comp_map, Functor.id_map] at h
+  rw [h]
 
 /-- Over a finite étale `K`-scheme, the sections of the sheaf of a finitely generated module over
 a Noetherian ring are finitely generated. -/
@@ -182,73 +207,54 @@ theorem isFiniteLisse_galoisModuleSheaf [FiniteDimensional K Ω] [IsNoetherianRi
   have : Module.Finite Λ
       ((TauCeti.AlgebraicGeometry.Scheme.etaleStalk Λ s).obj (galoisModuleSheaf K Ω ρ)) :=
     Module.Finite.equiv (((Scheme.pointSmallEtaleSheafFiberIso s).app _ ≪≫
-      (galoisModuleSheaf K Ω ρ).obj.mapIso ((Scheme.Etale.forgetFullyFaithful _).preimageIso
-        (eqToIso (by rw [forget_obj_toEtale_obj, ofHom_obj]; rfl)) :
-          Scheme.Etale.mk s ≅ (toEtale _).obj (ofHom s)).symm.op).toLinearEquiv.symm)
+      (galoisModuleSheaf K Ω ρ).obj.mapIso (toEtaleObjOfHomIso _ s).op).toLinearEquiv.symm)
   exact .of_etale_of_surjective_of_isSepClosed _ s
 
 variable {K Ω} in
-/-- **Sections over `Spec K` are the invariants.** If no nonzero vector of `ρ` is fixed by
-`Gal(Ω/K)`, the sheaf `galoisModuleSheaf K Ω ρ` has no nonzero sections over `Spec K`: the
-corresponding Galois set is a point, so a section is a fixed vector. -/
-theorem subsingleton_galoisModuleSheaf_obj_ofHom_id (hfix : ∀ m, (∀ g, ρ g m = m) → m = 0) :
+/-- **Sections over `Spec K` are the invariants.** The sections of `galoisModuleSheaf K Ω ρ` over
+the terminal object `Spec K` are the invariants of `ρ`: the corresponding Galois set is a point,
+and a `Gal(Ω/K)`-map from a point is its value, a fixed vector. -/
+noncomputable def galoisModuleSheafObjOfHomIdEquivInvariants :
+    (galoisModuleSheaf K Ω ρ).obj.obj (op ((toEtale _).obj (ofHom (𝟙 (Spec (.of K)))))) ≃ₗ[Λ]
+      Representation.invariants ρ :=
+  (galoisModuleSheafObjIso K Ω ρ _).toLinearEquiv ≪≫ₗ
+    ContAction.modulePresheafObjEquivInvariants ρ
+      ((isTerminalOfHomId (Spec (.of K))).isTerminalObj (galoisEquivalence K Ω).functor)
+
+variable {K Ω} in
+/-- If `ρ` has no nonzero invariants, the sheaf `galoisModuleSheaf K Ω ρ` has no nonzero sections
+over `Spec K`. -/
+theorem subsingleton_galoisModuleSheaf_obj_ofHom_id (hρ : Representation.invariants ρ = ⊥) :
     Subsingleton ((galoisModuleSheaf K Ω ρ).obj.obj
       (op ((toEtale _).obj (ofHom (𝟙 (Spec (.of K))))))) := by
-  have hT := (isTerminalOfHomId (Spec (.of K))).isTerminalObj (galoisEquivalence K Ω).functor
-  have : Subsingleton ((ContAction.fiberFunctor Gal(Ω/K)).obj
-      ((galoisEquivalence K Ω).functor.obj (ofHom (𝟙 (Spec (.of K)))))) :=
-    (Types.isTerminalEquivUnique _
-      (hT.isTerminalObj (ContAction.fiberFunctor Gal(Ω/K)))).instSubsingleton
-  have key (φ : (ContAction.modulePresheaf ρ).obj
-      (op ((galoisEquivalence K Ω).functor.obj (ofHom (𝟙 (Spec (.of K))))))) y : φ.val y = 0 :=
-    hfix _ fun g ↦ by rw [← φ.property g y, Subsingleton.elim (g • y) y]
-  exact ⟨fun a b ↦ (galoisModuleSheafObjIso K Ω ρ _).toLinearEquiv.injective
-    (Subtype.ext (funext fun y ↦ (key _ y).trans (key _ y).symm))⟩
-
-/-- The regular `Gal(Ω/K)`-set, for `Ω` finite over `K`; it is continuous since `Gal(Ω/K)` is
-then discrete. -/
-noncomputable abbrev regularGaloisSet [FiniteDimensional K Ω] :
-    ContAction FintypeCat.{u} Gal(Ω/K) :=
-  ⟨Action.FintypeCat.ofMulAction Gal(Ω/K) (FintypeCat.of Gal(Ω/K)),
-    (Action.isContinuous_iff_isOpen_stabilizer _).2 fun _ ↦ isOpen_discrete _⟩
+  rw [(galoisModuleSheafObjOfHomIdEquivInvariants ρ).subsingleton_congr, hρ]
+  infer_instance
 
 variable {K Ω} in
 /-- For `Ω` finite over `K` and `M ≠ 0`, the sheaf `galoisModuleSheaf K Ω ρ` has a nonzero
 section over the finite étale `K`-scheme of the regular `Gal(Ω/K)`-set: the orbit map
 `g ↦ ρ g m` of a nonzero `m`. -/
-theorem nontrivial_galoisModuleSheaf_obj_regularGaloisSet [FiniteDimensional K Ω]
-    [Nontrivial M] :
+theorem nontrivial_galoisModuleSheaf_obj_regular [FiniteDimensional K Ω] [Nontrivial M] :
     Nontrivial ((galoisModuleSheaf K Ω ρ).obj.obj
-      (op ((toEtale _).obj ((galoisEquivalence K Ω).inverse.obj (regularGaloisSet K Ω))))) := by
-  obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  let φ : (ContAction.modulePresheaf ρ).obj (op (regularGaloisSet K Ω)) :=
-    ⟨fun (g : Gal(Ω/K)) ↦ ρ g m, fun g (h : Gal(Ω/K)) ↦ by
-      change ρ (g * h) m = _
-      rw [map_mul]; rfl⟩
-  have : φ ≠ 0 := fun h ↦ by
-    have h1 : φ.val (show (ContAction.fiberFunctor _).obj (regularGaloisSet K Ω) from
-        (1 : Gal(Ω/K))) = m := by
-      simp [φ]
-    rw [h] at h1
-    exact hm h1.symm
-  exact (galoisModuleSheafInverseObjIso K Ω ρ _).toLinearEquiv.nontrivial_congr.2 ⟨φ, 0, this⟩
+      (op ((toEtale _).obj ((galoisEquivalence K Ω).inverse.obj (ContAction.regular Gal(Ω/K)))))) :=
+  have := ContAction.nontrivial_modulePresheaf_obj_regular ρ
+  (galoisModuleSheafInverseObjIso K Ω ρ _).toLinearEquiv.nontrivial_congr.2 this
 
 variable {K Ω} in
 /-- **Galois representations without invariants give nonconstant étale sheaves.** Let `Ω` be
-finite over `K`, and let `ρ` be a nonzero representation of `Gal(Ω/K)` with no nonzero fixed
-vector. Then the étale sheaf `galoisModuleSheaf K Ω ρ` on `Spec K` is not constant: morphisms
+finite over `K`, and let `ρ` be a nonzero representation of `Gal(Ω/K)` with no nonzero
+invariants. Then the étale sheaf `galoisModuleSheaf K Ω ρ` on `Spec K` is not constant: morphisms
 from a constant sheaf on `N` correspond to maps from `N` to the sections over the terminal object
 `Spec K`, which vanish, so a constant such sheaf is zero; but it has a nonzero section over the
 finite étale `K`-scheme of the regular Galois set. -/
 theorem not_isConstant_galoisModuleSheaf [FiniteDimensional K Ω] [Nontrivial M]
-    (hfix : ∀ m, (∀ g, ρ g m = m) → m = 0) :
+    (hρ : Representation.invariants ρ = ⊥) :
     ¬ (galoisModuleSheaf K Ω ρ).IsConstant (Scheme.smallEtaleTopology (Spec (.of K))) := by
   rintro ⟨N, ⟨e⟩⟩
   let F := galoisModuleSheaf K Ω ρ
   have hT : IsTerminal ((toEtale _).obj (ofHom (𝟙 (Spec (.of K))))) :=
-    (Scheme.Etale.mkIdTerminal _).ofIso ((Scheme.Etale.forgetFullyFaithful _).preimageIso
-      (eqToIso (by rw [forget_obj_toEtale_obj, ofHom_obj]; rfl)))
-  have hΓ := subsingleton_galoisModuleSheaf_obj_ofHom_id ρ hfix
+    (Scheme.Etale.mkIdTerminal _).ofIso (toEtaleObjOfHomIso _ (𝟙 _)).symm
+  have hΓ := subsingleton_galoisModuleSheaf_obj_ofHom_id ρ hρ
   -- Morphisms from the constant sheaf on `N` correspond to maps from `N` to the zero module.
   have hF : Subsingleton (F ⟶ F) := ⟨fun a b ↦ by
     have h := ((constantSheafAdj _ (ModuleCat.{u} Λ) hT).homEquiv N F).injective
@@ -256,9 +262,10 @@ theorem not_isConstant_galoisModuleSheaf [FiniteDimensional K Ω] [Nontrivial M]
       (ModuleCat.hom_ext (LinearMap.ext fun _ ↦ hΓ.elim _ _))
     simpa using congr(e.inv ≫ $h)⟩
   have hz : IsZero F := (IsZero.iff_id_eq_zero F).2 (Subsingleton.elim _ _)
-  obtain ⟨a, b, hab⟩ := (nontrivial_galoisModuleSheaf_obj_regularGaloisSet ρ).exists_pair_ne
+  obtain ⟨a, b, hab⟩ :=
+    (nontrivial_galoisModuleSheaf_obj_regular (K := K) (Ω := Ω) ρ).exists_pair_ne
   exact hab (@Subsingleton.elim _ (ModuleCat.subsingleton_of_isZero
     (((sheafSections _ _).obj (op ((toEtale _).obj
-      ((galoisEquivalence K Ω).inverse.obj (regularGaloisSet K Ω))))).map_isZero hz)) a b)
+      ((galoisEquivalence K Ω).inverse.obj (ContAction.regular Gal(Ω/K)))))).map_isZero hz)) a b)
 
 end TauCeti.FiniteEtaleScheme

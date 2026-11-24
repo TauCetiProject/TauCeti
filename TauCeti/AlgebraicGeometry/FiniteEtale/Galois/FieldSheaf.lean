@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Sites.DenseSubsite.OneHypercoverDense
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 
 /-!
 # Étale sheaves on a field as sheaves on finite étale schemes
@@ -47,6 +48,9 @@ continuous `G`-sets with continuous discrete `G`-sets.
 * `TauCeti.FiniteEtaleScheme.ofArrows_mem_galoisTopology_iff`: the coverings for
   `galoisTopology K Ω` are the families whose corresponding finite étale `K`-scheme morphisms are
   jointly surjective.
+* `TauCeti.FiniteEtaleScheme.subcanonical_fieldTopology`,
+  `TauCeti.FiniteEtaleScheme.subcanonical_galoisTopology`: these topologies are subcanonical, being
+  induced from the subcanonical small étale topology of `Spec K`.
 
 ## References
 
@@ -107,6 +111,12 @@ instance isOneHypercoverDense_toEtale :
       (Scheme.smallEtaleTopology _) :=
   Functor.IsOneHypercoverDense.of_hasPullbacks (exists_ofArrows_toEtale_mem K)
 
+/-- The topology on finite étale `K`-schemes induced from the small étale site of `Spec K` is
+subcanonical, as the small étale topology is. -/
+instance subcanonical_fieldTopology : (fieldTopology K).Subcanonical :=
+  GrothendieckTopology.subcanonical_of_full_of_faithful (toEtale _) _
+    (Scheme.smallEtaleTopology _)
+
 variable (A : Type v) [Category.{u} A] [HasLimitsOfSize.{u, u} A]
 
 instance isEquivalence_sheafPushforwardContinuous_toEtale :
@@ -145,6 +155,12 @@ theorem ofArrows_mem_galoisTopology_iff {X : ContAction FintypeCat.{u} Gal(Ω/K)
   rw [Functor.mem_inducedTopology_iff_of_isCoverDense, Sieve.functorPushforward_ofArrows]
   exact ofArrows_mem_fieldTopology_iff K _
 
+/-- The topology on finite continuous `Gal(Ω/K)`-sets transported from the small étale site of
+`Spec K` is subcanonical. -/
+instance subcanonical_galoisTopology : (galoisTopology K Ω).Subcanonical :=
+  GrothendieckTopology.subcanonical_of_full_of_faithful (galoisEquivalence K Ω).inverse _
+    (fieldTopology K)
+
 /-- **Étale sheaves on a field are sheaves on finite Galois sets.** For a separable closure `Ω` of
 `K`, étale sheaves on `Spec K` are sheaves on finite continuous `Gal(Ω/K)`-sets for
 `galoisTopology K Ω`. -/
@@ -158,6 +174,14 @@ transports it along `galoisEquivalence K Ω`. -/
 @[simp] theorem galoisSheafEquiv_functor :
     (galoisSheafEquiv K A Ω).functor = (fieldSheafEquiv K A).functor ⋙
       ((galoisEquivalence K Ω).sheafCongr (fieldTopology K) (galoisTopology K Ω) A).functor :=
+  (rfl)
+
+/-- The underlying presheaf of `(galoisSheafEquiv K A Ω).functor.obj F` is that of `F` restricted
+to finite étale `K`-schemes and composed with `galoisEquivalence K Ω`: both functors in
+`galoisSheafEquiv` act on underlying presheaves by precomposition. -/
+theorem galoisSheafEquiv_functor_obj_obj (F : Sheaf (Scheme.smallEtaleTopology (Spec (.of K))) A) :
+    ((galoisSheafEquiv K A Ω).functor.obj F).obj =
+      (galoisEquivalence K Ω).inverse.op ⋙ (toEtale _).op ⋙ F.obj :=
   (rfl)
 
 end TauCeti.FiniteEtaleScheme
