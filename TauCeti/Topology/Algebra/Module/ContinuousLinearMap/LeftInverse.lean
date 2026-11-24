@@ -26,7 +26,9 @@ and as a linear map it is Mathlib's `LinearMap.linearProjOfIsCompl`
 (`ContinuousLinearMap.toLinearMap_leftInverseAlong`). Moreover `ker P` is a topological complement
 of the range of `L` (`ContinuousLinearMap.isTopCompl_range_ker_of_isInvertible_comp`), and
 `1 - L (P ∘ L)⁻¹ P` is the projection onto `ker P` along that range
-(`ContinuousLinearMap.id_sub_comp_leftInverseAlong_eq_projectionL`). The Banach-space and
+(`ContinuousLinearMap.id_sub_comp_leftInverseAlong_eq_projectionL`); the equation `L f + S = 0`
+holds exactly when `f = -(P ∘ L)⁻¹ P S` and this projection of `S` vanishes
+(`ContinuousLinearMap.apply_add_eq_zero_iff`). The Banach-space and
 parameter-family theory of this construction is in
 `TauCeti.Analysis.Normed.Operator.Splitting.RangeComplement`.
 
@@ -249,6 +251,17 @@ theorem apply_neg_leftInverseAlong_add_eq_projectionL (h : (P ∘L L).IsInvertib
       P.ker.projectionL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm S := by
   rw [← id_sub_comp_leftInverseAlong_eq_projectionL h, map_neg, sub_apply, id_apply, comp_apply]
   abel
+
+/-- **The Lyapunov–Schmidt reduction.** If `P ∘ L` is invertible, then `L f + S = 0` exactly when
+`f = -(P ∘ L)⁻¹ P S` and the projection `Π S` of `S` onto `ker P` along the range of `L` vanishes.
+-/
+theorem apply_add_eq_zero_iff (h : (P ∘L L).IsInvertible) {S : F} {x : E} :
+    L x + S = 0 ↔ x = -leftInverseAlong L P S ∧
+      P.ker.projectionL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm S = 0 := by
+  rw [← apply_neg_leftInverseAlong_add_eq_projectionL h]
+  refine ⟨fun hxS ↦ ?_, fun ⟨hx, hS⟩ ↦ hx ▸ hS⟩
+  have hx := (apply_add_mem_ker_iff h).1 (hxS ▸ P.ker.zero_mem)
+  exact ⟨hx, hx ▸ hxS⟩
 
 end LeftInverseAlong
 
