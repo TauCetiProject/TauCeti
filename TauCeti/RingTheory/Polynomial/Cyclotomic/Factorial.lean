@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Ring.QPochhammer
 public import TauCeti.RingTheory.Polynomial.Cyclotomic.IndexMonoid
-import Mathlib.Algebra.CharP.Algebra
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.NumberTheory.Divisors
 
@@ -28,8 +27,8 @@ not monic for odd `N`, but `(-1) ^ N P_N` is a monic cyclotomic index. Consequen
 `(P_N)` and the cyclotomic ideals `(f)`, `f ∈ cycloIndex R S`, are mutually cofinal for `S` the
 set of all positive orders, and so are the ideals `(P_N)` and `((q ^ m - 1) ^ k)`.
 
-Over a ring of characteristic zero the multiplicity `⌊N / d⌋` is sharp: `Φ_d ^ k ∣ P_N` exactly
-when `d k ≤ N`. In characteristic two it is not, since there `Φ_1 = Φ_2`.
+Over a ring of characteristic zero the multiplicity `⌊N / d⌋` is sharp for `0 < d`:
+`Φ_d ^ k ∣ P_N` exactly when `d k ≤ N`. In characteristic two it is not, since there `Φ_1 = Φ_2`.
 
 ## Main definitions
 
@@ -55,7 +54,7 @@ when `d k ≤ N`. In characteristic two it is not, since there `Φ_1 = Φ_2`.
   `(X ^ m - 1) ^ k ∣ P_N` for `0 < m` and `m k ≤ N`, and `P_N ∣ (X ^ m - 1) ^ N` when every
   `1 ≤ i ≤ N` divides `m`.
 * `TauCeti.cyclotomic_pow_dvd_factorialPoly_iff`: over a ring of characteristic zero,
-  `Φ_d ^ k ∣ P_N ↔ d k ≤ N` for `0 < d`.
+  `Φ_d ^ k ∣ P_N ↔ d k ≤ N`.
 
 ## References
 
@@ -123,6 +122,7 @@ theorem coeff_zero_factorialPoly (N : ℕ) : (factorialPoly R N).coeff 0 = 1 := 
   rw [coeff_zero_eq_eval_zero, eval_zero_factorialPoly]
 
 /-- Over a nontrivial ring `P_N ≠ 0`, since its constant coefficient is one. -/
+@[simp]
 theorem factorialPoly_ne_zero [Nontrivial R] (N : ℕ) : factorialPoly R N ≠ 0 := fun h ↦ by
   simpa [h] using coeff_zero_factorialPoly (R := R) N
 
@@ -253,7 +253,7 @@ end CommRing
 section CharZero
 
 /-- Over `ℚ`, where distinct cyclotomic polynomials are coprime, the multiplicity of `Φ_d` in
-`P_N` is exactly `⌊N / d⌋`. -/
+`P_N` is exactly `⌊N / d⌋` for `0 < d`. -/
 private theorem cyclotomic_pow_dvd_factorialPoly_rat_iff {d k N : ℕ} (hd : 0 < d) :
     cyclotomic d ℚ ^ k ∣ factorialPoly ℚ N ↔ d * k ≤ N := by
   refine ⟨fun h ↦ ?_, cyclotomic_pow_dvd_factorialPoly⟩
@@ -261,20 +261,16 @@ private theorem cyclotomic_pow_dvd_factorialPoly_rat_iff {d k N : ℕ} (hd : 0 <
   -- Split off the factor `Φ_d ^ (N / d)` of `(-1) ^ N P_N`; it is `1` if `d > N`.
   have hsplit : (-1) ^ N * factorialPoly ℚ N =
       cyclotomic d ℚ ^ (N / d) * ∏ e ∈ (Ioc 0 N).erase d, cyclotomic e ℚ ^ (N / e) := by
-    rw [neg_one_pow_mul_factorialPoly_eq_prod_cyclotomic]
-    by_cases hdN : d ∈ Ioc 0 N
-    · exact (mul_prod_erase _ _ hdN).symm
-    · rw [erase_eq_of_notMem hdN, Nat.div_eq_of_lt (by simpa [hd] using hdN), pow_zero, one_mul]
+    rw [neg_one_pow_mul_factorialPoly_eq_prod_cyclotomic, ← sdiff_singleton_eq_erase]
+    exact prod_eq_mul_prod_sdiff_singleton d _ fun hdN ↦ by
+      rw [Nat.div_eq_of_lt (by simpa [hd] using hdN), pow_zero]
   have hcop : IsCoprime (cyclotomic d ℚ ^ k)
       (∏ e ∈ (Ioc 0 N).erase d, cyclotomic e ℚ ^ (N / e)) :=
     IsCoprime.pow_left (IsCoprime.prod_right fun e he ↦
       (cyclotomic.isCoprime_rat (ne_of_mem_erase he).symm).pow_right)
   rw [hsplit] at h
-  have hpos : 0 < (cyclotomic d ℚ).natDegree := by
-    rw [natDegree_cyclotomic]
-    exact Nat.totient_pos.mpr hd
-  rw [mul_comm, ← Nat.le_div_iff_mul_le hd, ← pow_dvd_pow_iff (cyclotomic_ne_zero d ℚ)
-    (not_isUnit_of_natDegree_pos _ hpos)]
+  have hirr := cyclotomic.irreducible_rat hd
+  rw [mul_comm, ← Nat.le_div_iff_mul_le hd, ← pow_dvd_pow_iff hirr.ne_zero hirr.not_isUnit]
   exact hcop.dvd_of_dvd_mul_right h
 
 /-- Both sides come from `ℤ[X]` and the divisor is monic, so in characteristic zero the
@@ -282,16 +278,19 @@ divisibility `Φ_d ^ k ∣ P_N` can be decided over `ℤ`. -/
 private theorem cyclotomic_pow_dvd_factorialPoly_iff_int (R : Type*) [CommRing R] [CharZero R]
     (d k N : ℕ) :
     cyclotomic d R ^ k ∣ factorialPoly R N ↔ cyclotomic d ℤ ^ k ∣ factorialPoly ℤ N := by
-  rw [← map_dvd_map (Int.castRingHom R) Int.cast_injective ((cyclotomic.monic d ℤ).pow k),
-    Polynomial.map_pow, map_cyclotomic, map_factorialPoly]
+  simpa using (map_dvd_map (Int.castRingHom R) Int.cast_injective ((cyclotomic.monic d ℤ).pow k)
+    (y := factorialPoly ℤ N))
 
 variable {R : Type*} [CommRing R] [CharZero R]
 
-/-- In characteristic zero the multiplicity of `Φ_d` in `P_N` is exactly `⌊N / d⌋`: for `0 < d`,
-`Φ_d ^ k ∣ P_N` if and only if `d k ≤ N`. No domain hypothesis is needed, since the divisibility
-is decided over `ℤ`. -/
-theorem cyclotomic_pow_dvd_factorialPoly_iff {d k N : ℕ} (hd : 0 < d) :
+/-- In characteristic zero the multiplicity of `Φ_d` in `P_N` is exactly `⌊N / d⌋` for `0 < d`:
+`Φ_d ^ k ∣ P_N` if and only if `d k ≤ N`. At `d = 0` both sides hold, since `Φ_0 = 1`. No domain
+hypothesis is needed, since the divisibility is decided over `ℤ`. -/
+@[simp]
+theorem cyclotomic_pow_dvd_factorialPoly_iff {d k N : ℕ} :
     cyclotomic d R ^ k ∣ factorialPoly R N ↔ d * k ≤ N := by
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · simp
   rw [cyclotomic_pow_dvd_factorialPoly_iff_int, ← cyclotomic_pow_dvd_factorialPoly_iff_int ℚ,
     cyclotomic_pow_dvd_factorialPoly_rat_iff hd]
 
@@ -328,7 +327,7 @@ example : (factorialPoly ℤ 3).natDegree = 6 := by
 
 /-- The bound `⌊N / d⌋` is sharp over `ℤ`: `Φ_3² ∣ P_6` but `Φ_3² ∤ P_5`. -/
 example : cyclotomic 3 ℤ ^ 2 ∣ factorialPoly ℤ 6 ∧ ¬cyclotomic 3 ℤ ^ 2 ∣ factorialPoly ℤ 5 := by
-  simp only [cyclotomic_pow_dvd_factorialPoly_iff three_pos]
+  simp only [cyclotomic_pow_dvd_factorialPoly_iff]
   decide
 
 /-- `(q² - 1)² ∣ P_4`. -/
