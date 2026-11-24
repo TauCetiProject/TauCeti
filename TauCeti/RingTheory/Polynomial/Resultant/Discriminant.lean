@@ -91,10 +91,11 @@ depressed specialization of that formula is used to compare a quartic with its c
   exactly when `R` has a repeated element.
 * `Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr`: the same product formula for
   `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
-* `Squarefree.discr_ne_zero`, `Squarefree.resultant_derivative_ne_zero`: a squarefree polynomial
-  over a domain whose polynomials form a decomposition monoid and whose fraction field is perfect
-  (such as a GCD domain of characteristic zero) has nonzero discriminant, and nonzero resultant with
-  its derivative.
+* `Squarefree.discr_ne_zero`: a squarefree polynomial over a domain whose polynomials form a
+  decomposition monoid and whose fraction field is perfect (such as a GCD domain of characteristic
+  zero) has nonzero discriminant.
+* `Squarefree.resultant_derivative_ne_zero`: a squarefree polynomial over a GCD domain of
+  characteristic zero has nonzero resultant with its derivative.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
@@ -796,12 +797,11 @@ theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
   · exact PerfectField.separable_iff_squarefree.mpr (hp.map_localization_map (nonZeroDivisors D))
   · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
 
-/-- A squarefree polynomial over a domain whose polynomials form a decomposition monoid and whose
-fraction field is perfect (such as a GCD domain of characteristic zero) has nonzero resultant with
+/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero resultant with
 its derivative. In degree zero the resultant is the empty determinant `1`; otherwise it is the
 discriminant up to the sign and the leading coefficient. -/
 theorem _root_.Squarefree.resultant_derivative_ne_zero {D : Type*} [CommRing D] [IsDomain D]
-    [DecompositionMonoid D[X]] [PerfectField (FractionRing D)] {p : D[X]} (hp : Squarefree p) :
+    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) :
     resultant p (derivative p) ≠ 0 := by
   rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
   · obtain ⟨c, rfl⟩ := natDegree_eq_zero.mp h0
