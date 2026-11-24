@@ -49,25 +49,35 @@ public section
 open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
+/-- If `I ×ˢ A` is predictable for every `ℱ s`-measurable `A`, extending an `ℱ s`-strongly
+measurable function by zero outside `I` yields a strongly predictable process. -/
+theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_indicator {ι Ω E : Type*}
+    [Preorder ι] [OrderBot ι] {m : MeasurableSpace Ω} [TopologicalSpace E] [Zero E]
+    {ℱ : Filtration ι m} {s : ι} {I : Set ι}
+    (hI : ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A → MeasurableSet[ℱ.predictable] (I ×ˢ A))
+    {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) :
+    IsStronglyPredictable ℱ (fun u ω ↦ I.indicator (fun _ ↦ ξ ω) u) := by
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable; let : MeasurableSpace Ω := ℱ s
+  obtain ⟨f, hf⟩ := hξ
+  refine ⟨fun n ↦ ⟨fun p ↦ I.indicator (fun _ ↦ f n p.2) p.1, fun c ↦ ?_,
+    ((f n).finite_range.insert 0).subset fun _ ⟨p, hp⟩ ↦ by
+      by_cases h : p.1 ∈ I <;> simp [h, ← hp]⟩,
+    fun ⟨u, ω⟩ ↦ by
+      by_cases h : u ∈ I <;> [simpa [h] using hf ω; simpa [h] using tendsto_const_nhds]⟩
+  by_cases hc : c = 0
+  · convert (hI ((f n).measurableSet_fiber c)).union (hI MeasurableSet.univ).compl using 1
+    ext ⟨u, ω⟩; by_cases hu : u ∈ I <;> simp [hu, hc]
+  · convert hI ((f n).measurableSet_fiber c) using 1
+    ext ⟨u, ω⟩; by_cases hu : u ∈ I <;> simp [hu, Ne.symm hc]
+
 /-- A height known at the left endpoint, extended by zero outside `(s,t]`, is predictable. -/
 theorem MeasureTheory.Filtration.stronglyMeasurable_indicator_Ioc_predictable
     {ι Ω E : Type*} {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι]
     [TopologicalSpace E] [Zero E] (ℱ : Filtration ι m) (s t : ι) {a : Ω → E}
     (ha : StronglyMeasurable[ℱ s] a) :
     StronglyMeasurable[ℱ.predictable]
-      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ a p.2) p.1) := by
-  classical
-  let : MeasurableSpace Ω := ℱ s
-  let : MeasurableSpace (ι × Ω) := ℱ.predictable
-  let S : Set (ι × Ω) := Ioc s t ×ˢ univ
-  have hS : MeasurableSet S := measurableSet_predictable_Ioc_prod s t MeasurableSet.univ
-  have hproj : Measurable (fun p : S ↦ p.val.2) := by
-    intro A hA
-    refine ⟨Ioc s t ×ˢ A, measurableSet_predictable_Ioc_prod s t hA, ?_⟩
-    ext p
-    simp [S, p.property.1]
-  simpa [S, indicator_apply] using
-    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
+      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ a p.2) p.1) :=
+  ha.isStronglyPredictable_indicator fun _ hA ↦ measurableSet_predictable_Ioc_prod s t hA
 
 section Arithmetic
 
@@ -429,33 +439,23 @@ theorem MeasureTheory.IsStronglyPredictable.stronglyMeasurable_path {ι Ω E : T
     {H : ι → Ω → E} (hH : IsStronglyPredictable ℱ H) (ω : Ω) : StronglyMeasurable (H · ω) :=
   (hH.mono ℱ.predictable_le_prod).comp_measurable measurable_prodMk_right
 
+/-- For two strongly predictable processes `H` and `K` into a normed additive group,
+`‖H · ω - K · ω‖ₑ ^ p` is almost everywhere measurable in time along every sample path `ω`. -/
+theorem MeasureTheory.IsStronglyPredictable.aemeasurable_enorm_sub_pow {ι Ω E : Type*}
+    [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderClosedTopology ι] [MeasurableSpace ι]
+    [OpensMeasurableSpace ι] {m : MeasurableSpace Ω} [SeminormedAddCommGroup E]
+    {ℱ : Filtration ι m} {H K : ι → Ω → E} (hH : IsStronglyPredictable ℱ H)
+    (hK : IsStronglyPredictable ℱ K) {μ : Measure ι} (ω : Ω) (p : ℕ) :
+    AEMeasurable (fun s ↦ ‖H s ω - K s ω‖ₑ ^ p) μ :=
+  (((hH.stronglyMeasurable_path ω).sub (hK.stronglyMeasurable_path ω)).eNorm.pow_const
+    p).aemeasurable
+
 /-- Every deterministic strongly measurable function of time is strongly predictable. -/
 theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable {ι Ω E : Type*} [LinearOrder ι]
     [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
     [MeasurableSpace ι] [BorelSpace ι] {m : MeasurableSpace Ω} [TopologicalSpace E]
     (ℱ : Filtration ι m) {u : ι → E} (hu : StronglyMeasurable u) :
     IsStronglyPredictable ℱ (fun t _ ↦ u t) := hu.comp_measurable ℱ.measurable_fst_predictable
-
-/-- If `I ×ˢ A` is predictable for every `ℱ s`-measurable `A`, extending an `ℱ s`-strongly
-measurable function by zero outside `I` yields a strongly predictable process. -/
-theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_indicator {ι Ω E : Type*}
-    [Preorder ι] [OrderBot ι] {m : MeasurableSpace Ω} [TopologicalSpace E] [Zero E]
-    {ℱ : Filtration ι m} {s : ι} {I : Set ι}
-    (hI : ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A → MeasurableSet[ℱ.predictable] (I ×ˢ A))
-    {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) :
-    IsStronglyPredictable ℱ (fun u ω ↦ I.indicator (fun _ ↦ ξ ω) u) := by
-  let : MeasurableSpace (ι × Ω) := ℱ.predictable; let : MeasurableSpace Ω := ℱ s
-  obtain ⟨f, hf⟩ := hξ
-  refine ⟨fun n ↦ ⟨fun p ↦ I.indicator (fun _ ↦ f n p.2) p.1, fun c ↦ ?_,
-    ((f n).finite_range.insert 0).subset fun _ ⟨p, hp⟩ ↦ by
-      by_cases h : p.1 ∈ I <;> simp [h, ← hp]⟩,
-    fun ⟨u, ω⟩ ↦ by
-      by_cases h : u ∈ I <;> [simpa [h] using hf ω; simpa [h] using tendsto_const_nhds]⟩
-  by_cases hc : c = 0
-  · convert (hI ((f n).measurableSet_fiber c)).union (hI MeasurableSet.univ).compl using 1
-    ext ⟨u, ω⟩; by_cases hu : u ∈ I <;> simp [hu, hc]
-  · convert hI ((f n).measurableSet_fiber c) using 1
-    ext ⟨u, ω⟩; by_cases hu : u ∈ I <;> simp [hu, Ne.symm hc]
 
 /-- Extending an `ℱ s`-strongly measurable function by zero outside `(s, ∞)` is predictable. -/
 theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_indicator_Ioi {ι Ω E : Type*}

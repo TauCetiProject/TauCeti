@@ -44,8 +44,9 @@ indistinguishability (`TauCeti.Probability.IsItoIntegral.congr`), so it determin
 integrals exactly up to indistinguishability (`TauCeti.Probability.isItoIntegral_iff_indist`).
 
 The elementary integral of a simple holding is its Itô integral against every process with
-almost surely continuous paths (`TauCeti.Probability.isItoIntegral_simpleGains`). Every such
-integrand satisfies `LocallyBrownianIntegrable` (`IsItoIntegral.locallyBrownianIntegrable`), and
+almost surely continuous paths (`TauCeti.Probability.isItoIntegral_simpleGains`). Every integrand
+admitting an Itô integral satisfies `LocallyBrownianIntegrable`
+(`IsItoIntegral.locallyBrownianIntegrable`), and
 `IsItoIntegral` is closed under filtration enlargement (`IsItoIntegral.mono_filtration`),
 product-a.e. replacement (`IsItoIntegral.congr_ae_prod`), linearity (`IsItoIntegral.const_mul`,
 `IsItoIntegral.add`, `IsItoIntegral.sub`), sequential limits (`IsItoIntegral.of_seq`), and against
@@ -116,9 +117,8 @@ theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianRe
       (f := fun p ↦ Finance.simpleHolding (τ p.1) (n p.1) (a p.1))
       (g := fun p ↦ Finance.simpleHolding (τ₂ p.2) (n₂ p.2) (a₂ p.2)) (h := fun _ ↦ H)
       (.of_forall fun p ↦ .of_forall fun ω ↦
-        (((Finance.isStronglyPredictable_simpleHolding (ha p.1)).stronglyMeasurable_path
-          ω).sub (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
-          |>.aemeasurable)
+        (Finance.isStronglyPredictable_simpleHolding (ha p.1)).aemeasurable_enorm_sub_pow
+          hI.isStronglyPredictable ω 2)
       (fun _ hε ↦ (hE _ hε).comp tendsto_fst) (fun _ hε ↦ (hE₂ _ hε).comp tendsto_snd) hδ
   have htot : TendstoInMeasure P
       (fun p : ι × ℕ ↦ Finance.simpleGains (τ p.1) (n p.1) (a p.1) W t) lp (I t) := by
@@ -321,8 +321,8 @@ theorem add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
       (h := fun _ _ _ ↦ 0)
       (.of_forall fun m ↦ .of_forall fun ω ↦ by
         simpa only [sub_zero, Pi.sub_apply] using
-          (((Finance.isStronglyPredictable_simpleHolding (ha₁ m)).stronglyMeasurable_path ω).sub
-            (hI.isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2 |>.aemeasurable)
+          (Finance.isStronglyPredictable_simpleHolding (ha₁ m)).aemeasurable_enorm_sub_pow
+            hI.isStronglyPredictable ω 2)
       (fun _ hδ ↦ by simpa only [sub_zero] using hE₁ _ hδ)
       (fun _ hδ ↦ by simpa only [sub_zero, eNorm_sub_rev (K _ _)] using hE₂ _ hδ) hε).congr
       fun m ↦ congrArg P <| Set.ext fun ω ↦ iff_of_eq <| congrArg (ε ≤ ·) <|
@@ -364,9 +364,8 @@ theorem of_seq {H_seq : ℕ → ℝ≥0 → Ω → ℝ} {U_seq : ℕ → ℝ≥0
   refine ⟨N, grid, height, hgrid, hheight, fun _ hε ↦
     tendsto_measure_lintegral_enorm_sub_sq (h := H_seq)
       (.of_forall fun k ↦ .of_forall fun ω ↦
-        (((Finance.isStronglyPredictable_simpleHolding (hheight k)).stronglyMeasurable_path
-          ω).sub ((hU k).isStronglyPredictable.stronglyMeasurable_path ω)).eNorm.pow_const 2
-          |>.aemeasurable)
+        (Finance.isStronglyPredictable_simpleHolding (hheight k)).aemeasurable_enorm_sub_pow
+          (hU k).isStronglyPredictable ω 2)
       (fun _ hδ ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hδ_lim
         (.of_forall fun _ ↦ zero_le) ((hδ_lim.eventually (eventually_lt_nhds hδ)).mono fun k hk ↦
           (measure_mono fun _ hω ↦ hk.le.trans hω).trans (hE_diag k)))
@@ -432,7 +431,10 @@ theorem ite_lt_mul (hW : IsFilteredPreBrownianReal ℱ W P)
         rw [← lintegral_const_mul' _ _ (ENNReal.pow_ne_top eNorm_ne_top)]
         exact lintegral_mono fun u ↦ by
           rw [hhold m u ω]; by_cases hu : s < u <;> simp [hu, ← mul_sub, eNorm_mul, mul_pow], ?_⟩
-  refine ((hξ.mono (ℱ.le s)).aestronglyMeasurable.tendstoInMeasure_smul
+  have hWm (u : ℝ≥0) : AEStronglyMeasurable (W u) P := hW.adapted.measurable.aestronglyMeasurable
+  refine ((tendstoInMeasure_const (μ := P) (l := atTop) ξ).smul
+    (hξ.mono (ℱ.le s)).aestronglyMeasurable
+    ((hI.aestronglyMeasurable hWm t).sub (hI.aestronglyMeasurable hWm _))
     (hG.sub (hI.tendstoInMeasure_simpleGains_of_le hW (min_le_right s t) hτ ha hE))).congr_left
     fun m ↦ .of_forall fun ω ↦ ?_
   rw [smul_eq_mul, Finance.simpleGains_def, Finance.simpleGains_def, Finance.simpleGains_def,

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 public import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Iterated `Lᵖ` seminorms on a product measure
@@ -29,6 +30,9 @@ Only the second measure needs to be s-finite.
   seminorm of its section seminorms.
 * `TauCeti.lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq` — the squared `L²(μ ⊗ ν)` seminorm
   is the iterated integral of the squared extended norm, integrating over `μ` first.
+* `TauCeti.tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm` and
+  `TauCeti.tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm` — `Lᵖ(μ ⊗ ν)` convergence
+  (`0 < p < ∞`) forces `ν`-tail measures of `μ`-slice `p`-th power integrals to tend to zero.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 * `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
@@ -185,6 +189,37 @@ theorem lintegral_lintegral_enorm_sq_eq_eLpNorm_prod_sq [SFinite μ] [SFinite ν
     {f : α × β → ε} (hf : AEStronglyMeasurable f (μ.prod ν)) :
     ∫⁻ y, ∫⁻ x, ‖f (x, y)‖ₑ ^ 2 ∂μ ∂ν = eLpNorm f 2 (μ.prod ν) ^ 2 := by
   rw [eLpNorm_two_sq_eq_lintegral hf, lintegral_prod_symm _ (hf.eNorm.pow_const 2)]
+
+/-- If `eLpNorm (f i) p (μ.prod ν) → 0` for `0 < p < ∞` and `SFinite` measures `μ`, `ν`, then the
+`ν`-measure of slices where `∫⁻ x, ‖f i (x, y)‖ₑ ^ p.toReal ∂μ ≥ ε` tends to zero for every `ε > 0`
+(including `∞`). No explicit measurability hypothesis on `f` is needed. -/
+theorem tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm
+    {ι : Type*} {l : Filter ι} [SFinite μ] [SFinite ν] {f : ι → α × β → ε} {p : ℝ≥0∞}
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) (hlim : Tendsto (fun i ↦ eLpNorm (f i) p (μ.prod ν)) l (𝓝 0))
+    {δ : ℝ≥0∞} (hδ : 0 < δ) :
+    Tendsto (fun i ↦ ν {y | δ ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ p.toReal ∂μ}) l (𝓝 0) := by
+  have hδ0 : min 1 δ ≠ 0 := (lt_min one_pos hδ).ne'
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by
+      simpa only [Function.comp_def, ENNReal.zero_rpow_of_pos (ENNReal.toReal_pos hp0 hp),
+        ENNReal.zero_div] using ENNReal.Tendsto.div_const
+          (((ENNReal.continuous_rpow_const (y := p.toReal)).tendsto 0).comp hlim) (.inr hδ0))
+    (.of_forall fun _ ↦ zero_le)
+    ((hlim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)).mono fun i hi ↦ ?_)
+  have hsm := aestronglyMeasurable_of_eLpNorm_ne_top hi.ne; have hm := hsm.eNorm.pow_const p.toReal
+  refine (measure_mono fun _ hy ↦ (min_le_right 1 δ).trans hy).trans
+    ((MeasureTheory.meas_ge_le_lintegral_div hm.lintegral_prod_left' hδ0
+      ((min_le_left 1 δ).trans_lt ENNReal.one_lt_top).ne).trans_eq ?_)
+  rw [← lintegral_prod_symm _ hm, MeasureTheory.lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hsm]
+
+/-- Natural-power form of `tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm` for `n ≠ 0`. -/
+theorem tendsto_measure_lintegral_enorm_pow_of_tendsto_eLpNorm
+    {ι : Type*} {l : Filter ι} [SFinite μ] [SFinite ν] {f : ι → α × β → ε} {n : ℕ} (hn : n ≠ 0)
+    (hlim : Tendsto (fun i ↦ eLpNorm (f i) n (μ.prod ν)) l (𝓝 0)) {δ : ℝ≥0∞} (hδ : 0 < δ) :
+    Tendsto (fun i ↦ ν {y | δ ≤ ∫⁻ x, ‖f i (x, y)‖ₑ ^ n ∂μ}) l (𝓝 0) := by
+  simpa only [ENNReal.toReal_natCast, ENNReal.rpow_natCast] using
+    tendsto_measure_lintegral_rpow_enorm_of_tendsto_eLpNorm
+      (Nat.cast_ne_zero.2 hn) (ENNReal.natCast_ne_top n) hlim hδ
 
 /-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
 is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every
