@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import TauCeti.Analysis.Normed.Order.OrderUnit
-import Mathlib.Analysis.Convex.Cone.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Convex.Cone.PositiveDual
 import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
@@ -27,14 +27,13 @@ Without a norm, the state space is convex and weak-* closed, and its points are 
 normalized positive continuous linear functionals `E →P[ℝ] ℝ`. When the norm of `E` is the
 order-unit norm of `e` (`TauCeti.IsOrderUnitNorm e`):
 
-* positive linear maps between order-unit spaces are automatically bounded, with operator norm
-  `‖T‖ = ‖T e‖`, and unital ones have norm one;
 * a functional is a state exactly when `‖φ‖ = φ e = 1`;
 * states exist, by the Hahn–Banach theorem, and every state of a subspace containing `e` extends
   to a state of `E`;
 * the state space is weak-* compact, by the Banach–Alaoglu theorem;
 * states detect the order and the norm: `0 ≤ a` exactly when `0 ≤ φ a` for every state `φ`, and
-  `‖a‖ = sup_φ |φ a|`, by separating `a` from the closed positive cone.
+  `‖a‖ = sup_φ |φ a|`, by separating `a` from the closed positive cone with a monotone
+  functional (`TauCeti.le_iff_forall_monotone_dual_le`).
 
 The name `stateSpace` lives in the namespace `TauCeti.OrderUnit` because the state space of a
 C⋆-algebra, normalized by the norm rather than by a unit, is `TauCeti.stateSpace`.
@@ -51,9 +50,6 @@ C⋆-algebra, normalized by the norm rather than by a unit, is `TauCeti.stateSpa
   normalized positive continuous linear functionals.
 * `TauCeti.OrderUnit.toWeakDual_comp_mem_stateSpace`: states pull back along unital monotone
   continuous linear maps; in particular they restrict to subspaces containing `e`.
-* `TauCeti.IsOrderUnitNorm.norm_map_le`, `TauCeti.IsOrderUnitNorm.opNorm_eq_norm_apply`,
-  `TauCeti.IsOrderUnitNorm.opNorm_eq_one`: a positive linear map `T` between order-unit spaces
-  satisfies `‖T a‖ ≤ ‖T e‖ ‖a‖`, has operator norm `‖T e‖`, and has norm one when unital.
 * `TauCeti.IsOrderUnitNorm.mem_stateSpace_iff_norm_eq_one`: `φ` is a state iff `‖φ‖ = φ e = 1`.
 * `TauCeti.IsOrderUnitNorm.stateSpace_nonempty`: existence of states.
 * `TauCeti.IsOrderUnitNorm.exists_extension_mem_stateSpace`: extension of states from subspaces
@@ -131,7 +127,8 @@ theorem toWeakDual_comp_mem_stateSpace {F : Type*} [AddCommGroup F] [Module ℝ 
     [TopologicalSpace F] [Preorder F] {f : F} {T : E →L[ℝ] F} (hT : Monotone T) (hTe : T e = f)
     {φ : WeakDual ℝ F} (hφ : φ ∈ stateSpace f) :
     StrongDual.toWeakDual ((toStrongDual φ).comp T) ∈ stateSpace e :=
-  ⟨hφ.1.comp hT, by simpa [hTe] using hφ.2⟩
+  ⟨by simpa [StrongDual.coe_toWeakDual, ContinuousLinearMap.coe_comp, coe_toStrongDual] using
+    hφ.1.comp hT, by simpa [hTe] using hφ.2⟩
 
 end Preorder
 
@@ -171,52 +168,6 @@ end OrderUnit
 
 namespace IsOrderUnitNorm
 
-section PositiveMap
-
-variable {E F G : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
-  [SeminormedAddCommGroup F] [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F]
-  {e : E} {f : F} [FunLike G E F] [LinearMapClass G ℝ E F]
-
-/-- **Positive maps are bounded.** A monotone linear map `T` between spaces with order-unit norms
-satisfies `‖T a‖ ≤ ‖T e‖ * ‖a‖`. No continuity is assumed. -/
-theorem norm_map_le (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G)
-    (hT : Monotone T) (a : E) : ‖T a‖ ≤ ‖T e‖ * ‖a‖ := by
-  have key (b : E) : T b ≤ (‖T e‖ * ‖b‖) • f :=
-    calc T b ≤ T (‖b‖ • e) := hT (he.le_norm_smul b)
-      _ ≤ ‖T (‖b‖ • e)‖ • f := hf.le_norm_smul _
-      _ = (‖T e‖ * ‖b‖) • f := by
-        rw [map_smul, norm_smul, Real.norm_of_nonneg (norm_nonneg b), mul_comm]
-  refine (hf.norm_le_iff (by positivity)).2 ⟨neg_le.1 ?_, key a⟩
-  simpa using key (-a)
-
-/-- A monotone linear map between spaces with order-unit norms is Lipschitz, with constant
-`‖T e‖`. -/
-theorem lipschitzWith_map (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G)
-    (hT : Monotone T) : LipschitzWith ‖T e‖₊ T :=
-  AddMonoidHomClass.lipschitz_of_bound_nnNorm T _ fun a => by
-    exact_mod_cast he.norm_map_le hf T hT a
-
-/-- **Automatic continuity.** A monotone linear map between spaces with order-unit norms is
-continuous. -/
-theorem continuous_map (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G)
-    (hT : Monotone T) : Continuous T :=
-  (he.lipschitzWith_map hf T hT).continuous
-
-/-- A monotone continuous linear map `T` between spaces with order-unit norms has operator norm
-`‖T e‖`. -/
-theorem opNorm_eq_norm_apply (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : E →L[ℝ] F)
-    (hT : Monotone T) : ‖T‖ = ‖T e‖ :=
-  le_antisymm (T.opNorm_le_bound (norm_nonneg _) (he.norm_map_le hf T hT))
-    (by simpa [he.norm_eq_one] using T.le_opNorm e)
-
-/-- A unital monotone continuous linear map between spaces with order-unit norms has operator
-norm one; in particular it is contractive. -/
-theorem opNorm_eq_one (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : E →L[ℝ] F)
-    (hT : Monotone T) (hTe : T e = f) : ‖T‖ = 1 := by
-  rw [he.opNorm_eq_norm_apply hf T hT, hTe, hf.norm_eq_one]
-
-end PositiveMap
-
 section State
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E]
@@ -225,8 +176,8 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrde
 /-- A state of an order-unit space has norm one. -/
 theorem norm_toStrongDual_of_mem_stateSpace (h : IsOrderUnitNorm e)
     (hφ : φ ∈ OrderUnit.stateSpace e) : ‖toStrongDual φ‖ = 1 := by
-  rw [ContinuousLinearMap.opNorm_eq_apply_of_monotone (toStrongDual φ) hφ.1 h.le_norm_smul
-    h.norm_eq_one.le]
+  rw [ContinuousLinearMap.opNorm_eq_apply_of_monotone (toStrongDual φ)
+    (by simpa [coe_toStrongDual] using hφ.1) h.le_norm_smul h.norm_eq_one.le, toStrongDual_apply]
   exact hφ.2
 
 /-- A state of an order-unit space is contractive: `|φ a| ≤ ‖a‖`. -/
@@ -247,6 +198,7 @@ theorem mem_stateSpace_iff_norm_eq_one (h : IsOrderUnitNorm e) :
     φ ∈ OrderUnit.stateSpace e ↔ ‖toStrongDual φ‖ = 1 ∧ φ e = 1 := by
   refine ⟨fun hφ => ⟨h.norm_toStrongDual_of_mem_stateSpace hφ, hφ.2⟩, fun ⟨hn, h1⟩ =>
     OrderUnit.mem_stateSpace_iff_map_nonneg.2 ⟨fun a ha => ?_, h1⟩⟩
+  rw [← toStrongDual_apply]
   refine LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm (u := e) (toStrongDual φ)
     (fun g => ?_) (h.nonneg_iff_norm_smul_sub_le.1 ha)
   simpa [h1, hn] using (toStrongDual φ).le_opNorm g
@@ -264,7 +216,8 @@ theorem exists_extension_mem_stateSpace (h : IsOrderUnitNorm e) (p : Submodule �
     (hp : e ∈ p) {ψ : WeakDual ℝ p} (hψ : ψ ∈ OrderUnit.stateSpace (⟨e, hp⟩ : p)) :
     ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : p, φ x = ψ x := by
   obtain ⟨g, hgx, hg⟩ := exists_extension_norm_eq p (toStrongDual ψ)
-  refine ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one.2 ⟨?_, ?_⟩, hgx⟩
+  refine ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one.2 ⟨?_, ?_⟩, fun x => by
+    simpa [StrongDual.toWeakDual_apply, toStrongDual_apply] using hgx x⟩
   · rw [StrongDual.toStrongDual_toWeakDual, hg]
     exact (h.submodule p hp).norm_toStrongDual_of_mem_stateSpace hψ
   · simpa using (hgx ⟨e, hp⟩).trans hψ.2
@@ -274,24 +227,22 @@ state is nonnegative on it. -/
 theorem nonneg_iff_forall_mem_stateSpace (h : IsOrderUnitNorm e) :
     0 ≤ a ↔ ∀ φ ∈ OrderUnit.stateSpace e, 0 ≤ φ a := by
   refine ⟨fun ha φ hφ => OrderUnit.map_nonneg_of_mem_stateSpace hφ ha, fun H => ?_⟩
-  by_contra ha
-  -- separate `a` from the closed positive cone by a functional `g ≥ 0` with `g a < 0`
   have := h.posSMulMono
   have := h.orderClosedTopology
-  obtain ⟨g, hg, hga⟩ := (ProperCone.positive ℝ E).hyperplane_separation_point (x₀ := a) ha
-  have hmono : Monotone g := (monotone_iff_map_nonneg g).2 fun x hx => hg x hx
-  -- `|g a| ≤ g e * ‖a‖` forces `g e > 0`, so `g / g e` is a state, negative at `a`
-  have hge : 0 < g e := by
-    by_contra! hge
-    have := PositiveLinearMap.abs_apply_le_mul_norm g hmono h.le_norm_smul a
-    nlinarith [abs_nonneg (g a), norm_nonneg a, neg_abs_le (g a)]
+  -- every monotone functional `g` is a nonnegative multiple of a state, or vanishes at `a`
+  refine le_iff_forall_monotone_dual_le.2 fun g hmono => ?_
+  have hga := PositiveLinearMap.abs_apply_le_mul_norm g hmono h.le_norm_smul a
+  rw [map_zero]
+  rcases (by simpa using hmono h.nonneg : 0 ≤ g e).eq_or_lt with hge | hge
+  · rw [← hge, zero_mul] at hga
+    exact (abs_nonpos_iff.1 hga).ge
   have hφ : StrongDual.toWeakDual ((g e)⁻¹ • g) ∈ OrderUnit.stateSpace e :=
     ⟨fun x y hxy => by
       simpa using mul_le_mul_of_nonneg_left (hmono hxy) (inv_nonneg.2 hge.le),
       by simp [hge.ne']⟩
   have := H _ hφ
   simp only [StrongDual.toWeakDual_apply, smul_apply, smul_eq_mul] at this
-  exact (mul_neg_of_pos_of_neg (inv_pos.2 hge) hga).not_ge this
+  exact (mul_nonneg_iff_of_pos_left (inv_pos.2 hge)).1 this
 
 /-- **States detect the order.** In an order-unit space, `a ≤ b` exactly when `φ a ≤ φ b` for
 every state `φ`. -/
