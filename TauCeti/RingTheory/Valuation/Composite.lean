@@ -62,8 +62,7 @@ private theorem mem_comapResidueSubring_iff {U : ValuationSubring (ResidueField 
 theorem residue_inv {x : K} (hx : x ∈ A) (hx' : x⁻¹ ∈ A) :
     residue A ⟨x⁻¹, hx'⟩ = (residue A ⟨x, hx⟩)⁻¹ := by
   rcases eq_or_ne x 0 with rfl | h0
-  · rw [show (⟨(0 : K)⁻¹, hx'⟩ : A) = 0 from Subtype.ext inv_zero,
-      show (⟨0, hx⟩ : A) = 0 from Subtype.ext rfl, map_zero, inv_zero]
+  · simp [show (⟨0, hx⟩ : A) = 0 from rfl]
   refine (eq_inv_of_mul_eq_one_left ?_)
   rw [← map_mul, ← map_one (residue A)]
   congr 1

@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.Jacobson.Ring
 public import Mathlib.RingTheory.Valuation.Integers
 public import TauCeti.RingTheory.Valuation.Composite
+import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
@@ -17,16 +18,18 @@ import TauCeti.RingTheory.Valuation.ValuationSubring
 Let `K` be a field extension of a field `k`. The Zariski–Riemann space `ZR(K/k)` is the set of
 valuation subrings of `K` containing `k`; a valuation subring specializes to the valuation
 subrings it contains, so the closed points of `ZR(K/k)` are its minimal elements. This file shows
-that valuation subrings whose residue field is `k` are such closed points, and that over an
-algebraically closed `k` there are enough of them.
+that valuation subrings whose residue field is algebraic over `k` are such closed points, and that
+there are enough of them; over an algebraically closed `k` their residue field is `k`.
 
-* A valuation subring `W ⊇ k` whose residue field is `k` is minimal among valuation subrings
-  containing `k`: a valuation subring `V ⊆ W` contains the nonunits of `W`, and every element of
-  `W` is a constant plus a nonunit. This holds for every field `k`.
-* If `k` is algebraically closed, `A ⊆ K` is a finitely generated `k`-subalgebra and `V₀` is a
-  valuation subring of `K` containing `A`, then some valuation subring `W ⊆ V₀` containing `A` has
-  residue field `k`. Thus `W` is a closed point of `ZR(K/k)` in the closure of `V₀` and in the
-  set of valuation subrings containing `A`.
+* A valuation subring `W ⊇ k` whose residue field `κ(W)` is algebraic over `k` is minimal among
+  valuation subrings containing `k`: a valuation subring `V ⊆ W` is the composite of `W` with a
+  valuation subring of `κ(W)` containing `k`, which is integrally closed and hence all of `κ(W)`.
+  For example, for `K = ℝ(t)` the valuation ring at `t² + 1` has residue field `ℂ` and is minimal
+  among valuation subrings containing `ℝ`.
+* If `A ⊆ K` is a finitely generated `k`-subalgebra and `V₀` is a valuation subring of `K`
+  containing `A`, then some valuation subring `W ⊆ V₀` containing `A` has residue field algebraic
+  over `k`. Thus `W` is a closed point of `ZR(K/k)` in the closure of `V₀` and in the set of
+  valuation subrings containing `A`. If `k` is algebraically closed, `W` has residue field `k`.
 
 The second statement rests on two general facts: Zorn's lemma gives a valuation subring `W`
 minimal among those between `A` and `V₀` (`ValuationSubring.exists_le_minimal`), and a field with
@@ -35,23 +38,21 @@ no proper valuation subring containing a finitely generated `k`-subalgebra is al
 valuation subrings (`ValuationSubring.comapResidue`) connect the two: for minimal `W`, the residue
 field `κ(W)` has no proper valuation subring containing the image of `A`.
 
-Without algebraic closedness, residue field `k` no longer characterises closed points: for
-`K = ℝ(t)`, the valuation ring at `t² + 1` is minimal among valuation subrings containing `ℝ` and
-has residue field `ℂ`.
-
 ## Main results
 
 * `ValuationSubring.exists_le_minimal`: below a valuation subring containing a set `s` there is a
   valuation subring minimal among those containing `s`.
 * `Algebra.IsIntegral.of_forall_valuationSubring_eq_top`: a field with no proper valuation subring
   containing a given finitely generated subalgebra is algebraic over the base field.
-* `ValuationSubring.eq_of_le_of_surjective_algebraMap_residueField`: a valuation subring with
-  residue field `k` is minimal among valuation subrings containing `k`.
+* `ValuationSubring.eq_of_le_of_isIntegral_residueField`: a valuation subring with residue field
+  algebraic over `k` is minimal among valuation subrings containing `k`.
+* `ValuationSubring.exists_le_isIntegral_residueField`: a valuation subring containing a finitely
+  generated `k`-subalgebra `A` contains a valuation subring containing `A` with residue field
+  algebraic over `k`.
 * `ValuationSubring.exists_le_bijective_algebraMap_residueField`: over an algebraically closed
-  field `k`, a valuation subring containing a finitely generated `k`-subalgebra `A` contains a
-  valuation subring containing `A` with residue field `k`.
-* `ValuationSubring.exists_le_minimal_isTrivialOn`: consequently it contains a closed point of
-  `ZR(K/k)` containing `A`.
+  field `k`, that residue field is `k`.
+* `ValuationSubring.exists_le_minimal_isTrivialOn`: consequently a valuation subring containing
+  `A` contains a closed point of `ZR(K/k)` containing `A`.
 
 ## References
 
@@ -110,26 +111,32 @@ namespace ValuationSubring
 
 variable {k K : Type*} [Field k] [Field K] [Algebra k K]
 
-/-- **Valuation subrings with residue field `k` are closed points of `ZR(K/k)`.** If a valuation
-subring `W` of `K` contains `k` and has residue field `k`, then every valuation subring `V ⊆ W`
-containing `k` equals `W`. -/
-theorem eq_of_le_of_surjective_algebraMap_residueField (V : ValuationSubring K)
-    {W : ValuationSubring K} [V.valuation.IsTrivialOn k] [W.valuation.IsTrivialOn k]
-    (hVW : V ≤ W) (hW : Function.Surjective (algebraMap k (ResidueField W))) : V = W := by
-  refine W.eq_of_le_of_surjective_residue hVW fun y ↦ ?_
-  obtain ⟨c, rfl⟩ := hW y
-  -- the residue of the constant `c ∈ V` is the image of `c` in `κ(W)`
-  refine ⟨algebraMap k V c, ?_⟩
-  rw [IsScalarTower.algebraMap_apply k W (ResidueField W), ResidueField.algebraMap_eq]
-  exact congrArg (residue W) (Subtype.ext rfl)
+/-- **Valuation subrings with algebraic residue field are closed points of `ZR(K/k)`.** If a
+valuation subring `W` of `K` contains `k` and its residue field is algebraic over `k`, then every
+valuation subring `V ⊆ W` containing `k` equals `W`. In particular this applies when the residue
+field of `W` is `k`. -/
+theorem eq_of_le_of_isIntegral_residueField (V : ValuationSubring K) {W : ValuationSubring K}
+    [V.valuation.IsTrivialOn k] [W.valuation.IsTrivialOn k] [Algebra.IsIntegral k (ResidueField W)]
+    (hVW : V ≤ W) : V = W := by
+  obtain ⟨U, rfl⟩ := exists_comapResidue_eq hVW
+  refine comapResidue_eq_self_iff.mpr (_root_.eq_top_iff.mpr fun y _ ↦ ?_)
+  -- `U` contains the residues of the constants, so it is integrally closed in the algebraic
+  -- extension `κ(W)` of `k`
+  have : U.valuation.IsTrivialOn k := .of_le_one _ fun c ↦ by
+    rw [valuation_le_one_iff, IsScalarTower.algebraMap_apply k W (ResidueField W),
+      ResidueField.algebraMap_eq, ← coe_mem_comapResidue_iff, coe_algebraMap_of_isTrivialOn]
+    exact algebraMap_mem_of_isTrivialOn _ c
+  obtain ⟨u, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp
+    ((Algebra.IsIntegral.isIntegral (R := k) y).tower_top (A := U))
+  exact u.property
 
-/-- **Existence of valuation subrings with residue field `k`.** Let `k` be algebraically closed,
-`A` a finitely generated `k`-subalgebra of `K` and `V₀` a valuation subring of `K` containing `A`.
-Then some valuation subring `W ⊆ V₀` of `K` containing `A` has residue field `k`. -/
-theorem exists_le_bijective_algebraMap_residueField [IsAlgClosed k] (V₀ : ValuationSubring K)
-    {A : Subalgebra k K} (hA : A.FG) (hAV₀ : (A : Set K) ⊆ V₀) :
+/-- **Existence of valuation subrings with algebraic residue field.** Let `A` be a finitely
+generated `k`-subalgebra of `K` and `V₀` a valuation subring of `K` containing `A`. Then some
+valuation subring `W ⊆ V₀` of `K` containing `A` has residue field algebraic over `k`. -/
+theorem exists_le_isIntegral_residueField (V₀ : ValuationSubring K) {A : Subalgebra k K}
+    (hA : A.FG) (hAV₀ : (A : Set K) ⊆ V₀) :
     ∃ (W : ValuationSubring K) (_ : W.valuation.IsTrivialOn k), W ≤ V₀ ∧ (A : Set K) ⊆ W ∧
-      Function.Bijective (algebraMap k (ResidueField W)) := by
+      Algebra.IsIntegral k (ResidueField W) := by
   obtain ⟨W, hWV₀, hmin⟩ := V₀.exists_le_minimal hAV₀
   have hAW : (A : Set K) ⊆ W := hmin.prop
   have : W.valuation.IsTrivialOn k := .of_le_one _ fun c ↦
@@ -143,24 +150,30 @@ theorem exists_le_bijective_algebraMap_residueField [IsAlgClosed k] (V₀ : Valu
   have hf (a : A) : f a = residue W ⟨a, hAW a.property⟩ := by
     simp only [f, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', ResidueField.algebraMap_eq]
     exact congrArg (residue W) (Subtype.ext (by simp))
-  have : Algebra.IsIntegral k (ResidueField W) := by
-    have hfg : (⊤ : Subalgebra k A).FG := ((Subalgebra.fg_iff_finiteType A).mp hA).out
-    refine .of_forall_valuationSubring_eq_top (hfg.map f) fun U hU ↦ ?_
-    refine (comapResidue_eq_self_iff (A := W)).mp (hmin.eq_of_le (fun a ha ↦ ?_) comapResidue_le)
-    exact coe_mem_comapResidue_iff (a := ⟨a, hAW ha⟩).mpr
-      (hf ⟨a, ha⟩ ▸ hU (Subalgebra.mem_map.mpr ⟨⟨a, ha⟩, trivial, rfl⟩))
-  exact IsAlgClosed.algebraMap_bijective_of_isIntegral
+  have hfg : (⊤ : Subalgebra k A).FG := ((Subalgebra.fg_iff_finiteType A).mp hA).out
+  refine .of_forall_valuationSubring_eq_top (hfg.map f) fun U hU ↦ ?_
+  refine (comapResidue_eq_self_iff (A := W)).mp (hmin.eq_of_le (fun a ha ↦ ?_) comapResidue_le)
+  exact coe_mem_comapResidue_iff (a := ⟨a, hAW ha⟩).mpr
+    (hf ⟨a, ha⟩ ▸ hU (Subalgebra.mem_map.mpr ⟨⟨a, ha⟩, trivial, rfl⟩))
 
-/-- **Closed points of `ZR(K/k)` below a point.** Let `k` be algebraically closed, `A` a finitely
-generated `k`-subalgebra of `K` and `V₀` a valuation subring of `K` containing `A`. Then some
-valuation subring `W ⊆ V₀` containing `A` is minimal among the valuation subrings of `K`
-containing `k`. -/
-theorem exists_le_minimal_isTrivialOn [IsAlgClosed k] (V₀ : ValuationSubring K)
+/-- **Existence of valuation subrings with residue field `k`.** Let `k` be algebraically closed,
+`A` a finitely generated `k`-subalgebra of `K` and `V₀` a valuation subring of `K` containing `A`.
+Then some valuation subring `W ⊆ V₀` of `K` containing `A` has residue field `k`. -/
+theorem exists_le_bijective_algebraMap_residueField [IsAlgClosed k] (V₀ : ValuationSubring K)
     {A : Subalgebra k K} (hA : A.FG) (hAV₀ : (A : Set K) ⊆ V₀) :
+    ∃ (W : ValuationSubring K) (_ : W.valuation.IsTrivialOn k), W ≤ V₀ ∧ (A : Set K) ⊆ W ∧
+      Function.Bijective (algebraMap k (ResidueField W)) :=
+  (V₀.exists_le_isIntegral_residueField hA hAV₀).imp fun _ ⟨h, hWV₀, hAW, _⟩ ↦
+    ⟨h, hWV₀, hAW, IsAlgClosed.algebraMap_bijective_of_isIntegral⟩
+
+/-- **Closed points of `ZR(K/k)` below a point.** Let `A` be a finitely generated `k`-subalgebra
+of `K` and `V₀` a valuation subring of `K` containing `A`. Then some valuation subring `W ⊆ V₀`
+containing `A` is minimal among the valuation subrings of `K` containing `k`. -/
+theorem exists_le_minimal_isTrivialOn (V₀ : ValuationSubring K) {A : Subalgebra k K} (hA : A.FG)
+    (hAV₀ : (A : Set K) ⊆ V₀) :
     ∃ W ≤ V₀, (A : Set K) ⊆ W ∧
       Minimal (fun V : ValuationSubring K ↦ V.valuation.IsTrivialOn k) W := by
-  obtain ⟨W, _, hWV₀, hAW, hW⟩ := V₀.exists_le_bijective_algebraMap_residueField hA hAV₀
-  exact ⟨W, hWV₀, hAW, ‹_›, fun V _ hVW ↦
-    (V.eq_of_le_of_surjective_algebraMap_residueField hVW hW.2).ge⟩
+  obtain ⟨W, _, hWV₀, hAW, _⟩ := V₀.exists_le_isIntegral_residueField hA hAV₀
+  exact ⟨W, hWV₀, hAW, ‹_›, fun V _ hVW ↦ (V.eq_of_le_of_isIntegral_residueField (k := k) hVW).ge⟩
 
 end ValuationSubring
