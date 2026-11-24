@@ -529,12 +529,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddComm
 /-- **Smooth functions supported in a convex compact set are dense.** For convex `K`, a Banach
 space `F` (`[CompleteSpace F]`) and `n₂ ≤ n₁`, the inclusion `𝓓^{n₁}_{K}(E, F) → 𝓓^{n₂}_{K}(E, F)`
 has dense range. For `n₁ = ∞` this says that every `C^{n₂}` function supported in `K` is a limit,
-in every derivative of order at most `n₂` uniformly, of smooth functions supported in `K`.
-
-For finite `n₂` this transports `TauCeti.NormedContDiffMapSupportedIn.dense_setOf_contDiff` along
-the identity `TauCeti.NormedContDiffMapSupportedIn.continuousLinearEquiv`; every smooth map
-supported in `K` lies in the range of the inclusion. For `n₂ = ∞` the hypothesis forces
-`n₁ = ∞`, and every element of `𝓓_{K}(E, F)` is already smooth. -/
+in every derivative of order at most `n₂` uniformly, of smooth functions supported in `K`. -/
 theorem denseRange_monoCLM [CompleteSpace F] (𝕜 : Type*) [NontriviallyNormedField 𝕜]
     [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {n₁ n₂ : ℕ∞} (hn : n₂ ≤ n₁)
     (hK : Convex ℝ (K : Set E)) :
@@ -545,7 +540,10 @@ theorem denseRange_monoCLM [CompleteSpace F] (𝕜 : Type*) [NontriviallyNormedF
     ⟨.of_support_subset (hg.of_le (by exact_mod_cast le_top)) g.support_subset,
       ext fun x ↦ by simp [hn]⟩
   induction n₂ using ENat.recTopCoe with
+  -- For `n₂ = ∞` every element is already smooth, so it lies in the range.
   | top => exact fun g ↦ subset_closure (hrange g.contDiff)
+  -- For finite `n₂ = ℓ`, transport the density of smooth maps in the norm synonym along the
+  -- identity `continuousLinearEquiv`.
   | coe ℓ =>
     exact ((TauCeti.NormedContDiffMapSupportedIn.continuousLinearEquiv ℝ E F ℓ
       K).surjective.denseRange.dense_image (ContinuousLinearEquiv.continuous _)
