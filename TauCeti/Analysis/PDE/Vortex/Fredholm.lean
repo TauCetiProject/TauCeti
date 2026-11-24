@@ -9,16 +9,11 @@ public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
-import Mathlib.Algebra.Module.Submodule.Equiv
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Fredholm.Criteria
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
-import TauCeti.Analysis.PDE.Vortex.RightInverse
-import TauCeti.Analysis.PDE.Vortex.WeakKernel
 import TauCeti.Analysis.Sobolev.W1p.Density
-import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Restrict
 
@@ -34,8 +29,7 @@ constructed in `TauCeti.Analysis.PDE.Vortex.SobolevRealization`. At a `C¹` vort
 and `∇₁ α → 0` at infinity, its kernel is finite dimensional and its range is closed
 (`TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`,
 `TauCeti.Vortex.isClosed_range_sobolevGaugeFixedOperator`). This file establishes the weak
-formulation, surjectivity, bounded `L²`-orthogonal right inverse, and Fredholm property of this
-Sobolev realization.
+formulation, surjectivity, and Fredholm property of this Sobolev realization.
 
 * **Weak and strong solutions.** By density of compactly supported test fields in `H¹(ℂ)⁴` and
   classical integration by parts (`TauCeti.Vortex.integral_inner_gaugeFixedOperator`), for a
@@ -50,15 +44,12 @@ Sobolev realization.
   identification (`TemperedDistribution.exists_w1p_value_ae_eq_of_mem_realSobolevFunctions`), every
   weak `L²` solution is the value of a strong solution in `H¹(ℂ)⁴`
   (`TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`).
-* **Surjectivity and bounded right inverse.** At a `C¹` plane vortex with `|α| → 1` at infinity
+* **Surjectivity and vanishing cokernel.** At a `C¹` plane vortex with `|α| → 1` at infinity
   and `L∞` class `a`, the weak right inverse of `TauCeti.Analysis.PDE.Vortex.RightInverse` solves
-  `L_x y = f` weakly for every `f ∈ L²`, so the realization is surjective
-  (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`) and its cokernel vanishes. Applying the
-  closed graph theorem produces a bounded right inverse `Q : L²(ℂ; ℝ⁴) → H¹(ℂ)⁴` whose values are
-  `L²`-orthogonal to the kernel
-  (`TauCeti.Vortex.exists_isOrthogonalRightInverse_sobolevGaugeFixedOperator`), which is unique by
-  `ContinuousLinearMap.IsOrthogonalRightInverse.unique` and equals
-  `ContinuousLinearMap.orthogonalRightInverse`.
+  `L_x y = f` weakly for every `f ∈ L²`
+  (`TauCeti.Vortex.exists_mem_sobolevFields_one_integral_inner_gaugeFixedAdjoint_eq`), so the
+  realization is surjective (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`) and its
+  cokernel vanishes.
 * **Fredholm property.** Combining vanishing cokernel with the finite-dimensional kernel from
   `TauCeti.Analysis.PDE.Vortex.SobolevRealization` via
   `ContinuousLinearMap.IsFredholm.of_surjective` yields
@@ -81,9 +72,8 @@ dimension and real Fredholm index `2 |D|` and `2 m`, and degree-zero bijectivity
   `TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`:
   integration by parts, weak characterization, and weak-to-strong lifting for
   `sobolevGaugeFixedOperator a`.
-* `TauCeti.Vortex.sobolevGaugeFixedOperator_surjective` and
-  `TauCeti.Vortex.exists_isOrthogonalRightInverse_sobolevGaugeFixedOperator`: surjectivity
-  (vanishing cokernel) and bounded `L²`-orthogonal right inverse `L² → H¹`.
+* `TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`: surjectivity (vanishing cokernel) of
+  `sobolevGaugeFixedOperator a`.
 * `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator`,
   `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_contDiff`, and
   `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_mem_framedFieldSpace`: the Fredholm
@@ -261,88 +251,7 @@ theorem exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_
   ext j
   exact hz j
 
-/-! ### Bounded `L²`-orthogonal right inverse, surjectivity, and vanishing cokernel -/
-
-/-- **Bounded `L²`-orthogonal right inverse `L² → H¹`.** At a `C¹` plane vortex `x` with
-`|α| → 1` at infinity and `L∞` class `a`, there is a continuous linear right inverse
-`Q : L²(ℂ; ℝ⁴) → H¹(ℂ)⁴` of `sobolevGaugeFixedOperator a` whose outputs are `L²`-orthogonal to
-the kernel of `sobolevGaugeFixedOperator a`. By
-`ContinuousLinearMap.IsOrthogonalRightInverse.unique` (with `sobolevFieldValues_injective`), this
-operator `Q` is unique and equals
-`ContinuousLinearMap.orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator a)`. -/
-theorem exists_isOrthogonalRightInverse_sobolevGaugeFixedOperator (hx : ContDiff ℝ 1 x)
-    (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hax : a =ᵐ[μ⊤] x) :
-    ∃ Q, ContinuousLinearMap.IsOrthogonalRightInverse
-      sobolevFieldValues (sobolevGaugeFixedOperator a) Q := by
-  -- Transport the `L²` minimal weak right inverse from `volume` to `μ⊤`, then lift to `H¹(ℂ)⁴`.
-  obtain ⟨Q₀, hQ₀⟩ := exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution
-    (μ := volume) hx hsol hlim
-  set e := castLpₗᵢ (𝕜 := ℝ) (E := EuclideanSpace ℝ (Fin 4)) (p := 2)
-    (Measure.restrict_coe_opens_top (volume : Measure ℂ))
-  set Q₁ : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
-    e.symm.toContinuousLinearEquiv.toContinuousLinearMap.comp
-      (Q₀.comp e.toContinuousLinearEquiv.toContinuousLinearMap)
-  have hQ₁_apply (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) (z : ℂ) : Q₁ f z = Q₀ (e f) z := by
-    simp only [Q₁, e, ContinuousLinearMap.comp_apply,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.coe_coe,
-      castLpₗᵢ_symm, coeFn_castLpₗᵢ]
-  have hQ₁_mem (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-      ∃ w : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2,
-        sobolevFieldValues w = Q₁ f ∧ sobolevGaugeFixedOperator a w = f := by
-    obtain ⟨w, hw, hLw⟩ :=
-      exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq
-        hx.continuous hax ((Lp.memLp (Q₁ f)).mono_measure (Measure.restrict_coe_opens_top _).ge)
-        (f := f) fun η hη hηc ↦ by
-        have hL : ∫ z, ⟪(Q₁ f) z, gaugeFixedAdjoint x η z⟫ =
-            ∫ z, ⟪(Q₀ (e f)) z, gaugeFixedAdjoint x η z⟫ :=
-          integral_congr_ae (.of_forall fun z ↦ by simp only [hQ₁_apply])
-        rw [hL, isGaugeFixedWeakSolution_iff.1 (hQ₀ (e f)).isGaugeFixedWeakSolution
-          η (hη.of_le (by simp)) hηc]
-        exact integral_congr_ae (.of_forall fun z ↦ by simp only [e, coeFn_castLpₗᵢ])
-    refine ⟨w, Lp.ext ?_, hLw⟩
-    filter_upwards [sobolevFieldValues_ae_eq w, ae_restrict_of_ae (ae_all_iff.2 hw)] with z h₁ h₂
-    rw [h₁]
-    ext j
-    exact h₂ j
-  let qL : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →ₗ[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :=
-    Q₁.toLinearMap.codRestrictOfInjective sobolevFieldValues.toLinearMap
-      sobolevFieldValues_injective fun f ↦ let ⟨w, hw, _⟩ := hQ₁_mem f; ⟨w, hw⟩
-  have hqL (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) : sobolevFieldValues (qL f) = Q₁ f :=
-    Q₁.toLinearMap.codRestrictOfInjective_comp_apply sobolevFieldValues.toLinearMap
-      sobolevFieldValues_injective _ f
-  have hclosed : IsClosed (qL.graph : Set (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ×
-      (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2))) := by
-    have hgraph : (qL.graph : Set (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ ×
-        (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2))) = {p | sobolevFieldValues p.snd = Q₁ p.fst} := by
-      ext ⟨f, y⟩
-      simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq]
-      exact ⟨fun h ↦ by rw [h, hqL], fun h ↦ sobolevFieldValues_injective (by rw [h, hqL])⟩
-    rw [hgraph]
-    exact isClosed_eq (sobolevFieldValues.continuous.comp continuous_snd)
-      (Q₁.continuous.comp continuous_fst)
-  refine ⟨ContinuousLinearMap.ofIsClosedGraph hclosed, ⟨fun f ↦ ?_, fun f u hu ↦ ?_⟩⟩
-  · obtain ⟨w, hw, hLw⟩ := hQ₁_mem f
-    have hQw : ContinuousLinearMap.ofIsClosedGraph hclosed f = w :=
-      sobolevFieldValues_injective (by simpa [hqL] using hw.symm)
-    simpa [hQw] using hLw
-  · have hQ_apply : sobolevFieldValues (ContinuousLinearMap.ofIsClosedGraph hclosed f) = Q₁ f := by
-      simpa using hqL f
-    have hu_weak : IsGaugeFixedWeakSolution volume x 0 (e (sobolevFieldValues u)) := by
-      rw [isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel hx.continuous,
-        mem_weakGaugeFixedKernel_iff hx.continuous]
-      intro η hη hηc
-      have hae : (e (sobolevFieldValues u) : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
-          fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (u j) z := by
-        filter_upwards [ae_mono (Measure.restrict_coe_opens_top volume).ge
-          (sobolevFieldValues_ae_eq u)] with z hz
-        simpa only [e, coeFn_castLpₗᵢ] using hz
-      rw [integral_congr_ae (hae.mono fun z hz ↦ congrArg (⟪·, gaugeFixedAdjoint x η z⟫) hz)]
-      exact (mem_ker_sobolevGaugeFixedOperator_iff hx.continuous hax).1 hu η hη hηc
-    rw [hQ_apply, ← e.inner_map_map (Q₁ f) (sobolevFieldValues u),
-      show e (Q₁ f) = Q₀ (e f) from by simp [Q₁], L2.inner_def]
-    exact (hQ₀ (e f)).integral_inner_eq_zero hu_weak
+/-! ### Surjectivity and vanishing cokernel -/
 
 /-- **The realization of `L_x` on `H¹` is onto** at a `C¹` vortex `x` with `|α| → 1` at infinity
 and with `L∞` class `a`: its cokernel vanishes. -/
@@ -351,9 +260,15 @@ theorem sobolevGaugeFixedOperator_surjective (hx : ContDiff ℝ 1 x)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hax : a =ᵐ[μ⊤] x) :
     Function.Surjective (sobolevGaugeFixedOperator a) := by
-  obtain ⟨Q, hQ⟩ :=
-    exists_isOrthogonalRightInverse_sobolevGaugeFixedOperator hx hsol hlim hax
-  exact hQ.rightInverse.surjective
+  intro f
+  have hM (z : ℂ) : ‖x z‖ ≤ ‖a‖ :=
+    Lp.norm_le_norm_top_of_ae_eq_of_continuousAt hax hx.continuous.continuousAt
+  obtain ⟨y, hy, hweak⟩ := exists_mem_sobolevFields_one_integral_inner_gaugeFixedAdjoint_eq hx hM
+    hsol hlim ((Lp.memLp f).mono_measure (Measure.restrict_coe_opens_top _).ge)
+  obtain ⟨w, -, hw⟩ := exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq
+    hx.continuous hax (memLp_of_mem_sobolevFields hy)
+      fun η hη hηc ↦ hweak η (hη.of_le (by simp)) hηc
+  exact ⟨w, hw⟩
 
 /-! ### Fredholm property -/
 
