@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
-import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import TauCeti.Data.Finsupp.Weight
 
