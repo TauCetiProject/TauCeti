@@ -59,8 +59,9 @@ coordinate face and composed with linear coordinate maps, so it is `C^r`.
   `ModelWithCorners.depthStratum_modelWithCornersEuclideanHalfSpace_eq_empty_of_one_lt`: on a
   manifold modelled on the half-space, the depth-one stratum is the boundary and there are no
   strata of higher depth.
-* `TauCeti.card_filter_chartAt_eq_depth`: on a `C^1` manifold modelled on the quadrant, the depth
-  of a point counts the vanishing coordinates of its image in its preferred chart.
+* `TauCeti.card_filter_chartAt_eq_of_mem_depthStratum`: on a `C^1` manifold modelled on the
+  quadrant, a point of the depth-`k` stratum has exactly `k` vanishing coordinates in its preferred
+  chart.
 * `TauCeti.depthStratumChartedSpace_atlas`, `TauCeti.depthStratumChartedSpace_chartAt_source` and
   its companions: the atlas of the stratum is the range of its preferred charts, which read the
   ambient preferred charts with the vanishing coordinates deleted.
@@ -281,28 +282,21 @@ private theorem leftInvOn_stratumProj_stratumParam (x : M) (hx : #(zeroCoords n 
 
 variable [IsManifold (𝓡c n) 1 M]
 
-/-- The depth of a point `y` of the domain of the preferred chart at `x` counts the vanishing
-coordinates of its image in that chart. -/
-private theorem depth_eq_card {x y : M} (hy : y ∈ (chartAt (EuclideanQuadrant n) x).source) :
-    (𝓡c n).depth y = #{i | (chartAt (EuclideanQuadrant n) x y).val i = 0} := by
-  rw [ModelWithCorners.depth_modelWithCornersEuclideanQuadrant one_ne_zero
-    (IsManifold.chart_mem_maximalAtlas x) hy, Nat.card_eq_fintype_card, Fintype.card_subtype]
-
-/-- On a `C^1` manifold modelled on the quadrant, the depth of `x` is the number of coordinates
-vanishing at the image of `x` in its preferred chart. -/
-theorem card_filter_chartAt_eq_depth (x : M) :
-    #{i | (chartAt (EuclideanQuadrant n) x x).val i = 0} = (𝓡c n).depth x :=
-  (depth_eq_card (mem_chart_source _ x)).symm
+/-- On a `C^1` manifold modelled on the quadrant, a point of the depth-`k` stratum has exactly `k`
+coordinates vanishing at its image in its preferred chart. -/
+theorem card_filter_chartAt_eq_of_mem_depthStratum {x : M} (hx : x ∈ (𝓡c n).depthStratum M k) :
+    #{i | (chartAt (EuclideanQuadrant n) x x).val i = 0} = k :=
+  (ModelWithCorners.depth_eq_card_filter_chartAt one_ne_zero (mem_chart_source _ x)).symm.trans hx
 
 private theorem card_zeroCoords (x : M) : #(zeroCoords n x) = (𝓡c n).depth x :=
-  card_filter_chartAt_eq_depth x
+  (ModelWithCorners.depth_eq_card_filter_chartAt one_ne_zero (mem_chart_source _ x)).symm
 
 /-- On `stratumDomain n x`, the points of the depth of `x` are those whose image in the chart at
 `x` vanishes on `zeroCoords n x`. -/
 private theorem depth_eq_iff {x y : M} (hy : y ∈ stratumDomain n x) :
     (𝓡c n).depth y = (𝓡c n).depth x ↔
       ∀ i ∈ zeroCoords n x, (chartAt (EuclideanQuadrant n) x y).val i = 0 := by
-  rw [depth_eq_card hy.1, ← card_zeroCoords]
+  rw [ModelWithCorners.depth_eq_card_filter_chartAt one_ne_zero hy.1, ← card_zeroCoords]
   have hsub : ({i | (chartAt (EuclideanQuadrant n) x y).val i = 0} : Finset (Fin n)) ⊆
       zeroCoords n x :=
     fun i hi ↦ by_contra fun h ↦ (hy.2 i h).ne' (by simpa using hi)
@@ -330,7 +324,7 @@ private theorem stratumParam_stratumProj {x : M} {hx : #(zeroCoords n x) = k} {y
     finsetComplEquivProd_symm_mk_fst_zero (by simpa using hZ), ModelWithCorners.left_inv]
 
 private theorem card_zeroCoords_eq (p : (𝓡c n).depthStratum M k) : #(zeroCoords n p.val) = k :=
-  (card_zeroCoords p.val).trans p.prop
+  card_filter_chartAt_eq_of_mem_depthStratum p.prop
 
 /-- The parametrization of the stratum at `p`, with the coordinates vanishing at `p` written out. -/
 private theorem stratumParam_eq (p : (𝓡c n).depthStratum M k)
@@ -338,8 +332,7 @@ private theorem stratumParam_eq (p : (𝓡c n).depthStratum M k)
     stratumParam k p.val (card_zeroCoords_eq p) w =
       (𝓡c n).symm ((finsetComplEquivProd ℝ
         ({i | (chartAt (EuclideanQuadrant n) p.val p.val).val i = 0} : Finset (Fin n))
-        ((card_filter_chartAt_eq_depth p.val).trans
-          (ModelWithCorners.depth_subtypeVal_depthStratum p))).symm (w, 0)) := by
+        (card_filter_chartAt_eq_of_mem_depthStratum p.prop)).symm (w, 0)) := by
   rw [stratumParam]
   dsimp only [zeroCoords]
 
@@ -472,8 +465,7 @@ preferred ambient chart at `p`. -/
 theorem depthStratumChartedSpace_chartAt_target (p : (𝓡c n).depthStratum M k) :
     (chartAt (EuclideanSpace ℝ (Fin (n - k))) p).target =
       {w | (∀ j, 0 < w j) ∧ (𝓡c n).symm ((finsetComplEquivProd ℝ _
-        ((card_filter_chartAt_eq_depth p.val).trans
-          (ModelWithCorners.depth_subtypeVal_depthStratum p))).symm (w, 0)) ∈
+        (card_filter_chartAt_eq_of_mem_depthStratum p.prop)).symm (w, 0)) ∈
         (chartAt (EuclideanQuadrant n) p.val).target} := by
   ext w
   rw [depthStratumChartedSpace_chartAt, stratumChart_target, mem_preimage]
@@ -492,10 +484,8 @@ theorem depthStratumChartedSpace_chartAt_target (p : (𝓡c n).depthStratum M k)
 ambient chart at `p` and deletes the `k` coordinates vanishing at `p`. -/
 theorem depthStratumChartedSpace_chartAt_apply (p q : (𝓡c n).depthStratum M k) :
     chartAt (EuclideanSpace ℝ (Fin (n - k))) p q =
-      (finsetComplEquivProd ℝ _
-        ((card_filter_chartAt_eq_depth p.val).trans
-          (ModelWithCorners.depth_subtypeVal_depthStratum p))
-          ((𝓡c n) (chartAt (EuclideanQuadrant n) p.val q.val))).1 := by
+      (finsetComplEquivProd ℝ _ (card_filter_chartAt_eq_of_mem_depthStratum p.prop)
+        ((𝓡c n) (chartAt (EuclideanQuadrant n) p.val q.val))).1 := by
   rw [depthStratumChartedSpace_chartAt, stratumChart_apply, stratumProj]
   dsimp only [zeroCoords]
 
@@ -508,8 +498,7 @@ theorem depthStratumChartedSpace_chartAt_symm_apply (p : (𝓡c n).depthStratum 
     ((chartAt (EuclideanSpace ℝ (Fin (n - k))) p).symm w : M) =
       (chartAt (EuclideanQuadrant n) p.val).symm
         ((𝓡c n).symm ((finsetComplEquivProd ℝ _
-          ((card_filter_chartAt_eq_depth p.val).trans
-            (ModelWithCorners.depth_subtypeVal_depthStratum p))).symm (w, 0))) := by
+          (card_filter_chartAt_eq_of_mem_depthStratum p.prop)).symm (w, 0))) := by
   rw [depthStratumChartedSpace_chartAt] at hw ⊢
   rw [coe_stratumChart_symm_apply p hw, stratumParam_eq]
 

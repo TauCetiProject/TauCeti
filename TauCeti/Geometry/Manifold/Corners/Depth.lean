@@ -66,6 +66,8 @@ along `Sᵏ⁻¹ × Sⁿ⁻ᵏ⁻¹`, and `M × [0, 1]` along `∂M × {0, 1}`.
 * `ModelWithCorners.depthAt_extend_eq_depth`: the depth does not depend on the chart.
 * `ModelWithCorners.depth_modelWithCornersEuclideanQuadrant`: on a manifold modelled on the
   quadrant, the depth of a point counts the vanishing coordinates of its image in any chart.
+* `ModelWithCorners.depth_eq_card_filter_chartAt`: the same count in a preferred chart, as the
+  cardinality of a finset.
 * `MDifferentiableAt.finrank_sub_depth_le`: a map with injective differential does not decrease
   the dimension of the largest linear subspace in the cone.
 * `IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`: (local) diffeomorphisms preserve the
@@ -474,6 +476,16 @@ theorem depth_modelWithCornersEuclideanQuadrant (hr : r ≠ 0)
   rw [← depthAt_extend_eq_depth hr he hx, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
     depthAt_modelWithCornersEuclideanQuadrant (mem_range_self _),
     modelWithCornersEuclideanQuadrant_apply]
+
+open scoped Finset in
+/-- On a `C^r` manifold modelled on the quadrant `𝓡c n`, `r ≠ 0`, the depth of a point `y` of the
+source of the preferred chart at `x` is the number of vanishing coordinates of its image in that
+chart. -/
+theorem depth_eq_card_filter_chartAt (hr : r ≠ 0) {x y : M}
+    (hy : y ∈ (chartAt (EuclideanQuadrant n) x).source) :
+    (𝓡c n).depth y = #{i | (chartAt (EuclideanQuadrant n) x y).val i = 0} := by
+  rw [depth_modelWithCornersEuclideanQuadrant hr (IsManifold.chart_mem_maximalAtlas x) hy,
+    Nat.card_eq_fintype_card, Fintype.card_subtype]
 
 end Quadrant
 
