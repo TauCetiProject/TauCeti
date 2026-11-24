@@ -212,10 +212,7 @@ theorem hasHomotopyExtensionProperty_range_of_coe_map_eq {W Y : Type*} [Topologi
     at h
 
 /-- **A point of a relative CW complex outside its base has the homotopy extension property
-inside the complex.** The point `x` lies in an open `n`-cell, which is open in the `n`-skeleton and
-is the source of the chart `TauCeti.openCellChart`; a point of a chart has the homotopy extension
-property, and so does the `n`-skeleton inside the complex. As `X` is Hausdorff, `{x}` is closed,
-so the inclusion of `x` is a closed cofibration. -/
+inside the complex.** -/
 theorem hasHomotopyExtensionProperty_singleton {x : C} (hx : (x : X) ∉ D) :
     HasHomotopyExtensionProperty ({x} : Set C) := by
   obtain ⟨n, i, hxi⟩ : ∃ n, ∃ i : cell C n, (x : X) ∈ openCell n i := by
