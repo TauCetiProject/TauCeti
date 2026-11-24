@@ -174,8 +174,7 @@ lemma mul_mem_stalkSubmodule_sub_principalDivisor {x : CodimensionOnePoint X}
   · exact Or.inl (mul_zero _)
   refine Or.inr ?_
   have hf' := hf.resolve_left h0
-  rw [WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
-    WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply, Scheme.ord_mul (Units.ne_zero _) h0]
+  rw [coeff_sub_principalDivisor, Scheme.ord_mul (Units.ne_zero _) h0]
   omega
 
 /-- Multiplication by a nonzero rational function `g` on the local principal parts at `x`,

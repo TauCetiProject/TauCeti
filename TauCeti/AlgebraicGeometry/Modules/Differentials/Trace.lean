@@ -223,9 +223,8 @@ lemma eq_sub_principalDivisor_derivativeOfSeparating :
       (Additive.ofMul (Units.mk0 (derivativeOfSeparating ht' t)
         (derivativeOfSeparating_ne_zero ht'))) := by
   ext y
-  rw [hK', WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
-    WeilDivisor.OrderSystem.ofScheme_ord, SchemeWeilDivisor.orderAt_apply, hK, toMul_ofMul,
-    Units.val_mk0, ← CodimensionOnePoint.toPlace_ord (k := k),
+  rw [hK', SchemeWeilDivisor.coeff_sub_principalDivisor, hK, toMul_ofMul, Units.val_mk0,
+    ← CodimensionOnePoint.toPlace_ord (k := k),
     Place.ord_derivativeOfSeparating_eq_sub _ hF hk ht' ht]
   ring
 
@@ -277,6 +276,37 @@ theorem relativeDifferentialsTrace_eq :
 
 end ChangeOfSeparatingFunction
 
+/-- The separating function from which `relativeDifferentialsResidueTrace` is built. -/
+private def residueTraceSeparating : X.functionField :=
+  (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose
+
+omit [AlgebraicGeometry.IsNoetherian X] [X.IsSeparated]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] in
+private lemma transcendental_residueTraceSeparating :
+    Transcendental k (residueTraceSeparating hF) :=
+  (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.1
+
+private instance isSeparable_residueTraceSeparating :
+    Algebra.IsSeparable k⟮residueTraceSeparating hF⟯ X.functionField :=
+  (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.2
+
+/-- The divisor of `dt` for the separating function `t = residueTraceSeparating hF`. -/
+private def residueTraceDivisor : SchemeWeilDivisor X :=
+  (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
+    (weilDifferentialDivisor hF hk
+      (weilDifferentialOfSeparating hF (transcendental_residueTraceSeparating hF)).property
+      (coe_weilDifferentialOfSeparating_ne_zero hF (transcendental_residueTraceSeparating hF)))
+
+omit [AlgebraicGeometry.IsNoetherian X] in
+private lemma coeff_residueTraceDivisor (y : CodimensionOnePoint X) :
+    WeilDivisor.coeff (residueTraceDivisor hF hk hex hdim) y =
+      weilDifferentialOrder hF hk
+        (weilDifferentialOfSeparating hF (transcendental_residueTraceSeparating hF)).property
+        (coe_weilDifferentialOfSeparating_ne_zero hF (transcendental_residueTraceSeparating hF))
+        (X.toPlace (k := k) (y : X)) := by
+  simp only [residueTraceDivisor, SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
+    coeff_weilDifferentialDivisor]
+
 /-- **The residue trace** `tr_{X/k} : H¹(X, Ω_{X/k}) → k` of an integral curve over an exact
 constant field, with invertible differentials and all the places of its function field: on the
 class represented by a repartition of differentials `(η_P)_P` it is the sum over the places `P`
@@ -287,25 +317,15 @@ these are the `k`-valued residues of the `η_P`). It is
 differentials are invertible. -/
 def relativeDifferentialsResidueTrace :
     Module.Dual k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1) :=
-  haveI := (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.2
-  relativeDifferentialsTrace
-    (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.1 hF hk hex hdim
-    ((SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
-      (weilDifferentialDivisor hF hk (weilDifferentialOfSeparating hF
-        (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.1).property
-        (coe_weilDifferentialOfSeparating_ne_zero hF
-          (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.1)))
-    fun _ ↦ by
-      simp only [SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
-        coeff_weilDifferentialDivisor]
+  relativeDifferentialsTrace (transcendental_residueTraceSeparating hF) hF hk hex hdim
+    (residueTraceDivisor hF hk hex hdim) (coeff_residueTraceDivisor hF hk hex hdim)
 
 /-- The residue trace is the trace built from any separating function `t` and the divisor
 of `dt`. -/
 theorem relativeDifferentialsResidueTrace_eq :
     relativeDifferentialsResidueTrace hF hk hex hdim =
-      relativeDifferentialsTrace ht hF hk hex hdim K hK := by
-  have := (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.2
-  exact relativeDifferentialsTrace_eq _ hF hk hex hdim _ _ ht K hK
+      relativeDifferentialsTrace ht hF hk hex hdim K hK :=
+  relativeDifferentialsTrace_eq _ hF hk hex hdim _ _ ht K hK
 
 /-- On the class of the repartition `(a_P dt)_P`, the residue trace is the Weil differential `dt`
 evaluated on the coefficients `(a_P)_P`. -/
@@ -336,10 +356,8 @@ theorem relativeDifferentialsResidueTrace_eq_finsum_residue
 
 /-- The residue trace is nonzero. -/
 theorem relativeDifferentialsResidueTrace_ne_zero :
-    relativeDifferentialsResidueTrace hF hk hex hdim ≠ 0 := by
-  have := (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.2
-  exact relativeDifferentialsTrace_ne_zero _ hF hk hex hdim _ _
-
+    relativeDifferentialsResidueTrace hF hk hex hdim ≠ 0 :=
+  relativeDifferentialsTrace_ne_zero _ hF hk hex hdim _ _
 
 end
 

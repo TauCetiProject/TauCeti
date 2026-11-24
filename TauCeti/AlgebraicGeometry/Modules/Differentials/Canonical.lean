@@ -233,9 +233,7 @@ lemma relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι :
     simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
       relativeDifferentialsIsoDivisorSheaf_hom_app, relativeDifferentialsIsoDivisorSheaf_inv_app,
       Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app, map_smul,
-      ← derivativeOfSeparating_smul_D ht' t, ← kaehlerBasisOfSeparating_apply ht' (),
-      Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul,
-      mul_one]
+      Module.Basis.coord_apply, kaehlerBasisOfSeparating_repr_D, smul_eq_mul]
     exact mul_comm _ _
   · exact (Scheme.subsingleton_rationalFunctions U (Scheme.eq_bot_of_not_nonempty hU)).elim _ _
 
