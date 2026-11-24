@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Signature
-public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Discriminant
+public import TauCeti.LinearAlgebra.QuadraticForm.Witt.FundamentalIdeal
 
 /-!
 # Signature on Witt rings over ordered fields
