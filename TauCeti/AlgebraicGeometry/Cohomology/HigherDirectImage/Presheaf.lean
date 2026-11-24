@@ -26,7 +26,9 @@ provides the module-valued comparison needed to apply localization criteria for
 quasi-coherence.
 
 The comparison with sheafification is natural in the coefficient module, and so is the
-resulting map from the presheaf to `Rⁿ f_* M` (`higherDirectImagePresheafToSheaf`). In degree
+resulting map from the presheaf to `Rⁿ f_* M` (`higherDirectImagePresheafToSheaf`); maps out of
+`Rⁿ f_* M` are determined by their restrictions along it
+(`higherDirectImagePresheafToSheaf_hom_ext`). In degree
 zero the presheaf is the underlying presheaf of the ordinary direct image. The
 comparison with cohomology is natural in coefficient modules
 (`higherDirectImagePresheafToPresheafIso_naturality`) and uses the flasque abelian
@@ -110,6 +112,31 @@ lemma higherDirectImagePresheafToSheaf_app (n : ℕ) (M : X.Modules) :
         (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map
           ((f.higherDirectImagePresheafSheafificationIso n).hom.app M) :=
   (rfl)
+
+/-- Maps out of `Rⁿ f_* M` are determined by their restrictions to the presheaf
+`V ↦ Hⁿ(f⁻¹ V, M)` along `higherDirectImagePresheafToSheaf`. -/
+lemma higherDirectImagePresheafToSheaf_hom_ext {n : ℕ} {M : X.Modules} {S : Y.Modules}
+    {α β : (f.higherDirectImage n).obj M ⟶ S}
+    (h : (f.higherDirectImagePresheafToSheaf n).app M ≫
+        (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map α =
+      (f.higherDirectImagePresheafToSheaf n).app M ≫
+        (SheafOfModules.forget _ ⋙ PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map
+          β) :
+    α = β := by
+  let adj := PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)
+  -- Transposing `e ≫ γ` along the sheafification adjunction gives the restriction of `γ`.
+  -- Chain with `Eq.trans`: it identifies `Y.Modules` with `SheafOfModules Y.ringCatSheaf` in the
+  -- objects, which `rw` does not.
+  have key (γ : (f.higherDirectImage n).obj M ⟶ S) :
+      adj.homEquiv _ _ ((f.higherDirectImagePresheafSheafificationIso n).hom.app M ≫ γ) =
+        (f.higherDirectImagePresheafToSheaf n).app M ≫
+          (SheafOfModules.forget _ ⋙
+            PresheafOfModules.restrictScalars (𝟙 Y.ringCatSheaf.obj)).map γ :=
+    (adj.homEquiv_unit _ _ _).trans ((congrArg _ (Functor.map_comp _ _ _)).trans
+      ((Category.assoc _ _ _).symm.trans
+        (congrArg (· ≫ _) (f.higherDirectImagePresheafToSheaf_app n M).symm)))
+  exact (cancel_epi ((f.higherDirectImagePresheafSheafificationIso n).hom.app M)).mp
+    ((adj.homEquiv _ _).injective ((key α).trans (h.trans (key β).symm)))
 
 /-- Forgetting the module structure of the module cohomology presheaf gives the
 usual cohomology presheaf `U ↦ Hⁿ(f⁻¹ U, M)`. This comparison respects restriction

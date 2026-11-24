@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 
 /-!
@@ -24,19 +25,22 @@ Y' --g---> Y
 
 that is, `g' ≫ f = f' ≫ g`. This file constructs, for affine `Y`, the base change map
 
-`Scheme.Hom.higherDirectImageBaseChange h q : g^* R^q f_* M ⟶ R^q f'_* g'^* M`,
+`TauCeti.AlgebraicGeometry.higherDirectImageBaseChange h q : g^* R^q f_* M ⟶ R^q f'_* g'^* M`,
 
 natural in the sheaf of modules `M`, together with its transpose under `g^* ⊣ g_*`
-`Scheme.Hom.higherDirectImageBaseChangeTranspose h q : R^q f_* M ⟶ g_* R^q f'_* g'^* M`. No
-hypothesis on `f`, `g` or `M` is needed, and the square need not be cartesian.
+
+`TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeTranspose h q :
+  R^q f_* M ⟶ g_* R^q f'_* g'^* M`.
+
+No hypothesis on `f`, `g` or `M` is needed, and the square need not be cartesian.
 
 `R^q f_* M` is the sheafification of the presheaf of modules `V ↦ H^q(f⁻¹ V, M)`
 (`Scheme.Hom.higherDirectImagePresheafSheafificationIso`). Over an open `V` of `Y`, pullback on
 cohomology along `g'` (`Scheme.Hom.cohomologyOnPullback`) is a map
 `H^q(f⁻¹ V, M) ⟶ H^q(g'⁻¹ f⁻¹ V, g'^* M) = H^q(f'⁻¹ g⁻¹ V, g'^* M)`, compatible with restriction,
 so these maps form a morphism from that presheaf to `g_* R^q f'_* g'^* M`
-(`Scheme.Hom.higherDirectImageBaseChangeToPresheaf`). Sheafification and the adjunction
-`g^* ⊣ g_*` turn it into the base change map.
+(`TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeToPresheaf`). Sheafification and the
+adjunction `g^* ⊣ g_*` turn it into the base change map.
 
 The one point that uses the affineness of `Y` is linearity. The identification of
 `V ↦ H^q(f⁻¹ V, M)` with cohomology is known to be compatible with the action of global functions
@@ -49,18 +53,18 @@ global function divided by a power of `s`.
 Over an affine open `V` of `Y` with `g⁻¹ V` affine, for quasi-compact quasi-separated `f` and `f'`
 and quasi-coherent `M`, the sections of the transposed base change map are pullback on cohomology,
 under the identifications of sections of higher direct images with cohomology
-(`Scheme.Hom.higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`). At
+(`TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`). At
 `V = ⊤` this is the map `Scheme.Hom.cohomologyPullback` whose linear extension is the flat base
 change map `TauCeti.AlgebraicGeometry.cohomologyBaseChange` over an affine base.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChange`: the base change map
+* `TauCeti.AlgebraicGeometry.higherDirectImageBaseChange`: the base change map
   `g^* R^q f_* M ⟶ R^q f'_* g'^* M`, natural in `M`, for affine `Y`;
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeTranspose`: its transpose
+* `TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeTranspose`: its transpose
   `R^q f_* M ⟶ g_* R^q f'_* g'^* M`;
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf` and
-  `AlgebraicGeometry.Scheme.Hom.higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`:
+* `TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf` and
+  `TauCeti.AlgebraicGeometry.higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv`:
   its sections are pullback on cohomology.
 
 ## References
@@ -77,28 +81,13 @@ universe u
 
 noncomputable section
 
-namespace AlgebraicGeometry.Scheme.Hom
+namespace TauCeti.AlgebraicGeometry
 
-open TauCeti.AlgebraicGeometry.Scheme.Modules
+open Scheme.Modules Scheme.Hom
 
 section BaseChange
 
 variable {X Y X' Y' : Scheme.{u}} {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
-
-/-- For a commutative square `g' ≫ f = f' ≫ g`, taking preimages of opens of `Y` along the two
-sides of the square agree. -/
-def preimageSquareIso (h : g' ≫ f = f' ≫ g) :
-    (TopologicalSpace.Opens.map f.base).op ⋙ (TopologicalSpace.Opens.map g'.base).op ≅
-      (TopologicalSpace.Opens.map g.base).op ⋙ (TopologicalSpace.Opens.map f'.base).op :=
-  NatIso.ofComponents (fun U ↦ eqToIso (congrArg op
-    (congrArg (fun φ : X' ⟶ Y ↦ φ ⁻¹ᵁ U.unop) h))) (fun _ ↦ rfl)
-
-/-- The components of `preimageSquareIso` are the identifications of the two preimages. -/
-@[simp]
-lemma preimageSquareIso_hom_app (h : g' ≫ f = f' ≫ g) (U : Y.Opensᵒᵖ) :
-    (preimageSquareIso h).hom.app U =
-      eqToHom (congrArg op (congrArg (fun φ : X' ⟶ Y ↦ φ ⁻¹ᵁ U.unop) h)) :=
-  (rfl)
 
 variable (h : g' ≫ f = f' ≫ g) (q : ℕ)
 
@@ -119,12 +108,6 @@ def higherDirectImagePresheafBaseChangeToPresheaf (M : X.Modules) :
     Functor.whiskerLeft (TopologicalSpace.Opens.map g.base).op
       (f'.higherDirectImagePresheafToPresheafIso _ q).inv
 
-omit q in
-include h in
-/-- The two sides of a commutative square have the same preimages of opens. -/
-lemma preimage_eq_of_comp_eq (V : Y.Opens) : f' ⁻¹ᵁ g ⁻¹ᵁ V = g' ⁻¹ᵁ f ⁻¹ᵁ V :=
-  (congrArg (fun φ : X' ⟶ Y ↦ φ ⁻¹ᵁ V) h).symm
-
 /-- The base change map on presheaves is, over an open `V` of `Y`, the pullback
 `H^q(f⁻¹ V, M) ⟶ H^q(g'⁻¹ f⁻¹ V, g'^* M) = H^q(f'⁻¹ g⁻¹ V, g'^* M)` read through the
 identifications of the presheaves `V ↦ H^q(f⁻¹ V, M)` with cohomology. -/
@@ -132,12 +115,15 @@ lemma higherDirectImagePresheafBaseChangeToPresheaf_app_apply (M : X.Modules) (V
     (x : ((f.higherDirectImagePresheaf q).obj M).obj (op V)) :
     (higherDirectImagePresheafBaseChangeToPresheaf h q M).app (op V) x =
       (f'.higherDirectImagePresheafToPresheafIso _ q).inv.app (op (g ⁻¹ᵁ V))
-        (cohomologyOnRes _ q (preimage_eq_of_comp_eq h V).le
+        (cohomologyOnRes _ q (preimage_preimage_eq_of_comp_eq h V).le
           (g'.cohomologyOnPullback M q (f ⁻¹ᵁ V)
             ((f.higherDirectImagePresheafToPresheafIso M q).hom.app (op V) x))) := by
   dsimp only [higherDirectImagePresheafBaseChangeToPresheaf, NatTrans.comp_app,
     Functor.whiskerLeft_app, Functor.whiskerRight_app]
   rw [cohomologyPresheafPullback_app]
+  -- The component of `preimageSquareIso h` is an `eqToHom` between opens. Morphisms of opens are
+  -- proofs of inclusions, so it is definitionally the `homOfLE` of the inclusion that defines
+  -- `cohomologyOnRes`, and the cohomology presheaf maps along both agree by definition.
   rfl
 
 /-- The base change map on presheaves is linear over the global functions of `Y`, acting on
@@ -343,7 +329,7 @@ lemma higherDirectImageBaseChangeTranspose_app_app_presheafToSheaf (M : X.Module
           ((f.higherDirectImagePresheafToPresheafIso M q).inv.app (op V) c)) =
       ((f'.higherDirectImagePresheafToSheaf q).app _).app (op (g ⁻¹ᵁ V))
         ((f'.higherDirectImagePresheafToPresheafIso _ q).inv.app (op (g ⁻¹ᵁ V))
-          (cohomologyOnRes _ q (preimage_eq_of_comp_eq h V).le
+          (cohomologyOnRes _ q (preimage_preimage_eq_of_comp_eq h V).le
             (g'.cohomologyOnPullback M q (f ⁻¹ᵁ V) c))) := by
   have e := ConcreteCategory.congr_hom (congrArg (fun ψ ↦ ψ.app (op V))
     (higherDirectImagePresheafToSheaf_comp_higherDirectImageBaseChangeTranspose h q M))
@@ -364,7 +350,7 @@ theorem higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv
     ((higherDirectImageBaseChangeTranspose h q).app M).app V
         (f.higherDirectImageSectionsAddEquiv M q hV c) =
       f'.higherDirectImageSectionsAddEquiv _ q hV'
-        (cohomologyOnRes _ q (preimage_eq_of_comp_eq h V).le
+        (cohomologyOnRes _ q (preimage_preimage_eq_of_comp_eq h V).le
           (g'.cohomologyOnPullback M q (f ⁻¹ᵁ V) c)) := by
   rw [higherDirectImageSectionsAddEquiv_eq_presheafToSheaf,
     higherDirectImageSectionsAddEquiv_eq_presheafToSheaf]
@@ -372,4 +358,4 @@ theorem higherDirectImageBaseChangeTranspose_app_sectionsAddEquiv
 
 end BaseChange
 
-end AlgebraicGeometry.Scheme.Hom
+end TauCeti.AlgebraicGeometry
