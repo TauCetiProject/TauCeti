@@ -31,6 +31,11 @@ representation on its underlying set.
 * `Rep.projective_iff_id_mem_range_norm_linHom`,
   `Rep.moduleProjective_iff_id_mem_range_norm_linHom`: Higman's criterion, for a representation
   projective over `k`, in `Rep k G` and as a `k[G]`-module.
+
+## References
+
+* P. Webb, *A Course in Finite Group Representation Theory*, Proposition 11.3.4, pp. 198–199
+  (the case `H = 1`).
 -/
 
 public section
@@ -68,14 +73,8 @@ theorem id_mem_range_norm_linHom_free (ι : Type u) :
   refine ⟨Finsupp.mapRange.linearMap (MonoidAlgebra.lsingle (R := k) (1 : G) ∘ₗ
     Finsupp.lapply 1 ∘ₗ (MonoidAlgebra.coeffLinearEquiv k).toLinearMap), ?_⟩
   refine Finsupp.lhom_ext' fun i ↦ MonoidAlgebra.lhom_ext' fun h ↦ LinearMap.ext_ring ?_
-  simp only [LinearMap.comp_apply, Finsupp.lsingle_apply, MonoidAlgebra.lsingle_apply,
-    Representation.norm_linHom_apply, LinearMap.id_apply]
-  simp only [Representation.free_single_single, Finsupp.mapRange.linearMap_apply,
-    Finsupp.mapRange_single, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    MonoidAlgebra.coeffLinearEquiv_apply, MonoidAlgebra.coeff_single, Finsupp.lapply_apply,
-    Finsupp.single_apply, MonoidAlgebra.lsingle_apply]
-  rw [Finset.sum_eq_single h (fun g _ hg ↦ by simp [inv_mul_eq_one, hg]) (by simp)]
-  simp
+  simp +contextual [Representation.norm_linHom_apply, MonoidAlgebra.coeff_single,
+    Finsupp.single_apply, inv_mul_eq_one, Fintype.sum_eq_single h]
 
 /-- **The identity of a projective representation is a norm**: `id_A = ∑ g, A.ρ g ∘ α ∘ A.ρ g⁻¹`
 for some `k`-linear `α`. -/
