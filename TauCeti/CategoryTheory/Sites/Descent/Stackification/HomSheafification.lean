@@ -204,9 +204,10 @@ lemma Fiber.homEquiv_comp {M N P : Fiber J F U} (f : M ⟶ N) (g : N ⟶ P) :
 
 /-- The identity of `M` in the fibre of the Hom-sheafification is the image of `PUnit.unit` under
 the unit morphism `ε` of the monoidal functor `sheafifySections J U` followed by the image of the
-identities of local morphisms. This holds by definition of the category obtained by transporting
-the enrichment (`TransportEnrichment`) and of the category of a type-enriched category
-(`categoryOfEnrichedCategoryType`). -/
+identities of local morphisms. -/
+-- This holds by definition of the category obtained by transporting the enrichment
+-- (`TransportEnrichment`) and of the category of a type-enriched category
+-- (`categoryOfEnrichedCategoryType`).
 lemma Fiber.homEquiv_id (M : Fiber J F U) :
     Fiber.homEquiv M M (𝟙 M) =
       (ε (sheafifySections J U) ≫ (sheafifySections J U).map (presheafHomId M.obj))
@@ -230,6 +231,8 @@ lemma Fiber.homEquiv_homMk {M N : Fiber J F U}
       (toSheafifySections J U).app (F.presheafHom M.obj N.obj) x :=
   Equiv.apply_symm_apply _ _
 
+/-- The composite of the morphisms given by local morphisms `x` and `y` is the morphism given by
+`x ≫ y`. -/
 @[simp, reassoc]
 lemma Fiber.homMk_comp {M N P : Fiber J F U}
     (x : (F.presheafHom M.obj N.obj).obj (op (Over.mk (𝟙 U))))
@@ -244,6 +247,7 @@ lemma Fiber.homMk_comp {M N P : Fiber J F U}
   exact congrArg ((toSheafifySections J U).app _)
     (presheafHomComp_app_apply M.obj N.obj P.obj _ (x, y))
 
+/-- The morphism given by the identity local morphism is the identity. -/
 lemma Fiber.homMk_id (M : Fiber J F U) : Fiber.homMk (𝟙 _) = 𝟙 M := by
   ext
   rw [Fiber.homEquiv_homMk, Fiber.homEquiv_id, ConcreteCategory.comp_apply,
