@@ -294,14 +294,13 @@ private theorem exists_eLpNorm_halfWavePropagator_comp_fourierMultiplierCLM_appl
         ENNReal.ofReal (A * ((2 : ℝ) ^ j) ^ (2 * ((Module.finrank ℝ E : ℝ) / 2 -
           Module.finrank ℝ E * (r⁻¹).toReal - 1 / q))) *
           ‖s - t‖ₑ ^ (-(2 / q : ℝ)) * eLpNorm g r' volume := by
-  obtain ⟨ψ', hψ', hψ'c, hψ'0, hred⟩ :=
-    exists_halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint_eq hψ hψc hψ0
   obtain ⟨A, hA0, hA⟩ := exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le_rpow
-    (r' := r') hψ' hψ'c hψ'0 hq hqr
+    (r' := r') (hψ.mul (Complex.conjCLE.contDiff.comp hψ)) hψc.mul_right
+    (fun h ↦ hψ0 (tsupport_mul_subset_left h)) hq hqr
   refine ⟨A, hA0, fun j m hm s t hst g ↦ ?_⟩
-  obtain ⟨m', hm', hm'eq⟩ := hred j m hm
-  rw [hm'eq]
-  exact hA j m' hm' (s - t) (sub_ne_zero.2 hst) g
+  rw [halfWavePropagator_comp_fourierMultiplierCLM_apply_adjoint,
+    Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
+  exact hA j _ (smul_star_ae_eq_dilate_mul_star hm) (s - t) (sub_ne_zero.2 hst) g
 
 /-! ### The Strichartz estimates -/
 
