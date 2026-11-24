@@ -42,6 +42,8 @@ particular the module of `ℝ` is the usual absolute value and the module of `�
   along `g • ·` divides it by `distribHaarChar A g`.
 * `MeasureTheory.integral_comp_smul_eq_inv_distribHaarChar_smul`: the corresponding change of
   variables for Bochner integrals.
+* `MeasureTheory.distribHaarChar_eq_nnnorm_det`: a group acting `ℝ`-linearly on a
+  finite-dimensional real space scales Haar measure by the absolute value of the determinant.
 * `MeasureTheory.distribHaarChar_real_eq`, `MeasureTheory.distribHaarChar_complex_eq`: the
   module of a nonzero real, resp. complex, scalar acting on a finite-dimensional space `E` is
   `|a| ^ dim_ℝ E`.
@@ -89,33 +91,36 @@ section Archimedean
 
 variable (E : Type*) [NormedAddCommGroup E]
 
-/-- A nonzero real scalar `a` scales additive Haar measure on a finite-dimensional real normed
-space `E` by `|a| ^ dim_ℝ E`. For `E = ℝ` the module of `a` is its absolute value. -/
-theorem distribHaarChar_real_eq [NormedSpace ℝ E] [FiniteDimensional ℝ E] (a : ℝˣ) :
-    distribHaarChar E a = ‖(a : ℝ)‖₊ ^ finrank ℝ E := by
+/-- A group `G` acting `ℝ`-linearly on a finite-dimensional real normed space `E` scales additive
+Haar measure by the absolute value of the determinant: `distribHaarChar E g = ‖det (g • ·)‖₊`. -/
+theorem distribHaarChar_eq_nnnorm_det [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [DistribMulAction G E] [SMulCommClass G ℝ E] [ContinuousConstSMul G E] (g : G) :
+    distribHaarChar E g = ‖LinearMap.det (DistribSMul.toLinearMap ℝ E g)‖₊ := by
   borelize E
   let μ : Measure E := Measure.addHaar
   refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ)
     (Metric.measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne ?_
-  rw [Units.smul_def, Measure.addHaar_smul, abs_pow, ← Real.norm_eq_abs, ← coe_nnNorm,
-    ← NNReal.coe_pow, ENNReal.ofReal_coe_nnreal]
+  rw [← Set.image_smul, ← ENNReal.ofReal_coe_nnreal, coe_nnNorm, Real.norm_eq_abs]
+  exact Measure.addHaar_image_linearMap μ (DistribSMul.toLinearMap ℝ E g) _
+
+/-- A nonzero real scalar `a` scales additive Haar measure on a finite-dimensional real normed
+space `E` by `|a| ^ dim_ℝ E`. For `E = ℝ` the module of `a` is its absolute value. -/
+theorem distribHaarChar_real_eq [NormedSpace ℝ E] [FiniteDimensional ℝ E] (a : ℝˣ) :
+    distribHaarChar E a = ‖(a : ℝ)‖₊ ^ finrank ℝ E := by
+  have h : DistribSMul.toLinearMap ℝ E a = (a : ℝ) • LinearMap.id := by ext; rfl
+  simp [distribHaarChar_eq_nnnorm_det, h]
 
 /-- A nonzero complex scalar `a` scales additive Haar measure on a finite-dimensional complex
 normed space `E` by `|a| ^ dim_ℝ E`. For `E = ℂ` the module of `a` is `|a| ^ 2 = a * conj a`. -/
 theorem distribHaarChar_complex_eq [NormedSpace ℂ E] [FiniteDimensional ℂ E] (a : ℂˣ) :
     distribHaarChar E a = ‖(a : ℂ)‖₊ ^ finrank ℝ E := by
-  borelize E
-  let μ : Measure E := Measure.addHaar
-  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ)
-    (Metric.measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne ?_
-  have h := Measure.addHaar_image_linearMap μ
-    (((a : ℂ) • LinearMap.id : E →ₗ[ℂ] E).restrictScalars ℝ) (Metric.ball 0 1)
-  rw [LinearMap.det_restrictScalars, LinearMap.det_smul, LinearMap.det_id, mul_one, map_pow,
-    Algebra.norm_complex_apply, Complex.normSq_eq_norm_sq, ← pow_mul, abs_pow, abs_norm,
-    ← finrank_real_of_complex, ← coe_nnNorm, ← NNReal.coe_pow,
-    ENNReal.ofReal_coe_nnreal] at h
-  rw [Units.smul_def, ← h, ← Set.image_smul]
-  simp
+  have h : DistribSMul.toLinearMap ℝ E a =
+      ((a : ℂ) • (LinearMap.id : E →ₗ[ℂ] E)).restrictScalars ℝ := by
+    ext; rfl
+  rw [distribHaarChar_eq_nnnorm_det, h, LinearMap.det_restrictScalars]
+  ext
+  simp [Algebra.norm_complex_apply, Complex.normSq_eq_norm_sq, finrank_real_of_complex, pow_mul,
+    pow_right_comm]
 
 end Archimedean
 

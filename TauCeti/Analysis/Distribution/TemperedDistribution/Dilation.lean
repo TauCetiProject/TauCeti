@@ -12,14 +12,14 @@ public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 /-!
 # The dilation action on tempered distributions
 
-Let `𝕜` be a commutative ring acting continuously and `ℝ`-linearly on a real normed space `E`,
-for instance `ℝ` or `ℂ` acting on a normed space over it. The units of `𝕜` act on Schwartz
+Let `G` be a commutative group acting continuously and `ℝ`-linearly on a real normed space `E`,
+for instance the units of `ℝ` or `ℂ` acting on a normed space over it. Then `G` acts on Schwartz
 functions by `r(a) f (x) = f (a • x)` (`SchwartzMap.compSMulCLM`). The **contragredient action**
 on tempered distributions is the transpose of `r(a⁻¹)`,
 
 `⟨r'(a) T, f⟩ = ⟨T, r(a⁻¹) f⟩`,
 
-a homomorphism from `𝕜ˣ` to the monoid of continuous linear endomorphisms of `𝓢'(E, F)`
+a homomorphism from `G` to the monoid of continuous linear endomorphisms of `𝓢'(E, F)`
 (`TemperedDistribution.contragredientSMul`). The inverse makes `r'` a homomorphism rather than an
 antihomomorphism, and is the normalization under which, for a quasi-character `ω` of `Fˣ`, the
 distribution `f ↦ ∫ f(x) ω(x) d^×x` satisfies `r'(a) T = ω(a) T`: these eigendistributions are
@@ -56,17 +56,17 @@ open scoped SchwartzMap
 
 namespace TemperedDistribution
 
-variable {𝕜 E : Type*} [CommRing 𝕜] [NormedAddCommGroup E] [NormedSpace ℝ E] [Module 𝕜 E]
-  [ContinuousConstSMul 𝕜 E] [SMulCommClass 𝕜 ℝ E]
+variable {G E : Type*} [CommGroup G] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [DistribMulAction G E] [ContinuousConstSMul G E] [SMulCommClass G ℝ E]
 
 section TVS
 
 variable (F : Type*) [AddCommGroup F] [Module ℂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
   [ContinuousConstSMul ℂ F]
 
-/-- The **contragredient dilation action** of `𝕜ˣ` on tempered distributions,
+/-- The **contragredient dilation action** of `G` on tempered distributions,
 `⟨r'(a) T, f⟩ = ⟨T, r(a⁻¹) f⟩`, where `r(a) f = f (a • ·)` is `SchwartzMap.compSMulCLM`. -/
-def contragredientSMul : 𝕜ˣ →* (𝓢'(E, F) →L[ℂ] 𝓢'(E, F)) where
+def contragredientSMul : G →* (𝓢'(E, F) →L[ℂ] 𝓢'(E, F)) where
   toFun a := PointwiseConvergenceCLM.precomp F (SchwartzMap.compSMulCLM ℂ a⁻¹)
   -- Evaluating a precomposition on the type synonym `→Lₚₜ` is definitional; the
   -- `ContinuousLinearMap` evaluation lemmas do not fire through the synonym.
@@ -83,7 +83,7 @@ variable {F}
 
 /-- The contragredient action evaluates as `⟨r'(a) T, f⟩ = ⟨T, r(a⁻¹) f⟩`. -/
 @[simp]
-theorem contragredientSMul_apply_apply (a : 𝕜ˣ) (T : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
+theorem contragredientSMul_apply_apply (a : G) (T : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
     contragredientSMul F a T f = T (SchwartzMap.compSMulCLM ℂ a⁻¹ f) :=
   (rfl)
 
@@ -92,7 +92,7 @@ end TVS
 /-- The contragredient action moves the Dirac distribution at `x` to the one at `a⁻¹ • x`. In
 particular it fixes the Dirac distribution at the origin. -/
 @[simp]
-theorem contragredientSMul_delta (a : 𝕜ˣ) (x : E) :
+theorem contragredientSMul_delta (a : G) (x : E) :
     contragredientSMul ℂ a (delta x) = delta (a⁻¹ • x) := by
   ext f
   simp
@@ -104,7 +104,7 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 measure `μ`, the contragredient action is dilation of `g` times the module of `a`:
 `r'(a) g = distribHaarChar E a • r(a) g`. -/
 theorem contragredientSMul_toTemperedDistributionCLM (μ : Measure E) [μ.IsAddHaarMeasure]
-    (a : 𝕜ˣ) (g : 𝓢(E, F)) :
+    (a : G) (g : 𝓢(E, F)) :
     contragredientSMul F a (SchwartzMap.toTemperedDistributionCLM E F μ g) =
       ((distribHaarChar E a : ℝ) : ℂ) •
         SchwartzMap.toTemperedDistributionCLM E F μ (SchwartzMap.compSMulCLM ℂ a g) := by
