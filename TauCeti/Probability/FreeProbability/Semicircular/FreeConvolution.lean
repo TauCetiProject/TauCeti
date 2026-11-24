@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Semicircle.LocationScale
 public import TauCeti.Probability.FreeProbability.FreeConvolution.Additive.Power
 public import TauCeti.Probability.FreeProbability.Semicircular.Law
+import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Free additive convolution of Wigner semicircle laws
@@ -48,24 +49,22 @@ namespace TauCeti.Probability
       semicircleReal (m₁ + m₂) (v₁ + v₂) := by
   have hcentred : (semicircleReal 0 v₁).freeConv (semicircleReal 0 v₂) =
       semicircleReal 0 (v₁ + v₂) := by
-    let τ : Bool → Measure ℝ := (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂))
-    have : ∀ i : Bool, IsProbabilityMeasure (τ i) := fun i => by
-      cases i <;> exact isProbabilityMeasure_semicircleReal 0 _
-    have : ∀ i : Bool, CompactSpace (τ i).support := fun i => by
-      cases i <;> exact isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 _)
-    let φ := FreeLawRealization.state τ
-    let g := FreeLawRealization.generator τ
-    have hg1 := FreeLawRealization.isSelfAdjoint_generator τ true
-    have hg2 := FreeLawRealization.isSelfAdjoint_generator τ false
+    have := isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 v₁)
+    have := isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 v₂)
+    let φ := FreeLawRealization.state (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂))
+    let g := FreeLawRealization.generator (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂))
+    have hg1 := FreeLawRealization.isSelfAdjoint_generator
+      (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂)) true
+    have hg2 := FreeLawRealization.isSelfAdjoint_generator
+      (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂)) false
     have hsum : IsSemicircular φ.toLinearMap (g true + g false) (((v₁ + v₂ : ℝ≥0) : ℝ) : ℂ) := by
       simpa [NNReal.coe_add] using
-        (FreeLawRealization.isFreelyIndependentElements_generator τ).isSemicircular_add
+        (FreeLawRealization.isFreelyIndependentElements_generator
+          (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂))).isSemicircular_add
           Bool.false_ne_true.symm
-          ((φ.law_eq_semicircleReal_iff hg1 v₁).mp
-            (FreeLawRealization.law_generator τ true))
-          ((φ.law_eq_semicircleReal_iff hg2 v₂).mp
-            (FreeLawRealization.law_generator τ false))
-    exact (FreeLawRealization.law_add_generator τ Bool.false_ne_true.symm).symm.trans <|
+          ((φ.law_eq_semicircleReal_iff hg1 v₁).mp (FreeLawRealization.law_generator _ true))
+          ((φ.law_eq_semicircleReal_iff hg2 v₂).mp (FreeLawRealization.law_generator _ false))
+    exact (FreeLawRealization.law_add_generator _ Bool.false_ne_true.symm).symm.trans <|
       (φ.law_eq_semicircleReal_iff (hg1.add hg2) _).mpr hsum
   have hshift (m : ℝ) (v : ℝ≥0) :
       semicircleReal m v = (semicircleReal 0 v).map fun x => m + 1 * x := by
