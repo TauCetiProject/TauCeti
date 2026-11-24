@@ -21,10 +21,9 @@ universal pair of `GLₙ`-points valued in `O(GLₙ) ⊗ O(GLₙ)`. The constant
 `R[c₀^{±1}, c₁, …, c_{n-1}] → O(GLₙ)^{GLₙ}`
 
 (`TauCeti.GeneralLinear.charpolyCoeffAlgHom`), for `n ≥ 1`. Equivalently, the characteristic
-polynomial `GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ` factors uniquely through the quotient map
-`χ : GLₙ ⟶ Conj_{GLₙ} = GLₙ // GLₙ`, by `TauCeti.GeneralLinear.charpolyQuotientMap`
-(
-`TauCeti.GeneralLinear.existsUnique_conjugationQuotientMap_comp_eq_charpoly`).
+polynomial `TauCeti.GeneralLinear.charpolyMap : GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ` factors uniquely through the
+quotient map `χ : GLₙ ⟶ Conj_{GLₙ} = GLₙ // GLₙ`, by `TauCeti.GeneralLinear.charpolyQuotientMap`
+(`TauCeti.GeneralLinear.existsUnique_conjugationQuotientMap_comp_eq_charpolyMap`).
 
 Over a field, `charpolyCoeffAlgHom` is expected to be an isomorphism, identifying the conjugation
 invariants of `GLₙ` with the Laurent polynomial ring `R[c₀^{±1}, c₁, …, c_{n-1}]`: the invariants
@@ -39,10 +38,12 @@ with no further relations. That identification is outside the scope of this file
   of the invariants.
 * `TauCeti.GeneralLinear.charpolyCoeffAlgHom`: the coordinate map of the characteristic
   polynomial on the conjugation quotient.
+* `TauCeti.GeneralLinear.charpolyMap`: the characteristic polynomial `GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ`, as a
+  morphism of schemes.
 * `TauCeti.GeneralLinear.charpolyQuotientMap`: the characteristic polynomial on `Conj_{GLₙ}`, as a
   morphism of schemes, with `TauCeti.GeneralLinear.conjugationQuotientMap_comp_charpolyQuotientMap`.
-* `TauCeti.GeneralLinear.existsUnique_conjugationQuotientMap_comp_eq_charpoly`: the characteristic
-  polynomial factors uniquely through `Conj_{GLₙ}`.
+* `TauCeti.GeneralLinear.existsUnique_conjugationQuotientMap_comp_eq_charpolyMap`: the
+  characteristic polynomial factors uniquely through `Conj_{GLₙ}`.
 
 ## References
 
@@ -78,15 +79,14 @@ theorem charpoly_coeff_genericMatrix_mem_conjugationInvariants (i : ℕ) :
   have hmat : (genericMatrix R n).map (HopfAlgebra.conjugationCoactAlgHom R H) =
       (g : Matrix (Fin n) (Fin n) (H ⊗[R] H))⁻¹ *
         (genericMatrix R n).map (Algebra.TensorProduct.includeLeft : H →ₐ[R] H ⊗[R] H) * g := by
-    rw [map_genericMatrix_eq_coe_pointToGeneralLinear, HopfAlgebra.toConv_conjugationCoactAlgHom,
-      pointToGeneralLinear_mul, pointToGeneralLinear_mul, pointToGeneralLinear_inv,
-      Units.val_mul, Units.val_mul, Matrix.coe_units_inv,
-      map_genericMatrix_eq_coe_pointToGeneralLinear]
-  rw [HopfAlgebra.mem_conjugationInvariants,
-    ← Algebra.TensorProduct.includeLeft_apply (S := R) (B := H),
-    hcoeff (HopfAlgebra.conjugationCoactAlgHom R H),
-    hcoeff (Algebra.TensorProduct.includeLeft : H →ₐ[R] H ⊗[R] H),
-    hmat, Matrix.charpoly_units_conj']
+    simp [map_genericMatrix_eq_coe_pointToGeneralLinear,
+      HopfAlgebra.toConv_conjugationCoactAlgHom, pointToGeneralLinear_mul,
+      pointToGeneralLinear_inv, Matrix.coe_units_inv, g, H]
+  -- Both sides are the `i`-th coefficient of the characteristic polynomial of `X`, since
+  -- `g⁻¹ X g` and `X` have the same characteristic polynomial.
+  have h := (hcoeff (HopfAlgebra.conjugationCoactAlgHom R H)).trans <| by
+    rw [hmat, Matrix.charpoly_units_conj', ← hcoeff]
+  simpa [HopfAlgebra.mem_conjugationInvariants] using h
 
 /-- A coefficient of the characteristic polynomial of the generic matrix of `GLₙ`, as a
 conjugation-invariant function. -/
@@ -149,62 +149,70 @@ section Scheme
 
 open AlgebraicGeometry CategoryTheory
 
-/-- The morphism `GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ` given by the coefficients of the characteristic polynomial
-is invariant under the conjugation action, since the coefficients are conjugation invariant. -/
-private theorem conjugationCoact_comp_charpoly :
+/-- **The characteristic polynomial of `GLₙ`**, as the morphism of schemes
+`GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ` given by the coefficients of the characteristic polynomial of the generic
+matrix. -/
+noncomputable def charpolyMap :
+    Spec (CommRingCat.of (coordinateHopfAlgebra R n)) ⟶
+      Spec (CommRingCat.of
+        (Localization.Away (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R))) :=
+  Spec.map (CommRingCat.ofHom
+    ((HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n)).val.comp
+      (charpolyCoeffAlgHom R n)).toRingHom)
+
+/-- `charpolyMap` is the spectrum of `charpolyCoeffAlgHom` followed by the inclusion of the
+conjugation invariants into `O(GLₙ)`. -/
+theorem charpolyMap_def :
+    charpolyMap R n = Spec.map (CommRingCat.ofHom
+      ((HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n)).val.comp
+        (charpolyCoeffAlgHom R n)).toRingHom) :=
+  (rfl)
+
+/-- `charpolyMap` is invariant under the conjugation action, since the coefficients of the
+characteristic polynomial are conjugation invariant. -/
+private theorem conjugationCoact_comp_charpolyMap :
     Spec.map (CommRingCat.ofHom
         (HopfAlgebra.conjugationCoactAlgHom R (coordinateHopfAlgebra R n)).toRingHom) ≫
-      Spec.map (CommRingCat.ofHom
-        ((HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n)).val.comp
-          (charpolyCoeffAlgHom R n)).toRingHom) =
+      charpolyMap R n =
     Spec.map (CommRingCat.ofHom (Algebra.TensorProduct.includeLeftRingHom :
         coordinateHopfAlgebra R n →+* coordinateHopfAlgebra R n ⊗[R] coordinateHopfAlgebra R n)) ≫
-      Spec.map (CommRingCat.ofHom
-        ((HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n)).val.comp
-          (charpolyCoeffAlgHom R n)).toRingHom) := by
-  rw [← Spec.map_comp, ← Spec.map_comp]
+      charpolyMap R n := by
+  rw [charpolyMap_def, ← Spec.map_comp, ← Spec.map_comp]
   congr 1
   ext x
-  exact HopfAlgebra.mem_conjugationInvariants.1 (charpolyCoeffAlgHom R n x).property
+  simpa [Algebra.TensorProduct.includeLeftRingHom_apply] using
+    HopfAlgebra.mem_conjugationInvariants.1 (charpolyCoeffAlgHom R n x).property
 
 /-- **The characteristic polynomial on `Conj_{GLₙ}`**, as a morphism of schemes
-`Conj_{GLₙ} ⟶ 𝔸^{n-1} × 𝔾ₘ`: the descent through the quotient map of the morphism given by the
-coefficients of the characteristic polynomial. -/
+`Conj_{GLₙ} ⟶ 𝔸^{n-1} × 𝔾ₘ`: the descent of `charpolyMap` through the quotient map. -/
 noncomputable def charpolyQuotientMap :
     HopfAlgebra.conjugationQuotient R (coordinateHopfAlgebra R n) ⟶
       Spec (CommRingCat.of
         (Localization.Away (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R))) :=
   letI := HopfAlgebra.conjugationComoduleAlgebra (R := R) (H := coordinateHopfAlgebra R n)
-  ComoduleAlgebra.AffineQuotient.desc _ <| by
+  ComoduleAlgebra.AffineQuotient.desc (charpolyMap R n) <| by
     rw [HopfAlgebra.conjugationComoduleAlgebra_coactAlgHom]
-    exact conjugationCoact_comp_charpoly R n
+    exact conjugationCoact_comp_charpolyMap R n
 
-/-- The quotient map `χ : GLₙ ⟶ Conj_{GLₙ}` followed by `charpolyQuotientMap` is the morphism
-`GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ` given by the coefficients of the characteristic polynomial. -/
+/-- The quotient map `χ : GLₙ ⟶ Conj_{GLₙ}` followed by `charpolyQuotientMap` is `charpolyMap`. -/
 @[reassoc]
 theorem conjugationQuotientMap_comp_charpolyQuotientMap :
     HopfAlgebra.conjugationQuotientMap R (coordinateHopfAlgebra R n) ≫ charpolyQuotientMap R n =
-      Spec.map (CommRingCat.ofHom
-        ((HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n)).val.comp
-          (charpolyCoeffAlgHom R n)).toRingHom) := by
+      charpolyMap R n := by
   let := HopfAlgebra.conjugationComoduleAlgebra (R := R) (H := coordinateHopfAlgebra R n)
   rw [HopfAlgebra.conjugationQuotientMap_def, charpolyQuotientMap]
   exact ComoduleAlgebra.AffineQuotient.projection_desc _ _
 
-/-- **The characteristic polynomial factors through `Conj_{GLₙ}`.** The morphism
-`GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ` given by the coefficients of the characteristic polynomial factors
-uniquely through the quotient map `χ : GLₙ ⟶ Conj_{GLₙ}`, by `charpolyQuotientMap`. -/
-theorem existsUnique_conjugationQuotientMap_comp_eq_charpoly :
+/-- **The characteristic polynomial factors through `Conj_{GLₙ}`.** The morphism `charpolyMap`
+factors uniquely through the quotient map `χ : GLₙ ⟶ Conj_{GLₙ}`, by `charpolyQuotientMap`. -/
+theorem existsUnique_conjugationQuotientMap_comp_eq_charpolyMap :
     ∃! g : HopfAlgebra.conjugationQuotient R (coordinateHopfAlgebra R n) ⟶
         Spec (CommRingCat.of
           (Localization.Away (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R))),
-      HopfAlgebra.conjugationQuotientMap R (coordinateHopfAlgebra R n) ≫ g =
-        Spec.map (CommRingCat.ofHom
-          ((HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n)).val.comp
-            (charpolyCoeffAlgHom R n)).toRingHom) :=
+      HopfAlgebra.conjugationQuotientMap R (coordinateHopfAlgebra R n) ≫ g = charpolyMap R n :=
   ⟨charpolyQuotientMap R n, conjugationQuotientMap_comp_charpolyQuotientMap R n, fun _ hg ↦
     (HopfAlgebra.existsUnique_conjugationQuotientMap_comp_eq _
-      (conjugationCoact_comp_charpoly R n)).unique hg
+      (conjugationCoact_comp_charpolyMap R n)).unique hg
       (conjugationQuotientMap_comp_charpolyQuotientMap R n)⟩
 
 end Scheme

@@ -159,6 +159,10 @@ theorem isUnit_coinvariants_iff {a : coinvariants R H A} : IsUnit a ↔ IsUnit (
   have h : (coinvariants R H A).toSubmonoid = (coactAlgHom R H A).toMonoidHom.eqLocusM
       (Algebra.TensorProduct.includeLeft : A →ₐ[R] A ⊗[R] H).toMonoidHom :=
     Submonoid.ext fun _ ↦ AlgHom.mem_equalizer _ _ _
+  -- `coinvariants R H A` is by definition `AlgHom.equalizer`, whose underlying submonoid has the
+  -- same carrier and coercion as the equalizer `eqLocusM` of the underlying monoid maps. Hence `a`
+  -- is an element of both, and `MulEquiv.submonoidCongr h` sends `a` to `⟨↑a, _⟩`, the element of
+  -- `eqLocusM` to which `MonoidHom.isUnit_eqLocusM_mk_iff` applies.
   exact (MulEquiv.isUnit_map (MulEquiv.submonoidCongr h)).symm.trans
     (MonoidHom.isUnit_eqLocusM_mk_iff _ _ (AlgHom.mem_equalizer _ _ _ |>.1 a.property))
 
