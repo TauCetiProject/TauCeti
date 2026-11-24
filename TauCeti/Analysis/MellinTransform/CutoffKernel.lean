@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.MellinInversion
 public import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.MellinTransform.Decay
 

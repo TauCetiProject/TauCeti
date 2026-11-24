@@ -19,8 +19,8 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 For every `R > 1` there is a `C^∞` function `ν : ℝ → ℝ` with `ν ≥ 0`, support in `[R⁻¹, R]`,
 `∫_{(0,∞)} ν(x) dx/x = 1` and `ν(x⁻¹) = ν(x)` for `x > 0`
 (`TauCeti.exists_smooth_symmetric_bump`). Such a function is a bump for the multiplicative Haar
-measure `dx/x` on `(0, ∞)`, invariant under the inversion `x ↦ x⁻¹`, so its smoothed cutoffs
-take the value `1/2` at `1` (`TauCeti.smoothCutoff_one_eq_half_of_symm`).
+measure `dx/x` on `(0, ∞)`, invariant under the inversion `x ↦ x⁻¹`, so its smoothed cutoffs at
+every scale `ε > 0` take the value `1/2` at `1` (`TauCeti.smoothCutoff_one_eq_half_of_symm`).
 
 ## References
 

@@ -15,8 +15,10 @@ public import TauCeti.Analysis.MellinTransform.Basic
 The multiplicative Mellin convolution `mellinConv f g x = ∫₀^∞ f(y) g(x/y) dy/y` has Mellin
 transform `𝓜f(s) 𝓜g(s)` wherever both transforms on the right converge absolutely. For
 `I(x) = ∫₀^∞ f(t) h(xt) dt`, which is the Mellin convolution of `y ↦ f(1/y)/y` with `h`, this
-gives `𝓜I(z) = 𝓜f(1 - z) 𝓜h(z)`, and then Mellin inversion along a vertical line `Re z = c`
-gives the Parseval formula `I(x) = (2πi)⁻¹ ∫_{c-i∞}^{c+i∞} x^{-z} 𝓜f(1 - z) 𝓜h(z) dz`.
+gives `𝓜I(z) = 𝓜f(1 - z) 𝓜h(z)`. If moreover both transforms converge absolutely on a vertical
+line `Re z = c`, their product is integrable along that line, and `I` is continuous at `x > 0`,
+Mellin inversion gives the Parseval formula
+`I(x) = (2πi)⁻¹ ∫_{c-i∞}^{c+i∞} x^{-z} 𝓜f(1 - z) 𝓜h(z) dz`.
 
 The proofs pass to logarithmic coordinates (`TauCeti.mellinConvergent_iff_integrable_exp_smul`
 and `TauCeti.mellin_eq_integral_exp_smul`). The substitution `t = e^{-u}` turns the multiplicative
@@ -41,16 +43,19 @@ convergence.
 * `TauCeti.mellinConv_const_mul_left`, `TauCeti.mellinConv_const_mul_right`: scalar homogeneity in
   each argument; `TauCeti.mellinConv_add_left`, `TauCeti.mellinConv_add_right`: additivity in each
   argument where both component integrals converge.
-* `TauCeti.mellinConv_congr`: at `x > 0` the convolution only depends on the values on `(0, ∞)`.
+* `TauCeti.mellinConv_congr`, `TauCeti.mellinConv_congr_ae`: at `x > 0` the convolution only
+  depends on the values on `(0, ∞)`, and only on their classes up to null sets there.
 * `TauCeti.support_mellinConv_inter_Ioi_subset_Icc`: if `f` and `g` vanish on `(0, ∞)` off
   `[a, b]` and `[c, d]` with `0 ≤ c`, then `mellinConv f g` vanishes on `(0, ∞)` off
   `[a * c, b * d]`.
-* `TauCeti.hasMellin_mellinConv`: the Mellin transform of `mellinConv f g` is `𝓜f(s) 𝓜g(s)`,
-  with absolute convergence.
-* `TauCeti.mellinConv_inv_div`: `mellinConv (fun y ↦ f y⁻¹ / y) h x = ∫₀^∞ f(t) h(xt) dt`.
-* `TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform of `∫₀^∞ f(t) h(xt) dt` is
-  `𝓜f(1 - z) 𝓜h(z)` (DLMF 2.5.3–2.5.4).
-* `TauCeti.integral_mul_comp_mul_eq_mellinInv`: the Parseval formula (DLMF 2.5.5).
+* `TauCeti.hasMellin_mellinConv`: if `f` and `g` are Mellin convergent at `s`, the Mellin
+  transform of `mellinConv f g` is `𝓜f(s) 𝓜g(s)`, with absolute convergence.
+* `TauCeti.mellinConv_comp_inv_div_eq_integral_mul_comp_mul`:
+  `mellinConv (fun y ↦ f y⁻¹ / y) h x = ∫₀^∞ f(t) h(xt) dt`.
+* `TauCeti.hasMellin_integral_mul_comp_mul`: if `f` is Mellin convergent at `1 - z` and `h` at
+  `z`, the Mellin transform of `∫₀^∞ f(t) h(xt) dt` is `𝓜f(1 - z) 𝓜h(z)` (DLMF 2.5.3–2.5.4).
+* `TauCeti.integral_mul_comp_mul_eq_mellinInv`: the Parseval formula (DLMF 2.5.5), under the
+  hypotheses above.
 
 ## References
 
@@ -154,6 +159,18 @@ theorem mellinConv_comm_of_pos (f g : ℝ → ℂ) {x : ℝ} (hx : 0 < x) :
     mellinConv_exp_neg_eq_convolution,
     convolution_symm (ContinuousLinearMap.mul ℝ ℂ) (by ext a b; simp)]
 
+/-- For `x > 0`, `mellinConv f g x` only depends on `f` and `g` up to null subsets of `(0, ∞)`. -/
+theorem mellinConv_congr_ae {f₁ f₂ g₁ g₂ : ℝ → ℂ} (hf : f₁ =ᵐ[volume.restrict (Ioi 0)] f₂)
+    (hg : g₁ =ᵐ[volume.restrict (Ioi 0)] g₂) {x : ℝ} (hx : 0 < x) :
+    mellinConv f₁ g₁ x = mellinConv f₂ g₂ x := by
+  have hleft {f₁ f₂ : ℝ → ℂ} (g : ℝ → ℂ) (hf : f₁ =ᵐ[volume.restrict (Ioi 0)] f₂) :
+      mellinConv f₁ g x = mellinConv f₂ g x := by
+    rw [mellinConv_def, mellinConv_def]
+    refine integral_congr_ae (hf.mono fun y hy ↦ ?_)
+    simp only [hy]
+  -- Commutativity on `(0, ∞)` moves `g` into the first slot.
+  rw [hleft g₁ hf, mellinConv_comm_of_pos _ _ hx, hleft f₂ hg, mellinConv_comm_of_pos _ _ hx]
+
 /-- Left additivity of `mellinConv` where both component integrals converge. -/
 theorem mellinConv_add_left {f₁ f₂ g : ℝ → ℂ} {x : ℝ}
     (h₁ : IntegrableOn (fun y : ℝ ↦ f₁ y * g (x / y) / y) (Ioi 0))
@@ -241,7 +258,7 @@ theorem hasMellin_mellinConv {f g : ℝ → ℂ} {s : ℂ}
 
 /-- The substitution `y = 1/t` turns `mellinConv (fun y ↦ f y⁻¹ / y) h x` into
 `∫₀^∞ f(t) h(xt) dt`. -/
-theorem mellinConv_inv_div (f h : ℝ → ℂ) (x : ℝ) :
+theorem mellinConv_comp_inv_div_eq_integral_mul_comp_mul (f h : ℝ → ℂ) (x : ℝ) :
     mellinConv (fun y ↦ f y⁻¹ / y) h x = ∫ t in Ioi 0, f t * h (x * t) := by
   rw [mellinConv_def]
   have he := mellin_comp_inv (fun y => f y * h (x * y)) (-1 : ℂ)
@@ -267,7 +284,7 @@ theorem hasMellin_integral_mul_comp_mul {f h : ℝ → ℂ} {z : ℂ} (hf : Mell
   have hk : MellinConvergent (fun y : ℝ => f y⁻¹ / y) z := by
     simpa only [smul_eq_mul, div_eq_inv_mul] using mellinConvergent_inv_smul_comp_inv hf
   have he := hasMellin_mellinConv hk hh
-  rw [funext (mellinConv_inv_div f h)] at he
+  rw [funext (mellinConv_comp_inv_div_eq_integral_mul_comp_mul f h)] at he
   have hmel : mellin (fun y : ℝ => f y⁻¹ / y) z = mellin f (1 - z) := by
     simpa only [smul_eq_mul, div_eq_inv_mul] using mellin_inv_smul_comp_inv f z
   rwa [hmel] at he
