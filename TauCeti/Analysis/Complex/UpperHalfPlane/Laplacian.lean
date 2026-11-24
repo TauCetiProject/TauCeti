@@ -11,8 +11,10 @@ public import Mathlib.NumberTheory.ModularForms.SlashActions
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.Analysis.Complex.Conformal.Laplacian
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.Analysis.Complex.Wirtinger.Laplacian
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -180,14 +182,6 @@ private theorem im_cpow_comp_ofComplex_eventuallyEq (s : ℂ) (z : ℍ) :
   filter_upwards with τ
   simp [ofComplex_apply]
 
-/-- The chain rule for a function of the imaginary part. -/
-private theorem hasFDerivAt_comp_im {φ : ℝ → ℂ} {φ' : ℂ} {w : ℂ} (h : HasDerivAt φ φ' w.im) :
-    HasFDerivAt (fun w : ℂ ↦ φ w.im) (imCLM.smulRight φ') w := by
-  have h' : HasDerivAt φ φ' (imCLM w) := by rwa [imCLM_apply]
-  refine (h'.hasFDerivAt.comp w imCLM.hasFDerivAt).congr_fderiv ?_
-  ext v
-  simp
-
 /-- **The power law for the weight-`k` Laplacian**: `Δ_k y^s = s (1 - k - s) y^s` for every
 complex `s`. -/
 theorem weightLaplacian_im_cpow (k : ℝ) (s : ℂ) (z : ℍ) :
@@ -200,7 +194,7 @@ theorem weightLaplacian_im_cpow (k : ℝ) (s : ℂ) (z : ℍ) :
     have h := ((hasDerivAt_id (w.im : ℂ)).cpow_const (c := s)
       (ofReal_mem_slitPlane.2 hw)).comp_ofReal
     simp only [id, mul_one] at h
-    exact hasFDerivAt_comp_im h
+    exact h.hasFDerivAt_comp_im
   have hφ' : HasDerivAt φ' (s * ((s - 1) * (z.im : ℂ) ^ (s - 1 - 1))) z.im := by
     have h := ((hasDerivAt_id (z.im : ℂ)).cpow_const (c := s - 1)
       (ofReal_mem_slitPlane.2 z.im_pos)).comp_ofReal
@@ -222,7 +216,7 @@ theorem weightLaplacian_im_cpow (k : ℝ) (s : ℂ) (z : ℍ) :
   have hΔ : Δ G z = s * ((s - 1) * (z.im : ℂ) ^ (s - 1 - 1)) := by
     rw [laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I
       ((hcont.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)),
-      hD1.fderiv_eq, hDI.fderiv_eq, (hasFDerivAt_comp_im hφ').fderiv]
+      hD1.fderiv_eq, hDI.fderiv_eq, hφ'.hasFDerivAt_comp_im.fderiv]
     simp
   have hev := im_cpow_comp_ofComplex_eventuallyEq s z
   rw [weightLaplacian_eq_fderiv, hyperbolicLaplacian_apply,
@@ -245,6 +239,20 @@ section Slash
 
 variable {g : GL (Fin 2) ℝ}
 
+/-- The Möbius transformation read through `ofComplex` sends a point of `ℍ` to its image. -/
+private theorem coe_smul_ofComplex_coe (z : ℍ) :
+    ((g • ofComplex (z : ℂ) : ℍ) : ℂ) = ((g • z : ℍ) : ℂ) := by
+  rw [ofComplex_apply]
+
+/-- The squared norm of the derivative `det g / (cz + d)²` of the Möbius transformation read
+through `ofComplex`. -/
+private theorem norm_deriv_coe_smul_ofComplex_sq (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
+    (z : ℍ) :
+    ‖deriv (fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) z‖ ^ 2 =
+      ((g : Matrix (Fin 2) (Fin 2) ℝ).det / normSq (denom g z)) ^ 2 := by
+  rw [deriv_smul hg z, norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg hg.le,
+    ← Complex.normSq_eq_norm_sq]
+
 /-- Composing `f ∘ ofComplex` with the Möbius transformation read through `ofComplex` gives
 `τ ↦ f (g • τ)` read through `ofComplex`. -/
 private theorem comp_ofComplex_comp_coe_smul_ofComplex (f : ℍ → ℂ) :
@@ -258,14 +266,13 @@ determinant, `Δ (f ∘ g) = (Δ f) ∘ g` at every point where `f` is `C²`. -/
 theorem hyperbolicLaplacian_comp_smul (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
     {f : ℍ → ℂ} {z : ℍ} (hf : ContDiffAt ℝ 2 (f ∘ ofComplex) (g • z : ℍ)) :
     hyperbolicLaplacian (fun τ ↦ f (g • τ)) z = hyperbolicLaplacian f (g • z) := by
-  have hmz : ((g • ofComplex (z : ℂ) : ℍ) : ℂ) = ((g • z : ℍ) : ℂ) := by simp [ofComplex_apply]
   rw [hyperbolicLaplacian_apply, hyperbolicLaplacian_apply,
-    ← comp_ofComplex_comp_coe_smul_ofComplex, laplacian_comp_eq_norm_deriv_sq_smul (hmz ▸ hf)
-      (analyticAt_smul hg z).contDiffAt, hmz, deriv_smul hg z,
-    im_smul_eq_div_normSq, abs_of_pos (by simpa using hg)]
+    ← comp_ofComplex_comp_coe_smul_ofComplex, laplacian_comp_eq_norm_deriv_sq_smul
+      ((coe_smul_ofComplex_coe z).symm ▸ hf) (analyticAt_smul hg z).contDiffAt,
+    coe_smul_ofComplex_coe, norm_deriv_coe_smul_ofComplex_sq hg, im_smul_eq_div_normSq,
+    abs_of_pos (by simpa using hg)]
   have := denom_ne_zero g z
-  rw [norm_div, norm_pow, Complex.real_smul, Complex.norm_real, Real.norm_of_nonneg hg.le,
-    ← Complex.normSq_eq_norm_sq, Matrix.GeneralLinearGroup.val_det_apply]
+  rw [Complex.real_smul, Matrix.GeneralLinearGroup.val_det_apply]
   push_cast
   field_simp
 
@@ -279,7 +286,8 @@ private theorem slash_comp_ofComplex_eventuallyEq (hg : 0 < (g : Matrix (Fin 2) 
         ((f ∘ ofComplex) ∘ fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) w := by
   rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
   filter_upwards with τ
-  simp [ModularForm.slash_apply, σ_eq_refl_of_det_pos hg, ofComplex_apply]
+  simp only [Function.comp_apply, ofComplex_apply, ModularForm.slash_apply,
+    σ_eq_refl_of_det_pos hg, ContinuousAlgEquiv.refl_apply]
   ring
 
 /-- The first-order coefficients in `Δ_k (f ∣[k] g)` match those of `(Δ_k f) ∣[k] g`: with
@@ -295,7 +303,9 @@ private theorem slash_firstOrder_coeff (k : ℤ) (z : ℍ) :
   have hDc : (starRingEnd ℂ) (denom g z) ≠ 0 := (map_ne_zero _).2 hD
   have hy : (z.im : ℂ) ≠ 0 := ofReal_ne_zero.2 z.im_ne_zero
   have hrel : denom g z - (starRingEnd ℂ) (denom g z) = 2 * I * (g 1 0 : ℂ) * z.im := by
-    simp [denom, Complex.ext_iff]
+    rw [denom, map_add, map_mul, conj_ofReal, conj_ofReal, add_sub_add_right_eq_sub, ← mul_sub,
+      sub_conj, coe_im]
+    push_cast
     ring
   field_simp
   linear_combination ((k : ℂ) * (g : Matrix (Fin 2) (Fin 2) ℝ).det * I) * hrel +
@@ -309,8 +319,11 @@ theorem weightLaplacian_slash (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (k
     weightLaplacian k (f ∣[k] g) z = (weightLaplacian k f ∣[k] g) z := by
   set m : ℂ → ℂ := fun w ↦ ((g • ofComplex w : ℍ) : ℂ)
   set J : ℂ → ℂ := fun w ↦ ((|g.det.val| : ℝ) : ℂ) ^ (k - 1) * denom g w ^ (-k)
-  have hmz : m z = ((g • z : ℍ) : ℂ) := by simp [m, ofComplex_apply]
+  -- Both sides are linear in `A = Δ (f ∘ ofComplex)` and `B = \bar∂(f ∘ ofComplex)` at `g • z`.
+  set A := Δ (f ∘ ofComplex) ((g • z : ℍ) : ℂ)
+  set B := conjWirtingerDeriv (f ∘ ofComplex) ((g • z : ℍ) : ℂ) 1
   have hm : AnalyticAt ℂ m z := analyticAt_smul hg z
+  have hmz : m z = ((g • z : ℍ) : ℂ) := coe_smul_ofComplex_coe z
   have hFm : ContDiffAt ℝ 2 (f ∘ ofComplex) (m z) := hmz ▸ hf
   have hJ : ContDiffAt ℂ 2 J z := by
     refine (analyticAt_const.mul (AnalyticAt.zpow ?_ (denom_ne_zero g z))).contDiffAt
@@ -318,33 +331,38 @@ theorem weightLaplacian_slash (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (k
     fun_prop
   have hH : ContDiffAt ℝ 2 ((f ∘ ofComplex) ∘ m) z :=
     hFm.comp _ (hm.contDiffAt.restrict_scalars ℝ)
-  have hdm : deriv m z = g.val.det / denom g z ^ 2 := deriv_smul hg z
+  have hev := slash_comp_ofComplex_eventuallyEq hg k f z
+  -- The left side: the product rule for the holomorphic factor `J`, then the conformal
+  -- covariance of `Δ` and `\bar∂` under `m`.
+  have hL : weightLaplacian k (f ∣[k] g) z =
+      -(z.im : ℂ) ^ 2 * (J z * (‖deriv m z‖ ^ 2 • A) +
+        4 * deriv J z * ((starRingEnd ℂ) (deriv m z) * B)) +
+      2 * I * ((k : ℝ) : ℂ) * z.im * (J z * ((starRingEnd ℂ) (deriv m z) * B)) := by
+    rw [weightLaplacian_apply, hyperbolicLaplacian_apply, (laplacian_congr_nhds hev).self_of_nhds,
+      hev.conjWirtingerDeriv_eq, conjWirtingerDeriv_fun_mul
+        ((hJ.restrict_scalars ℝ).differentiableAt (by norm_num))
+        (hH.differentiableAt (by norm_num)),
+      (hJ.differentiableAt (by norm_num)).conjWirtingerDeriv_eq_zero,
+      laplacian_fun_mul_eq_mul_laplacian_add_deriv_mul_conjWirtingerDeriv hJ hH,
+      conjWirtingerDeriv_comp_eq_conj_smul (hFm.differentiableAt (by norm_num))
+        hm.differentiableAt.hasDerivAt,
+      laplacian_comp_eq_norm_deriv_sq_smul hFm hm.contDiffAt, hmz]
+    simp only [smul_apply, smul_zero, smul_eq_mul, add_zero, A, B]
+  -- The right side: the slash of `Δ_k f`, with `Im (g • z) = det g · Im z / |cz + d|²`.
+  have hR : (weightLaplacian k f ∣[k] g) z =
+      J z * (-(((g • z : ℍ).im : ℂ) ^ 2) * A + 2 * I * ((k : ℝ) : ℂ) * (g • z : ℍ).im * B) := by
+    rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos hg, weightLaplacian_apply,
+      hyperbolicLaplacian_apply, ContinuousAlgEquiv.refl_apply]
+    simp only [J]
+    ring
   have hdJ : deriv J z = ((|g.det.val| : ℝ) : ℂ) ^ (k - 1) *
       ((-k : ℤ) * g 1 0 * denom g z ^ (-k - 1)) :=
     ((hasDerivAt_denom_zpow g (-k) z).const_mul _).deriv
-  have hev := slash_comp_ofComplex_eventuallyEq hg k f z
-  -- Both sides are linear in `Δ (f ∘ ofComplex)` and `\bar∂(f ∘ ofComplex)` at `g • z`.
-  rw [weightLaplacian_apply, hyperbolicLaplacian_apply, (laplacian_congr_nhds hev).self_of_nhds,
-    hev.conjWirtingerDeriv_eq, conjWirtingerDeriv_fun_mul
-      ((hJ.restrict_scalars ℝ).differentiableAt (by norm_num)) (hH.differentiableAt (by norm_num)),
-    (hJ.differentiableAt (by norm_num)).conjWirtingerDeriv_eq_zero,
-    laplacian_fun_mul_eq_mul_laplacian_add_deriv_mul hJ hH,
-    conjWirtingerDeriv_comp_eq_conj_smul (hFm.differentiableAt (by norm_num))
-      hm.differentiableAt.hasDerivAt,
-    laplacian_comp_eq_norm_deriv_sq_smul hFm hm.contDiffAt, ModularForm.slash_apply,
-    σ_eq_refl_of_det_pos hg, weightLaplacian_apply, hyperbolicLaplacian_apply, hmz, hdm, hdJ,
-    im_smul_eq_div_normSq]
-  simp only [add_apply, smul_apply, zero_apply, smul_eq_mul, mul_zero, add_zero]
-  generalize Δ (f ∘ ofComplex) ((g • z : ℍ) : ℂ) = A
-  generalize conjWirtingerDeriv (f ∘ ofComplex) ((g • z : ℍ) : ℂ) 1 = B
-  have hn : ((normSq (denom g z) : ℝ) : ℂ) = denom g z * (starRingEnd ℂ) (denom g z) :=
-    (mul_conj _).symm
-  simp only [ContinuousAlgEquiv.refl_apply, Matrix.GeneralLinearGroup.val_det_apply,
-    abs_of_pos hg, J, zpow_sub_one₀ (denom_ne_zero g z), map_div₀, map_pow, conj_ofReal,
-    Complex.real_smul, norm_div, norm_pow, Complex.norm_real, Real.norm_of_nonneg hg.le,
-    ← normSq_eq_norm_sq]
+  rw [hL, hR, norm_deriv_coe_smul_ofComplex_sq hg, deriv_smul hg z, hdJ, im_smul_eq_div_normSq]
+  simp only [Matrix.GeneralLinearGroup.val_det_apply, abs_of_pos hg, J,
+    zpow_sub_one₀ (denom_ne_zero g z), map_div₀, map_pow, conj_ofReal, Complex.real_smul]
   push_cast
-  rw [hn]
+  rw [← mul_conj]
   linear_combination
     (2 * ((g : Matrix (Fin 2) (Fin 2) ℝ).det : ℂ) ^ (k - 1) * denom g z ^ (-k) * B) *
       slash_firstOrder_coeff (g := g) k z
