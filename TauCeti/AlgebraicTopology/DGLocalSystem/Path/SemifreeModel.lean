@@ -80,7 +80,7 @@ together have one generator for each cell of `B`
   compatibility of the chosen model with the cells and the skeleta.
 * `TauCeti.nonempty_rowFiniteHomologous_brownModel_brownModel`: the chosen model does not depend on
   the CW structure, the paths to the cells or the phantom parameter, up to homology.
-* `TauCeti.pathComponentBrownModel_eq`: Brown's model on the path component of `b` is the chosen
+* `TauCeti.pathComponentBrownModel_def`: Brown's model on the path component of `b` is the chosen
   model of that subcomplex.
 
 ## References
@@ -394,7 +394,7 @@ def pathComponentBrownModel (hC : pathComponent b ⊆ C) :
 /-- Brown's model on the path component of `b` is Brown's model `TauCeti.brownModel` of the
 subcomplex `Topology.CWComplex.pathComponentInSubcomplex C b`, with the paths
 `TauCeti.pathComponentCellPath`, so the properties of `TauCeti.brownModel` apply to it. -/
-theorem pathComponentBrownModel_eq (hC : pathComponent b ⊆ C) :
+theorem pathComponentBrownModel_def (hC : pathComponent b ⊆ C) :
     pathComponentBrownModel H R hC = brownModel H R (pathComponentCellPath b)
       (CWComplex.pathComponent_subset_pathComponentInSubcomplex C hC) :=
   (rfl)
