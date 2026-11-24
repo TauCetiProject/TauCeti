@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Normalized
-public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Pullback.Basic
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Groupoid.SingleObj
 
 /-!
 # Transport of an equivariant lift as a family of equivariant functors
@@ -49,10 +49,7 @@ equivalences along `α.app l`.
 
 Restricting `N.equivariantTransport` along the inclusion `SingleObj (End p) ⥤ Γ` gives
 `N.equivariantEndAction p`: the endomorphism monoid of `p`, and so for a groupoid `Γ` the
-isotropy group of `p`, acts on the categorical action `actions p` by equivariant transport. For a
-lift `L` and `ψ : Λ ⥤ Γ`, `pullback_normalizedTransport_transportStrongTrans` identifies the
-equivariant transport of `L.pullback ψ` along an arrow `g` of `Λ` with the equivariant transport
-of `L` along `ψ.map g`.
+isotropy group of `p`, acts on the categorical action `actions p` by equivariant transport.
 
 ## Main definitions
 
@@ -387,14 +384,15 @@ lemma equivariantTransportEquivalence_counit_inv_as_app_toNatTrans_app {p q : Γ
 
 /-- The action of the endomorphism monoid `End p` on the prescribed categorical action
 `actions p` by equivariant transport: the restriction of `N.equivariantTransport` along the
-inclusion `SingleObj (End p) ⥤ Γ`. It sends `g` to the strong transformation
-`N.transportStrongTrans g`, so `End p` acts on `C p` by functors commuting coherently with the
-action of `H`. For a lift `L`, its component functors are those of `L.endAction p`. -/
+inclusion `Groupoid.singleObjFunctor p : SingleObj (End p) ⥤ Γ`. It sends `g` to the strong
+transformation `N.transportStrongTrans g`, so `End p` acts on `C p` by functors commuting
+coherently with the action of `H`. For a lift `L`, its component functors are those of
+`L.endAction p`. -/
 -- The body is exposed so that its values are definitionally `actions p` and its maps are
 -- `N.transportStrongTrans`, as stated in the lemmas below.
 @[expose] noncomputable def equivariantEndAction (p : Γ) :
     LocallyDiscrete (SingleObj (End p)) ⥤ᵖ (LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) :=
-  (SingleObj.functor (MonoidHom.id (End p))).toPseudofunctor.comp N.equivariantTransport
+  (Groupoid.singleObjFunctor p).toPseudofunctor.comp N.equivariantTransport
 
 @[simp]
 lemma equivariantEndAction_obj (p : Γ) (b : LocallyDiscrete (SingleObj (End p))) :
@@ -407,21 +405,23 @@ lemma equivariantEndAction_map (p : Γ) {b b' : LocallyDiscrete (SingleObj (End 
   rfl
 
 @[simp]
-lemma equivariantEndAction_mapId_hom_as_app (p : Γ) (b : LocallyDiscrete (SingleObj (End p)))
-    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+lemma equivariantEndAction_mapId_hom_as_app_toNatTrans_app (p : Γ)
+    (b : LocallyDiscrete (SingleObj (End p))) (a : LocallyDiscrete (SingleObj H))
+    (X : fiber actions p) :
     (((N.equivariantEndAction p).mapId b).hom.as.app a).toNatTrans.app X =
       (N.transportId p).hom.app X :=
   Category.id_comp _
 
 @[simp]
-lemma equivariantEndAction_mapId_inv_as_app (p : Γ) (b : LocallyDiscrete (SingleObj (End p)))
-    (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
+lemma equivariantEndAction_mapId_inv_as_app_toNatTrans_app (p : Γ)
+    (b : LocallyDiscrete (SingleObj (End p))) (a : LocallyDiscrete (SingleObj H))
+    (X : fiber actions p) :
     (((N.equivariantEndAction p).mapId b).inv.as.app a).toNatTrans.app X =
       (N.transportId p).inv.app X :=
   Category.comp_id _
 
 @[simp]
-lemma equivariantEndAction_mapComp_hom_as_app (p : Γ)
+lemma equivariantEndAction_mapComp_hom_as_app_toNatTrans_app (p : Γ)
     {b₀ b₁ b₂ : LocallyDiscrete (SingleObj (End p))} (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂)
     (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
     (((N.equivariantEndAction p).mapComp g h).hom.as.app a).toNatTrans.app X =
@@ -429,7 +429,7 @@ lemma equivariantEndAction_mapComp_hom_as_app (p : Γ)
   Category.id_comp _
 
 @[simp]
-lemma equivariantEndAction_mapComp_inv_as_app (p : Γ)
+lemma equivariantEndAction_mapComp_inv_as_app_toNatTrans_app (p : Γ)
     {b₀ b₁ b₂ : LocallyDiscrete (SingleObj (End p))} (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂)
     (a : LocallyDiscrete (SingleObj H)) (X : fiber actions p) :
     (((N.equivariantEndAction p).mapComp g h).inv.as.app a).toNatTrans.app X =
@@ -437,18 +437,5 @@ lemma equivariantEndAction_mapComp_inv_as_app (p : Γ)
   Category.comp_id _
 
 end NormalizedTransport
-
-/-- The equivariant transport of the pullback of a lift `L` along `ψ : Λ ⥤ Γ` is the equivariant
-transport of `L` along the image of `ψ`. -/
-@[simp]
-lemma pullback_normalizedTransport_transportStrongTrans (L : EquivariantGroupoidLift Γ actions)
-    {Λ : Type*} [Category Λ] (ψ : Λ ⥤ Γ) {l l' : Λ} (g : l ⟶ l') :
-    (L.pullback ψ).normalizedTransport.transportStrongTrans g =
-      L.normalizedTransport.transportStrongTrans (ψ.map g) := by
-  -- The transport functors of the pullback are definitionally those of `L` along `ψ.map g`, so
-  -- only the commuting isomorphisms need rewriting.
-  simp only [NormalizedTransport.transportStrongTrans, normalizedTransport_transportCommIso,
-    pullback_transportCommIso]
-  rfl
 
 end TauCeti.EquivariantGroupoidLift
