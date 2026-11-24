@@ -352,9 +352,7 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniform
   have hω : ContDiff ℝ (1 : ℕ) (gaugeForm v) := by
     have heq : gaugeForm v = fun z ↦ connectionDifferenceCLM ((x - y) z, 0) := by
       ext z : 1
-      rw [gaugeForm_eq_connectionDifferenceCLM hv z, connectionDifferenceCLM_apply,
-        connectionDifferenceCLM_apply]
-      simp
+      simp [gaugeForm_eq_connectionDifferenceCLM hv z]
     rw [heq]
     exact connectionDifferenceCLM.contDiff.comp (hdC1.prodMk contDiff_const)
   have hv2 : ContDiff ℝ 2 (fun z ↦ (v z : ℂ)) := by

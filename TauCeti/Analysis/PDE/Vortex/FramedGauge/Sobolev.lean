@@ -248,9 +248,8 @@ theorem differentiable_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} (h2 : 2 <
     one_ne_zero
 
 /-- **Sobolev gauges carrying one smooth field to another are smooth framed gauges.** For `s > 2`,
-an element `u ∈ G_s` is differentiable (`differentiable_of_mem_sobolevGaugeGroup`); if both `x` and
-`gaugeTransform u x` are smooth, then `u` is smooth by `contDiff_coe_of_contDiff_gaugeTransform`
-and hence belongs to `framedGaugeGroup`. -/
+an element `u ∈ G_s` such that both `x` and `gaugeTransform u x` are smooth belongs to
+`framedGaugeGroup`. -/
 theorem mem_framedGaugeGroup_of_mem_sobolevGaugeGroup_of_contDiff_gaugeTransform
     {s : ℝ} {hs : 1 < s} (h2 : 2 < s) {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs)
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x)

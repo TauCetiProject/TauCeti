@@ -719,6 +719,7 @@ def connectionDifferenceCLM :
       (EuclideanSpace.proj (1 : Fin 4)).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight imCLM
 
 /-- Pointwise formula for `connectionDifferenceCLM`. -/
+@[simp]
 theorem connectionDifferenceCLM_apply
     (p : EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :
     connectionDifferenceCLM p = (p.1 0 - p.2 0) • reCLM + (p.1 1 - p.2 1) • imCLM := (rfl)
@@ -732,8 +733,7 @@ theorem gaugeForm_eq_connectionDifferenceCLM {u : ℂ → Circle}
 
 /-- **A differentiable gauge between `C^n` fields is `C^(n+1)`.** Converse to
 `contDiff_gaugeTransform`: if `u` is differentiable and both `x` and `gaugeTransform u x` are
-`C^n` (`n ≤ ∞`), then `gaugeForm u` is `C^n` from the connection difference and `u` is `C^(n+1)`
-by `contDiff_coe_of_contDiff_gaugeForm`. -/
+`C^n` (`n ≤ ∞`), then `u` is `C^(n+1)`. -/
 theorem contDiff_coe_of_contDiff_gaugeTransform {n : ℕ∞} {u : ℂ → Circle}
     (hu : Differentiable ℝ (fun z ↦ (u z : ℂ)))
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ n x)

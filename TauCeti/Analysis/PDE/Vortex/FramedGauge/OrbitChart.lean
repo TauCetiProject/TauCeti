@@ -8,13 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.CoulombGauge
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.SliceChart
-public import TauCeti.Analysis.PDE.Vortex.FramedGauge.SobolevOrder
-public import TauCeti.Analysis.PDE.Vortex.Moduli.Topology
 public import TauCeti.Topology.Algebra.ProperAction.TransverseSlice
-public import Mathlib.Geometry.Manifold.ChartedSpace
-import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Topology.LocalAtTarget
-import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.Proper
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.Slice
 
@@ -60,16 +55,8 @@ the Coulomb slice chart
 orders of the same field space, `↑(k + 1)` for the gauge action and `↑k + 1` for the real chart,
 are identified by `TauCeti.Vortex.SobolevFieldSpace.congrOrder`.
 
-**Global charts and comparison with `Sym^m ℂ` and the smooth framed moduli.** For `k ≥ 4`, every
-continuous vortex of `A_m^k` is `C²` and has a smooth representative in `⋂_j A_m^j` in its
-`G_(k+1)`-orbit (`TauCeti.Vortex.exists_sobolevGaugeGroup_smul_mem_framedFieldSpace`), so every
-point of `vortexModuli` admits a `ℝ^(2m)`-chart (`vortexModuliChartedSpace`). Moreover, the zero
-divisor gives a continuous bijection `vortexModuliEquiv : vortexModuli ≃ Sym ℂ m`. Composed with
-`Sym.coeffHomeomorph ℂ m : Sym ℂ m ≃ₜ ℂᵐ`, invariance of domain turns it into a
-homeomorphism `vortexModuliHomeomorph : vortexModuli ≃ₜ Sym ℂ m`, and hence a homeomorphism
-`vortexModuliHomeomorphFramedVortexModuli` with the smooth framed moduli space
-`framedVortices 1 m / framedGaugeGroup` of `TauCeti.Vortex.framedVortexModuliHomeomorph`. Whether
-the transition maps of the Coulomb slice charts are smooth is not treated here.
+Whether the transition maps of these charts are smooth, and how they compare with the divisor
+map to `Sym^m ℂ`, is not treated here.
 
 ## Main results
 
@@ -81,12 +68,6 @@ the transition maps of the Coulomb slice charts are smooth is not treated here.
   space.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_openPartialHomeomorph_vortexModuli`: the vortex moduli
   space is locally homeomorphic to `ℝ^(2m)` at the orbit of every vortex lying in every `A_m^j`.
-* `TauCeti.Vortex.SobolevFieldSpace.vortexModuliChartedSpace`: for `k ≥ 4`, `vortexModuli` is
-  charted on `ℝ^(2m)` at every orbit.
-* `TauCeti.Vortex.SobolevFieldSpace.vortexModuliHomeomorph`: for `k ≥ 4`, the divisor identifies
-  `vortexModuli` homeomorphically with `Sym ℂ m`.
-* `TauCeti.Vortex.SobolevFieldSpace.vortexModuliHomeomorphFramedVortexModuli`: for `k ≥ 4`,
-  `vortexModuli` is homeomorphic to the smooth framed vortex moduli space.
 
 ## References
 
@@ -147,8 +128,6 @@ theorem realSobolevSliceEquation_realSubRef_congrOrder_eq_zero_iff (hk : 2 ≤ k
       y ∈ coulombSlice x ∧ ∀ z, equation y z = 0 := by
   simp only [realSobolevSliceEquation_realSubRef_eq_zero_iff, mem_coulombSlice, coe_congrOrder,
     funext_iff, Pi.zero_apply]
-
-section
 
 variable [Fact (1 < k + 1)] {hs : 1 < ((k + 1 : ℕ) : ℝ) + 1}
 
@@ -275,256 +254,6 @@ theorem exists_openPartialHomeomorph_vortexModuli (hk : 2 ≤ k)
   obtain ⟨hsrc, hval⟩ := he x₀ hx₀V (self_mem_coulombSlice x₀) hsol
   exact ⟨e, hsrc.2 (mem_coulombSliceChart_source hk _ _ _),
     hval.trans (coulombSliceChart_apply_self hk _ _ _)⟩
-
-end
-
-section Global
-
-open scoped ContDiff
-
-variable [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
-
-/-- **Every vortex orbit has a `ℝ^(2m)`-chart.** For `k ≥ 4`, every point `q` of `vortexModuli`
-in `A_m^k / G_(k+1)` admits a chart modelled on `Fin (2 * m) → ℝ` sending `q` to `0`, without
-assuming a smooth representative in advance
-(`exists_sobolevGaugeGroup_smul_mem_framedFieldSpace`). -/
-theorem exists_openPartialHomeomorph_vortexModuli_of_lt (hk : 3 < k) (q : vortexModuli f m hs) :
-    ∃ e : OpenPartialHomeomorph (vortexModuli f m hs) (Fin (2 * m) → ℝ),
-      q ∈ e.source ∧ e q = 0 := by
-  revert hs q
-  rcases Nat.exists_eq_succ_of_ne_zero (by omega : k ≠ 0) with ⟨k', rfl⟩
-  intro hs q
-  rcases q with ⟨q, hq⟩
-  obtain ⟨x, hsol, rfl⟩ := mem_vortexModuli_iff.1 hq
-  have hxc2 : ContDiff ℝ 2 x :=
-    x.contDiff (n := 2) (by exact_mod_cast (by omega : 2 + 1 < k' + 1))
-  obtain ⟨y, hyc, hys, -, u, hu, -⟩ :=
-    exists_sobolevGaugeGroup_smul_mem_framedFieldSpace (hs := hs)
-      ⟨x.toFramedFieldSpace, mem_sobolevVortices.2 ⟨hxc2, hsol⟩⟩
-  let y' : SobolevFieldSpace f m (k' + 1 : ℕ) := ⟨y.val, y.val.property, hyc.continuous⟩
-  have hxy : Quotient.mk (MulAction.orbitRel (SobolevTopologicalGaugeGroup hs)
-      (SobolevFieldSpace f m (k' + 1 : ℕ))) y' = Quotient.mk _ x := by
-    refine Quotient.sound (orbitRel_iff.2 ⟨u⁻¹, u⁻¹.property, ?_⟩)
-    have h := congrArg (fun z : framedFieldSpace f m (k'.succ : ℕ) ↦
-      ((u⁻¹ • z : framedFieldSpace f m (k'.succ : ℕ)) : ℂ → EuclideanSpace ℝ (Fin 4))) hu.symm
-    rw [inv_smul_smul, coe_sobolevGaugeGroup_smul] at h
-    exact h
-  have hqeq :
-      (⟨Quotient.mk _ y', mk_mem_vortexModuli (mem_sobolevVortices.1 y.property).2⟩ :
-        vortexModuli f m hs) =
-      ⟨Quotient.mk _ x, mk_mem_vortexModuli hsol⟩ := Subtype.ext hxy
-  obtain ⟨e, hesrc, he0⟩ := exists_openPartialHomeomorph_vortexModuli (hs := hs) (by omega : 2 ≤ k')
-    y' (fun j ↦ hys j) (mem_sobolevVortices.1 y.property).2
-  exact ⟨e, hqeq ▸ hesrc, hqeq ▸ he0⟩
-
-/-- **The charted space structure on `vortexModuli`.** For `k ≥ 4`, the Sobolev moduli space of
-framed vortices is charted on `Fin (2 * m) → ℝ` at every orbit. -/
-@[instance_reducible]
-noncomputable def vortexModuliChartedSpace (hk : 3 < k) :
-    ChartedSpace (Fin (2 * m) → ℝ) (vortexModuli f m hs) where
-  atlas := Set.range fun q ↦ (exists_openPartialHomeomorph_vortexModuli_of_lt hk q).choose
-  chartAt q := (exists_openPartialHomeomorph_vortexModuli_of_lt hk q).choose
-  mem_chart_source q := (exists_openPartialHomeomorph_vortexModuli_of_lt hk q).choose_spec.1
-  chart_mem_atlas q := Set.mem_range_self q
-
-/-! ### Comparison with `Sym ℂ m` and the smooth framed moduli -/
-
-/-- Two smooth fields of `A_m^k`, `k ≥ 2`, lie in the same `G_(k+1)`-orbit in
-`SobolevFieldSpace f m k` if and only if they are related by a smooth framed gauge. -/
-theorem orbitRel_iff_exists_framedGaugeGroup_smul_eq {x y : SobolevFieldSpace f m k}
-    (hx : ContDiff ℝ ∞ x) (hy : ContDiff ℝ ∞ y) :
-    MulAction.orbitRel (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k) x y ↔
-      ∃ u : framedGaugeGroup, u • (x : ℂ → EuclideanSpace ℝ (Fin 4)) = y := by
-  have h := exists_framedGaugeGroup_smul_eq_iff_exists_sobolevGaugeGroup_smul_eq (hs := hs)
-    (y := x.toFramedFieldSpace) (x := y.toFramedFieldSpace) hy hx
-  rw [orbitRel_iff]
-  simpa only [Subtype.ext_iff, coe_sobolevGaugeGroup_smul, coe_toFramedFieldSpace, Subtype.exists,
-    exists_prop] using h.symm
-
-/-- For `k ≥ 4`, the vortex moduli subset `vortexModuli f m hs ⊆ A_m^k / G_(k+1)` is in canonical
-bijection with `sobolevVortexSubMulAction hk / sobolevGaugeGroup hs`, since every continuous field
-of `A_m^k` is `C²`. -/
-noncomputable def vortexModuliEquivSobolevVortexModuli (hk : 3 < k) :
-    vortexModuli f m hs ≃ MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
-      (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :=
-  (Equiv.ofBijective
-    (Quotient.lift
-      (fun x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk ↦
-        (⟨Quotient.mk _ ⟨x.val, x.val.property,
-            (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 x.property)).1.continuous⟩,
-          mk_mem_vortexModuli
-            (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 x.property)).2⟩ :
-          vortexModuli f m hs))
-      fun x y h ↦ Subtype.ext <| Quotient.sound <| orbitRel_iff.2 <| by
-        obtain ⟨u, rfl⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 h)
-        have hinv := congrArg
-          (fun z : framedFieldSpace f m k ↦ (z : ℂ → EuclideanSpace ℝ (Fin 4)))
-          (inv_smul_smul u y.val)
-        rw [coe_sobolevGaugeGroup_smul] at hinv
-        exact ⟨u⁻¹, u⁻¹.property, hinv⟩)
-    ⟨Quotient.ind₂ fun x y h ↦ Quotient.sound <| MulAction.orbitRel_apply.2 <|
-        MulAction.mem_orbit_iff.2 <| by
-          obtain ⟨u, hu, hxy⟩ := orbitRel_iff.1 (Quotient.exact (congrArg Subtype.val h).symm)
-          exact ⟨⟨u, hu⟩, Subtype.ext (Subtype.ext hxy)⟩,
-      fun ⟨q, hq⟩ ↦ by
-        obtain ⟨x, hx, rfl⟩ := mem_vortexModuli_iff.1 hq
-        have hx2 : ContDiff ℝ 2 x :=
-          x.contDiff (n := 2) (by exact_mod_cast (by omega : 2 + 1 < k))
-        exact ⟨Quotient.mk'' ⟨x.toFramedFieldSpace, mem_sobolevVortexSubMulAction.2
-          (mem_sobolevVortices.2 ⟨hx2, hx⟩)⟩, rfl⟩⟩).symm
-
-/-- The inverse of `vortexModuliEquivSobolevVortexModuli` sends the orbit of a `C²` vortex of
-`A_m^k` to its orbit in `vortexModuli`. -/
-@[simp]
-theorem vortexModuliEquivSobolevVortexModuli_symm_mk (hk : 3 < k)
-    (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
-    (vortexModuliEquivSobolevVortexModuli hk).symm (Quotient.mk'' x) =
-      ⟨Quotient.mk _ ⟨x.val, x.val.property,
-          (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 x.property)).1.continuous⟩,
-        mk_mem_vortexModuli
-          (mem_sobolevVortices.1 (mem_sobolevVortexSubMulAction.1 x.property)).2⟩ := by
-  rw [vortexModuliEquivSobolevVortexModuli]
-  rfl
-
-/-- `vortexModuliEquivSobolevVortexModuli` sends the orbit of a continuous vortex `x` of `A_m^k` to
-its `sobolevGaugeGroup`-orbit in `sobolevVortexSubMulAction`. -/
-@[simp]
-theorem vortexModuliEquivSobolevVortexModuli_mk (hk : 3 < k) {x : SobolevFieldSpace f m k}
-    (hx : ∀ z, equation x z = 0) :
-    vortexModuliEquivSobolevVortexModuli (hs := hs) hk
-        ⟨Quotient.mk _ x, mk_mem_vortexModuli hx⟩ =
-      Quotient.mk'' ⟨x.toFramedFieldSpace, mem_sobolevVortexSubMulAction.2
-        (mem_sobolevVortices.2
-          ⟨x.contDiff (n := 2) (by exact_mod_cast (by omega : 2 + 1 < k)), hx⟩)⟩ := by
-  refine ((vortexModuliEquivSobolevVortexModuli hk).eq_symm_apply).1 ?_
-  rw [vortexModuliEquivSobolevVortexModuli_symm_mk]
-  exact Subtype.ext (congrArg (Quotient.mk _) (ext rfl))
-
-/-- **The divisor bijection on `vortexModuli`.** For `k ≥ 4`, the zero divisor identifies the
-Sobolev vortex moduli space `vortexModuli f m hs ⊆ A_m^k / G_(k+1)` bijectively with `Sym ℂ m`. -/
-noncomputable def vortexModuliEquiv (hk : 3 < k) : vortexModuli f m hs ≃ Sym ℂ m :=
-  (vortexModuliEquivSobolevVortexModuli hk).trans (sobolevVortexModuliEquiv hk)
-
-/-- `vortexModuliEquiv` sends the orbit of a vortex to its zero divisor. -/
-@[simp]
-theorem vortexModuliEquiv_mk (hk : 3 < k) {x : SobolevFieldSpace f m k}
-    (hx : ∀ z, equation x z = 0) :
-    vortexModuliEquiv (hs := hs) hk ⟨Quotient.mk _ x, mk_mem_vortexModuli hx⟩ =
-      sobolevVortexDivisor ⟨x.toFramedFieldSpace, mem_sobolevVortices.2
-        ⟨x.contDiff (n := 2) (by exact_mod_cast (by omega : 2 + 1 < k)), hx⟩⟩ := by
-  rw [vortexModuliEquiv, Equiv.trans_apply, vortexModuliEquivSobolevVortexModuli_mk hk hx,
-    sobolevVortexModuliEquiv_apply, sobolevVortexModuliDivisor_mk]
-
-/-- **Bijection between `vortexModuli` and the smooth framed vortex moduli.** For `k ≥ 4`, the
-Sobolev vortex moduli space `vortexModuli f m hs` is canonically in bijection with the smooth
-framed vortex moduli space via their zero divisors. -/
-noncomputable def vortexModuliEquivFramedVortexModuli (hk : 3 < k) :
-    vortexModuli f m hs ≃
-      MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction 1 m) :=
-  (vortexModuliEquivSobolevVortexModuli hk).trans (sobolevVortexModuliEquivFramedVortexModuli hk)
-
-/-- On the orbit of a smooth vortex in `A_m^k`, `vortexModuliEquivFramedVortexModuli` agrees with
-taking its `framedGaugeGroup`-orbit. -/
-theorem vortexModuliEquivFramedVortexModuli_mk_of_eq (hk : 3 < k) {x : SobolevFieldSpace f m k}
-    (hx : ∀ z, equation x z = 0) (x' : framedVortexSubMulAction 1 m)
-    (hxx' : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
-    vortexModuliEquivFramedVortexModuli (hs := hs) hk
-        ⟨Quotient.mk _ x, mk_mem_vortexModuli hx⟩ = Quotient.mk'' x' := by
-  rw [vortexModuliEquivFramedVortexModuli, Equiv.trans_apply,
-    vortexModuliEquivSobolevVortexModuli_mk hk hx]
-  exact sobolevVortexModuliEquivFramedVortexModuli_mk_of_eq _ x' hxx'
-
-/-- For `k ≥ 3`, the restriction of the quotient map `A_m^k → A_m^k / G_(k+1)` to the vortices is
-a quotient map onto `vortexModuli`. -/
-theorem isQuotientMap_vortexModuli_quotientMk (hk : 3 ≤ k) :
-    IsQuotientMap fun x : {x : SobolevFieldSpace f m k | ∀ z, equation x z = 0} ↦
-      (⟨Quotient.mk _ x.val, mk_mem_vortexModuli x.property⟩ : vortexModuli f m hs) := by
-  refine isQuotientMap_of_isOpenQuotientMap_of_isInducing Subtype.val Subtype.val
-    (fun x ↦ ⟨Quotient.mk _ x.val, mk_mem_vortexModuli x.property⟩)
-    (Quotient.mk _) rfl .subtypeVal
-    (fun ⟨q, hq⟩ ↦ by
-      obtain ⟨x, hx, rfl⟩ := mem_vortexModuli_iff.1 hq
-      exact ⟨⟨x, hx⟩, rfl⟩)
-    MulAction.isOpenQuotientMap_quotientMk .subtypeVal ?_
-  rintro x ⟨_, ⟨y, hy, rfl⟩, hyx⟩
-  exact ⟨⟨x, (mk_mem_vortexModuli_iff hk).1
-    (hyx ▸ mk_mem_vortexModuli (hs := hs) y.property)⟩, rfl⟩
-
-/-- **The divisor on `vortexModuli` is continuous.** For `k ≥ 4`, `vortexModuliEquiv` is
-continuous with respect to the quotient topology on `vortexModuli` and the topology of `Sym ℂ m`. -/
-theorem continuous_vortexModuliEquiv (hk : 3 < k) :
-    Continuous (vortexModuliEquiv (f := f) (m := m) (hs := hs) hk) := by
-  rw [(isQuotientMap_vortexModuli_quotientMk (f := f) (m := m) (hs := hs)
-    (by omega : 3 ≤ k)).continuous_iff, continuous_iff_continuousAt]
-  intro x₀
-  have hs1 : (1 : ℝ) < k := by exact_mod_cast (Fact.out : 1 < k)
-  refine tendsto_of_tendsto hs1 continuous_subtypeVal.continuousAt ?_ (.of_forall fun x ↦ ?_)
-  · dsimp only [Function.comp_apply]
-    rw [vortexModuliEquiv_mk hk x₀.property]
-    exact isZeroMultiplicity_sectionValue_sobolevVortexDivisor
-      ⟨x₀.val.toFramedFieldSpace, mem_sobolevVortices.2
-        ⟨x₀.val.contDiff (n := 2) (by exact_mod_cast (by omega : 2 + 1 < k)), x₀.property⟩⟩
-  · dsimp only [Function.comp_apply]
-    rw [vortexModuliEquiv_mk hk x.property]
-    exact isZeroMultiplicity_sectionValue_sobolevVortexDivisor
-      ⟨x.val.toFramedFieldSpace, mem_sobolevVortices.2
-        ⟨x.val.contDiff (n := 2) (by exact_mod_cast (by omega : 2 + 1 < k)), x.property⟩⟩
-
-/-- **The Sobolev moduli space of framed vortices is homeomorphic to `Sym ℂ m`** (Taubes). For
-`k ≥ 4`, the divisor identifies `vortexModuli f m hs` homeomorphically with `Sym ℂ m`, by
-continuity of the divisor, the `ℝ^(2m)`-charts (`vortexModuliChartedSpace`), the elementary
-symmetric chart `Sym.coeffHomeomorph ℂ m`, and Brouwer's invariance of domain. -/
-noncomputable def vortexModuliHomeomorph (hk : 3 < k) : vortexModuli f m hs ≃ₜ Sym ℂ m where
-  toEquiv := vortexModuliEquiv hk
-  continuous_toFun := continuous_vortexModuliEquiv hk
-  continuous_invFun := continuous_def.2 fun U hU ↦ by
-    let _ := vortexModuliChartedSpace (f := f) (m := m) (hs := hs) hk
-    let ψ := Sym.coeffHomeomorph ℂ m
-    have hEF : Module.finrank ℝ (Fin (2 * m) → ℝ) = Module.finrank ℝ (Fin m → ℂ) := by
-      rw [Module.finrank_fin_fun, Module.finrank_pi_fintype, Complex.finrank_real_complex]
-      simp [mul_comm]
-    have hψ : IsOpenEmbedding (ψ ∘ vortexModuliEquiv (f := f) (m := m) (hs := hs) hk) :=
-      (ψ.continuous.comp (continuous_vortexModuliEquiv hk)).isOpenEmbedding_of_injective
-        (ψ.injective.comp (vortexModuliEquiv hk).injective) hEF
-    have he : IsOpenEmbedding (vortexModuliEquiv (f := f) (m := m) (hs := hs) hk) := by
-      have heq :
-          (vortexModuliEquiv (f := f) (m := m) (hs := hs) hk :
-            vortexModuli f m hs → Sym ℂ m) =
-            ψ.symm ∘ (ψ ∘ vortexModuliEquiv (f := f) (m := m) (hs := hs) hk) :=
-        funext fun q ↦ (ψ.symm_apply_apply _).symm
-      rw [heq]
-      exact ψ.symm.isOpenEmbedding.comp hψ
-    change IsOpen ((vortexModuliEquiv hk).symm ⁻¹' U)
-    rw [← Equiv.image_eq_preimage_symm]
-    exact he.isOpenMap U hU
-
-/-- Underlying equivalence of `vortexModuliHomeomorph`. -/
-@[simp]
-theorem coe_vortexModuliHomeomorph (hk : 3 < k) :
-    ⇑(vortexModuliHomeomorph (f := f) (m := m) (hs := hs) hk) = vortexModuliEquiv hk := by
-  rw [vortexModuliHomeomorph]
-  rfl
-
-/-- **Homeomorphism between `vortexModuli` and the smooth framed vortex moduli.** For `k ≥ 4`, the
-Sobolev vortex moduli space `vortexModuli f m hs` is homeomorphic to the orbit space of the smooth
-framed vortices `framedVortices 1 m` with the topology of locally uniform convergence, identifying
-orbits with the same zero divisor. -/
-noncomputable def vortexModuliHomeomorphFramedVortexModuli (hk : 3 < k) :
-    vortexModuli f m hs ≃ₜ
-      MulAction.orbitRel.Quotient framedGaugeGroup (framedVortices 1 m) :=
-  (vortexModuliHomeomorph hk).trans (framedVortexModuliHomeomorph one_pos m).symm
-
-/-- Passing from `vortexModuli` to `framedVortices 1 m / framedGaugeGroup` and then taking the
-divisor recovers `vortexModuliEquiv`. -/
-@[simp]
-theorem framedVortexModuliHomeomorph_vortexModuliHomeomorphFramedVortexModuli (hk : 3 < k)
-    (q : vortexModuli f m hs) :
-    framedVortexModuliHomeomorph one_pos m
-        (vortexModuliHomeomorphFramedVortexModuli hk q) =
-      vortexModuliEquiv hk q := by
-  simp [vortexModuliHomeomorphFramedVortexModuli]
-
-end Global
 
 end SobolevFieldSpace
 

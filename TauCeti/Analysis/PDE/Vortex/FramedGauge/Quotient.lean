@@ -64,7 +64,8 @@ charts, from the slice theorem, are in `TauCeti.Analysis.PDE.Vortex.FramedGauge.
 * `TauCeti.Vortex.SobolevFieldSpace.t2Space_quotient`: for `k ≥ 3`, `A_m^k / G_(k+1)` is
   Hausdorff.
 * `TauCeti.Vortex.SobolevFieldSpace.vortexModuli`: the vortex orbits in `A_m^k / G_(k+1)`, with
-  `TauCeti.Vortex.SobolevFieldSpace.mk_mem_vortexModuli_iff` for `k ≥ 3`.
+  `TauCeti.Vortex.SobolevFieldSpace.mk_mem_vortexModuli_iff` and
+  `TauCeti.Vortex.SobolevFieldSpace.isQuotientMap_vortexModuli_quotientMk` for `k ≥ 3`.
 
 ## References
 
@@ -440,6 +441,22 @@ theorem mk_mem_vortexModuli_iff (hk : 3 ≤ k) {x : SobolevFieldSpace f m k} :
   obtain ⟨u, rfl⟩ :=
     MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact hyx.symm))
   exact fun z ↦ (equation_smul_eq_zero_iff hk u y z).2 (hy z)
+
+/-- For `k ≥ 3`, the restriction of the quotient map `A_m^k → A_m^k / G_(k+1)` to the vortices is
+a quotient map onto `vortexModuli`. -/
+theorem isQuotientMap_vortexModuli_quotientMk (hk : 3 ≤ k) :
+    IsQuotientMap fun x : {x : SobolevFieldSpace f m k | ∀ z, equation x z = 0} ↦
+      (⟨Quotient.mk _ x.val, mk_mem_vortexModuli x.property⟩ : vortexModuli f m hs) := by
+  refine isQuotientMap_of_isOpenQuotientMap_of_isInducing Subtype.val Subtype.val
+    (fun x ↦ ⟨Quotient.mk _ x.val, mk_mem_vortexModuli x.property⟩)
+    (Quotient.mk _) rfl .subtypeVal
+    (fun ⟨q, hq⟩ ↦ by
+      obtain ⟨x, hx, rfl⟩ := mem_vortexModuli_iff.1 hq
+      exact ⟨⟨x, hx⟩, rfl⟩)
+    MulAction.isOpenQuotientMap_quotientMk .subtypeVal ?_
+  rintro x ⟨_, ⟨y, hy, rfl⟩, hyx⟩
+  exact ⟨⟨x, (mk_mem_vortexModuli_iff hk).1
+    (hyx ▸ mk_mem_vortexModuli (hs := hs) y.property)⟩, rfl⟩
 
 end SobolevFieldSpace
 
