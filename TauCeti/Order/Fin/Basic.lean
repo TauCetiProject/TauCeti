@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Fin.Basic
+public import Mathlib.Order.Interval.Set.Defs
 
 /-!
 # Order characterizations on `Fin`
@@ -23,9 +24,13 @@ This file characterizes elements of `Fin (k + 1)` by how they sit relative to th
   if they determine the same order cut on the embedded indices `i'.castSucc` (`i' : Fin k`).
 * `Fin.galoisConnection_predAbove_castSucc_succAbove`: `i.predAbove ⊣ i.castSucc.succAbove`.
 * `Fin.galoisConnection_succ_succAbove_predAbove`: `i.succ.succAbove ⊣ i.predAbove`.
+* `Fin.strictMono_of_forall_mem_Ioo`: a tuple separated by a sequence, `a k < w k < a (k + 1)`,
+  is strictly increasing.
 -/
 
 public section
+
+open Set
 
 namespace Fin
 
@@ -98,5 +103,14 @@ theorem galoisConnection_succ_succAbove_predAbove {n : ℕ} (i : Fin (n + 1)) :
   have h := (galoisConnection_predAbove_castSucc_succAbove i.rev x.rev y.rev).symm
   rwa [← Fin.rev_succ, ← Fin.rev_succAbove, ← Fin.rev_predAbove,
     Fin.rev_le_rev, Fin.rev_le_rev] at h
+
+/-- A tuple `w` separated by a `ℤ`-indexed sequence `a`, in the sense that
+`a k < w k < a (k + 1)` for every index `k`, is strictly increasing. -/
+theorem strictMono_of_forall_mem_Ioo {α : Type*} [Preorder α] {n : ℕ} {w : Fin n → α}
+    {a : ℤ → α} (h : ∀ k : Fin n, w k ∈ Ioo (a k) (a ((k : ℕ) + 1))) : StrictMono w := by
+  obtain _ | n := n
+  · exact fun i ↦ i.elim0
+  · exact strictMono_iff_lt_succ.2 fun i ↦
+      ((h i.castSucc).2.trans_le (le_of_eq (by simp))).trans (h i.succ).1
 
 end Fin
