@@ -33,7 +33,7 @@ representation with projective group-algebra module is a retract of Mathlib's fr
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
   identifications Mathlib leaves definitional, of `ρ.asModule` with `V` and of the intertwining
   map attached to a `k[G]`-linear map.
-* `Representation.IntertwiningMap.surjective_equivLinearMapAsModule_iff`: an intertwining map
+* `Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff`: an intertwining map
   is surjective exactly when its attached `k[G]`-linear map is.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
   scalars preserves the dimension of the representation.
@@ -149,7 +149,7 @@ theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply
 /-- **Surjectivity transfers across the module dictionary.** The `k[G]`-linear map that
 `Representation.IntertwiningMap.equivLinearMapAsModule` attaches to an intertwining map is
 surjective exactly when the intertwining map is. -/
-theorem _root_.Representation.IntertwiningMap.surjective_equivLinearMapAsModule_iff
+theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff
     (f : _root_.Representation.IntertwiningMap ρ σ) :
     Function.Surjective (_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f) ↔
       Function.Surjective f := by

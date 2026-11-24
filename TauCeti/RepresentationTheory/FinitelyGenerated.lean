@@ -50,7 +50,7 @@ variable {A G V W : Type*} [CommSemiring A] [Monoid G]
 theorem finite_asModule_of_surjective [Module.Finite A[G] ρ.asModule] (f : IntertwiningMap ρ σ)
     (hf : Function.Surjective f) : Module.Finite A[G] σ.asModule :=
   Module.Finite.of_surjective (IntertwiningMap.equivLinearMapAsModule ρ σ f)
-    ((IntertwiningMap.surjective_equivLinearMapAsModule_iff f).2 hf)
+    ((IntertwiningMap.equivLinearMapAsModule_surjective_iff f).2 hf)
 
 /-- A finite direct sum of finitely generated representations is finitely generated. -/
 instance finite_asModule_directSum {ι : Type*} [Finite ι] {V' : ι → Type*}
@@ -104,7 +104,7 @@ theorem exists_surjective_of_finite_asModule {G : Type*} [Group G] {ρ : Represe
   obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := A[G]) (M := ρ.asModule)
   choose U hPU hU using fun i : Fin n ↦ hP (ρ.asModuleEquiv (s i))
   let f := IntertwiningMap.directSumToModule fun i ↦ ρ.cosetLift _ _ (hU i)
-  refine ⟨n, U, hPU, f, (IntertwiningMap.surjective_equivLinearMapAsModule_iff f).1 ?_⟩
+  refine ⟨n, U, hPU, f, (IntertwiningMap.equivLinearMapAsModule_surjective_iff f).1 ?_⟩
   rw [← LinearMap.range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
   rintro _ ⟨i, rfl⟩
   refine ⟨(directSum _).asModuleEquiv.symm
