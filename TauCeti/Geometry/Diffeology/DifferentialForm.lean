@@ -396,6 +396,28 @@ theorem wedgeWith_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : Dif
     σ.wedgeWith μ (0 : DifferentialForm X F₂ l) = 0 :=
   ext fun _ _ ↦ funext fun _ ↦ ContinuousAlternatingMap.pairedWedge_zero_right _ _ _
 
+@[simp]
+theorem wedgeWith_neg_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) : (-σ).wedgeWith μ τ = -σ.wedgeWith μ τ := by
+  rw [eq_neg_iff_add_eq_zero, ← wedgeWith_add_left, neg_add_cancel, wedgeWith_zero_left]
+
+@[simp]
+theorem wedgeWith_neg_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) : σ.wedgeWith μ (-τ) = -σ.wedgeWith μ τ := by
+  rw [eq_neg_iff_add_eq_zero, ← wedgeWith_add_right, neg_add_cancel, wedgeWith_zero_right]
+
+@[simp]
+theorem wedgeWith_sub_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ σ' : DifferentialForm X F₁ k)
+    (τ : DifferentialForm X F₂ l) :
+    (σ - σ').wedgeWith μ τ = σ.wedgeWith μ τ - σ'.wedgeWith μ τ := by
+  rw [sub_eq_add_neg, sub_eq_add_neg, wedgeWith_add_left, wedgeWith_neg_left]
+
+@[simp]
+theorem wedgeWith_sub_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm X F₁ k)
+    (τ τ' : DifferentialForm X F₂ l) :
+    σ.wedgeWith μ (τ - τ') = σ.wedgeWith μ τ - σ.wedgeWith μ τ' := by
+  rw [sub_eq_add_neg, sub_eq_add_neg, wedgeWith_add_right, wedgeWith_neg_right]
+
 /-- Pullback commutes with the paired wedge product. -/
 @[simp]
 theorem pullback_wedgeWith {Y : Type*} [DiffeologicalSpace Y] (g : X → Y)
@@ -472,6 +494,26 @@ theorem wedge_zero_right (σ : DifferentialForm X ℝ k) :
     σ.wedge (0 : DifferentialForm X ℝ l) = 0 :=
   wedgeWith_zero_right _ _
 
+@[simp]
+theorem wedge_neg_left (σ : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) :
+    (-σ).wedge τ = -σ.wedge τ :=
+  wedgeWith_neg_left _ _ _
+
+@[simp]
+theorem wedge_neg_right (σ : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) :
+    σ.wedge (-τ) = -σ.wedge τ :=
+  wedgeWith_neg_right _ _ _
+
+@[simp]
+theorem wedge_sub_left (σ σ' : DifferentialForm X ℝ k) (τ : DifferentialForm X ℝ l) :
+    (σ - σ').wedge τ = σ.wedge τ - σ'.wedge τ :=
+  wedgeWith_sub_left _ _ _ _
+
+@[simp]
+theorem wedge_sub_right (σ : DifferentialForm X ℝ k) (τ τ' : DifferentialForm X ℝ l) :
+    σ.wedge (τ - τ') = σ.wedge τ - σ.wedge τ' :=
+  wedgeWith_sub_right _ _ _ _
+
 /-- Pullback commutes with the wedge product. -/
 @[simp]
 theorem pullback_wedge {Y : Type*} [DiffeologicalSpace Y] (g : X → Y)
@@ -499,6 +541,8 @@ section NormedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [DiffeologicalSpace E]
   [_root_.Diffeology.IsContDiffCompatible E]
+  {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃] {l : ℕ}
 
 /-- The differential form on a normed space `E` with a compatible diffeology given by a smooth
 flat form `σ`: on a plot `p`, the pullback `p^* σ`. -/
@@ -524,6 +568,34 @@ theorem extDeriv_ofForm (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff �
     (ofForm σ hσ).extDeriv = ofForm (_root_.extDeriv σ) (contDiff_extDeriv hσ (by simp)) :=
   ext fun p hp ↦ funext fun x ↦ extDeriv_pullback ((hσ.differentiable (by simp)) _)
     hp.contDiff.contDiffAt (by simp)
+
+@[simp]
+theorem ofForm_zero : ofForm (0 : E → E [⋀^Fin k]→L[ℝ] F) contDiff_zero_fun = 0 := by
+  ext
+  simp
+
+@[simp]
+theorem ofForm_add (σ τ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) (hτ : ContDiff ℝ ∞ τ) :
+    ofForm (σ + τ) (hσ.add hτ) = ofForm σ hσ + ofForm τ hτ := by
+  ext
+  simp
+
+@[simp]
+theorem ofForm_smul (c : ℝ) (σ : E → E [⋀^Fin k]→L[ℝ] F) (hσ : ContDiff ℝ ∞ σ) :
+    ofForm (c • σ) (hσ.const_smul c) = c • ofForm σ hσ := by
+  ext
+  simp
+
+/-- The paired wedge product of the plotwise forms given by smooth flat forms `σ` and `τ` is the
+plotwise form given by their pointwise paired wedge. -/
+@[simp]
+theorem wedgeWith_ofForm (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : E → E [⋀^Fin k]→L[ℝ] F₁)
+    (hσ : ContDiff ℝ ∞ σ) (τ : E → E [⋀^Fin l]→L[ℝ] F₂) (hτ : ContDiff ℝ ∞ τ) :
+    (ofForm σ hσ).wedgeWith μ (ofForm τ hτ) =
+      ofForm (fun y ↦ ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ (σ y) (τ y))
+        (contDiff_const.pairedWedge hσ hτ) :=
+  ext fun _ _ ↦ funext fun _ ↦
+    (ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap _ _ _ _ _).symm
 
 variable [FiniteDimensional ℝ E]
 
@@ -583,6 +655,40 @@ theorem toForm_extDeriv (σ : DifferentialForm E F k) :
     σ.extDeriv.toForm = _root_.extDeriv σ.toForm := by
   conv_lhs => rw [← σ.ofForm_toForm]
   rw [extDeriv_ofForm, toForm_ofForm]
+
+@[simp]
+theorem toForm_zero : (0 : DifferentialForm E F k).toForm = 0 := by
+  funext
+  ext
+  simp [toForm_apply]
+
+@[simp]
+theorem toForm_add (σ τ : DifferentialForm E F k) : (σ + τ).toForm = σ.toForm + τ.toForm := by
+  funext
+  ext
+  simp [toForm_apply]
+
+@[simp]
+theorem toForm_smul (c : ℝ) (σ : DifferentialForm E F k) : (c • σ).toForm = c • σ.toForm := by
+  funext
+  ext
+  simp [toForm_apply]
+
+/-- The flat form underlying a paired wedge product of differential forms on a
+finite-dimensional normed space is the pointwise paired wedge of their underlying flat forms. -/
+@[simp]
+theorem toForm_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (σ : DifferentialForm E F₁ k)
+    (τ : DifferentialForm E F₂ l) :
+    (σ.wedgeWith μ τ).toForm = fun y ↦
+      ContinuousAlternatingMap.pairedWedge μ μ.continuous₂ (σ.toForm y) (τ.toForm y) :=
+  funext fun _ ↦ ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap _ _ _ _ _
+
+/-- The flat form underlying a wedge product of real-valued differential forms on a
+finite-dimensional normed space is the pointwise wedge of their underlying flat forms. -/
+@[simp]
+theorem toForm_wedge (σ : DifferentialForm E ℝ k) (τ : DifferentialForm E ℝ l) :
+    (σ.wedge τ).toForm = fun y ↦ (σ.toForm y).wedge (τ.toForm y) :=
+  (toForm_wedgeWith _ σ τ).trans (funext fun _ ↦ (ContinuousAlternatingMap.wedge_def _ _).symm)
 
 end NormedSpace
 
