@@ -9,7 +9,7 @@ public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.Analysis.Normed.Algebra.Derivation.Basic
 public import TauCeti.Analysis.Normed.Module.Essential
 import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
-import TauCeti.Analysis.Normed.Ring.ApproximateUnit
+import TauCeti.Topology.ApproximateUnit
 
 /-!
 # Essential-module reductions for bounded derivations
@@ -31,9 +31,9 @@ innerness for bounded derivations into dual bimodules to essential submodules (R
    implementing functional from `E_L` to `E` by Hahn–Banach leaves a residual derivation `D₁`
    annihilating `E_L`, so `D₁ a · b = 0` and hence `D₁ (a * b) = a · D₁ b`; any weak-star limit of
    `D₁ e` along an ultrafilter finer than the approximate identity implements `D₁`.
-2. **Right-essential reduction.** Transporting to the opposite algebra `Aᵐᵒᵖ` reduces the symmetric
-   statement for a bounded left approximate identity and `E_R` directly to the left-essential
-   reduction.
+2. **Right-essential reduction.** After the same Hahn–Banach reduction on `E_R`, transporting only
+   the residual derivation to the opposite algebra `Aᵐᵒᵖ` reduces directly to the weak-star
+   residual innerness lemma.
 3. **Two-sided reduction.** Applying the left- and right-essential reductions successively shows
    that in the presence of a bounded two-sided approximate identity, `D` is inner as soon as its
    restriction to `E_ess = E_L ⊓ E_R` is inner.
@@ -62,10 +62,45 @@ namespace TauCeti
 
 section Reduction
 
-variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [ProperSpace 𝕜]
+variable {𝕜 A E : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   [NonUnitalSeminormedRing A] [NormedSpace 𝕜 A]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {L R : A →L[𝕜] E →L[𝕜] E}
+
+/-- Weak-star residual innerness: if `A` has a bounded right approximate identity, then any
+bounded derivation `D₁ : A →L[𝕜] E*` annihilating all left action products `L b x` is inner. -/
+private theorem exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero
+    {l : Filter A} [l.NeBot] {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
+    (hl : ∀ a, Tendsto (a * ·) l (𝓝 a))
+    (D₁ : A →L[𝕜] StrongDual 𝕜 E)
+    (hD₁ : ∀ a b, D₁ (a * b) = dualAction R a (D₁ b) + dualAction L b (D₁ a))
+    (hD₁_L : ∀ a b x, D₁ a (L b x) = 0) :
+    ∃ φ₁ : StrongDual 𝕜 E, ∀ a, D₁ a = dualAction R a φ₁ - dualAction L a φ₁ := by
+  have : ProperSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
+  -- Since `D₁ a (L b x) = 0`, we have `D₁ a · b = 0` and hence `D₁ (a * b) = a · D₁ b`.
+  have hD₁_mul (a b : A) (x : E) : D₁ (a * b) x = D₁ b (R a x) := by
+    have h := congr($(hD₁ a b) x)
+    simp only [add_apply, dualAction_apply_apply, hD₁_L, add_zero] at h
+    exact h
+  -- Take a weak-star limit `φ₁` of `D₁ e` along an ultrafilter finer than `l`.
+  have hC₁ : ∀ᶠ e in Ultrafilter.of l, ‖D₁ e‖ ≤ ‖D₁‖ * C :=
+    mem_of_superset (Ultrafilter.of_le l hC) fun e he ↦
+      (D₁.le_opNorm e).trans (mul_le_mul_of_nonneg_left he (norm_nonneg D₁))
+  obtain ⟨φ₁, -, hφ₁⟩ := (Ultrafilter.of l).exists_tendsto_toWeakDual D₁ hC₁
+  have hφ₁_eval (x : E) : Tendsto (fun e ↦ D₁ e x) (Ultrafilter.of l) (𝓝 (φ₁ x)) :=
+    ((WeakDual.eval_continuous x).tendsto (StrongDual.toWeakDual φ₁)).comp hφ₁
+  have hφ₁R (a : A) (x : E) : φ₁ (R a x) = D₁ a x := by
+    refine tendsto_nhds_unique (hφ₁_eval (R a x)) ?_
+    have hlim : Tendsto (fun e ↦ D₁ (a * e) x) (Ultrafilter.of l) (𝓝 (D₁ a x)) :=
+      (((D₁.continuous.clm_apply (continuous_const (y := x))).tendsto a).comp (hl a)).mono_left
+        (Ultrafilter.of_le l)
+    exact hlim.congr fun e ↦ hD₁_mul a e x
+  have hφ₁L (a : A) (x : E) : φ₁ (L a x) = 0 := by
+    refine tendsto_nhds_unique (hφ₁_eval (L a x)) ?_
+    simp [hD₁_L _ a x]
+  refine ⟨φ₁, fun a ↦ ?_⟩
+  ext x
+  simp only [sub_apply, dualAction_apply_apply, hφ₁R, hφ₁L, sub_zero]
 
 /-- **Left-essential reduction.** If `A` has a bounded right approximate identity, then a bounded
 derivation `D : A →L[𝕜] E*` is inner as soon as its restriction to the left-essential part
@@ -90,33 +125,14 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential
     fun a _ hx ↦ apply_mem_essentialSubmodule_of_comm hLR a hx
   obtain ⟨ψ, D₁, hD₁, hD₁_EL, hD_eq⟩ :=
     exists_residual_derivation_of_restrict hL hR hLR L.essentialSubmodule hL_inv hR_inv hD hEL
-  -- Since `L b x ∈ L.essentialSubmodule`, `D₁ a · b = 0` and hence `D₁ (a * b) = a · D₁ b`.
-  have hD₁_mul (a b : A) (x : E) : D₁ (a * b) x = D₁ b (R a x) := by
-    have h := congr($(hD₁ a b) x)
-    have h0 : D₁ a (L b x) = 0 := hD₁_EL a (L b x) (apply_mem_essentialSubmodule L b x)
-    simp only [add_apply, dualAction_apply_apply, h0, add_zero] at h
-    exact h
-  -- Take a weak-star limit `φ₁` of `D₁ e` along an ultrafilter finer than `l`.
-  have hC₁ : ∀ᶠ e in Ultrafilter.of l, ‖D₁ e‖ ≤ ‖D₁‖ * C :=
-    mem_of_superset (Ultrafilter.of_le l hC) fun e he ↦
-      (D₁.le_opNorm e).trans (mul_le_mul_of_nonneg_left he (norm_nonneg D₁))
-  obtain ⟨φ₁, -, hφ₁⟩ := (Ultrafilter.of l).exists_tendsto_toWeakDual D₁ hC₁
-  have hφ₁_eval (x : E) : Tendsto (fun e ↦ D₁ e x) (Ultrafilter.of l) (𝓝 (φ₁ x)) :=
-    ((WeakDual.eval_continuous x).tendsto (StrongDual.toWeakDual φ₁)).comp hφ₁
-  have hφ₁R (a : A) (x : E) : φ₁ (R a x) = D₁ a x := by
-    refine tendsto_nhds_unique (hφ₁_eval (R a x)) ?_
-    have hlim : Tendsto (fun e ↦ D₁ (a * e) x) (Ultrafilter.of l) (𝓝 (D₁ a x)) :=
-      (((D₁.continuous.clm_apply (continuous_const (y := x))).tendsto a).comp (hl a)).mono_left
-        (Ultrafilter.of_le l)
-    exact hlim.congr fun e ↦ hD₁_mul a e x
-  have hφ₁L (a : A) (x : E) : φ₁ (L a x) = 0 := by
-    refine tendsto_nhds_unique (hφ₁_eval (L a x)) ?_
-    simp [hD₁_EL _ (L a x) (apply_mem_essentialSubmodule L a x)]
+  obtain ⟨φ₁, hφ₁⟩ := exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero hC hl D₁
+    hD₁ fun a b x ↦ hD₁_EL a (L b x) (apply_mem_essentialSubmodule L b x)
   refine ⟨ψ + φ₁, fun a ↦ ?_⟩
   ext x
   have hDa := congr($(hD_eq a) x)
-  simp only [add_apply, sub_apply, dualAction_apply_apply, hφ₁R, hφ₁L] at hDa ⊢
-  rw [hDa]
+  have hD₁a := congr($(hφ₁ a) x)
+  simp only [add_apply, sub_apply, dualAction_apply_apply] at hDa hD₁a ⊢
+  rw [hDa, hD₁a]
   ring
 
 /-- **Right-essential reduction.** If `A` has a bounded left approximate identity, then a bounded
@@ -136,61 +152,36 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
         dualAction (L.restrictAction R.essentialSubmodule fun a _ hx ↦
           apply_mem_essentialSubmodule_of_comm (fun b c y ↦ (hLR c b y).symm) a hx) a ψ₀) :
     ∃ φ : StrongDual 𝕜 E, ∀ a, D a = dualAction R a φ - dualAction L a φ := by
+  have hL_inv : ∀ a, ∀ x ∈ R.essentialSubmodule, L a x ∈ R.essentialSubmodule :=
+    fun a _ hx ↦ apply_mem_essentialSubmodule_of_comm (fun b c y ↦ (hLR c b y).symm) a hx
+  have hR_inv : ∀ a, ∀ x ∈ R.essentialSubmodule, R a x ∈ R.essentialSubmodule :=
+    fun a x _ ↦ apply_mem_essentialSubmodule R a x
+  obtain ⟨ψ, D₁, hD₁, hD₁_ER, hD_eq⟩ :=
+    exists_residual_derivation_of_restrict hL hR hLR R.essentialSubmodule hL_inv hR_inv hD hER
   let unopL : Aᵐᵒᵖ →L[𝕜] A := (MulOpposite.opContinuousLinearEquiv 𝕜 (M := A)).symm
   let Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := R.comp unopL
   let Rop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := L.comp unopL
-  have hLop (a b : Aᵐᵒᵖ) (x : E) : Lop (a * b) x = Lop a (Lop b x) := by
-    simp [Lop, unopL, hR]
-  have hRop (a b : Aᵐᵒᵖ) (x : E) : Rop (a * b) x = Rop b (Rop a x) := by
-    simp [Rop, unopL, hL]
-  have hLRop (a b : Aᵐᵒᵖ) (x : E) : Lop a (Rop b x) = Rop b (Lop a x) := by
-    simp [Lop, Rop, unopL, hLR]
-  let Dop : Aᵐᵒᵖ →L[𝕜] StrongDual 𝕜 E := D.comp unopL
-  have hDop (a b : Aᵐᵒᵖ) :
-      Dop (a * b) = dualAction Rop a (Dop b) + dualAction Lop b (Dop a) := by
+  let D₁op : Aᵐᵒᵖ →L[𝕜] StrongDual 𝕜 E := D₁.comp unopL
+  have hD₁op (a b : Aᵐᵒᵖ) :
+      D₁op (a * b) = dualAction Rop a (D₁op b) + dualAction Lop b (D₁op a) := by
     ext x
-    simp only [Dop, Lop, Rop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
-      MulOpposite.opContinuousLinearEquiv_symm_apply, MulOpposite.unop_mul, hD, add_apply,
+    simp only [D₁op, Lop, Rop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
+      MulOpposite.opContinuousLinearEquiv_symm_apply, MulOpposite.unop_mul, hD₁, add_apply,
       dualAction_apply_apply]
     exact add_comm _ _
-  have hE_eq : Lop.essentialSubmodule = R.essentialSubmodule :=
-    essentialSubmodule_comp_of_surjective R MulOpposite.unop_surjective
-  obtain ⟨ψ₀, hψ₀⟩ := hER
-  let eSub : Lop.essentialSubmodule →L[𝕜] R.essentialSubmodule :=
-    (LinearIsometryEquiv.ofEq _ _ hE_eq).toLinearIsometry.toContinuousLinearMap
-  have heSub_coe (x : Lop.essentialSubmodule) : (eSub x : E) = (x : E) :=
-    LinearIsometryEquiv.coe_ofEq_apply hE_eq x
-  obtain ⟨φ, hφ⟩ := exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential
-    hLop hRop hLRop (eventually_norm_le_map_op hC) (tendsto_mul_left_map_op hl)
-    Dop hDop ⟨-(ψ₀.comp eSub), fun a ↦ by
-      ext x
-      have hx := congr($(hψ₀ a.unop) (eSub x))
-      have hRe :
-          eSub (Lop.restrictAction Lop.essentialSubmodule (fun a x _ ↦
-              apply_mem_essentialSubmodule Lop a x) a x) =
-            R.restrictAction R.essentialSubmodule (fun a x _ ↦
-              apply_mem_essentialSubmodule R a x) a.unop (eSub x) :=
-        restrictAction_intertwine id heSub_coe (fun y ↦ by simp [Lop, unopL]) x
-      have hLe :
-          eSub (Rop.restrictAction Lop.essentialSubmodule (fun a _ hx ↦
-              apply_mem_essentialSubmodule_of_comm hLRop a hx) a x) =
-            L.restrictAction R.essentialSubmodule (fun a _ hx ↦
-              apply_mem_essentialSubmodule_of_comm (fun b c y ↦ (hLR c b y).symm) a hx) a.unop
-              (eSub x) :=
-        restrictAction_intertwine id heSub_coe (fun y ↦ by simp [Rop, unopL]) x
-      simp only [comp_apply, Submodule.subtypeL_apply, heSub_coe, sub_apply,
-        dualAction_apply_apply, neg_apply, Dop, unopL, ContinuousLinearEquiv.coe_coe,
-        MulOpposite.opContinuousLinearEquiv_symm_apply] at hx ⊢
-      rw [hx, ← hRe, ← hLe]
-      abel⟩
-  refine ⟨-φ, fun a ↦ ?_⟩
+  obtain ⟨φ₁, hφ₁⟩ := exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero
+    (L := Lop) (R := Rop) (l := l.map MulOpposite.op) (Filter.eventually_map.2 hC)
+    (tendsto_mul_left_map_op hl) D₁op hD₁op
+    fun a b x ↦ hD₁_ER a.unop (R b.unop x) (apply_mem_essentialSubmodule R b.unop x)
+  refine ⟨ψ - φ₁, fun a ↦ ?_⟩
   ext x
-  have hax := congr($(hφ (MulOpposite.op a)) x)
-  simp only [Dop, comp_apply, unopL, ContinuousLinearEquiv.coe_coe,
-    MulOpposite.opContinuousLinearEquiv_symm_apply, MulOpposite.unop_op, Rop, Lop,
-    sub_apply, dualAction_apply_apply] at hax
-  simp only [sub_apply, dualAction_apply_apply, neg_apply, hax]
-  abel
+  have hDa := congr($(hD_eq a) x)
+  have hD₁a := congr($(hφ₁ (MulOpposite.op a)) x)
+  simp only [D₁op, Rop, Lop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
+    MulOpposite.opContinuousLinearEquiv_symm_apply, MulOpposite.unop_op,
+    sub_apply, add_apply, dualAction_apply_apply] at hDa hD₁a ⊢
+  rw [hDa, hD₁a]
+  ring
 
 /-- **Essential-part reduction for a bounded derivation.** If `A` has a bounded two-sided
 approximate identity, then a bounded derivation `D : A →L[𝕜] E*` is inner as soon as its
@@ -234,15 +225,12 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
     hl.tendsto_mul_right DL hDL ?_
   let ELR := RL.essentialSubmodule
   have hELR_mem (x : ELR) :
-      (EL.subtypeL.comp ELR.subtypeL) x ∈ essentialBimoduleSubmodule L R := by
-    simp only [comp_apply, Submodule.subtypeL_apply]
-    rw [essentialBimoduleSubmodule_eq_inf hR hLR hC hl.tendsto_mul_left]
-    refine ⟨x.val.property, ?_⟩
-    exact (essentialSubmodule_le_iff (M := RL) (p := R.essentialSubmodule.comap EL.subtype)
-      ((isClosed_essentialSubmodule R).preimage continuous_subtypeVal)).2
+      (EL.subtypeL.comp ELR.subtypeL) x ∈ essentialBimoduleSubmodule L R :=
+    (essentialSubmodule_le_iff (M := RL) (p := (essentialBimoduleSubmodule L R).comap EL.subtype)
+      ((isClosed_essentialBimoduleSubmodule L R).preimage continuous_subtypeVal)).2
       (fun a y ↦ by
-        simp only [Submodule.mem_comap, Submodule.coe_subtype, RL, coe_restrictAction_apply]
-        exact apply_mem_essentialSubmodule R a y.val)
+        simpa [RL, coe_restrictAction_apply] using
+          apply_right_mem_essentialBimoduleSubmodule_of_mem_left hLR a y.property)
       x.property
   let ι : ELR →L[𝕜] essentialBimoduleSubmodule L R :=
     (EL.subtypeL.comp ELR.subtypeL).codRestrict (essentialBimoduleSubmodule L R) hELR_mem

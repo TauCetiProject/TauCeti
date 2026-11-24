@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.Analysis.Normed.Module.CohenFactorization.Basic
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
+import TauCeti.Analysis.Normed.Module.Dual.Bilinear
+import TauCeti.Analysis.Normed.Module.Dual.ClusterPt
 import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
@@ -53,6 +56,9 @@ bounded approximate diagonal has a bounded approximate identity.
   `TauCeti.CompletedProjectiveTensor.mul'_mulRight_apply`: `Δ` is a bimodule map.
 * `TauCeti.CompletedProjectiveTensor.mul'_surjective`: `Δ` is surjective when `A` has a bounded
   left approximate identity.
+* `TauCeti.CompletedProjectiveTensor.exists_bidual_mul_comp_mul'_eq_of_isApproximateUnit`:
+  a bounded two-sided approximate identity lifts to a weak-star cluster point `E₀ ∈ (A ⊗̂π A)**`
+  satisfying `E₀ (f ∘ mul a ∘ Δ) = f a` and `E₀ (f ∘ (· * a) ∘ Δ) = f a`.
 * `TauCeti.CompletedProjectiveTensor.mapL_comp_mulLeft`,
   `TauCeti.CompletedProjectiveTensor.mapL_comp_mulRight` and
   `TauCeti.CompletedProjectiveTensor.mul'_comp_mapL`: a bounded operator `f : A → B` compatible with
@@ -81,6 +87,12 @@ open Filter Topology UniformSpace
 open scoped TensorProduct
 
 namespace TauCeti
+
+-- Shorten instance search for iterated duals of `A` and `A ⊗̂π A`.
+attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
+  ContinuousLinearMap.strongDualNormedSpace
+  ContinuousLinearMap.strongBidualSeminormedAddCommGroup
+  ContinuousLinearMap.strongBidualNormedSpace
 
 namespace CompletedProjectiveTensor
 
@@ -233,6 +245,45 @@ theorem mul'_surjective {𝕜 A : Type*} [RCLike 𝕜] [NonUnitalNormedRing A] [
     Function.Surjective (mul' 𝕜 A) := fun x ↦
   let ⟨a, y, _, h⟩ := exists_mul_eq_of_tendsto_mul_right 𝕜 hC hl x
   ⟨(⟨a ⊗ₜ y⟩ : ProjectiveTensor 𝕜 A A), by simpa using h⟩
+
+/-- If a Banach algebra `A` over a proper scalar field has a bounded two-sided approximate
+identity, then there is `E₀ ∈ (A ⊗̂π A)**` satisfying `E₀ (f ∘ mul a ∘ Δ) = f a` and
+`E₀ (f ∘ (· * a) ∘ Δ) = f a` for all `a : A` and `f ∈ A*`. -/
+theorem exists_bidual_mul_comp_mul'_eq_of_isApproximateUnit {𝕜 A : Type*}
+    [NontriviallyNormedField 𝕜] [ProperSpace 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+    [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] [CompleteSpace A]
+    {l : Filter A} (hl : l.IsApproximateUnit) {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) :
+    ∃ E₀ : StrongDual 𝕜 (StrongDual 𝕜 (CompletedProjectiveTensor 𝕜 A A)),
+      (∀ (a : A) (f : StrongDual 𝕜 A),
+        E₀ ((f.comp (ContinuousLinearMap.mul 𝕜 A a)).comp (mul' 𝕜 A)) = f a) ∧
+      (∀ (a : A) (f : StrongDual 𝕜 A),
+        E₀ ((f.comp ((ContinuousLinearMap.mul 𝕜 A).flip a)).comp (mul' 𝕜 A)) = f a) := by
+  -- Take a weak-star cluster point `E₀` of `e ⊗ₜ e` along the bounded approximate identity.
+  have := hl.neBot
+  obtain ⟨e₀, he₀⟩ := hC.exists
+  have hC0 : 0 ≤ C := (norm_nonneg e₀).trans he₀
+  have hbdd : l.IsBoundedUnder (· ≤ ·) norm := isBoundedUnder_of_eventually_le hC
+  have hsq : ∀ᶠ m in l.map (fun e ↦ tmulL (𝕜 := 𝕜) e e), ‖m‖ ≤ C * C :=
+    eventually_map.2 <| hC.mono fun e he ↦ by
+      rw [tmulL_apply]
+      exact (norm_coe_tmul_le e e).trans (mul_le_mul he he (norm_nonneg e) hC0)
+  obtain ⟨E₀, -, hE₀⟩ := hsq.exists_mapClusterPt_inclusionInDoubleDual (𝕜 := 𝕜)
+  refine ⟨E₀, fun a f ↦ ?_, fun a f ↦ ?_⟩
+  · have haee : Tendsto (fun e ↦ a * (e * e)) l (𝓝 a) := by
+      simpa [sub_mul, mul_assoc] using
+        ((tendsto_sub_nhds_zero_iff.2 (hl.tendsto_mul_left a)).zero_mul_isBoundedUnder_le hbdd).add
+          (hl.tendsto_mul_left a)
+    refine hE₀.apply_eq_of_tendsto_inclusionInDoubleDual _ (tendsto_map'_iff.2 ?_)
+    simpa only [Function.comp_def, ContinuousLinearMap.comp_apply, tmulL_apply, mul'_coe_tmul,
+      ContinuousLinearMap.mul_apply'] using (f.continuous.tendsto a).comp haee
+  · have heea : Tendsto (fun e ↦ (e * e) * a) l (𝓝 a) := by
+      simpa [mul_sub, mul_assoc] using
+        (isBoundedUnder_le_mul_tendsto_zero hbdd
+          (tendsto_sub_nhds_zero_iff.2 (hl.tendsto_mul_right a))).add (hl.tendsto_mul_right a)
+    refine hE₀.apply_eq_of_tendsto_inclusionInDoubleDual _ (tendsto_map'_iff.2 ?_)
+    simpa only [Function.comp_def, ContinuousLinearMap.comp_apply, tmulL_apply, mul'_coe_tmul,
+      ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply'] using
+        (f.continuous.tendsto a).comp heea
 
 section Map
 

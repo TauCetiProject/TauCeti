@@ -13,8 +13,8 @@ import TauCeti.Analysis.Normed.Module.CohenFactorization.Basic
 /-!
 # Cohen–Hewitt factorization for Banach left modules over C⋆-algebras
 
-Instantiates `ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span` and
-`ContinuousLinearMap.coe_topologicalClosure_span_range_eq` from
+Instantiates `ContinuousLinearMap.exists_apply_eq_of_mem_essentialSubmodule` and
+`ContinuousLinearMap.coe_essentialSubmodule_eq_range` from
 `TauCeti.Analysis.Normed.Module.CohenFactorization.Basic` along the canonical approximate unit
 `CStarAlgebra.increasingApproximateUnit A`, formulated in terms of `⋃ a, Set.range (L a)` to match
 the essential-subspace convention for C⋆-algebra representations and multiplier homomorphisms.
@@ -46,8 +46,11 @@ theorem exists_apply_eq_of_mem_topologicalClosure_span_iUnion (L : A →L[ℂ] E
   have hl := CStarAlgebra.increasingApproximateUnit A; have := hl.neBot
   have hrange : (Set.range fun p : A × E => L p.1 p.2) = ⋃ a, Set.range (L a) :=
     Set.ext fun _ => by simp [Prod.exists]
-  exact L.exists_apply_eq_of_mem_topologicalClosure_span hL
-    hl.eventually_norm hl.tendsto_mul_right (by rwa [hrange]) hε
+  have hx' : x ∈ L.essentialSubmodule := by
+    rw [L.essentialSubmodule_eq_topologicalClosure_span, hrange]
+    exact hx
+  exact L.exists_apply_eq_of_mem_essentialSubmodule hL
+    hl.eventually_norm hl.tendsto_mul_right hx' hε
 
 /-- Over a C⋆-algebra `A`, the set `⋃ a, Set.range (L a)` of products for a bounded left action
 `L : A →L[ℂ] E →L[ℂ] E` on a complex Banach space `E` already equals its closed linear span. -/
@@ -59,7 +62,7 @@ theorem coe_topologicalClosure_span_iUnion_range_eq (L : A →L[ℂ] E →L[ℂ]
   have hl := CStarAlgebra.increasingApproximateUnit A; have := hl.neBot
   have hrange : (Set.range fun p : A × E => L p.1 p.2) = ⋃ a, Set.range (L a) :=
     Set.ext fun _ => by simp [Prod.exists]
-  rw [← hrange]
-  exact L.coe_topologicalClosure_span_range_eq hL hl.eventually_norm hl.tendsto_mul_right
+  rw [← hrange, ← L.essentialSubmodule_eq_topologicalClosure_span]
+  exact L.coe_essentialSubmodule_eq_range hL hl.eventually_norm hl.tendsto_mul_right
 
 end ContinuousLinearMap

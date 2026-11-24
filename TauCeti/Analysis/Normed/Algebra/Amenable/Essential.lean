@@ -47,7 +47,7 @@ namespace TauCeti
 algebra with a bounded two-sided approximate identity is amenable if and only if every bounded
 derivation into the dual of an essential Banach `A`-bimodule (in the universe of `A`) is inner. -/
 theorem isAmenable_iff_essential {𝕜 : Type v} {A : Type u} [NontriviallyNormedField 𝕜]
-    [IsRCLikeNormedField 𝕜] [ProperSpace 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+    [IsRCLikeNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
     {l : Filter A} (hl : l.IsApproximateUnit) {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) :
     IsAmenable 𝕜 A ↔
       ∀ (E : Type u) [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]

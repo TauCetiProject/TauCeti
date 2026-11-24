@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import TauCeti.Analysis.Normed.Operator.Restrict
 import TauCeti.Analysis.Normed.Operator.Dense
-import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 import TauCeti.Topology.Algebra.Module.Span
+import TauCeti.Topology.ApproximateUnit
 
 /-!
 # Bounded approximate identities on essential modules
@@ -55,9 +55,11 @@ This file proves:
   `ContinuousLinearMap.apply_mem_essentialSubmodule_of_comm`: invariance of `M.essentialSubmodule`
   under `M` and under any commuting bounded bilinear action.
 * `ContinuousLinearMap.apply_left_apply_right_mem_essentialBimoduleSubmodule`,
-  `ContinuousLinearMap.apply_left_mem_essentialBimoduleSubmodule`, and
-  `ContinuousLinearMap.apply_right_mem_essentialBimoduleSubmodule`: generator membership and
-  invariance of `essentialBimoduleSubmodule L R` under both actions.
+  `ContinuousLinearMap.apply_left_mem_essentialBimoduleSubmodule`,
+  `ContinuousLinearMap.apply_right_mem_essentialBimoduleSubmodule`,
+  `ContinuousLinearMap.apply_left_mem_essentialBimoduleSubmodule_of_mem_right`, and
+  `ContinuousLinearMap.apply_right_mem_essentialBimoduleSubmodule_of_mem_left`: generator
+  membership, invariance, and one-sided-to-two-sided entry of `essentialBimoduleSubmodule L R`.
 * `ContinuousLinearMap.tendsto_apply_of_mem_essentialSubmodule_of_tendsto_apply`,
   `ContinuousLinearMap.mem_essentialSubmodule_of_tendsto_apply`, and
   `ContinuousLinearMap.essentialSubmodule_restrictAction_eq_top_of_tendsto`: generator-to-closure
@@ -250,6 +252,26 @@ theorem apply_right_mem_essentialBimoduleSubmodule [Mul A] {L R : A →L[𝕜] E
       exact apply_left_apply_right_mem_essentialBimoduleSubmodule L R b (c * a) y)
     ((essentialBimoduleSubmodule_eq_topologicalClosure_span L R).symm ▸ hx)
 
+/-- Applying the left action `L a` to an element of `R.essentialSubmodule` lands in the two-sided
+essential submodule `essentialBimoduleSubmodule L R`. -/
+theorem apply_left_mem_essentialBimoduleSubmodule_of_mem_right {L R : A →L[𝕜] E →L[𝕜] E}
+    (a : A) {x : E} (hx : x ∈ R.essentialSubmodule) :
+    L a x ∈ essentialBimoduleSubmodule L R :=
+  (L a).continuous.apply_mem_of_mem_topologicalClosure_span
+    (isClosed_essentialBimoduleSubmodule L R)
+    (by
+      rintro _ ⟨⟨b, z⟩, rfl⟩
+      exact apply_left_apply_right_mem_essentialBimoduleSubmodule L R a b z)
+    ((essentialSubmodule_eq_topologicalClosure_span R).symm ▸ hx)
+
+/-- If `L` and `R` commute, applying the right action `R b` to an element of `L.essentialSubmodule`
+lands in the two-sided essential submodule `essentialBimoduleSubmodule L R`. -/
+theorem apply_right_mem_essentialBimoduleSubmodule_of_mem_left {L R : A →L[𝕜] E →L[𝕜] E}
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (b : A) {y : E} (hy : y ∈ L.essentialSubmodule) :
+    R b y ∈ essentialBimoduleSubmodule L R := by
+  rw [essentialBimoduleSubmodule_comm hLR]
+  exact apply_left_mem_essentialBimoduleSubmodule_of_mem_right b hy
+
 /-- If an eventually norm-bounded filter `l` acts as the identity in the limit on every generator
 `M a w`, then it converges pointwise to the identity on the entire essential submodule
 `M.essentialSubmodule`. -/
@@ -378,20 +400,9 @@ theorem essentialBimoduleSubmodule_eq_inf
     essentialBimoduleSubmodule L R = L.essentialSubmodule ⊓ R.essentialSubmodule := by
   refine le_antisymm
     (le_inf (essentialBimoduleSubmodule_le_left L R) (essentialBimoduleSubmodule_le_right hLR))
-    fun x hx ↦ ?_
-  have hmem : ∀ b : A, ∀ y ∈ L.essentialSubmodule, R b y ∈ essentialBimoduleSubmodule L R :=
-    fun b y hy ↦
-      (R b).continuous.apply_mem_of_mem_topologicalClosure_span
-        (isClosed_essentialBimoduleSubmodule L R)
-        (by
-          rintro _ ⟨⟨a, z⟩, rfl⟩
-          dsimp only
-          rw [← hLR]
-          exact apply_left_apply_right_mem_essentialBimoduleSubmodule L R a b z)
-        ((essentialSubmodule_eq_topologicalClosure_span L).symm ▸ hy)
-  exact (isClosed_essentialBimoduleSubmodule L R).mem_of_tendsto
-    (tendsto_apply_of_mem_essentialSubmodule_right R hR hC hl hx.2)
-    (.of_forall fun e ↦ hmem e x hx.1)
+    fun x hx ↦ (isClosed_essentialBimoduleSubmodule L R).mem_of_tendsto
+      (tendsto_apply_of_mem_essentialSubmodule_right R hR hC hl hx.2)
+      (.of_forall fun e ↦ apply_right_mem_essentialBimoduleSubmodule_of_mem_left hLR e hx.1)
 
 /-- In a bounded bimodule over a normed algebra with a bounded left approximate identity, the
 two-sided essential submodule `essentialBimoduleSubmodule L R` equals the intersection
@@ -409,8 +420,8 @@ theorem essentialBimoduleSubmodule_eq_inf_of_tendsto_mul_right
     simp [Lop, unopL, hL]
   have hRLop : ∀ a b x, Rop a (Lop b x) = Lop b (Rop a x) := fun a b x ↦
     (hLR b.unop a.unop x).symm
-  have h := essentialBimoduleSubmodule_eq_inf hLop hRLop
-    (TauCeti.eventually_norm_le_map_op hC) (TauCeti.tendsto_mul_left_map_op hl)
+  have h := essentialBimoduleSubmodule_eq_inf (l := l.map MulOpposite.op) hLop hRLop
+    (Filter.eventually_map.2 hC) (TauCeti.tendsto_mul_left_map_op hl)
   rwa [essentialBimoduleSubmodule_comp_of_surjective R L MulOpposite.unop_surjective,
     ← essentialBimoduleSubmodule_comm hLR,
     essentialSubmodule_comp_of_surjective R MulOpposite.unop_surjective,
