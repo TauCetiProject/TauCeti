@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.Analysis.MvPolynomial.L1Norm
 import TauCeti.Algebra.Polynomial.Homogenize
+import TauCeti.Algebra.Polynomial.Coeff.ToMvPolynomial
 
 /-!
 # The coefficient l¹-norm of a polynomial
@@ -39,6 +41,8 @@ coefficients.
   quotient of a polynomial by a power of `X - a`.
 * `Polynomial.l1Norm_aeval_homogenize_le`: the bound `‖p‖∞ (‖g‖₁ + ‖h‖₁) ^ n` after substituting
   `g` and `h` into the homogenization of degree `n` of `p`.
+* `Polynomial.l1Norm_toMvPolynomial`: embedding a polynomial as a polynomial in one variable of
+  a multivariate polynomial ring preserves its coefficient l¹-norm.
 
 ## References
 
@@ -406,6 +410,18 @@ theorem l1Norm_aeval_homogenize_le (p : A[X]) (n : ℕ) (g h : A[X]) :
         have h1 : (1 : ℝ) ≤ n.choose k := by
           exact_mod_cast Nat.choose_pos (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
         exact le_mul_of_one_le_right (by positivity) h1
+
+/-- Embedding a polynomial as a polynomial in the variable `Xᵢ` of a multivariate polynomial ring
+preserves its coefficient l¹-norm. -/
+@[simp]
+theorem l1Norm_toMvPolynomial {σ : Type*} (i : σ) (p : A[X]) :
+    (p.toMvPolynomial i).l1Norm = p.l1Norm := by
+  -- Both sums run over the supports of the coefficient vectors, which the placement reindexes
+  -- along `Finsupp.single i`.
+  rw [MvPolynomial.l1Norm_def, l1Norm_eq_sum_support, Polynomial.support,
+    ← MvPolynomial.finsupp_support_eq_support, coeff_toMvPolynomial_eq_embDomain,
+    Finsupp.support_embDomain, Finset.sum_map]
+  simp only [Finsupp.embDomain_apply_self]
 
 end CommRing
 
