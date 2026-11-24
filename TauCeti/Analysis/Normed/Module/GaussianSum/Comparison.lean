@@ -104,14 +104,11 @@ theorem gaussianSecondMoment_le_of_weakTwo_le (x : ι → Y) (y : κ → Y)
       ∑ i, |f (x i)| ^ 2 ≤ ∑ j, |f (y j)| ^ 2) :
     gaussianSecondMoment x ≤ gaussianSecondMoment y := by
   obtain ⟨D, hD, hxy⟩ := exists_contraction_of_weakTwo_le x y h
-  let U : EuclideanSpace ℝ κ →L[ℝ] Y :=
-    (EuclideanSpace.basisFun κ ℝ).toBasis.constrL y
-  have hU (g : EuclideanSpace ℝ κ) : U g = ∑ j, g j • y j :=
-    EuclideanSpace.basisFun_toBasis_constrL_apply y g
   rw [gaussianSecondMoment_def, gaussianSecondMoment_def]
   apply Real.sqrt_le_sqrt
-  simpa only [hU, ← hxy] using
-    U.integral_norm_sq_comp_le_stdGaussian D.adjoint (ContinuousLinearMap.adjoint.norm_map D ▸ hD)
+  simpa only [gaussianSumCLM_apply, ← hxy] using
+    (gaussianSumCLM y).integral_norm_sq_comp_le_stdGaussian D.adjoint
+      (ContinuousLinearMap.adjoint.norm_map D ▸ hD)
 
 /-- Families with the same square sums against every real continuous functional have the same
 Gaussian second moment. -/

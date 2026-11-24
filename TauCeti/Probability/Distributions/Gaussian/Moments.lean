@@ -39,8 +39,8 @@ The formulas follow the standard calculation in, for example, Johnson, Kotz, and
 * `integral_sub_pow_two_mul_add_one_gaussianReal` and
   `centralMoment_id_two_mul_add_one_gaussianReal` say that every odd centered moment vanishes.
 * `integral_sq_gaussianReal` evaluates the second raw moment.
-* `setIntegral_sq_tail_gaussianReal_le` bounds the quadratic tail integral of `gaussianReal 0 1`
-  by `3 / t²`.
+* `setIntegral_sq_tail_gaussianReal_le` and `sqrt_setIntegral_sq_tail_gaussianReal_le` bound the
+  quadratic tail integral of `gaussianReal 0 1` by `3 / t²` and its square root by `√3 / t`.
 * `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
   first-moment integrability for one or two Gaussian coordinates.
 * `isMomentDeterminate_gaussianReal`: a real Gaussian law is determined by its moments, so the
@@ -190,5 +190,13 @@ theorem setIntegral_sq_tail_gaussianReal_le {t : ℝ} (ht : 0 < t) :
       have h4 := integral_sub_pow_four_gaussianReal 0 1
       simp only [sub_zero, NNReal.coe_one, one_pow, mul_one] at h4
       rw [h4]
+
+/-- Square-root fourth-moment bound on the quadratic tail of a standard real Gaussian. -/
+theorem sqrt_setIntegral_sq_tail_gaussianReal_le {t : ℝ} (ht : 0 < t) :
+    √(∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤ √3 / t := by
+  calc
+    √(∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤ √(3 / t ^ 2) :=
+      Real.sqrt_le_sqrt (setIntegral_sq_tail_gaussianReal_le ht)
+    _ = √3 / t := by rw [Real.sqrt_div (by norm_num), Real.sqrt_sq ht.le]
 
 end TauCeti.Probability

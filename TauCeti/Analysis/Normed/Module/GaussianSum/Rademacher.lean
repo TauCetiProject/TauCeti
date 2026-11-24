@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype.Basic
 
 import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype.Comparison
-import TauCeti.Probability.Distributions.Gaussian.Moments
 
 /-!
 # Gaussian sums are dominated by Rademacher sums under cotype `2`
@@ -19,13 +18,16 @@ Rademacher cotype `2` with constant `C`), then the Gaussian second moment of eve
 `G₂(y) = (𝔼_g ‖∑ i, gᵢ yᵢ‖²)^(1/2) ≤ 4 √3 C R₂(y)`.
 
 The proof applies the threshold comparison `gaussianSecondMoment_le_two_mul_rademacherSecondMoment`
-at `t = 2 √3 C` together with the fourth-moment tail bound `setIntegral_sq_tail_gaussianReal_le`
-(and `subsingleton_of_lt_one` when `C = 0`).
+at `t = 2 √3 C` together with the tail certificate `mul_sqrt_setIntegral_sq_tail_le`
+(and `subsingleton_of_lt_one` when `C = 0`). Combining this with Gaussian cotype `2` yields
+Rademacher cotype `2` with constant `4 √3 C²`.
 
 ## Main declarations
 
 * `TauCeti.HasGaussianCotype.gaussianSecondMoment_le`, `TauCeti.HasCotype.gaussianSecondMoment_le`:
   `G₂(y) ≤ 4 √3 C R₂(y)` under Gaussian or Rademacher cotype `2` with constant `C`.
+* `TauCeti.HasGaussianCotype.hasCotype_two`: Gaussian cotype `2` implies Rademacher cotype `2`
+  with constant `4 √3 C²`.
 
 ## References
 
@@ -37,10 +39,12 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory TauCeti.Probability
+open MeasureTheory ProbabilityTheory
 open scoped NNReal BigOperators
 
 namespace TauCeti
+
+section GaussianSecondMoment
 
 variable {ι Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y] [Fintype ι] [DecidableEq ι]
   {C : ℝ≥0}
@@ -57,15 +61,9 @@ theorem HasGaussianCotype.gaussianSecondMoment_le (h : HasGaussianCotype Y 2 C) 
   have ht : 0 < 2 * √3 * (C : ℝ) := by positivity
   have htail :
       (C : ℝ) * √(∫ r in {r : ℝ | 2 * √3 * (C : ℝ) < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤
-        1 / 2 := by
-    calc
-      (C : ℝ) * √(∫ r in {r : ℝ | 2 * √3 * (C : ℝ) < |r|}, r ^ 2 ∂gaussianReal 0 1)
-          ≤ (C : ℝ) * √(3 / (2 * √3 * (C : ℝ)) ^ 2) := by
-        gcongr
-        exact setIntegral_sq_tail_gaussianReal_le ht
-      _ = 1 / 2 := by
-        rw [Real.sqrt_div (by norm_num), Real.sqrt_sq ht.le]
-        field_simp
+        1 / 2 :=
+    mul_sqrt_setIntegral_sq_tail_le ht (by
+      rw [show (C : ℝ) * √3 / (2 * √3 * (C : ℝ)) = 1 / 2 by field_simp])
   simpa only [mul_assoc] using
     (gaussianSecondMoment_le_two_mul_rademacherSecondMoment h htail y).trans_eq (by ring)
 
@@ -74,5 +72,23 @@ then `G₂(y) ≤ 4 √3 C R₂(y)` for every finite family `y`. -/
 theorem HasCotype.gaussianSecondMoment_le (h : HasCotype Y 2 C) (y : ι → Y) :
     gaussianSecondMoment y ≤ 4 * √3 * C * rademacherSecondMoment y :=
   h.hasGaussianCotype_two.gaussianSecondMoment_le y
+
+end GaussianSecondMoment
+
+/-- Gaussian cotype `2` with constant `C` implies Rademacher cotype `2` with constant
+`4 √3 C²`. -/
+theorem HasGaussianCotype.hasCotype_two {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    {C : ℝ≥0} (hY : HasGaussianCotype Y 2 C) :
+    HasCotype Y 2 (4 * NNReal.sqrt 3 * C ^ 2) := by
+  rw [hasCotype_iff]
+  intro n y
+  calc
+    ‖WithLp.toLp 2 y‖ ≤ C * gaussianSecondMoment y := hY.norm_toLp_le y
+    _ ≤ C * (4 * √3 * C * rademacherSecondMoment y) := by
+      gcongr
+      exact hY.gaussianSecondMoment_le y
+    _ = ((4 * NNReal.sqrt 3 * C ^ 2 : ℝ≥0) : ℝ) * rademacherSecondMoment y := by
+      push_cast
+      ring
 
 end TauCeti

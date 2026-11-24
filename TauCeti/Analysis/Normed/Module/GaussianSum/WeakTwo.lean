@@ -10,7 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Normed.Lp.Weak
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.RCLike.Extend
-import Mathlib.Topology.Instances.RealVectorSpace
 import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 import TauCeti.Analysis.InnerProductSpace.Parseval
 

@@ -47,12 +47,12 @@ variable {ι Y : Type*} [Fintype ι] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 theorem integral_norm_sq_truncVec_le [DecidableEq ι] (y : ι → Y) {t : ℝ} (ht : 0 ≤ t) :
     ∫ g, ‖∑ i, EuclideanSpace.truncVec t g i • y i‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) ≤
       (t * rademacherSecondMoment y) ^ 2 := by
-  let U : EuclideanSpace ℝ ι →L[ℝ] Y := (EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
   have hint : Integrable (fun g : EuclideanSpace ℝ ι ↦
         ‖∑ i, EuclideanSpace.truncVec t g i • y i‖ ^ 2)
       (stdGaussian (EuclideanSpace ℝ ι)) := by
-    simpa only [U, EuclideanSpace.basisFun_toBasis_constrL_apply] using
-      (Probability.memLp_comp_truncVec U t (by simp)).integrable_norm_pow two_ne_zero
+    simpa only [gaussianSumCLM_apply] using
+      (Probability.memLp_comp_truncVec (gaussianSumCLM y) t (by simp)).integrable_norm_pow
+        two_ne_zero
   rw [Probability.integral_eq_integral_expect_signFlip hint]
   refine (integral_mono_of_nonneg (ae_of_all _ fun _ ↦ Finset.expect_nonneg fun _ _ ↦
     sq_nonneg _) (integrable_const ((t * rademacherSecondMoment y) ^ 2))
@@ -78,16 +78,16 @@ theorem gaussianSecondMoment_le_trunc_add_tail (y : ι → Y) (t : ℝ) :
           ∂stdGaussian (EuclideanSpace ℝ ι)) +
         √(∫ g, ‖∑ i, EuclideanSpace.tailVec t g i • y i‖ ^ 2
           ∂stdGaussian (EuclideanSpace ℝ ι)) := by
-  let U : EuclideanSpace ℝ ι →L[ℝ] Y := (EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
   have hsplit (g : EuclideanSpace ℝ ι) : ∑ i, g i • y i =
-      ((fun g ↦ U (EuclideanSpace.truncVec t g)) +
-        (fun g ↦ U (EuclideanSpace.tailVec t g))) g := by
-    rw [Pi.add_apply, ← U.map_add, EuclideanSpace.truncVec_add_tailVec]
-    exact (EuclideanSpace.basisFun_toBasis_constrL_apply y g).symm
-  simp_rw [← EuclideanSpace.basisFun_toBasis_constrL_apply y]
+      ((fun g ↦ gaussianSumCLM y (EuclideanSpace.truncVec t g)) +
+        (fun g ↦ gaussianSumCLM y (EuclideanSpace.tailVec t g))) g := by
+    rw [Pi.add_apply, ← (gaussianSumCLM y).map_add, EuclideanSpace.truncVec_add_tailVec,
+      gaussianSumCLM_apply]
+  simp_rw [← gaussianSumCLM_apply y]
   rw [gaussianSecondMoment_def]
   simp_rw [hsplit]
-  exact (Probability.memLp_comp_truncVec U t (by simp)).sqrt_integral_norm_add_sq_le
-    (Probability.memLp_comp_tailVec U t (by simp))
+  exact (Probability.memLp_comp_truncVec (gaussianSumCLM y) t
+    (by simp)).sqrt_integral_norm_add_sq_le
+    (Probability.memLp_comp_tailVec (gaussianSumCLM y) t (by simp))
 
 end TauCeti

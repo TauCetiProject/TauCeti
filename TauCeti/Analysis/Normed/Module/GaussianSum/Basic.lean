@@ -43,16 +43,29 @@ namespace TauCeti
 
 variable {ι Y : Type*} [Fintype ι] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 
+/-- The continuous linear map `EuclideanSpace ℝ ι →L[ℝ] Y` sending the standard orthonormal basis
+vector `eᵢ` to `y i`, i.e., `g ↦ ∑ i, g i • y i`. -/
+def gaussianSumCLM (y : ι → Y) : EuclideanSpace ℝ ι →L[ℝ] Y :=
+  (EuclideanSpace.basisFun ι ℝ).toBasis.constrL y
+
+/-- Applying `gaussianSumCLM y` to a coordinate vector `g` gives `∑ i, g i • y i`. -/
+@[simp]
+theorem gaussianSumCLM_apply (y : ι → Y) (g : EuclideanSpace ℝ ι) :
+    gaussianSumCLM y g = ∑ i, g i • y i :=
+  EuclideanSpace.basisFun_toBasis_constrL_apply y g
+
+/-- `gaussianSumCLM y` maps the `i`-th standard orthonormal basis vector to `y i`. -/
+theorem gaussianSumCLM_basisFun (y : ι → Y) (i : ι) :
+    gaussianSumCLM y (EuclideanSpace.basisFun ι ℝ i) = y i := by
+  rw [gaussianSumCLM, ← (EuclideanSpace.basisFun ι ℝ).coe_toBasis]
+  exact Module.Basis.constrL_basis (EuclideanSpace.basisFun ι ℝ).toBasis y i
+
 /-- A finite Gaussian sum has every finite moment, even in an incomplete target. -/
 theorem memLp_gaussianSum (x : ι → Y) (p : ℝ≥0∞) (hp : p ≠ ∞) :
     MemLp (fun g : EuclideanSpace ℝ ι ↦ ∑ i, g i • x i) p
       (stdGaussian (EuclideanSpace ℝ ι)) := by
-  let T : EuclideanSpace ℝ ι →L[ℝ] Y :=
-    (EuclideanSpace.basisFun ι ℝ).toBasis.constrL x
-  have hT (g : EuclideanSpace ℝ ι) : T g = ∑ i, g i • x i :=
-    EuclideanSpace.basisFun_toBasis_constrL_apply x g
-  simpa only [Function.comp_def, id_eq, hT] using
-    T.comp_memLp' (IsGaussian.memLp_id (stdGaussian (EuclideanSpace ℝ ι)) p hp)
+  simpa only [Function.comp_def, id_eq, gaussianSumCLM_apply] using
+    (gaussianSumCLM x).comp_memLp' (IsGaussian.memLp_id (stdGaussian (EuclideanSpace ℝ ι)) p hp)
 
 /-- The squared norm of a finite Gaussian sum is integrable. -/
 theorem integrable_norm_sq_gaussianSum (x : ι → Y) :

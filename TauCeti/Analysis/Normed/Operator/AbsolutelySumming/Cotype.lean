@@ -25,10 +25,9 @@ Pisier's Gaussian-to-Rademacher comparison
 (`TauCeti.gaussianSecondMoment_le_two_mul_rademacherSecondMoment`) yields Pisier's cotype-`2`
 summing bounds (Pisier, Theorem 3.9):
 `π₂(U) ≤ (1 + ‖(RCLike.I : 𝕜)‖) * (2 * C * t) * R₂(U ∘ b)` whenever
-`C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2`, specializing to `π₂(U) ≤ 2 * C * t * R₂(U ∘ b)` and
-`π₂(U) ≤ 8 * C² * R₂(U ∘ b)` over `ℝ`, and to `π₂(U) ≤ 4 * C * t * R₂(U ∘ b)` and
-`π₂(U) ≤ 16 * C² * R₂(U ∘ b)` over any `RCLike` field. We also include the `4 √3 C² R₂(U eᵢ)`
-real bounds derived via `TauCeti.HasGaussianCotype.gaussianSecondMoment_le`.
+`C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2`, specializing to `π₂(U) ≤ 2 * C * t * R₂(U ∘ b)` over `ℝ` and
+to `π₂(U) ≤ 4 * C * t * R₂(U ∘ b)` and `π₂(U) ≤ 16 * C² * R₂(U ∘ b)` over any `RCLike` field,
+while `t = 2 √3 C` gives the sharper real bound `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)` for seminormed `Y`.
 
 ## Main declarations
 
@@ -37,9 +36,9 @@ real bounds derived via `TauCeti.HasGaussianCotype.gaussianSecondMoment_le`.
 * `ContinuousLinearMap.summingENorm_two_le_ofReal_two_mul_rademacherSecondMoment`,
   `ContinuousLinearMap.summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment`:
   threshold-form cotype-`2` summing bounds over `ℝ` and over any `RCLike` field.
-* `ContinuousLinearMap.summingENorm_two_le_ofReal_eight_mul_sq_mul_rademacherSecondMoment`,
-  `ContinuousLinearMap.summingENorm_two_le_ofReal_sixteen_mul_sq_mul_rademacherSecondMoment`:
-  explicit-constant cotype-`2` summing bounds over `ℝ` and over any `RCLike` field.
+* `ContinuousLinearMap.summingENorm_two_le_ofReal_sixteen_mul_sq_mul_rademacherSecondMoment`:
+  explicit-constant cotype-`2` summing bound `π₂(U) ≤ 16 * C² * R₂(U ∘ b)` over any `RCLike`
+  field.
 * `ContinuousLinearMap.summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype`,
   `ContinuousLinearMap.summingENorm_two_le_mul_rademacherSecondMoment_of_hasCotype`:
   `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)` over `ℝ`.
@@ -129,20 +128,6 @@ theorem summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment
       mul_nonneg (mul_nonneg C.property ht_neg.le) (rademacherSecondMoment_nonneg _)
     nlinarith
 
-/-- **Pisier's cotype-`2` summing bound (real case, explicit constant).** If `Y` has Rademacher
-cotype `2` with constant `C`, then every bounded real-linear operator `U : E →L[ℝ] Y` from an
-inner product space with a finite orthonormal basis `b` satisfies
-`π₂(U) ≤ 8 * C² * R₂(U ∘ b)`. -/
-theorem summingENorm_two_le_ofReal_eight_mul_sq_mul_rademacherSecondMoment
-    {ι E Y : Type*} [Fintype ι] [DecidableEq ι]
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [SeminormedAddCommGroup Y] [NormedSpace ℝ Y]
-    {C : ℝ≥0} (hY : HasCotype Y 2 C)
-    (b : OrthonormalBasis ι ℝ E) (U : E →L[ℝ] Y) :
-    U.summingENorm 2 ≤ ENNReal.ofReal (8 * (C : ℝ) ^ 2 * rademacherSecondMoment (U ∘ b)) :=
-  (summingENorm_two_le_ofReal_two_mul_rademacherSecondMoment hY
-    (Probability.mul_sqrt_setIntegral_sq_tail_four_mul_le C) b U).trans_eq (by ring_nf)
-
 /-- **Pisier's cotype-`2` summing bound (`RCLike` case, explicit constant).** If `Y` has Rademacher
 cotype `2` with constant `C`, then every bounded `𝕜`-linear operator `U : E →L[𝕜] Y` from an
 inner product space with a finite orthonormal basis `b` satisfies `π₂(U) ≤ 16 * C² * R₂(U ∘ b)`. -/
@@ -152,20 +137,28 @@ theorem summingENorm_two_le_ofReal_sixteen_mul_sq_mul_rademacherSecondMoment
     [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
     {C : ℝ≥0} (hY : HasCotype Y 2 C)
     (b : OrthonormalBasis ι 𝕜 E) (U : E →L[𝕜] Y) :
-    U.summingENorm 2 ≤ ENNReal.ofReal (16 * (C : ℝ) ^ 2 * rademacherSecondMoment (U ∘ b)) :=
-  (summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment hY
-    (Probability.mul_sqrt_setIntegral_sq_tail_four_mul_le C) b U).trans_eq (by ring_nf)
+    U.summingENorm 2 ≤ ENNReal.ofReal (16 * (C : ℝ) ^ 2 * rademacherSecondMoment (U ∘ b)) := by
+  rcases eq_or_ne C 0 with rfl | hC
+  · simpa using summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment hY (t := 0) (by simp) b U
+  have : 0 < (C : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hC)
+  have ht : (C : ℝ) * √(∫ r in {r : ℝ | 4 * (C : ℝ) < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤ 1 / 2 :=
+    mul_sqrt_setIntegral_sq_tail_le (by positivity) (by
+      rw [show (C : ℝ) * √3 / (4 * C) = √3 / 4 by field_simp]
+      have h3 : √3 ≤ 2 := Real.sqrt_le_iff.2 ⟨by norm_num, by norm_num⟩
+      linarith)
+  exact (summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment hY ht b U).trans_eq (by ring_nf)
 
 section RademacherSecondMoment
 
-variable {ι E Y : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E]
-  [InnerProductSpace ℝ E] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {C : ℝ≥0}
+variable {ι E : Type*} [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  {C : ℝ≥0}
 
 /-- **The `2`-summing norm under Gaussian cotype `2`, by Rademacher averages.** If `Y` has
 Gaussian cotype `2` with constant `C`, every operator `U` from a real inner product space with
 orthonormal basis `(eᵢ)` into `Y` satisfies `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`. -/
-theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype (U : E →L[ℝ] Y)
-    (b : OrthonormalBasis ι ℝ E) (h : HasGaussianCotype Y 2 C) :
+theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype
+    {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (U : E →L[ℝ] Y) (b : OrthonormalBasis ι ℝ E) (h : HasGaussianCotype Y 2 C) :
     U.summingENorm 2 ≤
       ENNReal.ofReal (4 * √3 * C ^ 2 * rademacherSecondMoment fun i ↦ U (b i)) := by
   refine (U.summingENorm_two_le_of_hasGaussianCotype b h).trans (ENNReal.ofReal_le_ofReal ?_)
@@ -175,14 +168,20 @@ theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype (U :
     _ = _ := by ring
 
 /-- **The cotype-`2` summing bound.** If `Y` has Rademacher cotype `2` with constant `C`, every
-operator `U` from a real inner product space with orthonormal basis `(eᵢ)` into `Y` satisfies
-`π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`, with a constant independent of the dimension. -/
-theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasCotype (U : E →L[ℝ] Y)
-    (b : OrthonormalBasis ι ℝ E) (h : HasCotype Y 2 C) :
+operator `U` from a real inner product space with orthonormal basis `(eᵢ)` into a seminormed
+space `Y` satisfies `π₂(U) ≤ 4 √3 C² R₂(U eᵢ)`, with a constant independent of the dimension. -/
+theorem summingENorm_two_le_mul_rademacherSecondMoment_of_hasCotype
+    {Y : Type*} [SeminormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (U : E →L[ℝ] Y) (b : OrthonormalBasis ι ℝ E) (h : HasCotype Y 2 C) :
     U.summingENorm 2 ≤
-      ENNReal.ofReal (4 * √3 * C ^ 2 * rademacherSecondMoment fun i ↦ U (b i)) :=
-  U.summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype b
-    h.hasGaussianCotype_two
+      ENNReal.ofReal (4 * √3 * C ^ 2 * rademacherSecondMoment fun i ↦ U (b i)) := by
+  let Uq : E →L[ℝ] SeparationQuotient Y := (SeparationQuotient.mkCLM ℝ Y).comp U
+  have hrad : rademacherSecondMoment (fun i ↦ Uq (b i)) =
+      rademacherSecondMoment (fun i ↦ U (b i)) := by
+    simp [Uq]
+  rw [← summingENorm_comp_separationQuotient U, ← hrad]
+  exact Uq.summingENorm_two_le_mul_rademacherSecondMoment_of_hasGaussianCotype b
+    h.separationQuotient.hasGaussianCotype_two
 
 end RademacherSecondMoment
 
