@@ -42,8 +42,8 @@ modules are the nondegenerate parts of the limits of modules.
 * `TauCeti.isNondegenerate_of_isColimit`: a colimit of nondegenerate modules is nondegenerate.
 * `TauCeti.isNondegenerate_of_isLimit`: over an idempotented algebra, a finite limit of
   nondegenerate modules is nondegenerate.
-* for idempotented `H`, the instances `Abelian`, `HasColimits` and `HasLimits` on
-  `TauCeti.NondegMod A H`, and `Coreflective` on its inclusion into modules.
+* the instance `HasColimits` on `TauCeti.NondegMod A H`, and for idempotented `H`, the instances
+  `Abelian` and `HasLimits` on it and `Coreflective` on its inclusion into modules.
 * `TauCeti.nondegeneratePartAdjunction_counit_app`: the counit of the coreflection is the
   inclusion `H • M → M`; `TauCeti.coe_nondegeneratePartAdjunction_unit_app` and
   `TauCeti.coe_nondegeneratePartAdjunction_homEquiv_apply` compute its unit and hom-equivalence.
@@ -128,6 +128,9 @@ instance (J : Type*) [Category J] :
     rintro X ⟨h⟩
     exact isNondegenerate_of_isColimit h.isColimit h.prop_diag_obj
 
+/-- Nondegenerate modules have all colimits, computed on underlying modules. -/
+instance : HasColimits (NondegMod.{v} A H) := ⟨fun _ _ ↦ inferInstance⟩
+
 variable [IsIdempotented H]
 
 instance : (nondegenerateModuleProperty.{v} A H).IsClosedUnderSubobjects where
@@ -141,9 +144,6 @@ instance : (nondegenerateModuleProperty.{v} A H).IsClosedUnderFiniteLimits where
 
 /-- Over an idempotented algebra, nondegenerate modules form an abelian category. -/
 instance : Abelian (NondegMod.{v} A H) := inferInstance
-
-/-- Nondegenerate modules have all colimits, computed on underlying modules. -/
-instance : HasColimits (NondegMod.{v} A H) := ⟨fun _ _ ↦ inferInstance⟩
 
 end NondegMod
 
