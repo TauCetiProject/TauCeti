@@ -13,8 +13,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Calculus.BumpFunction.Punctured
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -1077,34 +1076,13 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
 homogeneous symbol agrees with a smooth function on the whole space. -/
 theorem exists_contDiff_eventuallyEq_coefficient {ξ₀ : E} (hξ₀ : ξ₀ ≠ 0) :
     ∃ f : X × E → V →L[ℂ] W, ContDiff ℝ ∞ f ∧ ∀ x, f =ᶠ[𝓝 (x, ξ₀)] a.coefficient := by
-  -- For a functional `ℓ` with `ℓ ξ₀ = ‖ξ₀‖` and a smooth transition `s ξ` from `0` where
-  -- `ℓ ξ ≤ ‖ξ₀‖ / 4` to `1` where `ℓ ξ ≥ ‖ξ₀‖ / 2`, the frequency map `g ξ = ξ₀ + s ξ • (ξ - ξ₀)`
-  -- is smooth, misses the zero frequency and is the identity near `ξ₀`; take `f = a ∘ (id × g)`.
-  have hn : 0 < ‖ξ₀‖ := norm_pos_iff.2 hξ₀
-  obtain ⟨ℓ, -, hℓ⟩ := exists_dual_vector ℝ ξ₀ hn.ne'
-  set t : E → ℝ := fun ξ ↦ 4 * (ℓ ξ / ‖ξ₀‖) - 1 with ht
-  set g : E → E := fun ξ ↦ ξ₀ + Real.smoothTransition (t ξ) • (ξ - ξ₀) with hg
-  have hgc : ContDiff ℝ ∞ g := contDiff_const.add <|
-    (Real.smoothTransition.contDiff.comp (by fun_prop)).smul (contDiff_id.sub contDiff_const)
-  have hg0 (ξ : E) : g ξ ≠ 0 := by
-    intro h
-    have hs0 := Real.smoothTransition.nonneg (t ξ)
-    have hs1 := Real.smoothTransition.le_one (t ξ)
-    have h0 : ‖ξ₀‖ + Real.smoothTransition (t ξ) * (ℓ ξ - ‖ξ₀‖) = 0 := by
-      simpa [hg, hℓ] using congrArg ℓ h
-    by_cases hξ : ℓ ξ ≤ ‖ξ₀‖ / 4
-    · rw [Real.smoothTransition.zero_of_nonpos (by rw [ht]; field_simp; linarith)] at h0
-      linarith
-    · nlinarith [mul_le_mul_of_nonneg_left (min_le_left ‖ξ₀‖ (ℓ ξ)) (sub_nonneg.2 hs1),
-        mul_le_mul_of_nonneg_left (min_le_right ‖ξ₀‖ (ℓ ξ)) hs0, lt_min hn (by linarith : 0 < ℓ ξ)]
+  -- Precompose with a smooth frequency map that misses the zero frequency and is the identity
+  -- near `ξ₀`.
+  obtain ⟨g, hgc, hg0, hg⟩ := exists_contDiff_ne_zero_eventuallyEq_id hξ₀
   refine ⟨fun p ↦ a.coefficient (p.1, g p.2), a.contDiffOn_coefficient.comp_contDiff
     (contDiff_fst.prodMk (hgc.comp contDiff_snd)) fun p ↦ hg0 p.2, fun x ↦ ?_⟩
-  -- Near `ξ₀` the transition variable exceeds `1`, where the transition equals `1`.
-  have h3 : 1 < t ξ₀ := by norm_num [ht, hℓ, hn.ne']
-  have htc : Continuous fun q : X × E ↦ t q.2 := by rw [ht]; fun_prop
-  filter_upwards [htc.continuousAt.eventually (lt_mem_nhds (a := 1) (b := t (x, ξ₀).2) h3)]
-    with q hq
-  simp [hg, Real.smoothTransition.one_of_one_le hq.le]
+  filter_upwards [(continuous_snd.tendsto (x, ξ₀)).eventually hg] with q hq
+  simp [hq]
 
 end Growth
 
@@ -1205,29 +1183,28 @@ theorem mixedDeriv_spatialDeriv_frequencyDeriv
     mixedDeriv α β ((a.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
         (EuclideanSpace.single i 1)).coefficient x ξ =
       mixedDeriv (α ++ [i]) (β ++ [j]) a.coefficient x ξ := by
-  -- The smooth cut-off term `G = χ(4 ξ' / ‖ξ‖) • a`, equal to `a` at frequencies `‖ξ'‖ > ‖ξ‖ / 2`.
-  have hξ' : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-  let χ : FrequencyCutoff (CoordinateSpace n) := default
-  let G : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W :=
-    fun p ↦ χ ((‖ξ‖ / 4)⁻¹ • p.2) • a.coefficient p
-  have hG : ContDiff ℝ ∞ G := a.contDiff_comp_inv_smul_snd_smul_coefficient χ _
-  have hGa (p : CoordinateSpace n × CoordinateSpace n) (hp : ‖ξ‖ / 2 < ‖p.2‖) :
-      G p = a.coefficient p := by
-    rw [show G p = χ ((‖ξ‖ / 4)⁻¹ • p.2) • a.coefficient p from rfl,
-      χ.apply_inv_smul_eq_one (by positivity) (by linarith), one_smul]
-  have hnhds : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in 𝓝 (x, ξ), ‖ξ‖ / 2 < ‖q.2‖ :=
-    (continuous_norm.comp continuous_snd).continuousAt.eventually_const_lt (half_lt_self hξ')
+  -- The smooth function `G = a ∘ (id × g)`, for a smooth frequency map `g` that misses the zero
+  -- frequency and is the identity on an open neighbourhood `U` of `ξ`, equals `a` over `U`.
+  obtain ⟨g, hgc, hg0, hg⟩ := exists_contDiff_ne_zero_eventuallyEq_id hξ
+  obtain ⟨U, hgU, hU, hξU⟩ := _root_.eventually_nhds_iff.1 hg
+  let G : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun p ↦ a.coefficient (p.1, g p.2)
+  have hG : ContDiff ℝ ∞ G := a.contDiffOn_coefficient.comp_contDiff
+    (contDiff_fst.prodMk (hgc.comp contDiff_snd)) fun p ↦ hg0 p.2
+  have hGa (p : CoordinateSpace n × CoordinateSpace n) (hp : p.2 ∈ U) : G p = a.coefficient p := by
+    simp [G, hgU _ hp]
+  have hnhds : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in 𝓝 (x, ξ), q.2 ∈ U :=
+    continuous_snd.continuousAt.eventually (hU.mem_nhds hξU)
   -- Near `(x, ξ)`, the derivative `∂_{xᵢ} ∂_{ξⱼ} a` is that of `G`.
   have hgerm : ((a.frequencyDeriv (EuclideanSpace.single j 1)).spatialDeriv
       (EuclideanSpace.single i 1)).coefficient =ᶠ[𝓝 (x, ξ)]
         fun p ↦ coordinateDeriv [i] (fun y ↦ coordinateDeriv [j] (fun η ↦ G (y, η)) p.2) p.1 := by
     filter_upwards [hnhds] with p hp
-    have hp0 : p.2 ≠ 0 := norm_pos_iff.1 (by linarith)
+    have hp0 : p.2 ≠ 0 := by simpa [hgU _ hp] using hg0 p.2
     rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
     congr 2
     funext y
     have h : (fun η ↦ G (y, η)) =ᶠ[𝓝 p.2] fun η ↦ a.coefficient (y, η) := by
-      filter_upwards [(continuous_norm.continuousAt (x := p.2)).eventually_const_lt hp] with η hη
+      filter_upwards [hU.mem_nhds hp] with η hη
       exact hGa (y, η) hη
     rw [coefficient_frequencyDeriv _ _ hp0, coordinateDeriv_cons, coordinateDeriv_nil,
       h.fderiv_eq]

@@ -27,7 +27,8 @@ prescribed full symbol at one parameter value.
 * `TauCeti.ClassicalSymbol.exists_lift_of_continuous`: **continuous lifts with a prescribed
   initial value.** A continuous family `t ↦ a_t` of homogeneous symbols of degree `m` is the
   family of principal symbols of classical symbols `b_t` whose full symbols depend continuously
-  on `t`, with `b_{t₀}` any prescribed classical symbol with principal symbol `a_{t₀}`.
+  on `t`, with `b_{t₀}` any prescribed classical symbol with principal symbol `a_{t₀}`; for a
+  given cutoff `χ` their remainders after `N ≥ 1` terms do not depend on `t`.
 
 ## References
 
@@ -64,17 +65,18 @@ theorem continuous_toSymbol_replacePrincipal :
 /-- **Continuous lifts of principal symbols with a prescribed initial value.** Let `t ↦ a_t` be a
 continuous family of homogeneous symbols of degree `m`, and `b₀` a classical symbol whose principal
 symbol is `a_{t₀}`. Then there are classical symbols `b_t` with principal symbols `a_t`, full
-symbols depending continuously on `t`, and `b_{t₀} = b₀`; their lower order terms do not depend on
-`t`. -/
+symbols depending continuously on `t`, and `b_{t₀} = b₀`; their lower order terms, and their
+remainders after `N ≥ 1` terms for the cutoff `χ`, are those of `b₀`. -/
 theorem exists_lift_of_continuous {T : Type*} [TopologicalSpace T]
     {a : T → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m} (ha : Continuous a)
     {t₀ : T} {b₀ : ClassicalSymbol n V W m} (hb₀ : b₀.principal = a t₀) :
     ∃ b' : T → ClassicalSymbol n V W m, Continuous (fun t => (b' t).toSymbol) ∧
-      (∀ t, (b' t).principal = a t) ∧ b' t₀ = b₀ ∧ ∀ t j, (b' t).term (j + 1) = b₀.term (j + 1) :=
-  have χ : FrequencyCutoff (CoordinateSpace n) := default
+      (∀ t, (b' t).principal = a t) ∧ b' t₀ = b₀ ∧ (∀ t j, (b' t).term (j + 1) = b₀.term (j + 1)) ∧
+      ∀ t N, (b' t).remainder χ (N + 1) = b₀.remainder χ (N + 1) :=
   ⟨fun t => b₀.replacePrincipal χ (a t), (continuous_toSymbol_replacePrincipal χ b₀).comp ha,
     fun t => principal_replacePrincipal χ b₀ (a t), by simp [← hb₀],
-    fun t j => term_replacePrincipal_succ χ b₀ (a t) j⟩
+    fun t j => term_replacePrincipal_succ χ b₀ (a t) j,
+    fun t N => remainder_replacePrincipal_succ χ b₀ (a t) N⟩
 
 end ClassicalSymbol
 

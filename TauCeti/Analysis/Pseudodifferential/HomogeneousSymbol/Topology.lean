@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Module.Seminorm.WeightedSup
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -30,6 +31,8 @@ lifts a homogeneous symbol to a symbol of order `m`, depends continuously on `a`
 * `TauCeti.HomogeneousSymbol.seminorm`, `TauCeti.HomogeneousSymbol.withSeminorms`: the seminorms
   and the locally convex topology they induce on the homogeneous symbols of degree `m`; it is
   Hausdorff (`TauCeti.HomogeneousSymbol.instT1Space`).
+* `TauCeti.HomogeneousSymbol.mixedDerivCLM`: every mixed derivative at a point with nonzero
+  frequency is a continuous linear function of the homogeneous symbol.
 * `TauCeti.HomogeneousSymbol.exists_seminorm_cutoffSymbol_le`: the seminorm `p_{K,α,β}` of the
   cut-off term `χ(ξ) a(x, ξ)` in the symbol class `S^m_{1,0}` is bounded by finitely many
   seminorms `p_{K,α,β'}(a)` with `|β'| ≤ |β|`, with a constant depending only on `χ`, `m` and `β`.
@@ -43,9 +46,10 @@ the seminorms `TauCeti.Symbol.seminorm` of the symbol classes.
 
 A homogeneous symbol is not smooth at the zero frequency, so the Leibniz rule for the cut-off
 term is applied, near a frequency `ξ₀ ≠ 0`, to a smooth function with the same germ as `a`
-(`TauCeti.HomogeneousSymbol.exists_contDiff_eventuallyEq_coefficient`). The derivatives of `χ` of
-positive order vanish outside the annulus `1 ≤ ‖ξ‖ ≤ 2`, where `‖ξ‖` and `⟨ξ⟩` are comparable,
-and `χ` itself vanishes on the unit ball.
+(`TauCeti.HomogeneousSymbol.exists_contDiff_eventuallyEq_coefficient`). The cutoff `χ` satisfies
+the symbol estimates of order zero
+(`TauCeti.FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le`) and vanishes on the unit
+ball; outside it `‖ξ‖` and `⟨ξ⟩` are comparable.
 
 ## References
 
@@ -140,13 +144,13 @@ theorem seminorm_le_iff_norm_eq_one {K : Compacts (CoordinateSpace n)} {α β : 
     fun h x hx ξ hξ => ?_⟩
   -- Rescale `ξ` to the unit sphere and use the homogeneity of `∂_x^α ∂_ξ^β a`.
   have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-  have hs : ‖‖ξ‖⁻¹ • ξ‖ = 1 := by rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hn.ne']
-  have hu : ‖ξ‖⁻¹ • ξ ≠ 0 := norm_ne_zero_iff.1 (by rw [hs]; exact one_ne_zero)
   have hscale : mixedDeriv α β a.coefficient x ξ =
-      ‖ξ‖ ^ (m - β.length) • mixedDeriv α β a.coefficient x (‖ξ‖⁻¹ • ξ) := by
-    rw [← mixedDeriv_coefficient_smul_frequency a α β x hu hn, smul_inv_smul₀ hn.ne']
+      ‖ξ‖ ^ (m - β.length) • mixedDeriv α β a.coefficient x (NormedSpace.normalize ξ) := by
+    rw [← mixedDeriv_coefficient_smul_frequency a α β x
+      ((NormedSpace.normalize_eq_zero_iff ξ).not.2 hξ) hn, NormedSpace.norm_smul_normalize]
   rw [hscale, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg hn.le _), mul_comm]
-  exact mul_le_mul_of_nonneg_right (h x hx _ hs) (Real.rpow_nonneg hn.le _)
+  exact mul_le_mul_of_nonneg_right (h x hx _ (NormedSpace.norm_normalize_eq_one_iff.2 hξ))
+    (Real.rpow_nonneg hn.le _)
 
 end Seminorm
 
@@ -201,6 +205,23 @@ instance instT1Space :
   have h := le_seminorm {x} [] [] a rfl hξ
   rwa [← seminormFamily_apply, h0, zero_mul, mixedDeriv_nil_nil] at h
 
+variable (V W m) in
+/-- The mixed derivative `a ↦ ∂_x^α ∂_ξ^β a(x, ξ)` at a nonzero frequency `ξ`, as a continuous
+linear map on the homogeneous symbols of degree `m`; in particular the value `a ↦ a(x, ξ)` for
+`α = β = []`. -/
+def mixedDerivCLM (α β : List (Fin n)) (x : CoordinateSpace n) {ξ : CoordinateSpace n}
+    (hξ : ξ ≠ 0) :
+    HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m →L[ℂ] V →L[ℂ] W where
+  toLinearMap := mixedDerivLinearMap α β x ⟨ξ, hξ⟩
+  cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) _
+    (Seminorm.IsBounded.of_real fun _ => ⟨{({x}, α, β)}, ‖ξ‖ ^ (m - β.length), fun a => by
+      simpa [mixedDerivLinearMap, mul_comm] using le_seminorm {x} α β a rfl hξ⟩)
+
+@[simp]
+theorem mixedDerivCLM_apply (α β : List (Fin n)) (x : CoordinateSpace n) {ξ : CoordinateSpace n}
+    (hξ : ξ ≠ 0) (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    mixedDerivCLM V W m α β x hξ a = mixedDeriv α β a.coefficient x ξ := (rfl)
+
 end Topology
 
 /-! ### The cut-off term depends continuously on the homogeneous symbol -/
@@ -212,18 +233,26 @@ section Cutoff
 seminorms `p_{K,α,β'}(a)` of the homogeneous symbol `a` over all words `β'` with `|β'| ≤ |β|`.
 The constant depends only on `χ`, `m` and `β`. -/
 theorem exists_seminorm_cutoffSymbol_le (χ : FrequencyCutoff (CoordinateSpace n))
-    (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
-    ∃ C, 0 ≤ C ∧ ∀ a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m,
+    (β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ (K : Compacts (CoordinateSpace n)) (α : List (Fin n))
+      (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m),
       Symbol.seminorm K α β (cutoffSymbol χ a) ≤
         C * ∑ i ∈ Finset.range (β.length + 1), ∑ w : Fin (β.length - i) → Fin n,
           HomogeneousSymbol.seminorm K α (List.ofFn w) a := by
   set k := β.length
-  choose B hB using fun i => χ.exists_bound_iteratedFDeriv (E := CoordinateSpace n) i
-  have hB0 (i : ℕ) : 0 ≤ B i := (norm_nonneg _).trans (hB i 0)
+  -- The order-zero symbol estimates `‖D^i χ ξ‖ ⟨ξ⟩ ^ i ≤ B i` of the cutoff.
+  choose B hB0 hB using fun i : ℕ => χ.exists_norm_iteratedFDeriv_comp_inv_smul_le i
+  have hB' (i : ℕ) (ξ : CoordinateSpace n) :
+      ‖iteratedFDeriv ℝ i χ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i := by
+    have h := hB i 1 le_rfl ξ
+    simp only [inv_one, one_smul] at h
+    calc ‖iteratedFDeriv ℝ i χ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)
+        ≤ B i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) := by gcongr
+      _ = B i := by rw [mul_assoc, one_add_norm_sq_rpow_neg_mul_rpow, mul_one]
   -- The constant in front of `∑_{|β'| = k - i} p_{K,α,β'}(a)`.
-  set c : ℕ → ℝ := fun i => k.choose i * (B i * 5 ^ ((i : ℝ) / 2)) * 2 ^ (|m - ↑(k - i)| / 2)
+  set c : ℕ → ℝ := fun i => k.choose i * B i * 2 ^ (|m - ↑(k - i)| / 2)
   have hc (i : ℕ) : 0 ≤ c i := by have := hB0 i; positivity
-  refine ⟨∑ i ∈ Finset.range (k + 1), c i, Finset.sum_nonneg fun i _ => hc i, fun a => ?_⟩
+  refine ⟨∑ i ∈ Finset.range (k + 1), c i, Finset.sum_nonneg fun i _ => hc i, fun K α a => ?_⟩
   set S := ∑ i ∈ Finset.range (k + 1), ∑ w : Fin (k - i) → Fin n,
     HomogeneousSymbol.seminorm K α (List.ofFn w) a
   have hS : 0 ≤ S := Finset.sum_nonneg fun _ _ => Finset.sum_nonneg fun _ _ => apply_nonneg _ _
@@ -239,23 +268,15 @@ theorem exists_seminorm_cutoffSymbol_le (χ : FrequencyCutoff (CoordinateSpace n
     exact mul_nonneg (mul_nonneg (Finset.sum_nonneg fun i _ => hc i) hS) (rpow_weight_pos ξ _).le
   have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (one_pos.trans_le hξ)
   -- Near `(x, ξ)`, replace `a` by a smooth function `f` with the same germ and apply the Leibniz
-  -- rule. The derivatives of `χ` of positive order vanish outside `‖ξ‖ < 2`, where `⟨ξ⟩ ≤ √5`.
+  -- rule.
   obtain ⟨f, hf, hfa⟩ := a.exists_contDiff_eventuallyEq_coefficient hξ0
   have heq : (cutoffSymbol χ a).coefficient =ᶠ[𝓝 (x, ξ)] fun p => χ p.2 • f p := by
     filter_upwards [hfa x] with q hq
     rw [coefficient_cutoffSymbol, hq]
   rw [heq.mixedDeriv_eq]
-  refine (norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight χ.contDiff hf
-    (m := m) (B := fun i => B i * 5 ^ ((i : ℝ) / 2))
+  refine (norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight χ.contDiff hf (m := m) (B := B)
     (D := fun w => 2 ^ (|m - w.length| / 2) * HomogeneousSymbol.seminorm K α w a)
-    (fun i => ?_) (fun w => ?_) β).trans ?_
-  · rcases Nat.eq_zero_or_pos i with rfl | hi
-    · simpa using hB 0 ξ
-    by_cases h2 : 2 ≤ ‖ξ‖
-    · rw [χ.iteratedFDeriv_eq_zero_of_two_le_norm hi.ne' h2, norm_zero, zero_mul]
-      exact mul_nonneg (hB0 i) (by positivity)
-    exact mul_le_mul (hB i ξ) (Real.rpow_le_rpow (by positivity)
-      (by nlinarith [norm_nonneg ξ, not_le.1 h2]) (by positivity)) (by positivity) (hB0 i)
+    (fun i => hB' i ξ) (fun w => ?_) β).trans ?_
   · rw [(hfa x).mixedDeriv_eq, mul_comm (2 ^ _), mul_assoc]
     exact (le_seminorm K α w a hx hξ0).trans (mul_le_mul_of_nonneg_left
       (norm_rpow_le_one_add_norm_sq_rpow hξ _) (apply_nonneg _ _))
@@ -276,7 +297,7 @@ theorem continuous_cutoffSymbol (χ : FrequencyCutoff (CoordinateSpace n)) :
   refine WithSeminorms.continuous_of_isBounded withSeminorms Symbol.withSeminorms _
     (.of_real fun ⟨K, α, β⟩ => ?_)
   classical
-  obtain ⟨C, hC, h⟩ := exists_seminorm_cutoffSymbol_le (V := V) (W := W) (m := m) χ K α β
+  obtain ⟨C, hC, h⟩ := exists_seminorm_cutoffSymbol_le (V := V) (W := W) (m := m) χ β
   set k := β.length
   -- The finitely many seminorms `p_{K,α,β'}` with `|β'| ≤ |β|`, and their number.
   let s : Finset (Compacts (CoordinateSpace n) × List (Fin n) × List (Fin n)) :=
@@ -285,7 +306,7 @@ theorem continuous_cutoffSymbol (χ : FrequencyCutoff (CoordinateSpace n)) :
   set N : ℝ := ∑ i ∈ Finset.range (k + 1), (Fintype.card (Fin (k - i) → Fin n) : ℝ)
   refine ⟨s, C * N, fun a => ?_⟩
   rw [Symbol.seminormFamily_apply, mul_assoc]
-  refine (h a).trans (mul_le_mul_of_nonneg_left ?_ hC)
+  refine (h K α a).trans (mul_le_mul_of_nonneg_left ?_ hC)
   calc ∑ i ∈ Finset.range (k + 1), ∑ w : Fin (k - i) → Fin n,
         HomogeneousSymbol.seminorm K α (List.ofFn w) a
       ≤ ∑ i ∈ Finset.range (k + 1), ∑ _w : Fin (k - i) → Fin n,

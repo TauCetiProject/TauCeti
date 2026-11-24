@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
+import TauCeti.Analysis.Normed.Module.Seminorm.Basic
 
 /-!
 # Best constants of weighted estimates
@@ -77,13 +78,10 @@ theorem norm_le_weightedSup (a : E) (i : ι) : ‖L i a‖ ≤ weightedSup L w h
   exact le_ciSup ⟨C, Set.forall_mem_range.2 fun j => (div_le_iff₀ (hw j)).2 (hC j)⟩ i
 
 /-- Without an estimate `‖L i a‖ ≤ C * w i` for every `a`, the supremum `weightedSup L w hw` is
-the junk value `⊥`. Mathlib has no API for unbounded suprema of seminorms, so this unfolds the
-definition of `Seminorm.instSupSet`. -/
+the junk value `⊥` (`Seminorm.iSup_of_not_bddAbove`). -/
 theorem weightedSup_eq_bot (h : ¬∀ a, ∃ C, ∀ i, ‖L i a‖ ≤ C * w i) :
-    weightedSup L w hw = ⊥ := by
-  have hb := Seminorm.bddAbove_iff.not.1
-    ((bddAbove_range_smul_comp_normSeminorm_iff L w hw).not.2 h)
-  simp only [weightedSup, iSup, sSup, hb, dite_false]
+    weightedSup L w hw = ⊥ :=
+  Seminorm.iSup_of_not_bddAbove ((bddAbove_range_smul_comp_normSeminorm_iff L w hw).not.2 h)
 
 /-- A constant `C ≥ 0` in the estimates `‖L i a‖ ≤ C * w i` bounds `weightedSup L w hw a`. -/
 theorem weightedSup_le {a : E} {C : ℝ} (hC : 0 ≤ C) (h : ∀ i, ‖L i a‖ ≤ C * w i) :
