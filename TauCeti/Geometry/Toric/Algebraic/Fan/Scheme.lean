@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Cover.Directed
 public import Mathlib.AlgebraicGeometry.Gluing
 public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
+public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 public import TauCeti.Geometry.Toric.Algebraic.FaceLocalization
 
 /-!
@@ -109,33 +110,12 @@ theorem isOpenImmersion_affineToricDiagram_map {τ σ : Φ.cones} (f : τ ⟶ σ
 charts of two faces `τ` and `υ` of a cone `σ` have the same image in the chart of `σ`, they come
 from a common point of the chart of `τ ⊓ υ`. -/
 theorem isLocallyDirected_affineToricDiagram :
-    (Φ.affineToricDiagram ⋙ Scheme.forget).IsLocallyDirected := by
-  refine ⟨fun {τ υ σ} fτ fυ xτ xυ h ↦ ?_⟩
-  have hτσ := Φ.isFaceOf_of_le σ.property τ.property (leOfHom fτ)
-  have hυσ := Φ.isFaceOf_of_le σ.property υ.property (leOfHom fυ)
-  -- On points, the functor `Φ.affineToricDiagram ⋙ Scheme.forget` applies the face morphisms.
-  have h' : faceAffineToricSchemeMap Φ.lattice hτσ xτ =
-      faceAffineToricSchemeMap Φ.lattice hυσ xυ := h
-  have hσ := Φ.isToricCone σ.property
-  have := hσ.rational.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice hτσ
-  have := hσ.rational.isOpenImmersion_faceAffineToricSchemeMap Φ.lattice hυσ
-  -- The common image lies in the image of the chart of `τ ⊓ υ`.
-  obtain ⟨x, hx⟩ : faceAffineToricSchemeMap Φ.lattice hτσ xτ ∈
-      Set.range (faceAffineToricSchemeMap Φ.lattice (hτσ.inf_left hυσ)) := by
-    rw [hσ.rational.range_faceAffineToricSchemeMap_inf Φ.lattice hτσ hυσ]
-    exact ⟨⟨xτ, rfl⟩, ⟨xυ, h'.symm⟩⟩
-  have hτ : faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le τ.property
-      (Φ.inf_mem τ.property υ.property)
-      inf_le_left) x = xτ := by
-    apply (faceAffineToricSchemeMap Φ.lattice hτσ).isOpenEmbedding.injective
-    rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp, hx]
-  have hυ : faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le υ.property
-      (Φ.inf_mem τ.property υ.property)
-      inf_le_right) x = xυ := by
-    apply (faceAffineToricSchemeMap Φ.lattice hυσ).isOpenEmbedding.injective
-    rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp, hx, h']
-  exact ⟨τ ⊓ υ, homOfLE (Subtype.coe_le_coe.1 inf_le_left),
-    homOfLE (Subtype.coe_le_coe.1 inf_le_right), x, hτ, hυ⟩
+    (Φ.affineToricDiagram ⋙ Scheme.forget).IsLocallyDirected :=
+  haveI := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map f
+  Scheme.IsLocallyDirected.isLocallyDirected_of_range_inter_subset _ fun {τ υ σ} fτ fυ ↦
+    ((Φ.isToricCone σ.property).rational.range_faceAffineToricSchemeMap_inf Φ.lattice
+      (Φ.isFaceOf_of_le σ.property τ.property (leOfHom fτ))
+      (Φ.isFaceOf_of_le σ.property υ.property (leOfHom fυ))).ge
 
 /-! ### The toric scheme of a finite fan -/
 
@@ -277,24 +257,11 @@ theorem affineToricChartι_eq_affineToricChartι_iff
     Φ.affineToricChartι σ x = Φ.affineToricChartι τ y ↔
       ∃ z : Φ.affineToricOverlap σ τ,
         Φ.affineToricOverlapLeft σ τ z = x ∧ Φ.affineToricOverlapRight σ τ z = y := by
-  have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦
-    isOpenImmersion_affineToricDiagram_map f
+  have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map f
   have := isLocallyDirected_affineToricDiagram (Φ := Φ)
-  let στ : Φ.cones := σ ⊓ τ
-  refine ⟨fun h ↦ ?_, fun ⟨z, hzx, hzy⟩ ↦ ?_⟩
-  · obtain ⟨κ, fσ, fτ, (w : Φ.affineToricChart κ), hwx, hwy⟩ :=
-      (Scheme.IsLocallyDirected.ι_eq_ι_iff Φ.affineToricDiagram).1 h
-    have hκ : κ.val.IsFaceOf στ.val := Φ.isFaceOf_of_le στ.property κ.property (le_inf (leOfHom fσ)
-        (leOfHom fτ))
-    refine ⟨faceAffineToricSchemeMap Φ.lattice hκ w, ?_, ?_⟩
-    -- `hwx` and `hwy` are stated with the diagram maps, which are the face morphisms.
-    · rw [affineToricOverlapLeft_def, ← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp]
-      exact hwx
-    · rw [affineToricOverlapRight_def, ← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp]
-      exact hwy
-  · rw [← hzx, ← hzy, ← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply,
-      affineToricOverlapLeft_comp_affineToricChartι,
-      affineToricOverlapRight_comp_affineToricChartι]
+  -- The overlap maps are the diagram maps of the inclusions of `σ ⊓ τ`.
+  rw [affineToricOverlapLeft_def, affineToricOverlapRight_def]
+  exact Scheme.IsLocallyDirected.ι_eq_ι_iff_inf Φ.affineToricDiagram
 
 /-- The intersection of two affine cone opens is the affine open of the intersection cone. -/
 @[simp]
@@ -363,22 +330,11 @@ noncomputable instance : Φ.affineToricOpenCover.LocallyDirected where
   w {τ σ} f :=
     faceAffineToricSchemeMap_comp_affineToricChartι (Φ := Φ) (τ := τ) (σ := σ)
       (Φ.isFaceOf_of_le σ.property τ.property (leOfHom f))
-  directed {σ τ : Φ.cones} x := by
-    obtain ⟨z, hzσ, -⟩ := (Φ.affineToricChartι_eq_affineToricChartι_iff
-      (pullback.fst (Φ.affineToricChartι σ) (Φ.affineToricChartι τ) x)
-      (pullback.snd (Φ.affineToricChartι σ) (Φ.affineToricChartι τ) x)).1
-      congr($(pullback.condition (f := Φ.affineToricChartι σ) (g := Φ.affineToricChartι τ)) x)
-    refine ⟨(σ ⊓ τ : Φ.cones), (homOfLE inf_le_left : (σ ⊓ τ : Φ.cones) ⟶ σ),
-      (homOfLE inf_le_right : (σ ⊓ τ : Φ.cones) ⟶ τ), z, ?_⟩
-    -- The first projection of a pullback along an open immersion is injective.
-    apply (pullback.fst (Φ.affineToricChartι σ) (Φ.affineToricChartι τ)).isOpenEmbedding.injective
-    rw [affineToricOverlapLeft_def] at hzσ
-    refine Eq.trans ?_ hzσ
-    exact congr($(pullback.lift_fst
-      (Φ.affineToricDiagram.map (homOfLE inf_le_left : (σ ⊓ τ : Φ.cones) ⟶ σ))
-      (Φ.affineToricDiagram.map (homOfLE inf_le_right : (σ ⊓ τ : Φ.cones) ⟶ τ))
-      ((faceAffineToricSchemeMap_comp_affineToricChartι _).trans
-        (faceAffineToricSchemeMap_comp_affineToricChartι _).symm)) z)
+  directed x := by
+    have := fun {τ σ : Φ.cones} (f : τ ⟶ σ) ↦ isOpenImmersion_affineToricDiagram_map f
+    have := isLocallyDirected_affineToricDiagram (Φ := Φ)
+    -- The chart inclusions are by definition the colimit inclusions of the chart diagram.
+    exact Scheme.IsLocallyDirected.exists_pullback_lift_eq Φ.affineToricDiagram x
   property_trans f := isOpenImmersion_affineToricDiagram_map f
 
 /-- The transition maps of the affine toric open cover are the face morphisms. -/

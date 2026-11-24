@@ -37,6 +37,8 @@ member, and two morphisms over a member which agree over the limit agree over so
   locally finitely presented morphism between suitable quasi-compact stage models.
 * `CategoryTheory.Limits.IsLimit.exists_mono_pullbackMap`: monomorphism inheritance for a
   quasi-compact locally finite type morphism from a quasi-compact quasi-separated stage source.
+* `CategoryTheory.Limits.IsLimit.LiftsAlong`: a lift of a morphism to a member of the diagram,
+  stable under passage to later members (`LiftsAlong.comp`).
 * `CategoryTheory.Limits.IsLimit.exists_overPullback_map_comp_eq`: morphism descent for the base
   change functors of over categories.
 * `CategoryTheory.Limits.IsLimit.exists_overPullback_map_eq_map`: descent of equalities of

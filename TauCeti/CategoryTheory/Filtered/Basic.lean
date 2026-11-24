@@ -13,8 +13,9 @@ public import Mathlib.CategoryTheory.Filtered.Basic
 In a cofiltered category, a property of morphisms into a fixed object `i` which is stable under
 precomposition holds *eventually* once it holds for some morphism into `i`. Two such properties
 which each hold eventually hold together eventually
-(`CategoryTheory.IsCofiltered.exists_and_of_stable`), so finitely many conditions, each realised
-along some morphism into `i`, are realised along a common one. This is how statements about a
+(`CategoryTheory.IsCofiltered.exists_and_of_stable`). More generally, a finite family of such
+conditions is realised along a common morphism
+(`CategoryTheory.IsCofiltered.exists_forall_of_stable`). This is how statements about a
 cofiltered limit, each of which holds at some member of the diagram, are combined at a single
 member.
 -/
