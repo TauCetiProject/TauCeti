@@ -30,26 +30,23 @@ namespace TauCeti
 /-- The raising matrix `E₀₁` is upper triangular of trace zero. -/
 theorem single_zero_one_mem_upperTriangular_inf_sl :
     single (0 : Fin 2) 1 (1 : ℝ) ∈ upperTriangular ℝ (Fin 2) ⊓ SpecialLinear.sl (Fin 2) ℝ := by
-  refine ⟨mem_upperTriangular_iff.mpr fun i j hij ↦ ?_, ?_⟩
-  · fin_cases i <;> fin_cases j <;> simp_all
-  · simp [SpecialLinear.sl, trace_single_eq_of_ne]
+  refine ⟨single_mem_upperTriangular (by decide) 1, ?_⟩
+  simp [SpecialLinear.sl, trace_single_eq_of_ne]
 
 /-- The upper triangular trace-zero real `2 × 2` matrices are not closed under transpose. -/
 theorem not_forall_transpose_mem_upperTriangular_inf_sl :
     ¬ ∀ X ∈ upperTriangular ℝ (Fin 2) ⊓ SpecialLinear.sl (Fin 2) ℝ,
       Xᵀ ∈ upperTriangular ℝ (Fin 2) ⊓ SpecialLinear.sl (Fin 2) ℝ := by
   intro h
-  have := mem_upperTriangular_iff.mp (h _ single_zero_one_mem_upperTriangular_inf_sl).1 1 0
-    (by decide)
-  simp at this
+  have := (h _ single_zero_one_mem_upperTriangular_inf_sl).1
+  rw [transpose_single] at this
+  exact absurd ((single_mem_upperTriangular_iff one_ne_zero).mp this) (by decide)
 
 /-- `X ↦ -Xᵀ` does not map the upper triangular trace-zero real `2 × 2` matrices to themselves. -/
 theorem not_forall_neg_transpose_mem_upperTriangular_inf_sl :
     ¬ ∀ X ∈ upperTriangular ℝ (Fin 2) ⊓ SpecialLinear.sl (Fin 2) ℝ,
-      -Xᵀ ∈ upperTriangular ℝ (Fin 2) ⊓ SpecialLinear.sl (Fin 2) ℝ := by
-  intro h
-  have := mem_upperTriangular_iff.mp (h _ single_zero_one_mem_upperTriangular_inf_sl).1 1 0
-    (by decide)
-  simp at this
+      -Xᵀ ∈ upperTriangular ℝ (Fin 2) ⊓ SpecialLinear.sl (Fin 2) ℝ :=
+  fun h ↦ not_forall_transpose_mem_upperTriangular_inf_sl fun X hX ↦ by
+    simpa using neg_mem (h X hX)
 
 end TauCeti
