@@ -27,7 +27,9 @@ A compactly supported continuous function on `X` extends by zero along an open e
 `e : X → Y` into a Hausdorff space to a compactly supported continuous function on `Y`
 (`CompactlySupportedContinuousMap.extendZero`). Every compactly supported continuous function on
 `Y` whose support lies in the range of `e` arises this way
-(`CompactlySupportedContinuousMap.exists_extendZero_eq`).
+(`CompactlySupportedContinuousMap.exists_extendZero_eq`), and conversely the support of an
+extension by zero is the image of the original support. The extension by zero is injective and
+preserves zero, addition and scalar multiplication.
 -/
 
 public section
@@ -146,6 +148,46 @@ theorem exists_extendZero_eq (he : IsOpenEmbedding e) (g : C_c(Y, β))
     simp
   · rw [extendZero_apply_of_notMem_range he _ hy,
       image_eq_zero_of_notMem_tsupport fun h ↦ hy (hg h)]
+
+/-- The topological support of the extension by zero is the image of the topological support. -/
+theorem tsupport_extendZero (he : IsOpenEmbedding e) (f : C_c(X, β)) :
+    tsupport (f.extendZero he) = e '' tsupport f :=
+  f.hasCompactSupport.tsupport_extend_zero he.continuous he.injective
+
+/-- A compactly supported continuous function on `Y` is an extension by zero along `e` if and
+only if its topological support lies in the range of `e`. -/
+theorem exists_extendZero_eq_iff (he : IsOpenEmbedding e) (g : C_c(Y, β)) :
+    (∃ f : C_c(X, β), f.extendZero he = g) ↔ tsupport g ⊆ range e := by
+  refine ⟨?_, exists_extendZero_eq he g⟩
+  rintro ⟨f, rfl⟩
+  rw [tsupport_extendZero]
+  exact image_subset_range _ _
+
+/-- The extension by zero along an open embedding is injective. -/
+theorem extendZero_injective (he : IsOpenEmbedding e) :
+    Function.Injective (extendZero (β := β) he) := fun f g hfg ↦
+  ext fun x ↦ by rw [← extendZero_apply he f, hfg, extendZero_apply]
+
+/-- The extension by zero of the zero function is zero. -/
+@[simp]
+theorem extendZero_zero (he : IsOpenEmbedding e) : (0 : C_c(X, β)).extendZero he = 0 :=
+  ext fun y ↦ by simp [coe_extendZero, Function.extend_zero]
+
+/-- The extension by zero is additive. -/
+@[simp]
+theorem extendZero_add {γ : Type*} [TopologicalSpace γ] [AddZeroClass γ] [ContinuousAdd γ]
+    (he : IsOpenEmbedding e) (f g : C_c(X, γ)) :
+    (f + g).extendZero he = f.extendZero he + g.extendZero he := by
+  ext y
+  simpa [coe_extendZero] using congrFun (Function.extend_add e f g (0 : Y → γ) 0) y
+
+/-- The extension by zero commutes with scalar multiplication. -/
+@[simp]
+theorem extendZero_smul {R : Type*} [SMulZeroClass R β] [ContinuousConstSMul R β]
+    (he : IsOpenEmbedding e) (r : R) (f : C_c(X, β)) :
+    (r • f).extendZero he = r • f.extendZero he := by
+  ext y
+  simpa [coe_extendZero] using congrFun (Function.extend_smul r e f (0 : Y → β)) y
 
 end ExtendZero
 
