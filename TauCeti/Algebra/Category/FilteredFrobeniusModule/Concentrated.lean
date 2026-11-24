@@ -193,25 +193,11 @@ theorem concentratedHomEquiv_apply_coe (f : concentrated ϖ ψ j ⟶ concentrate
 /-- Twisting an object with a single jump `j` by `k` gives the object with the single jump
 `j + k`. -/
 def concentratedTwistIso (k : ℤ) :
-    (concentrated ϖ ψ j).twist k ≅ concentrated ϖ ψ (j + k) where
-  hom :=
-    { hom := LinearMap.id
-      map_fil _ _ hx := (mem_concentrated_fil_iff (ϖ := ϖ) ψ (j + k)).2
-        (((mem_concentrated_fil_iff (ϖ := ϖ) ψ j).1 hx).imp_left fun _ => by omega)
-      hom_phi i x hx := by
-        by_cases h : i - k ≤ j
-        · simp [h, show i ≤ j + k by omega, show j - (i - k) = j + k - i by ring]
-        · simp [h, show ¬ i ≤ j + k by omega] }
-  inv :=
-    { hom := LinearMap.id
-      map_fil _ _ hx := (mem_concentrated_fil_iff (ϖ := ϖ) ψ j).2
-        (((mem_concentrated_fil_iff (ϖ := ϖ) ψ (j + k)).1 hx).imp_left fun _ => by omega)
-      hom_phi i x hx := by
-        by_cases h : i ≤ j + k
-        · simp [h, show i - k ≤ j by omega, show j - (i - k) = j + k - i by ring]
-        · simp [h, show ¬ i - k ≤ j by omega] }
-  hom_inv_id := hom_ext rfl
-  inv_hom_id := hom_ext rfl
+    (concentrated ϖ ψ j).twist k ≅ concentrated ϖ ψ (j + k) :=
+  isoMk (LinearEquiv.refl W V) (fun i => by simp) fun i x hx => by
+    by_cases h : i - k ≤ j
+    · simp [h, show i ≤ j + k by omega, show j - (i - k) = j + k - i by ring]
+    · simp [h, show ¬ i ≤ j + k by omega]
 
 @[simp]
 theorem concentratedTwistIso_hom_hom (k : ℤ) :

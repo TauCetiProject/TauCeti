@@ -106,22 +106,13 @@ theorem twistFunctor_map_hom {M N : FilteredFrobeniusModule.{v} σ ϖ} (f : M �
     ((twistFunctor j).map f).hom = f.hom := (rfl)
 
 /-- `M(0) ≅ M`, by the identity of the underlying module. -/
-def twistZeroIso : M.twist 0 ≅ M where
-  hom := ⟨LinearMap.id, fun i _ hx => by simpa using hx,
-    fun i _ _ => M.phi_congr (sub_zero i) _ _⟩
-  inv := ⟨LinearMap.id, fun i _ hx => by simpa using hx,
-    fun i _ _ => M.phi_congr (sub_zero i).symm _ _⟩
-  hom_inv_id := hom_ext rfl
-  inv_hom_id := hom_ext rfl
+def twistZeroIso : M.twist 0 ≅ M :=
+  isoMk (LinearEquiv.refl W M) (fun i => by simp) fun i _ _ => M.phi_congr (sub_zero i) _ _
 
 /-- `M(j)(k) ≅ M(j + k)`, by the identity of the underlying module. -/
-def twistTwistIso : (M.twist j).twist k ≅ M.twist (j + k) where
-  hom := ⟨LinearMap.id, fun i _ hx => by simpa [sub_sub, add_comm k j] using hx,
-    fun i _ _ => M.phi_congr (by ring) _ _⟩
-  inv := ⟨LinearMap.id, fun i _ hx => by simpa [sub_sub, add_comm k j] using hx,
-    fun i _ _ => M.phi_congr (by ring) _ _⟩
-  hom_inv_id := hom_ext rfl
-  inv_hom_id := hom_ext rfl
+def twistTwistIso : (M.twist j).twist k ≅ M.twist (j + k) :=
+  isoMk (LinearEquiv.refl W M) (fun i => by simp [sub_sub, add_comm k j])
+    fun _ _ _ => M.phi_congr (by ring) _ _
 
 @[simp]
 theorem twistZeroIso_hom_hom : (M.twistZeroIso).hom.hom = LinearMap.id := (rfl)

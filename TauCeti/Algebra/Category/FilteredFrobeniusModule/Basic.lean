@@ -42,6 +42,8 @@ with `i > b` vanish, and generation only involves `φ^a, …, φ^b`.
 * `TauCeti.FilteredFrobeniusModule σ ϖ`: the category of filtered Frobenius modules over
   `(W, σ, ϖ)`, whose morphisms are the linear maps preserving the filtrations and commuting
   with every divided Frobenius map. It is preadditive.
+* `TauCeti.FilteredFrobeniusModule.homAddSubgroup M N`: the underlying linear maps of the
+  morphisms `M ⟶ N`, as an additive subgroup; the preadditive structure is built from it.
 * `TauCeti.FilteredFrobeniusModule.isoMk`: an isomorphism from a linear equivalence carrying
   each filtration step onto the corresponding step and commuting with the divided Frobenius
   maps.
@@ -219,6 +221,7 @@ instance : (forget₂ (FilteredFrobeniusModule.{v} σ ϖ) (ModuleCat.{v} W)).Fai
 
 /-- A linear equivalence carrying each filtration step onto the corresponding step and
 commuting with the divided Frobenius maps is an isomorphism of filtered Frobenius modules. -/
+@[expose]
 def isoMk (e : M ≃ₗ[W] N) (he : ∀ i, (M.fil i).map e.toLinearMap = N.fil i)
     (hphi : ∀ i (x : M) (hx : x ∈ M.fil i),
       e (M.phi i ⟨x, hx⟩) = N.phi i ⟨e x, he i ▸ Submodule.mem_map_of_mem hx⟩) :
@@ -263,37 +266,58 @@ theorem isIso_iff_bijective_and_map_fil_eq (f : M ⟶ N) :
 
 /-! ### The preadditive structure -/
 
-instance : Zero (M ⟶ N) := ⟨⟨0, fun _ _ _ => zero_mem _, fun i _ _ => (map_zero (N.phi i)).symm⟩⟩
+/-- The underlying linear maps of the morphisms `M ⟶ N` form an additive subgroup: these are
+the linear maps preserving the filtrations and commuting with the divided Frobenius maps. -/
+def homAddSubgroup (M N : FilteredFrobeniusModule.{v} σ ϖ) :
+    AddSubgroup (M →ₗ[W] N) where
+  carrier := {g | ∀ i (x : M) (hx : x ∈ M.fil i), ∃ hgx : g x ∈ N.fil i,
+    g (M.phi i ⟨x, hx⟩) = N.phi i ⟨g x, hgx⟩}
+  zero_mem' {i} _ _ := ⟨zero_mem _, (map_zero (N.phi i)).symm⟩
+  add_mem' {f g} hf hg i x hx := by
+    obtain ⟨hf₁, hf₂⟩ := hf i x hx
+    obtain ⟨hg₁, hg₂⟩ := hg i x hx
+    refine ⟨add_mem hf₁ hg₁, ?_⟩
+    rw [LinearMap.add_apply, hf₂, hg₂, ← map_add]
+    exact congrArg _ (Subtype.ext (by simp))
+  neg_mem' {f} hf i x hx := by
+    obtain ⟨hf₁, hf₂⟩ := hf i x hx
+    refine ⟨neg_mem hf₁, ?_⟩
+    rw [LinearMap.neg_apply, hf₂, ← map_neg]
+    exact congrArg _ (Subtype.ext (by simp))
+
+/-- A linear map lies in `homAddSubgroup M N` iff it maps each `Fil^i M` into `Fil^i N` and
+commutes with `φ^i`. -/
+theorem mem_homAddSubgroup {g : M →ₗ[W] N} :
+    g ∈ homAddSubgroup M N ↔ ∀ i (x : M) (hx : x ∈ M.fil i), ∃ hgx : g x ∈ N.fil i,
+      g (M.phi i ⟨x, hx⟩) = N.phi i ⟨g x, hgx⟩ := Iff.rfl
+
+/-- The underlying linear map of a morphism lies in `homAddSubgroup M N`. -/
+theorem Hom.hom_mem_homAddSubgroup (f : M ⟶ N) : f.hom ∈ homAddSubgroup M N :=
+  fun i x hx => ⟨f.map_fil i hx, f.hom_phi i x hx⟩
+
+/-- The morphism with a given underlying linear map in `homAddSubgroup M N`. -/
+@[expose]
+def homOfMem {g : M →ₗ[W] N} (hg : g ∈ homAddSubgroup M N) : M ⟶ N :=
+  ⟨g, fun i _ hx => (mem_homAddSubgroup.1 hg i _ hx).1,
+    fun i x hx => (mem_homAddSubgroup.1 hg i x hx).2⟩
+
+@[simp]
+theorem hom_homOfMem {g : M →ₗ[W] N} (hg : g ∈ homAddSubgroup M N) : (homOfMem hg).hom = g :=
+  (rfl)
+
+instance : Zero (M ⟶ N) := ⟨homOfMem (zero_mem _)⟩
 
 instance : Add (M ⟶ N) :=
-  ⟨fun f g => ⟨f.hom + g.hom, fun i _ hx => add_mem (f.map_fil i hx) (g.map_fil i hx),
-    fun i x hx => by
-      rw [LinearMap.add_apply, f.hom_phi, g.hom_phi, ← map_add]
-      exact congrArg _ (Subtype.ext (by simp))⟩⟩
+  ⟨fun f g => homOfMem (add_mem f.hom_mem_homAddSubgroup g.hom_mem_homAddSubgroup)⟩
 
-instance : Neg (M ⟶ N) :=
-  ⟨fun f => ⟨-f.hom, fun i _ hx => neg_mem (f.map_fil i hx),
-    fun i x hx => by
-      rw [LinearMap.neg_apply, f.hom_phi, ← map_neg]
-      exact congrArg _ (Subtype.ext (by simp))⟩⟩
+instance : Neg (M ⟶ N) := ⟨fun f => homOfMem (neg_mem f.hom_mem_homAddSubgroup)⟩
 
 instance : Sub (M ⟶ N) :=
-  ⟨fun f g => ⟨f.hom - g.hom, fun i _ hx => sub_mem (f.map_fil i hx) (g.map_fil i hx),
-    fun i x hx => by
-      rw [LinearMap.sub_apply, f.hom_phi, g.hom_phi, ← map_sub]
-      exact congrArg _ (Subtype.ext (by simp))⟩⟩
+  ⟨fun f g => homOfMem (sub_mem f.hom_mem_homAddSubgroup g.hom_mem_homAddSubgroup)⟩
 
-instance : SMul ℕ (M ⟶ N) :=
-  ⟨fun n f => ⟨n • f.hom, fun i _ hx => Submodule.smul_of_tower_mem _ n (f.map_fil i hx),
-    fun i x hx => by
-      rw [LinearMap.smul_apply, f.hom_phi, ← map_nsmul]
-      exact congrArg _ (Subtype.ext (by simp))⟩⟩
+instance : SMul ℕ (M ⟶ N) := ⟨fun n f => homOfMem (nsmul_mem f.hom_mem_homAddSubgroup n)⟩
 
-instance : SMul ℤ (M ⟶ N) :=
-  ⟨fun n f => ⟨n • f.hom, fun i _ hx => Submodule.smul_of_tower_mem _ n (f.map_fil i hx),
-    fun i x hx => by
-      rw [LinearMap.smul_apply, f.hom_phi, ← map_zsmul]
-      exact congrArg _ (Subtype.ext (by simp))⟩⟩
+instance : SMul ℤ (M ⟶ N) := ⟨fun n f => homOfMem (zsmul_mem f.hom_mem_homAddSubgroup n)⟩
 
 @[simp] theorem hom_zero : (0 : M ⟶ N).hom = 0 := (rfl)
 
