@@ -297,18 +297,6 @@ theorem localIndex_eq_iff_of_preimage_subset (hF : finrank ℝ F = n) (f : C(M, 
   -- `f.comp ⟨Subtype.val, _⟩` is `f.restrict univ` by definition.
   rfl
 
-/-- The identity has local index `1` at every point. -/
-@[simp]
-theorem localIndex_id (hE : finrank ℝ E = n) (x : M) :
-    o.localIndex o (ContinuousMap.id M) x = 1 := by
-  rw [o.localIndex_eq_iff_of_preimage_subset o hE (ContinuousMap.id M) (y := x) rfl
-      (subset_rfl : ({x} : Set M) ⊆ {x}),
-    one_zsmul]
-  have hid := (localHomologyIsoOfIsOpenEmbedding_hom (A := ModuleCat.{0} ℤ)
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) IsOpenEmbedding.id x n).symm.trans
-    (congrArg Iso.hom (localHomologyIsoOfIsOpenEmbedding_id _ x n))
-  exact ConcreteCategory.congr_hom hid _
-
 /-- **The local index only depends on the orientations at the point and its image**: if `o` and
 `p` agree at `x`, and `o'` and `p'` agree at `f x`, the two local indices of `f` at `x` agree. The
 orientations `p` and `p'` may be read in other model spaces. -/
@@ -607,6 +595,12 @@ theorem localDegree_eq_localIndex (hE : finrank ℝ E = n) (hF : finrank ℝ F =
   have hfin : (f ⁻¹' {y}).Finite := h ▸ finite_singleton x
   have hs : hfin.toFinset = {x} := by ext; simp [h]
   rw [o.localDegree_eq_sum_localIndex o' hE hF f hfin, hs, Finset.sum_singleton]
+
+/-- The identity has local index `1` at every point. -/
+@[simp]
+theorem localIndex_id (hE : finrank ℝ E = n) (x : M) :
+    o.localIndex o (ContinuousMap.id M) x = 1 := by
+  rw [← o.localDegree_eq_localIndex o hE hE _ (preimage_id (s := {x})), localDegree_id]
 
 /-- **The degree is the sum of the local indices over any finite fibre**: for a proper map `f`
 onto a preconnected manifold and a point `y` whose fibre is finite, the degree of `f` is the sum
