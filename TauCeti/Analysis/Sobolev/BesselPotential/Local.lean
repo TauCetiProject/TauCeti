@@ -5,13 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
+import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
+import TauCeti.Geometry.Manifold.Diffeomorph.Germ
 
 /-!
 # Local `H^{s,p}` regularity of distributions
@@ -33,7 +40,20 @@ Smooth multiples preserve the notion (`Distribution.IsLocallyMemSobolevAt.smulLe
 at most `k` maps `H^{s,p}_loc` to `H^{s - k,p}_loc`
 (`Distribution.IsLocallyMemSobolevAt.sum_smul_smulLeftCLM_iteratedLineDerivOp`).
 
-The main result is that every distribution has finite order on this scale: for `1 < p < ∞`, every
+For `1 < p < ∞` the notion is invariant under smooth changes of variables: if `e` is a smooth open
+partial homeomorphism of `E` with smooth inverse, the pullback `e^* T`
+(`Distribution.compCLMOfOpenPartialHomeomorph`) is `H^{s,p}` near `x` exactly when `T` is
+`H^{s,p}` near `e x` (`Distribution.isLocallyMemSobolevAt_compCLMOfOpenPartialHomeomorph_iff`).
+Near `x`, `e` agrees with a bijection `Φ` of `E` whose derivatives are bounded
+(`TauCeti.exists_equiv_eventuallyEq_of_det_fderiv_ne_zero`), there `e^* T` is the tempered
+pullback `Φ^* (χ T)` for a cutoff `χ` equal to `1` near `e x`
+(`Distribution.restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution`), and `Φ^*` preserves
+`H^{s,p}` (`TemperedDistribution.MemSobolev.compCLM_of_norm_iteratedFDeriv_le_natCeil`). Since
+chart transitions are such maps `e`, this is the invariance needed to define `H^{s,p}_loc` on a
+manifold chart by chart. The restriction to an open subset `Ω' ≤ Ω` is `H^{s,p}` near a point of
+`Ω'` exactly when `T` is (`Distribution.isLocallyMemSobolevAt_restrictCLM_iff`).
+
+Every distribution has finite order on this scale: for `1 < p < ∞`, every
 cut-off distribution `φ T` lies in some `H^{s,p}`
 (`Distribution.exists_memSobolev_cutoffTempered_of_one_lt`), and for a compact `K ⊆ Ω` there is an
 `s` with `T` being `H^{s,p}` near every point of `K`
@@ -46,7 +66,7 @@ distributions of finite `L²` order:
   and `n < 2 (s + 2k)`, where `n = dim E`, then `ψ f ∈ H^{-2k,p}` for every Schwartz function
   `ψ` and every `1 < p < ∞`.
 
-## The argument
+## Finite order
 
 Write `J^r` for the Bessel potential `TemperedDistribution.besselPotential` of order `r`. The
 distribution `v = J^{-2k} f` lies in `H^{s + 2k}` with `2 (s + 2k) > n`, so by the Sobolev
@@ -194,6 +214,13 @@ theorem IsLocallyMemSobolevAt.sub {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemSobol
   rw [sub_eq_add_neg]
   exact hS.add (isLocallyMemSobolevAt_neg_iff.2 hT)
 
+/-- A finite sum of distributions `H^{s,p}` near a point `x ∈ Ω` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.sum {ι : Type*} {t : Finset ι} {S : ι → 𝓓'(Ω, ℂ)} (hx : x ∈ Ω)
+    (h : ∀ i ∈ t, (S i).IsLocallyMemSobolevAt s p x) :
+    (∑ i ∈ t, S i).IsLocallyMemSobolevAt s p x :=
+  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsLocallyMemSobolevAt s p x) (fun _ _ ↦ .add)
+    (isLocallyMemSobolevAt_zero_iff.2 hx) h
+
 section Operations
 
 open scoped ContDiff
@@ -303,5 +330,127 @@ theorem exists_forall_isLocallyMemSobolevAt (hp : 1 < p) (hp_top : p ≠ ∞) (T
   exact ⟨-(2 * k), fun x hx ↦ ⟨V ∩ Ω, inter_mem (hVo.mem_nhds (hKV hx))
     (Ω.isOpen.mem_nhds (hKΩ hx)), inter_subset_right, fun φ hφ ↦
     memSobolev_cutoffTempered_of_memSobolev_two hp hp_top T (fun y hy ↦ hχ y (hφ hy).1) hk hr⟩⟩
+
+/-! ### Restrictions, tempered distributions and changes of variables -/
+
+section ChangeOfVariables
+
+/-- At a point of an open subset `Ω' ≤ Ω`, the restriction `T|_{Ω'}` is `H^{s,p}` exactly where
+`T` is. -/
+theorem isLocallyMemSobolevAt_restrictCLM_iff {Ω' : Opens E} (h : Ω' ≤ Ω) (hx : x ∈ Ω') :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).IsLocallyMemSobolevAt s p x ↔ T.IsLocallyMemSobolevAt s p x := by
+  constructor
+  · -- A cutoff on `Ω` supported in `U ⊆ Ω'` is a cutoff on `Ω'`, extended by zero.
+    rintro ⟨U, hU, hUΩ', hT⟩
+    refine ⟨U, hU, hUΩ'.trans h, fun φ hφ ↦ ?_⟩
+    let φ' : 𝓓(Ω', ℂ) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφ.trans hUΩ'⟩
+    have hφ' : monoCLM ℝ φ' = φ := by
+      ext y
+      simp [φ', h]
+    simpa [cutoffTempered_restrictCLM, hφ'] using hT φ' hφ
+  · rintro ⟨U, hU, -, hT⟩
+    refine ⟨U ∩ Ω', inter_mem hU (Ω'.isOpen.mem_nhds hx), inter_subset_right, fun φ hφ ↦ ?_⟩
+    rw [cutoffTempered_restrictCLM]
+    exact hT _ (by simpa [h] using hφ.trans inter_subset_left)
+
+/-- For `1 < p < ∞`, a tempered distribution in `H^{s,p}`, restricted to `Ω`, is `H^{s,p}` near
+every point of `Ω`: its cut-offs are its products with test functions. -/
+theorem _root_.TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_toDistribution (hp : 1 < p)
+    (hp_top : p ≠ ∞) {u : 𝓢'(E, ℂ)} (hu : TemperedDistribution.MemSobolev s p u) (hx : x ∈ Ω) :
+    (TemperedDistribution.toDistribution Ω u).IsLocallyMemSobolevAt s p x :=
+  ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun φ _ ↦ by
+    rw [cutoffTempered_toDistribution]
+    exact hu.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top fun n _ ↦
+      ⟨_, fun y ↦ by
+        simpa [coe_toSchwartzMapCLM] using
+          (toSchwartzMapCLM ℝ φ).norm_iteratedFDeriv_le_seminorm ℝ n y⟩⟩
+
+variable {e : OpenPartialHomeomorph E E} {U : Opens E}
+  {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}
+  {hU : (U : Set E) ⊆ e.source} {hUΩ : MapsTo e U Ω}
+
+/-- **Pulling back preserves local `H^{s,p}` regularity.** Let `1 < p < ∞`. If `T` is `H^{s,p}`
+near `e x`, then its pullback `e^* T` along `e` is `H^{s,p}` near `x`. -/
+theorem IsLocallyMemSobolevAt.compCLMOfOpenPartialHomeomorph (hp : 1 < p) (hp_top : p ≠ ∞)
+    (hx : x ∈ U) (hT : T.IsLocallyMemSobolevAt s p (e x)) :
+    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsLocallyMemSobolevAt s p x := by
+  have hxs : x ∈ e.source := hU hx
+  -- `φ T ∈ H^{s,p}` for every test function `φ` supported in an open neighbourhood `W` of `e x`.
+  obtain ⟨W₀, hW₀, -, hWT⟩ := hT
+  obtain ⟨W, hWW₀, hW, hxW⟩ := _root_.mem_nhds_iff.1 hW₀
+  -- A global change of variables `Φ` with bounded derivatives agreeing with `e` near `x`.
+  obtain ⟨Φ, hΦ, hΨ, hΦb, hΨb, hΦe⟩ := TauCeti.exists_equiv_eventuallyEq_of_det_fderiv_ne_zero
+    (eventually_of_mem (e.open_source.mem_nhds hxs) fun y hy ↦
+      (he.contDiffAt (e.open_source.mem_nhds hy)))
+    (e.det_fderiv_ne_zero_of_contDiffOn he he' (by simp) hxs)
+  have hΦt := Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos hΦ hΦb
+  have hΨt := Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos hΨ hΨb
+  -- A ball `N` around `x` in `U` on which `Φ = e`, whose closure `e` maps into `W ∩ Ω`.
+  have hxU : ∀ᶠ y in 𝓝 x, y ∈ U := U.isOpen.mem_nhds hx
+  have hxWΩ : ∀ᶠ y in 𝓝 x, e y ∈ W ∩ Ω :=
+    e.continuousAt hxs |>.preimage_mem_nhds ((hW.inter Ω.isOpen).mem_nhds ⟨hxW, hUΩ hx⟩)
+  have hev : ∀ᶠ y in 𝓝 x, Φ y = e y ∧ y ∈ U ∧ e y ∈ W ∩ Ω := hΦe.and (hxU.and hxWΩ)
+  obtain ⟨ε, hε, hεP⟩ := Metric.eventually_nhds_iff.1 hev
+  have hball : Metric.closedBall x (ε / 2) ⊆ Metric.ball x ε :=
+    Metric.closedBall_subset_ball (by linarith)
+  let N : Opens E := ⟨Metric.ball x (ε / 2), Metric.isOpen_ball⟩
+  have hxN : x ∈ N := Metric.mem_ball_self (by linarith)
+  have hNU : N ≤ U := fun y hy ↦ (hεP (hball (Metric.ball_subset_closedBall hy))).2.1
+  have hΦeN : EqOn Φ e N := fun y hy ↦ (hεP (hball (Metric.ball_subset_closedBall hy))).1
+  -- A cutoff `χ` supported in `W ∩ Ω` which is `1` on `e '' closedBall x (ε / 2)`.
+  have hKs : Metric.closedBall x (ε / 2) ⊆ e.source := fun y hy ↦ hU (hεP (hball hy)).2.1
+  have hK : IsCompact (e '' Metric.closedBall x (ε / 2)) :=
+    (isCompact_closedBall x (ε / 2)).image_of_continuousOn (e.continuousOn.mono hKs)
+  have hKW : e '' Metric.closedBall x (ε / 2) ⊆ W ∩ Ω := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact (hεP (hball hy)).2.2
+  obtain ⟨χ, hχ1, hχW⟩ :=
+    exists_complex_cutoff_tsupport_subset (n := ⊤) hK (hW.inter Ω.isOpen) hKW inter_subset_right
+  have hχN : EqOn χ 1 (e '' N) := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact ((eventually_nhdsSet_iff_forall.1 hχ1) _
+      ⟨y, Metric.ball_subset_closedBall hy, rfl⟩).self_of_nhds
+  -- On `N`, `e^* T` is the tempered pullback `Φ^* (χ T)`, which lies in `H^{s,p}`.
+  have hmem := (hWT χ (hχW.trans (inter_subset_left.trans hWW₀)))
+    |>.compCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top hΦt hΨt (fun n hn _ ↦ hΦb n hn)
+      (fun n hn _ ↦ hΨb n hn)
+  rw [← isLocallyMemSobolevAt_restrictCLM_iff hNU hxN,
+    restrictCLM_compCLMOfOpenPartialHomeomorph_eq_toDistribution hNU hΦt hΨt hΦeN T hχN]
+  exact hmem.isLocallyMemSobolevAt_toDistribution hp hp_top hxN
+
+/-- **Local `H^{s,p}` regularity is invariant under changes of variables.** Let `1 < p < ∞`. The
+pullback `e^* T` of a distribution `T` along `e` is `H^{s,p}` near a point `x ∈ U` exactly when
+`T` is `H^{s,p}` near `e x`. -/
+theorem isLocallyMemSobolevAt_compCLMOfOpenPartialHomeomorph_iff (hp : 1 < p) (hp_top : p ≠ ∞)
+    (hx : x ∈ U) :
+    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsLocallyMemSobolevAt s p x ↔
+      T.IsLocallyMemSobolevAt s p (e x) := by
+  refine ⟨fun h ↦ ?_, IsLocallyMemSobolevAt.compCLMOfOpenPartialHomeomorph hp hp_top hx⟩
+  -- Pull back along `e⁻¹` from the open set `V = e '' U`, which returns the restriction `T|_V`.
+  let V : Opens E := ⟨e '' U, (e.isOpen_image_iff_of_subset_source hU).2 U.isOpen⟩
+  have hV : (V : Set E) ⊆ e.symm.source := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact e.map_source (hU hy)
+  have hVU : MapsTo e.symm V U := by
+    rintro _ ⟨y, hy, rfl⟩
+    rwa [e.left_inv (hU hy)]
+  have hUV : MapsTo e U V := fun y hy ↦ ⟨y, hy, rfl⟩
+  have hVΩ : V ≤ Ω := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact hUΩ hy
+  have hexV : e x ∈ V := ⟨x, hx, rfl⟩
+  have hres : compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T =
+      compCLMOfOpenPartialHomeomorph e he he' hU hUV (restrictCLM T) := by
+    rw [← restrictCLM_compCLMOfOpenPartialHomeomorph le_rfl hVΩ, restrictCLM_self]
+  rw [hres, ← e.left_inv (hU hx)] at h
+  have := h.compCLMOfOpenPartialHomeomorph (e := e.symm) (he := he') (he' := by simpa using he)
+    (hU := hV) (hUΩ := hVU) hp hp_top hexV
+  have hid := compCLMOfOpenPartialHomeomorph_symm_apply_apply (e := e) (he := he) (he' := he')
+    (hU := hU) (hV := hV) (hVU := hVU) (hUV := hUV) (he₁ := he') (he₁' := by simpa using he)
+    (restrictCLM T : 𝓓'(V, ℂ))
+  rw [hid] at this
+  exact (isLocallyMemSobolevAt_restrictCLM_iff hVΩ hexV).1 this
+
+end ChangeOfVariables
 
 end Distribution
