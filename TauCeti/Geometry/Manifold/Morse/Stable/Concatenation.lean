@@ -47,8 +47,9 @@ Bundled as continuous maps between the spaces of broken trajectories
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat`), with their associativity
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryConcat_assoc`), they provide the maps from
 which the composition maps `ι x z y : 𝓜(x, z) × 𝓜(z, y) → 𝓜(x, y)` of a twisting chain system of
-Barraud and Cornea (`TauCeti.TwistingChainSystem`) can be built, once the index type is the set of
-critical points of `f` and `L` contains no critical value. This file does not build that family.
+Barraud and Cornea (`TauCeti.TwistingChainSystem`) are built, once the index type is the set of
+critical points of `f` and `L` contains no critical value
+(`TauCeti.IsAdaptedPseudoGradient.morseRecordsComp`).
 
 ## Main definitions
 
@@ -378,31 +379,14 @@ theorem disjoint_morseTrajectoryRecords_image2_morseRecordConcat (hqr : q ≠ r)
     Disjoint (hX.morseTrajectoryRecords p r (Subtype.val : ↥(L ∩ Ioo (f r) (f p)) → ℝ))
       (image2 (morseRecordConcat f L p q r) (hX.morseBrokenTrajectoryRecords p q Subtype.val)
         (hX.morseBrokenTrajectoryRecords q r Subtype.val)) := by
-  -- On a level between `f q` and `f p`, the concatenation lies on a trajectory converging to a
-  -- critical point `x` with `f q ≤ f x`, while an unbroken trajectory from `p` to `r` converges to
-  -- `r`, and `f r < f q`.
+  -- On a level between `f q` and `f p`, the concatenation is a point of the first broken
+  -- trajectory, which meets no unbroken trajectory to `r` since `f r < f q`.
   refine disjoint_left.2 ?_
   rintro w hw ⟨w₁, h₁, w₂, h₂, rfl⟩
   obtain ⟨c, hcL, hc⟩ := hL
   have hrq := hX.value_lt_of_mem_morseBrokenTrajectoryRecords hqr h₂
-  -- On the level `c`, the unbroken trajectory lies in the stable set of `r`.
-  obtain ⟨y, hy, hwy⟩ := hX.mem_morseTrajectoryRecords.1 hw
-  obtain ⟨-, t, ht⟩ := hwy ⟨c, hcL, hrq.trans hc.1, hc.2⟩
-  -- The concatenation is there a point of a component of the first broken trajectory, which lies
-  -- in the stable set of a critical point `x₁ j.succ` with `f q ≤ f (x₁ j.succ)`.
-  obtain ⟨k, x, z, -, rfl, -, -, hz, hw₁⟩ := hX.mem_morseBrokenTrajectoryRecords.1 h₁
-  obtain ⟨-, j, t', ht'⟩ := hw₁ ⟨c, hcL, hc⟩
-  have hxq : f (x (Fin.last k)) ≤ f (x j.succ) :=
-    hX.antitone_apply_of_chain hz (Fin.le_last _)
-  have hne : x j.succ ≠ r := fun h ↦ (hrq.trans_le hxq).ne' (congrArg f h)
-  rw [morseRecordConcat_apply_of_lt _ _ _ hc.1] at ht
-  have h₁ : w₁ ⟨c, hcL, hc⟩ ∈ hX.flow.stableSet (x j.succ) := by
-    rw [← ht']
-    exact (Flow.apply_mem_stableSet_iff _ t').2 (hz j).2
-  have h₂ : w₁ ⟨c, hcL, hc⟩ ∈ hX.flow.stableSet r := by
-    rw [← ht]
-    exact (Flow.apply_mem_stableSet_iff _ t).2 hy.2
-  exact disjoint_left.1 (Flow.disjoint_stableSet hne) h₁ h₂
+  exact hX.apply_ne_of_mem_morseBrokenTrajectoryRecords_of_mem_morseTrajectoryRecords h₁ hw hrq
+    ⟨c, hcL, hc⟩ ⟨c, hcL, hrq.trans hc.1, hc.2⟩ (by rw [morseRecordConcat_apply_of_lt _ _ _ hc.1])
 
 end IsAdaptedPseudoGradient
 

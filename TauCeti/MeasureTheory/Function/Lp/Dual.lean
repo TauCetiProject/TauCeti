@@ -13,6 +13,8 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.MeasureTheory.Function.Holder
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Representation of continuous functionals on `Lᵖ`
@@ -31,11 +33,17 @@ continuous dual of `Lᵠ(μ; H)` by `g ↦ (f ↦ ∫ g x (f x) dμ)`, with `H�
 norm is computed by testing against the pointwise Riesz representative of `g`, and surjectivity
 again follows from reflexivity of `Lᵠ(μ; H)`, which is uniformly convex.
 
+For a real inner product space `E` with a finite orthonormal basis `b`, the dual of the product
+`(Lᵠ)ᶥ` is represented by `Lᵖ(α; E)`: a functional `Λ` is `g ↦ ∑ᵢ ∫ ⟪H, bᵢ⟫ gᵢ` for a field
+`H ∈ Lᵖ` with `‖H‖_{Lᵖ} ≤ |ι| ‖Λ‖` (`MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq`).
+
 ## Main declarations
 
 * `MeasureTheory.Lp.dualEquiv`: the isometric isomorphism `Lᵖ(μ) ≃ (Lᵠ(μ))⋆`.
 * `MeasureTheory.Lp.strongDualEquiv`: the isometric isomorphism `Lᵖ(μ; H⋆) ≃ (Lᵠ(μ; H))⋆` for a
   Hilbert space `H`.
+* `MeasureTheory.Lp.exists_memLp_forall_dual_pi_apply_eq`: the representation of functionals on
+  `(Lᵠ)ᶥ` by `Lᵖ(α; E)`.
 
 ## References
 
@@ -47,7 +55,7 @@ again follows from reflexivity of `Lᵠ(μ; H)`, which is uniformly convex.
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace MeasureTheory.Lp
 
@@ -89,6 +97,49 @@ theorem integral_dualEquiv_symm_mul (hq : 1 < q) (hq_top : q ≠ ∞)
     ∫ x, (dualEquiv 𝕜 μ p q hq hq_top).symm Λ x * f x ∂μ = Λ f := by
   rw [← dualEquiv_apply hq hq_top, LinearIsometryEquiv.apply_symm_apply]
 
+/-- **Representation of functionals on `(Lᵠ)ᶥ`.** Let `b` be a finite orthonormal basis of a real
+inner product space `E`. A continuous functional `Λ` on `(Lᵠ)ᶥ` is `g ↦ ∑ᵢ ∫ ⟪H, bᵢ⟫ gᵢ` for a
+field `H ∈ Lᵖ(α; E)` with `‖H‖_{Lᵖ} ≤ |ι| ‖Λ‖`. -/
+theorem exists_memLp_forall_dual_pi_apply_eq {ι E : Type*} [Fintype ι] [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (hq : 1 < q) (hq_top : q ≠ ∞) (b : OrthonormalBasis ι ℝ E)
+    (Λ : StrongDual ℝ (ι → Lp ℝ q μ)) :
+    ∃ H : α → E, MemLp H p μ ∧ eLpNorm H p μ ≤ Fintype.card ι * ENNReal.ofReal ‖Λ‖ ∧
+      ∀ g, Λ g = ∑ i, ∫ x, ⟪H x, b i⟫_ℝ * g i x ∂μ := by
+  classical
+  let Λc : ι → StrongDual ℝ (Lp ℝ q μ) := fun i =>
+    Λ.comp (ContinuousLinearMap.single ℝ (fun _ : ι => Lp ℝ q μ) i)
+  let Hc : ι → Lp ℝ p μ := fun i => (dualEquiv ℝ μ p q hq hq_top).symm (Λc i)
+  have hHc (i : ι) : ‖Hc i‖ ≤ ‖Λ‖ := by
+    simp only [Hc, LinearIsometryEquiv.norm_map]
+    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun g => ?_
+    calc ‖Λc i g‖ ≤ ‖Λ‖ * ‖Pi.single (M := fun _ : ι => Lp ℝ q μ) i g‖ := Λ.le_opNorm _
+      _ = ‖Λ‖ * ‖g‖ := by rw [Pi.norm_single]
+  have hHi (i : ι) : MemLp (fun x => (Hc i : α → ℝ) x • b i) p μ :=
+    (Lp.memLp (Hc i)).smul (memLp_top_const (b i))
+  have hsum : (fun x => ∑ i, (Hc i : α → ℝ) x • b i) = ∑ i, fun x => (Hc i : α → ℝ) x • b i :=
+    (Finset.sum_fn _ _).symm
+  have hinner (x : α) (i : ι) : ⟪∑ j, (Hc j : α → ℝ) x • b j, b i⟫_ℝ = Hc i x := by
+    simp [sum_inner, real_inner_smul_left, b.inner_eq_ite]
+  refine ⟨fun x => ∑ i, (Hc i : α → ℝ) x • b i, ?_, ?_, fun g => ?_⟩
+  · rw [hsum]
+    exact memLp_finsetSum' Finset.univ fun i _ => hHi i
+  · calc eLpNorm (fun x => ∑ i, (Hc i : α → ℝ) x • b i) p μ
+        ≤ ∑ i, eLpNorm (fun x => (Hc i : α → ℝ) x • b i) p μ := by
+          rw [hsum]
+          exact eLpNorm_sum_le Fact.out
+      _ ≤ ∑ _i : ι, ENNReal.ofReal ‖Λ‖ := by
+          refine Finset.sum_le_sum fun i _ => ?_
+          rw [eLpNorm_congr_norm_ae (hHi i).aestronglyMeasurable (Lp.aestronglyMeasurable (Hc i))
+            (ae_of_all _ fun x => by rw [norm_smul, b.orthonormal.1 i, mul_one]), ← Lp.eNorm_def,
+            ← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal (hHc i)
+      _ = Fintype.card ι * ENNReal.ofReal ‖Λ‖ := by simp
+  · conv_lhs => rw [← Finset.univ_sum_single g]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    simp_rw [hinner]
+    exact (integral_dualEquiv_symm_mul (p := p) hq hq_top (Λc i) (g i)).symm
+
 /-! ### Functionals on `Lᵠ` with values in a Hilbert space -/
 
 section StrongDual
@@ -105,10 +156,10 @@ private theorem lpPairing_id_eq_integral_inner (g : Lp (StrongDual 𝕜 H) p μ)
       ∫ x, ⟪(InnerProductSpace.toDual 𝕜 H).symm (g x), f x⟫_𝕜 ∂μ := by
   simp [ContinuousLinearMap.lpPairing_eq_integral]
 
-/-- **Norming by the Riesz representative.** For `p < ∞`, the norm of `g ∈ Lᵖ(μ; H⋆)` is at most
-the norm of the functional `f ↦ ∫ g x (f x) dμ` on `Lᵠ(μ; H)`: the pointwise Riesz representative
-of `g` is normed by bounded test functions of finite-measure support. -/
-private theorem eLpNorm_le_enorm_lpPairing (hp : p ≠ ∞) (g : Lp (StrongDual 𝕜 H) p μ) :
+/-- **Norming by the Riesz representative.** The norm of `g ∈ Lᵖ(μ; H⋆)` is at most the norm of
+the functional `f ↦ ∫ g x (f x) dμ` on `Lᵠ(μ; H)`: the pointwise Riesz representative of `g` is
+normed by bounded test functions of finite-measure support. -/
+private theorem eLpNorm_le_enorm_lpPairing (g : Lp (StrongDual 𝕜 H) p μ) :
     eLpNorm g p μ ≤ ‖(ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q g‖ₑ := by
   set Λ := (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q g
   set h : α → H := fun x ↦ (InnerProductSpace.toDual 𝕜 H).symm (g x)
@@ -116,7 +167,7 @@ private theorem eLpNorm_le_enorm_lpPairing (hp : p ≠ ∞) (g : Lp (StrongDual 
     (InnerProductSpace.toDual 𝕜 H).symm.continuous.comp_aestronglyMeasurable
       (Lp.aestronglyMeasurable g)
   rw [eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable g) hh (ae_of_all _ fun x ↦ by simp [h])]
-  refine hh.eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜) (q' := q) hp
+  refine hh.eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜) (q' := q)
     fun f s hs hfs hf ↦ ?_
   -- A bounded function of finite-measure support is an element of `Lᵠ`.
   have hfq : MemLp f q μ := hf.mono_exponent_of_measure_support_ne_top hfs hs le_top
@@ -126,15 +177,15 @@ private theorem eLpNorm_le_enorm_lpPairing (hp : p ≠ ∞) (g : Lp (StrongDual 
   rw [hpair, ← eNorm_toLp hfq]
   exact Λ.le_opENorm _
 
-/-- For `q < ∞`, an element `f ∈ Lᵠ(μ; H)` paired to zero with every `g ∈ Lᵖ(μ; H⋆)` is zero: it
-is normed by the Riesz duals of bounded test functions of finite-measure support. -/
-private theorem eq_zero_of_forall_lpPairing_eq_zero (hq : q ≠ ∞) (f : Lp H q μ)
+/-- An element `f ∈ Lᵠ(μ; H)` paired to zero with every `g ∈ Lᵖ(μ; H⋆)` is zero: it is normed by
+the Riesz duals of bounded test functions of finite-measure support. -/
+private theorem eq_zero_of_forall_lpPairing_eq_zero (f : Lp H q μ)
     (hf : ∀ g : Lp (StrongDual 𝕜 H) p μ,
       (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q g f = 0) :
     f = 0 := by
   have hle : eLpNorm f q μ ≤ 0 := by
     refine (Lp.aestronglyMeasurable f).eLpNorm_le_of_forall_enorm_integral_inner_le (𝕜 := 𝕜)
-      (q' := p) hq fun g s hs hgs hg ↦ ?_
+      (q' := p) fun g s hs hgs hg ↦ ?_
     have hgp : MemLp g p μ := hg.mono_exponent_of_measure_support_ne_top hgs hs le_top
     set G : α → StrongDual 𝕜 H := fun x ↦ InnerProductSpace.toDual 𝕜 H (g x)
     have hGp : MemLp G p μ := hgp.congr_norm
@@ -151,8 +202,8 @@ private theorem eq_zero_of_forall_lpPairing_eq_zero (hq : q ≠ ∞) (f : Lp H q
 
 variable (𝕜 μ p q) in
 /-- The integral pairing `g ↦ (f ↦ ∫ g x (f x) dμ)` as a linear isometry from `Lᵖ(μ; H⋆)` to the
-continuous dual of `Lᵠ(μ; H)`, for `p < ∞`. -/
-private noncomputable def toStrongDual (hp : p ≠ ∞) :
+continuous dual of `Lᵠ(μ; H)`. -/
+private noncomputable def toStrongDual :
     Lp (StrongDual 𝕜 H) p μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp H q μ) where
   toLinearMap := (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q
   norm_map' g := by
@@ -162,22 +213,21 @@ private noncomputable def toStrongDual (hp : p ≠ ∞) :
     · exact (B.norm_lpPairing_apply_apply_le g f).trans
         (by gcongr; exact mul_le_of_le_one_left (norm_nonneg _) ContinuousLinearMap.norm_id_le)
     · rw [← toReal_eNorm g, ← toReal_eNorm (B.lpPairing μ p q g), Lp.eNorm_def]
-      exact ENNReal.toReal_mono eNorm_ne_top (eLpNorm_le_enorm_lpPairing hp g)
+      exact ENNReal.toReal_mono eNorm_ne_top (eLpNorm_le_enorm_lpPairing g)
 
-private theorem toStrongDual_apply (hp : p ≠ ∞) (g : Lp (StrongDual 𝕜 H) p μ) (f : Lp H q μ) :
-    toStrongDual 𝕜 μ p q hp g f = (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q g f :=
+private theorem toStrongDual_apply (g : Lp (StrongDual 𝕜 H) p μ) (f : Lp H q μ) :
+    toStrongDual 𝕜 μ p q g f = (ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 H)).lpPairing μ p q g f :=
   rfl
 
 private theorem toStrongDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
-    Function.Surjective (toStrongDual 𝕜 μ p q (H := H)
-      ((ENNReal.HolderConjugate.lt_top_iff_one_lt p q).2 hq).ne) := by
+    Function.Surjective (toStrongDual 𝕜 μ p q (H := H)) := by
   -- `Lᵠ(μ; H)` is reflexive, since `H` is uniformly convex.
   have : UniformConvexSpace H := by
     let := InnerProductSpace.rclikeToReal 𝕜 H
     infer_instance
   refine LinearIsometry.surjective_of_surjective_inclusionInDoubleDual _
     (surjective_inclusionInDoubleDual (𝕜 := 𝕜) (μ := μ) hq hq_top)
-    fun f hf ↦ eq_zero_of_forall_lpPairing_eq_zero (𝕜 := 𝕜) (p := p) hq_top f fun g ↦ ?_
+    fun f hf ↦ eq_zero_of_forall_lpPairing_eq_zero (𝕜 := 𝕜) (p := p) f fun g ↦ ?_
   rw [← toStrongDual_apply]
   exact hf g
 

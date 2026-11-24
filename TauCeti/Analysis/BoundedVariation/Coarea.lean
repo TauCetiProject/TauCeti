@@ -18,7 +18,7 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.LayerCake
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.Topology.MetricSpace.ProperSpace
+import TauCeti.Topology.Compactness.SigmaCompact
 import TauCeti.Topology.Sets.Opens
 
 /-!

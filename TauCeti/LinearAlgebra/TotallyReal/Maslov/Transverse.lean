@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Path
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Prod
 public import TauCeti.Topology.Algebra.Matrix.Symmetric
 
 /-!
@@ -45,18 +47,27 @@ convention that a positive crossing counts `+1`:
 * **normalization:** the rotation `t ↦ e^{iπ(2t - 1)/4} ℝⁿ`, which crosses `ℝⁿ` once in the
   positive direction, from the chart subspace of `-1` to that of `1`, has index `n`
   (`TauCeti.TotallyRealPath.transverseMaslovIndex_rotation`); for `n = 1` this is the
-  normalization axiom.
+  normalization axiom;
+* **naturality:** a real orthogonal change of coordinates `O`, which preserves `ℝⁿ` and moves the
+  chart subspace of `S` to that of `O S Oᵀ`, does not change the index
+  (`TauCeti.TotallyRealPath.transverseMaslovIndex_eq_of_orthogonal`);
+* **direct sum:** the direct sum `Λ ⊕ Λ'` of paths in `ℂⁿ` and `ℂᵐ`
+  (`TauCeti.TotallyRealPath.sum`), a path in `ℂ^{n ⊕ m}` between the chart subspaces of
+  block-diagonal matrices, has index the sum of the two indices
+  (`TauCeti.TotallyRealPath.transverseMaslovIndex_sum`), as is the relative index of two direct
+  sums (`TauCeti.TotallyRealPath.relativeMaslovIndex_sum`).
 
 For a loop based at a chart subspace it is the Maslov index of the loop
 (`TauCeti.TotallyRealLoop.transverseMaslovIndex_toTotallyRealPath`).
 
-The crossing-form formula for the index, its extension to endpoints that are not transverse, and
-the direct-sum and naturality axioms are not treated here.
+The crossing-form formula for the index and its extension to endpoints that are not transverse
+are not treated here.
 
 ## References
 
 * J. Robbin and D. Salamon, *The Maslov index for paths*, Topology **32** (1993), 827--844,
-  Theorem 2.3 (the axioms of the Maslov index for paths).
+  Theorem 2.3 (the axioms of the Maslov index for paths, including naturality and the direct
+  sum).
 * D. McDuff and D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford University
   Press, 2017, Section 2.3 (the Lagrangian Grassmannian, the open cell of Lagrangians transverse
   to a fixed one as symmetric matrices, and the Maslov index of paths).
@@ -284,6 +295,116 @@ theorem transverseMaslovIndex_rotation (Λ : TotallyRealPath (EuclideanSpace ℂ
   · simp only [Set.Icc.coe_one, Set.Icc.coe_zero]
     norm_num [arctan_one, arctan_neg]
     ring
+
+/-! ### Naturality and direct sums -/
+
+/-- **Naturality.** A real orthogonal change of coordinates `O` of `ℂⁿ` preserves `ℝⁿ` and carries
+the chart subspace of `S` to that of `O S Oᵀ`
+(`Matrix.lagrangianChart_mul_mul_transpose`). If `Γ` is the image of `Λ` under `O`, then the
+Maslov index of `Γ` relative to `ℝⁿ`, between the conjugated endpoints, is that of `Λ`. -/
+theorem transverseMaslovIndex_eq_of_orthogonal (Λ Γ : TotallyRealPath (EuclideanSpace ℂ n))
+    {O : Matrix n n ℝ} (hO : O ∈ orthogonalGroup n ℝ)
+    (hΓ : ∀ t, Γ t = (Λ t).map (((toEuclideanCLM (𝕜 := ℂ) (O.map ((↑) : ℝ → ℂ)) :
+      EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
+        EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ))
+    {S₀ S₁ : Matrix n n ℝ} (hS₀ : S₀.IsSymm) (hS₁ : S₁.IsSymm) (h₀ : Λ 0 = S₀.lagrangianChart)
+    (h₁ : Λ 1 = S₁.lagrangianChart) :
+    Γ.transverseMaslovIndex (hS₀.mul_mul_transpose O) (hS₁.mul_mul_transpose O)
+      (by rw [hΓ, h₀, lagrangianChart_mul_mul_transpose hO])
+      (by rw [hΓ, h₁, lagrangianChart_mul_mul_transpose hO]) =
+      Λ.transverseMaslovIndex hS₀ hS₁ h₀ h₁ := by
+  -- The complex matrix of `O` as an automorphism of `ℂⁿ`.
+  have hdet : (O.map ((↑) : ℝ → ℂ)).det ≠ 0 := by
+    rw [det_map_ofReal, Complex.ofReal_ne_zero]
+    exact (isUnit_det_of_left_inverse ((mem_orthogonalGroup_iff' n ℝ).1 hO)).ne_zero
+  set D := (O.map ((↑) : ℝ → ℂ)).toEuclideanCLE hdet
+  have hD (L : Submodule ℝ (EuclideanSpace ℂ n)) :
+      L.map ((D.toLinearEquiv : EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) =
+        L.map (((toEuclideanCLM (𝕜 := ℂ) (O.map ((↑) : ℝ → ℂ)) :
+          EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) :
+            EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) := by
+    congr 1
+    ext x
+    simp [D]
+  have hΓD : Γ = Λ.mapEquiv D := ext fun t ↦ by rw [hΓ, mapEquiv_apply, hD]
+  -- The image under `O` of the chart path of the segment from `S₀` to `S₁` is the chart path of
+  -- the segment from `O S₀ Oᵀ` to `O S₁ Oᵀ`.
+  have hseg : ofLagrangianChart (Path.segment (O * S₀ * Oᵀ) (O * S₁ * Oᵀ))
+      (isSymm_segment (hS₀.mul_mul_transpose O) (hS₁.mul_mul_transpose O)) =
+      (ofLagrangianChart (Path.segment S₀ S₁) (isSymm_segment hS₀ hS₁)).mapEquiv D := by
+    ext1 t
+    rw [mapEquiv_apply, ofLagrangianChart_apply, ofLagrangianChart_apply, hD,
+      ← lagrangianChart_mul_mul_transpose hO]
+    congr 1
+    simp only [Path.segment_apply, AffineMap.lineMap_apply_module, Matrix.mul_add,
+      Matrix.add_mul, Matrix.mul_smul, Matrix.smul_mul]
+  subst hΓD
+  rw [transverseMaslovIndex, transverseMaslovIndex]
+  exact (relativeMaslovIndex_congr_right hseg _ _).trans (relativeMaslovIndex_mapEquiv _ _ _ _ _)
+
+section Sum
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+omit [DecidableEq n] [DecidableEq m] in
+/-- The **direct sum** `Λ ⊕ Λ'` of paths of maximal totally real subspaces of `ℂⁿ` and `ℂᵐ`, as a
+path in `ℂ^{n ⊕ m}`: the product path, transported along `ℂⁿ × ℂᵐ ≃ ℂ^{n ⊕ m}`. -/
+noncomputable def sum (Λ : TotallyRealPath (EuclideanSpace ℂ n))
+    (Λ' : TotallyRealPath (EuclideanSpace ℂ m)) :
+    TotallyRealPath (EuclideanSpace ℂ (n ⊕ m)) :=
+  (Λ.prod Λ').mapEquiv (EuclideanSpace.sumEquivProd (𝕜 := ℂ) (ι := n) (κ := m)).symm
+
+omit [DecidableEq n] [DecidableEq m] in
+@[simp]
+theorem sum_apply (Λ : TotallyRealPath (EuclideanSpace ℂ n))
+    (Λ' : TotallyRealPath (EuclideanSpace ℂ m)) (t : I) :
+    Λ.sum Λ' t = ((Λ t).prod (Λ' t)).map
+      (((EuclideanSpace.sumEquivProd (𝕜 := ℂ) (ι := n) (κ := m)).symm.toLinearEquiv :
+        (EuclideanSpace ℂ n × EuclideanSpace ℂ m) →ₗ[ℂ] EuclideanSpace ℂ (n ⊕ m)).restrictScalars
+          ℝ) := by
+  rw [sum, mapEquiv_apply, prod_apply]
+
+omit [DecidableEq n] [DecidableEq m] in
+/-- The relative Maslov index is additive under the direct sum of paths in `ℂⁿ` and `ℂᵐ`:
+`μ(Λ ⊕ Λ', Γ ⊕ Γ') = μ(Λ, Γ) + μ(Λ', Γ')`. -/
+@[simp]
+theorem relativeMaslovIndex_sum (Λ Γ : TotallyRealPath (EuclideanSpace ℂ n))
+    (Λ' Γ' : TotallyRealPath (EuclideanSpace ℂ m)) (h₀ : Λ 0 = Γ 0) (h₁ : Λ 1 = Γ 1)
+    (h₀' : Λ' 0 = Γ' 0) (h₁' : Λ' 1 = Γ' 1) :
+    relativeMaslovIndex (Λ.sum Λ') (Γ.sum Γ') (by simp [h₀, h₀']) (by simp [h₁, h₁']) =
+      relativeMaslovIndex Λ Γ h₀ h₁ + relativeMaslovIndex Λ' Γ' h₀' h₁' :=
+  (relativeMaslovIndex_mapEquiv _ _ _ _ _).trans (relativeMaslovIndex_prod _ _ _ _ _ _ _ _)
+
+/-- **Direct-sum axiom.** The Maslov index relative to `ℝ^{n ⊕ m}` of the direct sum of paths
+between chart subspaces is the sum of their Maslov indices relative to `ℝⁿ` and `ℝᵐ`; the endpoints
+of the direct sum are the chart subspaces of the block-diagonal matrices
+(`Matrix.lagrangianChart_fromBlocks_diagonal`). -/
+theorem transverseMaslovIndex_sum (Λ : TotallyRealPath (EuclideanSpace ℂ n))
+    (Λ' : TotallyRealPath (EuclideanSpace ℂ m)) {S₀ S₁ : Matrix n n ℝ} {T₀ T₁ : Matrix m m ℝ}
+    (hS₀ : S₀.IsSymm) (hS₁ : S₁.IsSymm) (hT₀ : T₀.IsSymm) (hT₁ : T₁.IsSymm)
+    (h₀ : Λ 0 = S₀.lagrangianChart) (h₁ : Λ 1 = S₁.lagrangianChart)
+    (h₀' : Λ' 0 = T₀.lagrangianChart) (h₁' : Λ' 1 = T₁.lagrangianChart) :
+    (Λ.sum Λ').transverseMaslovIndex (S₀ := fromBlocks S₀ 0 0 T₀) (S₁ := fromBlocks S₁ 0 0 T₁)
+      (hS₀.fromBlocks (by simp) hT₀) (hS₁.fromBlocks (by simp) hT₁)
+      (by rw [sum_apply, h₀, h₀', lagrangianChart_fromBlocks_diagonal])
+      (by rw [sum_apply, h₁, h₁', lagrangianChart_fromBlocks_diagonal]) =
+      Λ.transverseMaslovIndex hS₀ hS₁ h₀ h₁ + Λ'.transverseMaslovIndex hT₀ hT₁ h₀' h₁' := by
+  -- The chart path of the segment of block-diagonal matrices is the direct sum of the chart paths
+  -- of the segments of the blocks.
+  have hseg : ofLagrangianChart (Path.segment (fromBlocks S₀ 0 0 T₀) (fromBlocks S₁ 0 0 T₁))
+      (isSymm_segment (hS₀.fromBlocks (by simp) hT₀) (hS₁.fromBlocks (by simp) hT₁)) =
+      (ofLagrangianChart (Path.segment S₀ S₁) (isSymm_segment hS₀ hS₁)).sum
+        (ofLagrangianChart (Path.segment T₀ T₁) (isSymm_segment hT₀ hT₁)) := by
+    ext1 t
+    rw [sum_apply, ofLagrangianChart_apply, ofLagrangianChart_apply, ofLagrangianChart_apply,
+      ← lagrangianChart_fromBlocks_diagonal]
+    congr 1
+    simp only [Path.segment_apply, AffineMap.lineMap_apply_module, fromBlocks_smul,
+      fromBlocks_add, smul_zero, add_zero]
+  rw [transverseMaslovIndex, transverseMaslovIndex, transverseMaslovIndex]
+  exact (relativeMaslovIndex_congr_right hseg _ _).trans (relativeMaslovIndex_sum _ _ _ _ _ _ _ _)
+
+end Sum
 
 end TotallyRealPath
 

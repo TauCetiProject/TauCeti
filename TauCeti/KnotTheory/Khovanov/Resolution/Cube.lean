@@ -407,7 +407,7 @@ section Hom
 variable {D} {D' : PDCode n} (hD' : D'.IsPlanar) {j' d : ℤ}
   (f : ∀ s : Fin n → Bool, Khovanov.CircleTensor R (D.ResolvedCircle s) →ₗ[R]
     Khovanov.CircleTensor R (D'.ResolvedCircle s))
-  (hf : ∀ s, TauCeti.LinearMap.IsHomogeneous (f s)
+  (hf : ∀ s, LinearMap.IsHomogeneous (f s)
     (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
     (Khovanov.circleQuantumGrading R (D'.ResolvedCircle s)).piece d)
   (hfe : ∀ ⦃s t : Fin n → Bool⦄ ⦃c : Fin n⦄ (hst : ∀ i, i ≠ c → s i = t i) (hc : s c ≠ t c)
