@@ -62,7 +62,7 @@ universe u
 variable {X Y : Scheme.{u}} (f : Y ⟶ X) {x : X}
 
 private lemma top_le_preimage (hf : ∀ y, f y = x) {U : X.Opens} (hxU : x ∈ U) : ⊤ ≤ f ⁻¹ᵁ U :=
-  fun y _ ↦ show f y ∈ U from hf y ▸ hxU
+  fun y _ ↦ f.mem_preimage.mpr (hf y ▸ hxU)
 
 private lemma basicOpen_appLE_eq_bot (hf : ∀ y, f y = x) {U : X.Opens} (e : ⊤ ≤ f ⁻¹ᵁ U)
     {s : Γ(X, U)} (hs : x ∉ X.basicOpen s) : Y.basicOpen (f.appLE U ⊤ e s) = ⊥ := by
@@ -111,6 +111,15 @@ noncomputable def toSpecResidueField [IsReduced Y] (hf : ∀ y, f y = x) :
     Y ⟶ Spec (X.residueField x) :=
   Y.toSpecΓ ≫ Spec.map (residueFieldToΓ f hf)
 
+/-- If `f` maps all of `Y` into an affine open `U`, then `f` is recovered from its ring map
+`Γ(X, U) ⟶ Γ(Y, ⊤)` via `Y ⟶ Spec Γ(Y, ⊤) ⟶ Spec Γ(X, U) ≅ U ⟶ X`. -/
+private lemma toSpecΓ_SpecMap_appLE_fromSpec {U : X.Opens} (hU : IsAffineOpen U)
+    (e : ⊤ ≤ f ⁻¹ᵁ U) : Y.toSpecΓ ≫ Spec.map (f.appLE U ⊤ e) ≫ hU.fromSpec = f := by
+  -- Precompose with `⊤ ≅ Y`, where `toSpecΓ` becomes `Scheme.Opens.toSpecΓ` of the open `⊤`;
+  -- then `toSpecΓ ≫ Spec.map (appLE)` is `resLE ≫ toSpecΓ` and `toSpecΓ ≫ fromSpec` is `ι`.
+  rw [← cancel_epi Y.topIso.hom, Scheme.topIso_hom, ← Category.assoc, ← Scheme.Opens.toSpecΓ_top,
+    Scheme.Opens.toSpecΓ_SpecMap_appLE_assoc, IsAffineOpen.toSpecΓ_fromSpec, resLE_comp_ι]
+
 /-- A morphism from a reduced scheme all of whose points map to `x` factors through
 `Spec κ(x) ⟶ X`. -/
 @[reassoc (attr := simp), stacks 0H1M]
@@ -118,11 +127,12 @@ theorem toSpecResidueField_fromSpecResidueField [IsReduced Y] (hf : ∀ y, f y =
     f.toSpecResidueField hf ≫ X.fromSpecResidueField x = f := by
   obtain ⟨_, ⟨U, hU : IsAffineOpen U, rfl⟩, hxU : x ∈ U, -⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
+  -- Through an affine neighbourhood `U` of `x`, the composite is induced by the ring map
+  -- `Γ(X, U) ⟶ 𝒪_{X,x} ⟶ κ(x) ⟶ Γ(Y, ⊤)`, which is `f.appLE U ⊤ _`.
   rw [toSpecResidueField, fromSpecResidueField, ← hU.fromSpecStalk_eq_fromSpecStalk hxU]
   simp only [IsAffineOpen.fromSpecStalk, Category.assoc, ← Spec.map_comp_assoc,
     residue_residueFieldToΓ, germ_stalkToΓ]
-  rw [← cancel_epi Y.topIso.hom, Scheme.topIso_hom, ← Category.assoc, ← Scheme.Opens.toSpecΓ_top,
-    Scheme.Opens.toSpecΓ_SpecMap_appLE_assoc, IsAffineOpen.toSpecΓ_fromSpec, resLE_comp_ι]
+  exact toSpecΓ_SpecMap_appLE_fromSpec f hU _
 
 /-- The factorization of `Scheme.Hom.toSpecResidueField` is unique, since `Spec κ(x) ⟶ X` is a
 monomorphism. -/
@@ -138,6 +148,18 @@ theorem exists_comp_fromSpecResidueField_eq_iff [IsReduced Y] :
   rintro ⟨g, rfl⟩ y
   rw [Scheme.Hom.comp_apply, Scheme.fromSpecResidueField_apply]
 
+/-- The pullback of a section `s` along `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` is the image of the germ at `y`
+of the pullback of `s` under `Γ(Spec 𝒪_{Y,y}, ⊤) ≅ 𝒪_{Y,y}`. -/
+private lemma comp_appLE_fromSpecStalk {y : Y} {U : X.Opens} (hy : y ∈ f ⁻¹ᵁ U)
+    (e : ⊤ ≤ (Y.fromSpecStalk y ≫ f) ⁻¹ᵁ U) :
+    (Y.fromSpecStalk y ≫ f).appLE U ⊤ e =
+      f.app U ≫ Y.presheaf.germ (f ⁻¹ᵁ U) y hy ≫ (Scheme.ΓSpecIso _).inv := by
+  rw [comp_appLE]
+  simp only [Hom.appLE, fromSpecStalk_app hy, Category.assoc, ← Functor.map_comp]
+  -- The two restrictions compose to an endomorphism of an open of `Spec 𝒪_{Y,y}`; as the opens
+  -- form a poset, it is the identity.
+  rw [Subsingleton.elim (_ ≫ _) (𝟙 _), CategoryTheory.Functor.map_id, Category.comp_id]
+
 /-- If `f` maps every generization of `y` to `f y`, then for a section `s` near `f y` whose basic
 open misses `f y`, the germ at `y` of the pullback of `s` is nilpotent. -/
 theorem isNilpotent_germ_app {y : Y} (hgen : ∀ y', y' ⤳ y → f y' = f y) {U : X.Opens}
@@ -149,11 +171,9 @@ theorem isNilpotent_germ_app {y : Y} (hgen : ∀ y', y' ⤳ y → f y' = f y) {U
     refine hgen _ ?_
     have := Set.mem_range_self (f := Y.fromSpecStalk y) z
     rwa [range_fromSpecStalk] at this
-  have h0 := basicOpen_appLE_eq_bot _ hg (top_le_preimage _ hg hy) hs
-  rw [comp_appLE] at h0
-  simp only [Hom.appLE, fromSpecStalk_app hy, Category.assoc, ← Functor.map_comp] at h0
-  rw [Subsingleton.elim (_ ≫ _) (𝟙 _), CategoryTheory.Functor.map_id, Category.comp_id,
-    CommRingCat.comp_apply, CommRingCat.comp_apply, basicOpen_eq_of_affine] at h0
+  have h0 := basicOpen_appLE_eq_bot _ hg (top_le_preimage _ hg (f.mem_preimage.mp hy)) hs
+  rw [comp_appLE_fromSpecStalk f hy, CommRingCat.comp_apply, CommRingCat.comp_apply,
+    basicOpen_eq_of_affine] at h0
   exact (PrimeSpectrum.basicOpen_eq_bot_iff _).mp h0
 
 /-- Let `E` be a set of points of a locally Noetherian scheme `X` with no nontrivial
@@ -163,7 +183,9 @@ theorem isOpen_preimage_singleton [IsLocallyNoetherian X] {E : Set X}
     (hE : ∀ x ∈ E, ∀ x' ∈ E, x ⤳ x' → x = x') (hf : ∀ y, f y ∈ E) (x : X) :
     IsOpen (f ⁻¹' {x}) := by
   rw [isOpen_iff_forall_mem_open]
-  rintro y (rfl : f y = x)
+  intro y hy
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at hy
+  subst hy
   obtain ⟨_, ⟨U, hU : IsAffineOpen U, rfl⟩, hxU : f y ∈ U, -⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f y)) isOpen_univ
   have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
@@ -182,7 +204,7 @@ theorem isOpen_preimage_singleton [IsLocallyNoetherian X] {E : Set X}
     have hspec := ((PrimeSpectrum.le_iff_specializes _ _).mp hle).map hU.fromSpec.continuous
     rw [hU.fromSpec_primeIdealOf, hU.fromSpec_primeIdealOf] at hspec
     exact (hE _ (hf y) _ (hf y') hspec).symm
-  · have hy : y ∈ f ⁻¹ᵁ U := hxU
+  · have hy : y ∈ f ⁻¹ᵁ U := f.mem_preimage.mpr hxU
     obtain ⟨n, hn⟩ := f.isNilpotent_germ_app (fun y' hy' ↦ hE _ (hf y') _ (hf y) (hy'.map
       f.continuous)) hy (s := s) fun h ↦
         (hU.mem_basicOpen_iff_notMem_primeIdealOf ⟨f y, hxU⟩ s).mp h (hS ▸ Submodule.subset_span hs)
@@ -211,9 +233,13 @@ theorem exists_comp_sigmaDesc_fromSpecResidueField_eq [IsLocallyNoetherian X] [I
     (eq_top_iff.mpr fun y _ ↦ by simpa using ⟨f y, hf y, rfl⟩)
     (fun x x' hxx' ↦ by
       simp only [Function.onFun, Scheme.Opens.opensRange_ι, ← Opens.coe_disjoint]
-      exact Set.disjoint_left.mpr fun y (hy : f y = x) (hy' : f y = x') ↦
-        hxx' (Subtype.ext (hy.symm.trans hy')))
-  have hW (x : E) (y : (W x).toScheme) : ((W x).ι ≫ f) y = x := y.property
+      refine Set.disjoint_left.mpr fun y hy hy' ↦ hxx' (Subtype.ext ?_)
+      rw [SetLike.mem_coe, Opens.mem_mk, Set.mem_preimage, Set.mem_singleton_iff] at hy hy'
+      exact hy.symm.trans hy')
+  have hW (x : E) (y : (W x).toScheme) : ((W x).ι ≫ f) y = x := by
+    rw [Scheme.Hom.comp_apply, Scheme.Opens.ι_apply (W x) y, ← Set.mem_singleton_iff,
+      ← Set.mem_preimage]
+    exact Opens.mem_mk.mp y.property
   let g (x : E) := ((W x).ι ≫ f).toSpecResidueField (hW x) ≫
     Sigma.ι (fun x : E ↦ Spec (X.residueField x)) x
   refine ⟨Cofan.IsColimit.desc hc g, Cofan.IsColimit.hom_ext hc _ _ fun x ↦ ?_⟩
