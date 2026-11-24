@@ -18,7 +18,11 @@ exact sequence of representations to a short exact sequence (`Rep.shortExact_map
 exactness of representations is tested on underlying modules and `Homₖ(A, -)` is exact on
 `k`-modules for projective `A`. Applied to trivial representations, this gives the short exact
 sequences of coefficients `Homₖ(A, N)` along which group cohomology with coefficients in an
-internal hom has its long exact sequence.
+internal hom has its long exact sequence. In particular `Homₖ(A, -)` preserves epimorphisms
+(`Rep.preservesEpimorphisms_ihom`), so its left adjoint `A ⊗ -` preserves projective objects: the
+tensor product `A ⊗ P` of a representation `A` whose underlying module is projective over `k` with
+a projective representation `P` is projective (`Rep.projective_tensorObj`). For instance, twisting
+a projective representation by a one-dimensional representation keeps it projective.
 
 For a group homomorphism `f : G →* H`, an equivariant map `φ : A ⟶ Rep.res f B`,
 and a module `N` with trivial action, precomposition with `φ` gives an equivariant map
@@ -37,7 +41,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Rep
+open CategoryTheory MonoidalCategory Rep
 
 namespace Rep
 
@@ -99,6 +103,30 @@ theorem ihom_obj_trivial_ρ_inv_sub_id (N : Type w) [AddCommGroup N] [Module k N
     (congrArg (· - φ) (ihom_obj_trivial_ρ_apply A N g⁻¹ φ)).trans ?_
   ext a
   simp
+
+section Monoidal
+
+variable (A : Rep.{u} k G)
+
+/-- **The internal hom out of a `k`-projective representation preserves epimorphisms**: a linear
+map from `A` to the target of a surjective equivariant map lifts along it, as `A` is projective
+over `k`. -/
+instance preservesEpimorphisms_ihom [Module.Projective k A] :
+    (ihom A).PreservesEpimorphisms where
+  preserves {B C} f hf := by
+    rw [epi_iff_surjective] at hf ⊢
+    intro x
+    exact Module.projective_lifting_property f.hom.toLinearMap (x : A →ₗ[k] C) hf
+
+/-- **Twisting a projective representation by a `k`-projective one keeps it projective.** If the
+underlying module of `A` is projective over `k` and `P` is a projective representation, then
+`A ⊗ P` is a projective representation, since `A ⊗ -` is left adjoint to the internal hom
+`Homₖ(A, -)`, which preserves epimorphisms. -/
+instance projective_tensorObj [Module.Projective k A] (P : Rep.{u} k G) [Projective P] :
+    Projective (A ⊗ P) :=
+  (ihom.adjunction A).map_projective P inferInstance
+
+end Monoidal
 
 end Rep
 
