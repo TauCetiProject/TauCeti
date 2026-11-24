@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Propagator
-import Mathlib.MeasureTheory.Function.Holder
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Triangle
 
 /-!
@@ -50,16 +50,6 @@ variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*}
   [CompleteSpace E] {P : ℝ → E →L[𝕜] E} {F : ℝ → E} {a b t₀ t : ℝ}
 
 namespace VariationOfConstants
-
-/-- `s ↦ N_P(t, s) (F s)` is integrable on `[a, b]` for `t ∈ [a, b]`. -/
-private theorem integrableOn_propagator_apply (hP : IntegrableOn P (Icc a b))
-    (hF : IntegrableOn F (Icc a b)) (ht : t ∈ Icc a b) :
-    IntegrableOn (fun s ↦ propagator P t s (F s)) (Icc a b) := by
-  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (continuousOn_propagator_right hP ht)
-  exact (ContinuousLinearMap.id 𝕜 (E →L[𝕜] E)).integrable_of_bilin_of_bdd_left C
-    ((continuousOn_propagator_right hP ht).aestronglyMeasurable measurableSet_Icc)
-    ((ae_restrict_iff' measurableSet_Icc).2 (ae_of_all _ hC)) hF
 
 /-- `(u, s) ↦ P u (N_P(u, s) (F s))` is integrable on `[a, b]²`. -/
 private theorem integrableOn_prod (hP : IntegrableOn P (Icc a b))
@@ -117,7 +107,8 @@ private theorem integral_propagator_apply_eq_propagator_apply (hP : IntegrableOn
       propagator P t a (∫ s in t₀..t, propagator P a s (F s)) := by
   have ha : a ∈ Icc a b := ⟨le_rfl, h₀.1.trans h₀.2⟩
   have hI : IntervalIntegrable (fun s ↦ propagator P a s (F s)) volume t₀ t :=
-    ((integrableOn_propagator_apply hP hF ha).mono_set (uIcc_subset_Icc h₀ ht)).intervalIntegrable
+    ((hF.continuousOn_clm_apply (continuousOn_propagator_right hP ha) isCompact_Icc).mono_set
+      (uIcc_subset_Icc h₀ ht)).intervalIntegrable
   rw [← ContinuousLinearMap.intervalIntegral_comp_comm _ hI]
   refine integral_congr fun s hs ↦ ?_
   rw [← ContinuousLinearMap.comp_apply,
@@ -132,7 +123,8 @@ private theorem continuousOn_integral_propagator_apply (hP : IntegrableOn P (Icc
   have hG : ContinuousOn (fun t ↦ ∫ s in t₀..t, propagator P a s (F s)) (Icc a b) := by
     have := continuousOn_primitive_interval' (μ := volume) (a := t₀)
       ((intervalIntegrable_iff_integrableOn_Icc_of_le hab).2
-        (integrableOn_propagator_apply hP hF ha)) (by rwa [uIcc_of_le hab])
+        (hF.continuousOn_clm_apply (continuousOn_propagator_right hP ha) isCompact_Icc))
+      (by rwa [uIcc_of_le hab])
     rwa [uIcc_of_le hab] at this
   exact ((continuousOn_propagator_left hP ha).clm_apply hG).congr fun t ht ↦
     integral_propagator_apply_eq_propagator_apply hP hF h₀ ht
@@ -152,17 +144,19 @@ theorem integral_propagator_apply_eq (hP : IntegrableOn P (Icc a b))
     propagator_apply_eq_add_integral hP (hsub hs) ht (F s)
   have hinner : IntervalIntegrable (fun s ↦ ∫ u in s..t, P u (propagator P u s (F s)))
       volume t₀ t := by
-    refine ((((integrableOn_propagator_apply hP hF ht).mono_set hsub).intervalIntegrable).sub
-      hFi).congr fun s hs ↦ ?_
+    refine ((((hF.continuousOn_clm_apply (continuousOn_propagator_right hP ht)
+      isCompact_Icc).mono_set hsub).intervalIntegrable).sub hFi).congr fun s hs ↦ ?_
     simp only [hexp s (uIoc_subset_uIcc hs), add_sub_cancel_left]
   -- Pull `P u` out of the inner integrals.
   have hpull : ∀ u ∈ uIcc t₀ t, ∫ s in t₀..u, P u (propagator P u s (F s)) =
       P u (∫ s in t₀..u, propagator P u s (F s)) := fun u hu ↦
     ContinuousLinearMap.intervalIntegral_comp_comm _
-      ((integrableOn_propagator_apply hP hF (hsub hu)).mono_set
+      ((hF.continuousOn_clm_apply (continuousOn_propagator_right hP (hsub hu))
+        isCompact_Icc).mono_set
         (uIcc_subset_Icc h₀ (hsub hu))).intervalIntegrable
   have hw : IntervalIntegrable (fun u ↦ P u (∫ s in t₀..u, propagator P u s (F s))) volume t₀ t :=
-    intervalIntegrable_clm_apply hP (continuousOn_integral_propagator_apply hP hF h₀) h₀ ht
+    ((hP.clm_apply_continuousOn (continuousOn_integral_propagator_apply hP hF h₀)
+      isCompact_Icc).mono_set hsub).intervalIntegrable
   rw [integral_congr hexp, integral_add hFi hinner, integral_integral_swap hP hF h₀ ht,
     integral_congr hpull, integral_add hw hFi, add_comm]
 
@@ -187,8 +181,10 @@ theorem propagator_apply_add_integral_eq (hP : IntegrableOn P (Icc a b))
   have hw := continuousOn_integral_propagator_apply hP hF h₀
   have hsub : uIcc t₀ t ⊆ Icc a b := uIcc_subset_Icc h₀ ht
   rw [propagator_apply_eq_add_integral hP h₀ ht y₀, integral_propagator_apply_eq hP hF h₀ ht,
-    add_assoc, ← integral_add (intervalIntegrable_clm_apply hP hN h₀ ht)
-      ((intervalIntegrable_clm_apply hP hw h₀ ht).add (hF.mono_set hsub).intervalIntegrable)]
+    add_assoc, ← integral_add
+      (((hP.clm_apply_continuousOn hN isCompact_Icc).mono_set hsub).intervalIntegrable)
+      ((((hP.clm_apply_continuousOn hw isCompact_Icc).mono_set hsub).intervalIntegrable).add
+        (hF.mono_set hsub).intervalIntegrable)]
   congr 1
   refine integral_congr fun u _ ↦ ?_
   simp only [map_add, add_assoc]
