@@ -24,7 +24,6 @@ import TauCeti.RingTheory.Kaehler.SeparatingLift
 import TauCeti.RingTheory.KrullDimension.DiscreteValuationRing
 import TauCeti.RingTheory.Localization.Away.Quotient
 import TauCeti.RingTheory.Localization.Finiteness
-import TauCeti.RingTheory.Localization.FractionRing
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.Localization.TensorProduct
 import TauCeti.RingTheory.Smooth.GeometricallyReduced

@@ -14,7 +14,6 @@ import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Submodule
 import TauCeti.RingTheory.IntegralClosure.Pi
 import TauCeti.RingTheory.IntegralClosure.Transfer
-import TauCeti.RingTheory.Localization.FractionRing
 import TauCeti.RingTheory.Localization.Reduced
 
 /-!

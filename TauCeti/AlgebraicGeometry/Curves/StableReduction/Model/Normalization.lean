@@ -298,13 +298,25 @@ def liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M)
       Scheme.Hom.toNormalization_normalizationDesc, pullback.lift_fst,
       genericι_normalization]
 
+/-- The lift of `f` to `M.normalization` has the canonical factorization through the pullback as
+underlying morphism. -/
+@[simp]
+lemma liftToNormalization_hom [AlgebraicGeometry.IsNormalScheme N.total] (f : N ⟶ M) :
+    (liftToNormalization f).hom =
+      inv N.genericι.fromNormalization ≫
+        N.genericι.normalizationDesc
+          (pullback.lift M.genericι.toNormalization N.genericι (by simp))
+          (pullback.snd M.genericι.fromNormalization f.hom) (pullback.lift_snd _ _ _).symm ≫
+        pullback.fst M.genericι.fromNormalization f.hom :=
+  (rfl)
+
 /-- The lift of `f` to `M.normalization` commutes with `M.normalizationHom`. -/
 @[reassoc (attr := simp)]
 lemma liftToNormalization_normalizationHom [AlgebraicGeometry.IsNormalScheme N.total]
     (f : N ⟶ M) :
     liftToNormalization f ≫ M.normalizationHom = f := by
   refine Hom.ext ?_
-  simp only [comp_hom, liftToNormalization, normalizationHom_hom, Category.assoc,
+  simp only [comp_hom, liftToNormalization_hom, normalizationHom_hom, Category.assoc,
     pullback.condition, Scheme.Hom.normalizationDesc_comp_assoc, IsIso.inv_hom_id_assoc]
 
 /-- **Uniqueness of factorization into the normalization model.** Every morphism of models
@@ -315,7 +327,7 @@ theorem eq_liftToNormalization [AlgebraicGeometry.IsNormalScheme N.total] {f : N
   refine Hom.ext (TauCeti.ext_of_isSchemeTheoreticallyDominant N.genericι M.normalizationHom.hom
     ?_ ?_)
   · rw [← comp_hom, hg, ← comp_hom, liftToNormalization_normalizationHom]
-  · simp
+  · rw [genericι_hom, genericι_hom]
 
 end Model
 

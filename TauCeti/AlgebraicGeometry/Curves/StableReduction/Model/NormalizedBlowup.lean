@@ -52,7 +52,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 
 namespace TauCeti.Model
 
@@ -76,13 +76,20 @@ abbrev normalizedBlowup : Model R K C toK :=
 def normalizedBlowupHom : M.normalizedBlowup I hC ⟶ M :=
   (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC
 
+/-- The normalized-blowup morphism of models factors as the normalization morphism followed by the
+blowup morphism. -/
+@[reassoc]
+lemma normalizedBlowupHom_eq :
+    M.normalizedBlowupHom I hC = (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC :=
+  (rfl)
+
 /-- The normalized-blowup morphism of models has the composite of the normalization and blowup
 morphisms as its underlying scheme morphism. -/
 @[simp]
 lemma normalizedBlowupHom_hom :
     (M.normalizedBlowupHom I hC).hom =
       (M.blowup I hC).genericι.fromNormalization ≫ I.blowupToBase := by
-  rw [normalizedBlowupHom, comp_hom, normalizationHom_hom, blowupHom_hom]
+  rw [normalizedBlowupHom_eq, comp_hom, normalizationHom_hom, blowupHom_hom]
 
 /-- The normalized-blowup morphism of models is proper on total spaces. -/
 instance isProper_normalizedBlowupHom_hom :
@@ -94,7 +101,7 @@ instance isProper_normalizedBlowupHom_hom :
 /-- The centre `I` pulls back to an effective Cartier divisor on the normalized blowup. -/
 theorem isEffectiveCartier_comap_normalizedBlowupHom :
     (I.comap (M.normalizedBlowupHom I hC).hom).IsEffectiveCartier := by
-  rw [normalizedBlowupHom, comp_hom, Scheme.IdealSheafData.comap_comp, blowupHom_hom]
+  rw [normalizedBlowupHom_eq, comp_hom, Scheme.IdealSheafData.comap_comp, blowupHom_hom]
   exact isEffectiveCartier_comap_hom (M.blowup I hC).normalizationHom
     I.isEffectiveCartier_comap_blowupToBase
 
@@ -112,7 +119,7 @@ theorem isIso_normalizedBlowupHom_iff [TauCeti.AlgebraicGeometry.IsNormalScheme 
     have : IsIso (M.blowupHom I hC).hom := (isIso_iff_isIso_hom _).mp ‹_›
     have : TauCeti.AlgebraicGeometry.IsNormalScheme (M.blowup I hC).total :=
       .of_isOpenImmersion (M.blowupHom I hC).hom
-    rw [normalizedBlowupHom]
+    rw [normalizedBlowupHom_eq]
     infer_instance
 
 variable {M I hC} {N : Model R K C toK}
@@ -124,6 +131,48 @@ def normalizedBlowupLift [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
     (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
     N ⟶ M.normalizedBlowup I hC :=
   liftToNormalization (blowupLift (hC := hC) f hf)
+
+/-- The lift to the normalized blowup is the lift to the normalization of the lift to the
+blowup. -/
+lemma normalizedBlowupLift_eq [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+    (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
+    normalizedBlowupLift (hC := hC) f hf = liftToNormalization (blowupLift (hC := hC) f hf) :=
+  (rfl)
+
+/-- The lift to the normalized blowup has the canonical factorization through the pullback as
+underlying morphism. -/
+@[simp]
+lemma normalizedBlowupLift_hom [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+    (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
+    (normalizedBlowupLift (hC := hC) f hf).hom =
+      inv N.genericι.fromNormalization ≫
+        N.genericι.normalizationDesc
+          (pullback.lift (M.blowup I hC).genericι.toNormalization N.genericι
+            (by rw [← blowupLift_hom, Scheme.Hom.toNormalization_fromNormalization,
+              genericι_hom]))
+          (pullback.snd (M.blowup I hC).genericι.fromNormalization (I.blowupLift f.hom hf))
+          (pullback.lift_snd _ _ _).symm ≫
+        pullback.fst (M.blowup I hC).genericι.fromNormalization (I.blowupLift f.hom hf) := by
+  rw [normalizedBlowupLift_eq, liftToNormalization_hom]
+  have aux {φ₁ φ₂ : N.total ⟶ I.blowup} (hφ : φ₁ = φ₂)
+      (h₁ : (M.blowup I hC).genericι.toNormalization ≫
+        (M.blowup I hC).genericι.fromNormalization = N.genericι ≫ φ₁)
+      (h₂ : (M.blowup I hC).genericι.toNormalization ≫
+        (M.blowup I hC).genericι.fromNormalization = N.genericι ≫ φ₂) :
+      inv N.genericι.fromNormalization ≫
+        N.genericι.normalizationDesc
+          (pullback.lift (M.blowup I hC).genericι.toNormalization N.genericι h₁)
+          (pullback.snd (M.blowup I hC).genericι.fromNormalization φ₁)
+          (pullback.lift_snd _ _ _).symm ≫
+        pullback.fst (M.blowup I hC).genericι.fromNormalization φ₁ =
+      inv N.genericι.fromNormalization ≫
+        N.genericι.normalizationDesc
+          (pullback.lift (M.blowup I hC).genericι.toNormalization N.genericι h₂)
+          (pullback.snd (M.blowup I hC).genericι.fromNormalization φ₂)
+          (pullback.lift_snd _ _ _).symm ≫
+        pullback.fst (M.blowup I hC).genericι.fromNormalization φ₂ := by
+    subst hφ; rfl
+  exact aux (blowupLift_hom (hC := hC) f hf) _ _
 
 /-- Composing the lift to the normalized blowup with the normalization morphism recovers the lift to
 the blowup. -/
@@ -141,7 +190,7 @@ lemma normalizedBlowupLift_normalizedBlowupHom
     [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
     (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
     normalizedBlowupLift (hC := hC) f hf ≫ M.normalizedBlowupHom I hC = f := by
-  rw [normalizedBlowupLift, normalizedBlowupHom, ← Category.assoc,
+  rw [normalizedBlowupLift_eq, normalizedBlowupHom_eq, ← Category.assoc,
     liftToNormalization_normalizationHom, blowupLift_blowupHom]
 
 /-- **The universal property of the normalized blowup: uniqueness.** Every morphism of models
@@ -152,6 +201,6 @@ theorem eq_normalizedBlowupLift [TauCeti.AlgebraicGeometry.IsNormalScheme N.tota
     {g : N ⟶ M.normalizedBlowup I hC} (hg : g ≫ M.normalizedBlowupHom I hC = f) :
     g = normalizedBlowupLift f hf := by
   refine eq_liftToNormalization (eq_blowupLift hf ?_)
-  simpa [normalizedBlowupHom, Category.assoc] using hg
+  simpa [normalizedBlowupHom_eq, Category.assoc] using hg
 
 end TauCeti.Model
