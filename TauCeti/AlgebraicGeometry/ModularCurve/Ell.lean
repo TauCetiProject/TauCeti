@@ -584,16 +584,16 @@ noncomputable def homProdCurveEquiv (X : EllObj B) :
     k.isPullback.paste_horiz (isPullback_prodCurveProj B C),
     by rw [k.zero_total_assoc, zero_prodCurveProj, Category.assoc]⟩
   invFun fg :=
-    { base := prod.lift X.structureMap fg.1.1
+    { base := prod.lift X.structureMap fg.val.1
       base_structureMap := prod.lift_fst _ _
-      total := (isPullback_prodCurveProj B C).lift fg.1.2
-        (X.curve.structureMap ≫ prod.lift X.structureMap fg.1.1) (by simp [fg.2.1.w])
-      isPullback := .of_right (by simpa using fg.2.1) (IsPullback.lift_snd _ _ _ _)
+      total := (isPullback_prodCurveProj B C).lift fg.val.2
+        (X.curve.structureMap ≫ prod.lift X.structureMap fg.val.1) (by simp [fg.property.1.w])
+      isPullback := .of_right (by simpa using fg.property.1) (IsPullback.lift_snd _ _ _ _)
         (isPullback_prodCurveProj B C)
       zero_total := (isPullback_prodCurveProj B C).hom_ext
         (by rw [Category.assoc, IsPullback.lift_fst, Category.assoc, zero_prodCurveProj,
               prod.lift_snd_assoc]
-            exact fg.2.2)
+            exact fg.property.2)
         (by simp) }
   left_inv k := EllObj.hom_ext <| (isPullback_prodCurveProj B C).hom_ext (by simp) <| by
     rw [IsPullback.lift_snd, k.total_structureMap]
@@ -605,14 +605,14 @@ noncomputable def homProdCurveEquiv (X : EllObj B) :
 second projection. -/
 @[simp]
 theorem homProdCurveEquiv_apply_fst {X : EllObj B} (k : X ⟶ prodCurve B C) :
-    (homProdCurveEquiv X k).1.1 = k.base ≫ prod.snd :=
+    (homProdCurveEquiv X k).val.1 = k.base ≫ prod.snd :=
   (rfl)
 
 /-- The morphism of curves attached to an arrow `k : X ⟶ prodCurve B C` is `k.total` followed by
 the projection to `C`. -/
 @[simp]
 theorem homProdCurveEquiv_apply_snd {X : EllObj B} (k : X ⟶ prodCurve B C) :
-    (homProdCurveEquiv X k).1.2 = k.total ≫ prodCurveProj B C :=
+    (homProdCurveEquiv X k).val.2 = k.total ≫ prodCurveProj B C :=
   (rfl)
 
 variable (B) in
@@ -641,7 +641,7 @@ theorem pointsPullback_prodCurvePoint_eq_iff {X : EllObj B} (k : X ⟶ prodCurve
     (R : 𝟙_ (Over M) ⟶ Over.mk C.structureMap)
     (P : 𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap) :
     EllipticCurveGeom.pointsPullback k.isPullback k.zero_total (prodCurvePoint B R) = P ↔
-      P.left ≫ (homProdCurveEquiv X k).1.2 = (homProdCurveEquiv X k).1.1 ≫ R.left := by
+      P.left ≫ (homProdCurveEquiv X k).val.2 = (homProdCurveEquiv X k).val.1 ≫ R.left := by
   rw [eq_comm, EllipticCurveGeom.eq_pointsPullback_iff, homProdCurveEquiv_apply_fst,
     homProdCurveEquiv_apply_snd]
   refine ⟨fun h ↦ ?_, fun h ↦ (isPullback_prodCurveProj B C).hom_ext ?_ ?_⟩

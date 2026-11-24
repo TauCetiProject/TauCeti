@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Lift
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.LineFibers
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Basic
 import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
+import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
 
 /-!
 # Projective orbits represent homogeneous quotients
@@ -39,6 +40,8 @@ A locally bijective morphism of sheaves is an isomorphism.
   projective orbit scheme.**
 * `HopfIdeal.exists_fppfHomogeneousQuotient_iso_projectiveOrbitPoints`: every closed subgroup
   has a projective orbit representing its homogeneous quotient.
+* `Comodule.mem_quotientPointsSubgroup_iff_projectiveOrbitMap_kernelPoint_eq`: for such a vector,
+  the rational points of `N` are the stabilizer of the base point of the orbit.
 
 ## References
 
@@ -60,18 +63,24 @@ variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k
 /-- The fppf sheaf of points of the projective orbit scheme of a line: an affine `k`-scheme
 `Spec A` is sent to the morphisms `Spec A ⟶ X` over `Spec k`, lifted to `Type (u + 1)` to sit
 beside the fppf homogeneous quotient. -/
-noncomputable def projectiveOrbitPointsSheaf (m : M) (hm : Module.IsUnimodular k m) :
+noncomputable abbrev projectiveOrbitPointsSheaf (m : M) (hm : Module.IsUnimodular k m) :
     Sheaf (CommAlgCat.fppfTopology k) (Type (u + 1)) :=
   CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm))
 
 /-- The points of the projective orbit scheme over `Spec A` are its morphisms from `Spec A`
 over the base field. -/
-@[simp]
 theorem projectiveOrbitPointsSheaf_obj (m : M) (hm : Module.IsUnimodular k m) :
     (projectiveOrbitPointsSheaf (H := H) m hm).obj =
       ((algSpec (CommRingCat.of k)).op ⋙
         yoneda.obj (Over.mk (projectiveOrbitToSpec (H := H) m hm))) ⋙
           uliftFunctor.{u + 1, u} :=
+  (rfl)
+
+/-- The sheaf of points of the projective orbit scheme is the fppf sheaf of points of the orbit
+scheme over the base field. -/
+theorem projectiveOrbitPointsSheaf_eq (m : M) (hm : Module.IsUnimodular k m) :
+    projectiveOrbitPointsSheaf (H := H) m hm =
+      CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm)) :=
   (rfl)
 
 /-- An algebra-valued group point followed by the orbit map lies over the base field. -/
@@ -100,29 +109,26 @@ private theorem SpecMap_toProjectiveOrbit_naturality (m : M) (hm : Module.IsUnim
 `Spec A ⟶ Spec H ⟶ X` of the projective orbit scheme. -/
 noncomputable def toProjectiveOrbitPoints (m : M) (hm : Module.IsUnimodular k m) :
     HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶
-      (projectiveOrbitPointsSheaf (H := H) m hm).obj := by
-  rw [projectiveOrbitPointsSheaf_obj]
-  exact
-    { app A := ↾fun g ↦ ULift.up <| Over.homMk
-        (Spec.map (CommRingCat.ofHom g.down.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
-        (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.down.ofConv)
-      naturality A B χ := by
-        ext ⟨g⟩
-        have h := SpecMap_toProjectiveOrbit_naturality m hm χ.unop.unop.hom g.ofConv
-        rw [← WithConv.ofConv_toConv (χ.unop.unop.hom.comp g.ofConv),
-          ← HopfAlgebra.mapPoints_apply (H := H) χ.unop.unop g] at h
-        -- Both sides are `Spec` of the composite value-algebra map followed by the orbit map.
-        exact congrArg ULift.up (Over.OverMorphism.ext h) }
+      (projectiveOrbitPointsSheaf (H := H) m hm).obj where
+  app A := ↾fun g ↦ ULift.up <| Over.homMk
+    (Spec.map (CommRingCat.ofHom g.down.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
+    (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.down.ofConv)
+  naturality A B χ := by
+    ext ⟨g⟩
+    have h := SpecMap_toProjectiveOrbit_naturality m hm χ.unop.unop.hom g.ofConv
+    rw [← WithConv.ofConv_toConv (χ.unop.unop.hom.comp g.ofConv),
+      ← HopfAlgebra.mapPoints_apply (H := H) χ.unop.unop g] at h
+    -- Both sides are `Spec` of the composite value-algebra map followed by the orbit map.
+    exact congrArg ULift.up (Over.OverMorphism.ext h)
 
 /-- The orbit point of `g` is `Spec g` followed by the orbit map. -/
 @[simp]
 theorem toProjectiveOrbitPoints_app_apply (m : M) (hm : Module.IsUnimodular k m)
     (A : ((CommAlgCat.{u} k)ᵒᵖ)ᵒᵖ) (g : HopfAlgebra.points (R := k) (H := H) A.unop.unop) :
     dsimp% (toProjectiveOrbitPoints (H := H) m hm).app A (ULift.up g) =
-      (projectiveOrbitPointsSheaf_obj (H := H) m hm).symm ▸
-        ULift.up (Over.homMk
-          (Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
-          (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.ofConv)) :=
+      ULift.up (Over.homMk
+        (Spec.map (CommRingCat.ofHom g.ofConv.toRingHom) ≫ toProjectiveOrbit (H := H) m hm)
+        (SpecMap_toProjectiveOrbit_projectiveOrbitToSpec m hm g.ofConv)) :=
   (rfl)
 
 /-- Two algebra-valued group points have the same orbit point exactly when their matrix
@@ -222,6 +228,26 @@ theorem fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom [_root_.IsReduced H]
   (rfl)
 
 end Descent
+
+omit [IsAlgClosed k] [Algebra.FiniteType k H] in
+/-- If the matrix coefficients at `m` detect the left cosets of the rational points of the closed
+subgroup `N`, then the rational points of `N` are exactly the stabilizer of the base point `[m]`
+of the projective orbit. -/
+theorem mem_quotientPointsSubgroup_iff_projectiveOrbitMap_kernelPoint_eq {I : HopfIdeal k H}
+    {m : M} (hm : Module.IsUnimodular k m)
+    (hcoset : ∀ g h : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k),
+      (QuotientGroup.mk g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) ⧸
+          CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k)) = QuotientGroup.mk h ↔
+        ∃ c : kˣ, ∀ φ : Module.Dual k M,
+          h.ofConv (matrixCoefficient (C := H) φ m) = c * g.ofConv (matrixCoefficient (C := H) φ m))
+    (a : WithConv (H →ₐ[k] k)) :
+    a ∈ CommHopfAlgCat.quotientPointsSubgroup H I (CommAlgCat.of k k) ↔
+      projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint a.ofConv) =
+        projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) := by
+  have h := (hcoset 1 a).trans
+    (projectiveOrbitMap_kernelPoint_eq_iff_exists_units_matrixCoefficient m hm 1 a).symm
+  rw [QuotientGroup.eq, inv_one, one_mul, eq_comm] at h
+  simpa [AlgHom.convOne_def] using h
 
 end TauCeti.Comodule
 

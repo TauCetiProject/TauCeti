@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
-public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 
 /-!
 # Codimension-one points under quasi-finite morphisms
@@ -92,7 +92,7 @@ one to points of coheight one. -/
 def codimensionOneMap (hf : ∀ x : X, coheight x = 1 → coheight (f x) = 1) :
     TauCeti.AlgebraicGeometry.CodimensionOnePoint X →
       TauCeti.AlgebraicGeometry.CodimensionOnePoint Y :=
-  fun x => ⟨f x, hf x x.2⟩
+  fun x => ⟨f x, hf x x.property⟩
 
 @[simp]
 theorem codimensionOneMap_apply (hf : ∀ x : X, coheight x = 1 → coheight (f x) = 1)
@@ -110,7 +110,7 @@ theorem codimensionOneMap_surjective [Surjective f] [LocallyQuasiFinite f]
   intro y
   obtain ⟨x, hx⟩ := f.surjective y
   have hcodim : coheight x = 1 :=
-    coheight_eq_one_of_coheight_apply_eq_one f x (hx ▸ y.2)
+    coheight_eq_one_of_coheight_apply_eq_one f x (hx ▸ y.property)
   exact ⟨⟨x, hcodim⟩, Subtype.ext hx⟩
 
 /-- The fibres of the map on codimension-one points of a quasi-compact locally quasi-finite

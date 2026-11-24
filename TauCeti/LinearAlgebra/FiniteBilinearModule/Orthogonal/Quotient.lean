@@ -37,7 +37,7 @@ Lagrangian.  Read through the discriminant form of an integral lattice, that las
 the module-level form of "an overlattice glued along a Lagrangian subgroup is unimodular".
 
 The quadratic refinement `TauCeti.FiniteQuadraticModule.orthogonalQuotient` of
-`TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic` carries a quadratic map on the same
+`TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Basic` carries a quadratic map on the same
 quotient group, and its underlying bilinear module is definitionally the construction of this
 file; `TauCeti.FiniteQuadraticModule.orthogonalQuotient_toFiniteBilinearModule` records that
 identification.
@@ -111,7 +111,7 @@ theorem orthogonalQuotientMk_apply (H : AddSubgroup A) (x : A.orthogonalCompleme
 @[simp]
 theorem orthogonalQuotient_pairing_mk (H : AddSubgroup A) (x y : A.orthogonalComplement H) :
     (A.orthogonalQuotient H).pairing (A.orthogonalQuotientMk H x)
-      (A.orthogonalQuotientMk H y) = A.pairing x.1 y.1 :=
+      (A.orthogonalQuotientMk H y) = A.pairing x.val y.val :=
   quotientOfLeRadical_pairing_mk (A.restrict (A.orthogonalComplement H))
     (H.addSubgroupOf (A.orthogonalComplement H))
     (A.addSubgroupOf_orthogonalComplement_le_radical_restrict H) x y
@@ -179,7 +179,7 @@ representatives. -/
 theorem orthogonalQuotientCongr_orthogonalQuotientMk {H K : AddSubgroup A} (h : H = K)
     (x : A.orthogonalComplement H) :
     A.orthogonalQuotientCongr h (A.orthogonalQuotientMk H x) =
-      A.orthogonalQuotientMk K ⟨x.1, h ▸ x.2⟩ := by
+      A.orthogonalQuotientMk K ⟨x.val, h ▸ x.property⟩ := by
   subst h
   simp only [orthogonalQuotientCongr, Isometry.refl_apply]
 
@@ -370,7 +370,7 @@ theorem orthogonalQuotientEquiv_orthogonalQuotientMk (f : Isometry A B)
     (x : A.orthogonalComplement H) :
     f.orthogonalQuotientEquiv h (A.orthogonalQuotientMk H x) =
       B.orthogonalQuotientMk K
-        ⟨f (x : A), Isometry.map_mem_orthogonalComplement_of_map_eq A f h x.2⟩ := by
+        ⟨f (x : A), Isometry.map_mem_orthogonalComplement_of_map_eq A f h x.property⟩ := by
   rw [orthogonalQuotientEquiv, trans_apply, orthogonalQuotientMap_orthogonalQuotientMk,
     B.orthogonalQuotientCongr_orthogonalQuotientMk]
   apply congrArg (B.orthogonalQuotientMk K)
@@ -388,7 +388,7 @@ theorem orthogonalQuotientEquiv_symm_orthogonalQuotientMk (f : Isometry A B)
           rw [A.mem_orthogonalComplement_iff]
           intro x hx
           rw [← f.map_pairing, f.apply_symm_apply]
-          exact (B.mem_orthogonalComplement_iff K (y : B)).mp y.2 (f x)
+          exact (B.mem_orthogonalComplement_iff K (y : B)).mp y.property (f x)
             (h ▸ ⟨x, hx, rfl⟩)⟩ := by
   conv_rhs => rw [← (f.orthogonalQuotientEquiv h).symm_apply_apply (A.orthogonalQuotientMk H _),
     orthogonalQuotientEquiv_orthogonalQuotientMk]

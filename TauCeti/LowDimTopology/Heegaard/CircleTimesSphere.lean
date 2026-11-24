@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LowDimTopology.Heegaard.BasepointChange
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
 public import TauCeti.LowDimTopology.Heegaard.StrongAdmissibility
@@ -93,6 +94,10 @@ differential vanishes and the hat chain complex is `𝔽₂²` with zero differe
   in the annulus, the hat differential counts the two bigons from `p₀` to `p₁`.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_circleTimesSphere_zero`: these cancel, and the hat
   differential vanishes.
+* `TauCeti.HeegaardRegionSystem.coe_basepointChangeEquiv_circleTimesSphere` and
+  `TauCeti.HeegaardRegionSystem.maslovIndex_basepointChangeEquiv_circleTimesSphere`: moving the
+  basepoint across `α` from the annulus into `B₁` carries `B₁ - B₂` to `-(A + 2 B₂)` and lowers its
+  Maslov index from `0` to `-2` at both generators.
 
 ## References
 
@@ -116,9 +121,9 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   alpha _ := 0
   beta _ := 0
   alphaNext := Equiv.swap 0 1
-  alphaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
+  alphaNext_isCycleOn := isCycleOn_swap_fiber (by decide) _
   betaNext := Equiv.swap 0 1
-  betaNext_isCycleOn := isCycleOn_swap_fin_two_fiber _
+  betaNext_isCycleOn := isCycleOn_swap_fiber (by decide) _
   alphaLeft := ![1, 0]
   alphaRight := ![0, 2]
   betaLeft := ![0, 2]
@@ -126,6 +131,7 @@ def circleTimesSphere (r : Fin 3) : HeegaardRegionSystem 1 (Fin 2) (Fin 3) Unit 
   regionNonempty := inferInstance
   crossingCompatible := by
     intro p
+    rw [isCrossingCompatible_iff]
     fin_cases p
     · left
       simp
@@ -360,9 +366,10 @@ theorem maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains (a : Fin 2) {P
 /-- With the basepoint in the annulus, the relative grading of `p₀` over `p₁` is one, computed
 from either bigon. -/
 theorem relativeGrading_circleTimesSphere_zero :
-    (circleTimesSphere 0).relativeGrading ![0, 1, 1] () (circleTimesSphereGenerator 0 0)
+    (circleTimesSphere 0).relativeGrading ![0, 1, 1] (circleTimesSphereGenerator 0 0)
       (circleTimesSphereGenerator 0 1) = 1 := by
-  rw [(isDomainBetween_circleTimesSphere_single_one 0).relativeGrading_eq () (by decide)
+  rw [(isDomainBetween_circleTimesSphere_single_one 0).relativeGrading_eq
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide))
     fun _ => maslovIndex_circleTimesSphere_zero_of_mem_periodicDomains 0,
     maslovIndex_circleTimesSphere_single_one]
   simp
@@ -456,10 +463,11 @@ theorem finite_setOf_isDomainBetween_circleTimesSphere_one (x : (circleTimesSphe
 /-- With the basepoint in the bigon `B₁`, the relative grading of `p₀` over `p₁` is one modulo
 two: the bigons give `-1` and `1`, which agree modulo the periodic Maslov indices. -/
 theorem coe_relativeGrading_circleTimesSphere_one :
-    ((circleTimesSphere 1).relativeGrading ![0, 1, 1] () (circleTimesSphereGenerator 1 0)
+    ((circleTimesSphere 1).relativeGrading ![0, 1, 1] (circleTimesSphereGenerator 1 0)
       (circleTimesSphereGenerator 1 1) : ℚ ⧸ AddSubgroup.zmultiples (2 : ℚ)) = (1 : ℚ) := by
   rw [← periodicMaslovIndices_circleTimesSphere_one 0,
-    (isDomainBetween_circleTimesSphere_single_two 1).coe_relativeGrading_eq () (by decide),
+    (isDomainBetween_circleTimesSphere_single_two 1).coe_relativeGrading_eq
+      (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide)),
     maslovIndex_circleTimesSphere_single_two]
   simp
 
@@ -468,6 +476,12 @@ theorem coe_relativeGrading_circleTimesSphere_one :
 theorem circleTimesSphereGenerator_snd_zero (r : Fin 3) (x : (circleTimesSphere r).Generator) :
     circleTimesSphereGenerator r (x.2 0) = x :=
   HeegaardIntersectionSystem.point_injective _ (funext fun i => by simp [Subsingleton.elim i 0])
+
+/-- The generators of `circleTimesSphere r` are exactly `p₀` and `p₁`. -/
+theorem circleTimesSphereGenerator_bijective (r : Fin 3) :
+    Function.Bijective (circleTimesSphereGenerator r) :=
+  ⟨fun a b h => by simpa using congrFun (congrArg (circleTimesSphere r).point h) 0,
+    fun x => ⟨_, circleTimesSphereGenerator_snd_zero r x⟩⟩
 
 /-- With the basepoint in the annulus, the domains counted by the hat differential from `p₀` to
 `p₁` are the two bigons. -/
@@ -533,6 +547,64 @@ theorem hatDifferential_circleTimesSphere_zero :
       ZMod.natCast_self]
   · exact hatCoefficient_eq_zero_of_hatDomains_eq_empty hatDomains_circleTimesSphere_zero_one_zero
   · exact weaklyAdmissible_circleTimesSphere_zero.hatCoefficient_self _ _
+
+section BasepointChange
+
+/-- Moving the basepoint of the genus-one diagram of `S¹ × S²` gives the same diagram with the
+basepoint in another region. -/
+@[simp]
+theorem withBasepoints_circleTimesSphere (r s : Fin 3) :
+    (circleTimesSphere r).withBasepoints (fun _ : Unit => s) = circleTimesSphere s :=
+  (rfl)
+
+/-- Crossing the `α`-arc starting at `p₀` from its right, the annulus `A`, to its left, the bigon
+`B₁`, is a path from `A` to `B₁` crossing only `α`-arcs. -/
+theorem isAlphaPath_circleTimesSphere (r : Fin 3) :
+    (circleTimesSphere r).IsAlphaPath 0 [(0, true)] 1 := by
+  simp
+
+/-- The path from `A` to `B₁` crosses `α` algebraically once. -/
+theorem alphaCrossingNumber_circleTimesSphere (r : Fin 3) :
+    (circleTimesSphere r).alphaCrossingNumber [(0, true)] = Pi.single 0 1 := by
+  ext i
+  fin_cases i
+  simp
+
+/-- The difference `B₁ - B₂` of the two bigons is a periodic domain for the basepoint in the
+annulus. -/
+theorem sub_mem_periodicDomains_circleTimesSphere_zero :
+    Pi.single 1 1 - Pi.single 2 1 ∈
+      ((circleTimesSphere 0).withBasepoints fun _ : Unit => 0).periodicDomains := by
+  rw [withBasepoints_circleTimesSphere, periodicDomains_circleTimesSphere_zero]
+  exact AddSubgroup.mem_zmultiples _
+
+/-- Moving the basepoint from the annulus `A` into the bigon `B₁` carries the generator `B₁ - B₂`
+of the periodic domains for the basepoint in `A` to `-(A + 2 B₂)`, a generator of the periodic
+domains for the basepoint in `B₁`. -/
+theorem coe_basepointChangeEquiv_circleTimesSphere :
+    ((circleTimesSphere 0).basepointChangeEquiv 0 1
+      ⟨_, sub_mem_periodicDomains_circleTimesSphere_zero⟩ : Fin 3 → ℤ) = -![1, 0, 2] := by
+  ext i
+  fin_cases i <;> simp
+
+/-- Moving the basepoint from the annulus `A` across `α` into the bigon `B₁` lowers the Maslov
+index of the periodic domain `B₁ - B₂`, whose `α`-coefficient is one, from `0` to `-2` at both
+generators. This is the combinatorial form of `s_{z₂}(x) - s_{z₁}(x) = α*` (up to the
+orientation convention), which via the Chern class formula, not formalized here, predicts that the
+pairing of the first Chern class with the generator of `H₂(S¹ × S²)` changes by twice the pairing
+with the dual class of `α`, by the same amount at both generators. -/
+theorem maslovIndex_basepointChangeEquiv_circleTimesSphere (a : Fin 2) :
+    (circleTimesSphere 0).maslovIndex ![0, 1, 1] (circleTimesSphereGenerator 0 a)
+      (circleTimesSphereGenerator 0 a)
+      ((circleTimesSphere 0).basepointChangeEquiv 0 1
+        ⟨_, sub_mem_periodicDomains_circleTimesSphere_zero⟩) = -2 := by
+  rw [(isAlphaPath_circleTimesSphere 0).maslovIndex_basepointChangeEquiv_of_eq_single
+      (alphaCrossingNumber_circleTimesSphere 0) (by decide) _ _ _ (a := fun _ => 1)
+    (fun p => by fin_cases p <;> simp [alphaBoundary_apply]),
+    maslovIndex_circleTimesSphere_periodic]
+  norm_num
+
+end BasepointChange
 
 end HeegaardRegionSystem
 

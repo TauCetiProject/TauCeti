@@ -192,7 +192,7 @@ theorem hasCantorAntichainOn_subtype_iff :
     (E.comap ((↑) : A → X)).HasCantorAntichainOn univ ↔ E.HasCantorAntichainOn A := by
   constructor
   · rintro ⟨f, hf, -, hE⟩
-    exact ⟨fun a => f a, continuous_subtype_val.comp hf, fun a => (f a).2, hE⟩
+    exact ⟨fun a => f a, continuous_subtypeVal.comp hf, fun a => (f a).property, hE⟩
   · rintro ⟨f, hf, hA, hE⟩
     exact ⟨fun a => ⟨f a, hA a⟩, hf.subtype_mk _, fun _ => trivial, hE⟩
 

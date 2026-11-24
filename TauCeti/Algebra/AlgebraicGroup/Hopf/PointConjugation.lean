@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 
 /-!
@@ -79,8 +79,15 @@ theorem comp_pointConjugationAlgHom {A : Type w} [CommSemiring A] [Algebra R A]
       WithConv.toConv (x.ofConv.comp (pointConjugationAlgHom g)) := by
     rw [AlgHom.mapValue_apply, WithConv.ofConv_toConv]
   rw [← hmapValue, toConv_pointConjugationAlgHom, map_mul, map_mul, map_inv]
-  rw [WithConv.mapValue_algebraOfId]
+  rw [AlgHom.mapValue_mapValue_ofId]
   simp [AlgHom.mapValue_apply]
+
+/-- On rational points, precomposition by point conjugation is conjugation by `g` in the group
+of rational points. -/
+theorem comp_pointConjugationAlgHom_self (g x : WithConv (H →ₐ[R] R)) :
+    WithConv.toConv (x.ofConv.comp (pointConjugationAlgHom g)) = g * x * g⁻¹ := by
+  simpa only [Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply] using
+    comp_pointConjugationAlgHom g x
 
 /-- Conjugation by the identity point is the identity coordinate map. -/
 @[simp]
@@ -144,7 +151,7 @@ private theorem map_comp_comul_pointConjugationAlgHom
         (pointConjugationAlgHom g)).comp (Bialgebra.comulAlgHom R H) =
       (Bialgebra.comulAlgHom R H).comp (pointConjugationAlgHom g) := by
   apply WithConv.toConv_injective
-  rw [Bialgebra.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
+  rw [AlgHom.toConv_comp_comulAlgHom, comp_pointConjugationAlgHom,
     Bialgebra.comulPoint_eq_include_mul]
   rw [Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight,

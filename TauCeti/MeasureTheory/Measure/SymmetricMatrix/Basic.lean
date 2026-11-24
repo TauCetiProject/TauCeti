@@ -5,17 +5,10 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Frobenius
-public import Mathlib.Analysis.InnerProductSpace.Subspace
-public import Mathlib.Analysis.Matrix.MeasurableSpace
+public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic
 public import Mathlib.Data.Sym.Card
-public import Mathlib.Order.Sym2
-public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
-public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import Mathlib.Topology.UniformSpace.Matrix
+public import Mathlib.Order.Sym2
 
 /-!
 # The carrier of symmetric-matrix distributions
@@ -25,31 +18,28 @@ self-adjoint subspace `selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)`. 
 transpose, so this is exactly the subspace of symmetric matrices, and
 `Matrix.isHermitian_iff_isSelfAdjoint` connects membership to the spectral API.
 
-This file equips that subspace with the ambient Frobenius norm and inner product while keeping
-the subtype topology and uniformity it already carries: the norm structure is induced from
-`Matrix.frobeniusNormedAddCommGroup`, whose topology and uniformity are definitionally the
-product ones, so the induced structures agree definitionally with the subtype instances. The
-measurable structure is the Borel structure of the subtype topology, and `volume` is supplied by
-`measureSpaceOfInnerProductSpace`.
+`TauCeti.Analysis.Matrix.SelfAdjoint` equips
+`selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) 𝕜)` with the ambient Frobenius norm and real
+inner product while keeping the subtype topology and uniformity definitionally equal to the induced
+product ones, and `TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic` adds the Borel measurable
+structure, with `volume` from `measureSpaceOfInnerProductSpace`.
 
-It also fixes the upper-triangular coordinate system used to normalize Lebesgue measure on the
-subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagonal.
+This file specializes the entry and trace-pairing API to `ℝ` and fixes the upper-triangular
+coordinate system used to normalize Lebesgue measure on the subspace:
+`TauCeti.symmetricCoordinates` reads off the entries on or above the diagonal.
 
 ## Main declarations
 
 * `TauCeti.upperTriangle` — the index type of upper-triangular positions.
 * `TauCeti.card_upperTriangle` — there are `p * (p + 1) / 2` such positions.
-* `TauCeti.symmetricMatrixNormedAddCommGroup`, `TauCeti.symmetricMatrixInnerProductSpace` —
-  the Frobenius structure on the symmetric subspace.
-* `selfAdjoint.coe_inner` — the subspace inner product is the ambient one on the coercions.
 * `TauCeti.symmetricCoordinates` — the continuous linear equivalence with `upperTriangle p → ℝ`.
 * `TauCeti.symmetricCoordinatesMeasurableEquiv` — its measurable-equivalence form.
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
 * `TauCeti.symmetricFinOneEquiv` — the identification of `1 × 1` symmetric matrices with `ℝ`.
 * `TauCeti.finrank_symmetricMatrix` — the dimension is `p * (p + 1) / 2`.
-* `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing, and
-  `selfAdjoint.continuous_trace_mul_coe` — that pairing is continuous in its second argument, as
-  is its exponential `selfAdjoint.continuous_exp_trace_mul_coe`.
+* `selfAdjoint.inner_eq_trace_mul`, `selfAdjoint.norm_sq_eq_trace_sq` — the Frobenius pairing is
+  the trace pairing and the squared norm is `tr(A ^ 2)`, with continuity lemmas
+  `selfAdjoint.continuous_trace_mul_coe` and `selfAdjoint.continuous_exp_trace_mul_coe`.
 * `TauCeti.symmetricEntry` — the symmetric matrix representing evaluation at an entry under the
   trace pairing, with `TauCeti.trace_symmetricEntry_mul` and
   `TauCeti.trace_symmetricEntry_mul_mul_symmetricEntry_mul`.
@@ -74,131 +64,36 @@ theorem card_upperTriangle (p : ℕ) : Fintype.card (upperTriangle p) = p * (p +
   rw [← Fintype.card_congr (Sym2.sortEquiv (α := Fin p)), Sym2.card, Fintype.card_fin,
     Nat.choose_two_right, Nat.add_sub_cancel, mul_comm]
 
-/-! ### The Frobenius structure on the symmetric subspace
-
-The instances below install the Frobenius norm and inner product on the symmetric subspace: the
-norm is induced from the ambient (scoped) Frobenius instances, and the inner product pairs the
-underlying matrices. Because the Frobenius norm is definitionally compatible with the product
-topology and uniformity of `Matrix`, the induced structures agree definitionally with the subtype
-instances already present. -/
-
 section instances
-
 variable (p : ℕ)
-
-/-- The symmetric subspace carries the Frobenius norm induced from the ambient matrices, with
-its metric rebuilt on the subtype uniformity so that the uniform and topological structures are
-the subtype ones on the nose. -/
 instance symmetricMatrixNormedAddCommGroup :
     NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
-  letI base : NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-    Submodule.normedAddCommGroup _
-  -- Forces the uniformity field of the metric to be the subtype uniformity itself, so that
-  -- downstream instance search unifies the two syntactically rather than only up to `rfl`.
-  { base with toMetricSpace := base.toMetricSpace.replaceUniformity rfl }
-
-/-- The symmetric subspace carries the Frobenius inner product `⟪A, B⟫ = ∑ i, ∑ j, A i j * B i j`
-of the underlying matrices, which on this subspace is the trace pairing
-`selfAdjoint.inner_eq_trace_mul`. -/
+  selfAdjointMatrixNormedAddCommGroup p ℝ
 instance symmetricMatrixInnerProductSpace :
     InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
-  letI : NormedSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedSpace
-  letI : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
-  { __ := (inferInstance : Module ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
-    norm_smul_le r A := norm_smul_le r (A : Matrix (Fin p) (Fin p) ℝ)
-    inner A B := ⟪(A : Matrix (Fin p) (Fin p) ℝ), (B : Matrix (Fin p) (Fin p) ℝ)⟫
-    norm_sq_eq_re_inner A :=
-      InnerProductSpace.norm_sq_eq_re_inner (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) ℝ)
-    conj_inner_symm A B :=
-      InnerProductSpace.conj_inner_symm (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) ℝ) ↑B
-    add_left A B C := by
-      rw [Submodule.coe_add]
-      exact InnerProductSpace.add_left (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) ℝ) ↑B ↑C
-    smul_left A B r := Matrix.frobenius_inner_smul_left r (A : Matrix (Fin p) (Fin p) ℝ) ↑B }
-
+  selfAdjointMatrixInnerProductSpace p ℝ
 instance symmetricMatrixIsUniformAddGroup :
     IsUniformAddGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  SeminormedAddCommGroup.to_isUniformAddGroup
-
+  selfAdjointMatrixIsUniformAddGroup p ℝ
 instance symmetricMatrixSecondCountableTopology :
     SecondCountableTopology (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  secondCountable_of_proper
-
+  selfAdjointMatrixSecondCountableTopology p ℝ
 instance symmetricMatrixCompleteSpace :
     CompleteSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  FiniteDimensional.completeSpace ℝ _
-
+  selfAdjointMatrixCompleteSpace p ℝ
 instance symmetricMatrixContinuousENorm :
     ContinuousENorm (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  ESeminormedAddMonoid.toContinuousENorm
-
-/-- The measurable structure is the Borel structure of the subtype topology. Declared explicitly
-so that instance search finds it regardless of which (definitionally equal) route it takes to
-the topology. -/
+  selfAdjointMatrixContinuousENorm p ℝ
 instance symmetricMatrixBorelSpace :
     BorelSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-  Subtype.borelSpace _
-
-/-- The uniformity of the Frobenius structure is definitionally the subtype uniformity. -/
-example :
-    (symmetricMatrixNormedAddCommGroup p).toMetricSpace.toUniformSpace =
-      (instUniformSpaceSubtype :
-        UniformSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) := by
-  with_reducible_and_instances rfl
-
-/-- The uniformity of the Frobenius structure induces the subtype topology definitionally. -/
-example :
-    (symmetricMatrixNormedAddCommGroup p).toMetricSpace.toUniformSpace.toTopologicalSpace =
-      (instTopologicalSpaceSubtype :
-        TopologicalSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) := by
-  with_reducible_and_instances rfl
-
-/-- The selected topology is the subtype topology. -/
-example :
-    (inferInstance :
-        TopologicalSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) =
-      @instTopologicalSpaceSubtype _ _ inferInstance := by
-  with_reducible_and_instances rfl
-
-/-- `volume` is supplied by `measureSpaceOfInnerProductSpace`. -/
-example :
-    (inferInstance : MeasureSpace (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))) =
-      measureSpaceOfInnerProductSpace :=
-  rfl
-
+  selfAdjointMatrixBorelSpace p ℝ
 end instances
 
 end TauCeti
 
-/-! ### The inner product of the symmetric subspace -/
-
-namespace selfAdjoint
-
-open scoped Matrix.Norms.Frobenius
-
-/-- The inner product of the symmetric subspace is the Frobenius inner product of the underlying
-matrices. -/
--- Mathlib's `Submodule.coe_inner` states this for the induced instance
--- `Submodule.innerProductSpace`; `TauCeti.symmetricMatrixInnerProductSpace` is built directly, so
--- that lemma does not apply to it.
-@[simp]
-theorem coe_inner {p : ℕ} (A B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    ⟪A, B⟫ = ⟪(A : Matrix (Fin p) (Fin p) ℝ), (B : Matrix (Fin p) (Fin p) ℝ)⟫ :=
-  (rfl)
-
-end selfAdjoint
-
 /-! ### Symmetry of the entries -/
 
 namespace selfAdjoint
-
-/-- An element of the symmetric subspace is a Hermitian matrix; over `ℝ` this says that it is
-symmetric, as spelled out by `selfAdjoint.coe_apply_comm`. -/
-theorem isHermitian_coe {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    (A : Matrix (Fin p) (Fin p) ℝ).IsHermitian :=
-  A.2
 
 /-- The entries of a symmetric matrix are unchanged by swapping the two indices. -/
 theorem coe_apply_comm {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
@@ -230,7 +125,7 @@ This coordinate system fixes the normalization of `TauCeti.symmetricLebesgue`. -
 def symmetricCoordinates :
     (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) ≃L[ℝ] (upperTriangle p → ℝ) :=
   LinearEquiv.toContinuousLinearEquiv
-    { toFun A ij := (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2
+    { toFun A ij := (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2
       map_add' A B := rfl
       map_smul' c A := rfl
       invFun x :=
@@ -261,7 +156,7 @@ def symmetricCoordinates :
 @[simp]
 theorem symmetricCoordinates_apply (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (ij : upperTriangle p) :
-    symmetricCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 :=
+    symmetricCoordinates p A ij = (A : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 :=
   (rfl)
 
 @[simp]
@@ -319,7 +214,7 @@ on-or-above-diagonal entries. -/
 @[simp]
 theorem symmetricBasis_repr (x : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ))
     (ij : upperTriangle p) :
-    (symmetricBasis p).repr x ij = (x : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+    (symmetricBasis p).repr x ij = (x : Matrix (Fin p) (Fin p) ℝ) ij.val.1 ij.val.2 := by
   simp [symmetricBasis]
 
 theorem coe_symmetricBasis_apply_of_le (ij : upperTriangle p) {k l : Fin p} (h : k ≤ l) :
@@ -407,11 +302,14 @@ namespace selfAdjoint
 `MeasureTheory.charFun` on the subspace use the same pairing as the Wishart trace statistics. -/
 theorem inner_eq_trace_mul {p : ℕ}
     (A Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
-    ⟪A, Θ⟫ = ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
-  let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
-  let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
-  rw [coe_inner, Matrix.frobenius_inner_eq_trace_conjTranspose_mul, (isHermitian_coe A).eq,
-    Matrix.trace_mul_comm]
+    ⟪A, Θ⟫ = ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace :=
+  inner_eq_rclike_re_trace_mul A Θ
+
+/-- The squared Frobenius norm of an element of the real symmetric subspace is `tr(A ^ 2)`. -/
+theorem norm_sq_eq_trace_sq {p : ℕ}
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    ‖A‖ ^ 2 = ((A : Matrix (Fin p) (Fin p) ℝ) ^ 2).trace :=
+  norm_sq_eq_rclike_re_trace_sq A
 
 /-- The trace pairing against a fixed symmetric matrix is continuous, being the Frobenius inner
 product with that matrix. -/
@@ -426,7 +324,7 @@ theorem continuous_trace_mul_coe {p : ℕ}
 theorem continuous_coe_apply {p : ℕ} (i j : Fin p) :
     Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ) i j :=
-  continuous_subtype_val.matrix_elem i j
+  continuous_subtypeVal.matrix_elem i j
 
 /-- Reading off an entry of a symmetric matrix is measurable. -/
 @[fun_prop]

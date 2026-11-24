@@ -28,10 +28,10 @@ free module `F`, making `SymmetricAlgebra R M` an `R`-algebra retract of the pol
 presented (`Module.finitePresentation_of_projective`), giving finite presentation of
 `SymmetricAlgebra R M` (`TauCeti.SymmetricAlgebra.instFinitePresentation`).
 
-Necessity uses `SymmetricAlgebra.kaehlerDifferentialEquiv` (`Ω[Sym M ⁄ R] ≃ Sym M ⊗[R] M`)
+Necessity uses `SymmetricAlgebra.kaehlerDifferentialEquiv` (`Ω[Sym M⁄R] ≃ Sym M ⊗[R] M`)
 together with base change along the augmentation `SymmetricAlgebra.algebraMapInv : Sym M →ₐ[R] R` to
 descend projectivity (`Module.Projective.tensorProduct`) and finiteness
-(`Module.Finite.base_change`) of `Ω[Sym M ⁄ R]` over `Sym M` back to `M` over `R`.
+(`Module.Finite.base_change`) of `Ω[Sym M⁄R]` over `Sym M` back to `M` over `R`.
 
 ## Main declarations
 
@@ -76,12 +76,12 @@ instance instSmooth [Module.Projective R M] [Module.Finite R M] :
   letI : Module.FinitePresentation R M := Module.finitePresentation_of_projective R M
   ⟨inferInstance, inferInstance⟩
 
-/-- Base change of `Ω[SymmetricAlgebra R M ⁄ R]` along the augmentation
+/-- Base change of `Ω[SymmetricAlgebra R M⁄R]` along the augmentation
 `SymmetricAlgebra.algebraMapInv : SymmetricAlgebra R M →ₐ[R] R` recovers `M`. -/
 private noncomputable def augKaehlerEquiv :
     letI : Algebra (SymmetricAlgebra R M) R :=
       (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
-    R ⊗[SymmetricAlgebra R M] Ω[SymmetricAlgebra R M ⁄ R] ≃ₗ[R] M :=
+    R ⊗[SymmetricAlgebra R M] Ω[SymmetricAlgebra R M⁄R] ≃ₗ[R] M :=
   letI : Algebra (SymmetricAlgebra R M) R :=
     (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
   haveI : IsScalarTower R (SymmetricAlgebra R M) R :=
@@ -103,7 +103,7 @@ theorem formallySmooth_iff :
 `R`. -/
 theorem smooth_iff :
     Algebra.Smooth R (SymmetricAlgebra R M) ↔ Module.Projective R M ∧ Module.Finite R M := by
-  refine ⟨fun h ↦ ⟨(formallySmooth_iff R M).mp h.1, ?_⟩, fun ⟨_, _⟩ ↦ inferInstance⟩
+  refine ⟨fun h ↦ ⟨(formallySmooth_iff R M).mp h.formallySmooth, ?_⟩, fun ⟨_, _⟩ ↦ inferInstance⟩
   let : Algebra (SymmetricAlgebra R M) R :=
     (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
   exact .equiv (augKaehlerEquiv R M)

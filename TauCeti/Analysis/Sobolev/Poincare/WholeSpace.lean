@@ -113,7 +113,7 @@ theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} {k : ℕ
     refine ge_of_tendsto hlim ?_
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr using
       eLpNorm_le_ofReal_inv_mul_of_forall μ φ hC hr
-  rw [zero_mul, le_zero_iff] at hle
+  rw [zero_mul, nonpos_iff_eq_zero] at hle
   -- A continuous function vanishing almost everywhere vanishes at the origin, where the bump is 1.
   have hzero : (φ : E → ℝ) = 0 :=
     (Continuous.ae_eq_iff_eq μ (φ.contDiff (n := 0)).continuous continuous_const).1

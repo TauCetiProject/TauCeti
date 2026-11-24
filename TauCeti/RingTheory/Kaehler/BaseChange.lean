@@ -5,29 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.Kaehler.Basic
+public import Mathlib.RingTheory.Kaehler.JacobiZariski
+public import Mathlib.RingTheory.Kaehler.TensorProduct
 public import Mathlib.RingTheory.Smooth.Basic
-import Mathlib.RingTheory.Kaehler.JacobiZariski
 
 /-!
-# Ranges and splittings of base-change maps for Kähler differentials
+# Base-change maps for Kähler differentials
 
 This file identifies the base-change map `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` with the `liftBaseChange`
-of `KaehlerDifferential.map R R A B`. It then records reusable consequences of the
-Jacobi–Zariski sequence:
-* the base-change map onto `Ω[B⁄R]` is surjective exactly when `Ω[B⁄A]` vanishes, and if
-  `Ω[A⁄R]` is spanned by a set `s` then its range is spanned by the image of `s`;
-* when `B` is formally smooth over `A`, `H¹(L_{B/A})` vanishes so the first map
-  `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective and the short exact sequence
-  `0 → B ⊗[A] Ω[A⁄R] → Ω[B⁄R] → Ω[B⁄A] → 0` splits as a `B`-module direct sum.
+of `KaehlerDifferential.map R R A B`, gives an extensionality criterion for `B`-linear maps out of
+`B ⊗[A] Ω[A⁄R]`, and records reusable consequences of the Jacobi–Zariski sequence:
+
+* the base-change map onto `Ω[B⁄R]` is surjective exactly when `Ω[B⁄A]` vanishes, and if `Ω[A⁄R]`
+  is spanned by a set `s` then its range is spanned by the image of `s`;
+* when `H¹(L_{B/A}) = 0` (for example, when `B` is formally smooth over `A`), the base-change map
+  `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective, if in addition `B` is faithfully flat over `A` then
+  `KaehlerDifferential.map R R A B : Ω[A⁄R] → Ω[B⁄R]` is injective, and when `B` is formally smooth
+  over `A` the short exact sequence `0 → B ⊗[A] Ω[A⁄R] → Ω[B⁄R] → Ω[B⁄A] → 0` splits as a
+  `B`-module direct sum.
+
+For a base change `B = S ⊗[R] A`, Mathlib's isomorphism `B ⊗[A] Ω[A⁄R] ≃ Ω[B⁄S]`
+(`KaehlerDifferential.tensorKaehlerEquiv`) is the base-change map into `Ω[B⁄R]` followed by the
+map `Ω[B⁄R] → Ω[B⁄S]` sending `d_R b` to `d_S b`.
 
 ## Main results
 
 * `TauCeti.mapBaseChange_eq_liftBaseChange`
+* `TauCeti.kaehlerBaseChange_linearMap_ext`
 * `TauCeti.subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top`
 * `TauCeti.range_mapBaseChange_eq_span_image`
-* `TauCeti.mapBaseChange_injective_of_formallySmooth`
+* `TauCeti.injective_mapBaseChange_of_subsingleton_h1Cotangent`
+* `TauCeti.injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent`
 * `TauCeti.exists_kaehlerDifferentialProdEquiv`
+* `TauCeti.map_comp_mapBaseChange_eq_tensorKaehlerEquiv`
 -/
 
 public section
@@ -47,6 +59,20 @@ theorem mapBaseChange_eq_liftBaseChange :
     mapBaseChange R A B = (map R R A B).liftBaseChange B := by
   ext; simp
 
+/-- Two `B`-linear maps out of `B ⊗[A] Ω[A⁄R]` agree as soon as they agree on `1 ⊗ₜ D R A a` for
+all `a : A`. -/
+theorem kaehlerBaseChange_linearMap_ext
+    {R A B M : Type*} [CommRing R] [CommRing A] [CommRing B] [AddCommGroup M]
+    [Algebra R A] [Algebra A B] [Module B M]
+    {L₁ L₂ : B ⊗[A] Ω[A⁄R] →ₗ[B] M}
+    (h : ∀ a : A, L₁ (1 ⊗ₜ[A] D R A a) = L₂ (1 ⊗ₜ[A] D R A a)) :
+    L₁ = L₂ := by
+  let : Module A M := Module.compHom M (algebraMap A B)
+  have : IsScalarTower A B M := .of_algebraMap_smul fun _ _ ↦ rfl
+  exact AlgebraTensorModule.curry_injective <| LinearMap.ext_ring <|
+    LinearMap.ext_on_range (span_range_derivation R A) fun a ↦ by
+      simpa using h a
+
 /-- In a tower `R → A → B`, the first map in the Jacobi–Zariski sequence is surjective
 exactly when the relative differential module `Ω[B⁄A]` vanishes. -/
 theorem subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top :
@@ -65,15 +91,28 @@ theorem range_mapBaseChange_eq_span_image {s : Set Ω[A⁄R]} (hs : Submodule.sp
   rw [mapBaseChange_eq_liftBaseChange, LinearMap.range_liftBaseChange, LinearMap.range_eq_map,
     ← hs, ← Submodule.span_image, Submodule.span_span_of_tower]
 
-/-- In a tower `R → A → B` with `B` formally smooth over `A`, the Jacobi–Zariski base-change map
-`B ⊗[A] Ω[A⁄R] →ₗ[B] Ω[B⁄R]` is injective because `H¹(L_{B/A})` is trivial. -/
-theorem mapBaseChange_injective_of_formallySmooth [Algebra.FormallySmooth A B] :
+/-- In a tower `R → A → B` with `H¹(L_{B/A}) = 0` (in particular when `B` is formally smooth over
+`A`), the base-change map `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective. -/
+theorem injective_mapBaseChange_of_subsingleton_h1Cotangent
+    [Subsingleton (Algebra.H1Cotangent A B)] :
     Function.Injective (mapBaseChange R A B) := by
-  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
+  rw [injective_iff_map_eq_zero]
   intro x hx
   obtain ⟨y, rfl⟩ := (Algebra.H1Cotangent.exact_δ_mapBaseChange R A B x).mp hx
   rw [Subsingleton.elim y 0, map_zero]
-  exact Submodule.zero_mem ⊥
+
+/-- In a tower `R → A → B` where `H¹(L_{B/A}) = 0` and `B` is faithfully flat over `A` (for
+instance, a formally smooth extension of fields), `KaehlerDifferential.map R R A B : Ω[A⁄R] →
+Ω[B⁄R]` is injective. -/
+theorem injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent
+    [Subsingleton (Algebra.H1Cotangent A B)] [Module.FaithfullyFlat A B] :
+    Function.Injective (map R R A B) := by
+  rw [injective_iff_map_eq_zero]
+  intro ω hω
+  have h0 : mapBaseChange R A B (1 ⊗ₜ[A] ω) = 0 := by
+    simpa [mapBaseChange_tmul] using hω
+  simpa using
+    (map_eq_zero_iff _ (injective_mapBaseChange_of_subsingleton_h1Cotangent R A B)).mp h0
 
 /-- In a tower `R → A → B` with `B` formally smooth over `A`, the short exact Jacobi–Zariski
 sequence `0 → B ⊗[A] Ω[A⁄R] → Ω[B⁄R] → Ω[B⁄A] → 0` splits, yielding a `B`-linear equivalence
@@ -86,7 +125,16 @@ theorem exists_kaehlerDifferentialProdEquiv [Algebra.FormallySmooth A B] :
   obtain ⟨l, hl⟩ := Module.projective_lifting_property (map R A B B) LinearMap.id
     (map_surjective R A B)
   obtain ⟨e, he⟩ := (exact_mapBaseChange_map R A B).splitSurjectiveEquiv
-    (mapBaseChange_injective_of_formallySmooth R A B) ⟨l, hl⟩
+    (injective_mapBaseChange_of_subsingleton_h1Cotangent R A B) ⟨l, hl⟩
   exact ⟨e, he⟩
+
+/-- For a base change `B = S ⊗[R] A`, Mathlib's isomorphism
+`KaehlerDifferential.tensorKaehlerEquiv : B ⊗[A] Ω[A⁄R] ≃ Ω[B⁄S]` is the base-change map
+`B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` followed by `KaehlerDifferential.map R S B B : Ω[B⁄R] → Ω[B⁄S]`, which
+sends `d_R b` to `d_S b`. Neither factor need be an isomorphism. -/
+theorem map_comp_mapBaseChange_eq_tensorKaehlerEquiv (S : Type*) [CommRing S] [Algebra R S]
+    [Algebra S B] [IsScalarTower R S B] [Algebra.IsPushout R S A B] :
+    (map R S B B).comp (mapBaseChange R A B) = (tensorKaehlerEquiv R S A B).toLinearMap :=
+  kaehlerBaseChange_linearMap_ext fun a ↦ by simp
 
 end TauCeti

@@ -43,11 +43,17 @@ root system is irreducible exactly when its graph is connected.
   `RootPairing.coe_componentProj_reflection`: the projections commute with the reflections.
 * `RootPairing.root_mem_componentSpace_iff`: when `2 ≠ 0`, a root lies in exactly the component
   space of its own component.
+* `RootPairing.mem_closure_root_inter_supp`: a sum of roots lying in the component space of `C` is
+  a sum of the roots of `C` among them, and `RootPairing.mem_closure_coroot_inter_supp`: likewise
+  for coroots.
 * `RootPairing.componentSpace_mem_invtSubmodule`: component spaces are invariant under reflections.
 * `RootPairing.InvariantForm.apply_eq_zero_of_mem_componentSpace`: over a domain with `2 ≠ 0`,
   different component spaces are orthogonal under every invariant form.
 * `RootPairing.Equiv.map_componentSpace`, `RootPairing.Equiv.map_corootComponentSpace`: an
   equivalence carries component spaces to component spaces, and likewise for coroots.
+* `RootPairing.Equiv.componentEquiv_one`, `RootPairing.Equiv.componentEquiv_mul`: automorphisms
+  permute the components by a group action, and `RootPairing.Equiv.componentEquiv_pow`: the
+  permutation induced by a power is the corresponding power.
 * `RootPairing.isIrreducible_iff_connected_nonorthogonalGraph`: irreducibility is connectedness of
   the graph.
 
@@ -78,6 +84,13 @@ theorem nonorthogonalGraph_adj {i j : ι} :
     P.nonorthogonalGraph.Adj i j ↔ i ≠ j ∧ ¬ P.IsOrthogonal i j := by
   rw [nonorthogonalGraph, SimpleGraph.fromRel_adj, P.isOrthogonal_symm (i := j) (j := i)]
   tauto
+
+/-- The flipped pairing has the same non-orthogonality graph, since orthogonality is symmetric in
+the roots and the coroots. -/
+@[simp]
+theorem nonorthogonalGraph_flip : P.flip.nonorthogonalGraph = P.nonorthogonalGraph := by
+  ext i j
+  simp [IsOrthogonal, and_comm]
 
 /-- The **irreducible components** of a root pairing: the connected components of its
 non-orthogonality graph. -/
@@ -212,6 +225,41 @@ theorem coroot_mem_corootComponentSpace_iff [NeZero (2 : R)] {i : ι} {C : P.Com
   rw [root'_coroot_eq_pairing, pairing_same] at this
   exact two_ne_zero this
 
+/-- **A sum of roots lying in a component space is a sum of roots of that component**: a vector of
+the component space of `C` that is a sum of roots indexed by `s` is a sum of roots indexed by the
+elements of `s` in `C`. -/
+theorem mem_closure_root_inter_supp [P.IsRootSystem] {C : P.Component} {s : Set ι} {x : M}
+    (hx : x ∈ AddSubmonoid.closure (P.root '' s)) (hxC : x ∈ P.componentSpace C) :
+    x ∈ AddSubmonoid.closure (P.root '' (s ∩ C.supp)) := by
+  rw [← Set.inter_union_sdiff s C.supp, Set.image_union, AddSubmonoid.closure_union,
+    AddSubmonoid.mem_sup] at hx
+  obtain ⟨y, hy, z, hz, rfl⟩ := hx
+  have hyC : y ∈ P.componentSpace C := AddSubmonoid.closure_le.mpr
+    (Set.image_mono Set.inter_subset_right |>.trans subset_span) hy
+  have hzC : z ∈ P.componentSpace C := by simpa using sub_mem hxC hyC
+  suffices z = 0 by simpa [this] using hy
+  have hle : AddSubmonoid.closure (P.root '' (s \ C.supp)) ≤
+      (⨆ D, ⨆ (_ : D ≠ C), P.componentSpace D).toAddSubmonoid := by
+    refine AddSubmonoid.closure_le.mpr ?_
+    rintro _ ⟨k, hk, rfl⟩
+    exact Submodule.mem_iSup_of_mem (P.componentOf k)
+      (Submodule.mem_iSup_of_mem ((C.mem_supp_iff k).not.mp hk.2) (root_mem_componentSpace k))
+  exact Submodule.disjoint_def.mp (iSupIndep_componentSpace C) z hzC (hle hz)
+
+/-- A sum of coroots lying in a coroot component space is a sum of coroots of that component: a
+vector of the coroot space of `C` that is a sum of coroots indexed by `s` is a sum of coroots
+indexed by the elements of `s` in `C`. This is `RootPairing.mem_closure_root_inter_supp` for the
+flipped pairing, which has the same irreducible components. -/
+theorem mem_closure_coroot_inter_supp [P.IsRootSystem] {C : P.Component} {s : Set ι} {x : N}
+    (hx : x ∈ AddSubmonoid.closure (P.coroot '' s)) (hxC : x ∈ P.corootComponentSpace C) :
+    x ∈ AddSubmonoid.closure (P.coroot '' (s ∩ C.supp)) := by
+  obtain ⟨i, rfl⟩ : ∃ i, P.componentOf i = C := C.exists_rep
+  have hsupp : (P.flip.componentOf i).supp = (P.componentOf i).supp :=
+    congrArg (fun G : SimpleGraph ι ↦ (G.connectedComponentMk i).supp) P.nonorthogonalGraph_flip
+  rw [← hsupp]
+  refine P.flip.mem_closure_root_inter_supp hx ?_
+  rwa [componentSpace_def, hsupp, flip_root, ← corootComponentSpace_def]
+
 /-- **Component spaces are invariant under every reflection.** The reflection at a root of the
 component preserves its span; the reflection at any other root fixes it pointwise. -/
 theorem componentSpace_mem_invtSubmodule (C : P.Component) (i : ι) :
@@ -309,7 +357,7 @@ theorem componentProj_reflection_of_ne {C : P.Component} {i : ι} (h : P.compone
     (x : M) : P.componentProj C (P.reflection i x) = P.componentProj C x := by
   ext
   rw [coe_componentProj_reflection, reflection_apply,
-    coroot'_eq_zero_of_mem_componentSpace h (P.componentProj C x).2, zero_smul, sub_zero]
+    coroot'_eq_zero_of_mem_componentSpace h (P.componentProj C x).property, zero_smul, sub_zero]
 
 end Projection
 
@@ -384,6 +432,36 @@ theorem Equiv.map_corootComponentSpace (e : P.Equiv Q) (C : P.Component) :
   · rintro ⟨i, hi, rfl⟩
     exact ⟨e.indexEquiv i, e.indexEquiv_mem_supp_iff.mpr hi,
       by simpa using Hom.coroot_coweightMap_apply P Q (e.indexEquiv i) e.toHom⟩
+
+/-- An equivalence of root pairings carries the component space of `C` into that of the
+corresponding component. -/
+theorem Equiv.weightMap_mem_componentSpace (e : P.Equiv Q) {C : P.Component} {x : M}
+    (hx : x ∈ P.componentSpace C) :
+    e.toHom.weightMap x ∈ Q.componentSpace (e.componentEquiv C) := by
+  rw [← e.map_componentSpace C]
+  exact Submodule.mem_map_of_mem hx
+
+/-- The identity automorphism fixes every component. -/
+@[simp]
+theorem Equiv.componentEquiv_one : (1 : P.Aut).componentEquiv = 1 :=
+  _root_.Equiv.ext fun C ↦ C.ind fun i ↦ componentEquiv_componentOf 1 i
+
+/-- The permutation of the components induced by a product of automorphisms is the product of the
+induced permutations. Not a `simp` lemma: `RootPairing.Equiv.mul_eq_comp` rewrites its left-hand
+side. -/
+theorem Equiv.componentEquiv_mul (σ τ : P.Aut) :
+    (σ * τ).componentEquiv = σ.componentEquiv * τ.componentEquiv :=
+  _root_.Equiv.ext fun C ↦ C.ind fun i ↦ by
+    simp [componentEquiv_componentOf]
+
+/-- The permutation of the components induced by a power of an automorphism is the corresponding
+power of the induced permutation. -/
+@[simp]
+theorem Equiv.componentEquiv_pow (σ : P.Aut) (n : ℕ) :
+    (σ ^ n).componentEquiv = σ.componentEquiv ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, componentEquiv_mul, ih, pow_succ]
 
 end Equiv
 

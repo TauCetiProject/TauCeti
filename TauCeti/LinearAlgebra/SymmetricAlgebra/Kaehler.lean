@@ -23,24 +23,24 @@ on `M` is required.
 Both directions come from the two universal properties:
 * the derivation `SymmetricAlgebra.mkDerivation (TensorProduct.mk R _ M 1)` sends `ι m` to
   `1 ⊗ₜ m`, and `Derivation.liftKaehlerDifferential` extends it `SymmetricAlgebra R M`-linearly
-  out of `Ω[SymmetricAlgebra R M ⁄ R]`;
+  out of `Ω[SymmetricAlgebra R M⁄R]`;
 * the `R`-linear map `m ↦ d(ι m)` extends by base change along `R → SymmetricAlgebra R M` to
-  `SymmetricAlgebra R M ⊗[R] M →ₗ[SymmetricAlgebra R M] Ω[SymmetricAlgebra R M ⁄ R]`.
+  `SymmetricAlgebra R M ⊗[R] M →ₗ[SymmetricAlgebra R M] Ω[SymmetricAlgebra R M⁄R]`.
 
 When `M` carries an `R`-basis `b`, base change transports `b` along this equivalence to a basis of
-`Ω[SymmetricAlgebra R M ⁄ R]` consisting of the differentials `d(ι (b i))`
+`Ω[SymmetricAlgebra R M⁄R]` consisting of the differentials `d(ι (b i))`
 (`Module.Basis.kaehlerDifferentialSymmetricAlgebra`).
 
 ## Main definitions and results
 
 * `SymmetricAlgebra.kaehlerDifferentialEquiv`: the `SymmetricAlgebra R M`-linear equivalence
-  `Ω[SymmetricAlgebra R M ⁄ R] ≃ₗ[SymmetricAlgebra R M] SymmetricAlgebra R M ⊗[R] M`.
+  `Ω[SymmetricAlgebra R M⁄R] ≃ₗ[SymmetricAlgebra R M] SymmetricAlgebra R M ⊗[R] M`.
 * `SymmetricAlgebra.kaehlerDifferentialEquiv_D_ι` and
   `SymmetricAlgebra.kaehlerDifferentialEquiv_symm_tmul`: action on differentials of generators and
   on pure tensors.
 * `SymmetricAlgebra.kaehlerDifferentialEquiv_mapSemilinear_map`: naturality with respect to
   `SymmetricAlgebra.map` and `KaehlerDifferential.mapSemilinear`.
-* `Module.Basis.kaehlerDifferentialSymmetricAlgebra`: the basis of `Ω[SymmetricAlgebra R M ⁄ R]`
+* `Module.Basis.kaehlerDifferentialSymmetricAlgebra`: the basis of `Ω[SymmetricAlgebra R M⁄R]`
   induced by a basis of `M`.
 -/
 
@@ -59,7 +59,7 @@ variable (R : Type u) (M : Type v) [CommRing R] [AddCommGroup M] [Module R M]
 /-- The Kähler differentials of `SymmetricAlgebra R M` over `R` are canonically isomorphic to the
 base change `SymmetricAlgebra R M ⊗[R] M`, identifying `d(ι m)` with `1 ⊗ₜ m`. -/
 def kaehlerDifferentialEquiv :
-    Ω[SymmetricAlgebra R M ⁄ R] ≃ₗ[SymmetricAlgebra R M] SymmetricAlgebra R M ⊗[R] M :=
+    Ω[SymmetricAlgebra R M⁄R] ≃ₗ[SymmetricAlgebra R M] SymmetricAlgebra R M ⊗[R] M :=
   LinearEquiv.ofLinearMap
     (mkDerivation (TensorProduct.mk R (SymmetricAlgebra R M) M 1)).liftKaehlerDifferential
     (((D R (SymmetricAlgebra R M)).toLinearMap ∘ₗ ι R M).liftBaseChange (SymmetricAlgebra R M))
@@ -101,7 +101,7 @@ theorem kaehlerDifferentialEquiv_symm_tmul (s : SymmetricAlgebra R M) (m : M) :
 `SymmetricAlgebra.map R f ⊗ f`. -/
 @[simp]
 theorem kaehlerDifferentialEquiv_mapSemilinear_map {N : Type w} [AddCommGroup N] [Module R N]
-    (f : M →ₗ[R] N) (ω : Ω[SymmetricAlgebra R M ⁄ R]) :
+    (f : M →ₗ[R] N) (ω : Ω[SymmetricAlgebra R M⁄R]) :
     kaehlerDifferentialEquiv R N (mapSemilinear (SymmetricAlgebra.map R f) ω) =
       TensorProduct.AlgebraTensorModule.map (SymmetricAlgebra.map R f).toLinearMap f
         (kaehlerDifferentialEquiv R M ω) := by
@@ -112,10 +112,10 @@ theorem kaehlerDifferentialEquiv_mapSemilinear_map {N : Type w} [AddCommGroup N]
   have hmap : SymmetricAlgebra.map R f =
       IsScalarTower.toAlgHom R (SymmetricAlgebra R M) (SymmetricAlgebra R N) :=
     AlgHom.ext fun _ ↦ rfl
-  let lhs : Ω[SymmetricAlgebra R M ⁄ R] →ₗ[SymmetricAlgebra R M] SymmetricAlgebra R N ⊗[R] N :=
+  let lhs : Ω[SymmetricAlgebra R M⁄R] →ₗ[SymmetricAlgebra R M] SymmetricAlgebra R N ⊗[R] N :=
     (kaehlerDifferentialEquiv R N).toLinearMap.restrictScalars (SymmetricAlgebra R M) ∘ₗ
       KaehlerDifferential.map R R (SymmetricAlgebra R M) (SymmetricAlgebra R N)
-  let rhs : Ω[SymmetricAlgebra R M ⁄ R] →ₗ[SymmetricAlgebra R M] SymmetricAlgebra R N ⊗[R] N :=
+  let rhs : Ω[SymmetricAlgebra R M⁄R] →ₗ[SymmetricAlgebra R M] SymmetricAlgebra R N ⊗[R] N :=
     TensorProduct.AlgebraTensorModule.map
       (Algebra.linearMap (SymmetricAlgebra R M) (SymmetricAlgebra R N)) f ∘ₗ
       (kaehlerDifferentialEquiv R M).toLinearMap
@@ -139,10 +139,10 @@ end SymmetricAlgebra
 namespace Module.Basis
 
 /-- An `R`-basis `b` of `M` induces a `SymmetricAlgebra R M`-basis of
-`Ω[SymmetricAlgebra R M ⁄ R]` consisting of the differentials `d(ι R M (b i))`. -/
+`Ω[SymmetricAlgebra R M⁄R]` consisting of the differentials `d(ι R M (b i))`. -/
 def kaehlerDifferentialSymmetricAlgebra {R : Type u} {M : Type v} {κ : Type*} [CommRing R]
     [AddCommGroup M] [Module R M] (b : Module.Basis κ R M) :
-    Module.Basis κ (SymmetricAlgebra R M) Ω[SymmetricAlgebra R M ⁄ R] :=
+    Module.Basis κ (SymmetricAlgebra R M) Ω[SymmetricAlgebra R M⁄R] :=
   (Algebra.TensorProduct.basis (SymmetricAlgebra R M) b).map
     (SymmetricAlgebra.kaehlerDifferentialEquiv R M).symm
 

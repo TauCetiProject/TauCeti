@@ -29,10 +29,10 @@ there exist an étale `R`-algebra `C` (either in the universe of `A` or in the u
 (`Algebra.Smooth.exists_etale_algHom_comp_eq`).
 
 Geometrically, a smooth morphism `Spec A → Spec R` equipped with a section over a closed subscheme
-`Spec T ↪ Spec R` admits an étale closed subscheme ("étale slice") through which that closed-fibre
-section factors. No Henselian or Noetherian hypothesis on `R` is required; when `(R, I)` is a
-Henselian pair, lifting the induced `T`-point of the étale slice `C` immediately yields Elkik's
-smooth lifting theorem (`TauCeti.HenselianRing.comp_surjective`).
+`Spec T ↪ Spec R` admits an étale `R`-scheme ("étale slice") mapping to `Spec A` through which that
+closed-fibre section factors. No Henselian or Noetherian hypothesis on `R` is required; when
+`(R, I)` is a Henselian pair, lifting the induced `T`-point of the étale slice `C` immediately
+yields Elkik's smooth lifting theorem (`TauCeti.HenselianRing.comp_surjective`).
 
 The construction has two steps, following Stacks Project Lemma 15.13.3 (Tag 0H74):
 1. **Free-cotangent retract** (`Algebra.Smooth.exists_retract_basis_kaehlerDifferential`): because

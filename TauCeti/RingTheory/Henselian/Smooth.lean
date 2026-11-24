@@ -90,7 +90,7 @@ theorem comp_surjective :
   -- Factor `ψ : A →ₐ[S] S ⧸ J` through an étale slice `C` and lift the étale section.
   obtain ⟨C, _, _, _, f, ψC, hψC⟩ :=
     Algebra.Smooth.exists_etale_algHom_comp_eq (R := S) Ideal.Quotient.mk_surjective ψ
-  obtain ⟨φC, hφC⟩ := (comp_bijective (S := S) (A := C) J).2 ψC
+  obtain ⟨φC, hφC⟩ := (comp_bijective (S := S) (A := C) J).surjective ψC
   refine ⟨φC.comp f, ?_⟩
   rw [← AlgHom.comp_assoc, hφC, hψC]
 
