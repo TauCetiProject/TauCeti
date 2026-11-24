@@ -9,9 +9,9 @@ public import Mathlib.FieldTheory.Galois.Profinite
 public import TauCeti.AlgebraicGeometry.FiniteEtale.AffineFiber
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Monodromy
 public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.CategoryTheory.Galois.ContAction
+public import TauCeti.CategoryTheory.Galois.Topology
 public import TauCeti.CategoryTheory.Galois.Transport
 
 /-!
@@ -23,7 +23,7 @@ group `Aut (FiniteEtaleScheme.fiber x)` of the geometric fibre functor at `x`, a
 This file identifies it with the absolute Galois group `Gal(Ω/K)`, as topological groups:
 `Gal(Ω/K)` is a fundamental group of the fibre functor
 (`TauCeti.FiniteEtaleScheme.instIsFundamentalGroupFiber`), so
-`TauCeti.FiniteEtaleScheme.continuousMulEquivAutFiber _ Gal(Ω/K)` is an isomorphism of
+`CategoryTheory.PreGaloisCategory.toAutContinuousMulEquiv (fiber x) Gal(Ω/K)` is an isomorphism of
 topological groups `Gal(Ω/K) ≃ₜ* π₁(Spec K, x)`.
 
 The identification is compatible with Grothendieck's Galois theory for `K`. The geometric fibre
@@ -193,6 +193,6 @@ instance instIsFundamentalGroupFiber :
 `Spec K ⟶ Spec K` is trivial. -/
 instance [IsSepClosed K] :
     Subsingleton (Aut (fiber (Spec.map (CommRingCat.ofHom (algebraMap K K))))) :=
-  (continuousMulEquivAutFiber _ Gal(K/K)).toEquiv.symm.subsingleton
+  (toAutContinuousMulEquiv _ Gal(K/K)).toEquiv.symm.subsingleton
 
 end TauCeti.FiniteEtaleScheme

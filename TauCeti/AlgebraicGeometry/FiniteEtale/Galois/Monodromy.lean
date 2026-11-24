@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Galois.Equivalence
-public import Mathlib.CategoryTheory.Galois.IsFundamentalgroup
-public import Mathlib.CategoryTheory.Monoidal.CommGrp_
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
 public import TauCeti.CategoryTheory.Action.Cartesian
-public import TauCeti.CategoryTheory.Galois.Topology
+public import TauCeti.CategoryTheory.Galois.Equivalence
 
 /-!
 # The monodromy equivalence for finite étale covers of a connected scheme
@@ -27,37 +24,41 @@ correspondence that live on the side of covers (SGA 1, Exposé V, §§4–7):
 * For any profinite group `G` with `PreGaloisCategory.IsFundamentalGroup (fiber x) G`, such as a
   Galois group or a chosen small model of `π₁(S, x)`, the same correspondence lands in finite
   continuous `G`-sets (`TauCeti.FiniteEtaleScheme.monodromyEquivalenceOfIsFundamentalGroup`),
-  with `G` acting on each geometric fibre through its given action.
+  with `G` acting on each geometric fibre through its given action. This restricts along the
+  isomorphism of topological groups `G ≃ₜ* Aut (fiber x)` of
+  `CategoryTheory.PreGaloisCategory.toAutContinuousMulEquiv`.
 * Both categories are cartesian monoidal and the equivalence preserves finite products, so it
   carries group objects to group objects. Finite étale group schemes over `S` therefore correspond
   to finite groups with a continuous action of `π₁(S, x)` by automorphisms
   (`TauCeti.FiniteEtaleScheme.monodromyEquivalenceGrp`), and finite étale commutative group
   schemes to finite continuous `π₁(S, x)`-modules
   (`TauCeti.FiniteEtaleScheme.monodromyEquivalenceCommGrp`). This is the lisse monodromy
-  correspondence for `ℤ`-coefficients on the side of the representing covers.
+  correspondence for `ℤ`-coefficients on the side of the representing covers. The construction
+  follows the field case, `TauCeti.FiniteEtaleScheme.galoisEquivalenceGrp` and
+  `TauCeti.FiniteEtaleScheme.galoisEquivalenceCommGrp` in
+  `TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Basic`, applying Mathlib's
+  `CategoryTheory.Equivalence.mapGrp` and `CategoryTheory.Equivalence.mapCommGrp`.
 * An étale path `γ : fiber x ≅ fiber y` changes the base point: the monodromy functor at `y`,
   restricted along conjugation by `γ` (`CategoryTheory.Iso.continuousConjAut`), is isomorphic to
-  the monodromy functor at `x`, with components the bijections `γ.app X` of geometric fibres
-  (`TauCeti.FiniteEtaleScheme.monodromyEquivalenceChangeBasepoint`).
+  the monodromy functor at `x`, with components the bijections `γ.app X` of geometric fibres. This
+  is the general `CategoryTheory.Iso.functorToContActionIso γ` for fibre functors, since
+  `(monodromyEquivalence x).functor` is `functorToContAction (fiber x)`
+  (`TauCeti.FiniteEtaleScheme.monodromyEquivalence_functor`).
 
 For the field case, with `Gal(Ω/K)` in place of `π₁`, see
 `TauCeti.FiniteEtaleScheme.galoisEquivalence`. There `Gal(Ω/K)` is a fundamental group of the
 fibre functor (`TauCeti.FiniteEtaleScheme.instIsFundamentalGroupFiber`), so
-`continuousMulEquivAutFiber` identifies it with `π₁(Spec K, x)`.
+`toAutContinuousMulEquiv` identifies it with `π₁(Spec K, x)`.
 
 ## Main definitions
 
 * `TauCeti.FiniteEtaleScheme.monodromyEquivalence x`:
   `FiniteEtaleScheme S ≌ ContAction FintypeCat (Aut (fiber x))` for connected `S`.
-* `TauCeti.FiniteEtaleScheme.continuousMulEquivAutFiber x G`: `G ≃ₜ* Aut (fiber x)` for a
-  fundamental group `G` of the fibre functor; `g` acts on each fibre by `g` (`toAut_hom_app_apply`).
 * `TauCeti.FiniteEtaleScheme.monodromyEquivalenceOfIsFundamentalGroup x G`: the monodromy
   equivalence with such a `G` in place of `Aut (fiber x)`.
 * `TauCeti.FiniteEtaleScheme.monodromyEquivalenceGrp x` and
   `TauCeti.FiniteEtaleScheme.monodromyEquivalenceCommGrp x`: the induced equivalences of group
   objects and of commutative group objects.
-* `TauCeti.FiniteEtaleScheme.monodromyEquivalenceChangeBasepoint γ`: change of base point along
-  an étale path `γ`.
 
 ## References
 
@@ -66,7 +67,7 @@ fibre functor (`TauCeti.FiniteEtaleScheme.instIsFundamentalGroupFiber`), so
 * The Stacks Project, Section 58.6 (tag 0BND), *Fundamental groups of schemes*.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits AlgebraicGeometry PreGaloisCategory FintypeCatDiscrete
 
@@ -80,23 +81,39 @@ variable {S : Scheme.{u}} [ConnectedSpace S] {Ω : Type u} [Field Ω] [IsSepClos
 `x : Spec Ω ⟶ S`, finite étale `S`-schemes are equivalent to finite sets with a continuous action
 of the étale fundamental group `Aut (fiber x)`. A cover `X` goes to its geometric fibre at `x`,
 on which `Aut (fiber x)` acts by evaluation. -/
-noncomputable def monodromyEquivalence (x : Spec (.of Ω) ⟶ S) :
+@[expose] noncomputable def monodromyEquivalence (x : Spec (.of Ω) ⟶ S) :
     FiniteEtaleScheme S ≌ ContAction FintypeCat.{u} (Aut (fiber x)) :=
   (functorToContAction (fiber x)).asEquivalence
 
 variable (x : Spec (.of Ω) ⟶ S)
 
+/-- The functor of `monodromyEquivalence x` is Mathlib's `functorToContAction` for the geometric
+fibre functor at `x`, so general facts about `functorToContAction` (such as the change of base
+point `CategoryTheory.Iso.functorToContActionIso`) apply to it. -/
+theorem monodromyEquivalence_functor :
+    (monodromyEquivalence x).functor = functorToContAction (fiber x) :=
+  (rfl)
+
 /-- The finite continuous `Aut (fiber x)`-set attached to a finite étale `S`-scheme `X` has
 underlying finite set the geometric fibre of `X` at `x`. -/
+@[simp]
 theorem monodromyEquivalence_functor_obj_obj_V (X : FiniteEtaleScheme S) :
     ((monodromyEquivalence x).functor.obj X).obj.V = (fiber x).obj X :=
   (rfl)
 
 /-- An automorphism `σ` of the fibre functor acts on the geometric fibre of `X` by its component
 at `X`. -/
+@[simp]
 theorem monodromyEquivalence_functor_obj_obj_ρ_apply (X : FiniteEtaleScheme S)
     (σ : Aut (fiber x)) (a : (fiber x).obj X) :
     (((monodromyEquivalence x).functor.obj X).obj.ρ σ).asHom a = σ.asIso.hom.app X a :=
+  (rfl)
+
+/-- On a morphism of covers, the functor of `monodromyEquivalence x` is the induced map of
+geometric fibres. -/
+@[simp]
+theorem monodromyEquivalence_functor_map_hom_hom {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
+    ((monodromyEquivalence x).functor.map f).hom.hom = (fiber x).map f :=
   (rfl)
 
 section FundamentalGroup
@@ -104,49 +121,55 @@ section FundamentalGroup
 variable (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [∀ X : FiniteEtaleScheme S, MulAction G ((fiber x).obj X)] [IsFundamentalGroup (fiber x) G]
 
-/-- A fundamental group `G` of the geometric fibre functor at `x` is isomorphic, as a topological
-group, to `Aut (fiber x)`, through its action on the geometric fibres. -/
-noncomputable def continuousMulEquivAutFiber : G ≃ₜ* Aut (fiber x) where
-  toMulEquiv := toAutMulEquiv _ _
-  continuous_toFun := (toAutMulEquiv_isHomeomorph _ _).continuous
-  continuous_invFun := (toAutMulEquiv_isHomeomorph _ _).homeomorph.symm.continuous
-
 /-- **The monodromy equivalence for a fundamental group.** For a connected scheme `S`, a
 geometric point `x` and a fundamental group `G` of the geometric fibre functor at `x` (for
 instance a Galois group, or a small model of `Aut (fiber x)`), finite étale `S`-schemes are
-equivalent to finite sets with a continuous action of `G`. -/
-noncomputable def monodromyEquivalenceOfIsFundamentalGroup :
+equivalent to finite sets with a continuous action of `G`. It is `monodromyEquivalence x`
+followed by restriction along `toAutContinuousMulEquiv (fiber x) G : G ≃ₜ* Aut (fiber x)`. -/
+@[expose] noncomputable def monodromyEquivalenceOfIsFundamentalGroup :
     FiniteEtaleScheme S ≌ ContAction FintypeCat.{u} G :=
-  (monodromyEquivalence x).trans (ContAction.resEquiv _ (continuousMulEquivAutFiber x G))
+  (monodromyEquivalence x).trans (ContAction.resEquiv _ (toAutContinuousMulEquiv (fiber x) G))
 
 /-- In `monodromyEquivalenceOfIsFundamentalGroup x G`, the finite `G`-set attached to a cover
 `X` has underlying set the geometric fibre of `X` at `x`. -/
+@[simp]
 theorem monodromyEquivalenceOfIsFundamentalGroup_functor_obj_obj_V (X : FiniteEtaleScheme S) :
     ((monodromyEquivalenceOfIsFundamentalGroup x G).functor.obj X).obj.V = (fiber x).obj X :=
+  (rfl)
+
+variable {G} in
+/-- In `monodromyEquivalenceOfIsFundamentalGroup x G`, an element `g` of `G` acts on the
+geometric fibre of a cover by its given action. -/
+@[simp]
+theorem monodromyEquivalenceOfIsFundamentalGroup_functor_obj_obj_ρ_apply
+    (X : FiniteEtaleScheme S) (g : G) (a : (fiber x).obj X) :
+    (((monodromyEquivalenceOfIsFundamentalGroup x G).functor.obj X).obj.ρ g).asHom a = g • a :=
+  -- `g` acts through `σ = toAutContinuousMulEquiv (fiber x) G g` by
+  -- `monodromyEquivalence_functor_obj_obj_ρ_apply`, and `σ` is `toAut (fiber x) G g`.
+  (monodromyEquivalence_functor_obj_obj_ρ_apply x X _ a).trans <|
+    (congrArg (fun σ : Aut (fiber x) ↦ σ.asIso.hom.app X a)
+      (toAutContinuousMulEquiv_apply (fiber x) g)).trans (toAut_hom_app_apply _ g a)
+
+/-- On a morphism of covers, the functor of `monodromyEquivalenceOfIsFundamentalGroup x G` is
+the induced map of geometric fibres. -/
+@[simp]
+theorem monodromyEquivalenceOfIsFundamentalGroup_functor_map_hom_hom
+    {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
+    ((monodromyEquivalenceOfIsFundamentalGroup x G).functor.map f).hom.hom = (fiber x).map f :=
   (rfl)
 
 end FundamentalGroup
 
 section GroupObjects
 
-/-- The functor of `monodromyEquivalence x` is monoidal for the cartesian monoidal structures, as
-it preserves finite products. -/
-noncomputable instance instMonoidalFunctorMonodromyEquivalence :
-    (monodromyEquivalence x).functor.Monoidal :=
-  .ofChosenFiniteProducts _
-
-/-- The inverse of `monodromyEquivalence x` is monoidal for the cartesian monoidal structures, as
-it preserves finite products. -/
-noncomputable instance instMonoidalInverseMonodromyEquivalence :
-    (monodromyEquivalence x).inverse.Monoidal :=
-  .ofChosenFiniteProducts _
-
-/-- The functor of `monodromyEquivalence x` is braided. -/
+/-- The functor of `monodromyEquivalence x` is braided, hence monoidal, for the cartesian monoidal
+structures, as it preserves finite products. -/
 noncomputable instance instBraidedFunctorMonodromyEquivalence :
     (monodromyEquivalence x).functor.Braided :=
   .ofChosenFiniteProducts _
 
-/-- The inverse of `monodromyEquivalence x` is braided. -/
+/-- The inverse of `monodromyEquivalence x` is braided, hence monoidal, for the cartesian monoidal
+structures, as it preserves finite products. -/
 noncomputable instance instBraidedInverseMonodromyEquivalence :
     (monodromyEquivalence x).inverse.Braided :=
   .ofChosenFiniteProducts _
@@ -160,6 +183,7 @@ noncomputable def monodromyEquivalenceGrp :
   (monodromyEquivalence x).mapGrp
 
 /-- On underlying objects, `monodromyEquivalenceGrp x` is `monodromyEquivalence x`. -/
+@[simp]
 theorem monodromyEquivalenceGrp_functor_comp_forget :
     (monodromyEquivalenceGrp x).functor ⋙ Grp.forget _ =
       Grp.forget _ ⋙ (monodromyEquivalence x).functor :=
@@ -167,6 +191,7 @@ theorem monodromyEquivalenceGrp_functor_comp_forget :
 
 /-- On underlying objects, the inverse of `monodromyEquivalenceGrp x` is the inverse of
 `monodromyEquivalence x`. -/
+@[simp]
 theorem monodromyEquivalenceGrp_inverse_comp_forget :
     (monodromyEquivalenceGrp x).inverse ⋙ Grp.forget _ =
       Grp.forget _ ⋙ (monodromyEquivalence x).inverse :=
@@ -181,6 +206,7 @@ noncomputable def monodromyEquivalenceCommGrp :
   (monodromyEquivalence x).mapCommGrp
 
 /-- On underlying objects, `monodromyEquivalenceCommGrp x` is `monodromyEquivalence x`. -/
+@[simp]
 theorem monodromyEquivalenceCommGrp_functor_comp_forget :
     (monodromyEquivalenceCommGrp x).functor ⋙ CommGrp.forget _ =
       CommGrp.forget _ ⋙ (monodromyEquivalence x).functor :=
@@ -188,41 +214,12 @@ theorem monodromyEquivalenceCommGrp_functor_comp_forget :
 
 /-- On underlying objects, the inverse of `monodromyEquivalenceCommGrp x` is the inverse of
 `monodromyEquivalence x`. -/
+@[simp]
 theorem monodromyEquivalenceCommGrp_inverse_comp_forget :
     (monodromyEquivalenceCommGrp x).inverse ⋙ CommGrp.forget _ =
       CommGrp.forget _ ⋙ (monodromyEquivalence x).inverse :=
   (rfl)
 
 end GroupObjects
-
-section ChangeBasepoint
-
-variable {x} {Ω' : Type u} [Field Ω'] [IsSepClosed Ω'] {y : Spec (.of Ω') ⟶ S}
-
-/-- **Change of base point.** An étale path `γ : fiber x ≅ fiber y` identifies the monodromy
-functor at `x` with the monodromy functor at `y` followed by restriction along conjugation by `γ`,
-`Aut (fiber x) ≃ₜ* Aut (fiber y)`. The component at a cover `X` is the bijection `γ.app X` of
-geometric fibres. -/
-noncomputable def monodromyEquivalenceChangeBasepoint (γ : fiber x ≅ fiber y) :
-    (monodromyEquivalence x).functor ≅
-      (monodromyEquivalence y).functor ⋙
-        ContAction.res _ (γ.continuousConjAut : Aut (fiber x) →ₜ* Aut (fiber y)) :=
-  NatIso.ofComponents
-    (fun X ↦ ObjectProperty.isoMk _ (Action.mkIso (γ.app X) fun σ ↦ by
-      change σ.asIso.hom.app X ≫ γ.hom.app X =
-        γ.hom.app X ≫ (γ.continuousConjAut σ).asIso.hom.app X
-      simp [Iso.conjAut_apply]))
-    fun f ↦ by
-      ext : 2
-      exact γ.hom.naturality f
-
-/-- The component of `monodromyEquivalenceChangeBasepoint γ` at a cover `X` is `γ.app X` on the
-geometric fibres. -/
-theorem monodromyEquivalenceChangeBasepoint_hom_app_hom_hom (γ : fiber x ≅ fiber y)
-    (X : FiniteEtaleScheme S) :
-    ((monodromyEquivalenceChangeBasepoint γ).hom.app X).hom.hom = γ.hom.app X :=
-  (rfl)
-
-end ChangeBasepoint
 
 end TauCeti.FiniteEtaleScheme
