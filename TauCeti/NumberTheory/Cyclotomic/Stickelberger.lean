@@ -10,6 +10,7 @@ public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 import Mathlib.Data.Nat.Totient
+import TauCeti.Algebra.MonoidAlgebra.MapDomain
 
 /-!
 # The Stickelberger element and the integral Stickelberger ideal
@@ -58,9 +59,9 @@ element `∑_a ⌊b a₀ / m⌋ [a⁻¹]` of `I_m`.
 ## Implementation notes
 
 The coefficient extension `ℤ[G] → ℚ[G]` is `MonoidAlgebra.mapRingHom (ZMod m)ˣ (Int.castRingHom ℚ)`,
-which is injective by `MonoidAlgebra.map_injective`; both ideals are defined through it. Since the
-multiplier `[b] - b` depends on the integer `b` and not only on its residue, the generating set of
-`J_m` is indexed by natural numbers: `b = 1 + m` gives the generator `-m`.
+which is injective by `MonoidAlgebra.mapRingHom_injective`; both ideals are defined through it.
+Since the multiplier `[b] - b` depends on the integer `b` and not only on its residue, the
+generating set of `J_m` is indexed by natural numbers: `b = 1 + m` gives the generator `-m`.
 
 ## References
 
@@ -112,12 +113,10 @@ theorem one_add_single_neg_one_mul_stickelberger (hm : 2 ≤ m) :
     rw [ZMod.val_neg_of_ne_zero]
     have := ZMod.val_lt ((b⁻¹ : (ZMod m)ˣ) : ZMod m)
     omega
-  rw [add_mul, one_mul, coeff_add, Finsupp.add_apply, coeff_single_mul_apply, coeff_stickelberger,
-    coeff_stickelberger, coeff_sum]
-  simp only [mul_inv_rev, inv_inv, mul_neg_one, Units.val_neg, one_mul, coeff_single,
-    Finsupp.finsetSum_apply, Finsupp.single_apply, Finset.sum_ite_eq',
-    Finset.mem_univ, ite_true]
-  rw [← add_div, ← Nat.cast_add, hb, div_self (by exact_mod_cast NeZero.ne m)]
+  have hm : (m : ℚ) ≠ 0 := by exact_mod_cast NeZero.ne m
+  simp [add_mul, coeff_single_mul_apply, coeff_sum, Finsupp.single_apply, -ZMod.natCast_val]
+  field_simp
+  exact_mod_cast hb
 
 /-- The value of `θ_m` under the algebra map `ℚ[G] → R` extending a monoid homomorphism
 `ψ : G →* R`. -/
@@ -189,24 +188,17 @@ theorem mem_stickelbergerIdeal_iff {y : MonoidAlgebra ℤ (ZMod m)ˣ} :
       mapRingHom _ (Int.castRingHom ℚ) x * stickelberger m :=
   Iff.rfl
 
-omit [NeZero m] in
-/-- Coefficient extension from `ℤ[G]` to `ℚ[G]` is injective. -/
-private theorem mapRingHom_intCast_injective :
-    Function.Injective (mapRingHom (ZMod m)ˣ (Int.castRingHom ℚ)) := by
-  rw [coe_mapRingHom]
-  exact map_injective (Int.castRingHom ℚ : ℤ →+ ℚ) Int.cast_injective
-
 variable (m) in
 /-- **The integral Stickelberger multiplication map** `J_m → I_m`, sending a multiplier `x` to the
 unique integral element whose image in `ℚ[G]` is `x θ_m`. -/
 noncomputable def stickelbergerMul :
     stickelbergerDenominatorIdeal m →ₗ[MonoidAlgebra ℤ (ZMod m)ˣ] stickelbergerIdeal m where
   toFun x := ⟨x.property.choose, x.val, x.property.choose_spec⟩
-  map_add' x x' := Subtype.ext <| mapRingHom_intCast_injective <|
+  map_add' x x' := Subtype.ext <| mapRingHom_injective Int.cast_injective <|
     (x + x').property.choose_spec.trans <| by
       simp only [Submodule.coe_add, map_add, x.property.choose_spec, x'.property.choose_spec,
         add_mul]
-  map_smul' r x := Subtype.ext <| mapRingHom_intCast_injective <|
+  map_smul' r x := Subtype.ext <| mapRingHom_injective Int.cast_injective <|
     (r • x).property.choose_spec.trans <| by
       simp only [SetLike.val_smul, smul_eq_mul, RingHom.id_apply, map_mul, x.property.choose_spec,
         mul_assoc]
@@ -221,7 +213,7 @@ theorem mapRingHom_stickelbergerMul (x : stickelbergerDenominatorIdeal m) :
 /-- Multiplication by `θ_m` maps the denominator ideal onto the integral Stickelberger ideal. -/
 theorem stickelbergerMul_surjective : Function.Surjective (stickelbergerMul m) := by
   rintro ⟨y, x, hx⟩
-  exact ⟨⟨x, y, hx⟩, Subtype.ext <| mapRingHom_intCast_injective <|
+  exact ⟨⟨x, y, hx⟩, Subtype.ext <| mapRingHom_injective Int.cast_injective <|
     (mapRingHom_stickelbergerMul _).trans hx.symm⟩
 
 /-- The coefficients of `x θ_m` for an integral multiplier `x`. -/
@@ -248,7 +240,7 @@ theorem mem_stickelbergerDenominatorIdeal_iff_sum_eq_zero {x : MonoidAlgebra ℤ
   have hint (z : ℤ) : (∃ n : ℤ, (n : ℚ) = z / m) ↔ (z : ZMod m) = 0 := by
     rw [ZMod.intCast_zmod_eq_zero_iff_dvd, ← Rat.den_div_intCast_eq_one_iff z m
       (by exact_mod_cast NeZero.ne m), Int.cast_natCast, Rat.den_eq_one_iff]
-    exact ⟨fun ⟨n, hn⟩ ↦ hn ▸ Rat.num_intCast n ▸ rfl, fun h ↦ ⟨_, h⟩⟩
+    exact ⟨fun ⟨n, hn⟩ ↦ by rw [← hn, Rat.num_intCast], fun h ↦ ⟨_, h⟩⟩
   rw [mem_stickelbergerDenominatorIdeal_iff, hrange]
   simp only [coeff_mapRingHom_mul_stickelberger, hint, key,
     Units.mul_right_eq_zero]
@@ -346,18 +338,12 @@ theorem mapRingHom_smoothedStickelberger {b : ℕ} (hb : b.Coprime m) :
     mapRingHom _ (Int.castRingHom ℚ) (smoothedStickelberger m b) =
       ((b : MonoidAlgebra ℚ (ZMod m)ˣ) - single (ZMod.unitOfCoprime b hb) 1) * stickelberger m := by
   ext c
-  have hmod : ((c⁻¹ * ZMod.unitOfCoprime b hb : (ZMod m)ˣ) : ZMod m).val =
-      b * ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val % m := by
-    rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast, Nat.mul_mod_mod,
-      mul_comm]
-  have hdiv : ((b * ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val / m : ℕ) : ℚ) * m +
-      ((b * ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val % m : ℕ) : ℚ) =
-        b * ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val := by
-    exact_mod_cast (by rw [mul_comm _ m]; exact Nat.div_add_mod _ _)
+  set v := ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val
+  have hdiv : ((b * v / m : ℕ) : ℚ) * m + ((v * b % m : ℕ) : ℚ) = b * v := by
+    exact_mod_cast (by rw [mul_comm v b, mul_comm _ m]; exact Nat.div_add_mod _ _)
   have hm : (m : ℚ) ≠ 0 := by exact_mod_cast NeZero.ne m
-  rw [coeff_mapRingHom, coeff_smoothedStickelberger, sub_mul, coeff_sub, Finsupp.sub_apply,
-    coeff_natCast_mul, coeff_single_mul_apply, coeff_stickelberger, coeff_stickelberger,
-    mul_inv_rev, inv_inv, hmod, one_mul, eq_intCast, Int.cast_natCast]
+  simp [sub_mul, coeff_natCast_mul, coeff_single_mul_apply, ZMod.val_mul, -ZMod.natCast_val,
+    -Int.natCast_ediv]
   field_simp
   linarith
 
@@ -395,17 +381,15 @@ theorem smoothedStickelberger_mul (b : ℕ) {d : ℕ} (hd : d.Coprime m) :
     smoothedStickelberger m (b * d) = (b : MonoidAlgebra ℤ (ZMod m)ˣ) * smoothedStickelberger m d +
       single (ZMod.unitOfCoprime d hd) 1 * smoothedStickelberger m b := by
   ext c
-  set n := d * ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val
-  have hmod : ((c⁻¹ * ZMod.unitOfCoprime d hd : (ZMod m)ˣ) : ZMod m).val = n % m := by
-    rw [Units.val_mul, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast, Nat.mul_mod_mod,
-      mul_comm]
-  -- `⌊b n / m⌋ = b ⌊n / m⌋ + ⌊b (n mod m) / m⌋`, from `b n = b (n mod m) + m (b ⌊n / m⌋)`.
-  have hdiv : b * n / m = b * (n / m) + b * (n % m) / m := by
-    conv_lhs => rw [← Nat.mod_add_div n m, mul_add, mul_left_comm,
+  set v := ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val
+  -- `⌊b n / m⌋ = b ⌊n / m⌋ + ⌊b (n mod m) / m⌋` for `n = d v`, from
+  -- `b n = b (n mod m) + m (b ⌊n / m⌋)`.
+  have hdiv : b * (d * v) / m = b * (d * v / m) + b * (v * d % m) / m := by
+    rw [mul_comm v d]
+    conv_lhs => rw [← Nat.mod_add_div (d * v) m, mul_add, mul_left_comm,
       Nat.add_mul_div_left _ _ (Nat.pos_of_neZero m)]
     ring
-  rw [coeff_add, Finsupp.add_apply, coeff_natCast_mul, coeff_single_mul_apply,
-    coeff_smoothedStickelberger, coeff_smoothedStickelberger, coeff_smoothedStickelberger,
-    mul_inv_rev, inv_inv, hmod, one_mul, mul_assoc, hdiv, Nat.cast_add, Nat.cast_mul]
+  simp [v, coeff_natCast_mul, coeff_single_mul_apply, ZMod.val_mul, mul_assoc, hdiv,
+    -ZMod.natCast_val, -Int.natCast_ediv]
 
 end TauCeti
