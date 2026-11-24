@@ -82,6 +82,7 @@ private theorem circlesCommuteAt_circle (X : TLDiagCat) : CirclesCommuteAt circl
 
 /-- **Closed circles are central in the Temperley–Lieb diagram category**: every endomorphism of
 the empty boundary acts in the same way on the left and on the right of every object. -/
+@[simp]
 theorem circlesCommuteAt (d : 𝟙_ TLDiagCat ⟶ 𝟙_ TLDiagCat) (X : TLDiagCat) :
     CirclesCommuteAt d X := by
   have hd : d = (End.of circle ^ (End.of d).asHom.diagram.circles).asHom :=
@@ -118,6 +119,9 @@ abbrev toTLDiagCat : CircleCentralSelfDualityCat ⥤ TLDiagCat :=
 theorem toTLDiagCat_obj_tensorUnit :
     toTLDiagCat.obj (𝟙_ CircleCentralSelfDualityCat) = 𝟙_ TLDiagCat := (rfl)
 
+/-- The comparison functor sends the generator to a single boundary point. -/
+theorem toTLDiagCat_obj_generator : toTLDiagCat.obj generator = TLDiagCat.of 1 := (rfl)
+
 /-- The comparison functor is strict on objects: the image of a tensor product is the tensor
 product of the images. -/
 @[simp]
@@ -140,10 +144,11 @@ theorem exists_toTLDiagCat_obj_eq (Y : TLDiagCat) : ∃ X, toTLDiagCat.obj X = Y
   | zero => exact ⟨𝟙_ _, rfl⟩
   | succ n ih =>
     obtain ⟨X, hX⟩ := ih
-    exact ⟨X ⊗ generator, by rw [toTLDiagCat_obj_tensor, hX]; rfl⟩
+    refine ⟨X ⊗ generator, ?_⟩
+    rw [toTLDiagCat_obj_tensor, hX, toTLDiagCat_obj_generator]
+    exact TLDiagCat.ext (TLDiagCat.tensorObj_as _ _)
 
-instance : toTLDiagCat.EssSurj where
-  mem_essImage Y := ⟨_, ⟨eqToIso (exists_toTLDiagCat_obj_eq Y).choose_spec⟩⟩
+instance : toTLDiagCat.EssSurj := toTLDiagCat.essSurj_of_surj exists_toTLDiagCat_obj_eq
 
 /-- **The comparison functor is full at the unit**: every endomorphism of the empty boundary,
 a number of closed circles, is the image of a power of the generating closed circle. -/
