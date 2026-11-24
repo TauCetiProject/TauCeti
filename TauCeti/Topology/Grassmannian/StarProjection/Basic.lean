@@ -73,7 +73,8 @@ This is the Grassmannian `G(E, k)` that carries the varifolds of a Euclidean spa
   `Euclidean.grassmannian.finiteGrassmannianHomeomorph_trans_symm_apply`: changing the
   coordinates `e` to `O ∘ e` precomposes `finiteGrassmannianHomeomorph` with `S ↦ O⁻¹(S)` and
   postcomposes its inverse with `S ↦ O(S)`, where `TauCeti.finiteGrassmannian.mapEuclidean`
-  moves a point of the finite Grassmannian by a linear isometry of `EuclideanSpace 𝕜 (Fin N)`.
+  moves a point of the finite Grassmannian by a linear automorphism of
+  `EuclideanSpace 𝕜 (Fin N)`.
 * `Euclidean.grassmannian_zero`, `Euclidean.grassmannian_finrank` and
   `Euclidean.grassmannian_eq_empty`: `G(E, 0) = {0}`, `G(E, dim E) = {1}`, and `G(E, k)` is
   empty for `k > dim E`.
@@ -102,31 +103,33 @@ namespace TauCeti.finiteGrassmannian
 
 variable {𝕜 : Type*} [RCLike 𝕜] {k N : ℕ}
 
-/-- The image of a point `S` of the finite Grassmannian under a linear isometry `O` of
+/-- The image of a point `S` of the finite Grassmannian under a linear automorphism `O` of
 `EuclideanSpace 𝕜 (Fin N)`: `TauCeti.finiteGrassmannian.map` of `O` read on `Fin N → 𝕜` through
 the coordinate identification `WithLp.linearEquiv`. In coordinates it is `O(S)`
 (`TauCeti.finiteGrassmannian.toEuclidean_mapEuclidean`). -/
-noncomputable def mapEuclidean (O : EuclideanSpace 𝕜 (Fin N) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
+noncomputable def mapEuclidean (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
     (S : finiteGrassmannian 𝕜 k N) : finiteGrassmannian 𝕜 k N :=
-  S.map ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).symm ≪≫ₗ O.toLinearEquiv ≪≫ₗ
+  S.map ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).symm ≪≫ₗ O ≪≫ₗ
     WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).toLinearMap (LinearEquiv.injective _)
 
 /-- Read in coordinates, `S.mapEuclidean O` is the image `O(S)`. -/
 @[simp]
 theorem toEuclidean_mapEuclidean
-    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
     (S : finiteGrassmannian 𝕜 k N) :
     (S.mapEuclidean O).toEuclidean =
-      S.toEuclidean.map (O.toLinearEquiv : EuclideanSpace 𝕜 (Fin N) →ₗ[𝕜] _) := by
+      S.toEuclidean.map (O : EuclideanSpace 𝕜 (Fin N) →ₗ[𝕜] _) := by
   ext x
   simp [mapEuclidean]
 
 /-- Moving a point of the finite Grassmannian by `O⁻¹` and then by `O` gives it back. -/
 @[simp]
 theorem mapEuclidean_mapEuclidean_symm
-    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
-    (S : finiteGrassmannian 𝕜 k N) : (S.mapEuclidean O.symm).mapEuclidean O = S :=
-  toEuclidean_injective <| by simp [← Submodule.map_comp]
+    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (S : finiteGrassmannian 𝕜 k N) : (S.mapEuclidean O.symm).mapEuclidean O = S := by
+  rw [mapEuclidean, mapEuclidean, ← map_comp]
+  convert map_id S
+  exact LinearMap.ext fun x ↦ by simp
 
 end TauCeti.finiteGrassmannian
 
@@ -273,7 +276,7 @@ theorem finiteGrassmannianHomeomorph_trans_symm_apply
     (e : E ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
     (O : EuclideanSpace 𝕜 (Fin N) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N)) (P : grassmannian 𝕜 E k) :
     (finiteGrassmannianHomeomorph k (e.trans O)).symm P =
-      ((finiteGrassmannianHomeomorph k e).symm P).mapEuclidean O :=
+      ((finiteGrassmannianHomeomorph k e).symm P).mapEuclidean O.toLinearEquiv :=
   finiteGrassmannian.toEuclidean_injective <| by
     simp [toEuclidean_finiteGrassmannianHomeomorph_symm, ← Submodule.map_comp]
 
@@ -283,7 +286,7 @@ theorem finiteGrassmannianHomeomorph_trans_apply (e : E ≃ₗᵢ[𝕜] Euclidea
     (O : EuclideanSpace 𝕜 (Fin N) ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 (Fin N))
     (S : finiteGrassmannian 𝕜 k N) :
     finiteGrassmannianHomeomorph k (e.trans O) S =
-      finiteGrassmannianHomeomorph k e (S.mapEuclidean O.symm) := by
+      finiteGrassmannianHomeomorph k e (S.mapEuclidean O.toLinearEquiv.symm) := by
   apply (finiteGrassmannianHomeomorph k (e.trans O)).symm.injective
   rw [Homeomorph.symm_apply_apply, finiteGrassmannianHomeomorph_trans_symm_apply,
     Homeomorph.symm_apply_apply, finiteGrassmannian.mapEuclidean_mapEuclidean_symm]
