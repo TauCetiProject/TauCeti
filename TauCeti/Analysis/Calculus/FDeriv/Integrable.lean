@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
@@ -16,6 +17,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
@@ -39,6 +41,10 @@ squared norm of the real-direction derivative `∂ₛu` implies integrability of
 Precomposing with a measure-preserving continuous linear equivalence does not change whether
 the squared norm of the derivative is integrable.
 
+For a map which is `C¹` up to the boundary of a closed disc in `ℂ`, every continuous function of
+its derivative is integrable on the open disc, since the derivative extends continuously to the
+closed disc.
+
 On a Euclidean product `ℝ × V`, the derivative of such a function in a fixed direction is also
 integrable on the product of a half-line with `V`.
 
@@ -56,6 +62,8 @@ integrable on the product of a half-line with `V`.
   integrability of `‖fderiv 𝕜 u z‖ ^ 2`.
 * `TauCeti.integrableOn_norm_fderiv_sq_of_apply_I_eq`: integrability of `‖fderiv ℝ u z‖ ^ 2` from
   integrability of `‖fderiv ℝ u z 1‖ ^ 2` under a Cauchy--Riemann equation.
+* `TauCeti.integrableOn_ball_comp_fderiv_of_contDiffOn`: for a map that is `C¹` on a closed disc,
+  continuous functions of its derivative are integrable on the open disc.
 * `ContinuousLinearEquiv.integrable_norm_fderiv_comp_sq_iff`: integrability of
   `‖fderiv (u ∘ e)‖ ^ 2` for a measure-preserving continuous linear equivalence `e` is that of
   `‖fderiv u‖ ^ 2`.
@@ -186,6 +194,26 @@ theorem integrableOn_norm_fderiv_sq_of_apply_I_eq {ν : Measure K} {u : K → G}
     ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hA z hz) le_rfl) 2
 
 end CauchyRiemann
+section ClosedBall
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+
+/-- If `u` is `C¹` on the closed disc `‖z - z₀‖ ≤ b`, then for every continuous `F` the function
+`z ↦ F (Du z)` is integrable on the open disc: the differential of `u` extends continuously to the
+closed disc. -/
+theorem integrableOn_ball_comp_fderiv_of_contDiffOn {F : (ℂ →L[ℝ] V) → W} (hF : Continuous F)
+    {u : ℂ → V} {z₀ : ℂ} {b : ℝ} (hu : ContDiffOn ℝ 1 u (Metric.closedBall z₀ b)) :
+    IntegrableOn (fun z ↦ F (fderiv ℝ u z)) (Metric.ball z₀ b) := by
+  rcases le_or_gt b 0 with hb | hb
+  · simp [Metric.ball_eq_empty.mpr hb]
+  have hDu := hu.continuousOn_fderivWithin (uniqueDiffOn_closedBall z₀ hb) le_rfl
+  refine (((hF.comp_continuousOn hDu).integrableOn_compact (isCompact_closedBall z₀ b)).mono_set
+    Metric.ball_subset_closedBall).congr_fun (fun z hz ↦ ?_) measurableSet_ball
+  -- On the open disc the derivative within the closed disc is the derivative.
+  rw [Function.comp_apply, fderivWithin_of_mem_nhds (Metric.closedBall_mem_nhds_of_mem hz)]
+
+end ClosedBall
+
 section CompContinuousLinearEquiv
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]

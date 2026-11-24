@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Geometry.Symplectic.Duality
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem
 

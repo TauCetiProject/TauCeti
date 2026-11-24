@@ -178,8 +178,8 @@ theorem pathIntegral_mpullback_radialPrimitive_pos
   · -- A closed disc of nonpositive radius is at most a point.
     exact absurd
       (Function.IsConstOn.of_subsingleton (subsingleton_closedBall z₀ hb) u).exists_eqOn_const hne
-  rw [pathIntegral_mpullback_radialPrimitive_eq_integral hb.le hu hu₁ hi hc hbd,
-    ω.integral_fderiv_apply_ball_eq_pathIntegral_radialPrimitive z₀ hb.le hu hu₁]
+  rw [pathIntegral_mpullback _ hi hc, ← pathIntegral_congr_of_eqOn_uIoo (γ' := i ∘ c)
+    fun θ hθ ↦ hbd θ (uIoo_subset_uIcc_self hθ)]
   exact (pathIntegral_radialPrimitive_circleMap_nonneg hb.le hu hu₁ hhol htame).lt_of_ne
     fun h ↦ hne ((pathIntegral_radialPrimitive_circleMap_eq_zero_iff hb.le hu hu₁ hhol htame).mp
       h.symm)
