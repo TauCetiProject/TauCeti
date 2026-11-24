@@ -519,6 +519,7 @@ theorem rightDerivedΓRestriction_nested (h : V ≤ U) (F : X.Sheaf (ModuleCat.{
   have hA := InjectiveResolution.isoRightDerivedObj_hom_naturality
     ((actualNestedRestrictionIso h).hom.app F) IT IV (nestedCoefficientComplexMap h I)
     hcomm ΓV n
+  -- The composed section functor maps the complex map degreewise before taking homology.
   change _ = _ ≫ HomologicalComplex.homologyMap ((ΓV.mapHomologicalComplex _).map _) n at hA
   have hH := relativeDerivedGammaIso_app h IW n
   have hW := rightDerivedΓRestriction_app_injectiveResolution (X := TopCat.of U) (relativeOpen h)

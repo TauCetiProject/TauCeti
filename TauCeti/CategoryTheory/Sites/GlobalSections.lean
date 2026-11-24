@@ -60,6 +60,13 @@ lemma natTransΓRes_eq_ΓNatIsoSheafSections_hom {T : C} (hT : IsTerminal T) :
   funext F
   exact (ΓNatIsoSheafSections_hom_app_eq_ΓRes J A hT F).symm
 
+/-- Terminal restriction followed by the inverse comparison is the identity. -/
+@[reassoc (attr := simp)]
+lemma ΓRes_ΓNatIsoSheafSections_inv_app {T : C} (hT : IsTerminal T) (F : Sheaf J A) :
+    F.ΓRes (op T) ≫ (ΓNatIsoSheafSections J A hT).inv.app F = 𝟙 _ := by
+  rw [← ΓNatIsoSheafSections_hom_app_eq_ΓRes J A hT F]
+  exact (ΓNatIsoSheafSections J A hT).hom_inv_id_app F
+
 /-- Restriction cancels the inverse terminal global-sections comparison. -/
 @[reassoc (attr := simp)]
 lemma ΓNatIsoSheafSections_inv_app_ΓRes {T : C} (hT : IsTerminal T) (F : Sheaf J A) :

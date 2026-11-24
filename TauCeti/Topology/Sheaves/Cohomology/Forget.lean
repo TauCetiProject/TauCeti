@@ -141,7 +141,7 @@ sheaves.** For sheaves of modules over a commutative ring on any topological spa
 group underlying `RⁿΓ(F)` is naturally isomorphic to the `Ext`-based cohomology `Hⁿ(X, U F)` of
 the underlying abelian sheaf `U F`. -/
 def moduleCohomologyForgetComparison
-    [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive] (n : ℕ) :
+    (n : ℕ) :
     (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).rightDerived n ⋙
         forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u} ≅
       sheafCompose (Opens.grothendieckTopology X) (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) ⋙
@@ -320,6 +320,7 @@ lemma moduleCohomologyForgetComparison_hom_app_injectiveResolution (n : ℕ) :
   rw [Functor.map_comp] at he
   dsimp only [Functor.mapIso_hom]
   erw [reassoc_of% he]
+  -- The comparison hom is the composite of the evaluated homology-isomorphism factors above.
   rfl
 
 private lemma moduleComplexForget_chain_component (F : X.Sheaf (ModuleCat.{u} R)) :

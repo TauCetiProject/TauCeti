@@ -151,8 +151,6 @@ example (n : ℕ) :
   exact moduleCohomologyForgetComparison_restriction (⊤ : Opens pointSpace) modTwoSheaf n
 end ModTwo
 variable {X : TopCat.{u}} {R : Type u} [CommRing R]
-variable [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
-  [(Sheaf.Γ (Opens.grothendieckTopology (⊤ : Opens X)) (ModuleCat.{u} R)).Additive]
 example (n : ℕ) :
     rightDerivedΓRestriction (R := R) (⊤ : Opens X) n ≫
       (rightDerivedΓRestrictionTopIso (X := X) (R := R) n).inv = 𝟙 _ := by

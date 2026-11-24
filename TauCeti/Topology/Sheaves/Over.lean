@@ -408,6 +408,7 @@ private def relativeRestrictionSitesIso (h : V ≤ U) :
     apply Opens.ext
     let f : relativeOpen h → V := (relativeHomeomorph h)
     let g : V → U := fun v ↦ ⟨v.val, h v.property⟩
+    -- `Opens.map` is direct image; the relative homeomorphism supplies its preimage carrier.
     change Subtype.val '' (f ⁻¹' (D : Set V)) = g '' (D : Set V)
     calc
       Subtype.val '' (f ⁻¹' (D : Set V)) = g '' (f '' (f ⁻¹' (D : Set V))) := by
@@ -464,6 +465,7 @@ lemma actualNestedRestrictionIso_hom_app_hom_app (h : V ≤ U)
   simp only [relativeRestrictionIso, sheafRestrictionCompositionIso,
     Functor.sheafPushforwardContinuousComp'_hom_app_hom_app]
   erw [Functor.sheafPushforwardContinuousComp'_hom_app_hom_app]
+  -- Both pushforward components are the presheaf maps of the corresponding open inclusions.
   change F.obj.map _ ≫ F.obj.map _ = F.obj.map _
   erw [← CategoryTheory.Functor.map_comp]
   congr 1

@@ -621,6 +621,7 @@ theorem resolutionExtClass_mapExactFunctor (n : ℕ) :
       { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := (mappedCyclesIso G K 0).inv
         comm₁₂ := by simp
         comm₂₃ := by
+          -- Mapping the short complex uses identity on its middle object and the cycle isomorphism.
           change 𝟙 _ ≫ (mappedResolution G K).toCycles 0 1 =
             G.map (K.toCycles 0 1) ≫ (mappedCyclesIso G K 0).inv
           rw [Category.id_comp]
@@ -632,6 +633,7 @@ theorem resolutionExtClass_mapExactFunctor (n : ℕ) :
       ← Ext.comp_assoc_of_second_deg_zero, mappedSuccExtClass_naturality G K hK n]
     rw [Ext.comp_assoc (a₂₃ := n + 2) _ _ _ _ (by omega) (by omega),
       CochainComplex.resolutionExtClass_succ]
+    -- `mappedResolution` is the mapped complex; its successor cycle class has this same composite.
     rfl
 
 /-- Exact functors transport the extension class of a cocycle. -/
