@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.KnotTheory.Khovanov.Homology
 public import TauCeti.KnotTheory.Khovanov.Resolution.Support
 public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Adequate
@@ -112,9 +113,10 @@ def khovanovBracketHomologyAllAIso (hA : D.IsAAdequate) :
   have h₀ : IsZero ((D.khovanovBracket hD R (-(D.stateLoopCount (cubeState ∅) : ℤ))).X (-1)) := by
     rw [khovanovBracket_apply]
     exact (D.resolutionCube hD R _).isZero_cubeComplex_X_of_neg (by simp)
-  ((D.khovanovBracket hD R _).isoHomologyπ (-1) 0 (by simp) (h₀.eq_of_src _ _)).symm ≪≫
-    (D.khovanovBracket hD R _).iCyclesIso 0 1 (by simp)
-      ((hA.isZero_khovanovBracket_X_one hD R).eq_of_tgt _ _) ≪≫
+  ((D.khovanovBracket hD R _).XIsoHomologyOfDEqZero 0
+      (by rw [CochainComplex.prev, zero_sub]; exact h₀.eq_of_src _ _)
+      (by rw [CochainComplex.next, zero_add]
+          exact (hA.isZero_khovanovBracket_X_one hD R).eq_of_tgt _ _)).symm ≪≫
     eqToIso (by rw [khovanovBracket_apply]) ≪≫
     (D.resolutionCube hD R _).cubeComplexXZeroIso ≪≫
     eqToIso (D.resolutionCube_obj hD R _ ∅) ≪≫
@@ -133,12 +135,9 @@ theorem homologyπ_khovanovBracketHomologyAllAIso_hom (hA : D.IsAAdequate) :
           eqToHom (D.resolutionCube_obj hD R _ ∅) ≫
             ModuleCat.ofHom ((Khovanov.circleBasis R _).coord (fun _ ↦ true) ∘ₗ
               Submodule.subtype _) := by
-  have h₀ : IsZero ((D.khovanovBracket hD R (-(D.stateLoopCount (cubeState ∅) : ℤ))).X (-1)) := by
-    rw [khovanovBracket_apply]
-    exact (D.resolutionCube hD R _).isZero_cubeComplex_X_of_neg (by simp)
-  simp only [khovanovBracketHomologyAllAIso, Iso.trans_hom, Iso.symm_hom, iCyclesIso_hom,
-    eqToIso.hom, LinearEquiv.toModuleIso_hom]
-  rw [← isoHomologyπ_hom _ (-1) 0 (by simp) (h₀.eq_of_src _ _), Iso.hom_inv_id_assoc]
+  simp only [khovanovBracketHomologyAllAIso, Iso.trans_hom, Iso.symm_hom,
+    XIsoHomologyOfDEqZero_inv, eqToIso.hom, LinearEquiv.toModuleIso_hom, Category.assoc]
+  rw [isoHomologyπ_hom_inv_id_assoc]
   ext x
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom, LinearEquiv.coe_coe,
     Khovanov.circlePieceEquivOfUnique_apply, Module.Basis.coord_apply, Submodule.subtype_apply]
@@ -152,9 +151,10 @@ def khovanovBracketHomologyAllBIso (hB : D.IsBAdequate) :
       IsZero ((D.khovanovBracket hD R (n + D.stateLoopCount (cubeState univ))).X (n + 1)) := by
     rw [khovanovBracket_apply]
     exact (D.resolutionCube hD R _).isZero_cubeComplex_X_of_card_lt (by simp)
-  ((D.khovanovBracket hD R _).isoHomologyπ (n - 1) n (by simp)
-      ((hB.isZero_khovanovBracket_X_sub_one hD R).eq_of_src _ _)).symm ≪≫
-    (D.khovanovBracket hD R _).iCyclesIso n (n + 1) (by simp) (h₀.eq_of_tgt _ _) ≪≫
+  ((D.khovanovBracket hD R _).XIsoHomologyOfDEqZero n
+      (by rw [CochainComplex.prev]
+          exact (hB.isZero_khovanovBracket_X_sub_one hD R).eq_of_src _ _)
+      (by rw [CochainComplex.next]; exact h₀.eq_of_tgt _ _)).symm ≪≫
     (D.khovanovBracket hD R _).XIsoOfEq (show (n : ℤ) = Fintype.card (Fin n) by simp) ≪≫
     eqToIso (by rw [khovanovBracket_apply]) ≪≫
     (D.resolutionCube hD R _).cubeComplexXTopIso ≪≫
@@ -176,10 +176,9 @@ theorem homologyπ_khovanovBracketHomologyAllBIso_hom (hB : D.IsBAdequate) :
               eqToHom (D.resolutionCube_obj hD R _ univ) ≫
                 ModuleCat.ofHom ((Khovanov.circleBasis R _).coord (fun _ ↦ false) ∘ₗ
                   Submodule.subtype _) := by
-  simp only [khovanovBracketHomologyAllBIso, Iso.trans_hom, Iso.symm_hom, iCyclesIso_hom,
-    eqToIso.hom, LinearEquiv.toModuleIso_hom]
-  rw [← isoHomologyπ_hom _ ((n : ℤ) - 1) (n : ℤ) (by simp)
-    ((hB.isZero_khovanovBracket_X_sub_one hD R).eq_of_src _ _), Iso.hom_inv_id_assoc]
+  simp only [khovanovBracketHomologyAllBIso, Iso.trans_hom, Iso.symm_hom,
+    XIsoHomologyOfDEqZero_inv, eqToIso.hom, LinearEquiv.toModuleIso_hom, Category.assoc]
+  rw [isoHomologyπ_hom_inv_id_assoc]
   ext x
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom, LinearEquiv.coe_coe,
     Khovanov.circlePieceEquivOfUnique_apply, Module.Basis.coord_apply, Submodule.subtype_apply]

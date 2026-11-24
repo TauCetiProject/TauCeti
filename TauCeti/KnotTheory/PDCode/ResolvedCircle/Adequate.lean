@@ -105,25 +105,14 @@ theorem IsBAdequate.stateLoopCount_add_one (hB : D.IsBAdequate) {t : Fin n → B
 
 end PDCode
 
-/-- A state of the trefoil that is constant away from one crossing, written out as a vector. -/
-private theorem update_const_eq_vec (b b' : Bool) (c : Fin 3) :
-    Function.update (fun _ ↦ b) c b' =
-      ![if c = 0 then b' else b, if c = 1 then b' else b, if c = 2 then b' else b] := by
-  funext i
-  fin_cases c <;> fin_cases i <;> rfl
-
-/-- A constant state of the trefoil, written out as a vector. -/
-private theorem const_eq_vec (b : Bool) : (fun _ : Fin 3 ↦ b) = ![b, b, b] := by
-  funext i
-  fin_cases i <;> rfl
-
 /-- **The standard right-handed trefoil diagram is A-adequate**: its all-A smoothing has two
 circles, and changing any crossing merges them. -/
 theorem rightHandedTrefoilPDCode_isAAdequate :
     rightHandedTrefoilPDCode.toPDCode.IsAAdequate := by
   rw [PDCode.isAAdequate_iff]
   intro c
-  rw [update_const_eq_vec, const_eq_vec, rightHandedTrefoilPDCode_stateLoopCount,
+  have h (v : Fin 3 → Bool) : v = ![v 0, v 1, v 2] := (FinVec.etaExpand_eq v).symm
+  rw [h (Function.update _ c _), h fun _ ↦ _, rightHandedTrefoilPDCode_stateLoopCount,
     rightHandedTrefoilPDCode_stateLoopCount]
   fin_cases c <;> rfl
 
@@ -133,7 +122,8 @@ theorem rightHandedTrefoilPDCode_isBAdequate :
     rightHandedTrefoilPDCode.toPDCode.IsBAdequate := by
   rw [PDCode.isBAdequate_iff]
   intro c
-  rw [update_const_eq_vec, const_eq_vec, rightHandedTrefoilPDCode_stateLoopCount,
+  have h (v : Fin 3 → Bool) : v = ![v 0, v 1, v 2] := (FinVec.etaExpand_eq v).symm
+  rw [h (Function.update _ c _), h fun _ ↦ _, rightHandedTrefoilPDCode_stateLoopCount,
     rightHandedTrefoilPDCode_stateLoopCount]
   fin_cases c <;> rfl
 
