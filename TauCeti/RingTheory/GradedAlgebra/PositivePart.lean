@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 
 /-!
@@ -39,6 +40,9 @@ a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotan
 * `TauCeti.map_positivePart_le`, `TauCeti.map_positivePart_mul_positivePart_le`: maps raising
   degrees carry `A⁺` into `B⁺`, and algebra maps carrying `A⁺` into `B⁺` carry `A⁺ · A⁺` into
   `B⁺ · B⁺`, the two hypotheses of `TauCeti.Indecomposables.map`.
+* `GradedAlgHom.map_positivePart_le`, `GradedAlgHom.map_positivePart_mul_positivePart_le`: a
+  degree-preserving algebra map discharges both hypotheses, so it induces a map on
+  indecomposables.
 * `TauCeti.mul_mem_positivePart_of_left`, `TauCeti.mul_mem_positivePart_of_right`: when `A`
   vanishes in negative degrees, `A⁺` is a two-sided ideal, and so is `A⁺ · A⁺`
   (`TauCeti.mul_mem_positivePart_mul_positivePart_of_left` and its mirror).
@@ -262,3 +266,26 @@ end Indecomposables
 end Indecomposables
 
 end TauCeti
+
+namespace GradedAlgHom
+
+open TauCeti
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
+  {𝒜 : ℤ → Submodule R A} {ℬ : ℤ → Submodule R B} [GradedAlgebra 𝒜] [GradedAlgebra ℬ]
+
+/-- A degree-preserving algebra map carries the positive part into the positive part. -/
+theorem map_positivePart_le (f : 𝒜 →ₐᵍ[R] ℬ) :
+    (positivePart 𝒜).map (f : A →ₐ[R] B).toLinearMap ≤ positivePart ℬ :=
+  TauCeti.map_positivePart_le le_rfl fun ha => by
+    simpa using Graded.map_mem f ha
+
+/-- A degree-preserving algebra map carries the decomposables `A⁺ · A⁺` into the decomposables
+`B⁺ · B⁺`. With `GradedAlgHom.map_positivePart_le` it discharges the hypotheses of
+`TauCeti.Indecomposables.map`, so it induces a map on indecomposables. -/
+theorem map_positivePart_mul_positivePart_le (f : 𝒜 →ₐᵍ[R] ℬ) :
+    (positivePart 𝒜 * positivePart 𝒜).map (f : A →ₐ[R] B).toLinearMap ≤
+      positivePart ℬ * positivePart ℬ :=
+  TauCeti.map_positivePart_mul_positivePart_le f.map_positivePart_le
+
+end GradedAlgHom

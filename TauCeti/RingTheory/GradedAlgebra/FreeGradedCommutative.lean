@@ -529,9 +529,11 @@ theorem sub_algebraMap_augmentation_mem_positivePart (hx : IsFreeGradedCommutati
 that `A = K ⊕ A⁺`. -/
 theorem ker_augmentation (hx : IsFreeGradedCommutative 𝒜 x deg) (hdeg : ∀ i, 0 < deg i) :
     LinearMap.ker hx.augmentation.toLinearMap = positivePart 𝒜 := by
-  refine le_antisymm (fun a ha => ?_) fun a ha => hx.augmentation_eq_zero_of_mem_positivePart ha
+  refine le_antisymm (fun a ha => ?_) fun a ha =>
+    LinearMap.mem_ker.2 (hx.augmentation_eq_zero_of_mem_positivePart ha)
+  rw [LinearMap.mem_ker, AlgHom.toLinearMap_apply] at ha
   have := hx.sub_algebraMap_augmentation_mem_positivePart hdeg a
-  rwa [show hx.augmentation a = 0 from ha, map_zero, sub_zero] at this
+  rwa [ha, map_zero, sub_zero] at this
 
 /-- The classes of the generators in the indecomposables are linearly independent: the
 coefficient of `x i` modulo decomposables is read off by `toTrivSqZeroExt`. -/
