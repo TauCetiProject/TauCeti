@@ -22,7 +22,7 @@ On the vertical strip `1 < Re s ≤ 2` (`s = 1 + η + i u`, `0 < η ≤ 1`), Had
 and level change give explicit upper bounds on `-Re (L'/L)(1 + η + i u, χ)` for nonprincipal
 characters:
 
-* `DirichletCharacter.exists_neg_re_logDeriv_LFunction_one_add_le_of_ne_one`: for every
+* `DirichletCharacter.exists_neg_re_logDeriv_LFunction_one_add_mul_I_le_of_ne_one`: for every
   nonprincipal character `ψ ≠ 1` modulo `q` (primitive or imprimitive),
   `-Re (L'/L)(1 + η + i u, ψ) ≤ (3 / 2) * log q + C * log (|u| + 3)`.
 * `DirichletCharacter.exists_neg_re_logDeriv_LFunction_one_add_mul_I_le_of_LFunction_eq_zero`:
@@ -46,7 +46,7 @@ namespace DirichletCharacter
 /-- On the strip `1 < Re s ≤ 2` (`s = 1 + η + i u`), every nonprincipal Dirichlet L-function
 satisfies `-Re (L'/L)(1 + η + i u, ψ) ≤ (3 / 2) * log q + C * log (|u| + 3)` for one absolute
 constant `C > 0`. -/
-theorem exists_neg_re_logDeriv_LFunction_one_add_le_of_ne_one :
+theorem exists_neg_re_logDeriv_LFunction_one_add_mul_I_le_of_ne_one :
     ∃ C : ℝ, 0 < C ∧ ∀ {q : ℕ} [NeZero q] (ψ : DirichletCharacter ℂ q), ψ ≠ 1 →
       ∀ {η : ℝ}, 0 < η → η ≤ 1 → ∀ u : ℝ,
       -(logDeriv ψ.LFunction (1 + η + u * I)).re ≤

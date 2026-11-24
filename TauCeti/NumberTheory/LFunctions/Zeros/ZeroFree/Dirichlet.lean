@@ -427,7 +427,7 @@ private theorem primitive_nonprincipal_zeroFreeRegion :
   obtain ⟨C_prin, hCp, hprin⟩ := exists_neg_re_logDeriv_LFunctionTrivChar_one_add_le
   obtain ⟨C_zero, hCz, hsingle⟩ :=
     exists_neg_re_logDeriv_LFunction_one_add_mul_I_le_of_LFunction_eq_zero
-  obtain ⟨C_ne, hCne, hnonprin⟩ := exists_neg_re_logDeriv_LFunction_one_add_le_of_ne_one
+  obtain ⟨C_ne, hCne, hnonprin⟩ := exists_neg_re_logDeriv_LFunction_one_add_mul_I_le_of_ne_one
   obtain ⟨C_ζ, hCζ, hζ_raw⟩ := exists_neg_re_logDeriv_riemannZeta_one_add_mul_I_le
   obtain ⟨C_sum, _, hsum⟩ := exists_sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le
   let K₁ : ℝ := 3 * (C_prin + 1) + 4 * (1 / 2 + C_zero) + max (3 / 2 + 2 * C_ne) (1 + 2 * C_ζ)
