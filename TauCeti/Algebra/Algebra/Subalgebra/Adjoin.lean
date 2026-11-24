@@ -25,6 +25,7 @@ to noncommutative ambient algebras, using the same span calculation.
 
 * `TauCeti.Algebra.adjoin_algebraMap_mul_add_algebraMap_eq_adjoin`: an affine change with a
   unit multiplier generates the same subalgebra.
+* `TauCeti.Algebra.adjoin_sub_one_eq_adjoin`: `x - 1` and `x` generate the same subalgebra.
 * `TauCeti.Algebra.adjoin_two_mul_sub_one_eq_top`: `2x - 1` generates the whole algebra when
   `x` does and `2` is a unit.
 * `TauCeti.rank_adjoin_eq_rank_adjoin_range`: adjoining a set to `F` or to the image of `F` in a
@@ -58,6 +59,11 @@ theorem adjoin_algebraMap_mul_add_algebraMap_eq_adjoin {a : F} (ha : IsUnit a) (
     rw [hx]
     exact sub_mem (mul_mem (Subalgebra.algebraMap_mem _ _)
       (Algebra.subset_adjoin (Set.mem_singleton _))) (Subalgebra.algebraMap_mem _ _)
+
+/-- The elements `x - 1` and `x` generate the same subalgebra. -/
+theorem adjoin_sub_one_eq_adjoin (x : E) : Algebra.adjoin F {x - 1} = Algebra.adjoin F {x} := by
+  simpa [← sub_eq_add_neg] using
+    adjoin_algebraMap_mul_add_algebraMap_eq_adjoin (isUnit_one (M := F)) (-1) x
 
 /-- If `x` generates an algebra over a commutative ring in which `2` is a unit, then so does
 `2x - 1`. -/

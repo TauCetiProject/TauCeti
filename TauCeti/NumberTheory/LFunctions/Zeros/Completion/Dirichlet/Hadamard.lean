@@ -620,31 +620,4 @@ example :
       0 < (1 / ((2 : ℂ) - ((1 / 2 : ℂ) + 14 * I))).re := by
   norm_num [Complex.div_re, Complex.normSq_apply]
 
-/-- A nonreal character: there is a primitive character `χ` modulo `5` of order `4`, so
-`χ⁻¹ ≠ χ`, and with `S = ∅` at `σ = 2` the finite-sum inequality reads
-`0 ≤ Re (L'/L)(2, χ) + ½ log 5 + C_Γ`. A statement restricted to real characters would say
-nothing here. -/
-example :
-    ∃ χ : DirichletCharacter ℂ 5, orderOf χ = 4 ∧ χ⁻¹ ≠ χ ∧ χ.IsPrimitive ∧
-      0 ≤ (logDeriv χ.LFunction 2).re + Real.log 5 / 2 + gammaLogDerivBound := by
-  have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
-  obtain ⟨χ, hχ⟩ := MulChar.exists_mulChar_orderOf (ZMod 5) (n := 4)
-    (by rw [ZMod.card]) isPrimitiveRoot_I
-  have hne : χ ≠ 1 := by
-    rintro rfl
-    rw [orderOf_one] at hχ
-    exact absurd hχ (by norm_num)
-  have hprim : DirichletCharacter.IsPrimitive χ := by
-    rcases Nat.prime_five.eq_one_or_self_of_dvd _ (DirichletCharacter.conductor_dvd_level χ) with
-      h | h
-    · exact absurd (DirichletCharacter.eq_one_iff_conductor_eq_one.mpr h) hne
-    · exact (DirichletCharacter.isPrimitive_def χ).mpr h
-  refine ⟨χ, hχ, fun hinv ↦ ?_, hprim, ?_⟩
-  · have horder : orderOf χ ≤ 2 :=
-      (isSelfInv_iff_isOfFinOrder_and_orderOf_le_two.mp (isSelfInv_iff.mpr hinv)).2
-    norm_num [hχ] at horder
-  · simpa using
-      sum_analyticOrderNatAt_LFunction_mul_re_one_div_sub_le_re_logDeriv_LFunction_add
-        χ hprim hne ∅ (by simp) (σ := 2) ⟨by norm_num, le_rfl⟩
-
 end DirichletCharacter

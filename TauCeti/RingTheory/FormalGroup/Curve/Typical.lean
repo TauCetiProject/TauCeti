@@ -416,7 +416,7 @@ theorem IsPTypical.coeff_subst_log_eq_zero [Algebra ℚ R] {p : ℕ} {γ : F.Cur
   simpa only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logIso_toHom,
     logHom_toPowerSeries] using
     (hγ.mapCurve F.logIso.toHom).coeff_𝔾ₐ_eq_zero
-      (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero hq.ne_zero) hk
+      (fun _ hq _ ↦ TauCeti.isUnit_natCast_of_ne_zero ℚ hq.ne_zero) hk
 
 end IsPTypical
 
