@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Divergence
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.DifferentiatedSymmetries
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
@@ -74,6 +75,8 @@ trace of `derivCurvatureTensor`.
   the trace of `∇Ric` is the derivative of scalar curvature.
 * `CovariantDerivative.IsMetricCompatible.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature`:
   the twice contracted second Bianchi identity `2 div Ric = d Scal`.
+* `CovariantDerivative.IsMetricCompatible.two_smul_divBilinearTensor_ricciTensor`: the same
+  identity for the divergence of the Ricci tensor as a field of bilinear forms.
 
 ## References
 
@@ -416,5 +419,17 @@ theorem IsMetricCompatible.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvat
     simp only [cov.sum_inner_derivCurvatureTensor_eq_derivRicciTensor,
       hcov.derivRicciTensor_comm ht x v]
   linarith
+
+/-- **The twice contracted second Bianchi identity** `2 div Ric = d Scal`, as an identity of
+covectors with the divergence `CovariantDerivative.divBilinearTensor` of the Ricci tensor. -/
+theorem IsMetricCompatible.two_smul_divBilinearTensor_ricciTensor
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0) (x : M) :
+    (2 : ℝ) • cov.divBilinearTensor (fun y ↦ (cov.ricciTensor y).toContinuousBilinearMap) x =
+      mvfderiv I cov.scalarCurvature x := by
+  ext v
+  rw [smul_apply, smul_eq_mul,
+    cov.divBilinearTensor_apply_eq_sum _ (stdOrthonormalBasis ℝ (TangentSpace I x)),
+    ← derivRicciTensor_def, hcov.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature ht]
 
 end CovariantDerivative
