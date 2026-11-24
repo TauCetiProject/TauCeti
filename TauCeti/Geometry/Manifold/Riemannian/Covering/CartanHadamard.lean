@@ -342,6 +342,29 @@ theorem proj_cartanHadamardHomeomorphUniversalCover
     UniversalCover.proj (cartanHadamardHomeomorphUniversalCover hK p v) = riemannianExp I M p v :=
   congrFun (cartanHadamard_exists_homeomorph_universalCover hK p).choose_spec.2 v
 
+/-- Under the inverse of `cartanHadamardHomeomorphUniversalCover`, `exp_p` becomes the projection
+of the universal cover. -/
+@[simp]
+theorem riemannianExp_cartanHadamardHomeomorphUniversalCover_symm
+    (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
+      (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
+        x u w ≤ 0) (p : M) (z : UniversalCover p) :
+    riemannianExp I M p ((cartanHadamardHomeomorphUniversalCover hK p).symm z) =
+      UniversalCover.proj z := by
+  rw [← proj_cartanHadamardHomeomorphUniversalCover hK, Homeomorph.apply_symm_apply]
+
+/-- The inverse of `cartanHadamardHomeomorphUniversalCover` sends the base point, the class of the
+constant path at `p`, to `0`. -/
+@[simp]
+theorem cartanHadamardHomeomorphUniversalCover_symm_mk_refl
+    (hK : ∀ x : M, ∀ u w : TangentSpace I x, LinearIndependent ℝ ![u, w] →
+      (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
+        x u w ≤ 0) (p : M) :
+    (cartanHadamardHomeomorphUniversalCover hK p).symm
+      (UniversalCover.mk p (Path.Homotopic.Quotient.refl p)) = 0 := by
+  rw [← UniversalCover.basepointLift_coe, ← cartanHadamardHomeomorphUniversalCover_zero hK p,
+    Homeomorph.symm_apply_apply]
+
 /-- The universal cover of a complete Riemannian manifold of nonpositive sectional curvature, at any
 base point, is contractible. -/
 theorem cartanHadamard_contractibleSpace_universalCover
