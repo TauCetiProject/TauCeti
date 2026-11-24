@@ -96,6 +96,12 @@ private theorem finite_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 ∨ 
   H.isCofinite_map_sl2zToPSL2R.finite_ellipticOrbits.subset fun q hq ↦
     (H.mem_ellipticOrbits_map_sl2zToPSL2R_iff q).mpr (hq ▸ hm)
 
+/-- A finite sum of a constant over a finite set is the cardinality of the set times the
+constant. -/
+private theorem finsum_mem_const {α : Type*} {s : Set α} (hs : s.Finite) (c : ℝ) :
+    ∑ᶠ _ ∈ s, c = s.ncard * c := by
+  simp [finsum_mem_eq_finite_toFinset_sum _ hs, Set.ncard_eq_toFinset_card _ hs]
+
 /-- On the orbits of stabilizer order `m ∈ {2, 3}` the summand `1 - 1 / m` of the elliptic defect
 is constant, so its sum is `1 - 1 / m` times the number of such orbits. -/
 private theorem finsum_mem_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 ∨ m = 3) :
@@ -103,10 +109,8 @@ private theorem finsum_mem_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 
         (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹) =
       Nat.card {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = m} *
         (1 - (m : ℝ)⁻¹) := by
-  have hs := H.finite_setOf_cardStabilizerOnOrbit_eq hm
-  rw [finsum_mem_congr rfl fun q (hq : cardStabilizerOnOrbit q = m) ↦ by rw [hq],
-    finsum_mem_eq_finite_toFinset_sum _ hs, Finset.sum_const, nsmul_eq_mul,
-    ← Set.ncard_eq_toFinset_card _ hs, ← Nat.card_coe_set_eq, Set.coe_ofPred]
+  rw [finsum_mem_congr rfl fun q (hq : cardStabilizerOnOrbit q = m) ↦ by rw [hq]]
+  exact finsum_mem_const (H.finite_setOf_cardStabilizerOnOrbit_eq hm) _
 
 /-- **The elliptic defect of a finite-index subgroup of `SL(2, ℤ)`.** Summing `1 - 1 / m` over the
 elliptic orbits, of orders `m = 2` and `m = 3`, gives `ε₂ / 2 + 2 ε₃ / 3`. -/
@@ -160,13 +164,9 @@ theorem twelve_mul_genus_compactifiedQuotient_map_sl2zToPSL2R_add :
     H.finsum_mem_ellipticOrbits_map_sl2zToPSL2R, Nat.card_unique, ← relIndex,
     H.relIndex_map_sl2zToPSL2R] at hR
   rw [hR] at hRH
-  have : (12 * genus (H.map sl2zToPSL2R).CompactifiedQuotient +
-        3 * Nat.card {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 2} +
-        4 * Nat.card {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = 3} +
-        6 * Nat.card (H.map sl2zToPSL2R).CuspOrbit : ℝ) = 12 + H.withCenter.index := by
-    push_cast at hRH
-    linarith
-  exact_mod_cast this
+  rw [← Nat.cast_inj (R := ℝ)]
+  push_cast at hRH ⊢
+  linarith
 
 /-- **The genus formula for modular curves** (Diamond–Shurman, Theorem 3.1.1). For a finite-index
 subgroup `H ≤ SL(2, ℤ)`, the genus of `X(H)` is `1 + d / 12 - ε₂ / 4 - ε₃ / 3 - ε∞ / 2`, where
