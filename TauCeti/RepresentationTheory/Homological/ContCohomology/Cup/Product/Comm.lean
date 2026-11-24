@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Hom.Instances
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.Topology.Algebra.Group.Hom
 
 /-!
@@ -20,7 +20,7 @@ a ⌣_μ b = (-1)^{pq} (b ⌣_{μᵒᵖ} a)
 ```
 
 for every bidegree `(p, q)` with `p + q ≤ 2` on the explicit low-degree model built in
-`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product`.
+`TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic`.
 
 ## Main statements
 

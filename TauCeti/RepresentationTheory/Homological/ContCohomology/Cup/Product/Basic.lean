@@ -133,7 +133,7 @@ theorem pairingLeft_apply (m : H0 G M) (x : N) : pairingLeft μ hequiv m x = μ 
 theorem continuous_pairingLeft [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P]
     (hμ : Continuous fun p : M × N => μ p.1 p.2) (m : H0 G M) :
     Continuous (pairingLeft μ hequiv m) :=
-  hμ.comp (continuous_const.prodMk continuous_id)
+  hμ.uncurry_left (f := (μ · ·)) (m : M)
 
 end PairingLeft
 
@@ -177,7 +177,7 @@ theorem pairingRight_apply (n : H0 G N) (m : M) : pairingRight μ hequiv n m = �
 theorem continuous_pairingRight [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P]
     (hμ : Continuous fun p : M × N => μ p.1 p.2) (n : H0 G N) :
     Continuous (pairingRight μ hequiv n) :=
-  hμ.comp (continuous_id.prodMk continuous_const)
+  hμ.uncurry_right (f := (μ · ·)) (n : N)
 
 end PairingRight
 
@@ -260,7 +260,7 @@ theorem explicitCup01_apply (m : H0 G M) :
 theorem explicitCup01_mk (m : H0 G M) (b : Z1 G N) :
     explicitCup01 G M N P μ hμ hequiv m (b : H1 G N) =
       ((⟨fun g => μ (m : M) ((b : G → N) g),
-        cup01_mem_Z1 G M N P μ hequiv m (hμ.comp (continuous_const.prodMk continuous_id))
+        cup01_mem_Z1 G M N P μ hequiv m (hμ.uncurry_left (f := (μ · ·)) (m : M))
           b.property⟩ : Z1 G P) : H1 G P) := by
   rw [explicitCup01_apply, explicitCoeff1_mk]
   exact congrArg (fun z : Z1 G P => (z : H1 G P))
@@ -325,7 +325,7 @@ theorem explicitCup10_mk (a : Z1 G M) (n : H0 G N) :
     explicitCup10 G M N P μ hμ hequiv (a : H1 G M) n =
       ((⟨fun g => μ ((a : G → M) g) (g • (n : N)),
         cup10_mem_Z1 G M N P μ hequiv a.property n
-          (hμ.comp (continuous_id.prodMk continuous_const))⟩ : Z1 G P) : H1 G P) := by
+          (hμ.uncurry_right (f := (μ · ·)) (n : N))⟩ : Z1 G P) : H1 G P) := by
   rw [explicitCup10_apply, explicitCoeff1_mk]
   exact congrArg (fun z : Z1 G P => (z : H1 G P))
     (Subtype.ext (funext fun g => by simp [coe_cocyclesMap1, n.property g]))
@@ -386,7 +386,7 @@ theorem explicitCup02_apply (m : H0 G M) :
 theorem explicitCup02_mk (m : H0 G M) (b : Z2 G N) :
     explicitCup02 G M N P μ hμ hequiv m (b : H2 G N) =
       ((⟨fun q : G × G => μ (m : M) ((b : G × G → N) q),
-        cup02_mem_Z2 G M N P μ hequiv m (hμ.comp (continuous_const.prodMk continuous_id))
+        cup02_mem_Z2 G M N P μ hequiv m (hμ.uncurry_left (f := (μ · ·)) (m : M))
           b.property⟩ : Z2 G P) : H2 G P) := by
   rw [explicitCup02_apply, explicitCoeff2_mk]
   exact congrArg (fun z : Z2 G P => (z : H2 G P))
@@ -450,7 +450,7 @@ theorem explicitCup20_mk (a : Z2 G M) (n : H0 G N) :
     explicitCup20 G M N P μ hμ hequiv (a : H2 G M) n =
       ((⟨fun q : G × G => μ ((a : G × G → M) q) ((q.1 * q.2) • (n : N)),
         cup20_mem_Z2 G M N P μ hequiv a.property n
-          (hμ.comp (continuous_id.prodMk continuous_const))⟩ : Z2 G P) : H2 G P) := by
+          (hμ.uncurry_right (f := (μ · ·)) (n : N))⟩ : Z2 G P) : H2 G P) := by
   rw [explicitCup20_apply, explicitCoeff2_mk]
   exact congrArg (fun z : Z2 G P => (z : H2 G P))
     (Subtype.ext (funext fun q => by
@@ -584,7 +584,7 @@ noncomputable def explicitCup11 : H1 G M →+ H1 G N →+ H2 G P :=
       induction x using QuotientAddGroup.induction_on with
       | _ b =>
         exact (QuotientAddGroup.eq_zero_iff _).2 <| AddSubgroup.mem_addSubgroupOf.2 <|
-          cup11_mem_B2_left G M N P μ (fun _ => hμ.comp (continuous_const.prodMk continuous_id))
+          cup11_mem_B2_left G M N P μ (fun m => hμ.uncurry_left (f := (μ · ·)) m)
             hequiv (AddSubgroup.mem_addSubgroupOf.1 ha) b.property
 
 /-- The cochain formula for the `(1,1)` cup on the classes of two continuous `1`-cocycles. -/

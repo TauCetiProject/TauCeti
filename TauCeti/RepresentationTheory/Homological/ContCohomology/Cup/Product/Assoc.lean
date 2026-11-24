@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 
 /-!
 # Associativity of explicit low-degree cup products
@@ -20,7 +20,7 @@ composites are equal:
 ```
 
 This file proves all ten tridegrees `(p, q, r)` with `p + q + r ≤ 2` on the explicit low-degree
-model built in `TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product`, together
+model built in `TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic`, together
 with their specialization to a topological `G`-ring `R` with all four pairings given by
 multiplication.
 

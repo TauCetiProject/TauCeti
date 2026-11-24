@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Comm
@@ -190,7 +190,7 @@ theorem explicitDelta1_explicitCup01_left [IsTopologicalAddGroup B] [ContinuousS
     have hleft := SC.explicitDelta1_apply
       (⟨fun g => μ'' (x : A'') ((β : G → B) g),
         cup01_mem_Z1 G A'' B C'' μ'' hequiv'' x
-          (hμ''.comp (continuous_const.prodMk continuous_id)) β.property⟩ : Z1 G C'')
+          (hμ''.uncurry_left (f := (μ'' · ·)) (x : A'')) β.property⟩ : Z1 G C'')
       hecont he (a := fun q : G × G => μ' (α q.1) (q.1 • (β : G → B) q.2)) hcup
     have hright := SA.explicitDelta0_apply x ha hαi'
     simp only [QuotientAddGroup.mk'_apply] at hleft hright
