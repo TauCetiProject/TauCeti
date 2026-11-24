@@ -184,11 +184,13 @@ theorem with_finiteType_algebraIsPushout_of_isPullback
   have : Algebra.FiniteType R Γ(X, U) :=
     hRX ▸ finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
   have hcomp : hU.fromSpec ≫ toR = Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U))) := by
+    -- `X ↘ Spec (.of R)` is definitionally `toR` via the local `Over` instance above.
     change hU.fromSpec ≫ (X ↘ Spec (.of R)) = _
     rw [hU.fromSpec_comp_eq_SpecMap (X ↘ Spec (.of R)), hRX, RingHom.algebraMap_toAlgebra,
       Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.ofHom_hom]
   have hS : algebraMap S Γ(Y, g ⁻¹ᵁ U) =
       ((Scheme.ΓSpecIso (.of S)).inv ≫ toS.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom := by
+    -- `Y ↘ Spec (.of S)` is definitionally `toS` via the local `Over` instance above.
     change _ = ((Scheme.ΓSpecIso (.of S)).inv ≫ (Y ↘ Spec (.of S)).appLE ⊤ (g ⁻¹ᵁ U) le_top).hom
     rw [hSY, RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
   exact hP hcomp hS hXY
