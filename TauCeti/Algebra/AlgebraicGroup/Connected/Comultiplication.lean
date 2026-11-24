@@ -12,7 +12,6 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 import TauCeti.Algebra.AlgebraicGroup.Connected.Translation
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 import TauCeti.RingTheory.FiniteType.PointSeparation
-import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.Idempotents
@@ -306,11 +305,9 @@ theorem identityComponentHopfIdeal_toIdeal_le_ker_of_connected
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
   -- `f` pulls the augmentation point of `K` back to that of `H`, since it preserves counits.
   have hz : PrimeSpectrum.comap f.hom.toAlgHom.toRingHom (Bialgebra.augmentationPoint k K) =
-      Bialgebra.augmentationPoint k H := by
-    ext y
-    change f.hom y ∈ (Bialgebra.augmentationPoint k K).asIdeal ↔ _
-    rw [AlgHom.kernelPoint_asIdeal, AlgHom.kernelPoint_asIdeal, RingHom.mem_ker, RingHom.mem_ker]
-    simp only [AlgHom.coe_toRingHom, Bialgebra.counitAlgHom_apply, CoalgHomClass.counit_comp_apply]
+      Bialgebra.augmentationPoint k H :=
+    (AlgHom.comap_kernelPoint (Bialgebra.counitAlgHom k K) f.hom.toAlgHom).trans
+      (congrArg AlgHom.kernelPoint (BialgHom.counitAlgHom_comp f.hom))
   rw [HopfAlgebra.identityComponentHopfIdeal_toIdeal, ← hz]
   exact PrimeSpectrum.connectedComponentIdeal_comap_le_ker _ _
 
