@@ -258,12 +258,12 @@ theorem mem_qPochhammerIntDomain {a : R} {q : Rˣ} {j : ℤ} :
   Iff.rfl
 
 /-- Every nonnegative index lies in the domain of the integer-indexed q-Pochhammer product. -/
+@[simp]
 theorem mem_qPochhammerIntDomain_of_nonneg {a : R} {q : Rˣ} {j : ℤ} (hj : 0 ≤ j) :
     j ∈ qPochhammerIntDomain a q :=
   fun _ hi hi₀ ↦ absurd (hj.trans hi) hi₀.not_ge
 
 /-- Every natural index lies in the domain of the integer-indexed q-Pochhammer product. -/
-@[simp]
 theorem natCast_mem_qPochhammerIntDomain (a : R) (q : Rˣ) (n : ℕ) :
     (n : ℤ) ∈ qPochhammerIntDomain a q :=
   mem_qPochhammerIntDomain_of_nonneg n.cast_nonneg
@@ -315,13 +315,25 @@ theorem qPochhammerInt_natCast (n : ℕ) (hn : (n : ℤ) ∈ qPochhammerIntDomai
   rw [qPochhammerInt_of_nonneg n.cast_nonneg, Int.toNat_natCast]
 
 /-- `(a; q)_0 = 1`, for every `a`. -/
-@[simp]
 theorem qPochhammerInt_zero (h : (0 : ℤ) ∈ qPochhammerIntDomain a q) :
     qPochhammerInt a q 0 h = 1 :=
   qPochhammerInt_natCast 0 h
 
-/-- For `j ≤ 0`, `(a; q)_j (a q ^ j; q)_{-j} = 1`. -/
-private theorem qPochhammerInt_mul_qPochhammer_of_nonpos {j : ℤ} (hj₀ : j ≤ 0)
+/-- `(a; q)_1 = 1 - a`. -/
+theorem qPochhammerInt_one (h : (1 : ℤ) ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q 1 h = 1 - a := by
+  simpa using qPochhammerInt_natCast 1 h
+
+/-- At a numeral index the integer-indexed product is the finite product. -/
+@[simp]
+theorem qPochhammerInt_ofNat (n : ℕ)
+    (h : (ofNat(n) : ℤ) ∈ qPochhammerIntDomain a q) :
+    qPochhammerInt a q ofNat(n) h = qPochhammer a q ofNat(n) :=
+  qPochhammerInt_natCast n h
+
+/-- For `j ≤ 0`, `(a; q)_j (a q ^ j; q)_{-j} = 1`: a nonpositive-index product is the inverse of
+the finite product `(a q ^ j; q)_{-j}`. -/
+theorem qPochhammerInt_mul_qPochhammer_of_nonpos {j : ℤ} (hj₀ : j ≤ 0)
     (hj : j ∈ qPochhammerIntDomain a q) :
     qPochhammerInt a q j hj * qPochhammer (a * ↑(q ^ j)) q (-j).toNat = 1 := by
   rcases hj₀.lt_or_eq with hj₀ | rfl
@@ -351,10 +363,10 @@ private theorem qPochhammerInt_mul_qPochhammer_of_nonneg {j : ℤ}
       ← Nat.cast_add, Int.toNat_natCast]
   · obtain ⟨n, rfl⟩ := Int.exists_eq_neg_ofNat hj₀.le
     obtain ⟨k, rfl⟩ : ∃ k, N = n + k := ⟨N - n, by omega⟩
-    rw [qPochhammer_add, ← mul_assoc, qPochhammerInt_neg_natCast_mul, one_mul, mul_assoc,
-      val_zpow_mul_pow, neg_add_cancel, zpow_zero, Units.val_one, mul_one]
-    congr 1
-    omega
+    have hshift : a * ↑(q ^ (-(n : ℤ))) * ↑q ^ n = a := by
+      rw [mul_assoc, val_zpow_mul_pow, neg_add_cancel, zpow_zero, Units.val_one, mul_one]
+    rw [qPochhammer_add, ← mul_assoc, qPochhammerInt_neg_natCast_mul, one_mul, hshift,
+      show (-(n : ℤ) + ↑(n + k)).toNat = k by omega]
 
 /-- **Concatenation with a natural second index**: `(a; q)_{i + N} = (a; q)_i (a q ^ i; q)_N`
 for every integer `i` and natural `N` with both products defined. -/
@@ -365,9 +377,11 @@ theorem qPochhammerInt_add_natCast {i : ℤ} (N : ℕ) (hi : i ∈ qPochhammerIn
   · rw [qPochhammerInt_of_nonneg h₀, qPochhammerInt_mul_qPochhammer_of_nonneg hi N h₀]
   · -- Both sides are left inverses of the unit `(a q ^ (i + N); q)_{-(i + N)}`.
     refine (mem_qPochhammerIntDomain_iff_isUnit.mp hiN).mul_left_inj.mp ?_
-    rw [qPochhammerInt_mul_qPochhammer_of_nonpos h₀.le, mul_assoc, ← val_zpow_mul_pow,
-      ← mul_assoc a, ← qPochhammer_add, show N + (-(i + N)).toNat = (-i).toNat by omega,
-      qPochhammerInt_mul_qPochhammer_of_nonpos (by omega)]
+    have hshift : a * ↑(q ^ i) * ↑q ^ N = a * ↑(q ^ (i + N)) := by
+      rw [mul_assoc, val_zpow_mul_pow]
+    have hlen : N + (-(i + N)).toNat = (-i).toNat := by omega
+    rw [qPochhammerInt_mul_qPochhammer_of_nonpos h₀.le, mul_assoc, ← hshift, ← qPochhammer_add,
+      hlen, qPochhammerInt_mul_qPochhammer_of_nonpos (by omega)]
 
 /-- The recursion `(a; q)_{j + 1} = (a; q)_j (1 - a q ^ j)`, for every integer `j` with both
 products defined. -/
@@ -390,9 +404,10 @@ theorem qPochhammerInt_add {i j : ℤ} (hi : i ∈ qPochhammerIntDomain a q)
     refine (mem_qPochhammerIntDomain_iff_isUnit.mp hj).mul_left_inj.mp ?_
     have hi' : i + j + ((-j).toNat : ℤ) ∈ qPochhammerIntDomain a q := by
       rwa [show i + j + ((-j).toNat : ℤ) = i by omega]
+    have hshift : a * ↑(q ^ i) * ↑(q ^ j) = a * ↑(q ^ (i + j)) := by
+      rw [mul_assoc, ← Units.val_mul, ← zpow_add]
     rw [mul_assoc (qPochhammerInt a q i hi), qPochhammerInt_mul_qPochhammer_of_nonpos hj₀.le,
-      mul_one, mul_assoc,
-      ← Units.val_mul, ← zpow_add, ← qPochhammerInt_add_natCast _ hij hi']
+      mul_one, hshift, ← qPochhammerInt_add_natCast _ hij hi']
     congr 1
     omega
 
