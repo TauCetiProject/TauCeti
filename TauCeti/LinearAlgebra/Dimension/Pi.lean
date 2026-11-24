@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import Mathlib.RingTheory.Ideal.Defs
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 
 /-!
-# The dimension of a finite product of lines and zero spaces
+# The dimension of a finite product
 
 Over a ring `R` with the strong rank condition (for instance a division ring), let
 `M : J → Type*` be a finite family of free `R`-modules, each of which is either a line
@@ -19,6 +21,10 @@ Over a ring `R` with the strong rank condition (for instance a division ring), l
 (`TauCeti.finite_pi_of_finrank_eq_one`) and has dimension the number of lines
 (`TauCeti.finrank_pi_eq_card_of_finrank_eq_one`). This is the form in which Krull–Schmidt
 multiplicities show up as dimensions over residue division rings.
+
+Over a domain `R`, a finite product of nonzero ideals has rank the number of factors
+(`Module.rank_pi_ideal`): it sits between `Rⁿ` and a copy of `Rⁿ` scaled into it. Hence so does
+any module isomorphic to such a product (`Module.finrank_eq_card_of_linearEquiv_pi`).
 -/
 
 public section
@@ -60,3 +66,36 @@ theorem finrank_pi_eq_card_of_finrank_eq_one (h₁ : ∀ j, p j → finrank R (M
   simp [hdim, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
 end TauCeti
+
+section Rank
+
+variable {R ι : Type*} [CommRing R] [IsDomain R] [Fintype ι]
+
+/-- A finite product of nonzero ideals of a domain has rank equal to the number of factors. -/
+theorem Module.rank_pi_ideal {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥) :
+    Module.rank R ((i : ι) → J i) = Fintype.card ι := by
+  choose a ha ha0 using fun i ↦ Submodule.exists_mem_ne_zero_of_ne_bot (hJ i)
+  -- the inclusion into `Rⁿ`, and the scaling `v ↦ (vᵢ aᵢ)ᵢ` from `Rⁿ`
+  let incl : ((i : ι) → J i) →ₗ[R] ι → R := LinearMap.pi fun i ↦ (J i).subtype ∘ₗ .proj i
+  let scale : (ι → R) →ₗ[R] (i : ι) → J i :=
+    LinearMap.pi fun i ↦ LinearMap.toSpanSingleton R (J i) ⟨a i, ha i⟩ ∘ₗ .proj i
+  have hincl : Function.Injective incl := fun v w h ↦ funext fun i ↦
+    Subtype.ext (congrFun h i)
+  have hscale : Function.Injective scale := by
+    refine (injective_iff_map_eq_zero _).mpr fun v hv ↦ funext fun i ↦ ?_
+    have := congrArg Subtype.val (congrFun hv i)
+    simp [scale] at this
+    exact this.resolve_right (ha0 i)
+  apply le_antisymm
+  · simpa [rank_fun'] using incl.lift_rank_le_of_injective hincl
+  · simpa [rank_fun'] using scale.lift_rank_le_of_injective hscale
+
+/-- A module isomorphic to a finite product of nonzero ideals of a domain has rank the number of
+factors. -/
+theorem Module.finrank_eq_card_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module R M]
+    {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥) (e : M ≃ₗ[R] (i : ι) → J i) :
+    Module.finrank R M = Fintype.card ι := by
+  rw [e.finrank_eq]
+  exact Module.finrank_eq_of_rank_eq (Module.rank_pi_ideal hJ)
+
+end Rank
