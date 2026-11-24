@@ -9,13 +9,13 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 public import TauCeti.Algebra.ContinuedFractions.ReductionOfOrder
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.KummerLaplace
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper
+import TauCeti.Analysis.Asymptotics.Sum.Divergence
 import TauCeti.Analysis.Asymptotics.Sum.Telescoping
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
-import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
