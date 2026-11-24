@@ -31,14 +31,14 @@ namespace Ideal
 
 variable {R : Type u} [CommRing R] (J : Ideal R) (M : Type v) [AddCommGroup M] [Module R M]
 
-/-- The extension of scalars of an `R`-module `M` along `R → R ⧸ J` is `M ⧸ J • M`: the
-identification of the extension of scalars with `(R ⧸ J) ⊗[R] M`
-(`ModuleCat.extendScalarsAlgebraMapIso`) followed by the isomorphism
-`TensorProduct.quotTensorEquivQuotSMul`, which is `R ⧸ J`-linear because `R → R ⧸ J` is
-surjective. -/
+/-- The extension of scalars of an `R`-module `M` along `R → R ⧸ J` is `M ⧸ J • M`, as
+`R ⧸ J`-modules. -/
 noncomputable def extendScalarsMkEquivQuotSMul :
     (ModuleCat.extendScalars.{u, u, v} (Ideal.Quotient.mk J)).obj (ModuleCat.of R M) ≃ₗ[R ⧸ J]
       M ⧸ (J • ⊤ : Submodule R M) :=
+  -- Identify the extension of scalars with `(R ⧸ J) ⊗[R] M`
+  -- (`ModuleCat.extendScalarsAlgebraMapIso`), then apply `TensorProduct.quotTensorEquivQuotSMul`,
+  -- which is `R ⧸ J`-linear because `R → R ⧸ J` is surjective.
   (ModuleCat.extendScalarsAlgebraMapIso (S := R ⧸ J) (ModuleCat.of R M)).toLinearEquiv ≪≫ₗ
     (TensorProduct.quotTensorEquivQuotSMul M J).extendScalarsOfSurjective
       Ideal.Quotient.mk_surjective

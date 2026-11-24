@@ -63,7 +63,6 @@ noncomputable def ofIdealTopSectionsEquiv :
         rfl)
       map_smul' r a := sheafι_app_injective _ _ (by
         -- `R` acts on the global sections through `Γ(Spec R, ⊤) ≅ R`.
-        change _ = Scheme.Modules.Hom.app _ ⊤ ((Scheme.ΓSpecIso R).inv r • _)
         refine Eq.trans ?_ (Scheme.Modules.Hom.app_smul (ofIdealTop _).sheafι _ _).symm
         simp
         rfl) }
@@ -74,13 +73,11 @@ noncomputable def ofIdealTopSectionsEquiv :
           rw [sheafι_app_ofIdealTopSectionsMk, sheafι_app_ofIdealTopSectionsMk] at this
           exact this)),
       fun t ↦ by
-        -- `J.map φ⁻¹ = J.comap φ` for the ring isomorphism `φ : Γ(Spec R, ⊤) ≅ R`.
+        -- `J.map φ⁻¹ ≤ J.comap φ` for the ring isomorphism `φ : Γ(Spec R, ⊤) ≅ R`.
         have key (x : Γ(Spec R, ⊤)) (hx : x ∈ J.map (Scheme.ΓSpecIso R).inv.hom) :
-            (Scheme.ΓSpecIso R).hom x ∈ J := by
-          have hφ : (Scheme.ΓSpecIso R).inv.hom =
-              ((Scheme.ΓSpecIso R).commRingCatIsoToRingEquiv.symm : R →+* Γ(Spec R, ⊤)) := rfl
-          rw [hφ, Ideal.map_coe, Ideal.map_symm] at hx
-          exact hx
+            (Scheme.ΓSpecIso R).hom x ∈ J :=
+          Ideal.map_le_comap_of_inverse _ _ J
+            (fun r ↦ (Scheme.ΓSpecIso R).inv_hom_id_apply r) hx
         have ht := sheafι_app_mem _ ⊤ t
         rw [sections_ofIdealTop_top] at ht
         exact ⟨⟨_, key _ ht⟩, sheafι_app_injective _ _ <|
@@ -92,11 +89,12 @@ theorem ofIdealTopSectionsEquiv_apply (a : J) :
     ofIdealTopSectionsEquiv J a = ofIdealTopSectionsMk J a :=
   (rfl)
 
-/-- The ideal sheaf of an ideal `J` of `R` on `Spec R` is the sheaf `J~` associated with the
-`R`-module `J`: it is quasi-coherent, hence the sheaf associated with its global sections, and these
-are `J` (`ofIdealTopSectionsEquiv`). -/
+/-- The ideal sheaf of an ideal `J` of `R` on `Spec R` is canonically isomorphic to the sheaf `J~`
+associated with the `R`-module `J`. -/
 noncomputable def ofIdealTopSheafIsoTilde :
     (ofIdealTop (J.map (Scheme.ΓSpecIso R).inv.hom)).sheaf ≅ tilde (ModuleCat.of R J) :=
+  -- The ideal sheaf is quasi-coherent, hence the sheaf associated with its global sections, and
+  -- these are `J` (`ofIdealTopSectionsEquiv`).
   (asIso (Scheme.Modules.fromTildeΓ _)).symm ≪≫
     (tilde.functor R).mapIso (ofIdealTopSectionsEquiv J).toModuleIso.symm
 

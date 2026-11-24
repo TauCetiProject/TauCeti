@@ -44,16 +44,16 @@ variable {X Z : Scheme.{u}} (j : X ⟶ Z) [IsClosedImmersion j] (U : Z.affineOpe
 
 /-- For a closed immersion `j : X ⟶ Z` with ideal sheaf `I` and an affine open `U` of `Z`, the
 pullback of `j^* I` to the affine chart `Spec (Γ(Z, U) ⧸ I(U))` of `X` is the sheaf associated with
-the conormal module `I(U) ⧸ I(U)²`. The pullback along `Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U)`,
-which is `Spec.map` of the quotient map, is turned into extension of scalars along the quotient
-map by `tildeFunctorCompPullbackIso`, and that extension of scalars is `I(U) ⧸ I(U)²` by
-`Ideal.extendScalarsMkEquivCotangent`. -/
+the conormal module `I(U) ⧸ I(U)²`. -/
 noncomputable def pullbackConormalAffineChartIsoTilde :
     (Scheme.Modules.pullback (j.affineChart U)).obj ((Scheme.Modules.pullback j).obj j.ker.sheaf) ≅
       tilde (ModuleCat.of _ (Ideal.Cotangent (j.ker.ideal U))) :=
   -- Pull `I` back along `Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U) ⟶ Z`: the open immersion
   -- `U.fromSpec` turns it into the ideal sheaf `I(U)~` of `I(U)`, and the closed immersion then
-  -- extends scalars to `(Γ(Z, U) ⧸ I(U)) ⊗ I(U) = I(U) ⧸ I(U)²`.
+  -- extends scalars to `(Γ(Z, U) ⧸ I(U)) ⊗ I(U) = I(U) ⧸ I(U)²`. The pullback along
+  -- `Spec (Γ(Z, U) ⧸ I(U)) ⟶ Spec Γ(Z, U)`, which is `Spec.map` of the quotient map, is extension
+  -- of scalars along the quotient map (`tildeFunctorCompPullbackIso`), and that extension of
+  -- scalars is `I(U) ⧸ I(U)²` (`Ideal.extendScalarsMkEquivCotangent`).
   have : IsOpenImmersion U.property.fromSpec := U.property.isOpenImmersion_fromSpec
   (Scheme.Modules.pullbackComp (j.affineChart U) j).app _ ≪≫
     (Scheme.Modules.pullbackCongr (j.affineChart_comp U)).app _ ≪≫
