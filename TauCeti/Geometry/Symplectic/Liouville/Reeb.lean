@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reeb.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.RadialHamiltonian
 import TauCeti.Geometry.Contact.Flat
 import TauCeti.Geometry.Manifold.Flow.Complete
