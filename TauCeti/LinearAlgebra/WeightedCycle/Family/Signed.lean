@@ -172,7 +172,6 @@ variable (b : Module.Basis ι ℤ V) (e : (Σ j, Fin (n j + 1)) ≃ ι)
 /-- Integral fixed vectors are determined by the initial coefficients on positive cycles. -/
 noncomputable def fixedEquivPositiveSignedFamily :
     f.fixedSubmodule ≃ₗ[ℤ] ({j // (∏ i, ε j i) = 1} → ℤ) := by
-  letI : Subsingleton (Submodule.torsionBy ℤ ℤ 2) := TauCeti.subsingleton_torsionBy_int 2 ℤ
   letI := uniqueOfSubsingleton (0 : Submodule.torsionBy ℤ ℤ 2)
   exact (b.fixedEquivSignedFamily e ε hε f h).trans LinearEquiv.prodUnique
 

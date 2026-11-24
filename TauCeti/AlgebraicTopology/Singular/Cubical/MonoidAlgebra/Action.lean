@@ -101,6 +101,17 @@ theorem act_def {p q : ℕ} (c : NormalizedCubicalChain Y R p) (a : NormalizedCu
     act Y G R p q c a = map R (actMap Y G) (p + q) (crossProduct Y G R p q c a) :=
   (rfl)
 
+/-- The `0`-cube at `g` acts on the `0`-cube at `y` as `g` acts on `y`. -/
+@[simp]
+theorem act_ofCube_point (y : Y) (g : G) :
+    act Y G R 0 0 (ofCube Y R (SingularCube.point y)) (ofCube G R (SingularCube.point g)) =
+      ofCube Y R (SingularCube.point (op g • y)) := by
+  rw [act_def, crossProduct_ofCube, map_ofCube]
+  congr 1
+  ext t
+  rw [ContinuousMap.comp_apply, SingularCube.crossProduct_zero_left, actMap_apply,
+    SingularCube.point_apply, SingularCube.point_apply, SingularCube.point_apply]
+
 /-- **The Leibniz rule for the action**: for `c` of degree `p + 1` and `a` of degree `q + 1`,
 `∂ (c · a) = ∂ c · a + (-1) ^ (p + 1) • (c · ∂ a)`, in degree `p + q + 1`. -/
 theorem boundary_act {p q : ℕ} (c : NormalizedCubicalChain Y R (p + 1))
@@ -422,6 +433,16 @@ theorem cubicalChainModuleDifferential_isHomogeneous :
     rw [mem_cubicalChainModuleGrading, cubicalChainModuleEquiv_differential]
     exact cubicalChainDifferential_mem Y R (mem_cubicalChainModuleGrading.1 hx)
 
+variable (Y G R) in
+/-- The component of degree `p` of the differential of `x` is the differential of the component of
+degree `p - 1` of `x`. -/
+theorem decompose_cubicalChainModuleDifferential (p : ℤ) (x : cubicalChainModule Y G R) :
+    (DirectSum.decompose (cubicalChainModuleGrading Y G R) (cubicalChainModuleDifferential Y G R x)
+        p : cubicalChainModule Y G R) =
+      cubicalChainModuleDifferential Y G R
+        (DirectSum.decompose (cubicalChainModuleGrading Y G R) x (p - 1)) := by
+  rw [(cubicalChainModuleDifferential_isHomogeneous Y G R).map_decompose, sub_add_cancel]
+
 /-- The differential of the module squares to zero. -/
 @[simp]
 theorem cubicalChainModuleDifferential_cubicalChainModuleDifferential
@@ -684,6 +705,14 @@ theorem cubicalChainModuleLinearMap_mem (f : C(Y, Y')) {i : ℤ} {x : cubicalCha
     cubicalChainModuleLinearMap (G' := G') R f x ∈ cubicalChainModuleGrading Y' G' R i :=
   cubicalChainSumMap_mem f hx
 
+/-- The induced map is homogeneous of degree zero. -/
+theorem cubicalChainModuleLinearMap_isHomogeneous (f : C(Y, Y')) :
+    LinearMap.IsHomogeneous (cubicalChainModuleLinearMap (G := G) (G' := G') R f)
+      (cubicalChainModuleGrading Y G R) (cubicalChainModuleGrading Y' G' R) 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+    rw [add_zero]
+    exact cubicalChainModuleLinearMap_mem f hx
+
 /-- The identity map induces the identity. -/
 @[simp]
 theorem cubicalChainModuleLinearMap_id :
@@ -699,6 +728,14 @@ theorem cubicalChainModuleLinearMap_comp (f : C(Y, Y')) (g : C(Y', Y'')) :
   LinearMap.ext fun x ↦ (cubicalChainModuleEquiv Y'' G'' R).injective <| by
     rw [cubicalChainModuleEquiv_linearMap, LinearMap.comp_apply, cubicalChainModuleEquiv_linearMap,
       cubicalChainModuleEquiv_linearMap, cubicalChainSumMap_comp, LinearMap.comp_apply]
+
+/-- The composite of two induced maps is the map induced by the composite, whatever the phantom
+monoid of the middle module. -/
+theorem cubicalChainModuleLinearMap_linearMap (f : C(Y, Y')) (g : C(Y', Y''))
+    (x : cubicalChainModule Y G R) :
+    cubicalChainModuleLinearMap (G := G') (G' := G'') R g (cubicalChainModuleLinearMap R f x) =
+      cubicalChainModuleLinearMap R (g.comp f) x :=
+  (LinearMap.congr_fun (cubicalChainModuleLinearMap_comp f g) x).symm
 
 /-- The induced map of a map `f` that intertwines the actions through a map `g` of the acting
 monoids is semilinear for the action, through the push-forward along `g`. -/

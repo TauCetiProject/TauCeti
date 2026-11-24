@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Products
+import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.Topology.LocallyConstant.Fiber
 
@@ -110,18 +111,16 @@ theorem isIso_locallyConstantExteriorPowerπ_app_app (r : LocallyConstant X ℕ)
     IsIso (((locallyConstantExteriorPowerπ r n).app M).app V) := by
   refine (ConcreteCategory.isIso_iff_bijective _).2 <|
     bijective_app_π_of_subsingleton _ n V fun m hm ↦ ?_
-  -- The sections over `V` of the `m`-th factor are those of a module on `r⁻¹{m}` over the
-  -- preimage of `V`, which is empty; they form a module over the zero ring `Γ(r⁻¹{m}, ∅)`.
-  have h : (Scheme.Opens.ι (r.fiberClopens m).toOpens) ⁻¹ᵁ V = ⊥ :=
-    eq_bot_iff.2 fun x hx ↦ hm ((LocallyConstant.mem_fiberClopens.1 x.property).symm.trans
-        (hV x.val hx))
+  have h : Disjoint V (r.fiberClopens m).toOpens := by
+    apply disjoint_iff_inf_le.mpr
+    intro x hx
+    exact hm ((LocallyConstant.mem_fiberClopens.1 hx.2).symm.trans (hV x hx.1))
   -- The `m`-th factor is by definition the composite `⋀ᵐ ⋙ restrict ⋙ pushforward`. Neither
   -- `rw` nor `simp` can apply `Functor.comp_obj` to it: `SheafOfModules.exteriorPower X.sheaf m`
   -- only type-checks after unfolding the type of `X.sheaf`, beyond instance transparency. So the
   -- composite is unfolded by `change`.
   change Subsingleton Γ((pushforward (Scheme.Opens.ι (r.fiberClopens m).toOpens)).obj _, V)
-  rw [pushforward_obj_obj]
-  exact h ▸ Module.subsingleton Γ((Scheme.Opens.toScheme (r.fiberClopens m).toOpens), ⊥) _
+  exact subsingleton_sections_pushforward_of_disjoint _ h
 
 /-- The unit `⋀ⁿ M ⟶ (r⁻¹{n}).ι_* (⋀ⁿ M|_{r⁻¹{n}})` of the restriction--pushforward adjunction,
 as a natural transformation into the `n`-th factor of `⋀^r`. -/

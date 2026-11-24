@@ -52,7 +52,7 @@ theorem re_exp_mul_schwarzChristoffelIntegrand_pos_of_sum_abs_le_one
   let θ : ℝ := Real.pi / 2 * ∑ i, e i
   let S : ℂ := ∑ i, log (z - (a i : ℂ)) * (e i : ℂ)
   have harg : ∀ i, |(z - (a i : ℂ)).arg - Real.pi / 2| < Real.pi / 2 := fun i =>
-    abs_arg_sub_pi_div_two_lt_of_im_pos (by simpa using hz)
+    abs_arg_sub_pi_div_two_lt_iff.2 (by simpa using hz)
   have hangle := abs_sum_mul_lt_of_sum_abs_le_one (half_pos Real.pi_pos) e _ he harg
   -- Express the rotated product as one exponential, keeping its unwrapped argument.
   have him : (S - (θ : ℂ) * Complex.I).im =

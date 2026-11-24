@@ -26,9 +26,10 @@ The chain-level product need not be associative or unital. Then the degree-wise 
 form a graded ring with unit the class of `e` (`LinearMap.cohomologyGRing`), and a graded
 `R`-algebra (`LinearMap.cohomologyGAlgebra`), so that Mathlib's instances on direct sums make
 `⨁ i, H^i` an `R`-algebra in which `of i [a] * of j [b] = of (i + j) [μ a b]`
-(`DirectSum.of_mul_of`, `LinearMap.cohomologyGRing_gMul`, `LinearMap.cohomologyMul_mk`). If
-`μ a b - (-1)^(i j) μ b a` is a coboundary for cocycles `a` and `b` of degrees `i` and `j`, the
-ring is graded commutative (`LinearMap.cohomologyGRing_of_mul_of_comm`).
+(`LinearMap.cohomologyGRing_of_mk_mul_of_mk`) and `1 = of 0 [e]`
+(`LinearMap.cohomologyGRing_one`). If `μ a b - (-1)^(i j) μ b a` is a coboundary for cocycles
+`a` and `b` of degrees `i` and `j`, the ring is graded commutative
+(`LinearMap.cohomologyGRing_of_mul_of_comm`).
 
 A degree-preserving linear map `f` commuting with the endomorphisms, which intertwines two such
 products up to coboundaries on cocycles and sends the unit to the unit up to a coboundary, induces
@@ -198,6 +199,25 @@ theorem cohomologyGRing_gOne :
     letI := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
     GradedMonoid.GOne.one (A := fun i ↦ D.cohomology G i) = Submodule.Quotient.mk ⟨e, he⟩ :=
   rfl
+
+/-- In the cohomology ring, the product of the classes of two cocycles `a` and `b` is the class of
+`μ a b`. -/
+theorem cohomologyGRing_of_mk_mul_of_mk {i j : ℤ} (a : D.cocycles G i) (b : D.cocycles G j) :
+    letI := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+    of (fun i ↦ D.cohomology G i) i (Submodule.Quotient.mk a) * of _ j (Submodule.Quotient.mk b) =
+      of (fun i ↦ D.cohomology G i) (i + j)
+        (Submodule.Quotient.mk
+          ⟨μ a b, apply_mem_cocycles_add μ hdeg hL a.property b.property⟩) := by
+  let := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+  rw [of_mul_of, cohomologyGRing_gMul, cohomologyMul_mk]
+
+/-- The unit of the cohomology ring is the class of `e`, in degree zero. -/
+theorem cohomologyGRing_one :
+    letI := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+    (1 : ⨁ i, D.cohomology G i) =
+      of (fun i ↦ D.cohomology G i) 0 (Submodule.Quotient.mk ⟨e, he⟩) := by
+  let := cohomologyGRing μ hdeg hL e he hone_mul hmul_one hassoc
+  rw [one_def, cohomologyGRing_gOne]
 
 /-- Multiplying on the left by a scalar multiple `r • [e]` of the unit is scalar multiplication by
 `r`, as elements of the graded monoid of cohomology classes. -/

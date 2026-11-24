@@ -123,6 +123,18 @@ theorem differentiableAt_cyclicAction {S : ZMod N → E × E → ℝ} {q : ZMod 
     DifferentiableAt ℝ (cyclicAction S) q :=
   (hasFDerivAt_cyclicAction hS).differentiableAt
 
+/-- If each `S_i` is `C^n` at the edge `(q_i, q_(i+1))`, then the cyclic discrete action
+`A(q) = Σ_i S_i(q_i, q_(i+1))` on configurations in a normed space is `C^n` at `q`. -/
+theorem contDiffAt_cyclicAction {n : ℕ∞ω} {S : ZMod N → E × E → ℝ} {q : ZMod N → E}
+    (hS : ∀ i, ContDiffAt ℝ n (S i) (q i, q (i + 1))) :
+    ContDiffAt ℝ n (cyclicAction S) q := by
+  have h : cyclicAction S = fun q' ↦ ∑ i, S i (q' i, q' (i + 1)) := by
+    funext q'
+    simp [cyclicAction_apply]
+  rw [h]
+  exact ContDiffAt.sum fun i _ ↦ (hS i).comp q
+    ((contDiffAt_apply ℝ (fun _ ↦ E) i q).prodMk (contDiffAt_apply ℝ (fun _ ↦ E) (i + 1) q))
+
 /-- The edge `(q_i, q_(i+1))` of a configuration has derivative `v ↦ (v_i, v_(i+1))`. -/
 private theorem hasMFDerivAt_edge (i : ZMod N) (q : ZMod N → Q) :
     HasMFDerivAt (ModelWithCorners.pi fun _ : ZMod N ↦ I) (I.prod I)

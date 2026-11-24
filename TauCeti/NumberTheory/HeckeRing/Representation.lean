@@ -188,10 +188,10 @@ theorem heckeSum_comp_of_mem_normalizer {g : G} (hg : g ∈ Δ')
     heckeSum D ρ hD hΓ₂ q ∘ₛₗ ρ ⟨g, hg⟩ = u ∘ₛₗ heckeSum D ρ hD hΓ₂ q := by
   classical
   have hdc := doubleCoset_eq_of_mem hconj
-  have hcover := doubleCoset_eq_iUnion_rightCosets_conj hg₁ hg₂ (rightCosetRep D)
+  have hcover := (doubleCoset_conj_eq_iUnion_rightCosets_conj_iff hg₁ hg₂ (rightCosetRep D)).mpr
     (doubleCoset_eq_iUnion_rightCosetRep D)
   rw [hdc] at hcover
-  have hinj := injective_rightCoset_conj (rightCosetRep D) hg₁
+  have hinj := (injective_rightCoset_conj_iff (rightCosetRep D) hg₁).mpr
     (op_rightCosetRep_smul_injective D)
   have hmem (v : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) :
       g⁻¹ * rightCosetRep D v * g ∈ Δ' := by

@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 
 /-!
@@ -28,8 +29,9 @@ variable, held constant in time, belongs to the pathwise domain without any mome
 
 Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
 `ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
-of the pullback Lebesgue measure to `(0,T]`. Pathwise membership uses native `MemLp`, so square
-energy means a finite nonnegative lower integral, never the default value of a divergent
+of the pullback Lebesgue measure to `(0,T]`, that is `TauCeti.Probability.timeMeasure T`
+(`TauCeti.BrownianIntegrable.memLp_timeMeasure`). Pathwise membership uses native `MemLp`, so
+square energy means a finite nonnegative lower integral, never the default value of a divergent
 Bochner integral.
 
 ## References
@@ -91,6 +93,12 @@ theorem locallyBrownianIntegrable_iff_nat : LocallyBrownianIntegrable ℱ P H �
         ← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc]
       exact Measure.restrict_mono_set _ (Ioc_subset_Ioc_right (by exact_mod_cast hn))
     exact (hω n).mono_measure hmeasure
+
+/-- The finite expected square energy of a Brownian-integrable integrand, for Lebesgue time
+`TauCeti.Probability.timeMeasure T` on `(0,T]` times `P`. -/
+theorem BrownianIntegrable.memLp_timeMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 ((Probability.timeMeasure T).prod P) := by
+  simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using h.memLp T
 
 /-- Finite expected energy on every finite horizon gives finite pathwise energy on all
 finite horizons simultaneously. -/

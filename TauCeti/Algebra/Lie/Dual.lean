@@ -46,6 +46,8 @@ coadjoint modules.
   in a Lie submodule of `M*`, refining `Submodule.dualCoannihilator`.
 * `LieModuleHom.lieInvariant_coe`: a morphism `M → M*`, read as a bilinear form on `M`, is
   invariant.
+* `LinearMap.BilinForm.map_lie_of_lieInvariant`: conversely, an invariant bilinear form `B` sends
+  `⁅x, m⁆` to `⁅x, B m⁆`.
 * `TauCeti.LieModule.exists_ne_zero_lieInvariant_iff_exists_ne_zero_lieModuleHom`: a nonzero
   invariant bilinear form on `M` is a nonzero morphism `M → M*`, over any commutative ring.
 * `LinearMap.BilinForm.lieModuleEquivDual`: a nondegenerate invariant bilinear form on a
@@ -136,6 +138,24 @@ end LieModuleHom
 
 namespace LinearMap.BilinForm
 
+section CommRing
+
+variable {R : Type u} {L : Type v} {M : Type w}
+variable [CommRing R] [LieRing L] [LieAlgebra R L]
+variable [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
+/-- **An invariant bilinear form is a map of Lie modules into the dual.** If
+`B ⁅x, m⁆ n = -B m ⁅x, n⁆`, then `m ↦ B m` sends `⁅x, m⁆` to the action `⁅x, B m⁆ = -(B m) ∘ x`
+of `x` on the linear form `B m`. This is the converse of `LieModuleHom.lieInvariant_coe`. -/
+theorem map_lie_of_lieInvariant {B : LinearMap.BilinForm R M} (hB : B.lieInvariant L) (x : L)
+    (m : M) : B ⁅x, m⁆ = ⁅x, B m⁆ := by
+  ext n
+  rw [Dual.lie_apply, hB]
+
+end CommRing
+
+section Field
+
 variable {K : Type u} {L : Type v} {M : Type w}
 variable [Field K] [LieRing L] [LieAlgebra K L]
 variable [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
@@ -147,7 +167,7 @@ Lie modules. -/
 noncomputable def lieModuleEquivDual (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
     (hBL : B.lieInvariant L) : M ≃ₗ⁅K,L⁆ Dual K M where
   __ := B.toDual hB
-  map_lie' {x m} := LinearMap.ext fun n ↦ by simp [toDual_def, hBL x m n]
+  map_lie' {x m} := map_lie_of_lieInvariant hBL x m
 
 /-- The Lie module equivalence `M ≃ M*` of a nondegenerate invariant form `B` sends `m` to the
 linear form `n ↦ B m n`. -/
@@ -170,6 +190,8 @@ theorem apply_lieModuleEquivDual_symm_apply (B : LinearMap.BilinForm K M) (hB : 
 theorem toLinearEquiv_lieModuleEquivDual (B : LinearMap.BilinForm K M) (hB : B.Nondegenerate)
     (hBL : B.lieInvariant L) : (B.lieModuleEquivDual hB hBL : M ≃ₗ[K] Dual K M) = B.toDual hB :=
   (rfl)
+
+end Field
 
 end LinearMap.BilinForm
 

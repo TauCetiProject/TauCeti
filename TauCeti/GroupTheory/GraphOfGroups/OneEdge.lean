@@ -27,7 +27,9 @@ fundamental group is Mathlib's amalgamated product or HNN extension respectively
   HNN extension `HNNExtension G (range f) (range g) φ` with `φ (f c) = g c`. The isomorphism is
   the identity on `G` and sends the dart `((), true)`, whose boundary maps are `α = f` and
   `ω = g`, to `t⁻¹`: Mathlib's relation `t f(c) t⁻¹ = g(c)` is the relation
-  `e g(c) e⁻¹ = f(c)` of the dart `e = ((), true)`, read for `e = t⁻¹`.
+  `e g(c) e⁻¹ = f(c)` of the dart `e = ((), true)`, read for `e = t⁻¹`. Every HNN extension
+  `HNNExtension G A B φ` along an isomorphism `φ : A ≃* B` of subgroups arises in this way, from
+  the loop with edge group `A` and edge maps the inclusion of `A` and `a ↦ φ a`.
 
 These comparisons transport the normal form theorems of `Monoid.PushoutI` and `HNNExtension` to
 one-edge graphs of groups; in particular the vertex groups of a one-edge graph of groups embed in
@@ -44,6 +46,8 @@ its fundamental group.
   which the HNN extension of the loop is taken.
 * `TauCeti.GraphOfGroups.π₁Tree.equivHNNExtension`: `π₁(loop, ∅) ≃* HNNExtension G (range f)
   (range g) (loopEquiv f g hf hg)`.
+* `TauCeti.GraphOfGroups.π₁Tree.equivHNNExtensionOfMulEquiv`: `π₁(loop, ∅) ≃* HNNExtension G A B φ`
+  for the loop with edge maps the inclusion of `A` and `a ↦ φ a`.
 
 ## Main results
 
@@ -386,6 +390,72 @@ theorem of_injective_loop : Function.Injective (of (𝔸 := loop f g hf hg) ∅ 
 end π₁Tree
 
 end loop
+
+/-! ### HNN extensions along an isomorphism of subgroups -/
+
+section HNNExtension
+
+variable {G : Type w} [Group G] {A B : Subgroup G} (φ : A ≃* B)
+
+namespace π₁Tree
+
+/-- The HNN extension of `G` along `loopEquiv` for the edge maps `A.subtype` and `a ↦ φ a`. -/
+private abbrev LoopHNN : Type w :=
+  HNNExtension G A.subtype.range (B.subtype.comp (φ : A →* B)).range
+    (loopEquiv A.subtype (B.subtype.comp (φ : A →* B)) A.subtype_injective
+      (B.subtype_injective.comp φ.injective))
+
+/-- `HNNExtension G A B φ →* LoopHNN φ`, the identity on `G` and on `t`. -/
+private noncomputable def toLoopHNN : HNNExtension G A B φ →* LoopHNN φ :=
+  HNNExtension.lift HNNExtension.of HNNExtension.t fun a ↦ by
+    simpa [MonoidHom.ofInjective_apply] using HNNExtension.t_mul_of
+      (φ := loopEquiv A.subtype (B.subtype.comp (φ : A →* B)) A.subtype_injective
+        (B.subtype_injective.comp φ.injective))
+      (MonoidHom.ofInjective A.subtype_injective a)
+
+/-- `LoopHNN φ →* HNNExtension G A B φ`, the identity on `G` and on `t`. -/
+private noncomputable def ofLoopHNN : LoopHNN φ →* HNNExtension G A B φ :=
+  HNNExtension.lift HNNExtension.of HNNExtension.t fun a ↦ by
+    obtain ⟨a, rfl⟩ := (MonoidHom.ofInjective A.subtype_injective).surjective a
+    simpa [MonoidHom.ofInjective_apply] using HNNExtension.t_mul_of (φ := φ) a
+
+/-- Every HNN extension is the fundamental group of a loop of groups. For an isomorphism
+`φ : A ≃* B` of subgroups of `G`, the fundamental group of the loop with vertex group `G`, edge
+group `A` and edge maps the inclusion of `A` and `a ↦ φ a`, relative to its maximal tree `∅`, is
+the HNN extension `HNNExtension G A B φ`. The vertex group maps by the identity and the dart
+`((), false)` maps to `t`. -/
+noncomputable def equivHNNExtensionOfMulEquiv :
+    π₁Tree (loop A.subtype (B.subtype.comp (φ : A →* B)) A.subtype_injective
+      (B.subtype_injective.comp φ.injective)) ∅ ≃* HNNExtension G A B φ :=
+  (equivHNNExtension _ _ _ _).trans <| MonoidHom.toMulEquiv (ofLoopHNN φ) (toLoopHNN φ)
+    (HNNExtension.hom_ext (MonoidHom.ext fun _ ↦ by simp [toLoopHNN, ofLoopHNN])
+      (by simp [toLoopHNN, ofLoopHNN]))
+    (HNNExtension.hom_ext (MonoidHom.ext fun _ ↦ by simp [toLoopHNN, ofLoopHNN])
+      (by simp [toLoopHNN, ofLoopHNN]))
+
+@[simp] theorem equivHNNExtensionOfMulEquiv_of (a : G) :
+    equivHNNExtensionOfMulEquiv φ (of ∅ () a) = HNNExtension.of a := by
+  simp [equivHNNExtensionOfMulEquiv, ofLoopHNN]
+
+@[simp] theorem equivHNNExtensionOfMulEquiv_edge_true :
+    equivHNNExtensionOfMulEquiv φ (edge ∅ ((), true)) = HNNExtension.t⁻¹ := by
+  simp [equivHNNExtensionOfMulEquiv, ofLoopHNN]
+
+@[simp] theorem equivHNNExtensionOfMulEquiv_edge_false :
+    equivHNNExtensionOfMulEquiv φ (edge ∅ ((), false)) = HNNExtension.t := by
+  simp [equivHNNExtensionOfMulEquiv, ofLoopHNN]
+
+@[simp] theorem equivHNNExtensionOfMulEquiv_symm_of (a : G) :
+    (equivHNNExtensionOfMulEquiv φ).symm (HNNExtension.of a) = of ∅ () a := by
+  simp [equivHNNExtensionOfMulEquiv, toLoopHNN]
+
+@[simp] theorem equivHNNExtensionOfMulEquiv_symm_t :
+    (equivHNNExtensionOfMulEquiv φ).symm HNNExtension.t = edge ∅ ((), false) := by
+  simp [equivHNNExtensionOfMulEquiv, toLoopHNN]
+
+end π₁Tree
+
+end HNNExtension
 
 end GraphOfGroups
 

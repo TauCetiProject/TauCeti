@@ -46,14 +46,14 @@ section NatPredicates
 
 -- The infinitary Scott sentence of a one-point structure in the language of countably many
 -- unary predicates characterizes it among structures of every cardinality, although no
--- first-order sentence does so even among countable structures.
+-- first-order sentence does so even among finite structures.
 example (S : Set ℕ) :
     letI := natPredicateStructure S
     (∀ (N : Type) [natPredicateLanguage.Structure N],
       SentenceInf.Realize (scottSentence (L := natPredicateLanguage) Unit) N ↔
         Nonempty (Unit ≃[natPredicateLanguage] N)) ∧
     ¬ ∃ φ : natPredicateLanguage.Sentence, ∀ (N : Type) [natPredicateLanguage.Structure N]
-      [Countable N], N ⊨ φ ↔ Nonempty (Unit ≃[natPredicateLanguage] N) := by
+      [Finite N], N ⊨ φ ↔ Nonempty (Unit ≃[natPredicateLanguage] N) := by
   let := natPredicateStructure S
   exact ⟨fun _ _ => realize_scottSentence_iff_of_finite Unit,
     not_exists_sentence_iff_nonempty_equiv_natPredicateStructure S⟩

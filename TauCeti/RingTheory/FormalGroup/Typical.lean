@@ -52,6 +52,8 @@ transport along homotheties `X ↦ u X` (which conjugate `F.pTypicalCoordinate`)
 
 ## Main results
 
+* `FormalGroup.IsPTypical.monomialCurve_pow`: monomial curves in prime-power degrees on a
+  `p`-typical law are `p`-typical.
 * `FormalGroup.isPTypical_smul_iff`: `(c • F).IsPTypical p` holds if and only if `c⁻¹` is a
   `p`-typical curve on `F`.
 * `FormalGroup.isPTypical_iff_exists_eq_hazewinkelFormalGroup` and
@@ -114,6 +116,21 @@ theorem isPTypical_congr {F G : FormalGroup R} [F.IsComm] [G.IsComm] (h : F = G)
 theorem IsPTypical.tautologicalCurve {F : FormalGroup R} [F.IsComm] {p : ℕ}
     (hF : F.IsPTypical p) : F.tautologicalCurve.IsPTypical p :=
   hF
+
+/-- A monomial curve of prime-power degree on a `p`-typical law is `p`-typical. -/
+theorem IsPTypical.monomialCurve_pow {F : FormalGroup R} [F.IsComm] {p : ℕ}
+    (hF : F.IsPTypical p) (hp : p.Prime) (n : ℕ) (c : R) :
+    (F.monomialCurve (p ^ n) (pow_ne_zero n hp.ne_zero) c).IsPTypical p := by
+  rw [monomialCurve_eq_verschiebungCurve_homothetyCurve]
+  exact (hF.tautologicalCurve.homothetyCurve c).verschiebungCurve_pow hp n
+
+/-- A finite formal-group sum `∑^F_{j ∈ s} t_j X ^ (p ^ j)` of monomial curves in prime-power
+degrees on a `p`-typical law is `p`-typical. -/
+theorem IsPTypical.sum_monomialCurve_pow {F : FormalGroup R} [F.IsComm] {p : ℕ}
+    (hF : F.IsPTypical p) (hp : p.Prime) (s : Finset ℕ) (t : ℕ → R) :
+    (∑ j ∈ s, F.monomialCurve (p ^ j) (pow_ne_zero j hp.ne_zero) (t j)).IsPTypical p :=
+  (mem_pTypicalCurveSubgroup F p _).mp <| AddSubgroup.sum_mem _ fun j _ ↦
+    (mem_pTypicalCurveSubgroup F p _).mpr (hF.monomialCurve_pow hp j _)
 
 /-- Base change along a ring homomorphism preserves `p`-typicality of formal group laws. -/
 theorem IsPTypical.map {F : FormalGroup R} [F.IsComm] {p : ℕ} (hF : F.IsPTypical p)

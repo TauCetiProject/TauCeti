@@ -125,6 +125,16 @@ lemma arrival_renewalCountNat_le {ω : Ω}
     arrival T (renewalCountNat T t ω) ω ≤ t :=
   (renewalCountNat_eq_iff hω |>.1 rfl).1
 
+/-- Larger increments give smaller counts when the process with smaller increments does not
+explode. This assumption is needed because the natural count is zero on explosive paths. -/
+lemma renewalCountNat_anti_of_tendsto {U : ℕ → Ω → ℝ≥0} {ω : Ω}
+    (hTU : ∀ n, T n ω ≤ U n ω)
+    (hT : Tendsto (fun n ↦ arrival T n ω) atTop atTop) (t : ℝ≥0) :
+    renewalCountNat U t ω ≤ renewalCountNat T t ω := by
+  have hU := tendsto_atTop_mono (arrival_mono T hTU) hT
+  exact (le_renewalCountNat_iff hT).2
+    ((arrival_mono T hTU _).trans (arrival_renewalCountNat_le hU t))
+
 /-- The arrival immediately after the count is strictly in the future. -/
 lemma lt_arrival_renewalCountNat_succ {ω : Ω}
     (hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop) (t : ℝ≥0) :
