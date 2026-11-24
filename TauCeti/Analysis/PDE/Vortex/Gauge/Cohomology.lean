@@ -144,10 +144,7 @@ theorem gaugeFixedKernel_inf_sobolevFields_le_deformationCocycles (k : ℕ) :
   obtain ⟨hyc, -, hyk⟩ := mem_gaugeFixedKernel.1 hyK
   refine ⟨hy, hyc, fun z ↦ ?_⟩
   ext i
-  fin_cases i
-  · simpa using congrArg (· 1) (hyk z)
-  · simpa using congrArg (· 2) (hyk z)
-  · simpa using congrArg (· 3) (hyk z)
+  simpa [gaugeFixedOperator_apply_succ] using congrArg (· i.succ) (hyk z)
 
 /-- **Harmonic coboundaries vanish.** At any field `x`, a coboundary `d₀ u` in the kernel of
 `L_x` is zero: `d₀* d₀ u = 0`, and `u ∈ H^(k+2)` tends to zero at infinity. -/
