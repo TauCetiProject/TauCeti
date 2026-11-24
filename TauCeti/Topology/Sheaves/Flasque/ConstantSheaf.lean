@@ -34,8 +34,8 @@ A spectral space with a generic point is irreducible, so this applies to it.
 
 ## Main declarations
 
-* `TauCeti.Topology.toSheafify_app_const_comp_map`: on any space, restricting the image of `A` in
-  `A_X(U)` to `V` gives its image in `A_X(V)`.
+* `TauCeti.toSheafify_app_const_comp_map`: on any site, restricting the image of `A` in the
+  sections of the constant sheaf over `U` to `V` gives its image over `V`.
 * `TauCeti.Topology.injective_toSheafify_app_const`: on any space, the map `A ⟶ A_X(U)` is
   injective when `U` is nonempty.
 * `TauCeti.Topology.bijective_toSheafify_app_const`: the map `A ⟶ A_X(U)` is bijective when `U`
@@ -59,34 +59,40 @@ universe u
 
 namespace TauCeti
 
+section Site
+
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Category* D]
+  [HasWeakSheafify J D]
+
+/-- On any site, restricting the image of `A` in the sections of the constant sheaf over `U`
+along `i : U ⟶ V` gives the image of `A` over `V`, since the constant presheaf has identity
+restrictions. -/
+@[reassoc]
+theorem toSheafify_app_const_comp_map (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) :
+    (toSheafify J ((Functor.const _).obj A)).app U ≫ ((constantSheaf J D).obj A).obj.map i =
+      (toSheafify J ((Functor.const _).obj A)).app V :=
+  -- `((constantSheaf J D).obj A).obj` is by definition the sheafification of the constant
+  -- presheaf, whose restriction maps are identities.
+  ((toSheafify J ((Functor.const _).obj A)).naturality i).symm.trans (by simp)
+
+/-- The elementwise form of `toSheafify_app_const_comp_map`: restricting the image of `a : A` in
+the sections of the constant sheaf over `U` along `i : U ⟶ V` gives the image of `a` over `V`. -/
+@[simp]
+theorem toSheafify_app_const_map_apply {FD : D → D → Type*} {CD : D → Type*}
+    [∀ X Y, FunLike (FD X Y) (CD X) (CD Y)] [ConcreteCategory D FD]
+    (A : D) {U V : Cᵒᵖ} (i : U ⟶ V) (a : ToType A) :
+    ((constantSheaf J D).obj A).obj.map i ((toSheafify J ((Functor.const _).obj A)).app U a) =
+      (toSheafify J ((Functor.const _).obj A)).app V a := by
+  rw [← ConcreteCategory.comp_apply, toSheafify_app_const_comp_map]
+
+end Site
+
 namespace Topology
 
 variable {X : TopCat.{u}} {D : Type*} [Category* D] {FD : D → D → Type*} {CD : D → Type*}
   [∀ X Y, FunLike (FD X Y) (CD X) (CD Y)] [ConcreteCategory D FD]
   [HasWeakSheafify (Opens.grothendieckTopology X) D]
-
-/-- Restricting the image of `A` in the sections of the constant sheaf `A_X` over `U` to a smaller
-open `V` gives the image of `A` over `V`, since the constant presheaf has identity restrictions. -/
-@[reassoc]
-theorem toSheafify_app_const_comp_map (A : D) {U V : Opens X} (i : op U ⟶ op V) :
-    (toSheafify (Opens.grothendieckTopology X) ((Functor.const _).obj A)).app (op U) ≫
-        ((constantSheaf (Opens.grothendieckTopology X) D).obj A).obj.map i =
-      (toSheafify (Opens.grothendieckTopology X) ((Functor.const _).obj A)).app (op V) :=
-  -- `((constantSheaf _ D).obj A).obj` is by definition the sheafification of the constant
-  -- presheaf, whose restriction maps are identities.
-  ((toSheafify (Opens.grothendieckTopology X) ((Functor.const _).obj A)).naturality i).symm.trans
-    (by simp)
-
-/-- The elementwise form of `toSheafify_app_const_comp_map`: restricting the image of `a : A` in
-`A_X(U)` to `V` gives the image of `a` in `A_X(V)`. -/
-@[simp]
-theorem toSheafify_app_const_map_apply (A : D) {U V : Opens X} (i : op U ⟶ op V) (a : ToType A) :
-    ((constantSheaf (Opens.grothendieckTopology X) D).obj A).obj.map i
-        ((toSheafify (Opens.grothendieckTopology X) ((Functor.const _).obj A)).app (op U) a) =
-      (toSheafify (Opens.grothendieckTopology X) ((Functor.const _).obj A)).app (op V) a := by
-  rw [← ConcreteCategory.comp_apply, toSheafify_app_const_comp_map]
-
-variable [(Opens.grothendieckTopology X).WEqualsLocallyBijective D]
+  [(Opens.grothendieckTopology X).WEqualsLocallyBijective D]
 
 /-- Over a nonempty open `U`, the canonical map from `A` to the sections of the constant sheaf
 `A_X` over `U` is injective. -/
@@ -120,7 +126,7 @@ theorem bijective_toSheafify_app_const [(Opens.grothendieckTopology X).HasSheafC
   -- The separatedness goal is stated for `F.obj ⋙ forget D`; restate it with restriction maps.
   change F.obj.map g.op (φ.app (op U) a) = F.obj.map g.op s
   rw [← hb]
-  refine (toSheafify_app_const_map_apply A g.op a).trans ?_
+  refine (toSheafify_app_const_map_apply J A g.op a).trans ?_
   rcases (W : Set X).eq_empty_or_nonempty with hW | hW
   · -- Over the empty open the sections of a sheaf form a terminal object.
     exact (Types.isTerminalEquivUnique _ (TopCat.Sheaf.isTerminalOfEqEmpty
@@ -130,8 +136,8 @@ theorem bijective_toSheafify_app_const [(Opens.grothendieckTopology X).HasSheafC
     obtain ⟨y, -, hyW, hyV₀⟩ := hU.2 _ _ W.isOpen V₀.isOpen ⟨w, g.le hw, hw⟩ ⟨x₀, hx₀, hxV₀⟩
     suffices a = b by rw [this]
     refine injective_toSheafify_app_const (U := W ⊓ V₀) A ⟨y, hyW, hyV₀⟩ ?_
-    rw [← toSheafify_app_const_map_apply A (homOfLE (inf_le_right : W ⊓ V₀ ≤ V₀)).op,
-      ← toSheafify_app_const_map_apply A (homOfLE (inf_le_left : W ⊓ V₀ ≤ W)).op, ha, hb]
+    rw [← toSheafify_app_const_map_apply J A (homOfLE (inf_le_right : W ⊓ V₀ ≤ V₀)).op,
+      ← toSheafify_app_const_map_apply J A (homOfLE (inf_le_left : W ⊓ V₀ ≤ W)).op, ha, hb]
     exact TopCat.Presheaf.map_map_apply_eq_map_map_apply _ _ _ _ _ s
 
 /-- Over an irreducible open `U`, the sections of the constant sheaf `A_X` over `U` are `A`. -/
@@ -182,7 +188,7 @@ theorem isFlasque_constantSheaf [IrreducibleSpace X]
       obtain ⟨a, rfl⟩ := (bijective_toSheafify_app_const A
         ⟨hV, (IrreducibleSpace.isIrreducible_univ X).2.open_subset V.isOpen
           (Set.subset_univ _)⟩).2 t
-      exact ⟨φ.app U a, toSheafify_app_const_map_apply A i a⟩
+      exact ⟨φ.app U a, toSheafify_app_const_map_apply _ A i a⟩
 
 end Topology
 
