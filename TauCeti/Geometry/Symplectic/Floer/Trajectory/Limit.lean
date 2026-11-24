@@ -47,7 +47,8 @@ energy; so it applies to the levels of a breaking sequence of smooth trajectorie
   as the orbits at which consecutive levels of a broken limit meet, then the actions of the loops
   of `g` converge to `A_H(x₀)` and `A_H(x₁)`
   (`TauCeti.SymplecticForm.tendsto_hamiltonianAction_slice_of_tendstoUniformly`, from
-  `TauCeti.SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`), and the energy of `g`
+  `TauCeti.SymplecticForm.tendsto_hamiltonianAction_sub_hamiltonianAction`). If moreover `J` is
+  tamed by `ω` along `g`, so that the energy density of `g` is nonnegative, then the energy of `g`
   is `A_H(x₁) - A_H(x₀)`
   (`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendstoUniformly`).
 
