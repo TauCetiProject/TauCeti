@@ -59,6 +59,9 @@ representative formula pairs it with the class of the constant function `1` to g
   `H^n_c(U) → H^n_c(M)` into the whole manifold.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral_map_diffeomorph`: integration is
   preserved by orientation-preserving diffeomorphisms.
+* `TauCeti.deRhamCohomology.integral`: integration `H^n_dR(M) → ℝ` on a compact manifold, where
+  the comparison map `H^n_c(M) → H^n_dR(M)` is bijective, computed on classes by
+  `TauCeti.deRhamCohomology.integral_mk`.
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
   by integration (`TauCeti.poincarePairing_apply`), computed on classes by
   `TauCeti.poincarePairing_mk`.
@@ -384,3 +387,42 @@ theorem integralTopForm_wedge_self_eq_of_sub_mem_exactForms
     congrArg (compactlySupportedDeRhamCohomology.integral o) hmk
 
 end TauCeti
+
+namespace TauCeti.deRhamCohomology
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [BoundarylessManifold I M]
+  [T2Space M] [CompactSpace M] {n : ℕ}
+
+/-- Integration `H^n_dR(M) → ℝ` on a compact oriented boundaryless manifold: on a compact manifold
+de Rham cohomology is compactly supported de Rham cohomology, on which integration is defined. -/
+def integral (o : Manifold.Orientation I M (Fin n)) : deRhamCohomology I M n →ₗ[ℝ] ℝ :=
+  compactlySupportedDeRhamCohomology.integral o ∘ₗ (LinearEquiv.ofBijective _
+    (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective I n)).symm.toLinearMap
+
+/-- Integration on de Rham cohomology extends integration on compactly supported de Rham
+cohomology along the comparison map, which is bijective on a compact manifold. -/
+@[simp]
+theorem integral_toDeRhamCohomology (o : Manifold.Orientation I M (Fin n))
+    (c : compactlySupportedDeRhamCohomology I M n) :
+    integral o (compactlySupportedDeRhamCohomology.toDeRhamCohomology I M n c) =
+      compactlySupportedDeRhamCohomology.integral o c := by
+  rw [integral, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    LinearEquiv.ofBijective_symm_apply_apply]
+
+/-- The integral of the class of a closed top form on a compact manifold is the integral of the
+form. -/
+@[simp]
+theorem integral_mk (o : Manifold.Orientation I M (Fin n)) (φ : closedForms I M n) :
+    integral o (mk I n φ) = integralTopForm o φ.val.val := by
+  -- On a compact manifold the closed form `φ` is a compactly supported closed form.
+  let ψ : compactlySupportedClosedForms I M n :=
+    ⟨φ.val, (mem_compactlySupportedClosedForms I).mpr
+      ⟨by simp [compactlySupportedForms_eq_top], φ.property⟩⟩
+  have hψ : compactlySupportedDeRhamCohomology.toDeRhamCohomology I M n
+      (compactlySupportedDeRhamCohomology.mk I n ψ) = mk I n φ :=
+    compactlySupportedDeRhamCohomology.toDeRhamCohomology_mk I n ψ
+  rw [← hψ, integral_toDeRhamCohomology, compactlySupportedDeRhamCohomology.integral_mk]
+
+end TauCeti.deRhamCohomology

@@ -37,12 +37,12 @@ theorem hessian_eq_laplaceBeltrami_mul_inner_of_finrank_le_one
     (v w : TangentSpace I x) :
     hessian I f x v w = laplaceBeltrami I f x * inner ℝ v w := by
   rcases eq_or_ne v 0 with rfl | hv
-  · simp [hessian_def]
+  · simp [I.hessian_eq_inner_leviCivitaConnection_mgradient]
   have hn' : Module.finrank ℝ (TangentSpace I x) = 1 := by
     have hpos := (Module.finrank_pos_iff_exists_ne_zero (R := ℝ)).2 ⟨v, hv⟩
     have hle := (finrank_tangentSpace (I := I) x).le.trans hn
     omega
-  rw [hessian_def, laplaceBeltrami_def, divergence_def]
+  rw [I.hessian_eq_inner_leviCivitaConnection_mgradient, laplaceBeltrami_def, divergence_def]
   have h := LinearMap.congr_fun (LinearMap.eq_trace_smul_one_of_finrank_eq_one hn'
     (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x).toLinearMap) v
   simpa only [ContinuousLinearMap.coe_coe, LinearMap.smul_apply, one_apply_eq_self,

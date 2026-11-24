@@ -18,7 +18,7 @@ import Mathlib.Tactic.FinCases
 The product of two folded labelled graphs accepts the intersection of their subgroups, and
 its based core is the subgroup graph of the intersection. Three examples:
 
-* `⟨a²⟩ ∩ ⟨a³⟩ = ⟨a⁶⟩`, as in any group (`Subgroup.zpowers_pow_inf_zpowers_pow_of_coprime`),
+* `⟨a²⟩ ∩ ⟨a³⟩ = ⟨a⁶⟩`, as in any group (`Subgroup.zpowers_pow_inf`),
   so the core of the product of the subgroup graphs of `⟨a²⟩` and `⟨a³⟩`, two cycles labelled
   `a`, is the cycle of length six labelled `a`.
 * For distinct letters `a` and `b`, `⟨a, b a b⁻¹⟩ ∩ ⟨b⟩ = 1`.
@@ -99,7 +99,7 @@ theorem nonempty_iso_core_prod_subgroupGraph_zpowers_sq_cube (a : α) :
   obtain ⟨f⟩ := Subgroup.nonempty_iso_core_prod_subgroupGraph (Subgroup.zpowers (of a ^ 2))
     (Subgroup.zpowers (of a ^ 3))
   obtain ⟨g⟩ := nonempty_iso_subgroupGraph (hexagon_isFolded a) (hexagon_isCore a)
-  rw [Subgroup.zpowers_pow_inf_zpowers_pow_of_coprime _ (by decide : Nat.Coprime 2 3)] at f
+  rw [Subgroup.zpowers_pow_inf, (by decide : Nat.lcm 2 3 = 6)] at f
   rw [ofDigraph_base, hexagon_subgroup] at g
   exact ⟨f.trans g.symm⟩
 
