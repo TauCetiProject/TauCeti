@@ -35,6 +35,8 @@ isomorphisms, base change and composition.
 ## Main results
 
 * `SSet.Edge.isCartesian_of_isIso`: every edge is Cartesian along an isomorphism.
+* `SSet.Edge.isCartesian_iff_rlp_slice_map`: over a terminal simplicial set, an edge `f : x ⟶ y`
+  is Cartesian exactly when the restriction of cones `X_{/f} ⟶ X_{/y}` is a trivial fibration.
 * `SSet.Edge.IsCartesian.of_isPullback`: in a pullback square, an edge is Cartesian along the
   pulled-back map when its image is Cartesian along the original one.
 * `SSet.Edge.IsCartesian.comp`: if `f` is `p`-Cartesian and `p f` is `r`-Cartesian, then `f` is
@@ -72,6 +74,23 @@ lemma isCartesian_iff (f : Edge x y) (p : X ⟶ S) :
       (monomorphisms SSet.{u}).rlp
         (slice.restrictionMap (stdSimplex.δ 0) p (yonedaEquiv.symm f.edge)) :=
   Iff.rfl
+
+/-- **Over a terminal simplicial set, an edge `f : x ⟶ y` is Cartesian exactly when the
+restriction of cones `X_{/f} ⟶ X_{/y}` is a trivial fibration**: all slices of a terminal
+simplicial set are terminal, so the map defining Cartesian edges is this restriction of cones
+followed by an isomorphism. -/
+theorem isCartesian_iff_rlp_slice_map (f : Edge x y) (p : X ⟶ S) (hS : IsTerminal S) :
+    f.IsCartesian p ↔ (monomorphisms SSet.{u}).rlp (slice.map (stdSimplex.δ 0) (𝟙 X) (by simp) :
+      slice (yonedaEquiv.symm f.edge) ⟶ slice (stdSimplex.δ 0 ≫ yonedaEquiv.symm f.edge)) := by
+  have : IsIso (slice.map (stdSimplex.δ 0) (𝟙 S) (by simp) :
+      slice (yonedaEquiv.symm f.edge ≫ p) ⟶
+        slice (stdSimplex.δ 0 ≫ yonedaEquiv.symm f.edge ≫ p)) :=
+    isIso_of_isTerminal (slice.isTerminal _ hS) (slice.isTerminal _ hS) _
+  have : (monomorphisms SSet.{u}).rlp.RespectsIso :=
+    respectsIso_of_isStableUnderComposition fun _ _ g (_ : IsIso g) ↦ rlp_of_isIso _ g
+  rw [isCartesian_iff, ← cancel_right_of_respectsIso (monomorphisms SSet.{u}).rlp
+    (slice.restrictionMap (stdSimplex.δ 0) p (yonedaEquiv.symm f.edge)) (pullback.fst _ _),
+    slice.restrictionMap_fst]
 
 /-- Being `p`-Cartesian only depends on the underlying `1`-simplex of an edge. -/
 lemma IsCartesian.of_edge_eq {x' y' : X _⦋0⦌} {f : Edge x y} {f' : Edge x' y'} {p : X ⟶ S}

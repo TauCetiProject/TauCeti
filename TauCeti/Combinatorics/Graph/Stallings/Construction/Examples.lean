@@ -189,10 +189,10 @@ theorem lift_ab_ac_injective (hbc : b ≠ c) :
   -- The positive `b`- and `c`-edges are the darts outside the tree.
   let φ : Fin 2 → ↥(O \ (abAcTree a b c).darts) := fun i =>
     ⟨(i.succ, true), rfl, Fin.succ_ne_zero i⟩
-  have hφ : Function.Injective φ := fun i j h => Fin.succ_injective _ (congrArg (·.1.1) h)
+  have hφ : Function.Injective φ := fun i j h => Fin.succ_injective _ (congrArg (·.val.1) h)
   have key : FreeGroup.lift ![FreeGroup.of a * FreeGroup.of b, FreeGroup.of a * FreeGroup.of c] =
       (FreeGroup.lift fun e : ↥(O \ (abAcTree a b c).darts) =>
-        (abAc a b c).treeLoopWord (abAcTree a b c) 0 e.1).comp (FreeGroup.map φ) := by
+        (abAc a b c).treeLoopWord (abAcTree a b c) 0 e.val).comp (FreeGroup.map φ) := by
     ext i
     simp only [FreeGroup.lift_apply_of, MonoidHom.comp_apply, FreeGroup.map.of]
     fin_cases i <;> exact (treeLoopWord_of_mem a b c (T := abAcTree a b c) rfl rfl rfl rfl).symm

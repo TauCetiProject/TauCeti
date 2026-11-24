@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ExplicitBounds.VerifiedZeros.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # Platt's finite-conductor GRH records and exclusion of real zeros

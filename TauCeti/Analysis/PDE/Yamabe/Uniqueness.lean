@@ -86,10 +86,8 @@ private theorem exists_pos_eq_const_of_conformalLaplacian_eq (hn : 2 < finrank �
     (hc : c ≤ 0) (hScal : ∀ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x = c)
     (heq : ∀ x, conformalLaplacian I u x = d * u x ^ (criticalExponent (finrank ℝ E) - 1)) :
     ∃ t > 0, ∀ x, u x = t := by
-  obtain ⟨a, -, ha⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty hu.continuous.continuousOn
-  obtain ⟨b, -, hb⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hu.continuous.continuousOn
-  have hΔa := laplaceBeltrami_nonneg_of_isLocalMin hu.contMDiffAt (ha.isLocalMin Filter.univ_mem)
-  have hΔb := laplaceBeltrami_nonpos_of_isLocalMax hu.contMDiffAt (hb.isLocalMax Filter.univ_mem)
+  obtain ⟨a, ha, hΔa⟩ := exists_forall_le_and_laplaceBeltrami_nonneg hu
+  obtain ⟨b, hb, hΔb⟩ := exists_forall_ge_and_laplaceBeltrami_nonpos hu
   have hA := conformalCoefficient_pos hn
   have hmin : d * u a ^ (criticalExponent (finrank ℝ E) - 2) ≤ c := by
     rw [← conformalLaplacian_eq_div hu_pos hScal heq a]
@@ -117,7 +115,7 @@ private theorem exists_pos_eq_const_of_conformalLaplacian_eq (hn : 2 < finrank �
     have hpow : u b ^ (criticalExponent (finrank ℝ E) - 2) ≤
         u a ^ (criticalExponent (finrank ℝ E) - 2) := by nlinarith
     have hba := (Real.rpow_le_rpow_iff (hu_pos b).le (hu_pos a).le hp).mp hpow
-    exact fun x ↦ le_antisymm ((hb (Set.mem_univ x)).trans hba) (ha (Set.mem_univ x))
+    exact fun x ↦ le_antisymm ((hb x).trans hba) (ha x)
 
 end TauCeti.Yamabe
 

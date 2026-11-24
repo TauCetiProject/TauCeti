@@ -172,7 +172,7 @@ theorem liminf_le_apply (f : ℕ →ᵇ ℝ) : liminf f atTop ≤ ω f := by
 
 /-- A generalized limit is bounded in absolute value by the supremum norm. -/
 theorem abs_apply_le_norm (f : ℕ →ᵇ ℝ) : |ω f| ≤ ‖f‖ := by
-  simpa using PositiveLinearMap.abs_apply_le_mul_norm ω (u := 1)
+  simpa using PositiveLinearMap.abs_apply_le_mul_norm ω (OrderHomClass.mono ω) (u := 1)
     (fun g n ↦ by simpa using g.apply_le_norm n) f
 
 /-- A generalized limit is *dilation invariant* when `ω (f.dilate k) = ω f` for every bounded

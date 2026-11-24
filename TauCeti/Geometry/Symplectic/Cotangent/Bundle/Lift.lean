@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Cotangent
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Cotangent
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
@@ -29,6 +30,12 @@ may have boundary or corners and need not be finite-dimensional. In particular, 
 carry exact Lagrangian maps for `λ_M` to exact Lagrangian maps for `λ_N` with the same primitive
 (`Diffeomorph.isExactLagrangianMap_cotangent_comp_iff`).
 
+The same holds for the cotangent map `(x, p) ↦ (f x, p ∘ (df_x)⁻¹)` of a local diffeomorphism
+`f` (`IsLocalDiffeomorph.cotangent`), which need not be injective or surjective:
+`IsLocalDiffeomorph.mpullback_cotangent_liouvilleForm` and
+`IsLocalDiffeomorph.mpullback_cotangent_symplecticForm`. So the cotangent map of a covering map,
+such as `ℝ → ℝ / 2πℤ`, is a local symplectomorphism.
+
 In particular, if a group `G` acts on `M` by smooth maps, its cotangent-lifted action on `T*M`
 (`TauCeti.CotangentBundle.instMulAction`) preserves `λ` and `ω`
 (`TauCeti.CotangentBundle.mpullback_smul_liouvilleForm`,
@@ -50,6 +57,42 @@ noncomputable section
 open Bundle
 open scoped Manifold ContDiff
 
+namespace IsLocalDiffeomorph
+
+open TauCeti TauCeti.CotangentBundle
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {f : M → N} (hf : IsLocalDiffeomorph I J ∞ f)
+
+/-- **Naturality of the Liouville form under local diffeomorphisms.** The cotangent map of a
+smooth local diffeomorphism pulls the Liouville form of `T*N` back to the Liouville form of
+`T*M`. -/
+@[simp]
+theorem mpullback_cotangent_liouvilleForm [IsManifold I 2 M] [IsManifold J 2 N] :
+    SmoothForm.mpullback hf.cotangent hf.contMDiff_cotangent (liouvilleForm J N) =
+      liouvilleForm I M := by
+  apply Subtype.ext
+  funext z
+  ext v
+  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq hf.contMDiff_cotangent
+    hf.proj_cotangent z, liouvilleForm_apply]
+  exact hf.cotangent_snd_apply_mfderiv z _
+
+/-- **Cotangent maps of local diffeomorphisms are symplectic.** The cotangent map of a smooth
+local diffeomorphism pulls the canonical symplectic form of `T*N` back to the canonical symplectic
+form of `T*M`. -/
+@[simp]
+theorem mpullback_cotangent_symplecticForm [IsManifold I ∞ M] [IsManifold J ∞ N] :
+    SmoothForm.mpullback hf.cotangent hf.contMDiff_cotangent (symplecticForm J N) =
+      symplecticForm I M := by
+  rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
+    ← SmoothForm.mextDerivₗ_mpullback, mpullback_cotangent_liouvilleForm]
+
+end IsLocalDiffeomorph
+
 namespace Diffeomorph
 
 open TauCeti TauCeti.CotangentBundle
@@ -69,12 +112,9 @@ pulls the Liouville form of `T*N` back to the Liouville form of `T*M`. -/
 theorem mpullback_cotangent_liouvilleForm (h : M ≃ₘ⟮I, J⟯ N) :
     SmoothForm.mpullback h.cotangent h.cotangent.contMDiff (liouvilleForm J N) =
       liouvilleForm I M := by
-  apply Subtype.ext
-  funext z
-  ext v
-  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq h.cotangent.contMDiff
-    (proj_cotangent h) z, liouvilleForm_apply]
-  exact cotangent_snd_apply_mfderiv h z _
+  -- The cotangent lift is the cotangent map of `h` as a local diffeomorphism.
+  convert h.isLocalDiffeomorph.mpullback_cotangent_liouvilleForm using 3
+  exact h.coe_cotangent
 
 end Liouville
 
@@ -88,8 +128,9 @@ canonical symplectic form of `T*N` back to the canonical symplectic form of `T*M
 theorem mpullback_cotangent_symplecticForm (h : M ≃ₘ⟮I, J⟯ N) :
     SmoothForm.mpullback h.cotangent h.cotangent.contMDiff (symplecticForm J N) =
       symplecticForm I M := by
-  rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
-    ← SmoothForm.mextDerivₗ_mpullback, mpullback_cotangent_liouvilleForm]
+  -- The cotangent lift is the cotangent map of `h` as a local diffeomorphism.
+  convert h.isLocalDiffeomorph.mpullback_cotangent_symplecticForm using 3
+  exact h.coe_cotangent
 
 /-- **Cotangent lifts preserve exact Lagrangian maps.** For a smooth diffeomorphism `h : M → N`
 and a map `f` into `T*M`, the composite `T*h ∘ f` is an exact Lagrangian map for

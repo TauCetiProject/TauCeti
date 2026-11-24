@@ -64,7 +64,7 @@ private theorem isSchemeTheoreticallyDominant_of_forall_pullbackSnd_awayι {X : 
     (h : ∀ {d : ℕ} (hd : 0 < d) {f : A} (hf : f ∈ 𝒜 d),
       IsSchemeTheoreticallyDominant (pullback.snd φ (awayι 𝒜 f hf hd))) :
     IsSchemeTheoreticallyDominant φ :=
-  .of_openCover (affineOpenCover 𝒜).openCover fun i ↦ h i.1.2 i.2.2
+  .of_openCover (affineOpenCover 𝒜).openCover fun i ↦ h i.1.property i.2.property
 
 /-- For a homogeneous element `g` of positive degree that is a nonzerodivisor of the graded ring
 `A`, the standard open `D₊(g)` is scheme-theoretically dense in `Proj A`: the open immersion

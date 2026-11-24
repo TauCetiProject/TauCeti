@@ -53,21 +53,21 @@ noncomputable def whitneySum (f : finiteFullRankFrame 𝕜 k a)
 
 @[simp] theorem whitneySum_castAdd (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) (i : Fin k) :
-    (whitneySum f g).1 (Fin.castAdd l i) =
-      interleaveLinearMap 𝕜 𝕜 a b (f.1 i, 0) := by simp [whitneySum]
+    (whitneySum f g).val (Fin.castAdd l i) =
+      interleaveLinearMap 𝕜 𝕜 a b (f.val i, 0) := by simp [whitneySum]
 
 @[simp] theorem whitneySum_natAdd (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) (i : Fin l) :
-    (whitneySum f g).1 (Fin.natAdd k i) =
-      interleaveLinearMap 𝕜 𝕜 a b (0, g.1 i) := by simp [whitneySum]
+    (whitneySum f g).val (Fin.natAdd k i) =
+      interleaveLinearMap 𝕜 𝕜 a b (0, g.val i) := by simp [whitneySum]
 
 /-- The concatenated frame ranges over the interleaved images of the two input frames. -/
 theorem range_whitneySum (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) :
-    range (whitneySum f g).1 = interleaveLinearMap 𝕜 𝕜 a b ''
-      (range (fun i ↦ (f.1 i, 0)) ∪ range (fun j ↦ (0, g.1 j))) := by
-  have h : (whitneySum f g).1 = interleaveLinearMap 𝕜 𝕜 a b ∘
-      Sum.elim (fun i ↦ (f.1 i, 0)) (fun j ↦ (0, g.1 j)) ∘ finSumFinEquiv.symm := by
+    range (whitneySum f g).val = interleaveLinearMap 𝕜 𝕜 a b ''
+      (range (fun i ↦ (f.val i, 0)) ∪ range (fun j ↦ (0, g.val j))) := by
+  have h : (whitneySum f g).val = interleaveLinearMap 𝕜 𝕜 a b ∘
+      Sum.elim (fun i ↦ (f.val i, 0)) (fun j ↦ (0, g.val j)) ∘ finSumFinEquiv.symm := by
     ext i
     refine Fin.addCases (fun j ↦ ?_) (fun j ↦ ?_) i <;> simp [whitneySum]
   rw [h, range_comp]
@@ -92,14 +92,14 @@ noncomputable def whitneySum (V : finiteGrassmannian 𝕜 k a)
 
 theorem coe_whitneySum (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) :
-    (whitneySum V W).1 = (V.1.prod W.1).map (interleaveLinearMap 𝕜 𝕜 a b) :=
+    (whitneySum V W).val = (V.val.prod W.val).map (interleaveLinearMap 𝕜 𝕜 a b) :=
   coe_directSum _ interleaveLinearMap_injective V W
 
 /-- A vector lies in the sum plane exactly when it is the interleaving of vectors in the two
 input planes. -/
 theorem mem_whitneySum_iff (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) (z : Fin (2 * max a b) → 𝕜) :
-    z ∈ (whitneySum V W).1 ↔ ∃ v ∈ V.1, ∃ w ∈ W.1,
+    z ∈ (whitneySum V W).val ↔ ∃ v ∈ V.val, ∃ w ∈ W.val,
       interleaveLinearMap 𝕜 𝕜 a b (v, w) = z := by
   exact mem_directSum _ interleaveLinearMap_injective V W z
 
@@ -107,7 +107,7 @@ theorem mem_whitneySum_iff (V : finiteGrassmannian 𝕜 k a)
 respective input planes. -/
 @[simp] theorem interleaveLinearMap_mem_whitneySum_iff (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) (v : Fin a → 𝕜) (w : Fin b → 𝕜) :
-    interleaveLinearMap 𝕜 𝕜 a b (v, w) ∈ (whitneySum V W).1 ↔ v ∈ V.1 ∧ w ∈ W.1 := by
+    interleaveLinearMap 𝕜 𝕜 a b (v, w) ∈ (whitneySum V W).val ↔ v ∈ V.val ∧ w ∈ W.val := by
   simp only [coe_whitneySum, Submodule.mem_map, interleaveLinearMap_injective.eq_iff,
     exists_eq_right, Submodule.mem_prod]
 
@@ -139,8 +139,8 @@ noncomputable def whitneySumTautologicalEquiv (V : finiteGrassmannian 𝕜 k a)
     (Tautological 𝕜 k a V × Tautological 𝕜 l b W) ≃L[𝕜]
       Tautological 𝕜 (k + l) (2 * max a b) (whitneySum V W) :=
   ((((((tautologicalEquiv 𝕜 k a V).prodCongr (tautologicalEquiv 𝕜 l b W)).trans
-    (V.1.prodEquiv W.1).symm).trans
-    (Submodule.equivMapOfInjective _ interleaveLinearMap_injective (V.1.prod W.1))).trans
+    (V.val.prodEquiv W.val).symm).trans
+    (Submodule.equivMapOfInjective _ interleaveLinearMap_injective (V.val.prod W.val))).trans
     (LinearEquiv.ofEq _ _ (coe_whitneySum V W).symm)).trans
     (tautologicalEquiv 𝕜 (k + l) (2 * max a b) (whitneySum V W)).symm).toContinuousLinearEquiv
 
@@ -148,7 +148,7 @@ noncomputable def whitneySumTautologicalEquiv (V : finiteGrassmannian 𝕜 k a)
 @[simp] theorem whitneySumTautologicalEquiv_apply (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b) (v : Tautological 𝕜 k a V × Tautological 𝕜 l b W) :
     (whitneySumTautologicalEquiv V W v : EuclideanSpace 𝕜 (Fin (2 * max a b))) =
-      WithLp.toLp 2 (interleaveLinearMap 𝕜 𝕜 a b (WithLp.ofLp v.1.1, WithLp.ofLp v.2.1)) := by
+      WithLp.toLp 2 (interleaveLinearMap 𝕜 𝕜 a b (WithLp.ofLp v.1.val, WithLp.ofLp v.2.val)) := by
   simp [whitneySumTautologicalEquiv, LinearEquiv.coe_toContinuousLinearEquiv',
     LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply]
 
@@ -156,10 +156,10 @@ noncomputable def whitneySumTautologicalEquiv (V : finiteGrassmannian 𝕜 k a)
 @[simp] theorem whitneySumTautologicalEquiv_symm_fst (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b)
     (z : Tautological 𝕜 (k + l) (2 * max a b) (whitneySum V W)) (i : Fin a) :
-    WithLp.ofLp ((whitneySumTautologicalEquiv V W).symm z).1.1 i =
-      WithLp.ofLp z.1 (interleaveIndex a b (.inl i)) := by
+    WithLp.ofLp ((whitneySumTautologicalEquiv V W).symm z).1.val i =
+      WithLp.ofLp z.val (interleaveIndex a b (.inl i)) := by
   have h := congrArg (fun t : Tautological 𝕜 (k + l) (2 * max a b) (whitneySum V W) ↦
-    WithLp.ofLp t.1 (interleaveIndex a b (.inl i)))
+    WithLp.ofLp t.val (interleaveIndex a b (.inl i)))
     ((whitneySumTautologicalEquiv V W).apply_symm_apply z)
   simpa only [whitneySumTautologicalEquiv_apply, WithLp.ofLp_toLp,
     interleaveLinearMap_apply_inl] using h
@@ -168,10 +168,10 @@ noncomputable def whitneySumTautologicalEquiv (V : finiteGrassmannian 𝕜 k a)
 @[simp] theorem whitneySumTautologicalEquiv_symm_snd (V : finiteGrassmannian 𝕜 k a)
     (W : finiteGrassmannian 𝕜 l b)
     (z : Tautological 𝕜 (k + l) (2 * max a b) (whitneySum V W)) (i : Fin b) :
-    WithLp.ofLp ((whitneySumTautologicalEquiv V W).symm z).2.1 i =
-      WithLp.ofLp z.1 (interleaveIndex a b (.inr i)) := by
+    WithLp.ofLp ((whitneySumTautologicalEquiv V W).symm z).2.val i =
+      WithLp.ofLp z.val (interleaveIndex a b (.inr i)) := by
   have h := congrArg (fun t : Tautological 𝕜 (k + l) (2 * max a b) (whitneySum V W) ↦
-    WithLp.ofLp t.1 (interleaveIndex a b (.inr i)))
+    WithLp.ofLp t.val (interleaveIndex a b (.inr i)))
     ((whitneySumTautologicalEquiv V W).apply_symm_apply z)
   simpa only [whitneySumTautologicalEquiv_apply, WithLp.ofLp_toLp,
     interleaveLinearMap_apply_inr] using h
@@ -184,7 +184,7 @@ theorem continuous_whitneySumTautologicalEquiv :
       TotalSpace.mk' (Fin (k + l) → 𝕜)
         (E := (fun q : finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b ↦
           whitneySum q.1 q.2) *ᵖ (Tautological 𝕜 (k + l) (2 * max a b)))
-        p.proj (whitneySumTautologicalEquiv p.proj.1 p.proj.2 p.2)) := by
+        p.proj (whitneySumTautologicalEquiv p.proj.1 p.proj.2 p.snd)) := by
   let E : (finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) → Type _ :=
     Prod.fst *ᵖ (Tautological 𝕜 k a)
   let F : (finiteGrassmannian 𝕜 k a × finiteGrassmannian 𝕜 l b) → Type _ :=
@@ -206,11 +206,12 @@ theorem continuous_whitneySumTautologicalEquiv :
   refine (continuous_whitneySum.comp hb).prodMk ?_
   have hc : Continuous (fun p : TotalSpace ((Fin k → 𝕜) × (Fin l → 𝕜)) (E ×ᵇ F) ↦
       (WithLp.toLp 2 (interleaveLinearMap 𝕜 𝕜 a b
-        (WithLp.ofLp p.2.1.1, WithLp.ofLp p.2.2.1)) : EuclideanSpace 𝕜 (Fin (2 * max a b)))) :=
+        (WithLp.ofLp p.snd.1.val, WithLp.ofLp p.snd.2.val)) : EuclideanSpace 𝕜 (Fin (2 * max a b))))
+            :=
     (PiLp.continuous_toLp 2 _).comp (continuous_interleaveLinearMap.comp
       (((PiLp.continuous_ofLp 2 _).comp (continuous_snd.comp h₁)).prodMk
         ((PiLp.continuous_ofLp 2 _).comp (continuous_snd.comp h₂))))
-  exact hc.congr fun p ↦ (whitneySumTautologicalEquiv_apply p.proj.1 p.proj.2 p.2).symm
+  exact hc.congr fun p ↦ (whitneySumTautologicalEquiv_apply p.proj.1 p.proj.2 p.snd).symm
 
 noncomputable section
 
@@ -278,7 +279,7 @@ noncomputable def whitneySumTautologicalHomeomorph :
       ((Prod.fst *ᵖ (Tautological 𝕜 k a)) ×ᵇ (Prod.snd *ᵖ (Tautological 𝕜 l b)))) :
     whitneySumTautologicalHomeomorph p =
       TotalSpace.mk' (Fin (k + l) → 𝕜) p.proj
-        (whitneySumTautologicalEquiv p.proj.1 p.proj.2 p.2) := by
+        (whitneySumTautologicalEquiv p.proj.1 p.proj.2 p.snd) := by
   unfold whitneySumTautologicalHomeomorph
   apply bundleHomeomorph_apply
 
@@ -289,7 +290,7 @@ noncomputable def whitneySumTautologicalHomeomorph :
         *ᵖ (Tautological 𝕜 (k + l) (2 * max a b)))) :
     whitneySumTautologicalHomeomorph.symm p =
       TotalSpace.mk' ((Fin k → 𝕜) × (Fin l → 𝕜)) p.proj
-        ((whitneySumTautologicalEquiv p.proj.1 p.proj.2).symm p.2) := by
+        ((whitneySumTautologicalEquiv p.proj.1 p.proj.2).symm p.snd) := by
   unfold whitneySumTautologicalHomeomorph
   apply bundleHomeomorph_symm_apply
 

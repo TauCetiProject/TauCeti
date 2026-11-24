@@ -101,7 +101,7 @@ theorem maximal_isCompact_unitarySubgroup :
   have hmap : K.map (GLSymplectic n 𝕜).subtype =
       GLSymplectic n 𝕜 ⊓ unitarySubgroup (GL (n ⊕ n) 𝕜) := by
     apply eq_inf_unitarySubgroup_of_isCompact_of_le
-    · exact hK.image continuous_subtype_val
+    · exact hK.image continuous_subtypeVal
     · exact Subgroup.map_subtype_le K
     · simpa only [Subgroup.subgroupOf_map_subtype, inf_comm] using
         Subgroup.map_mono (f := (GLSymplectic n 𝕜).subtype) hUK

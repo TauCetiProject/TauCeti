@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.DSlope
-public import Mathlib.RingTheory.PowerSeries.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.RingTheory.PowerSeries.Substitution
 import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.DSlope.Basic
 
@@ -24,9 +26,10 @@ of a function as a formal multilinear series at each point; `TauCeti.taylorSerie
 one-variable expansion as an element of the ring `PowerSeries A`, where formal expansions can be
 multiplied.
 
-For functions analytic at `a`, the Taylor series is additive and multiplicative. Multiplicativity
-rests on the product rule for divided differences, `TauCeti.dslope_mul`, which gives the Cauchy
-product formula for the coefficients of the power series of a product
+For functions analytic at `a`, the Taylor series is additive and multiplicative, it determines the
+germ of the function, and it turns composition into formal substitution (`PowerSeries.subst`).
+Multiplicativity rests on the product rule for divided differences, `TauCeti.dslope_mul`, which
+gives the Cauchy product formula for the coefficients of the power series of a product
 (`HasFPowerSeriesAt.coeff_mul`). This is the coefficient calculus with which formal expansions of
 germs of analytic and meromorphic functions are compared with the functions themselves.
 
@@ -38,6 +41,12 @@ germs of analytic and meromorphic functions are compared with the functions them
 * `TauCeti.taylorSeries_add`, `TauCeti.taylorSeries_mul`, `TauCeti.taylorSeries_const`,
   `TauCeti.taylorSeries_pow`: the Taylor series of analytic functions respects the ring
   operations.
+* `TauCeti.taylorSeries_eq_C_add_X_mul`: the constant term and divided-difference tail.
+* `TauCeti.taylorSeries_inj`: two functions analytic at `a` have the same Taylor series at `a`
+  exactly when they agree near `a`.
+* `AnalyticAt.factorial_smul_coeff_taylorSeries`: `n! • aₙ` is the `n`-th iterated derivative.
+* `TauCeti.taylorSeries_comp`: the Taylor series of a composition `F ∘ φ` of scalar analytic
+  functions is the formal substitution of the Taylor series of `φ - φ a` into that of `F`.
 
 ## References
 
@@ -192,5 +201,134 @@ theorem taylorSeries_sub_const : taylorSeries (fun z : 𝕜 ↦ z - a) a = Power
     rw [coeff_taylorSeries, iterate_succ_apply, show swap dslope a (fun z : 𝕜 ↦ z - a) = _ from hd,
       ← coeff_taylorSeries, taylorSeries_const, PowerSeries.coeff_C, PowerSeries.coeff_X]
     rcases n with _ | n <;> simp
+
+/-- The Taylor series is its constant term plus `X` times the Taylor series of the
+divided difference at the same centre. -/
+theorem taylorSeries_eq_C_add_X_mul :
+    taylorSeries f a = PowerSeries.C (f a) +
+      PowerSeries.X * taylorSeries (dslope f a) a := by
+  ext (_ | n)
+  · simp
+  · simp only [map_add, PowerSeries.coeff_C, Nat.succ_ne_zero, ↓reduceIte,
+      PowerSeries.coeff_succ_X_mul, zero_add, coeff_taylorSeries, iterate_succ_apply]
+
+/-- The constant coefficient of the Taylor series of `f` at `a` is `f a`. -/
+@[simp]
+theorem constantCoeff_taylorSeries : PowerSeries.constantCoeff (taylorSeries f a) = f a := by
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_taylorSeries, iterate_zero_apply]
+
+/-- The Taylor series of the zero function is zero. -/
+@[simp]
+theorem taylorSeries_zero : taylorSeries (0 : 𝕜 → A) a = 0 := by
+  rw [Pi.zero_def, taylorSeries_const, map_zero]
+
+/-- The Taylor series of the negative of a function is the negative of its Taylor series. -/
+@[simp]
+theorem taylorSeries_neg : taylorSeries (-f) a = -taylorSeries f a := by
+  have key : ∀ n, (swap dslope a)^[n] (-f) = -(swap dslope a)^[n] f := fun n ↦ by
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      rw [iterate_succ_apply', iterate_succ_apply', ih]
+      -- `swap dslope a f` is `dslope f a` by the definition of `Function.swap`.
+      exact dslope_neg _ a
+  ext n
+  rw [coeff_taylorSeries, map_neg, coeff_taylorSeries, key, Pi.neg_apply]
+
+/-- The Taylor series of a difference of functions analytic at `a` is the difference of their
+Taylor series. -/
+@[simp]
+theorem taylorSeries_sub (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
+    taylorSeries (f - g) a = taylorSeries f a - taylorSeries g a := by
+  rw [sub_eq_add_neg, taylorSeries_add hf hg.neg, taylorSeries_neg, sub_eq_add_neg]
+
+/-- The Taylor series of a finite sum of functions analytic at `a` is the sum of their Taylor
+series. -/
+theorem taylorSeries_sum {ι : Type*} (s : Finset ι) {f : ι → 𝕜 → A}
+    (hf : ∀ i ∈ s, AnalyticAt 𝕜 (f i) a) :
+    taylorSeries (∑ i ∈ s, f i) a = ∑ i ∈ s, taylorSeries (f i) a := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    have hs : AnalyticAt 𝕜 (∑ j ∈ s, f j) a := by
+      simpa only [← Finset.sum_fn] using
+        Finset.analyticAt_sum s fun j hj ↦ hf j (mem_insert_of_mem hj)
+    rw [sum_insert hi, sum_insert hi, taylorSeries_add (hf i (mem_insert_self i s)) hs,
+      ih fun j hj ↦ hf j (mem_insert_of_mem hj)]
+
+/-- **Uniqueness of Taylor expansions.** Two functions analytic at `a` have the same Taylor series
+at `a` if and only if they agree on a neighbourhood of `a`. -/
+theorem taylorSeries_inj (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
+    taylorSeries f a = taylorSeries g a ↔ f =ᶠ[𝓝 a] g := by
+  refine ⟨fun h ↦ ?_, taylorSeries_congr⟩
+  obtain ⟨p, hp⟩ := hf.sub hg
+  have hp0 : p = 0 := funext fun n ↦ by
+    rw [FormalMultilinearSeries.zero_apply, ← FormalMultilinearSeries.coeff_eq_zero,
+      ← hp.coeff_taylorSeries, taylorSeries_sub hf hg, h, sub_self, map_zero]
+  filter_upwards [(hp0 ▸ hp).eventually_eq_zero] with z hz
+  exact sub_eq_zero.1 hz
+
+end TauCeti
+
+/-- The `n`-th Taylor coefficient of a function analytic at `a`, multiplied by `n!`, is its `n`-th
+iterated derivative at `a`. -/
+theorem AnalyticAt.factorial_smul_coeff_taylorSeries [CompleteSpace A] (hf : AnalyticAt 𝕜 f a)
+    (n : ℕ) :
+    n.factorial • PowerSeries.coeff n (TauCeti.taylorSeries f a) = iteratedDeriv n f a := by
+  obtain ⟨p, r, hp⟩ := hf
+  rw [hp.hasFPowerSeriesAt.coeff_taylorSeries, iteratedDeriv_eq_iteratedFDeriv,
+    ← hp.factorial_smul, p.apply_eq_pow_smul_coeff, one_pow, one_smul]
+
+namespace TauCeti
+
+/-- **Taylor series of a composition.** If `φ` is analytic at `a` and `F` is analytic at `φ a`,
+the Taylor series of `F ∘ φ` at `a` is obtained by substituting the Taylor series of `φ - φ a` at
+`a`, which has constant coefficient `0`, into the Taylor series of `F` at `φ a`. -/
+theorem taylorSeries_comp {F φ : 𝕜 → 𝕜} (hF : AnalyticAt 𝕜 F (φ a)) (hφ : AnalyticAt 𝕜 φ a) :
+    taylorSeries (F ∘ φ) a =
+      (taylorSeries F (φ a)).subst (taylorSeries φ a - PowerSeries.C (φ a)) := by
+  set b := φ a
+  set ψ := taylorSeries φ a - PowerSeries.C b
+  have hψ0 : PowerSeries.constantCoeff ψ = 0 := by simp [ψ, b]
+  have hψ : PowerSeries.HasSubst ψ := .of_constantCoeff_zero' hψ0
+  set u : 𝕜 → 𝕜 := φ - fun _ ↦ b
+  have hu : AnalyticAt 𝕜 u a := hφ.sub analyticAt_const
+  have hTu : taylorSeries u a = ψ := by
+    rw [taylorSeries_sub hφ analyticAt_const, taylorSeries_const]
+  -- A product with `ψ ^ (n + 1)` has vanishing coefficients below `n + 1`.
+  have hcoeff : ∀ n (S : PowerSeries 𝕜), PowerSeries.coeff n (ψ ^ (n + 1) * S) = 0 := fun n S ↦
+    PowerSeries.X_pow_dvd_iff.1 ((pow_dvd_pow_of_dvd (PowerSeries.X_dvd_iff.2 hψ0) _).mul_right S)
+      n (Nat.lt_succ_self n)
+  ext n
+  set c : ℕ → 𝕜 := fun j ↦ (swap dslope b)^[j] F b
+  set D := (swap dslope b)^[n + 1] F
+  -- Function side: Taylor's formula for `F` around `b`, to order `n + 1`, composed with `φ`.
+  have hFφ : F ∘ φ = ∑ j ∈ range (n + 1), (fun _ ↦ c j) * u ^ j + u ^ (n + 1) * (D ∘ φ) := by
+    funext z
+    simpa [u, c, D, Finset.sum_apply, mul_comm] using
+      (sum_add_pow_sub_smul_iterate_dslope F b (φ z) (n + 1)).symm
+  have hD : AnalyticAt 𝕜 (D ∘ φ) a := (hF.iterate_dslope (n + 1)).comp hφ
+  have hL : taylorSeries (F ∘ φ) a =
+      ∑ j ∈ range (n + 1), PowerSeries.C (c j) * ψ ^ j + ψ ^ (n + 1) * taylorSeries (D ∘ φ) a := by
+    rw [hFφ, taylorSeries_add (Finset.analyticAt_sum _ fun j _ ↦ analyticAt_const.mul (hu.pow j))
+      ((hu.pow _).mul hD), taylorSeries_sum _ fun j _ ↦ analyticAt_const.mul (hu.pow j),
+      taylorSeries_mul (hu.pow _) hD, taylorSeries_pow hu, hTu]
+    congr 1
+    refine sum_congr rfl fun j _ ↦ ?_
+    rw [taylorSeries_mul analyticAt_const (hu.pow j), taylorSeries_const, taylorSeries_pow hu, hTu]
+  -- Formal side: the Taylor series of `F` agrees with its truncation up to a multiple of
+  -- `X ^ (n + 1)`.
+  obtain ⟨Q, hQ⟩ : PowerSeries.X ^ (n + 1) ∣
+      taylorSeries F b - ∑ j ∈ range (n + 1), PowerSeries.C (c j) * PowerSeries.X ^ j := by
+    refine PowerSeries.X_pow_dvd_iff.2 fun k hk ↦ ?_
+    simp [map_sum, Finset.mem_range.2 hk, c]
+  have hR : (taylorSeries F b).subst ψ =
+      ∑ j ∈ range (n + 1), PowerSeries.C (c j) * ψ ^ j + ψ ^ (n + 1) * Q.subst ψ := by
+    rw [eq_add_of_sub_eq hQ, ← PowerSeries.coe_substAlgHom hψ]
+    simp only [map_add, map_sum, map_mul, map_pow, PowerSeries.substAlgHom_X,
+      PowerSeries.coe_substAlgHom, PowerSeries.subst_C]
+    exact add_comm _ _
+  rw [hL, hR, map_add, map_add, hcoeff, hcoeff]
 
 end TauCeti

@@ -27,16 +27,16 @@ purely imaginary zeros `Re s = 0` introduced by deleted Euler factors of imprimi
 while nonvanishing on `1 ≤ Re s` (`DirichletCharacter.LFunction_ne_zero_of_one_le_re`) reduces
 `DirichletGRH χ` to zeros in the open critical strip `0 < Re s < 1`. Consequently:
 
-* `TauCeti.dirichletGRH_iff_mem_Ioo`: `DirichletGRH χ` is equivalent to every zero of
+* `DirichletCharacter.dirichletGRH_iff_mem_Ioo`: `DirichletGRH χ` is equivalent to every zero of
   `χ.LFunction` with `0 < Re s < 1` having `Re s = 1 / 2`.
-* `TauCeti.dirichletGRH_changeLevel_iff` and `TauCeti.dirichletGRH_primitiveCharacter_iff`:
-  `DirichletGRH` is invariant under raising the level and passing to the inducing primitive
-  character, so `GRH` is equivalent to its restriction to primitive characters
-  (`TauCeti.grh_iff_isPrimitive`).
-* `TauCeti.dirichletGRH_one_iff` and `TauCeti.dirichletGRH_modOne_iff`: for a principal character
-  modulo any `N ≥ 1`, `DirichletGRH` is equivalent to Mathlib's `RiemannHypothesis`; in
+* `TauCeti.dirichletGRH_changeLevel_iff` and
+  `DirichletCharacter.dirichletGRH_primitiveCharacter_iff`: `DirichletGRH` is invariant under
+  raising the level and passing to the inducing primitive character, so `GRH` is equivalent to its
+  restriction to primitive characters (`TauCeti.grh_iff_isPrimitive`).
+* `TauCeti.dirichletGRH_one_iff` and `DirichletCharacter.dirichletGRH_modOne_iff`: for a principal
+  character modulo any `N ≥ 1`, `DirichletGRH` is equivalent to Mathlib's `RiemannHypothesis`; in
   particular `GRH` implies `RiemannHypothesis` (`TauCeti.GRH.riemannHypothesis`).
-* `TauCeti.dirichletGRH_inv_iff`: `DirichletGRH` is invariant under character inversion.
+* `DirichletCharacter.dirichletGRH_inv_iff`: `DirichletGRH` is invariant under character inversion.
 
 ## References
 
@@ -55,16 +55,22 @@ namespace TauCeti
 def DirichletGRH {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) : Prop :=
   ∀ s : ℂ, 0 < s.re → (χ ≠ 1 ∨ s ≠ 1) → χ.LFunction s = 0 → s.re = 1 / 2
 
-theorem dirichletGRH_def {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
-    DirichletGRH χ =
-      ∀ s : ℂ, 0 < s.re → (χ ≠ 1 ∨ s ≠ 1) → χ.LFunction s = 0 → s.re = 1 / 2 :=
-  (rfl)
-
 /-- Zero-location projection from `DirichletGRH χ`. -/
 theorem DirichletGRH.re_eq {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N} (h : DirichletGRH χ)
     {s : ℂ} (hs : 0 < s.re) (h1 : χ ≠ 1 ∨ s ≠ 1) (h0 : χ.LFunction s = 0) :
     s.re = 1 / 2 :=
   h s hs h1 h0
+
+end TauCeti
+
+namespace DirichletCharacter
+
+open TauCeti
+
+theorem dirichletGRH_def {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
+    DirichletGRH χ =
+      ∀ s : ℂ, 0 < s.re → (χ ≠ 1 ∨ s ≠ 1) → χ.LFunction s = 0 → s.re = 1 / 2 :=
+  (rfl)
 
 /-- Because `χ.LFunction` has no zeros on `1 ≤ Re s` (away from the principal pole at `1`),
 `DirichletGRH χ` is equivalent to every zero in the open critical strip `0 < Re s < 1` lying on
@@ -73,43 +79,14 @@ theorem dirichletGRH_iff_mem_Ioo {N : ℕ} [NeZero N] (χ : DirichletCharacter �
     DirichletGRH χ ↔ ∀ s : ℂ, χ.LFunction s = 0 → s.re ∈ Ioo 0 1 → s.re = 1 / 2 := by
   refine ⟨fun h s h0 hre ↦ h s hre.1 (.inr fun hs1 ↦ by simp [hs1] at hre) h0,
     fun h s hs h1 h0 ↦ h s h0 ⟨hs, ?_⟩⟩
-  exact lt_of_not_ge fun hge ↦ DirichletCharacter.LFunction_ne_zero_of_one_le_re χ h1 hge h0
-
-/-- Raising the level of a Dirichlet character deletes Euler factors whose zeros lie on `Re s = 0`,
-leaving `DirichletGRH` unchanged. -/
-@[simp]
-theorem dirichletGRH_changeLevel_iff {M N : ℕ} [NeZero M] [NeZero N] (hMN : M ∣ N)
-    (χ : DirichletCharacter ℂ M) :
-    DirichletGRH (DirichletCharacter.changeLevel hMN χ) ↔ DirichletGRH χ := by
-  rw [dirichletGRH_iff_mem_Ioo, dirichletGRH_iff_mem_Ioo]
-  refine forall_congr' fun s ↦ ⟨fun h h0 hre ↦ h ?_ hre, fun h h0 hre ↦ h ?_ hre⟩
-  · exact (DirichletCharacter.LFunction_changeLevel_eq_zero_iff χ hMN hre.1
-      (.inr fun hs1 ↦ by simp [hs1] at hre)).2 h0
-  · exact (DirichletCharacter.LFunction_changeLevel_eq_zero_iff χ hMN hre.1
-      (.inr fun hs1 ↦ by simp [hs1] at hre)).1 h0
-
-/-- `DirichletGRH` holds for a character if and only if it holds for its inducing primitive
-character. -/
-@[simp]
-theorem dirichletGRH_primitiveCharacter_iff {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
-    DirichletGRH χ.primitiveCharacter ↔ DirichletGRH χ := by
-  conv_rhs => rw [← χ.changeLevel_primitiveCharacter]
-  exact (dirichletGRH_changeLevel_iff χ.conductor_dvd_level χ.primitiveCharacter).symm
+  exact lt_of_not_ge fun hge ↦ χ.LFunction_ne_zero_of_one_le_re h1 hge h0
 
 /-- At modulus `1`, `DirichletGRH` is equivalent to `RiemannHypothesis`. -/
 @[simp]
 theorem dirichletGRH_modOne_iff (χ : DirichletCharacter ℂ 1) :
     DirichletGRH χ ↔ RiemannHypothesis := by
-  rw [dirichletGRH_iff_mem_Ioo, riemannHypothesis_iff_mem_Ioo]
-  simp_rw [DirichletCharacter.LFunction_modOne_eq]
-
-/-- For the principal character modulo any `N ≥ 1`, `DirichletGRH` is equivalent to
-`RiemannHypothesis`. -/
-@[simp]
-theorem dirichletGRH_one_iff {N : ℕ} [NeZero N] :
-    DirichletGRH (1 : DirichletCharacter ℂ N) ↔ RiemannHypothesis := by
-  rw [← DirichletCharacter.changeLevel_one N.one_dvd, dirichletGRH_changeLevel_iff,
-    dirichletGRH_modOne_iff]
+  rw [χ.dirichletGRH_iff_mem_Ioo, riemannHypothesis_iff_mem_Ioo]
+  simp_rw [LFunction_modOne_eq]
 
 /-- Complex conjugation relates the zeros of `χ.LFunction` and `χ⁻¹.LFunction`, so `DirichletGRH`
 is invariant under character inversion. -/
@@ -122,8 +99,51 @@ theorem dirichletGRH_inv_iff {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N
   intro N _ ψ h
   rw [dirichletGRH_iff_mem_Ioo] at h ⊢
   intro s h0 hre
-  rw [← conj_conj s, DirichletCharacter.LFunction_inv_conj_eq_zero_iff] at h0
+  rw [← conj_conj s, LFunction_inv_conj_eq_zero_iff] at h0
   simpa using h (conj s) h0 (by simpa using hre)
+
+end DirichletCharacter
+
+namespace TauCeti
+
+/-- Raising the level of a Dirichlet character deletes Euler factors whose zeros lie on `Re s = 0`,
+leaving `DirichletGRH` unchanged. -/
+@[simp]
+theorem dirichletGRH_changeLevel_iff {M N : ℕ} [NeZero M] [NeZero N] (hMN : M ∣ N)
+    (χ : DirichletCharacter ℂ M) :
+    DirichletGRH (DirichletCharacter.changeLevel hMN χ) ↔ DirichletGRH χ := by
+  rw [DirichletCharacter.dirichletGRH_iff_mem_Ioo, DirichletCharacter.dirichletGRH_iff_mem_Ioo]
+  refine forall_congr' fun s ↦ ⟨fun h h0 hre ↦ h ?_ hre, fun h h0 hre ↦ h ?_ hre⟩
+  · exact (DirichletCharacter.LFunction_changeLevel_eq_zero_iff χ hMN hre.1
+      (.inr fun hs1 ↦ by simp [hs1] at hre)).2 h0
+  · exact (DirichletCharacter.LFunction_changeLevel_eq_zero_iff χ hMN hre.1
+      (.inr fun hs1 ↦ by simp [hs1] at hre)).1 h0
+
+/-- For the principal character modulo any `N ≥ 1`, `DirichletGRH` is equivalent to
+`RiemannHypothesis`. -/
+@[simp]
+theorem dirichletGRH_one_iff {N : ℕ} [NeZero N] :
+    DirichletGRH (1 : DirichletCharacter ℂ N) ↔ RiemannHypothesis := by
+  rw [← DirichletCharacter.changeLevel_one N.one_dvd, dirichletGRH_changeLevel_iff,
+    DirichletCharacter.dirichletGRH_modOne_iff]
+
+end TauCeti
+
+namespace DirichletCharacter
+
+open TauCeti
+
+/-- `DirichletGRH` holds for a character if and only if it holds for its inducing primitive
+character. -/
+@[simp]
+theorem dirichletGRH_primitiveCharacter_iff {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
+    DirichletGRH χ.primitiveCharacter ↔ DirichletGRH χ := by
+  conv_rhs => rw [← χ.changeLevel_primitiveCharacter]
+  exact (dirichletGRH_changeLevel_iff χ.conductor_dvd_level χ.primitiveCharacter).symm
+
+end DirichletCharacter
+
+namespace TauCeti
 
 /-- **The generalized Riemann hypothesis for all Dirichlet L-functions.** -/
 def GRH : Prop :=
@@ -146,7 +166,7 @@ characters. -/
 theorem grh_iff_isPrimitive :
     GRH ↔ ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N), χ.IsPrimitive → DirichletGRH χ :=
   ⟨fun h N _ χ _ ↦ h N χ, fun h _ _ χ ↦
-    (dirichletGRH_primitiveCharacter_iff χ).mp
+    χ.dirichletGRH_primitiveCharacter_iff.mp
       (h χ.conductor χ.primitiveCharacter χ.primitiveCharacter_isPrimitive)⟩
 
 end TauCeti

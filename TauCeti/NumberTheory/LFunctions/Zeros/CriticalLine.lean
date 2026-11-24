@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Meromorphic.Counting.Certificate
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.GRH
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
-public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 
 /-!
@@ -135,7 +135,7 @@ that every zero of `χ.completedLFunction` lies on the critical line. -/
 theorem allOnCriticalLine_completedLFunction_iff {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
     AllOnCriticalLine χ.completedLFunction univ univ ↔ DirichletGRH χ := by
-  rw [allOnCriticalLine_iff, dirichletGRH_iff_mem_Ioo]
+  rw [allOnCriticalLine_iff, χ.dirichletGRH_iff_mem_Ioo]
   exact forall_congr' fun s ↦ ⟨fun h h0 hre ↦ h (mem_univ s)
     (hχ.zero_lt_divisor_completedLFunction_iff.2 ⟨h0, hre⟩),
     fun h _ hpos ↦
@@ -147,7 +147,7 @@ that every zero of `(dirichletData χ hχ).entireCompletion` lies on the critica
 theorem allOnCriticalLine_dirichletData_entireCompletion_iff {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
     AllOnCriticalLine (dirichletData χ hχ).entireCompletion univ univ ↔ DirichletGRH χ := by
-  rw [allOnCriticalLine_iff, dirichletGRH_iff_mem_Ioo]
+  rw [allOnCriticalLine_iff, χ.dirichletGRH_iff_mem_Ioo]
   exact forall_congr' fun s ↦ ⟨fun h h0 hre ↦ h (mem_univ s)
     ((zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ).2 ⟨h0, hre⟩),
     fun h _ hpos ↦

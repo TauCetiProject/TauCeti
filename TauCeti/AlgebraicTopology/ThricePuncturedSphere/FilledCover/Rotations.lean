@@ -102,9 +102,9 @@ variable {E : Type*} [TopologicalSpace E] {p : E → ThricePuncturedSphere} {n :
 /-- Multiplication by a complex number of norm `1` maps the punctured unit disc to itself. -/
 private theorem mul_mem_puncturedDisc_of_norm_eq_one {ζ : ℂ} (hζ : ‖ζ‖ = 1) (w : 𝔻*) :
     ζ * w ∈ ball (0 : ℂ) 1 \ {0} := by
-  refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (norm_ne_zero_iff.1 (by simp [hζ])) w.2.2⟩
+  refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (norm_ne_zero_iff.1 (by simp [hζ])) w.property.2⟩
   rw [norm_mul, hζ, one_mul]
-  exact mem_ball_zero_iff.1 w.2.1
+  exact mem_ball_zero_iff.1 w.property.1
 
 /-- Rotation by `exp (2πi/e)` does not change `e`-th powers. -/
 private theorem exp_mul_pow {e : ℕ} (he : e ≠ 0) (z : ℂ) :
@@ -134,7 +134,7 @@ variable (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n) {q : Puncture
   (hδ : ∀ t : unitInterval, (q.coord (δ t) : ℂ) = q.coord y * exp (2 * π * I * t))
   (hσ : σ = ν.permCongr (hp.monodromyPerm basePt g))
   (hg : (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
-    (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ y
+    (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ y
       (FundamentalGroup.fromPath (.mk δ))) = g)
 
 include hσ hg in
@@ -142,12 +142,12 @@ include hσ hg in
 from the endpoint of the lift of `α` from the sheet `m` ends at the endpoint of the lift of `α` from
 the sheet `σ m`. -/
 private theorem monodromy_δ_monodromy_α (m : Fin n) :
-    hp.monodromy (.mk (δ.map continuous_subtype_val)) (hp.monodromy (.mk α) (ν.symm m)) =
+    hp.monodromy (.mk (δ.map continuous_subtypeVal)) (hp.monodromy (.mk α) (ν.symm m)) =
       hp.monodromy (.mk α) (ν.symm (σ m)) := by
   subst hσ hg
   -- Lifting the transport of `δ` and then `α` is lifting `α` and then `δ`.
   have h := hp.monodromy_fundamentalGroupMulEquivOfPath_symm_apply α
-    (FundamentalGroup.fromPath (.mk (δ.map continuous_subtype_val))) (ν.symm m)
+    (FundamentalGroup.fromPath (.mk (δ.map continuous_subtypeVal))) (ν.symm m)
   rw [eq_symm_apply, coveringFiberEquiv_apply] at h
   rw [FundamentalGroup.map_fromPath]
   simpa only [permCongr_apply, symm_apply_apply, IsCoveringMap.coe_monodromyPerm] using h.symm
@@ -171,7 +171,7 @@ coordinate `c` of `y`, the lift of `δ` from a point `v` with `v ^ e = c` ends a
 private theorem monodromy_δ_eq {v v' : 𝔻*}
     (hv : (v : ℂ) ^ e = q.coord y) (hv' : (v' : ℂ) = exp (2 * π * I / e) * v)
     {x : p ⁻¹' {(y : ThricePuncturedSphere)}} (hx : φ v = x) :
-    (hp.monodromy (.mk (δ.map continuous_subtype_val)) x : E) = φ v' := by
+    (hp.monodromy (.mk (δ.map continuous_subtypeVal)) x : E) = φ v' := by
   have hmem (t : unitInterval) : exp (2 * π * I * t / e) * v ∈ ball (0 : ℂ) 1 \ {0} := by
     refine mul_mem_puncturedDisc_of_norm_eq_one ?_ v
     rw [show 2 * π * I * t / e = ((2 * π * t / e : ℝ) : ℂ) * I by push_cast; ring]
@@ -179,12 +179,12 @@ private theorem monodromy_δ_eq {v v' : 𝔻*}
   -- The arc `t ↦ exp (2πit/e) * v` lifts `δ`.
   let Γ : C(unitInterval, E) := ⟨fun t ↦ φ ⟨_, hmem t⟩,
     hφ.comp (Continuous.subtype_mk (by fun_prop) _)⟩
-  have hΓ : p ∘ Γ = δ.map continuous_subtype_val := by
+  have hΓ : p ∘ Γ = δ.map continuous_subtypeVal := by
     funext t
     obtain ⟨ht, h⟩ := hφq ⟨_, hmem t⟩
     refine congrArg Subtype.val (q.coord.injective (Subtype.ext (h.trans ?_)))
     have he' : (e : ℂ) ≠ 0 := Nat.cast_ne_zero.2 he
-    rw [hδ t, mul_pow, ← exp_nat_mul, hv, mul_comm, mul_div_cancel₀ _ he']
+    rw [hδ t, mul_pow, ← exp_natCast_mul, hv, mul_comm, mul_div_cancel₀ _ he']
   rw [hp.monodromy_eq_apply_one hΓ (by simp [Γ, hx])]
   exact congrArg φ (Subtype.ext (by simp [hv']))
 
@@ -220,7 +220,7 @@ private theorem exists_mk_eq_σ
     push_cast
     field_simp [ofReal_ne_zero.2 hwe.2.ne']
   have hmem (u : 𝔻*) (hu : (u : ℂ) ^ e = a) : (r : ℂ) * u ∈ ball (0 : ℂ) 1 \ {0} := by
-    refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (ofReal_ne_zero.2 hr.ne') u.2.2⟩
+    refine ⟨mem_ball_zero_iff.2 ?_, mul_ne_zero (ofReal_ne_zero.2 hr.ne') u.property.2⟩
     have h := congrArg norm (hrw u hu)
     rw [norm_pow] at h
     exact (pow_lt_one_iff_of_nonneg (norm_nonneg _) he).1 (by rw [h]; norm_num)
@@ -315,7 +315,7 @@ private theorem chartAt_center_symm_mul_mem_iff_of (hp : IsCoveringMap p)
     exact iff_of_false hs' hs
   -- Off the centre, both points lie in `E`, on the filling chart.
   obtain ⟨w, rfl⟩ : ∃ w : 𝔻*, inclusion sdiff_subset w = d :=
-    ⟨⟨d, d.2, fun h ↦ hd (Subtype.ext h)⟩, rfl⟩
+    ⟨⟨d, d.property, fun h ↦ hd (Subtype.ext h)⟩, rfl⟩
   let w' : 𝔻* := ⟨_, mul_mem_puncturedDisc_of_norm_eq_one hζ w⟩
   have hw' : ζ * ((inclusion sdiff_subset w : ball (0 : ℂ) 1) : ℂ) =
       ((inclusion sdiff_subset w' : ball (0 : ℂ) 1) : ℂ) := by
@@ -435,14 +435,14 @@ private theorem exists_path_pow_im_neg {e : ℕ} (he : e ≠ 0) (w : 𝔻*) (hw 
   have ha0 : a ≠ 0 := fun h ↦ by simp [h] at hw
   have ha1 : ‖a‖ < 1 := by
     rw [ha, norm_pow]
-    exact pow_lt_one₀ (norm_nonneg _) (mem_ball_zero_iff.1 w.2.1) he
+    exact pow_lt_one₀ (norm_nonneg _) (mem_ball_zero_iff.1 w.property.1) he
   -- The segment `s` from `a` to `c` stays in the lower half-plane and in the unit disc.
   let s : unitInterval → ℂ := fun t ↦ (1 - (t : ℝ)) • a + (t : ℝ) • c
   have hs_im (t : unitInterval) : (s t).im < 0 :=
-    convex_halfSpace_im_lt 0 hw hc (sub_nonneg.2 t.2.2) t.2.1 (by ring)
+    convex_halfSpace_im_lt 0 hw hc (sub_nonneg.2 t.property.2) t.property.1 (by ring)
   have hs_norm (t : unitInterval) : ‖s t‖ < 1 :=
     mem_ball_zero_iff.1 (convex_ball (0 : ℂ) 1 (mem_ball_zero_iff.2 ha1) (mem_ball_zero_iff.2 hc1)
-      (sub_nonneg.2 t.2.2) t.2.1 (by ring))
+      (sub_nonneg.2 t.property.2) t.property.1 (by ring))
   -- Its quotients by `a` avoid the closed negative real axis, so they have continuous `e`-th roots.
   have hslit (t : unitInterval) : s t / a ∈ slitPlane := div_mem_slitPlane_of_im_neg hw (hs_im t)
   let u : unitInterval → ℂ := fun t ↦ w * (s t / a) ^ ((e : ℂ)⁻¹)
@@ -519,7 +519,7 @@ private theorem exists_mk_eq_σinf (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt
   have hc : (Puncture.inf.coord infBasePt : ℂ).im < 0 :=
     (mem_upperHalfPlane_iff_coord_inf _ _).1 pPlus_mem_upperHalfPlane
   obtain ⟨v, hv, γ, hγ⟩ := exists_path_pow_im_neg he w ((hφH w).1 hw) hc
-    (mem_ball_zero_iff.1 (Puncture.inf.coord infBasePt).2.1)
+    (mem_ball_zero_iff.1 (Puncture.inf.coord infBasePt).property.1)
   have hvH : p (chart p (overInf p b) v) ∈ upperHalfPlane := (hφH v).2 (by rw [hv]; exact hc)
   obtain ⟨m, hm⟩ := exists_eq_monodromy_α hp ν hφq (q := .inf) (y := infBasePt) (α := αPlus)
     (v := v) hv

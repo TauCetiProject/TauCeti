@@ -46,6 +46,9 @@ changes across a rectangle move into marking counts.
   the swapped-out column is covered by the original rectangle but not by the new one.
 * `TauCeti.GridDiagram.X_not_mem_coveredRows_of_disjoint`: the X-marking of a covered column
   avoids an X-avoiding rectangle's covered rows.
+* `TauCeti.GridRectangleBetween.pointSet_inter_coveredSquares_eq_insert`,
+  `TauCeti.GridRectangleBetween.card_pointSet_inter_coveredSquares`: the source-state points in
+  the squares a rectangle covers are its interior points and its lower-left corner.
 
 ## References
 
@@ -232,6 +235,14 @@ theorem pointSet_inter_coveredSquares_eq_insert :
         (R.toGridRectangle.mem_coveredSquares _).mpr
           ⟨Grid.left_mem_cIco R.left_ne_right, Grid.left_mem_cIco R.bottom_ne_top⟩⟩
     · exact ⟨hx, R.toGridRectangle.interior_subset_coveredSquares hp⟩
+
+/-- A rectangle covers one more source-state point than it has in its interior: its lower-left
+corner. -/
+theorem card_pointSet_inter_coveredSquares :
+    (x.pointSet ∩ R.toGridRectangle.coveredSquares).card =
+      (x.pointSet ∩ R.toGridRectangle.interior).card + 1 := by
+  rw [R.pointSet_inter_coveredSquares_eq_insert, Finset.card_insert_of_notMem fun h =>
+    R.toGridRectangle.notMem_interior_of_fst_eq_left rfl (Finset.mem_inter.1 h).2]
 
 end GridRectangleBetween
 

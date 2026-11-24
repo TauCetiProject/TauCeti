@@ -232,16 +232,16 @@ theorem Place.ord_derivativeOfSeparating_eq_sub (P : Place k F)
     (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F]
     (hy : Transcendental k y) [Algebra.IsSeparable k⟮y⟯ F] :
     P.ord (derivativeOfSeparating hx y) =
-      weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hy).2
+      weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hy).property
           (by simpa using weilDifferentialOfSeparating_ne_zero hF hy) P -
-        weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hx).2
+        weilDifferentialOrder hF hex (weilDifferentialOfSeparating hF hx).property
           (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) P := by
   let := weilDifferentialSpaceModule hF
   have hchain := congrArg Subtype.val
     (weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul hF hex hx hy)
   rw [coe_weilDifferentialSpaceModule_smul] at hchain
   rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex _ _
-    (weilDifferentialOfSeparating hF hx).2
+    (weilDifferentialOfSeparating hF hx).property
     (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) hchain P, add_sub_cancel_right]
 
 /-- **The Kähler–Weil comparison does not depend on the separating element** (Stichtenoth,

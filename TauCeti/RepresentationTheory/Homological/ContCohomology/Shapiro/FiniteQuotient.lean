@@ -80,7 +80,7 @@ noncomputable def comapInflation (B : Rep.{w} R C) :
     SmoothDiscreteTopRep.{v, u, w} R (C.comap (QuotientGroup.mk' V.toSubgroup)) :=
   ⟨TopRep.res ((QuotientGroup.mk' V.toSubgroup).subgroupComap C) (discreteTopRep R C B),
     (isSmoothDiscrete_discreteTopRep R C B).res
-      ((QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _)⟩
+      ((QuotientGroup.continuous_mk.comp continuous_subtypeVal).subtype_mk _)⟩
 
 variable {V C} (B : Rep.{w} R C)
 
@@ -147,9 +147,9 @@ noncomputable def coindInflationEquiv :
         ((ofSmoothDiscrete R _).obj (comapInflation V C B)).V where
   -- `QuotientGroup.mk` is multiplicative by definition, so equivariance in both directions is the
   -- defining law of the source on representatives.
-  toFun f := DiscreteCoind.mk _ _ _ (fun g ↦ (comapInflationLinearEquiv B).symm (f.1 g))
-    ((IsLocallyConstant.of_discrete f.1).comp_continuous QuotientGroup.continuous_mk)
-    fun u g ↦ f.2 ((QuotientGroup.mk' V.toSubgroup).subgroupComap C u) g
+  toFun f := DiscreteCoind.mk _ _ _ (fun g ↦ (comapInflationLinearEquiv B).symm (f.val g))
+    ((IsLocallyConstant.of_discrete f.val).comp_continuous QuotientGroup.continuous_mk)
+    fun u g ↦ f.property ((QuotientGroup.mk' V.toSubgroup).subgroupComap C u) g
   invFun F := ⟨fun q ↦ Quotient.liftOn' q (fun g ↦ comapInflationLinearEquiv B (F g))
       fun a b hab ↦ by
         rw [← mul_inv_cancel_left a b]
@@ -171,7 +171,7 @@ noncomputable def coindInflationEquiv :
 @[simp]
 theorem coindInflationEquiv_apply
     (f : (discreteTopRep R (G ⧸ V.toSubgroup) (Rep.coind C.subtype B)).V) (g : G) :
-    coindInflationEquiv B f g = (comapInflationLinearEquiv B).symm (f.1 g) :=
+    coindInflationEquiv B f g = (comapInflationLinearEquiv B).symm (f.val g) :=
   (rfl)
 
 /-- The inverse comparison descends a coinduced function along the quotient map. -/
@@ -179,7 +179,7 @@ theorem coindInflationEquiv_apply
 theorem coindInflationEquiv_symm_apply_mk
     (F : DiscreteCoind G (C.comap (QuotientGroup.mk' V.toSubgroup))
       ((ofSmoothDiscrete R _).obj (comapInflation V C B)).V)
-    (g : G) : ((coindInflationEquiv B).symm F).1 g = comapInflationLinearEquiv B (F g) :=
+    (g : G) : ((coindInflationEquiv B).symm F).val g = comapInflationLinearEquiv B (F g) :=
   (rfl)
 
 variable [CompactSpace G]

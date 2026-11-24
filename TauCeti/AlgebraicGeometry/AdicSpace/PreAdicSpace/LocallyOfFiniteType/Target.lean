@@ -80,7 +80,7 @@ theorem LocallyOfFiniteType.restrictPreimage {f : X ⟶ Y} (hf : LocallyOfFinite
           K.isOpenEmbedding) ≫ f.restrictPreimage W) := by
     intro x
     obtain ⟨U, hx, V, -, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-      hsheaf, eU, eV, hfac⟩ := (chartLocally_iff f).mp ((locallyOfFiniteType_iff f).mp hf) x.1
+      hsheaf, eU, eV, hfac⟩ := (chartLocally_iff f).mp ((locallyOfFiniteType_iff f).mp hf) x.val
     have hsA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
         (presentationLimitPresheaf P S.plus) :=
       ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ hY)

@@ -70,9 +70,9 @@ variable (F : (Finset ι)ᵒᵖ ⥤ C)
 /-- The restriction from the summand `F(s)` to the summand `F(t)` of the coproduct of the values
 of `F` on the sets of size `n + 1`, for a subset `t ⊆ s`; it vanishes when `t` has another size. -/
 private def orderedCechRestrict (n : ℕ) {s t : Finset ι} (h : t ⊆ s) :
-    F.obj (op s) ⟶ ∐ fun u : {u : Finset ι // #u = n + 1} ↦ F.obj (op u.1) :=
+    F.obj (op s) ⟶ ∐ fun u : {u : Finset ι // #u = n + 1} ↦ F.obj (op u.val) :=
   if ht : #t = n + 1 then
-    F.map (homOfLE h).op ≫ Sigma.ι (fun u : {u : Finset ι // #u = n + 1} ↦ F.obj (op u.1)) ⟨t, ht⟩
+    F.map (homOfLE h).op ≫ Sigma.ι (fun u : {u : Finset ι // #u = n + 1} ↦ F.obj (op u.val)) ⟨t, ht⟩
   else 0
 
 omit [LinearOrder ι] in
@@ -84,14 +84,14 @@ private lemma orderedCechRestrict_congr (n : ℕ) {s t t' : Finset ι} (h : t �
 /-- The ordered Čech differential, sending the summand `F(s)` to the alternating sum of its
 restrictions to the sets `s \ {i}`. -/
 private def orderedCechD (n : ℕ) :
-    (∐ fun s : {s : Finset ι // #s = n + 1 + 1} ↦ F.obj (op s.1)) ⟶
-      ∐ fun s : {s : Finset ι // #s = n + 1} ↦ F.obj (op s.1) :=
-  Sigma.desc fun s ↦ ∑ i ∈ s.1, ((-1 : ℤ) ^ #{j ∈ s.1 | j < i}) •
-    F.orderedCechRestrict n (s.1.erase_subset i)
+    (∐ fun s : {s : Finset ι // #s = n + 1 + 1} ↦ F.obj (op s.val)) ⟶
+      ∐ fun s : {s : Finset ι // #s = n + 1} ↦ F.obj (op s.val) :=
+  Sigma.desc fun s ↦ ∑ i ∈ s.val, ((-1 : ℤ) ^ #{j ∈ s.val | j < i}) •
+    F.orderedCechRestrict n (s.val.erase_subset i)
 
 private lemma ι_orderedCechD (n : ℕ) (s : {s : Finset ι // #s = n + 1 + 1}) :
-    Sigma.ι _ s ≫ F.orderedCechD n = ∑ i ∈ s.1, ((-1 : ℤ) ^ #{j ∈ s.1 | j < i}) •
-      F.orderedCechRestrict n (s.1.erase_subset i) := by
+    Sigma.ι _ s ≫ F.orderedCechD n = ∑ i ∈ s.val, ((-1 : ℤ) ^ #{j ∈ s.val | j < i}) •
+      F.orderedCechRestrict n (s.val.erase_subset i) := by
   simp [orderedCechD]
 
 private lemma orderedCechRestrict_comp_orderedCechD (n : ℕ) {s t : Finset ι} (h : t ⊆ s) :
@@ -145,25 +145,25 @@ coproduct of the `F(s)` over the sets `s = {i₀ < ⋯ < iₚ}` with `p + 1` ele
 `Functor.orderedCechComplexι` of the summands, which are a coproduct cocone, and by
 `Functor.ι_orderedCechComplex_d`. -/
 def orderedCechComplex : ChainComplex C ℕ :=
-  ChainComplex.of (fun p ↦ ∐ fun s : {s : Finset ι // #s = p + 1} ↦ F.obj (op s.1))
+  ChainComplex.of (fun p ↦ ∐ fun s : {s : Finset ι // #s = p + 1} ↦ F.obj (op s.val))
     F.orderedCechD F.orderedCechD_comp_orderedCechD
 
 /-- The inclusion of the summand `F(s)` into the degree `p` term of the ordered Čech complex, for
 a set `s` with `p + 1` elements. -/
 def orderedCechComplexι {p : ℕ} (s : {s : Finset ι // #s = p + 1}) :
-    F.obj (op s.1) ⟶ F.orderedCechComplex.X p :=
-  Sigma.ι (fun s : {s : Finset ι // #s = p + 1} ↦ F.obj (op s.1)) s
+    F.obj (op s.val) ⟶ F.orderedCechComplex.X p :=
+  Sigma.ι (fun s : {s : Finset ι // #s = p + 1} ↦ F.obj (op s.val)) s
 
 /-- The morphism out of the degree `p` term of the ordered Čech complex given on each summand. -/
 def orderedCechComplexDesc {p : ℕ} {A : C}
-    (f : ∀ s : {s : Finset ι // #s = p + 1}, F.obj (op s.1) ⟶ A) :
+    (f : ∀ s : {s : Finset ι // #s = p + 1}, F.obj (op s.val) ⟶ A) :
     F.orderedCechComplex.X p ⟶ A :=
   Sigma.desc f
 
 /-- The morphism `Functor.orderedCechComplexDesc f` restricts to `f s` on the summand `F(s)`. -/
 @[reassoc (attr := simp)]
 lemma ι_orderedCechComplexDesc {p : ℕ} {A : C}
-    (f : ∀ s : {s : Finset ι // #s = p + 1}, F.obj (op s.1) ⟶ A)
+    (f : ∀ s : {s : Finset ι // #s = p + 1}, F.obj (op s.val) ⟶ A)
     (s : {s : Finset ι // #s = p + 1}) :
     F.orderedCechComplexι s ≫ F.orderedCechComplexDesc f = f s :=
   Sigma.ι_comp_desc f s
@@ -186,13 +186,13 @@ lemma isZero_orderedCechComplex_X [Fintype ι] {p : ℕ} (hp : Fintype.card ι �
     IsZero (F.orderedCechComplex.X p) := by
   rw [IsZero.iff_id_eq_zero]
   ext s
-  have := s.2 ▸ card_le_univ s.1
+  have := s.property ▸ card_le_univ s.val
   omega
 
 private lemma orderedCechComplex_d (p : ℕ) :
     F.orderedCechComplex.d (p + 1) p = F.orderedCechD p := by
   unfold orderedCechComplex
-  exact ChainComplex.of_d (fun p ↦ ∐ fun s : {s : Finset ι // #s = p + 1} ↦ F.obj (op s.1))
+  exact ChainComplex.of_d (fun p ↦ ∐ fun s : {s : Finset ι // #s = p + 1} ↦ F.obj (op s.val))
     F.orderedCechD p
 
 /-- The ordered Čech differential on the summand of `s = {i₀ < ⋯ < iₚ₊₁}` is the alternating sum
@@ -201,14 +201,17 @@ below `i`. -/
 @[reassoc]
 lemma ι_orderedCechComplex_d {p : ℕ} (s : {s : Finset ι // #s = p + 1 + 1}) :
     F.orderedCechComplexι s ≫ F.orderedCechComplex.d (p + 1) p =
-      ∑ i : s.1, ((-1 : ℤ) ^ #{j ∈ s.1 | j < i.1}) • F.map (homOfLE (s.1.erase_subset i.1)).op ≫
+      ∑ i : s.val, ((-1 : ℤ) ^ #{j ∈ s.val | j < i.val}) • F.map (homOfLE
+          (s.val.erase_subset i.val)).op ≫
         F.orderedCechComplexι
-          ⟨s.1.erase i, by rw [card_erase_of_mem i.2, s.2, Nat.add_sub_cancel]⟩ := by
+          ⟨s.val.erase i, by rw [card_erase_of_mem i.property, s.property, Nat.add_sub_cancel]⟩
+              := by
   rw [orderedCechComplex_d]
   refine (F.ι_orderedCechD p s).trans ?_
   rw [← sum_coe_sort]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [orderedCechRestrict, dite_eq_left (by rw [card_erase_of_mem i.2, s.2, Nat.add_sub_cancel])]
+  rw [orderedCechRestrict, dite_eq_left (by rw [card_erase_of_mem i.property, s.property,
+      Nat.add_sub_cancel])]
   -- `orderedCechComplexι` is the coproduct inclusion.
   rfl
 
@@ -250,12 +253,12 @@ restricted to `F(∅)`. It vanishes on the boundaries
 (`Functor.orderedCechComplex_d_comp_orderedCechAugmentation`), so it augments the complex by
 `F(∅)` in the sense of `ChainComplex.augment`. -/
 def orderedCechAugmentation : F.orderedCechComplex.X 0 ⟶ F.obj (op ∅) :=
-  F.orderedCechComplexDesc fun s ↦ F.map (homOfLE s.1.empty_subset).op
+  F.orderedCechComplexDesc fun s ↦ F.map (homOfLE s.val.empty_subset).op
 
 /-- The augmentation restricts the summand `F({i})` of the degree `0` term to `F(∅)`. -/
 @[reassoc (attr := simp)]
 lemma ι_orderedCechAugmentation (s : {s : Finset ι // #s = 0 + 1}) :
-    F.orderedCechComplexι s ≫ F.orderedCechAugmentation = F.map (homOfLE s.1.empty_subset).op :=
+    F.orderedCechComplexι s ≫ F.orderedCechAugmentation = F.map (homOfLE s.val.empty_subset).op :=
   F.ι_orderedCechComplexDesc _ s
 
 /-- The augmentation vanishes on the boundaries. -/
@@ -287,7 +290,7 @@ variable {F G H : (Finset ι)ᵒᵖ ⥤ C}
 /-- The chain map of ordered Čech complexes induced by a natural transformation, acting summand by
 summand (`NatTrans.ι_orderedCechComplexMap_f`). -/
 def orderedCechComplexMap (α : F ⟶ G) : F.orderedCechComplex ⟶ G.orderedCechComplex where
-  f p := F.orderedCechComplexDesc fun s ↦ α.app (op s.1) ≫ G.orderedCechComplexι s
+  f p := F.orderedCechComplexDesc fun s ↦ α.app (op s.val) ≫ G.orderedCechComplexι s
   comm' := by
     rintro _ p rfl
     ext s
@@ -301,7 +304,7 @@ def orderedCechComplexMap (α : F ⟶ G) : F.orderedCechComplex ⟶ G.orderedCec
 @[reassoc (attr := simp)]
 lemma ι_orderedCechComplexMap_f (α : F ⟶ G) {p : ℕ} (s : {s : Finset ι // #s = p + 1}) :
     F.orderedCechComplexι s ≫ (orderedCechComplexMap α).f p =
-      α.app (op s.1) ≫ G.orderedCechComplexι s :=
+      α.app (op s.val) ≫ G.orderedCechComplexι s :=
   F.ι_orderedCechComplexDesc _ s
 
 @[simp]

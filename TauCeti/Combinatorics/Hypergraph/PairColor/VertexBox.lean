@@ -141,7 +141,7 @@ theorem IsRegularPair.isVertexBoxRegularPair (h : S.IsRegularPair ε s t)
       (h₀ : 0 < #{p ∈ s ×ˢ t | p.1 ≠ p.2})
       (hN : ε * #{p ∈ s ×ˢ t | p.1 ≠ p.2} ≤ #{p ∈ s' ×ˢ t' | p.1 ≠ p.2}) : ε * #s ≤ #s' := by
     have hle : (#{p ∈ s' ×ˢ t' | p.1 ≠ p.2} * #s : ℝ) ≤ #s' * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
-      exact_mod_cast card_filter_ne_product_mul_card_le hst hs' ht'
+      exact_mod_cast card_filter_ne_product_mul_card_le (hst.imp_left (·.subset)) hs' ht'
     refine le_of_mul_le_mul_right ?_ (show (0 : ℝ) < #{p ∈ s ×ˢ t | p.1 ≠ p.2} by
       exact_mod_cast h₀)
     calc ε * #s * #{p ∈ s ×ˢ t | p.1 ≠ p.2}

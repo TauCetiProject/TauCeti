@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gumbel.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # The density of the Gumbel distribution
@@ -238,7 +239,7 @@ theorem integrable_gumbelMeasure_iff (m s : ℝ) {g : ℝ → E} :
     Integrable g (gumbelMeasure m s) ↔
       Integrable fun y ↦ gumbelPDFReal m s y • g y := by
   rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_eq_ofReal m s)]
-  exact integrable_withDensity_ofReal_iff (measurable_gumbelPDFReal m s).aemeasurable
+  exact MeasureTheory.integrable_withDensity_ofReal_iff (measurable_gumbelPDFReal m s).aemeasurable
     (ae_of_all _ (gumbelPDFReal_nonneg m s))
 
 /-- An integral against a Gumbel measure is the density-weighted Lebesgue integral. This holds at
@@ -246,7 +247,7 @@ every scale, including the zero measure. -/
 theorem integral_gumbelMeasure_eq (m s : ℝ) (g : ℝ → E) :
     ∫ y, g y ∂gumbelMeasure m s = ∫ y, gumbelPDFReal m s y • g y := by
   rw [gumbelMeasure_eq_withDensity, funext (gumbelPDF_eq_ofReal m s)]
-  exact integral_withDensity_ofReal (measurable_gumbelPDFReal m s).aemeasurable
+  exact MeasureTheory.integral_withDensity_ofReal (measurable_gumbelPDFReal m s).aemeasurable
     (ae_of_all _ (gumbelPDFReal_nonneg m s)) g
 
 end Transfer

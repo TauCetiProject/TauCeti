@@ -95,8 +95,8 @@ theorem natCard_quotient_eq_mul_natCard_eisenstein_fiber {t c : 𝒪[K]} (ht : t
   have heq : (𝒪[K] ⧸ I) ≃ Set.range F × {x : 𝒪[K] ⧸ I // F x = 1} :=
     (Equiv.sigmaFiberEquiv (Set.rangeFactorization F)).symm.trans <|
       (Equiv.sigmaCongrRight fun z ↦ (Equiv.subtypeEquivRight fun x ↦ by
-          simp [Set.rangeFactorization, Subtype.ext_iff, z.2.choose_spec]).trans
-        (hfiber z.2.choose).some).trans (Equiv.sigmaEquivProd _ _)
+          simp [Set.rangeFactorization, Subtype.ext_iff, z.property.choose_spec]).trans
+        (hfiber z.property.choose).some).trans (Equiv.sigmaEquivProd _ _)
   rw [Nat.card_congr heq, Nat.card_prod,
     Nat.card_congr (Equiv.subtypeEquivRight fun q ↦ by rw [hrange, SetLike.mem_coe])]
 
@@ -134,11 +134,11 @@ theorem mem_maximalIdeal_or_one_sub_mem_of_isSquare_one_add_mul_sq_sub (h2 : (2 
     s ∈ 𝓂[K] ∨ 1 - s ∈ 𝓂[K] := by
   by_contra! hnot
   obtain ⟨ξ, hξ⟩ := hs
-  have hsv : valuation K (s : K) = 1 := le_antisymm ((Valuation.mem_integer_iff _ _).mp s.2)
+  have hsv : valuation K (s : K) = 1 := le_antisymm ((Valuation.mem_integer_iff _ _).mp s.property)
     (not_lt.mp (mt (valuation K).mem_maximalIdeal_iff.mpr hnot.1))
   have h1sv : valuation K ((s : K) - 1) = 1 := by
     rw [show (s : K) - 1 = -((1 - s : 𝒪[K]) : K) by push_cast; ring, Valuation.map_neg]
-    exact le_antisymm ((Valuation.mem_integer_iff _ _).mp (1 - s).2)
+    exact le_antisymm ((Valuation.mem_integer_iff _ _).mp (1 - s).property)
       (not_lt.mp (mt (valuation K).mem_maximalIdeal_iff.mpr hnot.2))
   apply valuation_sq_sub_one_ne_pow_odd h2 hc (by omega : natCastValuation K 2 h2 - k - 1 < _) ξ
   rw [show ξ ^ 2 - 1 = (β : K) * (s : K) * ((s : K) - 1) by rw [← sq] at hξ; linear_combination -hξ,
@@ -152,14 +152,15 @@ private theorem natCard_subtype_eq_two_mul_of_symm (m : ℕ)
         Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) (1 - y) = 0) :
     Nat.card {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) // P y} =
       2 * Nat.card {x : {y : 𝒪[K] ⧸ 𝓂[K] ^ (m + 1) //
-        Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} // P x.1} := by
+        Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero m)) y = 0} // P x.val} := by
   let fac := Ideal.Quotient.factor (Ideal.pow_le_self (I := 𝓂[K]) (Nat.succ_ne_zero m))
   have : Nontrivial (𝒪[K] ⧸ 𝓂[K]) :=
     Ideal.Quotient.nontrivial_iff.mpr (IsLocalRing.maximalIdeal.isMaximal 𝒪[K]).ne_top
   have hnot_both : ∀ y, ¬ (fac y = 0 ∧ fac (1 - y) = 0) := fun y ⟨hy, h1y⟩ ↦ by
     rw [map_sub, map_one, hy, sub_zero] at h1y; exact one_ne_zero h1y
-  let splitFn : Bool × {x : {y // fac y = 0} // P x.1} → {y // P y} :=
-    fun ⟨b, x⟩ ↦ if b then ⟨x.1.1, x.2⟩ else ⟨1 - x.1.1, (hsym x.1.1).mpr x.2⟩
+  let splitFn : Bool × {x : {y // fac y = 0} // P x.val} → {y // P y} :=
+    fun ⟨b, x⟩ ↦ if b then ⟨x.val.val, x.property⟩ else ⟨1 - x.val.val,
+        (hsym x.val.val).mpr x.property⟩
   refine (Nat.card_congr (Equiv.ofBijective splitFn ⟨?_, fun ⟨y, hyP⟩ ↦ ?_⟩).symm).trans
     (by rw [Nat.card_prod]; simp [fac])
   · rintro ⟨b₁, ⟨⟨y₁, hy₁⟩, _⟩⟩ ⟨b₂, ⟨⟨y₂, hy₂⟩, _⟩⟩ heq
@@ -183,7 +184,8 @@ private theorem isSquare_one_add_mul_sq_sub_congr (h2 : (2 : K) ≠ 0) {c β : �
   have hlt : ∀ s : 𝒪[K], valuation K ((β : K) * ((s : K) ^ 2 - (s : K))) < 1 := fun s ↦ by
     rw [map_mul, hvβ]
     exact (mul_le_mul' le_rfl ((Valuation.mem_integer_iff _ _).mp
-      (sub_mem (pow_mem s.2 2) s.2))).trans_lt (by simpa using pow_lt_one₀ zero_le hc1 (by omega))
+      (sub_mem (pow_mem s.property 2) s.property))).trans_lt
+          (by simpa using pow_lt_one₀ zero_le hc1 (by omega))
   let u : 𝒪[K] → Kˣ := fun s ↦ Units.mk0 (1 + (β : K) * ((s : K) ^ 2 - (s : K))) fun h0 ↦ by
     simpa [h0] using (valuation K).map_one_add_of_lt (hlt s)
   have hdiff : (u s₁)⁻¹ * u s₂ ∈ unitFiltration K (2 * dyadicLevel K h2 + 1) := by
@@ -222,7 +224,7 @@ private def artinSchreierMaximalIdealSquareEquiv (h2 : (2 : K) ≠ 0) {c β : �
     (hvβ : valuation K (β : K) = valuation K (c : K) ^ (2 * natCastValuation K 2 h2 - 2 * k - 1)) :
     {x : {y : 𝒪[K] ⧸ 𝓂[K] ^ (2 * k + 2) //
         Ideal.Quotient.factor (Ideal.pow_le_self (Nat.succ_ne_zero (2 * k + 1))) y = 0} //
-      ∃ s : 𝒪[K], Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s = x.1 ∧
+      ∃ s : 𝒪[K], Ideal.Quotient.mk (𝓂[K] ^ (2 * k + 2)) s = x.val ∧
         IsSquare (1 + (β : K) * ((s : K) ^ 2 - (s : K)))} ≃
     {q : unitFiltration K (2 * natCastValuation K 2 h2 - 2 * k) ⧸
         (unitFiltration K (2 * natCastValuation K 2 h2 + 1)).subgroupOf

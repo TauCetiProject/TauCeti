@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Zeros.CriticalLine
-import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # Bounded-height Riemann hypotheses and verified zero-free strips
@@ -315,7 +314,7 @@ primitive character `χ` modulo `q`. -/
 theorem forall_dirichletGRHUpTo_iff {q : ℕ} [NeZero q] :
     (∀ H : ℝ, DirichletGRHUpTo q H) ↔
       ∀ χ : DirichletCharacter ℂ q, χ.IsPrimitive → DirichletGRH χ := by
-  simp_rw [dirichletGRH_iff_mem_Ioo]
+  simp_rw [DirichletCharacter.dirichletGRH_iff_mem_Ioo]
   exact ⟨fun h χ hχ ρ h0 hre ↦ h |ρ.im| χ hχ ρ h0 hre.1 hre.2 le_rfl,
     fun h _ χ hχ ρ h0 hre0 hre1 _ ↦ h χ hχ ρ h0 ⟨hre0, hre1⟩⟩
 

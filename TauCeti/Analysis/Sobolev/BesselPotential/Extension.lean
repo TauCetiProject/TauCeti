@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
@@ -26,6 +27,9 @@ symbol `⟨ξ⟩ ^ t = (1 + ‖ξ‖ ^ 2) ^ (t / 2)`, extends to an operator `H^
 
 * `SchwartzMap.HasSobolevExtension`: `A` extends to a bounded operator `H^s → H^r`, characterised
   by `SchwartzMap.hasSobolevExtension_iff`.
+* `SchwartzMap.hasSobolevExtension_iff_exists_norm_le`: `A` extends to `H^s → H^r` exactly when
+  `‖A u‖_{H^r} ≤ C ‖u‖_{H^s}` for every Schwartz function `u`, since Schwartz functions are dense
+  in `H^s`.
 * `SchwartzMap.hasSobolevExtension_zero`, `SchwartzMap.hasSobolevExtension_id`: the zero map and the
   identity extend.
 * `SchwartzMap.HasSobolevExtension.comp`, `SchwartzMap.HasSobolevExtension.add`,
@@ -33,6 +37,8 @@ symbol `⟨ξ⟩ ^ t = (1 + ‖ξ‖ ^ 2) ^ (t / 2)`, extends to an operator `H^
   `SchwartzMap.HasSobolevExtension.sub`: extensions compose and form a vector space.
 * `SchwartzMap.HasSobolevExtension.mono`: an extension into `H^r` is one into every `H^{r'}` with
   `r' ≤ r`.
+* `SchwartzMap.toDistr_apply_congr_of_comp_eq`: extensions of the same operator to different
+  orders agree as maps of tempered distributions.
 * `SchwartzMap.hasSobolevExtension_besselMultiplier`: `J^t` extends to `H^s → H^{s - t}`.
 -/
 
@@ -41,7 +47,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped SchwartzMap BesselPotentialSpace
+open scoped SchwartzMap BesselPotentialSpace ENNReal
 
 namespace SchwartzMap
 
@@ -63,6 +69,25 @@ theorem hasSobolevExtension_iff {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)} {s r : ℝ
     HasSobolevExtension A s r ↔ ∃ T : H^{s}(E, F) →L[ℂ] H^{r}(E, G),
       T ∘L toBesselPotentialSpaceCLM s 2 = toBesselPotentialSpaceCLM r 2 ∘L A :=
   Iff.rfl
+
+/-- `A` extends to a bounded operator `H^s → H^r` if and only if the a priori estimate
+`‖A u‖_{H^r} ≤ C ‖u‖_{H^s}` holds for some `C ≥ 0` and every Schwartz function `u`. -/
+theorem hasSobolevExtension_iff_exists_norm_le {A : 𝓢(E, F) →L[ℂ] 𝓢(E, G)} {s r : ℝ} :
+    HasSobolevExtension A s r ↔ ∃ C ≥ 0, ∀ u,
+      ‖toBesselPotentialSpaceCLM r 2 (A u)‖ ≤ C * ‖toBesselPotentialSpaceCLM s 2 u‖ := by
+  constructor
+  · rintro ⟨T, hT⟩
+    refine ⟨‖T‖, norm_nonneg T, fun u ↦ ?_⟩
+    rw [← ContinuousLinearMap.comp_apply (toBesselPotentialSpaceCLM r 2) A, ← hT,
+      ContinuousLinearMap.comp_apply]
+    exact T.le_opNorm _
+  · rintro ⟨C, -, hC⟩
+    -- Schwartz functions are dense in `H^s`, so the estimate extends `A` by continuity.
+    have hdense := denseRange_toBesselPotentialSpaceCLM (E := E) (F := F) s (p := 2)
+      ENNReal.ofNat_ne_top
+    refine ⟨((toBesselPotentialSpaceCLM r 2).toLinearMap ∘ₗ A.toLinearMap).extendOfNorm
+      (toBesselPotentialSpaceCLM s 2).toLinearMap, ContinuousLinearMap.ext fun u ↦ ?_⟩
+    exact LinearMap.extendOfNorm_eq hdense ⟨C, hC⟩ u
 
 /-- The zero map extends to a bounded operator `H^s → H^r`. -/
 theorem hasSobolevExtension_zero (s r : ℝ) :
@@ -122,6 +147,51 @@ theorem mono (hA : HasSobolevExtension A s r) {r' : ℝ} (h : r' ≤ r) :
   exact ContinuousLinearMap.ext (BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM h)
 
 end HasSobolevExtension
+
+section Normed
+
+variable {F' G' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [CompleteSpace F']
+  [NormedAddCommGroup G'] [NormedSpace ℂ G'] [CompleteSpace G'] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Extensions agree as tempered distributions.** Let `p < ∞`. Bounded operators
+`T : H^{s,p} → H^{r,p}` and `T' : H^{s',p} → H^{r',p}` that agree with the same operator `A` on
+Schwartz functions take the same tempered distribution on elements `u ∈ H^{s,p}` and
+`u' ∈ H^{s',p}` with the same tempered distribution, whatever the orders. -/
+theorem toDistr_apply_congr_of_comp_eq (hp_top : p ≠ ∞) {A : 𝓢(E, F') →L[ℂ] 𝓢(E, G')}
+    {s r s' r' : ℝ} {T : H^{s, p}(E, F') →L[ℂ] H^{r, p}(E, G')}
+    {T' : H^{s', p}(E, F') →L[ℂ] H^{r', p}(E, G')}
+    (hT : T ∘L toBesselPotentialSpaceCLM s p = toBesselPotentialSpaceCLM r p ∘L A)
+    (hT' : T' ∘L toBesselPotentialSpaceCLM s' p = toBesselPotentialSpaceCLM r' p ∘L A)
+    {u : H^{s, p}(E, F')} {u' : H^{s', p}(E, F')} (h : u.toDistr = u'.toDistr) :
+    (T u).toDistr = (T' u').toDistr := by
+  -- It suffices to compare `T` with `T'` after the inclusion `H^{s,p} ⊆ H^{s',p}` for `s' ≤ s`.
+  suffices key : ∀ {s r s' r' : ℝ} {T : H^{s, p}(E, F') →L[ℂ] H^{r, p}(E, G')}
+      {T' : H^{s', p}(E, F') →L[ℂ] H^{r', p}(E, G')},
+      T ∘L toBesselPotentialSpaceCLM s p = toBesselPotentialSpaceCLM r p ∘L A →
+      T' ∘L toBesselPotentialSpaceCLM s' p = toBesselPotentialSpaceCLM r' p ∘L A →
+      ∀ (hs : s' ≤ s) (u : H^{s, p}(E, F')),
+        (T u).toDistr = (T' (BesselPotentialSpace.inclusion hs u)).toDistr by
+    rcases le_total s' s with hs | hs
+    · rw [key hT hT' hs u]
+      exact congrArg _ (congrArg _ (BesselPotentialSpace.ext (by
+        rw [BesselPotentialSpace.toDistr_inclusion, h])))
+    · rw [key hT' hT hs u']
+      exact congrArg _ (congrArg _ (BesselPotentialSpace.ext (by
+        rw [BesselPotentialSpace.toDistr_inclusion, h]))).symm
+  intro s r s' r' T T' hT hT' hs u
+  have hTT' : BesselPotentialSpace.inclusion (min_le_left r r') ∘L T =
+      BesselPotentialSpace.inclusion (min_le_right r r') ∘L T' ∘L
+        BesselPotentialSpace.inclusion hs := by
+    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun w ↦
+      BesselPotentialSpace.ext ?_
+    have h₁ := congrArg (fun T ↦ (T w).toDistr) hT
+    have h₂ := congrArg (fun T ↦ (T w).toDistr) hT'
+    simp only [ContinuousLinearMap.comp_apply, toDistr_toBesselPotentialSpaceCLM] at h₁ h₂
+    simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
+      BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM, h₁, h₂]
+  simpa using congrArg (fun T ↦ (T u).toDistr) hTT'
+
+end Normed
 
 /-- The Bessel multiplier `J^t`, the Fourier multiplier with symbol `⟨ξ⟩ ^ t`, extends to a
 bounded operator `H^s → H^r` when `r + t = s`. -/

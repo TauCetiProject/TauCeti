@@ -497,7 +497,7 @@ theorem exists_comap_inclusion_eq_iff (h₁ : S₁ ≤ S₃) (h₂ : S₂ ≤ S�
   -- Every element of `S₃` is a sum of an element of `S₁` and an element of `S₂`.
   let π : S₁ × S₂ →+ S₃ := (AddSubmonoid.inclusion h₁).coprod (AddSubmonoid.inclusion h₂)
   have hπ : Function.Surjective π := fun w ↦ by
-    obtain ⟨s, hs, t, ht, hst⟩ := AddSubmonoid.mem_sup.1 (h₃ w.2)
+    obtain ⟨s, hs, t, ht, hst⟩ := AddSubmonoid.mem_sup.1 (h₃ w.property)
     exact ⟨(⟨s, hs⟩, ⟨t, ht⟩), Subtype.ext hst⟩
   -- The product character on `S₁ × S₂` is constant on the fibres of `π`, so it descends to `S₃`.
   let χ : S₁ × S₂ → ℂ := fun p ↦

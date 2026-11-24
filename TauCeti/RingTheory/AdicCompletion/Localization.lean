@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.Defs
+public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.Algebra.Module.LocalizedModule.Regular
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
@@ -24,7 +24,7 @@ import TauCeti.RingTheory.Regular.Pair
 /-!
 # Completions of localizations
 
-This file compares adic completions with localizations, in two settings.
+This file compares adic completions with localizations, in three settings.
 
 ## Principal-adic completion of localization sequences
 
@@ -62,6 +62,14 @@ sets. For instance, for an open prime `𝔭` of an adic noetherian ring `A` with
 `I`, the completion of `A_𝔭` along `I A_𝔭` is flat over every completed localization `A_{f}` with
 `f ∉ 𝔭`.
 
+## Completion at a maximal ideal vs. localization
+
+For a maximal ideal `p` of `R` and any localization `Rₚ` of `R` at `p`, every element outside `p`
+is already a unit modulo `p ^ n`, so `R ⧸ p ^ n ≃ₐ[R] Rₚ ⧸ maximalIdeal Rₚ ^ n` for all `n`
+(`IsLocalization.AtPrime.equivQuotMaximalIdealPow`). Passing to the inverse limit gives a canonical
+`R`-algebra isomorphism `AdicCompletion p R ≃ₐ[R] AdicCompletion (maximalIdeal Rₚ) Rₚ` without any
+Noetherian or finite-generation hypotheses.
+
 ## Main results
 
 * `AdicCompletion.map_span_singleton_injective_of_isLocalizedModule`: principal-adic completion
@@ -70,11 +78,15 @@ sets. For instance, for an open prime `𝔭` of an adic noetherian ring `A` with
   a localization sequence is exact at the localized module.
 * `AdicCompletion.flat_mapₐ_of_isLocalization`: the completion of a localization `S` of a
   noetherian ring `R` is flat over the completion of `R`.
+* `AdicCompletion.mapₐ_ofId_bijective_of_isMaximal` and
+  `AdicCompletion.equivMaximalIdealOfAtPrime`: completing `R` at a maximal ideal `p` agrees
+  canonically with completing the localization `Rₚ` at its maximal ideal.
 
 ## References
 
 * Douglas–Francis–Henriques–Hill, *Topological Modular Forms*, Chapter 12, §8.
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §7.6.
+* H. Matsumura, *Commutative Ring Theory*, §8.
 -/
 
 public section
@@ -195,13 +207,13 @@ private theorem bijective_quotientMap_toLocalization (hJ : J.FG) {K : Ideal S}
     obtain ⟨_, ⟨m₀, hm₀, rfl⟩, hm⟩ := hr
     rw [← map_mul, AdicCompletion.algebraMap_mem_map_pow_iff] at hm
     rw [← hK, ← Ideal.map_pow, ← Ideal.mul_unit_mem_iff_mem _
-      (IsLocalization.map_units S (⟨m₀ * m, mul_mem hm₀ m.2⟩ : M)), map_mul,
+      (IsLocalization.map_units S (⟨m₀ * m, mul_mem hm₀ m.property⟩ : M)), map_mul,
       mul_left_comm, IsLocalization.mk'_spec, ← map_mul]
     exact Ideal.mem_map_of_mem _ hm
   · -- write `t = x / m₀` with `x ∈ R̂`, and `x ≡ r` modulo `J ^ n R̂` with `r ∈ R`
     obtain ⟨⟨x, m⟩, rfl⟩ := IsLocalization.mk'_surjective
       (Algebra.algebraMapSubmonoid (AdicCompletion J R) M) t
-    obtain ⟨m₀, hm₀, hm⟩ := m.2
+    obtain ⟨m₀, hm₀, hm⟩ := m.property
     obtain ⟨r, hr⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow hJ n x
     refine ⟨Ideal.Quotient.mk _ (IsLocalization.mk' S r ⟨m₀, hm₀⟩), ?_⟩
     -- after multiplying by the unit `m₀`, the difference is the image of `r - x ∈ J ^ n R̂`
@@ -253,5 +265,57 @@ theorem flat_mapₐ_of_isLocalization [IsNoetherianRing R] {K : Ideal S}
     (RingHom.flat_algebraMap_iff.mpr inferInstance)
 
 end Localization
+
+section MaximalIdeal
+
+variable {R : Type*} [CommRing R] (p : Ideal R) [p.IsMaximal]
+  (Rₚ : Type*) [CommRing Rₚ] [Algebra R Rₚ] [IsLocalization.AtPrime Rₚ p] [IsLocalRing Rₚ]
+
+/-- Completing a commutative ring `R` at a maximal ideal `p` is canonically bijective onto the
+completion of any localization `Rₚ` at `p` along its maximal ideal. Neither Noetherianity nor
+finite generation of `p` is required. -/
+theorem mapₐ_ofId_bijective_of_isMaximal
+    (hp : p ≤ (IsLocalRing.maximalIdeal Rₚ).comap (Algebra.ofId R Rₚ) :=
+      (IsLocalization.AtPrime.map_eq_maximalIdeal p Rₚ) ▸ Ideal.le_comap_map) :
+    Function.Bijective (mapₐ (Algebra.ofId R Rₚ) hp) := by
+  refine mapₐ_bijective (Algebra.ofId R Rₚ) hp fun n ↦ ?_
+  have hq : ⇑(Ideal.quotientMap (IsLocalRing.maximalIdeal Rₚ ^ n) (Algebra.ofId R Rₚ).toRingHom
+      ((Ideal.pow_right_mono hp n).trans (Ideal.le_comap_pow _ n))) =
+      ⇑(IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ n) :=
+    funext fun x ↦ by obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x; simp
+  exact hq ▸ (IsLocalization.AtPrime.equivQuotMaximalIdealPow p Rₚ n).bijective
+
+/-- The canonical `R`-algebra isomorphism between the `p`-adic completion of `R` at a maximal ideal
+`p` and the completion of its localization `Rₚ` at the maximal ideal of `Rₚ`. -/
+noncomputable def equivMaximalIdealOfAtPrime :
+    AdicCompletion p R ≃ₐ[R] AdicCompletion (IsLocalRing.maximalIdeal Rₚ) Rₚ :=
+  AlgEquiv.ofBijective
+    (mapₐ (Algebra.ofId R Rₚ)
+      ((IsLocalization.AtPrime.map_eq_maximalIdeal p Rₚ) ▸ Ideal.le_comap_map))
+    (mapₐ_ofId_bijective_of_isMaximal p Rₚ)
+
+/-- As an algebra homomorphism, `equivMaximalIdealOfAtPrime` is `mapₐ (Algebra.ofId R Rₚ)`. -/
+@[simp]
+theorem toAlgHom_equivMaximalIdealOfAtPrime :
+    (equivMaximalIdealOfAtPrime p Rₚ :
+      AdicCompletion p R →ₐ[R] AdicCompletion (IsLocalRing.maximalIdeal Rₚ) Rₚ) =
+      mapₐ (Algebra.ofId R Rₚ)
+        ((IsLocalization.AtPrime.map_eq_maximalIdeal p Rₚ) ▸ Ideal.le_comap_map) := by
+  rw [equivMaximalIdealOfAtPrime]; exact AlgEquiv.toAlgHom_ofBijective _ _
+
+/-- Applying `equivMaximalIdealOfAtPrime` agrees with `mapₐ (Algebra.ofId R Rₚ)`. -/
+@[simp]
+theorem equivMaximalIdealOfAtPrime_apply (x : AdicCompletion p R) :
+    equivMaximalIdealOfAtPrime p Rₚ x =
+      mapₐ (Algebra.ofId R Rₚ)
+        ((IsLocalization.AtPrime.map_eq_maximalIdeal p Rₚ) ▸ Ideal.le_comap_map) x := by
+  rw [equivMaximalIdealOfAtPrime, AlgEquiv.ofBijective_apply]
+
+/-- `equivMaximalIdealOfAtPrime` extends `algebraMap R Rₚ` along `AdicCompletion.of`. -/
+theorem equivMaximalIdealOfAtPrime_of (r : R) :
+    equivMaximalIdealOfAtPrime p Rₚ (of p R r) =
+      of (IsLocalRing.maximalIdeal Rₚ) Rₚ (algebraMap R Rₚ r) := by simp
+
+end MaximalIdeal
 
 end AdicCompletion

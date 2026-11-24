@@ -106,14 +106,14 @@ noncomputable def lazardDelineationCMulLastCoordinate (hS : S.Nonempty) {a : ℝ
       continuous_root := fun _ ↦ continuous_const
       strictMono_root := fun _ ↦ Fin.strictMono_iff_lt_succ.mpr fun i ↦ Fin.elim0 i
       exponent := fun _ ↦ 0
-      lazardExponent_eq := fun _ x ↦ lazardExponent_C_mul_lastCoordinate ha x.1
+      lazardExponent_eq := fun _ x ↦ lazardExponent_C_mul_lastCoordinate ha x.val
       multiplicity := fun _ _ ↦ 1
       rootMultiplicity_root := by
         intro _ _ x
         rw [rootMultiplicity_lazardEval_C_mul_lastCoordinate ha]
         simp
       exists_root_eq := fun _ x _ _ ht ↦
-        ⟨0, ((isRoot_lazardEval_C_mul_lastCoordinate ha x.1).1 ht).symm⟩
+        ⟨0, ((isRoot_lazardEval_C_mul_lastCoordinate ha x.val).1 ht).symm⟩
       exists_multiplicity_pos := by
         intro _
         exact ⟨(), by simp⟩ }
@@ -155,9 +155,9 @@ private theorem lazardExponent_eq_of_comp (D : LazardDelineation (F ∘ f) S)
     (hcoord : ∀ k, k ∉ range f → ∃ a ≠ 0, F k = MvPolynomial.C a * X (Fin.last n)) (k : ι)
     (x y : S) :
     (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
-        (Polynomial.C ∘ x.1) =
+        (Polynomial.C ∘ x.val) =
       (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
-        (Polynomial.C ∘ y.1) := by
+        (Polynomial.C ∘ y.val) := by
   by_cases hk : k ∈ range f
   · obtain ⟨j, rfl⟩ := hk
     exact (D.lazardExponent_eq j x).trans (D.lazardExponent_eq j y).symm
@@ -187,14 +187,14 @@ private theorem nonempty_lazardDelineation_of_comp_of_forall_eq_zero
     Nonempty (LazardDelineation F S) := by
   let x₀ : S := ⟨D.nonempty.some, D.nonempty.some_mem⟩
   let Q (k : ι) (x : S) :=
-    (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval (Polynomial.C ∘ x.1)
+    (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval (Polynomial.C ∘ x.val)
   refine ⟨{ nonempty := D.nonempty
             count := D.count
             root := D.root
             continuous_root := D.continuous_root
             strictMono_root := D.strictMono_root
             exponent := fun k ↦ (optionEquivRight ℝ (Fin n)
-              (rename finSuccEquivLast (F k))).lazardExponent (Polynomial.C ∘ x₀.1)
+              (rename finSuccEquivLast (F k))).lazardExponent (Polynomial.C ∘ x₀.val)
             lazardExponent_eq := fun k x ↦ lazardExponent_eq_of_comp D hcoord k x x₀
             multiplicity := fun k i ↦ (Q k x₀).rootMultiplicity (D.root i x₀)
             rootMultiplicity_root := fun k i x ↦ ?_
@@ -206,7 +206,7 @@ private theorem nonempty_lazardDelineation_of_comp_of_forall_eq_zero
     · obtain ⟨i₀, hi₀⟩ := hR k hk
       have hi (y : S) : D.root i y = 0 ↔ i = i₀ :=
         ⟨fun h ↦ (D.strictMono_root y).injective (h.trans (hi₀ y).symm), fun h ↦ h ▸ hi₀ y⟩
-      exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.1 x₀.1
+      exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.val x₀.val
         ((hi x).trans (hi x₀).symm)
   · by_cases hk' : k ∈ range f
     · obtain ⟨j, rfl⟩ := hk'
@@ -226,15 +226,15 @@ private theorem rootMultiplicity_insertNth_zero_eq (D : LazardDelineation (F ∘
     {p : Fin (D.count + 1)} (hne : ∀ (i : Fin D.count) (x : S), D.root i x ≠ 0) (k : ι)
     (l : Fin (D.count + 1)) (x x₀ : S) :
     ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-        (Polynomial.C ∘ x.1)).rootMultiplicity
+        (Polynomial.C ∘ x.val)).rootMultiplicity
         (Fin.insertNth (α := fun _ ↦ ℝ) p 0 (fun i ↦ D.root i x) l) =
       ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-        (Polynomial.C ∘ x₀.1)).rootMultiplicity
+        (Polynomial.C ∘ x₀.val)).rootMultiplicity
         (Fin.insertNth (α := fun _ ↦ ℝ) p 0 (fun i ↦ D.root i x₀) l) := by
   -- No member of `F ∘ f` has the root `0`.
   have hzmult (j : κ) (x : S) :
       ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F (f j)))).lazardEval
-        (Polynomial.C ∘ x.1)).rootMultiplicity 0 = 0 := by
+        (Polynomial.C ∘ x.val)).rootMultiplicity 0 = 0 := by
     by_cases hF : F (f j) = 0
     · simp [hF]
     refine Polynomial.rootMultiplicity_eq_zero fun hroot ↦ ?_
@@ -245,12 +245,12 @@ private theorem rootMultiplicity_insertNth_zero_eq (D : LazardDelineation (F ∘
     rw [hl, Fin.insertNth_apply_same, Fin.insertNth_apply_same]
     exact (hzmult j x).trans (hzmult j x₀).symm
   · rw [hl, Fin.insertNth_apply_same, Fin.insertNth_apply_same]
-    exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.1 x₀.1 Iff.rfl
+    exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.val x₀.val Iff.rfl
   · obtain ⟨j, rfl⟩ := hk
     rw [Fin.insertNth_apply_succAbove, Fin.insertNth_apply_succAbove]
     exact (D.rootMultiplicity_root j i x).trans (D.rootMultiplicity_root j i x₀).symm
   · rw [Fin.insertNth_apply_succAbove, Fin.insertNth_apply_succAbove]
-    exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.1 x₀.1
+    exact rootMultiplicity_eq_of_eq_C_mul_lastCoordinate (hcoord k hk) x.val x₀.val
       (iff_of_false (hne i x) (hne i x₀))
 
 /-- Adjoining coordinate members when `0` lies in the sector `p` of `D` over every base point:
@@ -263,7 +263,7 @@ private theorem nonempty_lazardDelineation_of_comp_of_mem_sectorSet
     Nonempty (LazardDelineation F S) := by
   let x₀ : S := ⟨D.nonempty.some, D.nonempty.some_mem⟩
   let Q (k : ι) (x : S) :=
-    (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval (Polynomial.C ∘ x.1)
+    (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval (Polynomial.C ∘ x.val)
   have hne (i : Fin D.count) (x : S) : D.root i x ≠ 0 := fun hx ↦
     disjoint_left.1 (disjoint_sectionSet_sectorSet D.root i p) (mem_sectionSet.2 hx) (hp x)
   let root (l : Fin (D.count + 1)) (x : S) : ℝ :=
@@ -278,7 +278,7 @@ private theorem nonempty_lazardDelineation_of_comp_of_mem_sectorSet
             strictMono_root := fun x ↦ (Fin.strictMono_insertNth_iff p 0 _).2
               ⟨D.strictMono_root x, (mem_sectorSet.1 (hp x)).1, (mem_sectorSet.1 (hp x)).2⟩
             exponent := fun k ↦ (optionEquivRight ℝ (Fin n)
-              (rename finSuccEquivLast (F k))).lazardExponent (Polynomial.C ∘ x₀.1)
+              (rename finSuccEquivLast (F k))).lazardExponent (Polynomial.C ∘ x₀.val)
             lazardExponent_eq := fun k x ↦ lazardExponent_eq_of_comp D hcoord k x x₀
             multiplicity := fun k l ↦ (Q k x₀).rootMultiplicity (root l x₀)
             rootMultiplicity_root := fun k l x ↦
@@ -318,9 +318,9 @@ theorem nonempty_lazardDelineation_of_comp (D : LazardDelineation (F ∘ f) S)
     (hcoord : ∀ k, k ∉ range f → ∃ a ≠ 0, F k = MvPolynomial.C a * X (Fin.last n))
     (hzero : ∀ j (x y : S),
       ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F (f j)))).lazardEval
-        (Polynomial.C ∘ x.1)).IsRoot 0 →
+        (Polynomial.C ∘ x.val)).IsRoot 0 →
       ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F (f j)))).lazardEval
-        (Polynomial.C ∘ y.1)).IsRoot 0) :
+        (Polynomial.C ∘ y.val)).IsRoot 0) :
     Nonempty (LazardDelineation F S) := by
   have : PreconnectedSpace S := isPreconnected_iff_preconnectedSpace.1 hS
   -- Whether `0` is a value of a root function of `D` does not depend on the base point.
@@ -352,15 +352,15 @@ theorem LazardDelineation.isRoot_zero_of_lazardValuation_coeff_zero_eq
     (hval : ∀ x ∈ S, ∀ y ∈ S, (f.coeff 0).lazardValuation x = (f.coeff 0).lazardValuation y)
     (x y : S)
     (hx : ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-      (Polynomial.C ∘ x.1)).IsRoot 0) :
+      (Polynomial.C ∘ x.val)).IsRoot 0) :
     ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
-      (Polynomial.C ∘ y.1)).IsRoot 0 := by
+      (Polynomial.C ∘ y.val)).IsRoot 0 := by
   -- Putting the distinguished variable last and moving it back into the coefficients is the
   -- coefficient swap of the two `Option` equivalences.
   have hswap : optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k)) =
       ((optionEquivLeft ℝ (Fin n)).symm.trans (optionEquivRight ℝ (Fin n))) f := by
     rw [hf, rename_rename, Equiv.self_comp_symm, rename_id_apply, AlgEquiv.trans_apply]
-  have hv := hval x x.2 y y.2
+  have hv := hval x x.property y y.property
   rw [← map_constantCoeff_optionEquivRight_optionEquivLeft_symm] at hv
   have hexp := (D.lazardExponent_eq k x).trans (D.lazardExponent_eq k y).symm
   rw [hswap] at hx hexp ⊢

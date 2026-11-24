@@ -165,7 +165,7 @@ inverse of the chosen identification of separable closures. It is semilinear ove
 (`intermediateFieldCongrEquiv_algebraMap`). -/
 def intermediateFieldCongrEquiv : E ≃+* e.intermediateFieldCongr E where
   toFun x := ⟨e.separableClosureCongr.symm x, by simp⟩
-  invFun y := ⟨e.separableClosureCongr y, y.2⟩
+  invFun y := ⟨e.separableClosureCongr y, y.property⟩
   left_inv x := by
     ext
     simp

@@ -64,7 +64,7 @@ noncomputable def productDifferential :
     (fun j ↦ by
       rw [LinearMap.isHomogeneous_def]
       intro p x hx
-      have hxj : x.1 j ∈ (M j).grading p := by
+      have hxj : x.val j ∈ (M j).grading p := by
         simpa only [toGradedModuleCat_piece] using
           (GradedModuleCat.mem_product_piece_iff _ p x).mp hx j
       rw [toGradedModuleCat_piece, LinearMap.comp_apply, InternalGrading.productEval_apply]
@@ -74,7 +74,7 @@ noncomputable def productDifferential :
 @[simp]
 theorem productDifferential_apply
     (x : GradedModuleCat.product (fun j ↦ toGradedModuleCat (M j))) (j : J) :
-    (productDifferential M x).1 j = (M j).differential (x.1 j) := by
+    (productDifferential M x).val j = (M j).differential (x.val j) := by
   dsimp only [productDifferential]
   rw [InternalGrading.productLiftLinear_apply, LinearMap.comp_apply,
     InternalGrading.productEval_apply]
@@ -92,7 +92,7 @@ noncomputable def product : CurvedDGRightModuleCat.{u, u, u} h := by
     intro p x hx
     apply (GradedModuleCat.mem_product_piece_iff _ (p + 1) _).mpr
     intro j
-    have hxj : x.1 j ∈ (M j).grading p := by
+    have hxj : x.val j ∈ (M j).grading p := by
       simpa only [toGradedModuleCat_piece] using
         (GradedModuleCat.mem_product_piece_iff _ p x).mp hx j
     rw [toGradedModuleCat_piece, productDifferential_apply]
@@ -103,8 +103,8 @@ noncomputable def product : CurvedDGRightModuleCat.{u, u, u} h := by
     -- The sum and scalar actions are still typed at the bundled `P.carrier`; the raw
     -- `Submodule.coe_add`/`coe_smul` rules do not match their function-valued coercions.
     -- Align only this carrier arithmetic at `j`, retaining the public differential API.
-    change (productDifferential M (op a • x)).1 j =
-      op a • (productDifferential M x).1 j + p.negOnePow • (op (d a) • x.1 j)
+    change (productDifferential M (op a • x)).val j =
+      op a • (productDifferential M x).val j + p.negOnePow • (op (d a) • x.val j)
     rw [productDifferential_apply, productDifferential_apply]
     apply (M j).isCurvedDGRightModule.leibniz
     simpa only [toGradedModuleCat_piece] using
@@ -113,12 +113,12 @@ noncomputable def product : CurvedDGRightModuleCat.{u, u, u} h := by
     apply Subtype.ext
     funext j
     rw [productDifferential_apply, productDifferential_apply]
-    exact (M j).isCurvedDGRightModule.sq_eq (x.1 j)
+    exact (M j).isCurvedDGRightModule.sq_eq (x.val j)
 
 /-- Product homogeneity is componentwise homogeneity of the family. -/
 @[simp]
 theorem mem_product_grading_iff (p : ℤ) (x : product M) :
-    x ∈ (product M).grading p ↔ ∀ j, x.1 j ∈ (M j).grading p := by
+    x ∈ (product M).grading p ↔ ∀ j, x.val j ∈ (M j).grading p := by
   dsimp only [product]
   simpa only [toGradedModuleCat_piece] using
     (GradedModuleCat.mem_product_piece_iff (fun j ↦ toGradedModuleCat (M j)) p x)
@@ -126,7 +126,7 @@ theorem mem_product_grading_iff (p : ℤ) (x : product M) :
 /-- The product differential is the differential in each factor. -/
 @[simp]
 theorem product_differential_apply (x : product M) (j : J) :
-    ((product M).differential x).1 j = (M j).differential (x.1 j) := by
+    ((product M).differential x).val j = (M j).differential (x.val j) := by
   dsimp only [product]
   exact productDifferential_apply M x j
 
@@ -178,7 +178,7 @@ noncomputable def closedProductπ (j : J) :
 /-- On elements the closed projection is coordinate evaluation. -/
 @[simp]
 theorem closedHom_closedProductπ_apply (j : J) (x : product M) :
-    closedHom (closedProductπ M j) x = x.1 j := by
+    closedHom (closedProductπ M j) x = x.val j := by
   rw [closedProductπ, closedHom_closedHomOf]
   exact GradedModuleCat.productπ_apply _ _ _
 
@@ -209,7 +209,7 @@ noncomputable def closedProductLift {N : CurvedDGRightModuleCat.{u, u, u} h}
 theorem closedHom_closedProductLift_apply {N : CurvedDGRightModuleCat.{u, u, u} h}
     (f : ∀ j, ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (M j)) (x : N) (j : J) :
-    (closedHom (closedProductLift M f) x).1 j = closedHom (f j) x := by
+    (closedHom (closedProductLift M f) x).val j = closedHom (f j) x := by
   rw [closedProductLift, closedHom_closedHomOf, GradedModuleCat.productLift_apply,
     forgetDifferential_map_hom]
 
@@ -258,7 +258,7 @@ noncomputable instance
 
 instance : HasProducts.{u}
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
+  .mk fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 /-- Componentwise homotopies glue to a homotopy into the product. Their common degree of minus
 one gives a uniform finite degree support on each source element. -/
@@ -271,18 +271,18 @@ theorem dgClosedToHomotopy_map_product_ext {N : CurvedDGRightModuleCat.{u, u, u}
   classical
   have hcomponents := fun j ↦ (quotient_map_eq_iff_exists_homotopy _ _).mp (hfg j)
   choose k hk using hcomponents
-  have hhom (j : J) : LinearMap.IsHomogeneous ((k j).1.restrictScalars R)
+  have hhom (j : J) : LinearMap.IsHomogeneous ((k j).val.restrictScalars R)
       (InternalGrading.ofDecomposition N.grading).piece
       (toGradedModuleCat (M j)).grading.piece (-1) := by
     rw [LinearMap.isHomogeneous_def]
     intro p x hx
     rw [toGradedModuleCat_piece]
-    exact (dgRightModuleCochains.mem_iff.mp (k j).2).map_mem
+    exact (dgRightModuleCochains.mem_iff.mp (k j).property).map_mem
       (by simpa only [InternalGrading.ofDecomposition_piece] using hx)
   let K := InternalGrading.productLift
     (fun j ↦ (toGradedModuleCat (M j)).grading)
     (InternalGrading.ofDecomposition 𝒜).opposite.piece
-    (InternalGrading.ofDecomposition N.grading) (-1) (fun j ↦ (k j).1)
+    (InternalGrading.ofDecomposition N.grading) (-1) (fun j ↦ (k j).val)
     hhom
   apply (quotient_map_eq_iff_exists_homotopy f g).mpr
   refine ⟨⟨K, ?_⟩, fun x ↦ ?_⟩
@@ -292,14 +292,14 @@ theorem dgClosedToHomotopy_map_product_ext {N : CurvedDGRightModuleCat.{u, u, u}
     intro j
     dsimp only [K, LinearMap.restrictScalars_apply]
     rw [InternalGrading.productLift_apply]
-    exact (dgRightModuleCochains.mem_iff.mp (k j).2).map_mem hx
+    exact (dgRightModuleCochains.mem_iff.mp (k j).property).map_mem hx
   · apply Subtype.ext
     funext j
     -- The closed maps land in the bundled product, while `K` lands in its scalar-submodule
     -- presentation. The raw `Submodule.coe_sub`/`coe_add` rules do not match these dependent
     -- function-valued coercions. Align just their pointwise arithmetic; keep the named maps.
-    change (closedHom f x).1 j - (closedHom g x).1 j =
-      ((product M).differential (K x)).1 j + (K (N.differential x)).1 j
+    change (closedHom f x).val j - (closedHom g x).val j =
+      ((product M).differential (K x)).val j + (K (N.differential x)).val j
     rw [product_differential_apply]
     dsimp only [K]
     rw [InternalGrading.productLift_apply, InternalGrading.productLift_apply]
@@ -350,6 +350,6 @@ noncomputable instance (X : J → DGHomotopyCategory R (CurvedDGRightModuleCat.{
       isLimit := homotopyProductFanIsLimit _ }
 
 instance : HasProducts.{u} (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
+  .mk fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 end TauCeti.CurvedDGRightModuleCat

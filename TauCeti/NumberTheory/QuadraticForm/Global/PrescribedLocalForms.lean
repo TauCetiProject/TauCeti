@@ -82,7 +82,7 @@ theorem exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one
       (letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero;
         RegularFormClass.discr (formClass W hW) = I.discr) ∧
       (∀ w, (W.atRealPlace w).Equivalent (R w)) ∧
-      (∀ w : {w : InfinitePlace K // w.IsReal}, 0 < embedding_of_isReal w.2 (b : K)) ∧
+      (∀ w : {w : InfinitePlace K // w.IsReal}, 0 < embedding_of_isReal w.property (b : K)) ∧
       ∀ v, (W.atFinitePlace v).Equivalent (U v) ↔
         hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) = 1 := by
   classical
@@ -90,9 +90,9 @@ theorem exists_atFinitePlace_equivalent_iff_hilbertSymbol_eq_one
   -- Step 1: a global form with the discriminant of `I`, matching `R` at every real place.
   obtain ⟨W, hW, hWd, -, hWR⟩ := exists_form_discr_eq_equivalent_at_places hI.one_le_rank ∅
     Finset.univ (Additive.toMul (Quotient.out I.discr))
-    (fun v ↦ (Finset.notMem_empty _ v.2).elim) (fun w ↦ R w.1)
-    (fun v ↦ (Finset.notMem_empty _ v.2).elim) (fun w ↦ hL.nondegenerate_real w.1)
-    (fun v ↦ (Finset.notMem_empty _ v.2).elim)
+    (fun v ↦ (Finset.notMem_empty _ v.property).elim) (fun w ↦ R w.val)
+    (fun v ↦ (Finset.notMem_empty _ v.property).elim) (fun w ↦ hL.nondegenerate_real w.val)
+    (fun v ↦ (Finset.notMem_empty _ v.property).elim)
     (fun w ↦ by rw [hL.discr_real hI, discrAtRealPlace_def, squareClass_toMul_out])
   rw [squareClass_toMul_out] at hWd
   have hWR' (w : {w : InfinitePlace K // w.IsReal}) : (W.atRealPlace w).Equivalent (R w) :=

@@ -218,17 +218,17 @@ theorem exists_preimage_norm_le_ideal_quotient_isRestricted_subring_of_division
 
 end NoncommEuclidean
 
+private theorem exists_eq_mul_add_of_divisionRing {K : Type*} [NormedDivisionRing K] (x y : K)
+    (hx : x ≠ 0) :
+    ∃ z w, y = z * x + w ∧ ‖w‖ ≤ ‖y‖ ∧ (w = 0 ∨ (0 : ℕ) < 0) :=
+  ⟨y * x⁻¹, 0, by rw [add_zero, inv_mul_cancel_right₀ hx], by simp, Or.inl rfl⟩
+
 section DivisionRing
 
 variable {K σ : Type*} [NormedDivisionRing K] [IsUltrametricDist K] [CompleteSpace K] [Finite σ]
   {c : σ → ℝ} [∀ i, Fact (0 < c i)]
 
 local notation "T" => IsRestricted.subring (R := K) c
-
-omit [IsUltrametricDist K] [CompleteSpace K] in
-private theorem exists_eq_mul_add_of_divisionRing (x y : K) (hx : x ≠ 0) :
-    ∃ z w, y = z * x + w ∧ ‖w‖ ≤ ‖y‖ ∧ (w = 0 ∨ (0 : ℕ) < 0) :=
-  ⟨y * x⁻¹, 0, by rw [add_zero, inv_mul_cancel_right₀ hx], by simp, Or.inl rfl⟩
 
 /-- **Uniformly norm-bounded preimages for linear maps into a Tate algebra**
 (S. Bosch, *Lectures on Formal and Rigid Geometry*, §1.3, Corollary 10). -/

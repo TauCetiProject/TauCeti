@@ -72,9 +72,9 @@ namespace Subcomplex
 variable {X : SSet.{u}} {A : X.Subcomplex}
 
 /-- The indices of the opposite of a pairing are reversed. -/
-lemma Pairing.index_op (P : A.Pairing) [P.IsProper] (x : P.II) {d : ℕ} (hd : x.1.dim = d)
-    (hd' : (N.opEquiv.symm x.1).dim = d) :
-    (P.op.isUniquelyCodimOneFace ⟨N.opEquiv.symm x.1, x.2⟩).index hd' =
+lemma Pairing.index_op (P : A.Pairing) [P.IsProper] (x : P.II) {d : ℕ} (hd : x.val.dim = d)
+    (hd' : (N.opEquiv.symm x.val).dim = d) :
+    (P.op.isUniquelyCodimOneFace ⟨N.opEquiv.symm x.val, x.property⟩).index hd' =
       ((P.isUniquelyCodimOneFace x).index hd).rev := by
   rw [← (P.isUniquelyCodimOneFace x).index_op hd hd']
   exact S.IsUniquelyCodimOneFace.index_congr _ _ rfl (by rw [op_p]; rfl) _ _

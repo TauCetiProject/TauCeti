@@ -40,7 +40,7 @@ noncomputable def spanSingletonQuotientMap :
   LinearMap.codRestrict
     ((Ideal.span {Ideal.Quotient.mk I e} : Ideal (A ⧸ I)).restrictScalars A)
     (I.mkQ.domRestrict (Ideal.span {e})) fun x => by
-    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp x.2
+    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton'.mp x.property
     exact Ideal.mem_span_singleton'.mpr ⟨Ideal.Quotient.mk I a, by rw [← map_mul, ha]; rfl⟩
 
 @[simp]
@@ -51,7 +51,7 @@ theorem coe_spanSingletonQuotientMap (x : (Ideal.span {e} : Ideal A)) :
 theorem spanSingletonQuotientMap_surjective :
     Function.Surjective (spanSingletonQuotientMap e I) := by
   intro y
-  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp y.2
+  obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp y.property
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective b
   refine ⟨⟨a * e, Ideal.mem_span_singleton'.mpr ⟨a, rfl⟩⟩, Subtype.ext ?_⟩
   simpa only [coe_spanSingletonQuotientMap, map_mul] using hb
@@ -81,8 +81,8 @@ theorem range_spanSingletonRelationMap (he : IsIdempotentElem e) :
   ext x
   constructor
   · rintro ⟨y, rfl⟩
-    exact I.mul_mem_right e y.2
+    exact I.mul_mem_right e y.property
   · intro hx
-    exact ⟨⟨x, hx⟩, Subtype.ext ((mem_span_singleton_iff_mul_eq_self he).mp x.2)⟩
+    exact ⟨⟨x, hx⟩, Subtype.ext ((mem_span_singleton_iff_mul_eq_self he).mp x.property)⟩
 
 end TauCeti
