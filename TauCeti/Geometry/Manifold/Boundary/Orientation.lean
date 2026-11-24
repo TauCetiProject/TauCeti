@@ -397,32 +397,15 @@ theorem mvfderiv_nonneg_of_isLocalMin {f : M → ℝ} {q : M}
   by_cases hf : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) f q
   swap
   · exact not_lt.mp fun h ↦ hf (mdifferentiableAt_of_mvfderiv_apply_ne_zero h.ne)
-  let I := 𝓡∂ (n + 1)
   -- Read `f` in the preferred chart at `q`, as a function on the model half-space.
   have hd := hf.hasMFDerivAt.2
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp] at hd
-  have hy0 : extChartAt I q q 0 = 0 := by
-    simpa only [I, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
-      modelWithCornersEuclideanHalfSpace_toFun] using
-      (ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (mem_chart_source _ q)).mp hq
-  have hmin' : IsLocalMinOn (f ∘ (extChartAt I q).symm) (range I) (extChartAt I q q) := by
-    have h := (map_extChartAt_symm_nhdsWithin_range (I := I) q).le
-    refine IsMinFilter.comp_of_tendsto ?_ h
-    rwa [extChartAt_to_inv]
-  -- The tangent space at `q` is the model space, in which `v` is a vector with `0 ≤ v 0`.
-  let w : EuclideanSpace ℝ (Fin (n + 1)) := v
-  have hw : 0 ≤ w 0 := by
-    rw [isOutwardPointing_iff_proj hq, not_lt] at hv
-    exact hv
-  have hcone : w ∈ posTangentConeAt (range I) (extChartAt I q q) := by
-    apply mem_posTangentConeAt_of_segment_subset
-    apply I.convex_range.segment_subset (mem_range_self (chartAt _ q q))
-    rw [range_modelWithCornersEuclideanHalfSpace]
-    simp only [mem_ofPred_eq, PiLp.add_apply, hy0, zero_add]
-    exact hw
+  rw [isOutwardPointing_iff_proj hq, not_lt] at hv
   rw [mvfderiv_apply_eq_mfderiv_apply]
-  exact hmin'.hasFDerivWithinAt_nonneg hd hcone
+  -- The tangent space at `q` is the model space, in which `v` is a vector with `0 ≤ v 0`.
+  exact hasFDerivWithinAt_nonneg_of_isLocalMin (v := (v : EuclideanSpace ℝ (Fin (n + 1)))) hq
+    (mem_extChartAt_source q) hmin hd hv
 
 /-- A function with a local minimum and nonzero differential at a boundary point `q` has
 differential at `q` a positive multiple of the differential of the normal coordinate of the

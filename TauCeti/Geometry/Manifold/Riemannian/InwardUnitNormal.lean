@@ -115,11 +115,9 @@ theorem boundaryTangentSpace_eq_orthogonal_span_inwardUnitNormal
     boundaryTangentSpace q = (ℝ ∙ inwardUnitNormal q)ᗮ := by
   have : FiniteDimensional ℝ (TangentSpace (𝓡∂ (n + 1)) (q : M)) :=
     inferInstanceAs (FiniteDimensional ℝ (EuclideanSpace ℝ (Fin (n + 1))))
-  have hneg : (ℝ ∙ -outwardUnitNormal q)ᗮ = (ℝ ∙ outwardUnitNormal q)ᗮ := by
-    ext w
-    simp only [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_neg_left, neg_eq_zero]
-  rw [inwardUnitNormal_def, hneg, ← orthogonalNormalSpace_subtypeVal_boundary_eq_span,
-    orthogonalNormalSpace_def, Submodule.orthogonal_orthogonal]
+  rw [inwardUnitNormal_def, ← Set.neg_singleton, Submodule.span_neg,
+    ← orthogonalNormalSpace_subtypeVal_boundary_eq_span, orthogonalNormalSpace_def,
+    Submodule.orthogonal_orthogonal]
   exact boundaryTangentSpace_def q
 
 /-- **Tangential decomposition.** Every tangent vector `v` at a boundary point splits as
