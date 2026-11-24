@@ -45,6 +45,8 @@ method of Schneider, Lang and Baker.
 * `TauCeti.partialModByMonic_add_smul_partialDivByMonic`: `f₀ z + P(zᵢ) • f₁ z = f z`.
 * `TauCeti.iterate_partialDeriv_partialModByMonic_eq_zero`: `∂ᵢ^p f₀ = 0`.
 * `TauCeti.eq_partialDivByMonic`, `TauCeti.eq_partialModByMonic`: uniqueness.
+* `TauCeti.partialDivByMonic_add`, `TauCeti.partialDivByMonic_const_smul` and their remainder
+  counterparts: both are linear on entire functions.
 * `TauCeti.norm_partialDivByMonic_le`, `TauCeti.norm_partialModByMonic_le`: the bounds
   `‖f₁‖ ≤ (2 / (R - r)) ^ p M` and `‖f₀‖ ≤ (∑_{j < p} (2 (R + r) / (R - r)) ^ j) M` for `r < R`,
   and their consequences `TauCeti.norm_partialDivByMonic_le_of_five_mul_le` and
@@ -94,6 +96,24 @@ theorem partialDivByMonic_one (i : ι) (f : (ι → ℂ) → E) : partialDivByMo
 
 @[simp]
 theorem partialModByMonic_one (i : ι) (f : (ι → ℂ) → E) : partialModByMonic i f 1 = 0 := by
+  ext z
+  simp [partialModByMonic_apply]
+
+@[simp]
+theorem partialDivByMonic_zero (i : ι) (P : ℂ[X]) :
+    partialDivByMonic i (0 : (ι → ℂ) → E) P = 0 := by
+  unfold partialDivByMonic
+  induction P.roots.toList with
+  | nil => rfl
+  | cons ζ l ih =>
+    have h0 : partialDslope i (0 : (ι → ℂ) → E) ζ = 0 := by
+      ext z
+      simp [partialDslope_apply, dslope, update_apply, slope_def_module]
+    rw [List.foldl_cons, h0, ih]
+
+@[simp]
+theorem partialModByMonic_zero (i : ι) (P : ℂ[X]) :
+    partialModByMonic i (0 : (ι → ℂ) → E) P = 0 := by
   ext z
   simp [partialModByMonic_apply]
 
@@ -308,6 +328,31 @@ private theorem iterate_partialDeriv_listQuot_of_ne (hf : Differentiable ℂ f) 
     exact (ih (differentiable_partialDslope hf i ζ)).trans
       (congrArg (listQuot i · l) (iterate_partialDeriv_partialDslope_of_ne hf hji ζ m))
 
+/-- Division along `l` is additive on entire functions. -/
+private theorem listQuot_add {g : (ι → ℂ) → E} (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) (l : List ℂ) :
+    listQuot i (f + g) l = listQuot i f l + listQuot i g l := by
+  have := Fintype.ofFinite ι
+  have hfr := differentiable_listRem (i := i) hf l
+  have hgr := differentiable_listRem (i := i) hg l
+  refine (eq_listQuot (hfr.add hgr)
+    ((differentiable_listQuot hf l).add (differentiable_listQuot hg l)) l ?_ fun z ↦ ?_).symm
+  · rw [iterate_partialDeriv_add hfr hgr, iterate_partialDeriv_listRem hf,
+      iterate_partialDeriv_listRem hg, add_zero]
+  · simp only [listRem, Pi.add_apply, smul_add]
+    abel
+
+/-- Division along `l` commutes with scalar multiplication by a constant. -/
+private theorem listQuot_const_smul (hf : Differentiable ℂ f) (c : ℂ) (l : List ℂ) :
+    listQuot i (c • f) l = c • listQuot i f l := by
+  have := Fintype.ofFinite ι
+  have hr := differentiable_listRem (i := i) hf l
+  refine (eq_listQuot (hr.const_smul c) ((differentiable_listQuot hf l).const_smul c) l ?_
+    fun z ↦ ?_).symm
+  · rw [iterate_partialDeriv_const_smul, iterate_partialDeriv_listRem hf, smul_zero]
+  · simp only [listRem, Pi.smul_apply, smul_sub]
+    rw [smul_smul, smul_smul, mul_comm c, sub_add_cancel]
+
 end Entire
 
 /-- The bound `(2 / (R - r)) ^ (length l) M` for the quotient along `l`. -/
@@ -402,6 +447,34 @@ theorem eq_partialModByMonic {f₀ g : (ι → ℂ) → E} (hP : P.Monic) (hf₀
     (h : ∀ z, f z = f₀ z + P.eval (z i) • g z) : f₀ = partialModByMonic i f P := by
   ext z
   rw [partialModByMonic_apply, ← eq_partialDivByMonic hP hf₀ hg hdeg h, h z, add_sub_cancel_right]
+
+/-- The quotient by `P(zᵢ)` is additive on entire functions. -/
+theorem partialDivByMonic_add {g : (ι → ℂ) → E} (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) (i : ι) (P : ℂ[X]) :
+    partialDivByMonic i (f + g) P = partialDivByMonic i f P + partialDivByMonic i g P :=
+  listQuot_add hf hg _
+
+/-- The remainder modulo `P(zᵢ)` is additive on entire functions. -/
+theorem partialModByMonic_add {g : (ι → ℂ) → E} (hf : Differentiable ℂ f)
+    (hg : Differentiable ℂ g) (i : ι) (P : ℂ[X]) :
+    partialModByMonic i (f + g) P = partialModByMonic i f P + partialModByMonic i g P := by
+  ext z
+  simp only [partialModByMonic_apply, partialDivByMonic_add hf hg, Pi.add_apply, smul_add]
+  abel
+
+/-- The quotient of an entire function by `P(zᵢ)` commutes with scalar multiplication by a
+constant. -/
+theorem partialDivByMonic_const_smul (hf : Differentiable ℂ f) (c : ℂ) (i : ι) (P : ℂ[X]) :
+    partialDivByMonic i (c • f) P = c • partialDivByMonic i f P :=
+  listQuot_const_smul hf c _
+
+/-- The remainder of an entire function modulo `P(zᵢ)` commutes with scalar multiplication by a
+constant. -/
+theorem partialModByMonic_const_smul (hf : Differentiable ℂ f) (c : ℂ) (i : ι) (P : ℂ[X]) :
+    partialModByMonic i (c • f) P = c • partialModByMonic i f P := by
+  ext z
+  simp only [partialModByMonic_apply, partialDivByMonic_const_smul hf, Pi.smul_apply, smul_sub]
+  rw [smul_comm c (P.eval (z i))]
 
 /-- The iterated partial derivatives `∂ⱼ^m` in another variable `j ≠ i` commute with the quotient
 by `P(zᵢ)`. In particular, if `f` is a polynomial of degree at most `e` in `zⱼ`, in the sense that
