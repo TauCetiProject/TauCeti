@@ -128,7 +128,7 @@ private theorem ofSignedEquiv_apply (u : Fin 24 → ℤˣ) (σ : Equiv.Perm (Fin
 private theorem wordSign_signWord (c : Fin 24 → ZMod 2) :
     (fun i ↦ if wordSign c i = 1 then (0 : ZMod 2) else 1) = c := by
   funext i
-  rcases (by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) (c i) with h | h <;>
+  rcases (c i).eq_zero_or_eq_one with h | h <;>
     simp [wordSign, h, show (-1 : ℤˣ) ≠ 1 by decide]
 
 /-- The sign change by a Golay codeword preserves the Golay Construction B lattice. -/
@@ -163,13 +163,12 @@ private theorem signedEquiv_wordSign_leechShift_sub_mem {c : Fin 24 → ZMod 2}
     funext i
     by_cases h : c i = 0
     · simp [z, h]
-    · have h1 : c i = 1 := ((by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) _).resolve_left h
+    · have h1 : c i = 1 := ZMod.ne_zero_iff_eq_one.mp h
       simp only [z, h, ite_false, ne_eq, not_false_eq_true, and_true]
       rw [h1]
       split_ifs <;> decide
   · have hcard : ∑ i, (if c i = 0 then (0 : ℤ) else -1) = -(hammingNorm c : ℤ) := by
-      rw [Finset.sum_ite, Finset.sum_const_zero, Finset.sum_const, zero_add, smul_neg,
-        nsmul_eq_mul, mul_one, hammingNorm]
+      simp [Finset.sum_ite, hammingNorm]
     rw [Finset.sum_add_distrib, hcard]
     refine dvd_add (dvd_neg.mpr (Int.natCast_dvd_natCast.mpr
       (BinaryCode.isDoublyEven_iff.mp isDoublyEven_code c hc)))
@@ -199,12 +198,9 @@ private theorem signedEquiv_one_leechShift_sub_mem (σ : Equiv.Perm (Fin 24)) :
       one_mul, leechShift_apply, Equiv.symm_apply_eq]
     push_cast
     split_ifs <;> norm_num
-  rw [heq, constructionBLattice_carrier, ConstructionB.intCast_mem_lattice, ← Finset.mul_sum,
-    Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.sum_ite_eq']
-  push_cast
-  simp only [CharTwo.two_eq_zero, zero_mul, Finset.mem_univ, ite_true, sub_self,
-    mul_zero, dvd_zero, and_true]
-  exact zero_mem _
+  rw [heq, constructionBLattice_carrier, ConstructionB.intCast_mem_lattice]
+  exact ⟨by simp [CharTwo.two_eq_zero, ← Pi.zero_def],
+    by simp [Finset.sum_sub_distrib, ← Finset.mul_sum]⟩
 
 /-- A Golay permutation automorphism preserves the Leech lattice. -/
 private theorem signedEquiv_one_mem_leechLattice {σ : Equiv.Perm (Fin 24)}
@@ -242,9 +238,8 @@ def signChangeHom : Multiplicative BinaryGolay.code.toAddSubgroup →* Co0 where
   map_mul' c d := Isometry.ext fun x ↦ funext fun i ↦ by
     simp only [signChange_apply, Isometry.mul_apply, toAdd_mul, AddSubgroup.coe_add,
       Pi.add_apply]
-    rcases (by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) ((c.toAdd : Fin 24 → ZMod 2) i) with h | h <;>
-      rcases (by decide : ∀ a : ZMod 2, a = 0 ∨ a = 1) ((d.toAdd : Fin 24 → ZMod 2) i) with
-        h' | h' <;>
+    rcases ((c.toAdd : Fin 24 → ZMod 2) i).eq_zero_or_eq_one with h | h <;>
+      rcases ((d.toAdd : Fin 24 → ZMod 2) i).eq_zero_or_eq_one with h' | h' <;>
       simp [h, h', CharTwo.add_self_eq_zero]
 
 /-- The sign change `ε_c` negates exactly the coordinates in the support of `c`. -/
