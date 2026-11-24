@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Dynamics.Billiard.Circle
 public import TauCeti.Dynamics.Billiard.NextCollision
+import TauCeti.Dynamics.Billiard.Inverse
 public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.Analysis.Calculus.DerivativeTest
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -154,18 +155,10 @@ theorem im_conj_deriv_mul_sub_pos {s t : ℝ} (h : (s : AddCircle ℓ) ≠ t) :
   rw [eq_comm, ← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff]
   exact ⟨m, by rw [hm, zsmul_eq_mul]⟩
 
-/-- **Injectivity modulo the period.** Two parameters give the same point of a table exactly when
-they agree modulo `ℓ`. -/
-theorem apply_eq_apply_iff {s t : ℝ} : T s = T t ↔ (s : AddCircle ℓ) = t := by
-  refine ⟨fun hst => by_contra fun h => ?_, fun hst => ?_⟩
-  · simpa [hst] using T.im_conj_deriv_mul_sub_pos h
-  · obtain ⟨m, hm⟩ := (AddCircle.coe_eq_zero_iff ℓ (x := s - t)).1
-      (by rw [AddCircle.coe_sub, hst, sub_self])
-    rw [show s = t + m • ℓ by rw [hm]; ring, T.periodic.zsmul m]
-
 /-- A table is injective on every half-open interval of length `ℓ`. -/
-theorem injOn_Ico (a : ℝ) : InjOn T (Ico a (a + ℓ)) := fun _ hs _ ht hst =>
-  (AddCircle.coe_eq_coe_iff_of_mem_Ico hs ht).1 (T.apply_eq_apply_iff.1 hst)
+theorem injOn_Ico (a : ℝ) : InjOn T (Ico a (a + ℓ)) := fun _ hs _ ht hst => by_contra fun h => by
+  simpa [hst] using T.im_conj_deriv_mul_sub_pos
+    (mt (AddCircle.coe_eq_coe_iff_of_mem_Ico hs ht).1 h)
 
 /-! ### The parametrisation by the circle -/
 
@@ -435,13 +428,18 @@ def toStrictConvexBilliardTable : StrictConvexBilliardTable Complex.orientation 
   injOn := by simpa using T.injOn_Ico 0
   areaForm_pos s t h := by
     rw [Complex.areaForm]
-    exact T.im_conj_deriv_mul_sub_pos fun h' => h (T.apply_eq_apply_iff.2 h'.symm)
+    exact T.im_conj_deriv_mul_sub_pos fun h' => h (by rw [← circleParam_coe, ← h', circleParam_coe])
 
 @[simp]
 theorem coe_toStrictConvexBilliardTable : ⇑T.toStrictConvexBilliardTable = T := (rfl)
 
 @[simp]
 theorem toStrictConvexBilliardTable_period : T.toStrictConvexBilliardTable.period = ℓ := (rfl)
+
+/-- **Injectivity modulo the period.** Two parameters give the same point of a table exactly when
+they agree modulo `ℓ`. -/
+theorem apply_eq_apply_iff {s t : ℝ} : T s = T t ↔ (s : AddCircle ℓ) = t :=
+  T.toStrictConvexBilliardTable.apply_eq_apply_iff
 
 /-- The convex table `circle R` is the circle billiard table
 `TauCeti.StrictConvexBilliardTable.circle`. -/
