@@ -37,6 +37,7 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   at most `1` (`CStarMatrix.norm_normalizedTraceMap_le`), with equality for `k ≠ 0`.
 * `CStarMatrix.normalizedTwoNorm`: the normalized 2-norm `‖x‖₂`.
 * `CStarMatrix.normalizedTwoNorm_eq_inv_sqrt_mul_frobenius_norm`: `‖x‖₂ = k^{-1/2}‖x‖_F`.
+* `CStarMatrix.normalizedTwoNorm_matrixUnit`: `‖e_ij‖₂ = k^{-1/2}`.
 * `CStarMatrix.normalizedTwoNormAddGroupNorm`: `‖·‖₂` as an additive group norm; its complex
   homogeneity is `CStarMatrix.normalizedTwoNorm_smul`.
 * `CStarMatrix.norm_normalizedTrace_star_mul_le`: Cauchy–Schwarz `|tr_k(x⋆y)| ≤ ‖x‖₂‖y‖₂`, and
@@ -353,6 +354,12 @@ theorem normalizedTwoNorm_one [DecidableEq n] [Nonempty n] :
 the index type is nonempty. -/
 theorem normalizedTwoNorm_one_le [DecidableEq n] : normalizedTwoNorm (1 : CStarMatrix n n ℂ) ≤ 1 :=
   by cases isEmpty_or_nonempty n <;> simp
+
+/-- `‖e_ij‖₂ = k^{-1/2}`. -/
+@[simp]
+theorem normalizedTwoNorm_matrixUnit [DecidableEq n] (i j : n) :
+    normalizedTwoNorm (matrixUnit i j) = (√(Fintype.card n))⁻¹ := by
+  simp [normalizedTwoNorm_def, Real.sqrt_inv]
 
 /-- `|tr_k(x)| ≤ ‖x‖₂`, Cauchy–Schwarz against the identity. -/
 theorem norm_normalizedTrace_le_normalizedTwoNorm (x : CStarMatrix n n ℂ) :
