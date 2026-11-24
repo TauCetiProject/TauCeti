@@ -20,8 +20,8 @@ equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
-* `CategoryTheory.Over.pullbackComp_id_hom_app_comp_pullbackId`: `pullbackComp (𝟙 X) f` followed
-  by `pullbackId` is the identity of base change along `f`;
+* `CategoryTheory.Over.pullbackComp_id_left_hom_app_comp_pullbackId`: `pullbackComp (𝟙 X) f`
+  followed by `pullbackId` is the identity of base change along `f`;
 * `CategoryTheory.Over.pullbackComp_comp_inv_app_comp_eqToHom`: the two identifications of base
   change along `f ≫ g ≫ h` with the composite of the three base changes agree;
 * `CategoryTheory.Over.pullback_iso_triangle`: for an isomorphism `e : X ≅ Y`, the unit and
@@ -77,11 +77,11 @@ theorem pullbackComp_id_inv_app_comp_eqToHom {X Y : C} (f : X ⟶ Y) [HasPullbac
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_fst A.hom (Category.comp_id f)]
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_snd A.hom (Category.comp_id f)]
 
-/-- Base change along `𝟙 X` and then along the composite `𝟙 X ≫ f` is base change along `f`: the
+/-- Base change along `f` followed by base change along `𝟙 X` is base change along `𝟙 X ≫ f`: the
 composition isomorphism `pullbackComp (𝟙 X) f` followed by `pullbackId` is the identity, up to the
 equality `𝟙 X ≫ f = f`. -/
 @[reassoc]
-theorem pullbackComp_id_hom_app_comp_pullbackId {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
+theorem pullbackComp_id_left_hom_app_comp_pullbackId {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
     (A : Over Y) :
     (pullbackComp (𝟙 X) f).hom.app A ≫ pullbackId.hom.app ((pullback f).obj A) =
       eqToHom (by simp) := by

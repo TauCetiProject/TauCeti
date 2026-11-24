@@ -55,7 +55,7 @@ example (M : NeronModel j A) :
             Over.pullbackId.hom.app A := by
     simp only [Category.assoc]
     rw [Over.pullbackId.hom.naturality e.hom, Functor.id_map,
-      Over.pullbackComp_id_hom_app_comp_pullbackId_assoc, eqToHom_trans_assoc,
+      Over.pullbackComp_id_left_hom_app_comp_pullbackId_assoc, eqToHom_trans_assoc,
       Over.pullbackComp_id_inv_app_comp_eqToHom_assoc]
   rw [NeronModel.baseChange_genericIso_hom]
   simp only [NatTrans.comp_app, eqToHom_app]
