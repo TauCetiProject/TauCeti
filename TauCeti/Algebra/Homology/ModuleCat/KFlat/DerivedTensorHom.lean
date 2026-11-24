@@ -30,7 +30,8 @@ The construction follows the Stacks Project. Represent `L` by a K-flat complex `
 adjunction `- ⊗ P ⊣ Hom(P, -)` on the homotopy category of complexes
 (`TauCeti.tensorRightLinearHomComplexHomotopyAdjunction`). Composing it with the adjunction
 `DerivedCategory.Qh ⊣ TauCeti.kInjectiveReplacement` gives an adjunction between the homotopy
-category and `D(A)`. Since `P` is K-flat, `- ⊗ P` computes `T(-, P)`, and since `Hom(P, I)` is
+category and `D(A)`. Since `P` is K-flat, `- ⊗ P` computes `T(-, P)`
+(`TauCeti.qhCompFlipObjIsoOfIsKFlat`), and since `Hom(P, I)` is
 K-injective for K-injective `I`, the right adjoint takes values in the image of the fully faithful
 functor `TauCeti.kInjectiveReplacement`. Restricting along that functor gives the model adjunction
 `TauCeti.derivedTensorHomAdjOfIsKFlat`. Finally, when `P` maps quasi-isomorphically to the
@@ -39,8 +40,6 @@ K-injective replacement of `L`, precomposition identifies `Hom(P, I)` with `RHom
 
 ## Main definitions
 
-* `TauCeti.qhCompFlipObjIsoOfIsKFlat`: for a K-flat complex `P`, the identification of `T(-, P)` on
-  the homotopy category with the totalized tensor product with `P`.
 * `TauCeti.derivedTensorHomAdjOfIsKFlat`: for a K-flat complex `P`, the adjunction between
   `T(-, P)` and the Hom complex out of `P` into K-injective replacements.
 * `TauCeti.derivedTensorHomAdjOfQuasiIso`: the derived tensor–Hom adjunction
@@ -76,22 +75,6 @@ namespace TauCeti
 
 variable {A : Type u} [CommRing A] [HasDerivedCategory.{w} (ModuleCat.{u} A)]
 
-/-- Tensoring on the right with `P` commutes with passing to the homotopy category, after
-localizing to `D(A)`: on the class of a complex `K`, the totalized tensor bifunctor of homotopy
-categories is the class of `K ⊗ P` (`CategoryTheory.Functor.map₂HomotopyCategory_map_app`). -/
-@[simps! hom_app]
-private def tensorRightQuotientCompQhIso (P : CochainComplex (ModuleCat.{u} A) ℤ) :
-    ((curriedTensor (CochainComplex (ModuleCat.{u} A) ℤ)).flip.obj P ⋙
-        HomotopyCategory.quotient _ _) ⋙ Qh ≅
-      (HomotopyCategory.quotient _ _ ⋙
-        ((curriedTensor (ModuleCat.{u} A)).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).flip.obj
-          ((HomotopyCategory.quotient _ _).obj P)) ⋙ Qh :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _) fun f ↦ by
-    simp only [Functor.comp_map, Functor.flip_obj_map, curriedTensor_map_app, Iso.refl_hom,
-      Functor.map₂HomotopyCategory_map_app, HomologicalComplex.whiskerRight_eq_mapBifunctorMap]
-    -- Both identities are over the class of `K ⊗ P`, written in two ways.
-    exact (Category.comp_id _).trans (Category.id_comp _).symm
-
 variable (T : DerivedCategory (ModuleCat.{u} A) ⥤ DerivedCategory (ModuleCat.{u} A) ⥤
     DerivedCategory (ModuleCat.{u} A))
   (α : (((Functor.whiskeringLeft₂ _).obj DerivedCategory.Q).obj DerivedCategory.Q).obj T ⟶
@@ -101,40 +84,6 @@ variable (T : DerivedCategory (ModuleCat.{u} A) ⥤ DerivedCategory (ModuleCat.{
     (HomologicalComplex.quasiIso (ModuleCat.{u} A) (ComplexShape.up ℤ))]
 
 include α
-
-/-- For a K-flat complex `P`, the derived tensor product `T(-, P)` on the homotopy category is
-the totalized tensor product with `P`: this is the partial counit `Functor.bifunctorCounit₂ α P`,
-an isomorphism since `P` is K-flat, descended to the homotopy category. -/
-def qhCompFlipObjIsoOfIsKFlat (P : CochainComplex (ModuleCat.{u} A) ℤ) [P.IsKFlat] :
-    Qh ⋙ T.flip.obj (Q.obj P) ≅
-      ((curriedTensor (ModuleCat.{u} A)).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).flip.obj
-        ((HomotopyCategory.quotient _ _).obj P) ⋙ Qh :=
-  CategoryTheory.Quotient.natIsoLift _ <| (Functor.associator _ _ _).symm ≪≫
-    Functor.isoWhiskerRight (quotientCompQhIso _) _ ≪≫ asIso (Functor.bifunctorCounit₂ α P) ≪≫
-    Functor.isoWhiskerLeft ((curriedTensor _).flip.obj P) (quotientCompQhIso _).symm ≪≫
-    (Functor.associator _ _ _).symm ≪≫
-    tensorRightQuotientCompQhIso P ≪≫
-    Functor.associator _ _ _
-
-/-- The component of `qhCompFlipObjIsoOfIsKFlat` at the class of a complex `K` is the derived
-tensor comparison `(α.app K).app P`, conjugated by `quotientCompQhIso`. -/
-@[simp]
-lemma qhCompFlipObjIsoOfIsKFlat_hom_app (P : CochainComplex (ModuleCat.{u} A) ℤ) [P.IsKFlat]
-    (K : CochainComplex (ModuleCat.{u} A) ℤ) :
-    (qhCompFlipObjIsoOfIsKFlat T α P).hom.app ((HomotopyCategory.quotient _ _).obj K) =
-      (T.map ((quotientCompQhIso _).hom.app K)).app (Q.obj P) ≫ (α.app K).app P ≫
-        (quotientCompQhIso _).inv.app (K ⊗ P) := by
-  refine (Quotient.natTransLift_app _ _ _ _ K).trans ?_
-  simp only [Functor.comp_obj, Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom,
-    asIso_hom, Functor.isoWhiskerLeft_hom, NatTrans.comp_app, Functor.whiskerRight_app,
-    Functor.whiskerLeft_app, Functor.associator_hom_app, Functor.associator_inv_app,
-    Functor.bifunctorCounit₂_app, tensorRightQuotientCompQhIso_hom_app, Functor.flip_obj_map,
-    Category.id_comp]
-  -- The two remaining identities live over objects of `D(A)` written through `Qh` and through
-  -- the homotopy-category tensor bifunctor, which agree only after unfolding, so they are
-  -- cancelled by `Category.id_comp` and `Category.comp_id` stated up to that unfolding.
-  congr 2
-  exact (congrArg _ (Category.id_comp _)).trans (Category.comp_id _)
 
 /-- **Tensor–Hom adjunction on K-flat models.** For a K-flat complex `P`, the derived tensor
 product `T(-, P)` is left adjoint to the functor sending `M` to the Hom complex out of `P` into

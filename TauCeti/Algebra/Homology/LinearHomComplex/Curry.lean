@@ -490,6 +490,84 @@ lemma tensorRightLinearHomComplexAdjunction_homEquiv (K M : CochainComplex (Modu
     (tensorRightLinearHomComplexAdjunction L).homEquiv K M = linearHomComplexHomEquiv K L M := by
   rw [tensorRightLinearHomComplexAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
 
+/-- Currying on homotopy classes of chain maps: it sends homotopic chain maps to homotopic chain
+maps (`linearHomComplexHomEquivHomotopy`), so it is computed on any representatives, which exist
+because `HomotopyCategory.quotient` is full. -/
+private def linearHomComplexHomotopyHomEquiv (K M : CochainComplex (ModuleCat.{v} R) ℤ) :
+    ((HomotopyCategory.quotient _ _).obj (K ⊗ L) ⟶ (HomotopyCategory.quotient _ _).obj M) ≃
+      ((HomotopyCategory.quotient _ _).obj K ⟶
+        (HomotopyCategory.quotient _ _).obj (linearHomComplex R L M)) :=
+  have h {f g : K ⊗ L ⟶ M}
+      (hfg : (HomotopyCategory.quotient _ _).map f = (HomotopyCategory.quotient _ _).map g) :
+      (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M f) =
+        (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M g) :=
+    HomotopyCategory.eq_of_homotopy _ _
+      (linearHomComplexHomEquivHomotopy f g (HomotopyCategory.homotopyOfEq _ _ hfg))
+  have h' {f g : K ⟶ linearHomComplex R L M}
+      (hfg : (HomotopyCategory.quotient _ _).map f = (HomotopyCategory.quotient _ _).map g) :
+      (HomotopyCategory.quotient _ _).map ((linearHomComplexHomEquiv K L M).symm f) =
+        (HomotopyCategory.quotient _ _).map ((linearHomComplexHomEquiv K L M).symm g) :=
+    HomotopyCategory.eq_of_homotopy _ _ ((linearHomComplexHomEquivHomotopy _ _).symm
+      (by simpa using HomotopyCategory.homotopyOfEq _ _ hfg))
+  { toFun f := (HomotopyCategory.quotient _ _).map
+      (linearHomComplexHomEquiv K L M ((HomotopyCategory.quotient _ _).preimage f))
+    invFun g := (HomotopyCategory.quotient _ _).map
+      ((linearHomComplexHomEquiv K L M).symm ((HomotopyCategory.quotient _ _).preimage g))
+    left_inv f := by
+      dsimp only
+      rw [h' (Functor.map_preimage _ _), Equiv.symm_apply_apply, Functor.map_preimage]
+    right_inv g := by
+      dsimp only
+      rw [h (Functor.map_preimage _ _), Equiv.apply_symm_apply, Functor.map_preimage] }
+
+private lemma linearHomComplexHomotopyHomEquiv_quotient_map
+    {K M : CochainComplex (ModuleCat.{v} R) ℤ} (f : K ⊗ L ⟶ M) :
+    linearHomComplexHomotopyHomEquiv L K M ((HomotopyCategory.quotient _ _).map f) =
+      (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M f) :=
+  HomotopyCategory.eq_of_homotopy _ _ (linearHomComplexHomEquivHomotopy _ _
+    (HomotopyCategory.homotopyOfEq _ _ (Functor.map_preimage _ _)))
+
+private lemma linearHomComplexHomotopyHomEquiv_symm_quotient_map
+    {K M : CochainComplex (ModuleCat.{v} R) ℤ} (g : K ⟶ linearHomComplex R L M) :
+    (linearHomComplexHomotopyHomEquiv L K M).symm ((HomotopyCategory.quotient _ _).map g) =
+      (HomotopyCategory.quotient _ _).map ((linearHomComplexHomEquiv K L M).symm g) :=
+  HomotopyCategory.eq_of_homotopy _ _ ((linearHomComplexHomEquivHomotopy _ _).symm (by
+    simpa using HomotopyCategory.homotopyOfEq _ _ (Functor.map_preimage _ _)))
+
+private lemma linearHomComplexHomotopyHomEquiv_symm_naturality_left
+    {K' K M : CochainComplex (ModuleCat.{v} R) ℤ}
+    (f : (HomotopyCategory.quotient _ _).obj K' ⟶ (HomotopyCategory.quotient _ _).obj K)
+    (g : (HomotopyCategory.quotient _ _).obj K ⟶
+      (HomotopyCategory.quotient _ _).obj (linearHomComplex R L M)) :
+    (linearHomComplexHomotopyHomEquiv L K' M).symm (f ≫ g) =
+      (((curriedTensor (ModuleCat.{v} R)).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).map f).app
+          ((HomotopyCategory.quotient _ _).obj L) ≫
+        (linearHomComplexHomotopyHomEquiv L K M).symm g := by
+  obtain ⟨f, rfl⟩ := (HomotopyCategory.quotient _ _).map_surjective f
+  obtain ⟨g, rfl⟩ := (HomotopyCategory.quotient _ _).map_surjective g
+  rw [← Functor.map_comp, linearHomComplexHomotopyHomEquiv_symm_quotient_map,
+    linearHomComplexHomotopyHomEquiv_symm_quotient_map, Functor.map₂HomotopyCategory_map_app,
+    linearHomComplexHomEquiv_symm_naturality_left, whiskerRight_eq_mapBifunctorMap]
+  -- The middle object is `K ⊗ L`, which is `mapBifunctor K L (curriedTensor _) (.up ℤ)` by
+  -- `Functor.map₂HomotopyCategory_obj_obj`.
+  exact Functor.map_comp _ _ _
+
+private lemma linearHomComplexHomotopyHomEquiv_naturality_right
+    {K M M' : CochainComplex (ModuleCat.{v} R) ℤ}
+    (f : (HomotopyCategory.quotient _ _).obj (K ⊗ L) ⟶ (HomotopyCategory.quotient _ _).obj M)
+    (g : (HomotopyCategory.quotient _ _).obj M ⟶ (HomotopyCategory.quotient _ _).obj M') :
+    linearHomComplexHomotopyHomEquiv L K M' (f ≫ g) =
+      linearHomComplexHomotopyHomEquiv L K M f ≫
+        ((linearHomComplexHomotopyFunctor R (ModuleCat.{v} R)).obj
+          (Opposite.op ((HomotopyCategory.quotient _ _).obj L))).map g := by
+  obtain ⟨f, rfl⟩ := (HomotopyCategory.quotient _ _).map_surjective f
+  obtain ⟨g, rfl⟩ := (HomotopyCategory.quotient _ _).map_surjective g
+  rw [← Functor.map_comp, linearHomComplexHomotopyHomEquiv_quotient_map,
+    linearHomComplexHomotopyHomEquiv_quotient_map, linearHomComplexHomotopyFunctor_obj_map,
+    linearHomComplexHomEquiv_naturality_right]
+  -- The middle object is `linearHomComplex R L M`, by `linearHomComplexHomotopyFunctor_obj_obj`.
+  exact Functor.map_comp _ _ _
+
 /-- **Tensor–Hom adjunction on homotopy categories.** Tensoring on the right with `L` is left
 adjoint to the `R`-linear Hom complex out of `L` on the homotopy category of complexes of
 `R`-modules: currying is compatible with homotopies (`linearHomComplexHomEquivHomotopy`). -/
@@ -499,20 +577,10 @@ def tensorRightLinearHomComplexHomotopyAdjunction :
       (linearHomComplexHomotopyFunctor R (ModuleCat.{v} R)).obj
         (Opposite.op ((HomotopyCategory.quotient _ _).obj L)) :=
   Adjunction.mkOfHomEquiv
-    -- Morphisms in the homotopy category are homotopy classes of chain maps, so currying
-    -- descends to them along `Quot.congr`; the naturality laws are checked on representatives.
-    { homEquiv K M := Quot.congr (linearHomComplexHomEquiv K.as L M.as) fun f g ↦ by
-        rw [HomRel.compClosure_iff_self, HomRel.compClosure_iff_self]
-        exact ⟨fun ⟨h⟩ ↦ ⟨linearHomComplexHomEquivHomotopy f g h⟩,
-          fun ⟨h⟩ ↦ ⟨(linearHomComplexHomEquivHomotopy f g).symm h⟩⟩
-      homEquiv_naturality_left_symm f g := by
-        obtain ⟨f, rfl⟩ := Quot.exists_rep f
-        obtain ⟨g, rfl⟩ := Quot.exists_rep g
-        exact congrArg (Quot.mk _) (linearHomComplexHomEquiv_symm_naturality_left f g)
-      homEquiv_naturality_right f g := by
-        obtain ⟨f, rfl⟩ := Quot.exists_rep f
-        obtain ⟨g, rfl⟩ := Quot.exists_rep g
-        exact congrArg (Quot.mk _) (linearHomComplexHomEquiv_naturality_right f g) }
+    { homEquiv K M := linearHomComplexHomotopyHomEquiv L K.as M.as
+      homEquiv_naturality_left_symm f g :=
+        linearHomComplexHomotopyHomEquiv_symm_naturality_left L f g
+      homEquiv_naturality_right f g := linearHomComplexHomotopyHomEquiv_naturality_right L f g }
 
 /-- On homotopy classes of chain maps, the adjunction on homotopy categories is currying. -/
 lemma tensorRightLinearHomComplexHomotopyAdjunction_homEquiv_quotient_map
@@ -522,10 +590,7 @@ lemma tensorRightLinearHomComplexHomotopyAdjunction_homEquiv_quotient_map
         ((HomotopyCategory.quotient _ _).map f) =
       (HomotopyCategory.quotient _ _).map (linearHomComplexHomEquiv K L M f) := by
   rw [tensorRightLinearHomComplexHomotopyAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
-  -- `HomotopyCategory.quotient` sends a chain map `f` to its class `Quot.mk _ f`, and
-  -- `Quot.congr e _` sends that class to the class of `e f`.
-  dsimp only [HomotopyCategory.quotient, Quotient.functor]
-  exact Quot.congr_mk _ _ f
+  exact linearHomComplexHomotopyHomEquiv_quotient_map L f
 
 variable {L}
 
