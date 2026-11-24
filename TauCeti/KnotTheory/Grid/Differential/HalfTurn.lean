@@ -79,16 +79,14 @@ state. -/
 @[simp]
 theorem halfTurnEquiv_apply (c : GridChain R n) (y : GridState n) :
     halfTurnEquiv R c y = c y.halfTurn := by
-  rw [halfTurnEquiv]
-  rfl
+  rw [halfTurnEquiv, Finsupp.domLCongr_apply]
+  exact Finsupp.equivMapDomain_apply _ _ _
 
 /-- The half-turn sends a generator to the half-turned generator. -/
 @[simp]
 theorem halfTurnEquiv_single (x : GridState n) (a : R) :
-    halfTurnEquiv R (Finsupp.single x a) = Finsupp.single x.halfTurn a := by
-  ext y : 1
-  rw [halfTurnEquiv_apply]
-  simp only [Finsupp.single_apply, GridState.halfTurn_involutive.eq_iff]
+    halfTurnEquiv R (Finsupp.single x a) = Finsupp.single x.halfTurn a :=
+  Finsupp.domLCongr_single _ x a
 
 /-- The half-turn of chains is an involution. -/
 @[simp]
@@ -96,6 +94,13 @@ theorem halfTurnEquiv_halfTurnEquiv (c : GridChain R n) :
     halfTurnEquiv R (halfTurnEquiv R c) = c := by
   ext y : 1
   rw [halfTurnEquiv_apply, halfTurnEquiv_apply, GridState.halfTurn_halfTurn]
+
+/-- The half-turn of chains is its own inverse, so the forward lemmas `halfTurnEquiv_apply` and
+`halfTurnEquiv_single` also drive the inverse map. -/
+@[simp]
+theorem halfTurnEquiv_symm : (halfTurnEquiv R).symm = halfTurnEquiv R (n := n) := by
+  rw [halfTurnEquiv, Finsupp.domLCongr_symm,
+    Function.Involutive.toPerm_symm GridState.halfTurn_involutive]
 
 end Constant
 
@@ -116,8 +121,9 @@ half-turned state. -/
 @[simp]
 theorem halfTurnRenameEquiv_apply (c : GridChainMinus R n) (y : GridState n) :
     halfTurnRenameEquiv R c y = rename Fin.rev (c y.halfTurn) := by
-  rw [halfTurnRenameEquiv]
-  rfl
+  rw [halfTurnRenameEquiv, LinearEquiv.trans_apply, halfTurnEquiv_apply,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply]
+  exact RingEquiv.toSemilinearEquiv_apply _ _
 
 /-- The half-turn sends a generator with coefficient `a` to the half-turned generator with the
 renamed coefficient. -/
