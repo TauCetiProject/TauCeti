@@ -65,6 +65,8 @@ identity of `kⁿ`, so they are different module deformations.
   induced by a semilinear map sending a basis to a basis; it gives the isomorphisms
   `TauCeti.Deformation.ModuleDeformation.baseChangeId` and
   `TauCeti.Deformation.ModuleDeformation.baseChangeComp` behind the functor laws.
+* `TauCeti.Deformation.ModuleDeformation.baseChange_hom_ext`: semilinear maps out of a base change
+  are determined by their values on the vectors `1 ⊗ v`.
 * `TauCeti.Deformation.FramedModuleDeformationClass.forget_surjective`: forgetting the framing is
   surjective on isomorphism classes.
 * Over the residue field `k` there is at most one isomorphism class of (framed) module
@@ -226,8 +228,8 @@ def refl (D : ModuleDeformation ρbar A) : D.Equiv D where
   reduction_apply _ := rfl
 
 @[simp]
-theorem refl_toLinearEquiv (D : ModuleDeformation ρbar A) :
-    (refl D).toLinearEquiv = LinearEquiv.refl _ _ :=
+theorem refl_toRepresentationEquiv (D : ModuleDeformation ρbar A) :
+    (refl D).toRepresentationEquiv = .refl D.action :=
   (rfl)
 
 /-- The inverse of an isomorphism of module deformations. -/
@@ -238,8 +240,8 @@ def symm {D D' : ModuleDeformation ρbar A} (e : D.Equiv D') : D'.Equiv D where
     exact congrArg D'.reduction (e.toLinearEquiv.apply_symm_apply v)
 
 @[simp]
-theorem symm_toLinearEquiv {D D' : ModuleDeformation ρbar A} (e : D.Equiv D') :
-    e.symm.toLinearEquiv = e.toLinearEquiv.symm :=
+theorem symm_toRepresentationEquiv {D D' : ModuleDeformation ρbar A} (e : D.Equiv D') :
+    e.symm.toRepresentationEquiv = e.toRepresentationEquiv.symm :=
   (rfl)
 
 /-- The composite of two isomorphisms of module deformations. -/
@@ -249,8 +251,9 @@ def trans {D D' D'' : ModuleDeformation ρbar A} (e : D.Equiv D') (e' : D'.Equiv
   reduction_apply v := (e'.reduction_apply _).trans (e.reduction_apply v)
 
 @[simp]
-theorem trans_toLinearEquiv {D D' D'' : ModuleDeformation ρbar A} (e : D.Equiv D')
-    (e' : D'.Equiv D'') : (e.trans e').toLinearEquiv = e.toLinearEquiv.trans e'.toLinearEquiv :=
+theorem trans_toRepresentationEquiv {D D' D'' : ModuleDeformation ρbar A} (e : D.Equiv D')
+    (e' : D'.Equiv D'') :
+    (e.trans e').toRepresentationEquiv = e.toRepresentationEquiv.trans e'.toRepresentationEquiv :=
   (rfl)
 
 end Equiv
@@ -358,6 +361,15 @@ theorem baseChangeBasis_apply (D : ModuleDeformation ρbar A) {ι : Type*}
   let _ : Algebra A.obj.left B.obj.left := f.hom.left.hom.toAlgebra
   exact Algebra.TensorProduct.basis_apply b i
 
+/-- Two semilinear maps out of the base change `B ⊗_A V` of a module deformation are equal as soon
+as they agree on the vectors `1 ⊗ v`. -/
+@[ext]
+theorem baseChange_hom_ext (D : ModuleDeformation ρbar A) {S M : Type*} [Semiring S]
+    [AddCommMonoid M] [Module S M] {σ : B.obj.left →+* S} {ψ₁ ψ₂ : D.baseChange f →ₛₗ[σ] M}
+    (h : ∀ v, ψ₁ (D.toBaseChange f v) = ψ₂ (D.toBaseChange f v)) : ψ₁ = ψ₂ :=
+  (D.baseChangeBasis f (Module.Free.chooseBasis A.obj.left D)).ext fun i ↦ by
+    rw [baseChangeBasis_apply, h]
+
 variable {f} in
 private theorem baseChangeBasis_equiv_toBaseChange {D : ModuleDeformation ρbar A}
     {D' : ModuleDeformation ρbar B} (ψ : D →ₛₗ[(f.hom.left.hom : A.obj.left →+* B.obj.left)] D')
@@ -454,18 +466,17 @@ noncomputable def Equiv.baseChange {D D' : ModuleDeformation ρbar A} (e : D.Equ
     (D.baseChange f).Equiv (D'.baseChange f) :=
   letI : Algebra A.obj.left B.obj.left := f.hom.left.hom.toAlgebra
   { toRepresentationEquiv := e.toRepresentationEquiv.baseChange B.obj.left
-    reduction_apply t := by
-      change (D'.baseChange f).reduction (e.toRepresentationEquiv.baseChange B.obj.left t) = _
-      induction t using TensorProduct.inductionOn with
-      | tmul b v =>
-        rw [Representation.Equiv.baseChange_tmul]
-        exact congrArg (B.augmentation b • ·) (e.reduction_apply v)
-      | add t t' ht ht' =>
-        -- `simp` does not match the addition of `B ⊗[A] V` from `TensorProduct.inductionOn` with
-        -- that of the carrier of the base change, so the two additivity steps are applied as terms.
-        rw [map_add]
-        exact ((D'.baseChange f).reduction.map_add _ _).trans
-          ((congrArg₂ (· + ·) ht ht').trans ((D.baseChange f).reduction.map_add t t').symm) }
+    -- The carrier of `D.baseChange f` is by definition `B ⊗[A] V` and `D.toBaseChange f v` is by
+    -- definition `1 ⊗ₜ v`, so `Representation.Equiv.baseChange_tmul` computes the isomorphism
+    -- on `D.toBaseChange f v`.
+    reduction_apply := LinearMap.congr_fun (baseChange_hom_ext f D
+      (ψ₁ := (D'.baseChange f).reduction ∘ₛₗ
+        (e.toRepresentationEquiv.baseChange B.obj.left).toLinearMap)
+      (ψ₂ := (D.baseChange f).reduction) fun v ↦
+        (congrArg (D'.baseChange f).reduction
+          (e.toRepresentationEquiv.baseChange_tmul B.obj.left 1 v)).trans <|
+        (baseChange_reduction_toBaseChange f D' _).trans <|
+        (e.reduction_apply v).trans (baseChange_reduction_toBaseChange f D v).symm) }
 
 @[simp]
 theorem Equiv.baseChange_toBaseChange {D D' : ModuleDeformation ρbar A} (e : D.Equiv D')
