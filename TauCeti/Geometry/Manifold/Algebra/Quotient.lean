@@ -42,6 +42,18 @@ diffeomorphism use `IsLocalHomeomorph.isManifold_chartedSpaceOfRightInverse` and
 and smooth descent criterion use `IsLocalDiffeomorph.lieGroup` and
 `IsLocalDiffeomorph.contMDiff_comp_iff`, respectively.
 
+## Discrete subgroups of normed spaces
+
+For a discrete subgroup `N` of a normed space `E`, the projection `E → E ⧸ N` read in any chart of
+the quotient is locally a translation by an element of `N`
+(`AddSubgroup.exists_eventuallyEq_sub_of_mem_atlas`), so its differential is the identity of `E`
+(`AddSubgroup.hasMFDerivAt_quotientMk`). The same holds for the orbit projection by a discrete
+submodule below. Both follow from two general facts: a map `f : E → Q` whose fibres are the cosets
+of an additive subgroup is locally a translation in every partial homeomorphism `Q → E` whose
+inverse is `f` on its target (`TauCeti.exists_eventuallyEq_sub_of_symm_eq`), and a map that is
+locally a translation in charts has differential the identity
+(`TauCeti.hasMFDerivAt_of_eventuallyEq_sub`).
+
 ## Discrete submodules of normed spaces
 
 Let `L` be a discrete submodule of a locally compact normed space `E` over a nontrivially normed
@@ -100,7 +112,7 @@ identity component.
 
 ### Discrete subgroups
 
-The following results also have additive counterparts in the `AddSubgroup` namespace.
+Each of the following results also has an additive counterpart in the `AddSubgroup` namespace.
 
 * `Subgroup.isLocalDiffeomorph_quotientMk`: the coset projection by a discrete subgroup is a
   local diffeomorphism.
@@ -110,6 +122,16 @@ The following results also have additive counterparts in the `AddSubgroup` names
   after composition with the projection.
 * `Subgroup.contMDiff_quotientGroup_lift`: a smooth homomorphism killing a discrete normal
   subgroup descends smoothly to the quotient group.
+
+### Discrete subgroups of normed spaces
+
+* `TauCeti.exists_eventuallyEq_sub_of_symm_eq`, `TauCeti.hasMFDerivAt_of_eventuallyEq_sub`: a map
+  whose fibres are the cosets of an additive subgroup is locally a translation in charts inverse to
+  it, and then its differential is the identity.
+* `AddSubgroup.exists_eventuallyEq_sub_of_mem_atlas`: the projection `E → E ⧸ N` read in a
+  quotient chart is locally a translation by an element of `N`.
+* `AddSubgroup.hasMFDerivAt_quotientMk`, `AddSubgroup.mfderiv_quotientMk`: the differential of
+  the projection is the identity in quotient coordinates.
 
 ### Discrete submodules
 
@@ -245,6 +267,93 @@ theorem contMDiff_quotientGroup_lift [N.Normal] [Monoid M] (f : G →* M) (hN : 
 
 end Subgroup
 
+/-! ### Projections that are locally translations in charts -/
+
+namespace TauCeti
+
+open Filter
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {Q : Type*} [TopologicalSpace Q]
+
+/-- Let `f : E → Q` identify two points of `E` exactly when their difference lies in an additive
+subgroup `N`. If a partial homeomorphism `c : Q → E` has inverse `f` on its target, then near each
+point `x` with `f x` in its source, `c ∘ f` is a translation by an element of `N`. -/
+theorem exists_eventuallyEq_sub_of_symm_eq {f : E → Q} {N : AddSubgroup E}
+    (hf : ∀ y y', f y = f y' ↔ y - y' ∈ N) {c : OpenPartialHomeomorph Q E}
+    (hc : ∀ y ∈ c.target, c.symm y = f y) {x : E} (hx : f x ∈ c.source) :
+    ∃ l ∈ N, c ∘ f =ᶠ[𝓝 x] fun y ↦ y - l := by
+  have hmem : c (f x) ∈ c.target := c.map_source hx
+  have hrep : f (c (f x)) = f x := by rw [← hc _ hmem, c.left_inv hx]
+  set l := x - c (f x)
+  have hl : l ∈ N := (hf _ _).1 hrep.symm
+  have htend : Tendsto (fun y : E ↦ y - l) (𝓝 x) (𝓝 (c (f x))) := by
+    have h : Tendsto (fun y : E ↦ y - l) (𝓝 x) (𝓝 (x - l)) :=
+      (continuous_id.sub continuous_const).tendsto x
+    simpa only [l, sub_sub_cancel] using h
+  refine ⟨l, hl, ?_⟩
+  filter_upwards [htend (c.open_target.mem_nhds hmem)] with y hy
+  have hy' : f (y - l) = f y := by
+    rw [hf, sub_sub_cancel_left]
+    exact neg_mem hl
+  rw [Function.comp_apply, ← hy', ← hc _ hy]
+  exact c.right_inv hy
+
+/-- **A map that is locally a translation in charts has differential the identity.** If a map
+`f : E → Q` to a manifold modelled on `E`, continuous at `x`, read in the chart at `f x` is near `x`
+a translation, then its differential at `x` is the identity of `E`. -/
+theorem hasMFDerivAt_of_eventuallyEq_sub [ChartedSpace E Q] {f : E → Q} {x : E}
+    (hf : ContinuousAt f x) {l : E} (hl : chartAt E (f x) ∘ f =ᶠ[𝓝 x] fun y ↦ y - l) :
+    HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E) f x (ContinuousLinearMap.id 𝕜 E) := by
+  refine ⟨hf, ?_⟩
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe,
+    Set.range_id, hasFDerivWithinAt_univ, extChartAt_coe, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Function.id_comp, Function.comp_id, id_eq]
+  exact ((hasFDerivAt_id x).sub_const l).congr_of_eventuallyEq hl
+
+end TauCeti
+
+/-! ### Quotients of a normed space by a discrete subgroup -/
+
+namespace AddSubgroup
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] (N : AddSubgroup E) [DiscreteTopology N]
+
+/-- In a chart of the quotient of a normed space by a discrete subgroup `N`, the projection is
+locally a translation by an element of `N`. -/
+theorem exists_eventuallyEq_sub_of_mem_atlas {c : OpenPartialHomeomorph (E ⧸ N) E}
+    (hc : c ∈ atlas E (E ⧸ N)) {x : E} (hx : (x : E ⧸ N) ∈ c.source) :
+    ∃ l ∈ N, c ∘ QuotientAddGroup.mk =ᶠ[𝓝 x] fun y ↦ y - l := by
+  have hf := N.isLocalHomeomorph_quotientMk
+  rw [hf.atlas_chartedSpaceOfRightInverse
+    QuotientAddGroup.mk_surjective.hasRightInverse.choose_spec] at hc
+  obtain ⟨p, rfl⟩ := hc
+  -- the chart is a local inverse of the projection followed by the identity chart of `E`
+  simp only [chartAt_self_eq, OpenPartialHomeomorph.trans_refl] at hx ⊢
+  refine TauCeti.exists_eventuallyEq_sub_of_symm_eq (fun _ _ ↦ QuotientAddGroup.eq_iff_sub_mem)
+    (fun y _ ↦ ?_) hx
+  rw [hf.localInverseAt_symm]
+
+/-- **The differential of the projection onto a quotient of a normed space is the identity.** For
+a discrete subgroup `N` of a normed space `E`, read in the charts of `E ⧸ N`, the projection is
+locally a translation by an element of `N`, so its differential is the identity of `E`. -/
+theorem hasMFDerivAt_quotientMk (x : E) :
+    HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E) (QuotientAddGroup.mk : E → E ⧸ N) x
+      (ContinuousLinearMap.id 𝕜 E) := by
+  obtain ⟨l, -, hc⟩ :=
+    N.exists_eventuallyEq_sub_of_mem_atlas (chart_mem_atlas E (x : E ⧸ N)) (mem_chart_source _ _)
+  exact TauCeti.hasMFDerivAt_of_eventuallyEq_sub continuous_quotient_mk'.continuousAt hc
+
+/-- The manifold derivative of the projection onto a quotient of a normed space by a discrete
+subgroup is the identity. -/
+@[simp]
+theorem mfderiv_quotientMk (x : E) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) (QuotientAddGroup.mk : E → E ⧸ N) x = ContinuousLinearMap.id 𝕜 E :=
+  (N.hasMFDerivAt_quotientMk x).mfderiv
+
+end AddSubgroup
+
 end
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
@@ -271,26 +380,10 @@ theorem Submodule.exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient
     {c : OpenPartialHomeomorph (AddAction.orbitRel.Quotient L E) E}
     (hc : c ∈ atlas E (AddAction.orbitRel.Quotient L E)) {x : E}
     (hx : _root_.Quotient.mk (AddAction.orbitRel L E) x ∈ c.source) :
-    ∃ l ∈ L, (c ∘ _root_.Quotient.mk (AddAction.orbitRel L E)) =ᶠ[𝓝 x] fun y ↦ y - l := by
-  let q := _root_.Quotient.mk (AddAction.orbitRel L E)
-  have hmem : c (q x) ∈ c.target := c.map_source hx
-  have hrep : q (c (q x)) = q x :=
-    TauCeti.addQuotientMk_apply_of_mem_atlas_addQuotient hc hx
-  set l := x - c (q x)
-  have hl : l ∈ L := (L.orbitRelQuotient_mk_eq_mk_iff).mp hrep.symm
-  have htend : Tendsto (fun y : E ↦ y - l) (𝓝 x) (𝓝 (c (q x))) := by
-    have h : Tendsto (fun y : E ↦ y - l) (𝓝 x) (𝓝 (x - l)) :=
-      (continuous_id.sub continuous_const).tendsto x
-    simpa only [l, sub_sub_cancel] using h
-  refine ⟨l, hl, ?_⟩
-  filter_upwards [htend (c.open_target.mem_nhds hmem)] with y hy
-  have hy' : q (y - l) = q y := by
-    apply (L.orbitRelQuotient_mk_eq_mk_iff).mpr
-    rw [sub_sub_cancel_left]
-    exact neg_mem hl
-  have hs : c.symm (y - l) = q (y - l) :=
-    TauCeti.symm_eq_addQuotientMk_of_mem_atlas_addQuotient hc hy
-  exact (congrArg c hy'.symm).trans ((congrArg c hs.symm).trans (c.right_inv hy))
+    ∃ l ∈ L, (c ∘ _root_.Quotient.mk (AddAction.orbitRel L E)) =ᶠ[𝓝 x] fun y ↦ y - l :=
+  TauCeti.exists_eventuallyEq_sub_of_symm_eq (N := L.toAddSubgroup)
+    (fun _ _ ↦ L.orbitRelQuotient_mk_eq_mk_iff)
+    (fun _ hy ↦ TauCeti.symm_eq_addQuotientMk_of_mem_atlas_addQuotient hc hy) hx
 
 /-- The differential of the orbit projection by a discrete submodule is the identity,
 with tangent spaces read in the quotient charts. -/
@@ -299,13 +392,7 @@ theorem Submodule.hasMFDerivAt_orbitRelQuotient_mk (x : E) :
       (ContinuousLinearMap.id 𝕜 E) := by
   obtain ⟨l, -, hc⟩ := L.exists_eventuallyEq_sub_of_mem_atlas_orbitRelQuotient
     (chart_mem_atlas E (_root_.Quotient.mk (AddAction.orbitRel L E) x)) (mem_chart_source _ _)
-  refine ⟨continuous_quotient_mk'.continuousAt, ?_⟩
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, modelWithCornersSelf_coe,
-    range_id, hasFDerivWithinAt_univ, extChartAt_coe, PartialEquiv.refl_symm,
-    PartialEquiv.refl_coe, Function.id_comp, Function.comp_id, id_eq]
-  convert ((hasFDerivAt_id x).sub_const l).congr_of_eventuallyEq hc using 1
-  ext
-  rfl
+  exact TauCeti.hasMFDerivAt_of_eventuallyEq_sub continuous_quotient_mk'.continuousAt hc
 
 /-- The manifold derivative of the orbit projection by a discrete submodule is the identity. -/
 @[simp]

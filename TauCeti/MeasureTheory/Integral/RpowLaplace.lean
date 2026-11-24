@@ -50,6 +50,8 @@ normalization of the inverse-gamma density; averaging Gaussians `exp (-π ‖z�
   `(s - i t)⁻¹ - s⁻¹ - i t / (1 + s ^ 2)` of the sine-compensated kernel.
 * `TauCeti.integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin`: the Laplace transform
   `(s + a)⁻¹ - s⁻¹ + a / (1 + s ^ 2)` of the real sine-compensated kernel.
+* `TauCeti.norm_setIntegral_Ioc_exp_neg_mul_smul_le`: Euler's integral bounds the Laplace
+  integral over `(0, δ]` of a function with `‖G t‖ ≤ K t ^ (s - 1)` there by `K Γ(s) x ^ (-s)`.
 -/
 
 public section
@@ -282,5 +284,30 @@ theorem integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin {s a : ℝ}
     integral_exp_mul_Ioi (by linarith : -s < 0) 0, heq]
   simp only [mul_zero, exp_zero, neg_div, div_neg, one_div, neg_neg]
   ring
+
+/-- The part of a Laplace integral near `0`: if `‖G t‖ ≤ K t^{s-1}` on `(0, δ]` with `s > 0` and
+`K ≥ 0`, then
+`‖∫₀^δ e^{-xt} G(t) dt‖ ≤ K Γ(s) x^{-s}` for every `x > 0`. -/
+theorem norm_setIntegral_Ioc_exp_neg_mul_smul_le {G : ℝ → E} {s x K δ : ℝ} (hs : 0 < s)
+    (hx : 0 < x) (hK : 0 ≤ K) (hGb : ∀ t ∈ Ioc 0 δ, ‖G t‖ ≤ K * t ^ (s - 1)) :
+    ‖∫ t in Ioc 0 δ, Real.exp (-x * t) • G t‖ ≤ K * Real.Gamma s * x ^ (-s) := by
+  have hint : IntegrableOn (fun t : ℝ => t ^ (s - 1) * Real.exp (-(x * t))) (Ioi 0) :=
+    integrableOn_rpow_mul_exp_neg_mul_Ioi hs hx
+  calc ‖∫ t in Ioc 0 δ, Real.exp (-x * t) • G t‖
+      ≤ ∫ t in Ioc 0 δ, K * (t ^ (s - 1) * Real.exp (-(x * t))) := by
+        refine norm_integral_le_of_norm_le ((hint.mono_set Ioc_subset_Ioi_self).const_mul K) ?_
+        filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+        rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le, neg_mul, mul_comm,
+          ← mul_assoc]
+        exact mul_le_mul_of_nonneg_right (hGb t ht) (Real.exp_pos _).le
+    _ ≤ ∫ t in Ioi 0, K * (t ^ (s - 1) * Real.exp (-(x * t))) := by
+        refine setIntegral_mono_set (hint.const_mul K) ?_
+          (Filter.Eventually.of_forall Ioc_subset_Ioi_self)
+        filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
+        exact mul_nonneg hK (mul_nonneg (Real.rpow_nonneg ht.le _) (Real.exp_pos _).le)
+    _ = K * Real.Gamma s * x ^ (-s) := by
+        rw [integral_const_mul, integral_rpow_mul_exp_neg_mul_Ioi_eq (by linarith) hx,
+          sub_add_cancel]
+        ring
 
 end TauCeti

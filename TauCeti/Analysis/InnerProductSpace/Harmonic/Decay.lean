@@ -10,9 +10,9 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -147,7 +147,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_s
     calc μ.real (ball y s) * (μ.real (ball y s) * ‖u y‖ ^ 2)
         = (μ.real (ball y s) * ‖u y‖) ^ 2 := by ring
       _ ≤ (∫ x in ball y s, ‖u x‖ ∂μ) ^ 2 := pow_le_pow_left₀ (by positivity) h1 2
-      _ ≤ _ := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ _
+      _ ≤ _ := TauCeti.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ _
           measure_ball_lt_top.ne hint2
   rcases hB.eq_or_lt with h0 | hpos
   · rw [← h0, zero_mul]
@@ -749,7 +749,7 @@ end TauCeti
 
 namespace InnerProductSpace.HarmonicOnNhd
 
-open MeasureTheory Metric Module Set TauCeti TauCeti.MeasureTheory
+open MeasureTheory Metric Module Set TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]

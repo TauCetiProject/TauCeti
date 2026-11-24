@@ -559,6 +559,21 @@ theorem W1p0.coeFn_sobolevEmbeddingL (hpstar : pstar ≠ ∞)
     rw [W1p0.sobolevEmbeddingL, LinearMap.mkContinuous_apply]
     exact W1p0.coeFn_sobolevEmbeddingₗ hpstar hexp u
 
+/-- The Sobolev embedding of `W^{1,p}_0(Ω)` sends a test-function jet to the class of the test
+function. -/
+@[simp]
+theorem W1p0.sobolevEmbeddingL_ofTestFunctionₗ (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (phi : 𝓓(Omega, ℝ)) :
+    W1p0.sobolevEmbeddingL hpstar hexp
+        ⟨W1p.ofTestFunctionₗ mu Omega p phi, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩ =
+      testFunctionLp pstar phi := by
+  let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
+  refine Lp.ext ?_
+  filter_upwards [W1p0.coeFn_sobolevEmbeddingL hpstar hexp
+      ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule phi⟩, testFunctionLp_apply_ae p phi,
+    testFunctionLp_apply_ae pstar phi] with x h1 h2 h3
+  rw [h1, W1p.value_ofTestFunctionₗ, h2, h3]
+
 /-- The Sobolev embedding is injective. -/
 theorem W1p0.sobolevEmbeddingL_injective (hpstar : pstar ≠ ∞)
     (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) :

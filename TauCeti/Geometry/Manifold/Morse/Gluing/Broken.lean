@@ -13,52 +13,40 @@ import TauCeti.Analysis.Calculus.Morse.Gluing.Centre
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Data.Set.Function
 
 /-!
 # Gluing at a broken trajectory
 
 Let `f` be a Morse function on a compact boundaryless manifold `M`, `X` a pseudo-gradient field
-adapted to `f` satisfying the Morse–Smale condition, and `p`, `q`, `r` critical points, first with
-`ind p = ind q + 1 = ind r + 2`. Record the trajectories from `p` to `r` by their points on two
-levels: for a point `a₁` of a trajectory from `p` to `q` and a point `a₂` of a trajectory from `q`
-to `r`, the unbroken trajectories give the pairs `(w₁, w₂)` of points of one trajectory from `p` to
-`r` with `f w₁ = f a₁` and `f w₂ = f a₂`, and the broken trajectory through `a₁` and `a₂` gives
-the pair `(a₁, a₂)`. The main theorem shows that `(a₁, a₂)` has a neighbourhood among these pairs
-homeomorphic to a half-open interval `[0, δ)`. These are the boundary charts of the compactified
-space of index-two trajectories, whose boundary points therefore come in pairs
-(`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico`).
-
-The proof transports the gluing in the split model of a Morse box at `q`
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_homeomorph_closure_splitGluingPairs`), which
-describes the pairs of a model entrance point and a model exit point joined by the passage map as
-a half-open arc whose closure adds only the broken pair, to the two levels:
-
-* a trajectory near the broken one crosses the box once, so its model entrance and exit points
-  form one of these pairs
-  (`TauCeti.IsAdaptedPseudoGradient.splitPassage_splitEntryTime_eq_splitExitTime`);
-* following the flow to the two levels is continuous at both broken and unbroken trajectories,
-  since the level points depend continuously on the orbit along connecting trajectories.
-
-So the level points of the gluing arc form a continuous injective arc in `M × M` from `(a₁, a₂)`,
-which contains every unbroken pair near `(a₁, a₂)`.
-
-**Any index.** Without conditions on the Morse indices, so for `p ≠ q` and `q ≠ r` only, the same
-construction still glues: the Morse–Smale condition gives a disc in `W^u(p)` through the entrance
-point and a disc in `W^s(r)` through the exit point, transverse to the stable and unstable sets of
-`q` and of the dimensions of the expanding and contracting coordinates there
+adapted to `f` satisfying the Morse–Smale condition, and `p`, `q`, `r` critical points with
+`p ≠ q` and `q ≠ r`, with no condition on their Morse indices. A broken trajectory from `p` to `r`
+through `q` enters a Morse box at `q` along the stable set of `q` and leaves it along its unstable
+set. This file sets up such a box and shows that every once-broken trajectory is a limit of
+unbroken ones: the Morse–Smale condition gives a disc in `W^u(p)` through the entrance point and a
+disc in `W^s(r)` through the exit point, transverse to the stable and unstable sets of `q` and of
+the dimensions of the expanding and contracting coordinates there
 (`IsMorseSmale.exists_hasStrictFDerivAt_mem_unstableSet_of_eventually_mem_stableSet_iff` and
 `IsMorseSmale.exists_hasStrictFDerivAt_mem_stableSet_of_eventually_mem_unstableSet_iff`, in the
-namespace `TauCeti.IsAdaptedPseudoGradient`), and the model gluing joins
-them by trajectories from `p` to `r` converging to the broken one. These discs are in general only
-part of `W^u(p)` and `W^s(r)`, so these trajectories need not contain every nearby one, but they
-show that every once-broken trajectory is a limit of unbroken ones.
+namespace `TauCeti.IsAdaptedPseudoGradient`), and the model gluing
+(`TauCeti.exists_homeomorph_closure_splitGluingPairs_of_hasStrictFDerivAt`) joins them by
+trajectories from `p` to `r` converging to the broken one. These discs are in general only part of
+`W^u(p)` and `W^s(r)`, so these trajectories need not contain every nearby one.
 
 **Any transverse set.** The outgoing disc need not lie in a stable manifold. For any set `Z`
 flattened near a point `y ≠ q` of `W^u(q)` by a chart of the maximal atlas and transverse to
 `W^u(q)` at `y`, the flow carries `Z` to the exit face along the orbit of `y`, still flattened and
-transverse there, and the same gluing produces points of `W^u(p) ∩ Z` converging to `y`, on orbits
-which follow the trajectory from `p` to `q`. With `Z` the stable manifold of a second
-pseudo-gradient, this glues the broken configurations of a Morse–Smale pair.
+transverse there (`TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_preimage_flow`), and the
+same gluing produces points of `W^u(p) ∩ Z` converging to `y`, on orbits which follow the
+trajectory from `p` to `q`. With `Z` the stable manifold of a second pseudo-gradient, this glues
+the broken configurations of a Morse–Smale pair.
+
+The Morse box at the break, with the transverse set carried to its exit point
+(`exists_morseBox_of_broken_of_isSliceChart`), the local description of the
+split coordinates near its entrance and exit points (`eventually_of_morseBox`) and the continuity of
+reading gluing pairs back on `M` (`continuousAt_toChart_symm_of_mem_insert_splitGluingPairs`), in
+the namespace `TauCeti.IsAdaptedPseudoGradient`, are also the setting of the half-open gluing
+charts of `TauCeti.Geometry.Manifold.Morse.Gluing.Transverse`.
 
 **Through the critical point.** The point `y` may also be `q` itself, for a set `Z` through `q`
 transverse to `W^u(q)` there. Its orbit is then constant and never reaches the exit face; instead,
@@ -70,9 +58,8 @@ of `W^u(p)` at the entrance face that meet it at a late time are the fixed point
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`: for consecutive indices,
-  a broken trajectory has a neighbourhood homeomorphic to `[0, δ)` among the unbroken trajectories
-  recorded on two levels.
+* `exists_morseBox_of_broken_of_isSliceChart`: a Morse box at a broken configuration ending in a
+  transverse set, with that set carried by the flow to the exit point.
 * `IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart`: points of `W^u(p) ∩ Z`
   accumulate at each point `y` of `W^u(q)`, `q` included, where a flattened set `Z` meets
   `W^u(q)` transversally, along orbits following a given trajectory from `p` to `q`.
@@ -243,7 +230,7 @@ let `y₁` be a point of the entrance face `‖u‖ = ε, v = 0` and `y₂` a po
 `u = 0, ‖v‖ = ε` of the box of radius `ε`, in the split coordinates `(u, v)` of `φ`. Near `y₁`,
 `0 < ‖u‖ < 2 ε`, `‖v‖ < ε` and the stable set of `q` is the plane `v = 0`; symmetrically near `y₂`.
 The product `‖u‖ ‖v‖` tends to `0` at both points. -/
-private theorem eventually_of_morseBox (hX : IsAdaptedPseudoGradient f X) {q y₁ y₂ : M}
+theorem eventually_of_morseBox (hX : IsAdaptedPseudoGradient f X) {q y₁ y₂ : M}
     (φ : MorseChart E f q) {ε ρ : ℝ} (hε : 0 < ε) (hερ : 2 * ε < ρ)
     (hloc : ∀ w ∈ φ.toChart.source, ‖φ.coord (φ.toChart w)‖ < ρ →
       (w ∈ hX.flow.stableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).snd = 0) ∧
@@ -309,7 +296,7 @@ and whose exit point is the model exit point of a point `w'` near the exit face.
 to the point with the coordinates of the entrance point at its entry time, that point flows to the
 point with the coordinates of the exit point at its exit time, and `w'` reaches the latter at its
 own exit time. -/
-private theorem flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGradient f X) {q : M}
+theorem flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGradient f X) {q : M}
     (φ : MorseChart E f q)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
@@ -340,43 +327,6 @@ private theorem flow_eq_of_mem_splitGluingPairs (hX : IsAdaptedPseudoGradient f 
   obtain ⟨hsrc, -, -, hpass, -⟩ := mem_splitGluingPairs.1 hz
   refine ⟨h₁, ?_, h₂⟩
   rw [hpass]; exact hX.flow_splitExitTime φ hφ (fun z hz ↦ hε₂ z (by linarith)) hsrc
-
-/-- **Gluing pairs of a Morse box lie on trajectories from `p` to `r`.** Let `φ` be a Morse chart
-at `q` in which `X` is linear and which contains the cube of radius `2 ε`, and let `z` be a gluing
-pair of the box of radius `ε` whose entrance point is the model entry point of a point `w` of
-`W^u(p)` near the entrance face, and whose exit point is the model exit point of a point `w'` of
-`W^s(r)` near the exit face. Then the point with the coordinates of the entrance point lies on a
-trajectory from `p` to `r`, which reaches the point with the coordinates of the exit point at the
-exit time. -/
-private theorem mem_unstableSet_inter_stableSet_of_mem_splitGluingPairs
-    (hX : IsAdaptedPseudoGradient f X) {p q r : M} (φ : MorseChart E f q)
-    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
-      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
-    {ε r₀ : ℝ} (hε : 0 < ε) (hε₂ : ∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target)
-    {g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ}
-    {k : ({i // φ.weight i = 1} → ℝ) → {i // ¬φ.weight i = 1} → ℝ}
-    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) ×
-      WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
-    (hz : z ∈ splitGluingPairs ε r₀ g k) {w w' : M} (hw : w ∈ φ.toChart.source)
-    (hwf : ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖ < 2 * ε)
-    (hws : ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖ < ε) (hwu : w ∈ hX.flow.unstableSet p)
-    (hwz : splitQuadraticFlow (splitEntryTime ε (φ.splitCoord (φ.coord (φ.toChart w))))
-      (φ.splitCoord (φ.coord (φ.toChart w))) = z.1)
-    (hw' : w' ∈ φ.toChart.source) (hw'f : ‖(φ.splitCoord (φ.coord (φ.toChart w'))).fst‖ < ε)
-    (hw's : ‖(φ.splitCoord (φ.coord (φ.toChart w'))).snd‖ < 2 * ε)
-    (hw'r : w' ∈ hX.flow.stableSet r)
-    (hw'z : splitQuadraticFlow (splitExitTime ε (φ.splitCoord (φ.coord (φ.toChart w'))))
-      (φ.splitCoord (φ.coord (φ.toChart w'))) = z.2) :
-    φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1)) ∈
-        hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
-      hX.flow (splitExitTime ε z.1) (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.1))) =
-        φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z.2)) := by
-  obtain ⟨h₁, h₃, h₂⟩ := hX.flow_eq_of_mem_splitGluingPairs φ hφ hε hε₂ hz hw hwf hws hwz hw'
-    hw'f hw's hw'z
-  refine ⟨⟨h₁ ▸ (Flow.apply_mem_unstableSet_iff _ _).2 hwu, ?_⟩, h₃⟩
-  have h₄ := h₂ ▸ (Flow.apply_mem_stableSet_iff _ _).2 hw'r
-  rw [← h₃] at h₄
-  exact (Flow.apply_mem_stableSet_iff _ _).1 h₄
 
 /-- **Gluing pairs of a Morse box lie on orbits from their entrance disc to their exit disc.**
 Let `φ` be a Morse chart at `q` in which `X` is linear and which contains the cube of radius
@@ -425,7 +375,7 @@ omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
 /-- If a Morse chart contains the cube of radius `ε`, reading pairs of split coordinates back on
 `M` is continuous at the gluing pairs of the box of radius `ε`, and at the pair of coordinates of
 two points of the chart. -/
-private theorem continuousAt_toChart_symm_of_mem_insert_splitGluingPairs {q y₁ y₂ : M}
+theorem continuousAt_toChart_symm_of_mem_insert_splitGluingPairs {q y₁ y₂ : M}
     (φ : MorseChart E f q) {ε r₀ : ℝ} (hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
     (hy₁φ : y₁ ∈ φ.toChart.source) (hy₂φ : y₂ ∈ φ.toChart.source)
     {g : ({i // ¬φ.weight i = 1} → ℝ) → {i // φ.weight i = 1} → ℝ}
@@ -457,367 +407,12 @@ private theorem continuousAt_toChart_symm_of_mem_insert_splitGluingPairs {q y₁
     continuous_fst.continuousAt).prodMk
     ((continuousAt_toChart_symm_coord_symm_splitCoord_symm φ hb₂).comp continuous_snd.continuousAt)
 
-/-- **The model gluing arc at a broken trajectory, on the manifold.** For a trajectory from `p`
-through `a₁` to `q` and one from `q` through `a₂` to `r`, of consecutive indices, there are points
-`flow T₁ a₁` and `flow T₂ a₂` of the two trajectories and a continuous arc `B` in `M × M`, starting
-at this pair, along which `B s` is, for `s ≠ 0`, a pair of points of one trajectory from `p` to
-`r`, different `s` giving different trajectories. Every pair of points of one trajectory from `p`
-to `r` on the levels of `flow T₁ a₁` and `flow T₂ a₂` near this pair lies on the trajectories of
-some `B s` with `s` below the end of the arc. -/
-private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
-    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q r a₁ a₂ : M}
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
-    (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
-    (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-    (ha₂ : a₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) :
-    ∃ (T₁ T₂ δ : ℝ) (hδ : 0 < δ) (B : Icc (0 : ℝ) δ → M × M), Continuous B ∧
-      B ⟨0, left_mem_Icc.2 hδ.le⟩ = (hX.flow T₁ a₁, hX.flow T₂ a₂) ∧
-      (∀ s : Icc (0 : ℝ) δ, (s : ℝ) ≠ 0 →
-        (B s).1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧ ∃ t, hX.flow t (B s).1 = (B s).2) ∧
-      (∀ s s' : Icc (0 : ℝ) δ, (s : ℝ) ≠ 0 → (s' : ℝ) ≠ 0 → ∀ t,
-        hX.flow t (B s).1 = (B s').1 → s = s') ∧
-      ∀ᶠ w : M × M in 𝓝 (hX.flow T₁ a₁, hX.flow T₂ a₂),
-        w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r → f w.1 = f (hX.flow T₁ a₁) →
-        f w.2 = f (hX.flow T₂ a₂) → (∃ t, hX.flow t w.1 = w.2) →
-        ∃ s : Icc (0 : ℝ) δ, (s : ℝ) < δ ∧ (∃ t, hX.flow t w.1 = (B s).1) ∧
-          ∃ t, hX.flow t w.2 = (B s).2 := by
-  -- Plan: choose a Morse box at `q` with entrance point `y₁` and exit point `y₂`
-  -- (`exists_morseBox_of_broken`), apply the model gluing theorem there, and take as `B` the points
-  -- with the coordinates of the gluing pairs of small parameter. Uniqueness of the passage gives
-  -- the injectivity clause, and `splitPassage_splitEntryTime_eq_splitExitTime` the last clause.
-  have hpq' : p ≠ q := by rintro rfl; omega
-  have hqr' : q ≠ r := by rintro rfl; omega
-  have hpr' : p ≠ r := by rintro rfl; omega
-  obtain ⟨φ, ε, ρ, T₁, T₂, y₁, y₂, hφ, hε, hερ, hε₂, hloc, hT₁, hT₂, hy₁φ, hy₂φ, hy₁s, hy₁ε,
-    hy₂u, hy₂ε⟩ := hX.exists_morseBox_of_broken hf hpq' hqr' ha₁ ha₂
-  set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
-    fun w ↦ φ.splitCoord (φ.coord (φ.toChart w)) with hΦdef
-  set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
-    fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
-  have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun w hw ↦ by
-    simp only [hΨdef, hΦdef, LinearEquiv.symm_apply_apply, φ.toChart.left_inv hw]
-  have hε₁ : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target := fun z hz ↦
-    hε₂ z (by linarith)
-  have hy₁ : y₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
-    hT₁ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p q T₁ ha₁
-  have hy₂ : y₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r :=
-    hT₂ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet q r T₂ ha₂
-  -- The split coordinates near the entrance and exit points.
-  obtain ⟨hA₁, hA₂, hy₁κ, hy₂κ⟩ :=
-    hX.eventually_of_morseBox φ hε hερ hloc hy₁φ hy₂φ hy₁s hy₁ε hy₂u hy₂ε
-  have hloc₁ : ∀ᶠ w in 𝓝 y₁, w ∈ hX.flow.stableSet q → (Φ w).snd = 0 :=
-    hA₁.mono fun w hw ↦ hw.2.2.2.2.1
-  have hloc₂ : ∀ᶠ w in 𝓝 y₂, w ∈ hX.flow.unstableSet q → (Φ w).fst = 0 :=
-    hA₂.mono fun w hw ↦ hw.2.2.2.2.1
-  set U := {w | w ∈ φ.toChart.source ∧ ‖(Φ w).fst‖ < 2 * ε ∧ ‖(Φ w).snd‖ < ε}
-  set V := {w | w ∈ φ.toChart.source ∧ ‖(Φ w).fst‖ < ε ∧ ‖(Φ w).snd‖ < 2 * ε}
-  have hU : U ∈ 𝓝 y₁ := hA₁.mono fun w ⟨h₁, _, h₂, h₃, _⟩ ↦ ⟨h₁, h₂, h₃⟩
-  have hV : V ∈ 𝓝 y₂ := hA₂.mono fun w ⟨h₁, _, h₂, h₃, _⟩ ↦ ⟨h₁, h₃, h₂⟩
-  obtain ⟨r₀, hr₀, g, k, ⟨e, he, he₀⟩, hcl, hpairs, hexh⟩ :=
-    h.exists_homeomorph_closure_splitGluingPairs hf hpq hqr φ hy₁ hy₁φ hy₂ hy₂φ hloc₁
-      hloc₂ hε hy₁ε hy₂ε hU hV
-  -- The orbits through the points of the gluing pairs run from `p` to `r`.
-  have hP : ∀ z ∈ splitGluingPairs ε r₀ g k,
-      Ψ z.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
-        hX.flow (splitExitTime ε z.1) (Ψ z.1) = Ψ z.2 := fun z hz ↦ by
-    obtain ⟨⟨w, ⟨hw, hwf, hws⟩, hwu, -, hwz⟩, w', ⟨hw', hw'f, hw's⟩, hw'r, -, hw'z⟩ :=
-      hpairs z hz
-    exact hX.mem_unstableSet_inter_stableSet_of_mem_splitGluingPairs φ hφ hε hε₂ hz hw hwf hws
-      hwu hwz hw' hw'f hw's hw'r hw'z
-  -- Restrict to gluing parameters small enough for the passage to be unique.
-  set n : ℝ := (Module.finrank ℝ E : ℝ)
-  have hn : 0 ≤ n := Nat.cast_nonneg _
-  set r₁ := min r₀ (1 / (n + 1))
-  have hr₁ : 0 < r₁ := lt_min hr₀ (by positivity)
-  have hr₁r₀ : r₁ ≤ r₀ := min_le_left _ _
-  have hr₁1 : r₁ ≤ 1 := (min_le_right _ _).trans
-    ((div_le_one (by positivity)).2 (by linarith))
-  have hr₁n : n * (r₁ * ε) ^ 2 < ε ^ 2 := by
-    have h₁ : r₁ * (n + 1) ≤ 1 := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
-    have h₂ : 0 < r₁ * ε := mul_pos hr₁ hε
-    have h₃ : r₁ * ε * (n + 1) ≤ ε := by nlinarith
-    have h₄ : (r₁ * ε * (n + 1)) ^ 2 ≤ ε ^ 2 := pow_le_pow_left₀ (by positivity) h₃ 2
-    nlinarith [mul_pos h₂ h₂]
-  have hsmall : ∀ u : ℝ, 0 ≤ u → u ≤ r₁ * ε → n * u ^ 2 < ε ^ 2 := fun u hu hu' ↦
-    lt_of_le_of_lt (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hu hu' 2) hn) hr₁n
-  have hr₁ε : r₁ * ε ≤ ε := mul_le_of_le_one_left hε.le hr₁1
-  -- The points of the arc with nonzero parameter are unbroken pairs.
-  have hz₀ : (Φ y₁, Φ y₂) ∈ closure (splitGluingPairs ε r₀ g k) := hcl ▸ mem_insert _ _
-  have he₀' : e ⟨0, left_mem_Icc.2 hr₀.le⟩ = ⟨_, hz₀⟩ := Subtype.ext he₀
-  have hepair : ∀ s : Icc (0 : ℝ) r₀, (s : ℝ) ≠ 0 →
-      (e s).val ∈ splitGluingPairs ε r₀ g k ∧ ‖(e s).val.1.snd‖ = s * ε := by
-    intro s hs
-    have hsn : ‖(e s).val.1.snd‖ = s * ε := by
-      have := he (e s)
-      rw [e.symm_apply_apply] at this
-      rw [this, div_mul_cancel₀ _ hε.ne']
-    refine ⟨?_, hsn⟩
-    have hmem : (e s).val ∈ insert (Φ y₁, Φ y₂) (splitGluingPairs ε r₀ g k) := hcl ▸ (e s).property
-    refine hmem.resolve_left fun h0 ↦ hs ?_
-    have : e s = e ⟨0, left_mem_Icc.2 hr₀.le⟩ := by rw [he₀']; exact Subtype.ext h0
-    exact congrArg Subtype.val (e.injective this)
-  -- The arc: the points with the coordinates of the gluing pairs.
-  set B : Icc (0 : ℝ) r₁ → M × M := fun s ↦
-    (Ψ (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val.1,
-      Ψ (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val.2) with hBdef
-  refine ⟨T₁, T₂, r₁, hr₁, B, ?_, ?_, fun s hs ↦ ?_, fun s s' hs hs' t hss' ↦ ?_, ?_⟩
-  · refine continuous_iff_continuousAt.2 fun s ↦ ?_
-    have hc : Continuous fun s : Icc (0 : ℝ) r₁ ↦
-        (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val :=
-      continuous_subtypeVal.comp (e.continuous.comp (continuous_inclusion _))
-    exact (continuousAt_toChart_symm_of_mem_insert_splitGluingPairs φ hε₁ hy₁φ hy₂φ
-      (by rw [← hcl]; exact (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).property)).comp
-      hc.continuousAt
-  · simp only [hBdef]
-    rw [inclusion_mk, he₀', hΨΦ y₁ hy₁φ, hΨΦ y₂ hy₂φ, hT₁, hT₂]
-  · obtain ⟨hpz, hflow⟩ := hP _ (hepair (inclusion (Icc_subset_Icc_right hr₁r₀) s) hs).1
-    exact ⟨hpz, _, hflow⟩
-  · -- Two unbroken pairs whose entrance points lie on one orbit are equal.
-    set z := (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val
-    set z' := (e (inclusion (Icc_subset_Icc_right hr₁r₀) s')).val
-    obtain ⟨hz, hzn⟩ := hepair (inclusion (Icc_subset_Icc_right hr₁r₀) s) hs
-    obtain ⟨hz', hzn'⟩ := hepair (inclusion (Icc_subset_Icc_right hr₁r₀) s') hs'
-    have hle : ∀ u : Icc (0 : ℝ) r₁, (u : ℝ) * ε ≤ r₁ * ε := fun u ↦
-      mul_le_mul_of_nonneg_right u.property.2 hε.le
-    have h1 := hX.eq_of_flow_eq_of_mem_splitPassage_source φ hφ hε₁ (mem_splitGluingPairs.1 hz).1
-      (mem_splitGluingPairs.1 hz').1
-      (hsmall _ (norm_nonneg _) (hzn ▸ hle s)) (hsmall _ (norm_nonneg _) (hzn' ▸ hle s'))
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' (hP z hz).1) hss'
-    have hzz : z = z' := Prod.ext h1 (by
-      rw [(mem_splitGluingPairs.1 hz).2.2.2.1, (mem_splitGluingPairs.1 hz').2.2.2.1, h1])
-    exact inclusion_injective _ (e.injective (Subtype.ext hzz))
-  · -- A trajectory near the broken one crosses the box once; its entrance and exit points form a
-    -- gluing pair of small parameter.
-    have hκ₁ : ∀ᶠ w in 𝓝 y₁, ‖(Φ w).fst‖ * ‖(Φ w).snd‖ / ε < r₁ * ε := by
-      have h := hy₁κ.div_const ε
-      rw [zero_div] at h
-      exact h.eventually (gt_mem_nhds (mul_pos hr₁ hε))
-    have hκ₂ : ∀ᶠ w in 𝓝 y₂, ‖(Φ w).fst‖ * ‖(Φ w).snd‖ / ε < r₁ * ε := by
-      have h := hy₂κ.div_const ε
-      rw [zero_div] at h
-      exact h.eventually (gt_mem_nhds (mul_pos hr₁ hε))
-    rw [hT₁, hT₂]
-    filter_upwards [(hA₁.and hκ₁).prod_nhds (hA₂.and hκ₂), hexh] with w hw hpairw hw1 hw1f hw2f hwt
-    obtain ⟨⟨⟨hw₁src, hw₁f0, hw₁f, hw₁s, hw₁q⟩, hκw₁⟩, ⟨⟨hw₂src, hw₂s0, hw₂s, hw₂f, hw₂q⟩, hκw₂⟩⟩ :=
-      hw
-    obtain ⟨t, ht⟩ := hwt
-    have hw2 : w.2 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r :=
-      ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t hw1
-    -- Off the broken trajectory, the coordinate that vanishes on it does not vanish.
-    have hsnd₁ : (Φ w.1).snd ≠ 0 := fun h0 ↦
-      (Flow.disjoint_stableSet hqr').ne_of_mem (hw₁q.2 h0) hw1.2 rfl
-    have hfst₂ : (Φ w.2).fst ≠ 0 := fun h0 ↦
-      (Flow.disjoint_unstableSet hpq').ne_of_mem hw2.1 (hw₂q.2 h0) rfl
-    obtain ⟨hE, hEQ'⟩ := hX.splitPassage_splitEntryTime_eq_splitExitTime φ hφ hε hε₂ hw₁src
-      (norm_pos_iff.1 hw₁f0) hw₁f hsnd₁ hw₁s hw₂src (norm_pos_iff.1 hw₂s0) hw₂s hfst₂ hw₂f
-      (by linarith) (hsmall _ (by positivity) hκw₁.le) (by linarith)
-      (hsmall _ (by positivity) hκw₂.le)
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw1) ht
-    have hEQ := hpairw hw1.1 hw1f hw2.2 hw2f (mem_splitPassage_source.1 hE).2.1 hEQ'
-    -- The pair is a point of the arc of small parameter.
-    set s₀ := e.symm ⟨_, subset_closure hEQ⟩ with hs₀def
-    have hs₀r₁ : (s₀ : ℝ) < r₁ := by
-      rw [hs₀def, he, div_lt_iff₀ hε, norm_snd_splitQuadraticFlow_splitEntryTime hε
-        (norm_pos_iff.1 hw₁f0)]
-      exact hκw₁
-    have hes : e (inclusion (Icc_subset_Icc_right hr₁r₀) ⟨(s₀ : ℝ), s₀.property.1, hs₀r₁.le⟩) =
-        ⟨_, subset_closure hEQ⟩ := by
-      rw [← e.apply_symm_apply ⟨_, subset_closure hEQ⟩, ← hs₀def]
-    refine ⟨⟨s₀, s₀.property.1, hs₀r₁.le⟩, hs₀r₁, ⟨splitEntryTime ε (Φ w.1), ?_⟩,
-      ⟨splitExitTime ε (Φ w.2), ?_⟩⟩
-    · simp only [hBdef, hes]
-      exact hX.flow_splitEntryTime_of_norm_lt φ hφ hε hε₂ hw₁src hw₁f hw₁s
-    · simp only [hBdef, hes]
-      exact hX.flow_splitExitTime_of_norm_lt φ hφ hε hε₂ hw₂src hw₂f hw₂s
-
-/-- **Gluing at a broken trajectory.** Let `X` be a Morse–Smale adapted pseudo-gradient for a
-Morse function `f` on a compact manifold, and `p`, `q`, `r` critical points of consecutive indices
-`ind p = ind q + 1 = ind r + 2`. Record trajectories from `p` to `r` by their points on two levels:
-take a point `a₁` of a trajectory from `p` to `q` and a point `a₂` of a trajectory from `q` to `r`,
-and let `S` be the set of pairs `(w₁, w₂)` of points of one trajectory from `p` to `r` with
-`f w₁ = f a₁` and `f w₂ = f a₂`. Then the broken trajectory `(a₁, a₂)` has a neighbourhood `N` in
-`S ∪ {(a₁, a₂)}` homeomorphic to a half-open interval `[0, δ)`, with `(a₁, a₂)` corresponding to
-`0`.
-
-So the broken trajectories are endpoints of the compactified space of index-two trajectories
-recorded on two levels, and every broken trajectory is a limit of unbroken ones. -/
-theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
-    {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    {p q r a₁ a₂ : M}
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
-    (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
-    (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-    (ha₂ : a₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) :
-    ∃ (N : Set (M × M)) (δ : ℝ) (hδ : 0 < δ) (e : Ico (0 : ℝ) δ ≃ₜ N),
-      (e ⟨0, left_mem_Ico.2 hδ⟩ : M × M) = (a₁, a₂) ∧
-      N ⊆ insert (a₁, a₂) {w | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
-        f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} ∧
-      N ∈ 𝓝[insert (a₁, a₂) {w | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
-        f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2}] (a₁, a₂) := by
-  -- Plan: follow the arc `B` of `exists_gluingArc` to the two levels. The resulting map `F` is
-  -- continuous and injective on a closed interval, hence an embedding, and every unbroken pair
-  -- near `(a₁, a₂)` is a value of `F` at a parameter below the end of the interval.
-  have hpq' : p ≠ q := by rintro rfl; omega
-  have hqr' : q ≠ r := by rintro rfl; omega
-  have hpr' : p ≠ r := by rintro rfl; omega
-  obtain ⟨T₁, T₂, δ, hδ, B, hBc, hB₀, hBS, hBinj, hBfwd⟩ :=
-    h.exists_gluingArc hf hpq hqr ha₁ ha₂
-  set S := {w : M × M | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
-    f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} with hSdef
-  have hfa₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq' ha₁
-  have hfa₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hqr' ha₂
-  have hy₁ : hX.flow T₁ a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
-    hX.flow.isInvariant_unstableSet_inter_stableSet p q T₁ ha₁
-  have hy₂ : hX.flow T₂ a₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r :=
-    hX.flow.isInvariant_unstableSet_inter_stableSet q r T₂ ha₂
-  -- Along the arc, the first points run from `p`, and the second points run to `r`.
-  have hB : ∀ s, (∃ b, p ≠ b ∧ (B s).1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet b ∧
-      f b < f a₁) ∧ ∃ a, a ≠ r ∧ (B s).2 ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet r ∧
-      f a₂ < f a := by
-    intro s
-    by_cases hs : (s : ℝ) = 0
-    · obtain rfl : s = ⟨0, left_mem_Icc.2 hδ.le⟩ := Subtype.ext hs
-      rw [hB₀]
-      exact ⟨⟨q, hpq', hy₁, hfa₁.1⟩, ⟨q, hqr', hy₂, hfa₂.2⟩⟩
-    · obtain ⟨hs₁, t, ht⟩ := hBS s hs
-      exact ⟨⟨r, hpr', hs₁, by linarith [hfa₁.1, hfa₂.1, hfa₂.2]⟩,
-        ⟨p, hpr', ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t hs₁,
-          by linarith [hfa₁.1, hfa₁.2, hfa₂.2]⟩⟩
-  -- The level points along the arc.
-  set F : Icc (0 : ℝ) δ → M × M := fun s ↦
-    (hX.flow (Flow.levelCrossingTime hX.flow f (f a₁) (B s).1) (B s).1,
-      hX.flow (Flow.levelCrossingTime hX.flow f (f a₂) (B s).2) (B s).2) with hFdef
-  have hFc : Continuous F := by
-    refine continuous_iff_continuousAt.2 fun s ↦ ?_
-    obtain ⟨⟨b, hpb, hb, hfb⟩, ⟨a, har, ha, hfa⟩⟩ := hB s
-    obtain ⟨σ₁, hσ₁, -⟩ :=
-      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpb hb hfb hfa₁.2
-    obtain ⟨σ₂, hσ₂, -⟩ :=
-      hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet har ha hfa₂.1 hfa
-    have h₁ := hX.tendsto_flow_levelCrossingTime hpb hb hσ₁
-      ((continuous_fst.comp hBc).tendsto s) (.of_forall fun s' ↦ by
-        obtain ⟨⟨b', hpb', hb', -⟩, -⟩ := hB s'
-        exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpb' hb')
-    have h₂ := hX.tendsto_flow_levelCrossingTime har ha hσ₂
-      ((continuous_snd.comp hBc).tendsto s) (.of_forall fun s' ↦ by
-        obtain ⟨-, ⟨a', ha'r, ha', -⟩⟩ := hB s'
-        exact hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet ha'r ha')
-    have e₁ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpb hb) hσ₁ 0
-    have e₂ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet har ha) hσ₂ 0
-    rw [Flow.map_zero_apply] at e₁ e₂
-    rw [← e₁] at h₁
-    rw [← e₂] at h₂
-    exact h₁.prodMk_nhds h₂
-  have hF₀ : F ⟨0, left_mem_Icc.2 hδ.le⟩ = (a₁, a₂) := by
-    have e₁ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpq' ha₁)
-      (by rw [Flow.map_zero_apply] : f (hX.flow 0 a₁) = f a₁) T₁
-    have e₂ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hqr' ha₂)
-      (by rw [Flow.map_zero_apply] : f (hX.flow 0 a₂) = f a₂) T₂
-    rw [Flow.map_zero_apply] at e₁ e₂
-    simp only [hFdef, hB₀, e₁, e₂]
-  -- Away from `0`, the level points are an unbroken trajectory.
-  have hFS : ∀ s : Icc (0 : ℝ) δ, (s : ℝ) ≠ 0 → F s ∈ S := by
-    intro s hs
-    obtain ⟨hs₁, t, ht⟩ := hBS s hs
-    have hs₂ : (B s).2 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r :=
-      ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t hs₁
-    obtain ⟨σ₁, hσ₁, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr' hs₁
-      (by linarith [hfa₁.1, hfa₂.1, hfa₂.2]) hfa₁.2
-    obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr' hs₂
-      hfa₂.1 (by linarith [hfa₁.1, hfa₁.2, hfa₂.2])
-    have e₁ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hs₁) hσ₁ 0
-    have e₂ := Flow.flow_levelCrossingTime_flow
-      (hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hs₂) hσ₂ 0
-    rw [Flow.map_zero_apply] at e₁ e₂
-    simp only [hFdef, hSdef, mem_ofPred_eq, e₁, e₂]
-    refine ⟨hX.flow.isInvariant_unstableSet_inter_stableSet p r _ hs₁, hσ₁, hσ₂, σ₂ + t - σ₁, ?_⟩
-    rw [← Flow.map_add, sub_add_cancel, Flow.map_add, ht]
-  have hFinj : Injective F := by
-    have hne : ∀ s : Icc (0 : ℝ) δ, (s : ℝ) ≠ 0 → F s ≠ (a₁, a₂) := fun s hs h ↦
-      (Flow.disjoint_stableSet hqr'.symm).ne_of_mem (hFS s hs).1.2 (h ▸ ha₁.2) rfl
-    intro s s' hss'
-    by_cases hs : (s : ℝ) = 0
-    · by_cases hs' : (s' : ℝ) = 0
-      · exact Subtype.ext (hs.trans hs'.symm)
-      · obtain rfl : s = ⟨0, left_mem_Icc.2 hδ.le⟩ := Subtype.ext hs
-        rw [hF₀] at hss'
-        exact absurd hss'.symm (hne s' hs')
-    by_cases hs' : (s' : ℝ) = 0
-    · obtain rfl : s' = ⟨0, left_mem_Icc.2 hδ.le⟩ := Subtype.ext hs'
-      rw [hF₀] at hss'
-      exact absurd hss' (hne s hs)
-    -- Equal first level points put the first points of `B s` and `B s'` on one orbit.
-    refine hBinj s s' hs hs' (Flow.levelCrossingTime hX.flow f (f a₁) (B s).1 -
-      Flow.levelCrossingTime hX.flow f (f a₁) (B s').1) ?_
-    have h₁ := congrArg Prod.fst hss'
-    simp only [hFdef] at h₁
-    rw [sub_eq_add_neg, add_comm, Flow.map_add, h₁, ← Flow.map_add, neg_add_cancel,
-      Flow.map_zero_apply]
-  -- Every unbroken trajectory near the broken one is a level point of the arc.
-  have hfwd : ∀ᶠ w in 𝓝[S] (a₁, a₂),
-      ∃ s : Ico (0 : ℝ) δ, F (inclusion Ico_subset_Icc_self s) = w := by
-    have hSmem : ∀ᶠ w in 𝓝[S] (a₁, a₂), w ∈ S := self_mem_nhdsWithin
-    have hw₂m : ∀ w ∈ S, w.2 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r := fun w hw ↦ by
-      obtain ⟨t, ht⟩ := hw.2.2.2
-      exact ht ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p r t hw.1
-    -- The points of the trajectories on the levels of the arc's start tend to its start.
-    have hm₁ := hX.tendsto_flow_levelCrossingTime hpq' ha₁ (σ₀ := T₁) rfl
-      ((continuous_fst.tendsto _).mono_left nhdsWithin_le_nhds)
-      (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw.1)
-    have hm₂ := hX.tendsto_flow_levelCrossingTime hqr' ha₂ (σ₀ := T₂) rfl
-      ((continuous_snd.tendsto _).mono_left nhdsWithin_le_nhds)
-      (hSmem.mono fun w hw ↦ hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr'
-        (hw₂m w hw))
-    have hfy₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq' hy₁
-    have hfy₂ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hqr' hy₂
-    filter_upwards [hSmem, (hm₁.prodMk_nhds hm₂).eventually hBfwd] with w hw hfw
-    have hw2 := hw₂m w hw
-    obtain ⟨hw1, hw1f, hw2f, t, ht⟩ := hw
-    have hanti₁ := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw1
-    have hanti₂ := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hpr' hw2
-    obtain ⟨σ₁, hσ₁, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr' hw1
-      (by linarith [hfy₁.1, hfa₂.1, hfa₂.2]) hfy₁.2
-    obtain ⟨σ₂, hσ₂, -⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpr' hw2
-      hfy₂.1 (by linarith [hfy₂.2, hfa₁.1, hfa₁.2])
-    set τ₁ := Flow.levelCrossingTime hX.flow f (f (hX.flow T₁ a₁)) w.1
-    set τ₂ := Flow.levelCrossingTime hX.flow f (f (hX.flow T₂ a₂)) w.2
-    obtain ⟨s, hs, ⟨t₁, ht₁⟩, ⟨t₂, ht₂⟩⟩ := hfw
-      (hX.flow.isInvariant_unstableSet_inter_stableSet p r _ hw1)
-      (Flow.apply_flow_levelCrossingTime ⟨σ₁, hσ₁⟩) (Flow.apply_flow_levelCrossingTime ⟨σ₂, hσ₂⟩)
-      ⟨τ₂ + t - τ₁, by rw [← Flow.map_add, sub_add_cancel, Flow.map_add, ht]⟩
-    refine ⟨⟨s, s.property.1, hs⟩, ?_⟩
-    have e₁ := Flow.flow_levelCrossingTime_flow hanti₁
-      (by rw [Flow.map_zero_apply]; exact hw1f : f (hX.flow 0 w.1) = f a₁) (t₁ + τ₁)
-    have e₂ := Flow.flow_levelCrossingTime_flow hanti₂
-      (by rw [Flow.map_zero_apply]; exact hw2f : f (hX.flow 0 w.2) = f a₂) (t₂ + τ₂)
-    rw [Flow.map_zero_apply, Flow.map_add] at e₁ e₂
-    rw [ht₁] at e₁
-    rw [ht₂] at e₂
-    exact Prod.ext e₁ e₂
-  have hemb : IsEmbedding (F ∘ inclusion (Ico_subset_Icc_self : Ico (0 : ℝ) δ ⊆ Icc 0 δ)) :=
-    (hFc.isClosedEmbedding hFinj).isEmbedding.comp (IsEmbedding.inclusion Ico_subset_Icc_self)
-  refine ⟨range (F ∘ inclusion Ico_subset_Icc_self), δ, hδ, hemb.toHomeomorph, hF₀, ?_, ?_⟩
-  · rintro _ ⟨s, rfl⟩
-    by_cases hs : (s : ℝ) = 0
-    · left
-      rw [← hF₀]
-      exact congrArg F (Subtype.ext hs)
-    · exact Or.inr (hFS _ hs)
-  · rw [mem_nhdsWithin_insert]
-    refine ⟨⟨⟨0, left_mem_Ico.2 hδ⟩, hF₀⟩, ?_⟩
-    filter_upwards [hfwd] with w ⟨s, hs⟩ using ⟨s, hs⟩
-
 /-- **The flow carries a set transverse to an unstable manifold along it.** Let `Z` be a set
 through a point `y` of `W^u(q)`, flattened near `y` by a chart of the maximal atlas and transverse
 to `W^u(q)` at `y`. For every time `T`, the set `flow T '' Z`, written as the preimage of `Z`
 under `flow (-T)`, is flattened near `flow T y` by a chart of the maximal atlas and is transverse
 to `W^u(q)` there. -/
-private theorem exists_isSliceChart_preimage_flow (hX : IsAdaptedPseudoGradient f X) {q y : M}
+theorem exists_isSliceChart_preimage_flow (hX : IsAdaptedPseudoGradient f X) {q y : M}
     {Z : Set M} {L : Submodule ℝ E} {φZ : OpenPartialHomeomorph M E}
     (hφZ : φZ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) (hZ : IsSliceChart φZ (L : Set E) Z)
     (hyφZ : y ∈ φZ.source)
@@ -850,6 +445,57 @@ private theorem exists_isSliceChart_preimage_flow (hX : IsAdaptedPseudoGradient 
     simpa [G, ← Flow.map_add] using hz
   · rintro _ ⟨z, hz, rfl⟩
     simpa [G] using (Flow.apply_mem_unstableSet_iff _ _).2 hz
+
+/-- **A Morse box at a broken configuration into a transverse set.** Let `a₁` be a point of a
+trajectory from `p` to a critical point `q ≠ p`, and `y ≠ q` a point of `W^u(q)`. Let `Z` be a set
+through `y`, flattened near `y` by a chart of the maximal atlas and transverse to `W^u(q)` at `y`.
+Then `y` lies on a trajectory from `q` to a critical point `r ≠ q`, and there is a Morse box at
+`q`, in a Morse chart in which `X` is linear and the stable and unstable sets of `q` are the
+coordinate planes, with entrance point `y₁` on the trajectory through `a₁` and exit point
+`y₂ = flow T₂ y`. The image `flow (-T₂) ⁻¹' Z` of `Z` under the flow passes through `y₂`, is
+flattened near `y₂` by a chart of the maximal atlas, and is transverse to `W^u(q)` there. -/
+theorem exists_morseBox_of_broken_of_isSliceChart (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) {p q a₁ y : M} {Z : Set M} (hpq : p ≠ q)
+    (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q) (hy : y ∈ hX.flow.unstableSet q)
+    (hyq : y ≠ q) {L : Submodule ℝ E} {φZ : OpenPartialHomeomorph M E}
+    (hφZ : φZ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) (hZ : IsSliceChart φZ (L : Set E) Z)
+    (hyφZ : y ∈ φZ.source) (hyZ : y ∈ Z)
+    (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) Z y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y) = ⊤) :
+    ∃ (r : M) (φ : MorseChart E f q) (ε ρ T₁ T₂ : ℝ) (y₁ y₂ : M) (φ' : OpenPartialHomeomorph M E),
+      q ≠ r ∧
+      (∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+        fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) ∧
+      0 < ε ∧ 2 * ε < ρ ∧ (∀ z, ‖z‖ ≤ 2 * ε → φ.coord.symm z ∈ φ.toChart.target) ∧
+      (∀ w ∈ φ.toChart.source, ‖φ.coord (φ.toChart w)‖ < ρ →
+        (w ∈ hX.flow.stableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).snd = 0) ∧
+        (w ∈ hX.flow.unstableSet q ↔ (φ.splitCoord (φ.coord (φ.toChart w))).fst = 0)) ∧
+      hX.flow T₁ a₁ = y₁ ∧ hX.flow T₂ y = y₂ ∧ y₁ ∈ φ.toChart.source ∧ y₂ ∈ φ.toChart.source ∧
+      (φ.splitCoord (φ.coord (φ.toChart y₁))).snd = 0 ∧
+      ‖(φ.splitCoord (φ.coord (φ.toChart y₁))).fst‖ = ε ∧
+      (φ.splitCoord (φ.coord (φ.toChart y₂))).fst = 0 ∧
+      ‖(φ.splitCoord (φ.coord (φ.toChart y₂))).snd‖ = ε ∧
+      y₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q ∧
+      y₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r ∧
+      φ' ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
+      IsSliceChart φ' (L : Set E) (hX.flow (-T₂) ⁻¹' Z) ∧ y₂ ∈ φ'.source ∧
+      y₂ ∈ hX.flow (-T₂) ⁻¹' Z ∧
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow (-T₂) ⁻¹' Z) y₂) ⊔
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet q) y₂) = ⊤ := by
+  obtain ⟨r, -, hyr⟩ := hX.exists_mem_stableSet hf y
+  have hqr : q ≠ r := by
+    rintro rfl
+    exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hy, hyr⟩)
+  obtain ⟨φ, ε, ρ, T₁, T₂, y₁, y₂, hφ, hε, hερ, hε₂, hloc, hT₁, hT₂, hy₁φ, hy₂φ, hy₁s, hy₁ε,
+    hy₂u, hy₂ε⟩ := hX.exists_morseBox_of_broken hf hpq hqr ha₁ ⟨hy, hyr⟩
+  obtain ⟨φ', hφ', hZ', hy₂φ', htr'⟩ := hX.exists_isSliceChart_preimage_flow hφZ hZ hyφZ htr T₂
+  rw [hT₂] at hy₂φ' htr'
+  refine ⟨r, φ, ε, ρ, T₁, T₂, y₁, y₂, φ', hqr, hφ, hε, hερ, hε₂, hloc, hT₁, hT₂, hy₁φ, hy₂φ,
+    hy₁s, hy₁ε, hy₂u, hy₂ε, hT₁ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p q T₁ ha₁,
+    hT₂ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet q r T₂ ⟨hy, hyr⟩, hφ', hZ', hy₂φ', ?_,
+    htr'⟩
+  rw [mem_preimage, ← hT₂, Flow.map_neg_apply_map]
+  exact hyZ
 
 /-- **A transverse disc crosses the entrance face of a Morse box in a Lipschitz graph.** Let `φ`
 be a Morse chart at `q` in which `X` is linear and whose cube of radius `2 ε` lies in the chart,
@@ -945,7 +591,7 @@ private theorem exists_lipschitzOnWith_graph_mem_of_isSliceChart (hX : IsAdapted
   obtain ⟨χ, χ', hχ, hχ', hχ₀, hχs⟩ :=
     exists_hasStrictFDerivAt_splitCoord φ (pr := WithLp.fstL 2 ℝ _ _)
       (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩) hlocq hφZ hZ φ.mem_source hqφZ hqZ hq htr
-  obtain ⟨η, hη, K, k, hk, hk₀, hkpts⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
+  obtain ⟨η, hη, K, k, hk, hk₀, hkpts, -⟩ := exists_lipschitzOnWith_graph_of_hasStrictFDerivAt hχ
     (by rw [hχ']; exact ⟨.refl ℝ _, rfl⟩) (by simp [hχ₀, φ.apply_self])
     (hχs.mono fun _ hz ↦ hz.2)
   refine ⟨η, hη, K, k, hk, hk₀, fun u hu ↦ ?_⟩
@@ -1046,21 +692,15 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
   -- Plan: choose a Morse box at `q` with entrance point `y₁` on the trajectory through `a₁` and
   -- exit point `y₂` on the orbit of `y`; glue a disc in `W^u(p)` through `y₁` to a disc through
   -- `y₂` in the image of `Z` under the flow, and flow a glued point back to `Z`.
-  obtain ⟨r, -, hyr⟩ := hX.exists_mem_stableSet hf y
-  have hqr : q ≠ r := by
-    rintro rfl
-    exact hyq (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hy, hyr⟩)
-  obtain ⟨φ, ε, ρ, T₁, T₂, y₁, y₂, hφ, hε, hερ, hε₂, hloc, hT₁, hT₂, hy₁φ, hy₂φ, hy₁s, hy₁ε,
-    hy₂u, hy₂ε⟩ := hX.exists_morseBox_of_broken hf hpq hqr ha₁ ⟨hy, hyr⟩
+  obtain ⟨r, φ, ε, ρ, T₁, T₂, y₁, y₂, φ', -, hφ, hε, hερ, hε₂, hloc, hT₁, hT₂, hy₁φ, hy₂φ, hy₁s,
+    hy₁ε, hy₂u, hy₂ε, hy₁, ⟨hy₂, -⟩, hφ', hZ', hy₂φ', hy₂Z', htr'⟩ :=
+    hX.exists_morseBox_of_broken_of_isSliceChart hf hpq ha₁ hy hyq hφZ hZ hyφZ hyZ htr
   set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
     fun w ↦ φ.splitCoord (φ.coord (φ.toChart w)) with hΦdef
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
     fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) with hΨdef
   have hΨΦ : ∀ w ∈ φ.toChart.source, Ψ (Φ w) = w := fun w hw ↦ by
     simp only [hΨdef, hΦdef, LinearEquiv.symm_apply_apply, φ.toChart.left_inv hw]
-  have hy₁ : y₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q :=
-    hT₁ ▸ hX.flow.isInvariant_unstableSet_inter_stableSet p q T₁ ha₁
-  have hy₂ : y₂ ∈ hX.flow.unstableSet q := hT₂ ▸ (Flow.apply_mem_unstableSet_iff _ _).2 hy
   obtain ⟨hA₁, hA₂, -, -⟩ :=
     hX.eventually_of_morseBox φ hε hερ hloc hy₁φ hy₂φ hy₁s hy₁ε hy₂u hy₂ε
   set U := {w | w ∈ φ.toChart.source ∧ ‖(Φ w).fst‖ < 2 * ε ∧ ‖(Φ w).snd‖ < ε}
@@ -1072,16 +712,13 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
   set Z' := hX.flow (-T₂) ⁻¹' Z
   have hy₂Z : hX.flow (-T₂) y₂ = y := by
     rw [← hT₂, Flow.map_neg_apply_map]
-  obtain ⟨φ', hφ', hZ', hy₂φ', htr'⟩ :=
-    hX.exists_isSliceChart_preimage_flow hφZ hZ hyφZ htr T₂
-  rw [hT₂] at hy₂φ' htr'
   obtain ⟨ψ, ψ', hψ, hψ', hψ₀, hψs⟩ :=
     h.exists_hasStrictFDerivAt_mem_unstableSet_of_eventually_mem_stableSet_iff hf φ hy₁ hy₁φ
       (hA₁.mono fun w hw ↦ hw.2.2.2.2)
   obtain ⟨χ, χ', hχ, hχ', hχ₀, hχs⟩ :=
     exists_hasStrictFDerivAt_splitCoord φ (pr := WithLp.fstL 2 ℝ _ _)
       (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩) (hA₂.mono fun w hw ↦ hw.2.2.2.2) hφ' hZ' hy₂φ hy₂φ'
-      (mem_preimage.2 (hy₂Z ▸ hyZ)) hy₂ htr'
+      hy₂Z' hy₂ htr'
   have hΦy₁ : WithLp.toLp 2 ((Φ y₁).fst, 0) = Φ y₁ :=
     WithLp.ofLp_injective 2 (Prod.ext (by simp) (by simpa using hy₁s.symm))
   have hΦy₂ : WithLp.toLp 2 (0, (Φ y₂).snd) = Φ y₂ :=
@@ -1125,14 +762,8 @@ theorem IsMorseSmale.exists_mem_unstableSet_inter_flow_mem_of_isSliceChart
       (by rw [hχ']; exact ⟨.refl ℝ _, rfl⟩) (hχ₀.trans hΦy₂.symm) hy₂ε hε hU' hV'
   rw [hΦy₁, hΦy₂] at he₀ hcl
   -- The end of the gluing arc is an unbroken gluing pair.
-  have hz : (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val ∈ splitGluingPairs ε r₀ g k := by
-    have hmem : (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val ∈
-        insert (Φ y₁, Φ y₂) (splitGluingPairs ε r₀ g k) :=
-      hcl ▸ (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).property
-    refine hmem.resolve_left fun h0 ↦ hr₀.ne ?_
-    have : e ⟨r₀, right_mem_Icc.2 hr₀.le⟩ = e ⟨0, left_mem_Icc.2 hr₀.le⟩ :=
-      Subtype.ext (h0.trans he₀.symm)
-    exact (congrArg Subtype.val (e.injective this)).symm
+  have hz : (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val ∈ splitGluingPairs ε r₀ g k :=
+    e.injective.val_mem_of_subset_insert hcl.subset he₀ fun h ↦ hr₀.ne' (congrArg Subtype.val h)
   set z := (e ⟨r₀, right_mem_Icc.2 hr₀.le⟩).val
   obtain ⟨⟨z₁, ⟨⟨hw, hwf, hws⟩, hz₁, hwu, hwN₁⟩, hwz⟩,
     z₂, ⟨⟨hw', hw'f, hw's⟩, hz₂, hw'Z, hw'N⟩, hw'z⟩ := hpairs z hz

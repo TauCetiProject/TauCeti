@@ -11,7 +11,7 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
