@@ -9,21 +9,24 @@ public import TauCeti.Probability.Quantile
 public import TauCeti.Statistics.Experiments.Tests
 
 /-!
-# Sizes of threshold tests
+# Threshold tests of every size
 
 The threshold test `thresholdTest T c γ` rejects when the statistic `T` exceeds `c` and rejects
-with probability `γ` when `T = c`. Under a finite measure `P` its integral, the size of the test
-when `P` is a null law, is `P(T > c) + γ P(T = c)`. For a probability `P` and a real statistic `T`
-every size `β ∈ (0, 1)` is attained: take for `c` the `(1 - β)`-quantile of the law of `T`, which
-traps `1 - β` between `P(T < c)` and `P(T ≤ c)`, and randomize at `c` to fill the gap.
+with probability `γ` when `T = c`. Its integral under a measure `P` is `P(T > c) + γ P(T = c)`
+whenever the two events are null-measurable with finite measure
+(`TauCeti.integral_thresholdTest`, in `TauCeti/Statistics/Experiments/Tests.lean`); for a
+measurable `T`, `γ ∈ [0, 1]` and a probability null law `P`, it is the size of the test. For a
+probability `P` and a real statistic `T` that is almost everywhere measurable under `P`, every
+value `β ∈ (0, 1)` is such an integral: take for `c` the `(1 - β)`-quantile of the law of `T`,
+which traps `1 - β` between `P(T < c)` and `P(T ≤ c)`, and randomize at `c` to fill the gap.
 
 ## Main results
 
-* `TauCeti.integral_thresholdTest`: the size `P(T > c) + γ P(T = c)` of a threshold test.
-* `TauCeti.exists_integral_thresholdTest_quantile_eq`: every size `β ∈ (0, 1)` is the size of a
-  threshold test at the `(1 - β)`-quantile of the law of `T`, with randomization in `[0, 1]`.
-* `TauCeti.exists_isSimilarTest_thresholdTest_quantile`: the same in a parametric family, as a
-  test similar of size `β` at a null parameter `θ₀`.
+* `TauCeti.exists_integral_thresholdTest_quantile_eq`: for an almost everywhere measurable real
+  statistic, every `β ∈ (0, 1)` is the integral of a threshold test at the `(1 - β)`-quantile of
+  the law of `T`, with randomization in `[0, 1]`.
+* `TauCeti.exists_isSimilarTest_thresholdTest_quantile`: for a measurable real statistic in a
+  parametric family, the same test is similar of size `β` at a null parameter `θ₀`.
 
 ## References
 
@@ -45,40 +48,15 @@ namespace TauCeti
 
 variable {X : Type*} [MeasurableSpace X]
 
-/-- The **size of a threshold test**: under a finite measure `P` the integral of
-`thresholdTest T c γ` is `P(T > c) + γ P(T = c)`. -/
-theorem integral_thresholdTest {α : Type*} [LinearOrder α] [TopologicalSpace α]
-    [OrderClosedTopology α] [MeasurableSpace α] [OpensMeasurableSpace α] (P : Measure X)
-    [IsFiniteMeasure P] {T : X → α} (hT : AEMeasurable T P) (c : α) (γ : ℝ) :
-    ∫ x, thresholdTest T c γ x ∂P = P.real (T ⁻¹' Ioi c) + γ * P.real (T ⁻¹' {c}) := by
-  have h₁ : MeasurableSet (Ioi c) := measurableSet_Ioi
-  have h₂ : MeasurableSet {c} := measurableSet_singleton c
-  have hsplit : thresholdTest (id : α → α) c γ =
-      (Ioi c).indicator (fun _ ↦ (1 : ℝ)) + ({c} : Set α).indicator (fun _ ↦ γ) := by
-    ext y
-    rcases lt_trichotomy y c with h | h | h
-    · simp [h, h.not_gt, h.ne]
-    · simp [h]
-    · simp [h, h.ne']
-  have hm : Measurable (thresholdTest (id : α → α) c γ) := by
-    rw [hsplit]
-    exact (measurable_const.indicator h₁).add (measurable_const.indicator h₂)
-  rw [show (fun x ↦ thresholdTest T c γ x) = fun x ↦ thresholdTest id c γ (T x) by
-      simp [thresholdTest_apply],
-    ← integral_map hT hm.aestronglyMeasurable, hsplit, Pi.add_def, integral_add
-      ((integrable_const _).indicator h₁) ((integrable_const _).indicator h₂),
-    integral_indicator_const _ h₁, integral_indicator_const _ h₂,
-    map_measureReal_apply_of_aemeasurable hT h₁, map_measureReal_apply_of_aemeasurable hT h₂]
-  simp [mul_comm]
-
-/-- **Threshold tests attain every size.** For a probability `P`, a real statistic `T` and
-`β ∈ (0, 1)`, the threshold test at the `(1 - β)`-quantile `c` of the law of `T` has size `β`
-under `P` for some randomization `γ ∈ [0, 1]` at `c`. -/
-theorem exists_integral_thresholdTest_quantile_eq (P : Measure X) [IsProbabilityMeasure P]
+/-- **Threshold tests attain every size.** For a probability `P`, a real statistic `T` that is
+almost everywhere measurable under `P`, and `β ∈ (0, 1)`, the threshold test at the
+`(1 - β)`-quantile `c` of the law of `T` has integral `β` under `P` for some randomization
+`γ ∈ [0, 1]` at `c`. For a measurable `T` this is the size of the test under the null law `P`. -/
+theorem exists_integral_thresholdTest_quantile_eq {P : Measure X} [IsProbabilityMeasure P]
     {T : X → ℝ} (hT : AEMeasurable T P) {β : ℝ} (hβ : β ∈ Ioo 0 1) :
     ∃ γ ∈ Icc (0 : ℝ) 1,
       ∫ x, thresholdTest T ((P.map T).quantile (1 - β)) γ x ∂P = β := by
-  set ν := P.map T
+  set ν := P.map T with hν
   set c := ν.quantile (1 - β)
   have hlt : ν.real (Iio c) ≤ 1 - β := ν.measureReal_Iio_quantile_le (by linarith [hβ.2])
   have hle : 1 - β ≤ ν.real (Iic c) := by
@@ -88,16 +66,18 @@ theorem exists_integral_thresholdTest_quantile_eq (P : Measure X) [IsProbability
     rw [← compl_Iic, probReal_compl_eq_one_sub measurableSet_Iic]
   have heq : ν.real (Iic c) = ν.real (Iio c) + ν.real {c} := by
     rw [← Iio_union_right, measureReal_union (by simp) (measurableSet_singleton c)]
-  simp_rw [integral_thresholdTest P hT,
-    ← map_measureReal_apply_of_aemeasurable hT measurableSet_Ioi,
-    ← map_measureReal_apply_of_aemeasurable hT (measurableSet_singleton _)]
-  change ∃ γ ∈ Icc (0 : ℝ) 1, ν.real (Ioi c) + γ * ν.real {c} = β
-  rcases (measureReal_nonneg : 0 ≤ ν.real {c}).eq_or_lt with hpe | hpe
-  · exact ⟨0, ⟨le_rfl, zero_le_one⟩, by rw [← hpe] at heq ⊢; linarith⟩
-  · refine ⟨(β - ν.real (Ioi c)) / ν.real {c},
-      ⟨div_nonneg (by linarith) hpe.le, (div_le_one hpe).2 (by linarith)⟩, ?_⟩
-    field_simp
-    ring
+  -- The integral is `f γ` for the affine function `f γ = ν(T > c) + γ ν(T = c)`.
+  have hint (γ : ℝ) : ∫ x, thresholdTest T c γ x ∂P = ν.real (Ioi c) + γ * ν.real {c} := by
+    rw [integral_thresholdTest (hT.nullMeasurableSet_preimage measurableSet_Ioi)
+      (hT.nullMeasurableSet_preimage (measurableSet_singleton c)) (measure_ne_top _ _)
+      (measure_ne_top _ _), hν, map_measureReal_apply_of_aemeasurable hT measurableSet_Ioi,
+      map_measureReal_apply_of_aemeasurable hT (measurableSet_singleton c)]
+  -- `f 0 ≤ β ≤ f 1`, so the intermediate value theorem gives `γ ∈ [0, 1]` with `f γ = β`.
+  have hβmem : β ∈ Icc (ν.real (Ioi c) + 0 * ν.real {c}) (ν.real (Ioi c) + 1 * ν.real {c}) :=
+    ⟨by linarith, by linarith⟩
+  obtain ⟨γ, hγ, hfγ⟩ := intermediate_value_Icc zero_le_one
+    (by fun_prop : Continuous fun γ : ℝ ↦ ν.real (Ioi c) + γ * ν.real {c}).continuousOn hβmem
+  exact ⟨γ, hγ, (hint γ).trans hfγ⟩
 
 /-- **Similar threshold tests.** In a family `P` whose law at `θ₀` is a probability, a real
 measurable statistic `T` and `β ∈ (0, 1)`, the threshold test at the `(1 - β)`-quantile of the
@@ -107,7 +87,7 @@ theorem exists_isSimilarTest_thresholdTest_quantile {Θ : Type*} (P : Θ → Mea
     [IsProbabilityMeasure (P θ₀)] {T : X → ℝ} (hT : Measurable T) {β : ℝ} (hβ : β ∈ Ioo 0 1) :
     ∃ γ ∈ Icc (0 : ℝ) 1,
       IsSimilarTest P {θ₀} β (thresholdTest T (((P θ₀).map T).quantile (1 - β)) γ) := by
-  obtain ⟨γ, hγ, h⟩ := exists_integral_thresholdTest_quantile_eq (P θ₀) hT.aemeasurable hβ
+  obtain ⟨γ, hγ, h⟩ := exists_integral_thresholdTest_quantile_eq (P := P θ₀) hT.aemeasurable hβ
   exact ⟨γ, hγ, .mk (isStatisticalTest_thresholdTest hT _ hγ) fun θ hθ ↦ by
     rw [mem_singleton_iff.1 hθ, testPower_def, h]⟩
 
