@@ -34,8 +34,12 @@ its regularity at a point also loses one derivative.
   `C^n` section of the bundle of linear maps;
   `ContMDiffAt.contMDiffAt_totalSpaceMk_mvfderiv` is the pointwise statement.
 
+* `ContMDiffAt.mfderiv_right`: the differentials of the members of a jointly `C^m` family of
+  maps between manifolds, in tangent coordinates, are jointly `C^n` when `n + 1 ≤ m`.
 * `ContMDiffAt.fderiv_right`: the derivative in the vector-space variable of a jointly `C^m`
   family is jointly `C^n` when `n + 1 ≤ m`.
+* `ContMDiffAt.deriv_uncurry`: the partial derivative in a scalar parameter of a jointly `C^m`
+  function is jointly `C^n` when `n + 1 ≤ m`.
 * `ContMDiffAt.iteratedFDeriv_right`: the `i`-th iterated derivative in the vector-space variable
   of a jointly `C^n` family is jointly `C^m` when `m + i ≤ n`.
 * `ContMDiff.contMDiff_tangentMap_family`: the tangent maps of a jointly `C^m` family of maps
@@ -113,6 +117,31 @@ theorem ContMDiff.mfderiv_apply_sectionAlong (hf : ContMDiff I J m f)
 
 end SectionAlong
 
+section Family
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
+  {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP]
+  [TopologicalSpace HP] [TopologicalSpace P] [ChartedSpace HP P]
+  {IP : ModelWithCorners 𝕜 EP HP} [IsManifold IP 1 P] {m n : ℕ∞ω}
+
+/-- The differentials of the members of a jointly `C^n` family of maps `f p : M → N`, written in
+tangent coordinates, are jointly `C^m` in the parameter and the point when `m + 1 ≤ n`. -/
+theorem ContMDiffAt.mfderiv_right {f : P → M → N} {p₀ : P × M}
+    (hf : ContMDiffAt (IP.prod I) J n (Function.uncurry f) p₀) (hmn : m + 1 ≤ n) :
+    ContMDiffAt (IP.prod I) 𝓘(𝕜, E →L[𝕜] F) m
+      (inTangentCoordinates I J Prod.snd (fun p : P × M ↦ f p.1 p.2)
+        (fun p ↦ mfderiv I J (f p.1) p.2) p₀) p₀ :=
+  (hf.comp (p₀, p₀.2) ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)).mfderiv
+    (fun (p : P × M) (x : M) ↦ f p.1 x) Prod.snd contMDiffAt_snd hmn
+
+end Family
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -128,11 +157,7 @@ theorem ContMDiffAt.fderiv_right
     (hnm : n + 1 ≤ m) :
     ContMDiffAt (J.prod 𝓘(𝕜, E)) 𝓘(𝕜, E →L[𝕜] F) n
       (fun q : P × E ↦ fderiv 𝕜 (g q.1) q.2) z := by
-  have hfamily : ContMDiffAt ((J.prod 𝓘(𝕜, E)).prod 𝓘(𝕜, E)) 𝓘(𝕜, F) m
-      (fun q : (P × E) × E ↦ g q.1.1 q.2) (z, z.2) :=
-    hg.comp (z, z.2) ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)
-  have h := hfamily.mfderiv (fun q : P × E ↦ g q.1) Prod.snd contMDiffAt_snd hnm
-  convert h using 1
+  convert hg.mfderiv_right hnm using 1
   ext q : 1
   -- `mfderiv` uses the normed-space instances on tangent fibres, whereas the model-space
   -- lemma uses those on E and F. `erw` unfolds these fibre instances; `rw` cannot match them.
@@ -158,6 +183,19 @@ theorem ContMDiffAt.iteratedFDeriv_right {i : ℕ}
     exact (continuousMultilinearCurryLeftEquiv 𝕜 (fun _ : Fin (i + 1) ↦ E) F).symm.contDiff
       |>.contMDiff.contMDiffAt.comp z
         (hi.fderiv_right (g := fun p ↦ iteratedFDeriv 𝕜 i (g p)) le_rfl)
+
+/-- **Regularity of the partial derivative in a scalar parameter.** If `(t, a) ↦ f t a` is `C^m`
+at `p₀` and `n + 1 ≤ m`, then the partial derivative `(t, a) ↦ ∂_t f t a` is `C^n` at `p₀`. -/
+theorem ContMDiffAt.deriv_uncurry {f : 𝕜 → P → F} {p₀ : 𝕜 × P}
+    (hf : ContMDiffAt (𝓘(𝕜).prod J) 𝓘(𝕜, F) m (Function.uncurry f) p₀) (hnm : n + 1 ≤ m) :
+    ContMDiffAt (𝓘(𝕜).prod J) 𝓘(𝕜, F) n (fun p : 𝕜 × P ↦ deriv (fun s ↦ f s p.2) p.1) p₀ := by
+  -- Swap the factors to use the derivative in the vector-space variable of a family.
+  have hswap : ContMDiffAt (J.prod 𝓘(𝕜)) 𝓘(𝕜, F) m
+      (Function.uncurry fun (a : P) (s : 𝕜) ↦ f s a) (p₀.2, p₀.1) :=
+    hf.comp (p₀.2, p₀.1) (contMDiffAt_snd.prodMk contMDiffAt_fst)
+  have h := (hswap.fderiv_right hnm).comp p₀ (contMDiffAt_snd.prodMk contMDiffAt_fst)
+  simpa only [Function.comp_def, ContinuousLinearMap.apply_apply, fderiv_apply_one_eq_deriv]
+    using (ContinuousLinearMap.apply 𝕜 F (1 : 𝕜)).contMDiff.contMDiffAt.comp p₀ h
 
 section TangentMap
 

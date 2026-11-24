@@ -69,6 +69,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.eq_torsionBy_of_natCard_eq`: a subgroup of `AddCircle p` with `n` elements is the
   `n`-torsion; equivalently, `AddCircle.exists_eq_torsionBy` writes every finite subgroup as a
   torsion subgroup, and `AddCircle.isAddCyclic_of_finite` shows that it is cyclic.
+* `AddCircle.exists_isCoprime_zsmul_eq_of_addOrderOf_eq`: two points of the same positive
+  additive order are multiples of each other by an integer prime to that order.
 * `AddCircle.isCyclic_of_finite_multiplicative`: a finite subgroup of the multiplicative copy of a
   circle `𝕜 ⧸ p ℤ` over a characteristic-zero division ring is cyclic.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
@@ -345,6 +347,18 @@ theorem isAddCyclic_of_finite (H : AddSubgroup (AddCircle p)) [Finite H] : IsAdd
   obtain ⟨n, hn, hH⟩ := exists_eq_torsionBy p (H := H)
   rw [hH]
   exact isAddCyclic_torsionBy p (Nat.cast_ne_zero.mpr hn.ne')
+
+/-- Two points of `AddCircle p` of the same positive additive order `n` are unit multiples of
+each other: both generate the `n`-torsion, the only subgroup of order `n`. -/
+theorem exists_isCoprime_zsmul_eq_of_addOrderOf_eq {u v : AddCircle p} (hu : 0 < addOrderOf u)
+    (h : addOrderOf u = addOrderOf v) : ∃ k : ℤ, IsCoprime k (addOrderOf u) ∧ k • u = v := by
+  have hn : ((addOrderOf u : ℕ) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hu.ne'
+  have huv : zmultiples u = zmultiples v := by
+    rw [eq_torsionBy_of_natCard_eq p hn (Nat.card_zmultiples u),
+      eq_torsionBy_of_natCard_eq p hn (H := zmultiples v) (by rw [Nat.card_zmultiples, h])]
+  obtain ⟨k, rfl⟩ := mem_zmultiples_iff.mp (huv ▸ mem_zmultiples v)
+  exact ⟨k, Int.isCoprime_iff_gcd_eq_one.mpr
+    (mem_zmultiples_zsmul_iff.mp (huv.symm ▸ mem_zmultiples u)), rfl⟩
 
 end FiniteSubgroups
 

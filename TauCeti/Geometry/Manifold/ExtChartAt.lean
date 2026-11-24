@@ -47,10 +47,11 @@ without differentiability assumptions, and they take values in the range of the 
 boundaryless model, their domains are open. A compact coordinate set of a chart is covered by
 finitely many compact pieces, each in the overlap with one of a given family of charts at points of
 the manifold. On an open subset, extended chart targets lie in the ambient chart targets, and
-inverse charts agree through inclusion on the smaller target. Near a chart point the inverse charts
-of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has a
-convex neighbourhood within the model range, inside the chart target, on which flat calculus
-applies even when the manifold has boundary.
+inverse charts agree through inclusion on the smaller target; on an open subset of a normed space
+all charts coincide and the inverse charts fix the points of the subset. Near a chart point the
+inverse charts of nested open subsets likewise differ only by the inclusion. Over `ℝ`, every chart
+point has a convex neighbourhood within the model range, inside the chart target, on which flat
+calculus applies even when the manifold has boundary.
 
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
 homeomorphism `Ψ` is again a chart, `OpenPartialHomeomorph.extendTrans`. When the charts lie in the
@@ -58,6 +59,9 @@ maximal atlas and `Ψ` is smooth with smooth inverse, the transition maps betwee
 smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 
 ## Main results
+
+* `IsLocalMin.comp_extChartAt_symm`, `IsLocalMax.comp_extChartAt_symm` and
+  `IsLocalExtr.comp_extChartAt_symm`: local extrema pass to the preferred coordinate expression.
 
 * `TauCeti.extChartAt_prod_modelSpace_apply` and `TauCeti.extChartAt_prod_modelSpace_symm_apply`:
   the extended chart of `M × E'` for a normed space `E'` is the identity on `E'`.
@@ -83,6 +87,8 @@ smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
   is continuous on its domain, for extended charts over any models.
 * `TauCeti.locallyCompactSpace_extChartAt_target`: over a locally compact model, every extended
   chart target is locally compact.
+* `CompleteSpace.of_locallyCompact_manifold`: a nonempty locally compact manifold is modelled on a
+  complete space.
 * `TauCeti.exists_countable_chartExhaustion`: a sigma-compact manifold with locally compact model
   is covered by the sources of countably many charts, whose targets have compact exhaustions.
 * `TauCeti.IsChartMeasurable`: chartwise measurability without a measurable structure on the
@@ -149,6 +155,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A local minimum remains a local minimum in the preferred extended chart. -/
+theorem _root_.IsLocalMin.comp_extChartAt_symm {α : Type*} [Preorder α] {f : M → α} {x : M}
+    (h : IsLocalMin f x) :
+    IsLocalMin (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by
+    rwa [extChartAt_to_inv]
+  exact hm.comp_continuous (continuousAt_extChartAt_symm x)
+
+/-- A local maximum remains a local maximum in the preferred extended chart. -/
+theorem _root_.IsLocalMax.comp_extChartAt_symm {α : Type*} [Preorder α] {f : M → α} {x : M}
+    (h : IsLocalMax f x) :
+    IsLocalMax (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+  IsLocalMin.comp_extChartAt_symm (α := αᵒᵈ) h
+
+/-- A local extremum remains a local extremum in the preferred extended chart. -/
+theorem _root_.IsLocalExtr.comp_extChartAt_symm {α : Type*} [Preorder α] {f : M → α} {x : M}
+    (h : IsLocalExtr f x) :
+    IsLocalExtr (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+  h.elim (fun hm ↦ Or.inl (hm.comp_extChartAt_symm (I := I)))
+    (fun hm ↦ Or.inr (hm.comp_extChartAt_symm (I := I)))
 
 /-- The target of the extended chart of a product manifold at `x` is the product of the targets
 of the extended charts of the factors at the components of `x`. -/
@@ -610,6 +637,15 @@ instance locallyCompactSpace_extChartAt_target [LocallyCompactSpace E] (x : M) :
   rw [extChartAt_target]
   exact ((chartAt H x).open_target.preimage I.continuous_symm).isLocallyClosed.inter
     I.isClosed_range.isLocallyClosed |>.locallyCompactSpace
+
+/-- **The model space of a locally compact manifold is complete.** By Riesz's theorem a nonempty
+locally compact manifold over a complete field is modelled on a finite-dimensional space
+(`FiniteDimensional.of_locallyCompact_manifold`), which is complete. -/
+theorem _root_.CompleteSpace.of_locallyCompact_manifold [CompleteSpace 𝕜] (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] (I : ModelWithCorners 𝕜 E H) [Nonempty M]
+    [LocallyCompactSpace M] : CompleteSpace E :=
+  have := FiniteDimensional.of_locallyCompact_manifold M I
+  FiniteDimensional.completeSpace 𝕜 E
 
 /-- On a sigma-compact manifold with locally compact model, select a countable set of chart
 centres whose chart sources cover the manifold, together with compact exhaustions of their chart
@@ -1259,6 +1295,17 @@ its extended target. -/
 theorem extChartAt_opens_target (U : Opens E) (x : U) :
     (extChartAt 𝓘(𝕜, E) x).target = (U : Set E) := by
   simp [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def]
+
+/-- All charts of an open subset of a normed space are the same restriction of the identity. -/
+theorem chartAt_opens_model_space_eq {U : Opens E} (x y : U) : chartAt E x = chartAt E y := by
+  simp only [Opens.chartAt_eq, chartAt_self_eq]
+
+/-- On an open subset of a normed space, every inverse extended chart sends a point of the subset
+to itself. -/
+theorem extChartAt_opens_model_space_symm_apply {U : Opens E} (x : U) {z : E} (hz : z ∈ U) :
+    (extChartAt 𝓘(𝕜, E) x).symm z = ⟨z, hz⟩ :=
+  Subtype.ext ((coe_extChartAt_symm_apply U x (by rwa [extChartAt_opens_target])).trans
+    (by simp))
 
 /-- The target of an inherited chart is canonically homeomorphic to the open source. -/
 noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :

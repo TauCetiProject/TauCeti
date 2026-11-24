@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.OfCompLeft
 
 /-!
 # The circle `AddCircle p` as a smooth manifold
@@ -88,6 +89,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`.
 * `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
   of `f`.
+* `AddCircle.hasDerivAt_of_hasMFDerivAt_coe_comp`: conversely, a continuous lift `Θ` of a curve
+  `s ↦ [Θ s]` has the derivative given by its velocity.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
 * `AddCircle.mfderiv_diffeomorphAddCircle`: the rescaling from period `p` to period `q` has
   derivative multiplication by `p⁻¹ * q`.
@@ -464,6 +467,22 @@ theorem hasMFDerivAt_add_coe_comp {f : ℝ → ℝ} {f' t : ℝ} (hf : HasDerivA
   rw [h]
   exact ((hasMFDerivAt_coe p (a + f t)).comp t
     (hf.const_add a).hasFDerivAt.hasMFDerivAt).congr_mfderiv (ContinuousLinearMap.id_comp _)
+
+variable {p} in
+/-- **The derivative of a continuous lift.** If `Θ : ℝ → ℝ` is continuous at `s` and the curve
+`u ↦ [Θ u]` of `AddCircle p` has velocity `w` at `s`, read in the tangent line of `AddCircle p`,
+then `Θ` has derivative `w` at `s`. -/
+theorem hasDerivAt_of_hasMFDerivAt_coe_comp {Θ : ℝ → ℝ} {s w : ℝ} (hΘ : ContinuousAt Θ s)
+    (h : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun u ↦ (Θ u : AddCircle p)) s
+      ((1 : ℝ →L[ℝ] ℝ).smulRight w)) :
+    HasDerivAt Θ w s := by
+  -- The quotient map has derivative the identity, which is its own left inverse.
+  have h' := HasMFDerivWithinAt.of_comp_of_leftInverse (L := ContinuousLinearMap.id ℝ ℝ)
+    (hasMFDerivAt_coe p (Θ s)) hΘ.continuousWithinAt (s := univ) h.hasMFDerivWithinAt
+    fun _ ↦ rfl
+  rw [hasMFDerivWithinAt_univ] at h'
+  exact hasDerivAt_iff_hasFDerivAt.2
+    (hasMFDerivAt_iff_hasFDerivAt.1 (h'.congr_mfderiv (ContinuousLinearMap.id_comp _)))
 
 variable {p} in
 /-- At the image of `t`, a map out of `AddCircle p` has the derivative of its

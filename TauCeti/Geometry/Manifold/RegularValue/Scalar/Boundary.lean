@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.ChartLinear
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel
+public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Basic
 
 /-!
 # The boundary of a regular sublevel is the regular level
