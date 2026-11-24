@@ -394,7 +394,7 @@ theorem orbitEsymm_eq_zero_of_ncard_lt {x : σ} {r : ℕ} (h : (MulAction.orbit 
 theorem orbitEsymm_mem_permInvariants (x : σ) (r : ℕ) :
     orbitEsymm R G x r ∈ permInvariants R G := by
   classical
-  intro g hg
+  refine mem_permInvariants.2 fun g hg ↦ ?_
   rw [orbitEsymm_def]
   set O := (Finite.finite_mulAction_orbit x : (MulAction.orbit G x).Finite).toFinset
   have hO : O.map g.toEmbedding = O := by
