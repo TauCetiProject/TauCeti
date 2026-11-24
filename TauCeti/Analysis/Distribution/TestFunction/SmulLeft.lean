@@ -39,7 +39,8 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 
 * `TestFunction.smulLeftCLM`: multiplication `φ ↦ f φ` of test functions by a smooth function.
 * `TestFunction.smulLeftCLMOfContDiffOn`: multiplication `φ ↦ g φ` of test functions on `Ω` by a
-  function `C^n` on `Ω` only.
+  function `C^n` on `Ω` only, which depends only on the values of the multiplier on `Ω`
+  (`TestFunction.smulLeftCLMOfContDiffOn_congr`).
 * `TestFunction.norm_iteratedFDeriv_smulLeftCLM_le`: the Leibniz bound for `a Ψ` when the
   derivatives of `a` are only controlled on a set containing the support of `Ψ`.
 * `TestFunction.exists_mul_eq_of_forall_ne_zero`: a test function divided by a smooth function
@@ -97,9 +98,8 @@ theorem coe_smulLeftCLM (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F)) :
 
 /-- Multiplying by a smooth function does not enlarge the support of a test function. -/
 theorem tsupport_smulLeftCLM_subset (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F)) :
-    tsupport (smulLeftCLM hf φ : E → F) ⊆ tsupport f ∩ tsupport φ := by
-  rw [coe_smulLeftCLM]
-  exact Set.subset_inter (tsupport_smul_subset_left f φ) (tsupport_smul_subset_right f φ)
+    tsupport (smulLeftCLM hf φ : E → F) ⊆ tsupport f ∩ tsupport φ :=
+  tsupport_subset_inter_of_apply_eq_smul (smulLeftCLM_apply hf φ)
 
 /-- Multiplying by a smooth function does not enlarge the support of a test function: the support
 of `f φ` lies in that of `φ`. -/
@@ -253,15 +253,24 @@ theorem coe_smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ n g Ω) (φ : 𝓓^{n}(
 
 /-- Multiplying by a function `C^n` on `Ω` does not enlarge the support of a test function. -/
 theorem tsupport_smulLeftCLMOfContDiffOn_subset (hg : ContDiffOn ℝ n g Ω) (φ : 𝓓^{n}(Ω, F)) :
-    tsupport (smulLeftCLMOfContDiffOn hg φ : E → F) ⊆ tsupport g ∩ tsupport φ := by
-  rw [coe_smulLeftCLMOfContDiffOn]
-  exact subset_inter (tsupport_smul_subset_left g φ) (tsupport_smul_subset_right g φ)
+    tsupport (smulLeftCLMOfContDiffOn hg φ : E → F) ⊆ tsupport g ∩ tsupport φ :=
+  tsupport_subset_inter_of_apply_eq_smul (smulLeftCLMOfContDiffOn_apply hg φ)
 
 /-- For a function `C^n` on all of `E`, multiplication by it is `TestFunction.smulLeftCLM`. -/
 theorem smulLeftCLMOfContDiffOn_eq_smulLeftCLM (hg : ContDiff ℝ n g) :
     (smulLeftCLMOfContDiffOn hg.contDiffOn : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = smulLeftCLM hg := by
   ext φ x
   simp
+
+/-- Multiplication by a function `C^n` on `Ω` depends only on the values of the multiplier on
+`Ω`. -/
+theorem smulLeftCLMOfContDiffOn_congr (hf : ContDiffOn ℝ n f Ω) (hg : ContDiffOn ℝ n g Ω)
+    (hfg : EqOn f g Ω) :
+    (smulLeftCLMOfContDiffOn hf : 𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(Ω, F)) = smulLeftCLMOfContDiffOn hg := by
+  ext φ x
+  by_cases hx : x ∈ (Ω : Set E)
+  · simp [hfg hx]
+  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hx (φ.tsupport_subset h)]
 
 /-- Multiplication by a function `C^n` on `Ω` is additive in the multiplier. -/
 theorem smulLeftCLMOfContDiffOn_add (hf : ContDiffOn ℝ n f Ω) (hg : ContDiffOn ℝ n g Ω) :
