@@ -10,6 +10,7 @@ import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ExtChartAt.LocallyCompact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Complete
 import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 
 /-!
 # Finite-atlas `C^k` norms on bundle sections
@@ -98,15 +99,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {V : M → Type*}
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V]
-
-/-- On an empty base manifold, `C^n` sections form a subsingleton. -/
-instance subsingleton_of_isEmpty {n : ℕ∞ω} [IsEmpty M] : Subsingleton Cₛ^n⟮I; F, V⟯ :=
-  coe_injective.subsingleton
-
-variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
 
 section FiniteAtlasSeminorm
 
