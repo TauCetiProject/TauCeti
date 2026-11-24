@@ -53,14 +53,15 @@ open TensorProduct UniformSpace
 namespace TauCeti.Huber.CompletedTensor
 
 open PairOfDefinition
-open scoped TauCeti.Huber.PairOfDefinition
 
 /-- Bring the localisation topology and extended base-algebra/adic instances for
 `completionLocBaseEquiv` into scope under a universal quantifier. -/
-scoped macro "withCompletionLocBase " A:term:max B:term:max C:term:max
+local macro "withCompletionLocBase " A:term:max B:term:max C:term:max
     P:term:max T:term:max s:term:max S:term:max hden:term:max
     α:ident β:ident hαc:ident hβc:ident hα:ident hβ:ident " in " t:term : term =>
-  `(withLoc $P $T $s $S $hden in
+  `(letI := locUniformSpace $P $T $s $S $hden
+    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
+    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
     ∀ ($α : UniformSpace.Completion $S →+* $B) ($β : UniformSpace.Completion $S →+* $C)
       ($hαc : Continuous $α) ($hβc : Continuous $β)
       ($hα : ($α).comp (PairOfDefinition.toCompletionLoc $P $T $s $S $hden) = algebraMap $A $B)
@@ -77,10 +78,12 @@ scoped macro "withCompletionLocBase " A:term:max B:term:max C:term:max
 
 /-- Bring the localisation topology and extended base-algebra/adic instances for
 `completionLocBaseEquiv` into scope under a lambda binder. -/
-scoped macro "funCompletionLocBase " A:term:max B:term:max C:term:max
+local macro "funCompletionLocBase " A:term:max B:term:max C:term:max
     P:term:max T:term:max s:term:max S:term:max hden:term:max
     α:ident β:ident hαc:ident hβc:ident hα:ident hβ:ident " => " t:term : term =>
-  `(withLoc $P $T $s $S $hden in
+  `(letI := locUniformSpace $P $T $s $S $hden
+    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
+    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
     fun ($α : UniformSpace.Completion $S →+* $B) ($β : UniformSpace.Completion $S →+* $C)
       ($hαc : Continuous $α) ($hβc : Continuous $β)
       ($hα : ($α).comp (PairOfDefinition.toCompletionLoc $P $T $s $S $hden) = algebraMap $A $B)

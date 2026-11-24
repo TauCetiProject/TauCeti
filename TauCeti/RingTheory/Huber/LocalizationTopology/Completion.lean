@@ -798,22 +798,6 @@ theorem eq_comp_of_comp_toCompletionLoc_eq [IsTopologicalRing A] (P : PairOfDefi
   rw [RingHom.comp_assoc, hgc, hhc]
   exact hkc
 
-/-- Bring the localisation uniformity, uniform additive group, and topological ring instances for
-`P`, `T`, `s`, `S`, `hden` into scope. -/
-scoped macro "withLoc " P:term:max T:term:max s:term:max S:term:max hden:term:max
-    " in " t:term : term =>
-  `(letI := locUniformSpace $P $T $s $S $hden
-    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
-    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
-    $t)
-
-/-- Bring `withLoc` and `isHuberRing_completion_locTopology` into scope. -/
-scoped macro "withLocHuber " P:term:max T:term:max s:term:max S:term:max hden:term:max
-    " in " t:term : term =>
-  `(withLoc $P $T $s $S $hden in
-    letI := isHuberRing_completion_locTopology $P $T $s $S $hden
-    $t)
-
 end PairOfDefinition
 
 end

@@ -46,7 +46,46 @@ open TensorProduct UniformSpace
 namespace TauCeti.Huber.Pair.completedTensor
 
 open CompletedTensor PairOfDefinition
-open scoped TauCeti.Huber.CompletedTensor
+
+local macro "withCompletionLocBase " A:term:max B:term:max C:term:max
+    P:term:max T:term:max s:term:max S:term:max hden:term:max
+    α:ident β:ident hαc:ident hβc:ident hα:ident hβ:ident " in " t:term : term =>
+  `(letI := locUniformSpace $P $T $s $S $hden
+    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
+    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
+    ∀ ($α : UniformSpace.Completion $S →+* $B) ($β : UniformSpace.Completion $S →+* $C)
+      ($hαc : Continuous $α) ($hβc : Continuous $β)
+      ($hα : ($α).comp (PairOfDefinition.toCompletionLoc $P $T $s $S $hden) = algebraMap $A $B)
+      ($hβ : ($β).comp (PairOfDefinition.toCompletionLoc $P $T $s $S $hden) = algebraMap $A $C),
+      letI : Algebra (UniformSpace.Completion $S) $B := ($α).toAlgebra
+      letI : Algebra (UniformSpace.Completion $S) $C := ($β).toAlgebra
+      haveI : IsAdicHom (algebraMap (UniformSpace.Completion $S) $B) :=
+        PairOfDefinition.isAdicHom_of_comp_toCompletionLoc $P $T $s $S $hden $hαc
+          (($hα).symm ▸ inferInstanceAs (IsAdicHom (algebraMap $A $B)))
+      haveI : IsAdicHom (algebraMap (UniformSpace.Completion $S) $C) :=
+        PairOfDefinition.isAdicHom_of_comp_toCompletionLoc $P $T $s $S $hden $hβc
+          (($hβ).symm ▸ inferInstanceAs (IsAdicHom (algebraMap $A $C)))
+      $t)
+
+local macro "funCompletionLocBase " A:term:max B:term:max C:term:max
+    P:term:max T:term:max s:term:max S:term:max hden:term:max
+    α:ident β:ident hαc:ident hβc:ident hα:ident hβ:ident " => " t:term : term =>
+  `(letI := locUniformSpace $P $T $s $S $hden
+    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
+    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
+    fun ($α : UniformSpace.Completion $S →+* $B) ($β : UniformSpace.Completion $S →+* $C)
+      ($hαc : Continuous $α) ($hβc : Continuous $β)
+      ($hα : ($α).comp (PairOfDefinition.toCompletionLoc $P $T $s $S $hden) = algebraMap $A $B)
+      ($hβ : ($β).comp (PairOfDefinition.toCompletionLoc $P $T $s $S $hden) = algebraMap $A $C) ↦
+      letI : Algebra (UniformSpace.Completion $S) $B := ($α).toAlgebra
+      letI : Algebra (UniformSpace.Completion $S) $C := ($β).toAlgebra
+      haveI : IsAdicHom (algebraMap (UniformSpace.Completion $S) $B) :=
+        PairOfDefinition.isAdicHom_of_comp_toCompletionLoc $P $T $s $S $hden $hαc
+          (($hα).symm ▸ inferInstanceAs (IsAdicHom (algebraMap $A $B)))
+      haveI : IsAdicHom (algebraMap (UniformSpace.Completion $S) $C) :=
+        PairOfDefinition.isAdicHom_of_comp_toCompletionLoc $P $T $s $S $hden $hβc
+          (($hβ).symm ▸ inferInstanceAs (IsAdicHom (algebraMap $A $C)))
+      $t)
 
 variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
   [Algebra A B] [Algebra A C]

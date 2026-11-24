@@ -77,11 +77,21 @@ open UniformSpace TensorProduct
 namespace TauCeti.Huber.Pair
 
 open CompletedTensor PairOfDefinition ValuationSpectrum
-open scoped Pointwise TauCeti.Huber.PairOfDefinition TauCeti.Huber.CompletedTensor
+open scoped Pointwise
+
+open UniformSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition in
+local macro "withLoc " P:term:max T:term:max s:term:max S:term:max hden:term:max
+    " in " t:term : term =>
+  `(letI := locUniformSpace $P $T $s $S $hden
+    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
+    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
+    $t)
 
 open UniformSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition in
 local macro "withLocPres " P:term:max p:term:max " in " t:term : term =>
-  `(withLocHuber $P ($p).num ($p).den _ ($p).hasDenominatorPower in $t)
+  `(withLoc $P ($p).num ($p).den _ ($p).hasDenominatorPower in
+    letI := isHuberRing_completion_locTopology $P ($p).num ($p).den _ ($p).hasDenominatorPower
+    $t)
 
 open UniformSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition in
 local macro "withFourPres " PA:term:max a:term:max PB:term:max b:term:max
@@ -116,14 +126,27 @@ local macro "withRationalCtx "
     $t)
 
 open UniformSpace TauCeti.Huber TauCeti.Huber.PairOfDefinition in
-open scoped Pointwise TauCeti.Huber.CompletedTensor in
+open scoped Pointwise in
 local macro "withInterLoc " A:term:max B:term:max C:term:max
     PB:term:max b:term:max hb:term:max PC:term:max c:term:max hc:term:max PD:term:max
     d₀:ident " in " t:term : term =>
   `(letI := Classical.decEq (CompletedTensor $A $B $C)
     let $d₀ := CompletedTensor.interPresentation $PD ($b).den ($c).den $hb $hc
-    withRationalTensorHuber $A $B $C $PB ($b).num ($b).den _ ($b).hasDenominatorPower
-      $PC ($c).num ($c).den _ ($c).hasDenominatorPower $PD _ ($d₀).hasDenominatorPower in
+    withLocPres $PB $b in withLocPres $PC $c in
+    letI : Algebra $A (Completion (Localization.Away ($b).den)) :=
+      ((toCompletionLoc $PB ($b).num ($b).den _ ($b).hasDenominatorPower).comp
+        (algebraMap $A $B)).toAlgebra
+    letI : Algebra $A (Completion (Localization.Away ($c).den)) :=
+      ((toCompletionLoc $PC ($c).num ($c).den _ ($c).hasDenominatorPower).comp
+        (algebraMap $A $C)).toAlgebra
+    haveI : IsAdicHom (algebraMap $A (Completion (Localization.Away ($b).den))) :=
+      IsAdicHom.comp (isAdicHom_toCompletionLoc $PB ($b).num ($b).den _ ($b).hasDenominatorPower)
+        (inferInstanceAs (IsAdicHom (algebraMap $A $B)))
+    haveI : IsAdicHom (algebraMap $A (Completion (Localization.Away ($c).den))) :=
+      IsAdicHom.comp (isAdicHom_toCompletionLoc $PC ($c).num ($c).den _ ($c).hasDenominatorPower)
+        (inferInstanceAs (IsAdicHom (algebraMap $A $C)))
+    withLoc $PD _ _ _ ($d₀).hasDenominatorPower in
+    letI := isHuberRing_completion_locTopology $PD _ _ _ ($d₀).hasDenominatorPower
     $t)
 
 open TauCeti.Huber.PairOfDefinition in

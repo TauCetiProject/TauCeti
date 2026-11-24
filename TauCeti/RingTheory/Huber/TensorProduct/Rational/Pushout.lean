@@ -38,11 +38,37 @@ Combining the fixed-base comparison `toRationalLocalization` / `ofRationalLocali
 public section
 
 open UniformSpace
-open scoped Pointwise TauCeti.Huber.PairOfDefinition TauCeti.Huber.CompletedTensor
+open scoped Pointwise
 
 namespace TauCeti.Huber.Pair.completedTensor
 
 open CompletedTensor PairOfDefinition
+
+local macro "withLocHuber " P:term:max T:term:max s:term:max S:term:max hden:term:max
+    " in " t:term : term =>
+  `(letI := locUniformSpace $P $T $s $S $hden
+    letI := isUniformAddGroup_locUniformSpace $P $T $s $S $hden
+    letI := isTopologicalRing_locUniformSpace $P $T $s $S $hden
+    letI := PairOfDefinition.isHuberRing_completion_locTopology $P $T $s $S $hden
+    $t)
+
+local macro "withRationalTensorHuber " A:term:max B:term:max C:term:max
+    P:term:max T:term:max s:term:max S:term:max hden:term:max
+    P':term:max T':term:max s':term:max S':term:max hden':term:max
+    Q:term:max S'':term:max hden'':term:max " in " t:term : term =>
+  `(withLocHuber $P $T $s $S $hden in withLocHuber $P' $T' $s' $S' $hden' in
+    letI : Algebra $A (UniformSpace.Completion $S) :=
+      ((PairOfDefinition.toCompletionLoc $P $T $s $S $hden).comp (algebraMap $A $B)).toAlgebra
+    letI : Algebra $A (UniformSpace.Completion $S') :=
+      ((PairOfDefinition.toCompletionLoc $P' $T' $s' $S' $hden').comp (algebraMap $A $C)).toAlgebra
+    haveI : IsAdicHom (algebraMap $A (UniformSpace.Completion $S)) :=
+      IsAdicHom.comp (PairOfDefinition.isAdicHom_toCompletionLoc $P $T $s $S $hden)
+        (inferInstanceAs (IsAdicHom (algebraMap $A $B)))
+    haveI : IsAdicHom (algebraMap $A (UniformSpace.Completion $S')) :=
+      IsAdicHom.comp (PairOfDefinition.isAdicHom_toCompletionLoc $P' $T' $s' $S' $hden')
+        (inferInstanceAs (IsAdicHom (algebraMap $A $C)))
+    withLocHuber $Q _ _ $S'' $hden'' in
+    $t)
 
 section Pushout
 
