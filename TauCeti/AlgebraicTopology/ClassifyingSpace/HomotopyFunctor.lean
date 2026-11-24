@@ -123,32 +123,17 @@ def classifyingSpaceHomotopyFunctorFullyFaithful :
     classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.inv.app G ≫
       PointedHomotopyCat.fundamentalGroupFunctor.map f ≫
       classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H
-  map_preimage {G H} f := by
-    let φ : G ⟶ H :=
-      classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.inv.app G ≫
-        PointedHomotopyCat.fundamentalGroupFunctor.map f ≫
-        classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H
-    have hnat :
-        PointedHomotopyCat.fundamentalGroupFunctor.map (classifyingSpaceHomotopyFunctor.map φ) ≫
-            classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H =
-          classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G ≫ φ :=
-      classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.naturality φ
-    have hEq :
-        PointedHomotopyCat.fundamentalGroupFunctor.map (classifyingSpaceHomotopyFunctor.map φ) =
-          PointedHomotopyCat.fundamentalGroupFunctor.map f := by
-      rw [← cancel_mono (classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H),
-        hnat]
-      exact Iso.hom_inv_id_app_assoc _ G _
-    exact (fundamentalGroupFunctor_map_bijective_classifyingSpace G
+  map_preimage {G H} _ :=
+    (fundamentalGroupFunctor_map_bijective_classifyingSpace G
       (Y := classifyingSpaceFunctor.obj H)
-      (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y)).1 hEq
-  preimage_map {G H} φ := by
-    have hnat :
-        PointedHomotopyCat.fundamentalGroupFunctor.map (classifyingSpaceHomotopyFunctor.map φ) ≫
-            classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H =
-          classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G ≫ φ :=
-      classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.naturality φ
-    rw [hnat, Iso.inv_hom_id_app_assoc]
+      (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y)).1 <|
+      (cancel_mono (classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H)).1 <|
+        (classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.naturality _).trans
+          (Iso.hom_inv_id_app_assoc _ G _)
+  preimage_map {G _} φ :=
+    (congrArg (classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.inv.app G ≫ ·)
+      (classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.naturality φ)).trans
+      (Iso.inv_hom_id_app_assoc classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso G _)
 
 /-- The explicit formula for the inverse on morphisms of
 `classifyingSpaceHomotopyFunctorFullyFaithful`. -/

@@ -401,7 +401,7 @@ theorem homotopicRel_cellularClassifyingSpaceHomotopyEquiv_toFun
     f.HomotopicRel (cellularClassifyingSpaceHomotopyEquiv R hY φ).toFun
       {cellularClassifyingSpaceBasepoint R} :=
   homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace R
-    (fun z n ↦ (hY.of_basepoint z).subsingleton_homotopyGroup n) hf
+    hY.subsingleton_homotopyGroup_add_two hf
     (cellularClassifyingSpaceHomotopyEquiv_toFun_basepoint R hY φ)
     (MonoidHom.ext fun a ↦ by simp [hfφ])
 

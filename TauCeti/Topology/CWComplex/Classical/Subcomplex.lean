@@ -389,7 +389,7 @@ def ofBaseSubsetSkeletonLTOne {S : Set X} (hDS : D ⊆ S) (hS : S ⊆ (skeletonL
         | succ n => exact j.property.elim
       · obtain hxD | ⟨m, hm, j, hxj⟩ := RelCWComplex.mem_skeletonLT_iff.1 (hS hx)
         · exact Or.inl hxD
-        · obtain rfl : m = 0 := Nat.lt_one_iff.1 (Nat.cast_lt.1 (hm.trans_eq Nat.cast_one.symm))
+        · obtain rfl : m = 0 := Nat.lt_one_iff.1 (by exact_mod_cast hm)
           rw [openCell_zero_eq_singleton, mem_singleton_iff] at hxj
           refine Or.inr (mem_iUnion₂.2
             ⟨0, ⟨j, by simpa only [mem_ofPred_eq, ← hxj] using hx⟩, ?_⟩)

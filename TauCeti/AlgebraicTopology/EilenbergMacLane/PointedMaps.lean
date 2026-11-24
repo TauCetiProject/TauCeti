@@ -169,6 +169,14 @@ theorem IsAspherical.fundamentalGroupFunctor_map_bijective {X Y : BasedTopologic
         (PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map _)).trans
         ((BasedTopologicalSpace.fundamentalGroupFunctor_map_hom _).trans hfψ)⟩
 
+private theorem fundamentalGroupFunctor_map_bijective_of_isAspherical
+    {X Y : BasedTopologicalSpace.{u}} [CWType X.carrier]
+    (hX : IsAspherical X.carrier X.basepoint) (hY : IsAspherical Y.carrier Y.basepoint)
+    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier)) :
+    Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
+      (X := PointedHomotopyCat.quotient.obj X) (Y := PointedHomotopyCat.quotient.obj Y)) :=
+  hX.fundamentalGroupFunctor_map_bijective hX_hep hY.subsingleton_homotopyGroup_add_two
+
 /-- **Pointed uniqueness of well-pointed aspherical spaces of CW type.** Two well-pointed
 aspherical spaces of CW type are isomorphic in `PointedHomotopyCat` by a canonical isomorphism
 realizing any prescribed isomorphism `φ` on fundamental groups. This isomorphism is unique
@@ -184,21 +192,17 @@ def IsAspherical.pointedHomotopyCatIso {X Y : BasedTopologicalSpace.{u}} [CWType
     (hY_hep : HasHomotopyExtensionProperty ({Y.basepoint} : Set Y.carrier))
     (φ : FundamentalGroup X.carrier X.basepoint ≃* FundamentalGroup Y.carrier Y.basepoint) :
     PointedHomotopyCat.quotient.obj X ≅ PointedHomotopyCat.quotient.obj Y :=
-  let hXY := hX.fundamentalGroupFunctor_map_bijective hX_hep
-    (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)
-  let hYX := hY.fundamentalGroupFunctor_map_bijective hY_hep
-    (fun x n ↦ (hX.of_basepoint x).subsingleton_homotopyGroup n)
+  let hXY := fundamentalGroupFunctor_map_bijective_of_isAspherical hX hY hX_hep
+  let hYX := fundamentalGroupFunctor_map_bijective_of_isAspherical hY hX hY_hep
   let hf := hXY.2 (GrpCat.ofHom φ.toMonoidHom)
   let hg := hYX.2 (GrpCat.ofHom φ.symm.toMonoidHom)
   { hom := hf.choose
     inv := hg.choose
-    hom_inv_id := (hX.fundamentalGroupFunctor_map_bijective hX_hep
-        (fun x n ↦ (hX.of_basepoint x).subsingleton_homotopyGroup n)).1 <| by
+    hom_inv_id := (fundamentalGroupFunctor_map_bijective_of_isAspherical hX hX hX_hep).1 <| by
       rw [CategoryTheory.Functor.map_comp, hf.choose_spec, hg.choose_spec,
         CategoryTheory.Functor.map_id]
       exact GrpCat.hom_ext <| MonoidHom.ext fun a ↦ φ.symm_apply_apply a
-    inv_hom_id := (hY.fundamentalGroupFunctor_map_bijective hY_hep
-        (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)).1 <| by
+    inv_hom_id := (fundamentalGroupFunctor_map_bijective_of_isAspherical hY hY hY_hep).1 <| by
       rw [CategoryTheory.Functor.map_comp, hg.choose_spec, hf.choose_spec,
         CategoryTheory.Functor.map_id]
       exact GrpCat.hom_ext <| MonoidHom.ext fun a ↦ φ.apply_symm_apply a }
@@ -214,9 +218,8 @@ theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom
     PointedHomotopyCat.fundamentalGroupFunctor.map
         (hX.pointedHomotopyCatIso hY hX_hep hY_hep φ).hom =
       GrpCat.ofHom φ.toMonoidHom :=
-  ((hX.fundamentalGroupFunctor_map_bijective hX_hep
-    (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)).2
-      (GrpCat.ofHom φ.toMonoidHom)).choose_spec
+  ((fundamentalGroupFunctor_map_bijective_of_isAspherical hX hY hX_hep).2
+    (GrpCat.ofHom φ.toMonoidHom)).choose_spec
 
 /-- The inverse morphism of `IsAspherical.pointedHomotopyCatIso` induces `φ⁻¹` on `π₁`. -/
 @[simp]
@@ -229,9 +232,8 @@ theorem IsAspherical.fundamentalGroupFunctor_map_pointedHomotopyCatIso_inv
     PointedHomotopyCat.fundamentalGroupFunctor.map
         (hX.pointedHomotopyCatIso hY hX_hep hY_hep φ).inv =
       GrpCat.ofHom φ.symm.toMonoidHom :=
-  ((hY.fundamentalGroupFunctor_map_bijective hY_hep
-    (fun x n ↦ (hX.of_basepoint x).subsingleton_homotopyGroup n)).2
-      (GrpCat.ofHom φ.symm.toMonoidHom)).choose_spec
+  ((fundamentalGroupFunctor_map_bijective_of_isAspherical hY hX hY_hep).2
+    (GrpCat.ofHom φ.symm.toMonoidHom)).choose_spec
 
 /-- **Uniqueness of the pointed isomorphism realizing `φ`.** Every isomorphism in
 `PointedHomotopyCat` between well-pointed aspherical spaces of CW type that induces `φ` on `π₁`
@@ -245,8 +247,8 @@ theorem IsAspherical.eq_pointedHomotopyCatIso_of_fundamentalGroupFunctor_map_eq
     {e : PointedHomotopyCat.quotient.obj X ≅ PointedHomotopyCat.quotient.obj Y}
     (he : PointedHomotopyCat.fundamentalGroupFunctor.map e.hom = GrpCat.ofHom φ.toMonoidHom) :
     e = hX.pointedHomotopyCatIso hY hX_hep hY_hep φ :=
-  CategoryTheory.Iso.ext <| (hX.fundamentalGroupFunctor_map_bijective hX_hep
-    (fun y n ↦ (hY.of_basepoint y).subsingleton_homotopyGroup n)).1
-    (he.trans (hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom hY hX_hep hY_hep φ).symm)
+  CategoryTheory.Iso.ext <|
+    (fundamentalGroupFunctor_map_bijective_of_isAspherical hX hY hX_hep).1
+      (he.trans (hX.fundamentalGroupFunctor_map_pointedHomotopyCatIso_hom hY hX_hep hY_hep φ).symm)
 
 end TauCeti
