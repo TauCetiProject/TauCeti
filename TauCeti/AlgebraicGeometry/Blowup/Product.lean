@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Blowup.ExceptionalDivisor
-import TauCeti.Algebra.Regular.SMul
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
-import TauCeti.Algebra.Regular.SMul
 
 /-!
 # The exceptional divisor of an affine blowup

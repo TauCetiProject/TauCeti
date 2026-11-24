@@ -26,7 +26,8 @@ Because `F` is always an effective Cartier divisor on `Bl_{D₁ ⊔ D₂} X`, th
 (`blowupSupResidualRight`) are defined for arbitrary ideal sheaves `D₁` and `D₂` and satisfy:
 
 * `F * D'₁ = D₁.comap p` and `F * D'₂ = D₂.comap p` (`p* Dᵢ = F + D'ᵢ`),
-* `K ≤ D'ᵢ ↔ K * F ≤ p* Dᵢ` (via `Scheme.IdealSheafData.le_colon_iff`),
+* `K ≤ D'ᵢ ↔ K * F ≤ p* Dᵢ` (`AlgebraicGeometry.Scheme.IdealSheafData.le_blowupSupResidualLeft_iff`,
+  `AlgebraicGeometry.Scheme.IdealSheafData.le_blowupSupResidualRight_iff`),
 * `D'₁ ⊔ D'₂ = ⊤`, equivalently `Disjoint D'₁.support D'₂.support`,
 * `D₁.comap p * D'₂ = D₂.comap p * D'₁` (`p* D₁ + D'₂ = p* D₂ + D'₁`).
 
@@ -43,6 +44,9 @@ open `U` where `D₁(U) = (x₁)` and `D₂(U) = (x₂)`, the residual ideals on
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.IdealSheafData.le_blowupSupResidualLeft_iff`,
+  `AlgebraicGeometry.Scheme.IdealSheafData.le_blowupSupResidualRight_iff`:
+  residuation property `K ≤ D'ᵢ ↔ K * F ≤ p* Dᵢ`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_blowupToBase_sup_mul_blowupSupResidualLeft`,
   `AlgebraicGeometry.Scheme.IdealSheafData.comap_blowupToBase_sup_mul_blowupSupResidualRight`:
   `F * D'ᵢ = p* Dᵢ`.
@@ -126,6 +130,20 @@ theorem blowupSupResidualRight_def (D₁ D₂ : X.IdealSheafData) :
     D₁.blowupSupResidualRight D₂ =
       (D₂.comap (D₁ ⊔ D₂).blowupToBase).colon ((D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase) :=
   (rfl)
+
+/-- Universal property of the left residual ideal sheaf `D'₁ = (p* D₁ : F)`. -/
+theorem le_blowupSupResidualLeft_iff {D₁ D₂ : X.IdealSheafData}
+    {K : (D₁ ⊔ D₂).blowup.IdealSheafData} :
+    K ≤ D₁.blowupSupResidualLeft D₂ ↔
+      K * (D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase ≤ D₁.comap (D₁ ⊔ D₂).blowupToBase :=
+  le_colon_iff
+
+/-- Universal property of the right residual ideal sheaf `D'₂ = (p* D₂ : F)`. -/
+theorem le_blowupSupResidualRight_iff {D₁ D₂ : X.IdealSheafData}
+    {K : (D₁ ⊔ D₂).blowup.IdealSheafData} :
+    K ≤ D₁.blowupSupResidualRight D₂ ↔
+      K * (D₁ ⊔ D₂).comap (D₁ ⊔ D₂).blowupToBase ≤ D₂.comap (D₁ ⊔ D₂).blowupToBase :=
+  le_colon_iff
 
 /-- **Left factorization `p* D₁ = F + D'₁`.** On `Bl_{D₁ ⊔ D₂} X`, the product of the exceptional
 ideal `F` with the left residual ideal `D'₁` is the pulled-back ideal `p* D₁`. -/
