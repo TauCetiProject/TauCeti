@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
+public import Mathlib.CategoryTheory.MorphismProperty.LiftingProperty
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.RingHom.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
@@ -34,11 +35,14 @@ Definitions 37.11.1 (02H0) and 37.8.1 (02HG)). The test thickenings are Tau Ceti
   composition and base change.
 * `TauCeti.AlgebraicGeometry.FormallySmooth.hasLiftingProperty`: a formally smooth morphism has
   the right lifting property, in the sense of `CategoryTheory.HasLiftingProperty`, against affine
-  first-order thickenings.
+  first-order thickenings; conversely `TauCeti.AlgebraicGeometry.formallySmooth_eq_rlp` identifies
+  formal smoothness with `CategoryTheory.MorphismProperty.rlp` of the affine first-order
+  thickenings.
 * `TauCeti.AlgebraicGeometry.FormallyEtale.formallySmooth`: a formally étale morphism is formally
   smooth.
 * `TauCeti.AlgebraicGeometry.formallyEtale_iff`: formally étale means formally smooth and formally
-  unramified in the sense of Mathlib's `AlgebraicGeometry.FormallyUnramified`.
+  unramified in the sense of Mathlib's `AlgebraicGeometry.FormallyUnramified`;
+  `TauCeti.AlgebraicGeometry.formallyEtale_eq_inf` is the same statement for morphism properties.
 * `TauCeti.AlgebraicGeometry.FormallySmooth.of_comp_of_formallyUnramified` and
   `TauCeti.AlgebraicGeometry.FormallyEtale.of_comp_of_formallyUnramified`: if `g ≫ j` is formally
   smooth (formally étale) and `j` is formally unramified, then `g` is formally smooth (formally
@@ -101,50 +105,6 @@ class FormallyEtale (f : X ⟶ S) : Prop where
 
 namespace FormallySmooth
 
-/-- An isomorphism is formally smooth: the lift is `h ≫ f⁻¹`. -/
-instance (priority := 100) of_isIso (f : X ⟶ S) [IsIso f] : FormallySmooth f where
-  exists_lift i _ g h w := ⟨h ≫ inv f, by rw [← Category.assoc, ← w, Category.assoc,
-    IsIso.hom_inv_id, Category.comp_id], by simp⟩
-
-/-- A composite of formally smooth morphisms is formally smooth: lift through the second
-morphism, then through the first. -/
-instance comp (f : X ⟶ Y) (g : Y ⟶ S) [FormallySmooth f] [FormallySmooth g] :
-    FormallySmooth (f ≫ g) where
-  exists_lift i _ a h w := by
-    obtain ⟨l₁, hl₁, hl₁'⟩ := exists_lift (f := g) i (a ≫ f) h (by rw [Category.assoc, w])
-    obtain ⟨l₂, hl₂, hl₂'⟩ := exists_lift (f := f) i a l₁ hl₁.symm
-    exact ⟨l₂, hl₂, by rw [← Category.assoc, hl₂', hl₁']⟩
-
-instance : MorphismProperty.IsStableUnderComposition @FormallySmooth where
-  comp_mem _ _ _ _ := inferInstance
-
-instance : MorphismProperty.IsMultiplicative @FormallySmooth where
-  id_mem _ := inferInstance
-
-instance : MorphismProperty.RespectsIso @FormallySmooth :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition fun _ _ f (_ : IsIso f) ↦
-    inferInstance
-
-/-- Formal smoothness is stable under base change: lift into `X` and pair with the given map to
-`Y`. -/
-instance pullback_snd (f : X ⟶ S) (g : Y ⟶ S) [FormallySmooth f] :
-    FormallySmooth (pullback.snd f g) where
-  exists_lift i _ a h w := by
-    obtain ⟨l, hl, hl'⟩ := exists_lift (f := f) i (a ≫ pullback.fst f g) (h ≫ g) (by
-      rw [Category.assoc, pullback.condition, ← Category.assoc, w, Category.assoc])
-    refine ⟨pullback.lift l h (by rw [hl']), ?_, by simp⟩
-    apply pullback.hom_ext <;> simp [hl, w]
-
-/-- Formal smoothness is stable under base change, on the other side. -/
-instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallySmooth g] :
-    FormallySmooth (pullback.fst f g) := by
-  rw [← pullbackSymmetry_hom_comp_snd]
-  infer_instance
-
-instance : MorphismProperty.IsStableUnderBaseChange @FormallySmooth :=
-  MorphismProperty.IsStableUnderBaseChange.mk' fun _ _ _ f g _ (_ : FormallySmooth g) ↦
-    inferInstanceAs (FormallySmooth (pullback.fst f g))
-
 /-- A formally smooth morphism has the right lifting property against every first-order
 thickening with affine target. -/
 instance hasLiftingProperty {T T' : Scheme.{u}} [IsAffine T'] (i : T ⟶ T')
@@ -152,6 +112,53 @@ instance hasLiftingProperty {T T' : Scheme.{u}} [IsAffine T'] (i : T ⟶ T')
   sq_hasLift {a h} sq :=
     let ⟨l, hl, hl'⟩ := exists_lift i a h sq.w
     ⟨⟨⟨l, hl, hl'⟩⟩⟩
+
+end FormallySmooth
+
+/-- Formal smoothness is the right lifting property, in the sense of
+`CategoryTheory.MorphismProperty.rlp`, against first-order thickenings with affine target. -/
+theorem formallySmooth_eq_rlp :
+    @FormallySmooth.{u} = MorphismProperty.rlp fun (_ T' : Scheme.{u}) i ↦
+      IsAffine T' ∧ IsFirstOrderThickening i := by
+  ext X S f
+  refine ⟨fun _ _ _ i ⟨_, _⟩ ↦ inferInstance, fun H ↦ ⟨fun i _ g h w ↦ ?_⟩⟩
+  have := H i ⟨‹_›, ‹_›⟩
+  let sq : CommSq g i f h := ⟨w⟩
+  exact ⟨sq.lift, sq.fac_left, sq.fac_right⟩
+
+namespace FormallySmooth
+
+-- The closure properties of `MorphismProperty.rlp`, transported along `formallySmooth_eq_rlp`.
+instance isMultiplicative : MorphismProperty.IsMultiplicative @FormallySmooth.{u} :=
+  formallySmooth_eq_rlp ▸ MorphismProperty.rlp_isMultiplicative _
+
+instance isStableUnderComposition : MorphismProperty.IsStableUnderComposition @FormallySmooth.{u} :=
+  isMultiplicative.toIsStableUnderComposition
+
+instance isStableUnderBaseChange : MorphismProperty.IsStableUnderBaseChange @FormallySmooth.{u} :=
+  formallySmooth_eq_rlp ▸ MorphismProperty.rlp_isStableUnderBaseChange _
+
+instance respectsIso : MorphismProperty.RespectsIso @FormallySmooth.{u} :=
+  MorphismProperty.IsStableUnderBaseChange.respectsIso (P := @FormallySmooth.{u})
+
+/-- An isomorphism is formally smooth. -/
+instance (priority := 100) of_isIso (f : X ⟶ S) [IsIso f] : FormallySmooth f :=
+  formallySmooth_eq_rlp ▸ MorphismProperty.rlp_of_isIso _ f
+
+/-- A composite of formally smooth morphisms is formally smooth. -/
+instance comp (f : X ⟶ Y) (g : Y ⟶ S) [FormallySmooth f] [FormallySmooth g] :
+    FormallySmooth (f ≫ g) :=
+  MorphismProperty.comp_mem _ f g ‹_› ‹_›
+
+/-- Formal smoothness is stable under base change. -/
+instance pullback_snd (f : X ⟶ S) (g : Y ⟶ S) [FormallySmooth f] :
+    FormallySmooth (pullback.snd f g) :=
+  MorphismProperty.IsStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback f g) ‹_›
+
+/-- Formal smoothness is stable under base change, on the other side. -/
+instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallySmooth g] :
+    FormallySmooth (pullback.fst f g) :=
+  MorphismProperty.IsStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback f g).flip ‹_›
 
 end FormallySmooth
 
@@ -187,12 +194,33 @@ theorem formallyEtale_iff (f : X ⟶ S) :
     exact H (Spec.map φ) g₁ g₂ h₁ h₂
   · exact FormallyUnramified.hom_ext i (IsFirstOrderThickening.isNilpotent_ker i) f h₁ h₂
 
+/-- Formal étaleness is the intersection of formal smoothness with Mathlib's formal
+unramifiedness. -/
+theorem formallyEtale_eq_inf :
+    @FormallyEtale.{u} = (@FormallySmooth ⊓ @FormallyUnramified : MorphismProperty Scheme.{u}) := by
+  ext X S f
+  exact formallyEtale_iff f
+
 namespace FormallyEtale
 
 /-- A formally étale morphism is formally unramified. -/
 instance (priority := 100) formallyUnramified (f : X ⟶ S) [FormallyEtale f] :
     FormallyUnramified f :=
   ((formallyEtale_iff f).1 ‹_›).2
+
+-- The instances for `⊓` are not found by instance search through `formallyEtale_eq_inf`, so they
+-- are named explicitly.
+instance isMultiplicative : MorphismProperty.IsMultiplicative @FormallyEtale.{u} :=
+  formallyEtale_eq_inf ▸ MorphismProperty.IsMultiplicative.inf
+
+instance isStableUnderComposition : MorphismProperty.IsStableUnderComposition @FormallyEtale.{u} :=
+  isMultiplicative.toIsStableUnderComposition
+
+instance isStableUnderBaseChange : MorphismProperty.IsStableUnderBaseChange @FormallyEtale.{u} :=
+  formallyEtale_eq_inf ▸ MorphismProperty.IsStableUnderBaseChange.inf
+
+instance respectsIso : MorphismProperty.RespectsIso @FormallyEtale.{u} :=
+  MorphismProperty.IsStableUnderBaseChange.respectsIso (P := @FormallyEtale.{u})
 
 /-- An isomorphism is formally étale. -/
 instance (priority := 100) of_isIso (f : X ⟶ S) [IsIso f] : FormallyEtale f :=
@@ -201,35 +229,17 @@ instance (priority := 100) of_isIso (f : X ⟶ S) [IsIso f] : FormallyEtale f :=
 /-- A composite of formally étale morphisms is formally étale. -/
 instance comp (f : X ⟶ Y) (g : Y ⟶ S) [FormallyEtale f] [FormallyEtale g] :
     FormallyEtale (f ≫ g) :=
-  (formallyEtale_iff _).2
-    ⟨inferInstance, MorphismProperty.comp_mem _ f g inferInstance inferInstance⟩
-
-instance : MorphismProperty.IsStableUnderComposition @FormallyEtale where
-  comp_mem _ _ _ _ := inferInstance
-
-instance : MorphismProperty.IsMultiplicative @FormallyEtale where
-  id_mem _ := inferInstance
-
-instance : MorphismProperty.RespectsIso @FormallyEtale :=
-  MorphismProperty.respectsIso_of_isStableUnderComposition fun _ _ f (_ : IsIso f) ↦
-    inferInstance
+  MorphismProperty.comp_mem _ f g ‹_› ‹_›
 
 /-- Formal étaleness is stable under base change. -/
 instance pullback_snd (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale f] :
     FormallyEtale (pullback.snd f g) :=
-  (formallyEtale_iff _).2
-    ⟨inferInstance, MorphismProperty.IsStableUnderBaseChange.of_isPullback
-      (IsPullback.of_hasPullback f g) inferInstance⟩
+  MorphismProperty.IsStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback f g) ‹_›
 
 /-- Formal étaleness is stable under base change, on the other side. -/
 instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale g] :
-    FormallyEtale (pullback.fst f g) := by
-  rw [← pullbackSymmetry_hom_comp_snd]
-  infer_instance
-
-instance : MorphismProperty.IsStableUnderBaseChange @FormallyEtale :=
-  MorphismProperty.IsStableUnderBaseChange.mk' fun _ _ _ f g _ (_ : FormallyEtale g) ↦
-    inferInstanceAs (FormallyEtale (pullback.fst f g))
+    FormallyEtale (pullback.fst f g) :=
+  MorphismProperty.IsStableUnderBaseChange.of_isPullback (IsPullback.of_hasPullback f g).flip ‹_›
 
 end FormallyEtale
 

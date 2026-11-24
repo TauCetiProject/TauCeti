@@ -19,9 +19,12 @@ by unique infinitesimal lifting along affine first-order thickenings.
 
 * `TauCeti.AlgebraicGeometry.FormallyEtale.of_etale`: an étale morphism, for instance an open
   immersion, is formally étale: every commutative square against a first-order thickening with
-  affine target has a unique lift. The lifts come from
-  `IsUniversalHomeomorphism.hasLiftingProperty_of_etale`, since first-order thickenings are
-  universal homeomorphisms.
+  affine target has a unique lift.
+* For lifting against arbitrary universal homeomorphisms, with no affineness assumption on the
+  target, use `TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism.hasLiftingProperty_of_etale`:
+  every commutative square from a universal homeomorphism to an étale morphism has a diagonal
+  filler. Since first-order thickenings are universal homeomorphisms, `FormallyEtale.of_etale`
+  takes its lifts from there.
 * `TauCeti.AlgebraicGeometry.etale_iff_formallyEtale`: a morphism locally of finite presentation
   is étale if and only if it is formally étale.
 

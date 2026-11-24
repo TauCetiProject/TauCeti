@@ -21,9 +21,12 @@ defined by the infinitesimal lifting property along affine first-order thickenin
 * `TauCeti.AlgebraicGeometry.FormallySmooth.of_smooth_of_isAffineHom`: a smooth affine morphism is
   formally smooth, so `smooth_iff_formallySmooth_of_isAffineHom`.
 
-That an arbitrary smooth morphism `f : X ⟶ S` is formally smooth is not proved here. For a
-first-order thickening `T ⟶ T'`, lifts `T' ⟶ X` exist locally on `T'`, and the local lifts form a
-torsor on `T'`. The step not covered here is that this torsor has a global section when `T'` is
+That an arbitrary smooth morphism `f : X ⟶ S` is formally smooth is not proved here. Fix a
+commutative square with top map `a : T ⟶ X`, bottom map `T' ⟶ S` and left map a first-order
+thickening `T ⟶ T'` with square-zero ideal sheaf `I`. Lifts `T' ⟶ X` of this square exist locally
+on `T'`, and the local lifts form a torsor under the sheaf `Hom(a* Ω_{X/S}, I)` of `𝒪_T`-module
+homomorphisms. This sheaf lives on `T`, and is viewed on `T'` because `T` and `T'` have the same
+underlying space. The step not covered here is that this torsor has a global section when `T'` is
 affine.
 
 ## References
