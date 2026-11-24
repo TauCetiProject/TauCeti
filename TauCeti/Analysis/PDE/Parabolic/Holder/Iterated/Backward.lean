@@ -7,26 +7,44 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Operator
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.TimeReversal
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 
 /-!
 # The backward parabolic operator at every order
 
-For coefficient fields `A`, `B`, `C` in the bounded parabolic Hölder space `C_{par,b}^{k+α}` on the
-slab `E × [a, b]`, this file defines the backward operator `P_back u = ∂ₜu + A·D_x²u + B·D_xu + C·u`
-as a bounded linear map `C_{par,b}^{k+2+α} → C_{par,b}^{k+α}`, and the terminal-data operator
-`u ↦ (P_back u, u(·, b))` into `C_{par,b}^{k+α} × C_b^{k+2,α}`.
+For `0 ≤ α ≤ 1` and coefficient fields `A`, `B`, `C` in the bounded parabolic Hölder space
+`C_{par,b}^{k+α}` on the slab `E × [a, b]`, `a < b`, this file defines the backward operator
+`P_back u = ∂ₜu + A·D_x²u + B·D_xu + C·u` as a bounded linear map
+`C_{par,b}^{k+2+α} → C_{par,b}^{k+α}`, and the terminal-data operator `u ↦ (P_back u, u(·, b))`
+into `C_{par,b}^{k+α} × C_b^{k+2,α}`.
 
 The time reversal `R (x, s) = (x, T - s)` turns the backward operator into a forward one:
 `P_R (u ∘ R) = -(P_back u) ∘ R`, where `P_R` has the reversed coefficients
-(`TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_timeReverseLIE`). This reduces terminal-value
-problems to Cauchy problems.
+(`TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_timeReverseLIE`). So the initial data of
+`u ∘ R` are the terminal data `(f, g)` of `u` transported to `(-f ∘ R, g)`, and the terminal-data
+operator is bijective exactly when the initial-data operator of the reversed forward problem is.
+This reduces terminal-value problems to Cauchy problems.
+
+These are the order-`k` forms of the order-two declarations
+`TauCeti.ParabolicC2HolderSpace.backwardParabolicOperatorL`,
+`TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_timeReverseLIE` and
+`TauCeti.ParabolicC2HolderSpace.bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff`,
+and follow their proofs.
 
 ## Main declarations
 
 * `TauCeti.ParabolicCkHolderSpace.backwardParabolicOperatorL`: the backward operator.
 * `TauCeti.ParabolicCkHolderSpace.terminalDataL`: the operator `u ↦ (P_back u, u(·, b))`.
 * `TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_timeReverseLIE`: its time reversal.
+* `TauCeti.ParabolicCkHolderSpace.initialDataL_timeReverseLIE`: the initial data of `u ∘ R` are the
+  reversed terminal data of `u`.
+* `TauCeti.ParabolicCkHolderSpace.bijective_terminalDataL_iff`: the terminal-data operator is
+  bijective iff the reversed initial-data operator is.
+* `TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_backwardParabolicOperatorL`: the backward operator
+  commutes with the inclusions between orders, and so do the terminal data
+  (`TauCeti.ParabolicCkHolderSpace.terminalDataL_inclusionOfLEL_fst` and
+  `TauCeti.ParabolicCkHolderSpace.coe_terminalDataL_inclusionOfLEL_snd`).
+* `TauCeti.ParabolicCkHolderSpace.timeReverseLIE_euclideanSecondOrderCoeff` and its first- and
+  zeroth-order companions: time reversal of the coordinate coefficient fields on `ℝⁿ`.
 
 ## References
 
@@ -52,8 +70,8 @@ variable {k : ℕ} {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSp
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
 /-- **The backward parabolic operator** `P_back u = ∂ₜu + A·D_x²u + B·D_xu + C·u` with coefficient
-fields in `C_{par,b}^{k+α}`, as a continuous linear map from `C_{par,b}^{(k+2)+α}` to
-`C_{par,b}^{k+α}`. -/
+fields in `C_{par,b}^{k+α}`, `α ≤ 1`, as a continuous linear map from `C_{par,b}^{(k+2)+α}` to
+`C_{par,b}^{k+α}`. The time derivative is taken within `[a, b]`, so one-sided at the endpoints. -/
 def backwardParabolicOperatorL (hα : α ≤ 1)
     (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
     (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
@@ -93,7 +111,7 @@ theorem backwardParabolicOperatorL_slabMk (hα : α ≤ 1)
         (A (slabMk x t) (fderiv ℝ (fderiv ℝ fun y ↦ u (slabMk y t)) x) +
           B (slabMk x t) (fderiv ℝ (fun y ↦ u (slabMk y t)) x) +
           C (slabMk x t) (u (slabMk x t))) := by
-  rw [backwardParabolicOperatorL_def, _root_.add_apply, coe_add, Pi.add_apply,
+  simp only [backwardParabolicOperatorL_def, _root_.add_apply, coe_add, Pi.add_apply,
     timeDerivL_slabMk, spatialOperatorL_slabMk]
 
 /-- **The operator bound for the backward operator.**
@@ -108,7 +126,7 @@ theorem norm_backwardParabolicOperatorL_le (hα : α ≤ 1)
   (norm_add_le _ _).trans (add_le_add norm_timeDerivL_le_one (norm_spatialOperatorL_le hα A B C))
 
 /-- The terminal-data operator `u ↦ (P_back u, u(·, b))` from `C_{par,b}^{(k+2)+α}` to
-`C_{par,b}^{k+α} × C_b^{k+2,α}`. -/
+`C_{par,b}^{k+α} × C_b^{k+2,α}`, for `α ≤ 1`: the forcing and the terminal spatial trace of `u`. -/
 def terminalDataL (hα : α ≤ 1)
     (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
     (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
@@ -116,6 +134,14 @@ def terminalDataL (hα : α ≤ 1)
     ParabolicCkHolderSpace (k + 2) α E F hab →L[ℝ]
       ParabolicCkHolderSpace k α E F hab × CkHolderSpace (k + 2) α E F :=
   (backwardParabolicOperatorL hα A B C).prod (spatialTraceL ⟨b, right_mem_Icc.2 hab.le⟩)
+
+theorem terminalDataL_def (hα : α ≤ 1)
+    (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab) :
+    terminalDataL hα A B C =
+      (backwardParabolicOperatorL hα A B C).prod (spatialTraceL ⟨b, right_mem_Icc.2 hab.le⟩) :=
+  (rfl)
 
 /-- The first data component is the backward operator. -/
 @[simp]
@@ -137,9 +163,15 @@ theorem terminalDataL_snd (hα : α ≤ 1)
     (terminalDataL hα A B C u).2 = u.spatialTrace ⟨b, right_mem_Icc.2 hab.le⟩ := by
   simp [terminalDataL]
 
+/-! ### Time reversal -/
+
+section TimeReversal
+
+variable {a' b' T : ℝ} {ha : a' = T - b} {hb : b' = T - a}
+
 /-- **Time reversal of the backward operator.** With `R (x, s) = (x, T - s)`, the forward operator
 with the reversed coefficients satisfies `P_R (u ∘ R) = -(P_back u) ∘ R`. -/
-theorem parabolicOperatorL_timeReverseLIE {a' b' T : ℝ} {ha : a' = T - b} {hb : b' = T - a}
+theorem parabolicOperatorL_timeReverseLIE
     (hα : α ≤ 1) (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
     (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
     (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab)
@@ -150,6 +182,122 @@ theorem parabolicOperatorL_timeReverseLIE {a' b' T : ℝ} {ha : a' = T - b} {hb 
   refine ext fun p ↦ ?_
   simp [parabolicOperatorL_apply]
   abel
+
+/-- **The reversed initial data are the transported terminal data.** With `R (x, s) = (x, T - s)`,
+the initial data of `u ∘ R` for the forward operator with the reversed coefficients are
+`(-f ∘ R, g)`, where `(f, g)` are the terminal data of `u` for the backward operator. -/
+theorem initialDataL_timeReverseLIE
+    (hα : α ≤ 1) (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab)
+    (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    initialDataL hα (timeReverseLIE T ha hb A) (timeReverseLIE T ha hb B)
+        (timeReverseLIE T ha hb C) (timeReverseLIE T ha hb u) =
+      (-timeReverseLIE T ha hb (terminalDataL hα A B C u).1, (terminalDataL hα A B C u).2) := by
+  rw [initialDataL_apply, terminalDataL_fst, terminalDataL_snd, parabolicOperatorL_timeReverseLIE,
+    spatialTrace_timeReverseLIE_left]
+
+/-- **Solvability of the terminal-value problem by time reversal.** With
+`R (x, s) = (x, T - s)`, the terminal-data operator `u ↦ (P_back u, u(·, b))` on `E × [a, b]` is
+bijective if and only if the initial-data operator `v ↦ (P_R v, v(·, T - b))` on
+`E × [T - b, T - a]` with the reversed coefficients is. -/
+theorem bijective_terminalDataL_iff
+    (hα : α ≤ 1) (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab) :
+    Function.Bijective (terminalDataL hα A B C) ↔
+      Function.Bijective (initialDataL hα (timeReverseLIE T ha hb A) (timeReverseLIE T ha hb B)
+        (timeReverseLIE T ha hb C)) := by
+  -- The data transport `(f, g) ↦ (-f ∘ R, g)`.
+  let Φ := ((timeReverseLIE T ha hb (k := k) (α := α) (E := E) (F := F) (hab := hab)
+      ).toContinuousLinearEquiv.trans
+      (ContinuousLinearEquiv.neg ℝ)).prodCongr
+    (ContinuousLinearEquiv.refl ℝ (CkHolderSpace (k + 2) α E F))
+  have hcomp : ⇑(initialDataL hα (timeReverseLIE T ha hb A) (timeReverseLIE T ha hb B)
+      (timeReverseLIE T ha hb C)) ∘ timeReverseLIE T ha hb = Φ ∘ terminalDataL hα A B C :=
+    funext fun u ↦ by simp [Φ, initialDataL_timeReverseLIE]
+  rw [← Function.Bijective.of_comp_iff' Φ.bijective, ← hcomp,
+    Function.Bijective.of_comp_iff _ (timeReverseLIE T ha hb).bijective]
+
+end TimeReversal
+
+/-! ### Reading the operator at a lower order -/
+
+/-- The backward operator commutes with the inclusions between orders: reading `P_back u` at a
+lower order `m` is applying the operator with the coefficients and `u` read at that order. -/
+theorem inclusionOfLEL_backwardParabolicOperatorL (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
+    (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab)
+    (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    inclusionOfLEL hα h (backwardParabolicOperatorL hα A B C u) =
+      backwardParabolicOperatorL hα (inclusionOfLEL hα h A) (inclusionOfLEL hα h B)
+        (inclusionOfLEL hα h C) (inclusionOfLEL hα (Nat.add_le_add_right h 2) u) := by
+  refine ext fun p ↦ ?_
+  have h₂ := Nat.add_le_add_right h 2
+  simp only [inclusionOfLEL_apply, backwardParabolicOperatorL_apply, spatialFDerivBCF_apply,
+    mixedDerivL_inclusionOfLEL hα h₂ u (r := 1) (m := 0) (by omega),
+    mixedDerivL_inclusionOfLEL hα h₂ u (r := 0) (m := 2) (by omega),
+    mixedDerivL_inclusionOfLEL hα h₂ u (r := 0) (m := 1) (by omega)]
+
+/-- Reading `u` and the coefficients at a lower order `m` reads the forcing of the terminal data at
+that order. -/
+theorem terminalDataL_inclusionOfLEL_fst (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
+    (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab)
+    (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    (terminalDataL hα (inclusionOfLEL hα h A) (inclusionOfLEL hα h B) (inclusionOfLEL hα h C)
+        (inclusionOfLEL hα (Nat.add_le_add_right h 2) u)).1 =
+      inclusionOfLEL hα h (terminalDataL hα A B C u).1 := by
+  rw [terminalDataL_fst, terminalDataL_fst, inclusionOfLEL_backwardParabolicOperatorL]
+
+/-- Reading `u` and the coefficients at a lower order keeps the terminal trace. -/
+theorem coe_terminalDataL_inclusionOfLEL_snd (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
+    (A : ParabolicCkHolderSpace k α E ((E →L[ℝ] E →L[ℝ] F) →L[ℝ] F) hab)
+    (B : ParabolicCkHolderSpace k α E ((E →L[ℝ] F) →L[ℝ] F) hab)
+    (C : ParabolicCkHolderSpace k α E (F →L[ℝ] F) hab)
+    (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    ⇑(terminalDataL hα (inclusionOfLEL hα h A) (inclusionOfLEL hα h B) (inclusionOfLEL hα h C)
+        (inclusionOfLEL hα (Nat.add_le_add_right h 2) u)).2 =
+      ⇑(terminalDataL hα A B C u).2 := by
+  rw [terminalDataL_snd, terminalDataL_snd, coe_spatialTrace_inclusionOfLEL]
+
+/-! ### Time reversal of the coordinate coefficients on Euclidean space -/
+
+section Euclidean
+
+variable {ι : Type*} [Fintype ι] {a' b' T : ℝ} {ha : a' = T - b} {hb : b' = T - a}
+
+attribute [local instance] instNormedAddCommGroupEuclideanCovector
+  instNormedSpaceEuclideanCovector instNormedAddCommGroupEuclideanHessian
+  instNormedSpaceEuclideanHessian
+
+/-- Reversing the second-order coefficient field in time reverses its scalar coefficients. -/
+@[simp]
+theorem timeReverseLIE_euclideanSecondOrderCoeff [DecidableEq ι]
+    (c : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hab) :
+    timeReverseLIE T ha hb (euclideanSecondOrderCoeff c) =
+      euclideanSecondOrderCoeff fun i j ↦ timeReverseLIE T ha hb (c i j) :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+
+/-- Reversing the first-order coefficient field in time reverses its scalar coefficients. -/
+@[simp]
+theorem timeReverseLIE_euclideanFirstOrderCoeff [DecidableEq ι]
+    (c : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hab) :
+    timeReverseLIE T ha hb (euclideanFirstOrderCoeff c) =
+      euclideanFirstOrderCoeff fun i ↦ timeReverseLIE T ha hb (c i) :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+
+/-- Reversing the zeroth-order coefficient field in time reverses its scalar coefficient. -/
+@[simp]
+theorem timeReverseLIE_euclideanZerothOrderCoeff
+    (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hab) :
+    timeReverseLIE T ha hb (euclideanZerothOrderCoeff c) =
+      euclideanZerothOrderCoeff (timeReverseLIE T ha hb c) :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+
+end Euclidean
 
 end ParabolicCkHolderSpace
 
