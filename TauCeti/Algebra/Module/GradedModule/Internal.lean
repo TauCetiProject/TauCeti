@@ -943,8 +943,8 @@ theorem InternalGrading.koszulTwist_one_eq_negOnePow_smul (G : InternalGrading R
     koszulTwist G 1 x = e.negOnePow • x := by
   rw [InternalGrading.koszulTwist_eq_negOnePow_smul G hx 1, one_mul]
 
-/-- Acting by the degree-one Koszul twist of a homogeneous element of degree `e` multiplies by the
-unit sign `(-1)^e`, even when the acting graded module is only an `AddCommMonoid`. -/
+/-- Acting by the Koszul twist of parameter one of a homogeneous element of degree `e` multiplies
+by the unit sign `(-1)^e`, even when the graded acting module `A` is only an `AddCommMonoid`. -/
 theorem InternalGrading.koszulTwist_one_smul_eq_negOnePow_smul {A : Type*} [AddCommMonoid A]
     [Module R A] [SMul A M] [IsScalarTower R A M] (G : InternalGrading R A ℤ) {a : A} {e : ℤ}
     (ha : a ∈ G.piece e) (y : M) :
