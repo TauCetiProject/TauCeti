@@ -67,17 +67,16 @@ theorem mul_add_one_sub_mul (he : IsIdempotentElem e) (x y x' y' : R) :
 
 end CommRing
 
-section NonAssocRing
+section Ring
 
-variable {R : Type*} [NonAssocRing R]
+variable {R : Type*} [Ring R] {p : R}
 
 /-- For an idempotent `p`, `2 p - 1` squares to `1`. -/
-theorem two_mul_sub_one_mul_self {p : R} (hp : IsIdempotentElem p) :
-    (2 * p - 1) * (2 * p - 1) = 1 := by
+theorem two_mul_sub_one_mul_self (hp : IsIdempotentElem p) : (2 * p - 1) * (2 * p - 1) = 1 := by
   simp only [two_mul, add_mul, mul_add, sub_mul, mul_sub, one_mul, mul_one, hp.eq]
   abel
 
-end NonAssocRing
+end Ring
 
 end IsIdempotentElem
 
