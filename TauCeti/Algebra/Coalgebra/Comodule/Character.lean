@@ -47,6 +47,8 @@ coefficients of the characteristic polynomial regular class functions, in
 * `TauCeti.Comodule.trace_endOfPoint_mul_mul_inv` and
   `TauCeti.Comodule.charpoly_endOfPoint_mul_mul_inv`: conjugate points act with equal traces and
   characteristic polynomials.
+* `TauCeti.Comodule.isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq`: a universal
+  characteristic-polynomial identity makes every point action unipotent.
 
 ## References
 
@@ -340,6 +342,31 @@ theorem charpoly_corestrict {H' : Type*} [CommRing H'] [Bialgebra k H'] (φ : H 
   exact congrArg (fun F ↦ ((coefficientMatrix b).map F).charpoly) (funext φ.toCoalgHom_apply)
 
 end RingBialgebra
+
+section HopfAlgebraField
+
+variable {k : Type u} [Field k] {H : Type v} [CommRing H] [HopfAlgebra k H]
+variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
+
+/-- A universal `X - 1` characteristic-polynomial identity makes the action of every point on
+the comodule unipotent. -/
+theorem isUnipotent_pointsAction_of_coefficientMatrix_charpoly_eq
+    {L : Type x} [CommRing L] [Algebra k L]
+    (g : WithConv (H →ₐ[k] L)) {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι k M)
+    (hCcharpoly : (coefficientMatrix (C := H) b).charpoly =
+      ((X - (1 : k[X])) ^ finrank k M).map (algebraMap k H)) :
+    LinearMap.GeneralLinearGroup.IsUnipotent
+      (LinearMap.GeneralLinearGroup.ofLinearEquiv (pointsAction M g)) := by
+  have := Module.Free.of_basis b
+  have := Module.Finite.of_basis b
+  apply LinearMap.GeneralLinearGroup.isUnipotent_of_charpoly_eq (n := finrank k M)
+  have hcoe : ((LinearMap.GeneralLinearGroup.ofLinearEquiv (pointsAction M g)) :
+      Module.End L (L ⊗[k] M)) = endOfPoint M g.ofConv := pointsAction_toLinearMap M g
+  rw [hcoe, ← map_charpoly, charpoly_eq_charpoly_coefficientMatrix b, hCcharpoly,
+    Polynomial.map_map]
+  simp
+
+end HopfAlgebraField
 
 end
 

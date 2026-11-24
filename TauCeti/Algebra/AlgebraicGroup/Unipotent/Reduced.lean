@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
+import TauCeti.Algebra.Coalgebra.Comodule.Character
 import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
