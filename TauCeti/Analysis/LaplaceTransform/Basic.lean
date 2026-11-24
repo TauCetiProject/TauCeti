@@ -187,10 +187,7 @@ theorem hasLaplace_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
 theorem hasLaplace_fun_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
     HasLaplace (fun _ : ℝ ↦ (0 : E)) s 0 μ := by
-  have hzero : (fun _ : ℝ ↦ (0 : E)) = 0 := by
-    ext t
-    rw [Pi.zero_apply]
-  rw [hzero]
+  rw [← Pi.zero_def]
   exact hasLaplace_zero s μ
 
 /-- The zero function has Laplace transform `z` if and only if `z = 0`. -/
@@ -206,10 +203,7 @@ if and only if `z = 0`. -/
 theorem hasLaplace_fun_zero_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [SMulZeroClass ℂ E] {s : ℂ} {z : E} {μ : Measure ℝ} :
     HasLaplace (fun _ : ℝ ↦ (0 : E)) s z μ ↔ z = 0 := by
-  have hzero : (fun _ : ℝ ↦ (0 : E)) = 0 := by
-    ext t
-    rw [Pi.zero_apply]
-  rw [hzero]
+  rw [← Pi.zero_def]
   exact hasLaplace_zero_iff
 
 section DistribSMul
