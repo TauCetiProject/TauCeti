@@ -9,7 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Basic
 import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.CStarAlgebra.Unitization
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtFactor
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Factor
 
 /-!
 # Smith's lemma and completely bounded maps into commutative C⋆-algebras
