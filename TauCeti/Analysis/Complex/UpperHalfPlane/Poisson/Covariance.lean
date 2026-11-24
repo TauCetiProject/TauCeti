@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Basic
 
 /-!
 # Covariance of the upper half-plane Poisson integral
@@ -22,17 +22,12 @@ For the Poisson integral `P[ν](z) = ∫ P(z, x) dν(x)` this says that the tran
 
 `P[ν_u](z) = P[ν](z - u)`,   `P[ν^c](z) = c P[ν](c z)`.
 
-Since `P(i, x) = 1 / (π (1 + x ^ 2))`, a function `h` is integrable against the Poisson measure
-`Π = dx / (1 + x ^ 2)` exactly when the extended Poisson integral of `|h| dx` is finite at `i`.
-
 ## Main results
 
 * `TauCeti.upperHalfPlanePoissonKernel_add`, `TauCeti.upperHalfPlanePoissonKernel_div`: covariance
   of the Poisson kernel.
 * `TauCeti.upperHalfPlanePoissonIntegral_map_add`, `TauCeti.upperHalfPlanePoissonIntegral_map_div`:
   translation and dilation covariance of the Poisson integral.
-* `TauCeti.integrable_upperHalfPlanePoissonMeasure_iff`: `h ∈ L¹(Π)` exactly when
-  `P[|h| dx](i) < ∞`.
 -/
 
 public section
@@ -42,8 +37,6 @@ noncomputable section
 namespace TauCeti
 
 open Complex MeasureTheory
-
-open scoped Real ENNReal
 
 /-- Translating the boundary point of the Poisson kernel by `u` is translating the pole by `-u`. -/
 theorem upperHalfPlanePoissonKernel_add (z : ℂ) (u x : ℝ) :
@@ -81,33 +74,5 @@ theorem upperHalfPlanePoissonIntegral_map_div (ν : Measure ℝ) {c : ℝ} (hc :
   rw [upperHalfPlanePoissonIntegral_def, upperHalfPlanePoissonIntegral_def,
     integral_map (by fun_prop) (by fun_prop), ← integral_const_mul]
   simp_rw [upperHalfPlanePoissonKernel_div z hc]
-
-/-- **Integrability against the Poisson measure through the Poisson integral at `i`.** An almost
-everywhere strongly measurable `h : ℝ → E` lies in `L¹(Π)`, for the Poisson measure
-`Π = dx / (1 + x ^ 2)`, exactly when the extended Poisson integral of `|h| dx` is finite at `i`,
-as `P(i, x) = 1 / (π (1 + x ^ 2))`. -/
-theorem integrable_upperHalfPlanePoissonMeasure_iff {E : Type*} [NormedAddCommGroup E]
-    {h : ℝ → E} (hh : AEStronglyMeasurable h volume) :
-    Integrable h upperHalfPlanePoissonMeasure ↔
-      upperHalfPlanePoissonLIntegral (volume.withDensity fun x ↦ ‖h x‖ₑ) I < ∞ := by
-  have hd : Measurable fun x : ℝ ↦ ENNReal.ofReal (1 + x ^ 2)⁻¹ := by fun_prop
-  have hPi : upperHalfPlanePoissonMeasure ≪ volume := by
-    rw [upperHalfPlanePoissonMeasure_eq_withDensity]
-    exact withDensity_absolutelyContinuous _ _
-  have hP : upperHalfPlanePoissonLIntegral (volume.withDensity fun x ↦ ‖h x‖ₑ) I =
-      ENNReal.ofReal π⁻¹ * ∫⁻ x, ‖h x‖ₑ ∂upperHalfPlanePoissonMeasure := by
-    rw [upperHalfPlanePoissonLIntegral_def, upperHalfPlanePoissonMeasure_eq_withDensity,
-      lintegral_withDensity_eq_lintegral_mul₀ hh.eNorm (by fun_prop),
-      lintegral_withDensity_eq_lintegral_mul₀ hd.aemeasurable hh.eNorm,
-      ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    refine lintegral_congr fun x ↦ ?_
-    simp only [Pi.mul_apply, upperHalfPlanePoissonKernel_I, mul_inv]
-    rw [ENNReal.ofReal_mul (by positivity)]
-    ring
-  rw [hP, Integrable, and_iff_right (hh.mono_ac hPi), HasFiniteIntegral,
-    ENNReal.mul_lt_top_iff]
-  simp only [ENNReal.ofReal_lt_top, true_and, ENNReal.ofReal_eq_zero, not_le.mpr
-    (inv_pos.mpr Real.pi_pos), false_or, iff_self_or]
-  exact fun h0 ↦ h0 ▸ ENNReal.zero_lt_top
 
 end TauCeti
