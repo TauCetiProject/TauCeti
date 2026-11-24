@@ -64,7 +64,8 @@ positive diagonal matrix, which is not a product of this form.
 * `Subgroup.cartanHomeomorph`: the Cartan decomposition of such a subgroup, the
   homeomorphism `{u ∈ unitary A | u ∈ G} × {x ∈ selfAdjoint A | ∀ t, exp (t x) ∈ G} ≃ₜ G`, with
   `Subgroup.val_cartanHomeomorph_apply`, `Subgroup.coe_cartanHomeomorph_symm_apply_fst` and
-  `Subgroup.coe_cartanHomeomorph_symm_apply_snd` computing it and its inverse.
+  `Subgroup.coe_cartanHomeomorph_symm_apply_snd` computing it and its inverse, and
+  `Subgroup.existsUnique_unitary_mul_exp`, the uniqueness of the factorization.
 
 ## References
 
@@ -305,6 +306,19 @@ theorem _root_.Subgroup.coe_cartanHomeomorph_symm_apply_snd (hstar : ∀ a ∈ G
     ((((G.cartanHomeomorph hstar hexp).symm a).2 : selfAdjoint A) : A) =
       CFC.log (CFC.sqrt (star ((a : Aˣ) : A) * (a : Aˣ))) :=
   (rfl)
+
+/-- **Uniqueness of the Cartan factorization in a subgroup**: under the hypotheses of
+`Subgroup.cartanHomeomorph`, every `a ∈ G` is `u * exp x` for exactly one unitary `u ∈ G` and one
+self-adjoint `x` in the Lie algebra of `G`. -/
+theorem _root_.Subgroup.existsUnique_unitary_mul_exp (hstar : ∀ a ∈ G, star a ∈ G)
+    (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G) {a : Aˣ}
+    (ha : a ∈ G) :
+    ∃! p : {u : unitary A // Unitary.toUnits u ∈ G} ×
+        {x : selfAdjoint A // ∀ t : ℝ, expUnit (t • (x : A)) ∈ G},
+      (a : A) = (p.1 : A) * exp ((p.2 : selfAdjoint A) : A) := by
+  refine (existsUnique_congr fun p ↦ ?_).1
+    ((G.cartanHomeomorph hstar hexp).bijective.existsUnique ⟨a, ha⟩)
+  rw [Subtype.ext_iff, Units.ext_iff, Subgroup.val_cartanHomeomorph_apply, eq_comm]
 
 end Subgroup
 

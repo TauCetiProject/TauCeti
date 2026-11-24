@@ -6,7 +6,9 @@ Authors: Claude
 module
 
 public import Mathlib.Analysis.Matrix.Normed
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.UnitaryGroup
+import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # The Frobenius inner product on matrices
@@ -36,6 +38,10 @@ and the inner product together.
   `∑ i, ∑ j, A i j * B i j`.
 * `Matrix.frobenius_inner_eq_trace_conjTranspose_mul` — over `𝕜` itself, the inner product is
   `(Aᴴ * B).trace`.
+* `Matrix.frobenius_real_inner_eq_re_trace_conjTranspose_mul`: over `ℝ`, the inner product of
+  matrices over `𝕜` is `re (Aᴴ * B).trace`.
+* `Matrix.IsHermitian.exists_add_orthogonal`: a Hermitian matrix splits into Hermitian parts in a
+  subspace stable under the conjugate transpose and orthogonal to it.
 * `Matrix.frobenius_norm_sq_eq_sum_normSq` — the squared complex Frobenius norm is the sum of
   the squared norms of the entries.
 * `Matrix.frobenius_norm_sq_conj_unitary` — unitary conjugation preserves the squared norm.
@@ -79,7 +85,7 @@ in an inner product space, compatible with the Frobenius norm of
 `Matrix.frobeniusSeminormedAddCommGroup`. Not declared as a global instance because there are
 several natural choices of norm on matrices; it is available through
 `open scoped Matrix.Norms.Frobenius`. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 def frobeniusInnerProductSpace :
     letI : SeminormedAddCommGroup (Matrix m n E) := frobeniusSeminormedAddCommGroup
     InnerProductSpace 𝕜 (Matrix m n E) :=
@@ -141,6 +147,45 @@ theorem frobenius_inner_eq_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
     conjTranspose_apply,
     RCLike.star_def]
   exact Finset.sum_comm
+
+/-- Over `ℝ`, the Frobenius inner product of matrices over `𝕜` is the real part of the trace of
+`Aᴴ * B`. -/
+theorem frobenius_real_inner_eq_re_trace_conjTranspose_mul (A B : Matrix m n 𝕜) :
+    ⟪A, B⟫_ℝ = RCLike.re (Aᴴ * B).trace := by
+  rw [← frobenius_inner_eq_trace_conjTranspose_mul, frobenius_inner_def, frobenius_inner_def,
+    map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ real_inner_eq_re_inner 𝕜 (A i j) (B i j)
+
+omit [Fintype m] in
+/-- **Hermitian orthogonal splitting.** For a real subspace `V` of the square matrices stable under
+the conjugate transpose, a Hermitian matrix `X` splits as `X₁ + Z` with `X₁ ∈ V` and `Z`
+orthogonal to `V` for the real trace pairing `re (trace (A * B))`, both Hermitian. -/
+theorem IsHermitian.exists_add_orthogonal {X : Matrix n n 𝕜} (hX : X.IsHermitian)
+    {V : Submodule ℝ (Matrix n n 𝕜)} (hV : ∀ Y ∈ V, Yᴴ ∈ V) :
+    ∃ X₁ ∈ V, X₁.IsHermitian ∧ ∃ Z : Matrix n n 𝕜, Z.IsHermitian ∧ X = X₁ + Z ∧
+      ∀ W ∈ V, RCLike.re (Z * W).trace = 0 := by
+  obtain ⟨X₀, hX₀, Z₀, hZ₀, hsum⟩ := V.exists_add_mem_mem_orthogonal X
+  -- `Z₀ ⊥ V` gives `re (trace (Z₀ * W)) = 0` and `re (trace (Z₀ᴴ * W)) = 0` for `W ∈ V`.
+  have horth (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ * W).trace = 0 := by
+    have h := Submodule.inner_right_of_mem_orthogonal (hV W hW) hZ₀
+    rwa [frobenius_real_inner_eq_re_trace_conjTranspose_mul, conjTranspose_conjTranspose,
+      trace_mul_comm] at h
+  have horth' (W : Matrix n n 𝕜) (hW : W ∈ V) : RCLike.re (Z₀ᴴ * W).trace = 0 := by
+    have h := Submodule.inner_left_of_mem_orthogonal hW hZ₀
+    rwa [frobenius_real_inner_eq_re_trace_conjTranspose_mul] at h
+  refine ⟨(1 / 2 : ℝ) • (X₀ + X₀ᴴ), V.smul_mem _ (V.add_mem hX₀ (hV _ hX₀)), ?_,
+    (1 / 2 : ℝ) • (Z₀ + Z₀ᴴ), ?_, ?_, fun W hW ↦ ?_⟩
+  · simp [IsHermitian, conjTranspose_smul, add_comm]
+  · simp [IsHermitian, conjTranspose_smul, add_comm]
+  · have hX' : X = (1 / 2 : ℝ) • (X + Xᴴ) := by
+      rw [hX.eq, ← two_smul ℝ X, smul_smul]
+      norm_num
+    rw [hX', hsum, conjTranspose_add, ← smul_add]
+    congr 1
+    abel
+  · simp [Matrix.smul_mul, add_mul, trace_smul, RCLike.smul_re, horth W hW, horth' W hW]
 
 /-- The squared Frobenius norm of a complex matrix is the sum of its entrywise squared norms. -/
 theorem frobenius_norm_sq_eq_sum_normSq (A : Matrix m n ℂ) :

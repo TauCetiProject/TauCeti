@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.LinearAlgebra.Lagrange
 import TauCeti.Analysis.Matrix.Exponential.Spectrum
+import TauCeti.Analysis.Matrix.Spectrum
 
 /-!
 # Mostow's lemma on positive conjugations
@@ -30,8 +31,10 @@ whole line through it.
 
 ## Main results
 
-* `Matrix.sub_smul_mem_of_exp_sub_smul_mem`: the diagonal form, for matrices with entries in any
-  real vector space.
+* `Matrix.entrywiseSMulAlgHom`: entrywise scaling by a matrix of real weights, as an algebra
+  homomorphism into the real endomorphisms of `Matrix m n E`.
+* `TauCeti.weight_smul_mem_of_exp_weight_smul_mem`: the form for entrywise weights taking finitely
+  many values, for matrices with entries in any real vector space.
 * `Matrix.IsHermitian.commutator_mem_of_exp_mul_mul_exp_neg_mem`: Mostow's lemma.
 
 ## References
@@ -49,12 +52,12 @@ open NormedSpace
 
 namespace Matrix
 
-variable {n : Type*}
+variable {m n : Type*}
 
 /-- Entrywise scaling by a real matrix of weights, as a real algebra homomorphism from the weights
-to the real linear endomorphisms of `Matrix n n E`. -/
-private def weightEnd {E : Type*} [AddCommGroup E] [Module ℝ E] :
-    (n → n → ℝ) →ₐ[ℝ] Module.End ℝ (Matrix n n E) where
+to the real linear endomorphisms of `Matrix m n E`. -/
+def entrywiseSMulAlgHom (E : Type*) [AddCommGroup E] [Module ℝ E] :
+    (m → n → ℝ) →ₐ[ℝ] Module.End ℝ (Matrix m n E) where
   toFun r :=
     { toFun Y := of fun i j ↦ r i j • Y i j
       map_add' Y Z := by ext i j; simp [smul_add]
@@ -65,26 +68,49 @@ private def weightEnd {E : Type*} [AddCommGroup E] [Module ℝ E] :
   map_add' r s := by ext Y i j; simp [add_smul]
   commutes' c := by ext Y i j; simp
 
-/-- **Mostow's lemma in a diagonal basis.** If scaling the entry `(i, j)` by `exp (d i - d j)` maps
-a real subspace of matrices into itself, so does scaling it by `d i - d j`. -/
-theorem sub_smul_mem_of_exp_sub_smul_mem [Finite n] {E : Type*} [AddCommGroup E] [Module ℝ E]
-    (d : n → ℝ) {W : Submodule ℝ (Matrix n n E)}
-    (hW : ∀ Y ∈ W, (of fun i j ↦ Real.exp (d i - d j) • Y i j) ∈ W) {Y : Matrix n n E}
-    (hY : Y ∈ W) : (of fun i j ↦ (d i - d j) • Y i j) ∈ W := by
+/-- The entry `(i, j)` of `entrywiseSMulAlgHom E r Y` is `r i j • Y i j`. -/
+@[simp]
+theorem entrywiseSMulAlgHom_apply_apply {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (r : m → n → ℝ) (Y : Matrix m n E) (i : m) (j : n) :
+    entrywiseSMulAlgHom E r Y i j = r i j • Y i j :=
+  (rfl)
+
+end Matrix
+
+namespace TauCeti
+
+open Matrix
+
+variable {m n : Type*}
+
+/-- **Mostow's lemma for entrywise weights.** If scaling the entry `(i, j)` by `exp (w i j)` maps a
+real subspace of matrices into itself, so does scaling it by `w i j`, provided the weights take
+finitely many values. -/
+theorem weight_smul_mem_of_exp_weight_smul_mem {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (w : m → n → ℝ) (hw : (Set.range (Function.uncurry w)).Finite)
+    {W : Submodule ℝ (Matrix m n E)}
+    (hW : ∀ Y ∈ W, (of fun i j ↦ Real.exp (w i j) • Y i j) ∈ W) {Y : Matrix m n E}
+    (hY : Y ∈ W) : (of fun i j ↦ w i j • Y i j) ∈ W := by
   classical
-  have := Fintype.ofFinite n
-  let r : n → n → ℝ := fun i j ↦ Real.exp (d i - d j)
-  let s : Finset ℝ := Finset.univ.image fun p : n × n ↦ r p.1 p.2
+  let r : m → n → ℝ := fun i j ↦ Real.exp (w i j)
+  let s : Finset ℝ := (hw.image Real.exp).toFinset
   let q : Polynomial ℝ := Lagrange.interpolate s id Real.log
-  have hq : Polynomial.aeval r q = fun i j ↦ d i - d j := by
+  have hq : Polynomial.aeval r q = w := by
     ext i j
     rw [Polynomial.aeval_pi_apply₂, Polynomial.aeval_pi_apply₂, Polynomial.coe_aeval_eq_eval]
-    have hmem : r i j ∈ s := Finset.mem_image.2 ⟨(i, j), Finset.mem_univ _, rfl⟩
+    have hmem : r i j ∈ s :=
+      (Set.Finite.mem_toFinset _).2 ⟨w i j, ⟨(i, j), rfl⟩, rfl⟩
     exact (Lagrange.eval_interpolate_at_node (v := id) Real.log (Set.injOn_id _) hmem).trans
       (Real.log_exp _)
-  have h := Polynomial.aeval_apply_smul_mem_of_le_comap hY q (weightEnd (E := E) r)
+  have h := Polynomial.aeval_apply_smul_mem_of_le_comap hY q (entrywiseSMulAlgHom E r)
     fun Y hY ↦ hW Y hY
   rwa [Polynomial.aeval_algHom_apply, hq] at h
+
+end TauCeti
+
+namespace Matrix
+
+variable {n : Type*}
 
 namespace IsHermitian
 
@@ -106,10 +132,8 @@ theorem commutator_mem_of_exp_mul_mul_exp_neg_mem {X : Matrix n n 𝕜} (hX : X.
     simp [e, φ, Unitary.conjStarAlgAut_apply]
   have he_mul (Z Z' : Matrix n n 𝕜) : e (Z * Z') = e Z * e Z' := map_mul φ Z Z'
   have hD : e X = diagonal fun i ↦ (d i : 𝕜) := by
-    have h := hX.conjStarAlgAut_star_eigenvectorUnitary
-    rw [Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_star] at h
     rw [he]
-    exact h
+    exact hX.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary
   -- The transported subspace is preserved by the transported conjugation.
   have hW' : ∀ Z ∈ W.map (e : Matrix n n 𝕜 →ₗ[ℝ] Matrix n n 𝕜),
       (of fun i j ↦ Real.exp (d i - d j) • Z i j) ∈
@@ -126,7 +150,9 @@ theorem commutator_mem_of_exp_mul_mul_exp_neg_mem {X : Matrix n n 𝕜} (hX : X.
     simp [diagonal_mul, mul_diagonal, d, Real.exp_sub, div_eq_mul_inv, Real.exp_neg,
       RCLike.real_smul_eq_coe_mul]
     ring
-  have h := sub_smul_mem_of_exp_sub_smul_mem d hW' (Submodule.mem_map_of_mem hY)
+  have hfin : (Set.range (Function.uncurry fun i j ↦ d i - d j)).Finite :=
+    Set.finite_range _
+  have h := TauCeti.weight_smul_mem_of_exp_weight_smul_mem _ hfin hW' (Submodule.mem_map_of_mem hY)
   rw [Submodule.mem_map_equiv] at h
   convert h using 1
   apply e.injective

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.Normed.Operator.Exponential
 import Mathlib.Analysis.Normed.Algebra.Spectrum
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import TauCeti.LinearAlgebra.Matrix.OfReal
@@ -136,9 +137,8 @@ theorem star_eigenvectorUnitary_mul_exp_smul_mul_eigenvectorUnitary {X : Matrix 
   have hinv : ((Unitary.toUnits hX.eigenvectorUnitary)⁻¹ : (Matrix m m 𝕜)ˣ) =
       star (hX.eigenvectorUnitary : Matrix m m 𝕜) :=
     Units.inv_eq_of_mul_eq_one_left (Unitary.star_mul_self_of_mem hX.eigenvectorUnitary.property)
-  have hD := hX.conjStarAlgAut_star_eigenvectorUnitary
-  rw [Unitary.conjStarAlgAut_apply, Unitary.coe_star, star_star] at hD
-  simp only [hinv, Unitary.val_toUnits_apply, Matrix.mul_smul, Matrix.smul_mul, hD] at h
+  simp only [hinv, Unitary.val_toUnits_apply, Matrix.mul_smul, Matrix.smul_mul,
+    hX.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary] at h
   rw [← h, ← diagonal_smul, exp_diagonal]
   congr 1
   funext i

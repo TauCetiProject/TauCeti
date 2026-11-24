@@ -23,6 +23,9 @@ by a condition on algebra elements can have its Lie algebra computed entirely in
   line of `x : R` is the Banach-algebra exponential line.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff`: for a closed
   subgroup, membership in its Lie algebra is that exponential line staying inside the subgroup.
+* `TauCeti.Lie.unitsLieSubalgebraOfSubgroup`: the Lie algebra of a subgroup of `Rˣ` as a Lie
+  subalgebra of `R`, with `TauCeti.Lie.mem_unitsLieSubalgebraOfSubgroup_iff` describing it by
+  exponential lines for a closed subgroup.
 -/
 
 public section
@@ -63,5 +66,25 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff {K : Subgro
   rw [mem_lieSubalgebraOfSubgroup hK,
     ← forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff K x]
   simp only [map_smul]
+
+
+/-- **The Lie algebra of a subgroup of `Rˣ`, in algebra coordinates**: the Lie subalgebra of `R`
+corresponding to `TauCeti.Lie.lieSubalgebraOfSubgroup K` under the canonical identification
+`TauCeti.Lie.unitsLieAlgebraLieEquiv` of the Lie algebra of `Rˣ` with `R`. -/
+def unitsLieSubalgebraOfSubgroup (K : Subgroup Rˣ) : LieSubalgebra ℝ R :=
+  (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) K).comap
+    ((unitsLieAlgebraLieEquiv (R := R)).symm : R →ₗ⁅ℝ⁆ _)
+
+/-- Membership in `unitsLieSubalgebraOfSubgroup K` is membership in the Lie algebra of `K`. -/
+theorem mem_unitsLieSubalgebraOfSubgroup (K : Subgroup Rˣ) (x : R) :
+    x ∈ unitsLieSubalgebraOfSubgroup K ↔
+      (unitsLieAlgebraLieEquiv (R := R)).symm x ∈ lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) K :=
+  Iff.rfl
+
+/-- For a closed subgroup `K` of `Rˣ`, an element of `R` lies in its Lie algebra exactly when the
+Banach-algebra exponential line it generates stays inside `K`. -/
+theorem mem_unitsLieSubalgebraOfSubgroup_iff {K : Subgroup Rˣ} (hK : IsClosed (K : Set Rˣ))
+    (x : R) : x ∈ unitsLieSubalgebraOfSubgroup K ↔ ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ K :=
+  unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hK x
 
 end TauCeti.Lie

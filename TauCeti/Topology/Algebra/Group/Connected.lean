@@ -29,6 +29,8 @@ connected one.
   connected when a subgroup and the corresponding coset quotient are preconnected.
 * `Subgroup.connectedComponentOfOne_le_of_isOpen`: an open subgroup contains the identity
   component.
+* `Subgroup.ambientConnectedComponentOfOne`: the identity component of a subgroup, as a subgroup of
+  the ambient group, with carrier `connectedComponentIn H 1`; it is closed when `H` is.
 * `TauCeti.exists_pow_mem_connectedComponentOfOne`: in a group with finitely many connected
   components, some positive power of each element lies in the identity component.
 * `Subgroup.closure_eq_connectedComponentOfOne_of_mem_nhds_one_of_subset`: a neighbourhood of
@@ -131,6 +133,42 @@ theorem _root_.Subgroup.connectedComponentOfOne_le_of_isOpen {H : Subgroup G}
   -- An open subgroup is also closed, so the connected component of `1` cannot leave it.
   fun _ hg ↦ IsClopen.connectedComponent_subset ⟨H.isClosed_of_isOpen hH, hH⟩ H.one_mem hg
 
+/-- The identity component of a subgroup `H`, as a subgroup of the ambient group: the image of
+the identity component of `H` under the inclusion. -/
+def _root_.Subgroup.ambientConnectedComponentOfOne (H : Subgroup G) : Subgroup G :=
+  (Subgroup.connectedComponentOfOne H).map H.subtype
+
+/-- Membership in the identity component of a subgroup `H`, viewed in the ambient group. -/
+theorem _root_.Subgroup.mem_ambientConnectedComponentOfOne {H : Subgroup G} {g : G} :
+    g ∈ H.ambientConnectedComponentOfOne ↔
+      ∃ x ∈ Subgroup.connectedComponentOfOne H, (x : G) = g :=
+  Subgroup.mem_map
+
+/-- The carrier of `Subgroup.ambientConnectedComponentOfOne H` is the connected component of `1`
+in `H`. -/
+theorem _root_.Subgroup.coe_ambientConnectedComponentOfOne (H : Subgroup G) :
+    (H.ambientConnectedComponentOfOne : Set G) = connectedComponentIn (H : Set G) 1 := by
+  rw [connectedComponentIn_eq_image H.one_mem]
+  exact Subgroup.coe_map _ _
+
+/-- The identity component of a subgroup is contained in it. -/
+theorem _root_.Subgroup.ambientConnectedComponentOfOne_le (H : Subgroup G) :
+    H.ambientConnectedComponentOfOne ≤ H :=
+  Subgroup.map_subtype_le _
+
+/-- The identity component of a subgroup is preconnected. -/
+theorem _root_.Subgroup.isPreconnected_ambientConnectedComponentOfOne (H : Subgroup G) :
+    IsPreconnected (H.ambientConnectedComponentOfOne : Set G) := by
+  rw [Subgroup.coe_ambientConnectedComponentOfOne]
+  exact isPreconnected_connectedComponentIn
+
+/-- The identity component of a closed subgroup is closed. -/
+theorem _root_.Subgroup.isClosed_ambientConnectedComponentOfOne {H : Subgroup G}
+    (hH : IsClosed (H : Set G)) : IsClosed (H.ambientConnectedComponentOfOne : Set G) := by
+  rw [Subgroup.ambientConnectedComponentOfOne, Subgroup.coe_map]
+  exact hH.isClosedEmbedding_subtypeVal.isClosedMap _ isClosed_connectedComponent
+
+open scoped Pointwise in
 /-- In a topological group with finitely many connected components, some positive power of each
 element lies in the identity component. -/
 theorem exists_pow_mem_connectedComponentOfOne [Finite (ConnectedComponents G)] (p : G) :
@@ -141,14 +179,13 @@ theorem exists_pow_mem_connectedComponentOfOne [Finite (ConnectedComponents G)] 
       (h : ConnectedComponents.mk (p ^ i) = ConnectedComponents.mk (p ^ j)) :
       ∃ m : ℕ, 0 < m ∧ p ^ m ∈ Subgroup.connectedComponentOfOne G := by
     refine ⟨j - i, Nat.sub_pos_of_lt hij, ?_⟩
-    have hj : p ^ j ∈ connectedComponent (p ^ i) :=
-      ConnectedComponents.coe_eq_coe.1 h ▸ mem_connectedComponent
-    have hsub := (Homeomorph.mulLeft (p ^ i)⁻¹).continuous.image_connectedComponent_subset
-      (p ^ i) ⟨p ^ j, hj, rfl⟩
-    simp only [Homeomorph.coe_mulLeft, inv_mul_cancel] at hsub
-    rw [Subgroup.mem_connectedComponentOfOne_iff]
-    convert hsub using 1
-    rw [eq_inv_mul_iff_mul_eq, ← pow_add, Nat.add_sub_cancel' hij.le]
+    have hj : p ^ j ∈ p ^ i • connectedComponent (1 : G) := by
+      rw [smul_connectedComponent, mul_one]
+      exact ConnectedComponents.coe_eq_coe.1 h ▸ mem_connectedComponent
+    have heq : (p ^ i)⁻¹ • p ^ j = p ^ (j - i) := by
+      rw [smul_eq_mul, inv_mul_eq_iff_eq_mul, ← pow_add, Nat.add_sub_cancel' hij.le]
+    rw [Subgroup.mem_connectedComponentOfOne_iff, ← heq]
+    exact Set.mem_smul_set_iff_inv_smul_mem.1 hj
   obtain ⟨i, j, hij, h⟩ :=
     Finite.exists_ne_map_eq_of_infinite fun k : ℕ ↦ ConnectedComponents.mk (p ^ k)
   rcases hij.lt_or_gt with hij | hij
