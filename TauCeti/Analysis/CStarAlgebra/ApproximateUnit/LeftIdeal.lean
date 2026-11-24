@@ -27,21 +27,24 @@ inverse is needed in the algebra. If `star x * x ≤ b`, then `‖x - x * e‖ ^
 
 Indexing by finite sets `F ⊆ L` and `δ > 0`, and taking `b_F = ∑ x ∈ F, star x * x ∈ L`, the net
 `e_{F,δ} = resolventCutoff δ b_F` is the required approximate identity. Taking stars gives the
-corresponding left approximate identity in a right ideal, and when `L` is norm separable,
-finite initial segments of a dense sequence give an approximate identity indexed by `ℕ`.
+corresponding left approximate identity in a right ideal, and when the ideal is norm separable,
+finite initial segments of a dense sequence give such approximate identities indexed by `ℕ`.
 
 ## Main declarations
 
 * `TauCeti.CStarAlgebra.resolventCutoff`: the element `b (δ + b)⁻¹`, with
+  `resolventCutoff_eq_mul_inverse` (the inverse taken in `Unitization ℂ A`),
   `resolventCutoff_nonneg`, `norm_resolventCutoff_le_one`, `resolventCutoff_mem` (membership in a
   left ideal containing `b`) and the estimate `norm_sub_mul_resolventCutoff_sq_le`.
-* `TauCeti.CStarAlgebra.tendsto_mul_resolventCutoff_sum`: convergence of the net `e_{F,δ}`.
+* `TauCeti.CStarAlgebra.tendsto_mul_resolventCutoff`: `x * resolventCutoff δᵢ bᵢ → x` along any
+  filter with `δᵢ → 0⁺` and eventually `star x * x ≤ bᵢ`; `tendsto_mul_resolventCutoff_sum` is
+  the case of the net `e_{F,δ}`.
 * `Submodule.exists_rightApproximateUnit`: a left ideal has a positive contractive right
   approximate identity in itself, which is a two-sided one on the elements `x ∈ L` with
   `star x ∈ L`.
 * `Submodule.exists_leftApproximateUnit`: the same for right ideals, on the other side.
-* `Submodule.exists_seq_rightApproximateUnit`: a separable left ideal has such an approximate
-  identity indexed by `ℕ`.
+* `Submodule.exists_seq_rightApproximateUnit`, `Submodule.exists_seq_leftApproximateUnit`: the
+  same two statements for norm-separable ideals, with approximate identities indexed by `ℕ`.
 
 ## References
 
@@ -71,6 +74,11 @@ omit [PartialOrder A] [StarOrderedRing A] in
 theorem resolventCutoff_def (δ : ℝ) (b : A) :
     resolventCutoff δ b = cfcₙ (fun t : ℝ ↦ t / (δ + t)) b :=
   (rfl)
+
+omit [PartialOrder A] [StarOrderedRing A] in
+@[simp]
+theorem resolventCutoff_zero_right (δ : ℝ) : resolventCutoff δ (0 : A) = 0 :=
+  cfcₙ_apply_zero
 
 /-- `b (δ + b)⁻¹` is positive for `δ ≥ 0` and positive `b`. -/
 theorem resolventCutoff_nonneg {δ : ℝ} (hδ : 0 ≤ δ) {b : A} (hb : 0 ≤ b) :
@@ -113,6 +121,34 @@ theorem resolventCutoff_eq_inv_smul {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 �
             (continuousOn_id.sub hfm),
           cfcₙ_sub (fun t : ℝ ↦ t) (fun t : ℝ ↦ t / (δ + t) * t) b (hg := hfm),
           cfcₙ_mul (fun t : ℝ ↦ t / (δ + t)) (fun t : ℝ ↦ t) b (hf := hf), cfcₙ_id' ℝ b]
+
+/-- `e = b (δ + b)⁻¹` satisfies `e (δ + b) = b` in the unitization `Unitization ℂ A`. -/
+theorem resolventCutoff_mul_algebraMap_add {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 ≤ b) :
+    ((resolventCutoff δ b : A) : Unitization ℂ A) * (algebraMap ℝ (Unitization ℂ A) δ + b) = b := by
+  have h := resolventCutoff_eq_inv_smul hδ hb
+  have h' : δ • resolventCutoff δ b + resolventCutoff δ b * b = b := by
+    nth_rw 1 [h]
+    rw [smul_inv_smul₀ hδ.ne']
+    abel
+  rw [mul_add, ← Algebra.commutes, Algebra.algebraMap_eq_smul_one, smul_one_mul,
+    ← Unitization.inr_mul, ← Unitization.inr_smul, ← Unitization.inr_add, h']
+
+/-- `δ + b` is invertible in the unitization `Unitization ℂ A` for `δ > 0` and positive `b`. -/
+theorem isUnit_algebraMap_add {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 ≤ b) :
+    IsUnit (algebraMap ℝ (Unitization ℂ A) δ + b) := by
+  have hσ : -δ ∉ spectrum ℝ (b : Unitization ℂ A) := by
+    rw [← Unitization.quasispectrum_eq_spectrum_inr' ℝ ℂ]
+    exact fun h ↦ (neg_neg_of_pos hδ).not_ge (quasispectrum_nonneg_of_nonneg b hb _ h)
+  simpa [sub_eq_add_neg, add_comm] using (spectrum.notMem_iff.mp hσ).neg
+
+/-- `resolventCutoff δ b` is `b (δ + b)⁻¹`, with the inverse taken in the unitization
+`Unitization ℂ A`, for `δ > 0` and positive `b`. -/
+theorem resolventCutoff_eq_mul_inverse {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 ≤ b) :
+    ((resolventCutoff δ b : A) : Unitization ℂ A) =
+      b * Ring.inverse (algebraMap ℝ (Unitization ℂ A) δ + b) := by
+  rw [← mul_one ((resolventCutoff δ b : A) : Unitization ℂ A),
+    ← Ring.mul_inverse_cancel _ (isUnit_algebraMap_add hδ hb), ← mul_assoc,
+    resolventCutoff_mul_algebraMap_add hδ hb]
 
 /-- `b (δ + b)⁻¹` lies in every complex left ideal that contains the positive element `b`; the
 ideal need not be closed. -/
@@ -160,24 +196,31 @@ theorem norm_sub_mul_resolventCutoff_sq_le {δ : ℝ} (hδ : 0 < δ) {x b : A}
         rw [div_pow, Real.sq_sqrt hδ.le]
         norm_num
 
+/-- Along any filter on which `δᵢ → 0⁺` and eventually `star x * x ≤ bᵢ`, the elements
+`bᵢ (δᵢ + bᵢ)⁻¹` are right units for `x` in the limit: `x * resolventCutoff δᵢ bᵢ → x`. -/
+theorem tendsto_mul_resolventCutoff {ι : Type*} {l : Filter ι} {δ : ι → ℝ} {b : ι → A} {x : A}
+    (hδ : Tendsto δ l (𝓝[>] 0)) (hxb : ∀ᶠ i in l, star x * x ≤ b i) :
+    Tendsto (fun i ↦ x * resolventCutoff (δ i) (b i)) l (𝓝 x) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hs : Tendsto (fun i ↦ √(δ i / 4)) l (𝓝 0) := by
+    have : Tendsto (fun δ : ℝ ↦ √(δ / 4)) (𝓝 0) (𝓝 0) := by
+      simpa using (show Continuous fun δ : ℝ ↦ √(δ / 4) by fun_prop).tendsto 0
+    exact (this.mono_left nhdsWithin_le_nhds).comp hδ
+  refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ hs
+  filter_upwards [hδ self_mem_nhdsWithin, hxb] with i hi hxi
+  rw [norm_sub_rev]
+  exact Real.le_sqrt_of_sq_le (norm_sub_mul_resolventCutoff_sq_le hi hxi)
+
 /-- For a set `S`, the net `e_{F,δ} = b_F (δ + b_F)⁻¹`, with `b_F = ∑ y ∈ F, star y * y`, indexed
 by finite subsets `F` of `S` (ordered by inclusion) and `δ → 0⁺`, is a right approximate identity
 for `S`: `x * e_{F,δ} → x` for every `x ∈ S`. -/
 theorem tendsto_mul_resolventCutoff_sum {S : Set A} {x : A} (hx : x ∈ S) :
     Tendsto (fun p : Finset S × ℝ ↦ x * resolventCutoff p.2 (∑ y ∈ p.1, star (y : A) * y))
-      (atTop ×ˢ 𝓝[>] 0) (𝓝 x) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hs : Tendsto (fun p : Finset S × ℝ ↦ √(p.2 / 4)) (atTop ×ˢ 𝓝[>] 0) (𝓝 0) := by
-    have : Tendsto (fun δ : ℝ ↦ √(δ / 4)) (𝓝 0) (𝓝 0) := by
-      simpa using (show Continuous fun δ : ℝ ↦ √(δ / 4) by fun_prop).tendsto 0
-    exact (this.mono_left nhdsWithin_le_nhds).comp tendsto_snd
-  refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ hs
-  filter_upwards [prod_mem_prod (eventually_ge_atTop {⟨x, hx⟩}) self_mem_nhdsWithin] with
-    ⟨F, δ⟩ ⟨hF, hδ⟩
-  rw [norm_sub_rev]
-  refine Real.le_sqrt_of_sq_le (norm_sub_mul_resolventCutoff_sq_le hδ ?_)
-  exact Finset.single_le_sum (f := fun y : S ↦ star (y : A) * y)
-    (fun _ _ ↦ star_mul_self_nonneg _) (hF (Finset.mem_singleton_self _))
+      (atTop ×ˢ 𝓝[>] 0) (𝓝 x) :=
+  tendsto_mul_resolventCutoff tendsto_snd <| tendsto_fst.eventually
+    (eventually_ge_atTop {⟨x, hx⟩}) |>.mono fun _ hF ↦
+      Finset.single_le_sum (f := fun y : S ↦ star (y : A) * y)
+        (fun _ _ ↦ star_mul_self_nonneg _) (hF (Finset.mem_singleton_self _))
 
 end TauCeti.CStarAlgebra
 
@@ -211,6 +254,13 @@ theorem exists_rightApproximateUnit (L : Submodule ℂ A) (hL : ∀ a : A, ∀ x
   simpa using TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x)
     (hpos.mono fun _ ↦ IsSelfAdjoint.of_nonneg) (hright _ hx')
 
+omit [PartialOrder A] [StarOrderedRing A] in
+/-- The image `star R` of a complex right ideal `R` is a complex left ideal. -/
+private theorem exists_star_leftIdeal (R : Submodule ℂ A) (hR : ∀ a : A, ∀ x ∈ R, x * a ∈ R) :
+    ∃ L : Submodule ℂ A, (∀ x, x ∈ L ↔ star x ∈ R) ∧ ∀ a : A, ∀ x ∈ L, a * x ∈ L := by
+  refine ⟨R.comap (starLinearEquiv ℂ (A := A)).toLinearMap, fun x ↦ by simp, fun a x hx ↦ ?_⟩
+  simpa [star_mul] using hR (star a) _ (by simpa using hx)
+
 /-- A complex right ideal `R` of a C⋆-algebra, not necessarily closed, has a left approximate
 identity of positive contractions lying in `R` itself: a proper filter along which `e * x → x`
 for every `x ∈ R`. It is a two-sided approximate identity for the elements `x ∈ R` with
@@ -219,59 +269,80 @@ theorem exists_leftApproximateUnit (R : Submodule ℂ A) (hR : ∀ a : A, ∀ x 
     ∃ l : Filter A, l.NeBot ∧ (∀ᶠ e in l, e ∈ R) ∧ (∀ᶠ e in l, 0 ≤ e) ∧ (∀ᶠ e in l, ‖e‖ ≤ 1) ∧
       (∀ x ∈ R, Tendsto (· * x) l (𝓝 x)) ∧
       ∀ x ∈ R, star x ∈ R → Tendsto (x * ·) l (𝓝 x) := by
-  -- The image `star R` is a left ideal; positive elements of `star R` lie in `R`.
-  set L : Submodule ℂ A := R.comap (starLinearEquiv ℂ (A := A)).toLinearMap
-  have hmem {x : A} : x ∈ L ↔ star x ∈ R := by
-    simp [L]
-  have hL (a : A) (x : A) (hx : x ∈ L) : a * x ∈ L := by
-    rw [hmem, star_mul]
-    exact hR _ _ (hmem.mp hx)
+  -- Positive elements of the left ideal `star R` lie in `R`.
+  obtain ⟨L, hmem, hL⟩ := R.exists_star_leftIdeal hR
   obtain ⟨l, hl, hmemL, hpos, hnorm, hright, -⟩ := L.exists_rightApproximateUnit hL
   have hsa : ∀ᶠ e in l, IsSelfAdjoint e := hpos.mono fun _ ↦ IsSelfAdjoint.of_nonneg
   refine ⟨l, hl, ?_, hpos, hnorm, fun x hx ↦ ?_, fun x _ hx' ↦ ?_⟩
   · filter_upwards [hmemL, hsa] with e he hsa
-    simpa [hsa.star_eq] using hmem.mp he
+    simpa [hsa.star_eq] using (hmem e).mp he
   · simpa using TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x) hsa
-      (hright _ (hmem.mpr (by simpa)))
-  · exact hright x (hmem.mpr hx')
+      (hright _ ((hmem _).mpr (by simpa)))
+  · exact hright x ((hmem x).mpr hx')
 
 /-- A norm-separable complex left ideal `L` of a C⋆-algebra, not necessarily closed, has a
-sequential right approximate identity of positive contractions lying in `L`. The `n`-th term is
-`b_n (1 / (n + 1) + b_n)⁻¹`, where `b_n = ∑ k ≤ n, star (u k) * u k` for a dense sequence `u`
-in `L`. -/
+sequential right approximate identity of positive contractions lying in `L`: `x * e n → x` for
+every `x ∈ L`. It is a two-sided approximate identity for the elements `x ∈ L` with
+`star x ∈ L`. -/
 theorem exists_seq_rightApproximateUnit (L : Submodule ℂ A) (hL : ∀ a : A, ∀ x ∈ L, a * x ∈ L)
     [TopologicalSpace.SeparableSpace L] :
     ∃ e : ℕ → A, (∀ n, e n ∈ L) ∧ (∀ n, 0 ≤ e n) ∧ (∀ n, ‖e n‖ ≤ 1) ∧
-      ∀ x ∈ L, Tendsto (fun n ↦ x * e n) atTop (𝓝 x) := by
+      (∀ x ∈ L, Tendsto (fun n ↦ x * e n) atTop (𝓝 x)) ∧
+      ∀ x ∈ L, star x ∈ L → Tendsto (fun n ↦ e n * x) atTop (𝓝 x) := by
+  -- The `n`-th term is `b_n (1 / (n + 1) + b_n)⁻¹`, where `b_n = ∑ k ≤ n, star (u k) * u k` for
+  -- a dense sequence `u` in `L`.
   obtain ⟨u, hu⟩ := TopologicalSpace.exists_dense_seq L
   set b : ℕ → A := fun n ↦ ∑ k ∈ Finset.range (n + 1), star (u k : A) * u k
   set e : ℕ → A := fun n ↦ resolventCutoff (1 / (n + 1)) (b n)
   have hb (n : ℕ) : 0 ≤ b n := Finset.sum_nonneg fun _ _ ↦ star_mul_self_nonneg _
   have hδ (n : ℕ) : (0 : ℝ) < 1 / (n + 1) := by positivity
   have hnorm (n : ℕ) : ‖e n‖ ≤ 1 := norm_resolventCutoff_le_one (hδ n).le (hb n)
-  -- Convergence holds on the dense sequence, by the estimate of
-  -- `norm_sub_mul_resolventCutoff_sq_le`.
-  have hdense (k : ℕ) : Tendsto (fun n ↦ (u k : A) * e n) atTop (𝓝 (u k)) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    have hs : Tendsto (fun n : ℕ ↦ √((1 / ((n : ℝ) + 1)) / 4)) atTop (𝓝 0) := by
-      have : Tendsto (fun δ : ℝ ↦ √(δ / 4)) (𝓝 0) (𝓝 0) := by
-        simpa using (show Continuous fun δ : ℝ ↦ √(δ / 4) by fun_prop).tendsto 0
-      exact this.comp tendsto_one_div_add_atTop_nhds_zero_nat
-    refine squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) ?_ hs
-    filter_upwards [eventually_ge_atTop k] with n hn
-    rw [norm_sub_rev]
-    refine Real.le_sqrt_of_sq_le (norm_sub_mul_resolventCutoff_sq_le (hδ n) ?_)
-    exact Finset.single_le_sum (f := fun k ↦ star (u k : A) * u k)
-      (fun _ _ ↦ star_mul_self_nonneg _) (Finset.mem_range.mpr (Nat.lt_succ_of_le hn))
+  have hpos (n : ℕ) : 0 ≤ e n := resolventCutoff_nonneg (hδ n).le (hb n)
+  -- Convergence holds on the dense sequence.
+  have hdense (k : ℕ) : Tendsto (fun n ↦ (u k : A) * e n) atTop (𝓝 (u k)) :=
+    tendsto_mul_resolventCutoff (tendsto_nhdsWithin_iff.mpr
+      ⟨tendsto_one_div_add_atTop_nhds_zero_nat, .of_forall hδ⟩) <|
+      (eventually_ge_atTop k).mono fun n hn ↦
+        Finset.single_le_sum (f := fun k ↦ star (u k : A) * u k)
+          (fun _ _ ↦ star_mul_self_nonneg _) (Finset.mem_range.mpr (Nat.lt_succ_of_le hn))
   -- The maps `x ↦ x * e n` are `1`-Lipschitz, so the convergence set is closed.
   have hequi : Equicontinuous fun n (x : L) ↦ (x : A) * e n :=
     (LipschitzWith.uniformEquicontinuous _ 1 fun n ↦ LipschitzWith.of_dist_le_mul fun x y ↦ by
       simpa [dist_eq_norm, ← sub_mul] using
         (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) (hnorm n))).equicontinuous
+  have hright (x : A) (hx : x ∈ L) : Tendsto (fun n ↦ x * e n) atTop (𝓝 x) :=
+    hu.induction_on (p := fun y : L ↦ Tendsto (fun n ↦ (y : A) * e n) atTop (𝓝 (y : A)))
+      ⟨x, hx⟩ (hequi.isClosed_setOfPred_tendsto continuous_subtypeVal) hdense
   refine ⟨e, fun n ↦
     resolventCutoff_mem hL (hδ n) (hb n) (L.sum_mem fun k _ ↦ hL _ _ (u k).property),
-    fun n ↦ resolventCutoff_nonneg (hδ n).le (hb n), hnorm, fun x hx ↦ ?_⟩
-  exact hu.induction_on (p := fun y : L ↦ Tendsto (fun n ↦ (y : A) * e n) atTop (𝓝 (y : A)))
-    ⟨x, hx⟩ (hequi.isClosed_setOfPred_tendsto continuous_subtypeVal) hdense
+    hpos, hnorm, hright, fun x _ hx' ↦ ?_⟩
+  simpa [Function.comp_def] using tendsto_map'_iff.mp <|
+    TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x) (l := Filter.map e atTop)
+      (eventually_map.mpr <| .of_forall fun n ↦ (hpos n).isSelfAdjoint)
+      (tendsto_map'_iff.mpr (hright _ hx'))
+
+/-- A norm-separable complex right ideal `R` of a C⋆-algebra, not necessarily closed, has a
+sequential left approximate identity of positive contractions lying in `R`: `e n * x → x` for
+every `x ∈ R`. It is a two-sided approximate identity for the elements `x ∈ R` with
+`star x ∈ R`. -/
+theorem exists_seq_leftApproximateUnit (R : Submodule ℂ A) (hR : ∀ a : A, ∀ x ∈ R, x * a ∈ R)
+    [TopologicalSpace.SeparableSpace R] :
+    ∃ e : ℕ → A, (∀ n, e n ∈ R) ∧ (∀ n, 0 ≤ e n) ∧ (∀ n, ‖e n‖ ≤ 1) ∧
+      (∀ x ∈ R, Tendsto (fun n ↦ e n * x) atTop (𝓝 x)) ∧
+      ∀ x ∈ R, star x ∈ R → Tendsto (fun n ↦ x * e n) atTop (𝓝 x) := by
+  obtain ⟨L, hmem, hL⟩ := R.exists_star_leftIdeal hR
+  -- The left ideal `star R` is separable, as the image of `R` under `star`.
+  have hsurj : Function.Surjective fun x : R ↦
+      (⟨star (x : A), (hmem _).mpr (by simp)⟩ : L) :=
+    fun y ↦ ⟨⟨star (y : A), (hmem _).mp y.property⟩, by ext; simp⟩
+  have : TopologicalSpace.SeparableSpace L :=
+    hsurj.denseRange.separableSpace (continuous_subtypeVal.star.subtype_mk _)
+  obtain ⟨e, hmemL, hpos, hnorm, hright, -⟩ := L.exists_seq_rightApproximateUnit hL
+  refine ⟨e, fun n ↦ by simpa [(hpos n).isSelfAdjoint.star_eq] using (hmem _).mp (hmemL n), hpos,
+    hnorm, fun x hx ↦ ?_, fun x _ hx' ↦ hright x ((hmem x).mpr hx')⟩
+  simpa [Function.comp_def] using tendsto_map'_iff.mp <|
+    TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x) (l := Filter.map e atTop)
+      (eventually_map.mpr <| .of_forall fun n ↦ (hpos n).isSelfAdjoint)
+      (tendsto_map'_iff.mpr (hright _ ((hmem _).mpr (by simpa))))
 
 end Submodule
