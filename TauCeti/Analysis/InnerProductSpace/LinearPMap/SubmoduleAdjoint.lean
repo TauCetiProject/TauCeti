@@ -6,6 +6,7 @@ Authors: Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
+import TauCeti.Analysis.Normed.Operator.Dense
 import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
@@ -32,6 +33,8 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
   operator.
 * `LinearPMap.adjoint_adjoint`, `LinearPMap.adjoint_adjoint_apply`: `T†† = T` for a closed
   densely defined operator.
+* `LinearPMap.tendsto_inner_apply_of_isClosable`: for closable `A`, a family `uᵢ → 0` of
+  `dom A` with `‖A uᵢ‖` eventually bounded has `A uᵢ → 0` weakly.
 * `ContinuousLinearMap.compPMap_adjoint`: the adjoint of `W ∘ M` for a bounded
   operator `W` and an arbitrary partial linear map `M` is `M† ∘ W†` on its maximal
   domain.
@@ -51,6 +54,7 @@ Adapted from the Kitware DKPS formalization, originally authored in `ForTauCeti`
 
 public section
 
+open Filter Topology
 open scoped InnerProductSpace LinearPMap
 
 namespace Submodule
@@ -261,6 +265,27 @@ theorem adjoint_adjoint {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T
 theorem adjoint_adjoint_apply {T : E →ₗ.[𝕜] F} (hT : T.IsClosed) (hd : Dense (T.domain : Set E))
     (x : T.domain) : T.adjoint.adjoint ⟨x, (adjoint_adjoint hT hd).symm ▸ x.property⟩ = T x :=
   (adjoint_adjoint hT hd).le.2 rfl
+
+/-- For a closable `A` and a family `uᵢ → 0` of `dom A` with `‖A uᵢ‖` eventually bounded, the
+vectors `A uᵢ` tend to zero weakly: they do so against the dense domain of the adjoint
+(`LinearPMap.dense_adjoint_domain`), and they are bounded. -/
+theorem tendsto_inner_apply_of_isClosable {A : E →ₗ.[𝕜] F} (hA : A.IsClosable) {ι : Type*}
+    {l : Filter ι} {u : ι → A.domain} {C : ℝ} (hu : Tendsto (fun i ↦ (u i : E)) l (𝓝 0))
+    (hAu : ∀ᶠ i in l, ‖A (u i)‖ ≤ C) (k : F) : Tendsto (fun i ↦ ⟪A (u i), k⟫_𝕜) l (𝓝 0) := by
+  have hD (b : F) (hb : b ∈ A.adjoint.domain) :
+      Tendsto (fun i ↦ ⟪A (u i), b⟫_𝕜) l (𝓝 0) := by
+    -- On `dom A†`, `x ↦ ⟪b, A x⟫` is continuous, so it tends to `0` along `uₙ → 0`.
+    have hc : Continuous ((innerₛₗ 𝕜 b).comp A.toFun) := (A.mem_adjoint_domain_iff b).mp hb
+    have h₁ : Tendsto (fun i ↦ ⟪b, A (u i)⟫_𝕜) l (𝓝 0) := by
+      simpa [Function.comp_def] using
+        (hc.tendsto 0).comp (tendsto_subtype_rng.mpr (by simpa using hu))
+    simpa [Function.comp_def, inner_conj_symm] using
+      ((RCLike.continuous_conj (K := 𝕜)).tendsto 0).comp h₁
+  have := ContinuousLinearMap.tendsto_apply_of_dense (dense_adjoint_domain hA) (l := l)
+    (f := fun i ↦ innerSL 𝕜 (A (u i))) (g := 0) (C := C)
+    (hAu.mono fun i hi ↦ (innerSL_apply_norm 𝕜 _).trans_le hi)
+    (fun b hb ↦ by simpa using hD b hb) k
+  simpa using this
 
 end LinearPMap
 
