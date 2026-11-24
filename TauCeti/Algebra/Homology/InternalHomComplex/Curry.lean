@@ -93,8 +93,8 @@ def curryInternalHom (w : Cochain (tensorObj K L) M n) : Cochain L (internalHomC
     (internalHomComplexHomEquiv K M (L.X q) r).symm (curryInternalHomAux w q r hqr)
 
 /-- The component of the curried cochain on `K^p ⊗ L^q` is `(-1)^{pq} w_{p,q}`. -/
-lemma curryInternalHom_v_v (w : Cochain (tensorObj K L) M n) {q r : ℤ} (hqr : q + n = r)
-    {p s : ℤ} (hps : p + r = s) {i : ℤ} (hi : p + q = i) :
+lemma internalHomComplexHomEquiv_curryInternalHom_v_v (w : Cochain (tensorObj K L) M n) {q r : ℤ}
+    (hqr : q + n = r) {p s : ℤ} (hps : p + r = s) {i : ℤ} (hi : p + q = i) :
     (internalHomComplexHomEquiv K M (L.X q) r (w.curryInternalHom.v q r hqr)).v p s hps =
       (p * q).negOnePow • (ιTensorObj K L p q i hi ≫ w.v i s (by omega)) := by
   subst hi
@@ -123,16 +123,17 @@ lemma curryInternalHom_uncurryInternalHom (z : Cochain L (internalHomComplex K M
   ext q r hqr : 1
   refine (internalHomComplexHomEquiv K M (L.X q) r).injective ?_
   ext p s hps
-  rw [curryInternalHom_v_v _ hqr hps rfl, ιTensorObj_uncurryInternalHom_v _ _ _ hqr, smul_smul,
-    Int.units_mul_self, one_smul]
+  rw [internalHomComplexHomEquiv_curryInternalHom_v_v _ hqr hps rfl,
+    ιTensorObj_uncurryInternalHom_v _ _ _ hqr, smul_smul, Int.units_mul_self, one_smul]
 
 @[simp]
 lemma uncurryInternalHom_curryInternalHom (w : Cochain (tensorObj K L) M n) :
     w.curryInternalHom.uncurryInternalHom = w := by
   ext i j hij : 1
   refine mapBifunctor.hom_ext fun p q h ↦ ?_
-  rw [ιTensorObj_uncurryInternalHom_v _ _ _ rfl, curryInternalHom_v_v _ rfl _ h, smul_smul,
-    Int.units_mul_self, one_smul]
+  rw [ιTensorObj_uncurryInternalHom_v _ _ _ rfl,
+    internalHomComplexHomEquiv_curryInternalHom_v_v _ rfl _ h, smul_smul, Int.units_mul_self,
+    one_smul]
 
 variable (K L M n) in
 /-- Currying, as an additive equivalence between the cochains of degree `n` from `K ⊗ L` to `M`
@@ -147,8 +148,8 @@ def curryInternalHomAddEquiv :
     ext q r hqr : 1
     refine (internalHomComplexHomEquiv K M (L.X q) r).injective ?_
     ext p s hps
-    simp only [Cochain.add_v, map_add, curryInternalHom_v_v _ hqr hps rfl, Preadditive.comp_add,
-      smul_add]
+    simp only [Cochain.add_v, map_add,
+      internalHomComplexHomEquiv_curryInternalHom_v_v _ hqr hps rfl, Preadditive.comp_add, smul_add]
 
 @[simp]
 lemma curryInternalHomAddEquiv_apply (w : Cochain (tensorObj K L) M n) :
@@ -196,10 +197,10 @@ lemma δ_curryInternalHom (w : Cochain (tensorObj K L) M n) (m : ℤ) :
   ext p s hps
   rw [Cochain.add_v, Cochain.smul_v, Cochain.zero_cochain_comp_v, Cochain.ofHom_v,
     δ_v (r - 1) r (by omega) _ p s hps (s - 1) (p + 1) rfl rfl,
-    curryInternalHom_v_v _ _ _ (rfl : p + q = p + q),
-    curryInternalHom_v_v _ _ _ (by omega : p + 1 + q = p + q + 1),
-    curryInternalHom_v_v _ _ _ (by omega : p + (q + 1) = p + q + 1),
-    curryInternalHom_v_v _ hqr hps (rfl : p + q = p + q),
+    internalHomComplexHomEquiv_curryInternalHom_v_v _ _ _ (rfl : p + q = p + q),
+    internalHomComplexHomEquiv_curryInternalHom_v_v _ _ _ (by omega : p + 1 + q = p + q + 1),
+    internalHomComplexHomEquiv_curryInternalHom_v_v _ _ _ (by omega : p + (q + 1) = p + q + 1),
+    internalHomComplexHomEquiv_curryInternalHom_v_v _ hqr hps (rfl : p + q = p + q),
     δ_v n m hnm w (p + q) s (by omega) (s - 1) (p + q + 1) rfl rfl]
   simp only [Preadditive.comp_add, Preadditive.add_comp, Linear.comp_units_smul,
     Linear.units_smul_comp, Category.assoc, smul_add, smul_smul,
@@ -227,7 +228,8 @@ lemma curryInternalHom_comp_ofHom {M' : CochainComplex C ℤ} (w : Cochain (tens
   ext q r hqr : 1
   refine (internalHomComplexHomEquiv K M' (L.X q) r).injective ?_
   ext p s hps
-  simp [TauCeti.internalHomComplexHomEquiv_comp_postcomp_f, curryInternalHom_v_v _ hqr hps rfl]
+  simp [TauCeti.internalHomComplexHomEquiv_comp_postcomp_f,
+    internalHomComplexHomEquiv_curryInternalHom_v_v _ hqr hps rfl]
 
 /-- Currying is natural in the second tensor factor `L`, which becomes the source. -/
 lemma curryInternalHom_ofHom_id_tensorHom_comp {L' : CochainComplex C ℤ} [HasTensor K L']
@@ -237,8 +239,8 @@ lemma curryInternalHom_ofHom_id_tensorHom_comp {L' : CochainComplex C ℤ} [HasT
   ext q r hqr : 1
   refine (internalHomComplexHomEquiv K M (L'.X q) r).injective ?_
   ext p s hps
-  simp [internalHomComplexHomEquiv_comp, curryInternalHom_v_v _ hqr hps rfl,
-    ι_mapBifunctorMap_assoc]
+  simp [internalHomComplexHomEquiv_comp,
+    internalHomComplexHomEquiv_curryInternalHom_v_v _ hqr hps rfl, ι_mapBifunctorMap_assoc]
 
 /-- Currying is natural in the first tensor factor `K`, which becomes the source of the internal
 Hom complex. -/
@@ -250,8 +252,8 @@ lemma curryInternalHom_ofHom_tensorHom_id_comp {K' : CochainComplex C ℤ} [HasT
   ext q r hqr : 1
   refine (internalHomComplexHomEquiv K' M (L.X q) r).injective ?_
   ext p s hps
-  simp [TauCeti.internalHomComplexHomEquiv_comp_precomp_f, curryInternalHom_v_v _ hqr hps rfl,
-    ι_mapBifunctorMap_assoc]
+  simp [TauCeti.internalHomComplexHomEquiv_comp_precomp_f,
+    internalHomComplexHomEquiv_curryInternalHom_v_v _ hqr hps rfl, ι_mapBifunctorMap_assoc]
 
 end Naturality
 
@@ -305,7 +307,7 @@ lemma internalHomComplexHomEquiv_tensorObjInternalHomComplexHomEquiv_f_v
       (p * q).negOnePow • (ιTensorObj K L p q s hps ≫ f.f s) := by
   have h := Cochain.congr_v (ofHom_tensorObjInternalHomComplexHomEquiv f) q q (add_zero q)
   rw [Cochain.ofHom_v] at h
-  rw [h, Cochain.curryInternalHom_v_v _ _ hps hps, Cochain.ofHom_v]
+  rw [h, Cochain.internalHomComplexHomEquiv_curryInternalHom_v_v _ _ hps hps, Cochain.ofHom_v]
 
 /-- The component of the uncurried morphism on `K^p ⊗ L^q` is `(-1)^{pq}` times the component at
 `p` of the cochain from `K ⊗ L^q` to `M` corresponding to `g_q`. -/
