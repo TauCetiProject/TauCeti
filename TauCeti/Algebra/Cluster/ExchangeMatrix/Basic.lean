@@ -460,15 +460,13 @@ theorem extendFrozen_matrix_frozen_reindex {K' J' F' : Type*}
       (B.extendFrozen e).matrix (Sum.inr (eF.symm f)) (eK.symm k) := by
   classical
   let q := (eJ.symm.toEmbedding.trans e).trans eF.toEmbedding
+  have hqa (j : J') : q j = eF (e (eJ.symm j)) := rfl
   by_cases hf : eF.symm f ∈ Set.range e
   · obtain ⟨j, hj⟩ := hf
     have hfj : f = q (eJ j) := by
-      simp only [q, Function.Embedding.trans_apply, Equiv.toEmbedding_apply,
-        Equiv.symm_apply_apply]
-      rw [hj, Equiv.apply_symm_apply]
+      simp [hqa, hj]
     rw [hfj, extendFrozen_matrix_inr]
-    simp only [q, Function.Embedding.trans_apply, Equiv.toEmbedding_apply,
-      Equiv.symm_apply_apply, reindex_matrix, Matrix.submatrix_apply,
+    simp only [hqa, Equiv.symm_apply_apply, reindex_matrix, Matrix.submatrix_apply,
       Equiv.sumCongr_symm, Equiv.sumCongr_apply, Sum.map_inr]
     rw [extendFrozen_matrix_inr]
   · have hq : f ∉ Set.range q := by
@@ -476,8 +474,7 @@ theorem extendFrozen_matrix_frozen_reindex {K' J' F' : Type*}
       apply hf
       refine ⟨eJ.symm j, ?_⟩
       have he := congrArg eF.symm hj
-      simpa only [q, Function.Embedding.trans_apply, Equiv.toEmbedding_apply,
-        Equiv.symm_apply_apply] using he
+      simpa only [hqa, Equiv.symm_apply_apply] using he
     rw [extendFrozen_matrix_of_notMem_range _ _ _ hq,
       extendFrozen_matrix_of_notMem_range _ _ _ hf]
 
