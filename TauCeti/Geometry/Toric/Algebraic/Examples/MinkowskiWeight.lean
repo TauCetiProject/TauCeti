@@ -40,17 +40,13 @@ open Module
 
 namespace TauCeti.Toric
 
-private theorem finrank_span_hull_singleton {x : Fin 1 → ℝ} (hx : x ≠ 0) :
-    finrank ℝ (Submodule.span ℝ (PointedCone.hull ℝ {x} : Set (Fin 1 → ℝ))) = 1 := by
-  rw [PointedCone.hull, Submodule.span_span_of_tower, finrank_span_singleton hx]
-
 private theorem finrank_span_affineRayCone :
     finrank ℝ (Submodule.span ℝ (affineRayCone : Set (Fin 1 → ℝ))) = 1 := by
-  rw [affineRayCone_def, finrank_span_hull_singleton one_ne_zero]
+  rw [affineRayCone_def, PointedCone.finrank_span_coe_hull_singleton one_ne_zero]
 
 private theorem finrank_span_negativeRayCone :
     finrank ℝ (Submodule.span ℝ (negativeRayCone : Set (Fin 1 → ℝ))) = 1 := by
-  rw [negativeRayCone_def, finrank_span_hull_singleton (neg_ne_zero.2 one_ne_zero)]
+  rw [negativeRayCone_def, PointedCone.finrank_span_coe_hull_singleton (neg_ne_zero.2 one_ne_zero)]
 
 private theorem finrank_span_bot :
     finrank ℝ (Submodule.span ℝ ((⊥ : PointedCone ℝ (Fin 1 → ℝ)) : Set (Fin 1 → ℝ))) =
