@@ -119,13 +119,11 @@ theorem mapRingHom_smoothedStickelberger {b : ℕ} (hb : b.Coprime m) :
   have hm : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
   set v := ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val
   -- The representative of `c⁻¹ b` is `b v mod m`, and `b v = m ⌊b v / m⌋ + (b v mod m)`.
-  have hval : (((ZMod.unitOfCoprime b hb)⁻¹ * c)⁻¹ : (ZMod m)ˣ).val.val = b * v % m := by
-    simp [v, mul_comm, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast]
   have h : (m : ℚ) * (b * v / m : ℕ) + (b * v % m : ℕ) = b * v := by
     exact_mod_cast Nat.div_add_mod (b * v) m
   simp only [coeff_mapRingHom, coeff_smoothedStickelberger, sub_mul, coeff_sub, Finsupp.sub_apply,
-    coeff_natCast_mul, coeff_single_mul_apply, coeff_stickelberger, hval, Int.coe_castRingHom,
-    Int.cast_natCast, one_mul]
+    coeff_natCast_mul, coeff_single_mul_apply, coeff_stickelberger, mul_inv_rev, inv_inv,
+    ZMod.val_mul_unitOfCoprime, Int.coe_castRingHom, Int.cast_natCast, one_mul]
   field_simp
   linear_combination h
 
@@ -145,10 +143,8 @@ theorem smoothedStickelberger_mul (b : ℕ) {d : ℕ} (hd : d.Coprime m) :
   ext c
   set v := ((c⁻¹ : (ZMod m)ˣ) : ZMod m).val
   -- The representative of `c⁻¹ d` is `d v mod m`; write `d v = m q + r` with `r = d v mod m`.
-  have hval : (((ZMod.unitOfCoprime d hd)⁻¹ * c)⁻¹ : (ZMod m)ˣ).val.val = d * v % m := by
-    simp [v, mul_comm, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast]
   simp only [coeff_smoothedStickelberger, coeff_add, Finsupp.add_apply, coeff_natCast_mul,
-    coeff_single_mul_apply, hval, one_mul]
+    coeff_single_mul_apply, mul_inv_rev, inv_inv, ZMod.val_mul_unitOfCoprime, one_mul]
   conv_lhs => rw [mul_assoc, ← Nat.div_add_mod (d * v) m, mul_add, ← mul_assoc, mul_comm b m,
     mul_assoc, Nat.mul_add_div (NeZero.pos m)]
   push_cast

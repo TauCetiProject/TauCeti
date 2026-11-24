@@ -129,9 +129,9 @@ theorem stickelbergerDenominatorIdeal_eq_ker :
     stickelbergerDenominatorIdeal m =
       RingHom.ker (lift ℤ (ZMod m) (ZMod m)ˣ (Units.coeHom (ZMod m))) := by
   ext x
-  rw [mem_stickelbergerDenominatorIdeal, RingHom.mem_ker, lift_apply_eq_sum]
-  rw [← SetLike.mem_coe, RingHom.coe_range, coe_mapRingHom, range_map, Set.mem_ofPred_eq]
-  simp only [← coe_mapRingHom, coeff_mapRingHom_mul_stickelberger]
+  rw [mem_stickelbergerDenominatorIdeal, RingHom.mem_ker, lift_apply_eq_sum,
+    mem_range_mapRingHom_iff]
+  simp only [coeff_mapRingHom_mul_stickelberger]
   -- Each coefficient condition is the vanishing of `c⁻¹ ∑_a n_a a` in `ZMod m`.
   have key : ∀ c : (ZMod m)ˣ, ((m : ℤ) ∣ ∑ a : (ZMod m)ˣ,
       x.coeff a * ((c⁻¹ * a : (ZMod m)ˣ) : ZMod m).val) ↔
@@ -141,9 +141,9 @@ theorem stickelbergerDenominatorIdeal_eq_ker :
     simp only [ZMod.natCast_val, ZMod.cast_id', id, Units.coeHom_apply, zsmul_eq_mul]
     conv_rhs => rw [← (c⁻¹).isUnit.mul_right_eq_zero, Finset.mul_sum]
     exact Iff.of_eq (congrArg (· = 0) (Finset.sum_congr rfl fun a _ ↦ by ring))
-  have hdiv (n : ℤ) : (n : ℚ) / m ∈ Set.range ((↑) : ℤ → ℚ) ↔ (m : ℤ) ∣ n := by
+  have hdiv (n : ℤ) : (n : ℚ) / m ∈ (Int.castRingHom ℚ).range ↔ (m : ℤ) ∣ n := by
     exact_mod_cast Rat.intCast_div_intCast_mem_range_iff (Int.natCast_ne_zero.2 (NeZero.ne m)) n
-  simp only [AddMonoidHom.coe_ofClass, Int.coe_castRingHom, hdiv, key]
+  simp only [hdiv, key]
   exact ⟨fun h ↦ h 1, fun h _ ↦ h⟩
 
 /-- **Congruence criterion for the denominator ideal.** `∑_a n_a [a] ∈ J_m` exactly when
