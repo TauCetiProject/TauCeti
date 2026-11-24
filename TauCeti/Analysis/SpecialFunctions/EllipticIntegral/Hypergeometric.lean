@@ -149,13 +149,12 @@ theorem legendreEc_eq_ordinaryHypergeometric {k : ℝ} (hk : k ^ 2 < 1) :
 
 /-- The complete elliptic integral `D(k) = (K(k) - E(k))/k²` (DLMF 19.2.6) is a hypergeometric
 function of the squared modulus (DLMF 15.9.26): for `0 < k² < 1`,
-`(K(k) - E(k))/k² = (π/4) ₂F₁(1/2, 3/2; 2; k²)`.
-
-The proof is termwise: the constant terms of the series of `K` and `E` cancel, and since
-`(1/2)ₙ₊₁ - (-1/2)ₙ₊₁ = (n + 1) (1/2)ₙ`, the `(n + 1)`-st term of their difference is `k²/2` times
-the `n`-th term of `₂F₁(1/2, 3/2; 2; k²)`. -/
+`(K(k) - E(k))/k² = (π/4) ₂F₁(1/2, 3/2; 2; k²)`. -/
 theorem legendreD_eq_ordinaryHypergeometric {k : ℝ} (hk₀ : 0 < k ^ 2) (hk : k ^ 2 < 1) :
     (legendreK k - legendreEc k) / k ^ 2 = π / 4 * ₂F₁ (1 / 2 : ℝ) (3 / 2) 2 (k ^ 2) := by
+  -- Termwise: the constant terms of the series of `K` and `E` cancel, and since
+  -- `(1/2)ₙ₊₁ - (-1/2)ₙ₊₁ = (n + 1) (1/2)ₙ`, the `(n + 1)`-st term of their difference is `k²/2`
+  -- times the `n`-th term of `₂F₁(1/2, 3/2; 2; k²)`.
   rw [legendreK_eq_ordinaryHypergeometric hk, legendreEc_eq_ordinaryHypergeometric hk, ← mul_sub]
   set m := k ^ 2
   have hm : ‖m‖ < 1 := by rwa [Real.norm_of_nonneg hk₀.le]
@@ -180,12 +179,11 @@ theorem legendreD_eq_ordinaryHypergeometric {k : ℝ} (hk₀ : 0 < k ^ 2) (hk : 
       norm_num
     have h3 : (ascPochhammer ℝ n).eval (3 / 2 : ℝ) =
         2 * ((ascPochhammer ℝ n).eval (1 / 2) * (1 / 2 + n)) := by
-      rw [← h1, hl, show (1 / 2 : ℝ) + 1 = 3 / 2 by norm_num]
+      rw [← h1, hl]
+      norm_num
       ring
     have h4 : (ascPochhammer ℝ n).eval (2 : ℝ) = ((n + 1)! : ℝ) := by
-      have h := hl 1
-      rw [ascPochhammer_eval_one, one_add_one_eq_two, one_mul] at h
-      exact_mod_cast h.symm
+      simpa [Nat.add_comm 1 n, one_add_one_eq_two] using factorial_mul_ascPochhammer ℝ 1 n
     have hn : (n ! : ℝ) ≠ 0 := by positivity
     simp only [ordinaryHypergeometricCoefficient, smul_eq_mul, h1, h2, h3, h4,
       ascPochhammer_eval_one, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
