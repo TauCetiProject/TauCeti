@@ -1090,29 +1090,25 @@ private theorem toTop_apply (f : CkHolderSpaceOn k α (⊤ : Opens E) F) (x : E)
 private theorem norm_toTop (f : CkHolderSpaceOn k α (⊤ : Opens E) F) :
     ‖toTop f‖ = ‖f‖ := by
   have hcoe : ⇑(toTop f) = f.extend := CkHolderSpace.coe_ofContDiff ..
-  have hfield (i : Fin (k + 1)) : ‖(toTop f).iteratedFDeriv i‖ = ‖f.iteratedFDeriv i‖ := by
-    apply le_antisymm
-    · refine (BoundedContinuousFunction.norm_le (norm_nonneg (f.iteratedFDeriv i))).2 fun x ↦ ?_
+  have hle : ‖toTop f‖ ≤ ‖f‖ := by
+    have hfield (i : Fin (k + 1)) : ‖(toTop f).iteratedFDeriv i‖ ≤ ‖f.iteratedFDeriv i‖ := by
+      refine (BoundedContinuousFunction.norm_le (norm_nonneg (f.iteratedFDeriv i))).2 fun x ↦ ?_
       rw [← CkHolderSpace.iteratedFDeriv_eq, hcoe, f.iteratedFDeriv_extend i ⟨x, trivial⟩]
       exact (f.iteratedFDeriv i).norm_coe_le_norm ⟨x, trivial⟩
-    · refine (BoundedContinuousFunction.norm_le (norm_nonneg ((toTop f).iteratedFDeriv i))).2
-        fun x ↦ ?_
-      rw [← f.iteratedFDeriv_extend i x, ← hcoe, CkHolderSpace.iteratedFDeriv_eq]
-      exact ((toTop f).iteratedFDeriv i).norm_coe_le_norm x.val
-  have htop : nnHolderNorm α (_root_.iteratedFDeriv ℝ k (toTop f)) =
-      nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : (⊤ : Opens E) →
-        E [×k]→L[ℝ] F) := by
-    refine le_antisymm ?_ ?_
-    · rw [hcoe]
-      exact (holderOnWith_univ.mp f.holderOnWith_iteratedFDeriv_extend).nnholderNorm_le
-    · have hdom : (f.iteratedFDeriv (Fin.last k) : (⊤ : Opens E) → E [×k]→L[ℝ] F) =
-          ((⊤ : Opens E) : Set E).domRestrict (_root_.iteratedFDeriv ℝ k (toTop f)) :=
-        funext fun x ↦ (f.iteratedFDeriv_eq (fun y ↦ toTop_apply f y.val) (Fin.last k) x).symm
-      rw [hdom]
-      exact ((toTop f).memHolder_iteratedFDeriv.holderWith.holderOnWith
-        ((⊤ : Opens E) : Set E)).holderWith.nnholderNorm_le
-  rw [CkHolderSpace.norm_eq, norm_eq]
-  simp only [hfield, htop]
+    have htop : (nnHolderNorm α (_root_.iteratedFDeriv ℝ k (toTop f)) : ℝ) ≤
+        nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : (⊤ : Opens E) →
+          E [×k]→L[ℝ] F) := by
+      rw [hcoe]
+      exact_mod_cast (holderOnWith_univ.mp f.holderOnWith_iteratedFDeriv_extend).nnholderNorm_le
+    rw [CkHolderSpace.norm_eq, norm_eq]
+    exact add_le_add (Finset.sum_le_sum fun i _ ↦ hfield i) htop
+  have hge : ‖f‖ ≤ ‖toTop f‖ := by
+    have hf : f = CkHolderSpace.restrictOnL (⊤ : Opens E) (toTop f) :=
+      ext fun x ↦ ((CkHolderSpace.restrictOnL_apply ..).trans (toTop_apply f x.val)).symm
+    conv_lhs => rw [hf]
+    exact ((CkHolderSpace.restrictOnL (⊤ : Opens E)).le_opNorm (toTop f)).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (CkHolderSpace.norm_restrictOnL_le_one (⊤ : Opens E)))
+  exact le_antisymm hle hge
 
 /-- On `⊤ : Opens E`, `CkHolderSpaceOn k α ⊤ F ≃ₗᵢ[ℝ] CkHolderSpace k α E F`. -/
 def equivTop :
