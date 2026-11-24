@@ -47,6 +47,21 @@ number, the local index of `(z, w) ↦ u₁ z - u₂ w` at `(z₀, w₀)`, and i
 for the standard complex structure of `ℂ²`, of the local intersection multiplicities of distinct
 branches of pseudoholomorphic curves in a four-manifold.
 
+The same positivity of real Jacobians shows that local indices do not change under changes of
+coordinates whose derivative at the point is complex linear and injective: on the target, for the
+difference `a - b` of two maps
+(`TauCeti.HomologicalOrientation.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt`), and on the
+source (`TauCeti.HomologicalOrientation.localIndex_comp_eq_of_hasStrictFDerivAt`). These are the
+specializations of the real statements
+`TauCeti.HomologicalOrientation.localIndex_eq_sign_det_mul_of_apply_eq_sub` and
+`TauCeti.HomologicalOrientation.localIndex_comp_eq_mul_sign_det`. The target changes include the
+unitary maps and the holomorphic changes of coordinates, which preserve the standard complex
+structure. A `C¹` chart whose derivative at the intersection point carries a different complex
+structure there to the standard one has a derivative that is not complex linear for the standard
+structure; such charts fall under the real statement
+`TauCeti.HomologicalOrientation.localIndex_eq_sign_det_mul_of_apply_eq_sub`, once the sign of its
+real Jacobian determinant is known.
+
 ## Proof
 
 A complex-linear map has real determinant `|det_ℂ|²` (`LinearMap.det_restrictScalars_eq_normSq`),
@@ -76,6 +91,10 @@ positive number of preimages.
 
 * `TauCeti.HomologicalOrientation.localIndex_eq_one_of_hasFDerivAt`: at a point with invertible
   complex derivative the local index is `1`.
+* `TauCeti.HomologicalOrientation.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt`,
+  `TauCeti.HomologicalOrientation.localIndex_comp_eq_of_hasStrictFDerivAt`: local indices are
+  invariant under changes of coordinates of the target and of the source with complex-linear
+  derivative.
 * `TauCeti.HomologicalOrientation.degree_eq_ncard_of_hasFDerivAt`: the degree of a proper map is the
   number of preimages of a value whose preimages have invertible complex derivatives.
 * `TauCeti.HomologicalOrientation.localIndex_eq_ncard_of_hasFDerivAt`: the local index counts the
@@ -114,39 +133,10 @@ namespace TauCeti
 
 namespace HomologicalOrientation
 
-section Holomorphic
+section Real
 
-variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E] {n : ℕ}
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
   (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
-
-include hE in
-/-- **The local index at a point with invertible complex derivative is `1`.** If `f` is complex
-differentiable at `x` with injective derivative, its local index at `x`, for the same orientation of
-`E` on source and target, is `1`: the real Jacobian determinant `|det_ℂ f'|²` is positive. -/
-theorem localIndex_eq_one_of_hasFDerivAt {f : C(E, E)} {f' : E →L[ℂ] E} {x : E}
-    (hf : HasFDerivAt f f' x) (hf' : Function.Injective f') : o.localIndex o f x = 1 := by
-  have hpos : 0 < (f'.restrictScalars ℝ).det :=
-    LinearMap.det_restrictScalars_pos_iff_injective.2 hf'
-  rw [o.localIndex_eq_sign_det hE (hf.restrictScalars ℝ) hpos.ne', sign_pos hpos,
-    SignType.coe_one]
-
-include hE in
-/-- **The degree of a holomorphic proper map counts preimages.** If every preimage of `y` under the
-proper map `f : E → E` is a point where `f` is complex differentiable with injective derivative,
-then the degree of `f` is the number of preimages of `y`. -/
-theorem degree_eq_ncard_of_hasFDerivAt {f : C(E, E)} (hf : IsProperMap f) {f' : E → E →L[ℂ] E}
-    {y : E} (hderiv : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
-    (hinj : ∀ x ∈ f ⁻¹' {y}, Function.Injective (f' x)) :
-    o.degree o hE f = (f ⁻¹' {y}).ncard := by
-  have hpos (x : E) (hx : x ∈ f ⁻¹' {y}) : 0 < ((f' x).restrictScalars ℝ).det :=
-    LinearMap.det_restrictScalars_pos_iff_injective.2 (hinj x hx)
-  have h₁ : {x | 0 < ((f' x).restrictScalars ℝ).det} ∩ f ⁻¹' {y} = f ⁻¹' {y} :=
-    inter_eq_right.2 fun x hx ↦ hpos x hx
-  have h₂ : {x | ((f' x).restrictScalars ℝ).det < 0} ∩ f ⁻¹' {y} = ∅ :=
-    eq_empty_iff_forall_notMem.2 fun x hx ↦ (hpos x hx.2).not_gt hx.1
-  rw [o.degree_eq_ncard_sub_ncard hE hf (f' := fun x ↦ (f' x).restrictScalars ℝ)
-    (fun x hx ↦ (hderiv x hx).restrictScalars ℝ) fun x hx ↦ (hpos x hx).ne', h₁, h₂,
-    ncard_empty, Nat.cast_zero, sub_zero]
 
 include hE in
 /-- If `x` is the only solution of `f z = f x` in the ball of radius `r` about `x`, and `f` stays
@@ -162,7 +152,7 @@ private theorem exists_isProperMap_eqOn_localIndex_eq_degree {f : C(E, E)} {x : 
       (∀ y, ‖y - f x‖ < δ → g ⁻¹' {y} = {z ∈ ball x r | f z = y}) ∧
       o.localIndex o f x = o.degree o hE g := by
   obtain ⟨g, hgp, hgf, hgout⟩ :=
-    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr hδ hfδ
+    f.continuous.continuousOn.exists_isProperMap_eqOn_closedBall_and_le_norm_sub hr.le hδ hfδ
   -- Outside the open ball `g` stays at distance at least `δ` from `f x`, so its fibre over a value
   -- `y` within `δ` of `f x` is the set of solutions in the open ball.
   have hgfib (y : E) (hy : ‖y - f x‖ < δ) : g ⁻¹' {y} = {z ∈ ball x r | f z = y} := by
@@ -182,6 +172,77 @@ private theorem exists_isProperMap_eqOn_localIndex_eq_degree {f : C(E, E)} {x : 
     eventually_of_mem (ball_mem_nhds x hr) fun _ hw ↦ hgf (ball_subset_closedBall hw)
   rw [o.localIndex_congr o hE hgf_nhds.symm, ← o.localDegree_eq_localIndex o hE hE g hfib₀,
     o.localDegree_eq_degree o hE hE hgp]
+
+end Real
+
+section Holomorphic
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E] {n : ℕ}
+  (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
+
+include hE in
+/-- **The local index at a point with invertible complex derivative is `1`.** If `f` is complex
+differentiable at `x` with injective derivative, its local index at `x`, for the same orientation of
+`E` on source and target, is `1`: the real Jacobian determinant `|det_ℂ f'|²` is positive. -/
+theorem localIndex_eq_one_of_hasFDerivAt {f : C(E, E)} {f' : E →L[ℂ] E} {x : E}
+    (hf : HasFDerivAt f f' x) (hf' : Function.Injective f') : o.localIndex o f x = 1 := by
+  have hpos : 0 < (f'.restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 hf'
+  rw [o.localIndex_eq_sign_det hE (hf.restrictScalars ℝ) hpos.ne', sign_pos hpos,
+    SignType.coe_one]
+
+include hE in
+/-- **Local intersection indices are invariant under changes of coordinates of the target with
+complex-linear derivative.** Let `F p = a p - b p` for maps `a, b : M → E` continuous at `x` with
+`a x = b x`. If `Ψ : E → E` is strictly differentiable at `a x` with an injective complex-linear
+derivative, such as a holomorphic chart or a unitary map, then `G' p = Ψ (a p) - Ψ (b p)` has the
+same local index as `F` at `x`: the real Jacobian determinant `|det_ℂ|²` of the derivative is
+positive. -/
+theorem localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt {M G : Type} [TopologicalSpace M]
+    [T2Space M] [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+    [ChartedSpace G M] (o₀ : HomologicalOrientation M G n) (hG : finrank ℝ G = n)
+    {F G' : C(M, E)} {a b : M → E} {Ψ : E → E} {L : E →L[ℂ] E} {x : M}
+    (hF : ∀ p, F p = a p - b p) (hG' : ∀ p, G' p = Ψ (a p) - Ψ (b p))
+    (ha : ContinuousAt a x) (hb : ContinuousAt b x) (hab : a x = b x)
+    (hΨ : HasStrictFDerivAt Ψ (L.restrictScalars ℝ) (a x)) (hL : Function.Injective L) :
+    o₀.localIndex o G' x = o₀.localIndex o F x := by
+  have hpos : 0 < (L.restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 hL
+  rw [o₀.localIndex_eq_sign_det_mul_of_apply_eq_sub o hG hE hF hG' ha hb hab hΨ hpos.ne',
+    sign_pos hpos, SignType.coe_one, one_mul]
+
+include hE in
+/-- **Local indices are invariant under changes of coordinates of the source with complex-linear
+derivative.** If `φ : E → E` is strictly differentiable at `x` with an injective complex-linear
+derivative, such as a holomorphic reparametrization, then the local index of `F ∘ φ` at `x` is
+that of `F` at `φ x`. -/
+theorem localIndex_comp_eq_of_hasStrictFDerivAt {N G : Type} [TopologicalSpace N] [T2Space N]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [ChartedSpace G N]
+    (o' : HomologicalOrientation N G n) (hG : finrank ℝ G = n) {F : C(E, N)} {φ : C(E, E)}
+    {φ' : E →L[ℂ] E} {x : E} (hφ : HasStrictFDerivAt φ (φ'.restrictScalars ℝ) x)
+    (hφ' : Function.Injective φ') : o.localIndex o' (F.comp φ) x = o.localIndex o' F (φ x) := by
+  have hpos : 0 < (φ'.restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 hφ'
+  rw [o.localIndex_comp_eq_mul_sign_det o' hE hG hφ hpos.ne', sign_pos hpos, SignType.coe_one,
+    mul_one]
+
+include hE in
+/-- **The degree of a holomorphic proper map counts preimages.** If every preimage of `y` under the
+proper map `f : E → E` is a point where `f` is complex differentiable with injective derivative,
+then the degree of `f` is the number of preimages of `y`. -/
+theorem degree_eq_ncard_of_hasFDerivAt {f : C(E, E)} (hf : IsProperMap f) {f' : E → E →L[ℂ] E}
+    {y : E} (hderiv : ∀ x ∈ f ⁻¹' {y}, HasFDerivAt f (f' x) x)
+    (hinj : ∀ x ∈ f ⁻¹' {y}, Function.Injective (f' x)) :
+    o.degree o hE f = (f ⁻¹' {y}).ncard := by
+  have hpos (x : E) (hx : x ∈ f ⁻¹' {y}) : 0 < ((f' x).restrictScalars ℝ).det :=
+    LinearMap.det_restrictScalars_pos_iff_injective.2 (hinj x hx)
+  have h₁ : {x | 0 < ((f' x).restrictScalars ℝ).det} ∩ f ⁻¹' {y} = f ⁻¹' {y} :=
+    inter_eq_right.2 fun x hx ↦ hpos x hx
+  have h₂ : {x | ((f' x).restrictScalars ℝ).det < 0} ∩ f ⁻¹' {y} = ∅ :=
+    eq_empty_iff_forall_notMem.2 fun x hx ↦ (hpos x hx.2).not_gt hx.1
+  rw [o.degree_eq_ncard_sub_ncard hE hf (f' := fun x ↦ (f' x).restrictScalars ℝ)
+    (fun x hx ↦ (hderiv x hx).restrictScalars ℝ) fun x hx ↦ (hpos x hx).ne', h₁, h₂,
+    ncard_empty, Nat.cast_zero, sub_zero]
 
 include hE in
 /-- **The local index of a holomorphic map counts nearby solutions.** Suppose that `x` is the only
@@ -255,13 +316,13 @@ at distance at least `δ` from `f x` on the sphere of radius `r`, the map `f` an
 whose degree is the local index of `f` at `x`, equal to `f + c • (· - x)` on the closed ball, and
 at distance at least `δ - ‖c‖ r` from `f x` outside the open ball. -/
 private theorem exists_isProperMap_localIndex_eq_degree {f : C(E, E)} {x : E} {r δ : ℝ}
-    (hr : 0 < r) (hδ : 0 < δ) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
+    (hr : 0 < r) (hfδ : ∀ z ∈ sphere x r, δ ≤ ‖f z - f x‖)
     (hiso : ∀ z ∈ ball x r, f z = f x → z = x) {c : ℂ} (hc : ‖c‖ * r < δ) :
     ∃ G : C(E, E), IsProperMap G ∧ o.localIndex o f x = o.degree o hE G ∧
       EqOn G (fun z ↦ f z + c • (z - x)) (closedBall x r) ∧
       ∀ z, r ≤ dist z x → δ - ‖c‖ * r ≤ ‖G z - f x‖ := by
-  obtain ⟨g, hgp, hgf, hgout, -, hidx⟩ :=
-    o.exists_isProperMap_eqOn_localIndex_eq_degree hE hr hδ hfδ hiso
+  obtain ⟨g, hgp, hgf, hgout, -, hidx⟩ := o.exists_isProperMap_eqOn_localIndex_eq_degree hE hr
+    ((mul_nonneg (norm_nonneg c) hr.le).trans_lt hc) hfδ hiso
   -- The perturbation `t • c • ρ`, with `ρ z = radialRetraction r (z - x)` equal to `z - x` on the
   -- closed ball and of norm at most `r`.
   set ρ : E → E := fun z ↦ radialRetraction r (z - x) with hρ_def
@@ -339,7 +400,7 @@ theorem localIndex_pos_of_analyticAt {f : C(E, E)} {x : E} (hf : AnalyticAt ℂ 
     exact (lt_div_iff₀ hr).1 hεδ
   -- The local index of `f` is the degree of a proper map `G`, equal to `f + ε (· - x)` near `x`,
   -- complex differentiable there with derivative `Df + ε`, which is invertible at `x`.
-  obtain ⟨G, hGp, hidx, hGf, hGout⟩ := o.exists_isProperMap_localIndex_eq_degree hE hr hδ hfδ
+  obtain ⟨G, hGp, hidx, hGf, hGout⟩ := o.exists_isProperMap_localIndex_eq_degree hE hr hfδ
     (fun z hz ↦ hiso' z (ball_subset_closedBall hz)) hεr
   have hGeq {z : E} (hz : z ∈ ball x (R / 2)) :
       (G : E → E) =ᶠ[𝓝 z] fun w ↦ f w + (ε : ℂ) • (w - x) :=

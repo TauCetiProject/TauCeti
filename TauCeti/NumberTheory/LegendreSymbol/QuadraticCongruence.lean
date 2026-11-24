@@ -127,7 +127,7 @@ theorem natCard_sq_sub_self_add_one_eq_zero_prime_pow (hp3 : p ≠ 3) {k : ℕ}
     rw [h0, Nat.cast_zero, Nat.cast_ofNat, _root_.legendreSym.at_two (p := 3) (by norm_num)]
     decide
   have h2 : IsUnit (2 : ZMod (p ^ k)) := by
-    rw [ZMod.isUnit_prime_pow_iff_castHom_ne_zero p k (Nat.pos_of_ne_zero hk), map_ofNat]
+    rw [ZMod.isUnit_prime_pow_iff_castHom_ne_zero p k hk, map_ofNat]
     exact Ring.two_ne_zero (by rwa [ZMod.ringChar_zmod_n])
   -- Completing the square: `x ↦ 2 x - 1` carries the roots of `x² - x + 1` to the square roots
   -- of `-3`, since `(2 x - 1)² + 3 = 4 (x² - x + 1)`.

@@ -14,7 +14,8 @@ public import Mathlib.Geometry.Manifold.ContMDiffMap
 This file evaluates Mathlib's basic bundled `C^n` maps (`ContMDiffMap.id`, `ContMDiffMap.const`,
 `ContMDiffMap.fst`, `ContMDiffMap.snd`, and `ContMDiffMap.prodMk`) pointwise, and defines the
 `C^n` function `e^{t f}` of a real `C^n` function `f` (`ContMDiffMap.expMul`), with inverse
-`e^{-t f}` (`ContMDiffMap.expMul_mul_expMul_neg`).
+`e^{-t f}` (`ContMDiffMap.expMul_mul_expMul_neg`). A continuous map is a `C⁰` map
+(`ContMDiffMap.ofContinuous`), with the order written as the cast of the natural number `0`.
 -/
 
 public section
@@ -57,6 +58,18 @@ theorem snd_apply (p : M × M') : (snd : C^n⟮I.prod I', M × M'; I', M'⟯) p 
 theorem prodMk_apply (f : C^n⟮J, N; I, M⟯) (g : C^n⟮J, N; I', M'⟯) (x : N) :
     f.prodMk g x = (f x, g x) :=
   rfl
+
+/-- A continuous map as a `C⁰` map, with the order written as the cast of the natural number `0`,
+the form in which `TauCeti.CompactChartAtlas.CkHolderSpace 0` asks for it. -/
+def ofContinuous (f : M → M') (hf : Continuous f) : C^(0 : ℕ)⟮I, M; I', M'⟯ :=
+  ⟨f, by
+    rw [Nat.cast_zero]
+    exact contMDiff_zero_iff.mpr hf⟩
+
+@[simp]
+theorem coe_ofContinuous (f : M → M') (hf : Continuous f) :
+    ⇑(ofContinuous (I := I) (I' := I') f hf) = f :=
+  (rfl)
 
 section Exp
 

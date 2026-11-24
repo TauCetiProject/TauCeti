@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.Normal.Basic
+public import Mathlib.FieldTheory.IntermediateField.Basic
 
 /-!
 # Conjugate intermediate fields
@@ -29,9 +29,6 @@ under that action.
   the underlying set and the elements of a translated intermediate field.
 * `AlgEquiv.smul_intermediateField_def`: an automorphism acts by mapping along it.
 * `IntermediateField.mem_conjugateFields_iff`: orbit membership is an automorphism image.
-* `IntermediateField.nonempty_algEquiv_iff_exists_map_eq`: inside a normal extension, two
-  intermediate fields are `K`-isomorphic exactly when an ambient `K`-automorphism carries one onto
-  the other.
 -/
 
 public section
@@ -100,24 +97,5 @@ def conjugateFields (E : IntermediateField K L) : Set (IntermediateField K L) :=
 theorem mem_conjugateFields_iff {E E' : IntermediateField K L} :
     E' ∈ conjugateFields E ↔ ∃ σ : L ≃ₐ[K] L, E.map σ = E' := by
   simp [conjugateFields, mem_orbit_iff, eq_comm]
-
-/-- **Isomorphic intermediate fields inside a normal extension are conjugate.** Inside a normal
-extension `L / K`, two intermediate fields are `K`-isomorphic exactly when an ambient
-`K`-automorphism of `L` carries one onto the other. -/
-theorem nonempty_algEquiv_iff_exists_map_eq [Normal K L] (E₁ E₂ : IntermediateField K L) :
-    Nonempty (E₁ ≃ₐ[K] E₂) ↔ ∃ g : L ≃ₐ[K] L, E₁.map g.toAlgHom = E₂ := by
-  refine ⟨fun ⟨e⟩ ↦ ⟨e.liftNormal L, ?_⟩, fun ⟨g, hg⟩ ↦
-    ⟨(E₁.equivMap g.toAlgHom).trans (equivOfEq hg)⟩⟩
-  ext x
-  simp only [mem_map]
-  refine ⟨?_, fun hx ↦ ⟨e.symm ⟨x, hx⟩, (e.symm ⟨x, hx⟩).property, ?_⟩⟩
-  · rintro ⟨y, hy, rfl⟩
-    have h := e.liftNormal_commutes L ⟨y, hy⟩
-    rw [IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply] at h
-    exact h.symm ▸ (e ⟨y, hy⟩).property
-  · have h := e.liftNormal_commutes L (e.symm ⟨x, hx⟩)
-    rw [IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply,
-      AlgEquiv.apply_symm_apply] at h
-    exact h
 
 end IntermediateField
