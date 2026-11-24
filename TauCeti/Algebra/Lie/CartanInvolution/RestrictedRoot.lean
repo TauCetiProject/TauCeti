@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
+public import TauCeti.Algebra.Lie.Weights.Eigenvector
+public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.Order.CompactlyGenerated.Basic
 public import Mathlib.RingTheory.Noetherian.Basic
@@ -25,9 +27,9 @@ maximal abelian subspace of the `-1`-eigenspace `𝔭` of `θ`. For any automorp
 `𝔞 ⊆ 𝔭`, `θ` maps `𝔤_λ` onto `𝔤_{-λ}`, so the restricted roots are symmetric under negation,
 `λ` and `-λ` have the same multiplicity, and distinct restricted root spaces are orthogonal for
 the twisted Killing form `B_θ`. For `𝔞` maximal abelian in `𝔭`, `𝔞` is its own centralizer in
-`𝔭`, and, when `θ` is an involution and `2` is a unit, the centralizer `𝔤_0` of `𝔞` is the direct
-sum of `𝔞` and its intersection `𝔪` with the fixed subalgebra `𝔨` of `θ`. In a Noetherian Lie
-algebra every element of `𝔭` lies in a maximal abelian subspace of `𝔭`.
+`𝔭`, and, when `θ` is an involution and `2` is a unit, the centralizer `𝔤_0` of `𝔞` is the sum
+of `𝔞` and its intersection `𝔪` with the fixed subalgebra `𝔨` of `θ`. Every element of `𝔭` lies
+in a maximal abelian subspace of `𝔭`, by Zorn's lemma.
 
 ## Main definitions
 
@@ -51,7 +53,7 @@ algebra every element of `𝔭` lies in a maximal abelian subspace of `𝔭`.
   subspace of `𝔭`.
 * `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_inf_cartanP`: `𝔞` is its own
   centralizer in `𝔭`.
-* `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_sup`: `𝔤_0 = 𝔪 ⊕ 𝔞` with
+* `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_sup`: `𝔤_0 = 𝔪 + 𝔞` with
   `𝔪 = 𝔤_0 ∩ 𝔨`.
 
 ## References
@@ -83,6 +85,7 @@ def restrictedRoots (𝔞 : Submodule R L) : Set (Dual R 𝔞) :=
 
 variable {𝔞 : Submodule R L} {μ ν : Dual R 𝔞} {x y : L}
 
+@[simp]
 theorem mem_restrictedRootSpace :
     x ∈ 𝔞.restrictedRootSpace μ ↔ ∀ H : 𝔞, ⁅(H : L), x⁆ = μ H • x := by
   simp [restrictedRootSpace]
@@ -103,10 +106,8 @@ theorem le_restrictedRootSpace_zero (h𝔞 : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅
 
 /-- The bracket carries `𝔤_λ × 𝔤_μ` into `𝔤_{λ + μ}`. -/
 theorem lie_mem_restrictedRootSpace (hx : x ∈ 𝔞.restrictedRootSpace μ)
-    (hy : y ∈ 𝔞.restrictedRootSpace ν) : ⁅x, y⁆ ∈ 𝔞.restrictedRootSpace (μ + ν) := by
-  rw [mem_restrictedRootSpace] at hx hy ⊢
-  intro H
-  rw [leibniz_lie, hx, hy, smul_lie, lie_smul, LinearMap.add_apply, add_smul, add_comm]
+    (hy : y ∈ 𝔞.restrictedRootSpace ν) : ⁅x, y⁆ ∈ 𝔞.restrictedRootSpace (μ + ν) :=
+  TauCeti.lie_mem_iInf_eigenspace_ad (H := ((↑) : 𝔞 → L)) hx hy
 
 /-- The Killing form pairs `𝔤_λ` and `𝔤_μ` trivially unless `λ + μ = 0`. -/
 theorem killingForm_eq_zero_of_mem_restrictedRootSpace [NoZeroDivisors R]
@@ -124,8 +125,8 @@ theorem killingForm_eq_zero_of_mem_restrictedRootSpace [NoZeroDivisors R]
 /-- The restricted root spaces of `𝔞` are independent. -/
 theorem iSupIndep_restrictedRootSpace [IsDomain R] [IsTorsionFree R L] :
     iSupIndep 𝔞.restrictedRootSpace :=
-  (iSupIndep.iInf (fun H : 𝔞 ↦ End.eigenspace (ad R L H)) fun _ ↦
-    End.eigenspaces_iSupIndep _).comp (f := fun μ : Dual R 𝔞 ↦ ⇑μ) DFunLike.coe_injective
+  (TauCeti.iSupIndep_iInf_eigenspace fun H : 𝔞 ↦ ad R L H).comp (f := fun μ : Dual R 𝔞 ↦ ⇑μ)
+    DFunLike.coe_injective
 
 /-- A Noetherian Lie algebra has finitely many restricted roots for each submodule `𝔞`. -/
 theorem finite_restrictedRoots [IsDomain R] [IsTorsionFree R L] [IsNoetherian R L] :
@@ -236,8 +237,9 @@ theorem restrictedRootSpace_zero_inf_cartanP (h𝔞 : θ.IsMaximalAbelianInP �
     le_sup_left (mem_sup_right (mem_span_singleton_self x))
 
 /-- The centralizer `𝔤_0` of a maximal abelian subspace `𝔞` of `𝔭` is the sum of `𝔞` and
-`𝔪 = 𝔤_0 ∩ 𝔨`, for an involution when `2` is a unit. The sum is direct, since `𝔞 ⊆ 𝔭` and `𝔨`
-and `𝔭` are complementary (`LieEquiv.isCompl_fixedSubalgebra_cartanP`). -/
+`𝔪 = 𝔤_0 ∩ 𝔨`, for an involution when `2` is a unit. This states only the sum; that it is
+direct, as `𝔞 ⊆ 𝔭` and `𝔨` and `𝔭` are complementary
+(`LieEquiv.isCompl_fixedSubalgebra_cartanP`), is not proved here. -/
 theorem restrictedRootSpace_zero_eq_sup (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ)
     (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
     𝔞.restrictedRootSpace 0 =
@@ -265,18 +267,21 @@ theorem isMaximalAbelianInP_bot_iff : θ.IsMaximalAbelianInP ⊥ ↔ θ.cartanP 
   refine ⟨fun h ↦ by simpa using h.restrictedRootSpace_zero_inf_cartanP, fun h ↦ ?_⟩
   exact isMaximalAbelianInP_iff.mpr ⟨⟨bot_le, by simp⟩, fun _ h𝔟 _ ↦ h ▸ h𝔟.1⟩
 
-variable [IsNoetherian R L]
-
 variable (θ) in
-/-- In a Noetherian Lie algebra, every abelian subspace of `𝔭` lies in a maximal one. -/
+/-- Every abelian subspace of `𝔭` lies in a maximal one, by Zorn's lemma. -/
 theorem exists_isMaximalAbelianInP_ge {𝔟 : Submodule R L} (h𝔟 : 𝔟 ≤ θ.cartanP)
     (hab : ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) : ∃ 𝔞, 𝔟 ≤ 𝔞 ∧ θ.IsMaximalAbelianInP 𝔞 := by
-  obtain ⟨𝔞, h𝔟𝔞, h𝔞⟩ := exists_maximal_ge_of_wellFoundedGT
-    (fun 𝔠 : Submodule R L ↦ 𝔠 ≤ θ.cartanP ∧ ∀ x ∈ 𝔠, ∀ y ∈ 𝔠, ⁅x, y⁆ = 0) 𝔟 ⟨h𝔟, hab⟩
-  exact ⟨𝔞, h𝔟𝔞, h𝔞⟩
+  refine zorn_le_nonempty₀ {𝔠 | 𝔠 ≤ θ.cartanP ∧ ∀ x ∈ 𝔠, ∀ y ∈ 𝔠, ⁅x, y⁆ = 0}
+    (fun c hc hchain 𝔠 h𝔠 ↦ ⟨sSup c, ⟨sSup_le fun 𝔡 h𝔡 ↦ (hc h𝔡).1, fun x hx y hy ↦ ?_⟩,
+      fun _ ↦ le_sSup⟩) 𝔟 ⟨h𝔟, hab⟩
+  -- The union of a chain of abelian subspaces is abelian: `x` and `y` lie in a common member.
+  have hdir := hchain.directedOn
+  obtain ⟨𝔡, h𝔡, hx⟩ := (mem_sSup_of_directed ⟨𝔠, h𝔠⟩ hdir).mp hx
+  obtain ⟨𝔢, h𝔢, hy⟩ := (mem_sSup_of_directed ⟨𝔠, h𝔠⟩ hdir).mp hy
+  obtain ⟨𝔣, h𝔣, h𝔡𝔣, h𝔢𝔣⟩ := hdir 𝔡 h𝔡 𝔢 h𝔢
+  exact (hc h𝔣).2 x (h𝔡𝔣 hx) y (h𝔢𝔣 hy)
 
-/-- In a Noetherian Lie algebra, every element of `𝔭` lies in a maximal abelian subspace of
-`𝔭`. -/
+/-- Every element of `𝔭` lies in a maximal abelian subspace of `𝔭`. -/
 theorem exists_isMaximalAbelianInP_mem (hx : x ∈ θ.cartanP) :
     ∃ 𝔞, θ.IsMaximalAbelianInP 𝔞 ∧ x ∈ 𝔞 := by
   obtain ⟨𝔞, hx𝔞, h𝔞⟩ := exists_isMaximalAbelianInP_ge θ
@@ -286,7 +291,7 @@ theorem exists_isMaximalAbelianInP_mem (hx : x ∈ θ.cartanP) :
       simp
   exact ⟨𝔞, h𝔞, hx𝔞 (mem_span_singleton_self x)⟩
 
-/-- In a Noetherian Lie algebra, `𝔭` has a maximal abelian subspace. -/
+/-- `𝔭` has a maximal abelian subspace. -/
 theorem exists_isMaximalAbelianInP (θ : L ≃ₗ⁅R⁆ L) : ∃ 𝔞, θ.IsMaximalAbelianInP 𝔞 :=
   (exists_isMaximalAbelianInP_mem (zero_mem θ.cartanP)).imp fun _ h ↦ h.1
 
