@@ -259,18 +259,15 @@ end Mul
 theorem hochschildFace_castSucc_eq_succ_of_apply_succ_eq_one [MulOneClass A]
     (a : Fin (n + 2) → A) (j : Fin (n + 1))
     (ha : a j.succ = 1) : hochschildFace j.castSucc a = hochschildFace j.succ a := by
-  have hleft : hochschildFace j.castSucc a = Fin.removeNth j.succ a := by
-    simp [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_update_removeNth_succ, ha,
-      Fin.removeNth_apply]
-  rw [hleft]
+  rw [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_removeNth_succ_of_apply_succ_eq_one ha]
   induction j using Fin.lastCases with
   | last =>
     ext k
     cases k using Fin.cases <;> simp_all [Fin.init]
   | cast j =>
     rw [Fin.succ_castSucc] at ha ⊢
-    simp only [hochschildFace_castSucc, Fin.contractNth_castSucc_eq_update_removeNth_succ, ha,
-      one_mul, Fin.update_removeNth_succ_eq_removeNth_castSucc]
+    rw [hochschildFace_castSucc,
+      Fin.contractNth_castSucc_eq_removeNth_castSucc_of_apply_castSucc_eq_one ha]
 
 /-- In a commutative monoid every Hochschild face preserves the product of the entries. -/
 @[simp]

@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
 public import TauCeti.Analysis.Pseudodifferential.Microlocality
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Distribution
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Closure
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
+import TauCeti.Analysis.Pseudodifferential.Microlocal
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
-# Microlocality of properly supported pseudodifferential operators
+# Microlocality and elliptic regularity of properly supported pseudodifferential operators
 
 Let `a` be a scalar symbol on `ℝⁿ` whose quantization has kernel supported within distance `R` of
 the diagonal (`TauCeti.Symbol.HasNearDiagonalKernel a R`), acting on all distributions
@@ -30,6 +33,20 @@ spatial support acting on a Bessel-potential space `H^t` this is
 `TauCeti.Symbol.waveFrontSet_toDistribution_quantizeSobolev_subset`; the point here is that `T` is
 an arbitrary distribution, with no global Sobolev regularity, and that the symbol is only properly
 supported.
+
+The same holds on the Sobolev scale, where `Op(a)` loses `m` orders of microlocal regularity: if
+`T` is microlocally `H^s` at `(x, ξ)`, then `Op(a) T` is microlocally `H^{s - m}` there
+(`TauCeti.Symbol.isMicrolocallySobolevAt_quantizeDistribution`), so
+
+`WF_{s - m}(Op(a) T) ⊆ WF_s(T)` and `singsupp_{s - m}(Op(a) T) ⊆ singsupp_s(T)`
+
+(`TauCeti.Symbol.sobolevWaveFrontSet_quantizeDistribution_subset`,
+`TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_subset`). For symbols with compact
+spatial support acting on `H^t` this is
+`TauCeti.Symbol.HasCompactSpatialSupport.sobolevWaveFrontSet_toDistribution_quantizeSobolev_subset`.
+Unlike `TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_subset_cthickening`, the
+`H^{s - m}` singular support of `Op(a) T` lies in the `H^s` singular support of `T` itself, not
+only in its closed `R`-neighbourhood.
 
 ## Proof
 
@@ -48,6 +65,18 @@ The reduction to the Sobolev statement is by localization in the input and in th
   (`Distribution.exists_memSobolev_cutoffTempered`), the Sobolev statement applies to
   `Op(a) (χ T)`, and `χ T` agrees with `T` near `x₀`.
 
+The `H^s` order shift is proved by the same two localizations, from
+`TauCeti.Symbol.HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantizeSobolev`.
+
+Conversely, an elliptic operator gains back these `m` orders: if `a` is elliptic in a conic
+neighbourhood of `(x, ξ)` and `Op(a) T` is microlocally `H^s` at `(x, ξ)`, then `T` is microlocally
+`H^{s + m}` there (`Distribution.IsMicrolocallySobolevAt.of_quantizeDistribution`). The same two
+localizations reduce this to microlocal elliptic regularity on `H^t`,
+`TauCeti.Symbol.HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_of_quantizeSobolev`,
+for the cut-off symbol `ψ a`, which agrees with `a` near `x`. Letting `s` vary gives the `C^∞`
+statement `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`, and for symbols elliptic everywhere the wave front set
+and every `H^s` wave front set are preserved up to the shift by `m`.
+
 ## Main results
 
 * `TauCeti.Symbol.quantizeDistribution_toDistribution_cutoffTempered`: on a cut-off distribution,
@@ -56,13 +85,36 @@ The reduction to the Sobolev statement is by localization in the input and in th
   `WF(Op(a) T) ⊆ WF(T)` for every distribution `T`.
 * `TauCeti.Symbol.singularSupport_quantizeDistribution_subset`: **pseudolocality**,
   `singsupp (Op(a) T) ⊆ singsupp T`.
+* `TauCeti.Symbol.isMicrolocallySobolevAt_quantizeDistribution`: if `T` is microlocally `H^s` at
+  `(x, ξ)`, then `Op(a) T` is microlocally `H^{s - m}` there.
+* `TauCeti.Symbol.sobolevWaveFrontSet_quantizeDistribution_subset`: **the order shift of the `H^s`
+  wave front set**, `WF_{s - m}(Op(a) T) ⊆ WF_s(T)`.
+* `TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_subset`:
+  `singsupp_{s - m}(Op(a) T) ⊆ singsupp_s(T)`.
+* `Distribution.IsMicrolocallySobolevAt.of_quantizeDistribution`: **microlocal elliptic
+  regularity**, if `Op(a) T` is microlocally `H^s` at `(x, ξ)` and `a` is elliptic in a conic
+  neighbourhood of `(x, ξ)`, then `T` is microlocally `H^{s + m}` there.
+* `Distribution.IsMicrolocallySmoothAt.of_quantizeDistribution`: the same for microlocal
+  smoothness, `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`.
+* `TauCeti.Symbol.sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn`,
+  `TauCeti.Symbol.waveFrontSet_quantizeDistribution_of_forall_isEllipticOn`: for `a` elliptic near
+  every position, `WF_s(Op(a) T) = WF_{s + m}(T)` and `WF(Op(a) T) = WF(T)`.
+* `TauCeti.Symbol.IsEllipticAbove.sobolevWaveFrontSet_quantizeDistribution`,
+  `TauCeti.ClassicalSymbol.IsElliptic.sobolevWaveFrontSet_quantizeDistribution`: for elliptic `a`,
+  `WF_s(Op(a) T) = WF_{s + m}(T)`.
+* `TauCeti.Symbol.IsEllipticAbove.waveFrontSet_quantizeDistribution`,
+  `TauCeti.ClassicalSymbol.IsElliptic.waveFrontSet_quantizeDistribution`: for elliptic `a`,
+  `WF(Op(a) T) = WF(T)`.
 
 ## References
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008, Lecture I,
-  Proposition 7.3 (`WF(Pu) ⊆ WF(u)` for properly supported operators).
+  Proposition 7.3 (`WF(Pu) ⊆ WF(u)` for properly supported operators) and §7 (microlocal
+  parametrices, `WF(u) ⊆ WF(Pu) ∪ Char(P)`).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
   §18.1 (properly supported pseudodifferential operators and wave front sets).
+* L. Hörmander, *Lectures on Nonlinear Hyperbolic Differential Equations*, Springer, 1997,
+  §11.1 (the `H^s` wave front set and its behaviour under pseudodifferential operators).
 -/
 
 public section
@@ -70,7 +122,7 @@ public section
 noncomputable section
 
 open MeasureTheory Complex Set Metric TopologicalSpace Distribution TemperedDistribution
-open scoped SchwartzMap Distributions ContDiff
+open scoped SchwartzMap Distributions ContDiff BesselPotentialSpace Topology
 
 namespace TauCeti
 
@@ -184,15 +236,18 @@ theorem quantizeDistribution_toDistribution_cutoffTempered (ha : a.HasNearDiagon
   refine T.cutoffTempered_apply_congr χ fun x hx ↦ ?_
   rw [TestFunction.toSchwartzMapCLM_apply, eqOn_transposeTest ha hψ hψc hU hψU φ (hχU hx)]
 
-/-- Microlocality on cut-off distributions: if `χ T` is microlocally smooth at `(x₀, ξ₀)`, so is
-`Op(a) (χ T)`. Since `χ T` lies in some `H^t` and `Op(a) (χ T) = Op(ψ a) (χ T)` for a cutoff `ψ`,
-this is microlocality of operators with compact spatial support on `H^t`. -/
-private theorem isMicrolocallySmoothAt_quantizeDistribution_toDistribution_cutoffTempered
+/-- **Reduction to the Sobolev case.** On a cut-off distribution `χ T`, which lies in some `H^t`,
+`Op(a)` is the quantization on `H^t` of a symbol with compact spatial support: take the cut-off
+symbol `ψ a`, with `ψ = 1` on the closed `R`-neighbourhood of a neighbourhood of `supp χ`. This
+symbol agrees with `a` at the positions of `supp χ`. -/
+private theorem exists_quantizeDistribution_toDistribution_cutoffTempered_eq
     (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ))
-    (χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) {x₀ ξ₀ : CoordinateSpace n} (hξ₀ : ξ₀ ≠ 0)
-    (h : (toDistribution ⊤ (T.cutoffTempered χ)).IsMicrolocallySmoothAt x₀ ξ₀) :
-    (quantizeDistribution ha (toDistribution ⊤ (T.cutoffTempered χ))).IsMicrolocallySmoothAt
-      x₀ ξ₀ := by
+    (χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    ∃ (b : Symbol n ℂ ℂ (0 + m)) (hb : b.HasCompactSpatialSupport) (t : ℝ)
+      (u : H^{t}(CoordinateSpace n, ℂ)), T.cutoffTempered χ = u.toDistr ∧
+        quantizeDistribution ha (toDistribution ⊤ (T.cutoffTempered χ)) =
+          toDistribution ⊤ (b.quantizeSobolev hb t u).toDistr ∧
+        ∀ x ∈ tsupport χ, ∀ ξ, b.coefficient (x, ξ) = a.coefficient (x, ξ) := by
   -- A cutoff `ψ = 1` on the closed `R`-neighbourhood of the open set `U = thickening 1 (supp χ)`.
   have hK : IsCompact (cthickening R (cthickening 1 (tsupport χ))) :=
     χ.hasCompactSupport.isCompact.cthickening.cthickening
@@ -203,18 +258,62 @@ private theorem isMicrolocallySmoothAt_quantizeDistribution_toDistribution_cutof
   have hb := (hasCompactSpatialSupport_cutoff (V := ℂ) hψ hψc).comp_right a
   -- `χ T ∈ H^t` for some `t`, and `Op(a) (χ T) = Op(ψ a) (χ T)` there.
   obtain ⟨t, ht⟩ := T.exists_memSobolev_cutoffTempered χ
-  have hD : toDistribution ⊤ (T.cutoffTempered χ) =
-      toDistribution ⊤ ht.toBesselPotentialSpace.toDistr := by
-    rw [ht.toBesselPotentialSpace_toDistr]
-  have hOp : quantizeDistribution ha (toDistribution ⊤ (T.cutoffTempered χ)) =
-      toDistribution ⊤ (quantizeSobolev _ hb t ht.toBesselPotentialSpace).toDistr := by
-    rw [toDistr_quantizeSobolev, ht.toBesselPotentialSpace_toDistr]
+  refine ⟨_, hb, t, ht.toBesselPotentialSpace, ht.toBesselPotentialSpace_toDistr.symm, ?_,
+    fun x hx ξ ↦ ?_⟩
+  · rw [toDistr_quantizeSobolev, ht.toBesselPotentialSpace_toDistr]
     exact quantizeDistribution_toDistribution_cutoffTempered ha hψ hψc isOpen_thickening hψU T
       (self_subset_thickening one_pos _)
+  · have hx1 : ψ x = 1 :=
+      hψU (self_subset_cthickening _ (self_subset_thickening one_pos _ hx))
+    simp [hx1]
+
+/-- Microlocality on cut-off distributions: if `χ T` is microlocally smooth at `(x₀, ξ₀)`, so is
+`Op(a) (χ T)`. Since `χ T` lies in some `H^t` and `Op(a) (χ T) = Op(ψ a) (χ T)` for a cutoff `ψ`,
+this is microlocality of operators with compact spatial support on `H^t`. -/
+private theorem isMicrolocallySmoothAt_quantizeDistribution_toDistribution_cutoffTempered
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ))
+    (χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) {x₀ ξ₀ : CoordinateSpace n} (hξ₀ : ξ₀ ≠ 0)
+    (h : (toDistribution ⊤ (T.cutoffTempered χ)).IsMicrolocallySmoothAt x₀ ξ₀) :
+    (quantizeDistribution ha (toDistribution ⊤ (T.cutoffTempered χ))).IsMicrolocallySmoothAt
+      x₀ ξ₀ := by
+  obtain ⟨b, hb, t, u, hu, hOp, -⟩ :=
+    exists_quantizeDistribution_toDistribution_cutoffTempered_eq ha T χ
   by_contra hn
-  have hmem := waveFrontSet_toDistribution_quantizeSobolev_subset hb t
-    ht.toBesselPotentialSpace (hOp ▸ mem_waveFrontSet_iff.2 ⟨trivial, hξ₀, hn⟩)
-  exact (mem_waveFrontSet_iff.1 (hD ▸ hmem)).2.2 h
+  have hmem := waveFrontSet_toDistribution_quantizeSobolev_subset hb t u
+    (hOp ▸ mem_waveFrontSet_iff.2 ⟨trivial, hξ₀, hn⟩)
+  exact (mem_waveFrontSet_iff.1 (hu ▸ hmem)).2.2 h
+
+/-- **Localizing the input.** For every point `x₀` there is a test function `χ`, supported on a
+neighbourhood of `x₀`, such that `T - χ T` vanishes near `x₀`, and so does `Op(a) (T - χ T)`: take
+`χ = 1` on a ball about `x₀` of radius larger than `R`, so that `Op(a)`, which enlarges supports by
+at most `R`, maps `T - χ T` to a distribution vanishing near `x₀`. -/
+private theorem exists_notMem_dsupport_sub_cutoffTempered (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (x₀ : CoordinateSpace n) :
+    ∃ χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ),
+      x₀ ∉ dsupport (T - toDistribution ⊤ (T.cutoffTempered χ)) ∧
+        x₀ ∉ dsupport (quantizeDistribution ha (T - toDistribution ⊤ (T.cutoffTempered χ))) ∧
+          tsupport χ ∈ 𝓝 x₀ := by
+  -- A cutoff `χ = 1` on `ball x₀ r`, where `r > R`.
+  set r : ℝ := |R| + 1
+  have hr₀ : 0 < r := by positivity
+  let ρ : ContDiffBump x₀ := ⟨r, 2 * r, hr₀, by linarith⟩
+  let χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
+    ⟨fun x ↦ (ρ x : ℂ), ofRealCLM.contDiff.comp ρ.contDiff,
+      ρ.hasCompactSupport.comp_left ofReal_zero, subset_univ _⟩
+  -- `χ` is the bump function `ρ`, viewed as a complex-valued test function.
+  have hχx (x : CoordinateSpace n) : χ x = ρ x := (rfl)
+  -- `T - χ T` vanishes on `ball x₀ r`.
+  have hdsupp : dsupport (T - toDistribution ⊤ (T.cutoffTempered χ)) ⊆ (ball x₀ r)ᶜ := by
+    refine subset_compl_comm.1 fun x hx hx' ↦
+      ((T.isVanishingOn_sub_toDistribution_cutoffTempered fun y hy ↦ ?_).disjoint_dsupport
+        isOpen_ball).ne_of_mem hx hx' rfl
+    rw [hχx, ρ.one_of_mem_closedBall (ball_subset_closedBall hy), ofReal_one]
+  exact ⟨χ, fun h ↦ hdsupp h (mem_ball_self hr₀), fun h ↦ notMem_cthickening_compl_ball
+    (by linarith [le_abs_self R]) hr₀ (cthickening_subset_of_subset R hdsupp
+      (dsupport_quantizeDistribution_subset ha _ h)),
+    Filter.mem_of_superset (ball_mem_nhds x₀ hr₀) fun y hy ↦ subset_tsupport _ (by
+      rw [Function.mem_support, hχx, ρ.one_of_mem_closedBall (ball_subset_closedBall hy)]
+      exact one_ne_zero)⟩
 
 /-- **Microlocality of properly supported pseudodifferential operators.** For a scalar symbol `a`
 whose quantization has kernel supported within distance `R` of the diagonal, and every distribution
@@ -226,39 +325,15 @@ theorem waveFrontSet_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R
   rintro ⟨x₀, ξ₀⟩ hp
   obtain ⟨-, hξ₀, hnot⟩ := mem_waveFrontSet_iff.1 hp
   refine mem_waveFrontSet_iff.2 ⟨trivial, hξ₀, fun hT ↦ hnot ?_⟩
-  -- A cutoff `χ = 1` on `ball x₀ r`, where `r > R`.
-  set r : ℝ := |R| + 1
-  have hr₀ : 0 < r := by positivity
-  let ρ : ContDiffBump x₀ := ⟨r, 2 * r, hr₀, by linarith⟩
-  let χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
-    ⟨fun x ↦ (ρ x : ℂ), ofRealCLM.contDiff.comp ρ.contDiff,
-      ρ.hasCompactSupport.comp_left ofReal_zero, subset_univ _⟩
-  -- `χ` is the bump function `ρ`, viewed as a complex-valued test function.
-  have hχx (x : CoordinateSpace n) : χ x = ρ x := (rfl)
+  obtain ⟨χ, hTD, hOpTD, -⟩ := exists_notMem_dsupport_sub_cutoffTempered ha T x₀
   set D := toDistribution ⊤ (T.cutoffTempered χ)
-  -- `T - χ T` vanishes on `ball x₀ r`.
-  have hdsupp : dsupport (T - D) ⊆ (ball x₀ r)ᶜ := by
-    refine subset_compl_comm.1 fun x hx hx' ↦
-      ((T.isVanishingOn_sub_toDistribution_cutoffTempered fun y hy ↦ ?_).disjoint_dsupport
-        isOpen_ball).ne_of_mem hx hx' rfl
-    rw [hχx, ρ.one_of_mem_closedBall (ball_subset_closedBall hy), ofReal_one]
-  -- So `χ T` is microlocally smooth at `(x₀, ξ₀)`, and `Op(a) (T - χ T)` vanishes near `x₀`.
-  have hTD : (T - D).IsMicrolocallySmoothAt x₀ ξ₀ :=
-    isMicrolocallySmoothAt_of_notMem_dsupport trivial
-      (fun h ↦ hdsupp h (mem_ball_self hr₀)) ξ₀
+  -- `χ T` agrees with `T` near `x₀`, so it is microlocally smooth at `(x₀, ξ₀)`.
   have hD : D.IsMicrolocallySmoothAt x₀ ξ₀ := by
-    convert hT.add (hTD.smul (-1)) using 1
+    convert hT.add ((isMicrolocallySmoothAt_of_notMem_dsupport trivial hTD ξ₀).smul (-1)) using 1
     module
-  have hOpTD : (quantizeDistribution ha (T - D)).IsMicrolocallySmoothAt x₀ ξ₀ :=
-    isMicrolocallySmoothAt_of_notMem_dsupport trivial (fun h ↦ notMem_cthickening_compl_ball
-      (by linarith [le_abs_self R]) hr₀ (cthickening_subset_of_subset R hdsupp
-        (dsupport_quantizeDistribution_subset ha _ h))) ξ₀
-  have hsplit : quantizeDistribution ha T =
-      quantizeDistribution ha D + quantizeDistribution ha (T - D) := by
-    rw [← map_add, add_sub_cancel]
-  rw [hsplit]
+  rw [← add_sub_cancel D T, map_add]
   exact (isMicrolocallySmoothAt_quantizeDistribution_toDistribution_cutoffTempered ha T χ hξ₀
-    hD).add hOpTD
+    hD).add (isMicrolocallySmoothAt_of_notMem_dsupport trivial hOpTD ξ₀)
 
 /-- **Pseudolocality of properly supported pseudodifferential operators.** For a scalar symbol
 `a` whose quantization has kernel supported within distance `R` of the diagonal, and every
@@ -270,6 +345,232 @@ theorem singularSupport_quantizeDistribution_subset (ha : a.HasNearDiagonalKerne
   rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet]
   exact image_mono (waveFrontSet_quantizeDistribution_subset ha T)
 
+/-! ### The order shift of the `H^s` wave front set -/
+
+/-- The `H^s` order shift on cut-off distributions: if `χ T` is microlocally `H^s` at `(x₀, ξ₀)`,
+then `Op(a) (χ T)` is microlocally `H^{s - m}` there. Since `χ T` lies in some `H^t` and
+`Op(a) (χ T) = Op(ψ a) (χ T)` for a cutoff `ψ`, this is the order shift for operators with compact
+spatial support on `H^t`. -/
+private theorem isMicrolocallySobolevAt_quantizeDistribution_toDistribution_cutoffTempered
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ))
+    (χ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) {s : ℝ} {x₀ ξ₀ : CoordinateSpace n}
+    (h : (toDistribution ⊤ (T.cutoffTempered χ)).IsMicrolocallySobolevAt s x₀ ξ₀) :
+    (quantizeDistribution ha (toDistribution ⊤ (T.cutoffTempered χ))).IsMicrolocallySobolevAt
+      (s - m) x₀ ξ₀ := by
+  obtain ⟨b, hb, t, u, hu, hOp, -⟩ :=
+    exists_quantizeDistribution_toDistribution_cutoffTempered_eq ha T χ
+  rw [hOp]
+  -- The cut-off symbol `b` has order `0 + m`.
+  convert hb.isMicrolocallySobolevAt_toDistribution_quantizeSobolev (hu ▸ h) using 2
+  rw [zero_add]
+
+/-- **Microlocal Sobolev mapping of properly supported pseudodifferential operators.** For a scalar
+symbol `a` of order `m` whose quantization has kernel supported within distance `R` of the
+diagonal, if a distribution `T` on `ℝⁿ` is microlocally `H^s` at `(x₀, ξ₀)`, then `Op(a) T` is
+microlocally `H^{s - m}` at `(x₀, ξ₀)`. -/
+theorem isMicrolocallySobolevAt_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
+    {T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)} {s : ℝ} {x₀ ξ₀ : CoordinateSpace n}
+    (hT : T.IsMicrolocallySobolevAt s x₀ ξ₀) :
+    (quantizeDistribution ha T).IsMicrolocallySobolevAt (s - m) x₀ ξ₀ := by
+  obtain ⟨χ, hTD, hOpTD, -⟩ := exists_notMem_dsupport_sub_cutoffTempered ha T x₀
+  set D := toDistribution ⊤ (T.cutoffTempered χ)
+  -- `χ T` agrees with `T` near `x₀`, so it is microlocally `H^s` at `(x₀, ξ₀)`.
+  have hD : D.IsMicrolocallySobolevAt s x₀ ξ₀ := by
+    convert hT.add (((isLocallySobolevAt_of_notMem_dsupport trivial hTD s).isMicrolocallySobolevAt
+      ξ₀).smul (-1)) using 1
+    module
+  rw [← add_sub_cancel D T, map_add]
+  exact (isMicrolocallySobolevAt_quantizeDistribution_toDistribution_cutoffTempered ha T χ
+    hD).add ((isLocallySobolevAt_of_notMem_dsupport trivial hOpTD _).isMicrolocallySobolevAt ξ₀)
+
+/-- **The order shift of the `H^s` wave front set.** A scalar pseudodifferential operator of order
+`m` whose kernel is supported within distance `R` of the diagonal loses at most `m` orders of
+microlocal Sobolev regularity: for every distribution `T` on `ℝⁿ` and every real `s`,
+`WF_{s - m}(Op(a) T) ⊆ WF_s(T)`. -/
+theorem sobolevWaveFrontSet_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R) (s : ℝ)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (quantizeDistribution ha T).sobolevWaveFrontSet (s - m) ⊆ T.sobolevWaveFrontSet s := by
+  rintro ⟨x, ξ⟩ hp
+  rw [mem_sobolevWaveFrontSet_iff] at hp ⊢
+  exact ⟨hp.1, hp.2.1, fun hT ↦ hp.2.2 (isMicrolocallySobolevAt_quantizeDistribution ha hT)⟩
+
+/-- **The order shift of the `H^s` singular support.** For a scalar symbol `a` of order `m` whose
+quantization has kernel supported within distance `R` of the diagonal, `Op(a) T` is `H^{s - m}`
+near every point near which the distribution `T` is `H^s`:
+`singsupp_{s - m}(Op(a) T) ⊆ singsupp_s(T)`. -/
+theorem sobolevSingularSupport_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R)
+    (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (quantizeDistribution ha T).sobolevSingularSupport (s - m) ⊆ T.sobolevSingularSupport s := by
+  rw [← fst_image_sobolevWaveFrontSet, ← fst_image_sobolevWaveFrontSet]
+  exact image_mono (sobolevWaveFrontSet_quantizeDistribution_subset ha s T)
+
 end Symbol
+
+end TauCeti
+
+/-! ### Microlocal elliptic regularity -/
+
+namespace Distribution
+
+open TauCeti TauCeti.Symbol Set Filter
+open scoped Topology
+
+variable {n : ℕ} {m R R' s : ℝ} {a : Symbol n ℂ ℂ m} {T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)}
+  {x ξ : CoordinateSpace n} {U Γ : Set (CoordinateSpace n)}
+
+/-- **Microlocal elliptic regularity of properly supported pseudodifferential operators.** Let `a`
+be a scalar symbol of order `m` whose quantization has kernel supported within distance `R` of the
+diagonal, and which is elliptic at the frequencies of norm at least `R'` in an open cone `Γ ∋ ξ`,
+at all positions of a neighbourhood `U` of `x`. If `Op(a) T` is microlocally `H^s` at `(x, ξ)` for
+a distribution `T` on `ℝⁿ`, then `T` is microlocally `H^{s + m}` at `(x, ξ)`. Thus
+`WF_{s + m}(T) ⊆ WF_s(Op(a) T) ∪ Char(a)`, where `Char(a)` is the set of `(x, ξ)`, `ξ ≠ 0`, at which
+`a` is not elliptic in this conic sense. No a priori regularity of `T` is assumed, and the symbol
+needs neither compact spatial support nor estimates uniform in the position. -/
+theorem IsMicrolocallySobolevAt.of_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
+    (hU : U ∈ 𝓝 x) (hΓ : IsOpen Γ) (hcone : ∀ r : ℝ, 0 < r → ∀ η ∈ Γ, r • η ∈ Γ) (hξ : ξ ∈ Γ)
+    (hell : a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R' ≤ ‖p.2‖})
+    (h : (quantizeDistribution ha T).IsMicrolocallySobolevAt s x ξ) :
+    T.IsMicrolocallySobolevAt (s + m) x ξ := by
+  obtain ⟨χ, hTD, hOpTD, hχx⟩ := exists_notMem_dsupport_sub_cutoffTempered ha T x
+  -- `Op(a) (χ T)` agrees with `Op(a) T` near `x`, so it is microlocally `H^s` at `(x, ξ)`.
+  have hOpD : (quantizeDistribution ha
+      (toDistribution ⊤ (T.cutoffTempered χ))).IsMicrolocallySobolevAt s x ξ := by
+    convert h.add (((isLocallySobolevAt_of_notMem_dsupport trivial hOpTD s).isMicrolocallySobolevAt
+      ξ).smul (-1)) using 1
+    rw [map_sub]
+    module
+  -- `χ T = u ∈ H^t` and `Op(a) (χ T) = Op(b) u`, where `b` has compact spatial support and agrees
+  -- with `a` on `tsupport χ`, a neighbourhood of `x`; so `b` is elliptic near `(x, ξ)`.
+  obtain ⟨b, hb, t, u, hu, hOp, hba⟩ :=
+    exists_quantizeDistribution_toDistribution_cutoffTempered_eq ha T χ
+  have hellb : b.IsEllipticOn {p | p.1 ∈ U ∩ tsupport χ ∧ p.2 ∈ Γ ∧ R' ≤ ‖p.2‖} := by
+    refine (hell.mono fun _ hp ↦ ?_).congr (zero_add m) fun p hp ↦ hba p.1 hp.1.2 p.2
+    exact ⟨hp.1.1, hp.2⟩
+  -- Microlocal elliptic regularity on `H^t` makes `χ T` microlocally `H^{s + m}` at `(x, ξ)`, and
+  -- `T - χ T` vanishes near `x`.
+  have hD := hb.isMicrolocallySobolevAt_toDistribution_of_quantizeSobolev (Ω := ⊤)
+    (inter_mem hU hχx) hΓ hcone hξ hellb (hOp ▸ hOpD)
+  rw [zero_add, ← hu] at hD
+  convert hD.add ((isLocallySobolevAt_of_notMem_dsupport trivial hTD _).isMicrolocallySobolevAt ξ)
+    using 1
+  exact (add_sub_cancel _ _).symm
+
+/-- **Microlocal elliptic regularity of properly supported pseudodifferential operators, for
+smoothness.** Let `a` be a scalar symbol whose quantization has kernel supported within distance
+`R` of the diagonal, and which is elliptic at the frequencies of norm at least `R'` in an open cone
+`Γ ∋ ξ`, at all positions of a neighbourhood `U` of `x`. If `Op(a) T` is microlocally smooth at
+`(x, ξ)` for a distribution `T` on `ℝⁿ`, then so is `T`: `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`. -/
+theorem IsMicrolocallySmoothAt.of_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
+    (hU : U ∈ 𝓝 x) (hΓ : IsOpen Γ) (hcone : ∀ r : ℝ, 0 < r → ∀ η ∈ Γ, r • η ∈ Γ) (hξ : ξ ∈ Γ)
+    (hell : a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R' ≤ ‖p.2‖})
+    (h : (quantizeDistribution ha T).IsMicrolocallySmoothAt x ξ) :
+    T.IsMicrolocallySmoothAt x ξ := by
+  refine isMicrolocallySmoothAt_of_eventually_forall_isMicrolocallySobolevAt ?_
+  -- Near `(x, ξ)`, `Op(a) T` is microlocally `H^s` for every `s`, and `a` stays elliptic.
+  filter_upwards [isMicrolocallySmoothAt_iff_eventually_forall_isMicrolocallySobolevAt.1 h,
+    prod_mem_nhds (interior_mem_nhds.2 hU) (hΓ.mem_nhds hξ)] with p hp hpW s
+  simpa using (hp (s - m)).of_quantizeDistribution ha (mem_interior_iff_mem_nhds.1 hpW.1) hΓ hcone
+    hpW.2 hell
+
+end Distribution
+
+namespace TauCeti
+
+open Distribution Set Metric
+open scoped Topology
+
+variable {n : ℕ} {m R R' : ℝ}
+
+namespace Symbol
+
+/-- **Locally elliptic operators shift the `H^s` wave front set by exactly their order.** If the
+scalar symbol `a` of order `m` is elliptic near every position, at the frequencies of norm at least
+a radius depending on the position, and `Op(a)` has kernel supported within distance `R` of the
+diagonal, then `WF_s(Op(a) T) = WF_{s + m}(T)` for every distribution `T` on `ℝⁿ` and every real
+`s`. -/
+theorem sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn {a : Symbol n ℂ ℂ m}
+    (hell : ∀ x, ∃ U ∈ 𝓝 x, ∃ R' : ℝ, a.IsEllipticOn {p | p.1 ∈ U ∧ R' ≤ ‖p.2‖})
+    (ha : a.HasNearDiagonalKernel R) (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (quantizeDistribution ha T).sobolevWaveFrontSet s = T.sobolevWaveFrontSet (s + m) := by
+  refine Subset.antisymm
+    (by simpa using sobolevWaveFrontSet_quantizeDistribution_subset ha (s + m) T) fun p hp ↦ ?_
+  rw [mem_sobolevWaveFrontSet_iff] at hp ⊢
+  obtain ⟨U, hU, R', hell⟩ := hell p.1
+  exact ⟨hp.1, hp.2.1, fun h ↦ hp.2.2 (h.of_quantizeDistribution ha hU isOpen_univ
+    (fun _ _ _ _ ↦ trivial) trivial (hell.mono fun q hq ↦ ⟨hq.1, hq.2.2⟩))⟩
+
+/-- **Locally elliptic operators preserve the wave front set.** If the scalar symbol `a` is
+elliptic near every position, at the frequencies of norm at least a radius depending on the
+position, and `Op(a)` has kernel supported within distance `R` of the diagonal, then
+`WF(Op(a) T) = WF(T)` for every distribution `T` on `ℝⁿ`. -/
+theorem waveFrontSet_quantizeDistribution_of_forall_isEllipticOn {a : Symbol n ℂ ℂ m}
+    (hell : ∀ x, ∃ U ∈ 𝓝 x, ∃ R' : ℝ, a.IsEllipticOn {p | p.1 ∈ U ∧ R' ≤ ‖p.2‖})
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (quantizeDistribution ha T).waveFrontSet = T.waveFrontSet := by
+  refine Subset.antisymm (waveFrontSet_quantizeDistribution_subset ha T) fun p hp ↦ ?_
+  rw [mem_waveFrontSet_iff] at hp ⊢
+  obtain ⟨U, hU, R', hell⟩ := hell p.1
+  exact ⟨hp.1, hp.2.1, fun h ↦ hp.2.2 (h.of_quantizeDistribution ha hU isOpen_univ
+    (fun _ _ _ _ ↦ trivial) trivial (hell.mono fun q hq ↦ ⟨hq.1, hq.2.2⟩))⟩
+
+end Symbol
+
+/-- A symbol elliptic above a radius is elliptic near every position. -/
+private theorem Symbol.IsEllipticAbove.forall_exists_isEllipticOn {a : Symbol n ℂ ℂ m}
+    (hell : a.IsEllipticAbove R') :
+    ∀ x : CoordinateSpace n, ∃ U ∈ 𝓝 x, ∃ R'' : ℝ, a.IsEllipticOn {p | p.1 ∈ U ∧ R'' ≤ ‖p.2‖} :=
+  fun _ ↦ ⟨univ, Filter.univ_mem, R',
+    (isEllipticAbove_iff_isEllipticOn.1 hell).mono fun _ hp ↦ hp.2⟩
+
+/-- An elliptic classical symbol is elliptic near every position, above a radius depending on the
+position. -/
+private theorem ClassicalSymbol.IsElliptic.forall_exists_isEllipticOn
+    {a : ClassicalSymbol n ℂ ℂ m} (hell : a.IsElliptic) :
+    ∀ x : CoordinateSpace n, ∃ U ∈ 𝓝 x, ∃ R' : ℝ,
+      a.toSymbol.IsEllipticOn {p | p.1 ∈ U ∧ R' ≤ ‖p.2‖} := fun x ↦
+  ⟨closedBall x 1, closedBall_mem_nhds x one_pos,
+    hell.exists_isEllipticOn (isCompact_closedBall x 1)⟩
+
+/-- **Elliptic operators shift the `H^s` wave front set by exactly their order.** If the scalar
+symbol `a` of order `m` is elliptic above some radius and `Op(a)` has kernel supported within
+distance `R` of the diagonal, then `WF_s(Op(a) T) = WF_{s + m}(T)` for every distribution `T` on
+`ℝⁿ` and every real `s`. -/
+theorem Symbol.IsEllipticAbove.sobolevWaveFrontSet_quantizeDistribution {a : Symbol n ℂ ℂ m}
+    (hell : a.IsEllipticAbove R') (ha : a.HasNearDiagonalKernel R) (s : ℝ)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (Symbol.quantizeDistribution ha T).sobolevWaveFrontSet s = T.sobolevWaveFrontSet (s + m) :=
+  Symbol.sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+    hell.forall_exists_isEllipticOn ha s T
+
+/-- **Elliptic operators preserve the wave front set.** If the scalar symbol `a` is elliptic above
+some radius and `Op(a)` has kernel supported within distance `R` of the diagonal, then
+`WF(Op(a) T) = WF(T)` for every distribution `T` on `ℝⁿ`. -/
+theorem Symbol.IsEllipticAbove.waveFrontSet_quantizeDistribution {a : Symbol n ℂ ℂ m}
+    (hell : a.IsEllipticAbove R') (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (Symbol.quantizeDistribution ha T).waveFrontSet = T.waveFrontSet :=
+  Symbol.waveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+    hell.forall_exists_isEllipticOn ha T
+
+/-- **Elliptic classical operators shift the `H^s` wave front set by exactly their order.** If the
+classical symbol `a` of order `m` is elliptic and `Op(a)` has kernel supported within distance `R`
+of the diagonal, then `WF_s(Op(a) T) = WF_{s + m}(T)` for every distribution `T` on `ℝⁿ` and every
+real `s`. -/
+theorem ClassicalSymbol.IsElliptic.sobolevWaveFrontSet_quantizeDistribution
+    {a : ClassicalSymbol n ℂ ℂ m} (hell : a.IsElliptic) (ha : a.toSymbol.HasNearDiagonalKernel R)
+    (s : ℝ) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (Symbol.quantizeDistribution ha T).sobolevWaveFrontSet s = T.sobolevWaveFrontSet (s + m) :=
+  Symbol.sobolevWaveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+    hell.forall_exists_isEllipticOn ha s T
+
+/-- **Elliptic classical operators preserve the wave front set.** If the classical symbol `a` is
+elliptic and `Op(a)` has kernel supported within distance `R` of the diagonal, then
+`WF(Op(a) T) = WF(T)` for every distribution `T` on `ℝⁿ`. -/
+theorem ClassicalSymbol.IsElliptic.waveFrontSet_quantizeDistribution
+    {a : ClassicalSymbol n ℂ ℂ m} (hell : a.IsElliptic) (ha : a.toSymbol.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (Symbol.quantizeDistribution ha T).waveFrontSet = T.waveFrontSet :=
+  Symbol.waveFrontSet_quantizeDistribution_of_forall_isEllipticOn
+    hell.forall_exists_isEllipticOn ha T
 
 end TauCeti

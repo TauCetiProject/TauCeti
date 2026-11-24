@@ -34,6 +34,12 @@ spaces by zero at nontangent indices. The definition retains the zero-normal,
 rescaling and contracted-bracket laws, but omits the paper's condition (3) on an
 action on a graded algebra: no such action is needed for these Lie identities.
 
+A geometric direction `ρ n` is transverse here when it lies outside `f.ker ⊓ g.ker`.
+The common-kernel calculation uses the contracted normal `f (ρ n) • g - g (ρ n) • f`.
+It is the wall-space calculation for transverse joint corrections in Mandel,
+*Scattering diagrams, theta functions, and refined tropical curve counts*,
+proof of Theorem 2.6.
+
 ## Attribution
 
 Adapted from `Mei/Geometry/ScatteringDiagram/WallSpace/Basic.lean`
@@ -41,6 +47,10 @@ in Mei at commit
 `7f1e4c7714fb020473694755ad8748c8f15d0e7f`. Original copyright and author credit are retained.
 
 Source: https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15d0e7f/Mei/Geometry/ScatteringDiagram/WallSpace/Basic.lean
+
+The transverse common-kernel results are adapted from
+`Mei/Geometry/ScatteringDiagram/WallSpace/Normal.lean` at Mei commit
+`bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0).
 -/
 
 public section
@@ -72,6 +82,20 @@ theorem wallBracketNormal_zsmul {Γ Λ : Type*} [AddCommGroup Γ] [AddCommMonoid
     simpa only [AddMonoidHom.comp_apply, zsmul_eq_mul, Int.cast_id] using (m'.comp ρ).map_zsmul a n
   simp only [wallBracketNormal, hm, hm']
 
+/-- The contracted normal annihilates the common kernel of its two input characters. -/
+theorem inf_ker_le_ker_wallBracketNormal {Λ : Type*} [AddCommGroup Λ]
+    (ρ : Γ →+ Λ) (n n' : Γ) (f g : Λ →+ ℤ) :
+    f.ker ⊓ g.ker ≤ (wallBracketNormal ρ n n' f g).ker := by
+  intro x hx
+  obtain ⟨hf, hg⟩ := AddSubgroup.mem_inf.mp hx
+  simp [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker.mp hf, AddMonoidHom.mem_ker.mp hg]
+
+/-- The contracted normal with both directions equal to `n` vanishes at `ρ n`. -/
+@[simp↓]
+theorem wallBracketNormal_apply_same (ρ : Γ →+ Λ) (n : Γ) (f g : Λ →+ ℤ) :
+    wallBracketNormal ρ n n f g (ρ n) = 0 := by
+  simp [mul_comm (f (ρ n)) (g (ρ n))]
+
 /-- Homogeneous submodules with the normal and bracket laws of directed walls.
 For a positive grading, containment in the homogeneous pieces automatically makes
 all spaces outside the nonzero positive degrees vanish. -/
@@ -99,14 +123,51 @@ namespace DirectedWallSpaces
 
 variable {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L} (H : DirectedWallSpaces ρ ℒ)
 
+section KernelComparison
+
+variable {Λ : Type*} [AddCommGroup Λ] {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L}
+  (H : DirectedWallSpaces ρ ℒ)
+
+/-- A smaller kernel of the normal permits a larger wall space. -/
+theorem wall_le_wall_of_ker_ge (n : Γ) {m μ : Λ →+ ℤ} (hker : μ.ker ≤ m.ker) :
+    H.wall n m ≤ H.wall n μ := by
+  obtain ⟨a, b, ha, hab⟩ := μ.exists_ne_zero_zsmul_eq_of_ker_le m hker
+  rw [← H.rescale n m a ha, hab]
+  by_cases hb : b = 0
+  · rw [hb, zero_smul, H.zero_normal]
+    exact bot_le
+  · rw [H.rescale n μ b hb]
+
 /-- Integral normals with the same kernel define the same wall spaces.
 In particular a change of coorientation preserves eligible coefficients. -/
-theorem wall_eq_of_ker_eq {Λ : Type*} [AddCommGroup Λ]
-    {ρ : Γ →+ Λ} {ℒ : Γ → Submodule R L} (H : DirectedWallSpaces ρ ℒ)
-    (n : Γ) {m m' : Λ →+ ℤ} (hker : m.ker = m'.ker) :
-    H.wall n m = H.wall n m' := by
-  obtain ⟨c, e, hc, he, hme⟩ := m.exists_ne_zero_zsmul_eq_of_ker_eq m' hker
-  rw [← H.rescale n m c hc, hme, H.rescale n m' e he]
+theorem wall_eq_of_ker_eq (n : Γ) {m m' : Λ →+ ℤ} (hker : m.ker = m'.ker) :
+    H.wall n m = H.wall n m' :=
+  le_antisymm (H.wall_le_wall_of_ker_ge n hker.ge) (H.wall_le_wall_of_ker_ge n hker.le)
+
+/-- If `ρ n` lies outside `f.ker ⊓ g.ker`, any wall space with normal annihilating the common kernel
+is contained in the wall space with the contracted normal. -/
+theorem wall_le_wall_wallBracketNormal_of_inf_ker_le (f g m : Λ →+ ℤ) {n : Γ}
+    (hn : ρ n ∉ f.ker ⊓ g.ker) (hm : f.ker ⊓ g.ker ≤ m.ker) :
+    H.wall n m ≤ H.wall n (wallBracketNormal ρ n n f g) := by
+  by_cases hmn : m (ρ n) = 0
+  · apply H.wall_le_wall_of_ker_ge n
+    rw [wallBracketNormal]
+    exact f.ker_zsmul_sub_zsmul_le_of_inf_ker_le g m (ρ n) hn hm hmn
+  · simp [hmn]
+
+/-- If `ρ n` lies outside `f.ker ⊓ g.ker`, the sum of the wall spaces
+with normals vanishing on the common kernel `f.ker ⊓ g.ker`
+is the wall space with the contracted normal. -/
+theorem iSup_wall_eq_wall_wallBracketNormal_of_notMem_inf_ker (f g : Λ →+ ℤ) {n : Γ}
+    (hn : ρ n ∉ f.ker ⊓ g.ker) :
+    (⨆ (m : Λ →+ ℤ) (_ : f.ker ⊓ g.ker ≤ m.ker), H.wall n m) =
+      H.wall n (wallBracketNormal ρ n n f g) := by
+  refine le_antisymm
+    (iSup₂_le fun m hm => H.wall_le_wall_wallBracketNormal_of_inf_ker_le f g m hn hm) ?_
+  exact le_iSup₂_of_le (wallBracketNormal ρ n n f g)
+    (inf_ker_le_ker_wallBracketNormal ρ n n f g) le_rfl
+
+end KernelComparison
 
 /-- Directed wall spaces are determined by their wall submodules. -/
 @[ext]

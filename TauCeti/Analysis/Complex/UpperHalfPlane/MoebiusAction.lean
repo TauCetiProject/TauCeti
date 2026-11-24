@@ -46,6 +46,12 @@ unfolded by hand.
 * `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
   `SL(2, ℝ)`- and `SL(2, R)`-actions on `ℍ` agree with the `GL(2, ℝ)`-action of the underlying
   matrix, generalizing Mathlib's `ModularGroup.sl_moeb`.
+* `UpperHalfPlane.num_mul`, `UpperHalfPlane.moebius_mul`: off the real line, the numerator of a
+  raw Möbius transformation is a cocycle like `UpperHalfPlane.denom_cocycle`, so raw Möbius
+  transformations compose like their matrices; `UpperHalfPlane.moebius_im_ne_zero`: they keep
+  the imaginary part nonzero.
+* `UpperHalfPlane.σ_apply_of_det_pos`, `UpperHalfPlane.σ_apply_of_det_neg`: the automorphism
+  `UpperHalfPlane.σ g` is the identity or complex conjugation according to the sign of `det g`.
 * `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
   `SL(2, R)`-action.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
@@ -227,6 +233,41 @@ lemma smul_eq_smul_of_coe_eq_smul {g h : GL (Fin 2) ℝ} {c : ℝ}
     ext i j
     simp [Matrix.scalar, Matrix.diagonal_mul]
   rw [h_mul, mul_smul, glScalar_smul]
+
+/-- A raw Möbius transformation `z ↦ (a z + b) / (c z + d)` of `GL(2, ℝ)` keeps the imaginary
+part of a non-real complex number nonzero. -/
+theorem moebius_im_ne_zero (g : GL (Fin 2) ℝ) {z : ℂ} (hz : z.im ≠ 0) :
+    (num g z / denom g z).im ≠ 0 := by
+  rw [moebius_im]
+  exact div_ne_zero (mul_ne_zero g.det.ne_zero hz) (normSq_denom_ne_zero g hz)
+
+/-- The numerator of a raw Möbius transformation transforms like the denominator: this is
+the companion of `UpperHalfPlane.denom_cocycle`. -/
+theorem num_mul (g h : GL (Fin 2) ℝ) {z : ℂ} (hz : z.im ≠ 0) :
+    num (g * h) z = num g (num h z / denom h z) * denom h z := by
+  have hd := denom_ne_zero_of_im h hz
+  simp only [num, denom, Units.val_mul, Matrix.mul_apply, Fin.sum_univ_two, Complex.ofReal_add,
+    Complex.ofReal_mul] at hd ⊢
+  field_simp
+  ring
+
+/-- Raw Möbius transformations `z ↦ (a z + b) / (c z + d)` of `GL(2, ℝ)` compose on non-real
+complex numbers like the matrices. -/
+theorem moebius_mul (g h : GL (Fin 2) ℝ) {z : ℂ} (hz : z.im ≠ 0) :
+    num (g * h) z / denom (g * h) z =
+      num g (num h z / denom h z) / denom g (num h z / denom h z) := by
+  rw [num_mul g h hz, denom_cocycle g h hz,
+    mul_div_mul_right _ _ (denom_ne_zero_of_im h hz)]
+
+/-- For positive determinant, the automorphism `UpperHalfPlane.σ g` of `ℂ` is the identity. -/
+theorem σ_apply_of_det_pos {g : GL (Fin 2) ℝ} (hg : 0 < g.det.val) (z : ℂ) : σ g z = z := by
+  rw [σ, ite_eq_left hg, ContinuousAlgEquiv.refl_apply]
+
+/-- For negative determinant, the automorphism `UpperHalfPlane.σ g` of `ℂ` is complex
+conjugation. -/
+theorem σ_apply_of_det_neg {g : GL (Fin 2) ℝ} (hg : g.det.val < 0) (z : ℂ) :
+    σ g z = conj z := by
+  rw [σ, ite_eq_right hg.not_gt, Complex.conjCAE_apply]
 
 end UpperHalfPlane
 

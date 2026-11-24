@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Geometry.Symplectic.Complex.Line
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The area form of the complex line in polar coordinates
@@ -23,7 +23,7 @@ The standard area form `ω(v, w) = Re v Im w - Im v Re w` of `ℂ`
 * **For maps in polar form.** A map `f = e^{iθ} r` from a real normed space, with real-valued
   angle `θ` and radius `r` differentiable at `x`, has differential
   `df_x v = e^{iθ(x)} (dr_x v + i r(x) dθ_x v)`
-  (`TauCeti.fderiv_circleExp_mul_ofReal_apply`, in `TauCeti.Analysis.Complex.Circle`), and so
+  (`TauCeti.fderiv_circleExp_mul_ofReal_apply`, in `TauCeti.Analysis.Complex.Circle.Basic`), and so
   pulls the area form back to `r dr ∧ dθ`:
   `ω(df_x v, df_x w) = r(x) (dr_x v dθ_x w - dθ_x v dr_x w)`
   (`TauCeti.stdComplexSymplecticForm_fderiv_circleExp_mul_ofReal`). The factor `e^{iθ(x)}` drops

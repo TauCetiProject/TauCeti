@@ -34,6 +34,11 @@ homology (`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`). In particular, 
 an embedding and `h : X ≃ₕ t` is a homotopy equivalence with `h ∘ j` the inclusion `s ⊆ t`, then
 `Hₙ(X, j s) ≅ Hₙ(t, s)` (`TopPair.nonempty_singularHomology_ofInclusion_iso_of_homotopyEquiv`).
 
+The singular chain homotopies of homotopies forming a commutative square of spaces commute with the
+chain maps of the square (`TopCat.Homotopy.singularChainComplexFunctorObjMap_hom_comm`); for
+instance, on the chains of a subspace, the chain homotopy of a homotopy which keeps the subspace
+inside a subspace of the target is that of its restriction.
+
 The homotopy is transported to the singular simplicial sets of the two spaces, where the
 compatibility of the two simplicial homotopies over the inclusion of the subspace descends the
 chain homotopy to the relative chain complexes.  The absolute case is
@@ -49,9 +54,37 @@ Theorem 2.10 and its relative form.
 
 noncomputable section
 
-open CategoryTheory Limits
+open CategoryTheory Limits MonoidalCategory AlgebraicTopology
+
+open scoped Simplicial
 
 universe w v u
+
+namespace TopCat.Homotopy
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
+  {X Y X' Y' : TopCat.{w}} {f g : X ⟶ Y} {f' g' : X' ⟶ Y'}
+
+/-- The singular chain homotopies of homotopies `H` and `H'` which form a commutative square with
+maps `u : X ⟶ X'` and `v : Y ⟶ Y'`, that is, `H' (t, u x) = v (H (t, x))`, commute with the
+singular chain maps of `u` and `v`. -/
+@[reassoc]
+lemma singularChainComplexFunctorObjMap_hom_comm (H : TopCat.Homotopy f g)
+    (H' : TopCat.Homotopy f' g') {u : X ⟶ X'} {v : Y ⟶ Y'} (huv : u ▷ TopCat.I ≫ H'.h = H.h ≫ v)
+    (R : C) (p q : ℕ) :
+    (((singularChainComplexFunctor C).obj R).map u).f p ≫
+        (H'.singularChainComplexFunctorObjMap R).hom p q =
+      (H.singularChainComplexFunctorObjMap R).hom p q ≫
+        (((singularChainComplexFunctor C).obj R).map v).f q := by
+  -- Transport the commutative square to the singular simplicial sets.
+  have hu : TopCat.toSSet.map u ▷ Δ[1] ≫ H'.toSSet.h = H.toSSet.h ≫ TopCat.toSSet.map v := by
+    simp only [TopCat.Homotopy.toSSet, Category.assoc]
+    rw [← whisker_exchange_assoc (TopCat.toSSet.map u) SSet.stdSimplex.toSSetObjI,
+      Functor.LaxMonoidal.μ_natural_left_assoc]
+    simp only [← Functor.map_comp, huv]
+  exact H.toSSet.chainComplexMap_hom_comm H'.toSSet hu R p q
+
+end TopCat.Homotopy
 
 namespace TopPair.Homotopy
 

@@ -5,20 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.Calculus.Deriv.Slope
+import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
+import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
 # Iterated derivatives of holomorphic functions of one complex variable
 
 This file records that every iterated derivative of a complex differentiable function
 `g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`), the iterated form of
-Mathlib's `Differentiable.deriv`. It also computes the norms of the real iterated derivatives
-of the powers `z ^ m` (`TauCeti.Complex.norm_iteratedFDeriv_pow`).
+Mathlib's `Differentiable.deriv`. For `f : ℂ → ℂ` holomorphic on an open set, the iterated
+derivatives of the real function `x ↦ Re f(x)` on the real line are the real parts of the complex
+ones (`DifferentiableOn.iteratedDeriv_re_comp_ofReal`, and
+`Differentiable.iteratedDeriv_re_comp_ofReal` for entire `f`). If the `(e + 1)`-th derivative
+of an entire function `h` vanishes, so does the `e`-th derivative of `dslope h ζ`
+(`Differentiable.iteratedDeriv_dslope_eq_zero`): dividing a polynomial by a linear factor lowers
+its degree. It also computes the norms of the real iterated derivatives of the powers `z ^ m`
+(`TauCeti.Complex.norm_iteratedFDeriv_pow`).
 
 On an open set `U`, the iterated derivatives over any field below `ℂ`, such as `ℝ`, of a map
 holomorphic on `U` are the restrictions of scalars of its complex iterated derivatives
@@ -26,6 +37,16 @@ holomorphic on `U` are the restrictions of scalars of its complex iterated deriv
 uniform convergence of holomorphic maps on `U` to locally uniform convergence of all iterated
 derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
 (`TendstoLocallyUniformlyOn.iteratedFDeriv`).
+
+For a family `f t` of maps holomorphic on `U`, depending on a real variable `t` with derivative
+`f' t` in `t`, Weierstrass's theorem applied to the difference quotients
+`(t - x)⁻¹ (f t - f x)`, which are holomorphic on `U` (`TauCeti.eventually_differentiableOn_slope`),
+shows that `f' x` is again holomorphic on `U` and that the complex derivatives of `f t` are
+differentiable in `t` at `x`, with derivatives those of `f' x`, provided `f' t` converges to `f' x`
+uniformly on `U`
+(`TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`,
+`TauCeti.hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn`). No joint regularity in `t` and the
+complex variable is assumed.
 -/
 
 public section
@@ -37,6 +58,56 @@ differentiable. This is the iterated form of `Differentiable.deriv`. -/
 theorem Differentiable.iteratedDeriv {g : ℂ → E} (hg : Differentiable ℂ g) (k : ℕ) :
     Differentiable ℂ (iteratedDeriv k g) :=
   (hg.contDiff (n := ⊤)).differentiable_iteratedDeriv k (by simp)
+
+/-- **Iterated derivatives on the real line.** For `f : ℂ → ℂ` holomorphic on an open set `U`
+and a real `x` with `(x : ℂ) ∈ U`, the `k`-th derivative at `x` of the real function
+`y ↦ Re f(y)` is the real part of the complex `k`-th derivative of `f` at `x`. -/
+theorem DifferentiableOn.iteratedDeriv_re_comp_ofReal {f : ℂ → ℂ} {U : Set ℂ}
+    (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (k : ℕ) {x : ℝ} (hx : (x : ℂ) ∈ U) :
+    _root_.iteratedDeriv k (fun y : ℝ => (f y).re) x = (_root_.iteratedDeriv k f x).re := by
+  have hV : IsOpen ((↑) ⁻¹' U : Set ℝ) := hU.preimage Complex.continuous_ofReal
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    have heq : _root_.iteratedDeriv k (fun y : ℝ => (f y).re) =ᶠ[nhds x]
+        fun y : ℝ => (_root_.iteratedDeriv k f y).re :=
+      Filter.eventually_of_mem (hV.mem_nhds hx) fun y hy => ih hy
+    have hd : HasDerivAt (_root_.iteratedDeriv k f) (_root_.iteratedDeriv (k + 1) f x) x := by
+      rw [iteratedDeriv_succ, iteratedDeriv_eq_iterate]
+      exact (((hf.analyticOnNhd hU).iterated_deriv k) x hx).differentiableAt.hasDerivAt
+    rw [iteratedDeriv_succ, heq.deriv_eq, hd.real_of_complex.deriv]
+
+/-- **Iterated derivatives on the real line.** For an entire function `f : ℂ → ℂ`, the `k`-th
+derivative of the real function `x ↦ Re f(x)` is the real part of the complex `k`-th derivative
+of `f` at `x`. -/
+theorem Differentiable.iteratedDeriv_re_comp_ofReal {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (k : ℕ) :
+    _root_.iteratedDeriv k (fun x : ℝ => (f x).re) =
+      fun x : ℝ => (_root_.iteratedDeriv k f x).re :=
+  funext fun _ => hf.differentiableOn.iteratedDeriv_re_comp_ofReal isOpen_univ k trivial
+
+/-- **Dividing out a root lowers the degree.** If the `(e + 1)`-th derivative of an entire
+function `h : ℂ → E` vanishes, that is, if `h` is a polynomial of degree at most `e`, then the
+`e`-th derivative of `dslope h ζ` vanishes: `dslope h ζ` is a polynomial of degree less than `e`.
+-/
+theorem Differentiable.iteratedDeriv_dslope_eq_zero {h : ℂ → E} (hh : Differentiable ℂ h)
+    {e : ℕ} (he : _root_.iteratedDeriv (e + 1) h = 0) (ζ : ℂ) :
+    _root_.iteratedDeriv e (dslope h ζ) = 0 := by
+  have hD : Differentiable ℂ (dslope h ζ) := fun z ↦ ((hh.analyticAt z).dslope ζ).differentiableAt
+  -- The Taylor coefficients of `dslope h ζ` at `ζ` of order at least `e` are those of `h` of order
+  -- at least `e + 1`, which vanish.
+  have hcoeff (k : ℕ) : _root_.iteratedDeriv (k + e) (dslope h ζ) ζ = 0 := by
+    have hshift := TauCeti.inv_factorial_smul_iteratedDeriv_pow_sub_smul 1 (k + e)
+      ((hD.contDiff (n := ⊤)).contDiffAt.of_le le_top) (a := ζ)
+    have hfun : (fun z ↦ (z - ζ) ^ 1 • dslope h ζ z) = fun z ↦ -h ζ + h z := by
+      ext z
+      rw [pow_one, sub_smul_dslope, neg_add_eq_sub]
+    rw [hfun, iteratedDeriv_const_add (by omega), show 1 + (k + e) = k + (e + 1) by omega,
+      ← TauCeti.iteratedDeriv_iteratedDeriv, he] at hshift
+    simpa [Nat.factorial_ne_zero] using hshift.symm
+  ext z
+  rw [← Complex.taylorSeries_eq_of_entire (hD.iteratedDeriv e) ζ z]
+  simp [TauCeti.iteratedDeriv_iteratedDeriv, hcoeff]
 
 /-- On an open set `U`, the `k`-th iterated derivative over a field `𝕜` below `ℂ` of a map
 holomorphic on `U` is the restriction of scalars of its complex `k`-th iterated derivative, which
@@ -84,6 +155,61 @@ theorem TendstoLocallyUniformlyOn.iteratedFDeriv (𝕜 : Type*) [NontriviallyNor
     (hF.mono fun n hn z hz => .of_eq ?_)).congr_right fun z hz => ?_
   · exact (hn.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
   · exact (hf'.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
+
+namespace TauCeti
+
+/-! ### Holomorphic families depending on a real variable -/
+
+section RealVariable
+
+open Filter Metric Topology
+
+variable {f f' : ℝ → ℂ → E} {U : Set ℂ} {x δ : ℝ}
+
+omit [CompleteSpace E] in
+/-- If `f t` is holomorphic on `U` for every real `t` near `x`, then so are the difference
+quotients `r ↦ (t - x)⁻¹ (f t r - f x r)` for every `t ≠ x` near `x`. -/
+theorem eventually_differentiableOn_slope (hδ : 0 < δ)
+    (hF : ∀ t ∈ ball x δ, DifferentiableOn ℂ (f t) U) :
+    ∀ᶠ t in 𝓝[≠] x, DifferentiableOn ℂ (fun r ↦ slope (f · r) x t) U := by
+  filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds x hδ)] with t ht
+  simp only [slope_def_module]
+  exact ((hF t ht).sub (hF x (mem_ball_self hδ))).const_smul (t - x)⁻¹
+
+/-- **Differentiating a holomorphic family in a real variable.** Let `f t` be holomorphic on an
+open set `U ⊆ ℂ` for every real `t` near `x`, and let `t ↦ f t r` have derivative `f' t r`, with
+`f' t → f' x` uniformly on `U` as `t → x`. Then the derivative `f' x` at `t = x` is holomorphic
+on `U`. -/
+theorem differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn (hU : IsOpen U) (hδ : 0 < δ)
+    (hF : ∀ t ∈ ball x δ, DifferentiableOn ℂ (f t) U)
+    (hf : ∀ r ∈ U, ∀ t ∈ ball x δ, HasDerivAt (f · r) (f' t r) t)
+    (hf' : TendstoUniformlyOn f' (f' x) (𝓝 x) U) :
+    DifferentiableOn ℂ (f' x) U :=
+  (tendstoUniformlyOn_slope_of_tendstoUniformlyOn hδ hf hf').tendstoLocallyUniformlyOn
+    |>.differentiableOn (eventually_differentiableOn_slope hδ hF) hU
+
+/-- **The real and the complex derivatives of a holomorphic family commute.** Under the
+hypotheses of `TauCeti.differentiableOn_of_hasDerivAt_of_tendstoUniformlyOn`, for every `k` and
+`r ∈ U` the `k`-th complex derivative `∂_r^k f t r` has derivative `∂_r^k f' x r` in `t` at
+`t = x`. -/
+theorem hasDerivAt_iteratedDeriv_of_tendstoUniformlyOn (hU : IsOpen U) (hδ : 0 < δ)
+    (hF : ∀ t ∈ ball x δ, DifferentiableOn ℂ (f t) U)
+    (hf : ∀ r ∈ U, ∀ t ∈ ball x δ, HasDerivAt (f · r) (f' t r) t)
+    (hf' : TendstoUniformlyOn f' (f' x) (𝓝 x) U) (k : ℕ) {r : ℂ} (hr : r ∈ U) :
+    HasDerivAt (fun t ↦ iteratedDeriv k (f t) r) (iteratedDeriv k (f' x) r) x := by
+  rw [hasDerivAt_iff_tendsto_slope]
+  -- by Weierstrass's theorem, the derivatives of the difference quotients converge
+  have hT := (tendstoUniformlyOn_slope_of_tendstoUniformlyOn hδ hf hf').tendstoLocallyUniformlyOn
+  refine ((hT.iteratedDeriv (eventually_differentiableOn_slope hδ hF) hU k).tendsto_at hr).congr' ?_
+  filter_upwards [nhdsWithin_le_nhds (ball_mem_nhds x hδ)] with t ht
+  have hc (s : ℝ) (hs : s ∈ ball x δ) : ContDiffAt ℂ k (f s) r :=
+    ((hF s hs).contDiffOn hU).contDiffAt (hU.mem_nhds hr)
+  simp only [slope_def_module]
+  rw [iteratedDeriv_fun_const_smul_field, iteratedDeriv_fun_sub (hc t ht) (hc x (mem_ball_self hδ))]
+
+end RealVariable
+
+end TauCeti
 
 namespace TauCeti.Complex
 

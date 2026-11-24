@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 
 /-!
@@ -53,6 +54,8 @@ partial sums of the Fourier multipliers `𝓕⁻ (ψⱼ • 𝓕 f)` are the low
   derivative bounds for the pieces of a symbol satisfying Mihlin's condition.
 * `SchwartzMap.exists_eqOn_annulus_of_contDiffOn`: a symbol smooth away from the origin agrees
   with a Schwartz function on every annulus `1 ≤ ‖ξ‖ ≤ θ`.
+* `SchwartzMap.fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply_eq_integral`: each
+  inhomogeneous Littlewood–Paley piece is convolution with the Schwartz kernel `𝓕⁻ ψⱼ`.
 * `SchwartzMap.sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range`: the partial sums of
   the inhomogeneous Littlewood–Paley multipliers are the low-pass truncations.
 * `SchwartzMap.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`: Littlewood–Paley
@@ -305,6 +308,15 @@ theorem sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley_range (φ : ContDi
   rw [← fourierMultiplierCLM_sum F
     fun j _ ↦ φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j]
   simp_rw [← Complex.ofReal_sum, φ.sum_inhomogeneousLittlewoodPaley_range]
+
+/-- The inhomogeneous Littlewood–Paley piece `𝓕⁻ (ψⱼ • 𝓕 f)` of a Schwartz function `f` is the
+convolution of `f` with the Schwartz kernel `𝓕⁻ ψⱼ`. -/
+theorem fourierMultiplierCLM_inhomogeneousLittlewoodPaley_apply_eq_integral
+    (φ : ContDiffBump (0 : E)) (j : ℕ) (f : 𝓢(E, F)) (x : E) :
+    fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f x =
+      ∫ y, 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) (x - y) • f y := by
+  rw [← φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  exact fourierMultiplierCLM_apply_eq_integral _ f x
 
 variable [CompleteSpace F]
 

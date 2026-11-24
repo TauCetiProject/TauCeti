@@ -29,8 +29,10 @@ hypotheses on the action, and regularity also uses the moment-map equation.
 * The stabilizer of a point lies in the coadjoint stabilizer of its value, `G_x ≤ G_{μ x}`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.stabilizer_le_stabilizer_coadjointRepresentation`).
 * The level `Z` is invariant under `G_c`, so it is a `SubMulAction` of `G_c`
-  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`). Conversely, an element of
-  `G` carrying a point of `Z` into `Z` lies in `G_c`.
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`), and its inclusion into `M`
+  is equivariant along `G_c → G`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulActionSubtype`). Conversely, an
+  element of `G` carrying a point of `Z` into `Z` lies in `G_c`.
 * Two points of `Z` lie in the same `G_c`-orbit exactly when they lie in the same `G`-orbit, so
   `Z / G_c → M / G` is injective, with image the orbits meeting `Z`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientMap_levelSubMulAction_injective`).
@@ -50,6 +52,10 @@ hypotheses on the action, and regularity also uses the moment-map equation.
 * If `G` acts properly on `M`, then `G_c` acts properly on `Z`, since every element of `G`
   carrying a point of `Z` into `Z` lies in `G_c`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.properSMul_levelSubMulAction`).
+* An action of a monoid `L` on `M` preserving `μ` restricts to an action on `Z`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelMulAction`), which commutes with that of
+  `G_c` when `L` commutes with `G`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.smulCommClass_levelMulAction`).
 
 * The action is smooth: for a manifold structure on `G_c` with smooth inclusion into `G`, such as
   its closed-subgroup Lie group structure, and a manifold structure on `Z` whose inclusion into
@@ -137,6 +143,19 @@ theorem mem_levelSubMulAction (h : σ.IsEquivariantMomentMap μ) {x : M} :
 @[simp]
 theorem coe_levelSubMulAction (h : σ.IsEquivariantMomentMap μ) :
     (h.levelSubMulAction c : Set M) = μ ⁻¹' {c} :=
+  (rfl)
+
+variable (c) in
+/-- The inclusion of the level `μ⁻¹(c)` into `M`, equivariant along the inclusion `G_c → G` of the
+coadjoint stabilizer. -/
+def levelSubMulActionSubtype (h : σ.IsEquivariantMomentMap μ) :
+    h.levelSubMulAction c →ₑ[((↑) : (Lie.coadjointRepresentation ℝ I G).stabilizer c → G)] M where
+  toFun := Subtype.val
+  map_smul' k z := SubMulAction.val_smul k z
+
+@[simp]
+theorem coe_levelSubMulActionSubtype (h : σ.IsEquivariantMomentMap μ) :
+    ⇑(h.levelSubMulActionSubtype c) = Subtype.val :=
   (rfl)
 
 /-! ### Orbits -/
@@ -233,6 +252,52 @@ theorem properSMul_levelSubMulAction [ProperSMul G M] (h : σ.IsEquivariantMomen
     (fun g z ↦ SubMulAction.val_smul g z)
     fun _ y y' hg ↦ ⟨⟨_, h.mem_stabilizer_coadjointRepresentation_of_apply_eq
       (h.mem_levelSubMulAction.1 y.property) (hg ▸ h.mem_levelSubMulAction.1 y'.property)⟩, rfl⟩
+
+/-! ### Symmetries preserving the moment map -/
+
+section Symmetry
+
+variable {L : Type*} [Monoid L] [MulAction L M]
+
+variable (c) in
+/-- **A symmetry preserving `μ` acts on the level.** An action of `L` on `M` with
+`μ (l • x) = μ x` preserves the level `μ⁻¹(c)`, and restricts to an action on it. -/
+@[instance_reducible]
+def levelMulAction (h : σ.IsEquivariantMomentMap μ) (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) :
+    MulAction L (h.levelSubMulAction c) where
+  smul l z := ⟨l • (z : M), h.mem_levelSubMulAction.2
+    ((hμL l z).trans (h.mem_levelSubMulAction.1 z.property))⟩
+  one_smul z := Subtype.ext (one_smul L (z : M))
+  mul_smul l l' z := Subtype.ext (mul_smul l l' (z : M))
+
+/-- The action of `L` on the level is the restriction of its action on `M`. -/
+@[simp]
+theorem coe_smul_levelMulAction (h : σ.IsEquivariantMomentMap μ)
+    (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) (l : L) (z : h.levelSubMulAction c) :
+    letI := h.levelMulAction c hμL
+    ((l • z : h.levelSubMulAction c) : M) = l • (z : M) :=
+  (rfl)
+
+/-- The inclusion of the level intertwines the actions of `L` on the level and on `M`. -/
+theorem coe_comp_smul_levelMulAction (h : σ.IsEquivariantMomentMap μ)
+    (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) (l : L) :
+    letI := h.levelMulAction c hμL
+    (Subtype.val : h.levelSubMulAction c → M) ∘ (fun z ↦ l • z) =
+      (fun x : M ↦ l • x) ∘ Subtype.val :=
+  letI := h.levelMulAction c hμL
+  funext (h.coe_smul_levelMulAction hμL l)
+
+variable (c) in
+/-- **The symmetry commutes with the stabilizer on the level.** Since `L` commutes with `G`, its
+action on the level `μ⁻¹(c)` commutes with that of the coadjoint stabilizer `G_c`. -/
+theorem smulCommClass_levelMulAction [SMulCommClass L G M] (h : σ.IsEquivariantMomentMap μ)
+    (hμL : ∀ (l : L) (x : M), μ (l • x) = μ x) :
+    letI := h.levelMulAction c hμL
+    SMulCommClass L ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) :=
+  letI := h.levelMulAction c hμL
+  ⟨fun l k z ↦ Subtype.ext (smul_comm l (k : G) (z : M))⟩
+
+end Symmetry
 
 variable [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
