@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.GroupTheory.Index
 public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.RelativeNorm
 
 /-!
 # Level forms
@@ -28,6 +29,10 @@ finiteness of class sets or stabilizers: everything follows from the covariance 
 ## Main definitions and results
 
 * `Representation.levelForms ρ Γ`: the submodule `S_Γ(J, M)` of `G → M`.
+* `Representation.levelAction ρ`: the left action `(u • f) g = f (g * u) ∣ u⁻¹` of `J` on
+  `G → M`; a level form is a `Γ`-invariant function fixed by it
+  (`Representation.mem_levelForms_iff_levelAction`).
+* `Subgroup.levelStabilizer Γ J c`: the stabilizer `J ∩ c⁻¹ Γ c` of the coset `Γ * c`.
 * `Representation.levelFormsEquivPi`: **evaluation at representatives**. For representatives
   `c q` of the double cosets `q ∈ Γ \ G / J`, `f ↦ (f (c q))_q` is a linear equivalence from
   `S_Γ(J, M)` onto the product of the invariants `M ^ (J ∩ (c q)⁻¹ Γ (c q))`. Its inverse sends
@@ -36,10 +41,11 @@ finiteness of class sets or stabilizers: everything follows from the covariance 
 * `Representation.levelFormsMap`: the map on level forms induced by a `J`-equivariant map of
   coefficients.
 * `Representation.levelFormsRes`: for `J' ≤ J`, restriction `S_Γ(J, M) → S_Γ(J', M)`, the
-  identity on functions.
+  identity on functions; restrictions compose (`Representation.levelFormsRes_comp`).
 * `Representation.levelFormsTrace`: for `J' ≤ J` of finite index, the trace
-  `(tr f) g = ∑_{u J' ∈ J / J'} f (g * u) ∣ u⁻¹`, summed over the left cosets of `J'` in `J`; it is
-  independent of the representatives (`Representation.levelFormsTrace_apply`).
+  `(tr f) g = ∑_{u J' ∈ J / J'} f (g * u) ∣ u⁻¹`, summed over the left cosets of `J'` in `J`: the
+  relative norm `Representation.relNorm` of `levelAction ρ`. It is independent of the
+  representatives (`Representation.levelFormsTrace_apply`).
 * `Representation.levelFormsTrace_levelFormsRes`: `tr ∘ res = [J : J'] • id`.
 
 ## References
@@ -55,6 +61,22 @@ finiteness of class sets or stabilizers: everything follows from the covariance 
 public section
 
 open MulOpposite
+
+namespace Subgroup
+
+variable {G : Type*} [Group G]
+
+/-- The **stabilizer** `J ∩ c⁻¹ Γ c` in `J` of the coset `Γ * c` under right multiplication, as a
+subgroup of `J`: the `u ∈ J` with `c * u * c⁻¹ ∈ Γ`. -/
+def levelStabilizer (Γ J : Subgroup G) (c : G) : Subgroup J :=
+  (Γ.comap (MulAut.conj c : G →* G)).subgroupOf J
+
+@[simp]
+theorem mem_levelStabilizer_iff {Γ J : Subgroup G} {c : G} {u : J} :
+    u ∈ Γ.levelStabilizer J c ↔ c * u * c⁻¹ ∈ Γ :=
+  Iff.rfl
+
+end Subgroup
 
 namespace Representation
 
@@ -84,7 +106,44 @@ theorem mem_levelForms_iff {f : G → M} :
       (∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) ∧ ∀ (u : J) g, f (g * u) = ρ (op u) (f g) :=
   Iff.rfl
 
+/-- Composing the right action: `(m ∣ u) ∣ v = m ∣ (u * v)`. -/
+private theorem apply_op_apply_op (u v : J) (m : M) :
+    ρ (op v) (ρ (op u) m) = ρ (op (u * v)) m := by
+  rw [op_mul, map_mul, mul_apply_eq_comp]
+
+/-- The left action of the level `J` on functions `G → M` that combines right translation with
+the inverse coefficient action: `(u • f) g = f (g * u) ∣ u⁻¹`. The level forms are the
+`Γ`-invariant functions fixed by it (`mem_levelForms_iff_levelAction`). -/
+def levelAction : Representation R J (G → M) where
+  toFun u :=
+    { toFun f g := ρ (op u⁻¹) (f (g * u))
+      map_add' _ _ := by ext; simp
+      map_smul' _ _ := by ext; simp }
+  map_one' := by ext; simp
+  map_mul' u v := by
+    ext f g
+    simp [mul_assoc]
+
 variable {ρ Γ}
+
+@[simp]
+theorem levelAction_apply (u : J) (f : G → M) (g : G) :
+    levelAction ρ u f g = ρ (op u⁻¹) (f (g * u)) :=
+  (rfl)
+
+/-- A function is fixed by `u` under `levelAction ρ` exactly when `f (g * u) = f g ∣ u`. -/
+theorem levelAction_apply_eq_self_iff {f : G → M} (u : J) :
+    levelAction ρ u f = f ↔ ∀ g, f (g * u) = ρ (op u) (f g) := by
+  refine ⟨fun h g ↦ ?_, fun h ↦ funext fun g ↦ ?_⟩
+  · conv_rhs => rw [← h]
+    rw [levelAction_apply, apply_op_apply_op, inv_mul_cancel, op_one, map_one, one_apply_eq_self]
+  · rw [levelAction_apply, h, apply_op_apply_op, mul_inv_cancel, op_one, map_one,
+      one_apply_eq_self]
+
+/-- The level forms are the `Γ`-invariant functions fixed by `levelAction ρ`. -/
+theorem mem_levelForms_iff_levelAction {f : G → M} :
+    f ∈ ρ.levelForms Γ ↔ (∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) ∧ ∀ u : J, levelAction ρ u f = f := by
+  simp only [mem_levelForms_iff, levelAction_apply_eq_self_iff]
 
 /-- A level form is invariant under left multiplication by `Γ`. -/
 theorem levelForms_apply_mul_left (f : ρ.levelForms Γ) {γ : G} (hγ : γ ∈ Γ) (g : G) :
@@ -106,27 +165,29 @@ section Evaluation
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   {ρ : Representation R Jᵐᵒᵖ M} {Γ : Subgroup G}
 
+/-- A vector is fixed by the stabilizer `J ∩ c⁻¹ Γ c` acting through the level exactly when
+`m ∣ u = m` for every `u ∈ J` with `c * u * c⁻¹ ∈ Γ`. -/
+private theorem mem_invariants_levelStabilizer {c : G} {m : M} :
+    m ∈ invariants (ρ.comp (MonoidHom.op (Γ.levelStabilizer J c).subtype)) ↔
+      ∀ u : J, c * u * c⁻¹ ∈ Γ → ρ (op u) m = m := by
+  rw [mem_invariants]
+  exact ⟨fun h u hu ↦ h (op ⟨u, Subgroup.mem_levelStabilizer_iff.mpr hu⟩),
+    fun h u ↦ h u.unop (Subgroup.mem_levelStabilizer_iff.mp u.unop.property)⟩
+
 /-- If `m` is fixed by the stabilizer `J ∩ c⁻¹ Γ c` of `c`, then `m ∣ u` depends only on
 `γ * c * u` for `γ ∈ Γ` and `u ∈ J`. -/
 private theorem apply_eq_of_mul_mul_eq {c : G} {m : M}
-    (hm : m ∈ invariants
-      (ρ.comp (MonoidHom.op ((Γ.comap (MulAut.conj c : G →* G)).subgroupOf J).subtype)))
+    (hm : m ∈ invariants (ρ.comp (MonoidHom.op (Γ.levelStabilizer J c).subtype)))
     {γ γ' : G} (hγ : γ ∈ Γ) (hγ' : γ' ∈ Γ) {u u' : J} (h : γ * c * u = γ' * c * u') :
     ρ (op u) m = ρ (op u') m := by
-  have hs : u * u'⁻¹ ∈ (Γ.comap (MulAut.conj c : G →* G)).subgroupOf J := by
-    have : c * ((u : G) * (u' : G)⁻¹) * c⁻¹ = γ⁻¹ * γ' := by
-      rw [show c * ((u : G) * (u' : G)⁻¹) * c⁻¹ = γ⁻¹ * (γ * c * u) * ((u' : G)⁻¹ * c⁻¹) by
-        group, h]
-      group
-    simp only [Subgroup.mem_subgroupOf, Subgroup.mem_comap, MonoidHom.coe_ofClass,
-      MulAut.conj_apply, Subgroup.coe_mul, Subgroup.coe_inv, this]
-    exact Γ.mul_mem (Γ.inv_mem hγ) hγ'
-  have hfix := (mem_invariants _ m).mp hm (op ⟨_, hs⟩)
-  simp only [MonoidHom.coe_comp, Function.comp_apply, MonoidHom.op_apply_apply,
-    MonoidHom.coe_comp, Subgroup.coe_subtype, Function.comp_apply, unop_op] at hfix
+  have hs : c * ((u * u'⁻¹ : J) : G) * c⁻¹ = γ⁻¹ * γ' := by
+    rw [Subgroup.coe_mul, Subgroup.coe_inv, show c * ((u : G) * (u' : G)⁻¹) * c⁻¹ =
+      γ⁻¹ * (γ * c * u) * ((u' : G)⁻¹ * c⁻¹) by group, h]
+    group
   calc ρ (op u) m = ρ (op u') (ρ (op (u * u'⁻¹)) m) := by
-        rw [← mul_apply_eq_comp, ← map_mul, ← op_mul, inv_mul_cancel_right]
-    _ = ρ (op u') m := by rw [hfix]
+        rw [apply_op_apply_op, inv_mul_cancel_right]
+    _ = ρ (op u') m := by
+        rw [mem_invariants_levelStabilizer.mp hm _ (hs ▸ Γ.mul_mem (Γ.inv_mem hγ) hγ')]
 
 variable (c : DoubleCoset.Quotient (Γ : Set G) J → G)
   (hc : ∀ q, DoubleCoset.mk Γ J (c q) = q)
@@ -141,16 +202,14 @@ private theorem exists_eq_mul_mul (g : G) :
 `g = γ * c q * u` is `m q ∣ u`, for one chosen factorization. -/
 private noncomputable def ofPi
     (m : (q : DoubleCoset.Quotient (Γ : Set G) J) →
-      invariants
-        (ρ.comp (MonoidHom.op ((Γ.comap (MulAut.conj (c q) : G →* G)).subgroupOf J).subtype)))
+      invariants (ρ.comp (MonoidHom.op (Γ.levelStabilizer J (c q)).subtype)))
     (g : G) : M :=
   ρ (op (exists_eq_mul_mul c hc g).choose.2) (m (DoubleCoset.mk Γ J g))
 
 include hc in
 private theorem ofPi_eq
     (m : (q : DoubleCoset.Quotient (Γ : Set G) J) →
-      invariants
-        (ρ.comp (MonoidHom.op ((Γ.comap (MulAut.conj (c q) : G →* G)).subgroupOf J).subtype)))
+      invariants (ρ.comp (MonoidHom.op (Γ.levelStabilizer J (c q)).subtype)))
     {g : G} {q : DoubleCoset.Quotient (Γ : Set G) J} {γ : G} (hγ : γ ∈ Γ) (u : J)
     (hg : g = γ * c q * u) :
     ofPi c hc m g = ρ (op u) (m q) := by
@@ -163,15 +222,8 @@ private theorem ofPi_eq
 
 /-- The values `f (c q)` of a level form at the representatives, each fixed by its stabilizer. -/
 private def evalPi (f : ρ.levelForms Γ) (q : DoubleCoset.Quotient (Γ : Set G) J) :
-    invariants
-      (ρ.comp (MonoidHom.op ((Γ.comap (MulAut.conj (c q) : G →* G)).subgroupOf J).subtype)) :=
-  ⟨(f : G → M) (c q), (mem_invariants _ _).mpr fun u ↦ by
-    have hu : c q * ((u.unop : J) : G) * (c q)⁻¹ ∈ Γ := by
-      have := u.unop.property
-      rwa [Subgroup.mem_subgroupOf, Subgroup.mem_comap, MonoidHom.coe_ofClass,
-        MulAut.conj_apply] at this
-    simp only [MonoidHom.coe_comp, Function.comp_apply, MonoidHom.op_apply_apply,
-      Subgroup.coe_subtype]
+    invariants (ρ.comp (MonoidHom.op (Γ.levelStabilizer J (c q)).subtype)) :=
+  ⟨(f : G → M) (c q), mem_invariants_levelStabilizer.mpr fun u hu ↦ by
     rw [← levelForms_apply_mul_right f]
     conv_rhs => rw [← levelForms_apply_mul_left f hu]
     group⟩
@@ -189,8 +241,7 @@ level. The inverse sends `m` to the form with value `m q ∣ u` at `γ * c q * u
 is needed. -/
 noncomputable def levelFormsEquivPi :
     ρ.levelForms Γ ≃ₗ[R] ((q : DoubleCoset.Quotient (Γ : Set G) J) →
-      invariants
-        (ρ.comp (MonoidHom.op ((Γ.comap (MulAut.conj (c q) : G →* G)).subgroupOf J).subtype)))
+      invariants (ρ.comp (MonoidHom.op (Γ.levelStabilizer J (c q)).subtype)))
     where
   toFun := evalPi c
   map_add' _ _ := rfl
@@ -201,8 +252,7 @@ noncomputable def levelFormsEquivPi :
     · rw [ofPi_eq c hc m hγ₀ u₀ h₀, ofPi_eq c hc m (q := DoubleCoset.mk Γ J g)
         (Γ.mul_mem hγ hγ₀) u₀ (by nth_rw 1 [h₀]; simp only [mul_assoc])]
     · rw [ofPi_eq c hc m hγ₀ u₀ h₀, ofPi_eq c hc m (q := DoubleCoset.mk Γ J g) hγ₀ (u₀ * u)
-        (by nth_rw 1 [h₀]; simp only [Subgroup.coe_mul, mul_assoc]),
-        op_mul, map_mul, mul_apply_eq_comp]⟩
+        (by nth_rw 1 [h₀]; simp only [Subgroup.coe_mul, mul_assoc]), apply_op_apply_op]⟩
   left_inv f := by
     ext g
     obtain ⟨⟨⟨γ₀, hγ₀⟩, u₀⟩, h₀ : g = γ₀ * _ * u₀⟩ := exists_eq_mul_mul c hc g
@@ -223,8 +273,7 @@ theorem coe_levelFormsEquivPi_apply (f : ρ.levelForms Γ)
 `m q ∣ u` at `γ * c q * u`, whatever the factorization. -/
 theorem levelFormsEquivPi_symm_apply
     (m : (q : DoubleCoset.Quotient (Γ : Set G) J) →
-      invariants
-        (ρ.comp (MonoidHom.op ((Γ.comap (MulAut.conj (c q) : G →* G)).subgroupOf J).subtype)))
+      invariants (ρ.comp (MonoidHom.op (Γ.levelStabilizer J (c q)).subtype)))
     (q : DoubleCoset.Quotient (Γ : Set G) J) {γ : G} (hγ : γ ∈ Γ) (u : J) :
     ((levelFormsEquivPi ρ Γ c hc).symm m : G → M) (γ * c q * u) = ρ (op u) (m q) :=
   ofPi_eq c hc m hγ u rfl
@@ -296,63 +345,44 @@ theorem coe_levelFormsRes_apply (f : ρ.levelForms Γ) :
 theorem levelFormsRes_injective : Function.Injective (levelFormsRes ρ Γ h) :=
   Submodule.inclusion_injective _
 
+/-- Restricting from `J` to `J'` and then to `J'' ≤ J'` is restricting from `J` to `J''`. -/
+@[simp]
+theorem levelFormsRes_comp {J'' : Subgroup G} (h' : J'' ≤ J') :
+    levelFormsRes (ρ.comp (MonoidHom.op (Subgroup.inclusion h))) Γ h' ∘ₗ levelFormsRes ρ Γ h =
+      levelFormsRes ρ Γ (h'.trans h) :=
+  (rfl)
+
 variable {ρ Γ h}
 
-variable (ρ) in
-/-- The summand `f (g * u) ∣ u⁻¹` of the trace, at the chosen representative `u` of a left coset
-`u J'` of `J'` in `J`. -/
-private noncomputable def traceTerm (f : G → M) (g : G) (x : J ⧸ J'.subgroupOf J) : M :=
-  ρ (op x.out⁻¹) (f (g * x.out))
+/-- A level form of the smaller level `J'` is fixed by `J' ∩ J` acting through `levelAction ρ`. -/
+private theorem levelAction_apply_eq_self_of_mem {f : G → M}
+    (hf : f ∈ levelForms (ρ.comp (MonoidHom.op (Subgroup.inclusion h))) Γ)
+    (u : J'.subgroupOf J) : levelAction ρ u f = f :=
+  (mem_levelForms_iff_levelAction.mp hf).2 ⟨u, Subgroup.mem_subgroupOf.mp u.property⟩
 
-/-- The summand `f (g * u) ∣ u⁻¹` is constant on each left coset `u J'`. -/
-private theorem traceTerm_mk {f : G → M}
-    (hf : f ∈ levelForms (ρ.comp (MonoidHom.op (Subgroup.inclusion h))) Γ) (g : G) (u : J) :
-    traceTerm ρ f g (u : J ⧸ J'.subgroupOf J) = ρ (op u⁻¹) (f (g * u)) := by
-  obtain ⟨w, hu⟩ := QuotientGroup.mk_out_eq_mul (J'.subgroupOf J) u
-  have hw : f (g * u * (w : J)) = ρ (op (w : J)) (f (g * u)) :=
-    hf.2 ⟨((w : J) : G), Subgroup.mem_subgroupOf.mp w.property⟩ (g * u)
-  rw [traceTerm, hu, Subgroup.coe_mul, ← mul_assoc, hw, ← mul_apply_eq_comp, ← map_mul, ← op_mul,
-    mul_inv_rev, mul_inv_cancel_left]
-
-variable [J'.IsFiniteRelIndex J]
-
-/-- The trace sum `∑_{u J' ∈ J / J'} f (g * u) ∣ u⁻¹`. -/
-private theorem traceTerm_sum_mem {f : G → M}
-    (hf : f ∈ levelForms (ρ.comp (MonoidHom.op (Subgroup.inclusion h))) Γ) :
-    (fun g ↦ ∑ᶠ x : J ⧸ J'.subgroupOf J, traceTerm ρ f g x) ∈ ρ.levelForms Γ := by
-  have := Fintype.ofFinite (J ⧸ J'.subgroupOf J)
-  refine ⟨fun γ hγ g ↦ ?_, fun u g ↦ ?_⟩
-  · simp only [traceTerm, mul_assoc, hf.1 γ hγ]
-  · simp only [finsum_eq_sum_of_fintype, map_sum]
-    refine (Fintype.sum_equiv (MulAction.toPerm u⁻¹) _ _ fun x ↦ ?_).symm
-    induction x using QuotientGroup.induction_on with | H a => ?_
-    rw [MulAction.toPerm_apply, MulAction.Quotient.smul_mk, traceTerm_mk hf,
-      traceTerm_mk hf, ← mul_apply_eq_comp, ← map_mul, ← op_mul]
-    simp [mul_assoc]
-
-variable (ρ Γ h)
+variable [J'.IsFiniteRelIndex J] (ρ Γ h)
 
 /-- **The trace** from a level `J'` of finite index in `J` down to `J`:
-`(tr f) g = ∑_{u J' ∈ J / J'} f (g * u) ∣ u⁻¹`, summed over the left cosets `u J'`. The summand is
+`(tr f) g = ∑_{u J' ∈ J / J'} f (g * u) ∣ u⁻¹`, summed over the left cosets `u J'`. It is the
+relative norm `Representation.relNorm` of `J' ∩ J` in `J` for `levelAction ρ`. The summand is
 constant on each left coset, so the sum does not depend on the representatives
 (`levelFormsTrace_apply`). -/
 noncomputable def levelFormsTrace :
-    levelForms (ρ.comp (MonoidHom.op (Subgroup.inclusion h))) Γ →ₗ[R] ρ.levelForms Γ where
-  toFun f := ⟨fun g ↦ ∑ᶠ x : J ⧸ J'.subgroupOf J, traceTerm ρ f g x, traceTerm_sum_mem f.property⟩
-  map_add' f₁ f₂ := by
-    have := Fintype.ofFinite (J ⧸ J'.subgroupOf J)
-    ext g
-    simp [traceTerm, finsum_eq_sum_of_fintype, Finset.sum_add_distrib]
-  map_smul' r f := by
-    have := Fintype.ofFinite (J ⧸ J'.subgroupOf J)
-    ext g
-    simp [traceTerm, finsum_eq_sum_of_fintype, Finset.smul_sum]
+    levelForms (ρ.comp (MonoidHom.op (Subgroup.inclusion h))) Γ →ₗ[R] ρ.levelForms Γ :=
+  letI := Fintype.ofFinite (J ⧸ J'.subgroupOf J)
+  (relNorm (levelAction ρ) (J'.subgroupOf J)).restrict fun f hf ↦
+    mem_levelForms_iff_levelAction.mpr ⟨fun γ hγ g ↦ by
+      simp only [relNorm_apply, Finset.sum_apply, levelAction_apply, mul_assoc, hf.1 γ hγ],
+      relNorm_apply_eq_self _ (levelAction_apply_eq_self_of_mem hf)⟩
 
+/-- The trace as a finite sum of `levelAction ρ` over the chosen coset representatives. -/
 private theorem coe_levelFormsTrace_apply_eq_finsum
     (f : levelForms (ρ.comp (MonoidHom.op (Subgroup.inclusion h))) Γ) (g : G) :
     (levelFormsTrace ρ Γ h f : G → M) g =
-      ∑ᶠ x : J ⧸ J'.subgroupOf J, traceTerm ρ (f : G → M) g x :=
-  rfl
+      ∑ᶠ x : J ⧸ J'.subgroupOf J, levelAction ρ x.out (f : G → M) g := by
+  let _ := Fintype.ofFinite (J ⧸ J'.subgroupOf J)
+  rw [levelFormsTrace, LinearMap.coe_restrict_apply, relNorm_apply, Finset.sum_apply,
+    finsum_eq_sum_of_fintype]
 
 /-- The trace `(tr f) g = ∑_{u J' ∈ J / J'} f (g * u) ∣ u⁻¹`, computed with any choice of
 representatives `s x` of the left cosets `x` of `J'` in `J`. -/
@@ -362,19 +392,16 @@ theorem levelFormsTrace_apply [Fintype (J ⧸ J'.subgroupOf J)]
     (levelFormsTrace ρ Γ h f : G → M) g = ∑ x, ρ (op (s x)⁻¹) ((f : G → M) (g * s x)) := by
   rw [coe_levelFormsTrace_apply_eq_finsum, finsum_eq_sum_of_fintype]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
-  conv_lhs => rw [← hs x]
-  exact traceTerm_mk f.property g (s x)
+  rw [← levelAction_apply]
+  exact congrFun (apply_eq_apply_of_quotientGroup_mk_eq _
+    (levelAction_apply_eq_self_of_mem f.property) ((QuotientGroup.out_eq' x).trans (hs x).symm)) g
 
 /-- **Trace after restriction is multiplication by the index**: `tr ∘ res = [J : J'] • id`. -/
 theorem levelFormsTrace_levelFormsRes (f : ρ.levelForms Γ) :
-    levelFormsTrace ρ Γ h (levelFormsRes ρ Γ h f) = J'.relIndex J • f := by
-  have := Fintype.ofFinite (J ⧸ J'.subgroupOf J)
-  ext g
-  rw [levelFormsTrace_apply ρ Γ h _ Quotient.out (fun x ↦ QuotientGroup.out_eq' x) g]
-  simp only [coe_levelFormsRes_apply, levelForms_apply_mul_right f, ← mul_apply_eq_comp,
-    ← map_mul, ← op_mul, mul_inv_cancel, op_one, map_one, one_apply_eq_self, Finset.sum_const,
-    Finset.card_univ, Submodule.coe_smul_of_tower, Pi.smul_apply, Subgroup.relIndex,
-    Subgroup.index_eq_card, Nat.card_eq_fintype_card]
+    levelFormsTrace ρ Γ h (levelFormsRes ρ Γ h f) = J'.relIndex J • f :=
+  letI := Fintype.ofFinite (J ⧸ J'.subgroupOf J)
+  Subtype.ext <|
+    relNorm_apply_of_forall_apply_eq _ (mem_levelForms_iff_levelAction.mp f.property).2
 
 end Level
 
