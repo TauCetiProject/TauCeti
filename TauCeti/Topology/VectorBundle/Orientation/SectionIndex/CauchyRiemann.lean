@@ -41,21 +41,27 @@ in this file. The section need not be holomorphic, but its zeros behave as if it
   least `1`. In particular the Euler number is nonnegative.
 * **Unique continuation.** On a connected compact surface, a section satisfying the inequality in
   coordinates around every point either vanishes identically or has finitely many zeros
-  (`TauCeti.finite_setOf_eq_zero_of_norm_conjWirtingerDeriv_le`): near each point it vanishes
-  identically or has no other zero, by the similarity principle, and the set of points near which
-  it vanishes is open and closed.
+  (`TauCeti.finite_setOf_section_eq_zero_of_norm_conjWirtingerDeriv_le`): near each point it
+  vanishes identically or has no other zero, by the similarity principle, and the set of points
+  near which it vanishes is open and closed
+  (`TauCeti.finite_setOf_eq_zero_of_forall_eventually`).
 
 Together: a section satisfying the inequality everywhere which vanishes at more than `⟨e(E), [M]⟩`
 points vanishes identically
-(`TauCeti.VectorBundleOrientation.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard`). For the
-complex line bundle `L` of degree `d = c₁(L)[M]` over the sphere, this says that evaluating the
-kernel of a real Cauchy–Riemann operator at `d + 1` distinct points is injective, and that the
-kernel is zero when `d < 0`: the inputs of automatic transversality for line bundles.
+(`TauCeti.VectorBundleOrientation.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard`). So, for
+sections satisfying the inequality in coordinates everywhere, evaluation at `⟨e(E), [M]⟩ + 1`
+distinct points is injective, and there are no nonzero such sections when `⟨e(E), [M]⟩ < 0`. This
+file does not identify the Euler class with the first Chern class, nor derive the inequality from a
+bundle operator. Once both are done, this becomes the statement that evaluating the kernel of a
+real Cauchy–Riemann operator on a complex line bundle `L` of degree `d = c₁(L)[M]` at `d + 1`
+distinct points is injective, and that this kernel is zero when `d < 0`: the inputs of automatic
+transversality for line bundles.
 
 ## Main results
 
-* `TauCeti.eventually_eq_zero_or_eventually_ne_zero_of_norm_conjWirtingerDeriv_le`: a section
-  satisfying the inequality near `z` vanishes near `z` or has no zero near `z` other than `z`.
+* `Bundle.Trivialization.eventually_eq_zero_or_eventually_ne_zero_of_norm_conjWirtingerDeriv_le`:
+  a section satisfying the inequality near `z` vanishes near `z` or has no zero near `z` other than
+  `z`.
 * `TauCeti.VectorBundleOrientation.sectionIndex_nonneg_of_norm_conjWirtingerDeriv_le` and
   `TauCeti.VectorBundleOrientation.sectionIndex_pos_of_norm_conjWirtingerDeriv_le`: its local index
   is nonnegative, and positive at an isolated zero.
@@ -63,8 +69,10 @@ kernel is zero when `d < 0`: the inputs of automatic transversality for line bun
   `evalFundamentalClass_eulerClass_nonneg_of_norm_conjWirtingerDeriv_le`, in the namespace
   `TauCeti.VectorBundleOrientation`: the number of zeros is at most the Euler number, which is
   therefore nonnegative.
-* `TauCeti.finite_setOf_eq_zero_of_norm_conjWirtingerDeriv_le`: on a connected compact surface, a
-  section which is not identically zero has finitely many zeros.
+* `TauCeti.finite_setOf_section_eq_zero_of_norm_conjWirtingerDeriv_le`: on a connected compact
+  surface, a section which is not identically zero has finitely many zeros, by
+  `TauCeti.finite_setOf_eq_zero_of_forall_eventually`, which needs only that near every point the
+  section vanishes identically or has no other zero.
 * `TauCeti.VectorBundleOrientation.eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard`: a section
   vanishing at more points than the Euler number vanishes identically.
 
@@ -85,9 +93,9 @@ noncomputable section
 
 open Bundle CategoryTheory Filter Module Set Topology
 
-namespace TauCeti
+namespace Bundle.Trivialization
 
-section Coordinates
+open TauCeti
 
 variable {M : Type} [TopologicalSpace M] {E : M → Type} [TopologicalSpace (TotalSpace ℂ E)]
   [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)] (e : Trivialization ℂ (π ℂ E))
@@ -109,36 +117,23 @@ theorem eventually_eq_zero_or_eventually_ne_zero_of_norm_conjWirtingerDeriv_le
     (∀ᶠ x in 𝓝 z, s x = 0) ∨ ∀ᶠ x in 𝓝[≠] z, s x ≠ 0 := by
   obtain ⟨v, σ, hv, hv₀, hσ, hfac⟩ :=
     exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le hΩ hf hK hfK hzΩ
-  exact eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul e φ hze hzφ hv hv₀ hσ hfac
+  exact e.eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul φ hze hzφ hv hv₀ hσ hfac
 
-end Coordinates
+end Bundle.Trivialization
+
+namespace TauCeti
 
 section Finite
 
-variable {M : Type} [TopologicalSpace M] [CompactSpace M] [ConnectedSpace M] {E : M → Type}
-  [TopologicalSpace (TotalSpace ℂ E)] [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)]
-  {s : ∀ x, E x}
-
-/-- **Unique continuation for sections solving a Cauchy–Riemann inequality.** Let `M` be a
-connected compact space and `s` a section of a real plane bundle `E → M` with fibre `ℂ`. Suppose
-that around every point `z` there are a chart `φ z` and a linear trivialization `e z` in which `s`,
-read as `f y = (e z (s ((φ z)⁻¹ y))).2`, is of class `C¹` on an open set `Ω z ∋ φ z z` and
-satisfies `‖\bar∂ f‖ ≤ K z ‖f‖` there, for a locally bounded `K z`. If `s` does not vanish
-identically, it has finitely many zeros. -/
-theorem finite_setOf_eq_zero_of_norm_conjWirtingerDeriv_le (φ : M → OpenPartialHomeomorph M ℂ)
-    (e : M → Trivialization ℂ (π ℂ E)) [∀ z, (e z).IsLinear ℝ] (hzφ : ∀ z, z ∈ (φ z).source)
-    (hze : ∀ z, z ∈ (e z).baseSet) (Ω : M → Set ℂ) (hΩ : ∀ z, IsOpen (Ω z))
-    (hzΩ : ∀ z, φ z z ∈ Ω z)
-    (hf : ∀ z, ContDiffOn ℝ 1
-      (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) (Ω z))
-    (K : M → ℂ → ℝ) (hK : ∀ z, ∀ y ∈ Ω z, ∃ B, ∀ᶠ w in 𝓝 y, K z w ≤ B)
-    (hfK : ∀ z, ∀ y ∈ Ω z, ‖conjWirtingerDeriv
-        (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) y‖ ≤
-      K z y * ‖(e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2‖)
-    (hne : ∃ x, s x ≠ 0) : {x | s x = 0}.Finite := by
-  have hdich (x : M) : (∀ᶠ y in 𝓝 x, s y = 0) ∨ ∀ᶠ y in 𝓝[≠] x, s y ≠ 0 :=
-    eventually_eq_zero_or_eventually_ne_zero_of_norm_conjWirtingerDeriv_le (e x) (φ x) (hze x)
-      (hzφ x) (hΩ x) (hzΩ x) (hf x) (hK x) (hfK x)
+/-- **A function which vanishes identically or has no other zero near each point has finitely many
+zeros.** Let `M` be a connected compact space and `s` a dependent function on `M` with values in
+types with a zero, such as a section of a bundle. If near every point `x` either `s` vanishes
+identically, or `s` has no zero other than possibly `x`, and `s` does not vanish identically, then
+`s` has finitely many zeros. -/
+theorem finite_setOf_eq_zero_of_forall_eventually {M : Type*} [TopologicalSpace M] [CompactSpace M]
+    [ConnectedSpace M] {E : M → Type*} [∀ x, Zero (E x)] {s : ∀ x, E x}
+    (hdich : ∀ x, (∀ᶠ y in 𝓝 x, s y = 0) ∨ ∀ᶠ y in 𝓝[≠] x, s y ≠ 0) (hne : ∃ x, s x ≠ 0) :
+    {x | s x = 0}.Finite := by
   -- The set `A` of points near which `s` vanishes is open, and closed: near a point outside `A`,
   -- `s` vanishes at most at that point.
   set A := {x | ∀ᶠ y in 𝓝 x, s y = 0}
@@ -154,16 +149,36 @@ theorem finite_setOf_eq_zero_of_norm_conjWirtingerDeriv_le (φ : M → OpenParti
       fun hA ↦ ?_
     obtain ⟨x, hx⟩ := hne
     exact hx (hA ▸ mem_univ x : x ∈ A).self_of_nhds
-  -- So every point has a neighbourhood containing no other zero, and finitely many such
-  -- neighbourhoods cover `M`.
-  have hU (x : M) : {y | y ≠ x → s y ≠ 0} ∈ 𝓝 x := by
-    have hxA : x ∉ A := by rw [hA]; exact notMem_empty x
-    exact eventually_nhdsWithin_iff.1 ((hdich x).resolve_left hxA)
-  obtain ⟨t, -, ht⟩ := isCompact_univ.elim_nhds_subcover _ fun x _ ↦ hU x
-  refine t.finite_toSet.subset fun z hz ↦ ?_
-  obtain ⟨x, hxt, hzx⟩ := mem_iUnion₂.1 (ht (mem_univ z))
-  by_contra hzt
-  exact hzx (fun h ↦ hzt (h ▸ hxt)) hz
+  -- So the zeros of `s` are isolated, and a codiscrete subset of a compact space is cofinite.
+  have h : {y | s y ≠ 0} ∈ codiscrete M := mem_codiscrete_iff_forall_mem_nhdsNE.2 fun x ↦
+    (hdich x).resolve_left (show x ∉ A by rw [hA]; exact notMem_empty x)
+  simpa [compl_ofPred] using cofinite_le_codiscrete h
+
+variable {M : Type} [TopologicalSpace M] [CompactSpace M] [ConnectedSpace M] {E : M → Type}
+  [TopologicalSpace (TotalSpace ℂ E)] [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)]
+  {s : ∀ x, E x}
+
+/-- **Unique continuation for sections solving a Cauchy–Riemann inequality.** Let `M` be a
+connected compact space and `s` a section of a real plane bundle `E → M` with fibre `ℂ`. Suppose
+that around every point `z` there are a chart `φ z` and a linear trivialization `e z` in which `s`,
+read as `f y = (e z (s ((φ z)⁻¹ y))).2`, is of class `C¹` on an open set `Ω z ∋ φ z z` and
+satisfies `‖\bar∂ f‖ ≤ K z ‖f‖` there, for a locally bounded `K z`. If `s` does not vanish
+identically, it has finitely many zeros. -/
+theorem finite_setOf_section_eq_zero_of_norm_conjWirtingerDeriv_le
+    (φ : M → OpenPartialHomeomorph M ℂ)
+    (e : M → Trivialization ℂ (π ℂ E)) [∀ z, (e z).IsLinear ℝ] (hzφ : ∀ z, z ∈ (φ z).source)
+    (hze : ∀ z, z ∈ (e z).baseSet) (Ω : M → Set ℂ) (hΩ : ∀ z, IsOpen (Ω z))
+    (hzΩ : ∀ z, φ z z ∈ Ω z)
+    (hf : ∀ z, ContDiffOn ℝ 1
+      (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) (Ω z))
+    (K : M → ℂ → ℝ) (hK : ∀ z, ∀ y ∈ Ω z, ∃ B, ∀ᶠ w in 𝓝 y, K z w ≤ B)
+    (hfK : ∀ z, ∀ y ∈ Ω z, ‖conjWirtingerDeriv
+        (fun y ↦ (e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2) y‖ ≤
+      K z y * ‖(e z (TotalSpace.mk' ℂ ((φ z).symm y) (s ((φ z).symm y)))).2‖)
+    (hne : ∃ x, s x ≠ 0) : {x | s x = 0}.Finite :=
+  finite_setOf_eq_zero_of_forall_eventually (fun x ↦
+    (e x).eventually_eq_zero_or_eventually_ne_zero_of_norm_conjWirtingerDeriv_le (φ x) (hze x)
+      (hzφ x) (hΩ x) (hzΩ x) (hf x) (hK x) (hfK x)) hne
 
 end Finite
 
@@ -372,8 +387,8 @@ theorem eq_zero_of_evalFundamentalClass_eulerClass_lt_ncard (hze : ∀ z, z ∈ 
     (hlt : (oM.evalFundamentalClass hF (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
       (o.eulerClass hF)).down < S.ncard) (x : M) : s x = 0 := by
   by_contra hx
-  have hZ := finite_setOf_eq_zero_of_norm_conjWirtingerDeriv_le φ e hzφ hze Ω hΩ hzΩ hf K hK hfK
-    ⟨x, hx⟩
+  have hZ := finite_setOf_section_eq_zero_of_norm_conjWirtingerDeriv_le φ e hzφ hze Ω hΩ hzΩ hf K
+    hK hfK ⟨x, hx⟩
   have hle := o.ncard_le_evalFundamentalClass_eulerClass_of_norm_conjWirtingerDeriv_le hF oM hs φ e
     ω (fun z _ ↦ hzφ z) Ω K hZ (fun z _ ↦ hze z) (fun z _ ↦ ho z) (fun z _ ↦ hφ z)
     (fun z _ ↦ hΩ z) (fun z _ ↦ hzΩ z) (fun z _ ↦ hf z) (fun z _ ↦ hK z) (fun z _ ↦ hfK z)

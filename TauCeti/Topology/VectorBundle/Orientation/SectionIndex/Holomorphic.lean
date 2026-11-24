@@ -31,10 +31,11 @@ More generally, `f` only needs to be holomorphic up to a nonvanishing factor: if
 (`TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul`),
 positive at an isolated zero
 (`TauCeti.VectorBundleOrientation.sectionIndex_pos_of_eventually_eq_mul`). Near `z`, such a section
-vanishes exactly where `σ ∘ φ` does (`TauCeti.eventually_eq_zero_iff_of_eventually_eq_mul`), so it
-vanishes near `z` or has no other zero near `z`
-(`TauCeti.eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul`). These are the
-factorizations which the similarity principle provides for solutions of Cauchy–Riemann
+vanishes exactly where `σ ∘ φ` does
+(`Bundle.Trivialization.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul`), so it vanishes near
+`z` or has no other zero near `z`
+(`Bundle.Trivialization.eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul`). These are
+the factorizations which the similarity principle provides for solutions of Cauchy–Riemann
 inequalities, treated in `TauCeti.Topology.VectorBundle.Orientation.SectionIndex.CauchyRiemann`.
 
 Over a compact surface, if a section has finitely many zeros and is complex analytic in such
@@ -65,9 +66,9 @@ holomorphic, has local index `-1` (`TauCeti.VectorBundleOrientation.sectionIndex
 * `TauCeti.VectorBundleOrientation.sectionIndex_eq_analyticOrderNatAt_of_eventually_eq_mul` and
   `TauCeti.VectorBundleOrientation.sectionIndex_pos_of_eventually_eq_mul`: the same for a section
   which is holomorphic up to a continuous nonvanishing factor.
-* `TauCeti.eventually_eq_zero_iff_of_eventually_eq_mul` and
-  `TauCeti.eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul`: the zeros of such a
-  section near `z`.
+* `Bundle.Trivialization.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul` and
+  `Bundle.Trivialization.eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul`: the zeros
+  of such a section near `z`.
 * `TauCeti.VectorBundleOrientation.evalFundamentalClass_eulerClass_eq_sum_analyticOrderNatAt`: the
   Euler number is the sum of the orders of the zeros of a section with finitely many zeros, each
   complex analytic in oriented coordinates.
@@ -91,9 +92,7 @@ noncomputable section
 
 open Bundle CategoryTheory Filter Module Set Topology
 
-namespace TauCeti
-
-section Coordinates
+namespace Bundle.Trivialization
 
 variable {M : Type} [TopologicalSpace M] {E : M → Type} [TopologicalSpace (TotalSpace ℂ E)]
   [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)] (e : Trivialization ℂ (π ℂ E))
@@ -105,8 +104,8 @@ linear trivialization of a real plane bundle `E` with fibre `ℂ` and `φ` a cha
 in `ℂ`, both defined at `z`. If the section `s`, read in these coordinates as
 `y ↦ (e (s (φ⁻¹ y))).2`, agrees near `φ z` with `v * σ`, for a function `v` continuous and nonzero
 at `φ z`, then near `z` the section vanishes exactly where `σ ∘ φ` does. -/
-theorem eventually_eq_zero_iff_of_eventually_eq_mul (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source)
-    (hv : ContinuousAt v (φ z)) (hv₀ : v (φ z) ≠ 0)
+theorem eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul (hze : z ∈ e.baseSet)
+    (hzφ : z ∈ φ.source) (hv : ContinuousAt v (φ z)) (hv₀ : v (φ z) ≠ 0)
     (hfac : ∀ᶠ y in 𝓝 (φ z),
       (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2 = v y * σ y) :
     ∀ᶠ x in 𝓝 z, s x = 0 ↔ σ (φ x) = 0 := by
@@ -121,15 +120,16 @@ theorem eventually_eq_zero_iff_of_eventually_eq_mul (hze : z ∈ e.baseSet) (hz�
 
 /-- **A section which is holomorphic up to a nonvanishing factor vanishes near a point or has no
 zeros near it except possibly the point itself.** Under the hypotheses of
-`TauCeti.eventually_eq_zero_iff_of_eventually_eq_mul`, with `σ` analytic at `φ z`, either `s`
-vanishes on a neighbourhood of `z`, or `s` does not vanish on a punctured neighbourhood of `z`. -/
+`Bundle.Trivialization.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul`, with `σ` analytic at
+`φ z`, either `s` vanishes on a neighbourhood of `z`, or `s` does not vanish on a punctured
+neighbourhood of `z`. -/
 theorem eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul (hze : z ∈ e.baseSet)
     (hzφ : z ∈ φ.source) (hv : ContinuousAt v (φ z)) (hv₀ : v (φ z) ≠ 0)
     (hσ : AnalyticAt ℂ σ (φ z))
     (hfac : ∀ᶠ y in 𝓝 (φ z),
       (e (TotalSpace.mk' ℂ (φ.symm y) (s (φ.symm y)))).2 = v y * σ y) :
     (∀ᶠ x in 𝓝 z, s x = 0) ∨ ∀ᶠ x in 𝓝[≠] z, s x ≠ 0 := by
-  have hsσ := eventually_eq_zero_iff_of_eventually_eq_mul e φ hze hzφ hv hv₀ hfac
+  have hsσ := e.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul φ hze hzφ hv hv₀ hfac
   rcases hσ.eventually_eq_zero_or_eventually_ne_zero with h | h
   · left
     filter_upwards [(φ.continuousAt hzφ).eventually h, hsσ] with x hσx hx
@@ -142,7 +142,9 @@ theorem eventually_eq_zero_or_eventually_ne_zero_of_eventually_eq_mul (hze : z �
     filter_upwards [hφ.eventually h, eventually_nhdsWithin_of_eventually_nhds hsσ] with x hσx hx
     exact fun h0 ↦ hσx (hx.1 h0)
 
-end Coordinates
+end Bundle.Trivialization
+
+namespace TauCeti
 
 namespace VectorBundleOrientation
 
@@ -280,7 +282,7 @@ theorem sectionIndex_pos_of_eventually_eq_mul (φ : OpenPartialHomeomorph M ℂ)
       hσ hfac, Nat.cast_pos, analyticOrderNatAt, Nat.pos_iff_ne_zero, ne_eq, ENat.toNat_eq_zero,
     not_or]
   -- In these coordinates `s x = 0` exactly when `σ (φ x) = 0`, for `x` near `z`.
-  have hsσ := eventually_eq_zero_iff_of_eventually_eq_mul e φ hze hzφ hv hv₀ hfac
+  have hsσ := e.eventually_eq_zero_iff_eq_zero_of_eventually_eq_mul φ hze hzφ hv hv₀ hfac
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- The order is not `0`, since `σ` vanishes at `φ z`.
     exact (analyticOrderAt_eq_zero.1 h).resolve_left (not_not.2 hσ) (hsσ.self_of_nhds.1 hsz)
@@ -292,10 +294,7 @@ theorem sectionIndex_pos_of_eventually_eq_mul (φ : OpenPartialHomeomorph M ℂ)
     have htarget : ∀ᶠ y in 𝓝 (φ z), y ∈ φ.target := φ.open_target.mem_nhds (φ.map_source hzφ)
     have hsym : Tendsto φ.symm (𝓝[≠] (φ z)) (𝓝[≠] z) :=
       tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ (hcont.mono_left nhdsWithin_le_nhds)
-        (by
-          filter_upwards [eventually_nhdsWithin_of_eventually_nhds htarget, self_mem_nhdsWithin]
-            with y hyt hy
-          exact fun h ↦ hy ((φ.right_inv hyt).symm.trans (congrArg φ h)))
+        (by simpa [φ.left_inv hzφ] using φ.symm.eventually_ne_nhdsWithin (φ.map_source hzφ))
     obtain ⟨y, ⟨⟨hσy, hyt⟩, hsy⟩, hsσy⟩ :=
       (((eventually_nhdsWithin_of_eventually_nhds ((analyticOrderAt_eq_top.1 h).and
         htarget)).and (hsym.eventually hiso)).and

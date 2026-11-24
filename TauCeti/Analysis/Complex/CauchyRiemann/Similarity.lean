@@ -711,6 +711,21 @@ theorem hasSimilarityFactorizationAt_of_norm_le {E : Type*} [NormedAddCommGroup 
   hasSimilarityFactorizationAt_of_exists_similarity
     (exists_similarity_of_norm_le hΩ hη hM hle hz₀)
 
+/-- The bound `‖\bar∂ f‖ ≤ K ‖f‖`, for a locally bounded `K`, gives
+`‖∂ₛ f + i ∂ₜ f‖ = 2 ‖\bar∂ f(1)‖ ≤ 2 K ‖f‖`, with `2 * K` again locally bounded: the hypotheses of
+`TauCeti.exists_similarity_of_norm_le`. -/
+private theorem norm_fderiv_one_add_I_smul_le_of_norm_conjWirtingerDeriv_le {f : ℂ → ℂ}
+    {K : ℂ → ℝ} (hK : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, K w ≤ M)
+    (hfK : ∀ z ∈ Ω, ‖conjWirtingerDeriv f z‖ ≤ K z * ‖f z‖) :
+    (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, 2 * K w ≤ M) ∧
+      ∀ z ∈ Ω, ‖fderiv ℝ f z 1 + I • fderiv ℝ f z I‖ ≤ 2 * K z * ‖f z‖ := by
+  refine ⟨fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · obtain ⟨M, hM⟩ := hK z hz
+    exact ⟨2 * M, hM.mono fun w hw ↦ by gcongr⟩
+  · rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, norm_smul, Complex.norm_two, mul_assoc]
+    gcongr
+    exact ((conjWirtingerDeriv f z).le_opNorm 1).trans (by simpa using hfK z hz)
+
 /-- **Isolated zeros under a differential inequality.** On a connected open set `Ω ⊆ ℂ`, a
 function `f : ℂ → ℂ` of class `C¹` with `‖\bar∂ f(z)‖ ≤ K(z) ‖f(z)‖` on `Ω`, for a locally bounded
 `K`, that is not identically zero on `Ω` has isolated zeros. -/
@@ -720,14 +735,10 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_norm_conjWirtingerDeriv_le (hΩ : 
     (hfK : ∀ z ∈ Ω, ‖conjWirtingerDeriv f z‖ ≤ K z * ‖f z‖) (hne : ∃ z ∈ Ω, f z ≠ 0) :
     {z | f z ≠ 0} ∈ codiscreteWithin Ω := by
   -- `‖∂ₛ f + i ∂ₜ f‖ = 2 ‖\bar∂ f(1)‖ ≤ 2 K ‖f‖`, so `f` has similarity factorizations
-  refine setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc
+  obtain ⟨hM, hle⟩ := norm_fderiv_one_add_I_smul_le_of_norm_conjWirtingerDeriv_le hK hfK
+  exact setOf_ne_zero_mem_codiscreteWithin_of_hasSimilarityFactorizationAt hΩ hΩc
     hf.continuousOn (fun _ hz _ ↦ hasSimilarityFactorizationAt_of_norm_le (M := fun w ↦ 2 * K w)
-      hΩ hf (fun z hz ↦ ?_) (fun z hz ↦ ?_) hz) hne
-  · obtain ⟨M, hM⟩ := hK z hz
-    exact ⟨2 * M, hM.mono fun w hw ↦ by gcongr⟩
-  · rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, norm_smul, Complex.norm_two, mul_assoc]
-    gcongr
-    exact ((conjWirtingerDeriv f z).le_opNorm 1).trans (by simpa using hfK z hz)
+      hΩ hf hM hle hz) hne
 
 /-- **Scalar similarity factorization under a differential inequality.** A function `f : ℂ → ℂ` of
 class `C¹` on an open set `Ω`, with `‖\bar∂ f(z)‖ ≤ K(z) ‖f(z)‖` on `Ω` for a locally bounded `K`,
@@ -740,13 +751,7 @@ theorem exists_eventually_eq_mul_of_norm_conjWirtingerDeriv_le (hΩ : IsOpen Ω)
     ∃ v σ : ℂ → ℂ, ContinuousAt v z₀ ∧ v z₀ ≠ 0 ∧ AnalyticAt ℂ σ z₀ ∧
       ∀ᶠ z in 𝓝 z₀, f z = v z * σ z := by
   -- `‖∂ₛ f + i ∂ₜ f‖ = 2 ‖\bar∂ f(1)‖ ≤ 2 K ‖f‖`
-  have hM : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, 2 * K w ≤ M := fun z hz ↦ by
-    obtain ⟨M, hM⟩ := hK z hz
-    exact ⟨2 * M, hM.mono fun w hw ↦ by gcongr⟩
-  have hle : ∀ z ∈ Ω, ‖fderiv ℝ f z 1 + I • fderiv ℝ f z I‖ ≤ 2 * K z * ‖f z‖ := fun z hz ↦ by
-    rw [fderiv_apply_one_add_I_smul_fderiv_apply_I, norm_smul, Complex.norm_two, mul_assoc]
-    gcongr
-    exact ((conjWirtingerDeriv f z).le_opNorm 1).trans (by simpa using hfK z hz)
+  obtain ⟨hM, hle⟩ := norm_fderiv_one_add_I_smul_le_of_norm_conjWirtingerDeriv_le hK hfK
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hfσ⟩ := exists_similarity_of_norm_le hΩ hf hM hle hz₀
   -- A complex-linear endomorphism of `ℂ` is multiplication by its value at `1`.
   have hball : ball z₀ r ∈ 𝓝 z₀ := ball_mem_nhds z₀ hr
