@@ -41,11 +41,11 @@ scheme-theoretic density replaces topological density, and the quasi-compactness
 (with `q` quasi-separated) keeps it under restriction to opens.
 
 Further results use such hypotheses. For `X` reduced, the graph restricted to a dense open
-`V ⊆ U` has the same kernel, hence the same scheme-theoretic image
-(`AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp`). For `q` separated and `U ⟶ X` quasi-compact, the
-inclusion of `U` into the graph closure is an open immersion; hence over a field, for `X`
-irreducible, `U` nonempty and `f`, `q` locally of finite type, the graph closure has the
-dimension of `X`.
+`V ⊆ U`, which is the graph of the restriction of `g` to `V` (`homOfLE_comp_opensGraph`), has the
+same kernel, hence the same scheme-theoretic image (`ker_opensGraph_homOfLE_comp`). For `q`
+separated and `U ⟶ X` quasi-compact, the inclusion of `U` into the graph closure is an open
+immersion; hence over a field, for `X` irreducible, `U` nonempty and `f`, `q` locally of finite
+type, the graph closure has the dimension of `X`.
 
 ## Main definitions
 
@@ -60,6 +60,8 @@ dimension of `X`.
 
 * `TauCeti.AlgebraicGeometry.isIso_graphClosureFst_restrict`: for `q` separated and `U ⟶ X`
   quasi-compact, the projection to `X` is an isomorphism over `U`.
+* `TauCeti.AlgebraicGeometry.ker_opensGraph_homOfLE_comp`: for `X` reduced and `V ⊆ U` a dense
+  open, the graph of the restriction of `g` to `V` has the same kernel as the graph of `g`.
 * `TauCeti.AlgebraicGeometry.isOpenImmersion_toGraphClosure`: for `q` separated and `U ⟶ X`
   quasi-compact, the inclusion of `U` into the graph closure is an open immersion.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_graphClosure`: over a field, for `X` irreducible,
@@ -117,6 +119,26 @@ instance [QuasiCompact U.ι] [QuasiSeparated q] : QuasiCompact (opensGraph f q U
     rw [opensGraph_fst]
     infer_instance
   exact QuasiCompact.of_comp _ (pullback.fst f q)
+
+variable {f q U g hg} in
+/-- Restricting the graph of `g` to an open `V ⊆ U` gives the graph of the restriction of `g` to
+`V`. -/
+@[reassoc]
+theorem homOfLE_comp_opensGraph {V : X.Opens} (hVU : V ≤ U) :
+    X.homOfLE hVU ≫ opensGraph f q U g hg =
+      opensGraph f q V (X.homOfLE hVU ≫ g)
+        (by rw [Category.assoc, hg, Scheme.homOfLE_ι_assoc]) := by
+  apply pullback.hom_ext <;> simp
+
+variable {f q U g hg} in
+/-- For `X` reduced and `V ⊆ U` a dense open, the graph of the restriction of `g` to `V` has the
+same kernel as the graph of `g`, hence the same scheme-theoretic image. -/
+theorem ker_opensGraph_homOfLE_comp [IsReduced X] {V : X.Opens} (hV : Dense (V : Set X))
+    (hVU : V ≤ U) :
+    (opensGraph f q V (X.homOfLE hVU ≫ g)
+        (by rw [Category.assoc, hg, Scheme.homOfLE_ι_assoc])).ker =
+      (opensGraph f q U g hg).ker := by
+  rw [← homOfLE_comp_opensGraph, Scheme.Hom.ker_homOfLE_comp hV]
 
 /-- The *graph closure* of `g : U ⟶ P` over `S`: the scheme-theoretic image of the graph of `g`
 in `X ×_S P`. -/

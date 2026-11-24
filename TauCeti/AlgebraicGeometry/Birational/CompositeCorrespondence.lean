@@ -24,8 +24,10 @@ closure API applies to it.
 
 For `X` Noetherian and integral, `W_{f,g}` is integral: instance search finds this through the
 graph closure, from `AlgebraicGeometry.Scheme.Hom.isIntegral_image`. For `X` reduced, restricting
-`(ι_U, f_U, (g ∘ f)_U)` to a dense open `V ⊆ U` gives a morphism with the same kernel, hence the
-same scheme-theoretic image `W_{f,g}` (`AlgebraicGeometry.Scheme.Hom.ker_homOfLE_comp`).
+`(ι_U, f_U, (g ∘ f)_U)` to a dense open `V ⊆ U` gives the graph of the restriction of
+`compositeLift` to `V` (`TauCeti.AlgebraicGeometry.homOfLE_comp_opensGraph`), which has the same
+kernel, hence the same scheme-theoretic image `W_{f,g}`
+(`TauCeti.AlgebraicGeometry.ker_opensGraph_homOfLE_comp`).
 Over a field `K`, for `X` Noetherian and integral and `X`, `Y`, `Z` locally of finite type,
 `W_{f,g}` has the dimension of `X`.
 
@@ -97,29 +99,16 @@ instance nonempty_compositeDomain [Nonempty X] : Nonempty (compositeDomain f g) 
   (dense_compositeDomain f g).nonempty.to_subtype
 
 /-- The restriction `f_U` of the representative of `f` on its domain to `U`. -/
+@[expose]
 def compositeToY : (compositeDomain f g).toScheme ⟶ Y :=
-  X.homOfLE ((compositeDomain_le_domain f g).trans_eq f.toPartialMap_domain.symm) ≫
-    f.toPartialMap.hom
-
-omit [Z.IsSeparated] in
-/-- `f_U` is the inclusion of `U` into the domain of `f` followed by the representative of `f`. -/
-theorem compositeToY_def :
-    compositeToY f g =
-      X.homOfLE ((compositeDomain_le_domain f g).trans_eq f.toPartialMap_domain.symm) ≫
-        f.toPartialMap.hom := (rfl)
+  (f.toPartialMap.restrict (compositeDomain f g) (dense_compositeDomain f g)
+    ((compositeDomain_le_domain f g).trans_eq f.toPartialMap_domain.symm)).hom
 
 /-- The restriction `(g ∘ f)_U` of the representative of `g ∘ f` on its domain to `U`. -/
+@[expose]
 def compositeToZ : (compositeDomain f g).toScheme ⟶ Z :=
-  X.homOfLE ((compositeDomain_le_domain_comp f g).trans_eq (f.comp g).toPartialMap_domain.symm) ≫
-    (f.comp g).toPartialMap.hom
-
-omit [Y.IsSeparated] in
-/-- `(g ∘ f)_U` is the inclusion of `U` into the domain of `g ∘ f` followed by the representative
-of `g ∘ f`. -/
-theorem compositeToZ_def :
-    compositeToZ f g =
-      X.homOfLE ((compositeDomain_le_domain_comp f g).trans_eq
-        (f.comp g).toPartialMap_domain.symm) ≫ (f.comp g).toPartialMap.hom := (rfl)
+  ((f.comp g).toPartialMap.restrict (compositeDomain f g) (dense_compositeDomain f g)
+    ((compositeDomain_le_domain_comp f g).trans_eq (f.comp g).toPartialMap_domain.symm)).hom
 
 section Over
 
@@ -128,12 +117,13 @@ variable [S.IsSeparated] [f.IsOver sX sY] [(f.comp g).IsOver sX sZ]
 omit [Z.IsSeparated] in
 /-- `f_U` is a morphism over `S`. -/
 theorem compositeToY_comp : compositeToY f g ≫ sY = (compositeDomain f g).ι ≫ sX := by
-  rw [compositeToY_def, Category.assoc, f.toPartialMap.over sX sY, Scheme.homOfLE_ι_assoc]
+  rw [compositeToY, PartialMap.restrict_hom, Category.assoc, f.toPartialMap.over sX sY,
+    Scheme.homOfLE_ι_assoc]
 
 omit [Y.IsSeparated] in
 /-- `(g ∘ f)_U` is a morphism over `S`. -/
 theorem compositeToZ_comp : compositeToZ f g ≫ sZ = (compositeDomain f g).ι ≫ sX := by
-  rw [compositeToZ_def, Category.assoc, (f.comp g).toPartialMap.over sX sZ,
+  rw [compositeToZ, PartialMap.restrict_hom, Category.assoc, (f.comp g).toPartialMap.over sX sZ,
     Scheme.homOfLE_ι_assoc]
 
 /-- The morphism `(f_U, (g ∘ f)_U) : U → Y ×_S Z`. -/
