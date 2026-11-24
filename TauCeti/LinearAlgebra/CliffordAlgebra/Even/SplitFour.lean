@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
+public import TauCeti.Algebra.Algebra.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.SplitBaseChange
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
@@ -48,8 +49,9 @@ corresponds to applying `R → S` to the matrix entries.
 
 * `TauCeti.splitEvenTwoEvenEquivMatrixProd_ι`: the equivalence sends the even element `ι m₁ ι m₂`
   to the pair of matrices `(B m₁ C m₂, C m₁ B m₂)`.
-* `TauCeti.splitEvenTwoEvenEquivMatrixProd_splitEvenEvenBaseChange`: naturality of the
-  equivalence in `R`.
+* `TauCeti.splitEvenTwoEvenEquivMatrixProd_comp_splitEvenEvenBaseChange`: naturality of the
+  equivalence in `R`, as an equality of algebra maps, and
+  `TauCeti.splitEvenTwoEvenEquivMatrixProd_splitEvenEvenBaseChange` its pointwise form.
 
 ## References
 
@@ -304,9 +306,7 @@ private theorem unit_mul_unit (s i j t k l : Fin 2) :
 private theorem sum_unit :
     unit R 0 0 0 + unit R 0 1 1 + unit R 1 0 0 + unit R 1 1 1 = 1 := by
   apply Subtype.ext
-  simp only [unit, Fin.isValue, AddMemClass.coe_add, MulMemClass.coe_mul, coe_even_ι_bilin, ι_vecB,
-    ι_vecA, cB_mul_cA_self, mul_sub, mul_one, ← mul_assoc, sub_mul, one_mul, mul_cB_zero_mul_cA_one,
-    sub_neg_eq_add, add_mul, neg_mul, OneMemClass.coe_one]
+  simp [unit, ← mul_assoc]
   abel
 
 /-- The inverse map, sending the matrix units of the two factors to the matrix units `unit 0` and
@@ -331,8 +331,7 @@ private noncomputable def splitEvenTwoMatrixProdToEven :
     (fun p q ↦ by
       simp only [LinearMap.coe_mk, AddHom.coe_mk, Prod.fst_mul, Prod.snd_mul, Matrix.mul_apply,
         Fin.sum_univ_two, add_mul, mul_add, smul_mul_smul_comm, unit_mul_unit, add_smul]
-      simp only [Fin.isValue, and_self, ↓reduceIte, one_ne_zero, and_true, smul_zero, add_zero,
-        and_false, zero_ne_one, zero_add]
+      simp
       module)
 
 private theorem splitEvenTwoEvenToMatrixProd_unit (s i j : Fin 2) :
@@ -358,19 +357,7 @@ private theorem inv_comp_splitEvenTwoEvenToMatrixProd :
   simp only [EvenHom.compr₂_bilin, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
     AlgHom.comp_apply, AlgHom.id_apply, splitEvenTwoEvenToMatrixProd_ι]
   conv_rhs => rw [eq_vec R m₁, eq_vec R m₂]
-  simp only [splitEvenTwoMatrixProdToEven, unit, Fin.isValue, Fin.sum_univ_two,
-    splitEvenTwoToMatrix_apply, splitEvenTwoToMatrixAdj_apply, Matrix.cons_mul,
-    Nat.succ_eq_add_one, Nat.reduceAdd, Matrix.vecMul_cons, Matrix.head_cons, Matrix.smul_cons,
-    smul_eq_mul, mul_neg, Matrix.smul_empty, Matrix.tail_cons, Matrix.empty_vecMul, add_zero,
-    Matrix.add_cons, Matrix.empty_add_empty, Matrix.symm_of, neg_smul, Matrix.neg_cons, neg_neg,
-    Matrix.neg_empty, Matrix.empty_mul, Matrix.coe_rowEquiv, Matrix.row_of,
-    AlgHom.ofLinearMap_apply, LinearMap.coe_mk, AddHom.coe_mk, Matrix.of_apply, Matrix.cons_val',
-    Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_one, AddMemClass.coe_add,
-    SetLike.val_smul, MulMemClass.coe_mul, coe_even_ι_bilin, ι_vecB, ι_vecA, cB_mul_cA_self,
-    mul_sub, mul_one, ← mul_assoc, sub_mul, one_mul, mul_cB_zero_mul_cA_one, sub_neg_eq_add,
-    add_mul, neg_mul, smul_add, cB_one_mul_cB_zero, smul_neg, map_add, map_smul,
-    LinearMap.add_apply, LinearMap.smul_apply, cA_mul_cA, smul_zero, zero_add, cA_one_mul_cA_zero,
-    cB_zero_mul_cA_one, cB_mul_cB, cB_one_mul_cA_zero]
+  simp [splitEvenTwoMatrixProdToEven, unit, Fin.sum_univ_two, ← mul_assoc]
   module
 
 /-- **The even Clifford algebra of the split quaternary form is `M₂(R) × M₂(R)`**, over any
@@ -411,11 +398,21 @@ theorem splitEvenTwoToMatrixAdj_splitEvenSpaceBaseChange (m : SplitEvenSpace R 2
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
-/-- Applying `R → S` entrywise to both factors of `M₂(R) × M₂(R)`. Mathlib has no apply lemma for
-`AlgHom.prodMap`, so this unfolds it together with `AlgHom.mapMatrix`. -/
-private theorem prodMap_mapMatrix_apply (p : Matrix (Fin 2) (Fin 2) R × Matrix (Fin 2) (Fin 2) R) :
-    ((Algebra.ofId R S).mapMatrix.prodMap (Algebra.ofId R S).mapMatrix) p =
-      Prod.map (Matrix.map · (algebraMap R S)) (Matrix.map · (algebraMap R S)) p :=
+/-- **Naturality in the base ring**, as an equality of `R`-algebra maps: the equivalence
+`splitEvenTwoEvenEquivMatrixProd` intertwines the base change `splitEvenEvenBaseChange` along an
+algebra `R → S` with applying `R → S` entrywise to both matrix factors. -/
+theorem splitEvenTwoEvenEquivMatrixProd_comp_splitEvenEvenBaseChange :
+    ((splitEvenTwoEvenEquivMatrixProd S).toAlgHom.restrictScalars R).comp
+        (splitEvenEvenBaseChange R S 2) =
+      ((Algebra.ofId R S).mapMatrix.prodMap (Algebra.ofId R S).mapMatrix).comp
+        (splitEvenTwoEvenEquivMatrixProd R).toAlgHom := by
+  refine even.algHom_ext _ (EvenHom.ext (LinearMap.ext₂ fun m₁ m₂ ↦ ?_))
+  simp only [EvenHom.compr₂_bilin, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
+    AlgHom.comp_apply, AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom,
+    splitEvenEvenBaseChange_ι, splitEvenTwoEvenEquivMatrixProd_ι,
+    splitEvenTwoToMatrix_splitEvenSpaceBaseChange,
+    splitEvenTwoToMatrixAdj_splitEvenSpaceBaseChange, AlgHom.prodMap_apply,
+    AlgHom.mapMatrix_apply, Matrix.map_mul]
   rfl
 
 /-- **Naturality in the base ring**: the equivalence `splitEvenTwoEvenEquivMatrixProd` commutes
@@ -425,21 +422,8 @@ theorem splitEvenTwoEvenEquivMatrixProd_splitEvenEvenBaseChange
     (x : even (splitEvenForm R 2)) :
     splitEvenTwoEvenEquivMatrixProd S (splitEvenEvenBaseChange R S 2 x) =
       Prod.map (Matrix.map · (algebraMap R S)) (Matrix.map · (algebraMap R S))
-        (splitEvenTwoEvenEquivMatrixProd R x) := by
-  let f := (Algebra.ofId R S).mapMatrix (m := Fin 2)
-  have h : ((splitEvenTwoEvenEquivMatrixProd S).toAlgHom.restrictScalars R).comp
-      (splitEvenEvenBaseChange R S 2) =
-        (f.prodMap f).comp (splitEvenTwoEvenEquivMatrixProd R).toAlgHom := by
-    refine even.algHom_ext (splitEvenForm R 2)
-      (EvenHom.ext (LinearMap.ext₂ fun m₁ m₂ ↦ ?_))
-    simp only [EvenHom.compr₂_bilin, AlgHom.comp_toLinearMap, AlgHom.toLinearMap_restrictScalars,
-      AlgEquiv.toAlgHom_toLinearMap, LinearMap.compr₂_apply, LinearMap.coe_comp,
-      LinearMap.coe_restrictScalars, LinearEquiv.coe_coe, AlgEquiv.coe_toLinearEquiv,
-      AlgHom.coe_toLinearMap, Function.comp_apply, splitEvenEvenBaseChange_ι,
-      splitEvenTwoEvenEquivMatrixProd_ι, splitEvenTwoToMatrix_splitEvenSpaceBaseChange,
-      splitEvenTwoToMatrixAdj_splitEvenSpaceBaseChange, f, prodMap_mapMatrix_apply,
-      Prod.map_apply, Matrix.map_mul]
-  simpa [f, prodMap_mapMatrix_apply] using congr($h x)
+        (splitEvenTwoEvenEquivMatrixProd R x) :=
+  DFunLike.congr_fun (splitEvenTwoEvenEquivMatrixProd_comp_splitEvenEvenBaseChange R S) x
 
 end BaseChange
 
