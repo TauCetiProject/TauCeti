@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.Perfect
 public import TauCeti.RingTheory.FittingIdeal.Projective
 public import TauCeti.RingTheory.FittingIdeal.Semilinear
-public import TauCeti.RingTheory.Ideal.IdempotentFG
+public import TauCeti.RingTheory.Ideal.Idempotent.FG
 
 /-!
 # Finitely presented Frobenius modules over a perfect ring are projective
@@ -55,7 +55,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Module
+open _root_.Module
 
 variable {R M : Type*} [CommRing R] (p : ℕ) [ExpChar R p] [Fact p.Prime] [PerfectRing R p]
   [AddCommGroup M] [Module R M] [Module.FinitePresentation R M]

@@ -16,15 +16,17 @@ Let `X` be a spectral object in an abelian category, indexed by `EInt`. Its abut
 filtered by the images of the maps `H^n(⊥ ≤ q) ⟶ H^n(⊥ ≤ ⊤)`: the `q`th piece is
 `opZ^n(⊥ ≤ q, q ≤ ⊤)`, the cokernel of `δ : H^{n-1}(q ≤ ⊤) ⟶ H^n(⊥ ≤ q)`, embedded in the abutment
 by `X.abutmentFiltrationι q n` (a monomorphism, by exactness). The pieces increase with `q`
-(`X.abutmentFiltrationMap q n`, compatible with the embeddings), and the limit object
+(`X.abutmentFiltrationMap q n`, a monomorphism compatible with the embeddings), and the limit object
 `X.EInfty q n = E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece: the cokernel
 of `F_q H^n ⟶ F_{q+1} H^n` (`X.EInftyIsoCokernel`), from Mathlib's short exact sequence
 `shortComplexOpcyclesThreeδ₂Toδ₁_shortExact`.
 
 The filtration is bounded below and exhaustive in degree `n` as soon as `H^n(⊥ ≤ q)` vanishes for
 small `q` (`isZero_abutmentFiltration`) and `H^n(q ≤ ⊤)` vanishes for large `q`
-(`isIso_abutmentFiltrationι`). If `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for some `b ≤ a`, the
-abutment itself vanishes (`isZero_abutment_of_le`); this is the case `⊥ ≤ b ≤ a ≤ ⊤` of
+(`isIso_abutmentFiltrationι`); more generally, the `q`th piece is the whole abutment as soon
+as `H^n(⊥ ≤ q) ⟶ H^n(⊥ ≤ ⊤)` is an epimorphism (`isIso_abutmentFiltrationι_of_epi`). If
+`H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for some `b ≤ a`, the abutment itself vanishes
+(`isZero_abutment_of_le`); this is the case `⊥ ≤ b ≤ a ≤ ⊤` of
 `isZero_H_obj_mk₁_of_isZero_of_isZero`, which holds for three composable morphisms in any index
 category.
 
@@ -91,6 +93,11 @@ lemma abutmentFiltrationMap_ι (q n : ℤ) :
   rw [X.opcyclesMap_fromOpcycles _ _ _ _ _ _ _ _ _ (𝟙 _) n (by simp [threeδ₂Toδ₁])
     (by simp [threeδ₂Toδ₁]), CategoryTheory.Functor.map_id, Category.comp_id]
 
+/-- The inclusion of the `q`th piece of the filtration of the abutment into the `(q + 1)`st one is
+a monomorphism, since both embed into the abutment compatibly. -/
+instance (q n : ℤ) : Mono (X.abutmentFiltrationMap q n) :=
+  mono_of_mono_fac (X.abutmentFiltrationMap_ι q n)
+
 /-- The limit object `E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤)` of the spectral sequence is the graded piece
 `F_{q+1} H^n / F_q H^n` of the filtration of the abutment. -/
 noncomputable def EInftyIsoCokernel (q n : ℤ) :
@@ -122,17 +129,23 @@ lemma isZero_abutmentFiltration {q n : ℤ}
       (homOfLE (le_top : (q : EInt) ≤ ⊤)) n) := inferInstanceAs (Epi (cokernel.π _))
   IsZero.of_epi (X.pOpcycles _ _ n) h
 
+/-- The `q`th filtration piece is the whole abutment when the map `H^n(⊥ ≤ q) ⟶ H^n(⊥ ≤ ⊤)` is
+an epimorphism. -/
+lemma isIso_abutmentFiltrationι_of_epi {q n : ℤ}
+    [Epi ((X.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ q))
+      (homOfLE (le_top : (q : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _)))] :
+    IsIso (X.abutmentFiltrationι q n) := by
+  have : Epi (X.abutmentFiltrationι q n) := epi_of_epi_fac (X.pOpcycles_abutmentFiltrationι q n)
+  exact isIso_of_mono_of_epi _
+
 /-- The `q`th filtration piece is the whole abutment when `H^n(q ≤ ⊤)` vanishes: the filtration
 is exhaustive in degree `n` when these vanish for large `q`. -/
 lemma isIso_abutmentFiltrationι {q n : ℤ}
     (h : IsZero ((X.H n).obj (mk₁ (homOfLE (le_top : (q : EInt) ≤ ⊤))))) :
-    IsIso (X.abutmentFiltrationι q n) := by
-  have hepi : Epi ((X.H n).map (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ q))
-      (homOfLE (le_top : (q : EInt) ≤ ⊤)) (homOfLE bot_le) (Subsingleton.elim _ _))) :=
-    (X.exact₂ _ _ _ (Subsingleton.elim _ _) n).epi_f (h.eq_of_tgt _ _)
-  have : Epi (X.abutmentFiltrationι q n) :=
-    @epi_of_epi_fac _ _ _ _ _ _ _ _ hepi (X.p_fromOpcycles _ _ _ (Subsingleton.elim _ _) n)
-  exact isIso_of_mono_of_epi _
+    IsIso (X.abutmentFiltrationι q n) :=
+  have := X.epi_H_map_twoδ₂Toδ₁ n (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE le_top)
+    (homOfLE bot_le) (Subsingleton.elim _ _) h
+  X.isIso_abutmentFiltrationι_of_epi
 
 /-- The abutment in degree `n` vanishes when `H^n(⊥ ≤ a)` and `H^n(b ≤ ⊤)` vanish for some
 `b ≤ a`: the filtration then starts above where it ends. -/

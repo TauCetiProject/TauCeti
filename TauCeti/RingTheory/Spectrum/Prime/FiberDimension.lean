@@ -7,15 +7,25 @@ module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import TauCeti.RingTheory.FittingIdeal.BaseChange
+public import Mathlib.RingTheory.Jacobson.Ring
+public import Mathlib.LinearAlgebra.TensorProduct.Prod
 
 /-!
-# Fibre dimensions under change of scalars
+# Fibre dimensions of finite modules
 
 The dimension of the fibre of a finite module is unchanged by extending its residue field.
 In particular, the fibre dimension function of a base-changed module is the pullback of the
 original dimension function on prime spectra. No flatness of the change of scalars is needed.
 
-These statements use the fibre-dimension characterization of Fitting ideals.
+The fibre of a product of finite modules has dimension the sum of the dimensions of the fibres.
+
+Over a Jacobson ring the fibre dimensions of a finite module are determined by its closed fibres:
+if all closed points specializing a prime `p` have fibre dimension `k`, then so does `p`. This is
+how a constant rank condition checked at closed points of a scheme of finite type over a field
+propagates to all points.
+
+The base-change and Jacobson statements use the fibre-dimension characterization of Fitting
+ideals.
 -/
 
 public section
@@ -51,5 +61,38 @@ theorem finrank_fiber_baseChange {S : Type*} [CommRing S] [Algebra R S] (q : Ide
   rw [← TauCeti.fittingIdeal_le_iff_lt_finrank,
     ← TauCeti.fittingIdeal_le_iff_lt_finrank,
     TauCeti.fittingIdeal_baseChange, Ideal.map_le_iff_le_comap]
+
+variable (M)
+
+/-- The fibre of a product of finite modules has dimension the sum of the dimensions of the
+fibres. -/
+@[simp]
+theorem finrank_fiber_prod (N : Type*) [AddCommGroup N] [Module R N] [Module.Finite R N] :
+    finrank p.ResidueField (p.Fiber (M × N)) =
+      finrank p.ResidueField (p.Fiber M) + finrank p.ResidueField (p.Fiber N) := by
+  rw [(TensorProduct.prodRight R p.ResidueField p.ResidueField M N).finrank_eq, finrank_prod]
+
+/-- Over a Jacobson ring, the fibres of a finite module at closed points determine all fibre
+dimensions: if every maximal ideal containing the prime `p` has fibre dimension `k`, then the
+fibre at `p` has dimension `k` too. -/
+theorem finrank_fiber_eq_of_forall_isMaximal [IsJacobsonRing R] {k : ℕ}
+    (h : ∀ (m : Ideal R) [m.IsMaximal], p ≤ m → finrank m.ResidueField (m.Fiber M) = k) :
+    finrank p.ResidueField (p.Fiber M) = k := by
+  obtain ⟨m, hm, hpm⟩ := p.exists_le_maximal ‹p.IsPrime›.ne_top
+  apply le_antisymm
+  · -- Fibre dimensions can only grow under specialization.
+    by_contra! hlt
+    have hle := ((TauCeti.fittingIdeal_le_iff_lt_finrank p k).2 hlt).trans hpm
+    rw [TauCeti.fittingIdeal_le_iff_lt_finrank, h m hpm] at hle
+    exact lt_irrefl k hle
+  · -- The prime `p` is the intersection of the maximal ideals containing it.
+    cases k with
+    | zero => exact Nat.zero_le _
+    | succ j =>
+      rw [Nat.succ_le_iff, ← TauCeti.fittingIdeal_le_iff_lt_finrank,
+        ← IsJacobsonRing.out ‹_› ‹p.IsPrime›.isRadical]
+      refine le_sInf fun n ⟨hpn, hn⟩ ↦ ?_
+      rw [TauCeti.fittingIdeal_le_iff_lt_finrank, h n hpn]
+      exact Nat.lt_succ_self j
 
 end Ideal

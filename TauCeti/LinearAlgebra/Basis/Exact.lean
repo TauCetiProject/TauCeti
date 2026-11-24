@@ -34,6 +34,8 @@ transition matrix between two such bases is block upper triangular
 * `Module.Basis.eq_reindex_ofExactLift`: the same for a basis indexed by `Fin (m + n)`.
 * `Module.Basis.coe_reindex_ofExactLift`: indexed by `Fin (m + n)`, the basis `ofExactLift` is
   `Fin.append (f ∘ a) s`.
+* `Module.Basis.coe_reindex_finAddFlip_ofExactLift`: further reindexed by `finAddFlip`, it is
+  `Fin.append s (f ∘ a)`.
 * `Module.Basis.exists_coe_eq_append_lift`: for surjective `g`, some lifts `s` of `c` give such a
   basis `Fin.append (f ∘ a) s`.
 * `Module.Basis.ofExactLift_det_eq_mul`: the determinant with respect to such a basis of a family
@@ -158,6 +160,18 @@ theorem coe_reindex_ofExactLift {m n : ℕ} (a : Basis (Fin m) R A) (c : Basis (
     ⇑((ofExactLift hf hfg a c s hs).reindex finSumFinEquiv) = Fin.append (f ∘ a) s := by
   funext j
   induction j using Fin.addCases <;> simp
+
+/-- Reindexed by `finSumFinEquiv` and then by the block swap `finAddFlip`, the basis
+`ofExactLift` lists the lifts `s` followed by the image of the basis `a` of `A`. -/
+theorem coe_reindex_finAddFlip_ofExactLift {m n : ℕ} (a : Basis (Fin m) R A)
+    (c : Basis (Fin n) R C) (s : Fin n → B) (hs : ∀ j, g (s j) = c j) :
+    ⇑(((ofExactLift hf hfg a c s hs).reindex finSumFinEquiv).reindex finAddFlip) =
+      Fin.append s (f ∘ a) := by
+  rw [coe_reindex, coe_reindex_ofExactLift]
+  funext j
+  induction j using Fin.addCases with
+  | left j => simp [(Equiv.symm_apply_eq _).2 (finAddFlip_apply_natAdd j m).symm]
+  | right i => simp [(Equiv.symm_apply_eq _).2 (finAddFlip_apply_castAdd i n).symm]
 
 include hf hfg in
 /-- In a short exact sequence `0 → A → B → C → 0`, a basis `a` of `A` and a basis `c` of `C`

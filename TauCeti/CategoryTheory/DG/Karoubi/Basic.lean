@@ -127,12 +127,8 @@ theorem d_mem_homSubmodule {P Q : DGKaroubi R C} {i j : ℤ} {f : DGHom R i P.X 
   by_cases hij : i + 1 = j
   · subst hij
     refine ⟨?_, ?_⟩
-    · have key := dgDifferential_dgComp R P.p f (zero_add i)
-      rw [hf.1, P.dgDifferential_p, zero_dgComp, zero_add, Int.negOnePow_zero, one_smul] at key
-      exact key.symm
-    · have key := dgDifferential_dgComp R f Q.p (add_zero i)
-      rw [hf.2, Q.dgDifferential_p, dgComp_zero, smul_zero, add_zero] at key
-      exact key.symm
+    · rw [← dgDifferential_dgComp_of_dgDifferential_eq_zero_left R P.dgDifferential_p, hf.1]
+    · rw [← dgDifferential_dgComp_of_dgDifferential_eq_zero_right R f Q.dgDifferential_p, hf.2]
   · rw [(dgHomComplex R P.X Q.X).shape i j hij]
     exact zero_mem _
 
@@ -331,8 +327,8 @@ theorem dgDifferential_p_dgComp_dgComp_p (P Q : DGKaroubi R C) {n : ℤ}
     (f : DGHom R n P.X Q.X) :
     dgDifferential R n (dgComp R P.p (dgComp R f Q.p (add_zero n)) (zero_add n)) =
       dgComp R P.p (dgComp R (dgDifferential R n f) Q.p (add_zero (n + 1))) (zero_add (n + 1)) := by
-  rw [dgDifferential_dgComp, dgDifferential_dgComp, P.dgDifferential_p, Q.dgDifferential_p,
-    zero_dgComp, dgComp_zero, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul]
+  rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_left R P.dgDifferential_p,
+    dgDifferential_dgComp_of_dgDifferential_eq_zero_right R f Q.dgDifferential_p]
 
 /-- The projection `f ↦ p ≫ f ≫ q` from the morphisms of degree `n` between the underlying
 objects onto the morphisms of degree `n` of the Karoubi envelope. -/
@@ -409,6 +405,23 @@ closed. -/
 theorem dgHomVal_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P Q}
     (hf : f ∈ dgCycles R P Q) : dgHomVal 0 f ∈ dgCycles R P.X Q.X :=
   homComplexRetract_i_f_apply P Q f ▸ map_mem_dgCycles R (homComplexRetract P Q).i hf
+
+/-- A morphism of degree zero of the Karoubi envelope is closed exactly when its underlying
+morphism is closed in `C`. -/
+theorem dgHomVal_mem_dgCycles_iff {P Q : DGKaroubi R C} {f : DGHom R 0 P Q} :
+    dgHomVal 0 f ∈ dgCycles R P.X Q.X ↔ f ∈ dgCycles R P Q := by
+  rw [mem_dgCycles, mem_dgCycles, ← dgHomVal_dgDifferential,
+    dgHomVal_injective.eq_iff' (map_zero _)]
+
+/-- **A closed morphism of the Karoubi envelope is a boundary exactly when its underlying morphism
+is a boundary in `C`.**  If `dgHomVal f = d h`, then `f = d (homProj h)`. -/
+theorem dgHomVal_mem_dgBoundaries_iff {P Q : DGKaroubi R C} {f : DGHom R 0 P Q} :
+    dgHomVal 0 f ∈ dgBoundaries R P.X Q.X ↔ f ∈ dgBoundaries R P Q := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
+  · obtain ⟨h, hh⟩ := (mem_dgBoundaries R).1 hf
+    exact (mem_dgBoundaries R).2 ⟨homProj P Q (-1) h, by rw [← homProj_dgDifferential]; simp [hh]⟩
+  · obtain ⟨h, rfl⟩ := (mem_dgBoundaries R).1 hf
+    exact (mem_dgBoundaries R).2 ⟨dgHomVal (-1) h, (dgHomVal_dgDifferential h).symm⟩
 
 /-- The projection `f ↦ p ≫ f ≫ q` of a closed morphism of degree zero is closed. -/
 theorem homProj_mem_dgCycles {P Q : DGKaroubi R C} {f : DGHom R 0 P.X Q.X}
@@ -533,7 +546,7 @@ theorem closedHomMk_comp {P Q S : DGKaroubi R C} (f : DGHom R 0 P.X Q.X)
     (hg : g ∈ homSubmodule Q S 0) (hdg : dgDifferential R 0 g = 0) :
     closedHomMk f hf hdf ≫ closedHomMk g hg hdg =
       closedHomMk (dgComp R f g (zero_add 0)) (dgComp_mem_homSubmodule hf hg _)
-        (by rw [dgDifferential_dgComp, hdf, hdg, zero_dgComp, dgComp_zero, smul_zero, add_zero]) :=
+        (by rw [dgDifferential_dgComp_of_dgDifferential_eq_zero_left R hdf, hdg, dgComp_zero]) :=
   closedHom_ext <| by
     rw [dgHomVal_dgClosedHom_comp, dgHomVal_dgClosedHom_closedHomMk,
       dgHomVal_dgClosedHom_closedHomMk, dgHomVal_dgClosedHom_closedHomMk]

@@ -27,6 +27,8 @@ positive reals, so they agree on the half-plane by the identity theorem.
 * `Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi` and
   `Complex.differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi`: the integral converges and is
   holomorphic in the rate on the right half-plane.
+* `TauCeti.integral_norm_cpow_mul_exp_neg_mul_Ioi`: the integral of the norm of the integrand is
+  `(Re w)^{−Re s} Γ(Re s)`.
 
 The proof is adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMFMathlib/Analysis/Asymptotics/WatsonSector.lean`.
@@ -105,3 +107,18 @@ theorem integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos {s z : ℂ} (hs : 0 < s.re) 
     (by simp [hU]) hfreq hz
 
 end Complex
+
+namespace TauCeti
+
+open Complex
+
+/-- For `Re s > 0` and `Re w > 0`, the integral of `|t^{s-1} e^{-wt}|` over `(0, ∞)` is
+`(1 / Re w)^{Re s} Γ(Re s)`. -/
+theorem integral_norm_cpow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : 0 < s.re) (hw : 0 < w.re) :
+    ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (s - 1) * cexp (-(w * t))‖ =
+      (1 / w.re) ^ s.re * Real.Gamma s.re := by
+  rw [← Real.integral_rpow_mul_exp_neg_mul_Ioi hs hw]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
+  rw [norm_cpow_mul_exp_neg_mul s w ht, neg_mul]
+
+end TauCeti

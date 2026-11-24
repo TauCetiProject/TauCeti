@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
@@ -37,6 +38,8 @@ the relevant first derivatives where they are needed.
   `S(f) = f''' / f' - (3 / 2) * (f'' / f') ^ 2`, valid everywhere for the totalized definition.
 * `TauCeti.schwarzian_eq_deriv_logDeriv_deriv_sub` -- the Schwarzian in terms of the
   pre-Schwarzian derivative `logDeriv (deriv f)`.
+* `TauCeti.schwarzian_eq_of_sq_eq_deriv` -- the Schwarzian through a square root `s` of `f'`,
+  `S(f) = 2 * s'' / s - 4 * (s' / s) ^ 2`.
 * `TauCeti.schwarzian_comp` -- the chain rule
   `S(f ∘ g) = (S(f) ∘ g) * (g') ^ 2 + S(g)`.
 * `TauCeti.schwarzian_const_mul_add`, `TauCeti.schwarzian_fun_inv` and
@@ -104,6 +107,59 @@ theorem schwarzian_eq_deriv_logDeriv_deriv_sub (hf : AnalyticAt ℂ f x) (hfx : 
     schwarzian_def, iteratedDeriv_succ, iteratedDeriv_succ, iteratedDeriv_one]
   field_simp
   ring
+
+/-- The Schwarzian derivative at `x` depends only on the germ of `f'` at `x`: if `f' = g` near
+`x`, then `S(f)(x) = (2 * g'' * g - 3 * g' ^ 2) / (2 * g ^ 2)` at `x`. -/
+theorem schwarzian_eq_of_deriv_eventuallyEq {g : ℂ → ℂ} (h : deriv f =ᶠ[𝓝 x] g) :
+    schwarzian f x =
+      (2 * deriv (deriv g) x * g x - 3 * deriv g x ^ 2) / (2 * g x ^ 2) := by
+  rw [schwarzian_def, iteratedDeriv_succ, iteratedDeriv_succ, iteratedDeriv_one, h.eq_of_nhds,
+    h.deriv_eq, h.deriv.deriv_eq]
+
+/-- **The Schwarzian derivative through a square root of the derivative.** If `s` is holomorphic
+near `x` and `s ^ 2 = f'` near `x`, then `S(f) = 2 * s'' / s - 4 * (s' / s) ^ 2` at `x`. If
+`s x = 0`, both sides vanish by totalization. -/
+theorem schwarzian_eq_of_sq_eq_deriv {s : ℂ → ℂ}
+    (hs : ∀ᶠ y in 𝓝 x, AnalyticAt ℂ s y ∧ s y ^ 2 = deriv f y) :
+    schwarzian f x = 2 * deriv (deriv s) x / s x - 4 * (deriv s x / s x) ^ 2 := by
+  rcases eq_or_ne (s x) 0 with hx | hx
+  · rw [schwarzian_of_deriv_eq_zero (by rw [← hs.self_of_nhds.2, hx, zero_pow two_ne_zero]), hx]
+    simp
+  have hd : ∀ᶠ y in 𝓝 x, HasDerivAt (fun y => s y ^ 2) (2 * s y * deriv s y) y :=
+    hs.mono fun y hy => by
+      convert hy.1.differentiableAt.hasDerivAt.pow 2 using 1
+      ring
+  have hsx := hs.self_of_nhds.1
+  have hd₂ : HasDerivAt (fun y => 2 * s y * deriv s y)
+      (2 * deriv s x * deriv s x + 2 * s x * deriv (deriv s) x) x := by
+    convert (hsx.differentiableAt.hasDerivAt.const_mul 2).mul
+      hsx.deriv.differentiableAt.hasDerivAt using 1
+  rw [schwarzian_eq_of_deriv_eventuallyEq (hs.mono fun y hy => hy.2.symm),
+    Filter.EventuallyEq.deriv_eq (hd.mono fun y hy => hy.deriv), hd₂.deriv,
+    hd.self_of_nhds.deriv]
+  field_simp
+  ring
+
+/-- The Schwarzian derivative of a function holomorphic at a noncritical point is holomorphic
+there. -/
+theorem _root_.AnalyticAt.schwarzian (hf : AnalyticAt ℂ f x) (hx : deriv f x ≠ 0) :
+    AnalyticAt ℂ (TauCeti.schwarzian f) x := by
+  have h : TauCeti.schwarzian f = fun y =>
+      (2 * iteratedDeriv 3 f y * deriv f y - 3 * iteratedDeriv 2 f y ^ 2) /
+        (2 * deriv f y ^ 2) :=
+    funext fun y => schwarzian_def f y
+  have h3 : AnalyticAt ℂ (iteratedDeriv 3 f) x := by
+    simpa only [iteratedDeriv_eq_iterate] using hf.iterated_deriv 3
+  have h2 : AnalyticAt ℂ (iteratedDeriv 2 f) x := by
+    simpa only [iteratedDeriv_eq_iterate] using hf.iterated_deriv 2
+  rw [h]
+  fun_prop (disch := exact mul_ne_zero two_ne_zero (pow_ne_zero 2 hx))
+
+/-- The Schwarzian derivative of a function holomorphic near a set without critical points is
+holomorphic near that set. -/
+theorem _root_.AnalyticOnNhd.schwarzian {s : Set ℂ} (hf : AnalyticOnNhd ℂ f s)
+    (hs : ∀ x ∈ s, deriv f x ≠ 0) : AnalyticOnNhd ℂ (TauCeti.schwarzian f) s :=
+  fun x hx => (hf x hx).schwarzian (hs x hx)
 
 /-- **The chain rule for the Schwarzian derivative.**  If `g` is holomorphic at `x` and `f` is
 holomorphic at `g x` with `f' (g x) ≠ 0`, then `S(f ∘ g) = (S(f) ∘ g) * (g') ^ 2 + S(g)` at

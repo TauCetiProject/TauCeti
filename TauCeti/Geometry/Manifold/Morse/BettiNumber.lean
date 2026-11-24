@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.MorseInequa
 public import TauCeti.Geometry.Manifold.Morse.CWModel
 import TauCeti.Geometry.Manifold.Morse.Cell.Band
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
+import TauCeti.Geometry.Manifold.Morse.Inequalities
 
 /-!
 # The Morse polynomial identity with Betti numbers
@@ -42,6 +43,8 @@ invariance of Betti numbers.
 
 * `TauCeti.bettiNumber_eq_zero_of_finrank_lt`: the Betti numbers of a compact boundaryless
   manifold vanish above its dimension.
+* `TauCeti.bettiNumber_eq_sum_connectedComponents_of_compactSpace`: the Betti numbers of a compact
+  boundaryless manifold are the sums of those of its connected components.
 * `TauCeti.IsMorse.exists_cwComplex_criticalCount_eq_bettiNumber_add_coeff`: the Morse polynomial
   identity, with the coefficients of `Q` the ranks of the cellular differentials of a CW model of
   `M` with one cell for each critical point.
@@ -86,6 +89,19 @@ theorem bettiNumber_eq_zero_of_finrank_lt (k : Type u) [Ring k] [Nontrivial k] {
       (fun _ _ ↦ manifoldMorseIndex_le_finrank) (ModuleCat.of k k) hj)
   rw [bettiNumber_def]
   exact finrank_zero_of_subsingleton
+
+variable (I) in
+include I in
+/-- **The Betti numbers of a compact manifold are the sums of those of its components.** For a
+compact boundaryless manifold `M` and a division ring `k`, `bⱼ(M; k)` is the sum of the `bⱼ` of the
+connected components of `M`, each an open subset. The homology of `M` is finite-dimensional, since
+`M` carries a Morse function. -/
+theorem bettiNumber_eq_sum_connectedComponents_of_compactSpace (k : Type u) [DivisionRing k]
+    [LocallyConnectedSpace M] [Fintype (ConnectedComponents M)] (j : ℕ) :
+    bettiNumber k M j = ∑ C : ConnectedComponents M, bettiNumber k C.opens j := by
+  obtain ⟨f, hf⟩ := exists_isMorse (I := I) (M := M)
+  have := hf.finite_singularHomology (ModuleCat.of k k) j
+  exact bettiNumber_eq_sum_connectedComponents j
 
 /-- **The Morse polynomial identity, with the cellular coefficients.** A compact boundaryless
 manifold `M` with a Morse function `f` is homotopy equivalent to a finite CW complex `W` with one

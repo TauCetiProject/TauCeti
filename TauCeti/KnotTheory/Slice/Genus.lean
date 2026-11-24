@@ -10,7 +10,7 @@ public import Mathlib.Data.ENat.Lattice
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 public import TauCeti.KnotTheory.Slice.Basic
 public import TauCeti.Geometry.Manifold.Orientation.ClosedBall
-import Mathlib.Analysis.Convex.Contractible
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # The smooth slice genus of a knot
@@ -235,7 +235,7 @@ theorem genus_ofClosedBall (Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1
       Subtype.val '' range K) :
     (ofClosedBall Φ hΦ hpre himg).genus = 0 := by
   have : ContractibleSpace (ofClosedBall Φ hΦ hpre himg).carrier :=
-    (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
+    inferInstanceAs (ContractibleSpace (closedBall (0 : ℂ) 1))
   rw [genus_def, surfaceGenus_eq_zero_of_contractibleSpace]
 
 end SliceSurfaceData

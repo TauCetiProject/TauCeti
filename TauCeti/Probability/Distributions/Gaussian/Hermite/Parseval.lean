@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Parseval
 public import TauCeti.Probability.Distributions.Gaussian.Hermite.Basis
 
 /-!
@@ -63,14 +62,14 @@ theorem tsum_norm_sq_integral_hermite_mul_gaussianReal (f : Lp 𝕜 2 (gaussianR
       (aeval x (hermite n) / Real.sqrt (n.factorial : ℝ)) * f x ∂(gaussianReal 0 1)‖ ^ 2 =
         ‖f‖ ^ 2 := by
   simpa only [← HilbertBasis.repr_apply_apply, gaussianHermiteHilbertBasis_repr_apply] using
-    (gaussianHermiteHilbertBasis 𝕜).tsum_norm_sq_inner f
+    (gaussianHermiteHilbertBasis 𝕜).tsum_norm_inner_sq f
 
 /-- The squared norms of the Gaussian Hermite coefficients of an `L²` function are summable. -/
 theorem summable_norm_sq_integral_hermite_mul_gaussianReal (f : Lp 𝕜 2 (gaussianReal 0 1)) :
     Summable fun n : ℕ => ‖∫ x : ℝ, (algebraMap ℝ 𝕜)
       (aeval x (hermite n) / Real.sqrt (n.factorial : ℝ)) * f x ∂(gaussianReal 0 1)‖ ^ 2 := by
   simpa only [← HilbertBasis.repr_apply_apply, gaussianHermiteHilbertBasis_repr_apply] using
-    (gaussianHermiteHilbertBasis 𝕜).summable_norm_sq_inner f
+    (gaussianHermiteHilbertBasis 𝕜).summable_norm_inner_sq f
 
 /-- **The Gaussian Hermite expansion.** Every `f ∈ L²(N(0, 1); 𝕜)` is the sum of its
 normalized Hermite-polynomial series. -/

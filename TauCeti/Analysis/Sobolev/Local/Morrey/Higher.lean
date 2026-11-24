@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Planar
+import TauCeti.Analysis.Sobolev.Local.Wkp
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
 
@@ -52,6 +55,9 @@ maps needed by the order-one estimates is `ContinuousMultilinearMap.instModuleFi
   derivative.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact`: Hölder continuity of the
   top derivative on compact subsets of `Ω`.
+* `TauCeti.MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball`: for real-valued maps and
+  `2 < p < ∞`, the local `C^{j,1-2/p}` bound on a disc whose closure lies in `Ω`, by the norm in
+  `W^{j+1,p}` of the disc.
 
 ## References
 
@@ -163,5 +169,28 @@ theorem MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact (hp : 2 < p)
   refine ⟨C, fun x hx y hy => ?_⟩
   rw [← heq (hKΩ hx), ← heq (hKΩ hy)]
   exact hC x hx y hy
+
+/-- **Local `C^{j,1-2/q}` bounds on a disc.** For `2 < q < ∞`, a centre `c` and a radius `s`
+there is a constant `K` such that, for every open `Ω` containing the closure of `ball c s`, every
+real `u ∈ MemWkpLoc q Ω (j + 1)` is represented on `ball c s` by some
+`v ∈ W^{j+1,q}(ball c s)` and agrees almost everywhere there with a map `g` that is `Cʲ` on
+`ball c s`, whose derivatives of order `i ≤ j` are bounded by `K ‖v‖` and Hölder of exponent
+`1 - 2 / q` with constant `K ‖v‖` on `ball c s`. -/
+theorem MemWkpLoc.exists_contDiffOn_holderOnWith_iteratedFDeriv_ball {q : ℝ≥0}
+    [Fact (1 ≤ (q : ℝ≥0∞))] (hq : 2 < q) (c : ℂ) (s : ℝ) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ {Ω : Opens ℂ} (u : ℂ → ℝ), closure (ball c s) ⊆ Ω →
+      MemWkpLoc q Ω (j + 1) u →
+      ∃ v : Wkp volume (⟨ball c s, isOpen_ball⟩ : Opens ℂ) q (j + 1),
+        Wkp.value (j + 1) v =ᵐ[volume.restrict (ball c s)] u ∧
+        ∃ g : ℂ → ℝ, ContDiffOn ℝ j g (ball c s) ∧ u =ᵐ[volume.restrict (ball c s)] g ∧
+          ∀ i ≤ j, (∀ z ∈ ball c s, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖v‖) ∧
+            HolderOnWith (K * ‖v‖₊) (1 - 2 / q) (iteratedFDeriv ℝ i g) (ball c s) := by
+  obtain ⟨K, hK⟩ := Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall c s hq j
+  refine ⟨K, fun u hsub hu => ?_⟩
+  obtain ⟨v, hv⟩ := hu.exists_wkp (W := ⟨ball c s, isOpen_ball⟩)
+    ((isCompact_closedBall c s).of_isClosed_subset isClosed_closure closure_ball_subset_closedBall)
+    hsub
+  obtain ⟨g, hg, hvg, hb⟩ := hK v
+  exact ⟨v, hv, g, hg, hv.symm.trans hvg, hb⟩
 
 end TauCeti

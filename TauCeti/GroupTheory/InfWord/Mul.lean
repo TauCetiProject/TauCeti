@@ -58,7 +58,9 @@ function with values in `Λ` on groups of cyclically decomposable words.
 * `TauCeti.InfWord.exists_isMul_iff`: for reduced `u`, `v`, the product `u ∗ v` is defined if and
   only if the lengths of the common initial segments of `u⁻¹` and `v` have a greatest element `δ`;
   `TauCeti.InfWord.isMul_of_isGreatest` gives the product, and
-  `TauCeti.InfWord.exists_isMul_inv_left_iff` is the case of `u⁻¹ ∗ v`.
+  `TauCeti.InfWord.exists_isMul_inv_left_iff` is the case of `u⁻¹ ∗ v`. If `u ∗ v` is defined,
+  then so is `u ∗ v'` for every initial segment `v'` of `v`
+  (`TauCeti.InfWord.IsMul.exists_isMul_take`).
 * `TauCeti.InfWord.IsMul.length_add_two_nsmul_eq`: `|u ∗ v| + 2 δ = |u| + |v|`, where `δ` is the
   length of the longest common initial segment of `u⁻¹` and `v`; and
   `TauCeti.InfWord.length_add_two_nsmul_eq_of_isMul_inv_left`: `|u⁻¹ ∗ v| + 2 δ = |u| + |v|`,
@@ -372,6 +374,19 @@ the common initial segments of `u⁻¹` and `v` has a greatest element. -/
 theorem exists_isMul_iff (hu : u.IsReduced) (hv : v.IsReduced) : (∃ w, IsMul u v w) ↔
     ∃ δ, IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u⁻¹.take β = v.take β} δ :=
   ⟨fun ⟨_, h⟩ => h.exists_isGreatest, fun ⟨_, hδ⟩ => ⟨_, isMul_of_isGreatest hu hv hδ⟩⟩
+
+/-- If `u ∗ v` is defined, then so is the product of `u` with every initial segment of `v`. -/
+theorem IsMul.exists_isMul_take (h : IsMul u v w) (β : Λ) : ∃ w', IsMul u (v.take β) w' := by
+  rw [← take_max_zero]
+  obtain ⟨δ, ⟨h0, hδu, hδv, hδ⟩, hmax⟩ := h.exists_isGreatest
+  refine (exists_isMul_iff h.isReduced_left (h.isReduced_right.take _)).2
+    ⟨min δ (max β 0), ⟨by simp [h0], by simp [hδu], by simp; grind, ?_⟩, ?_⟩
+  · rw [take_take, min_assoc, min_self]
+    simpa using congrArg (take · (min δ (max β 0))) hδ
+  · rintro γ ⟨hγ0, hγu, hγv, hγ⟩
+    have hγβ : γ ≤ max β 0 := by simp at hγv; grind
+    rw [take_take, min_eq_left hγβ] at hγ
+    exact le_min (hmax ⟨hγ0, hγu, by simp at hγv; grind, hγ⟩) hγβ
 
 /-- If the longest common initial segment of `u` and `v` has length `δ`, then `u⁻¹ ∗ v` is
 defined: it is `(u.drop δ)⁻¹ ++ v.drop δ`. -/

@@ -59,13 +59,14 @@ non-smooth affine group scheme, the canonical non-reduced example admitted by th
 finite-type theory. -/
 theorem coordinateRing_not_isReduced :
     ¬ IsReduced (MonoidAlgebra R (Multiplicative (ZMod p))) :=
-  not_isReduced_monoidAlgebra p (generator_ne_one p) (generator_pow_eq_one p)
+  not_isReduced_monoidAlgebra p (n := 1) (generator_ne_one p)
+    (by rw [pow_one]; exact generator_pow_eq_one p)
 
 /-- The explicit nonzero nilpotent in the coordinate Hopf algebra of `μ_p`: the difference
 `single (ofAdd 1) 1 - 1` of the group-like generator and the identity. -/
 theorem isNilpotent_single_generator_sub_one :
     IsNilpotent (MonoidAlgebra.single (generator p) (1 : R) - 1) :=
-  isNilpotent_single_sub_one p (generator_pow_eq_one p)
+  isNilpotent_single_sub_one p (n := 1) (by rw [pow_one]; exact generator_pow_eq_one p)
 
 end RootsOfUnityGroup
 

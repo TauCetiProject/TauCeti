@@ -43,6 +43,8 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   commutators with each joined subgroup lie in that join.
 * `TauCeti.commutator_le_iff_map_mk'_eq_bot`: `⁅A, B⁆ ≤ N` for a normal `N` says that the images
   of `A` and `B` in `G ⧸ N` commute.
+* `TauCeti.commutator_commutator_le_of_rotate`: the Three Subgroups Lemma relative to a normal
+  subgroup `N`.
 * `TauCeti.le_centralizer_of_le_normalizer_of_inf_eq_bot`: two subgroups that normalize each
   other and meet trivially centralize each other;
   `TauCeti.inf_normalizer_le_centralizer_of_inf_eq_bot` restricts this to the elements of `Z`
@@ -377,6 +379,14 @@ and `B` in the quotient `G ⧸ N` commute. -/
 theorem commutator_le_iff_map_mk'_eq_bot {A B : Subgroup G} [N.Normal] :
     ⁅A, B⁆ ≤ N ↔ ⁅A.map (QuotientGroup.mk' N), B.map (QuotientGroup.mk' N)⁆ = ⊥ := by
   rw [← map_commutator, Subgroup.map_eq_bot_iff, QuotientGroup.ker_mk']
+
+/-- **The Three Subgroups Lemma** relative to a normal subgroup: if `⁅⁅H₂, H₃⁆, H₁⁆` and
+`⁅⁅H₃, H₁⁆, H₂⁆` lie in a normal subgroup `N`, then so does `⁅⁅H₁, H₂⁆, H₃⁆`. Mathlib's
+`Subgroup.commutator_commutator_eq_bot_of_rotate` is the case `N = ⊥`. -/
+theorem commutator_commutator_le_of_rotate [N.Normal] {H₁ H₂ H₃ : Subgroup G}
+    (h1 : ⁅⁅H₂, H₃⁆, H₁⁆ ≤ N) (h2 : ⁅⁅H₃, H₁⁆, H₂⁆ ≤ N) : ⁅⁅H₁, H₂⁆, H₃⁆ ≤ N := by
+  rw [commutator_le_iff_map_mk'_eq_bot, map_commutator] at h1 h2 ⊢
+  exact commutator_commutator_eq_bot_of_rotate h1 h2
 
 /-- Two subgroups `Z` and `U` that normalize each other and meet trivially centralize each other:
 the commutator `⁅Z, U⁆` lies in `Z` because `U` normalizes `Z` and in `U` because `Z` normalizes

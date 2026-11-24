@@ -39,9 +39,10 @@ this is `TauCeti.constCoeffCharacteristicSet`. This file proves
 Together with the reverse microlocality `WF(P T) ⊆ WF(T)` of differential operators
 (`Distribution.waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_subset`), an operator
 elliptic at every point of `Ω` satisfies `WF(P T) = WF(T)`, and hence has the same singular
-support: `P T` is smooth on an open set exactly when `T` is. The constant-coefficient statements
-are the special case `a i = 1`, and the Laplacian is the basic example
-(`Distribution.waveFrontSet_laplacianCLM`).
+support: `P T` is smooth on an open set exactly when `T` is. In particular such an operator is
+hypoelliptic, and every distributional solution of `P T = 0` is a function smooth on `Ω`. The
+constant-coefficient statements are the special case `a i = 1`, and the Laplacian is the basic
+example (`Distribution.waveFrontSet_laplacianCLM`), for which this is Weyl's lemma.
 
 ## The argument
 
@@ -102,6 +103,13 @@ gives rapid decay on `Γ`.
 * `Distribution.waveFrontSet_laplacianCLM`, `Distribution.singularSupport_laplacianCLM`:
   `WF(Δ T) = WF(T)` and `singsupp(Δ T) = singsupp(T)` for the Laplacian
   `Δ = LineDeriv.laplacianCLM ℝ E 𝓓'(Ω, ℂ)`.
+* `Distribution.exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_ofFun`:
+  elliptic operators are hypoelliptic: if `P T` is a function smooth on `Ω`, so is `T`.
+* `Distribution.exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_zero`,
+  `Distribution.exists_contDiffOn_eq_ofFun_of_sum_smul_iteratedLineDerivOp_eq_zero`: every
+  distributional solution of `P T = 0` is a smooth function.
+* `Distribution.exists_contDiffOn_eq_ofFun_of_laplacianCLM_eq_zero`: Weyl's lemma for
+  distributions, `Δ T = 0` makes `T` a smooth function.
 
 ## References
 
@@ -892,5 +900,57 @@ theorem waveFrontSet_laplacianCLM (T : 𝓓'(Ω, ℂ)) :
 theorem singularSupport_laplacianCLM [MeasurableSpace E] [BorelSpace E] (T : 𝓓'(Ω, ℂ)) :
     (laplacianCLM ℝ E 𝓓'(Ω, ℂ) T).singularSupport = T.singularSupport := by
   rw [← fst_image_waveFrontSet, ← fst_image_waveFrontSet, waveFrontSet_laplacianCLM]
+
+/-! ### Smoothness of solutions -/
+
+/-- **Elliptic differential operators are hypoelliptic.** If the principal symbol of
+`P = ∑ i ∈ s, c i a i ∂^(m i)` of order `M`, with the coefficients frozen at any point of `Ω`,
+vanishes at no `ξ ≠ 0`, and `P T` is a function smooth on `Ω`, then so is `T`. -/
+theorem exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_ofFun
+    [MeasurableSpace E] [BorelSpace E] {ι : Type*} (s : Finset ι) (c : ι → ℂ) {a : ι → E → ℝ}
+    (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ}
+    (hk : ∀ i ∈ s, k i ≤ M)
+    (hσ : ∀ x ∈ Ω, ∀ ξ : E, ξ ≠ 0 → principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0)
+    {T : 𝓓'(Ω, ℂ)} {g : E → ℂ} (hg : ContDiffOn ℝ ∞ g Ω)
+    (hT : ∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T) = ofFun Ω g MeasureTheory.volume ⊤) :
+    ∃ f : E → ℂ, ContDiffOn ℝ ∞ f Ω ∧ T = ofFun Ω f MeasureTheory.volume ⊤ := by
+  rw [← singularSupport_eq_empty_iff,
+    ← singularSupport_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero s c ha m hk hσ,
+    hT]
+  exact singularSupport_ofFun_eq_empty hg
+
+/-- **Solutions of elliptic equations are smooth.** If the principal symbol of
+`P = ∑ i ∈ s, c i a i ∂^(m i)` of order `M`, with the coefficients frozen at any point of `Ω`,
+vanishes at no `ξ ≠ 0`, then every distributional solution of `P T = 0` is a function smooth
+on `Ω`. -/
+theorem exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_zero
+    [MeasurableSpace E] [BorelSpace E] {ι : Type*} (s : Finset ι) (c : ι → ℂ) {a : ι → E → ℝ}
+    (ha : ∀ i, ContDiff ℝ ∞ (a i)) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E) {M : ℕ}
+    (hk : ∀ i ∈ s, k i ≤ M)
+    (hσ : ∀ x ∈ Ω, ∀ ξ : E, ξ ≠ 0 → principalSymbol s (fun i y ↦ c i * a i y) m M x ξ ≠ 0)
+    {T : 𝓓'(Ω, ℂ)} (hT : ∑ i ∈ s, c i • smulLeftCLM (ha i) (∂^{m i} T) = 0) :
+    ∃ f : E → ℂ, ContDiffOn ℝ ∞ f Ω ∧ T = ofFun Ω f MeasureTheory.volume ⊤ :=
+  exists_contDiffOn_eq_ofFun_of_sum_smul_smulLeftCLM_iteratedLineDerivOp_eq_ofFun s c ha m hk hσ
+    contDiffOn_const (hT.trans ofFun_zero.symm)
+
+/-- **Solutions of elliptic constant-coefficient equations are smooth.** If the principal symbol
+of `P = ∑ i ∈ s, c i ∂^(m i)` of order `M` vanishes at no `ξ ≠ 0`, then every distributional
+solution of `P T = 0` is a function smooth on `Ω`. -/
+theorem exists_contDiffOn_eq_ofFun_of_sum_smul_iteratedLineDerivOp_eq_zero [MeasurableSpace E]
+    [BorelSpace E] {ι : Type*} (s : Finset ι) (c : ι → ℂ) {k : ι → ℕ} (m : ∀ i, Fin (k i) → E)
+    {M : ℕ} (hk : ∀ i ∈ s, k i ≤ M)
+    (hσ : ∀ ξ : E, ξ ≠ 0 → constCoeffPrincipalSymbol s c m M ξ ≠ 0)
+    {T : 𝓓'(Ω, ℂ)} (hT : ∑ i ∈ s, c i • ∂^{m i} T = 0) :
+    ∃ f : E → ℂ, ContDiffOn ℝ ∞ f Ω ∧ T = ofFun Ω f MeasureTheory.volume ⊤ := by
+  rw [← singularSupport_eq_empty_iff,
+    ← singularSupport_sum_smul_iteratedLineDerivOp_of_forall_ne_zero s c m hk hσ, hT,
+    singularSupport_zero]
+
+/-- **Weyl's lemma for distributions.** Every distribution `T` with `Δ T = 0` on `Ω` is a function
+smooth on `Ω`. -/
+theorem exists_contDiffOn_eq_ofFun_of_laplacianCLM_eq_zero [MeasurableSpace E] [BorelSpace E]
+    {T : 𝓓'(Ω, ℂ)} (hT : laplacianCLM ℝ E 𝓓'(Ω, ℂ) T = 0) :
+    ∃ f : E → ℂ, ContDiffOn ℝ ∞ f Ω ∧ T = ofFun Ω f MeasureTheory.volume ⊤ := by
+  rw [← singularSupport_eq_empty_iff, ← singularSupport_laplacianCLM, hT, singularSupport_zero]
 
 end Distribution
