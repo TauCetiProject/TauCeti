@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.Character.Basic
+public import TauCeti.Analysis.Normed.Algebra.Character.ApproximateUnit
 public import TauCeti.Analysis.Normed.Algebra.GroupAlgebra.Basic
 public import TauCeti.MeasureTheory.Group.Convolution.Kernel
 public import TauCeti.Topology.ApproximateUnit
@@ -318,11 +318,9 @@ theorem tendsto_character_approximateIdentity {χ : L1GroupAlgebra 𝕜 μ →�
 is assumed on `χ`. -/
 theorem norm_character_toStrongDual {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜} (hχ : χ ≠ 0) :
     ‖χ.toStrongDual‖ = 1 :=
-  let hl := isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)
-  have := hl.neBot
-  NonUnitalAlgHom.norm_toStrongDual_eq_one_of_tendsto_mul_right hχ
+  NonUnitalAlgHom.norm_toStrongDual_eq_one_of_isApproximateUnit
+    isApproximateUnit_map_approximateIdentity hχ
     (eventually_norm_eq_one_map_approximateIdentity.mono fun _ hu ↦ hu.le)
-    hl.tendsto_mul_right
 
 @[simp]
 theorem toStrongDual_integralNonUnitalAlgHom :

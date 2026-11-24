@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
-public import Mathlib.Topology.ApproximateUnit
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
 import Mathlib.Analysis.Normed.Module.WeakDual
@@ -21,9 +20,7 @@ import TauCeti.Topology.Compactness.LocallyCompact
 A character of a complex algebra `A` is an algebra homomorphism `A → ℂ`. In the nonunital setting
 it is a nonunital algebra homomorphism, and the zero map is allowed. By Mathlib's
 `NonUnitalAlgHom.norm_apply_le_self`, a nonunital character of a Banach algebra is bounded by the
-norm, with no unit and no continuity assumption, because its values lie in the quasispectrum; hence
-it defines a continuous linear functional `NonUnitalAlgHom.toStrongDual` of operator norm at most
-`1` (`NonUnitalAlgHom.norm_toStrongDual_le`).
+norm, with no unit and no continuity assumption, because its values lie in the quasispectrum.
 
 Every character kills the Jacobson radical. In a commutative complex Banach algebra the converse
 holds. By Gelfand–Mazur every point of the spectrum is the value of a character, so an element
@@ -38,14 +35,6 @@ Banach algebras are automatically continuous.
 
 ## Main results
 
-* `NonUnitalAlgHom.toStrongDual_injective`, `NonUnitalAlgHom.toStrongDual_inj`,
-  `NonUnitalAlgHom.toStrongDual_zero`, `NonUnitalAlgHom.toStrongDual_eq_zero`: injectivity and
-  zero-character characterization of `NonUnitalAlgHom.toStrongDual`.
-* `NonUnitalAlgHom.tendsto_one_of_tendsto_mul_right`,
-  `NonUnitalAlgHom.tendsto_one_of_isApproximateUnit`,
-  `NonUnitalAlgHom.norm_toStrongDual_eq_one_of_tendsto_mul_right`: a nonzero character tends to `1`
-  along any one-sided approximate identity or `Filter.IsApproximateUnit`, and has operator norm `1`
-  when that approximate identity is eventually bounded by `1`.
 * `WeakDual.CharacterSpace.isCompact_union_zero`,
   `WeakDual.CharacterSpace.instLocallyCompactSpace`: the character space of any nonunital Banach
   algebra over a proper nontrivially normed field is locally compact, realized inside the weak-star
@@ -64,101 +53,6 @@ Banach algebras are automatically continuous.
 -/
 
 public section
-
-open Filter Topology
-
-namespace NonUnitalAlgHom
-
-variable {𝕜 A F : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [CompleteSpace A]
-
-section Class
-
-variable [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
-
-/-- If `e * a → a` along `l` for an element `a` not in the kernel of a character `φ`, then
-`φ e → 1` along `l`. -/
-theorem tendsto_one_of_tendsto_mul_right {l : Filter A} {φ : F} {a : A} (ha : φ a ≠ 0)
-    (he : Tendsto (· * a) l (𝓝 a)) : Tendsto φ l (𝓝 1) := by
-  have hmul : Tendsto (fun e ↦ φ e * φ a) l (𝓝 (φ a)) := by
-    simpa only [Function.comp_def, map_mul] using ((map_continuous φ).tendsto a).comp he
-  simpa only [Function.comp_def, mul_inv_cancel_right₀ ha, mul_inv_cancel₀ ha] using
-    ((continuous_mul_const (φ a)⁻¹).tendsto (φ a)).comp hmul
-
-/-- If `a * e → a` along `l` for an element `a` not in the kernel of a character `φ`, then
-`φ e → 1` along `l`. -/
-theorem tendsto_one_of_tendsto_mul_left {l : Filter A} {φ : F} {a : A} (ha : φ a ≠ 0)
-    (he : Tendsto (a * ·) l (𝓝 a)) : Tendsto φ l (𝓝 1) := by
-  have hmul : Tendsto (fun e ↦ φ a * φ e) l (𝓝 (φ a)) := by
-    simpa only [Function.comp_def, map_mul] using ((map_continuous φ).tendsto a).comp he
-  simpa only [Function.comp_def, inv_mul_cancel_left₀ ha, inv_mul_cancel₀ ha] using
-    ((continuous_const_mul (φ a)⁻¹).tendsto (φ a)).comp hmul
-
-end Class
-
-/-- Along any two-sided approximate unit `l`, a nonzero character `φ` tends to `1`. -/
-theorem tendsto_one_of_isApproximateUnit {l : Filter A} (hl : l.IsApproximateUnit)
-    {φ : A →ₙₐ[𝕜] 𝕜} (hφ : φ ≠ 0) : Tendsto φ l (𝓝 1) := by
-  obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := by simpa [DFunLike.ext_iff] using hφ
-  exact tendsto_one_of_tendsto_mul_right ha (hl.tendsto_mul_right a)
-
-theorem toStrongDual_injective :
-    Function.Injective (toStrongDual (𝕜 := 𝕜) (A := A)) := fun _ _ h =>
-  DFunLike.ext _ _ fun a => congrArg (fun f : StrongDual 𝕜 A => f a) h
-
-@[simp]
-theorem toStrongDual_inj {φ ψ : A →ₙₐ[𝕜] 𝕜} :
-    φ.toStrongDual = ψ.toStrongDual ↔ φ = ψ :=
-  toStrongDual_injective.eq_iff
-
-@[simp]
-theorem toStrongDual_zero :
-    (0 : A →ₙₐ[𝕜] 𝕜).toStrongDual = 0 :=
-  DFunLike.ext _ _ fun _ => rfl
-
-@[simp]
-theorem toStrongDual_eq_zero {φ : A →ₙₐ[𝕜] 𝕜} :
-    φ.toStrongDual = 0 ↔ φ = 0 := by
-  rw [← toStrongDual_zero, toStrongDual_inj]
-
-end NonUnitalAlgHom
-
-namespace NonUnitalAlgHom
-
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [CompleteSpace A]
-
-/-- If a character `φ` tends to `1` along a proper filter `l` eventually contained in the closed
-unit ball, then `φ` has operator norm `1`. -/
-theorem norm_toStrongDual_eq_one_of_tendsto_one {l : Filter A} [l.NeBot]
-    {φ : A →ₙₐ[𝕜] 𝕜} (ht : Tendsto φ l (𝓝 1)) (hb : ∀ᶠ e in l, ‖e‖ ≤ 1) :
-    ‖φ.toStrongDual‖ = 1 := by
-  refine le_antisymm (norm_toStrongDual_le φ) ?_
-  have h1 : Tendsto (fun e ↦ ‖φ e‖) l (𝓝 1) := by simpa only [norm_one] using ht.norm
-  refine le_of_tendsto h1 ?_
-  filter_upwards [hb] with e he
-  exact (φ.toStrongDual.le_opNorm e).trans <|
-    (mul_le_mul_of_nonneg_left he (norm_nonneg _)).trans_eq (mul_one _)
-
-/-- Every nonzero character of a Banach algebra admitting a left approximate identity bounded by
-`1` has operator norm `1`. -/
-theorem norm_toStrongDual_eq_one_of_tendsto_mul_right {l : Filter A} [l.NeBot]
-    {φ : A →ₙₐ[𝕜] 𝕜} (hφ : φ ≠ 0) (hb : ∀ᶠ e in l, ‖e‖ ≤ 1)
-    (he : ∀ a, Tendsto (· * a) l (𝓝 a)) : ‖φ.toStrongDual‖ = 1 := by
-  obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := by simpa [DFunLike.ext_iff] using hφ
-  exact norm_toStrongDual_eq_one_of_tendsto_one
-    (tendsto_one_of_tendsto_mul_right ha (he a)) hb
-
-/-- Every nonzero character of a Banach algebra admitting a right approximate identity bounded by
-`1` has operator norm `1`. -/
-theorem norm_toStrongDual_eq_one_of_tendsto_mul_left {l : Filter A} [l.NeBot]
-    {φ : A →ₙₐ[𝕜] 𝕜} (hφ : φ ≠ 0) (hb : ∀ᶠ e in l, ‖e‖ ≤ 1)
-    (he : ∀ a, Tendsto (a * ·) l (𝓝 a)) : ‖φ.toStrongDual‖ = 1 := by
-  obtain ⟨a, ha⟩ : ∃ a, φ a ≠ 0 := by simpa [DFunLike.ext_iff] using hφ
-  exact norm_toStrongDual_eq_one_of_tendsto_one
-    (tendsto_one_of_tendsto_mul_left ha (he a)) hb
-
-end NonUnitalAlgHom
 
 namespace TauCeti
 
