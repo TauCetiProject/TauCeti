@@ -33,7 +33,9 @@ When `σ` is invertible, a `σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` 
 to the basis `f ∘ b` of `M'` (`Module.Basis.mapₛₗ`), and so preserves `finrank`
 (`LinearEquiv.finrank_eqₛₗ`). For instance, a conjugate-linear equivalence of complex vector spaces
 carries complex bases to complex bases. Over any commutative star semiring, a finite basis `b`
-induces the conjugate-linear coordinate equivalence `Module.Basis.conjEquivFun`.
+induces the conjugate-linear coordinate equivalence `Module.Basis.conjEquivFun`, and any basis
+induces the conjugation of the coordinates `Module.Basis.coordConj`, the involutive equivalence
+form of `Module.Basis.semilinearMap (starRingEnd R) b b`, which conjugates determinants.
 
 ## Main declarations
 
@@ -49,6 +51,9 @@ induces the conjugate-linear coordinate equivalence `Module.Basis.conjEquivFun`.
 * `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence.
 * `Module.Basis.conjEquivFun`: the conjugate-linear coordinate equivalence `M ≃ₛₗ[starRingEnd R]
   (ι → R)` of a finite basis.
+* `Module.Basis.coordConj`: the conjugation of the coordinates in a basis.
+* `Module.Basis.det_coordConj_comp_comp_coordConj`: conjugating an endomorphism by it conjugates
+  the determinant.
 * `LinearEquiv.finrank_eqₛₗ`: semilinear equivalences along ring isomorphisms preserve `finrank`.
 -/
 
@@ -202,6 +207,69 @@ theorem conjEquivFun_self [Finite ι] (b : Basis ι R M) (j : ι) :
     apply_ite star, eq_comm]
 
 end ConjEquivFun
+
+section CoordConj
+
+variable {ι R M : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid M] [Module R M]
+  (b : Basis ι R M)
+
+/-- The **conjugation of the coordinates** in a basis `b`, the conjugate-linear involution
+`∑ₖ aₖ bₖ ↦ ∑ₖ star(aₖ) bₖ`. It is `Module.Basis.semilinearMap (starRingEnd R) b b` as an
+equivalence. -/
+def coordConj : M ≃ₛₗ[starRingEnd R] M :=
+  .ofInvolutive (b.semilinearMap (starRingEnd R) b) fun m ↦ b.ext_elem fun i ↦ by simp
+
+/-- As a function, the conjugation of the coordinates is `semilinearMap (starRingEnd R) b b`. -/
+theorem coe_coordConj : ⇑b.coordConj = b.semilinearMap (starRingEnd R) b :=
+  LinearEquiv.coe_ofInvolutive _ _
+
+/-- The coordinates of the conjugate of a vector are the conjugates of its coordinates. -/
+@[simp]
+theorem repr_coordConj (m : M) (i : ι) : b.repr (b.coordConj m) i = star (b.repr m i) := by
+  simp [coe_coordConj, starRingEnd_apply]
+
+/-- The conjugation of the coordinates conjugates the coefficients of the expansion in `b`. -/
+theorem coordConj_apply [Fintype ι] (m : M) : b.coordConj m = ∑ i, star (b.repr m i) • b i := by
+  conv_lhs => rw [← b.sum_repr (b.coordConj m)]
+  simp
+
+/-- The conjugation of the coordinates fixes the basis vectors. -/
+@[simp]
+theorem coordConj_self (i : ι) : b.coordConj (b i) = b i := by
+  simp [coe_coordConj]
+
+/-- The conjugation of the coordinates is an involution. -/
+@[simp]
+theorem coordConj_coordConj (m : M) : b.coordConj (b.coordConj m) = m :=
+  b.ext_elem fun i ↦ by simp
+
+/-- The conjugation of the coordinates is its own inverse. -/
+@[simp]
+theorem coordConj_symm : b.coordConj.symm = b.coordConj :=
+  LinearEquiv.ext fun m ↦ b.coordConj.injective (by simp)
+
+end CoordConj
+
+section CoordConjDet
+
+variable {ι R M : Type*} [CommRing R] [StarRing R] [AddCommGroup M] [Module R M] [Finite ι]
+
+/-- **Conjugating an endomorphism by the conjugation of the coordinates conjugates its
+determinant**: the matrix of `κ ∘ f ∘ κ` in the basis is the conjugate of the matrix of `f`. -/
+@[simp]
+theorem det_coordConj_comp_comp_coordConj (b : Basis ι R M) (f : M →ₗ[R] M) :
+    LinearMap.det (b.coordConj.toLinearMap ∘ₛₗ f ∘ₛₗ b.coordConj.toLinearMap) =
+      star (LinearMap.det f) := by
+  classical
+  have := Fintype.ofFinite ι
+  have hM : LinearMap.toMatrix b b (b.coordConj.toLinearMap ∘ₛₗ f ∘ₛₗ b.coordConj.toLinearMap) =
+      (starRingEnd R).mapMatrix (LinearMap.toMatrix b b f) := by
+    ext i j
+    simp [LinearMap.toMatrix_apply, starRingEnd_apply]
+  rw [← LinearMap.det_toMatrix b, hM, ← RingHom.map_det, LinearMap.det_toMatrix,
+    starRingEnd_apply]
+
+end CoordConjDet
 
 end Module.Basis
 

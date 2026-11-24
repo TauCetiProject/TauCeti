@@ -31,8 +31,9 @@ scheme-level duality remains a separate step.
 * `TauCeti.ConvolutionDual.map_id` and `TauCeti.ConvolutionDual.map_comp`: its functoriality laws.
 * `TauCeti.ConvolutionDual.mapEquiv`: the contravariant equivalence induced by a bialgebra
   equivalence.
-* `TauCeti.ConvolutionDual.evalAlgEquiv`: evaluation as an algebra equivalence with the
-  convolution algebra of the dual coalgebra.
+* `TauCeti.ConvolutionDual.ofConv_evalAlgEquiv_comp_coalgMap`: naturality of the algebra
+  evaluation `TauCeti.ConvolutionDual.evalAlgEquiv` from
+  `TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic`.
 * `TauCeti.ConvolutionDual.tensor_eq_of_forall_tensorComponent_evalAlgEquiv_eq`: contractions
   against evaluation at the elements of the algebra detect equality of tensors with its dual.
 * `TauCeti.ConvolutionDual.evalBialgEquiv`: evaluation as a bialgebra equivalence with the double
@@ -198,60 +199,6 @@ section AlgebraEvaluation
 variable (k : Type u) [CommSemiring k]
 variable (H : Type v) [Semiring H] [Algebra k H] [Module.Finite k H] [Module.Projective k H]
 
-/-- Evaluation into the double convolution dual as a linear equivalence. -/
-private noncomputable def evalLinearEquiv :
-    H ≃ₗ[k] ConvolutionDual k (ConvolutionDual k H) :=
-  (Module.evalEquiv k H).trans
-    ((WithConv.linearEquiv k (Module.Dual k H)).dualMap.trans
-      (WithConv.linearEquiv k (Module.Dual k (ConvolutionDual k H))).symm)
-
-private theorem evalLinearEquiv_apply_apply (x : H) (phi : ConvolutionDual k H) :
-    (evalLinearEquiv k H x).ofConv phi = phi.ofConv x :=
-  (rfl)
-
-/-- **A finite projective algebra is canonically isomorphic to the convolution algebra of its
-dual coalgebra.**
-
-The dual `ConvolutionDual k H` of a finite projective algebra `H` is a coalgebra, and the
-equivalence sends `x` to evaluation at `x`. Only the algebra structure of `H` is used. -/
-noncomputable def evalAlgEquiv :
-    H ≃ₐ[k] ConvolutionDual k (ConvolutionDual k H) :=
-  AlgEquiv.ofLinearEquiv (evalLinearEquiv k H)
-    (by
-      apply WithConv.ofConv_injective
-      ext phi
-      simp [evalLinearEquiv_apply_apply, counit_apply])
-    (fun x y => by
-      apply WithConv.ofConv_injective
-      ext phi
-      rw [evalLinearEquiv_apply_apply]
-      symm
-      calc
-        ((evalLinearEquiv k H x) * (evalLinearEquiv k H y)).ofConv phi =
-            dualDistribEquiv k H (Coalgebra.comul phi) (x ⊗ₜ[k] y) := by
-          rw [LinearMap.convMul_apply]
-          generalize Coalgebra.comul (R := k) phi = z
-          induction z using TensorProduct.inductionOn with
-          | add z₁ z₂ hz₁ hz₂ =>
-              simpa only [map_add, LinearMap.add_apply] using
-                congrArg₂ (fun a b => a + b) hz₁ hz₂
-          | tmul a b => simp [evalLinearEquiv_apply_apply]
-        _ = phi.ofConv (x * y) := dualDistribEquiv_comul_apply k H phi x y)
-
-/-- The double-dual algebra equivalence evaluates a functional at the original element. -/
-@[simp, grind =]
-theorem evalAlgEquiv_apply_apply (x : H) (phi : ConvolutionDual k H) :
-    (evalAlgEquiv k H x).ofConv phi = phi.ofConv x :=
-  (rfl)
-
-/-- The inverse double-dual algebra equivalence is characterized by evaluation. -/
-@[simp, grind =]
-theorem evalAlgEquiv_symm_apply_apply
-    (Phi : ConvolutionDual k (ConvolutionDual k H)) (phi : ConvolutionDual k H) :
-    phi.ofConv ((evalAlgEquiv k H).symm Phi) = Phi.ofConv phi := by
-  rw [← evalAlgEquiv_apply_apply]
-  simp
-
 /-- Evaluation at `x` after the dual coalgebra morphism of `f` is evaluation at `f x`. This is the
 naturality of `evalAlgEquiv`. -/
 theorem ofConv_evalAlgEquiv_comp_coalgMap {K : Type w} [Semiring K] [Algebra k K]
@@ -306,7 +253,7 @@ private theorem dualDistribEquiv_tensor_eval_apply
   | add z₁ z₂ hz₁ hz₂ =>
       simpa only [map_add, LinearMap.add_apply, WithConv.ofConv_add] using
         congrArg₂ (fun a b => a + b) hz₁ hz₂
-  | tmul x y => simp [evalAlgEquiv_apply_apply]
+  | tmul x y => simp
 
 /-- Evaluation into the double finite dual as a coalgebra morphism. -/
 private noncomputable def evalCoalgHom :
@@ -314,7 +261,7 @@ private noncomputable def evalCoalgHom :
   __ := (evalAlgEquiv k H).toLinearMap
   counit_comp := by
     ext x
-    simp [counit_apply, evalAlgEquiv_apply_apply, LinearMap.convOne_apply]
+    simp [counit_apply, LinearMap.convOne_apply]
   map_comp_comul := by
     ext x
     apply (dualDistribEquiv k (ConvolutionDual k H)).injective

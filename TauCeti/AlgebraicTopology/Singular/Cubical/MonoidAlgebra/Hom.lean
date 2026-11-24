@@ -249,6 +249,22 @@ theorem cubicalChainAugmentation_lof (n : ℕ) (y : NormalizedCubicalChain G R n
     cubicalChainAugmentation G R (cubicalChainLof G R n y) = cubicalChainAugmentLof G R n y :=
   cubicalChainAugmentAlgHom_lof n y
 
+/-- The augmentation of the algebra of cubical chains is the augmentation of the component of
+dimension zero. -/
+theorem cubicalChainAugmentation_eq_augment (z : normalizedCubicalChainAlgebra G R) :
+    cubicalChainAugmentation G R z = augment G R (z 0) := by
+  induction z using DirectSum.induction_on with
+  | zero => simp
+  | of n y =>
+    have h := cubicalChainAugmentation_lof (G := G) (R := R) n y
+    rw [DirectSum.lof_eq_of] at h
+    rw [h]
+    rcases n with _ | i
+    · rw [cubicalChainAugmentLof_zero, DirectSum.of_eq_same]
+    · rw [cubicalChainAugmentLof_of_ne_zero (Nat.succ_ne_zero i),
+        DirectSum.of_eq_of_ne _ _ _ (Nat.succ_ne_zero i).symm, map_zero]
+  | add z z' hz hz' => simp [hz, hz']
+
 /-- The morphisms induced by continuous monoid homomorphisms are compatible with the
 augmentations. -/
 theorem cubicalChainAugmentation_comp_dgAlgHom (φ : G →ₜ* G') :

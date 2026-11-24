@@ -231,7 +231,7 @@ private theorem sum_range_gtRowCount (h : IsLRPattern n lam γ μ P) (r : ℕ) :
     push_cast [← Nat.cast_sum] at hs
     omega
   · rw [sum_eq_zero fun k _ => gtRowCount_eq_zero_of_le h.topRow_nonneg hr k,
-      YoungDiagram.rowLen_eq_zero_of_colLen_le (h.hγ.trans hr), Nat.zero_sub]
+      YoungDiagram.rowLen_eq_zero_iff.mpr (h.hγ.trans hr), Nat.zero_sub]
 
 private theorem le (h : IsLRPattern n lam γ μ P) : lam ≤ γ := by
   refine YoungDiagram.le_of_forall_rowLen_le fun r => ?_
@@ -239,7 +239,7 @@ private theorem le (h : IsLRPattern n lam γ μ P) : lam ≤ γ := by
   · have hs := sum_range_natCast_gtRowCount_of_lt h.topRow_nonneg h.weight hr hr
     have : (0 : ℤ) ≤ ∑ k ∈ range n, (gtRowCount P r k : ℤ) := sum_nonneg fun _ _ => by positivity
     omega
-  · rw [YoungDiagram.rowLen_eq_zero_of_colLen_le (h.hlam.trans hr)]; exact Nat.zero_le _
+  · rw [YoungDiagram.rowLen_eq_zero_iff.mpr (h.hlam.trans hr)]; exact Nat.zero_le _
 
 /-- Column strictness of the filling with the row counts of `P`: this is `IsGTCompletable` in
 rows `i + 1 < n` and letters `x ≤ i`; for larger letters both rows are full, and rows `i + 1 ≥ n`
@@ -292,7 +292,7 @@ private theorem content_tableau (h : IsLRPattern n lam γ μ P) :
     rw [GTPattern.topRow_apply, weightOfShape_apply] at ht
     exact_mod_cast hs.trans ht
   · rw [P.entry_eq_zero_of_le hk, Nat.cast_eq_zero] at hs
-    rw [hs, YoungDiagram.rowLen_eq_zero_of_colLen_le (h.hμ.trans hk)]
+    rw [hs, YoungDiagram.rowLen_eq_zero_iff.mpr (h.hμ.trans hk)]
 
 /-- The ballot condition on `h.tableau` is the second interlacing inequality of `P`. -/
 private theorem isLatticeWord_tableau (h : IsLRPattern n lam γ μ P) :

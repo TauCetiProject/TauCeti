@@ -66,7 +66,7 @@ action and a translated quadratic moment map. For a Delzant polytope every verte
 every point of `Δ` has its active facets among those of some vertex
 (`TauCeti.Toric.exists_mem_extremePoints_activeSet_subset`), so by
 `TauCeti.Toric.DelzantQuotient.mem_vertexChart_source_iff` the charts at the vertices cover
-`M_Δ`.
+`M_Δ` (`TauCeti.Toric.IsDelzant.exists_mem_vertexChart_source`).
 
 ## Main definitions
 
@@ -82,6 +82,8 @@ every point of `Δ` has its active facets among those of some vertex
   exactly to vertices.
 * `TauCeti.Toric.DelzantQuotient.mem_vertexChart_source_iff`: the source of the vertex chart is
   the set of points whose active facets are active at `v`.
+* `TauCeti.Toric.IsDelzant.exists_mem_vertexChart_source`: for a Delzant polytope the charts at
+  the vertices cover `M_Δ`.
 * `TauCeti.Toric.DelzantQuotient.vertexChart_symm_apply`,
   `TauCeti.Toric.DelzantQuotient.vertexChart_mk`: the chart and its inverse on representatives.
 * `TauCeti.Toric.DelzantQuotient.reducedMomentMap_vertexChart_symm`: the moment map in the chart.
@@ -815,5 +817,29 @@ theorem vertexChart_vadd {q : DelzantQuotient i u c} (hq : q ∈ (vertexChart hv
   rw [← vertexChart_symm_torusRotation hv hi hvP hw, (vertexChart hv hi hvP).right_inv hφw]
 
 end DelzantQuotient
+
+/-! ### The vertex charts cover the Delzant quotient -/
+
+namespace IsDelzant
+
+open DelzantQuotient
+
+variable [FiniteDimensional ℝ V] (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i)
+
+open Classical in
+/-- **The vertex charts cover the Delzant quotient.** Every point of `M_Δ` lies in the
+source of the chart at some vertex of `Δ`: the facets active at its moment value are among those
+active at some vertex. -/
+theorem exists_mem_vertexChart_source (q : DelzantQuotient i u c) :
+    ∃ (v : StrongDual ℝ V) (hv : v ∈ (facetPolyhedron i u c).extremePoints ℝ),
+      q ∈ (vertexChart (hΔ.isSmoothVertex v hv) hi hv.1).source := by
+  have hβ := surjective_linearCombination_real hi.span_range_eq_top
+    hΔ.surjective_linearCombination
+  obtain ⟨v, hv, hsub⟩ := exists_mem_extremePoints_activeSet_subset
+    (isCompact_facetPolyhedron_of_isBounded hΔ.isBounded)
+    (reducedMomentMap_mem_facetPolyhedron hβ q)
+  exact ⟨v, hv, (mem_vertexChart_source_iff _ hi _).2 hsub⟩
+
+end IsDelzant
 
 end TauCeti.Toric
