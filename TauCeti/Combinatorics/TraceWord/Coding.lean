@@ -711,34 +711,19 @@ theorem sum_piFinset_pow_div_pow_card_image_le_of_no_singleton_edge [DecidableEq
     rw [card_subtype, filter_true_of_mem fun _ ↦ hS]
   have key := sum_piFinset_pow_div_pow_card_image_le_of_finite hγ₀ hγ₁ hm A'
   simp only [hcard] at key
-  -- A walk through the prescribed sets restricts to a walk in `S`, which projects back to it.
-  let r (w : Fin L → α) (hw : w ∈ Fintype.piFinset A) (t : Fin L) : S :=
-    ⟨w t, hS (Fintype.mem_piFinset.mp hw t)⟩
-  have hr (w : Fin L → α) (hw : w ∈ Fintype.piFinset A) : Subtype.val ∘ r w hw = w := rfl
-  refine le_of_eq_of_le (sum_bij (fun w hw ↦ r w (mem_filter.mp hw).1) ?_ ?_ ?_ ?_) key
-  · intro w hw
-    obtain ⟨hw, hsing⟩ := mem_filter.mp hw
-    refine mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun t ↦
-      mem_subtype.mpr (Fintype.mem_piFinset.mp hw t), fun t ↦ ?_⟩
-    obtain ⟨s, hst, he⟩ := hsing t
-    exact ⟨s, hst, Sym2.map.injective Subtype.val_injective (by simpa [r] using he)⟩
-  · intro w hw w' hw' h
-    rw [← hr w (mem_filter.mp hw).1, ← hr w' (mem_filter.mp hw').1]
-    exact congrArg (Subtype.val ∘ ·) h
-  · intro w' hw'
-    obtain ⟨hw', hsing⟩ := mem_filter.mp hw'
-    have hw : Subtype.val ∘ w' ∈ Fintype.piFinset A := Fintype.mem_piFinset.mpr fun t ↦
-      mem_subtype.mp (Fintype.mem_piFinset.mp hw' t)
-    refine ⟨Subtype.val ∘ w', mem_filter.mpr ⟨hw, fun t ↦ ?_⟩,
-      funext fun t ↦ Subtype.ext (congrFun (hr _ hw) t)⟩
-    obtain ⟨s, hst, he⟩ := hsing t
-    exact ⟨s, hst, by simpa using congrArg (Sym2.map Subtype.val) he⟩
-  · intro w hw
-    -- The restricted walk visits as many vertices as the walk itself.
-    have himage : #(univ.image (r w (mem_filter.mp hw).1)) = #(univ.image w) := by
-      rw [← card_image_of_injective _ Subtype.val_injective, image_image,
-        hr w (mem_filter.mp hw).1]
-    rw [himage]
+  -- The walks through the prescribed sets are the pointwise projections of the walks in `S`.
+  have hpi : Fintype.piFinset A = (Fintype.piFinset A').image (Subtype.val ∘ ·) := by
+    have hA : (fun t ↦ (A' t).image Subtype.val) = A := funext fun t ↦ by
+      rw [← Function.Embedding.coe_subtype, ← map_eq_image, subtype_map_of_mem fun _ ↦ hS]
+    rw [← hA]
+    exact Fintype.piFinset_image (fun _ ↦ Subtype.val) A'
+  rw [hpi, filter_image, sum_image Subtype.val_injective.comp_left.injOn]
+  refine le_of_eq_of_le (sum_congr (filter_congr fun w _ ↦ ?_) fun w _ ↦ ?_) key
+  · -- The projection is injective on edges, so it preserves the repeated edges.
+    simp only [Function.comp_apply, ← Sym2.map_mk,
+      (Sym2.map.injective Subtype.val_injective).eq_iff]
+  · -- The projected walk visits as many vertices as the walk itself.
+    rw [← image_image, card_image_of_injective _ Subtype.val_injective]
 
 /-- **Weighted Füredi–Komlós enumeration.** Let `α` be a finite type of cardinality `n` and let
 `0 ≤ γ ≤ 1`. Over the closed walks `w : Fin L → α` traversing each of their edges
