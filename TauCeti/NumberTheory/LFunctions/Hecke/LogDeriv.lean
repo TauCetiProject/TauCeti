@@ -9,15 +9,12 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeF
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 
 /-!
-# Logarithmic derivatives of presented Hecke L-series
+# The `3-4-1` inequality for logarithmic derivatives of presented Hecke L-series
 
-On `Re s > 1`, the negative logarithmic derivative of the Hecke L-series of a ray class
-character has coefficients `χ(A) Λ_K(A)`. The character is extended by zero at ideals meeting
-the finite part of the presentation modulus. In particular, the principal character contributes
-only the von Mangoldt terms prime to that modulus.
-
-The logarithmic derivatives of the principal character, `χ`, and `χ ^ 2`, all presented at the
-same modulus, satisfy the `3-4-1` inequality. This is the case of
+The negative logarithmic derivatives of the Hecke L-series of the principal character, of `χ`
+and of `χ ^ 2`, all presented at the same modulus, satisfy the `3-4-1` inequality on
+`Re s > 1`. Each character is extended by zero at ideals meeting the finite part of the modulus.
+This is the case of
 `TauCeti.UnitaryIdealWeight.threeFourOne_re_neg_logDeriv_LSeries_nonneg` in which `χ₀` is the
 weight of the principal character, the indicator of the ideals prime to the modulus.
 
