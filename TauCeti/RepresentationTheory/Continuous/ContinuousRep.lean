@@ -13,7 +13,9 @@ public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.Charpoly
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.RepresentationTheory.BaseChange.Charpoly
 
 /-!
 # Jointly continuous representations
@@ -71,6 +73,8 @@ finitely many vectors.
   along `A → C`.
 * `TauCeti.ContinuousRep.baseChangeOfCharacterIso`: the base change of a character line is the
   line of the character composed with `Aˣ → Bˣ`.
+* `TauCeti.ContinuousRep.baseChangeTrivialIso`: the base change of the trivial representation is
+  the trivial representation.
 * `TauCeti.ContinuousRep.dual`: the contragredient representation on `Module.Dual A M`, using
   `Representation.dual`.
 
@@ -82,6 +86,8 @@ finitely many vectors.
   `TauCeti.ContinuousRep.range_toContRepresentation`: a continuous representation is determined
   by its operators, and the Mathlib continuous representations arising this way are those with
   jointly continuous action.
+* `TauCeti.ContinuousRep.finite_range`: a continuous representation on a finite carrier has
+  finite image.
 * `TauCeti.ContinuousRep.continuous_toMatrix`: the matrix coefficients in a finite basis are
   continuous.
 * `TauCeti.ContinuousRep.nonempty_iso_ofCharacter_iff`: two character lines are isomorphic
@@ -89,6 +95,10 @@ finitely many vectors.
 * `TauCeti.ContinuousRep.Iso.charpoly_apply_eq` and
   `TauCeti.ContinuousRep.charpoly_ofCharacter_apply`: on finite free carriers the characteristic
   polynomial `(ρ g).charpoly` is an isomorphism invariant, and it is `X - χ g` on the line of `χ`.
+* `TauCeti.ContinuousRep.charpoly_baseChange_apply` and
+  `TauCeti.ContinuousRep.linearMap_det_baseChange_apply`: on finite free carriers the
+  characteristic polynomial and the determinant of `g` on a base change are the images of those
+  of `ρ g`.
 * `TauCeti.ContinuousRep.baseChangeTransIso_trans_baseChangeTransIso`: the two identifications
   of a threefold scalar extension `A → B → C → D` with the extension along `A → D` agree.
 
@@ -207,6 +217,17 @@ theorem toRepresentation_trivial :
 @[simp]
 theorem trivial_apply (g : Γ) (x : M) : trivial Γ A M g x = x :=
   (rfl)
+
+/-- Every element of `Γ` acts as the identity operator in the trivial representation. -/
+theorem trivial_apply_eq_id (g : Γ) : trivial Γ A M g = LinearMap.id :=
+  Representation.isTrivial_def (Representation.trivial A Γ M) g
+
+/-- **Finite image.** A continuous representation on a finite carrier takes only finitely many
+values. -/
+theorem finite_range [Finite M] (ρ : ContinuousRep Γ A M) :
+    (Set.range (ρ : Γ → Module.End A M)).Finite :=
+  have : Finite (Module.End A M) := .of_injective _ DFunLike.coe_injective
+  Set.toFinite _
 
 section Subquotient
 
@@ -502,6 +523,11 @@ theorem toContinuousLinearEquiv_trans (e : Iso ρ σ) (f : Iso σ τ) :
       e.toContinuousLinearEquiv.trans f.toContinuousLinearEquiv :=
   (rfl)
 
+@[simp]
+theorem ofEquiv_symm [TopologicalSpace A] [IsModuleTopology A M] [IsModuleTopology A N]
+    (e : ρ.toRepresentation.Equiv σ.toRepresentation) : (ofEquiv e).symm = ofEquiv e.symm :=
+  (rfl)
+
 end Iso
 
 /-- **A morphism of continuous representations**: an equivariant continuous linear map. -/
@@ -789,6 +815,21 @@ theorem Iso.baseChange_tmul (e : Iso ρ σ) (b : B) (x : M) :
 
 end Iso
 
+variable (Γ A M) in
+/-- **Extension of scalars of the trivial representation is trivial**, through the identity of
+`B ⊗[A] M`. -/
+def baseChangeTrivialIso : Iso ((trivial Γ A M).baseChange B) (trivial Γ B (B ⊗[A] M)) :=
+  .ofEquiv (.mk (.refl _ _) fun g => by ext; simp)
+
+@[simp]
+theorem baseChangeTrivialIso_apply (x : B ⊗[A] M) : baseChangeTrivialIso Γ A M B x = x :=
+  (rfl)
+
+@[simp]
+theorem baseChangeTrivialIso_symm_apply (x : B ⊗[A] M) :
+    (baseChangeTrivialIso Γ A M B).symm x = x :=
+  (rfl)
+
 end BaseChange
 
 section BaseChangeSelf
@@ -899,15 +940,14 @@ base change of `ofCharacter χ` to `B` is the line `B` on which `g` acts by the 
 in `Bˣ`, through `TensorProduct.AlgebraTensorModule.rid`. -/
 def baseChangeOfCharacterIso (χ : Γ →ₜ* Aˣ) :
     Iso ((ofCharacter χ).baseChange B)
-      (ofCharacter (ContinuousMonoidHom.comp
-        ⟨Units.map (algebraMap A B : A →* B), Continuous.units_map _ (continuous_algebraMap A B)⟩
-        χ)) :=
+      (ofCharacter ((ContinuousMonoidHom.unitsMap
+        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ)) :=
   .ofEquiv (.mk (TensorProduct.AlgebraTensorModule.rid A B B) fun g => by
     -- The extended character takes the value `algebraMap A B (χ g)` at `g`.
-    have hχ : (ContinuousMonoidHom.comp
-        ⟨Units.map (algebraMap A B : A →* B), Continuous.units_map _ (continuous_algebraMap A B)⟩
-        χ g : B) = algebraMap A B (χ g) :=
-      Units.coe_map _ _
+    have hχ : ((ContinuousMonoidHom.unitsMap
+        ⟨(algebraMap A B : A →* B), continuous_algebraMap A B⟩).comp χ g : B) =
+        algebraMap A B (χ g) :=
+      ContinuousMonoidHom.coe_unitsMap_apply _ _
     ext
     simpa [Algebra.smul_def] using hχ.symm)
 
@@ -997,6 +1037,26 @@ theorem charpoly_trivial_apply (g : Γ) :
 theorem charpoly_ofCharacter_apply [TopologicalSpace A] [ContinuousMul A] (χ : Γ →ₜ* Aˣ)
     (g : Γ) : (ofCharacter χ g).charpoly = X - C (χ g : A) :=
   Representation.charpoly_ofLinearCharacter_apply (χ : Γ →* Aˣ) g
+
+section BaseChange
+
+variable [TopologicalSpace A] [IsModuleTopology A M] (B : Type*) [CommRing B] [TopologicalSpace B]
+  [IsTopologicalSemiring B] [Algebra A B] [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)]
+  [IsModuleTopology B (B ⊗[A] M)]
+
+/-- **The characteristic polynomial of a base change.** The element `g` acts on
+`ρ.baseChange B` with characteristic polynomial the image in `B[X]` of that of `ρ g`. -/
+theorem charpoly_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
+    (ρ.baseChange B g).charpoly = (ρ g).charpoly.map (algebraMap A B) :=
+  Representation.charpoly_baseChange_apply ρ.toRepresentation B g
+
+/-- **The determinant of a base change.** The element `g` acts on `ρ.baseChange B` with
+determinant the image in `B` of that of `ρ g`. -/
+theorem linearMap_det_baseChange_apply (ρ : ContinuousRep Γ A M) (g : Γ) :
+    LinearMap.det (ρ.baseChange B g) = algebraMap A B (LinearMap.det (ρ g)) := by
+  rw [baseChange_apply, LinearMap.det_baseChange]
+
+end BaseChange
 
 end Charpoly
 

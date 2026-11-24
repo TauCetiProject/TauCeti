@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.Limits
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
+public import TauCeti.AlgebraicGeometry.Gluing.Pushout
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Localization
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # The scheme of a function field glued from two affine charts
@@ -254,39 +256,17 @@ theorem isPullback :
   have := isOpenImmersion_specMap_infinityChartRestriction hF hx
   exact Scheme.isPullback_pushout_of_isOpenImmersion _ _
 
-instance : IsReduced (twoChartModel hF hx) := by
-  -- Every stalk is a stalk of one of the two charts, which are spectra of domains.
-  have (p : twoChartModel hF hx) : _root_.IsReduced ((twoChartModel hF hx).presheaf.stalk p) := by
-    rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
-      ⟨q, rfl⟩ | ⟨q, rfl⟩
-    · exact isReduced_of_injective _
-        (asIso ((ιFinite hF hx).stalkMap q)).commRingCatIsoToRingEquiv.injective
-    · exact isReduced_of_injective _
-        (asIso ((ιInfinity hF hx).stalkMap q)).commRingCatIsoToRingEquiv.injective
-  exact isReduced_of_isReduced_stalk _
-
-instance : IrreducibleSpace (twoChartModel hF hx) := by
-  -- Both charts are spectra of domains, so their images are irreducible.
-  have isIrreducible_range {R : CommRingCat.{u}} [IsDomain R] (f : Spec R ⟶ twoChartModel hF hx) :
-      IsIrreducible (Set.range f) := by
-    simpa only [Set.image_univ] using
-      (IrreducibleSpace.isIrreducible_univ _).image _ f.continuous.continuousOn
-  -- The finite chart is dense: it meets the irreducible chart at infinity in a nonempty open set,
-  -- which is dense there.
-  have hdense : closure (Set.range (ιFinite hF hx)) = Set.univ := by
-    refine Set.eq_univ_of_univ_subset ?_
-    rw [← range_ιFinite_union_range_ιInfinity hF hx]
-    refine Set.union_subset subset_closure ((subset_closure_inter_of_isPreirreducible_of_isOpen
-      (isIrreducible_range (ιInfinity hF hx)).isPreirreducible
-      (ιFinite hF hx).isOpenEmbedding.isOpen_range
-      (range_ιInfinity_inter_range_ιFinite_nonempty hF hx)).trans
-      (closure_mono Set.inter_subset_right))
-  rw [irreducibleSpace_def, Set.top_eq_univ, ← hdense]
-  exact (isIrreducible_range (ιFinite hF hx)).closure
-
-/-- **`twoChartModel` is an integral scheme.** -/
-instance : IsIntegral (twoChartModel hF hx) :=
-  isIntegral_of_irreducibleSpace_of_isReduced _
+/-- **`twoChartModel` is an integral scheme**: its charts are spectra of domains, glued along the
+nonempty spectrum of the overlap ring. -/
+instance : IsIntegral (twoChartModel hF hx) := by
+  have := isOpenImmersion_specMap_finiteChartRestriction hF hx
+  have := isOpenImmersion_specMap_infinityChartRestriction hF hx
+  have : Nonempty (Spec (.of (holomorphyRing
+      ({P : Place k F | x ∈ P.integers} ∩ {P : Place k F | x⁻¹ ∈ P.integers})))) :=
+    inferInstance
+  exact inferInstanceAs (IsIntegral (pushout
+    (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
+    (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))))
 
 /-- **`twoChartModel` is quasi-compact**, as the union of its two affine charts. -/
 instance : CompactSpace (twoChartModel hF hx) where
@@ -352,24 +332,8 @@ the constants of `𝒪_x`. -/
 @[simp]
 theorem finiteChartSectionsEquiv_appLE (a : Γ(Spec (.of k), ⊤)) :
     finiteChartSectionsEquiv hF hx ((twoChartModel hF hx ↘ Spec (.of k)).appLE ⊤ _ le_top a) =
-      algebraMap k _ ((Scheme.ΓSpecIso (.of k)).hom a) := by
-  suffices h : (twoChartModel hF hx ↘ Spec (.of k)).appLE ⊤ _ le_top ≫
-        ((ιFinite hF hx).appIso ⊤).hom ≫ (Scheme.ΓSpecIso _).hom =
-      (Scheme.ΓSpecIso (.of k)).hom ≫
-        CommRingCat.ofHom (algebraMap k (holomorphyRing {P : Place k F | x ∈ P.integers})) from
-    congr($h a)
-  rw [← cancel_epi (Scheme.ΓSpecIso (.of k)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
-    reassoc_of% Scheme.Hom.appLE_comp_appLE (ιFinite hF hx)
-    (twoChartModel hF hx ↘ Spec (.of k)) ⊤ (ιFinite hF hx ''ᵁ ⊤) ⊤ le_top
-    (Scheme.Hom.preimage_image_eq _ _).ge]
-  -- The composite of the chart with the structure morphism is `Spec` of the inclusion of `k`;
-  -- the proof that `⊤` lies over `⊤` has to be generalized before rewriting it.
-  generalize_proofs e
-  revert e
-  rw [ιFinite_over]
-  intro e
-  rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
-    Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+      algebraMap k _ ((Scheme.ΓSpecIso (.of k)).hom a) :=
+  Scheme.ΓSpecIso_appIso_hom_appLE _ _ _ (ιFinite_over hF hx) a
 
 /-- The canonical morphism from the spectrum of the sections of the finite chart is `Spec` of the
 identification of these sections with `𝒪_x`, followed by the chart inclusion. -/
@@ -394,17 +358,8 @@ over `k`. It identifies the germ of a function on the finite chart with that fun
 (`TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv_germToFunctionField`). -/
 noncomputable def functionFieldEquiv (hxt : Transcendental k x) :
     (twoChartModel hF hx).functionField ≃ₐ[k] F :=
-  haveI := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_ιFinite_top hF hx)
   haveI := isFractionRing_holomorphyRing_setOf_mem hF hxt
-  AlgEquiv.ofRingEquiv (f := IsFractionRing.ringEquivOfRingEquiv (finiteChartSectionsEquiv hF hx))
-    fun c ↦ by
-      rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
-        Scheme.baseRingToFunctionField_eq_comp_appLE k _ (ιFinite hF hx ''ᵁ ⊤),
-        RingHom.comp_apply]
-      -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
-      refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
-      rw [CommRingCat.comp_apply, finiteChartSectionsEquiv_appLE, Iso.inv_hom_id_apply]
-      exact (IsScalarTower.algebraMap_apply k _ F c).symm
+  (ιFinite hF hx).functionFieldAlgEquivOfIsOpenImmersion (ιFinite_over hF hx) F
 
 /-- `TauCeti.AlgebraicGeometry.twoChartModel.functionFieldEquiv` sends the germ of a function on
 the finite chart to the corresponding function of `F`. -/
@@ -412,11 +367,9 @@ the finite chart to the corresponding function of `F`. -/
 theorem functionFieldEquiv_germToFunctionField (hxt : Transcendental k x)
     (a : Γ(twoChartModel hF hx, ιFinite hF hx ''ᵁ ⊤)) :
     functionFieldEquiv hxt ((twoChartModel hF hx).germToFunctionField _ a) =
-      finiteChartSectionsEquiv hF hx a := by
-  have := functionField_isFractionRing_of_isAffineOpen _ _ (isAffineOpen_image_ιFinite_top hF hx)
-  have := isFractionRing_holomorphyRing_setOf_mem hF hxt
-  -- `germToFunctionField` is by definition the algebra map of `Γ(X, U)` to `k(X)`.
-  exact IsFractionRing.ringEquivOfRingEquiv_algebraMap _ a
+      finiteChartSectionsEquiv hF hx a :=
+  haveI := isFractionRing_holomorphyRing_setOf_mem hF hxt
+  Scheme.Hom.functionFieldAlgEquivOfIsOpenImmersion_germToFunctionField _ (ιFinite_over hF hx) F a
 
 end twoChartModel
 

@@ -823,17 +823,14 @@ theorem exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp (hx : Co
       ∀ c < 1 / 2, ∃ K, ∀ z, ‖(u • x) z - referenceField f m z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
   refine ⟨u, hu, fun c hc ↦ ?_⟩
-  have huc := ((mem_framedGaugeGroup _).1 u.property).1
-  have hy : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform (by simpa using huc) hx
-  have hcd (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ (u • x) z i) := contDiff_euclidean.1 hy i
+  have hcd (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ (u • x) z i) :=
+    contDiff_euclidean.1 (contDiff_framedGaugeGroup_smul u hx) i
   have hsol' (z : ℂ) : equation (u • x) z = 0 :=
-    (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
+    (equation_framedGaugeGroup_smul_eq_zero_iff u
       fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
-  have hlim : Tendsto (fun z ↦ 4 * ((u • x) z 2 ^ 2 + (u • x) z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-    refine (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ ?_
-    rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, framedGaugeGroup_smul,
-      sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
   exact exists_norm_sub_referenceField_le_mul_exp (hcd 0).continuous (hcd 1).continuous
-    ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast)) hsol' hlim hu f hc
+    ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast)) hsol'
+    ((tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ by
+      simp [framedGaugeGroup_smul]) hu f hc
 
 end TauCeti.Vortex
