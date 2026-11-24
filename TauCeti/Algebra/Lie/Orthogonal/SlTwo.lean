@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Classical
+public import TauCeti.Algebra.Lie.GeneralLinear.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.LinearAlgebra.Matrix.Trace
@@ -49,15 +50,6 @@ namespace TauCeti
 @[expose] def soTwoOneMatrix (x y z : ℝ) : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ :=
   fromBlocks !![0, y - z; z - y, 0] !![2 * x; y + z] !![2 * x, y + z] 0
 
-/-- Membership in `𝔰𝔬(2, 1)`, entrywise: `Nᵀ D = -(D N)` for `D = diag(1, 1, -1)`. -/
-private theorem mem_so'_iff (N : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) :
-    N ∈ so' (Fin 2) (Fin 1) ℝ ↔
-      ∀ a b, N b a * indefiniteDiagonal (Fin 2) (Fin 1) ℝ b b =
-        -(indefiniteDiagonal (Fin 2) (Fin 1) ℝ a a * N a b) := by
-  rw [so', mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
-    Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, ← Matrix.ext_iff]
-  simp [indefiniteDiagonal, Matrix.mul_diagonal, Matrix.diagonal_mul]
-
 /-- `soTwoOneMatrix x y z` lies in `𝔰𝔬(2, 1)`. -/
 theorem soTwoOneMatrix_mem (x y z : ℝ) : soTwoOneMatrix x y z ∈ so' (Fin 2) (Fin 1) ℝ := by
   rw [mem_so'_iff]
@@ -67,7 +59,7 @@ theorem soTwoOneMatrix_mem (x y z : ℝ) : soTwoOneMatrix x y z ∈ so' (Fin 2) 
 
 /-- The isomorphism `𝔰𝔩₂(ℝ) ≃ 𝔰𝔬(2, 1)`, sending `[[x, y], [z, -x]]` to
 `TauCeti.soTwoOneMatrix x y z`. -/
-@[expose] noncomputable def slTwoLieEquivSoTwoOne : sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ so' (Fin 2) (Fin 1) ℝ where
+noncomputable def slTwoLieEquivSoTwoOne : sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ so' (Fin 2) (Fin 1) ℝ where
   toFun X := ⟨soTwoOneMatrix (X.val 0 0) (X.val 0 1) (X.val 1 0), soTwoOneMatrix_mem _ _ _⟩
   map_add' X Y := by
     ext a b
@@ -87,7 +79,7 @@ theorem soTwoOneMatrix_mem (x y z : ℝ) : soTwoOneMatrix x y z ∈ so' (Fin 2) 
   invFun N := ⟨!![N.val (.inl 0) (.inr 0) / 2,
       (N.val (.inl 0) (.inl 1) + N.val (.inl 1) (.inr 0)) / 2;
       (N.val (.inl 1) (.inr 0) - N.val (.inl 0) (.inl 1)) / 2, -(N.val (.inl 0) (.inr 0) / 2)], by
-    change traceLinearMap (Fin 2) ℝ ℝ _ = 0
+    rw [mem_sl_iff]
     simp [trace_fin_two]⟩
   left_inv X := by
     have hX := val_one_one_eq_neg_val_zero_zero X
@@ -112,14 +104,17 @@ theorem soTwoOneMatrix_mem (x y z : ℝ) : soTwoOneMatrix x y z ∈ so' (Fin 2) 
 theorem coe_slTwoLieEquivSoTwoOne_apply (X : sl (Fin 2) ℝ) :
     (slTwoLieEquivSoTwoOne X : Matrix (Fin 2 ⊕ Fin 1) (Fin 2 ⊕ Fin 1) ℝ) =
       soTwoOneMatrix (X.val 0 0) (X.val 0 1) (X.val 1 0) :=
-  rfl
+  (rfl)
 
-/-- `𝔰𝔩₂(ℝ)` is stable under the Cartan involution `X ↦ -Xᵀ`. -/
-theorem neg_transpose_mem_sl {X : Matrix (Fin 2) (Fin 2) ℝ} (hX : X ∈ sl (Fin 2) ℝ) :
-    -Xᵀ ∈ sl (Fin 2) ℝ := by
-  have h : X.trace = 0 := hX
-  change traceLinearMap (Fin 2) ℝ ℝ _ = 0
-  simp [h]
+/-- The inverse isomorphism `𝔰𝔬(2, 1) ≃ 𝔰𝔩₂(ℝ)` reads `x`, `y`, `z` off the entries of
+`TauCeti.soTwoOneMatrix x y z`. -/
+@[simp]
+theorem coe_slTwoLieEquivSoTwoOne_symm_apply (N : so' (Fin 2) (Fin 1) ℝ) :
+    (slTwoLieEquivSoTwoOne.symm N : Matrix (Fin 2) (Fin 2) ℝ) =
+      !![N.val (.inl 0) (.inr 0) / 2,
+        (N.val (.inl 0) (.inl 1) + N.val (.inl 1) (.inr 0)) / 2;
+        (N.val (.inl 1) (.inr 0) - N.val (.inl 0) (.inl 1)) / 2, -(N.val (.inl 0) (.inr 0) / 2)] :=
+  (rfl)
 
 /-- The isomorphism `𝔰𝔩₂(ℝ) ≃ 𝔰𝔬(2, 1)` intertwines the Cartan involutions `X ↦ -Xᵀ` of the two
 sides. -/

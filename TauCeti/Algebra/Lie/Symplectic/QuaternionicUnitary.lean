@@ -41,6 +41,12 @@ scalar (`Matrix.mem_range_scalar_of_commute_sp`), and a scalar symplectic matrix
 * `TauCeti.conjTranspose_mem_quaternionicUnitaryLieAlgebra`: `𝔰𝔭(p, q)` is closed under conjugate
   transpose.
 * `TauCeti.center_quaternionicUnitaryLieAlgebra_eq_bot`: the centre of `𝔰𝔭(p, q)` is trivial.
+
+## References
+
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Birkhäuser, 2002, Chapter I
+  (the real form `𝔰𝔭(p, q)` among the examples of semisimple Lie algebras, realized inside
+  `𝔰𝔭(n, ℂ)` through the Hermitian form of `diag(I_{p,q}, I_{p,q})`).
 -/
 
 public section
@@ -58,6 +64,13 @@ variable (p q : Type*) [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
 diagonal matrix of signature `(p, q)`. -/
 def quaternionicUnitaryGram : Matrix ((p ⊕ q) ⊕ (p ⊕ q)) ((p ⊕ q) ⊕ (p ⊕ q)) ℂ :=
   fromBlocks (indefiniteDiagonal p q ℂ) 0 0 (indefiniteDiagonal p q ℂ)
+
+omit [Fintype p] [Fintype q] in
+/-- `K = fromBlocks D 0 0 D` for `D` the indefinite diagonal matrix of signature `(p, q)`. -/
+theorem quaternionicUnitaryGram_def :
+    quaternionicUnitaryGram p q =
+      fromBlocks (indefiniteDiagonal p q ℂ) 0 0 (indefiniteDiagonal p q ℂ) :=
+  (rfl)
 
 variable {p q}
 
@@ -152,8 +165,8 @@ theorem mem_quaternionicUnitaryLieAlgebra_iff
 theorem conjTranspose_mem_quaternionicUnitaryLieAlgebra
     {X : Matrix ((p ⊕ q) ⊕ (p ⊕ q)) ((p ⊕ q) ⊕ (p ⊕ q)) ℂ}
     (hX : X ∈ quaternionicUnitaryLieAlgebra p q) : Xᴴ ∈ quaternionicUnitaryLieAlgebra p q := by
-  obtain ⟨hsp, h⟩ := hX
-  refine ⟨conjTranspose_mem_sp hsp, ?_⟩
+  obtain ⟨hsp, h⟩ := mem_quaternionicUnitaryLieAlgebra_iff.mp hX
+  refine mem_quaternionicUnitaryLieAlgebra_iff.mpr ⟨conjTranspose_mem_sp hsp, ?_⟩
   rw [conjTranspose_conjTranspose]
   calc X * quaternionicUnitaryGram p q
       = -(quaternionicUnitaryGram p q * -(quaternionicUnitaryGram p q * X) *
@@ -174,13 +187,13 @@ theorem commute_of_forall_mem_quaternionicUnitaryLieAlgebra
   have hσ : K * Yᴴ * K ∈ sp (p ⊕ q) ℂ :=
     quaternionicUnitaryGram_mul_mul_mem_sp (conjTranspose_mem_sp hY)
   have hA : Y - K * Yᴴ * K ∈ quaternionicUnitaryLieAlgebra p q := by
-    refine ⟨sub_mem hY hσ, ?_⟩
+    refine mem_quaternionicUnitaryLieAlgebra_iff.mpr ⟨sub_mem hY hσ, ?_⟩
     simp only [K, conjTranspose_sub, conjTranspose_mul, conjTranspose_quaternionicUnitaryGram,
       conjTranspose_conjTranspose, Matrix.sub_mul, Matrix.mul_sub, Matrix.mul_assoc,
       quaternionicUnitaryGram_mul_self, Matrix.mul_one, quaternionicUnitaryGram_mul_mul_self]
     abel
   have hB : Complex.I • (Y + K * Yᴴ * K) ∈ quaternionicUnitaryLieAlgebra p q := by
-    refine ⟨(sp (p ⊕ q) ℂ).smul_mem _ (add_mem hY hσ), ?_⟩
+    refine mem_quaternionicUnitaryLieAlgebra_iff.mpr ⟨(sp (p ⊕ q) ℂ).smul_mem _ (add_mem hY hσ), ?_⟩
     simp only [K, conjTranspose_smul, conjTranspose_add, conjTranspose_mul,
       conjTranspose_quaternionicUnitaryGram, conjTranspose_conjTranspose, Complex.star_def,
       Complex.conj_I, Matrix.mul_smul, Matrix.add_mul, Matrix.mul_add, Matrix.mul_assoc,
@@ -212,7 +225,7 @@ theorem center_quaternionicUnitaryLieAlgebra_eq_bot :
     exact this.symm
   obtain ⟨c, rfl⟩ := mem_range_scalar_of_commute_sp Z
     fun Y hY ↦ commute_of_forall_mem_quaternionicUnitaryLieAlgebra hcomm hY
-  have hZsp := (mem_symplecticLieAlgebra_iff _).mp hZq.1
+  have hZsp := (mem_symplecticLieAlgebra_iff _).mp (mem_quaternionicUnitaryLieAlgebra_iff.mp hZq).1
   ext a b
   rw [ZeroMemClass.coe_zero, Matrix.zero_apply]
   by_cases hab : a = b

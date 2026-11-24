@@ -50,6 +50,8 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   `LieAlgebra.Orthogonal.star_indefiniteDiagonal`: it squares to one, so is its own inverse,
   its diagonal entries are `±1`, hence nonzero, it is the block matrix `fromBlocks 1 0 0 (-1)`, and
   it is Hermitian, that is, self-adjoint.
+* `LieAlgebra.Orthogonal.mem_so'_iff`: membership in the indefinite orthogonal Lie algebra
+  `so' p q R`, entrywise.
 * `LieAlgebra.Orthogonal.indefiniteDiagonal_mulVec_apply` and
   `LieAlgebra.Orthogonal.vecMul_indefiniteDiagonal_apply`: it scales the coordinates of a vector by
   its diagonal entries.
@@ -161,6 +163,16 @@ omit [Fintype p] [Fintype q] in
 theorem star_indefiniteDiagonal [StarRing R] :
     star (indefiniteDiagonal p q R) = indefiniteDiagonal p q R :=
   isHermitian_indefiniteDiagonal
+
+open Matrix in
+/-- Membership in the indefinite orthogonal Lie algebra `so' p q R`, entrywise: `Nᵀ D = -(D N)`
+for the diagonal Gram matrix `D = indefiniteDiagonal p q R`. -/
+theorem mem_so'_iff (N : Matrix (p ⊕ q) (p ⊕ q) R) :
+    N ∈ so' p q R ↔
+      ∀ a b, N b a * indefiniteDiagonal p q R b b = -(indefiniteDiagonal p q R a a * N a b) := by
+  rw [so', mem_skewAdjointMatricesLieSubalgebra, mem_skewAdjointMatricesSubmodule,
+    Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, ← Matrix.ext_iff]
+  simp [indefiniteDiagonal, Matrix.mul_diagonal, Matrix.diagonal_mul]
 
 variable {ι : Type*} [DecidableEq ι]
 
