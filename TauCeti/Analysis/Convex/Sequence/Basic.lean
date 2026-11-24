@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Algebra.Order.WithTop.Untop0
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Order.Interval.Set.OrdConnected
-public import TauCeti.Algebra.Order.WithTop.Untop0
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -26,7 +25,9 @@ interval, or a half-line; infinity never supplies a genuine edge slope.
 This file proves supporting-line and chord inequalities, including existence of
 affine minorants through finite heights and separation at infinite heights. It
 recovers heights from an anchor and consecutive increments, and characterises convexity by second
-differences. A sequence is admissible when it has a real affine lower bound,
+differences. In particular a real sequence with nonnegative second differences on `[0, k]` lies
+below its chord from `0` to `k` (`TauCeti.natCast_mul_le_of_two_mul_le_add`). A sequence is
+admissible when it has a real affine lower bound,
 which is equivalent to having a convex minorant; a pointwise minimum is admissible exactly when
 both sequences are. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
@@ -472,6 +473,22 @@ theorem update_of_le {n : ℕ} {y : ℝ}
 
 end IsConvexSeq
 
+/-- A real sequence which is midpoint convex on `[0, k]`, `2 d j ≤ d (j - 1) + d (j + 1)` for
+`0 < j < k`, satisfies the chord inequality from `0` to `k`: `k d j ≤ (k - j) d 0 + j d k` for
+`j ≤ k`. This is `TauCeti.IsConvexSeq.chord_inequality` for the restriction of `d` to `[0, k]`. -/
+theorem natCast_mul_le_of_two_mul_le_add {d : ℕ → ℝ} {k : ℕ}
+    (h : ∀ j, 0 < j → j < k → 2 * d j ≤ d (j - 1) + d (j + 1)) {j : ℕ} (hj : j ≤ k) :
+    (k : ℝ) * d j ≤ (k - j) * d 0 + j * d k := by
+  classical
+  have hconv : IsConvexSeq (fun n ↦ if n ∈ Set.Iic k then (d n : WithTop ℝ) else ⊤) := by
+    refine isConvexSeq_iff_two_mul_le.2 ⟨by simpa [← Set.Iic_def] using Set.ordConnected_Iic,
+      fun n _ hn₂ ↦ ?_⟩
+    have hn₂' : n + 2 ≤ k := by by_contra h'; simp [Set.mem_Iic, h'] at hn₂
+    simpa [show n ≤ k by omega, show n + 1 ≤ k by omega, hn₂'] using
+      h (n + 1) (by omega) (by omega)
+  simpa [hj] using hconv.chord_inequality (i := 0) (j := j) (k := k) (by simp) (by simp)
+    (Nat.zero_le j) hj
+
 /-- Splice two convex sequences where their heights agree, taking the prefix from the
 sequence lying higher on that prefix. This comparison ensures convexity across the join;
 no finiteness assumption on the joining height is needed. -/
@@ -702,13 +719,8 @@ theorem unitSlope_add_affine {h : ℕ → WithTop ℝ} {n : ℕ} (hn : n ∈ fin
 
 /-- Scaling the heights by a nonnegative real factor preserves convexity. -/
 theorem IsConvexSeq.map_mul {h : ℕ → WithTop ℝ} (hh : IsConvexSeq h) {c : ℝ} (hc : 0 ≤ c) :
-    IsConvexSeq fun n => (h n).map (c * ·) := by
-  obtain ⟨hD, hmid⟩ := isConvexSeq_iff_two_mul_le.mp hh
-  refine isConvexSeq_iff_two_mul_le.mpr ⟨by simpa only [ne_eq, WithTop.map_eq_top_iff] using hD,
-    fun n hn hn₂ => ?_⟩
-  simp only [ne_eq, WithTop.map_eq_top_iff] at hn hn₂
-  simp only [WithTop.untop₀_map_mul]
-  nlinarith [hmid n hn hn₂]
+    IsConvexSeq fun n => (h n).map (c * ·) :=
+  hh.map (⟨AddMonoidHom.mulLeft c, fun _ _ hxy => mul_le_mul_of_nonneg_left hxy hc⟩ : ℝ →+o ℝ)
 
 /-- Scaling the heights by a nonnegative real factor preserves admissibility. -/
 theorem IsAdmissible.map_mul {a : ℕ → WithTop ℝ} (ha : IsAdmissible a) {c : ℝ} (hc : 0 ≤ c) :

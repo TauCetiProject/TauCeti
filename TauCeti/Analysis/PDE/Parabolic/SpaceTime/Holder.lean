@@ -60,6 +60,8 @@ slab Hölder spaces.
 * `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_of_lipschitzWith`: reparametrizing time by a
   `1`-Lipschitz map, such as a restriction or a time reversal, does not increase the temporal
   seminorm.
+* `TauCeti.ParabolicSpaceTime.timeEHolderNorm_comp_isometry`: postcomposition with an isometry
+  preserves the temporal seminorm.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_div_two_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm`: the
@@ -69,9 +71,11 @@ slab Hölder spaces.
 * `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_eHolderNorm_add_eHolderNorm`: control of the
   temporal seminorm of the spatial gradient.
+* `TauCeti.HolderSpace.holderWith_slabMk`: the time slices of a parabolic Hölder field on a slab
+  are Hölder in space, with its norm as constant.
 * `TauCeti.HolderSpace.compSlabSpaceL`, `TauCeti.HolderSpace.compSlabTimeL`,
   `TauCeti.HolderSpace.ofHolderTime`: spatial `α`-Hölder fields and temporal `α / 2`-Hölder fields
-  viewed as parabolic `α`-Hölder fields on a slab.
+  viewed as parabolic `α`-Hölder fields on a slab, with norm bounds and norm preservation.
 * `TauCeti.HolderSpace.ofHolderSpaceTime`: parabolic `α`-Hölder fields assembled from separate
   spatial and temporal bounds.
 * `TauCeti.HolderSpace.slabSpaceIsometryEquivLIE`, `TauCeti.HolderSpace.slabTimeReverseLIE`:
@@ -255,6 +259,17 @@ theorem timeEHolderNorm_le_of_lipschitzWith {a' b' : ℝ} {γ : ℝ≥0} {v : sl
         gcongr
         simpa using hφ t s
 
+/-- Postcomposition with an isometry preserves the temporal Hölder seminorm. -/
+theorem timeEHolderNorm_comp_isometry {G : Type*} [PseudoEMetricSpace G] {γ : ℝ≥0}
+    {e : F → G} (he : Isometry e) (v : slab (E := E) a b → F) :
+    timeEHolderNorm γ (e ∘ v) = timeEHolderNorm γ v := by
+  refine le_antisymm (timeEHolderNorm_le_iff.2 fun x t s ↦ ?_)
+    (timeEHolderNorm_le_iff.2 fun x t s ↦ ?_)
+  · simpa only [Function.comp_apply, he.edist_eq] using
+      timeEHolderNorm_le_iff.1 (le_refl (timeEHolderNorm γ v)) x t s
+  · simpa only [Function.comp_apply, ← he.edist_eq] using
+      timeEHolderNorm_le_iff.1 (le_refl (timeEHolderNorm γ (e ∘ v))) x t s
+
 variable [MetricSpace E]
 
 /-- The spatial seminorm is bounded by the parabolic seminorm: at a common time, the parabolic
@@ -301,6 +316,19 @@ theorem eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm (α : ℝ≥0)
         edist (slabMk x t) (slabMk y s) ^ (α : ℝ) := by
         rw [add_mul]
         gcongr
+
+/-- A function on a slab that is `α`-Hölder in space with constant `C₁` on every time slice and
+`α / 2`-Hölder in time with constant `C₂` at every position is parabolically `α`-Hölder with
+constant `C₁ + C₂`. -/
+theorem holderWith_of_holderWith_slices {α C₁ C₂ : ℝ≥0} {v : slab (E := E) a b → F}
+    (hspace : ∀ t : Icc a b, HolderWith C₁ α fun x ↦ v (slabMk x t))
+    (htime : ∀ x : E, HolderWith C₂ (α / 2) fun t : Icc a b ↦ v (slabMk x t)) :
+    HolderWith (C₁ + C₂) α v := by
+  have h := (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α v).trans
+    (add_le_add (spaceEHolderNorm_le_iff.2 fun t x y ↦ hspace t x y)
+      (timeEHolderNorm_le_iff.2 fun x t s ↦ htime x t s))
+  intro p q
+  simpa only [ENNReal.coe_add] using eHolderNorm_le_iff.1 h p q
 
 /-- A function on a slab is parabolically `α`-Hölder exactly when it is `α`-Hölder in space and
 `α / 2`-Hölder in time, uniformly in the other variable. -/
@@ -350,7 +378,8 @@ theorem timeEHolderNorm_le_timeEHolderNorm_add_spaceEHolderNorm (α : ℝ≥0)
   have hCₜ : ∀ t ∈ Icc a b, HolderWith Cₜ.toNNReal α (uₜ · t) := fun t ht y z => by
     simpa [ENNReal.coe_toNNReal hₜ] using spaceEHolderNorm_le_iff.1 (le_refl Cₜ) ⟨t, ht⟩ y z
   refine timeEHolderNorm_le_iff.2 fun x t s => ?_
-  have := holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt hu' hu'' huₜ hC₂ hCₜ x t t.2 s s.2
+  have := holderOnWith_Icc_of_hasFDerivAt_of_hasDerivWithinAt hu' hu'' huₜ hC₂ hCₜ x t t.property s
+      s.property
   simpa [ENNReal.coe_toNNReal h₂, ENNReal.coe_toNNReal hₜ, Subtype.edist_eq] using this
 
 /-- **The temporal seminorm of the spatial gradient is controlled by parabolic seminorms.** On
@@ -374,8 +403,6 @@ end TauCeti.ParabolicSpaceTime
 
 namespace TauCeti.HolderSpace
 
-/-! ### Spatial, temporal, and separate space-time Hölder fields on a slab -/
-
 open ParabolicSpaceTime
 open scoped BoundedContinuousFunction
 
@@ -385,16 +412,21 @@ private theorem holderWith_of_space_time {α : ℝ≥0} {E Y : Type*} [MetricSpa
     (hH : ∀ x, HolderOnWith H (α / 2) (f x) (Icc a b)) :
     HolderWith (K + H) α fun p : slab (E := E) a b ↦
       f (p : ParabolicSpaceTime E).space (slabTime p) :=
-  eHolderNorm_le_iff.1 <|
-    (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α
-      (fun p : slab (E := E) a b ↦ f (p : ParabolicSpaceTime E).space (slabTime p))).trans <| by
-      rw [ENNReal.coe_add]
-      exact add_le_add
-        (spaceEHolderNorm_le_iff.2 fun t x y ↦ by simpa using hK t t.2 x y)
-        (timeEHolderNorm_le_iff.2 fun x t s ↦ by simpa [Subtype.edist_eq] using hH x t t.2 s s.2)
+  holderWith_of_holderWith_slices (fun t x y ↦ by simpa using hK t t.property x y)
+    (fun x t s ↦ by simpa [Subtype.edist_eq] using hH x t t.property s s.property)
 
 variable {α : ℝ≥0} {E Y : Type*} [MetricSpace E] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
   {a b : ℝ}
+
+/-! ### Time slices of Hölder fields on a slab -/
+
+/-- The time slices of a parabolic Hölder field on a slab are Hölder in space, with its norm as
+constant. -/
+theorem holderWith_slabMk (F : HolderSpace α (slab (E := E) a b) Y) (t : Icc a b) :
+    HolderWith ‖F‖₊ α fun x ↦ F (slabMk x t) := fun x y ↦ by
+  simpa [edist_slabMk] using F.holderWith_nnnorm (slabMk x t) (slabMk y t)
+
+/-! ### Spatial, temporal, and separate space-time Hölder fields on a slab -/
 
 /-- A bounded `α`-Hölder field on space, viewed as a time-independent bounded parabolically
 `α`-Hölder field on the slab `E × [a, b]`: precomposition with the spatial position, which is
@@ -406,16 +438,17 @@ def compSlabSpaceL : HolderSpace α E Y →L[ℝ] HolderSpace α (slab (E := E) 
     compSlabSpaceL f p = f (p : ParabolicSpaceTime E).space :=
   compLipschitzL_apply _ _ _
 
-/-- Viewing a spatial Hölder field on a slab does not increase its norm. -/
+/-- Viewing a Hölder field on space as a time-independent field on a slab does not increase the
+Hölder-space norm. -/
 theorem norm_compSlabSpaceL_le_one :
-    ‖compSlabSpaceL (α := α) (E := E) (Y := Y) (a := a) (b := b)‖ ≤ 1 :=
-  norm_compLipschitzL_le_one lipschitzWith_slabSpace
+    ‖(compSlabSpaceL : HolderSpace α E Y →L[ℝ] HolderSpace α (slab (E := E) a b) Y)‖ ≤ 1 :=
+  norm_compLipschitzL_le_one _
 
-/-- Viewing a Hölder field on space as a time-independent field on a slab does not increase its
-norm. -/
+/-- The Hölder-space norm of a time-independent field on a slab is at most that of the field on
+space. -/
 theorem norm_compSlabSpaceL_apply_le (f : HolderSpace α E Y) :
     ‖(compSlabSpaceL f : HolderSpace α (slab (E := E) a b) Y)‖ ≤ ‖f‖ :=
-  ((compLipschitzL _ _).le_of_opNorm_le (norm_compLipschitzL_le_one _) f).trans_eq (one_mul _)
+  (compSlabSpaceL.le_of_opNorm_le norm_compSlabSpaceL_le_one f).trans_eq (one_mul _)
 
 /-- On a nonempty time interval, lifting a spatial `α`-Hölder field to a slab preserves its norm. -/
 @[simp] theorem norm_compSlabSpaceL_apply [Nonempty (Icc a b)] (f : HolderSpace α E Y) :
@@ -444,12 +477,9 @@ theorem norm_compSlabSpaceL_apply_of_le (hab : a ≤ b) (f : HolderSpace α E Y)
 private theorem holderWith_comp_slabTime (f : HolderSpace (α / 2) (Icc a b) Y) :
     HolderWith (nnHolderNorm (α / 2) (f : Icc a b → Y)) α
       (fun p : slab (E := E) a b ↦ f (slabTime p)) := by
-  refine eHolderNorm_le_iff.1 <| (eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α
-    (fun p : slab (E := E) a b ↦ f (slabTime p))).trans ?_
-  rw [← zero_add ((nnHolderNorm (α / 2) (f : Icc a b → Y) : ℝ≥0) : ℝ≥0∞)]
-  refine add_le_add (spaceEHolderNorm_le_iff.2 fun t x y ↦ by simp)
-    (timeEHolderNorm_le_iff.2 fun x t s ↦ ?_)
-  simpa only [slabTime_slabMk, NNReal.coe_div, NNReal.coe_ofNat] using f.holderWith t s
+  simpa only [zero_add] using holderWith_of_holderWith_slices
+    (v := fun p : slab (E := E) a b ↦ f (slabTime p))
+    (C₁ := 0) (fun t x y ↦ by simp) (fun _ ↦ by simpa only [slabTime_slabMk] using f.holderWith)
 
 /-- A bounded `α / 2`-Hölder function of time on `[a, b]`, viewed as a spatially constant bounded
 parabolically `α`-Hölder field on the slab `E × [a, b]`. -/
@@ -526,7 +556,7 @@ def ofHolderSpaceTime (hα : 0 < α) {M K H : ℝ≥0} {f : E → ℝ → Y}
   ofBoundedContinuousFunction
     (BoundedContinuousFunction.ofNormedAddCommGroup
       (fun p : slab (E := E) a b ↦ f (p : ParabolicSpaceTime E).space (slabTime p))
-      ((holderWith_of_space_time hK hH).continuous hα) M fun p ↦ hM _ _ (slabTime p).2)
+      ((holderWith_of_space_time hK hH).continuous hα) M fun p ↦ hM _ _ (slabTime p).property)
     (by simpa using (holderWith_of_space_time hK hH).memHolder)
 
 @[simp] theorem ofHolderSpaceTime_apply (hα : 0 < α) {M K H : ℝ≥0} {f : E → ℝ → Y}
@@ -542,7 +572,7 @@ theorem norm_ofHolderSpaceTime_le (hα : 0 < α) {M K H : ℝ≥0} {f : E → �
     ‖ofHolderSpaceTime hα hM hK hH‖ ≤ (M : ℝ) + K + H := by
   refine (norm_le_of_norm_le_of_holderWith (M := M) (K := K + H) M.coe_nonneg
     (fun p ↦ ?_) ?_).trans (by push_cast; linarith)
-  · simpa using hM (p : ParabolicSpaceTime E).space (slabTime p) (slabTime p).2
+  · simpa using hM (p : ParabolicSpaceTime E).space (slabTime p) (slabTime p).property
   · convert holderWith_of_space_time hK hH using 1; ext p; simp
 
 /-- Pulling back a bounded parabolic Hölder field along a spatial isometric equivalence
@@ -550,7 +580,7 @@ theorem norm_ofHolderSpaceTime_le (hα : 0 < α) {M K H : ℝ≥0} {f : E → �
 `C_b^{α,α/2}(E' × [a, b]) ≃ₗᵢ C_b^{α,α/2}(E × [a, b])`. -/
 def slabSpaceIsometryEquivLIE {E' : Type*} [MetricSpace E'] (e : E ≃ᵢ E') :
     HolderSpace α (slab (E := E') a b) Y ≃ₗᵢ[ℝ] HolderSpace α (slab (E := E) a b) Y :=
-  compIsometryEquivLIE (slabSpaceIsometryEquiv e)
+  compIsometryEquivLIE α Y (slabSpaceIsometryEquiv e)
 
 @[simp]
 theorem slabSpaceIsometryEquivLIE_apply {E' : Type*} [MetricSpace E'] (e : E ≃ᵢ E')
@@ -569,7 +599,7 @@ equivalence `C_b^{α,α/2}(E × [a, b]) ≃ₗᵢ C_b^{α,α/2}(E × [a', b'])` 
 `b' = T - a`. -/
 def slabTimeReverseLIE {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a) :
     HolderSpace α (slab (E := E) a b) Y ≃ₗᵢ[ℝ] HolderSpace α (slab (E := E) a' b') Y :=
-  compIsometryEquivLIE (slabTimeReverse T ha hb)
+  compIsometryEquivLIE α Y (slabTimeReverse T ha hb)
 
 @[simp]
 theorem slabTimeReverseLIE_apply {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
@@ -582,5 +612,11 @@ theorem slabTimeReverseLIE_symm {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : 
     (slabTimeReverseLIE (α := α) (E := E) (Y := Y) T ha hb).symm =
       slabTimeReverseLIE T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) := by
   simp [slabTimeReverseLIE]
+
+theorem slabTimeReverseLIE_eq_compLipschitzL {a' b' : ℝ} (T : ℝ) (ha : a' = T - b)
+    (hb : b' = T - a) (f : HolderSpace α (slab (E := E) a b) Y) :
+    slabTimeReverseLIE T ha hb f =
+      compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith f :=
+  compIsometryEquivLIE_eq_compLipschitzL _ f
 
 end TauCeti.HolderSpace

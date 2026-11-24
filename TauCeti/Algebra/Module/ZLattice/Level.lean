@@ -47,7 +47,9 @@ odd unimodular lattice `ℤⁿ` has level `2`. For an even lattice,
 `level L = 1` exactly when `L` is unimodular (`ZLattice.IsEven.level_eq_one_iff`, in a
 finite-dimensional space). Evenness is
 needed for this: the lattice `½ ℤ ⊆ ℝ` has the even dual `2 ℤ`, so it has level one, but it is
-neither even nor unimodular.
+neither even nor unimodular. The zero lattice has level `1` in the zero space
+(`ZLattice.level_of_subsingleton`) and level `0` in every nontrivial space (`ZLattice.level_bot`),
+where its dual is the whole space.
 
 This is the level of the real model of a lattice, with the norm of `E` as its quadratic form. The
 rational model `TauCeti.IntegralLattice` has the analogous invariant
@@ -81,8 +83,9 @@ by tauceti-ai-for-science in
 ## Main statements
 
 * `ZLattice.level_dvd_iff`: `level L ∣ N` if and only if `N ‖x‖² ∈ 2ℤ` for every `x ∈ L^∨`.
-* `ZLattice.level_eq_zero_of_span_ne_top`: a lattice in a finite-dimensional space that does not
-  span it has level `0`.
+* `ZLattice.level_eq_zero_of_forall_smul_mem_dual`, `ZLattice.level_eq_zero_of_span_ne_top`: a
+  lattice whose dual contains a real line, for instance one in a finite-dimensional space that does
+  not span it, has level `0`.
 * `ZLattice.level_dvd_two_mul_card_discriminantGroup`, `ZLattice.IsIntegral.level_pos`: the level
   divides `2 |A_L|`, which is `2 det L` for a full integral lattice, and is then positive.
 * `ZLattice.level_nsmul_mem`: `level L • x ∈ L` for `x ∈ L^∨`, for a discrete lattice in a
@@ -177,22 +180,33 @@ theorem level_dvd_iff {N : ℕ} :
   rw [hmod, Int.cast_sub, Int.cast_mul, Int.cast_natCast]
   linear_combination ha - ((N / level L : ℕ) : ℝ) * hb
 
-/-- A lattice in a finite-dimensional space that does not span has level `0`: a nonzero vector
-`w` orthogonal to the lattice has every real multiple in the dual lattice, and no positive `N` makes
-`N ‖t w‖² / 2` an integer for every real `t`. -/
-theorem level_eq_zero_of_span_ne_top [FiniteDimensional ℝ E] (h : span ℝ (L : Set E) ≠ ⊤) :
-    level L = 0 := by
+/-- A lattice whose dual contains every real multiple of a nonzero vector `w` has level `0`: no
+positive `N` makes `N ‖t w‖² / 2` an integer for every real `t`. -/
+theorem level_eq_zero_of_forall_smul_mem_dual {w : E} (hw0 : w ≠ 0)
+    (hw : ∀ t : ℝ, t • w ∈ dual L) : level L = 0 := by
   by_contra hN
-  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-    (mt Submodule.orthogonal_eq_bot_iff.mp h)
   have hN' : (0 : ℝ) < level L := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hN)
-  have hx : ((√(level L : ℝ) * ‖w‖)⁻¹ : ℝ) • w ∈ dual L :=
-    mem_dual_of_mem_orthogonal_span (Submodule.smul_mem _ _ hw)
-  obtain ⟨m, hm⟩ := exists_level_mul_norm_sq_eq hx
+  obtain ⟨m, hm⟩ := exists_level_mul_norm_sq_eq (hw (√(level L : ℝ) * ‖w‖)⁻¹)
   rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs, inv_pow, mul_pow, Real.sq_sqrt hN'.le] at hm
   field_simp at hm
   have : (1 : ℤ) = 2 * m := by exact_mod_cast hm
   omega
+
+/-- A lattice in a finite-dimensional space that does not span has level `0`: a nonzero vector
+orthogonal to the lattice has every real multiple in the dual lattice. -/
+theorem level_eq_zero_of_span_ne_top [FiniteDimensional ℝ E] (h : span ℝ (L : Set E) ≠ ⊤) :
+    level L = 0 := by
+  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (mt Submodule.orthogonal_eq_bot_iff.mp h)
+  exact level_eq_zero_of_forall_smul_mem_dual hw0 fun t ↦
+    mem_dual_of_mem_orthogonal_span (Submodule.smul_mem _ t hw)
+
+/-- In a nontrivial space the zero lattice has level `0`, its dual being the whole space, whereas
+in the zero space it has level `1` (`level_of_subsingleton`). -/
+@[simp]
+theorem level_bot [Nontrivial E] : level (⊥ : Submodule ℤ E) = 0 :=
+  let ⟨_, hw0⟩ := exists_ne (0 : E)
+  level_eq_zero_of_forall_smul_mem_dual hw0 fun _ ↦ by simp
 
 /-- The level is invariant under linear isometry equivalences. -/
 @[simp]
@@ -275,6 +289,11 @@ theorem IsEven.level_eq_one_of_isUnimodular (h : IsEven L) (hu : IsUnimodular L)
   Nat.dvd_one.mp <| level_dvd_iff.mpr fun x hx ↦ by
     simpa using isEven_iff.mp h x (hu.dual_eq ▸ hx)
 
+/-- Every lattice in the zero space has level one, being the even unimodular zero lattice. -/
+@[simp]
+theorem level_of_subsingleton [Subsingleton E] : level L = 1 :=
+  (isEven_of_subsingleton L).level_eq_one_of_isUnimodular (isUnimodular_of_subsingleton L)
+
 /-! ### Lattices in a finite-dimensional space -/
 
 section FiniteDimensional
@@ -304,7 +323,7 @@ theorem exponent_discriminantGroup_dvd_level :
   refine AddMonoid.exponent_dvd_iff_forall_nsmul_eq_zero.mpr fun a ↦ ?_
   induction a using Submodule.Quotient.induction_on with | _ x
   rw [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff]
-  exact level_nsmul_mem x.2
+  exact level_nsmul_mem x.property
 
 /-- A full integral lattice has positive level. -/
 theorem IsIntegral.level_pos (h : IsIntegral L) : 0 < level L := by
@@ -504,7 +523,7 @@ theorem IsEven.toRatAddCircle_eq_discriminantQuadraticMap_of_mem_cosetShell (hL 
   obtain ⟨hv, hvt⟩ := mem_cosetShell.mp hv
   rw [ZMod.toRatAddCircle_intCast, eq_comm,
     discriminantQuadraticMap_ratModelDiscriminantGroupEquiv_mk_eq_coe_iff hL.isIntegral hL]
-  obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq x.2 hv
+  obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq x.property hv
   refine ⟨-j, ?_⟩
   push_cast
   linear_combination (hvt - hj) / 2
@@ -572,7 +591,7 @@ theorem IsEven.cosetShell_eq_empty_of_level_dvd (hL : IsEven L) (x : dual L)
   obtain ⟨m, rfl⟩ : ∃ m : ℕ, t = 2 * m / N := by
     by_contra hdiv
     exact Set.notMem_empty v
-      (hL.cosetShell_eq_empty_of_not_exists_div_of_level_dvd x.2 hN hdvd hdiv ▸ hv)
+      (hL.cosetShell_eq_empty_of_not_exists_div_of_level_dvd x.property hN hdvd hdiv ▸ hv)
   have hv' : v ∈ cosetShell L (x : E) (2 * (m : ℤ) / N) := by simpa using hv
   exact ⟨m, rfl,
     by simpa using hL.toRatAddCircle_eq_discriminantQuadraticMap_of_mem_cosetShell x hv'⟩
@@ -655,21 +674,11 @@ theorem level_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] [Nonempt
     (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
     level (√(m : ℝ) • span ℤ (Set.range b)) = 2 * m := by
   rcases eq_or_ne m 0 with rfl | hm
-  · -- The lattice is `0`, whose dual is the whole space, so no `N > 0` makes `N ‖x‖² / 2` an
-    -- integer.
+  · -- The lattice is `0`, whose dual is the whole space, so its level is `0`.
     obtain ⟨i⟩ := ‹Nonempty ι›
     rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, mul_zero]
-    by_contra hne
-    have hpos : (0 : ℝ) < level (⊥ : Submodule ℤ E) := by exact_mod_cast Nat.pos_of_ne_zero hne
-    have hx : (√(level (⊥ : Submodule ℤ E) : ℝ))⁻¹ • b i ∈ dual (⊥ : Submodule ℤ E) :=
-      mem_dual.2 fun y hy ↦ by
-        rw [Submodule.mem_bot] at hy
-        exact ⟨0, by simp [hy]⟩
-    obtain ⟨k, hk⟩ := exists_level_mul_norm_sq_eq hx
-    rw [norm_smul, mul_pow, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _), inv_pow,
-      Real.sq_sqrt hpos.le, b.orthonormal.1 i, one_pow, mul_one, mul_inv_cancel₀ hpos.ne'] at hk
-    have hk' : (1 : ℤ) = 2 * k := by exact_mod_cast hk
-    omega
+    have : Nontrivial E := ⟨⟨b i, 0, b.orthonormal.ne_zero i⟩⟩
+    exact level_bot
   have hs : 0 < √(m : ℝ) := Real.sqrt_pos.mpr (by positivity)
   have hsq : √(m : ℝ) ^ 2 = m := Real.sq_sqrt (Nat.cast_nonneg m)
   have hnorm (y : E) : ‖(√(m : ℝ))⁻¹ • y‖ ^ 2 = ‖y‖ ^ 2 / m := by

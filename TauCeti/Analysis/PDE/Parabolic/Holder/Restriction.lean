@@ -58,11 +58,6 @@ open scoped NNReal BoundedContinuousFunction
 variable {α : ℝ≥0} {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ} {hab : a < b}
 
-private theorem sub_mem_Icc_of_eq_sub {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
-    {s : ℝ} (hs : s ∈ Icc a' b') : T - s ∈ Icc a b := by
-  subst ha hb
-  constructor <;> linarith [hs.1, hs.2]
-
 namespace ParabolicC2HolderSpace
 
 /-! ### Restriction to a smaller slab -/
@@ -90,7 +85,7 @@ private def restrict (hab' : a' < b') (f : ParabolicC2HolderSpace α E F hab) :
       have h := (f.hasTimeDerivWithinAt x (inclusion (Icc_subset_Icc ha hb) t)).mono
         (Icc_subset_Icc ha hb)
       rw [HolderSpace.compLipschitzL_apply, inclusion_slabMk]
-      refine h.congr_of_mem (fun s hs ↦ ?_) t.2
+      refine h.congr_of_mem (fun s hs ↦ ?_) t.property
       simp [ContinuousMap.inclusion, timeExtension_def, projIcc_of_mem hab'.le hs,
         projIcc_of_mem hab.le (Icc_subset_Icc ha hb hs)])
 
@@ -161,11 +156,24 @@ theorem timeDerivL_restrictL (f : ParabolicC2HolderSpace α E F hab)
 
 variable (ha hb hab') in
 /-- Restriction to a smaller slab does not increase the norm. -/
-theorem norm_restrictL_le :
+theorem norm_restrictL_le_one :
     ‖restrictL (α := α) (E := E) (F := F) (hab := hab) ha hb hab'‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb hab' f
+
+variable (ha hb hab') in
+/-- Restriction to a smaller slab does not increase the norm, applied form. -/
+theorem norm_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖restrictL ha hb hab' f‖ ≤ ‖f‖ := by
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb hab' f
+
+/-- Restriction to a smaller slab does not increase the supremum norm of the value. -/
+theorem norm_valueL_restrictL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueL (restrictL ha hb hab' f)‖ ≤ ‖valueL f‖ :=
+  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+    simpa using (valueL f).norm_coe_le_norm _
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
@@ -197,21 +205,26 @@ private def reverse (f : ParabolicC2HolderSpace α E F hab) :
     ParabolicC2HolderSpace α E F (ha ▸ hb ▸ sub_lt_sub_left hab T) :=
   mk ((valueL f).compContinuous ⟨_, (slabTimeReverse T ha hb).continuous⟩)
     ((spatialFDerivL f).compContinuous ⟨_, (slabTimeReverse T ha hb).continuous⟩)
-    (HolderSpace.slabTimeReverseLIE T ha hb (spatialSecondFDerivL f))
-    (-HolderSpace.slabTimeReverseLIE T ha hb (timeDerivL f))
+    (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
+      (spatialSecondFDerivL f))
+    (-HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith (timeDerivL f))
     (fun t x ↦ by
-      simpa using f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+      simpa [iccTimeReverse_apply] using
+        f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩ x)
     (fun t x ↦ by
-      simpa using f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+      simpa [iccTimeReverse_apply] using
+        f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩ x)
     (fun x t ↦ by
       have h := HasDerivWithinAt.scomp (t : ℝ)
-        (f.hasTimeDerivWithinAt x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩)
+        (f.hasTimeDerivWithinAt x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩)
         ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
         (fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs)
       rw [neg_one_smul] at h
-      rw [HolderSpace.neg_apply, HolderSpace.slabTimeReverseLIE_apply, slabTimeReverse_slabMk]
-      refine h.congr_of_mem (fun s hs ↦ ?_) t.2
-      simp [timeExtension_def, projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
+      rw [HolderSpace.neg_apply, HolderSpace.compLipschitzL_apply, slabTimeReverse_slabMk,
+        iccTimeReverse_apply]
+      refine h.congr_of_mem (fun s hs ↦ ?_) t.property
+      simp [timeExtension_def, iccTimeReverse_apply,
+        projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
         projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)])
 
 private theorem reverse_apply (f : ParabolicC2HolderSpace α E F hab)
@@ -220,13 +233,19 @@ private theorem reverse_apply (f : ParabolicC2HolderSpace α E F hab)
 
 private theorem norm_reverse_le (f : ParabolicC2HolderSpace α E F hab) :
     ‖reverse T ha hb f‖ ≤ ‖f‖ := by
+  have hH := HolderSpace.norm_compLipschitzL_le_one (α := α) (Y := E →L[ℝ] E →L[ℝ] F)
+    (X := slab (E := E) a b) (X' := slab (E := E) a' b')
+    (slabTimeReverse T ha hb).isometry.lipschitzWith
+  have hT := HolderSpace.norm_compLipschitzL_le_one (α := α) (Y := F)
+    (X := slab (E := E) a b) (X' := slab (E := E) a' b')
+    (slabTimeReverse T ha hb).isometry.lipschitzWith
   rw [norm_eq, norm_eq f, reverse, valueL_mk, spatialFDerivL_mk, spatialSecondFDerivL_mk,
     timeDerivL_mk, norm_neg]
   gcongr
   · exact BoundedContinuousFunction.norm_compContinuous_le _ _
   · exact BoundedContinuousFunction.norm_compContinuous_le _ _
-  · exact ((HolderSpace.slabTimeReverseLIE T ha hb).norm_map _).le
-  · exact ((HolderSpace.slabTimeReverseLIE T ha hb).norm_map _).le
+  · simpa using (HolderSpace.compLipschitzL _ _).le_of_opNorm_le hH (spatialSecondFDerivL f)
+  · simpa using (HolderSpace.compLipschitzL _ _).le_of_opNorm_le hT (timeDerivL f)
 
 /-- Time reversal about `T`: the map `u ↦ u ∘ R` with `R (x, s) = (x, T - s)`, from order-two
 parabolic Hölder maps on `E × [a, b]` to those on `E × [a', b']`, where `a' = T - b` and
@@ -274,7 +293,7 @@ theorem spatialSecondFDerivL_timeReverseLIE (f : ParabolicC2HolderSpace α E F h
     (p : slab (E := E) a' b') : spatialSecondFDerivL (timeReverseLIE T ha hb f) p =
       spatialSecondFDerivL f (slabTimeReverse T ha hb p) := by
   rw [timeReverseLIE_eq_reverse, reverse, spatialSecondFDerivL_mk,
-    HolderSpace.slabTimeReverseLIE_apply]
+    HolderSpace.compLipschitzL_apply]
 
 /-- Time reversal negates the time derivative. -/
 @[simp]
@@ -282,7 +301,7 @@ theorem timeDerivL_timeReverseLIE (f : ParabolicC2HolderSpace α E F hab)
     (p : slab (E := E) a' b') : timeDerivL (timeReverseLIE T ha hb f) p =
       -timeDerivL f (slabTimeReverse T ha hb p) := by
   rw [timeReverseLIE_eq_reverse, reverse, timeDerivL_mk, HolderSpace.neg_apply,
-    HolderSpace.slabTimeReverseLIE_apply]
+    HolderSpace.compLipschitzL_apply]
 
 /-- The inverse of time reversal is time reversal in the opposite direction. -/
 @[simp]
@@ -392,10 +411,17 @@ theorem spatialFDerivL_restrictL (f : ParabolicC1HolderSpace α E F a b)
 
 variable (ha hb) in
 /-- Restriction to a smaller slab does not increase the norm. -/
-theorem norm_restrictL_le : ‖restrictL (α := α) (E := E) (F := F) ha hb‖ ≤ 1 :=
+theorem norm_restrictL_le_one : ‖restrictL (α := α) (E := E) (F := F) ha hb‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
     rw [restrictL_eq_restrict, one_mul]
     exact norm_restrict_le ha hb f
+
+variable (ha hb) in
+/-- Restriction to a smaller slab does not increase the norm, applied form. -/
+theorem norm_restrictL_le (f : ParabolicC1HolderSpace α E F a b) :
+    ‖restrictL ha hb f‖ ≤ ‖f‖ := by
+  rw [restrictL_eq_restrict]
+  exact norm_restrict_le ha hb f
 
 /-- Restricting to the whole slab does nothing. -/
 @[simp]
@@ -420,24 +446,16 @@ section TimeReversal
 
 variable {a' b' : ℝ} (T : ℝ) (ha : a' = T - b) (hb : b' = T - a)
 
-/-- The reversal `t ↦ T - t` of the time interval `[a', b']` onto `[a, b]`. -/
-private def reverseIcc (t : Icc a' b') : Icc a b :=
-  ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩
-
-private theorem lipschitzWith_reverseIcc : LipschitzWith 1 (reverseIcc T ha hb) :=
-  LipschitzWith.of_dist_le_mul fun t s ↦ by
-    simpa [reverseIcc, Subtype.dist_eq] using (dist_sub_left T (t : ℝ) s).le
-
 /-- The time reversal `u ∘ R` of an order-one parabolic Hölder map. -/
 private def reverse (f : ParabolicC1HolderSpace α E F a b) :
     ParabolicC1HolderSpace α E F a' b' :=
   mk ((valueL f).compContinuous ⟨_, (slabTimeReverse T ha hb).continuous⟩)
-    (HolderSpace.slabTimeReverseLIE T ha hb (spatialFDerivL f))
+    (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith
+      (spatialFDerivL f))
     (fun t x ↦ by
-      simpa [reverseIcc, HolderSpace.slabTimeReverseLIE_apply] using
-        f.hasSpatialFDerivAt (reverseIcc T ha hb t) x)
-    ((timeEHolderNorm_le_of_lipschitzWith (lipschitzWith_reverseIcc T ha hb)
-      fun x t ↦ by simp [reverseIcc]).trans_lt f.timeEHolderNorm_lt_top)
+      simpa [iccTimeReverse_apply] using f.hasSpatialFDerivAt (iccTimeReverse T ha hb t) x)
+    ((timeEHolderNorm_le_of_lipschitzWith (iccTimeReverse T ha hb).isometry.lipschitzWith
+      fun x t ↦ by simp [iccTimeReverse_apply]).trans_lt f.timeEHolderNorm_lt_top)
 
 private theorem reverse_apply (f : ParabolicC1HolderSpace α E F a b)
     (p : slab (E := E) a' b') : reverse T ha hb f p = f (slabTimeReverse T ha hb p) := by
@@ -446,22 +464,25 @@ private theorem reverse_apply (f : ParabolicC1HolderSpace α E F a b)
 /-- Each time slice of the reversal is the reversal of the time slice. -/
 private theorem timeSliceL_reverse (f : ParabolicC1HolderSpace α E F a b) (x : E) :
     timeSliceL (reverse T ha hb f) x =
-      HolderSpace.compLipschitzL _ (lipschitzWith_reverseIcc T ha hb) (timeSliceL f x) :=
+      HolderSpace.compLipschitzL _ (iccTimeReverse T ha hb).isometry.lipschitzWith
+        (timeSliceL f x) :=
   HolderSpace.ext fun t ↦ by
     rw [timeSliceL_apply, HolderSpace.compLipschitzL_apply, timeSliceL_apply, reverse_apply,
-      slabTimeReverse_slabMk]
-    rfl
+      slabTimeReverse_slabMk, iccTimeReverse_apply]
 
 private theorem norm_reverse_le (f : ParabolicC1HolderSpace α E F a b) :
     ‖reverse T ha hb f‖ ≤ ‖f‖ := by
+  have hH := HolderSpace.norm_compLipschitzL_le_one (α := α) (Y := E →L[ℝ] F)
+    (X := slab (E := E) a b) (X' := slab (E := E) a' b')
+    (slabTimeReverse T ha hb).isometry.lipschitzWith
   have hT := HolderSpace.norm_compLipschitzL_le_one (α := (1 + α) / 2) (Y := F)
-    (lipschitzWith_reverseIcc T ha hb)
+    (iccTimeReverse T ha hb).isometry.lipschitzWith
   rw [norm_eq, norm_eq f]
   gcongr
   · rw [reverse, valueL_mk]
     exact BoundedContinuousFunction.norm_compContinuous_le _ _
   · rw [reverse, spatialFDerivL_mk]
-    exact ((HolderSpace.slabTimeReverseLIE T ha hb).norm_map _).le
+    simpa using (HolderSpace.compLipschitzL _ _).le_of_opNorm_le hH (spatialFDerivL f)
   · refine lp.norm_le_of_forall_le (norm_nonneg _) fun x ↦ ?_
     rw [timeSliceL_reverse]
     exact ((HolderSpace.compLipschitzL _ _).le_of_opNorm_le hT _).trans
@@ -504,7 +525,7 @@ theorem timeReverseLIE_apply (f : ParabolicC1HolderSpace α E F a b) (p : slab (
 theorem spatialFDerivL_timeReverseLIE (f : ParabolicC1HolderSpace α E F a b)
     (p : slab (E := E) a' b') : spatialFDerivL (timeReverseLIE T ha hb f) p =
       spatialFDerivL f (slabTimeReverse T ha hb p) := by
-  rw [timeReverseLIE_eq_reverse, reverse, spatialFDerivL_mk, HolderSpace.slabTimeReverseLIE_apply]
+  rw [timeReverseLIE_eq_reverse, reverse, spatialFDerivL_mk, HolderSpace.compLipschitzL_apply]
 
 /-- The inverse of time reversal is time reversal in the opposite direction. -/
 @[simp]

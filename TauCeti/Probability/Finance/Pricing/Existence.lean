@@ -509,7 +509,7 @@ theorem exists_weightedLogSpotPrice_terminal_and_pde (hα₀ : 0 < α) (hα₁ :
   let rH := HolderSpace.ofHolderTime (E := ℝ) hα₀ hr_hold
   have ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p, lam ≤ a p :=
     ⟨δ / 2, half_pos hδ, div_le_halfSqVolatility_of_le_sq fun p ↦ by
-      simpa [σH] using (hσ_bounds _ (exp_pos _) _ (slabTime p).2).1⟩
+      simpa [σH] using (hσ_bounds _ (exp_pos _) _ (slabTime p).property).1⟩
   refine ⟨weightedLogSpotTerminalSolutionL hα₀ hα₁ ht a rH ha g,
     weightedLogSpotTerminalSolutionL_slabMk_right g,
     fun s hs ↦ weightedLogSpotPrice_terminal _
