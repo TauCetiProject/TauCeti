@@ -57,7 +57,7 @@ theorem isCofinite_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteInde
   rw [← Γ'.map_liftSL_sl2zToPSL2R]; exact Γ'.liftSL.isCofinite_map_sl2zToPSL2R
 
 /-- The compactified modular curve `X(Γ')` of a finite-index `Γ' ≤ PSL(2, ℤ)` is compact. -/
-theorem compactSpace_compactifiedQuotient_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ))
+instance compactSpace_compactifiedQuotient_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ))
     [Γ'.FiniteIndex] : CompactSpace (Γ'.map psl2zToPSL2R).CompactifiedQuotient :=
   (isCofinite_map_psl2zToPSL2R Γ').compactSpace_compactifiedQuotient
 

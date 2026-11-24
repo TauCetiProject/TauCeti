@@ -415,12 +415,7 @@ def fixedσ0EquivOrderThreeEllipticOrbits (Γ' : Subgroup PSL(2, ℤ))
     (fixedσ0EquivOrderThreeEllipticOrbits Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩).val =
       Quotient.mk (orbitRel (Γ'.map psl2zToPSL2R) ℍ)
         ((((S : PSL(2, ℤ)) * g)⁻¹ : PSL(2, ℤ)) • ρ) := by
-  have hmk := fixedσ0EquivFixedPermR_mk Γ' e g hg
-  rw [fixedσ0EquivOrderThreeEllipticOrbits, Equiv.trans_apply,
-    show fixedσ0EquivFixedPermR Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩ =
-      ⟨e ((((S : PSL(2, ℤ)) * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')),
-        hmk ▸ (fixedσ0EquivFixedPermR Γ' e ⟨e (g : PSL(2, ℤ) ⧸ Γ'), hg⟩).property⟩ from
-      Subtype.ext hmk,
+  rw [fixedσ0EquivOrderThreeEllipticOrbits, Equiv.trans_apply, fixedσ0EquivFixedPermR_mk,
     fixedPermREquivOrderThreeEllipticOrbits_mk]
 
 /-- The combinatorial count `ellipticTwo` equals the number of order-`2` elliptic orbits of
@@ -464,16 +459,17 @@ theorem finsum_mem_ellipticOrbits_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ))
     Set.finite_coe_iff.mp (Finite.of_equiv _ (fixedPermREquivOrderThreeEllipticOrbits Γ' e))
   have hsum (k : ℕ) (hfin : (S k).Finite) :
       ∑ᶠ q ∈ S k, (1 - (cardStabilizerOnOrbit q : ℝ)⁻¹) =
-        (Nat.card (S k) : ℝ) * (1 - (k : ℝ)⁻¹) := by
+        (Nat.card {q : orbitRel.Quotient (Γ'.map psl2zToPSL2R) ℍ //
+          cardStabilizerOnOrbit q = k} : ℝ) * (1 - (k : ℝ)⁻¹) := by
     rw [finsum_mem_congr rfl fun q hq ↦ by rw [Set.mem_ofPred_eq.mp hq],
       finsum_mem_eq_finite_toFinset_sum _ hfin, Finset.sum_const, nsmul_eq_mul,
       ← Set.ncard_eq_toFinset_card _ hfin, ← Nat.card_coe_set_eq]
+    dsimp only [S]
+    rw [Set.coe_ofPred]
   rw [hunion, finsum_mem_union (Set.disjoint_left.mpr fun _ h2 h3 ↦ by
       rw [Set.mem_ofPred_eq] at h2 h3; omega) hfin₂ hfin₃, hsum 2 hfin₂, hsum 3 hfin₃,
-    show Nat.card (S 2) = ellipticTwo Γ' e from
-      (ellipticTwo_eq_card_orderTwoEllipticOrbits Γ' e).symm,
-    show Nat.card (S 3) = ellipticThree Γ' e from
-      (ellipticThree_eq_card_orderThreeEllipticOrbits Γ' e).symm]
+    ← ellipticTwo_eq_card_orderTwoEllipticOrbits Γ' e,
+    ← ellipticThree_eq_card_orderThreeEllipticOrbits Γ' e]
   norm_num; ring
 
 /-! ### Topological Euler characteristic and genus comparison -/
@@ -486,8 +482,6 @@ theorem eulerChar_compactifiedQuotient_eq_eulerChar (Γ' : Subgroup PSL(2, ℤ))
     letI := Γ'.finiteIndex_of_equiv e
     eulerChar (Γ'.map psl2zToPSL2R).CompactifiedQuotient = (modularTriple Γ' e).eulerChar := by
   let : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
-  have : CompactSpace (Γ'.map psl2zToPSL2R).CompactifiedQuotient :=
-    Γ'.compactSpace_compactifiedQuotient_map_psl2zToPSL2R
   have hle : Γ'.map psl2zToPSL2R ≤ psl2zToPSL2R.range := Γ'.map_le_range psl2zToPSL2R
   have hidx : ((Γ'.map psl2zToPSL2R).subgroupOf psl2zToPSL2R.range).index = n := by
     rw [← Subgroup.relIndex, Γ'.relIndex_map_psl2zToPSL2R, Γ'.index_eq_of_equiv e]

@@ -75,14 +75,12 @@ theorem exists_not_conj_invariants_eq :
     refine Invariants.ext (invariants_index Γ₁ e₁) ?_ ?_ ?_ ?_
     · rw [invariants_genus, genus_def, PermutationTriple.genus_eq_of_equivalent heq₁,
         ← computedGenus_eq]; decide
-    · rw [invariants_ellipticTwo, ellipticTwo_eq_count_fullCycleType, fullCycleType_def,
-        ← cycleData_σ1, cycleData_eq_of_equivalent heq₁, cycleData_σ1, ← fullCycleType_def,
-        ← computedCycleType_eq_fullCycleType]; decide
-    · rw [invariants_ellipticThree, ellipticThree_eq_count_fullCycleType, fullCycleType_def,
-        ← cycleData_σ0, cycleData_eq_of_equivalent heq₁, cycleData_σ0, ← fullCycleType_def,
-        ← computedCycleType_eq_fullCycleType]; decide
-    · rw [invariants_cuspWidths, cuspWidths_eq_cycleData, cycleData_eq_of_equivalent heq₁,
-        cycleData_σinf, ← fullCycleType_def, ← computedCycleType_eq_fullCycleType]; decide
+    · rw [invariants_ellipticTwo, ellipticTwo_eq_count_fullCycleType, permS,
+        fullCycleType_σ1_eq_of_equivalent heq₁, ← computedCycleType_eq_fullCycleType]; decide
+    · rw [invariants_ellipticThree, ellipticThree_eq_count_fullCycleType,
+        fullCycleType_σ0_eq_of_equivalent heq₁, ← computedCycleType_eq_fullCycleType]; decide
+    · rw [invariants_cuspWidths, cuspWidths_def, permT,
+        fullCycleType_σinf_eq_of_equivalent heq₁, ← computedCycleType_eq_fullCycleType]; decide
   refine ⟨Γ₁, Γ₂, e₁, e₂, hinv₁, by rw [invariants_map_conjJAut Γ₁ e₁ e₂, hinv₁], fun hconj ↦ ?_⟩
   exact not_equivalent_chiralTriple_mirror (IsoClass.mk_eq_mk_iff.mp <|
     (IsoClass.mk_eq_mk_iff.mpr heq₁).symm.trans <|

@@ -41,18 +41,14 @@ theorem injective_inverseTranslateOrbit_on_fixed {Γ' : Subgroup PSL(2, ℤ)}
     mem_stabilizer_iff.mp ((Subgroup.zpowers_le.mpr (mem_stabilizer_iff.mpr hq₂)) ht)
   rw [Subgroup.smul_def, ht_fix] at hsmul; exact hsmul.symm
 
-private theorem mem_subgroupOf_conj_smul_iff {G : Type*} [Group G] (Γ' K : Subgroup G)
-    (g : G) (t : K) : t ∈ (MulAut.conj g • Γ').subgroupOf K ↔ g⁻¹ * (t : G) * g ∈ Γ' := by
-  rw [Subgroup.mem_subgroupOf, Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← map_inv,
-    MulAut.smul_def, MulAut.conj_apply, inv_inv]
-
 private def stabilizerSubgroupOfEquiv (Γ' : Subgroup PSL(2, ℤ)) {z₀ : ℍ} {s : PSL(2, ℤ)}
     (hstab : stabilizer PSL(2, ℤ) z₀ = Subgroup.zpowers s) (g : PSL(2, ℤ)) :
     (MulAut.conj g • Γ').subgroupOf (Subgroup.zpowers s) ≃
       stabilizer (Γ'.map psl2zToPSL2R) (psl2zToPSL2R g⁻¹ • z₀) :=
   Equiv.ofBijective
     (fun ⟨t, ht⟩ ↦ ⟨⟨psl2zToPSL2R (g⁻¹ * t.val * g),
-        Subgroup.mem_map_of_mem psl2zToPSL2R ((mem_subgroupOf_conj_smul_iff Γ' _ g t).mp ht)⟩, by
+        Subgroup.mem_map_of_mem psl2zToPSL2R
+          ((TauCeti.mem_conj_smul g Γ' t).mp (Subgroup.mem_subgroupOf.mp ht))⟩, by
       have htfix : t.val • z₀ = z₀ := mem_stabilizer_iff.mp (by rw [hstab]; exact t.property)
       rw [mem_stabilizer_iff, Subgroup.smul_def, ← mul_smul, ← map_mul,
         show (g⁻¹ * t.val * g) * g⁻¹ = g⁻¹ * t.val by group, map_mul, mul_smul,
@@ -68,7 +64,8 @@ private def stabilizerSubgroupOfEquiv (Γ' : Subgroup PSL(2, ℤ)) {z₀ : ℍ} 
         rw [UpperHalfPlane.psl2zToPSL2R_smul, UpperHalfPlane.psl2zToPSL2R_smul] at hxfix
         rw [mul_smul, mul_smul, hxfix, smul_inv_smul]
       refine ⟨⟨⟨g * h * g⁻¹, hstab ▸ mem_stabilizer_iff.mpr hfix⟩,
-        (mem_subgroupOf_conj_smul_iff Γ' _ g _).mpr (by simpa [mul_assoc] using hhΓ)⟩,
+        Subgroup.mem_subgroupOf.mpr ((TauCeti.mem_conj_smul g Γ' _).mpr
+          (by simpa [mul_assoc] using hhΓ))⟩,
         Subtype.ext <| Subtype.ext <| congrArg psl2zToPSL2R (by group)⟩⟩
 
 /-- When `stabilizer PSL(2, ℤ) z₀ = ⟨s⟩` has order `p > 0`, the `(Γ'.map psl2zToPSL2R)`-orbit of
@@ -84,10 +81,10 @@ theorem cardStabilizerOnOrbit_inverseTranslateOrbit_eq_iff
   rw [inverseTranslateOrbit_mk, cardStabilizerOnOrbit_mk,
     ← Nat.card_congr (stabilizerSubgroupOfEquiv Γ' hstab g), ← hcard,
     Subgroup.card_eq_iff_eq_top, Subgroup.eq_top_iff', TauCeti.smul_quotientGroup_mk_eq_self_iff]
-  refine ⟨fun htop ↦ (mem_subgroupOf_conj_smul_iff Γ' _ g ⟨s, Subgroup.mem_zpowers s⟩).mp
-    (htop ⟨s, Subgroup.mem_zpowers s⟩), fun hs ⟨t, ht⟩ ↦ ?_⟩
+  refine ⟨fun htop ↦ (TauCeti.mem_conj_smul g Γ' s).mp
+    (Subgroup.mem_subgroupOf.mp (htop ⟨s, Subgroup.mem_zpowers s⟩)), fun hs ⟨t, ht⟩ ↦ ?_⟩
   obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.mp ht
-  rw [mem_subgroupOf_conj_smul_iff,
+  rw [Subgroup.mem_subgroupOf, TauCeti.mem_conj_smul,
     show g⁻¹ * s ^ k * g = (g⁻¹ * s * g) ^ k by
       simpa [MulAut.conj_apply] using map_zpow (MulAut.conj g⁻¹) s k]
   exact zpow_mem hs k

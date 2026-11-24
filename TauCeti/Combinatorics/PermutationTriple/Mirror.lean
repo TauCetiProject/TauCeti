@@ -142,6 +142,21 @@ theorem Equivalent.mirror {t t' : PermutationTriple n} (h : t.Equivalent t') :
 @[simp] theorem cycleData_mirror (t : PermutationTriple n) : t.mirror.cycleData = t.cycleData := by
   simp [Prod.ext_iff]
 
+/-- Taking the mirror preserves the full cycle type of `σ0`. -/
+theorem fullCycleType_σ0_mirror (t : PermutationTriple n) :
+    t.mirror.σ0.fullCycleType = t.σ0.fullCycleType := by
+  simp [mirror_σ0]
+
+/-- Taking the mirror preserves the full cycle type of `σ1`. -/
+theorem fullCycleType_σ1_mirror (t : PermutationTriple n) :
+    t.mirror.σ1.fullCycleType = t.σ1.fullCycleType := by
+  simp [mirror_σ1]
+
+/-- Taking the mirror preserves the full cycle type of `σinf`. -/
+theorem fullCycleType_σinf_mirror (t : PermutationTriple n) :
+    t.mirror.σinf.fullCycleType = t.σinf.fullCycleType := by
+  simp [mirror_σinf]
+
 /-- Taking the mirror preserves the ordered cycle counts of a triple. -/
 @[simp] theorem cycleCounts_mirror (t : PermutationTriple n) :
     t.mirror.cycleCounts = t.cycleCounts := by
