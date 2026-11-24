@@ -5,76 +5,88 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Class
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Narrow.Equivalence
 public import TauCeti.NumberTheory.BinaryQuadraticForm.IndefiniteReduction.Cycles
+public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import Mathlib.NumberTheory.NumberField.ClassNumber
-public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.OrderOfConductor
+public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.NormNum.Prime
-import TauCeti.Data.Int.Sqrt
-import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.DiscriminantTwelve
-import TauCeti.NumberTheory.FundamentalDiscriminant
-import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
-import TauCeti.NumberTheory.NumberField.Discriminant.Stickelberger
-import TauCeti.NumberTheory.NumberField.Global.Orders.Functoriality
-import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
-import TauCeti.NumberTheory.NumberField.Global.Orders.NarrowPic.RayClass
+import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
+import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.OrderOfConductor
+import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Finite
 
 /-!
-# Narrow class numbers of real quadratic orders from Gauss cycles
+# Narrow class numbers of real quadratic orders from cycles of reduced forms
 
-For a positive nonsquare discriminant `D ≡ 0, 1 (mod 4)`, proper equivalence classes of primitive
-binary quadratic forms of discriminant `D` are in canonical bijection both with the narrow Picard
-group of the quadratic order of discriminant `D` (`properClassEquivNarrowPic`) and with the cycles
-of Gauss's reduction operator `primitiveReductionPerm D`
-(`primitiveGaussReducedCyclesEquivProperClasses`). Composing the two identifies
-`PrimitiveGaussReducedCycle D` with `NarrowPic (QuadraticOrder.numberFieldOrder D hD)`, so the
-order of the narrow Picard group equals the number of primitive Gauss cycles of discriminant `D`.
+Proper classes of primitive indefinite binary quadratic forms of nonsquare discriminant `D > 0`
+(`D ≡ 0, 1 (mod 4)`) are in bijection with the narrow Picard group `NarrowPic O_D` of the quadratic
+order `O_D` of discriminant `D` (`properClassEquivNarrowPic`), and by Gauss's theorem on reduced
+cycles (`primitiveCycleEquivProperClass`) those proper classes are in bijection with the cycles of
+`primitiveReductionPerm D` on the finite set `primitiveGaussReducedForms D`. Composing the two gives
+a canonical bijection `primitiveCycleEquivNarrowPic` between cycles of primitive Gauss reduced forms
+and `NarrowPic O_D`, expressing `#NarrowPic O_D` as the number of primitive reduction cycles
+(`nat_card_narrowPic`).
 
-When `D` is a fundamental discriminant, `QuadraticOrder.numberFieldOrder D` is the maximal order of
-`ℚ(√D)` (`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), whose narrow Picard group is the narrow
-class group `NumberField.NarrowClassGroup ℚ(√D)` (`GlobalNumberFields.maximalOrderNarrowPicEquiv`).
-More generally, in any quadratic number field `K` with `f² discr K = D`, evaluation at
-`f √(discr K)` identifies the order of discriminant `D` in `ℚ(√D)` with the order `ℤ + f 𝓞 K` of
-conductor `f` in `K` (`QuadraticOrder.numberFieldOrderOfSqrt_eq_intAddMulOrder`), transporting the
-narrow Picard count to `ℤ + f 𝓞 K` and, at `f = 1`, to `NarrowClassGroup K`.
+Combined with `narrowToPic_narrowPicClass` (which projects `f.narrowPicClass` to `picClass` under
+the forgetful homomorphism `O_D.narrowToPic : NarrowPic O_D →* Pic O_D`), every wide Picard class
+of `O_D` is represented by a primitive Gauss reduced form
+(`exists_mem_primitiveGaussReducedForms_picClass_eq`). When `D > 0` is a fundamental discriminant,
+`O_D` is the maximal order of `ℚ(√D)` (`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), so
+`maximalOrderNarrowPicEquiv` identifies `NarrowPic O_D` with `NumberField.NarrowClassGroup` and
+counts the narrow class group by primitive cycles (`nat_card_narrowClassGroup`). More generally, in
+any quadratic number field `K` with `f² discr K = D > 0`, evaluation at `f √(discr K)` identifies
+`O_D` with the order `ℤ + f 𝓞 K` of conductor `f` in `K`
+(`QuadraticOrder.numberFieldOrderOfSqrt_eq_intAddMulOrder`), transporting the cycle count via
+`NumberFieldOrder.narrowPicMulEquivOfRingEquiv` to `NarrowPic (ℤ + f 𝓞 K)`
+(`nat_card_narrowPic_intAddMulOrder`) and, at `f = 1`, to `NarrowClassGroup K`
+(`nat_card_narrowClassGroup_of_discr_eq`).
 
-As certified examples:
-* At `D = 5`, the two primitive Gauss reduced forms `x² + x y - y²` and `-x² + x y + y²` form a
-  single `2`-cycle, so `ℚ(√5)` has narrow class number `1` and wide class number `1`.
-* At `D = 12`, the four primitive Gauss reduced forms split into two `2`-cycles,
-  `x² + 2 x y - 2 y² ↔ -2 x² + 2 x y + y²` and `-x² + 2 x y + 2 y² ↔ 2 x² + 2 x y - y²`, so
-  `ℚ(√12) = ℚ(√3)` has narrow class number `2`, while the nontrivial narrow principal class of
-  `√12` forces its wide class number to be `1`.
+The final section certifies the narrow and wide class numbers at the three canonical indefinite test
+discriminants `D = 5`, `8`, and `12`:
+
+* `D = 5` (`ℚ(√5)`): `primitiveGaussReducedForms 5 = {⟨1, 1, -1⟩, ⟨-1, 1, 1⟩}` forms a single
+  2-cycle, so `#NarrowPic = #Cl⁺(ℚ(√5)) = 1`, `classNumber ℚ(√5) = 1`, and `𝓞 ℚ(√5)` is a UFD.
+* `D = 8` (`ℚ(√2)`): `primitiveGaussReducedForms 8 = {⟨1, 2, -1⟩, ⟨-1, 2, 1⟩}` forms a single
+  2-cycle, so `#NarrowPic = #Cl⁺(ℚ(√8)) = 1`, `classNumber ℚ(√8) = 1`, and `𝓞 ℚ(√8)` is a UFD.
+* `D = 12` (`ℚ(√3)`): complementing
+  `TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.DiscriminantTwelve` (which separates the unreduced
+  forms `x² - 3 y²` and `-x² + 3 y²` via unit norms modulo `3`), we compute
+  `primitiveGaussReducedForms 12 = {⟨1, 2, -2⟩, ⟨-2, 2, 1⟩, ⟨-1, 2, 2⟩, ⟨2, 2, -1⟩}` and decompose
+  it into two 2-cycles, certifying directly from Gauss's theorem that `⟨1, 2, -2⟩` and `⟨-1, 2, 2⟩`
+  are not properly equivalent (`not_exists_smul_eq_twelve`) and `#NarrowPic = #Cl⁺ = 2`, while both
+  cycle representatives have unit leading coefficients `±1` and hence trivial wide Picard class,
+  giving `#Pic = classNumber ℚ(√12) = 1` (the first narrow/wide split).
 
 ## Main definitions and results
 
-* `TauCeti.BinaryQuadraticForm.primitiveGaussReducedCyclesEquivNarrowPic`: bijection between
-  `PrimitiveGaussReducedCycle D` and `NarrowPic (QuadraticOrder.numberFieldOrder D hD)`.
-* `TauCeti.BinaryQuadraticForm.nat_card_narrowPic`: the narrow Picard group of the quadratic order
-  of discriminant `D` has `Fintype.card (PrimitiveGaussReducedCycle D)` elements.
-* `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_eq_card_primitiveGaussReducedCycle`: for a
-  positive nonsquare fundamental discriminant `D`, `Nat.card (NarrowClassGroup ℚ(√D))` equals
-  `Fintype.card (PrimitiveGaussReducedCycle D)`.
-* `TauCeti.BinaryQuadraticForm.card_narrowPic_intAddMulOrder_eq_card_primitiveGaussReducedCycle`:
-  if `f² discr K = D > 0` in a quadratic field `K`, then `Nat.card (NarrowPic (ℤ + f 𝓞 K))` equals
-  `Fintype.card (PrimitiveGaussReducedCycle D)`.
-* `card_narrowClassGroup_eq_card_primitiveGaussReducedCycle_of_discr_eq`:
-  the narrow class number of any quadratic field of positive discriminant `D` equals
-  `Fintype.card (PrimitiveGaussReducedCycle D)`.
-* `TauCeti.BinaryQuadraticForm.classNumber_eq_one_of_card_primitiveGaussReducedCycle_eq_one`: a
-  single primitive Gauss cycle at discriminant `D = discr K` forces
-  `NumberField.classNumber K = 1`.
-* `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_five_eq_one`,
-  `TauCeti.BinaryQuadraticForm.classNumber_five_eq_one`: `ℚ(√5)` has narrow and wide class number
-  `1`.
-* `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_twelve_eq_two`,
-  `TauCeti.BinaryQuadraticForm.classNumber_twelve_eq_one`: `ℚ(√12)` has narrow class number `2` and
-  wide class number `1`.
+* `TauCeti.BinaryQuadraticForm.primitiveCycleEquivNarrowPic`: bijection between cycles of
+  `primitiveReductionPerm D` and `NarrowPic (QuadraticOrder.numberFieldOrder D hD)`.
+* `TauCeti.BinaryQuadraticForm.nat_card_narrowPic`: cycle-count formula for
+  `NarrowPic (QuadraticOrder.numberFieldOrder D hD)`.
+* `TauCeti.BinaryQuadraticForm.picClass_eq_of_sameCycle`: forms in the same primitive reduction
+  cycle represent the same wide Picard class.
+* `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup`: for a positive fundamental discriminant
+  `D`, `#Cl⁺(ℚ(√D))` equals the number of cycles of `primitiveReductionPerm D`.
+* `TauCeti.BinaryQuadraticForm.nat_card_narrowPic_intAddMulOrder`: if `f² discr K = D > 0` in a
+  quadratic field `K`, `#NarrowPic (ℤ + f 𝓞 K)` equals the number of cycles of
+  `primitiveReductionPerm D`.
+* `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_of_discr_eq`: for any quadratic field `K`
+  of positive discriminant `D`, `#Cl⁺(K)` equals the number of cycles of
+  `primitiveReductionPerm D`.
+* `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_five`,
+  `TauCeti.BinaryQuadraticForm.classNumber_five`,
+  `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_eight`,
+  `TauCeti.BinaryQuadraticForm.classNumber_eight`: narrow and wide class number `1` at `D = 5, 8`.
+* `TauCeti.BinaryQuadraticForm.not_exists_smul_eq_twelve`,
+  `TauCeti.BinaryQuadraticForm.nat_card_narrowClassGroup_twelve`,
+  `TauCeti.BinaryQuadraticForm.classNumber_twelve`: the narrow/wide split `#Cl⁺ = 2`, `h = 1` at
+  `D = 12`.
 
 ## References
 
-* C. F. Gauss, *Disquisitiones Arithmeticae*, art. 183–197.
+* C. F. Gauss, *Disquisitiones Arithmeticae*, art. 183–195.
 * D. A. Cox, *Primes of the Form x² + ny²*, §7, Theorem 7.7 and the narrow analogue.
 * H. Cohen, *A Course in Computational Algebraic Number Theory*, GTM 138, §5.6–5.7.
 -/
@@ -82,7 +94,8 @@ As certified examples:
 public section
 noncomputable section
 
-open scoped NumberField
+open Finset MulAction
+open scoped MatrixGroups NumberField
 
 namespace TauCeti.BinaryQuadraticForm
 
@@ -92,92 +105,93 @@ section Order
 
 variable (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1) [Fact (¬ IsSquare D)]
 
+/-- Forms in the same cycle of `primitiveReductionPerm D` represent the same wide Picard class. -/
+theorem picClass_eq_of_sameCycle {f g : primitiveGaussReducedForms D}
+    (h : (primitiveReductionPerm D).SameCycle f g) :
+    picClass D hD ⟨f.val, (mem_primitiveForms D f.val).mpr
+      ⟨(mem_primitiveGaussReducedForms.mp f.property).1,
+        (mem_primitiveGaussReducedForms.mp f.property).2.2⟩⟩ =
+    picClass D hD ⟨g.val, (mem_primitiveForms D g.val).mpr
+      ⟨(mem_primitiveGaussReducedForms.mp g.property).1,
+        (mem_primitiveGaussReducedForms.mp g.property).2.2⟩⟩ := by
+  obtain ⟨γ, hγ⟩ := sameCycle_primitiveReductionPerm_iff.mp h
+  have hsub : γ • (⟨f.val, (mem_primitiveForms D f.val).mpr
+      ⟨(mem_primitiveGaussReducedForms.mp f.property).1,
+        (mem_primitiveGaussReducedForms.mp f.property).2.2⟩⟩ : primitiveForms D) =
+      ⟨g.val, (mem_primitiveForms D g.val).mpr
+        ⟨(mem_primitiveGaussReducedForms.mp g.property).1,
+          (mem_primitiveGaussReducedForms.mp g.property).2.2⟩⟩ :=
+    Subtype.ext (by simpa only [SubMulAction.val_smul] using hγ)
+  rw [← hsub, picClass_smul]
+
 /-- **Cycles of primitive Gauss reduced forms classify the narrow Picard group.** For a positive
 nonsquare discriminant `D ≡ 0, 1 (mod 4)`, the cycles of `primitiveReductionPerm D` are in
-canonical bijection with the narrow Picard group of the quadratic order of discriminant `D`. -/
-def primitiveGaussReducedCyclesEquivNarrowPic (hpos : 0 < D) :
-    PrimitiveGaussReducedCycle D ≃ NarrowPic (QuadraticOrder.numberFieldOrder D hD) :=
-  (primitiveGaussReducedCyclesEquivProperClasses D hpos).trans
-    (properClassEquivNarrowPic D hD hpos)
+bijection with `NarrowPic` of the quadratic order of discriminant `D`. -/
+def primitiveCycleEquivNarrowPic (hpos : 0 < D) :
+    Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D)) ≃
+      NarrowPic (QuadraticOrder.numberFieldOrder D hD) :=
+  (primitiveCycleEquivProperClass D hpos).trans (properClassEquivNarrowPic D hD hpos)
 
-/-- Applying `primitiveGaussReducedCyclesEquivNarrowPic` sends a cycle to the narrow Picard class
-of its proper equivalence class. -/
-@[simp] theorem primitiveGaussReducedCyclesEquivNarrowPic_apply (hpos : 0 < D)
-    (c : PrimitiveGaussReducedCycle D) :
-    primitiveGaussReducedCyclesEquivNarrowPic D hD hpos c =
-      properClassToNarrowPic D hD (primitiveGaussReducedCycleToProperClass D c) := by
-  simp [primitiveGaussReducedCyclesEquivNarrowPic]
+/-- On a primitive Gauss reduced form `f`, `primitiveCycleEquivNarrowPic` evaluates to the oriented
+narrow class `f.1.narrowPicClass`. -/
+@[simp] theorem primitiveCycleEquivNarrowPic_mk (hpos : 0 < D) (f : primitiveGaussReducedForms D) :
+    primitiveCycleEquivNarrowPic D hD hpos (Quotient.mk'' f) =
+      f.val.narrowPicClass D (mem_primitiveGaussReducedForms.mp f.property).1
+        (mem_primitiveGaussReducedForms.mp f.property).2.2 := by
+  simp [primitiveCycleEquivNarrowPic]
 
-/-- On the cycle of a primitive Gauss reduced form `f`,
-`primitiveGaussReducedCyclesEquivNarrowPic` evaluates to the oriented narrow class of `f`. -/
-theorem primitiveGaussReducedCyclesEquivNarrowPic_mk (hpos : 0 < D)
-    (f : primitiveGaussReducedForms D) :
-    primitiveGaussReducedCyclesEquivNarrowPic D hD hpos (Quotient.mk _ f) =
-      f.1.narrowPicClass D (mem_primitiveGaussReducedForms.mp f.2).1
-        (mem_primitiveGaussReducedForms.mp f.2).2.2 := by
-  simp
-
-/-- **The order of the narrow Picard group** of the quadratic order of positive nonsquare
-discriminant `D` equals the number of cycles of `primitiveReductionPerm D`. -/
+/-- **The order of the narrow Picard group** of a real quadratic order of discriminant `D > 0` is
+the number of cycles of `primitiveReductionPerm D`. -/
 theorem nat_card_narrowPic (hpos : 0 < D) :
     Nat.card (NarrowPic (QuadraticOrder.numberFieldOrder D hD)) =
-      Fintype.card (PrimitiveGaussReducedCycle D) := by
-  rw [Nat.card_congr (primitiveGaussReducedCyclesEquivNarrowPic D hD hpos).symm,
-    Nat.card_eq_fintype_card]
+      Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) :=
+  Nat.card_congr (primitiveCycleEquivNarrowPic D hD hpos).symm
+
+/-- Every wide Picard class of a real quadratic order of discriminant `D > 0` is represented by a
+primitive Gauss reduced form. -/
+theorem exists_mem_primitiveGaussReducedForms_picClass_eq (hpos : 0 < D)
+    (c : Pic (QuadraticOrder.numberFieldOrder D hD)) :
+    ∃ f : primitiveGaussReducedForms D,
+      picClass D hD ⟨f.val, (mem_primitiveForms D f.val).mpr
+        ⟨(mem_primitiveGaussReducedForms.mp f.property).1,
+          (mem_primitiveGaussReducedForms.mp f.property).2.2⟩⟩ = c := by
+  obtain ⟨n, rfl⟩ := (QuadraticOrder.numberFieldOrder D hD).narrowToPic_surjective c
+  obtain ⟨q, rfl⟩ := (primitiveCycleEquivNarrowPic D hD hpos).surjective n
+  refine Quotient.inductionOn' q fun f ↦ ⟨f, ?_⟩
+  rw [primitiveCycleEquivNarrowPic_mk, narrowToPic_narrowPicClass]
 
 end Order
 
 section Fundamental
 
-/-- **The narrow class number of a real quadratic model counts primitive Gauss cycles.** For a
-positive nonsquare fundamental discriminant `D`, the narrow class group of `ℚ(√D)` has
-`Fintype.card (PrimitiveGaussReducedCycle D)` elements. -/
-theorem nat_card_narrowClassGroup_eq_card_primitiveGaussReducedCycle
-    {D : ℤ} [Fact (¬ IsSquare D)] (hfund : Int.IsFundamentalDiscr D) (hpos : 0 < D) :
+/-- **The narrow class number of a real quadratic field counts primitive reduction cycles.** For a
+positive fundamental discriminant `D`, the narrow class group of `ℚ(√D)` has cardinality equal to
+the number of cycles of `primitiveReductionPerm D`. -/
+theorem nat_card_narrowClassGroup (D : ℤ) [Fact (¬ IsSquare D)] (hpos : 0 < D)
+    (hfund : Int.IsFundamentalDiscr D) :
     Nat.card (NumberField.NarrowClassGroup (QuadraticAlgebra ℚ (D : ℚ) 0)) =
-      Fintype.card (PrimitiveGaussReducedCycle D) := by
+      Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) := by
   rw [← Nat.card_congr (maximalOrderNarrowPicEquiv _).toEquiv,
-    ← (QuadraticOrder.numberFieldOrder_eq_maximal_iff D hfund.emod_four_eq_zero_or_one).mpr hfund,
+    ← (QuadraticOrder.numberFieldOrder_eq_maximal_iff D hfund.emod_four_eq_zero_or_one).2 hfund,
     nat_card_narrowPic D hfund.emod_four_eq_zero_or_one hpos]
 
 end Fundamental
 
 section Conductor
 
-/-- An isomorphism of number fields identifying two orders induces an isomorphism of their narrow
-Picard groups via `NumberFieldOrder.Hom.mapNarrowPic`. -/
-private def narrowPicMulEquivOfRingEquiv {K L : Type*} [Field K] [NumberField K]
-    [Field L] [NumberField L] {O : NumberFieldOrder K} {O' : NumberFieldOrder L}
-    (e : K ≃+* L) (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
-    NarrowPic O ≃* NarrowPic O' :=
-  let φ : NumberFieldOrder.Hom O O' := ⟨e.toRingHom, fun {x} hx ↦ (h x).mpr hx⟩
-  let ψ : NumberFieldOrder.Hom O' O :=
-    ⟨e.symm.toRingHom, fun {y} hy ↦ (h (e.symm y)).mp (by simpa using hy)⟩
-  MonoidHom.toMulEquiv φ.mapNarrowPic ψ.mapNarrowPic
-    (by
-      rw [← NumberFieldOrder.Hom.mapNarrowPic_comp]
-      have hid : ψ.comp φ = NumberFieldOrder.Hom.id O :=
-        NumberFieldOrder.Hom.ext fun x ↦ by simp [φ, ψ]
-      rw [hid, NumberFieldOrder.Hom.mapNarrowPic_id])
-    (by
-      rw [← NumberFieldOrder.Hom.mapNarrowPic_comp]
-      have hid : φ.comp ψ = NumberFieldOrder.Hom.id O' :=
-        NumberFieldOrder.Hom.ext fun y ↦ by simp [φ, ψ]
-      rw [hid, NumberFieldOrder.Hom.mapNarrowPic_id])
-
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **Narrow Picard numbers of real quadratic orders of conductor `f` from Gauss cycles.** Let `K`
+/-- **Narrow Picard numbers of real quadratic orders of conductor `f` from reduced cycles.** Let `K`
 be a quadratic field and `f ≥ 1` with `f² discr K = D > 0`. The narrow Picard group of the order
-`ℤ + f 𝓞 K` of conductor `f` has `Fintype.card (PrimitiveGaussReducedCycle D)` elements. -/
-theorem card_narrowPic_intAddMulOrder_eq_card_primitiveGaussReducedCycle
-    (hK : Module.finrank ℚ K = 2) {f : ℕ} [NeZero f] {D : ℤ} [Fact (¬ IsSquare D)]
-    (hpos : 0 < D) (hD : (f : ℤ) ^ 2 * NumberField.discr K = D) :
+`ℤ + f 𝓞 K` of conductor `f` has cardinality equal to the number of cycles of
+`primitiveReductionPerm D`. -/
+theorem nat_card_narrowPic_intAddMulOrder (hK : Module.finrank ℚ K = 2) {f : ℕ} [NeZero f]
+    {D : ℤ} [Fact (¬ IsSquare D)] (hpos : 0 < D) (hD : (f : ℤ) ^ 2 * NumberField.discr K = D) :
     Nat.card (NarrowPic (intAddMulOrder K f)) =
-      Fintype.card (PrimitiveGaussReducedCycle D) := by
+      Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) := by
   have hD4 : D % 4 = 0 ∨ D % 4 = 1 := by
     rw [← hD, Int.mul_emod, Int.sq_emod_four]
-    rcases TauCeti.NumberField.discr_emod_four_eq_zero_or_one K with h | h <;>
+    rcases (Multiquadratic.isFundamentalDiscr_discr hK).emod_four_eq_zero_or_one with h | h <;>
       rcases Int.emod_two_eq_zero_or_one (f : ℤ) with h' | h' <;> simp [h, h']
   obtain ⟨δ, hδ⟩ := Multiquadratic.exists_sq_eq_discr hK
   have hfδ : ((f : K) * δ) ^ 2 = (D : K) := by
@@ -187,283 +201,373 @@ theorem card_narrowPic_intAddMulOrder_eq_card_primitiveGaussReducedCycle
   rw [← QuadraticOrder.numberFieldOrderOfSqrt_eq_intAddMulOrder hK hD4 hD.symm _ hfδ,
     ← nat_card_narrowPic D hD4 hpos]
   let e := QuadraticOrder.algEquivOfSqrt D ((f : K) * δ) hfδ hK
-  refine (Nat.card_congr (narrowPicMulEquivOfRingEquiv e.toRingEquiv fun x ↦ ?_).toEquiv).symm
+  refine (Nat.card_congr
+    (NumberFieldOrder.narrowPicMulEquivOfRingEquiv e.toRingEquiv fun x ↦ ?_).toEquiv).symm
   rw [QuadraticOrder.numberFieldOrderOfSqrt_toSubalgebra,
     QuadraticOrder.numberFieldOrder_toSubalgebra, Subalgebra.mem_map]
   exact ⟨fun ⟨z, hz, hzx⟩ ↦ e.injective hzx ▸ hz, fun hx ↦ ⟨x, hx, rfl⟩⟩
 
-/-- **Narrow class numbers of real quadratic fields from Gauss cycles.** Any quadratic number field
-`K` of positive discriminant `D` has narrow class number
-`Fintype.card (PrimitiveGaussReducedCycle D)`. -/
-theorem card_narrowClassGroup_eq_card_primitiveGaussReducedCycle_of_discr_eq
-    (hK : Module.finrank ℚ K = 2) {D : ℤ} [Fact (¬ IsSquare D)] (hpos : 0 < D)
-    (hD : NumberField.discr K = D) :
+/-- **Narrow class numbers of real quadratic fields from reduced cycles.** Any quadratic number
+field `K` of positive discriminant `D` has narrow class number equal to the number of cycles of
+`primitiveReductionPerm D`. -/
+theorem nat_card_narrowClassGroup_of_discr_eq (hK : Module.finrank ℚ K = 2) {D : ℤ}
+    [Fact (¬ IsSquare D)] (hpos : 0 < D) (hD : NumberField.discr K = D) :
     Nat.card (NumberField.NarrowClassGroup K) =
-      Fintype.card (PrimitiveGaussReducedCycle D) := by
+      Nat.card (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) := by
   rw [← Nat.card_congr (maximalOrderNarrowPicEquiv K).toEquiv,
     ← NumberFieldOrder.intAddMulOrder_one,
-    card_narrowPic_intAddMulOrder_eq_card_primitiveGaussReducedCycle hK hpos
-      (by simpa using hD)]
+    nat_card_narrowPic_intAddMulOrder hK hpos (by simpa using hD)]
 
 end Conductor
 
-section Examples
+/-! ### Certified narrow and wide class numbers at `D = 5`, `8`, `12` -/
 
-private theorem isFundamentalDiscr_five : Int.IsFundamentalDiscr 5 := by
-  rw [show (5 : ℤ) = 4 * 1 + 1 by norm_num, Int.isFundamentalDiscr_four_mul_add_one]
-  exact Int.squarefree_natAbs.mp (by norm_num : Nat.Prime 5).squarefree
+private theorem nat_card_narrowPic_eq_one_of_sameCycle {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1)
+    [Fact (¬ IsSquare D)] (hpos : 0 < D) (f₀ : primitiveGaussReducedForms D)
+    (h : ∀ g : primitiveGaussReducedForms D, (primitiveReductionPerm D).SameCycle f₀ g) :
+    Nat.card (NarrowPic (QuadraticOrder.numberFieldOrder D hD)) = 1 := by
+  rw [nat_card_narrowPic D hD hpos]
+  have : Subsingleton (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) :=
+    ⟨fun a b ↦ Quotient.inductionOn₂' a b fun y z ↦ Quotient.sound' ((h y).symm.trans (h z))⟩
+  have : Nonempty (Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm D))) :=
+    ⟨Quotient.mk'' f₀⟩
+  exact Nat.card_unique
 
-private theorem isFundamentalDiscr_twelve : Int.IsFundamentalDiscr 12 := by
-  rw [show (12 : ℤ) = 4 * 3 by norm_num, Int.isFundamentalDiscr_four_mul]
-  exact ⟨Int.squarefree_natAbs.mp (by norm_num : Nat.Prime 3).squarefree, by norm_num⟩
+section DiscriminantFive
 
-/-- `5` is not an integer square. -/
-instance instFactNotIsSquareFive : Fact (¬ IsSquare (5 : ℤ)) :=
-  ⟨fun h ↦ isFundamentalDiscr_five.not_isSquare_rat (by norm_num) (h.map (Int.castRingHom ℚ))⟩
+private theorem isFundamentalDiscr_five : Int.IsFundamentalDiscr 5 :=
+  Int.isFundamentalDiscr_iff_squarefree.mpr
+    (Or.inl ⟨rfl, Int.squarefree_natAbs.mp Nat.prime_five.squarefree⟩)
 
-/-- `12` is not an integer square. -/
-instance instFactNotIsSquareTwelve : Fact (¬ IsSquare (12 : ℤ)) :=
-  ⟨fun h ↦ isFundamentalDiscr_twelve.not_isSquare_rat (by norm_num) (h.map (Int.castRingHom ℚ))⟩
+/-- `5` is not a square in `ℤ`. -/
+local instance instFactNotIsSquareFive : Fact (¬ IsSquare (5 : ℤ)) :=
+  ⟨fun h ↦ isFundamentalDiscr_five.not_isSquare_rat (by decide) (h.map (Int.castRingHom ℚ))⟩
 
-/-- Every Gauss reduced form of discriminant `5` is `x² + x y - y²` or `-x² + x y + y²`. -/
-private theorem eq_of_mem_primitiveGaussReducedForms_five {f : BinaryQuadraticForm ℤ}
-    (hf : f ∈ primitiveGaussReducedForms 5) :
-    f = ⟨1, 1, -1⟩ ∨ f = ⟨-1, 1, 1⟩ := by
-  obtain ⟨a, b, c⟩ := f
-  obtain ⟨hd, hred, -⟩ := mem_primitiveGaussReducedForms.mp hf
-  have hb : 0 < b := hred.b_pos
-  have hac : a * c < 0 := (isGaussReduced_iff.mp hred).1
-  have hsq : (|a| + |c|) ^ 2 < 5 := hd ▸ hred.sq_abs_add_abs_lt
-  rw [discrim_def, discrim] at hd
-  dsimp only at hb hac hsq hd
-  have ha0 : 1 ≤ |a| := Int.one_le_abs (left_ne_zero_of_mul hac.ne)
-  have hc0 : 1 ≤ |c| := Int.one_le_abs (right_ne_zero_of_mul hac.ne)
-  obtain ⟨ha_lo, ha_hi⟩ := abs_le.mp (by nlinarith : |a| ≤ 1)
-  obtain ⟨hc_lo, hc_hi⟩ := abs_le.mp (by nlinarith : |c| ≤ 1)
-  interval_cases a <;> interval_cases c
-  all_goals norm_num at hac
-  · exact Or.inr (BinaryQuadraticForm.ext rfl (by nlinarith) rfl)
-  · exact Or.inl (BinaryQuadraticForm.ext rfl (by nlinarith) rfl)
+private theorem nat_sqrt_five : Nat.sqrt 5 = 2 :=
+  ((Nat.eq_sqrt (a := 2) (n := 5)).mpr (by norm_num)).symm
 
-/-- The principal reduced form `x² + x y - y²` of discriminant `5`. -/
-private def gaussFivePos : primitiveGaussReducedForms 5 :=
-  ⟨⟨1, 1, -1⟩, mem_primitiveGaussReducedForms.mpr
-    ⟨by norm_num [discrim_def, discrim],
-      isGaussReduced_iff.mpr ⟨by norm_num, by norm_num⟩,
-      by norm_num [isPrimitive_iff, content_def]⟩⟩
+/-- The primitive Gauss reduced forms of discriminant `5` are `x² + x y - y²` and
+`-x² + x y + y²`. -/
+theorem primitiveGaussReducedForms_five :
+    primitiveGaussReducedForms 5 = {⟨1, 1, -1⟩, ⟨-1, 1, 1⟩} := by
+  ext f
+  rw [mem_primitiveGaussReducedForms, mem_insert, mem_singleton]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨hD, hred, -⟩
+    obtain ⟨a, b, c⟩ := f
+    obtain ⟨hb, hb2, -, -⟩ := isGaussReduced_iff_sq_lt.mp hred
+    simp only [discrim_def, _root_.discrim, mul_assoc] at hD hb hb2
+    have : b ≤ 2 := by by_contra!; nlinarith
+    have hb1 : b = 1 := by interval_cases b <;> omega
+    subst hb1
+    have hac : a * c = -1 := by linarith
+    rcases Int.eq_one_or_neg_one_of_mul_eq_neg_one hac with rfl | rfl
+    · obtain rfl : c = -1 := by linarith
+      left; rfl
+    · obtain rfl : c = 1 := by linarith
+      right; rfl
+  · rintro (rfl | rfl) <;>
+      norm_num [discrim_def, _root_.discrim, isGaussReduced_iff, isPrimitive_iff, content_def]
 
-private theorem int_sqrt_five : Int.sqrt 5 = 2 := by
-  have h1 : (2 : ℤ) ≤ Int.sqrt 5 := by
-    simpa using (Int.abs_le_sqrt (a := 2) (by norm_num : (0 : ℤ) ≤ 5)).mpr (by norm_num)
-  have h2 : Int.sqrt 5 * Int.sqrt 5 ≤ 5 :=
-    (Int.abs_le_sqrt (by norm_num)).mp (abs_of_nonneg (Int.sqrt_nonneg 5)).le
-  nlinarith
+/-- **`NarrowPic` of the order of discriminant `5` is trivial.** -/
+theorem nat_card_narrowPic_five :
+    Nat.card (NarrowPic (QuadraticOrder.numberFieldOrder 5 (Or.inr rfl))) = 1 := by
+  have hf₀ : (⟨1, 1, -1⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 5 := by
+    rw [primitiveGaussReducedForms_five]; simp
+  refine nat_card_narrowPic_eq_one_of_sameCycle (Or.inr rfl) (by decide) ⟨⟨1, 1, -1⟩, hf₀⟩
+    fun g ↦ ?_
+  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_five g.val).mp g.property
+  simp only [mem_insert, mem_singleton] at hg
+  rcases hg with hg | hg
+  · exact (Subtype.ext hg.symm).sameCycle _
+  · refine ⟨1, ?_⟩
+    rw [zpow_one]
+    apply Subtype.ext
+    rw [coe_primitiveReductionPerm_apply, hg]
+    ext <;>
+      simp only [reductionStep_a, reductionStep_b, reductionStep_c, discrim_def, _root_.discrim] <;>
+      norm_num [nat_sqrt_five]
 
-/-- One reduction step carries `x² + x y - y²` to `-x² + x y + y²`. -/
-private theorem reductionStep_one_one_neg_one :
-    reductionStep ⟨1, 1, -1⟩ = ⟨-1, 1, 1⟩ := by
-  have hd : (⟨1, 1, -1⟩ : BinaryQuadraticForm ℤ).discrim = 5 := by norm_num [discrim_def, discrim]
-  refine BinaryQuadraticForm.ext (by simp) ?_ ?_
-  · rw [reductionStep_b, hd, int_sqrt_five]
-    norm_num
-  · rw [reductionStep_c, hd, int_sqrt_five]
-    norm_num
-
-/-- **Discriminant `5` has a single cycle of primitive Gauss reduced forms**, consisting of
-`x² + x y - y²` and `-x² + x y + y²`. -/
-theorem card_primitiveGaussReducedCycle_five :
-    Fintype.card (PrimitiveGaussReducedCycle 5) = 1 := by
-  refine Fintype.card_eq_one_iff.mpr ⟨Quotient.mk _ gaussFivePos, fun c ↦ ?_⟩
-  refine Quotient.inductionOn c fun f ↦ eq_comm.mpr (Quotient.sound ?_)
-  rcases eq_of_mem_primitiveGaussReducedForms_five f.2 with hf | hf
-  · exact (Subtype.ext hf : f = gaussFivePos) ▸ Equiv.Perm.SameCycle.rfl
-  · refine ⟨1, Subtype.ext ?_⟩
-    rw [zpow_one, coe_primitiveReductionPerm_apply]
-    exact reductionStep_one_one_neg_one.trans hf.symm
-
-/-- **`ℚ(√5)` has narrow class number `1`**, certified by its single primitive Gauss cycle. -/
-theorem nat_card_narrowClassGroup_five_eq_one :
+/-- **`ℚ(√5)` has narrow class number `1`.** -/
+theorem nat_card_narrowClassGroup_five :
     Nat.card (NumberField.NarrowClassGroup (QuadraticAlgebra ℚ ((5 : ℤ) : ℚ) 0)) = 1 := by
-  rw [nat_card_narrowClassGroup_eq_card_primitiveGaussReducedCycle isFundamentalDiscr_five
-    (by norm_num), card_primitiveGaussReducedCycle_five]
+  rw [nat_card_narrowClassGroup 5 (by decide) isFundamentalDiscr_five,
+    ← nat_card_narrowPic 5 (Or.inr rfl) (by decide), nat_card_narrowPic_five]
 
-/-- **`ℚ(√5)` has wide class number `1`.** -/
-theorem classNumber_five_eq_one :
+/-- **`ℚ(√5)` has class number `1`.** -/
+theorem classNumber_five :
     NumberField.classNumber (QuadraticAlgebra ℚ ((5 : ℤ) : ℚ) 0) = 1 := by
-  have : Subsingleton (NumberField.NarrowClassGroup (QuadraticAlgebra ℚ ((5 : ℤ) : ℚ) 0)) :=
-    (Nat.card_eq_one_iff_unique.mp nat_card_narrowClassGroup_five_eq_one).1
-  have hsub : Subsingleton (ClassGroup (𝓞 (QuadraticAlgebra ℚ ((5 : ℤ) : ℚ) 0))) :=
-    NumberField.NarrowClassGroup.toClassGroup_surjective.subsingleton
+  have h := nat_card_narrowClassGroup_five
+  rw [NumberField.NarrowClassGroup.card_eq_card_classGroup_mul_card_ker] at h
   rw [NumberField.classNumber, ← Nat.card_eq_fintype_card]
-  exact Nat.card_eq_one_iff_unique.mpr ⟨hsub, ⟨1⟩⟩
+  exact Nat.eq_one_of_mul_eq_one_right h
 
-/-- Every Gauss reduced form of discriminant `12` is one of `(1, 2, -2)`, `(-2, 2, 1)`,
-`(-1, 2, 2)`, or `(2, 2, -1)`. -/
-private theorem eq_of_mem_primitiveGaussReducedForms_twelve {f : BinaryQuadraticForm ℤ}
-    (hf : f ∈ primitiveGaussReducedForms 12) :
-    f = ⟨1, 2, -2⟩ ∨ f = ⟨-2, 2, 1⟩ ∨ f = ⟨-1, 2, 2⟩ ∨ f = ⟨2, 2, -1⟩ := by
-  obtain ⟨a, b, c⟩ := f
-  obtain ⟨hd, hred, -⟩ := mem_primitiveGaussReducedForms.mp hf
-  have hb : 0 < b := hred.b_pos
-  have hb2 : b ^ 2 < 12 := hd ▸ (isGaussReduced_iff_sq_lt.mp hred).2.1
-  rw [discrim_def, discrim] at hd
-  dsimp only at hb hb2 hd
-  have hb3 : b ≤ 3 := by nlinarith
-  have hd_mod : b ^ 2 % 4 = 0 := by
-    have : b ^ 2 = 12 + 4 * (a * c) := by linarith
-    rw [this]
-    omega
-  have hb_eq : b = 2 := by
-    interval_cases b
-    · norm_num at hd_mod
-    · rfl
-    · norm_num at hd_mod
-  subst hb_eq
-  have hac : a * c = -2 := by linarith
-  have hc0 : 1 ≤ |c| := Int.one_le_abs (right_ne_zero_of_mul (by omega : a * c ≠ 0))
-  have ha_abs : |a| ≤ 2 := by
-    have : |a| * |c| = 2 := by rw [← abs_mul, hac]; norm_num
-    nlinarith [abs_nonneg a]
-  obtain ⟨ha_lo, ha_hi⟩ := abs_le.mp ha_abs
-  interval_cases a
-  · exact Or.inr (Or.inl (BinaryQuadraticForm.ext rfl rfl (by dsimp only; omega)))
-  · exact Or.inr (Or.inr (Or.inl (BinaryQuadraticForm.ext rfl rfl (by dsimp only; omega))))
-  · omega
-  · exact Or.inl (BinaryQuadraticForm.ext rfl rfl (by dsimp only; omega))
-  · exact Or.inr (Or.inr (Or.inr (BinaryQuadraticForm.ext rfl rfl (by dsimp only; omega))))
+/-- **The ring of integers of `ℚ(√5)` is a unique factorization domain.** -/
+theorem uniqueFactorizationMonoid_five :
+    UniqueFactorizationMonoid (𝓞 (QuadraticAlgebra ℚ ((5 : ℤ) : ℚ) 0)) :=
+  NumberField.classNumber_eq_one_iff_uniqueFactorizationMonoid.mp classNumber_five
 
-/-- The reduced form `x² + 2 x y - 2 y²` of discriminant `12`. -/
-private def gaussTwelvePos : primitiveGaussReducedForms 12 :=
-  ⟨⟨1, 2, -2⟩, mem_primitiveGaussReducedForms.mpr
-    ⟨by norm_num [discrim_def, discrim],
-      isGaussReduced_iff.mpr ⟨by norm_num, by norm_num⟩,
-      by norm_num [isPrimitive_iff, content_def]⟩⟩
+end DiscriminantFive
 
-/-- The reduced form `-x² + 2 x y + 2 y²` of discriminant `12`. -/
-private def gaussTwelveNeg : primitiveGaussReducedForms 12 :=
-  ⟨⟨-1, 2, 2⟩, mem_primitiveGaussReducedForms.mpr
-    ⟨by norm_num [discrim_def, discrim],
-      isGaussReduced_iff.mpr ⟨by norm_num, by norm_num⟩,
-      by norm_num [isPrimitive_iff, content_def]⟩⟩
+section DiscriminantEight
 
-private theorem int_sqrt_twelve : Int.sqrt 12 = 3 := by
-  have h1 : (3 : ℤ) ≤ Int.sqrt 12 := by
-    simpa using (Int.abs_le_sqrt (a := 3) (by norm_num : (0 : ℤ) ≤ 12)).mpr (by norm_num)
-  have h2 : Int.sqrt 12 * Int.sqrt 12 ≤ 12 :=
-    (Int.abs_le_sqrt (by norm_num)).mp (abs_of_nonneg (Int.sqrt_nonneg 12)).le
-  nlinarith
+private theorem isFundamentalDiscr_eight : Int.IsFundamentalDiscr 8 :=
+  (Int.isFundamentalDiscr_four_mul (m := 2)).mpr
+    ⟨Int.squarefree_natAbs.mp Nat.prime_two.squarefree, Or.inl rfl⟩
 
-private theorem reductionStep_one_two_neg_two :
-    reductionStep ⟨1, 2, -2⟩ = ⟨-2, 2, 1⟩ := by
-  have hd : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ).discrim = 12 := by norm_num [discrim_def, discrim]
-  refine BinaryQuadraticForm.ext (by simp) ?_ ?_
-  · rw [reductionStep_b, hd, int_sqrt_twelve]
-    norm_num
-  · rw [reductionStep_c, hd, int_sqrt_twelve]
-    norm_num
+/-- `8` is not a square in `ℤ`. -/
+local instance instFactNotIsSquareEight : Fact (¬ IsSquare (8 : ℤ)) :=
+  ⟨fun h ↦ isFundamentalDiscr_eight.not_isSquare_rat (by decide) (h.map (Int.castRingHom ℚ))⟩
 
-private theorem reductionStep_neg_two_two_one :
-    reductionStep ⟨-2, 2, 1⟩ = ⟨1, 2, -2⟩ := by
-  have hd : (⟨-2, 2, 1⟩ : BinaryQuadraticForm ℤ).discrim = 12 := by norm_num [discrim_def, discrim]
-  refine BinaryQuadraticForm.ext (by simp) ?_ ?_
-  · rw [reductionStep_b, hd, int_sqrt_twelve]
-    norm_num
-  · rw [reductionStep_c, hd, int_sqrt_twelve]
-    norm_num
+private theorem nat_sqrt_eight : Nat.sqrt 8 = 2 :=
+  ((Nat.eq_sqrt (a := 2) (n := 8)).mpr (by norm_num)).symm
 
-private theorem reductionStep_neg_one_two_two :
-    reductionStep ⟨-1, 2, 2⟩ = ⟨2, 2, -1⟩ := by
-  have hd : (⟨-1, 2, 2⟩ : BinaryQuadraticForm ℤ).discrim = 12 := by norm_num [discrim_def, discrim]
-  refine BinaryQuadraticForm.ext (by simp) ?_ ?_
-  · rw [reductionStep_b, hd, int_sqrt_twelve]
-    norm_num
-  · rw [reductionStep_c, hd, int_sqrt_twelve]
-    norm_num
+/-- The primitive Gauss reduced forms of discriminant `8` are `x² + 2 x y - y²` and
+`-x² + 2 x y + y²`. -/
+theorem primitiveGaussReducedForms_eight :
+    primitiveGaussReducedForms 8 = {⟨1, 2, -1⟩, ⟨-1, 2, 1⟩} := by
+  ext f
+  rw [mem_primitiveGaussReducedForms, mem_insert, mem_singleton]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨hD, hred, -⟩
+    obtain ⟨a, b, c⟩ := f
+    obtain ⟨hb, hb2, -, -⟩ := isGaussReduced_iff_sq_lt.mp hred
+    simp only [discrim_def, _root_.discrim, mul_assoc] at hD hb hb2
+    have : b ≤ 2 := by by_contra!; nlinarith
+    have hb2' : b = 2 := by interval_cases b <;> omega
+    subst hb2'
+    have hac : a * c = -1 := by linarith
+    rcases Int.eq_one_or_neg_one_of_mul_eq_neg_one hac with rfl | rfl
+    · obtain rfl : c = -1 := by linarith
+      left; rfl
+    · obtain rfl : c = 1 := by linarith
+      right; rfl
+  · rintro (rfl | rfl) <;>
+      norm_num [discrim_def, _root_.discrim, isGaussReduced_iff, isPrimitive_iff, content_def]
 
-private theorem pow_primitiveReductionPerm_gaussTwelvePos (n : ℕ) :
-    ((primitiveReductionPerm 12 ^ n) gaussTwelvePos).1 = ⟨1, 2, -2⟩ ∨
-      ((primitiveReductionPerm 12 ^ n) gaussTwelvePos).1 = ⟨-2, 2, 1⟩ := by
+/-- **`NarrowPic` of the order of discriminant `8` is trivial.** -/
+theorem nat_card_narrowPic_eight :
+    Nat.card (NarrowPic (QuadraticOrder.numberFieldOrder 8 (Or.inl rfl))) = 1 := by
+  have hf₀ : (⟨1, 2, -1⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 8 := by
+    rw [primitiveGaussReducedForms_eight]; simp
+  refine nat_card_narrowPic_eq_one_of_sameCycle (Or.inl rfl) (by decide) ⟨⟨1, 2, -1⟩, hf₀⟩
+    fun g ↦ ?_
+  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_eight g.val).mp g.property
+  simp only [mem_insert, mem_singleton] at hg
+  rcases hg with hg | hg
+  · exact (Subtype.ext hg.symm).sameCycle _
+  · refine ⟨1, ?_⟩
+    rw [zpow_one]
+    apply Subtype.ext
+    rw [coe_primitiveReductionPerm_apply, hg]
+    ext <;>
+      simp only [reductionStep_a, reductionStep_b, reductionStep_c, discrim_def, _root_.discrim] <;>
+      norm_num [nat_sqrt_eight]
+
+/-- **`ℚ(√8) = ℚ(√2)` has narrow class number `1`.** -/
+theorem nat_card_narrowClassGroup_eight :
+    Nat.card (NumberField.NarrowClassGroup (QuadraticAlgebra ℚ ((8 : ℤ) : ℚ) 0)) = 1 := by
+  rw [nat_card_narrowClassGroup 8 (by decide) isFundamentalDiscr_eight,
+    ← nat_card_narrowPic 8 (Or.inl rfl) (by decide), nat_card_narrowPic_eight]
+
+/-- **`ℚ(√8) = ℚ(√2)` has class number `1`.** -/
+theorem classNumber_eight :
+    NumberField.classNumber (QuadraticAlgebra ℚ ((8 : ℤ) : ℚ) 0) = 1 := by
+  have h := nat_card_narrowClassGroup_eight
+  rw [NumberField.NarrowClassGroup.card_eq_card_classGroup_mul_card_ker] at h
+  rw [NumberField.classNumber, ← Nat.card_eq_fintype_card]
+  exact Nat.eq_one_of_mul_eq_one_right h
+
+/-- **The ring of integers of `ℚ(√8)` is a unique factorization domain.** -/
+theorem uniqueFactorizationMonoid_eight :
+    UniqueFactorizationMonoid (𝓞 (QuadraticAlgebra ℚ ((8 : ℤ) : ℚ) 0)) :=
+  NumberField.classNumber_eq_one_iff_uniqueFactorizationMonoid.mp classNumber_eight
+
+end DiscriminantEight
+
+section DiscriminantTwelve
+
+private theorem isFundamentalDiscr_twelve : Int.IsFundamentalDiscr 12 :=
+  (Int.isFundamentalDiscr_four_mul (m := 3)).mpr
+    ⟨Int.squarefree_natAbs.mp Nat.prime_three.squarefree, Or.inr rfl⟩
+
+/-- `12` is not a square in `ℤ`. -/
+local instance instFactNotIsSquareTwelve : Fact (¬ IsSquare (12 : ℤ)) :=
+  ⟨fun h ↦ isFundamentalDiscr_twelve.not_isSquare_rat (by decide) (h.map (Int.castRingHom ℚ))⟩
+
+private theorem nat_sqrt_twelve : Nat.sqrt 12 = 3 :=
+  ((Nat.eq_sqrt (a := 3) (n := 12)).mpr (by norm_num)).symm
+
+/-- The primitive Gauss reduced forms of discriminant `12` are `(1, 2, -2)`, `(-2, 2, 1)`,
+`(-1, 2, 2)`, and `(2, 2, -1)`. -/
+theorem primitiveGaussReducedForms_twelve :
+    primitiveGaussReducedForms 12 = {⟨1, 2, -2⟩, ⟨-2, 2, 1⟩, ⟨-1, 2, 2⟩, ⟨2, 2, -1⟩} := by
+  ext f
+  rw [mem_primitiveGaussReducedForms]
+  simp only [mem_insert, mem_singleton]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨hD, hred, -⟩
+    obtain ⟨a, b, c⟩ := f
+    obtain ⟨hb, hb2, -, -⟩ := isGaussReduced_iff_sq_lt.mp hred
+    simp only [discrim_def, _root_.discrim, mul_assoc] at hD hb hb2
+    have : b ≤ 3 := by by_contra!; nlinarith
+    have hb_eq : b = 2 := by interval_cases b <;> omega
+    subst hb_eq
+    have hac : a * c = -2 := by linarith
+    have ha_le : -2 ≤ a ∧ a ≤ 2 := by
+      have hc0 : c ≠ 0 := fun hc0 ↦ by simp [hc0] at hac
+      have : |a| ≤ 2 := by
+        have := Int.one_le_abs hc0
+        have : |a| * |c| = 2 := by rw [← abs_mul, hac]; rfl
+        nlinarith [abs_nonneg a]
+      exact abs_le.mp this
+    obtain ⟨ha_lo, ha_hi⟩ := ha_le
+    interval_cases a
+    · obtain rfl : c = 1 := by linarith
+      right; left; rfl
+    · obtain rfl : c = 2 := by linarith
+      right; right; left; rfl
+    · exfalso; linarith
+    · obtain rfl : c = -2 := by linarith
+      left; rfl
+    · obtain rfl : c = -1 := by linarith
+      right; right; right; rfl
+  · rintro (rfl | rfl | rfl | rfl) <;>
+      norm_num [discrim_def, _root_.discrim, isGaussReduced_iff, isPrimitive_iff, content_def]
+
+private theorem pow_primitiveReductionPerm_twelve_one_two_neg_two
+    (h₀ : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12) (n : ℕ) :
+    ((primitiveReductionPerm 12 ^ n) ⟨⟨1, 2, -2⟩, h₀⟩).val = ⟨1, 2, -2⟩ ∨
+      ((primitiveReductionPerm 12 ^ n) ⟨⟨1, 2, -2⟩, h₀⟩).val = ⟨-2, 2, 1⟩ := by
   induction n with
   | zero => exact Or.inl rfl
   | succ n ih =>
     rw [pow_succ', Equiv.Perm.mul_apply, coe_primitiveReductionPerm_apply]
-    rcases ih with h | h
-    · exact Or.inr (by rw [h, reductionStep_one_two_neg_two])
-    · exact Or.inl (by rw [h, reductionStep_neg_two_two_one])
+    rcases ih with h | h <;> rw [h]
+    · right
+      ext <;>
+        simp only [reductionStep_a, reductionStep_b, reductionStep_c, discrim_def,
+          _root_.discrim] <;>
+        norm_num [nat_sqrt_twelve]
+    · left
+      ext <;>
+        simp only [reductionStep_a, reductionStep_b, reductionStep_c, discrim_def,
+          _root_.discrim] <;>
+        norm_num [nat_sqrt_twelve]
 
-/-- **Discriminant `12` has exactly two cycles of primitive Gauss reduced forms.** -/
-theorem card_primitiveGaussReducedCycle_twelve :
-    Fintype.card (PrimitiveGaussReducedCycle 12) = 2 := by
-  have hne : (Quotient.mk _ gaussTwelvePos : PrimitiveGaussReducedCycle 12) ≠
-      Quotient.mk _ gaussTwelveNeg := by
-    intro h
-    obtain ⟨n, hn⟩ := (Quotient.exact h).exists_nat_pow_eq
-    rcases pow_primitiveReductionPerm_gaussTwelvePos n with h1 | h2
-    · have ha : (-1 : ℤ) = 1 := by
-        simpa [gaussTwelveNeg] using
-          congrArg BinaryQuadraticForm.a ((congrArg Subtype.val hn).symm.trans h1)
-      norm_num at ha
-    · have ha : (-1 : ℤ) = -2 := by
-        simpa [gaussTwelveNeg] using
-          congrArg BinaryQuadraticForm.a ((congrArg Subtype.val hn).symm.trans h2)
-      norm_num at ha
-  have hbij : Function.Bijective
-      (fun b : Bool ↦ cond b (Quotient.mk _ gaussTwelvePos : PrimitiveGaussReducedCycle 12)
-        (Quotient.mk _ gaussTwelveNeg)) := by
-    refine ⟨?_, fun c ↦ Quotient.inductionOn c fun f ↦ ?_⟩
-    · intro b₁ b₂ hb
-      cases b₁ <;> cases b₂ <;> simp_all
-    · rcases eq_of_mem_primitiveGaussReducedForms_twelve f.2 with hf | hf | hf | hf
-      · exact ⟨true, Quotient.sound ((Subtype.ext hf.symm : gaussTwelvePos = f) ▸
-          Equiv.Perm.SameCycle.rfl)⟩
-      · refine ⟨true, Quotient.sound ⟨1, Subtype.ext ?_⟩⟩
-        rw [zpow_one, coe_primitiveReductionPerm_apply]
-        exact reductionStep_one_two_neg_two.trans hf.symm
-      · exact ⟨false, Quotient.sound ((Subtype.ext hf.symm : gaussTwelveNeg = f) ▸
-          Equiv.Perm.SameCycle.rfl)⟩
-      · refine ⟨false, Quotient.sound ⟨1, Subtype.ext ?_⟩⟩
-        rw [zpow_one, coe_primitiveReductionPerm_apply]
-        exact reductionStep_neg_one_two_two.trans hf.symm
-  exact (Fintype.card_of_bijective hbij).symm.trans Fintype.card_bool
+private theorem not_sameCycle_twelve
+    (h₀ : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12)
+    (h₁ : (⟨-1, 2, 2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12) :
+    ¬ (primitiveReductionPerm 12).SameCycle ⟨⟨1, 2, -2⟩, h₀⟩ ⟨⟨-1, 2, 2⟩, h₁⟩ := by
+  intro hsc
+  obtain ⟨n, hn⟩ := hsc.exists_nat_pow_eq
+  have hn' := congrArg (fun f : primitiveGaussReducedForms 12 ↦ f.val.a) hn
+  rcases pow_primitiveReductionPerm_twelve_one_two_neg_two h₀ n with h | h <;>
+    rw [h] at hn' <;> norm_num at hn'
 
-/-- **`ℚ(√12)` has narrow class number `2`**, certified by its two primitive Gauss cycles. -/
-theorem nat_card_narrowClassGroup_twelve_eq_two :
+/-- **Cycle-theoretic non-equivalence at discriminant `12`**: `x² + 2 x y - 2 y²` and
+`-x² + 2 x y + 2 y²` are not properly equivalent under `SL(2, ℤ)`, because they lie in distinct
+cycles of `primitiveReductionPerm 12`. -/
+theorem not_exists_smul_eq_twelve :
+    ¬ ∃ γ : SL(2, ℤ), γ • (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ) = ⟨-1, 2, 2⟩ := by
+  have h₀ : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12 := by
+    rw [primitiveGaussReducedForms_twelve]; simp
+  have h₁ : (⟨-1, 2, 2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12 := by
+    rw [primitiveGaussReducedForms_twelve]; simp
+  rw [← sameCycle_primitiveReductionPerm_iff (f := ⟨⟨1, 2, -2⟩, h₀⟩) (g := ⟨⟨-1, 2, 2⟩, h₁⟩)]
+  exact not_sameCycle_twelve h₀ h₁
+
+private theorem sameCycle_twelve_or
+    (h₀ : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12)
+    (h₁ : (⟨-1, 2, 2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12)
+    (g : primitiveGaussReducedForms 12) :
+    (primitiveReductionPerm 12).SameCycle ⟨⟨1, 2, -2⟩, h₀⟩ g ∨
+      (primitiveReductionPerm 12).SameCycle ⟨⟨-1, 2, 2⟩, h₁⟩ g := by
+  have hg := (Finset.ext_iff.mp primitiveGaussReducedForms_twelve g.val).mp g.property
+  simp only [mem_insert, mem_singleton] at hg
+  rcases hg with hg | hg | hg | hg
+  · exact Or.inl ((Subtype.ext hg.symm).sameCycle _)
+  · refine Or.inl ⟨1, ?_⟩
+    rw [zpow_one]
+    apply Subtype.ext
+    rw [coe_primitiveReductionPerm_apply, hg]
+    ext <;>
+      simp only [reductionStep_a, reductionStep_b, reductionStep_c, discrim_def, _root_.discrim] <;>
+      norm_num [nat_sqrt_twelve]
+  · exact Or.inr ((Subtype.ext hg.symm).sameCycle _)
+  · refine Or.inr ⟨1, ?_⟩
+    rw [zpow_one]
+    apply Subtype.ext
+    rw [coe_primitiveReductionPerm_apply, hg]
+    ext <;>
+      simp only [reductionStep_a, reductionStep_b, reductionStep_c, discrim_def, _root_.discrim] <;>
+      norm_num [nat_sqrt_twelve]
+
+/-- **`NarrowPic` of the order of discriminant `12` has order `2`**, corresponding to the two
+2-cycles `{(1, 2, -2), (-2, 2, 1)}` and `{(-1, 2, 2), (2, 2, -1)}`. -/
+theorem nat_card_narrowPic_twelve :
+    Nat.card (NarrowPic (QuadraticOrder.numberFieldOrder 12 (Or.inl rfl))) = 2 := by
+  rw [nat_card_narrowPic 12 (Or.inl rfl) (by decide)]
+  have h₀ : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12 := by
+    rw [primitiveGaussReducedForms_twelve]; simp
+  have h₁ : (⟨-1, 2, 2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12 := by
+    rw [primitiveGaussReducedForms_twelve]; simp
+  let φ : Bool → Quotient (Equiv.Perm.SameCycle.setoid (primitiveReductionPerm 12)) := fun b ↦
+    cond b (Quotient.mk'' ⟨⟨-1, 2, 2⟩, h₁⟩) (Quotient.mk'' ⟨⟨1, 2, -2⟩, h₀⟩)
+  have hbij : Function.Bijective φ := by
+    refine ⟨fun b₁ b₂ hb ↦ ?_, Quotient.ind' fun g ↦ ?_⟩
+    · cases b₁ <;> cases b₂
+      · rfl
+      · exact absurd (Quotient.exact' hb) (not_sameCycle_twelve h₀ h₁)
+      · exact absurd (Quotient.exact' hb).symm (not_sameCycle_twelve h₀ h₁)
+      · rfl
+    · rcases sameCycle_twelve_or h₀ h₁ g with hg | hg
+      · exact ⟨false, Quotient.sound' hg⟩
+      · exact ⟨true, Quotient.sound' hg⟩
+  exact (Nat.card_eq_of_bijective φ hbij).symm.trans (by simp)
+
+/-- **`ℚ(√12) = ℚ(√3)` has narrow class number `2`.** -/
+theorem nat_card_narrowClassGroup_twelve :
     Nat.card (NumberField.NarrowClassGroup (QuadraticAlgebra ℚ ((12 : ℤ) : ℚ) 0)) = 2 := by
-  rw [nat_card_narrowClassGroup_eq_card_primitiveGaussReducedCycle isFundamentalDiscr_twelve
-    (by norm_num), card_primitiveGaussReducedCycle_twelve]
+  rw [nat_card_narrowClassGroup 12 (by decide) isFundamentalDiscr_twelve,
+    ← nat_card_narrowPic 12 (Or.inl rfl) (by decide), nat_card_narrowPic_twelve]
 
-/-- **`ℚ(√12)` has wide class number `1`**: its narrow class group of order `2` has a nontrivial
-narrowly non-principal ideal class killed by forgetting positivity. -/
-theorem classNumber_twelve_eq_one :
+/-- **The wide Picard group of the order of discriminant `12` is trivial**, because both narrow
+cycle representatives `(1, 2, -2)` and `(-1, 2, 2)` have unit leading coefficients `±1`. -/
+theorem nat_card_pic_twelve :
+    Nat.card (Pic (QuadraticOrder.numberFieldOrder 12 (Or.inl rfl))) = 1 := by
+  have h₀ : (⟨1, 2, -2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12 := by
+    rw [primitiveGaussReducedForms_twelve]; simp
+  have h₁ : (⟨-1, 2, 2⟩ : BinaryQuadraticForm ℤ) ∈ primitiveGaussReducedForms 12 := by
+    rw [primitiveGaussReducedForms_twelve]; simp
+  have : Subsingleton (Pic (QuadraticOrder.numberFieldOrder 12 (Or.inl rfl))) := by
+    refine ⟨fun c₁ c₂ ↦ ?_⟩
+    suffices ∀ c : Pic (QuadraticOrder.numberFieldOrder 12 (Or.inl rfl)), c = 1 by
+      rw [this c₁, this c₂]
+    intro c
+    obtain ⟨g, rfl⟩ := exists_mem_primitiveGaussReducedForms_picClass_eq 12 (Or.inl rfl)
+      (by decide) c
+    rcases sameCycle_twelve_or h₀ h₁ g with hsc | hsc
+    · rw [← picClass_eq_of_sameCycle 12 (Or.inl rfl) hsc]
+      exact picClass_eq_one_of_isUnit_a 12 (Or.inl rfl) isUnit_one
+    · rw [← picClass_eq_of_sameCycle 12 (Or.inl rfl) hsc]
+      exact picClass_eq_one_of_isUnit_a 12 (Or.inl rfl) (IsUnit.neg isUnit_one)
+  exact Nat.card_unique
+
+/-- **`ℚ(√12) = ℚ(√3)` has wide class number `1`**, exhibiting the first narrow/wide split
+(`#Cl⁺ = 2`, `h = 1`). -/
+theorem classNumber_twelve :
     NumberField.classNumber (QuadraticAlgebra ℚ ((12 : ℤ) : ℚ) 0) = 1 := by
-  let O := QuadraticOrder.numberFieldOrder 12 (Or.inl rfl)
-  have hcard : Nat.card (NarrowPic O) = 2 :=
-    (nat_card_narrowPic 12 (Or.inl rfl) (by norm_num)).trans card_primitiveGaussReducedCycle_twelve
-  have hprod : Nat.card (NarrowPic O) =
-      Nat.card (Pic O) * Nat.card (MonoidHom.ker O.narrowToPic) := by
-    rw [Subgroup.card_eq_card_quotient_mul_card_subgroup (MonoidHom.ker O.narrowToPic),
-      Nat.card_congr
-        (QuotientGroup.quotientKerEquivOfSurjective _ O.narrowToPic_surjective).toEquiv]
-  let c := NarrowPic.mkPrincipal O (discrimTwelveNegativeLeading.val.idealSignFactor 12)
-  have hc_ker : c ∈ MonoidHom.ker O.narrowToPic := O.narrowToPic_mkPrincipal _
-  have hc_ne : c ≠ 1 := by
-    have hce : c = discrimTwelveNegativeLeading.val.narrowPicClass 12
-        ((mem_primitiveForms 12 _).mp discrimTwelveNegativeLeading.property).1
-        ((mem_primitiveForms 12 _).mp discrimTwelveNegativeLeading.property).2 := by
-      rw [narrowPicClass_def, orientedInvertibleFractionalIdeal_def,
-        invertibleFractionalIdeal_discrimTwelveNegativeLeading_eq_one, mul_one,
-        ← NarrowPic.mkPrincipal_apply]
-    exact hce ▸ narrowPicClass_discrimTwelveNegativeLeading_ne_one
-  have : Nontrivial (MonoidHom.ker O.narrowToPic) :=
-    ⟨⟨1, one_mem _⟩, ⟨c, hc_ker⟩, fun h ↦ hc_ne (congrArg Subtype.val h).symm⟩
-  have hk : 1 < Nat.card (MonoidHom.ker O.narrowToPic) := Finite.one_lt_card
-  have hp : Nat.card (Pic O) = 1 := by nlinarith
-  have hmax :=
-    (QuadraticOrder.numberFieldOrder_eq_maximal_iff 12 (Or.inl rfl)).mpr isFundamentalDiscr_twelve
   rw [NumberField.classNumber, ← Nat.card_eq_fintype_card,
-    ← Nat.card_congr (maximalOrderPicEquiv _).toEquiv, ← hmax]
-  exact hp
+    ← Nat.card_congr (maximalOrderPicEquiv _).toEquiv,
+    ← (QuadraticOrder.numberFieldOrder_eq_maximal_iff 12 (Or.inl rfl)).2 isFundamentalDiscr_twelve,
+    nat_card_pic_twelve]
 
-end Examples
+/-- **The ring of integers of `ℚ(√12)` is a unique factorization domain.** -/
+theorem uniqueFactorizationMonoid_twelve :
+    UniqueFactorizationMonoid (𝓞 (QuadraticAlgebra ℚ ((12 : ℤ) : ℚ) 0)) :=
+  NumberField.classNumber_eq_one_iff_uniqueFactorizationMonoid.mp classNumber_twelve
+
+end DiscriminantTwelve
 
 end TauCeti.BinaryQuadraticForm

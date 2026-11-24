@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Bigraded.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.KnotTheory.Grid.Grading.Complex
+public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Homology.Basic
 import TauCeti.LinearAlgebra.Dimension.DirectSum
 
@@ -71,30 +72,49 @@ local notation "F" => ZMod 2
 
 /-- The homogeneous part of a fully blocked cycle is a cycle. -/
 theorem bigradedChainInclusion_bigradedChainProjection_mem_fullyBlockedCycles (g : ℤ × ℤ)
-    {z : GridChain F n} (hz : z ∈ G.1.fullyBlockedCycles) :
-    G.bigradedChainInclusion F g (G.bigradedChainProjection F g z) ∈ G.1.fullyBlockedCycles := by
+    {z : GridChain F n} (hz : z ∈ G.val.fullyBlockedCycles) :
+    G.bigradedChainInclusion F g (G.bigradedChainProjection F g z) ∈ G.val.fullyBlockedCycles := by
   rw [GridDiagram.mem_fullyBlockedCycles] at hz ⊢
   rw [fullyBlockedDifferential_bigradedChainInclusion_bigradedChainProjection, hz, map_zero,
     map_zero]
 
 /-- The homogeneous part of a fully blocked boundary is a boundary. -/
 theorem bigradedChainInclusion_bigradedChainProjection_mem_fullyBlockedBoundaries (g : ℤ × ℤ)
-    {b : GridChain F n} (hb : b ∈ G.1.fullyBlockedBoundaries) :
+    {b : GridChain F n} (hb : b ∈ G.val.fullyBlockedBoundaries) :
     G.bigradedChainInclusion F g (G.bigradedChainProjection F g b) ∈
-      G.1.fullyBlockedBoundaries := by
-  obtain ⟨c, rfl⟩ := (G.1.mem_fullyBlockedBoundaries b).mp hb
-  refine (G.1.mem_fullyBlockedBoundaries _).mpr
+      G.val.fullyBlockedBoundaries := by
+  obtain ⟨c, rfl⟩ := (G.val.mem_fullyBlockedBoundaries b).mp hb
+  refine (G.val.mem_fullyBlockedBoundaries _).mpr
     ⟨G.bigradedChainInclusion F (g + (1, 0)) (G.bigradedChainProjection F (g + (1, 0)) c), ?_⟩
   rw [fullyBlockedDifferential_bigradedChainInclusion_bigradedChainProjection,
     add_sub_cancel_right]
+
+/-- The constant coefficients of a chain of `GC⁻` of bidegree `g` form a chain of bidegree `g`:
+the constant coefficient at a state `x` is the coefficient of the monomial `V^0 x`, of bidegree
+the bidegree of `x`. -/
+theorem mapRange_constantCoeff_mem_range_bigradedChainInclusion {R : Type*} [CommSemiring R]
+    {g : ℤ × ℤ} {c : GridChainMinus R n} (hc : c ∈ G.bigradedChainMinusPiece R g) :
+    c.mapRange MvPolynomial.constantCoeff (map_zero _) ∈
+      LinearMap.range (G.bigradedChainInclusion R g) := by
+  refine ⟨G.bigradedChainProjection R g (c.mapRange MvPolynomial.constantCoeff (map_zero _)), ?_⟩
+  ext x
+  rw [bigradedChainInclusion_apply]
+  split_ifs with hx
+  · rw [bigradedChainProjection_apply]
+  · rw [Finsupp.mapRange_apply, eq_comm]
+    by_contra h
+    refine hx ?_
+    rw [← G.monomialBidegree_zero]
+    rw [mem_bigradedChainMinusPiece] at hc
+    exact hc x 0 (by rwa [MvPolynomial.mem_support_iff, ← MvPolynomial.constantCoeff_eq])
 
 /-! ### The homogeneous projections of fully blocked homology -/
 
 /-- The projection of fully blocked grid homology onto bidegree `g`: the class of a cycle goes to
 the class of its homogeneous part of bidegree `g`. -/
 noncomputable def bigradedFullyBlockedHomologyProjection (g : ℤ × ℤ) :
-    G.1.fullyBlockedHomology →ₗ[F] G.1.fullyBlockedHomology :=
-  G.1.fullyBlockedBoundariesInCycles.mapQ G.1.fullyBlockedBoundariesInCycles
+    G.val.fullyBlockedHomology →ₗ[F] G.val.fullyBlockedHomology :=
+  G.val.fullyBlockedBoundariesInCycles.mapQ G.val.fullyBlockedBoundariesInCycles
     ((G.bigradedChainInclusion F g ∘ₗ G.bigradedChainProjection F g).restrict fun _ hz =>
       G.bigradedChainInclusion_bigradedChainProjection_mem_fullyBlockedCycles g hz)
     fun z hz => by
@@ -106,17 +126,17 @@ noncomputable def bigradedFullyBlockedHomologyProjection (g : ℤ × ℤ) :
 /-- The projection onto bidegree `g` sends the class of a cycle to the class of its homogeneous
 part of bidegree `g`. -/
 @[simp]
-theorem bigradedFullyBlockedHomologyProjection_mk (g : ℤ × ℤ) (z : G.1.fullyBlockedCycles) :
+theorem bigradedFullyBlockedHomologyProjection_mk (g : ℤ × ℤ) (z : G.val.fullyBlockedCycles) :
     G.bigradedFullyBlockedHomologyProjection g (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨G.bigradedChainInclusion F g (G.bigradedChainProjection F g z),
-        G.bigradedChainInclusion_bigradedChainProjection_mem_fullyBlockedCycles g z.2⟩ := by
+        G.bigradedChainInclusion_bigradedChainProjection_mem_fullyBlockedCycles g z.property⟩ := by
   rw [bigradedFullyBlockedHomologyProjection, Submodule.mapQ_apply]
   rfl
 
 /-- The projection onto bidegree `g` is idempotent. -/
 @[simp]
 theorem bigradedFullyBlockedHomologyProjection_apply_self (g : ℤ × ℤ)
-    (y : G.1.fullyBlockedHomology) :
+    (y : G.val.fullyBlockedHomology) :
     G.bigradedFullyBlockedHomologyProjection g (G.bigradedFullyBlockedHomologyProjection g y) =
       G.bigradedFullyBlockedHomologyProjection g y := by
   induction y using Submodule.Quotient.induction_on with
@@ -125,7 +145,7 @@ theorem bigradedFullyBlockedHomologyProjection_apply_self (g : ℤ × ℤ)
 /-- Projections onto two different bidegrees are orthogonal. -/
 @[simp]
 theorem bigradedFullyBlockedHomologyProjection_apply_of_ne {g h : ℤ × ℤ} (hgh : g ≠ h)
-    (y : G.1.fullyBlockedHomology) :
+    (y : G.val.fullyBlockedHomology) :
     G.bigradedFullyBlockedHomologyProjection g (G.bigradedFullyBlockedHomologyProjection h y) =
       0 := by
   induction y using Submodule.Quotient.induction_on with
@@ -135,12 +155,12 @@ theorem bigradedFullyBlockedHomologyProjection_apply_of_ne {g h : ℤ × ℤ} (h
     exact (Submodule.Quotient.mk_eq_zero _).mpr (Submodule.zero_mem _)
 
 /-- A homology class is the sum of its homogeneous projections over the occupied bidegrees. -/
-theorem sum_bigradedFullyBlockedHomologyProjection (y : G.1.fullyBlockedHomology) :
+theorem sum_bigradedFullyBlockedHomologyProjection (y : G.val.fullyBlockedHomology) :
     ∑ g ∈ G.bidegreeSupport, G.bigradedFullyBlockedHomologyProjection g y = y := by
   induction y using Submodule.Quotient.induction_on with
   | H z =>
     simp only [bigradedFullyBlockedHomologyProjection_mk]
-    refine (map_sum G.1.fullyBlockedBoundariesInCycles.mkQ _ _).symm.trans ?_
+    refine (map_sum G.val.fullyBlockedBoundariesInCycles.mkQ _ _).symm.trans ?_
     rw [Submodule.mkQ_apply]
     congr 1
     ext x
@@ -152,12 +172,12 @@ theorem sum_bigradedFullyBlockedHomologyProjection (y : G.1.fullyBlockedHomology
 bidegree `g`. Its elements are the classes of cycles of bidegree `g`
 (`mem_bigradedFullyBlockedHomologyPiece_iff_exists`). -/
 noncomputable def bigradedFullyBlockedHomologyPiece (g : ℤ × ℤ) :
-    Submodule F G.1.fullyBlockedHomology :=
+    Submodule F G.val.fullyBlockedHomology :=
   LinearMap.range (G.bigradedFullyBlockedHomologyProjection g)
 
 /-- A class lies in the bidegree-`g` piece exactly when the projection onto bidegree `g`
 fixes it. -/
-theorem mem_bigradedFullyBlockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.1.fullyBlockedHomology} :
+theorem mem_bigradedFullyBlockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.val.fullyBlockedHomology} :
     y ∈ G.bigradedFullyBlockedHomologyPiece g ↔
       G.bigradedFullyBlockedHomologyProjection g y = y := by
   refine ⟨?_, fun h => ⟨y, h⟩⟩
@@ -165,16 +185,16 @@ theorem mem_bigradedFullyBlockedHomologyPiece_iff {g : ℤ × ℤ} {y : G.1.full
   exact G.bigradedFullyBlockedHomologyProjection_apply_self g y
 
 /-- The projection onto bidegree `g` lands in the bidegree-`g` piece. -/
-theorem bigradedFullyBlockedHomologyProjection_mem (g : ℤ × ℤ) (y : G.1.fullyBlockedHomology) :
+theorem bigradedFullyBlockedHomologyProjection_mem (g : ℤ × ℤ) (y : G.val.fullyBlockedHomology) :
     G.bigradedFullyBlockedHomologyProjection g y ∈ G.bigradedFullyBlockedHomologyPiece g :=
   ⟨y, rfl⟩
 
 /-- A class is homogeneous of bidegree `g` exactly when it is the class of a cycle of bidegree
 `g`. -/
 theorem mem_bigradedFullyBlockedHomologyPiece_iff_exists {g : ℤ × ℤ}
-    {y : G.1.fullyBlockedHomology} :
+    {y : G.val.fullyBlockedHomology} :
     y ∈ G.bigradedFullyBlockedHomologyPiece g ↔
-      ∃ z : G.1.fullyBlockedCycles,
+      ∃ z : G.val.fullyBlockedCycles,
         (z : GridChain F n) ∈ LinearMap.range (G.bigradedChainInclusion F g) ∧
           Submodule.Quotient.mk z = y := by
   constructor
@@ -189,7 +209,7 @@ theorem mem_bigradedFullyBlockedHomologyPiece_iff_exists {g : ℤ × ℤ}
 
 /-- The projection onto bidegree `g` kills the pieces of every other bidegree. -/
 theorem bigradedFullyBlockedHomologyProjection_eq_zero_of_mem {g h : ℤ × ℤ} (hgh : g ≠ h)
-    {y : G.1.fullyBlockedHomology} (hy : y ∈ G.bigradedFullyBlockedHomologyPiece h) :
+    {y : G.val.fullyBlockedHomology} (hy : y ∈ G.bigradedFullyBlockedHomologyPiece h) :
     G.bigradedFullyBlockedHomologyProjection g y = 0 := by
   obtain ⟨y, rfl⟩ := hy
   exact G.bigradedFullyBlockedHomologyProjection_apply_of_ne hgh y
@@ -232,7 +252,7 @@ theorem isInternal_bigradedFullyBlockedHomologyPiece :
 
 /-- The internal `(O-Maslov, Alexander)` grading of fully blocked grid homology. -/
 noncomputable def bigradedFullyBlockedHomologyGrading :
-    InternalGrading F G.1.fullyBlockedHomology (ℤ × ℤ) :=
+    InternalGrading F G.val.fullyBlockedHomology (ℤ × ℤ) :=
   ⟨G.bigradedFullyBlockedHomologyPiece, G.isInternal_bigradedFullyBlockedHomologyPiece⟩
 
 /-- The pieces of the bundled grading are the homogeneous pieces. -/
@@ -244,10 +264,10 @@ theorem bigradedFullyBlockedHomologyGrading_piece (g : ℤ × ℤ) :
 /-- The homogeneous components of a class under the bundled grading are its homogeneous
 projections. -/
 @[simp]
-theorem coe_decompose_bigradedFullyBlockedHomologyGrading (y : G.1.fullyBlockedHomology)
+theorem coe_decompose_bigradedFullyBlockedHomologyGrading (y : G.val.fullyBlockedHomology)
     (g : ℤ × ℤ) :
     (DirectSum.decompose G.bigradedFullyBlockedHomologyGrading.piece y g :
-        G.1.fullyBlockedHomology) =
+        G.val.fullyBlockedHomology) =
       G.bigradedFullyBlockedHomologyProjection g y := by
   conv_lhs => rw [← G.sum_bigradedFullyBlockedHomologyProjection y]
   rw [DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
@@ -283,7 +303,7 @@ theorem coeff_bigradedFullyBlockedHomologyPoincareSeries (g : ℤ × ℤ) :
 /-- The dimension of fully blocked homology is the sum of the dimensions of its pieces. -/
 theorem sum_finrank_bigradedFullyBlockedHomologyPiece :
     ∑ g ∈ G.bidegreeSupport, Module.finrank F (G.bigradedFullyBlockedHomologyPiece g) =
-      Module.finrank F G.1.fullyBlockedHomology := by
+      Module.finrank F G.val.fullyBlockedHomology := by
   have hsupp : {g | G.bigradedFullyBlockedHomologyPiece g ≠ ⊥} ⊆ G.bidegreeSupport :=
     fun _ hg => Classical.byContradiction fun h => hg (G.bigradedFullyBlockedHomologyPiece_eq_bot h)
   rw [← finsum_finrank_eq_finrank_of_isInternal G.isInternal_bigradedFullyBlockedHomologyPiece
@@ -297,7 +317,7 @@ theorem sum_finrank_bigradedFullyBlockedHomologyPiece :
 @[simp]
 theorem totalDim_bigradedFullyBlockedHomologyPoincareSeries :
     Bigraded.totalDim G.bigradedFullyBlockedHomologyPoincareSeries =
-      Module.finrank F G.1.fullyBlockedHomology := by
+      Module.finrank F G.val.fullyBlockedHomology := by
   rw [Bigraded.totalDim_apply, bigradedFullyBlockedHomologyPoincareSeries,
     AddMonoidAlgebra.coeff_ofCoeff, Finsupp.onFinset_sum _ fun _ => rfl,
     sum_finrank_bigradedFullyBlockedHomologyPiece]
@@ -305,7 +325,7 @@ theorem totalDim_bigradedFullyBlockedHomologyPoincareSeries :
 /-- A linear equivalence of fully blocked homologies that commutes with the homogeneous
 projections carries each homogeneous piece onto the piece of the same bidegree. -/
 theorem map_bigradedFullyBlockedHomologyPiece {m : ℕ} {G' : OddComponentGridDiagram m}
-    (e : G.1.fullyBlockedHomology ≃ₗ[F] G'.1.fullyBlockedHomology)
+    (e : G.val.fullyBlockedHomology ≃ₗ[F] G'.val.fullyBlockedHomology)
     (he : ∀ g y, e (G.bigradedFullyBlockedHomologyProjection g y) =
       G'.bigradedFullyBlockedHomologyProjection g (e y)) (g : ℤ × ℤ) :
     (G.bigradedFullyBlockedHomologyPiece g).map e.toLinearMap =
@@ -320,7 +340,7 @@ theorem map_bigradedFullyBlockedHomologyPiece {m : ℕ} {G' : OddComponentGridDi
 projections identifies their Poincaré series. -/
 theorem bigradedFullyBlockedHomologyPoincareSeries_eq_of_linearEquiv {m : ℕ}
     {G' : OddComponentGridDiagram m}
-    (e : G.1.fullyBlockedHomology ≃ₗ[F] G'.1.fullyBlockedHomology)
+    (e : G.val.fullyBlockedHomology ≃ₗ[F] G'.val.fullyBlockedHomology)
     (he : ∀ g y, e (G.bigradedFullyBlockedHomologyProjection g y) =
       G'.bigradedFullyBlockedHomologyProjection g (e y)) :
     G.bigradedFullyBlockedHomologyPoincareSeries =

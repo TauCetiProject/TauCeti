@@ -18,7 +18,9 @@ fractional-ideal semirings, so it maps invertible ideals to invertible ideals. I
 principal ideal `(x)` to `(f x)`, and `f x` is totally positive whenever `x` is. Consequently it
 descends both to the wide Picard groups and to the narrow Picard groups, and the forgetful map
 from narrow to wide Picard groups is natural. Each of these maps respects identities and
-composition.
+composition. When an isomorphism of ambient number fields `e : K ≃+* L` identifies `O` with `O'`,
+`NumberFieldOrder.narrowPicMulEquivOfRingEquiv` packages `Hom.mapNarrowPic` in both directions as
+an isomorphism `NarrowPic O ≃* NarrowPic O'`.
 
 An order morphism `NumberFieldOrder.Hom` packages its ambient field map explicitly, and the
 extension of fractional ideals is described through that map. This is no extra choice: the
@@ -32,6 +34,8 @@ field map (`NumberFieldOrder.Hom.isLocalization_map_toOrderHom`).
 * `NumberFieldOrder.Hom.mapInvertible`: the induced map of invertible fractional ideals.
 * `NumberFieldOrder.Hom.mapPic`: the induced map of wide Picard groups.
 * `NumberFieldOrder.Hom.mapNarrowPic`: the induced map of narrow Picard groups.
+* `NumberFieldOrder.narrowPicMulEquivOfRingEquiv`: the isomorphism `NarrowPic O ≃* NarrowPic O'`
+  induced by a field isomorphism `e : K ≃+* L` carrying `O` onto `O'`.
 
 ## Main results
 
@@ -41,6 +45,12 @@ field map (`NumberFieldOrder.Hom.isLocalization_map_toOrderHom`).
 * `NumberFieldOrder.Hom.mapPic_comp`, `NumberFieldOrder.Hom.mapNarrowPic_comp` and the identity
   lemmas: functoriality.
 * `NumberFieldOrder.narrowToPic_natural`: the forgetful map `NarrowPic → Pic` is natural.
+* `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_apply`,
+  `NumberFieldOrder.coe_narrowPicMulEquivOfRingEquiv`,
+  `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_refl`,
+  `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_symm`,
+  `NumberFieldOrder.narrowPicMulEquivOfRingEquiv_trans`: agreement with `Hom.mapNarrowPic` and
+  functoriality of `narrowPicMulEquivOfRingEquiv`.
 
 ## References
 
@@ -224,6 +234,69 @@ by `narrowToPic` and the maps induced by `f` on narrow and wide Picard groups co
 theorem narrowToPic_natural (f : Hom O O') :
     O'.narrowToPic.comp f.mapNarrowPic = f.mapPic.comp O.narrowToPic :=
   MonoidHom.ext (narrowToPic_mapNarrowPic f)
+
+/-- An isomorphism of ambient number fields `e : K ≃+* L` carrying `O` onto `O'` induces an
+isomorphism `NarrowPic O ≃* NarrowPic O'` via `Hom.mapNarrowPic`. -/
+def narrowPicMulEquivOfRingEquiv (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    NarrowPic O ≃* NarrowPic O' :=
+  let φ : Hom O O' := ⟨e.toRingHom, fun {_} hx => (h _).mpr hx⟩
+  let ψ : Hom O' O := ⟨e.symm.toRingHom, fun {y} hy => (h (e.symm y)).mp (by simpa using hy)⟩
+  MonoidHom.toMulEquiv φ.mapNarrowPic ψ.mapNarrowPic
+    (by
+      rw [← Hom.mapNarrowPic_comp]
+      have hid : ψ.comp φ = Hom.id O := Hom.ext fun x => by simp [φ, ψ]
+      rw [hid, Hom.mapNarrowPic_id])
+    (by
+      rw [← Hom.mapNarrowPic_comp]
+      have hid : φ.comp ψ = Hom.id O' := Hom.ext fun y => by simp [φ, ψ]
+      rw [hid, Hom.mapNarrowPic_id])
+
+/-- Applying `narrowPicMulEquivOfRingEquiv` evaluates `Hom.mapNarrowPic` along `e`. -/
+@[simp]
+theorem narrowPicMulEquivOfRingEquiv_apply (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) (c : NarrowPic O) :
+    narrowPicMulEquivOfRingEquiv e h c =
+      (⟨e.toRingHom, fun {_} hx => (h _).mpr hx⟩ : Hom O O').mapNarrowPic c :=
+  (rfl)
+
+/-- As a monoid homomorphism, `narrowPicMulEquivOfRingEquiv` is `Hom.mapNarrowPic`. -/
+@[simp]
+theorem coe_narrowPicMulEquivOfRingEquiv (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    (narrowPicMulEquivOfRingEquiv e h : NarrowPic O →* NarrowPic O') =
+      (⟨e.toRingHom, fun {_} hx => (h _).mpr hx⟩ : Hom O O').mapNarrowPic :=
+  (rfl)
+
+/-- The identity field isomorphism induces the identity on `NarrowPic O`. -/
+@[simp]
+theorem narrowPicMulEquivOfRingEquiv_refl
+    (h : ∀ x : K, (RingEquiv.refl K) x ∈ O.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    narrowPicMulEquivOfRingEquiv (RingEquiv.refl K) h = MulEquiv.refl (NarrowPic O) := by
+  ext c
+  rw [narrowPicMulEquivOfRingEquiv_apply, MulEquiv.refl_apply]
+  have hid : (⟨(RingEquiv.refl K).toRingHom, fun {_} hx => (h _).mpr hx⟩ : Hom O O) = Hom.id O :=
+    Hom.ext fun _ => by simp
+  rw [hid, Hom.mapNarrowPic_id, MonoidHom.id_apply]
+
+/-- The inverse of `narrowPicMulEquivOfRingEquiv e h` is induced by `e.symm`. -/
+@[simp]
+theorem narrowPicMulEquivOfRingEquiv_symm (e : K ≃+* L)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra) :
+    (narrowPicMulEquivOfRingEquiv e h).symm =
+      narrowPicMulEquivOfRingEquiv e.symm (fun y => by simpa using (h (e.symm y)).symm) :=
+  MulEquiv.ext fun _ => (rfl)
+
+/-- `narrowPicMulEquivOfRingEquiv` respects composition of field isomorphisms. -/
+theorem narrowPicMulEquivOfRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M)
+    (h : ∀ x : K, e x ∈ O'.toSubalgebra ↔ x ∈ O.toSubalgebra)
+    (h' : ∀ y : L, e' y ∈ O''.toSubalgebra ↔ y ∈ O'.toSubalgebra) :
+    (narrowPicMulEquivOfRingEquiv e h).trans (narrowPicMulEquivOfRingEquiv e' h') =
+      narrowPicMulEquivOfRingEquiv (e.trans e') (fun x => (h' (e x)).trans (h x)) := by
+  ext c
+  simp only [MulEquiv.trans_apply, narrowPicMulEquivOfRingEquiv_apply, ← MonoidHom.comp_apply,
+    ← Hom.mapNarrowPic_comp]
+  exact DFunLike.congr_fun (congrArg Hom.mapNarrowPic (Hom.ext fun _ => by simp)) c
 
 end NumberFieldOrder
 

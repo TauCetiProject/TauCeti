@@ -49,6 +49,9 @@ determinant of its restriction to the rows and columns indexed by a finite set o
 * `Matrix.pairMinor_mul`: Cauchy--Binet, expanding a minor of a product over the increasing pairs
   of the middle index type.
 * `Matrix.principalMinor_empty`: the empty principal minor is `1`.
+* `Matrix.principalMinor_one`, `Matrix.principalMinor_diagonal`: every principal minor of the
+  identity matrix is `1`, and a principal minor of a diagonal matrix is the product of the
+  chosen diagonal entries.
 * `Matrix.principalMinor_submatrix`: principal minors of a restriction along an embedding of
   index types, in particular their invariance under reindexing.
 * `Matrix.principalMinor_transpose`, `Matrix.principalMinor_map`, `Matrix.principalMinor_smul`,
@@ -211,7 +214,7 @@ theorem principalMinor_mul_column (v : ι → R) (A : Matrix ι ι R) (s : Finse
 /-- A principal minor vanishes on a set containing an index whose row vanishes on that set. -/
 theorem principalMinor_eq_zero_of_row_eq_zero {A : Matrix ι ι R} {s : Finset ι} {i : ι}
     (hi : i ∈ s) (h : ∀ j ∈ s, A i j = 0) : A.principalMinor s = 0 :=
-  det_eq_zero_of_row_eq_zero ⟨i, hi⟩ fun j ↦ h j j.2
+  det_eq_zero_of_row_eq_zero ⟨i, hi⟩ fun j ↦ h j j.property
 
 /-- Diagonal intertwining with regular entries preserves principal minors. The pointwise
 relation expresses `A D = D B` without requiring the index type to be finite. The diagonal
@@ -236,6 +239,18 @@ product of the chosen diagonal entries. -/
 theorem det_submatrix_diagonal [Fintype ι] (d : κ → R) {e : ι → κ}
     (he : Function.Injective e) : ((diagonal d).submatrix e e).det = ∏ i, d (e i) := by
   rw [submatrix_diagonal _ _ he, det_diagonal, Function.comp_def]
+
+/-- A principal minor of a diagonal matrix is the product of the chosen diagonal entries. -/
+@[simp]
+theorem principalMinor_diagonal (d : ι → R) (s : Finset ι) :
+    (diagonal d).principalMinor s = ∏ i ∈ s, d i := by
+  rw [principalMinor_def, det_submatrix_diagonal d Subtype.val_injective,
+    Finset.prod_coe_sort s d]
+
+/-- Every principal minor of the identity matrix is `1`. -/
+@[simp]
+theorem principalMinor_one (s : Finset ι) : (1 : Matrix ι ι R).principalMinor s = 1 := by
+  rw [← diagonal_one, principalMinor_diagonal, Finset.prod_const_one]
 
 end Principal
 

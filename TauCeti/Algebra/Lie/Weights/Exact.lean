@@ -54,7 +54,7 @@ variable {R : Type u} {L : Type v} {M : Type w} {N : Type w₁} [CommRing R] [Li
 def genWeightSpaceMap (f : M →ₗ⁅R,L⁆ N) (χ : L → R) :
     genWeightSpace M χ →ₗ[R] genWeightSpace N χ :=
   ((f.comp (genWeightSpace M χ).incl).codRestrict (genWeightSpace N χ) (fun m ↦
-      map_genWeightSpace_le f ⟨m, m.2, rfl⟩)).toLinearMap
+      map_genWeightSpace_le f ⟨m, m.property, rfl⟩)).toLinearMap
 
 /-- Restricting a Lie-module homomorphism to a generalized weight space does not change its
 underlying values. -/
@@ -134,7 +134,7 @@ private theorem map_genWeightSpacePreimage_eq_of_eq_bot (f : M →ₗ⁅K,L⁆ N
     (hχ : genWeightSpace N χ = ⊥) : f (genWeightSpacePreimage f hf χ y) = y := by
   classical
   have hy : (y : N) = 0 := by
-    have : (y : N) ∈ (⊥ : LieSubmodule K L N) := hχ ▸ y.2
+    have : (y : N) ∈ (⊥ : LieSubmodule K L N) := hχ ▸ y.property
     simpa using this
   rw [hy]
   simp only [genWeightSpacePreimage, map_sum]
@@ -168,7 +168,7 @@ private theorem map_genWeightSpacePreimage_eq_of_ne_bot (f : M →ₗ⁅K,L⁆ N
   have hyν : (y : N) ∈ genWeightSpace N (ν : L → K) := by
     have hle : genWeightSpace N χ ≤ genWeightSpace N (ν : L → K) := by
       simpa only [Weight.coe_weight_mk, ν] using (le_refl (genWeightSpace N χ))
-    exact hle y.2
+    exact hle y.property
   rw [map_sum, genWeightSpaceProjection_apply_of_mem hyν] at hsum
   simp_rw [genWeightSpaceProjection_map_genWeightSpaceProjection f x] at hsum
   have hsum' : (∑ μ : Weight K L M,
@@ -230,7 +230,7 @@ theorem genWeightSpaceMap_exact (f : M →ₗ⁅R,L⁆ N) (g : N →ₗ⁅R,L⁆
     have hxmem : x ∈ genWeightSpace M χ := by
       rw [← comap_genWeightSpace_eq_of_injective hf]
       rw [LieSubmodule.mem_comap, hx]
-      exact y.2
+      exact y.property
     refine ⟨⟨x, hxmem⟩, Subtype.ext ?_⟩
     exact hx
   · rintro ⟨x, rfl⟩
