@@ -472,18 +472,10 @@ theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
       exact map_comp_eq_of_map_eq (by fun_prop) (by fun_prop)
         (h₀.trans (markovChainLaw_map_eval_zero ν κ).symm)
     | succ n ih =>
-      have hc : (fun (x : ℕ → α) (i : Fin (n + 2)) => x i.val)
-          = (fun p : (Fin (n + 1) → α) × α => Fin.snoc p.1 p.2) ∘
-            (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.val), x (n + 1))) := by
-        funext x i
-        refine Fin.lastCases ?_ (fun j => ?_) i <;> simp
-      have hsnoc : Measurable
-          fun p : (Fin (n + 1) → α) × α => (Fin.snoc p.1 p.2 : Fin (n + 2) → α) :=
-        measurable_pi_iff.2 fun i => Fin.lastCases (by simp only [Fin.snoc_last]; fun_prop)
-          (fun j => by simp only [Fin.snoc_castSucc]; fun_prop) i
-      rw [hc]
-      refine map_comp_eq_of_map_eq hsnoc (by fun_prop) ?_
-      rw [hstep, ih, markovChainLaw_map_prefix_succ_eq_compProd]
+      have hX (ρ : Measure (ℕ → α)) (k : ℕ) : AEMeasurable (fun x : ℕ → α => x k) ρ :=
+        (measurable_pi_apply k).aemeasurable
+      rw [← map_finSnoc_map_prefix_eval μ (hX μ), ← map_finSnoc_map_prefix_eval _ (hX _), hstep,
+        ih, markovChainLaw_map_prefix_succ_eq_compProd]
   -- Every prefix law is a pushforward of one of these, so finite-marginal uniqueness applies.
   refine (measure_eq_of_prefixProj_map_eq fun n => ?_).symm
   have hc : prefixProj α n = (fun (w : Fin (n + 1) → α) (i : Fin n) => w i.castSucc) ∘
