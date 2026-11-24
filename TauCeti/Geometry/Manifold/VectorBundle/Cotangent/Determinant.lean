@@ -258,6 +258,8 @@ theorem coordChange_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x�
         ContinuousLinearMap.id 𝕜 (Fin (canonicalCore I b M).rank → 𝕜) := by
   refine (FiniteRankBundleCore.coordChange_ofLinearEquiv (canonicalModelCoords b)
     (CanonicalBundle I M) x₀ x₁ x).trans ?_
+  change _ = LinearMap.det (tangentCoordChange I x₁ x₀ x : E →ₗ[𝕜] E) •
+    ContinuousLinearMap.id 𝕜 (Fin 1 → 𝕜)
   ext u i
   let F := E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜
   have hb₀ : x ∈ (trivializationAt F (CanonicalBundle I M) x₀).baseSet := by simpa [F] using hx₀
@@ -266,9 +268,8 @@ theorem coordChange_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {x�
     CanonicalBundle.trivializationAt_apply_snd_basis_eq_det_mul hx₀ hx₁ _ b,
     Trivialization.apply_mk_symm _ hb₀, canonicalModelCoords_symm_apply]
   obtain rfl : i = 0 := Subsingleton.elim i 0
-  simp [b.continuousDet_apply, b.det_self]
-  -- `(canonicalCore I b M).rank` is definitionally `1`, which blocks `_root_.smul_apply` in `simp`.
-  rfl
+  simp only [ContinuousAlternatingMap.smul_apply, smul_eq_mul, b.continuousDet_apply, b.det_self,
+    mul_one, smul_apply, ContinuousLinearMap.id_apply, Pi.smul_apply]
 
 private theorem baseSet_cotangentCore_det_eq_canonicalCore
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (x₀ : M) :
@@ -330,25 +331,11 @@ theorem isContMDiff_canonicalCore (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) {k :
     haveI : IsManifold I 1 M := .of_le (n := k + 1) le_add_self
     (canonicalCore I b M).core.IsContMDiff I k := by
   have : IsManifold I 1 M := .of_le (n := k + 1) le_add_self
-  have hdet := isContMDiff_cotangentCore_det (I := I) (M := M) (k := k) b
-  let e := cotangentDetCanonicalCoords (I := I) (M := M) b
-  refine ⟨fun i j ↦ ?_⟩
-  have hconj : ContMDiffOn I 𝓘(𝕜, (Fin (canonicalCore I b M).rank → 𝕜) →L[𝕜]
-      (Fin (canonicalCore I b M).rank → 𝕜)) k
-      (fun x ↦ (e.arrowCongr e) ((cotangentCore I b M).det.core.coordChange i j x))
-      ((canonicalCore I b M).core.baseSet i ∩ (canonicalCore I b M).core.baseSet j) := by
-    rw [← baseSet_cotangentCore_det_eq_canonicalCore b i,
-      ← baseSet_cotangentCore_det_eq_canonicalCore b j]
-    exact (e.arrowCongr e).contDiff.contMDiff.comp_contMDiffOn (hdet.contMDiffOn_coordChange i j)
-  refine hconj.congr fun x hx ↦ ?_
-  rw [← baseSet_cotangentCore_det_eq_canonicalCore b i,
-    ← baseSet_cotangentCore_det_eq_canonicalCore b j] at hx
-  ext u : 1
-  rw [ContinuousLinearEquiv.arrowCongr_apply]
-  exact (congrArg ((canonicalCore I b M).core.coordChange i j x)
-      (e.apply_symm_apply u).symm).trans
-    (DFunLike.congr_fun (coordChange_comp_cotangentDetCanonicalCore b hx.1 hx.2)
-      (e.symm u)).symm
+  have := isContMDiff_cotangentCore_det (I := I) (M := M) (k := k) b
+  exact FiniteRankBundleCore.isContMDiff_of_constIntertwine
+    (baseSet_cotangentCore_det_eq_canonicalCore b)
+    (cotangentDetCanonicalCoords (I := I) (M := M) b)
+    (fun _ _ _ hx₀ hx₁ ↦ coordChange_comp_cotangentDetCanonicalCore b hx₀ hx₁)
 
 /-- Reconstructed total space of `canonicalCore I b M` identified `C^k`-diffeomorphically with
 `CanonicalBundle I M`. -/

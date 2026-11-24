@@ -36,11 +36,13 @@ intertwined by a fixed continuous linear map:
   with `C^n` forward and inverse total-space maps into a `C^n` diffeomorphism;
 * `FiniteRankBundleCore.isContMDiff_trivial`,
   `FiniteRankBundleCore.contMDiff_totalSpaceMap_constHom`,
-  `FiniteRankBundleCore.constIsoDiffeomorph`, and
+  `FiniteRankBundleCore.constIsoDiffeomorph`,
+  `FiniteRankBundleCore.isContMDiff_of_constIntertwine`, and
   `FiniteRankBundleCore.contMDiff_totalSpaceMap_isoTrivialOfCoordChangeEqId_hom` show that trivial
-  cores are `C^n` and that constant intertwining maps (`constHom`, `constIso`) and
+  cores are `C^n`, that constant intertwining maps (`constHom`, `constIso`) and
   identity-transition trivializations induce `C^n` maps and diffeomorphisms of total spaces without
-  smoothness or completeness assumptions.
+  smoothness or completeness assumptions, and that `C^n` regularity transfers across constant
+  intertwinings.
 
 ## References
 
@@ -262,6 +264,30 @@ theorem coe_constIsoDiffeomorph_symm
     ⇑(constIsoDiffeomorph (I := I) (n := n) hbase e he).symm =
       (constIso hbase e he).inv.totalSpaceMap :=
   CoordinateHom.coe_toDiffeomorphOfInv_symm _ _ _ _ _ _
+
+/-- If `A` and `D` have the same chart domains and their transition functions are intertwined by a
+fixed continuous linear equivalence `e`, then `C^n` regularity of `A` transfers to `D`. -/
+theorem isContMDiff_of_constIntertwine
+    (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)))
+    [A.core.IsContMDiff I n] :
+    D.core.IsContMDiff I n := by
+  refine ⟨fun i j ↦ ?_⟩
+  have hconj : ContMDiffOn I 𝓘(𝕜, (Fin D.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)) n
+      (fun x ↦ (e.arrowCongr e) (A.core.coordChange i j x))
+      (D.core.baseSet i ∩ D.core.baseSet j) := by
+    rw [← hbase i, ← hbase j]
+    exact (e.arrowCongr e).contDiff.contMDiff.comp_contMDiffOn
+      (A.core.contMDiffOn_coordChange I i j)
+  refine hconj.congr fun x hx ↦ ?_
+  rw [← hbase i, ← hbase j] at hx
+  ext u : 1
+  rw [ContinuousLinearEquiv.arrowCongr_apply]
+  exact (congrArg (D.core.coordChange i j x) (e.apply_symm_apply u).symm).trans
+    (DFunLike.congr_fun (he i j x hx.1 hx.2) (e.symm u)).symm
 
 section IsContMDiff
 

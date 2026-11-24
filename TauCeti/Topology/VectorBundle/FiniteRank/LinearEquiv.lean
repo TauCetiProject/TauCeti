@@ -80,10 +80,11 @@ noncomputable def ofLinearEquivChangeIso :
 @[simp] theorem ofLinearEquivChangeIso_self :
     ofLinearEquivChangeIso e₁ e₁ V = Iso.refl (ofLinearEquiv e₁ V) :=
   Iso.ext <| hom_ext fun x ↦ by
+    rw [Iso.refl_hom, fiberMap_id, fiberMap_ofLinearEquivChangeIso_hom]
+    dsimp only [ofLinearEquiv]
     ext v
-    simp [fiberMap_ofLinearEquivChangeIso_hom]
-    -- `(ofLinearEquiv e₁ V).rank` reduces definitionally to `r₁`.
-    rfl
+    simp only [ContinuousLinearEquiv.symm_trans_self, ContinuousLinearEquiv.coe_refl,
+      ContinuousLinearMap.id_apply]
 
 /-- Inverting a coordinate-change isomorphism reverses the two coordinate equivalences. -/
 @[simp] theorem ofLinearEquivChangeIso_symm :
