@@ -27,7 +27,9 @@ structure, whose values lie in the contact line rather than in the scalars. Then
   (`LinearMap.IsRefl.injective_symplecticNormalForm`), and identifying `Q` with the scalars by any
   nonzero functional makes it a nondegenerate bilinear form
   (`LinearMap.IsRefl.nondegenerate_compr₂_symplecticNormalForm`);
-* for an isotropic `W`, `dim (W^⊥ ⧸ W) + 2 dim W = dim V`
+* for every `W`, `dim (W^⊥ ⧸ (W ∩ W^⊥)) + dim (W ∩ W^⊥) + dim W = dim V`
+  (`LinearMap.finrank_symplecticNormal_add_finrank_inf_add_finrank`); for an isotropic `W` this
+  reads `dim (W^⊥ ⧸ W) + 2 dim W = dim V`
   (`LinearMap.finrank_symplecticNormal_add_two_mul_finrank`), so the symplectic normal space is
   zero exactly when `W` has half the dimension of `V`
   (`LinearMap.subsingleton_symplecticNormal_iff`).
@@ -73,7 +75,7 @@ what lets a reflexive form descend to the symplectic normal space. -/
 private theorem comap_le_ker_domRestrict₁₂ :
     W.comap (W.orthogonalBilin B).subtype ≤
       LinearMap.ker (B.domRestrict₁₂ (W.orthogonalBilin B) (W.orthogonalBilin B)) :=
-  fun w hw ↦ LinearMap.mem_ker.2 <| LinearMap.ext fun u ↦ u.2 w hw
+  fun w hw ↦ LinearMap.mem_ker.2 <| LinearMap.ext fun u ↦ u.property w hw
 
 variable (W) in
 /-- The form `[u], [v] ↦ B u v` induced by a reflexive bilinear map `B` on the symplectic normal
@@ -142,20 +144,32 @@ theorem IsRefl.nondegenerate_compr₂_symplecticNormalForm (hB : B.IsRefl)
   ext y
   exact he (by simpa using hx (Submodule.Quotient.mk y))
 
+variable (W) in
 /-- **Dimension of the symplectic normal space.** If the bilinear map `B : V → Hom(V, Q)` is
-injective, `Q` is one-dimensional and `W` is isotropic, then
-`dim (W^⊥ ⧸ W) + 2 dim W = dim V`. -/
-theorem finrank_symplecticNormal_add_two_mul_finrank (hinj : Function.Injective B)
-    (hQ : finrank K Q = 1) (hW : W ≤ W.orthogonalBilin B) :
-    finrank K (SymplecticNormal B W) + 2 * finrank K W = finrank K V := by
+injective and `Q` is one-dimensional, then for every subspace `W`,
+`dim (W^⊥ ⧸ (W ∩ W^⊥)) + dim (W ∩ W^⊥) + dim W = dim V`. -/
+theorem finrank_symplecticNormal_add_finrank_inf_add_finrank (hinj : Function.Injective B)
+    (hQ : finrank K Q = 1) :
+    finrank K (SymplecticNormal B W) + finrank K ↥(W ⊓ W.orthogonalBilin B) + finrank K W =
+      finrank K V := by
   obtain ⟨e, hnd⟩ := exists_nondegenerate_compr₂_of_injective hinj hQ
   have horth := BilinForm.finrank_orthogonal hnd W
   rw [BilinForm.orthogonal, Submodule.orthogonalBilin_compr₂_of_injective e.injective] at horth
   have hquot : finrank K (SymplecticNormal B W) +
       finrank K (W.comap (W.orthogonalBilin B).subtype) = finrank K (W.orthogonalBilin B) :=
     Submodule.finrank_quotient_add_finrank _
-  rw [LinearEquiv.finrank_eq (Submodule.comapSubtypeEquivOfLe hW)] at hquot
+  rw [← Submodule.finrank_map_subtype_eq, Submodule.map_comap_subtype, inf_comm] at hquot
   have hle := Submodule.finrank_le W
+  omega
+
+/-- **Dimension of the symplectic normal space of an isotropic subspace.** If the bilinear map
+`B : V → Hom(V, Q)` is injective, `Q` is one-dimensional and `W` is isotropic, then
+`dim (W^⊥ ⧸ W) + 2 dim W = dim V`. -/
+theorem finrank_symplecticNormal_add_two_mul_finrank (hinj : Function.Injective B)
+    (hQ : finrank K Q = 1) (hW : W ≤ W.orthogonalBilin B) :
+    finrank K (SymplecticNormal B W) + 2 * finrank K W = finrank K V := by
+  have := finrank_symplecticNormal_add_finrank_inf_add_finrank W hinj hQ
+  rw [inf_eq_left.2 hW] at this
   omega
 
 /-- **The symplectic normal space of a half-dimensional isotropic subspace is zero.** If the

@@ -141,7 +141,7 @@ theorem mapsTo_stellarSubdivisionLinearMap :
   · subst σ
     rw [mem_stellarSubdivision_iff] at hxface
     simp at hxface
-  have hσne : σ.Nonempty := Finset.nonempty_iff_ne_empty.mpr hσempty
+  have hσne : σ.Nonempty := Finset.ne_empty_iff_nonempty.mp hσempty
   rw [Geometry.SimplicialComplex.mem_space_onFinsupp_iff]
   refine ⟨?_, (sum_stellarSubdivisionLinearMap hσne x).trans hxsum, ?_⟩
   · intro i
@@ -305,7 +305,7 @@ variable {ι : Type*}
 face barycentre. -/
 theorem stellarSubdivisionLinearMap_single_eq_faceBarycenter (K : AbstractSimplicialComplex ι)
     (τ : Face K) (v : ι) :
-    Finset.stellarSubdivisionLinearMap τ.1 v (Finsupp.single v 1) = faceBarycenter K τ := by
+    Finset.stellarSubdivisionLinearMap τ.val v (Finsupp.single v 1) = faceBarycenter K τ := by
   classical
   ext i
   simp [Finset.sum_apply', Finsupp.single_apply]

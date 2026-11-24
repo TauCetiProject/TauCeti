@@ -132,7 +132,7 @@ theorem characterSumCenter_coe : (characterSumCenter ρ : k[G]) = characterSum �
 
 /-- The character sum lies in the centre of the group algebra. -/
 theorem characterSum_mem_center : characterSum ρ ∈ Subalgebra.center k k[G] :=
-  (characterSumCenter ρ).2
+  (characterSumCenter ρ).property
 
 /-- The coefficients of `∑_g χ(g⁻¹) g` are the character values at the inverses.
 

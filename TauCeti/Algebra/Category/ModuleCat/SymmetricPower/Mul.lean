@@ -62,14 +62,14 @@ noncomputable def mul (M : ModuleCat.{u} R) (i j : ℕ) :
 @[simp]
 lemma coe_mul_tmul (M : ModuleCat.{u} R) {i j : ℕ} (x : M.symmetricPower i)
     (y : M.symmetricPower j) :
-    Subtype.val (mul M i j (x ⊗ₜ y)) = x.1 * y.1 :=
+    Subtype.val (mul M i j (x ⊗ₜ y)) = x.val * y.val :=
   (rfl)
 
 /-- Transport along an equality of degrees does not change the underlying element of the
 symmetric algebra. -/
 @[simp]
 lemma coe_eqToHom_apply (M : ModuleCat.{u} R) {i j : ℕ} (h : i = j) (x : M.symmetricPower i) :
-    Subtype.val (eqToHom (congrArg M.symmetricPower h) x) = x.1 := by
+    Subtype.val (eqToHom (congrArg M.symmetricPower h) x) = x.val := by
   subst h
   rfl
 

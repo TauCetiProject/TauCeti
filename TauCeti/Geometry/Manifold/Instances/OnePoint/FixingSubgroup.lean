@@ -54,7 +54,7 @@ variable [DecidableEq 𝕜]
 /-- The dilation `z ↦ c * z` of the projective line, for `c ≠ 0`. -/
 private def dilation (c : ({0}ᶜ : Set 𝕜)) : GL (Fin 2) 𝕜 :=
   Matrix.GeneralLinearGroup.mkOfDetNeZero !![(c : 𝕜), 0; 0, 1]
-    (by simpa using mem_compl_singleton_iff.mp c.2)
+    (by simpa using mem_compl_singleton_iff.mp c.property)
 
 private theorem dilation_smul_coe (c : ({0}ᶜ : Set 𝕜)) (z : 𝕜) :
     dilation c • (z : OnePoint 𝕜) = ((c * z : 𝕜) : OnePoint 𝕜) := by

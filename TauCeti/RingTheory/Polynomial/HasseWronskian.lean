@@ -15,8 +15,8 @@ public import TauCeti.Algebra.Polynomial.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.RingTheory.Polynomial.Pochhammer
+import TauCeti.Algebra.Polynomial.LinearFactor
 import TauCeti.Algebra.Polynomial.Roots
-import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.Vandermonde
 
@@ -55,10 +55,13 @@ polynomials the degree estimate is Mathlib's `Polynomial.natDegree_wronskian_lt_
 ## Main results
 
 * `Polynomial.hasseWronskian_fin_two`: for two polynomials it is Mathlib's `wronskian`.
+* `Polynomial.hasseWronskian_X_pow`: the Hasse Wronskian of `1, X, …, X^(m - 1)` is `1`.
 * `Polynomial.prod_factorial_mul_hasseWronskian`: `(∏ k, k!) W(g)` is the classical Wronskian
   `derivative'.wronskian g`.
 * `Polynomial.hasseWronskian_comp_perm`: permuting the family multiplies `W(g)` by the sign.
-* `Polynomial.hasseWronskian_map`: `W(g)` commutes with maps of coefficient rings.
+* `Polynomial.hasseWronskian_map`: `W(g)` commutes with maps of coefficient rings, and
+  `Polynomial.rootMultiplicity_hasseWronskian_map`: an injective map preserves its root
+  multiplicities.
 * `Polynomial.hasseWronskian_eq_zero_of_not_linearIndependent`: over an integral domain,
   dependent families have vanishing Hasse Wronskian.
 * `Polynomial.linearIndependent_iff_hasseWronskian_ne_zero`: over a field of characteristic
@@ -117,6 +120,18 @@ theorem hasseWronskian_fin_two (g : Fin 2 → R[X]) :
   simp only [of_apply, Fin.val_zero, Fin.val_one, hasseDeriv_zero', hasseDeriv_one']
   ring
 
+variable (R) in
+/-- The Hasse Wronskian of the monomials `1, X, …, X^(m - 1)` is `1`: the matrix of their Hasse
+derivatives is upper unitriangular. -/
+@[simp]
+theorem hasseWronskian_X_pow (m : ℕ) :
+    hasseWronskian (fun j : Fin m ↦ (X : R[X]) ^ (j : ℕ)) = 1 := by
+  rw [hasseWronskian_def, det_of_isUpperTriangular]
+  · simp [← monomial_one_right_eq_X_pow, hasseDeriv_monomial]
+  · intro k l hlk
+    have hlk' : (l : ℕ) < k := Fin.lt_def.mp hlk
+    simp [← monomial_one_right_eq_X_pow, hasseDeriv_monomial, Nat.choose_eq_zero_of_lt hlk']
+
 /-- Multiplying the Hasse Wronskian by `∏ k < m, k!` gives the classical Wronskian, the
 determinant of the iterated ordinary derivatives `derivative^[k] gₗ`. -/
 theorem prod_factorial_mul_hasseWronskian (g : Fin m → R[X]) :
@@ -144,6 +159,15 @@ theorem hasseWronskian_map (f : R →+* S) (g : Fin m → R[X]) :
   congr 1
   ext1 k l
   simp
+
+/-- An injective map of coefficient rings preserves the root multiplicities of the Hasse
+Wronskian: the Hasse Wronskian of the mapped family vanishes at `f a` to the same order as the
+Hasse Wronskian of the family at `a`. -/
+theorem rootMultiplicity_hasseWronskian_map {f : R →+* S} (hf : Function.Injective f)
+    (g : Fin m → R[X]) (a : R) :
+    (hasseWronskian fun l ↦ (g l).map f).rootMultiplicity (f a) =
+      (hasseWronskian g).rootMultiplicity a := by
+  rw [hasseWronskian_map, ← eq_rootMultiplicity_map hf]
 
 /-- Adding a multiple of one member of the family to another does not change the Hasse
 Wronskian. -/

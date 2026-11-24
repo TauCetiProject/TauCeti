@@ -129,7 +129,7 @@ variable {G : Type u} [Group G] {N : Subgroup G} [N.Normal]
 /-- The coset of an element of `N` is trivial. This is the form in which the cocycle computations
 below evaluate an inflated cochain on `N`. -/
 private theorem quotientMk_coe_eq_one (n : N) : ((n : G) : G ⧸ N) = 1 :=
-  (QuotientGroup.eq_one_iff (n : G)).2 n.2
+  (QuotientGroup.eq_one_iff (n : G)).2 n.property
 
 end Cosets
 
@@ -172,7 +172,7 @@ fixed under the quotient action. -/
 theorem explicitInfl0_surjective : Function.Surjective (explicitInfl0 G M N) := by
   intro m
   have hm : ∀ g : G, g • (m : M) = m :=
-    (FixedPoints.mem_addSubgroup G M (m : M)).1 m.2
+    (FixedPoints.mem_addSubgroup G M (m : M)).1 m.property
   let n : FixedPoints.addSubgroup N M :=
     ⟨m, (FixedPoints.mem_addSubgroup N M (m : M)).2 fun g ↦ hm g⟩
   have hn : n ∈ H0 (G ⧸ N) (FixedPoints.addSubgroup N M) :=
@@ -246,7 +246,7 @@ theorem explicitRes1_comp_explicitInfl1 :
       H1pi_eq_zero_iff, mem_B1_iff]
     refine ⟨0, fun n => ?_⟩
     rw [cocyclesMap1_apply, cocyclesMap1_apply]
-    simp [quotientMk_coe_eq_one n, map_one_of_mem_Z1 c.2]
+    simp [quotientMk_coe_eq_one n, map_one_of_mem_Z1 c.property]
 
 /-- **Inflation is injective in degree one.** A cocycle on `G ⧸ N` whose inflation is the
 coboundary of `m : M` has `m` fixed by `N`, so it is already the coboundary of `m` viewed in
@@ -263,7 +263,8 @@ theorem explicitInfl1_injective : Function.Injective (explicitInfl1 G M N) := by
       have h := hm (n : G)
       rw [cocyclesMap1_apply] at h
       simp only [Subgroup.quotientMkContinuousMonoidHom_apply, quotientMk_coe_eq_one,
-        map_one_of_mem_Z1 c.2, AddSubgroup.coe_subtype, ZeroMemClass.coe_zero, sub_eq_zero] at h
+        map_one_of_mem_Z1 c.property, AddSubgroup.coe_subtype, ZeroMemClass.coe_zero,
+            sub_eq_zero] at h
       exact h
     rw [H1pi_eq_zero_iff, mem_B1_iff]
     refine ⟨⟨m, hmem⟩, fun q => ?_⟩
@@ -284,7 +285,7 @@ omit [ContinuousSMul G M] [N.Normal]
 private theorem apply_mul_eq_self_of_vanishing {z : Z1 G M}
     (hz : ∀ n : N, (z : G → M) (n : G) = 0) (g : G) (n : N) :
     (z : G → M) (g * (n : G)) = (z : G → M) g := by
-  rw [(mem_Z1_iff.1 z.2).2 g (n : G), hz n, smul_zero, zero_add]
+  rw [(mem_Z1_iff.1 z.property).2 g (n : G), hz n, smul_zero, zero_add]
 
 omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- The values of a continuous `1`-cocycle vanishing on `N` are fixed by `N`: the cocycle identity
@@ -293,11 +294,11 @@ normal subgroup `N`. -/
 private theorem smul_apply_eq_self_of_vanishing {z : Z1 G M}
     (hz : ∀ n : N, (z : G → M) (n : G) = 0) (g : G) (n : N) :
     (n : G) • (z : G → M) g = (z : G → M) g := by
-  have h := (mem_Z1_iff.1 z.2).2 (n : G) g
+  have h := (mem_Z1_iff.1 z.property).2 (n : G) g
   rw [hz n, add_zero] at h
   have hconj : ((n : G) * g) = g * (g⁻¹ * (n : G) * g) := by group
   rw [hconj, apply_mul_eq_self_of_vanishing hz g ⟨g⁻¹ * (n : G) * g,
-    ‹N.Normal›.conj_mem' (n : G) n.2 g⟩] at h
+    ‹N.Normal›.conj_mem' (n : G) n.property g⟩] at h
   exact h.symm
 
 /-- The descent to `G ⧸ N` of a continuous `1`-cocycle vanishing on `N`. It is well defined by
@@ -315,7 +316,7 @@ def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
         simpa using
           (apply_mul_eq_self_of_vanishing hz a ⟨a⁻¹ * b, QuotientGroup.leftRel_apply.1 hab⟩).symm,
     mem_Z1_iff.2 ⟨(QuotientGroup.isQuotientMap_mk N).continuous_iff.2
-        (((mem_Z1_iff.1 z.2).1).subtype_mk _), fun q q' => by
+        (((mem_Z1_iff.1 z.property).1).subtype_mk _), fun q q' => by
       induction q using QuotientGroup.induction_on with
       | H a =>
         induction q' using QuotientGroup.induction_on with
@@ -323,7 +324,7 @@ def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
           refine Subtype.ext ?_
           rw [AddSubgroup.coe_add, coe_quotient_smul_fixedPoints_addSubgroup,
             coe_smul_fixedPoints_addSubgroup]
-          exact (mem_Z1_iff.1 z.2).2 a b⟩⟩
+          exact (mem_Z1_iff.1 z.property).2 a b⟩⟩
 
 omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- The descent takes on the coset of `g` the value the original cocycle takes at `g`. This is the
@@ -437,7 +438,7 @@ theorem explicitRes2_comp_explicitInfl2 :
     set m₀ : FixedPoints.addSubgroup N M :=
       (c : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (1, 1) with hm₀
     refine ⟨fun _ => (m₀ : M), continuous_const, fun n n' => ?_⟩
-    have hfix := (FixedPoints.mem_addSubgroup N M (m₀ : M)).1 m₀.2 n
+    have hfix := (FixedPoints.mem_addSubgroup N M (m₀ : M)).1 m₀.property n
     rw [cocyclesMap2_apply, cocyclesMap2_apply]
     simp only [ContinuousMonoidHom.subgroupSubtype_apply,
       Subgroup.quotientMkContinuousMonoidHom_apply,
@@ -468,7 +469,7 @@ def descendZ2 [SeparatelyContinuousMul G] (z : Z2 G M)
     mem_Z2_iff.2 ⟨
       ((QuotientGroup.isOpenQuotientMap_mk.prodMap
           QuotientGroup.isOpenQuotientMap_mk).isQuotientMap.continuous_iff.2 <| by
-        simpa [Function.comp_def] using ((mem_Z2_iff.1 z.2).1).subtype_mk
+        simpa [Function.comp_def] using ((mem_Z2_iff.1 z.property).1).subtype_mk
           (fun p => (FixedPoints.mem_addSubgroup N M _).2 fun n => hfixed n p.1 p.2)),
       fun q q' q'' => by
         induction q using QuotientGroup.induction_on with
@@ -480,7 +481,7 @@ def descendZ2 [SeparatelyContinuousMul G] (z : Z2 G M)
               refine Subtype.ext ?_
               simp only [AddSubgroup.coe_add, coe_quotient_smul_fixedPoints_addSubgroup,
                 coe_smul_fixedPoints_addSubgroup, Quotient.liftOn₂'_mk'']
-              exact (mem_Z2_iff.1 z.2).2 g h j⟩⟩
+              exact (mem_Z2_iff.1 z.property).2 g h j⟩⟩
 
 omit [ContinuousMul G] [ContinuousSMul G M]
   [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
@@ -530,7 +531,7 @@ private theorem exists_sub_mem_B2_vanishing_snd (hN : IsOpen (N : Set G)) (f : Z
     ∃ f' : Z2 G M, (f : G × G → M) - f' ∈ B2 G M ∧
       ∀ (g : G) (n : N), (f' : G × G → M) (g, n) = 0 := by
   have := QuotientGroup.discreteTopology hN
-  have hf := mem_Z2_iff.1 f.2
+  have hf := mem_Z2_iff.1 f.property
   -- The chosen representative `r g` of the coset `g N`, and the `N`-part `m g = (r g)⁻¹ g`.
   let r : G → G := fun g => (g : G ⧸ N).out
   have hr : Continuous r := continuous_of_discreteTopology.comp QuotientGroup.continuous_mk
@@ -543,17 +544,17 @@ private theorem exists_sub_mem_B2_vanishing_snd (hN : IsOpen (N : Set G)) (f : Z
   have hm : Continuous m := (hr_inv.mul continuous_id).subtype_mk _
   have hrm (g : G) : r g * m g = g := mul_inv_cancel_left _ _
   have hr_mul (g : G) (n : N) : r (g * n) = r g := by
-    simp only [r, QuotientGroup.mk_mul_of_mem g n.2]
+    simp only [r, QuotientGroup.mk_mul_of_mem g n.property]
   have hm_mul (g : G) (n : N) : m (g * n) = m g * n :=
     Subtype.ext (by simp only [m, hr_mul, Subgroup.coe_mul, mul_assoc])
   let σ : N := ⟨r 1, by simpa using hrN 1⟩
   have hr_N (n : N) : r n = σ := by
-    simp only [r, σ, (QuotientGroup.eq_one_iff _).2 n.2, QuotientGroup.mk_one]
+    simp only [r, σ, (QuotientGroup.eq_one_iff _).2 n.property, QuotientGroup.mk_one]
   have hm_N (n : N) : m n = σ⁻¹ * n := Subtype.ext (by simp only [m, hr_N, Subgroup.coe_mul,
     Subgroup.coe_inv])
   let b : G → M := fun g => r g • c (m g) - (f : G × G → M) (r g, m g) + c σ
   have hb : Continuous b :=
-    ((hr.smul (hc.comp hm)).sub (hf.1.comp (hr.prodMk (continuous_subtype_val.comp hm)))).add
+    ((hr.smul (hc.comp hm)).sub (hf.1.comp (hr.prodMk (continuous_subtypeVal.comp hm)))).add
       continuous_const
   -- On `N` the correction `b` is `c`.
   have hbN (n : N) : b n = c n := by
@@ -582,16 +583,16 @@ private theorem exists_sub_mem_B2_vanishing (hN : IsOpen (N : Set G)) [Subsingle
       (∀ (g : G) (n : N), (f' : G × G → M) (g, n) = 0) ∧
         ∀ (n : N) (g : G), (f' : G × G → M) (n, g) = 0 := by
   have := QuotientGroup.discreteTopology hN
-  have hf := mem_Z2_iff.1 f.2
+  have hf := mem_Z2_iff.1 f.property
   -- For each `h`, the function `n ↦ f (n, h)` is a continuous `1`-cocycle on `N`, hence a
   -- coboundary `n ↦ n • x h - x h`.
   have hx (h : G) : ∃ x : M, ∀ n : N, n • x - x = (f : G × G → M) (n, h) := by
     let φ : Z1 N M := ⟨fun n => (f : G × G → M) (n, h), mem_Z1_iff.2
-      ⟨hf.1.comp (continuous_subtype_val.prodMk continuous_const), fun n n' => by
+      ⟨hf.1.comp (continuous_subtypeVal.prodMk continuous_const), fun n n' => by
         have h₁ := hf.2 n n' h
         -- `n' * h = h * (h⁻¹ * n' * h)`, with `h⁻¹ * n' * h ∈ N` by normality.
         have h₂ := groupCohomology.apply_mul_snd_of_isCocycle₂_of_vanishing hf.2 hR n h
-          ⟨_, ‹N.Normal›.conj_mem' _ n'.2 h⟩
+          ⟨_, ‹N.Normal›.conj_mem' _ n'.property h⟩
         rw [← mul_assoc, mul_inv_cancel_left] at h₂
         rw [hR, add_zero, h₂] at h₁
         exact h₁⟩⟩
@@ -603,9 +604,9 @@ private theorem exists_sub_mem_B2_vanishing (hN : IsOpen (N : Set G)) [Subsingle
     (continuous_of_discreteTopology (f := fun q : G ⧸ N => x q.out - x (1 : G ⧸ N).out)).comp
       QuotientGroup.continuous_mk
   have he_mul (g : G) (n : N) : e (g * n) = e g := by
-    simp only [e, QuotientGroup.mk_mul_of_mem g n.2]
+    simp only [e, QuotientGroup.mk_mul_of_mem g n.property]
   have he_N (n : N) : e n = 0 := by
-    simp only [e, (QuotientGroup.eq_one_iff _).2 n.2, sub_self]
+    simp only [e, (QuotientGroup.eq_one_iff _).2 n.property, sub_self]
   have hσ : ((1 : G ⧸ N).out : G) ∈ N := by
     rw [← QuotientGroup.eq_one_iff, QuotientGroup.out_eq']
   have hs (g : G) : ((g : G ⧸ N).out)⁻¹ * g ∈ N :=
@@ -617,7 +618,7 @@ private theorem exists_sub_mem_B2_vanishing (hN : IsOpen (N : Set G)) [Subsingle
   · -- `n • e g - e g` is `f (n, r) - f (n, σ) = f (n, g)`, for the representatives `r` of `g N`
     -- and `σ` of `N`.
     have hng : e (n * g) = e g := by
-      simp only [e, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).2 n.2, one_mul]
+      simp only [e, QuotientGroup.mk_mul, (QuotientGroup.eq_one_iff _).2 n.property, one_mul]
     have h₁ := hx (g : G ⧸ N).out n
     have h₂ := hx (1 : G ⧸ N).out n
     rw [hR n ⟨_, hσ⟩] at h₂
@@ -643,7 +644,7 @@ theorem explicitInfRes2_exact (hN : IsOpen (N : Set G))
     obtain ⟨f₁, hf₁, hR₁⟩ := exists_sub_mem_B2_vanishing_snd hN f c hc fun n n' => by
       simpa [cocyclesMap2_apply] using hcf n n'
     obtain ⟨f₂, hf₂, hR, hL⟩ := exists_sub_mem_B2_vanishing hN f₁ hR₁
-    have hf := (mem_Z2_iff.1 f₂.2).2
+    have hf := (mem_Z2_iff.1 f₂.property).2
     have hff₂ : (f : H2 G M) = f₂ := H2pi_eq_iff.2 (by simpa using add_mem hf₁ hf₂)
     refine ⟨descendZ2 f₂ (fun g h n n' => ?_)
       (groupCohomology.smul_apply_of_isCocycle₂_of_vanishing hf hR hL),
@@ -663,7 +664,7 @@ private theorem exists_continuous_cochain_const_on_normal [Subsingleton (H1 N M)
       ∀ n : N, k n = F (1, 1) := by
   -- On `N`, `c - F (1, 1)` is a continuous `1`-cocycle, hence a coboundary.
   have hz : (fun n : N ↦ c n - F (1, 1)) ∈ Z1 N M := by
-    refine mem_Z1_iff.2 ⟨(hc.comp continuous_subtype_val).sub continuous_const, fun n n' ↦ ?_⟩
+    refine mem_Z1_iff.2 ⟨(hc.comp continuous_subtypeVal).sub continuous_const, fun n n' ↦ ?_⟩
     have h := hcF n n'
     rw [quotientMk_coe_eq_one, quotientMk_coe_eq_one] at h
     simp only [Subgroup.coe_mul, Subgroup.smul_def, smul_sub]
@@ -706,14 +707,14 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
     -- The normalizations of the cocycle `f`, read in `M`.
     have hF1 (g : G) : F ((g : G ⧸ N), 1) = g • F (1, 1) := by
       simp only [hF]
-      rw [map_one_snd_of_mem_Z2 f.2, coe_quotient_smul_fixedPoints_addSubgroup,
+      rw [map_one_snd_of_mem_Z2 f.property, coe_quotient_smul_fixedPoints_addSubgroup,
         coe_smul_fixedPoints_addSubgroup]
     have hF1' (g : G) : F (1, (g : G ⧸ N)) = F (1, 1) := by
       simp only [hF]
-      rw [map_one_fst_of_mem_Z2 f.2]
+      rw [map_one_fst_of_mem_Z2 f.property]
     have hfix (n : N) : (n : G) • F (1, 1) = F (1, 1) :=
       (FixedPoints.mem_addSubgroup N M _).1
-        ((f : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (1, 1)).2 n
+        ((f : (G ⧸ N) × (G ⧸ N) → FixedPoints.addSubgroup N M) (1, 1)).property n
     obtain ⟨k, hkc, hdk, hkN⟩ := exists_continuous_cochain_const_on_normal hc hfix hcF
     have hright (g : G) (n : N) : k (g * n) = k g := by
       have h := hdk g n
@@ -725,7 +726,7 @@ theorem explicitInfl2_injective [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgro
       -- `N`, so that `hright` proves the needed fixedness.
       have hconj : (n : G) * g = g * (g⁻¹ * n * g) := by group
       rw [quotientMk_coe_eq_one, hkN, hF1', hconj,
-        hright g ⟨_, ‹N.Normal›.conj_mem' _ n.2 g⟩] at h
+        hright g ⟨_, ‹N.Normal›.conj_mem' _ n.property g⟩] at h
       linear_combination (norm := abel) h
     -- `k` descends to a continuous primitive of `f` on `G ⧸ N`.
     let e : G ⧸ N → FixedPoints.addSubgroup N M := fun q ↦ Quotient.liftOn' q

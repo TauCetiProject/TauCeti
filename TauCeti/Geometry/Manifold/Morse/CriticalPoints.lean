@@ -21,10 +21,16 @@ import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
+import TauCeti.Geometry.Manifold.ModelWithCorners.Perfect
+import TauCeti.Geometry.Manifold.RegularValue.Open
 import TauCeti.Topology.Instances.Real.SeparatingGrid
+import TauCeti.Topology.Order.Sublevel
+import TauCeti.Topology.Perfect
 
 /-!
 # The critical set of a real function on a manifold
@@ -36,10 +42,11 @@ in the preferred extended chart at `x` has zero Fréchet derivative. That is the
 built into `TauCeti.IsMorseOn`, so a Morse function is exactly a smooth function all of whose
 critical points are nondegenerate.
 
-On a boundaryless manifold local extrema are critical points, so a continuous function on a
-nonempty compact boundaryless manifold has a critical point, and so does each nonempty compact
-sublevel of a continuous function. On a compact boundaryless manifold with at least two points it
-has at least two critical points, a maximum and a minimum.
+Interior local extrema are critical points, and a function has zero derivative
+where it is not differentiable, so every function on a nonempty compact boundaryless manifold has a
+critical point, and so does each nonempty compact sublevel of a continuous function. On a compact
+boundaryless manifold with at least two points a continuous function has at least two critical
+points, a maximum and a minimum.
 The critical set of a `C¹` function is closed, and a nondegenerate critical point is isolated in
 it, so a Morse function has finitely many critical points in every compact set; for a proper
 function bounded below, this applies to every sublevel set. A compact band between regular
@@ -53,9 +60,14 @@ values of `f`, into critical bands.
 
 Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
 critical count is additive over a finite partition of `M` into open sets, such as its connected
-components. On a compact boundaryless manifold of positive dimension every component carries at
-least two critical points of a continuous function, so a continuous function with fewer than four
-critical points lives on a preconnected manifold. In dimension zero every point is critical.
+components. In the same way, the critical points of a function on a disjoint union `M ⊕ M'` are
+those of its restrictions to `M` and `M'`, and their numbers add. On a compact boundaryless
+manifold of positive dimension every component carries at least two critical points of a continuous
+function, so a continuous function with fewer than four critical points lives on a preconnected
+manifold. In dimension zero every point is critical, so the count is the number of points: `1` on
+a point and `0` on the empty manifold. Every point is a critical point of a constant function, so
+on a nonempty manifold of positive dimension a constant function has infinitely many critical
+points.
 
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
@@ -69,11 +81,14 @@ polynomial in the Morse inequalities.
   on boundaryless manifolds `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`,
   on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`, and on the real line
   `TauCeti.mem_criticalPoints_iff_deriv_eq_zero`.
+* `TauCeti.criticalPoints_const`: every point is a critical point of a constant function.
 * `TauCeti.criticalPoints_pow`: the only critical point of `y ↦ yᵐ` on the real line, `m ≥ 2`,
   is `0`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
+* `TauCeti.criticalPoints_sumElim` and `TauCeti.totalCriticalCount_sumElim`: on a disjoint union
+  `M ⊕ M'` the critical points and their count are those of the two summands together.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
@@ -85,6 +100,11 @@ polynomial in the Morse inequalities.
 * `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints` and
   `TauCeti.exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero`: a compact band starting at a regular
   value begins with a compact collar free of critical points.
+* `TauCeti.eventually_isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints`: near a
+  regular point or a nondegenerate critical point of a function which is `C¹` there, every
+  critical point is nondegenerate.
+* `TauCeti.IsMorseOn.exists_isOpen_superset`: on a boundaryless manifold, a function which is
+  smooth near a set and Morse on it is Morse on an open neighbourhood of it.
 * `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
   are isolated.
 * `TauCeti.finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint`: a `C¹`
@@ -92,10 +112,18 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.finite_criticalPoints_inter` and
   `TauCeti.IsMorse.finite_criticalPoints_inter_preimage_Iic`: finiteness on compact sets and on
   sublevel sets of proper functions bounded below.
+* `TauCeti.IsMorse.finite_setOf_mfderiv_eq_zero`: on a compact manifold, the zeros of the
+  manifold derivative of a Morse function are finite.
+* `TauCeti.IsMorse.exists_countable_dense_forall_apply_notMem`: on a compact manifold, a Morse
+  function has a countable dense set of levels containing no critical point.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
-* `TauCeti.IsMorse.exists_separating_levels`: on a compact manifold, levels just below `f p` and
-  just above `f r` separate the critical values strictly between them.
+* `TauCeti.IsMorse.exists_lt_lt_forall_mem_Ioo`: on a compact manifold, for `a < b` there are
+  levels `a < c₂ < c₁ < b` such that every critical value strictly between `a` and `b` lies
+  strictly between `c₂` and `c₁`.
+* `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
+  from its validity across bands without critical points, across single critical levels, and
+  along triples of levels.
 * `TauCeti.IsCriticalBand` and `TauCeti.IsCriticalBandCut`: compact bands with at most one
   critical value, strictly inside, and sequences of values cutting `f` into such bands, which are
   strictly increasing (`TauCeti.IsCriticalBandCut.strictMono`), with
@@ -103,16 +131,28 @@ polynomial in the Morse inequalities.
   `TauCeti.IsMorse.exists_isCriticalBandCut`: on a compact manifold a critical-band cut exists for
   a function with finitely many critical values, such as a Morse function, starting below and
   ending above all values of `f`.
-* `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
-  from its validity across bands without critical points, across single critical levels, and
-  along triples of levels.
-* `TauCeti.IsMorse.exists_regular_sublevel_partition`: on a compact manifold, regular values
-  cutting the values of a Morse function into bands with at most one critical value each.
+* `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`: the same cut indexed by
+  `ℕ`, at regular values.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
-  points, with `TauCeti.natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
+  points, with `TauCeti.criticalCount_eq_zero_iff`,
+  `TauCeti.natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
+  `TauCeti.natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
+* `TauCeti.IsMorse.setOf_neg_band_eq`: the critical points of index `i` of `-f` with values in
+  `(-b, -a]` are those of `f` with values in `[a, b)` and complementary index `dim M - i`.
+* `TauCeti.IsMorse.neg_band`: if `f` is Morse, `f ⁻¹' [a, b]` is compact and `a`, `b` are regular
+  values of `f`, then `-f` is Morse, `(-f) ⁻¹' [-b, -a]` is compact and `-b`, `-a` are regular
+  values of `-f`.
+* `TauCeti.totalCriticalCount_of_isEmpty`, `TauCeti.totalCriticalCount_of_subsingleton`,
+  `TauCeti.totalCriticalCount_const` and `TauCeti.totalCriticalCount_const_eq_top`: the count on
+  the empty manifold, in dimension zero and for a constant function, which is `⊤` on a nonempty
+  manifold of positive dimension.
+* `TauCeti.isMorse_const_iff`: on a nonempty manifold a constant function is Morse exactly in
+  dimension zero.
+* `TauCeti.IsMorse.criticalPointsIndexNegEquiv`: the critical points of `-f` of index `j` are those
+  of `f` of index `dim M - j`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
   nonempty compact manifold the minimum is a critical point of index `0` and, for a Morse function,
   the maximum is one of index the dimension.
@@ -163,6 +203,11 @@ def criticalPoints (f : M → ℝ) : Set M :=
 theorem mem_criticalPoints : x ∈ criticalPoints I f ↔ mvfderiv I f x = 0 :=
   Iff.rfl
 
+/-- Whether `x` is a critical point of `f` depends only on the germ of `f` at `x`. -/
+theorem _root_.Filter.EventuallyEq.mem_criticalPoints_iff {f₁ f₂ : M → ℝ}
+    (h : f₁ =ᶠ[𝓝 x] f₂) : x ∈ criticalPoints I f₁ ↔ x ∈ criticalPoints I f₂ := by
+  rw [mem_criticalPoints, mem_criticalPoints, h.mvfderiv_eq]
+
 /-- A point is critical exactly when the manifold derivative `mfderiv I 𝓘(ℝ) f` vanishes there. -/
 theorem mem_criticalPoints_iff_mfderiv_eq_zero :
     x ∈ criticalPoints I f ↔ mfderiv I 𝓘(ℝ) f x = 0 :=
@@ -206,11 +251,32 @@ theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
     not_exists, not_and]
   tauto
 
+/-- Every point is a critical point of a constant function. -/
+@[simp]
+theorem criticalPoints_const (c : ℝ) : criticalPoints I (fun _ : M ↦ c) = univ :=
+  eq_univ_of_forall fun _ ↦ mem_criticalPoints.2 (mvfderiv_const c)
+
 /-- On a manifold modelled on a zero-dimensional space every point is critical. -/
 @[simp]
 theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints I f = univ :=
-  -- The derivative at `x` is a linear form on the tangent space, which is the zero space `E`.
-  eq_univ_of_forall fun _ ↦ Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
+  -- The derivative at `x` is a linear form on the tangent space, which is the zero space.
+  eq_univ_of_forall fun _ ↦ Subsingleton.elim _ _
+
+/-- **A constant function is Morse only in dimension zero.** On a nonempty manifold every point is
+a critical point of a constant function, and its Hessian vanishes, which is invertible only on the
+zero space. So the constant function is Morse exactly when the model space is zero-dimensional,
+although on a locally connected boundaryless manifold it is Morse–Bott
+(`TauCeti.isMorseBottFamily_ofOpens_const`). -/
+theorem isMorse_const_iff [Nonempty M] (c : ℝ) :
+    IsMorse I (fun _ : M ↦ c) ↔ Subsingleton E := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ isMorse_of_subsingleton⟩
+  obtain ⟨x⟩ := ‹Nonempty M›
+  -- In the chart at `x` the function is still constant, so its second derivative is `0`.
+  have hc : (fun _ : M ↦ c) ∘ (extChartAt I x).symm = fun _ ↦ c := rfl
+  have hx := (isMorse_iff.1 h).2 x (by rw [hc, fderiv_const_apply])
+  rw [isManifoldNondegenerateCriticalPoint_iff, hc] at hx
+  -- The second derivative is `0`, which is invertible only between zero spaces.
+  exact (ContinuousLinearMap.isInvertible_zero_iff (R := ℝ).1 (by simpa using hx.isInvertible)).1
 
 /-- A function and its negation have the same critical points. -/
 @[simp]
@@ -287,6 +353,28 @@ theorem criticalPoints_comp_subtypeVal {U : Opens M} :
     criticalPoints I (f ∘ Subtype.val : U → ℝ) = Subtype.val ⁻¹' criticalPoints I f :=
   Set.ext fun _ ↦ mem_criticalPoints_comp_subtypeVal
 
+/-! ### Disjoint unions -/
+
+section Sum
+
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M'] {g : M' → ℝ}
+
+/-- The critical points of a function on a disjoint union `M ⊕ M'` are the critical points of its
+restrictions to the two summands. -/
+@[simp]
+theorem criticalPoints_sumElim :
+    criticalPoints I (Sum.elim f g) =
+      Sum.inl '' criticalPoints I f ∪ Sum.inr '' criticalPoints I g := by
+  ext (x | x)
+  · rw [← (isLocalDiffeomorph_sumInl (I := I) (n := 1) (M' := M') x).mem_criticalPoints_comp_iff
+      le_rfl, Sum.elim_comp_inl]
+    simp
+  · rw [← (isLocalDiffeomorph_sumInr (I := I) (n := 1) (M := M) x).mem_criticalPoints_comp_iff
+      le_rfl, Sum.elim_comp_inr]
+    simp
+
+end Sum
+
 /-! ### Critical points read in the preferred chart -/
 
 section Chart
@@ -358,6 +446,30 @@ theorem fderiv_comp_extChartAt_symm_eq_zero_of_mem_criticalPoints (hx : x ∈ cr
   · exact (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt hg).1 hx
   · exact fderiv_zero_of_not_differentiableAt hg
 
+/-- **Fermat's theorem on a manifold.** An interior local extremum is a critical point.
+No differentiability or atlas regularity assumption is required. -/
+theorem _root_.IsLocalExtr.mem_criticalPoints (h : IsLocalExtr f x) (hx : I.IsInteriorPoint x) :
+    x ∈ criticalPoints I f := by
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
+  · have hg : DifferentiableAt ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+      have hd := ((mdifferentiableAt_iff f x).mp hf).2
+      simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+        Function.id_comp] at hd
+      exact hd.differentiableAt (range_mem_nhds_isInteriorPoint hx)
+    exact (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt hg).2
+      (h.comp_extChartAt_symm (I := I)).fderiv_eq_zero
+  · exact mem_criticalPoints_iff_mfderiv_eq_zero.2 (mfderiv_zero_of_not_mdifferentiableAt hf)
+
+/-- An interior local minimum is a critical point. -/
+theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) (hx : I.IsInteriorPoint x) :
+    x ∈ criticalPoints I f :=
+  IsLocalExtr.mem_criticalPoints (IsMinFilter.isExtrFilter h) hx
+
+/-- An interior local maximum is a critical point. -/
+theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) (hx : I.IsInteriorPoint x) :
+    x ∈ criticalPoints I f :=
+  IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h) hx
+
 /-- A nondegenerate critical point is a critical point. -/
 theorem IsManifoldNondegenerateCriticalPoint.mem_criticalPoints
     (h : IsManifoldNondegenerateCriticalPoint I f x) : x ∈ criticalPoints I f :=
@@ -375,6 +487,21 @@ theorem IsMorseOn.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
 theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (h : IsMorse I f)
     (hx : x ∈ criticalPoints I f) : IsManifoldNondegenerateCriticalPoint I f x :=
   (isMorseOn_univ.2 h).isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (mem_univ x) hx
+
+/-- An extremum of `f` on a neighbourhood of an interior point `x` is a critical point. -/
+theorem _root_.IsExtrOn.mem_criticalPoints {s : Set M} (h : IsExtrOn f s x)
+    (hx : I.IsInteriorPoint x) (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  (h.isLocalExtr hs).mem_criticalPoints hx
+
+/-- A minimum of `f` on a neighbourhood of an interior point `x` is a critical point. -/
+theorem _root_.IsMinOn.mem_criticalPoints {s : Set M} (h : IsMinOn f s x)
+    (hx : I.IsInteriorPoint x) (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  h.isExtrOn.mem_criticalPoints hx hs
+
+/-- A maximum of `f` on a neighbourhood of an interior point `x` is a critical point. -/
+theorem _root_.IsMaxOn.mem_criticalPoints {s : Set M} (h : IsMaxOn f s x)
+    (hx : I.IsInteriorPoint x) (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
+  h.isExtrOn.mem_criticalPoints hx hs
 
 section Boundaryless
 
@@ -403,36 +530,6 @@ theorem isMorseOn_iff_criticalPoints :
         ∀ x ∈ s, x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x := by
   simp only [isMorseOn_iff, mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero]
 
-/-- **Fermat's theorem on a manifold.** A local extremum is a critical point. -/
-theorem _root_.IsLocalExtr.mem_criticalPoints (h : IsLocalExtr f x) : x ∈ criticalPoints I f := by
-  rw [mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero]
-  refine IsLocalExtr.fderiv_eq_zero
-    (IsLocalExtr.comp_continuous ?_ (continuousAt_extChartAt_symm x))
-  rwa [extChartAt_to_inv]
-
-/-- A local minimum is a critical point. -/
-theorem _root_.IsLocalMin.mem_criticalPoints (h : IsLocalMin f x) : x ∈ criticalPoints I f :=
-  IsLocalExtr.mem_criticalPoints (IsMinFilter.isExtrFilter h)
-
-/-- A local maximum is a critical point. -/
-theorem _root_.IsLocalMax.mem_criticalPoints (h : IsLocalMax f x) : x ∈ criticalPoints I f :=
-  IsLocalExtr.mem_criticalPoints (IsMaxFilter.isExtrFilter h)
-
-/-- An extremum of `f` on a neighbourhood of `x` is a critical point. -/
-theorem _root_.IsExtrOn.mem_criticalPoints {s : Set M} (h : IsExtrOn f s x)
-    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
-  (h.isLocalExtr hs).mem_criticalPoints
-
-/-- A minimum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
-theorem _root_.IsMinOn.mem_criticalPoints {s : Set M} (h : IsMinOn f s x)
-    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
-  h.isExtrOn.mem_criticalPoints hs
-
-/-- A maximum of `f` on a neighbourhood of `x` (by default all of `M`) is a critical point. -/
-theorem _root_.IsMaxOn.mem_criticalPoints {s : Set M} (h : IsMaxOn f s x)
-    (hs : s ∈ 𝓝 x := by simp) : x ∈ criticalPoints I f :=
-  h.isExtrOn.mem_criticalPoints hs
-
 /-- If the only critical points of `f` are a global minimum `x₀` and a point `x₁` with a larger
 value, then `x₀` is the only point at which `f` attains its minimum: any other such point would be
 a third critical point. -/
@@ -440,7 +537,7 @@ theorem _root_.IsMinOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₀ :
     (hlt : f x₀ < f x₁) (hcrit : ∀ x ∈ criticalPoints I f, x = x₀ ∨ x = x₁)
     (hy : f y ≤ f x₀) : y = x₀ := by
   have hy' : IsMinOn f univ y := isMinOn_univ_iff.2 fun z ↦ hy.trans (hx₀ (mem_univ z))
-  refine (hcrit y hy'.mem_criticalPoints).resolve_right ?_
+  refine (hcrit y (hy'.mem_criticalPoints BoundarylessManifold.isInteriorPoint)).resolve_right ?_
   rintro rfl
   exact hy.not_gt hlt
 
@@ -451,16 +548,19 @@ theorem _root_.IsMaxOn.eq_of_le_of_two_criticalPoints {x₀ x₁ y : M} (hx₁ :
     (hlt : f x₀ < f x₁) (hcrit : ∀ x ∈ criticalPoints I f, x = x₀ ∨ x = x₁)
     (hy : f x₁ ≤ f y) : y = x₁ := by
   have hy' : IsMaxOn f univ y := isMaxOn_univ_iff.2 fun z ↦ (hx₁ (mem_univ z)).trans hy
-  refine (hcrit y hy'.mem_criticalPoints).resolve_left ?_
+  refine (hcrit y (hy'.mem_criticalPoints BoundarylessManifold.isInteriorPoint)).resolve_left ?_
   rintro rfl
   exact hy.not_gt hlt
 
-/-- A continuous function on a nonempty compact boundaryless manifold has a critical point, for
-instance a point where it attains its minimum. -/
-theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] (hf : Continuous f) :
-    (criticalPoints I f).Nonempty := by
-  obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
-  exact ⟨x, hx.mem_criticalPoints⟩
+/-- A function on a nonempty compact boundaryless manifold has a critical point: a point where it
+attains its minimum if it is continuous, and otherwise a point where it is not differentiable. -/
+theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] : (criticalPoints I f).Nonempty := by
+  by_cases hf : Continuous f
+  · obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
+    exact ⟨x, hx.mem_criticalPoints BoundarylessManifold.isInteriorPoint⟩
+  · obtain ⟨x, hx⟩ := not_forall.1 (mt continuous_iff_continuousAt.2 hf)
+    exact ⟨x, mem_criticalPoints_iff_mfderiv_eq_zero.2
+      (mfderiv_zero_of_not_mdifferentiableAt fun hd ↦ hx hd.continuousAt)⟩
 
 /-- A function on a boundaryless manifold has a critical point in each nonempty compact sublevel
 `{f ≤ t}` on which it is continuous, for instance a point where it attains its minimum. -/
@@ -471,7 +571,7 @@ theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
   -- Points outside the sublevel have values above `t ≥ f x`, so `x` is a global minimum.
   have hglobal : IsMinOn f univ x := fun y _ ↦
     (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
-  exact ⟨x, hglobal.mem_criticalPoints, hx⟩
+  exact ⟨x, hglobal.mem_criticalPoints BoundarylessManifold.isInteriorPoint, hx⟩
 
 /-- **A nonempty compact regular sublevel forces the model space to be finite dimensional.** If
 `f` is continuous, the sublevel `{f ≤ b}` is compact and nonempty, and `b` is a regular value, then
@@ -494,7 +594,7 @@ theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Cont
       (fun x hx ↦ by
         have hlt : f x < b := hx
         simpa using hlt.le)
-      (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
+      (U.isOpen.preimage continuous_subtypeVal)).locallyCompactSpace
   exact FiniteDimensional.of_locallyCompact_manifold U I
 
 end Boundaryless
@@ -591,36 +691,89 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
     (hf.contMDiff.of_le (by simp)) hK
     fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
 
+/-- **Isolation of a nondegenerate critical point.** If `x` is either a regular point or a
+nondegenerate critical point of a function `f` which is `C¹` at `x`, then no critical point of `f`
+other than `x` lies near `x`: a regular point has a neighbourhood free of critical points, and a
+nondegenerate critical point is isolated among the critical points. -/
+theorem eventually_eq_of_mem_criticalPoints (hf : ContMDiffAt I 𝓘(ℝ) 1 f x)
+    (hx : x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x) :
+    ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → y = x := by
+  by_cases hxc : x ∈ criticalPoints I f
+  · filter_upwards [eventually_nhdsWithin_iff.1 (hx hxc).eventually_notMem_criticalPoints]
+      with y hy hyc
+    by_contra hyx
+    exact hy hyx hyc
+  · filter_upwards [(isRegularPoint_iff_notMem_criticalPoints.2 hxc).eventually_isRegularPoint hf
+      le_rfl] with y hy hyc
+    exact (isRegularPoint_iff_notMem_criticalPoints.1 hy hyc).elim
+
+/-- **Nondegeneracy of critical points spreads to a neighbourhood.** If a point `x` is either a
+regular point or a nondegenerate critical point of a function `f` which is `C¹` at `x`, then every
+critical point of `f` near `x` is nondegenerate. -/
+theorem eventually_isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x)
+    (hx : x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x) :
+    ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y := by
+  filter_upwards [eventually_eq_of_mem_criticalPoints hf hx] with y hy hyc
+  obtain rfl := hy hyc
+  exact hx hyc
+
+/-- **A function which is Morse on a set is Morse on an open neighbourhood of it.** On a
+boundaryless manifold, a function which is smooth near `s` and Morse on `s` is Morse on an open set
+containing `s`, since near a regular point or a nondegenerate critical point every critical point
+is nondegenerate. -/
+theorem IsMorseOn.exists_isOpen_superset [I.Boundaryless]
+    (hf : ∀ᶠ y in 𝓝ˢ s, ContMDiffAt I 𝓘(ℝ) ∞ f y) (h : IsMorseOn I f s) :
+    ∃ V, IsOpen V ∧ s ⊆ V ∧ IsMorseOn I f V := by
+  let P : M → Prop := fun x ↦
+    ContMDiffAt I 𝓘(ℝ) ∞ f x ∧ (x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x)
+  refine ⟨{x | ∀ᶠ y in 𝓝 x, P y}, isOpen_setOfPred_eventually_nhds, fun x hx ↦ ?_,
+    isMorseOn_iff_criticalPoints.2
+      ⟨fun x hx ↦ (hx.self_of_nhds).1.contMDiffWithinAt, fun x hx ↦ (hx.self_of_nhds).2⟩⟩
+  have hfx := eventually_nhdsSet_iff_forall.1 hf x hx
+  filter_upwards [hfx,
+    eventually_isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      (hfx.self_of_nhds.of_le (by simp))
+      (h.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx)] with y hy hy'
+  exact ⟨hy, hy'⟩
+
 omit [IsManifold I 1 M] in
 /-- If only finitely many critical points lie in `S`, then only finitely many pairs of an index `m`
 and a critical point of index `m` in `S` exist. -/
 theorem finite_sigma_criticalPoints_inter {S : Set M} (hS : (criticalPoints I f ∩ S).Finite) :
     Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ S | manifoldMorseIndex I f x = m}) :=
   have := hS.to_subtype
-  .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ S)))
+  .of_injective (fun x ↦ (⟨x.2, x.2.property.1⟩ : ↥(criticalPoints I f ∩ S)))
     fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
       cases Subtype.ext_iff.1 hxy
       cases hx.2.symm.trans hy.2
       rfl
 
+omit [IsManifold I 1 M] in
+/-- If `f` has only finitely many critical points, then only finitely many pairs of an index `m`
+and a critical point of index `m` exist. -/
+theorem finite_sigma_criticalPoints (h : (criticalPoints I f).Finite) :
+    Finite (Σ m, ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m}) :=
+  have := finite_sigma_criticalPoints_inter (I := I) (f := f) (S := univ) (by simpa using h)
+  .of_equiv (Σ m, ↥{x ∈ criticalPoints I f ∩ univ | manifoldMorseIndex I f x = m})
+    (Equiv.sigmaCongrRight fun _ ↦ Set.equivOfEq (by simp))
+
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/
 theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
-    ∀ᶠ z in 𝓝 x, z ∈ criticalPoints I f → z = x := by
-  by_cases hx : x ∈ criticalPoints I f
-  · have hiso := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      hx).eventually_notMem_criticalPoints
-    filter_upwards [eventually_nhdsWithin_iff.1 hiso] with z hz hzc
-    by_contra hzx
-    exact hz hzx hzc
-  · filter_upwards [(isClosed_criticalPoints (hf.contMDiff.of_le (by simp))).isOpen_compl.mem_nhds
-      hx] with z hz hzc
-    exact absurd hzc hz
+    ∀ᶠ z in 𝓝 x, z ∈ criticalPoints I f → z = x :=
+  TauCeti.eventually_eq_of_mem_criticalPoints ((hf.contMDiff.of_le (by simp)) x)
+    hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
 
 /-- A Morse function on a compact manifold has finitely many critical points. -/
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :
     (criticalPoints I f).Finite := by
   simpa using hf.finite_criticalPoints_inter isCompact_univ
+
+/-- A Morse function on a compact manifold has finitely many zeros of its manifold derivative. -/
+theorem IsMorse.finite_setOf_mfderiv_eq_zero [CompactSpace M] (hf : IsMorse I f) :
+    {x | mfderiv I 𝓘(ℝ) f x = 0}.Finite :=
+  criticalPoints_eq_setOf_mfderiv_eq_zero (I := I) (f := f) ▸ hf.finite_criticalPoints
 
 /-- **Levels separating the critical values.** For a Morse function on a compact manifold and
 `a < b`, there are levels `a < c₂ < c₁ < b` such that every critical value strictly between `a`
@@ -652,32 +805,14 @@ theorem IsMorse.exists_lt_lt_forall_mem_Ioo [CompactSpace M] (hf : IsMorse I f) 
   have h₂ := T.le_max' _ (hmem hx hxab)
   constructor <;> linarith [hmin.1, hmax.2]
 
-/-- **Separating levels exist.** For a Morse function on a compact manifold and points `p` and
-`r`, there are levels `c₂` above `f r` and `c₁` below `f p` such that every critical value
-strictly between `f r` and `f p` lies strictly between `c₂` and `c₁`, and no critical point lies on
-the level `c₁`. -/
-theorem IsMorse.exists_separating_levels [CompactSpace M] (hf : IsMorse I f) (p r : M) :
-    ∃ c₁ c₂ : ℝ, c₁ < f p ∧ f r < c₂ ∧ (∀ y ∈ criticalPoints I f, f y ≠ c₁) ∧
-      ∀ q ∈ criticalPoints I f, f r < f q → f q < f p → c₂ < f q ∧ f q < c₁ := by
-  have hcrit := hf.finite_criticalPoints
-  -- Levels close enough to `f p` from below, and to `f r` from above, separate the finitely many
-  -- critical values.
-  have h₁ : ∀ᶠ c in 𝓝[<] (f p), c < f p ∧ ∀ q ∈ criticalPoints I f, f q < f p → f q < c :=
-    (eventually_nhdsWithin_of_forall fun _ h ↦ h).and <| (eventually_all_finite hcrit).2
-      fun q _ ↦ by
-        by_cases hq : f q < f p
-        · filter_upwards [Ioo_mem_nhdsLT hq] with c hc _ using hc.1
-        · exact Eventually.of_forall fun _ h ↦ absurd h hq
-  have h₂ : ∀ᶠ c in 𝓝[>] (f r), f r < c ∧ ∀ q ∈ criticalPoints I f, f r < f q → c < f q :=
-    (eventually_nhdsWithin_of_forall fun _ h ↦ h).and <| (eventually_all_finite hcrit).2
-      fun q _ ↦ by
-        by_cases hq : f r < f q
-        · filter_upwards [Ioo_mem_nhdsGT hq] with c hc _ using hc.2
-        · exact Eventually.of_forall fun _ h ↦ absurd h hq
-  obtain ⟨c₁, hc₁p, hc₁⟩ := h₁.exists
-  obtain ⟨c₂, hc₂r, hc₂⟩ := h₂.exists
-  exact ⟨c₁, c₂, hc₁p, hc₂r, fun y hy hyc ↦ (hc₁ y hy (hyc ▸ hc₁p)).ne hyc,
-    fun q hq hrq hqp ↦ ⟨hc₂ q hq hrq, hc₁ q hq hqp⟩⟩
+/-- **Dense regular levels.** For a Morse function on a compact manifold there is a countable dense
+set of levels none of which is the level of a critical point. -/
+theorem IsMorse.exists_countable_dense_forall_apply_notMem [CompactSpace M] (hf : IsMorse I f) :
+    ∃ L : Set ℝ, L.Countable ∧ Dense L ∧ ∀ x ∈ criticalPoints I f, f x ∉ L :=
+  -- The rationals that are not one of the finitely many critical values.
+  ⟨range ((↑) : ℚ → ℝ) \ f '' criticalPoints I f, (countable_range _).mono sdiff_subset,
+    Rat.denseRange_cast.sdiff_finite (hf.finite_criticalPoints.image f),
+    fun _ hx h ↦ h.2 (mem_image_of_mem f hx)⟩
 
 /-- A proper Morse function bounded below has finitely many critical points in each sublevel
 set. -/
@@ -784,47 +919,6 @@ theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t �
   exact htrans _ _ _ _ _ hcompact
     (htrans _ _ _ _ _ (hcompact' le_rfl (by linarith)) hlow hmid) hup
 
-/-- **A regular partition of the values of a Morse function.** For a Morse function `f` on a
-compact boundaryless manifold, there are regular values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with
-`s 0 < f ≤ s (N + 1)` on `M`, such that each band `f⁻¹[s j, s (j + 1)]` contains at most one
-critical value. -/
-theorem IsMorse.exists_regular_sublevel_partition [CompactSpace M] (hf : IsMorse I f) :
-    ∃ (s : ℕ → ℝ) (N : ℕ), Monotone s ∧ (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
-      (∀ j ≤ N + 1, IsRegularValue I 𝓘(ℝ) f (s j)) ∧
-      ∀ j ≤ N, ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
-        f x ∈ Icc (s j) (s (j + 1)) → f y ∈ Icc (s j) (s (j + 1)) → f x = f y := by
-  set C := f '' criticalPoints I f
-  have hC : C.Finite := hf.finite_criticalPoints.image f
-  -- A step `δ` smaller than the distance between any two distinct critical values.
-  have hev : ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ p ∈ {p ∈ C ×ˢ C | p.1 ≠ p.2}, δ < |p.1 - p.2| :=
-    (Filter.eventually_all_finite ((hC.prod hC).subset (sep_subset _ _))).2 fun p hp ↦
-      (eventually_lt_nhds (abs_pos.2 (sub_ne_zero.2 hp.2))).filter_mono nhdsWithin_le_nhds
-  obtain ⟨δ, hgap, hδ⟩ := (hev.and self_mem_nhdsWithin).exists
-  obtain ⟨L, hL⟩ := (isCompact_range hf.contMDiff.continuous).bddBelow
-  obtain ⟨U, hU⟩ := (isCompact_range hf.contMDiff.continuous).bddAbove
-  set N := ⌈(U - L + 1) / δ⌉₊
-  -- Start the arithmetic progression `a + j δ` at an `a` which keeps its first terms off `C`.
-  have hB : (⋃ j ∈ Finset.range (N + 2), (fun c ↦ c - j * δ) '' C).Finite :=
-    (Finset.range (N + 2)).finite_toSet.biUnion fun j _ ↦ hC.image _
-  obtain ⟨a, ⟨haL, haL'⟩, ha⟩ := ((Ioo_infinite (sub_one_lt L)).sdiff hB).nonempty
-  simp only [mem_iUnion, mem_image, Finset.mem_range, not_exists, not_and] at ha
-  refine ⟨fun j ↦ a + j * δ, N, fun i j hij ↦ by dsimp only; gcongr,
-    fun x ↦ by simpa using haL'.trans_le (hL (mem_range_self x)), fun x ↦ ?_, fun j hj ↦ ?_,
-    fun j _ x hx y hy hxj hyj ↦ ?_⟩
-  · have hN : (U - L + 1) / δ ≤ N := Nat.le_ceil _
-    rw [div_le_iff₀ hδ] at hN
-    have := hU (mem_range_self x)
-    push_cast
-    nlinarith
-  · refine isRegularValue_iff_notMem_image_criticalPoints.2 fun hc ↦ ha j (by lia) _ hc ?_
-    ring
-  · -- Two values in an interval of length `δ` are at distance at most `δ`.
-    by_contra hxy
-    have h := hgap (f x, f y) ⟨⟨mem_image_of_mem f hx, mem_image_of_mem f hy⟩, hxy⟩
-    simp only [Nat.cast_add, Nat.cast_one, mem_Icc] at h hxj hyj
-    rw [lt_abs] at h
-    rcases h with h | h <;> linarith [hxj.1, hxj.2, hyj.1, hyj.2]
-
 end IsManifold
 
 /-! ### Critical-band cuts -/
@@ -889,6 +983,30 @@ theorem exists_isCriticalBandCut_of_finite_image_criticalPoints [CompactSpace M]
     exact ⟨(a q + a (q + 1)) / 2, ⟨by linarith, by linarith⟩,
       fun y hy hfy ↦ absurd hfy (hx y hy)⟩
 
+/-- **Critical-band cuts indexed by `ℕ`.** A continuous function `f` with finitely many critical
+values on a compact manifold can be cut at regular values `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)`, with
+`s 0 < f ≤ s (N + 1)`, such that each band `f⁻¹[s j, s (j + 1)]` is a critical band. This is the
+form of a critical-band cut (`TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints`)
+taken by the Morse–Bott inequalities. -/
+theorem exists_monotone_isCriticalBand_of_finite_image_criticalPoints [CompactSpace M]
+    (hf : Continuous f) (hfin : (f '' criticalPoints I f).Finite) :
+    ∃ (s : ℕ → ℝ) (N : ℕ), Monotone s ∧ (∀ x, s 0 < f x) ∧ (∀ x, f x ≤ s (N + 1)) ∧
+      (∀ j, IsCriticalBand I f (s j) (s (j + 1))) ∧ ∀ j, IsRegularValue I 𝓘(ℝ) f (s j) := by
+  obtain ⟨a, ha, ⟨q₀, hq₀⟩, ⟨q₁, hq₁⟩⟩ :=
+    exists_isCriticalBandCut_of_finite_image_criticalPoints (I := I) hf hfin
+  have hband (j : ℕ) : IsCriticalBand I f (a (q₀ + j)) (a (q₀ + (j + 1))) := by
+    simpa [add_assoc] using ha.isCriticalBand (q₀ + j)
+  refine ⟨fun j ↦ a (q₀ + j), (q₁ - q₀).toNat, fun j k hjk ↦ ha.monotone (by lia),
+    fun x ↦ by simpa using hq₀ x, fun x ↦ (hq₁ x).trans (ha.monotone (by lia)), hband,
+    fun j ↦ ?_⟩
+  rcases j with _ | j
+  · exact isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (by simpa using hq₀ x : _ < f x).ne' hx
+  -- The critical value of a critical band lies strictly inside it, so its upper end is regular.
+  obtain ⟨c, hc, hcrit⟩ := (hband j).exists_mem_Ioo_forall_eq
+  refine isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, hx, hfx⟩ ↦ hc.2.ne ?_
+  replace hfx : f x = a (q₀ + (j + 1)) := by simpa using hfx
+  rw [← hcrit x hx ⟨hfx ▸ hc.1.le.trans hc.2.le, hfx.le⟩, hfx]
+
 /-- **Critical-band cuts exist for Morse functions on compact manifolds.** A Morse function `f` on
 a compact manifold has a critical-band cut `a : ℤ → ℝ` which starts below and ends above all values
 of `f`, so that the filtration `q ↦ {f ≤ a q}` is finite. -/
@@ -920,20 +1038,73 @@ theorem criticalCount_def (j : ℕ) :
     criticalCount I f j = {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.encard :=
   (rfl)
 
+/-- The critical count in index `j` vanishes exactly when no critical point has index `j`. -/
+theorem criticalCount_eq_zero_iff (j : ℕ) :
+    criticalCount I f j = 0 ↔ ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≠ j := by
+  simp [criticalCount_def, encard_eq_zero, eq_empty_iff_forall_notMem]
+
 /-- The number of critical points of a given index is at most the number of critical points. -/
 theorem criticalCount_le_totalCriticalCount (j : ℕ) :
     criticalCount I f j ≤ totalCriticalCount I f :=
   encard_le_encard (sep_subset _ _)
+
+/-- The number of critical points of index `j` is the cardinality of the set of critical points
+of index `j`; both are `0` when there are infinitely many. -/
+theorem natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount (j : ℕ) :
+    Nat.card {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j} =
+      (criticalCount I f j).toNat := by
+  rw [Nat.card_coe_set_eq, ncard_def, criticalCount_def]
 
 /-- The number of critical points of index `j` is the cardinality of the type of critical points
 of index `j`; both are `0` when there are infinitely many. -/
 @[simp]
 theorem natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount (j : ℕ) :
     Nat.card {p : criticalPoints I f // manifoldMorseIndex I f p = j} =
-      (criticalCount I f j).toNat := by
-  rw [Nat.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ criticalPoints I f)
-    (manifoldMorseIndex I f · = j)), criticalCount_def, ← ncard_def]
-  exact Nat.card_coe_set_eq {x | x ∈ criticalPoints I f ∧ manifoldMorseIndex I f x = j}
+      (criticalCount I f j).toNat :=
+  (Nat.card_congr (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ criticalPoints I f)
+    (manifoldMorseIndex I f · = j))).trans
+    (natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount j)
+
+/-- A function on the empty manifold has no critical points. -/
+@[simp]
+theorem totalCriticalCount_of_isEmpty [IsEmpty M] : totalCriticalCount I f = 0 := by
+  rw [totalCriticalCount_def, eq_empty_of_isEmpty (criticalPoints I f), encard_empty]
+
+/-- On a manifold modelled on a zero-dimensional space every point is critical, so the number of
+critical points of any function is the number of points; on a single point it is `1`. -/
+theorem totalCriticalCount_of_subsingleton [Subsingleton E] :
+    totalCriticalCount I f = ENat.card M := by
+  rw [totalCriticalCount_def, criticalPoints_eq_univ_of_subsingleton, encard_univ]
+
+/-- The number of critical points of a constant function is the number of points. -/
+theorem totalCriticalCount_const (c : ℝ) :
+    totalCriticalCount I (fun _ : M ↦ c) = ENat.card M := by
+  rw [totalCriticalCount_def, criticalPoints_const, encard_univ]
+
+/-- **A constant function has infinitely many critical points** on a nonempty manifold of positive
+dimension, such as the circle: its critical count is `⊤`, not a junk natural number. -/
+theorem totalCriticalCount_const_eq_top [Nontrivial E] [Nonempty M] (c : ℝ) :
+    totalCriticalCount I (fun _ : M ↦ c) = ⊤ := by
+  -- `M` is a `T1` space without isolated points, so every neighbourhood of a point is infinite.
+  have := I.perfectSpace M
+  have : T1Space H := I.isClosedEmbedding.isEmbedding.t1Space
+  have := ChartedSpace.t1Space H M
+  obtain ⟨x⟩ := ‹Nonempty M›
+  rw [totalCriticalCount_def, criticalPoints_const, encard_eq_top_iff]
+  exact infinite_of_mem_nhds x univ_mem
+
+/-- On a manifold modelled on a zero-dimensional space every point is critical of index `0`, so
+the number of critical points of index `0` is the number of points, possibly `⊤`. -/
+@[simp]
+theorem criticalCount_zero_of_subsingleton [Subsingleton E] :
+    criticalCount I f 0 = ENat.card M := by
+  simp [criticalCount_def, encard_univ]
+
+/-- On a manifold modelled on a zero-dimensional space every Morse index is `0`, so there are no
+critical points of positive index. -/
+theorem criticalCount_eq_zero_of_subsingleton [Subsingleton E] {j : ℕ} (hj : j ≠ 0) :
+    criticalCount I f j = 0 := by
+  simp [criticalCount_def, hj.symm]
 
 /-- A function and its negation have the same number of critical points. -/
 @[simp]
@@ -947,6 +1118,16 @@ theorem totalCriticalCount_comp_subtypeVal {U : Opens M} :
     totalCriticalCount I (f ∘ Subtype.val : U → ℝ) = (criticalPoints I f ∩ U).encard := by
   rw [totalCriticalCount_def, criticalPoints_comp_subtypeVal,
     ← Subtype.val_injective.encard_image, image_preimage_eq_inter_range, Subtype.range_val]
+
+/-- **The critical count of a disjoint union** `M ⊕ M'` is the sum of the critical counts of the
+restrictions of the function to `M` and to `M'`. -/
+@[simp]
+theorem totalCriticalCount_sumElim {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M']
+    {g : M' → ℝ} :
+    totalCriticalCount I (Sum.elim f g) = totalCriticalCount I f + totalCriticalCount I g := by
+  simp only [totalCriticalCount_def, criticalPoints_sumElim]
+  rw [encard_union_eq disjoint_image_inl_image_inr, Sum.inl_injective.encard_image,
+    Sum.inr_injective.encard_image]
 
 /-- **The critical count is additive over components.** If `M` has finitely many connected
 components, the number of critical points of `f` is the sum over the components of the numbers of
@@ -998,12 +1179,14 @@ theorem two_le_totalCriticalCount [I.Boundaryless] [CompactSpace M] [Nontrivial 
     (encard_pair hxy).symm.le.trans (encard_le_encard (pair_subset hx hy))
   rw [totalCriticalCount_def]
   obtain hpq | rfl := ne_or_eq p q
-  · exact hpair hpq (IsLocalMax.mem_criticalPoints (.of_forall hp))
-      (IsLocalMin.mem_criticalPoints (.of_forall hq))
+  · exact hpair hpq
+      (IsLocalMax.mem_criticalPoints (.of_forall hp) BoundarylessManifold.isInteriorPoint)
+      (IsLocalMin.mem_criticalPoints (.of_forall hq) BoundarylessManifold.isInteriorPoint)
   · -- The maximum and the minimum are attained at the same point, so `f` is constant and every
     -- point is a local maximum.
     have hcrit (x : M) : x ∈ criticalPoints I f :=
       IsLocalMax.mem_criticalPoints (.of_forall fun y ↦ (hp y).trans (hq x))
+        BoundarylessManifold.isInteriorPoint
     obtain ⟨x, y, hxy⟩ := exists_pair_ne M
     exact hpair hxy (hcrit x) (hcrit y)
 
@@ -1024,10 +1207,11 @@ theorem two_mul_card_connectedComponents_le_totalCriticalCount [I.Boundaryless] 
   -- Each component is a nonempty compact boundaryless manifold with no isolated points.
   obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
   have : Nonempty (ConnectedComponents.mk x).opens := ⟨⟨x, ConnectedComponents.mem_opens.2 rfl⟩⟩
-  have : Nontrivial (ConnectedComponents.mk x).opens := ChartedSpace.nontrivial (H := H)
+  have := ChartedSpace.perfectSpace (H := H) (X := (ConnectedComponents.mk x).opens)
+  have := PerfectSpace.nontrivial (ConnectedComponents.mk x).opens
   have : CompactSpace (ConnectedComponents.mk x).opens :=
     isCompact_iff_compactSpace.1 (ConnectedComponents.isClopen_opens _).isClosed.isCompact
-  exact two_le_totalCriticalCount (hf.comp continuous_subtype_val)
+  exact two_le_totalCriticalCount (hf.comp continuous_subtypeVal)
 
 /-- A compact boundaryless manifold of positive dimension carrying a continuous function with fewer
 than four critical points is preconnected, hence connected when nonempty: each connected component
@@ -1059,8 +1243,8 @@ theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [Co
   obtain ⟨x₁, -, hx₁⟩ := isCompact_univ.exists_isMaxOn ⟨p, mem_univ p⟩ hf.continuousOn
   rcases (hx₀ (mem_univ x₁)).lt_or_eq with hlt | hconst
   · -- The minimum and the maximum are two distinct critical points, so they are all of them.
-    have h₀ := hx₀.mem_criticalPoints (I := I)
-    have h₁ := hx₁.mem_criticalPoints (I := I)
+    have h₀ := hx₀.mem_criticalPoints (I := I) BoundarylessManifold.isInteriorPoint
+    have h₁ := hx₁.mem_criticalPoints (I := I) BoundarylessManifold.isInteriorPoint
     have hne : x₀ ≠ x₁ := fun h ↦ hlt.ne (congrArg f h)
     refine ⟨x₀, x₁, hx₀, hx₁, hne, ?_, .inl hlt⟩
     rw [hpq', mem_insert_iff, mem_singleton_iff] at h₀ h₁
@@ -1073,7 +1257,7 @@ theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [Co
   have hmin (x : M) : IsMinOn f univ x := isMinOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]
   have hmax (x : M) : IsMaxOn f univ x := isMaxOn_univ_iff.2 fun y ↦ by rw [hall x, hall y]
   have hcrit : criticalPoints I f = univ :=
-    eq_univ_of_forall fun x ↦ (hmin x).mem_criticalPoints
+    eq_univ_of_forall fun x ↦ (hmin x).mem_criticalPoints BoundarylessManifold.isInteriorPoint
   exact ⟨p, q, hmin p, hmax q, hpq, hpq', .inr ⟨fun x ↦ by rw [hall x, hall p], hcrit⟩⟩
 
 /-- There are no critical points of index larger than the dimension. -/
@@ -1152,6 +1336,37 @@ theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Modul
     hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega
 
+/-- **Critical points of complementary index.** For a Morse function `f`, the critical points of
+`-f` of index `j` are the critical points of `f` of index `k`, when `j + k = dim M`. This is the
+generator-level form of `TauCeti.IsMorse.criticalCount_neg`. -/
+def IsMorse.criticalPointsIndexNegEquiv (hf : IsMorse I f) {j k : ℕ}
+    (hjk : j + k = Module.finrank ℝ E) :
+    {p : criticalPoints I (-f) // manifoldMorseIndex I (-f) p = j} ≃
+      {p : criticalPoints I f // manifoldMorseIndex I f p = k} :=
+  (Set.equivOfEq criticalPoints_neg).subtypeEquiv fun p ↦ by
+    have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      (by simpa using p.property)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+    simp only [Set.equivOfEq_apply]
+    omega
+
+/-- The equivalence `TauCeti.IsMorse.criticalPointsIndexNegEquiv` does not move the underlying
+point. -/
+@[simp]
+theorem IsMorse.coe_criticalPointsIndexNegEquiv_apply (hf : IsMorse I f) {j k : ℕ}
+    (hjk : j + k = Module.finrank ℝ E)
+    (p : {p : criticalPoints I (-f) // manifoldMorseIndex I (-f) p = j}) :
+    ((hf.criticalPointsIndexNegEquiv hjk p : criticalPoints I f) : M) = p := by
+  simp [criticalPointsIndexNegEquiv]
+
+/-- The inverse of `TauCeti.IsMorse.criticalPointsIndexNegEquiv` does not move the underlying
+point. -/
+@[simp]
+theorem IsMorse.coe_criticalPointsIndexNegEquiv_symm_apply (hf : IsMorse I f) {j k : ℕ}
+    (hjk : j + k = Module.finrank ℝ E)
+    (q : {q : criticalPoints I f // manifoldMorseIndex I f q = k}) :
+    (((hf.criticalPointsIndexNegEquiv hjk).symm q : criticalPoints I (-f)) : M) = q := by
+  simp [criticalPointsIndexNegEquiv]
+
 /-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
 `f` with values in `[a, b)` and complementary index `dim M - i`. -/
 theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
@@ -1165,6 +1380,17 @@ theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
   · have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
       hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     exact ⟨⟨hx, h₂, h₁⟩, by omega⟩
+
+/-- If `f` is a Morse function on all of `M` whose band `f ⁻¹' [a, b]` is compact and whose
+endpoints `a` and `b` are regular values, then `-f` is a Morse function on all of `M` whose band
+`(-f) ⁻¹' [-b, -a]` is compact and whose endpoints `-b` and `-a` are regular values. -/
+theorem IsMorse.neg_band (hf : IsMorse I f) {a b : ℝ}
+    (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha : IsRegularValue I 𝓘(ℝ) f a)
+    (hb : IsRegularValue I 𝓘(ℝ) f b) :
+    IsMorse I (-f) ∧ IsCompact ((-f) ⁻¹' Icc (-b) (-a)) ∧ IsRegularValue I 𝓘(ℝ) (-f) (-b) ∧
+      IsRegularValue I 𝓘(ℝ) (-f) (-a) :=
+  ⟨hf.neg, by rwa [preimage_neg_Icc_neg], isRegularValue_neg_iff.2 (by rwa [neg_neg]),
+    isRegularValue_neg_iff.2 (by rwa [neg_neg])⟩
 
 /-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a manifold of dimension `m`, the
 signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by the factor `(-1)ᵐ`,
@@ -1210,7 +1436,9 @@ theorem criticalCount_zero_ne_zero (hf : ContMDiff I 𝓘(ℝ) 2 f) : criticalCo
   have hmin : IsLocalMin f x := hx.isLocalMin Filter.univ_mem
   rw [criticalCount_def]
   exact encard_ne_zero_of_mem
-    ⟨hmin.mem_criticalPoints, manifoldMorseIndex_eq_zero_of_isLocalMin (hf x) hmin⟩
+    ⟨hmin.mem_criticalPoints BoundarylessManifold.isInteriorPoint,
+      manifoldMorseIndex_eq_zero_of_isLocalMin ((hf x).of_le one_le_two)
+        BoundarylessManifold.isInteriorPoint hmin⟩
 
 /-- A Morse function on a nonempty compact boundaryless manifold has a critical point of index
 the dimension of the manifold, at a point of maximum. -/

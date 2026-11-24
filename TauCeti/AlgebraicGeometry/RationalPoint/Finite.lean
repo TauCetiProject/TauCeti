@@ -65,8 +65,8 @@ private theorem finite_points_of_isAffine {Y : Scheme.{u}} [IsAffine Y] (b : Y �
       infer_instance
     exact HasRingHomProperty.Spec_iff.mp this
   refine Finite.of_injective
-    (fun y ↦ Spec.homEquivAlgHom ⟨y.1 ≫ Y.isoSpec.hom, by rw [Category.assoc, ← hb,
-      Iso.hom_inv_id_assoc, y.2]⟩) fun y y' h ↦ ?_
+    (fun y ↦ Spec.homEquivAlgHom ⟨y.val ≫ Y.isoSpec.hom, by rw [Category.assoc, ← hb,
+      Iso.hom_inv_id_assoc, y.property]⟩) fun y y' h ↦ ?_
   have := congrArg Subtype.val (Spec.homEquivAlgHom.injective h)
   exact Subtype.ext ((cancel_mono Y.isoSpec.hom).mp this)
 
@@ -83,18 +83,18 @@ theorem finite_points {X : Scheme.{u}} (a : X ⟶ Spec (.of k)) [QuasiCompact a]
       (y : {y : Spec (.of L) ⟶ 𝒰.X i //
         y ≫ 𝒰.f i ≫ a = Spec.map (CommRingCat.ofHom (algebraMap k L))}) :
       {x : Spec (.of L) ⟶ X // x ≫ a = Spec.map (CommRingCat.ofHom (algebraMap k L))} :=
-    ⟨y.1 ≫ 𝒰.f i, by rw [Category.assoc, y.2]⟩
+    ⟨y.val ≫ 𝒰.f i, by rw [Category.assoc, y.property]⟩
   have (i : 𝒰.I₀) := finite_points_of_isAffine (L := L) (𝒰.f i ≫ a)
   refine Set.finite_univ_iff.mp <| (Set.finite_iUnion fun i ↦ Set.finite_range (g i)).subset
     fun x _ ↦ ?_
   -- `Spec L` has a single point, so `x` factors through the open containing its image.
-  let i := 𝒰.idx (x.1 default)
-  have hx : Set.range x.1 ⊆ Set.range (𝒰.f i) := by
+  let i := 𝒰.idx (x.val default)
+  have hx : Set.range x.val ⊆ Set.range (𝒰.f i) := by
     rintro _ ⟨p, rfl⟩
     rw [Subsingleton.elim p default]
     exact 𝒰.covers _
-  refine Set.mem_iUnion.mpr ⟨i, ⟨IsOpenImmersion.lift (𝒰.f i) x.1 hx, ?_⟩, ?_⟩
-  · rw [IsOpenImmersion.lift_fac_assoc, x.2]
+  refine Set.mem_iUnion.mpr ⟨i, ⟨IsOpenImmersion.lift (𝒰.f i) x.val hx, ?_⟩, ?_⟩
+  · rw [IsOpenImmersion.lift_fac_assoc, x.property]
   · exact Subtype.ext (IsOpenImmersion.lift_fac _ _ _)
 
 /-- For a quasi-compact scheme locally of finite type over `Spec k` and a finite field `L` over

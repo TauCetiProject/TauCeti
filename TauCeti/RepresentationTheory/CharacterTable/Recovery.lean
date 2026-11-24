@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.ClassEquation
 public import TauCeti.Algebra.Group.Conj
-public import TauCeti.RepresentationTheory.CharacterTable.Degree
+public import TauCeti.RepresentationTheory.CharacterTable.Degree.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Eigenrow
 
 /-!

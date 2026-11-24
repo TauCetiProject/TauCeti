@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.Option
 public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.Topology.Algebra.Group.UCB.Prod
+import TauCeti.Algebra.Group.Equiv.Pi
 
 /-!
 # Products of amenable groups
@@ -130,15 +131,9 @@ instance Amenable.pi {ι : Type u} [Finite ι] {G : ι → Type v} [∀ i, Group
     intro α β e h G _ _ _ _
     have := h (fun a => G (e a))
     let φ : (∀ a, G (e a)) →ₜ* ∀ b, G b :=
-      { toFun := Equiv.piCongrLeft G e
-        map_one' := funext fun b => by
-          obtain ⟨a, rfl⟩ := e.surjective b
-          simp [Equiv.piCongrLeft_apply_apply]
-        map_mul' f f' := funext fun b => by
-          obtain ⟨a, rfl⟩ := e.surjective b
-          simp [Equiv.piCongrLeft_apply_apply]
-        continuous_toFun := (Homeomorph.piCongrLeft e).continuous }
-    exact .of_denseRange φ (Equiv.piCongrLeft G e).surjective.denseRange
+      { (MulEquiv.piCongrLeft G e).toMonoidHom with
+        continuous_toFun := by simpa using (Homeomorph.piCongrLeft e).continuous_toFun }
+    exact .of_denseRange φ (MulEquiv.piCongrLeft G e).surjective.denseRange
   · -- The empty product is the trivial group.
     intro G _ _ _ _
     infer_instance

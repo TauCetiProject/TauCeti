@@ -186,7 +186,7 @@ theorem of_linearlyEquivalent (hK : IsCanonicalDivisor K)
   obtain ⟨ω, hω, hω₀, rfl⟩ := hK
   obtain ⟨u, hu⟩ :=
     (MeromorphicFunction.orderSystem X).linearlyEquivalent_iff_exists_principalDivisor.1 h
-  set f : MeromorphicFunction X := (Additive.toMul u).1
+  set f : MeromorphicFunction X := (Additive.toMul u).val
   have hf : f ≠ 0 := (Additive.toMul u).ne_zero
   have hfω (x : X) : (f.finitePart • ω).MeromorphicAt x :=
     (hω x).smul (f.meromorphicAt_finitePart x)

@@ -20,7 +20,9 @@ records two smoothness results:
 
 It also records that a family of maps which is a `C^n` map at one index and zero at the others is
 `C^n` at every index (`ContMDiff.piSingle_apply`), as are the uncurried members of such a family of
-two-variable maps (`ContMDiff.uncurry_piSingle_apply`).
+two-variable maps (`ContMDiff.uncurry_piSingle_apply`). Appending a `C^n` component to a `C^n`
+family of maps into normed spaces with `Fin.snoc` gives a `C^n` family (`ContMDiffAt.finSnoc`,
+`ContMDiff.finSnoc`).
 
 ## Main results
 
@@ -29,11 +31,38 @@ two-variable maps (`ContMDiff.uncurry_piSingle_apply`).
 * `ContMDiff.piSingle_apply`: the members of `Pi.single i f` are `C^n` when `f` is.
 * `ContMDiff.uncurry_piSingle_apply`: the uncurried members of `Pi.single i f` are `C^n` when
   `uncurry f` is.
+* `ContMDiffAt.finSnoc`, `ContMDiff.finSnoc`: appending a `C^n` component with `Fin.snoc`.
 -/
 
 public section
 
 open Function
+open scoped Manifold
+
+section FinSnoc
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
+  {k : ℕ} {E' : Fin (k + 1) → Type*} [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)]
+  {F : M → ∀ j : Fin k, E' j.castSucc} {g : M → E' (Fin.last k)}
+
+/-- Appending a `C^n` component `g` to a `C^n` family `F` with `Fin.snoc` gives a `C^n` family. -/
+theorem ContMDiffAt.finSnoc {n : WithTop ℕ∞} {x : M}
+    (hF : ContMDiffAt I 𝓘(𝕜, ∀ j : Fin k, E' j.castSucc) n F x)
+    (hg : ContMDiffAt I 𝓘(𝕜, E' (Fin.last k)) n g x) :
+    ContMDiffAt I 𝓘(𝕜, ∀ i, E' i) n (fun y ↦ Fin.snoc (α := E') (F y) (g y)) x := by
+  refine contMDiffAt_pi_module_iff.2 fun i ↦ ?_
+  induction i using Fin.lastCases with
+  | last => simpa using hg
+  | cast j => simpa using contMDiffAt_pi_module_iff.1 hF j
+
+/-- Appending a `C^n` component `g` to a `C^n` family `F` with `Fin.snoc` gives a `C^n` family. -/
+theorem ContMDiff.finSnoc {n : WithTop ℕ∞} (hF : ContMDiff I 𝓘(𝕜, ∀ j : Fin k, E' j.castSucc) n F)
+    (hg : ContMDiff I 𝓘(𝕜, E' (Fin.last k)) n g) :
+    ContMDiff I 𝓘(𝕜, ∀ i, E' i) n (fun y ↦ Fin.snoc (α := E') (F y) (g y)) :=
+  fun x ↦ (hF x).finSnoc (hg x)
+
+end FinSnoc
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι]
   {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]

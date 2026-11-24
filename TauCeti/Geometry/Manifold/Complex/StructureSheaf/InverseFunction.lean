@@ -68,16 +68,59 @@ theorem stalkPullback_bijective_iff :
   ⟨fun h ↦ (stalkPullback_surjective_iff hf).mp h.2, stalkPullback_bijective_of_deriv_ne_zero hf⟩
 
 /-- The holomorphic-stalk isomorphism induced by an analytic map with nonzero derivative. -/
-def stalkPullbackEquiv (hf0 : deriv f a ≠ 0) :
+def stalkPullbackEquivOfDerivNeZero (hf0 : deriv f a ≠ 0) :
     (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk (f a) ≃+*
       (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a :=
-  RingEquiv.ofBijective (stalkPullback (eventually_contMDiffAt_of_analyticAt hf))
-    ((stalkPullback_bijective_iff hf).mpr hf0)
+  stalkPullbackEquiv (eventually_contMDiffAt_of_analyticAt hf)
+    (eventually_contMDiffAt_of_analyticAt (hf.analyticAt_localInverse hf0))
+    (hf.hasStrictDerivAt.eventually_left_inverse hf0)
+    (hf.hasStrictDerivAt.eventually_right_inverse hf0)
 
 /-- The stalk isomorphism acts by pullback of holomorphic germs. -/
-@[simp]
-theorem stalkPullbackEquiv_apply (hf0 : deriv f a ≠ 0)
+theorem stalkPullbackEquivOfDerivNeZero_apply (hf0 : deriv f a ≠ 0)
     (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk (f a)) :
-    stalkPullbackEquiv hf hf0 s = stalkPullback (eventually_contMDiffAt_of_analyticAt hf) s := (rfl)
+    stalkPullbackEquivOfDerivNeZero hf hf0 s =
+      stalkPullback (eventually_contMDiffAt_of_analyticAt hf) s :=
+  stalkPullbackEquiv_apply (eventually_contMDiffAt_of_analyticAt hf)
+    (eventually_contMDiffAt_of_analyticAt (hf.analyticAt_localInverse hf0))
+    (hf.hasStrictDerivAt.eventually_left_inverse hf0)
+    (hf.hasStrictDerivAt.eventually_right_inverse hf0) s
+
+/-- The stalk isomorphism induced by a nonzero derivative preserves evaluation. -/
+@[simp]
+theorem eval_stalkPullbackEquivOfDerivNeZero (hf0 : deriv f a ≠ 0)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk (f a)) :
+    eval 𝓘(ℂ) ℂ a (stalkPullbackEquivOfDerivNeZero hf hf0 s) = eval 𝓘(ℂ) ℂ (f a) s := by
+  rw [stalkPullbackEquivOfDerivNeZero, eval_stalkPullbackEquiv]
+
+/-- The inverse stalk isomorphism induced by a nonzero derivative preserves evaluation. -/
+@[simp]
+theorem eval_stalkPullbackEquivOfDerivNeZero_symm (hf0 : deriv f a ≠ 0)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) :
+    eval 𝓘(ℂ) ℂ (f a) ((stalkPullbackEquivOfDerivNeZero hf hf0).symm s) =
+      eval 𝓘(ℂ) ℂ a s := by
+  rw [stalkPullbackEquivOfDerivNeZero, eval_stalkPullbackEquiv_symm]
+
+/-- On function germs, the stalk isomorphism is composition with the analytic map. -/
+@[simp]
+theorem toFilterGerm_stalkPullbackEquivOfDerivNeZero (hf0 : deriv f a ≠ 0)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk (f a)) :
+    toFilterGerm 𝓘(ℂ) ℂ a (𝓝 a) le_rfl (stalkPullbackEquivOfDerivNeZero hf hf0 s) =
+      (toFilterGerm 𝓘(ℂ) ℂ (f a) (𝓝 (f a)) le_rfl s).compTendsto f
+        hf.continuousAt.tendsto := by
+  rw [stalkPullbackEquivOfDerivNeZero, toFilterGerm_stalkPullbackEquiv]
+
+/-- On function germs, the inverse stalk isomorphism is composition with the analytic local
+inverse supplied by the inverse function theorem. -/
+@[simp]
+theorem toFilterGerm_stalkPullbackEquivOfDerivNeZero_symm (hf0 : deriv f a ≠ 0)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ) ℂ).presheaf.stalk a) :
+    toFilterGerm 𝓘(ℂ) ℂ (f a) (𝓝 (f a)) le_rfl
+        ((stalkPullbackEquivOfDerivNeZero hf hf0).symm s) =
+      (toFilterGerm 𝓘(ℂ) ℂ a (𝓝 a) le_rfl s).compTendsto
+        (hf.hasStrictDerivAt.localInverse f (deriv f a) a hf0)
+        (by simpa only [(hf.hasStrictDerivAt.eventually_left_inverse hf0).self_of_nhds] using
+          (hf.analyticAt_localInverse hf0).continuousAt.tendsto) := by
+  rw [stalkPullbackEquivOfDerivNeZero, toFilterGerm_stalkPullbackEquiv_symm]
 
 end TauCeti.holomorphicStructureSheaf

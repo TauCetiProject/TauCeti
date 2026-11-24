@@ -85,8 +85,8 @@ lemma mem_basedMaps_iff {n : SimplexCategoryᵒᵖ} (φ : ((ihom X.right).obj Y.
 /-- A based simplex of the internal hom sends the basepoint to the basepoint. -/
 @[simp]
 lemma basedMaps_app_point {n m : SimplexCategoryᵒᵖ} (φ : (basedMaps X Y).obj n) (f : n ⟶ m) :
-    φ.1.app m f (X.point m) = Y.point m :=
-  φ.2 m f
+    φ.val.app m f (X.point m) = Y.point m :=
+  φ.property m f
 
 variable (X Y)
 
@@ -100,10 +100,10 @@ acts on based maps by postcomposition. -/
 protected def ihom : PointedSSet.{u} ⥤ PointedSSet.{u} where
   obj Y := Under.mk (basedMapsPoint X Y)
   map {Y Y'} g := Under.homMk
-    { app n := ↾fun φ ↦ ⟨φ.1.comp (.ofNatTrans g.right), (mem_basedMaps_iff _).2 fun m f ↦ by
+    { app n := ↾fun φ ↦ ⟨φ.val.comp (.ofNatTrans g.right), (mem_basedMaps_iff _).2 fun m f ↦ by
         -- A simplex of `[X, Y]` is a `Functor.HomObj` only after unfolding Mathlib's internal
         -- hom, so `simp` cannot rewrite `Functor.HomObj.comp`; `change` states the component.
-        change g.right.app m (φ.1.app m f (X.point m)) = _
+        change g.right.app m (φ.val.app m f (X.point m)) = _
         simp [basedMaps_app_point φ f]⟩
       naturality _ _ _ := rfl }
     (by
@@ -117,8 +117,8 @@ variable {X Y} in
 /-- Two simplices of `Map_*(X, Y)` are equal when their components agree on every simplex. -/
 @[ext]
 lemma ihom_obj_right_ext {n : SimplexCategoryᵒᵖ} {φ ψ : ((PointedSSet.ihom X).obj Y).right.obj n}
-    (h : ∀ m (f : n ⟶ m) x, (φ : (basedMaps X Y).obj n).1.app m f x =
-      (ψ : (basedMaps X Y).obj n).1.app m f x) :
+    (h : ∀ m (f : n ⟶ m) x, (φ : (basedMaps X Y).obj n).val.app m f x =
+      (ψ : (basedMaps X Y).obj n).val.app m f x) :
     φ = ψ :=
   Subtype.ext (Functor.functorHom_ext fun m f ↦ by ext x; exact h m f x)
 
@@ -138,7 +138,7 @@ private lemma functorHomEquiv_comp_ι_app_apply (g : Y ⟶ (PointedSSet.ihom X).
     {n : SimplexCategoryᵒᵖ} (x : X.right.obj n) (y : Y.right.obj n) :
     dsimp% (FunctorToTypes.functorHomEquiv X.right Y.right Z.right
       (g.right ≫ (basedMaps X Z).ι)).app n (x, y) =
-      (g.right.app n y : (basedMaps X Z).obj n).1.app n (𝟙 n) x := (rfl)
+      (g.right.app n y : (basedMaps X Z).obj n).val.app n (𝟙 n) x := (rfl)
 
 variable (Z)
 
@@ -161,7 +161,7 @@ def tensorHomEquiv : (X ⊗ Y ⟶ Z) ≃ (Y ⟶ (PointedSSet.ihom X).obj Z) wher
       simp [PointedSSet.ihom, basedMapsPoint])
   invFun g := smashLift
     (FunctorToTypes.functorHomEquiv X.right Y.right Z.right (g.right ≫ (basedMaps X Z).ι))
-    (fun n y ↦ (g.right.app n y : (basedMaps X Z).obj n).2 n (𝟙 n))
+    (fun n y ↦ (g.right.app n y : (basedMaps X Z).obj n).property n (𝟙 n))
     (fun n x ↦ by
       refine (functorHomEquiv_comp_ι_app_apply g x _).trans ?_
       rw [app_point]
@@ -175,12 +175,12 @@ def tensorHomEquiv : (X ⊗ Y ⟶ Z) ≃ (Y ⟶ (PointedSSet.ihom X).obj Z) wher
     ext n y m f x
     -- Naturality of `g.right` at `f`, evaluated at `𝟙 m` and `x`. `simp` would prove the
     -- naturality square itself again and reduce it to `True`, so it is applied directly.
-    refine (congrArg (fun φ : (basedMaps X Z).obj m ↦ φ.1.app m (𝟙 m) x)
+    refine (congrArg (fun φ : (basedMaps X Z).obj m ↦ φ.val.app m (𝟙 m) x)
       (NatTrans.naturality_apply g.right f y)).trans ?_
     -- The simplicial operator of `Map_*(X, Z)` along `f` precomposes with `f`, so the goal is
     -- `Category.comp_id f` under the component; `ihom_obj_right_map_coe_app_apply` states this
     -- for `ihom X`, which is only available once the instance below is built.
-    exact congrArg (fun h ↦ (g.right.app n y : (basedMaps X Z).obj n).1.app m h x)
+    exact congrArg (fun h ↦ (g.right.app n y : (basedMaps X Z).obj n).val.app m h x)
       (Category.comp_id f)
 
 variable {X Y Z}
@@ -188,14 +188,14 @@ variable {X Y Z}
 @[simp]
 lemma tensorHomEquiv_apply_right_app_coe_app_apply (f : X ⊗ Y ⟶ Z) {n m : SimplexCategoryᵒᵖ}
     (y : Y.right.obj n) (g : n ⟶ m) (x : X.right.obj m) :
-    dsimp% ((tensorHomEquiv X Y Z f).right.app n y : (basedMaps X Z).obj n).1.app m g x =
+    dsimp% ((tensorHomEquiv X Y Z f).right.app n y : (basedMaps X Z).obj n).val.app m g x =
       f.right.app m (smashMk x (Y.right.map g y)) := (rfl)
 
 @[simp]
 lemma tensorHomEquiv_symm_apply_right_app_smashMk (g : Y ⟶ (PointedSSet.ihom X).obj Z)
     {n : SimplexCategoryᵒᵖ} (x : X.right.obj n) (y : Y.right.obj n) :
     dsimp% ((tensorHomEquiv X Y Z).symm g).right.app n (smashMk x y) =
-      (g.right.app n y : (basedMaps X Z).obj n).1.app n (𝟙 n) x := (rfl)
+      (g.right.app n y : (basedMaps X Z).obj n).val.app n (𝟙 n) x := (rfl)
 
 /-- Currying is natural in the source: precomposition with `f` corresponds to precomposition
 with `X ◁ f`. -/
@@ -228,7 +228,7 @@ lemma homEquiv_def (X Y Z : PointedSSet.{u}) :
 @[simp]
 lemma curry_right_app_coe_app_apply (f : X ⊗ Y ⟶ Z) {n m : SimplexCategoryᵒᵖ}
     (y : Y.right.obj n) (g : n ⟶ m) (x : X.right.obj m) :
-    dsimp% ((MonoidalClosed.curry f).right.app n y : (basedMaps X Z).obj n).1.app m g x =
+    dsimp% ((MonoidalClosed.curry f).right.app n y : (basedMaps X Z).obj n).val.app m g x =
       f.right.app m (smashMk x (Y.right.map g y)) := by
   rw [← MonoidalClosed.homEquiv_apply_eq, homEquiv_def]
   exact tensorHomEquiv_apply_right_app_coe_app_apply f y g x
@@ -237,7 +237,7 @@ lemma curry_right_app_coe_app_apply (f : X ⊗ Y ⟶ Z) {n m : SimplexCategory�
 lemma uncurry_right_app_smashMk (g : Y ⟶ (ihom X).obj Z) {n : SimplexCategoryᵒᵖ}
     (x : X.right.obj n) (y : Y.right.obj n) :
     dsimp% (MonoidalClosed.uncurry g).right.app n (smashMk x y) =
-      (g.right.app n y : (basedMaps X Z).obj n).1.app n (𝟙 n) x := by
+      (g.right.app n y : (basedMaps X Z).obj n).val.app n (𝟙 n) x := by
   rw [← MonoidalClosed.homEquiv_symm_apply_eq, homEquiv_def]
   exact tensorHomEquiv_symm_apply_right_app_smashMk g x y
 
@@ -245,7 +245,7 @@ lemma uncurry_right_app_smashMk (g : Y ⟶ (ihom X).obj Z) {n : SimplexCategory�
 @[simp]
 lemma ihom_obj_right_coe_app_point {n m : SimplexCategoryᵒᵖ} (φ : ((ihom X).obj Y).right.obj n)
     (f : n ⟶ m) :
-    dsimp% (φ : (basedMaps X Y).obj n).1.app m f (X.point m) = Y.point m :=
+    dsimp% (φ : (basedMaps X Y).obj n).val.app m f (X.point m) = Y.point m :=
   basedMaps_app_point φ f
 
 /-- The simplicial operator of `Map_*(X, Y)` along `f` precomposes the components of a based map
@@ -253,13 +253,13 @@ with `f`. -/
 @[simp]
 lemma ihom_obj_right_map_coe_app_apply {n m k : SimplexCategoryᵒᵖ} (f : n ⟶ m)
     (φ : ((ihom X).obj Y).right.obj n) (g : m ⟶ k) (x : X.right.obj k) :
-    dsimp% (((ihom X).obj Y).right.map f φ : (basedMaps X Y).obj m).1.app k g x =
-      (φ : (basedMaps X Y).obj n).1.app k (f ≫ g) x := (rfl)
+    dsimp% (((ihom X).obj Y).right.map f φ : (basedMaps X Y).obj m).val.app k g x =
+      (φ : (basedMaps X Y).obj n).val.app k (f ≫ g) x := (rfl)
 
 /-- The basepoint of `Map_*(X, Y)` is the constant map to the basepoint of `Y`. -/
 @[simp]
 lemma ihom_obj_point_coe_app_apply {n m : SimplexCategoryᵒᵖ} (f : n ⟶ m) (x : X.right.obj m) :
-    dsimp% (((ihom X).obj Y).point n : (basedMaps X Y).obj n).1.app m f x = Y.point m :=
+    dsimp% (((ihom X).obj Y).point n : (basedMaps X Y).obj n).val.app m f x = Y.point m :=
   -- The basepoint is `basedMapsPoint X Y`, the constant map `HomObj.ofNatTrans (SSet.const _)`;
   -- its component at `x` unfolds to a face of the basepoint of `Y`. `simp` cannot see through
   -- the internal hom of `MonoidalClosed` here, so the unfolded goal is closed by `map_point`.
@@ -271,8 +271,8 @@ lemma pre_right_app_coe_app_apply {W : PointedSSet.{u}} (i : W ⟶ X)
     {n m : SimplexCategoryᵒᵖ} (φ : ((ihom X).obj Y).right.obj n)
     (f : n ⟶ m) (x : W.right.obj m) :
     dsimp% ((((MonoidalClosed.pre i).app Y).right.app n φ :
-      (basedMaps W Y).obj n).1.app m f x) =
-        (φ : (basedMaps X Y).obj n).1.app m f (i.right.app m x) := by
+      (basedMaps W Y).obj n).val.app m f x) =
+        (φ : (basedMaps X Y).obj n).val.app m f (i.right.app m x) := by
   have h := congrArg (fun k : W ⊗ (ihom X).obj Y ⟶ Y ↦
     k.right.app m (smashMk x (((ihom X).obj Y).right.map f φ)))
     (MonoidalClosed.id_tensor_pre_app_comp_ev i Y)
@@ -281,7 +281,7 @@ lemma pre_right_app_coe_app_apply {W : PointedSSet.{u}} (i : W ⟶ X)
     ← MonoidalClosed.uncurry_id_eq_ev, uncurry_right_app_smashMk,
     Under.id_right, NatTrans.id_app, types_id_apply] at h
   have hn := congrArg (fun ψ : ((ihom W).obj Y).right.obj m ↦
-    (ψ : (basedMaps W Y).obj m).1.app m (𝟙 m) x)
+    (ψ : (basedMaps W Y).obj m).val.app m (𝟙 m) x)
     (NatTrans.naturality_apply ((MonoidalClosed.pre i).app Y).right f φ)
   simpa only [Under.comp_right, NatTrans.comp_app, types_comp_apply,
     whiskerLeft_app_smashMk, whiskerRight_app_smashMk,
@@ -292,15 +292,15 @@ lemma pre_right_app_coe_app_apply {W : PointedSSet.{u}} (i : W ⟶ X)
 @[simp]
 lemma ihom_map_right_app_coe_app_apply (g : Y ⟶ Z) {n m : SimplexCategoryᵒᵖ}
     (φ : ((ihom X).obj Y).right.obj n) (f : n ⟶ m) (x : X.right.obj m) :
-    dsimp% (((ihom X).map g).right.app n φ : (basedMaps X Z).obj n).1.app m f x =
-      g.right.app m ((φ : (basedMaps X Y).obj n).1.app m f x) := (rfl)
+    dsimp% (((ihom X).map g).right.app n φ : (basedMaps X Z).obj n).val.app m f x =
+      g.right.app m ((φ : (basedMaps X Y).obj n).val.app m f x) := (rfl)
 
 /-- Evaluation `X ⊗ Map_*(X, Y) ⟶ Y` applies a based map to a simplex. -/
 @[simp]
 lemma ihom_ev_app_right_app_smashMk {n : SimplexCategoryᵒᵖ} (x : X.right.obj n)
     (φ : ((ihom X).obj Y).right.obj n) :
     dsimp% ((ihom.ev X).app Y).right.app n (smashMk x φ) =
-      (φ : (basedMaps X Y).obj n).1.app n (𝟙 n) x := by
+      (φ : (basedMaps X Y).obj n).val.app n (𝟙 n) x := by
   rw [← MonoidalClosed.uncurry_id_eq_ev, uncurry_right_app_smashMk]
   simp
 
@@ -308,7 +308,7 @@ lemma ihom_ev_app_right_app_smashMk {n : SimplexCategoryᵒᵖ} (x : X.right.obj
 @[simp]
 lemma ihom_coev_app_right_app_coe_app_apply {n m : SimplexCategoryᵒᵖ} (y : Y.right.obj n)
     (f : n ⟶ m) (x : X.right.obj m) :
-    dsimp% (((ihom.coev X).app Y).right.app n y : (basedMaps X (X ⊗ Y)).obj n).1.app m f x =
+    dsimp% (((ihom.coev X).app Y).right.app n y : (basedMaps X (X ⊗ Y)).obj n).val.app m f x =
       smashMk x (Y.right.map f y) := by
   rw [← MonoidalClosed.curry_id_eq_coev, curry_right_app_coe_app_apply]
   simp
@@ -406,7 +406,7 @@ lemma range_le_basedMaps_iff (X E : PointedSSet.{u}) {K : SSet.{u}}
 lemma basedMaps_ι_comp_pre (X E : PointedSSet.{u}) :
     (basedMaps X E).ι ≫ (MonoidalClosed.pre X.hom).app E.right =
       pointRestriction E (basedMaps X E).toSSet :=
-  (range_le_basedMaps_iff X E _).1 (by rintro n _ ⟨φ, rfl⟩; exact φ.2)
+  (range_le_basedMaps_iff X E _).1 (by rintro n _ ⟨φ, rfl⟩; exact φ.property)
 
 /-- The based mapping simplicial set is the fibre of restriction to the source basepoint
 at the target basepoint, expressed as a pullback over the zero-simplex. -/
@@ -444,22 +444,22 @@ lemma pre_right_comp_ι {W X : PointedSSet.{u}} (i : W ⟶ X) (E : PointedSSet.{
   apply Functor.functorHom_ext fun m f ↦ ?_
   ext x
   have h := congrArg (fun k : W.right ⊗ (CategoryTheory.ihom X.right).obj E.right ⟶
-      E.right ↦ k.app m (x, ((CategoryTheory.ihom X.right).obj E.right).map f φ.1))
+      E.right ↦ k.app m (x, ((CategoryTheory.ihom X.right).obj E.right).map f φ.val))
     (MonoidalClosed.id_tensor_pre_app_comp_ev i.right E.right)
   have hn := congrArg (fun ψ : ((CategoryTheory.ihom W.right).obj E.right).obj m ↦
     ψ.app m (𝟙 m) x)
-    (NatTrans.naturality_apply ((MonoidalClosed.pre i.right).app E.right) f φ.1)
+    (NatTrans.naturality_apply ((MonoidalClosed.pre i.right).app E.right) f φ.val)
   -- The unpointed internal hom is the native functor HomObj; evaluation is application.
   change (((MonoidalClosed.pre i.right).app E.right).app m
-    (((CategoryTheory.ihom X.right).obj E.right).map f φ.1)).app m (𝟙 m) x =
-      φ.1.app m (f ≫ 𝟙 m) (i.right.app m x) at h
+    (((CategoryTheory.ihom X.right).obj E.right).map f φ.val)).app m (𝟙 m) x =
+      φ.val.app m (f ≫ 𝟙 m) (i.right.app m x) at h
   -- Its simplicial operators precompose the simplex index.
-  change (((MonoidalClosed.pre i.right).app E.right).app n φ.1).app m (f ≫ 𝟙 m) x =
+  change (((MonoidalClosed.pre i.right).app E.right).app n φ.val).app m (f ≫ 𝟙 m) x =
     _ at hn
   -- The subcomplex inclusions forget the proofs that the mapping simplices are based.
   change (((MonoidalClosed.pre i).app E).right.app n φ :
-    (basedMaps W E).obj n).1.app m f x =
-      (((MonoidalClosed.pre i.right).app E.right).app n φ.1).app m f x
+    (basedMaps W E).obj n).val.app m f x =
+      (((MonoidalClosed.pre i.right).app E.right).app n φ.val).app m f x
   rw [pre_right_app_coe_app_apply]
   simpa only [Category.comp_id] using (hn.trans h).symm
 

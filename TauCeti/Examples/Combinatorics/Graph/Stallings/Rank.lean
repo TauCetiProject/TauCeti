@@ -49,9 +49,9 @@ private theorem rank_closure_add_natCard {ws : List (List (α × Bool))} {s : Se
     (isOrientation_setOf_label_snd _) (stallingsGraph_connected ws)
   -- The isomorphism preserves labels, so it matches the positive darts with the drawn edges.
   let g : {e : ι × Bool // e.2 = true} ≃ ι :=
-    { toFun e := e.1.1
+    { toFun e := e.val.1
       invFun i := ⟨(i, true), rfl⟩
-      left_inv := fun e => Subtype.ext (Prod.ext rfl e.2.symm)
+      left_inv := fun e => Subtype.ext (Prod.ext rfl e.property.symm)
       right_inv := fun _ => rfl }
   have hE : Nat.card {e | ((stallingsGraph ws).label e).2 = true} = Nat.card ι :=
     Nat.card_congr ((f.dartEquiv.subtypeEquiv fun e => by
