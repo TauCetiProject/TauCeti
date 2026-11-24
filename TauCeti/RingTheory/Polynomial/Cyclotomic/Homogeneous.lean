@@ -343,12 +343,10 @@ theorem pow_sub_pow_mul_homogeneousCyclotomic_dvd_pow_sub_pow {d n : ℕ}
     (h : d ∈ n.properDivisors) (a b : R) :
     (a ^ d - b ^ d) * homogeneousCyclotomic n a b ∣ a ^ n - b ^ n := by
   obtain ⟨hdn, hlt⟩ := Nat.mem_properDivisors.1 h
-  have hd : 0 < d := Nat.pos_of_mem_properDivisors h
-  have hn : 0 < n := hd.trans hlt
-  rw [← homogeneousCyclotomic_mul_prod_properDivisors hn, mul_comm,
-    ← prod_homogeneousCyclotomic_eq_pow_sub_pow hd]
-  exact mul_dvd_mul_left _ (Finset.prod_dvd_prod_of_subset _ _ _
-    (Nat.divisors_subset_properDivisors hn.ne' hdn hlt.ne))
+  have hn : 0 < n := (Nat.pos_of_mem_properDivisors h).trans hlt
+  rw [← pow_sub_pow_mul_prod_homogeneousCyclotomic_eq_pow_sub_pow_of_dvd hdn hn]
+  exact mul_dvd_mul_left _ (Finset.dvd_prod_of_mem _ (Finset.mem_sdiff.2
+    ⟨Nat.mem_divisors_self n hn.ne', fun hnd => hlt.not_ge (Nat.divisor_le hnd)⟩))
 
 /-- For a proper divisor `d` of `n`, in a Euclidean domain such as `ℤ`, `Φ_n(a, b)` divides the
 quotient `(a ^ n - b ^ n) / (a ^ d - b ^ d)`. No condition `a ^ d ≠ b ^ d` is needed, since
