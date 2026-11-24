@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Area
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chern
+import TauCeti.Topology.Homotopy.Extension.Cube
+import TauCeti.Topology.VectorBundle.FiberCast
 
 /-!
 # The first Chern number of the sphere bounded by two caps
@@ -231,15 +233,14 @@ private theorem mk_frame_rectangleTrans_of_boundary {x : X} {u u' : ℝ × ℝ �
     · exact Or.inr (Or.inl h)
     · exact Or.inr (Or.inr h)
 
-/-- **The clutching number of a sphere glued from two caps.** Let `u` and `u'` be continuous maps
-of the plane that agree on the line `s = 0`, and let `p` be the sphere at `x` whose square is
+/-- **The clutching number of a sphere glued from two caps.** Let `u` and `u'` be maps of the
+plane that agree on the line `s = 0`, and let `p` be the sphere at `x` whose square is
 `rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'`, `u` run backwards followed by `u'`. Let `φ`
 and `φ'` be continuous frames of `E` along `u` and `u'` that are constant, equal to `φ₀` and `φ₀'`,
-on the three edges `s = 1`, `t = 0` and `t = 1` of the unit square, and let `k` be a continuous
-family of automorphisms of `F` with `φ (0, t) = φ' (0, t) ∘ k t` along the edge `s = 0`; such a
-family is continuous, since `φ` and `φ'` are. Then for
-every continuous lift `θ` of the normalized determinant of `k` through `Circle.exp`,
-`2π` times the clutching number of `p` is `θ 0 - θ 1`. -/
+on the three edges `s = 1`, `t = 0` and `t = 1` of the unit square, and let `k` be a family of
+automorphisms of `F` with `φ (0, t) = φ' (0, t) ∘ k t` along the edge `s = 0` (it is automatically
+continuous, since `φ` and `φ'` are). Then for every continuous lift `θ` of the normalized
+determinant of `k` through `Circle.exp`, `2π` times the clutching number of `p` is `θ 0 - θ 1`. -/
 theorem clutchingNumber_mul_two_pi_eq_of_rectangleTrans {x : X} {u u' : ℝ × ℝ → X}
     (hseam : ∀ t, u (0, t) = u' (0, t)) {p : Ω^ (Fin 2) X x}
     (hp : ∀ y, p y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ)))
@@ -295,11 +296,16 @@ theorem clutchingNumber_mul_two_pi_eq_of_rectangleTrans {x : X} {u u' : ℝ × �
         (hleft _ (by simpa using hs) (Or.inr (by simpa using ht)))
     · rw [hR _ (by simpa using hs) (Or.inr (by simpa using ht))]
       exact hcorner _ (by simpa using ht)
-  exact squareBoundaryDegree_mul_two_pi_eq_of_edges
+  -- Along the right edge `θc' - θ` lifts `c' * (det k)⁻¹`.
+  obtain ⟨θc', hθc'⟩ := Circle.exp_surjective c'
+  rw [squareBoundaryDegree_mul_two_pi_eq_of_edges
     (continuousOn_clutchingFunction_boundary p hψc e hx) (fun s ↦ hhor s 0 (Or.inl rfl))
     (fun s ↦ hhor s 1 (Or.inr rfl))
     (fun t ↦ clutchingFunction_eq_of_mk_eq e (hleft _ (by norm_num) (Or.inl (by simp))))
-    (fun t ↦ by simpa using hR ![1, t] (by norm_num) (Or.inl (by simp))) hθ hθk
+    (fun t ↦ by simpa using hR ![1, t] (by norm_num) (Or.inl (by simp)))
+    (continuous_const.sub hθ) (θ := fun t ↦ θc' - θ t)
+    fun t ↦ by rw [Circle.exp_sub, hθc', hθk, div_eq_mul_inv]]
+  ring
 
 end Clutching
 
@@ -312,14 +318,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I ∞ M] {J : SmoothAlmostComplexStructure I M}
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
   [Fact (finrank ℝ E = 2 * finrank ℂ G)]
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-/-- Tangent vectors at equal points with equal underlying vectors are equal in the tangent
-bundle. -/
-private theorem tangentBundle_mk_eq_of_eq {b b' : M} (hb : b = b') (w : TangentSpace I b) :
-    (⟨b, w⟩ : TangentBundle I M) = ⟨b', w⟩ := by
-  subst hb
-  rfl
 
 variable [T2Space M] [SigmaCompactSpace M] {σ : SmoothTwoForm I M} {x : M} {γ : Ω M x}
   {u u' : ℝ × ℝ → M}
@@ -334,29 +332,6 @@ private theorem IsSmoothBasedCap.apply_eq_of_edge (hu : IsSmoothBasedCap I γ u)
   · simpa using hu.apply_one ⟨t, ht⟩
   · simpa using hu.apply_seam ⟨s, hs⟩
   · simpa using hu.apply_seam_one ⟨s, hs⟩
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M] in
-/-- The sphere by which the raw caps of two smooth based caps `u'` and `u` differ is represented by
-the square of `u` run backwards followed by `u'`. -/
-private theorem IsSmoothBasedCap.exists_genLoop_homotopyClass_vsub_homotopyClass
-    (hu : IsSmoothBasedCap I γ u) (hu' : IsSmoothBasedCap I γ u') :
-    ∃ p : Ω^ (Fin 2) M x,
-      (∀ y, p y = rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u' ((y 0 : ℝ), (y 1 : ℝ))) ∧
-        hu'.homotopyClass -ᵥ hu.homotopyClass = Additive.ofMul ⟦p⟧ := by
-  set w := rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) u'
-  have hw : IsSmoothBasedHomotopy I (Path.refl x) (Path.refl x) w :=
-    hu.comp_prodMap_one_sub.rectangleTrans hu'
-  let p : Ω^ (Fin 2) M x := ⟨⟨fun y ↦ w ((y 0 : ℝ), (y 1 : ℝ)),
-    hw.contMDiff.continuous.comp (by fun_prop)⟩, fun y hy ↦ by
-      simp only [Cube.boundary, Set.mem_ofPred_eq, Fin.exists_fin_two] at hy
-      -- Evaluate the continuous map built from `w` at `y`.
-      change w ((y 0 : ℝ), (y 1 : ℝ)) = x
-      rcases hy with (hi | hi) | (hi | hi) <;> rw [hi]
-      · simpa using hw.apply_zero (y 1)
-      · simpa using hw.apply_one (y 1)
-      · simpa using hw.apply_seam (y 0)
-      · simpa using hw.apply_seam_one (y 0)⟩
-  exact ⟨p, fun y ↦ rfl, hu.homotopyClass_vsub_homotopyClass_toMul hu' fun y ↦ rfl⟩
 
 omit [T2Space M] [SigmaCompactSpace M] in
 /-- A continuous real frame `χ` of the tangent bundle along a smooth based cap `u`, complex linear
@@ -387,15 +362,16 @@ private theorem IsSmoothBasedCap.complexFrame_of_eq_on_edges (hu : IsSmoothBased
     refine (Jc.totalSpaceHomeomorph G).injective ?_
     rw [ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame,
       ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame, hχ₀ s t hs ht hst v]
-    exact tangentBundle_mk_eq_of_eq ((hu.apply_eq_of_edge hs ht hst).trans hx₀.symm) _
+    -- The tangent spaces are all the model space, so equal points carry the same vectors.
+    exact TotalSpace.ext ((hu.apply_eq_of_edge hs ht hst).trans hx₀.symm) HEq.rfl
 
 /-- **The first Chern number of the sphere bounded by two smooth caps.** Let `u` and `u'` be
 smooth based caps of a loop `γ` at `x`, in a manifold with a fiberwise nondegenerate two-form `σ`
 taming an almost complex structure `J`. Let `χ` and `χ'` be real frames of the tangent bundle along
 `u` and `u'`, continuous into the tangent bundle, complex linear for `J`, and constant on the three
 edges `s = 1`, `t = 0`, `t = 1` of the unit square, where the caps are at `x`. Along `γ` they
-differ by a continuous loop `k` of complex-linear automorphisms of the model,
-`χ (0, t) = χ' (0, t) ∘ k t`. Then for every continuous lift `θ` of the normalized complex
+differ by a family `k` of complex-linear automorphisms of the model (necessarily a continuous
+loop), `χ (0, t) = χ' (0, t) ∘ k t`. Then for every continuous lift `θ` of the normalized complex
 determinant of `k` through `Circle.exp`, `2π` times the first Chern number of the sphere
 `D' -ᵥ D` by which the raw caps of `u'` and `u` differ is `θ 0 - θ 1`. -/
 theorem IsSmoothBasedCap.firstChernHom_homotopyClass_vsub_homotopyClass_mul_two_pi_eq
@@ -431,107 +407,44 @@ theorem IsSmoothBasedCap.firstChernHom_homotopyClass_vsub_homotopyClass_mul_two_
   refine ((J.toContMDiff 0).toContinuousComplexStructure.totalSpaceHomeomorph G).injective ?_
   rw [ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame,
     ContMDiffAlmostComplexStructure.totalSpaceHomeomorph_mk_complexFrame, hχk t v]
-  exact tangentBundle_mk_eq_of_eq (hseam t) _
+  exact TotalSpace.ext (hseam t) HEq.rfl
 
 /-! ### Frames over a cap that are constant on its edges at the base point -/
 
 /-- A retraction of the plane onto the three edges `s = 1`, `t = 0`, `t = 1` of the unit square:
-clamp to the square, then project radially from the point `(-1, 1/2)` onto the three edges, which
-form the unit sphere of `d ↦ max (d₁ / 2) (2 |d₂|)` around that point. -/
-private def capEdgeRetraction (z : ℝ × ℝ) : ℝ × ℝ :=
-  (((max 0 (min z.1 1) + 1) / max ((max 0 (min z.1 1) + 1) / 2) (2 * |max 0 (min z.2 1) - 1 / 2|)
-      - 1),
-    ((max 0 (min z.2 1) - 1 / 2) / max ((max 0 (min z.1 1) + 1) / 2)
-      (2 * |max 0 (min z.2 1) - 1 / 2|) + 1 / 2))
-
-/-- The radial scale of `capEdgeRetraction`: for `a, b ∈ [0, 1]`,
-`1/2 ≤ max ((a + 1) / 2) (2 |b - 1/2|) ≤ 1`. -/
-private theorem capEdgeRetraction_scale {a b : ℝ} (ha : a ∈ Icc (0 : ℝ) 1)
-    (hb : b ∈ Icc (0 : ℝ) 1) :
-    1 / 2 ≤ max ((a + 1) / 2) (2 * |b - 1 / 2|) ∧ max ((a + 1) / 2) (2 * |b - 1 / 2|) ≤ 1 := by
-  have hab : |b - 1 / 2| ≤ 1 / 2 := abs_le.2 ⟨by linarith [hb.1], by linarith [hb.2]⟩
-  exact ⟨le_max_of_le_left (by linarith [ha.1]),
-    max_le (by linarith [ha.2]) (by linarith)⟩
-
-private theorem clamp_mem (r : ℝ) : max 0 (min r 1) ∈ Icc (0 : ℝ) 1 :=
-  ⟨le_max_left _ _, max_le zero_le_one (min_le_right _ _)⟩
-
-private theorem continuous_capEdgeRetraction : Continuous capEdgeRetraction := by
-  have hN (z : ℝ × ℝ) : max ((max 0 (min z.1 1) + 1) / 2) (2 * |max 0 (min z.2 1) - 1 / 2|) ≠ 0 :=
-    (lt_of_lt_of_le (by norm_num) (capEdgeRetraction_scale (clamp_mem z.1) (clamp_mem z.2)).1).ne'
-  unfold capEdgeRetraction
-  exact ((Continuous.div (by fun_prop) (by fun_prop) hN).sub continuous_const).prodMk
-    ((Continuous.div (by fun_prop) (by fun_prop) hN).add continuous_const)
-
-/-- The radial projection of `capEdgeRetraction` lands in the three edges: for `a, b ∈ [0, 1]` and
-`N = max ((a + 1) / 2) (2 |b - 1/2|)`, the point `((a + 1) / N - 1, (b - 1/2) / N + 1/2)` lies on
-the edge `s = 1`, `t = 0` or `t = 1` of the unit square. -/
-private theorem capEdge_mem {a b N : ℝ} (ha : a ∈ Icc (0 : ℝ) 1) (hb : b ∈ Icc (0 : ℝ) 1)
-    (hNdef : N = max ((a + 1) / 2) (2 * |b - 1 / 2|)) :
-    (a + 1) / N - 1 ∈ Icc (0 : ℝ) 1 ∧ (b - 1 / 2) / N + 1 / 2 ∈ Icc (0 : ℝ) 1 ∧
-      ((a + 1) / N - 1 = 1 ∨ (b - 1 / 2) / N + 1 / 2 = 0 ∨ (b - 1 / 2) / N + 1 / 2 = 1) := by
-  obtain ⟨hN₁, hN₂⟩ := capEdgeRetraction_scale ha hb
-  rw [← hNdef] at hN₁ hN₂
-  have hN : 0 < N := lt_of_lt_of_le (by norm_num) hN₁
-  have hNa : (a + 1) / 2 ≤ N := hNdef ▸ le_max_left _ _
-  have hNb : 2 * |b - 1 / 2| ≤ N := hNdef ▸ le_max_right _ _
-  have hb' := abs_le.1 (show |b - 1 / 2| ≤ N / 2 by linarith)
-  refine ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ?_⟩
-  · rw [sub_nonneg, le_div_iff₀ hN]
-    linarith [ha.1]
-  · rw [sub_le_iff_le_add, div_le_iff₀ hN]
-    linarith
-  · have : -(1 / 2) ≤ (b - 1 / 2) / N := by
-      rw [le_div_iff₀ hN]
-      linarith [hb'.1]
-    linarith
-  · have : (b - 1 / 2) / N ≤ 1 / 2 := by
-      rw [div_le_iff₀ hN]
-      linarith [hb'.2]
-    linarith
-  · have ha1 : a + 1 ≠ 0 := by linarith [ha.1]
-    rcases max_choice ((a + 1) / 2) (2 * |b - 1 / 2|) with h | h <;> rw [← hNdef] at h
-    · left
-      rw [h]
-      field_simp
-      ring
-    · right
-      have hc : b - 1 / 2 ≠ 0 := fun hc ↦ by
-        rw [hc, abs_zero, mul_zero] at h
-        linarith
-      rcases le_or_gt 0 (b - 1 / 2) with hs | hs
-      · right
-        rw [abs_of_nonneg hs] at h
-        rw [h, mul_comm, ← div_div, div_self hc]
-        norm_num
-      · left
-        rw [abs_of_neg hs] at h
-        rw [h, mul_neg, div_neg, mul_comm, ← div_div, div_self hc]
-        norm_num
-
-/-- `capEdgeRetraction` lands in the three edges `s = 1`, `t = 0`, `t = 1` of the unit square. -/
-private theorem capEdgeRetraction_mem (z : ℝ × ℝ) :
-    (capEdgeRetraction z).1 ∈ Icc (0 : ℝ) 1 ∧ (capEdgeRetraction z).2 ∈ Icc (0 : ℝ) 1 ∧
-      ((capEdgeRetraction z).1 = 1 ∨ (capEdgeRetraction z).2 = 0 ∨
-        (capEdgeRetraction z).2 = 1) :=
-  capEdge_mem (clamp_mem z.1) (clamp_mem z.2) rfl
-
-/-- `capEdgeRetraction` fixes the three edges `s = 1`, `t = 0`, `t = 1` of the unit square. -/
-private theorem capEdgeRetraction_eq {s t : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1)
-    (hst : s = 1 ∨ t = 0 ∨ t = 1) : capEdgeRetraction (s, t) = (s, t) := by
-  have hs' : max 0 (min s 1) = s := by rw [min_eq_left hs.2, max_eq_right hs.1]
-  have ht' : max 0 (min t 1) = t := by rw [min_eq_left ht.2, max_eq_right ht.1]
-  have hN : max ((s + 1) / 2) (2 * |t - 1 / 2|) = 1 := by
-    have htb : |t - 1 / 2| ≤ 1 / 2 := abs_le.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩
+clamp to the square, then apply, in the coordinates `(1 - s, t)`, a retraction of the cylinder
+`I × I` onto `{0} × I ∪ I × {0, 1}` given by the homotopy extension property of `{0, 1}`. -/
+private theorem exists_capEdgeRetraction :
+    ∃ ρ : ℝ × ℝ → ℝ × ℝ, Continuous ρ ∧
+      (∀ z, (ρ z).1 ∈ Icc (0 : ℝ) 1 ∧ (ρ z).2 ∈ Icc (0 : ℝ) 1 ∧
+        ((ρ z).1 = 1 ∨ (ρ z).2 = 0 ∨ (ρ z).2 = 1)) ∧
+      ∀ s t : ℝ, s ∈ Icc (0 : ℝ) 1 → t ∈ Icc (0 : ℝ) 1 → (s = 1 ∨ t = 0 ∨ t = 1) →
+        ρ (s, t) = (s, t) := by
+  obtain ⟨r, hr, hr'⟩ := hasHomotopyExtensionProperty_zero_one.exists_retraction
+  -- The point of the cylinder `I × I` with coordinates `(1 - s, t)` after clamping.
+  let q : ℝ × ℝ → unitInterval × unitInterval := fun z ↦
+    (unitInterval.symm (projIcc 0 1 zero_le_one z.1), projIcc 0 1 zero_le_one z.2)
+  have hq : Continuous q := by
+    fun_prop (disch := exact zero_le_one)
+  refine ⟨fun z ↦ (1 - ((r (q z)).1 : ℝ), ((r (q z)).2 : ℝ)),
+    by fun_prop, fun z ↦ ?_, fun s t hs ht hst ↦ ?_⟩
+  · refine ⟨⟨by linarith [unitInterval.le_one (r (q z)).1],
+      by linarith [unitInterval.nonneg (r (q z)).1]⟩, (r (q z)).2.property, ?_⟩
+    obtain h | h | h : (r (q z)).1 = 0 ∨ (r (q z)).2 = 0 ∨ (r (q z)).2 = 1 :=
+      mem_cylinderExtensionDomain_iff.1 (hr (q z))
+    · exact Or.inl (by simp [h])
+    · exact Or.inr (Or.inl (by simp [h]))
+    · exact Or.inr (Or.inr (by simp [h]))
+  · have hqst : q (s, t) = (unitInterval.symm ⟨s, hs⟩, ⟨t, ht⟩) := by
+      simp only [q, projIcc_of_mem _ hs, projIcc_of_mem _ ht]
+    beta_reduce
+    rw [hqst, hr' _ ?_]
+    · simp
+    rw [mem_cylinderExtensionDomain_iff]
     rcases hst with rfl | rfl | rfl
-    · rw [max_eq_left (by linarith)]
-      norm_num
-    · rw [max_eq_right (by norm_num; linarith [hs.2])]
-      norm_num
-    · rw [max_eq_right (by norm_num; linarith [hs.2])]
-      norm_num
-  simp only [capEdgeRetraction, hs', ht', hN, div_one]
-  ext <;> simp only <;> ring
+    · exact Or.inl (Subtype.ext (by simp))
+    · exact Or.inr (Or.inl rfl)
+    · exact Or.inr (Or.inr rfl)
 
 omit [T2Space M] [SigmaCompactSpace M] in
 /-- **Frames over a cap.** Along every smooth based cap `u` of a loop at `x` there is a real frame
@@ -547,12 +460,11 @@ theorem IsSmoothBasedCap.exists_frame_eq_on_edges (hu : IsSmoothBasedCap I γ u)
         χ (s, t) v = χ (1, 0) v := by
   obtain ⟨φ, hφ, hφJ⟩ :=
     (J.toContMDiff 0).exists_continuous_frame (G := G) hu.contMDiff.continuous
-  set ρ := capEdgeRetraction
-  have hρ : Continuous ρ := continuous_capEdgeRetraction
+  obtain ⟨ρ, hρ, hρmem, hρeq⟩ := exists_capEdgeRetraction
   have hcorner : (1 : ℝ) ∈ Icc (0 : ℝ) 1 ∧ (0 : ℝ) ∈ Icc (0 : ℝ) 1 :=
     ⟨⟨zero_le_one, le_rfl⟩, ⟨le_rfl, zero_le_one⟩⟩
   have hρx (z : ℝ × ℝ) : u (ρ z) = u (1, 0) := by
-    obtain ⟨h₁, h₂, h₃⟩ := capEdgeRetraction_mem z
+    obtain ⟨h₁, h₂, h₃⟩ := hρmem z
     exact (hu.apply_eq_of_edge h₁ h₂ h₃).trans
       (hu.apply_eq_of_edge hcorner.1 hcorner.2 (Or.inl rfl)).symm
   -- The change of frame from `φ` at the retraction of `z` back to `φ` at the corner `(1, 0)`.
@@ -562,7 +474,7 @@ theorem IsSmoothBasedCap.exists_frame_eq_on_edges (hu : IsSmoothBasedCap I γ u)
       (ψ := fun z ↦ φ (ρ z)) ?_ (hφ.comp ((hρ.comp continuous_fst).prodMk continuous_snd))
     refine (hφ.comp ((continuous_const (y := ((1, 0) : ℝ × ℝ))).prodMk
       continuous_snd)).congr fun q ↦ ?_
-    exact (tangentBundle_mk_eq_of_eq (hρx q.1) _).symm
+    exact TotalSpace.ext (hρx q.1).symm HEq.rfl
   refine ⟨fun z ↦ (A z).trans (φ z),
     hφ.comp (continuous_fst.prodMk ((hA.comp continuous_fst).clm_apply continuous_snd)),
     fun z v ↦ ?_, fun s t hs ht hst v ↦ ?_⟩
@@ -588,7 +500,7 @@ theorem IsSmoothBasedCap.exists_frame_eq_on_edges (hu : IsSmoothBasedCap I γ u)
       -- As for `hAI`, the composite is unfolded by `change` since its tangent spaces are equal
       -- only definitionally.
       change φ (s, t) ((φ (ρ (s, t))).symm (φ (1, 0) w)) = φ (1, 0) w
-      rw [show ρ (s, t) = (s, t) from capEdgeRetraction_eq hs ht hst]
+      rw [hρeq s t hs ht hst]
       exact (φ (s, t)).apply_symm_apply _
     -- Evaluate the frame `fun z ↦ (A z).trans (φ z)` at the two points.
     change (A (s, t)).trans (φ (s, t)) v = (A (1, 0)).trans (φ (1, 0)) v

@@ -90,7 +90,6 @@ case for any two almost complex structures tamed by a common symplectic form.
 
 * `TauCeti.clutchingFunction p φ e`: the normalized determinant of the transition between a frame
   `φ` along `p` and a trivialization `e`.
-* `TauCeti.fiberCast`: the identification of the fibres of `E` over two equal points.
 * `TauCeti.clutchingNumber F E p`: the clutching number of `E` on a based sphere `p`.
 * `TauCeti.clutchingNumberHom F E x`: the clutching number as a homomorphism `π₂(X, x) → ℤ`.
 
@@ -200,19 +199,6 @@ theorem clutchingFunction_eq_mul_coordChangeL {y : B} (hy : f y ∈ e.baseSet)
     simp [e.coordChangeL_apply e' ⟨hy, hy'⟩, e.symm_apply_apply_mk hy]
   rw [clutchingFunction_of_mem hy, clutchingFunction_of_mem hy', h,
     ContinuousLinearEquiv.normalizedDet_trans, mul_inv]
-
-/-- The identification of the fibres of `E` over two equal points, which lets a frame along one
-map be read as a frame along another map with the same values. -/
-def fiberCast {a b : X} (h : a = b) : E a ≃L[ℂ] E b :=
-  h ▸ ContinuousLinearEquiv.refl ℂ (E a)
-
-omit [TopologicalSpace X] [NormedAddCommGroup F] [NormedSpace ℂ F]
-  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] in
-/-- `TauCeti.fiberCast` does not move points of the total space. -/
-theorem mk_fiberCast {a b : X} (h : a = b) (w : E a) :
-    TotalSpace.mk' F b (fiberCast h w) = TotalSpace.mk' F a w := by
-  subst h
-  rfl
 
 omit [TopologicalSpace B] in
 /-- Two frames that agree as families of points of the total space have the same clutching
