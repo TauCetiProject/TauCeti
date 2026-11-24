@@ -26,9 +26,10 @@ symbol** on `W(A, I)` with values in a group `C` is a map `(a, b) ↦ [b/a]` sat
 The two moves are deliberately asymmetric: the first, which changes `b` by a multiple of `a`,
 only allows coefficients in `I`. The normalization `[0/1] = 1` follows from multiplicativity.
 Mennicke symbols are the rank-two shadow of the relative elementary subgroups: Bass, Milnor and
-Serre show that for `n ≥ 3` the first row of the upper left `2 × 2` corner induces a Mennicke
-symbol on `SLₙ(A, I) / Eₙ(A, I)`, and compute this group over rings of `S`-integers through the
-universal Mennicke symbol, which this file constructs.
+Serre show that for `n ≥ 3`, sending `(a, b) ∈ W(A, I)` to the class in `SLₙ(A, I) / Eₙ(A, I)` of
+a determinant-one matrix congruent to the identity modulo `I` whose upper left `2 × 2` block has
+first row `(a, b)` is a Mennicke symbol, and compute this group over rings of `S`-integers
+through the universal Mennicke symbol, which this file constructs.
 
 The **universal Mennicke group** `C_I = Ideal.MennickeGroup I` is the group presented by the
 generators `[b/a]`, one for each pair in `W(A, I)`, subject to the three Mennicke relations. Its
@@ -200,6 +201,27 @@ theorem map_map (g : B →+* D) (f : A →+* B) (hg : J ≤ K.comap g) (hf : I �
     (p.map f hf).map g hg = p.map (g.comp f) (hf.trans (Ideal.comap_mono hg)) :=
   (rfl)
 
+@[simp]
+theorem map_one (f : A →+* B) (h : I ≤ J.comap f) :
+    (MennickePair.one : MennickePair I).map f h = .one := by
+  ext <;> simp
+
+@[simp]
+theorem map_shiftSnd (f : A →+* B) (h : I ≤ J.comap f) (p : MennickePair I) (t : A)
+    (ht : t ∈ I) :
+    (p.shiftSnd t ht).map f h = (p.map f h).shiftSnd (f t) (Ideal.mem_comap.mp (h ht)) := by
+  ext <;> simp
+
+@[simp]
+theorem map_shiftFst (f : A →+* B) (h : I ≤ J.comap f) (p : MennickePair I) (t : A) :
+    (p.shiftFst t).map f h = (p.map f h).shiftFst (f t) := by
+  ext <;> simp
+
+@[simp]
+theorem map_mulSnd (f : A →+* B) (h : I ≤ J.comap f) (p q : MennickePair I) (hpq : p.fst = q.fst) :
+    (p.mulSnd q hpq).map f h = (p.map f h).mulSnd (q.map f h) (by simp [hpq]) := by
+  ext <;> simp
+
 end MennickePair
 
 /-- The **Mennicke relations** for a map `s : W(A, I) → C`, written `s (a, b) = [b/a]`:
@@ -262,7 +284,10 @@ theorem map_eq_one_of_dvd_fst_sub (hs : IsMennickeSymbol s) {p : MennickePair I}
     (hu : IsUnit u) (hdvd : p.snd ∣ p.fst - u) : s p = 1 := by
   obtain ⟨k, hk⟩ := hdvd
   rw [← hs.map_shiftFst p (-k)]
-  exact hs.map_eq_one_of_isUnit_fst (by simpa [neg_mul, mul_comm k, ← sub_eq_add_neg, ← hk])
+  refine hs.map_eq_one_of_isUnit_fst ?_
+  convert hu using 1
+  simp only [MennickePair.shiftFst_fst]
+  linear_combination hk
 
 /-- **Near-unit reduction in the second entry.** If `b` is congruent modulo `a` to a unit of `A`,
 then `[b/a] = 1`. -/
@@ -297,15 +322,11 @@ theorem monoidHom_comp (hs : IsMennickeSymbol s) (φ : C →* E) : IsMennickeSym
 theorem comp_map {s : MennickePair J → C} (hs : IsMennickeSymbol s) (f : A →+* B)
     (h : I ≤ J.comap f) : IsMennickeSymbol (s ∘ MennickePair.map f h) where
   map_shiftSnd p t ht := by
-    simpa using hs.map_eq_of_snd_eq (p := p.map f h) (q := (p.shiftSnd t ht).map f h) rfl (h ht)
-      (by simp)
-  map_shiftFst p t := hs.map_eq_of_fst_eq (p := p.map f h) (q := (p.shiftFst t).map f h) (f t)
-    (by simp) rfl
+    simp only [Function.comp_apply, MennickePair.map_shiftSnd, hs.map_shiftSnd]
+  map_shiftFst p t := by
+    simp only [Function.comp_apply, MennickePair.map_shiftFst, hs.map_shiftFst]
   map_mulSnd p q hpq := by
-    simp only [Function.comp_apply]
-    rw [← hs.map_mulSnd (p.map f h) (q.map f h) (by simp [hpq])]
-    congr 1
-    ext <;> simp
+    simp only [Function.comp_apply, MennickePair.map_mulSnd, hs.map_mulSnd]
 
 /-- **The Euclidean algorithm.** Over a Euclidean domain, every Mennicke symbol at the unit ideal
 is trivial. -/
@@ -494,7 +515,7 @@ def ofLE {I J : Ideal A} (h : J ≤ I) : MennickeGroup J →* MennickeGroup I :=
 @[simp]
 theorem ofLE_of {I J : Ideal A} (h : J ≤ I) (p : MennickePair J) :
     ofLE h (of p) = of ⟨p.fst, p.snd, h p.fst_sub_one_mem, h p.snd_mem, p.isCoprime⟩ :=
-  map_of _ h p
+  (map_of _ (h.trans (Ideal.comap_id I).ge) p).trans (congrArg of (by ext <;> simp))
 
 @[simp]
 theorem ofLE_refl (I : Ideal A) : ofLE (le_refl I) = MonoidHom.id _ :=
@@ -502,8 +523,8 @@ theorem ofLE_refl (I : Ideal A) : ofLE (le_refl I) = MonoidHom.id _ :=
 
 @[simp]
 theorem ofLE_ofLE {I J L : Ideal A} (hJI : J ≤ I) (hLJ : L ≤ J) (x : MennickeGroup L) :
-    ofLE hJI (ofLE hLJ x) = ofLE (hLJ.trans hJI) x :=
-  map_map _ _ hJI hLJ x
+    ofLE hJI (ofLE hLJ x) = ofLE (hLJ.trans hJI) x := by
+  simp only [ofLE, map_map, RingHom.id_comp]
 
 end MennickeGroup
 
