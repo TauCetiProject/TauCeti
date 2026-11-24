@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Convex.SpectralFunction
-public import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction
 public import TauCeti.Analysis.Matrix.MinkowskiDeterminant
+public import TauCeti.Data.Fin.Basic
 
 /-!
 # Values and concavity of spectral functions on `2 × 2` matrices
@@ -27,15 +27,11 @@ spectral functions on diagonal `2 × 2` matrices and test the hypotheses of the 
   `diag(1, -2/5)` and `diag(1, 1/10)` but not their midpoint.
 * `min` is symmetric and concave, so its spectral function `λ₂` is concave. The convex `max` is the
   negative control: `λ₁` is `1` at `diag(1, 0)` and `diag(0, 1)` and `1/2` at their midpoint.
-* `μ ↦ ∑ log(1 + μᵢ)` has spectral function `log det(1 + T)`, concave on `{T | T > -1}`, a domain
-  that is not a cone. At `diag(-1/2, 1)` and `diag(1, -1/2)` it is `0`, and at their midpoint it is
-  `2 log(5/4) > 0`.
+* On `{T | T > -1}`, a domain that is not a cone, `μ ↦ ∑ log(1 + μᵢ)` has spectral function
+  `log det(1 + T)`. At `diag(-1/2, 1)` and `diag(1, -1/2)` it is `0`, and at their midpoint it is
+  `2 log(5/4) > 0`, consistent with concavity.
 * Ellipticity is needed for monotonicity: the spectral function of `f = -σ₁` decreases along
   `diag(1, 0) ≤ diag(2, 0)`.
-
-## References
-
-These are the Checks of §1.4 of the ComplexHessianEquations roadmap.
 -/
 
 public section
@@ -47,16 +43,12 @@ namespace TauCeti.SpectralFunctionExamples
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- A decreasing pair is an antitone vector on `Fin 2`. -/
-theorem antitone_vecCons_two {a b : ℝ} (hab : b ≤ a) : Antitone (![a, b] : Fin 2 → ℝ) := by
-  intro i j hij
-  fin_cases i <;> fin_cases j <;> simp_all
-
 /-- The sorted eigenvalues of `diag(a, b)` with `b ≤ a` are `(a, b)`. -/
 theorem eigenvalues₀_diagonal_two {a b : ℝ} (hab : b ≤ a)
     (h : (diagonal ![(a : 𝕜), b]).IsHermitian) : h.eigenvalues₀ = ![a, b] := by
-  refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecCons_two hab) ?_
+  refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecEmpty.vecCons hab) ?_
   rw [charpoly_diagonal]
+  -- `Fintype.card (Fin 2)` reduces to `2`, exposing the product to `Fin.prod_univ_two`.
   change _ = ∏ k : Fin 2, _
   simp [Fin.prod_univ_two]
 
@@ -64,33 +56,11 @@ theorem eigenvalues₀_diagonal_two {a b : ℝ} (hab : b ≤ a)
 diagonal. -/
 theorem eigenvalues₀_diagonal_two_swap {a b : ℝ} (hab : b ≤ a)
     (h : (diagonal ![(b : 𝕜), a]).IsHermitian) : h.eigenvalues₀ = ![a, b] := by
-  refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecCons_two hab) ?_
+  refine h.eigenvalues₀_eq_of_charpoly_eq (antitone_vecEmpty.vecCons hab) ?_
   rw [charpoly_diagonal]
+  -- `Fintype.card (Fin 2)` reduces to `2`, exposing the product to `Fin.prod_univ_two`.
   change _ = ∏ k : Fin 2, _
   simp [Fin.prod_univ_two, mul_comm]
-
-/-- A permutation of `Fin 2` is the identity or the swap. -/
-theorem comp_perm_fin_two (σ : Equiv.Perm (Fin 2)) (μ : Fin 2 → ℝ) :
-    μ ∘ σ = μ ∨ μ ∘ σ = ![μ 1, μ 0] := by
-  have h := σ.injective.ne (show (0 : Fin 2) ≠ 1 by decide)
-  have h0 : σ 0 = 0 ∨ σ 0 = 1 := by omega
-  have h1 : σ 1 = 0 ∨ σ 1 = 1 := by omega
-  rcases h0 with h0 | h0 <;> rcases h1 with h1 | h1
-  · exact absurd (h0.trans h1.symm) h
-  · exact .inl (funext fun i ↦ by fin_cases i <;> simp [h0, h1])
-  · exact .inr (funext fun i ↦ by fin_cases i <;> simp [h0, h1])
-  · exact absurd (h0.trans h1.symm) h
-
-/-- A function on `ℝ²` that is invariant under swapping the two coordinates is symmetric. -/
-theorem apply_comp_perm_fin_two {α : Type*} {f : (Fin 2 → ℝ) → α}
-    (hf : ∀ a b, f ![a, b] = f ![b, a]) (σ : Equiv.Perm (Fin 2)) (μ : Fin 2 → ℝ) :
-    f (μ ∘ σ) = f μ := by
-  rcases comp_perm_fin_two σ μ with h | h
-  · rw [h]
-  · rw [h, hf]
-    congr 1
-    funext i
-    fin_cases i <;> rfl
 
 /-! ### The geometric mean and `det^{1/n}` -/
 
@@ -102,6 +72,7 @@ theorem geomMean_eigenvalues₀ {A : Matrix (Fin 2) (Fin 2) 𝕜} (hA : A.IsHerm
     geomMean hA.eigenvalues₀ = RCLike.re A.det ^ (2⁻¹ : ℝ) := by
   rw [hA.det_eq_prod_eigenvalues₀]
   unfold geomMean
+  -- `Fintype.card (Fin 2)` reduces to `2`, exposing the product to `Fin.prod_univ_two`.
   change _ = RCLike.re (∏ k : Fin 2, _) ^ _
   rw [Fin.prod_univ_two, ← RCLike.ofReal_mul, RCLike.ofReal_re]
 
@@ -113,18 +84,15 @@ theorem geomMean_diagonal_four_one (hA : (diagonal ![((4 : ℝ) : 𝕜), (1 : �
     geomMean hA.eigenvalues₀ = 2 ∧ geomMean hB.eigenvalues₀ = 2 ∧
       geomMean hM.eigenvalues₀ = 5 / 2 := by
   have h4 : (4 : ℝ) ^ (2⁻¹ : ℝ) = 2 := by
-    rw [show (4 : ℝ) = 2 ^ (2 : ℝ) by norm_num, ← Real.rpow_mul (by norm_num)]
-    norm_num
-  have h52 : (5 / 2 * (5 / 2) : ℝ) ^ (2⁻¹ : ℝ) = 5 / 2 := by
-    rw [← sq, ← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
-    norm_num
+    rw [show (4 : ℝ) = 2 ^ 2 by norm_num]
+    simpa using Real.pow_rpow_inv_natCast (x := 2) (n := 2) (by norm_num) two_ne_zero
   refine ⟨?_, ?_, ?_⟩
   · rw [eigenvalues₀_diagonal_two (by norm_num) hA, geomMean]
     simpa using h4
   · rw [eigenvalues₀_diagonal_two_swap (by norm_num) hB, geomMean]
     simpa using h4
   · rw [eigenvalues₀_diagonal_two le_rfl hM, geomMean]
-    simpa using h52
+    simpa [← sq] using Real.pow_rpow_inv_natCast (x := 5 / 2) (n := 2) (by norm_num) two_ne_zero
 
 /-- The midpoint of `diag(4, 1)` and `diag(1, 4)` is `diag(5/2, 5/2)`. -/
 theorem midpoint_diagonal_four_one :
@@ -134,8 +102,7 @@ theorem midpoint_diagonal_four_one :
 
 /-- **Agreement with the Minkowski determinant theorem.** For real `n × n` matrices, the spectral
 function `A ↦ (∏ λ(A))^{1/n}` of the geometric mean is `det^{1/n}`, and it is concave on the
-positive semidefinite matrices by `Matrix.concaveOn_det_rpow`. The geometric mean is concave on the
-closed orthant, a convex symmetric set that is not open. -/
+positive semidefinite matrices by `Matrix.concaveOn_det_rpow`. -/
 theorem concaveOn_prod_eigenvalues₀_rpow {ι : Type*} [Fintype ι] [DecidableEq ι] :
     ConcaveOn ℝ {A : selfAdjoint.submodule ℝ (Matrix ι ι ℝ) | (A : Matrix ι ι ℝ).PosSemidef}
       fun A ↦ (∏ k, A.property.isHermitian.eigenvalues₀ k) ^ (Fintype.card ι : ℝ)⁻¹ := by
@@ -158,11 +125,8 @@ theorem geomMean_diagonal_one_zero (hA : (diagonal ![((1 : ℝ) : 𝕜), (0 : �
     simp
   · rw [eigenvalues₀_diagonal_two_swap (by norm_num) hB, geomMean]
     simp
-  · have h : (1 / 2 * (1 / 2) : ℝ) ^ (2⁻¹ : ℝ) = 1 / 2 := by
-      rw [← sq, ← Real.rpow_natCast, ← Real.rpow_mul (by norm_num)]
-      norm_num
-    rw [eigenvalues₀_diagonal_two le_rfl hM, geomMean]
-    simpa using h
+  · rw [eigenvalues₀_diagonal_two le_rfl hM, geomMean]
+    simpa [← sq] using Real.pow_rpow_inv_natCast (x := 1 / 2) (n := 2) (by norm_num) two_ne_zero
 
 /-! ### A symmetric cone that is not convex -/
 
@@ -175,9 +139,9 @@ def InNonconvexCone (μ : Fin 2 → ℝ) : Prop :=
 /-- The cone `InNonconvexCone` is invariant under permutations of the coordinates. -/
 theorem inNonconvexCone_comp_perm (σ : Equiv.Perm (Fin 2)) (μ : Fin 2 → ℝ) :
     InNonconvexCone (μ ∘ σ) = InNonconvexCone μ :=
-  apply_comp_perm_fin_two (fun a b ↦ by
+  σ.apply_comp_fin_two (fun a b ↦ by
     simp only [InNonconvexCone, Matrix.cons_val_zero, Matrix.cons_val_one]
-    exact propext (by tauto)) σ μ
+    exact propext (by tauto)) μ
 
 /-- **Convexity of `Γ` is necessary for the convexity of the spectral domain.** The real symmetric
 `2 × 2` matrices with eigenvalue vector in the symmetric cone `InNonconvexCone` do not form a
@@ -222,7 +186,7 @@ theorem concaveOn_minPair_eigenvalues₀ :
       fun A ↦ minPair A.property.isHermitian.eigenvalues₀ := by
   simpa using Matrix.concaveOn_spectralFunction (𝕜 := 𝕜) (ι := Fin 2) (Γ := Set.univ)
     (fun _ _ _ ↦ Set.mem_univ _) (f := minPair)
-    (fun σ μ _ ↦ apply_comp_perm_fin_two (fun a b ↦ by simp [minPair, min_comm]) σ μ)
+    (fun σ μ _ ↦ σ.apply_comp_fin_two (fun a b ↦ by simp [minPair, min_comm]) μ)
     (((LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 0).concaveOn convex_univ).inf
       ((LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 1).concaveOn convex_univ))
 
@@ -258,7 +222,7 @@ theorem sum_log_one_add_eigenvalues₀ {ι : Type*} [Fintype ι] [DecidableEq ι
     linarith [hA1 k]]
   simp [add_comm]
 
-/-- The spectral function of `μ ↦ log(1 + μ₁) + log(1 + μ₂)` on `ℝ²`. -/
+/-- The function `μ ↦ log(1 + μ₁) + log(1 + μ₂)` on `ℝ²`. -/
 noncomputable def logOneAdd (μ : Fin 2 → ℝ) : ℝ := Real.log (1 + μ 0) + Real.log (1 + μ 1)
 
 /-- `log det(1 + T)` is `0` at `diag(-1/2, 1)` and at `diag(1, -1/2)`, and `2 log(5/4) > 0` at
@@ -288,9 +252,9 @@ theorem neg_sum_eigenvalues₀_diagonal (hS : (diagonal ![(1 : 𝕜), 0]).IsHerm
   · rw [diagonal_sub]
     refine PosSemidef.diagonal fun i ↦ ?_
     fin_cases i <;> norm_num
-  · rw [hS.sum_eigenvalues₀, trace_diagonal, Fin.sum_univ_two]
+  · rw [hS.sum_eigenvalues₀_eq_re_trace, trace_diagonal, Fin.sum_univ_two]
     simp
-  · rw [hT.sum_eigenvalues₀, trace_diagonal, Fin.sum_univ_two]
+  · rw [hT.sum_eigenvalues₀_eq_re_trace, trace_diagonal, Fin.sum_univ_two]
     simp
 
 end TauCeti.SpectralFunctionExamples

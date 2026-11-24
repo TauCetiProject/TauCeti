@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.Spectrum
-public import Mathlib.Data.Fin.Tuple.Sort
-public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
+public import TauCeti.Analysis.Matrix.Eigenvalues.Basic
+import TauCeti.Analysis.Matrix.Spectrum
 
 /-!
 # Values of spectral functions of Hermitian matrices
@@ -18,28 +17,26 @@ For a function `f : ℝⁿ → ℝ` the *spectral function* of `f` sends a Hermi
 
 The sorted eigenvalue vector is determined by the characteristic polynomial: if
 `A.charpoly = ∏ k, (X - μ k)`, then `λ(A)` is a rearrangement `μ ∘ σ` of `μ`, and equals `μ` when
-`μ` is antitone. So a function `f` invariant under the rearrangements of `μ` takes the value `f μ`
-at `λ(A)`: the eigenvalues may be listed in any order. In particular the spectral function of a
-real diagonal matrix `diag μ` is `f μ`, the sum of the sorted eigenvalues is the real part of the
-trace, their product is the determinant, and shifting `A` by `t • 1` shifts every sorted eigenvalue
-by `t`, so that the spectral function of `μ ↦ f (μ + t)` at `A` is that of `f` at `A + t • 1`.
+`μ` is antitone (`Matrix.IsHermitian.eigenvalues₀_eq_of_charpoly_eq`). So a function `f`
+invariant under the rearrangements of `μ` takes the value `f μ` at `λ(A)`: the eigenvalues may
+be listed in any order. In particular the spectral function of a real diagonal matrix `diag μ` is
+`f μ`, the sum of the sorted eigenvalues is the real part of the trace, their product is the
+determinant, and shifting `A` by `t • 1` shifts every sorted eigenvalue by `t`, so that the
+spectral function of `μ ↦ f (μ + t)` at `A` is that of `f` at `A + t • 1`.
 
 ## Main results
 
-* `Matrix.IsHermitian.eigenvalues₀_eq_of_charpoly_eq`: an antitone `μ` with
-  `A.charpoly = ∏ k, (X - μ k)` is the sorted eigenvalue vector of `A`.
-* `Matrix.IsHermitian.exists_perm_eigenvalues₀_eq_comp`: for any such `μ`, the sorted eigenvalue
-  vector is a rearrangement of `μ`.
+* `Matrix.IsHermitian.exists_perm_eigenvalues₀_eq_comp`: if `A.charpoly = ∏ k, (X - μ k)`, the
+  sorted eigenvalue vector is a rearrangement of `μ`.
 * `Matrix.IsHermitian.apply_eigenvalues₀_of_charpoly_eq`,
   `Matrix.IsHermitian.apply_eigenvalues₀_diagonal`: the value of a symmetric function at the
   sorted eigenvalues may be computed from any listing of the eigenvalues, and at `diag μ` it is
   `f μ`.
-* `Matrix.IsHermitian.sum_eigenvalues₀`, `Matrix.IsHermitian.det_eq_prod_eigenvalues₀`: the
-  spectral functions of the first and last elementary symmetric functions are the trace and the
-  determinant.
-* `Matrix.IsHermitian.eigenvalues₀_add_smul_one`,
-  `Matrix.IsHermitian.apply_eigenvalues₀_add_smul_one`: the sorted eigenvalues of `A + t • 1`,
-  and the spectral function of a shifted function.
+* `Matrix.IsHermitian.sum_eigenvalues₀_eq_re_trace`,
+  `Matrix.IsHermitian.det_eq_prod_eigenvalues₀`: the spectral functions of the first and last
+  elementary symmetric functions are the trace and the determinant.
+* `Matrix.IsHermitian.eigenvalues₀_add_smul_one`: the sorted eigenvalues of `A + t • 1` are
+  those of `A` shifted by `t`.
 -/
 
 public section
@@ -51,20 +48,6 @@ open Polynomial
 variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜}
 
 namespace IsHermitian
-
-/-- **The characteristic polynomial determines the sorted eigenvalues.** If the characteristic
-polynomial of a Hermitian matrix `A` is `∏ k, (X - μ k)` for an antitone real vector `μ`, then
-`μ` is the sorted eigenvalue vector of `A`. -/
-theorem eigenvalues₀_eq_of_charpoly_eq (hA : A.IsHermitian) {μ : Fin (Fintype.card ι) → ℝ}
-    (hμ : Antitone μ) (h : A.charpoly = ∏ k, (X - C (μ k : 𝕜))) : hA.eigenvalues₀ = μ := by
-  rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, h,
-    roots_prod _ _ (by simp [Finset.prod_ne_zero_iff, X_sub_C_ne_zero])]
-  simp only [roots_X_sub_C, Multiset.bind_singleton, Fin.univ_val_map, Multiset.map_coe,
-    List.map_ofFn, Function.comp_def, RCLike.ofReal_re, Multiset.coe_sort]
-  -- Sorting the decreasing list `List.ofFn μ` returns it unchanged.
-  apply List.mergeSort_of_pairwise
-  simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
-  exact hμ.sortedGE_ofFn
 
 /-- **The sorted eigenvalues are a rearrangement of any listing of the eigenvalues.** If the
 characteristic polynomial of a Hermitian matrix `A` is `∏ k, (X - μ k)` for a real vector `μ`,
@@ -101,28 +84,25 @@ theorem apply_eigenvalues₀_diagonal {α : Type*} {d : ι → ℝ}
 
 /-- **The trace is the spectral function of the sum**: the sorted eigenvalues of a Hermitian
 matrix sum to the real part of its trace. -/
-theorem sum_eigenvalues₀ (hA : A.IsHermitian) : ∑ k, hA.eigenvalues₀ k = RCLike.re A.trace := by
+theorem sum_eigenvalues₀_eq_re_trace (hA : A.IsHermitian) :
+    ∑ k, hA.eigenvalues₀ k = RCLike.re A.trace := by
   rw [hA.trace_eq_sum_eigenvalues, map_sum]
-  simp only [RCLike.ofReal_re, IsHermitian.eigenvalues]
-  exact (Equiv.sum_comp (Fintype.equivOfCardEq (Fintype.card_fin _)).symm hA.eigenvalues₀).symm
+  simp only [RCLike.ofReal_re]
+  exact (hA.sum_comp_eigenvalues fun x ↦ x).symm
 
 /-- **The determinant is the spectral function of the product**: the determinant of a Hermitian
 matrix is the product of its sorted eigenvalues. -/
 theorem det_eq_prod_eigenvalues₀ (hA : A.IsHermitian) :
     A.det = ∏ k, (hA.eigenvalues₀ k : 𝕜) := by
   rw [hA.det_eq_prod_eigenvalues]
-  simp only [IsHermitian.eigenvalues]
-  exact Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin _)).symm
-    fun k ↦ (hA.eigenvalues₀ k : 𝕜)
+  exact hA.prod_comp_eigenvalues fun x ↦ (x : 𝕜)
 
 /-- The characteristic polynomial of a Hermitian matrix is `∏ k, (X - λ k)` over its sorted
 eigenvalues `λ`. -/
 theorem charpoly_eq_prod_eigenvalues₀ (hA : A.IsHermitian) :
     A.charpoly = ∏ k, (X - C (hA.eigenvalues₀ k : 𝕜)) := by
   rw [hA.charpoly_eq]
-  simp only [IsHermitian.eigenvalues]
-  exact Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin _)).symm
-    fun k ↦ X - C (hA.eigenvalues₀ k : 𝕜)
+  exact hA.prod_comp_eigenvalues fun x ↦ X - C (x : 𝕜)
 
 /-- **Scalar shifts.** The sorted eigenvalues of `A + t • 1` are those of `A` shifted by `t`. -/
 theorem eigenvalues₀_add_smul_one (hA : A.IsHermitian) (t : ℝ)
@@ -137,13 +117,6 @@ theorem eigenvalues₀_add_smul_one (hA : A.IsHermitian) (t : ℝ)
   refine Finset.prod_congr rfl fun k _ ↦ ?_
   simp only [sub_comp, X_comp, C_comp, Pi.add_apply, RCLike.ofReal_add, C_add, map_neg]
   ring
-
-/-- **Spectral functions under scalar shifts.** For `g μ = f (μ + t)`, the spectral function of `g`
-at `A` is the spectral function of `f` at `A + t • 1`. -/
-theorem apply_eigenvalues₀_add_smul_one {α : Type*} (hA : A.IsHermitian) (t : ℝ)
-    (hAt : (A + t • (1 : Matrix ι ι 𝕜)).IsHermitian) (f : (Fin (Fintype.card ι) → ℝ) → α) :
-    f (hA.eigenvalues₀ + fun _ ↦ t) = f hAt.eigenvalues₀ := by
-  rw [hA.eigenvalues₀_add_smul_one t hAt]
 
 end IsHermitian
 
