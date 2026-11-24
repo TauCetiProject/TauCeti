@@ -145,21 +145,23 @@ theorem isCompleteIsometry (π : F) (hπ : Function.Injective π) :
 
 end NonUnitalStarAlgHom
 
-namespace LinearMap
+section toSpanSingleton
 
 variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+
+namespace CStarMatrix
 
 /-- The amplification of `z ↦ z • b` has norm at most `‖x‖ ‖b‖` at the scalar matrix `x`. In
 matrices over the unitization of `B` it is the product of `x` and `diag(b, …, b)`, and the
 inclusion of `B` in its unitization is isometric on matrices. -/
-private theorem norm_map_toSpanSingleton_le (b : B) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) ℂ) :
-    ‖x.map (toSpanSingleton ℂ B b)‖ ≤ ‖x‖ * ‖b‖ := by
+theorem norm_map_toSpanSingleton_le (b : B) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) ℂ) :
+    ‖x.map (LinearMap.toSpanSingleton ℂ B b)‖ ≤ ‖x‖ * ‖b‖ := by
   let ι : B →⋆ₙₐ[ℂ] Unitization ℂ B := Unitization.inrNonUnitalStarAlgHom ℂ B
   let ιₙ := CStarMatrix.mapₙₐ (n := Fin n) ι
   have hιₙ : Function.Injective ιₙ := CStarMatrix.map_injective Unitization.inr_injective
   let α := CStarMatrix.mapₙₐ (n := Fin n)
     ((StarAlgHom.ofId ℂ (Unitization ℂ B)).toNonUnitalStarAlgHom)
-  have hfac : ιₙ (x.map (toSpanSingleton ℂ B b)) =
+  have hfac : ιₙ (x.map (LinearMap.toSpanSingleton ℂ B b)) =
       α x * CStarMatrix.diagonalNonUnitalStarAlgHom ℂ (Fin n) _ (ι b) := by
     refine CStarMatrix.ext fun i j ↦ ?_
     simp [ιₙ, α, ι, CStarMatrix.mul_apply, Unitization.algebraMap_eq_inl,
@@ -169,19 +171,24 @@ private theorem norm_map_toSpanSingleton_le (b : B) {n : ℕ} (x : CStarMatrix (
     (norm_nonneg _) (norm_nonneg _))
   exact (CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le _).trans (Unitization.norm_inr b).le
 
+end CStarMatrix
+
+namespace LinearMap
+
 /-- The map `z ↦ z • b` from `ℂ` to a C⋆-algebra is completely bounded. -/
 @[simp, grind .]
 theorem isCompletelyBounded_toSpanSingleton (b : B) :
     (toSpanSingleton ℂ B b).IsCompletelyBounded :=
   isCompletelyBounded_def.2
-    ⟨‖b‖, norm_nonneg b, fun _ x ↦ (norm_map_toSpanSingleton_le b x).trans_eq (mul_comm _ _)⟩
+    ⟨‖b‖, norm_nonneg b, fun _ x ↦
+      (CStarMatrix.norm_map_toSpanSingleton_le b x).trans_eq (mul_comm _ _)⟩
 
 /-- The map `z ↦ z • b` from `ℂ` to a C⋆-algebra has cb norm `‖b‖`. -/
 @[simp, grind =]
 theorem cbNorm_toSpanSingleton (b : B) : (toSpanSingleton ℂ B b).cbNorm = ‖b‖ :=
   le_antisymm
     (cbNorm_le_of_bound (norm_nonneg b) fun _ x ↦
-      (norm_map_toSpanSingleton_le b x).trans_eq (mul_comm _ _)) <| by
+      (CStarMatrix.norm_map_toSpanSingleton_le b x).trans_eq (mul_comm _ _)) <| by
     simpa using norm_apply_le_cbNorm_mul (isCompletelyBounded_toSpanSingleton b) 1
 
 namespace completelyBounded
@@ -212,3 +219,5 @@ theorem toSpanSingletonLIE_symm_apply (u : completelyBounded ℂ B) :
 end completelyBounded
 
 end LinearMap
+
+end toSpanSingleton
