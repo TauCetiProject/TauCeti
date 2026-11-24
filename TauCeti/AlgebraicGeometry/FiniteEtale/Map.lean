@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
+public import Mathlib.CategoryTheory.Adjunction.Restrict
 public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
@@ -32,6 +33,8 @@ extension of a cover of `U` by the empty cover of the complement.
 
 * `TauCeti.FiniteEtaleScheme.map g`: composition with a finite étale `g : T ⟶ S`, a functor
   from finite étale `T`-schemes to finite étale `S`-schemes.
+* `TauCeti.FiniteEtaleScheme.mapPullbackAdj g`: `map g` is left adjoint to base change along
+  `g`; for a monomorphism `g` its unit is an isomorphism.
 * `TauCeti.FiniteEtaleScheme.mapCompPullbackIso g`: for a monomorphism `g`, base change along
   `g` after `map g` is the identity.
 * `TauCeti.FiniteEtaleScheme.mapCompFiberIso g x`: for a monomorphism `g`, the geometric
@@ -106,6 +109,25 @@ theorem mapCompPullbackIso_hom_app_hom (g : T ⟶ S) [IsFinite g] [Etale g] [Mon
     (X : FiniteEtaleScheme T) :
     ((mapCompPullbackIso g).hom.app X).hom = inv ((Over.mapPullbackAdj g).unit.app X.obj) :=
   (rfl)
+
+/-- **Extension is left adjoint to base change.** For a finite étale `g : T ⟶ S`, composition
+with `g` is left adjoint to base change along `g`; this is Mathlib's `Over.mapPullbackAdj g`
+restricted to finite étale schemes. -/
+noncomputable def mapPullbackAdj (g : T ⟶ S) [IsFinite g] [Etale g] : map g ⊣ pullback g :=
+  (Over.mapPullbackAdj g).restrictFullyFaithful (finiteEtaleSchemeProperty T).fullyFaithfulι
+    (finiteEtaleSchemeProperty S).fullyFaithfulι (eqToIso (map_comp_ι g).symm)
+    (eqToIso (pullback_comp_ι g))
+
+/-- For a finite étale monomorphism `g`, the unit of `map g ⊣ pullback g` is an isomorphism:
+`map g` is fully faithful. -/
+instance isIso_mapPullbackAdj_unit (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g] :
+    IsIso (mapPullbackAdj g).unit := by
+  have (X : FiniteEtaleScheme T) : IsIso ((mapPullbackAdj g).unit.app X) := by
+    have : IsIso ((finiteEtaleSchemeProperty T).ι.map ((mapPullbackAdj g).unit.app X)) := by
+      rw [mapPullbackAdj, Adjunction.map_restrictFullyFaithful_unit_app]
+      infer_instance
+    exact isIso_of_reflects_iso _ (finiteEtaleSchemeProperty T).ι
+  exact NatIso.isIso_of_isIso_app _
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
