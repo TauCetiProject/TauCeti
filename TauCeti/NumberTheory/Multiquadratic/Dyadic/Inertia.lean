@@ -12,7 +12,7 @@ import TauCeti.Algebra.CharZero.IntCast
 import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.Algebra.Squarefree
 import TauCeti.FieldTheory.Galois.FixedField
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.Multiquadratic.SquareClass.Rational
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat

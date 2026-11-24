@@ -10,6 +10,7 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Partial diffeomorphisms and open subsets
@@ -59,7 +60,9 @@ subset of the target manifold.
 * `PartialDiffeomorph.subtypeVal`: the inclusion of a nonempty open subset as a partial
   diffeomorphism.
 * `PartialDiffeomorph.liftOpens`: a partial diffeomorphism between nonempty open subsets, as a
-  partial diffeomorphism between the ambient manifolds.
+  partial diffeomorphism between the ambient manifolds. On the open subset it has the values
+  (`PartialDiffeomorph.liftOpens_comp_subtypeVal`) and the differentials
+  (`PartialDiffeomorph.mfderiv_liftOpens_apply_coe`) of the original one.
 * `IsLocalDiffeomorphAt.exists_partialDiffeomorph_eqOn`: a local diffeomorphism at `x` agrees with
   a partial diffeomorphism whose source contains `x` and lies in a prescribed open set.
 * `PartialDiffeomorph.exists_diffeomorph_opens_comp_eq`: a partial diffeomorphism corrected by a
@@ -458,6 +461,18 @@ variable {U : TopologicalSpace.Opens M} {V : TopologicalSpace.Opens N}
 theorem liftOpens_apply_coe (x : U) : ⇑(Ψ.liftOpens hU hV) x = Ψ x := by
   simp only [liftOpens, coe_trans, Function.comp_apply, PartialDiffeomorph.symm_toPartialEquiv,
     subtypeVal_symm_apply_coe, coe_subtypeVal]
+
+/-- The lift of `Ψ` restricts to `Ψ` on `U`. -/
+theorem liftOpens_comp_subtypeVal :
+    ⇑(Ψ.liftOpens hU hV) ∘ Subtype.val = Subtype.val ∘ Ψ :=
+  funext (Ψ.liftOpens_apply_coe hU hV)
+
+/-- On `U`, the lift of `Ψ` has the differential of `Ψ`, the tangent spaces of `U` and `V` being
+those of `M` and `N`. -/
+theorem mfderiv_liftOpens_apply_coe (x : U) (v : TangentSpace I (x : M)) :
+    mfderiv I J (Ψ.liftOpens hU hV) x v = mfderiv I J Ψ x v :=
+  (TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq
+    (Ψ.liftOpens_comp_subtypeVal hU hV).symm v).symm
 
 /-- On `V`, the inverse of the lift of `Ψ` is the inverse of `Ψ`. -/
 @[simp]
