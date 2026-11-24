@@ -57,9 +57,11 @@ orbit images in `P(𝔤 × k)`—if and only if their weighted Dynkin diagrams c
 (`IsSl2Triple.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq`,
 `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_iff_weightedDynkinDiagram_eq`), and we obtain the
 explicit equivalence `RootPairing.Base.optionDominantNeutralElementsEquivNilpotentOrbit`, the
-injective invariant `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`, and the exact orbit
-count on the nilpotent cone
-(`TauCeti.ncard_image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval_eq`).
+injective invariant `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`, the exact nilpotent
+orbit counts (`TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_eq`,
+`TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_eq`), and the identification of the
+rational orbits on the nilpotent cone
+(`TauCeti.image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval`).
 
 ## Main declarations
 
@@ -86,9 +88,12 @@ count on the nilpotent cone
   `IsSl2Triple.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq`,
   `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_iff_weightedDynkinDiagram_eq`,
   `RootPairing.Base.optionDominantNeutralElementsEquivNilpotentOrbit`,
-  `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`, and
-  `TauCeti.ncard_image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval_eq`: complete
-  weighted-Dynkin-diagram classification and exact orbit count for connected `G`.
+  `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`,
+  `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_eq`,
+  `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_eq`, and
+  `TauCeti.image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval`: complete
+  weighted-Dynkin-diagram classification, exact orbit counts, and nilpotent-cone orbit
+  identification for connected `G`.
 
 ## References
 
@@ -249,13 +254,20 @@ variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
 assumption on `G` is needed: `G⁰(k)` already conjugates every triple into the dominant chamber. -/
 theorem range_dominantVectorOrbit (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     Set.range b.dominantVectorOrbit =
-      Comodule.VectorOrbit.mk (k := k) (H := H) ''
-        {e : Module.Dual k (Bialgebra.CotangentSpace k H) | ∃ h f, IsSl2Triple h e f} := by
+      {O : Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) |
+        O.IsNilpotentAd ∧ O ≠ Comodule.VectorOrbit.mk 0} := by
   refine Set.Subset.antisymm ?_ ?_
   · rintro _ ⟨h, rfl⟩
+    refine ⟨?_, b.dominantVectorOrbit_ne_mk_zero h⟩
     obtain ⟨e, f, t, he⟩ := b.exists_isSl2Triple_and_dominantVectorOrbit_eq_mk h
-    exact ⟨e, ⟨h, f, t⟩, he.symm⟩
-  · rintro _ ⟨e, ⟨h, f, t⟩, rfl⟩
+    rw [he, Comodule.VectorOrbit.isNilpotentAd_mk_iff]
+    exact t.isNilpotent_toEnd_e (K := k) (M := Module.Dual k (Bialgebra.CotangentSpace k H))
+  · rintro O ⟨hO, h0⟩
+    obtain ⟨e, rfl⟩ := Comodule.VectorOrbit.mk_surjective O
+    have he : IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e) :=
+      Comodule.VectorOrbit.isNilpotentAd_mk_iff.mp hO
+    have he0 : e ≠ 0 := by rintro rfl; exact h0 rfl
+    obtain ⟨h, f, t⟩ := exists_isSl2Triple_of_isNilpotent_ad he he0
     obtain ⟨g, -, h₀, hh₀, -, t'⟩ :=
       t.exists_mem_quotientPointsSubgroup_basePointsRepresentation_mem_dominantNeutralElements b
         (J := ⊥) HopfIdeal.lieSubalgebra_bot
@@ -265,15 +277,13 @@ theorem range_dominantVectorOrbit (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Ba
 /-- **All nilpotent `G`-orbits are the zero orbit together with the dominant nilpotent orbits.** -/
 theorem insert_mk_zero_range_dominantVectorOrbit (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     insert (Comodule.VectorOrbit.mk (k := k) (H := H) 0) (Set.range b.dominantVectorOrbit) =
-      Comodule.VectorOrbit.mk (k := k) (H := H) ''
-        {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-          IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} := by
-  rw [b.range_dominantVectorOrbit, ← Set.image_insert_eq]
-  congr 1
-  ext e
-  rcases eq_or_ne e 0 with rfl | he0
-  · simp [exists_isSl2Triple_iff (K := k), IsNilpotent.zero]
-  · simp [exists_isSl2Triple_iff (K := k), he0]
+      {O : Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) |
+        O.IsNilpotentAd} := by
+  rw [b.range_dominantVectorOrbit]
+  ext O
+  simp only [Set.mem_insert_iff, Set.mem_ofPred_eq]
+  exact ⟨by rintro (rfl | ⟨hO, -⟩); exacts [Comodule.VectorOrbit.isNilpotentAd_mk_zero, hO],
+    fun hO ↦ (em (O = Comodule.VectorOrbit.mk 0)).imp_right (⟨hO, ·⟩)⟩
 
 end Surjective
 
@@ -355,35 +365,6 @@ theorem exists_basePointsRepresentation_isSl2Triple_of_isNilpotent_ad
       (J := ⊥) HopfIdeal.lieSubalgebra_bot he he0
   exact ⟨g, h, hh, f, t⟩
 
-omit [IsAlgClosed k] in
-/-- **Nonzero nilpotent `G`-orbits as orbit predicates.** The image of the nilpositive elements
-of `sl₂` triples in `Comodule.VectorOrbit` is the set of nonzero nilpotent orbits. -/
-theorem image_vectorOrbit_mk_setOf_exists_isSl2Triple :
-    Comodule.VectorOrbit.mk (k := k) (H := H) ''
-        {e : 𝔤 | ∃ h f, IsSl2Triple h e f} =
-      {O : Comodule.VectorOrbit k H 𝔤 | O.IsNilpotentAd ∧ O ≠ Comodule.VectorOrbit.mk 0} := by
-  rw [← Set.image_preimage_eq
-    {O : Comodule.VectorOrbit k H 𝔤 | O.IsNilpotentAd ∧ O ≠ Comodule.VectorOrbit.mk 0}
-    Comodule.VectorOrbit.mk_surjective]
-  congr 1
-  ext e
-  simp only [Set.mem_preimage, Set.mem_ofPred_eq, Comodule.VectorOrbit.isNilpotentAd_mk_iff,
-    ne_eq, Comodule.VectorOrbit.mk_eq_mk_zero_iff]
-  exact exists_isSl2Triple_iff (K := k)
-
-omit [CharZero k] [IsAlgClosed k] [LieAlgebra.IsKilling k 𝔤] in
-/-- **Nilpotent `G`-orbits as orbit predicates.** The image of the `ad`-nilpotent elements in
-`Comodule.VectorOrbit` is the set of nilpotent orbits. -/
-theorem image_vectorOrbit_mk_setOf_isNilpotent_ad :
-    Comodule.VectorOrbit.mk (k := k) (H := H) ''
-        {e : 𝔤 | IsNilpotent (LieAlgebra.ad k 𝔤 e)} =
-      {O : Comodule.VectorOrbit k H 𝔤 | O.IsNilpotentAd} := by
-  rw [← Set.image_preimage_eq {O : Comodule.VectorOrbit k H 𝔤 | O.IsNilpotentAd}
-    Comodule.VectorOrbit.mk_surjective]
-  congr 1
-  ext e
-  exact Comodule.VectorOrbit.isNilpotentAd_mk_iff.symm
-
 namespace Comodule.VectorOrbit
 
 /-- **Bound on nonzero nilpotent orbits.** Over an algebraically closed field of characteristic
@@ -395,8 +376,7 @@ theorem ncard_setOf_isNilpotentAd_and_ne_mk_zero_le (𝔥 : LieSubalgebra k 𝔤
   let b := (LieAlgebra.IsKilling.rootSystem 𝔥).nonempty_base.some
   have hle : {O : VectorOrbit k H 𝔤 | O.IsNilpotentAd ∧ O ≠ mk 0}.ncard ≤
       b.dominantNeutralElements.ncard := by
-    rw [← image_vectorOrbit_mk_setOf_exists_isSl2Triple, ← b.range_dominantVectorOrbit,
-      ← Set.image_univ]
+    rw [← b.range_dominantVectorOrbit, ← Set.image_univ]
     refine (Set.ncard_image_le Set.finite_univ).trans ?_
     rw [Set.ncard_univ, Nat.card_coe_set_eq]
   have hbound := b.ncard_dominantNeutralElements_add_one_le
@@ -408,7 +388,7 @@ many nilpotent rational adjoint orbits. No connectedness hypothesis is needed. -
 theorem finite_setOf_isNilpotentAd : {O : VectorOrbit k H 𝔤 | O.IsNilpotentAd}.Finite := by
   obtain ⟨x, _⟩ := LieAlgebra.exists_isCartanSubalgebra_engel k 𝔤
   let b := (LieAlgebra.IsKilling.rootSystem (LieSubalgebra.engel k x)).nonempty_base.some
-  rw [← image_vectorOrbit_mk_setOf_isNilpotent_ad, ← b.insert_mk_zero_range_dominantVectorOrbit]
+  rw [← b.insert_mk_zero_range_dominantVectorOrbit]
   exact (Set.finite_range _).insert _
 
 /-- The subtype of nilpotent rational adjoint orbits is finite. -/
@@ -552,7 +532,7 @@ theorem existsUnique_dominantVectorOrbit_eq_of_isNilpotent_ad
     ∃! h : b.dominantNeutralElements,
       b.dominantVectorOrbit h = Comodule.VectorOrbit.mk (k := k) (H := H) e := by
   rw [b.dominantVectorOrbit_injective.existsUnique_iff_exists, ← Set.mem_range,
-    b.range_dominantVectorOrbit, TauCeti.image_vectorOrbit_mk_setOf_exists_isSl2Triple]
+    b.range_dominantVectorOrbit]
   exact ⟨Comodule.VectorOrbit.isNilpotentAd_mk_iff.mpr he,
     mt Comodule.VectorOrbit.mk_eq_mk_zero_iff.mp he0⟩
 
@@ -581,7 +561,7 @@ private theorem optionDominantToNilpotentOrbit_bijective
     by_cases h0 : O = Comodule.VectorOrbit.mk 0
     · exact ⟨none, Subtype.ext h0.symm⟩
     · have hmem : O ∈ Set.range (b.dominantVectorOrbit (H := H)) := by
-        rw [b.range_dominantVectorOrbit, TauCeti.image_vectorOrbit_mk_setOf_exists_isSl2Triple]
+        rw [b.range_dominantVectorOrbit]
         exact ⟨hO, h0⟩
       obtain ⟨h, hh⟩ := hmem
       exact ⟨some h, Subtype.ext hh⟩
@@ -727,30 +707,27 @@ theorem nilpotentOrbitWeightedDynkinDiagram_eq_zero_iff
 
 end RootPairing.Base
 
-namespace TauCeti
+namespace TauCeti.Comodule.VectorOrbit
 
 /-- **Exact count of nonzero nilpotent `G`-orbits for a connected Killing group.** -/
-theorem ncard_image_vectorOrbit_mk_setOf_exists_isSl2Triple_eq
+theorem ncard_setOf_isNilpotentAd_and_ne_mk_zero_eq
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
-    (Comodule.VectorOrbit.mk (k := k) (H := H) ''
-      {e : Module.Dual k (Bialgebra.CotangentSpace k H) | ∃ h f, IsSl2Triple h e f}).ncard =
+    {O : VectorOrbit k H 𝔤 | O.IsNilpotentAd ∧ O ≠ mk 0}.ncard =
       b.dominantNeutralElements.ncard := by
   rw [← b.range_dominantVectorOrbit,
     Set.ncard_range_of_injective b.dominantVectorOrbit_injective, Nat.card_coe_set_eq]
 
 /-- **Exact count of nilpotent `G`-orbits for a connected Killing group.** Together with the zero
 orbit, the nilpotent `G`-orbits are in bijection with `Option b.dominantNeutralElements`. -/
-theorem ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_eq
+theorem ncard_setOf_isNilpotentAd_eq
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
-    (Comodule.VectorOrbit.mk (k := k) (H := H) ''
-      {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)}).ncard =
+    {O : VectorOrbit k H 𝔤 | O.IsNilpotentAd}.ncard =
       b.dominantNeutralElements.ncard + 1 := by
-  rw [image_vectorOrbit_mk_setOf_isNilpotent_ad, ← Nat.card_coe_set_eq]
+  rw [← Nat.card_coe_set_eq]
   exact (Nat.card_congr (b.optionDominantNeutralElementsEquivNilpotentOrbit (H := H))).symm.trans
     (by rw [Finite.card_option, Nat.card_coe_set_eq])
 
-end TauCeti
+end TauCeti.Comodule.VectorOrbit
 
 end Connected
 
@@ -770,36 +747,15 @@ theorem image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval :
         {x : Module.Dual k (Bialgebra.CotangentSpace k H) |
           nilpotentConeIdeal k H ≤
             RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k _ x))} =
-      Comodule.VectorOrbit.mk (k := k) (H := H) ''
-        {e : Module.Dual k (Bialgebra.CotangentSpace k H) |
-          IsNilpotent (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) e)} := by
+      {O : Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) |
+        O.IsNilpotentAd} := by
+  rw [← Set.image_preimage_eq
+    {O : Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) | O.IsNilpotentAd}
+    Comodule.VectorOrbit.mk_surjective]
   congr 1
   ext x
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, Comodule.VectorOrbit.isNilpotentAd_mk_iff]
   exact nilpotentConeIdeal_le_ker_lift_eval_iff (H := FiniteTypeCommHopfAlgCat.of k H)
-
-/-- **Finiteness of rational `G`-orbits on the nilpotent cone.** -/
-theorem finite_image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval :
-    (Comodule.VectorOrbit.mk (k := k) (H := H) ''
-      {x : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        nilpotentConeIdeal k H ≤
-          RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k _ x))}).Finite := by
-  rw [image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval H,
-    image_vectorOrbit_mk_setOf_isNilpotent_ad]
-  exact Comodule.VectorOrbit.finite_setOf_isNilpotentAd
-
-variable {H}
-
-/-- **Exact count of rational `G`-orbits on the nilpotent cone.** -/
-theorem ncard_image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval_eq
-    {𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))} [𝔥.IsCartanSubalgebra]
-    (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
-    (Comodule.VectorOrbit.mk (k := k) (H := H) ''
-      {x : Module.Dual k (Bialgebra.CotangentSpace k H) |
-        nilpotentConeIdeal k H ≤
-          RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k _ x))}).ncard =
-      b.dominantNeutralElements.ncard + 1 := by
-  rw [image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval H]
-  exact ncard_image_vectorOrbit_mk_setOf_isNilpotent_ad_eq b
 
 end NilpotentCone
 
