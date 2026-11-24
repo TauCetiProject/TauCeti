@@ -33,25 +33,25 @@ including when rates coincide and when the index type is empty. -/
 theorem continuous_hypoexponentialMeasure :
     Continuous (Y := ProbabilityMeasure ℝ)
       (fun r : {r : ι → ℝ // ∀ i, 0 < r i} ↦
-        (⟨hypoexponentialMeasure r.1,
-          isProbabilityMeasure_hypoexponentialMeasure r.2⟩ : ProbabilityMeasure ℝ)) := by
+        (⟨hypoexponentialMeasure r.val,
+          isProbabilityMeasure_hypoexponentialMeasure r.property⟩ : ProbabilityMeasure ℝ)) := by
   apply continuous_iff_seqContinuous.2
   intro r a hr
   -- Mathlib's Lévy convergence theorem.
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
-    (μ := fun n ↦ ⟨hypoexponentialMeasure (r n).1,
-      isProbabilityMeasure_hypoexponentialMeasure (r n).2⟩)
+    (μ := fun n ↦ ⟨hypoexponentialMeasure (r n).val,
+      isProbabilityMeasure_hypoexponentialMeasure (r n).property⟩)
   intro t
-  simp only [ProbabilityMeasure.coe_mk, charFun_hypoexponentialMeasure (r _).2,
-    charFun_hypoexponentialMeasure a.2]
+  simp only [ProbabilityMeasure.coe_mk, charFun_hypoexponentialMeasure (r _).property,
+    charFun_hypoexponentialMeasure a.property]
   apply tendsto_finsetProd
   intro i _
-  have hi : Tendsto (fun n ↦ ((r n).1 i : ℂ)) atTop (𝓝 (a.1 i : ℂ)) := by
-    have hc : Continuous (fun r : {r : ι → ℝ // ∀ i, 0 < r i} ↦ (r.1 i : ℂ)) :=
-      Complex.continuous_ofReal.comp ((continuous_apply i).comp continuous_subtype_val)
+  have hi : Tendsto (fun n ↦ ((r n).val i : ℂ)) atTop (𝓝 (a.val i : ℂ)) := by
+    have hc : Continuous (fun r : {r : ι → ℝ // ∀ i, 0 < r i} ↦ (r.val i : ℂ)) :=
+      Complex.continuous_ofReal.comp ((continuous_apply i).comp continuous_subtypeVal)
     exact (hc.tendsto a).comp hr
   refine hi.div (hi.sub tendsto_const_nhds) ?_
   intro h
-  exact (a.2 i).ne' (by simpa using congrArg Complex.re h)
+  exact (a.property i).ne' (by simpa using congrArg Complex.re h)
 
 end TauCeti.Probability

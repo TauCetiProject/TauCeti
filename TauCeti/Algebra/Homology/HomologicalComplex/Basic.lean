@@ -53,13 +53,17 @@ isomorphism when the complex is exact in both degrees (`HomologicalComplex.isIso
 For chain complexes indexed by the natural numbers, the identification of zero chains with
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`), and so is the passage from zero
 chains to zeroth homology (`ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap`).
+Their homology in degree zero is the cokernel of the first differential
+(`ChainComplex.homologyZeroIsoCokernel`).
 The isomorphisms `homologyIsoSc'`
 are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`), and exactness in a degree
 is the vanishing of the homology of the short complex `sc'` there
 (`HomologicalComplex.exactAt_iff_isZero_homology_sc'`).
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
-Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`.
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, and exactness of a mapped complex in
+degree `i` reduces to exactness of the mapped short complex `(K.sc i).map F`
+(`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
 -/
@@ -91,7 +95,7 @@ lemma pow_f_succ (m : ℕ) (i : ι) :
 /-- Homological complexes have the coproducts that the underlying category has. They are
 computed degreewise. -/
 instance hasCoproducts [HasCoproducts.{w} C] : HasCoproducts.{w} (HomologicalComplex C c) :=
-  fun _ ↦ inferInstance
+  .mk fun _ ↦ inferInstance
 
 /-! ### The maps onto the cycles -/
 
@@ -450,6 +454,29 @@ lemma pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap (φ : K ⟶ L) :
       φ.f 0 ≫ L.pOpcycles 0 ≫ L.isoHomologyι₀.inv := by
   rw [ChainComplex.isoHomologyι₀_inv_naturality, HomologicalComplex.p_opcyclesMap_assoc]
 
+variable (K) in
+/-- The homology in degree zero of a chain complex indexed by `ℕ` is the cokernel of its first
+differential `K.d 1 0`. The hypothesis `K.HasHomology 1` is inherited from Mathlib's
+`HomologicalComplex.opcyclesIsCokernel`; it holds in any category with homology. -/
+noncomputable def homologyZeroIsoCokernel [K.HasHomology 1] [HasCokernel (K.d 1 0)] :
+    K.homology 0 ≅ cokernel (K.d 1 0) :=
+  -- The comparison is stated with source `cokernelIsCokernel` rather than with target `cokernel`,
+  -- whose cocone is the colimit cocone only up to unfolding.
+  K.isoHomologyι₀ ≪≫
+    ((cokernelIsCokernel (K.d 1 0)).coconePointUniqueUpToIso
+      (K.opcyclesIsCokernel 1 0 (by simp))).symm
+
+/-- Under `ChainComplex.homologyZeroIsoCokernel`, the projection of the cycles onto the homology
+in degree zero is the projection of the chains onto the cokernel of `K.d 1 0`. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_comp_homologyZeroIsoCokernel_hom [K.HasHomology 1] [HasCokernel (K.d 1 0)] :
+    K.homologyπ 0 ≫ K.homologyZeroIsoCokernel.hom = K.iCycles 0 ≫ cokernel.π (K.d 1 0) := by
+  simp only [homologyZeroIsoCokernel, Iso.trans_hom, HomologicalComplex.isoHomologyι_hom,
+    HomologicalComplex.homology_π_ι_assoc]
+  exact congrArg (K.iCycles 0 ≫ ·) ((cokernelIsCokernel (K.d 1 0)
+    ).comp_coconePointUniqueUpToIso_inv (K.opcyclesIsCokernel 1 0 (by simp))
+      WalkingParallelPair.one)
+
 end ChainComplex
 
 namespace HomologicalComplex
@@ -480,6 +507,14 @@ lemma quasiIso_of_acyclic {K L : HomologicalComplex C c} (f : K ⟶ L) [∀ i, K
 end HomologicalComplex
 
 namespace CategoryTheory.Functor
+
+/-- An additive functor `F` maps a homological complex `K` to one exact in degree `i` if and only
+if the mapped short complex `(K.sc i).map F` is exact. -/
+theorem mapHomologicalComplex_obj_exactAt_iff {C D ι : Type*} [Category* C] [Category* D]
+    [Preadditive C] [Preadditive D] {c : ComplexShape ι} (F : C ⥤ D) [F.Additive]
+    (K : HomologicalComplex C c) (i : ι) :
+    ((F.mapHomologicalComplex c).obj K).ExactAt i ↔ ((K.sc i).map F).Exact :=
+  Iff.rfl
 
 variable {C : Type*} [Category* C] {D : Type*} [Category* D]
   [Preadditive C] [Preadditive D] [CategoryWithHomology C] [CategoryWithHomology D]

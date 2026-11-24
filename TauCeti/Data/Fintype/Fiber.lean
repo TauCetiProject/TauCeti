@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.GroupTheory.Perm.DomMulAct
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Data.Multiset.Fintype
@@ -40,6 +41,9 @@ covering the range is weighted by its occurrence count.
 * `Function.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
 * `Function.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
 * `Multiset.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
+* `Nat.card_subtype_perm_of_map_univ_eq`, `Nat.card_subtype_equiv_of_map_univ_eq`: the number of
+  permutations or equivalences intertwining families with multiset of values `σ` is
+  `∏ y ∈ σ.toFinset, (σ.count y)!`.
 
 -/
 
@@ -194,7 +198,7 @@ theorem occCount_subtype_ne (f : X → S) {z a : S} (ha : a ≠ z) :
 occurs. -/
 theorem occCount_subtype_ne_self (f : X → S) (z : S) :
     occCount (fun x : {x // f x ≠ z} => f x) z = 0 :=
-  occCount_of_notMem_range _ _ fun ⟨x, hx⟩ => x.2 hx
+  occCount_of_notMem_range _ _ fun ⟨x, hx⟩ => x.property hx
 
 /-- Two finite families with the same occurrence counts away from a value `z` are related by a
 bijection between the indices at which they do not take the value `z`. -/
@@ -270,3 +274,35 @@ theorem exists_map_univ_eq [Fintype X] (s : Multiset S) (h : s.card = Fintype.ca
   rw [← Multiset.map_map, Multiset.map_univ_val_equiv, Multiset.map_univ_coe]
 
 end Multiset
+
+/-- The permutations of a finite type preserving a function whose multiset of values is `σ` have
+cardinality `∏ y ∈ σ.toFinset, (σ.count y)!`. -/
+theorem Nat.card_subtype_perm_of_map_univ_eq {X S : Type*} [Fintype X] [DecidableEq S]
+    {u : X → S} {σ : Multiset S} (hu : Finset.univ.val.map u = σ) :
+    Nat.card {e : Equiv.Perm X // ∀ x, u (e x) = u x} =
+      ∏ y ∈ σ.toFinset, Nat.factorial (σ.count y) := by
+  classical
+  have himg : Finset.univ.image u = σ.toFinset := by
+    ext y
+    simp [← hu]
+  let E : {e : Equiv.Perm X // ∀ x, u (e x) = u x} ≃ {e : Equiv.Perm X // u ∘ e = u} :=
+    Equiv.subtypeEquivRight fun e ↦ by simp [funext_iff]
+  rw [Nat.card_congr E, Nat.card_eq_fintype_card, DomMulAct.stabilizer_card', himg]
+  refine Finset.prod_congr rfl fun y _ ↦ congrArg Nat.factorial ?_
+  rw [← Nat.card_eq_fintype_card, ← Function.occCount_def,
+    Function.occCount_eq_count_map_univ, hu]
+
+/-- Between two finite types carrying functions `u` and `v` with the same multiset of values `σ`,
+the equivalences intertwining `u` and `v` have cardinality `∏ y ∈ σ.toFinset, (σ.count y)!`. -/
+theorem Nat.card_subtype_equiv_of_map_univ_eq {X Y S : Type*} [Fintype X] [Fintype Y]
+    [DecidableEq S] {u : X → S} {v : Y → S} {σ : Multiset S}
+    (hu : Finset.univ.val.map u = σ) (hv : Finset.univ.val.map v = σ) :
+    Nat.card {e : X ≃ Y // ∀ x, v (e x) = u x} =
+      ∏ y ∈ σ.toFinset, Nat.factorial (σ.count y) := by
+  obtain ⟨e₀, he₀⟩ := Function.exists_equiv_of_occCount_eq (u := u) (v := v) fun y ↦ by
+    rw [Function.occCount_eq_count_map_univ, Function.occCount_eq_count_map_univ, hu, hv]
+  have he₀' : ∀ x, v (e₀ x) = u x := congrFun he₀
+  let E : {g : Equiv.Perm X // ∀ x, u (g x) = u x} ≃ {e : X ≃ Y // ∀ x, v (e x) = u x} :=
+    (Equiv.equivCongr (Equiv.refl X) e₀).subtypeEquiv fun g ↦
+      forall_congr' fun x ↦ by simp [he₀']
+  rw [← Nat.card_congr E, Nat.card_subtype_perm_of_map_univ_eq hu]

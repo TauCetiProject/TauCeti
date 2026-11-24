@@ -110,7 +110,7 @@ theorem contMDiff_totalSpace_inclusion_tangentRange :
     letI := f.tangentRangeTopology (E := E) (V := V) hn; letI := f.tangentRangeFiberBundle hn hm
     ContMDiff (I.prod 𝓘(𝕜, Fin (Module.finrank 𝕜 E) → 𝕜)) (I.prod 𝓘(𝕜, V)) m
       (fun v : TotalSpace (Fin (Module.finrank 𝕜 E) → 𝕜) (fun x ↦ f.tangentRange x hn) ↦
-        (⟨v.proj, v.2.1⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) :=
+        (⟨v.proj, v.snd.val⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) :=
   letI := f.tangentRangeTopology (E := E) (V := V) hn; letI := f.tangentRangeFiberBundle hn hm
   letI := f.pullbackTangentContMDiffVectorBundle hm
   (f.hasLocalContMDiffSubbundleFrames_tangentRange hn hm).contMDiff_totalSpace_inclusion (𝕜 := 𝕜)
@@ -122,7 +122,7 @@ private theorem contMDiff_tangentSpaceEquivTangentRange :
     ContMDiff (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, Fin (Module.finrank 𝕜 E) → 𝕜)) m
       (fun q : TotalSpace E (TangentSpace I : M → Type _) ↦
         TotalSpace.mk' (Fin (Module.finrank 𝕜 E) → 𝕜) (E := fun x ↦ f.tangentRange x hn) q.proj
-          (f.tangentSpaceEquivTangentRange q.proj hn q.2)) := by
+          (f.tangentSpaceEquivTangentRange q.proj hn q.snd)) := by
   let := IsRCLikeNormedField.rclike 𝕜; let := f.tangentRangeTopology (E := E) (V := V) hn
   let := f.tangentRangeFiberBundle hn hm; let := f.pullbackTangentContMDiffVectorBundle hm
   let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := m)
@@ -131,18 +131,18 @@ private theorem contMDiff_tangentSpaceEquivTangentRange :
   have hw : ContMDiffAt (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, V)) m
       (fun q : TotalSpace E (TangentSpace I : M → Type _) ↦
         TotalSpace.mk' V (E := (f : M → N) *ᵖ (TangentSpace J)) q.proj
-          (mfderiv I J (f : M → N) q.proj q.2)) p :=
+          (mfderiv I J (f : M → N) q.proj q.snd)) p :=
     (Pullback.contMDiffAt_iff f hfm).2 ⟨contMDiffAt_proj (TangentSpace I : M → Type _),
       (ContMDiff.contMDiff_tangentMap f.contMDiff hm).contMDiffAt⟩
   have hmk : ContMDiffAt (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, Fin (Module.finrank 𝕜 E) → 𝕜)) m
       (fun q : TotalSpace E (TangentSpace I : M → Type _) ↦
         TotalSpace.mk' (Fin (Module.finrank 𝕜 E) → 𝕜) (E := fun x ↦ f.tangentRange x hn) q.proj
-          ⟨mfderiv I J (f : M → N) q.proj q.2, ⟨q.2, rfl⟩⟩) p :=
-    (f.hasLocalContMDiffSubbundleFrames_tangentRange hn hm).contMDiffAt_totalSpace_mk
-      hw fun q ↦ ⟨q.2, rfl⟩
+          ⟨mfderiv I J (f : M → N) q.proj q.snd, ⟨q.snd, rfl⟩⟩) p :=
+    (f.hasLocalContMDiffSubbundleFrames_tangentRange hn hm).contMDiffAt_totalSpace_mk le_rfl
+      hw fun q ↦ ⟨q.snd, rfl⟩
   exact hmk.congr_of_eventuallyEq (Filter.EventuallyEq.of_eq <| funext fun q ↦
     congrArg (TotalSpace.mk' _ q.proj) <|
-      Subtype.ext (f.coe_tangentSpaceEquivTangentRange_apply q.proj hn q.2))
+      Subtype.ext (f.coe_tangentSpaceEquivTangentRange_apply q.proj hn q.snd))
 
 /-- **The tangent bundle of an embedded submanifold is `C^m`-isomorphic to its differential image
 subbundle.** Over `ℝ` or `ℂ` (`[IsRCLikeNormedField 𝕜]`), `f.tangentSpaceEquivTangentRange`
@@ -164,7 +164,7 @@ def tangentBundleDiffeomorphTangentRange :
     (p : TotalSpace E (TangentSpace I : M → Type _)) :
     letI := f.tangentRangeTopology (E := E) (V := V) hn; letI := f.tangentRangeFiberBundle hn hm
     f.tangentBundleDiffeomorphTangentRange hn hm p =
-      ⟨p.proj, f.tangentSpaceEquivTangentRange p.proj hn p.2⟩ := by
+      ⟨p.proj, f.tangentSpaceEquivTangentRange p.proj hn p.snd⟩ := by
   let := IsRCLikeNormedField.rclike 𝕜; let := f.tangentRangeTopology (E := E) (V := V) hn
   let := f.tangentRangeFiberBundle hn hm; let := f.tangentRangeVectorBundle hn hm
   let := f.tangentRangeContMDiffVectorBundle hn hm
@@ -175,7 +175,7 @@ def tangentBundleDiffeomorphTangentRange :
     (p : TotalSpace (Fin (Module.finrank 𝕜 E) → 𝕜) (fun x ↦ f.tangentRange x hn)) :
     letI := f.tangentRangeTopology (E := E) (V := V) hn; letI := f.tangentRangeFiberBundle hn hm
     (f.tangentBundleDiffeomorphTangentRange (E := E) hn hm).symm p =
-      ⟨p.proj, (f.tangentSpaceEquivTangentRange p.proj hn).symm p.2⟩ := by
+      ⟨p.proj, (f.tangentSpaceEquivTangentRange p.proj hn).symm p.snd⟩ := by
   let := IsRCLikeNormedField.rclike 𝕜; let := f.tangentRangeTopology (E := E) (V := V) hn
   let := f.tangentRangeFiberBundle hn hm; let := f.tangentRangeVectorBundle hn hm
   let := f.tangentRangeContMDiffVectorBundle hn hm
@@ -189,7 +189,7 @@ theorem lift_mk'_tangentBundleDiffeomorphTangentRange_eq_tangentMap
     letI := f.tangentRangeTopology (E := E) (V := V) hn; letI := f.tangentRangeFiberBundle hn hm
     Pullback.lift f (TotalSpace.mk' V (E := (f : M → N) *ᵖ (TangentSpace J))
       (f.tangentBundleDiffeomorphTangentRange hn hm p).proj
-      (f.tangentBundleDiffeomorphTangentRange hn hm p).2.1) =
+      (f.tangentBundleDiffeomorphTangentRange hn hm p).snd.val) =
       tangentMap I J (f : M → N) p := by
   let := f.tangentRangeTopology (E := E) (V := V) hn; let := f.tangentRangeFiberBundle hn hm
   rw [tangentBundleDiffeomorphTangentRange_apply]; simp [Pullback.lift, tangentMap]

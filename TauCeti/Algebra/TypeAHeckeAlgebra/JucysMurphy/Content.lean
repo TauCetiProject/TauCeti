@@ -63,6 +63,17 @@ theorem additiveContent_neg_natCast (Q : R) (n : ℕ) :
 theorem additiveContent_zero (Q : R) : additiveContent Q 0 = 0 := by
   simp [additiveContent]
 
+/-- A content with nonzero additive content is nonzero. -/
+theorem ne_zero_of_additiveContent_ne_zero {Q : R} {c : ℤ} (h : additiveContent Q c ≠ 0) :
+    c ≠ 0 := by
+  rintro rfl
+  exact h (additiveContent_zero Q)
+
+/-- The content one has value one. -/
+@[simp]
+theorem additiveContent_one_right (Q : R) : additiveContent Q 1 = 1 := by
+  simpa using additiveContent_natCast Q 1
+
 /-- At `Q = 1` the additive content is the ordinary integer content. -/
 @[simp]
 theorem additiveContent_one (c : ℤ) : additiveContent (1 : R) c = c := by
@@ -102,6 +113,53 @@ theorem sub_one_mul_additiveContent {Q : R} (hQ : Q ≠ 0) (c : ℤ) :
     rw [sub_add_cancel] at hrec
     rw [hrec, mul_add, hpow] at ih
     linear_combination ih
+
+/-- The cocycle identity `[a + b]_Q = [a]_Q + Q ^ a * [b]_Q` of additive contents. Like
+`additiveContent_add_one`, it holds also at `Q = 1`. -/
+theorem additiveContent_add {Q : R} (hQ : Q ≠ 0) (a b : ℤ) :
+    additiveContent Q (a + b) = additiveContent Q a + Q ^ a * additiveContent Q b := by
+  induction b using Int.induction_on with
+  | zero => simp
+  | succ b ih =>
+    rw [← add_assoc, additiveContent_add_one, ih, additiveContent_add_one, zpow_add₀ hQ]
+    ring
+  | pred b ih =>
+    have h₁ := additiveContent_add_one Q (a + (-(b : ℤ) - 1))
+    have h₂ := additiveContent_add_one Q (-(b : ℤ) - 1)
+    rw [show a + (-(b : ℤ) - 1) + 1 = a + -(b : ℤ) by ring, ih, zpow_add₀ hQ] at h₁
+    rw [sub_add_cancel] at h₂
+    rw [h₂] at h₁
+    linear_combination -h₁
+
+/-- Negating the content: `[-c]_Q = -Q ^ (-c) * [c]_Q`. -/
+theorem additiveContent_neg {Q : R} (hQ : Q ≠ 0) (c : ℤ) :
+    additiveContent Q (-c) = -(Q ^ (-c) * additiveContent Q c) := by
+  have h := additiveContent_add hQ (-c) c
+  rw [neg_add_cancel, additiveContent_zero] at h
+  linear_combination -h
+
+/-- A content and its negative vanish together. -/
+theorem additiveContent_neg_eq_zero_iff {Q : R} (hQ : Q ≠ 0) (c : ℤ) :
+    additiveContent Q (-c) = 0 ↔ additiveContent Q c = 0 := by
+  rw [additiveContent_neg hQ, neg_eq_zero, mul_eq_zero, or_iff_right (zpow_ne_zero _ hQ)]
+
+/-- Additive contents separate contents less than `n` apart as soon as the `Q`-integers
+`[d]_Q`, `0 < d < n`, are nonzero: `[x]_Q - [y]_Q = Q ^ y [x - y]_Q`. -/
+theorem additiveContent_inj {Q : R} (hQ : Q ≠ 0) {n : ℕ}
+    (hn : ∀ d : ℕ, 0 < d → d < n → additiveContent Q d ≠ 0) {x y : ℤ} (hxy : |x - y| < n) :
+    additiveContent Q x = additiveContent Q y ↔ x = y := by
+  refine ⟨fun h => ?_, congrArg _⟩
+  by_contra hne
+  have hzero : additiveContent Q (x - y) = 0 := by
+    have hadd := additiveContent_add hQ y (x - y)
+    rw [add_sub_cancel, h, left_eq_add, mul_eq_zero] at hadd
+    exact hadd.resolve_left (zpow_ne_zero _ hQ)
+  obtain ⟨m, hm | hm⟩ := Int.eq_nat_or_neg (x - y)
+  · rw [hm] at hzero hxy
+    exact hn m (by omega) (by simpa using hxy) hzero
+  · rw [hm, additiveContent_neg_eq_zero_iff hQ] at hzero
+    rw [hm, abs_neg] at hxy
+    exact hn m (by omega) (by simpa using hxy) hzero
 
 /-- Away from `Q = 1`, the additive content is the usual quotient. -/
 theorem additiveContent_eq_div {Q : R} (hQ : Q ≠ 0) (hQ1 : Q ≠ 1) (c : ℤ) :

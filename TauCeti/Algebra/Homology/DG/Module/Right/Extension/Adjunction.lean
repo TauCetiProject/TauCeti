@@ -172,12 +172,13 @@ noncomputable def fromExtendScalars (hP : IsDGRightModule hB ℳP dP)
         | @homogeneous q m =>
           have hφm : (φ m).val ∈ ℳP q := by
             simpa only [IsDGRightModule.mem_restrictScalarsGrading_iff,
-              DGRightModule.RestrictScalars.linearEquiv_apply] using Graded.map_mem φ m.2
+              DGRightModule.RestrictScalars.linearEquiv_apply] using Graded.map_mem φ m.property
           have hd : dP (φ m).val = (φ (dM m)).val := by
             simpa only [IsDGRightModule.val_restrictScalarsDifferential] using
               congrArg DGRightModule.RestrictScalars.val (φ.map_d m)
           rw [LinearMap.comp_apply, LinearMap.comp_apply,
-            IsDGRightModule.extendScalarsDifferential_tmul_of_mem f hM m.2, Int.cast_smul_eq_zsmul]
+            IsDGRightModule.extendScalarsDifferential_tmul_of_mem f hM m.property,
+                Int.cast_smul_eq_zsmul]
           simp [hF, hP.leibniz hφm ((Bimodule.of f.toGradedAlgHom.toAlgHom).symm x), hd,
             Units.smul_def]
       exact LinearMap.congr_fun key z }

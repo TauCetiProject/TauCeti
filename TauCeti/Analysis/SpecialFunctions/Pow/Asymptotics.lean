@@ -24,24 +24,45 @@ These facts transfer power-law tail constants between proportional or translated
 On a seminormed group, as `‖s‖ → ∞`:
 
 * `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` whenever `a < b`, for every real `c`;
-* every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`.
+* every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`, and `o(exp (c ‖s‖))` whenever
+  `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
+  every `a < c`;
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`,
+  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, and `√x / (x ^ a) ^ k → 0`
+  for real `x → ∞` whenever `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
 
 ## Positive powers near zero
 
-As `h → 0⁺`, every multiple `A * h ^ θ` of a positive power falls below any positive constant.
-This is how polynomial rates in a small scale `h` become inequalities for all small `h`.
+As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f = O(h ^ θ)`, in
+particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
+rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
+`f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
+`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`.
 
 ## Families bounded by integer powers
 
 A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a → -∞`,
 tends to zero. This is how valuation bounds on coefficients give convergence of series.
 
+## Powers of a fixed base tending to one
+
+For `q > 1` and a nonzero real base `b`, the powers `b ^ (a / q ^ n)` tend to one.
+For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`.
+
 ## Comparing exponents
 
 If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
-larger exponent outgrows every constant multiple of a smaller one.
+larger exponent outgrows every constant multiple of a smaller one. Symmetrically, if
+`t ^ a ≤ C t ^ b` for every `t ∈ (0, T]`, `T > 0`, then `b ≤ a`: near zero a power with a smaller
+exponent dominates every constant multiple of a larger one.
+
+## Powers outgrowing geometric sequences
+
+For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
+power `r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
+proof of the Gelfond–Schneider theorem.
 -/
 
 public section
@@ -94,12 +115,23 @@ open Asymptotics Bornology
 
 namespace TauCeti
 
+/-- A positive power of `h` tends to zero as `h → 0⁺`. -/
+theorem tendsto_rpow_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) :
+    Tendsto (fun h : ℝ ↦ h ^ θ) (𝓝[>] 0) (𝓝 0) := by
+  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto
+  rw [Real.zero_rpow hθ.ne'] at ht
+  exact ht.mono_left nhdsWithin_le_nhds
+
+/-- A function bounded by a positive power of `h` is eventually below every positive bound as
+`h → 0⁺`. -/
+theorem eventually_lt_of_isBigO_rpow {f : ℝ → ℝ} {θ : ℝ} (hθ : 0 < θ)
+    (hf : f =O[𝓝[>] 0] fun h ↦ h ^ θ) {c : ℝ} (hc : 0 < c) : ∀ᶠ h in 𝓝[>] 0, f h < c :=
+  (hf.trans_tendsto (tendsto_rpow_nhdsGT_zero hθ)).eventually (gt_mem_nhds hc)
+
 /-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
 theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
-    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c := by
-  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto.const_mul A
-  rw [Real.zero_rpow hθ.ne', mul_zero] at ht
-  exact (ht.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
+    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c :=
+  eventually_lt_of_isBigO_rpow hθ (isBigO_const_mul_self A _ _) hc
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 
@@ -126,6 +158,57 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
     rw [Function.comp_apply, ← Real.rpow_mul hx, mul_div_cancel₀ _ hb.ne', Real.rpow_natCast]
   exact h.comp_tendsto tendsto_norm_cobounded_atTop
 
+/-- For `c > 0`, every power `‖s‖ ^ n` is `o(exp (c ‖s‖))` as `‖s‖ → ∞`. -/
+theorem isLittleO_norm_pow_exp_mul_norm (n : ℕ) {c : ℝ} (hc : 0 < c) :
+    (fun s : E ↦ ‖s‖ ^ n) =o[cobounded E] fun s ↦ Real.exp (c * ‖s‖) :=
+  (isLittleO_pow_exp_pos_mul_atTop n hc).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- A polynomial weight costs an arbitrarily small part of an exponential decay rate: if `f` is
+`O(exp (-c ‖s‖))` and `a < c`, then `‖s‖ ^ n • f s` is `O(exp (-a ‖s‖))` as `‖s‖ → ∞`. -/
+theorem isBigO_norm_pow_smul_of_isBigO_exp_neg_mul_norm {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] (n : ℕ) {a c : ℝ} (hac : a < c) {f : E → F}
+    (hf : f =O[cobounded E] fun s ↦ Real.exp (-(c * ‖s‖))) :
+    (fun s ↦ ‖s‖ ^ n • f s) =O[cobounded E] fun s ↦ Real.exp (-(a * ‖s‖)) := by
+  refine ((isLittleO_norm_pow_exp_mul_norm n (sub_pos.2 hac)).isBigO.smul hf).congr_right
+    fun s ↦ ?_
+  rw [smul_eq_mul, ← Real.exp_add]
+  ring_nf
+
+/-- For `a < b`, the real power `x ^ a` is `o(x ^ b)` as `x → ∞`. -/
+theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
+    (fun x : ℝ ↦ x ^ a) =o[atTop] fun x ↦ x ^ b := by
+  refine (isLittleO_iff_tendsto' ?_).mpr ((tendsto_rpow_neg_atTop (sub_pos.2 hab)).congr' ?_)
+  · filter_upwards [eventually_gt_atTop 0] with x hx h
+    exact absurd h (Real.rpow_pos_of_pos hx b).ne'
+  · filter_upwards [eventually_gt_atTop 0] with x hx
+    rw [← Real.rpow_sub hx, neg_sub]
+
+/-- For `1 / 2 < a * k`, the square root is negligible against the `k`-th power of `x ^ a`:
+`√x / (x ^ a) ^ k → 0` as `x → ∞`. -/
+theorem tendsto_sqrt_div_rpow_pow_atTop_nhds_zero {a : ℝ} {k : ℕ} (h : 1 / 2 < a * k) :
+    Tendsto (fun x : ℝ ↦ √x / (x ^ a) ^ k) atTop (𝓝 0) := by
+  refine (tendsto_rpow_neg_atTop (sub_pos.2 h)).congr' ?_
+  filter_upwards [eventually_gt_atTop 0] with x hx
+  rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast hx.le, ← Real.rpow_sub hx, neg_sub]
+
+/-- For `a < b`, `‖s‖ ^ a` is `o(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
+theorem isLittleO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a < b) :
+    (fun s : E ↦ ‖s‖ ^ a) =o[cobounded E] fun s ↦ ‖s‖ ^ b :=
+  (isLittleO_rpow_rpow_atTop hab).comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- For `a ≤ b`, `‖s‖ ^ a` is `O(‖s‖ ^ b)` as `‖s‖ → ∞`. -/
+theorem isBigO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a ≤ b) :
+    (fun s : E ↦ ‖s‖ ^ a) =O[cobounded E] fun s ↦ ‖s‖ ^ b := by
+  rcases hab.lt_or_eq with hab | rfl
+  · exact (isLittleO_norm_rpow_norm_rpow_cobounded hab).isBigO
+  · exact isBigO_refl _ _
+
+/-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
+theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
+  refine isLittleO_norm_right.mp ?_
+  refine (isLittleO_norm_rpow_norm_rpow_cobounded (E := E) (show (1 / 2 : ℝ) < 1 by norm_num)).congr
+    (fun s ↦ (Real.sqrt_eq_rpow _).symm) fun s ↦ Real.rpow_one _
+
 /-- A family whose norms are bounded by `r ^ g a`, with `1 < r` and integer exponents `g a`
 tending to `-∞`, tends to zero. -/
 theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : Filter α}
@@ -135,6 +218,13 @@ theorem tendsto_zero_of_norm_le_zpow {α F : Type*} [SeminormedAddGroup F] {l : 
   have h := (tendsto_rpow_atBot_of_base_gt_one r hr).comp
     ((tendsto_intCast_atBot_iff (R := ℝ)).2 hg)
   simpa [Function.comp_def, Real.rpow_intCast] using h
+
+/-- For `q > 1`, the powers `b ^ (a / q ^ n)` of a fixed nonzero base `b` tend to one. -/
+theorem tendsto_const_rpow_div_pow_atTop {b q : ℝ} (hb : b ≠ 0) (hq : 1 < q) (a : ℝ) :
+    Tendsto (fun n : ℕ ↦ b ^ (a / q ^ n)) atTop (𝓝 1) := by
+  have h := (tendsto_pow_atTop_atTop_of_one_lt hq).const_div_atTop a
+  simpa only [Function.comp_def, Real.rpow_zero] using
+    (Real.continuousAt_const_rpow hb (b := 0)).tendsto.comp h
 
 /-- If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`. -/
 theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
@@ -150,7 +240,44 @@ theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
   rw [Real.rpow_sub hpos, lt_div_iff₀ (Real.rpow_pos_of_pos hpos _)] at hn
   linarith
 
+/-- If `t ^ a ≤ C t ^ b` for every `t ∈ (0, T]`, with `T > 0`, then `b ≤ a`. -/
+theorem le_of_forall_mem_Ioc_rpow_le_mul_rpow {a b C T : ℝ} (hT : 0 < T)
+    (h : ∀ t ∈ Set.Ioc 0 T, t ^ a ≤ C * t ^ b) : b ≤ a := by
+  by_contra hab
+  push Not at hab
+  obtain ⟨t, hCt, ht⟩ := ((eventually_mul_rpow_lt_nhdsGT_zero (sub_pos.2 hab) C one_pos).and
+    (Ioo_mem_nhdsGT hT)).exists
+  have hsplit : C * t ^ b = C * t ^ (b - a) * t ^ a := by
+    rw [mul_assoc, ← Real.rpow_add ht.1, sub_add_cancel]
+  have hle := h t ⟨ht.1, ht.2.le⟩
+  rw [hsplit] at hle
+  nlinarith [Real.rpow_pos_of_pos ht.1 a]
+
 end TauCeti
+
+namespace Asymptotics
+
+/-- Power laws multiply near `0⁺`: if `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then
+`f * g = O(h ^ c)` for every `c ≤ a + b`. This is the counterpart near zero of
+`Asymptotics.IsBigO.mul_atTop_rpow_of_isBigO_rpow`. -/
+theorem IsBigO.mul_nhdsGT_zero_rpow_of_isBigO_rpow {R : Type*} [SeminormedRing R] {f g : ℝ → R}
+    {a b c : ℝ} (hf : f =O[𝓝[>] 0] fun h ↦ h ^ a) (hg : g =O[𝓝[>] 0] fun h ↦ h ^ b)
+    (h : c ≤ a + b) : (f * g) =O[𝓝[>] 0] fun h ↦ h ^ c := by
+  refine (hf.mul hg).trans (Eventually.isBigO ?_)
+  filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
+  rw [← Real.rpow_add ht.1, Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le (a + b))]
+  exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
+
+/-- Power laws weaken near `0⁺`: if `f = O(h ^ a)` as `h → 0⁺`, then `f = O(h ^ c)` for every
+`c ≤ a`. -/
+theorem IsBigO.nhdsGT_zero_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c : ℝ}
+    (hf : f =O[𝓝[>] 0] fun h ↦ h ^ a) (h : c ≤ a) : f =O[𝓝[>] 0] fun h ↦ h ^ c := by
+  refine hf.trans (Eventually.isBigO ?_)
+  filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le a)]
+  exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
+
+end Asymptotics
 
 namespace Real
 
@@ -196,5 +323,41 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     _ ≤ (M * (1 + r)) * ((2 * M + 1) * log (2 + r)) :=
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
+
+/-- For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`. -/
+theorem pow_mul_rpow_lt_one_of_four_mul_sq_le (C : ℝ) {r : ℕ} (hCr : 4 * C ^ 2 ≤ r) :
+    C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) < 1 := by
+  rcases Nat.eq_zero_or_pos r with rfl | hr
+  · norm_num
+  have hr₁ : (1 : ℝ) ≤ r := by exact_mod_cast hr
+  have hr₀ : (0 : ℝ) < r := zero_lt_one.trans_le hr₁
+  set s := √(r : ℝ)
+  have hs₀ : 0 < s := sqrt_pos.2 hr₀
+  have hsr : s ≤ r := sqrt_le_self_iff.2 (Or.inr hr₁)
+  -- `2 |C| ≤ s`, since `(2 |C|) ^ 2 = 4 C ^ 2 ≤ r`.
+  have hCs : 2 * |C| ≤ s := le_sqrt_of_sq_le (by rw [mul_pow, sq_abs]; linarith)
+  -- `r ^ ((1 - r) / 2) = s ^ (1 - r) = s / s ^ r`.
+  have hrs : (r : ℝ) ^ ((1 - (r : ℝ)) / 2) = s / s ^ r := by
+    rw [rpow_div_two_eq_sqrt _ hr₀.le, rpow_sub hs₀]
+    simp
+  have hCs' : |C| / s ≤ 1 / 2 := by
+    rw [div_le_div_iff₀ hs₀ two_pos]
+    linarith
+  calc C ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) ≤ |C| ^ r * (r : ℝ) ^ ((1 - (r : ℝ)) / 2) :=
+        mul_le_mul_of_nonneg_right ((le_abs_self _).trans_eq (abs_pow C r)) (by positivity)
+    _ = s * (|C| / s) ^ r := by
+        rw [hrs, div_pow]
+        field_simp
+    _ ≤ s * (1 / 2) ^ r := by gcongr
+    _ = s / 2 ^ r := by rw [one_div_pow, mul_one_div]
+    _ < 1 := by
+        rw [div_lt_one (by positivity)]
+        exact hsr.trans_lt (by exact_mod_cast Nat.lt_two_pow_self)
+
+/-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`. -/
+theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
+    Tendsto (fun q : ℝ => B ^ q⁻¹) atTop (𝓝 1) := by
+  simpa only [Function.comp_def, rpow_zero] using
+    (continuousAt_const_rpow hB).tendsto.comp tendsto_inv_atTop_zero
 
 end Real

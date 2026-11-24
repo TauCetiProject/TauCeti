@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.NonDivergence
 
 import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.InnerProductSpace.Young
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # The comparison principle for parabolic equations on the whole space
@@ -84,13 +86,11 @@ All declarations are in the `TauCeti.PDE` namespace.
 
 public section
 
-noncomputable section
-
 namespace TauCeti
 
 namespace PDE
 
-open Matrix RealInnerProductSpace Set
+open RealInnerProductSpace Set
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
@@ -139,14 +139,8 @@ private theorem not_forall_sub_mul_exp_mul_le
     sum_mul_fderiv_fderiv_add_fderiv_norm_sq] at hLf
   -- In time, `t₀` maximizes `s ↦ u s x₀ - ε exp (K s) (1 + q²)` from the left, so its derivative
   -- `∂ₜu - ε K e (1 + q²)` is nonnegative.
-  have hg : HasDerivAt (fun s ↦ u s x₀ - ε * (Real.exp (K * s) * (1 + q ^ 2)))
-      (deriv (fun s ↦ u s x₀) t₀ - ε * (K * e * (1 + q ^ 2))) t₀ := by
-    have hexp : HasDerivAt (fun s ↦ Real.exp (K * s)) (K * e) t₀ := by
-      have := ((hasDerivAt_id t₀).const_mul K).exp
-      simp only [id, mul_one] at this
-      rw [mul_comm]
-      exact this
-    exact (hdiff ht₀ x₀).hasDerivAt.sub ((hexp.mul_const (1 + q ^ 2)).const_mul ε)
+  have hg := (hdiff ht₀ x₀).hasDerivAt.sub
+    (((Real.hasDerivAt_exp_mul K t₀).mul_const (1 + q ^ 2)).const_mul ε)
   have hleft : IsLocalMaxOn (fun s ↦ u s x₀ - ε * (Real.exp (K * s) * (1 + q ^ 2))) (Iic t₀) t₀ :=
     Filter.mem_of_superset (Icc_mem_nhdsLE ht₀.1) fun s hs ↦ hglob s hs x₀
   have htime := hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt
@@ -156,11 +150,8 @@ private theorem not_forall_sub_mul_exp_mul_le
   have htr' : (a t₀ x₀).trace ≤ |Lam| * (1 + q ^ 2) :=
     (htr ht₀ x₀).trans (mul_le_mul_of_nonneg_right (le_abs_self Lam) (by positivity))
   have hinner : 2 * ⟪x₀, b t₀ x₀⟫ ≤ 3 * |β| * (1 + q ^ 2) := by
-    have hb' : ‖b t₀ x₀‖ ≤ |β| * (1 + q) :=
-      (hb ht₀ x₀).trans (mul_le_mul_of_nonneg_right (le_abs_self β) (by positivity))
-    have h1 : ⟪x₀, b t₀ x₀⟫ ≤ q * (|β| * (1 + q)) :=
-      (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left hb' (norm_nonneg _))
-    nlinarith [sq_nonneg (q - 1), abs_nonneg β, mul_nonneg (abs_nonneg β) (sq_nonneg (q - 1))]
+    simpa using two_mul_re_inner_le_of_norm_le_mul_add_norm (𝕜 := ℝ)
+      ((hb ht₀ x₀).trans (mul_le_mul_of_nonneg_right (le_abs_self β) (by positivity)))
   -- Hence `ε e K (1 + q²) ≤ ∂ₜu ≤ ε e (2 |Λ| + 3 |β|) (1 + q²)`, contradicting the choice of `K`.
   have hεe : 0 < ε * e := mul_pos hε he
   have hkey := hsub ht₀ x₀
@@ -292,16 +283,14 @@ theorem le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_
       Real.exp (-(γ * p.1))).continuousOn.mul hcont).sub
       (by fun_prop : Continuous fun p : ℝ × EuclideanSpace ℝ ι ↦ M + p.1 * F).continuousOn)
   have hwbdd : BddAbove (Function.uncurry w '' Icc 0 T ×ˢ univ) := by
-    obtain ⟨Mu, hMu⟩ := hbdd
-    refine ⟨max Mu 0, ?_⟩
+    obtain ⟨Mu, hMu0, hMu⟩ := hbdd.exists_ge 0
+    refine ⟨Mu, ?_⟩
     rintro _ ⟨⟨t, x⟩, ⟨ht, -⟩, rfl⟩
     have h1 : Real.exp (-(γ * t)) ≤ 1 := Real.exp_le_one_iff.mpr (by nlinarith [ht.1])
-    have h2 : u t x ≤ max Mu 0 := (hMu ⟨(t, x), ⟨ht, mem_univ x⟩, rfl⟩).trans (le_max_left _ _)
-    have h3 : 0 ≤ M + t * F := by nlinarith [ht.1]
+    have h2 : u t x ≤ Mu := hMu _ ⟨(t, x), ⟨ht, mem_univ x⟩, rfl⟩
     simp only [Function.uncurry_apply_pair, hw]
-    nlinarith [Real.exp_pos (-(γ * t)), le_max_right Mu 0,
-      mul_le_mul_of_nonneg_left h2 (Real.exp_pos (-(γ * t))).le,
-      mul_le_mul_of_nonneg_right h1 (le_max_right Mu 0)]
+    nlinarith [ht.1, mul_le_mul_of_nonneg_left h2 (Real.exp_pos (-(γ * t))).le,
+      mul_le_mul_of_nonneg_right h1 hMu0]
   have hwle := nonpos_of_deriv_le_of_nonpos (u := w) (c := fun t x ↦ c t x - γ) ha htr hb
     (fun t ht x ↦ sub_nonpos.mpr (hc ht x)) hwcont hwbdd
     (fun t ht x ↦ contDiffAt_const.add ((hcd ht x).const_smul (Real.exp (-(γ * t)))))
@@ -467,5 +456,3 @@ theorem eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_in
 end PDE
 
 end TauCeti
-
-end

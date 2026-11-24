@@ -222,10 +222,10 @@ theorem hasSubgaussianMGF_add_of_condExp_eq_zero [IsProbabilityMeasure μ] {m : 
       simp [mgf, mul_add, exp_add]
     rw [hmul]
     calc _ ≤ exp ((‖b - a‖₊ / 2) ^ 2 * t ^ 2 / 2) * ∫ ω, exp (t * S ω) ∂μ :=
-          integral_mul_le_of_condExp_le hm (hZ t)
-            (Filter.Eventually.of_forall fun ω ↦ (exp_pos _).le) (hS.integrable_exp_mul t)
-            (hWint t) (hZW t)
-            (condExp_exp_mul_le (mΩ := mΩ) hm hX hbound hmean t)
+          integral_mul_le_of_condExp_le hm (hZ t) (hS.integrable_exp_mul t) (hWint t) (hZW t) <| by
+            filter_upwards [condExp_exp_mul_le (mΩ := mΩ) hm hX hbound hmean t] with ω hω
+            rw [mul_comm _ (exp (t * S ω))]
+            exact mul_le_mul_of_nonneg_left hω (exp_pos _).le
       _ ≤ exp ((‖b - a‖₊ / 2) ^ 2 * t ^ 2 / 2) * exp (c * t ^ 2 / 2) :=
           mul_le_mul_of_nonneg_left (hS.mgf_le t) (exp_pos _).le
       _ = _ := by rw [← exp_add]; push_cast; ring_nf

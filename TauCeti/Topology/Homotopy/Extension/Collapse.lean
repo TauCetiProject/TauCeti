@@ -82,9 +82,9 @@ theorem HasHomotopyExtensionProperty.exists_deformation_of_contractible
   -- Extend the contraction of `A`, read as a homotopy of maps into `X`, to a deformation of `X`.
   obtain ⟨F, hF₀, hFA⟩ := hA.exists_extension (ContinuousMap.id X)
     ((subtypeVal A).comp H.toContinuousMap) fun a => by simp
-  refine ⟨F, hF₀, fun t a ha => ?_, a₀, a₀.2, fun a ha => ?_⟩
+  refine ⟨F, hF₀, fun t a ha => ?_, a₀, a₀.property, fun a ha => ?_⟩
   · rw [hFA t ⟨a, ha⟩]
-    exact (H (t, ⟨a, ha⟩)).2
+    exact (H (t, ⟨a, ha⟩)).property
   · rw [hFA 1 ⟨a, ha⟩]
     simp
 

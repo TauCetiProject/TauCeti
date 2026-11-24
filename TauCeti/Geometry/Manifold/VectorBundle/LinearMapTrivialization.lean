@@ -73,7 +73,7 @@ variable {𝕜 EB HB B F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 
   [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)] {U : Set B}
   [FiberBundle F V] [VectorBundle 𝕜 F V] {n : ℕ∞ω} (hU : IsOpen U) (L : ∀ x, V x →L[𝕜] F)
   (hL : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) n
-    (fun p : TotalSpace F V ↦ L p.proj p.2) (π F V ⁻¹' U))
+    (fun p : TotalSpace F V ↦ L p.proj p.snd) (π F V ⁻¹' U))
   (hbij : ∀ x ∈ U, Function.Bijective (L x))
 
 include hU hL in
@@ -129,7 +129,7 @@ theorem ofContinuousLinearMapOn_mem_maximalAtlas [ContMDiffVectorBundle n F V IB
 
 /-- Over `U`, `ofContinuousLinearMapOn` evaluates `L` on the fibre component. -/
 @[simp] theorem ofContinuousLinearMapOn_apply {p : TotalSpace F V} (hp : p.proj ∈ U) :
-    ofContinuousLinearMapOn hU L hL hbij p = (p.proj, L p.proj p.2) := by
+    ofContinuousLinearMapOn hU L hL hbij p = (p.proj, L p.proj p.snd) := by
   obtain ⟨x, v⟩ := p
   rw [ofContinuousLinearMapOn,
     (isLocalFrameOn_invFrame hU L hL hbij).trivialization_apply hU (finBasis 𝕜 F) hp]
@@ -174,7 +174,7 @@ section Overlap
 
 variable {U' : Set B} (hU' : IsOpen U') (L' : ∀ x, V x →L[𝕜] F)
   (hL' : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) n
-    (fun p : TotalSpace F V ↦ L' p.proj p.2) (π F V ⁻¹' U'))
+    (fun p : TotalSpace F V ↦ L' p.proj p.snd) (π F V ⁻¹' U'))
   (hbij' : ∀ x ∈ U', Function.Bijective (L' x)) {x : B} (hx : x ∈ U ∩ U')
 
 include hx
@@ -201,7 +201,7 @@ end Overlap
 /-- `ofContinuousLinearMapOn` depends only on the values of `L` over `U`. -/
 theorem ofContinuousLinearMapOn_congr {L' : ∀ x, V x →L[𝕜] F}
     (hL' : ContMDiffOn (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) n
-      (fun p : TotalSpace F V ↦ L' p.proj p.2) (π F V ⁻¹' U))
+      (fun p : TotalSpace F V ↦ L' p.proj p.snd) (π F V ⁻¹' U))
     (hbij' : ∀ x ∈ U, Function.Bijective (L' x)) (heq : ∀ x ∈ U, L x = L' x) :
     ofContinuousLinearMapOn hU L hL hbij = ofContinuousLinearMapOn hU L' hL' hbij' := by
   have hframe : invFrame L hbij = invFrame L' hbij' := by

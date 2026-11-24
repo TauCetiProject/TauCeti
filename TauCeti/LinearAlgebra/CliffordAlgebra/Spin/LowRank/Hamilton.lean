@@ -111,7 +111,7 @@ variable [Invertible (2 : K)]
 noncomputable def spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne :
     spinGroup (weightedSumSquares K ![(1 : K), 1, 1]) ≃* unitary ℍ[K] :=
   spinGroupEquivQuaternionUnitary _
-    (nondegenerate_weightedSumSquares fun i ↦ by fin_cases i <;> exact isRegular_one)
+    (nondegenerate_weightedSumSquares_iff.mpr fun i ↦ by fin_cases i <;> exact isRegular_one)
     (Module.finrank_fin_fun K) evenHamiltonEquivWeightedSumSquaresOne
     evenHamiltonEquivWeightedSumSquaresOne_reverseEven
 
@@ -210,7 +210,7 @@ private theorem map_hamiltonVectorEven (v : Fin 3 → K) :
         (hamiltonBasisVector (K := K) 2) (hamiltonBasisVector (K := K) 0)) =
       (⟨0, -1, 0, 0⟩ : ℍ[K]) := by
     rw [evenHamiltonEquivWeightedSumSquaresOne_ι]
-    ext <;> simp [hamiltonBasisVector, Pi.basisFun_apply, QuaternionAlgebra.mk_mul_mk]
+    ext <;> simp [hamiltonBasisVector, Pi.basisFun_apply]
   have h01 : evenHamiltonEquivWeightedSumSquaresOne
       ((even.ι (hamiltonThreeForm (K := K))).bilin
         (hamiltonBasisVector (K := K) 0) (hamiltonBasisVector (K := K) 1)) =
@@ -314,7 +314,7 @@ private theorem hamiltonVectorEven_spin_action
   have hrev : reverse (s : CliffordAlgebra (hamiltonThreeForm (K := K))) =
       star (s : CliffordAlgebra (hamiltonThreeForm (K := K))) :=
     reverse_eq_star_of_mem_even
-      ⟨(s : CliffordAlgebra (hamiltonThreeForm (K := K))), spinGroup.mem_even s.2⟩
+      ⟨(s : CliffordAlgebra (hamiltonThreeForm (K := K))), spinGroup.mem_even s.property⟩
   rw [hrev]
   have hcomm : hamiltonVolume (K := K) * star (s : CliffordAlgebra _) =
       star (s : CliffordAlgebra _) * hamiltonVolume :=
@@ -349,7 +349,7 @@ theorem spinToSpecialOrthogonal_weightedSumSquares_one_surjective_iff :
   have h1 : (1 : Kˣ) ∈ unitValueSet (weightedSumSquares K ![(1 : K), 1, 1]) :=
     mem_unitValueSet.2 ((represents_iff _ _).2 ⟨![1, 0, 0], by simp [happ]⟩)
   rw [spinToSpecialOrthogonal_surjective_iff_isSquare_of_one_mem _
-    (nondegenerate_weightedSumSquares fun i ↦ by fin_cases i <;> exact isRegular_one) h1]
+    (nondegenerate_weightedSumSquares_iff.mpr fun i ↦ by fin_cases i <;> exact isRegular_one) h1]
   constructor
   · intro h x y z hs
     have := h (Units.mk0 _ hs) (mem_unitValueSet.2 ((represents_iff _ _).2 ⟨![x, y, z], by
@@ -380,7 +380,7 @@ theorem exists_quaternionUnitaryHom_range_ne_top_rat :
         (∀ hQ, f.range = (spinorNorm (weightedSumSquares ℚ ![(1 : ℚ), 1, 1]) hQ).ker) ∧
           f.range ≠ ⊤ := by
   have hQ : (weightedSumSquares ℚ ![(1 : ℚ), 1, 1]).Nondegenerate :=
-    nondegenerate_weightedSumSquares fun i ↦ by fin_cases i <;> exact isRegular_one
+    nondegenerate_weightedSumSquares_iff.mpr fun i ↦ by fin_cases i <;> exact isRegular_one
   let f := quaternionUnitaryToSpecialOrthogonal _ hQ (Module.finrank_fin_fun ℚ)
     evenHamiltonEquivWeightedSumSquaresOne
     evenHamiltonEquivWeightedSumSquaresOne_reverseEven

@@ -23,10 +23,7 @@ map `g : N → P` that is regular at every point of `S` and cuts out `Set.range 
 
 When `P` is nontrivial, the image `Set.range f` is closed in `N` if and only if every ambient point
 `y₀ : N` admits such a local defining equation regular along `S ∩ Set.range f`
-(`TauCeti.SmoothEmbedding.isClosed_range_iff_forall_exists_contMDiffOn_eq_zero`). We also expose
-chosen local defining data `TauCeti.SmoothEmbedding.transverseAmbientSet` and
-`TauCeti.SmoothEmbedding.transverseDefiningMap` at `x₀ : M` for constructing transition cocycles of
-intrinsic normal bundles.
+(`TauCeti.SmoothEmbedding.isClosed_range_iff_forall_exists_contMDiffOn_eq_zero`).
 
 ## References
 
@@ -49,18 +46,13 @@ variable {𝕜 E V P H G M N : Type*} [NontriviallyNormedField 𝕜] [CompleteSp
   [TopologicalSpace N] [ChartedSpace G N] {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 V G}
   [I.Boundaryless] [J.Boundaryless] {n : ℕ∞ω} [IsManifold J n N]
 
-private structure TransverseZeroData (f : SmoothEmbedding I J n M N) (x₀ : M) where
-  ambSet : Set N
-  isOpen_ambSet : IsOpen ambSet
-  mem_ambSet : f x₀ ∈ ambSet
-  eqFun : N → P
-  contMDiffOn_eqFun : ContMDiffOn J 𝓘(𝕜, P) n eqFun ambSet
-  mem_range_iff : ∀ y ∈ ambSet, y ∈ range f ↔ eqFun y = 0
-  regular : ∀ y ∈ ambSet, IsRegularPoint J 𝓘(𝕜, P) eqFun y
-
-private theorem nonempty_transverseZeroData (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+/-- **Local defining equations of a smooth embedding.** Around every `x₀ : M`, there is an open
+ambient set `S ⊆ N` containing `f x₀` and a `C^n` map `g : N → P` cutting out `Set.range f` on `S`
+(`y ∈ Set.range f ↔ g y = 0`) and regular at every `y ∈ S`. -/
+theorem exists_contMDiffOn_eq_zero (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
     (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
-    Nonempty (TransverseZeroData (P := P) f x₀) := by
+    ∃ S : Set N, IsOpen S ∧ f x₀ ∈ S ∧ ∃ g : N → P, ContMDiffOn J 𝓘(𝕜, P) n g S ∧
+      (∀ y ∈ S, y ∈ range f ↔ g y = 0) ∧ ∀ y ∈ S, IsRegularPoint J 𝓘(𝕜, P) g y := by
   have : IsManifold J 1 N := .of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn)
   let F := f.isImmersion.complement
   let h : Manifold.IsImmersionAtOfComplement F I J n f x₀ :=
@@ -78,11 +70,11 @@ private theorem nonempty_transverseZeroData (f : SmoothEmbedding I J n M N) (hn 
     rw [Module.finrank_prod] at heq; omega
   let c : F ≃L[𝕜] P := ContinuousLinearEquiv.ofFinrankEq hFdim
   let π₂ : E × F →L[𝕜] P := c.toContinuousLinearMap.comp (ContinuousLinearMap.snd 𝕜 E F)
-  refine ⟨⟨Φ.source, Φ.open_source, hfx₀, π₂ ∘ Φ, π₂.contDiff.contMDiff.comp_contMDiffOn hΦ,
-    fun y hy ↦ ?_, fun y hy ↦ ?_⟩⟩
+  refine ⟨Φ.source, Φ.open_source, hfx₀, π₂ ∘ Φ, π₂.contDiff.contMDiff.comp_contMDiffOn hΦ,
+    fun y hy ↦ ?_, fun y hy ↦ ?_⟩
   · rw [(isSliceChart_iff.1 hslice) y hy, I.range_eq_univ, mem_prod, and_iff_right (mem_univ _),
       mem_singleton_iff]
-    exact (c.map_eq_zero_iff (x := (Φ y).2)).symm
+    exact (c.map_eq_zero_iff (x := (Φ y).snd)).symm
   · have hloc := (PartialDiffeomorph.mk Φ.toPartialEquiv Φ.open_source Φ.open_target hΦ
       hΦsymm).isLocalDiffeomorphAt J 𝓘(𝕜, E × F) n hy
     have hΦAt := (hΦ.contMDiffAt (Φ.open_source.mem_nhds hy)).mdifferentiableAt hn
@@ -90,17 +82,6 @@ private theorem nonempty_transverseZeroData (f : SmoothEmbedding I J n M N) (hn 
       ContinuousLinearMap.coe_comp]
     exact (c.surjective.comp Prod.snd_surjective).comp
       (hloc.mfderivToContinuousLinearEquiv hn).surjective
-
-/-- **Local defining equations of a smooth embedding.** Around every `x₀ : M`, there is an open
-ambient set `S ⊆ N` containing `f x₀` and a `C^n` map `g : N → P` cutting out `Set.range f` on `S`
-(`y ∈ Set.range f ↔ g y = 0`) and regular at every `y ∈ S`. -/
-theorem exists_contMDiffOn_eq_zero (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
-    ∃ S : Set N, IsOpen S ∧ f x₀ ∈ S ∧ ∃ g : N → P, ContMDiffOn J 𝓘(𝕜, P) n g S ∧
-      (∀ y ∈ S, y ∈ range f ↔ g y = 0) ∧ ∀ y ∈ S, IsRegularPoint J 𝓘(𝕜, P) g y :=
-  let ⟨d⟩ := f.nonempty_transverseZeroData hn hdim x₀
-  ⟨d.ambSet, d.isOpen_ambSet, d.mem_ambSet, d.eqFun, d.contMDiffOn_eqFun, d.mem_range_iff,
-    d.regular⟩
 
 /-- **Characterization of closed embedded submanifolds by local defining equations.** When the
 codimension model `P` is nontrivial, the image of a `C^n` (`n ≠ 0`) smooth embedding `f : M → N`
@@ -127,51 +108,5 @@ theorem isClosed_range_iff_forall_exists_contMDiffOn_eq_zero [Nontrivial P]
     refine Filter.mem_of_superset ((hg.continuousOn.isOpen_inter_preimage hS
       isClosed_singleton.isOpen_compl).mem_nhds
       ⟨hy₀S, fun hgy₀ ↦ hy₀ ((hzero y₀ hy₀S).2 hgy₀)⟩) fun y hy hyr ↦ hy.2 ((hzero y hy.1).1 hyr)
-
-section TransverseData
-
-variable (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
-  (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M)
-
-private def chosenTransverseZeroData : TransverseZeroData (P := P) f x₀ :=
-  Classical.choice (f.nonempty_transverseZeroData hn hdim x₀)
-
-/-- The open ambient neighbourhood around `f x₀` on which `f.transverseDefiningMap` cuts out
-`Set.range f`. -/
-def transverseAmbientSet : Set N := (f.chosenTransverseZeroData hn hdim x₀).ambSet
-
-/-- The chosen local `C^n` transverse defining map `N → P` cutting out `Set.range f` on
-`f.transverseAmbientSet hn hdim x₀`. -/
-def transverseDefiningMap : N → P := (f.chosenTransverseZeroData hn hdim x₀).eqFun
-
-/-- The chosen ambient slice neighbourhood `f.transverseAmbientSet hn hdim x₀` is open in `N`. -/
-theorem isOpen_transverseAmbientSet : IsOpen (f.transverseAmbientSet hn hdim x₀) :=
-  (f.chosenTransverseZeroData hn hdim x₀).isOpen_ambSet
-
-/-- The point `f x₀` lies in `f.transverseAmbientSet hn hdim x₀`. -/
-@[simp] theorem apply_mem_transverseAmbientSet : f x₀ ∈ f.transverseAmbientSet hn hdim x₀ :=
-  (f.chosenTransverseZeroData hn hdim x₀).mem_ambSet
-
-/-- `f.transverseDefiningMap hn hdim x₀` is `C^n` on `f.transverseAmbientSet hn hdim x₀`. -/
-theorem contMDiffOn_transverseDefiningMap :
-    ContMDiffOn J 𝓘(𝕜, P) n (f.transverseDefiningMap hn hdim x₀)
-      (f.transverseAmbientSet hn hdim x₀) :=
-  (f.chosenTransverseZeroData hn hdim x₀).contMDiffOn_eqFun
-
-/-- On `f.transverseAmbientSet hn hdim x₀`, `Set.range f` coincides with the zero locus of
-`f.transverseDefiningMap hn hdim x₀`. -/
-theorem mem_range_iff_transverseDefiningMap_eq_zero {y : N}
-    (hy : y ∈ f.transverseAmbientSet hn hdim x₀) :
-    y ∈ range f ↔ f.transverseDefiningMap hn hdim x₀ y = 0 :=
-  (f.chosenTransverseZeroData hn hdim x₀).mem_range_iff y hy
-
-/-- Every point of `f.transverseAmbientSet hn hdim x₀` is a regular point of
-`f.transverseDefiningMap hn hdim x₀`. -/
-theorem isRegularPoint_transverseDefiningMap {y : N}
-    (hy : y ∈ f.transverseAmbientSet hn hdim x₀) :
-    IsRegularPoint J 𝓘(𝕜, P) (f.transverseDefiningMap hn hdim x₀) y :=
-  (f.chosenTransverseZeroData hn hdim x₀).regular y hy
-
-end TransverseData
 
 end TauCeti.SmoothEmbedding
