@@ -93,7 +93,8 @@ theorem exists_mem_comp_app_eq {M N : ModuleCat.{w} Λ} [Module.Finite Λ M]
   have hL {Z : C} (f : Z ⟶ Y) (m : M) : L Z m = G.map f.op (L Y m) := by
     simp only [L, ModuleCat.hom_comp, LinearMap.comp_apply]
     rw [← NatTrans.naturality_apply ψ, ← NatTrans.naturality_apply p]
-    rfl
+    -- The constant presheaf on `M` maps `f.op` to the identity of `M`.
+    simp
   let R : Sieve Y :=
     { arrows Z _ := ∃ g : M ⟶ N, p.app (op Z) ≫ ψ.app (op Z) = g ≫ q.app (op Z)
       downward_closed := by
@@ -126,7 +127,8 @@ theorem exists_mem_comp_app_eq {M N : ModuleCat.{w} Λ} [Module.Finite Λ M]
     have hmem := Presheaf.equalizerSieve_mem J q x y hxy
     by_contra hne
     refine hbot (J.superset_covering (fun W k hk ↦ hne ?_) hmem)
-    exact hk
+    -- The constant presheaf on `N` maps `k.op` to the identity of `N`.
+    simpa using hk
   have hrange : LinearMap.range (L Z) ≤ LinearMap.range (q.app (op Z)).hom := by
     rw [LinearMap.range_eq_map, ← hs, Submodule.map_span_le]
     intro m hm
@@ -139,29 +141,6 @@ theorem exists_mem_comp_app_eq {M N : ModuleCat.{w} Λ} [Module.Finite Λ M]
   exact (congrArg Subtype.val (e.apply_symm_apply ⟨L Z m, hrange ⟨m, rfl⟩⟩)).symm
 
 end Local
-
-section Restrict
-
-variable {A : Type*} [Category* A]
-
-/-- An isomorphism between the restrictions of two sheaves to `Over Y` restricts, along
-`f : V ⟶ Y`, to an isomorphism between their restrictions to `Over V`. -/
-noncomputable def overIsoRestrict {F F' : Sheaf J A} {Y V : C} (e : F.over Y ≅ F'.over Y)
-    (f : V ⟶ Y) : F.over V ≅ F'.over V :=
-  (F.pushforwardOverMapIso f).symm ≪≫
-    ((Over.map f).sheafPushforwardContinuous A (J.over V) (J.over Y)).mapIso e ≪≫
-      F'.pushforwardOverMapIso f
-
-@[simp]
-lemma overIsoRestrict_hom_hom_app {F F' : Sheaf J A} {Y V : C} (e : F.over Y ≅ F'.over Y)
-    (f : V ⟶ Y) (W : (Over V)ᵒᵖ) :
-    (overIsoRestrict e f).hom.hom.app W = e.hom.hom.app (op ((Over.map f).obj W.unop)) := by
-  simp only [overIsoRestrict, Sheaf.pushforwardOverMapIso, Iso.trans_hom, Iso.symm_hom,
-    ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app]
-  erw [Category.id_comp, Category.comp_id]
-  rfl
-
-end Restrict
 
 section Constant
 
@@ -247,6 +226,7 @@ def locallyConstantMapSieve {F G : Sheaf J (ModuleCat.{w} Λ)} (φ : F ⟶ G) (X
     exact this
 
 omit [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)] in
+@[simp]
 lemma locallyConstantMapSieve_apply {F G : Sheaf J (ModuleCat.{w} Λ)} (φ : F ⟶ G) {X Y : C}
     (f : Y ⟶ X) :
     locallyConstantMapSieve φ X f ↔ ∃ (M N : ModuleCat.{w} Λ) (_ : Module.Finite Λ M)
@@ -257,6 +237,14 @@ lemma locallyConstantMapSieve_apply {F G : Sheaf J (ModuleCat.{w} Λ)} (φ : F �
         eF.hom ≫ (J.overPullback (ModuleCat.{w} Λ) Y).map
           ((constantSheaf J (ModuleCat.{w} Λ)).map g) :=
   Iff.rfl
+
+omit [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)] in
+/-- Whether a morphism is constant over `Y ⟶ X` does not depend on `X`, so these sieves are
+stable under pullback. -/
+@[simp]
+lemma pullback_locallyConstantMapSieve {F G : Sheaf J (ModuleCat.{w} Λ)} (φ : F ⟶ G) {X Z : C}
+    (g : Z ⟶ X) : (locallyConstantMapSieve φ X).pullback g = locallyConstantMapSieve φ Z :=
+  Sieve.ext fun _ _ ↦ Iff.rfl
 
 /-- **Morphisms of locally constant sheaves are locally constant.** A morphism between sheaves of
 `Λ`-modules that are locally constant of finite type is, locally on the site and up to
@@ -279,7 +267,21 @@ end Constant
 
 section Closure
 
-variable [HasSheafify J (ModuleCat.{w} Λ)] [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
+variable [HasSheafify J (ModuleCat.{w} Λ)]
+
+/-- The constant sheaf functor preserves finite limits: it is the constant presheaf functor
+followed by sheafification, both of which preserve finite limits. -/
+instance preservesFiniteLimits_constantSheaf :
+    PreservesFiniteLimits (constantSheaf J (ModuleCat.{w} Λ)) :=
+  inferInstanceAs (PreservesFiniteLimits (Functor.const Cᵒᵖ ⋙ presheafToSheaf J _))
+
+/-- The constant sheaf functor preserves finite colimits: it is the constant presheaf functor
+followed by sheafification, both of which preserve finite colimits. -/
+instance preservesFiniteColimits_constantSheaf :
+    PreservesFiniteColimits (constantSheaf J (ModuleCat.{w} Λ)) :=
+  inferInstanceAs (PreservesFiniteColimits (Functor.const Cᵒᵖ ⋙ presheafToSheaf J _))
+
+variable [J.WEqualsLocallyBijective (ModuleCat.{w} Λ)]
 
 /-- **Kernels of locally constant sheaves.** Over a Noetherian ring `Λ`, the kernel of a morphism
 between sheaves of `Λ`-modules that are locally constant of finite type is locally constant of
@@ -291,8 +293,6 @@ theorem IsLocallyConstantIn.kernel [IsNoetherianRing Λ] {F G : Sheaf J (ModuleC
   refine (isLocallyConstantIn_iff _ _).2 fun X ↦
     J.superset_covering (fun Y f hf ↦ ?_) (hF.locallyConstantMapSieve_mem hG φ X)
   obtain ⟨M, N, hM, -, g, eF, eG, w⟩ := hf
-  have : PreservesFiniteLimits (constantSheaf J (ModuleCat.{w} Λ)) :=
-    inferInstanceAs (PreservesFiniteLimits (Functor.const Cᵒᵖ ⋙ presheafToSheaf J _))
   refine (locallyConstantSieve_apply _ _ f).2 ⟨Limits.kernel g,
     Module.Finite.equiv (ModuleCat.kernelIsoKer g).symm.toLinearEquiv,
     ⟨PreservesKernel.iso (J.overPullback (ModuleCat.{w} Λ) Y) φ ≪≫ kernel.mapIso _ _ eF eG w ≪≫
@@ -312,8 +312,6 @@ theorem IsLocallyConstantIn.cokernel
   refine (isLocallyConstantIn_iff _ _).2 fun X ↦
     J.superset_covering (fun Y f hf ↦ ?_) (hF.locallyConstantMapSieve_mem hG φ X)
   obtain ⟨M, N, -, hN, g, eF, eG, w⟩ := hf
-  have : PreservesFiniteColimits (constantSheaf J (ModuleCat.{w} Λ)) :=
-    inferInstanceAs (PreservesFiniteColimits (Functor.const Cᵒᵖ ⋙ presheafToSheaf J _))
   refine (locallyConstantSieve_apply _ _ f).2 ⟨Limits.cokernel g,
     Module.Finite.equiv (ModuleCat.cokernelIsoRangeQuotient g).symm.toLinearEquiv,
     ⟨PreservesCokernel.iso (J.overPullback (ModuleCat.{w} Λ) Y) φ ≪≫ cokernel.mapIso _ _ eF eG w ≪≫

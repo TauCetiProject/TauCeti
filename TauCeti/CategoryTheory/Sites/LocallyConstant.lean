@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.Point.ConstantSheaf
+public import TauCeti.CategoryTheory.Sites.Over
 public import TauCeti.CategoryTheory.Sites.Point.Over
 
 /-!
@@ -61,9 +62,7 @@ def locallyConstantSieve (F : Sheaf J A) (X : C) : Sieve X where
   arrows Y _ := ∃ M, P M ∧ Nonempty (F.over Y ≅ ((constantSheaf J A).obj M).over Y)
   downward_closed := by
     rintro Y Z - ⟨M, hM, ⟨e⟩⟩ g
-    exact ⟨M, hM, ⟨(F.pushforwardOverMapIso g).symm ≪≫
-      ((Over.map g).sheafPushforwardContinuous A _ _).mapIso e ≪≫
-        ((constantSheaf J A).obj M).pushforwardOverMapIso g⟩⟩
+    exact ⟨M, hM, ⟨overIsoRestrict e g⟩⟩
 
 @[simp]
 lemma locallyConstantSieve_apply (F : Sheaf J A) {X Y : C} (f : Y ⟶ X) :

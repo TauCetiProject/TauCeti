@@ -23,10 +23,10 @@ kernels when `Λ` is Noetherian (for instance finite):
 These are the étale cases of the statements for locally constant sheaves of finite type on a site
 (`CategoryTheory.Sheaf.IsLocallyConstantIn.kernel`,
 `CategoryTheory.Sheaf.IsLocallyConstantIn.cokernel`).
-The cokernel statement uses that restricting étale sheaves to `Over U` preserves finite colimits
-(`AlgebraicGeometry.Scheme.Etale.preservesFiniteColimits_overPullback`): up to the equivalence
-`AlgebraicGeometry.Scheme.Etale.overSheafEquiv`, it is the inverse image along the étale morphism
-`U ⟶ S`, which is exact.
+The cokernel statement uses that restricting étale sheaves to `Over U` preserves cokernels: it is
+a left adjoint (`AlgebraicGeometry.Scheme.Etale.isLeftAdjoint_overPullback`), since up to the
+equivalence `AlgebraicGeometry.Scheme.Etale.overSheafEquiv` it is the inverse image along the
+étale morphism `U ⟶ S`.
 
 ## References
 
@@ -39,22 +39,6 @@ public section
 universe u
 
 open CategoryTheory Limits AlgebraicGeometry Scheme
-
-namespace AlgebraicGeometry.Scheme.Etale
-
-variable {S : Scheme.{u}} (U : S.Etale) (Λ : Type u) [Ring Λ]
-
-/-- Restricting étale sheaves of `Λ`-modules on `S` to `Over U` preserves finite colimits: up to
-`U.overSheafEquiv`, it is the inverse image along the étale morphism `U ⟶ S`. -/
-instance preservesFiniteColimits_overPullback :
-    PreservesFiniteColimits ((smallEtaleTopology S).overPullback (ModuleCat.{u} Λ) U) :=
-  preservesFiniteColimits_of_natIso
-    (Functor.isoWhiskerRight (U.smallEtalePullbackIsoOver (ModuleCat.{u} Λ))
-        (U.overSheafEquiv (ModuleCat.{u} Λ)).inverse ≪≫ Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft _ (U.overSheafEquiv (ModuleCat.{u} Λ)).unitIso.symm ≪≫
-      Functor.rightUnitor _)
-
-end AlgebraicGeometry.Scheme.Etale
 
 namespace CategoryTheory.Sheaf
 
