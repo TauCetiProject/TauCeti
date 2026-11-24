@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -526,7 +527,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
     totalVariationOn_tsum_shrinking_convolution_le hu hζ hζ0 hζ1 hloc (fun k => (hε k).le)
       (hasSum_geometric_two' δ) hng⟩
   · obtain ⟨m, hm⟩ := hloc x hx
-    refine (contDiffAt_tsum_of_eventually_eq_zero (Finset.range m)
+    refine (Finset.contDiffAt_tsum_of_eventually_eq_zero (Finset.range m)
       (fun k _ => (hf k).contDiffAt) (hm.mono fun y hy k hk => ?_)).contDiffWithinAt
     exact hy.1 k (by simpa using hk)
   -- The `L¹` error is at most the sum of the errors of the pieces.
