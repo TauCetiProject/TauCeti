@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.MvPolynomial.L1Norm
 public import TauCeti.NumberTheory.Transcendental.Waldschmidt.Interpolation.Delta.Operator
+import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Data.Nat.Choose.Bounds
 
@@ -102,14 +103,12 @@ theorem waldschmidtEntryPolynomial_apply (t : ℤ) (s : Fin (n + 1) → ℤ) (P 
 one. -/
 private theorem totalDegree_waldschmidtPoint_X_le (s : Fin (n + 1) → ℤ) (i : Fin (n + 1)) :
     (waldschmidtPoint (X : Fin (n + 1) → MvPolynomial (Fin (n + 1)) R) s i).totalDegree ≤ 1 := by
-  have hX (j : Fin (n + 1)) : (X j : MvPolynomial (Fin (n + 1)) R).totalDegree ≤ 1 := by
-    rw [X]
-    exact (totalDegree_monomial_le _ _).trans (by simp)
   have hz (z : ℤ) : (z : MvPolynomial (Fin (n + 1)) R).totalDegree = 0 := by
     rw [← map_intCast (C : R →+* MvPolynomial (Fin (n + 1)) R), totalDegree_C]
   have hCX (z : ℤ) (j : Fin (n + 1)) :
-      ((z : MvPolynomial (Fin (n + 1)) R) * X j).totalDegree ≤ 1 :=
-    (totalDegree_mul _ _).trans (by rw [hz, zero_add]; exact hX j)
+      ((z : MvPolynomial (Fin (n + 1)) R) * X j).totalDegree ≤ 1 := by
+    rw [← map_intCast (C : R →+* MvPolynomial (Fin (n + 1)) R), ← smul_eq_C_mul]
+    exact (totalDegree_smul_le (z : R) (X j)).trans (totalDegree_X_le j)
   cases i using Fin.cases with
   | zero =>
     rw [waldschmidtPoint_apply_zero]
@@ -125,7 +124,7 @@ theorem totalDegree_waldschmidtEntryPolynomial_le (t : ℤ) (s : Fin (n + 1) →
     (waldschmidtEntryPolynomial t s P F).totalDegree ≤ F.totalDegree := by
   rw [← mem_restrictTotalDegree, waldschmidtEntryPolynomial_apply]
   refine Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ ?_
-  exact aeval_mem_restrictTotalDegree (totalDegree_waldschmidtPoint_X_le s)
+  exact aeval_mem_restrictTotalDegree _ (fun i _ ↦ totalDegree_waldschmidtPoint_X_le s i)
     ((mem_restrictTotalDegree _ _ _).2 ((totalDegree_iterate_pderiv_le 0 k F).trans tsub_le_self))
 
 /-- **The entry as a value of the entry polynomial.** Let `K` be a field that is an algebra over

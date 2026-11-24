@@ -232,8 +232,8 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   set b : ℕ → ℂ → ℝ := fun n ↦ (closedBall (0 : ℂ) (2 * R n)).indicator
     fun _ ↦ C₀ * (R n)⁻¹ * (M / R n)
   have hb (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ * ‖u x‖ ≤ b n x :=
-    norm_fderiv_mul_norm_le_indicator (hR n) hM (hχ1 n) (hχ0 n) (hχfd n)
-      (fun x hx ↦ norm_mul_norm_cauchyTransform_le hsupp
+    norm_fderiv_mul_norm_le_indicator hM (hχ1 n) (hχ0 n) (hχfd n)
+      (fun x hx _ ↦ norm_mul_norm_cauchyTransform_le hsupp
         (hf.continuous.integrable_of_hasCompactSupport hc) ((hrR n).trans hx)) x
   obtain ⟨Cb, hCb⟩ := exists_eLpNorm_beurlingL2_le (F := F) (p := 2) (by norm_num)
     ENNReal.ofNat_ne_top

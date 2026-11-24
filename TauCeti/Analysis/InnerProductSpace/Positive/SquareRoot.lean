@@ -83,7 +83,7 @@ theorem sqrt_apply_eigenvectorBasis (hT : T.IsPositive) {n : ℕ}
 
 /-- The square root of a positive endomorphism is positive. -/
 theorem sqrt_isPositive (hT : T.IsPositive) : hT.sqrt.IsPositive :=
-  hT.isSymmetric.isPositive_cfc fun _ _ ↦ Real.sqrt_nonneg _
+  hT.isSymmetric.isPositive_cfc_iff.mpr fun _ _ ↦ Real.sqrt_nonneg _
 
 /-- The positive square root is symmetric. -/
 theorem sqrt_isSymmetric (hT : T.IsPositive) : hT.sqrt.IsSymmetric :=
