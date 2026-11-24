@@ -43,6 +43,8 @@ underlying sesquilinear form.
   (`TauCeti.CoerciveHermitianForm.inner_toEnergySpace`) and the two-sided norm bounds
   `TauCeti.CoerciveHermitianForm.sqrt_mul_norm_le_norm_toEnergySpace` and
   `TauCeti.CoerciveHermitianForm.norm_toEnergySpace_le`.
+* `TauCeti.CoerciveHermitianForm.sqrt_mul_norm_toEnergySpace_le`: the energy norms of two
+  coercive Hermitian forms on the same space bound each other.
 * `TauCeti.CoerciveHermitianForm.toEnergySpace_eq_toDual_symm_iff`: on a Banach space, `u` solves
   `a.form u v = ℓ v` for every `v` exactly when `a.toEnergySpace u` is the Riesz representative,
   in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`.
@@ -207,6 +209,20 @@ theorem sqrt_mul_norm_le_norm_toEnergySpace {c : ℝ} (u : V)
     (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) : √c * ‖u‖ ≤ ‖a.toEnergySpace u‖ := by
   rw [coe_toEnergySpace]
   exact a.sqrt_mul_norm_le_norm_toEnergySpaceₗ u h
+
+/-- **Comparison of two energy norms.** If `c * ‖u‖ ^ 2 ≤ re (a.form u u)`, then the energy norm
+of `u` for another coercive Hermitian form `b` is controlled by its energy norm for `a`:
+`√c * ‖u‖_b ≤ √‖b.form‖ * ‖u‖_a`. -/
+theorem sqrt_mul_norm_toEnergySpace_le (b : CoerciveHermitianForm 𝕜 V) {c : ℝ} (u : V)
+    (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) :
+    √c * ‖b.toEnergySpace u‖ ≤ √‖b.form‖ * ‖a.toEnergySpace u‖ :=
+  calc √c * ‖b.toEnergySpace u‖ ≤ √c * (√‖b.form‖ * ‖u‖) := by
+        gcongr
+        exact b.norm_toEnergySpace_le u
+    _ = √‖b.form‖ * (√c * ‖u‖) := by ring
+    _ ≤ √‖b.form‖ * ‖a.toEnergySpace u‖ := by
+        gcongr
+        exact a.sqrt_mul_norm_le_norm_toEnergySpace u h
 
 /-- The operator norm of `a.toEnergySpace` is at most `√‖a.form‖`. -/
 theorem opNorm_toEnergySpace_le : ‖(a.toEnergySpace : V →L[𝕜] a.EnergySpace)‖ ≤ √‖a.form‖ :=

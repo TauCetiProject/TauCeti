@@ -13,7 +13,7 @@ import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -310,7 +310,7 @@ private theorem MollifiedSetup.integral_cutoff_mul_div_sqrt_add_two_mul_le
     exact (add_le_add hψle le_rfl).trans (hsq_α y)
   have hφ_le (y : H) : ‖φ y‖ ≤ 1 := by
     rw [TestFunction.mollify_apply]
-    exact ρ.norm_normed_convolution_le (fun z ↦ by
+    exact ρ.norm_normed_convolution_le (.of_forall fun z ↦ by
       nlinarith [hsq_α z, sq_nonneg (mollD s e ρ z / g z), norm_nonneg (φ₀ z)]) y
   -- Pair the mollified fields against the localized joint slicing inequality.
   have hpair_D := S.pair_D η hg_smooth.continuous hg_pos hψ₀_mem

@@ -30,6 +30,8 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
 * `PointedCone.finrank_span_coe_prod_bot` and `PointedCone.finrank_span_coe_bot_prod`:
   multiplying a pointed cone by the zero cone leaves the dimension of the span of the cone
   unchanged.
+* `PointedCone.mapsTo_nsmul_linearMap_id`: multiplication by a natural number carries a pointed
+  cone into itself.
 -/
 
 public section
@@ -131,3 +133,15 @@ theorem mapsTo_bot_pointedCone (g : V →ₗ[R] V') :
   simp [Set.MapsTo]
 
 end LinearMap
+
+namespace PointedCone
+
+variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R] [AddCommMonoid V]
+  [Module R V]
+
+/-- Multiplication by a natural number carries a pointed cone into itself. -/
+theorem mapsTo_nsmul_linearMap_id (q : ℕ) (σ : PointedCone R V) :
+    Set.MapsTo (q • LinearMap.id : V →ₗ[R] V) σ σ := fun x hx ↦ by
+  simpa using σ.nsmul_mem hx q
+
+end PointedCone

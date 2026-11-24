@@ -14,7 +14,7 @@ import TauCeti.Analysis.BoundedVariation.Slicing.MollifiedExcess
 import TauCeti.Analysis.BoundedVariation.Subgraph
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.MeasureTheory.Integral.Bochner.Set
