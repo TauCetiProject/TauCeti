@@ -221,6 +221,18 @@ theorem liftFiberEquiv_apply {x : B} (e : VectorBundleOrientationCover F E ι)
         (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨e, he⟩ :=
   signFiberEquiv_apply _ _ _ _
 
+/-- Evaluation at a point `e` of the orientation cover does not see a transport between the fibres
+of `o(E)` over two equal points of the base: any identification of the fibres given by an
+equality is the identity once both are read at `e`. -/
+theorem liftFiberEquiv_eqToHom_apply {x y : B} (e : VectorBundleOrientationCover F E ι)
+    (hx : e.proj = x) (hy : e.proj = y)
+    (h : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x) =
+      (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk y))
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk x)) :
+    liftFiberEquiv hι e hy ((eqToHom h).hom f) = liftFiberEquiv hι e hx f := by
+  subst hx hy
+  rfl
+
 /-- Evaluation at the image `deck e` of a point `e` of the orientation cover is the negative of
 evaluation at `e`. -/
 theorem liftFiberEquiv_deck {x : B} (e : VectorBundleOrientationCover F E ι) (he : e.proj = x)
