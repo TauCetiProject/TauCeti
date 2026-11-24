@@ -71,7 +71,7 @@ theorem exists_measurable_rightInverse_eqOn [MeasurableSpace E] [MeasurableMul E
     obtain ⟨g, hgt, -⟩ := mem_iUnion₂.1 (htV ▸ mem_univ (1 : G))
     exact ⟨g, hgt⟩
   rw [biUnion_range, iUnion_eq_univ_iff] at htV
-  have hmem (n : ℕ) (x : G) : x ∈ f n • V ↔ (f n)⁻¹ * x ∈ V := mem_smul_set_iff_inv_smul_mem
+  have hmem (n : ℕ) (x : G) : x ∈ f n • V ↔ (f n)⁻¹ • x ∈ V := mem_smul_set_iff_inv_smul_mem
   -- on the first translate containing `x`, use the translate of `σ` by a lift of `f n`
   set patch : ℕ → G → E := fun n x ↦ surjInv hp (f n) * σ ((f n)⁻¹ • x)
   have hpatch : Measurable fun x ↦ patch (Nat.find (htV x)) x :=
@@ -81,7 +81,8 @@ theorem exists_measurable_rightInverse_eqOn [MeasurableSpace E] [MeasurableMul E
     fun x ↦ ?_, fun x hx ↦ piecewise_eq_of_mem _ _ _ hx⟩
   by_cases hx : x ∈ V
   · simp [hx, hpσ]
-  · simp [hx, patch, surjInv_eq hp, hpσ _ ((hmem _ _).1 (Nat.find_spec (htV x)))]
+  · rw [piecewise_eq_of_notMem _ _ _ hx, map_mul, surjInv_eq hp,
+      hpσ _ ((hmem _ _).1 (Nat.find_spec (htV x))), smul_eq_mul, mul_inv_cancel_left]
 
 /-- **Borel sections from a local continuous section.** Let `p : E →* G` be a surjective
 homomorphism onto a Lindelöf group with continuous left translations, for instance a
