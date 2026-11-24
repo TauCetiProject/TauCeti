@@ -7,9 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.Summand
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Decomposition
+import TauCeti.LinearAlgebra.FiniteBilinearModule.Quadratic.Refinement
 
 /-!
-# Nikulin's generators decompose every nondegenerate finite quadratic module
+# Nikulin's generators decompose every nondegenerate finite quadratic module and pairing
 
 Every nondegenerate finite quadratic module is isometric to an orthogonal sum of Nikulin's
 generators:
@@ -32,14 +33,29 @@ cyclic generator; for `p = 2` some nonzero subgroup is a dyadic generator
 `A ≅ H ⊥ H⊥` with `H⊥` nondegenerate of smaller order, and induction on the order applies to
 `H⊥`.
 
+In order `2^N` no odd cyclic generator occurs, since its order is odd and greater than `1`.
+
+Every symmetric pairing on a finite abelian group is the polar form of a quadratic map
+(`TauCeti.FiniteQuadraticModule.toFiniteBilinearModule_surjective`), so the same decompositions
+hold for nondegenerate finite bilinear modules, with the generators replaced by their pairings. On a
+finite `2`-group these are the cyclic pairings `ηxy / 2^k` on `ℤ/2^k` with `η` odd and the pairings
+of `u^{(2)}(2^k)` and `v^{(2)}(2^k)` on `(ℤ/2^k)²`, with matrices `2^{-k} [[0, 1], [1, 0]]` and
+`2^{-k} [[2, 1], [1, 2]]`: the pairings `A^k(η)`, `E_0^k` and `E_1^k` of Kawauchi and Kojima. This
+is the decomposition half of their classification of linking pairings on finite `2`-groups.
+
 The decomposition is not unique: Nikulin's Proposition 1.8.2 lists the relations among the
 generators, and they are not treated here.
 
-## Main declaration
+## Main declarations
 
 * `TauCeti.FiniteQuadraticModule.exists_isometry_prod_pi_generators`: a nondegenerate finite
   quadratic module is isometric to an orthogonal sum of odd cyclic, dyadic cyclic, `u` and `v`
   generators.
+* `TauCeti.FiniteQuadraticModule.exists_isometry_prod_pi_dyadic_of_natCard_eq_two_pow`: in order
+  `2^N`, only the dyadic generators occur.
+* `TauCeti.FiniteBilinearModule.exists_isometry_prod_pi_generators` and
+  `TauCeti.FiniteBilinearModule.exists_isometry_prod_pi_dyadic_of_natCard_eq_two_pow`: the same
+  decompositions for nondegenerate symmetric pairings.
 
 ## References
 
@@ -47,15 +63,19 @@ generators, and they are not treated here.
   Proposition 1.8.1.
 * C. T. C. Wall, *Quadratic forms on finite groups, and related topics*, Topology 2 (1963),
   281–298.
+* A. Kawauchi and S. Kojima, *Algebraic classification of linking pairings on 3-manifolds*,
+  Math. Ann. 253 (1980), 29–42.
 -/
 
 public section
 
 open AddSubgroup QuadraticMap.IsometryEquiv
 
-namespace TauCeti.FiniteQuadraticModule
-
 universe u
+
+namespace TauCeti
+
+namespace FiniteQuadraticModule
 
 /-- A nontrivial nondegenerate finite quadratic module has a nonzero nondegenerate subgroup whose
 restricted form is isometric to one of Nikulin's generators. -/
@@ -152,4 +172,81 @@ theorem exists_isometry_prod_pi_generators (A : FiniteQuadraticModule.{u})
         (((QuadraticMap.IsometryEquiv.refl _).prod (prodLeftComm _ _ _)).trans
           ((prodLeftComm _ _ _).trans ((g.prod f).trans e))))
 
-end TauCeti.FiniteQuadraticModule
+/-- **Nikulin's decomposition at the prime `2`.** A nondegenerate finite quadratic module of order
+`2^N` is isometric to an orthogonal sum of dyadic generators: cyclic modules
+`q_η^{(2)}(2^{k+1})` with `η` odd, and rank-two modules `u^{(2)}(2^{k+1})` and
+`v^{(2)}(2^{k+1})`. -/
+theorem exists_isometry_prod_pi_dyadic_of_natCard_eq_two_pow (A : FiniteQuadraticModule.{u})
+    (hA : A.IsNondegenerate) {N : ℕ} (hN : Nat.card A = 2 ^ N) :
+    ∃ (b : ℕ) (k : Fin b → ℕ) (η : Fin b → ℤ) (c : ℕ) (ku : Fin c → ℕ) (d : ℕ) (kv : Fin d → ℕ),
+      (∀ i, Odd (η i)) ∧
+        Nonempty (Isometry ((pi fun i ↦ dyadicCyclic (k i + 1) (η i)).prod
+          ((pi fun i ↦ dyadicU (ku i + 1)).prod (pi fun i ↦ dyadicV (kv i + 1)))) A) := by
+  obtain ⟨a, m, hm, θ, b, k, η, c, ku, d, kv, hmθ, hη, ⟨f⟩⟩ :=
+    exists_isometry_prod_pi_generators A hA
+  -- An odd cyclic summand has odd order `m > 1` dividing `#A = 2^N`, which is impossible.
+  have ha : a = 0 := by
+    by_contra ha
+    let i : Fin a := ⟨0, Nat.pos_of_ne_zero ha⟩
+    have hdvd : m i ∣ 2 ^ N := by
+      rw [← hN, ← Nat.card_congr f.toLinearEquiv.toEquiv, Nat.card_prod, Nat.card_pi]
+      refine Dvd.dvd.mul_right ?_ _
+      simpa using Finset.dvd_prod_of_mem (fun j ↦ Nat.card (oddCyclic (m j) (hm j) (θ j)))
+        (Finset.mem_univ i)
+    obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow Nat.prime_two).1 hdvd
+    have hj0 : j = 0 := by
+      by_contra hj0
+      exact Nat.not_odd_iff_even.2 even_two ((Nat.odd_pow_iff hj0).1 (hj ▸ hm i))
+    exact not_isPrimePow_one (by simpa [hj, hj0] using (hmθ i).1)
+  subst ha
+  -- The empty orthogonal sum of odd cyclic summands is trivial and can be dropped.
+  exact ⟨b, k, η, c, ku, d, kv, hη, ⟨(uniqueProd _ _).symm.trans f⟩⟩
+
+end FiniteQuadraticModule
+
+namespace FiniteBilinearModule
+
+open FiniteQuadraticModule (oddCyclic dyadicCyclic dyadicU dyadicV pi)
+
+/-- **Nikulin's generator decomposition for symmetric pairings.** A nondegenerate finite bilinear
+module is isometric to an orthogonal sum of the pairings of Nikulin's generators: the pairings
+`θxy / p^k` of the odd cyclic modules `q_θ^{(p)}(p^k)` with `θ` prime to `p`, the pairings
+`ηxy / 2^{k+1}` of the dyadic cyclic modules `q_η^{(2)}(2^{k+1})` with `η` odd, and the pairings
+of `u^{(2)}(2^{k+1})` and `v^{(2)}(2^{k+1})`, with matrices `2^{-(k+1)} [[0, 1], [1, 0]]` and
+`2^{-(k+1)} [[2, 1], [1, 2]]`. -/
+theorem exists_isometry_prod_pi_generators (A : FiniteBilinearModule.{u})
+    (hA : A.IsNondegenerate) :
+    ∃ (a : ℕ) (m : Fin a → ℕ) (hm : ∀ i, Odd (m i)) (θ : Fin a → ℤ)
+      (b : ℕ) (k : Fin b → ℕ) (η : Fin b → ℤ) (c : ℕ) (ku : Fin c → ℕ) (d : ℕ) (kv : Fin d → ℕ),
+      (∀ i, IsPrimePow (m i) ∧ IsCoprime (m i : ℤ) (θ i)) ∧ (∀ i, Odd (η i)) ∧
+        Nonempty (Isometry ((pi fun i ↦ oddCyclic (m i) (hm i) (θ i)).prod
+          ((pi fun i ↦ dyadicCyclic (k i + 1) (η i)).prod
+            ((pi fun i ↦ dyadicU (ku i + 1)).prod
+              (pi fun i ↦ dyadicV (kv i + 1))))).toFiniteBilinearModule A) := by
+  -- Decompose a quadratic refinement of `A`; its bilinear module is `A` itself.
+  obtain ⟨Q, rfl⟩ := FiniteQuadraticModule.toFiniteBilinearModule_surjective A
+  obtain ⟨a, m, hm, θ, b, k, η, c, ku, d, kv, hmθ, hη, ⟨f⟩⟩ :=
+    Q.exists_isometry_prod_pi_generators hA
+  exact ⟨a, m, hm, θ, b, k, η, c, ku, d, kv, hmθ, hη, ⟨f.toFiniteBilinearModule⟩⟩
+
+/-- **Decomposition of symmetric pairings on finite `2`-groups.** A nondegenerate finite bilinear
+module of order `2^N` is isometric to an orthogonal sum of the pairings of the dyadic generators:
+the cyclic pairings `ηxy / 2^{k+1}` on `ℤ/2^{k+1}` with `η` odd, and the pairings of
+`u^{(2)}(2^{k+1})` and `v^{(2)}(2^{k+1})` on `(ℤ/2^{k+1})²`, with matrices
+`2^{-(k+1)} [[0, 1], [1, 0]]` and `2^{-(k+1)} [[2, 1], [1, 2]]`. These are the pairings
+`A^{k+1}(η)`, `E_0^{k+1}` and `E_1^{k+1}` of Kawauchi and Kojima. -/
+theorem exists_isometry_prod_pi_dyadic_of_natCard_eq_two_pow (A : FiniteBilinearModule.{u})
+    (hA : A.IsNondegenerate) {N : ℕ} (hN : Nat.card A = 2 ^ N) :
+    ∃ (b : ℕ) (k : Fin b → ℕ) (η : Fin b → ℤ) (c : ℕ) (ku : Fin c → ℕ) (d : ℕ) (kv : Fin d → ℕ),
+      (∀ i, Odd (η i)) ∧
+        Nonempty (Isometry ((pi fun i ↦ dyadicCyclic (k i + 1) (η i)).prod
+          ((pi fun i ↦ dyadicU (ku i + 1)).prod
+            (pi fun i ↦ dyadicV (kv i + 1)))).toFiniteBilinearModule A) := by
+  obtain ⟨Q, rfl⟩ := FiniteQuadraticModule.toFiniteBilinearModule_surjective A
+  obtain ⟨b, k, η, c, ku, d, kv, hη, ⟨f⟩⟩ :=
+    Q.exists_isometry_prod_pi_dyadic_of_natCard_eq_two_pow hA hN
+  exact ⟨b, k, η, c, ku, d, kv, hη, ⟨f.toFiniteBilinearModule⟩⟩
+
+end FiniteBilinearModule
+
+end TauCeti

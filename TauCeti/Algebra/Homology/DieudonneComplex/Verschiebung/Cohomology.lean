@@ -152,11 +152,10 @@ private lemma verschiebungQuotientToHomology_bijective (r : ℕ) (n : ℤ) :
     obtain ⟨x, rfl⟩ := hM.toVerschiebungQuotient_f_surjective r n y
     rw [verschiebungQuotientToHomology, verschiebungQuotientLift_apply,
       AddCommGrpCat.comp_apply] at hy
-    obtain ⟨b', hb'⟩ := addCommGrpCat_exists_toCycles_eq _ (CochainComplex.prev ℤ n) _ hy
+    obtain ⟨b', h⟩ := (addCommGrpCat_homologyπ_eq_zero_iff _ (CochainComplex.prev ℤ n) _).1 hy
     obtain ⟨b, rfl⟩ := M.toQuotSMulTop_f_surjective _ (n - 1) b'
-    have h := congrArg (Q.iCycles n).hom hb'
-    rw [← AddCommGrpCat.comp_apply, toCycles_i, quotSMulTop_d_toQuotSMulTop_f_apply,
-      iCycles_frobeniusIterateCycles_apply, toQuotSMulTop_f_apply_eq_iff] at h
+    rw [quotSMulTop_d_toQuotSMulTop_f_apply, iCycles_frobeniusIterateCycles_apply,
+      toQuotSMulTop_f_apply_eq_iff] at h
     obtain ⟨t, ht⟩ := h
     rw [eq_sub_iff_add_eq, ← eq_sub_iff_add_eq'] at ht
     have hx : p ^ r • x = p ^ r • ((M.d (n - 1) n).hom ((⇑(hM.V (n - 1)).hom)^[r] b) -
@@ -245,12 +244,11 @@ private lemma injective_homologyMap_quotSMulTopToVerschiebungQuotient :
   refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
   obtain ⟨z, rfl⟩ := (AddCommGrpCat.epi_iff_surjective (Q.homologyπ n)).1 inferInstance y
   rw [← AddCommGrpCat.comp_apply, homologyπ_naturality, AddCommGrpCat.comp_apply] at hy
-  obtain ⟨y', hy'⟩ := addCommGrpCat_exists_toCycles_eq _ (CochainComplex.prev ℤ n) _ hy
+  obtain ⟨y', h⟩ := (addCommGrpCat_homologyπ_eq_zero_iff _ (CochainComplex.prev ℤ n) _).1 hy
   obtain ⟨w', rfl⟩ := hM.toVerschiebungQuotient_f_surjective r (n - 1) y'
   obtain ⟨w, hw, t, ht⟩ := exists_toQuotSMulTop_eq_iCycles (n + 1) z
-  have h := congrArg ((hM.verschiebungQuotient r).iCycles n).hom hy'
-  rw [← AddCommGrpCat.comp_apply, toCycles_i, verschiebungQuotient_d_toVerschiebungQuotient_f_apply,
-    ← AddCommGrpCat.comp_apply (cyclesMap _ n), cyclesMap_i, AddCommGrpCat.comp_apply, ← hw,
+  rw [verschiebungQuotient_d_toVerschiebungQuotient_f_apply, addCommGrpCat_iCycles_cyclesMap_apply,
+    ← hw,
     quotSMulTopToVerschiebungQuotient_f_apply, toVerschiebungQuotient_f_apply_eq_iff,
     ← neg_mem_iff, neg_sub, hM.mem_verschiebungFiltration_iff (sub_add_cancel n 1)] at h
   obtain ⟨u, v, huv⟩ := h
