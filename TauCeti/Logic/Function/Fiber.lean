@@ -13,23 +13,23 @@ import Mathlib.Data.Set.Finite.Lattice
 /-!
 # Fibres of a map over a base
 
-For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file collects the
-elementary constructions on such fibres that the covering-space development uses. None needs a
-topology, so they are stated for bare functions and equivalences; a `ContinuousMap` or a
-`Homeomorph` is applied through its underlying function or equivalence.
-The finite-cover criteria use injectivity on each piece to bound preimages.
+For `p : E → X`, the fibre of `p` over `x` is the set `p ⁻¹' {x}`. This file gives elementary
+fibre constructions used in covering-space development and finite-preimage criteria used for
+finite-branch fibres. These results are stated for bare functions and equivalences. A
+`ContinuousMap` or a `Homeomorph` is applied through its underlying function or equivalence.
 
 * `Function.fiberMap`: a map `f : E → F` commuting with the projections to `X` restricts to the
   fibres over each point. It is `Set.MapsTo.restrict` for the fibre inclusion, so its application,
   identity and composition laws are the generic `Subtype.map` ones.
 * `Equiv.compFiberEquiv`: relabelling the base along `h : X ≃ Y` identifies the fibre of `h ∘ p`
   over `y` with the fibre of `p` over `h.symm y`. It is the identity on underlying points.
+* `Set.finite_preimage_of_subset_iUnion`: the preimage of a finite target is finite when
+  finitely many pieces cover it and the map is injective on each piece's intersection with that
+  preimage.
+* `Set.finite_fiber_of_subset_iUnion`: the single-target specialization.
 
 ## Main declarations
 
-* `Set.finite_preimage_of_subset_iUnion`: a finite target has finite preimage under a
-  finite cover with injectivity only on the portions lying over that target.
-* `Set.finite_fiber_of_subset_iUnion`: the single-target specialization.
 * `Function.mapsTo_fiber`: a map over `X` sends each fibre into the corresponding fibre.
 * `Function.fiberMap`: the restriction of a map over `X` to the fibre over `x`.
 * `Equiv.compFiberEquiv`: the relabelling of fibres under an equivalence of bases.
