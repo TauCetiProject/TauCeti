@@ -141,22 +141,22 @@ private theorem fromBlocks_mem_isometryMatrices_fromBlocks_iff' (hA : Aᵀ = A) 
 the two equations of `fromBlocks_mem_isometryMatrices_fromBlocks_iff'`. -/
 private noncomputable def isometryMatricesFromBlocksFiberEquiv (hA : Aᵀ = A) (hB : Bᵀ = B)
     (Z : Matrix κ ι R) (hC : IsUnit (A - Zᵀ * B * Z).det) :
-    {X : isometryMatrices (fromBlocks A 0 0 B) // X.1.toBlocks₂₁ = Z} ≃
+    {X : isometryMatrices (fromBlocks A 0 0 B) // X.val.toBlocks₂₁ = Z} ≃
       {Y : Matrix ι ι R // Yᵀ * A * Y = A - Zᵀ * B * Z} ×
         {V : Matrix κ κ R // Vᵀ * (B * (1 + Z * (A - Zᵀ * B * Z)⁻¹ * Zᵀ * B)) * V = B} :=
-  have hmem (X : {X : isometryMatrices (fromBlocks A 0 0 B) // X.1.toBlocks₂₁ = Z}) :=
+  have hmem (X : {X : isometryMatrices (fromBlocks A 0 0 B) // X.val.toBlocks₂₁ = Z}) :=
     (fromBlocks_mem_isometryMatrices_fromBlocks_iff' hA hB hC).mp <| by
-      have h := X.1.2
-      rwa [← fromBlocks_toBlocks X.1.1, X.2] at h
-  { toFun X := (⟨X.1.1.toBlocks₁₁, (hmem X).1⟩, ⟨X.1.1.toBlocks₂₂, (hmem X).2.2⟩)
-    invFun YV := ⟨⟨fromBlocks YV.1.1 (-(YV.1.1 * (A - Zᵀ * B * Z)⁻¹ * (Zᵀ * B * YV.2.1))) Z
-        YV.2.1, (fromBlocks_mem_isometryMatrices_fromBlocks_iff' hA hB hC).mpr
-          ⟨YV.1.2, rfl, YV.2.2⟩⟩, toBlocks_fromBlocks₂₁ _ _ _ _⟩
+      have h := X.val.property
+      rwa [← fromBlocks_toBlocks X.val.val, X.property] at h
+  { toFun X := (⟨X.val.val.toBlocks₁₁, (hmem X).1⟩, ⟨X.val.val.toBlocks₂₂, (hmem X).2.2⟩)
+    invFun YV := ⟨⟨fromBlocks YV.1.val (-(YV.1.val * (A - Zᵀ * B * Z)⁻¹ * (Zᵀ * B * YV.2.val))) Z
+        YV.2.val, (fromBlocks_mem_isometryMatrices_fromBlocks_iff' hA hB hC).mpr
+          ⟨YV.1.property, rfl, YV.2.property⟩⟩, toBlocks_fromBlocks₂₁ _ _ _ _⟩
     left_inv X := by
       refine Subtype.ext (Subtype.ext ?_)
       dsimp only
-      conv_rhs => rw [← fromBlocks_toBlocks X.1.1]
-      rw [X.2, ← (hmem X).2.1]
+      conv_rhs => rw [← fromBlocks_toBlocks X.val.val]
+      rw [X.property, ← (hmem X).2.1]
     right_inv YV := Prod.ext (Subtype.ext (toBlocks_fromBlocks₁₁ _ _ _ _))
       (Subtype.ext (toBlocks_fromBlocks₂₂ _ _ _ _)) }
 
@@ -220,7 +220,7 @@ theorem natCard_isometryMatrices_fromBlocks_of_isNilpotent (h2 : IsUnit (2 : R))
         (Equiv.subtypeEquivRight fun _ => mem_isometryMatrices.symm))
   -- group the solutions by their lower left block
   rw [Nat.card_congr <| (Equiv.sigmaFiberEquiv fun X : isometryMatrices (fromBlocks A 0 0 B) =>
-      X.1.toBlocks₂₁).symm.trans <| (Equiv.sigmaCongrRight fun Z =>
+      X.val.toBlocks₂₁).symm.trans <| (Equiv.sigmaCongrRight fun Z =>
       (isometryMatricesFromBlocksFiberEquiv hA hB Z (hC Z)).trans (e Z)).trans
       (Equiv.sigmaEquivProd _ _)]
   simp only [Nat.card_prod, Nat.card_congr (of (m := κ) (n := ι) (α := R)).symm, Nat.card_fun,

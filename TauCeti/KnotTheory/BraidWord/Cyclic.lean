@@ -58,8 +58,8 @@ private theorem crossingsAt_rotate_isRotated (w : BraidWord n) (k : ℕ) (p : Fi
     rw [List.map_finRange_rotateIndexEquiv]
     exact List.IsRotated.forall _ _
   have hfilter := hfin.filter
-    (fun j : Fin w.length => p = BraidGroup.strand w[j.1].1 ∨
-      p = BraidGroup.strandSucc w[j.1].1)
+    (fun j : Fin w.length => p = BraidGroup.strand w[j.val].1 ∨
+      p = BraidGroup.strandSucc w[j.val].1)
   rw [List.filter_map] at hfilter
   rw [crossingsAt_def, crossingsAt_def]
   simpa only [Function.comp_def, List.getElem_rotateIndexEquiv] using hfilter

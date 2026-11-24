@@ -69,7 +69,7 @@ theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDim
   -- `x` is central in its Engel subalgebra, because the generalized kernel of `ad x` is its kernel
   have hxE : x ∈ E := self_mem_engel K x
   have hcentral (w : E) : ⁅(⟨x, hxE⟩ : E), w⁆ = 0 :=
-    Subtype.ext ((mem_engel_iff_lie_eq_zero hx.isFinitelySemisimple).1 w.2)
+    Subtype.ext ((mem_engel_iff_lie_eq_zero hx.isFinitelySemisimple).1 w.property)
   have hxC : (⟨x, hxE⟩ : E) ∈ C := by
     rw [← hC.self_normalizing, mem_normalizer_iff]
     intro w _
@@ -83,7 +83,7 @@ theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDim
       (mem_normalizer_iff' (C.map E.incl) z).mp hz x (hmemC.mpr hxC)
     have hzE : z ∈ E := by
       obtain ⟨w, -, hw⟩ := (C.mem_map E.incl _).mp hxz
-      obtain ⟨n, hn⟩ := (mem_engel_iff K x w).mp w.2
+      obtain ⟨n, hn⟩ := (mem_engel_iff K x w).mp w.property
       refine (mem_engel_iff K x z).mpr ⟨n + 1, ?_⟩
       rw [pow_succ, mul_apply_eq_comp, ad_apply, ← hw]
       simpa using hn

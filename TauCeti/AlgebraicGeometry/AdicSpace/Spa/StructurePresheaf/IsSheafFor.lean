@@ -65,11 +65,11 @@ presentation-limit presheaf of sets from `V` to `W ≤ V` is applying `presentat
 theorem eqToHom_apply_presentationLimitPresheaf_map_apply {V W : Opens ↥(spa Aplus)}
     (h : W ≤ V) (x : (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
       forget _root_.TopCommRingCat).obj (Opposite.op V)) :
-    (eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op W))).hom.1
+    (eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op W))).hom.val
       ((presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat).map (homOfLE h).op x) =
-      (presentationLimitMap (P := P) h).hom.1
-        ((eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op V))).hom.1 x) := by
+      (presentationLimitMap (P := P) h).hom.val
+        ((eqToHom (presentationLimitPresheaf_obj P Aplus (Opposite.op V))).hom.val x) := by
   rw [Functor.comp_map, Functor.comp_map, presentationLimitPresheaf_map]
   exact Iso.hom_inv_id_apply
     (eqToIso (presentationLimitPresheaf_obj P Aplus (Opposite.op W)).symm) _
@@ -80,15 +80,15 @@ by the transports along `presentationLimitPresheaf_obj`. -/
 theorem isInducing_restrictionMap_iff_isInducing_presentationLimitMap {ι : Type*}
     {W : Opens ↥(spa Aplus)} {V : ι → Opens ↥(spa Aplus)} (h : ∀ i, V i ≤ W) :
     Topology.IsInducing (fun (x : (presentationLimitPresheaf P Aplus).obj (op W)) (i : ι) ↦
-      ((presentationLimitPresheaf P Aplus).map (homOfLE (h i)).op).hom.1 x) ↔
+      ((presentationLimitPresheaf P Aplus).map (homOfLE (h i)).op).hom.val x) ↔
     Topology.IsInducing (fun (x : presentationLimit (P := P) Aplus W) (i : ι) ↦
-      (presentationLimitMap (P := P) (h i)).hom.1 x) := by
+      (presentationLimitMap (P := P) (h i)).hom.val x) := by
   let G := TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ _root_.TopCommRingCat TopCat
   let e (V : Opens ↥(spa Aplus)) :
       (presentationLimitPresheaf P Aplus).obj (op V) ≃ₜ presentationLimit (P := P) Aplus V :=
     TopCat.homeoOfIso (G.mapIso (eqToIso (presentationLimitPresheaf_obj P Aplus (op V))))
   have e_apply (V : Opens ↥(spa Aplus)) (x : (presentationLimitPresheaf P Aplus).obj (op V)) :
-      e V x = (eqToHom (presentationLimitPresheaf_obj P Aplus (op V))).hom.1 x := rfl
+      e V x = (eqToHom (presentationLimitPresheaf_obj P Aplus (op V))).hom.val x := rfl
   exact (e W).isInducing_pi_iff_of_homeomorph (fun i ↦ (e (V i)).isInducing) fun x i ↦ by
     rw [e_apply, e_apply]
     exact eqToHom_apply_presentationLimitPresheaf_map_apply P (h i) x
@@ -103,15 +103,15 @@ theorem isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap {W : Opens ↥
         (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
           forget _root_.TopCommRingCat) ↔
       ∀ x : ∀ i, presentationLimit (P := P) Aplus (U i),
-        (∀ i j, (presentationLimitMap (P := P) (inf_le_left : U i ⊓ U j ≤ U i)).hom.1 (x i) =
-          (presentationLimitMap (P := P) (inf_le_right : U i ⊓ U j ≤ U j)).hom.1 (x j)) →
+        (∀ i j, (presentationLimitMap (P := P) (inf_le_left : U i ⊓ U j ≤ U i)).hom.val (x i) =
+          (presentationLimitMap (P := P) (inf_le_right : U i ⊓ U j ≤ U j)).hom.val (x j)) →
         ∃! a : presentationLimit (P := P) Aplus W, ∀ i,
-          (presentationLimitMap (P := P) (hUW i)).hom.1 a = x i := by
+          (presentationLimitMap (P := P) (hUW i)).hom.val a = x i := by
   -- `τ V` reads a section of the presheaf of sets as an element of `presentationLimit V`, and
   -- `τ' V` is its inverse
   let e (V : Opens ↥(spa Aplus)) := presentationLimitPresheaf_obj P Aplus (op V)
-  let τ (V : Opens ↥(spa Aplus)) := (eqToHom (e V)).hom.1
-  let τ' (V : Opens ↥(spa Aplus)) := (eqToHom (e V).symm).hom.1
+  let τ (V : Opens ↥(spa Aplus)) := (eqToHom (e V)).hom.val
+  let τ' (V : Opens ↥(spa Aplus)) := (eqToHom (e V).symm).hom.val
   have hττ' (V : Opens ↥(spa Aplus)) y : τ V (τ' V y) = y := (eqToIso (e V).symm).hom_inv_id_apply y
   have hτ'τ (V : Opens ↥(spa Aplus)) y : τ' V (τ V y) = y := (eqToIso (e V)).hom_inv_id_apply y
   have hτ (V : Opens ↥(spa Aplus)) : Function.Injective (τ V) :=

@@ -66,15 +66,15 @@ theorem joined_one_spinReflectionPair_of_joined (v w : M) (hv : Q v = 1) (hw : Q
     (h : Joined (⟨v, hv⟩ : {u : M // Q u = 1}) ⟨w, hw⟩) :
     Joined (1 : spinGroup Q) (spinReflectionPair Q v w hv hw) := by
   let f : {u : M // Q u = 1} → spinGroup Q :=
-    fun u => spinReflectionPair Q v u hv u.2
+    fun u => spinReflectionPair Q v u hv u.property
   have hf : Continuous f := by
     apply continuous_induced_rng.mpr
     let _ : ContinuousAdd (CliffordAlgebra Q) := IsModuleTopology.toContinuousAdd R _
     have hmul : Continuous (fun x : M ↦ ι Q v * ι Q x) :=
       IsModuleTopology.continuous_of_linearMap ((LinearMap.mulLeft R (ι Q v)).comp (ι Q))
-    convert hmul.comp continuous_subtype_val using 1
+    convert hmul.comp continuous_subtypeVal using 1
     funext u
-    exact coe_spinReflectionPair Q v u hv u.2
+    exact coe_spinReflectionPair Q v u hv u.property
   simpa only [f, spinReflectionPair_self] using h.map hf
 
 /-- In dimension at least two, every normalized reflection-pair lift for the positive-definite real
@@ -94,10 +94,10 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
       ⟨w, (mem_realCliffordUnitLevel (k + 2) w).mpr hw⟩ := PathConnectedSpace.joined _ _
   let f : realCliffordUnitLevel (k + 2) →
       {u : Fin (k + 2) → ℝ // realCliffordForm (k + 2) 0 u = 1} :=
-    fun u => ⟨u.1, (mem_realCliffordUnitLevel (k + 2) _).mp u.2⟩
+    fun u => ⟨u.val, (mem_realCliffordUnitLevel (k + 2) _).mp u.property⟩
   have hf : Continuous f := by
     apply continuous_induced_rng.mpr
-    exact continuous_subtype_val
+    exact continuous_subtypeVal
   exact joined_one_spinReflectionPair_of_joined v w hv hw
     (by simpa only [f] using this.map hf)
 

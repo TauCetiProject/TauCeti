@@ -99,8 +99,19 @@ theorem le_mul_left (f g : BasicNeighbourhood p) : g ≤ f * g := by
 instance : IsDirectedOrder (BasicNeighbourhood p) :=
   ⟨fun f g ↦ ⟨f * g, le_mul_right f g, le_mul_left f g⟩⟩
 
+/-- The least basic neighbourhood of `p` is `D(1)`, the whole formal spectrum. -/
+instance : OrderBot (BasicNeighbourhood p) where
+  bot := ⟨1, (p : PrimeSpectrum A).asIdeal.one_notMem⟩
+  bot_le f := by
+    rw [le_def, basicOpen_one]
+    exact le_top
+
+@[simp]
+theorem elem_bot : (⊥ : BasicNeighbourhood p).elem = 1 :=
+  (rfl)
+
 instance : Nonempty (BasicNeighbourhood p) :=
-  ⟨⟨1, (p : PrimeSpectrum A).asIdeal.one_notMem⟩⟩
+  ⟨⊥⟩
 
 /-- For an ideal of definition `I`, `f ≤ g` holds exactly when `g` lies in the radical of
 `f A + I`, the condition for the restriction map `A_{f} → A_{g}`. -/
@@ -145,6 +156,13 @@ theorem completedNeighbourhoodDiagram_map_apply {f g : BasicNeighbourhood p} (h 
       ((BasicNeighbourhood.le_iff_mem_radical (IsAdicRing.ideal_spec A).2.1).mp h.le) x :=
   (rfl)
 
+/-- The transition maps of the diagram of completed localisations are `A`-algebra maps. -/
+theorem completedNeighbourhoodDiagram_map_algebraMap {f g : BasicNeighbourhood p} (h : f ⟶ g)
+    (a : A) :
+    (completedNeighbourhoodDiagram p).map h (algebraMap A (CompletedAway A f.elem) a) =
+      algebraMap A (CompletedAway A g.elem) a :=
+  (completedNeighbourhoodDiagram_map_apply p h _).trans ((CompletedAway.restrict _).commutes a)
+
 /-! ### The value at `p` -/
 
 section Residue
@@ -178,7 +196,7 @@ private theorem continuous_toResidue : Continuous (toResidue p) := by
   refine continuous_of_continuousAt_zero (toResidue p).toAddMonoidHom ?_
   rw [ContinuousAt, map_zero, nhds_discrete (FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal)),
     Filter.tendsto_pure]
-  filter_upwards [(mem_carrier.mp p.2).mem_nhds (zero_mem _)] with a ha
+  filter_upwards [(mem_carrier.mp p.property).mem_nhds (zero_mem _)] with a ha
   exact (toResidue_eq_zero_iff p).mpr ha
 
 omit [IsTopologicalRing A] [IsAdicRing A] in
@@ -211,7 +229,7 @@ private theorem residueAway_eq_zero_of_mem (f : BasicNeighbourhood p) {x : Compl
     residueAway p f x = 0 := by
   refine (Ideal.map_le_iff_le_comap.mpr fun a ha ↦ ?_ : _ ≤ RingHom.ker (residueAway p f)) hx
   rw [Ideal.mem_comap, RingHom.mem_ker, residueAway_algebraMap, toResidue_eq_zero_iff]
-  exact (mem_carrier_iff_le (IsAdicRing.ideal_spec A).2.1).mp p.2 ha
+  exact (mem_carrier_iff_le (IsAdicRing.ideal_spec A).2.1).mp p.property ha
 
 /-- An element of `A_{f}` with nonzero value at `p` becomes a unit in `A_{g}` for some basic
 neighbourhood `D(g) ⊆ D(f)` of `p`. -/

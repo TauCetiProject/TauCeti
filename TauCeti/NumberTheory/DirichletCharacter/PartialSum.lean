@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Defs
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import Mathlib.Data.Nat.Periodic
+import TauCeti.Data.Nat.Interval
 import TauCeti.Data.ZMod.FinEquiv
 
 /-!
@@ -16,28 +17,28 @@ import TauCeti.Data.ZMod.FinEquiv
 
 The sum of a nonprincipal character over a full period vanishes (both on `0 ≤ k < N` and on
 `1 ≤ k ≤ N`). Consequently its partial sums depend only on the endpoint modulo the level, and for
-characters valued in a normed field their norms are bounded by the level (hence `O(n ^ 0)` for
-every level `N`, including `N = 0`). This cancellation is the input to partial summation estimates
-for continued Dirichlet L-functions.
+characters valued in a normed field their norms are bounded by the level, hence are `O(1)` at
+infinity. This cancellation is the input to partial summation estimates for continued Dirichlet
+L-functions.
 
-## Main results
-
-* `DirichletCharacter.sum_range_level_eq_zero`, `DirichletCharacter.sum_Icc_one_level_eq_zero`:
-  cancellation of a nonprincipal character over a full period `0 ≤ k < N` and `1 ≤ k ≤ N`.
-* `DirichletCharacter.sum_range_eq_sum_range_mod`: periodicity of partial sums modulo the level.
-* `DirichletCharacter.norm_sum_Icc_le_level`: `‖∑ k ∈ Icc 1 n, χ k‖ ≤ N` for normed-field-valued
-  nonprincipal characters of nonzero level `N`.
-* `DirichletCharacter.sum_Icc_isBigO_rpow_zero`: `∑ k ∈ Icc 1 n, χ k = O(n ^ 0)` as `n → ∞`,
-  without a nonzero-level assumption.
+Bounds on partial sums survive sieving: if every partial sum `∑ n ∈ Icc 1 K, χ n` has norm at
+most `B`, then every partial sum over the `n` prime to `m` has norm at most `2 ^ ω m * B`
+(`DirichletCharacter.norm_sum_Icc_filter_coprime_le_two_pow_mul`). Removing the multiples of one
+prime `p` subtracts `χ p` times a partial sum of the same kind up to `K / p`. This turns bounds for
+a primitive character into bounds for the imprimitive characters it induces.
 -/
 
 public section
 
-open Asymptotics Filter Finset
+open Finset Filter Asymptotics
 
 namespace DirichletCharacter
 
-variable {N : ℕ} [NeZero N]
+variable {N : ℕ}
+
+section Level
+
+variable [NeZero N]
 
 /-- The sum of a nonprincipal character over a full period vanishes. -/
 theorem sum_range_level_eq_zero {R : Type*} [CommRing R] [IsDomain R]
@@ -87,26 +88,79 @@ theorem norm_sum_Icc_le_level {F : Type*} [NormedField F]
     _ ≤ (N : ℝ) := by simpa using (Nat.cast_le.mpr (Nat.mod_lt (n + 1) (NeZero.pos N)).le :
       (((n + 1) % N : ℕ) : ℝ) ≤ N)
 
-omit [NeZero N] in
-/-- The partial sums `∑_{k=1}^n χ(k)` of a nonprincipal Dirichlet character are `O(n ^ 0)` as
-`n → ∞`. -/
-theorem sum_Icc_isBigO_rpow_zero {F : Type*} [NormedField F] (χ : DirichletCharacter F N)
-    (hχ : χ ≠ 1) :
-    (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
-  rcases N.eq_zero_or_pos with rfl | hN
-  · refine isBigO_iff.mpr ⟨‖χ 1‖, Eventually.of_forall fun n ↦ ?_⟩
-    have hsub : ∑ k ∈ Icc 1 n, χ k = if 1 ≤ n then χ 1 else 0 := by
-      split_ifs with hn
-      · rw [← sum_erase_add (Icc 1 n) _ (left_mem_Icc.mpr hn), sum_eq_zero, zero_add, Nat.cast_one]
-        intro k hk
-        rw [mem_erase, mem_Icc] at hk
-        -- In `ZMod 0`, `k : ℕ` is a unit iff `k.Coprime 0`, i.e., `k = 1`.
-        exact MulChar.map_nonunit χ fun hu ↦
-          hk.1 ((Nat.coprime_zero_right k).mp ((ZMod.isUnit_iff_coprime k 0).mp hu))
-      · rw [Icc_eq_empty hn, sum_empty]
-    split_ifs at hsub <;> simp [hsub]
-  · have : NeZero N := ⟨hN.ne'⟩
-    refine isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ ?_⟩
-    simpa using χ.norm_sum_Icc_le_level hχ n
+/-- Partial sums of a nonprincipal character valued in a normed field are `O(1)` at infinity. -/
+theorem isBigO_sum_Icc_one {F : Type*} [NormedField F]
+    (χ : DirichletCharacter F N) (hχ : χ ≠ 1) :
+    (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun _ ↦ (1 : ℝ) :=
+  isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ by simpa using χ.norm_sum_Icc_le_level hχ n⟩
+
+end Level
+
+section Sieve
+
+open scoped ArithmeticFunction.omega
+
+variable {F : Type*} [NormedField F]
+
+/-- Sieving the partial sums of `χ` by a finite set `s` of primes: one prime at a time, removing
+the multiples of `p` subtracts `χ p` times a sieved partial sum up to `K / p`. -/
+private lemma norm_sum_Icc_filter_forall_not_dvd_le (χ : DirichletCharacter F N) {B : ℝ}
+    (hB : ∀ K : ℕ, ‖∑ n ∈ Icc 1 K, χ n‖ ≤ B) {s : Finset ℕ} (hs : ∀ p ∈ s, p.Prime) (K : ℕ) :
+    ‖∑ n ∈ Icc 1 K with ∀ p ∈ s, ¬ p ∣ n, χ n‖ ≤ 2 ^ #s * B := by
+  induction s using Finset.induction_on generalizing K with
+  | empty => simpa using hB K
+  | insert p s hps ih =>
+    have hp := hs p (mem_insert_self p s)
+    have ih' := ih (fun q hq ↦ hs q (mem_insert_of_mem hq))
+    have hdvd (k : ℕ) : (∀ q ∈ s, ¬ q ∣ p * k) ↔ ∀ q ∈ s, ¬ q ∣ k := by
+      refine forall₂_congr fun q hq ↦ not_congr ⟨fun h ↦ ?_, (Dvd.dvd.mul_left · p)⟩
+      refine ((hs q (mem_insert_of_mem hq)).dvd_mul.mp h).resolve_left fun hqp ↦ hps ?_
+      rwa [← (Nat.prime_dvd_prime_iff_eq (hs q (mem_insert_of_mem hq)) hp).mp hqp]
+    have hmul : χ p * ∑ k ∈ Icc 1 (K / p) with ∀ q ∈ s, ¬ q ∣ k, χ k =
+        ∑ n ∈ Icc 1 K with p ∣ n, if ∀ q ∈ s, ¬ q ∣ n then χ n else 0 := by
+      rw [Nat.sum_Icc_filter_dvd_eq, sum_filter, mul_sum]
+      refine sum_congr rfl fun k _ ↦ ?_
+      simp only [hdvd, Nat.cast_mul, map_mul]
+      split_ifs <;> simp
+    have hsplit : ∑ n ∈ Icc 1 K with ∀ q ∈ insert p s, ¬ q ∣ n, χ n =
+        ∑ n ∈ Icc 1 K with ∀ q ∈ s, ¬ q ∣ n, χ n -
+          χ p * ∑ k ∈ Icc 1 (K / p) with ∀ q ∈ s, ¬ q ∣ k, χ k := by
+      rw [hmul, eq_sub_iff_add_eq, sum_filter, sum_filter, sum_filter, ← sum_add_distrib]
+      refine sum_congr rfl fun n _ ↦ ?_
+      by_cases hpn : p ∣ n <;> simp [hpn]
+    rw [hsplit, card_insert_of_notMem hps, pow_succ]
+    calc _ ≤ ‖∑ n ∈ Icc 1 K with ∀ q ∈ s, ¬ q ∣ n, χ n‖ +
+          ‖χ p‖ * ‖∑ k ∈ Icc 1 (K / p) with ∀ q ∈ s, ¬ q ∣ k, χ k‖ := by
+          rw [← norm_mul]
+          exact norm_sub_le _ _
+      _ ≤ 2 ^ #s * B + 1 * (2 ^ #s * B) := by
+          gcongr
+          · exact ih' K
+          · exact χ.norm_le_one _
+          · exact ih' (K / p)
+      _ = _ := by ring
+
+/-- **Sieving bounded character sums.** If every partial sum `∑ n ∈ Icc 1 K, χ n` of a
+Dirichlet character valued in a normed field has norm at most `B`, then every partial sum over
+the `n` prime to `m` has norm at most `2 ^ ω m * B`. -/
+theorem norm_sum_Icc_filter_coprime_le_two_pow_mul (χ : DirichletCharacter F N) {B : ℝ}
+    (hB : ∀ K : ℕ, ‖∑ n ∈ Icc 1 K, χ n‖ ≤ B) (m K : ℕ) :
+    ‖∑ n ∈ Icc 1 K with n.Coprime m, χ n‖ ≤ 2 ^ ω m * B := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · -- Only `n = 1` is prime to `0`.
+    have h : {n ∈ Icc 1 K | n.Coprime 0} = Icc 1 (min K 1) := by
+      ext n
+      simp only [mem_filter, mem_Icc, Nat.coprime_zero_right]
+      omega
+    rw [h, ArithmeticFunction.cardDistinctFactors_zero, pow_zero, one_mul]
+    exact hB _
+  have hcop (n : ℕ) : n.Coprime m ↔ ∀ p ∈ m.primeFactors, ¬ p ∣ n := by
+    refine ⟨fun h p hp hpn ↦ (Nat.prime_of_mem_primeFactors hp).one_lt.ne'
+      (Nat.eq_one_of_dvd_coprimes h hpn (Nat.dvd_of_mem_primeFactors hp)), fun h ↦ ?_⟩
+    exact (Nat.coprime_of_dvd fun p hp hpm ↦ h p (Nat.mem_primeFactors.mpr ⟨hp, hpm, hm⟩)).symm
+  simp_rw [hcop, ArithmeticFunction.cardDistinctFactors_eq_card_primeFactors]
+  exact χ.norm_sum_Icc_filter_forall_not_dvd_le hB (fun p hp ↦ Nat.prime_of_mem_primeFactors hp) K
+
+end Sieve
 
 end DirichletCharacter

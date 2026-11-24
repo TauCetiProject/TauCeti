@@ -5,16 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.OuterMeasure.Basic
+public import Mathlib.MeasureTheory.Measure.Restrict
+public import Mathlib.Topology.Compactness.LocallyCompact
 
 /-!
 # Locally null images
 
-This file provides a local-to-global criterion for the image of a set to have measure zero.
+This file provides local-to-global criteria for sets to have measure zero: for the image of a set,
+and for the failure of a property outside a closed set of a second-countable locally compact space,
+which is null as soon as it is null on every compact set disjoint from the closed set.
 
 ## Main results
 
 * `TauCeti.measure_image_null_of_locally_null`: an image is null as soon as it is locally null.
+* `TauCeti.ae_notMem_imp_of_forall_isCompact`: a property holding almost everywhere on every compact
+  set disjoint from a closed set `s` holds almost everywhere outside `s`.
 -/
 
 public section
@@ -42,6 +47,23 @@ theorem measure_image_null_of_locally_null (hs : IsLindelof s)
   rintro _ ⟨y, hy, rfl⟩
   obtain ⟨x, hx, hyx⟩ := mem_iUnion₂.1 (hst hy)
   exact mem_iUnion₂.2 ⟨x, hx, mem_image_of_mem f (hvu x (hts x hx) ⟨hyx, hy⟩)⟩
+
+/-- **Almost everywhere outside a closed set, from compact pieces.** In a second-countable locally
+compact space, a property that holds almost everywhere on every compact set disjoint from a closed
+set `s` holds almost everywhere outside `s`. Each point outside `s` has a compact neighbourhood
+disjoint from `s`, and countably many of these neighbourhoods cover the complement of `s`. -/
+theorem ae_notMem_imp_of_forall_isCompact {X : Type*} [TopologicalSpace X] [LocallyCompactSpace X]
+    [SecondCountableTopology X] [MeasurableSpace X] {μ : Measure X} {s : Set X} (hs : IsClosed s)
+    {p : X → Prop} (h : ∀ K, IsCompact K → Disjoint K s → ∀ᵐ x ∂μ.restrict K, p x) :
+    ∀ᵐ x ∂μ, x ∉ s → p x := by
+  rw [ae_iff]
+  refine measure_null_of_locally_null _ fun x hx ↦ ?_
+  obtain ⟨K, hK, hxK, hKs⟩ := exists_compact_subset hs.isOpen_compl (not_imp.1 hx).1
+  have hK₀ : μ ({y | ¬p y} ∩ K) = 0 := nonpos_iff_eq_zero.1 <| (Measure.le_restrict_apply _ _).trans
+    (ae_iff.1 (h K hK (subset_compl_iff_disjoint_right.1 hKs))).le
+  refine ⟨_ ∩ K, inter_mem_nhdsWithin _ (mem_interior_iff_mem_nhds.1 hxK), ?_⟩
+  refine measure_mono_null (fun y hy ↦ ?_) hK₀
+  exact ⟨fun hp ↦ hy.1 fun _ ↦ hp, hy.2⟩
 
 end TauCeti
 

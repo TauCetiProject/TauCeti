@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
-public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
-import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 import TauCeti.NumberTheory.NumberField.Index.Discriminant
 import TauCeti.NumberTheory.NumberField.Minpoly
@@ -19,7 +17,7 @@ import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
-# Explicit lower bounds for the regulator of a quadratic field
+# Explicit discriminant-dependent lower bounds for the regulator of a quadratic field
 
 Let `K` be a quadratic number field of discriminant `D`. When `K` is imaginary quadratic (`D < 0`),
 its unit rank is `0` and `NumberField.Units.regulator K = 1` trivially. When `K` is real quadratic
@@ -39,10 +37,10 @@ of `minpoly ℤ u` from below by `D`, where `x > 1` is the real image of `u` at 
 
 Choosing `u` to be a normalized fundamental unit yields the corresponding sharp lower bounds on
 `NumberField.Units.regulator K` for real quadratic fields (which also hold trivially for `D < 0`
-because `Real.sqrt` evaluates to `0` on negative arguments and `regulator K = 1`). Substituting
-`5 ≤ D` together with `regulator K = 1 > log φ` in the imaginary quadratic case gives the universal
-lower bound `Real.log Real.goldenRatio ≤ regulator K` (`log_goldenRatio_le_regulator`) for every
-quadratic field, with equality for `ℚ(√5)`.
+because `Real.sqrt` evaluates to `0` on negative arguments and `regulator K = 1`). For the
+uniform discriminant-free bound `log ((1 + √5) / 2) ≤ regulator K`, see
+`TauCeti.NumberField.Units.log_goldenRatio_le_regulator` in
+`TauCeti.NumberTheory.NumberField.Units.Elimination.GoldenRatio`.
 
 ## Main results
 
@@ -60,7 +58,6 @@ All declarations are in the `TauCeti.NumberField.Units` namespace:
 * `log_sqrt_discr_add_four_add_sqrt_div_two_le_regulator`: when every unit has norm `1`,
   `log ((√(D + 4) + √D) / 2) ≤ regulator K` (sharp for real quadratic fields such as `ℚ(√3)` and
   trivial for `D < 0`).
-* `log_goldenRatio_le_regulator`: `log ((1 + √5) / 2) ≤ regulator K` for every quadratic field.
 
 ## References
 
@@ -213,7 +210,7 @@ theorem exists_one_lt_embedding_of_isReal_and_regulator_eq_log {w : InfinitePlac
       refine ⟨g⁻¹, hinv, ?_⟩
       rw [hreg, abs_of_neg (Real.log_neg hg_pos hlt), hwInv, Real.log_inv]
   obtain ⟨ε, hε⟩ := w.exists_torsion_mul_embedding_eq_abs hw u₀
-  exact ⟨ε.1 * u₀, hε.symm ▸ hu₀_gt, hu₀_reg.trans (congrArg Real.log hε.symm)⟩
+  exact ⟨ε.val * u₀, hε.symm ▸ hu₀_gt, hu₀_reg.trans (congrArg Real.log hε.symm)⟩
 
 /-- **Discriminant-dependent lower bound on the regulator of a quadratic field.** For any quadratic
 field `K` of discriminant `D`, `log ((√D + √(D - 4)) / 2) ≤ regulator K`. For real quadratic fields
@@ -246,9 +243,8 @@ theorem log_sqrt_discr_add_four_add_sqrt_div_two_le_regulator (hK : finrank ℚ 
     Real.log ((√((discr K : ℝ) + 4) + √(discr K : ℝ)) / 2) ≤ regulator K := by
   rcases lt_or_ge (discr K) 0 with hneg | hnonneg
   · have hD1 : (discr K : ℝ) ≤ -1 := mod_cast Int.le_sub_one_of_lt hneg
-    have hsqrt3 : √((discr K : ℝ) + 4) ≤ 2 := by
-      rw [show (2 : ℝ) = √4 by norm_num]
-      exact Real.sqrt_le_sqrt (by linarith)
+    have hsqrt3 : √((discr K : ℝ) + 4) ≤ 2 :=
+      Real.sqrt_le_iff.mpr ⟨by norm_num, by linarith⟩
     rw [Real.sqrt_eq_zero_of_nonpos (x := (discr K : ℝ)) (by linarith), add_zero]
     exact (Real.log_nonpos (by positivity) (by linarith)).trans (regulator_pos K).le
   · have : IsTotallyReal K := isTotallyReal_of_finrank_eq_two_of_discr_nonneg hK hnonneg
@@ -262,27 +258,5 @@ theorem log_sqrt_discr_add_four_add_sqrt_div_two_le_regulator (hK : finrank ℚ 
     rw [hreg]
     exact Real.log_le_log hpos
       (sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_one _ hK hu (hnorm u))
-
-/-- **Universal lower bound on the regulator of a quadratic field.** Every quadratic field `K`
-satisfies `Real.log Real.goldenRatio ≤ regulator K`, with equality for `ℚ(√5)`. -/
-theorem log_goldenRatio_le_regulator (hK : finrank ℚ K = 2) :
-    Real.log Real.goldenRatio ≤ regulator K := by
-  rcases lt_or_ge (discr K) 0 with hneg | hnonneg
-  · have : IsTotallyComplex K := isTotallyComplex_of_finrank_eq_two_of_discr_neg hK hneg
-    rw [regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two K hK]
-    have hsqrt5 : √5 < 3 := (Real.sqrt_lt' (by norm_num)).mpr (by norm_num)
-    have hlog := Real.log_le_sub_one_of_pos Real.goldenRatio_pos
-    rw [Real.goldenRatio] at hlog ⊢
-    linarith
-  · have : IsTotallyReal K := isTotallyReal_of_finrank_eq_two_of_discr_nonneg hK hnonneg
-    refine le_trans ?_ (log_sqrt_discr_add_sqrt_sub_four_div_two_le_regulator hK)
-    refine Real.log_le_log Real.goldenRatio_pos ?_
-    have hD5 : (5 : ℝ) ≤ discr K := mod_cast five_le_discr_of_isTotallyReal hK
-    have hs5 : √5 ≤ √(discr K : ℝ) := Real.sqrt_le_sqrt hD5
-    have hs1 : (1 : ℝ) ≤ √((discr K : ℝ) - 4) := by
-      rw [show (1 : ℝ) = √1 by norm_num]
-      exact Real.sqrt_le_sqrt (by linarith)
-    rw [Real.goldenRatio]
-    linarith
 
 end TauCeti.NumberField.Units

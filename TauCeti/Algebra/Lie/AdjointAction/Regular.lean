@@ -60,9 +60,9 @@ isomorphisms, hence by the adjoint action, and by nonzero scalars. In finite dim
   minimality of `finrank K (ker (ad x))`.
 * `LieAlgebra.isCentralizerRegular_iff_forall_finrank_range_le`: in finite dimension, an element is
   regular exactly when `ad x` has maximal rank.
-* `LieEquiv.isCentralizerRegular_apply_iff` and
-  `LieAlgebra.isCentralizerRegular_smul_iff`: invariance under Lie algebra isomorphisms and
-  nonzero scalars.
+* `LieEquiv.isCentralizerRegular_apply_iff`, `LieAlgebra.isCentralizerRegular_smul_iff` and
+  `LieAlgebra.isCentralizerRegular_neg_iff`: invariance under Lie algebra isomorphisms, nonzero
+  scalars and negation.
 * `LieAlgebra.isCentralizerRegular_zero_iff`: in finite dimension, `0` is regular exactly when `L`
   is abelian.
 * `Module.Basis.not_isCentralizerRegular_of_mem_zeroLocus_vanishingIdeal`: the nonregular
@@ -161,6 +161,13 @@ theorem isCentralizerRegular_smul_iff {c : K} (hc : c ≠ 0) {x : L} :
   simp only [isCentralizerRegular_iff]
   rw [_root_.map_smul, ker_smul _ _ hc]
 
+/-- Regularity is invariant under negation. -/
+@[simp]
+theorem isCentralizerRegular_neg_iff {x : L} :
+    IsCentralizerRegular K (-x) ↔ IsCentralizerRegular K x := by
+  simpa only [neg_one_smul] using isCentralizerRegular_smul_iff (K := K) (x := x)
+    (neg_ne_zero.mpr (one_ne_zero : (1 : K) ≠ 0))
+
 /-- **In finite dimension, `0` is regular exactly in an abelian Lie algebra.** In a
 finite-dimensional Lie algebra the centralizer of `0` is everything, so `0` is regular exactly
 when every centralizer is everything. -/
@@ -176,6 +183,7 @@ theorem isCentralizerRegular_zero_iff [FiniteDimensional K L] :
   · rw [ad_eq_zero_of_isLieAbelian, ker_zero, finrank_top]
 
 /-- In an abelian Lie algebra every element is regular. -/
+@[simp]
 theorem isCentralizerRegular_of_isLieAbelian [IsLieAbelian L] (x : L) :
     IsCentralizerRegular K x := fun y ↦ by
   rw [ad_eq_zero_of_isLieAbelian, ad_eq_zero_of_isLieAbelian]

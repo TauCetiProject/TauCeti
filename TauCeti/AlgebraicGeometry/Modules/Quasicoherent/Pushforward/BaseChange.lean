@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.Pushforward.BaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
@@ -124,6 +124,6 @@ theorem isIso_pushforwardBaseChange_app (H : IsPullback g' f' f g) [QuasiCompact
     IsIso ((pushforwardBaseChange H.toCommSq).app M) :=
   Hom.isIso_of_isBasis _ g.isBasis_range_affineOpens_le_preimage fun i ↦
     (ConcreteCategory.isIso_iff_bijective _).mpr
-      (bijective_pushforwardBaseChange_app_app H M i.1.2.2 i.1.1.2 i.2)
+      (bijective_pushforwardBaseChange_app_app H M i.val.2.property i.val.1.property i.property)
 
 end AlgebraicGeometry.Scheme.Modules

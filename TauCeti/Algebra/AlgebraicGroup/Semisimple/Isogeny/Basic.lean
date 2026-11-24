@@ -294,7 +294,7 @@ private theorem eq_augmentation_of_moduleFinite_reducedQuotient
     exact ⟨n, by rw [← map_pow, CommHopfAlgCat.mkQuotient_eq_zero_iff]; exact hyn⟩
   let _ : Module.Finite k (quotient Q J) := Module.Finite.of_injective j.hom.toLinearMap hj
   let _ : ConnectedSpace (PrimeSpectrum (quotient Q J)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hJ.geometricallyConnected
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace hJ.geometricallyConnected
   -- A finite connected reduced group is trivial.
   have hbot := HopfIdeal.augmentation_eq_bot_of_moduleFinite (k := k) (H := quotient Q J)
   apply le_antisymm (HopfIdeal.le_augmentation k Q J)
@@ -344,15 +344,12 @@ theorem of_isCentralIsogeny (hG : semisimpleCommHopfAlgProperty k G) (f : Q.obj 
       k G).mp hG
   rw [semisimpleCommHopfAlgProperty_iff_solvableRadicalDefiningIdeal_baseChange_eq_augmentation]
   have hinj : Function.Injective f.hom := hf.injective
-  have hred : geometricallyReducedCommHopfAlgProperty k Q.obj :=
-    .of_injective f.hom.toAlgHom hinj <| geometricallyReducedCommHopfAlgProperty_of_smooth k _ <|
-      (smoothCommHopfAlgProperty_iff _).mpr hG.smooth
+  let _ : Algebra.Smooth k G := hG.smooth
   refine ⟨(smoothCommHopfAlgProperty_iff _).mp <|
-      smoothCommHopfAlgProperty_of_geometricallyReduced k _ hred,
+      f.hom.toAlgHom.smoothCommHopfAlgProperty_of_injective hinj,
     .of_injective f.hom.toAlgHom hinj hG.geometricallyConnected, ?_⟩
   let K := AlgebraicClosure k
   have hfK := hf.baseChange (L := K)
-  let _ : Algebra.Smooth k G := hG.smooth
   let _ : IsReduced (FiniteTypeCommHopfAlgCat.baseChange (K := K) G) :=
     isReduced_of_smooth K (K ⊗[k] G)
   exact FiniteTypeCommHopfAlgCat.solvableRadicalDefiningIdeal_eq_augmentation_of_isCentral

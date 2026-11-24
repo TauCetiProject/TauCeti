@@ -47,10 +47,10 @@ theorem Continuous.eventually_norm_sum_smul_sub_lt_edgewiseSubdivision
     {σ : Finset ι} {g : StandardSimplex σ → E} (hg : Continuous g)
     (K : PreAbstractSimplicialComplex ι) {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ k in atTop, ∀ ρ ∈ K.edgewiseSubdivision k, ∀ p : ρ → StandardSimplex σ,
-      (∀ a, (p a : ι →₀ ℝ) = TauCeti.edgewisePoint a.1.1) →
+      (∀ a, (p a : ι →₀ ℝ) = TauCeti.edgewisePoint a.val.val) →
       ∀ (x : StandardSimplex ρ) (q : StandardSimplex σ),
-        (∀ i : σ, q.1 i = ∑ a : ρ, x.1 a • (p a).1 i) →
-        ‖(∑ a : ρ, x.1 a • g (p a)) - g q‖ < ε := by
+        (∀ i : σ, q.val i = ∑ a : ρ, x.val a • (p a).val i) →
+        ‖(∑ a : ρ, x.val a • g (p a)) - g q‖ < ε := by
   -- Read the compact simplex in its finite-dimensional coordinate space.
   let e := (Finset.standardSimplexHomeomorph σ).trans
     (Convexity.StdSimplex.isEmbedding_toFun_comp_weights ℝ σ).toHomeomorph
@@ -62,18 +62,18 @@ theorem Continuous.eventually_norm_sum_smul_sub_lt_edgewiseSubdivision
   obtain ⟨N, hN⟩ := exists_nat_gt δ⁻¹
   filter_upwards [eventually_ge_atTop N] with k hk ρ hρ p hp x q hq
   have hkδ : δ⁻¹ < k := hN.trans_le (Nat.cast_le.mpr hk)
-  have hweights : ∑ a : ρ, x.1 a = 1 := by
+  have hweights : ∑ a : ρ, x.val a = 1 := by
     simpa [Finsupp.sum_fintype] using (Finset.standardSimplexHomeomorph ρ x).total
-  have he (y : StandardSimplex σ) (i : σ) : (e y).1 i = y.1 i := by
+  have he (y : StandardSimplex σ) (i : σ) : (e y).val i = y.val i := by
     simp [e]
-  have hdist (a b : ρ) : ‖(e (p a)).1 - (e (p b)).1‖ ≤ δ := by
-    have heq (y : StandardSimplex σ) : (e y).1 = fun i : σ => y.1 i := funext (he y)
+  have hdist (a b : ρ) : ‖(e (p a)).val - (e (p b)).val‖ ≤ δ := by
+    have heq (y : StandardSimplex σ) : (e y).val = fun i : σ => y.val i := funext (he y)
     simp only [heq, hp]
-    exact (norm_edgewisePoint_sub_edgewisePoint_le hρ a.2 b.2 σ).trans
+    exact (norm_edgewisePoint_sub_edgewisePoint_le hρ a.property b.property σ).trans
       (inv_lt_of_inv_lt₀ hδ hkδ).le
-  have hq' : (e q).1 = ∑ a : ρ, x.1 a • (e (p a)).1 := by
+  have hq' : (e q).val = ∑ a : ρ, x.val a • (e (p a)).val := by
     ext i
     simpa only [Finset.sum_apply, Pi.smul_apply, he] using hq i
   simpa only [f, Function.comp_apply, Homeomorph.symm_apply_apply] using
-    happrox (fun a => e (p a)) (fun a => x.1 a)
+    happrox (fun a => e (p a)) (fun a => x.val a)
       (fun a => StandardSimplex.nonneg x a) hweights hdist (e q) hq'

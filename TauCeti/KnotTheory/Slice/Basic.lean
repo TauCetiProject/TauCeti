@@ -466,7 +466,7 @@ and complementary model `ℝⁿ⁻¹`
 (`TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq`). -/
 theorem IsSmoothSliceDisc.isTopologicalSliceDisc {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}
     (h : IsSmoothSliceDisc K Φ) : IsTopologicalSliceDisc K Φ where
-  isLocallyFlat := .of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq (by simp)
+  isLocallyFlat := .of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq
     h.isSmoothEmbedding h.preimage_boundary (by omega)
   norm_eq_one_iff := h.norm_eq_one_iff
   apply_inclusion := h.apply_inclusion

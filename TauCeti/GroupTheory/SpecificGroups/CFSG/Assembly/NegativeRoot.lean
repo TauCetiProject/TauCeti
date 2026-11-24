@@ -72,15 +72,15 @@ def negativeSimpleRootSubgroup :
   | ⟨.reeG2 m, hv⟩, i =>
       letI := ReeG2LieIndex.algebraZModThree (ReeG2LieIndex.of m hv)
       G2ShortRoot.PrimeField.rootSubgroupPoints
-        (.inr (finCongr (ReeG2LieIndex.of m hv).rank_eq_two i)) (ReeG2LieIndex.of m hv).1.Closure
+        (.inr (finCongr (ReeG2LieIndex.of m hv).rank_eq_two i)) (ReeG2LieIndex.of m hv).val.Closure
   | ⟨.reeF4 m, hv⟩, i =>
       letI := ReeF4LieIndex.algebraZModTwo (ReeF4LieIndex.of m hv)
       F4ShortRoot.PrimeField.rootSubgroupPoints
-        (.inr (finCongr (ReeF4LieIndex.of m hv).rank_eq_four i)) (ReeF4LieIndex.of m hv).1.Closure
+        (.inr (finCongr (ReeF4LieIndex.of m hv).rank_eq_four i)) (ReeF4LieIndex.of m hv).val.Closure
   | ⟨.tits, _⟩, i =>
       letI := TitsLieIndex.algebraZModTwo TitsLieIndex.of
       F4ShortRoot.PrimeField.rootSubgroupPoints
-        (.inr (finCongr TitsLieIndex.of.rank_eq_four i)) TitsLieIndex.of.1.Closure
+        (.inr (finCongr TitsLieIndex.of.rank_eq_four i)) TitsLieIndex.of.val.Closure
 
 section Branches
 
@@ -190,7 +190,7 @@ theorem negativeSimpleRootSubgroup_reeG2 (hv : (LieTypeIndex.reeG2 m).Valid)
     letI := ReeG2LieIndex.algebraZModThree (ReeG2LieIndex.of m hv)
     negativeSimpleRootSubgroup ⟨_, hv⟩ i = G2ShortRoot.PrimeField.rootSubgroupPoints
       (.inr (finCongr (ReeG2LieIndex.of m hv).rank_eq_two i))
-      (ReeG2LieIndex.of m hv).1.Closure :=
+      (ReeG2LieIndex.of m hv).val.Closure :=
   (rfl)
 
 /-- Ree F₄ uses the short-root carrier's negative root maps in characteristic two. -/
@@ -199,7 +199,7 @@ theorem negativeSimpleRootSubgroup_reeF4 (hv : (LieTypeIndex.reeF4 m).Valid)
     letI := ReeF4LieIndex.algebraZModTwo (ReeF4LieIndex.of m hv)
     negativeSimpleRootSubgroup ⟨_, hv⟩ i = F4ShortRoot.PrimeField.rootSubgroupPoints
       (.inr (finCongr (ReeF4LieIndex.of m hv).rank_eq_four i))
-      (ReeF4LieIndex.of m hv).1.Closure :=
+      (ReeF4LieIndex.of m hv).val.Closure :=
   (rfl)
 
 /-- The Tits index retains the short-root F₄ carrier's negative root maps. -/
@@ -207,7 +207,7 @@ theorem negativeSimpleRootSubgroup_tits (hv : LieTypeIndex.tits.Valid)
     (i : Fin (rank ⟨.tits, hv⟩)) :
     letI := TitsLieIndex.algebraZModTwo TitsLieIndex.of
     negativeSimpleRootSubgroup ⟨_, hv⟩ i = F4ShortRoot.PrimeField.rootSubgroupPoints
-      (.inr (finCongr TitsLieIndex.of.rank_eq_four i)) TitsLieIndex.of.1.Closure :=
+      (.inr (finCongr TitsLieIndex.of.rank_eq_four i)) TitsLieIndex.of.val.Closure :=
   (rfl)
 
 end Branches

@@ -43,16 +43,16 @@ theorem smooth_of_grpObj_of_isAlgClosed_of_isReduced
     (f : G ⟶ Spec (.of K)) [LocallyOfFiniteType f] [GrpObj (Over.mk f)] [IsReduced G] :
     Smooth f := by
   have := LocallyOfFiniteType.jacobsonSpace f
-  have : Nonempty G := ⟨η[Over.mk f].1 (IsLocalRing.closedPoint _)⟩
+  have : Nonempty G := ⟨η[Over.mk f].left (IsLocalRing.closedPoint _)⟩
   rw [← Scheme.Hom.smoothLocus_eq_top_iff, ← TopologicalSpace.Opens.coe_eq_univ,
     ← not_ne_iff, ← Set.nonempty_compl]
   intro h
   obtain ⟨x, hx, hxc⟩ :=
-    nonempty_inter_closedPoints h f.smoothLocus.2.isClosed_compl.isLocallyClosed
+    nonempty_inter_closedPoints h f.smoothLocus.is_open'.isClosed_compl.isLocallyClosed
   obtain ⟨y, hy : y ∈ f.smoothLocus, hyc⟩ := nonempty_inter_closedPoints
-    f.dense_smoothLocus_of_perfectField.nonempty f.smoothLocus.2.isLocallyClosed
-  let x' : 𝟙_ _ ⟶ Over.mk f := Over.homMk _ ((pointEquivClosedPoint f).symm ⟨x, hxc⟩).2
-  let y' : 𝟙_ _ ⟶ Over.mk f := Over.homMk _ ((pointEquivClosedPoint f).symm ⟨y, hyc⟩).2
+    f.dense_smoothLocus_of_perfectField.nonempty f.smoothLocus.is_open'.isLocallyClosed
+  let x' : 𝟙_ _ ⟶ Over.mk f := Over.homMk _ ((pointEquivClosedPoint f).symm ⟨x, hxc⟩).property
+  let y' : 𝟙_ _ ⟶ Over.mk f := Over.homMk _ ((pointEquivClosedPoint f).symm ⟨y, hyc⟩).property
   let e := (GrpObj.mulRight (A := Over.mk f) x').symm ≪≫ GrpObj.mulRight (A := Over.mk f) y'
   have he : x' ≫ e.hom = y' := by
     dsimp only [Iso.trans_hom, Iso.symm_hom, e]
