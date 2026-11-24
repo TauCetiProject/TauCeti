@@ -29,8 +29,9 @@ Noetherian. The implication
 from maximal domination to density holds for every source. Dominance alone permits vertical
 components of the source whose generic points do not map to component-generic points of the target.
 
-Maximal domination is local on the source and on the target, descends along composition with an
-open immersion, and passes to the restriction `f ∣_ U` over an open `U` of the target. For an
+Maximal domination is local on the source and on the target, so it passes to the restriction
+`f ∣_ U` over an open `U` of the target by `IsZariskiLocalAtTarget.restrict`, and it descends
+along composition with an open immersion. For an
 irreducible source it says that the generic point maps to a component-generic point, so dominant
 morphisms from irreducible schemes are maximally dominating. The residue-field point
 `Spec κ(y) ⟶ Y` is maximally dominating exactly when `y` is a component-generic point.
@@ -204,14 +205,6 @@ theorem IsMaximallyDominating.of_comp_of_isOpenImmersion {f : X ⟶ Y} {g : Y �
 theorem isMaximallyDominating_comp_iff_of_isOpenImmersion (f : X ⟶ Y) (g : Y ⟶ Z)
     [IsOpenImmersion g] : (f ≫ g).IsMaximallyDominating ↔ f.IsMaximallyDominating :=
   ⟨.of_comp_of_isOpenImmersion, g.isMaximallyDominating_of_isOpenImmersion.comp⟩
-
-/-- The restriction `f ∣_ U : f ⁻¹ᵁ U ⟶ U` of a maximally dominating morphism over an open
-subset `U` of the target is maximally dominating. -/
-theorem IsMaximallyDominating.morphismRestrict {f : X ⟶ Y} (hf : f.IsMaximallyDominating)
-    (U : Y.Opens) : (f ∣_ U).IsMaximallyDominating :=
-  .of_comp_of_isOpenImmersion (g := U.ι) (by
-    rw [morphismRestrict_ι]
-    exact hf.restrictSource _)
 
 instance isMultiplicative_isMaximallyDominating :
     MorphismProperty.IsMultiplicative @IsMaximallyDominating where
