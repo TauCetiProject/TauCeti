@@ -101,7 +101,7 @@ theorem affineIndependent_stellarSubdivisionLinearMap (ha : a ∈ σ) (haτ : a 
       (fun i : τ => Finsupp.single (i : ι) (1 : ℝ)) := by
     funext i
     apply stellarSubdivisionInverseLinearMap_left_inv ha
-    simp [ne_of_mem_of_not_mem i.2 haτ]
+    simp [ne_of_mem_of_not_mem i.property haτ]
   simp only [Function.comp_def, LinearMap.coe_toAffineMap, hsingle]
   exact ((Finsupp.linearIndependent_single_one ℝ ι).comp Subtype.val
     Subtype.val_injective).affineIndependent

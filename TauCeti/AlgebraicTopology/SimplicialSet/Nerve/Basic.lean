@@ -26,7 +26,13 @@ An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exact
 
 Prepending an arrow `b` to a string commutes with deleting any vertex but the first two, and
 deleting the second vertex composes `b` with the first arrow of the string
-(`CategoryTheory.nerve.δ_succ_precomp`).
+(`CategoryTheory.nerve.δ_succ_precomp`); it commutes with repeating any vertex but the first one
+(`CategoryTheory.nerve.σ_succ_precomp`). Dually, appending an arrow `g : σ.right ⟶ Y` with
+`CategoryTheory.ComposableArrows.postcomp` is retracted by the final face
+(`CategoryTheory.nerve.δ_last_postcomp`), and on simplices of positive dimension (`n + 1`, strings
+of at least one arrow) deleting any earlier vertex deletes that vertex of `σ` and composes `g` with
+the arrow from the new final vertex of `(nerve C).δ k σ` to `σ.right`
+(`CategoryTheory.nerve.δ_castSucc_postcomp`, `CategoryTheory.nerve.δ_zero_postcomp`).
 
 A `3`-simplex of the nerve is a sequence of three composable morphisms `ComposableArrows.mk₃ f g h`.
 Its faces are the `2`-simplices obtained by dropping a vertex, whose arrows are composites of
@@ -39,11 +45,17 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
   `i`-th degeneracy of its `i`-th face.
 * `CategoryTheory.nerve.mem_range_σ_iff`: the image of the `i`-th degeneracy consists of the
   strings whose `i`-th arrow is an identity.
-* `CategoryTheory.nerve.δ_succ_precomp`: the faces of a string with a prepended arrow.
+* `CategoryTheory.nerve.δ_succ_precomp`, `CategoryTheory.nerve.σ_succ_precomp`: the faces and
+  degeneracies of a string with a prepended arrow.
 * `CategoryTheory.nerve.map_obj`, `CategoryTheory.nerve.totalArrow_map`,
   `CategoryTheory.nerve.map_const`: the objects, arrows and vertices of a reindexed simplex.
+* `CategoryTheory.nerve.totalArrow_δ`, `CategoryTheory.nerve.δ_last_postcomp`,
+  `CategoryTheory.nerve.δ_castSucc_postcomp`, `CategoryTheory.nerve.δ_zero_postcomp`: the arrows
+  of a face and the faces of a string with an appended arrow.
 * `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
   `3`-simplex of the nerve given by three composable morphisms.
+* `CategoryTheory.nerveMap_app_nerveEquiv_symm`: the map of nerves induced by a functor sends the
+  vertex of an object to the vertex of its image.
 -/
 
 public section
@@ -167,12 +179,95 @@ lemma totalArrow_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows
       s.totalArrow (f.toOrderHom i) (f.toOrderHom j) (f.toOrderHom.monotone hij) :=
   s.totalArrow_whiskerLeft _ i j hij
 
+/-- The `k`-th face of a simplex of the nerve reindexes its arrows along `k.succAbove`. -/
+@[simp]
+theorem totalArrow_δ {n : ℕ} (k : Fin (n + 2)) (σ : ComposableArrows C (n + 1))
+    (i j : Fin (n + 1)) (hij : i ≤ j) :
+    ((nerve C).δ k σ).totalArrow i j hij =
+      σ.totalArrow (k.succAbove i) (k.succAbove j) ((Fin.strictMono_succAbove k).monotone hij) :=
+  totalArrow_map (SimplexCategory.δ k) σ i j hij
+
 /-- The `i`-th vertex of a simplex `s` of the nerve is the `0`-simplex given by `s.obj i`. -/
 lemma map_const {n : ℕ} (s : ComposableArrows C n) (i : Fin (n + 1)) :
     (nerve C).map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op s = nerveEquiv.symm (s.obj i) :=
   ComposableArrows.ext₀ rfl
 
 end Map
+
+/-- Repeating a vertex other than the first one of a string with a prepended arrow `b` repeats the
+corresponding vertex of the original string, keeping `b` as the first arrow. -/
+theorem σ_succ_precomp {n : ℕ} (i : Fin (n + 1)) (σ : ComposableArrows C n) {y : C}
+    (b : y ⟶ σ.left) :
+    (nerve C).σ i.succ (σ.precomp b) = ((nerve C).σ i σ).precomp b := by
+  refine ComposableArrows.ext_succ_of_totalArrow
+    ((nerve C).δ_comp_σ_of_le_apply (Fin.zero_le _) (σ.precomp b)) ?_
+  refine (totalArrow_map (SimplexCategory.σ i.succ) (σ.precomp b) 0 1 (Fin.zero_le _)).trans ?_
+  -- The degeneracy `σ i.succ` fixes the vertices `0` and `1`; rewriting the indices changes the
+  -- dependent proof of `0 ≤ 1`, so `key` transports along them by `subst`.
+  have key (j k : Fin (n + 2)) (hjk : j ≤ k) (hj : j = 0) (hk : k = 1) :
+      (σ.precomp b).totalArrow j k hjk = (σ.precomp b).totalArrow 0 1 (Fin.zero_le _) := by
+    subst hj hk
+    rfl
+  refine (key _ _ _ (by simp [SimplexCategory.σ]) ?_).trans ?_
+  · simp [SimplexCategory.σ, Fin.predAbove, Fin.lt_def]
+  -- By definition of `precomp`, both first arrows are `b`.
+  rw [ComposableArrows.totalArrow_def, ComposableArrows.totalArrow_def]
+  rfl
+
+/-- Deleting the last vertex of `σ.postcomp g` recovers `σ`. -/
+@[simp] theorem δ_last_postcomp {n : ℕ} (σ : ComposableArrows C n) {Y : C} (g : σ.right ⟶ Y) :
+    (nerve C).δ (Fin.last (n + 1)) (σ.postcomp g) = σ := by
+  refine ComposableArrows.ext_of_totalArrow (n := n) fun i j hij ↦ ?_
+  rw [totalArrow_δ]; simpa only [Fin.succAbove_last] using σ.totalArrow_postcomp_castSucc g i j hij
+
+/-- On a positive-dimensional simplex `σ : ComposableArrows C (n + 1)` (at least one arrow), any
+non-last face `δ k.castSucc` of `σ.postcomp g` deletes vertex `k` of `σ` and composes `g` with the
+arrow of `σ` from `k.succAbove (Fin.last n)` to `σ.right`, dual to `δ_succ_precomp`. -/
+@[simp] theorem δ_castSucc_postcomp {n : ℕ} (k : Fin (n + 2)) (σ : ComposableArrows C (n + 1))
+    {Y : C} (g : σ.right ⟶ Y) : (nerve C).δ k.castSucc (σ.postcomp g) = ((nerve C).δ k σ).postcomp
+      (σ.map (homOfLE (Fin.le_last (k.succAbove (Fin.last n)))) ≫ g) := by
+  set τ : ComposableArrows C n := (nerve C).δ k σ
+  set g' : τ.right ⟶ Y := σ.map (homOfLE (Fin.le_last (k.succAbove (Fin.last n)))) ≫ g
+  refine ComposableArrows.ext_of_totalArrow (n := n + 1) fun i j hij ↦ ?_
+  rw [totalArrow_δ]; cases j using Fin.lastCases with
+  | cast j₀ =>
+    cases i using Fin.lastCases with
+    | last => exact absurd hij (not_le_of_gt (Fin.castSucc_lt_last j₀))
+    | cast i₀ =>
+      have hij₀ : i₀ ≤ j₀ := Fin.castSucc_le_castSucc_iff.mp hij
+      simp only [Fin.castSucc_succAbove_castSucc]
+      rw [σ.totalArrow_postcomp_castSucc g (k.succAbove i₀) (k.succAbove j₀)
+        ((Fin.strictMono_succAbove k).monotone hij₀),
+        τ.totalArrow_postcomp_castSucc g' i₀ j₀ hij₀, ← totalArrow_δ]
+  | last =>
+    have hkl : k.castSucc.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=
+      (Fin.succAbove_of_le_castSucc _ _
+        (Fin.castSucc_le_castSucc_iff.mpr (Fin.le_last k))).trans (Fin.succ_last _)
+    cases i using Fin.lastCases with
+    | last =>
+      simp only [hkl, ComposableArrows.totalArrow_self]
+      exact congrArg (fun Z ↦ ({ left := Z, right := Z, hom := 𝟙 Z } : Quiver.Total C))
+        ((σ.postcomp_obj_last g).trans (τ.postcomp_obj_last g').symm)
+    | cast i₀ =>
+      simp only [hkl, Fin.castSucc_succAbove_castSucc,
+        ComposableArrows.totalArrow_postcomp_castSucc_last]
+      rw [Subsingleton.elim hij (Fin.le_last _), τ.totalArrow_postcomp_castSucc_last g']
+      refine Quiver.Total.ext rfl rfl (heq_of_eq ?_)
+      have hτ : τ.map (homOfLE (Fin.le_last i₀)) =
+          σ.map (homOfLE ((Fin.strictMono_succAbove k).monotone (Fin.le_last i₀))) :=
+        congrArg σ.map (Subsingleton.elim _ _)
+      exact ((congrArg (σ.map · ≫ g) (Subsingleton.elim _ _)).trans
+        (σ.map_comp_assoc _ _ g)).trans (congrArg (· ≫ g') hτ.symm)
+
+/-- On positive-dimensional `σ : ComposableArrows C (n + 1)`, `δ 0` commutes with `postcomp g`. -/
+@[simp] theorem δ_zero_postcomp {n : ℕ} (σ : ComposableArrows C (n + 1)) {Y : C}
+    (g : σ.right ⟶ Y) : (nerve C).δ 0 (σ.postcomp g) = ((nerve C).δ 0 σ).postcomp g := by
+  have h := δ_castSucc_postcomp 0 σ g; rw [Fin.castSucc_zero] at h
+  refine h.trans (congrArg (((nerve C).δ 0 σ).postcomp) ?_)
+  have hid := (congrArg σ.map (Subsingleton.elim
+    (homOfLE (Fin.le_last ((0 : Fin (n + 2)).succAbove (Fin.last n))))
+    (𝟙 (Fin.last (n + 1))))).trans (σ.map_id _)
+  exact (congrArg (· ≫ g) hid).trans (Category.id_comp g)
 
 section Faces
 
@@ -208,3 +303,14 @@ theorem δ₃_mk₃_eq :
 end Faces
 
 end CategoryTheory.nerve
+
+namespace CategoryTheory
+
+/-- The map of nerves induced by a functor `F` sends the vertex of an object `X` to the vertex of
+`F.obj X`: Mathlib's `nerveMap_app_mk₀`, stated for vertices written with `nerveEquiv`. -/
+@[simp]
+lemma nerveMap_app_nerveEquiv_symm {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D)
+    (X : C) : (nerveMap F).app (Opposite.op ⦋0⦌) (nerveEquiv.symm X) = nerveEquiv.symm (F.obj X) :=
+  nerveMap_app_mk₀ F X
+
+end CategoryTheory

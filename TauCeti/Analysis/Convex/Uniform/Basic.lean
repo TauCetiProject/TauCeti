@@ -82,8 +82,8 @@ theorem exists_norm_le_norm_sub_inclusionInDoubleDual_le_of_uniformConvexSpace
   -- A functional of norm at most one on which the real part of `φ` is almost its norm.
   obtain ⟨f, hf, hφf⟩ : ∃ f : StrongDual 𝕜 E, ‖f‖ ≤ 1 ∧ r - δ / 2 < re (φ f) := by
     by_contra! h
-    have hbound := StrongDual.re_apply_add_mul_norm_le (f := φ) (x := 0)
-      (r := 1) zero_le_one (fun f hf ↦ h f
+    have hbound := (StrongDual.re_apply_add_mul_norm_le_iff (f := φ) (x := 0)
+      (r := 1) zero_le_one).2 (fun f hf ↦ h f
         ((mem_closedBall_zero_iff (E := StrongDual 𝕜 E)).mp hf))
     simp only [map_zero, zero_add, one_mul] at hbound
     linarith

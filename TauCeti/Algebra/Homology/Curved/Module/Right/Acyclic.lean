@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Abelian
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangulated
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Coproduct
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Product
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Triangulated
 public import TauCeti.CategoryTheory.Triangulated.LocalizingClosure
-import TauCeti.Algebra.Homology.Curved.Module.Right.Cone.Triangulated
 
 /-!
 # Totalizations and the acyclic classes of the second kind
@@ -59,6 +59,9 @@ particular its preimage in the closed category is extension-closed in the sense 
 * `TauCeti.CurvedDGRightModuleCat.isClosedUnderExtensions_inverseImage`: the same closure under
   extensions, as Mathlib's `CategoryTheory.ObjectProperty.IsClosedUnderExtensions`; instances
   record it for the three acyclic classes.
+* `TauCeti.CurvedDGRightModuleCat.exists_absolutelyAcyclic_trW_of_shortExact_of_isZero`: a short
+  exact sequence `K ⟶ Q ⟶ M` with contractible middle term gives a morphism `K[1] ⟶ M` with
+  absolutely acyclic cone.
 
 ## References
 
@@ -105,7 +108,7 @@ def totalizations : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat
   ObjectProperty.ofObj fun S : {S : ShortComplex
       (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) //
       S.ShortExact} ↦
-    DGHomotopyCategory.of R (totalization S.1)
+    DGHomotopyCategory.of R (totalization S.val)
 
 variable {S} in
 /-- The totalization of a short exact sequence belongs to the class of totalizations. -/
@@ -123,7 +126,7 @@ theorem totalizations_le_iff
         (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)),
         S.ShortExact → Q (DGHomotopyCategory.of R (totalization S)) := by
   rw [totalizations, ObjectProperty.ofObj_le_iff]
-  exact ⟨fun H S hS ↦ H ⟨S, hS⟩, fun H S ↦ H S.1 S.2⟩
+  exact ⟨fun H S hS ↦ H ⟨S, hS⟩, fun H S ↦ H S.val S.property⟩
 
 open ZeroObject in
 instance : (totalizations R h).Nonempty :=
@@ -132,19 +135,6 @@ instance : (totalizations R h).Nonempty :=
     0).shortExact⟩
 
 end Totalization
-
-/-- For any object property containing all totalizations, the comparison map from the cone of the
-first morphism of a short exact sequence to its third term has cone in `Q`. -/
-theorem coneDesc_mem_trW_of_shortExact
-    (Q : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)))
-    (hQ : totalizations R h ≤ Q)
-    {S : ShortComplex
-      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
-    (hS : S.ShortExact) :
-    Q.trW ((dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero)) := by
-  have htot := hQ _ (totalizations_totalization hS)
-  rw [totalization_eq S] at htot
-  exact ObjectProperty.trW.mk Q (coneTriangle_distinguished (coneDesc S.f S.g S.zero)) htot
 
 section TwoOutOfThree
 
@@ -266,15 +256,6 @@ theorem totalizations_le_absolutelyAcyclic :
     totalizations R h ≤ absolutelyAcyclic R h :=
   (totalizations R h).le_triangEnvelope
 
-/-- For any short exact sequence `S` of curved right modules, the induced map from `cone S.f` to
-`S.X₃` has absolutely acyclic cone. -/
-theorem coneDesc_mem_absolutelyAcyclic_trW
-    {S : ShortComplex
-      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
-    (hS : S.ShortExact) :
-    (absolutelyAcyclic R h).trW ((dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero)) :=
-  coneDesc_mem_trW_of_shortExact (absolutelyAcyclic R h) (totalizations_le_absolutelyAcyclic R h) hS
-
 variable (R h) in
 /-- Totalizations of short exact sequences are coacyclic. -/
 theorem totalizations_le_coacyclic : totalizations R h ≤ coacyclic R h :=
@@ -333,5 +314,47 @@ instance : ((coacyclic R h).inverseImage (dgClosedToHomotopy R)).IsClosedUnderEx
 
 instance : ((contraacyclic R h).inverseImage (dgClosedToHomotopy R)).IsClosedUnderExtensions :=
   isClosedUnderExtensions_inverseImage _ (totalizations_le_contraacyclic R h)
+
+/-! ### Short exact sequences with contractible middle term -/
+
+/-- For a short exact sequence `K ⟶ L ⟶ M` of curved modules, the map `cone(K ⟶ L) ⟶ M` induced
+by the second map has absolutely acyclic cone: its cone is the totalization of the sequence. -/
+theorem absolutelyAcyclic_trW_coneDesc
+    {S : ShortComplex
+      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
+    (hS : S.ShortExact) :
+    (absolutelyAcyclic R h).trW ((dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero)) := by
+  have hT := totalizations_le_absolutelyAcyclic R h _ (totalizations_totalization hS)
+  rw [totalization_eq] at hT
+  exact ObjectProperty.trW.mk _ (coneTriangle_distinguished _) hT
+
+/-- A short exact sequence `K ⟶ Q ⟶ M` of curved modules whose middle term `Q` is zero in the
+curved homotopy category gives a morphism `K[1] ⟶ M` with absolutely acyclic cone. -/
+theorem exists_absolutelyAcyclic_trW_of_shortExact_of_isZero
+    {S : ShortComplex
+      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
+    (hS : S.ShortExact) (hQ : IsZero ((dgClosedToHomotopy R).obj S.X₂)) :
+    ∃ s : ((dgClosedToHomotopy R).obj S.X₁)⟦(1 : ℤ)⟧ ⟶ (dgClosedToHomotopy R).obj S.X₃,
+      (absolutelyAcyclic R h).trW s := by
+  -- In the cone triangle `K ⟶ Q ⟶ cone(K ⟶ Q) ⟶ K[1]`, the zero middle term makes the third
+  -- arrow an isomorphism.
+  have := (Triangle.isZero₂_iff_isIso₃ _ (coneTriangle_distinguished S.f)).1 hQ
+  exact ⟨inv (coneTriangle S.f).mor₃ ≫ (dgClosedToHomotopy R).map (coneDesc S.f S.g S.zero),
+    MorphismProperty.comp_mem _ _ _ (ObjectProperty.trW_of_isIso _ _)
+      (absolutelyAcyclic_trW_coneDesc hS)⟩
+
+/-- Dual form of `exists_absolutelyAcyclic_trW_of_shortExact_of_isZero`: a short exact sequence
+`M ⟶ Q ⟶ C` of curved modules whose middle term `Q` is zero in the curved homotopy category gives
+a morphism `M ⟶ C[-1]` with absolutely acyclic cone. -/
+theorem exists_absolutelyAcyclic_trW_shift_neg_one_of_shortExact_of_isZero
+    {S : ShortComplex
+      (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
+    (hS : S.ShortExact) (hQ : IsZero ((dgClosedToHomotopy R).obj S.X₂)) :
+    ∃ s : (dgClosedToHomotopy R).obj S.X₁ ⟶ ((dgClosedToHomotopy R).obj S.X₃)⟦(-1 : ℤ)⟧,
+      (absolutelyAcyclic R h).trW s := by
+  obtain ⟨u, hu⟩ := exists_absolutelyAcyclic_trW_of_shortExact_of_isZero hS hQ
+  let e := (shiftEquiv (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) (1 : ℤ)).unitIso
+  exact ⟨e.hom.app _ ≫ u⟦(-1 : ℤ)⟧',
+    MorphismProperty.comp_mem _ _ _ (ObjectProperty.trW_of_isIso _ _) (hu.shift (-1))⟩
 
 end TauCeti.CurvedDGRightModuleCat

@@ -122,31 +122,31 @@ contraderived category consists exactly of the contraacyclic objects. -/
       (ObjectProperty.TrWLocalization.isZero_obj_iff _ _ X).2 hX |>.of_iso e⟩
 
 /-- The comparison functor from the absolute derived category to the coderived category is an
-equivalence if and only if the coacyclic curved right modules coincide with the absolutely acyclic
-ones. -/
+equivalence if and only if the absolutely acyclic and coacyclic classes of curved right modules
+coincide. -/
 theorem isEquivalence_toCoderived_iff :
-    (toCoderived R h).IsEquivalence ↔ coacyclic R h = absolutelyAcyclic R h := by
-  refine ⟨fun _ ↦ le_antisymm (fun X hX ↦ ?_) (absolutelyAcyclic_le_coacyclic R h), fun hEq ↦ ?_⟩
+    (toCoderived R h).IsEquivalence ↔ absolutelyAcyclic R h = coacyclic R h := by
+  refine ⟨fun _ ↦ le_antisymm (absolutelyAcyclic_le_coacyclic R h) fun X hX ↦ ?_, fun hEq ↦ ?_⟩
   · exact (isZero_Q_obj_iff X).1
       (IsZero.of_full_of_faithful_of_isZero (toCoderived R h) _
         ((isZero_toCoderived_obj_Q_obj_iff X).2 hX))
   · have := ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE
-      (absolutelyAcyclic_le_coacyclic R h) hEq.le
+      (h := absolutelyAcyclic_le_coacyclic R h) hEq.ge
     rw [toCoderived]
     infer_instance
 
 /-- The comparison functor from the absolute derived category to the contraderived category is an
-equivalence if and only if the contraacyclic curved right modules coincide with the absolutely
-acyclic ones. -/
+equivalence if and only if the absolutely acyclic and contraacyclic classes of curved right
+modules coincide. -/
 theorem isEquivalence_toContraderived_iff :
-    (toContraderived R h).IsEquivalence ↔ contraacyclic R h = absolutelyAcyclic R h := by
-  refine ⟨fun _ ↦ le_antisymm (fun X hX ↦ ?_) (absolutelyAcyclic_le_contraacyclic R h),
+    (toContraderived R h).IsEquivalence ↔ absolutelyAcyclic R h = contraacyclic R h := by
+  refine ⟨fun _ ↦ le_antisymm (absolutelyAcyclic_le_contraacyclic R h) fun X hX ↦ ?_,
     fun hEq ↦ ?_⟩
   · exact (isZero_Q_obj_iff X).1
       (IsZero.of_full_of_faithful_of_isZero (toContraderived R h) _
         ((isZero_toContraderived_obj_Q_obj_iff X).2 hX))
   · have := ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE
-      (absolutelyAcyclic_le_contraacyclic R h) hEq.le
+      (h := absolutelyAcyclic_le_contraacyclic R h) hEq.ge
     rw [toContraderived]
     infer_instance
 
