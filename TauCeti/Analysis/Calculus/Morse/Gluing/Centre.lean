@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.Passage
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.Normed.Lp.ProdLp
+import TauCeti.Topology.Algebra.Order.Field
 import TauCeti.Topology.MetricSpace.Contracting
 
 /-!
@@ -180,7 +181,7 @@ theorem eventually_exists_continuousOn_smul_comp_smul_eq_iff [CompleteSpace Eᵤ
     (tendsto_mul_const_nhdsGT_zero 1).eventually (gt_mem_nhds one_pos),
     (tendsto_mul_const_nhdsGT_zero ε).eventually (gt_mem_nhds hη),
     (tendsto_mul_const_nhdsGT_zero (Kk * ε)).eventually (gt_mem_nhds hδ),
-    (tendsto_mul_const_nhdsGT_zero (Kk * Kg)).eventually (gt_mem_nhds one_pos)]
+    (tendsto_mul_const_nhdsGT_zero (Kk * Kg : ℝ)).eventually (gt_mem_nhds one_pos)]
     with l₀ hl₀ h₀ h₁ h₂ h₃
   rw [mem_Ioi] at hl₀
   rw [mul_one] at h₀
@@ -298,7 +299,7 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
   obtain ⟨r, hr, hW'⟩ := WithLp.exists_pos_forall_toLp_mem_of_mem_nhds_zero hW
   -- A bound `l₀` on the rates for which the gluing equation has its solutions `v l`, and for
   -- which the glued points lie in `W`.
-  have hlin := tendsto_mul_const_nhdsGT_zero
+  have hlin := tendsto_mul_const_nhdsGT_zero (𝕜 := ℝ)
   obtain ⟨l₀, ⟨v, -, -, hv⟩, hl₀, hl₀₁, hl₀r, hl₀k, hl₀Kk⟩ :=
     ((eventually_exists_continuousOn_smul_comp_smul_eq_iff hδ hη hg hgε hk hk₀).and
       (Filter.Eventually.and self_mem_nhdsWithin (((hlin 1).eventually (gt_mem_nhds one_pos)).and

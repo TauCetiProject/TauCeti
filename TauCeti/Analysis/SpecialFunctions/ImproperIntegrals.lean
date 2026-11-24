@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
 import TauCeti.MeasureTheory.Integral.RpowLaplace
+import TauCeti.Topology.Algebra.Order.Field
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -318,10 +319,8 @@ theorem tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero {E : Type*} [NormedAddCo
     (hlim.eventually (Metric.closedBall_mem_nhds L (half_pos hδ)))
   set T' := max T 1
   set K := ∫ t in Ioc 1 T', ‖g t - L‖
-  have hsmall : ∀ᶠ ε : ℝ in 𝓝[>] 0, ε * K < δ / 2 := by
-    have : Tendsto (fun ε : ℝ ↦ ε * K) (𝓝[>] 0) (𝓝 (0 * K)) :=
-      (tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).mul_const K
-    exact this.eventually_lt_const (by simpa using half_pos hδ)
+  have hsmall : ∀ᶠ ε : ℝ in 𝓝[>] 0, ε * K < δ / 2 :=
+    (tendsto_mul_const_nhdsGT_zero K).eventually_lt_const (half_pos hδ)
   filter_upwards [hsmall, self_mem_nhdsWithin] with ε hεK (hε : 0 < ε)
   obtain ⟨hint, hnorm⟩ :=
     integrableOn_and_norm_integral_rpow_smul_sub_le hε (half_pos hδ).le hg fun t ht ↦ by

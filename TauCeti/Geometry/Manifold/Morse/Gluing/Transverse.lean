@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Gluing.Broken
 import TauCeti.Analysis.Calculus.Morse.Gluing.Centre
 import TauCeti.Analysis.Normed.Lp.ProdLp
+import TauCeti.Topology.Algebra.Order.Field
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Data.Set.Function
 
