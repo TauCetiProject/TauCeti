@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.Analysis.MellinInversion
 public import TauCeti.Analysis.MellinTransform.SmoothCutoff
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 

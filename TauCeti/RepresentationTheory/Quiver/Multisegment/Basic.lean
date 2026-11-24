@@ -46,6 +46,8 @@ occurrence while dropping singletons, `shift` translates every occurrence, and
 * `TauCeti.Multisegment.rightTruncate`: right shortening applied to every occurrence.
 * `TauCeti.Multisegment.shift`: integer translation applied to every occurrence.
 * `TauCeti.Multisegment.occurrenceInterval`: finite indexing of occurrences by `Fin m.card`.
+* `TauCeti.Multisegment.StandardIndex`: occurrence–degree labels `(i, a)` with `a` in the
+  `i`-th occurrence.
 
 ## Main results
 
@@ -57,6 +59,7 @@ occurrence while dropping singletons, `shift` translates every occurrence, and
 * `TauCeti.Multisegment.rightTruncate_shift`: right truncation commutes with translation.
 * `TauCeti.Multisegment.card_filter_occurrenceInterval_eq`: occurrence labels recover exact
   interval multiplicities and are invariant under label permutations.
+* `TauCeti.Multisegment.card_standardIndex`: there are `totalLength m` occurrence–degree labels.
 
 ## References
 
@@ -740,6 +743,49 @@ theorem card_filter_mem_occurrenceInterval (m : Multisegment) (a : ℤ) :
       Multiset.card_map]
   rw [Finset.card_def, Finset.filter_val]
   exact congrArg Multiset.card (Multiset.filter_congr fun _ _ => Iff.rfl)
+
+/-- The occurrence–degree labels of `m`: an occurrence label `i` together with a degree in the
+interval `m.occurrenceInterval i`. They index the standard basis of the standard graded space
+of `m`. -/
+abbrev StandardIndex (m : Multisegment) : Type :=
+  Σ i : Fin m.card, Set.Icc (occurrenceInterval m i).fst (occurrenceInterval m i).snd
+
+/-- The occurrence–degree label `(i, a)` of a degree `a` in the `i`-th occurrence of `m`. -/
+def StandardIndex.mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : StandardIndex m :=
+  ⟨i, a, Set.mem_Icc.2 (NonemptyInterval.mem_def.1 h)⟩
+
+/-- The occurrence of the label `(i, a)` is `i`. -/
+@[simp]
+theorem StandardIndex.fst_mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : (StandardIndex.mk i a h).1 = i :=
+  (rfl)
+
+/-- The degree of the label `(i, a)` is `a`. -/
+@[simp]
+theorem StandardIndex.coe_snd_mk {m : Multisegment} (i : Fin m.card) (a : ℤ)
+    (h : a ∈ occurrenceInterval m i) : ((StandardIndex.mk i a h).2 : ℤ) = a :=
+  (rfl)
+
+/-- The degree of an occurrence–degree label lies in the interval of its occurrence. -/
+theorem StandardIndex.mem_occurrenceInterval {m : Multisegment} (x : StandardIndex m) :
+    (x.2 : ℤ) ∈ occurrenceInterval m x.1 :=
+  NonemptyInterval.mem_def.2 (Set.mem_Icc.1 x.2.property)
+
+/-- An occurrence–degree label is rebuilt from its occurrence and its degree. -/
+@[simp]
+theorem StandardIndex.mk_fst_snd {m : Multisegment} (x : StandardIndex m) :
+    StandardIndex.mk x.1 x.2 x.mem_occurrenceInterval = x :=
+  (rfl)
+
+/-- The number of occurrence–degree labels is the total length of `m`. It takes precedence over
+`Fintype.card_sigma`, which would expand the count into a sum over occurrences. -/
+@[simp high]
+theorem card_standardIndex (m : Multisegment) :
+    Fintype.card (StandardIndex m) = totalLength m := by
+  rw [Fintype.card_sigma, ← sum_length_occurrenceInterval]
+  exact Finset.sum_congr rfl fun i _ ↦ by
+    rw [IntInterval.length_eq_card_Icc, ← Fintype.card_Icc]
 
 end Multisegment
 

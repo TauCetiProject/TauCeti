@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Algebra
+public import Mathlib.RingTheory.AdicCompletion.RingHom
 
 /-!
 # Adic completions along algebra homomorphisms
@@ -33,6 +34,10 @@ at a prime.
   with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
   `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.congrₐ_of`, and the laws
   `AdicCompletion.congrₐ_refl`, `AdicCompletion.congrₐ_symm` and `AdicCompletion.congrₐ_trans`.
+* `IsAdicComplete.liftAlgHomSucc`: the algebra map to an `I`-adically complete ring assembled from
+  compatible algebra maps to the quotients `S ⧸ I ^ (n + 1)`, a reindexing of Mathlib's
+  `IsAdicComplete.liftAlgHom` convenient when level `0` should be `S ⧸ I` rather than the zero
+  ring, with `IsAdicComplete.mk_liftAlgHomSucc`.
 -/
 
 public section
@@ -247,3 +252,39 @@ theorem congrₐ_symm_of (e : S ≃ₐ[R] S') (he : I.map e = I') (x : S') :
   mapₐ_of (e.symm : S' →ₐ[R] S) (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge) x
 
 end AdicCompletion
+
+namespace IsAdicComplete
+
+variable {R S A : Type*} [CommRing R] [CommRing S] [Algebra R S] (I : Ideal S) [CommRing A]
+  [Algebra R A] (f : ∀ n : ℕ, A →ₐ[R] S ⧸ I ^ (n + 1))
+  (hf : ∀ {m n : ℕ} (h : m ≤ n),
+    (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right (I := I) (Nat.succ_le_succ h))).comp (f n) =
+      f m)
+
+include hf in
+/-- A family of algebra maps to the quotients `S ⧸ I ^ (n + 1)`, compatible with the transitions,
+gives a family to the quotients `S ⧸ I ^ n`, compatible as in `IsAdicComplete.liftAlgHom`. -/
+private theorem factorₐ_comp_factorₐ_comp {m n : ℕ} (h : m ≤ n) :
+    (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right (I := I) h)).comp
+        ((Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right n.le_succ)).comp (f n)) =
+      (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right m.le_succ)).comp (f m) := by
+  rw [← hf h, ← AlgHom.comp_assoc, ← AlgHom.comp_assoc, Ideal.Quotient.factorₐ_comp,
+    Ideal.Quotient.factorₐ_comp]
+
+variable [IsAdicComplete I S]
+
+/-- The algebra map to an `I`-adically complete ring assembled from compatible algebra maps to its
+quotients `S ⧸ I ^ (n + 1)`. This is Mathlib's `IsAdicComplete.liftAlgHom`, reindexed so that the
+family starts at `S ⧸ I`. -/
+noncomputable def liftAlgHomSucc : A →ₐ[R] S :=
+  liftAlgHom I (fun n ↦ (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right n.le_succ)).comp (f n))
+    (factorₐ_comp_factorₐ_comp I f hf)
+
+/-- Modulo `I ^ (n + 1)`, the map `liftAlgHomSucc I f hf` is `f n`. -/
+@[simp]
+theorem mk_liftAlgHomSucc (n : ℕ) (x : A) :
+    Ideal.Quotient.mk (I ^ (n + 1)) (liftAlgHomSucc I f hf x) = f n x := by
+  rw [liftAlgHomSucc, mk_liftAlgHom _ _ (factorₐ_comp_factorₐ_comp I f hf), AlgHom.comp_apply,
+    ← hf n.le_succ, AlgHom.comp_apply]
+
+end IsAdicComplete
