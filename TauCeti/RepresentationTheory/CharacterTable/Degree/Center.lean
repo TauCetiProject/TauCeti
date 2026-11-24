@@ -144,9 +144,10 @@ private theorem finrank_mul_pow_dvd_aux (ρ : Representation k H V) [ρ.IsIrredu
         rintro _ ⟨p, rfl⟩ w
         induction w using TensorProduct.inductionOn with
         | tmul v w =>
-          rw [antidiagonalHom_apply, externalTensor_apply, TensorProduct.map_tmul, map_mul,
-            mul_apply_eq_comp, hAσ _ p.2.property, ← map_inv, hισ, hlam, ← TensorProduct.smul_tmul,
-            smul_smul, hinv, one_smul]
+          -- `ι(z)⁻¹` acts on `W` by `λ(z)⁻¹`, cancelling the scalar `λ(z)` of `z` on `V`
+          have hσinv : σ (ι p.1)⁻¹ w = lam p.1⁻¹ • w := by rw [← map_inv, hισ]
+          simp [antidiagonalHom_apply, hAσ _ p.2.property, hσinv, hlam,
+            TensorProduct.smul_tmul', smul_smul, hinv]
         | add x y hx hy => simp_all)
     rw [Module.finrank_tensorProduct, card_range_antidiagonalHom, Nat.card_prod] at key
     calc finrank k W * finrank k V ^ (m + 1) * (Nat.card A * Nat.card Z ^ (m + 1))
