@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
 import Mathlib.Analysis.Matrix.Hermitian
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Data.Matrix.DotProduct
 
@@ -93,10 +94,10 @@ theorem sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one (hβ : β ≠ 1) (
         gaussianEnsemble β n (Pi.single ab 1) k' l' =
       if k = l' ∧ l = k' then (n : ℂ)⁻¹ else 0 := by
   have hs : ((Real.sqrt 2 : ℝ) : ℂ)⁻¹ ^ 2 = 1 / 2 := by
-    rw [inv_pow, Complex.ofReal_sqrt_sq zero_le_two]
+    rw [inv_pow, Complex.sq_ofReal_sqrt zero_le_two]
     norm_num
   have hn : ((Real.sqrt n : ℝ) : ℂ)⁻¹ ^ 2 = (n : ℂ)⁻¹ := by
-    rw [inv_pow, Complex.ofReal_sqrt_sq n.cast_nonneg, Complex.ofReal_natCast]
+    rw [inv_pow, Complex.sq_ofReal_sqrt n.cast_nonneg, Complex.ofReal_natCast]
   have hI := Complex.I_sq
   simp only [gaussianEnsemble_apply, hβ, ite_false, Pi.single_apply]
   -- Split on the position of `(k, l)` and of `(k', l')` relative to the diagonal, evaluate the sum
@@ -119,9 +120,9 @@ theorem sum_gaussianEnsemble_one_single_apply_mul_apply (k l k' l' : Fin n) :
         gaussianEnsemble 1 n (Pi.single ab 1) k' l' =
       (n : ℂ)⁻¹ * ((if k = l' ∧ l = k' then 1 else 0) + if k = k' ∧ l = l' then 1 else 0) := by
   have hs : ((Real.sqrt 2 : ℝ) : ℂ) ^ 2 = 2 := by
-    rw [Complex.ofReal_sqrt_sq zero_le_two, Complex.ofReal_ofNat]
+    rw [Complex.sq_ofReal_sqrt zero_le_two, Complex.ofReal_ofNat]
   have hn : ((Real.sqrt n : ℝ) : ℂ)⁻¹ ^ 2 = (n : ℂ)⁻¹ := by
-    rw [inv_pow, Complex.ofReal_sqrt_sq n.cast_nonneg, Complex.ofReal_natCast]
+    rw [inv_pow, Complex.sq_ofReal_sqrt n.cast_nonneg, Complex.ofReal_natCast]
   simp only [gaussianEnsemble_apply, ite_true, Pi.single_apply]
   -- The same case analysis as for `β ≠ 1`, with real entries.
   split_ifs <;>
