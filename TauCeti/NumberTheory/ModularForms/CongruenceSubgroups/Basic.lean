@@ -69,6 +69,8 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.ker_map_intCast_zmod`, `CongruenceSubgroup.map_eq_one_of_mem_Gamma`,
   `CongruenceSubgroup.mem_Gamma_iff_dvd`: `Γ(N)` is the kernel of reduction modulo `N`, and its
   membership is equivalent to four entrywise integer divisibilities (valid at `N = 0` as well).
+* `CongruenceSubgroup.instNormalGamma`: Mathlib's `CongruenceSubgroup.Gamma_normal` as an
+  instance, so quotients by `Γ(N)` and by its intersections with subgroups are groups.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
   `(N : ℤ) ∣ A 1 0` rather than as a `ZMod N` congruence, for a proof that wants to name the
   quotient. Valid at every level, `N = 0` included.
@@ -226,6 +228,12 @@ theorem map_eq_one_of_mem_Gamma {N : ℕ} {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma 
 /-- The principal congruence subgroup `Γ(N)` is the kernel of entrywise reduction modulo `N`. -/
 theorem ker_map_intCast_zmod (N : ℕ) :
     (map (Int.castRingHom (ZMod N)) : SL(2, ℤ) →* SL(2, ZMod N)).ker = Gamma N := (rfl)
+
+/-- The principal congruence subgroup `Γ(N)` is normal in `SL(2, ℤ)`, being the kernel of
+reduction modulo `N`; as an instance, it makes `Γ ⧸ (Γ ∩ Γ(N))` a group for every subgroup
+`Γ`. -/
+instance instNormalGamma (N : ℕ) : (Gamma N).Normal :=
+  Gamma_normal N
 
 /-- **Membership in `Γ(N)` as four integer divisibilities**, the principal-subgroup counterpart of
 `mem_Gamma0_iff_dvd` and `mem_Gamma1_iff_dvd_lowerRow`. Valid at every `N`, `N = 0` included. -/
@@ -472,7 +480,6 @@ matrix, since `Γ(N)` is normal in `SL(2, ℤ)`. -/
 theorem Gamma_map_inv_conjAct_eq (N : ℕ) (γ : SL(2, ℤ)) :
     ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Gamma N).map (mapGL ℝ) =
       (Gamma N).map (mapGL ℝ) := by
-  let := Gamma_normal N
   apply Subgroup.conjAct_pointwise_smul_eq_self
   apply Subgroup.inv_mem
   exact Subgroup.le_normalizer_map (H := Gamma N) (mapGL ℝ)
@@ -687,9 +694,8 @@ theorem T_zpow_mem_Gamma1 (N : ℕ) (n : ℤ) : ModularGroup.T ^ n ∈ Gamma1 N 
 
 /-- The normal closure of `T ^ N` in `SL(2, ℤ)` is contained in `Γ(N)` for every `N : ℕ`. -/
 theorem normalClosure_T_pow_le_Gamma (N : ℕ) :
-    Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) ≤ Gamma N := by
-  have := Gamma_normal N
-  exact Subgroup.normalClosure_le_normal
+    Subgroup.normalClosure ({ModularGroup.T ^ N} : Set SL(2, ℤ)) ≤ Gamma N :=
+  Subgroup.normalClosure_le_normal
     (Set.singleton_subset_iff.mpr (by simpa using ModularGroup_T_pow_mem_Gamma N N dvd_rfl))
 
 /-! ## The index of `Γ₀(pᵏ)`
@@ -995,7 +1001,6 @@ theorem Gamma_gcd_eq_sup (a b : ℕ) : Gamma (Nat.gcd a b) = Gamma a ⊔ Gamma b
   have : NeZero (Nat.lcm a b) := ⟨Nat.lcm_ne_zero (NeZero.ne a) (NeZero.ne b)⟩
   refine le_antisymm ?_ (sup_le (Gamma_le_Gamma_of_dvd (Nat.gcd_dvd_left a b))
     (Gamma_le_Gamma_of_dvd (Nat.gcd_dvd_right a b)))
-  have : (Gamma a).Normal := Gamma_normal a
   intro γ hγ
   rw [Subgroup.mem_sup_of_normal_left]
   obtain ⟨M, hMa, hMb⟩ := exists_matrix_modEq_one_modEq_of_mem_Gamma_gcd hγ
@@ -1102,7 +1107,6 @@ theorem exists_mul_eq_of_mem_Gamma1_gcd {a b : ℕ} {γ : SL(2, ℤ)}
     obtain ⟨h00, h11, h10⟩ := (Gamma1_mem _ _).mp hγ
     rw [Gamma_mem]
     simp [Matrix.mul_apply, Fin.sum_univ_two, ModularGroup.coe_T_zpow, h00, h11, h10]
-  have : (Gamma a).Normal := Gamma_normal a
   rw [Gamma_gcd_eq_sup, Subgroup.mem_sup_of_normal_left] at hδ
   obtain ⟨y, hy, z, hz, hyz⟩ := hδ
   refine ⟨ModularGroup.T ^ (γ 0 1) * y,
@@ -1132,7 +1136,6 @@ theorem Gamma0_relIndex_Gamma0_of_coprime {a b : ℕ} (hab : Nat.Coprime a b) :
   · obtain rfl := Nat.coprime_zero_left _ |>.mp hab
     simp
   have : NeZero a := ⟨ha⟩
-  have : (Gamma b).Normal := Gamma_normal b
   -- `Γ(a) ⊔ Γ(b) = Γ(1) = ⊤` and `Γ(a) ≤ Γ₀(a)`, so `Γ₀(a)` and `Γ(b)` generate everything
   have hsup : Gamma0 a ⊔ Gamma b = ⊤ := top_unique <| by
     rw [← Gamma_one_top, ← hab.gcd_eq_one, Gamma_gcd_eq_sup]
@@ -1244,7 +1247,6 @@ theorem IsCongruenceSubgroup.withCenter {Γ : Subgroup SL(2, ℤ)}
 theorem isCongruenceSubgroup_normalCore_iff {Γ : Subgroup SL(2, ℤ)} :
     IsCongruenceSubgroup Γ.normalCore ↔ IsCongruenceSubgroup Γ :=
   ⟨isCongruenceSubgroup_trans _ _ Γ.normalCore_le, fun ⟨N, hN, hle⟩ ↦
-    have := Gamma_normal N
     ⟨N, hN, Subgroup.normal_le_normalCore.mpr hle⟩⟩
 
 /-- The intersection of all principal congruence subgroups `Γ(N)` (`N ≠ 0`) is trivial:

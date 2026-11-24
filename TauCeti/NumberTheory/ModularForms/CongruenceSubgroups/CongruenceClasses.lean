@@ -23,9 +23,8 @@ For `Γ = Γ(N)` and `A = 𝔽_q` with the trivial action, characters are the cl
 cohomology `H¹(Γ(N), 𝔽_q)`, and the congruence classes are the subspace `H¹_cong(Γ(N), 𝔽_q)` of
 Calegari–Dimitrov–Tang. Ihara-type theorems at principal level do not assert that the
 difference of the two degeneracy restrictions is injective on `H¹`; they assert that its kernel
-consists of congruence classes, which is where this subspace is used. It is neither all of `H¹`
-nor its parabolic part: for `Γ(3)` and `𝔽₅` coefficients it is zero while `H¹` is not
-(Calegari–Dimitrov–Tang, §4.5).
+consists of congruence classes, which is where this subspace is used. It is not all of `H¹`:
+for `Γ(3)` and `𝔽₅` coefficients it is zero while `H¹` is not (Calegari–Dimitrov–Tang, §4.5).
 
 ## Main definitions
 
@@ -64,12 +63,6 @@ public section
 open scoped MatrixGroups
 
 namespace CongruenceSubgroup
-
-/-- The principal congruence subgroup `Γ(N)` is normal in `SL(2, ℤ)`, being the kernel of
-reduction modulo `N`; as an instance, it makes `Γ ⧸ (Γ ∩ Γ(N))` a group for every subgroup
-`Γ`. -/
-instance instNormalGamma (N : ℕ) : (Gamma N).Normal :=
-  Gamma_normal N
 
 variable (Γ : Subgroup SL(2, ℤ)) (R A : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
 
@@ -186,8 +179,8 @@ noncomputable def congruenceClassesOfLevelEquiv (m : ℕ) :
     (mem_congruenceClassesOfLevel_iff_le_ker.mp ψ.property))
   left_inv φ := by
     ext
-    rfl
-  right_inv _ := rfl
+    simp [QuotientGroup.lift_mk]
+  right_inv ψ := Subtype.ext (AddMonoidHom.ext fun g ↦ by simp [QuotientGroup.lift_mk])
 
 @[simp]
 theorem congruenceClassesOfLevelEquiv_apply_apply (m : ℕ)
@@ -201,8 +194,8 @@ theorem congruenceClassesOfLevelEquiv_symm_apply_apply (m : ℕ)
     (ψ : congruenceClassesOfLevel Γ R A m) (g : Γ) :
     (congruenceClassesOfLevelEquiv Γ R A m).symm ψ
         (Additive.ofMul (g : Γ ⧸ (Gamma m).subgroupOf Γ)) =
-      (ψ : Additive Γ →+ A) (Additive.ofMul g) :=
-  (rfl)
+      (ψ : Additive Γ →+ A) (Additive.ofMul g) := by
+  simp [congruenceClassesOfLevelEquiv, QuotientGroup.lift_mk]
 
 /-- **Congruence classes are the pullbacks of characters of finite congruence quotients.** -/
 theorem mem_congruenceClasses_iff_exists_eq_comp {ψ : Additive Γ →+ A} :
