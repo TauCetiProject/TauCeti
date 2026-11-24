@@ -689,7 +689,8 @@ theorem lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top
     (h : center R L ⊔ derivedSeries R L 1 = ⊤) :
     ⁅derivedSeries R L 1, derivedSeries R L 1⁆ = derivedSeries R L 1 := by
   refine le_antisymm (LieSubmodule.lie_le_right _ _) ?_
-  have hDtop : derivedSeries R L 1 = ⁅(⊤ : LieIdeal R L), (⊤ : LieIdeal R L)⁆ := rfl
+  have hDtop : derivedSeries R L 1 = ⁅(⊤ : LieIdeal R L), (⊤ : LieIdeal R L)⁆ := by
+    rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
   rw [hDtop]
   refine (LieSubmodule.lie_le_iff _ _ _).2 fun y _ z _ ↦ ?_
   obtain ⟨zy, hzy, dy, hdy, rfl⟩ := exists_mem_center_add_mem_derivedSeries_of_sup_eq_top h y
