@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.GLTwo.CompactCartan
+public import TauCeti.RepresentationTheory.GL2.CompactCartan
 public import TauCeti.Algebra.Lie.Sl2.Coordinates
 public import TauCeti.LinearAlgebra.Finsupp.Supported
 
@@ -37,11 +37,11 @@ give explicit `𝔤𝔩₂(ℂ)`-modules, such as the discrete series of `GL₂(
 
 * `TauCeti.lie_compactCartanH_weightVector`, `TauCeti.lie_compactCartanX_weightVector`,
   `TauCeti.lie_compactCartanY_weightVector`: the normalization above;
-  `TauCeti.lie_glTwoRotationGenerator_weightVector`: `J v_ℓ = iℓ v_ℓ`, so that `r_θ = exp(θJ)` acts
+  `TauCeti.lie_gl2RotationGenerator_weightVector`: `J v_ℓ = iℓ v_ℓ`, so that `r_θ = exp(θJ)` acts
   on `v_ℓ` by `e^{iℓθ}`.
 * `TauCeti.CompactWeightModule.one_lie_lieSubmodule`: the central scalar of every Lie submodule of
   `TauCeti.CompactWeightModule k μ` is `μ`.
-* `TauCeti.CompactWeightModule.glTwoCasimir_lieSubmodule`: the Casimir operator of every Lie
+* `TauCeti.CompactWeightModule.gl2Casimir_lieSubmodule`: the Casimir operator of every Lie
   submodule of `TauCeti.CompactWeightModule k μ` is `k (k - 2) / 4`.
 * `TauCeti.CompactWeightModule.reflection_lie`: the reflection intertwines the action of `M` with
   that of `A M A⁻¹`; `TauCeti.CompactWeightModule.reflection_mem_weightLieSubmodule_iff`: it maps
@@ -301,9 +301,9 @@ theorem lie_weightVector (M : Matrix (Fin 2) (Fin 2) ℂ) (ℓ : ℤ) :
   module
 
 /-- `J v_ℓ = iℓ v_ℓ`, the derivative of `r_θ v_ℓ = e^{iℓθ} v_ℓ`. -/
-theorem lie_glTwoRotationGenerator_weightVector (ℓ : ℤ) :
-    ⁅glTwoRotationGenerator, weightVector k μ ℓ⁆ = (I * ℓ) • weightVector k μ ℓ := by
-  have hJ : glTwoRotationGenerator = I • compactCartanH := by
+theorem lie_gl2RotationGenerator_weightVector (ℓ : ℤ) :
+    ⁅gl2RotationGenerator, weightVector k μ ℓ⁆ = (I * ℓ) • weightVector k μ ℓ := by
+  have hJ : gl2RotationGenerator = I • compactCartanH := by
     rw [compactCartanH_eq, smul_smul]
     simp
   rw [hJ, smul_lie, lie_compactCartanH_weightVector, smul_smul]
@@ -312,10 +312,10 @@ theorem lie_glTwoRotationGenerator_weightVector (ℓ : ℤ) :
 
 /-- **The Casimir operator acts by `k(k - 2)/4`** on every vector of
 `TauCeti.CompactWeightModule k μ`. -/
-theorem glTwoCasimir_compactWeightModule :
-    glTwoCasimir (CompactWeightModule k μ) = (k * (k - 2) / 4) • 1 := by
+theorem gl2Casimir_compactWeightModule :
+    gl2Casimir (CompactWeightModule k μ) = (k * (k - 2) / 4) • 1 := by
   refine (weightBasis k μ).ext fun ℓ ↦ ?_
-  simp only [weightBasis_apply, glTwoCasimir_apply, LinearMap.smul_apply,
+  simp only [weightBasis_apply, gl2Casimir_apply, LinearMap.smul_apply,
     lie_compactCartanH_weightVector, lie_compactCartanX_weightVector,
     lie_compactCartanY_weightVector, lie_smul, sub_add_cancel, add_sub_cancel_right, smul_smul,
     one_apply_eq_self]
@@ -328,11 +328,11 @@ namespace CompactWeightModule
 
 /-- The Casimir operator acts by `k(k - 2)/4` on every Lie submodule of
 `TauCeti.CompactWeightModule k μ`. -/
-theorem glTwoCasimir_lieSubmodule
+theorem gl2Casimir_lieSubmodule
     (N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) (CompactWeightModule k μ)) (v : N) :
-    glTwoCasimir N v = (k * (k - 2) / 4) • v := by
+    gl2Casimir N v = (k * (k - 2) / 4) • v := by
   ext
-  rw [coe_glTwoCasimir_lieSubmodule, glTwoCasimir_compactWeightModule, LieSubmodule.coe_smul,
+  rw [coe_gl2Casimir_lieSubmodule, gl2Casimir_compactWeightModule, LieSubmodule.coe_smul,
     LinearMap.smul_apply, one_apply_eq_self]
 
 /-- The identity matrix acts by `μ` on every Lie submodule of `TauCeti.CompactWeightModule k μ`. -/

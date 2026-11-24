@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.GLTwo.CompactWeightModule
+public import TauCeti.RepresentationTheory.GL2.CompactWeightModule
 
 /-!
 # The discrete series of `GL₂(ℝ)` as explicit `𝔤𝔩₂(ℂ)`-modules
@@ -36,15 +36,15 @@ definitions accept every `k : ℕ`, but only `k ≥ 1` gives a discrete series o
 ## Main results
 
 * `TauCeti.one_lie_discreteSeries`: the central scalar of `D_k(μ)` is `μ`.
-* `TauCeti.glTwoCasimir_discreteSeries`: the Casimir operator of `D_k(μ)` is `k (k - 2) / 4`.
+* `TauCeti.gl2Casimir_discreteSeries`: the Casimir operator of `D_k(μ)` is `k (k - 2) / 4`.
 * `TauCeti.discreteSeries_eq_sup`: `D_k(μ)` is the sum of its two rays.
 * `TauCeti.CompactWeightModule.reflection_mem_negativeDiscreteSeries_iff`: the reflection
   interchanges the two rays.
 
 Explicit checks: `TauCeti.lie_compactCartanY_weightVector_self`,
 `TauCeti.lie_compactCartanX_weightVector_self`, `TauCeti.lie_compactCartanY_weightVector_add_two`,
-`TauCeti.lie_compactCartanX_weightVector_neg_self`, `TauCeti.glTwoCasimir_discreteSeries_two`
-and `TauCeti.glTwoCasimir_discreteSeries_one`.
+`TauCeti.lie_compactCartanX_weightVector_neg_self`, `TauCeti.gl2Casimir_discreteSeries_two`
+and `TauCeti.gl2Casimir_discreteSeries_one`.
 
 ## Implementation notes
 
@@ -221,9 +221,9 @@ theorem weightVector_mem_negativeDiscreteSeries {k : ℕ} {ℓ : ℤ}
   weightVector_mem_weightLieSubmodule hℓ
 
 /-- **The Casimir operator of `D_k(μ)` is `k (k - 2) / 4`.** -/
-theorem glTwoCasimir_discreteSeries (k : ℕ) (v : discreteSeries k μ) :
-    glTwoCasimir (discreteSeries k μ) v = ((k : ℂ) * (k - 2) / 4) • v :=
-  CompactWeightModule.glTwoCasimir_lieSubmodule _ v
+theorem gl2Casimir_discreteSeries (k : ℕ) (v : discreteSeries k μ) :
+    gl2Casimir (discreteSeries k μ) v = ((k : ℂ) * (k - 2) / 4) • v :=
+  CompactWeightModule.gl2Casimir_lieSubmodule _ v
 
 /-- **The central scalar of `D_k(μ)` is `μ`.** -/
 theorem one_lie_discreteSeries (k : ℕ) (v : discreteSeries k μ) :
@@ -287,15 +287,15 @@ theorem lie_compactCartanX_weightVector_neg_self (k : ℕ) :
 
 /-- `D₂` has Casimir `0`, the infinitesimal character of the trivial representation; the scalar
 `(k² - 1) / 4` would give `3 / 4`. -/
-theorem glTwoCasimir_discreteSeries_two (v : discreteSeries 2 μ) :
-    glTwoCasimir (discreteSeries 2 μ) v = 0 := by
-  rw [glTwoCasimir_discreteSeries]
+theorem gl2Casimir_discreteSeries_two (v : discreteSeries 2 μ) :
+    gl2Casimir (discreteSeries 2 μ) v = 0 := by
+  rw [gl2Casimir_discreteSeries]
   norm_num
 
 /-- The limit `D₁` has Casimir `-1/4`. -/
-theorem glTwoCasimir_discreteSeries_one (v : discreteSeries 1 μ) :
-    glTwoCasimir (discreteSeries 1 μ) v = (-1 / 4 : ℂ) • v := by
-  rw [glTwoCasimir_discreteSeries]
+theorem gl2Casimir_discreteSeries_one (v : discreteSeries 1 μ) :
+    gl2Casimir (discreteSeries 1 μ) v = (-1 / 4 : ℂ) • v := by
+  rw [gl2Casimir_discreteSeries]
   norm_num
 
 end TauCeti

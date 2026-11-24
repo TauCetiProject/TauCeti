@@ -28,9 +28,9 @@ is a basis of `𝔤𝔩₂(ℂ)`; this file gives the coordinates in that basis,
   basis, with `TauCeti.isSl2Triple_compactCartan`.
 * `TauCeti.compactCoordH`, `TauCeti.compactCoordX`, `TauCeti.compactCoordY`,
   `TauCeti.compactCoordOne`: the coordinates in the basis `H_c, X_c, Y_c, 1`.
-* `TauCeti.glTwoRotationGenerator`: `J`, the generator of the rotations `r_θ = exp(θJ)`.
+* `TauCeti.gl2RotationGenerator`: `J`, the generator of the rotations `r_θ = exp(θJ)`.
 * `TauCeti.compactCartanReflection`: the reflection `A = diag(1, -1)`.
-* `TauCeti.glTwoCasimir`: the Casimir operator `Ω = (H_c² + 2X_cY_c + 2Y_cX_c) / 4` of a
+* `TauCeti.gl2Casimir`: the Casimir operator `Ω = (H_c² + 2X_cY_c + 2Y_cX_c) / 4` of a
   `𝔤𝔩₂(ℂ)`-module.
 
 ## Main results
@@ -39,7 +39,7 @@ is a basis of `𝔤𝔩₂(ℂ)`; this file gives the coordinates in that basis,
   coordinates; `TauCeti.compactCoordH_lie` and its siblings compute the coordinates of a bracket.
 * `TauCeti.compactCoordX_compactCartanReflection_mul_mul` and its siblings: conjugation by `A`
   exchanges `X_c` and `Y_c` and negates `H_c`.
-* `TauCeti.coe_glTwoCasimir_lieSubmodule`: the Casimir operator of a Lie submodule is the
+* `TauCeti.coe_gl2Casimir_lieSubmodule`: the Casimir operator of a Lie submodule is the
   restriction of that of the ambient module.
 
 ## Implementation notes
@@ -286,16 +286,16 @@ theorem isSl2Triple_compactCartan : IsSl2Triple compactCartanH compactCartanX co
   lie_h_f_nsmul := by rw [lie_compactCartanH_compactCartanY, ofNat_smul_eq_nsmul]
 
 /-- `J = E₁₂ - E₂₁`, the generator of the rotations `r_θ = exp(θJ)` in `GL₂(ℝ)`. -/
-def glTwoRotationGenerator : Matrix (Fin 2) (Fin 2) ℂ := !![0, 1; -1, 0]
+def gl2RotationGenerator : Matrix (Fin 2) (Fin 2) ℂ := !![0, 1; -1, 0]
 
 /-- The entries of `J`. -/
-theorem glTwoRotationGenerator_def : glTwoRotationGenerator = !![0, 1; -1, 0] :=
+theorem gl2RotationGenerator_def : gl2RotationGenerator = !![0, 1; -1, 0] :=
   (rfl)
 
 /-- `H_c = -iJ`. -/
-theorem compactCartanH_eq : compactCartanH = -I • glTwoRotationGenerator := by
+theorem compactCartanH_eq : compactCartanH = -I • gl2RotationGenerator := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [compactCartanH, glTwoRotationGenerator]
+  fin_cases i <;> fin_cases j <;> simp [compactCartanH, gl2RotationGenerator]
 
 /-- The reflection `A = diag(1, -1)` of `O(2)`, which normalizes the compact Cartan subalgebra. -/
 def compactCartanReflection : Matrix (Fin 2) (Fin 2) ℂ := !![1, 0; 0, -1]
@@ -327,7 +327,7 @@ theorem compactCartanY_eq :
 
 /-- The **Casimir operator** `Ω = (H_c² + 2 X_c Y_c + 2 Y_c X_c) / 4` of a `𝔤𝔩₂(ℂ)`-module: half of
 the Casimir operator `TauCeti.sl2Casimir` of the compact triple. -/
-def glTwoCasimir (V : Type*) [AddCommGroup V] [Module ℂ V]
+def gl2Casimir (V : Type*) [AddCommGroup V] [Module ℂ V]
     [LieRingModule (Matrix (Fin 2) (Fin 2) ℂ) V] [LieModule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V] :
     Module.End ℂ V :=
   (2⁻¹ : ℂ) • sl2Casimir ℂ compactCartanH compactCartanX compactCartanY V
@@ -338,17 +338,17 @@ variable {V : Type*} [AddCommGroup V] [Module ℂ V] [LieRingModule (Matrix (Fin
   [LieModule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V]
 
 /-- `Ω v = (H_c² v + 2 X_c Y_c v + 2 Y_c X_c v) / 4`. -/
-theorem glTwoCasimir_apply (v : V) :
-    glTwoCasimir V v = (4⁻¹ : ℂ) • (⁅compactCartanH, ⁅compactCartanH, v⁆⁆ +
+theorem gl2Casimir_apply (v : V) :
+    gl2Casimir V v = (4⁻¹ : ℂ) • (⁅compactCartanH, ⁅compactCartanH, v⁆⁆ +
       (2 : ℂ) • ⁅compactCartanX, ⁅compactCartanY, v⁆⁆ +
       (2 : ℂ) • ⁅compactCartanY, ⁅compactCartanX, v⁆⁆) := by
-  rw [glTwoCasimir, LinearMap.smul_apply, sl2Casimir_apply]
+  rw [gl2Casimir, LinearMap.smul_apply, sl2Casimir_apply]
   module
 
 /-- The Casimir operator of a Lie submodule is the restriction of that of the ambient module. -/
-theorem coe_glTwoCasimir_lieSubmodule {N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V}
-    (v : N) : (glTwoCasimir N v : V) = glTwoCasimir V (v : V) := by
-  simp [glTwoCasimir_apply]
+theorem coe_gl2Casimir_lieSubmodule {N : LieSubmodule ℂ (Matrix (Fin 2) (Fin 2) ℂ) V}
+    (v : N) : (gl2Casimir N v : V) = gl2Casimir V (v : V) := by
+  simp [gl2Casimir_apply]
 
 end GlTwoCasimir
 
