@@ -44,7 +44,7 @@ theorem MemLp.uniformIntegrable_condExp (hf : MemLp f p μ) (hp : 1 ≤ p) (hp_t
   have hui := hint.uniformIntegrable_condExp hℱ
   refine ⟨unifIntegrable_iff.2 ?_, ?_⟩
   · intro ε hε
-    obtain ⟨δ, hδ, hbound⟩ := unifIntegrable_iff.1 hui.1 (ε ^ p.toReal)
+    obtain ⟨δ, hδ, hbound⟩ := unifIntegrable_iff.1 hui.unifIntegrable (ε ^ p.toReal)
       (ENNReal.rpow_pos_of_nonneg hε hp_pos.le)
     refine ⟨δ, hδ, fun i s hs => ?_⟩
     apply (ENNReal.rpow_le_rpow_iff hp_pos).mp

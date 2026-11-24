@@ -233,7 +233,7 @@ theorem im_scaling_smul_smul_mul_im_scaling_smul_le [DiscreteTopology Γ] (D' : 
     exact _root_.Subgroup.smul_mem_pointwise_smul _ _ _ hx
   have hT : upperRightHom D.width ∈ Δ := by
     rw [← D.scaling_mul_generator_mul_inv]
-    exact hmem _ D.generator.2
+    exact hmem _ D.generator.property
   -- `σ g σ'⁻¹` conjugates the translation by the width of `D'` into `σ Γ σ⁻¹`
   have hh : D.scaling * g * D'.scaling⁻¹ * upperRightHom D'.width *
       (D.scaling * g * D'.scaling⁻¹)⁻¹ ∈ Δ := by
@@ -243,7 +243,7 @@ theorem im_scaling_smul_smul_mul_im_scaling_smul_le [DiscreteTopology Γ] (D' : 
       rw [← D'.scaling_mul_generator_mul_inv]
       group
     rw [heq]
-    exact hmem _ (Γ.mul_mem (Γ.mul_mem g.2 D'.generator.2) (Γ.inv_mem g.2))
+    exact hmem _ (Γ.mul_mem (Γ.mul_mem g.property D'.generator.property) (Γ.inv_mem g.property))
   -- it does not fix `∞`, because `g` does not carry the cusp of `D'` to the cusp of `D`
   have hinf : (D.scaling * g * D'.scaling⁻¹) • (∞ : OnePoint ℝ) ≠ ∞ := by
     rw [mul_smul, mul_smul, inv_smul_eq_iff.mpr D'.scaling_smul_cusp.symm,

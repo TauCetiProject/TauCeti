@@ -59,11 +59,11 @@ private theorem comp_mem_cochains (u : M' ⟶ M) (v : N ⟶ N') {p : ℤ}
     (hf : f ∈ dgRightModuleCochains (R := R) (ℳ := M.grading) (ℳN := N.grading) p) :
     v.toLinearMap ∘ₗ f ∘ₗ u.val.toLinearMap ∈
       dgRightModuleCochains (R := R) (ℳ := M'.grading) (ℳN := N'.grading) p := by
-  let u₀ := (dgRightModuleHomEquivZeroCocycles M'.isDGRightModule M.isDGRightModule u.val).1
-  let v₀ := (dgRightModuleHomEquivZeroCocycles N.isDGRightModule N'.isDGRightModule v).1
+  let u₀ := (dgRightModuleHomEquivZeroCocycles M'.isDGRightModule M.isDGRightModule u.val).val
+  let v₀ := (dgRightModuleHomEquivZeroCocycles N.isDGRightModule N'.isDGRightModule v).val
   let c := dgRightModuleCochains.comp v₀
     (dgRightModuleCochains.comp ⟨f, hf⟩ u₀ (add_zero p)) (zero_add p)
-  convert c.2 using 1
+  convert c.property using 1
   ext x
   simp only [c, dgRightModuleCochains.comp_apply, LinearMap.comp_apply,
     u₀, v₀, dgRightModuleHomEquivZeroCocycles_apply, DGRightModuleHom.coe_toLinearMap]
@@ -74,7 +74,7 @@ private def mapLinearMap (u : M' ⟶ M) (v : N ⟶ N') :
     induction f using DirectSum.Decomposition.inductionOn (grading 𝒜 B M.grading N.grading) with
     | zero => simp
     | @homogeneous p f =>
-      exact Submodule.mem_iSup_of_mem p (comp_mem_cochains u v (mem_grading_iff.1 f.2))
+      exact Submodule.mem_iSup_of_mem p (comp_mem_cochains u v (mem_grading_iff.1 f.property))
     | add f g hf hg =>
       simpa only [map_add, LinearMap.add_comp, LinearMap.comp_add] using add_mem hf hg⟩⟩
   map_add' f g := ext fun x ↦ by simp
@@ -105,8 +105,8 @@ noncomputable def map (u : M' ⟶ M) (v : N ⟶ N') :
     | @homogeneous p f =>
       apply ext
       intro x
-      simp only [differential_apply_of_mem _ _ (mapLinearMap_mem u v f.2),
-        mapLinearMap_apply, differential_apply_of_mem _ _ f.2, map_sub, map_zsmul_unit,
+      simp only [differential_apply_of_mem _ _ (mapLinearMap_mem u v f.property),
+        mapLinearMap_apply, differential_apply_of_mem _ _ f.property, map_sub, map_zsmul_unit,
         DGBimoduleCat.map_d, DGRightModuleCat.map_d]
     | add f g hf hg => simp only [map_add, hf, hg]
 

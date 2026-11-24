@@ -97,11 +97,11 @@ group law is `t₁ + t₂` modulo `I ^ (2 k)`. -/
 private noncomputable def gradedHom {k : ℕ} (hk : k ≠ 0) :
     filtration W I k →+ (I ^ k).toAddSubgroup ⧸
       (I ^ (k + 1)).toAddSubgroup.addSubgroupOf (I ^ k).toAddSubgroup where
-  toFun P := QuotientAddGroup.mk ⟨((P : FormalGroupPoint W I) : O), P.2⟩
+  toFun P := QuotientAddGroup.mk ⟨((P : FormalGroupPoint W I) : O), P.property⟩
   map_zero' := by simp [coe_zero, AddSubgroup.mem_addSubgroupOf]
   map_add' P Q := by
     rw [← QuotientAddGroup.mk_add, QuotientAddGroup.eq, AddSubgroup.mem_addSubgroupOf]
-    have h := W.formalAddEval_sub_add_mem (Fact.out : IsAdic I) P.2 Q.2
+    have h := W.formalAddEval_sub_add_mem (Fact.out : IsAdic I) P.property Q.property
     have hle : I ^ (2 * k) ≤ I ^ (k + 1) := Ideal.pow_le_pow_right (by omega)
     simpa [neg_add_eq_sub] using neg_mem (hle h)
 

@@ -12,9 +12,15 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 -- Non-public: the determinant surjection transfers vanishing cardinality for infinite fields.
 import Mathlib.SetTheory.Cardinal.NatCard
+-- Non-public: the count along a local surjection is the unit count of the matrix rings.
+import TauCeti.LinearAlgebra.Matrix.IdealEntries
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.RingTheory.LocalRing.RingHom
 
 /-!
-# The order of `GL₂` over a field
+# The order of general linear groups
+
+## Over a field
 
 Mathlib's `Matrix.card_GL_field` gives `|GL n 𝔽_q| = ∏ i, (qⁿ - qⁱ)`, which in size two reads
 `(q² - 1)(q² - q)`. That form is a product of differences, and every index computation in `GL₂`
@@ -27,8 +33,17 @@ The formulas use `q = Nat.card F` and require no chosen enumeration or finitenes
 For an infinite field, both the field and its general linear group have `Nat.card` equal to zero,
 so the same identities hold.
 
+## Along a local surjection
+
+A surjective ring homomorphism `f : R →+* S` that reflects units (`IsLocalHom f`), such as the
+reduction `ℤ/pᵏ → 𝔽_p`, multiplies the order of `GL n` by `|ker f| ^ (n²)`: an `n × n` matrix is
+invertible exactly when its image is, and the entrywise map on matrices is a surjective local
+homomorphism whose kernel is the matrices with entries in `ker f`.
+
 ## Main results
 
+* `Matrix.natCard_GL_eq_natCard_ker_pow_mul`: `|GL n R| = |ker f| ^ (n²) · |GL n S|` for a
+  surjective local homomorphism `f : R →+* S`.
 * `TauCeti.natCard_GL_fin_two`: `|GL₂(𝔽_q)| = (q - 1)² · q(q + 1)`.
 * `TauCeti.natCard_GL_fin_two_eq_sq_sub_one_mul`: `|GL₂(𝔽_q)| = (q² - 1) · q(q - 1)`.
 * `TauCeti.natCard_GL_fin_two_of_card_eq_two`: `|GL₂(𝔽₂)| = 6`.
@@ -75,3 +90,18 @@ theorem natCard_GL_fin_two_of_card_eq_two (hF : Nat.card F = 2) :
   norm_num
 
 end TauCeti
+
+namespace Matrix
+
+/-- **The order of `GL n` along a surjective local homomorphism.** If `f : R →+* S` is surjective
+and reflects units, then `|GL n R| = |ker f| ^ (n²) · |GL n S|`: this is the unit count of
+`RingHom.natCard_units_eq_natCard_ker_mul` for the entrywise map on matrices. -/
+theorem natCard_GL_eq_natCard_ker_pow_mul {n R S : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [CommRing S] (f : R →+* S) [IsLocalHom f] (hf : Function.Surjective f) :
+    Nat.card (GL n R) =
+      Nat.card (RingHom.ker f) ^ (Fintype.card n * Fintype.card n) * Nat.card (GL n S) := by
+  rw [← f.natCard_ker_mapMatrix]
+  exact (f.mapMatrix (m := n)).natCard_units_eq_natCard_ker_mul fun M ↦
+    ⟨of fun i j ↦ (hf (M i j)).choose, ext fun i j ↦ (hf (M i j)).choose_spec⟩
+
+end Matrix

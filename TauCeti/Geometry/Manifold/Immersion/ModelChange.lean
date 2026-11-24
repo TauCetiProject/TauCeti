@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Immersion
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 public import TauCeti.Geometry.Manifold.ModelWithCorners.ModelHomeomorph
 
 /-!
@@ -35,6 +37,11 @@ modelled on a half-space moves immersions between the two models.
   whose source model is linearly related to the old one preserves immersions.
 * `TauCeti.isImmersionAtOfComplement_diffeomorph_comp_of_image_range_eq` and
   `TauCeti.isImmersionAt_diffeomorph_comp_of_image_range_eq`: the same for postcomposing.
+* `Diffeomorph.isImmersionAtOfComplement_chartedSpaceComp`,
+  `Diffeomorph.isImmersionAt_chartedSpaceComp` and
+  `Diffeomorph.isSmoothEmbedding_chartedSpaceComp`: following the charts of the source with a
+  diffeomorphism of models `Φ` (`Homeomorph.chartedSpaceComp`), whose model is linearly related to
+  the old one, preserves immersions and embeddings.
 
 ## References
 
@@ -167,5 +174,47 @@ theorem isImmersionAt_diffeomorph_comp_of_image_range_eq [IsManifold J₁ n N₁
     {x : M} (h : IsImmersionAt I J n f x) : IsImmersionAt I J₁ n (e ∘ f) x :=
   (isImmersionAtOfComplement_diffeomorph_comp_of_image_range_eq B hB e hnm
     h.isImmersionAtOfComplement_complement).isImmersionAt
+
+/-! ### Changing the charts of the source -/
+
+/-- Following the charts of `M` with a `C^m` diffeomorphism of models `Φ : H ≃ₘ H₁`, `n ≤ m`,
+preserves the immersion normal form at a point, when the new model is related to the old one by a
+continuous linear equivalence `A : E₁ ≃L E` carrying the range of one model onto the range of the
+other. The complement stays the same. -/
+theorem _root_.Diffeomorph.isImmersionAtOfComplement_chartedSpaceComp [IsManifold I m M]
+    (Φ : H ≃ₘ^m⟮I, I₁⟯ H₁) (A : E₁ ≃L[𝕜] E) (hA : A '' range I₁ = range I) (hnm : n ≤ m)
+    {x : M} (h : IsImmersionAtOfComplement F I J n f x) :
+    letI := Φ.toHomeomorph.chartedSpaceComp M
+    IsImmersionAtOfComplement F I₁ J n f x := by
+  let := Φ.toHomeomorph.chartedSpaceComp M
+  have : IsManifold I₁ m M := Φ.isManifold_chartedSpaceComp M
+  have : IsManifold I₁ n M := .of_le hnm
+  -- The identity of `M` is a diffeomorphism from the new charts to the old ones.
+  have h' := isImmersionAtOfComplement_comp_diffeomorph_of_image_range_eq A hA
+    (Φ.chartedSpaceCompDiffeomorph M) hnm (x := x)
+    (by rwa [Diffeomorph.coe_chartedSpaceCompDiffeomorph])
+  rwa [Diffeomorph.coe_chartedSpaceCompDiffeomorph, Function.comp_id] at h'
+
+/-- Following the charts of `M` with a `C^m` diffeomorphism of models `Φ`, `n ≤ m`, whose model is
+linearly related to the old one preserves `C^n` immersions at a point. -/
+theorem _root_.Diffeomorph.isImmersionAt_chartedSpaceComp [IsManifold I m M]
+    (Φ : H ≃ₘ^m⟮I, I₁⟯ H₁) (A : E₁ ≃L[𝕜] E) (hA : A '' range I₁ = range I) (hnm : n ≤ m)
+    {x : M} (h : IsImmersionAt I J n f x) :
+    letI := Φ.toHomeomorph.chartedSpaceComp M
+    IsImmersionAt I₁ J n f x :=
+  letI := Φ.toHomeomorph.chartedSpaceComp M
+  (Φ.isImmersionAtOfComplement_chartedSpaceComp A hA hnm
+    h.isImmersionAtOfComplement_complement).isImmersionAt
+
+/-- Following the charts of `M` with a `C^m` diffeomorphism of models `Φ`, `n ≤ m`, whose model is
+linearly related to the old one preserves `C^n` embeddings. -/
+theorem _root_.Diffeomorph.isSmoothEmbedding_chartedSpaceComp [IsManifold I m M]
+    (Φ : H ≃ₘ^m⟮I, I₁⟯ H₁) (A : E₁ ≃L[𝕜] E) (hA : A '' range I₁ = range I) (hnm : n ≤ m)
+    (h : IsSmoothEmbedding I J n f) :
+    letI := Φ.toHomeomorph.chartedSpaceComp M
+    IsSmoothEmbedding I₁ J n f :=
+  letI := Φ.toHomeomorph.chartedSpaceComp M
+  ⟨IsImmersionOfComplement.isImmersion fun x ↦ Φ.isImmersionAtOfComplement_chartedSpaceComp A hA
+    hnm (h.isImmersion.isImmersionOfComplement_complement x), h.isEmbedding⟩
 
 end TauCeti

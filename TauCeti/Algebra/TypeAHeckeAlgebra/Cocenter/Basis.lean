@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Laurent.Basic
+import TauCeti.Algebra.Polynomial.Laurent.Regular
 import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Block
 import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
@@ -20,12 +22,12 @@ commutative ring `K`, with parameter `q` and `Q = q ^ 2`. The elements `ζ_λ`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.cycleBlock`), for `λ` a partition of `n`, span the cocenter
 `Hₙ / [Hₙ, Hₙ]` (`TauCeti.InfiniteTypeAHeckeAlgebra.span_cycleBlock_sup_commutatorSubmodule`).
 This file proves that their classes are linearly independent when `K` is an infinite integral
-domain, `Q ≠ 1`, and the product `∏_{d=1}^{n} [d]_Q` of the `Q`-integers
+domain and the product `∏_{d=1}^{n} [d]_Q` of the `Q`-integers
 `[d]_Q = 1 + Q + ⋯ + Q ^ (d - 1)` is nonzero
 (`TauCeti.InfiniteTypeAHeckeAlgebra.linearIndependent_mkQ_cycleBlock`). So the classes of the
 `ζ_λ` form a basis of the cocenter (`TauCeti.InfiniteTypeAHeckeAlgebra.cycleBlockCocenterBasis`),
 and the cocenter has dimension the number of partitions of `n`. This applies for instance over
-`ℂ` at every positive real `Q ≠ 1`, where every `[d]_Q` is positive.
+`ℂ` at every positive real `Q`, including `Q = 1`, where every `[d]_Q` is positive.
 
 The classes are separated by the atomic traces on alphabets of `n` negative letters. Such a trace,
 with weights `p₁, …, pₙ`, is a trace on `Hₙ`; it is multiplicative on disjoint blocks of strands,
@@ -37,7 +39,9 @@ variables `X 1, X 2, …` given by the recursion
 `γₘ = [m]_Q * X m - ∑ (0 < i < m), γᵢ * X (m - i)`,
 
 which records that `1 + (Q - 1) * ∑ (m > 0), γₘ * x ^ m` is `E (Q x) / E x` for
-`E x = 1 + ∑ (k > 0), X k * x ^ k`; dividing by `Q - 1` needs `Q ≠ 1`.
+`E x = 1 + ∑ (k > 0), X k * x ^ k`. At the universal Laurent parameter `u`, regularity of
+`u ^ 2 - 1` allows cancellation to obtain `tr (ζₘ) = γₘ(e₁, …, eₙ)`. Specializing `u` to `q`
+gives the trace formula without dividing by `Q - 1` in the target ring.
 
 So the lowest-degree part of `γₘ` is `[m]_Q * X m`, and the lowest-degree part of the product
 `γ_λ = ∏ᵢ γ_(λᵢ)` is the monomial `∏ᵢ [λᵢ]_Q * X λᵢ`, of total degree the number of parts of
@@ -144,9 +148,10 @@ section Atomic
 variable {R : Type*} [CommRing R] {ι : Type*} [LinearOrder ι] [Fintype ι]
 
 open PowerSeries in
-/-- On an alphabet of negative letters only, the atomic trace of the cycle word `ζₘ`, `m > 0`, is
-the universal cycle value at the elementary symmetric functions of the weights. -/
-private theorem atomicTrace_cycleWord_eq_cycleValue (q : Rˣ)
+/-- If `q ^ 2 - 1` is left-regular, the atomic trace of `ζₘ` for `m > 0` on an alphabet of
+negative letters equals `cycleValue (q ^ 2)` at the elementary symmetric functions of the
+weights. -/
+private theorem atomicTrace_cycleWord_eq_cycleValue_of_regular (q : Rˣ)
     (hq : IsLeftRegular ((q : R) ^ 2 - 1)) (p : ι → R) {m : ℕ} (hm : 0 < m) :
     atomicTrace (fun _ ↦ False) q p m (cycleWord q m) =
       cycleValue ((q : R) ^ 2) (fun k ↦ (univ.val.map p).esymm k) m := by
@@ -167,6 +172,33 @@ private theorem atomicTrace_cycleWord_eq_cycleValue (q : Rˣ)
       ← mk_multiset_esymm_eq_prod_one_add_X fun a ↦ (q : R) ^ 2 * p a, coeff_mul,
       Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, coeff_mk, hscale] at hcoeff
     simpa only [coeff_mk] using hcoeff
+
+/-- Over any commutative ring and for any unit `q`, the atomic trace of `ζₘ` for `m > 0` on an
+alphabet of negative letters equals `cycleValue (q ^ 2)` at the elementary symmetric functions
+of the weights. -/
+private theorem atomicTrace_cycleWord_eq_cycleValue (q : Rˣ) (p : ι → R)
+    {m : ℕ} (hm : 0 < m) :
+    atomicTrace (fun _ ↦ False) q p m (cycleWord q m) =
+      cycleValue ((q : R) ^ 2) (fun k ↦ (univ.val.map p).esymm k) m := by
+  let u := LaurentPolynomial.genericUnit R
+  let f := LaurentPolynomial.eval₂ (RingHom.id R) q
+  have hu : Units.map f.toMonoidHom u = q := by
+    apply Units.ext
+    simp [f, u, LaurentPolynomial.eval₂_T]
+  have hreg : IsLeftRegular ((u : LaurentPolynomial R) ^ 2 - 1) := by
+    have h := (LaurentPolynomial.isRegular_toLaurent_of_isUnit_leadingCoeff
+      (p := Polynomial.X ^ 2 - (1 : Polynomial R)) (by
+        rw [Polynomial.monic_X_pow_sub_one (by decide)]
+        exact isUnit_one)).left
+    simpa [u, map_sub, Polynomial.toLaurent_X_pow] using h
+  have h := congrArg f (atomicTrace_cycleWord_eq_cycleValue_of_regular u hreg
+    (fun a ↦ LaurentPolynomial.C (p a)) hm)
+  rw [map_atomicTrace_cycleWord, hu, map_cycleValue] at h
+  -- Expand the elementary symmetric functions into finite sums of products so that
+  -- coefficient specialization acts termwise.
+  simpa [f, u, map_pow, LaurentPolynomial.eval₂_T, LaurentPolynomial.eval₂_C,
+    Multiset.esymm, Multiset.powersetCard_map, map_multiset_sum, map_multiset_prod,
+    Multiset.map_map, Function.comp_def] using h
 
 end Atomic
 
@@ -278,11 +310,11 @@ open TypeAHeckeAlgebra MvPolynomial
 variable {K : Type*} [CommRing K] [IsDomain K] [Infinite K] {q : Kˣ} {n : ℕ}
 
 /-- **The classes of the elements `ζ_λ` in the cocenter are linearly independent.** Over an
-infinite integral domain, if `Q = q ^ 2` is not `1` and the product `∏_{d=1}^{n} [d]_Q` of the
+infinite integral domain, if the product `∏_{d=1}^{n} [d]_Q`, for `Q = q ^ 2`, of the
 `Q`-integers `[d]_Q = 1 + Q + ⋯ + Q ^ (d - 1)` is nonzero, then the classes of the elements
 `ζ_λ`, for `λ` a partition of `n`, in the cocenter of the stage of the first `n` strands are
 linearly independent. -/
-theorem linearIndependent_mkQ_cycleBlock (hQ : (q : K) ^ 2 ≠ 1)
+theorem linearIndependent_mkQ_cycleBlock
     (hprod : ∏ d ∈ Icc 1 n, ∑ i ∈ range d, ((q : K) ^ 2) ^ i ≠ 0) :
     LinearIndependent K fun μ : n.Partition ↦
       (commutatorSubmodule K (stage K q n)).mkQ ⟨cycleBlock q μ, cycleBlock_mem_stage μ⟩ := by
@@ -293,7 +325,6 @@ theorem linearIndependent_mkQ_cycleBlock (hQ : (q : K) ^ 2 ≠ 1)
       commutatorSubmodule K (stage K q n) := by
     rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply, map_sum]
     simpa only [map_smul] using hg
-  have hreg : IsLeftRegular ((q : K) ^ 2 - 1) := fun _ _ h ↦ mul_left_cancel₀ (sub_ne_zero.mpr hQ) h
   -- Every atomic trace on `n` negative letters kills the combination of the `ζ_λ`, which
   -- evaluates the same combination of the universal cycle values.
   have heval (p : Fin n → K) : aeval (fun k ↦ (univ.val.map p).esymm k)
@@ -314,29 +345,30 @@ theorem linearIndependent_mkQ_cycleBlock (hQ : (q : K) ^ 2 ≠ 1)
       X m
     simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, aeval_C, aeval_X,
       Algebra.algebraMap_self, RingHom.id_apply] at this
-    rw [Function.comp_apply, this, atomicTrace_cycleWord_eq_cycleValue q hreg p (μ.parts_pos hm)]
+    rw [Function.comp_apply, this, atomicTrace_cycleWord_eq_cycleValue q p (μ.parts_pos hm)]
   have hpoly := eq_zero_of_aeval_esymm_eq_zero (n := n)
     (sum_mem fun μ _ ↦ Subalgebra.smul_mem _ (Subalgebra.multiset_prod_mem _ fun x hx ↦ by
       obtain ⟨m, hm, rfl⟩ := Multiset.mem_map.mp hx
       exact cycleValue_C_X_mem_supported _ m (μ.le_of_mem_parts hm)) _) heval
   exact Fintype.linearIndependent_iff.mp (linearIndependent_prod_cycleValue hprod) g hpoly
 
-/-- **The cycle-block basis of the cocenter.** Over an infinite integral domain, if `Q = q ^ 2` is
-not `1` and `∏_{d=1}^{n} [d]_Q` is nonzero, the classes of the elements `ζ_λ`, for `λ` a partition
-of `n`, form a basis of the cocenter `Hₙ / [Hₙ, Hₙ]` of the stage of the first `n` strands. -/
-noncomputable def cycleBlockCocenterBasis (hQ : (q : K) ^ 2 ≠ 1)
+/-- **The cycle-block basis of the cocenter.** Over an infinite integral domain, if
+`∏_{d=1}^{n} [d]_Q` is nonzero for `Q = q ^ 2`, the classes of the elements `ζ_λ`, for `λ` a
+partition of `n`, form a basis of the cocenter `Hₙ / [Hₙ, Hₙ]` of the stage of the first `n`
+strands. -/
+noncomputable def cycleBlockCocenterBasis
     (hprod : ∏ d ∈ Icc 1 n, ∑ i ∈ range d, ((q : K) ^ 2) ^ i ≠ 0) :
     Module.Basis n.Partition K (cyclicQuotient K (stage K q n)) :=
-  .mk (linearIndependent_mkQ_cycleBlock hQ hprod) <| by
+  .mk (linearIndependent_mkQ_cycleBlock hprod) <| by
     have h := span_cycleBlock_sup_commutatorSubmodule (R := K) (q := q) n
     rw [sup_comm, ← Submodule.map_mkQ_eq_top, Submodule.map_span, ← Set.range_comp] at h
     exact h.ge
 
 /-- The basis vector of `cycleBlockCocenterBasis` at `λ` is the class of `ζ_λ`. -/
 @[simp]
-theorem cycleBlockCocenterBasis_apply (hQ : (q : K) ^ 2 ≠ 1)
+theorem cycleBlockCocenterBasis_apply
     (hprod : ∏ d ∈ Icc 1 n, ∑ i ∈ range d, ((q : K) ^ 2) ^ i ≠ 0) (μ : n.Partition) :
-    cycleBlockCocenterBasis hQ hprod μ =
+    cycleBlockCocenterBasis hprod μ =
       (commutatorSubmodule K (stage K q n)).mkQ ⟨cycleBlock q μ, cycleBlock_mem_stage μ⟩ :=
   Module.Basis.mk_apply _ _ _
 

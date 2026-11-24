@@ -190,7 +190,7 @@ theorem affineCoequalizer_condition :
     Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp, ← Spec.map_comp]
   congr 2
   ext a
-  exact a.2
+  exact a.property
 
 section Points
 

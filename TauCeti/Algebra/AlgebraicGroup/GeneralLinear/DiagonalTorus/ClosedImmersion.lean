@@ -122,7 +122,7 @@ noncomputable def diagonalTorusClosedSubgroup :
 morphism. -/
 @[simp]
 theorem coe_diagonalTorusClosedSubgroup :
-    (diagonalTorusClosedSubgroup R N).1 =
+    (diagonalTorusClosedSubgroup R N).val =
       Subobject.mk (diagonalTorus (R := R) (N := N)) := by
   rw [diagonalTorusClosedSubgroup]
   exact ClosedSubgroupScheme.coe_mk _

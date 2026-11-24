@@ -274,10 +274,8 @@ private theorem heckeTScalarCompositeGamma0_eq_heckeTScalarGamma0 :
     rcases eq_or_lt_of_le (Nat.one_le_iff_ne_zero.mpr hn) with h1 | h1
     · simp [← h1]
     · have hp : (n.minFac).Prime := Nat.minFac_prime (by omega)
-      have hv : n.factorization n.minFac ≠ 0 :=
-        (hp.factorization_pos_of_dvd hn (Nat.minFac_dvd n)).ne'
       have hlt : ordCompl[n.minFac] n < n :=
-        Nat.div_lt_self (Nat.pos_of_ne_zero hn) (Nat.one_lt_pow hv hp.one_lt)
+        TauCeti.ordCompl_lt_self_iff.2 (TauCeti.minFac_mem_primeFactors_iff.2 h1)
       have hne : ordCompl[n.minFac] n ≠ 0 := (Nat.ordCompl_pos n.minFac hn).ne'
       rw [heckeTScalarCompositeGamma0_def,
         TauCeti.Nat.primePowerProd_eq_ordProj_mul_ordCompl

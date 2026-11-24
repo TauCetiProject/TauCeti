@@ -58,12 +58,12 @@ theorem wedgePow_succ (φ : SmoothForm I M ℝ k) (m : ℕ) :
 /-- A wedge power of a smooth form is, at every point, the wedge power of its value. -/
 @[simp]
 theorem wedgePow_apply (φ : SmoothForm I M ℝ k) (m : ℕ) (x : M) :
-    (φ.wedgePow m).1 x = (φ.1 x).wedgePow m := by
+    (φ.wedgePow m).val x = (φ.val x).wedgePow m := by
   induction m with
   | zero =>
     ext v
     exact (RoughForm.ofFunction_apply _ x v).trans
-      (ContinuousAlternatingMap.wedgePow_zero_apply (φ.1 x) v).symm
+      (ContinuousAlternatingMap.wedgePow_zero_apply (φ.val x) v).symm
   | succ m ih =>
     rw [wedgePow_succ, coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply', ih,
       ContinuousAlternatingMap.wedgePow_succ]

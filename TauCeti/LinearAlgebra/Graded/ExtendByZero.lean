@@ -86,10 +86,10 @@ theorem isInternal_extendByZero_iff {R M : Type*} [Semiring R] [AddCommMonoid M]
     | of d m =>
       rcases lt_or_ge d 0 with hd | hd
       · obtain rfl : m = 0 := Subtype.ext <| by
-          simpa [extendByZero_of_neg 𝒜 hd] using m.2
+          simpa [extendByZero_of_neg 𝒜 hd] using m.property
         exact ⟨0, by simp⟩
       · lift d to ℕ using hd
-        exact ⟨DirectSum.of (fun n ↦ 𝒜 n) d ⟨m, (extendByZero_natCast 𝒜 d).le m.2⟩,
+        exact ⟨DirectSum.of (fun n ↦ 𝒜 n) d ⟨m, (extendByZero_natCast 𝒜 d).le m.property⟩,
           DirectSum.toAddMonoid_of _ _ _⟩
     | add x y hx hy =>
       obtain ⟨x, rfl⟩ := hx

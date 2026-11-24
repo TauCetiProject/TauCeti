@@ -57,6 +57,8 @@ namespace CategoryTheory.ProjectiveResolution
 
 open Abelian
 
+section HasExt
+
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {X Y : C}
   (P : ProjectiveResolution X)
 
@@ -96,10 +98,12 @@ theorem subsingleton_ext_iff_exactAt (n : ℕ) :
   | zero => rw [subsingleton_ext_zero_iff P, ChainComplex.exactAt_linearYonedaObj_zero_iff]
   | succ n => rw [subsingleton_ext_succ_iff P, ChainComplex.exactAt_linearYonedaObj_succ_iff]
 
-omit [HasExt.{w} C] in
+end HasExt
+
 /-- The left derived functor `Ext k C n` vanishes on `(X, Y)` exactly when the complex
 `Hom(P, Y)` is exact in degree `n`, for any projective resolution `P` of `X`. -/
-theorem isZero_Ext_iff_exactAt [EnoughProjectives C] (n : ℕ) :
+theorem isZero_Ext_iff_exactAt {C : Type u} [Category.{v} C] [Abelian C] {X Y : C}
+    (P : ProjectiveResolution X) (k : Type t) [Ring k] [Linear k C] [EnoughProjectives C] (n : ℕ) :
     IsZero (((_root_.Ext k C n).obj (Opposite.op X)).obj Y) ↔
       (P.complex.linearYonedaObj k Y).ExactAt n := by
   rw [HomologicalComplex.exactAt_iff_isZero_homology]
