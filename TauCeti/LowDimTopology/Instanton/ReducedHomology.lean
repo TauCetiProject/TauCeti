@@ -359,10 +359,12 @@ lemma exists_moduleCatKerHomologyClass_mem_reducedBoundaries {i : ZMod 8}
       D.ν_d_apply (m := i) (n := i - 4 + 1) (j := i - 4) rfl rfl y]
     refine B.add_mem ⟨⟨_, LinearMap.mem_ker.2 (C.d_comp_d_apply _ _ _ _)⟩, ?_, rfl⟩
       (B.smul_mem _ (hδ' 0))
-    rw [SetLike.mem_coe, Submodule.mem_comap]
-    convert zero_mem (D.reducedBoundaries (i - 4))
-    exact LinearMap.mem_ker.1 ((LinearMap.exact_iff.1 (C.exact_inclusion_moduleCatKerHomologyClass _
-      (ChainComplex.prev _ (i - 4)))).ge ⟨⟨_, _, rfl⟩, rfl⟩)
+    have h0 : C.moduleCatKerHomologyClass (ChainComplex.next _ (i - 4))
+        ⟨_, LinearMap.mem_ker.2 (C.d_comp_d_apply _ _ _ (D.ν (i + 1) (i - 4 + 1) y))⟩ = 0 :=
+      (C.exact_inclusion_moduleCatKerHomologyClass _ (ChainComplex.prev _ (i - 4)) _).2
+        ⟨⟨_, D.ν (i + 1) (i - 4 + 1) y, rfl⟩, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_comap, h0]
+    exact zero_mem _
 
 /-- The class map from the cycles whose classes lie in `Z(I)` onto `Î`. -/
 private def toReducedHomology (i : ZMod 8) :
@@ -372,12 +374,18 @@ private def toReducedHomology (i : ZMod 8) :
     (C.moduleCatKerHomologyClass (ChainComplex.next _ i)).restrict (q := D.reducedCycles i)
       fun _ h ↦ h
 
+private lemma toReducedHomology_apply {i : ZMod 8}
+    (z : (D.reducedCycles i).comap (C.moduleCatKerHomologyClass (ChainComplex.next _ i))) :
+    D.toReducedHomology i z =
+      Submodule.Quotient.mk ⟨C.moduleCatKerHomologyClass (ChainComplex.next _ i) z, z.property⟩ :=
+  rfl
+
 private lemma toReducedHomology_surjective (i : ZMod 8) :
     Function.Surjective (D.toReducedHomology i) := by
   intro x
   obtain ⟨⟨x, hx⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ x
   obtain ⟨z, rfl⟩ := C.moduleCatKerHomologyClass_surjective (ChainComplex.next _ i) x
-  exact ⟨⟨z, hx⟩, rfl⟩
+  exact ⟨⟨z, hx⟩, D.toReducedHomology_apply _⟩
 
 /-- The map `x ↦ [ν x]` from the cycles whose classes lie in `Z(I)` to `Î` in degree `i - 4`. -/
 private def toReducedHomologyν (i : ZMod 8) :
@@ -388,18 +396,25 @@ private def toReducedHomologyν (i : ZMod 8) :
       fun z ↦ D.d_ν_eq_zero z.val z.property)
     fun z ↦ D.moduleCatKerHomologyClass_ν_mem_reducedCycles z.val z.property
 
+private lemma toReducedHomologyν_apply {i : ZMod 8}
+    (z : (D.reducedCycles i).comap (C.moduleCatKerHomologyClass (ChainComplex.next _ i))) :
+    D.toReducedHomologyν i z =
+      Submodule.Quotient.mk ⟨C.moduleCatKerHomologyClass (ChainComplex.next _ (i - 4))
+        ⟨D.ν i (i - 4) z, D.d_ν_eq_zero z.val z.property⟩,
+        D.moduleCatKerHomologyClass_ν_mem_reducedCycles z.val z.property⟩ :=
+  rfl
+
 private lemma ker_toReducedHomology_le (i : ZMod 8) :
     LinearMap.ker (D.toReducedHomology i) ≤ LinearMap.ker (D.toReducedHomologyν i) := by
   intro z hz
-  simp only [LinearMap.mem_ker, toReducedHomology, LinearMap.comp_apply, Submodule.mkQ_apply,
-    Submodule.Quotient.mk_eq_zero, Submodule.mem_comap, Submodule.subtype_apply,
-    LinearMap.restrict_apply] at hz
+  rw [LinearMap.mem_ker, toReducedHomology_apply, Submodule.Quotient.mk_eq_zero,
+    Submodule.mem_comap] at hz
   obtain ⟨w, hw, hwz⟩ := D.exists_moduleCatKerHomologyClass_mem_reducedBoundaries z.val hz
-  simp only [LinearMap.mem_ker, toReducedHomologyν, toReducedHomology, LinearMap.comp_apply,
-    Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, Submodule.mem_comap,
-    Submodule.subtype_apply, LinearMap.restrict_apply]
-  convert hw using 2
-  exact Subtype.ext hwz.symm
+  rw [LinearMap.mem_ker, toReducedHomologyν_apply, Submodule.Quotient.mk_eq_zero,
+    Submodule.mem_comap, Submodule.subtype_apply]
+  have hw' : w = ⟨D.ν i (i - 4) z, LinearMap.mem_ker.2 (D.d_ν_eq_zero z.val z.property)⟩ :=
+    Subtype.ext hwz
+  rwa [hw'] at hw
 
 /-- The **point map** `u : Îᵢ → Îᵢ₋₄` induced by `ν` on the reduced homology. -/
 def reducedPointMap (i : ZMod 8) : D.reducedHomology i →ₗ[R] D.reducedHomology (i - 4) :=
@@ -415,7 +430,11 @@ theorem reducedPointMap_mk {i : ZMod 8} (z : LinearMap.ker (C.d i (i - 1)).hom)
       Submodule.Quotient.mk ⟨C.moduleCatKerHomologyClass (ChainComplex.next _ (i - 4))
         ⟨D.ν i (i - 4) z, D.d_ν_eq_zero z hz⟩,
         D.moduleCatKerHomologyClass_ν_mem_reducedCycles z hz⟩ :=
-  LinearMap.equivOfSurjective_apply (f := D.toReducedHomology i) _ (m := ⟨z, hz⟩) _
+  calc D.reducedPointMap i
+        (Submodule.Quotient.mk ⟨C.moduleCatKerHomologyClass (ChainComplex.next _ i) z, hz⟩)
+      _ = D.reducedPointMap i (D.toReducedHomology i ⟨z, hz⟩) := by rw [toReducedHomology_apply]
+      _ = D.toReducedHomologyν i ⟨z, hz⟩ := LinearMap.equivOfSurjective_apply _ _
+      _ = _ := D.toReducedHomologyν_apply _
 
 end ReducibleMaps
 
