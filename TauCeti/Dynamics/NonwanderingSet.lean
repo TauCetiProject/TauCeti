@@ -150,8 +150,8 @@ namespace Homeomorph
 /-- A homeomorphism and its inverse have the same non-wandering set. -/
 @[simp]
 theorem nonwanderingSet_symm (e : X ≃ₜ X) : nonwanderingSet e.symm = nonwanderingSet e :=
-  e.left_inv.nonwanderingSet_subset.antisymm
-    e.right_inv.nonwanderingSet_subset |>.symm
+  (Function.LeftInverse.nonwanderingSet_subset (g := e.symm) (f := e) e.symm_apply_apply).antisymm
+    (Function.LeftInverse.nonwanderingSet_subset (g := e) (f := e.symm) e.apply_symm_apply) |>.symm
 
 /-- A homeomorphism maps its non-wandering set onto itself. -/
 @[simp]
