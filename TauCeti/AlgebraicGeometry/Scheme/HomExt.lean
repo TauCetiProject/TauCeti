@@ -20,6 +20,9 @@ states the same criterion through the maps `appLE`, which avoids that restrictio
   if `φ.appLE V (ψ ⁻¹ᵁ V)` agrees with `ψ.app V` for every open `V`.
 * `AlgebraicGeometry.Scheme.Hom.ext_of_appLE_eq_appLE`: two morphisms with the same underlying
   map agree if their maps `appLE` agree.
+* `AlgebraicGeometry.Scheme.Hom.appLE_appLE_eq_app`: composing maps `appLE` of `g` and `f` gives
+  the map `app` of `f ≫ g`, the form in which the hypothesis of `ext_of_appLE` arises for a
+  composite.
 -/
 
 public section
@@ -44,5 +47,12 @@ theorem ext_of_appLE (hbase : φ.base = ψ.base)
 theorem ext_of_appLE_eq_appLE (hbase : φ.base = ψ.base)
     (h : ∀ V U e e' (x : Γ(Z, V)), φ.appLE V U e x = ψ.appLE V U e' x) : φ = ψ :=
   ext_of_appLE hbase fun V e x ↦ (h V _ e le_rfl x).trans (by rw [appLE_eq_app])
+
+/-- Applying `g.appLE U V` and then `f.appLE V ((f ≫ g) ⁻¹ᵁ U)` to a section is applying
+`(f ≫ g).app U`. -/
+theorem appLE_appLE_eq_app {X : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) {U : Z.Opens} {V : Y.Opens}
+    (e₁ : V ≤ g ⁻¹ᵁ U) (e₂ : (f ≫ g) ⁻¹ᵁ U ≤ f ⁻¹ᵁ V) (x : Γ(Z, U)) :
+    f.appLE V ((f ≫ g) ⁻¹ᵁ U) e₂ (g.appLE U V e₁ x) = (f ≫ g).app U x := by
+  rw [← CommRingCat.comp_apply, appLE_comp_appLE, app_eq_appLE]
 
 end AlgebraicGeometry.Scheme.Hom
