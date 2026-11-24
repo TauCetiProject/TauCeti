@@ -93,16 +93,25 @@ def unipotentHom : HeisenbergGroup.unitarySubgroup σ →* UnitaryRankOne.Group 
         HeisenbergGroup.coe_toSpecialLinear, coe_typeAGraphConjugator_two]
       exact HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mp a.property
 
+/-- The special linear element of a root element is the image of its Heisenberg parameter. -/
+theorem val_unipotentHom (a : HeisenbergGroup.unitarySubgroup σ) :
+    (unipotentHom R σ a : SpecialLinearGroup (Fin 3) R) =
+      HeisenbergGroup.toSpecialLinear (a : HeisenbergGroup R) := by
+  rw [unipotentHom, MonoidHom.codRestrict_apply]
+  rfl
+
 /-- The matrix of a root element is its Heisenberg matrix. -/
 @[simp]
 theorem coe_unipotentHom (a : HeisenbergGroup.unitarySubgroup σ) :
     ((unipotentHom R σ a : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
-      HeisenbergGroup.toMatrix (a : HeisenbergGroup R) :=
-  HeisenbergGroup.coe_toSpecialLinear _
+      HeisenbergGroup.toMatrix (a : HeisenbergGroup R) := by
+  rw [val_unipotentHom, HeisenbergGroup.coe_toSpecialLinear]
 
 /-- Distinct root parameters give distinct elements of the unitary group. -/
-theorem unipotentHom_injective : Function.Injective (unipotentHom R σ) := fun _ _ h ↦
-  Subtype.ext (HeisenbergGroup.toSpecialLinear_injective (congrArg Subtype.val h))
+theorem unipotentHom_injective : Function.Injective (unipotentHom R σ) := fun a b h ↦ by
+  have hab := congrArg Subtype.val h
+  rw [val_unipotentHom, val_unipotentHom] at hab
+  exact Subtype.ext (HeisenbergGroup.toSpecialLinear_injective hab)
 
 /-- The **unipotent subgroup**: the image of the unitary Heisenberg group, which consists of the
 upper unitriangular isometries (`TauCeti.UnitaryRankOne.mem_unipotent_iff`). -/
@@ -126,16 +135,16 @@ variable {R σ} in
 theorem mem_unipotent_iff (g : UnitaryRankOne.Group R σ) :
     g ∈ unipotent R σ ↔
       ((g : SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R).IsUpperUnitriangular := by
-  rw [← HeisenbergGroup.mem_range_toSpecialLinear_iff]
+  rw [mem_unipotent_iff_exists, ← HeisenbergGroup.mem_range_toSpecialLinear_iff]
   constructor
   · rintro ⟨a, rfl⟩
-    exact ⟨a, rfl⟩
+    exact ⟨a, (val_unipotentHom R σ a).symm⟩
   · rintro ⟨a, hga⟩
     have ha : a ∈ HeisenbergGroup.unitarySubgroup σ := by
       have hg := mem_specialIsometryGroup_iff.mp g.property
       rw [← hga, HeisenbergGroup.coe_toSpecialLinear, coe_typeAGraphConjugator_two] at hg
       exact HeisenbergGroup.mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mpr hg
-    exact ⟨⟨a, ha⟩, Subtype.ext hga⟩
+    exact ⟨⟨a, ha⟩, Subtype.ext ((val_unipotentHom R σ _).trans hga)⟩
 
 /-- The unipotent subgroup is solvable, being a quotient of a subgroup of the nilpotent Heisenberg
 group. -/
