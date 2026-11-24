@@ -22,6 +22,9 @@ none of the further theory built on it.
 
 * `TauCeti.single_sub_one_ne_zero_iff`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero exactly when `g ≠ 1`.
+* This file tags Mathlib's `MonoidAlgebra.coeff_natCast_mul` and
+  `AddMonoidAlgebra.coeff_natCast_mul` as `simp` lemmas: a natural-number constant scales every
+  coefficient, `(↑n * x).coeff m = ↑n * x.coeff m`.
 * `MonoidAlgebra.coeff_one_mul_comm`: the coefficient at the identity of `xy` equals
   that of `yx` in the monoid algebra of a Dedekind-finite monoid (for instance a group) over a
   commutative semiring.
@@ -57,12 +60,16 @@ none of the further theory built on it.
   regular in `R`.
 * `TauCeti.MonoidAlgebra.isSMulRegular_iff`: for nonempty `M`, a scalar acts injectively on `R[M]`
   exactly when it acts injectively on `R`.
+* `MonoidAlgebra.smul_single_one`: an element `single g r` supported at a single point is the
+  scalar multiple `r • single g 1` of the basis element there.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
 * `MonoidAlgebra.mapRingHom_injective`: the coefficientwise map along an injective ring
   homomorphism is injective.
 * `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
   `∑ m, x_m • F m`.
+* `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
+  group, as a convolution.
 
 ## References
 
@@ -104,6 +111,13 @@ theorem _root_.MonoidAlgebra.exists_eq_smul_iff_dvd_coeff (x : MonoidAlgebra R M
   simp only [hmap, Set.mem_range, Set.mem_ofPred_eq, AddMonoidHom.coe_mulLeft] at h
   exact (exists_congr fun _ ↦ eq_comm).trans
     (h.trans (forall_congr' fun _ ↦ exists_congr fun _ ↦ eq_comm))
+
+-- Mathlib states that a natural-number constant scales every coefficient of a monoid algebra and
+-- an additive monoid algebra, but does not tag either lemma `simp`. Tag both so that `simp`
+-- normalizes `(↑n * x).coeff m` in every monoid algebra, such as Laurent polynomials, as Mathlib
+-- does for polynomials (`Polynomial.coeff_natCast_mul`) and power series
+-- (`PowerSeries.coeff_natCast_mul`).
+attribute [simp] MonoidAlgebra.coeff_natCast_mul AddMonoidAlgebra.coeff_natCast_mul
 
 end Semiring
 
@@ -377,6 +391,11 @@ theorem mrange_of_le_nonZeroDivisors {R M : Type*} [Semiring R] [Monoid M] [IsCa
     (TauCeti.MonoidAlgebra.single_mem_nonZeroDivisors_iff (m := m)).mpr
       (one_mem (nonZeroDivisors R))
 
+/-- An element supported at a single point is a scalar multiple of the basis element there. -/
+theorem smul_single_one {k G : Type*} [Semiring k] (g : G) (r : k) :
+    r • single g (1 : k) = single g r := by
+  rw [smul_single', mul_one]
+
 /-- Conjugating by the monomial at a unit `u` of `M` conjugates the indices of the coefficients:
 `(u x u⁻¹)_h = x_{u⁻¹ h u}`. For a group element `g`, take `u = toUnits g`. -/
 theorem coeff_single_mul_mul_single_inv {R M : Type*} [Semiring R] [Monoid M]
@@ -405,6 +424,12 @@ theorem lift_apply_eq_sum {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra
     [Fintype M] (F : M →* A) (x : MonoidAlgebra R M) :
     lift R A M F x = ∑ m, x.coeff m • F m := by
   rw [lift_apply, Finsupp.sum_fintype _ _ (by simp)]
+
+/-- The coefficients of a product in the group algebra of a finite group, as a convolution. -/
+theorem coeff_mul_eq_sum {k G : Type*} [Semiring k] [Group G] [Fintype G]
+    (x y : MonoidAlgebra k G) (g : G) :
+    (x * y).coeff g = ∑ h, x.coeff h * y.coeff (h⁻¹ * g) := by
+  rw [coeff_mul_apply_left, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _]
 
 /-- The basis monomials `of ℤ M m` generate the integral monoid algebra `ℤ[M]` as an additive
 group. -/
