@@ -59,6 +59,15 @@ bijectively onto it, and that it is closed and contractible in its subspace topo
 * `LieSubalgebra.isClosed_integralLeafSubgroup_of_diffeomorph`: it is closed.
 * `LieSubalgebra.contractibleSpace_integralLeafSubgroup_of_diffeomorph`: it is contractible in its
   subspace topology.
+
+## References
+
+* J. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups* (2012), Section 14.4,
+  Theorem 14.4.8, for Lie groups whose exponential is a global diffeomorphism. The injectivity of
+  the intrinsic differential is derived here from the exponential naturality square rather than
+  from a restriction of the differential of the exponential.
+* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd edition (2013), Theorem 19.26, for the
+  connected Lie subgroup of a Lie subalgebra presented as an integral leaf.
 -/
 
 public section

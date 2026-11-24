@@ -43,6 +43,13 @@ contractible, in particular simply connected, in its subspace topology.
 * `LieSubalgebra.isClosed_integralLeafSubgroup_posUpperTriangular`: it is closed.
 * `LieSubalgebra.contractibleSpace_integralLeafSubgroup_posUpperTriangular`: it is contractible in
   its subspace topology.
+
+## References
+
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, first edition (1996), Chapter VI,
+  Section 4, Example, pp.311–312, for the positive triangular factor.
+* J. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups* (2012), Section 14.4,
+  Theorem 14.4.8, for Lie groups whose exponential is a global diffeomorphism.
 -/
 
 public noncomputable section
