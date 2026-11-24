@@ -55,8 +55,13 @@ Pullback along a rectangular matrix preserves alternation over a commutative sem
 commutative ring, alternation is equivalent to skew-symmetry together with a zero diagonal;
 the diagonal condition remains necessary in characteristic two.
 
+A ring homomorphism `f` carries the value of `Matrix.toBilin' A` at `v` and `w` to the value of
+`Matrix.toBilin' (A.map f)` at `f ∘ v` and `f ∘ w`; this computes scalar extensions of forms given
+by a Gram matrix.
+
 ## Main results
 
+* `RingHom.map_toBilin'_apply`: a ring homomorphism commutes with evaluating the form of a matrix.
 * `Matrix.isAlt_toBilin'_transpose_mul_mul`: rectangular pullback preserves alternation.
 * `Matrix.isAlt_toBilin'_iff`: alternation is skew-symmetry and a zero diagonal over any
   commutative ring.
@@ -110,6 +115,18 @@ the diagonal condition remains necessary in characteristic two.
 public section
 
 universe u
+
+namespace RingHom
+
+variable {R S n : Type*} [CommSemiring R] [CommSemiring S] [Fintype n] [DecidableEq n]
+
+/-- A ring homomorphism `f` carries the value of the form `Matrix.toBilin' A` at `v` and `w` to the
+value of `Matrix.toBilin' (A.map f)` at `f ∘ v` and `f ∘ w`. -/
+theorem map_toBilin'_apply (f : R →+* S) (A : Matrix n n R) (v w : n → R) :
+    f (Matrix.toBilin' A v w) = Matrix.toBilin' (A.map f) (f ∘ v) (f ∘ w) := by
+  simp only [Matrix.toBilin'_apply', f.map_dotProduct, Function.comp_def, f.map_mulVec]
+
+end RingHom
 
 namespace Matrix
 

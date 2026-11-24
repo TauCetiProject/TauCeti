@@ -12,8 +12,10 @@ public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.MvPolynomial
+public import TauCeti.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
-import TauCeti.Data.Matrix.DotProduct
+import TauCeti.Algebra.Algebra.Pi
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Coordinate scalar extension of quadratic forms
@@ -63,6 +65,8 @@ derived from this characterization. Anisotropy is not preserved in general: the 
   particular the hyperbolic plane `x y` extends to the hyperbolic plane.
 * `QuadraticForm.extendScalars_weightedSumSquares`: the extension of a diagonal form is
   diagonal.
+* `QuadraticMap.IsometryEquiv.extendScalars_refl`, `QuadraticMap.IsometryEquiv.extendScalars_trans`,
+  `QuadraticMap.IsometryEquiv.extendScalars_symm`: functoriality of the induced isometries.
 * `QuadraticMap.Equivalent.extendScalars`: isometric forms have isometric extensions.
 * `QuadraticForm.nondegenerate_polarBilin_extendScalars_iff`: along an injective map of domains,
   in particular over fields, extension preserves and reflects nonsingularity.
@@ -87,14 +91,6 @@ open LinearMap (BilinForm)
 
 open QuadraticMap
 
-/-- The identification `L ⊗[K] (ι → K) ≃ (ι → L)` sends `1 ⊗ v` to `v` read in `ι → L`. -/
-private theorem piScalarRight_one_tmul {K L ι : Type*} [CommRing K] [CommRing L] [Algebra K L]
-    [Fintype ι] [DecidableEq ι] (v : ι → K) :
-    TensorProduct.piScalarRight K L L ι (1 ⊗ₜ v) = algebraMap K L ∘ v := by
-  ext i
-  simp [TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul,
-    Algebra.algebraMap_eq_smul_one]
-
 namespace QuadraticMap
 
 variable {K L N ι : Type*} [CommRing K] [CommRing L] [Algebra K L]
@@ -112,7 +108,8 @@ theorem ext_algebraMap_comp ⦃Q₁ Q₂ : QuadraticMap L (ι → L) N⦄
   have hcomp : Q₁.comp (TensorProduct.piScalarRight K L L ι).toLinearMap =
       Q₂.comp (TensorProduct.piScalarRight K L L ι).toLinearMap :=
     baseChange_ext fun v ↦ by
-      rw [comp_apply, comp_apply, LinearEquiv.coe_toLinearMap, piScalarRight_one_tmul]
+      rw [comp_apply, comp_apply, LinearEquiv.coe_toLinearMap,
+        TensorProduct.piScalarRight_one_tmul]
       exact h v
   ext x
   simpa using DFunLike.congr_fun hcomp ((TensorProduct.piScalarRight K L L ι).symm x)
@@ -143,9 +140,8 @@ extension, by `QuadraticMap.ext_algebraMap_comp`. -/
 @[simp]
 theorem extendScalars_apply_algebraMap_comp (Q : QuadraticForm K (ι → K)) (v : ι → K) :
     extendScalars L Q (algebraMap K L ∘ v) = algebraMap K L (Q v) := by
-  rw [extendScalars, LinearMap.BilinMap.toQuadraticMap_apply, Matrix.toBilin'_apply',
-    ← RingHom.map_dotProduct_mulVec, ← Matrix.toBilin'_apply', Matrix.toBilin'_toMatrix',
-    ← LinearMap.BilinMap.toQuadraticMap_apply,
+  rw [extendScalars, LinearMap.BilinMap.toQuadraticMap_apply, ← RingHom.map_toBilin'_apply,
+    Matrix.toBilin'_toMatrix', ← LinearMap.BilinMap.toQuadraticMap_apply,
     (LinearMap.BilinMap.toQuadraticMap_surjective Q).choose_spec]
 
 /-- A quadratic form on `ι → L` which agrees with `Q` on vectors with coordinates in `K` is the
@@ -169,9 +165,8 @@ theorem extendScalars_toQuadraticMap (B : BilinForm K (ι → K)) :
     extendScalars L B.toQuadraticMap =
       (Matrix.toBilin' ((BilinForm.toMatrix' B).map (algebraMap K L))).toQuadraticMap := by
   refine ((eq_extendScalars_iff L).2 fun v ↦ ?_).symm
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, Matrix.toBilin'_apply',
-    ← RingHom.map_dotProduct_mulVec, ← Matrix.toBilin'_apply', Matrix.toBilin'_toMatrix',
-    LinearMap.BilinMap.toQuadraticMap_apply]
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, ← RingHom.map_toBilin'_apply,
+    Matrix.toBilin'_toMatrix', LinearMap.BilinMap.toQuadraticMap_apply]
 
 /-- The coordinate formula for the extension:
 `x ↦ ∑ᵢ Q(eᵢ) xᵢ² + ∑_{i<j} b_Q(eᵢ, eⱼ) xᵢ xⱼ`, with the coefficients mapped into `L`. -/
@@ -199,14 +194,6 @@ theorem extendScalars_apply [LinearOrder ι] (Q : QuadraticForm K (ι → K)) (x
     · simp [h.ne', h.not_gt]
   simp_rw [hsplit, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
-omit [Fintype ι] in
-variable (K) in
-/-- A standard basis vector of `ι → L` has its coordinates in `K`. -/
-private theorem single_one_eq_algebraMap_comp (k : ι) :
-    (Pi.single k 1 : ι → L) = algebraMap K L ∘ Pi.single k 1 := by
-  ext l
-  by_cases h : l = k <;> simp [h]
-
 /-- The polar form of the extension agrees with the polar form of `Q` on vectors with
 coordinates in `K`. -/
 @[simp]
@@ -220,13 +207,14 @@ theorem polar_extendScalars_algebraMap_comp (Q : QuadraticForm K (ι → K)) (v 
 
 /-- The Gram matrix of the polar form of the extension is the image of the Gram matrix of the
 polar form of `Q`. -/
+@[simp]
 theorem toMatrix'_polarBilin_extendScalars (Q : QuadraticForm K (ι → K)) :
     BilinForm.toMatrix' (polarBilin (extendScalars L Q)) =
       (BilinForm.toMatrix' (polarBilin Q)).map (algebraMap K L) := by
   ext i j
   rw [Matrix.map_apply, BilinForm.toMatrix'_apply, BilinForm.toMatrix'_apply,
-    polarBilin_apply_apply, polarBilin_apply_apply, single_one_eq_algebraMap_comp K L i,
-    single_one_eq_algebraMap_comp K L j, polar_extendScalars_algebraMap_comp]
+    polarBilin_apply_apply, polarBilin_apply_apply, Pi.single_one_eq_algebraMap_comp K i,
+    Pi.single_one_eq_algebraMap_comp K j, polar_extendScalars_algebraMap_comp]
 
 /-- The coordinate polynomial of the extension is the coordinate polynomial of `Q` with its
 coefficients mapped into `L`. -/
@@ -235,14 +223,14 @@ theorem toMvPolynomial_extendScalars (Q : QuadraticForm K (ι → K)) :
   rw [toMvPolynomial_def, toMvPolynomial_def, map_add, map_sum, map_sum]
   congr 1
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [single_one_eq_algebraMap_comp K L i, extendScalars_apply_algebraMap_comp]
+    rw [Pi.single_one_eq_algebraMap_comp K i, extendScalars_apply_algebraMap_comp]
     simp
   · refine Finset.sum_congr rfl fun ij _ ↦ ?_
     induction ij using Sym2.ind with
     | _ i j =>
       simp only [Sym2.lift_mk]
-      rw [single_one_eq_algebraMap_comp K L i,
-        single_one_eq_algebraMap_comp K L j, polar_extendScalars_algebraMap_comp]
+      rw [Pi.single_one_eq_algebraMap_comp K i,
+        Pi.single_one_eq_algebraMap_comp K j, polar_extendScalars_algebraMap_comp]
       simp
 
 /-- Extending scalars from `K` to itself does nothing. -/
@@ -251,6 +239,7 @@ theorem extendScalars_self (Q : QuadraticForm K (ι → K)) : extendScalars K Q 
   ((eq_extendScalars_iff K).2 fun v ↦ by simp).symm
 
 /-- Extending scalars along a tower `K → L → M` in two steps is extending them in one step. -/
+@[simp]
 theorem extendScalars_extendScalars (M : Type*) [CommRing M] [Algebra K M] [Algebra L M]
     [IsScalarTower K L M] (Q : QuadraticForm K (ι → K)) :
     extendScalars M (extendScalars L Q) = extendScalars M Q := by
@@ -302,23 +291,19 @@ theorem extendScalars_prod (Q₁ : QuadraticForm K (ι → K)) (Q₂ : Quadratic
   simp [LinearEquiv.sumArrowLequivProdArrow, Equiv.sumArrowEquivProdArrow, Function.comp_assoc]
 
 /-- An isometry `Q₁ ≅ Q₂` of quadratic forms on coordinate spaces induces an isometry of their
-extensions to `L`. The underlying linear equivalence is the base change of the given one,
-transported to coordinates; it carries `algebraMap K L ∘ v` to `algebraMap K L ∘ e v`. -/
+extensions to `L`. The underlying linear equivalence is the scalar extension
+`LinearEquiv.extendScalarsPi` of the given one; it carries `algebraMap K L ∘ v` to
+`algebraMap K L ∘ e v`. -/
 def _root_.QuadraticMap.IsometryEquiv.extendScalars {Q₁ : QuadraticForm K (ι → K)}
     {Q₂ : QuadraticForm K (κ → K)} (e : Q₁.IsometryEquiv Q₂) :
     (QuadraticForm.extendScalars L Q₁).IsometryEquiv (QuadraticForm.extendScalars L Q₂) where
-  toLinearEquiv := (TensorProduct.piScalarRight K L L ι).symm ≪≫ₗ
-    LinearEquiv.baseChange K L _ _ e.toLinearEquiv ≪≫ₗ TensorProduct.piScalarRight K L L κ
+  toLinearEquiv := e.toLinearEquiv.extendScalarsPi L
   map_app' x := by
     have h : (QuadraticForm.extendScalars L Q₂).comp
-        ((TensorProduct.piScalarRight K L L ι).symm ≪≫ₗ
-          LinearEquiv.baseChange K L _ _ e.toLinearEquiv ≪≫ₗ
-            TensorProduct.piScalarRight K L L κ).toLinearMap =
-          QuadraticForm.extendScalars L Q₁ := by
+        (e.toLinearEquiv.extendScalarsPi L).toLinearMap = QuadraticForm.extendScalars L Q₁ := by
       refine (eq_extendScalars_iff L).2 fun v ↦ ?_
-      rw [QuadraticMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.trans_apply,
-        LinearEquiv.trans_apply, ← piScalarRight_one_tmul, LinearEquiv.symm_apply_apply,
-        LinearEquiv.baseChange_tmul, piScalarRight_one_tmul, extendScalars_apply_algebraMap_comp,
+      rw [QuadraticMap.comp_apply, LinearEquiv.coe_toLinearMap,
+        LinearEquiv.extendScalarsPi_apply_algebraMap_comp, extendScalars_apply_algebraMap_comp,
         QuadraticMap.IsometryEquiv.coe_toLinearEquiv, e.map_app]
     exact DFunLike.congr_fun h x
 
@@ -327,11 +312,29 @@ that vector. -/
 @[simp]
 theorem _root_.QuadraticMap.IsometryEquiv.extendScalars_apply_algebraMap_comp
     {Q₁ : QuadraticForm K (ι → K)} {Q₂ : QuadraticForm K (κ → K)} (e : Q₁.IsometryEquiv Q₂)
-    (v : ι → K) : e.extendScalars L (algebraMap K L ∘ v) = algebraMap K L ∘ e v := by
-  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
-  simp only [QuadraticMap.IsometryEquiv.extendScalars, LinearEquiv.trans_apply]
-  rw [← piScalarRight_one_tmul, LinearEquiv.symm_apply_apply, LinearEquiv.baseChange_tmul,
-    piScalarRight_one_tmul, QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+    (v : ι → K) : e.extendScalars L (algebraMap K L ∘ v) = algebraMap K L ∘ e v :=
+  e.toLinearEquiv.extendScalarsPi_apply_algebraMap_comp L v
+
+/-- The identity isometry induces the identity isometry of extensions. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.extendScalars_refl (Q : QuadraticForm K (ι → K)) :
+    (QuadraticMap.IsometryEquiv.refl Q).extendScalars L =
+      QuadraticMap.IsometryEquiv.refl (extendScalars L Q) :=
+  DFunLike.ext _ _ fun x ↦ DFunLike.congr_fun (LinearEquiv.extendScalarsPi_refl (R := K) L) x
+
+/-- A composite of isometries induces the composite of the induced isometries. -/
+theorem _root_.QuadraticMap.IsometryEquiv.extendScalars_trans {μ : Type*} [Fintype μ]
+    [DecidableEq μ] {Q₁ : QuadraticForm K (ι → K)} {Q₂ : QuadraticForm K (κ → K)}
+    {Q₃ : QuadraticForm K (μ → K)} (e : Q₁.IsometryEquiv Q₂) (f : Q₂.IsometryEquiv Q₃) :
+    (e.trans f).extendScalars L = (e.extendScalars L).trans (f.extendScalars L) :=
+  DFunLike.ext _ _ fun x ↦
+    DFunLike.congr_fun (e.toLinearEquiv.extendScalarsPi_trans L f.toLinearEquiv) x
+
+/-- The inverse of an isometry induces the inverse of the induced isometry. -/
+theorem _root_.QuadraticMap.IsometryEquiv.extendScalars_symm {Q₁ : QuadraticForm K (ι → K)}
+    {Q₂ : QuadraticForm K (κ → K)} (e : Q₁.IsometryEquiv Q₂) :
+    e.symm.extendScalars L = (e.extendScalars L).symm :=
+  DFunLike.ext _ _ fun x ↦ DFunLike.congr_fun (e.toLinearEquiv.extendScalarsPi_symm L) x
 
 /-- Isometric forms have isometric extensions. -/
 theorem _root_.QuadraticMap.Equivalent.extendScalars {Q₁ : QuadraticForm K (ι → K)}
@@ -367,7 +370,8 @@ def isometryEquivBaseChangeExtendScalars [Invertible (2 : K)] (Q : QuadraticForm
     have h : (extendScalars L Q).comp (TensorProduct.piScalarRight K L L ι).toLinearMap =
         Q.baseChange L :=
       baseChange_ext fun v ↦ by
-        rw [QuadraticMap.comp_apply, LinearEquiv.coe_toLinearMap, piScalarRight_one_tmul,
+        rw [QuadraticMap.comp_apply, LinearEquiv.coe_toLinearMap,
+          TensorProduct.piScalarRight_one_tmul,
           extendScalars_apply_algebraMap_comp, baseChange_tmul, mul_one,
           Algebra.algebraMap_eq_smul_one]
     exact DFunLike.congr_fun h x
