@@ -242,7 +242,7 @@ omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 private theorem IsNondegenerate.integrableOn_and_setIntegral_floerEnergyDensity_comp_add_le
     [I.Boundaryless] (hω : ω.IsNondegenerate) (hHper : Periodic H 1)
     {J : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
-    (hX : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α fun z ↦ H z.2)
+    (hX : ∀ α, ContinuousOn (ω.hamiltonianVectorFieldInChartAt α fun z : ℝ × ℝ ↦ H z.2)
       (univ ×ˢ (extChartAt I α).target))
     (hJt : ∀ t x, (hω.symplecticFormAt x).Tames (J t x)) {u : ℝ × ℝ → M} {a b s₀ S : ℝ}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u (Ioo a b ×ˢ univ)) (hper : ∀ s t, u (s, t + 1) = u (s, t))
@@ -286,7 +286,7 @@ theorem IsNondegenerate.exists_pos_forall_floerEnergyDensity_le_of_setLIntegral_
     {J : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α fun z : ℝ × ℝ ↦ J z.2)
       (univ ×ˢ (extChartAt I α).target))
-    (hX : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α fun z ↦ H z.2)
+    (hX : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α fun z : ℝ × ℝ ↦ H z.2)
       (univ ×ˢ (extChartAt I α).target))
     (he : ∀ x, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : Injective e)
     (hde : ∀ p, Injective (mvfderiv I e p)) {c B : ℝ} (hc : 0 < c)
@@ -302,13 +302,20 @@ theorem IsNondegenerate.exists_pos_forall_floerEnergyDensity_le_of_setLIntegral_
       ∀ z : ℝ × ℝ, z.1 ∈ Icc (a + 1) (b - 1) →
         ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z ≤ A := by
   have hJt (t : ℝ) (x : M) := hω.tames_of_mul_norm_sq_le (hde x) hc (hJc t x)
+  -- The constant family over the one-point parameter space `Unit`.
+  have hπ (α : M) : MapsTo (fun q : (Unit × (ℝ × ℝ)) × E ↦ (q.1.2, q.2))
+      (univ ×ˢ (extChartAt I α).target) (univ ×ˢ (extChartAt I α).target) :=
+    fun _ hq ↦ ⟨mem_univ _, hq.2⟩
   obtain ⟨δ, hδ, hconc⟩ := hω.exists_pos_forall_eventually_le_setIntegral_floerEnergyDensity_ball
-    (J := fun z ↦ J z.2) (Ks := fun _ _ ↦ 0) (Kt := fun z ↦ H z.2) he he_inj isOpen_univ
-    (isCompact_closedBall ((0 : ℝ), (1 / 2 : ℝ)) 1) (subset_univ _) hJ
-    (fun α ↦ by rw [hamiltonianVectorFieldInChartAt_zero]; exact contDiffOn_const) hX
-    (fun z _ x ↦ hJt z.2 x) hc (fun z _ x v ↦ hJc z.2 x v) (B := max B 0)
-    (fun _ _ x ↦ norm_mvfderiv_hamiltonianVectorField_zero_le B x)
-    (fun z _ x ↦ (hB z.2 x).trans (le_max_left _ _))
+    (J := fun _ z ↦ J z.2) (Ks := fun _ _ _ ↦ 0) (Kt := fun _ z ↦ H z.2) (C := univ) he he_inj
+    isOpen_univ isCompact_univ (isCompact_closedBall ((0 : ℝ), (1 / 2 : ℝ)) 1) (subset_univ _)
+    (fun α ↦ Floer.contDiffOn_almostComplexInChartAt_uncurry_const (hJ α) (hπ α))
+    (fun α ↦ contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const
+      (by rw [hamiltonianVectorFieldInChartAt_zero]; exact contDiffOn_const) (hπ α))
+    (fun α ↦ contDiffOn_hamiltonianVectorFieldInChartAt_uncurry_const (hX α) (hπ α))
+    (fun _ _ z _ x ↦ hJt z.2 x) hc (fun _ _ z _ x v ↦ hJc z.2 x v) (B := max B 0)
+    (fun _ _ _ _ x ↦ norm_mvfderiv_hamiltonianVectorField_zero_le B x)
+    (fun _ _ z _ x ↦ (hB z.2 x).trans (le_max_left _ _))
   refine ⟨δ / 4, by positivity, ?_⟩
   by_contra! hA
   -- Cylinders `uₖ` of energy at most `δ / 4` whose densities exceed `k` at points `zₖ`.
@@ -339,8 +346,9 @@ theorem IsNondegenerate.exists_pos_forall_floerEnergyDensity_le_of_setLIntegral_
       add_zero]
     exact (hρ (φ n)).le.trans_eq (htz (φ n))
   -- So energy `δ` concentrates near `w₀`, but the translates have energy at most `3 δ / 4`.
-  obtain ⟨n, hn⟩ := (hconc isOpen_ball ball_subset_closedBall (fun n ↦ (hv (φ n)).1)
-    (fun n ↦ (hv (φ n)).2) (fun n ↦ (hint (φ n)).1) hw₀Ω hlim hblow 1 one_pos).exists
+  obtain ⟨n, hn⟩ := (hconc (p := fun _ ↦ ()) isOpen_ball ball_subset_closedBall
+    (fun _ ↦ mem_univ _) (fun n ↦ (hv (φ n)).1) (fun n ↦ (hv (φ n)).2) (fun n ↦ (hint (φ n)).1)
+    hw₀Ω hlim hblow 1 one_pos).exists
   have hle := (setIntegral_mono_set (hint (φ n)).1 (ae_restrict_of_forall_mem measurableSet_ball
     fun w hw ↦ floerEnergyDensity_nonneg hω (hJt _ _) ((hv (φ n)).2 w hw))
     (Eventually.of_forall fun _ (hx : _ ∈ ball w₀ 1 ∩ ball ((0 : ℝ), (1 / 2 : ℝ)) 1) ↦ hx.2)).trans
@@ -366,7 +374,7 @@ theorem IsNondegenerate.exists_pos_forall_exists_mem_periodicSolutions_forall_di
     {J : ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
     (hJ : ∀ α, ContDiffOn ℝ 2 (Floer.almostComplexInChartAt I α fun z : ℝ × ℝ ↦ J z.2)
       (univ ×ˢ (extChartAt I α).target))
-    (hX : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α fun z ↦ H z.2)
+    (hX : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α fun z : ℝ × ℝ ↦ H z.2)
       (univ ×ˢ (extChartAt I α).target))
     (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
     (hde : ∀ p, Injective (mvfderiv I e p)) {c : ℝ} (hc : 0 < c)
