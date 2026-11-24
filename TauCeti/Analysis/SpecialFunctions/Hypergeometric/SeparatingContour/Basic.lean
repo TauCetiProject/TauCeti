@@ -9,8 +9,8 @@ public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import TauCeti.Analysis.Contour.Residue.Basic
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Contour.Residue.Rectangle
 import TauCeti.Analysis.Contour.Residue.SimplePole
+import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
@@ -440,25 +440,27 @@ private theorem mellinBarnesSeparatingIntegral_eq_of_lt_of_lt_zero {a b : ℂ} (
       (hp : (∃ k : ℕ, t = -a - k) ∨ (∃ k : ℕ, t = -b - k)) : t ∈ S :=
     hS_iff.2 ⟨⟨lt_of_le_of_ne ht.1 (hne_line hp).1.symm,
       lt_of_le_of_ne ht.2 (hne_line hp).2⟩, hp⟩
-  have hshift :=
-    TauCeti.Contour.integral_add_mul_I_sub_integral_add_mul_I_eq_two_pi_mul_sum_residue_of_norm_le
-      (f := g) (S := S) (B := fun T : ℝ => B₀ * Real.exp (-δ * T)) h12.le
-    (fun t ht htS => analyticAt_mellinBarnesIntegrand a b c z
+  have hAn : ∀ t : ℂ, t.re ∈ Icc σ₁ σ₂ → t ∉ S → AnalyticAt ℂ g t := fun t ht htS =>
+    analyticAt_mellinBarnesIntegrand a b c z
       (fun k hk => htS (hS_of_Icc ht (Or.inl ⟨k, hk⟩)))
       (fun k hk => htS (hS_of_Icc ht (Or.inr ⟨k, hk⟩)))
       (fun m hm => by
         have hre : t.re = m := by simp [hm]
-        linarith [ht.2, hσ₂, m.cast_nonneg (α := ℝ)]))
-    (fun s _ => meromorphicAt_mellinBarnesIntegrand a b c z s)
-    (fun s hs => (hS_iff.1 hs).1)
-    (verticalIntegrable_mellinBarnesIntegrand c ha₁ hb₁
-      (fun m _ => by linarith [h12, hσ₂, m.cast_nonneg (α := ℝ)]) hz)
-    (verticalIntegrable_mellinBarnesIntegrand c ha₂ hb₂
-      (fun m _ => by linarith [hσ₂, m.cast_nonneg (α := ℝ)]) hz)
-    (by
-      simpa using (Real.tendsto_exp_atBot.comp
-        (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hδ))).const_mul B₀)
-    (eventually_norm_mellinBarnesIntegrand_horizontal_le hY₀ htail)
+        linarith [ht.2, hσ₂, m.cast_nonneg (α := ℝ)])
+  have hshift :=
+    TauCeti.Contour.integral_vertical_sub_eq_two_pi_mul_sum_residue_of_norm_le
+      g h12.le S (fun s hs => (hS_iff.1 hs).1)
+      (fun t ht => (hAn t ht.1 ht.2).continuousAt.continuousWithinAt)
+      (fun t ht => (hAn t ⟨ht.1.1.le, ht.1.2.le⟩ ht.2).differentiableAt.differentiableWithinAt)
+      (fun s _ => meromorphicAt_mellinBarnesIntegrand a b c z s)
+      (verticalIntegrable_mellinBarnesIntegrand c ha₂ hb₂
+        (fun m _ => by linarith [hσ₂, m.cast_nonneg (α := ℝ)]) hz)
+      (verticalIntegrable_mellinBarnesIntegrand c ha₁ hb₁
+        (fun m _ => by linarith [h12, hσ₂, m.cast_nonneg (α := ℝ)]) hz)
+      (by
+        simpa using (Real.tendsto_exp_atBot.comp
+          (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hδ))).const_mul B₀)
+      (eventually_norm_mellinBarnesIntegrand_horizontal_le hY₀ htail)
   have h2pi : (2 * (π : ℂ)) ≠ 0 := mul_ne_zero two_ne_zero (ofReal_ne_zero.2 Real.pi_ne_zero)
   have hdiv := congrArg ((2 * π : ℂ)⁻¹ * ·) hshift
   dsimp only [S] at hdiv
