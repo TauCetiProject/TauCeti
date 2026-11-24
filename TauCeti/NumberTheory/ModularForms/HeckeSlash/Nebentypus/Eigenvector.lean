@@ -181,7 +181,7 @@ theorem qExpansion_coeff_prime_mul_of_heckeRingHomCharSpace_heckeTCompositeGamma
   have : NeZero p := ⟨hp.ne_zero⟩
   have hT := heckeTNat_eq_smul_of_heckeRingHomCharSpace_heckeTCompositeGamma0_eq_smul hp hF
   have h := qExpansion_coeff_heckeSlashGamma1ModularFormEnd_diagCosetGamma1_of_mem_modFormCharSpace
-    k hp hpN χ F.2 m
+    k hp hpN χ F.property m
   rw [← heckeTNat_def, hT, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map _), map_smul,
     smul_eq_mul] at h
@@ -198,7 +198,7 @@ theorem qExpansion_coeff_prime_mul_of_heckeRingHomCuspCharSpace_heckeTCompositeG
         if p ∣ m then (χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 1) *
           (qExpansion 1 (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k)).coeff (m / p) else 0 :=
   have : NeZero p := ⟨hp.ne_zero⟩
-  (heckeTCuspNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul hp hpN F.2 c).1
+  (heckeTCuspNat_eq_smul_iff_forall_qExpansion_coeff_prime_mul hp hpN F.property c).1
     (heckeTCuspNat_eq_smul_of_heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul hp hF) m
 
 /-- **Coefficient vanishing from the prime eigenvalues, on `M_k(N, χ)`.** Let `L` be a multiple of

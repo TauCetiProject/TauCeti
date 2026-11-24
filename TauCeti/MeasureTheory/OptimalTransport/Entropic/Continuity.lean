@@ -8,11 +8,13 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
 import TauCeti.Basic.ENNReal.Real
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Prod
 import TauCeti.MeasureTheory.OptimalTransport.Entropic.ZeroTemperature
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.BoundedLipschitz
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.KantorovichRubinstein
 import TauCeti.Topology.ContinuousMap.Compact
 import TauCeti.Topology.Instances.ENNReal
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Quantitative stability and weak continuity of entropic optimal transport
@@ -24,21 +26,29 @@ convergence of the marginals does not give the matching upper bound by primal co
 because the reference measure `μ ⊗ ν` of the relative entropy moves with the marginals.
 
 At positive temperature `ε ≠ 0` and for a bounded cost `c ≤ B`, canonical Schrödinger potentials
-(`TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials`) supply both quantitative Lipschitz
-stability and joint weak continuity, following Feydy–Séjourné–Vialard–Amari–Trouvé–Peyré,
-Proposition 2:
+(`TauCeti.MeasureTheory.OptimalTransport.Entropic.Potentials`) supply continuous potentials on
+compact spaces, quantitative `W₁`-Lipschitz stability, and joint weak continuity, following
+Feydy–Séjourné–Vialard–Amari–Trouvé–Peyré, Propositions 1 and 2:
 
-1. **Temperature-independent `W₁` stability
+1. **Continuous canonical potentials on compact spaces
+   (`TauCeti.exists_continuous_entropicDualValue_eq`).**
+   On compact spaces `X` and `Y` with measurable opens on each factor, a continuous cost bounded by
+   `B` is automatically product-measurable
+   (`Continuous.measurable_prod_of_sigmaCompact_of_compact`),
+   and the tube-lemma equicontinuity criterion (`Metric.equicontinuous_of_forall_dist_le`) upgrades
+   the canonical measurable potentials of `TauCeti.exists_measurable_entropicDualValue_eq` to
+   continuous potentials satisfying `0 ≤ φ ≤ B`, `|ψ| ≤ B`, and both marginal equations everywhere.
+2. **Temperature-independent `W₁` stability
    (`TauCeti.ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one`).**
-   Evaluating weak duality for `(μ, ν')` at the canonical potentials `(φ', ψ')` of `(μ', ν')`
-   (`TauCeti.exists_entropicDualValue_eq_toReal_entropicTransportCost_and_le`) and transferring
-   slicewise Lipschitz regularity via
+   Evaluating weak duality for `(μ, ν')` at the canonical potentials `(φ', ψ')` of `(μ', ν')` and
+   transferring slicewise Lipschitz regularity via
    `TauCeti.lipschitzWith_of_forall_integral_entropicGibbsFactor_eq_one`, the exponential penalty
    vanishes identically because `φ'` solves the `ν'`-marginal equation at every point of `X`, even
    off the support of `μ'`. Thus `OT_ε(μ', ν') - OT_ε(μ, ν') ≤ ∫ φ' d(μ' - μ) ≤ K₁ W₁(μ', μ)`,
    with no factor depending on `ε` or `B`. Combining with the symmetric target estimate yields
    `|OT_ε(μ', ν') - OT_ε(μ, ν)| ≤ K₁ W₁(μ', μ) + K₂ W₁(ν', ν)`.
-2. **Joint weak continuity (`TauCeti.continuous_entropicTransportCost`).**
+3. **Joint weak continuity (`TauCeti.continuous_entropicTransportCost_of_lipschitzWith`,
+   `TauCeti.continuous_entropicTransportCost`).**
    Because `0 ≤ φ' ≤ B`, centering `φ'` by `B / 2` also bounds the difference by truncated optimal
    transport
    (`TauCeti.abs_integral_sub_integral_le_add_one_mul_toReal_transportCost_truncated_dist`),
@@ -47,12 +57,16 @@ Proposition 2:
    transport bound is independent of `ε`, passing `ε → 0⁺` via
    `TauCeti.tendsto_entropicTransportCost_transportCost_of_continuous` extends weak continuity on
    compact pseudometric spaces to `ε = 0`. On arbitrary compact spaces `X` and `Y` with measurable
-   opens, factoring a continuous finite cost through compact metric ranges inside `C(Y, ℝ)` and
-   `C(K, ℝ)` (`TauCeti.entropicTransportCost_comp_prodMap_of_continuous`) yields joint weak
-   continuity at every temperature `ε : ℝ≥0` with no metrisability hypothesis.
+   opens on each factor, factoring a continuous finite cost through compact pseudometric ranges
+   (`ContinuousMap.exists_factor_lipschitzWith_one`,
+   `TauCeti.entropicTransportCost_comp_prodMap_of_continuous`) yields joint weak continuity at every
+   temperature `ε : ℝ≥0` with neither metrisability nor `[OpensMeasurableSpace (X × Y)]`.
 
 ## Main statements
 
+* `TauCeti.exists_continuous_entropicDualValue_eq`: existence of continuous canonical Schrödinger
+  potentials on compact spaces satisfying `0 ≤ φ ≤ B`, `|ψ| ≤ B`, coordinate oscillation bounds, and
+  both pointwise marginal equations.
 * `TauCeti.ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one` and
   `TauCeti.abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one`: `W₁`-Lipschitz stability
   of entropic optimal transport on extended pseudometric spaces.
@@ -67,7 +81,7 @@ Proposition 2:
 
 * J. Feydy, T. Séjourné, F.-X. Vialard, S. Amari, A. Trouvé and G. Peyré,
   *Interpolating between optimal transport and MMD using Sinkhorn divergences*,
-  AISTATS 2019, Proposition 2.
+  AISTATS 2019, Propositions 1 and 2.
 * M. Nutz, *Introduction to Entropic Optimal Transport*, lecture notes, Columbia University, 2021,
   §2.
 -/
@@ -80,6 +94,51 @@ open Filter InformationTheory MeasureTheory Set
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
+
+section ContinuousPotentials
+
+/-- **Existence of continuous canonical Schrödinger potentials on compact spaces.** For probability
+measures on compact spaces `X` and `Y` with measurable opens on each factor, a continuous cost
+bounded by `B`, and a positive temperature `ε`, the entropic dual problem is attained by continuous
+potentials `(φ, ψ)` satisfying `0 ≤ φ ≤ B` and `|ψ| ≤ B`, inheriting every uniform coordinate
+oscillation bound of `(c ·).toReal`, solving both Schrödinger marginal equations pointwise
+everywhere on `X` and `Y`, and attaining `(entropicTransportCost c ε μ ν).toReal` in both the
+Kantorovich and entropic dual objectives. -/
+theorem exists_continuous_entropicDualValue_eq
+    {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+    {c : X × Y → ℝ≥0∞} {ε B : ℝ≥0} {μ : Measure X} {ν : Measure Y}
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hc : Continuous c) (hcB : ∀ z, c z ≤ B)
+    (hε : ε ≠ 0) :
+    ∃ (φ : X → ℝ) (ψ : Y → ℝ), Continuous φ ∧ Continuous ψ ∧
+      (∀ x, 0 ≤ φ x ∧ φ x ≤ B) ∧ (∀ y, |ψ y| ≤ B) ∧
+      (∀ x₁ x₂ δ, (∀ y, |(c (x₁, y)).toReal - (c (x₂, y)).toReal| ≤ δ) →
+        |φ x₁ - φ x₂| ≤ δ) ∧
+      (∀ y₁ y₂ δ, (∀ x, |(c (x, y₁)).toReal - (c (x, y₂)).toReal| ≤ δ) →
+        |ψ y₁ - ψ y₂| ≤ δ) ∧
+      (∀ x, ∫ y, entropicGibbsFactor c ε φ ψ (x, y) ∂ν = 1) ∧
+      (∀ y, ∫ x, entropicGibbsFactor c ε φ ψ (x, y) ∂μ = 1) ∧
+      kantorovichDualValue μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal ∧
+      entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal := by
+  have hfin : ∀ z, c z ≠ ∞ := fun z ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)
+  have hc_real : Continuous fun z ↦ (c z).toReal := hc.ennreal_toReal hfin
+  obtain ⟨φ, ψ, -, -, hφB, hψB, hφ_osc, hψ_osc, hrow, hcol, hkant, hent⟩ :=
+    exists_measurable_entropicDualValue_eq (μ := μ) (ν := ν)
+      hc.measurable_prod_of_sigmaCompact_of_compact hcB hε
+  have hφc : Continuous φ :=
+    (Metric.equicontinuous_of_forall_dist_le (F := fun _ : Unit ↦ φ) (L := 1) hc_real
+      fun x₁ x₂ δ _ h _ ↦ by
+        simpa only [Real.dist_eq, one_mul] using
+          hφ_osc x₁ x₂ δ (by simpa only [Real.dist_eq] using h)).continuous ()
+  have hψc : Continuous ψ :=
+    (Metric.equicontinuous_of_forall_dist_le (F := fun _ : Unit ↦ ψ) (L := 1)
+      (hc_real.comp continuous_swap) fun y₁ y₂ δ _ h _ ↦ by
+        simpa only [Real.dist_eq, one_mul] using hψ_osc y₁ y₂ δ
+          (by simpa only [Real.dist_eq, Function.comp_apply, Prod.swap_prod_mk] using h)).continuous
+      ()
+  exact ⟨φ, ψ, hφc, hψc, hφB, hψB, hφ_osc, hψ_osc, hrow, hcol, hkant, hent⟩
+
+end ContinuousPotentials
 
 section MarginalStability
 
@@ -96,8 +155,8 @@ private theorem exists_lipschitzWith_source_potential_diff_bound [PseudoEMetricS
       (entropicTransportCost c ε μ' ν).toReal - (entropicTransportCost c ε μ ν).toReal ≤
         ∫ x, φ' x ∂μ' - ∫ x, φ' x ∂μ := by
   have hfin (z : X × Y) : c z ≠ ∞ := ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)
-  obtain ⟨φ', ψ', hφ', hψ', hφ'B, hψ'B, hrow, -, hkant, -⟩ :=
-    exists_entropicDualValue_eq_toReal_entropicTransportCost_and_le (μ := μ') (ν := ν) hc hcB hε
+  obtain ⟨φ', ψ', hφ', hψ', hφ'B, hψ'B, -, -, hrow, -, hkant, -⟩ :=
+    exists_measurable_entropicDualValue_eq (μ := μ') (ν := ν) hc hcB hε
   have hφ'L : LipschitzWith K₁ φ' :=
     lipschitzWith_of_forall_integral_entropicGibbsFactor_eq_one hc hfin hε hL₁ hψ'
       (fun y ↦ le_of_abs_le (hψ'B y)) hrow
@@ -166,8 +225,7 @@ theorem ofReal_abs_toReal_entropicTransportCost_sub_le_wassersteinEDist_one
   refine (ENNReal.ofReal_le_ofReal htri).trans (ENNReal.ofReal_add_le.trans ?_)
   gcongr
   · exact ofReal_abs_toReal_entropicTransportCost_sub_left_le_wassersteinEDist_one hc hcB hL₁ hε
-  · rw [← entropicTransportCost_comp_swap (c := c) (μ := μ) (ν := ν'),
-      ← entropicTransportCost_comp_swap (c := c) (μ := μ) (ν := ν)]
+  · rw [← entropicTransportCost_comp_swap c ε ν', ← entropicTransportCost_comp_swap c ε ν]
     exact ofReal_abs_toReal_entropicTransportCost_sub_left_le_wassersteinEDist_one
       (hc.comp measurable_swap) (fun w ↦ hcB w.swap) hL₂ hε
 
@@ -301,7 +359,7 @@ theorem continuous_toReal_entropicTransportCost_of_lipschitzWith
       have hb := abs_toReal_entropicTransportCost_sub_left_le_transportCost_truncated_dist
         (c := c ∘ Prod.swap) (μ := ν) (μ' := ν') (ν := μ)
         (hc.comp measurable_swap) (fun w ↦ hcB w.swap) hL₂ hε
-      rwa [entropicTransportCost_comp_swap, entropicTransportCost_comp_swap] at hb)
+      rwa [entropicTransportCost_comp_swap c ε ν', entropicTransportCost_comp_swap c ε ν] at hb)
 
 /-- **Joint weak continuity of entropic optimal transport in `ℝ≥0∞`, for bounded
 slicewise-Lipschitz costs.** -/
@@ -317,7 +375,7 @@ theorem continuous_entropicTransportCost_of_lipschitzWith
   have heq : (fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
       entropicTransportCost c ε q.1.toMeasure q.2.toMeasure) =
       fun q ↦ ENNReal.ofReal (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal :=
-    funext fun q ↦ (ENNReal.ofReal_toReal
+    funext fun _ ↦ (ENNReal.ofReal_toReal
       (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε)).symm
   rw [heq]
   exact ENNReal.continuous_ofReal.comp
@@ -357,10 +415,11 @@ private theorem abs_toReal_entropicTransportCost_sub_left_le_of_compact
       (μ := μ) (μ' := μ') (ν := ν) hc hcB hcL₁ hε
 
 /-- **Joint weak continuity of entropic optimal transport on compact spaces.** For arbitrary
-compact topological spaces `X` and `Y` whose open sets are measurable (with no metrisability
-assumption), a continuous finite-valued cost `c`, and any temperature `ε : ℝ≥0` (including the
-unregularised Kantorovich transport cost at `ε = 0`), the real-valued regularised transport cost
-is jointly continuous on `ProbabilityMeasure X × ProbabilityMeasure Y`. -/
+compact topological spaces `X` and `Y` whose open sets are measurable (with neither metrisability
+nor `[OpensMeasurableSpace (X × Y)]`), a continuous finite-valued cost `c`, and any temperature
+`ε : ℝ≥0` (including the unregularised Kantorovich transport cost at `ε = 0`), the real-valued
+regularised transport cost is jointly continuous on
+`ProbabilityMeasure X × ProbabilityMeasure Y`. -/
 theorem continuous_toReal_entropicTransportCost
     {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
     [OpensMeasurableSpace X] [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
@@ -368,12 +427,11 @@ theorem continuous_toReal_entropicTransportCost
     (hfin : ∀ z, c z ≠ ∞) :
     Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
       (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal := by
-  obtain ⟨B, hB⟩ := ENNReal.exists_forall_le_of_continuous hc hfin
+  obtain ⟨B, hB⟩ := hc.exists_forall_le_coe_of_ne_top hfin
   -- Factor `c.toReal` through continuous surjections `Φ : X → K`, `Ψ : Y → L` onto compact
   -- pseudometric spaces with a continuous reduced cost `g : K × L → ℝ` whose slices are
   -- `1`-Lipschitz in both variables.
-  let f : C(X × Y, ℝ) :=
-    ⟨fun z ↦ (c z).toReal, ENNReal.continuousOn_toReal.comp_continuous hc hfin⟩
+  let f : C(X × Y, ℝ) := ⟨fun z ↦ (c z).toReal, hc.ennreal_toReal hfin⟩
   obtain ⟨K, L, _, _, _, _, Φ, Ψ, g, hΦc, hΦs, hΨc, hΨs, hgc, hgL₁, hgL₂, hfg⟩ :=
     f.exists_factor_lipschitzWith_one
   borelize K L
@@ -400,7 +458,8 @@ theorem continuous_toReal_entropicTransportCost
           (fun w ↦ hbB w.swap) hgL₂ ν ν' μ
         have hswap : (fun w : L × K ↦ ((b ∘ Prod.swap) w : ℝ≥0∞)) =
             (fun w : K × L ↦ (b w : ℝ≥0∞)) ∘ Prod.swap := rfl
-        rwa [hswap, entropicTransportCost_comp_swap, entropicTransportCost_comp_swap] at hb)
+        rwa [hswap, entropicTransportCost_comp_swap _ ε ν',
+          entropicTransportCost_comp_swap _ ε ν] at hb)
   -- Pull continuity back along the pushforward map `(q.1, q.2) ↦ (q.1.map Φ, q.2.map Ψ)`.
   have hcost_eq : c = fun z ↦ (b (Prod.map Φ Ψ z) : ℝ≥0∞) := funext fun z ↦ by
     rw [← ENNReal.ofReal_toReal (hfin z), ← ENNReal.ofReal_coe_nnreal]
@@ -415,7 +474,8 @@ theorem continuous_toReal_entropicTransportCost
     (ProbabilityMeasure.continuous_map hΨc))).congr fun q ↦
       congrArg ENNReal.toReal (hpush q).symm
 
-/-- **Joint weak continuity of entropic optimal transport in `ℝ≥0∞` on compact spaces.** -/
+/-- **Joint weak continuity of entropic optimal transport in `ℝ≥0∞` on compact spaces** at every
+temperature `ε : ℝ≥0`. -/
 theorem continuous_entropicTransportCost
     {X Y : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X]
     [OpensMeasurableSpace X] [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace Y]
@@ -423,11 +483,11 @@ theorem continuous_entropicTransportCost
     (hfin : ∀ z, c z ≠ ∞) :
     Continuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
       entropicTransportCost c ε q.1.toMeasure q.2.toMeasure := by
-  obtain ⟨B, hB⟩ := ENNReal.exists_forall_le_of_continuous hc hfin
+  obtain ⟨B, hB⟩ := hc.exists_forall_le_coe_of_ne_top hfin
   have heq : (fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
       entropicTransportCost c ε q.1.toMeasure q.2.toMeasure) =
       fun q ↦ ENNReal.ofReal (entropicTransportCost c ε q.1.toMeasure q.2.toMeasure).toReal :=
-    funext fun q ↦ (ENNReal.ofReal_toReal
+    funext fun _ ↦ (ENNReal.ofReal_toReal
       (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hB) ε)).symm
   rw [heq]
   exact ENNReal.continuous_ofReal.comp (continuous_toReal_entropicTransportCost hc hfin)

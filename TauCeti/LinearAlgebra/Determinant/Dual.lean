@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.Dual.Annihilator
 public import TauCeti.LinearAlgebra.Dual.Basis
 import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.TensorProduct.Dual
 
 /-!
 # Determinant lines of duals and of dual maps
@@ -17,6 +18,12 @@ The top exterior power of the dual of a finite free module `V` is the dual of it
 power: the pairing `(φ₁ ∧ ⋯ ∧ φₙ, v₁ ∧ ⋯ ∧ vₙ) ↦ det (φᵢ vⱼ)` identifies
 `det (V^*) ≃ (det V)^*` (`TauCeti.detLineDualEquiv`). This is Mathlib's
 `exteriorPower.pairingDual` in top degree.
+
+In coordinates, for a basis `b` of `V`, the determinant of a family of functionals `φ` in the
+dual basis of `b` times the determinant of a family of vectors `v` in `b` is `det (φᵢ vⱼ)`
+(`Module.Basis.dualBasis_det_mul_det`); in particular the determinant of the dual basis of a basis
+`u`, in the dual basis of `b`, is the inverse of the determinant of `u` in `b`
+(`Module.Basis.dualBasis_det_dualBasis_mul_det`).
 
 For a linear map `f : M → N` of vector spaces, the dual map `f^* : N^* → M^*` exchanges kernel and
 cokernel up to duality: `ker f^* ≃ (coker f)^*` (`LinearMap.kerDualMapEquiv`) and
@@ -52,6 +59,8 @@ point: its kernel is the orthogonal complement of the range, a copy of the coker
 
 ## Main declarations
 
+* `Module.Basis.dualBasis_det_mul_det`: `det_{b^*} φ · det_b v = det (φᵢ vⱼ)`.
+* `Module.Basis.dualBasis_det_dualBasis_mul_det`: `det_{b^*} u^* · det_b u = 1`.
 * `TauCeti.detLineDualEquiv`: the isomorphism `det (V^*) ≃ (det V)^*`, with value
   `TauCeti.detLineDualEquiv_ιMulti_ιMulti`.
 * `LinearMap.detLineDualMapEquiv`: the isomorphism `det f^* ≃ det f`, with value
@@ -101,6 +110,32 @@ theorem detLineDualEquiv_ιMulti_ιMulti (φ : Fin (finrank R (Dual R V)) → Du
     exteriorPower.pairingDual_ιMulti_ιMulti, Function.comp_apply]
 
 end TauCeti
+
+namespace Module.Basis
+
+variable {ι R M : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The determinant of a family `v` of functionals in the dual basis of `b`, times the
+determinant of a family `u` of vectors in `b`, is the determinant of the matrix of values
+`v i (u j)`. -/
+theorem dualBasis_det_mul_det (b : Basis ι R M) (v : ι → Dual R M) (u : ι → M) :
+    b.dualBasis.det v * b.det u = (Matrix.of fun i j ↦ v i (u j)).det := by
+  rw [det_apply, det_apply, ← Matrix.det_transpose, ← Matrix.det_mul]
+  congr 1
+  ext i j
+  conv_rhs => rw [Matrix.of_apply, ← b.sum_repr (u j), map_sum]
+  simp [Matrix.mul_apply, toMatrix_apply, mul_comm]
+
+/-- The determinant of the dual basis of `u` in the dual basis of `b` is the inverse of the
+determinant of `u` in `b`: their product is `1`. -/
+theorem dualBasis_det_dualBasis_mul_det (b u : Basis ι R M) :
+    b.dualBasis.det u.dualBasis * b.det u = 1 := by
+  rw [dualBasis_det_mul_det]
+  convert Matrix.det_one (R := R) (n := ι)
+  ext i j
+  simp [Matrix.one_apply, Finsupp.single_apply, eq_comm]
+
+end Module.Basis
 
 namespace LinearMap
 
@@ -224,11 +259,8 @@ Fredholm operator, whose kernel is the orthogonal complement of the range of `f`
 comparison `det f† ≃ (det f)^*` (`ContinuousLinearMap.detLineAdjointEquivDual`). -/
 def detLineEquivDualOfKerCoker (e₁ : ker g ≃ₗ[K] N ⧸ range f) (e₂ : (Q ⧸ range g) ≃ₗ[K] ker f) :
     g.detLine ≃ₗ[K] Dual K f.detLine :=
-  (TensorProduct.congr (LinearEquiv.detLineCongr e₁)
-      (LinearEquiv.detLineCongr e₂).symm.dualMap).trans <|
-    (TensorProduct.comm K _ _).trans <|
-      (TensorProduct.congr (LinearEquiv.refl K _) (evalEquiv K _)).trans
-        (dualDistribEquiv K _ _)
+  TensorProduct.congr (LinearEquiv.detLineCongr e₁) (LinearEquiv.detLineCongr e₂).symm.dualMap ≪≫ₗ
+    TensorProduct.dualFlipEquiv K _ _
 
 /-- `LinearMap.detLineEquivDualOfKerCoker` pairs `x ⊗ ψ` with `u ⊗ φ` to `φ (e₁ x) * ψ (e₂⁻¹ u)`. -/
 @[simp]
@@ -238,6 +270,7 @@ theorem detLineEquivDualOfKerCoker_tmul_tmul (e₁ : ker g ≃ₗ[K] N ⧸ range
     (φ : Dual K (TauCeti.detLine K (N ⧸ range f))) :
     detLineEquivDualOfKerCoker e₁ e₂ (x ⊗ₜ ψ) (u ⊗ₜ φ) =
       φ (LinearEquiv.detLineCongr e₁ x) * ψ (LinearEquiv.detLineCongr e₂.symm u) := by
+  rw [mul_comm]
   simp [detLineEquivDualOfKerCoker]
 
 /-- **The pairing is symmetric.** Exchanging the roles of `f` and `g`, with the inverse
@@ -264,12 +297,6 @@ theorem detLineEquivDualOfKerCoker_apply_detLineEquivOfBijective_symm_one
     (hg : Function.Bijective g) (a : g.detLine) :
     detLineEquivDualOfKerCoker e₁ e₂ a ((detLineEquivOfBijective hf).symm 1) =
       detLineEquivOfBijective hg a := by
-  have hcf : finrank K (N ⧸ range f) = 0 :=
-    have := Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hf.2)
-    finrank_zero_of_subsingleton
-  have hcg : finrank K (Q ⧸ range g) = 0 :=
-    have := Submodule.Quotient.subsingleton_iff.mpr (range_eq_top.mpr hg.2)
-    finrank_zero_of_subsingleton
   -- Both sides are linear in `a`, and `g.detLine` is spanned by `(detLineEquivOfBijective hg)⁻¹ 1`,
   -- the tensor of the empty exterior product of the kernel with a functional taking the value `1`
   -- on the empty exterior product of the cokernel; the same holds for `f`.
@@ -277,10 +304,8 @@ theorem detLineEquivDualOfKerCoker_apply_detLineEquivOfBijective_symm_one
     ⟨detLineEquivOfBijective hg a, by rw [← map_smul, smul_eq_mul, mul_one,
       LinearEquiv.symm_apply_apply]⟩
   rw [map_smul, map_smul, LinearMap.smul_apply, LinearEquiv.apply_symm_apply,
-    detLineEquivOfBijective_symm_one hg 0 (TauCeti.detLineEquivOfFinrankEqZero hcg).toLinearMap 0
-      (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcg _),
-    detLineEquivOfBijective_symm_one hf 0 (TauCeti.detLineEquivOfFinrankEqZero hcf).toLinearMap 0
-      (TauCeti.detLineEquivOfFinrankEqZero_ιMulti hcf _),
+    detLineEquivOfBijective_symm_one_eq_ιMulti_tmul hg,
+    detLineEquivOfBijective_symm_one_eq_ιMulti_tmul hf,
     detLineEquivDualOfKerCoker_tmul_tmul]
   simp [TauCeti.detLineEquivOfFinrankEqZero_ιMulti]
 

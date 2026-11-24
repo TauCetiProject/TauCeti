@@ -97,7 +97,7 @@ private theorem derivative_precompOneEquivOfLift_eq {f' : AddCircle T → ℂ}
     (contDiff_derivOfLift hF hper hF' _)]
   refine (toLpₗᵢ T).injective (Lp.ext ?_)
   filter_upwards [toLpₗᵢ_derivative_precompOneEquivOfLift hF hper hφ hc hcF hMF hF'.continuous
-      (f' := (periodic_deriv_of_lift hF hper).lift) (fun _ ↦ rfl) a,
+      (f' := (periodic_of_hasDerivAt_of_lift hF hper).lift) (fun _ ↦ rfl) a,
     toLpₗᵢ_multiplicationOperator_ae (ContinuousMap.toLp ⊤ haarAddCircle ℂ g)
       (precompEquivOfLift hF hper hφ hc hcF hMF
         (derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a)),

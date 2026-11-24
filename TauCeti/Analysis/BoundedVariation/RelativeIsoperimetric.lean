@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import TauCeti.Analysis.BoundedVariation.Poincare
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
@@ -50,8 +49,6 @@ inequality.
 -/
 
 public section
-
-noncomputable section
 
 namespace TauCeti
 

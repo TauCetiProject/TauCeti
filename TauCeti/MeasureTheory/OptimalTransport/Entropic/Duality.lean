@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Matrix.Scaling.Basic
 public import TauCeti.InformationTheory.KullbackLeibler.Variational
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.SchroedingerSystem
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Duality for entropic optimal transport
@@ -47,10 +48,10 @@ additive constant.
 
 ## Main statements
 
-* `TauCeti.entropicGibbsKernel_eq_iff`, `TauCeti.isHermitian_entropicGibbsKernel_iff`, and
-  `TauCeti.comp_swap_eq_of_posSemidef_entropicGibbsKernel`: at positive temperature the Gibbs
-  kernel determines the cost, so a Hermitian (in particular, positive-semidefinite) Gibbs kernel
-  forces the cost to be symmetric.
+* `TauCeti.continuous_entropicGibbsKernel`, `TauCeti.continuous_of_continuous_entropicGibbsKernel`,
+  and `TauCeti.exists_le_of_continuous_entropicGibbsKernel`: continuity of a finite-valued cost at
+  positive temperature is equivalent to continuity of its Gibbs kernel, and on compact spaces gives
+  a finite upper bound on the cost.
 * `TauCeti.IsCoupling.ofReal_entropicDualValue_le_lintegral_add_mul_klDiv` and
   `TauCeti.ofReal_entropicDualValue_le_entropicTransportCost`: weak duality, for a finite source
   measure and an almost everywhere measurable cost.
@@ -215,46 +216,6 @@ theorem entropicGibbsKernel_of_eq_top {x : X} {y : Y} (hz : c (x, y) = ∞) :
     entropicGibbsKernel c ε x y = 0 :=
   entropicGibbsFactor_of_eq_top hz
 
-/-- At positive temperature, the Gibbs kernel determines the cost: two Gibbs kernel entries agree
-exactly when the corresponding extended-nonnegative costs agree. -/
-theorem entropicGibbsKernel_eq_iff {X₁ Y₁ X₂ Y₂ : Type*} {c₁ : X₁ × Y₁ → ℝ≥0∞}
-    {c₂ : X₂ × Y₂ → ℝ≥0∞} {x₁ : X₁} {y₁ : Y₁} {x₂ : X₂} {y₂ : Y₂} (hε : ε ≠ 0) :
-    entropicGibbsKernel c₁ ε x₁ y₁ = entropicGibbsKernel c₂ ε x₂ y₂ ↔
-      c₁ (x₁, y₁) = c₂ (x₂, y₂) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rcases eq_or_ne (c₁ (x₁, y₁)) ∞ with h₁ | h₁ <;>
-      rcases eq_or_ne (c₂ (x₂, y₂)) ∞ with h₂ | h₂
-    · rw [h₁, h₂]
-    · rw [entropicGibbsKernel_of_eq_top h₁, entropicGibbsKernel_of_ne_top h₂] at h
-      exact False.elim ((Real.exp_pos _).ne h)
-    · rw [entropicGibbsKernel_of_ne_top h₁, entropicGibbsKernel_of_eq_top h₂] at h
-      exact False.elim ((Real.exp_pos _).ne' h)
-    · rw [entropicGibbsKernel_of_ne_top h₁, entropicGibbsKernel_of_ne_top h₂, Real.exp_eq_exp,
-        div_left_inj₀ (NNReal.coe_ne_zero.2 hε), neg_inj] at h
-      exact (ENNReal.toReal_eq_toReal_iff' h₁ h₂).1 h
-  · by_cases h₁ : c₁ (x₁, y₁) = ∞
-    · rw [entropicGibbsKernel_of_eq_top h₁, entropicGibbsKernel_of_eq_top (h ▸ h₁)]
-    · rw [entropicGibbsKernel_of_ne_top h₁, entropicGibbsKernel_of_ne_top (h ▸ h₁), h]
-
-/-- At positive temperature, the Gibbs kernel is symmetric (Hermitian) if and only if the cost is
-symmetric. -/
-theorem isHermitian_entropicGibbsKernel_iff {c : X × X → ℝ≥0∞} (hε : ε ≠ 0) :
-    Matrix.IsHermitian (entropicGibbsKernel c ε) ↔ c ∘ Prod.swap = c := by
-  constructor
-  · intro h
-    funext ⟨x, y⟩
-    have hxy := h.apply x y
-    rw [star_trivial] at hxy
-    exact (entropicGibbsKernel_eq_iff hε).1 hxy
-  · intro h
-    exact Matrix.ext fun x y ↦ (star_trivial _).trans
-      ((entropicGibbsKernel_eq_iff hε).2 (congrFun h (x, y)))
-
-/-- A positive-semidefinite Gibbs kernel at positive temperature forces the cost to be symmetric. -/
-theorem comp_swap_eq_of_posSemidef_entropicGibbsKernel {c : X × X → ℝ≥0∞} (hε : ε ≠ 0)
-    (hk : Matrix.PosSemidef (entropicGibbsKernel c ε)) : c ∘ Prod.swap = c :=
-  (isHermitian_entropicGibbsKernel_iff hε).1 hk.isHermitian
-
 /-- The Gibbs kernel is nonnegative. -/
 theorem entropicGibbsKernel_nonneg (x : X) (y : Y) : 0 ≤ entropicGibbsKernel c ε x y :=
   entropicGibbsFactor_nonneg _
@@ -289,6 +250,30 @@ theorem continuous_entropicGibbsKernel [TopologicalSpace X] [TopologicalSpace Y]
     funext fun z ↦ entropicGibbsKernel_of_ne_top (hfin z)
   rw [h]
   exact ((ENNReal.continuousOn_toReal.comp_continuous hc hfin).neg.div_const _).rexp
+
+/-- When `c` avoids `∞` and `ε ≠ 0`, continuity of the Gibbs kernel `exp (-c / ε)` forces `c`
+itself to be continuous. -/
+theorem continuous_of_continuous_entropicGibbsKernel [TopologicalSpace X] [TopologicalSpace Y]
+    (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
+    (hkc : Continuous (Function.uncurry (entropicGibbsKernel c ε))) : Continuous c := by
+  have hne : ∀ z : X × Y, Function.uncurry (entropicGibbsKernel c ε) z ≠ 0 := fun z ↦ by
+    rw [Function.uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z)]
+    exact (Real.exp_pos _).ne'
+  have hc_eq : c = fun z ↦
+      ENNReal.ofReal (-(ε : ℝ) * Real.log (Function.uncurry (entropicGibbsKernel c ε) z)) :=
+    funext fun z ↦ by
+      rw [Function.uncurry_apply_pair, entropicGibbsKernel_of_ne_top (hfin z), Real.log_exp,
+        neg_div, neg_mul_neg, mul_div_cancel₀ _ (NNReal.coe_ne_zero.2 hε),
+        ENNReal.ofReal_toReal (hfin z)]
+  rw [hc_eq]
+  exact ENNReal.continuous_ofReal.comp (continuous_const.mul (hkc.log hne))
+
+/-- On compact spaces, a finite-valued cost whose Gibbs kernel is continuous at positive
+temperature is bounded above by a finite `ℝ≥0` constant. -/
+theorem exists_le_of_continuous_entropicGibbsKernel [TopologicalSpace X] [CompactSpace X]
+    [TopologicalSpace Y] [CompactSpace Y] (hfin : ∀ z, c z ≠ ∞) (hε : ε ≠ 0)
+    (hkc : Continuous (Function.uncurry (entropicGibbsKernel c ε))) : ∃ B : ℝ≥0, ∀ z, c z ≤ B :=
+  (continuous_of_continuous_entropicGibbsKernel hfin hε hkc).exists_forall_le_coe_of_ne_top hfin
 
 end TauCeti
 

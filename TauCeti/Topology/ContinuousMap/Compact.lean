@@ -8,19 +8,30 @@ module
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.ContinuousMap.Ordered
-import Mathlib.Tactic.FieldSimp
 
 /-!
 # Uniform positivity of continuous functions
 
-The continuous real-valued functions bounded below by a positive constant form a convex set.
-On a compact domain this set is open for the uniform topology. These facts apply, for example,
-to separating positive continuous functions in the proof of Pietsch domination.
+Let `𝕜` be a linearly ordered semiring (`IsOrderedRing 𝕜`) with a topology in which addition and
+multiplication by a constant are continuous, so that `C(X, 𝕜)` is a `𝕜`-module. The continuous
+functions into `𝕜` that are bounded below by a positive constant (the uniformly positive functions)
+form a convex set. On a compact domain this set is open for the compact-open topology (the uniform
+topology when `𝕜 = ℝ`). Openness needs only a linear order with a zero on `𝕜` whose lower rays
+`Set.Iic a` are closed: the pointwise positive functions form an open set, and on a nonempty
+compact domain each of them attains a positive minimum.
+These facts apply, for example, to separating positive continuous functions in the proof of
+Pietsch domination.
 
-A linear functional on `C(X, ℝ)` that is bounded above on the uniformly positive functions is
-nonpositive on them, since they form a cone, and hence nonpositive on every nonnegative function:
-adding a small positive constant to a nonnegative function makes it uniformly positive. This is the
-positivity of the functional produced by separating the uniformly positive functions from a cone.
+Now let `𝕜` be a linearly ordered semifield (`IsOrderedRing 𝕜`, so addition need not be strictly
+monotone) in which `a ≤ b` gives `b = a + c` for some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0`, any
+linearly ordered field, or `ℝ≥0` with `max` as addition, again with continuous addition and
+continuous multiplication by a constant. A linear functional `L` on `C(X, 𝕜)` with `L g < u` for
+every uniformly positive `g` is nonpositive on them, since they form a cone. It is then nonpositive
+on every nonnegative function `h`: if `0 < L h`, then a suitable nonnegative multiple of `h` plus
+the constant function `1` is uniformly positive and has positive value under `L`. In the
+real-valued proof of Pietsch domination this gives the sign of the functional produced by
+separating the uniformly positive functions from a cone: it is nonpositive on the nonnegative
+functions, so its negation is a positive functional.
 
 A continuous map from a compact space into a metric space (or normed additive group) stays at a
 uniform positive distance from every point outside its range.
@@ -28,15 +39,20 @@ uniform positive distance from every point outside its range.
 ## Main results
 
 * `ContinuousMap.convex_uniformlyPositive`: the uniformly positive functions form a convex set.
-* `ContinuousMap.isOpen_uniformlyPositive`: on a compact space they form an open set.
+* `ContinuousMap.isOpen_uniformlyPositive`: for a linear order `𝕜` with a zero whose lower rays
+  `Set.Iic a` are closed, the uniformly positive functions on a compact space form an open set for
+  the compact-open topology.
 * `ContinuousMap.exists_pos_le_dist_of_notMem_range`: a continuous map from a compact space into a
   metric space has `dist (f x) y` bounded below by a positive constant when `y ∉ Set.range f`.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
 * `ContinuousMap.exists_factor_lipschitzWith_one`: a continuous map from a product of compact spaces
   into a pseudometric space factors through continuous surjections onto compact pseudometric spaces
   as a continuous map whose slices in each variable are `1`-Lipschitz.
-* `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a functional bounded above on the
-  uniformly positive functions is nonpositive on the nonnegative functions.
+* `ContinuousMap.norm_evalCLM_le_one`, `ContinuousMap.norm_evalCLM`: point evaluation on `C(K, E)`
+  for compact `K` has operator norm at most `1`, and exactly `1` when `E` has nontrivial topology.
+* `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a linear functional on `C(X, 𝕜)` that
+  stays strictly below some `u` on the uniformly positive functions is nonpositive on the
+  nonnegative functions.
 -/
 
 public section
@@ -44,12 +60,16 @@ public section
 open Metric
 open scoped BoundedContinuousFunction
 
+variable {X : Type*} [TopologicalSpace X]
+
 namespace ContinuousMap
 
-/-- The continuous real functions uniformly bounded below by a positive constant form a
-convex set. -/
-theorem convex_uniformlyPositive {X : Type*} [TopologicalSpace X] :
-    Convex ℝ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
+/-- Let `𝕜` be a linearly ordered semiring (`IsOrderedRing 𝕜`) with a topology in which addition
+and multiplication by a constant are continuous. The continuous functions into `𝕜` that are
+uniformly bounded below by a positive constant form a convex set. -/
+theorem convex_uniformlyPositive {𝕜 : Type*} [Semiring 𝕜] [LinearOrder 𝕜] [IsOrderedRing 𝕜]
+    [TopologicalSpace 𝕜] [ContinuousAdd 𝕜] [ContinuousConstSMul 𝕜 𝕜] :
+    Convex 𝕜 {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
   rintro h₁ ⟨δ₁, hδ₁, h₁δ⟩ h₂ ⟨δ₂, hδ₂, h₂δ⟩ a b ha hb hab
   refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun f ↦ ?_⟩
   have e₁ := (min_le_left δ₁ δ₂).trans (h₁δ f)
@@ -59,21 +79,27 @@ theorem convex_uniformlyPositive {X : Type*} [TopologicalSpace X] :
     min δ₁ δ₂ = a * min δ₁ δ₂ + b * min δ₁ δ₂ := by rw [← add_mul, hab, one_mul]
     _ ≤ a * h₁ f + b * h₂ f := by gcongr
 
-/-- Uniform positivity is open in the uniform topology on continuous functions
-on a compact space. -/
-theorem isOpen_uniformlyPositive {X : Type*} [TopologicalSpace X] [CompactSpace X] :
-    IsOpen {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
-  refine Metric.isOpen_iff.2 ?_
-  rintro h ⟨δ, hδ, hhδ⟩
-  refine ⟨δ / 2, half_pos hδ, fun h' hh' ↦ ⟨δ / 2, half_pos hδ, fun f ↦ ?_⟩⟩
-  have := (ContinuousMap.dist_apply_le_dist (f := h') (g := h) f).trans (mem_ball.1 hh').le
-  rw [Real.dist_eq] at this
-  linarith [hhδ f, (abs_le.1 this).1]
+/-- Let `𝕜` be a linear order with zero whose topology makes every lower ray `Set.Iic a` closed
+(`ClosedIicTopology 𝕜`). On a compact space, the continuous functions into `𝕜` that are uniformly
+bounded below by a positive constant form an open set for the compact-open topology. For
+real-valued functions this is the uniform topology. -/
+theorem isOpen_uniformlyPositive {𝕜 : Type*} [Zero 𝕜] [LinearOrder 𝕜] [TopologicalSpace 𝕜]
+    [ClosedIicTopology 𝕜] [CompactSpace X] :
+    IsOpen {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x} := by
+  refine isOpen_iff_mem_nhds.2 fun h ⟨δ, hδ, hhδ⟩ ↦ Filter.mem_of_superset
+    ((isOpen_setOfPred_mapsTo isCompact_univ isOpen_Ioi).mem_nhds
+      fun x _ ↦ hδ.trans_le (hhδ x)) fun g hg ↦ ?_
+  -- On an empty `X` any `δ > 0` is a lower bound. On a nonempty compact `X`, the pointwise
+  -- positive `g` attains a positive minimum.
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact ⟨δ, hδ, isEmptyElim⟩
+  · obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMinOn Set.univ_nonempty g.continuous.continuousOn
+    exact ⟨g x₀, hg (Set.mem_univ x₀), fun x ↦ hx₀ (Set.mem_univ x)⟩
 
 /-- A continuous map from a compact space into a metric space stays at a uniform positive distance
 from every point outside its range. -/
-theorem exists_pos_le_dist_of_notMem_range {X Y : Type*} [TopologicalSpace X] [CompactSpace X]
-    [MetricSpace Y] (f : C(X, Y)) {y : Y} (hy : y ∉ Set.range f) :
+theorem exists_pos_le_dist_of_notMem_range {Y : Type*} [CompactSpace X] [MetricSpace Y]
+    (f : C(X, Y)) {y : Y} (hy : y ∉ Set.range f) :
     ∃ δ > 0, ∀ x, δ ≤ dist (f x) y := by
   rcases isEmpty_or_nonempty X with hX | hX
   · exact ⟨1, zero_lt_one, isEmptyElim⟩
@@ -83,8 +109,8 @@ theorem exists_pos_le_dist_of_notMem_range {X Y : Type*} [TopologicalSpace X] [C
 
 /-- A continuous map from a compact space into a normed additive group has `‖f x - y‖` uniformly
 bounded below by a positive constant whenever `y ∉ Set.range f`. -/
-theorem exists_pos_le_norm_sub_of_notMem_range {X E : Type*} [TopologicalSpace X] [CompactSpace X]
-    [NormedAddCommGroup E] (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
+theorem exists_pos_le_norm_sub_of_notMem_range {E : Type*} [CompactSpace X] [NormedAddCommGroup E]
+    (f : C(X, E)) {y : E} (hy : y ∉ Set.range f) :
     ∃ δ > 0, ∀ x, δ ≤ ‖f x - y‖ := by
   simpa only [dist_eq_norm] using f.exists_pos_le_dist_of_notMem_range hy
 
@@ -92,97 +118,125 @@ section
 
 universe u v w
 
-/-- **Compact double-currying factorisation.** Any continuous map `f : C(X × Y, Z)` from a product
+/-- **Compact double-currying factorisation.** Any continuous map `f : C(A × B, Z)` from a product
 of compact topological spaces into a pseudometric space factors as `f (x, y) = g (Φ x, Ψ y)`
-through continuous surjections `Φ : X → K` and `Ψ : Y → L` onto compact pseudometric spaces, where
+through continuous surjections `Φ : A → K` and `Ψ : B → L` onto compact pseudometric spaces, where
 `g : K × L → Z` is continuous and `1`-Lipschitz in each variable separately. -/
-theorem exists_factor_lipschitzWith_one {X : Type u} {Y : Type v} {Z : Type w}
-    [TopologicalSpace X] [CompactSpace X] [TopologicalSpace Y] [CompactSpace Y]
-    [PseudoMetricSpace Z] (f : C(X × Y, Z)) :
+theorem exists_factor_lipschitzWith_one {A : Type u} {B : Type v} {Z : Type w}
+    [TopologicalSpace A] [CompactSpace A] [TopologicalSpace B] [CompactSpace B]
+    [PseudoMetricSpace Z] (f : C(A × B, Z)) :
     ∃ (K L : Type max v w) (_ : PseudoMetricSpace K) (_ : PseudoMetricSpace L),
       CompactSpace K ∧ CompactSpace L ∧
-      ∃ (Φ : X → K) (Ψ : Y → L) (g : K × L → Z),
+      ∃ (Φ : A → K) (Ψ : B → L) (g : K × L → Z),
         Continuous Φ ∧ Function.Surjective Φ ∧
         Continuous Ψ ∧ Function.Surjective Ψ ∧
         Continuous g ∧
         (∀ l : L, LipschitzWith 1 fun k : K ↦ g (k, l)) ∧
         (∀ k : K, LipschitzWith 1 fun l : L ↦ g (k, l)) ∧
         ∀ x y, g (Φ x, Ψ y) = f (x, y) := by
-  -- Currying `f` embeds `X` onto a compact subset `K ⊆ C(Y, Z)`.
+  -- Currying `f` embeds `A` onto a compact subset `K ⊆ C(B, Z)`.
   let K := Set.range f.curry
   have hKc : CompactSpace K := isCompact_iff_compactSpace.1 (isCompact_range f.curry.continuous)
-  -- Evaluating on `Y × K` and currying again embeds `Y` onto a compact subset `L ⊆ C(K, Z)`.
-  let evalYK : C(Y × K, Z) := ⟨fun p ↦ p.2.1 p.1,
-    (continuous_eval : Continuous fun p : (Y →ᵇ Z) × Y ↦ p.1 p.2).comp
-      (((ContinuousMap.isometryEquivBoundedOfCompact Y Z).continuous.comp
-        (continuous_subtype_val.comp continuous_snd)).prodMk continuous_fst)⟩
-  let L := Set.range evalYK.curry
+  -- Evaluating on `B × K` and currying again embeds `B` onto a compact subset `L ⊆ C(K, Z)`.
+  let evalBK : C(B × K, Z) := ⟨fun p ↦ p.2.val p.1,
+    (continuous_eval : Continuous fun p : (B →ᵇ Z) × B ↦ p.1 p.2).comp
+      (((ContinuousMap.isometryEquivBoundedOfCompact B Z).continuous.comp
+        (continuous_subtypeVal.comp continuous_snd)).prodMk continuous_fst)⟩
+  let L := Set.range evalBK.curry
   have hLc : CompactSpace L :=
-    isCompact_iff_compactSpace.1 (isCompact_range evalYK.curry.continuous)
-  let Φ : X → K := Set.rangeFactorization f.curry
-  let Ψ : Y → L := Set.rangeFactorization evalYK.curry
-  let g : K × L → Z := fun w ↦ w.2.1 w.1
-  have evalYK_apply (y : Y) (k : K) : evalYK (y, k) = k.1 y := rfl
+    isCompact_iff_compactSpace.1 (isCompact_range evalBK.curry.continuous)
+  let Φ : A → K := Set.rangeFactorization f.curry
+  let Ψ : B → L := Set.rangeFactorization evalBK.curry
+  let g : K × L → Z := fun w ↦ w.2.val w.1
+  have evalBK_apply (y : B) (k : K) : evalBK (y, k) = k.val y := rfl
   have hgc : Continuous g :=
     (continuous_eval : Continuous fun p : (K →ᵇ Z) × K ↦ p.1 p.2).comp
       (((ContinuousMap.isometryEquivBoundedOfCompact K Z).continuous.comp
-        (continuous_subtype_val.comp continuous_snd)).prodMk continuous_fst)
+        (continuous_subtypeVal.comp continuous_snd)).prodMk continuous_fst)
   refine ⟨K, L, inferInstance, inferInstance, hKc, hLc, Φ, Ψ, g,
     f.curry.continuous.rangeFactorization, Set.rangeFactorization_surjective,
-    evalYK.curry.continuous.rangeFactorization, Set.rangeFactorization_surjective,
+    evalBK.curry.continuous.rangeFactorization, Set.rangeFactorization_surjective,
     hgc, fun l ↦ ?_, fun k ↦ ?_, fun x y ↦ ?_⟩
-  · obtain ⟨y, hy⟩ := l.2
+  · obtain ⟨y, hy⟩ := l.property
     refine LipschitzWith.of_dist_le_mul fun k₁ k₂ ↦ ?_
-    have h₁ : g (k₁, l) = k₁.1 y := by
+    have h₁ : g (k₁, l) = k₁.val y := by
       dsimp only [g]
-      rw [← hy, ContinuousMap.curry_apply, evalYK_apply]
-    have h₂ : g (k₂, l) = k₂.1 y := by
+      rw [← hy, ContinuousMap.curry_apply, evalBK_apply]
+    have h₂ : g (k₂, l) = k₂.val y := by
       dsimp only [g]
-      rw [← hy, ContinuousMap.curry_apply, evalYK_apply]
+      rw [← hy, ContinuousMap.curry_apply, evalBK_apply]
     simpa only [NNReal.coe_one, one_mul, h₁, h₂, Subtype.dist_eq] using
-      ContinuousMap.dist_apply_le_dist (f := k₁.1) (g := k₂.1) y
+      ContinuousMap.dist_apply_le_dist (f := k₁.val) (g := k₂.val) y
   · refine LipschitzWith.of_dist_le_mul fun l₁ l₂ ↦ ?_
     simpa only [NNReal.coe_one, one_mul, g, Subtype.dist_eq] using
-      ContinuousMap.dist_apply_le_dist (f := l₁.1) (g := l₂.1) k
+      ContinuousMap.dist_apply_le_dist (f := l₁.val) (g := l₂.val) k
   · dsimp only [g, Φ, Ψ]
-    rw [Set.rangeFactorization_coe, ContinuousMap.curry_apply, evalYK_apply,
+    rw [Set.rangeFactorization_coe, ContinuousMap.curry_apply, evalBK_apply,
       Set.rangeFactorization_coe, ContinuousMap.curry_apply]
 
 end
+
+/-- Point evaluation on `C(K, E)` has operator norm at most `1`. -/
+theorem norm_evalCLM_le_one {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]
+    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] (x : K) :
+    ‖evalCLM 𝕜 (M := E) x‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa only [evalCLM_apply, one_mul] using f.norm_coe_le_norm x
+
+/-- Point evaluation on `C(K, E)` has operator norm `1` when `E` has nontrivial topology. -/
+@[simp]
+theorem norm_evalCLM {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]
+    [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NontrivialTopology E] (x : K) :
+    ‖evalCLM 𝕜 (M := E) x‖ = 1 := by
+  refine le_antisymm (norm_evalCLM_le_one x) ?_
+  obtain ⟨v, hv⟩ := exists_norm_ne_zero E
+  -- The constant function `v` has the same norm as `v`, and evaluates to `v` at `x`.
+  have hc : ‖const K v‖ = ‖v‖ :=
+    ((norm_le _ (norm_nonneg v)).2 fun _ ↦ le_rfl).antisymm ((const K v).norm_coe_le_norm x)
+  simpa only [evalCLM_apply, const_apply, hc, div_self hv] using
+    (evalCLM 𝕜 (M := E) x).ratio_le_opNorm (const K v)
 
 end ContinuousMap
 
 namespace LinearMap
 
-/-- A linear functional on `C(X, ℝ)` that is bounded above on the functions bounded below by a
-positive constant is nonpositive on the nonnegative functions. -/
-theorem apply_nonpos_of_forall_uniformlyPositive_lt {X : Type*} [TopologicalSpace X]
-    (L : C(X, ℝ) →ₗ[ℝ] ℝ) {u : ℝ}
-    (hL : ∀ h ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, ℝ)} (hh : 0 ≤ h) :
+/-- A linear functional `L` on `C(X, 𝕜)` with `L g < u` for every function `g` bounded below by a
+positive constant is nonpositive on the nonnegative functions. Here `𝕜` is a linearly ordered
+semifield (`IsOrderedRing 𝕜`, so addition need not be strictly monotone) in which `a ≤ b` gives
+`b = a + c` for some `c` (`ExistsAddOfLE 𝕜`), such as `ℝ≥0`, any linearly ordered field, or `ℝ≥0`
+with `max` as addition, with a topology in which addition and multiplication by a constant are
+continuous. -/
+theorem apply_nonpos_of_forall_uniformlyPositive_lt {𝕜 : Type*} [Semifield 𝕜] [LinearOrder 𝕜]
+    [IsOrderedRing 𝕜] [ExistsAddOfLE 𝕜] [TopologicalSpace 𝕜] [ContinuousAdd 𝕜]
+    [ContinuousConstSMul 𝕜 𝕜] (L : C(X, 𝕜) →ₗ[𝕜] 𝕜) {u : 𝕜}
+    (hL : ∀ h ∈ {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x}, L h < u) {h : C(X, 𝕜)} (hh : 0 ≤ h) :
     L h ≤ 0 := by
+  -- Multiplication by a positive element is strictly monotone in a linearly ordered semifield,
+  -- even when addition is not.
+  have := PosMulMono.toPosMulReflectLT (α := 𝕜)
+  have := PosMulReflectLT.toPosMulStrictMono 𝕜
   -- The uniformly positive functions form a cone, so `L` is nonpositive on them: if `L g > 0`,
-  -- then `t • g` with `t = |u| / L g + 1` is uniformly positive and `L (t • g) = |u| + L g > u`.
-  have hL' (g : C(X, ℝ)) (hg : g ∈ {h : C(X, ℝ) | ∃ δ > 0, ∀ x, δ ≤ h x}) : L g ≤ 0 := by
-    obtain ⟨δ, hδ, hgδ⟩ := hg
+  -- then `0 < L g < u`, so `t • g` with `t = u / L g` is uniformly positive and `L (t • g) = u`.
+  have hL' (g : C(X, 𝕜)) (hg : g ∈ {h : C(X, 𝕜) | ∃ δ > 0, ∀ x, δ ≤ h x}) : L g ≤ 0 := by
     by_contra! hpos
-    have ht : 0 < |u| / L g + 1 := by
-      have := div_nonneg (abs_nonneg u) hpos.le
-      linarith
-    have hlt := hL ((|u| / L g + 1) • g) ⟨_, mul_pos ht hδ, fun x ↦ by
+    obtain ⟨δ, hδ, hgδ⟩ := hg
+    have ht : 0 < u / L g := div_pos (hpos.trans (hL g ⟨δ, hδ, hgδ⟩)) hpos
+    have hlt := hL ((u / L g) • g) ⟨_, mul_pos ht hδ, fun x ↦ by
       simpa using mul_le_mul_of_nonneg_left (hgδ x) ht.le⟩
-    rw [map_smul, smul_eq_mul, add_mul, div_mul_cancel₀ _ hpos.ne', one_mul] at hlt
-    linarith [le_abs_self u]
-  have hL1 : L 1 ≤ 0 := hL' 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩
-  have h1 : 0 < 1 - L 1 := by linarith
-  -- If `0 < L h`, then `h + ε • 1` with `ε = L h / (1 - L 1)` is uniformly positive, and
-  -- `L (h + ε • 1) = L h / (1 - L 1)` is positive.
+    rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne'] at hlt
+    exact lt_irrefl u hlt
+  -- As `L 1 ≤ 0 < 1`, write `1 = L 1 + s`. Then `0 ≤ s`, since `s < 0` would give `L 1 + s ≤ 0`.
+  -- If `0 < L h`, then `t • h + 1` with `t = s / L h` is uniformly positive and
+  -- `L (t • h + 1) = s + L 1 = 1` is positive.
+  have h1 := hL' 1 ⟨1, one_pos, fun _ ↦ le_rfl⟩
+  obtain ⟨s, hs⟩ := exists_add_of_le (h1.trans zero_le_one)
+  have hs0 : 0 ≤ s := le_of_not_gt fun hs0 ↦
+    (add_nonpos h1 hs0.le).not_gt (hs ▸ zero_lt_one)
   by_contra! hpos
-  have hε : 0 < L h / (1 - L 1) := div_pos hpos h1
-  have hle := hL' (h + (L h / (1 - L 1)) • 1) ⟨_, hε, fun x ↦ by simpa using hh x⟩
-  rw [map_add, map_smul, smul_eq_mul] at hle
-  have heq : L h + L h / (1 - L 1) * L 1 = L h / (1 - L 1) := by
-    field_simp
-    ring
-  linarith
+  have hle := hL' ((s / L h) • h + 1) ⟨1, one_pos, fun x ↦
+    le_add_of_nonneg_left (mul_nonneg (div_nonneg hs0 hpos.le) (hh x))⟩
+  rw [map_add, map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne', add_comm, ← hs] at hle
+  exact hle.not_gt one_pos
 
 end LinearMap

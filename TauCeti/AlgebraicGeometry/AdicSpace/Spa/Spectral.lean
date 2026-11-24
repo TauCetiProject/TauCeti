@@ -51,7 +51,7 @@ points lie in `Spv (A, IA)` (Theorem 7.10's inclusion). -/
 theorem spa_subset_spvOfIdeal (P : PairOfDefinition A) (Aplus : Subring A) :
     spa Aplus ⊆ spvOfIdeal P.extendedIdealOfDefinition
       ⟨P.extendedIdealOfDefinition, P.fg_extendedIdealOfDefinition, rfl⟩ :=
-  (spa_def Aplus ▸ Set.inter_subset_left).trans
+  (spa_subset_cont Aplus).trans
     (cont_subset_spvOfIdeal_extendedIdealOfDefinition P)
 
 /-- The trace of `spa Aplus` on `Spv (A, IA)` is pro-constructible — the intersection of

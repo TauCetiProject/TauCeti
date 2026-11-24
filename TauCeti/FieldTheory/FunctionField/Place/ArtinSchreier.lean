@@ -93,7 +93,7 @@ theorem exists_ord_sub_pow_sub_self_gt_of_dvd_ord {n : ℕ} (hn : 1 < n)
     simpa only [heq, add_comm] using h
   -- The linear correction has strictly higher order than the original pole.
   have hsecond : (a : F) / s ∈ P.filtration (P.ord u + 1) := by
-    have haint := P.mem_filtration_zero_iff.mpr a.2
+    have haint := P.mem_filtration_zero_iff.mpr a.property
     have hsint : s⁻¹ ∈ P.filtration q := by
       rw [P.mem_filtration_iff_le_ord (inv_ne_zero hs0), P.ord_inv, hs]
       omega

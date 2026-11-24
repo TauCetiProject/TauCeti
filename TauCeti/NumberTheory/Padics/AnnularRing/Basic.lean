@@ -270,11 +270,11 @@ theorem addConvolutionExists_coeff (x y : AnnularRing p) :
 `DiscreteConvolution.addRingConvolution_assoc`, by pairs `((k, c), (a, b))` with `k + c = n` and
 `a + b = k`. -/
 private theorem summable_sigma_addFiber_coeff_mul_coeff_mul_coeff (x y z : AnnularRing p) (n : ℤ) :
-    Summable fun σ : Σ q : DiscreteConvolution.addFiber n, DiscreteConvolution.addFiber q.1.1 ↦
-      x.coeff σ.2.1.1 * y.coeff σ.2.1.2 * z.coeff σ.1.1.2 := by
+    Summable fun σ : Σ q : DiscreteConvolution.addFiber n, DiscreteConvolution.addFiber q.val.1 ↦
+      x.coeff σ.2.val.1 * y.coeff σ.2.val.2 * z.coeff σ.1.val.2 := by
   -- Such a pair is determined by `(a, b)`, since `c = n - a - b`.
   have hj : Function.Injective fun σ : Σ q : DiscreteConvolution.addFiber n,
-      DiscreteConvolution.addFiber q.1.1 ↦ σ.2.1 := fun _ _ _ ↦ by grind
+      DiscreteConvolution.addFiber q.val.1 ↦ σ.2.val := fun _ _ _ ↦ by grind
   refine ((summable_coeff_mul_coeff_mul_coeff x y z n).comp_injective hj).congr fun σ ↦ ?_
   obtain ⟨⟨⟨k, c⟩, hkc⟩, ⟨⟨a, b⟩, hab⟩⟩ := σ
   simp only [DiscreteConvolution.mem_addFiber] at hkc hab
@@ -394,6 +394,15 @@ theorem coeff_U_pow (n : ℕ) (m : ℤ) :
     by_cases hm : m = -(n + 1 : ℕ)
     · simp [hm, pow_succ']
     · rw [ite_eq_right (show ¬m + 1 = -(n : ℤ) by omega), ite_eq_right hm, mul_zero]
+
+/-- The monomial `T ^ a U ^ b` has normal form `p ^ b T ^ (a - b)`. -/
+theorem coeff_T_pow_mul_U_pow (a b : ℕ) (m : ℤ) :
+    ((T : AnnularRing p) ^ a * U ^ b).coeff m = if m = a - b then (p : ℤ_[p]) ^ b else 0 := by
+  rw [coeff_mul_of_coeff_eq_zero (k := a) fun i hi ↦ by rw [coeff_T_pow, ite_eq_right hi],
+    coeff_T_pow, ite_eq_left rfl, one_mul, coeff_U_pow]
+  by_cases h : m = a - b
+  · rw [ite_eq_left (by omega), ite_eq_left h]
+  · rw [ite_eq_right (by omega), ite_eq_right h]
 
 /-- The defining relation `T U = p` of the annular coefficient ring. -/
 @[simp] theorem T_mul_U : (T : AnnularRing p) * U = (p : AnnularRing p) := by

@@ -7,6 +7,7 @@ module
 
 import TauCeti.Algebra.Module.Dual.ProjectiveInjective
 import TauCeti.Algebra.Module.Opposite
+import TauCeti.RingTheory.Noetherian.LinearMap
 public import TauCeti.LinearAlgebra.Dual.RightAction
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 
@@ -32,17 +33,24 @@ Right `A`-modules are modules over `Aᵐᵒᵖ`.
   synonym, since the module of linear maps already carries the action on the codomain.
 * `TauCeti.MatlisDual.map` and `TauCeti.MatlisDual.mapOp`: the contravariant action on morphisms of
   left and of right modules, with the isomorphisms `TauCeti.MatlisDual.congr` and
-  `TauCeti.MatlisDual.congrOp`.
+  `TauCeti.MatlisDual.congrOp`, and `TauCeti.MatlisDual.congrCoeff` and
+  `TauCeti.MatlisDual.congrCoeffOp` for an isomorphism of the coefficient modules.
 * `TauCeti.MatlisDual.dualSelfEquiv`: the isomorphism `D_R (Hom_A(A, A)) ≅ D_R A` of left
   `A`-modules.
+* `TauCeti.MatlisDual.equivLinearMapDualRegular`: the Hom-tensor adjunction
+  `D_R N ≅ Hom_A(N, D_R A)` for a left `A`-module `N`, where `D_R A` is the dual of the right
+  regular module.
 * `TauCeti.MatlisDual.evalEquiv` and `TauCeti.MatlisDual.evalEquivOp`: biduality for modules of
   finite length over `R`, as an isomorphism of left and of right `A`-modules.
 
 ## Main results
 
 * `TauCeti.subsingleton_matlisDual_iff`: `D_R N` is zero exactly when `N` is, for every `N`.
-* `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: for modules of
-  finite length over `R`, dualizing is a bijection on morphisms.
+* `TauCeti.MatlisDual.bijective_map` and `TauCeti.MatlisDual.bijective_mapOp`: dualizing is a
+  bijection on morphisms into a module of finite length over `R`.
+* `TauCeti.moduleInjective_of_projective_op_matlisDual` and
+  `TauCeti.moduleInjective_op_of_projective_matlisDual`: for an injective `E`, a left or right
+  module with bijective evaluation into its double dual and projective dual is injective.
 * `TauCeti.MatlisDual.exists_retract_of_retract`: a retract of `D_R N` dualizes to a retract of
   `N`, for `N` of finite length over `R`.
 
@@ -151,6 +159,14 @@ theorem map_comp {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module A N'']
   ext
   simp
 
+/-- The right action of the endomorphism ring `Module.End A N` on `D_R N` is dualization of
+endomorphisms. -/
+@[simp]
+theorem end_op_smul_eq_map (γ : (Module.End A N)ᵐᵒᵖ) (φ : MatlisDual R E N) :
+    γ • φ = map γ.unop φ := by
+  ext
+  simp [Module.End.smul_def]
+
 /-- An isomorphism of left modules dualizes to an isomorphism of right modules. The two modules may
 carry any `R`-module structures compatible with the `A`-action. -/
 def congr (e : N ≃ₗ[A] N') : MatlisDual R E N' ≃ₗ[Aᵐᵒᵖ] MatlisDual R E N :=
@@ -177,6 +193,54 @@ theorem congr_refl :
 theorem congr_trans {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module A N'']
     [IsScalarTower R A N''] (e : N ≃ₗ[A] N') (e' : N' ≃ₗ[A] N'') :
     congr (R := R) (E := E) (e.trans e') = (congr e').trans (congr e) := by
+  ext
+  simp
+
+variable {E' E'' : Type*} [AddCommGroup E'] [Module R E'] [AddCommGroup E''] [Module R E'']
+
+/-- An isomorphism `E ≃ E'` of coefficient modules induces an isomorphism of the duals of a left
+module, by postcomposition. -/
+def congrCoeff (f : E ≃ₗ[R] E') : MatlisDual R E N ≃ₗ[Aᵐᵒᵖ] MatlisDual R E' N where
+  toFun φ := (equivLinearMap R E' N).symm (f.toLinearMap ∘ₗ equivLinearMap R E N φ)
+  invFun φ := (equivLinearMap R E N).symm (f.symm.toLinearMap ∘ₗ equivLinearMap R E' N φ)
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+  left_inv _ := by ext; simp
+  right_inv _ := by ext; simp
+
+@[simp]
+theorem congrCoeff_apply (f : E ≃ₗ[R] E') (φ : MatlisDual R E N) (x : N) :
+    equivLinearMap R E' N (congrCoeff (A := A) f φ) x = f (equivLinearMap R E N φ x) :=
+  (rfl)
+
+@[simp]
+theorem congrCoeff_symm (f : E ≃ₗ[R] E') :
+    (congrCoeff (A := A) (N := N) f).symm = congrCoeff f.symm :=
+  (rfl)
+
+@[simp]
+theorem congrCoeff_refl :
+    congrCoeff (A := A) (N := N) (LinearEquiv.refl R E) = LinearEquiv.refl Aᵐᵒᵖ _ := by
+  ext
+  simp
+
+@[simp]
+theorem congrCoeff_trans (f : E ≃ₗ[R] E') (f' : E' ≃ₗ[R] E'') :
+    congrCoeff (A := A) (N := N) (f.trans f') = (congrCoeff f).trans (congrCoeff f') := by
+  ext
+  simp
+
+/-- Changing the coefficients commutes with dualizing a morphism of left modules. -/
+@[simp]
+theorem congrCoeff_comp_map (f : E ≃ₗ[R] E') (g : N →ₗ[A] N') :
+    (congrCoeff (A := A) (N := N) f).toLinearMap ∘ₗ map g =
+      map (R := R) (E := E') g ∘ₗ (congrCoeff f).toLinearMap := by
+  ext
+  simp
+
+@[simp]
+theorem congrCoeff_map_apply (f : E ≃ₗ[R] E') (g : N →ₗ[A] N') (φ : MatlisDual R E N') :
+    congrCoeff (A := A) f (map g φ) = map g (congrCoeff (A := A) f φ) := by
   ext
   simp
 
@@ -256,6 +320,55 @@ theorem congrOp_trans {N'' : Type*} [AddCommGroup N''] [Module R N''] [Module A�
   ext
   simp
 
+variable {E' E'' : Type*} [AddCommGroup E'] [Module R E'] [AddCommGroup E''] [Module R E'']
+
+/-- An isomorphism `E ≃ E'` of coefficient modules induces an isomorphism of the duals of a right
+module, by postcomposition. For instance, `ULift.moduleEquiv` compares the duals with values in `E`
+and in a universe lift of `E`. -/
+def congrCoeffOp (f : E ≃ₗ[R] E') : MatlisDual R E N ≃ₗ[A] MatlisDual R E' N where
+  toFun φ := (equivLinearMap R E' N).symm (f.toLinearMap ∘ₗ equivLinearMap R E N φ)
+  invFun φ := (equivLinearMap R E N).symm (f.symm.toLinearMap ∘ₗ equivLinearMap R E' N φ)
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+  left_inv _ := by ext; simp
+  right_inv _ := by ext; simp
+
+@[simp]
+theorem congrCoeffOp_apply (f : E ≃ₗ[R] E') (φ : MatlisDual R E N) (x : N) :
+    equivLinearMap R E' N (congrCoeffOp (A := A) f φ) x = f (equivLinearMap R E N φ x) :=
+  (rfl)
+
+@[simp]
+theorem congrCoeffOp_symm (f : E ≃ₗ[R] E') :
+    (congrCoeffOp (A := A) (N := N) f).symm = congrCoeffOp f.symm :=
+  (rfl)
+
+@[simp]
+theorem congrCoeffOp_refl :
+    congrCoeffOp (A := A) (N := N) (LinearEquiv.refl R E) = LinearEquiv.refl A _ := by
+  ext
+  simp
+
+@[simp]
+theorem congrCoeffOp_trans (f : E ≃ₗ[R] E') (f' : E' ≃ₗ[R] E'') :
+    congrCoeffOp (A := A) (N := N) (f.trans f') = (congrCoeffOp f).trans (congrCoeffOp f') := by
+  ext
+  simp
+
+/-- Changing the coefficients commutes with dualizing a morphism of right modules. -/
+@[simp]
+theorem congrCoeffOp_comp_mapOp (f : E ≃ₗ[R] E') (g : N →ₗ[Aᵐᵒᵖ] N') :
+    (congrCoeffOp (A := A) (N := N) f).toLinearMap ∘ₗ mapOp g =
+      mapOp (R := R) (E := E') g ∘ₗ (congrCoeffOp f).toLinearMap := by
+  ext
+  simp
+
+@[simp]
+theorem congrCoeffOp_mapOp_apply (f : E ≃ₗ[R] E') (g : N →ₗ[Aᵐᵒᵖ] N') (φ : MatlisDual R E N') :
+    congrCoeffOp (A := A) f (mapOp g φ) = mapOp g (congrCoeffOp (A := A) f φ) := by
+  ext
+  simp
+
 end Right
 
 section Regular
@@ -277,6 +390,55 @@ theorem dualSelfEquiv_apply (θ : MatlisDual R E (Module.Dual A A)) (a : A) :
 theorem dualSelfEquiv_symm_apply (φ : MatlisDual R E A) (ψ : Module.Dual A A) :
     equivLinearMap R E _ (dualSelfEquiv.symm φ) ψ = equivLinearMap R E A φ (ψ 1) := by
   simp [dualSelfEquiv]
+
+variable {N : Type w} [AddCommGroup N] [Module R N] [Module A N] [IsScalarTower R A N]
+
+/-- **The Hom-tensor adjunction for the Matlis dual**: `D_R N` is isomorphic to `Hom_A(N, D_R A)`,
+where `D_R A` is the dual of the right regular module, a left `A`-module. A functional `φ` goes to
+`x ↦ (a ↦ φ (a • x))`, and a morphism `g : N → D_R A` goes back to `x ↦ g x 1`.
+
+This is the restriction-coextension adjunction along `R → A`, stated directly: Mathlib's
+`ModuleCat.restrictCoextendScalarsAdj` needs the module in the universe `max v u₂` and gives only a
+bijection of Hom sets, while this is an `R`-linear equivalence with all universes independent. -/
+def equivLinearMapDualRegular : MatlisDual R E N ≃ₗ[R] (N →ₗ[A] MatlisDual R E A) where
+  toFun φ :=
+    { toFun x := (equivLinearMap R E A).symm <|
+        equivLinearMap R E N φ ∘ₗ (LinearMap.toSpanSingleton A N x).restrictScalars R
+      map_add' _ _ := by ext; simp
+      map_smul' _ _ := by ext; simp [mul_smul] }
+  invFun g := (equivLinearMap R E N).symm <|
+    LinearMap.applyₗ 1 ∘ₗ (equivLinearMap R E A).toLinearMap ∘ₗ g.restrictScalars R
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+  left_inv _ := by ext; simp
+  right_inv g := by ext x a; simp
+
+@[simp]
+theorem equivLinearMapDualRegular_apply_apply (φ : MatlisDual R E N) (x : N) (a : A) :
+    equivLinearMap R E A (equivLinearMapDualRegular φ x) a = equivLinearMap R E N φ (a • x) :=
+  (rfl)
+
+@[simp]
+theorem equivLinearMapDualRegular_symm_apply (g : N →ₗ[A] MatlisDual R E A) (x : N) :
+    equivLinearMap R E N (equivLinearMapDualRegular.symm g) x = equivLinearMap R E A (g x) 1 :=
+  (rfl)
+
+/-- **Naturality of the Hom-tensor adjunction**: dualizing a morphism `g : N → N'` corresponds to
+precomposition with `g`. -/
+@[simp]
+theorem equivLinearMapDualRegular_map {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N']
+    [IsScalarTower R A N'] (g : N →ₗ[A] N') (ψ : MatlisDual R E N') :
+    equivLinearMapDualRegular (map g ψ) = equivLinearMapDualRegular ψ ∘ₗ g := by
+  ext x a
+  simp
+
+/-- **Naturality of the inverse of the Hom-tensor adjunction**: precomposition with `g : N → N'`
+corresponds to dualizing `g`. -/
+@[simp]
+theorem equivLinearMapDualRegular_symm_comp {N' : Type*} [AddCommGroup N'] [Module R N']
+    [Module A N'] [IsScalarTower R A N'] (h : N' →ₗ[A] MatlisDual R E A) (g : N →ₗ[A] N') :
+    equivLinearMapDualRegular.symm (h ∘ₗ g) = map g (equivLinearMapDualRegular.symm h) := by
+  rw [LinearEquiv.symm_apply_eq, equivLinearMapDualRegular_map, LinearEquiv.apply_symm_apply]
 
 end Regular
 
@@ -311,6 +473,19 @@ instance : Module.Injective A (MatlisDual R E A) :=
     (smul_apply a φ x).trans (by rw [op_smul_eq_mul])
 
 end Instances
+
+section Finite
+
+variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E] [IsNoetherian R E]
+  {N : Type w} [AddCommGroup N] [Module R N] [Module.Finite R N]
+
+/-- The dual of a finitely generated module with values in a Noetherian module is Noetherian, as
+linear maps between such modules are (`TauCeti.isNoetherian_linearMap_of_finite`); in particular it
+is finitely generated. -/
+instance : IsNoetherian R (MatlisDual R E N) :=
+  isNoetherian_of_linearEquiv (equivLinearMap R E N).symm
+
+end Finite
 
 section Biduality
 
@@ -351,6 +526,14 @@ theorem subsingleton_matlisDual_iff
   have : Subsingleton (MatlisDual R E (MatlisDual R E N)) :=
     (equivLinearMap R E (MatlisDual R E N)).toEquiv.subsingleton
   exact (MatlisDual.injective_evalₗ hE).subsingleton
+
+/-- The Matlis dual of a module of finite length has finite length, if `E` is injective and each
+`Hom_R(R ⧸ 𝔪, E)` has length one: dualizing preserves length. -/
+theorem MatlisDual.isFiniteLength
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+    (hN : IsFiniteLength R N) : IsFiniteLength R (MatlisDual R E N) := by
+  rw [← Module.length_ne_top_iff] at hN ⊢
+  rwa [(equivLinearMap R E N).length_eq, length_linearMap_of_forall_isMaximal hE]
 
 /-- **Matlis biduality.** If `E` is injective and each `Hom_R(R ⧸ 𝔪, E)` has length one, then
 evaluation `N → D_R (D_R N)` is bijective for every `R`-module `N` of finite length. -/
@@ -398,38 +581,52 @@ theorem MatlisDual.evalEquivOp_apply [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐ
   (rfl)
 
 /-- **Matlis duality is fully faithful on left modules.** Dualizing is a bijection from morphisms
-of left `A`-modules of finite length over `R` to morphisms of their dual right modules. -/
+of left `A`-modules `N → N'` to morphisms of their dual right modules, for `N'` of finite length
+over `R`; the source `N` is arbitrary. -/
 theorem MatlisDual.bijective_map [Module A N] [IsScalarTower R A N]
     {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N'] [IsScalarTower R A N']
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-    (hN : IsFiniteLength R N) (hN' : IsFiniteLength R N') :
+    (hN' : IsFiniteLength R N') :
     Function.Bijective (map (R := R) (A := A) (E := E) : (N →ₗ[A] N') → _) := by
+  -- Evaluation `N → D (D N)` is a map of left modules for every `N`.
+  let ev : N →ₗ[A] MatlisDual R E (MatlisDual R E N) :=
+    { evalₗ R E N with
+      map_smul' := fun a x => by
+        ext φ
+        simp }
   refine ⟨fun g h hgh => ?_, fun F => ⟨(evalEquiv hE hN').symm.toLinearMap ∘ₗ
-    mapOp F ∘ₗ (evalEquiv hE hN).toLinearMap, ?_⟩⟩
+    mapOp F ∘ₗ ev, ?_⟩⟩
   · ext x
     refine (bijective_evalₗ hE hN').1 (MatlisDual.ext fun φ => ?_)
     simpa using congr(equivLinearMap R E N ($hgh φ) x)
   · ext φ x
     rw [map_apply, ← evalEquiv_apply (A := A) hE hN', LinearMap.comp_apply,
       LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
-    simp
+    simp [ev]
 
 /-- **Matlis duality is fully faithful on right modules.** Dualizing is a bijection from morphisms
-of right `A`-modules of finite length over `R` to morphisms of their dual left modules. -/
+of right `A`-modules `N → N'` to morphisms of their dual left modules, for `N'` of finite length
+over `R`; the source `N` is arbitrary. -/
 theorem MatlisDual.bijective_mapOp [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
     {N' : Type*} [AddCommGroup N'] [Module R N'] [Module Aᵐᵒᵖ N'] [IsScalarTower R Aᵐᵒᵖ N']
     (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-    (hN : IsFiniteLength R N) (hN' : IsFiniteLength R N') :
+    (hN' : IsFiniteLength R N') :
     Function.Bijective (mapOp (R := R) (A := A) (E := E) : (N →ₗ[Aᵐᵒᵖ] N') → _) := by
+  -- Evaluation `N → D (D N)` is a map of right modules for every `N`.
+  let ev : N →ₗ[Aᵐᵒᵖ] MatlisDual R E (MatlisDual R E N) :=
+    { evalₗ R E N with
+      map_smul' := fun a x => by
+        ext φ
+        simp }
   refine ⟨fun g h hgh => ?_, fun F => ⟨(evalEquivOp hE hN').symm.toLinearMap ∘ₗ
-    map F ∘ₗ (evalEquivOp hE hN).toLinearMap, ?_⟩⟩
+    map F ∘ₗ ev, ?_⟩⟩
   · ext x
     refine (bijective_evalₗ hE hN').1 (MatlisDual.ext fun φ => ?_)
     simpa using congr(equivLinearMap R E N ($hgh φ) x)
   · ext φ x
     rw [mapOp_apply, ← evalEquivOp_apply (A := A) hE hN', LinearMap.comp_apply,
       LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
-    simp
+    simp [ev]
 
 /-- **A retract of a Matlis dual dualizes to a retract**: if a left `A`-module `I` is a retract of
 `D_R N`, for a right `A`-module `N` of finite length over `R`, then `D_R I` is a retract of `N`,
@@ -445,6 +642,34 @@ theorem MatlisDual.exists_retract_of_retract [Module Aᵐᵒᵖ N] [IsScalarTowe
     (evalEquivOp hE hN).symm.toLinearMap ∘ₗ map r, LinearMap.ext fun φ ↦ ?_⟩
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
   rw [← LinearMap.comp_apply (map s), ← map_comp, hrs, map_id, LinearMap.id_apply]
+
+/-- **A module with projective dual is injective.** If `E` is injective and `R` is small in its
+universe, then a left `A`-module `N` for which evaluation `N → D_R (D_R N)` is bijective, and whose
+dual `D_R N` is a projective right `A`-module, is an injective `A`-module. Evaluation is bijective
+for `N` of finite length over `R` when each `Hom_R(R ⧸ 𝔪, E)` has length one
+(`TauCeti.MatlisDual.bijective_evalₗ`). -/
+theorem moduleInjective_of_projective_op_matlisDual [Module A N] [IsScalarTower R A N]
+    (hN : Function.Bijective (evalₗ R E N)) [Module.Projective Aᵐᵒᵖ (MatlisDual R E N)] :
+    Module.Injective A N :=
+  -- Through evaluation, `N` is the dual of the projective right module `D_R N`.
+  ((LinearEquiv.ofBijective (evalₗ R E N) hN).trans
+    (equivLinearMap R E _)).moduleInjective_of_dual_projective fun a x φ ↦ by simp
+
+attribute [local instance] RingHomInvPair.of_ringEquiv in
+/-- **A right module with projective dual is injective.** If `E` is injective and `R` is small in
+its universe, then a right `A`-module `N` for which evaluation `N → D_R (D_R N)` is bijective, and
+whose dual `D_R N` is a projective left `A`-module, is an injective right `A`-module. -/
+theorem moduleInjective_op_of_projective_matlisDual [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N]
+    (hN : Function.Bijective (evalₗ R E N)) [Module.Projective A (MatlisDual R E N)] :
+    Module.Injective Aᵐᵒᵖ N :=
+  -- This is the left-module case over `Aᵐᵒᵖ`: the action of `Aᵐᵒᵖᵐᵒᵖ` on `D_R N` is that of `A`
+  -- through `RingEquiv.opOp A`.
+  let e : MatlisDual R E N ≃ₛₗ[RingHomClass.toRingHom (RingEquiv.opOp A)] MatlisDual R E N :=
+    { Equiv.refl _ with
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ MatlisDual.ext fun _ ↦ by simp }
+  have : Module.Projective Aᵐᵒᵖᵐᵒᵖ (MatlisDual R E N) := .of_equiv e
+  moduleInjective_of_projective_op_matlisDual (A := Aᵐᵒᵖ) hN
 
 end Biduality
 

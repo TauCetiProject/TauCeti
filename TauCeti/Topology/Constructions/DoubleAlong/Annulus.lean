@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Constructions.DoubleAlong.Basic
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Analysis.Complex.ClosedAnnulus
 public import Mathlib.Topology.Order.ProjIcc
 
@@ -133,7 +133,7 @@ private noncomputable def annulusDoubleMap (h₀ : 0 < r₁) (h : r₁ < r₂) :
         (continuous_upperSemicircle.comp continuous_height).inv⟩
     fun z ↦ by
       simp only [ContinuousMap.coe_mk,
-        inv_upperSemicircle_of_sq_eq_one (height_sq_of_mem_annulusBoundary h z.2)]
+        inv_upperSemicircle_of_sq_eq_one (height_sq_of_mem_annulusBoundary h z.property)]
 
 private theorem annulusDoubleMap_inl (h₀ : 0 < r₁) (h : r₁ < r₂) (z : closedAnnulus r₁ r₂) :
     annulusDoubleMap h₀ h (inl _ z) = (direction h₀ z, upperSemicircle (height z)) :=
@@ -181,11 +181,11 @@ private theorem exists_direction_eq_and_height_eq (h₀ : 0 < r₁) (h : r₁ < 
   set r : ℝ := r₁ + (1 - (x : ℝ)) / 2 * (r₂ - r₁) with hr
   have hr₁ : r₁ ≤ r := by
     have : 0 ≤ (1 - (x : ℝ)) / 2 * (r₂ - r₁) :=
-      mul_nonneg (by linarith [x.2.2]) (by linarith)
+      mul_nonneg (by linarith [x.property.2]) (by linarith)
     linarith
   have hr₂ : r ≤ r₂ := by
     have : (1 - (x : ℝ)) / 2 * (r₂ - r₁) ≤ r₂ - r₁ :=
-      mul_le_of_le_one_left (by linarith) (by linarith [x.2.1])
+      mul_le_of_le_one_left (by linarith) (by linarith [x.property.1])
     linarith
   have hpolar := (closedAnnulusHomeomorph h₀).apply_symm_apply (u, ⟨r, hr₁, hr₂⟩)
   refine ⟨(closedAnnulusHomeomorph h₀).symm (u, ⟨r, hr₁, hr₂⟩), congrArg Prod.fst hpolar, ?_⟩

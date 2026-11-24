@@ -43,6 +43,8 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
 * `MonoidHom.ker_eq_topologicalClosure_normalClosure_insert_pow_of_orderOf_eq`: if a character
   kills all but one topological generator, whose image has finite order `m > 0`, its kernel is the
   closed normal closure of the killed generators and the `m`-th power of the remaining one.
+* `TauCeti.IsTopologicallyFinitelyGenerated.prod`: topological finite generation passes to binary
+  products.
 * `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup_of_finiteIndex`,
   `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup`: topological finite generation
   passes to open finite-index subgroups, in particular to open subgroups of compact groups.
@@ -282,6 +284,36 @@ theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :
   ⟨fun hG ↦ hG.of_surjective (f := (e : G →* H)) e.continuous e.surjective,
     fun hH ↦ hH.of_surjective (f := (e.symm : H →* G)) e.symm.continuous e.symm.surjective⟩
 
+/-- **Topological finite generation passes to binary products**: the images of topological
+generating sets of the two factors under the inclusions `g ↦ (g, 1)` and `h ↦ (1, h)` together
+generate `G × H` topologically. -/
+theorem IsTopologicallyFinitelyGenerated.prod (hG : IsTopologicallyFinitelyGenerated G)
+    (hH : IsTopologicallyFinitelyGenerated H) : IsTopologicallyFinitelyGenerated (G × H) := by
+  classical
+  obtain ⟨s, hs⟩ := hG
+  obtain ⟨t, ht⟩ := hH
+  let u : Finset (G × H) := s.image (MonoidHom.inl G H) ∪ t.image (MonoidHom.inr G H)
+  let K := (Subgroup.closure (u : Set (G × H))).topologicalClosure
+  have hK : IsClosed (K : Set (G × H)) := Subgroup.isClosed_topologicalClosure _
+  have hu : ∀ x ∈ u, x ∈ K := fun _ hx ↦
+    Subgroup.le_topologicalClosure _ (Subgroup.subset_closure hx)
+  -- Each factor of a generating set lands in `K`, so the closed preimage of `K` under each
+  -- inclusion is everything.
+  have hinl : (⊤ : Subgroup G) ≤ K.comap (MonoidHom.inl G H) := by
+    rw [← hs]
+    refine Subgroup.topologicalClosure_minimal _ ((Subgroup.closure_le _).mpr fun g hg ↦ ?_)
+      (hK.preimage (continuous_id.prodMk continuous_const))
+    exact hu _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hg))
+  have hinr : (⊤ : Subgroup H) ≤ K.comap (MonoidHom.inr G H) := by
+    rw [← ht]
+    refine Subgroup.topologicalClosure_minimal _ ((Subgroup.closure_le _).mpr fun h hh ↦ ?_)
+      (hK.preimage (continuous_const.prodMk continuous_id))
+    exact hu _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hh))
+  refine ⟨u, eq_top_iff.mpr fun x _ ↦ ?_⟩
+  have hx : x = MonoidHom.inl G H x.1 * MonoidHom.inr G H x.2 := by simp
+  rw [hx]
+  exact mul_mem (hinl (Subgroup.mem_top x.1)) (hinr (Subgroup.mem_top x.2))
+
 section OpenKernel
 
 /-- A homomorphism whose kernel is open is determined by its values on a topological generating
@@ -307,8 +339,8 @@ theorem IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker
     Finite {f : G →* F // IsOpen (f.ker : Set G)} := by
   obtain ⟨s, hs⟩ := hG
   have : Finite (s : Set G) := s.finite_toSet.to_subtype
-  refine Finite.of_injective (fun f (x : (s : Set G)) ↦ f.1 x) fun f g hfg ↦ Subtype.ext ?_
-  exact MonoidHom.eq_of_eqOn_of_isOpen_ker hs f.2 g.2 fun x hx ↦ congrFun hfg ⟨x, hx⟩
+  refine Finite.of_injective (fun f (x : (s : Set G)) ↦ f.val x) fun f g hfg ↦ Subtype.ext ?_
+  exact MonoidHom.eq_of_eqOn_of_isOpen_ker hs f.property g.property fun x hx ↦ congrFun hfg ⟨x, hx⟩
 
 end OpenKernel
 

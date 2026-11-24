@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Arithmetic
+public import TauCeti.RingTheory.FormalGroup.Curve.Homothety
 public import Mathlib.Algebra.Group.Hom.End
 public import Mathlib.Algebra.Group.Idempotent
 
@@ -15,8 +16,8 @@ public import Mathlib.Algebra.Group.Idempotent
 For a commutative formal group law `F`, when `n` is invertible in the coefficient ring,
 multiplication by `n` on the group of curves is an automorphism. The elementary Cartier projector
 `γ ↦ γ - V_n ([n]⁻¹ (f_n γ))` projects onto the kernel of `f_n`, along the image of `V_n`.
-It preserves coefficients below degree `n`. Over a rational algebra, its effect on the formal
-logarithm is to delete precisely the degrees divisible by `n`.
+It preserves coefficients below degree `n`. On the additive formal group law, and over a rational
+algebra on the formal logarithm, its effect is to delete precisely the degrees divisible by `n`.
 
 These are the individual factors in Cartier's prime-to-`p` projection onto typical curves;
 this file constructs individual factors, without taking an infinite product.
@@ -215,6 +216,30 @@ theorem coeff_cartierProjectorCurve_of_lt (n : ℕ) (hn : n ≠ 0)
   exact Curve.coeff_add_eq_left_of_forall_lt_coeff_eq_zero _ _ hk
     (fun i hi ↦ F.coeff_verschiebungCurve_eq_zero_of_lt hn hi _)
 
+/-- The degree-`k` coefficient of `F.cartierProjectorCurve n hn hunit γ` depends only on the
+coefficients of `γ` in degrees `≤ k`. -/
+theorem coeff_cartierProjectorCurve_congr {n k : ℕ} (hn : n ≠ 0) (hunit : IsUnit (n : R))
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.cartierProjectorCurve n hn hunit γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.cartierProjectorCurve n hn hunit γ₂).toPowerSeries := by
+  have hV : ∀ i ≤ k,
+      PowerSeries.coeff i (F.verschiebungCurve n hn
+          ((F.nsmulCurveEquiv n hunit).symm (F.frobeniusCurve n hn γ₁))).toPowerSeries =
+        PowerSeries.coeff i (F.verschiebungCurve n hn
+          ((F.nsmulCurveEquiv n hunit).symm (F.frobeniusCurve n hn γ₂))).toPowerSeries :=
+    fun i hi ↦ by
+      rw [toPowerSeries_verschiebungCurve, toPowerSeries_verschiebungCurve,
+        PowerSeries.coeff_expand, PowerSeries.coeff_expand]
+      split_ifs
+      · exact F.coeff_nsmulCurveEquiv_symm_congr hunit fun j hj ↦
+          F.coeff_frobeniusCurve_congr hn fun l hl ↦
+            h l (hl.trans ((Nat.mul_le_mul_right n hj).trans
+              ((Nat.div_mul_le_self i n).trans hi)))
+      · rfl
+  rw [cartierProjectorCurve_apply, cartierProjectorCurve_apply]
+  exact Curve.coeff_sub_congr h hV
+
 /-- At coprime indices, a Cartier projector commutes with Verschiebung. -/
 theorem cartierProjectorCurve_verschiebungCurve_of_coprime {m n : ℕ} (hm : m ≠ 0)
     (hn : n ≠ 0) (hunit : IsUnit (m : R)) (hcop : m.Coprime n) (γ : F.Curve) :
@@ -242,6 +267,16 @@ theorem frobeniusCurve_cartierProjectorCurve_of_coprime {m n : ℕ} (hm : m ≠ 
     frobeniusCurve_verschiebungCurve_of_coprime F hm hn hcop,
     F.map_nsmulCurveEquiv_symm (F.frobeniusCurve m hm) n hunit hunit, hf]
 
+/-- Elementary Cartier projectors commute with Cartier's homothety operator `[r]`. -/
+theorem cartierProjectorCurve_homothetyCurve (r : R) (n : ℕ) (hn : n ≠ 0)
+    (hunit : IsUnit (n : R)) (γ : F.Curve) :
+    F.cartierProjectorCurve n hn hunit (F.homothetyCurve r γ) =
+      F.homothetyCurve r (F.cartierProjectorCurve n hn hunit γ) := by
+  rw [cartierProjectorCurve_apply, cartierProjectorCurve_apply, map_sub,
+    F.frobeniusCurve_homothetyCurve,
+    ← F.map_nsmulCurveEquiv_symm (F.homothetyCurve (r ^ n)) n hunit hunit,
+    ← F.homothetyCurve_verschiebungCurve]
+
 /-- On the additive formal group, the Cartier projector subtracts the part supported in
 degrees divisible by its index. -/
 @[simp]
@@ -260,6 +295,17 @@ theorem toPowerSeries_cartierProjectorCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0)
   rw [← Curve.additiveToPowerSeriesHom_apply, map_sub,
     Curve.additiveToPowerSeriesHom_apply, Curve.additiveToPowerSeriesHom_apply,
     toPowerSeries_verschiebungCurve, hnorm]
+
+/-- On the additive formal group, the elementary Cartier projector deletes precisely the
+coefficients whose degrees are divisible by its index. -/
+theorem coeff_toPowerSeries_cartierProjectorCurve_𝔾ₐ (n : ℕ) (hn : n ≠ 0)
+    (hunit : IsUnit (n : R)) (k : ℕ) (γ : (𝔾ₐ (R := R)).Curve) :
+    PowerSeries.coeff k ((𝔾ₐ (R := R)).cartierProjectorCurve n hn hunit γ).toPowerSeries =
+      if n ∣ k then 0 else PowerSeries.coeff k γ.toPowerSeries := by
+  rw [toPowerSeries_cartierProjectorCurve_𝔾ₐ, map_sub, PowerSeries.coeff_expand]
+  split_ifs with hdvd
+  · rw [PowerSeries.coeff_cartier, Nat.add_zero, Nat.mul_div_cancel' hdvd, sub_self]
+  · rw [sub_zero]
 
 /-- The logarithm of a projected curve is obtained by subtracting the part supported in degrees
 divisible by `n`. -/
@@ -280,10 +326,10 @@ theorem coeff_subst_cartierProjectorCurve_log [Algebra ℚ R] (n : ℕ) (hn : n 
     PowerSeries.coeff k (PowerSeries.subst
       (F.cartierProjectorCurve n hn hunit γ).toPowerSeries F.log) =
       if n ∣ k then 0 else PowerSeries.coeff k (PowerSeries.subst γ.toPowerSeries F.log) := by
-  rw [subst_cartierProjectorCurve_log, map_sub, PowerSeries.coeff_expand]
-  split_ifs with hdvd
-  · rw [PowerSeries.coeff_cartier, Nat.add_zero, Nat.mul_div_cancel' hdvd, sub_self]
-  · rw [sub_zero]
+  have h := congrArg (fun δ ↦ PowerSeries.coeff k δ.toPowerSeries)
+    (F.logHom.mapCurve_cartierProjectorCurve n hn hunit γ)
+  simpa only [TauCeti.FormalGroupHom.toPowerSeries_mapCurve, logHom_toPowerSeries,
+    coeff_toPowerSeries_cartierProjectorCurve_𝔾ₐ] using h
 
 /-- Elementary Cartier projectors commute at arbitrary nonzero invertible indices. -/
 theorem cartierProjectorCurve_comm {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0)

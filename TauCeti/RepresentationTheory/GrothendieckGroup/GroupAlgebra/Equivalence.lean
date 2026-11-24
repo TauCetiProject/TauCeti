@@ -73,7 +73,7 @@ private instance : (fdRepToFGModuleFunctor k G).EssSurj := by
   intro M
   let := Module.restrictScalars k k[G] M.obj
   have := IsScalarTower.restrictScalars k k[G] M.obj
-  have : Module.Finite k[G] M.obj := M.2
+  have : Module.Finite k[G] M.obj := M.property
   have : Module.Finite k M.obj := Module.Finite.trans k[G] M.obj
   let ρ := _root_.Representation.ofModule' (k := k) (G := G) M.obj
   have : Module.Finite k[G] ρ.asModule :=

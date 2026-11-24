@@ -9,14 +9,15 @@ public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
-# Finite smooth spanning families
+# Finite differentiable spanning families
 
-A finite-rank smooth real vector bundle over a compact Hausdorff finite-dimensional manifold
-has finitely many global smooth sections spanning every fiber. The base may have corners.
+For `n ≤ ∞`, a finite-rank `C^n` real vector bundle over a compact Hausdorff
+finite-dimensional `C^n` manifold
+has finitely many global `C^n` sections spanning every fiber. The base may have corners.
 The construction cuts off local frames and takes a finite subcover. It does not require a
 metric, orientability, connectedness, a nonempty base, or positive rank.
 
-This is the finite-dimensional perturbation space for generic smooth sections.
+This is the finite-dimensional perturbation space for generic differentiable sections.
 
 ## References
 
@@ -34,24 +35,25 @@ namespace TauCeti
 variable {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [FiniteDimensional ℝ X] [TopologicalSpace H] {I : ModelWithCorners ℝ X H}
   [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [CompactSpace M]
-  [IsManifold I ∞ M] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {n : ℕ∞ω} [IsManifold I n M] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle n F V I]
 
-/-- A compact smooth real vector bundle admits a finite family of global smooth sections
+/-- For `n ≤ ∞`, a compact `C^n` real vector bundle admits a finite family of global `C^n` sections
 spanning each fiber. This includes rank zero and the empty base. -/
-theorem exists_fin_spanning_contMDiffSection :
-    ∃ (n : ℕ) (s : Fin n → ContMDiffSection I F ∞ V),
+theorem exists_fin_spanning_contMDiffSection [ENat.LEInfty n] :
+    ∃ (m : ℕ) (s : Fin m → ContMDiffSection I F n V),
       ∀ x, Submodule.span ℝ (range fun i ↦ s i x) = ⊤ := by
   classical
   let b := Module.finBasis ℝ F
   let e (x : M) := trivializationAt F V x
-  have hlocal (x : M) : ∃ s : Fin (finrank ℝ F) → ContMDiffSection I F ∞ V,
+  have hlocal (x : M) : ∃ s : Fin (finrank ℝ F) → ContMDiffSection I F n V,
       ∃ U : Set M, IsOpen U ∧ x ∈ U ∧
         ∀ y ∈ U, Submodule.span ℝ (range fun i ↦ s i y) = ⊤ := by
-    obtain ⟨f, hf, heq⟩ := (e x).exists_contMDiff_eventuallyEq_localFrame (I := I) b
-      (mem_baseSet_trivializationAt F V x)
+    obtain ⟨f, hf, heq⟩ :=
+      (e x).exists_contMDiff_eventuallyEq_localFrame (I := I) (n := n) b ENat.LEInfty.out
+        (mem_baseSet_trivializationAt F V x)
     obtain ⟨U, hU, hUopen, hxU⟩ := eventually_nhds_iff.mp (Filter.eventually_all.mpr heq)
     refine ⟨fun i ↦ ⟨f i, hf i⟩, U ∩ (e x).baseSet,
       hUopen.inter (e x).open_baseSet, ⟨hxU, mem_baseSet_trivializationAt F V x⟩, ?_⟩
@@ -64,7 +66,7 @@ theorem exists_fin_spanning_contMDiffSection :
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover U hU fun x _ ↦
     mem_iUnion.mpr ⟨x, hxU x⟩
   let J := ↥t × Fin (finrank ℝ F)
-  let f : J → ContMDiffSection I F ∞ V := fun i ↦ s i.1.1 i.2
+  let f : J → ContMDiffSection I F n V := fun i ↦ s i.1.val i.2
   let q := Fintype.equivFin J
   refine ⟨Fintype.card J, f ∘ q.symm, fun x ↦ ?_⟩
   obtain ⟨a, ha, hx⟩ := mem_iUnion₂.mp (ht (mem_univ x))

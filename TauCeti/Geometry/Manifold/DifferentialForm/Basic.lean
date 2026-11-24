@@ -83,6 +83,15 @@ theorem RoughForm.eq_ofFunction {I : ModelWithCorners ℝ E H} {M : Type*} [Topo
   ext v
   rw [RoughForm.ofFunction_apply, Subsingleton.elim v 0]
 
+/-- A rough form takes the same value at equal points on tuples of tangent vectors with equal
+coordinates in the model vector space. -/
+theorem RoughForm.apply_congr {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {k : ℕ}
+    (φ : RoughForm I M F k) {x y : M} (h : x = y) {v : Fin k → TangentSpace I x}
+    {w : Fin k → TangentSpace I y} (hvw : ∀ i, (v i : E) = w i) : φ x v = φ y w := by
+  subst h
+  exact congrArg (φ x) (funext hvw)
+
 section Kernel
 
 variable {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]

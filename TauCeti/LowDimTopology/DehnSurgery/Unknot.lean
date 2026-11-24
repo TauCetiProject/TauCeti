@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Sphere.HemisphereGraph
 public import TauCeti.LowDimTopology.DehnSurgery.Uniqueness
 public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
+import TauCeti.Analysis.Convex.Contractible
 
 /-!
 # Surgery on the unknot
@@ -115,12 +116,10 @@ theorem framingNumber_unknotSolidTorus :
     FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap, ← singularHomologyMap_comp,
     singularHomologyMap_torusClass]
   -- The longitude is the boundary of a meridian disc of the exterior, which is contractible.
-  have : ContractibleSpace (closedBall (0 : ℂ) 1) :=
-    (convex_closedBall 0 1).contractibleSpace ⟨0, by simp⟩
   have hdisc := (SimplyConnectedSpace.paths_homotopic diskBoundaryLoop (Path.refl _)).map
     exteriorMeridianDisc
   rw [loopClass_eq_of_apply_eq _ (diskBoundaryLoop.map exteriorMeridianDisc.continuous) fun t ↦ ?_,
-    (loopClass_eq_iff _ _).2 (pathChain_sub_mem_boundaries₁_of_homotopy hdisc.some),
+    (loopClass_eq_iff _ _).2 (pathChain_sub_mem_boundaries₁_of_homotopy ℤ hdisc.some),
     loopClass_eq_of_apply_eq ((Path.refl _).map exteriorMeridianDisc.continuous) (Path.refl _)
       fun _ ↦ rfl, loopClass_refl, map_zero]
   -- Pointwise, the longitude is the boundary of the meridian disc, read through the exchange of

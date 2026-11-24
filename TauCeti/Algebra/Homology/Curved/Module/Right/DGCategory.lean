@@ -256,8 +256,8 @@ theorem dgCycles_eq :
 exactly when its underlying map commutes with the module differentials. -/
 theorem mem_dgCycles_iff (f : DGHom R 0 M N) :
     f ∈ dgCycles R M N ↔
-      ∀ x : M, N.differential ((dgHomLinearEquivCochains M N 0 f).1 x) =
-        (dgHomLinearEquivCochains M N 0 f).1 (M.differential x) := by
+      ∀ x : M, N.differential ((dgHomLinearEquivCochains M N 0 f).val x) =
+        (dgHomLinearEquivCochains M N 0 f).val (M.differential x) := by
   rw [dgCycles_eq, Submodule.mem_comap, LinearMap.mem_ker, LinearEquiv.coe_toLinearMap,
     dgRightModuleCochains.curvedDifferential_zero_eq_zero_iff]
 
@@ -282,10 +282,10 @@ map of its closed degree-zero component. -/
 theorem coe_dgClosedHomEquivZeroCocycles_apply
     (f : ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) M ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) N) (x : M) :
-    ((dgClosedHomEquivZeroCocycles M N f).1.1 : M →ₗ[Aᵐᵒᵖ] N) x =
+    ((dgClosedHomEquivZeroCocycles M N f).val.val : M →ₗ[Aᵐᵒᵖ] N) x =
       (dgHomLinearEquivCochains M N 0
         (dgClosedHom R (X := ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) M)
-          (Y := ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) N) f)).1 x := by
+          (Y := ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) N) f)).val x := by
   simp only [dgClosedHomEquivZeroCocycles, Equiv.trans_apply, LinearEquiv.coe_toEquiv,
     LinearEquiv.trans_apply, LinearEquiv.ofSubmodule'_apply, LinearEquiv.coe_ofEq_apply,
     dgClosedHomEquiv_apply_coe]
@@ -307,14 +307,14 @@ theorem dgClosedHom_dgClosedHomEquivZeroCocycles_symm_apply
 @[simp]
 theorem dgClosedHomEquivZeroCocycles_id :
     ((dgClosedHomEquivZeroCocycles M M
-        (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) M))).1 :
+        (𝟙 (ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) M))).val :
         dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := M.grading) 0) =
       dgRightModuleCochains.id (R := R) (A := A) (ℳ := M.grading) := by
   refine Subtype.ext (LinearMap.ext fun x => ?_)
   rw [coe_dgClosedHomEquivZeroCocycles_apply, dgClosedHom_id]
   exact congrArg
     (fun c : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := M.grading) 0 =>
-      (c.1 : M →ₗ[Aᵐᵒᵖ] M) x) (dgId_eq M)
+      (c.val : M →ₗ[Aᵐᵒᵖ] M) x) (dgId_eq M)
 
 /-- Composition in the closed degree-zero category corresponds to composition of cochains. -/
 @[simp]
@@ -323,17 +323,17 @@ theorem dgClosedHomEquivZeroCocycles_comp
       ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) N)
     (g : ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) N ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat.{u} R) ℤ) P) :
-    ((dgClosedHomEquivZeroCocycles M P (f ≫ g)).1 :
+    ((dgClosedHomEquivZeroCocycles M P (f ≫ g)).val :
         dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := P.grading) 0) =
-      dgRightModuleCochains.comp (dgClosedHomEquivZeroCocycles N P g).1
-        (dgClosedHomEquivZeroCocycles M N f).1 (zero_add 0) := by
+      dgRightModuleCochains.comp (dgClosedHomEquivZeroCocycles N P g).val
+        (dgClosedHomEquivZeroCocycles M N f).val (zero_add 0) := by
   refine Subtype.ext (LinearMap.ext fun x => ?_)
   rw [dgRightModuleCochains.comp_apply, coe_dgClosedHomEquivZeroCocycles_apply,
     coe_dgClosedHomEquivZeroCocycles_apply, coe_dgClosedHomEquivZeroCocycles_apply,
     dgClosedHom_comp, dgCompZero_def]
   exact (congrArg
     (fun c : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := P.grading) 0 =>
-      (c.1 : M →ₗ[Aᵐᵒᵖ] P) x)
+      (c.val : M →ₗ[Aᵐᵒᵖ] P) x)
     (dgComp_eq M N P (dgClosedHom R f) (dgClosedHom R g) (zero_add 0))).trans
     (by rw [mul_zero, Int.negOnePow_zero, one_smul, dgRightModuleCochains.comp_apply])
 
@@ -347,14 +347,14 @@ homotopy** `k`, a right-module map lowering the internal degree by one. -/
 theorem mem_dgBoundaries_iff (f : DGHom R 0 M N) :
     f ∈ dgBoundaries R M N ↔
       ∃ k : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) (-1),
-        ∀ x : M, (dgHomLinearEquivCochains M N 0 f).1 x =
-          N.differential (k.1 x) + k.1 (M.differential x) := by
+        ∀ x : M, (dgHomLinearEquivCochains M N 0 f).val x =
+          N.differential (k.val x) + k.val (M.differential x) := by
   rw [mem_dgBoundaries]
   constructor
   · rintro ⟨k, rfl⟩
     refine ⟨dgHomLinearEquivCochains M N (-1) k, fun x => ?_⟩
     have hk := congrArg (fun c : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading)
-      (ℳN := N.grading) (-1 + 1) => (c.1 : M →ₗ[Aᵐᵒᵖ] N) x) (dgDifferential_eq M N (-1) k)
+      (ℳN := N.grading) (-1 + 1) => (c.val : M →ₗ[Aᵐᵒᵖ] N) x) (dgDifferential_eq M N (-1) k)
     rw [dgRightModuleCochains.curvedDifferential_neg_one_apply] at hk
     exact hk
   · rintro ⟨k, hk⟩
@@ -362,7 +362,7 @@ theorem mem_dgBoundaries_iff (f : DGHom R 0 M N) :
     apply (dgHomLinearEquivCochains M N 0).injective
     refine Subtype.ext (LinearMap.ext fun x => ?_)
     have hd := congrArg (fun c : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading)
-      (ℳN := N.grading) (-1 + 1) => (c.1 : M →ₗ[Aᵐᵒᵖ] N) x)
+      (ℳN := N.grading) (-1 + 1) => (c.val : M →ₗ[Aᵐᵒᵖ] N) x)
       (dgDifferential_eq M N (-1) ((dgHomLinearEquivCochains M N (-1)).symm k))
     rw [LinearEquiv.apply_symm_apply, dgRightModuleCochains.curvedDifferential_neg_one_apply]
       at hd
@@ -376,9 +376,9 @@ theorem homOf_eq_iff_exists_homotopy {f g : DGHom R 0 M N}
     (hf : f ∈ dgCycles R M N) (hg : g ∈ dgCycles R M N) :
     DGHomotopyCategory.homOf R f hf = DGHomotopyCategory.homOf R g hg ↔
       ∃ k : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) (-1),
-        ∀ x : M, (dgHomLinearEquivCochains M N 0 f).1 x -
-            (dgHomLinearEquivCochains M N 0 g).1 x =
-          N.differential (k.1 x) + k.1 (M.differential x) := by
+        ∀ x : M, (dgHomLinearEquivCochains M N 0 f).val x -
+            (dgHomLinearEquivCochains M N 0 g).val x =
+          N.differential (k.val x) + k.val (M.differential x) := by
   rw [DGHomotopyCategory.homOf_eq_iff, mem_dgBoundaries_iff]
   simp only [map_sub, Submodule.coe_sub, LinearMap.sub_apply]
 

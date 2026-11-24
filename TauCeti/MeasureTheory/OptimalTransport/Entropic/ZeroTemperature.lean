@@ -163,10 +163,8 @@ theorem IsCoupling.isCoupling_fitLaw_prodMap [SigmaFinite (μ.map p)] [SigmaFini
   (hπ.map hp hq).fitLaw_prodMap hp hq hac
 
 /-- **Pushforward invariance of positive-temperature entropic transport along product maps.**
-Because any coupling of `μ.map p` and `ν.map q` of finite relative entropy against
-`(μ.map p).prod (ν.map q)` lifts via `Measure.fitLaw` to a coupling of `μ` and `ν` with the exact
-same relative entropy against `μ.prod ν`, pulling back a measurable cost along `Prod.map p q` at
-positive temperature `ε ≠ 0` equals pushing the marginals forward along `p` and `q`. -/
+At positive temperature `ε ≠ 0`, pulling a measurable cost back along `Prod.map p q` gives the same
+regularised transport cost as pushing the marginals forward along `p` and `q`. -/
 theorem entropicTransportCost_comp_prodMap_of_ne_zero [IsFiniteMeasure μ]
     (hp : Measurable p) (hq : Measurable q) {c' : ι × κ → ℝ≥0∞} (hc' : Measurable c')
     {ε : ℝ≥0} (hε : ε ≠ 0) :
@@ -176,7 +174,8 @@ theorem entropicTransportCost_comp_prodMap_of_ne_zero [IsFiniteMeasure μ]
   have : IsFiniteMeasure (μ.map p) := Measure.isFiniteMeasure_map μ p
   refine le_antisymm (le_entropicTransportCost fun π' hπ' ↦ ?_)
     (le_entropicTransportCost fun π hπ ↦ ?_)
-  · rcases eq_or_ne (klDiv π' ((μ.map p).prod (ν.map q))) ∞ with hkl | hkl
+  · -- Lift `π'` along `Prod.map p q` via `Measure.fitLaw` with the same relative entropy.
+    rcases eq_or_ne (klDiv π' ((μ.map p).prod (ν.map q))) ∞ with hkl | hkl
     · simp [hkl, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hε)]
     have := hπ'.isFiniteMeasure
     have : IsFiniteMeasure (ν.map q) := hπ'.snd_eq ▸ inferInstance
@@ -330,7 +329,7 @@ theorem tendsto_entropicTransportCost_transportCost [IsFiniteMeasure μ]
 /-- **Pushforward invariance of entropic transport at every temperature for discretisable costs.**
 When a measurable cost `c'` can be discretised by finite measurable partitions of its factors,
 pulling `c'` back along `Prod.map p q` equals pushing the marginals forward along `p` and `q` at
-every temperature `ε : ℝ≥0`, including `ε = 0` by passing `ε' → 0⁺`. -/
+every temperature `ε : ℝ≥0`, including `ε = 0`. -/
 theorem entropicTransportCost_comp_prodMap {ι κ : Type*} [MeasurableSpace ι] [MeasurableSpace κ]
     [IsFiniteMeasure μ] {p : X → ι} {q : Y → κ} (hp : Measurable p) (hq : Measurable q)
     {c' : ι × κ → ℝ≥0∞} (hc' : Measurable c')

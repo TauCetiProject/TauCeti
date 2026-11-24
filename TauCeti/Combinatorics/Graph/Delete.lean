@@ -54,6 +54,14 @@ theorem banana_deleteEdges (u w : α) (F D : Set β) :
     (banana u w F).deleteEdges D = banana u w (F \ D) :=
   Graph.ext (by simp) fun e x y ↦ by simp [and_assoc, and_comm (a := e ∉ D)]
 
+/-- Deleting vertices induces the graph on the remaining actual vertices. -/
+theorem deleteVerts_eq_induce (G : Graph α β) (X : Set α) :
+    G.deleteVerts X = G.induce (V(G) \ X) := by
+  refine Graph.ext (by simp) fun e x y ↦ ?_
+  simp only [deleteVerts_isLink, induce_isLink, mem_sdiff, and_congr_right_iff]
+  intro h
+  simp only [h.left_mem, h.right_mem, true_and]
+
 /-- Simplifying after vertex deletion is the same as inducing the simplification on the
 remaining actual vertices. -/
 def toSimpleGraphDeleteVertsIso (G : Graph α β) (X : Set α) :

@@ -132,36 +132,108 @@ open PowerSeries MvPowerSeries
 
 namespace WeierstrassCurve
 
-variable {O : Type*} [CommRing O] [UniformSpace O] [IsUniformAddGroup O] [CompleteSpace O]
-  [T2Space O] [IsTopologicalRing O] [IsLinearTopology O O] (W : WeierstrassCurve O)
+variable {O : Type*} [CommRing O]
 
-omit [UniformSpace O] [IsUniformAddGroup O] [CompleteSpace O] [T2Space O]
-  [IsTopologicalRing O] [IsLinearTopology O O] in
 /-- Both entries of the pair lie in `I ^ k` as soon as the two parameters do. -/
 private theorem pair_mem {I : Ideal O} {k : ℕ} {t₁ t₂ : O} (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) :
     ∀ i, (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂ : Unit ⊕ Unit → O) i ∈ I ^ k := by
   rintro (_ | _) <;> [exact hk₁; exact hk₂]
 
-omit [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] in
+variable [UniformSpace O]
+
 /-- The identity ring homomorphism is continuous. -/
 private theorem continuous_ringHomId : Continuous (RingHom.id O) := by simpa using continuous_id
 
-omit [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] in
 /-- A pair of parameters admits evaluation as soon as each of them does. -/
 private theorem hasEval_pair {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
     (h₂ : PowerSeries.HasEval t₂) :
     MvPowerSeries.HasEval (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂ : Unit ⊕ Unit → O) :=
   MvPowerSeries.hasEval_of_finite_of_isTopologicallyNilpotent <| by rintro (_ | _) <;> assumption
 
-omit [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] in
 /-- A parameter drawn from a positive power of an adic ideal admits evaluation: it lies in `I`,
 and every element of `I` is topologically nilpotent for the `I`-adic topology. -/
 private theorem hasEval_of_mem_pow {I : Ideal O} (hI : IsAdic I) {k : ℕ} (hk : k ≠ 0) {t : O}
     (ht : t ∈ I ^ k) : PowerSeries.HasEval t :=
   hI.isTopologicallyNilpotent_of_mem (Ideal.pow_le_self hk ht)
+
+section Defs
+
+variable (W : WeierstrassCurve O)
+
+/-- The value of the slope series at a pair of parameters. -/
+noncomputable def formalSlopeEval (t₁ t₂ : O) : O :=
+  MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) W.formalSlope
+
+/-- `formalSlopeEval` is evaluation of `formalSlope` at the pair, through the identity ring hom. -/
+theorem formalSlopeEval_def (t₁ t₂ : O) :
+    W.formalSlopeEval t₁ t₂ =
+      MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂)
+        W.formalSlope := (rfl)
+
+/-- The value of the intercept series at a pair of parameters. -/
+noncomputable def formalInterceptEval (t₁ t₂ : O) : O :=
+  MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) W.formalIntercept
+
+/-- `formalInterceptEval` is evaluation of `formalIntercept` at the pair, through the identity
+ring hom. -/
+theorem formalInterceptEval_def (t₁ t₂ : O) :
+    W.formalInterceptEval t₁ t₂ =
+      MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂)
+        W.formalIntercept := (rfl)
+
+/-- The value of the third-root series at a pair of parameters. -/
+noncomputable def formalThirdRootEval (t₁ t₂ : O) : O :=
+  MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) W.formalThirdRoot
+
+/-- `formalThirdRootEval` is evaluation of `formalThirdRoot` at the pair, through the identity
+ring hom. -/
+theorem formalThirdRootEval_def (t₁ t₂ : O) :
+    W.formalThirdRootEval t₁ t₂ =
+      MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂)
+        W.formalThirdRoot := (rfl)
+
+/-- The value of the addition series at a pair of parameters. -/
+noncomputable def formalAddEval (t₁ t₂ : O) : O :=
+  MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) W.formalAdd
+
+/-- `formalAddEval` is evaluation of `formalAdd` at the pair, through the identity ring hom. -/
+theorem formalAddEval_def (t₁ t₂ : O) :
+    W.formalAddEval t₁ t₂ =
+      MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂)
+        W.formalAdd := (rfl)
+
+end Defs
+
+variable [IsUniformAddGroup O] [CompleteSpace O] [T2Space O]
+
+section AdicMem
+
+variable (W : WeierstrassCurve O)
+
+/-- The slope of the chord at parameters of `I ^ k` again lies in `I ^ k`: the slope series has
+vanishing constant coefficient. -/
+theorem formalSlopeEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
+    (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) : W.formalSlopeEval t₁ t₂ ∈ I ^ k := by
+  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · exact MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) continuous_ringHomId
+      (hasEval_pair (hasEval_of_mem_pow hI hk hk₁) (hasEval_of_mem_pow hI hk hk₂)) hI
+      (pair_mem hk₁ hk₂) W.formalSlope (by simp)
+
+/-- The third point's parameter at parameters of `I ^ k` again lies in `I ^ k`. -/
+theorem formalThirdRootEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
+    (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) : W.formalThirdRootEval t₁ t₂ ∈ I ^ k := by
+  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  · exact MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) continuous_ringHomId
+      (hasEval_pair (hasEval_of_mem_pow hI hk hk₁) (hasEval_of_mem_pow hI hk hk₂)) hI
+      (pair_mem hk₁ hk₂) W.formalThirdRoot (by simp)
+
+end AdicMem
+
+variable [IsTopologicalRing O] [IsLinearTopology O O]
 
 /-- Evaluation at a pair of parameters, as a ring homomorphism. The transport lemmas below take
 identities of series to identities of values along this map. -/
@@ -175,55 +247,7 @@ private theorem coe_evalPair {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t₁)
     ⇑(evalPair h₁ h₂) = MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) :=
   MvPowerSeries.coe_eval₂Hom (φ := RingHom.id O) _ (hasEval_pair h₁ h₂)
 
-/-- The value of the slope series at a pair of parameters. -/
-noncomputable def formalSlopeEval (t₁ t₂ : O) : O :=
-  MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) W.formalSlope
-
-omit [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] in
-/-- `formalSlopeEval` is evaluation of `formalSlope` at the pair, through the identity ring hom. -/
-theorem formalSlopeEval_def (t₁ t₂ : O) :
-    W.formalSlopeEval t₁ t₂ =
-      MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂)
-        W.formalSlope := (rfl)
-
-/-- The value of the intercept series at a pair of parameters. -/
-noncomputable def formalInterceptEval (t₁ t₂ : O) : O :=
-  MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) W.formalIntercept
-
-omit [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] in
-/-- `formalInterceptEval` is evaluation of `formalIntercept` at the pair, through the identity
-ring hom. -/
-theorem formalInterceptEval_def (t₁ t₂ : O) :
-    W.formalInterceptEval t₁ t₂ =
-      MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂)
-        W.formalIntercept := (rfl)
-
-/-- The value of the third-root series at a pair of parameters. -/
-noncomputable def formalThirdRootEval (t₁ t₂ : O) : O :=
-  MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) W.formalThirdRoot
-
-omit [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] in
-/-- `formalThirdRootEval` is evaluation of `formalThirdRoot` at the pair, through the identity
-ring hom. -/
-theorem formalThirdRootEval_def (t₁ t₂ : O) :
-    W.formalThirdRootEval t₁ t₂ =
-      MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂)
-        W.formalThirdRoot := (rfl)
-
-/-- The value of the addition series at a pair of parameters. -/
-noncomputable def formalAddEval (t₁ t₂ : O) : O :=
-  MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂) W.formalAdd
-
-omit [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] in
-/-- `formalAddEval` is evaluation of `formalAdd` at the pair, through the identity ring hom. -/
-theorem formalAddEval_def (t₁ t₂ : O) :
-    W.formalAddEval t₁ t₂ =
-      MvPowerSeries.eval₂ (RingHom.id O) (Sum.elim (fun _ ↦ t₁) fun _ ↦ t₂)
-        W.formalAdd := (rfl)
+variable (W : WeierstrassCurve O)
 
 open MvPowerSeries.WithPiTopology in
 /-- **The group law is closed on evaluable parameters**: `F(t₁, t₂)` admits evaluation as soon as
@@ -272,29 +296,6 @@ theorem formalInterceptEval_eq_inr {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t
   simpa [formalInterceptEval, formalSlopeEval, W.formalWEval_def, coe_evalPair, Sum.elim_inl,
     Sum.elim_inr, PowerSeries.eval₂_id_toMvPowerSeries (hasEval_pair h₁ h₂),
     MvPowerSeries.eval₂_X] using h
-
-omit [IsTopologicalRing O] [IsLinearTopology O O] in
-/-- The slope of the chord at parameters of `I ^ k` again lies in `I ^ k`: the slope series has
-vanishing constant coefficient. -/
-theorem formalSlopeEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
-    (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) : W.formalSlopeEval t₁ t₂ ∈ I ^ k := by
-  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  · exact MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) continuous_ringHomId
-      (hasEval_pair (hasEval_of_mem_pow hI hk hk₁) (hasEval_of_mem_pow hI hk hk₂)) hI
-      (pair_mem hk₁ hk₂) W.formalSlope (by simp)
-
-omit [IsTopologicalRing O] [IsLinearTopology O O] in
-/-- The third point's parameter at parameters of `I ^ k` again lies in `I ^ k`. -/
-theorem formalThirdRootEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
-    (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) : W.formalThirdRootEval t₁ t₂ ∈ I ^ k := by
-  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
-  rcases eq_or_ne k 0 with rfl | hk
-  · simp
-  · exact MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) continuous_ringHomId
-      (hasEval_pair (hasEval_of_mem_pow hI hk hk₁) (hasEval_of_mem_pow hI hk hk₂)) hI
-      (pair_mem hk₁ hk₂) W.formalThirdRoot (by simp)
 
 /-- **Vieta's formula at a pair of parameters**, cleared of the inverse of the cubic's leading
 coefficient: the third root satisfies

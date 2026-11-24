@@ -9,9 +9,9 @@ public import Mathlib.Geometry.Manifold.IsManifold.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.Homotopy.Extension.Basic
-import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Configuration
 import TauCeti.Topology.Homotopy.Extension.Segment
+import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
 # An embedded arc through finitely many points of a manifold
@@ -87,14 +87,14 @@ private theorem exists_injective_chart_arc [Nontrivial E] (b : M) :
   have hseg' : segment ℝ c (c + w) = (fun s : ℝ => c + s • w) '' Icc 0 1 := by
     rw [segment_eq_image', add_sub_cancel_left]
   have hmem (t : I) : c + (t : ℝ) • w ∈ φ.symm.source :=
-    φ.symm_source ▸ hseg (hseg' ▸ mem_image_of_mem _ t.2)
+    φ.symm_source ▸ hseg (hseg' ▸ mem_image_of_mem _ t.property)
   refine ⟨⟨fun t => φ.symm (c + (t : ℝ) • w), φ.continuousOn_symm.comp_continuous (by fun_prop)
     fun t => φ.symm_source ▸ hmem t⟩, fun s t hst => ?_, c, c + w, hseg, ?_⟩
   · exact Subtype.ext (smul_left_injective ℝ hw (add_left_cancel (φ.symm.injOn (hmem s)
       (hmem t) hst)))
   · rw [hseg', image_image]
     ext z
-    exact ⟨fun ⟨t, ht⟩ => ⟨t, t.2, ht⟩, fun ⟨t, ht, hz⟩ => ⟨⟨t, ht⟩, hz⟩⟩
+    exact ⟨fun ⟨t, ht⟩ => ⟨t, t.property, ht⟩, fun ⟨t, ht, hz⟩ => ⟨⟨t, ht⟩, hz⟩⟩
 
 variable {n : ℕ∞ω} [IsManifold 𝓘(ℝ, E) n M]
 
@@ -134,7 +134,6 @@ theorem exists_isClosedEmbedding_hasHomotopyExtensionProperty_range [Nonempty M]
     exact Ψ.symm_apply_apply z
   · rw [show range γ = Ψ.symm '' range α from range_comp (⇑Ψ.symm) (⇑α)]
     exact hαhep.image Ψ.symm
-  · have : ContractibleSpace I := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
-    exact hemb.isEmbedding.toHomeomorph.symm.contractibleSpace
+  · exact hemb.isEmbedding.toHomeomorph.symm.contractibleSpace
 
 end TauCeti

@@ -26,7 +26,7 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
 -- Proof-only: the place at infinity is the only place at which `x` has a pole.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Unique
 -- Proof-only: the place at infinity restricts to itself along `[n]`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InfinityPlace.Basic
 -- Proof-only: a place has finitely many places above it.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 -- Proof-only: `[n]` is separable when `n` is invertible, so it splits every place completely over a
@@ -71,9 +71,9 @@ statements are equivalences rather than equalities.
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], II.2.
 
 The construction follows `TauCeti.Isogeny.isEquiv_comap_infinityPlace`
-(`TauCeti/AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace.lean`), the same statement for the
-place at infinity; the ordering of the argument, and the choice to work at the `Valuation.comap`
-level rather than through `Place.restrict`, are taken from there.
+(`TauCeti/AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace/Basic.lean`), the same statement
+for the place at infinity; the ordering of the argument, and the choice to work at the
+`Valuation.comap` level rather than through `Place.restrict`, are taken from there.
 
 ## Prior art
 
@@ -281,9 +281,9 @@ theorem isEquiv_comap_pointPlace_iff {x y : F} (h : W.toAffine.Nonsingular x y) 
 `T`**, among the places of points. -/
 theorem isEquiv_comap_valuation_pointEquivDegreeOnePlace_iff {n : ℤ}
     (hn : psiFunctionField W n ≠ 0) (R T : W.toAffine.Point) :
-    (((pointEquivDegreeOnePlace W.toAffine R).1.valuation).comap
+    (((pointEquivDegreeOnePlace W.toAffine R).val.valuation).comap
         (mulByIntIsogeny W hn).fieldPullback.toRingHom).IsEquiv
-      (pointEquivDegreeOnePlace W.toAffine T).1.valuation ↔ n • R = T := by
+      (pointEquivDegreeOnePlace W.toAffine T).val.valuation ↔ n • R = T := by
   have hinf : ((infinityPlace W.toAffine).comap
       (mulByIntIsogeny W hn).fieldPullback.toRingHom).IsEquiv (infinityPlace W.toAffine) :=
     isEquiv_comap_infinityPlace _
@@ -313,10 +313,10 @@ theorem finite_setOf_zsmul_eq {n : ℤ} (hn : psiFunctionField W n ≠ 0) (T : W
   have := isScalarTower_of_algebraMap_eq_fieldPullback (mulByIntIsogeny W hn) fun _ ↦ rfl
   have := (mulByIntIsogeny W hn).finiteDimensional_functionField fun _ ↦ rfl
   have hinj : Function.Injective fun R : W.toAffine.Point ↦
-      (pointEquivDegreeOnePlace W.toAffine R).1 :=
+      (pointEquivDegreeOnePlace W.toAffine R).val :=
     Subtype.val_injective.comp (pointEquivDegreeOnePlace W.toAffine).injective
   exact ((Place.finite_setOf_restrict_eq (k' := F) (F' := W.toAffine.FunctionField) F
-    W.toAffine.FunctionField (pointEquivDegreeOnePlace W.toAffine T).1).preimage
+    W.toAffine.FunctionField (pointEquivDegreeOnePlace W.toAffine T).val).preimage
       hinj.injOn).subset fun R hR ↦
     (Place.restrict_eq_iff_isEquiv_comap F _ _ _).mpr
       ((isEquiv_comap_valuation_pointEquivDegreeOnePlace_iff W hn R T).mpr hR)
@@ -336,8 +336,8 @@ theorem restrict_eq_pointEquivDegreeOnePlace_iff {n : ℤ} (hchar : (n : F) ≠ 
       (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)) (fun _ ↦ rfl)
     haveI := (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).finiteDimensional_functionField
       (fun _ ↦ rfl)
-    P.restrict F W.toAffine.FunctionField = (pointEquivDegreeOnePlace W.toAffine T).1 ↔
-      ∃ R, n • R = T ∧ (pointEquivDegreeOnePlace W.toAffine R).1 = P := by
+    P.restrict F W.toAffine.FunctionField = (pointEquivDegreeOnePlace W.toAffine T).val ↔
+      ∃ R, n • R = T ∧ (pointEquivDegreeOnePlace W.toAffine R).val = P := by
   let _ := (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)).fieldPullback.toRingHom.toAlgebra
   have := isScalarTower_of_algebraMap_eq_fieldPullback
     (mulByIntIsogeny W (psiFunctionField_ne_zero W hchar)) (fun _ ↦ rfl)
@@ -345,17 +345,17 @@ theorem restrict_eq_pointEquivDegreeOnePlace_iff {n : ℤ} (hchar : (n : F) ≠ 
     (fun _ ↦ rfl)
   have := (isSeparable_mulByIntIsogeny_iff W (psiFunctionField_ne_zero W hchar)).2 hchar
   have hover (R : W.toAffine.Point) :
-      (pointEquivDegreeOnePlace W.toAffine R).1.restrict F W.toAffine.FunctionField =
-        (pointEquivDegreeOnePlace W.toAffine T).1 ↔ n • R = T :=
+      (pointEquivDegreeOnePlace W.toAffine R).val.restrict F W.toAffine.FunctionField =
+        (pointEquivDegreeOnePlace W.toAffine T).val ↔ n • R = T :=
     (Place.restrict_eq_iff_isEquiv_comap F _ _ _).trans
       (isEquiv_comap_valuation_pointEquivDegreeOnePlace_iff W _ R T)
   refine ⟨fun hP ↦ ?_, fun ⟨R, hR, hRP⟩ ↦ by rw [← hRP]; exact (hover R).mpr hR⟩
   -- a place over a place of degree one has degree one, the relative degree being one
   have hdeg : P.degree = 1 := by
     rw [Place.degree_eq_degree_restrict_mul_relativeDegree F W.toAffine.FunctionField P, hP,
-      (pointEquivDegreeOnePlace W.toAffine T).2, one_mul]
+      (pointEquivDegreeOnePlace W.toAffine T).property, one_mul]
     exact (isSplitCompletely _ (fun _ ↦ rfl) _).relativeDegree_eq_one hP
-  obtain ⟨R, hR⟩ : ∃ R, (pointEquivDegreeOnePlace W.toAffine R).1 = P :=
+  obtain ⟨R, hR⟩ : ∃ R, (pointEquivDegreeOnePlace W.toAffine R).val = P :=
     ⟨(pointEquivDegreeOnePlace W.toAffine).symm ⟨P, hdeg⟩, by simp⟩
   exact ⟨R, (hover R).mp (by rw [hR]; exact hP), hR⟩
 

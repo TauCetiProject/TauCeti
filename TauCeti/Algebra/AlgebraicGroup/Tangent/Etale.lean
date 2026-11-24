@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.TrivialIdentity
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
+import Mathlib.Algebra.Field.ULift
 import Mathlib.RingTheory.Etale.Descent
 
 /-!
@@ -35,7 +36,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 open scoped TensorProduct
 
@@ -68,10 +69,11 @@ end FiniteTypeCommHopfAlgCat
 
 namespace HopfAlgebra
 
-variable {k H : Type u} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
+variable {k : Type u} {H : Type v} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
 variable [Algebra.FiniteType k H]
 
-/-- A finite-type affine group over a field is étale if and only if its Lie algebra is zero. -/
+/-- A finite-type affine group over a field is étale if and only if its Lie algebra is zero.
+The coordinate ring may live in any universe. -/
 theorem algebraEtale_iff_finrank_lie_eq_zero :
     Algebra.Etale k H ↔
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) = 0 := by
@@ -83,7 +85,8 @@ theorem algebraEtale_iff_finrank_lie_eq_zero :
     exact Module.finrank_zero_of_subsingleton
   · intro h
     let A := _root_.CommHopfAlgCat.of k H
-    let K := AlgebraicClosure k
+    -- An algebraic closure in the universe of `H`, so that `K ⊗[k] H` is a group over `K`.
+    let K := AlgebraicClosure (ULift.{v} k)
     let AK := K ⊗[k] H
     have hcot : Subsingleton (Bialgebra.CotangentSpace k H) := by
       apply (Module.finrank_zero_iff (R := k)).mp

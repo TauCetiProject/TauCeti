@@ -199,7 +199,7 @@ def typeDDiagonalEquiv : (ι → K) ≃ₗ[K] typeDDiagonalCartan K ι where
     -- Reconstruct the diagonal matrix after identifying its signed coordinates.
     simp only [typeDDiagonalMatrix]
     refine Eq.trans (congrArg diagonal ?_)
-      (mem_typeDDiagonalCartan_iff_isDiag.mp A.2).diagonal_diag
+      (mem_typeDDiagonalCartan_iff_isDiag.mp A.property).diagonal_diag
     funext a
     rcases a with i | i
     · simp [typeDDiagonalValue_inl, diag_apply]
@@ -224,8 +224,8 @@ instance : IsLieAbelian (typeDDiagonalCartan K ι) where
     apply Subtype.ext
     apply Subtype.ext
     exact lie_eq_zero_of_isDiag
-      (mem_typeDDiagonalCartan_iff_isDiag.mp A.2)
-      (mem_typeDDiagonalCartan_iff_isDiag.mp B.2)
+      (mem_typeDDiagonalCartan_iff_isDiag.mp A.property)
+      (mem_typeDDiagonalCartan_iff_isDiag.mp B.property)
 
 /-! ### Self-normalization -/
 
@@ -288,7 +288,7 @@ theorem typeDDiagonalCartan_normalizer_eq_self (h2 : IsRegular (2 : K)) :
   obtain ⟨d, hd⟩ := exists_isRegular_typeDDiagonalValue_sub (K := K) h2 a b hab
   have hbracket := ((typeDDiagonalCartan K ι).mem_normalizer_iff X).mp hX
     (typeDDiagonalEquiv (K := K) (ι := ι) d)
-    (typeDDiagonalEquiv (K := K) (ι := ι) d).2
+    (typeDDiagonalEquiv (K := K) (ι := ι) d).property
   have hzero :
       ((⁅X, (typeDDiagonalEquiv (K := K) (ι := ι) d : typeDDiagonalCartan K ι)⁆ :
           LieAlgebra.Orthogonal.typeD ι K) : Matrix (ι ⊕ ι) (ι ⊕ ι) K) a b = 0 :=

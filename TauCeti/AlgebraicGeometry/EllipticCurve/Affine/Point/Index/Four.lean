@@ -501,8 +501,8 @@ private theorem add_mem_addSubgroupOf_nearSubgroup {ϖ : v.valuationSubring}
     (hQ : Q ∉ (W.nonsingularReduction v).addSubgroupOf (nearSubgroup v hϖ hst)) :
     P + Q ∈ (W.nonsingularReduction v).addSubgroupOf (nearSubgroup v hϖ hst) := by
   rw [AddSubgroup.mem_addSubgroupOf] at hP hQ ⊢
-  exact add_mem_of_notMem_farPoints v hϖ hst hP hQ ((mem_nearSubgroup v hϖ hst).1 P.2)
-    ((mem_nearSubgroup v hϖ hst).1 Q.2)
+  exact add_mem_of_notMem_farPoints v hϖ hst hP hQ ((mem_nearSubgroup v hϖ hst).1 P.property)
+    ((mem_nearSubgroup v hϖ hst).1 Q.property)
 
 /-- `E₀(F)` has index dividing `2` in the subgroup of points not of the form `(ϖ² X, ϖ² Y)`. -/
 private theorem relIndex_nearSubgroup_dvd_two {ϖ : v.valuationSubring}
