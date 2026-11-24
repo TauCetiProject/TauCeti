@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
+import TauCeti.Geometry.Manifold.ContMDiff.Pi
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Topology.Order.Interval
@@ -747,12 +748,9 @@ theorem flowOf_hamiltonianVectorField_dotProduct (v : ι → ℝ) (t : ℝ) (x :
     flowOf (σ.hamiltonianVectorField fun y ↦ v ⬝ᵥ F y) t x =
       (hσ.hamiltonianFlowAction hF hcomm hc (t • v)).toMul x := by
   have hv : ContMDiff I I.tangent 1
-      (fun y ↦ (⟨y, σ.hamiltonianVectorField (fun y ↦ v ⬝ᵥ F y) y⟩ : TangentBundle I M)) := by
-    classical
-    -- `v ⬝ᵥ F` is `F` followed by the linear form `w ↦ v ⬝ᵥ w`.
-    exact hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (by simp)
-      ((LinearMap.toContinuousLinearMap (dotProductEquiv ℝ ι v)).contMDiff.comp
-        (hF.of_le (by simp)))
+      (fun y ↦ (⟨y, σ.hamiltonianVectorField (fun y ↦ v ⬝ᵥ F y) y⟩ : TangentBundle I M)) :=
+    hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (by simp)
+      (contMDiff_const.dotProduct (hF.of_le (by simp)))
   have h := flowOf_eq_of_isMIntegralCurve hv
     (hσ.isMIntegralCurve_hamiltonianFlowAction_smul hF hcomm hc v x) t
   rwa [zero_smul, hσ.hamiltonianFlowAction_zero_apply] at h
