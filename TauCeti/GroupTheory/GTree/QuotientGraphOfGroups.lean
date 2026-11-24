@@ -1002,7 +1002,8 @@ without inversions on a tree in which every dart has trivial stabilizer. Then th
 `x j`, one from each orbit of vertices with nontrivial stabilizer, and a homomorphism
 `f : FreeGroup X →* G`, such that `G` is the internal free product of the stabilizers of the `x j`
 and of the free group `F(X)` along `f`: the homomorphism `(∗ⱼ G_{x j}) ∗ F(X) →* G` induced by the
-inclusions and by `f` is bijective. This is Serre, *Trees*, Chapter I, §5.5, Theorem 14. -/
+inclusions and by `f` is bijective. This is the tree-level step in the proof of Serre, *Trees*,
+Chapter I, §5.5, Theorem 14 (Kurosh). -/
 theorem exists_bijective_coprod_lift_stabilizer (T : GTree.{u, v} G)
     (hE : ∀ e : T.E, stabilizer G e = ⊥) :
     ∃ (J : Type u) (x : J → T.V) (X : Type v) (f : FreeGroup X →* G),
