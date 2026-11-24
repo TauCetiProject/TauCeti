@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Analysis.Normed.Group.Uniform
 import Mathlib.Analysis.Normed.MulAction
+import TauCeti.Topology.MetricSpace.UniformConvergence
 
 /-!
 # Lipschitz constants of multiplication and commutators in seminormed rings
@@ -20,11 +21,15 @@ specializing `lipschitzWith_smul` via `NonUnitalSeminormedRing.isBoundedSMul` an
 `antilipschitzWith_mul_right` for strictly multiplicative norms). Subtracting the two gives
 `(2 * ‖a‖₊)`- and `(2 * ‖b‖₊)`-Lipschitz bounds for the commutator maps `b ↦ a * b - b * a` and
 `a ↦ a * b - b * a` (`TauCeti.lipschitzWith_commutator_left` and
-`TauCeti.lipschitzWith_commutator_right`).
+`TauCeti.lipschitzWith_commutator_right`). Along any filter eventually contained in the closed unit
+ball, the commutator maps `a ↦ e * a - a * e` are eventually `2`-Lipschitz
+(`TauCeti.eventually_lipschitzWith_commutator_left`), so commutator convergence to `0` extends from
+a dense subset to all of `A` (`TauCeti.tendsto_commutator_of_dense`).
 -/
 
 public section
 
+open Filter Topology
 open scoped NNReal
 
 namespace TauCeti
@@ -51,5 +56,23 @@ theorem lipschitzWith_commutator_left (a : A) :
 theorem lipschitzWith_commutator_right (b : A) :
     LipschitzWith (2 * ‖b‖₊) (fun a => a * b - b * a) :=
   two_mul ‖b‖₊ ▸ (lipschitzWith_mul_right b).sub (lipschitzWith_mul_left b)
+
+/-- If elements along a filter `l` eventually satisfy `‖e‖ ≤ 1`, then the commutator maps
+`a ↦ e * a - a * e` are eventually `2`-Lipschitz along `l`. -/
+theorem eventually_lipschitzWith_commutator_left {l : Filter A}
+    (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) :
+    ∀ᶠ e in l, LipschitzWith 2 (fun a => e * a - a * e) :=
+  hnorm.mono fun e (he : ‖e‖₊ ≤ 1) =>
+    (lipschitzWith_commutator_left e).weaken (mul_le_of_le_one_right zero_le he)
+
+/-- If elements along a filter `l` eventually satisfy `‖e‖ ≤ 1` and commutators `e * a - a * e`
+tend to `0` for `a` in a dense subset `sA` of `A`, then `e * a - a * e → 0` for every `a : A`. -/
+theorem tendsto_commutator_of_dense {l : Filter A} (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1)
+    {sA : Set A} (hsA : Dense sA)
+    (hcomm : ∀ a ∈ sA, Tendsto (fun e => e * a - a * e) l (𝓝 0)) (a : A) :
+    Tendsto (fun e => e * a - a * e) l (𝓝 0) :=
+  tendsto_of_mem_closure_of_lipschitzWith
+    (eventually_lipschitzWith_commutator_left hnorm)
+    continuousWithinAt_const hcomm (hsA a)
 
 end TauCeti

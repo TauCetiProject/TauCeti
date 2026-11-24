@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.Convex.Combination
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Analysis.Normed.Ring.Lipschitz
 import TauCeti.RingTheory.TwoSidedIdeal.Operations
@@ -33,7 +35,7 @@ right for all `i < j`. Since
 the off-diagonal products `d_i^* d_j` (`i ≠ j`) are uniformly small, whereas the `n` diagonal norms
 `‖d_i^* d_i‖ ≤ 4 ‖a‖^2` are damped by `1 / n` in the Cesàro average
 `e = n⁻¹ • ∑_{i < n} u_i` via the C⋆-identity estimate
-`TauCeti.CStarAlgebra.norm_sum_sq_le`.
+`TauCeti.CStarAlgebra.norm_sum_sq_le` (`TauCeti.CStarAlgebra.norm_average_sq_le`).
 
 ## Main declarations
 
@@ -58,7 +60,6 @@ the off-diagonal products `d_i^* d_j` (`i ≠ j`) are uniformly small, whereas t
   `hasBasis_quasicentralApproximateUnit`, `mem_quasicentralApproximateUnit_iff`, and the universal
   property `isQuasicentralApproximateUnit_iff_neBot_and_le`.
 * `TwoSidedIdeal.quasicentralSet_nonempty`,
-  `TwoSidedIdeal.exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt`,
   `TwoSidedIdeal.quasicentralApproximateUnit_neBot`,
   `TwoSidedIdeal.isQuasicentralApproximateUnit_quasicentralApproximateUnit`, and
   `TwoSidedIdeal.exists_isQuasicentralApproximateUnit`: Arveson's existence theorem for closed
@@ -88,37 +89,14 @@ open scoped CStarAlgebra
 
 namespace TwoSidedIdeal
 
-private theorem eventually_nnNorm_le_one {A : Type*} [NonUnitalSeminormedRing A] {l : Filter A}
-    (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) : ∀ᶠ e in l, ‖e‖₊ ≤ 1 :=
-  hnorm.mono fun _ h => by rwa [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
-
-private theorem eventually_lipschitzWith_commutator_left {A : Type*} [NonUnitalSeminormedRing A]
-    {l : Filter A} (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) :
-    ∀ᶠ e in l, LipschitzWith 2 (fun a => e * a - a * e) :=
-  (eventually_nnNorm_le_one hnorm).mono fun e he =>
-    (TauCeti.lipschitzWith_commutator_left e).weaken (mul_le_of_le_one_right zero_le he)
-
-private theorem tendsto_commutator_of_dense {A : Type*} [NonUnitalSeminormedRing A]
-    {l : Filter A} (hnorm : ∀ᶠ e in l, ‖e‖ ≤ 1) {sA : Set A} (hsA : Dense sA)
-    (hcomm : ∀ a ∈ sA, Tendsto (fun e => e * a - a * e) l (𝓝 0)) (a : A) :
-    Tendsto (fun e => e * a - a * e) l (𝓝 0) :=
-  TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-    (eventually_lipschitzWith_commutator_left hnorm)
-    continuousWithinAt_const hcomm (hsA a)
-
-private theorem tendsto_nhds_iff_norm_lt {α E : Type*} [SeminormedAddCommGroup E]
-    {f : α → E} {l : Filter α} {y : E} :
-    Tendsto f l (𝓝 y) ↔ ∀ ε > 0, ∀ᶠ x in l, ‖f x - y‖ < ε := by
-  simp only [Metric.tendsto_nhds, dist_eq_norm]
-
 private theorem eventually_forall_mem_mul_sub_lt {α A : Type*} [NonUnitalSeminormedRing A]
     {I : TwoSidedIdeal A} {l : Filter α} {φ : α → A} (G : Finset I) {ε : ℝ} (hε : 0 < ε)
     (hmr : ∀ x ∈ G, Tendsto (fun a => φ a * (x : A)) l (𝓝 (x : A)))
     (hml : ∀ x ∈ G, Tendsto (fun a => (x : A) * φ a) l (𝓝 (x : A))) :
     ∀ᶠ a in l, ∀ x ∈ G, ‖φ a * (x : A) - x‖ < ε ∧ ‖(x : A) * φ a - x‖ < ε :=
   G.eventually_all.mpr fun x hx =>
-    (tendsto_nhds_iff_norm_lt.mp (hmr x hx) ε hε).and
-      (tendsto_nhds_iff_norm_lt.mp (hml x hx) ε hε)
+    (TauCeti.tendsto_nhds_iff_norm_sub_lt.mp (hmr x hx) ε hε).and
+      (TauCeti.tendsto_nhds_iff_norm_sub_lt.mp (hml x hx) ε hε)
 
 private theorem tendsto_mul_left_coe_iff {A : Type*} [NonUnitalCStarAlgebra A]
     {I : TwoSidedIdeal A} {l : Filter I} {x : I} :
@@ -216,10 +194,10 @@ theorem of_tendsto_mul_right_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
     I.IsQuasicentralApproximateUnit l :=
   of_tendsto_mul_right hmem hnonneg hnorm
     (fun _ hx => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      ((eventually_nnNorm_le_one hnorm).mono fun e he =>
+      (hnorm.mono fun e (he : ‖e‖₊ ≤ 1) =>
         (TauCeti.lipschitzWith_mul_left e).weaken he)
       continuousWithinAt_id hmul (hsI hx))
-    (tendsto_commutator_of_dense hnorm hsA hcomm)
+    (TauCeti.tendsto_commutator_of_dense hnorm hsA hcomm)
 
 /-- Dense-subset criterion for `IsQuasicentralApproximateUnit`: for a proper filter `l` eventually
 in the nonnegative closed unit ball of `I`, checking `x * e → x` on a subset `sI` with
@@ -233,10 +211,10 @@ theorem of_tendsto_mul_left_of_dense [l.NeBot] (hmem : ∀ᶠ e in l, e ∈ I)
     I.IsQuasicentralApproximateUnit l :=
   of_tendsto_mul_left hmem hnonneg hnorm
     (fun _ hx => TauCeti.tendsto_of_mem_closure_of_lipschitzWith
-      ((eventually_nnNorm_le_one hnorm).mono fun e he =>
+      (hnorm.mono fun e (he : ‖e‖₊ ≤ 1) =>
         (TauCeti.lipschitzWith_mul_right e).weaken he)
       continuousWithinAt_id hmul (hsI hx))
-    (tendsto_commutator_of_dense hnorm hsA hcomm)
+    (TauCeti.tendsto_commutator_of_dense hnorm hsA hcomm)
 
 /-- The closed unit ball belongs to any quasicentral approximate unit. -/
 theorem closedBall_mem (hl : I.IsQuasicentralApproximateUnit l) : Metric.closedBall 0 1 ∈ l :=
@@ -274,8 +252,8 @@ theorem topologicalClosure (hl : I.IsQuasicentralApproximateUnit l) :
 theorem tendstoUniformlyOn_mul_right (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
     (hK : IsCompact K) (hKI : K ⊆ I) : TendstoUniformlyOn (fun e x => e * x) id l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
-    ((eventually_nnNorm_le_one hl.eventually_norm).mono fun e =>
-      (TauCeti.lipschitzWith_mul_left e).weaken)
+    (hl.eventually_norm.mono fun e (he : ‖e‖₊ ≤ 1) =>
+      (TauCeti.lipschitzWith_mul_left e).weaken he)
     hK fun _ hx => hl.tendsto_mul_right (hKI hx)
 
 /-- Along a quasicentral approximate unit, commutators `e * a - a * e` tend to `0` uniformly on
@@ -283,7 +261,7 @@ every compact subset `K` of `A`. -/
 theorem tendstoUniformlyOn_commutator (hl : I.IsQuasicentralApproximateUnit l) {K : Set A}
     (hK : IsCompact K) : TendstoUniformlyOn (fun e a => e * a - a * e) 0 l K :=
   TauCeti.tendstoUniformlyOn_of_lipschitzWith
-    (eventually_lipschitzWith_commutator_left hl.eventually_norm)
+    (TauCeti.eventually_lipschitzWith_commutator_left hl.eventually_norm)
     hK fun a _ => hl.tendsto_commutator a
 
 /-- Along a quasicentral approximate unit of `I`, `x * e → x` uniformly on compact subsets of
@@ -563,11 +541,11 @@ theorem le_quasicentralApproximateUnit_iff {I : TwoSidedIdeal A} {l : Filter A} 
     refine ⟨(hmem_basis (G := ∅) (F := ∅) zero_lt_one).mono fun _ he => by
         obtain ⟨heI, he₀, he₁, _, _⟩ := mem_quasicentralSet_iff.mp he
         exact ⟨heI, he₀, he₁⟩,
-      fun x hx => tendsto_nhds_iff_norm_lt.mpr fun _ hε =>
+      fun x hx => TauCeti.tendsto_nhds_iff_norm_sub_lt.mpr fun _ hε =>
         (hmul_singleton hx hε).mono fun _ h => h.1,
-      fun x hx => tendsto_nhds_iff_norm_lt.mpr fun _ hε =>
+      fun x hx => TauCeti.tendsto_nhds_iff_norm_sub_lt.mpr fun _ hε =>
         (hmul_singleton hx hε).mono fun _ h => h.2,
-      fun a => tendsto_nhds_iff_norm_lt.mpr fun _ hε =>
+      fun a => TauCeti.tendsto_nhds_iff_norm_sub_lt.mpr fun _ hε =>
         (hmem_basis (G := ∅) (F := {a}) hε).mono fun _ he => by
           obtain ⟨_, _, _, _, heF⟩ := mem_quasicentralSet_iff.mp he
           simpa only [sub_zero] using heF a (Finset.mem_singleton_self a)⟩
@@ -576,7 +554,7 @@ theorem le_quasicentralApproximateUnit_iff {I : TwoSidedIdeal A} {l : Filter A} 
       (fun x _ => hmr x x.property) (fun x _ => hml x x.property)
     have hF : ∀ᶠ e in l, ∀ a ∈ F, ‖e * a - a * e‖ < ε :=
       F.eventually_all.mpr fun a _ =>
-        (tendsto_nhds_iff_norm_lt.mp (hc a) ε hε).mono fun _ ha => by
+        (TauCeti.tendsto_nhds_iff_norm_sub_lt.mp (hc a) ε hε).mono fun _ ha => by
           simpa only [sub_zero] using ha
     exact (hmem.and (hG.and hF)).mono fun _ ⟨⟨h1, h2, h3⟩, h4, h5⟩ =>
       mem_quasicentralSet_iff.mpr ⟨h1, h2, h3, h4, h5⟩
@@ -670,8 +648,9 @@ private theorem exists_next_quasicentral_step (I : TwoSidedIdeal A) [IsClosed (I
     let d : A := star (u i * a - a * u i)
     have hsd : d ∈ I :=
       I.star_mem_of_isClosed (I.sub_mem (I.mul_mem_right _ _ hui) (I.mul_mem_left _ _ hui))
-    filter_upwards [tendsto_nhds_iff_norm_lt.mp (hmul_l hsd) δ hδ,
-      tendsto_nhds_iff_norm_lt.mp (hmul_l (I.mul_mem_right _ _ hsd)) δ hδ] with v hv₁ hv₂
+    filter_upwards [TauCeti.tendsto_nhds_iff_norm_sub_lt.mp (hmul_l hsd) δ hδ,
+      TauCeti.tendsto_nhds_iff_norm_sub_lt.mp (hmul_l (I.mul_mem_right _ _ hsd)) δ hδ] with
+      v hv₁ hv₂
     calc ‖d * ((v : A) * a - a * (v : A))‖
         ≤ ‖d * (v : A) - d‖ * ‖a‖ + ‖d * a * (v : A) - d * a‖ :=
           norm_mul_commutator_le d (v : A) a
@@ -722,14 +701,7 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
       ∀ x ∈ G,
         ‖((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) * (x : A) - x‖ < ε ∧
         ‖(x : A) * ((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) - x‖ < ε := by
-  have hw_pos : 0 < ∑ _k ∈ Finset.range n, (1 : ℝ) := by
-    simp only [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one, Nat.cast_pos]
-    exact hn_pos
-  have hcm (f : ℕ → A) :
-      (Finset.range n).centerMass (fun _ => (1 : ℝ)) f =
-        (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f k := by
-    simp only [Finset.centerMass, Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_one,
-      one_smul]
+  have hne : (Finset.range n).Nonempty := Finset.nonempty_range_iff.mpr hn_pos.ne'
   have heI : ((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) ∈ I := by
     let c : ℝ := (n : ℝ)⁻¹
     have hec : ((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k) = (c : ℂ) • ∑ k ∈ Finset.range n, u k :=
@@ -741,15 +713,17 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
   have he₀ : 0 ≤ (n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k := smul_nonneg (by positivity)
     (Finset.sum_nonneg fun k hk => nonneg_of_mem_quasicentralSet (hu k (Finset.mem_range.mp hk)))
   have he₁ : ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, u k‖ ≤ 1 := by
-    rw [← mem_closedBall_zero_iff, ← hcm u]
-    exact (convex_closedBall (0 : A) 1).centerMass_mem (fun _ _ => zero_le_one) hw_pos fun k hk =>
-      mem_closedBall_zero_iff.mpr
-        (norm_le_one_of_mem_quasicentralSet (hu k (Finset.mem_range.mp hk)))
+    rw [← mem_closedBall_zero_iff]
+    simpa only [Finset.card_range] using
+      (convex_closedBall (0 : A) 1).inv_card_smul_sum_mem hne fun k hk =>
+        mem_closedBall_zero_iff.mpr
+          (norm_le_one_of_mem_quasicentralSet (hu k (Finset.mem_range.mp hk)))
   have havg (f : ℕ → A) (y : A) (hf : ∀ k < n, ‖f k - y‖ < ε) :
       ‖((n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, f k) - y‖ < ε := by
-    rw [← mem_ball_iff_norm, ← hcm f]
-    exact (convex_ball y ε).centerMass_mem (fun _ _ => zero_le_one) hw_pos fun k hk =>
-      mem_ball_iff_norm.mpr (hf k (Finset.mem_range.mp hk))
+    rw [← mem_ball_iff_norm]
+    simpa only [Finset.card_range] using
+      (convex_ball y ε).inv_card_smul_sum_mem hne fun k hk =>
+        mem_ball_iff_norm.mpr (hf k (Finset.mem_range.mp hk))
   refine ⟨heI, he₀, he₁, fun x hx => ⟨?_, ?_⟩⟩
   · simpa only [smul_mul_assoc, Finset.sum_mul] using
       havg (fun k => u k * (x : A)) x
@@ -757,20 +731,6 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
   · simpa only [mul_smul_comm, Finset.mul_sum] using
       havg (fun k => (x : A) * u k) x
         (fun k hk => norm_sub_mul_lt_of_mem_quasicentralSet (hu k hk) hx)
-
-omit [PartialOrder A] [StarOrderedRing A] in
-private theorem norm_average_sq_le {ι : Type*} {s : Finset ι}
-    {d : ι → A} {C η : ℝ} (hη : 0 ≤ η) (hd : ∀ i ∈ s, ‖d i‖ ≤ C)
-    (hoff : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → ‖star (d i) * d j‖ ≤ η) :
-    ‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2 ≤ C ^ 2 / s.card + η := by
-  rcases s.eq_empty_or_nonempty with rfl | hs
-  · simpa using hη
-  rw [norm_smul, Real.norm_of_nonneg (by positivity), mul_pow]
-  have hcard : (s.card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hs.card_pos.ne'
-  calc ((s.card : ℝ)⁻¹) ^ 2 * ‖∑ i ∈ s, d i‖ ^ 2
-      ≤ ((s.card : ℝ)⁻¹) ^ 2 * ((s.card : ℝ) * C ^ 2 + (s.card : ℝ) ^ 2 * η) :=
-        mul_le_mul_of_nonneg_left (TauCeti.CStarAlgebra.norm_sum_sq_le hη hd hoff) (by positivity)
-    _ = C ^ 2 / s.card + η := by field_simp
 
 omit [PartialOrder A] [StarOrderedRing A] in
 private theorem norm_commutator_average_sq_le {n : ℕ} {u : ℕ → A} {a : A}
@@ -786,7 +746,7 @@ private theorem norm_commutator_average_sq_le {n : ℕ} {u : ℕ → A} {a : A}
   have havg_sq : ‖(n : ℝ)⁻¹ • ∑ k ∈ Finset.range n, (u k * a - a * u k)‖ ^ 2 ≤
       (2 * ‖a‖) ^ 2 / n + η := by
     simpa only [Finset.card_range] using
-      norm_average_sq_le (C := 2 * ‖a‖) hη
+      TauCeti.CStarAlgebra.norm_average_sq_le (C := 2 * ‖a‖) hη
         (fun k hk => (TauCeti.norm_commutator_le (u k) a).trans
           (mul_le_mul_of_nonneg_right
             (mul_le_of_le_one_right zero_le_two (hu k (Finset.mem_range.mp hk)))
@@ -803,9 +763,7 @@ private theorem norm_commutator_average_sq_le {n : ℕ} {u : ℕ → A} {a : A}
 
 /-- **Finite-set Arveson–Akemann–Pedersen theorem.** Every finite-set quasicentral approximation
 neighborhood `I.quasicentralSet G F ε` (`ε > 0`) of a closed two-sided ideal `I` is nonempty; see
-`TwoSidedIdeal.mem_quasicentralSet_iff` and
-`TwoSidedIdeal.exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt` for the expanded
-clauses. -/
+`TwoSidedIdeal.mem_quasicentralSet_iff` for the expanded clauses. -/
 theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     (G : Finset I) (F : Finset A) {ε : ℝ} (hε : 0 < ε) :
     (I.quasicentralSet G F ε).Nonempty := by
@@ -842,19 +800,6 @@ theorem quasicentralSet_nonempty (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
       _ = ε ^ 2 := add_halves _
   exact lt_of_pow_lt_pow_left₀ 2 hε.le hlt
 
-/-- **Finite-set Arveson–Akemann–Pedersen theorem** (unpacked existential form). For every closed
-two-sided ideal `I` of a C⋆-algebra `A`, finite subsets `G ⊆ I` and `F ⊆ A`, and `ε > 0`, there
-exists a positive contraction `e ∈ I` such that `‖e * x - x‖ < ε` and `‖x * e - x‖ < ε` for all
-`x ∈ G`, and `‖e * a - a * e‖ < ε` for all `a ∈ F`. -/
-theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt
-    (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
-    (G : Finset I) (F : Finset A) {ε : ℝ} (hε : 0 < ε) :
-    ∃ e ∈ I, 0 ≤ e ∧ ‖e‖ ≤ 1 ∧
-      (∀ x ∈ G, ‖e * (x : A) - x‖ < ε ∧ ‖(x : A) * e - x‖ < ε) ∧
-      (∀ a ∈ F, ‖e * a - a * e‖ < ε) :=
-  let ⟨e, he⟩ := I.quasicentralSet_nonempty G F hε
-  ⟨e, mem_quasicentralSet_iff.mp he⟩
-
 /-- Finite-set Arveson theorem for a subset `G : Finset A` contained in `I`. -/
 theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt_of_subset
     (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
@@ -863,8 +808,8 @@ theorem exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt_of_subs
       (∀ x ∈ G, ‖e * x - x‖ < ε ∧ ‖x * e - x‖ < ε) ∧
       (∀ a ∈ F, ‖e * a - a * e‖ < ε) := by
   classical
-  obtain ⟨e, heI, he₀, he₁, heG, heF⟩ :=
-    I.exists_mem_nonneg_norm_le_one_norm_mul_sub_lt_norm_commutator_lt (G.subtype (· ∈ I)) F hε
+  obtain ⟨e, he⟩ := I.quasicentralSet_nonempty (G.subtype (· ∈ I)) F hε
+  obtain ⟨heI, he₀, he₁, heG, heF⟩ := mem_quasicentralSet_iff.mp he
   exact ⟨e, heI, he₀, he₁, fun x hx => heG ⟨x, hGI hx⟩ (Finset.mem_subtype.mpr hx), heF⟩
 
 /-- For every closed two-sided ideal `I` of a C⋆-algebra `A`, the canonical filter
@@ -918,11 +863,10 @@ theorem exists_isQuasicentralApproximateUnit_iff_exists_seq (I : TwoSidedIdeal A
     rwa [← Set.range_comp] at himg
   have hdiag (k : ℕ) {f : ℕ → A} {y : A}
       (hf : ∀ n, k < n → ‖f n - y‖ < 1 / ((n : ℝ) + 1)) :
-      Tendsto f atTop (𝓝 y) := by
-    refine tendsto_nhds_iff_norm_lt.mpr fun ε hε => ?_
-    filter_upwards [(tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).eventually (gt_mem_nhds hε),
-      eventually_gt_atTop k] with n hn hkn
-    exact (hf n hkn).trans hn
+      Tendsto f atTop (𝓝 y) :=
+    tendsto_sub_nhds_zero_iff.mp <|
+      squeeze_zero_norm' ((eventually_gt_atTop k).mono fun n hn => (hf n hn).le)
+        (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
   refine ⟨u, fun n => ⟨huI n, hu₀ n, hu₁ n⟩, ?_⟩
   have : (atTop.map u).NeBot := atTop_neBot.map u
   refine IsQuasicentralApproximateUnit.of_tendsto_mul_right_of_dense

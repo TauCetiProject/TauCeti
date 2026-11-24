@@ -35,6 +35,8 @@ bounds `‖star (d i) * d j‖ ≤ η` (`TauCeti.CStarAlgebra.norm_sum_sq_le`).
 * `CStarRing.instCompactSpaceUnitary`: the unitary group of a proper C⋆-ring is compact.
 * `TauCeti.CStarAlgebra.norm_sum_sq_le`: C⋆-identity bound on the squared norm of a finite sum in a
   C⋆-ring with bounded diagonal norms and off-diagonal products `star (d i) * d j`.
+* `TauCeti.CStarAlgebra.norm_average_sq_le`: C⋆-identity bound on the squared norm of an
+  equal-weight finite average in a C⋆-ring.
 -/
 
 public section
@@ -102,5 +104,30 @@ theorem norm_sum_sq_le {A ι : Type*} [NonUnitalNormedRing A] [StarRing A] [CSta
         simp only [Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.sum_const, nsmul_eq_mul]
         rw [Finset.sum_ite_of_true fun _ hx => hx, Finset.sum_const, nsmul_eq_mul]
         ring
+
+/-- C⋆-identity estimate on the squared norm of an equal-weight average in a C⋆-ring: if every
+term `d i` (`i ∈ s`) has norm at most `C` and every off-diagonal product `star (d i) * d j`
+(`i ≠ j`) has norm at most `η` (`0 ≤ η`), then
+`‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2 ≤ C ^ 2 / s.card + η`. -/
+theorem norm_average_sq_le {A ι : Type*} [NonUnitalNormedRing A] [StarRing A] [CStarRing A]
+    [SMulZeroClass ℝ A] [IsBoundedSMul ℝ A]
+    {s : Finset ι} {d : ι → A} {C η : ℝ} (hη : 0 ≤ η) (hd : ∀ i ∈ s, ‖d i‖ ≤ C)
+    (hoff : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → ‖star (d i) * d j‖ ≤ η) :
+    ‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2 ≤ C ^ 2 / s.card + η := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simpa using hη
+  have hsmul : ‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2 ≤
+      ((s.card : ℝ)⁻¹) ^ 2 * ‖∑ i ∈ s, d i‖ ^ 2 := by
+    calc ‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2
+        ≤ (‖(s.card : ℝ)⁻¹‖ * ‖∑ i ∈ s, d i‖) ^ 2 :=
+          pow_le_pow_left₀ (norm_nonneg _) (norm_smul_le _ _) 2
+      _ = ((s.card : ℝ)⁻¹) ^ 2 * ‖∑ i ∈ s, d i‖ ^ 2 := by
+          rw [Real.norm_of_nonneg (by positivity), mul_pow]
+  have hcard : (s.card : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hs.card_pos.ne'
+  calc ‖(s.card : ℝ)⁻¹ • ∑ i ∈ s, d i‖ ^ 2
+      ≤ ((s.card : ℝ)⁻¹) ^ 2 * ‖∑ i ∈ s, d i‖ ^ 2 := hsmul
+    _ ≤ ((s.card : ℝ)⁻¹) ^ 2 * ((s.card : ℝ) * C ^ 2 + (s.card : ℝ) ^ 2 * η) :=
+        mul_le_mul_of_nonneg_left (norm_sum_sq_le hη hd hoff) (by positivity)
+    _ = C ^ 2 / s.card + η := by field_simp
 
 end TauCeti.CStarAlgebra
