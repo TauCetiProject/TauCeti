@@ -80,6 +80,19 @@ variable [E.IsQuasicoherent] (k : ℕ)
 noncomputable abbrev grassmannianChart (U : X.affineOpens) : Scheme.{u} :=
   Module.Grassmannian.scheme Γ(X, U.val) Γ(E, U.val) k
 
+variable {E} in
+-- For affine opens `V ≤ U`, restriction of sections is a base change along restriction of
+-- functions.
+private lemma isBaseChange_restriction {U V : X.affineOpens} (h : V.val ≤ U.val) :
+    letI := restrictionAlgebra h
+    letI := restrictionModule E h
+    haveI := isScalarTower_restriction E h
+    IsBaseChange Γ(X, V.val) (E.sectionsRestrictionLinearMap h fun _ ↦ rfl) :=
+  letI := restrictionAlgebra h
+  letI := restrictionModule E h
+  haveI := isScalarTower_restriction E h
+  E.isBaseChange_sectionsRestrictionLinearMap U.property V.property h _
+
 /-- For affine opens `V ≤ U`, the morphism `G(k, Γ(E, V)) ⟶ G(k, Γ(E, U))` over the restriction
 `Spec Γ(X, V) ⟶ Spec Γ(X, U)`: `Γ(E, V)` is the base change of `Γ(E, U)` along restriction of
 functions, and this is `IsBaseChange.grassmannianSchemeHom` for that base change. It identifies
@@ -90,8 +103,7 @@ noncomputable def grassmannianChartMap {U V : X.affineOpens} (h : V.val ≤ U.va
   letI := restrictionAlgebra h
   letI := restrictionModule E h
   haveI := isScalarTower_restriction E h
-  (E.isBaseChange_sectionsRestrictionLinearMap U.property V.property h
-    fun r ↦ DFunLike.congr_fun (algebraMap_restrictionAlgebra h) r).grassmannianSchemeHom k
+  (isBaseChange_restriction h).grassmannianSchemeHom k
 
 -- `grassmannianChartMap` is the morphism of Grassmannians of the restriction base change.
 private lemma grassmannianChartMap_eq {U V : X.affineOpens} (h : V.val ≤ U.val) :
@@ -99,8 +111,7 @@ private lemma grassmannianChartMap_eq {U V : X.affineOpens} (h : V.val ≤ U.val
     letI := restrictionModule E h
     haveI := isScalarTower_restriction E h
     grassmannianChartMap E k h =
-      (E.isBaseChange_sectionsRestrictionLinearMap U.property V.property h
-        fun r ↦ DFunLike.congr_fun (algebraMap_restrictionAlgebra h) r).grassmannianSchemeHom k :=
+      (isBaseChange_restriction h).grassmannianSchemeHom k :=
   rfl
 
 /-- `grassmannianChartMap` lies over the restriction `Spec Γ(X, V) ⟶ Spec Γ(X, U)`. -/
@@ -166,10 +177,8 @@ theorem grassmannianChartMap_comp {U V W : X.affineOpens} (hWV : W.val ≤ V.val
   have _ : IsScalarTower Γ(X, U.val) Γ(X, V.val) Γ(E, W.val) := .of_algebraMap_smul fun r m ↦ by
     rw [smul_restrictionModule E hWV, smul_restrictionModule E (hWV.trans hVU),
       algebraMap_restrictionAlgebra hVU, hres]
-  have hf := E.isBaseChange_sectionsRestrictionLinearMap U.property V.property hVU
-    fun r ↦ DFunLike.congr_fun (algebraMap_restrictionAlgebra hVU) r
-  have hg := E.isBaseChange_sectionsRestrictionLinearMap V.property W.property hWV
-    fun r ↦ DFunLike.congr_fun (algebraMap_restrictionAlgebra hWV) r
+  have hf := isBaseChange_restriction (E := E) hVU
+  have hg := isBaseChange_restriction (E := E) hWV
   rw [grassmannianChartMap_eq, grassmannianChartMap_eq, grassmannianChartMap_eq,
     IsBaseChange.grassmannianSchemeHom_comp hf hg (hf.comp hg)]
   refine IsBaseChange.grassmannianSchemeHom_congr _ k _ (LinearMap.ext fun s ↦ ?_)
