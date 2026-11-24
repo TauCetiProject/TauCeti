@@ -39,7 +39,8 @@ unique *signed hermitian adjoint* `T*`, characterized by `h (T x) y = h x (T* y)
 ## Main results
 
 * `TauCeti.SignedHermitianSpace.eq_adjoint_iff`: `S` is the adjoint of `T` if and only if
-  `h (T x) y = h x (S y)` for all `x`, `y`.
+  `h (T x) y = h x (S y)` for all `x`, `y`, phrased as Mathlib's `LinearMap.IsAdjointPair` for
+  the flipped form `h.form.flip`.
 * `TauCeti.SignedHermitianSpace.adjoint_id`, `TauCeti.SignedHermitianSpace.adjoint_comp` and
   `TauCeti.SignedHermitianSpace.adjoint_adjoint`: the adjoint fixes the identity, reverses
   composition and is an involution.
@@ -47,6 +48,13 @@ unique *signed hermitian adjoint* `T*`, characterized by `h (T x) y = h x (T* y)
 Finite dimension is essential for the adjoint: on the direct sum of countably many rational
 lines with the dot pairing, the endomorphism sending every basis vector to the first one has no
 adjoint, as the adjoint would send the first basis vector to the vector with every coordinate one.
+
+## Implementation notes
+
+`toDual` and `adjoint` adapt Mathlib's `LinearMap.BilinForm.toDual` and
+`LinearMap.BilinForm.leftAdjointOfNondegenerate` (in
+`Mathlib/LinearAlgebra/BilinearForm/Properties.lean`) to a form that is conjugate-linear in its
+first argument: the adjoint is `toDual⁻¹ ∘ Tᵀ ∘ toDual`.
 
 ## References
 
@@ -106,8 +114,7 @@ def line (a : K) (ha : star a = ε • a) (ha₀ : a ∈ nonZeroDivisors K) :
     (fun _ _ _ => by simp [mul_add])
     (fun _ _ _ => by simp only [smul_eq_mul, RingHom.id_apply]; ring)
   form_swap x y := by
-    have hε : ((ε : ℤ) : K) ^ 2 = 1 := by
-      rw [← Int.cast_pow, ← Units.val_pow_eq_pow_val, Int.units_sq, Units.val_one, Int.cast_one]
+    have hε : ((ε : ℤ) : K) ^ 2 = 1 := by rw [← Int.cast_pow, Int.isUnit_sq ε.isUnit, Int.cast_one]
     simp only [LinearMap.mk₂'ₛₗ_apply, star_mul', star_star, ha, Units.smul_def, zsmul_eq_mul]
     linear_combination (-(star y * a * x)) * hε
   nondegenerate := by
@@ -136,7 +143,7 @@ variable {K V : Type*} [Field K] [StarRing K] [AddCommGroup V] [Module K V] {ε 
 variable [FiniteDimensional K V]
 
 /-- Over a field and in finite dimension, `v ↦ form v ·` is bijective onto the dual. -/
-theorem bijective_form : Function.Bijective h.form := by
+theorem form_bijective : Function.Bijective h.form := by
   have hinj : Function.Injective h.form :=
     LinearMap.ker_eq_bot.1 (LinearMap.separatingLeft_iff_ker_eq_bot.1 h.nondegenerate.1)
   refine ⟨hinj, LinearMap.range_eq_top.1 (Submodule.eq_top_of_finrank_eq ?_)⟩
@@ -151,11 +158,11 @@ theorem bijective_form : Function.Bijective h.form := by
 /-- Over a field and in finite dimension, the form of a signed hermitian space induces a
 conjugate-linear isomorphism `v ↦ form v ·` of `V` onto its dual. -/
 noncomputable def toDual : V ≃ₗ⋆[K] Dual K V :=
-  LinearEquiv.ofBijective h.form h.bijective_form
+  LinearEquiv.ofBijective h.form h.form_bijective
 
 @[simp]
-theorem toDual_apply (v w : V) : h.toDual v w = h.form v w :=
-  (rfl)
+theorem toDual_apply (v w : V) : h.toDual v w = h.form v w := by
+  rw [toDual, LinearEquiv.ofBijective_apply]
 
 @[simp]
 theorem form_toDual_symm_apply (f : Dual K V) (w : V) : h.form (h.toDual.symm f) w = f w := by
@@ -174,16 +181,17 @@ private theorem form_adjointAux_right (T : Module.End K V) (x y : V) :
   rw [h.form_swap, form_adjointAux_left, ← h.form_swap]
 
 private theorem eq_adjointAux_iff {S T : Module.End K V} :
-    S = h.adjointAux T ↔ ∀ x y, h.form (T x) y = h.form x (S y) := by
-  refine ⟨fun hS x y => by rw [hS, form_adjointAux_right], fun hS => ?_⟩
+    S = h.adjointAux T ↔ LinearMap.IsAdjointPair h.form.flip h.form.flip S T := by
+  refine ⟨fun hS y x => by simp [hS, form_adjointAux_right], fun hS => ?_⟩
   ext y
   refine LinearMap.ker_eq_bot.1
     (LinearMap.separatingRight_iff_flip_ker_eq_bot.1 h.nondegenerate.2) (LinearMap.ext fun x => ?_)
-  rw [LinearMap.flip_apply, LinearMap.flip_apply, ← hS, form_adjointAux_right]
+  rw [LinearMap.flip_apply, LinearMap.flip_apply, form_adjointAux_right]
+  exact hS y x
 
 private theorem adjointAux_adjointAux (T : Module.End K V) :
     h.adjointAux (h.adjointAux T) = T :=
-  ((h.eq_adjointAux_iff).2 fun x y => by rw [form_adjointAux_left]).symm
+  ((h.eq_adjointAux_iff).2 fun x y => by simp [form_adjointAux_left]).symm
 
 /-- The **signed hermitian adjoint** `T ↦ T*` of a finite-dimensional signed hermitian space
 over a field, characterized by `form (T x) y = form x (T* y)` (`eq_adjoint_iff`). It is a
@@ -208,11 +216,17 @@ theorem adjoint_form_right (T : Module.End K V) (x y : V) :
     h.form x (h.adjoint T y) = h.form (T x) y :=
   h.form_adjointAux_right T x y
 
-/-- The adjoint is characterized by `form (T x) y = form x (T* y)`; in particular it is the
-unique endomorphism with this property. -/
+/-- The adjoint is characterized by `form (T x) y = form x (T* y)`, that is, `(T*, T)` is an
+adjoint pair for the flipped form; in particular it is the unique endomorphism with this
+property. -/
 theorem eq_adjoint_iff {S T : Module.End K V} :
-    S = h.adjoint T ↔ ∀ x y, h.form (T x) y = h.form x (S y) :=
+    S = h.adjoint T ↔ LinearMap.IsAdjointPair h.form.flip h.form.flip S T :=
   h.eq_adjointAux_iff
+
+/-- `(T*, T)` is an adjoint pair for the flipped form: `form (T x) y = form x (T* y)`. -/
+theorem isAdjointPair_adjoint (T : Module.End K V) :
+    LinearMap.IsAdjointPair h.form.flip h.form.flip (h.adjoint T) T :=
+  (h.eq_adjoint_iff).1 rfl
 
 @[simp]
 theorem adjoint_adjoint (T : Module.End K V) : h.adjoint (h.adjoint T) = T :=
@@ -227,13 +241,13 @@ theorem adjoint_symm : h.adjoint.symm = h.adjoint :=
 
 @[simp]
 theorem adjoint_id : h.adjoint LinearMap.id = LinearMap.id :=
-  ((h.eq_adjoint_iff).2 fun _ _ => rfl).symm
+  ((h.eq_adjoint_iff).2 LinearMap.isAdjointPair_id).symm
 
 /-- The adjoint reverses composition: `(S ∘ T)* = T* ∘ S*`. -/
 @[simp]
 theorem adjoint_comp (S T : Module.End K V) :
     h.adjoint (S ∘ₗ T) = h.adjoint T ∘ₗ h.adjoint S :=
-  ((h.eq_adjoint_iff).2 fun x y => by simp).symm
+  ((h.eq_adjoint_iff).2 ((h.isAdjointPair_adjoint S).comp (h.isAdjointPair_adjoint T))).symm
 
 end Field
 
