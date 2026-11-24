@@ -69,17 +69,6 @@ namespace CliffordAlgebra
 variable {K M : Type*} [Field K] [Invertible (2 : K)] [AddCommGroup M] [Module K M]
   [FiniteDimensional K M] {Q : QuadraticForm K M}
 
-/-- An element of the kernel of `Spin(Q) → SO(Q)` doubles to `1` in `Spin(Q ⊕ Q)`: the kernel is
-`{1, -1}`, and the two signs `-1` multiply to `1`. -/
-theorem spinGroupProd_self_eq_one_of_mem_ker (hQ : Q.Nondegenerate) {x : spinGroup Q}
-    (hx : x ∈ (spinToSpecialOrthogonal Q).ker) : spinGroupProd Q Q (x, x) = 1 := by
-  rcases subsingleton_or_nontrivial M with hM | hM
-  · rw [ker_spinToSpecialOrthogonal_eq_bot_of_subsingleton, Subgroup.mem_bot] at hx
-    rw [hx, Prod.mk_one_one, map_one]
-  · rcases (mem_ker_spinToSpecialOrthogonal_iff Q hQ x).mp hx with rfl | rfl
-    · rw [Prod.mk_one_one, map_one]
-    · exact spinGroupProd_negOne_negOne _ _
-
 variable (Q) in
 /-- **The Spin lift of the diagonal `A ↦ A ⊕ A`.** For a finite-dimensional nondegenerate form
 whose Spin group surjects onto `SO(Q)`, the element `A ∈ SO(Q)` lifts to
