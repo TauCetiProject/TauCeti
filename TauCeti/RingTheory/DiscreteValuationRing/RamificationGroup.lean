@@ -194,8 +194,8 @@ noncomputable def ramificationGroupToUnitFiltrationGraded (i : ℕ) {ϖ : B} (h�
           Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
             (uniformizerRatio i hϖ τ : Bˣ) / (uniformizerRatio i hϖ τ : Bˣ) := by
       push_cast
-      rw [mul_inv_rev, inv_inv, mul_inv_rev, coe_uniformizerRatio_mul_apply,
-        mul_assoc, inv_mul_cancel_left, mul_comm, ← div_eq_mul_inv]
+      rw [coe_uniformizerRatio_mul_apply]
+      simp [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc]
     rw [hcocycle]
     exact unitsMap_div_mem_unitFiltration_succ σ.property _
 
@@ -231,10 +231,8 @@ theorem ramificationGroupToUnitFiltrationGraded_eq_of_irreducible (i : ℕ) {ϖ 
   have hrel :
       ((uniformizerRatio i hϖ σ)⁻¹ * uniformizerRatio i hϖ' σ : unitFiltration B i).val =
         Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom a / a := by
-    apply mul_left_cancel (a := a)
-    rw [Subgroup.coe_mul, InvMemClass.coe_inv, mul_left_comm,
-      coe_uniformizerRatio_change i hϖ hϖ' σ, inv_mul_cancel_left, div_eq_mul_inv,
-      mul_comm _ a⁻¹, mul_inv_cancel_left]
+    rw [Subgroup.coe_mul, InvMemClass.coe_inv, inv_mul_eq_div, div_eq_div_iff_mul_eq_mul]
+    simpa [mul_comm] using coe_uniformizerRatio_change i hϖ hϖ' σ
   rw [hrel]
   exact unitsMap_div_mem_unitFiltration_succ σ.property a
 
