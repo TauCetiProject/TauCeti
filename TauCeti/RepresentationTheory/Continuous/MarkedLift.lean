@@ -30,8 +30,9 @@ each other by `Iso.toIso_isLiftOf` and `IsLiftOf.toLinearEquiv_toIso`). In frame
 (`isLiftOf_iff_toMatrix`): for a basis `b` of `M`, `ρ` is a lift of `ρbar` marked by `ι` if and
 only if in the basis `ι (1 ⊗ b i)` of `V` the matrices of `ρbar` are the reductions of the
 matrices of `ρ` in `b`. Two bases of `M` lifting the same marked residual basis differ by a
-matrix reducing to `1`: this is the case `S = k_A` of `Module.Basis.toMatrix_map_algebraMap_eq_one`,
-which holds for any algebra `S` over the coefficient ring.
+matrix reducing to `1`: this is the case `S = k_A` of `Module.Basis.toMatrix_map_algebraMap_eq_one`
+in `TauCeti.LinearAlgebra.TensorProduct.Basis`, which holds for any commutative algebra `S` over
+the coefficient ring.
 
 ## Main definitions
 
@@ -47,9 +48,6 @@ which holds for any algebra `S` over the coefficient ring.
 * `TauCeti.ContinuousRep.IsLiftOf.toIso`, `TauCeti.ContinuousRep.Iso.isLiftOf`: marked lifts are
   isomorphisms between the reduction and `ρbar`.
 * `TauCeti.ContinuousRep.isLiftOf_iff_toMatrix`: the frame description.
-* `Module.Basis.toMatrix_map_algebraMap_eq_one`: a change of basis that becomes trivial after
-  extending scalars to `S` maps to `1` over `S`; for `S = k_A`, a change of lifted basis reduces
-  to `1`.
 
 ## References
 
@@ -229,23 +227,3 @@ theorem isLiftOf_iff_toMatrix (b : Module.Basis n A M) :
 end Frame
 
 end TauCeti.ContinuousRep
-
-namespace Module.Basis
-
-variable {R S M n : Type*} [CommSemiring R] [Semiring S] [Algebra R S] [AddCommMonoid M]
-  [Module R M] [DecidableEq n]
-
-/-- **Changing a lifted basis.** If two bases `b, b'` of `M` agree after extending scalars to `S`,
-that is `1 ⊗ b i = 1 ⊗ b' i` in `S ⊗[R] M`, then the change-of-basis matrix maps to `1` over `S`.
-For `S` the residue field of a local ring, two bases lifting the same residual basis differ by a
-matrix reducing to `1`. -/
-theorem toMatrix_map_algebraMap_eq_one (b b' : Basis n R M)
-    (h : ∀ i, (1 : S) ⊗ₜ[R] b i = 1 ⊗ₜ b' i) :
-    (b.toMatrix b').map (algebraMap R S) = 1 := by
-  ext i j
-  have := congrArg (fun x ↦ (Algebra.TensorProduct.basis S b).repr x i) (h j)
-  simp only [Algebra.TensorProduct.basis_repr_tmul, one_smul, Finsupp.mapRange_apply,
-    repr_self] at this
-  simp [toMatrix_apply, ← this, Matrix.one_apply, Finsupp.single_apply, eq_comm]
-
-end Module.Basis

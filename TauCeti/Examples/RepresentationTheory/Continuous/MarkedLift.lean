@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.MarkedLift
+public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.DualNumber
 public import Mathlib.Algebra.Field.ZMod
 
