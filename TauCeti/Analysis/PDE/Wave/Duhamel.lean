@@ -317,15 +317,21 @@ section Solution
 
 variable {G : ℝ → ℝ → F}
 
+/-- The integral of a continuous slice `G s` between `x - (t - s)` and `x + (t - s)` is the
+difference of the values of its spatial primitive `z ↦ ∫_0^z G(s, y) dy` at the two endpoints. -/
+private theorem integral_slice_eq_sub (hG : Continuous (uncurry G)) (s t x : ℝ) :
+    ∫ y in x - (t - s)..x + (t - s), G s y =
+      (∫ y in 0..x + (t - s), G s y) - ∫ y in 0..x - (t - s), G s y :=
+  (integral_interval_sub_left ((hG.comp (Continuous.prodMk_right s)).intervalIntegrable _ _)
+    ((hG.comp (Continuous.prodMk_right s)).intervalIntegrable _ _)).symm
+
 /-- Duhamel's formula is half the characteristic integral of the spatial primitive of `G`. -/
 private theorem dAlembertDuhamel_eq_charIntegral (hG : Continuous (uncurry G)) (t x : ℝ) :
     dAlembertDuhamel G t x =
       (2 : ℝ)⁻¹ • charIntegral (-1) (fun s z ↦ ∫ y in 0..z, G s y) t x := by
-  have hGs (s : ℝ) : Continuous (G s) := hG.comp (Continuous.prodMk_right s)
   rw [dAlembertDuhamel_def, charIntegral_neg_one]
   congr 1
-  exact integral_congr fun s _ ↦ (integral_interval_sub_left (a := 0)
-    ((hGs s).intervalIntegrable _ _) ((hGs s).intervalIntegrable _ _)).symm
+  exact integral_congr fun s _ ↦ integral_slice_eq_sub hG s t x
 
 /-- **Superposition.** For continuous forcings, Duhamel's formula is additive in the forcing. -/
 theorem dAlembertDuhamel_add {G' : ℝ → ℝ → F} (hG : Continuous (uncurry G))
@@ -333,15 +339,11 @@ theorem dAlembertDuhamel_add {G' : ℝ → ℝ → F} (hG : Continuous (uncurry 
     dAlembertDuhamel (G + G') = dAlembertDuhamel G + dAlembertDuhamel G' := by
   have hint {H : ℝ → ℝ → F} (hH : Continuous (uncurry H)) (t x : ℝ) :
       IntervalIntegrable (fun s ↦ ∫ y in x - (t - s)..x + (t - s), H s y) volume 0 t := by
-    have hc : Continuous fun s ↦
-        (∫ y in 0..x + (t - s), H s y) + (-1 : ℝ) • ∫ y in 0..x - (t - s), H s y :=
-      (continuous_charIntegrand (-1) (k := fun s z ↦ ∫ y in 0..z, H s y)
-        (continuous_parametric_primitive_of_continuous hH)).comp (Continuous.prodMk_right (t, x))
-    convert hc.intervalIntegrable (μ := volume) 0 t using 2 with s
-    have hi (a b : ℝ) : IntervalIntegrable (H s) volume a b :=
-      (hH.comp (Continuous.prodMk_right s)).intervalIntegrable a b
-    rw [neg_one_smul, ← sub_eq_add_neg]
-    exact (integral_interval_sub_left (hi _ _) (hi _ _)).symm
+    have hP : Continuous fun p : ℝ × ℝ ↦ ∫ y in 0..p.2, H p.1 y :=
+      continuous_parametric_primitive_of_continuous hH
+    rw [funext fun s ↦ integral_slice_eq_sub hH s t x]
+    exact ((hP.comp (by fun_prop : Continuous fun s ↦ (s, x + (t - s)))).sub
+      (hP.comp (by fun_prop : Continuous fun s ↦ (s, x - (t - s))))).intervalIntegrable 0 t
   ext t x
   simp only [dAlembertDuhamel_def, Pi.add_apply, ← smul_add]
   rw [← integral_add (hint hG t x) (hint hG' t x)]
@@ -351,6 +353,11 @@ theorem dAlembertDuhamel_add {G' : ℝ → ℝ → F} (hG : Continuous (uncurry 
 
 variable [CompleteSpace F]
 
+/-- The spatial primitive `z ↦ ∫_0^z G(s, y) dy` of a continuous `G` has derivative `G(s, z)`. -/
+private theorem hasDerivAt_spatialPrimitive (hG : Continuous (uncurry G)) (s z : ℝ) :
+    HasDerivAt (fun z ↦ ∫ y in 0..z, G s y) (G s z) z :=
+  ((hG.comp (Continuous.prodMk_right s)).integral_hasStrictDerivAt 0 z).hasDerivAt
+
 /-- The time derivative of Duhamel's formula:
 `∂ₜw(t, x) = (1 / 2) ∫_0^t (G(s, x + (t - s)) + G(s, x - (t - s))) ds`. -/
 theorem hasDerivAt_dAlembertDuhamel_time (hG : Continuous (uncurry G)) (t x : ℝ) :
@@ -358,8 +365,7 @@ theorem hasDerivAt_dAlembertDuhamel_time (hG : Continuous (uncurry G)) (t x : �
       ((2 : ℝ)⁻¹ • ∫ s in 0..t, (G s (x + (t - s)) + G s (x - (t - s)))) t := by
   simp only [dAlembertDuhamel_eq_charIntegral hG]
   refine ((hasDerivAt_charIntegral_time (-1) (k := fun s z ↦ ∫ y in 0..z, G s y)
-    (continuous_parametric_primitive_of_continuous hG) hG
-    (fun s z ↦ ((hG.comp (Continuous.prodMk_right s)).integral_hasStrictDerivAt 0 z).hasDerivAt)
+    (continuous_parametric_primitive_of_continuous hG) hG (hasDerivAt_spatialPrimitive hG)
     t x).const_smul (2 : ℝ)⁻¹).congr_deriv ?_
   rw [neg_neg, charIntegral_one, add_neg_cancel, zero_smul, zero_add]
 
@@ -370,8 +376,7 @@ theorem hasDerivAt_dAlembertDuhamel_space (hG : Continuous (uncurry G)) (t x : �
       ((2 : ℝ)⁻¹ • ∫ s in 0..t, (G s (x + (t - s)) - G s (x - (t - s)))) x := by
   rw [funext (dAlembertDuhamel_eq_charIntegral hG t), ← charIntegral_neg_one]
   exact (hasDerivAt_charIntegral_space (-1) (k := fun s z ↦ ∫ y in 0..z, G s y)
-    (continuous_parametric_primitive_of_continuous hG) hG
-    (fun s z ↦ ((hG.comp (Continuous.prodMk_right s)).integral_hasStrictDerivAt 0 z).hasDerivAt)
+    (continuous_parametric_primitive_of_continuous hG) hG (hasDerivAt_spatialPrimitive hG)
     t x).const_smul _
 
 /-- At time zero, the time derivative of Duhamel's formula vanishes. -/
@@ -388,6 +393,7 @@ include hG hGd hGd'
 space-time. No derivative of `G` in time is needed. -/
 theorem contDiff_dAlembertDuhamel : ContDiff ℝ 2 (uncurry (dAlembertDuhamel G)) := by
   have hd (s z : ℝ) : HasDerivAt (G s) (deriv (G s) z) z := (hGd s z).hasDerivAt
+  rw [← one_add_one_eq_two]
   refine (contDiff_succ_iff_hasFDerivAt (n := 1)).2 ⟨fun p ↦
     (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight ((2 : ℝ)⁻¹ • charIntegral 1 G p.1 p.2) +
       (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight ((2 : ℝ)⁻¹ • charIntegral (-1) G p.1 p.2),
@@ -395,8 +401,7 @@ theorem contDiff_dAlembertDuhamel : ContDiff ℝ 2 (uncurry (dAlembertDuhamel G)
       (contDiff_const.smulRight ((contDiff_charIntegral (-1) hG hGd' hd).const_smul _)),
     fun p ↦ ?_⟩
   have h := ((hasStrictFDerivAt_charIntegral (-1) (k := fun s z ↦ ∫ y in 0..z, G s y)
-    (continuous_parametric_primitive_of_continuous hG) hG
-    (fun s z ↦ ((hG.comp (Continuous.prodMk_right s)).integral_hasStrictDerivAt 0 z).hasDerivAt)
+    (continuous_parametric_primitive_of_continuous hG) hG (hasDerivAt_spatialPrimitive hG)
     p).const_smul (2 : ℝ)⁻¹).hasFDerivAt
   have heq : uncurry (dAlembertDuhamel G) = fun q ↦ (2 : ℝ)⁻¹ •
       uncurry (charIntegral (-1) fun s z ↦ ∫ y in 0..z, G s y) q :=
@@ -454,17 +459,7 @@ private theorem forcing_eq_fderiv (hu : ContDiff ℝ 2 (uncurry u))
     (t x : ℝ) :
     G t x = fderiv ℝ (fderiv ℝ (uncurry u)) (t, x) (1, 0) (1, 0) -
       fderiv ℝ (fderiv ℝ (uncurry u)) (t, x) (0, 1) (0, 1) := by
-  have hU1 : Differentiable ℝ (uncurry u) := hu.differentiable (by norm_num)
-  have hD : Differentiable ℝ (fderiv ℝ (uncurry u)) :=
-    (hu.fderiv_right (m := 1) one_add_one_eq_two.le).differentiable one_ne_zero
-  have ht : deriv (fun r ↦ u r x) = fun s ↦ fderiv ℝ (uncurry u) (s, x) (1, 0) :=
-    funext fun s ↦ (hasDerivAt_parameterCurve_uncurry (hU1 (s, x))).deriv
-  have hx : deriv (u t) = fun y ↦ fderiv ℝ (uncurry u) (t, y) (0, 1) :=
-    funext fun y ↦ (hasDerivAt_timeSlice_uncurry (hU1 (t, y))).deriv
-  have h := hwave t x
-  rw [ht, hx, (hasDerivAt_fderiv_apply_fst (hD _) _).deriv,
-    (hasDerivAt_fderiv_apply_snd (hD _) _).deriv] at h
-  rw [h, add_sub_cancel_left]
+  rw [← deriv_deriv_sub_deriv_deriv_eq_fderiv hu, hwave, add_sub_cancel_left]
 
 /-- The forcing of a `C²` solution of `∂ₜ²u = ∂ₓ²u + G` is jointly continuous. -/
 private theorem continuous_forcing (hu : ContDiff ℝ 2 (uncurry u))
@@ -565,9 +560,8 @@ private theorem deriv_deriv_spatialPrimitive (hu : ContDiff ℝ 2 (uncurry u))
       (f := fun r y ↦ D (r, y) (1, 0)) (f' := fun r y ↦ fderiv ℝ D (r, y) (1, 0) (1, 0)) 0
       (hDc.clm_apply continuous_const) (fun r y ↦ hasDerivAt_fderiv_apply_fst (hD _) _)
       ((hD2.clm_apply continuous_const).clm_apply continuous_const) (hasDerivAt_const t x)
-  have hut : Continuous (u t) := hu.continuous.comp (Continuous.prodMk_right t)
   have hx : deriv (fun z ↦ ∫ y in 0..z, u t y) = u t :=
-    funext fun z ↦ (hut.integral_hasStrictDerivAt 0 z).hasDerivAt.deriv
+    funext fun z ↦ (hasDerivAt_spatialPrimitive hu.continuous t z).deriv
   have hxx : Continuous fun y ↦ fderiv ℝ D (t, y) (0, 1) (0, 1) :=
     ((hD2.comp (Continuous.prodMk_right t)).clm_apply continuous_const).clm_apply continuous_const
   have hint : ∫ y in 0..x, fderiv ℝ D (t, y) (1, 0) (1, 0) =
@@ -593,8 +587,6 @@ theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2
   set D := fderiv ℝ (uncurry u)
   have hDc : Continuous D := hu.continuous_fderiv two_ne_zero
   have hG := continuous_forcing hu hwave
-  have hGs (s : ℝ) : Continuous (G s) := hG.comp (Continuous.prodMk_right s)
-  have hus (s : ℝ) : Continuous (u s) := hu.continuous.comp (Continuous.prodMk_right s)
   set g : ℝ → F := fun y ↦ deriv (fun s ↦ u s y) 0
   have hg : g = fun y ↦ D (0, y) (1, 0) := funext fun y ↦
     (hasDerivAt_parameterCurve_uncurry (hu.differentiable two_ne_zero (0, y))).deriv
@@ -603,7 +595,7 @@ theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2
   have hH : Continuous (uncurry H) :=
     (continuous_parametric_primitive_of_continuous hG).sub (by fun_prop)
   have hHd (s z : ℝ) : HasDerivAt (H s) (G s z) z :=
-    ((hGs s).integral_hasStrictDerivAt 0 z).hasDerivAt.sub_const _
+    (hasDerivAt_spatialPrimitive hG s z).sub_const _
   have hHG : (fun s ↦ deriv (H s)) = G := funext fun s ↦ funext fun z ↦ (hHd s z).deriv
   have hP1 : (fun y ↦ deriv (fun s ↦ ∫ z in 0..y, u s z) 0) = fun y ↦ ∫ z in 0..y, g z := by
     rw [hg]
@@ -614,18 +606,17 @@ theorem eq_dAlembert_add_dAlembertDuhamel_of_deriv_deriv_eq (hu : ContDiff ℝ 2
     (deriv_deriv_spatialPrimitive hu hwave) t
   simp only [hP1] at hrep
   have hd := ((hasDerivAt_dAlembert_space
-    (fun z ↦ ((hus 0).integral_hasStrictDerivAt 0 z).hasDerivAt.differentiableAt)
+    (fun z ↦ (hasDerivAt_spatialPrimitive hu.continuous 0 z).differentiableAt)
     (continuous_primitive (μ := volume) (hgc.intervalIntegrable · ·) 0) t x).add
     (hasDerivAt_dAlembertDuhamel_space hH t x))
   replace hd := hd.congr_of_eventuallyEq (Filter.Eventually.of_forall hrep)
   have hP0 (z : ℝ) : deriv (fun x ↦ ∫ y in 0..x, u 0 y) z = u 0 z :=
-    ((hus 0).integral_hasStrictDerivAt 0 z).hasDerivAt.deriv
+    (hasDerivAt_spatialPrimitive hu.continuous 0 z).deriv
   have hHsub (s : ℝ) : H s (x + (t - s)) - H s (x - (t - s)) =
       ∫ y in x - (t - s)..x + (t - s), G s y := by
     simp only [H, sub_sub_sub_cancel_right]
-    exact integral_interval_sub_left ((hGs s).intervalIntegrable _ _)
-      ((hGs s).intervalIntegrable _ _)
-  rw [((hus t).integral_hasStrictDerivAt 0 x).hasDerivAt.unique hd, hP0, hP0,
+    exact (integral_slice_eq_sub hG s t x).symm
+  rw [(hasDerivAt_spatialPrimitive hu.continuous t x).unique hd, hP0, hP0,
     integral_congr fun s _ ↦ hHsub s, dAlembert_def, dAlembertDuhamel_def,
     ← integral_interval_sub_left (hgc.intervalIntegrable 0 (x + t))
       (hgc.intervalIntegrable 0 (x - t))]
