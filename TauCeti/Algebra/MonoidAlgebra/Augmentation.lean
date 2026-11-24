@@ -28,11 +28,14 @@ in `TauCeti.Algebra.MonoidAlgebra.Exactness`.
 * `MonoidAlgebra.augmentation_mapDomainRingEquiv`: invariance under monoid isomorphisms.
 * `MonoidAlgebra.augmentation_mapRingHom`: naturality in the coefficients.
 * `MonoidAlgebra.augmentationLinearMap`: the coefficient-sum linear map.
+* `MonoidAlgebra.augmentation_smul`: the augmentation is `R`-linear.
 * `MonoidAlgebra.augmentationLinearMap_surjective`: surjectivity over any semiring.
 * `MonoidAlgebra.ker_augmentationLinearMap`: the linear kernel is the augmentation ideal.
 * `MonoidAlgebra.eq_sum_single_of_mul_single_eq_self`: over a semiring in which multiplication by
   `|G|` is injective, an element invariant under every right translation and with augmentation
   `|G| • c` is the constant combination `∑ g, single g c`; for `c = 1` this is the norm.
+* `MonoidAlgebra.lift_one_apply`: lifting the trivial character is the augmentation followed by
+  `algebraMap`.
 * `TauCeti.augmentation_subgroupCharSum`: the augmentation of the character sum
   `∑_{h ∈ H} χ(h) h` is `∑_{h ∈ H} χ(h)`, so that of the norm element of `H` is its order.
 
@@ -103,6 +106,12 @@ theorem augmentationLinearMap_apply (x : MonoidAlgebra R K) :
     augmentationLinearMap R K x = augmentation R K x :=
   (rfl)
 
+/-- The coefficient-sum augmentation is `R`-linear. -/
+@[simp]
+theorem augmentation_smul (r : R) (x : MonoidAlgebra R K) :
+    augmentation R K (r • x) = r * augmentation R K x :=
+  (augmentationLinearMap R K).map_smul r x
+
 /-- Over any semiring, the coefficient-sum linear map is surjective. -/
 theorem augmentationLinearMap_surjective :
     Function.Surjective (augmentationLinearMap R K) :=
@@ -130,6 +139,16 @@ theorem eq_sum_single_of_mul_single_eq_self {R G : Type*} [Semiring R] [Group G]
     rw [hγ, map_sum] at hε
     simpa using hε
   rw [hγ, hγc]
+
+/-- Lifting the trivial character to an `R`-algebra `A` is the coefficient-sum augmentation
+followed by `algebraMap R A`. -/
+theorem lift_one_apply {R : Type u} [CommSemiring R] {A : Type w} [Semiring A] [Algebra R A]
+    {K : Type v} [Monoid K] (x : MonoidAlgebra R K) :
+    lift R A K 1 x = algebraMap R A (augmentation R K x) := by
+  induction x using induction_linear with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | single k r => simp [lift_single, Algebra.smul_def]
 
 end MonoidAlgebra
 

@@ -54,6 +54,9 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Complex.zpow_mul_conj_zpow_of_mem_sphere`: `z ^ k * conj (z ^ m) = z ^ (k - m)` for a point
   of `sphere (0 : ℂ) 1`, and `Complex.zpow_mul_conj_sub_eq_neg_of_mem_sphere`: there
   `z ^ k * conj a - a = -(z ^ k * conj (z ^ k * conj a - a))`.
+* `Circle.coe_mul_conj_self` and `Circle.conj_coe_mul_self`: `z * conj z = 1` and `conj z * z = 1`
+  on the circle, `Circle.add_mul_coe_eq_coe_mul_conj_mul_add`: `p + t u = u (conj u · p + t)`, and
+  `Circle.im_conj_mul_ne_zero_iff`: the line `t ↦ p + t u` avoids `0` iff `conj u · p` is not real.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
@@ -272,6 +275,32 @@ theorem exp_neg_arg_mul_self (x : ℂ) : (exp (-Complex.arg x) : ℂ) * x = ‖x
 theorem coe_inv_mul_sub_one (a b : Circle) :
     ((a⁻¹ * b : Circle) : ℂ) - 1 = ((a⁻¹ : Circle) : ℂ) * ((b : ℂ) - a) := by
   rw [mul_sub, ← coe_mul, ← coe_mul, inv_mul_cancel, coe_one]
+
+/-- A point of the unit circle times its conjugate is `1`. -/
+theorem coe_mul_conj_self (z : Circle) : (z : ℂ) * conj (z : ℂ) = 1 := by
+  rw [← coe_inv_eq_conj, ← coe_mul, mul_inv_cancel, coe_one]
+
+/-- The conjugate of a point of the unit circle times the point is `1`. -/
+theorem conj_coe_mul_self (z : Circle) : conj (z : ℂ) * z = 1 := by
+  rw [mul_comm, coe_mul_conj_self]
+
+/-- For a point `u` of the unit circle, `p + t u = u (conj u · p + t)`: the point `p + t u` of the
+line through `p` with direction `u`, in coordinates rotated by `u`. -/
+theorem add_mul_coe_eq_coe_mul_conj_mul_add (u : Circle) (p t : ℂ) :
+    p + t * u = u * (conj (u : ℂ) * p + t) := by
+  linear_combination (-p) * conj_coe_mul_self u
+
+/-- The line `t ↦ p + t · u` avoids `0` exactly when `conj u · p` is not real. -/
+theorem im_conj_mul_ne_zero_iff (u : Circle) (p : ℂ) :
+    (conj (u : ℂ) * p).im ≠ 0 ↔ ∀ t : ℝ, p + t * u ≠ 0 := by
+  simp only [add_mul_coe_eq_coe_mul_conj_mul_add, ne_eq, mul_eq_zero, coe_ne_zero, false_or]
+  constructor
+  · intro h t ht
+    apply h
+    simpa using congrArg Complex.im ht
+  · intro h him
+    apply h (-(conj (u : ℂ) * p).re)
+    apply Complex.ext <;> simp [him]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/

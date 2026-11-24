@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Complex.SolutionGerm
-public import TauCeti.Analysis.Complex.Conformal.Continuation.Basic
+public import TauCeti.Analysis.Complex.Conformal.GlobalBranch
 
 /-!
 # Continuation of solutions of complex linear differential equations
@@ -26,9 +26,19 @@ interval into pieces whose images lie in discs inside the domain. The disc initi
 `LinearEquation.IsSolutionNear.exists_isSolutionNear_eball` to extend the germ across each piece.
 `IsAnalyticContinuationAlong.union` glues the pieces.
 
+On a simply connected domain, the monodromy theorem `TauCeti.ContinuesInside.exists_analyticOnNhd`
+turns every local solution into the germ of a global solution
+(`LinearEquation.IsSolutionNear.exists_isSolution`); the global branch solves the equation because
+continuation preserves it. Hence every unscaled initial jet has a unique solution on the whole
+domain (`LinearEquation.exists_isSolution_of_isSimplyConnected`), the initial jet at any point is a
+linear isomorphism `LinearEquation.initialJetEquivOfIsSimplyConnected` from the solution space onto
+`Fin n → ℂ`, and the solution space has dimension `n`
+(`LinearEquation.finrank_solutionSpace_of_isSimplyConnected`).
+
 ## References
 
-* Gerald Teschl, *Ordinary Differential Equations and Dynamical Systems*, §4.3, Theorem 4.7.
+* Gerald Teschl, *Ordinary Differential Equations and Dynamical Systems*, §4.3, Theorem 4.7 and
+  its proof.
 -/
 
 public section
@@ -153,3 +163,115 @@ theorem isSolutionNear {X : Type*} [TopologicalSpace X] {U : Opens ℂ} {n : ℕ
   exact ⟨hzU, hzF, hz⟩
 
 end TauCeti.IsAnalyticContinuationAlong
+
+namespace TauCeti.LinearEquation
+
+variable {U : Opens ℂ} {n : ℕ} {E : LinearEquation U n} {a : ℂ} {y : ℂ → ℂ}
+
+/-! ### Global solutions on simply connected domains -/
+
+/-- **Global solutions on a simply connected domain.** On a simply connected domain, every solution
+of `E` near a point of the domain agrees near that point with a solution on the whole domain. -/
+theorem IsSolutionNear.exists_isSolution (hU : IsSimplyConnected (U : Set ℂ))
+    (hy : E.IsSolutionNear a y) : ∃ F : ℂ → ℂ, E.IsSolution F ∧ F =ᶠ[𝓝 a] y := by
+  obtain ⟨F, hF, hFy⟩ := hy.continuesInside.exists_analyticOnNhd U.isOpen hU hy.mem
+  refine ⟨F, (isSolution_iff _ _).mpr ⟨hF, fun z hz ↦ ?_⟩, hFy⟩
+  -- `F` continues itself along a path from `a` to `z`, starting at a solution germ.
+  have hjoin := hU.isPathConnected.joinedIn a hy.mem z hz
+  have hcont : IsAnalyticContinuationAlong (fun _ ↦ F) hjoin.somePath univ :=
+    .const hjoin.somePath.continuous.continuousOn fun t _ ↦ hF _ (hjoin.somePath_mem t)
+  have h0 : E.IsSolutionNear (hjoin.somePath 0) F := by
+    rw [hjoin.somePath.source]
+    exact hy.congr hFy.symm
+  obtain ⟨-, -, hzE⟩ := (isSolutionNear_iff.mp (hcont.isSolutionNear isPreconnected_univ
+    (fun t _ ↦ hjoin.somePath_mem t) (mem_univ 0) (mem_univ 1) h0)).self_of_nhds
+  simpa only [hjoin.somePath.target] using hzE
+
+/-- On a simply connected domain, every unscaled initial jet at a point of the domain is the jet of
+a solution on the whole domain. -/
+theorem initialJet_surjective_of_isSimplyConnected (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) : Function.Surjective (E.initialJet ha) := by
+  intro v
+  obtain ⟨φ, rfl⟩ := initialJetGerm_surjective (E := E) ha v
+  obtain ⟨y, hy, hyφ⟩ := (mem_solutionGerms_iff ha).mp φ.property
+  obtain ⟨F, hF, hFy⟩ := hy.exists_isSolution hU
+  refine ⟨hF.toSolutionSpace, funext fun j ↦ ?_⟩
+  rw [hF.initialJet_toSolutionSpace ha, initialJetGerm_apply ha φ hyφ.symm j]
+  exact hFy.iteratedDeriv_eq j
+
+variable (E) in
+/-- **The initial-jet isomorphism on a simply connected domain.** On a simply connected domain, the
+unscaled initial jet at any point of the domain is a complex linear isomorphism from the solution
+space onto `Fin n → ℂ`: every jet has exactly one solution on the whole domain. -/
+noncomputable def initialJetEquivOfIsSimplyConnected (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) :
+    E.solutionSpace ≃ₗ[ℂ] (Fin n → ℂ) :=
+  LinearEquiv.ofBijective (E.initialJet ha)
+    ⟨E.initialJet_injective_of_isPreconnected hU.isPathConnected.isConnected.isPreconnected ha,
+      initialJet_surjective_of_isSimplyConnected hU ha⟩
+
+/-- The forward map of `initialJetEquivOfIsSimplyConnected` is the unscaled initial jet. -/
+@[simp]
+theorem initialJetEquivOfIsSimplyConnected_apply (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) (f : E.solutionSpace) :
+    E.initialJetEquivOfIsSimplyConnected hU ha f = E.initialJet ha f := by
+  unfold initialJetEquivOfIsSimplyConnected
+  exact LinearEquiv.ofBijective_apply _ f
+
+/-- **The global initial-value theorem.** On a simply connected domain, every unscaled initial jet
+at a point `a` of the domain is the jet at `a` of a solution on the whole domain, unique on the
+domain. -/
+theorem exists_isSolution_of_isSimplyConnected (hU : IsSimplyConnected (U : Set ℂ)) (ha : a ∈ U)
+    (v : Fin n → ℂ) :
+    ∃ y : ℂ → ℂ, E.IsSolution y ∧ (∀ j : Fin n, iteratedDeriv j y a = v j) ∧
+      ∀ w : ℂ → ℂ, E.IsSolution w → (∀ j : Fin n, iteratedDeriv j w a = v j) → EqOn w y U := by
+  obtain ⟨f, hf⟩ := initialJet_surjective_of_isSimplyConnected (E := E) hU ha v
+  have hjet (j : Fin n) : iteratedDeriv j (HolomorphicFunctions.extend f.val) a = v j := by
+    rw [← initialJet_apply ha, hf]
+  have hfE := (E.mem_solutionSpace _).mp f.property
+  exact ⟨_, hfE, hjet, fun w hw hwv ↦
+    hw.eqOn_of_isPreconnected_of_iteratedDeriv_eq hU.isPathConnected.isConnected.isPreconnected
+      hfE ha fun j ↦ (hwv j).trans (hjet j).symm⟩
+
+/-- The inverse of `initialJetEquivOfIsSimplyConnected` has the prescribed initial jet. -/
+@[simp]
+theorem initialJet_initialJetEquivOfIsSimplyConnected_symm (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) (v : Fin n → ℂ) :
+    E.initialJet ha ((E.initialJetEquivOfIsSimplyConnected hU ha).symm v) = v := by
+  rw [← initialJetEquivOfIsSimplyConnected_apply hU ha, LinearEquiv.apply_symm_apply]
+
+/-- The underlying linear map of `initialJetEquivOfIsSimplyConnected` is the unscaled initial
+jet. -/
+@[simp]
+theorem initialJetEquivOfIsSimplyConnected_toLinearMap (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) :
+    (E.initialJetEquivOfIsSimplyConnected hU ha).toLinearMap = E.initialJet ha :=
+  LinearMap.ext fun f ↦ by
+    rw [LinearEquiv.coe_coe, initialJetEquivOfIsSimplyConnected_apply hU ha]
+
+/-- The inverse of `initialJetEquivOfIsSimplyConnected` recovers a solution from its initial
+jet. -/
+@[simp]
+theorem initialJetEquivOfIsSimplyConnected_symm_initialJet (hU : IsSimplyConnected (U : Set ℂ))
+    (ha : a ∈ U) (f : E.solutionSpace) :
+    (E.initialJetEquivOfIsSimplyConnected hU ha).symm (E.initialJet ha f) = f := by
+  rw [← initialJetEquivOfIsSimplyConnected_apply hU ha, LinearEquiv.symm_apply_apply]
+
+/-- The `j`-th derivative at `a` of the extended solution
+`(E.initialJetEquivOfIsSimplyConnected hU ha).symm v` is `v j`. -/
+@[simp]
+theorem iteratedDeriv_extend_initialJetEquivOfIsSimplyConnected_symm
+    (hU : IsSimplyConnected (U : Set ℂ)) (ha : a ∈ U) (v : Fin n → ℂ) (j : Fin n) :
+    iteratedDeriv j
+      (HolomorphicFunctions.extend ((E.initialJetEquivOfIsSimplyConnected hU ha).symm v).val) a =
+      v j := by
+  rw [← initialJet_apply ha, initialJet_initialJetEquivOfIsSimplyConnected_symm]
+
+/-- On a simply connected domain the solution space of a monic equation of order `n` has complex
+dimension `n`. -/
+theorem finrank_solutionSpace_of_isSimplyConnected (hU : IsSimplyConnected (U : Set ℂ)) :
+    Module.finrank ℂ E.solutionSpace = n := by
+  obtain ⟨a, ha⟩ := hU.isPathConnected.nonempty
+  simpa using (E.initialJetEquivOfIsSimplyConnected hU ha).finrank_eq
+
+end TauCeti.LinearEquation

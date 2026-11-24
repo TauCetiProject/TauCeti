@@ -261,7 +261,7 @@ theorem nonnegSectionalCurvatureCone_le_nonnegRicciCone :
 `Scal = ∑ᵢ Ric(eᵢ, eᵢ)`. -/
 theorem nonnegRicciCone_le_nonnegScalarCone : nonnegRicciCone V ≤ nonnegScalarCone V :=
   fun r hr ↦ mem_nonnegScalarCone.mpr <| by
-    rw [scalar_apply, bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ V)]
+    rw [scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ V)]
     exact Finset.sum_nonneg fun _ _ ↦ mem_nonnegRicciCone.mp hr _
 
 /-- On a unit vector `e`, 2-nonnegativity of the curvature operator gives `Ric(e, e) ≥ 0` unless

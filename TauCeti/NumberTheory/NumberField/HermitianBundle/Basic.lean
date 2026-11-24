@@ -376,7 +376,8 @@ variable {F G : Type*} [AddCommGroup F] [Module (𝓞 K) F] [AddCommGroup G] [Mo
 
 /-- An **isometry** between hermitian metrics: an `𝓞 K`-linear isomorphism `E ≃ F` whose
 complexification is unitary at every complex embedding. Unitarity is tested on vectors of `E`;
-`HermitianMetric.IsometryEquiv.form_baseChange` gives it on the whole complex fibre. -/
+`HermitianMetric.IsometryEquiv.form_toLinearMap_baseChange` gives it on the whole complex
+fibre. -/
 structure IsometryEquiv (h : HermitianMetric K E) (h' : HermitianMetric K F)
     extends E ≃ₗ[𝓞 K] F where
   /-- The linear isomorphism preserves the hermitian forms. -/
@@ -415,7 +416,8 @@ theorem toLinearEquiv_injective :
   ext fun x ↦ congr($he x)
 
 /-- An isometry preserves the hermitian forms on the whole complex fibre. -/
-theorem form_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
+theorem form_toLinearMap_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ)
+    (u v : Codomain σ ⊗[𝓞 K] E) :
     h'.form σ (e.toLinearMap.baseChange (Codomain σ) u)
         (e.toLinearMap.baseChange (Codomain σ) v) = h.form σ u v := by
   induction u using TensorProduct.inductionOn with
@@ -427,9 +429,10 @@ theorem form_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u v : Codom
       rw [LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, h'.form_tmul_tmul,
         h.form_tmul_tmul, LinearEquiv.coe_coe, e.form_tmul]
 
-theorem norm_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
+theorem norm_toLinearMap_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ)
+    (u : Codomain σ ⊗[𝓞 K] E) :
     h'.norm σ (e.toLinearMap.baseChange (Codomain σ) u) = h.norm σ u := by
-  rw [norm_def, norm_def, e.form_baseChange]
+  rw [norm_def, norm_def, e.form_toLinearMap_baseChange]
 
 @[simp]
 theorem form_tmul_map (e : IsometryEquiv h h') (σ : K →+* ℂ) (x y : E) :
@@ -483,6 +486,17 @@ theorem apply_symm_apply (e : IsometryEquiv h h') (x : F) : e (e.symm x) = x :=
 @[simp]
 theorem trans_apply (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') (x : E) :
     e.trans e' x = e' (e x) := (rfl)
+
+@[simp]
+theorem toLinearEquiv_refl : (refl h).toLinearEquiv = LinearEquiv.refl (𝓞 K) E := (rfl)
+
+@[simp]
+theorem toLinearEquiv_symm (e : IsometryEquiv h h') : e.symm.toLinearEquiv = e.toLinearEquiv.symm :=
+  (rfl)
+
+@[simp]
+theorem toLinearEquiv_trans (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') :
+    (e.trans e').toLinearEquiv = e.toLinearEquiv.trans e'.toLinearEquiv := (rfl)
 
 end IsometryEquiv
 

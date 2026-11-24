@@ -621,12 +621,13 @@ theorem exists_forall_le_of_diff_singleton_subset_biUnion {X ι : Type*} [Zero X
     _ ≤ |f 0| + ∑ ξ ∈ t, |C ξ| := le_add_of_nonneg_left (abs_nonneg _)
 
 /-- **Finitely many neighbourhoods and cones over a compact set.** Given at each point `x` of a
-compact set `K` a neighbourhood `U x` and an open set `Γ x` containing `ξ` and closed under
-multiplication by positive reals, finitely many of the interiors of the `U x` cover `K`, and the
-intersection of the corresponding sets `Γ x` is again open, contains `ξ` and is closed under
-multiplication by positive reals. -/
-theorem exists_finset_subset_biUnion_interior_and_isOpen_cone [Module ℝ E] {K : Set E} {ξ : E}
-    (hK : IsCompact K) {U Γ : K → Set E} (hU : ∀ x : K, U x ∈ nhds (x : E))
+compact set `K` a neighbourhood `U x` and an open set `Γ x`, in a possibly different space,
+containing `ξ` and closed under multiplication by positive reals, finitely many of the interiors
+of the `U x` cover `K`, and the intersection of the corresponding sets `Γ x` is again open,
+contains `ξ` and is closed under multiplication by positive reals. -/
+theorem exists_finset_subset_biUnion_interior_and_isOpen_cone {X F : Type*}
+    [TopologicalSpace X] [TopologicalSpace F] [SMul ℝ F] {K : Set X} {ξ : F} (hK : IsCompact K)
+    {U : K → Set X} {Γ : K → Set F} (hU : ∀ x : K, U x ∈ nhds (x : X))
     (hΓ : ∀ x, IsOpen (Γ x)) (hξΓ : ∀ x, ξ ∈ Γ x)
     (hcone : ∀ x, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ x, t • η ∈ Γ x) :
     ∃ t : Finset K, K ⊆ ⋃ x ∈ t, interior (U x) ∧ IsOpen (⋂ x ∈ t, Γ x) ∧ ξ ∈ ⋂ x ∈ t, Γ x ∧

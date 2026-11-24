@@ -178,6 +178,13 @@ theorem sub_eq_norm_smul_outgoingDir_of_areaForm_eq_zero {s v t : ℝ} (hv : v �
 
 /-! ### Existence and uniqueness of the next collision -/
 
+/-- The signed area `t ↦ ω(u, χ(t) - χ(s))` of the chord from `χ(s)` against a direction `u` has
+derivative `ω(u, χ'(t))`. -/
+theorem hasDerivAt_areaForm_sub (u : E) (s t : ℝ) :
+    HasDerivAt (fun t ↦ o.areaForm u (χ t - χ s)) (o.areaForm u (deriv χ t)) t :=
+  (o.areaForm u).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt t
+    ((χ.differentiableAt t).hasDerivAt.sub_const (χ s))
+
 /-- The chord leaving `χ(s)` with tangential component `v ∈ (-1, 1)` meets the boundary again at a
 parameter `t ∈ (s, s + L)`. -/
 theorem exists_collision {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
@@ -186,13 +193,9 @@ theorem exists_collision {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
   set L := χ.period
   have hL : 0 < L := χ.period_pos
   let f : ℝ → ℝ := fun t ↦ o.areaForm u (χ t - χ s)
-  have hf : Continuous f :=
-    (LinearMap.continuous_of_finiteDimensional (o.areaForm u)).comp
-      (χ.continuous.sub continuous_const)
   -- `f` vanishes at `s` and `s + L`, with the negative derivative `ω(u, χ'(s))` at both.
-  have hderiv : ∀ a, HasDerivAt f (o.areaForm u (deriv χ a)) a := fun a ↦
-    (o.areaForm u).toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt a
-      ((χ.differentiableAt a).hasDerivAt.sub_const (χ s))
+  have hderiv : ∀ a, HasDerivAt f (o.areaForm u (deriv χ a)) a := χ.hasDerivAt_areaForm_sub u s
+  have hf : Continuous f := continuous_iff_continuousAt.2 fun a ↦ (hderiv a).continuousAt
   have hneg : o.areaForm u (deriv χ s) < 0 := by
     rw [o.areaForm_swap, areaForm_deriv_outgoingDir, neg_lt_zero]
     exact Real.sqrt_one_sub_sq_pos hv
