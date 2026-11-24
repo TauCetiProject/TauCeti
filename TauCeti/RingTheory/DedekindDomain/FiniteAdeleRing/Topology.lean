@@ -93,6 +93,7 @@ theorem isLocallyConstant_toFractionalIdeal :
   rw [ker_toFractionalIdeal]
   exact isOpen_integralUnits R K
 
+variable {R K} in
 /-- **Every compact subgroup of the finite ideles is contained in the everywhere-integral
 units** `integralUnits R K`. -/
 theorem le_integralUnits_of_isCompact {H : Subgroup (FiniteAdeleRing R K)ˣ}
@@ -121,7 +122,7 @@ theorem map_det_le_integralUnits_of_isCompact {n : Type*} [Fintype n] [Decidable
     {U : Subgroup (GL n (FiniteAdeleRing R K))}
     (hU : IsCompact (U : Set (GL n (FiniteAdeleRing R K)))) :
     U.map Matrix.GeneralLinearGroup.det ≤ integralUnits R K :=
-  le_integralUnits_of_isCompact R K (by
+  le_integralUnits_of_isCompact (by
     simpa only [Subgroup.coe_map] using hU.image Matrix.GeneralLinearGroup.continuous_det)
 
 /-- The ideal class attached to a finite idele is locally constant. -/
