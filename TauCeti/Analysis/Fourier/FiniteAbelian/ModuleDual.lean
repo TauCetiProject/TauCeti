@@ -34,8 +34,10 @@ It holds for every nontrivial character into a domain (`AddChar.sum_eq_zero_of_n
 
 Over a finite extension `L` of a finite field `K`, for instance on `L ⊗[K] W` for a `K`-vector
 space `W`, the transform uses the character `φ ∘ Tr_{L/K}` of `L`; for `φ = ψ ∘ Tr_{K/𝔽_p}` this is
-`ψ ∘ Tr_{L/𝔽_p}`, by transitivity of the trace. The transform over `L` is then the transform of
-the underlying `K`-vector space, the `L`-linear forms being identified with the `K`-linear forms by
+`ψ ∘ Tr_{L/𝔽_p}`, by transitivity of the trace
+(`AddChar.compAddMonoidHom_trace_compAddMonoidHom_trace`, in
+`TauCeti.NumberTheory.AddCharacter.Trace`). The transform over `L` is then the transform of the
+underlying `K`-vector space, the `L`-linear forms being identified with the `K`-linear forms by
 composition with `Tr_{L/K}`, and the orthogonality hypothesis passes from `φ` to `φ ∘ Tr_{L/K}`.
 The trace functions over `𝔽_{qⁿ}` of the Fourier–Deligne transform are finite transforms with
 respect to these characters, for all `n` at once.
@@ -68,8 +70,6 @@ respect to these characters, for all `n` at once.
   `∑ w', 𝔉 t₁ w' * 𝔉 t₂ w' = |W| ∑ w, t₁ w * t₂ (-w)`.
 * `AddChar.fourierTransform_indicator_submodule`: the transform of the indicator of a subspace `U`
   is `|U|` times the indicator of its annihilator `U^⊥`.
-* `AddChar.compAddMonoidHom_trace_compAddMonoidHom_trace`: for a tower `F ⊆ K ⊆ L`, the character
-  `ψ ∘ Tr_{L/F}` is `(ψ ∘ Tr_{K/F}) ∘ Tr_{L/K}`.
 * `AddChar.fourierTransform_compAddMonoidHom_trace_apply`: the transform over `L` with respect to
   `φ ∘ Tr_{L/K}` at `w'` is the transform over `K` with respect to `φ` at `Tr_{L/K} ∘ w'`.
 * `AddChar.fourierTransform_compAddMonoidHom_trace_traceCompEquiv_symm`: the same identity read
@@ -335,18 +335,6 @@ section Trace
 
 /-! ### Extension of the base field -/
 
-/-- **Transitivity of trace characters.** For a tower `F ⊆ K ⊆ L`, the character
-`ψ ∘ Tr_{L/F}` of `L` is `(ψ ∘ Tr_{K/F}) ∘ Tr_{L/K}`. -/
-theorem compAddMonoidHom_trace_compAddMonoidHom_trace {F K L M : Type*} [CommRing F] [CommRing K]
-    [CommRing L] [Algebra F K] [Algebra K L] [Algebra F L] [IsScalarTower F K L]
-    [Module.Free F K] [Module.Finite F K] [Module.Free K L] [Module.Finite K L] [Monoid M]
-    (ψ : AddChar F M) :
-    (ψ.compAddMonoidHom (Algebra.trace F K).toAddMonoidHom).compAddMonoidHom
-        (Algebra.trace K L).toAddMonoidHom =
-      ψ.compAddMonoidHom (Algebra.trace F L).toAddMonoidHom := by
-  ext x
-  simp [Algebra.trace_trace]
-
 variable {Λ W : Type*} [CommSemiring Λ] [AddCommMonoid W] [Fintype W]
 
 /-- **Restriction of scalars.** The transform of an `L`-module with respect to the character
@@ -364,6 +352,7 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] (φ : AddChar K Λ)
 /-- **Restriction of scalars, from the `K`-side.** For a finite separable extension `L / K`, the
 transform of the underlying `K`-module with respect to `φ`, at a `K`-linear form `μ`, is the
 transform over `L` with respect to `φ ∘ Tr_{L/K}`, at the `L`-linear form whose trace is `μ`. -/
+@[simp]
 theorem fourierTransform_compAddMonoidHom_trace_traceCompEquiv_symm [FiniteDimensional K L]
     [Algebra.IsSeparable K L] [Module L W] [Module K W] [IsScalarTower K L W] (t : W → Λ)
     (μ : Module.Dual K W) :
