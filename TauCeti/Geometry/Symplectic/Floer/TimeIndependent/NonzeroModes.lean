@@ -430,7 +430,7 @@ theorem setIntegral_norm_sq_le_mul_setIntegral_norm_deriv_sub_sq {C : ℝ}
   -- On the map `(s, t) ↦ ζ(s)`, the linearized operator is the Morse operator.
   have hDζ (z : ℝ × ℝ) : ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) (fun z ↦ ζ z.1) z = m z.1 :=
-    floerLinearization_comp_fst_of_hasDerivAt γ ((hζ.differentiable two_ne_zero) z.1).hasDerivAt
+    floerLinearization_comp_fst ω J H _ ζ z
   have h := hD (fun z ↦ ζ z.1) (hζ.comp contDiff_fst) (fun _ _ ↦ rfl) (fun _ ↦ hζ₀)
     fun _ ↦ hζ₁
   simp only [hDζ] at h

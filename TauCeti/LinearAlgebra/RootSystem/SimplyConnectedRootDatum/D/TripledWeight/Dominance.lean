@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 -- The equal-length certificate computes the explicit classical root enumeration and its
 -- signed-pair indexing rather than introducing a second invariant form.
-import all TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+import all TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 import all TauCeti.Data.Fin.DistinctPairs
 
 /-!

@@ -46,6 +46,8 @@ Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quad
   the coordinates of `S x` are those of `x` scaled by the eigenvalues.
 * `OrthonormalBasis.toBasis_equiv_refl`: for two finite orthonormal bases over the same index type,
   `Basis.equiv` along `Equiv.refl` agrees with `d₀.repr.trans c.repr.symm`.
+* `LinearMap.toMatrix_orthonormalBasis_apply`: the entries of the matrix of a linear map in
+  orthonormal bases `(bⱼ)` and `(cᵢ)` are `⟪cᵢ, T bⱼ⟫`.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
@@ -192,3 +194,16 @@ theorem rotatedRealCoords_symm_apply (b : OrthonormalBasis ι ℂ E) (ω : ι �
   rfl
 
 end OrthonormalBasis
+
+namespace LinearMap
+
+/-- The `(i, j)` entry of the matrix of `T : V → W` with respect to orthonormal bases `(bⱼ)` of
+`V` and `(cᵢ)` of `W` is `⟪cᵢ, T bⱼ⟫`. -/
+theorem toMatrix_orthonormalBasis_apply {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [InnerProductSpace 𝕜 V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] {ι κ : Type*}
+    [Fintype ι] [DecidableEq ι] [Fintype κ] (b : OrthonormalBasis ι 𝕜 V)
+    (c : OrthonormalBasis κ 𝕜 W) (T : V →ₗ[𝕜] W) (i : κ) (j : ι) :
+    toMatrix b.toBasis c.toBasis T i j = ⟪c i, T (b j)⟫_𝕜 := by
+  simp [toMatrix_apply, OrthonormalBasis.repr_apply_apply]
+
+end LinearMap
