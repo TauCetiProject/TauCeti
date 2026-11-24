@@ -32,7 +32,9 @@ centre `c`.
   bounded sets of centres, and locally uniform convergence.
 * `Real.hasSum_gaussianLatticeSum` and `Real.gaussianLatticeSum_pos` — convergence and positivity
   for `s ≠ 0`; `Real.gaussianLatticeSum_zero_right` records the totalized value `0` at `s = 0`.
-* `Real.gaussianLatticeSum_zero_left_le` — the upper bound `Z(0, s) ≤ 1 + √(2π) |s|`.
+* `Real.gaussianLatticeSum_zero_left_le` — the upper bound `Z(0, s) ≤ 1 + √(2π) |s|`; in the form
+  `Real.sum_exp_neg_mul_int_sq_le`, every finite sum of the weights `exp (-t n²)`, `t > 0`, is at
+  most `1 + √(π / t)`.
 * `Real.summable_pow_mul_exp_neg_sub_sq` — convergence of the lattice sums with polynomial weights;
   `Real.summable_abs_pow_mul_exp_neg_sub_sq_div` is the absolute version for any positive
   denominator, as used for domination arguments.
@@ -181,9 +183,11 @@ theorem gaussianLatticeSum_zero_left_le (s : ℝ) :
     exp_le_exp.2 <| by
       simpa only [neg_mul, neg_le_neg_iff] using
         mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (mem_Ici.1 hx) hxy 2) hb.le
+  have hπb : π / b = 2 * π * s ^ 2 := by
+    rw [hbs]
+    field_simp
   have hint : ∫ x in Ioi (0 : ℝ), rexp (-b * x ^ 2) = √(2 * π) * |s| / 2 := by
-    rw [integral_gaussian_Ioi, show π / b = 2 * π * s ^ 2 by rw [hbs]; field_simp,
-      Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs]
+    rw [integral_gaussian_Ioi, hπb, Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs]
   have htail := AntitoneOn.tsum_add_one_le_integral hanti
     (integrable_exp_neg_mul_sq hb).integrableOn fun _ _ => (exp_pos _).le
   rw [hint] at htail
@@ -192,6 +196,30 @@ theorem gaussianLatticeSum_zero_left_le (s : ℝ) :
   push_cast at htail ⊢
   rw [two_nsmul, zero_pow two_ne_zero, mul_zero, exp_zero]
   linarith
+
+/-- For `t > 0`, every finite sum of the Gaussian weights `exp (-t n²)` over integers `n` is at most
+`1 + √(π / t)`. -/
+theorem sum_exp_neg_mul_int_sq_le {t : ℝ} (ht : 0 < t) (s : Finset ℤ) :
+    ∑ n ∈ s, rexp (-t * (n : ℝ) ^ 2) ≤ 1 + √(π / t) := by
+  -- These are the terms of the centred lattice sum of width `σ = √(1 / (2t))`.
+  set σ := √(1 / (2 * t))
+  have hσ : 0 < σ := by positivity
+  have hσsq : 2 * σ ^ 2 = 1 / t := by
+    rw [Real.sq_sqrt (by positivity)]
+    field_simp
+  calc
+    _ = ∑ n ∈ s, rexp (-((n : ℝ) - 0) ^ 2 / (2 * σ ^ 2)) := by
+      refine Finset.sum_congr rfl fun n _ => ?_
+      rw [sub_zero, hσsq]
+      congr 1
+      field_simp
+    _ ≤ gaussianLatticeSum 0 σ :=
+      sum_le_hasSum _ (fun _ _ => (exp_pos _).le) (hasSum_gaussianLatticeSum 0 hσ.ne')
+    _ ≤ 1 + √(2 * π) * |σ| := gaussianLatticeSum_zero_left_le _
+    _ = 1 + √(π / t) := by
+      rw [abs_of_pos hσ, ← Real.sqrt_mul (by positivity)]
+      congr 2
+      field_simp
 
 /-- The Gaussian lattice sum depends on the width only through its square. -/
 @[simp]

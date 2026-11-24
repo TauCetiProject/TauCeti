@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.MetricSpace.Cover
 public import TauCeti.Analysis.InnerProductSpace.Compressible
-import TauCeti.Analysis.InnerProductSpace.Euclidean.IntegerPoints
+public import TauCeti.Analysis.InnerProductSpace.Euclidean.IntegerPoints
 import TauCeti.Analysis.Normed.Lp.PiLp
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Topology.MetricSpace.CoveringNumbers
@@ -19,22 +19,23 @@ import TauCeti.Topology.MetricSpace.CoveringNumbers
 
 For tolerances `α γ : ℝ`, the essential least common denominator `LCD_{α,γ}(a)` of a vector
 `a ∈ ℝⁿ` is the infimum of the dilations `θ > 0` for which `θ • a` lies within distance
-`min (γ ‖θ • a‖) α` of an integer point. The relative tolerance `γ ‖θ • a‖` only admits integer
-points in a cone around the direction of `a`. For `γ < 1`, a small LCD means that a moderate
-multiple of `a` is close to a nonzero integer vector, so that the coordinates of `a` have a strong
-arithmetic structure. The small-ball probability of a weighted sum `∑ aₖ ξₖ` of independent
-random variables is controlled by the reciprocal of the LCD of the weights. This is how the LCD
-enters the lower bounds for the least singular value of square random matrices. The LCD is `⊤`
-when no dilation qualifies, as for `a = 0`.
+`min (γ ‖θ • a‖) α` of an integer point `TauCeti.latticePoint p`. The relative tolerance
+`γ ‖θ • a‖` only admits integer points in a cone around the direction of `a`. For `γ < 1`, a small
+LCD means that a moderate multiple of `a` is close to a nonzero integer vector, so that the
+coordinates of `a` have a strong arithmetic structure. The small-ball probability of a weighted
+sum `∑ aₖ ξₖ` of independent random variables is controlled by the reciprocal of the LCD of the
+weights. This is how the LCD enters the lower bounds for the least singular value of square random
+matrices. The LCD is `⊤` when no dilation qualifies, as for `a = 0`.
 
 This file proves three deterministic facts about the LCD.
 
 * An incompressible unit vector, in the sense of `TauCeti.IsIncompressibleVector k ρ`, has LCD at
-  least `√(k + 1) / 2` whenever `γ ≤ ρ`. Its coordinates of norm at most `1 / √(k + 1)` carry
-  squared mass more than `ρ²`, and they stay within `1 / 2` of `0` under dilations by at most
-  `√(k + 1) / 2`.
-* If the LCD of `a ≠ 0` is at least `L > 0` and `2t < α`, the recurrence set of the dilations
-  `θ ∈ [-T, T]` bringing `θ • a` within `t` of an integer point has measure at most
+  least `√(k + 1) / 2` whenever `γ ≤ ρ`. For `ρ ≥ 0`, its coordinates of norm at most
+  `1 / √(k + 1)` carry squared mass more than `ρ²`, and they stay within `1 / 2` of `0` under
+  dilations by at most `√(k + 1) / 2`. For `ρ < 0` the relative tolerance is negative, so no
+  dilation qualifies.
+* If the LCD of `a ≠ 0` is at least `L > 0`, `γ > 0` and `2t < α`, the recurrence set of the
+  dilations `θ ∈ [-T, T]` bringing `θ • a` within `t` of an integer point has measure at most
   `(4T / L + 1) * (2t / (γ ‖a‖))`. This is the estimate through which the LCD controls the
   integral of a characteristic function in the small-ball inequality.
 * A set of unit vectors whose LCDs lie in `[D, 2D)` has a `4α/D`-net inside the set with at most
@@ -78,7 +79,7 @@ of the dilations `θ > 0` for which `θ • a` lies within distance `min (γ * �
 point. It is `⊤` when no dilation qualifies. -/
 def leastCommonDenominator (α γ : ℝ) (a : EuclideanSpace ℝ ι) : ℝ≥0∞ :=
   ⨅ (θ : ℝ) (_ : 0 < θ ∧ ∃ p : ι → ℤ,
-    ‖θ • a - WithLp.toLp 2 (fun i ↦ (p i : ℝ))‖ < min (γ * ‖θ • a‖) α), ENNReal.ofReal θ
+    ‖θ • a - latticePoint p‖ < min (γ * ‖θ • a‖) α), ENNReal.ofReal θ
 
 variable {α γ : ℝ} {a : EuclideanSpace ℝ ι}
 
@@ -86,7 +87,7 @@ variable {α γ : ℝ} {a : EuclideanSpace ℝ ι}
 `min (γ * ‖θ • a‖) α` of an integer point. -/
 theorem leastCommonDenominator_lt_ofReal_iff {D : ℝ} :
     leastCommonDenominator α γ a < ENNReal.ofReal D ↔ ∃ θ, 0 < θ ∧ θ < D ∧ ∃ p : ι → ℤ,
-      ‖θ • a - WithLp.toLp 2 (fun i ↦ (p i : ℝ))‖ < min (γ * ‖θ • a‖) α := by
+      ‖θ • a - latticePoint p‖ < min (γ * ‖θ • a‖) α := by
   simp only [leastCommonDenominator, iInf_lt_iff, exists_prop]
   constructor
   · rintro ⟨θ, ⟨hθ, hp⟩, hlt⟩
@@ -98,14 +99,14 @@ theorem leastCommonDenominator_lt_ofReal_iff {D : ℝ} :
 `min (γ * ‖θ • a‖) α` of an integer point. -/
 theorem ofReal_le_leastCommonDenominator_iff {D : ℝ} :
     ENNReal.ofReal D ≤ leastCommonDenominator α γ a ↔ ∀ θ, 0 < θ → θ < D → ∀ p : ι → ℤ,
-      min (γ * ‖θ • a‖) α ≤ ‖θ • a - WithLp.toLp 2 (fun i ↦ (p i : ℝ))‖ := by
+      min (γ * ‖θ • a‖) α ≤ ‖θ • a - latticePoint p‖ := by
   rw [← not_lt, leastCommonDenominator_lt_ofReal_iff]
   simp only [not_exists, not_and, not_lt]
 
 /-- A dilation `θ > 0` that brings `θ • a` within `min (γ * ‖θ • a‖) α` of an integer point bounds
 the LCD. -/
 theorem leastCommonDenominator_le_ofReal {θ : ℝ} (hθ : 0 < θ) (p : ι → ℤ)
-    (hp : ‖θ • a - WithLp.toLp 2 (fun i ↦ (p i : ℝ))‖ < min (γ * ‖θ • a‖) α) :
+    (hp : ‖θ • a - latticePoint p‖ < min (γ * ‖θ • a‖) α) :
     leastCommonDenominator α γ a ≤ ENNReal.ofReal θ :=
   iInf₂_le θ ⟨hθ, p, hp⟩
 
@@ -128,7 +129,7 @@ than `ρ * θ` from every integer point. -/
 theorem IsIncompressibleVector.mul_lt_norm_smul_sub {k : ℕ} {ρ θ : ℝ}
     {x : EuclideanSpace ℝ ι} (hx : IsIncompressibleVector k ρ x) (hθ : 0 < θ)
     (hθk : θ ≤ √(k + 1) / 2) (p : ι → ℤ) :
-    ρ * θ < ‖θ • x - WithLp.toLp 2 (fun i ↦ (p i : ℝ))‖ := by
+    ρ * θ < ‖θ • x - latticePoint p‖ := by
   classical
   rcases lt_or_ge ρ 0 with hρ | hρ
   · exact (mul_neg_of_neg_of_pos hρ hθ).trans_le (norm_nonneg _)
@@ -155,7 +156,7 @@ theorem IsIncompressibleVector.mul_lt_norm_smul_sub {k : ℕ} {ρ θ : ℝ}
       have := abs_sub_abs_le_abs_sub (p i : ℝ) (θ * x i)
       rw [abs_sub_comm] at this
       linarith
-  have hsq : (ρ * θ) ^ 2 < ‖θ • x - WithLp.toLp 2 (fun i ↦ (p i : ℝ))‖ ^ 2 := calc
+  have hsq : (ρ * θ) ^ 2 < ‖θ • x - latticePoint p‖ ^ 2 := calc
     (ρ * θ) ^ 2 = θ ^ 2 * ρ ^ 2 := by ring
     _ < θ ^ 2 * ∑ i ∈ sᶜ, ‖x i‖ ^ 2 := mul_lt_mul_of_pos_left hmass (by positivity)
     _ = ∑ i ∈ sᶜ, (θ * x i) ^ 2 := by
@@ -184,8 +185,8 @@ within `t` of an integer point with `2t < α`, are within `2t / (γ ‖a‖)` of
 private theorem abs_sub_le_of_ofReal_le_leastCommonDenominator {L t θ₁ θ₂ : ℝ}
     (hLa : ENNReal.ofReal L ≤ leastCommonDenominator α γ a) (htα : 2 * t < α)
     (hγa : 0 < γ * ‖a‖) {p₁ p₂ : ι → ℤ}
-    (h₁ : ‖θ₁ • a - WithLp.toLp 2 (fun i ↦ (p₁ i : ℝ))‖ ≤ t)
-    (h₂ : ‖θ₂ • a - WithLp.toLp 2 (fun i ↦ (p₂ i : ℝ))‖ ≤ t) (hL : |θ₁ - θ₂| < L) :
+    (h₁ : ‖θ₁ • a - latticePoint p₁‖ ≤ t)
+    (h₂ : ‖θ₂ • a - latticePoint p₂‖ ≤ t) (hL : |θ₁ - θ₂| < L) :
     |θ₁ - θ₂| ≤ 2 * t / (γ * ‖a‖) := by
   wlog h₂₁ : θ₂ ≤ θ₁ generalizing θ₁ θ₂ p₁ p₂
   · rw [abs_sub_comm] at hL ⊢
@@ -196,13 +197,11 @@ private theorem abs_sub_le_of_ofReal_le_leastCommonDenominator {L t θ₁ θ₂ 
     exact div_nonneg (by linarith [(norm_nonneg _).trans h₁]) hγa.le
   have hτ : 0 < θ₁ - θ₂ := sub_pos.2 h₂₁
   -- The difference of the two dilations is within `2t` of the difference of the integer points.
-  have hdiff : ‖(θ₁ - θ₂) • a - WithLp.toLp 2 (fun i ↦ ((p₁ - p₂) i : ℝ))‖ ≤ 2 * t := by
-    have heq : (θ₁ - θ₂) • a - WithLp.toLp 2 (fun i ↦ ((p₁ - p₂) i : ℝ)) =
-        (θ₁ • a - WithLp.toLp 2 (fun i ↦ (p₁ i : ℝ))) -
-          (θ₂ • a - WithLp.toLp 2 (fun i ↦ (p₂ i : ℝ))) := by
-      ext i
-      simp only [PiLp.sub_apply, PiLp.smul_apply, Pi.sub_apply, Int.cast_sub, smul_eq_mul]
-      ring
+  have hdiff : ‖(θ₁ - θ₂) • a - latticePoint (p₁ - p₂)‖ ≤ 2 * t := by
+    have heq : (θ₁ - θ₂) • a - latticePoint (p₁ - p₂) =
+        (θ₁ • a - latticePoint p₁) - (θ₂ • a - latticePoint p₂) := by
+      rw [latticePoint_sub, sub_smul]
+      abel
     rw [heq]
     exact (norm_sub_le _ _).trans (by linarith)
   -- Since `2t < α`, the LCD bound forces `γ (θ₁ - θ₂) ‖a‖ ≤ 2t`.
@@ -216,9 +215,9 @@ private theorem abs_sub_le_of_ofReal_le_leastCommonDenominator {L t θ₁ θ₂ 
 point form a set of measure at most `(4T / L + 1) * (2t / (γ ‖a‖))`. -/
 theorem volume_setOf_mem_Icc_exists_norm_smul_sub_le_le {L T t : ℝ} (hL : 0 < L) (hγ : 0 < γ)
     (ha : a ≠ 0) (htα : 2 * t < α) (hLa : ENNReal.ofReal L ≤ leastCommonDenominator α γ a) :
-    volume {θ ∈ Icc (-T) T | ∃ p : ι → ℤ, ‖θ • a - WithLp.toLp 2 (fun i ↦ (p i : ℝ))‖ ≤ t} ≤
+    volume {θ ∈ Icc (-T) T | ∃ p : ι → ℤ, ‖θ • a - latticePoint p‖ ≤ t} ≤
       ENNReal.ofReal ((4 * T / L + 1) * (2 * t / (γ * ‖a‖))) := by
-  set I := {θ ∈ Icc (-T) T | ∃ p : ι → ℤ, ‖θ • a - WithLp.toLp 2 (fun i ↦ (p i : ℝ))‖ ≤ t}
+  set I := {θ ∈ Icc (-T) T | ∃ p : ι → ℤ, ‖θ • a - latticePoint p‖ ≤ t}
   have hγa : 0 < γ * ‖a‖ := mul_pos hγ (norm_pos_iff.2 ha)
   rcases lt_or_ge t 0 with ht | ht
   · have hI : I = ∅ := eq_empty_of_forall_notMem fun _ ⟨_, _, hp⟩ ↦
@@ -262,9 +261,10 @@ theorem volume_setOf_mem_Icc_exists_norm_smul_sub_le_le {L T t : ℝ} (hL : 0 < 
       rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, ENNReal.ofReal_mul (by positivity),
         ENNReal.ofReal_natCast]
     _ ≤ _ := by
+      have hTL : 0 ≤ 4 * T / L := by positivity
       refine ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_right ?_ hr)
       push_cast
-      linarith [Nat.floor_le (show 0 ≤ 4 * T / L by positivity)]
+      linarith [Nat.floor_le hTL]
 
 /-- **Nets of the level sets of the LCD.** A set `S` of unit vectors whose LCDs lie in `[D, 2D)`
 has a `4α/D`-net contained in `S` with at most `(e (1 + √π (2D + α) / √n))ⁿ` points, where `n` is
@@ -277,9 +277,9 @@ theorem exists_finset_isCover_of_forall_leastCommonDenominator_mem_Ico {α D : �
       (N.card : ℝ) ≤
         (Real.exp 1 * (1 + √π * (2 * D + α) / √(Fintype.card ι))) ^ Fintype.card ι := by
   classical
-  have hfin := finite_setOf_norm_toLp_intCast_le (ι := ι) (2 * D + α)
+  have hfin := finite_setOf_norm_latticePoint_le (ι := ι) (2 * D + α)
   let N₀ : Finset (EuclideanSpace ℝ ι) := hfin.toFinset.image fun p ↦
-    NormedSpace.normalize (WithLp.toLp 2 fun i ↦ (p i : ℝ))
+    NormedSpace.normalize (latticePoint p)
   -- Every point of `S` is within `2α/D` of a normalized integer point of norm at most `2D + α`.
   have hN₀ : IsCover (2 * α / D) S N₀ := by
     intro x hx
@@ -291,7 +291,7 @@ theorem exists_finset_isCover_of_forall_leastCommonDenominator_mem_Ico {α D : �
     have hDθ : (D : ℝ) ≤ θ := by
       by_contra! h
       exact (ofReal_le_leastCommonDenominator_iff.1 hDx θ hθ h p).not_gt hp
-    set v : EuclideanSpace ℝ ι := WithLp.toLp 2 fun i ↦ (p i : ℝ)
+    set v : EuclideanSpace ℝ ι := latticePoint p
     have hpα : ‖θ • x - v‖ < α := hp.trans_le (min_le_right _ _)
     have hnorm : ‖θ • x‖ = θ := by rw [norm_smul, hx1, mul_one, Real.norm_of_nonneg hθ.le]
     have hvR : ‖v‖ ≤ 2 * D + α := by
@@ -299,10 +299,10 @@ theorem exists_finset_isCover_of_forall_leastCommonDenominator_mem_Ico {α D : �
       rw [sub_sub_cancel] at h
       linarith
     refine ⟨_, Finset.mem_image_of_mem _ (hfin.mem_toFinset.2 hvR), edist_le_coe.mpr ?_⟩
+    have hsub : x - θ⁻¹ • v = θ⁻¹ • (θ • x - v) := by
+      rw [smul_sub, smul_smul, inv_mul_cancel₀ hθ.ne', one_smul]
     have hdist : dist x (θ⁻¹ • v) = ‖θ • x - v‖ / θ := by
-      rw [dist_eq_norm, show x - θ⁻¹ • v = θ⁻¹ • (θ • x - v) by
-          rw [smul_sub, smul_smul, inv_mul_cancel₀ hθ.ne', one_smul],
-        norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hθ.le), inv_mul_eq_div]
+      rw [dist_eq_norm, hsub, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hθ.le), inv_mul_eq_div]
     calc
       dist x (NormedSpace.normalize v) = dist x (NormedSpace.normalize (θ⁻¹ • v)) := by
         rw [NormedSpace.normalize_smul_of_pos (inv_pos.2 hθ)]
@@ -317,7 +317,7 @@ theorem exists_finset_isCover_of_forall_leastCommonDenominator_mem_Ico {α D : �
   calc
     (N.card : ℝ) ≤ N₀.card := by exact_mod_cast hcard
     _ ≤ hfin.toFinset.card := by exact_mod_cast Finset.card_image_le
-    _ ≤ _ := card_le_of_forall_norm_toLp_intCast_le (by positivity)
+    _ ≤ _ := card_le_of_forall_norm_latticePoint_le (by positivity)
       fun p hp ↦ hfin.mem_toFinset.1 hp
 
 end TauCeti
