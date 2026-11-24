@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Holder.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
-public import Mathlib.Analysis.Normed.Operator.Banach
+import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Holder.FaaDiBruno
 
 /-!
