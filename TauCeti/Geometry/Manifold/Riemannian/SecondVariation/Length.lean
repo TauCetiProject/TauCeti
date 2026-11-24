@@ -486,21 +486,18 @@ theorem hasDerivAt_deriv_toReal_pathELength_exponentialVariation
     simp only [acceleration_exponentialVariation_zero, inner_zero_left, add_zero, sub_zero] at h
     rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
   have hVperp (t : ℝ) (ht : t ∈ uIoo a b) :
-      HEq (V' t - (ℝ ∙ curveVelocity I γ' t).starProjection (V' t))
-        (V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t)) := by
+      TotalSpace.mk' E (γ' t) (V' t - (ℝ ∙ curveVelocity I γ' t).starProjection (V' t)) =
+        TotalSpace.mk' E (γ t) (V t - (ℝ ∙ curveVelocity I γ t).starProjection (V t)) := by
     have hti : t ∈ Ioo a b := by rwa [uIoo_of_le hab] at ht
     have hnear : γ' =ᶠ[𝓝 t] γ := eventuallyEq_of_mem (Icc_mem_nhds hti.1 hti.2) hγEq
-    have hcongr : ∀ {x₁ x₂ : M}, x₁ = x₂ →
-        ∀ {v₁ : TangentSpace I x₁} {v₂ : TangentSpace I x₂}, HEq v₁ v₂ →
-        ∀ {w₁ : TangentSpace I x₁} {w₂ : TangentSpace I x₂}, HEq w₁ w₂ →
-        HEq (v₁ - (ℝ ∙ w₁).starProjection v₁) (v₂ - (ℝ ∙ w₂).starProjection v₂) := by
-      rintro x₁ _ rfl v₁ v₂ hv w₁ w₂ hw; rw [eq_of_heq hv, eq_of_heq hw]
-    exact hcongr hnear.self_of_nhds
-      (Bundle.TotalSpace.ext_iff.mp (hEq t (uIoo_subset_uIcc_self ht))).2
-      (heq_of_eq (Filter.EventuallyEq.curveVelocity_eq hnear))
+    have hvel : TotalSpace.mk' E (γ' t) (curveVelocity I γ' t) =
+        TotalSpace.mk' E (γ t) (curveVelocity I γ t) :=
+      Bundle.TotalSpace.ext hnear.self_of_nhds
+        (heq_of_eq (Filter.EventuallyEq.curveVelocity_eq hnear))
+    exact TauCeti.totalSpaceMk_sub_starProjection_singleton_eq
+      (hEq t (uIoo_subset_uIcc_self ht)) hvel
   rw [congrArg (fun f s ↦ (f s).toReal) (pathELength_exponentialVariation_eq_of_eqOn hExp)]
-  exact hd'.congr_deriv (congrArg (· / C) (indexForm_congr
-    (fun t ht ↦ congrArg TotalSpace.proj (hEq t (uIoo_subset_uIcc_self ht))) hVperp hVperp))
+  exact hd'.congr_deriv (congrArg (· / C) (indexForm_congr_of_totalSpaceMk_eq hVperp hVperp))
 
 /-- **Second variation of length along an exponential variation of a unit-speed geodesic.** For a
 geodesic `γ` on `(a, b)` of unit speed on `(a, b)` (`a ≤ b`) and any field `V` along `γ` whose lift
@@ -594,9 +591,12 @@ theorem eventually_pathELength_exponentialVariation_lt_of_indexForm_sub_starProj
   have hltR : ∀ᶠ s in 𝓝[≠] (0 : ℝ),
       (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal <
         (Manifold.pathELength I γ a b).toReal := by
+    have hneg' : deriv (deriv fun s ↦
+        (Manifold.pathELength I (exponentialVariation I γ V s) a b).toReal) 0 < 0 := by
+      rw [(hγ.hasDerivAt_deriv_toReal_pathELength_exponentialVariation hab hV hC hspeed).deriv]
+      exact div_neg_of_neg_of_pos hneg hC
     simpa only [exponentialVariation_zero] using TauCeti.eventually_gt_of_deriv_deriv_neg
-      ((hγ.hasDerivAt_deriv_toReal_pathELength_exponentialVariation hab hV hC hspeed).deriv.symm ▸
-        div_neg_of_neg_of_pos hneg hC) hd₁_zero hd₁.continuousAt
+      hneg' hd₁_zero hd₁.continuousAt
   have hfin := eventually_pathELength_exponentialVariation_ne_top
     (by rw [uIcc_of_le hab]; exact hV.of_le (by norm_num))
   filter_upwards [hltR, nhdsWithin_le_nhds hfin] with s hs hfs

@@ -243,7 +243,9 @@ theorem hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn {
     HasDerivAt (deriv fun s ↦ energy I (exponentialVariation I γ V s) a b)
       (indexForm I γ V V a b) 0 := by
   obtain ⟨n, τ, hτa, hτb, hτ, hpieces⟩ := hV.exists_partition
-  have hpi (i : Fin (n + 1)) := (uIcc_of_le (hτ i).le).symm ▸ hpieces i
+  have hpi (i : Fin (n + 1)) : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 3
+      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc (τ i.castSucc) (τ i.succ)) := by
+    rw [uIcc_of_le (hτ i).le]; exact hpieces i
   have heq := eventually_energy_exponentialVariation_eq_sum τ
     (Fin.strictMono_iff_lt_succ.mpr hτ).monotone fun i ↦ (hpieces i).of_le (by norm_num)
   rw [hτa, hτb] at heq
@@ -273,13 +275,15 @@ theorem indexForm_nonneg_of_isLocalMin_energy_exponentialVariation_of_isPiecewis
     (hmin : IsLocalMin (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0) :
     0 ≤ indexForm I γ V V a b := by
   obtain ⟨n, τ, hτa, hτb, hτ, hpieces⟩ := hV.exists_partition
+  have hpi (i : Fin (n + 1)) : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 3
+      (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc (τ i.castSucc) (τ i.succ)) := by
+    rw [uIcc_of_le (hτ i).le]; exact hpieces i
   have heq := eventually_energy_exponentialVariation_eq_sum τ
     (Fin.strictMono_iff_lt_succ.mpr hτ).monotone fun i ↦ (hpieces i).of_le (by norm_num)
   rw [hτa, hτb] at heq
   have hnn := TauCeti.deriv_deriv_nonneg_of_isLocalMin (((HasDerivAt.fun_sum (u := Finset.univ)
     fun i _ ↦ hasDerivAt_energy_exponentialVariation (I := I) (γ := γ) (V := V)
-      ((uIcc_of_le (hτ i).le).symm ▸ (hpieces i).of_le (by norm_num))).congr_of_eventuallyEq
-      heq).continuousAt) hmin
+      ((hpi i).of_le (by norm_num))).congr_of_eventuallyEq heq).continuousAt) hmin
   rwa [(hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn hV).deriv] at hnn
 
 /-- **Nonnegativity of the index form on a bundled piecewise smooth section at a local minimum of
@@ -314,9 +318,10 @@ theorem eventually_energy_exponentialVariation_lt_of_indexForm_neg_of_isPiecewis
   have hd₁_zero : deriv (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 = 0 := by
     rw [hd₁.deriv, hγ.integral_inner_acceleration_eq_zero (by rw [uIoo_of_le hV.lt.le]),
       hbdry, sub_self, sub_zero]
+  have hneg' : deriv (deriv fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 < 0 := by
+    rwa [(hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn hV).deriv]
   simpa only [exponentialVariation_zero] using TauCeti.eventually_gt_of_deriv_deriv_neg
-    ((hasDerivAt_deriv_energy_exponentialVariation_of_isPiecewiseContMDiffOn hV).deriv.symm ▸ hneg)
-    hd₁_zero hd₁.continuousAt
+    hneg' hd₁_zero hd₁.continuousAt
 
 /-- **Broken-field energy shortening along a geodesic for a bundled piecewise smooth section.**
 Specialization of

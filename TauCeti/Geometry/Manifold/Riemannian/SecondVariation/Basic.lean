@@ -526,10 +526,9 @@ theorem hasDerivAt_deriv_energy_exponentialVariation {a b : ℝ}
       intervalIntegral.integral_zero, add_zero, sub_zero] at h
     rwa [variationField_exponentialVariation_eq, exponentialVariation_zero] at h
   rw [energy_exponentialVariation_eq_of_eqOn hExp]
-  refine hd'.congr_deriv (indexForm_congr
-    (fun t ht ↦ congrArg TotalSpace.proj (hEq t (uIoo_subset_uIcc_self ht)))
-    (fun t ht ↦ (Bundle.TotalSpace.ext_iff.mp (hEq t (uIoo_subset_uIcc_self ht))).2)
-    (fun t ht ↦ (Bundle.TotalSpace.ext_iff.mp (hEq t (uIoo_subset_uIcc_self ht))).2))
+  refine hd'.congr_deriv (indexForm_congr_of_totalSpaceMk_eq
+    (fun t ht ↦ hEq t (uIoo_subset_uIcc_self ht))
+    (fun t ht ↦ hEq t (uIoo_subset_uIcc_self ht)))
 
 end ExponentialVariation
 
@@ -613,8 +612,10 @@ theorem eventually_energy_exponentialVariation_lt_of_indexForm_neg {a b : ℝ}
   have hd₁ := hasDerivAt_energy_exponentialVariation (hV.of_le (by norm_num))
   have hd₁_zero : deriv (fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 = 0 := by
     rw [hd₁.deriv, hγ.integral_inner_acceleration_eq_zero Subset.rfl, hbdry, sub_self, sub_zero]
+  have hneg' : deriv (deriv fun s ↦ energy I (exponentialVariation I γ V s) a b) 0 < 0 := by
+    rwa [(hasDerivAt_deriv_energy_exponentialVariation hV).deriv]
   simpa only [exponentialVariation_zero] using TauCeti.eventually_gt_of_deriv_deriv_neg
-    ((hasDerivAt_deriv_energy_exponentialVariation hV).deriv.symm ▸ hneg) hd₁_zero hd₁.continuousAt
+    hneg' hd₁_zero hd₁.continuousAt
 
 end ExponentialExtremum
 
