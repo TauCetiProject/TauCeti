@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Degree.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.Basic
+import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
@@ -76,18 +78,10 @@ private def bubbleNormalized (z : W) : E :=
 
 variable {L P e}
 
-/-- The bump is `1` at its centre. -/
-private theorem bump_apply_center : β c = 1 :=
-  β.one_of_mem_closedBall (mem_closedBall_self β.rIn_pos.le)
-
 /-- At the centre the bubble vector is `-e`. -/
 private theorem bubbleVec_center : bubbleVec β L e c = -e := by
-  rw [bubbleVec, bump_apply_center, sub_self, map_zero, smul_zero, zero_add]
+  rw [bubbleVec, β.apply_center, sub_self, map_zero, smul_zero, zero_add]
   norm_num
-
-/-- A unit vector is not its own negative. -/
-private theorem ne_neg_of_norm_eq_one (he : ‖e‖ = 1) : e ≠ -e :=
-  fun h ↦ ne_neg_of_mem_unit_sphere ℝ ⟨e, by simp [he]⟩ (Subtype.ext h)
 
 /-- The bubble vector never vanishes: its component along `e` is `1 - 2 β z`, and its component
 `β z • (z - c)` in `W` vanishes only where `β z = 0` or `z = c`, where `β = 1`. -/
@@ -101,7 +95,7 @@ private theorem bubbleVec_ne_zero (hPL : ∀ w, P (L w) = w) (hPe : P e = 0)
   have hβ : β z = 1 / 2 := by simp at h₁; linarith
   rcases smul_eq_zero.1 h₂ with h₃ | h₃
   · rw [hβ] at h₃; norm_num at h₃
-  · rw [sub_eq_zero.1 h₃, bump_apply_center] at hβ
+  · rw [sub_eq_zero.1 h₃, β.apply_center] at hβ
     norm_num at hβ
 
 /-- The projection of the normalized bubble vector to `W` is `(β z / ‖v z‖) • (z - c)`. -/
@@ -131,7 +125,7 @@ private theorem eq_of_bubbleNormalized_eq_neg (hPL : ∀ w, P (L w) = w) (hPe : 
     · -- Where the bump vanishes, the bubble vector is `e`, not `-e`.
       have h' : bubbleNormalized β L e z = e := by simp [bubbleNormalized, bubbleVec, h, he]
       rw [h'] at hz
-      exact absurd hz (ne_neg_of_norm_eq_one he)
+      exact (ne_neg_of_mem_unit_sphere ℝ ⟨e, by simp [he]⟩ (Subtype.ext hz)).elim
   · exact sub_eq_zero.1 h
 
 /-- The bubble vector is smooth. -/
@@ -161,7 +155,7 @@ private theorem injective_fderiv_bubbleNormalized (hPL : ∀ w, P (L w) = w) (hP
     (hn.inv (norm_ne_zero_iff.2 (hne c))).mul
       (β.contDiff.differentiable (by simp : (∞ : WithTop ℕ∞) ≠ 0) c)
   have hs1 : ‖bubbleVec β L e c‖⁻¹ * β c = 1 := by
-    rw [bubbleVec_center, bump_apply_center, norm_neg, he, inv_one, one_mul]
+    rw [bubbleVec_center, β.apply_center, norm_neg, he, inv_one, one_mul]
   have hP : HasFDerivAt (fun z ↦ P (bubbleNormalized β L e z)) (ContinuousLinearMap.id ℝ W) c := by
     have h := hs.hasFDerivAt.smul ((hasFDerivAt_id c).sub_const c)
     simp only [id_eq, sub_self, ContinuousLinearMap.smulRight_zero, add_zero, hs1, one_smul] at h
@@ -209,33 +203,16 @@ variable {W H M : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimen
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
-/-- A unit vector `e` of `E`, an isomorphism `L` of `W` onto the hyperplane `e^⊥` and a left
-inverse `P` of `L` killing `e`. -/
-private theorem exists_bubbleData (hW : finrank ℝ W = n) :
-    ∃ (e : E) (L : W →L[ℝ] E) (P : E →L[ℝ] W),
-      (∀ w, P (L w) = w) ∧ P e = 0 ∧ (∀ w, ⟪L w, e⟫ = 0) ∧ ‖e‖ = 1 := by
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
-  obtain ⟨e₀, he₀⟩ := exists_ne (0 : E)
-  set e : E := ‖e₀‖⁻¹ • e₀
-  have he : ‖e‖ = 1 := norm_smul_inv_norm he₀
-  have he0 : e ≠ 0 := norm_ne_zero_iff.1 (by rw [he]; exact one_ne_zero)
-  set K := (ℝ ∙ e)ᗮ
-  let A : W ≃L[ℝ] K := ContinuousLinearEquiv.ofFinrankEq
-    (hW.trans (Submodule.finrank_orthogonal_span_singleton he0).symm)
-  refine ⟨e, K.subtypeL ∘L (A : W →L[ℝ] K), (A.symm : K →L[ℝ] W) ∘L K.orthogonalProjectionOnto,
-    fun w ↦ ?_, ?_, fun w ↦ ?_, he⟩
-  · simp [Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
-  · simp [K, Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
-  · exact Submodule.inner_right_of_mem_orthogonal (Submodule.mem_span_singleton_self e)
-      (A w).property |> fun h ↦ by rwa [real_inner_comm] at h
-
 /-- The collapse map: a smooth map `f : M → Sⁿ` and a point `y` whose fibre is the single point
 `x₀`, at which the derivative of `f` is injective. -/
 private theorem exists_collapse (hW : finrank ℝ W = n) (x₀ : M) :
     ∃ (f : M → sphere (0 : E) 1) (y : sphere (0 : E) 1), ContMDiff I (𝓡 n) ∞ f ∧
       f ⁻¹' {y} = {x₀} ∧ Injective (mfderiv I (𝓡 n) f x₀) := by
-  obtain ⟨e, L, P, hPL, hPe, hLe, he⟩ := exists_bubbleData (W := W) (E := E) hW
+  -- A unit vector `e`, an isomorphism `L` of `W` onto `e^⊥` and a left inverse `P` killing `e`.
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
+  obtain ⟨e, he⟩ := exists_norm_eq E zero_le_one
+  obtain ⟨L, P, hPL, hPe, hLe⟩ := exists_leftInverse_inner_eq_zero_of_finrank_eq hW
+    (norm_ne_zero_iff.1 (he.symm ▸ one_ne_zero))
   set φ := extChartAt I x₀
   have hsrc : φ.source = (chartAt H x₀).source := extChartAt_source I x₀
   obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_extChartAt_target (I := I) x₀) (φ x₀)
@@ -260,7 +237,7 @@ private theorem exists_collapse (hW : finrank ℝ W = n) (x₀ : M) :
       exact φ.injOn (by rwa [hsrc]) (by rwa [hsrc])
         (eq_of_bubbleNormalized_eq_neg β hPL hPe hLe he (congrArg Subtype.val hx))
     · rw [mem_preimage, mem_singleton_iff, hfc x hxs] at hx
-      exact absurd (congrArg Subtype.val hx) (ne_neg_of_norm_eq_one he)
+      exact (ne_neg_of_mem_unit_sphere ℝ north (Subtype.ext (congrArg Subtype.val hx))).elim
   · rw [mem_singleton_iff.1 hx]
     exact (hfg x₀ hx₀).trans (Subtype.ext (bubbleNormalized_self β he))
   · -- Near `x₀`, `f` is `g ∘ φ`.
