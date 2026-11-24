@@ -13,7 +13,9 @@ public import Mathlib.Tactic.NoncommRing
 # Functoriality of the forced unitization
 
 A nonunital algebra `A` is a left ideal of its forced unitization: `(r, a) * a'` is
-`r • a' + a * a'` in `A`. A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
+`r • a' + a * a'` in `A`.
+
+A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
 counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 

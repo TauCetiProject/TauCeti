@@ -87,14 +87,14 @@ theorem exists_subset_corner (s : Finset H) :
 
 /-- An idempotented semigroup is the union of its corners `eHe` over all idempotents `e`. -/
 theorem iUnion_corner :
-    ⋃ e : {e : H // IsIdempotentElem e}, (Subsemigroup.corner e.1 : Set H) = Set.univ := by
+    ⋃ e : {e : H // IsIdempotentElem e}, (Subsemigroup.corner e.val : Set H) = Set.univ := by
   refine Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.2 ?_
   obtain ⟨e, he, hx⟩ := exists_subset_corner {x}
   exact ⟨⟨e, he⟩, hx (by simp)⟩
 
 /-- The corners `eHe` of an idempotented semigroup form a directed family. -/
 theorem directed_corner :
-    Directed (· ≤ ·) fun e : {e : H // IsIdempotentElem e} ↦ Subsemigroup.corner e.1 := by
+    Directed (· ≤ ·) fun e : {e : H // IsIdempotentElem e} ↦ Subsemigroup.corner e.val := by
   classical
   rintro ⟨e₁, he₁⟩ ⟨e₂, he₂⟩
   obtain ⟨f, hf, hs⟩ := exists_isIdempotentElem {e₁, e₂}
