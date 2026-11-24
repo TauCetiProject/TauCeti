@@ -34,12 +34,23 @@ natural in `K` (`ChainComplex.regradeLinearDualIso_hom_naturality`). For `n = 0`
 dual of a chain complex with the dual of the cochain complex `K^k = K_(0 - k)`, regraded back, with
 no sign (`ChainComplex.linearDualIsoRegradeLinearDual`).
 
+**Bidual maps and regrading.** The double dual `C∨∨` of the regrading is the regrading by `n` of
+`K∨∨`: in degree `k` both consist of the forms on the forms on `K_(n-k)`, and the comparison
+`ChainComplex.regradeBidualIso` identifies them without sign (`ChainComplex.regradeBidualXIso`);
+both differentials are the double transpose of `d_K` with the sign `-1`. The chain-compatible
+bidual maps `j(x) = (-1)^|x| (f ↦ f x)` of the two gradings do not correspond under it: in the raw
+grading of `K` an element `x` of `K_(n-k)` has degree `n - k`, in the cochain grading of `C` it has
+degree `k`, so the regrading of the bidual map of `K` is `(-1)^n` times the bidual map of `C`
+(`ChainComplex.restrictionMap_bidualHom`).
+
 For the Floer complex of a symplectic manifold of dimension `2n`, the external kernel of an
 operation counts functionals on tensor products of the generators of the inputs with the duals of
 those of the outputs. Its raw and cochain gradings, and the Koszul signs computed in each, are
 related by this comparison together with the regrading of tensor products
 (`ChainComplex.regradeTensorIso`): the dual of a generator of raw degree `μ` has raw degree `-μ`
-and cochain degree `μ - n`.
+and cochain degree `μ - n`. A count functional is read as an operator through the inverse of the
+bidual map of the outputs (`TauCeti.linearHomComplexTensorDualIso`), so the readouts formed in the
+two gradings differ by the sign `(-1)^n`.
 
 ## Main definitions and results
 
@@ -49,6 +60,10 @@ and cochain degree `μ - n`.
   and the regrading by `-n` of the dual.
 * `ChainComplex.linearDualIsoRegradeLinearDual`: the dual of a chain complex as the dual of its
   regrading by `0`, regraded back.
+* `ChainComplex.regradeBidualIso`: the isomorphism between the double dual of the regrading by
+  `n` and the regrading by `n` of the double dual.
+* `ChainComplex.restrictionMap_bidualHom`: the regrading of the bidual map of `K` is `(-1)^n`
+  times the bidual map of its regrading.
 
 ## References
 
@@ -256,6 +271,235 @@ theorem linearDualIsoRegradeLinearDual_hom_f (p : ℤ) :
       ((linearDual K).XIsoOfEq (show p = 0 - (0 - p) by omega)).hom ≫
         (K.regradeLinearDualIso 0).inv.f (0 - p) :=
   (rfl)
+
+/-- The term of degree `k` of the double dual of the regrading of `K` by `n`, the forms on the
+forms on `K_(n - k)`, identified with the term of degree `n - k` of `K∨∨`, the forms on the forms
+on `K_(-(-(n - k)))`, by transport along `n - k = -(-(n - k))`. This is the unsigned identification
+of terms behind `ChainComplex.regradeBidualIso`. -/
+def regradeBidualXIso (k : ℤ) :
+    (CochainComplex.linearDual R
+        (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n)))).X k ≅
+      (linearDual (linearDual K)).X (n - k) :=
+  ((CochainComplex.linearDualXEquiv _ (neg_add_cancel k)).trans
+    ((K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+      (neg_neg (n - k)).symm)).toLinearEquiv.dualMap.trans
+        (CochainComplex.linearDualXEquiv _ (add_neg_cancel k)).symm).dualMap).toModuleIso
+
+/-- The identification `regradeBidualXIso` evaluates a form `y` on the forms on `K_(n - k)` at the
+form `f` on `K_(-(-(n - k)))`, read on `K_(n - k)`. -/
+theorem regradeBidualXIso_hom_apply (k : ℤ)
+    (y : (CochainComplex.linearDual R
+      (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n)))).X k)
+    (f : (linearDual K).X (-(n - k))) :
+    (K.regradeBidualXIso n k).hom.hom y f =
+      CochainComplex.linearDualXEquiv _ (neg_add_cancel k) y
+        ((CochainComplex.linearDualXEquiv _ (add_neg_cancel k)).symm
+          (f ∘ₗ (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+            (neg_neg (n - k)).symm)).hom.hom)) :=
+  (rfl)
+
+/-- The inverse of `regradeBidualXIso` evaluates a form `z` on the forms on `K_(-(-(n - k)))` at
+the form `g` on `K_(n - k)`, read on `K_(-(-(n - k)))`. -/
+theorem linearDualXEquiv_regradeBidualXIso_inv_apply (k : ℤ)
+    (z : (linearDual (linearDual K)).X (n - k))
+    (g : (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n))).X (-k)) :
+    CochainComplex.linearDualXEquiv _ (neg_add_cancel k) ((K.regradeBidualXIso n k).inv.hom z) g =
+      z (CochainComplex.linearDualXEquiv _ (add_neg_cancel k) g ∘ₗ
+        (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+          (neg_neg (n - k)).symm)).inv.hom) := by
+  conv_rhs => rw [← (K.regradeBidualXIso n k).inv_hom_id_apply z, regradeBidualXIso_hom_apply,
+    LinearMap.comp_assoc, ← ModuleCat.hom_comp, Iso.hom_inv_id, ModuleCat.hom_id,
+    LinearMap.comp_id, LinearEquiv.symm_apply_apply]
+
+/-- The identifications `regradeBidualXIso` commute with the differentials. -/
+private theorem regradeBidualXIso_comm (k : ℤ) :
+    (K.regradeBidualXIso n k).hom ≫ (linearDual (linearDual K)).d (n - k) (n - (k + 1)) =
+      (CochainComplex.linearDual R
+        (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n)))).d k (k + 1) ≫
+        (K.regradeBidualXIso n (k + 1)).hom := by
+  ext y f
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Units.smul_def, ModuleCat.hom_zsmul,
+    LinearMap.smul_apply, ModuleCat.hom_ofHom, LinearMap.dualMap_apply, map_zsmul]
+  rw [regradeBidualXIso_hom_apply, regradeBidualXIso_hom_apply,
+    CochainComplex.linearDualXEquiv_d_apply (neg_add_cancel k) (neg_add_cancel (k + 1))]
+  -- The transpose of the differential of the regrading, read on forms on `K`, is the transpose of
+  -- the differential of `K` twisted by the sign `(-1)^k` of the dual of a cochain complex.
+  have key : ((CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n))).d
+        (-(k + 1)) (-k)).hom ((CochainComplex.linearDualXEquiv _ (add_neg_cancel (k + 1))).symm
+          (f ∘ₗ (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n (k + 1)).trans
+            (neg_neg _).symm)).hom.hom)) =
+      (-k).negOnePow • (CochainComplex.linearDualXEquiv _ (add_neg_cancel k)).symm
+        ((K.d (-(-(n - k))) (-(-(n - (k + 1))))).hom.dualMap f ∘ₗ
+          (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+            (neg_neg (n - k)).symm)).hom.hom) := by
+    refine (CochainComplex.linearDualXEquiv _ (add_neg_cancel k)).injective
+      (LinearMap.ext fun x ↦ ?_)
+    rw [CochainComplex.linearDualXEquiv_d_apply (add_neg_cancel (k + 1)) (add_neg_cancel k),
+      restriction_d_eq _ _ ((embeddingUpIntDownIntSub_f n k).trans (neg_neg (n - k)).symm)
+        ((embeddingUpIntDownIntSub_f n (k + 1)).trans (neg_neg _).symm)]
+    simp
+  rw [key]
+  simp only [map_zsmul_unit, smul_smul]
+  -- The two signs of the dual differentials of `K∨∨` against those of `C∨∨`.
+  congr 1
+  norm_cast
+  rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff]
+  exact ⟨1, by omega⟩
+
+/-- **The double dual of the regrading is the regrading of the double dual.** For a chain complex
+`K` and an integer `n`, the double dual of the regrading `C^k = K_(n-k)` of `K` by `n` is
+isomorphic to the regrading of `K∨∨` by `n`. In degree `k` both consist of the forms on the forms
+on `K_(n - k)`, and the isomorphism is the identity on them, without sign
+(`ChainComplex.regradeBidualIso_hom_f`, `ChainComplex.regradeBidualXIso_hom_apply`). -/
+def regradeBidualIso :
+    CochainComplex.linearDual R
+        (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n))) ≅
+      (linearDual (linearDual K)).restriction (embeddingUpIntDownIntSub n) :=
+  Hom.isoOfComponents (fun k ↦ K.regradeBidualXIso n k ≪≫
+      ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
+        (embeddingUpIntDownIntSub_f n k)).symm)
+    (fun k l hkl ↦ by
+      obtain rfl : k + 1 = l := hkl
+      rw [restriction_d_eq _ _ (embeddingUpIntDownIntSub_f n k)
+        (embeddingUpIntDownIntSub_f n (k + 1))]
+      simp only [Iso.trans_hom, Iso.symm_hom, Category.assoc, Iso.inv_hom_id_assoc]
+      rw [← Category.assoc, regradeBidualXIso_comm, Category.assoc])
+
+/-- In degree `k`, the comparison `regradeBidualIso` is the identification `regradeBidualXIso`,
+read in degree `k` of the regrading of `K∨∨`. -/
+@[simp]
+theorem regradeBidualIso_hom_f (k : ℤ) :
+    (K.regradeBidualIso n).hom.f k = (K.regradeBidualXIso n k).hom ≫
+      ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
+        (embeddingUpIntDownIntSub_f n k)).inv :=
+  (rfl)
+
+/-- In degree `k`, the inverse of `regradeBidualIso` is the inverse of the identification
+`regradeBidualXIso`, read in degree `k` of the regrading of `K∨∨`. -/
+@[simp]
+theorem regradeBidualIso_inv_f (k : ℤ) :
+    (K.regradeBidualIso n).inv.f k =
+      ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
+        (embeddingUpIntDownIntSub_f n k)).hom ≫ (K.regradeBidualXIso n k).inv :=
+  (rfl)
+
+/-- **The comparison on double duals.** The comparison `regradeBidualIso` sends a form `y` on the
+forms on `K_(n - k)` to the form evaluating `y` at a form `f` on `K_(-(-(n - k)))`, read on
+`K_(n - k)`, without sign. It is not a simp lemma: simp first rewrites the component by
+`regradeBidualIso_hom_f`. -/
+theorem restrictionXIso_hom_regradeBidualIso_hom_f_apply (k : ℤ)
+    (y : (CochainComplex.linearDual R
+      (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n)))).X k)
+    (f : (linearDual K).X (-(n - k))) :
+    ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
+        (embeddingUpIntDownIntSub_f n k)).hom.hom (((K.regradeBidualIso n).hom.f k).hom y) f =
+      CochainComplex.linearDualXEquiv _ (neg_add_cancel k) y
+        ((CochainComplex.linearDualXEquiv _ (add_neg_cancel k)).symm
+          (f ∘ₗ (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+            (neg_neg (n - k)).symm)).hom.hom)) := by
+  simp only [regradeBidualIso_hom_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    Iso.inv_hom_id_apply]
+  rw [regradeBidualXIso_hom_apply]
+
+/-- **The inverse comparison on double duals.** The inverse of `regradeBidualIso` sends a form `z`
+on the forms on `K_(-(-(n - k)))` to the form evaluating `z` at a form `g` on `K_(n - k)`, read on
+`K_(-(-(n - k)))`, without sign. It is not a simp lemma: simp first rewrites the component by
+`regradeBidualIso_inv_f`. -/
+theorem linearDualXEquiv_regradeBidualIso_inv_f_apply (k : ℤ)
+    (z : ((linearDual (linearDual K)).restriction (embeddingUpIntDownIntSub n)).X k)
+    (g : (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n))).X (-k)) :
+    CochainComplex.linearDualXEquiv _ (neg_add_cancel k)
+        (((K.regradeBidualIso n).inv.f k).hom z) g =
+      ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
+        (embeddingUpIntDownIntSub_f n k)).hom.hom z
+          (CochainComplex.linearDualXEquiv _ (add_neg_cancel k) g ∘ₗ
+            (K.restrictionXIso _ ((embeddingUpIntDownIntSub_f n k).trans
+              (neg_neg (n - k)).symm)).inv.hom) := by
+  simp only [regradeBidualIso_inv_f, ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [linearDualXEquiv_regradeBidualXIso_inv_apply]
+
+variable {K} in
+/-- The identifications `regradeBidualXIso` intertwine the double transposes of a morphism
+`φ : K ⟶ L` and of its regrading. -/
+@[reassoc]
+private theorem regradeBidualXIso_naturality (φ : K ⟶ L) (k : ℤ) :
+    (TauCeti.linearHomComplexPrecomp R (TauCeti.linearHomComplexPrecomp R
+        (restrictionMap φ (embeddingUpIntDownIntSub n)) _) _).f k ≫
+        (L.regradeBidualXIso n k).hom =
+      (K.regradeBidualXIso n k).hom ≫ (linearDualMap (linearDualMap φ)).f (n - k) := by
+  refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ LinearMap.ext fun f ↦ ?_)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [regradeBidualXIso_hom_apply, linearDualMap_f_apply, regradeBidualXIso_hom_apply,
+    CochainComplex.linearDualXEquiv_linearHomComplexPrecomp_f_apply]
+  congr 1
+  refine (CochainComplex.linearDualXEquiv _ (add_neg_cancel k)).injective
+    (LinearMap.ext fun x ↦ ?_)
+  rw [CochainComplex.linearDualXEquiv_linearHomComplexPrecomp_f_apply,
+    restrictionMap_f' _ _ ((embeddingUpIntDownIntSub_f n k).trans (neg_neg (n - k)).symm)]
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, LinearEquiv.apply_symm_apply,
+    Iso.inv_hom_id_apply]
+  exact (linearDualMap_f_apply φ _ f _).symm
+
+variable {K} in
+/-- **Naturality.** The comparison `regradeBidualIso` intertwines the double transposes of a
+morphism `φ : K ⟶ L` and of its regrading. -/
+@[reassoc]
+theorem regradeBidualIso_hom_naturality (φ : K ⟶ L) :
+    TauCeti.linearHomComplexPrecomp R (TauCeti.linearHomComplexPrecomp R
+        (restrictionMap φ (embeddingUpIntDownIntSub n)) _) _ ≫ (L.regradeBidualIso n).hom =
+      (K.regradeBidualIso n).hom ≫
+        restrictionMap (linearDualMap (linearDualMap φ)) (embeddingUpIntDownIntSub n) := by
+  ext k : 1
+  rw [comp_f, comp_f, regradeBidualIso_hom_f, regradeBidualIso_hom_f,
+    restrictionMap_f' _ _ (embeddingUpIntDownIntSub_f n k)]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, regradeBidualXIso_naturality_assoc]
+
+variable {K} in
+/-- **Naturality of the inverse.** The inverse of the comparison `regradeBidualIso` intertwines
+the double transposes of a morphism `φ : K ⟶ L` and of its regrading. -/
+@[reassoc]
+theorem regradeBidualIso_inv_naturality (φ : K ⟶ L) :
+    restrictionMap (linearDualMap (linearDualMap φ)) (embeddingUpIntDownIntSub n) ≫
+        (L.regradeBidualIso n).inv =
+      (K.regradeBidualIso n).inv ≫
+        TauCeti.linearHomComplexPrecomp R (TauCeti.linearHomComplexPrecomp R
+          (restrictionMap φ (embeddingUpIntDownIntSub n)) _) _ := by
+  rw [Iso.eq_inv_comp, ← Category.assoc, ← regradeBidualIso_hom_naturality, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
+
+/-- **The bidual maps of the two gradings differ by `(-1)^n`.** The regrading by `n` of the
+chain-compatible bidual map of `K` is `(-1)^n` times the chain-compatible bidual map of the
+regrading `C^k = K_(n-k)`, followed by the identification `regradeBidualIso` of the double duals.
+An element of `K_(n-k)` has raw degree `n - k` and cochain degree `k`, and the two bidual maps
+carry the signs `(-1)^(n-k)` and `(-1)^k`. -/
+theorem restrictionMap_bidualHom :
+    restrictionMap (bidualHom K) (embeddingUpIntDownIntSub n) =
+      n.negOnePow • (CochainComplex.bidualHom (K.restriction (embeddingUpIntDownIntSub n)) ≫
+        (K.regradeBidualIso n).hom) := by
+  ext k : 1
+  -- Compare the two components after reading them in `K∨∨_(n - k)`.
+  rw [← cancel_mono ((linearDual (linearDual K)).restrictionXIso (embeddingUpIntDownIntSub n)
+    (embeddingUpIntDownIntSub_f n k)).hom, restrictionMap_f' _ _ (embeddingUpIntDownIntSub_f n k),
+    units_smul_f_apply, comp_f, regradeBidualIso_hom_f]
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Linear.units_smul_comp]
+  refine ModuleCat.hom_ext (LinearMap.ext fun x ↦ LinearMap.ext fun f ↦ ?_)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Units.smul_def, ModuleCat.hom_zsmul,
+    LinearMap.smul_apply]
+  rw [bidualHom_f_apply, regradeBidualXIso_hom_apply,
+    CochainComplex.linearDualXEquiv_bidualHom_f_apply, LinearEquiv.apply_symm_apply,
+    LinearMap.comp_apply]
+  have hx : (K.XIsoOfEq (neg_neg (n - k)).symm).hom.hom
+      ((K.restrictionXIso (embeddingUpIntDownIntSub n) (embeddingUpIntDownIntSub_f n k)).hom.hom
+        x) = (K.restrictionXIso (embeddingUpIntDownIntSub n)
+          ((embeddingUpIntDownIntSub_f n k).trans (neg_neg (n - k)).symm)).hom.hom x := by
+    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp]
+    simp [restrictionXIso, XIsoOfEq]
+  rw [hx]
+  simp only [Units.smul_def, smul_smul]
+  congr 1
+  norm_cast
+  rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+  exact ⟨-k, by omega⟩
 
 end Regrade
 
