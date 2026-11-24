@@ -247,7 +247,7 @@ theorem integral_eq_sum (f : compactlySupported A G M) {ι : Type*} {s : Finset 
 
 /-- The integral against the zero Haar measure vanishes. -/
 @[simp]
-theorem zero_integral (f : compactlySupported A G M) :
+theorem integral_zero_measure (f : compactlySupported A G M) :
     (0 : HaarMeasureWithValues A G).integral f = 0 := by
   simp [integral, integralAux, zero_apply]
 
