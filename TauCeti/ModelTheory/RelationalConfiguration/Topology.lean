@@ -64,6 +64,14 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → RelationalCon
   simp only [eval_def]
   exact continuous_pi_iff
 
+/-- Convergence of configurations is convergence of every atom coordinate. -/
+theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → RelationalConfiguration L V}
+    {c : RelationalConfiguration L V} :
+    Filter.Tendsto f l (nhds c) ↔
+      ∀ a, Filter.Tendsto (fun i => (f i).eval a) l (nhds (c.eval a)) := by
+  simp only [eval_def]
+  exact tendsto_pi_nhds
+
 /-- Building a configuration from its atom values is continuous. -/
 @[fun_prop]
 theorem continuous_mk : Continuous (mk : (Atom L V → Bool) → RelationalConfiguration L V) :=
