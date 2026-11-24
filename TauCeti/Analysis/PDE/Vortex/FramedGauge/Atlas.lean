@@ -21,8 +21,9 @@ vortices form the subspace `TauCeti.Vortex.SobolevFieldSpace.vortexModuli` of th
 `A_m^k / G_(k+1)`. At the orbit of a vortex lying in every `A_m^j`, the Coulomb slice chart is a
 chart of this space with values in `ℝ^(2m)`
 (`TauCeti.Vortex.SobolevFieldSpace.exists_openPartialHomeomorph_vortexModuli`). This file shows
-that every vortex orbit has such a representative, so that the vortex moduli space is a
-topological manifold of dimension `2m`, and it descends the zero divisor to the orbits.
+that every vortex orbit has such a representative, so that the vortex moduli space is a charted
+space modelled on `ℝ^(2m)`, locally homeomorphic to `ℝ^(2m)` at each point, and it descends the
+zero divisor to the orbits.
 
 **Smooth representatives.** For `k ≥ 4` the Sobolev embedding makes a continuous field of `A_m^k`
 of class `C²`, so a vortex of `A_m^k` is one of the `C²` vortices of `A_m^k`
@@ -46,8 +47,8 @@ gauge-fixed deformation operator at a vortex.
 uniqueness theorems. It is continuous
 (`TauCeti.Vortex.SobolevFieldSpace.continuous_vortexModuliDivisor`): convergence in `A_m^k`
 implies uniform convergence of the fields, along which the zero divisor is continuous by Hurwitz's
-theorem (`TauCeti.Vortex.tendsto_of_tendstoLocallyUniformly`), and the quotient map onto the vortex
-moduli space is open.
+theorem (`TauCeti.Vortex.SobolevFieldSpace.tendsto_of_tendsto`), and the quotient map onto the
+vortex moduli space is open.
 
 Whether the transition maps of the atlas are smooth, and whether the inverse of the divisor is
 continuous, is not treated here.
@@ -124,12 +125,11 @@ theorem exists_openPartialHomeomorph_vortexModuli_apply_eq_zero (hk : 3 < k)
     ∃ e : OpenPartialHomeomorph (vortexModuli f m hs) (Fin (2 * m) → ℝ),
       q ∈ e.source ∧ e q = 0 := by
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
-  obtain ⟨x, hxq, hsol, -, hmem⟩ := exists_mk_eq_forall_mem_framedFieldSpace hk q.property
-  obtain rfl : (⟨Quotient.mk _ x, mk_mem_vortexModuli hsol⟩ : vortexModuli f m hs) = q :=
-    Subtype.ext hxq
+  obtain ⟨_, hq⟩ := q
+  obtain ⟨x, rfl, hsol, -, hmem⟩ := exists_mk_eq_forall_mem_framedFieldSpace hk hq
   exact exists_openPartialHomeomorph_vortexModuli (by omega) x (fun j ↦ hmem j) hsol
 
-/-- **The vortex moduli space as a topological manifold of dimension `2m`.** For `k ≥ 4`, the
+/-- **The vortex moduli space as a charted space modelled on `ℝ^(2m)`.** For `k ≥ 4`, the
 charted space structure on the vortex moduli space in `A_m^k / G_(k+1)` whose chart at an orbit
 `q` is a chart of `exists_openPartialHomeomorph_vortexModuli_apply_eq_zero`, sending `q` to `0`
 (`vortexModuliChartedSpace_chartAt_self`); its atlas consists of these charts. -/
@@ -158,6 +158,7 @@ def vortexModuliDivisor (hk : 3 < k) (q : vortexModuli f m hs) : Sym ℂ m :=
 
 /-- The divisor of the orbit of a continuous vortex of `A_m^k` is the zero divisor of that
 vortex. -/
+@[simp]
 theorem vortexModuliDivisor_mk (hk : 3 < k) {x : SobolevFieldSpace f m k}
     (hx : ∀ z, equation x z = 0) :
     vortexModuliDivisor hk (⟨Quotient.mk _ x, mk_mem_vortexModuli hx⟩ : vortexModuli f m hs) =
@@ -172,13 +173,10 @@ divisor is a bijection from the vortex moduli space in `A_m^k / G_(k+1)` onto th
 divisors of degree `m`, repeated points included. -/
 theorem vortexModuliDivisor_bijective (hk : 3 < k) :
     Function.Bijective (vortexModuliDivisor (f := f) (m := m) (hs := hs) hk) := by
-  refine ⟨fun q q' h ↦ ?_, fun D ↦ ?_⟩
-  · obtain ⟨x, hx, hxq⟩ := mem_vortexModuli_iff.1 q.property
-    obtain ⟨y, hy, hyq⟩ := mem_vortexModuli_iff.1 q'.property
-    obtain rfl : (⟨Quotient.mk _ x, mk_mem_vortexModuli hx⟩ : vortexModuli f m hs) = q :=
-      Subtype.ext hxq
-    obtain rfl : (⟨Quotient.mk _ y, mk_mem_vortexModuli hy⟩ : vortexModuli f m hs) = q' :=
-      Subtype.ext hyq
+  refine ⟨?_, fun D ↦ ?_⟩
+  · rintro ⟨_, hq⟩ ⟨_, hq'⟩ h
+    obtain ⟨x, hx, rfl⟩ := mem_vortexModuli_iff.1 hq
+    obtain ⟨y, hy, rfl⟩ := mem_vortexModuli_iff.1 hq'
     rw [vortexModuliDivisor_mk hk hx, vortexModuliDivisor_mk hk hy,
       sobolevVortexDivisor_eq_sobolevVortexDivisor_iff (hs := hs)] at h
     obtain ⟨u, hu⟩ := h
@@ -204,10 +202,11 @@ theorem continuous_vortexModuliDivisor (hk : 3 < k) :
       fun x ↦ sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices hk (hvort x)⟩ :=
     funext fun x ↦ vortexModuliDivisor_mk hk (hvort x)
   rw [← hπ.continuous_comp_iff, hcomp, continuous_iff_continuousAt]
-  exact fun x₀ ↦ tendsto_of_tendstoLocallyUniformly
-    (isZeroMultiplicity_sectionValue_sobolevVortexDivisor _)
-    (.of_forall fun x ↦ isZeroMultiplicity_sectionValue_sobolevVortexDivisor _)
-    (tendstoUniformly_of_tendsto hk' continuous_subtypeVal.continuousAt).tendstoLocallyUniformly
+  exact fun x₀ ↦ tendsto_of_tendsto hk' continuous_subtypeVal.continuousAt
+    (isZeroMultiplicity_sectionValue_sobolevVortexDivisor
+      ⟨_, toFramedFieldSpace_mem_sobolevVortices hk (hvort x₀)⟩)
+    (.of_forall fun x ↦ isZeroMultiplicity_sectionValue_sobolevVortexDivisor
+      ⟨_, toFramedFieldSpace_mem_sobolevVortices hk (hvort x)⟩)
 
 end SobolevFieldSpace
 
