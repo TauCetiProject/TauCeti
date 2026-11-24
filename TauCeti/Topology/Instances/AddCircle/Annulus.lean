@@ -286,13 +286,15 @@ theorem annulusHomeomorphOfLift_trans {G : ℝ × Y ≃ₜ ℝ × Y}
   (eq_annulusHomeomorphOfLift _ fun _ _ ↦ by simp).symm
 
 /-- Composing `F` with a deck translation does not change the induced homeomorphism of the strip
-quotient. -/
+quotient. The proof that `F` commutes with the deck translation is recovered from `h` by composing
+with the inverse deck translation, so simp fixes every argument by matching the left-hand side. -/
 @[simp]
-theorem annulusHomeomorphOfLift_trans_stripDeck
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (m : ℤ) :
-    (F.trans (stripDeck ℓ m Y)).annulusHomeomorphOfLift
-        (trans_stripDeck_apply_add_of_apply_add hF m) =
-      F.annulusHomeomorphOfLift hF := by
+theorem annulusHomeomorphOfLift_trans_stripDeck (m : ℤ)
+    (h : ∀ p : ℝ × Y, F.trans (stripDeck ℓ m Y) (p.1 + ℓ, p.2) =
+      ((F.trans (stripDeck ℓ m Y) p).1 + ℓ, (F.trans (stripDeck ℓ m Y) p).2)) :
+    (F.trans (stripDeck ℓ m Y)).annulusHomeomorphOfLift h =
+      F.annulusHomeomorphOfLift (by
+        simpa using trans_stripDeck_apply_add_of_apply_add h (-m)) := by
   ext ⟨θ, y⟩
   all_goals
     induction θ using QuotientAddGroup.induction_on with | H x => ?_
