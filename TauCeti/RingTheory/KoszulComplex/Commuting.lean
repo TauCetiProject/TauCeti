@@ -104,6 +104,7 @@ cochains `Finset ι → M`: the coefficient of `J` in `d ω` is
 noncomputable def koszulCochainDifferential : Module.End R (Finset ι → M) :=
   LinearMap.pi fun J ↦ ∑ j ∈ J, basisEraseSign j J • (D j ∘ₗ LinearMap.proj (J.erase j))
 
+@[simp]
 theorem koszulCochainDifferential_apply (ω : Finset ι → M) (J : Finset ι) :
     koszulCochainDifferential D ω J = ∑ j ∈ J, basisEraseSign j J • D j (ω (J.erase j)) := by
   simp [koszulCochainDifferential]

@@ -95,6 +95,7 @@ theorem eulerDerivation_X_self (i : K) : eulerDerivation i (X i : LaurentRing R 
   simp [X_def]
 
 /-- `θ_i x_j = 0` for `i ≠ j`. -/
+@[simp]
 theorem eulerDerivation_X_of_ne {i j : K} (h : i ≠ j) :
     eulerDerivation i (X j : LaurentRing R K) = 0 := by
   simp [X_def, h.symm]
