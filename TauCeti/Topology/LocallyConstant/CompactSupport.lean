@@ -100,6 +100,17 @@ theorem finite_range_of_hasCompactSupport {f : LocallyConstant X M} (hf : HasCom
   · exact mem_insert_of_mem _ ⟨x, hx, rfl⟩
   · exact .inl (image_eq_zero_of_notMem_tsupport hx)
 
+/-- A compactly supported locally constant function on `X` whose support lies in a set `U`
+restricts to a compactly supported function on `U`. -/
+theorem hasCompactSupport_comap_subtypeVal_of_support_subset {U : Set X}
+    {f : LocallyConstant X M} (hf : HasCompactSupport f) (hsupp : support f ⊆ U) :
+    HasCompactSupport (f.comap ⟨Subtype.val, continuous_subtypeVal⟩ : LocallyConstant U M) := by
+  rw [hasCompactSupport_iff_isCompact_support, coe_comap, ContinuousMap.coe_mk,
+    support_comp_eq_preimage]
+  refine Topology.IsInducing.subtypeVal.isCompact_preimage' ?_ (by rwa [Subtype.range_coe])
+  rw [← tsupport_eq_support]
+  exact hf.isCompact
+
 section Indicator
 
 variable [T2Space X]
