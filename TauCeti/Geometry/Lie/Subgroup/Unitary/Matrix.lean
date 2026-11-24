@@ -62,8 +62,8 @@ the block-diagonal matrices `diag(X₁, X₂)`, `Xᵢ ∈ 𝔤ᵢ`.
   `Xₖ` with `exp (tₖ • Xₖ) ∈ G` for positive scales `tₖ → 0` lies in the Lie algebra.
 * `ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra`: the Lie algebra consists of
   skew-Hermitian matrices.
-* `ClosedSubgroup.mem_matrixLieAlgebra_iff_conjTranspose_eq_neg`: the Lie algebra of all of `U(n)`
-  is the skew-Hermitian matrices.
+* `ClosedSubgroup.mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem`: the Lie algebra of
+  all of `U(n)` is the skew-Hermitian matrices.
 * `ClosedSubgroup.eq_zero_of_mem_matrixLieAlgebra_of_finite`: a finite closed subgroup has Lie
   algebra `0`.
 * `ClosedSubgroup.matrixAdjointRepresentation_lie`: each `Ad(g)` preserves the bracket.
@@ -227,7 +227,8 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContin
 
 /-- **The Lie algebra of `U(n)`.** If `G` is all of `U(n)`, its Lie algebra is the
 skew-Hermitian matrices. -/
-theorem mem_matrixLieAlgebra_iff_conjTranspose_eq_neg (hG : ∀ g, g ∈ G) {X : Matrix n n 𝕜} :
+theorem mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem (hG : ∀ g, g ∈ G)
+    {X : Matrix n n 𝕜} :
     X ∈ G.matrixLieAlgebra ↔ Xᴴ = -X :=
   ⟨conjTranspose_eq_neg_of_mem_matrixLieAlgebra, fun hX t ↦
     ⟨⟨_, exp_mem_unitary_of_mem_skewAdjoint (skewAdjoint.smul_mem t (skewAdjoint.mem_iff.mpr hX))⟩,

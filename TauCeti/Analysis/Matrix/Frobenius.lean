@@ -24,6 +24,8 @@ and the inner product together.
 
 ## Main declarations
 
+* `Matrix.frobeniusTopologicalSpace` — the topology induced by the Frobenius norm.
+* `Matrix.frobeniusTopologicalSpace_eq` — that topology is the entrywise topology on matrices.
 * `Matrix.re_trace_mul_conjTranspose_self` — the real trace of `X * Xᴴ` is the sum of the
   squared entry norms.
 * `Matrix.frobeniusInnerProductSpace` — the Frobenius inner product, compatible with
@@ -53,6 +55,24 @@ noncomputable section
 open scoped ComplexConjugate InnerProductSpace
 
 namespace Matrix
+
+/-- The topology underlying the Frobenius norm on finite matrices. -/
+protected abbrev frobeniusTopologicalSpace
+    (m n : Type*) [Fintype m] [Fintype n]
+    (α : Type*) [SeminormedAddCommGroup α] : TopologicalSpace (Matrix m n α) :=
+  (Matrix.frobeniusSeminormedAddCommGroup (m := m) (n := n) (α := α)).toPseudoMetricSpace
+    |>.toUniformSpace |>.toTopologicalSpace
+
+/-- The topology of the Frobenius norm is the entrywise topology on matrices.
+
+This holds by `rfl` by design of Mathlib's `Matrix.frobeniusSeminormedAddCommGroup`: it is built
+from `PiLp.seminormedAddCommGroupToPi`, which replaces the `L²` uniformity by the product
+uniformity, so the induced topology is the product topology, which is Mathlib's topology on
+matrices. -/
+theorem frobeniusTopologicalSpace_eq (m n : Type*) [Fintype m] [Fintype n]
+    (α : Type*) [SeminormedAddCommGroup α] :
+    Matrix.frobeniusTopologicalSpace m n α = (inferInstance : TopologicalSpace (Matrix m n α)) :=
+  rfl
 
 variable {𝕜 E m n : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
 

@@ -115,23 +115,13 @@ theorem matrixNearestPoint_coe {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G) :
 
 section Manifold
 
-/-- The topology of the Frobenius norm on matrices, selected so that the units of the Frobenius
-normed algebra receive their charts. It is the entrywise topology
-(`ClosedSubgroup.frobeniusTopologicalSpace_eq`). -/
+/-- The topology of the Frobenius norm on matrices (`Matrix.frobeniusTopologicalSpace`), selected
+so that the units of the Frobenius normed algebra receive their charts. It is private so that, under
+the module system, only the private declarations of this section see it: the statement of
+`ClosedSubgroup.exists_pos_contDiffOn_matrixNearestPoint`, including the type of `G`, keeps the
+entrywise topology on matrices. -/
 private abbrev frobeniusTopologicalSpace : TopologicalSpace (Matrix n n 𝕜) :=
-  (Matrix.frobeniusSeminormedAddCommGroup (m := n) (n := n) (α := 𝕜)).toPseudoMetricSpace
-    |>.toUniformSpace |>.toTopologicalSpace
-
-omit [DecidableEq n] in
-/-- The topology of the Frobenius norm is the entrywise topology on matrices.
-
-This holds by `rfl` by design of Mathlib's `Matrix.frobeniusSeminormedAddCommGroup`: it is built
-from `PiLp.seminormedAddCommGroupToPi`, which replaces the `L²` uniformity by the product
-uniformity, so the induced topology is the product topology, which is Mathlib's topology on
-matrices. -/
-private theorem frobeniusTopologicalSpace_eq :
-    frobeniusTopologicalSpace = (inferInstance : TopologicalSpace (Matrix n n 𝕜)) :=
-  rfl
+  Matrix.frobeniusTopologicalSpace n n 𝕜
 
 attribute [local instance] frobeniusTopologicalSpace
 
@@ -140,8 +130,9 @@ private def toUnits : Subgroup (Matrix n n 𝕜)ˣ :=
   (G : Subgroup (Matrix.unitaryGroup n 𝕜)).map Unitary.toUnits
 
 private theorem isCompact_toUnits : IsCompact (G.toUnits : Set (Matrix n n 𝕜)ˣ) :=
-  G.isClosed'.isCompact.image
-    ((frobeniusTopologicalSpace_eq (n := n) (𝕜 := 𝕜)).symm ▸ Unitary.continuous_toUnits)
+  G.isClosed'.isCompact.image <| by
+    rw [show frobeniusTopologicalSpace = _ from Matrix.frobeniusTopologicalSpace_eq n n 𝕜]
+    exact Unitary.continuous_toUnits
 
 /-- The inclusion of the units of `G` into the matrices. -/
 private def coeUnits (k : G.toUnits) : Matrix n n 𝕜 :=
@@ -301,12 +292,13 @@ theorem fderiv_matrixNearestPoint_one_of_forall_mem (hG : ∀ g, g ∈ G) (H : M
   have h1 : (((1 : G) : Matrix.unitaryGroup n 𝕜) : Matrix n n 𝕜) = 1 := by simp
   rw [← h1, fderiv_matrixNearestPoint, matrixTangentSpace_one]
   refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun W hW ↦ ?_
-  · rw [LieSubalgebra.mem_toSubmodule, mem_matrixLieAlgebra_iff_conjTranspose_eq_neg hG,
-      Matrix.conjTranspose_smul, Matrix.conjTranspose_sub, Matrix.conjTranspose_conjTranspose]
+  · rw [LieSubalgebra.mem_toSubmodule,
+      mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem hG, Matrix.conjTranspose_smul,
+      Matrix.conjTranspose_sub, Matrix.conjTranspose_conjTranspose]
     simp [smul_sub]
   -- The remainder `H - (H - Hᴴ) / 2 = (H + Hᴴ) / 2` is Hermitian, and `W` is skew-Hermitian.
   refine Matrix.IsHermitian.frobenius_real_inner_eq_zero_of_conjTranspose_eq_neg ?_
-    ((mem_matrixLieAlgebra_iff_conjTranspose_eq_neg hG).mp hW)
+    ((mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem hG).mp hW)
   simp only [Matrix.IsHermitian, Matrix.conjTranspose_sub, Matrix.conjTranspose_smul,
     Matrix.conjTranspose_conjTranspose, star_trivial]
   module
@@ -324,8 +316,8 @@ theorem fderiv_matrixNearestPoint_eq_zero_of_finite
     have hV' : V = (g : Matrix n n 𝕜) * (star (g : Matrix n n 𝕜) * V) := by simp [← mul_assoc]
     rw [Submodule.mem_bot, hV', h0, mul_zero]
   -- `fderiv` is taken for the entrywise topology `instTopologicalSpaceMatrix` and the projection
-  -- for the Frobenius-norm topology, which agree (`frobeniusTopologicalSpace_eq`). Evaluating at
-  -- `H` compares the two maps through their values, which are plain matrices.
+  -- for the Frobenius-norm topology, which agree (`Matrix.frobeniusTopologicalSpace_eq`).
+  -- Evaluating at `H` compares the two maps through their values, which are plain matrices.
   ext H : 1
   have h : fderiv ℝ G.matrixNearestPoint g H = (G.matrixTangentSpace g).starProjection H :=
     DFunLike.congr_fun (G.fderiv_matrixNearestPoint g) H
