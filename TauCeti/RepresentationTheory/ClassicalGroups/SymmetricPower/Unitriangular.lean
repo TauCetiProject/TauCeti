@@ -106,13 +106,14 @@ private theorem exists_upperCoeff_eq_smul {f : MvPolynomial (Fin 2) K} (hf : f.I
   classical
   -- The coefficients of `f` against the binary monomials `e_i = x ^ (d - i) * y ^ i`.
   set c : ℕ → K := fun i ↦ f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i)
+  have hcoeff (i : ℕ) : f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) = c i := rfl
   have hne : ((Finset.range (d + 1)).filter (c · ≠ 0)).Nonempty := by
     by_contra h
     refine hf0 ?_
     rw [← sum_coeff_smul_polynomialMonomial hf]
     refine Finset.sum_eq_zero fun i hi ↦ ?_
     by_cases hci : c i = 0
-    · rw [show f.coeff _ = 0 from hci, zero_smul]
+    · rw [hcoeff, hci, zero_smul]
     · exact (h ⟨i, Finset.mem_filter.mpr ⟨hi, hci⟩⟩).elim
   -- The largest exponent `j` of `y` occurring in `f`.
   set j := ((Finset.range (d + 1)).filter (c · ≠ 0)).max' hne
@@ -126,7 +127,7 @@ private theorem exists_upperCoeff_eq_smul {f : MvPolynomial (Fin 2) K} (hf : f.I
     · have hci : c i = 0 := by
         by_contra hci
         exact (Finset.le_max' _ i (Finset.mem_filter.mpr ⟨hi, hci⟩)).not_gt h
-      rw [show f.coeff _ = 0 from hci, zero_mul, zero_smul]
+      rw [hcoeff, hci, zero_mul, zero_smul]
   · exact fun h ↦ (h hjd).elim
 
 /-- **A stable subspace containing a nonzero form contains `xᵈ`.** Let `W` be a subspace of the

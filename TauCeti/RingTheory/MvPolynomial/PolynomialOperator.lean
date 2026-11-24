@@ -167,6 +167,22 @@ theorem polynomialAction_transvection_monomial (t : R) (s : σ →₀ ℕ)
   rw [mul_pow, smul_eq_C_mul, map_mul, map_pow, map_natCast]
   ring
 
+/-- The transvection `1 + t E_ab` on `X a ^ p * X b ^ q`, for `a ≠ b`: the binomial expansion of
+`X a ^ p * (X b + t X a) ^ q`, summed over any range `k ≤ N` with `q ≤ N`, since the terms with
+`k > q` vanish. -/
+private theorem polynomialAction_transvection_X_pow_mul_X_pow (hab : a ≠ b) (t : R) (p : ℕ)
+    {q N : ℕ} (hq : q ≤ N) :
+    polynomialAction (transvection a b t) (X a ^ p * X b ^ q) =
+      ∑ k ∈ Finset.range (N + 1), ((q.choose k : R) * t ^ k) • (X a ^ (p + k) * X b ^ (q - k)) := by
+  rw [← Finset.sum_subset (Finset.range_subset_range.mpr (by omega : q + 1 ≤ N + 1)),
+    X_pow_eq_monomial, X_pow_eq_monomial, monomial_mul_monomial, one_mul,
+    polynomialAction_transvection_monomial]
+  · refine Finset.sum_congr (by simp [hab]) fun k _ ↦ ?_
+    simp [hab, Finsupp.erase_add, ← X_pow_eq_monomial, mul_right_comm _ (X b ^ _), ← pow_add,
+      add_comm k p]
+  · intro k _ hk
+    simp [Nat.choose_eq_zero_of_lt (by simpa using hk : q < k)]
+
 /-- **The exponential formula for a transvection**: over a `ℚ`-algebra, for `a ≠ b` the
 transvection `1 + t E_ab` acts on a polynomial of degree at most `N` in `X b` as the finite
 exponential series `∑_{k ≤ N} tᵏ / k! (X a ∂_b)ᵏ`. -/
@@ -287,18 +303,11 @@ characteristic. The terms with `k > i` vanish. -/
 theorem polynomialAction_transvection_zero_one_polynomialMonomial (t : R) (h : i ≤ d) :
     polynomialAction (transvection (0 : Fin 2) 1 t) (polynomialMonomial R d i) =
       ∑ k ∈ Finset.range (d + 1), ((i.choose k : R) * t ^ k) • polynomialMonomial R d (i - k) := by
-  rw [polynomialMonomial_eq_monomial h, polynomialAction_transvection_monomial]
-  simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne,
-    Finsupp.erase_add, Finsupp.erase_single, Finsupp.erase_single_ne, ne_eq, Fin.one_eq_zero_iff,
-    OfNat.ofNat_ne_one, not_false_eq_true, zero_add, add_zero, ← X_pow_eq_monomial]
-  rw [← Finset.sum_subset (Finset.range_subset_range.mpr (by omega : i + 1 ≤ d + 1))]
-  · refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hk : k ≤ i := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-    rw [polynomialMonomial_of_le (by omega), show d - (i - k) = k + (d - i) by omega, pow_add]
-    congr 1
-    ring
-  · intro k _ hk
-    rw [Nat.choose_eq_zero_of_lt (by simpa using hk), Nat.cast_zero, zero_mul, zero_smul]
+  rw [polynomialMonomial_of_le h, polynomialAction_transvection_X_pow_mul_X_pow (by decide) t _ h]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rcases le_or_gt k i with hk | hk
+  · rw [polynomialMonomial_of_le (by omega), show d - (i - k) = d - i + k by omega]
+  · simp [Nat.choose_eq_zero_of_lt hk]
 
 /-- **The lower unitriangular matrix on binary monomials**: `!![1, 0; t, 1]` substitutes
 `x ↦ x + t y`, so it sends `e_i = x ^ (d - i) * y ^ i` to `∑ₖ (d - i choose k) tᵏ e_(i+k)`, in
@@ -307,18 +316,12 @@ theorem polynomialAction_transvection_one_zero_polynomialMonomial (t : R) (h : i
     polynomialAction (transvection (1 : Fin 2) 0 t) (polynomialMonomial R d i) =
       ∑ k ∈ Finset.range (d + 1),
         (((d - i).choose k : R) * t ^ k) • polynomialMonomial R d (i + k) := by
-  rw [polynomialMonomial_eq_monomial h, polynomialAction_transvection_monomial]
-  simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same, Finsupp.single_eq_of_ne,
-    Finsupp.erase_add, Finsupp.erase_single, Finsupp.erase_single_ne, ne_eq, Fin.zero_eq_one_iff,
-    OfNat.ofNat_ne_one, not_false_eq_true, zero_add, add_zero, ← X_pow_eq_monomial]
-  rw [← Finset.sum_subset (Finset.range_subset_range.mpr (by omega : d - i + 1 ≤ d + 1))]
-  · refine Finset.sum_congr rfl fun k hk ↦ ?_
-    have hk : k ≤ d - i := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-    rw [polynomialMonomial_of_le (by omega), show d - (i + k) = d - i - k by omega, pow_add]
-    congr 1
-    ring
-  · intro k _ hk
-    rw [Nat.choose_eq_zero_of_lt (by simpa using hk), Nat.cast_zero, zero_mul, zero_smul]
+  rw [polynomialMonomial_of_le h, mul_comm,
+    polynomialAction_transvection_X_pow_mul_X_pow (by decide) t _ (Nat.sub_le d i)]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rcases le_or_gt k (d - i) with hk | hk
+  · rw [polynomialMonomial_of_le (by omega), Nat.sub_sub, mul_comm (X 0 ^ _)]
+  · simp [Nat.choose_eq_zero_of_lt hk]
 
 end BinaryTransvection
 
