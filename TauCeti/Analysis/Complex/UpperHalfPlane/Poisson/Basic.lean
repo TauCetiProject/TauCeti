@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Probability.Distributions.Cauchy
-public import TauCeti.Analysis.Complex.Pick.Herglotz
+public import TauCeti.Analysis.Complex.Pick.Herglotz.Basic
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
@@ -251,9 +251,7 @@ theorem isPoissonFinite_volume : IsPoissonFinite volume :=
 /-- Every finite measure is Poisson-finite. -/
 theorem isPoissonFinite_of_isFiniteMeasure (ν : Measure ℝ) [IsFiniteMeasure ν] :
     IsPoissonFinite ν :=
-  (isPoissonFinite_iff _).2 <| .of_bound (by fun_prop) 1 <| .of_forall fun x ↦ by
-    rw [Real.norm_of_nonneg (by positivity)]
-    exact inv_le_one_of_one_le₀ (by nlinarith [sq_nonneg x])
+  (isPoissonFinite_iff_lintegral_lt_top ν).2 (lintegral_inv_one_add_sq_lt_top ν)
 
 /-- Reflecting the pole in the real axis changes the sign of the Poisson kernel. -/
 @[simp]
@@ -407,9 +405,8 @@ theorem upperHalfPlaneSchwarzIntegral_def (ν : Measure ℝ) (z : ℂ) :
 value `0`, since the subtracted resolvent kernel is not integrable there. -/
 theorem upperHalfPlaneSchwarzIntegral_of_not_isPoissonFinite {ν : Measure ℝ}
     (hν : ¬IsPoissonFinite ν) {z : ℂ} (hz : z.im ≠ 0) : upperHalfPlaneSchwarzIntegral ν z = 0 := by
-  rw [upperHalfPlaneSchwarzIntegral_def, integral_undef fun h ↦ hν
-    ((isPoissonFinite_iff_lintegral_lt_top ν).2
-      ((integrable_subtractedResolventKernel_iff hz).1 h)), mul_zero]
+  rw [upperHalfPlaneSchwarzIntegral_def, integral_subtractedResolventKernel_eq_zero
+    (mt (isPoissonFinite_iff_lintegral_lt_top ν).2 hν) hz, mul_zero]
 
 /-- At `z = i` the Schwarz integral is real: `S[ν](i) = (1 / π) ∫ dν / (1 + x ^ 2)`. -/
 @[simp]
