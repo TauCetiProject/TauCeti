@@ -204,22 +204,6 @@ private theorem taylor_subword_two {n : ℕ} (x : Fin n → nonisolatedZigzagQuo
     zigzagStrictAInfinityAlgebra_m_two_apply]
   norm_num
 
-/-- The leading `n + 1` letters of a natural-indexed word of length `n + 2`. -/
-private theorem subword_zero_nat {n : ℕ} (x : ℕ → nonisolatedZigzagQuotient k G) :
-    subword k (fun j : Fin (n + 2) ↦ x j) 0 (n + 1) =
-      of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ x j) := by
-  rw [subword_eq_of_tprod k _ (by omega) (by omega)]
-  exact of_tprod_congr k _ _ rfl fun j ↦ by simp
-
-/-- Splicing a block of length two in a natural-indexed word of length `n + 2`. -/
-private theorem splice_two_nat {n p : ℕ} (hp : p < n + 1) (x : ℕ → nonisolatedZigzagQuotient k G)
-    (e : nonisolatedZigzagQuotient k G) :
-    splice k (fun j : Fin (n + 2) ↦ x j) 0 (n + 2) p 2 e =
-      of k _ ⟨n + 1, by omega⟩
-        (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ replaceBlock x p 2 e j) := by
-  rw [splice_eq_of_tprod_replaceBlock k x two_pos (by omega)]
-  exact of_tprod_congr k _ _ (by omega) fun _ ↦ rfl
-
 /-- A homogeneous cochain `φ` of suspended degree zero maps any subword of elements of path length
 one into path length one. -/
 theorem apply_subword_mem_zigzagIntegerGrade_one
@@ -289,10 +273,11 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous
           ((𝒵).taylor (subword k (fun j : Fin (n + 2) ↦ x j) p 2)) =
         of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦
           replaceBlock x p 2 ((𝒵).grading.koszulTwist 1 (x p) * x (p + 1)) j) := by
-    rw [taylor_subword_two _ p (by omega), splice_two_nat hp]
+    rw [taylor_subword_two _ p (by omega), splice_eq_of_tprod_replaceBlock k x two_pos (by omega)]
+    exact of_tprod_congr k _ _ (by omega) fun j ↦ by simp
   rw [Finset.sum_congr rfl fun p hp ↦ by rw [hinner p (Finset.mem_range.mp hp)],
-    subword_zero_nat, subword_eq_of_tprod k _ (by omega) (by omega)]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Fin.val_zero, Fin.val_last]
+    subword_eq_of_tprod k _ (by omega) (by omega), subword_eq_of_tprod k _ (by omega) (by omega)]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Fin.val_zero, Fin.val_last, zero_add]
   abel
 
 /-- **The Hochschild differential on words of arrows of any length.** For a suspended cochain `φ`
@@ -327,14 +312,23 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
   -- `φ` sends a word of `n + 1` letters of path length one to path length one.
   have hφy : φ (subword k (fun j : Fin (n + 2) ↦ y j) 0 (n + 1)) ∈ zigzagIntegerGrade k G 1 :=
     apply_subword_mem_zigzagIntegerGrade_one hφ hx 0 (n + 1)
+  have hinit : subword k (fun j : Fin (n + 2) ↦ y j) 0 (n + 1) =
+      of k _ ⟨n + 1, by omega⟩ (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ y j) := by
+    rw [subword_eq_of_tprod k _ (by omega) (by omega)]
+    exact of_tprod_congr k _ _ rfl fun j ↦ by simp
+  have hsplice (p : ℕ) (hp : p < n + 1) (e : nonisolatedZigzagQuotient k G) :
+      of k _ ⟨n + 1, by omega⟩
+          (PiTensorProduct.tprod k fun j : Fin (n + 1) ↦ replaceBlock y p 2 e j) =
+        splice k (fun j : Fin (n + 2) ↦ y j) 0 (n + 2) p 2 e := by
+    rw [splice_eq_of_tprod_replaceBlock k y two_pos (by omega)]
+    exact of_tprod_congr k _ _ (by omega) fun j ↦ by simp
   rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_homogeneous φ y (fun _ ↦ 1) hy,
-    ← subword_zero_nat,
-    ← subword_eq_of_tprod k (fun j : Fin (n + 2) ↦ y j) (a := 1) (by omega) (by omega),
+    ← hinit, ← subword_eq_of_tprod k (fun j : Fin (n + 2) ↦ y j) (a := 1) (by omega) (by omega),
     htw _ hφy, htw _ (hy 0 (by omega)), Finset.sum_range]
   simp only [sub_self, Finset.sum_const_zero, negOnePowCast_zero, one_smul, Fin.val_castSucc,
     Fin.val_succ, Fin.val_last, Fin.val_zero]
   rw [Finset.sum_congr rfl fun (p : Fin (n + 1)) _ ↦ by
-    rw [htw _ (hy p (by omega)), neg_mul, ← splice_two_nat p.isLt, splice_neg, map_neg]]
+    rw [htw _ (hy p (by omega)), neg_mul, hsplice p p.isLt, splice_neg, map_neg]]
   simp only [Finset.sum_neg_distrib, neg_mul, sub_neg_eq_add]
   abel
 
@@ -374,12 +368,12 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod
     Fin.sum_univ_three]
   simp only [Fin.val_zero, Fin.val_one, Fin.val_two, Fin.isValue, Fin.reduceCastSucc,
     Fin.reduceSucc]
-  rw [hsp 0 (by omega) _ ![x 0 * x 1, x 2, x 3] (fun j ↦ by fin_cases j <;> rfl),
-    hsp 1 (by omega) _ ![x 0, x 1 * x 2, x 3] (fun j ↦ by fin_cases j <;> rfl),
-    hsp 2 (by omega) _ ![x 0, x 1, x 2 * x 3] (fun j ↦ by fin_cases j <;> rfl),
-    hsub 0 (by omega) ![x 0, x 1, x 2] (fun j ↦ by fin_cases j <;> rfl),
-    hsub 1 (by omega) ![x 1, x 2, x 3] (fun j ↦ by fin_cases j <;> rfl)]
-  rfl
+  have hlast : (Fin.last (2 + 1) : Fin 4) = 3 := Fin.ext (by simp)
+  rw [hsp 0 (by omega) _ ![x 0 * x 1, x 2, x 3] (fun j ↦ by fin_cases j <;> simp),
+    hsp 1 (by omega) _ ![x 0, x 1 * x 2, x 3] (fun j ↦ by fin_cases j <;> simp),
+    hsp 2 (by omega) _ ![x 0, x 1, x 2 * x 3] (fun j ↦ by fin_cases j <;> simp),
+    hsub 0 (by omega) ![x 0, x 1, x 2] (fun j ↦ by fin_cases j <;> simp),
+    hsub 1 (by omega) ![x 1, x 2, x 3] (fun j ↦ by fin_cases j <;> simp), hlast]
 
 end Differential
 
@@ -596,8 +590,9 @@ private theorem trace_hochschildDifferential_double
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
   have hd : 𝔞 d * 𝔞 d.symm = zigzagVolume k G d.snd := zigzagMk_ofArrow_mul_ofArrow_symm k G d
   have hd' : 𝔞 d.symm * 𝔞 d = zigzagVolume k G d.fst := by
-    conv_lhs => rw [← arrow_symm_symm d]
-    exact zigzagMk_ofArrow_mul_ofArrow_symm k G d.symm
+    have h := zigzagMk_ofArrow_mul_ofArrow_symm k G d.symm
+    rw [arrow_symm_symm] at h
+    simpa using h
   rw [hd, hd']
   simp only [map_add, map_sub]
 
