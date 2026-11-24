@@ -191,22 +191,9 @@ theorem exists_remainder_sharpTerms_of_isAsymptoticSum (a : ClassicalSymbol n W 
     (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
     ∃ r : Symbol n V U (m' + m - N), ∀ p, r.coefficient p =
       c.coefficient p - ∑ j ∈ range N, χ p.2 • (sharpTerms a.term b.term j).coefficient p := by
-  obtain ⟨r₀, hr₀⟩ := Symbol.isAsymptoticSum_iff.1 hc N
-  -- The remainder of `sharpTerm a b k` after `N - k` terms has order `m' + m - N` for `k ≤ N`.
-  have hord (k : ℕ) : m' + m - k - ((N - k : ℕ) : ℝ) ≤ m' + m - N := by
-    have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
-    linarith
-  refine ⟨r₀ + ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.sharpTerm b k).remainder χ (N - k)),
-    fun p ↦ ?_⟩
-  have hp := congrFun hr₀ p
-  simp only [Pi.sub_apply, Finset.sum_apply, Symbol.coefficient_inclusion] at hp
-  simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
-    Pi.add_apply, Finset.sum_apply, ← hp, coefficient_remainder, toSymbol_sharpTerm,
-    coefficient_sharpTerms_eq_sum_term_sharpTerm, Finset.smul_sum, Finset.sum_sub_distrib]
-  -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
-  rw [Finset.sum_range_diag_flip N
-    fun k i ↦ χ p.2 • ((a.sharpTerm b k).term i).coefficient p]
-  abel
+  obtain ⟨r, hr⟩ := exists_remainder_of_isAsymptoticSum (a.sharpTerm b)
+    (by simpa [toSymbol_sharpTerm] using hc) χ N
+  exact ⟨r, fun p ↦ by simp [hr p, coefficient_sharpTerms_eq_sum_term_sharpTerm]⟩
 
 section Sharp
 

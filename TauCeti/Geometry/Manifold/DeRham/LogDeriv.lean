@@ -300,7 +300,7 @@ theorem exists_homologyPeriodHom_mlogDeriv_eq_int_mul {u : M → ℂ}
       simp only [LinearMap.toSpanSingleton_apply, zsmul_eq_mul, Fin.coe_ofNat_eq_mod, Nat.zero_mod,
         Nat.mod_succ, pow_zero, pow_one, one_smul, neg_smul]
       ring
-  obtain ⟨z, rfl⟩ := (H₁AddEquivHomology (.of M)).surjective.comp H₁.mk_surjective c
+  obtain ⟨z, rfl⟩ := (H₁AddEquivHomology ℤ (.of M)).surjective.comp H₁.mk_surjective c
   refine ⟨chainsDesc N (z : ((singularChains ℤ).obj (.of M)).X 1), ?_⟩
   rw [Function.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk, hL]
   simp [mem_cycles₁_iff.1 z.property, zsmul_eq_mul]
@@ -444,7 +444,8 @@ theorem exists_mlogDeriv_eq_of_homologyPeriodHom_eq_int_mul {r : ℕ∞} (hr : 1
   have hpath {a a' y : M} (e : a = a') (p : Path a y) (q : Path a' y) :
       exp (pathClassIntegral φ (.mk p)) = exp (pathClassIntegral φ (.mk q)) := by
     subst e
-    obtain ⟨n, hn⟩ := hper (H₁AddEquivHomology (.of M) (loopClass (X := .of M) (p.trans q.symm)))
+    obtain ⟨n, hn⟩ :=
+      hper (H₁AddEquivHomology ℤ (.of M) (loopClass ℤ (X := .of M) (p.trans q.symm)))
     rw [homologyPeriodHom_loopClass, Path.Homotopic.Quotient.mk_trans,
       Path.Homotopic.Quotient.mk_symm, pathClassIntegral_trans, pathClassIntegral_symm] at hn
     exact exp_eq_exp_iff_exists_int.mpr ⟨n, by rw [← hn]; ring⟩

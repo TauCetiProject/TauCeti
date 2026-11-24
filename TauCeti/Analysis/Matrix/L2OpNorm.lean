@@ -86,6 +86,18 @@ theorem sum_sum_norm_sq_le_card_mul_l2_opNorm_sq {m : Type*} [Fintype m]
       simp only [conjTranspose_conjTranspose, l2_opNorm_conjTranspose] at h
       rw [h, sq]
 
+/-- The sum of squared entry norms over any set of positions is at most the row count times
+the squared Euclidean operator norm. -/
+theorem sum_norm_sq_le_card_mul_l2_opNorm_sq {m : Type*} [Fintype m]
+    (A : Matrix m n 𝕜) (s : Finset (m × n)) :
+    ∑ p ∈ s, ‖A p.1 p.2‖ ^ 2 ≤ (Fintype.card m : ℝ) * ‖A‖ ^ 2 := by
+  classical
+  calc
+    _ ≤ ∑ p ∈ (Finset.univ : Finset m) ×ˢ (Finset.univ : Finset n), ‖A p.1 p.2‖ ^ 2 :=
+      Finset.sum_le_sum_of_subset_of_nonneg (fun _ _ ↦ by simp) (fun _ _ _ ↦ sq_nonneg _)
+    _ = ∑ i, ∑ j, ‖A i j‖ ^ 2 := Finset.sum_product _ _ _
+    _ ≤ _ := A.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq
+
 /-- The absolute normalized trace is at most the Euclidean operator norm, including in dimension
 zero. -/
 theorem norm_normalized_trace_le_l2_opNorm (M : Matrix n n 𝕜) :
