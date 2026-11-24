@@ -9,17 +9,20 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.Probability.Independence.Basic
 
+import Mathlib.Analysis.Complex.ExponentialBounds
+
 /-!
 # Tensorization of small-ball probabilities
 
-Suppose that independent random vectors `ζ k`, indexed by a finite type of cardinality `n` and
-possibly taking values in different spaces, all satisfy a small-ball bound that is linear in the
-radius at every radius `r ≥ ε`: `P(‖ζ k‖ < r) ≤ K r + a`. Then the probability that the sum of
-their squared norms is less than `ε ^ 2 * n` is bounded by an `n`-th power:
+Suppose that random vectors `ζ k`, indexed by a finite type of cardinality `n` and possibly
+taking values in different spaces, have independent norms and all satisfy a small-ball bound that
+is linear in the radius at every radius `r ≥ ε`: `P(‖ζ k‖ < r) ≤ K r + a`. Then the probability
+that the sum of their squared norms is less than `ε ^ 2 * n` is bounded by an `n`-th power:
 `P(∑ k, ‖ζ k‖ ^ 2 < ε ^ 2 * n) ≤ (2 e (2 K ε + a)) ^ n`.
 For fixed parameters with `2 e (2 K ε + a) < 1`, the bound decays exponentially in `n`.
 
-For `a = 0` this is the tensorization lemma of Rudelson and Vershynin; requiring the
+For `a = 0` this is the tensorization lemma of Rudelson and Vershynin, stated there for the
+independent nonnegative random variables `‖ζ k‖`; requiring the
 small-ball bound only at radii `r ≥ ε` recovers their lower threshold `ε₀`. The additive term `a`
 absorbs radius-independent error terms of small-ball estimates, such as the term `C / D` for a
 lower bound `D` on the least common denominator of the coefficients.
@@ -27,13 +30,15 @@ lower bound `D` on the least common denominator of the coefficients.
 The application to the image of a fixed vector under a matrix with independent rows is in
 `TauCeti.Probability.RandomMatrix.SmallBall`.
 
-The bound assumes only independence, not measurability, so it holds for outer probabilities
-of arbitrary random vectors.
+The bound assumes only independence of the norms, not measurability, so it holds for outer
+probabilities of arbitrary random vectors, which need not themselves be independent.
 
 ## Main results
 
 * `ProbabilityTheory.iIndepFun.measureReal_sum_norm_sq_lt_le`: tensorization of small-ball
-  bounds for independent random vectors.
+  bounds for random vectors with independent norms.
+* `ProbabilityTheory.iIndepFun.measureReal_sum_norm_sq_lt_le'`: the same bound for independent
+  random vectors.
 
 ## References
 
@@ -102,10 +107,7 @@ private theorem sum_filter_prod_le [DecidableEq ι] {ε K a : ℝ}
       have : (i : ℝ) ≤ (i : ℝ) ^ 2 := by exact_mod_cast Nat.le_self_pow two_ne_zero i
       exact Real.exp_le_exp.mpr (by linarith)
     _ = Real.exp (-1) ^ i := Real.exp_natCast_mul i _
-    _ ≤ (1 / 2) ^ i := by
-      refine pow_le_pow_left₀ (Real.exp_pos _).le ?_ i
-      rw [Real.exp_neg, one_div]
-      exact inv_anti₀ two_pos (by linarith [Real.add_one_le_exp 1])
+    _ ≤ (1 / 2) ^ i := pow_le_pow_left₀ (Real.exp_pos _).le Real.exp_neg_one_lt_half.le i
   have hfactor : ∑ i ∈ range n, Real.exp (-(i : ℝ) ^ 2) * b i ≤ 2 * b 1 := calc
     _ ≤ ∑ i ∈ range n, (1 / 2 : ℝ) ^ i * b i :=
       sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right (hexp i) (hb i)
@@ -142,16 +144,15 @@ private theorem sum_filter_prod_le [DecidableEq ι] {ε K a : ℝ}
       push_cast [b]
       ring
 
-variable [∀ k, MeasurableSpace (E k)] [∀ k, OpensMeasurableSpace (E k)]
-
-/-- **Tensorization of small-ball probabilities.** Let `ζ k` be independent random vectors,
-indexed by a finite type of cardinality `n`, and let `ε ≥ 0`. If each `ζ k` satisfies the
-linear small-ball bound `P(‖ζ k‖ < r) ≤ K * r + a` at every radius `r ≥ ε`, then
+/-- **Tensorization of small-ball probabilities.** Let `ζ k` be random vectors with
+independent norms, indexed by a finite type of cardinality `n`, and let `ε ≥ 0`. If each `ζ k`
+satisfies the linear small-ball bound `P(‖ζ k‖ < r) ≤ K * r + a` at every radius `r ≥ ε`, then
 `P(∑ k, ‖ζ k‖ ^ 2 < ε ^ 2 * n) ≤ (2 e (2 K ε + a)) ^ n`.
 
-The random vectors may take values in different spaces and need not be measurable; the
-probabilities are outer measures. -/
-theorem measureReal_sum_norm_sq_lt_le (hind : iIndepFun ζ P) {ε K a : ℝ} (hε : 0 ≤ ε)
+The random vectors may take values in different spaces, need not be measurable and need not be
+independent themselves; the probabilities are outer measures. -/
+theorem measureReal_sum_norm_sq_lt_le (hind : iIndepFun (fun k ω ↦ ‖ζ k ω‖) P) {ε K a : ℝ}
+    (hε : 0 ≤ ε)
     (hsmall : ∀ k, ∀ r, ε ≤ r → P.real {ω | ‖ζ k ω‖ < r} ≤ K * r + a) :
     P.real {ω | ∑ k, ‖ζ k ω‖ ^ 2 < ε ^ 2 * Fintype.card ι} ≤
       (2 * Real.exp 1 * (2 * K * ε + a)) ^ Fintype.card ι := by
@@ -163,7 +164,7 @@ theorem measureReal_sum_norm_sq_lt_le (hind : iIndepFun ζ P) {ε K a : ℝ} (h�
   have hprod (r : ι → ℝ) :
       P.real (⋂ k, {ω | ‖ζ k ω‖ < r k}) = ∏ k, P.real {ω | ‖ζ k ω‖ < r k} := by
     simp only [measureReal_def, ← ENNReal.toReal_prod]
-    rw [hind.meas_iInter fun k ↦ ⟨Metric.ball 0 (r k), measurableSet_ball, by ext ω; simp⟩]
+    rw [hind.meas_iInter fun k ↦ ⟨Set.Iio (r k), measurableSet_Iio, by rfl⟩]
   have hr (i : ℕ) : ε ≤ (i + 1) * ε :=
     le_mul_of_one_le_left hε (by linarith [i.cast_nonneg (α := ℝ)])
   calc
@@ -175,5 +176,17 @@ theorem measureReal_sum_norm_sq_lt_le (hind : iIndepFun ζ P) {ε K a : ℝ} (h�
     _ ≤ _ := sum_le_sum fun j _ ↦ (hprod _).trans_le <|
       prod_le_prod₀ (fun _ _ ↦ measureReal_nonneg) fun k _ ↦ hsmall k _ (hr (j k))
     _ ≤ _ := sum_filter_prod_le fun i ↦ hb _ (hr i)
+
+/-- **Tensorization of small-ball probabilities** for independent random vectors `ζ k`, indexed
+by a finite type of cardinality `n`: if `ε ≥ 0` and each `ζ k` satisfies the linear small-ball
+bound `P(‖ζ k‖ < r) ≤ K * r + a` at every radius `r ≥ ε`, then
+`P(∑ k, ‖ζ k‖ ^ 2 < ε ^ 2 * n) ≤ (2 e (2 K ε + a)) ^ n`. -/
+theorem measureReal_sum_norm_sq_lt_le' [∀ k, MeasurableSpace (E k)]
+    [∀ k, OpensMeasurableSpace (E k)] (hind : iIndepFun ζ P) {ε K a : ℝ} (hε : 0 ≤ ε)
+    (hsmall : ∀ k, ∀ r, ε ≤ r → P.real {ω | ‖ζ k ω‖ < r} ≤ K * r + a) :
+    P.real {ω | ∑ k, ‖ζ k ω‖ ^ 2 < ε ^ 2 * Fintype.card ι} ≤
+      (2 * Real.exp 1 * (2 * K * ε + a)) ^ Fintype.card ι :=
+  (hind.comp (fun _ ↦ norm) fun _ ↦ continuous_norm.measurable).measureReal_sum_norm_sq_lt_le hε
+    hsmall
 
 end ProbabilityTheory.iIndepFun

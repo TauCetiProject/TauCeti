@@ -15,8 +15,10 @@ For a matrix `A` with independent rows, indexed by a finite type of cardinality 
 coordinates of the image `A x` of a fixed vector are independent. Tensorization of small-ball
 probabilities (`ProbabilityTheory.iIndepFun.measureReal_sum_norm_sq_lt_le`) turns small-ball
 bounds `P(‖(A x) i‖ < r) ≤ K r + a` at every radius `r ≥ ε` into
-`P(‖A x‖ < ε √m) ≤ (2 e (2 K ε + a)) ^ m`. This is the single-vector estimate of invertibility
-arguments on level sets of the least common denominator.
+`P(‖A x‖ < ε √m) ≤ (2 e (2 K ε + a)) ^ m`. This is the tensorization step of the single-vector
+estimate of invertibility arguments on level sets of the least common denominator; the
+coordinate bounds `P(‖(A x) i‖ < r) ≤ K r + a` must be supplied separately, by a one-dimensional
+small-ball bound for each row.
 
 ## Main results
 
@@ -54,10 +56,10 @@ theorem measureReal_norm_toEuclideanLin_lt_mul_sqrt_le {Ω m n 𝕜 : Type*} [Me
     hind.comp (fun _ (w : n → 𝕜) ↦ ‖w ⬝ᵥ x‖) fun _ ↦
       (continuous_id.dotProduct continuous_const).norm.measurable
   refine le_trans (measureReal_mono (fun ω hω ↦ ?_) (measure_ne_top _ _))
-    (hY.measureReal_sum_norm_sq_lt_le hε (by simpa only [norm_norm] using hsmall))
+    (hY.measureReal_sum_norm_sq_lt_le hε hsmall)
   rw [Set.mem_ofPred_eq] at hω ⊢
-  have hnorm : ‖toEuclideanLin (A ω) x‖ ^ 2 = ∑ i, ‖‖A ω i ⬝ᵥ x‖‖ ^ 2 := by
-    simp only [norm_norm, EuclideanSpace.norm_sq_eq, ofLp_toLpLin, toLin'_apply, mulVec]
+  have hnorm : ‖toEuclideanLin (A ω) x‖ ^ 2 = ∑ i, ‖A ω i ⬝ᵥ x‖ ^ 2 := by
+    simp only [EuclideanSpace.norm_sq_eq, ofLp_toLpLin, toLin'_apply, mulVec]
   have hsq := pow_lt_pow_left₀ hω (norm_nonneg _) two_ne_zero
   rwa [hnorm, mul_pow, Real.sq_sqrt (Nat.cast_nonneg _)] at hsq
 
