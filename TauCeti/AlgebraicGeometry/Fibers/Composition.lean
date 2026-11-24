@@ -18,7 +18,8 @@ scheme-theoretic fibre `(j ≫ f)⁻¹(s) = Y ×_S Spec κ(s)` maps to the fibre
 fibre. Hence a closed immersion `j` induces closed immersions of fibres. This is how properties
 tested on the fibres of `f` restrict to closed subschemes of `X`.
 
-The file also records that the fibres of a proper morphism are proper over their residue fields.
+The file also records that the fibres of a proper morphism are proper over their residue fields,
+and that the embedding of a fibre is an isomorphism when `Spec κ(s) ⟶ S` is one.
 
 ## Main declarations
 
@@ -30,6 +31,8 @@ The file also records that the fibres of a proper morphism are proper over their
   `fiberCompMap j f s`, `j` and the two fibre embeddings is cartesian;
 * `AlgebraicGeometry.Scheme.Hom.isProper_fiberToSpecResidueField`: the fibres of a proper morphism
   are proper over the residue fields.
+* `AlgebraicGeometry.Scheme.Hom.isIso_fiberι`: the embedding `f⁻¹(s) ⟶ X` of a fibre is an
+  isomorphism when `Spec κ(s) ⟶ S` is one, for instance over the spectrum of a field.
 -/
 
 public section
@@ -48,6 +51,13 @@ variable {X Y S : Scheme.{u}}
 instance isProper_fiberToSpecResidueField (f : X ⟶ S) [IsProper f] (s : S) :
     IsProper (f.fiberToSpecResidueField s) :=
   inferInstanceAs (IsProper (pullback.snd _ _))
+
+/-- The embedding `f⁻¹(s) ⟶ X` of the fibre of `f : X ⟶ S` over `s` is an isomorphism when
+`Spec κ(s) ⟶ S` is one: it is the base change of `Spec κ(s) ⟶ S` along `f`. -/
+instance isIso_fiberι (f : X ⟶ S) (s : S) [IsIso (S.fromSpecResidueField s)] :
+    IsIso (f.fiberι s) := by
+  unfold Scheme.Hom.fiberι
+  exact pullback_fst_iso_of_right_iso _ _
 
 /-- The fibre over `s` of a composite `j ≫ f` maps to the fibre of `f` over `s`. It is the base
 change of `j` along the embedding of the fibre of `f` (`Scheme.Hom.isPullback_fiberCompMap`). -/

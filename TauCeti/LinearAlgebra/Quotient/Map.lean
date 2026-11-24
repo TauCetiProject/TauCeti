@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
@@ -17,6 +18,9 @@ A class `[x]` of `M ⧸ p` lies in the image of a submodule `p'` containing `p` 
 `p'` under the quotient map, read off from Mathlib's `Submodule.comap_map_mkQ`; it identifies
 subspaces of a quotient through their representatives, as in the linear symplectic reduction of
 a subspace of a reduced space.
+
+For an ideal `I`, the class `[x]` lies in `I (M ⧸ p)` exactly when `x ∈ p + I M`
+(`Submodule.Quotient.mk_mem_smul_top_iff`), since `I (M ⧸ p)` is the image of `I M`.
 
 For an `R ⧸ K`-module, membership in the image ideal times the module can be checked over `R`
 (`Submodule.mem_map_quotient_mk_smul_top_iff`). In `M ⧸ K • M`, this also gives a criterion on
@@ -35,6 +39,14 @@ theorem Quotient.mk_mem_map_mkQ_iff {p p' : Submodule R M} (h : p ≤ p') (x : M
     (Quotient.mk x : M ⧸ p) ∈ p'.map p.mkQ ↔ x ∈ p' := by
   rw [← mkQ_apply, ← mem_comap, comap_map_mkQ, sup_eq_right.2 h]
 
+/-- The class of `x` in `M ⧸ p` lies in `I (M ⧸ p)` exactly when `x ∈ p + I M`. -/
+@[simp]
+theorem Quotient.mk_mem_smul_top_iff {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    {p : Submodule R M} {I : Ideal R} {x : M} :
+    (Quotient.mk x : M ⧸ p) ∈ I • (⊤ : Submodule R (M ⧸ p)) ↔ x ∈ p ⊔ I • ⊤ := by
+  rw [← map_top p.mkQ |>.trans (range_mkQ p), ← map_smul'', ← comap_map_mkQ, mem_comap,
+    mkQ_apply]
+
 /-- Multiples of the image of `J` in an `R ⧸ K`-module are the multiples of `J` under the
 compatible `R`-action. -/
 theorem mem_map_quotient_mk_smul_top_iff {S P : Type*} [CommRing S] [AddCommMonoid P]
@@ -51,9 +63,7 @@ theorem Quotient.mk_mem_map_ideal_smul_top_iff {S P : Type*} [CommRing S] [AddCo
     Quotient.mk (p := (K • ⊤ : Submodule S P)) x ∈
       J.map (Ideal.Quotient.mk K) • (⊤ : Submodule (S ⧸ K) (P ⧸ (K • ⊤ : Submodule S P))) ↔
       x ∈ J • (⊤ : Submodule S P) := by
-  let Q : Submodule S P := K • ⊤
-  rw [mem_map_quotient_mk_smul_top_iff, ← Submodule.range_mkQ Q, ← Submodule.map_top,
-    ← Submodule.map_smul'']
-  exact Quotient.mk_mem_map_mkQ_iff (Submodule.smul_mono_left h) x
+  rw [mem_map_quotient_mk_smul_top_iff, Quotient.mk_mem_smul_top_iff,
+    sup_eq_right.mpr (smul_mono_left h)]
 
 end Submodule

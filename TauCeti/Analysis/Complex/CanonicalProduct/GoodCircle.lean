@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import TauCeti.Analysis.Complex.CanonicalProduct.ElementaryFactor
+import TauCeti.Analysis.Complex.CanonicalProduct.PrimaryProduct
 import TauCeti.Analysis.Normed.Group.SummableNormInvRpow
 import TauCeti.Analysis.SpecialFunctions.Integrals.PosLog
 import TauCeti.Analysis.SpecialFunctions.Log.PosLog
+import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
 # Cartan's good-circle estimate for Weierstrass primary products
@@ -35,9 +37,11 @@ at most `(4 * R) ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ` (`Summable.finite_setOf_ne_
 their moduli with the sum of their logarithmic singularities at most a universal constant times
 their number. The bound holds for every finite partial product, hence for the unordered product.
 
-Indices with `a i = 0` contribute the unit factor `E_p 0 = 1`. A product over grouped
-multiplicities is the product over `Σ i, Fin (m i)`
-(`Complex.tprod_weierstrassFactor_div_pow_eq_sigma`).
+Indices with `a i = 0` contribute the unit factor `E_p 0 = 1`. With natural multiplicities
+`m` and `∑' i, m i * ‖a i‖⁻¹ ^ τ < ∞`, the same estimate holds for the weighted product
+`∏' i, E_p(z / a i) ^ m i`, with `∑' i, m i * ‖a i‖⁻¹ ^ τ` in the constant
+(`Complex.exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_div_pow`); it is
+the product over `Σ i, Fin (m i)` (`Complex.tprod_weierstrassFactor_div_pow_eq_sigma`).
 
 ## Provenance
 
@@ -187,5 +191,30 @@ theorem exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_di
   · rw [tprod_eq_one_of_not_multipliable hm, norm_one, Real.exp_le_one_iff, neg_nonpos]
     have : 0 ≤ ∑' i, ‖a i‖⁻¹ ^ τ := tsum_nonneg fun i ↦ by positivity
     positivity
+
+/-- **Cartan's good-circle estimate with multiplicities.** Let `p ≤ τ ≤ p + 1` and let natural
+multiplicities `m` satisfy `∑' i, m i * ‖a i‖⁻¹ ^ τ < ∞`. Every interval `(R, 2 * R]` with
+`R > 0` contains a radius `r` on whose circle the weighted genus-`p` primary product satisfies
+`exp (-(C * r ^ τ)) ≤ ‖∏' i, E_p(z / a i) ^ m i‖`, where
+`C = ((log 2 + 12 * sqrt 6 + p) * 4 ^ τ + p + 2) * ∑' i, m i * ‖a i‖⁻¹ ^ τ`. -/
+theorem exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_div_pow
+    {ι : Type*} (p : ℕ) {τ : ℝ} (hpτ : (p : ℝ) ≤ τ) (hτp : τ ≤ p + 1) {a : ι → ℂ} {m : ι → ℕ}
+    (ha : Summable fun i ↦ (m i : ℝ) * ‖a i‖⁻¹ ^ τ) {R : ℝ} (hR : 0 < R) :
+    ∃ r ∈ Set.Ioc R (2 * R), ∀ z : ℂ, ‖z‖ = r →
+      Real.exp (-(((Real.log 2 + 12 * Real.sqrt 6 + p) * 4 ^ τ + p + 2) *
+        (∑' i, (m i : ℝ) * ‖a i‖⁻¹ ^ τ) * r ^ τ)) ≤
+        ‖∏' i, weierstrassFactor p (z / a i) ^ m i‖ := by
+  have hτ : 0 ≤ τ := (Nat.cast_nonneg p).trans hpτ
+  have hσ := (TauCeti.summable_sigma_fin_iff (fun i ↦ by positivity) m).mpr ha
+  have htsum : ∑' q : Σ i, Fin (m i), ‖a q.1‖⁻¹ ^ τ = ∑' i, (m i : ℝ) * ‖a i‖⁻¹ ^ τ := by
+    rw [hσ.tsum_sigma]
+    simp
+  -- The weighted product is the product over `Σ i, Fin (m i)` once it converges.
+  have hm (R : ℝ) (_ : 0 < R) := ha.natCast_mul_div_pow_succ hτ hτp R
+  obtain ⟨r, hr, hbound⟩ :=
+    exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_div p hpτ hτp hσ hR
+  refine ⟨r, hr, fun z hz ↦ ?_⟩
+  rw [tprod_weierstrassFactor_div_pow_eq_sigma hm, ← htsum]
+  exact hbound z hz
 
 end Complex
