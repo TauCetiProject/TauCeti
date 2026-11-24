@@ -158,30 +158,19 @@ private theorem not_isNilpotent_thickAlg_X : ¬ IsNilpotent (thickAlg k X) := fu
 /-- After inverting `y`, the map `k[y] → k[x, y]/(x², xy)` is bijective: `x = 0` there. -/
 private theorem bijective_awayMap :
     Function.Bijective (Localization.awayMap (P := Thick k) (thickAlg k) X) := by
-  set φ := thickAlg k
-  refine ⟨(injective_iff_map_eq_zero _).2 fun z hz => ?_, fun z => ?_⟩
-  · obtain ⟨⟨a, _, n, rfl⟩, rfl⟩ := IsLocalization.mk'_surjective (Submonoid.powers (X : k[X])) z
-    rw [Localization.awayMap, IsLocalization.Away.map, IsLocalization.map_mk',
-      IsLocalization.mk'_eq_zero_iff] at hz
-    obtain ⟨⟨_, j, rfl⟩, hm⟩ := hz
-    have := congrArg (thickEval k) hm
-    simp only [map_mul, map_pow, thickEval_thickAlg, map_zero, φ] at this
-    obtain rfl := (mul_eq_zero.mp this).resolve_left (pow_ne_zero _ X_ne_zero)
-    exact IsLocalization.mk'_zero _
-  · obtain ⟨⟨b, _, n, rfl⟩, rfl⟩ := IsLocalization.mk'_surjective (Submonoid.powers (φ X)) z
-    obtain ⟨q, rfl⟩ := thickMk_surjective k b
-    refine ⟨IsLocalization.mk' (Localization.Away (X : k[X])) (q.coeff 0)
-      (⟨X ^ n, n, rfl⟩ : Submonoid.powers (X : k[X])), ?_⟩
-    rw [Localization.awayMap, IsLocalization.Away.map, IsLocalization.map_mk',
-      IsLocalization.mk'_eq_iff_eq]
-    -- The class of `x` vanishes once `y` is inverted, since `x * y = 0`.
-    have hx : algebraMap (Thick k) (Localization.Away (φ X)) (thickMk k X) = 0 := by
-      rw [IsLocalization.map_eq_zero_iff (Submonoid.powers (φ X))]
-      refine ⟨⟨φ X, 1, pow_one _⟩, ?_⟩
-      rw [thickAlg_apply, ← map_mul, thickMk_eq_zero_iff, mul_comm]
-      exact Ideal.subset_span (by simp)
-    conv_rhs => rw [← X_mul_divX_add q]
-    simp only [map_mul, map_add, hx, zero_mul, zero_add, map_pow, φ, thickAlg_apply]
+  refine ⟨Localization.awayMap_injective_iff.2 fun a ha => ⟨0, ?_⟩,
+    Localization.awayMap_surjective_iff.2 fun b => ?_⟩
+  · rw [pow_zero, one_mul, ← thickEval_thickAlg k a, ha, map_zero]
+  · obtain ⟨q, rfl⟩ := thickMk_surjective k b
+    -- Multiplying by `y` kills the multiple `x · q.divX` of `x`, since `x * y = 0`.
+    have hq : C X * q = X * C X * q.divX + C (X * q.coeff 0) := by
+      conv_lhs => rw [← X_mul_divX_add q]
+      rw [C_mul]
+      ring
+    have hx : thickMk k (X * C X) = 0 := (thickMk_eq_zero_iff k).2 (Ideal.subset_span (by simp))
+    refine ⟨X * q.coeff 0, 1, ?_⟩
+    rw [pow_one, thickAlg_apply, thickAlg_apply, ← map_mul, hq, map_add,
+      map_mul (thickMk k) (X * C X), hx, zero_mul, zero_add]
 
 -- `Spec k[x, y]/(x², xy) → Spec k[y]` is a finite modification of the normal integral line that
 -- is not an isomorphism; its source is not reduced.
