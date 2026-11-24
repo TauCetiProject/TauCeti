@@ -23,17 +23,19 @@ compares the `n`-adic filtration of `C` with the one induced from `R × S`.
   taken componentwise, they lie in `C` because `T` is separated, and the shifted comparison of
   filtrations turns componentwise convergence into convergence in `C`.
 
-Some torsion hypothesis is needed for the last step. For `R = S = ℤ_p`, `T = ℤ ⧸ p ^ 2` and `f = g`
-the reduction, `n = p`, the element `(p ^ 2, 0)` of `C` is divisible by `p ^ 2` in `ℤ_p × ℤ_p` but
-not by `p` in `C`, since `(p, 0) ∉ C`.
+The torsion hypothesis is needed for the first step, the comparison of filtrations. For
+`R = S = ℤ_p`, `T = ℤ ⧸ p ^ 2` and `f = g` the reduction, `n = p`, the element `(p ^ 2, 0)` of `C`
+is divisible by `p ^ 2` in `ℤ_p × ℤ_p` but not by `p` in `C`, since `(p, 0) ∉ C`.
 
 This is the completeness input for tilting fibre products of perfectoid rings, where `T` is
-integral perfectoid and so has bounded `p`-power torsion.
+integral perfectoid, whose `p`-power torsion is killed by `p`.
 
 ## Main results
 
 * `RingHom.pullback_natCast_pow_dvd_of_pow_succ_dvd`: `n ^ (k + 1) (R × S) ∩ C ⊆ n ^ k C` when the
   `n ^ (k + 1)`-torsion of `T` is killed by `n`.
+* `RingHom.pullback_natCast_pow_dvd_fst`, `RingHom.pullback_natCast_pow_dvd_snd`: divisibility by
+  `n ^ k` in `C` passes to the components.
 * `IsHausdorff.pullback_span_natCast`: `C` is `n`-adically Hausdorff when `R` and `S` are.
 * `IsPrecomplete.pullback_span_natCast`, `IsAdicComplete.pullback_span_natCast`: `C` is
   `n`-adically precomplete, respectively complete, when `R` and `S` are, `T` is `n`-adically
@@ -69,6 +71,20 @@ theorem pullback_natCast_pow_dvd_of_pow_succ_dvd {k : ℕ}
   refine ⟨⟨_, hmem⟩, Subtype.ext ?_⟩
   simp only [hab, Subring.coe_mul, Subring.coe_pow, Subring.coe_natCast, pow_succ, mul_assoc]
 
+variable {f g n} in
+/-- If `n ^ k` divides an element `x` of the pullback `R ×_T S`, then `n ^ k` divides its first
+component. -/
+theorem pullback_natCast_pow_dvd_fst {k : ℕ} {x : f.pullback g}
+    (hx : (n : f.pullback g) ^ k ∣ x) : (n : R) ^ k ∣ (x : R × S).1 := by
+  simpa using map_dvd (f.pullbackFst g) hx
+
+variable {f g n} in
+/-- If `n ^ k` divides an element `x` of the pullback `R ×_T S`, then `n ^ k` divides its second
+component. -/
+theorem pullback_natCast_pow_dvd_snd {k : ℕ} {x : f.pullback g}
+    (hx : (n : f.pullback g) ^ k ∣ x) : (n : S) ^ k ∣ (x : R × S).2 := by
+  simpa using map_dvd (f.pullbackSnd g) hx
+
 end RingHom
 
 /-- The pullback `R ×_T S` is `n`-adically Hausdorff when `R` and `S` are. -/
@@ -79,10 +95,10 @@ instance IsHausdorff.pullback_span_natCast [IsHausdorff (span {(n : R)}) R]
     simp only [TauCeti.sModEq_span_singleton_pow_iff, sub_zero] at hx
   · refine IsHausdorff.haus (I := span {(n : R)}) inferInstance _ fun k ↦ ?_
     rw [TauCeti.sModEq_span_singleton_pow_iff, sub_zero]
-    simpa using map_dvd (f.pullbackFst g) (hx k)
+    exact RingHom.pullback_natCast_pow_dvd_fst (hx k)
   · refine IsHausdorff.haus (I := span {(n : S)}) inferInstance _ fun k ↦ ?_
     rw [TauCeti.sModEq_span_singleton_pow_iff, sub_zero]
-    simpa using map_dvd (f.pullbackSnd g) (hx k)
+    exact RingHom.pullback_natCast_pow_dvd_snd (hx k)
 
 variable {f g n}
 
@@ -98,11 +114,11 @@ theorem IsPrecomplete.pullback_span_natCast [IsPrecomplete (span {(n : R)}) R]
   obtain ⟨a, ha⟩ := IsPrecomplete.prec (I := span {(n : R)}) inferInstance
     (f := fun k ↦ ((φ k : R × S)).1) fun hmk ↦ by
       rw [TauCeti.sModEq_span_singleton_pow_iff]
-      simpa using map_dvd (f.pullbackFst g) (hφ hmk)
+      exact RingHom.pullback_natCast_pow_dvd_fst (hφ hmk)
   obtain ⟨b, hb⟩ := IsPrecomplete.prec (I := span {(n : S)}) inferInstance
     (f := fun k ↦ ((φ k : R × S)).2) fun hmk ↦ by
       rw [TauCeti.sModEq_span_singleton_pow_iff]
-      simpa using map_dvd (f.pullbackSnd g) (hφ hmk)
+      exact RingHom.pullback_natCast_pow_dvd_snd (hφ hmk)
   simp only [TauCeti.sModEq_span_singleton_pow_iff] at ha hb
   -- the limit `(a, b)` lies in the pullback because `T` is separated
   have hab : (a, b) ∈ f.pullback g := by

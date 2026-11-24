@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Teichmuller
 public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
 
 import Mathlib.NumberTheory.Basic
+import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
 # Functoriality of the tilt, the sharp map and Fontaine's map
@@ -136,15 +137,14 @@ theorem apply_untilt_eq_of_map_eq [IsAdicComplete (span {(p : A)}) A]
     {g : B →+* C} {u : PreTilt A p} {v : PreTilt B p} (h : map p f u = map p g v) :
     f u.untilt = g v.untilt := by
   refine (IsHausdorff.eq_iff_smodEq (I := span {(p : C)})).mpr fun k ↦ ?_
-  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
-    Ideal.mem_span_singleton]
+  rw [TauCeti.sModEq_span_singleton_pow_iff]
   -- `u♯` and `v♯` are the `p ^ k`-th powers of the sharps of the `p ^ k`-th roots of `u` and `v`,
   -- whose images under `f` and `g` agree modulo `p`
   have hdvd : (p : C) ∣ f (untilt ((frobeniusEquiv (PreTilt A p) p).symm^[k] u)) -
       g (untilt ((frobeniusEquiv (PreTilt B p) p).symm^[k] v)) := by
-    rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem, map_sub, sub_eq_zero,
-      ← ModP.map_mk, ← ModP.map_mk, ← coeff_eq_mk_untilt_iterate, ← coeff_eq_mk_untilt_iterate,
-      ← coeff_map, ← coeff_map, h]
+    have hk := congr(coeff k $h)
+    rwa [coeff_map, coeff_map, coeff_eq_mk_untilt_iterate, coeff_eq_mk_untilt_iterate,
+      ModP.map_mk, ModP.map_mk, Ideal.Quotient.eq, Ideal.mem_span_singleton] at hk
   rw [← untilt_iterate_frobeniusEquiv_symm_pow u k, ← untilt_iterate_frobeniusEquiv_symm_pow v k,
     map_pow, map_pow]
   exact (pow_dvd_pow _ k.le_succ).trans (dvd_sub_pow_of_dvd_sub hdvd k)
