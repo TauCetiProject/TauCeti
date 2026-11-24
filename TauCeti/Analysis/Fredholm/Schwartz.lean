@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Completion
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Normed.Operator.Surjective
 public import TauCeti.Analysis.Normed.Operator.NonlinearRightInverse
 public import TauCeti.Analysis.Normed.Module.Quotient
 public import TauCeti.Analysis.Fredholm.ClosedRange
-public import TauCeti.Analysis.Normed.Operator.Completion
+public import TauCeti.Topology.Algebra.LinearMapCompletion
 import TauCeti.LinearAlgebra.Prod
 
 /-!
