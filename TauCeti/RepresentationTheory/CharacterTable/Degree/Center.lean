@@ -75,6 +75,26 @@ private theorem antidiagonalHom_injective {G : Type*} [Group G] (Z : Subgroup H)
   rw [h1, mul_right_inj] at h2
   exact Prod.ext h1 (Subtype.ext h2)
 
+private theorem antidiagonalHom_apply {G : Type*} [Group G] (Z : Subgroup H) (ι : Z →* G)
+    (hι : ∀ z, ι z ∈ Subgroup.center G) (A : Subgroup G) (p : Z × A) :
+    antidiagonalHom Z ι hι A p = ((p.1 : H), (ι p.1)⁻¹ * p.2) :=
+  rfl
+
+/-- The image `{(z, ι(z)⁻¹ a)}` is central when `Z` and `A` are. -/
+private theorem antidiagonalHom_range_le_center {G : Type*} [Group G] {Z : Subgroup H}
+    (hZ : Z ≤ Subgroup.center H) (ι : Z →* G) (hι : ∀ z, ι z ∈ Subgroup.center G)
+    {A : Subgroup G} (hA : A ≤ Subgroup.center G) :
+    (antidiagonalHom Z ι hι A).range ≤ Subgroup.center (H × G) := by
+  rintro _ ⟨p, rfl⟩
+  rw [Subgroup.center_prod, Subgroup.mem_prod, antidiagonalHom_apply]
+  exact ⟨hZ p.1.property, mul_mem (inv_mem (hι p.1)) (hA p.2.property)⟩
+
+private theorem card_range_antidiagonalHom {G : Type*} [Group G] (Z : Subgroup H) (ι : Z →* G)
+    (hι : ∀ z, ι z ∈ Subgroup.center G) (A : Subgroup G) :
+    Nat.card (antidiagonalHom Z ι hι A).range = Nat.card Z * Nat.card A := by
+  rw [← Nat.card_prod]
+  exact Nat.card_congr (MonoidHom.ofInjective (antidiagonalHom_injective Z ι hι A)).toEquiv.symm
+
 end Helpers
 
 section Center
@@ -108,11 +128,8 @@ private theorem finrank_mul_pow_dvd_aux (ρ : Representation k H V) [ρ.IsIrredu
     have hinv (z : Z) : lam z⁻¹ * lam z = 1 := by
       rw [← map_mul_of_forall_apply_eq_smul (ρ.comp Z.subtype) hlam, inv_mul_cancel,
         map_one_of_forall_apply_eq_smul (ρ.comp Z.subtype) hlam]
-    let φ := antidiagonalHom Z ι hι A
-    have hφ : Function.Injective φ := antidiagonalHom_injective Z ι hι A
-    have hcard : Nat.card φ.range = Nat.card Z * Nat.card A := by
-      rw [← Nat.card_prod]
-      exact Nat.card_congr (MonoidHom.ofInjective hφ).toEquiv.symm
+    -- the next tensor power `ρ ⊠ σ` of `H × G`, with `Z` embedded in the first factor and
+    -- trivial on the central subgroup `{(z, ι(z)⁻¹ a)}`
     have key := @ih (H × G) _ (V ⊗[k] W) _ _ (ρ.externalTensor σ)
       (isIrreducible_externalTensor ρ σ inferInstance hσ)
       ((MonoidHom.inl H G).comp Z.subtype)
@@ -122,22 +139,16 @@ private theorem finrank_mul_pow_dvd_aux (ρ : Representation k H V) [ρ.IsIrredu
         induction w using TensorProduct.inductionOn with
         | tmul v w => simp [hlam, TensorProduct.smul_tmul']
         | add x y hx hy => simp_all)
-      φ.range
-      (by
-        rintro _ ⟨p, rfl⟩
-        refine Subgroup.mem_center_iff.mpr fun x => Prod.ext
-          (Subgroup.mem_center_iff.mp (hZ p.1.property) x.1) ?_
-        exact (Subgroup.mem_center_iff.mp (mul_mem (inv_mem (hι p.1)) (hA p.2.property)) x.2))
+      (antidiagonalHom Z ι hι A).range (antidiagonalHom_range_le_center hZ ι hι hA)
       (by
         rintro _ ⟨p, rfl⟩ w
         induction w using TensorProduct.inductionOn with
         | tmul v w =>
-          simp only [φ, antidiagonalHom, MonoidHom.coe_mk, OneHom.coe_mk, externalTensor_apply,
-            TensorProduct.map_tmul, map_mul, mul_apply_eq_comp, hAσ _ p.2.property, ← map_inv,
-            hισ, hlam, TensorProduct.smul_tmul, smul_smul]
-          rw [mul_comm, hinv, one_smul]
+          rw [antidiagonalHom_apply, externalTensor_apply, TensorProduct.map_tmul, map_mul,
+            mul_apply_eq_comp, hAσ _ p.2.property, ← map_inv, hισ, hlam, ← TensorProduct.smul_tmul,
+            smul_smul, hinv, one_smul]
         | add x y hx hy => simp_all)
-    rw [Module.finrank_tensorProduct, hcard, Nat.card_prod] at key
+    rw [Module.finrank_tensorProduct, card_range_antidiagonalHom, Nat.card_prod] at key
     calc finrank k W * finrank k V ^ (m + 1) * (Nat.card A * Nat.card Z ^ (m + 1))
         = finrank k V * finrank k W * finrank k V ^ m *
             (Nat.card Z * Nat.card A * Nat.card Z ^ m) := by ring
