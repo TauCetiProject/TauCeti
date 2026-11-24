@@ -11,8 +11,7 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Negligible
 import TauCeti.NumberTheory.Chebotarev.Density.Chebotarev
-import TauCeti.NumberTheory.Chebotarev.RamifiedPrimes
-import TauCeti.NumberTheory.Multiquadratic.Frobenius
+import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
@@ -24,7 +23,7 @@ all `i` have Dirichlet density `2^{-n}`.
 
 The route is Chebotarev for the multiquadratic field `M = ℚ(√d₁, …, √dₙ)`. Its Galois group is
 `(ℤ/2)ⁿ` (`TauCeti.Multiquadratic.galoisGroupEquiv`), so the signs `ε` pick out one automorphism
-`σ`, whose conjugacy class is `{σ}`. For an odd prime `p ∤ d₁ ⋯ dₙ`, unramified in `M`, the
+`σ`, whose conjugacy class is `{σ}`. An odd prime `p ∤ d₁ ⋯ dₙ` is unramified in `M`, and the
 arithmetic Frobenius at `p` sends `√dᵢ` to `(dᵢ/p) √dᵢ` (`NumberField.signPattern_frobenius`), so
 `p` lies in the Frobenius fibre of `σ` exactly when `(dᵢ/p) = εᵢ` for all `i`
 (`NumberField.mem_frobeniusPrimeSet_iff_signPattern`). The two sets of primes therefore differ
@@ -102,19 +101,15 @@ theorem hasDirichletDensity_setOf_jacobiSym_eq (d : ι → ℤ)
     (Submonoid.mem_center_iff.mpr fun c ↦ aut_commute hroot' c σ),
     card_aut_adjoin_range hroot' hindep]
   · simp
-  -- The two sets agree away from the primes dividing `2 d₁ ⋯ dₙ` and the ramified primes.
+  -- The two sets agree away from the primes dividing `2 d₁ ⋯ dₙ`.
   have hd0 (i : ι) : d i ≠ 0 := by
     intro h
     exact hindep {i} (Finset.singleton_nonempty i) (by simp [h])
   have hN : Ideal.span {(((2 * ∏ i, d i : ℤ)) : 𝓞 ℚ)} ≠ ⊥ := by
     simp [Finset.prod_eq_zero_iff, hd0]
-  refine ((Ideal.finite_factors hN).union
-    (NumberField.Chebotarev.ramifiedPrimes ℚ (adjoin ℚ (Set.range root))).finite_toSet).subset ?_
-  intro 𝔭 h𝔭
-  by_contra hout
-  simp only [Set.mem_union, Set.mem_ofPred_eq, Finset.mem_coe, not_or,
-    NumberField.Chebotarev.mem_ramifiedPrimes_iff, not_not, Ideal.dvd_span_singleton] at hout
-  obtain ⟨hN𝔭, hur⟩ := hout
+  refine (Ideal.finite_factors hN).subset fun 𝔭 h𝔭 ↦ ?_
+  by_contra hN𝔭
+  simp only [Set.mem_ofPred_eq, Ideal.dvd_span_singleton] at hN𝔭
   have h2 : ((2 : ℤ) : 𝓞 ℚ) ∉ 𝔭.asIdeal := fun h ↦ hN𝔭 (by
     rw [Int.cast_mul]; exact Ideal.mul_mem_right _ _ h)
   have hd (i : ι) : ((d i : ℤ) : 𝓞 ℚ) ∉ 𝔭.asIdeal := fun h ↦ hN𝔭 (by
@@ -123,7 +118,7 @@ theorem hasDirichletDensity_setOf_jacobiSym_eq (d : ι → ℤ)
     exact Ideal.mul_mem_left _ _ (Ideal.mul_mem_right _ _ h))
   have hiff : 𝔭 ∈ NumberField.Chebotarev.frobeniusPrimeSet ℚ (adjoin ℚ (Set.range root))
       (ConjClasses.mk σ) ↔ ∀ i, jacobiSym (d i) (Ideal.absNorm 𝔭.asIdeal) = ε i :=
-    (NumberField.mem_frobeniusPrimeSet_iff_signPattern hroot σ h2 hd hur).trans
+    (NumberField.mem_frobeniusPrimeSet_iff_signPattern hroot σ h2 hd).trans
       (forall_congr' fun i ↦ by rw [hσ]; exact (jacobiSym_eq_iff 𝔭 (hd i) (ε i)).symm)
   rw [Set.mem_symmDiff] at h𝔭
   rcases h𝔭 with ⟨hmem, hnot⟩ | ⟨hmem, hnot⟩

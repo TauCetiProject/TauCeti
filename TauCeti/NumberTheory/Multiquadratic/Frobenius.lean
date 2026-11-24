@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
-public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 public import TauCeti.NumberTheory.NumberField.Frobenius
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Group
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
-import TauCeti.NumberTheory.NumberField.Frobenius.Tower
-import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # Frobenius actions on multiquadratic generators
@@ -48,9 +44,6 @@ abstract `K`). For a Frobenius `σ` on `M` at a prime over `p`,
 * `NumberField.signPattern_frobenius` and
   `NumberField.galoisGroupEquiv_frobenius`: the Frobenius sign pattern on the
   multiquadratic field is the Legendre vector `((d₁/p), …, (dₙ/p))` under `Gal ≅ (ℤ/2)ⁿ`.
-* `NumberField.mem_frobeniusPrimeSet_iff_signPattern`: away from `2 d₁ ⋯ dₙ` and the ramified
-  primes, a prime lies in the Frobenius fibre of an automorphism `σ` of the multiquadratic field
-  exactly when its Legendre symbols at the `dᵢ` give the sign pattern of `σ`.
 * `TauCeti.Multiquadratic.isArithFrobAt_eq_one_iff_mod_eight`: for radicands `1` modulo `4`,
   Frobenius at `2` is trivial exactly when all radicands are `1` modulo `8`.
 * `TauCeti.Multiquadratic.signPattern_frobenius_two` and
@@ -180,64 +173,6 @@ theorem galoisGroupEquiv_frobenius [Finite ι] (hroot : ∀ i, root i ^ 2 = alge
   exact signPattern_frobenius hroot p hodd hcop Q hσ i
 
 end SignVector
-
-section FrobeniusPrimeSet
-
-open IsDedekindDomain TauCeti.Multiquadratic
-
-variable {L : Type*} [Field L] [CharZero L] {root : ι → L} {d : ι → ℤ}
-
-/-- **Frobenius fibres of a multiquadratic field by Legendre symbols.** Away from `2 d₁ ⋯ dₙ` and
-the ramified primes, a prime `𝔭` of `𝓞 ℚ` lies in the Frobenius fibre of the automorphism `σ` of
-`M = ℚ(√d₁, …, √dₙ)` exactly when its Legendre symbols at the `dᵢ` give the sign pattern of `σ`.
-No independence of the `dᵢ` is needed. -/
-theorem mem_frobeniusPrimeSet_iff_signPattern
-    [NumberField (IntermediateField.adjoin ℚ (Set.range root))]
-    [IsGalois ℚ (IntermediateField.adjoin ℚ (Set.range root))]
-    (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i))
-    (σ : IntermediateField.adjoin ℚ (Set.range root) ≃ₐ[ℚ]
-      IntermediateField.adjoin ℚ (Set.range root))
-    {𝔭 : HeightOneSpectrum (𝓞 ℚ)} (h2 : ((2 : ℤ) : 𝓞 ℚ) ∉ 𝔭.asIdeal)
-    (hd : ∀ i, ((d i : ℤ) : 𝓞 ℚ) ∉ 𝔭.asIdeal)
-    (hur : ∀ (Q : Ideal (𝓞 (IntermediateField.adjoin ℚ (Set.range root)))) [Q.IsPrime]
-      [Q.LiesOver 𝔭.asIdeal], Algebra.IsUnramifiedAt (𝓞 ℚ) Q) :
-    𝔭 ∈ Chebotarev.frobeniusPrimeSet ℚ (IntermediateField.adjoin ℚ (Set.range root))
-        (ConjClasses.mk σ) ↔
-      ∀ i, signPattern root σ i =
-        if jacobiSym (d i) (Ideal.absNorm 𝔭.asIdeal) = 1 then 0 else 1 := by
-  set p := Ideal.absNorm 𝔭.asIdeal
-  have : Fact p.Prime := ⟨Rat.HeightOneSpectrum.prime_absNorm_asIdeal 𝔭⟩
-  have hodd : p ≠ 2 := fun h ↦
-    h2 ((Rat.HeightOneSpectrum.intCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mpr
-      (by exact_mod_cast (show p ∣ 2 from h ▸ dvd_rfl)))
-  have hcop (i : ι) : ¬ (p : ℤ) ∣ d i := fun h ↦
-    hd i ((Rat.HeightOneSpectrum.intCast_mem_iff_absNorm_asIdeal_dvd 𝔭).mpr h)
-  rw [Chebotarev.mem_frobeniusPrimeSet_iff_artinSymbol_eq hur]
-  -- A Frobenius `τ` at a prime `Q` over `𝔭` represents the Artin symbol.
-  obtain ⟨Q, hQp, hQo⟩ :=
-    (inferInstance : Nonempty (𝔭.asIdeal.primesOver
-      (𝓞 (IntermediateField.adjoin ℚ (Set.range root)))))
-  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot 𝔭.ne_bot Q
-  obtain ⟨τ, hτ⟩ := exists_isArithFrobAt ℚ Q hQ
-  have hroot' : ∀ i, root i ^ 2 = algebraMap ℚ L (d i) := root_sq_algebraMap_rat hroot
-  rw [artinSymbol_eq_mk_of_isArithFrobAt 𝔭.asIdeal hur Q τ hτ, ConjClasses.mk_eq_mk_iff_isConj,
-    aut_isConj_iff_eq hroot']
-  have : Q.LiesOver (Ideal.span {(p : ℤ)}) := Rat.HeightOneSpectrum.liesOver_span_absNorm 𝔭 Q
-  have : 𝔭.asIdeal.LiesOver (Ideal.span {(p : ℤ)}) := Ideal.LiesOver.tower_bot Q 𝔭.asIdeal _
-  have hτℤ : IsArithFrobAt ℤ τ Q := isArithFrobAt_int_of_absNorm_eq 𝔭.asIdeal rfl Q hτ
-  have hsign := signPattern_frobenius hroot p hodd hcop Q hτℤ
-  -- An automorphism is determined by its sign pattern.
-  constructor
-  · rintro rfl i
-    rw [hsign, jacobiSym.legendreSym.to_jacobiSym]
-  · intro h
-    refine signHom_injective hroot' ?_
-    simp only [TauCeti.Multiquadratic.signHom_apply]
-    congr 1
-    funext i
-    rw [hsign, h, jacobiSym.legendreSym.to_jacobiSym]
-
-end FrobeniusPrimeSet
 
 end NumberField
 
