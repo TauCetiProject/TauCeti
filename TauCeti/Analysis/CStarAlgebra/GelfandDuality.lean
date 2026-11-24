@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Star.Unitization
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import Mathlib.Analysis.CStarAlgebra.Unitization
-public import Mathlib.Topology.ContinuousMap.StarOrdered
 public import TauCeti.Analysis.Normed.Algebra.Character.Unitization
 public import TauCeti.Analysis.Normed.Algebra.Character.ZeroAtInfty
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.OnePoint
 
-import TauCeti.Topology.Compactness.Compact
+import Mathlib.Algebra.Order.Star.Unitization
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import Mathlib.Topology.ContinuousMap.StarOrdered
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Nonunital Gelfand Duality

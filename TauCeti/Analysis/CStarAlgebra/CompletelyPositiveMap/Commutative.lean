@@ -5,25 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Star.Unitization
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
-public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.RCLike.ContinuousMap
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Topology.ContinuousMap.StarOrdered
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.GelfandDuality
 
 /-!
-# Positive maps with commutative unital domain or commutative range are completely positive
+# Positive maps with commutative unital domain or commutative codomain are completely positive
 
 A positive linear map `φ : A → B` between C⋆-algebras is completely positive as soon as `A` is
 commutative and unital, or `B` is commutative.
 
-*Commutative range* (`B` commutative, possibly nonunital). Positivity in `B` is tested by
+*Commutative codomain* (`B` commutative, possibly nonunital). Positivity in `B` is tested by
 characters (`TauCeti.nonneg_iff_forall_characterSpace_nonneg`, in
 `TauCeti.Analysis.CStarAlgebra.GelfandDuality`). For a character `χ` of `B`, the quadratic form
 `∑ᵢⱼ zᵢ⋆ φ(aᵢⱼ) zⱼ` of `[φ(aᵢⱼ)]` maps to the value `ω(∑ᵢⱼ ξᵢ⋆ ξⱼ aᵢⱼ)` of the positive
