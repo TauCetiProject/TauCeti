@@ -78,14 +78,15 @@ theorem tracelessRicci_apply (r : FourTensor V) :
   ext; simp [tracelessRicci, div_eq_inv_mul, sub_eq_add_neg]
 
 /-- The trace-free Ricci contraction has zero metric trace in every dimension. -/
-@[simp] theorem bilinFormTrace_tracelessRicci (r : FourTensor V) :
-    bilinFormTrace (tracelessRicci r) = 0 := by
+@[simp] theorem metricTrace_tracelessRicci (r : FourTensor V) :
+    LinearMap.BilinMap.metricTrace (tracelessRicci r) = 0 := by
   by_cases hn : Module.finrank ℝ V = 0
   · have : Subsingleton V := Module.finrank_zero_iff.mp hn
     simp [Subsingleton.elim (tracelessRicci r) 0]
-  · have hsub := map_sub bilinFormTrace (ricci r) ((scalar r / Module.finrank ℝ V) • innerₗ V)
-    rw [tracelessRicci_apply, hsub, map_smul, bilinFormTrace_inner, ← scalar_apply, smul_eq_mul,
-      div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hn), sub_self]
+  · have hsub := map_sub LinearMap.BilinMap.metricTrace (ricci r)
+      ((scalar r / Module.finrank ℝ V) • innerₗ V)
+    rw [tracelessRicci_apply, hsub, map_smul, LinearMap.BilinMap.metricTrace_inner, ← scalar_apply,
+      smul_eq_mul, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hn), sub_self]
 
 /-- On a space of dimension at most `1`, `tracelessRicci r = 0` for every four-tensor `r`. -/
 theorem tracelessRicci_eq_zero_of_finrank_le_one (r : FourTensor V)
@@ -95,7 +96,7 @@ theorem tracelessRicci_eq_zero_of_finrank_le_one (r : FourTensor V)
   · let b : OrthonormalBasis (Fin 1) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr h1)
     refine b.toBasis.ext fun i ↦ b.toBasis.ext fun j ↦ ?_
     rcases Fin.eq_zero i with rfl; rcases Fin.eq_zero j with rfl
-    simp [tracelessRicci_apply, scalar_apply, bilinFormTrace_eq_sum _ b, h1]
+    simp [tracelessRicci_apply, scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b, h1]
 
 /-- `tracelessRicci r` is symmetric iff `ricci r` is symmetric. -/
 @[simp] theorem isSymm_tracelessRicci_iff {r : FourTensor V} :
@@ -193,7 +194,7 @@ theorem IsAlgebraicCurvature.isSymmetric_tracelessRicciEndomorphism {r : FourTen
 /-- The trace of `tracelessRicciEndomorphism r` vanishes in every dimension. -/
 @[simp] theorem trace_tracelessRicciEndomorphism (r : FourTensor V) :
     LinearMap.trace ℝ V (tracelessRicciEndomorphism r) = 0 :=
-  (tracelessRicci r).trace_bilinFormToEnd.trans (bilinFormTrace_tracelessRicci r)
+  (tracelessRicci r).trace_bilinFormToEnd.trans (metricTrace_tracelessRicci r)
 
 /-! ### Scalar, trace-free Ricci, and Weyl curvature parts -/
 
@@ -312,14 +313,14 @@ theorem scalar_scalarPart (hdim : Module.finrank ℝ V ≠ 1) (r : FourTensor V)
 @[simp] theorem scalar_tracelessRicciPart (r : FourTensor V) :
     scalar (tracelessRicciPart r) = 0 := by
   rw [tracelessRicciPart_apply, map_smul, scalar_kulkarniNomizu_innerₗ,
-    bilinFormTrace_tracelessRicci, mul_zero, smul_zero]
+    metricTrace_tracelessRicci, mul_zero, smul_zero]
 
 /-- For `finrank ℝ V ≠ 2`, `ricci (tracelessRicciPart r) = tracelessRicci r`. -/
 theorem ricci_tracelessRicciPart (hdim : Module.finrank ℝ V ≠ 2) (r : FourTensor V) :
     ricci (tracelessRicciPart r) = tracelessRicci r := by
   have hn2 : ((Module.finrank ℝ V : ℝ) - 2) ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hdim)
   rw [tracelessRicciPart_apply, map_smul, ricci_kulkarniNomizu_innerₗ,
-    bilinFormTrace_tracelessRicci, zero_smul, add_zero, inv_smul_smul₀ hn2]
+    metricTrace_tracelessRicci, zero_smul, add_zero, inv_smul_smul₀ hn2]
 
 /-- For `finrank ℝ V ≠ 2`, `tracelessRicci (tracelessRicciPart r) = tracelessRicci r`. -/
 theorem tracelessRicci_tracelessRicciPart (hdim : Module.finrank ℝ V ≠ 2) (r : FourTensor V) :
