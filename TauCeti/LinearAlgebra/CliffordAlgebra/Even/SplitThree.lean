@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.Algebra.Quaternion.Split
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Odd
 import Mathlib.Tactic.FinCases
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 
 /-!
 # The even Clifford algebra of the split ternary form
@@ -64,13 +65,15 @@ theorem splitOddOneToMatrix_apply (m : SplitOddSpace R 1) :
     splitOddOneToMatrix R m = !![m.2, m.1.2 0; m.1.1 (fun _ ↦ 1), -m.2] :=
   (rfl)
 
+variable {R} in
+private theorem fin_one_eq_smul (y : Fin 1 → R) : y = y 0 • fun _ ↦ 1 := by
+  ext i
+  fin_cases i
+  simp
+
 private theorem splitOddForm_one_apply (m : SplitOddSpace R 1) :
     splitOddForm R 1 m = m.1.2 0 * m.1.1 (fun _ ↦ 1) + m.2 * m.2 := by
-  have h : m.1.2 = m.1.2 0 • (fun _ : Fin 1 ↦ (1 : R)) := by
-    ext i
-    fin_cases i
-    simp
-  rw [splitOddForm_apply, h, map_smul, smul_eq_mul]
+  rw [splitOddForm_apply, fin_one_eq_smul m.1.2, map_smul, smul_eq_mul]
   simp
 
 /-- The matrix of a vector `m` squares to `q₃(m)` times the identity, so `splitOddOneToMatrix`
@@ -102,13 +105,9 @@ private theorem eq_vec (m : SplitOddSpace R 1) :
   obtain ⟨⟨φ, x⟩, z⟩ := m
   refine Prod.ext (Prod.ext ?_ ?_) ?_
   · refine LinearMap.ext fun y ↦ ?_
-    have hy : y = y 0 • (fun _ : Fin 1 ↦ (1 : R)) := by
-      ext i
-      fin_cases i
-      simp
     simp only [vecE, vecF, vecU, Prod.fst_add, Prod.smul_fst, smul_zero, zero_add, add_zero,
       LinearMap.smul_apply, LinearMap.proj_apply, smul_eq_mul]
-    conv_lhs => rw [hy, map_smul, smul_eq_mul]
+    conv_lhs => rw [fin_one_eq_smul y, map_smul, smul_eq_mul]
     ring
   · ext i
     fin_cases i
@@ -123,11 +122,6 @@ private noncomputable def cE : CliffordAlgebra (splitOddForm R 1) := ι _ (vecE 
 private noncomputable def cF : CliffordAlgebra (splitOddForm R 1) := ι _ (vecF R)
 /-- The generator `ι u`. -/
 private noncomputable def cU : CliffordAlgebra (splitOddForm R 1) := ι _ (vecU R)
-
-private theorem coe_even_ι (m₁ m₂ : SplitOddSpace R 1) :
-    ((even.ι (splitOddForm R 1)).bilin m₁ m₂ : CliffordAlgebra (splitOddForm R 1)) =
-      ι _ m₁ * ι _ m₂ :=
-  rfl
 
 private theorem ι_vecE : ι (splitOddForm R 1) (vecE R) = cE R := rfl
 private theorem ι_vecF : ι (splitOddForm R 1) (vecF R) = cF R := rfl
@@ -182,7 +176,7 @@ private theorem cl_mul_assoc (a b c : CliffordAlgebra (splitOddForm R 1)) :
     a * (b * c) = a * b * c :=
   (mul_assoc a b c).symm
 
-attribute [local simp] coe_even_ι ι_vecE ι_vecF ι_vecU cE_mul_cE cF_mul_cF cU_mul_cU cF_mul_cE
+attribute [local simp] ι_vecE ι_vecF ι_vecU cE_mul_cE cF_mul_cF cU_mul_cU cF_mul_cE
   cU_mul_cE cU_mul_cF mul_cE_mul_cE mul_cF_mul_cF mul_cU_mul_cU mul_cF_mul_cE mul_cU_mul_cE
   mul_cU_mul_cF cl_mul_assoc mul_add add_mul mul_sub sub_mul
 
@@ -219,9 +213,9 @@ private theorem splitOddOneEvenToMatrix_ι (m₁ m₂ : SplitOddSpace R 1) :
 private theorem splitOddOneEvenToMatrix_comp_liftHom :
     (splitOddOneEvenToMatrix R).comp (splitOddOneEvenBasis R).liftHom =
       QuaternionAlgebra.zeroOneNegOneEquivMatrix.toAlgHom := by
-  ext : 1 <;>
-  · simp [_root_.QuaternionAlgebra.Basis.liftHom, _root_.QuaternionAlgebra.Basis.lift,
-      splitOddOneEvenBasis, splitOddOneEvenToMatrix_ι, vecE, vecF, vecU, ← Matrix.cons_zero_zero]
+  ext : 1 <;> ext i j <;> fin_cases i <;> fin_cases j <;>
+    simp [_root_.QuaternionAlgebra.Basis.liftHom, _root_.QuaternionAlgebra.Basis.lift,
+      splitOddOneEvenBasis, splitOddOneEvenToMatrix_ι, vecE, vecF, vecU]
 
 private theorem liftHom_comp_symm_comp_splitOddOneEvenToMatrix :
     ((splitOddOneEvenBasis R).liftHom.comp

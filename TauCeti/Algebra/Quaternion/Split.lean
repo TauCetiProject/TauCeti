@@ -220,8 +220,7 @@ noncomputable def zeroOneNegOneEquivMatrix :
   right_inv M := by
     rw [AlgHom.toFun_eq_coe, zeroOneNegOneMatrixBasis_liftHom_apply]
     ext i j
-    fin_cases i <;> fin_cases j <;> simp
-    ring
+    fin_cases i <;> fin_cases j <;> simp [sub_eq_add_neg]
 
 /-- The splitting of `ℍ[R, 0, 1, -1]` on an arbitrary quaternion. -/
 @[simp]
