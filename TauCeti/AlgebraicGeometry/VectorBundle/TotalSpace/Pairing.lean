@@ -71,40 +71,6 @@ noncomputable section
 
 variable {X : Scheme.{u}} (E : FiniteLocallyFreeSheaf X)
 
-/-- The section `s` of a point `e'` of `𝕍(E^∨) = Spec_X (Sym E^∨∨)`, seen as a section of `q^* E^∨`,
-evaluated by the linear functional on `q^* E^∨` of a point `e` of `𝕍(E) = Spec_X (Sym E^∨)`, is
-the linear functional `φ` of `e'` applied to the section `s` of `e`: both are `φ ∘ s`. This is
-the form of the pairing that is visibly natural in the test scheme. -/
-@[reassoc]
-private theorem totalSpaceHomEquiv_dual_comp_functional {T : Over X}
-    (e : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj E))
-    (e' : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj (dual E))) :
-    totalSpaceHomEquiv (dual E) T e' ≫
-        relativeSpecSymmetricAlgebraPullbackHomEquiv ((toQuasicoherent X).obj (dual E)) T e =
-      totalSpaceHomEquiv E T e ≫ totalSpaceDualHomEquiv E T e' := by
-  have hφ : totalSpaceDualHomEquiv E T e' =
-      uncurry' (totalSpaceHomEquiv (dual E) T e' ≫
-          (pullbackIhomComparison E.obj T.hom).app (𝟙_ X.Modules)) ≫
-        (Scheme.Modules.pullbackObjUnitIso T.hom).hom :=
-    (totalSpaceDualHomEquiv_apply E T e').trans
-      (congrArg (· ≫ _) (totalSpaceIhomHomEquiv_apply E (𝟙_ _) T e'))
-  rw [hφ, totalSpaceHomEquiv_apply E T e]
-  -- Evaluating at a section `s` of `M = q^* E` is the transpose of composing with `s`.
-  have key (s : 𝟙_ T.left.Modules ⟶ (Scheme.Modules.pullback T.hom).obj E.obj)
-      (D : 𝟙_ T.left.Modules ⟶
-        (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).obj (𝟙_ T.left.Modules)) :
-      s ≫ uncurry' D = D ≫ (Scheme.Modules.dualHomUnitEquiv _).symm s := by
-    rw [Scheme.Modules.dualHomUnitEquiv_symm_apply, uncurry', uncurry_eq,
-      rightUnitor_inv_naturality_assoc, ← whisker_exchange_assoc,
-      leftUnitor_inv_naturality_assoc, unitors_inv_equal]
-  have hnat (g : 𝟙_ T.left.Modules ⟶ (ihom ((Scheme.Modules.pullback T.hom).obj E.obj)).obj
-      ((Scheme.Modules.pullback T.hom).obj (𝟙_ X.Modules))) :
-      uncurry' g ≫ (Scheme.Modules.pullbackObjUnitIso T.hom).hom =
-        uncurry' (g ≫ (ihom _).map (Scheme.Modules.pullbackObjUnitIso T.hom).hom) := by
-    rw [uncurry', uncurry', uncurry_natural_right, Category.assoc]
-  rw [hnat, key, Equiv.symm_apply_apply]
-  simp only [Category.assoc, IsIso.hom_inv_id_assoc]
-
 /-- **The evaluation pairing of a vector bundle with its dual.** The morphism
 `⟨ , ⟩ : 𝕍(E) ×_X 𝕍(E^∨) ⟶ 𝕍(𝒪_X)` over `X` sending a pair of points, a section `s` of `q^* E` and
 a linear functional `φ` on `q^* E`, to the function `φ ∘ s`
