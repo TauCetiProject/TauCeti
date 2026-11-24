@@ -12,7 +12,6 @@ import Mathlib.Data.NNRat.Encodable
 import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 import TauCeti.Probability.IdentDistrib
-import TauCeti.Topology.Instances.NNRat
 
 /-!
 # Further properties of counting-path measures and law equivalences
@@ -54,14 +53,14 @@ times. -/
 theorem pathOccurrenceTime_congr {f g : ℝ≥0 → ℕ} (h : ∀ q : ℚ≥0, f q = g q) :
     pathOccurrenceTime f = pathOccurrenceTime g := by
   funext n
-  simp only [pathOccurrenceTime_def, Real.toNNReal_ratCast, h]
+  simp only [pathOccurrenceTime_eq_iInf_nnrat, h]
 
 /-- Larger counting paths have earlier jump times. -/
 theorem pathOccurrenceTime_anti {f g : ℝ≥0 → ℕ} (h : f ≤ g) (n : ℕ) :
     pathOccurrenceTime g n ≤ pathOccurrenceTime f n := by
-  simp only [pathOccurrenceTime_def, le_iInf_iff]
+  simp only [pathOccurrenceTime_eq_iInf_nnrat, le_iInf_iff]
   intro q hq
-  exact iInf_le_of_le q (iInf_le_of_le (hq.trans_le (h _)) le_rfl)
+  exact iInf₂_le q (hq.trans_le (h _))
 
 /-- A jump time is infinite precisely when the path stays at most `n` at all nonnegative rational
 times. -/
@@ -80,9 +79,9 @@ private theorem pathOccurrenceTime_eq_iInf_of_le {f : ℝ≥0 → ℕ} {n : ℕ}
     pathOccurrenceTime f n = ⨅ (t : ℝ≥0) (_ : n + 1 ≤ f t), (t : ℝ≥0∞) := by
   refine le_antisymm ?_ ?_
   · exact le_iInf fun t ↦ le_iInf fun ht ↦ h t ht
-  · simp only [pathOccurrenceTime_def, le_iInf_iff]
+  · simp only [pathOccurrenceTime_eq_iInf_nnrat, le_iInf_iff]
     intro q hq
-    exact iInf_le_of_le (Real.toNNReal q) (iInf_le_of_le (Nat.succ_le_iff.2 hq) le_rfl)
+    exact iInf₂_le (q : ℝ≥0) (Nat.succ_le_iff.2 hq)
 
 /-- On a monotone path, `pathOccurrenceTime` agrees with the infimum over all `t : ℝ≥0`, without
 assuming right-continuity. -/
@@ -129,6 +128,14 @@ theorem natFloor_countingPathMeasure_Iic {f : ℝ≥0 → ℕ} (hf : Monotone f)
   funext t
   simp [countingPathMeasure_Iic_of_continuousWithinAt hf (hrc t)]
 
+/-- Recovering cumulative counts on `(a, t]` from `countingPathMeasure f` reproduces
+`fun t ↦ f t - f a` whenever `f` is monotone and right-continuous. -/
+theorem natFloor_countingPathMeasure_Ioc {f : ℝ≥0 → ℕ} (hf : Monotone f)
+    (hrc : IsRightContinuous f) (a : ℝ≥0) :
+    (fun t ↦ ⌊(countingPathMeasure f (Ioc a t)).toNNReal⌋₊) = fun t ↦ f t - f a := by
+  funext t
+  simp [countingPathMeasure_Ioc hf hrc a t]
+
 /-- On monotone right-continuous paths, `countingPathMeasure` is injective. -/
 theorem countingPathMeasure_inj {f g : ℝ≥0 → ℕ} (hf : Monotone f) (hrcf : IsRightContinuous f)
     (hg : Monotone g) (hrcg : IsRightContinuous g) :
@@ -150,12 +157,9 @@ theorem countingPathMeasure_add {f g : ℝ≥0 → ℕ} (hf : Monotone f) (hrcf 
     countingPathMeasure (f + g) = countingPathMeasure f + countingPathMeasure g := by
   have hadd : Monotone (f + g) := hf.add hg
   have hrc : IsRightContinuous (f + g) := hrcf.continuous_comp₂ hrcg continuous_add
-  refine Measure.ext_of_Iic' _ _ (fun t ↦ ?_) fun t ↦ ?_
-  · rw [countingPathMeasure_Iic_of_continuousWithinAt hadd (hrc t)]
-    exact ENNReal.natCast_ne_top _
-  · simp [countingPathMeasure_Iic_of_continuousWithinAt hadd (hrc t),
-      countingPathMeasure_Iic_of_continuousWithinAt hf (hrcf t),
-      countingPathMeasure_Iic_of_continuousWithinAt hg (hrcg t)]
+  refine ((eq_countingPathMeasure_iff hadd hrc).2 fun t ↦ ?_).symm
+  simp [countingPathMeasure_Iic_of_continuousWithinAt hf (hrcf t),
+    countingPathMeasure_Iic_of_continuousWithinAt hg (hrcg t)]
 
 /-- On a monotone right-continuous path, the atom at the origin equals the initial count `f 0`. -/
 @[simp]
@@ -176,9 +180,10 @@ theorem exists_lt_countingPathMeasure_singleton_eq {f : ℝ≥0 → ℕ} (hf : M
     (isIntegerValued_countingPathMeasure f).exists_nat_count_le_add_floor ht
   rw [countingPathMeasure_Ioc hf hrc, countingPathMeasure_Ioc hf hrc] at hs
   simp only [ENNReal.toNNReal_natCast, Nat.floor_natCast] at hs
-  have hle : countingPathMeasure f {t} ≤ countingPathMeasure f (Ioc s t) :=
-    measure_mono (singleton_subset_iff.2 ⟨hst, le_rfl⟩)
-  rw [countingPathMeasure_Ioc hf hrc s t] at hle
+  have hle : countingPathMeasure f {t} ≤ ((f t - f s : ℕ) : ℝ≥0∞) :=
+    Measure.measure_singleton_le_natCast_sub
+      (countingPathMeasure_Iic_of_continuousWithinAt hf (hrc s))
+      (countingPathMeasure_Iic_of_continuousWithinAt hf (hrc t)) hst
   have hfin : countingPathMeasure f {t} < ∞ :=
     hle.trans_lt (ENNReal.natCast_lt_top _)
   have hf0_s : f 0 ≤ f s := hf (zero_le (a := s))
@@ -201,9 +206,10 @@ theorem countingPathMeasure_singleton_le_one_iff {f : ℝ≥0 → ℕ} (hf : Mon
     have hsub' : f t - f s ≤ 1 := by exact_mod_cast hsub
     exact ⟨s, hst, by omega⟩
   · calc
-      countingPathMeasure f {t} ≤ countingPathMeasure f (Ioc s t) :=
-        measure_mono (singleton_subset_iff.2 ⟨hst, le_rfl⟩)
-      _ = ((f t - f s : ℕ) : ℝ≥0∞) := countingPathMeasure_Ioc hf hrc s t
+      countingPathMeasure f {t} ≤ ((f t - f s : ℕ) : ℝ≥0∞) :=
+        Measure.measure_singleton_le_natCast_sub
+          (countingPathMeasure_Iic_of_continuousWithinAt hf (hrc s))
+          (countingPathMeasure_Iic_of_continuousWithinAt hf (hrc t)) hst
       _ ≤ 1 := by
         have : f t - f s ≤ 1 := by omega
         exact_mod_cast this
@@ -236,13 +242,6 @@ theorem eq_countingPathMeasure_of_measure_Iic_eq {μ : Measure ℝ≥0} {f : ℝ
   have hrc : IsRightContinuous f := hf_eq ▸ μ.isRightContinuous_natFloor_Iic
   exact (eq_countingPathMeasure_iff hf hrc).2 hμ
 
-/-- Any measure on `ℝ≥0` whose cumulative masses agree with a natural-valued path `f` has
-occurrence times equal to `pathOccurrenceTime f`. -/
-theorem occurrenceTime_eq_pathOccurrenceTime_of_measure_Iic_eq {μ : Measure ℝ≥0} {f : ℝ≥0 → ℕ}
-    (hμ : ∀ t, μ (Iic t) = f t) :
-    μ.occurrenceTime = pathOccurrenceTime f := by
-  rw [eq_countingPathMeasure_of_measure_Iic_eq hμ, occurrenceTime_countingPathMeasure]
-
 /-- If the sample paths of `N` are monotone and right-continuous on one event of full measure, then
 the reconstructed measure `countingPathMeasure (N · ω)` has cumulative mass `N t ω` on `[0, t]`
 simultaneously at all times almost surely. -/
@@ -274,9 +273,8 @@ for any locally finite integer-valued measure. -/
 @[simp]
 theorem IsIntegerValued.pathOccurrenceTime_natFloor_Iic [IsLocallyFiniteMeasure μ]
     (hμ : μ.IsIntegerValued) :
-    pathOccurrenceTime (fun t ↦ ⌊(μ (Iic t)).toNNReal⌋₊) = μ.occurrenceTime :=
-  (occurrenceTime_eq_pathOccurrenceTime_of_measure_Iic_eq
-    fun t ↦ (hμ.natCast_natFloor_Iic t).symm).symm
+    pathOccurrenceTime (fun t ↦ ⌊(μ (Iic t)).toNNReal⌋₊) = μ.occurrenceTime := by
+  rw [← occurrenceTime_countingPathMeasure, hμ.countingPathMeasure_natFloor_Iic]
 
 /-- Reconstructing a temporal measure from its natural-valued counts on `(a, t]` retains the
 restriction to `(a, ∞)`. -/

@@ -240,15 +240,6 @@ theorem ae_forall_natFloor_toNNReal_Ioc_add_eq {Q : Measure Ω} {M₁ M₂ M₀ 
     (by simpa only [M, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using hadd)
   simpa only [M, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] using h
 
-/-- Two natural-valued random variables that agree almost surely with the cumulative masses of a
-random measure at ordered times `s ≤ t` are ordered almost surely. -/
-theorem ae_le_of_ae_measure_Iic_eq {P : Measure Ω} {X Y : Ω → ℕ} {s t : ℝ≥0}
-    (hs : ∀ᵐ ω ∂P, M ω (Iic s) = (X ω : ℝ≥0∞))
-    (ht : ∀ᵐ ω ∂P, M ω (Iic t) = (Y ω : ℝ≥0∞)) (hst : s ≤ t) :
-    ∀ᵐ ω ∂P, X ω ≤ Y ω := by
-  filter_upwards [hs, ht] with ω hωs hωt
-  exact Measure.le_of_measure_Iic_eq hωs hωt hst
-
 /-- A natural-valued process that agrees almost surely with the cumulative masses of a random
 measure simultaneously at all times is almost surely monotone. -/
 theorem ae_monotone_of_ae_forall_measure_Iic_eq {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
@@ -288,9 +279,11 @@ theorem isRightContinuous_natFloor_Iic (μ : Measure ℝ≥0) [IsLocallyFiniteMe
   have htoNat : Tendsto (fun s : ℝ≥0 ↦ ⌊((μ (Iic s)).toNNReal : ℝ)⌋.toNat)
       (𝓝[>] t) (pure ⌊((μ (Iic t)).toNNReal : ℝ)⌋.toNat) :=
     (tendsto_pure_pure Int.toNat _).comp hfloor
+  have hcoe (x : ℝ≥0) : ⌊(x : ℝ)⌋₊ = ⌊x⌋₊ :=
+    (Nat.floor_eq_iff x.coe_nonneg).2
+      ⟨by exact_mod_cast Nat.floor_le zero_le, by exact_mod_cast Nat.lt_floor_add_one x⟩
   rw [ContinuousWithinAt, nhds_discrete]
-  simp only [Int.floor_toNat] at htoNat
-  exact htoNat
+  simpa only [Int.floor_toNat, hcoe] using htoNat
 
 /-- For a locally finite measure on `ℝ≥0` and any cutoff `a`, the floored counts on `(a, t]` are
 monotone in `t`. -/

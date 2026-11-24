@@ -54,6 +54,8 @@ theorem ae_le_of_hasLaw_sub_poissonMeasure {Ω : Type*} [MeasurableSpace Ω] {P 
   have hd := (hlaw s t hst).natCast_poissonMeasure
   have hadm : Integrable (fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ)) P :=
     hs.integrable_map_cast_poissonMeasure.add hd.integrable_map_cast_poissonMeasure
+  -- Truncated subtraction only overestimates `N t`, and both sides have expectation `r * t`, so
+  -- equality holds almost surely.
   have hle : (fun ω ↦ (N t ω : ℝ)) ≤ᵐ[P] fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ) :=
     ae_of_all P fun ω ↦ by
       simpa only [← Nat.cast_add] using

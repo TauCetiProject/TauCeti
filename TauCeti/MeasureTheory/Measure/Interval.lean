@@ -67,6 +67,8 @@ longer windows linearly in their length, and so makes the measure locally finite
   natural numbers `m`, `n`, one has `m ≤ n`.
 * `MeasureTheory.Measure.measure_Ioc_eq_natCast_sub`: when `μ (Iic s)` and `μ (Iic t)` equal
   natural numbers `m` and `n`, `μ (Ioc s t)` equals `((n - m : ℕ) : ℝ≥0∞)`.
+* `MeasureTheory.Measure.measure_singleton_le_natCast_sub`: when `s < t` and `μ (Iic s)`,
+  `μ (Iic t)` equal natural numbers `m`, `n`, `μ {t}` is at most `((n - m : ℕ) : ℝ≥0∞)`.
 -/
 
 public section
@@ -109,6 +111,15 @@ theorem measure_Ioc_eq_natCast_sub {α : Type*} [LinearOrder α] [TopologicalSpa
       (by rw [hs]; exact ENNReal.natCast_ne_top _), hs, ht, ← ENNReal.natCast_sub]
   · have hmn : n ≤ m := le_of_measure_Iic_eq ht hs hts
     rw [Ioc_eq_empty_of_le hts, measure_empty, Nat.sub_eq_zero_of_le hmn, Nat.cast_zero]
+
+/-- If `s < t` and the cumulative measures `μ (Iic s)` and `μ (Iic t)` equal natural numbers `m`
+and `n`, then `μ {t}` is at most `((n - m : ℕ) : ℝ≥0∞)`. -/
+theorem measure_singleton_le_natCast_sub {α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [ClosedIicTopology α] [MeasurableSpace α] [OpensMeasurableSpace α]
+    {μ : Measure α} {s t : α} {m n : ℕ} (hs : μ (Iic s) = m) (ht : μ (Iic t) = n)
+    (hst : s < t) : μ {t} ≤ ((n - m : ℕ) : ℝ≥0∞) :=
+  (measure_mono (singleton_subset_iff.2 (mem_Ioc.2 ⟨hst, le_rfl⟩))).trans_eq
+    (measure_Ioc_eq_natCast_sub hs ht)
 
 section NegInvariant
 

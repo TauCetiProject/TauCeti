@@ -9,6 +9,7 @@ public import Mathlib.Data.NNRat.Defs
 public import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 public import TauCeti.Probability.PointProcess.OccurrenceTime.Reconstruction
 public import TauCeti.Topology.Order.Cadlag
+import Mathlib.Data.NNRat.Encodable
 import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.Topology.Instances.NNRat
 
@@ -55,6 +56,22 @@ theorem pathOccurrenceTime_def (N : ℝ≥0 → ℕ) (n : ℕ) :
       ⨅ (q : ℚ) (_ : n < N (Real.toNNReal q)), (Real.toNNReal q : ℝ≥0∞) :=
   (rfl)
 
+/-- Express `pathOccurrenceTime` as an infimum over nonnegative rational times `ℚ≥0`. -/
+theorem pathOccurrenceTime_eq_iInf_nnrat (N : ℝ≥0 → ℕ) (n : ℕ) :
+    pathOccurrenceTime N n = ⨅ (q : ℚ≥0) (_ : n < N q), ((q : ℝ≥0) : ℝ≥0∞) := by
+  refine le_antisymm ?_ ?_
+  · simp only [le_iInf_iff]
+    intro q hq
+    rw [pathOccurrenceTime_def]
+    refine iInf_le_of_le (q : ℚ) (iInf_le_of_le ?_ ?_)
+    · simpa only [Rat.cast_nnratCast, NNRat.toNNReal_cast] using hq
+    · simp only [Rat.cast_nnratCast, NNRat.toNNReal_cast, le_rfl]
+  · simp only [pathOccurrenceTime_def, le_iInf_iff]
+    intro q hq
+    refine iInf_le_of_le q.toNNRat (iInf_le_of_le ?_ ?_)
+    · simpa only [← Rat.toNNReal_cast] using hq
+    · simp only [← Rat.toNNReal_cast, le_rfl]
+
 /-- Path occurrence times are nondecreasing in their index, for every path. -/
 theorem monotone_pathOccurrenceTime (N : ℝ≥0 → ℕ) : Monotone (pathOccurrenceTime N) :=
   fun _ _ hnm ↦ iInf_mono fun _ ↦ iInf_mono' fun h ↦ ⟨hnm.trans_lt h, le_rfl⟩
@@ -63,33 +80,23 @@ theorem monotone_pathOccurrenceTime (N : ℝ≥0 → ℕ) : Monotone (pathOccurr
 already exceeds `n`. -/
 theorem pathOccurrenceTime_lt_iff (f : ℝ≥0 → ℕ) (n : ℕ) (b : ℝ≥0∞) :
     pathOccurrenceTime f n < b ↔ ∃ q : ℚ≥0, ((q : ℝ≥0) : ℝ≥0∞) < b ∧ n + 1 ≤ f q := by
-  simp only [pathOccurrenceTime_def, iInf_lt_iff]
-  constructor
-  · rintro ⟨q, hq, hb⟩
-    refine ⟨q.toNNRat, ?_, ?_⟩
-    · simpa only [← Real.toNNReal_ratCast] using hb
-    · simpa only [← Real.toNNReal_ratCast, Nat.succ_le_iff] using hq
-  · rintro ⟨q, hb, hq⟩
-    refine ⟨(q : ℚ), ?_, ?_⟩
-    · simpa only [Rat.cast_nnratCast, Real.toNNReal_nnratCast, Nat.succ_le_iff] using hq
-    · simpa only [Rat.cast_nnratCast, Real.toNNReal_nnratCast] using hb
+  simp only [pathOccurrenceTime_eq_iInf_nnrat, iInf_lt_iff, Nat.succ_le_iff]
+  exact ⟨fun ⟨q, hq, hb⟩ ↦ ⟨q, hb, hq⟩, fun ⟨q, hb, hq⟩ ↦ ⟨q, hq, hb⟩⟩
 
 /-- Exceeding `n` at a nonnegative rational time bounds the `n`-th jump time. -/
 theorem pathOccurrenceTime_le_nnrat {f : ℝ≥0 → ℕ} {n : ℕ} {q : ℚ≥0} (hq : n + 1 ≤ f q) :
     pathOccurrenceTime f n ≤ (q : ℝ≥0) := by
-  rw [pathOccurrenceTime_def]
-  refine iInf_le_of_le (q : ℚ) (iInf_le_of_le ?_ ?_)
-  · simpa only [Rat.cast_nnratCast, Real.toNNReal_nnratCast] using Nat.succ_le_iff.1 hq
-  · simp only [Rat.cast_nnratCast, Real.toNNReal_nnratCast, le_rfl]
+  rw [pathOccurrenceTime_eq_iInf_nnrat]
+  exact iInf₂_le q (Nat.succ_le_iff.1 hq)
 
 /-- Extracting the `n`-th jump time is measurable whenever the process is measurable at
 nonnegative rational times. -/
 theorem measurable_pathOccurrenceTime_of_nnrat {Ω : Type*} [MeasurableSpace Ω]
     {N : ℝ≥0 → Ω → ℕ} (hN : ∀ q : ℚ≥0, Measurable (N q)) (n : ℕ) :
     Measurable fun ω ↦ pathOccurrenceTime (N · ω) n := by
-  simp only [pathOccurrenceTime_def, Real.toNNReal_ratCast, iInf_eq_if]
+  simp only [pathOccurrenceTime_eq_iInf_nnrat, iInf_eq_if]
   exact Measurable.iInf fun q ↦
-    measurable_const.ite (measurableSet_lt measurable_const (hN q.toNNRat)) measurable_const
+    measurable_const.ite (measurableSet_lt measurable_const (hN q)) measurable_const
 
 /-- Extracting the jump-time sequence is measurable whenever the process is measurable at
 nonnegative rational times. -/
@@ -104,20 +111,23 @@ theorem measurable_pathOccurrenceTime (n : ℕ) :
     Measurable fun N : ℝ≥0 → ℕ ↦ pathOccurrenceTime N n :=
   measurable_pathOccurrenceTime_of_nnrat (fun q ↦ measurable_pi_apply (q : ℝ≥0)) n
 
+private theorem exists_nnrat_btwn_lt {t : ℝ≥0} {b : ℝ≥0∞} (h : (t : ℝ≥0∞) < b) :
+    ∃ q : ℚ≥0, t < (q : ℝ≥0) ∧ ((q : ℝ≥0) : ℝ≥0∞) < b := by
+  obtain ⟨r, hr0, htr, hrb⟩ := ENNReal.lt_iff_exists_rat_btwn.1 h
+  let q : ℚ≥0 := ⟨r, hr0⟩
+  have hcoe : Real.toNNReal r = (q : ℝ≥0) := by
+    simpa [q] using NNRat.toNNReal_cast q
+  rw [hcoe] at htr hrb
+  exact ⟨q, ENNReal.coe_lt_coe.1 htr, hrb⟩
+
 /-- If `f` stays at least `n + 1` throughout a nonempty open interval `(t, δ)`, then
 `pathOccurrenceTime f n ≤ t`, without global monotonicity or right-continuity assumptions. -/
 theorem pathOccurrenceTime_le_of_forall_Ioo {f : ℝ≥0 → ℕ} {t δ : ℝ≥0} (hδ : t < δ) {n : ℕ}
     (h : ∀ s ∈ Ioo t δ, n + 1 ≤ f s) : pathOccurrenceTime f n ≤ t := by
   refine le_of_forall_gt fun b hb ↦ ?_
-  obtain ⟨q, hq0, htq, hqb⟩ :=
-    ENNReal.lt_iff_exists_rat_btwn.1 (lt_min hb (ENNReal.coe_lt_coe.2 hδ))
-  let r : ℚ≥0 := ⟨q, hq0⟩
-  have hcoe : Real.toNNReal q = (r : ℝ≥0) := by
-    simpa [r] using Real.toNNReal_nnratCast r
-  rw [hcoe] at htq hqb
+  obtain ⟨q, htq, hqb⟩ := exists_nnrat_btwn_lt (lt_min hb (ENNReal.coe_lt_coe.2 hδ))
   exact (pathOccurrenceTime_le_nnrat
-    (h r ⟨ENNReal.coe_lt_coe.1 htq,
-      ENNReal.coe_lt_coe.1 (hqb.trans_le (min_le_right _ _))⟩)).trans_lt
+    (h q ⟨htq, ENNReal.coe_lt_coe.1 (hqb.trans_le (min_le_right _ _))⟩)).trans_lt
     (hqb.trans_le (min_le_left _ _))
 
 /-- On a monotone path, reaching `n + 1` at any real time `t` bounds `pathOccurrenceTime f n` by
@@ -147,9 +157,9 @@ theorem tendsto_pathOccurrenceTime_nhds_top {f : ℝ≥0 → ℕ} (hf : Monotone
   have hxq : x < (q : ℝ≥0) := (Nat.le_ceil x).trans_lt (by simp [q])
   filter_upwards [eventually_ge_atTop (f q)] with n hn
   refine (ENNReal.coe_lt_coe.2 hxq).trans_le ?_
-  simp only [pathOccurrenceTime_def, Real.toNNReal_ratCast, le_iInf_iff]
+  simp only [pathOccurrenceTime_eq_iInf_nnrat, le_iInf_iff]
   intro r hr
-  refine ENNReal.coe_le_coe.2 (le_of_not_gt fun hqr : (r.toNNRat : ℝ≥0) < q ↦ ?_)
+  refine ENNReal.coe_le_coe.2 (le_of_not_gt fun hqr : (r : ℝ≥0) < q ↦ ?_)
   exact not_le_of_gt (Nat.lt_succ_of_le ((hf hqr.le).trans hn)) (Nat.succ_le_iff.2 hr)
 
 /-- The counting measure of a natural-valued path, with one occurrence at each finite

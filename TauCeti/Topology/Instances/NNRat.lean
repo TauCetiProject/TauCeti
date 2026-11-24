@@ -22,8 +22,8 @@ The canonical coercions `ℚ≥0 → ℝ≥0` and `ℚ≥0 → ℝ` are isometri
   preservation under `ℚ≥0 → ℝ≥0`.
 * `NNRat.dist_cast_real`, `NNRat.nndist_cast_real`, `NNRat.edist_cast_real`: metric preservation
   under `ℚ≥0 → ℝ`.
-* `Real.toNNReal_nnratCast`, `Real.toNNReal_ratCast`: compatibility of `Real.toNNReal` with
-  coercions from `ℚ≥0` and `ℚ`.
+* `NNRat.toNNReal_cast`, `Rat.toNNReal_cast`: compatibility of `Real.toNNReal` with coercions from
+  `ℚ≥0` and `ℚ`.
 -/
 
 public section
@@ -82,23 +82,26 @@ theorem nndist_cast_real (x y : ℚ≥0) : nndist (x : ℝ) (y : ℝ) = nndist x
 theorem edist_cast_real (x y : ℚ≥0) : edist (x : ℝ) (y : ℝ) = edist x y :=
   isometry_cast_real.edist_eq x y
 
+/-- Applying `Real.toNNReal` to a nonnegative rational coerced to `ℝ` recovers `(r : ℝ≥0)`. -/
+@[simp, norm_cast]
+theorem toNNReal_cast (r : ℚ≥0) : Real.toNNReal (r : ℝ) = (r : ℝ≥0) := by
+  apply NNReal.eq
+  rw [Real.coe_toNNReal _ (NNRat.cast_nonneg r), NNRat.cast_def (K := ℝ),
+    NNRat.cast_def (K := ℝ≥0), NNReal.coe_div, NNReal.coe_natCast, NNReal.coe_natCast]
+
 end NNRat
 
-namespace Real
+namespace Rat
 
 open scoped NNRat
 
-/-- Applying `Real.toNNReal` to a nonnegative rational coerced to `ℝ` recovers `(r : ℝ≥0)`. -/
-@[simp, norm_cast]
-theorem toNNReal_nnratCast (r : ℚ≥0) : Real.toNNReal (r : ℝ) = (r : ℝ≥0) := by
-  apply NNReal.eq
-  rw [Real.coe_toNNReal (r : ℝ) (NNRat.cast_nonneg r)]
-  exact (map_nnratCast (Rat.castHom ℝ) r).trans (map_nnratCast NNReal.toRealHom r).symm
-
 /-- Applying `Real.toNNReal` to a rational coerced to `ℝ` agrees with coercing `q.toNNRat`. -/
-theorem toNNReal_ratCast (q : ℚ) : Real.toNNReal (q : ℝ) = (q.toNNRat : ℝ≥0) := by
-  rw [← Real.toNNReal_nnratCast q.toNNRat]
-  apply NNReal.eq
-  simp [Rat.toNNRat, Real.coe_toNNReal']
+theorem toNNReal_cast (q : ℚ) : Real.toNNReal (q : ℝ) = (q.toNNRat : ℝ≥0) := by
+  by_cases hq : 0 ≤ q
+  · conv_lhs => rw [← Rat.coe_toNNRat q hq, Rat.cast_nnratCast]
+    exact NNRat.toNNReal_cast q.toNNRat
+  · have hle : q ≤ 0 := le_of_not_ge hq
+    rw [Real.toNNReal_of_nonpos (Rat.cast_nonpos.2 hle), Rat.toNNRat_of_nonpos hle,
+      NNRat.cast_zero]
 
-end Real
+end Rat
