@@ -29,13 +29,15 @@ No finiteness or countability of the index set is needed: a union of open balls 
 preimage under `ballIndex` is the union of an open set and a closed set.
 
 For a finite, nonempty, linearly ordered index set and parameters that need not be separated,
-`TauCeti.nearestIndex θ y`, in `TauCeti.MeasureTheory.MeasurableSpace.Metric`, is the least index
-of a nearest parameter to `y`; it is measurable and
+`TauCeti.nearestIndex θ y`, in `TauCeti.Topology.MetricSpace.HausdorffDistance`, is the least
+index of a nearest parameter to `y` (measurable by `TauCeti.measurable_nearestIndex`, in
+`TauCeti.MeasureTheory.MeasurableSpace.Metric`), and
 `dist (θ (nearestIndex θ y)) (θ j) ≤ 2 * dist y (θ j)` for every `j`.
 
 ## Main results
 
-* `TauCeti.comp_map_ballIndex_compl_le`: the error of the test `κ.map (ballIndex θ s i₀)`.
+* `TauCeti.comp_map_ballIndex_compl_le`: the error of the test `κ.map (ballIndex θ s i₀)`, for
+  parameters whose balls of radius `s` are pairwise disjoint.
 * `TauCeti.le_max_measure_dist_ge_of_test`: every estimator is dominated by a test.
 
 ## References
@@ -59,10 +61,12 @@ namespace TauCeti
 variable {ι X Y : Type*} [PseudoMetricSpace Y] [MeasurableSpace X] [MeasurableSpace Y]
   [OpensMeasurableSpace Y] [MeasurableSpace ι] [MeasurableSingletonClass ι]
 
-/-- For `2 s`-separated parameters, the error of the test `κ.map (ballIndex θ s i₀)` at `i` is at
-most the probability that the estimate `κ` is at distance at least `s` from `θ i`. -/
+open Function in
+/-- If the balls of radius `s` around the parameters are pairwise disjoint, the error of the test
+`κ.map (ballIndex θ s i₀)` at `i` is at most the probability that the estimate `κ` is at distance
+at least `s` from `θ i`. -/
 theorem comp_map_ballIndex_compl_le {θ : ι → Y} {s : ℝ}
-    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) (κ : Kernel X Y) (μ : Measure X)
+    (hθ : Pairwise (Disjoint on fun i ↦ ball (θ i) s)) (i₀ : ι) (κ : Kernel X Y) (μ : Measure X)
     (i : ι) : (κ.map (ballIndex θ s i₀) ∘ₘ μ) {i}ᶜ ≤ (κ ∘ₘ μ) {y | s ≤ dist y (θ i)} := by
   rw [← Measure.map_comp _ _ (measurable_ballIndex hθ i₀),
     Measure.map_apply (measurable_ballIndex hθ i₀) (measurableSet_singleton i).compl]
@@ -75,8 +79,8 @@ theorem le_max_measure_dist_ge_of_test [Nonempty ι] (P : ι → Measure X) (θ 
     (hs : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (κ : Kernel X Y) [IsMarkovKernel κ] :
     ∃ ψ : Kernel X ι, IsMarkovKernel ψ ∧
       ∀ i, (ψ ∘ₘ P i) {i}ᶜ ≤ (κ ∘ₘ P i) {y | s ≤ dist y (θ i)} :=
-  ⟨κ.map (ballIndex θ s (Classical.arbitrary ι)),
-    Kernel.IsMarkovKernel.map κ (measurable_ballIndex hs _),
-    fun i ↦ comp_map_ballIndex_compl_le hs _ κ (P i) i⟩
+  have hd := pairwise_disjoint_ball_of_two_mul_le_dist hs
+  ⟨κ.map (ballIndex θ s (Classical.arbitrary ι)), Kernel.IsMarkovKernel.map κ
+    (measurable_ballIndex hd _), fun i ↦ comp_map_ballIndex_compl_le hd _ κ (P i) i⟩
 
 end TauCeti

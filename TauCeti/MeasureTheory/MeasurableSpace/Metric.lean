@@ -37,8 +37,8 @@ constant in the first variable.
 * `IsCompact.exists_enorm_sub_sum_indicator_le` — a function continuous on a product of compact
   sets and zero outside it is uniformly close to a function that is piecewise constant in the
   first variable on a finite measurable partition, with values the slices at the centres.
-* `TauCeti.measurable_ballIndex` — for `2 s`-separated points `θ i`, the index of the ball of
-  radius `s` containing a point is measurable, for an arbitrary index type.
+* `TauCeti.measurable_ballIndex` — for points `θ i` with pairwise disjoint balls of radius `s`,
+  the index of the ball containing a point is measurable, for an arbitrary index type.
 * `TauCeti.measurable_nearestIndex` — for finitely many points `θ i` indexed by a nonempty linear
   order, the least index of a nearest point (`TauCeti.nearestIndex`, in
   `TauCeti.Topology.MetricSpace.HausdorffDistance`) is measurable.
@@ -189,13 +189,14 @@ theorem _root_.IsCompact.exists_enorm_sub_sum_indicator_le {α β E : Type*} [Me
   · simp [Finset.sum_eq_zero fun i _ ↦ indicator_of_notMem (fun h ↦ hx (hPs i h).1) _,
       hK0 x y fun h ↦ hx h.1]
 
-/-- For `2 s`-separated points, `ballIndex θ s i₀` is measurable, for every σ-algebra on the
-index set and with no countability assumption: every preimage is the union of an open set and a
-closed set. -/
+open Function in
+/-- When the balls of radius `s` around the `θ i` are pairwise disjoint, `ballIndex θ s i₀` is
+measurable, for every σ-algebra on the index set and with no countability assumption: every
+preimage is the union of an open set and a closed set. -/
 @[fun_prop]
 theorem measurable_ballIndex {ι Y : Type*} [PseudoMetricSpace Y] [MeasurableSpace Y]
     [OpensMeasurableSpace Y] [MeasurableSpace ι] {θ : ι → Y} {s : ℝ}
-    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) :
+    (hθ : Pairwise (Disjoint on fun i ↦ ball (θ i) s)) (i₀ : ι) :
     Measurable (ballIndex θ s i₀) := fun A _ ↦ by
   rw [ballIndex_preimage hθ i₀ A]
   exact (isOpen_biUnion fun i _ ↦ isOpen_ball).measurableSet.union

@@ -51,12 +51,13 @@ preserving both containment and pairwise disjointness.
   `TauCeti.continuousOn_sphere_of_closedBall_subset`: a sphere inside a family of pairwise disjoint
   closed balls contained in `U` avoids the centres and inherits continuity from `U \ T`.
 
-For a family `θ : ι → Y` of points of a pseudometric space with `2 s ≤ dist (θ i) (θ j)` for
-`i ≠ j`, the open balls of radius `s` around them are pairwise disjoint, so a point of `Y` has a
+For a family `θ : ι → Y` of points of a pseudometric space whose open balls of radius `s` are
+pairwise disjoint (for example when `2 s ≤ dist (θ i) (θ j)` for `i ≠ j`), a point of `Y` has a
 well-defined ball index: `TauCeti.ballIndex θ s i₀ y` is the index of the ball containing `y`, and
 the default `i₀` when `y` lies in no ball.
 
-* `TauCeti.pairwise_disjoint_ball_of_two_mul_le_dist`: the balls are pairwise disjoint.
+* `TauCeti.pairwise_disjoint_ball_of_two_mul_le_dist`: for `2 s`-separated points the balls are
+  pairwise disjoint.
 * `TauCeti.mem_ball_ballIndex`: with no separation hypothesis, a point lying in some ball lies in
   the ball of its index.
 * `TauCeti.ballIndex_eq_iff`: `ballIndex θ s i₀ y = i` exactly when `y` lies in the ball around
@@ -146,12 +147,15 @@ theorem pairwise_disjoint_ball_of_two_mul_le_dist {ι Y : Type*} [PseudoMetricSp
 
 section BallIndex
 
+open Function
+
 variable {ι Y : Type*} [PseudoMetricSpace Y]
 
 /-- The index of the open ball of radius `s` around a point `θ i` that contains `y`, and `i₀`
 when `y` lies in no such ball: the extension (`Function.extend`) of the index projection
 `Σ i, ball (θ i) s → ι` along the point projection `Σ i, ball (θ i) s → Y`, with the constant
-default `i₀`. For `2 s`-separated points the balls are pairwise disjoint, so the index is unique
+default `i₀`. When the balls are pairwise disjoint (for example for `2 s`-separated points,
+`TauCeti.pairwise_disjoint_ball_of_two_mul_le_dist`) the index is unique
 (`TauCeti.ballIndex_eq_of_mem_ball`); in general it is the index of some ball containing `y`
 (`TauCeti.mem_ball_ballIndex`). -/
 noncomputable def ballIndex (θ : ι → Y) (s : ℝ) (i₀ : ι) (y : Y) : ι :=
@@ -167,12 +171,11 @@ theorem mem_ball_ballIndex {θ : ι → Y} {s : ℝ} (i₀ : ι) {y : Y} (h : �
   have := (Classical.choose h').2.property
   rwa [Classical.choose_spec h'] at this
 
-/-- A point in the ball around `θ i` has index `i`. -/
+/-- When the balls are pairwise disjoint, a point in the ball around `θ i` has index `i`. -/
 theorem ballIndex_eq_of_mem_ball {θ : ι → Y} {s : ℝ}
-    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) (i₀ : ι) {y : Y} {i : ι}
+    (hθ : Pairwise (Disjoint on fun i ↦ ball (θ i) s)) (i₀ : ι) {y : Y} {i : ι}
     (hy : y ∈ ball (θ i) s) : ballIndex θ s i₀ y = i :=
-  (Subtype.val_injective.comp (Set.sigmaToiUnion_injective _
-    (pairwise_disjoint_ball_of_two_mul_le_dist hθ))).extend_apply _ _ ⟨i, y, hy⟩
+  (Subtype.val_injective.comp (Set.sigmaToiUnion_injective _ hθ)).extend_apply _ _ ⟨i, y, hy⟩
 
 /-- A point in no ball has the default index. -/
 @[simp]
@@ -180,11 +183,11 @@ theorem ballIndex_eq_of_forall_notMem {θ : ι → Y} {s : ℝ} (i₀ : ι) {y :
     (hy : ∀ i, y ∉ ball (θ i) s) : ballIndex θ s i₀ y = i₀ :=
   Function.extend_apply' _ _ _ fun ⟨⟨i, _, hi⟩, h⟩ ↦ hy i (h ▸ hi)
 
-/-- For `2 s`-separated points, `ballIndex θ s i₀ y = i` exactly when `y` lies in the ball of
-radius `s` around `θ i`, or `i` is the default index `i₀` and `y` lies in no ball. -/
+/-- When the balls are pairwise disjoint, `ballIndex θ s i₀ y = i` exactly when `y` lies in the
+ball of radius `s` around `θ i`, or `i` is the default index `i₀` and `y` lies in no ball. -/
 @[simp]
-theorem ballIndex_eq_iff {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j))
-    {i₀ : ι} {y : Y} {i : ι} :
+theorem ballIndex_eq_iff {θ : ι → Y} {s : ℝ}
+    (hθ : Pairwise (Disjoint on fun i ↦ ball (θ i) s)) {i₀ : ι} {y : Y} {i : ι} :
     ballIndex θ s i₀ y = i ↔ y ∈ ball (θ i) s ∨ i = i₀ ∧ ∀ j, y ∉ ball (θ j) s := by
   by_cases hy : ∃ j, y ∈ ball (θ j) s
   · obtain ⟨j, hj⟩ := hy
@@ -196,17 +199,18 @@ theorem ballIndex_eq_iff {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j → 2
   · push Not at hy
     simp [hy, eq_comm]
 
-/-- For `2 s`-separated points, a point whose index is not `i` is at distance at least `s`
-from `θ i`. -/
+/-- When the balls are pairwise disjoint, a point whose index is not `i` is at distance at least
+`s` from `θ i`. -/
 theorem le_dist_of_ballIndex_ne {θ : ι → Y} {s : ℝ}
-    (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j)) {i₀ : ι} {y : Y} {i : ι}
+    (hθ : Pairwise (Disjoint on fun i ↦ ball (θ i) s)) {i₀ : ι} {y : Y} {i : ι}
     (h : ballIndex θ s i₀ y ≠ i) : s ≤ dist y (θ i) :=
   not_lt.1 fun hy ↦ h (ballIndex_eq_of_mem_ball hθ i₀ (mem_ball.2 hy))
 
-/-- For `2 s`-separated points, the preimage of a set `A` of indices under `ballIndex` is the
-union of the balls with index in `A`, together with the complement of all balls when `i₀ ∈ A`. -/
-theorem ballIndex_preimage {θ : ι → Y} {s : ℝ} (hθ : ∀ i j, i ≠ j → 2 * s ≤ dist (θ i) (θ j))
-    (i₀ : ι) (A : Set ι) :
+/-- When the balls are pairwise disjoint, the preimage of a set `A` of indices under `ballIndex` is
+the union of the balls with index in `A`, together with the complement of all balls when
+`i₀ ∈ A`. -/
+theorem ballIndex_preimage {θ : ι → Y} {s : ℝ}
+    (hθ : Pairwise (Disjoint on fun i ↦ ball (θ i) s)) (i₀ : ι) (A : Set ι) :
     ballIndex θ s i₀ ⁻¹' A =
       (⋃ i ∈ A, ball (θ i) s) ∪ ({_y | i₀ ∈ A} ∩ ⋂ i, (ball (θ i) s)ᶜ) := by
   rw [← biUnion_preimage_singleton]

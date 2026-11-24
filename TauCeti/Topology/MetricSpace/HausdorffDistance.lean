@@ -25,9 +25,9 @@ A continuous map from a nonempty compact space into a pseudometric space has a n
 every point: some value of the map minimises the distance to it
 (`Continuous.exists_isMinOn_dist`). For finitely many points `θ i` indexed by a nonempty linear
 order, `TauCeti.nearestIndex θ y` is the least index of a nearest point to `y`
-(`TauCeti.nearestIndex_eq_iff`); it minimizes the distance (`TauCeti.dist_nearestIndex_le`), and
-the nearest point lies within twice the distance from `y` to any `θ j` of `θ j`
-(`TauCeti.dist_nearestIndex_le_two_mul`).
+(`TauCeti.nearestIndex_eq_iff`, `TauCeti.isLeast_nearestIndex`); it minimizes the distance
+(`TauCeti.dist_nearestIndex_le`), and the nearest point lies within twice the distance from `y`
+to any `θ j` of `θ j` (`TauCeti.dist_nearestIndex_le_two_mul`).
 -/
 
 public section
@@ -107,8 +107,7 @@ open scoped Classical in
 `ι`, such that `dist y (θ i) ≤ dist y (θ j)` for every `j`. -/
 noncomputable def nearestIndex (θ : ι → Y) (y : Y) : ι :=
   (Finset.univ.filter fun i ↦ ∀ j, dist y (θ i) ≤ dist y (θ j)).min' <| by
-    obtain ⟨i, -, hi⟩ :=
-      Finset.univ.exists_min_image (fun i ↦ dist y (θ i)) Finset.univ_nonempty
+    obtain ⟨i, hi⟩ := Finite.exists_min (fun i ↦ dist y (θ i))
     exact ⟨i, by simpa using hi⟩
 
 /-- `nearestIndex θ y = i` exactly when `θ i` is a nearest point to `y` and every index of a
@@ -117,6 +116,11 @@ theorem nearestIndex_eq_iff {θ : ι → Y} {y : Y} {i : ι} :
     nearestIndex θ y = i ↔ (∀ j, dist y (θ i) ≤ dist y (θ j)) ∧
       ∀ j, (∀ k, dist y (θ j) ≤ dist y (θ k)) → i ≤ j := by
   simp [nearestIndex, Finset.min'_eq_iff]
+
+/-- `nearestIndex θ y` is the least index of a nearest point to `y`. -/
+theorem isLeast_nearestIndex (θ : ι → Y) (y : Y) :
+    IsLeast {i | ∀ j, dist y (θ i) ≤ dist y (θ j)} (nearestIndex θ y) :=
+  nearestIndex_eq_iff.1 rfl
 
 /-- `θ (nearestIndex θ y)` is a nearest point to `y`. -/
 @[simp]
