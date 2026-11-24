@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Frame
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
@@ -159,7 +160,6 @@ theorem inner_leviCivitaConnection_chartDualFrame
       -(trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y
         (CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α k) y
           (chartLocalFrame (I := I) α j y)) := by
-  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
   have : IsManifold I (minSmoothness ℝ 2) M := by
     rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
   have hy' : y ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
@@ -168,37 +168,20 @@ theorem inner_leviCivitaConnection_chartDualFrame
   have hLC := CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection (I := I) (M := M)
   have ht : (CovariantDerivative.leviCivitaConnection I M).IsTorsionFree :=
     (CovariantDerivative.isTorsionFree_iff_torsion_eq_zero _).2 hLC.torsion
-  have hD : MDiffAt (T% (chartDualFrame (I := I) α k)) y :=
-    (contMDiffAt_chartDualFrame (I := I) (n := 1) α hy' k).mdifferentiableAt one_ne_zero
-  have hF : MDiffAt (T% (chartLocalFrame (I := I) α j)) y :=
-    (contMDiffAt_chartLocalFrame_of_mem_chart_source (I := I) (n := 1) α hy j).mdifferentiableAt
-      one_ne_zero
-  have hcoeff (w : TangentSpace I y) :
-      ⟪chartDualFrame (I := I) α k y, w⟫ =
-        (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y w := by
-    conv_lhs =>
-      rw [(trivializationAt E (TangentSpace I) α).eq_sum_localFrameCoeff_smul
-        (I := I) (b := Module.finBasis ℝ E) (s := fun _ ↦ w) hy']
-    simp only [← chartLocalFrame_def, inner_sum, real_inner_smul_right, inner_chartDualFrame α hy,
-      mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
   have hconst : (fun z ↦ ⟪chartDualFrame (I := I) α k z, chartLocalFrame (I := I) α j z⟫) =ᶠ[𝓝 y]
       fun _ ↦ if k = j then (1 : ℝ) else 0 := by
     filter_upwards [(chartAt H α).open_source.mem_nhds hy] with z hz
     exact inner_chartDualFrame α hz k j
-  have h0 : mvfderiv I
-      (fun z ↦ ⟪chartDualFrame (I := I) α k z, chartLocalFrame (I := I) α j z⟫) y
-      (chartLocalFrame (I := I) α k y) = 0 := by
-    rw [hconst.mvfderiv_eq, mvfderiv_const, zero_apply]
-  have hm := hLC.isMetricCompatible.mvfderiv_inner_eq
-    (fun _ ↦ chartLocalFrame (I := I) α k y) hD hF
-  dsimp only at hm
+  have hm := hLC.isMetricCompatible.inner_apply_add_inner_apply_eq_zero_of_eventuallyEq_const
+    (mdifferentiableAt_chartDualFrame α hy' k) (mdifferentiableAt_chartLocalFrame α hy' j)
+    hconst (chartLocalFrame (I := I) α k y)
   have hcomm : CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α j) y
         (chartLocalFrame (I := I) α k y) =
       CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α k) y
         (chartLocalFrame (I := I) α j y) := by
     simpa only [chartLocalFrame_def] using
       covariantDerivative_localFrame_comm ht (Module.finBasis ℝ E) α hy_ext k j
-  rw [h0, hcomm, hcoeff] at hm
+  rw [hcomm, inner_chartDualFrame_eq_localFrameCoeff α hy k] at hm
   linarith
 
 /-- **Coordinate Piola identity for the Levi-Civita connection.** On a chart domain, the weighted
@@ -218,30 +201,29 @@ theorem sum_leviCivitaConnection_chartVolumeDensity_smul_chartDualFrame
   have hLC := CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection (I := I) (M := M)
   have hρ : MDiffAt (chartVolumeDensity (I := I) α) y :=
     (contMDiffAt_chartVolumeDensity (I := I) (n := 1) α hy).mdifferentiableAt one_ne_zero
-  have hD (k) : MDiffAt (T% (chartDualFrame (I := I) α k)) y :=
-    (contMDiffAt_chartDualFrame (I := I) (n := 1) α hy' k).mdifferentiableAt one_ne_zero
   refine InnerProductSpace.ext_inner_right_basis b fun j ↦ ?_
   rw [inner_zero_left, hb, sum_inner]
+  have hterm (k : Fin (Module.finrank ℝ E)) :
+      ⟪CovariantDerivative.leviCivitaConnection I M
+          (chartVolumeDensity (I := I) α • chartDualFrame (I := I) α k) y
+          (chartLocalFrame (I := I) α k y), chartLocalFrame (I := I) α j y⟫ =
+        chartVolumeDensity (I := I) α y *
+            (-(trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y
+              (CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α k) y
+                (chartLocalFrame (I := I) α j y))) +
+          mvfderiv I (chartVolumeDensity (I := I) α) y (chartLocalFrame (I := I) α k y) *
+            if k = j then 1 else 0 := by
+    rw [(CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.leibniz_apply
+      (mdifferentiableAt_chartDualFrame α hy' k) hρ, inner_add_left, real_inner_smul_left,
+      real_inner_smul_left, inner_leviCivitaConnection_chartDualFrame α hy,
+      inner_chartDualFrame α hy]
   have hsmul (k) : (fun z ↦ chartVolumeDensity (I := I) α z • chartDualFrame (I := I) α k z) =
       chartVolumeDensity (I := I) α • chartDualFrame (I := I) α k :=
     funext fun _ ↦ rfl
-  have hsum : ∑ k,
-      ⟪CovariantDerivative.leviCivitaConnection I M
-          (fun z ↦ chartVolumeDensity (I := I) α z • chartDualFrame (I := I) α k z) y
-          (chartLocalFrame (I := I) α k y), chartLocalFrame (I := I) α j y⟫ =
-      -chartVolumeDensity (I := I) α y *
-          ∑ k, (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y
-            (CovariantDerivative.leviCivitaConnection I M (chartLocalFrame (I := I) α k) y
-              (chartLocalFrame (I := I) α j y)) +
-        mvfderiv I (chartVolumeDensity (I := I) α) y (chartLocalFrame (I := I) α j y) := by
-    simp only [hsmul,
-      (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.leibniz_apply
-        (hD _) hρ,
-      inner_add_left, real_inner_smul_left, inner_leviCivitaConnection_chartDualFrame α hy,
-      inner_chartDualFrame α hy, mul_ite, mul_one, mul_zero, Finset.sum_add_distrib,
-      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, mul_neg, Finset.sum_neg_distrib,
-      ← Finset.mul_sum, neg_mul]
-  rw [hsum, mvfderiv_chartVolumeDensity hLC.isMetricCompatible α hy']
+  simp_rw [hsmul, hterm]
+  rw [Finset.sum_add_distrib, ← Finset.mul_sum]
+  simp only [mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
+    Finset.sum_neg_distrib, mvfderiv_chartVolumeDensity hLC.isMetricCompatible α hy']
   ring
 
 end TauCeti

@@ -157,6 +157,12 @@ theorem smoothFormalAdjoint_apply
     cov.smoothFormalAdjoint covT η x = cov.formalAdjoint covT η x :=
   (rfl)
 
+@[simp]
+theorem coe_smoothFormalAdjoint
+    (η : Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯) :
+    ⇑(cov.smoothFormalAdjoint covT η) = cov.formalAdjoint covT η :=
+  (rfl)
+
 /-- The rough Laplacian `∇*∇ σ = -tr_g ∇²σ` (`CovariantDerivative.roughLaplacian`) of a smooth
 connection `∇` on `V`, built with a smooth connection `∇ᵀ` on the tangent bundle, as a real-linear
 endomorphism of the smooth sections of `V`. -/
@@ -171,61 +177,30 @@ theorem smoothRoughLaplacian_apply (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
     cov.smoothRoughLaplacian covT σ x = cov.roughLaplacian covT σ x :=
   (rfl)
 
+@[simp]
+theorem coe_smoothRoughLaplacian (σ : Cₛ^∞⟮I; F, V⟯) :
+    ⇑(cov.smoothRoughLaplacian covT σ) = cov.roughLaplacian covT σ :=
+  (rfl)
+
 /-- **Operator factorization `∇* ∘ ∇ = ∇*∇`** on smooth sections. -/
 @[simp]
 theorem smoothFormalAdjoint_comp_smoothCovariantDerivative :
     (cov.smoothFormalAdjoint covT).comp cov.smoothCovariantDerivative =
       cov.smoothRoughLaplacian covT := by
   ext σ x
-  have hcoe : (⇑(cov.smoothCovariantDerivative σ) : Π y, TangentSpace I y →L[ℝ] V y) = cov σ :=
-    funext fun y ↦ cov.smoothCovariantDerivative_apply σ y
-  simp only [LinearMap.comp_apply, smoothFormalAdjoint_apply, hcoe, smoothRoughLaplacian_apply,
-    roughLaplacian_eq_formalAdjoint cov covT σ.contMDiff]
-
-/-- The formal adjoint does not enlarge the closed support of a smooth one-form. -/
-theorem tsupport_smoothFormalAdjoint_subset
-    (η : Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯) :
-    (cov.smoothFormalAdjoint covT η).tsupport ⊆ η.tsupport := by
-  refine (ContMDiffSection.tsupport_subset_iff η.isClosed_tsupport).2 fun x hx ↦ ?_
-  rw [ContMDiffSection.tsupport_def] at hx
-  rw [smoothFormalAdjoint_apply]
-  exact cov.formalAdjoint_eq_zero_of_notMem_closure covT hx
-
-/-- The rough Laplacian does not enlarge the closed support of a smooth section. -/
-theorem tsupport_smoothRoughLaplacian_subset (σ : Cₛ^∞⟮I; F, V⟯) :
-    (cov.smoothRoughLaplacian covT σ).tsupport ⊆ σ.tsupport := by
-  rw [← smoothFormalAdjoint_comp_smoothCovariantDerivative, LinearMap.comp_apply]
-  exact (cov.tsupport_smoothFormalAdjoint_subset covT _).trans
-    (cov.tsupport_smoothCovariantDerivative_subset σ)
-
-/-- The formal adjoint preserves compactly supported smooth one-forms. -/
-theorem smoothFormalAdjoint_mem_compactlySupported
-    {η : Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯}
-    (hη : η ∈
-      ContMDiffSection.compactlySupported I (E →L[ℝ] F) ∞ (fun x ↦ TangentSpace I x →L[ℝ] V x)) :
-    cov.smoothFormalAdjoint covT η ∈ ContMDiffSection.compactlySupported I F ∞ V := by
-  rw [ContMDiffSection.mem_compactlySupported] at hη ⊢
-  exact hη.of_isClosed_subset (ContMDiffSection.isClosed_tsupport _)
-    (cov.tsupport_smoothFormalAdjoint_subset covT η)
-
-/-- The rough Laplacian preserves compactly supported smooth sections. -/
-theorem smoothRoughLaplacian_mem_compactlySupported {σ : Cₛ^∞⟮I; F, V⟯}
-    (hσ : σ ∈ ContMDiffSection.compactlySupported I F ∞ V) :
-    cov.smoothRoughLaplacian covT σ ∈ ContMDiffSection.compactlySupported I F ∞ V := by
-  rw [ContMDiffSection.mem_compactlySupported] at hσ ⊢
-  exact hσ.of_isClosed_subset (ContMDiffSection.isClosed_tsupport _)
-    (cov.tsupport_smoothRoughLaplacian_subset covT σ)
+  simp only [LinearMap.comp_apply, smoothFormalAdjoint_apply, coe_smoothCovariantDerivative,
+    smoothRoughLaplacian_apply, roughLaplacian_eq_formalAdjoint cov covT σ.contMDiff]
 
 /-- The commutator `[∇*, f] η` is `-η(grad f)`: the principal symbol `-ι_{ξ♯}` of `∇*`. -/
 theorem smulCommutator_smoothFormalAdjoint_apply (f : C^∞⟮I, M; ℝ⟯)
     (η : Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯) (x : M) :
     smulCommutator ℝ f (cov.smoothFormalAdjoint covT) η x =
       -η x (TauCeti.Manifold.mgradient I f x) := by
-  have hcoe : (⇑(f • η) : Π y, TangentSpace I y →L[ℝ] V y) =
+  have hfun : (⇑(f • η) : Π y, TangentSpace I y →L[ℝ] V y) =
       (f : M → ℝ) • (η : Π y, TangentSpace I y →L[ℝ] V y) :=
     funext fun y ↦ ContMDiffSection.smul_apply f η y
   simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
-    ContMDiffSection.smul_apply, smoothFormalAdjoint_apply, hcoe,
+    ContMDiffSection.smul_apply, smoothFormalAdjoint_apply, hfun,
     formalAdjoint_smul cov covT (f.contMDiff.mdifferentiableAt (by simp)) η.mdifferentiableAt,
     sub_sub_cancel_left]
 
@@ -238,6 +213,13 @@ theorem smoothFormalAdjoint_mem_differentialOperators_one :
     mem_differentialOperators_zero_iff.2 fun g η ↦ ContMDiffSection.ext fun x ↦ ?_
   simp only [ContMDiffSection.smul_apply, smulCommutator_smoothFormalAdjoint_apply,
     smul_apply, smul_neg]
+
+/-- The formal adjoint does not enlarge the closed support of a smooth one-form. -/
+theorem tsupport_smoothFormalAdjoint_subset
+    (η : Cₛ^∞⟮I; E →L[ℝ] F, fun x ↦ TangentSpace I x →L[ℝ] V x⟯) :
+    (cov.smoothFormalAdjoint covT η).tsupport ⊆ η.tsupport :=
+  tsupport_differentialOperators_section_apply_subset
+    (cov.smoothFormalAdjoint_mem_differentialOperators_one covT) η
 
 /-- **The commutator of the rough Laplacian with multiplication.** With the Levi-Civita connection
 on the tangent bundle, `[∇*∇, f] σ = ∇*∇(f σ) - f ∇*∇ σ = -2 ∇_{grad f} σ - (Δ f) σ`, where
@@ -263,8 +245,8 @@ theorem smulCommutator_smulCommutator_smoothRoughLaplacian_apply (f g : C^∞⟮
   have hfun (a : C^∞⟮I, M; ℝ⟯) (τ : Cₛ^∞⟮I; F, V⟯) : ⇑(a • τ) = ⇑a • ⇑τ :=
     funext fun y ↦ ContMDiffSection.smul_apply a τ y
   rw [← roughLaplacian_smul_smul_sub cov covT f.contMDiff g.contMDiff σ.contMDiff x]
-  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, hfun, Pi.sub_apply,
-    Pi.smul_apply', smoothRoughLaplacian_apply]
+  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, hfun,
+    Pi.sub_apply, Pi.smul_apply', smoothRoughLaplacian_apply]
   module
 
 /-- The rough Laplacian `∇*∇ = ∇* ∘ ∇` is a differential operator of order at most two on the
@@ -276,6 +258,12 @@ theorem smoothRoughLaplacian_mem_differentialOperators_two :
   exact comp_mem_differentialOperators
     (cov.smoothFormalAdjoint_mem_differentialOperators_one covT)
     cov.smoothCovariantDerivative_mem_differentialOperators_one
+
+/-- The rough Laplacian does not enlarge the closed support of a smooth section. -/
+theorem tsupport_smoothRoughLaplacian_subset (σ : Cₛ^∞⟮I; F, V⟯) :
+    (cov.smoothRoughLaplacian covT σ).tsupport ⊆ σ.tsupport :=
+  tsupport_differentialOperators_section_apply_subset
+    (cov.smoothRoughLaplacian_mem_differentialOperators_two covT) σ
 
 /-- **The principal symbol of the rough Laplacian.** The geometric principal symbol of `∇*∇` is
 `ξ ↦ -‖ξ‖² Id`, the norm being the one the metric induces on `T_x*M`; in the Fourier convention

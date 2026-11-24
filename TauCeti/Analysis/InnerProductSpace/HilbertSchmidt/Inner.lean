@@ -14,10 +14,11 @@ public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 
 For two linear maps `A B : W →L[ℝ] V` out of a finite-dimensional real inner product space, the
 **Hilbert–Schmidt inner product** is `⟪A, B⟫_HS = ∑ᵢ ⟪A eᵢ, B eᵢ⟫` for any orthonormal basis `eᵢ`
-of the source. It is defined as the metric trace `TauCeti.bilinFormTrace` of the bilinear form
-`(u, v) ↦ ⟪A u, B v⟫`, so it does not depend on a basis. It is symmetric and bilinear, and on the
-diagonal it is the square of the Frobenius seminorm `TauCeti.UnitarilyInvariantSeminorm.frobenius`
-and of the Hilbert–Schmidt norm `ContinuousLinearMap.hilbertSchmidtNorm`.
+of the source. It is defined as the metric trace `LinearMap.BilinMap.metricTrace` of the bilinear
+form `(u, v) ↦ ⟪A u, B v⟫`, so it does not depend on a basis. It is symmetric and bilinear, and on
+the diagonal it is the square of the Frobenius seminorm
+`TauCeti.UnitarilyInvariantSeminorm.frobenius` and of the Hilbert–Schmidt norm
+`ContinuousLinearMap.hilbertSchmidtNorm`.
 
 ## Main definitions
 
@@ -74,19 +75,19 @@ a finite-dimensional real inner product space, for any orthonormal basis `eᵢ` 
 (`ContinuousLinearMap.hilbertSchmidtInner_eq_sum`): the metric trace of the bilinear form
 `(u, v) ↦ ⟪A u, B v⟫`, so it does not depend on a basis. -/
 noncomputable def hilbertSchmidtInner (A B : W →L[ℝ] V) : ℝ :=
-  TauCeti.bilinFormTrace ((innerₗ V).compl₁₂ (A : W →ₗ[ℝ] V) (B : W →ₗ[ℝ] V))
+  LinearMap.BilinMap.metricTrace ((innerₗ V).compl₁₂ (A : W →ₗ[ℝ] V) (B : W →ₗ[ℝ] V))
 
 /-- The Hilbert–Schmidt inner product is the metric trace of `(u, v) ↦ ⟪A u, B v⟫`. -/
 theorem hilbertSchmidtInner_def (A B : W →L[ℝ] V) :
     A.hilbertSchmidtInner B =
-      TauCeti.bilinFormTrace ((innerₗ V).compl₁₂ (A : W →ₗ[ℝ] V) (B : W →ₗ[ℝ] V)) :=
+      LinearMap.BilinMap.metricTrace ((innerₗ V).compl₁₂ (A : W →ₗ[ℝ] V) (B : W →ₗ[ℝ] V)) :=
   (rfl)
 
 /-- The Hilbert–Schmidt inner product in an orthonormal basis: `⟪A, B⟫_HS = ∑ᵢ ⟪A eᵢ, B eᵢ⟫`. -/
 theorem hilbertSchmidtInner_eq_sum (A B : W →L[ℝ] V) {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ W) : A.hilbertSchmidtInner B = ∑ i, ⟪A (b i), B (b i)⟫_ℝ := by
-  simp only [hilbertSchmidtInner_def, TauCeti.bilinFormTrace_eq_sum _ b, LinearMap.compl₁₂_apply,
-    innerₗ_apply_apply, coe_coe]
+  simp only [hilbertSchmidtInner_def, LinearMap.BilinMap.metricTrace_eq_sum _ b,
+    LinearMap.compl₁₂_apply, innerₗ_apply_apply, coe_coe]
 
 /-- The Hilbert–Schmidt inner product is the sum of products of matrix coefficients. -/
 theorem hilbertSchmidtInner_eq_sum_sum_inner_mul_inner (A B : W →L[ℝ] V)
@@ -267,7 +268,7 @@ theorem hilbertSchmidtInner_eq_sum_inv_gram {ι : Type*} [Fintype ι] [Decidable
     (A B : W →L[ℝ] V) (b : Module.Basis ι ℝ W) :
     A.hilbertSchmidtInner B =
       ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j * ⟪A (b i), B (b j)⟫_ℝ := by
-  rw [hilbertSchmidtInner_def, TauCeti.bilinFormTrace_eq_sum_inv_gram _ b]
-  simp only [LinearMap.compl₁₂_apply, innerₗ_apply_apply, coe_coe]
+  rw [hilbertSchmidtInner_def, LinearMap.BilinMap.metricTrace_eq_sum_inv_gram _ b]
+  simp only [LinearMap.compl₁₂_apply, innerₗ_apply_apply, coe_coe, smul_eq_mul]
 
 end ContinuousLinearMap

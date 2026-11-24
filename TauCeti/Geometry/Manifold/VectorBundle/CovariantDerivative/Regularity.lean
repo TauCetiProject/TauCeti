@@ -31,10 +31,9 @@ local frame.
 * `CovariantDerivative.contMDiff_covariantDerivative`: the covariant derivative `∇σ` of a
   `C^(n + 1)` section is a `C^n` section of `Hom(TM, V)`.
 * `CovariantDerivative.smoothCovariantDerivative`: a smooth connection `∇` bundled as a `𝕜`-linear
-  map from smooth sections of `V` to smooth sections of `Hom(TM, V)`, together with its Leibniz
-  rule (`smoothCovariantDerivative_smul`) and support preservation
-  (`tsupport_smoothCovariantDerivative_subset`,
-  `smoothCovariantDerivative_mem_compactlySupported`).
+  map from smooth sections of `V` to smooth sections of `Hom(TM, V)`, together with its coercion
+  (`coe_smoothCovariantDerivative`), Leibniz rule (`smoothCovariantDerivative_smul`), and support
+  preservation (`tsupport_smoothCovariantDerivative_subset`).
 * `CovariantDerivative.contMDiffAt_apply`: the pointwise version of the next result.
 * `CovariantDerivative.contMDiff_apply`: applying a `C^n` covariant derivative
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
@@ -97,6 +96,12 @@ theorem smoothCovariantDerivative_apply (cov : CovariantDerivative I F V)
     cov.smoothCovariantDerivative σ x = cov σ x :=
   (rfl)
 
+@[simp]
+theorem coe_smoothCovariantDerivative (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] (σ : Cₛ^∞⟮I; F, V⟯) :
+    ⇑(cov.smoothCovariantDerivative σ) = cov σ :=
+  (rfl)
+
 /-- **The Leibniz rule for `smoothCovariantDerivative`**:
 `∇(a • σ) x v = a x • ∇σ x v + da(v) • σ x`. -/
 theorem smoothCovariantDerivative_smul (cov : CovariantDerivative I F V)
@@ -117,16 +122,6 @@ theorem tsupport_smoothCovariantDerivative_subset (cov : CovariantDerivative I F
   rw [ContMDiffSection.tsupport_def] at hx
   rw [smoothCovariantDerivative_apply]
   exact cov.apply_eq_zero_of_notMem_closure hx
-
-/-- Covariant differentiation preserves compactly supported smooth sections. -/
-theorem smoothCovariantDerivative_mem_compactlySupported (cov : CovariantDerivative I F V)
-    [ContMDiffCovariantDerivative cov ∞] {σ : Cₛ^∞⟮I; F, V⟯}
-    (hσ : σ ∈ ContMDiffSection.compactlySupported I F ∞ V) :
-    cov.smoothCovariantDerivative σ ∈
-      ContMDiffSection.compactlySupported I (E →L[𝕜] F) ∞ (fun x ↦ TangentSpace I x →L[𝕜] V x) := by
-  rw [ContMDiffSection.mem_compactlySupported] at hσ ⊢
-  exact hσ.of_isClosed_subset (ContMDiffSection.isClosed_tsupport _)
-    (cov.tsupport_smoothCovariantDerivative_subset σ)
 
 /-- Applying a `C^n` covariant derivative to a `C^(n + 1)` section along a vector field which is
 `C^n` at `x` produces a section which is `C^n` at `x`. -/

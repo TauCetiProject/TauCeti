@@ -53,10 +53,6 @@ divergence theorem. The one-form `∇σ` has compact support as soon as `σ` has
   `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_isCompact_left`, and
   `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_of_or`:
   **the energy identity**, when `τ` or `σ` has compact support.
-* `IsMetricCompatible.integral_inner_roughLaplacian_self_eq_sq_hilbertSchmidtNorm` and
-  `IsMetricCompatible.integral_inner_roughLaplacian_self_eq_sum`:
-  the Dirichlet energy written via `hilbertSchmidtNorm ^ 2` and arbitrary pointwise orthonormal
-  bases.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right` and
   `CovariantDerivative.IsMetricCompatible.integral_inner_roughLaplacian_left_eq_right_of_or`:
   the rough Laplacian is formally self-adjoint.
@@ -148,29 +144,6 @@ theorem integral_inner_roughLaplacian_of_or (hcov : cov.IsMetricCompatible)
       ∫ x, cov.innerCovariantDerivative σ τ x ∂riemannianVolume I M :=
   hsupp.elim (hcov.integral_inner_roughLaplacian_of_isCompact_left hσ hτ)
     (hcov.integral_inner_roughLaplacian hσ hτ)
-
-/-- **Dirichlet energy identity in terms of `hilbertSchmidtNorm`.** For a compactly supported
-smooth section `σ` and a metric connection `∇`,
-`∫ ⟪∇*∇ σ, σ⟫ dV = ∫ (cov σ x).hilbertSchmidtNorm ^ 2 dV`. -/
-theorem integral_inner_roughLaplacian_self_eq_sq_hilbertSchmidtNorm (hcov : cov.IsMetricCompatible)
-    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
-    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫ ∂riemannianVolume I M =
-      ∫ x, (cov σ x).hilbertSchmidtNorm ^ 2 ∂riemannianVolume I M := by
-  rw [hcov.integral_inner_roughLaplacian hσ hσ hσc]
-  refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  rw [innerCovariantDerivative_def,
-    ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm]
-
-/-- **Dirichlet energy identity in arbitrary pointwise orthonormal bases.** The bases `b x` need
-not vary continuously with `x`. -/
-theorem integral_inner_roughLaplacian_self_eq_sum (hcov : cov.IsMetricCompatible)
-    (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0}))
-    {ι : Type*} [Fintype ι] (b : ∀ x : M, OrthonormalBasis ι ℝ (TangentSpace I x)) :
-    ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫ ∂riemannianVolume I M =
-      ∫ x, (∑ i, ‖cov σ x (b x i)‖ ^ 2) ∂riemannianVolume I M := by
-  rw [hcov.integral_inner_roughLaplacian hσ hσ hσc]
-  refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  simp [cov.innerCovariantDerivative_eq_sum σ σ x (b x)]
 
 /-- **The rough Laplacian is formally self-adjoint.** For a metric connection and smooth sections
 `σ` and `τ` where `τ` has compact support, `∫ ⟪∇*∇ σ, τ⟫ dV = ∫ ⟪σ, ∇*∇ τ⟫ dV`. -/
