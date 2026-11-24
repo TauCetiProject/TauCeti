@@ -59,6 +59,8 @@ dimension these common cells are smaller. So this need not be assumed.
 
 ## Main results
 
+* `Geometry.SimplicialComplex.IsSubdivision.exists_affineMap_eqOn`: a map affine on every face of
+  `K` is affine on every face of a subdivision of `K`.
 * `Geometry.SimplicialComplex.exists_extension_of_intrinsicFrontier_subset_space`: a complex `L`
   extends over a family of compact convex cells attached to `L` along subcomplexes covering their
   intrinsic frontiers, by coning each cell to a prescribed point.
@@ -110,6 +112,15 @@ theorem IsSubdivision.trans (h' : K''.IsSubdivision K') (h : K'.IsSubdivision K)
   obtain ⟨t, ht, hst⟩ := h'.exists_convexHull_subset hs
   obtain ⟨u, hu, htu⟩ := h.exists_convexHull_subset ht
   exact ⟨u, hu, hst.trans htu⟩
+
+/-- A map which agrees with an affine map on each face of `K` agrees with one on each face of a
+subdivision of `K`. -/
+theorem IsSubdivision.exists_affineMap_eqOn {F : Type*} [AddCommGroup F] [Module 𝕜 F] {f : E → F}
+    (h : K'.IsSubdivision K)
+    (haff : ∀ s ∈ K.faces, ∃ g : E →ᵃ[𝕜] F, EqOn f g (convexHull 𝕜 (s : Set E))) :
+    ∀ s ∈ K'.faces, ∃ g : E →ᵃ[𝕜] F, EqOn f g (convexHull 𝕜 (s : Set E)) := fun s hs => by
+  obtain ⟨t, ht, hst⟩ := h.exists_convexHull_subset hs
+  exact (haff t ht).imp fun _ hg => hg.mono hst
 
 /-- **A complex whose faces lie in finitely many convex cells subdivides the covered complex.**
 Let finitely many convex cells `P p`, each inside a simplex `σ p` of `K`, cover `K`, and let a
