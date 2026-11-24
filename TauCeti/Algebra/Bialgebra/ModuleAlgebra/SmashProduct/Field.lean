@@ -34,6 +34,15 @@ namespace LeftModuleAlgebra
 
 universe u v w
 
+-- `Module.Projective.exists_dual_eq_one` needs `Module.Projective K A`, which over a field
+-- synthesizes via `Module.Free.of_divisionRing` and therefore requires `AddCommGroup A`;
+-- `Module.addCommMonoidToAddCommGroup K` upgrades `[AddCommMonoid A]` definitionally.
+private theorem exists_dual_apply_one_eq_one (K : Type u) (A : Type w)
+    [Field K] [Semiring A] [Algebra K A] [Nontrivial A] :
+    ∃ φ : A →ₗ[K] K, φ 1 = 1 := by
+  let _ := Module.addCommMonoidToAddCommGroup K (M := A)
+  exact Module.Projective.exists_dual_eq_one K (one_ne_zero : (1 : A) ≠ 0)
+
 section FieldEmbedding
 
 variable {K : Type u} {H : Type v} {A : Type w}
@@ -42,8 +51,7 @@ variable {K : Type u} {H : Type v} {A : Type w}
 /-- Over a field, `includeH : H →ₐ[K] A # H` is injective whenever `A` is nontrivial. -/
 theorem includeH_injective (μ : LeftModuleAlgebra K H A) [Nontrivial A] :
     Function.Injective μ.includeH := by
-  let _ := Module.addCommMonoidToAddCommGroup K (M := A)
-  obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one K (one_ne_zero : (1 : A) ≠ 0)
+  obtain ⟨φ, hφ⟩ := exists_dual_apply_one_eq_one K A
   exact μ.includeH_injective_of_apply_one_eq_one φ hφ
 
 end FieldEmbedding

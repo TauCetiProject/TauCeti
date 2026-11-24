@@ -150,14 +150,14 @@ private noncomputable def coactLift (μ : LeftModuleAlgebra R H A) :
     μ.SmashProduct →ₐ[R] μ.SmashProduct ⊗[R] H :=
   lift (coactIncludeA μ) (coactIncludeH μ) (smashCompatible_coactInclude μ)
 
-private theorem toLinearMap_coactLift (μ : LeftModuleAlgebra R H A) :
-    (coactLift μ).toLinearMap = Comodule.coact (R := R) (C := H) (M := μ.SmashProduct) := by
-  refine lhom_ext fun a h => ?_
-  simp only [AlgHom.toLinearMap_apply, coactLift, lift_smash, coactIncludeA, coactIncludeH,
-    AlgHom.comp_apply, Algebra.TensorProduct.includeLeft_apply, Bialgebra.comulAlgHom_apply,
-    ← (ℛ R h).eq, map_sum, Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Finset.mul_sum,
-    Algebra.TensorProduct.tmul_mul_tmul, one_mul, includeA_mul_includeH,
+private theorem coactLift_smash (μ : LeftModuleAlgebra R H A) (a : A) (h : H) :
+    coactLift μ (μ.smash a h) = Comodule.coact (R := R) (C := H) (μ.smash a h) := by
+  simp [coactLift, coactIncludeA, coactIncludeH, ← (ℛ R h).eq, Finset.mul_sum,
     coact_smash_eq_sum (ℛ R h)]
+
+private theorem toLinearMap_coactLift (μ : LeftModuleAlgebra R H A) :
+    (coactLift μ).toLinearMap = Comodule.coact (R := R) (C := H) (M := μ.SmashProduct) :=
+  lhom_ext fun a h => coactLift_smash μ a h
 
 /-- The smash product `A # H` is a right `H`-comodule algebra under
 `coact (a # h) = ∑ (a # h₁) ⊗ h₂`. -/

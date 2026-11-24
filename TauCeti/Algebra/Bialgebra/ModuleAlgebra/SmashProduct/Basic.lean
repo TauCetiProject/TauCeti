@@ -178,14 +178,25 @@ theorem SmashProduct.inductionOn {motive : μ.SmashProduct → Prop} (z : μ.Sma
   TensorProduct.inductionOn (motive := fun t => motive ⟨t⟩) z.toTensor smash
     fun x y hx hy => add ⟨x⟩ ⟨y⟩ hx hy
 
-/-- Two `R`-linear maps out of `A # H` agree when they agree on pure elements `a # h`. -/
-@[ext]
+/-- Two `R`-linear maps out of `A # H` agree when they agree on pure elements `a # h`.
+
+For the `@[ext]` lemma, see `SmashProduct.lhom_ext'`, which states equality after composing with
+`μ.smashBilinear` so `ext` can recurse into extensionality lemmas for `A` and `H`. -/
 theorem SmashProduct.lhom_ext {M : Type*} [AddCommMonoid M] [Module R M]
     {f g : μ.SmashProduct →ₗ[R] M} (h : ∀ a x, f (μ.smash a x) = g (μ.smash a x)) : f = g := by
-  ext z
+  refine LinearMap.ext fun z => ?_
   induction z using SmashProduct.inductionOn with
   | smash a x => exact h a x
   | add x y hx hy => simp [hx, hy]
+
+/-- Two `R`-linear maps out of `A # H` agree when their compositions with `μ.smashBilinear`
+agree. Formulated in curried form so `ext` can continue into extensionality lemmas on `A` and
+`H`. -/
+@[ext high]
+theorem SmashProduct.lhom_ext' {M : Type*} [AddCommMonoid M] [Module R M]
+    {f g : μ.SmashProduct →ₗ[R] M}
+    (h : μ.smashBilinear.compr₂ f = μ.smashBilinear.compr₂ g) : f = g :=
+  SmashProduct.lhom_ext fun a x => LinearMap.congr_fun (LinearMap.congr_fun h a) x
 
 end Carrier
 
@@ -312,8 +323,7 @@ private theorem mulLinear_assoc (x y z : μ.SmashProduct) :
   simp only [mulLinear_eq_toEnd, LinearEquiv.apply_symm_apply, toEnd_mul, mul_apply_eq_comp]
 
 private theorem mulLinear_one_left (x : μ.SmashProduct) : mulLinear μ (μ.smash 1 1) x = x := by
-  simp only [mulLinear_eq_toEnd, tensorEquiv_smash, toEnd, LinearMap.mulMap_tmul,
-    AlgHom.toLinearMap_apply, map_one, mul_one, one_apply_eq_self, LinearEquiv.symm_apply_apply]
+  simp [mulLinear_eq_toEnd, toEnd]
 
 private theorem mulLinear_one_right (x : μ.SmashProduct) : mulLinear μ x (μ.smash 1 1) = x := by
   rw [mulLinear_eq_toEnd, tensorEquiv_smash, toEnd_apply_one, LinearEquiv.symm_apply_apply]
@@ -364,9 +374,8 @@ theorem smash_mul_smash_eq_sum {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι)
 @[simp]
 theorem smash_one_mul_smash (a b : A) (k : H) :
     μ.smash a 1 * μ.smash b k = μ.smash (a * b) k := by
-  rw [← mulLinear_apply, mulLinear_eq_toEnd, tensorEquiv_smash, tensorEquiv_smash, toEnd,
-    LinearMap.mulMap_tmul, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply, map_one, mul_one,
-    leftMulA_tmul, tensorEquiv_symm_tmul]
+  rw [smash_mul_smash]
+  simp [smashMulPure, Algebra.TensorProduct.one_def]
 
 @[simp]
 theorem smash_mul_one_smash (a : A) (h k : H) :
