@@ -174,7 +174,7 @@ theorem fst_mul_snd_complexSplitting (f : WithConv (S →ₐ[ℝ] R)) :
     (Algebra.TensorProduct.comm ℝ ℂ R).symm_apply_apply _
   ext
   rw [Units.val_mul, coe_complexSplitting_fst, coe_complexSplitting_snd, norm_apply,
-    NormTorus.coe_norm, norm_tensorProduct_complex, tensorProductComplexAlgEquiv_apply, hcomm]
+    NormTorus.coe_norm, norm_tensorProduct_complex, tensorProductComplexEquivProd_apply, hcomm]
 
 end Splitting
 
@@ -378,17 +378,35 @@ noncomputable abbrev baseChangeComplexPointsMulEquiv (R : Type*) [CommRing R] [A
   (AlgHom.baseChangePointsMulEquiv (k := ℝ) (K := ℂ)
     (A := FiniteTypeCommHopfAlgCat.of ℝ S) (R := R)).symm
 
+/-- The underlying `ℝ`-algebra map of `baseChangeComplexPointsMulEquiv R g` restricts `g` along
+`a ↦ 1 ⊗ a`. -/
+@[simp]
+theorem ofConv_baseChangeComplexPointsMulEquiv {R : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
+    (baseChangeComplexPointsMulEquiv R g).ofConv = (AlgHom.liftEquiv ℝ ℂ S R).symm g.ofConv :=
+  AlgHom.baseChangePointsMulEquiv_symm_ofConv g
+
+/-- The underlying `ℂ`-algebra map of `(baseChangeComplexPointsMulEquiv R).symm f` is the
+`ℂ`-linear lift of `f` to `ℂ ⊗[ℝ] S`. -/
+@[simp]
+theorem ofConv_baseChangeComplexPointsMulEquiv_symm {R : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (f : WithConv (S →ₐ[ℝ] R)) :
+    ((baseChangeComplexPointsMulEquiv R).symm f).ofConv = AlgHom.liftEquiv ℝ ℂ S R f.ofConv :=
+  AlgHom.baseChangePointsMulEquiv_apply_ofConv f
+
 /-- On a commutative `ℂ`-algebra `R`, `R`-points of `baseChangeComplex` (over `ℂ`) correspond
 naturally to `R`-points of `ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]` (over `ℂ`) through `complexSplitting R`. -/
-private noncomputable def baseChangeProductPointsMulEquiv (R : Type*) [CommRing R] [Algebra ℂ R] :
+private noncomputable def baseChangeProductPointsMulEquiv (R : Type*) [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] :
     WithConv (baseChangeComplex →ₐ[ℂ] R) ≃* WithConv ((ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]) →ₐ[ℂ] R) :=
   (baseChangeComplexPointsMulEquiv R).trans <|
     (complexSplitting R).trans <|
       (MulEquiv.prodCongr MultiplicativeGroup.pointsMulEquiv.symm
         MultiplicativeGroup.pointsMulEquiv.symm).trans AffineGroup.Product.pointsMulEquiv.symm
 
-private lemma mapValue_baseChangeProductPointsMulEquiv {R R' : Type*} [CommRing R] [Algebra ℂ R]
-    [CommRing R'] [Algebra ℂ R'] (φ : R →ₐ[ℂ] R') (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
+private lemma mapValue_baseChangeProductPointsMulEquiv {R R' : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] [CommRing R'] [Algebra ℝ R'] [Algebra ℂ R']
+    [IsScalarTower ℝ ℂ R'] (φ : R →ₐ[ℂ] R') (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
     AlgHom.mapValue (H := ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]) φ (baseChangeProductPointsMulEquiv R g) =
       baseChangeProductPointsMulEquiv R' (AlgHom.mapValue (H := baseChangeComplex) φ g) := by
   have hbc :
@@ -403,7 +421,8 @@ private lemma mapValue_baseChangeProductPointsMulEquiv {R R' : Type*} [CommRing 
     (MultiplicativeGroup.mapValue_pointsMulEquiv_symm_apply _ _)
 
 private lemma mapValue_baseChangeProductPointsMulEquiv_symm {R R' : Type*} [CommRing R]
-    [Algebra ℂ R] [CommRing R'] [Algebra ℂ R'] (φ : R →ₐ[ℂ] R')
+    [Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R] [CommRing R'] [Algebra ℝ R'] [Algebra ℂ R']
+    [IsScalarTower ℝ ℂ R'] (φ : R →ₐ[ℂ] R')
     (f : WithConv ((ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]) →ₐ[ℂ] R)) :
     AlgHom.mapValue (H := baseChangeComplex) φ
         ((baseChangeProductPointsMulEquiv R).symm f) =
@@ -413,25 +432,16 @@ private lemma mapValue_baseChangeProductPointsMulEquiv_symm {R R' : Type*} [Comm
   rw [← mapValue_baseChangeProductPointsMulEquiv, MulEquiv.apply_symm_apply,
     MulEquiv.apply_symm_apply]
 
-private lemma baseChangeProductPointsMulEquiv_symm_eq {R : Type*} [CommRing R] [Algebra ℂ R] :
-    ∀ (instR : Algebra ℝ R) (hT : @IsScalarTower ℝ ℂ R _ _ instR.toSMul)
-      (p : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R) × WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)),
+private lemma baseChangeProductPointsMulEquiv_symm_eq {R : Type*} [CommRing R] [Algebra ℝ R]
+    [Algebra ℂ R] [IsScalarTower ℝ ℂ R]
+    (p : WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R) × WithConv (ℂ[T;T⁻¹] →ₐ[ℂ] R)) :
     (baseChangeProductPointsMulEquiv R).symm (AffineGroup.Product.pointsMulEquiv.symm p) =
-      (@baseChangeComplexPointsMulEquiv R _ instR _ hT).symm
-        ((@complexSplitting R _ instR _ hT).symm
+      (baseChangeComplexPointsMulEquiv R).symm
+        ((complexSplitting R).symm
           (MultiplicativeGroup.pointsMulEquiv p.1, MultiplicativeGroup.pointsMulEquiv p.2)) := by
-  let inst0 : Algebra ℝ R := inferInstance
-  let ht0 : IsScalarTower ℝ ℂ R := inferInstance
-  intro instR hT p
-  have h1 : ∀ r : ℝ, @algebraMap ℝ R _ _ instR r = algebraMap ℂ R (algebraMap ℝ ℂ r) :=
-    @IsScalarTower.algebraMap_apply ℝ ℂ R _ _ _ _ _ instR hT
-  have h2 : ∀ r : ℝ, @algebraMap ℝ R _ _ inst0 r = algebraMap ℂ R (algebraMap ℝ ℂ r) :=
-    @IsScalarTower.algebraMap_apply ℝ ℂ R _ _ _ _ _ inst0 ht0
-  obtain rfl : instR = inst0 := Algebra.algebra_ext _ _ fun r ↦
-    (h1 r).trans (h2 r).symm
-  obtain rfl : hT = ht0 := Subsingleton.elim _ _
   simp only [baseChangeProductPointsMulEquiv, MulEquiv.symm_trans_apply,
     MulEquiv.symm_symm, MulEquiv.apply_symm_apply]
+  -- `(MulEquiv.prodCongr f g).symm` acts componentwise on products.
   rfl
 
 /-- The natural isomorphism of group-valued points functors between `baseChangeComplex` and
@@ -471,7 +481,8 @@ private lemma baseChangeComplexBialgEquiv_toBialgHom :
   rw [baseChangeComplexBialgEquiv, BialgEquiv.toBialgHom_eq_coe, CommHopfAlgCat.coe_ofIso]
 
 private lemma mapValue_baseChangeProductPointsMulEquiv_symm_id {R : Type*} [CommRing R]
-    [Algebra ℂ R] (g : WithConv ((ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]) →ₐ[ℂ] R)) :
+    [Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]
+    (g : WithConv ((ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]) →ₐ[ℂ] R)) :
     AlgHom.mapValue (H := baseChangeComplex) g.ofConv
         ((baseChangeProductPointsMulEquiv (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])).symm
           (toConv (AlgHom.id ℂ (ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹])))) =
@@ -499,7 +510,7 @@ theorem mapDomain_baseChangeComplexBialgEquiv {R : Type*} [CommRing R] [Algebra 
     rw [baseChangeProductPointsNatIso, NatIso.ofComponents_inv_app _ _]
     dsimp only [MulEquiv.toGrpIso]
     rw [ConcreteCategory.hom_ofHom, MulEquiv.coe_toMonoidHom]
-    -- Reconcile the `CommAlgCat.of ℂ H` algebra instance with `H`'s inferred instance.
+    -- `CommAlgCat.of ℂ H` and `H` share the same `ℂ`-algebra and inferred `ℝ`-algebra instances.
     rfl
   rw [baseChangeComplexBialgEquiv_toBialgHom,
     CommHopfAlgCat.mapDomain_homOfPointsMap (R := ℂ)
@@ -507,7 +518,7 @@ theorem mapDomain_baseChangeComplexBialgEquiv {R : Type*} [CommRing R] [Algebra 
       (K := _root_.CommHopfAlgCat.of ℂ baseChangeComplex)
       baseChangeProductPointsNatIso.inv,
     hid, mapValue_baseChangeProductPointsMulEquiv_symm_id]
-  exact baseChangeProductPointsMulEquiv_symm_eq _ _ p
+  exact baseChangeProductPointsMulEquiv_symm_eq p
 
 /-- **Compatibility of `baseChangeComplexBialgEquiv.symm` with `complexSplitting` on points** over
 every commutative `ℂ`-algebra `R` with compatible `ℝ`-algebra structure. -/

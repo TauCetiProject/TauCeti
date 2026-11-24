@@ -30,7 +30,7 @@ the second factor exchanges the two components up to conjugation
 (`TauCeti.complexTensorProductEquivProd_lTensor_conjAe`).
 
 When `A` is commutative, commuting the tensor factors gives the `A`-algebra isomorphism
-`A ⊗[ℝ] ℂ ≃ₐ[A] A × A` (`TauCeti.tensorProductComplexAlgEquiv`), so the `A`-algebra norm of an
+`A ⊗[ℝ] ℂ ≃ₐ[A] A × A` (`TauCeti.tensorProductComplexEquivProd`), so the `A`-algebra norm of an
 element of `A ⊗[ℝ] ℂ` is the product of its two components (`TauCeti.norm_tensorProduct_complex`).
 
 In particular, for nontrivial `A` the tensor product `ℂ ⊗[ℝ] A` has zero divisors. Explicit
@@ -188,7 +188,7 @@ variable (A : Type*) [CommRing A] [Algebra ℝ A] [Algebra ℂ A] [IsScalarTower
 /-- **Splitting of `A ⊗[ℝ] ℂ` as an `A`-algebra.** For a commutative complex algebra `A` with a
 compatible real algebra structure, `A ⊗[ℝ] ℂ ≃ₐ[A] A × A` sends `a ⊗ z` to
 `(a * algebraMap ℂ A z, a * algebraMap ℂ A (starRingEnd ℂ z))`. -/
-noncomputable def tensorProductComplexAlgEquiv : A ⊗[ℝ] ℂ ≃ₐ[A] A × A :=
+noncomputable def tensorProductComplexEquivProd : A ⊗[ℝ] ℂ ≃ₐ[A] A × A :=
   AlgEquiv.ofRingEquiv
     (f := (Algebra.TensorProduct.comm ℝ A ℂ).toRingEquiv.trans
       (complexTensorProductEquivProd A).toRingEquiv)
@@ -200,26 +200,26 @@ noncomputable def tensorProductComplexAlgEquiv : A ⊗[ℝ] ℂ ≃ₐ[A] A × A
 
 variable {A}
 
-/-- Applying `tensorProductComplexAlgEquiv A` commutes the tensor factors `A ⊗[ℝ] ℂ` to `ℂ ⊗[ℝ] A`
+/-- Applying `tensorProductComplexEquivProd A` commutes the tensor factors `A ⊗[ℝ] ℂ` to `ℂ ⊗[ℝ] A`
 and applies `TauCeti.complexTensorProductEquivProd A`. -/
-theorem tensorProductComplexAlgEquiv_apply (x : A ⊗[ℝ] ℂ) :
-    tensorProductComplexAlgEquiv A x =
+theorem tensorProductComplexEquivProd_apply (x : A ⊗[ℝ] ℂ) :
+    tensorProductComplexEquivProd A x =
       complexTensorProductEquivProd A (Algebra.TensorProduct.comm ℝ A ℂ x) :=
   (rfl)
 
-/-- On a pure tensor `a ⊗ₜ z`, `tensorProductComplexAlgEquiv A` evaluates to the pair
+/-- On a pure tensor `a ⊗ₜ z`, `tensorProductComplexEquivProd A` evaluates to the pair
 `(a * algebraMap ℂ A z, a * algebraMap ℂ A (conj z))`. -/
 @[simp]
-theorem tensorProductComplexAlgEquiv_tmul (a : A) (z : ℂ) :
-    tensorProductComplexAlgEquiv A (a ⊗ₜ[ℝ] z) =
+theorem tensorProductComplexEquivProd_tmul (a : A) (z : ℂ) :
+    tensorProductComplexEquivProd A (a ⊗ₜ[ℝ] z) =
       (a * algebraMap ℂ A z, a * algebraMap ℂ A (starRingEnd ℂ z)) := by
-  simp [tensorProductComplexAlgEquiv_apply, Algebra.smul_def, mul_comm]
+  simp [tensorProductComplexEquivProd_apply, Algebra.smul_def, mul_comm]
 
 /-- **The `A`-algebra norm on `A ⊗[ℝ] ℂ` is the product of the two components.** -/
 theorem norm_tensorProduct_complex (x : A ⊗[ℝ] ℂ) :
     Algebra.norm A x =
-      (tensorProductComplexAlgEquiv A x).1 * (tensorProductComplexAlgEquiv A x).2 := by
-  rw [← Algebra.norm_eq_of_algEquiv (tensorProductComplexAlgEquiv A), Algebra.norm_prod,
+      (tensorProductComplexEquivProd A x).1 * (tensorProductComplexEquivProd A x).2 := by
+  rw [← Algebra.norm_eq_of_algEquiv (tensorProductComplexEquivProd A), Algebra.norm_prod,
     Algebra.norm_self, MonoidHom.id_apply, MonoidHom.id_apply]
 
 end CommRing

@@ -241,20 +241,6 @@ theorem characterGroup_one_one : characterGroup R (.ofAdd (1, 1)) = norm R := by
   ext f
   rw [characterGroup_apply, zpow_one, zpow_one, fst_mul_snd_complexSplitting]
 
-/-- **Conjugation formula on complex points**: conjugating `characterGroup ℂ (.ofAdd pq)` by
-complex conjugation on both `S(ℂ)` and `ℂˣ` produces `characterGroup ℂ (.ofAdd pq.swap)`. For
-equivariance of the algebraic character lattice itself, see
-`TauCeti.DeligneTorus.characterLatticeEquiv_smul_conjAe`. -/
-theorem characterGroup_conj_monoidHom (pq : ℤ × ℤ) :
-    (Units.map (starRingEnd ℂ : ℂ →* ℂ)).comp
-        ((characterGroup ℂ (.ofAdd pq)).comp (AlgHom.mapValue Complex.conjAe.toAlgHom)) =
-      characterGroup ℂ (.ofAdd pq.swap) := by
-  refine MonoidHom.ext fun f ↦ Units.ext ?_
-  simp only [MonoidHom.comp_apply]
-  rw [characterGroup_conj]
-  simp only [Units.coe_map, MonoidHom.coe_ofClass, Units.coe_star, Complex.star_def,
-    starRingEnd_self_apply, Prod.swap]
-
 /-- **On real points, the character `(1, 1)` equals the norm `Nm : S(ℝ) →* ℝˣ` embedded into
 `ℂˣ`.** -/
 theorem characterGroup_norm_real (f : WithConv (S →ₐ[ℝ] ℝ)) :
@@ -282,11 +268,10 @@ private lemma val_toMul_characterLatticeEquiv_symm (pq : ℤ × ℤ) :
         (_root_.MonoidAlgebra.single
           (Multiplicative.ofAdd ((Finsupp.uliftFinTwoAddEquiv ℤ).symm pq)) 1) := by
   simp only [characterLatticeEquiv, AddEquiv.symm_trans_apply,
-    MulEquiv.toAdditive_apply_symm_apply, toMul_ofMul, MulEquiv.symm_trans_apply,
-    MulEquiv.symm_symm, BialgEquiv.val_mapGroupLike,
-    TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm, BialgEquiv.toBialgHom_eq_coe,
-    BialgEquiv.coe_toBialgHom]
-  rfl
+    MulEquiv.toAdditive_apply_symm_apply, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
+    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom]
+  rw [AddEquiv.additiveMultiplicative_symm_apply, toMul_ofMul, BialgEquiv.val_mapGroupLike,
+    TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm, toMul_ofMul]
 
 /-- **Evaluation of the algebraic character lattice on base-changed points**: evaluating a
 base-changed `R`-point `g` of `S_ℂ` at the group-like element corresponding to `pq : ℤ × ℤ` under
@@ -306,16 +291,18 @@ theorem ofConv_characterLatticeEquiv_symm (pq : ℤ × ℤ)
     Finsupp.uliftFinTwoAddEquiv_symm_apply_zero, Finsupp.uliftFinTwoAddEquiv_symm_apply_one]
   rw [← Prod.mk.eta (p := pq), characterGroup_apply]
 
+private lemma conjAe_symm : Complex.conjAe.symm = Complex.conjAe :=
+  AlgEquiv.ext fun z ↦ by rw [AlgEquiv.symm_apply_eq]; simp
+
 private lemma ofConv_smul_conjAe (g : WithConv (baseChangeComplex →ₐ[ℂ] ℂ))
     (z : ℂ ⊗[ℝ] S) :
     g.ofConv (Complex.conjAe • z) =
       star (((baseChangeComplexPointsMulEquiv ℂ).symm
         (AlgHom.mapValue Complex.conjAe.toAlgHom
           (baseChangeComplexPointsMulEquiv ℂ g))).ofConv z) := by
-  have hsymm : Complex.conjAe.symm.toAlgHom = Complex.conjAe.toAlgHom :=
-    AlgHom.ext fun _ ↦ rfl
-  simpa [baseChangeComplexPointsMulEquiv, AlgHom.baseChangePointsMulEquiv, AlgHom.mapValue_apply,
-    hsymm] using g.ofConv.apply_scalarAut_smul Complex.conjAe z
+  rw [g.ofConv.apply_scalarAut_smul Complex.conjAe z, conjAe_symm,
+    ofConv_baseChangeComplexPointsMulEquiv_symm, AlgHom.mapValue_apply, ofConv_toConv,
+    ofConv_baseChangeComplexPointsMulEquiv, Complex.star_def, ← Complex.conjAe_coe]
 
 /-- **Galois equivariance of the algebraic character lattice**: the action of complex conjugation
 `Complex.conjAe` on `Additive (GroupLike ℂ baseChangeComplex)` corresponds under

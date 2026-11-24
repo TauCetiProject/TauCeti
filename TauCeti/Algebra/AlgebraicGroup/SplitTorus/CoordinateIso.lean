@@ -109,8 +109,9 @@ private theorem rankTwoTensorAux_tmul (R : Type v) [CommSemiring R]
     (x y : MonoidAlgebra R (Multiplicative ℤ)) :
     rankTwoTensorAux R (x ⊗ₜ[R] y) =
       (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).symm x ⊗ₜ[R]
-        (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).symm y :=
-  rfl
+        (AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).symm y := by
+  rw [rankTwoTensorAux, ← BialgEquiv.coe_toBialgHom, BialgEquiv.coe_ofBialgHom]
+  exact Bialgebra.TensorProduct.map_tmul _ _ x y
 
 /-- Coordinate bialgebra isomorphism identifying the rank-two split torus with
 `R[T;T⁻¹] ⊗[R] R[T;T⁻¹]` over any commutative semiring `R`. -/
@@ -128,17 +129,15 @@ theorem rankTwoTensorBialgEquiv_single (R : Type v) [CommSemiring R]
     rankTwoTensorBialgEquiv.{u} R (MonoidAlgebra.single m r) =
       LaurentPolynomial.T (m.toAdd ⟨0⟩) ⊗ₜ[R]
         (LaurentPolynomial.C r * LaurentPolynomial.T (m.toAdd ⟨1⟩)) := by
-  have htrans :
-      rankTwoTensorBialgEquiv.{u} R (MonoidAlgebra.single m r) =
-        rankTwoTensorAux R ((MonoidAlgebra.prodTensorBialgEquiv R)
-          (MonoidAlgebra.domCongrBialgEquiv R R finTwoMulEquiv.{u} (MonoidAlgebra.single m r))) :=
-    rfl
   have hdom : MonoidAlgebra.domCongrBialgEquiv R R finTwoMulEquiv.{u}
       (MonoidAlgebra.single m r) =
       MonoidAlgebra.single (Multiplicative.ofAdd (m.toAdd ⟨0⟩),
         Multiplicative.ofAdd (m.toAdd ⟨1⟩)) r := by
     simp [MonoidAlgebra.domCongrBialgEquiv]
-  rw [htrans, hdom, MonoidAlgebra.prodTensorBialgEquiv_single, rankTwoTensorAux_tmul]
+  rw [rankTwoTensorBialgEquiv, ← BialgEquiv.coe_toBialgHom, BialgEquiv.trans_toBialgHom,
+    BialgEquiv.trans_toBialgHom, BialgHom.comp_apply, BialgHom.comp_apply,
+    BialgEquiv.coe_toBialgHom, BialgEquiv.coe_toBialgHom, BialgEquiv.coe_toBialgHom, hdom,
+    MonoidAlgebra.prodTensorBialgEquiv_single, rankTwoTensorAux_tmul]
   simp only [AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single, toAdd_ofAdd,
     LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul]
 

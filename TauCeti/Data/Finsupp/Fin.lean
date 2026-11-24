@@ -24,8 +24,8 @@ lexicographically by their initial parts first, and then by their last entries.
 
 Finally, `Finsupp.ext_iff_of_fin_three` says that a finitely supported function on `Fin 3` is
 determined by its values at any three distinct points, in whatever order they are listed, and
-`Finsupp.finTwoAddEquiv` (with its universe-lifted variant `Finsupp.uliftFinTwoAddEquiv`)
-identifies `Fin 2 →₀ M` with `M × M` as an additive equivalence.
+`Finsupp.uliftFinTwoAddEquiv` identifies `ULift (Fin 2) →₀ M` with `M × M` as an additive
+equivalence.
 -/
 
 public section
@@ -141,37 +141,12 @@ theorem ext_iff_of_fin_three [Zero M] {a b c : Fin 3} (hab : a ≠ b) (hac : a �
   refine ⟨by rintro rfl; simp, fun ⟨h₁, h₂, h₃⟩ => Finsupp.ext fun x => ?_⟩
   rcases (by omega : x = a ∨ x = b ∨ x = c) with rfl | rfl | rfl <;> assumption
 
-/-- Additive equivalence between finitely supported functions `Fin 2 →₀ M` and pairs `M × M`,
-sending `f` to `(f 0, f 1)`. -/
-noncomputable def finTwoAddEquiv (M : Type*) [AddZeroClass M] : (Fin 2 →₀ M) ≃+ M × M where
-  toEquiv := finTwoArrowEquiv' M
-  map_add' f g := by simp
-
-@[simp]
-theorem finTwoAddEquiv_apply [AddZeroClass M] (f : Fin 2 →₀ M) :
-    finTwoAddEquiv M f = (f 0, f 1) :=
-  (rfl)
-
-@[simp]
-theorem finTwoAddEquiv_symm_apply_zero [AddZeroClass M] (p : M × M) :
-    (finTwoAddEquiv M).symm p 0 = p.1 :=
-  (rfl)
-
-@[simp]
-theorem finTwoAddEquiv_symm_apply_one [AddZeroClass M] (p : M × M) :
-    (finTwoAddEquiv M).symm p 1 = p.2 :=
-  (rfl)
-
 /-- Additive equivalence between finitely supported functions `ULift (Fin 2) →₀ M` and pairs
 `M × M`, sending `f` to `(f ⟨0⟩, f ⟨1⟩)`. -/
 noncomputable def uliftFinTwoAddEquiv (M : Type*) [AddZeroClass M] :
-    (ULift (Fin 2) →₀ M) ≃+ M × M :=
-  Finsupp.addEquivFunOnFinite.trans
-    { toFun f := (f ⟨0⟩, f ⟨1⟩)
-      invFun p i := if i = ⟨0⟩ then p.1 else p.2
-      left_inv _ := funext fun ⟨⟨i, hi⟩⟩ ↦ match i, hi with | 0, _ => rfl | 1, _ => rfl
-      right_inv _ := rfl
-      map_add' _ _ := rfl }
+    (ULift (Fin 2) →₀ M) ≃+ M × M where
+  toEquiv := (Finsupp.equivCongrLeft Equiv.ulift).trans (finTwoArrowEquiv' M)
+  map_add' f g := by simp
 
 @[simp]
 theorem uliftFinTwoAddEquiv_apply [AddZeroClass M] (f : ULift (Fin 2) →₀ M) :

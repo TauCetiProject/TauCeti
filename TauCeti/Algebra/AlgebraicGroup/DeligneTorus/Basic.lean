@@ -264,15 +264,19 @@ theorem norm_real_eq_one_iff (f : WithConv (S →ₐ[ℝ] ℝ)) :
   exact NormTorus.mem_normOne_complex_iff
 
 /-- **The real norm-one locus of the Deligne torus is compact** in the point topology. -/
-theorem isCompact_ker_norm_real : IsCompact {f : WithConv (S →ₐ[ℝ] ℝ) | norm ℝ f = 1} := by
+theorem isCompact_ker_norm_real :
+    IsCompact (((norm ℝ).ker : Subgroup (WithConv (S →ₐ[ℝ] ℝ))) :
+      Set (WithConv (S →ₐ[ℝ] ℝ))) := by
   have hEmb : Topology.IsEmbedding
       (fun f : WithConv (S →ₐ[ℝ] ℝ) ↦ (realPointsMulEquiv f : ℂ)) :=
     Units.isEmbedding_val₀.comp isHomeomorph_realPointsMulEquiv.isEmbedding
   rw [hEmb.isCompact_iff]
   have himg : (fun f : WithConv (S →ₐ[ℝ] ℝ) ↦ (realPointsMulEquiv f : ℂ)) ''
-      {f : WithConv (S →ₐ[ℝ] ℝ) | norm ℝ f = 1} = Metric.sphere 0 1 := by
+      (((norm ℝ).ker : Subgroup (WithConv (S →ₐ[ℝ] ℝ))) :
+        Set (WithConv (S →ₐ[ℝ] ℝ))) = Metric.sphere 0 1 := by
     ext z
-    simp only [Set.mem_image, Set.mem_ofPred_eq, norm_real_eq_one_iff, mem_sphere_zero_iff_norm]
+    simp only [Set.mem_image, SetLike.mem_coe, MonoidHom.mem_ker, norm_real_eq_one_iff,
+      mem_sphere_zero_iff_norm]
     exact ⟨by rintro ⟨f, hf, rfl⟩; exact hf, fun hz ↦
       ⟨realPointsMulEquiv.symm
           (Units.mk0 z (ne_zero_of_mem_unit_sphere ⟨z, mem_sphere_zero_iff_norm.2 hz⟩)),
