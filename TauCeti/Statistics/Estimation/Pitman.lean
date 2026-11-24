@@ -204,6 +204,7 @@ theorem pitmanEstimator_add_const {x : ι → ℝ} (hx : x ∈ pitmanGoodSet f) 
 
 /-- On the good set the Pitman estimator commutes with subtracting a constant from every
 observation. -/
+@[simp]
 theorem pitmanEstimator_sub_const {x : ι → ℝ} (hx : x ∈ pitmanGoodSet f) (a : ℝ) :
     pitmanEstimator f (fun i ↦ x i - a) = pitmanEstimator f x - a := by
   simpa only [← sub_eq_add_neg] using pitmanEstimator_add_const hx (-a)
