@@ -262,14 +262,14 @@ theorem sum_inner_oneillA_ker_eq {x : M} {ι κ : Type*} [Fintype ι] [Fintype �
       ∑ j, ⟪h.oneillA x u (b i), (c j : TangentSpace I x)⟫_ℝ *
         ⟪(c j : TangentSpace I x), h.oneillA x u' (b i)⟫_ℝ := by
     simpa using (c.sum_inner_mul_inner
-      ⟨h.oneillA x u (b i), h.oneillA_apply_mem_orthogonal_ker u (b i).2⟩
-      ⟨h.oneillA x u' (b i), h.oneillA_apply_mem_orthogonal_ker u' (b i).2⟩).symm
+      ⟨h.oneillA x u (b i), h.oneillA_apply_mem_orthogonal_ker u (b i).property⟩
+      ⟨h.oneillA x u' (b i), h.oneillA_apply_mem_orthogonal_ker u' (b i).property⟩).symm
   have hc (j : κ) : ⟪h.oneillA x u (c j), h.oneillA x u' (c j)⟫_ℝ =
       ∑ i, ⟪h.oneillA x u (c j), (b i : TangentSpace I x)⟫_ℝ *
         ⟪(b i : TangentSpace I x), h.oneillA x u' (c j)⟫_ℝ := by
     simpa using (b.sum_inner_mul_inner
-      ⟨h.oneillA x u (c j), h.oneillA_apply_mem_ker u (c j).2⟩
-      ⟨h.oneillA x u' (c j), h.oneillA_apply_mem_ker u' (c j).2⟩).symm
+      ⟨h.oneillA x u (c j), h.oneillA_apply_mem_ker u (c j).property⟩
+      ⟨h.oneillA x u' (c j), h.oneillA_apply_mem_ker u' (c j).property⟩).symm
   simp_rw [hb, hc]
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
@@ -319,7 +319,7 @@ theorem oneillANormSq_eq_sum {x : M} {κ : Type*} [Fintype κ]
   have he₂ (j : κ) : e (Sum.inr j) = c j := by simp [e]
   -- `A` vanishes on the vertical vectors `bᵢ`.
   have hb (i : Fin (Module.finrank ℝ (mfderiv I J f x).ker)) : h.oneillA x (b i) = 0 := by
-    rw [← Submodule.starProjection_eq_self_iff.mpr (b i).2, h.oneillA_starProjection_ker]
+    rw [← Submodule.starProjection_eq_self_iff.mpr (b i).property, h.oneillA_starProjection_ker]
   have h2 := h.two_mul_oneillANormSq_eq_sum e
   simp only [Fintype.sum_sum_type, he₁, he₂, hb,
     zero_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
