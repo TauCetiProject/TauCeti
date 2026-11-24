@@ -10,7 +10,9 @@ public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.MvPowerSeries.Expand
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.RegularLocalRing.MvPowerSeries
+import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.MvPowerSeries.Dvd
+import TauCeti.RingTheory.MvPowerSeries.Rescale
 
 /-!
 # The completed node `R⟦X, Y⟧ ⧸ (XY - a)`
@@ -206,15 +208,6 @@ section Reduction
 
 variable {ϖ : R} {e : ℕ} (he : e ≠ 0) (u : Rˣ)
 
-/-- Rescaling multiplies each variable by its scalar. -/
-private theorem rescaleAlgHom_X (a : Fin 2 → R) (i : Fin 2) :
-    rescaleAlgHom a (X i) = C (a i) * X i := by
-  ext n
-  rw [rescaleAlgHom_apply, coeff_rescale, coeff_X, coeff_C_mul, coeff_X]
-  split_ifs with h
-  · simp [h]
-  · simp
-
 /-- The substitution `X 0 ↦ (X 0) ^ e`, `X 1 ↦ u (X 1) ^ e`. -/
 private def expandRescale : MvPowerSeries (Fin 2) R →ₐ[R] MvPowerSeries (Fin 2) R :=
   (expand e he).comp (rescaleAlgHom ![1, (u : R)])
@@ -328,12 +321,8 @@ theorem isDomain [IsDomain R] [IsDiscreteValuationRing R] {a : R} (ha0 : a ≠ 0
   have he : e ≠ 0 := by
     rintro rfl
     simp at ha
-  have hϖ2 : ϖ ∉ maximalIdeal R ^ 2 := by
-    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton, pow_two]
-    intro h
-    exact hϖ.not_isUnit (isUnit_of_dvd_one
-      ((mul_dvd_mul_iff_left hϖ.ne_zero).mp (by rwa [mul_one])))
-  have := isRegularLocalRing (mem_maximalIdeal _ |>.mpr hϖ.not_isUnit) hϖ2
+  have := isRegularLocalRing (mem_maximalIdeal _ |>.mpr hϖ.not_isUnit)
+    hϖ.notMem_maximalIdeal_sq
   let f := (Ideal.Quotient.mk (Ideal.span {X 0 * X 1 - C ϖ})).comp
     (expandRescale he u).toRingHom
   have hf (F : MvPowerSeries (Fin 2) R) (hF : F ∈ Ideal.span {X 0 * X 1 - C (u * ϖ ^ e)}) :

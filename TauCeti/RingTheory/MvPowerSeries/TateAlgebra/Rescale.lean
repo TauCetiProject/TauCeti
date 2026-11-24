@@ -103,14 +103,9 @@ theorem restrictedRescaleEquiv_X (u : σ → Rˣ)
         (⟨MvPowerSeries.X i, isRestricted_X r i⟩ : IsRestricted.subring (R := R) r) =
       algebraMap R (IsRestricted.subring (R := R) s) (u i : R) *
         (⟨MvPowerSeries.X i, isRestricted_X s i⟩ : IsRestricted.subring (R := R) s) := by
-  classical
   apply Subtype.ext
-  ext n
   rw [coe_restrictedRescaleEquiv, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
-    coeff_rescale, coeff_C_mul, coeff_X]
-  split_ifs with hn
-  · simp [hn]
-  · simp
+    MvPowerSeries.rescale_X]
 
 variable [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
 
