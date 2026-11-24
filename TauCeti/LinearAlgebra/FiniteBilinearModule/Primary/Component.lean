@@ -172,25 +172,17 @@ variable {A} in
 isometry between them. -/
 def Isometry.restrictPrimaryComponent {B : FiniteBilinearModule} (f : Isometry A B) (p : ℕ) :
     Isometry (A.restrict (AddCommGroup.primaryComponent A p))
-      (B.restrict (AddCommGroup.primaryComponent B p)) where
-  toAddEquiv :=
-    -- `f` maps the `p`-primary component of `A` onto that of `B`.
-    have h : (AddCommGroup.primaryComponent A p).map f.toAddEquiv.toAddMonoidHom =
-        AddCommGroup.primaryComponent B p := AddSubgroup.ext fun y ↦ by
-      rw [AddSubgroup.mem_map_equiv]
-      simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
-    (f.toAddEquiv.addSubgroupMap _).trans (AddEquiv.addSubgroupCongr h)
-  map_pairing' x y := f.map_pairing x.val y.val
+      (B.restrict (AddCommGroup.primaryComponent B p)) :=
+  f.restrict fun x ↦ by
+    simp only [AddCommGroup.mem_primaryComponent, ← map_nsmul, EmbeddingLike.map_eq_zero_iff]
 
 variable {A} in
 /-- The restriction of an isometry to primary components acts as the isometry. -/
 @[simp]
 theorem Isometry.restrictHom_restrictPrimaryComponent_apply {B : FiniteBilinearModule}
     (f : Isometry A B) (p : ℕ) (x : A.restrict (AddCommGroup.primaryComponent A p)) :
-    B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) := by
-  rw [restrictHom_apply, restrictHom_apply]
-  -- The underlying element of the restriction is `f x` by construction of `addSubgroupMap`.
-  rfl
+    B.restrictHom _ (f.restrictPrimaryComponent p x) = f (A.restrictHom _ x) :=
+  f.restrictHom_restrict_apply _ x
 
 end FiniteBilinearModule
 

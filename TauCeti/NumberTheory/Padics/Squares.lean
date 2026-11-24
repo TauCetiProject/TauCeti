@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.Henselian.SquareClasses
 
 /-!
@@ -56,11 +57,7 @@ theorem isSquare_of_isUnit_of_mul_pow_eq_sq {a s : ℤ_[p]} (ha : IsUnit a) {n :
   have hs : s ≠ 0 := by
     rintro rfl
     simp [ha.ne_zero, hp0] at h
-  have hval : a.valuation = 0 := by
-    obtain ⟨a, rfl⟩ := ha
-    have h1 := congrArg valuation a.mul_inv
-    rw [valuation_mul a.ne_zero a⁻¹.ne_zero, valuation_one] at h1
-    omega
+  have hval := valuation_eq_zero_of_isUnit ha
   -- Comparing valuations gives `n = 2 v(s)`, and then `s = t pᵛ⁽ˢ⁾` with `t` a unit.
   have hn : n = 2 * s.valuation := by
     have h1 := congrArg valuation h

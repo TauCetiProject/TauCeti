@@ -31,7 +31,8 @@ discriminant bilinear modules are isometric
 Necessity is the invariance of the rank, of the determinant square class and of the discriminant
 form under local isometry. For sufficiency, diagonalize: `L_p` has an orthogonal basis with
 self-pairings `uᵢ pᵏⁱ`, `uᵢ` a unit, and the `p`-primary component of `b_L` is the orthogonal sum
-of the odd cyclic pairings `b_{θᵢ}^{(p)}(pᵏⁱ)` for integers `θᵢ ≡ uᵢ (mod p^{kᵢ + 1})`. The
+of the odd cyclic pairings `b_{θᵢ}^{(p)}(pᵏⁱ)` for integers `θᵢ ≡ uᵢ (mod pᵏⁱ)` with the same
+reduction modulo `p` as `uᵢ` (`PadicInt.exists_intCast_dvd_sub_and_toZMod_eq`). The
 classification of such sums gives, for every `m ≥ 1`, equally many basis vectors of `L_p` and of
 `M_p` with exponent `m`, and equal products of the Legendre symbols of their coefficients, so that
 the products of the corresponding units of `L_p` and `M_p` lie in one square class. The rank then
@@ -72,20 +73,6 @@ variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module 
   {p : ℕ} [Fact p.Prime]
 
 /-! ### Diagonal Jordan data -/
-
-/-- A `p`-adic unit is congruent modulo `pᵏ` to an integer, which may be chosen with the same
-reduction modulo `p`. -/
-private theorem exists_intCast_dvd_sub_and_toZMod_eq (x : ℤ_[p]ˣ) (k : ℕ) :
-    ∃ θ : ℤ, (p : ℤ_[p]) ^ k ∣ x - θ ∧ PadicInt.toZMod (x : ℤ_[p]) = θ := by
-  have hdvd := Ideal.mem_span_singleton.mp (PadicInt.appr_spec (k + 1) (x : ℤ_[p]))
-  refine ⟨(PadicInt.appr (x : ℤ_[p]) (k + 1) : ℕ), ?_, ?_⟩
-  · rw [Int.cast_natCast]
-    exact (pow_dvd_pow _ k.le_succ).trans hdvd
-  · have hmem : (x : ℤ_[p]) - PadicInt.appr (x : ℤ_[p]) (k + 1) ∈ RingHom.ker PadicInt.toZMod := by
-      rw [PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p, Ideal.mem_span_singleton]
-      exact (dvd_pow_self _ k.succ_ne_zero).trans hdvd
-    rw [RingHom.mem_ker, map_sub, sub_eq_zero, map_natCast] at hmem
-    rw [hmem, Int.cast_natCast]
 
 /-- In an orthogonal basis of `L_p` with self-pairings `uᵢ pᵏⁱ`, the Gram determinant
 `(∏ uᵢ) p^{∑ kᵢ}` is the determinant of `L` up to the square of a unit. -/
@@ -164,8 +151,8 @@ private theorem localIntegralForm_equivalent_of_isometry (hp : p ≠ 2)
   obtain ⟨c, v, l, hc, hcv⟩ :=
     M.exists_basis_iIsOrtho_localIntegralForm_eq_unit_mul_pow hp M.form_nondegenerate
   -- Integer representatives of the units, nonzero modulo `p`.
-  choose θ hθ hθz using fun i ↦ exists_intCast_dvd_sub_and_toZMod_eq (u i) (k i)
-  choose η hη hηz using fun j ↦ exists_intCast_dvd_sub_and_toZMod_eq (v j) (l j)
+  choose θ hθ hθz using fun i ↦ PadicInt.exists_intCast_dvd_sub_and_toZMod_eq (u i).val (k i)
+  choose η hη hηz using fun j ↦ PadicInt.exists_intCast_dvd_sub_and_toZMod_eq (v j).val (l j)
   have hθ0 i : (θ i : ZMod p) ≠ 0 := hθz i ▸ ((u i).isUnit.map PadicInt.toZMod).ne_zero
   have hη0 j : (η j : ZMod p) ≠ 0 := hηz j ▸ ((v j).isUnit.map PadicInt.toZMod).ne_zero
   have hcop {a : ℤ} (ha : (a : ZMod p) ≠ 0) : IsCoprime (p : ℤ) a :=
@@ -227,9 +214,8 @@ theorem localIntegralForm_equivalent_iff_nonempty_isometry_primaryComponent (hp 
 
 /-- **The genus away from `2`.** Two nondegenerate lattices lie in one genus exactly when their
 signatures agree, their discriminant bilinear modules are isometric, and their localizations at
-`2` are isometric. At every odd prime the signature supplies the rank, the signature together with
-the order of the discriminant group supplies the determinant, and the discriminant bilinear form
-supplies its `p`-primary component. -/
+`2` are isometric. So away from `2` the genus is determined by the signature and the discriminant
+bilinear form. -/
 theorem sameGenus_iff_nonempty_isometry_and_localIntegralForm_two_equivalent :
     L.SameGenus M ↔ L.signature = M.signature ∧
       Nonempty (FiniteBilinearModule.Isometry L.discriminantBilinearModule
@@ -240,6 +226,8 @@ theorem sameGenus_iff_nonempty_isometry_and_localIntegralForm_two_equivalent :
     ⟨hsig, fun p _ ↦ ?_⟩⟩
   obtain rfl | hp := eq_or_ne p 2
   · exact h2
+  -- At an odd prime the signature supplies the rank, the signature together with the order of the
+  -- discriminant group supplies the determinant, and `f` supplies the `p`-primary component.
   have hdet : L.determinant = M.determinant := by
     have hcard : L.discriminant = M.discriminant := by
       rw [← natCard_discriminantGroup, ← natCard_discriminantGroup]
