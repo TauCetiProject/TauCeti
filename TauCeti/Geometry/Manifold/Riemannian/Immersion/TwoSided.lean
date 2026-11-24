@@ -50,7 +50,8 @@ bundles have base and fibres in one universe, so these last statements take `M` 
 
 ## Main results
 
-* `TauCeti.exists_contMDiffOn_unit_orthogonalNormalSpace`: local `C^m` unit normal fields.
+* `TauCeti.exists_contMDiffOn_unit_orthogonalNormalSpace`: local `C^m` unit normal fields, in any
+  positive codimension.
 * `TauCeti.isTwoSidedHypersurface_iff_nonempty_vectorBundleOrientation`: two-sided exactly when
   the normal bundle is orientable.
 * `TauCeti.isTwoSidedHypersurface_iff_exists_continuous`: a continuous unit normal field suffices.
@@ -121,12 +122,12 @@ variable [FiniteDimensional ℝ V] {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifo
   [IsContMDiffRiemannianBundle J m V (fun y : N ↦ TangentSpace J y)] [IsManifold J (m + 1) N]
   [FunLike K M N] [ContinuousMapClass K M N]
 
-/-- **Local unit normal fields.** Near every point, an immersion of codimension one has a `C^m`
-field of unit normal vectors, as a section of the pulled-back tangent bundle `f *ᵖ TN`: the
-normalization of a `C^m` local frame of its normal bundle. -/
-theorem exists_contMDiffOn_unit_orthogonalNormalSpace {f : K} (hf : ContMDiff I J n f)
+/-- **Local unit normal fields.** Near every point, an immersion of positive codimension has a
+`C^m` field of unit normal vectors, as a section of the pulled-back tangent bundle `f *ᵖ TN`: the
+normalization of the first vector of a `C^m` local frame of its normal bundle. -/
+theorem exists_contMDiffOn_unit_orthogonalNormalSpace {r : ℕ} {f : K} (hf : ContMDiff I J n f)
     (hinj : ∀ x, Function.Injective (mfderiv I J f x)) (hm : m + 1 ≤ n)
-    (hr : finrank ℝ V = finrank ℝ E + 1) (x₀ : M) :
+    (hr : finrank ℝ V = finrank ℝ E + (r + 1)) (x₀ : M) :
     ∃ U : Set M, IsOpen U ∧ x₀ ∈ U ∧ ∃ τ : ∀ x, TangentSpace J (f x),
       ContMDiffOn I (I.prod 𝓘(ℝ, V)) m
         (fun x ↦ (⟨x, τ x⟩ : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)))) U ∧
@@ -193,11 +194,8 @@ theorem nonempty_vectorBundleOrientation_of_continuous {f : K} (hf : ContMDiff I
       (w := ν) hνf).2 ⟨contMDiff_id, contMDiff_zero_iff.2 hν⟩).continuous
   have hne (x : M) : (⟨ν x, hνf x⟩ : orthogonalNormalSpace I J f x) ≠ 0 := fun h ↦
     hν₀ x ((Submodule.mk_eq_zero _ _).1 h)
-  exact ⟨VectorBundleOrientation.ofContinuous _
-    (VectorBundleOrientationCover.continuous_mk_basis_orientation continuous_id
-      (fun x ↦ FiniteDimensional.basisSingleton (Fin 1)
-        (finrank_orthogonalNormalSpace_eq_one (hinj x) hr) _ (hne x))
-      fun i ↦ by simpa only [FiniteDimensional.basisSingleton_apply, id_eq] using hσ)⟩
+  exact ⟨VectorBundleOrientation.ofContinuousNonvanishingSection
+    (fun x ↦ finrank_orthogonalNormalSpace_eq_one (hinj x) hr) hσ hne⟩
 
 /-- Near a point, the unit normal vectors `w x` that are positive for an orientation `o` of
 `ν_f` are the values of a local unit normal field `τ`, or their opposites: the set where `τ x` is

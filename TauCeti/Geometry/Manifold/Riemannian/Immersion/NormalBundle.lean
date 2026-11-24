@@ -58,7 +58,8 @@ is `C^k` into `TN` (`TauCeti.contMDiffWithinAt_orthogonalNormalSpace_mk_iff_tang
 orthogonal projection of `f *ᵖ TN` onto `ν_f` is `C^m`
 (`TauCeti.contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace`). For a continuous metric, the
 fibre norm of `ν_f` is continuous on its total space
-(`TauCeti.continuous_norm_orthogonalNormalSpace`). No compactness, injectivity
+(`TauCeti.continuous_norm_orthogonalNormalSpace`, an instance of `TauCeti.continuous_norm_subbundle`
+for any family of subspaces of the fibres). No compactness, injectivity
 of `f`, boundarylessness or choice of normal frame is assumed. The identity map has zero normal
 spaces and a constant map has the whole ambient tangent space as normal space
 (`TauCeti.orthogonalNormalSpace_id`, `TauCeti.orthogonalNormalSpace_const`).
@@ -78,6 +79,18 @@ open Bundle Manifold Module Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+/-- On a family `S` of subspaces of the fibres of a normed bundle `E`, with the subspace topology
+of the total space of `E` (`TauCeti.subbundleTopology`), the fibre norm is continuous whenever it
+is continuous on the total space of `E`, for any model fibre `P`. -/
+theorem continuous_norm_subbundle {B F : Type*} {E : B → Type*}
+    [∀ b, SeminormedAddCommGroup (E b)] [∀ b, NormedSpace ℝ (E b)]
+    [TopologicalSpace (TotalSpace F E)] (hE : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖)
+    (P : Type*) (S : ∀ b, Submodule ℝ (E b)) :
+    letI := subbundleTopology F (F' := P) S
+    Continuous fun v : TotalSpace P (fun b ↦ S b) ↦ ‖v.snd‖ :=
+  letI := subbundleTopology F (F' := P) S
+  hE.comp (isEmbedding_totalSpace_subbundle F P S).continuous
 
 variable {E V H G M N K : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -625,14 +638,9 @@ omit [FiniteDimensional ℝ V] [IsManifold I 1 M] in
 continuous on their total space with the subspace topology of `f *ᵖ TN`, for any model fibre. -/
 theorem continuous_norm_orthogonalNormalSpace
     [IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y)] (P : Type*) (f : M → N) :
-    Continuous fun v : TotalSpace P (fun x ↦ orthogonalNormalSpace I J f x) ↦ ‖v.snd‖ := by
-  have h : Continuous fun v : TotalSpace P (fun x ↦ orthogonalNormalSpace I J f x) ↦
-      (⟨v.proj, (v.snd : TangentSpace J (f v.proj))⟩ :
-        TotalSpace V ((f : M → N) *ᵖ (TangentSpace J))) :=
-    Topology.IsEmbedding.continuous (X := TotalSpace P fun x ↦ orthogonalNormalSpace I J f x)
-      (isEmbedding_totalSpace_subbundle V (E := (f : M → N) *ᵖ (TangentSpace J)) P
-        (orthogonalNormalSpace I J f))
-  exact (continuous_norm_bundle V (fun y : N ↦ TangentSpace J y)).comp
-    ((Pullback.continuous_lift (F := V) (E := TangentSpace J) f).comp h)
+    Continuous fun v : TotalSpace P (fun x ↦ orthogonalNormalSpace I J f x) ↦ ‖v.snd‖ :=
+  continuous_norm_subbundle (F := V) (E := (f : M → N) *ᵖ (TangentSpace J))
+    ((continuous_norm_bundle V (fun y : N ↦ TangentSpace J y)).comp
+      (Pullback.continuous_lift (F := V) (E := TangentSpace J) f)) P (orthogonalNormalSpace I J f)
 
 end TauCeti
