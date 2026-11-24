@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Manifold
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 /-!
@@ -21,8 +21,8 @@ These are the native quotient group and topology, not a replacement matrix carri
 
 The construction uses the native Spin charts pulled back from the embedded Clifford units
 and `Subgroup.instLieGroupDiscreteQuotient` for the central finite quotient, and packages the
-defining cover, canonical inclusions, and determinant character as `ContMDiffMonoidMorphism`s
-(`realMkSmoothHom`, `realOfSpinSmoothHom`, `realOfCircleSmoothHom`, `realDetSmoothHom`).
+defining cover and canonical Spin inclusion as `ContMDiffMonoidMorphism`s (`realMkSmoothHom`,
+`realOfSpinSmoothHom`).
 
 ## References
 
@@ -111,40 +111,6 @@ theorem realMkSmoothHom_comp_inl :
 theorem realOfSpinSmoothHom_apply (s : spinGroup (realCliffordForm n 0)) :
     realOfSpinSmoothHom n hQ s = ofSpin (realCliffordForm n 0) hQ s := by
   simp only [realOfSpinSmoothHom, ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
-    ContMDiffMonoidMorphism.inl_apply, realMkSmoothHom_apply, ofSpin_apply]
-
-/-- The central weight-one inclusion `U(1) → Spinᶜ(n)` as a smooth homomorphism. -/
-def realOfCircleSmoothHom :
-    ContMDiffMonoidMorphism (𝓡 1) (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) ∞
-      Circle (spinCGroup (realCliffordForm n 0) hQ) :=
-  (realMkSmoothHom n hQ).comp ContMDiffMonoidMorphism.inr
-
-@[simp]
-theorem realMkSmoothHom_comp_inr :
-    (realMkSmoothHom n hQ).comp ContMDiffMonoidMorphism.inr = realOfCircleSmoothHom n hQ :=
-  (rfl)
-
-@[simp]
-theorem realOfCircleSmoothHom_apply (z : Circle) :
-    realOfCircleSmoothHom n hQ z = ofCircle (realCliffordForm n 0) hQ z := by
-  simp only [realOfCircleSmoothHom, ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
-    ContMDiffMonoidMorphism.inr_apply, realMkSmoothHom_apply, ofCircle_apply]
-
-/-- The weight-two determinant character `Spinᶜ(n) → U(1)` as a smooth homomorphism. -/
-def realDetSmoothHom :
-    ContMDiffMonoidMorphism (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) (𝓡 1) ∞
-      (spinCGroup (realCliffordForm n 0) hQ) Circle where
-  toMonoidHom := det (realCliffordForm n 0) hQ
-  contMDiff_toFun := contMDiff_realDet n hQ
-
-@[simp]
-theorem realDetSmoothHom_apply (x : spinCGroup (realCliffordForm n 0) hQ) :
-    realDetSmoothHom n hQ x = det (realCliffordForm n 0) hQ x :=
-  (rfl)
-
-@[simp]
-theorem realDetSmoothHom_comp_ofSpin :
-    (realDetSmoothHom n hQ).comp (realOfSpinSmoothHom n hQ) = 1 :=
-  DFunLike.coe_injective <| funext fun s ↦ by simp [det_ofSpin]
+    ContMDiffMonoidMorphism.coe_inl, realMkSmoothHom_apply, ofSpin_apply]
 
 end CliffordAlgebra.spinCGroup

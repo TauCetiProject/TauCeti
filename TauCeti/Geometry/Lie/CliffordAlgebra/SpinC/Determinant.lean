@@ -183,105 +183,107 @@ theorem realDetLieLinearEquiv_symm_apply (X : 𝔤) :
   exact ((realDetLieLinearEquiv n hQ).apply_symm_apply X).trans
     (by simp only [realDetLieLinearEquiv_apply, sub_add_cancel])
 
-/-- The Lie map of `realOfCircleSmoothHom` agrees with the continuous Lie map of
-`ofCircleContinuousMonoidHom`. -/
-theorem lieMap_realOfCircleSmoothHom :
-    lieMap (realOfCircleSmoothHom n hQ) =
-      ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-        (ofCircleContinuousMonoidHom (realCliffordForm n 0) hQ) := by
-  -- Congruence avoids costly dependent rewriting through the Spinᶜ Lie-algebra model.
-  calc
-    lieMap (realOfCircleSmoothHom n hQ)
-      = lieMap ((ofCircleContinuousMonoidHom (realCliffordForm n 0) hQ).toContMDiffMonoidMorphism
-          (𝓡 1) IC) := by
-      congr 1
-      exact DFunLike.coe_injective <| funext fun z ↦ by
-        rw [realOfCircleSmoothHom_apply, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism,
-          ofCircleContinuousMonoidHom_apply]
-    _ = ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-          (ofCircleContinuousMonoidHom (realCliffordForm n 0) hQ) :=
-      (ContinuousMonoidHom.lieMap_def (I := 𝓡 1) (I' := IC) _).symm
+/-- The central weight-one inclusion `U(1) → Spinᶜ(n)` as a smooth homomorphism, obtained from
+`ofCircleContinuousMonoidHom` by automatic smoothness. -/
+def realOfCircleSmoothHom : ContMDiffMonoidMorphism (𝓡 1) IC ∞ Circle G :=
+  (ofCircleContinuousMonoidHom (realCliffordForm n 0) hQ).toContMDiffMonoidMorphism (𝓡 1) IC
 
-/-- The Lie map of `realDetSmoothHom` agrees with the continuous Lie map of
-`detContinuousMonoidHom`. -/
-theorem lieMap_realDetSmoothHom :
-    lieMap (realDetSmoothHom n hQ) =
-      ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1)
-        (detContinuousMonoidHom (realCliffordForm n 0) hQ) := by
-  calc
-    lieMap (realDetSmoothHom n hQ)
-      = lieMap ((detContinuousMonoidHom (realCliffordForm n 0) hQ).toContMDiffMonoidMorphism
-          IC (𝓡 1)) := by
-      congr 1
-      exact DFunLike.coe_injective <| funext fun x ↦ by
-        rw [realDetSmoothHom_apply, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism,
-          detContinuousMonoidHom_apply]
-    _ = ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1)
-          (detContinuousMonoidHom (realCliffordForm n 0) hQ) :=
-      (ContinuousMonoidHom.lieMap_def (I := IC) (I' := 𝓡 1) _).symm
+@[simp]
+theorem realOfCircleSmoothHom_apply (z : Circle) :
+    realOfCircleSmoothHom n hQ z = ofCircle (realCliffordForm n 0) hQ z := by
+  simp [realOfCircleSmoothHom]
+
+@[simp]
+theorem realMkSmoothHom_comp_inr :
+    (realMkSmoothHom n hQ).comp ContMDiffMonoidMorphism.inr = realOfCircleSmoothHom n hQ :=
+  DFunLike.coe_injective <| funext fun z ↦ by simp [ofCircle_apply]
+
+/-- The weight-two determinant character `Spinᶜ(n) → U(1)` as a smooth homomorphism, obtained from
+`detContinuousMonoidHom` by automatic smoothness. -/
+def realDetSmoothHom : ContMDiffMonoidMorphism IC (𝓡 1) ∞ G Circle :=
+  (detContinuousMonoidHom (realCliffordForm n 0) hQ).toContMDiffMonoidMorphism IC (𝓡 1)
+
+@[simp]
+theorem realDetSmoothHom_apply (x : G) :
+    realDetSmoothHom n hQ x = det (realCliffordForm n 0) hQ x := by
+  simp [realDetSmoothHom]
+
+@[simp]
+theorem realDetSmoothHom_comp_realOfSpinSmoothHom :
+    (realDetSmoothHom n hQ).comp (realOfSpinSmoothHom n hQ) = 1 :=
+  DFunLike.coe_injective <| funext fun s ↦ by simp [det_ofSpin]
 
 /-- In normalized circle Lie-algebra coordinates, `lieMap (realDetSmoothHom n hQ)` is the
 determinant weight `lieWeight (detContinuousMonoidHom _ hQ)`. -/
+@[simp]
 theorem circleLieAlgebraEquiv_lieMap_realDetSmoothHom (Y : 𝔤) :
-    circleLieAlgebraEquiv (lieMap (realDetSmoothHom n hQ) Y) = d Y := by
-  calc
-    circleLieAlgebraEquiv (lieMap (realDetSmoothHom n hQ) Y)
-      = circleLieAlgebraEquiv
-          (ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1)
-            (detContinuousMonoidHom (realCliffordForm n 0) hQ) Y) :=
-      congrArg circleLieAlgebraEquiv (DFunLike.congr_fun (lieMap_realDetSmoothHom n hQ) Y)
-    _ = d Y := (ContinuousMonoidHom.lieWeight_apply (I := IC) _ Y).symm
+    circleLieAlgebraEquiv (lieMap (realDetSmoothHom n hQ) Y) = d Y :=
+  (congrArg circleLieAlgebraEquiv
+    (DFunLike.congr_fun
+      (ContinuousMonoidHom.lieMap_def (I := IC) (I' := 𝓡 1)
+        (detContinuousMonoidHom (realCliffordForm n 0) hQ)).symm Y)).trans
+    (ContinuousMonoidHom.lieWeight_apply (I := IC) _ Y).symm
 
 /-- The differential of `det` vanishes on the image of `𝔰𝔭𝔦𝔫(n)`. -/
 @[simp]
 theorem lieMap_realDetSmoothHom_lieMap_realOfSpinSmoothHom
     (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
-    lieMap (realDetSmoothHom n hQ) (lieMap (realOfSpinSmoothHom n hQ) X) = 0 := by
-  have h : (lieMap (realDetSmoothHom n hQ)).comp (lieMap (realOfSpinSmoothHom n hQ)) = 0 :=
-    calc
-      (lieMap (realDetSmoothHom n hQ)).comp (lieMap (realOfSpinSmoothHom n hQ))
-        = lieMap ((realDetSmoothHom n hQ).comp (realOfSpinSmoothHom n hQ)) :=
-        (lieMap_comp _ _).symm
-      _ = lieMap 1 := congrArg _root_.lieMap (realDetSmoothHom_comp_ofSpin n hQ)
-      _ = 0 := lieMap_one
-  exact DFunLike.congr_fun h X
+    lieMap (realDetSmoothHom n hQ) (lieMap (realOfSpinSmoothHom n hQ) X) = 0 :=
+  (lieMap_lieMap_of_comp_eq (realDetSmoothHom_comp_realOfSpinSmoothHom n hQ) X).trans
+    (by simp only [lieMap_one, zero_apply])
 
 /-- The determinant differential vanishes on the image of `𝔰𝔭𝔦𝔫(n)` in `𝔰𝔭𝔦𝔫ᶜ(n)`. -/
 @[simp]
 theorem lieWeight_detContinuousMonoidHom_lieMap_realOfSpinSmoothHom
     (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
-    d (lieMap (realOfSpinSmoothHom n hQ) X) = 0 := by
-  calc
-    d (lieMap (realOfSpinSmoothHom n hQ) X)
-      = circleLieAlgebraEquiv
-          (lieMap (realDetSmoothHom n hQ) (lieMap (realOfSpinSmoothHom n hQ) X)) :=
-      (circleLieAlgebraEquiv_lieMap_realDetSmoothHom n hQ _).symm
-    _ = circleLieAlgebraEquiv 0 :=
-      congrArg circleLieAlgebraEquiv (lieMap_realDetSmoothHom_lieMap_realOfSpinSmoothHom n hQ X)
-    _ = 0 := map_zero circleLieAlgebraEquiv
+    d (lieMap (realOfSpinSmoothHom n hQ) X) = 0 :=
+  (circleLieAlgebraEquiv_lieMap_realDetSmoothHom n hQ _).symm.trans <|
+    (congrArg circleLieAlgebraEquiv
+      (lieMap_realDetSmoothHom_lieMap_realOfSpinSmoothHom n hQ X)).trans
+      (map_zero circleLieAlgebraEquiv)
+
+/-- On the central circle Lie algebra, the determinant weight of `realOfCircleSmoothHom` acts by
+twice the normalized circle parameter. -/
+@[simp]
+theorem lieWeight_detContinuousMonoidHom_lieMap_realOfCircleSmoothHom
+    (Z : LeftInvariantDerivation (𝓡 1) Circle) :
+    d (lieMap (realOfCircleSmoothHom n hQ) Z) = 2 * circleLieAlgebraEquiv Z :=
+  (congrArg d (DFunLike.congr_fun
+    (ContinuousMonoidHom.lieMap_def (I := 𝓡 1) (I' := IC)
+      (ofCircleContinuousMonoidHom (realCliffordForm n 0) hQ)).symm Z)).trans
+    (lieWeight_detContinuousMonoidHom_lieMap_ofCircleContinuousMonoidHom n hQ Z)
 
 /-- On the central circle Lie algebra, the differential of `det` acts by multiplication by `2`. -/
 @[simp]
 theorem lieMap_realDetSmoothHom_lieMap_realOfCircleSmoothHom
     (Z : LeftInvariantDerivation (𝓡 1) Circle) :
-    lieMap (realDetSmoothHom n hQ) (lieMap (realOfCircleSmoothHom n hQ) Z) = (2 : ℝ) • Z := by
-  apply circleLieAlgebraEquiv.injective
-  calc
-    circleLieAlgebraEquiv (lieMap (realDetSmoothHom n hQ) (lieMap (realOfCircleSmoothHom n hQ) Z))
-      = d (lieMap (realOfCircleSmoothHom n hQ) Z) :=
-      circleLieAlgebraEquiv_lieMap_realDetSmoothHom n hQ _
-    _ = d (ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-          (ofCircleContinuousMonoidHom _ hQ) Z) :=
-      congrArg d (DFunLike.congr_fun (lieMap_realOfCircleSmoothHom n hQ) Z)
-    _ = 2 * circleLieAlgebraEquiv Z :=
-      lieWeight_detContinuousMonoidHom_lieMap_ofCircleContinuousMonoidHom n hQ Z
-    _ = circleLieAlgebraEquiv ((2 : ℝ) • Z) := by rw [map_smul, smul_eq_mul]
+    lieMap (realDetSmoothHom n hQ) (lieMap (realOfCircleSmoothHom n hQ) Z) = (2 : ℝ) • Z :=
+  circleLieAlgebraEquiv.injective <|
+    (circleLieAlgebraEquiv_lieMap_realDetSmoothHom n hQ _).trans <|
+      (lieWeight_detContinuousMonoidHom_lieMap_realOfCircleSmoothHom n hQ Z).trans
+        (by rw [map_smul, smul_eq_mul] :
+          circleLieAlgebraEquiv ((2 : ℝ) • Z) = 2 * circleLieAlgebraEquiv Z).symm
+
+/-- Reconstructing the central determinant lift from the determinant weight of a central circle
+derivation recovers that circle derivation. -/
+theorem realDetLieLift_lieWeight_lieMap_realOfCircleSmoothHom
+    (Z : LeftInvariantDerivation (𝓡 1) Circle) :
+    realDetLieLift n hQ (d (lieMap (realOfCircleSmoothHom n hQ) Z)) =
+      lieMap (realOfCircleSmoothHom n hQ) Z :=
+  -- Congruence avoids costly `isDefEq` unfolding across the Spinᶜ Lie-algebra model.
+  (congrArg (realDetLieLift n hQ)
+    (lieWeight_detContinuousMonoidHom_lieMap_realOfCircleSmoothHom n hQ Z)).trans <|
+    (realDetLieLift_apply n hQ _).trans <|
+      (congrArg (ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
+        (ofCircleContinuousMonoidHom _ hQ)) <| by
+          rw [mul_div_cancel_left₀ _ two_ne_zero, LinearEquiv.symm_apply_apply]).trans
+        (DFunLike.congr_fun
+          (ContinuousMonoidHom.lieMap_def (I := 𝓡 1) (I' := IC) _) Z)
 
 /-- Membership in the kernel ideal of `det`'s Lie map is vanishing of the determinant weight. -/
-theorem mem_ker_lieMap_detContinuousMonoidHom_iff (Y : 𝔤) :
-    Y ∈ (ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ)).ker ↔
-      d Y = 0 :=
+theorem mem_ker_lieMap_realDetSmoothHom_iff (Y : 𝔤) :
+    Y ∈ (lieMap (realDetSmoothHom n hQ)).ker ↔ d Y = 0 :=
   LieHom.mem_ker.trans <| circleLieAlgebraEquiv.map_eq_zero_iff.symm.trans <|
-    Eq.to_iff (congrArg (· = 0) (ContinuousMonoidHom.lieWeight_apply (I := IC) _ Y).symm)
+    Eq.to_iff (congrArg (· = 0) (circleLieAlgebraEquiv_lieMap_realDetSmoothHom n hQ Y))
 
 end CliffordAlgebra.spinCGroup

@@ -21,10 +21,12 @@ arbitrary models with corners and independent model and carrier universes.
 * `TauCeti.Lie.prodLieEquiv_apply`: its two components are the native Lie maps of the projections.
 * `TauCeti.Lie.lieMap_fst_prodLieEquiv_symm` and
   `TauCeti.Lie.lieMap_snd_prodLieEquiv_symm`: the projections recover the two input derivations.
-* `TauCeti.Lie.prodLieEquiv_symm_eq_add`: the inverse equivalence sums the Lie maps of the two
-  smooth factor inclusions.
+* `TauCeti.Lie.lieMap_inl_add_lieMap_inr` and `TauCeti.Lie.prodLieEquiv_symm_eq_add`: a derivation
+  of the product is the sum of the images of its components under the inclusions of the factors.
 * `TauCeti.Lie.prodLieEquiv_lieMap_prod`: the Lie map of a paired homomorphism splits into the pair
   of Lie maps.
+* `TauCeti.Lie.lieMap_noncommCoprod`: the Lie map of `(g, g') ↦ φ g * ψ g'` for commuting smooth
+  homomorphisms `φ` and `ψ` is the sum of their Lie maps on the two components.
 
 ## References
 
@@ -132,6 +134,55 @@ theorem lieMap_snd_prodLieEquiv_symm
     ((prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).apply_symm_apply p)
   simpa only [prodLieEquiv_apply] using h
 
+/-- The first projection undoes the first inclusion on Lie algebras. -/
+@[simp]
+theorem lieMap_fst_lieMap_inl (X : LeftInvariantDerivation I G) :
+    lieMap (ContMDiffMonoidMorphism.fst (I := I) (I' := I') (G := G) (G' := G'))
+      (lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G := G) (G' := G')) X) = X := by
+  rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.fst_comp_inl, lieMap_id,
+    one_apply_eq_self]
+
+/-- The first projection kills the second inclusion on Lie algebras. -/
+@[simp]
+theorem lieMap_fst_lieMap_inr (Y : LeftInvariantDerivation I' G') :
+    lieMap (ContMDiffMonoidMorphism.fst (I := I) (I' := I') (G := G) (G' := G'))
+      (lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G) (G' := G')) Y) = 0 := by
+  rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.fst_comp_inr, lieMap_one,
+    zero_apply]
+
+/-- The second projection kills the first inclusion on Lie algebras. -/
+@[simp]
+theorem lieMap_snd_lieMap_inl (X : LeftInvariantDerivation I G) :
+    lieMap (ContMDiffMonoidMorphism.snd (I := I) (I' := I') (G := G) (G' := G'))
+      (lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G := G) (G' := G')) X) = 0 := by
+  rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.snd_comp_inl, lieMap_one,
+    zero_apply]
+
+/-- The second projection undoes the second inclusion on Lie algebras. -/
+@[simp]
+theorem lieMap_snd_lieMap_inr (Y : LeftInvariantDerivation I' G') :
+    lieMap (ContMDiffMonoidMorphism.snd (I := I) (I' := I') (G := G) (G' := G'))
+      (lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G) (G' := G')) Y) = Y := by
+  rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.snd_comp_inr, lieMap_id,
+    one_apply_eq_self]
+
+/-- A left-invariant derivation of a product is the sum of the images of its two components under
+the inclusions of the factors. -/
+theorem lieMap_inl_add_lieMap_inr (D : LeftInvariantDerivation (I.prod I') (G × G')) :
+    lieMap ContMDiffMonoidMorphism.inl (lieMap ContMDiffMonoidMorphism.fst D) +
+      lieMap ContMDiffMonoidMorphism.inr (lieMap ContMDiffMonoidMorphism.snd D) = D := by
+  refine EquivLike.injective (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')) ?_
+  simp
+
+/-- The inverse product Lie equivalence reconstructs a derivation as the sum of the Lie maps of
+the two smooth factor inclusions. -/
+theorem prodLieEquiv_symm_eq_add
+    (p : LeftInvariantDerivation I G × LeftInvariantDerivation I' G') :
+    prodLieEquiv.symm p =
+      lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G' := G')) p.1 +
+        lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G)) p.2 := by
+  simpa using (lieMap_inl_add_lieMap_inr (prodLieEquiv.symm p)).symm
+
 /-- Under `prodLieEquiv`, the Lie map of a paired smooth homomorphism is the pair of Lie maps. -/
 theorem prodLieEquiv_lieMap_prod
     {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
@@ -142,36 +193,25 @@ theorem prodLieEquiv_lieMap_prod
     (D : LeftInvariantDerivation I'' G'') :
     prodLieEquiv (lieMap (φ.prod ψ) D) = (lieMap φ D, lieMap ψ D) :=
   (prodLieEquiv_apply _).trans <| Prod.ext
-    (by simpa using (DFunLike.congr_fun (lieMap_comp (φ.prod ψ) .fst) D).symm)
-    (by simpa using (DFunLike.congr_fun (lieMap_comp (φ.prod ψ) .snd) D).symm)
+    (lieMap_lieMap_of_comp_eq (ContMDiffMonoidMorphism.fst_comp_prod φ ψ) D)
+    (lieMap_lieMap_of_comp_eq (ContMDiffMonoidMorphism.snd_comp_prod φ ψ) D)
 
-/-- The first factor inclusion maps into the first Lie-algebra summand under `prodLieEquiv`. -/
-theorem prodLieEquiv_lieMap_inl (X : LeftInvariantDerivation I G) :
-    prodLieEquiv (lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G' := G')) X) =
-      (X, 0) := by
-  have h : ContMDiffMonoidMorphism.inl (I := I) (I' := I') (n := ∞) (G := G) (G' := G') =
-      ContMDiffMonoidMorphism.id.prod (1 : ContMDiffMonoidMorphism I I' ∞ G G') :=
-    DFunLike.coe_injective <| funext fun x ↦ by simp
-  simpa [h] using prodLieEquiv_lieMap_prod .id (1 : ContMDiffMonoidMorphism I I' ∞ G G') X
-
-/-- The second factor inclusion maps into the second Lie-algebra summand under `prodLieEquiv`. -/
-theorem prodLieEquiv_lieMap_inr (Y : LeftInvariantDerivation I' G') :
-    prodLieEquiv (lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G)) Y) =
-      (0, Y) := by
-  have h : ContMDiffMonoidMorphism.inr (I := I) (I' := I') (n := ∞) (G := G) (G' := G') =
-      (1 : ContMDiffMonoidMorphism I' I ∞ G' G).prod .id :=
-    DFunLike.coe_injective <| funext fun y ↦ by simp
-  simpa [h] using prodLieEquiv_lieMap_prod (1 : ContMDiffMonoidMorphism I' I ∞ G' G) .id Y
-
-/-- The inverse product Lie equivalence reconstructs a derivation as the sum of the Lie maps of
-the two smooth factor inclusions. -/
-theorem prodLieEquiv_symm_eq_add
-    (p : LeftInvariantDerivation I G × LeftInvariantDerivation I' G') :
-    prodLieEquiv.symm p =
-      lieMap (ContMDiffMonoidMorphism.inl (I := I) (I' := I') (G' := G')) p.1 +
-        lieMap (ContMDiffMonoidMorphism.inr (I := I) (I' := I') (G := G)) p.2 :=
-  (prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).injective <| by
-    simp only [LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply, map_add, prodLieEquiv_lieMap_inl,
-      prodLieEquiv_lieMap_inr, Prod.fst_add_snd]
+/-- The Lie map of the product `(g, g') ↦ φ g * ψ g'` of two smooth homomorphisms with commuting
+images is the sum of their Lie maps on the two components. -/
+@[simp]
+theorem lieMap_noncommCoprod
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E''] [FiniteDimensional ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Group G''] [LieGroup I'' ∞ G'']
+    (φ : ContMDiffMonoidMorphism I I'' ∞ G G'') (ψ : ContMDiffMonoidMorphism I' I'' ∞ G' G'')
+    (h : ∀ g g', Commute (φ g) (ψ g')) (D : LeftInvariantDerivation (I.prod I') (G × G')) :
+    lieMap (φ.noncommCoprod ψ h) D =
+      lieMap φ (lieMap ContMDiffMonoidMorphism.fst D) +
+        lieMap ψ (lieMap ContMDiffMonoidMorphism.snd D) := by
+  conv_lhs => rw [← lieMap_inl_add_lieMap_inr D]
+  rw [map_add]
+  congr 1
+  · rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.noncommCoprod_comp_inl]
+  · rw [← LieHom.comp_apply, ← lieMap_comp, ContMDiffMonoidMorphism.noncommCoprod_comp_inr]
 
 end TauCeti.Lie

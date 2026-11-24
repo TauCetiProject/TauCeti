@@ -39,9 +39,12 @@ Lie-group exponential.
 * `lieMap`: the Lie-algebra homomorphism induced by a smooth monoid morphism.
 * `ContMDiffMonoidMorphism.groupLieAlgebraMap_lie`: the differential at the identity of a smooth
   homomorphism preserves the Lie bracket.
+* `leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap`: `lieMap` is the
+  differential at the identity, read through the canonical equivalences.
 * `leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap`: the differential formula
   in the model vector space.
-* `lieMap_id`, `lieMap_one`, `lieMap_comp`: the identity, trivial, and composition laws.
+* `lieMap_id`, `lieMap_comp`, `lieMap_lieMap_of_comp_eq`: the identity and composition laws.
+* `lieMap_one`: the Lie map of the trivial homomorphism is zero.
 * `map_lieExp`: naturality with respect to the Lie-group exponential.
 * `continuous_lieMap`: the Lie map is continuous.
 * `ContMDiffMonoidMorphism.isLocalDiffeomorph_iff_lieMap_bijective` and
@@ -190,6 +193,20 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
   rw [e'.apply_symm_apply]
   exact φ.toMonoidHom.groupLieAlgebraMap_apply I (e D)
 
+/-- `lieMap` is the differential at the identity of the homomorphism, read through the canonical
+equivalences between left-invariant derivations and tangent spaces at the identity. -/
+theorem leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (D : LeftInvariantDerivation I G) :
+    (leftInvariantDerivationLieEquivGroupLieAlgebra
+        (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))).symm
+        (φ.toMonoidHom.groupLieAlgebraMap I I'
+          (leftInvariantDerivationLieEquivGroupLieAlgebra
+            (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)) D)) =
+      lieMap φ D := by
+  rw [LieEquiv.symm_apply_eq, leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
+    MonoidHom.groupLieAlgebraMap_apply, ContMDiffMonoidMorphism.coe_toMonoidHom]
+
 /-- In model-vector-space coordinates, the Lie map is the differential at the identity. -/
 @[simp high]
 theorem leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap
@@ -229,13 +246,12 @@ theorem lieMap_id [FiniteDimensional ℝ E] :
 @[simp]
 theorem lieMap_one [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] :
     lieMap (1 : ContMDiffMonoidMorphism I I' ∞ G G') = 0 := by
-  ext D : 1
-  let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
-  apply (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I') (G := G')).injective
-  rw [zero_apply, map_zero, leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap,
-    ContMDiffMonoidMorphism.coe_one, Pi.one_def, mfderiv_const]
-  rfl
+  apply LieHom.ext
+  intro D
+  refine EquivLike.injective (leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I') (n := ∞) (by simp) (1 : G'))) ?_
+  rw [leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap, zero_apply, map_zero]
+  rw [ContMDiffMonoidMorphism.coe_one, mfderiv_const, zero_apply]
 
 /-- The Lie map of a composite is the composite of the two Lie maps. -/
 @[simp]
@@ -275,6 +291,20 @@ theorem lieMap_comp
     rw [← hφD, ← hψD]
   rw [LieHom.comp_apply]
   exact hleft.trans (hchain'.trans hright)
+
+/-- Pointwise functoriality of `lieMap` along a composite identity `ψ.comp φ = χ`. -/
+theorem lieMap_lieMap_of_comp_eq
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners ℝ E'' H''}
+    {G'' : Type*} [TopologicalSpace G''] [ChartedSpace H'' G''] [Group G'']
+    [LieGroup I'' ∞ G''] [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    [FiniteDimensional ℝ E'']
+    {φ : ContMDiffMonoidMorphism I I' ∞ G G'}
+    {ψ : ContMDiffMonoidMorphism I' I'' ∞ G' G''}
+    {χ : ContMDiffMonoidMorphism I I'' ∞ G G''}
+    (h : ψ.comp φ = χ) (D : LeftInvariantDerivation I G) :
+    lieMap ψ (lieMap φ D) = lieMap χ D := by
+  rw [← h, lieMap_comp, LieHom.comp_apply]
 
 private theorem monoidHom_mulInvariantExp
     [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']

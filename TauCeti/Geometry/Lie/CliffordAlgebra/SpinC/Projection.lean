@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Adjoint.Naturality
+public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.LieAlgebra
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.Determinant
 
 /-!
@@ -41,8 +42,8 @@ global `Spin` lift.
 
 ## Main results
 
-* `CliffordAlgebra.spinCGroup.isLocalDiffeomorph_realToSpecialOrthogonalProdDet`: the smooth
-  frame-and-determinant homomorphism `Spinᶜ(n) → SO(n) × U(1)` is a local diffeomorphism.
+* `CliffordAlgebra.spinCGroup.isLocalDiffeomorph_realToSpecialOrthogonalProdDetSmoothHom`: the
+  smooth frame-and-determinant homomorphism `Spinᶜ(n) → SO(n) × U(1)` is a local diffeomorphism.
 * `CliffordAlgebra.spinCGroup.realToSpecialOrthogonalProdDetLinearEquiv_symm_add_right`,
   `Ad_realSpinOrthogonalLieLift`, and `Ad_realToSpecialOrthogonalProdDetLinearEquiv_symm`: affine
   determinant shift and `Spinᶜ(n)`-equivariance of the orthogonal and full curvature lifts.
@@ -100,13 +101,13 @@ theorem realToSpecialOrthogonalSmoothRange_apply (x : SpinC) :
         (toSpecialOrthogonal (realCliffordForm n 0) hQ x) := (rfl)
 
 @[simp]
-theorem realToSpecialOrthogonalSmoothRange_comp_ofSpin :
+theorem realToSpecialOrthogonalSmoothRange_comp_realOfSpinSmoothHom :
     (realToSpecialOrthogonalSmoothRange n hQ).comp (realOfSpinSmoothHom n hQ) =
       realSpinToSpecialOrthogonalSmoothRange n :=
   DFunLike.coe_injective <| funext fun s ↦ by simp [toSpecialOrthogonal_ofSpin]
 
 @[simp]
-theorem realToSpecialOrthogonalSmoothRange_comp_ofCircle :
+theorem realToSpecialOrthogonalSmoothRange_comp_realOfCircleSmoothHom :
     (realToSpecialOrthogonalSmoothRange n hQ).comp (realOfCircleSmoothHom n hQ) = 1 :=
   DFunLike.coe_injective <| funext fun z ↦ by simp [toSpecialOrthogonal_ofCircle]
 
@@ -141,17 +142,13 @@ theorem realMkLieEquiv_apply
     realMkLieEquiv n hQ p =
       lieMap (realOfSpinSmoothHom n hQ) p.1 + lieMap (realOfCircleSmoothHom n hQ) p.2 := by
   -- Congruence avoids costly `isDefEq` unfolding across the Spin and Spinᶜ Lie-algebra models.
-  have hinl : (lieMap (realMkSmoothHom n hQ)).comp (lieMap ContMDiffMonoidMorphism.inl) =
-      lieMap (realOfSpinSmoothHom n hQ) :=
-    (lieMap_comp _ _).symm.trans (congrArg _root_.lieMap (realMkSmoothHom_comp_inl n hQ))
-  have hinr : (lieMap (realMkSmoothHom n hQ)).comp (lieMap ContMDiffMonoidMorphism.inr) =
-      lieMap (realOfCircleSmoothHom n hQ) :=
-    (lieMap_comp _ _).symm.trans (congrArg _root_.lieMap (realMkSmoothHom_comp_inr n hQ))
   simp only [realMkLieEquiv, LieEquiv.trans_apply,
     TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt_apply]
   exact (congrArg (lieMap (realMkSmoothHom n hQ)) (TauCeti.Lie.prodLieEquiv_symm_eq_add p)).trans <|
     (map_add (lieMap (realMkSmoothHom n hQ)) _ _).trans <|
-      congrArg₂ (· + ·) (DFunLike.congr_fun hinl p.1) (DFunLike.congr_fun hinr p.2)
+      congrArg₂ (· + ·)
+        (lieMap_lieMap_of_comp_eq (realMkSmoothHom_comp_inl n hQ) p.1)
+        (lieMap_lieMap_of_comp_eq (realMkSmoothHom_comp_inr n hQ) p.2)
 
 /-- The differential of `ofSpin : Spin(n) → Spinᶜ(n)` is injective. -/
 theorem lieMap_realOfSpinSmoothHom_injective :
@@ -166,32 +163,32 @@ of the Spin projection. -/
 theorem lieMap_realToSpecialOrthogonalSmoothRange_lieMap_realOfSpinSmoothHom
     (X : LeftInvariantDerivation IS Spin) :
     lieMap (realToSpecialOrthogonalSmoothRange n hQ) (lieMap (realOfSpinSmoothHom n hQ) X) =
-      realSpinToSpecialOrthogonalRangeLieEquiv n X := by
-  -- Congruence avoids costly `isDefEq` unfolding across the Spin/SO/Spinᶜ Lie-algebra models.
-  have h : (lieMap (realToSpecialOrthogonalSmoothRange n hQ)).comp
-      (lieMap (realOfSpinSmoothHom n hQ)) =
-      (realSpinToSpecialOrthogonalRangeLieEquiv n).toLieHom :=
-    (lieMap_comp _ _).symm.trans <|
-      (congrArg _root_.lieMap (realToSpecialOrthogonalSmoothRange_comp_ofSpin n hQ)).trans
-        (realSpinToSpecialOrthogonalRangeLieEquiv_toLieHom n).symm
-  exact DFunLike.congr_fun h X
+      realSpinToSpecialOrthogonalRangeLieEquiv n X :=
+  (lieMap_lieMap_of_comp_eq
+    (realToSpecialOrthogonalSmoothRange_comp_realOfSpinSmoothHom n hQ) X).trans
+    (realSpinToSpecialOrthogonalRangeLieEquiv_apply n X).symm
 
 /-- The differential of the descended rotation homomorphism vanishes on the central circle. -/
 @[simp]
 theorem lieMap_realToSpecialOrthogonalSmoothRange_lieMap_realOfCircleSmoothHom
     (Z : LeftInvariantDerivation (𝓡 1) Circle) :
     lieMap (realToSpecialOrthogonalSmoothRange n hQ) (lieMap (realOfCircleSmoothHom n hQ) Z) = 0 :=
-  DFunLike.congr_fun ((lieMap_comp _ _).symm.trans <|
-    (congrArg _root_.lieMap (realToSpecialOrthogonalSmoothRange_comp_ofCircle n hQ)).trans
-      lieMap_one) Z
+  (lieMap_lieMap_of_comp_eq
+    (realToSpecialOrthogonalSmoothRange_comp_realOfCircleSmoothHom n hQ) Z).trans
+    (by simp only [lieMap_one, zero_apply])
 
 /-- The differential of the descended rotation homomorphism vanishes on `realDetLieLift`. -/
 @[simp]
 theorem lieMap_realToSpecialOrthogonalSmoothRange_realDetLieLift (a : ℝ) :
-    lieMap (realToSpecialOrthogonalSmoothRange n hQ) (realDetLieLift n hQ a) = 0 :=
-  (congrArg (lieMap (realToSpecialOrthogonalSmoothRange n hQ)) <|
-    (realDetLieLift_apply n hQ a).trans
-      (DFunLike.congr_fun (lieMap_realOfCircleSmoothHom n hQ) _).symm).trans
+    lieMap (realToSpecialOrthogonalSmoothRange n hQ) (realDetLieLift n hQ a) = 0 := by
+  have ha : d (lieMap (realOfCircleSmoothHom n hQ) (circleLieAlgebraEquiv.symm (a / 2))) = a :=
+    (lieWeight_detContinuousMonoidHom_lieMap_realOfCircleSmoothHom n hQ _).trans
+      (by rw [LinearEquiv.apply_symm_apply]; ring)
+  have hlift : realDetLieLift n hQ a =
+      lieMap (realOfCircleSmoothHom n hQ) (circleLieAlgebraEquiv.symm (a / 2)) :=
+    (congrArg (realDetLieLift n hQ) ha.symm).trans
+      (realDetLieLift_lieWeight_lieMap_realOfCircleSmoothHom n hQ _)
+  exact (congrArg (lieMap (realToSpecialOrthogonalSmoothRange n hQ)) hlift).trans
     (lieMap_realToSpecialOrthogonalSmoothRange_lieMap_realOfCircleSmoothHom n hQ _)
 
 /-- The canonical Lie-algebra lift `𝔰𝔬(n) →ₗ⁅ℝ⁆ 𝔰𝔭𝔦𝔫ᶜ(n)`, obtained by inverting the differential
@@ -278,7 +275,7 @@ theorem lieMap_realDetSmoothHom_realSoLieLift
 
 /-! ### Bijectivity and local diffeomorphism of `Spinᶜ(n) → SO(n) × U(1)` -/
 
-private theorem prodLieEquiv_lieMap_realToSpecialOrthogonalProdDet_lift
+private theorem prodLieEquiv_lieMap_realToSpecialOrthogonalProdDetSmoothHom_lift
     (p : LeftInvariantDerivation ISO SORange × LeftInvariantDerivation (𝓡 1) Circle) :
     TauCeti.Lie.prodLieEquiv (lieMap (realToSpecialOrthogonalProdDetSmoothHom n hQ)
       (realSpinOrthogonalLieLift n hQ p.1 +
@@ -319,19 +316,10 @@ theorem realSpinOrthogonalLieLift_add_realDetLieLift (Y : 𝔤) :
       lieMap (realOfSpinSmoothHom n hQ) p.1 :=
     (realSpinOrthogonalLieLift_apply n hQ _).trans <| congrArg (lieMap (realOfSpinSmoothHom n hQ))
       ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm_apply_apply p.1)
-  have hZ : realDetLieLift n hQ (d (lieMap (realOfCircleSmoothHom n hQ) p.2)) =
-      lieMap (realOfCircleSmoothHom n hQ) p.2 :=
-    (congrArg (fun W ↦ realDetLieLift n hQ (d W))
-      (DFunLike.congr_fun (lieMap_realOfCircleSmoothHom n hQ) p.2)).trans <|
-      (congrArg (realDetLieLift n hQ)
-        (lieWeight_detContinuousMonoidHom_lieMap_ofCircleContinuousMonoidHom n hQ p.2)).trans <|
-        (realDetLieLift_apply n hQ _).trans <|
-          (congrArg (ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-            (ofCircleContinuousMonoidHom _ hQ)) <| by
-              rw [mul_div_cancel_left₀ _ two_ne_zero, LinearEquiv.symm_apply_apply]).trans
-            (DFunLike.congr_fun (lieMap_realOfCircleSmoothHom n hQ) p.2).symm
   exact (congrArg₂ (fun Ω a ↦ realSpinOrthogonalLieLift n hQ Ω + realDetLieLift n hQ a) hSO
-    hd).trans ((congrArg₂ (· + ·) hX hZ).trans hXZ.symm)
+    hd).trans <|
+    (congrArg₂ (· + ·) hX (realDetLieLift_lieWeight_lieMap_realOfCircleSmoothHom n hQ p.2)).trans
+      hXZ.symm
 
 /-- The inverse of `realMkLieEquiv` projects onto `𝔰𝔭𝔦𝔫(n)` via `Spinᶜ(n) → SO(n)` and halves the
 differential of `det` on `Lie(U(1))`. -/
@@ -342,18 +330,17 @@ theorem realMkLieEquiv_symm_apply (Y : 𝔤) :
         (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y),
       (1 / 2 : ℝ) • lieMap (realDetSmoothHom n hQ) Y) := by
   apply EquivLike.injective (realMkLieEquiv n hQ)
-  have hcirc : circleLieAlgebraEquiv ((1 / 2 : ℝ) • lieMap (realDetSmoothHom n hQ) Y) =
-      circleLieAlgebraEquiv (circleLieAlgebraEquiv.symm (d Y / 2)) :=
-    (circleLieAlgebraEquiv.map_smul (1 / 2 : ℝ) _).trans <| (smul_eq_mul _ _).trans <|
-      (congrArg ((1 / 2 : ℝ) * ·) (circleLieAlgebraEquiv_lieMap_realDetSmoothHom n hQ Y)).trans <|
-        (by ring : (1 / 2 : ℝ) * d Y = d Y / 2).trans
-          (circleLieAlgebraEquiv.apply_symm_apply _).symm
-  have hZ : lieMap (realOfCircleSmoothHom n hQ) ((1 / 2 : ℝ) • lieMap (realDetSmoothHom n hQ) Y) =
-      realDetLieLift n hQ (d Y) :=
-    (DFunLike.congr_fun (lieMap_realOfCircleSmoothHom n hQ) _).trans <|
-      (congrArg (ContinuousMonoidHom.lieMap (I := 𝓡 1) (I' := IC)
-        (ofCircleContinuousMonoidHom _ hQ)) (circleLieAlgebraEquiv.injective hcirc)).trans
-        (realDetLieLift_apply n hQ (d Y)).symm
+  have hd : d (lieMap (realOfCircleSmoothHom n hQ)
+      ((1 / 2 : ℝ) • lieMap (realDetSmoothHom n hQ) Y)) = d Y :=
+    (lieWeight_detContinuousMonoidHom_lieMap_realOfCircleSmoothHom n hQ _).trans <|
+      (congrArg (2 * ·) (circleLieAlgebraEquiv.map_smul (1 / 2 : ℝ) _)).trans <|
+        (congrArg (fun r ↦ 2 * ((1 / 2 : ℝ) • r))
+          (circleLieAlgebraEquiv_lieMap_realDetSmoothHom n hQ Y)).trans
+          (by rw [smul_eq_mul]; ring)
+  have hZ : lieMap (realOfCircleSmoothHom n hQ)
+      ((1 / 2 : ℝ) • lieMap (realDetSmoothHom n hQ) Y) = realDetLieLift n hQ (d Y) :=
+    (realDetLieLift_lieWeight_lieMap_realOfCircleSmoothHom n hQ _).symm.trans
+      (congrArg (realDetLieLift n hQ) hd)
   exact ((realMkLieEquiv n hQ).apply_symm_apply Y).trans <|
     (realSpinOrthogonalLieLift_add_realDetLieLift n hQ Y).symm.trans <|
       (congrArg₂ (· + ·) (realSpinOrthogonalLieLift_apply n hQ _) hZ.symm).trans
@@ -361,7 +348,7 @@ theorem realMkLieEquiv_symm_apply (Y : 𝔤) :
 
 /-- The Lie map of the paired smooth homomorphism `Spinᶜ(n) → SO(n) × U(1)` is bijective in every
 positive dimension (`realCliffordForm n 0 ≠ 0`). -/
-theorem lieMap_realToSpecialOrthogonalProdDet_bijective :
+theorem lieMap_realToSpecialOrthogonalProdDetSmoothHom_bijective :
     Function.Bijective (lieMap (realToSpecialOrthogonalProdDetSmoothHom n hQ)) :=
   ⟨fun Y₁ Y₂ h ↦ by
     have hprod : (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y₁,
@@ -381,21 +368,21 @@ theorem lieMap_realToSpecialOrthogonalProdDet_bijective :
       (congrArg₂ (fun Ω a ↦ realSpinOrthogonalLieLift n hQ Ω + realDetLieLift n hQ a)
         (congrArg Prod.fst hprod) hd).trans (realSpinOrthogonalLieLift_add_realDetLieLift n hQ Y₂),
   fun P ↦ ⟨_, (TauCeti.Lie.prodLieEquiv (I := ISO) (I' := 𝓡 1)).injective <|
-    prodLieEquiv_lieMap_realToSpecialOrthogonalProdDet_lift n hQ
+    prodLieEquiv_lieMap_realToSpecialOrthogonalProdDetSmoothHom_lift n hQ
       (TauCeti.Lie.prodLieEquiv (I := ISO) (I' := 𝓡 1) P)⟩⟩
 
 /-- **The frame-and-determinant map `Spinᶜ(n) → SO(n) × U(1)` is a smooth local diffeomorphism.** -/
-theorem isLocalDiffeomorph_realToSpecialOrthogonalProdDet :
+theorem isLocalDiffeomorph_realToSpecialOrthogonalProdDetSmoothHom :
     IsLocalDiffeomorph IC ISOProd ∞ (realToSpecialOrthogonalProdDetSmoothHom n hQ) :=
   (realToSpecialOrthogonalProdDetSmoothHom n hQ).isLocalDiffeomorph_of_lieMap_bijective
-    (lieMap_realToSpecialOrthogonalProdDet_bijective n hQ)
+    (lieMap_realToSpecialOrthogonalProdDetSmoothHom_bijective n hQ)
 
 /-- The Lie-algebra equivalence `𝔰𝔭𝔦𝔫ᶜ(n) ≃ₗ⁅ℝ⁆ (𝔰𝔬(n) × Lie(U(1)))` induced by the smooth
 frame-and-determinant homomorphism. -/
 def realToSpecialOrthogonalProdDetLieEquiv :
     𝔤 ≃ₗ⁅ℝ⁆ (LeftInvariantDerivation ISO SORange × LeftInvariantDerivation (𝓡 1) Circle) :=
   (TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt (realToSpecialOrthogonalProdDetSmoothHom n hQ)
-    (isLocalDiffeomorph_realToSpecialOrthogonalProdDet n hQ 1)).trans
+    (isLocalDiffeomorph_realToSpecialOrthogonalProdDetSmoothHom n hQ 1)).trans
       (TauCeti.Lie.prodLieEquiv (I := ISO) (I' := 𝓡 1))
 
 @[simp]
@@ -414,7 +401,7 @@ theorem realToSpecialOrthogonalProdDetLieEquiv_symm_apply
         lieMap (realOfCircleSmoothHom n hQ) ((1 / 2 : ℝ) • p.2) := by
   apply EquivLike.injective (realToSpecialOrthogonalProdDetLieEquiv n hQ)
   refine ((realToSpecialOrthogonalProdDetLieEquiv n hQ).apply_symm_apply p).trans <|
-    (prodLieEquiv_lieMap_realToSpecialOrthogonalProdDet_lift n hQ p).symm.trans ?_
+    (prodLieEquiv_lieMap_realToSpecialOrthogonalProdDetSmoothHom_lift n hQ p).symm.trans ?_
   simp only [realToSpecialOrthogonalProdDetLieEquiv, LieEquiv.trans_apply,
     TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt_apply]
 
@@ -422,10 +409,9 @@ theorem realToSpecialOrthogonalProdDetLieEquiv_symm_apply
 
 /-- The Lie-algebra equivalence `𝔰𝔭𝔦𝔫(n) ≃ₗ⁅ℝ⁆ ker(d det)` induced by `ofSpin`. -/
 def realOfSpinLieEquivDetKer :
-    LeftInvariantDerivation IS Spin ≃ₗ⁅ℝ⁆
-      (ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ)).ker where
+    LeftInvariantDerivation IS Spin ≃ₗ⁅ℝ⁆ (lieMap (realDetSmoothHom n hQ)).ker where
   toFun X := ⟨lieMap (realOfSpinSmoothHom n hQ) X,
-    (mem_ker_lieMap_detContinuousMonoidHom_iff n hQ _).mpr
+    (mem_ker_lieMap_realDetSmoothHom_iff n hQ _).mpr
       (lieWeight_detContinuousMonoidHom_lieMap_realOfSpinSmoothHom n hQ X)⟩
   invFun Y := (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
     (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.val)
@@ -438,7 +424,7 @@ def realOfSpinLieEquivDetKer :
   right_inv Y := Subtype.ext <| by
     have hd0 : realDetLieLift n hQ (d Y.val) = 0 :=
       (congrArg (realDetLieLift n hQ)
-        ((mem_ker_lieMap_detContinuousMonoidHom_iff n hQ Y.val).mp Y.property)).trans (map_zero _)
+        ((mem_ker_lieMap_realDetSmoothHom_iff n hQ Y.val).mp Y.property)).trans (map_zero _)
     exact (realSpinOrthogonalLieLift_apply n hQ _).symm.trans <| (add_zero _).symm.trans <|
       (congrArg (realSpinOrthogonalLieLift n hQ _ + ·) hd0.symm).trans
         (realSpinOrthogonalLieLift_add_realDetLieLift n hQ Y.val)
@@ -449,7 +435,7 @@ theorem coe_realOfSpinLieEquivDetKer_apply (X : LeftInvariantDerivation IS Spin)
 
 @[simp]
 theorem realOfSpinLieEquivDetKer_symm_apply
-    (Y : (ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ)).ker) :
+    (Y : (lieMap (realDetSmoothHom n hQ)).ker) :
     (realOfSpinLieEquivDetKer n hQ).symm Y =
       (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
         (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y.val) := (rfl)
@@ -468,7 +454,7 @@ def realToSpecialOrthogonalProdDetLinearEquiv :
 theorem realToSpecialOrthogonalProdDetLinearEquiv_apply (Y : 𝔤) :
     realToSpecialOrthogonalProdDetLinearEquiv n hQ Y =
       (lieMap (realToSpecialOrthogonalSmoothRange n hQ) Y, d Y) := by
-  simp [realToSpecialOrthogonalProdDetLinearEquiv, circleLieAlgebraEquiv_lieMap_realDetSmoothHom]
+  simp [realToSpecialOrthogonalProdDetLinearEquiv]
 
 @[simp]
 theorem realToSpecialOrthogonalProdDetLinearEquiv_symm_apply

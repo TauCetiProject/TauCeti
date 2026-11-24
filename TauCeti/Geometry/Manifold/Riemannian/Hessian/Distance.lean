@@ -53,7 +53,7 @@ theorem hessian_dist_mgradient_eq_zero (h : IsNormalDomain I M p U) (hU : Metric
     (hq : q ∈ Metric.ball p r) (w : TangentSpace I q) :
     hessian I (fun x ↦ dist p x) q (mgradient I (fun x ↦ dist p x) q) w = 0 := by
   rcases eq_or_ne q p with rfl | hne
-  · simp [hessian_def]
+  · simp [I.hessian_eq_inner_leviCivitaConnection_mgradient]
   apply hessian_mgradient_eq_zero_of_eventually_norm_sq_eq_const
     ((h.contMDiffAt_dist hU hq hne).of_le (by simp)) (c := 1)
   have hq' : q ∈ Metric.ball p r \ {p} := ⟨hq, hne⟩

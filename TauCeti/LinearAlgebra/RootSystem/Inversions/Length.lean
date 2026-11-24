@@ -178,8 +178,9 @@ theorem ncard_inversions_mul_ofIdx_lt_of_mem (w : P.weylGroup) {i : ι}
     (inversions P b (w * RootPairing.weylGroup.ofIdx P i)).ncard < (inversions P b w).ncard := by
   obtain ⟨hipos, hineg⟩ := (mem_inversions P b w i).mp hi
   obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b w
-  obtain ⟨j, hj, hj'⟩ :=
-    exists_wordProd_eraseIdx_eq_mul_ofIdx P b hipos l (by rw [hl]; exact hineg)
+  obtain ⟨j, hj, -, hj'⟩ :=
+    P.exists_wordProd_drop_apply_eq_and_wordProd_eraseIdx_eq_mul_ofIdx b hipos l
+      (by rw [hl]; exact hineg)
   have hle := ncard_inversions_wordProd_le_length P b (l.eraseIdx j)
   rw [hj', hl] at hle
   have hlen' := List.length_eraseIdx_add_one hj
