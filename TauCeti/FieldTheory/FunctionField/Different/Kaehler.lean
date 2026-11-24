@@ -60,7 +60,7 @@ theorem fittingIdeal_kaehlerDifferential_completionIntegers_eq_maximalIdeal_pow 
   have := (P'.restrict k F).moduleFinite_completionIntegers P' rfl
   have := (P'.restrict k F).isSeparable_completion P' rfl
   have := (P'.isSeparable_residueField_completion_iff (k := k) (F := F)).mpr ‹_›
-  rw [IsDiscreteValuationRing.fittingIdeal_kaehlerDifferential_zero_eq_differentIdeal
+  rw [IsDiscreteValuationRing.fittingIdeal_kaehlerDifferential_eq_differentIdeal
       (P'.restrict k F).Completion P'.Completion,
     (P'.restrict k F).differentIdeal_completionIntegers_eq_maximalIdeal_pow P' rfl]
 
