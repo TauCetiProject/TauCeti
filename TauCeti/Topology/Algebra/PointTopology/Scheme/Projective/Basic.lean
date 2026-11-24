@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricBaseChange
 public import TauCeti.Geometry.Toric.Analytic.Fan.Comparison.SchemePoints
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.ClosedImmersion
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.FiberProduct
-public import TauCeti.Topology.Algebra.PointTopology.Scheme.ProjectiveSpace
+public import TauCeti.Topology.Algebra.PointTopology.Scheme.Projective.Space
 
 /-!
 # Points of projective schemes over a topological field
@@ -28,7 +28,7 @@ compact space. Then the structure morphism `X ⟶ Spec A` induces a proper map
 
 The compactness of `ℙⁿ(K)` holds for `K = ℂ`
 (`TauCeti.Toric.compactSpace_points_projToSpec`, through toric geometry) and for every
-nonarchimedean local field `K`
+nonarchimedean local field `K : Type`
 (`TauCeti.SchemePointTopology.compactSpace_points_projToSpec_of_isNonarchimedeanLocalField`, by
 normalizing homogeneous coordinates), so both cases are covered.
 
@@ -49,8 +49,9 @@ product is proper because `ℙⁿ(K)` is compact.
 * `TauCeti.SchemePointTopology.isProperMap_map_of_isProjectiveOver`: a projective scheme over a
   `K`-algebra `A` has a proper map of `K`-points to `Spec A`.
 * `TauCeti.SchemePointTopology.compactSpace_of_isProjectiveOver`: the `K`-points of a
-  projective `K`-scheme are compact; in particular the `K`-points of a projective
-  `ℂ`-scheme and the `K`-points of a projective scheme over a nonarchimedean local field `K`.
+  projective `K`-scheme are compact; in particular the complex points of a projective
+  `ℂ`-scheme and the `K`-points of a projective scheme over a nonarchimedean local field
+  `K : Type`.
 
 ## References
 
@@ -151,7 +152,7 @@ theorem isProperMap_map_of_isProjectiveOver {X : Scheme.{u}} [X.Over (Spec (.of 
     (isClosedEmbedding_of_isClosedImmersion j hj').isProperMap
 
 /-- **The `K`-points of a projective `K`-scheme are compact.** This applies to `K = ℂ` and to every
-nonarchimedean local field `K`. -/
+nonarchimedean local field `K : Type`. -/
 instance compactSpace_of_isProjectiveOver {X : Scheme.{u}} [X.Over (Spec (.of K))]
     [X.IsProjectiveOver K] : CompactSpace (Points (R := K) (X ↘ Spec (.of K))) := by
   have hid : Spec.algebraMap K K = 𝟙 _ := by simp
