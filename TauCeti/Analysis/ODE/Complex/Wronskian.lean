@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Complex.LinearEquation
+import TauCeti.Analysis.ODE.Wronskian
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
@@ -79,10 +80,10 @@ theorem IsSolution.hasDerivAt_wronskian (hy₁ : E.IsSolution y₁) (hy₂ : E.I
         (y₁ z * deriv y₂ z - deriv y₁ z * y₂ z)) z := by
   have h₁ := hy₁.analyticOnNhd z hz
   have h₂ := hy₂.analyticOnNhd z hz
-  convert (h₁.differentiableAt.hasDerivAt.mul h₂.deriv.differentiableAt.hasDerivAt).sub
-    (h₁.deriv.differentiableAt.hasDerivAt.mul h₂.differentiableAt.hasDerivAt) using 1
-  rw [hy₁.deriv_deriv_eq hz, hy₂.deriv_deriv_eq hz]
-  ring
+  exact h₁.differentiableAt.hasDerivAt.wronskian_of_secondOrderLinearEquation
+    h₁.deriv.differentiableAt.hasDerivAt h₂.differentiableAt.hasDerivAt
+    h₂.deriv.differentiableAt.hasDerivAt ((isSolution_iff_deriv_deriv.mp hy₁).2 z hz)
+    ((isSolution_iff_deriv_deriv.mp hy₂).2 z hz)
 
 /-- For an equation `y'' + a₀ y = 0` without first-derivative term, the Wronskian
 `y₁ y₂' - y₁' y₂` of two solutions is constant on every open preconnected subset of the domain. -/
