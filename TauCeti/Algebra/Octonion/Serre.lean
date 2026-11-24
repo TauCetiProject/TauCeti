@@ -303,11 +303,11 @@ private theorem slDerivation_mem {S : LieSubalgebra R (derivationLieAlgebra R (O
   -- The pullback of `S` to `gl₃`, as a submodule of trace-zero matrices.
   let N : Submodule R (Matrix (Fin 3) (Fin 3) R) :=
     (S.toSubmodule.comap slDerivation.toLinearMap).map (sl (Fin 3) R).incl.toLinearMap
-  have hN : ∀ M : LieAlgebra.SpecialLinear.sl (Fin 3) R, slDerivation M ∈ S → M.1 ∈ N :=
+  have hN : ∀ M : LieAlgebra.SpecialLinear.sl (Fin 3) R, slDerivation M ∈ S → M.val ∈ N :=
     fun M hM => ⟨M, hM, rfl⟩
-  obtain ⟨M', hM', hMM'⟩ : M.1 ∈ N := by
+  obtain ⟨M', hM', hMM'⟩ : M.val ∈ N := by
     refine mem_of_trace_eq_zero_of_single_mem (fun {p q} hpq c => ?_) (fun p q c => ?_)
-      (LinearMap.mem_ker.mp M.2)
+      (LinearMap.mem_ker.mp M.property)
     · simpa using hN _ (hsingle' p q hpq c)
     · rcases eq_or_ne p q with rfl | hpq
       · simp

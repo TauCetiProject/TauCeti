@@ -30,16 +30,13 @@ potential terms in localized bubble energies.
 
 public section
 
-noncomputable section
-
 namespace TauCeti.Yamabe
 
 open Filter InnerProductSpace MeasureTheory Metric Module ProbabilityTheory Real Set Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [MeasurableSpace E] [BorelSpace E]
 
-omit [FiniteDimensional ℝ E] in
 /-- Outside a ball on which a bounded measurable cutoff equals one, its error in a finite
 square moment is bounded by `(C + 1) * (2 * t / r) ^ (n - 2)` times the moment at scale `r`,
 where `‖χ x‖ ≤ C` for every `x`. In particular the error has order `t ^ (n - 2)` at fixed
@@ -82,7 +79,6 @@ theorem abs_integral_cutoff_norm_sub_rpow_mul_bubble_sq_sub_le
         exact bubble_sq_le_mul_of_le_norm_sub hn ht hr hnorm
       _ = _ := by ring
 
-omit [FiniteDimensional ℝ E] in
 /-- Every finite square moment, normalized by its scale, converges against a bounded measurable
 weight continuous at the bubble centre to the weight's value times the exact beta moment. -/
 theorem tendsto_integral_mul_norm_sub_rpow_mul_bubble_sq_div
@@ -125,7 +121,6 @@ theorem tendsto_integral_mul_norm_sub_rpow_mul_bubble_sq_div
   rw [integral_mul_norm_sub_rpow_mul_bubble_sq_eq_mul μ χ p ht b,
     mul_div_cancel_left₀ _ (Real.rpow_pos_of_pos ht _).ne']
 
-omit [FiniteDimensional ℝ E] in
 /-- A bounded measurable cutoff equal to one near the centre preserves the leading coefficient
 of every finite square moment. -/
 theorem tendsto_integral_cutoff_norm_sub_rpow_mul_bubble_sq_div

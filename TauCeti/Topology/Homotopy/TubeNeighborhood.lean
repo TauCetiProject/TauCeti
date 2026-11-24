@@ -35,8 +35,9 @@ homotopy triviality of `Uᵢ` on each rectangle, and paste
 * `Path.IsInTube.exists_trans_homotopic`: two paths with the same source in a common tube become
   homotopic after appending to the first a path in the last vertex set.
 * `Path.IsInTube.homotopic`: two paths with the same endpoints in a common tube are homotopic.
-* `Path.IsInTube.trans_homotopic_trans`: two loops in a common tube are conjugate by any path
-  between their basepoints inside the first and last vertex sets.
+* `Path.IsInTube.trans_homotopic_trans`: two paths in a common tube are conjugate by any paths
+  between their sources inside the first vertex set and between their targets inside the last one;
+  in particular two loops in a common tube are conjugate.
 
 The application to semilocally simply connected spaces (path-homotopy classes are open, so
 `Path.Homotopic.Quotient` is discrete) is in
@@ -88,7 +89,7 @@ variable {n : ℕ} {part : unitInterval.Partition n} {T : Path.Tube X n}
     Path.IsInTube f part T ↔
       (∀ i : Fin n, MapsTo f (Icc (part.t i.castSucc) (part.t i.succ)) (T.U i)) ∧
         ∀ j, f (part.t j) ∈ T.V j :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  ⟨fun h ↦ ⟨h.mapsTo, h.mem_V⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 /-- A path in a tube has each of its segment subpaths inside the corresponding segment set. -/
 public theorem Path.IsInTube.range_subpath_subset {x y : X} {γ : Path x y}
@@ -184,22 +185,24 @@ public theorem Path.IsInTube.exists_trans_homotopic {x y y' : X} {γ : Path x y}
   exact ⟨(α (Fin.last _)).cast (by simp) (by simp), by simpa using hα _,
     h.trans (Path.Homotopic.trans_left_of_nullhomotopic h_α₀)⟩
 
-/-- **Loops in a common tube are conjugate.** If a loop `γ` at `x` and a loop `γ'` at `x'` lie in
-a common tube, and `ρ` is a path from `x` to `x'` inside both the first and the last vertex set of
-the tube, then `γ · ρ` is homotopic to `ρ · γ'`. -/
-public theorem Path.IsInTube.trans_homotopic_trans {x x' : X} {γ : Path x x} {γ' : Path x' x'}
-    (hγ : Path.IsInTube γ part T) (hγ' : Path.IsInTube γ' part T) {ρ : Path x x'}
-    (hρ₀ : range ρ ⊆ T.V 0) (hρ₁ : range ρ ⊆ T.V (Fin.last n)) :
-    (γ.trans ρ).Homotopic (ρ.trans γ') := by
+/-- **Paths in a common tube are conjugate.** If a path `γ` from `x` to `y` and a path `γ'` from
+`x'` to `y'` lie in a common tube, `ρ₀` is a path from `x` to `x'` inside the first vertex set of
+the tube and `ρ₁` a path from `y` to `y'` inside its last vertex set, then `γ · ρ₁` is homotopic
+to `ρ₀ · γ'`. For loops and `ρ₀ = ρ₁` this says that loops in a common tube are conjugate. -/
+public theorem Path.IsInTube.trans_homotopic_trans {x y x' y' : X} {γ : Path x y}
+    {γ' : Path x' y'} (hγ : Path.IsInTube γ part T) (hγ' : Path.IsInTube γ' part T)
+    {ρ₀ : Path x x'} {ρ₁ : Path y y'} (hρ₀ : range ρ₀ ⊆ T.V 0)
+    (hρ₁ : range ρ₁ ⊆ T.V (Fin.last n)) :
+    (γ.trans ρ₁).Homotopic (ρ₀.trans γ') := by
   cases n with
   | zero => exact isEmptyElim part
   | succ n =>
   obtain ⟨α, hα, h⟩ := hγ.exists_rungs_homotopic hγ'
-  -- The first rung and `ρ` lie in the first segment set, the last rung and `ρ` in the last one.
-  have h₀ : ((α 0).cast (by simp) (by simp)).Homotopic ρ :=
+  -- The first rung and `ρ₀` lie in the first segment set, the last rung and `ρ₁` in the last one.
+  have h₀ : ((α 0).cast (by simp) (by simp)).Homotopic ρ₀ :=
     isPathHomotopyTrivial_def.mp (T.isPathHomotopyTrivial_U 0) _ _
       (by simpa using (hα 0).trans (T.V_castSucc_subset 0)) (hρ₀.trans (T.V_castSucc_subset 0))
-  have h₁ : ((α (Fin.last _)).cast (by simp) (by simp)).Homotopic ρ :=
+  have h₁ : ((α (Fin.last _)).cast (by simp) (by simp)).Homotopic ρ₁ :=
     isPathHomotopyTrivial_def.mp (T.isPathHomotopyTrivial_U (Fin.last n)) _ _
       (by simpa using (hα _).trans (T.V_succ_subset (Fin.last n)))
       (hρ₁.trans (T.V_succ_subset (Fin.last n)))

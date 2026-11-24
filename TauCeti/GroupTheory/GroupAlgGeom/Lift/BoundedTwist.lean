@@ -79,13 +79,11 @@ open scoped commutatorElement
 
 namespace TauCeti.GroupAlgGeom.Lift
 
-variable {G H K : Type*} [Group G] [Group H] [Group K]
-
 /-! ### The six twist moves in a group -/
 
 section Stages
 
-variable (a b : H) (t : Fin 6 → H)
+variable {H K : Type*} [Group H] [Group K] (a b : H) (t : Fin 6 → H)
 
 /-- The seven pairs `(A₀, B₀) = (a, b)`, `(A₁, B₁)`, …, `(A₆, B₆)` obtained from `(a, b)` by six
 moves, the `i`-th of which multiplies one entry of the pair on the left by `tᵢ`. The moves change
@@ -164,7 +162,7 @@ end Stages
 
 section Family
 
-variable (a b : H) (p : Fin 6 → ℕ)
+variable {H K : Type*} [Group H] [Group K] (a b : H) (p : Fin 6 → ℕ)
 
 /-- The multipliers of the six twist moves with exponents `p`: the `i`-th multiplier is the
 `pᵢ`-th power of the pivot of the `i`-th move. -/
@@ -255,7 +253,7 @@ section TwistPoint
 
 open Quadratic.Standard
 
-variable (ι : G →* H) (v : Fin 2 → H) (p : Fin 6 → ℕ)
+variable {G H : Type*} [Group G] [Group H] (ι : G →* H) (v : Fin 2 → H) (p : Fin 6 → ℕ)
 
 /-- For the basic sequence `(y ↦ x y, x ↦ y x, y ↦ x y)` of a genus-one equation in the variables
 `x = 0`, `y = 1` without coefficient atoms, the point `φ_{6,p} v` is the member of the twist
@@ -299,7 +297,7 @@ end TwistPoint
 
 section System
 
-variable (a b : G)
+variable {G H : Type*} [Group G] [Group H] (a b : G)
 
 /-- The bounded-twist system over `G` in the variables `x`, `y` and `t₁, …, t₆`: the multiplier
 `tᵢ` of the `i`-th twist move commutes with the pivot of that move, and `(x, y)` is the pair

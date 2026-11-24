@@ -256,22 +256,6 @@ theorem weightParabolicInclusion_def (w : Fin N → α) :
         eqToHom (groupScheme_def R N).symm := by
   rw [weightParabolicInclusion, hopfIdealInclusion_def]
 
-/-- The coordinate morphism recovered from the weight-parabolic inclusion is the quotient
-coordinate map. -/
-@[simp↓]
-theorem weightParabolicInclusion_coordinateMap (w : Fin N → α) :
-    ((AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)).preimage
-      (weightParabolicInclusion R w ≫ eqToHom (groupScheme_def R N))).unop =
-      weightParabolicCoordinateMap R w := by
-  refine Quiver.Hom.op_inj
-    ((AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)).map_injective ?_)
-  rw [Quiver.Hom.op_unop,
-    (AlgebraicGeometry.hopfSpec.fullyFaithful (R := CommRingCat.of R)).map_preimage]
-  rw [weightParabolicInclusion_def]
-  rw [CommHopfAlgCat.quotientSpecι_def]
-  rw [weightParabolicCoordinateMap_def]
-  simp
-
 /-- The weight-parabolic inclusion into `GL_N` is a closed immersion. -/
 instance isClosedImmersion_weightParabolicInclusion (w : Fin N → α) :
     IsClosedImmersion (weightParabolicInclusion R w).hom.hom.left := by
@@ -279,7 +263,7 @@ instance isClosedImmersion_weightParabolicInclusion (w : Fin N → α) :
   infer_instance
 
 /-- The weight-parabolic coordinate Hopf algebra with its finite-type property. -/
-noncomputable def weightParabolicFiniteTypeCoordinateHopfAlgebra (w : Fin N → α) :
+noncomputable abbrev weightParabolicFiniteTypeCoordinateHopfAlgebra (w : Fin N → α) :
     FiniteTypeCommHopfAlgCat R :=
   ⟨weightParabolicCoordinateHopfAlgebra R w,
     inferInstanceAs (Algebra.FiniteType R (weightParabolicCoordinateHopfAlgebra R w))⟩

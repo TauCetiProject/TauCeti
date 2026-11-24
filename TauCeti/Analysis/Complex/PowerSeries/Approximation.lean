@@ -5,18 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
-# Approximating holomorphic functions on a disc by entire functions
+# Approximating holomorphic functions on a disc or bounded set by Taylor polynomials
 
 A holomorphic function on an open disc `ball c s` in `ℂ`, with values in a complex Banach space,
 is the uniform limit on every smaller closed disc `closedBall c r`, `r < s`, of the partial sums of
 its Taylor series at `c`. These partial sums are polynomial in `z - c`, hence entire. So the
-function is uniformly approximated on `closedBall c r` by entire functions.
+function is uniformly approximated on `closedBall c r` by entire functions. For a scalar entire
+function `f : ℂ → ℂ`, its Taylor series at `0` has infinite radius of convergence, giving uniform
+approximation by `Polynomial ℂ` on every bounded set `K ⊆ ℂ`
+(`Differentiable.exists_polynomial_norm_sub_lt`).
 
 This is the disc case of Runge's approximation theorem. It is the correction step in the
 solution of the inhomogeneous Cauchy–Riemann equation on a disc by exhaustion, where local
@@ -27,12 +31,13 @@ approximations of their holomorphic differences.
 
 * O. Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
   proof of Theorem 13.2.
+* A. Rainer, *Advanced Complex Analysis*, proof of Theorem 11.1.
 -/
 
 public section
 
 open Metric
-open scoped NNReal
+open scoped NNReal ENNReal
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
 
@@ -66,3 +71,27 @@ theorem DifferentiableOn.exists_differentiable_norm_sub_lt {h : ℂ → W} {c : 
       rw [ht']
       linarith [show ‖z - c‖ ≤ r by simpa [dist_eq_norm] using hz]
     simpa [dist_eq_norm] using hN (z - c) (by simpa using hz')
+
+/-- Every entire function `f : ℂ → ℂ` can be approximated uniformly on any bounded set `K ⊆ ℂ` by
+polynomials in `Polynomial ℂ`. -/
+theorem Differentiable.exists_polynomial_norm_sub_lt {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    {K : Set ℂ} (hK : Bornology.IsBounded K) {ε : ℝ} (hε : 0 < ε) :
+    ∃ p : Polynomial ℂ, ∀ z ∈ K, ‖f z - p.eval z‖ < ε := by
+  obtain ⟨R₀, hR₀⟩ := hK.subset_ball 0
+  set R : ℝ≥0 := (max R₀ 0).toNNReal
+  have hR : (R : ℝ) = max R₀ 0 := Real.coe_toNNReal _ (le_max_right _ _)
+  have hKsub : K ⊆ ball (0 : ℂ) R := fun w hw ↦
+    ball_subset_ball (hR ▸ le_max_left _ _) (hR₀ hw)
+  have hu := (hf.hasFPowerSeriesOnBall 0 zero_lt_one).tendstoUniformlyOn (r' := R)
+    ENNReal.coe_lt_top
+  obtain ⟨N, hN⟩ := (Metric.tendstoUniformlyOn_iff.1 hu ε hε).exists
+  set q := cauchyPowerSeries f 0 1
+  refine ⟨∑ n ∈ Finset.range N, Polynomial.C (q.coeff n) * Polynomial.X ^ n, fun z hz ↦ ?_⟩
+  have hq_eval : (∑ n ∈ Finset.range N, Polynomial.C (q.coeff n) * Polynomial.X ^ n).eval z =
+      q.partialSum N z := by
+    rw [← Polynomial.coe_evalRingHom]
+    simp only [map_sum, map_mul, map_pow, Polynomial.coe_evalRingHom,
+      Polynomial.eval_C, Polynomial.eval_X, FormalMultilinearSeries.partialSum,
+      FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_eq_mul, mul_comm]
+  rw [hq_eval]
+  simpa [zero_add, dist_eq_norm, norm_sub_rev] using hN z (hKsub hz)
