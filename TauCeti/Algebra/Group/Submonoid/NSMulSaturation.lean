@@ -46,6 +46,8 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
   is `PowSaturated` iff it equals its saturation.
 * `Submonoid.powSaturation_comap` and `Submonoid.powSaturation_inf`: saturation commutes with
   `comap` and `⊓`.
+* `AddMonoidHom.mem_powSaturation_mrange_toMultiplicative`: the saturation of the range of the
+  multiplicative form of an additive monoid homomorphism is the saturation of its range.
 * `Submonoid.subgroupClosure_powSaturation_inf_closure`,
   `Submonoid.powSaturationInfClosureToGroupClosure`, `Submonoid.powSaturationInfClosureEquiv`,
   and `Submonoid.powSaturated_comap_subtype_closure_iff`: saturation inside the generated subgroup.
@@ -351,3 +353,22 @@ theorem nsmulSaturationInfClosureEquiv_inclusion_apply (s : S) :
   simp
 
 end AddSubmonoid
+
+namespace AddMonoidHom
+
+variable {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
+
+/-- An element of `Multiplicative N` lies in the saturation of the range of the multiplicative
+form of `p : M →+ N` exactly when the corresponding element of `N` lies in the saturation of the
+range of `p`. -/
+theorem mem_powSaturation_mrange_toMultiplicative (p : M →+ N) {x : Multiplicative N} :
+    x ∈ (MonoidHom.mrange (AddMonoidHom.toMultiplicative p)).powSaturation ↔
+      x.toAdd ∈ (AddMonoidHom.mrange p).nsmulSaturation := by
+  simp only [Submonoid.mem_powSaturation, AddSubmonoid.mem_nsmulSaturation, MonoidHom.mem_mrange,
+    AddMonoidHom.mem_mrange, AddMonoidHom.coe_toMultiplicative, Function.comp_apply]
+  refine exists_congr fun n ↦ and_congr_right fun _ ↦ ⟨fun ⟨m, hm⟩ ↦ ⟨m.toAdd, ?_⟩,
+    fun ⟨m, hm⟩ ↦ ⟨Multiplicative.ofAdd m, ?_⟩⟩
+  · rw [← toAdd_pow, ← hm, toAdd_ofAdd]
+  · rw [toAdd_ofAdd, hm, ofAdd_nsmul, ofAdd_toAdd]
+
+end AddMonoidHom
