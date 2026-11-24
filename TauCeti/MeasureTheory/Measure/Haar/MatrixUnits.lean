@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import TauCeti.Algebra.Ring.QPochhammer
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
@@ -19,20 +20,21 @@ Let `R` be a commutative local ring with finite residue field of `q` elements, w
 ideal is measurable (for instance the ring of integers of a nonarchimedean local field, with its
 Borel σ-algebra). For every left-invariant measure `μ` on `M_n(R)`, such as the additive Haar
 probability measure when `R` is compact,
-`μ(GL_n(R)) = #GL_n(F_q) / q^{n²} · μ(M_n(R)) = ∏_{i=1}^n (1 - q^{-i}) · μ(M_n(R))`.
+`μ(GL_n(R)) = #GL_n(F_q) / q^{n²} · μ(M_n(R)) = (q⁻¹; q⁻¹)_n · μ(M_n(R))`, where the q-Pochhammer
+product `(q⁻¹; q⁻¹)_n` is `∏_{i=1}^n (1 - q^{-i})`.
 
 Indeed a matrix is invertible exactly when its reduction modulo the maximal ideal is
 (`Matrix.isUnit_map_iff`), so `GL_n(R)` is the preimage of `GL_n(F_q)` under reduction. The fibres
 of reduction are the cosets of its kernel, which all have the same measure by translation
 invariance (`MeasureTheory.measure_preimage_addMonoidHom`), and there are `q^{n²}` of them. The
 count `#GL_n(F_q) = ∏_{i=0}^{n-1} (q^n - q^i)` is Mathlib's `Matrix.card_GL_field`, and
-`TauCeti.prod_range_pow_sub_pow_div_pow` rewrites `#GL_n(F_q) / q^{n²}` as a product.
+`TauCeti.prod_range_pow_sub_pow_div_pow` rewrites `#GL_n(F_q) / q^{n²}` as `(q⁻¹; q⁻¹)_n`.
 
 ## Main results
 
 * `Matrix.measure_setOf_isUnit`: `μ(GL_n(R)) = #GL_n(F_q) / q^{n²} · μ(M_n(R))`.
 * `Matrix.measureReal_setOf_isUnit`: for a probability measure,
-  `μ(GL_n(R)) = ∏_{i=1}^n (1 - q^{-i})`.
+  `μ(GL_n(R)) = (q⁻¹; q⁻¹)_n = ∏_{i=1}^n (1 - q^{-i})`.
 -/
 
 public section
@@ -74,8 +76,8 @@ theorem measure_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
   have hGL : Nat.card {N : Matrix (Fin n) (Fin n) k | IsUnit N} =
       ∏ i : Fin n, (Nat.card k ^ n - Nat.card k ^ (i : ℕ)) := by
     have e : GL (Fin n) k ≃ {N : Matrix (Fin n) (Fin n) k | IsUnit N} :=
-      (Equiv.ofInjective _ Units.val_injective).trans <| Equiv.subtypeEquivRight fun _ =>
-        ⟨fun ⟨u, hu⟩ => hu ▸ u.isUnit, fun h => ⟨h.unit, h.unit_spec⟩⟩
+      Submonoid.unitsTypeEquivIsUnitSubmonoid.toEquiv.trans <|
+        Equiv.subtypeEquivRight fun N ↦ IsUnit.mem_submonoid_iff N
     rw [← Nat.card_congr e, card_GL_field, Nat.card_eq_fintype_card (α := k)]
   have hM : Nat.card (Matrix (Fin n) (Fin n) k) = Nat.card k ^ (n * n) := by
     rw [card_matrix, Nat.card_fin]
@@ -84,11 +86,12 @@ theorem measure_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
 /-- **Haar probability of the invertible matrices over a local ring.** If `R` is a commutative
 local ring with measurable maximal ideal and finite residue field of `q` elements, then every
 left-invariant probability measure on `M_n(R)`, such as its additive Haar probability measure,
-gives the invertible matrices measure `∏_{i=1}^n (1 - q^{-i})`. -/
+gives the invertible matrices measure the q-Pochhammer product
+`(q⁻¹; q⁻¹)_n = ∏_{i=1}^n (1 - q^{-i})`. -/
 theorem measureReal_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
     (μ : Measure (Matrix (Fin n) (Fin n) R)) [μ.IsAddLeftInvariant] [IsProbabilityMeasure μ] :
-    μ.real {M | IsUnit M} =
-      ∏ i ∈ Finset.range n, (1 - ((Nat.card (ResidueField R) : ℝ)⁻¹) ^ (i + 1)) := by
+    μ.real {M | IsUnit M} = TauCeti.qPochhammer ((Nat.card (ResidueField R) : ℝ)⁻¹)
+      (Nat.card (ResidueField R) : ℝ)⁻¹ n := by
   rw [measureReal_def, measure_setOf_isUnit n hm μ, measure_univ, mul_one, ENNReal.toReal_div]
   set q := Nat.card (ResidueField R)
   have hq : (q : ℝ) ≠ 0 := by exact_mod_cast Nat.card_pos.ne'
