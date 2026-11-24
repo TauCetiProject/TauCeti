@@ -124,7 +124,7 @@ public theorem fromBlocks_zero₂₁_pow {R m n : Type*} [Semiring R]
 
 /-- The corner embedding `y ↦ fromBlocks y 0 0 0` of `Matrix l l α` into
 `Matrix (l ⊕ m) (l ⊕ m) α`, as a non-unital `⋆`-algebra homomorphism. -/
-@[expose] public def fromBlocks₁₁NonUnitalStarAlgHom (R α l m : Type*) [Fintype l] [Fintype m]
+public def fromBlocks₁₁NonUnitalStarAlgHom (R α l m : Type*) [Fintype l] [Fintype m]
     [Monoid R] [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [StarAddMonoid α] :
     Matrix l l α →⋆ₙₐ[R] Matrix (l ⊕ m) (l ⊕ m) α where
   toFun y := fromBlocks y 0 0 0
@@ -139,7 +139,7 @@ public theorem fromBlocks_zero₂₁_pow {R m n : Type*} [Semiring R]
 public theorem fromBlocks₁₁NonUnitalStarAlgHom_apply {R α l m : Type*} [Fintype l] [Fintype m]
     [Monoid R] [NonUnitalNonAssocSemiring α] [DistribMulAction R α] [StarAddMonoid α]
     (y : Matrix l l α) : fromBlocks₁₁NonUnitalStarAlgHom R α l m y = fromBlocks y 0 0 0 :=
-  rfl
+  (rfl)
 
 end Matrix
 
