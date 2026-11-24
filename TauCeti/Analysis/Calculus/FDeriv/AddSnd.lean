@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 For a map `f : E → E'` between real inner product spaces, the map `g (x, y) = f x + y` on the
 Euclidean product `WithLp 2 (E × E')` (`TauCeti.addSnd`) factors `f` as `x ↦ g (x, 0)`. If `f` is
-smooth on an open set `Ω`, then `g` is a submersion on the open set
+differentiable on an open set `Ω`, then `g` is a submersion on the open set
 `W = {(x, y) | x ∈ Ω, f x + y ∈ Ω'}` (`TauCeti.addSndDomain`) and maps it into `Ω'`. Its
 derivative is `Dg(x, y) (u, v) = Df(x) u + v`, with transpose `η ↦ (Df(x)ᵀ η, η)`. This is how
 Hörmander reduces the pullback of a distribution along `f` to a pullback along a submersion.
@@ -25,7 +25,7 @@ Hörmander reduces the pullback of a distribution along `f` to a pullback along 
 * `TauCeti.addSnd`: the map `g (x, y) = f x + y`.
 * `TauCeti.addSndDomain`: the open set `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`.
 * `TauCeti.contDiffOn_addSnd`, `TauCeti.mapsTo_addSnd`, `TauCeti.surjective_fderiv_addSnd`:
-  `g` is a smooth submersion from `W` into `Ω'`.
+  `g` is a submersion from `W` into `Ω'`, as smooth as `f`.
 * `TauCeti.fderiv_addSnd`, `TauCeti.adjoint_fderiv_addSnd_apply`: the derivative of `g` and its
   transpose.
 * `TauCeti.mapsTo_inl_addSndDomain`: the inclusion `x ↦ (x, 0)` maps `Ω` into `W`.
@@ -75,9 +75,10 @@ theorem mem_addSndDomain {hf : ContinuousOn f Ω} {p : WithLp 2 (E × E')} :
     p ∈ addSndDomain hf Ω' ↔ p.fst ∈ Ω ∧ f p.fst + p.snd ∈ Ω' :=
   Iff.rfl
 
-/-- The map `g (x, y) = f x + y` is smooth on `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
-theorem contDiffOn_addSnd (hf : ContDiffOn ℝ ∞ f Ω) :
-    ContDiffOn ℝ ∞ (addSnd f) (addSndDomain hf.continuousOn Ω') := by
+/-- If `f` is `C^n` on `Ω`, then `g (x, y) = f x + y` is `C^n` on
+`{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
+theorem contDiffOn_addSnd {n : WithTop ℕ∞} (hf : ContDiffOn ℝ n f Ω) :
+    ContDiffOn ℝ n (addSnd f) (addSndDomain hf.continuousOn Ω') := by
   rw [addSnd_eq]
   exact ((hf.comp (fstL 2 ℝ E E').contDiff.contDiffOn (mapsTo_preimage _ _)).add
     (sndL 2 ℝ E E').contDiff.contDiffOn).mono inter_subset_left
@@ -87,18 +88,20 @@ theorem mapsTo_addSnd (hf : ContinuousOn f Ω) :
     MapsTo (addSnd f) (addSndDomain hf Ω') Ω' := fun _ hp ↦ by
   simpa using (mem_addSndDomain.1 hp).2
 
-/-- The derivative of `g (x, y) = f x + y` is `Dg(x, y) (u, v) = Df(x) u + v`. -/
-theorem fderiv_addSnd (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (E × E')} (hp : p.fst ∈ Ω) :
+/-- If `f` is differentiable at `x`, the derivative of `g (x, y) = f x + y` is
+`Dg(x, y) (u, v) = Df(x) u + v`. -/
+theorem fderiv_addSnd {p : WithLp 2 (E × E')} (hf : DifferentiableAt ℝ f p.fst) :
     fderiv ℝ (addSnd f) p = (fderiv ℝ f p.fst).comp (fstL 2 ℝ E E') + sndL 2 ℝ E E' := by
-  have hfp : HasFDerivAt f (fderiv ℝ f p.fst) p.fst :=
-    (hf.differentiableOn (by simp) _ hp |>.differentiableAt (Ω.isOpen.mem_nhds hp)).hasFDerivAt
   rw [addSnd_eq]
-  exact ((hfp.comp p (fstL 2 ℝ E E').hasFDerivAt).add (sndL 2 ℝ E E').hasFDerivAt).fderiv
+  exact ((hf.hasFDerivAt.comp p (fstL 2 ℝ E E').hasFDerivAt).add
+    (sndL 2 ℝ E E').hasFDerivAt).fderiv
 
-/-- The map `g (x, y) = f x + y` is a submersion on `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
-theorem surjective_fderiv_addSnd (hf : ContDiffOn ℝ ∞ f Ω) :
-    ∀ p ∈ addSndDomain hf.continuousOn Ω', Surjective (fderiv ℝ (addSnd f) p) := fun p hp w ↦
-  ⟨toLp 2 (0, w), by simp [fderiv_addSnd hf (mem_addSndDomain.1 hp).1]⟩
+/-- If `f` is differentiable on `Ω`, then `g (x, y) = f x + y` has surjective derivative on
+`{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
+theorem surjective_fderiv_addSnd (hc : ContinuousOn f Ω) (hf : DifferentiableOn ℝ f Ω) :
+    ∀ p ∈ addSndDomain hc Ω', Surjective (fderiv ℝ (addSnd f) p) := fun p hp w ↦
+  have hx := (mem_addSndDomain.1 hp).1
+  ⟨toLp 2 (0, w), by simp [fderiv_addSnd ((hf _ hx).differentiableAt (Ω.isOpen.mem_nhds hx))]⟩
 
 /-- The inclusion `x ↦ (x, 0)` maps `Ω` into `{(x, y) | x ∈ Ω, f x + y ∈ Ω'}`. -/
 theorem mapsTo_inl_addSndDomain (hf : ContinuousOn f Ω) (hfΩ : MapsTo f Ω Ω') :
@@ -108,10 +111,10 @@ theorem mapsTo_inl_addSndDomain (hf : ContinuousOn f Ω) (hfΩ : MapsTo f Ω Ω'
 variable [CompleteSpace E] [CompleteSpace E']
 
 /-- The transpose of `Dg(x, y)` is `η ↦ (Df(x)ᵀ η, η)`. -/
-theorem adjoint_fderiv_addSnd_apply (hf : ContDiffOn ℝ ∞ f Ω) {p : WithLp 2 (E × E')}
-    (hp : p.fst ∈ Ω) (η : E') :
+theorem adjoint_fderiv_addSnd_apply {p : WithLp 2 (E × E')} (hf : DifferentiableAt ℝ f p.fst)
+    (η : E') :
     (fderiv ℝ (addSnd f) p).adjoint η = toLp 2 ((fderiv ℝ f p.fst).adjoint η, η) := by
-  rw [fderiv_addSnd hf hp, map_add, ContinuousLinearMap.adjoint_comp, adjoint_fstL,
+  rw [fderiv_addSnd hf, map_add, ContinuousLinearMap.adjoint_comp, adjoint_fstL,
     adjoint_sndL]
   refine ofLp_injective 2 ?_
   ext <;> simp

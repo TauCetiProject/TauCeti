@@ -86,12 +86,13 @@ integration over the fibres of `g`, as a continuous linear map. -/
 def addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) :
     𝓓'(Ω', ℂ) →L[ℝ] 𝓓'(addSndDomain hf.continuousOn Ω', ℂ) :=
   compCLMOfSubmersion volume volume (addSnd f) (contDiffOn_addSnd hf) (mapsTo_addSnd _)
-    (surjective_fderiv_addSnd hf)
+    (surjective_fderiv_addSnd _ (hf.differentiableOn (by simp)))
 
 /-- `g^*` is the pullback `Distribution.compCLMOfSubmersion` along `g`. -/
 theorem addSndPullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) :
     addSndPullback (Ω' := Ω') hf = compCLMOfSubmersion volume volume (addSnd f)
-      (contDiffOn_addSnd hf) (mapsTo_addSnd _) (surjective_fderiv_addSnd hf) :=
+      (contDiffOn_addSnd hf) (mapsTo_addSnd _)
+      (surjective_fderiv_addSnd _ (hf.differentiableOn (by simp))) :=
   (rfl)
 
 /-- `g^* T` pairs a test function `φ` with `T` through `T (g_♯ φ)`. -/
@@ -99,7 +100,7 @@ theorem addSndPullback_eq_compCLMOfSubmersion (hf : ContDiffOn ℝ ∞ f Ω) :
 theorem addSndPullback_apply (hf : ContDiffOn ℝ ∞ f Ω) (T : 𝓓'(Ω', ℂ))
     (φ : 𝓓(addSndDomain hf.continuousOn Ω', ℝ)) :
     addSndPullback hf T φ = T (fiberIntegralCLM volume volume (addSnd f) (contDiffOn_addSnd hf)
-      (mapsTo_addSnd _) (surjective_fderiv_addSnd hf) φ) := by
+      (mapsTo_addSnd _) (surjective_fderiv_addSnd _ (hf.differentiableOn (by simp))) φ) := by
   rw [addSndPullback_eq_compCLMOfSubmersion, compCLMOfSubmersion_apply]
 
 /-- The pullback `g^* T` is homogeneous in `T`. -/
@@ -119,7 +120,8 @@ theorem notMem_waveFrontSet_addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) {T : �
   rw [addSndPullback_eq_compCLMOfSubmersion, waveFrontSet_compCLMOfSubmersion] at hmem
   obtain ⟨-, η, hη, hadj⟩ := hmem
   dsimp only at hη hadj
-  rw [adjoint_fderiv_addSnd_apply hf (by simpa using hx)] at hadj
+  rw [adjoint_fderiv_addSnd_apply (p := toLp 2 (x, 0))
+    ((hf.differentiableOn (by simp) x hx).differentiableAt (Ω.isOpen.mem_nhds hx))] at hadj
   have hfst := congrArg WithLp.fst hadj
   simp only [toLp_fst] at hfst
   exact h x hx η (by simpa using hη) hfst
@@ -311,7 +313,7 @@ private theorem fiberIntegralCLM_eq_mollify (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ
     (hσ : closedBall (0 : E') σ.rOut +
       tsupport (fiberIntegralCLM volume volume f hf hfΩ hsurj ψ) ⊆ (Ω' : Set E')) :
     fiberIntegralCLM volume volume (addSnd f) (contDiffOn_addSnd hf) (mapsTo_addSnd _)
-        (surjective_fderiv_addSnd hf) F =
+        (surjective_fderiv_addSnd _ (hf.differentiableOn (by simp))) F =
       mollify (fiberIntegralCLM volume volume f hf hfΩ hsurj ψ) volume σ hσ := by
   set ρ := σ.normed volume
   refine ((eq_fiberIntegralCLM_iff volume volume _ _ _).2 fun h hh hhc _ ↦ ?_).symm
