@@ -127,7 +127,9 @@ theorem of_comp_eq_id {f : A →+* B} (g : B →+* A) (h : g.comp f = RingHom.id
 /-- Bijective ring homomorphisms are arc-covers. -/
 theorem of_bijective {f : A →+* B} (hf : Function.Bijective f) : f.IsArcCover :=
   of_comp_eq_id (RingEquiv.ofBijective f hf).symm.toRingHom
-    (by ext x; exact (RingEquiv.ofBijective f hf).symm_apply_apply x)
+    (by
+      ext x
+      simpa [RingEquiv.ofBijective_apply] using (RingEquiv.ofBijective f hf).symm_apply_apply x)
 
 /-- Identities are arc-covers, in the form used by Mathlib's ring-homomorphism properties. -/
 theorem containsIdentities : ContainsIdentities IsArcCover := fun _ _ => IsArcCover.id
@@ -216,7 +218,7 @@ theorem exists_comp_eq_of_injOn {V : Type*} [CommRing V] [IsDomain V] [Valuation
       have := congr(φ $hpow)
       simp only [map_mul, map_pow] at this
       calc φ x ^ n * φ x = (φ (g b) * t) ^ n * φ x := by rw [← ht]
-        _ = φ x ^ n * (t ^ n * φ (g (b ^ n))) := by rw [mul_pow, mul_right_comm, this]; ring
+        _ = φ x ^ n * (t ^ n * φ (g (b ^ n))) := by linear_combination t ^ n * this
     exact ⟨φ (g (b ^ n)), mul_left_cancel₀ (pow_ne_zero n hx) hφ⟩
   choose q hq using hdvd
   have hq' : ∀ b c, φ (g b) = φ x * c → q b = c := fun b c h =>
