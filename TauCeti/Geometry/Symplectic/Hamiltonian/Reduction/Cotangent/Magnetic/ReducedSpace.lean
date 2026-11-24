@@ -7,9 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Twisted
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.Magnetic.Basic
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.ReducedSpace
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
-import TauCeti.Geometry.Lie.Subgroup.Differential
+import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Stabilizer
+import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Naturality
 import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 
 /-!
@@ -39,20 +40,20 @@ of the curvature of `A`), and `ω + π^* β` is the twisted symplectic form
 * **The forms.** Along `μ⁻¹(ν)` the magnetic reduction map pulls `ω + π^* β` back to the canonical
   symplectic form of `T*Q`. So the descended map pulls `ω + π^* β` back to the reduced symplectic
   form (`TauCeti.CotangentBundle.mpullback_magneticReducedSpaceDiffeomorph_twistedSymplecticForm`).
-* **A diffeomorphism.** The twisted form is nondegenerate for every `β`
-  (`TauCeti.CotangentBundle.isNondegenerate_twistedSymplecticForm`), so the descended map has
-  injective differential; both sides have dimension `2 (dim Q - dim G)`
-  (`TauCeti.CotangentBundle.finrank_quotientModelSpace_level`), so it is a local diffeomorphism,
-  and being bijective it is a diffeomorphism
-  (`TauCeti.CotangentBundle.magneticReducedSpaceDiffeomorph`).
+* **A diffeomorphism.** Since the reduced form is nondegenerate and both sides have dimension
+  `2 (dim Q - dim G)` (`TauCeti.CotangentBundle.finrank_quotientModelSpace_level`), the recognition
+  of reduced spaces (`TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`) makes the
+  descended map a diffeomorphism (`TauCeti.CotangentBundle.magneticReducedSpaceDiffeomorph`).
 * **Change of connection.** If `α'` is a second such one-form, with `α' - α = ρ^* γ`, the
   diffeomorphism of `α'` is that of `α` followed by the fibre translation of `T*(Q ⧸ G)` by `γ`
   (`TauCeti.CotangentBundle.magneticReducedSpaceDiffeomorph_eq_vectorBundleTranslateDiffeomorph`).
   The magnetic term changes from `β` to `β + dγ`, and the translation by `γ` pulls
   `ω + π^* (β + dγ)` back to `ω + π^* β`
   (`TauCeti.CotangentBundle.mpullback_vectorBundleTranslateDiffeomorph_twistedSymplecticForm`).
-* **The zero value.** For `α = 0` and `ν = 0` the diffeomorphism is that of cotangent reduction at
-  zero (`TauCeti.CotangentBundle.magneticReducedSpaceDiffeomorph_zero`).
+* **The zero value.** For `α = 0` and `ν = 0` this is cotangent reduction at zero, where
+  `β = 0` and the twisted form is the canonical one; the diffeomorphism
+  `TauCeti.CotangentBundle.zeroReducedSpaceDiffeomorph` of
+  `TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.ReducedSpace` is defined this way.
 
 As for the reduced space at zero, the statements take as arguments the data `h`, `hreg`, `n` and
 `d` from which the Marsden–Weinstein–Meyer theorem builds the atlas of the reduced space; `h` and
@@ -73,10 +74,6 @@ As for the reduced space at zero, the statements take as arguments the data `h`,
   symplectic form.
 * `TauCeti.CotangentBundle.magneticReducedSpaceDiffeomorph_eq_vectorBundleTranslateDiffeomorph`:
   changing the one-form changes the diffeomorphism by a fibre translation.
-* `TauCeti.CotangentBundle.finrank_quotientModelSpace_level`: the reduced space at a
-  coadjoint-fixed value has dimension `2 (dim Q - dim G)`.
-* `TauCeti.CotangentBundle.magneticReducedSpaceDiffeomorph_zero`: at `α = 0` and `ν = 0` it is the
-  diffeomorphism of cotangent reduction at zero.
 
 ## References
 
@@ -111,74 +108,13 @@ variable {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [FiniteDim
   {h : (symplecticForm I Q).IsEquivariantMomentMap (momentMap IG G)}
   {α : SmoothForm I Q ℝ 1} {ν : Module.Dual ℝ (GroupLieAlgebra IG G)}
 
-/-! ### The dimension of the reduced space -/
-
-section Dimension
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {n : ℕ}
-
-omit [I.Boundaryless] [IsManifold I ∞ Q] [MulAction G Q] [ContMDiffSMul IG I ∞ G Q]
-  [ContMDiffConstSMul I ∞ G Q] [IsCancelSMul G Q] in
-/-- **The dimension of the reduced space at an infinitesimally coadjoint-fixed value.** If every
-element of `𝔤` annihilates `ν`, `ν ⁅ξ, ·⁆ = 0`, as for a coadjoint-fixed `ν`, the model space
-`ℝ^(n - dim G_ν)` of the reduced space `μ⁻¹(ν) / G_ν` of `T*Q`, where `n = 2 dim Q - dim G` is the
-dimension of the level `μ⁻¹(ν)` and `G_ν` carries the Lie group structure `d`, has dimension
-`2 (dim Q - dim G)`, that of `T*(Q ⧸ G)`: the coadjoint stabilizer of `ν` has the dimension of `G`.
--/
-theorem finrank_quotientModelSpace_level
-    (hν : lieAnnihilator ℝ (GroupLieAlgebra IG G) ν = ⊤)
-    (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
-    (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer ν) F) :
-    finrank ℝ (ProperSMul.QuotientModelSpace F (Fin n → ℝ)) = 2 * (finrank ℝ E - finrank ℝ EG) := by
-  have : T2Space G := IG.t2Space_of_lieGroup ∞
-  have hF : finrank ℝ F = finrank ℝ EG := by
-    rw [d.finrank_eq_finrank_lieSubalgebraOfSubgroup,
-      Lie.finrank_lieSubalgebraOfSubgroup_stabilizer_coadjointRepresentation
-        BoundarylessManifold.isInteriorPoint, hν]
-    exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
-  -- The Lie algebra `GroupLieAlgebra IG G` is by definition the tangent space `EG` at `1`.
-  have hG : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := rfl
-  rw [ProperSMul.finrank_quotientModelSpace, Module.finrank_fin_fun, hF, ← hn, finrank_prod,
-    ContinuousLinearMap.dual_finrank_eq, hG]
-  omega
-
-end Dimension
-
 /-! ### The reduced space at a coadjoint-fixed value -/
 
 section ReducedSpace
 
 variable [ProperSMul G Q] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {n : ℕ}
-
-omit [I.Boundaryless] [IsCancelSMul G Q] [ProperSMul G Q] in
-/-- The coadjoint stabilizer of `ν` acts on the level `μ⁻¹(ν)` through its inclusion into `G`. This
-holds by definition; `SubMulAction.val_smul` does not apply, since instance search would read the
-right-hand side with the cotangent lift of the restricted action on `Q`, a different instance. -/
-private theorem coe_stabilizer_smul_levelSubMulAction
-    (k : (Lie.coadjointRepresentation ℝ IG G).stabilizer ν) (z : h.levelSubMulAction ν) :
-    ((k • z : h.levelSubMulAction ν) : CotangentBundle I Q) = (k : G) • (z : CotangentBundle I Q) :=
-  rfl
-
-variable (h) in
-/-- The magnetic reduction map, descended to the reduced space at `ν`. -/
-private def magneticReducedSpaceMap
-    (hαinv : ∀ g : G, SmoothForm.mpullback (fun x : Q ↦ g • x) (contMDiff_const_smul g) α = α)
-    (hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ) :
-    letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-    MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer ν)
-        (h.levelSubMulAction ν) →
-      CotangentBundle 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q) :=
-  letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  Quotient.lift (fun z ↦ magneticReductionMap I 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E)
-      (Quotient.mk (MulAction.orbitRel G Q)) α (z : CotangentBundle I Q)) fun z z' hzz' ↦ by
-    obtain ⟨k, hk⟩ := MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 hzz')
-    refine (ProperSMul.magneticReductionMap_eq_magneticReductionMap_iff_quotientMk hαinv hα
-      (h.mem_levelSubMulAction.1 z.property) (h.mem_levelSubMulAction.1 z'.property)).2
-      ⟨(k : G)⁻¹, ?_⟩
-    rw [← hk, coe_stabilizer_smul_levelSubMulAction, inv_smul_smul]
-
-variable {hαinv : ∀ g : G, SmoothForm.mpullback (fun x : Q ↦ g • x) (contMDiff_const_smul g) α = α}
+  {hαinv : ∀ g : G, SmoothForm.mpullback (fun x : Q ↦ g • x) (contMDiff_const_smul g) α = α}
   {hα : ∀ x ξ, α.val x ![fundamentalVectorField I ξ x] = -ν ξ}
 
 omit [FiniteDimensional ℝ EG] [FiniteDimensional ℝ E] [I.Boundaryless] [IsCancelSMul G Q]
@@ -192,169 +128,50 @@ private theorem coadjointRepresentation_apply_eq_self [Nonempty Q] (g : G) :
   rw [← map_neg]
   exact coadjointRepresentation_apply_eq_self_of_forall_eval_eq hαinv hα g
 
-private theorem magneticReducedSpaceMap_mk (z : h.levelSubMulAction ν) :
-    letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-    magneticReducedSpaceMap h hαinv hα (Quotient.mk _ z) =
-      magneticReductionMap I 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E)
-        (Quotient.mk (MulAction.orbitRel G Q)) α (z : CotangentBundle I Q) :=
-  (rfl)
-
-/-- The descended magnetic reduction map is a bijection: its fibres on the level are the
-`G`-orbits, which are the `G_ν`-orbits as `ν` is coadjoint-fixed, and it is onto. -/
-private theorem bijective_magneticReducedSpaceMap :
-    Bijective (magneticReducedSpaceMap h hαinv hα) := by
-  let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  refine ⟨fun x x' hxx' ↦ ?_, fun w ↦ ?_⟩
-  · induction x using Quotient.inductionOn with | h z => ?_
-    induction x' using Quotient.inductionOn with | h z' => ?_
-    rw [magneticReducedSpaceMap_mk, magneticReducedSpaceMap_mk] at hxx'
-    obtain ⟨g, hg⟩ := (ProperSMul.magneticReductionMap_eq_magneticReductionMap_iff_quotientMk
-      hαinv hα (h.mem_levelSubMulAction.1 z.property) (h.mem_levelSubMulAction.1 z'.property)).1
-      hxx'
-    -- The invariant one-form `α` pairs the fundamental vector fields with `-ν`, so `ν` is
-    -- coadjoint-fixed and `g` lies in its coadjoint stabilizer.
-    have : Nonempty Q := ⟨(z : CotangentBundle I Q).proj⟩
-    have hg0 : g ∈ (Lie.coadjointRepresentation ℝ IG G).stabilizer ν :=
-      Representation.mem_stabilizer.2 (coadjointRepresentation_apply_eq_self (hαinv := hαinv)
-        (hα := hα) g)
-    refine Quotient.sound (MulAction.orbitRel_apply.2
-      (MulAction.mem_orbit_iff.2 ⟨(⟨g, hg0⟩ : _)⁻¹, Subtype.ext ?_⟩))
-    rw [coe_stabilizer_smul_levelSubMulAction, Subgroup.coe_inv, Subgroup.coe_mk, ← hg,
-      inv_smul_smul]
-  · obtain ⟨z, hz, rfl⟩ := ProperSMul.exists_momentMap_eq_and_magneticReductionMap_eq_quotientMk
-      hα w
-    exact ⟨Quotient.mk _ ⟨z, h.mem_levelSubMulAction.2 hz⟩, rfl⟩
-
 variable (hreg : ∀ z, momentMap IG G z = ν → Surjective (h.differential z))
   (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
   (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer ν) F)
 
-/-- The descended magnetic reduction map is smooth, since the orbit projection onto the reduced
-space is a surjective submersion and the magnetic reduction map is smooth on the embedded level. -/
-private theorem contMDiff_magneticReducedSpaceMap :
+include hαinv hα in
+/-- The magnetic reduction map on the level `μ⁻¹(ν)` descends to a diffeomorphism from the reduced
+space onto `T*(Q ⧸ G)`, by the recognition of reduced spaces
+`TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`: its fibres are the `G`-orbits,
+which are the `G_ν`-orbits; it is onto; it pulls the twisted form `ω + π^* β`, for `ρ^* β = dα`,
+back to the restriction of the canonical form of `T*Q`; and both sides have dimension
+`2 (dim Q - dim G)`, as `ν` is coadjoint-fixed. On an empty `Q` both sides are empty. -/
+private theorem exists_diffeomorph_quotientMk_eq_magneticReductionMap :
     haveI := properSMul (IG := IG) (G := G) (I := I) (M := Q)
     letI := h.orbitRelQuotientChartedSpace ν hreg hn d
     letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-    ContMDiff 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
-      (𝓘(ℝ, ProperSMul.QuotientModelSpace EG E).prod
-        𝓘(ℝ, ProperSMul.QuotientModelSpace EG E →L[ℝ] ℝ)) ∞
-      (magneticReducedSpaceMap h hαinv hα) := by
-  have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-  let := h.levelSubMulActionChartedSpace ν hreg hn
-  have := h.isManifold_levelSubMulAction hreg hn
-  let := h.orbitRelQuotientChartedSpace ν hreg hn d
-  let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  refine ((h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff_comp_iff
-    Quotient.mk_surjective le_rfl).1 ?_
-  exact contMDiff_magneticReductionMap_comp ProperSMul.isSubmersion_quotientMk
-    (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
-    (fun z ↦ (momentMap_eq_iff_of_ker_eq (ProperSMul.ker_mfderiv_quotientMk _) hα).1
-      (h.mem_levelSubMulAction.1 z.property)) le_rfl
-
-/-- Along the orbit projection, the descended magnetic reduction map pulls the twisted form
-`ω + π^* β` of `T*(Q ⧸ G)`, for `ρ^* β = dα`, back to the restriction of the canonical symplectic
-form of `T*Q` to the level. -/
-private theorem mpullback_quotientMk_mpullback_magneticReducedSpaceMap_twistedSymplecticForm :
-    haveI := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-    letI := h.levelSubMulActionChartedSpace ν hreg hn
-    letI := h.orbitRelQuotientChartedSpace ν hreg hn d
-    letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-    haveI := h.isManifold_levelSubMulAction hreg hn
-    haveI := h.isManifold_orbitRelQuotient hreg hn d
-    ∀ {β : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E)
-        (MulAction.orbitRel.Quotient G Q)},
-      SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G Q))
-          (ProperSMul.contMDiff_quotientMk (I := IG) (G := G) (I' := I) (M := Q)) β =
-        mextDerivₗ I 1 α →
-      SmoothForm.mpullback _ (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff
-          (SmoothForm.mpullback (magneticReducedSpaceMap h hαinv hα)
-            (contMDiff_magneticReducedSpaceMap (h := h) hreg hn d) (twistedSymplecticForm β)) =
-        SmoothForm.mpullback Subtype.val
-          (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff (symplecticForm I Q) := by
+    ∃ Φ : MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer ν)
+          (h.levelSubMulAction ν) ≃ₘ⟮𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)),
+          𝓘(ℝ, ProperSMul.QuotientModelSpace EG E).prod
+            𝓘(ℝ, ProperSMul.QuotientModelSpace EG E →L[ℝ] ℝ)⟯
+        CotangentBundle 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q),
+      ∀ z : h.levelSubMulAction ν, Φ (Quotient.mk _ z) =
+        magneticReductionMap I 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E)
+          (Quotient.mk (MulAction.orbitRel G Q)) α (z : CotangentBundle I Q) := by
   have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
   let := h.levelSubMulActionChartedSpace ν hreg hn
   have := h.isManifold_levelSubMulAction hreg hn
   let := h.orbitRelQuotientChartedSpace ν hreg hn d
   have := h.isManifold_orbitRelQuotient hreg hn d
   let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  intro β hβ
-  refine (SmoothForm.mpullback_mpullback _ _ _
-    (contMDiff_magneticReducedSpaceMap (h := h) hreg hn d) _).trans ?_
-  rw [twistedSymplecticForm_def]
-  -- The descended map composed with the orbit projection is the magnetic reduction map on the
-  -- level.
-  convert ProperSMul.mpullback_magneticReductionMap_comp_symplecticForm_add_mpullback_quotientMk
-    hα hβ (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
-    fun z ↦ h.mem_levelSubMulAction.1 z.property using 3
-  exact funext magneticReducedSpaceMap_mk
-
-/-- The descended magnetic reduction map pulls the twisted form `ω + π^* β` of `T*(Q ⧸ G)` back to
-every form `η` on the reduced space with `π^* η = i^* ω`, that is to the reduced symplectic form. -/
-private theorem mpullback_magneticReducedSpaceMap_twistedSymplecticForm :
-    haveI := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-    letI := h.levelSubMulActionChartedSpace ν hreg hn
-    letI := h.orbitRelQuotientChartedSpace ν hreg hn d
-    letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-    haveI := h.isManifold_levelSubMulAction hreg hn
-    haveI := h.isManifold_orbitRelQuotient hreg hn d
-    ∀ {β : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E)
-        (MulAction.orbitRel.Quotient G Q)},
-      SmoothForm.mpullback (Quotient.mk (MulAction.orbitRel G Q))
-          (ProperSMul.contMDiff_quotientMk (I := IG) (G := G) (I' := I) (M := Q)) β =
-        mextDerivₗ I 1 α →
-      ∀ η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
-          (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ IG G).stabilizer ν)
-            (h.levelSubMulAction ν)),
-        SmoothForm.mpullback _ (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff η =
-            SmoothForm.mpullback Subtype.val
-              (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff (symplecticForm I Q) →
-          SmoothForm.mpullback (magneticReducedSpaceMap h hαinv hα)
-              (contMDiff_magneticReducedSpaceMap (h := h) hreg hn d) (twistedSymplecticForm β) =
-            η := by
-  have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-  let := h.levelSubMulActionChartedSpace ν hreg hn
-  have := h.isManifold_levelSubMulAction hreg hn
-  let := h.orbitRelQuotientChartedSpace ν hreg hn d
-  have := h.isManifold_orbitRelQuotient hreg hn d
-  let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  have hp := h.isSubmersion_quotientMk_levelSubMulAction hreg hn d
-  intro β hβ η hη
-  exact SmoothForm.mpullback_injective_of_surjective hp.contMDiff Quotient.mk_surjective
-    (hp.surjective_mfderiv (by simp))
-    ((mpullback_quotientMk_mpullback_magneticReducedSpaceMap_twistedSymplecticForm (h := h) hreg
-      hn d hβ).trans hη.symm)
-
-/-- The descended magnetic reduction map has injective differential, since it pulls the
-nondegenerate twisted form back to the nondegenerate reduced form, and the two sides have the same
-dimension `2 (dim Q - dim G)`, so it is a local diffeomorphism. -/
-private theorem isLocalDiffeomorph_magneticReducedSpaceMap :
-    haveI := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-    letI := h.orbitRelQuotientChartedSpace ν hreg hn d
-    letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-    IsLocalDiffeomorph 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
-      (𝓘(ℝ, ProperSMul.QuotientModelSpace EG E).prod
-        𝓘(ℝ, ProperSMul.QuotientModelSpace EG E →L[ℝ] ℝ)) ∞
-      (magneticReducedSpaceMap h hαinv hα) := by
-  have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-  let := h.levelSubMulActionChartedSpace ν hreg hn
-  have := h.isManifold_levelSubMulAction hreg hn
-  let := h.orbitRelQuotientChartedSpace ν hreg hn d
-  have := h.isManifold_orbitRelQuotient hreg hn d
-  let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  have hΦ := contMDiff_magneticReducedSpaceMap (h := h) (hαinv := hαinv) (hα := hα) hreg hn d
+  rcases isEmpty_or_nonempty Q with hQ | hQ
+  · have : IsEmpty (MulAction.orbitRel.Quotient
+        ((Lie.coadjointRepresentation ℝ IG G).stabilizer ν) (h.levelSubMulAction ν)) :=
+      ⟨fun x ↦ Quotient.inductionOn x fun z ↦ isEmptyElim (z : CotangentBundle I Q).proj⟩
+    have : IsEmpty (CotangentBundle 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E)
+        (MulAction.orbitRel.Quotient G Q)) :=
+      ⟨fun w ↦ Quotient.inductionOn w.proj isEmptyElim⟩
+    exact ⟨{ Equiv.equivOfIsEmpty _ _ with
+      contMDiff_toFun := isEmptyElim
+      contMDiff_invFun := isEmptyElim }, fun z ↦ isEmptyElim (z : CotangentBundle I Q).proj⟩
   -- The magnetic term `β` with `ρ^* β = dα`, and the reduced symplectic form `η`.
   obtain ⟨β, hβ, -⟩ := ProperSMul.existsUnique_mpullback_quotientMk_eq_mextDerivₗ hαinv
     (c := -ν) hα
   obtain ⟨η, ⟨hηs, hη⟩, -⟩ := h.existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback hreg
     hn d isSymplectic_symplecticForm mpullback_smul_symplecticForm
-  have hΦη := mpullback_magneticReducedSpaceMap_twistedSymplecticForm (h := h) (hαinv := hαinv)
-    (hα := hα) hreg hn d hβ η hη
-  intro x
-  induction x using Quotient.inductionOn with | h z => ?_
-  have : Nonempty Q := ⟨(z : CotangentBundle I Q).proj⟩
-  -- A map pulling a nondegenerate form back to a nondegenerate form has injective differential.
-  have hinj := (((isNondegenerate_twistedSymplecticForm β).isNondegenerate_mpullback_iff hΦ).1
-    (hΦη ▸ hηs.isNondegenerate)).2 (Quotient.mk _ z)
   -- The invariant one-form `α` makes `ν` coadjoint-fixed: every one-parameter subgroup fixes `ν`,
   -- so every element of `𝔤` annihilates it, which fixes the dimension.
   have : T2Space G := IG.t2Space_of_lieGroup ∞
@@ -362,10 +179,25 @@ private theorem isLocalDiffeomorph_magneticReducedSpaceMap :
     eq_top_iff.2 fun ξ _ ↦ Lie.mulInvariantExp_smul_mem_stabilizer_coadjointRepresentation_iff.1
       fun _ ↦ Representation.mem_stabilizer.2
         (coadjointRepresentation_apply_eq_self (hαinv := hαinv) (hα := hα) _)
-  exact isLocalDiffeomorphAt_of_injective_mfderiv hΦ.contMDiffOn isOpen_univ (Set.mem_univ _)
-    BoundarylessManifold.isInteriorPoint (by simp) hinj
+  have hi := (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
+  refine (SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq
+    (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d) Quotient.mk_surjective
+    hηs.isNondegenerate _ (fun w ↦ ?_) (fun z z' ↦ ?_)
     ((finrank_quotientModelSpace_level hν hn d).trans
       ProperSMul.finrank_quotientModelSpace_prod_dual.symm)
+    ((ProperSMul.mpullback_magneticReductionMap_comp_symplecticForm_add_mpullback_quotientMk hα hβ
+      hi fun z ↦ h.mem_levelSubMulAction.1 z.property).trans hη.symm)).imp
+    fun Φ hΦ z ↦ congrFun hΦ.1 z
+  · obtain ⟨z, hz, rfl⟩ := ProperSMul.exists_momentMap_eq_and_magneticReductionMap_eq_quotientMk
+      hα w
+    exact ⟨⟨z, h.mem_levelSubMulAction.2 hz⟩, rfl⟩
+  · rw [comp_apply, comp_apply,
+      ProperSMul.magneticReductionMap_eq_magneticReductionMap_iff_quotientMk hαinv hα
+        (h.mem_levelSubMulAction.1 z.property) (h.mem_levelSubMulAction.1 z'.property),
+      Quotient.eq, h.orbitRel_levelSubMulAction_iff, MulAction.orbitRel_apply,
+      MulAction.mem_orbit_iff]
+    exact ⟨fun ⟨g, hg⟩ ↦ ⟨g⁻¹, by rw [← hg, inv_smul_smul]⟩,
+      fun ⟨g, hg⟩ ↦ ⟨g⁻¹, by rw [← hg, inv_smul_smul]⟩⟩
 
 variable (h hαinv hα) in
 /-- **Magnetic cotangent bundle reduction.** For a free and proper smooth action of a Lie group `G`
@@ -390,11 +222,8 @@ def magneticReducedSpaceDiffeomorph :
         𝓘(ℝ, ProperSMul.QuotientModelSpace EG E).prod
           𝓘(ℝ, ProperSMul.QuotientModelSpace EG E →L[ℝ] ℝ)⟯
       CotangentBundle 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E) (MulAction.orbitRel.Quotient G Q) :=
-  haveI := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-  letI := h.orbitRelQuotientChartedSpace ν hreg hn d
-  letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  (isLocalDiffeomorph_magneticReducedSpaceMap (h := h) (hαinv := hαinv) (hα := hα) hreg hn
-    d).diffeomorphOfBijective (bijective_magneticReducedSpaceMap (hαinv := hαinv) (hα := hα))
+  (exists_diffeomorph_quotientMk_eq_magneticReductionMap (hαinv := hαinv) (hα := hα) hreg hn
+    d).choose
 
 /-- **The diffeomorphism of magnetic cotangent reduction sends the orbit of a covector in `μ⁻¹(ν)`
 to its magnetic reduced covector**: the unique covector `p'` at `[q]` with `p + α_q = p' ∘ dρ_q`. -/
@@ -405,23 +234,9 @@ theorem magneticReducedSpaceDiffeomorph_mk (z : h.levelSubMulAction ν) :
     letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
     magneticReducedSpaceDiffeomorph h hαinv hα hreg hn d (Quotient.mk _ z) =
       magneticReductionMap I 𝓘(ℝ, ProperSMul.QuotientModelSpace EG E)
-        (Quotient.mk (MulAction.orbitRel G Q)) α (z : CotangentBundle I Q) := by
-  have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-  let := h.orbitRelQuotientChartedSpace ν hreg hn d
-  let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  rw [magneticReducedSpaceDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective,
-    magneticReducedSpaceMap_mk]
-
-private theorem coe_magneticReducedSpaceDiffeomorph :
-    haveI := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-    letI := h.orbitRelQuotientChartedSpace ν hreg hn d
-    letI := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-    ⇑(magneticReducedSpaceDiffeomorph h hαinv hα hreg hn d) =
-      magneticReducedSpaceMap h hαinv hα := by
-  have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-  let := h.orbitRelQuotientChartedSpace ν hreg hn d
-  let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  rw [magneticReducedSpaceDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective]
+        (Quotient.mk (MulAction.orbitRel G Q)) α (z : CotangentBundle I Q) :=
+  (exists_diffeomorph_quotientMk_eq_magneticReductionMap (hαinv := hαinv) (hα := hα) hreg hn
+    d).choose_spec z
 
 /-- **Magnetic cotangent bundle reduction: the symplectic forms.** Let `β` be the two-form on
 `Q ⧸ G` with `ρ^* β = dα`, which exists and is closed
@@ -460,10 +275,18 @@ theorem mpullback_magneticReducedSpaceDiffeomorph_twistedSymplecticForm :
   let := h.orbitRelQuotientChartedSpace ν hreg hn d
   have := h.isManifold_orbitRelQuotient hreg hn d
   let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
+  have hp := h.isSubmersion_quotientMk_levelSubMulAction hreg hn d
   intro β hβ η hη
-  convert mpullback_magneticReducedSpaceMap_twistedSymplecticForm (h := h) hreg hn d hβ η hη
-    using 3
-  exact coe_magneticReducedSpaceDiffeomorph (h := h) hreg hn d
+  -- Pulling back along the orbit projection `π` is injective, and the diffeomorphism composed with
+  -- `π` is the magnetic reduction map on the level.
+  refine SmoothForm.mpullback_injective_of_surjective hp.contMDiff Quotient.mk_surjective
+    (hp.surjective_mfderiv (by simp)) (((SmoothForm.mpullback_mpullback _ _ _
+      (magneticReducedSpaceDiffeomorph h hαinv hα hreg hn d).contMDiff _).trans ?_).trans hη.symm)
+  rw [twistedSymplecticForm_def]
+  convert ProperSMul.mpullback_magneticReductionMap_comp_symplecticForm_add_mpullback_quotientMk
+    hα hβ (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff
+    fun z ↦ h.mem_levelSubMulAction.1 z.property using 3
+  exact funext (magneticReducedSpaceDiffeomorph_mk hreg hn d)
 
 /-- **Magnetic cotangent bundle reduction: change of connection.** Let `α'` be a second
 `G`-invariant one-form pairing every fundamental vector field with `-ν`, and `γ` the one-form on
@@ -496,36 +319,5 @@ theorem magneticReducedSpaceDiffeomorph_eq_vectorBundleTranslateDiffeomorph
     (h.mem_levelSubMulAction.1 z.property) hγ
 
 end ReducedSpace
-
-/-! ### The zero value -/
-
-section Zero
-
-variable [ProperSMul G Q] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {n : ℕ}
-  {hαinv : ∀ g : G, SmoothForm.mpullback (fun x : Q ↦ g • x) (contMDiff_const_smul g)
-    (0 : SmoothForm I Q ℝ 1) = 0}
-  {hα : ∀ x ξ, (0 : SmoothForm I Q ℝ 1).val x ![fundamentalVectorField I ξ x] =
-    -(0 : Module.Dual ℝ (GroupLieAlgebra IG G)) ξ}
-  (hreg : ∀ z, momentMap IG G z = 0 → Surjective (h.differential z))
-  (hn : finrank ℝ (E × (E →L[ℝ] ℝ)) - finrank ℝ (GroupLieAlgebra IG G) = n)
-  (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0) F)
-
-/-- **Magnetic reduction at zero is cotangent reduction at zero.** For the one-form `α = 0` and the
-value `ν = 0`, the diffeomorphism of magnetic cotangent reduction is the diffeomorphism
-`μ⁻¹(0) / G_0 ≅ T*(Q ⧸ G)` of cotangent reduction at zero. -/
-theorem magneticReducedSpaceDiffeomorph_zero :
-    haveI := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-    letI := h.orbitRelQuotientChartedSpace 0 hreg hn d
-    magneticReducedSpaceDiffeomorph h hαinv hα hreg hn d =
-      zeroReducedSpaceDiffeomorph h hreg hn d := by
-  have := properSMul (IG := IG) (G := G) (I := I) (M := Q)
-  let := h.orbitRelQuotientChartedSpace 0 hreg hn d
-  let := ProperSMul.orbitRelQuotientChartedSpace IG G I Q
-  refine Diffeomorph.ext fun x ↦ ?_
-  induction x using Quotient.inductionOn with | h z => ?_
-  rw [magneticReducedSpaceDiffeomorph_mk, zeroReducedSpaceDiffeomorph_mk, magneticReductionMap_zero]
-
-end Zero
 
 end TauCeti.CotangentBundle

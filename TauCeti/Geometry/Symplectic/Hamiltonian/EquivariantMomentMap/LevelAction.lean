@@ -145,6 +145,15 @@ theorem coe_levelSubMulAction (h : σ.IsEquivariantMomentMap μ) :
     (h.levelSubMulAction c : Set M) = μ ⁻¹' {c} :=
   (rfl)
 
+/-- The coadjoint stabilizer `G_c` acts on the level `μ⁻¹(c)` through its inclusion into `G`. This
+holds by definition. Unlike `SubMulAction.val_smul`, the right-hand side uses the action of `G` on
+`M`, which matters when instance search finds a different action of `G_c` on `M`, as for the
+cotangent lift of the restricted action on a cotangent bundle. -/
+theorem coe_smul_levelSubMulAction (h : σ.IsEquivariantMomentMap μ)
+    (k : (Lie.coadjointRepresentation ℝ I G).stabilizer c) (z : h.levelSubMulAction c) :
+    ((k • z : h.levelSubMulAction c) : M) = (k : G) • (z : M) :=
+  (rfl)
+
 variable (c) in
 /-- The inclusion of the level `μ⁻¹(c)` into `M`, equivariant along the inclusion `G_c → G` of the
 coadjoint stabilizer. -/
