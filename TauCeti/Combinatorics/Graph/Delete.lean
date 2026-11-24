@@ -117,20 +117,14 @@ private theorem coe_toSimpleGraphDeleteVertsSourceIso_apply (G : Graph α β) (X
 
 private def toSimpleGraphDeleteVertsTargetIso (G : Graph α β) (X : Set α) :
     G.toSimpleGraph.induce {v : V(G) | (v : α) ∈ V(G) \ X} ≃g
-      G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X} := by
-  have hsets : {v : V(G) | (v : α) ∈ V(G) \ X} = {v : V(G) | (v : α) ∉ X} := by
-    ext v
-    simp
-  have hbij : Set.BijOn id {v : V(G) | (v : α) ∈ V(G) \ X}
-      {v : V(G) | (v : α) ∉ X} := by
-    rw [← hsets]
-    exact Set.bijOn_id _
-  exact SimpleGraph.Iso.induce (SimpleGraph.Iso.refl (G := G.toSimpleGraph)) hbij
+      G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X} :=
+  SimpleGraph.Iso.induce (SimpleGraph.Iso.refl (G := G.toSimpleGraph)) (by
+    convert Set.bijOn_id {v : V(G) | (v : α) ∉ X} using 1 <;> ext v <;> simp)
 
 private theorem coe_toSimpleGraphDeleteVertsTargetIso_apply (G : Graph α β) (X : Set α)
     (v : {v : V(G) // (v : α) ∈ V(G) \ X}) :
     (((toSimpleGraphDeleteVertsTargetIso G X) v).val : α) = v.val := by
-  rfl
+  simp [toSimpleGraphDeleteVertsTargetIso]
 
 /-- Simplifying after vertex deletion is the same as inducing the simplification on the
 remaining actual vertices. -/
