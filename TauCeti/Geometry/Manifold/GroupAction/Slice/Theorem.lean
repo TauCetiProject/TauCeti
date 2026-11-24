@@ -91,16 +91,11 @@ theorem isLocalDiffeomorphAt_liftRightTranslation (hι : ContMDiff IZ IM ∞ ι)
   have hπ := isSubmersion_quotientMk_rightTranslation (K := K) (Z := Z) (I := I) (IZ := IZ)
     (F := F)
   have hΦ := contMDiff_liftRightTranslation (I := I) (F := F) hι
-  have hcomp :
-      liftRightTranslation ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
-        fun p : K.RightTranslation × Z ↦ K.toRightTranslation.symm p.1 • ι p.2 :=
-    funext fun p ↦ by
-      rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
   set π := Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z))
   set p₀ : K.RightTranslation × Z := (K.toRightTranslation g, z)
   have hd := mfderiv_comp p₀ (hΦ.mdifferentiableAt (by simp))
     (hπ.contMDiff.mdifferentiableAt (by simp) : MDifferentiableAt _ _ π p₀)
-  rw [hcomp] at hd
+  rw [liftRightTranslation_comp_quotientMk] at hd
   -- The differential of `[g, z] ↦ g • ι z` is onto, as its composite with that of the
   -- projection is.
   have hs : Surjective (mfderiv 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM
