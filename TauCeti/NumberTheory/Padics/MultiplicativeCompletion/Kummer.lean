@@ -233,7 +233,8 @@ the `m`-th coordinate. -/
 @[simp]
 theorem kummerH1Limit_smul_apply (a : ℤ_[p]) (y : kummerH1Limit p K) (m : ℕ) :
     (a • y).val m = a.appr m • y.val m :=
-  (rfl)
+  (kummerH1Tower p K).coe_limPadicModule_smul_apply p
+    (fun _ ↦ nsmul_H1_kummerCoeff_eq_zero) a y m
 
 /-- **The limit Kummer map is `ℤ_p`-linear.** -/
 theorem padicKummerMap_smul (hp : IsUnit (p : K)) (a : ℤ_[p])
