@@ -18,7 +18,9 @@ equation into a bound on the full differential: if `L I = A (L 1)` with `‖A‖
 `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖` (`ContinuousLinearMap.norm_apply_le_of_apply_I_eq`); with
 `‖L 1‖ ≤ B` this bounds the operator norm by `(1 + M) * B`
 (`ContinuousLinearMap.norm_le_of_apply_I_eq`), and such an `L` vanishes exactly when `L 1` does
-(`ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`).
+(`ContinuousLinearMap.eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`). If moreover `A² = -1`, then
+`L I` vanishes exactly when `L 1` does
+(`ContinuousLinearMap.apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq`).
 
 For `K = ℝ` the imaginary unit is `0` and the first bound reduces to `‖L z‖ ≤ ‖L 1‖ * ‖z‖`; the
 other two keep their factor `1 + M`.
@@ -65,6 +67,17 @@ theorem eq_zero_iff_apply_one_eq_zero_of_apply_I_eq {f : K →L[ℝ] V} {L : V �
   ext z
   conv_lhs => rw [← RCLike.re_add_im z]
   simp [RCLike.ofReal_alg, hCR, h]
+
+/-- If a real-linear map `f : K → V` out of an `RCLike` field satisfies `f I = L (f 1)` for a
+complex structure `L`, `L² = -1`, then `f I` vanishes exactly when `f 1` does. -/
+theorem apply_I_eq_zero_iff_apply_one_eq_zero_of_apply_I_eq {f : K →L[ℝ] V} {L : V →L[ℝ] V}
+    (hL : L ∘L L = -ContinuousLinearMap.id ℝ V) (hCR : f RCLike.I = L (f 1)) :
+    f RCLike.I = 0 ↔ f 1 = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [hCR, h, map_zero]⟩
+  have h1 : f 1 + L (f RCLike.I) = 0 := by
+    rw [hCR, ← comp_apply, hL]
+    simp
+  simpa [h] using h1
 
 end ContinuousLinearMap
 
