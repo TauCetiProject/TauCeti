@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Artinian.Module
 public import TauCeti.Dynamics.PeriodicPts.Finite
+public import TauCeti.LinearAlgebra.End.RangePow
 
 /-!
 # Hida's ordinary projector on a finite module
@@ -92,15 +93,14 @@ theorem ordinaryProjection_pow_apply_comm (U : Module.End R M) (k : ℕ) (x : M)
 /-- The ordinary part is `U`-stable. -/
 theorem range_ordinaryProjection_mem_invtSubmodule (U : Module.End R M) :
     range U.ordinaryProjection ∈ U.invtSubmodule := by
-  refine (mem_invtSubmodule_iff_forall_mem_of_mem _).mpr ?_
-  rintro _ ⟨x, rfl⟩
-  exact ⟨U x, by simpa using ordinaryProjection_pow_apply_comm U 1 x⟩
+  rw [ordinaryProjection_def]
+  exact (mem_invtSubmodule_iff_mapsTo _).mpr (LinearMap.mapsTo_range_pow U _)
 
 /-- The non-ordinary part is `U`-stable. -/
 theorem ker_ordinaryProjection_mem_invtSubmodule (U : Module.End R M) :
-    ker U.ordinaryProjection ∈ U.invtSubmodule :=
-  (mem_invtSubmodule_iff_forall_mem_of_mem _).mpr fun x hx ↦ by
-    simpa [mem_ker.mp hx] using ordinaryProjection_pow_apply_comm U 1 x
+    ker U.ordinaryProjection ∈ U.invtSubmodule := by
+  rw [ordinaryProjection_def]
+  exact (mem_invtSubmodule_iff_mapsTo _).mpr (LinearMap.mapsTo_ker_pow U _)
 
 @[simp]
 theorem ordinaryProjection_one : (1 : Module.End R M).ordinaryProjection = 1 :=
