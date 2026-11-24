@@ -214,9 +214,13 @@ theorem Gamma_nat_add_half_eq_factorial (n : ℕ) :
 /-- The half-integer value `Γ(3 / 2) = √π / 2`: the case `n = 1` of
 `Real.Gamma_nat_add_half_eq_factorial`. -/
 theorem Gamma_three_halves : Gamma (3 / 2) = √π / 2 := by
-  rw [show (3 / 2 : ℝ) = (1 : ℕ) + 1 / 2 by norm_num, Gamma_nat_add_half_eq_factorial]
-  field_simp
-  norm_num [Nat.factorial]
+  have h := Gamma_nat_add_half_eq_factorial 1
+  have harg : ((1 : ℕ) : ℝ) + 1 / 2 = 3 / 2 := by norm_num
+  have hval : ((2 * 1)! : ℝ) * √π / (4 ^ 1 * (1 : ℕ)!) = √π / 2 := by
+    simp only [mul_one, Nat.factorial_two, Nat.factorial_one, Nat.cast_ofNat, Nat.cast_one,
+      pow_one]
+    ring
+  rwa [harg, hval] at h
 
 /-- **Euler's limit formula in ratio form.** For every real `s`, `Γ(n + 1 + s)` is asymptotic to
 `n ^ s * n!` as the natural number `n` tends to infinity: the case `x = n` of

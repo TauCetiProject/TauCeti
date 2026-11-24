@@ -145,9 +145,7 @@ theorem airyChi_zero : airyChi 0 = 1 := by
 /-- `χ(1) = π/2`. -/
 @[simp]
 theorem airyChi_one : airyChi 1 = π / 2 := by
-  have h1 : (1 : ℝ) / 2 + 1 = 3 / 2 := by norm_num
-  have h2 : (1 : ℝ) / 2 + 1 / 2 = 1 := by norm_num
-  rw [airyChi_def, h1, h2, Real.Gamma_three_halves, Real.Gamma_one, div_one, ← mul_div_assoc,
+  norm_num [airyChi_def, Real.Gamma_three_halves, Real.Gamma_one, ← mul_div_assoc,
     Real.mul_self_sqrt Real.pi_pos.le]
 
 /-- `χ(2) = 2`. -/
