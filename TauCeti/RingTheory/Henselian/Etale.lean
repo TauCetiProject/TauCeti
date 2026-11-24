@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Henselian
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Unramified.LocalStructure
-public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 
+import TauCeti.RingTheory.Henselian.Basic
+import TauCeti.RingTheory.Henselian.Section
+import TauCeti.RingTheory.LocalRing.ResidueField.Ideal
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 import TauCeti.RingTheory.TensorProduct.LiftEquiv
 import TauCeti.RingTheory.Unramified.Diagonal
 
@@ -28,23 +32,24 @@ so this is Hensel's lemma: `f'(a)` is a unit at such a root. A general étale al
 (`Algebra.IsEtaleAt.exists_isStandardEtale`), and both `k`-points and their lifts extend
 uniquely to the localisation.
 
-Consequently a *strictly Henselian* local ring, one whose residue field is separably closed, has
-no nonsplit finite étale covers (`TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`): a faithfully
-flat finite étale algebra has a `k`-point because `k` is separably closed, and this lifts to a
-section. Such rings need be neither fields nor reduced. As the spectrum of a local ring is
-connected, every finite étale algebra over a strictly Henselian local ring is moreover a finite
-product of copies of the base (`Algebra.IsFiniteSplit.of_henselianLocalRing`).
+In terms of prime ideals, an `R`-algebra retraction `τ : S → R` cuts out the prime `𝔮 = τ⁻¹(𝔪_R)`
+lying over `𝔪_R` with `κ(𝔪_R) → κ(𝔮)` bijective; conversely, over a Henselian local ring every
+such prime of an étale `R`-algebra comes from a unique `R`-algebra retraction
+(`TauCeti.HenselianLocalRing.existsUnique_algHom_comap_maximalIdeal_of_residueFieldMap_surjective`),
+and this property characterises Henselian local rings (`TauCeti.HenselianLocalRing.tfae_etale`).
 
 ## Main results
 
 * `TauCeti.HenselianLocalRing.comp_bijective`: over a Henselian local ring, `R`-points of an étale
   algebra are in bijection with its points over the residue field.
-* `TauCeti.HenselianLocalRing.comp_bijective_of_algebra`: the same for an étale algebra over an
-  arbitrary base `R` and a Henselian local `R`-algebra `S`.
-* `TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`: a Henselian local ring with separably
-  closed residue field has no nonsplit finite étale covers.
-* `Algebra.IsFiniteSplit.of_henselianLocalRing`: over such a ring every finite étale algebra is a
-  finite product of copies of the base.
+* `TauCeti.HenselianLocalRing.existsUnique_algHom_comap_maximalIdeal_of_residueFieldMap_surjective`:
+  for a prime `𝔮` of an étale `R`-algebra over `𝔪_R` with `κ(𝔪_R) → κ(𝔮)` surjective, there is a
+  unique `R`-algebra retraction `τ : S → R` with `τ⁻¹(𝔪_R) = 𝔮`.
+* `TauCeti.HenselianLocalRing.tfae_etale`: equivalence of `HenselianLocalRing R`,
+  `HenselianRing R (maximalIdeal R)`, lifting of residue-field points of étale `R`-algebras, and
+  unique retractions at primes over `𝔪_R` with trivial residue field extension (Stacks, Tag 04GG).
+* `TauCeti.HenselianLocalRing.comp_bijective_of_algebra`: the relative form for an étale algebra
+  over an arbitrary base `R` and a Henselian local `R`-algebra `S`.
 
 ## References
 
@@ -53,19 +58,19 @@ product of copies of the base (`Algebra.IsFiniteSplit.of_henselianLocalRing`).
 * [Stacks Project, Lemma 10.153.11, Tag 08HQ](https://stacks.math.columbia.edu/tag/08HQ), unique
   lifting of residue field points of an étale algebra to a Henselian local algebra over an
   arbitrary base.
-* P. Scholze, *Étale cohomology of diamonds*, Lemma 15.3, for rings without nonsplit finite étale
-  covers.
 -/
 
 public section
 
-open IsLocalRing Polynomial TensorProduct
+open _root_.IsLocalRing TauCeti.IsLocalRing Polynomial TensorProduct
 
 universe u
 
 namespace TauCeti
 
 namespace HenselianLocalRing
+
+section Henselian
 
 variable {R S : Type*} [CommRing R] [HenselianLocalRing R] [CommRing S] [Algebra R S]
 
@@ -121,6 +126,100 @@ theorem comp_bijective [Algebra.Etale R S] :
   refine ⟨φ.comp (IsScalarTower.toAlgHom R S _), AlgHom.ext fun s ↦ ?_⟩
   simpa [ψ'] using AlgHom.congr_fun hφ (algebraMap S _ s)
 
+/-- Every residue-field point `ψ : S →ₐ[R] ResidueField R` of an étale `R`-algebra over a
+Henselian local ring `R` lifts to a unique `R`-algebra retraction `φ : S →ₐ[R] R`. -/
+@[stacks 04GG "unique lift of a residue field point"]
+theorem existsUnique_algHom_comp_eq [Algebra.Etale R S] (ψ : S →ₐ[R] ResidueField R) :
+    ∃! φ : S →ₐ[R] R, (Algebra.ofId R (ResidueField R)).comp φ = ψ :=
+  comp_bijective.existsUnique ψ
+
+/-- Over a Henselian local ring `R`, every prime `𝔮` of an étale `R`-algebra `S` lying over `𝔪_R`
+such that `κ(𝔪_R) → κ(𝔮)` is surjective is the preimage of `𝔪_R` under a unique `R`-algebra
+retraction `τ : S →ₐ[R] R`. -/
+@[stacks 04GG "(1) ⇒ (8)"]
+theorem existsUnique_algHom_comap_maximalIdeal_of_residueFieldMap_surjective [Algebra.Etale R S]
+    {𝔮 : Ideal S} [𝔮.IsPrime] (h𝔮 : 𝔮.comap (algebraMap R S) = maximalIdeal R)
+    (hκ : Function.Surjective
+      (Ideal.ResidueField.map (maximalIdeal R) 𝔮 (algebraMap R S) h𝔮.symm)) :
+    ∃! τ : S →ₐ[R] R, (maximalIdeal R).comap τ = 𝔮 := by
+  obtain ⟨ψ, hψ⟩ := exists_algHom_residueField_ker_eq h𝔮 hκ
+  obtain ⟨τ, hτ, _⟩ := existsUnique_algHom_comp_eq ψ
+  have hτ_comap : (maximalIdeal R).comap τ = 𝔮 := by
+    rw [← τ.ker_residue_comp_eq_comap_maximalIdeal, hτ, hψ]
+  refine ⟨τ, hτ_comap, fun τ' hτ' ↦ comp_bijective.1 (algHom_residueField_eq_of_ker_eq ?_)⟩
+  rw [τ'.ker_residue_comp_eq_comap_maximalIdeal, τ.ker_residue_comp_eq_comap_maximalIdeal,
+    hτ', hτ_comap]
+
+/-- Over a Henselian local ring `R`, a prime `𝔮` of an étale `R`-algebra `S` lying over `𝔪_R`
+is cut out by an `R`-algebra retraction `τ : S →ₐ[R] R` if and only if `κ(𝔪_R) → κ(𝔮)` is
+bijective. -/
+@[stacks 04GG "(8)"]
+theorem exists_algHom_comap_maximalIdeal_iff [Algebra.Etale R S] {𝔮 : Ideal S} [𝔮.IsPrime]
+    (h𝔮 : 𝔮.comap (algebraMap R S) = maximalIdeal R) :
+    (∃ τ : S →ₐ[R] R, (maximalIdeal R).comap τ = 𝔮) ↔
+      Function.Bijective
+        (Ideal.ResidueField.map (maximalIdeal R) 𝔮 (algebraMap R S) h𝔮.symm) :=
+  ⟨fun ⟨_, hτ⟩ ↦ Ideal.ResidueField.map_bijective_of_comap hτ h𝔮,
+    fun hκ ↦
+      (existsUnique_algHom_comap_maximalIdeal_of_residueFieldMap_surjective h𝔮
+        hκ.surjective).exists⟩
+
+end Henselian
+
+/-- **Étale retraction characterisations of Henselian local rings.** For a local ring `R`, the
+following are equivalent:
+1. `R` is a Henselian local ring;
+2. `(R, 𝔪_R)` is a Henselian pair;
+3. for every étale `R`-algebra `S`, reduction modulo `𝔪_R` is a bijection
+   `(S →ₐ[R] R) → (S →ₐ[R] ResidueField R)`;
+4. for every étale `R`-algebra `S`, every `R`-algebra map `S →ₐ[R] ResidueField R` lifts to
+   `S →ₐ[R] R`;
+5. for every étale `R`-algebra `S` and prime `𝔮` over `𝔪_R` with `κ(𝔪_R) → κ(𝔮)` bijective,
+   there is a unique `R`-algebra retraction `τ : S →ₐ[R] R` with `τ⁻¹(𝔪_R) = 𝔮`. -/
+@[stacks 04GG]
+theorem tfae_etale (R : Type u) [CommRing R] [_root_.IsLocalRing R] :
+    List.TFAE
+      [HenselianLocalRing R,
+        HenselianRing R (maximalIdeal R),
+        ∀ (S : Type u) [CommRing S] [Algebra R S] [Algebra.Etale R S],
+          Function.Bijective
+            ((Algebra.ofId R (ResidueField R)).comp : (S →ₐ[R] R) → S →ₐ[R] ResidueField R),
+        ∀ (S : Type u) [CommRing S] [Algebra R S] [Algebra.Etale R S],
+          Function.Surjective
+            ((Algebra.ofId R (ResidueField R)).comp : (S →ₐ[R] R) → S →ₐ[R] ResidueField R),
+        ∀ (S : Type u) [CommRing S] [Algebra R S] [Algebra.Etale R S] (𝔮 : Ideal S) [𝔮.IsPrime]
+          (h𝔮 : 𝔮.comap (algebraMap R S) = maximalIdeal R),
+          Function.Bijective
+            (Ideal.ResidueField.map (maximalIdeal R) 𝔮 (algebraMap R S) h𝔮.symm) →
+            ∃! τ : S →ₐ[R] R, (maximalIdeal R).comap τ = 𝔮] := by
+  tfae_have 1 → 2 := fun _ ↦ inferInstance
+  tfae_have 2 → 1 := fun _ ↦ HenselianRing.henselianLocalRing R
+  tfae_have 1 → 3 := fun _ _ _ _ _ ↦ comp_bijective
+  tfae_have 3 → 4 := fun h S _ _ _ ↦ (h S).surjective
+  tfae_have 1 → 5 := fun _ _ _ _ _ _ _ h𝔮 hκ ↦
+    existsUnique_algHom_comap_maximalIdeal_of_residueFieldMap_surjective h𝔮 hκ.surjective
+  tfae_have 5 → 4 := by
+    intro h S _ _ _ ψ
+    have : (RingHom.ker ψ).IsPrime := RingHom.ker_isPrime ψ
+    have h𝔮 := ψ.comap_ker_residueField
+    obtain ⟨τ, hτ, -⟩ := h S (RingHom.ker ψ) h𝔮 (ψ.residueFieldMap_bijective_of_ker_eq rfl h𝔮)
+    refine ⟨τ, algHom_residueField_eq_of_ker_eq ?_⟩
+    rw [τ.ker_residue_comp_eq_comap_maximalIdeal, hτ]
+  tfae_have 4 → 2 := by
+    intro h
+    let := Ideal.Quotient.field (maximalIdeal R)
+    let e : (R ⧸ maximalIdeal R) ≃ₐ[R] ResidueField R :=
+      (residueFieldAlgEquivOfSurjective (Ideal.Quotient.mkₐ_surjective R (maximalIdeal R))).symm
+    refine henselianRing_iff_forall_comp_surjective.mpr fun A _ _ _ ψ ↦ ?_
+    obtain ⟨φ, hφ⟩ := h A (e.toAlgHom.comp ψ)
+    refine ⟨φ, AlgHom.ext fun a ↦ e.injective ?_⟩
+    rw [AlgHom.comp_apply,
+      residueFieldAlgEquivOfSurjective_symm_apply
+        (Ideal.Quotient.mkₐ_surjective R (maximalIdeal R)),
+      ← ResidueField.algebraMap_eq]
+    exact AlgHom.congr_fun hφ a
+  tfae_finish
+
 section Relative
 
 variable {R S A : Type*} [CommRing R] [CommRing S] [HenselianLocalRing S] [Algebra R S]
@@ -142,23 +241,5 @@ theorem comp_bijective_of_algebra :
 end Relative
 
 end HenselianLocalRing
-
-/-- A Henselian local ring with separably closed residue field, that is, a strictly Henselian local
-ring, has no nonsplit finite étale covers: a faithfully flat finite étale algebra has a point over
-the separably closed residue field, which lifts to a section. -/
-instance IsFiniteEtaleSplit.of_henselianLocalRing (R : Type u) [CommRing R] [HenselianLocalRing R]
-    [IsSepClosed (ResidueField R)] : IsFiniteEtaleSplit R :=
-  isFiniteEtaleSplit_iff_exists_section.mpr fun T _ _ _ _ _ ↦
-    have ⟨ψ⟩ := IsFiniteEtaleSplit.nonempty_algHom (ResidueField R) T
-    have ⟨φ, _⟩ := (HenselianLocalRing.comp_bijective (R := R) (S := T)).2 ψ
-    ⟨φ⟩
-
-/-- **Finite étale algebras over a strictly Henselian local ring split**: over a Henselian local
-ring `R` with separably closed residue field, every finite étale `R`-algebra is `R`-isomorphic to
-a finite product `Fin n → R` of copies of `R`. -/
-theorem _root_.Algebra.IsFiniteSplit.of_henselianLocalRing (R : Type u) [CommRing R]
-    [HenselianLocalRing R] [IsSepClosed (ResidueField R)] (T : Type*) [CommRing T] [Algebra R T]
-    [Algebra.Etale R T] [Module.Finite R T] : Algebra.IsFiniteSplit R T :=
-  .of_isFiniteEtaleSplit T
 
 end TauCeti

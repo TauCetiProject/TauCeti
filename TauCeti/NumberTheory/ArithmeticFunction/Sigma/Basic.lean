@@ -10,17 +10,27 @@ import Mathlib.Algebra.Order.Group.Nat
 import Mathlib.Algebra.Ring.GeomSum
 
 /-!
-# The divisor power sums at prime powers
+# The divisor power sums and `ζ * ζ = σ 0`
 
+* `ArithmeticFunction.zeta_mul_zeta`, `ArithmeticFunction.coe_zeta_mul_coe_zeta`: the Dirichlet
+  square of `ζ` is the divisor-count function `σ 0`.
 * `ArithmeticFunction.sigma_prime_pow_succ`: the recurrence `σ_j(p^{m+1}) = p^j σ_j(p^m) + 1`.
 -/
 
 public section
 
 open Finset
-open scoped ArithmeticFunction.sigma
+open scoped ArithmeticFunction.sigma ArithmeticFunction.zeta
 
 namespace ArithmeticFunction
+
+/-- The Dirichlet square of `ζ` is the divisor-count function `σ 0`. -/
+theorem zeta_mul_zeta : (ζ * ζ : ArithmeticFunction ℕ) = σ 0 :=
+  pow_zero_eq_zeta ▸ zeta_mul_pow_eq_sigma
+
+/-- The Dirichlet square of `ζ` in `ArithmeticFunction R` is `σ 0`. -/
+theorem coe_zeta_mul_coe_zeta {R : Type*} [Semiring R] : (ζ * ζ : ArithmeticFunction R) = σ 0 := by
+  rw [← natCoe_mul, zeta_mul_zeta]
 
 /-- The prime-power recurrence for the divisor power sum: `σ_j(p^{m+1}) = p^j σ_j(p^m) + 1`. -/
 theorem sigma_prime_pow_succ {j p : ℕ} (hp : p.Prime) (m : ℕ) :

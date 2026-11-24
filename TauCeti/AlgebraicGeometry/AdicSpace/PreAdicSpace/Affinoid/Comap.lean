@@ -72,7 +72,7 @@ theorem presentationLimitPreAdicSpace_hom_ext
   rw [presentationLimitHomRingHom_eq_comp_presentationLimitAppTop,
     presentationLimitHomRingHom_eq_comp_presentationLimitAppTop] at h
   exact (RingHom.cancel_left (Function.LeftInverse.injective (g :=
-    (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv.1) fun b ↦
+    (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP').inv.val) fun b ↦
       Iso.hom_inv_id_apply (presentationLimitPreAdicSpaceTopIso P' Bplus hBplus hP') b)).mp h
 
 /-- **The global-sections map of `Spa(φ)` is `φ`**: for complete Hausdorff `A` and `B`, pullback on

@@ -108,7 +108,7 @@ private theorem IsAlloc.measure_biUnion {S T : Set ι} {Z : ι → Set X}
     (h : IsAlloc μ A m S Z) (hT : T ⊆ S) : μ (⋃ j ∈ T, Z j) = ∑' j, T.indicator m j := by
   rw [MeasureTheory.measure_biUnion T.to_countable (h.disjoint.subset hT)
     (fun j hj ↦ h.measurableSet j (hT hj)), ← tsum_subtype T m]
-  exact tsum_congr fun j ↦ h.measure_eq j (hT j.2)
+  exact tsum_congr fun j ↦ h.measure_eq j (hT j.property)
 
 private theorem IsAlloc.measurableSet_biUnion {S T : Set ι} {Z : ι → Set X}
     (h : IsAlloc μ A m S Z) (hT : T ⊆ S) : MeasurableSet (⋃ j ∈ T, Z j) :=

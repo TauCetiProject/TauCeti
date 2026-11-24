@@ -86,6 +86,7 @@ noncomputable def selectedRoot (hp : Irreducible p) : ℂ :=
 theorem aeval_selectedRoot (hp : Irreducible p) : aeval (selectedRoot hp) p = 0 := by
   have hz := (IsAlgClosed.exists_aeval_eq_zero ℂ p (degree_pos_of_irreducible hp).ne').choose_spec
   rw [selectedRoot]
+  dsimp only
   split_ifs with h
   · exact hz
   · rw [aeval_conj, hz, map_zero]
@@ -104,6 +105,7 @@ theorem selectedRoot_im_pos (hp : Irreducible p) (hd : p.natDegree = 2) :
   have hz := (IsAlgClosed.exists_aeval_eq_zero ℂ p (degree_pos_of_irreducible hp).ne').choose_spec
   have hne := im_ne_zero_of_aeval_eq_zero hp hd hz
   rw [selectedRoot]
+  dsimp only
   split_ifs with h
   · exact h
   · rw [Complex.conj_im]
@@ -188,7 +190,7 @@ theorem aeval_etaleTuple_snd (q : ℝ[X]) (p : {p : f.Factors // (p : ℝ[X]).na
 @[simp]
 theorem aeval_etaleTuple : aeval (etaleTuple f) f = 0 := by
   have h1 : (aeval (etaleTuple f) f).1 = 0 := by
-    funext x; rw [Pi.zero_apply, aeval_etaleTuple_fst]; exact x.2
+    funext x; rw [Pi.zero_apply, aeval_etaleTuple_fst]; exact x.property
   have h2 : (aeval (etaleTuple f) f).2 = 0 := by
     funext p
     rw [Pi.zero_apply, aeval_etaleTuple_snd]

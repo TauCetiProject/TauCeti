@@ -92,7 +92,7 @@ not claimed. This file is the numbered input those later steps consume.
   `TauCeti.DynkinType.span_geckOrbit_eq_top`: the integral orbit is stable under the Kostant form
   and spans the Geck module over `ℚ`.
 * In `…/GeckLattice/Basic.lean`, `TauCeti.DynkinType.geckOrbit_eq_geckCoordinateLattice` and
-  `TauCeti.DynkinType.instIsLatticeGeckOrbit`: the orbit equals the coordinate lattice and is a
+  `TauCeti.DynkinType.instIsFullLatticeGeckOrbit`: the orbit equals the coordinate lattice and is a
   full, finitely generated lattice.
 
 ## References

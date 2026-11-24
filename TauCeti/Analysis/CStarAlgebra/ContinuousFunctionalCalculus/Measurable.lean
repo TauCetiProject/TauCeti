@@ -71,7 +71,7 @@ theorem Measurable.cfc_of_mem_nhdsSet {X : Type*} [MeasurableSpace X] {s : Set �
     (hpa : ∀ x, p (a x) := by cfc_tac) (hf : ContinuousOn f s := by cfc_cont_tac) :
     Measurable (fun x ↦ cfc f (a x)) := by
   have hc : Continuous (fun b : Set.range a ↦ cfc f (b : A)) :=
-    continuous_subtype_val.cfc_of_mem_nhdsSet f
+    continuous_subtypeVal.cfc_of_mem_nhdsSet f
       (by simpa only [Set.iUnion_subtype, Set.biUnion_range] using hs)
       (by rintro ⟨_, x, rfl⟩; exact hpa x) hf
   exact hc.measurable.comp (ha.subtype_mk (h := fun x ↦ Set.mem_range_self x))

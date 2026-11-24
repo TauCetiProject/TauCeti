@@ -38,6 +38,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 
 * `PadicInt.val_toZModPow_eq_appr`, `PadicInt.toZModPow_eq_natCast_appr`: `appr` computes the
   `ZMod (p ^ n)`-value of `toZModPow`, which is the class of the natural number `x.appr n`.
+* `PadicInt.isLocalHom_toZModPow`: for `n ≠ 0`, truncation modulo `p ^ n` is a local ring
+  homomorphism, so a `p`-adic integer is a unit exactly when its residue modulo `p ^ n` is
+  (`isUnit_map_iff`).
 * `PadicInt.continuous_toZModPow`, `PadicInt.continuous_toZMod`: truncation modulo `p ^ n` and
   reduction modulo `p` are continuous, `ZMod (p ^ n)` and `ZMod p` carrying the discrete
   topology.
@@ -86,6 +89,7 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.valuation_natCast`, `PadicInt.valuation_eq_zero_of_isUnit`,
   `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural number is its `p`-adic
   valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
+* `PadicInt.index_range_nsmul`: `n ℤ_p` has index `p ^ v_p(n)` in `ℤ_p` for `n ≠ 0`.
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
@@ -115,6 +119,13 @@ variable {p : ℕ} [hp : Fact p.Prime]
 /-- P-adic truncation is surjective, allowing semilinear submodule images along it. -/
 instance (n : ℕ) : RingHomSurjective (toZModPow (p := p) n) :=
   ⟨ZMod.ringHom_surjective _⟩
+
+/-- For `n ≠ 0`, truncation modulo `p ^ n` is a local ring homomorphism: a `p`-adic integer is a
+unit exactly when its residue modulo `p ^ n` is (`isUnit_map_iff`). At `n = 0` the target
+`ZMod (p ^ 0)` is the zero ring, where `p` maps to a unit, so `n ≠ 0` is needed. -/
+instance isLocalHom_toZModPow (n : ℕ) [NeZero n] : IsLocalHom (toZModPow (p := p) n) :=
+  have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow (NeZero.ne n) hp.out.one_lt⟩
+  .of_surjective _ (ZMod.ringHom_surjective _)
 
 /-- The residue field of `ℤ_p` is finite, being `ℤ/pℤ`. -/
 instance finite_residueField : Finite (IsLocalRing.ResidueField ℤ_[p]) :=
@@ -476,6 +487,19 @@ theorem valuation_natCast (n : ℕ) : (n : ℤ_[p]).valuation = padicValNat p n 
   rw [coe_natCast, Padic.valuation_natCast] at h
   exact_mod_cast h.symm
 
+/-- **The index of `n ℤ_p` in `ℤ_p` is `p ^ v_p(n)`** for a natural number `n ≠ 0`, the inverse of
+the `p`-adic absolute value of `n`. -/
+theorem index_range_nsmul {n : ℕ} (hn : n ≠ 0) :
+    (nsmulAddMonoidHom (α := ℤ_[p]) n).range.index = p ^ multiplicity p n := by
+  have hrange : (nsmulAddMonoidHom (α := ℤ_[p]) n).range =
+      (Ideal.span {(n : ℤ_[p])}).toAddSubgroup := by
+    ext x
+    simp [Ideal.mem_span_singleton', nsmul_eq_mul, mul_comm]
+  rw [hrange, ← Nat.padicValNat_def, ← valuation_natCast,
+    ← natCard_quotient_span (Nat.cast_ne_zero.mpr hn)]
+  -- the ideal quotient `ℤ_[p] ⧸ I` is by definition the additive quotient by `I.toAddSubgroup`
+  exact AddSubgroup.index_eq_card _
+
 /-- A unit of `ℤ_[p]` has valuation `0`. -/
 theorem valuation_eq_zero_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) : x.valuation = 0 := by
   have h := isUnit_iff.1 hx
@@ -552,9 +576,9 @@ theorem unitsToZModPow_surjective (n : ℕ) :
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
     exact fun u ↦ ⟨1, Subsingleton.elim _ _⟩
-  · have : Fact (1 < p ^ n) := ⟨Nat.one_lt_pow hn.ne' hp.out.one_lt⟩
+  · have : NeZero n := ⟨hn.ne'⟩
     exact IsLocalRing.surjective_units_map_of_local_ringHom _ (ZMod.ringHom_surjective _)
-      (IsLocalHom.of_surjective _ (ZMod.ringHom_surjective _))
+      inferInstance
 
 /-- Truncating modulo `p ^ n` and then reducing modulo `p ^ m`, for `p ^ m ∣ p ^ n`, is
 truncation modulo `p ^ m`. -/

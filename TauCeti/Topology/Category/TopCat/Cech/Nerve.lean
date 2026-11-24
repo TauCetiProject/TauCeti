@@ -34,7 +34,7 @@ variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X)
 
 /-- The map from the disjoint union of a family of open subsets to the ambient space. -/
 def openCoverMap : TopCat.of (Σ i, U i) ⟶ X :=
-  TopCat.ofHom ⟨fun p => p.2.1, continuous_sigma fun _ => continuous_subtype_val⟩
+  TopCat.ofHom ⟨fun p => p.2.val, continuous_sigma fun _ => continuous_subtypeVal⟩
 
 /-- The cover map sends a point of a member of the family to the same point of the ambient
 space. -/
@@ -62,7 +62,7 @@ abbrev openCoverArrow : Arrow TopCat.{u} :=
 
 /-- The map from the disjoint union of open subspaces is open. -/
 theorem isOpenMap_openCoverMap : IsOpenMap (openCoverMap U) :=
-  isOpenMap_sigma.mpr fun i => (U i).isOpen.isOpenMap_subtype_val
+  isOpenMap_sigma.mpr fun i => (U i).isOpen.isOpenMap_subtypeVal
 
 /-- The cover map is surjective exactly when the family is an open cover. -/
 @[simp]
@@ -74,7 +74,7 @@ theorem openCoverMap_surjective_iff :
   refine ⟨fun h ↦ .of_sets (fun i ↦ (U i).isOpen) (Set.eq_univ_of_forall fun x ↦ ?_),
     fun hU x ↦ ?_⟩
   · obtain ⟨⟨i, y⟩, rfl⟩ := h x
-    exact Set.mem_iUnion.2 ⟨i, y.2⟩
+    exact Set.mem_iUnion.2 ⟨i, y.property⟩
   · obtain ⟨i, hi⟩ := hU.exists_mem x
     exact ⟨⟨i, x, hi⟩, rfl⟩
 
@@ -105,7 +105,7 @@ member `V (r i)`. -/
 theorem openCoverArrowMap_left_apply {Y : TopCat.{u}} {κ : Type u} (V : κ → Opens Y)
     (f : X ⟶ Y) (r : ι → κ) (hf : ∀ i, Set.MapsTo f (U i) (V (r i))) (p : Σ i, U i) :
     DFunLike.coe (F := no_index _) (ConcreteCategory.hom (openCoverArrowMap U V f r hf).left) p =
-      (⟨r p.1, f p.2, hf p.1 p.2.2⟩ : Σ k, V k) :=
+      (⟨r p.1, f p.2, hf p.1 p.2.property⟩ : Σ k, V k) :=
   (rfl)
 
 /-- The arrow map is `f` on the ambient spaces. -/

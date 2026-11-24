@@ -82,7 +82,7 @@ noncomputable def ofContinuousOnIoo (hab : a < b) (hg : ContinuousOn g (Ioo a b)
   continuous_toFun :=
     (continuousOn_Icc_extendIoo hg hu hv).comp_continuous
       (by simp only [AffineMap.lineMap_apply_ring]; fun_prop)
-      fun t => segment_eq_Icc hab.le ▸ lineMap_mem_segment ℝ a b t.2
+      fun t => segment_eq_Icc hab.le ▸ lineMap_mem_segment ℝ a b t.property
   source' := by simp
   target' := by simp [hab]
 

@@ -517,8 +517,8 @@ private theorem conductor_dvd_of_mem_span_newform [NeZero N]
   by_contra hndvd
   let ι := {p : ℕ // p.Prime ∧ Nat.Coprime p N}
   let T : ι → Module.End ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := fun p ↦
-    heckeTCuspNat k p.1 (_hn := ⟨p.2.1.ne_zero⟩)
-  let af : ι → ℂ := fun p ↦ f.eigenvalue ⟨p.1, p.2.1.pos⟩ p.2.2
+    heckeTCuspNat k p.val (_hn := ⟨p.property.1.ne_zero⟩)
+  let af : ι → ℂ := fun p ↦ f.eigenvalue ⟨p.val, p.property.1.pos⟩ p.property.2
   -- Split into `f.χ`-forms with good eigensystem `≠ af` and forms of nebentypus `≠ f.χ`.
   have hmem : f.toCuspForm ∈
       ((⨆ (a : ι → ℂ) (_ : a ≠ af), ⨅ p : ι, (T p).eigenspace (a p)) ⊓
@@ -531,14 +531,14 @@ private theorem conductor_dvd_of_mem_span_newform [NeZero N]
     by_cases hg'χ : g'.χ.comp (unitsMap hM'N) = f.χ
     · refine Submodule.mem_sup_left ⟨?_, hg'χ ▸ hchar⟩
       let ag' : ι → ℂ := fun p ↦
-        g'.eigenvalue ⟨p.1, p.2.1.pos⟩ (p.2.2.coprime_dvd_right hM'N)
+        g'.eigenvalue ⟨p.val, p.property.1.pos⟩ (p.property.2.coprime_dvd_right hM'N)
       have hne : ag' ≠ af := fun heq ↦ hndvd <| by
         have := (f.level_eq_conductor_and_coe_eq_primitiveAssociate_of_dvd g' hM'N hg'χ
           (S := ∅) fun p hp hpN _ ↦ congrFun heq ⟨p, hp, hpN⟩).1
         exact this ▸ hM'M
       refine Submodule.mem_iSup_of_mem ag' (Submodule.mem_iSup_of_mem hne ?_)
       exact (Submodule.mem_iInf _).mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr
-        (g'.heckeTCuspNat_levelRaise_eq_eigenvalue_smul hcN p.2.1 p.2.2)
+        (g'.heckeTCuspNat_levelRaise_eq_eigenvalue_smul hcN p.property.1 p.property.2)
     · exact Submodule.mem_sup_right (Submodule.mem_iSup_of_mem _
         (Submodule.mem_iSup_of_mem hg'χ hchar))
   obtain ⟨s, hs, t, ht, hst⟩ := Submodule.mem_sup.mp hmem
@@ -550,7 +550,7 @@ private theorem conductor_dvd_of_mem_span_newform [NeZero N]
   rw [ht0, add_zero] at hst
   have hfeig : f.toCuspForm ∈ ⨅ p : ι, (T p).eigenspace (af p) :=
     (Submodule.mem_iInf _).mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr
-      (f.heckeTCuspNat_eq_eigenvalue_smul p.2.1 p.2.2)
+      (f.heckeTCuspNat_eq_eigenvalue_smul p.property.1 p.property.2)
   exact f.ne_zero ((Submodule.disjoint_def.mp (iSupIndep_iInf_eigenspace T af)) f.toCuspForm
     hfeig (hst ▸ hs.1))
 

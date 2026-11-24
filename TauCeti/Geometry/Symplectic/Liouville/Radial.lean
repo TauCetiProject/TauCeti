@@ -59,14 +59,14 @@ def radialPrimitive : SmoothForm 𝓘(ℝ, V) V ℝ 1 :=
       (ContinuousLinearMap.liouvilleFormCLM _).contDiff).mem_smoothBundleForms⟩
 
 private theorem radialPrimitive_toRoughForm :
-    ω.radialPrimitive.1 =
+    ω.radialPrimitive.val =
       fun x ↦ ContinuousLinearMap.liouvilleFormCLM ω.toBilinForm.toContinuousBilinearMap x :=
   (rfl)
 
 /-- The radial primitive evaluates as `λₓ(v) = ω(x, v) / 2`. -/
 @[simp]
 theorem radialPrimitive_apply (x : V) (v : TangentSpace 𝓘(ℝ, V) x) :
-    ω.radialPrimitive.1 x ![v] = 2⁻¹ * ω x v := by
+    ω.radialPrimitive.val x ![v] = 2⁻¹ * ω x v := by
   rw [radialPrimitive_toRoughForm]
   refine (ContinuousLinearMap.liouvilleFormCLM_apply _ x ![v]).trans ?_
   simp only [LinearMap.toContinuousBilinearMap_apply, smul_eq_mul]
@@ -76,7 +76,7 @@ theorem radialPrimitive_apply (x : V) (v : TangentSpace 𝓘(ℝ, V) x) :
 
 /-- **The radial primitive is a primitive**: `dλ = ω`. -/
 @[simp]
-theorem mextDeriv_radialPrimitive : mextDeriv ω.radialPrimitive.1 = ω.constSmooth.1 := by
+theorem mextDeriv_radialPrimitive : mextDeriv ω.radialPrimitive.val = ω.constSmooth.val := by
   funext x
   ext v
   rw [mextDeriv_eq_extDeriv]
@@ -93,8 +93,8 @@ theorem mextDeriv_radialPrimitive : mextDeriv ω.radialPrimitive.1 = ω.constSmo
 /-- The Liouville field of the radial primitive is half the position field:
 `ι_Z ω = λ` for `Z(x) = x / 2`. -/
 theorem constSmooth_interior_two_inv_smul :
-    RoughForm.interior (I := 𝓘(ℝ, V)) (fun x : V ↦ (2⁻¹ : ℝ) • x) ω.constSmooth.1 =
-      ω.radialPrimitive.1 := by
+    RoughForm.interior (I := 𝓘(ℝ, V)) (fun x : V ↦ (2⁻¹ : ℝ) • x) ω.constSmooth.val =
+      ω.radialPrimitive.val := by
   funext x
   ext v
   have hv : v = ![v 0] := by

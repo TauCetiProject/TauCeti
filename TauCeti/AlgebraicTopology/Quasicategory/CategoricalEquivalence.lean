@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.Quasicategory.StrictBicategory
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveAdjunction
+public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.HoFunctorIhom
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FunctorCategory
 public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
@@ -34,10 +35,13 @@ two notions agree with equivalence of categories.
   bicategory of quasicategories to `ho X ⥤ ho Y`, which sends `f` to `mapHomotopyCategory f.hom`.
 * `SSet.QCat.IsCategoricalEquivalence`: categorical equivalences of quasicategories, with
   `SSet.QCat.isCategoricalEquivalence_iff_exists_equivalence` identifying them with the
-  `1`-morphisms underlying equivalences in the bicategory. They contain the identities and are
+  `1`-morphisms underlying equivalences in the bicategory. They contain the isomorphisms and are
   closed under composition.
 * `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
   equivalence induces an equivalence of homotopy categories.
+* `SSet.QCat.IsCategoricalEquivalence.exists_isEquivalence`: a categorical equivalence is
+  essentially surjective, every vertex of the target being joined by an equivalence to a vertex of
+  the image.
 * `CategoryTheory.Iso.nerveMap`: a natural isomorphism of functors gives an invertible natural
   transformation between their nerves, with components computed by
   `CategoryTheory.Iso.nerveMap_hom_base` and `CategoryTheory.Iso.nerveMap_inv_base`.
@@ -126,6 +130,10 @@ lemma comp {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsCategoricalEquivalence f)
   exact (isCategoricalEquivalence_iff_exists_equivalence _).2
     ⟨e.trans e', Bicategory.Equivalence.trans_hom e e'⟩
 
+/-- An isomorphism of quasicategories is a categorical equivalence. -/
+lemma of_isIso (f : X ⟶ Y) [IsIso f] : IsCategoricalEquivalence f :=
+  ⟨inv f, ⟨eqToIso (IsIso.hom_inv_id f).symm⟩, ⟨eqToIso (IsIso.inv_hom_id f)⟩⟩
+
 /-- A categorical equivalence of quasicategories induces an equivalence of homotopy
 categories. -/
 lemma isEquivalence_mapHomotopyCategory {f : X ⟶ Y} (hf : IsCategoricalEquivalence f) :
@@ -144,6 +152,14 @@ lemma isEquivalence_mapHomotopyCategory {f : X ⟶ Y} (hf : IsCategoricalEquival
   exact (CategoryTheory.Equivalence.mk (mapHomotopyCategory f.hom) (mapHomotopyCategory g.hom)
     (eqToIso (hid X).symm ≪≫ e η ≪≫ eqToIso (hcomp f g))
     (eqToIso (hcomp g f).symm ≪≫ e ε ≪≫ eqToIso (hid Y))).isEquivalence_functor
+
+/-- A categorical equivalence of quasicategories is essentially surjective: every vertex of the
+target is joined by an equivalence to a vertex in its image. -/
+lemma exists_isEquivalence {f : X ⟶ Y} (hf : IsCategoricalEquivalence f) (y : Y.obj _⦋0⦌) :
+    ∃ (x : X.obj _⦋0⦌) (e : Edge (f.hom.app _ x) y), e.IsEquivalence :=
+  have := Y.property
+  have := hf.isEquivalence_mapHomotopyCategory
+  (essSurj_mapHomotopyCategory_iff f.hom).1 inferInstance y
 
 end IsCategoricalEquivalence
 

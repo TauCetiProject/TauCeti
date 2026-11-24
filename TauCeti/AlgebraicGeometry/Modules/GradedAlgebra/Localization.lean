@@ -163,7 +163,7 @@ theorem _root_.CategoryTheory.CommMon.coequifibered_toGradedSectionsPresheaf
   apply coequifibered_iff_forall_isLocalizationAway.mpr
   intro U f
   rw [Functor.whiskerLeft_app, CommMon.toGradedSectionsPresheaf_app]
-  exact A.isLocalization_gradedSections_basicOpen U.2 f
+  exact A.isLocalization_gradedSections_basicOpen U.property f
 
 end
 

@@ -16,7 +16,9 @@ The underlying ring automorphism of an algebra automorphism turns the identity a
 (`AlgEquiv.toRingEquiv_one`, `AlgEquiv.toRingEquiv_mul`). For inverses, Mathlib's
 `AlgEquiv.aut_inv` and `AlgEquiv.symm_toRingEquiv` already apply. An algebra with no nontrivial
 automorphisms admits at most one isomorphism from any algebra
-(`AlgEquiv.subsingleton_of_subsingleton_aut`).
+(`AlgEquiv.subsingleton_of_subsingleton_aut`). A group homomorphism into the algebra
+endomorphisms, lifted to the automorphisms through `AlgEquiv.algHomUnitsEquiv`, still acts by the
+same endomorphisms (`AlgEquiv.algHomUnitsEquiv_comp_toHomUnits_apply`).
 
 The remaining lemmas relate the action of an algebra automorphism on one factor to its action
 on a product or quotient with a fixed cancellable factor. An automorphism negating a nonzero
@@ -67,6 +69,16 @@ theorem pow_apply_eq_mul_pow (σ : A ≃ₐ[R] A) {u c : A} (hc : σ c = c) (h :
   induction k with
   | zero => simp
   | succ k ih => simp only [pow_succ', mul_apply, ih, map_mul, map_pow, h, hc, mul_assoc]
+
+/-- A group homomorphism `f` into the algebra endomorphisms, lifted to the units and then to the
+algebra automorphisms through `AlgEquiv.algHomUnitsEquiv`, still acts by `f`: the automorphism
+attached to `g` applies `f g`. -/
+theorem algHomUnitsEquiv_comp_toHomUnits_apply {G : Type*} [Group G] (f : G →* (A →ₐ[R] A))
+    (g : G) (x : A) : (algHomUnitsEquiv R A).toMonoidHom.comp f.toHomUnits g x = f g x := by
+  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, algHomUnitsEquiv_apply_apply,
+    MonoidHom.coe_toHomUnits]
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom,
+    OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MonoidHom.coe_ofClass]
 
 end Semiring
 

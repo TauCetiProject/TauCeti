@@ -134,7 +134,7 @@ def siegelDomain (n : ℕ) (u t : ℝ) : Set (GL (Fin n) ℝ) :=
   {g | ∃ v ∈ upperUnitriangularGroup (Fin n) ℝ, ∃ a : Fin n → ℝ, ∃ ha : ∀ i, 0 < a i,
     ∃ k ∈ GLOrthogonal (Fin n) ℝ,
       (∀ i j : Fin n, i < j → |((v : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) i j| ≤ u) ∧
-      (∀ (i : Fin n) (h : i.1 + 1 < n), t ≤ a i / a ⟨i.1 + 1, h⟩) ∧
+      (∀ (i : Fin n) (h : i.val + 1 < n), t ≤ a i / a ⟨i.val + 1, h⟩) ∧
       g = v * diagGL (fun i ↦ Units.mk0 (a i) (ha i).ne') * k}
 
 /-- Unfolding characterization of membership in `siegelDomain n u t`. -/
@@ -143,7 +143,7 @@ theorem mem_siegelDomain_iff {n : ℕ} {u t : ℝ} {g : GL (Fin n) ℝ} :
       ∃ v ∈ upperUnitriangularGroup (Fin n) ℝ, ∃ a : Fin n → ℝ, ∃ ha : ∀ i, 0 < a i,
         ∃ k ∈ GLOrthogonal (Fin n) ℝ,
           (∀ i j : Fin n, i < j → |((v : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) i j| ≤ u) ∧
-          (∀ (i : Fin n) (h : i.1 + 1 < n), t ≤ a i / a ⟨i.1 + 1, h⟩) ∧
+          (∀ (i : Fin n) (h : i.val + 1 < n), t ≤ a i / a ⟨i.val + 1, h⟩) ∧
           g = v * diagGL (fun i ↦ Units.mk0 (a i) (ha i).ne') * k := Iff.rfl
 
 /-- Increasing the off-diagonal bound `u` and decreasing the root-ratio bound `t` enlarges
@@ -271,7 +271,7 @@ theorem upperHalfPlaneGL_mem_siegelDomain_iff (x : ℝ) {y : ℝ} (hy : 0 < y) (
     obtain ⟨hv01_eq, ha0, ha1⟩ := upperHalfPlaneGL_iwasawa_eq hy ha hv hk hg_eq
     refine ⟨hv01_eq ▸ hv_bound 0 1 (by decide), ?_⟩
     have hrat := ha_ratio 0 (by decide)
-    rwa [show (⟨(0 : Fin 2).1 + 1, by decide⟩ : Fin 2) = 1 from rfl,
+    rwa [show (⟨(0 : Fin 2).val + 1, by decide⟩ : Fin 2) = 1 from rfl,
       ha0, ha1, div_inv_eq_mul, Real.mul_self_sqrt hy.le] at hrat
   · rintro ⟨hx, hty⟩
     let hU := isUpperUnitriangular_fin_two x
@@ -324,12 +324,12 @@ theorem exists_reducedSet_of_siegelDomain (n : ℕ) (u : ℝ) {t : ℝ} (ht : 0 
         hv_ut.abs_inv_toGL_apply_le (le_max_right u 0)
           (fun p q hpq ↦ (hv_bound p q hpq).trans (le_max_left u 0)) i j
     exact hle.trans ((lt_add_one u_inv).le.trans (le_max_left _ _))
-  · have hinv : (a i)⁻¹ ≤ t⁻¹ * (a ⟨i.1 + 1, hi⟩)⁻¹ := by
-      rw [← mul_inv, inv_le_inv₀ (ha i) (mul_pos ht (ha ⟨i.1 + 1, hi⟩))]
-      exact (le_div_iff₀ (ha ⟨i.1 + 1, hi⟩)).mp (ha_ratio i hi)
-    have hsq : d i ≤ t⁻¹ ^ 2 * d ⟨i.1 + 1, hi⟩ := by
+  · have hinv : (a i)⁻¹ ≤ t⁻¹ * (a ⟨i.val + 1, hi⟩)⁻¹ := by
+      rw [← mul_inv, inv_le_inv₀ (ha i) (mul_pos ht (ha ⟨i.val + 1, hi⟩))]
+      exact (le_div_iff₀ (ha ⟨i.val + 1, hi⟩)).mp (ha_ratio i hi)
+    have hsq : d i ≤ t⁻¹ ^ 2 * d ⟨i.val + 1, hi⟩ := by
       simpa only [d, sq, mul_mul_mul_comm] using mul_le_mul hinv hinv (inv_nonneg.mpr (ha i).le)
-        (mul_nonneg (inv_nonneg.mpr ht.le) (inv_nonneg.mpr (ha ⟨i.1 + 1, hi⟩).le))
+        (mul_nonneg (inv_nonneg.mpr ht.le) (inv_nonneg.mpr (ha ⟨i.val + 1, hi⟩).le))
     exact hsq.trans (mul_le_mul_of_nonneg_right (le_max_right _ _) (hd_pos _).le)
 
 private theorem exists_mem_siegelDomain_gram_eq {n : ℕ} {C B : ℝ} (hB : 0 < B)
@@ -359,10 +359,11 @@ private theorem exists_mem_siegelDomain_gram_eq {n : ℕ} {C B : ℝ} (hB : 0 < 
   · exact (show |hN_ut.toGL⁻¹.val i j| ≤ _ by
       simpa only [Fintype.card_fin] using hN_ut.abs_inv_toGL_apply_le hB.le hN_bound i j).trans
       (lt_add_one _).le
-  · have hsqrt : Real.sqrt (d i) ≤ Real.sqrt B * Real.sqrt (d ⟨i.1 + 1, hi⟩) := by
+  · have hsqrt : Real.sqrt (d i) ≤ Real.sqrt B * Real.sqrt (d ⟨i.val + 1, hi⟩) := by
       rw [← Real.sqrt_mul hB.le]
-      exact Real.sqrt_le_sqrt (hd_ratio i ⟨i.1 + 1, hi⟩ (Fin.lt_def.mpr (Nat.lt_succ_self i.1)))
-    rw [le_div_iff₀ (ha_pos ⟨i.1 + 1, hi⟩)]
+      exact Real.sqrt_le_sqrt
+        (hd_ratio i ⟨i.val + 1, hi⟩ (Fin.lt_def.mpr (Nat.lt_succ_self i.val)))
+    rw [le_div_iff₀ (ha_pos ⟨i.val + 1, hi⟩)]
     simpa only [a, ← mul_inv] using (inv_le_inv₀
       (mul_pos (Real.sqrt_pos.mpr hB) (Real.sqrt_pos.mpr (hd_pos _)))
       (Real.sqrt_pos.mpr (hd_pos i))).mpr hsqrt
@@ -405,7 +406,7 @@ private theorem first_pivot_le_four_thirds {n : ℕ} {b : Matrix (Fin (n + 1)) (
     {N' : Matrix (Fin n) (Fin n) ℝ} (hN'_ut : N'.IsUpperUnitriangular)
     (hγ_eq : (γ.map (Int.castRingHom ℝ)).valᵀ * b * (γ.map (Int.castRingHom ℝ)).val =
       (Matrix.upperBorder w' N')ᵀ * Matrix.diagonal (Fin.cons d₀ d') * Matrix.upperBorder w' N')
-    (i₀ : Fin n) (hi₀ : i₀.1 = 0) : d₀ ≤ (4 / 3) * d' i₀ := by
+    (i₀ : Fin n) (hi₀ : i₀.val = 0) : d₀ ≤ (4 / 3) * d' i₀ := by
   let b₃ := (Matrix.upperBorder w' N')ᵀ * Matrix.diagonal (Fin.cons d₀ d') *
     Matrix.upperBorder w' N'
   have hquad (p : Fin (n + 1)) :
@@ -512,7 +513,7 @@ by an HKZ-style successive-minimum induction on `n`. -/
 theorem exists_cholesky_reduced_GLZ (n : ℕ) {b : Matrix (Fin n) (Fin n) ℝ} (hb : b.PosDef) :
     ∃ (γ : GL (Fin n) ℤ) (N : Matrix (Fin n) (Fin n) ℝ) (d : Fin n → ℝ),
       N.IsUpperUnitriangular ∧ (∀ i, 0 < d i) ∧ (∀ i j, i < j → |N i j| ≤ 1 / 2) ∧
-      (∀ (i : Fin n) (h : i.1 + 1 < n), d i ≤ (4 / 3) * d ⟨i.1 + 1, h⟩) ∧
+      (∀ (i : Fin n) (h : i.val + 1 < n), d i ≤ (4 / 3) * d ⟨i.val + 1, h⟩) ∧
       ((γ.map (Int.castRingHom ℝ) : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)ᵀ * b *
         ((γ.map (Int.castRingHom ℝ) : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) =
           Nᵀ * Matrix.diagonal d * N := by
@@ -554,8 +555,8 @@ theorem exists_cholesky_reduced_GLZ (n : ℕ) {b : Matrix (Fin n) (Fin n) ℝ} (
         fun i hi ↦ Fin.cases (fun h01 ↦ ?_) (fun i' hi' ↦ ?_) i hi, hγ_eq⟩
       · exact first_pivot_le_four_thirds hv₀_min hγ_col0 hb₁.diag_pos hw'_bound hN'_ut hγ_eq
           ⟨0, by omega⟩ rfl
-      · have hi'_lt : i'.1 + 1 < n := by simp only [Fin.val_succ] at hi'; omega
-        exact (show (⟨i'.succ.1 + 1, hi'⟩ : Fin (n + 1)) = (⟨i'.1 + 1, hi'_lt⟩ : Fin n).succ by
+      · have hi'_lt : i'.val + 1 < n := by simp only [Fin.val_succ] at hi'; omega
+        exact (show (⟨i'.succ.val + 1, hi'⟩ : Fin (n + 1)) = (⟨i'.val + 1, hi'_lt⟩ : Fin n).succ by
           ext; simp) ▸ hd'_ratio i' hi'_lt
 
 /-- **Siegel reduction for positive-definite forms over `ℤ`.** There exists `C > 1` depending only
@@ -648,16 +649,16 @@ theorem exists_mul_mem_siegelDomain_GLZ {n : ℕ} (g : GL (Fin n) ℝ) :
           hN_bound (Fin.rev j) (Fin.rev i) (Fin.rev_lt_iff.mpr (by simpa using hij)),
       fun i hi ↦ ?_, rfl⟩,
     by simp [h, map_inv, mul_inv_cancel_left]⟩
-  let j : Fin n := Fin.rev ⟨i.1 + 1, hi⟩
-  have hj : j.1 + 1 < n := by simp only [j, Fin.val_rev]; omega
-  have hj_succ : (⟨j.1 + 1, hj⟩ : Fin n) = Fin.rev i := by ext; simp only [j, Fin.val_rev]; omega
+  let j : Fin n := Fin.rev ⟨i.val + 1, hi⟩
+  have hj : j.val + 1 < n := by simp only [j, Fin.val_rev]; omega
+  have hj_succ : (⟨j.val + 1, hj⟩ : Fin n) = Fin.rev i := by ext; simp only [j, Fin.val_rev]; omega
   have hsqrt : Real.sqrt (3 / 4) * Real.sqrt (d j) ≤ Real.sqrt (d (Fin.rev i)) := by
     rw [← Real.sqrt_mul (by norm_num)]
     exact Real.sqrt_le_sqrt (by linarith [hj_succ ▸ hd_ratio j hj])
   have hsqrt_34 : Real.sqrt (3 / 4) = Real.sqrt 3 / 2 :=
     (Real.sqrt_eq_iff_eq_sq (by norm_num) (by positivity)).mpr
       (by rw [div_pow, Real.sq_sqrt (by norm_num)]; norm_num)
-  rw [le_div_iff₀ (ha_pos ⟨i.1 + 1, hi⟩)]; exact hsqrt_34 ▸ hsqrt
+  rw [le_div_iff₀ (ha_pos ⟨i.val + 1, hi⟩)]; exact hsqrt_34 ▸ hsqrt
 
 end Reduction
 

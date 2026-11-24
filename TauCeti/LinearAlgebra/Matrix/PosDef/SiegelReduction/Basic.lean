@@ -207,7 +207,7 @@ theorem isSemialgebraic_reducedSet (n : ℕ) (C : ℝ) :
       ((⋂ p : Fin n × Fin n, {s | 0 < ev s (MvPolynomial.C C * X (p.1, p.1) - X p)} ∩
           {s | 0 < ev s (MvPolynomial.C C * X (p.1, p.1) + X p)}) ∩
         ((⋂ q : {p : Fin n × Fin n // p.1 < p.2},
-            {s | 0 < ev s (MvPolynomial.C C * X (q.1.2, q.1.2) - X (q.1.1, q.1.1))}) ∩
+            {s | 0 < ev s (MvPolynomial.C C * X (q.val.2, q.val.2) - X (q.val.1, q.val.1))}) ∩
           {s | 0 < ev s (MvPolynomial.C C * (Matrix.mvPolynomialX (Fin n) (Fin n) ℝ).det -
             ∏ i : Fin n, X (i, i))})) := by
     ext s
@@ -350,7 +350,7 @@ private theorem abs_apply_le_of_cholesky_prev {n : ℕ} {C M : ℝ} {b N : Matri
 private theorem abs_apply_le_choleskySeqBound {n : ℕ} {C : ℝ} {b N : Matrix (Fin n) (Fin n) ℝ}
     {d : Fin n → ℝ} (hb : b.PosDef) (hred : IsReduced C b) (hN : N.IsUpperUnitriangular)
     (hd : ∀ i, 0 < d i) (hfac : b = Nᵀ * Matrix.diagonal d * N) (hb_lt_Cd : ∀ i, b i i < C * d i) :
-    ∀ m : ℕ, ∀ i j : Fin n, i.1 < m → i < j → |N i j| ≤ choleskySeqBound n C m
+    ∀ m : ℕ, ∀ i j : Fin n, i.val < m → i < j → |N i j| ≤ choleskySeqBound n C m
   | 0, _, _, hi, _ => (Nat.not_lt_zero _ hi).elim
   | m + 1, i, j, him, hij => (Nat.lt_succ_iff_lt_or_eq.mp him).elim
       (fun hlt ↦ (abs_apply_le_choleskySeqBound hb hred hN hd hfac hb_lt_Cd m i j hlt hij).trans
@@ -384,20 +384,20 @@ theorem exists_cholesky_bound_of_isReduced (n : ℕ) (C : ℝ) :
 
 private theorem pivot_le_pow_mul {n : ℕ} {d : Fin n → ℝ} {R R₁ : ℝ} (hd : ∀ i, 0 < d i)
     (hR₁ : 1 ≤ R₁) (hR : R ≤ R₁)
-    (hd_step : ∀ (i : Fin n) (h : i.1 + 1 < n), d i ≤ R * d ⟨i.1 + 1, h⟩) :
+    (hd_step : ∀ (i : Fin n) (h : i.val + 1 < n), d i ≤ R * d ⟨i.val + 1, h⟩) :
     ∀ {k i : Fin n}, k ≤ i → d k ≤ R₁ ^ n * d i := by
-  have haux : ∀ m : ℕ, ∀ {k i : Fin n}, i.1 - k.1 = m → k ≤ i → d k ≤ R₁ ^ m * d i := by
+  have haux : ∀ m : ℕ, ∀ {k i : Fin n}, i.val - k.val = m → k ≤ i → d k ≤ R₁ ^ m * d i := by
     intro m; induction m with
     | zero => intro k i _ _; obtain rfl : k = i := Fin.ext (by omega); simp
     | succ m ih =>
-      intro k i _ _; have hk1 : k.1 + 1 < n := by omega
-      let k' : Fin n := ⟨k.1 + 1, hk1⟩
+      intro k i _ _; have hk1 : k.val + 1 < n := by omega
+      let k' : Fin n := ⟨k.val + 1, hk1⟩
       calc d k ≤ R₁ * d k' := (hd_step k hk1).trans (mul_le_mul_of_nonneg_right hR (hd k').le)
         _ ≤ R₁ * (R₁ ^ m * d i) := mul_le_mul_of_nonneg_left
             (ih (by dsimp [k']; omega) (Fin.le_def.mpr (by dsimp [k']; omega)))
             (zero_le_one.trans hR₁)
         _ = R₁ ^ (m + 1) * d i := by ring
-  exact fun {k i} hki ↦ (haux (i.1 - k.1) rfl hki).trans
+  exact fun {k i} hki ↦ (haux (i.val - k.val) rfl hki).trans
     (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ hR₁ (by omega)) (hd i).le)
 
 private theorem abs_apply_transpose_mul_diagonal_mul_lt {n : ℕ} {R₁ : ℝ} (hR₁_pos : 0 < R₁)
@@ -428,7 +428,7 @@ upper unitriangular with `|N i j| ≤ R` above the diagonal and `d` has positive
 theorem exists_isReduced_of_cholesky_bound (n : ℕ) (R : ℝ) :
     ∃ C : ℝ, 1 < C ∧ ∀ {N : Matrix (Fin n) (Fin n) ℝ} {d : Fin n → ℝ},
       N.IsUpperUnitriangular → (∀ i, 0 < d i) → (∀ i j, i < j → |N i j| ≤ R) →
-        (∀ (i : Fin n) (h : i.1 + 1 < n), d i ≤ R * d ⟨i.1 + 1, h⟩) →
+        (∀ (i : Fin n) (h : i.val + 1 < n), d i ≤ R * d ⟨i.val + 1, h⟩) →
         (Nᵀ * Matrix.diagonal d * N).PosDef ∧ IsReduced C (Nᵀ * Matrix.diagonal d * N) := by
   -- Set `R₁ = max R 1`, entry bound factor `M = n * R₁^(n+2) + 1`, and threshold `C`.
   set R₁ : ℝ := max R 1; have hR₁ : 1 ≤ R₁ := le_max_right R 1

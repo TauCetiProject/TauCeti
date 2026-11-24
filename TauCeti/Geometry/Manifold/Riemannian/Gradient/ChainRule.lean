@@ -99,6 +99,15 @@ theorem mgradient_comp (hg : MDifferentiableAt I' 𝓘(ℝ) g (φ x))
 
 end Composition
 
+/-- The inner product with the gradient of a continuous linear functional `ℓ` applied to a map
+`g` into a vector space is `ℓ` applied to the derivative of `g`. -/
+theorem _root_.ContinuousLinearMap.inner_mgradient_comp {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (ℓ : F →L[ℝ] ℝ) {g : M → F} (hg : MDifferentiableAt I 𝓘(ℝ, F) g x)
+    (v : TangentSpace I x) :
+    inner ℝ (mgradient I (fun y ↦ ℓ (g y)) x) v = ℓ (mvfderiv I g x v) := by
+  rw [inner_mgradient]
+  exact ℓ.mvfderiv_comp_apply hg v
+
 /-- Scalar postcomposition multiplies the relative gradient by the scalar derivative.
 The outer derivative may itself be taken within a subset of the real line. -/
 theorem mgradientWithin_comp_hasDerivWithinAt {g : ℝ → ℝ} {g' : ℝ} {t : Set ℝ}
@@ -146,6 +155,13 @@ theorem mgradient_comp_deriv {g : ℝ → ℝ} (hg : DifferentiableAt ℝ g (f x
     mgradient I (g ∘ f) x = deriv g (f x) • mgradient I f x :=
   mgradient_comp_hasDerivAt hg.hasDerivAt hf
 
+/-- The gradient of `e^{t f}`: `grad (e^{t f}) = (t e^{t f}) • grad f`. -/
+theorem mgradient_exp_const_mul (t : ℝ) (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
+    mgradient I (fun y ↦ Real.exp (t * f y)) x = (t * Real.exp (t * f x)) • mgradient I f x := by
+  rw [mul_comm t]
+  exact mgradient_comp_hasDerivAt (g := fun s ↦ Real.exp (t * s))
+    (by simpa using ((hasDerivAt_id (f x)).const_mul t).exp) hf
+
 /-- The gradient of the logarithm of a function: `grad (log f) = f⁻¹ • grad f`. At a zero of `f`
 both sides vanish, since `Real.log 0 = 0` and `0⁻¹ = 0`. -/
 theorem mgradient_log (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
@@ -168,5 +184,27 @@ theorem mgradient_log (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
       exact mvfderiv_const 0
     · simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg]
   · exact mgradient_comp_hasDerivAt (Real.hasDerivAt_log hx) hf
+
+/-- A gradient is orthogonal to the differential of a map whose potential is locally constant.
+No differentiability assumptions are needed: the native derivative is zero in the other cases. -/
+theorem inner_mgradient_mfderiv_eq_zero_of_eventuallyEq_const
+    {F K S : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace K]
+    {J : ModelWithCorners ℝ F K} [TopologicalSpace S] [ChartedSpace K S]
+    {ι : S → M} {c : ℝ} (z : S) (v : TangentSpace J z)
+    (hlevel : f ∘ ι =ᶠ[𝓝 z] fun _ ↦ c) :
+    inner ℝ (mgradient I f (ι z)) (mfderiv J I ι z v) = 0 := by
+  rw [inner_mgradient, mvfderiv_apply_eq_mfderiv_apply]
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f (ι z)
+  · by_cases hι : MDifferentiableAt J I ι z
+    · have h := congrArg (fun L ↦ L v) (mfderiv_comp z hf hι)
+      rw [hlevel.mfderiv_eq, mfderiv_const] at h
+      exact h.symm
+    · simp only [mfderiv_zero_of_not_mdifferentiableAt hι, zero_apply, map_zero]
+      -- `mvfderiv` identifies the scalar tangent space with ℝ.
+      rfl
+  · simp only [mfderiv_zero_of_not_mdifferentiableAt hf, zero_apply]
+    -- `mvfderiv` identifies the scalar tangent space with ℝ.
+    rfl
+
 
 end TauCeti.Manifold

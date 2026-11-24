@@ -117,7 +117,7 @@ lemma skeletonBasePair_fst (n : ℕ) : (skeletonBasePair C n).fst = skeletonObj 
 
 /-- The subspace `X⁻¹` of the base pair `(Xⁿ, X⁻¹)` is the base of the relative CW complex. -/
 lemma range_skeletonBasePair_snd (n : ℕ) :
-    Set.range (fun x : (skeletonBasePair C n).snd ↦ (x.1 : X)) = D :=
+    Set.range (fun x : (skeletonBasePair C n).snd ↦ (x.val : X)) = D :=
   Subtype.range_coe.trans <| by rw [Nat.cast_zero, skeletonLT_zero_eq_base]
 
 /-- The triple `(Xⁿ⁺¹, Xⁿ, X⁻¹)`.  Its inner pair is `skeletonBasePair C n`, its total pair is
@@ -174,8 +174,8 @@ lemma skeletonBasePairToSkeletonPair_snd (n : ℕ) :
 /-- On the ambient spaces, `TauCeti.skeletonBasePairToSucc` is the inclusion `Xⁿ ⊆ Xⁿ⁺¹`. -/
 @[simp]
 lemma coe_skeletonBasePairToSucc_fst_apply (n : ℕ) (x : (skeletonBasePair C n).fst) :
-    (TopPair.Hom.fst (skeletonBasePairToSucc C n) x).1 = x.1 :=
-  congrArg (fun f ↦ (f x).1) (TopTriple.innerToTotal_app_fst (T := skeletonBaseTriple C n))
+    (TopPair.Hom.fst (skeletonBasePairToSucc C n) x).val = x.val :=
+  congrArg (fun f ↦ (f x).val) (TopTriple.innerToTotal_app_fst (T := skeletonBaseTriple C n))
 
 /-- On the subspaces, `TauCeti.skeletonBasePairToSucc` is the identity of `X⁻¹`. -/
 @[simp]
@@ -188,7 +188,7 @@ lemma skeletonBasePairToSucc_snd_apply (n : ℕ) (x : (skeletonBasePair C n).snd
 lemma skeletonBasePairToSkeletonPair_zero :
     skeletonBasePairToSkeletonPair C 0 = 𝟙 (skeletonPair C 0) := by
   ext x : 2
-  · exact Subtype.ext (congrArg (fun g ↦ (g x).1) (skeletonBasePairToSkeletonPair_snd C 0))
+  · exact Subtype.ext (congrArg (fun g ↦ (g x).val) (skeletonBasePairToSkeletonPair_snd C 0))
   · exact congrArg (fun g ↦ g x) (skeletonBasePairToSkeletonPair_fst C 0)
 
 /-- In positive degree the map `(Xⁿ⁺¹, X⁻¹) ⟶ (Xⁿ⁺¹, Xⁿ)` is the map from the total pair to the
@@ -199,7 +199,7 @@ lemma skeletonBasePairToSkeletonPair_succ (n : ℕ) :
   refine MorphismProperty.Arrow.Hom.ext ?_ ?_
   · refine Eq.trans ?_ (TopTriple.totalToOuter_app_snd (T := skeletonBaseTriple C n)).symm
     ext x
-    exact Subtype.ext (congrArg (fun g ↦ (g x).1) (skeletonBasePairToSkeletonPair_snd C (n + 1)))
+    exact Subtype.ext (congrArg (fun g ↦ (g x).val) (skeletonBasePairToSkeletonPair_snd C (n + 1)))
   · refine Eq.trans ?_ (TopTriple.totalToOuter_app_fst (T := skeletonBaseTriple C n)).symm
     ext x
     exact congrArg (fun g ↦ g x) (skeletonBasePairToSkeletonPair_fst C (n + 1))
@@ -214,7 +214,7 @@ def skeletonBasePairInclusion {n m : ℕ} (h : n ≤ m) :
 @[simp]
 lemma coe_skeletonBasePairInclusion_fst_apply {n m : ℕ} (h : n ≤ m)
     (x : (skeletonBasePair C n).fst) :
-    (TopPair.Hom.fst (skeletonBasePairInclusion C h) x).1 = x.1 :=
+    (TopPair.Hom.fst (skeletonBasePairInclusion C h) x).val = x.val :=
   congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ _)
 
 @[simp]

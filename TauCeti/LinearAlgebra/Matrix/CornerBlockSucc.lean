@@ -65,6 +65,11 @@ def cornerBlockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
     Matrix (Fin (m + 1)) (Fin (m + 1)) α :=
   of (Fin.cons (Fin.cons c 0) fun i ↦ Fin.cons 0 (B i))
 
+/-- Defining formula for `Matrix.cornerBlockSucc` in terms of `Fin.cons`. -/
+theorem cornerBlockSucc_def (c : α) (B : Matrix (Fin m) (Fin m) α) :
+    cornerBlockSucc c B = of (Fin.cons (Fin.cons c 0) fun i ↦ Fin.cons 0 (B i)) :=
+  (rfl)
+
 @[simp]
 theorem cornerBlockSucc_zero_zero (c : α) (B : Matrix (Fin m) (Fin m) α) :
     cornerBlockSucc c B 0 0 = c :=
@@ -204,8 +209,8 @@ theorem transpose_upperBorder_mul_cornerBlockSucc_mul [CommSemiring α] (d₀ : 
 unit of `Matrix (Fin m) (Fin m) α`. -/
 def upperBorderUnit [Ring α] (w : Fin m → α) (g : (Matrix (Fin m) (Fin m) α)ˣ) :
     (Matrix (Fin (m + 1)) (Fin (m + 1)) α)ˣ where
-  val := upperBorder w g.1
-  inv := upperBorder (-(w ᵥ* (g⁻¹).1)) (g⁻¹).1
+  val := upperBorder w g.val
+  inv := upperBorder (-(w ᵥ* (g⁻¹).val)) (g⁻¹).val
   val_inv := by
     rw [upperBorder_mul_upperBorder, Units.mul_inv, neg_add_cancel, upperBorder_zero_one]
   inv_val := by rw [upperBorder_mul_upperBorder, Units.inv_mul, neg_vecMul, vecMul_vecMul,
@@ -213,11 +218,11 @@ def upperBorderUnit [Ring α] (w : Fin m → α) (g : (Matrix (Fin m) (Fin m) α
 
 /-- The underlying matrix of `upperBorderUnit w g` is `upperBorder w g`. -/
 @[simp] theorem coe_upperBorderUnit [Ring α] (w : Fin m → α) (g : (Matrix (Fin m) (Fin m) α)ˣ) :
-    (upperBorderUnit w g : Matrix (Fin (m + 1)) (Fin (m + 1)) α) = upperBorder w g.1 := (rfl)
+    (upperBorderUnit w g : Matrix (Fin (m + 1)) (Fin (m + 1)) α) = upperBorder w g.val := (rfl)
 
 /-- The inverse of `upperBorderUnit w g` has row `-(w ᵥ* g⁻¹)` and lower-right block `g⁻¹`. -/
 @[simp] theorem upperBorderUnit_inv [Ring α] (w : Fin m → α) (g : (Matrix (Fin m) (Fin m) α)ˣ) :
-    (upperBorderUnit w g)⁻¹ = upperBorderUnit (-(w ᵥ* (g⁻¹).1)) g⁻¹ := Units.ext (rfl)
+    (upperBorderUnit w g)⁻¹ = upperBorderUnit (-(w ᵥ* (g⁻¹).val)) g⁻¹ := Units.ext (rfl)
 
 end UpperBorder
 

@@ -42,32 +42,32 @@ At time `t` the coordinate vector is `(1 - t) • x + t • single v 1`. -/
 def coneContraction (h : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimplicialComplex v) :
     (ContinuousMap.id (Realization K)).HomotopyRel
       (ContinuousMap.const (Realization K) (vertex K v)) {vertex K v} where
-  toFun p := ⟨(1 - (p.1 : ℝ)) • p.2.1 + (p.1 : ℝ) • Finsupp.single v 1,
-    mem_realization_iff.mpr ⟨insert v (carrier K p.2).1,
-      h.insert_mem (carrier K p.2).2,
+  toFun p := ⟨(1 - (p.1 : ℝ)) • p.2.val + (p.1 : ℝ) • Finsupp.single v 1,
+    mem_realization_iff.mpr ⟨insert v (carrier K p.2).val,
+      h.insert_mem (carrier K p.2).property,
       by
         -- Set images remove the equality-instance choice in the realization's finite image.
         simpa only [Finset.coe_image] using
-          StandardSimplex.smul_add_single_mem ⟨p.2.1, mem_convexHull_carrier K p.2⟩ v p.1⟩⟩
+          StandardSimplex.smul_add_single_mem ⟨p.2.val, mem_convexHull_carrier K p.2⟩ v p.1⟩⟩
   continuous_toFun := by
     apply continuous_prod_iff_faceInclusion.mpr
     intro σ
-    let g : unitInterval × StandardSimplex σ.1 → StandardSimplex (insert v σ.1) :=
-      fun p => ⟨(1 - (p.1 : ℝ)) • p.2.1 + (p.1 : ℝ) • Finsupp.single v 1,
+    let g : unitInterval × StandardSimplex σ.val → StandardSimplex (insert v σ.val) :=
+      fun p => ⟨(1 - (p.1 : ℝ)) • p.2.val + (p.1 : ℝ) • Finsupp.single v 1,
         by simpa only [Finset.coe_image] using p.2.smul_add_single_mem v p.1⟩
     have hg : Continuous g := by
       apply continuous_induced_rng.mpr
       apply continuous_pi
       intro w
-      have hx : Continuous (fun x : StandardSimplex σ.1 => (x.1 : ι → ℝ)) :=
+      have hx : Continuous (fun x : StandardSimplex σ.val => (x.val : ι → ℝ)) :=
         continuous_induced_dom
-      have hc : Continuous (fun p : unitInterval × StandardSimplex σ.1 => p.2.1 w) :=
+      have hc : Continuous (fun p : unitInterval × StandardSimplex σ.val => p.2.val w) :=
         ((continuous_apply w).comp hx).comp continuous_snd
-      have hh : Continuous (fun p : unitInterval × StandardSimplex σ.1 =>
-          (1 - (p.1 : ℝ)) * p.2.1 w + (p.1 : ℝ) * (Finsupp.single v 1) w) := by
+      have hh : Continuous (fun p : unitInterval × StandardSimplex σ.val =>
+          (1 - (p.1 : ℝ)) * p.2.val w + (p.1 : ℝ) * (Finsupp.single v 1) w) := by
         fun_prop
       exact hh.congr fun p => by simp [g, Finsupp.single_apply]
-    exact ((continuous_faceInclusion K ⟨insert v σ.1, h.insert_mem σ.2⟩).comp hg).congr
+    exact ((continuous_faceInclusion K ⟨insert v σ.val, h.insert_mem σ.property⟩).comp hg).congr
       fun p => Subtype.ext (by simp [g, faceInclusion_val])
   map_zero_left x := by
     apply Subtype.ext
@@ -86,7 +86,7 @@ theorem coneContraction_val
     (h : PreAbstractSimplicialComplex.IsCone K.toPreAbstractSimplicialComplex v)
     (t : unitInterval) (x : Realization K) :
     (coneContraction h (t, x) : ι →₀ ℝ) =
-      (1 - (t : ℝ)) • x.1 + (t : ℝ) • Finsupp.single v 1 := (rfl)
+      (1 - (t : ℝ)) • x.val + (t : ℝ) • Finsupp.single v 1 := (rfl)
 
 /-- The contraction fixes the apex at every time. -/
 @[simp]

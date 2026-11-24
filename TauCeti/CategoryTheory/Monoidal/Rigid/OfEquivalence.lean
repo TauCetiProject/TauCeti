@@ -14,18 +14,22 @@ Mathlib's `CategoryTheory.hasRightDualOfEquivalence` gives an object `X` of `C` 
 pulling back the right dual of `F.obj X` along a monoidal equivalence `F : C ⥤ D`. Its evaluation
 and coevaluation are defined as preimages under `F`. This file records their images under `F`:
 the evaluation and coevaluation of `(F.obj X, (F.obj X)ᘁ)`, transported across the counit of the
-equivalence and conjugated by the comparison maps of `F`.
+equivalence and conjugated by the comparison maps of `F`. The same holds for the left duals of
+`CategoryTheory.hasLeftDualOfEquivalence`.
 
 These identities are how the structure maps of such a dual are computed. For instance, Mathlib
-makes `Action V H` right rigid this way, and its evaluation and coevaluation are computed from
-them on underlying objects.
+makes `Action V H` left and right rigid this way, and its evaluations and coevaluations are
+computed from them on underlying objects.
 
 ## Main results
 
 * `CategoryTheory.map_evaluation_hasRightDualOfEquivalence`: the image under `F` of the evaluation
   of the pulled-back right dual;
 * `CategoryTheory.map_coevaluation_hasRightDualOfEquivalence`: the image under `F` of the
-  coevaluation of the pulled-back right dual.
+  coevaluation of the pulled-back right dual;
+* `CategoryTheory.map_evaluation_hasLeftDualOfEquivalence` and
+  `CategoryTheory.map_coevaluation_hasLeftDualOfEquivalence`: the same for the pulled-back left
+  dual.
 -/
 
 public section
@@ -53,6 +57,24 @@ theorem map_coevaluation_hasRightDualOfEquivalence (X : C) [HasRightDual (F.obj 
     F.map (@ExactPairing.coevaluation _ _ _ X _ (hasRightDualOfEquivalence adj X).exact) =
       η F ≫ (η_ (F.obj X) (F.obj X)ᘁ ≫
         F.obj X ◁ (adj.toEquivalence.counitIso.app (F.obj X)ᘁ).inv) ≫ μ F _ _ :=
+  F.map_preimage _
+
+/-- The evaluation of a left dual pulled back along a monoidal equivalence `F` is, by definition,
+the preimage under `F` of the evaluation of the left dual of `F.obj X` transported across the
+counit. -/
+theorem map_evaluation_hasLeftDualOfEquivalence (X : C) [HasLeftDual (F.obj X)] :
+    F.map (@ExactPairing.evaluation _ _ _ _ X (hasLeftDualOfEquivalence adj X).exact) =
+      δ F _ _ ≫ (F.obj X ◁ (adj.toEquivalence.counitIso.app ᘁ(F.obj X)).hom ≫
+        ε_ ᘁ(F.obj X) (F.obj X)) ≫ ε F :=
+  F.map_preimage _
+
+/-- The coevaluation of a left dual pulled back along a monoidal equivalence `F` is, by
+definition, the preimage under `F` of the coevaluation of the left dual of `F.obj X` transported
+across the counit. -/
+theorem map_coevaluation_hasLeftDualOfEquivalence (X : C) [HasLeftDual (F.obj X)] :
+    F.map (@ExactPairing.coevaluation _ _ _ _ X (hasLeftDualOfEquivalence adj X).exact) =
+      η F ≫ (η_ ᘁ(F.obj X) (F.obj X) ≫
+        (adj.toEquivalence.counitIso.app ᘁ(F.obj X)).inv ▷ F.obj X) ≫ μ F _ _ :=
   F.map_preimage _
 
 end CategoryTheory

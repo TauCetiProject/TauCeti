@@ -81,9 +81,9 @@ theorem continuous_unitsEquiv (hB : ∀ i, IsOpen (B i : Set (R i))) :
   -- The indices at which `x` is an integral unit form a cofinite set `T`.
   let T : Set ι := {i | (x : Πʳ i, [R i, B i]) i ∈ B i ∧
     ((x⁻¹ : (Πʳ i, [R i, B i])ˣ) : Πʳ i, [R i, B i]) i ∈ B i}
-  have hT : cofinite ≤ 𝓟 T := le_principal_iff.mpr (x.val.2.and x.inv.2)
+  have hT : cofinite ≤ 𝓟 T := le_principal_iff.mpr (x.val.property.and x.inv.property)
   -- The units that are integral units at every index of `T` form an open neighbourhood `V` of `x`.
-  let W : Set (Πʳ i, [R i, B i]) := {a | ∀ i, i ∈ T → a.1 i ∈ B i}
+  let W : Set (Πʳ i, [R i, B i]) := {a | ∀ i, i ∈ T → a.val i ∈ B i}
   have hW : IsOpen W := isOpen_forall_imp_mem hB
   let V : Set (Πʳ i, [R i, B i])ˣ := (fun y ↦ (y : Πʳ i, [R i, B i])) ⁻¹' W ∩
     (fun y ↦ ((y⁻¹ : (Πʳ i, [R i, B i])ˣ) : Πʳ i, [R i, B i])) ⁻¹' W
@@ -93,12 +93,12 @@ theorem continuous_unitsEquiv (hB : ∀ i, IsOpen (B i : Set (R i))) :
   -- On `V` the comparison map takes values in the principal stage at `T`.
   have hmem : ∀ (y : V), ∀ i ∈ T, V.domRestrict (unitsEquiv R) y i ∈
       ((Submonoid.ofClass (B i)).units : Set (R i)ˣ) :=
-    fun y i hi ↦ ⟨y.2.1 i hi, y.2.2 i hi⟩
+    fun y i hi ↦ ⟨y.property.1 i hi, y.property.2 i hi⟩
   refine ContinuousOn.continuousAt (continuousOn_iff_continuous_domRestrict.mpr ?_) hV
   rw [TauCeti.continuous_restrictedProduct_iff_of_forall_mem hT hmem]
   exact continuous_pi fun i ↦ Units.continuous_iff.mpr
-    ⟨((continuous_eval i).comp Units.continuous_val).comp continuous_subtype_val,
-      ((continuous_eval i).comp Units.continuous_coe_inv).comp continuous_subtype_val⟩
+    ⟨((continuous_eval i).comp Units.continuous_val).comp continuous_subtypeVal,
+      ((continuous_eval i).comp Units.continuous_coe_inv).comp continuous_subtypeVal⟩
 
 end RestrictedProduct
 

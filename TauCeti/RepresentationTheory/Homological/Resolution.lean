@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Homological.Resolution
 public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import Mathlib.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Augmentation.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # The standard and bar resolutions along a group homomorphism
@@ -28,8 +29,11 @@ resolutions of the trivial representation.
 
 To make the last statement checkable, the file also computes the augmentations of Mathlib's
 standard and bar resolutions on basis elements: both send a basis element with coefficient `r` to
-`r`. On the way it records the value of the comparison `Rep.diagonalSuccIsoFree` between the bar
-and standard resolutions on basis elements, `(g, (g₁, …, gₙ)) ↦ g • (1, g₁, g₁g₂, …, g₁⋯gₙ)`.
+`r`. On the way it records both directions of the comparison `Rep.diagonalSuccIsoFree` between the
+bar and standard resolutions on basis elements, `(g, (g₁, …, gₙ)) ↦ g • (1, g₁, g₁g₂, …, g₁⋯gₙ)`
+and `(y₀, …, yₙ) ↦ y₀ • (y₀⁻¹y₁, …, yₙ₋₁⁻¹yₙ)`, and proves that `Rep.barComplex.isoStandardComplex`
+intertwines `TauCeti.Rep.barComplex.resChainMap` with `MonoidHom.standardComplexMap` along any
+group homomorphism.
 
 The chain map is what identifies Mathlib's Shapiro isomorphism `groupCohomology.coindIso`, which is
 defined through `Ext`, with an explicit map on inhomogeneous cochains.
@@ -42,13 +46,19 @@ defined through `Ext`, with an explicit map on inhomogeneous cochains.
 
 ## Main results
 
-* `TauCeti.Rep.diagonalSuccIsoFree_inv_hom_single`: the comparison between the bar and standard
-  resolutions on basis elements.
+* `TauCeti.Rep.diagonalSuccIsoFree_inv_hom_single` and
+  `TauCeti.Rep.diagonalSuccIsoFree_hom_hom_single`: both directions of the comparison between the
+  bar and standard resolutions on basis elements.
 * `TauCeti.Rep.standardComplex.εToSingle₀_f_zero`: the augmentation of the standard complex in
   degree `0` is `Rep.standardComplex.ε`.
-* `TauCeti.Rep.standardResolution_π_f_zero_single` and
-  `TauCeti.Rep.barResolution_π_f_zero_single`: the augmentations on basis elements.
+* `TauCeti.Rep.standardResolution_π`, `TauCeti.Rep.barResolution_π`,
+  `TauCeti.Rep.standardResolution_π_f_zero_single`, and
+  `TauCeti.Rep.barResolution_π_f_zero_single`: the augmentations of the standard and bar
+  resolutions and their values on basis elements.
 * `TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π`: the chain map lies over the identity of `k`.
+* `MonoidHom.barComplex_isoStandardComplex_hom_naturality` and
+  `MonoidHom.barComplex_isoStandardComplex_inv_naturality`: Mathlib's isomorphism between the bar
+  and standard complexes commutes with change of groups along any group homomorphism.
 
 ## References
 
@@ -106,6 +116,35 @@ theorem diagonalSuccIsoFree_inv_hom_single (m : ℕ) (x : Fin m → G) (g : G) (
     (Representation.linearizeMap_single (k := k)
       (Action.diagonalSuccIsoTensorTrivial G m).inv (g, x) ((1 : k) * r))).trans ?_
   rw [one_mul, Action.diagonalSuccIsoTensorTrivial_inv_hom_apply]
+
+/-- The homogeneous-to-inhomogeneous comparison `(Rep.diagonalSuccIsoFree k G m).hom` sends the
+standard basis element `(y₀, …, yₘ)` with coefficient `r` to the bar basis element
+`(y₀⁻¹y₁, …, yₘ₋₁⁻¹yₘ)` with group coefficient `r • y₀`. -/
+theorem diagonalSuccIsoFree_hom_hom_single (m : ℕ) (y : Fin (m + 1) → G) (r : k) :
+    (diagonalSuccIsoFree k G m).hom.hom (MonoidAlgebra.single y r) =
+      single (fun i : Fin m ↦ (y i.castSucc)⁻¹ * y i.succ)
+        (MonoidAlgebra.single (y 0) r) := by
+  have hinv := diagonalSuccIsoFree_inv_hom_single (k := k) (G := G) m
+    (fun i : Fin m ↦ (y i.castSucc)⁻¹ * y i.succ) (y 0) r
+  rw [Fin.partialProd_left_inv y] at hinv
+  rw [← hinv, Rep.hom_inv_apply]
+
+-- Not `@[simp]`: downstream lemmas (`standardResolution_π_f_zero_single`,
+-- `barResolution_π_f_zero_single`, `barComplex.resChainMap_f_zero_comp_π`) state augmentation
+-- identities in terms of `(standardResolution k G).π` and `(barResolution k G).π`, matching
+-- Mathlib's `@[simps complex]` on `Rep.barResolution`.
+/-- The augmentation of `Rep.standardResolution` is `Rep.standardComplex.εToSingle₀`. -/
+theorem standardResolution_π (k G : Type u) [CommRing k] [Group G] :
+    (_root_.Rep.standardResolution k G).π = _root_.Rep.standardComplex.εToSingle₀ k G :=
+  (rfl)
+
+/-- The augmentation of `Rep.barResolution` is `(Rep.barComplex.isoStandardComplex k G).hom`
+followed by `Rep.standardComplex.εToSingle₀ k G`. -/
+theorem barResolution_π (k G : Type u) [CommRing k] [Group G] :
+    (_root_.Rep.barResolution k G).π =
+      (_root_.Rep.barComplex.isoStandardComplex k G).hom ≫
+        _root_.Rep.standardComplex.εToSingle₀ k G :=
+  (rfl)
 
 /-- The augmentation of the standard resolution sends a basis element with coefficient `r` to
 `r`. -/
@@ -185,6 +224,22 @@ theorem resChainMap_f_zero_comp_π (f : H →* G) : (resChainMap (k := k) f).f 0
   exact (congrArg _ h₁).trans (h₂.trans
     (barResolution_π_f_zero_single (k := k) x (1 : H) 1).symm)
 
+/-- In degree `n` the forward bar-to-standard isomorphism is `(Rep.diagonalSuccIsoFree k G n).inv`.
+-/
+@[simp]
+theorem isoStandardComplex_hom_f (k G : Type u) [CommRing k] [Group G] (n : ℕ) :
+    (_root_.Rep.barComplex.isoStandardComplex k G).hom.f n =
+      (diagonalSuccIsoFree k G n).inv :=
+  (rfl)
+
+/-- In degree `n` the inverse standard-to-bar isomorphism is `(Rep.diagonalSuccIsoFree k G n).hom`.
+-/
+@[simp]
+theorem isoStandardComplex_inv_f (k G : Type u) [CommRing k] [Group G] (n : ℕ) :
+    (_root_.Rep.barComplex.isoStandardComplex k G).inv.f n =
+      (diagonalSuccIsoFree k G n).hom :=
+  (rfl)
+
 end barComplex
 
 end TauCeti.Rep
@@ -194,6 +249,8 @@ noncomputable section
 namespace MonoidHom
 
 universe u
+
+section Monoid
 
 variable {k G H : Type u} [Monoid G] [Monoid H]
 
@@ -282,5 +339,62 @@ theorem standardComplexHom_comp_ε (φ : G →* H) :
   rw [TauCeti.Rep.standardComplex.ε_eq_permutationAugmentation,
     TauCeti.Rep.standardComplex.ε_eq_permutationAugmentation]
   exact MulActionHom.toRepRes_comp_permutationAugmentation _
+
+end Monoid
+
+section Group
+
+variable {k G H : Type u} [CommRing k] [Group G] [Group H]
+
+/-- **Mathlib's bar-to-standard comparison is natural in the group.** Relabelling inhomogeneous bar
+chains before passing to homogeneous coordinates agrees with passing to homogeneous coordinates and
+then relabelling standard tuples. -/
+@[reassoc]
+theorem barComplex_isoStandardComplex_hom_naturality (φ : G →* H) :
+    TauCeti.Rep.barComplex.resChainMap (k := k) φ ≫
+        ((Rep.resFunctor φ).mapHomologicalComplex _).map
+          (Rep.barComplex.isoStandardComplex k H).hom =
+      (Rep.barComplex.isoStandardComplex k G).hom ≫ φ.standardComplexMap := by
+  apply HomologicalComplex.hom_ext
+  intro n
+  refine Rep.free_ext _ _ _ _ _ fun x ↦ ?_
+  simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
+    TauCeti.Rep.barComplex.isoStandardComplex_hom_f, TauCeti.Rep.barComplex.resChainMap_f,
+    standardComplexMap_f]
+  -- `(standardComplex k G).X n` and `Rep.ofMulAction k G (Fin (n + 1) → G)` have the same
+  -- underlying module; compare the underlying linear maps once so representation-level lemmas
+  -- apply without carrier-transport mismatches.
+  change ((Rep.diagonalSuccIsoFree k H n).inv).hom.toLinearMap
+      (((TauCeti.Rep.barComplex.resHom (k := k) φ n).hom.toLinearMap)
+        (single x (MonoidAlgebra.single 1 1))) =
+    (φ.standardComplexHom n).hom.toLinearMap
+      (((Rep.diagonalSuccIsoFree k G n).inv).hom.toLinearMap
+        (single x (MonoidAlgebra.single 1 1)))
+  simp only [Representation.IntertwiningMap.toLinearMap_apply]
+  rw [TauCeti.Rep.barComplex.resHom_single, map_one,
+    TauCeti.Rep.diagonalSuccIsoFree_inv_hom_single, TauCeti.Rep.diagonalSuccIsoFree_inv_hom_single,
+    one_smul, one_smul, MulActionHom.toRepRes_hom_single]
+  exact congrArg (fun y ↦ MonoidAlgebra.single y (1 : k)) (Fin.comp_partialProd φ x).symm
+
+/-- **The inverse standard-to-bar comparison is natural in the group.** Relabelling standard tuples
+before passing to inhomogeneous bar coordinates agrees with passing to inhomogeneous bar
+coordinates and then relabelling bar chains. -/
+@[reassoc]
+theorem barComplex_isoStandardComplex_inv_naturality (φ : G →* H) :
+    φ.standardComplexMap (k := k) ≫
+        ((Rep.resFunctor φ).mapHomologicalComplex _).map
+          (Rep.barComplex.isoStandardComplex k H).inv =
+      (Rep.barComplex.isoStandardComplex k G).inv ≫
+        TauCeti.Rep.barComplex.resChainMap φ := by
+  apply (cancel_epi (Rep.barComplex.isoStandardComplex k G).hom).mp
+  apply (cancel_mono
+    (((Rep.resFunctor φ).mapHomologicalComplex _).map
+      (Rep.barComplex.isoStandardComplex k H).hom)).mp
+  simp only [Category.assoc]
+  rw [← CategoryTheory.Functor.map_comp, Iso.inv_hom_id, CategoryTheory.Functor.map_id,
+    Category.comp_id, Iso.hom_inv_id_assoc]
+  exact (φ.barComplex_isoStandardComplex_hom_naturality).symm
+
+end Group
 
 end MonoidHom

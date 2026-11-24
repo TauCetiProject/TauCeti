@@ -88,7 +88,7 @@ theorem finite_setOfPred_valuation_ne_one {x : K} (hx : x ≠ 0) :
   rcases lt_or_gt_of_ne hv with h | h
   · refine .inr ?_
     rw [Support, Set.mem_ofPred_eq, map_inv₀,
-      one_lt_inv₀ (zero_lt_iff.mpr ((Valuation.ne_zero_iff _).mpr hx))]
+      one_lt_inv₀ (pos_iff_ne_zero.mpr ((Valuation.ne_zero_iff _).mpr hx))]
     exact h
   · exact .inl h
 

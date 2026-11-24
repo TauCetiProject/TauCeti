@@ -207,23 +207,6 @@ private theorem integrable_profile_sq_mul {g : ℝ → ℝ} (hg : Continuous g) 
 
 variable [CompleteSpace F] {A : ℝ → F →L[ℝ] F}
 
-/-- The path `s ↦ profile c r s • e s` is the value of an element of `W^{1,2}(ℝ, F)`. -/
-private theorem exists_prev_ae_eq_profile_smul (he : ContDiff ℝ 1 e) (c r : ℝ) :
-    ∃ u : WeakDerivStep volume ⊤ 2
-        (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))),
-      ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ profile c r s • e s := by
-  have hφ := contDiff_profile_smul he c r
-  have hsupp : HasCompactSupport fun s ↦ profile c r s • e s :=
-    (hasCompactSupport_profile c r).smul_right
-  -- For the zero coefficient `D_0 u = u'`, so a compactly supported `C¹` path is the value of an
-  -- element of the weak-derivative graph.
-  obtain ⟨u, -, hu⟩ := exists_trajectoryOperator_ae_eq_of_hasDerivAt (p := 2)
-    (A := fun _ ↦ (0 : F →L[ℝ] F)) (AL := 0) (Lp.coeFn_zero _ _ _)
-    (fun s ↦ by simpa using (hφ.differentiable one_ne_zero s).hasDerivAt)
-    (hφ.continuous.memLp_of_hasCompactSupport hsupp)
-    ((hφ.continuous_deriv le_rfl).memLp_of_hasCompactSupport hsupp.deriv)
-  exact ⟨u, hu⟩
-
 variable {u u' : WeakDerivStep volume ⊤ 2
   (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))}
 
@@ -345,7 +328,8 @@ private theorem not_isFredholm_trajectoryOperator_of_forall_abs_sub_lt (he : Con
     ¬ (trajectoryOperator (p := 2) AL).IsFredholm := by
   intro hF
   have hr (n : ℕ) : (0 : ℝ) < n + 1 := by positivity
-  choose x hx using fun n : ℕ ↦ exists_prev_ae_eq_profile_smul he (c n) (n + 1)
+  choose x hx using fun n : ℕ ↦ exists_prev_ae_eq_of_contDiff_of_hasCompactSupport (p := 2)
+    (contDiff_profile_smul he (c n) (n + 1)) (hasCompactSupport_profile (c n) (n + 1)).smul_right
   set K := (∫ t, deriv bump t ^ 2) / ∫ t, bump t ^ 2
   have hK (n : ℕ) : (∫ t, deriv bump t ^ 2) / ((∫ t, bump t ^ 2) * ((n : ℝ) + 1) ^ 2) =
       K * (1 / ((n : ℝ) + 1)) ^ 2 := by

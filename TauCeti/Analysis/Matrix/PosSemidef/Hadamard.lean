@@ -58,11 +58,12 @@ theorem PosSemidef.det_le_prod_diag {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [
     set A₁₂ : Matrix {a // a = i} {a // a ≠ i} 𝕜 := A.submatrix (↑) (↑)
     set A₂₂ : Matrix {a // a ≠ i} {a // a ≠ i} 𝕜 := A.submatrix (↑) (↑)
     have hblk : A.submatrix e e = fromBlocks A₁₁ A₁₂ A₁₂ᴴ A₂₂ := by
-      ext (x | x) (y | y) <;> first | rfl | exact (hA.isHermitian.apply x.1 y.1).symm
+      ext (x | x) (y | y) <;> first | rfl | exact (hA.isHermitian.apply x.val y.val).symm
     have hcard : Fintype.card {a // a ≠ i} = k := by
       rw [Fintype.card_of_subtype (Finset.univ.erase i) (by simp),
         Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ, hk, Nat.add_sub_cancel]
-    have hdet₁₁ : A₁₁.det = A i i := by rw [det_unique]; simp [A₁₁, (default : {a // a = i}).2]
+    have hdet₁₁ : A₁₁.det = A i i := by
+      rw [det_unique]; simp [A₁₁, (default : {a // a = i}).property]
     have hsub : (fromBlocks A₁₁ A₁₂ A₁₂ᴴ A₂₂).PosSemidef := hblk ▸ hA.submatrix e
     calc A.det = (fromBlocks A₁₁ A₁₂ A₁₂ᴴ A₂₂).det := by rw [← hblk, det_submatrix_equiv_self]
       _ ≤ A i i * A₂₂.det := hdet₁₁ ▸ hsub.det_fromBlocks_le
@@ -70,7 +71,7 @@ theorem PosSemidef.det_le_prod_diag {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [
           (ih (hA.submatrix (Subtype.val : {a // a ≠ i} → n)) hcard)
           (by simpa using hA.dotProduct_mulVec_nonneg (Pi.single i 1))
       _ = ∏ j, A j j := by
-          simpa [(default : {a // a = i}).2] using
+          simpa [(default : {a // a = i}).property] using
             Fintype.prod_subtype_mul_prod_subtype (· = i) (fun j ↦ A j j)
 
 /-- If a positive-definite real matrix `B` satisfies `∏ i, B i i ≤ D * B.det`, then every diagonal
@@ -83,7 +84,7 @@ theorem PosDef.inv_apply_self_le_div {n : Type*} [Fintype n] [DecidableEq n]
       ≤ B k k * ∏ j : {a // a ≠ k}, B j j := mul_le_mul_of_nonneg_left
           (hB.submatrix Subtype.val_injective).posSemidef.det_le_prod_diag hB.diag_pos.le
     _ = ∏ i, B i i := by
-        simpa [(default : {a // a = k}).2] using
+        simpa [(default : {a // a = k}).property] using
           Fintype.prod_subtype_mul_prod_subtype (· = k) (fun i ↦ B i i)
     _ ≤ D * B.det := hD
   rw [inv_def, Matrix.smul_apply, B.adjugate_apply_self k, Ring.inverse_eq_inv', smul_eq_mul,

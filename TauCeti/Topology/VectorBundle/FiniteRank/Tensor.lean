@@ -109,10 +109,10 @@ theorem inChartCoordinates_tensor_kronecker (A A' D D' : FiniteRankBundleCore �
 operators. -/
 def tensorHom (f : A ⟶ A') (g : D ⟶ D') : tensor A D ⟶ tensor A' D' where
   operator i j :=
-    ⟨fun x => (f.operator i j ⟨x.1, x.2.1.1, x.2.2.1⟩).kronecker
-        (g.operator i j ⟨x.1, x.2.1.2, x.2.2.2⟩),
-      ((f.operator i j).continuous.comp (continuous_subtype_val.subtype_mk _)).clm_kronecker
-        ((g.operator i j).continuous.comp (continuous_subtype_val.subtype_mk _))⟩
+    ⟨fun x => (f.operator i j ⟨x.val, x.property.1.1, x.property.2.1⟩).kronecker
+        (g.operator i j ⟨x.val, x.property.1.2, x.property.2.2⟩),
+      ((f.operator i j).continuous.comp (continuous_subtypeVal.subtype_mk _)).clm_kronecker
+        ((g.operator i j).continuous.comp (continuous_subtypeVal.subtype_mk _))⟩
   compatible i i' j j' x hi hi' hj hj' v := by
     -- Both sides are Kronecker products; compare the two factors as operators.
     change ((A'.core.coordChange j j' x).kronecker (D'.core.coordChange j j' x)).comp
