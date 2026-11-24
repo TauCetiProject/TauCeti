@@ -170,7 +170,8 @@ theorem le_finrank_of_map_eq_inv_natCast
     (hϖ : w ϖ = (((e : ℝ)⁻¹ : ℝ) : WithTop ℝ)) : e ≤ Module.finrank K L := by
   rcases Nat.eq_zero_or_pos e with rfl | he
   · exact Nat.zero_le _
-  have h := den_le_finrank_of_map_eq_ratCast (q := (e : ℚ)⁻¹) hint hw (by rw [hϖ]; push_cast; rfl)
+  have h := den_le_finrank_of_map_eq_ratCast (q := (e : ℚ)⁻¹) hint hw
+    (by rw [hϖ, Rat.cast_inv, Rat.cast_natCast])
   rwa [Rat.inv_natCast_den_of_pos he] at h
 
 end Extension
@@ -189,12 +190,18 @@ private def valueAddSubgroup (w : AddValuation L (WithTop ℝ)) : AddSubgroup �
   neg_mem' := fun ⟨y, hy, ha⟩ ↦
     ⟨y⁻¹, inv_ne_zero hy, by rw [map_inv, ha, WithTop.LinearOrderedAddCommGroup.coe_neg]⟩
 
+/-- A real number lies in `valueAddSubgroup w` exactly when it is the value of a nonzero element. -/
+private theorem mem_valueAddSubgroup {t : ℝ} :
+    t ∈ valueAddSubgroup w ↔ ∃ y : L, y ≠ 0 ∧ w y = (t : WithTop ℝ) :=
+  Iff.rfl
+
 /-- An element of value `1 / e` under a valuation whose nonzero values are multiples of `1 / e'`
 forces `e ∣ e'`. -/
 private theorem dvd_of_map_eq_inv_natCast {e e' : ℕ} (he : 0 < e)
     (hL : ∀ y : L, y ≠ 0 → ∃ n : ℤ, w y = ((n / e' : ℝ) : WithTop ℝ)) {ϖ : L}
     (hϖ : w ϖ = (((e : ℝ)⁻¹ : ℝ) : WithTop ℝ)) : e ∣ e' := by
-  have h := den_dvd_of_map_eq_ratCast (q := (e : ℚ)⁻¹) hL (by rw [hϖ]; push_cast; rfl)
+  have h := den_dvd_of_map_eq_ratCast (q := (e : ℚ)⁻¹) hL
+    (by rw [hϖ, Rat.cast_inv, Rat.cast_natCast])
   rwa [Rat.inv_natCast_den_of_pos he] at h
 
 variable [Module.Finite K L]
@@ -214,7 +221,7 @@ theorem existsUnique_forall_map_eq_intCast_div
       ∀ y : L, y ≠ 0 → ∃ n : ℤ, w y = ((n / e : ℝ) : WithTop ℝ) := by
   have : Nontrivial K := ⟨⟨π, 0, fun h ↦ by simp [h] at hπ⟩⟩
   set G := valueAddSubgroup w
-  have h1 : (1 : ℝ) ∈ G :=
+  have h1 : (1 : ℝ) ∈ G := mem_valueAddSubgroup.2
     ⟨algebraMap K L π, ne_of_apply_ne w (by rw [hw, hπ, map_zero]; exact WithTop.one_ne_top),
       by rw [hw, hπ, WithTop.coe_one]⟩
   -- If `0 < t < 1 / (n + 1)` were a value of `w`, with `n = [L : K]`, no multiple `k * t` with
@@ -222,7 +229,8 @@ theorem existsUnique_forall_map_eq_intCast_div
   -- linearly independent over `K`.
   have hdisj : Disjoint (G : Set ℝ) (Set.Ioo 0 (1 / (Module.finrank K L + 1))) := by
     rw [Set.disjoint_left]
-    rintro t ⟨α, -, hα⟩ ⟨ht0, ht⟩
+    rintro t htG ⟨ht0, ht⟩
+    obtain ⟨α, -, hα⟩ := mem_valueAddSubgroup.1 htG
     have hli := linearIndependent_pow_of_map_eq (N := Module.finrank K L + 1) hint hw hα
       fun k hk hkn m hm ↦ by
         have hkt : (k : ℝ) * t < 1 := by
@@ -238,8 +246,10 @@ theorem existsUnique_forall_map_eq_intCast_div
   have hbot : G ≠ ⊥ := fun h ↦ one_ne_zero ((AddSubgroup.mem_bot).1 (h ▸ h1))
   obtain ⟨g, hg⟩ := AddSubgroup.exists_isLeast_pos hbot (by positivity) hdisj
   have hG := AddSubgroup.zmultiples_eq_of_isLeast_mem_and_pos hg
-  obtain ⟨⟨⟨ϖ, -, hϖ⟩, hg0⟩, -⟩ := hg
-  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (hG ▸ h1)
+  obtain ⟨⟨hgG, hg0⟩, -⟩ := hg
+  obtain ⟨ϖ, -, hϖ⟩ := mem_valueAddSubgroup.1 hgG
+  rw [← hG] at h1
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 h1
   rw [zsmul_eq_mul] at hk
   have hk0 : 0 < k := Int.cast_pos.mp (pos_of_mul_pos_left (hk ▸ one_pos) hg0.le)
   have hke : ((k.toNat : ℕ) : ℝ) = k := by exact_mod_cast Int.toNat_of_nonneg hk0.le
@@ -247,7 +257,8 @@ theorem existsUnique_forall_map_eq_intCast_div
   rw [hge] at hϖ
   have hall : ∀ y : L, y ≠ 0 → ∃ n : ℤ, w y = ((n / k.toNat : ℝ) : WithTop ℝ) := fun y hy ↦ by
     obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.1 (w.ne_top_iff.2 hy)
-    have htG : t ∈ AddSubgroup.zmultiples g := hG ▸ ⟨y, hy, ht.symm⟩
+    have htG : t ∈ G := mem_valueAddSubgroup.2 ⟨y, hy, ht.symm⟩
+    rw [← hG] at htG
     obtain ⟨m, hm⟩ := AddSubgroup.mem_zmultiples_iff.1 htG
     exact ⟨m, by rw [← ht, ← hm, zsmul_eq_mul, hge, div_eq_mul_inv]⟩
   refine ⟨k.toNat, ⟨by omega, le_finrank_of_map_eq_inv_natCast hint hw hϖ, ⟨ϖ, hϖ⟩, hall⟩,
