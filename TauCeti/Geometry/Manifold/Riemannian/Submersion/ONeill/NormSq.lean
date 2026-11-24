@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 import Mathlib.Analysis.InnerProductSpace.ProdL2
@@ -24,16 +25,17 @@ of a submersion with totally geodesic fibres, which shows that the connection me
 whose fibre has positive scalar curvature has positive scalar curvature once the fibre is scaled
 down enough.
 
-Here `|A|²` (`TauCeti.IsRiemannianSubmersion.oneillANormSq`) is defined without choosing a frame,
-as half the metric trace of the bilinear form `(u, u') ↦ tr_g ⟨A_u ·, A_(u') ·⟩`
-(`TauCeti.IsRiemannianSubmersion.oneillAInnerForm`). In an orthonormal basis `(eᵢ)` of the whole
-tangent space this trace is `∑ᵢ ∑ⱼ |A_(eᵢ) eⱼ|²`. Taking `(eᵢ)` adapted to the splitting into
-vertical and horizontal spaces, the pairs with a vertical first entry contribute nothing, since `A`
-only sees the horizontal part of its first entry. Because `A_u` exchanges the two spaces and is
-skew-adjoint, `∑ₐ |A_u bₐ|² = ∑ⱼ |A_u cⱼ|²` for orthonormal bases `(bₐ)` of the vertical and
-`(cⱼ)` of the horizontal space (`TauCeti.IsRiemannianSubmersion.sum_norm_oneillA_sq_ker_eq`), so
-the horizontal-vertical pairs contribute exactly as much as the horizontal-horizontal ones. Hence
-`|A|²` is given by the formula above in every horizontal orthonormal basis, and also by
+Here `|A|²` (`TauCeti.IsRiemannianSubmersion.oneillANormSq`) is defined without choosing a frame, as
+half the metric trace of the bilinear form `(u, u') ↦ tr_g ⟨A_u ·, A_(u') ·⟩`
+(`TauCeti.IsRiemannianSubmersion.oneillAInnerForm`), the Hilbert–Schmidt inner product
+`ContinuousLinearMap.hilbertSchmidtInner` of `A_u` and `A_(u')`. In an orthonormal basis `(eᵢ)` of
+the whole tangent space this trace is `∑ᵢ ∑ⱼ |A_(eᵢ) eⱼ|²`. Taking `(eᵢ)` adapted to the splitting
+into vertical and horizontal spaces, the pairs with a vertical first entry contribute nothing, since
+`A` only sees the horizontal part of its first entry. Because `A_u` exchanges the two spaces and is
+skew-adjoint, `∑ₐ |A_u bₐ|² = ∑ⱼ |A_u cⱼ|²` for orthonormal bases `(bₐ)` of the vertical and `(cⱼ)`
+of the horizontal space (`TauCeti.IsRiemannianSubmersion.sum_norm_oneillA_sq_ker_eq`), so the
+horizontal-vertical pairs contribute exactly as much as the horizontal-horizontal ones. Hence `|A|²`
+is given by the formula above in every horizontal orthonormal basis, and also by
 `∑ᵢ ∑ₐ |A_(cᵢ) bₐ|²`, the form in which it appears among the mixed curvatures.
 
 In the chart-local frame the trace contracts against the inverse Gram matrix, so `|A|²` is a
@@ -92,34 +94,17 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {f : M → N} (h : IsRiemannianSubmersion I J f)
 
-/-- The bilinear form `(u, u') ↦ tr_g ⟨A_u ·, A_(u') ·⟩` on `T_x M`, the metric trace of
-`(w, w') ↦ ⟨A_u w, A_(u') w'⟩`. Its metric trace is twice `|A|²`. -/
+/-- The bilinear form `(u, u') ↦ tr_g ⟨A_u ·, A_(u') ·⟩` on `T_x M`: the Hilbert–Schmidt inner
+product of `A_u` and `A_(u')`, the metric trace of `(w, w') ↦ ⟨A_u w, A_(u') w'⟩`. Its metric
+trace is twice `|A|²`. -/
 def oneillAInnerForm (h : IsRiemannianSubmersion I J f) (x : M) :
     BilinForm ℝ (TangentSpace I x) :=
-  LinearMap.mk₂ ℝ
-    (fun u u' ↦ bilinFormTrace ((innerₗ (TangentSpace I x)).compl₁₂
-      (h.oneillA x u : TangentSpace I x →ₗ[ℝ] TangentSpace I x)
-      (h.oneillA x u' : TangentSpace I x →ₗ[ℝ] TangentSpace I x)))
-    (fun u₁ u₂ u' ↦ by
-      rw [← map_add]
-      congr 1
-      ext w w'
-      simp)
+  LinearMap.mk₂ ℝ (fun u u' ↦ (h.oneillA x u).hilbertSchmidtInner (h.oneillA x u'))
+    (fun u₁ u₂ u' ↦ by rw [map_add, ContinuousLinearMap.hilbertSchmidtInner_add_left])
+    (fun a u u' ↦ by rw [map_smul, ContinuousLinearMap.hilbertSchmidtInner_smul_left, smul_eq_mul])
+    (fun u u₁ u₂ ↦ by rw [map_add, ContinuousLinearMap.hilbertSchmidtInner_add_right])
     (fun a u u' ↦ by
-      rw [← map_smul]
-      congr 1
-      ext w w'
-      simp)
-    (fun u u₁ u₂ ↦ by
-      rw [← map_add]
-      congr 1
-      ext w w'
-      simp [inner_add_right])
-    (fun a u u' ↦ by
-      rw [← map_smul]
-      congr 1
-      ext w w'
-      simp)
+      rw [map_smul, ContinuousLinearMap.hilbertSchmidtInner_smul_right, smul_eq_mul])
 
 /-- The squared norm `|A|²` of O'Neill's horizontal tensor at `x`: in every orthonormal basis
 `(cᵢ)` of the horizontal space it is `∑ᵢ ∑ⱼ |A_(cᵢ) cⱼ|²` (`oneillANormSq_eq_sum`). It is
@@ -131,17 +116,14 @@ include h
 
 /-- The defining formula for `oneillAInnerForm`. -/
 theorem oneillAInnerForm_apply (x : M) (u u' : TangentSpace I x) :
-    h.oneillAInnerForm x u u' = bilinFormTrace ((innerₗ (TangentSpace I x)).compl₁₂
-      (h.oneillA x u : TangentSpace I x →ₗ[ℝ] TangentSpace I x)
-      (h.oneillA x u' : TangentSpace I x →ₗ[ℝ] TangentSpace I x)) :=
+    h.oneillAInnerForm x u u' = (h.oneillA x u).hilbertSchmidtInner (h.oneillA x u') :=
   (rfl)
 
 /-- In an orthonormal basis `(eⱼ)` of `T_x M`, `oneillAInnerForm` is `∑ⱼ ⟨A_u eⱼ, A_(u') eⱼ⟩`. -/
 theorem oneillAInnerForm_eq_sum {x : M} {ι : Type*} [Fintype ι]
     (e : OrthonormalBasis ι ℝ (TangentSpace I x)) (u u' : TangentSpace I x) :
     h.oneillAInnerForm x u u' = ∑ j, ⟪h.oneillA x u (e j), h.oneillA x u' (e j)⟫_ℝ := by
-  rw [oneillAInnerForm_apply, bilinFormTrace_eq_sum _ e]
-  simp
+  rw [oneillAInnerForm_apply, ContinuousLinearMap.hilbertSchmidtInner_eq_sum _ _ e]
 
 /-- The defining formula for `oneillANormSq`. -/
 theorem oneillANormSq_def (x : M) :
@@ -158,14 +140,13 @@ theorem two_mul_oneillANormSq_eq_sum {x : M} {ι : Type*} [Fintype ι]
 /-- `oneillAInnerForm` is symmetric. -/
 theorem oneillAInnerForm_comm (x : M) (u u' : TangentSpace I x) :
     h.oneillAInnerForm x u u' = h.oneillAInnerForm x u' u := by
-  simp only [h.oneillAInnerForm_eq_sum (stdOrthonormalBasis ℝ (TangentSpace I x)),
-    real_inner_comm]
+  simp only [oneillAInnerForm_apply, ContinuousLinearMap.hilbertSchmidtInner_comm (h.oneillA x u)]
 
 /-- `oneillAInnerForm` is nonnegative on the diagonal: `oneillAInnerForm x u u = ∑ⱼ |A_u eⱼ|²`. -/
 theorem oneillAInnerForm_self_nonneg (x : M) (u : TangentSpace I x) :
     0 ≤ h.oneillAInnerForm x u u := by
-  rw [h.oneillAInnerForm_eq_sum (stdOrthonormalBasis ℝ (TangentSpace I x))]
-  exact Finset.sum_nonneg fun j _ ↦ real_inner_self_nonneg
+  rw [oneillAInnerForm_apply]
+  exact ContinuousLinearMap.hilbertSchmidtInner_self_nonneg _
 
 /-- `oneillAInnerForm` is positive semidefinite. -/
 theorem isPosSemidef_oneillAInnerForm (x : M) : (h.oneillAInnerForm x).IsPosSemidef :=
@@ -174,12 +155,7 @@ theorem isPosSemidef_oneillAInnerForm (x : M) : (h.oneillAInnerForm x).IsPosSemi
 /-- `oneillAInnerForm x u u` vanishes exactly when `A_u` does. -/
 theorem oneillAInnerForm_self_eq_zero_iff (x : M) (u : TangentSpace I x) :
     h.oneillAInnerForm x u u = 0 ↔ h.oneillA x u = 0 := by
-  let e := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [h.oneillAInnerForm_eq_sum e, Finset.sum_eq_zero_iff_of_nonneg
-    fun j _ ↦ real_inner_self_nonneg]
-  simp only [Finset.mem_univ, forall_const, inner_self_eq_zero]
-  refine ⟨fun hu ↦ ?_, fun hu j ↦ by simp [hu]⟩
-  exact ContinuousLinearMap.coe_injective (e.toBasis.ext fun j ↦ by simpa using hu j)
+  rw [oneillAInnerForm_apply, ContinuousLinearMap.hilbertSchmidtInner_self_eq_zero_iff]
 
 /-- `oneillAInnerForm` vanishes exactly when `A` does. -/
 theorem oneillAInnerForm_eq_zero_iff (x : M) :
@@ -242,8 +218,9 @@ private theorem oneillANormSq_eq_sum_chartInvGramMatrix (a : M) {x : M}
           h.oneillA x (chartLocalFrame (I := I) a j x) (chartLocalFrame (I := I) a l x)⟫_ℝ) /
       2 := by
   rw [oneillANormSq_def, bilinFormTrace_eq_sum_chartInvGramMatrix a hx]
-  simp only [oneillAInnerForm_apply, bilinFormTrace_eq_sum_chartInvGramMatrix a hx,
-    LinearMap.compl₁₂_apply, ContinuousLinearMap.coe_coe, innerₗ_apply_apply]
+  simp only [oneillAInnerForm_apply, ContinuousLinearMap.hilbertSchmidtInner_def,
+    bilinFormTrace_eq_sum_chartInvGramMatrix a hx, LinearMap.compl₁₂_apply,
+    ContinuousLinearMap.coe_coe, innerₗ_apply_apply]
 
 variable [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
 
