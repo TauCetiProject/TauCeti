@@ -20,8 +20,8 @@ or with simple Galois group. The Galois group of their compositum `⨆ i, K i` e
 may coincide. This file shows that some subfamily `K j`, `j ∈ J`, already generates the
 compositum and that restriction identifies `Gal((⨆ i, K i) / k)` with `∏ j ∈ J, Gal(K j / k)`.
 When every nontrivial `K i` has Galois group isomorphic to one simple group `Δ`, the Galois group
-of the compositum is therefore `Δ ^ J`, and the composita of two disjoint parts of the subfamily
-are linearly disjoint over `k`.
+of the compositum is therefore `Δ ^ J`, and, for finite Galois members, the composita of two
+disjoint parts of the subfamily are linearly disjoint over `k`.
 
 This is the field-theoretic form of `MonoidHom.exists_set_iInf_ker_eq_and_surjective_pi`. It is
 used in the proof of Qian's Lemma 2.6(2), with `Δ = PSL₂(𝔽_l)`.
@@ -31,6 +31,8 @@ used in the proof of Qian's Lemma 2.6(2), with `Δ = PSL₂(𝔽_l)`.
 * `IntermediateField.restrictNormalHomISupPi`: restriction
   `Gal((⨆ i, K i) / k) →* ∏ i, Gal(K i / k)` from the compositum of a family of normal
   subextensions to its members.
+* `IntermediateField.restrictNormalHomBiSupPi`: its components indexed by a set `J`, that is,
+  restriction `Gal((⨆ i, K i) / k) →* ∏ j ∈ J, Gal(K j / k)`.
 
 ## Main results
 
@@ -38,14 +40,16 @@ used in the proof of Qian's Lemma 2.6(2), with `Δ = PSL₂(𝔽_l)`.
   determined by its restrictions to the members.
 * `IntermediateField.biSup_eq_iSup_of_injective`: Galois members `K j`, `j ∈ J`, whose
   restrictions already determine automorphisms of the compositum generate it.
-* `IntermediateField.exists_biSup_eq_iSup_and_bijective_restrictNormalHomISupPi`: for Galois
+* `IntermediateField.exists_biSup_eq_iSup_and_bijective_restrictNormalHomBiSupPi`: for Galois
   members that are trivial or have simple Galois group, some subfamily of nontrivial members
   generates the compositum, and restriction to it is bijective.
-* `IntermediateField.linearDisjoint_biSup_of_surjective`: over a subfamily onto whose Galois
-  groups restriction is surjective, the composita of disjoint parts are linearly disjoint.
+* `IntermediateField.linearDisjoint_biSup_of_surjective`: for finite Galois members, over a
+  subfamily onto whose Galois groups restriction is surjective, the composita of disjoint parts
+  are linearly disjoint.
 * `IntermediateField.exists_biSup_eq_iSup_and_nonempty_mulEquiv_and_linearDisjoint`: when every
-  nontrivial member has Galois group isomorphic to a simple group `Δ`, the Galois group of the
-  compositum is `Δ ^ J` for such a subfamily `J`.
+  nontrivial member is finite Galois with Galois group isomorphic to a simple group `Δ`, for such
+  a subfamily `J` restriction is bijective, the Galois group of the compositum is `Δ ^ J`, and the
+  composita of disjoint parts of `J` are linearly disjoint.
 
 ## References
 
@@ -80,6 +84,19 @@ theorem restrictNormalHomISupPi_apply (σ : Gal(↥(⨆ i, K i)/k)) (i : ι) :
 theorem coe_restrictNormalHomISupPi_apply_apply (σ : Gal(↥(⨆ i, K i)/k)) (i : ι) (x : K i) :
     ((restrictNormalHomISupPi K σ i x : K i) : Ω) = σ (inclusion (le_iSup K i) x) :=
   congrArg Subtype.val ((inclusion (le_iSup K i)).restrictNormalHom_commutes σ x)
+
+/-- Restriction from the compositum `⨆ i, K i` to the members `K j` with `j` in a set `J`: the
+components of `restrictNormalHomISupPi K` indexed by `J`. -/
+noncomputable def restrictNormalHomBiSupPi (J : Set ι) :
+    Gal(↥(⨆ i, K i)/k) →* ((j : J) → Gal(K j/k)) :=
+  MonoidHom.pi fun j : J ↦ (inclusion (le_iSup K (j : ι))).restrictNormalHom
+
+/-- The `j`-th component of `restrictNormalHomBiSupPi K J σ` is that of
+`restrictNormalHomISupPi K σ`. -/
+@[simp]
+theorem restrictNormalHomBiSupPi_apply (J : Set ι) (σ : Gal(↥(⨆ i, K i)/k)) (j : J) :
+    restrictNormalHomBiSupPi K J σ j = restrictNormalHomISupPi K σ j :=
+  (rfl)
 
 variable {K}
 
@@ -116,7 +133,7 @@ variable {K : ι → IntermediateField k Ω} [∀ i, IsGalois k (K i)]
 a family of Galois subextensions are already determined by their restrictions to the `K j` with
 `j ∈ J`, then those `K j` generate the compositum. -/
 theorem biSup_eq_iSup_of_injective {J : Set ι}
-    (hJ : Function.Injective fun σ (j : J) ↦ restrictNormalHomISupPi K σ j) :
+    (hJ : Function.Injective (restrictNormalHomBiSupPi K J)) :
     (⨆ j ∈ J, K j) = ⨆ i, K i := by
   have hJL : (⨆ j ∈ J, K j) ≤ ⨆ i, K i := iSup₂_le fun j _ ↦ le_iSup K j
   refine le_antisymm hJL fun x hx ↦ ?_
@@ -126,8 +143,7 @@ theorem biSup_eq_iSup_of_injective {J : Set ι}
   let E : IntermediateField k ↥(⨆ i, K i) := restrict hJL
   have hfix : E.fixingSubgroup = ⊥ := by
     refine (Subgroup.eq_bot_iff_forall _).2 fun σ hσ ↦ hJ (funext fun j ↦ ?_)
-    dsimp only
-    rw [map_one, Pi.one_apply]
+    rw [map_one, Pi.one_apply, restrictNormalHomBiSupPi_apply]
     refine AlgEquiv.ext fun y ↦ Subtype.ext ?_
     rw [coe_restrictNormalHomISupPi_apply_apply, AlgEquiv.one_apply]
     have hyE : inclusion (le_iSup K j) y ∈ E :=
@@ -140,50 +156,38 @@ theorem biSup_eq_iSup_of_injective {J : Set ι}
     exact mem_top
   exact (mem_restrict hJL ⟨x, hx⟩).1 hxE
 
-/-- Automorphisms of a Galois subextension equal to `k` are trivial. -/
-private theorem subsingleton_of_eq_bot {L : IntermediateField k Ω} (hL : L = ⊥) :
-    Subsingleton Gal(L/k) := by
-  refine ⟨fun σ τ ↦ AlgEquiv.ext fun x ↦ ?_⟩
-  obtain ⟨c, hc⟩ := mem_bot.1 (hL.le x.property)
-  obtain rfl : algebraMap k L c = x := Subtype.ext hc
-  rw [AlgEquiv.commutes, AlgEquiv.commutes]
-
 /-- **Composita of Galois extensions with simple Galois groups.** Let `K i` be finitely many
 Galois subextensions of `Ω / k`, each equal to `k` or with simple Galois group. Then there is a
 set `J` of indices with `K j ≠ k` for `j ∈ J` such that the `K j`, `j ∈ J`, generate the
 compositum `⨆ i, K i` and restriction identifies `Gal((⨆ i, K i) / k)` with
 `∏ j ∈ J, Gal(K j / k)`. -/
-theorem exists_biSup_eq_iSup_and_bijective_restrictNormalHomISupPi [Finite ι]
+theorem exists_biSup_eq_iSup_and_bijective_restrictNormalHomBiSupPi [Finite ι]
     (hK : ∀ i, K i = ⊥ ∨ IsSimpleGroup Gal(K i/k)) :
     ∃ J : Set ι, (∀ j ∈ J, K j ≠ ⊥) ∧ (⨆ j ∈ J, K j) = ⨆ i, K i ∧
-      Function.Bijective fun σ (j : J) ↦ restrictNormalHomISupPi K σ j := by
+      Function.Bijective (restrictNormalHomBiSupPi K J) := by
   obtain ⟨J, hJnt, hJker, hJsurj⟩ := MonoidHom.exists_set_iInf_ker_eq_and_surjective_pi
     (fun i ↦ (inclusion (le_iSup K i)).restrictNormalHom)
     (fun i ↦ AlgHom.restrictNormalHom_surjective _)
-    (fun i ↦ (hK i).imp subsingleton_of_eq_bot id)
-  -- The restriction map to the `K j`, `j ∈ J`, is the product of the restriction maps.
-  have hR : (fun σ (j : J) ↦ restrictNormalHomISupPi K σ j) =
-      MonoidHom.pi fun j : J ↦ (inclusion (le_iSup K (j : ι))).restrictNormalHom :=
-    funext fun σ ↦ funext fun j ↦ restrictNormalHomISupPi_apply K σ j
-  -- It is injective: its kernel is the intersection of all the restriction kernels, which is
-  -- trivial.
-  have hinj : Function.Injective fun σ (j : J) ↦ restrictNormalHomISupPi K σ j := by
-    rw [hR, injective_iff_map_eq_one]
+    (fun i ↦ (hK i).imp subsingleton_algEquiv_of_eq_bot id)
+  -- Restriction to the `K j`, `j ∈ J`, is injective: its kernel is the intersection of all the
+  -- restriction kernels, which is trivial.
+  have hinj : Function.Injective (restrictNormalHomBiSupPi K J) := by
+    rw [injective_iff_map_eq_one]
     refine fun σ hσ ↦ restrictNormalHomISupPi_injective K (funext fun i ↦ ?_)
     have hmem : σ ∈ ⨅ j ∈ J, ((inclusion (le_iSup K j)).restrictNormalHom).ker :=
       Subgroup.mem_iInf.2 fun j ↦ Subgroup.mem_iInf.2 fun hj ↦ congrFun hσ ⟨j, hj⟩
     rw [hJker] at hmem
     rw [map_one, Pi.one_apply, restrictNormalHomISupPi_apply]
     exact Subgroup.mem_iInf.1 hmem i
-  refine ⟨J, fun j hj h ↦ ?_, biSup_eq_iSup_of_injective hinj, hinj, hR ▸ hJsurj⟩
-  exact not_nontrivial_iff_subsingleton.2 (subsingleton_of_eq_bot h) (hJnt j hj)
+  refine ⟨J, fun j hj h ↦ ?_, biSup_eq_iSup_of_injective hinj, hinj, hJsurj⟩
+  exact not_nontrivial_iff_subsingleton.2 (subsingleton_algEquiv_of_eq_bot h) (hJnt j hj)
 
 /-- **Disjoint parts of an independent subfamily are linearly disjoint.** If restriction from the
 compositum of finitely many finite Galois subextensions `K i` to the members `K j`, `j ∈ J`, is
 surjective, then for disjoint `I, I' ⊆ J` the composita `⨆ i ∈ I, K i` and `⨆ i ∈ I', K i` are
 linearly disjoint over `k`. -/
 theorem linearDisjoint_biSup_of_surjective [Finite ι] [∀ i, FiniteDimensional k (K i)]
-    {J : Set ι} (hJ : Function.Surjective fun σ (j : J) ↦ restrictNormalHomISupPi K σ j)
+    {J : Set ι} (hJ : Function.Surjective (restrictNormalHomBiSupPi K J))
     {I I' : Set ι} (hI : I ⊆ J) (hI' : I' ⊆ J) (hII' : Disjoint I I') :
     (⨆ i ∈ I, K i : IntermediateField k Ω).LinearDisjoint
       (⨆ i ∈ I', K i : IntermediateField k Ω) := by
@@ -206,7 +210,8 @@ theorem linearDisjoint_biSup_of_surjective [Finite ι] [∀ i, FiniteDimensional
   have hκ (i : ι) (hi : i ∈ J) : restrictNormalHomISupPi K ((σ₁ * σ₂)⁻¹ * σ) i = 1 := by
     have h₁i := congrFun h₁ ⟨i, hi⟩
     have h₂i := congrFun h₂ ⟨i, hi⟩
-    by_cases hiI : i ∈ I <;> simp_all
+    rw [restrictNormalHomBiSupPi_apply] at h₁i h₂i
+    by_cases hiI : i ∈ I <;> simp [h₁i, h₂i, hiI]
   have hzκ : ((σ₁ * σ₂)⁻¹ * σ) z = z :=
     apply_eq_self_of_restrictNormalHomISupPi_eq_one (fun i hi ↦ hκ i (hI hi)) hx.1
   have hz₂ : σ₂ z = z := apply_eq_self_of_restrictNormalHomISupPi_eq_one (fun i hi ↦ by
@@ -218,22 +223,24 @@ theorem linearDisjoint_biSup_of_surjective [Finite ι] [∀ i, FiniteDimensional
 /-- **The Galois group of a compositum of `Δ`-extensions is a power of `Δ`.** Let `K i` be
 finitely many finite Galois subextensions of `Ω / k`, each equal to `k` or with Galois group
 isomorphic to a fixed simple group `Δ`. Then for some set `J` of indices the `K j`, `j ∈ J`,
-generate the compositum, its Galois group is isomorphic to `Δ ^ J`, and for disjoint `I, I' ⊆ J`
-the composita `⨆ i ∈ I, K i` and `⨆ i ∈ I', K i` are linearly disjoint over `k`. -/
+generate the compositum, restriction identifies its Galois group with `∏ j ∈ J, Gal(K j / k)`,
+which is isomorphic to `Δ ^ J`, and for disjoint `I, I' ⊆ J` the composita `⨆ i ∈ I, K i` and
+`⨆ i ∈ I', K i` are linearly disjoint over `k`. -/
 theorem exists_biSup_eq_iSup_and_nonempty_mulEquiv_and_linearDisjoint [Finite ι]
     [∀ i, FiniteDimensional k (K i)] {Δ : Type*} [Group Δ] [IsSimpleGroup Δ]
     (hK : ∀ i, K i = ⊥ ∨ Nonempty (Gal(K i/k) ≃* Δ)) :
-    ∃ J : Set ι, (⨆ j ∈ J, K j) = ⨆ i, K i ∧ Nonempty (Gal(↥(⨆ i, K i)/k) ≃* (J → Δ)) ∧
+    ∃ J : Set ι, (⨆ j ∈ J, K j) = ⨆ i, K i ∧ Function.Bijective (restrictNormalHomBiSupPi K J) ∧
+      Nonempty (Gal(↥(⨆ i, K i)/k) ≃* (J → Δ)) ∧
       ∀ I I' : Set ι, I ⊆ J → I' ⊆ J → Disjoint I I' →
         (⨆ i ∈ I, K i : IntermediateField k Ω).LinearDisjoint
           (⨆ i ∈ I', K i : IntermediateField k Ω) := by
-  obtain ⟨J, hJne, hJ, hbij⟩ := exists_biSup_eq_iSup_and_bijective_restrictNormalHomISupPi
+  obtain ⟨J, hJne, hJ, hbij⟩ := exists_biSup_eq_iSup_and_bijective_restrictNormalHomBiSupPi
     fun i ↦ (hK i).imp id fun ⟨e⟩ ↦ e.isSimpleGroup
-  refine ⟨J, hJ, ⟨?_⟩, fun I I' hI hI' hII' ↦ linearDisjoint_biSup_of_surjective hbij.2 hI hI' hII'⟩
+  refine ⟨J, hJ, hbij, ⟨?_⟩,
+    fun I I' hI hI' hII' ↦ linearDisjoint_biSup_of_surjective hbij.2 hI hI' hII'⟩
   -- Restriction identifies the Galois group with `∏ j ∈ J, Gal(K j / k)`, and each factor with
   -- `Δ`, since `K j ≠ k`.
-  refine (MulEquiv.ofBijective (MonoidHom.pi fun j : J ↦
-    (Pi.evalMonoidHom (fun i ↦ Gal(K i/k)) (j : ι)).comp (restrictNormalHomISupPi K)) hbij).trans
+  exact (MulEquiv.ofBijective (restrictNormalHomBiSupPi K J) hbij).trans
     (MulEquiv.piCongrRight fun j ↦ ((hK j).resolve_left (hJne j j.property)).some)
 
 end Galois
