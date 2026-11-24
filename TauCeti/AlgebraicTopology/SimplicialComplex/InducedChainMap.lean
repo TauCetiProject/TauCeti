@@ -375,7 +375,7 @@ theorem orderedSimplicialChainComplexMap_f (n : ℕ) :
         ModuleCat.ofHom (OrderedSimplicialChain.map R f n) ≫
           eqToHom (orderedSimplicialChainComplex_X R n).symm :=
   (orderedSimplicialChainComplexHomOfLinear_f R _ _ n).trans
-    (orderedSimplicialChainComplexHomOfLinearMap_def R _)
+    (orderedSimplicialChainComplexXHomOfLinearMap_def R _)
 
 /-- The identity simplicial map induces the identity chain map. -/
 @[simp]

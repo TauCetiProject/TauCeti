@@ -288,24 +288,24 @@ def orderedSimplicialChainComplexHomotopyOfCarrier :
     Homotopy (orderedSimplicialChainComplexHomOfLinear R φ hφd)
       (orderedSimplicialChainComplexHomOfLinear R ψ hψd) :=
   Homotopy.equivSubZero.symm <| Homotopy.mkChainComplex _
-    (fun n ↦ orderedSimplicialChainComplexHomOfLinearMap R (carrierHomotopy R φ ψ v n))
+    (fun n ↦ orderedSimplicialChainComplexXHomOfLinearMap R (carrierHomotopy R φ ψ v n))
     (by
       rw [HomologicalComplex.sub_f_apply, orderedSimplicialChainComplexHomOfLinear_f,
         orderedSimplicialChainComplexHomOfLinear_f,
-        orderedSimplicialChainComplex_d_eq_homOfLinearMap,
-        orderedSimplicialChainComplexHomOfLinearMap_sub,
-        orderedSimplicialChainComplexHomOfLinearMap_comp,
+        orderedSimplicialChainComplex_d_eq_xHomOfLinearMap,
+        orderedSimplicialChainComplexXHomOfLinearMap_sub,
+        orderedSimplicialChainComplexXHomOfLinearMap_comp,
         boundary_comp_carrierHomotopy_zero hcone hφ hψ hε])
     fun n ↦ by
       rw [HomologicalComplex.sub_f_apply, orderedSimplicialChainComplexHomOfLinear_f,
         orderedSimplicialChainComplexHomOfLinear_f,
-        orderedSimplicialChainComplex_d_eq_homOfLinearMap,
-        orderedSimplicialChainComplex_d_eq_homOfLinearMap,
-        orderedSimplicialChainComplexHomOfLinearMap_sub,
-        orderedSimplicialChainComplexHomOfLinearMap_comp,
-        orderedSimplicialChainComplexHomOfLinearMap_comp,
-        orderedSimplicialChainComplexHomOfLinearMap_add]
-      exact congrArg (orderedSimplicialChainComplexHomOfLinearMap R)
+        orderedSimplicialChainComplex_d_eq_xHomOfLinearMap,
+        orderedSimplicialChainComplex_d_eq_xHomOfLinearMap,
+        orderedSimplicialChainComplexXHomOfLinearMap_sub,
+        orderedSimplicialChainComplexXHomOfLinearMap_comp,
+        orderedSimplicialChainComplexXHomOfLinearMap_comp,
+        orderedSimplicialChainComplexXHomOfLinearMap_add]
+      exact congrArg (orderedSimplicialChainComplexXHomOfLinearMap R)
         ((boundary_comp_carrierHomotopy_succ hcone hinsert hmono hφ hψ hε hφd hψd n).symm.trans
           (add_comm _ _))
 
@@ -313,7 +313,7 @@ def orderedSimplicialChainComplexHomotopyOfCarrier :
 @[simp]
 theorem orderedSimplicialChainComplexHomotopyOfCarrier_hom (n : ℕ) :
     (orderedSimplicialChainComplexHomotopyOfCarrier hφd hψd hcone hinsert hmono hφ hψ hε).hom n
-      (n + 1) = orderedSimplicialChainComplexHomOfLinearMap R (carrierHomotopy R φ ψ v n) := by
+      (n + 1) = orderedSimplicialChainComplexXHomOfLinearMap R (carrierHomotopy R φ ψ v n) := by
   simp [orderedSimplicialChainComplexHomotopyOfCarrier, Homotopy.equivSubZero]
 
 end Homotopy

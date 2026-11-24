@@ -292,7 +292,7 @@ theorem subdivisionChainMap_f (n : ℕ) :
       eqToHom (orderedSimplicialChainComplex_X R n) ≫
         ModuleCat.ofHom (subdivision R b n) ≫ eqToHom (orderedSimplicialChainComplex_X R n).symm :=
   (orderedSimplicialChainComplexHomOfLinear_f R _ _ n).trans
-    (orderedSimplicialChainComplexHomOfLinearMap_def R _)
+    (orderedSimplicialChainComplexXHomOfLinearMap_def R _)
 
 /-- A simplicial map sending the barycenter of every face to a vertex of that face is a left
 inverse of the subdivision chain map. -/
