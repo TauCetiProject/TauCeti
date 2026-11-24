@@ -54,8 +54,10 @@ variable {Ω : Type*} {m m₁ m₂ m₀ : MeasurableSpace Ω} {μ : Measure[m₀
 /-- If the conditional mean of `X` is almost everywhere equal to `Y`, then the conditional variance
 of `X` is the conditional expectation of the squared deviation `(X - Y) ^ 2`, almost everywhere. -/
 theorem condVar_ae_eq_condExp_sub_sq_of_condExp_ae_eq {Y : Ω → ℝ} (h : μ[X | m] =ᵐ[μ] Y) :
-    Var[X; μ | m] =ᵐ[μ] μ[(X - Y) ^ 2 | m] :=
-  condExp_congr_ae (h.mono fun ω hω ↦ by simp [hω])
+    Var[X; μ | m] =ᵐ[μ] μ[(X - Y) ^ 2 | m] := by
+  -- `condVar` is by definition `μ[(X - μ[X | m]) ^ 2 | m]`.
+  rw [condVar]
+  exact condExp_congr_ae (h.mono fun ω hω ↦ by simp only [Pi.pow_apply, Pi.sub_apply, hω])
 
 /-- The conditional variance of a square-integrable `X` is the conditional second moment minus the
 square of the conditional mean, `μ`-almost everywhere, for an arbitrary measure `μ`. This is
@@ -65,7 +67,10 @@ theorem condVar_ae_eq_condExp_sq_sub_sq_condExp' (hm : m ≤ m₀) (hX : MemLp X
   by_cases hσ : SigmaFinite (μ.trim hm); swap
   · simp [condVar_of_not_sigmaFinite hσ, condExp_of_not_sigmaFinite hm hσ]
   by_cases hXi : Integrable X μ; swap
-  · simp [condVar, condExp_of_not_integrable hXi]
+  -- Then `μ[X | m] = 0`, so both sides are `μ[X ^ 2 | m]`.
+  · filter_upwards [condVar_ae_eq_condExp_sub_sq_of_condExp_ae_eq (m := m)
+      (Y := 0) (condExp_of_not_integrable hXi).eventuallyEq] with ω hω
+    simp [hω, condExp_of_not_integrable hXi]
   -- On each finite-measure spanning set of `μ.trim hm`, apply Mathlib's finite-measure identity.
   have hsq : Integrable ((X - μ[X | m]) ^ 2) μ := (hX.sub (hX.condExp one_le_two)).integrable_sq
   refine (isCountablySpanning_spanningSets (μ.trim hm)).null_of_forall_restrict_null ?_ ?_ <;>
@@ -80,7 +85,8 @@ theorem condVar_ae_eq_condExp_sq_sub_sq_condExp' (hm : m ≤ m₀) (hX : MemLp X
       (condExp_restrict_ae_eq_restrict hm hs hsq)
   filter_upwards [condVar_ae_eq_condExp_sq_sub_sq_condExp hm (hX.restrict s), hmean, hvar,
     condExp_restrict_ae_eq_restrict (f := X ^ 2) hm hs hX.integrable_sq] with ω h₁ h₂ h₃ h₄
-  simp_all
+  rw [Pi.sub_apply, Pi.pow_apply] at h₁ ⊢
+  rw [← h₃, h₁, h₂, h₄]
 
 /-- **Conditional law of total variance**: for nested σ-algebras `m₁ ≤ m₂ ≤ m₀` and a
 square-integrable `X`, `μ`-almost everywhere, the conditional variance given `m₁` is the
