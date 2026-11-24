@@ -72,18 +72,6 @@ distinct positions. For the roots of `f`, it is `|disc f|` divided by `|a| ^ (2 
 private noncomputable def pairProd (t : Multiset ℂ) : ℝ :=
   (t.map fun β ↦ ((t.erase β).map fun γ ↦ ‖β - γ‖).prod).prod
 
-private theorem prod_map_norm_sub_nonneg (α : ℂ) (t : Multiset ℂ) :
-    0 ≤ (t.map fun γ ↦ ‖α - γ‖).prod :=
-  Multiset.prod_nonneg fun _ hx ↦ by
-    obtain ⟨γ, -, rfl⟩ := Multiset.mem_map.1 hx
-    exact norm_nonneg _
-
-private theorem one_le_prod_map_max_one_norm (t : Multiset ℂ) :
-    1 ≤ (t.map fun γ ↦ max 1 ‖γ‖).prod :=
-  Multiset.one_le_prod fun _ hx ↦ by
-    obtain ⟨γ, -, rfl⟩ := Multiset.mem_map.1 hx
-    exact le_max_left _ _
-
 /-- Adjoining `α` to `t` multiplies the product over pairs by the square of the product of the
 distances from `α` to the members of `t`: each such distance occurs once with `α` first and once
 with `α` second. -/
@@ -129,8 +117,8 @@ private theorem pairProd_le (t : Multiset ℂ) :
     set P := (t.map fun γ ↦ ‖α - γ‖).prod
     set M := (t.map fun γ ↦ max 1 ‖γ‖).prod
     have hP := prod_map_norm_sub_le α t
-    have hP₀ : 0 ≤ P := prod_map_norm_sub_nonneg α t
-    have hM : 0 ≤ M := zero_le_one.trans (one_le_prod_map_max_one_norm t)
+    have hP₀ : 0 ≤ P := Multiset.prod_map_nonneg fun _ _ ↦ norm_nonneg _
+    have hM : 0 ≤ M := zero_le_one.trans (Multiset.one_le_prod_map fun _ _ ↦ le_max_left _ _)
     rw [hk, Nat.add_sub_cancel] at ih
     rw [hk] at hP
     have hch : (k + 1 + 1).choose 2 = (k + 1) + (k + 1).choose 2 := by
@@ -146,28 +134,16 @@ private theorem pairProd_le (t : Multiset ℂ) :
 
 /-- The discriminant of `f ∈ ℂ[X]` of degree `d` is `|a| ^ (2 d - 2)` times the product of the
 differences of its roots over ordered pairs: this is the root-product formula
-`Polynomial.discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq`, read over the root multiset. -/
-private theorem norm_discr_eq_mul_pairProd (f : ℂ[X]) :
+`Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr` for `f.roots`, in norm. -/
+private theorem norm_discr_eq_mul_pairProd {f : ℂ[X]} (hf₀ : f ≠ 0) :
     ‖f.discr‖ = ‖f.leadingCoeff‖ ^ (2 * f.natDegree - 2) * pairProd f.roots := by
-  obtain ⟨r, hr⟩ := (exists_isRootEnumeration_iff_splits (f := f) (L := ℂ)
-    (ι := Fin f.natDegree) (by simp)).2 (by simpa using IsAlgClosed.splits f)
-  have h := discr_eq_leadingCoeff_pow_mul_prod_roots_sub_sq hr
-  have hroots : f.roots = Finset.univ.val.map r := by simpa using isRootEnumeration_iff.1 hr
-  simp only [Algebra.algebraMap_self, RingHom.id_apply] at h
-  -- Removing the root `r i` from the root multiset leaves the images of the other indices.
-  have herase (i : Fin f.natDegree) :
-      (Finset.univ.val.map r).erase (r i) = (Finset.univ.erase i).val.map r := by
-    rw [Finset.erase_val]
-    conv_lhs => rw [← Multiset.cons_erase (Finset.mem_val.mpr (Finset.mem_univ i))]
-    rw [Multiset.map_cons, Multiset.erase_cons_head]
-  rw [h, norm_mul, norm_pow, norm_prod, hroots]
-  congr 1
-  unfold pairProd
-  simp only [Multiset.map_map, Function.comp_apply, herase, ← Finset.prod_eq_multiset_prod,
-    ← Finset.compl_singleton, norm_prod, norm_pow]
-  -- Fold the product over ordered pairs into the product over pairs `i < j`.
-  rw [← Finset.prod_prod_Ioi_mul_eq_prod_prod_off_diag fun j i ↦ ‖r i - r j‖]
-  simp_rw [norm_sub_rev (r _) (r _), ← sq]
+  have hs : f.Splits := IsAlgClosed.splits f
+  have hd : (f.roots.map fun w ↦ X - C w).prod.natDegree = f.natDegree := by
+    rw [natDegree_multiset_prod_X_sub_C_eq_card, hs.natDegree_eq_card_roots]
+  have h := congrArg norm (Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr f.roots)
+  simp only [norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, Multiset.norm_prod_map] at h
+  conv_lhs => rw [hs.eq_prod_roots]
+  rw [TauCeti.discr_C_mul _ (leadingCoeff_ne_zero.2 hf₀), hd, norm_mul, norm_pow, ← h, pairProd]
 
 /-- **The discriminant against the derivative at one root.** Let `f ∈ ℂ[X]` have degree
 `d ≥ 2` and let `α` be a root of `f`. Then
@@ -188,11 +164,11 @@ theorem norm_discr_le_two_pow_mul_mahlerMeasure_pow_mul_norm_eval_derivative_sq 
   have hd : f.natDegree = k + 2 := by rw [hs.natDegree_eq_card_roots, hst, Multiset.card_cons, hk]
   set P := (t.map fun γ ↦ ‖α - γ‖).prod
   set M := (t.map fun γ ↦ max 1 ‖γ‖).prod
-  have hP₀ : 0 ≤ P := prod_map_norm_sub_nonneg α t
-  have hM₁ : 1 ≤ M := one_le_prod_map_max_one_norm t
+  have hP₀ : 0 ≤ P := Multiset.prod_map_nonneg fun _ _ ↦ norm_nonneg _
+  have hM₁ : 1 ≤ M := Multiset.one_le_prod_map fun _ _ ↦ le_max_left _ _
   -- `|disc f| = |a| ^ (2 d - 2) P ^ 2 (pairs of other roots)` and `|f'(α)| = |a| P`.
   have hdisc : ‖f.discr‖ = ‖f.leadingCoeff‖ ^ (2 * (k + 1)) * P ^ 2 * pairProd t := by
-    rw [norm_discr_eq_mul_pairProd, hst, pairProd_cons, hd,
+    rw [norm_discr_eq_mul_pairProd hf₀, hst, pairProd_cons, hd,
       show 2 * (k + 2) - 2 = 2 * (k + 1) by omega, mul_assoc]
   have hderiv : ‖f.derivative.eval α‖ = ‖f.leadingCoeff‖ * P := by
     rw [hs.eval_root_derivative_eq_leadingCoeff_mul hαs, norm_mul, Multiset.norm_prod_map, ← ht]
