@@ -11,8 +11,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
 /-!
 # Examples for endomorphisms of matrix algebras over a local ring
 
-These are the checks of ArithmeticGaloisRepresentations §5.5 (automorphisms of matrix algebras
-over a local ring) on `AlgHom.exists_innerAut_eq_of_isLocalRing`:
+These are examples for `AlgHom.exists_innerAut_eq_of_isLocalRing` in small dimensions and over
+`ℤ₃`:
 
 * for `d = 0` the only endomorphism is conjugation by the only element of `GL₀(R)`;
 * for `d = 1` every endomorphism is the identity, as `M₁(R)` consists of scalars;
@@ -49,13 +49,22 @@ noncomputable def unipotent : GL (Fin 2) ℤ_[3] where
   val_inv := by simp [Matrix.one_fin_two]
   inv_val := by simp [Matrix.one_fin_two]
 
+/-- The underlying matrix of `unipotent`. -/
+@[simp]
+theorem coe_unipotent : (unipotent : Matrix (Fin 2) (Fin 2) ℤ_[3]) = !![1, 1; 0, 1] :=
+  (rfl)
+
+/-- The underlying matrix of the inverse of `unipotent`. -/
+theorem coe_unipotent_inv : ((unipotent⁻¹ : GL (Fin 2) ℤ_[3]) : Matrix (Fin 2) (Fin 2) ℤ_[3]) =
+    !![1, -1; 0, 1] :=
+  (rfl)
+
 /-- Over `ℤ₃`, conjugation by `!![1, 1; 0, 1]` sends `E₀₀` to `!![1, -1; 0, 0]`. -/
 example : innerAut unipotent (single 0 0 1) = !![1, -1; 0, 0] := by
   have hE : (single 0 0 1 : Matrix (Fin 2) (Fin 2) ℤ_[3]) = !![1, 0; 0, 0] := by
     ext i j
     fin_cases i <;> fin_cases j <;> rfl
-  rw [innerAut_apply, hE]
-  change !![1, 1; 0, 1] * !![1, 0; 0, 0] * !![1, -1; 0, 1] = _
+  rw [innerAut_apply, hE, coe_unipotent, coe_unipotent_inv]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
 
