@@ -127,11 +127,13 @@ private theorem contMDiff_sphereTangentSubbundle_symm {k : ℕ∞ω} :
     ContMDiff ((𝓡 n).prod 𝓘(ℝ, Fin n → ℝ)) (𝓡 n).tangent k
       (fun q : TotalSpace (Fin n → ℝ) (fun x : sphere (0 : E) 1 ↦ (ℝ ∙ (x : E))ᗮ) ↦
         TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) q.proj
-          ((sphereTangentEquiv (n := n) q.proj).symm.toContinuousLinearEquiv q.snd)) :=
+          ((sphereTangentEquiv (n := n) q.proj).symm.toContinuousLinearEquiv q.snd)) := by
   have hincl := Bundle.Trivial.contMDiff_mk_iff.mp
     ((hasLocalContMDiffSubbundleFrames_orthogonalSpanSphere (E := E) (n := n)
-      (k := ω)).contMDiff_totalSpace_inclusion.of_le le_top)
-  contMDiff_sphereTangentEquiv_symm hincl.1 hincl.2 fun q ↦ q.snd.property
+      (k := ω)).contMDiff_totalSpace_inclusion.of_le (le_top : k ≤ ω))
+  have h := contMDiff_sphereTangentEquiv_symm hincl.1 hincl.2 fun q ↦ q.snd.property
+  exact h.congr fun q ↦ congrArg (TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) q.proj)
+    (by simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, Subtype.coe_eta])
 
 /-- **Smooth isomorphism between `TSⁿ` and the orthogonal-complement subbundle `x^⊥`.**
 Differentiating the ambient inclusion identifies `TangentBundle (𝓡 n) (sphere (0 : E) 1)` with the
@@ -201,11 +203,18 @@ def sphereTangentProdTrivialDiffeomorph {k : ℕ∞ω} :
         Bundle.Trivial (sphere (0 : E) 1) ℝ) ≃ₘ^k⟮(𝓡 n).prod
           𝓘(ℝ, EuclideanSpace ℝ (Fin n) × ℝ), (𝓡 n).prod 𝓘(ℝ, E)⟯
       TotalSpace E (Bundle.Trivial (sphere (0 : E) 1) E) :=
-  bundleDiffeomorph (fun x ↦ sphereTangentProdRealEquiv (E := E) (n := n) x)
-    (Bundle.Trivial.contMDiff_mk_iff.mpr ⟨Bundle.contMDiff_proj _,
+  bundleDiffeomorph (fun x ↦ sphereTangentProdRealEquiv (E := E) (n := n) x) <| by
+    have h : ContMDiff
+        ((𝓡 n).prod 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × ℝ)) 𝓘(ℝ, E) k
+        (fun p : TotalSpace (EuclideanSpace ℝ (Fin n) × ℝ)
+            ((fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) ×ᵇ
+              Bundle.Trivial (sphere (0 : E) 1) ℝ) ↦
+          (sphereTangentEquiv p.proj p.snd.1 : E) + (p.snd.2 : ℝ) • (p.proj : E)) :=
       (contMDiff_coe_sphereTangentEquiv.comp Bundle.Prod.contMDiff_fst).add
         ((Bundle.Trivial.contMDiff_mk_iff.mp Bundle.Prod.contMDiff_snd).2.smul
-          (contMDiff_coe_sphere.comp (Bundle.contMDiff_proj _)))⟩)
+          (contMDiff_coe_sphere.comp (Bundle.contMDiff_proj _)))
+    exact (Bundle.Trivial.contMDiff_mk_iff.mpr ⟨Bundle.contMDiff_proj _, h⟩).congr fun p ↦
+      congrArg (TotalSpace.mk' E p.proj) (sphereTangentProdRealEquiv_apply p.proj p.snd)
 
 /-- Forward formula for `TauCeti.sphereTangentProdTrivialDiffeomorph`. -/
 @[simp]
