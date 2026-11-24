@@ -9,6 +9,7 @@ public import TauCeti.Analysis.MellinTransform.CutoffKernel
 import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.MellinTransform.Decay
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 
 /-!
 # Delta spikes and smoothed cutoffs for the measure `dx/x`
@@ -16,11 +17,17 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 A *bump* is a function `ν : ℝ → ℝ` with `ν ≥ 0`, support in `[1/2, 2]` and
 `∫_{(0,∞)} ν(x) dx/x = 1`. For `ε > 0` its *delta spike* is `ν_ε(x) = ε⁻¹ ν(x^{1/ε})` for
 `x > 0` (and `0` for `x ≤ 0`): a bump supported in `[2^{-ε}, 2^ε]`, of `dx/x`-mass `1`, whose
-Mellin transform at `s` is `mellin ν (εs)`. As `ε → 0⁺` the spikes concentrate at `1`.
+Mellin transform at `s` is `mellin ν (εs)`. As `ε → 0⁺` the spikes concentrate at `1`, and
+Mellin convolution with them is an approximate identity for `dx/x`: for `ν ≥ 0` on `(0, ∞)` of
+`dx/x`-mass `1` vanishing there off a compact interval `[a, b] ⊂ (0, ∞)`, the convolution with
+`f` tends to `f x` at every `x > 0` where `f` is continuous (for `f` a.e. strongly measurable on
+`(0, ∞)`), uniformly on compact subsets of `(0, ∞)` when `f` is continuous there. Both follow from
+the bound `‖(ν_ε ⋆ f)(x) - f(x)‖ ≤ sup_{y ∈ [a^ε, b^ε]} ‖f(x/y) - f(x)‖`.
 
 The *smoothed cutoff* `χ_ε(x) = ∫_{(x,∞)} ν_ε(z) dz/z` (for `x > 0`, and `0` for `x ≤ 0`) is
 the Mellin convolution of the sharp cutoff `1_(0,1]` with `ν_ε`. It takes values in `[0, 1]`,
-equals `1` on `(0, 2^{-ε}]` and `0` on `[2^ε, ∞)`, and its Mellin transform is
+equals `1` on `(0, 2^{-ε}]` and `0` on `[2^ε, ∞)`, is antitone on `(0, ∞)`, takes the value
+`1/2` at `1` when `ν(1/x) = ν(x)`, and its Mellin transform is
 `mellin ν (εs) / s` on `Re s > 0`: the transform `1/s` of the sharp cutoff, times the factor
 `mellin ν (εs)`, whose value `mellin ν ε` at `s = 1` is within `2 log 2 · ε` of `mellin ν 0 = 1`.
 For `ν` of class `C^k` the transform decays like `|s|⁻¹ (1 + ε|s|)⁻ᵏ` on vertical strips,
@@ -35,16 +42,22 @@ how such sums are compared with zero-free regions of their Dirichlet series.
 
 ## Main results
 
-* `TauCeti.support_deltaSpike_subset`, `TauCeti.integral_deltaSpike_div`: the spike is supported
-  in `[2^{-ε}, 2^ε]` and has the same `dx/x`-mass as `ν`.
+* `TauCeti.support_deltaSpike_subset`, `TauCeti.integral_deltaSpike_div`: the spike of a function
+  vanishing on `(0, ∞)` off `[a, b]` is supported in `[a^ε, b^ε]`, and the spike has the same
+  `dx/x`-mass as `ν`.
 * `TauCeti.mellin_deltaSpike`: `mellin ν_ε s = mellin ν (εs)`.
 * `TauCeti.norm_mellin_sub_one_le`: `‖mellin ν ε - 1‖ ≤ 2 log 2 · ε` for a bump and `0 ≤ ε ≤ 1`.
+* `TauCeti.norm_mellinConv_deltaSpike_sub_le`, `TauCeti.tendsto_mellinConv_deltaSpike`,
+  `TauCeti.tendstoUniformlyOn_mellinConv_deltaSpike`: the approximate identity, quantitatively,
+  pointwise, and uniformly on compact subsets of `(0, ∞)`.
 * `TauCeti.smoothCutoff_eq_one`, `TauCeti.smoothCutoff_eq_zero`, `TauCeti.smoothCutoff_nonneg`,
-  `TauCeti.smoothCutoff_le_one`: the shape of the cutoff.
+  `TauCeti.smoothCutoff_le_one`, `TauCeti.smoothCutoff_antitoneOn`: the shape of the cutoff.
+* `TauCeti.smoothCutoff_one_eq_half_of_symm`: the value `1/2` at `1` for a bump invariant under
+  `x ↦ x⁻¹`.
 * `TauCeti.smoothCutoff_eq_mellinCutoffKernel`: the cutoff is the Mellin cutoff kernel
   `TauCeti.mellinCutoffKernel` of the spike.
-* `TauCeti.smoothCutoff_eq_integral_mul_div`: the cutoff as the Mellin convolution
-  `1_(0,1] ⋆ ν_ε`.
+* `TauCeti.smoothCutoff_eq_mellinConv`: the cutoff as the Mellin convolution
+  `TauCeti.mellinConv` of `1_(0,1]` with `ν_ε`.
 * `TauCeti.continuousOn_smoothCutoff`: the cutoff is continuous on `(0, ∞)`.
 * `TauCeti.mellin_smoothCutoff`, `TauCeti.hasMellin_smoothCutoff`:
   `mellin χ_ε s = mellin ν (εs) / s` for `Re s > 0`, with absolute convergence.
@@ -61,6 +74,7 @@ how such sums are compared with zero-free regions of their Dirichlet series.
 public section
 
 open Set MeasureTheory Complex Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -85,29 +99,47 @@ theorem deltaSpike_of_nonpos (hx : x ≤ 0) : deltaSpike ν ε x = 0 := by
 theorem deltaSpike_one_of_pos (hx : 0 < x) : deltaSpike ν 1 x = ν x := by
   simp [hx]
 
-theorem deltaSpike_nonneg (hν : ∀ x, 0 ≤ ν x) (hε : 0 ≤ ε) (x : ℝ) : 0 ≤ deltaSpike ν ε x := by
+theorem deltaSpike_nonneg (hν : ∀ x > 0, 0 ≤ ν x) (hε : 0 ≤ ε) (x : ℝ) :
+    0 ≤ deltaSpike ν ε x := by
   unfold deltaSpike
-  split_ifs
-  · exact mul_nonneg (inv_nonneg.mpr hε) (hν _)
+  split_ifs with hx
+  · exact mul_nonneg (inv_nonneg.mpr hε) (hν _ (Real.rpow_pos_of_pos hx _))
   · exact le_rfl
 
-/-- The spike of a function supported in `[1/2, 2]` is supported in `[2^{-ε}, 2^ε]`. -/
-theorem support_deltaSpike_subset (hνs : Function.support ν ⊆ Icc (1 / 2) 2) (hε : 0 < ε) :
-    Function.support (deltaSpike ν ε) ⊆ Icc (2 ^ (-ε)) (2 ^ ε) := by
+/-- At scale `ε = 0` the spike is identically zero, because `0⁻¹ = 0` in `ℝ`. -/
+@[simp]
+theorem deltaSpike_scale_zero (ν : ℝ → ℝ) (x : ℝ) : deltaSpike ν 0 x = 0 := by
+  simp [deltaSpike]
+
+/-- The spike of a function invariant under `x ↦ x⁻¹` on `(0, ∞)` is invariant under it too. -/
+theorem deltaSpike_inv_of_symm (hsym : ∀ x > 0, ν x⁻¹ = ν x) (hx : 0 < x) :
+    deltaSpike ν ε x⁻¹ = deltaSpike ν ε x := by
+  rw [deltaSpike_of_pos (inv_pos.mpr hx), deltaSpike_of_pos hx, Real.inv_rpow hx.le,
+    hsym _ (Real.rpow_pos_of_pos hx _)]
+
+/-- If `ν` vanishes on `(0, ∞)` off `[a, b]` with `0 ≤ a`, its spike is supported in
+`[a^ε, b^ε]`. -/
+theorem support_deltaSpike_subset {a b : ℝ} (ha : 0 ≤ a)
+    (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc a b) (hε : 0 < ε) :
+    Function.support (deltaSpike ν ε) ⊆ Icc (a ^ ε) (b ^ ε) := by
   intro x hx
   have hx0 : 0 < x := by
     by_contra h
     exact hx (deltaSpike_of_nonpos (not_lt.mp h))
   rw [Function.mem_support, deltaSpike_of_pos hx0] at hx
-  obtain ⟨h1, h2⟩ := hνs (right_ne_zero_of_mul hx)
+  obtain ⟨h1, h2⟩ := hνs ⟨right_ne_zero_of_mul hx, Real.rpow_pos_of_pos hx0 _⟩
   have hxe : (x ^ ε⁻¹) ^ ε = x := Real.rpow_inv_rpow hx0.le hε.ne'
   constructor
-  · calc (2 : ℝ) ^ (-ε) = (1 / 2) ^ ε := by
-          rw [Real.rpow_neg zero_le_two, one_div, Real.inv_rpow zero_le_two]
-      _ ≤ (x ^ ε⁻¹) ^ ε := Real.rpow_le_rpow (by norm_num) h1 hε.le
+  · calc a ^ ε ≤ (x ^ ε⁻¹) ^ ε := Real.rpow_le_rpow ha h1 hε.le
       _ = x := hxe
   · calc x = (x ^ ε⁻¹) ^ ε := hxe.symm
-      _ ≤ 2 ^ ε := Real.rpow_le_rpow (Real.rpow_nonneg hx0.le _) h2 hε.le
+      _ ≤ b ^ ε := Real.rpow_le_rpow (Real.rpow_nonneg hx0.le _) h2 hε.le
+
+/-- The spike of a function supported in `[1/2, 2]` is supported in `[2^{-ε}, 2^ε]`. -/
+private lemma support_deltaSpike_subset_two (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
+    (hε : 0 < ε) : Function.support (deltaSpike ν ε) ⊆ Icc (2 ^ (-ε)) (2 ^ ε) := by
+  have h := support_deltaSpike_subset (by norm_num) (inter_subset_left.trans hνs) hε
+  rwa [one_div, Real.inv_rpow zero_le_two, ← Real.rpow_neg zero_le_two] at h
 
 private lemma ofReal_deltaSpike_of_pos (hx : 0 < x) :
     (deltaSpike ν ε x : ℂ) = ε⁻¹ • (ν (x ^ ε⁻¹) : ℂ) := by
@@ -145,11 +177,19 @@ theorem integral_deltaSpike_div (ν : ℝ → ℝ) (hε : 0 < ε) :
   have h := mellin_deltaSpike ν hε 0
   rwa [mul_zero, mellin_ofReal_zero, mellin_ofReal_zero, ofReal_inj] at h
 
+/-- The spike has integrable `dx/x`-density exactly when `ν` does. -/
+theorem integrableOn_deltaSpike_div_iff (hε : 0 < ε) :
+    IntegrableOn (fun x ↦ deltaSpike ν ε x / x) (Ioi 0) ↔
+      IntegrableOn (fun x ↦ ν x / x) (Ioi 0) := by
+  rw [← mellinConvergent_ofReal_zero_iff, ← mellinConvergent_ofReal_zero_iff,
+    mellinConvergent_deltaSpike_iff hε, mul_zero]
+
 /-- For a bump `ν` (`ν ≥ 0`, supported in `[1/2, 2]`, of `dx/x`-mass `1`) and `0 ≤ ε ≤ 1`,
 `‖mellin ν ε - 1‖ ≤ 2 log 2 · ε`. This is the distance between the Mellin transform of the spike
 `ν_ε` at `s = 1` and that of the sharp cutoff. -/
-theorem norm_mellin_sub_one_le (hν0 : ∀ x, 0 ≤ ν x) (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
-    (hνm : ∫ x in Ioi 0, ν x / x = 1) (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) :
+theorem norm_mellin_sub_one_le (hν0 : ∀ x > 0, 0 ≤ ν x)
+    (hνs : Function.support ν ⊆ Icc (1 / 2) 2) (hνm : ∫ x in Ioi 0, ν x / x = 1) (hε0 : 0 ≤ ε)
+    (hε1 : ε ≤ 1) :
     ‖mellin (fun x ↦ (ν x : ℂ)) ε - 1‖ ≤ 2 * Real.log 2 * ε := by
   have hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0) :=
     Integrable.of_integral_ne_zero (hνm ▸ one_ne_zero)
@@ -179,15 +219,160 @@ theorem norm_mellin_sub_one_le (hν0 : ∀ x, 0 ≤ ν x) (hνs : Function.suppo
     rw [← ofReal_one, ← ofReal_sub, ← ofReal_cpow hx0.le, Real.rpow_sub_one hx0.ne']
     simp [cpow_neg_one]
     ring
-  have hq : 0 ≤ ν x / x := div_nonneg (hν0 x) hx0.le
+  have hq : 0 ≤ ν x / x := div_nonneg (hν0 x hx0) hx0.le
   rw [key, norm_real, Real.norm_eq_abs, abs_mul, abs_of_nonneg hq]
   gcongr
+
+/-! ### The approximate identity for `dx/x` -/
+
+/-- A function of `dx/x`-mass `1` vanishing on `(0, ∞)` off `[a, b]` has `0 < b`. -/
+private lemma pos_of_support_inter_Ioi_subset_Icc {a b : ℝ}
+    (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc a b) (hνm : ∫ x in Ioi 0, ν x / x = 1) : 0 < b := by
+  by_contra hb
+  refine one_ne_zero (hνm.symm.trans (setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ ?_))
+  have hνx : ν x = 0 := Function.notMem_support.mp fun h ↦
+    (not_lt.mp hb).not_gt ((hx : 0 < x).trans_le (hνs ⟨h, hx⟩).2)
+  rw [hνx, zero_div]
+
+/-- If `ν ≥ 0` on `(0, ∞)` vanishes there off `[a, b]` (`0 ≤ a`) and has `dx/x`-mass `1`, `ε > 0`,
+`x > 0`, `f` is a.e. strongly measurable on `(0, ∞)`, and `‖f (x / y) - f x‖ ≤ M` for every `y`
+in the support interval `[a^ε, b^ε]` of the spike, then the Mellin convolution of the spike with
+`f` is within `M` of `f x` at `x`. -/
+theorem norm_mellinConv_deltaSpike_sub_le {a b : ℝ} (ha : 0 ≤ a) (hν0 : ∀ x > 0, 0 ≤ ν x)
+    (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc a b) (hνm : ∫ x in Ioi 0, ν x / x = 1) {f : ℝ → ℂ}
+    (hf : AEStronglyMeasurable f (volume.restrict (Ioi 0))) {M : ℝ} (hε : 0 < ε) (hx : 0 < x)
+    (hbd : ∀ y ∈ Icc (a ^ ε) (b ^ ε), ‖f (x / y) - f x‖ ≤ M) :
+    ‖mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x - f x‖ ≤ M := by
+  -- In logarithmic coordinates `x = e^{-u}` the convolution is an ordinary convolution with the
+  -- spike `φ`, a probability density supported where `e^{-v} ∈ [a^ε, b^ε]`.
+  set u := -Real.log x
+  have hxu : Real.exp (-u) = x := by rw [neg_neg, Real.exp_log hx]
+  set φ : ℝ → ℂ := fun v ↦ (deltaSpike ν ε (Real.exp (-v)) : ℂ)
+  set g : ℝ → ℂ := fun v ↦ f (Real.exp (-v))
+  set S : Set ℝ := (fun v ↦ Real.exp (-v)) ⁻¹' Icc (a ^ ε) (b ^ ε)
+  have hφ1 : ∫ v, φ v = 1 := by
+    have h := mellin_eq_integral_exp_smul (fun x ↦ (deltaSpike ν ε x : ℂ)) 0
+    rw [mellin_deltaSpike ν hε, mul_zero, mellin_ofReal_zero, hνm, ofReal_one] at h
+    simpa [φ] using h.symm
+  have hφi : Integrable φ := Integrable.of_integral_ne_zero (hφ1 ▸ one_ne_zero)
+  have hφS : Function.support φ ⊆ S := fun v hv ↦
+    support_deltaSpike_subset ha hνs hε (by simpa [φ] using hv)
+  have hgm : AEStronglyMeasurable g volume :=
+    (hf.comp_quasiMeasurePreserving quasiMeasurePreserving_exp).comp_quasiMeasurePreserving
+      (Measure.measurePreserving_neg volume).quasiMeasurePreserving
+  -- On `S`, `g (u - v) = f (x / e^{-v})`.
+  have hgS {v : ℝ} : g (u - v) = f (x / Real.exp (-v)) := by
+    simp only [g, ← hxu, ← Real.exp_sub]
+    ring_nf
+  have hconv : ConvolutionExistsAt φ g u (ContinuousLinearMap.mul ℝ ℂ) volume := by
+    refine BddAbove.convolutionExistsAt (s := S) _ ⟨‖f x‖ + M, ?_⟩
+      (measurableSet_Icc.preimage (by fun_prop)) (fun v hv ↦ hφS fun h ↦ hv (by simp [h]))
+      hφi.integrableOn hgm
+    rintro _ ⟨w, hw, rfl⟩
+    have h := hbd (Real.exp (-(u - w))) hw
+    rw [← hgS, sub_sub_cancel] at h
+    exact norm_le_norm_add_const_of_dist_le (by rwa [dist_eq_norm])
+  -- Subtract `f x = ∫ φ v • f x` and bound the integrand pointwise by `‖φ v‖ * M`.
+  have hsub : mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x - f x =
+      ∫ v, φ v * (g (u - v) - f x) := by
+    rw [← hxu, mellinConv_exp_neg_eq_convolution, hxu, convolution_def]
+    conv_lhs => rhs; rw [← one_mul (f x), ← hφ1, ← integral_mul_const]
+    rw [← integral_sub hconv.integrable (hφi.mul_const _)]
+    simp [mul_sub]
+  have hnorm : ∫ v, ‖φ v‖ = 1 := by
+    have hφr : ∀ v, ‖φ v‖ = deltaSpike ν ε (Real.exp (-v)) := fun v ↦ by
+      simp [φ, abs_of_nonneg (deltaSpike_nonneg hν0 hε.le _)]
+    have h : ((∫ v, deltaSpike ν ε (Real.exp (-v)) : ℝ) : ℂ) = 1 := by
+      rw [← integral_complex_ofReal]
+      exact hφ1
+    simp_rw [hφr]
+    exact_mod_cast h
+  rw [hsub]
+  calc ‖∫ v, φ v * (g (u - v) - f x)‖ ≤ ∫ v, ‖φ v‖ * M := by
+        refine norm_integral_le_of_norm_le (hφi.norm.mul_const M)
+          (Eventually.of_forall fun v ↦ ?_)
+        rw [norm_mul]
+        by_cases hv : φ v = 0
+        · simp [hv]
+        refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+        rw [hgS]
+        exact hbd _ (hφS hv)
+    _ = M := by rw [integral_mul_const, hnorm, one_mul]
+
+/-- For `0 < a` and `0 < b`, the interval `[a^ε, b^ε]` lies in any given neighbourhood
+`(1 - δ, 1 + δ)` of `1` for all small enough `ε > 0`. -/
+private lemma eventually_Icc_rpow_subset_ball {a b δ : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hδ : 0 < δ) : ∀ᶠ ε in 𝓝[>] (0 : ℝ), Icc (a ^ ε) (b ^ ε) ⊆ Metric.ball 1 δ := by
+  have h {c : ℝ} (hc : 0 < c) : Tendsto (fun ε : ℝ ↦ c ^ ε) (𝓝[>] 0) (𝓝 1) := by
+    have h := (Real.continuousAt_const_rpow (b := 0) hc.ne').tendsto.mono_left
+      (nhdsWithin_le_nhds (s := Ioi 0))
+    rwa [Real.rpow_zero] at h
+  filter_upwards [(h ha).eventually (Ioi_mem_nhds (by linarith : 1 - δ < 1)),
+    (h hb).eventually (Iio_mem_nhds (by linarith : (1 : ℝ) < 1 + δ))] with ε h1 h2 y hy
+  rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
+  exact ⟨by linarith [hy.2, mem_Iio.mp h2], by linarith [hy.1, mem_Ioi.mp h1]⟩
+
+/-- **Approximate identity for `dx/x`, pointwise.** If `ν ≥ 0` on `(0, ∞)` vanishes there off
+`[a, b]` (`0 < a`) and has `dx/x`-mass `1`, and `f` is a.e. strongly measurable on `(0, ∞)` and
+continuous at `x > 0`, then the Mellin convolution of the spike `ν_ε` with `f` tends to `f x` at
+`x` as `ε → 0⁺`. -/
+theorem tendsto_mellinConv_deltaSpike {a b : ℝ} (ha : 0 < a) (hν0 : ∀ x > 0, 0 ≤ ν x)
+    (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc a b) (hνm : ∫ x in Ioi 0, ν x / x = 1) {f : ℝ → ℂ}
+    (hf : AEStronglyMeasurable f (volume.restrict (Ioi 0))) (hx : 0 < x)
+    (hcont : ContinuousAt f x) :
+    Tendsto (fun ε ↦ mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x) (𝓝[>] 0) (𝓝 (f x)) := by
+  have hc : ContinuousAt (fun y ↦ f (x / y)) 1 := by
+    have h : ContinuousAt f (x / 1) := by rwa [div_one]
+    exact h.comp (continuousAt_const.div continuousAt_id one_ne_zero)
+  rw [Metric.tendsto_nhds]
+  intro η hη
+  obtain ⟨δ, hδ, hδf⟩ := Metric.continuousAt_iff.mp hc (η / 2) (half_pos hη)
+  filter_upwards [self_mem_nhdsWithin, eventually_Icc_rpow_subset_ball ha
+    (pos_of_support_inter_Ioi_subset_Icc hνs hνm) hδ] with ε hε hsub
+  rw [dist_eq_norm]
+  refine (norm_mellinConv_deltaSpike_sub_le ha.le hν0 hνs hνm hf hε hx fun y hy ↦ ?_).trans_lt
+    (half_lt_self hη)
+  simpa [dist_eq_norm] using (hδf (hsub hy)).le
+
+/-- **Approximate identity for `dx/x`, uniformly on compact sets.** If `ν ≥ 0` on `(0, ∞)`
+vanishes there off `[a, b]` (`0 < a`) and has `dx/x`-mass `1`, and `f` is continuous on `(0, ∞)`,
+then the Mellin convolution of the spike `ν_ε` with `f` tends to `f` uniformly on every compact
+`K ⊆ (0, ∞)` as `ε → 0⁺`. -/
+theorem tendstoUniformlyOn_mellinConv_deltaSpike {a b : ℝ} (ha : 0 < a)
+    (hν0 : ∀ x > 0, 0 ≤ ν x) (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc a b)
+    (hνm : ∫ x in Ioi 0, ν x / x = 1) {f : ℝ → ℂ} (hf : ContinuousOn f (Ioi 0)) {K : Set ℝ}
+    (hK : IsCompact K) (hK0 : K ⊆ Ioi 0) :
+    TendstoUniformlyOn (fun ε x ↦ mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x) f
+      (𝓝[>] 0) K := by
+  -- `(x, y) ↦ f (x / y)` is uniformly continuous on the compact set `K × [1/2, 2]`.
+  have hI : ∀ y ∈ Icc (1 / 2 : ℝ) 2, 0 < y := fun y hy ↦ lt_of_lt_of_le (by norm_num) hy.1
+  have hF : ContinuousOn (fun p : ℝ × ℝ ↦ f (p.1 / p.2)) (K ×ˢ Icc (1 / 2) 2) :=
+    hf.comp (continuousOn_fst.div continuousOn_snd fun p hp ↦ (hI _ hp.2).ne')
+      fun p hp ↦ div_pos (hK0 hp.1) (hI _ hp.2)
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro η hη
+  obtain ⟨δ, hδ, hδf⟩ := Metric.uniformContinuousOn_iff.mp
+    ((hK.prod isCompact_Icc).uniformContinuousOn_of_continuous hF) (η / 2) (half_pos hη)
+  filter_upwards [self_mem_nhdsWithin, eventually_Icc_rpow_subset_ball ha
+    (pos_of_support_inter_Ioi_subset_Icc hνs hνm) (lt_min hδ (by norm_num : (0 : ℝ) < 1 / 2))]
+    with ε hε hsub x hxK
+  rw [dist_comm, dist_eq_norm]
+  refine (norm_mellinConv_deltaSpike_sub_le ha.le hν0 hνs hνm
+    (hf.aestronglyMeasurable measurableSet_Ioi) hε (hK0 hxK) fun y hy ↦ ?_).trans_lt
+    (half_lt_self hη)
+  have hy1 : dist y 1 < min δ (1 / 2) := hsub hy
+  have hyI : y ∈ Icc (1 / 2 : ℝ) 2 := by
+    rw [Real.dist_eq, abs_lt] at hy1
+    constructor <;> linarith [min_le_right δ (1 / 2)]
+  have h := hδf (x, y) ⟨hxK, hyI⟩ (x, 1) ⟨hxK, by norm_num⟩
+    (by simpa [Prod.dist_eq] using hy1.trans_le (min_le_left _ _))
+  simpa [dist_eq_norm] using h.le
 
 /-! ### Smoothed cutoffs -/
 
 /-- The smoothed cutoff `χ_ε(x) = ∫_{(x,∞)} ν_ε(z) dz/z` for `x > 0`, and `0` for `x ≤ 0`, where
 `ν_ε = deltaSpike ν ε`. For `x > 0` it is the Mellin convolution of `1_(0,1]` with the spike
-(`TauCeti.smoothCutoff_eq_integral_mul_div`). -/
+(`TauCeti.smoothCutoff_eq_mellinConv`). -/
 noncomputable def smoothCutoff (ν : ℝ → ℝ) (ε x : ℝ) : ℝ :=
   if 0 < x then ∫ z in Ioi x, deltaSpike ν ε z / z else 0
 
@@ -199,7 +384,7 @@ theorem smoothCutoff_of_pos (hx : 0 < x) :
 theorem smoothCutoff_of_nonpos (hx : x ≤ 0) : smoothCutoff ν ε x = 0 := by
   simp [smoothCutoff, hx.not_gt]
 
-theorem smoothCutoff_nonneg (hν : ∀ x, 0 ≤ ν x) (hε : 0 ≤ ε) (x : ℝ) :
+theorem smoothCutoff_nonneg (hν : ∀ x > 0, 0 ≤ ν x) (hε : 0 ≤ ε) (x : ℝ) :
     0 ≤ smoothCutoff ν ε x := by
   unfold smoothCutoff
   split_ifs with hx
@@ -208,7 +393,7 @@ theorem smoothCutoff_nonneg (hν : ∀ x, 0 ≤ ν x) (hε : 0 ≤ ε) (x : ℝ)
   · exact le_rfl
 
 /-- For a bump `ν` the smoothed cutoff is at most `1`. -/
-theorem smoothCutoff_le_one (hν : ∀ x, 0 ≤ ν x) (hνm : ∫ x in Ioi 0, ν x / x = 1)
+theorem smoothCutoff_le_one (hν : ∀ x > 0, 0 ≤ ν x) (hνm : ∫ x in Ioi 0, ν x / x = 1)
     (hε : 0 < ε) (x : ℝ) : smoothCutoff ν ε x ≤ 1 := by
   rcases le_or_gt x 0 with hx | hx
   · rw [smoothCutoff_of_nonpos hx]
@@ -230,7 +415,7 @@ theorem smoothCutoff_eq_one (hνs : Function.support ν ⊆ Icc (1 / 2) 2)
     (Ioi_subset_Ioi hx0.le) ?_).symm
   filter_upwards [Measure.ae_ne volume ((2 : ℝ) ^ (-ε))] with z hz hzm
   have h0 : deltaSpike ν ε z = 0 := Function.notMem_support.mp fun h ↦
-    hz (le_antisymm ((not_lt.mp hzm.2).trans hx) (support_deltaSpike_subset hνs hε h).1)
+    hz (le_antisymm ((not_lt.mp hzm.2).trans hx) (support_deltaSpike_subset_two hνs hε h).1)
   rw [h0, zero_div]
 
 /-- For `ν` supported in `[1/2, 2]` the smoothed cutoff vanishes on `[2^ε, ∞)`. -/
@@ -239,8 +424,62 @@ theorem smoothCutoff_eq_zero (hνs : Function.support ν ⊆ Icc (1 / 2) 2) (hε
   rw [smoothCutoff_of_pos ((Real.rpow_pos_of_pos two_pos ε).trans_le hx)]
   refine setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ ?_
   have h0 : deltaSpike ν ε z = 0 := Function.notMem_support.mp fun h ↦
-    (hx.trans_lt hz).not_ge (support_deltaSpike_subset hνs hε h).2
+    (hx.trans_lt hz).not_ge (support_deltaSpike_subset_two hνs hε h).2
   rw [h0, zero_div]
+
+/-- At scale `ε = 0` the smoothed cutoff is identically zero, as the spike is. -/
+@[simp]
+theorem smoothCutoff_scale_zero (ν : ℝ → ℝ) (x : ℝ) : smoothCutoff ν 0 x = 0 := by
+  simp [smoothCutoff]
+
+/-- If `ν ≥ 0` on `(0, ∞)` with `x ↦ ν x / x` integrable there and `ε > 0`, the smoothed cutoff is
+antitone on `(0, ∞)`. -/
+theorem smoothCutoff_antitoneOn (hν : ∀ x > 0, 0 ≤ ν x)
+    (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (hε : 0 < ε) :
+    AntitoneOn (smoothCutoff ν ε) (Ioi 0) := by
+  intro x hx y hy hxy
+  rw [smoothCutoff_of_pos hx, smoothCutoff_of_pos hy]
+  exact setIntegral_mono_set
+    (((integrableOn_deltaSpike_div_iff hε).mpr hνi).mono_set (Ioi_subset_Ioi (le_of_lt hx)))
+    ((ae_restrict_mem measurableSet_Ioi).mono fun z hz ↦
+      div_nonneg (deltaSpike_nonneg hν hε.le z) (hx.trans hz).le)
+    (Eventually.of_forall (Ioi_subset_Ioi hxy))
+
+/-- If `ν` is invariant under `x ↦ x⁻¹` on `(0, ∞)` and has `dx/x`-mass `1`, then for `ε > 0` the
+smoothed cutoff takes the value `1/2` at `1`: the spike has the same mass on `(0, 1]` as on
+`(1, ∞)`. -/
+theorem smoothCutoff_one_eq_half_of_symm (hsym : ∀ x > 0, ν x⁻¹ = ν x)
+    (hνm : ∫ x in Ioi 0, ν x / x = 1) (hε : 0 < ε) : smoothCutoff ν ε 1 = 1 / 2 := by
+  have hint : IntegrableOn (fun z ↦ deltaSpike ν ε z / z) (Ioi 0) :=
+    (integrableOn_deltaSpike_div_iff hε).mpr (Integrable.of_integral_ne_zero (hνm ▸ one_ne_zero))
+  -- The total mass `1` splits as the mass on `(0, 1]` plus the mass on `(1, ∞)`.
+  have hsplit := intervalIntegral.integral_interval_add_Ioi hint
+    (hint.mono_set (Ioi_subset_Ioi zero_le_one))
+  rw [intervalIntegral.integral_of_le zero_le_one, integral_deltaSpike_div ν hε, hνm] at hsplit
+  -- Inversion `z ↦ z⁻¹` preserves `dz/z` and exchanges the two pieces.
+  have hinv := mellin_comp_inv (fun z ↦ (((Ioi 1).indicator (deltaSpike ν ε) z : ℝ) : ℂ)) 0
+  rw [neg_zero, mellin_ofReal_zero, mellin_ofReal_zero] at hinv
+  have hright : ∫ z in Ioi 0, (Ioi 1).indicator (deltaSpike ν ε) z / z =
+      ∫ z in Ioi 1, deltaSpike ν ε z / z := by
+    have hcongr : ∫ z in Ioi 0, (Ioi 1).indicator (deltaSpike ν ε) z / z =
+        ∫ z in Ioi 0, (Ioi 1).indicator (fun z ↦ deltaSpike ν ε z / z) z :=
+      setIntegral_congr_fun measurableSet_Ioi fun z _ ↦ by by_cases hz : z ∈ Ioi 1 <;> simp [hz]
+    rw [hcongr, setIntegral_indicator measurableSet_Ioi,
+      inter_eq_right.mpr (Ioi_subset_Ioi zero_le_one)]
+  have hleft : ∫ z in Ioi 0, (Ioi 1).indicator (deltaSpike ν ε) z⁻¹ / z =
+      ∫ z in Ioc 0 1, deltaSpike ν ε z / z := by
+    have hcongr : ∫ z in Ioi 0, (Ioi 1).indicator (deltaSpike ν ε) z⁻¹ / z =
+        ∫ z in Ioi 0, (Ioo 0 1).indicator (fun z ↦ deltaSpike ν ε z / z) z := by
+      refine setIntegral_congr_fun measurableSet_Ioi fun z (hz : 0 < z) ↦ ?_
+      have hiff : z⁻¹ ∈ Ioi 1 ↔ z ∈ Ioo 0 1 := by simp [hz, one_lt_inv₀ hz]
+      by_cases hz1 : z ∈ Ioo 0 1
+      · rw [indicator_of_mem (hiff.mpr hz1), indicator_of_mem hz1, deltaSpike_inv_of_symm hsym hz]
+      · rw [indicator_of_notMem (mt hiff.mp hz1), indicator_of_notMem hz1, zero_div]
+    rw [hcongr, setIntegral_indicator measurableSet_Ioo, inter_eq_right.mpr Ioo_subset_Ioi_self,
+      integral_Ioc_eq_integral_Ioo]
+  rw [hleft, hright, ofReal_inj] at hinv
+  rw [smoothCutoff_of_pos one_pos]
+  linarith
 
 /-- For `x > 0` the smoothed cutoff is the Mellin cutoff kernel `∫_{(x,∞)} ν_ε(z) dz/z` of the
 delta spike. -/
@@ -254,19 +493,16 @@ is continuous on `(0, ∞)`. -/
 theorem continuousOn_smoothCutoff (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (hε : 0 < ε) :
     ContinuousOn (smoothCutoff ν ε) (Ioi 0) := by
   have hG : IntegrableOn (fun z ↦ z⁻¹ • deltaSpike ν ε z) (Ioi 0) := by
-    simpa only [smul_eq_mul, inv_mul_eq_div] using (mellinConvergent_ofReal_zero_iff _).mp
-      ((mellinConvergent_deltaSpike_iff hε).mpr
-        (by rw [mul_zero]; exact (mellinConvergent_ofReal_zero_iff ν).mpr hνi))
+    simpa only [smul_eq_mul, inv_mul_eq_div] using (integrableOn_deltaSpike_div_iff hε).mpr hνi
   exact (hG.continuousOn_mellinCutoffKernel.mono Ioi_subset_Ici_self).congr
     fun x hx ↦ smoothCutoff_eq_mellinCutoffKernel ν ε hx
 
-/-- For `x > 0` the smoothed cutoff is the Mellin convolution
-`(1_(0,1] ⋆ ν_ε)(x) = ∫_{(0,∞)} 1_(0,1](y) ν_ε(x/y) dy/y`, by the substitution `z = x/y`. -/
-theorem smoothCutoff_eq_integral_mul_div (ν : ℝ → ℝ) (ε : ℝ) (hx : 0 < x) :
-    (smoothCutoff ν ε x : ℂ) = ∫ y in Ioi 0,
-      (Ioc 0 1).indicator (fun _ ↦ (1 : ℂ)) y * (deltaSpike ν ε (x / y) : ℂ) / y :=
-  by rw [smoothCutoff_eq_mellinCutoffKernel ν ε hx, ← mellinCutoffKernel_ofReal,
-    mellinCutoffKernel_eq_integral_mul_div _ hx]
+/-- For `x > 0` the smoothed cutoff is the Mellin convolution `(1_(0,1] ⋆ ν_ε)(x)`. -/
+theorem smoothCutoff_eq_mellinConv (ν : ℝ → ℝ) (ε : ℝ) (hx : 0 < x) :
+    (smoothCutoff ν ε x : ℂ) =
+      mellinConv ((Ioc 0 1).indicator fun _ ↦ (1 : ℂ)) (fun y ↦ (deltaSpike ν ε y : ℂ)) x := by
+  rw [smoothCutoff_eq_mellinCutoffKernel ν ε hx, ← mellinCutoffKernel_ofReal,
+    mellinCutoffKernel_eq_mellinConv _ hx]
 
 /-- For `ν` supported in `[1/2, 2]` with `x ↦ ν x / x` integrable on `(0, ∞)` (which a bump's
 mass condition forces), `ε > 0` and `Re s > 0`, the smoothed cutoff is Mellin convergent at `s`
@@ -342,7 +578,7 @@ theorem exists_norm_mellin_smoothCutoff_le {k : ℕ} (hν : ContDiffOn ℝ k ν 
 
 /-- For a bump `ν` and `0 < ε ≤ 1`, the Mellin transform of the smoothed cutoff at `1` is within
 `2 log 2 · ε` of `1`, the transform of the sharp cutoff `1_(0,1]` there. -/
-theorem norm_mellin_smoothCutoff_one_sub_one_le (hν0 : ∀ x, 0 ≤ ν x)
+theorem norm_mellin_smoothCutoff_one_sub_one_le (hν0 : ∀ x > 0, 0 ≤ ν x)
     (hνs : Function.support ν ⊆ Icc (1 / 2) 2) (hνm : ∫ x in Ioi 0, ν x / x = 1) (hε : 0 < ε)
     (hε1 : ε ≤ 1) :
     ‖mellin (fun x ↦ (smoothCutoff ν ε x : ℂ)) 1 - 1‖ ≤ 2 * Real.log 2 * ε := by
