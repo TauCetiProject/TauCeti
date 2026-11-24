@@ -158,10 +158,13 @@ c.im x + c.re y)`. For a real inner product space this also follows from the com
 structure; it is not an instance, to avoid a second instance path in that case. -/
 theorem complexification_continuous_const_smul (c : ℂ) :
     Continuous fun z : WithLp 2 (Complexification X) ↦ c • z := by
-  have h : Continuous fun z : WithLp 2 (Complexification X) ↦ (z.ofLp.re, z.ofLp.im) :=
-    (prod_continuous_ofLp 2 X X).comp (complexificationEquivProd X).continuous
+  have h : Continuous fun z : WithLp 2 (Complexification X) ↦ (z.ofLp.re, z.ofLp.im) := by
+    simpa only [Function.comp_def, complexificationEquivProd_apply, ofLp_toLp] using
+      (prod_continuous_ofLp 2 X X).comp (complexificationEquivProd X).continuous
   rw [(complexificationEquivProd X).toHomeomorph.isInducing.continuous_iff]
-  refine (prod_continuous_toLp 2 X X).comp ?_
+  simp only [Function.comp_def, LinearIsometryEquiv.coe_toHomeomorph,
+    complexificationEquivProd_apply]
+  refine (prod_continuous_toLp 2 X X).comp' ?_
   simp only [ofLp_smul, Complexification.smul_re, Complexification.smul_im]
   exact ((h.fst.const_smul _).sub (h.snd.const_smul _)).prodMk
     ((h.fst.const_smul _).add (h.snd.const_smul _))

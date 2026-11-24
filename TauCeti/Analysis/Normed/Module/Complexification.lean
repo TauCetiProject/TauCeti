@@ -621,6 +621,17 @@ theorem tensorEquivComplexification_baseChange {X Y : Type*}
     tensorEquivComplexification Y (T.toLinearMap.baseChange ℂ u) =
       T.complexify (tensorEquivComplexification X u) := by ext <;> simp
 
+/-- As a `ℂ`-linear map, `ContinuousLinearMap.complexify` is `LinearMap.baseChange ℂ` transported
+along `tensorEquivComplexification`. -/
+theorem _root_.ContinuousLinearMap.coe_complexify {X Y : Type*}
+    [SeminormedAddCommGroup X] [NormedSpace ℝ X] [SeminormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (T : X →L[ℝ] Y) :
+    (T.complexify : Complexification X →ₗ[ℂ] Complexification Y) =
+      (tensorEquivComplexification Y).toLinearMap ∘ₗ T.toLinearMap.baseChange ℂ ∘ₗ
+        (tensorEquivComplexification X).symm.toLinearMap := by
+  refine LinearMap.ext fun z ↦ ?_
+  simp [-tensorEquivComplexification_symm_apply, tensorEquivComplexification_baseChange]
+
 /-- The complexification of a finite-dimensional real vector space is finite-dimensional over
 `ℂ`. -/
 instance Complexification.instFiniteComplex [Module.Finite ℝ W] :

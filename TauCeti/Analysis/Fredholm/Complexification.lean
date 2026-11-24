@@ -136,15 +136,8 @@ theorem isFredholm_complexify_iff {T : X →L[ℝ] Y} :
 operator has the same index as the operator. No Fredholm hypothesis is needed. -/
 @[simp]
 theorem index_complexify (T : X →L[ℝ] Y) : T.complexify.index = T.index := by
-  have h : (T.complexify : Complexification X →ₗ[ℂ] Complexification Y) =
-      ((tensorEquivComplexification Y : ℂ ⊗[ℝ] Y →ₗ[ℂ] Complexification Y).comp
-        (T.toLinearMap.baseChange ℂ)).comp
-        ((tensorEquivComplexification X).symm : Complexification X →ₗ[ℂ] ℂ ⊗[ℝ] X) := by
-    refine LinearMap.ext fun z ↦ ?_
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      tensorEquivComplexification_baseChange, LinearEquiv.apply_symm_apply, coe_coe]
-  rw [index_def, index_def, h, LinearMap.index_comp_equiv, LinearMap.index_equiv_comp,
-    LinearMap.index_baseChange]
+  rw [index_def, index_def, coe_complexify, LinearMap.index_equiv_comp,
+    LinearMap.index_comp_equiv, LinearMap.index_baseChange]
 
 end Complexify
 
@@ -178,6 +171,8 @@ theorem index_complexifyL2 (T : X →L[ℝ] Y) : T.complexifyL2.index = T.index 
         (WithLp.linearEquiv 2 ℂ (Complexification X) :
           WithLp 2 (Complexification X) →ₗ[ℂ] Complexification X) := by
     ext z
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      WithLp.coe_linearEquiv, WithLp.coe_symm_linearEquiv, ContinuousLinearMap.coe_coe]
     exact WithLp.ofLp_injective 2 (ofLp_complexifyL2_apply T z)
   rw [← index_complexify, index_def, index_def, h, LinearMap.index_comp_equiv,
     LinearMap.index_equiv_comp]
