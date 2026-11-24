@@ -79,4 +79,23 @@ lemma cohomologyPresheafIso_naturality
       exact (toSheaf X).map_comp _ _ |>.symm.trans
         ((congrArg (toSheaf X).map hψ).trans ((toSheaf X).map_comp _ _)))
 
+/-- Under `cohomologyPresheafIso`, the homology class of a cycle `s ∈ Pⁿ(U)` is its class
+`CategoryTheory.Sheaf.H'.resolutionClass` in `Hⁿ(U, M)`. -/
+lemma cohomologyPresheafIso_hom_app_homologyπ_apply (P : InjectiveResolution M) (n : ℕ)
+    (U : X.Opensᵒᵖ)
+    (z : ((((sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex _).obj
+      (((toSheaf X).mapHomologicalComplex _).obj P.cocomplex)).cycles n).obj U) :
+    haveI : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
+    (P.cohomologyPresheafIso n).hom.app U
+        (((((sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex _).obj
+          (((toSheaf X).mapHomologicalComplex _).obj P.cocomplex)).homologyπ n).app U z) =
+      Sheaf.H'.resolutionClass (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex)
+        ((toSheaf X).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d (toSheaf X))
+        (P.exact₀_map (toSheaf X)) (P.exactAt_succ_map (toSheaf X)) U.unop
+        (((((sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex _).obj
+          (((toSheaf X).mapHomologicalComplex _).obj P.cocomplex)).iCycles n).app U z)
+        (Sheaf.H'.d_hom_app_iCycles_app n z) :=
+  have : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
+  Sheaf.H'.homologyIsoCohomologyPresheaf_hom_app_homologyπ_apply _ _ _ _ _ n U z
+
 end CategoryTheory.InjectiveResolution
