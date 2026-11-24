@@ -97,7 +97,8 @@ lemma lightCondFreeInternalHomProductEquiv_naturality (M : ModuleCat.{u} R)
   exact (lightLocallyConstantSectionsEquiv_map_apply M (S ◁ f) _ (x, y)).trans
     (LocallyConstant.coe_comap_apply _ _ _).symm
 
-private lemma lightCondFreeInternalHomProductEquiv_smul (M : ModuleCat.{u} R)
+/-- The product comparison commutes with scalar multiplication in the coefficient module. -/
+lemma lightCondFreeInternalHomProductEquiv_smul (M : ModuleCat.{u} R)
     (S T : LightProfinite.{u}) (r : R)
     (s : (((LightCondensed.free R).obj S.toCondensed ⟶[LightCondMod R]
       (LightCondMod.LocallyConstant.functor R).obj M).obj.obj (op T))) :

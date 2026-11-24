@@ -105,12 +105,14 @@ noncomputable def freeModuleHomLinearEquiv {R : Type u} [CommRing R] {M : LightC
   map_smul' := freeModuleHomEquiv_smul S
 
 /-- The linear comparison retains the free-section evaluation. -/
+@[simp]
 lemma freeModuleHomLinearEquiv_apply {R : Type u} [CommRing R] {M : LightCondMod R}
     (S : LightProfinite.{u}) (g : (free R).obj S.toCondensed ⟶ M) :
     S.freeModuleHomLinearEquiv g = S.freeModuleHomEquiv g := by
   rfl
 
 /-- The inverse linear comparison retains the free-section inverse. -/
+@[simp]
 lemma freeModuleHomLinearEquiv_symm_apply {R : Type u} [CommRing R] {M : LightCondMod R}
     (S : LightProfinite.{u}) (s : M.obj.obj (Opposite.op S)) :
     S.freeModuleHomLinearEquiv.symm s = S.freeModuleHomEquiv.symm s := by
