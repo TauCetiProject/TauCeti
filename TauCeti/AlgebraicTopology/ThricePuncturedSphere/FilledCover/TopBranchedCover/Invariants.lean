@@ -31,8 +31,8 @@ variable {n : ℕ} (c : IsoClass.{0} n)
   simp [equivConnectedIsoClass_mk X ν, X.ramificationPartitions_eq_cycleData_monodromyTriple ν]
 
 /-- `IsoClass.equivConnectedIsoClass` preserves the order of the deck/automorphism group. -/
-@[simp] theorem natCardAutomorphismGroup_equivConnectedIsoClass :
-    (equivConnectedIsoClass n c).natCardAutomorphismGroup = c.natCardDeck := by
+@[simp] theorem automorphismOrder_equivConnectedIsoClass :
+    (equivConnectedIsoClass n c).automorphismOrder = c.natCardDeck := by
   obtain ⟨X, rfl⟩ := mk_surjective c
   obtain ⟨ν⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
   simpa [equivConnectedIsoClass_mk X ν] using

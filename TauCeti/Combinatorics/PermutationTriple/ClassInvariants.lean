@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PermutationTriple.AutomorphismOrder
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
@@ -84,14 +85,6 @@ noncomputable def genus : IsoClass n → ℕ :=
 /-- Expresses `c.genus` in terms of `c.eulerChar`. -/
 theorem genus_def : c.genus = ((2 - c.eulerChar) / 2).toNat := by
   obtain ⟨t, rfl⟩ := mk_surjective c; rw [genus_mk, eulerChar_mk, PermutationTriple.genus_def]
-
-/-- The cardinality of the automorphism group of any representative of an isomorphism class. -/
-noncomputable def natCardAutomorphismGroup : IsoClass n → ℕ :=
-  lift (fun t => Nat.card t.automorphismGroup) fun _ _ => natCard_automorphismGroup_eq_of_equivalent
-
-/-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.automorphismGroup`. -/
-@[simp] theorem natCardAutomorphismGroup_mk :
-    (mk t).natCardAutomorphismGroup = Nat.card t.automorphismGroup := lift_mk _ _ t
 
 /-- Regularity of an isomorphism class of triples: connected with transitive automorphism group. -/
 def IsRegular : IsoClass n → Prop :=
@@ -193,22 +186,6 @@ theorem two_sub_two_mul_genus : 2 - 2 * (c.genus : ℤ) = c.eulerChar := by
 @[simp] theorem genus_of_degree_one (c : ConnectedIsoClass 1) : c.genus = 0 := by
   obtain ⟨t, rfl⟩ := mk_surjective c; simpa using t.val.genus_of_degree_one
 
-/-- The cardinality of the automorphism group of any representative of a connected class. -/
-noncomputable def natCardAutomorphismGroup : ℕ := c.forget.natCardAutomorphismGroup
-
-/-- Evaluating `natCardAutomorphismGroup` on `mk t` gives `Nat.card t.val.automorphismGroup`. -/
-@[simp] theorem natCardAutomorphismGroup_mk : (mk t).natCardAutomorphismGroup =
-    Nat.card t.val.automorphismGroup := by simp [natCardAutomorphismGroup]
-
-/-- Forgetting connectedness preserves `natCardAutomorphismGroup`. -/
-@[simp] theorem natCardAutomorphismGroup_forget :
-    c.forget.natCardAutomorphismGroup = c.natCardAutomorphismGroup := (rfl)
-
-/-- For a connected isomorphism class, the order of the automorphism group divides the degree. -/
-theorem natCardAutomorphismGroup_dvd : c.natCardAutomorphismGroup ∣ n := by
-  obtain ⟨t, rfl⟩ := mk_surjective c
-  simpa using PermutationTriple.card_automorphismGroup_dvd t.property.isPretransitive
-
 /-- Regularity of a connected isomorphism class: transitive automorphism action on the sheets. -/
 def IsRegular : Prop := c.forget.IsRegular
 
@@ -219,7 +196,7 @@ def IsRegular : Prop := c.forget.IsRegular
 @[simp] theorem isRegular_forget : c.forget.IsRegular ↔ c.IsRegular := Iff.rfl
 
 /-- A connected isomorphism class is regular iff its automorphism group has order `n`. -/
-theorem isRegular_iff_natCardAutomorphismGroup : c.IsRegular ↔ c.natCardAutomorphismGroup = n := by
+theorem isRegular_iff_automorphismOrder : c.IsRegular ↔ c.automorphismOrder = n := by
   obtain ⟨t, rfl⟩ := mk_surjective c
   simp [PermutationTriple.isRegular_iff_card_automorphismGroup, t.property]
 

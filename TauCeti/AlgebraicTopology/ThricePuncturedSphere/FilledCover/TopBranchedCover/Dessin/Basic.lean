@@ -41,7 +41,7 @@ variable {n : ℕ} (c : IsoClass.{0} n)
 /-- `IsoClass.equivConnectedRibbonGraph` preserves the order of the deck/automorphism group. -/
 @[simp] theorem connectedNatCardAut_equivConnectedRibbonGraph :
     connectedNatCardAut n (equivConnectedRibbonGraph.{u} n c) = c.natCardDeck := by
-  simp [← natCardAutomorphismGroup_connectedIsoClassEquiv]
+  simp [← automorphismOrder_connectedIsoClassEquiv]
 
 /-- `IsoClass.equivConnectedRibbonGraph` preserves regularity. -/
 @[simp] theorem connectedIsRegular_equivConnectedRibbonGraph :

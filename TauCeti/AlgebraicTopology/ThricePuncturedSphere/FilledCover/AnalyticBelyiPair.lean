@@ -420,9 +420,9 @@ theorem isoClassEquivTopBranchedCoverIsoClass_trans_equivConnectedIsoClass (n : 
   simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
 
 /-- `isoClassEquivConnectedIsoClass` preserves the order of the automorphism group. -/
-@[simp] theorem natCardAutomorphismGroup_isoClassEquivConnectedIsoClass {n : ℕ}
+@[simp] theorem automorphismOrder_isoClassEquivConnectedIsoClass {n : ℕ}
     (P : Quotient (isoSetoid.{0} n)) :
-    (isoClassEquivConnectedIsoClass n P).natCardAutomorphismGroup = isoClassNatCardAut n P := by
+    (isoClassEquivConnectedIsoClass n P).automorphismOrder = isoClassNatCardAut n P := by
   simp [← equivConnectedIsoClass_toTopBranchedCoverIsoClass]
 
 /-- `isoClassEquivConnectedIsoClass` preserves regularity. -/

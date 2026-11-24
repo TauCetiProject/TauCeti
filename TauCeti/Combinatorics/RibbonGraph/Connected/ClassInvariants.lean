@@ -74,8 +74,8 @@ noncomputable def connectedNatCardAut (n : ℕ) : Quotient (connectedIsoSetoid.{
 @[simp] theorem connectedNatCardAut_mk : connectedNatCardAut n ⟦Γ⟧ = Nat.card Γ.val.val.Aut := (rfl)
 
 /-- The classification `connectedIsoClassEquiv` preserves the automorphism-group order. -/
-@[simp] theorem natCardAutomorphismGroup_connectedIsoClassEquiv :
-    (connectedIsoClassEquiv n c).natCardAutomorphismGroup = connectedNatCardAut n c :=
+@[simp] theorem automorphismOrder_connectedIsoClassEquiv :
+    (connectedIsoClassEquiv n c).automorphismOrder = connectedNatCardAut n c :=
   Quotient.inductionOn c fun _ => by simp
 
 /-- Regularity on isomorphism classes of connected bipartite ribbon graphs. -/

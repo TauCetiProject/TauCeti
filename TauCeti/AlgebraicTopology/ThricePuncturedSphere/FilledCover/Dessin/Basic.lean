@@ -120,7 +120,7 @@ variable {n : ℕ} (P : Quotient (isoSetoid.{0} n))
 /-- `isoClassEquivConnectedRibbonGraph` matches `isoClassNatCardAut` with `connectedNatCardAut`. -/
 @[simp] theorem connectedNatCardAut_isoClassEquivConnectedRibbonGraph :
     connectedNatCardAut n (isoClassEquivConnectedRibbonGraph.{u} n P) = isoClassNatCardAut n P := by
-  simp [← natCardAutomorphismGroup_connectedIsoClassEquiv]
+  simp [← automorphismOrder_connectedIsoClassEquiv]
 
 /-- `isoClassEquivConnectedRibbonGraph` matches `IsoClassIsRegular` with `ConnectedIsRegular`. -/
 @[simp] theorem connectedIsRegular_isoClassEquivConnectedRibbonGraph :
