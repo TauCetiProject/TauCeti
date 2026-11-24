@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # The completed Dedekind zeta function
@@ -228,11 +230,6 @@ theorem analyticAt_completedDedekindZeta {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1)
   rw [h]
   exact Finset.analyticAt_sum _ fun c _ ↦ analyticAt_completedPartialZeta (rep c) h0 h1
 
-/-- A number field has at least one infinite place. -/
-private theorem nrRealPlaces_add_nrComplexPlaces_pos : 0 < nrRealPlaces K + nrComplexPlaces K := by
-  rw [← card_eq_nrRealPlaces_add_nrComplexPlaces]
-  exact Fintype.card_pos
-
 /-- The common absolute value `2 ^ (r₁ + r₂) h R / w` of the residues of `Λ_K` is `h` times the
 residue `2 a₀` of each completed partial zeta function. -/
 private theorem classNumber_mul_two_mul_mellinConstant :
@@ -342,12 +339,6 @@ section Continued
 private def invArchFactor (s : ℂ) : ℂ :=
   ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
     (Gammaℂ s)⁻¹ ^ nrComplexPlaces K
-
-/-- For `x ≥ 0`, `x ^ (-1 / 2) = (√x)⁻¹` as complex numbers. -/
-private theorem ofReal_cpow_neg_one_half {x : ℝ} (hx : 0 ≤ x) :
-    (x : ℂ) ^ (-1 / 2 : ℂ) = ((√x : ℝ) : ℂ)⁻¹ := by
-  rw [Real.sqrt_eq_rpow, ← ofReal_inv, ← Real.rpow_neg hx, ofReal_cpow hx]
-  norm_num
 
 /-- The reciprocal of the archimedean factor is entire. -/
 private theorem analyticAt_invArchFactor (s : ℂ) : AnalyticAt ℂ (invArchFactor K) s := by

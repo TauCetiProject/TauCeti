@@ -14,6 +14,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Gamma.Multiplication
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -645,9 +646,6 @@ private theorem integral_product_equation_kernel (z : ℂ) :
       ring
     have hd := (hsqrt_deriv.const_mul (-4 : ℂ)).mul hexp_arg.cexp
     refine hd.congr_deriv ?_
-    have hcpow : (t : ℂ) ^ (-1 / 2 : ℂ) = (Real.sqrt t : ℂ)⁻¹ := by
-      have hnh : (-1 / 2 : ℂ) = ((-(1 / 2) : ℝ) : ℂ) := by push_cast; ring
-      rw [hnh, ← ofReal_cpow ht.le, Real.rpow_neg ht.le, ← Real.sqrt_eq_rpow, ofReal_inv]
     have hmul : (Real.sqrt t : ℂ) * (Real.sqrt t : ℂ)⁻¹ = 1 :=
       mul_inv_cancel₀ (ofReal_ne_zero.mpr (Real.sqrt_pos.mpr ht).ne')
     have hsq : (Real.sqrt t : ℂ) = (t : ℂ) * (Real.sqrt t : ℂ)⁻¹ := by
@@ -656,7 +654,7 @@ private theorem integral_product_equation_kernel (z : ℂ) :
       calc (Real.sqrt t : ℂ) = (Real.sqrt t : ℂ) * 1 := (mul_one _).symm
         _ = (Real.sqrt t : ℂ) * ((Real.sqrt t : ℂ) * (Real.sqrt t : ℂ)⁻¹) := by rw [hmul]
         _ = (t : ℂ) * (Real.sqrt t : ℂ)⁻¹ := by rw [← mul_assoc, hst]
-    rw [hcpow]
+    rw [ofReal_cpow_neg_one_half ht.le]
     push_cast
     linear_combination -4 * (z - (t : ℂ) ^ 2 / 4) * cexp (z * t - (t : ℂ) ^ 3 / 12) * hsq
   -- Bochner integrability follows from the `t³`, `t`, and `t⁰` moment integrability bounds.
