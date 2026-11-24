@@ -142,7 +142,7 @@ noncomputable def assocSymmHom :
       ((S.completedTensor A T).completedTensor A U) where
   toRingHom := (CompletedTensor.assoc A B C D).symm.toRingHom
   continuous_toRingHom := CompletedTensor.continuous_assoc_symm A B C D
-  map_mem_plus x hx := (assoc_mem_plus_iff A S T U _).mp (by simpa using hx)
+  map_mem_plus _ hx := assoc_symm_plus_le A S T U hx
 
 /-- The underlying ring map of `assocHom` is the completed tensor associator. -/
 @[simp]
@@ -168,30 +168,6 @@ theorem assocHom_comp_assocSymmHom :
     (assocHom A S T U).comp (assocSymmHom A S T U) =
       Hom.id (S.completedTensor A (T.completedTensor A U)) := by
   ext x
-  simp [Hom.toRingHom_comp]
-
-/-- The pair associator preserves the first coprojection. -/
-@[simp]
-theorem assocHom_comp_inl_comp_inl :
-    (assocHom A S T U).comp ((inl A (S.completedTensor A T) U).comp (inl A S T)) =
-      inl A S (T.completedTensor A U) := by
-  ext b
-  simp [Hom.toRingHom_comp]
-
-/-- The pair associator preserves the middle coprojection. -/
-@[simp]
-theorem assocHom_comp_inl_comp_inr :
-    (assocHom A S T U).comp ((inl A (S.completedTensor A T) U).comp (inr A S T)) =
-      (inr A S (T.completedTensor A U)).comp (inl A T U) := by
-  ext c
-  simp [Hom.toRingHom_comp]
-
-/-- The pair associator preserves the last coprojection. -/
-@[simp]
-theorem assocHom_comp_inr :
-    (assocHom A S T U).comp (inr A (S.completedTensor A T) U) =
-      (inr A S (T.completedTensor A U)).comp (inr A T U) := by
-  ext d
   simp [Hom.toRingHom_comp]
 
 /-- The inverse pair associator preserves the first coprojection. -/

@@ -5,40 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Pullback.WeaklyFiniteType
+public import TauCeti.AlgebraicGeometry.AdicSpace.Pullback.Affinoid
 public import TauCeti.RingTheory.Huber.TensorProduct.Coherence
 public import TauCeti.RingTheory.Huber.TensorProduct.Symmetry
 public import TauCeti.RingTheory.Huber.TensorProduct.Unit
 
 /-!
-# Associativity, symmetry and unit of fibre products of adic spaces
+# Associativity, symmetry and unit of fibre products of adic spaces on affinoid charts
 
-Fibre products of adic spaces do not exist in general. When `f : X ⟶ S`, `g : Y ⟶ S` and
-`h : Z ⟶ S` are locally of weakly finite type and `X`, `Z` are locally stably sheafy, the fibre
-product theorems of `TauCeti.AlgebraicGeometry.AdicSpace.Pullback.WeaklyFiniteType` give all the
-iterated fibre products of `X`, `Y`, `Z` over `S`
-(`TauCeti.AdicSpace.FibreProduct.hasPullback_snd_comp`,
-`TauCeti.AdicSpace.FibreProduct.hasPullback_fst_comp`). Given these, Mathlib's
-`pullbackAssoc f g g h : (X ×_S Y) ×_S Z ≅ X ×_S (Y ×_S Z)`, `pullbackSymmetry f g` (using
-`hasPullback_symmetry`) and `asIso (pullback.fst f (𝟙 S)) : X ×_S S ≅ X` are the associativity,
-symmetry and unit isomorphisms, with Mathlib's projection lemmas; each is the unique isomorphism
-compatible with the projections (`pullback.hom_ext`), so every coherence identity between
-composites of them holds.
+Fibre products of adic spaces do not exist in general. For `f : X ⟶ S`, `g : Y ⟶ S` and
+`h : Z ⟶ S`, the two parenthesizations `(X ×_S Y) ×_S Z` and `X ×_S (Y ×_S Z)` of the ordered
+triple exist under the hypotheses of `TauCeti.AdicSpace.hasPullback_snd_comp` and
+`TauCeti.AdicSpace.hasPullback_fst_comp`. Whenever these composites exist, Mathlib's
+`pullbackAssoc f g g h`, `pullbackSymmetry f g` and `asIso (pullback.fst f (𝟙 S))` are the
+associativity, symmetry and unit isomorphisms. Each of them is determined by its composites with
+the projections to the factors (`pullback.hom_ext`), so two composites of these isomorphisms
+between the same existing fibre products agree as soon as they induce the same maps to the
+factors.
 
-On affinoid charts these isomorphisms are `Spa` of the ring isomorphisms of completed tensor
-products. Since `Spa` is contravariant, the geometric associator
-`Spa((B ⊗̂_A C) ⊗̂_A D) ≅ Spa(B ⊗̂_A (C ⊗̂_A D))` is `Spa` of the inverse ring associator
-(`FibreProduct.associatorAffinoid`), the symmetry is `Spa` of the exchange of the two factors
-(`FibreProduct.symmetry_affinoid`), and the unit `Spa(B ⊗̂_A A) ≅ Spa(B)` is `Spa` of the left
-coprojection, with inverse `Spa` of `b ⊗ a ↦ b·a` (`FibreProduct.unitAffinoid`).
+This file computes these isomorphisms on affinoid charts, where they are isomorphisms of the
+displayed `Spa` objects given by ring isomorphisms of completed tensor products. Since `Spa` is
+contravariant, the associator `Spa((B ⊗̂_A C) ⊗̂_A D) ≅ Spa(B ⊗̂_A (C ⊗̂_A D))` is `Spa` of the
+inverse ring associator (`TauCeti.AdicSpace.associatorAffinoid`), the comparison of the two chart
+squares `Spa(B ⊗̂_A C)` and `Spa(C ⊗̂_A B)` is `Spa` of the exchange of the two factors
+(`TauCeti.AdicSpace.affinoid_isoIsPullback_flip_hom`), and the right unitor
+`Spa(B ⊗̂_A A) ≅ Spa(B)` is `Spa` of the left coprojection, with inverse `Spa` of `b ⊗ a ↦ b·a`
+(`TauCeti.AdicSpace.rightUnitorAffinoid`). When the chart squares are pullback squares (for
+instance by `TauCeti.AdicSpace.affinoid_isPullback`), the projection formulas below identify
+these chart isomorphisms with the categorical comparisons above. The sheafiness of the second
+parenthesization and of the unit tensor follow from that of the first parenthesization and of
+`B` (`TauCeti.Huber.IsSheafyForEveryPresentation.completedTensor_comm`,
+`TauCeti.Huber.IsSheafyForEveryPresentation.completedTensor_assoc`,
+`TauCeti.Huber.IsSheafyForEveryPresentation.completedTensor_rightUnitor`).
 
 ## Main results
 
-* `TauCeti.AdicSpace.FibreProduct.hasPullback_snd_comp`,
-  `TauCeti.AdicSpace.FibreProduct.hasPullback_fst_comp`: existence of the iterated fibre products.
-* `TauCeti.AdicSpace.FibreProduct.associatorAffinoid`,
-  `TauCeti.AdicSpace.FibreProduct.symmetry_affinoid`,
-  `TauCeti.AdicSpace.FibreProduct.unitAffinoid`: the chart formulas.
+* `TauCeti.AdicSpace.associatorAffinoid`, `TauCeti.AdicSpace.affinoid_isoIsPullback_flip_hom`,
+  `TauCeti.AdicSpace.rightUnitorAffinoid`: the chart formulas.
 
 ## References
 
@@ -52,47 +55,75 @@ public section
 
 open CategoryTheory CategoryTheory.Limits
 
-namespace TauCeti.AdicSpace.FibreProduct
-
-open Huber
-
 universe u
 
-section General
+/-! ### Sheafiness of the rearranged completed tensor products -/
 
-variable {X Y Z S : AdicSpace.{u}} {f : X ⟶ S} {g : Y ⟶ S} {h : Z ⟶ S}
+namespace TauCeti.Huber.IsSheafyForEveryPresentation
 
-/-- The iterated fibre product `(X ×_S Y) ×_S Z` exists when `f` is adic, `g`, `h` are locally of
-weakly finite type and `X` is locally stably sheafy; so does the inner `X ×_S Y`. -/
-theorem hasPullback_snd_comp (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g)
-    (hh : LocallyOfWeaklyFiniteType h) (hX : X.IsLocallyStablySheafy) :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
-    HasPullback (pullback.snd f g ≫ g) h :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
-  hasPullback_of_locallyOfWeaklyFiniteType_right
-    (IsAdic.isMultiplicative.comp_mem _ _
-      (IsAdic.pullback_snd_of_locallyOfWeaklyFiniteType hf hg hX) hg.isAdic) hh
-    (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_right hf hg hX)
+section Symmetry
 
-/-- The iterated fibre product `X ×_S (Y ×_S Z)` exists when `f`, `g` are locally of weakly finite
-type, `h` is adic and `Z` is locally stably sheafy; so does the inner `Y ×_S Z`. -/
-theorem hasPullback_fst_comp (hf : LocallyOfWeaklyFiniteType f)
-    (hg : LocallyOfWeaklyFiniteType g) (hh : IsAdic h) (hZ : Z.IsLocallyStablySheafy) :
-    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh hZ
-    HasPullback f (pullback.fst g h ≫ g) :=
-  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh hZ
-  hasPullback_of_locallyOfWeaklyFiniteType_left hf
-    (IsAdic.isMultiplicative.comp_mem _ _
-      (IsAdic.pullback_fst_of_locallyOfWeaklyFiniteType hg hh hZ) hg.isAdic)
-    (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_left hg hh hZ)
+variable {A B C : Type u} [CommRing A] [CommRing B] [CommRing C] [Algebra A B] [Algebra A C]
+  [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C]
+  [IsTopologicalRing A] [IsTopologicalRing B] [IsTopologicalRing C] [IsHuberRing B] [IsHuberRing C]
+  [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
 
-end General
+/-- Exchanging the two factors preserves `IsSheafyForEveryPresentation` of a completed tensor
+product of Huber pairs. -/
+theorem completedTensor_comm {T : Pair B} {U : Pair C}
+    (h : IsSheafyForEveryPresentation (T.completedTensor A U).plus) :
+    IsSheafyForEveryPresentation (U.completedTensor A T).plus :=
+  (isSheafyForEveryPresentation_iff_of_ringEquiv (CompletedTensor.comm A B C)
+    (CompletedTensor.continuous_comm A B C)
+    (by simpa only [CompletedTensor.comm_symm] using CompletedTensor.continuous_comm A C B)
+    (Pair.completedTensor.comm_plus A T U)).mp h
+
+end Symmetry
+
+section Associator
+
+variable {A B C D : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
+  [CommRing C] [TopologicalSpace C] [IsTopologicalRing C] [IsHuberRing C]
+  [CommRing D] [TopologicalSpace D] [IsTopologicalRing D] [IsHuberRing D]
+  [Algebra A B] [Algebra A C] [Algebra A D]
+  [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap A D)]
+
+/-- Reassociating an iterated completed tensor product of Huber pairs preserves
+`IsSheafyForEveryPresentation`. -/
+theorem completedTensor_assoc {T : Pair B} {U : Pair C} {V : Pair D}
+    (h : IsSheafyForEveryPresentation ((T.completedTensor A U).completedTensor A V).plus) :
+    IsSheafyForEveryPresentation (T.completedTensor A (U.completedTensor A V)).plus :=
+  (isSheafyForEveryPresentation_iff_of_ringEquiv (CompletedTensor.assoc A B C D)
+    (CompletedTensor.continuous_assoc A B C D) (CompletedTensor.continuous_assoc_symm A B C D)
+    (Pair.completedTensor.assoc_plus A T U V)).mp h
+
+end Associator
+
+section Unit
+
+variable {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
+  [CompleteSpace B] [T2Space B] [IsHuberRing B] [Algebra A B] [IsAdicHom (algebraMap A B)]
+
+/-- If `A⁺` maps into `B⁺`, then `(B, B⁺) ⊗̂_A (A, A⁺)` satisfies `IsSheafyForEveryPresentation`
+whenever `(B, B⁺)` does, since the right unitor identifies the two pairs. -/
+theorem completedTensor_rightUnitor {T : Pair B} (h : IsSheafyForEveryPresentation T.plus)
+    (S : Pair A) (hplus : ∀ a ∈ S.plus, algebraMap A B a ∈ T.plus) :
+    IsSheafyForEveryPresentation (T.completedTensor A S).plus :=
+  (isSheafyForEveryPresentation_iff_of_ringEquiv (CompletedTensor.rightUnitor A B)
+    (CompletedTensor.continuous_rightUnitor A B) (CompletedTensor.continuous_rightUnitor_symm A B)
+    (Pair.completedTensor.rightUnitor_plus S T hplus)).mpr h
+
+end Unit
+
+end TauCeti.Huber.IsSheafyForEveryPresentation
 
 /-! ### Chart formulas -/
 
-section Affinoid
+namespace TauCeti.AdicSpace
 
-open PreAdicSpace ValuationSpectrum
+open Huber PreAdicSpace ValuationSpectrum
 
 section Symmetry
 
@@ -108,17 +139,16 @@ variable {A B C : Type u}
 /-- **Symmetry on affinoid charts**: the comparison of the two affinoid fibre product squares
 `Spa((B, B⁺) ⊗̂_A (C, C⁺))` and `Spa((C, C⁺) ⊗̂_A (B, B⁺))` of `Spa(B, B⁺)` and `Spa(C, C⁺)` over
 `Spa(A, A⁺)` is `Spa` of the exchange of the two tensor factors. -/
-theorem symmetry_affinoid {S : Pair A} {T : Pair B} {U : Pair C}
+theorem affinoid_isoIsPullback_flip_hom {S : Pair A} {T : Pair B} {U : Pair C}
     (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
     (hU : IsSheafyForEveryPresentation U.plus)
     (hTU : IsSheafyForEveryPresentation (T.completedTensor A U).plus)
-    (hUT : IsSheafyForEveryPresentation (U.completedTensor A T).plus)
     (f : Pair.Hom S T) (g : Pair.Hom S U)
     (hf : f.toRingHom = algebraMap A B) (hg : g.toRingHom = algebraMap A C) :
     ((affinoid_isPullback hS hT hU hTU f g hf hg).isoIsPullback _ _
-        (affinoid_isPullback hS hU hT hUT g f hg hf).flip).hom =
-      comapOfPair hUT hTU (Pair.completedTensor.commHom A U T) := by
-  apply (affinoid_isPullback hS hU hT hUT g f hg hf).flip.hom_ext
+        (affinoid_isPullback hS hU hT hTU.completedTensor_comm g f hg hf).flip).hom =
+      comapOfPair hTU.completedTensor_comm hTU (Pair.completedTensor.commHom A U T) := by
+  apply (affinoid_isPullback hS hU hT hTU.completedTensor_comm g f hg hf).flip.hom_ext
   · rw [IsPullback.isoIsPullback_hom_fst, ← comapOfPair_comp,
       Pair.completedTensor.commHom_comp_inr]
   · rw [IsPullback.isoIsPullback_hom_snd, ← comapOfPair_comp,
@@ -132,36 +162,46 @@ variable {A B : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] 
   [CommRing B] [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B]
   [CompleteSpace B] [T2Space B] [IsHuberRing B] [Algebra A B] [IsAdicHom (algebraMap A B)]
 
-/-- The identity structure map of `A` is adic, so `A` is a Huber `A`-algebra. -/
-local instance isAdicHom_algebraMap_self : IsAdicHom (algebraMap A A) := by
-  simpa using (IsAdicHom.id (A := A))
-
-/-- **Unit on affinoid charts**: `Spa((B, B⁺) ⊗̂_A (A, A⁺)) ≅ Spa(B, B⁺)` is `Spa` of the left
-coprojection, with inverse `Spa` of the multiplication `b ⊗ a ↦ b·a`. -/
-@[expose, simps]
-noncomputable def unitAffinoid (S : Pair A) {T : Pair B}
+/-- **Right unitor on affinoid charts**: `Spa((B, B⁺) ⊗̂_A (A, A⁺)) ≅ Spa(B, B⁺)` is `Spa` of the
+left coprojection, with inverse `Spa` of the multiplication `b ⊗ a ↦ b·a`. -/
+noncomputable def rightUnitorAffinoid (S : Pair A) {T : Pair B}
     (hT : IsSheafyForEveryPresentation T.plus)
-    (hTS : IsSheafyForEveryPresentation (T.completedTensor A S).plus)
     (hplus : ∀ a ∈ S.plus, algebraMap A B a ∈ T.plus) :
-    ofPair (T.completedTensor A S) hTS ≅ ofPair T hT where
-  hom := comapOfPair hT hTS (Pair.completedTensor.inl A T S)
-  inv := comapOfPair hTS hT (Pair.completedTensor.rightUnitorHom S T hplus)
+    ofPair (T.completedTensor A S) (hT.completedTensor_rightUnitor S hplus) ≅ ofPair T hT where
+  hom := comapOfPair hT _ (Pair.completedTensor.inl A T S)
+  inv := comapOfPair _ hT (Pair.completedTensor.rightUnitorHom S T hplus)
   hom_inv_id := by
     rw [← comapOfPair_comp, Pair.completedTensor.inl_comp_rightUnitorHom, comapOfPair_id]
   inv_hom_id := by
     rw [← comapOfPair_comp, Pair.completedTensor.rightUnitorHom_comp_inl, comapOfPair_id]
 
-/-- The inverse affinoid unit composed with the second projection is the structure morphism
-`Spa(B, B⁺) ⟶ Spa(A, A⁺)`, as for the unit `(𝟙, f)` of a general fibre product. -/
-@[reassoc]
-theorem unitAffinoid_inv_comp_inr {S : Pair A} {T : Pair B}
-    (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
-    (hTS : IsSheafyForEveryPresentation (T.completedTensor A S).plus)
-    (f : Pair.Hom S T) (hf : f.toRingHom = algebraMap A B)
+/-- The affinoid right unitor is `Spa` of the left coprojection. -/
+@[simp]
+theorem rightUnitorAffinoid_hom (S : Pair A) {T : Pair B}
+    (hT : IsSheafyForEveryPresentation T.plus)
     (hplus : ∀ a ∈ S.plus, algebraMap A B a ∈ T.plus) :
-    (unitAffinoid S hT hTS hplus).inv ≫ comapOfPair hS hTS (Pair.completedTensor.inr A T S) =
+    (rightUnitorAffinoid S hT hplus).hom = comapOfPair hT _ (Pair.completedTensor.inl A T S) :=
+  (rfl)
+
+/-- The inverse affinoid right unitor is `Spa` of the multiplication `b ⊗ a ↦ b·a`. -/
+@[simp]
+theorem rightUnitorAffinoid_inv (S : Pair A) {T : Pair B}
+    (hT : IsSheafyForEveryPresentation T.plus)
+    (hplus : ∀ a ∈ S.plus, algebraMap A B a ∈ T.plus) :
+    (rightUnitorAffinoid S hT hplus).inv =
+      comapOfPair _ hT (Pair.completedTensor.rightUnitorHom S T hplus) :=
+  (rfl)
+
+/-- The inverse affinoid right unitor composed with the second projection is the structure
+morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)`, as for the unit `(𝟙, f)` of a general fibre product. -/
+@[reassoc]
+theorem rightUnitorAffinoid_inv_comp_inr {S : Pair A} {T : Pair B}
+    (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
+    (f : Pair.Hom S T) (hf : f.toRingHom = algebraMap A B) :
+    (rightUnitorAffinoid S hT (fun a ha ↦ hf ▸ f.map_mem_plus a ha)).inv ≫
+        comapOfPair hS _ (Pair.completedTensor.inr A T S) =
       comapOfPair hS hT f := by
-  rw [unitAffinoid_inv, ← comapOfPair_comp]
+  rw [rightUnitorAffinoid_inv, ← comapOfPair_comp]
   congr 1
   ext a
   simp [Pair.Hom.toRingHom_comp, hf]
@@ -177,21 +217,35 @@ variable {A B C D : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing
   [Algebra A B] [Algebra A C] [Algebra A D]
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap A D)]
 
-/-- **Associativity on affinoid charts**: the geometric associator
+/-- **Associativity on affinoid charts**: the associator
 `Spa(((B, B⁺) ⊗̂_A (C, C⁺)) ⊗̂_A (D, D⁺)) ≅ Spa((B, B⁺) ⊗̂_A ((C, C⁺) ⊗̂_A (D, D⁺)))` is `Spa` of
 the inverse ring associator `b ⊗ (c ⊗ d) ↦ (b ⊗ c) ⊗ d`; its inverse is `Spa` of the ring
 associator. -/
-@[expose, simps]
 noncomputable def associatorAffinoid (T : Pair B) (U : Pair C) (V : Pair D)
-    (hTU_V : IsSheafyForEveryPresentation ((T.completedTensor A U).completedTensor A V).plus)
-    (hT_UV : IsSheafyForEveryPresentation (T.completedTensor A (U.completedTensor A V)).plus) :
-    ofPair _ hTU_V ≅ ofPair _ hT_UV where
-  hom := comapOfPair hT_UV hTU_V (Pair.completedTensor.assocSymmHom A T U V)
-  inv := comapOfPair hTU_V hT_UV (Pair.completedTensor.assocHom A T U V)
+    (hTU_V : IsSheafyForEveryPresentation ((T.completedTensor A U).completedTensor A V).plus) :
+    ofPair _ hTU_V ≅ ofPair _ hTU_V.completedTensor_assoc where
+  hom := comapOfPair _ hTU_V (Pair.completedTensor.assocSymmHom A T U V)
+  inv := comapOfPair hTU_V _ (Pair.completedTensor.assocHom A T U V)
   hom_inv_id := by
     rw [← comapOfPair_comp, Pair.completedTensor.assocSymmHom_comp_assocHom, comapOfPair_id]
   inv_hom_id := by
     rw [← comapOfPair_comp, Pair.completedTensor.assocHom_comp_assocSymmHom, comapOfPair_id]
+
+/-- The affinoid associator is `Spa` of the inverse ring associator. -/
+@[simp]
+theorem associatorAffinoid_hom (T : Pair B) (U : Pair C) (V : Pair D)
+    (hTU_V : IsSheafyForEveryPresentation ((T.completedTensor A U).completedTensor A V).plus) :
+    (associatorAffinoid T U V hTU_V).hom =
+      comapOfPair _ hTU_V (Pair.completedTensor.assocSymmHom A T U V) :=
+  (rfl)
+
+/-- The inverse affinoid associator is `Spa` of the ring associator. -/
+@[simp]
+theorem associatorAffinoid_inv (T : Pair B) (U : Pair C) (V : Pair D)
+    (hTU_V : IsSheafyForEveryPresentation ((T.completedTensor A U).completedTensor A V).plus) :
+    (associatorAffinoid T U V hTU_V).inv =
+      comapOfPair hTU_V _ (Pair.completedTensor.assocHom A T U V) :=
+  (rfl)
 
 section AssociatorAffinoid
 
@@ -201,43 +255,43 @@ variable {T : Pair B} {U : Pair C} {V : Pair D}
   (hTU : IsSheafyForEveryPresentation (T.completedTensor A U).plus)
   (hUV : IsSheafyForEveryPresentation (U.completedTensor A V).plus)
   (hTU_V : IsSheafyForEveryPresentation ((T.completedTensor A U).completedTensor A V).plus)
-  (hT_UV : IsSheafyForEveryPresentation (T.completedTensor A (U.completedTensor A V)).plus)
 
 /-- The affinoid associator preserves the projection to `Spa(B, B⁺)`. -/
 @[reassoc]
 theorem associatorAffinoid_hom_inl :
-    (associatorAffinoid T U V hTU_V hT_UV).hom ≫
-        comapOfPair hT hT_UV (Pair.completedTensor.inl A T (U.completedTensor A V)) =
+    (associatorAffinoid T U V hTU_V).hom ≫
+        comapOfPair hT hTU_V.completedTensor_assoc
+          (Pair.completedTensor.inl A T (U.completedTensor A V)) =
       comapOfPair hTU hTU_V (Pair.completedTensor.inl A (T.completedTensor A U) V) ≫
         comapOfPair hT hTU (Pair.completedTensor.inl A T U) := by
-  rw [associatorAffinoid_hom, ← comapOfPair_comp, ← comapOfPair_comp,
+  simp only [associatorAffinoid_hom, ← comapOfPair_comp,
     Pair.completedTensor.assocSymmHom_comp_inl]
 
 /-- The affinoid associator preserves the projection to `Spa(C, C⁺)`. -/
 @[reassoc]
 theorem associatorAffinoid_hom_inr_inl :
-    (associatorAffinoid T U V hTU_V hT_UV).hom ≫
-        comapOfPair hUV hT_UV (Pair.completedTensor.inr A T (U.completedTensor A V)) ≫
+    (associatorAffinoid T U V hTU_V).hom ≫
+        comapOfPair hUV hTU_V.completedTensor_assoc
+          (Pair.completedTensor.inr A T (U.completedTensor A V)) ≫
           comapOfPair hU hUV (Pair.completedTensor.inl A U V) =
       comapOfPair hTU hTU_V (Pair.completedTensor.inl A (T.completedTensor A U) V) ≫
         comapOfPair hU hTU (Pair.completedTensor.inr A T U) := by
-  rw [associatorAffinoid_hom, ← comapOfPair_comp, ← comapOfPair_comp, ← comapOfPair_comp,
+  simp only [associatorAffinoid_hom, ← comapOfPair_comp,
     Pair.completedTensor.assocSymmHom_comp_inr_comp_inl]
 
 /-- The affinoid associator preserves the projection to `Spa(D, D⁺)`. -/
 @[reassoc]
 theorem associatorAffinoid_hom_inr_inr :
-    (associatorAffinoid T U V hTU_V hT_UV).hom ≫
-        comapOfPair hUV hT_UV (Pair.completedTensor.inr A T (U.completedTensor A V)) ≫
+    (associatorAffinoid T U V hTU_V).hom ≫
+        comapOfPair hUV hTU_V.completedTensor_assoc
+          (Pair.completedTensor.inr A T (U.completedTensor A V)) ≫
           comapOfPair hV hUV (Pair.completedTensor.inr A U V) =
       comapOfPair hV hTU_V (Pair.completedTensor.inr A (T.completedTensor A U) V) := by
-  rw [associatorAffinoid_hom, ← comapOfPair_comp, ← comapOfPair_comp,
+  simp only [associatorAffinoid_hom, ← comapOfPair_comp,
     Pair.completedTensor.assocSymmHom_comp_inr_comp_inr]
 
 end AssociatorAffinoid
 
 end Associator
 
-end Affinoid
-
-end TauCeti.AdicSpace.FibreProduct
+end TauCeti.AdicSpace
