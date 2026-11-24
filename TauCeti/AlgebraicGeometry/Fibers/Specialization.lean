@@ -243,15 +243,10 @@ through its singular point. -/
 theorem fiberι_specializePoint_mem_smoothLocus [LocallyOfFinitePresentation f]
     [∀ x : X, IsRegularLocalRing (X.presheaf.stalk x)] (s : S) (p : Spec (S.residueField s)) :
     f.fiberι s (f.specializePoint hS x hx s p) ∈ f.smoothLocus := by
-  set σ := (f.sectionEquivOfValuationRing hS).symm ⟨x, hx⟩
-  -- the local ring of `S` at `s` is a quotient of the Noetherian local ring of `X` at `σ s`,
-  -- so it is a Noetherian valuation ring, hence a regular local ring
-  have : SurjectiveOnStalks (σ.val ≫ f) := by rw [σ.property]; infer_instance
-  have := SurjectiveOnStalks.of_comp σ.val f
-  have := isNoetherianRing_of_surjective _ _ _ (σ.val.stalkMap_surjective s)
   have := hS s
   rw [fiberι_specializePoint_apply]
-  exact f.mem_smoothLocus_of_isRegularLocalRing σ.property s
+  exact f.mem_smoothLocus_of_valuationRing
+    ((f.sectionEquivOfValuationRing hS).symm ⟨x, hx⟩).property s
 
 end Specialization
 
