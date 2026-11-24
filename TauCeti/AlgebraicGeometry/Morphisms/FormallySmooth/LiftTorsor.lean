@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Torsor.Defs
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallySmooth
+public import TauCeti.AlgebraicGeometry.Scheme.HomExt
 
 /-!
 # Lifts along a first-order thickening form a torsor
@@ -69,28 +70,6 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {T T' X S : Scheme.{u}} (i : T ⟶ T') (a : T ⟶ X) (f : X ⟶ S)
 
-namespace IsFirstOrderThickening
-
-/-- The product of two sections of the ideal sheaf of a first-order thickening vanishes, over any
-open subset. -/
-theorem mul_eq_zero_of_app_eq_zero [IsFirstOrderThickening i] {U : T'.Opens} {s t : Γ(T', U)}
-    (hs : i.app U s = 0) (ht : i.app U t = 0) : s * t = 0 := by
-  refine TopCat.Presheaf.section_ext T'.sheaf U _ _ fun x hx ↦ ?_
-  obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp T'.isBasis_affineOpens hx
-  have hres : ∀ s : Γ(T', U), i.app U s = 0 →
-      T'.presheaf.map (homOfLE hVU).op s ∈ i.ker.ideal ⟨V, hV⟩ := by
-    intro s hs
-    rw [Scheme.Hom.ker_apply, RingHom.mem_ker, ← CommRingCat.comp_apply, i.naturality,
-      CommRingCat.comp_apply, hs, map_zero]
-  have h0 : T'.presheaf.map (homOfLE hVU).op (s * t) = 0 := by
-    have : _ ∈ (i.ker * i.ker).ideal ⟨V, hV⟩ := Ideal.mul_mem_mul (hres s hs) (hres t ht)
-    rw [ker_mul_self, ← map_mul] at this
-    simpa using this
-  change T'.presheaf.germ U x hx (s * t) = T'.presheaf.germ U x hx 0
-  rw [← TopCat.Presheaf.germ_res_apply T'.presheaf (homOfLE hVU) x hxV, h0, map_zero, map_zero]
-
-end IsFirstOrderThickening
-
 /-- The families of maps on sections underlying a derivation of `𝒪_X` into the ideal of `i`,
 along `a`: to an open `V` of `X` and an open `U` of `T'` whose part in `T` maps into `V` they
 assign a map `Γ(X, V) → Γ(T', U)`. -/
@@ -106,17 +85,17 @@ structure IsLiftDerivation (D : LiftDerivationData i a) : Prop where
   /-- Each `D V U` is additive. -/
   map_add (V U h) (x y : Γ(X, V)) : D V ⟨U, h⟩ (x + y) = D V ⟨U, h⟩ x + D V ⟨U, h⟩ y
   /-- `D` takes values in the ideal sheaf of `i`. -/
-  app_apply (V U h) (x : Γ(X, V)) : i.app U (D V ⟨U, h⟩ x) = 0
+  app_apply_eq_zero (V U h) (x : Γ(X, V)) : i.app U (D V ⟨U, h⟩ x) = 0
   /-- `D` is compatible with restriction. -/
-  map_apply {V V' : X.Opens} {U U' : T'.Opens} (h h') (hV : V' ≤ V) (hU : U' ≤ U)
+  apply_map {V V' : X.Opens} {U U' : T'.Opens} (h h') (hV : V' ≤ V) (hU : U' ≤ U)
     (x : Γ(X, V)) : D V' ⟨U', h'⟩ (X.presheaf.map (homOfLE hV).op x) =
       T'.presheaf.map (homOfLE hU).op (D V ⟨U, h⟩ x)
   /-- The Leibniz rule, with `𝒪_X` acting on the ideal sheaf of `i` through `a`. -/
-  map_mul (V U h) (x y : Γ(X, V)) (x' y' : Γ(T', U)) (hx : i.app U x' = a.appLE V _ h x)
+  leibniz (V U h) (x y : Γ(X, V)) (x' y' : Γ(T', U)) (hx : i.app U x' = a.appLE V _ h x)
     (hy : i.app U y' = a.appLE V _ h y) :
     D V ⟨U, h⟩ (x * y) = x' * D V ⟨U, h⟩ y + y' * D V ⟨U, h⟩ x
   /-- `D` kills the sections pulled back from `S`. -/
-  appLE_apply (W : S.Opens) (V U h) (e : V ≤ f ⁻¹ᵁ W) (s : Γ(S, W)) :
+  map_appLE (W : S.Opens) (V U h) (e : V ≤ f ⁻¹ᵁ W) (s : Γ(S, W)) :
     D V ⟨U, h⟩ (f.appLE W V e s) = 0
 
 /-- The additive group of derivations of `𝒪_X` over `𝒪_S` into the ideal sheaf of a thickening
@@ -126,17 +105,17 @@ def liftDerivations : AddSubgroup (LiftDerivationData i a) where
   zero_mem' := ⟨by simp, by simp, by simp, by simp, by simp⟩
   add_mem' {D D'} hD hD' :=
     ⟨fun V U h x y ↦ by simp [hD.map_add, hD'.map_add]; abel,
-      fun V U h x ↦ by simp [hD.app_apply, hD'.app_apply],
-      fun h h' hV hU x ↦ by simp [hD.map_apply h h' hV hU, hD'.map_apply h h' hV hU],
+      fun V U h x ↦ by simp [hD.app_apply_eq_zero, hD'.app_apply_eq_zero],
+      fun h h' hV hU x ↦ by simp [hD.apply_map h h' hV hU, hD'.apply_map h h' hV hU],
       fun V U h x y x' y' hx hy ↦ by
-        simp [hD.map_mul V U h x y x' y' hx hy, hD'.map_mul V U h x y x' y' hx hy]; ring,
-      fun W V U h e s ↦ by simp [hD.appLE_apply, hD'.appLE_apply]⟩
+        simp [hD.leibniz V U h x y x' y' hx hy, hD'.leibniz V U h x y x' y' hx hy]; ring,
+      fun W V U h e s ↦ by simp [hD.map_appLE, hD'.map_appLE]⟩
   neg_mem' {D} hD :=
     ⟨fun V U h x y ↦ by simp [hD.map_add]; abel,
-      fun V U h x ↦ by simp [hD.app_apply],
-      fun h h' hV hU x ↦ by simp [hD.map_apply h h' hV hU],
-      fun V U h x y x' y' hx hy ↦ by simp [hD.map_mul V U h x y x' y' hx hy]; ring,
-      fun W V U h e s ↦ by simp [hD.appLE_apply]⟩
+      fun V U h x ↦ by simp [hD.app_apply_eq_zero],
+      fun h h' hV hU x ↦ by simp [hD.apply_map h h' hV hU],
+      fun V U h x y x' y' hx hy ↦ by simp [hD.leibniz V U h x y x' y' hx hy]; ring,
+      fun W V U h e s ↦ by simp [hD.map_appLE]⟩
 
 /-- Membership in `liftDerivations` is `IsLiftDerivation`. -/
 theorem mem_liftDerivations {D : LiftDerivationData i a} :
@@ -158,23 +137,10 @@ theorem isLiftDerivation (D : LiftDerivation i a f) : IsLiftDerivation i a f D.v
 
 /-- A derivation vanishes on `1`. -/
 @[simp]
-theorem apply_one (D : LiftDerivation i a f) (V : X.Opens) (U) : D.val V U 1 = 0 := by
-  simpa using D.isLiftDerivation.appLE_apply ⊤ V U.val U.property le_top 1
+theorem map_one_eq_zero (D : LiftDerivation i a f) (V : X.Opens) (U) : D.val V U 1 = 0 := by
+  simpa using D.isLiftDerivation.map_appLE ⊤ V U.val U.property le_top 1
 
 end LiftDerivation
-
-/-- Two morphisms of schemes with the same underlying map agree if their maps on sections agree. -/
-theorem hom_ext_of_appLE {Y Z : Scheme.{u}} {φ ψ : Y ⟶ Z} (hbase : φ.base = ψ.base)
-    (h : ∀ V e (x : Γ(Z, V)), φ.appLE V (ψ ⁻¹ᵁ V) e x = ψ.app V x) : φ = ψ := by
-  refine Scheme.Hom.ext hbase fun V ↦ ?_
-  ext x
-  rw [← h V (by rw [hbase]) x, Scheme.Hom.appLE]
-  rfl
-
-/-- Two morphisms of schemes with the same underlying map agree if their maps on sections agree. -/
-theorem hom_ext_of_appLE_eq_appLE {Y Z : Scheme.{u}} {φ ψ : Y ⟶ Z} (hbase : φ.base = ψ.base)
-    (h : ∀ V U e e' (x : Γ(Z, V)), φ.appLE V U e x = ψ.appLE V U e' x) : φ = ψ :=
-  hom_ext_of_appLE hbase fun V e x ↦ (h V _ e le_rfl x).trans (by rw [Scheme.Hom.appLE_eq_app])
 
 /-- Equal morphisms have equal maps on sections. -/
 private theorem appLE_congr_hom {Y Z : Scheme.{u}} {φ ψ : Y ⟶ Z} (hφψ : φ = ψ) {V : Z.Opens}
@@ -224,9 +190,10 @@ private theorem app_add_map_mul (V : X.Opens) (x y : Γ(X, V)) :
   have hx := app_appLE hb le_rfl hle x
   have hy := app_appLE hb le_rfl hle y
   rw [← Scheme.Hom.app_eq_appLE] at hx hy
-  rw [map_mul, D.isLiftDerivation.map_mul V _ _ x y _ _ hx hy]
+  rw [map_mul, D.isLiftDerivation.leibniz V _ _ x y _ _ hx hy]
   have := IsFirstOrderThickening.mul_eq_zero_of_app_eq_zero i
-    (D.isLiftDerivation.app_apply V _ hle x) (D.isLiftDerivation.app_apply V _ hle y)
+    (D.isLiftDerivation.app_apply_eq_zero V _ hle x)
+    (D.isLiftDerivation.app_apply_eq_zero V _ hle y)
   linear_combination (-1 : Γ(T', b ⁻¹ᵁ V)) * this
 
 /-- The map on sections `x ↦ b^* x + D x` over `V`, a ring homomorphism. -/
@@ -235,14 +202,14 @@ noncomputable def addDerivationApp (V : X.Opens) : Γ(X, V) ⟶ Γ(T', b ⁻¹�
     { toFun x := b.app V x + D.val V ⟨_, preimage_preimage_le hb V⟩ x
       map_one' := by simp
       map_mul' := app_add_map_mul b hb D V
-      map_zero' := by simpa using D.isLiftDerivation.appLE_apply ⊤ V _ _ le_top 0
+      map_zero' := by simpa using D.isLiftDerivation.map_appLE ⊤ V _ _ le_top 0
       map_add' x y := by rw [map_add, D.isLiftDerivation.map_add]; abel }
 
 /-- The value of `addDerivationApp` on a section. -/
+@[simp]
 theorem addDerivationApp_apply (V : X.Opens) (x : Γ(X, V)) :
     addDerivationApp b hb D V x = b.app V x + D.val V ⟨_, preimage_preimage_le hb V⟩ x := by
-  rw [addDerivationApp]
-  rfl
+  simp [addDerivationApp]
 
 /-- The morphism of structure presheaves `x ↦ b^* x + D x`. -/
 noncomputable def addDerivationC : X.presheaf ⟶ b.base _* T'.presheaf where
@@ -254,13 +221,16 @@ noncomputable def addDerivationC : X.presheaf ⟶ b.base _* T'.presheaf where
     obtain rfl : g = (homOfLE hle).op := Subsingleton.elim _ _
     ext x
     have h1 := congr($(b.naturality (homOfLE hle).op) x)
-    have h2 := D.isLiftDerivation.map_apply (preimage_preimage_le hb V)
+    have h2 := D.isLiftDerivation.apply_map (preimage_preimage_le hb V)
       (preimage_preimage_le hb V') hle ((Opens.map b.base).map (homOfLE hle)).le x
-    simp only [CommRingCat.comp_apply] at h1 ⊢
-    rw [addDerivationApp_apply, addDerivationApp_apply, h1, h2, map_add]
-    rfl
+    simp only [CommRingCat.comp_apply, Quiver.Hom.unop_op] at h1 h2 ⊢
+    rw [addDerivationApp_apply, addDerivationApp_apply, h1, h2, map_add,
+      TopCat.Presheaf.pushforward_obj_map, Quiver.Hom.unop_op]
+    -- The two restriction maps agree, since there is at most one morphism between two opens.
+    congr 4
 
 /-- The components of `addDerivationC`. -/
+@[simp]
 theorem addDerivationC_app (V : X.Opens) :
     (addDerivationC b hb D).app (op V) = addDerivationApp b hb D V := by
   rw [addDerivationC]
@@ -273,16 +243,16 @@ private theorem addDerivationPsh_stalkMap_comp (t : T) :
   rw [PresheafedSpace.stalkMap_germ_assoc]
   dsimp only
   rw [Scheme.Hom.germ_stalkMap_assoc]
+  -- After `dsimp only`, the membership proof of the germ on the left still mentions the point map
+  -- of the `PresheafedSpace.Hom`; restate it with `hV'` so that `Scheme.Hom.germ_stalkMap` applies.
   have hV' : i t ∈ b ⁻¹ᵁ V := hV
   change _ ≫ T'.presheaf.germ (b ⁻¹ᵁ V) (i t) hV' ≫ _ =
     _ ≫ T'.presheaf.germ (b ⁻¹ᵁ V) (i t) hV' ≫ _
   rw [Scheme.Hom.germ_stalkMap, ← Category.assoc, ← Category.assoc]
   congr 1
   ext y
-  change i.app _ (addDerivationC b hb D |>.app (op V) y) = _
-  rw [addDerivationC_app, addDerivationApp_apply, map_add, D.isLiftDerivation.app_apply,
-    add_zero]
-  rfl
+  rw [CommRingCat.comp_apply, CommRingCat.comp_apply, addDerivationC_app, addDerivationApp_apply,
+    map_add, D.isLiftDerivation.app_apply_eq_zero, add_zero]
 
 /-- **Translating a lift by a derivation.** For `b : T' ⟶ X` lifting `a` along a first-order
 thickening `i` and a derivation `D` of `𝒪_X` into the ideal of `i`, the morphism `b + D` with the
@@ -305,7 +275,6 @@ theorem addDerivation_base : (addDerivation b hb D).base = b.base := by
 
 /-- `b + D` has the same preimages of opens as `b`. -/
 theorem preimage_addDerivation (V : X.Opens) : addDerivation b hb D ⁻¹ᵁ V = b ⁻¹ᵁ V := by
-  change (Opens.map _).obj V = _
   rw [addDerivation_base]
 
 /-- On sections, `(b + D)^* x = b^* x + D x`. -/
@@ -313,25 +282,26 @@ theorem addDerivation_appLE {V : X.Opens} {U : T'.Opens} (e : U ≤ b ⁻¹ᵁ V
     (e' : U ≤ addDerivation b hb D ⁻¹ᵁ V) (x : Γ(X, V)) :
     (addDerivation b hb D).appLE V U e' x =
       b.appLE V U e x + D.val V ⟨U, (i.preimage_mono e).trans (preimage_preimage_le hb V)⟩ x := by
-  rw [Scheme.Hom.appLE, CommRingCat.comp_apply]
-  change T'.presheaf.map _ (addDerivationApp b hb D V x) = _
-  have h2 := D.isLiftDerivation.map_apply (preimage_preimage_le hb V)
+  have h2 := D.isLiftDerivation.apply_map (preimage_preimage_le hb V)
     ((i.preimage_mono e).trans (preimage_preimage_le hb V)) le_rfl e x
-  rw [addDerivationApp_apply, map_add]
-  change T'.presheaf.map (homOfLE e).op (b.app V x) +
-    T'.presheaf.map (homOfLE e).op (D.val V ⟨_, preimage_preimage_le hb V⟩ x) = _
-  rw [← h2]
-  simp [Scheme.Hom.appLE]
+  -- The map on sections of `addDerivation b hb D` over `V` is `addDerivationApp b hb D V` by
+  -- definition. A lemma stating this cannot be written: its two sides have the types
+  -- `Γ(T', addDerivation b hb D ⁻¹ᵁ V)` and `Γ(T', b ⁻¹ᵁ V)`, which agree only after unfolding
+  -- `addDerivation`.
+  rw [Scheme.Hom.appLE, CommRingCat.comp_apply]
+  change T'.presheaf.map (homOfLE e).op (addDerivationApp b hb D V x) = _
+  rw [addDerivationApp_apply, map_add, ← h2, ← CommRingCat.comp_apply, ← Scheme.Hom.appLE]
+  simp
 
 /-- `b + D` still lifts `a` along `i`. -/
 theorem comp_addDerivation : i ≫ addDerivation b hb D = a := by
   subst hb
-  refine hom_ext_of_appLE (by rw [Scheme.Hom.comp_base, Scheme.Hom.comp_base,
+  refine Scheme.Hom.ext_of_appLE (by rw [Scheme.Hom.comp_base, Scheme.Hom.comp_base,
     addDerivation_base]) fun V e x ↦ ?_
   have hz : i.appLE (addDerivation b rfl D ⁻¹ᵁ V) ((i ≫ b) ⁻¹ᵁ V)
       (by rw [preimage_addDerivation]; rfl) (D.val V ⟨addDerivation b rfl D ⁻¹ᵁ V,
         by rw [preimage_addDerivation]; exact preimage_preimage_le rfl V⟩ x) = 0 := by
-    rw [Scheme.Hom.appLE, CommRingCat.comp_apply, D.isLiftDerivation.app_apply, map_zero]
+    rw [Scheme.Hom.appLE, CommRingCat.comp_apply, D.isLiftDerivation.app_apply_eq_zero, map_zero]
   rw [Scheme.Hom.comp_appLE, CommRingCat.comp_apply, Scheme.Hom.app_eq_appLE,
     addDerivation_appLE b rfl D (preimage_addDerivation b rfl D V).le, map_add, hz, add_zero,
     ← CommRingCat.comp_apply]
@@ -340,9 +310,9 @@ theorem comp_addDerivation : i ≫ addDerivation b hb D = a := by
 
 /-- `b + D` lies over the same morphism to `S` as `b`. -/
 theorem addDerivation_comp : addDerivation b hb D ≫ f = b ≫ f := by
-  refine hom_ext_of_appLE (by rw [Scheme.Hom.comp_base, Scheme.Hom.comp_base,
+  refine Scheme.Hom.ext_of_appLE (by rw [Scheme.Hom.comp_base, Scheme.Hom.comp_base,
     addDerivation_base]) fun W e x ↦ ?_
-  have hz := D.isLiftDerivation.appLE_apply W (f ⁻¹ᵁ W) ((b ≫ f) ⁻¹ᵁ W)
+  have hz := D.isLiftDerivation.map_appLE W (f ⁻¹ᵁ W) ((b ≫ f) ⁻¹ᵁ W)
     (preimage_preimage_le hb (f ⁻¹ᵁ W)) le_rfl x
   rw [Scheme.Hom.comp_appLE, CommRingCat.comp_apply]
   refine (addDerivation_appLE b hb D (le_rfl : (b ≫ f) ⁻¹ᵁ W ≤ b ⁻¹ᵁ (f ⁻¹ᵁ W)) e
@@ -381,8 +351,7 @@ theorem hom_base_eq [Surjective i] (b b' : ThickeningLift i a f h) :
 /-- Any two lifts along a surjective `i` have the same preimages of opens. -/
 theorem le_preimage_hom [Surjective i] (c c' : ThickeningLift i a f h) {V : X.Opens}
     {U : T'.Opens} (e : U ≤ c.hom ⁻¹ᵁ V) : U ≤ c'.hom ⁻¹ᵁ V := fun x hx ↦ by
-  change c'.hom.base x ∈ V
-  rw [← hom_base_eq c c']
+  rw [Scheme.Hom.mem_preimage, ← hom_base_eq c c']
   exact e hx
 
 /-- Restricting a lift to an open subset `U` of `T'`: a lift of `a` restricted to `i ⁻¹ᵁ U` along
@@ -407,23 +376,24 @@ noncomputable instance instVAdd : VAdd (LiftDerivation i a f) (ThickeningLift i 
     (addDerivation_comp b.hom b.comp_hom D).trans b.hom_comp⟩
 
 /-- The morphism underlying `D +ᵥ b` is `b + D`. -/
+@[simp]
 theorem hom_vadd (D : LiftDerivation i a f) (b : ThickeningLift i a f h) :
     (D +ᵥ b).hom = addDerivation b.hom b.comp_hom D :=
   rfl
 
 /-- The difference of two lifts on sections, `b^* x - b'^* x`. -/
-noncomputable def vsubData (b b' : ThickeningLift i a f h) : LiftDerivationData i a :=
+private noncomputable def vsubData (b b' : ThickeningLift i a f h) : LiftDerivationData i a :=
   fun V U x ↦ b.hom.appLE V U.val (le_preimage_of_preimage_le b.comp_hom U.property) x -
     b'.hom.appLE V U.val (le_preimage_of_preimage_le b'.comp_hom U.property) x
 
 /-- The value of `vsubData` on a section. -/
-theorem vsubData_apply (b b' : ThickeningLift i a f h) (V : X.Opens) (U) (x : Γ(X, V)) :
+private theorem vsubData_apply (b b' : ThickeningLift i a f h) (V : X.Opens) (U) (x : Γ(X, V)) :
     vsubData b b' V U x = b.hom.appLE V U.val (le_preimage_of_preimage_le b.comp_hom U.property) x -
       b'.hom.appLE V U.val (le_preimage_of_preimage_le b'.comp_hom U.property) x := by
   rw [vsubData]
 
 /-- The difference of two lifts is a derivation into the ideal of `i`. -/
-theorem isLiftDerivation_vsubData (b b' : ThickeningLift i a f h) :
+private theorem isLiftDerivation_vsubData (b b' : ThickeningLift i a f h) :
     IsLiftDerivation i a f (vsubData b b') := by
   have hi : ∀ (c : ThickeningLift i a f h) {V U} (hU : i ⁻¹ᵁ U ≤ a ⁻¹ᵁ V) (x : Γ(X, V)),
       i.app U (c.hom.appLE V U (le_preimage_of_preimage_le c.comp_hom hU) x) =
@@ -439,17 +409,16 @@ theorem isLiftDerivation_vsubData (b b' : ThickeningLift i a f h) :
     simp only [vsubData_apply, map_sub, ← CommRingCat.comp_apply, Scheme.Hom.map_appLE,
       Scheme.Hom.appLE_map]
   · intro V U hU x y x' y' hx hy
+    -- Two sections of `T'` restricting to the same section of `T` differ by a section of the
+    -- ideal of `i`; the product of two such differences vanishes.
+    have hI {s s' : Γ(T', U)} {z : Γ(X, V)} (hs : i.app U s = a.appLE V _ hU z)
+        (hs' : i.app U s' = a.appLE V _ hU z) : i.app U (s - s') = 0 := by
+      rw [map_sub, hs, hs', sub_self]
+    have h1 := IsFirstOrderThickening.mul_eq_zero_of_app_eq_zero i (hI hx (hi b hU x))
+      (hI (hi b hU y) (hi b' hU y))
+    have h2 := IsFirstOrderThickening.mul_eq_zero_of_app_eq_zero i (hI hy (hi b' hU y))
+      (hI (hi b hU x) (hi b' hU x))
     simp only [vsubData_apply, map_mul]
-    have h1 := IsFirstOrderThickening.mul_eq_zero_of_app_eq_zero i
-      (s := x' - b.hom.appLE V U (le_preimage_of_preimage_le b.comp_hom hU) x)
-      (t := b.hom.appLE V U (le_preimage_of_preimage_le b.comp_hom hU) y -
-        b'.hom.appLE V U (le_preimage_of_preimage_le b'.comp_hom hU) y)
-      (by rw [map_sub, hx, hi b hU, sub_self]) (by rw [map_sub, hi b hU, hi b' hU, sub_self])
-    have h2 := IsFirstOrderThickening.mul_eq_zero_of_app_eq_zero i
-      (s := y' - b'.hom.appLE V U (le_preimage_of_preimage_le b'.comp_hom hU) y)
-      (t := b.hom.appLE V U (le_preimage_of_preimage_le b.comp_hom hU) x -
-        b'.hom.appLE V U (le_preimage_of_preimage_le b'.comp_hom hU) x)
-      (by rw [map_sub, hy, hi b' hU, sub_self]) (by rw [map_sub, hi b hU, hi b' hU, sub_self])
     linear_combination -h1 - h2
   · intro W V U hU e s
     have hle : U ≤ h ⁻¹ᵁ W := by
@@ -464,14 +433,18 @@ theorem isLiftDerivation_vsubData (b b' : ThickeningLift i a f h) :
 
 /-- The difference of two lifts is a derivation. -/
 noncomputable instance instVSub : VSub (LiftDerivation i a f) (ThickeningLift i a f h) where
-  vsub b b' := ⟨vsubData b b', (mem_liftDerivations i a f).2 (isLiftDerivation_vsubData b b')⟩
+  vsub b b' := ⟨fun V U x ↦
+      b.hom.appLE V U.val (le_preimage_of_preimage_le b.comp_hom U.property) x -
+        b'.hom.appLE V U.val (le_preimage_of_preimage_le b'.comp_hom U.property) x,
+    by exact (mem_liftDerivations i a f).2 (isLiftDerivation_vsubData b b')⟩
 
 /-- On sections, `(b -ᵥ b') x = b^* x - b'^* x`. -/
+@[simp]
 theorem coe_vsub_apply (b b' : ThickeningLift i a f h) (V : X.Opens) (U) (x : Γ(X, V)) :
     (b -ᵥ b' : LiftDerivation i a f).val V U x =
       b.hom.appLE V U.val (le_preimage_of_preimage_le b.comp_hom U.property) x -
         b'.hom.appLE V U.val (le_preimage_of_preimage_le b'.comp_hom U.property) x :=
-  vsubData_apply b b' V U x
+  rfl
 
 /-- On sections, `(D +ᵥ b)^* x = b^* x + D x`. -/
 theorem hom_vadd_appLE (D : LiftDerivation i a f) (b : ThickeningLift i a f h) {V : X.Opens}
@@ -484,16 +457,16 @@ theorem hom_vadd_appLE (D : LiftDerivation i a f) (b : ThickeningLift i a f h) {
 `h`, the lifts form a torsor under the derivations of `𝒪_X` over `𝒪_S` into the ideal of `i`. -/
 noncomputable instance instAddTorsor [Nonempty (ThickeningLift i a f h)] :
     AddTorsor (LiftDerivation i a f) (ThickeningLift i a f h) where
-  zero_vadd b := ThickeningLift.ext <| hom_ext_of_appLE_eq_appLE (hom_base_eq _ _)
-    fun V U e e' x ↦ by simp [hom_vadd_appLE _ _ e' e]
-  add_vadd D D' b := ThickeningLift.ext <| hom_ext_of_appLE_eq_appLE (hom_base_eq _ _)
+  zero_vadd b := ThickeningLift.ext <| Scheme.Hom.ext_of_appLE_eq_appLE (hom_base_eq _ _)
+    fun V U e e' x ↦ by rw [hom_vadd_appLE _ _ e' e]; simp
+  add_vadd D D' b := ThickeningLift.ext <| Scheme.Hom.ext_of_appLE_eq_appLE (hom_base_eq _ _)
     fun V U e e' x ↦ by
       rw [hom_vadd_appLE _ _ (le_preimage_hom _ b e) e,
         hom_vadd_appLE D (D' +ᵥ b) (le_preimage_hom _ (D' +ᵥ b) e') e',
         hom_vadd_appLE D' b (le_preimage_hom _ b e')]
       simp only [AddSubgroup.coe_add, Pi.add_apply]
       abel
-  vsub_vadd' b b' := ThickeningLift.ext <| hom_ext_of_appLE_eq_appLE (hom_base_eq _ _)
+  vsub_vadd' b b' := ThickeningLift.ext <| Scheme.Hom.ext_of_appLE_eq_appLE (hom_base_eq _ _)
     fun V U e e' x ↦ by
       rw [hom_vadd_appLE _ _ (le_preimage_hom _ b' e), coe_vsub_apply]
       simp
@@ -512,23 +485,6 @@ instance instSubsingleton [FormallyEtale f] : Subsingleton (ThickeningLift i a f
   rw [← pullback.condition_assoc, ← pullback.condition_assoc, b.comp_hom, b'.comp_hom]
 
 end ThickeningLift
-
-/-- A smooth morphism between affine schemes is formally smooth. -/
-private theorem formallySmooth_of_smooth_of_isAffine {Y Z : Scheme.{u}} [IsAffine Y] [IsAffine Z]
-    (g : Y ⟶ Z) [Smooth g] : FormallySmooth g := by
-  have hg : RingHom.Smooth g.appTop.hom := (HasRingHomProperty.iff_of_isAffine (P := @Smooth)).1
-    inferInstance
-  have : FormallySmooth (Spec.map g.appTop) := (formallySmooth_SpecMap_iff _).2 hg.formallySmooth
-  have e : g = Y.isoSpec.hom ≫ Spec.map g.appTop ≫ Z.isoSpec.inv := by
-    rw [Scheme.isoSpec_hom_naturality_assoc, Iso.hom_inv_id, Category.comp_id]
-  rw [e]
-  infer_instance
-
-/-- The restriction of a first-order thickening over an open subset is a first-order thickening. -/
-instance isFirstOrderThickening_morphismRestrict [IsFirstOrderThickening i] (U : T'.Opens) :
-    IsFirstOrderThickening (i ∣_ U) :=
-  MorphismProperty.of_isPullback (P := @IsFirstOrderThickening)
-    (isPullback_morphismRestrict i U).flip ‹_›
 
 /-- **Local existence of lifts.** For `f` smooth, `i : T ⟶ T'` a first-order thickening and
 `a : T ⟶ X` lying over `h : T' ⟶ S`, every point of `T'` has an open neighbourhood `U` over which
@@ -566,7 +522,6 @@ theorem exists_thickeningLift_restrict [Smooth f] [IsFirstOrderThickening i] (h 
     exact (hUle x'.property).right
   let g' : (i ⁻¹ᵁ U).toScheme ⟶ V := IsOpenImmersion.lift V.ι ((i ⁻¹ᵁ U).ι ≫ a) hg
   let h' : U.toScheme ⟶ W := IsOpenImmersion.lift W.ι (U.ι ≫ h) hh
-  have := formallySmooth_of_smooth_of_isAffine (f.resLE W V hVW)
   obtain ⟨l, hl₁, hl₂⟩ := FormallySmooth.exists_lift (f := f.resLE W V hVW) (i ∣_ U) g' h' (by
     rw [← cancel_mono W.ι, Category.assoc, Category.assoc, Scheme.Hom.resLE_comp_ι]
     simp only [g', h']
