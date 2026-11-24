@@ -36,7 +36,7 @@ de Rham complexes `TauCeti.DeRham.complexMap f : complex A B ⟶ complex A C`, f
   one the pullback is `f` and `KaehlerDifferential.mapSemilinear f`.
 * `TauCeti.DeRham.pullback_d`: pullback commutes with the de Rham differential.
 * `TauCeti.DeRham.pullback_gMul`: pullback preserves wedge products.
-* `TauCeti.DeRham.pullback_id`, `TauCeti.DeRham.pullback_comp`: functoriality of pullback.
+* `TauCeti.DeRham.pullback_id`, `TauCeti.DeRham.pullback_comp_apply`: functoriality of pullback.
 * `TauCeti.DeRham.complexMap_id`, `TauCeti.DeRham.complexMap_comp`: functoriality of the
   morphism of de Rham complexes.
 
@@ -50,7 +50,7 @@ which span the forms over `A`.
 
 The semilinearity homomorphism of `pullback f n` is the coercion `(f : B →+* C)`, the simp-normal
 form of `f.toRingHom`, so that its simp lemmas still apply once `simp` has normalised the type of
-the map. For the same reason functoriality, `pullback_comp`, is stated pointwise: Mathlib's
+the map. For the same reason functoriality, `pullback_comp_apply`, is stated pointwise: Mathlib's
 `RingHomCompTriple` instance for algebra homomorphisms is phrased with `AlgHom.toRingHom`.
 
 ## References
@@ -185,7 +185,7 @@ theorem pullback_id : (pullback (AlgHom.id A B) n : Forms A B n →ₗ[B] Forms 
 /-- **Functoriality of pullback**: pullback along `g ∘ f` is pullback along `f`, then along `g`.
 -/
 @[simp]
-theorem pullback_comp (g : C →ₐ[A] E) (ω : Forms A B n) :
+theorem pullback_comp_apply (g : C →ₐ[A] E) (ω : Forms A B n) :
     pullback (g.comp f) n ω = pullback g n (pullback f n ω) :=
   Subtype.ext <| (coe_pullback _ ω).trans <| by simp
 
@@ -241,8 +241,9 @@ theorem complexMap_comp (f : B →ₐ[A] C) (g : C →ₐ[A] E) :
     complexMap (g.comp f) = complexMap f ≫ complexMap g := by
   ext n ω
   simp only [HomologicalComplex.comp_f, ModuleCat.comp_apply, complexMap_f_apply]
-  -- As in `complexMap_id`, `pullback_comp` matches `ω` only up to `complex_X`, definitionally.
-  exact pullback_comp f g ω
+  -- As in `complexMap_id`, `pullback_comp_apply` matches `ω` only up to `complex_X`,
+  -- definitionally.
+  exact pullback_comp_apply f g ω
 
 end
 
