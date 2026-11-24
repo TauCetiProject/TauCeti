@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import Mathlib.CategoryTheory.Adjunction.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Free
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Projective.Basic
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Homotopy
 import TauCeti.Algebra.Module.GradedModule.Prod
 
@@ -268,8 +268,8 @@ private theorem isCurvedDGRightModule_freeCarrier :
         (op a • (op w • x.snd) - op (d a) • V.grading.koszulTwist 1 x.fst) +
           p.negOnePow • (op (d a) • x.fst - op (d (d a)) • V.grading.koszulTwist 1 x.snd)
       rw [hτ₁, hτ₂, h.sq_eq a]
-      simp only [smul_sub, smul_neg, negOnePow_smul_negOnePow_smul, MulOpposite.op_sub, sub_smul,
-        op_mul, mul_smul]
+      simp only [smul_sub, smul_neg, Int.negOnePow_smul_negOnePow_smul, MulOpposite.op_sub,
+        sub_smul, op_mul, mul_smul]
       abel
     · -- Unfold `freeDifferential` and the twisted `Aᵐᵒᵖ`-action on the second coordinate.
       change op a • x.fst - op (d a) • V.grading.koszulTwist 1 x.snd =
@@ -661,6 +661,28 @@ theorem exists_epi_contractible_gradedProjective (M : CurvedDGRightModuleCat.{u,
   ⟨freeObj h (Projective.over (toGradedModuleCat M)),
     freeDesc (Projective.π (toGradedModuleCat M)),
     inferInstance, inferInstance, isZero_homotopy_freeObj h _⟩
+
+/-- **Dimension shifting along a contractible graded-projective cover.** If the underlying graded
+module of a curved right module `M` has projective dimension `< m + 2`, then `M` is the quotient
+of a short exact sequence `K ⟶ Q ⟶ M` of curved modules whose middle term `Q` is zero in the curved
+homotopy category and whose kernel `K` has underlying graded module of projective dimension
+`< m + 1`. -/
+theorem exists_shortExact_contractible_of_hasProjectiveDimensionLT {m : ℕ}
+    (M : CurvedDGRightModuleCat.{u, u, u} h)
+    (hM : HasProjectiveDimensionLT (toGradedModuleCat M) (m + 2)) :
+    ∃ (K Q : CurvedDGRightModuleCat.{u, u, u} h)
+      (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) K ⟶
+        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q)
+      (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
+        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M)
+      (hfg : f ≫ g = 0),
+      (ShortComplex.mk f g hfg).ShortExact ∧ IsZero (DGHomotopyCategory.of R Q) ∧
+        HasProjectiveDimensionLT (toGradedModuleCat K) (m + 1) := by
+  obtain ⟨Q, g, hg, hQproj, hQ0⟩ := exists_epi_contractible_gradedProjective (R := R) M
+  have hS : (ShortComplex.mk (kernelι g) g (kernelι_comp g)).ShortExact := shortExact_kernelι g
+  exact ⟨kernelObj g, Q, kernelι g, g, kernelι_comp g, hS, hQ0,
+    ((hS.map_of_exact (forgetDifferential (h := h))).hasProjectiveDimensionLT_X₃_iff
+      m hQproj).mp hM⟩
 
 end UniversalProperty
 

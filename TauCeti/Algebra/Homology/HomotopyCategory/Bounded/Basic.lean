@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Homology.CochainComplexMinus
 public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
-public import Mathlib.CategoryTheory.Localization.OfQuotient
 public import TauCeti.Algebra.Homology.EssentiallySmall
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.Small
+import Mathlib.CategoryTheory.Localization.OfQuotient
 
 /-!
 # The homotopy category of bounded cochain complexes
@@ -27,8 +27,10 @@ mapping cone of a morphism between bounded complexes is bounded
 on the cone are given by `CochainComplex.isStrictlyLE_mappingCone` (also only
 `[HasHomotopyCofiber f]`) and, under `[HasBinaryBiproducts C]`, Mathlib's
 `CochainComplex.isStrictlyGE_mappingCone`. Consequently the full subcategory is stable under
-shifts and distinguished triangles. Complexes concentrated in one degree, or in two adjacent
-degrees, are bounded (`CochainComplex.bounded_single`, `CochainComplex.bounded_double`).
+shifts and, up to isomorphism, under distinguished triangles (the representative of an object is
+remembered strictly, so the property itself is not closed under isomorphism). Complexes
+concentrated in one degree, or in two adjacent degrees, are bounded
+(`CochainComplex.bounded_single`, `CochainComplex.bounded_double`).
 
 The construction follows the organization of Mathlib's bounded-below category
 `HomotopyCategory.Plus`, replacing its one-sided support condition by two-sided boundedness.
@@ -55,9 +57,10 @@ The construction follows the organization of Mathlib's bounded-below category
   `HomotopyCategory.singleFunctor`.
 
 The homotopy category of bounded complexes over an essentially small category is essentially
-small (through `HomotopyCategory.essentiallySmall` and
-`CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`), so it has a triangulated
-Grothendieck group.
+small, which needs only `[Preadditive C]` (through `HomotopyCategory.essentiallySmall` and
+`CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`). With `[HasZeroObject C]` and
+`[HasBinaryBiproducts C]` it is also a triangulated subcategory of the homotopy category, so it
+has a triangulated Grothendieck group.
 
 ## References
 
@@ -86,12 +89,8 @@ def bounded [HasZeroMorphisms C] : ObjectProperty (CochainComplex C ℤ) :=
 /-- A cochain complex is bounded iff it is strictly bounded below by some `a` and strictly bounded
 above by some `b`. -/
 lemma bounded_iff [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
-    CochainComplex.bounded C K ↔ ∃ a b : ℤ, K.IsStrictlyGE a ∧ K.IsStrictlyLE b := by
-  constructor
-  · rintro ⟨⟨a, ha⟩, b, hb⟩
-    exact ⟨a, b, ha, hb⟩
-  · rintro ⟨a, b, ha, hb⟩
-    exact ⟨⟨a, ha⟩, b, hb⟩
+    CochainComplex.bounded C K ↔ ∃ a b : ℤ, K.IsStrictlyGE a ∧ K.IsStrictlyLE b :=
+  exists_and_exists_comm
 
 /-- A cochain complex is bounded exactly when it vanishes outside a finite set of degrees. -/
 lemma bounded_iff_exists_finset_isZero_X [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
@@ -282,9 +281,8 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
 
 /-- Every object of the homotopy category represented by a bounded complex is represented by a
 bounded below complex. -/
-lemma bounded_le_plus : HomotopyCategory.bounded C ≤ _root_.HomotopyCategory.plus C := by
-  rintro _ ⟨K, hK⟩
-  exact ⟨K, hK.1⟩
+lemma bounded_le_plus : HomotopyCategory.bounded C ≤ _root_.HomotopyCategory.plus C :=
+  ObjectProperty.strictMap_monotone inf_le_left _
 
 /-- The homotopy category of bounded cochain complexes. -/
 abbrev Bounded := (HomotopyCategory.bounded C).FullSubcategory

@@ -58,8 +58,9 @@ is the global dimension `TauCeti.globalDim C` of every pivotal structure on `C`.
   structure;
 * `TauCeti.isIso_doubleDualTrace`, `TauCeti.isIso_doubleDualTrace_rightAdjointMate` and
   `TauCeti.squaredNorm_ne_zero`: nonvanishing for simple objects, from Schur's lemma for an
-  exact pairing with a simple member (`TauCeti.isIso_comp_evaluation_of_simple_right` and
-  `TauCeti.isIso_comp_evaluation_of_simple_left`);
+  exact pairing with a member with scalar endomorphisms
+  (`TauCeti.comp_evaluation_ne_zero_of_surjective_right` and
+  `TauCeti.comp_evaluation_ne_zero_of_surjective_left`);
 * `TauCeti.normGlobalDim`: the global dimension as a sum of squared norms, independent of the
   isomorphisms by `TauCeti.normGlobalDim_congr` and equal to the pivotal global dimension by
   `TauCeti.normGlobalDim_eq_globalDim`.
@@ -256,7 +257,8 @@ theorem isIso_doubleDualTrace [RightRigidCategory C] (b : X ⟶ (Xᘁ : C)ᘁ) [
     IsIso (doubleDualTrace b) := by
   -- `X` is a right dual of `Xᘁ` through `b`, with evaluation `b ▷ Xᘁ ≫ ε_ Xᘁ Xᘁᘁ`.
   let := exactPairingCongrRight (X := (Xᘁ : C)) (asIso b)
-  have := isIso_comp_evaluation_of_simple_right k (X := (Xᘁ : C))
+  have := isIso_of_hom_simple <| comp_evaluation_ne_zero_of_surjective_right (X := (Xᘁ : C))
+    (bijective_algebraMap_end_of_simple k X).2
     (coevaluation_ne_zero (Y := (Xᘁ : C)) (Simple.not_isZero X))
   rwa [exactPairingCongrRight_evaluation, asIso_hom, ← doubleDualTrace_def] at this
 
@@ -268,7 +270,8 @@ theorem isIso_doubleDualTrace_rightAdjointMate [RigidCategory C] (b : (Xᘁ : C)
     IsIso (doubleDualTrace (bᘁ)) := by
   -- `X` is a right dual of `Xᘁ` through `b⁻¹`, with coevaluation `η_ Xᘁ Xᘁᘁ ≫ Xᘁ ◁ b`.
   let := exactPairingCongrRight (X := (Xᘁ : C)) (asIso b).symm
-  have := isIso_comp_evaluation_of_simple_left k (X := X) (Y := (Xᘁ : C))
+  have := isIso_of_hom_simple <| comp_evaluation_ne_zero_of_surjective_left (X := X)
+    (Y := (Xᘁ : C)) (bijective_algebraMap_end_of_simple k X).2
     (coevaluation_ne_zero (Y := X) (Simple.not_isZero (Xᘁ : C)))
   rwa [exactPairingCongrRight_coevaluation, Iso.symm_inv, asIso_hom, Category.assoc,
     ← doubleDualTrace_rightAdjointMate] at this

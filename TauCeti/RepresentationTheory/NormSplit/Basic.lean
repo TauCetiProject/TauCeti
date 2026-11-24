@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.RelativeNorm
+import TauCeti.RepresentationTheory.Rep.Projective
 
 /-!
 # Representations whose identity is a norm
@@ -162,8 +163,7 @@ theorem projective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Grou
 theorem moduleProjective_of_id_mem_range_norm_linHom {k G : Type u} [CommRing k] [Group G]
     [Fintype G] (A : Rep.{u} k G) [Module.Projective k A.V]
     (h : LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm) :
-    Module.Projective (MonoidAlgebra k G) A.ρ.asModule := by
-  have := projective_of_id_mem_range_norm_linHom A h
-  rwa [← equivalenceModuleMonoidAlgebra.map_projective_iff, ← IsProjective.iff_projective] at this
+    Module.Projective (MonoidAlgebra k G) A.ρ.asModule :=
+  (projective_iff_moduleProjective A).1 (projective_of_id_mem_range_norm_linHom A h)
 
 end Rep

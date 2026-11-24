@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
-public import TauCeti.Analysis.Pseudodifferential.Quantization
+public import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
+public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.LineSpatialDeriv
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -37,20 +39,34 @@ This file proves the exact formula and that the symbol classes are invariant:
   uniform estimates, smoothing symbols and, for invertible `P`, compact spatial support.
   `TauCeti.Symbol.quantizeSchwartzValue_compProdMap_symm_adjointEquiv` combines this with the
   formula above: written in linear coordinates, the quantization of a symbol of order `m` is the
-  quantization of a symbol of order `m`.
-* `TauCeti.Symbol.exists_bound_mixedDeriv_comp_prodMap`: the estimates for `a ∘ (P × Q)` hold with
-  one constant for all `P` and `Q` in a bounded set with `Q⁻¹` bounded too, as needed for families
-  of linear changes of variables such as compact group actions.
+  quantization of a symbol of order `m`, and
+  `TauCeti.Symbol.quantizeUniformCLM_compProdMap_symm_adjointEquiv` is the same identity for the
+  operator on Schwartz space. For invertible `P` the change of variables is injective and the
+  symbol classes are invariant in both directions (`TauCeti.Symbol.isUniform_compProdMap_iff` and
+  its analogues).
+* `TauCeti.Symbol.frequencyDeriv_compProdMap`, `TauCeti.Symbol.lineSpatialDeriv_compProdMap`: the
+  chain rules `∂_{ξ_j} (a ∘ (P × Q)) = ∑ₖ (Q eⱼ)ₖ (∂_{ξ_k} a) ∘ (P × Q)` and
+  `∂_{x, v} (a ∘ (P × Q)) = (∂_{x, P v} a) ∘ (P × Q)`, as identities of symbols. In coordinates
+  the latter reads `∂_{x_j} (a ∘ (P × Q)) = ∑ₖ (P eⱼ)ₖ (∂_{x_k} a) ∘ (P × Q)`
+  (`TauCeti.Symbol.spatialDeriv_compProdMap`).
+* `TauCeti.Symbol.exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm`: the estimates for
+  `a ∘ (P × Q)` hold with one constant for all `P` and `Q` in a bounded set with `Q⁻¹` bounded
+  too, as needed for families of linear changes of variables such as compact group actions.
+* `TauCeti.Symbol.compProdMap_symm_adjointEquiv_eq_self_iff`: a pseudodifferential operator
+  commutes with the change of coordinates `u ↦ u ∘ A` exactly when its symbol is invariant under
+  `(x, ξ) ↦ (A⁻¹ x, Aᵀ ξ)`.
 * `TauCeti.ClassicalSymbol.compProdMap`: the same change of variables in a classical symbol, whose
   homogeneous terms transform alike (`TauCeti.HomogeneousSymbol.compProdMap`). In particular the
-  principal symbol transforms by the same rule (`TauCeti.ClassicalSymbol.principal_compProdMap`).
+  principal symbol transforms by the same rule (`TauCeti.ClassicalSymbol.principal_compProdMap`),
+  and ellipticity is invariant (`TauCeti.ClassicalSymbol.isElliptic_compProdMap_iff`).
 
 The symbol estimates for `a ∘ (P × Q)` come from the chain rule: a mixed derivative of
 `a ∘ (P × Q)` is a derivative of `a` at `(P x, Q ξ)` along the directions `(P eⱼ, 0)` and
 `(0, Q eⱼ)` (`TauCeti.mixedDeriv_comp_prodMap`). Expanding these directions in the standard basis
 of each factor bounds it by mixed derivatives of `a` with the same numbers of position and
-frequency derivatives (`TauCeti.norm_iteratedFDeriv_append_le`), and the weights `⟨Q ξ⟩` and `⟨ξ⟩`
-are comparable since `Q` is invertible.
+frequency derivatives, with the weight `⟨Q ξ⟩` and one constant for all `P` and `Q` of bounded
+norm (`TauCeti.exists_bound_mixedDeriv_comp_prodMap`). The weights `⟨Q ξ⟩` and `⟨ξ⟩` are
+comparable since `Q` is invertible.
 
 ## References
 
@@ -69,12 +85,6 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- A linear isomorphism `Q` shrinks norms by at most the factor `‖Q⁻¹‖`. -/
-private theorem norm_le_norm_symm_mul (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
-    (ξ : CoordinateSpace n) :
-    ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ := by
-  simpa using (Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm (Q ξ)
-
 namespace Symbol
 
 variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
@@ -86,47 +96,20 @@ coefficient `f` satisfies the estimates of order `m` with constants `C α' β'` 
 The constant `B` depends only on `c`, the constants `C` and `(α, β)`, and serves every pair of
 linear maps `P`, `Q` with `‖P‖ ≤ c`, `‖Q‖ ≤ c` and `‖ξ‖ ≤ c ‖Q ξ‖`; the last condition makes
 `⟨Q ξ⟩` and `⟨ξ⟩` comparable. -/
-theorem exists_bound_mixedDeriv_comp_prodMap
+theorem exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm
     {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) {c : ℝ}
     (hc : 1 ≤ c) (C : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) :
     ∃ B, 0 ≤ B ∧ ∀ P Q : CoordinateSpace n →L[ℝ] CoordinateSpace n, ‖P‖ ≤ c → ‖Q‖ ≤ c →
       (∀ ξ, ‖ξ‖ ≤ c * ‖Q ξ‖) → ∀ x, (∀ α' β' η, ‖mixedDeriv α' β' f (P x) η‖ ≤
         C α' β' * (1 + ‖η‖ ^ 2) ^ ((m - β'.length) / 2)) → ∀ ξ,
       ‖mixedDeriv α β (f ∘ P.prodMap Q) x ξ‖ ≤ B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  set s : ℝ := m - β.length
-  set D : ℝ := ∑ r : Fin (α.length + β.length) → Fin n,
-    max (C (List.ofFn fun i => r (Fin.castAdd β.length i))
-      (List.ofFn fun i => r (Fin.natAdd α.length i))) 0
-  have _ : 0 ≤ D := Finset.sum_nonneg fun _ _ => le_max_right _ _
-  have _ : 0 ≤ c := zero_le_one.trans hc
-  refine ⟨c ^ α.length * c ^ β.length * D * c ^ |s|, by positivity,
-    fun P Q hP hQ hQ' x hC ξ => ?_⟩
-  -- Each direction `L eⱼ` of the chain rule has norm at most `‖L‖ ≤ c`.
-  have hprod (L : CoordinateSpace n →L[ℝ] CoordinateSpace n) (hL : ‖L‖ ≤ c)
-      (γ : List (Fin n)) : ∏ i, ‖L (EuclideanSpace.single (γ.get i) 1)‖ ≤ c ^ γ.length := by
-    calc ∏ i, ‖L (EuclideanSpace.single (γ.get i) 1)‖ ≤ ∏ _i : Fin γ.length, c :=
-          Finset.prod_le_prod₀ (fun _ _ => norm_nonneg _) fun i _ =>
-            (L.le_opNorm _).trans (by simpa using hL)
-      _ = c ^ γ.length := by simp
-  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
-    one_add_norm_sq_rpow_le_of_norm_le_mul hc s ((Q.le_opNorm ξ).trans (by gcongr)) (hQ' ξ)
-  have hsum : ∑ r : Fin (α.length + β.length) → Fin n,
-      ‖mixedDeriv (List.ofFn fun i => r (Fin.castAdd β.length i))
-        (List.ofFn fun i => r (Fin.natAdd α.length i)) f (P x) (Q ξ)‖ ≤
-        D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) := by
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun r _ => (hC _ _ _).trans ?_
-    rw [List.length_ofFn]
-    exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  rw [mixedDeriv_comp_prodMap P Q (hf.of_le (mod_cast le_top))]
-  refine (norm_iteratedFDeriv_append_le (hf.of_le (mod_cast le_top)) _ _ _ _).trans ?_
-  calc _ ≤ (∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-        (∏ i, ‖Q (EuclideanSpace.single (β.get i) 1)‖) * (D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2)) := by
-        gcongr
-    _ ≤ c ^ α.length * c ^ β.length * (D * (c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))) := by
-        gcongr
-        exacts [hprod P hP α, hprod Q hQ β]
-    _ = _ := by ring
+  obtain ⟨B, hB, h⟩ := exists_bound_mixedDeriv_comp_prodMap (α := α) (β := β)
+    (hf.of_le (mod_cast le_top)) (zero_le_one.trans hc) C m
+  refine ⟨B * c ^ |m - β.length|, by positivity, fun P Q hP hQ hQ' x hC ξ =>
+    (h P Q hP hQ x hC ξ).trans ?_⟩
+  rw [mul_assoc]
+  exact mul_le_mul_of_nonneg_left (one_add_norm_sq_rpow_le_of_norm_le_mul hc _
+    ((Q.le_opNorm ξ).trans (by gcongr)) (hQ' ξ)) hB
 
 /-- The symbol estimates of a smooth coefficient `f` at the position `P x` give estimates of
 `f ∘ (P × Q)` at the position `x`, with a constant depending only on `P`, `Q` and the constants
@@ -141,10 +124,11 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
         B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
   set c : ℝ := max 1 (max ‖P‖ (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
     ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖))
-  obtain ⟨B, hB, h⟩ := exists_bound_mixedDeriv_comp_prodMap (m := m) hf (le_max_left 1 _) C α β
+  obtain ⟨B, hB, h⟩ :=
+    exists_bound_mixedDeriv_comp_prodMap_of_norm_le_mul_norm (m := m) hf (le_max_left 1 _) C α β
   exact ⟨B, hB, h P Q (le_max_of_le_right (le_max_left _ _))
     (le_max_of_le_right (le_max_of_le_right (le_max_left _ _)))
-    fun ξ => (norm_le_norm_symm_mul Q ξ).trans (mul_le_mul_of_nonneg_right
+    fun ξ => (Q.antilipschitzWith.le_mul_norm (map_zero Q) ξ).trans (mul_le_mul_of_nonneg_right
       (le_max_of_le_right (le_max_of_le_right (le_max_right _ _))) (norm_nonneg _))⟩
 
 /-- **Linear change of variables in a symbol.** For a linear map `P` of positions and a linear
@@ -197,6 +181,48 @@ theorem compProdMap_comp (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
     compProdMap P Q (b.comp a) = (compProdMap P Q b).comp (compProdMap P Q a) :=
   Symbol.ext (funext fun _ => by simp)
 
+/-- **The chain rule in the frequency.** The frequency derivative `∂_{ξ_j}` of
+`(x, ξ) ↦ a(P x, Q ξ)` is `∑ₖ (Q eⱼ)ₖ (∂_{ξ_k} a)(P x, Q ξ)`. -/
+theorem frequencyDeriv_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (j : Fin n) (a : Symbol n V W m) :
+    frequencyDeriv j (compProdMap P Q a) =
+      ∑ k, (Q (EuclideanSpace.single j 1) k : ℂ) • compProdMap P Q (frequencyDeriv k a) := by
+  refine Symbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_)
+  have hcomp : (fun η ↦ (compProdMap P Q a).coefficient (x, η)) =
+      (fun η ↦ a.coefficient (P x, η)) ∘ Q := by
+    funext η
+    simp only [Function.comp_apply, coefficient_compProdMap]
+  rw [← fderiv_coefficient_slice_single, hcomp, Q.comp_right_fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_eq_sum_single]
+  simp only [coefficient_sum, Finset.sum_apply, coefficient_smul, Pi.smul_apply,
+    coefficient_compProdMap, fderiv_coefficient_slice_single, ContinuousLinearEquiv.coe_coe]
+  simp only [Complex.coe_smul]
+
+/-- **The chain rule in the position.** The position derivative of `(x, ξ) ↦ a(P x, Q ξ)` in the
+direction `v` is `(∂_{x, P v} a)(P x, Q ξ)`. -/
+theorem lineSpatialDeriv_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (v : CoordinateSpace n) (a : Symbol n V W m) :
+    lineSpatialDeriv v (compProdMap P Q a) = compProdMap P Q (lineSpatialDeriv (P v) a) := by
+  refine Symbol.ext (funext fun ⟨x, ξ⟩ ↦ ?_)
+  have hcomp : (fun y ↦ (compProdMap P Q a).coefficient (y, ξ)) =
+      (fun y ↦ a.coefficient (y, Q ξ)) ∘ P := by
+    funext y
+    simp only [Function.comp_apply, coefficient_compProdMap]
+  rw [coefficient_lineSpatialDeriv, hcomp,
+    fderiv_comp x ((a.contDiff_coefficient_slice (Q ξ)).differentiable (by simp) (P x))
+      P.differentiableAt, P.fderiv]
+  simp only [ContinuousLinearMap.comp_apply, coefficient_compProdMap,
+    coefficient_lineSpatialDeriv]
+
+/-- **The chain rule in the position, in coordinates.** The position derivative `∂_{x_j}` of
+`(x, ξ) ↦ a(P x, Q ξ)` is `∑ₖ (P eⱼ)ₖ (∂_{x_k} a)(P x, Q ξ)`. -/
+theorem spatialDeriv_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (j : Fin n) (a : Symbol n V W m) :
+    spatialDeriv j (compProdMap P Q a) =
+      ∑ k, (P (EuclideanSpace.single j 1) k : ℂ) • compProdMap P Q (spatialDeriv k a) := by
+  rw [← lineSpatialDeriv_single, lineSpatialDeriv_compProdMap, lineSpatialDeriv_apply, map_sum]
+  simp only [map_smul]
+
 /-- A linear change of variables preserves estimates uniform in the position. -/
 theorem IsUniform.compProdMap {a : Symbol n V W m} (ha : a.IsUniform)
     (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
@@ -226,6 +252,43 @@ theorem HasCompactSpatialSupport.compProdMap {a : Symbol n V W m}
   rw [coefficient_compProdMap]
   exact hKa _ (fun hPx => hx ⟨P x, hPx, by simp⟩) _
 
+section Invertible
+
+variable (P Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+
+/-- An invertible linear change of variables is injective on symbols: it is undone by the change of
+variables along `(P⁻¹, Q⁻¹)`. -/
+theorem compProdMap_injective :
+    Function.Injective
+      (compProdMap (V := V) (W := W) (m := m) (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q) :=
+  fun a b h => by
+    simpa using congrArg
+      (compProdMap (P.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q.symm) h
+
+@[simp]
+theorem isUniform_compProdMap_iff {a : Symbol n V W m} :
+    (compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q a).IsUniform ↔ a.IsUniform :=
+  ⟨fun h => by
+    simpa using IsUniform.compProdMap h (P.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q.symm,
+    fun h => h.compProdMap _ Q⟩
+
+@[simp]
+theorem isSmoothing_compProdMap_iff {a : Symbol n V W m} :
+    (compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q a).IsSmoothing ↔
+      a.IsSmoothing :=
+  ⟨fun h => by
+    simpa using
+      IsSmoothing.compProdMap h (P.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q.symm,
+    fun h => h.compProdMap _ Q⟩
+
+@[simp]
+theorem hasCompactSpatialSupport_compProdMap_iff {a : Symbol n V W m} :
+    (compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q a).HasCompactSpatialSupport ↔
+      a.HasCompactSpatialSupport :=
+  ⟨fun h => by simpa using h.compProdMap P.symm Q.symm, fun h => h.compProdMap P Q⟩
+
+end Invertible
+
 end Symbol
 
 namespace ClassicalSymbol
@@ -247,7 +310,7 @@ private theorem isSmoothing_compProdMap_cutoffSymbol_sub
   have hQ : 2 ≤ ‖Q ξ‖ := by
     have h1 : ‖ξ‖ ≤ c * ‖Q ξ‖ :=
       calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
-            norm_le_norm_symm_mul Q ξ
+            Q.antilipschitzWith.le_mul_norm (map_zero Q) ξ
         _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_right _ _
     nlinarith
   simp [χ.apply_eq_one_of_two_le_norm hQ,
@@ -327,6 +390,22 @@ theorem principal_compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n
     (compProdMap P Q a).principal = a.principal.compProdMap P Q :=
   HomogeneousSymbol.ext (funext fun p => by simp)
 
+/-- A linear change of variables preserves ellipticity. -/
+theorem IsElliptic.compProdMap {a : ClassicalSymbol n V W m} (ha : a.IsElliptic)
+    (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) : (compProdMap P Q a).IsElliptic := by
+  rw [isElliptic_def, principal_compProdMap]
+  exact (isElliptic_def.1 ha).compProdMap P Q
+
+/-- **Ellipticity is invariant under invertible linear changes of variables.** -/
+@[simp]
+theorem isElliptic_compProdMap_iff (P Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n)
+    {a : ClassicalSymbol n V W m} :
+    (compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n) Q a).IsElliptic ↔
+      a.IsElliptic := by
+  rw [isElliptic_def, isElliptic_def, principal_compProdMap,
+    HomogeneousSymbol.isElliptic_compProdMap_iff]
+
 end ClassicalSymbol
 
 section Quantization
@@ -353,13 +432,7 @@ theorem quantizeSchwartzValue_compCLMOfContinuousLinearEquiv (a : E × E → V �
   set B : E ≃L[ℝ] E := A.symm.adjointEquiv
   set h : E → W := fun θ => a (x, A.adjointEquiv ((2 * π) • θ)) (𝓕 u θ)
   have hdetB : (B.toLinearEquiv : E →ₗ[ℝ] E).det = (A.toLinearEquiv : E →ₗ[ℝ] E).det⁻¹ := by
-    have hB : (B.toLinearEquiv : E →ₗ[ℝ] E) =
-        LinearMap.adjoint ((A.symm : E →L[ℝ] E) : E →ₗ[ℝ] E) := by
-      rw [ContinuousLinearMap.adjoint_toLinearMap]
-      ext ζ
-      simp [B]
-    rw [hB, LinearMap.det_adjoint, star_trivial,
-      ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap,
+    rw [ContinuousLinearEquiv.det_adjointEquiv, star_trivial,
       ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.det_coe_symm]
   have hfun : (fun ζ => a (x, (2 * π) • ζ)
       (𝓕 (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) ζ)) =
@@ -392,6 +465,35 @@ theorem Symbol.quantizeSchwartzValue_compProdMap_symm_adjointEquiv {n : ℕ} (a 
           a).coefficient u (A x) =
       quantizeSchwartzValue a.coefficient (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) x :=
   (quantizeSchwartzValue_compCLMOfContinuousLinearEquiv a.coefficient A u x).symm
+
+/-- **Linear change of coordinates for the operator on Schwartz space.** For a symbol `a` with
+uniform estimates, `u ↦ Op(a) (u ∘ A) ∘ A⁻¹` is the quantization of the symbol
+`(y, η) ↦ a(A⁻¹ y, Aᵀ η)`. -/
+theorem Symbol.quantizeUniformCLM_compProdMap_symm_adjointEquiv {n : ℕ} {a : Symbol n V W m}
+    (ha : a.IsUniform) (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) :
+    quantizeUniformCLM
+        (Symbol.compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) A.adjointEquiv a)
+        (ha.compProdMap _ _) =
+      SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.symm ∘L quantizeUniformCLM a ha ∘L
+        SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A := by
+  ext u x
+  simpa using quantizeSchwartzValue_compProdMap_symm_adjointEquiv a A u (A.symm x)
+
+/-- **Invariant operators have invariant symbols.** The quantization of `a` commutes with the
+change of coordinates `u ↦ u ∘ A` exactly when `a` is invariant under the change of variables
+`(y, η) ↦ (A⁻¹ y, Aᵀ η)`. -/
+theorem Symbol.compProdMap_symm_adjointEquiv_eq_self_iff [CompleteSpace V] [CompleteSpace W]
+    {n : ℕ} {a : Symbol n V W m} (A : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) :
+    Symbol.compProdMap (A.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n) A.adjointEquiv a = a ↔
+      ∀ (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n),
+        quantizeSchwartzValue a.coefficient (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A u) x =
+          quantizeSchwartzValue a.coefficient u (A x) := by
+  refine ⟨fun h u x => ?_, fun h => Symbol.quantizeSchwartzValue_injective
+    (funext fun u => funext fun y => ?_)⟩
+  · rw [← quantizeSchwartzValue_compProdMap_symm_adjointEquiv, h]
+  · have := (quantizeSchwartzValue_compProdMap_symm_adjointEquiv a A u (A.symm y)).trans
+      (h u (A.symm y))
+    rwa [A.apply_symm_apply] at this
 
 end Quantization
 

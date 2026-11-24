@@ -15,8 +15,11 @@ public import TauCeti.Algebra.Module.ZLattice.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+import TauCeti.LinearAlgebra.Dual.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+import Mathlib.Topology.DiscreteSubset
 
 /-!
 # Integral lattices in a real vector space
@@ -45,6 +48,8 @@ forcing the integral and real ranks to agree.
 * `TauCeti.Toric.IsIntegralLattice.injective`, `TauCeti.Toric.IsIntegralLattice.span_range_eq_top`
   and `TauCeti.Toric.IsIntegralLattice.finrank_eq`: an integral lattice is injective with full
   real span, and the integral rank of `N` equals the real dimension of `V`.
+* `TauCeti.Toric.IsIntegralLattice.finiteIndex_range`: a map of integral lattices in the same
+  real vector space compatible with them has image of finite index.
 * `TauCeti.Toric.linearIndependent_comp_iff_of_liftBaseChange_injective`: when the real-linear
   map `ℝ ⊗[ℤ] N →ₗ[ℝ] V` induced by `i` is injective (as it is when `i` extends scalars from `ℤ`
   to `ℝ`, by `IsBaseChange.liftBaseChange_injective`), a family of integral vectors is linearly
@@ -67,8 +72,19 @@ forcing the integral and real ranks to agree.
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
 * `TauCeti.Toric.IsIntegralLattice.isClosed_range_smul`: in a normed space every rescaling
   `p i(N)` of the image of an integral lattice is closed.
+* `TauCeti.Toric.IsIntegralLattice.isDiscrete_range_smul`: every rescaling `p i(N)` of the image of
+  an integral lattice is discrete.
 * `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
   finite-dimensional space is an integral lattice for its inclusion.
+* `TauCeti.Toric.isIntegralLattice_castAddHom`, `TauCeti.Toric.isIntegralLattice_intCast`: the
+  standard lattices `ℤ ⊆ ℝ` and `ℤ^n ⊆ ℝ^n`.
+* `TauCeti.Toric.IsIntegralLattice.dualBasis`: in a normed space, the basis of the continuous dual
+  `V*` dual to the real basis `i ∘ b` of an integral basis `b`, with coordinates `x ↦ x (i (b j))`.
+  Its `ℤ`-span is the weight lattice `TauCeti.Toric.weightLattice` of functionals taking integer
+  values on the lattice (`TauCeti.Toric.IsIntegralLattice.span_dualBasis`), whatever `b` is.
+* `TauCeti.Toric.IsIntegralLattice.isZLattice_weightLattice`: the weight lattice is discrete,
+  hence a `ZLattice` in Mathlib's sense, with `ℤ`-basis
+  `TauCeti.Toric.IsIntegralLattice.weightLatticeBasis` given by the dual basis.
 
 ## Implementation notes
 
@@ -163,6 +179,24 @@ theorem IsIntegralLattice.finrank_eq (h : IsIntegralLattice i) :
   rw [← Module.finrank_baseChange (R := ℝ) (S := ℤ) (M' := N),
     h.isBaseChange.equiv.finrank_eq]
 
+/-- A map `f : N' →+ N` compatible with integral lattices `i'` and `i` in the same real vector
+space has image of finite index: the two lattices have the same rank. -/
+theorem IsIntegralLattice.finiteIndex_range {N' : Type*} [AddCommGroup N'] {i' : N' →+ V}
+    {f : N' →+ N} (hi : IsIntegralLattice i) (hi' : IsIntegralLattice i')
+    (hf : ∀ n, i' n = i (f n)) : f.range.FiniteIndex := by
+  have := hi.free
+  have := hi.finite
+  have hinj : Function.Injective f.toIntLinearMap := fun a b hab ↦
+    hi'.injective (by simp only [hf, AddMonoidHom.coe_toIntLinearMap] at hab ⊢; rw [hab])
+  have : Finite (N ⧸ AddSubgroup.toIntSubmodule f.range) := by
+    rw [← AddMonoidHom.coe_toIntLinearMap_range]
+    exact Submodule.finiteQuotientOfFreeOfRankEq _
+      (by rw [LinearMap.finrank_range_of_inj hinj, hi'.finrank_eq, hi.finrank_eq])
+  -- The quotient by a submodule is defined as the quotient by its underlying additive subgroup,
+  -- and the subgroup underlying `AddSubgroup.toIntSubmodule f.range` is `f.range` itself.
+  have : Finite (N ⧸ f.range) := this
+  exact AddSubgroup.finiteIndex_of_finite_quotient
+
 /-- An integral lattice sits in a finite-dimensional real vector space. -/
 theorem IsIntegralLattice.finiteDimensional (h : IsIntegralLattice i) :
     FiniteDimensional ℝ V := by
@@ -238,6 +272,16 @@ theorem IsIntegralLattice.realCharacter_apply (h : IsIntegralLattice i)
     (m : N →+ ℤ) (n : N) : h.realCharacter m (i n) = (m n : ℝ) := by
   simpa [IsIntegralLattice.realCharacter] using
     h.isBaseChange.toDual_comp_apply m.toIntLinearMap n
+
+/-- For prescribed characters, contraction adds a transverse lattice line to their
+common real kernel. No independence or codimension assumption is needed. -/
+theorem IsIntegralLattice.ker_realCharacter_apply_smul_sub_apply_smul (h : IsIntegralLattice i)
+    (f g : N →+ ℤ) (v : N)
+    (hv : i v ∉ (h.realCharacter f).ker ⊓ (h.realCharacter g).ker) :
+    (h.realCharacter (f v • g - g v • f)).ker =
+      (h.realCharacter f).ker ⊓ (h.realCharacter g).ker ⊔ ℝ ∙ i v := by
+  simpa only [map_sub, map_zsmul, h.realCharacter_apply, ← Int.cast_smul_eq_zsmul ℝ] using
+    LinearMap.ker_apply_smul_sub_apply_smul (h.realCharacter f) (h.realCharacter g) hv
 
 /-- A real-linear functional agreeing with an integral character on lattice points is *the* real
 extension of that character. -/
@@ -394,6 +438,20 @@ theorem IsIntegralLattice.isClosed_range_smul (hi : IsIntegralLattice i) (p : �
   rw [hrange]
   exact (Homeomorph.smulOfNeZero p hp).isClosedMap _ h
 
+/-- For an integral lattice `i`, the rescaled lattice `p i(N)` is discrete in `V`: it is the image
+of the discrete lattice `i(N)` under a homeomorphism for `p ≠ 0`, and zero for `p = 0`. -/
+theorem IsIntegralLattice.isDiscrete_range_smul (hi : IsIntegralLattice i) (p : ℝ) :
+    IsDiscrete ((p • i).range : Set V) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · exact Set.Subsingleton.isDiscrete (by simp)
+  have := hi.discreteTopology
+  have hrange : ((p • i).range : Set V) =
+      Homeomorph.smulOfNeZero p hp '' (LinearMap.range i.toIntLinearMap) := by
+    ext v
+    simp [eq_comm]
+  rw [hrange]
+  exact (isDiscrete_iff_discreteTopology.2 ‹_›).image (Homeomorph.smulOfNeZero p hp).isInducing
+
 /-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
 space, is an integral lattice for its inclusion: the space is the real scalar extension of the
 lattice. -/
@@ -403,7 +461,163 @@ theorem isIntegralLattice_subtype_of_isZLattice [FiniteDimensional ℝ V] (L : S
 
 end Discrete
 
+/-! ### The dual basis of an integral basis -/
+
+section DualBasis
+
+open Module Set Submodule
+
+variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+  (h : IsIntegralLattice i) {κ : Type*} [Finite κ]
+
+variable (i) in
+/-- The weight lattice `{x ∈ V* | x (i n) ∈ ℤ for every n ∈ N}` of `i`: the functionals taking
+integer values on the lattice. -/
+def weightLattice : Submodule ℤ (StrongDual ℝ V) where
+  carrier := {x | ∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ)}
+  add_mem' {x y} hx hy n := by
+    obtain ⟨p, hp⟩ := hx n
+    obtain ⟨q, hq⟩ := hy n
+    exact ⟨p + q, by simp [hp, hq]⟩
+  zero_mem' _ := ⟨0, by simp⟩
+  smul_mem' m x hx n := by
+    obtain ⟨p, hp⟩ := hx n
+    exact ⟨m * p, by simp [hp, zsmul_eq_mul]⟩
+
+/-- A functional lies in the weight lattice when it takes integer values on the lattice. -/
+@[simp]
+theorem mem_weightLattice {x : StrongDual ℝ V} :
+    x ∈ weightLattice i ↔ ∀ n, x (i n) ∈ range ((↑) : ℤ → ℝ) :=
+  Iff.rfl
+
+namespace IsIntegralLattice
+
+/-- The basis of `V* = StrongDual ℝ V` dual to the real basis `i ∘ b` of `V` attached to an
+integral basis `b` of `N`. -/
+noncomputable def dualBasis (b : Basis κ ℤ N) : Basis κ ℝ (StrongDual ℝ V) :=
+  have := h.finiteDimensional
+  by classical exact (h.isBaseChange.basis b).dualBasis.map LinearMap.toContinuousLinearMap
+
+/-- The coordinates of a functional in the dual basis of `b` are its values on the lattice vectors
+`i (b j)`. -/
+@[simp]
+theorem dualBasis_repr (b : Basis κ ℤ N) (x : StrongDual ℝ V) (j : κ) :
+    (h.dualBasis b).repr x j = x (i (b j)) := by
+  have := h.finiteDimensional
+  classical
+  simp [dualBasis, IsBaseChange.basis_apply]
+
+@[simp]
+theorem dualBasis_equivFun (b : Basis κ ℤ N) (x : StrongDual ℝ V) (j : κ) :
+    (h.dualBasis b).equivFun x j = x (i (b j)) := by
+  rw [Basis.equivFun_apply, dualBasis_repr]
+
+/-- The dual basis of `b` takes the value `1` on the matching lattice vector and `0` on the
+others. -/
+@[simp]
+theorem dualBasis_apply_apply [DecidableEq κ] (b : Basis κ ℤ N) (j k : κ) :
+    h.dualBasis b j (i (b k)) = if k = j then 1 else 0 := by
+  rw [← h.dualBasis_repr, Basis.repr_self, Finsupp.single_apply]
+  exact if_congr eq_comm rfl rfl
+
+/-- A functional on `V` is determined by its values on an integral basis `b`: it is the
+combination of the dual basis of `b` with these values as coefficients. -/
+@[simp]
+theorem sum_apply_mul_dualBasis_apply [Fintype κ] (b : Basis κ ℤ N) (x : StrongDual ℝ V) (z : V) :
+    ∑ j, x (i (b j)) * h.dualBasis b j z = x z := by
+  conv_rhs => rw [← (h.dualBasis b).sum_repr x]
+  simp [dualBasis_repr]
+
+/-- A vector of `V` is the combination of the lattice vectors `i (b j)` with its values on the
+dual basis of `b` as coefficients. -/
+@[simp]
+theorem sum_dualBasis_apply_smul [Fintype κ] (b : Basis κ ℤ N) (z : V) :
+    ∑ j, h.dualBasis b j z • i (b j) = z := by
+  have := h.finiteDimensional
+  classical
+  conv_rhs => rw [← (h.isBaseChange.basis b).sum_repr z]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp [dualBasis, IsBaseChange.basis_apply]
+
+/-- A vector of `V` vanishing on every vector of the dual basis of `b` but one, `l₀`, is its
+value there times the matching lattice vector `i (b l₀)`. -/
+theorem eq_smul_of_dualBasis_apply_eq_zero {b : Basis κ ℤ N} {z : V} {l₀ : κ}
+    (hz : ∀ l, l ≠ l₀ → h.dualBasis b l z = 0) : z = h.dualBasis b l₀ z • i (b l₀) := by
+  have := Fintype.ofFinite κ
+  conv_lhs => rw [← h.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_single l₀ (fun l _ hl ↦ by rw [hz l hl, zero_smul]) (by simp)
+
+/-- A nonzero vector of `V` that is nonnegative on the dual basis of `b` is positive on one of its
+vectors. -/
+theorem exists_dualBasis_apply_pos {b : Basis κ ℤ N} {z : V} (hz : z ≠ 0)
+    (ht : ∀ m, 0 ≤ h.dualBasis b m z) : ∃ m, 0 < h.dualBasis b m z := by
+  have := Fintype.ofFinite κ
+  by_contra! hneg
+  refine hz ?_
+  rw [← h.sum_dualBasis_apply_smul b z]
+  exact Finset.sum_eq_zero fun k _ ↦ by rw [le_antisymm (hneg k) (ht k), zero_smul]
+
+/-- **The `ℤ`-span of the dual basis is the weight lattice**: a functional lies in it exactly when
+it takes integer values on the lattice. In particular this span does not depend on `b`. -/
+theorem span_dualBasis (b : Basis κ ℤ N) : span ℤ (range (h.dualBasis b)) = weightLattice i := by
+  have := Fintype.ofFinite κ
+  ext x
+  rw [Basis.mem_span_iff_repr_mem, mem_weightLattice]
+  simp only [dualBasis_repr, algebraMap_int_eq, Int.coe_castRingHom]
+  refine ⟨fun hx n ↦ ?_, fun hx j ↦ hx (b j)⟩
+  choose m hm using hx
+  refine ⟨∑ j, b.repr n j * m j, ?_⟩
+  conv_rhs => rw [← b.sum_repr n, map_sum, map_sum]
+  push_cast
+  simp only [map_zsmul, zsmul_eq_mul, ← hm]
+
+/-- The `ℤ`-basis of the weight lattice given by the dual basis of an integral basis `b`. -/
+noncomputable def weightLatticeBasis (b : Basis κ ℤ N) : Basis κ ℤ (weightLattice i) :=
+  ((h.dualBasis b).restrictScalars ℤ).map (LinearEquiv.ofEq _ _ (h.span_dualBasis b))
+
+/-- The vectors of `weightLatticeBasis b` are those of the dual basis of `b`. -/
+@[simp]
+theorem coe_weightLatticeBasis (b : Basis κ ℤ N) (j : κ) :
+    (h.weightLatticeBasis b j : StrongDual ℝ V) = h.dualBasis b j := by
+  simp [weightLatticeBasis]
+
+/-- The integer coordinates of a weight in `weightLatticeBasis b` are its values on the lattice
+vectors `i (b j)`. -/
+@[simp]
+theorem weightLatticeBasis_repr (b : Basis κ ℤ N) (x : weightLattice i) (j : κ) :
+    ((h.weightLatticeBasis b).repr x j : ℝ) = (x : StrongDual ℝ V) (i (b j)) := by
+  simpa [weightLatticeBasis] using Basis.restrictScalars_repr_apply ℤ (h.dualBasis b)
+    (LinearEquiv.ofEq _ _ (h.span_dualBasis b).symm x) j
+
+include h in
+/-- The weight lattice of an integral lattice is a discrete subgroup of `V*`. -/
+theorem discreteTopology_weightLattice : DiscreteTopology (weightLattice i) := by
+  let _ := h.free
+  let _ := h.finite
+  rw [← h.span_dualBasis (Module.Free.chooseBasis ℤ N)]
+  infer_instance
+
+/-- The weight lattice of an integral lattice is a `ℤ`-lattice in Mathlib's sense. -/
+theorem isZLattice_weightLattice :
+    haveI := h.discreteTopology_weightLattice
+    IsZLattice ℝ (weightLattice i) := by
+  let _ := h.free
+  let _ := h.finite
+  have := h.discreteTopology_weightLattice
+  refine ⟨?_⟩
+  rw [← h.span_dualBasis (Module.Free.chooseBasis ℤ N)]
+  exact ZSpan.span_top _
+
+end IsIntegralLattice
+
+end DualBasis
+
 /-! ### The standard lattice -/
+
+/-- The standard lattice `ℤ ⊆ ℝ` given by the integer cast. -/
+theorem isIntegralLattice_castAddHom : IsIntegralLattice (Int.castAddHom ℝ) :=
+  isIntegralLattice_of_basis (Module.Basis.singleton (Fin 1) ℤ) (Module.Basis.singleton (Fin 1) ℝ)
+    fun _ ↦ by simp
 
 /-- The standard lattice `ℤ^n ⊆ ℝ^n` given by the coordinatewise integer cast. -/
 theorem isIntegralLattice_intCast (n : ℕ) :

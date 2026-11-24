@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Measure.Real
 public import TauCeti.Probability.Distributions.FisherSnedecor.ChiSquared
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 public import TauCeti.Probability.Distributions.StudentT.Cdf
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Probability.Distributions.FisherSnedecor.Cdf
 
 /-!
@@ -73,14 +74,8 @@ theorem studentTMeasure_map_sq (ν : ℝ) :
       exact fun hy ↦ (not_le_of_gt hx) ((sq_nonneg y).trans hy)
     rw [hpreimage, measureReal_empty, ite_eq_left hx.le]
   · have hx0 : 0 ≤ x := le_of_not_gt hx
-    have hpreimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic x = Icc (-√x) √x := by
-      ext y
-      simp only [mem_preimage, mem_Iic, mem_Icc]
-      constructor
-      · exact fun hy ↦ abs_le.mp (Real.abs_le_sqrt hy)
-      · intro hy
-        rw [← Real.sq_sqrt hx0]
-        exact sq_le_sq' hy.1 hy.2
+    have hpreimage : (fun y : ℝ ↦ y ^ 2) ⁻¹' Iic x = Icc (-√x) √x :=
+      Real.setOf_sq_le_eq_Icc hx0
     rw [hpreimage]
     let _ : NullSingletonClass (studentTMeasure ν) := by
       rw [studentTMeasure_def]

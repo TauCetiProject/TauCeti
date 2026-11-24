@@ -13,6 +13,7 @@ public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Nat.Choose.Basic
 public import TauCeti.Algebra.GroupWithZero.Indicator
 
+import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Data.Nat.Choose.Sum
 
 /-!
@@ -38,6 +39,8 @@ which commutes pairwise everywhere.
   `TauCeti.sum_powerset_eq_add_sum_singleton_add_sum_filter_add`: the four-part splitting.
 * `Finset.prod_powersetCard_succ_insert`, `Finset.sum_powersetCard_succ_insert`: splitting over
   the `n + 1`-element subsets of `insert a s`.
+* `Finset.prod_powersetCard_prod`, `Finset.sum_powersetCard_sum`: double counting, each element
+  lying in `(#s - 1).choose (n - 1)` of the `n`-element subsets.
 * `Finset.sum_noncommProd_powersetCard_eq_indicator`: sums of noncommutative products over
   `n`-element subsets, rewritten with the family extended by zero.
 * `Finset.sum_noncommProd_powersetCard_succ_insert`: the recursion for the sum of the products
@@ -73,6 +76,23 @@ theorem prod_powersetCard_succ_insert [DecidableEq α] {s : Finset α} {a : α} 
   · exact insert_erase_invOn.2.injOn.mono fun t ht ↦
       notMem_mono (mem_powersetCard.1 ht).1 ha
   · aesop (add simp [disjoint_left, insert_subset_iff, mem_powersetCard])
+
+/-- **Double counting over the `n`-element subsets**: for `0 < n`, each element of `s` lies in
+`(#s - 1).choose (n - 1)` of the `n`-element subsets of `s`, so the product over these subsets of
+the products over their elements is `(∏ i ∈ s, f i) ^ (#s - 1).choose (n - 1)`. -/
+@[to_additive /-- **Double counting over the `n`-element subsets**: for `0 < n`, each element of
+`s` lies in `(#s - 1).choose (n - 1)` of the `n`-element subsets of `s`, so the sum over these
+subsets of the sums over their elements is `(#s - 1).choose (n - 1) • ∑ i ∈ s, f i`. -/]
+theorem prod_powersetCard_prod {n : ℕ} (hn : 0 < n) (s : Finset α) (f : α → β) :
+    ∏ t ∈ s.powersetCard n, ∏ i ∈ t, f i = (∏ i ∈ s, f i) ^ (#s - 1).choose (n - 1) := by
+  classical
+  rw [prod_comm' (t' := s) (s' := fun i ↦ (s.powersetCard n).filter ({i} ⊆ ·)), ← prod_pow]
+  · refine prod_congr rfl fun i hi ↦ ?_
+    rw [prod_const, card_filter_powersetCard_subset {i} s n (singleton_subset_iff.2 hi)
+      (by simpa using Nat.one_le_iff_ne_zero.2 hn.ne'), card_singleton]
+  · intro t i
+    simp only [mem_filter, mem_powersetCard, singleton_subset_iff]
+    exact ⟨fun h ↦ ⟨h, h.1.1 h.2⟩, fun h ↦ h.1⟩
 
 /-- For `u ⊆ s` and a family commuting pairwise on `s`, the sum of the products over the
 `n`-element subsets of `u` is the corresponding sum for the family extended by zero outside `s`. -/

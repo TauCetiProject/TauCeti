@@ -101,9 +101,28 @@ theorem IsEffectiveCartier.exists_eq_span_singleton_le {I : X.IdealSheafData}
   have hVU' : V ≤ U.val := hVU.trans inf_le_right
   refine ⟨⟨V, hV⟩, hVU.trans inf_le_left, hxV, X.presheaf.map (homOfLE hVU').op a,
     U.property.isSMulRegular_map hVU' ha, ?_⟩
-  rw [← I.map_ideal (U := ⟨V, hV⟩) (V := U) hVU', hUa, Ideal.map_span, Set.image_singleton]
-  -- `Ideal.map` applies the underlying ring hom, the goal its `ConcreteCategory` coercion.
-  rfl
+  exact I.ideal_eq_span_singleton_of_le hVU' hUa
+
+/-- An effective Cartier ideal is locally principal, without retaining its regularity data. -/
+theorem IsEffectiveCartier.locallyPrincipal {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) :
+    ∀ x : X, ∃ U : X.affineOpens, x ∈ U.val ∧
+      ∃ a : Γ(X, U), I.ideal U = Ideal.span {a} := by
+  intro x
+  obtain ⟨U, hx, a, -, hUa⟩ := hI x
+  exact ⟨U, hx, a, hUa⟩
+
+/-- Two effective Cartier ideals admit regular equations on a common affine neighbourhood. -/
+theorem IsEffectiveCartier.exists_eq_span_singleton_pair_le {I J : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier)
+    (W : X.Opens) {x : X} (hx : x ∈ W) :
+    ∃ U : X.affineOpens, U.val ≤ W ∧ x ∈ U.val ∧ ∃ a b : Γ(X, U),
+      IsSMulRegular Γ(X, U) a ∧ IsSMulRegular Γ(X, U) b ∧
+      I.ideal U = Ideal.span {a} ∧ J.ideal U = Ideal.span {b} := by
+  obtain ⟨U, hUW, hxU, a, ha, hIa⟩ := hI.exists_eq_span_singleton_le W hx
+  obtain ⟨V, hVU, hxV, b, hb, hJb⟩ := hJ.exists_eq_span_singleton_le U.val hxU
+  exact ⟨V, hVU.trans hUW, hxV, X.presheaf.map (homOfLE hVU).op a, b,
+    U.property.isSMulRegular_map hVU ha, hb, I.ideal_eq_span_singleton_of_le hVU hIa, hJb⟩
 
 /-- The empty closed subscheme is an effective Cartier divisor on every scheme. -/
 @[simp]
@@ -320,15 +339,10 @@ theorem isEffectiveCartier_mul {I J : X.IdealSheafData}
     (I * J).IsEffectiveCartier := by
   rw [isEffectiveCartier_iff]
   intro x
-  obtain ⟨U, hxU, a, ha, hIa⟩ := (isEffectiveCartier_iff I).mp hI x
-  obtain ⟨V, hVU, hxV, b, hb, hJb⟩ := hJ.exists_eq_span_singleton_le U.val hxU
-  let a' := X.presheaf.map (homOfLE hVU).op a
-  have ha' : IsSMulRegular Γ(X, V) a' := U.property.isSMulRegular_map hVU ha
-  have hIa' : I.ideal V = Ideal.span {a'} := by
-    rw [← I.map_ideal hVU, hIa, Ideal.map_span, Set.image_singleton]
-    rfl
-  exact ⟨V, hxV, a' * b, ha'.mul hb, by
-    simp only [ideal_mul, Pi.mul_apply, hIa', hJb, Ideal.span_singleton_mul_span_singleton]⟩
+  obtain ⟨V, -, hxV, a, b, ha, hb, hIa, hJb⟩ :=
+    hI.exists_eq_span_singleton_pair_le hJ ⊤ (Set.mem_univ x)
+  exact ⟨V, hxV, a * b, ha.mul hb, by
+    simp only [ideal_mul, Pi.mul_apply, hIa, hJb, Ideal.span_singleton_mul_span_singleton]⟩
 
 /-- Every nonnegative multiple of an effective Cartier divisor is effective Cartier. -/
 theorem isEffectiveCartier_pow {I : X.IdealSheafData} (hI : I.IsEffectiveCartier) (n : ℕ) :

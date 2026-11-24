@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
-public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
 
 /-!
 # Fully faithful maps of simplicial sets
@@ -28,6 +28,14 @@ mapping spaces of the full enhanced subcategory are those of the ambient simplic
 mapping spaces of the nerve of a category are discrete on its morphisms, and the nerve of a fully
 faithful functor is fully faithful.
 
+Weak equivalences are bijective on connected components, and the connected components of the
+right mapping spaces of a quasicategory are the morphisms of its homotopy category
+(`SSet.rightMappingSpace.π₀Equiv`). Hence a fully faithful map of quasicategories is fully faithful
+on homotopy categories, and, if it is also essentially surjective on homotopy categories, it induces
+an equivalence of homotopy categories. Since the equivalences of a quasicategory are the edges
+whose classes are invertible in the homotopy category, a fully faithful map of quasicategories
+reflects equivalences.
+
 ## Main definitions
 
 * `SSet.IsFullyFaithful f`: the maps induced by `f` on right mapping spaces are weak equivalences.
@@ -39,6 +47,12 @@ faithful functor is fully faithful.
 * `SSet.IsFullyFaithful.fullEnhancedSubcategory_ι`: the inclusion of a full enhanced subcategory is
   fully faithful.
 * `SSet.IsFullyFaithful.nerveMap`: the nerve of a fully faithful functor is fully faithful.
+* `SSet.IsFullyFaithful.faithful_mapHomotopyCategory`,
+  `SSet.IsFullyFaithful.full_mapHomotopyCategory`: a fully faithful map of quasicategories is fully
+  faithful on homotopy categories, and `SSet.IsFullyFaithful.isEquivalence_mapHomotopyCategory`:
+  it induces an equivalence of homotopy categories when it is also essentially surjective on them.
+* `SSet.Edge.isEquivalence_map_iff_of_isFullyFaithful`: a fully faithful map of quasicategories
+  reflects equivalences.
 
 ## References
 
@@ -121,6 +135,59 @@ instance nerveMap {C D : Type v} [Category.{w} C] [Category.{w} D] (F : C ⥤ D)
     ((Function.Bijective.of_comp_iff' nerve.homEquiv.bijective _).1
       (hcomp ▸ ⟨F.map_injective, F.map_surjective⟩))
 
+/-! ### Homotopy categories -/
+
+section HomotopyCategory
+
+variable [X.Quasicategory] [Y.Quasicategory] [IsFullyFaithful f]
+
+/-- Under `rightMappingSpace.π₀Equiv`, the action of `mapHomotopyCategory f` on morphisms from `x`
+to `y` is the bijection induced on connected components by the weak equivalence
+`Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`. -/
+private theorem bijective_map_mapHomotopyCategory (x y : X _⦋0⦌) :
+    Function.Bijective ((mapHomotopyCategory f).map :
+      (HomotopyCategory.mk x ⟶ HomotopyCategory.mk y) → _) := by
+  have h : ((mapHomotopyCategory f).map :
+      (HomotopyCategory.mk x ⟶ HomotopyCategory.mk y) → _) =
+      rightMappingSpace.π₀Equiv _ _ ∘ mapπ₀ (rightMappingSpace.map x y f) ∘
+        (rightMappingSpace.π₀Equiv x y).symm := by
+    funext φ
+    rw [Function.comp_apply, Function.comp_apply, rightMappingSpace.π₀Equiv_mapπ₀_map,
+      Equiv.apply_symm_apply]
+  rw [h]
+  exact (Equiv.bijective _).comp
+    ((bijective_mapπ₀_of_weakEquivalence _).comp (Equiv.bijective _))
+
+/-- A fully faithful map of quasicategories is faithful on homotopy categories. -/
+instance faithful_mapHomotopyCategory : (mapHomotopyCategory f).Faithful where
+  map_injective {a b} := by
+    induction a with | mk x => ?_
+    induction b with | mk y => ?_
+    exact (bijective_map_mapHomotopyCategory f x y).1
+
+/-- A fully faithful map of quasicategories is full on homotopy categories. -/
+instance full_mapHomotopyCategory : (mapHomotopyCategory f).Full where
+  map_surjective {a b} := by
+    induction a with | mk x => ?_
+    induction b with | mk y => ?_
+    exact (bijective_map_mapHomotopyCategory f x y).2
+
+/-- A fully faithful and essentially surjective map of quasicategories induces an equivalence of
+homotopy categories. -/
+instance isEquivalence_mapHomotopyCategory [(mapHomotopyCategory f).EssSurj] :
+    (mapHomotopyCategory f).IsEquivalence where
+
+end HomotopyCategory
+
 end IsFullyFaithful
+
+/-- **Fully faithful maps reflect equivalences**: for a fully faithful map `f` of quasicategories,
+an edge of the source is an equivalence exactly when its image under `f` is. -/
+theorem Edge.isEquivalence_map_iff_of_isFullyFaithful [X.Quasicategory] [Y.Quasicategory]
+    (f : X ⟶ Y) [IsFullyFaithful f] {x₀ x₁ : X _⦋0⦌} (e : Edge x₀ x₁) :
+    (e.map f).IsEquivalence ↔ e.IsEquivalence := by
+  rw [Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk,
+    Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk, ← mapHomotopyCategory_map_homMk]
+  exact isIso_iff_of_reflects_iso _ _
 
 end SSet
