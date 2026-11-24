@@ -17,22 +17,18 @@ Building on `tr m x = (√3) ^ m * cubicScalarCoefficient (m - 1) (cubicHom m x)
 (`TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace`) and the surjectivity, star-compatibility, and
 dimension results (`TauCeti.Algebra.TemperleyLieb.CubicTorus.Projection`), this file establishes:
 
-* Star-compatibility of the restricted tower inclusion
-  `cubicFixedIncl N : cubicFixed N →ₐ[ℂ] cubicFixed (N + 1)` with `cubicFixedAdjoint`.
-* Positivity of every Markov trace at `δ = √3` (`IsMarkovTrace.map_star_mul_self_nonneg_sqrt_three`)
-  and identification of its trace radical with `RingHom.ker (cubicHom m)`
-  (`IsMarkovTrace.traceRadical_eq_ker_cubicHom`).
-* The Jones quotient algebra equivalence
-  `IsMarkovTrace.quotientCubicFixedEquiv : (TL_m(√3) ⧸ traceRadical) ≃ₐ[ℂ] cubicFixed (m - 1)` of
-  complex dimension `(3 ^ (m - 1) + 1) / 2` (`finrank_quotient_traceRadical_sqrt_three`),
-  compatibility with `star` (`quotientCubicFixedEquiv_star`),
-  packaged as `exists_cubicFixedModel`, and vanishing of `cubicHom 5 (jonesWenzl (√3 : ℂ) 5)`.
+* Identification of the trace radical of every Markov trace at `δ = √3` with
+  `RingHom.ker (cubicHom m)` (`IsMarkovTrace.traceRadical_eq_ker_cubicHom`).
+* The Jones quotient algebra equivalence `IsMarkovTrace.quotientCubicFixedEquiv` between
+  `TL_m(√3) ⧸ traceRadical` and `cubicFixed (m - 1)` of complex dimension
+  `(3 ^ (m - 1) + 1) / 2` (`finrank_quotient_traceRadical_sqrt_three`), compatibility with `star`
+  (`quotientCubicFixedEquiv_star`), packaged as `exists_cubicFixedModel`, and vanishing of
+  `cubicHom 5 (jonesWenzl (√3 : ℂ) 5)`.
 
 ## Main definitions and results
 
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientCubicFixedEquiv`.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.map_star_mul_self_nonneg_sqrt_three`,
-  `TauCeti.TemperleyLieb.IsMarkovTrace.traceRadical_eq_ker_cubicHom`,
+* `TauCeti.TemperleyLieb.IsMarkovTrace.traceRadical_eq_ker_cubicHom`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.finrank_quotient_traceRadical_sqrt_three`.
 * `TauCeti.TemperleyLieb.exists_cubicFixedModel`, `TauCeti.TemperleyLieb.cubicHom_jonesWenzl_five`.
 
@@ -51,52 +47,21 @@ open scoped ComplexOrder
 
 namespace TauCeti.TemperleyLieb
 
-/-! ### Adjoint compatibility of the tower inclusions -/
-
-@[simp] theorem cubicAdjoint_cubicIncl (N : ℕ) (x : CubicTorus N) :
-    cubicAdjoint (N + 1) (cubicIncl N x) = cubicIncl N (cubicAdjoint N x) := by
-  rw [cubicIncl]
-  exact TwistedMonoidAlgebra.conjReverse_mapDomain _ _ x
-
-@[simp] theorem cubicFixedAdjoint_cubicFixedIncl (N : ℕ) (x : cubicFixed N) :
-    cubicFixedAdjoint (N + 1) (cubicFixedIncl N x) = cubicFixedIncl N (cubicFixedAdjoint N x) :=
-  Subtype.ext (by
-    rw [coe_cubicFixedAdjoint, coe_cubicFixedIncl, coe_cubicFixedIncl, coe_cubicFixedAdjoint,
-      cubicAdjoint_cubicIncl])
-
-/-! ### Positivity, kernel = trace radical, and the Jones quotient equivalence -/
-
-private theorem sqrt_three_eq_two_mul_cos_pi_div_six :
-    Real.sqrt 3 = 2 * Real.cos (Real.pi / (6 : ℕ)) := by
-  rw [Nat.cast_ofNat, Real.cos_pi_div_six]
-  ring
-
-/-- `√3 = 2 cos (π / 6)` is an admissible loop parameter. -/
-@[simp] theorem sqrt_three_mem_jonesLoopParameters : Real.sqrt 3 ∈ jonesLoopParameters := by
-  rw [sqrt_three_eq_two_mul_cos_pi_div_six]
-  exact two_mul_cos_pi_div_mem_jonesLoopParameters (by decide)
+/-! ### Kernel = trace radical and the Jones quotient equivalence -/
 
 namespace IsMarkovTrace
 
 variable {tr : ∀ n : ℕ, TemperleyLieb ℂ (Real.sqrt 3 : ℂ) n →ₗ[ℂ] ℂ}
-
-/-- **Positivity of the Markov trace at `δ = √3`**: `0 ≤ tr m (star x * x)` on every `m`. -/
-theorem map_star_mul_self_nonneg_sqrt_three
-    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) {m : ℕ}
-    (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
-    0 ≤ tr m (star x * x) :=
-  htr.map_star_mul_self_nonneg_of_mem_jonesLoopParameters sqrt_three_mem_jonesLoopParameters m x
 
 /-- At `δ = √3`, `tr m (star x * x) = 0` if and only if `cubicHom m x = 0`. -/
 theorem map_star_mul_self_eq_zero_iff_cubicHom_eq_zero
     (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) {m : ℕ}
     {x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m} :
     tr m (star x * x) = 0 ↔ cubicHom m x = 0 := by
-  have hne : (Real.sqrt 3 : ℂ) ≠ 0 :=
-    Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by positivity)).ne'
   rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, map_mul,
-    Subalgebra.coe_mul, coe_cubicHom_star, mul_eq_zero, or_iff_right (pow_ne_zero m hne),
-    cubicScalarCoefficient,
+    Subalgebra.coe_mul, coe_cubicHom_star, mul_eq_zero,
+    or_iff_right (pow_ne_zero m sqrt_three_ne_zero),
+    cubicScalarCoefficient_eq_scalarTrace,
     TwistedMonoidAlgebra.scalarTrace_conjReverse_mul_self_eq_zero_iff
       (cubicFactor_inv_self (m - 1)), ZeroMemClass.coe_eq_zero]
 
@@ -107,13 +72,6 @@ theorem traceRadical_eq_ker_cubicHom
   ext x
   rw [htr.mem_traceRadical_iff_map_star_mul_self_eq_zero sqrt_three_mem_jonesLoopParameters,
     htr.map_star_mul_self_eq_zero_iff_cubicHom_eq_zero, RingHom.mem_ker]
-
-/-- At `δ = √3`, the null vectors of `x ↦ tr m (star x * x)` are precisely the trace radical. -/
-theorem map_star_mul_self_eq_zero_iff_mem_traceRadical_sqrt_three
-    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) {m : ℕ}
-    {x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m} :
-    tr m (star x * x) = 0 ↔ x ∈ (tr m).traceRadical (htr.map_mul_comm m) :=
-  (htr.mem_traceRadical_iff_map_star_mul_self_eq_zero sqrt_three_mem_jonesLoopParameters x).symm
 
 /-- **The Jones quotient at `δ = √3` is isomorphic to `cubicFixed (m - 1)`.** -/
 noncomputable def quotientCubicFixedEquiv
@@ -234,7 +192,9 @@ theorem exists_cubicFixedModel
 @[simp] theorem cubicHom_jonesWenzl_five :
     cubicHom 5 (jonesWenzl (Real.sqrt 3 : ℂ) 5) = 0 := by
   have hcoe : (Real.sqrt 3 : ℂ) = Complex.ofRealHom (2 * Real.cos (Real.pi / (6 : ℕ))) := by
-    rw [Complex.ofRealHom_eq_coe, sqrt_three_eq_two_mul_cos_pi_div_six]
+    rw [Complex.ofRealHom_eq_coe]
+    exact_mod_cast (by rw [Nat.cast_ofNat, Real.cos_pi_div_six]; ring :
+      Real.sqrt 3 = 2 * Real.cos (Real.pi / (6 : ℕ)))
   have hunits : ∀ k ∈ Finset.Icc 1 5, IsUnit (qInt ℂ (Real.sqrt 3 : ℂ) k) := by
     intro k hk
     obtain ⟨hk1, hk5⟩ := Finset.mem_Icc.mp hk

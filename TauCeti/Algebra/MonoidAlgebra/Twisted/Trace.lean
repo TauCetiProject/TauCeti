@@ -28,7 +28,8 @@ and faithfulness when `α g⁻¹ g = 1`.
 
 ## Main results
 
-* `TauCeti.TwistedMonoidAlgebra.eq_zero_of_forall_scalarTrace_mul_eq_zero`, `conjReverse_mul`,
+* `TauCeti.TwistedMonoidAlgebra.scalarTrace_mul_comm`,
+  `TauCeti.TwistedMonoidAlgebra.eq_zero_of_forall_scalarTrace_mul_eq_zero`, `conjReverse_mul`,
   `scalarTrace_conjReverse_mul_self_eq_sum_normSq`,
   `scalarTrace_conjReverse_mul_self_nonneg`, `scalarTrace_conjReverse_mul_self_eq_zero_iff`.
 
@@ -110,6 +111,11 @@ variable {k G : Type*} [CommSemiring k] [Group G] {α : G → G → kˣ} [IsFact
     scalarTrace k G α (of g * x) = (α g g⁻¹ : k) * (basis k G α).repr x g⁻¹ := by
   rw [scalarTrace_apply, repr_mul_apply_one_comm, ← scalarTrace_apply, scalarTrace_mul_of,
     IsFactorSet.apply_inv_eq_inv_apply α g, mul_comm]
+
+/-- `scalarTrace` is tracial when `G` is a group. -/
+theorem scalarTrace_mul_comm (x y : twistedMonoidAlgebra k G α) :
+    scalarTrace k G α (x * y) = scalarTrace k G α (y * x) := by
+  rw [scalarTrace_apply, scalarTrace_apply, repr_mul_apply_one_comm]
 
 /-- **Nondegeneracy of `scalarTrace`**: an element annihilated by every right factor is `0`. -/
 theorem eq_zero_of_forall_scalarTrace_mul_eq_zero {x : twistedMonoidAlgebra k G α}

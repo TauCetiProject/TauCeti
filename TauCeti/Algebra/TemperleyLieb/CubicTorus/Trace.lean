@@ -34,6 +34,8 @@ particular the spin-model `markovTrace`, is this one.
 
 ## Main results
 
+* `TauCeti.TemperleyLieb.cubicAdjoint_cubicIncl` and
+  `TauCeti.TemperleyLieb.cubicFixedAdjoint_cubicFixedIncl`: the inclusions commute with `†`.
 * `TauCeti.TemperleyLieb.cubicHom_strandIncl` and
   `TauCeti.TemperleyLieb.cubicHom_strandIncl_eq_cubicFixedIncl`:
   `F_(n+2) ∘ strandIncl = I_n ∘ F_(n+1)`.
@@ -76,9 +78,14 @@ def cubicExtendHom (N : ℕ) :
   map_one' := toAdd.injective (funext fun i ↦ Fin.lastCases (by simp) (fun _ ↦ by simp) i)
   map_mul' _ _ := toAdd.injective (funext fun i ↦ Fin.lastCases (by simp) (fun _ ↦ by simp) i)
 
+@[simp]
+theorem cubicExtendHom_apply (N : ℕ) (a : Multiplicative (Fin N → ZMod 3)) :
+    cubicExtendHom N a = ofAdd (Fin.snoc a.toAdd 0) :=
+  (rfl)
+
 theorem cubicExtendHom_injective (N : ℕ) : Function.Injective (cubicExtendHom N) :=
   fun _ _ h ↦ toAdd.injective (funext fun i ↦ by
-    simpa [cubicExtendHom] using congrFun (congrArg toAdd h) i.castSucc)
+    simpa using congrFun (congrArg toAdd h) i.castSucc)
 
 theorem cubicFactor_cubicExtendHom (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
     cubicFactor (N + 1) (cubicExtendHom N a) (cubicExtendHom N b) = cubicFactor N a b := by
@@ -89,11 +96,17 @@ variable (N : ℕ)
 
 /-- The **inclusion** `I_N : G_N →ₐ[ℂ] G_(N+1)` of cubic quantum tori, `W(a) ↦ W(a, 0)`: extending
 by a zero last coordinate preserves the chain form (`cubicFactor_cubicExtendHom`). -/
-@[expose] noncomputable def cubicIncl : CubicTorus N →ₐ[ℂ] CubicTorus (N + 1) :=
+noncomputable def cubicIncl : CubicTorus N →ₐ[ℂ] CubicTorus (N + 1) :=
   TwistedMonoidAlgebra.mapDomain (cubicExtendHom N) (cubicFactor_cubicExtendHom N)
 
-theorem cubicIncl_injective : Function.Injective (cubicIncl N) :=
-  TwistedMonoidAlgebra.mapDomain_injective (cubicFactor_cubicExtendHom N)
+theorem cubicIncl_eq_mapDomain :
+    cubicIncl N =
+      TwistedMonoidAlgebra.mapDomain (cubicExtendHom N) (cubicFactor_cubicExtendHom N) :=
+  (rfl)
+
+theorem cubicIncl_injective : Function.Injective (cubicIncl N) := by
+  rw [cubicIncl_eq_mapDomain]
+  exact TwistedMonoidAlgebra.mapDomain_injective (cubicFactor_cubicExtendHom N)
     (cubicExtendHom_injective N)
 
 variable {N}
@@ -101,8 +114,8 @@ variable {N}
 @[simp]
 theorem cubicIncl_weyl (a : Fin N → ZMod 3) :
     cubicIncl N (weyl N a) = weyl (N + 1) (Fin.snoc a 0) := by
-  rw [weyl_def, cubicIncl, TwistedMonoidAlgebra.mapDomain_of, of_eq_weyl]
-  rfl
+  rw [weyl_def, cubicIncl_eq_mapDomain, TwistedMonoidAlgebra.mapDomain_of,
+    cubicExtendHom_apply, toAdd_ofAdd, of_eq_weyl, toAdd_ofAdd]
 
 @[simp]
 theorem cubicIncl_cubicSite (j : Fin N) :
@@ -134,8 +147,11 @@ theorem cubicInversion_cubicIncl (x : CubicTorus N) :
 /-- The inclusion preserves the scalar coefficient. -/
 @[simp]
 theorem cubicScalarCoefficient_cubicIncl (x : CubicTorus N) :
-    cubicScalarCoefficient (N + 1) (cubicIncl N x) = cubicScalarCoefficient N x :=
-  scalarTrace_mapDomain_of_injective (cubicFactor_cubicExtendHom N) (cubicExtendHom_injective N) x
+    cubicScalarCoefficient (N + 1) (cubicIncl N x) = cubicScalarCoefficient N x := by
+  rw [cubicScalarCoefficient_eq_scalarTrace, cubicScalarCoefficient_eq_scalarTrace,
+    cubicIncl_eq_mapDomain]
+  exact scalarTrace_mapDomain_of_injective (cubicFactor_cubicExtendHom N)
+    (cubicExtendHom_injective N) x
 
 /-- Multiplying an included element by a nontrivial power of the new site unitary `U_N` kills its
 scalar coefficient: every basis element in the product has last coordinate `n ≠ 0`. -/
@@ -175,6 +191,19 @@ theorem coe_cubicFixedIncl (N : ℕ) (x : cubicFixed N) :
 
 theorem cubicFixedIncl_injective (N : ℕ) : Function.Injective (cubicFixedIncl N) :=
   fun _ _ h ↦ Subtype.ext (cubicIncl_injective N (congrArg Subtype.val h))
+
+@[simp]
+theorem cubicAdjoint_cubicIncl (N : ℕ) (x : CubicTorus N) :
+    cubicAdjoint (N + 1) (cubicIncl N x) = cubicIncl N (cubicAdjoint N x) := by
+  rw [cubicIncl_eq_mapDomain]
+  exact TwistedMonoidAlgebra.conjReverse_mapDomain _ _ x
+
+@[simp]
+theorem cubicFixedAdjoint_cubicFixedIncl (N : ℕ) (x : cubicFixed N) :
+    cubicFixedAdjoint (N + 1) (cubicFixedIncl N x) = cubicFixedIncl N (cubicFixedAdjoint N x) :=
+  Subtype.ext (by
+    rw [coe_cubicFixedAdjoint, coe_cubicFixedIncl, coe_cubicFixedIncl, coe_cubicFixedAdjoint,
+      cubicAdjoint_cubicIncl])
 
 end Inclusion
 
