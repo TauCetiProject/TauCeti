@@ -381,50 +381,27 @@ theorem exists_isTOrthogonalBasis_nat_of_dense_span (hE : ¬FiniteDimensional K 
     obtain ⟨σ⟩ : Nonempty (ℕ ≃ S) := nonempty_equiv_of_countable
     exact ⟨e ∘ σ, he.comp_equiv σ⟩
   · -- In a `T0Space`, a finite basis would span a closed (hence total) finite-dimensional subspace.
-    -- Thus some nonzero `x` has `‖x‖₊ = 0`; padding `e` with `x` preserves `t`-orthogonality.
+    -- Thus some nonzero `x` has `‖x‖ = 0`; padding `e` with `x` preserves `t`-orthogonality.
     have : Finite S := Set.not_infinite.1 hS
-    obtain ⟨x, hx0, hxn⟩ : ∃ x : E, x ≠ 0 ∧ ‖x‖₊ = 0 := by
+    obtain ⟨x, hx0, hxn⟩ : ∃ x : E, x ≠ 0 ∧ ‖x‖ = 0 := by
       by_contra! h
       have : T0Space E := (t0Space_iff_inseparable E).2 fun a b hab ↦ sub_eq_zero.1 <|
         not_not.1 fun hne ↦ h _ hne <| by
-          simpa [nnDist_eq_nnNorm] using Metric.inseparable_iff_nndist.1 hab
+          simpa [dist_eq_norm] using Metric.inseparable_iff.1 hab
       have := FiniteDimensional.span_of_finite K (finite_range e)
       have htop : span K (range e) = ⊤ := eq_top_iff'.2 fun y ↦
         (span K (range e)).isClosed_of_finiteDimensional'.closure_subset (he.dense_span y)
       exact hE (Module.finite_def.2 (htop ▸ fg_span (finite_range e)))
-    obtain ⟨n, ⟨eS⟩⟩ := Finite.exists_equiv_fin S
-    let e' : ℕ → E := fun k ↦ if hk : k < n then e (eS.symm ⟨k, hk⟩) else x
-    refine ⟨e', isTOrthogonalFamily_def.2 fun s a ↦ ?_,
+    classical
+    let e' : ℕ → E := fun k ↦ if hk : k ∈ S then e ⟨k, hk⟩ else x
+    have hcomp : IsTOrthogonalFamily K t (e' ∘ ((↑) : S → ℕ)) := by
+      convert he.isTOrthogonalFamily using 1
+      exact funext fun i ↦ by simp [e', i.property]
+    refine ⟨e', hcomp.of_comp_of_norm_eq_zero fun k hk ↦ by
+        rw [Subtype.range_coe] at hk; simp [e', hk, hxn],
       fun k ↦ by dsimp only [e']; split_ifs; exacts [he.ne_zero _, hx0],
       he.dense_span.mono (span_mono <| by
-        rintro _ ⟨i, rfl⟩; exact ⟨(eS i).val, by simp [e', (eS i).isLt]⟩)⟩
-    classical
-    let : Fintype S := Fintype.ofFinite S
-    let f : S ↪ ℕ := ⟨fun i ↦ (eS i).val, Fin.val_injective.comp eS.injective⟩
-    let s' : Finset S := Finset.univ.filter fun i ↦ f i ∈ s
-    have hmap : s'.map f = s.filter (· < n) := by
-      ext k
-      simp only [Finset.mem_map, Finset.mem_filter, Finset.mem_univ, true_and, s', f]
-      exact ⟨fun ⟨i, hi, hik⟩ ↦ ⟨hik ▸ hi, hik ▸ (eS i).isLt⟩,
-        fun ⟨hk, hkn⟩ ↦ ⟨eS.symm ⟨k, hkn⟩, by simpa using hk, by simp⟩⟩
-    have h0 (k : ℕ) (hk : ¬k < n) : ‖a k • e' k‖₊ = 0 := by simp [e', hk, nnNorm_smul, hxn]
-    have hsum2 : ‖∑ k ∈ s with ¬k < n, a k • e' k‖₊ = 0 := nonpos_iff_eq_zero.1 <|
-      (Finset.nnNorm_sum_le_sup_nnNorm _ _).trans <|
-        Finset.sup_le fun k hk ↦ (h0 k (Finset.mem_filter.1 hk).2).le
-    have hsup : (s.sup fun k ↦ ‖a k • e' k‖₊) = (s.filter (· < n)).sup fun k ↦ ‖a k • e' k‖₊ :=
-      le_antisymm (Finset.sup_le fun k hk ↦ by
-        by_cases hkn : k < n
-        · exact Finset.le_sup (f := fun k ↦ ‖a k • e' k‖₊) (Finset.mem_filter.2 ⟨hk, hkn⟩)
-        · simp [h0 k hkn]) (Finset.sup_mono (Finset.filter_subset _ _))
-    have hsum : ‖∑ k ∈ s, a k • e' k‖₊ = ‖∑ k ∈ s with k < n, a k • e' k‖₊ := by
-      rw [← Finset.sum_filter_add_sum_filter_not s (· < n)]
-      set y := ∑ k ∈ s with k < n, a k • e' k; set z := ∑ k ∈ s with ¬k < n, a k • e' k
-      exact le_antisymm ((nnNorm_add_le y z).trans_eq (by rw [hsum2, add_zero])) <| by
-        simpa only [add_sub_cancel_right, hsum2, add_zero] using nnNorm_sub_le (y + z) z
-    rw [hsup, hsum, ← hmap, Finset.sup_map, Finset.sum_map]
-    simpa only [f, e', Function.comp_def, Function.Embedding.coeFn_mk, Fin.isLt, dite_true,
-      Fin.eta, Equiv.symm_apply_apply] using
-      isTOrthogonalFamily_def.1 he.isTOrthogonalFamily s' fun i ↦ a (f i)
+        rintro _ ⟨i, rfl⟩; exact ⟨i.val, by simp [e', i.property]⟩)⟩
 
 /-- **Relative approximation by finite-dimensional subspaces**: let `D` be a closed subspace and
 `G` a finite-dimensional subspace of an ultrametric seminormed space over a complete normed field.

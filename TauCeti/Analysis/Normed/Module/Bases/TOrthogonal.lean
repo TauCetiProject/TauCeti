@@ -140,6 +140,44 @@ theorem comp (he : IsTOrthogonalFamily R t e) {f : J → I} (hf : Function.Injec
   simpa [Finset.sum_map, Finset.sup_map, Function.comp_def, hf.extend_apply] using
     he (s.map ⟨f, hf⟩) (Function.extend f a 0)
 
+/-- If `e ∘ f` is `t`-orthogonal and `e` has zero norm outside the range of `f`, then `e` is
+`t`-orthogonal. -/
+theorem of_comp_of_norm_eq_zero [ContinuousConstSMul R M] {f : J → I}
+    (he : IsTOrthogonalFamily R t (e ∘ f)) (h0 : ∀ i, i ∉ Set.range f → ‖e i‖ = 0) :
+    IsTOrthogonalFamily R t e := by
+  classical
+  intro s a
+  have hsmul (i : I) (hi : i ∉ Set.range f) : Inseparable (a i • e i) 0 := by
+    simpa only [smul_zero] using
+      (inseparable_zero_iff_norm.2 (h0 i hi)).map (continuous_const_smul (a i))
+  -- Choose a right inverse `g` of `f` on `Set.range f` to pull back the supported indices to `J`.
+  let g : {i // i ∈ Set.range f} → J := fun i ↦ i.property.choose
+  have hfg (i : {i // i ∈ Set.range f}) : f (g i) = i := i.property.choose_spec
+  have hg : Function.Injective g := fun i₁ i₂ h ↦ Subtype.ext (by rw [← hfg i₁, ← hfg i₂, h])
+  let s' : Finset J := (s.subtype (· ∈ Set.range f)).map ⟨g, hg⟩
+  have hsup : (s.sup fun i ↦ ‖a i • e i‖₊) ≤ s'.sup fun j ↦ ‖a (f j) • (e ∘ f) j‖₊ := by
+    refine Finset.sup_le fun i hi ↦ ?_
+    by_cases h : i ∈ Set.range f
+    · have hmem : g ⟨i, h⟩ ∈ s' := Finset.mem_map_of_mem _ (Finset.mem_subtype.2 hi)
+      simpa only [Function.comp_apply, hfg] using
+        Finset.le_sup (f := fun j ↦ ‖a (f j) • (e ∘ f) j‖₊) hmem
+    · simp [(hsmul i h).nnNorm_eq_nnNorm]
+  have hsum : ‖∑ j ∈ s', a (f j) • (e ∘ f) j‖₊ = ‖∑ i ∈ s, a i • e i‖₊ := by
+    have hsep : Inseparable (∑ i ∈ s with i ∉ Set.range f, a i • e i) 0 :=
+      inseparable_zero_iff_norm.2 <| le_antisymm
+        ((norm_sum_le _ _).trans_eq <| Finset.sum_eq_zero fun i hi ↦
+          inseparable_zero_iff_norm.1 (hsmul i (Finset.mem_filter.1 hi).2))
+        (norm_nonneg _)
+    have hsplit : ∑ i ∈ s, a i • e i =
+        (∑ j ∈ s', a (f j) • (e ∘ f) j) + ∑ i ∈ s with i ∉ Set.range f, a i • e i := by
+      rw [← Finset.sum_filter_add_sum_filter_not s (· ∈ Set.range f),
+        ← Finset.subtype_map (· ∈ Set.range f), Finset.sum_map, Finset.sum_map]
+      simp only [Function.comp_apply, Function.Embedding.coeFn_mk, Function.Embedding.subtype_apply,
+        hfg]
+    rw [hsplit]
+    simpa only [add_zero] using ((Inseparable.refl _).add hsep).symm.nnNorm_eq_nnNorm
+  exact ((mul_le_mul_right hsup t).trans (he s' (a ∘ f))).trans_eq hsum
+
 /-- The image of a `t`-orthogonal family under a linear isometry is `t`-orthogonal. -/
 theorem map [SeminormedAddCommGroup N] [Module R N] (he : IsTOrthogonalFamily R t e)
     (u : M →ₗᵢ[R] N) : IsTOrthogonalFamily R t (u ∘ e) := fun s a ↦ by
