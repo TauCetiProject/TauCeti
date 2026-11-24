@@ -16,11 +16,16 @@ interior local extrema are excluded. On a connected noncompact space, transferri
 frontier upper bound to the whole compact set also gives a maximum on the frontier, assuming
 continuity there. A continuous function mapping a nonempty compact set into an open interval
 maps it into a closed subinterval.
+
+A sequence of continuous functions on a compact set is uniformly bounded above as soon as each
+point has a neighbourhood on which the functions are eventually bounded above
+(`IsCompact.exists_forall_le_of_eventually_nhds`): finitely many such neighbourhoods cover the set,
+and each of the finitely many earlier functions is bounded on the compact set.
 -/
 
 public section
 
-open Set Topology
+open Filter Set Topology
 
 /-- If every interior point of a compact set is forbidden from being a local maximum, then a
 continuous function on the compact set has a maximum point on the frontier. -/
@@ -77,3 +82,25 @@ theorem IsCompact.exists_mapsTo_Icc_of_mapsTo_Ioo {X β : Type*} [TopologicalSpa
   obtain ⟨p, hp, hpmin⟩ := hs.exists_isMinOn hne hg
   obtain ⟨q, hq, hqmax⟩ := hs.exists_isMaxOn hne hg
   exact ⟨g p, g q, (h hp).1, hpmin hq, (h hq).2, fun x hx => ⟨hpmin hx, hqmax hx⟩⟩
+
+/-- **Local eventual bounds on a compact set give one bound.** If each `g n` is continuous on the
+compact set `C`, and each point of `C` has a neighbourhood on which the `g n` are eventually
+bounded above by a common bound, then a single bound holds for all `g n` on all of `C`. -/
+theorem IsCompact.exists_forall_le_of_eventually_nhds {X β : Type*} [TopologicalSpace X]
+    [LinearOrder β] [TopologicalSpace β] [ClosedIciTopology β] [Nonempty β] {C : Set X}
+    (hC : IsCompact C) {g : ℕ → X → β} (hg : ∀ n, ContinuousOn (g n) C)
+    (h : ∀ x ∈ C, ∃ U ∈ 𝓝 x, ∃ M, ∀ᶠ n in atTop, ∀ y ∈ U, g n y ≤ M) :
+    ∃ M, ∀ n, ∀ y ∈ C, g n y ≤ M := by
+  choose! U hU M hM using h
+  -- Finitely many of the neighbourhoods `U x` cover `C`, and their bounds hold from some `N` on.
+  obtain ⟨T, hTC, hCT⟩ := hC.elim_nhds_subcover U hU
+  obtain ⟨N, hN⟩ := eventually_atTop.1 ((eventually_all_finset T).2 fun x hx ↦ hM x (hTC x hx))
+  obtain ⟨A, hA⟩ : BddAbove (M '' T) := (T.finite_toSet.image M).bddAbove
+  -- Each of the finitely many earlier terms is bounded on `C`.
+  obtain ⟨B, hB⟩ : BddAbove (⋃ n ∈ Iio N, g n '' C) :=
+    (finite_Iio N).bddAbove_biUnion.2 fun n _ ↦ hC.bddAbove_image (hg n)
+  refine ⟨max A B, fun n y hy ↦ ?_⟩
+  rcases lt_or_ge n N with hn | hn
+  · exact (hB (mem_biUnion hn (mem_image_of_mem _ hy))).trans (le_max_right _ _)
+  · obtain ⟨x, hxT, hyx⟩ := mem_iUnion₂.1 (hCT hy)
+    exact ((hN n hn x hxT y hyx).trans (hA (mem_image_of_mem _ hxT))).trans (le_max_left _ _)

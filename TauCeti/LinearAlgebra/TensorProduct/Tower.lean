@@ -48,6 +48,8 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
   comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
   its pure-tensor form
   `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul_baseChange`.
+* `AlgHom.distribBaseChange_symm_rTensor_tmul`: the same comparison is natural in the scalar
+  algebra, along an algebra map `f : A →ₐ[R] B`.
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
@@ -136,6 +138,25 @@ theorem TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul
     (distribBaseChange R A P Q).symm (f.baseChange A x ⊗ₜ[A] g.baseChange A y) =
       (TensorProduct.map f g).baseChange A ((distribBaseChange R A M N).symm (x ⊗ₜ[A] y)) :=
   LinearMap.congr_fun (distribBaseChange_symm_comp_map_baseChange f g) (x ⊗ₜ[A] y)
+
+/-- On pure tensors, the comparison maps of scalar extensions along `f : A →ₐ[R] B` intertwine
+the comparisons `(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)` for the two scalar algebras. -/
+theorem AlgHom.distribBaseChange_symm_rTensor_tmul {R A B M N : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] [CommSemiring B] [Algebra R B]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (f : A →ₐ[R] B) (u : A ⊗[R] M) (v : A ⊗[R] N) :
+    (AlgebraTensorModule.distribBaseChange R B M N).symm
+        (LinearMap.rTensor M f.toLinearMap u ⊗ₜ[B] LinearMap.rTensor N f.toLinearMap v) =
+      LinearMap.rTensor (M ⊗[R] N) f.toLinearMap
+        ((AlgebraTensorModule.distribBaseChange R A M N).symm (u ⊗ₜ[A] v)) := by
+  induction u using TensorProduct.inductionOn with
+  | add u₁ u₂ hu₁ hu₂ => simp only [map_add, add_tmul, hu₁, hu₂]
+  | tmul a m =>
+    induction v using TensorProduct.inductionOn with
+    | add v₁ v₂ hv₁ hv₂ => simp only [map_add, tmul_add, hv₁, hv₂]
+    | tmul b n =>
+      simp only [LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply,
+        AlgebraTensorModule.distribBaseChange_symm_tmul, map_mul]
 
 /-- In `R ⊗[B] M`, for a subring `B` of `R`, an element `r ∈ B` can be moved across the tensor
 sign: `r ⊗ m = 1 ⊗ r • m`. -/
