@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.RingTheory.RingHom.Flat
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Stalk
 import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import Mathlib.CategoryTheory.Abelian.Exact
@@ -53,12 +54,6 @@ variable {X Y : TopCat.{u}} {𝒪X : Sheaf (Opens.grothendieckTopology X) CommRi
   (φ : ringCatSheaf 𝒪X ⟶
     ((Opens.map f).sheafPushforwardContinuous RingCat.{u} _ _).obj (ringCatSheaf 𝒪Y))
   [(_root_.SheafOfModules.pushforward.{u} φ).IsRightAdjoint]
-
-/-- Pullback of sheaves of modules along a morphism of ringed spaces is additive. -/
-instance _root_.SheafOfModules.additive_pullback :
-    (_root_.SheafOfModules.pullback φ).Additive :=
-  have := preservesBinaryBiproducts_of_preservesBinaryCoproducts (_root_.SheafOfModules.pullback φ)
-  Functor.additive_of_preservesBinaryBiproducts _
 
 /-- **Flat pullback preserves monomorphisms.** If every stalk map `𝒪_{X,f(y)} → 𝒪_{Y,y}` of a
 morphism of ringed spaces `(f, φ)` is flat, then pullback of sheaves of modules along `(f, φ)`
