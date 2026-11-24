@@ -171,7 +171,8 @@ theorem ContMDiffAt.deriv_uncurry {f : 𝕜 → P → F} {p₀ : 𝕜 × P}
       (Function.uncurry fun (a : P) (s : 𝕜) ↦ f s a) (p₀.2, p₀.1) :=
     hf.comp (p₀.2, p₀.1) (contMDiffAt_snd.prodMk contMDiffAt_fst)
   have h := (hswap.fderiv_right hnm).comp p₀ (contMDiffAt_snd.prodMk contMDiffAt_fst)
-  exact ((ContinuousLinearMap.apply 𝕜 F (1 : 𝕜)).contMDiff.contMDiffAt.comp p₀ h :)
+  simpa only [Function.comp_def, ContinuousLinearMap.apply_apply, fderiv_apply_one_eq_deriv]
+    using (ContinuousLinearMap.apply 𝕜 F (1 : 𝕜)).contMDiff.contMDiffAt.comp p₀ h
 
 section TangentMap
 

@@ -48,8 +48,10 @@ the metric that a manifold with a geometric structure receives through its chart
 * `Bundle.ContMDiffRiemannianMetric.pullback_id`,
   `Bundle.ContMDiffRiemannianMetric.pullback_comp_inner`, and
   `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
-* `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_pullback`: the metrics induced by a
-  jointly `C^(n+1)` family of immersions form a jointly `C^n` family.
+* `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_bilinearForm_pullback` and
+  `Bundle.ContMDiffRiemannianMetric.contMDiffAt_uncurry_pullback`: the bilinear forms, and the
+  metrics, induced by a jointly `C^(n+1)` family of maps, respectively immersions, form a jointly
+  `C^n` family.
 * `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
   rescaling, `f^* (h g) = (h ∘ f) f^* g`.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
@@ -233,6 +235,29 @@ theorem contMDiffAt_pullback
           ((g.inner (f x)).comp (mfderiv I J f x)))) x₀ :=
   contMDiffAt_bilinearForm_pullback (g.contMDiff (f x₀)) hf
 
+/-- **Joint regularity of pulled-back bilinear forms.** For a `C^n` Riemannian metric `g` and a
+jointly `C^(n+1)` family of maps `Φ_t`, parametrised by a manifold, the bilinear forms
+`(v, w) ↦ g_{Φ_t x}(dΦ_t v, dΦ_t w)` are `C^n` jointly in `(t, x)`. -/
+theorem contMDiffAt_uncurry_bilinearForm_pullback
+    {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+    {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : P → M → N}
+    (hΦ : ContMDiff (IP.prod I) J (n + 1) (Function.uncurry Φ)) (p₀ : P × M) :
+    ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun p : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
+        ((ContinuousLinearMap.precomp ℝ (mfderiv I J (Φ p.1) p.2)).comp
+          ((g.inner (Φ p.1 p.2)).comp (mfderiv I J (Φ p.1) p.2)))) p₀ := by
+  have hb := (g.contMDiff (Φ p₀.1 p₀.2)).comp p₀ (hΦ.contMDiffAt.of_le le_self_add)
+  have hL := ContMDiffAt.mfderiv (fun (p : P × M) (x : M) ↦ Φ p.1 x) Prod.snd
+    ((hΦ (p₀.1, p₀.2)).comp (p₀, p₀.2)
+      ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)) contMDiffAt_snd le_rfl
+  exact contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_snd,
+    contMDiffAt_trivializationAt_bilinearForm_pullback (g := Prod.snd)
+      (f := fun p ↦ Φ p.1 p.2) (b := fun p ↦ g.inner (Φ p.1 p.2))
+      (L := fun p ↦ mfderiv I J (Φ p.1) p.2) continuousAt_snd hb hL⟩
+
 variable [FiniteDimensional ℝ E]
 
 /-- Pull back a smooth Riemannian metric along a smooth immersion. At `x`, the inner product is
@@ -349,22 +374,10 @@ theorem contMDiffAt_uncurry_pullback
     ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
       (fun p : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
-        ((g.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2)) p₀ := by
-  have hb := (g.contMDiff (Φ p₀.1 p₀.2)).comp p₀ (hΦ.contMDiffAt.of_le le_self_add)
-  have hL := ContMDiffAt.mfderiv (fun (p : P × M) (x : M) ↦ Φ p.1 x) Prod.snd
-    ((hΦ (p₀.1, p₀.2)).comp (p₀, p₀.2)
-      ((contMDiffAt_fst.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd)) contMDiffAt_snd le_rfl
-  refine contMDiffAt_totalSpace_iff.2 ⟨contMDiffAt_snd, ?_⟩
-  refine (contMDiffAt_trivializationAt_bilinearForm_pullback continuousAt_snd hb hL
-    ).congr_of_eventuallyEq (Filter.Eventually.of_forall fun p ↦ ?_)
-  have hp : (g.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2 =
-      (ContinuousLinearMap.precomp ℝ (mfderiv I J (Φ p.1) p.2)).comp
-        ((g.inner (Φ p.1 p.2)).comp (mfderiv I J (Φ p.1) p.2)) := by
-    ext v w
-    simp only [pullback_inner, ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply]
-  dsimp only
-  rw [hp]
-  rfl
+        ((g.pullback (Φ p.1) (hΦ.curry_right (x := p.1)) (hinj p.1)).inner p.2)) p₀ :=
+  -- The inner product of `pullback` is by definition the bilinear form of
+  -- `contMDiffAt_uncurry_bilinearForm_pullback`.
+  g.contMDiffAt_uncurry_bilinearForm_pullback hΦ p₀
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
