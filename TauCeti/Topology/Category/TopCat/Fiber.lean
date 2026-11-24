@@ -258,7 +258,7 @@ variable {J : Type*} [Category J] {F : J ⥤ TopCat.{u}} (c : Cocone F) (S : Set
 /-- **The part of a diagram of spaces over a subset of the apex of a cocone.** For a cocone `c`
 over `F` and a subset `S` of its apex, the preimage of `S` under the leg `c.ι.app j` in each space
 `F.obj j`, with the restrictions of the maps of the diagram, which are maps over the apex. -/
-@[expose, simps obj]
+@[expose, simps obj map]
 def preimageFunctor : J ⥤ TopCat.{u} where
   obj j := TopCat.of (c.ι.app j ⁻¹' S)
   map f := (F.map f).preimageMap (c.w f) S
@@ -270,8 +270,7 @@ def preimageFunctor : J ⥤ TopCat.{u} where
     simp
 
 /-- On points, the maps of the part of a diagram over a subset of the apex are the maps of the
-diagram. -/
-@[simp]
+diagram. Not `@[simp]`: its left-hand side is rewritten by `preimageFunctor_map`. -/
 lemma coe_preimageFunctor_map_apply {j j' : J} (f : j ⟶ j') (x : c.ι.app j ⁻¹' S) :
     Subtype.val ((c.preimageFunctor S).map f x) = F.map f x :=
   (F.map f).coe_preimageMap_apply (c.w f) S x
