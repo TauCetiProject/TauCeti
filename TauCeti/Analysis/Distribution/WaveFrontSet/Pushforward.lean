@@ -40,9 +40,10 @@ The localized Fourier transform of `Φ_* (χ T)` with cutoff `f` at `η` is `T` 
 (`Distribution.localFourier_cutoffPushforwardCLM_eq_complexPairing`).
 For linear `Φ = A` the phase `⟪A x, η⟫ = ⟪x, Aᵀ η⟫` is linear and this is a localized Fourier
 transform of `T` at the transposed frequency (`Distribution.localFourier_cutoffPushforwardCLM`). In
-general the phase is not linear. Expanding a cutoff `φ` times the phase factor in a Fourier series
-on a compact set (`Distribution.exists_forall_hasSum_localFourier_of_eq_mul`) writes
-`T (φ 𝐞 (-⟪Φ ·, η⟫))` as `∑ m, κ 𝓕 (χ 𝐞 (-⟪Φ ·, η⟫)) (m) T (φ e_(-m))`. The terms with `-m` in a
+general the phase is not linear. Expanding the phase factor times an auxiliary smooth cutoff `ρ`,
+equal to one near `supp φ`, in a Fourier series on a compact set
+(`Distribution.exists_forall_hasSum_localFourier_of_eq_mul`) writes `T (φ 𝐞 (-⟪Φ ·, η⟫))` as
+`∑ m, κ 𝓕 (ρ 𝐞 (-⟪Φ ·, η⟫)) (m) T (φ e_(-m))`. The terms with `-m` in a
 cone where `T (φ e_ξ)` decays rapidly and `‖m‖ ≳ ‖η‖` are small by that decay; for all the others
 the phase `⟪x, m⟫ + ⟪Φ x, η⟫` has gradient `m + DΦ(x)ᵀ η` bounded below by a multiple of
 `‖m‖ + ‖η‖`, and the Fourier coefficient is small by non-stationary phase
@@ -63,10 +64,10 @@ which depends on `Γ` and `supp χ` but not on the distribution.
 
 ## Main results
 
-* `Distribution.localFourier_cutoffPushforwardCLM`: localized Fourier transforms of `A_* T`, for
-  linear `A`, are localized Fourier transforms of `T` at the transposed frequency.
+* `Distribution.localFourier_cutoffPushforwardCLM`: localized Fourier transforms of `A_* (χ T)`,
+  for linear `A`, are localized Fourier transforms of `T` at the transposed frequency.
 * `Distribution.localFourier_cutoffPushforwardCLM_eq_complexPairing`: localized Fourier transforms
-  of `Φ_* T` as pairings of `T` with the phase factor `𝐞 (-⟪Φ ·, η⟫)`.
+  of `Φ_* (χ T)` as pairings of `T` with `χ (f ∘ Φ) 𝐞 (-⟪Φ ·, η⟫)`.
 * `Distribution.exists_one_add_norm_pow_mul_norm_complexPairing_le_of_phase`: rapid decay of
   `T (φ 𝐞 (-⟪Φ ·, η⟫))` when the pulled-back covectors `DΦ(x)ᵀ η` stay in a cone of decay of
   `T (φ e_ξ)`.
@@ -115,8 +116,8 @@ variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ
   {Ω : Opens E} {χ : 𝓓(Ω, ℝ)}
 
 /-- **Localized Fourier transforms of a pushforward.** The localized Fourier transform of the
-pushforward `A_* T` along a linear map `A`, with cutoff `f`, at the frequency `η`, is that of `T`
-with the cutoff `χ (f ∘ A)` at the transposed frequency `Aᵀ η`. -/
+pushforward `A_* (χ T)` along a linear map `A`, with cutoff `f`, at the frequency `η`, is that of
+`T` with the cutoff `χ (f ∘ A)` at the transposed frequency `Aᵀ η`. -/
 theorem localFourier_cutoffPushforwardCLM (A : E →L[ℝ] E') (T : 𝓓'(Ω, ℂ)) (f : 𝓓(Ω', ℂ))
     (η : E') :
     (cutoffPushforwardCLM χ A A.contDiff.contDiffOn T : 𝓓'(Ω', ℂ)).localFourier f η =
