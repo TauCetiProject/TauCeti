@@ -19,7 +19,7 @@ Being a local complete intersection over a field descends along étale maps of t
 is of finite type over a field `k` and `B` is an `A`-algebra which is locally standard syntomic of
 relative dimension `n` over `k`, then every prime of `A` under a prime of `B` at which `B` is étale
 over `A` has a standard syntomic neighbourhood
-(`TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale`). When
+(`TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_isEtaleAt`). When
 `B` is faithfully flat over `A`, it follows that `A` is locally standard syntomic of relative
 dimension `n` over `k`
 (`TauCeti.locally_isStandardSyntomicOfRelativeDimension_of_etale_of_faithfullyFlat`). This is the
@@ -41,9 +41,9 @@ then gives the standard syntomic neighbourhood.
 
 ## Main results
 
-* `TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale`: every
-  prime of `A` under a prime of the étale locus of a locally standard syntomic `A`-algebra has a
-  standard syntomic neighbourhood.
+* `TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_isEtaleAt`:
+  every prime of `A` under a prime of the étale locus of a locally standard syntomic `A`-algebra
+  has a standard syntomic neighbourhood.
 * `TauCeti.locally_isStandardSyntomicOfRelativeDimension_of_etale_of_faithfullyFlat`: local
   complete intersections over a field descend along faithfully flat étale maps.
 
@@ -64,7 +64,7 @@ universe u
 variable {n : ℕ} {k A B : Type u} [Field k] [CommRing A] [Algebra k A] [CommRing B] [Algebra k B]
   [Algebra A B] [IsScalarTower k A B]
 
-/-- The case of `exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale`
+/-- The case of `exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_isEtaleAt`
 where `B` is standard étale over `A` and standard syntomic over `k`. -/
 private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandardEtale
     [Algebra.FiniteType k A] [Algebra.IsStandardEtale A B]
@@ -108,7 +108,7 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_isStandar
 over a field `k`, and `B` an `A`-algebra which is locally standard syntomic of relative dimension
 `n` over `k`. Then every prime of `A` under a prime `Q` of `B` at which `B` is étale over `A` has
 a neighbourhood `A[1/g]` which is standard syntomic of relative dimension `n` over `k`. -/
-theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale
+theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_isEtaleAt
     [Algebra.FiniteType k A]
     (h : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap k B))
     (Q : Ideal B) [Q.IsPrime] [Algebra.IsEtaleAt A Q] :
@@ -160,7 +160,7 @@ theorem locally_isStandardSyntomicOfRelativeDimension_of_etale_of_faithfullyFlat
   have hQm : Q.asIdeal.comap (algebraMap A B) = m := by
     rw [← PrimeSpectrum.comap_asIdeal, hQ]
   obtain ⟨g, hg, hstd⟩ :=
-    exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale (A := A) h
+    exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_isEtaleAt (A := A) h
       Q.asIdeal
   exact ⟨g, hQm ▸ hg, hstd⟩
 

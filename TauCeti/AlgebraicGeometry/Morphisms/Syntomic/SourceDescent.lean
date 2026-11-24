@@ -21,8 +21,8 @@ soon as `u ≫ f` is, for some étale surjection `u : X' ⟶ X`
 along the flat surjection `u`, and by the fibrewise criterion it suffices to treat a morphism to
 the spectrum of a field. There, near a point of `X` under a point of an affine open of `X'`, the
 ring-theoretic descent of local complete intersections along étale maps
-(`TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale`) gives a
-standard syntomic basic open neighbourhood.
+(`TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_isEtaleAt`)
+gives a standard syntomic basic open neighbourhood.
 
 The resulting morphism must be locally of finite presentation, as for smooth morphisms
 (`AlgebraicGeometry.Smooth.of_comp_surjective`). The étale cover need not be quasi-compact.
@@ -75,7 +75,7 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_of_etale {K 
     exact (PrimeSpectrum.comap_asIdeal χ.hom y).symm
   have : y.asIdeal.IsPrime := y.isPrime
   obtain ⟨g, hg, hstd⟩ :=
-    exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_etale (A := A) h
+    exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of_isEtaleAt (A := A) h
       y.asIdeal
   exact ⟨g, hQ ▸ hg, hstd⟩
 
