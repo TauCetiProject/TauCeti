@@ -33,23 +33,14 @@ tapered Fourier vectors.
   decaying linearly over `N ≤ |n| ≤ N + L`, and vanishing outside `|n| < N + L`.
 * `TauCeti.taperedFourierVec`: the vector in `EuclideanSpace ℂ (Fin (2 * (N + L) + 1))` with
   frequency `n = k - (N + L)` carrying entry `√(taperWeight N L n) * Real.fourierChar (-n * x)`.
-* `TauCeti.icoCorePadVec`: zero-padding of an integer-interval sequence on `[M, M + H)` into
-  coordinates `L ≤ k < L + H` of `EuclideanSpace ℂ (Fin (2 * (N + L) + 1))` (which lies in the
-  flat core `|k - (N + L)| ≤ N` when `H ≤ 2 * N + 1`, and truncates entries when
-  `L + H > 2 * (N + L) + 1`).
 
 ## Main results
 
 * `TauCeti.inner_taperedFourierVec_eq_sum_taperWeight`, `TauCeti.inner_taperedFourierVec`,
   `TauCeti.norm_taperedFourierVec_sq`, and `TauCeti.norm_inner_taperedFourierVec_le`: Gram entries
   of `taperedFourierVec`.
-* `TauCeti.icoCorePadVec_eq_zero_of_lt_abs`, `TauCeti.norm_icoCorePadVec_sq`,
-  `TauCeti.fourierChar_mul_sum_icoCorePadVec`, and `TauCeti.norm_sum_icoCorePadVec_fourierChar`:
-  support, squared-norm, and Fourier phase identities for `icoCorePadVec`.
 * `Finset.sum_norm_sum_fourierChar_sq_le_of_sum_inv_sin_sq_le`: the cosecant-row large sieve for
   core-supported vectors.
-* `Finset.sum_norm_sum_fourierChar_sq_le_of_support`: centered core additive large sieve for
-  `0 < δ ≤ 1 / 2`.
 * `Finset.sum_norm_sum_Ico_fourierChar_sq_le` and `Finset.sum_norm_sum_fourierChar_sq_le`:
   **Bombieri's additive large sieve inequality** with constant `H + 2 / δ` for arbitrary `H : ℕ`,
   `M : ℤ`, `0 < δ`, and `δ`-separated points in `UnitAddCircle`.
@@ -325,21 +316,21 @@ theorem inner_taperedFourierVec_eq_sum {N L : ℕ} (hL : 0 < L) (x : ℝ)
 /-- Zero-padding an integer-interval sequence `a` on `[M, M + H)` into coordinates `L ≤ k < L + H`
 of `EuclideanSpace ℂ (Fin (2 * (N + L) + 1))` (which lies in the flat core `|k - (N + L)| ≤ N` when
 `H ≤ 2 * N + 1`, and truncates entries when `L + H > 2 * (N + L) + 1`). -/
-noncomputable def icoCorePadVec (M : ℤ) (H N L : ℕ) (a : ℤ → ℂ) :
+private noncomputable def icoCorePadVec (M : ℤ) (H N L : ℕ) (a : ℤ → ℂ) :
     EuclideanSpace ℂ (Fin (2 * (N + L) + 1)) :=
   WithLp.toLp 2 fun k ↦
     if L ≤ k.val ∧ k.val - L < H then a (M + ((k.val - L : ℕ) : ℤ)) else 0
 
 /-- Coordinate formula for `icoCorePadVec`. -/
-@[simp]
-theorem icoCorePadVec_apply (M : ℤ) (H N L : ℕ) (a : ℤ → ℂ) (k : Fin (2 * (N + L) + 1)) :
+private theorem icoCorePadVec_apply (M : ℤ) (H N L : ℕ) (a : ℤ → ℂ)
+    (k : Fin (2 * (N + L) + 1)) :
     icoCorePadVec M H N L a k =
       if L ≤ k.val ∧ k.val - L < H then a (M + ((k.val - L : ℕ) : ℤ)) else 0 :=
   PiLp.toLp_apply 2 _ _ k
 
 /-- When `H ≤ 2 * N + 1`, `icoCorePadVec M H N L a` vanishes outside the flat core
 `|k - (N + L)| ≤ N` for every taper width `L`. -/
-theorem icoCorePadVec_eq_zero_of_lt_abs {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ)
+private theorem icoCorePadVec_eq_zero_of_lt_abs {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N + 1) (L : ℕ)
     (a : ℤ → ℂ) {k : Fin (2 * (N + L) + 1)}
     (hk : (N : ℤ) < |(k : ℤ) - ((N + L : ℕ) : ℤ)|) :
     icoCorePadVec M H N L a k = 0 := by
@@ -349,7 +340,8 @@ theorem icoCorePadVec_eq_zero_of_lt_abs {M : ℤ} {H N : ℕ} (hHN : H ≤ 2 * N
 
 /-- When `L + H ≤ 2 * (N + L) + 1`, the squared norm of `icoCorePadVec M H N L a` equals the
 squared `ℓ²` norm of `a` on `Finset.Ico M (M + H)`. -/
-theorem norm_icoCorePadVec_sq {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1) (a : ℤ → ℂ) :
+private theorem norm_icoCorePadVec_sq {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1)
+    (a : ℤ → ℂ) :
     ‖icoCorePadVec M H N L a‖ ^ 2 = ∑ n ∈ Finset.Ico M (M + H), ‖a n‖ ^ 2 := by
   rw [EuclideanSpace.norm_sq_eq, Finset.sum_Ico_int_add_eq_sum_range M H (fun n ↦ ‖a n‖ ^ 2),
     ← Finset.sum_fin_ite_sub_eq_sum_range (D := 2 * (N + L) + 1) (L := L) hLH
@@ -361,8 +353,8 @@ theorem norm_icoCorePadVec_sq {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + 
 /-- When `L + H ≤ 2 * (N + L) + 1`, shifting the centered Fourier sum of `icoCorePadVec M H N L a`
 by the unimodular phase `Real.fourierChar ((M + N) * t)` recovers the Fourier sum of `a` on
 `Finset.Ico M (M + H)`. -/
-theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1)
-    (a : ℤ → ℂ) (t : ℝ) :
+private theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N L : ℕ}
+    (hLH : L + H ≤ 2 * (N + L) + 1) (a : ℤ → ℂ) (t : ℝ) :
     (Real.fourierChar (((M + (N : ℤ) : ℤ) : ℝ) * t) : ℂ) *
         ∑ k : Fin (2 * (N + L) + 1),
           icoCorePadVec M H N L a k *
@@ -395,8 +387,8 @@ theorem fourierChar_mul_sum_icoCorePadVec {M : ℤ} {H N L : ℕ} (hLH : L + H �
 
 /-- When `L + H ≤ 2 * (N + L) + 1`, the centered Fourier sum of `icoCorePadVec M H N L a` has the
 same norm as the Fourier sum of `a` on `Finset.Ico M (M + H)`. -/
-theorem norm_sum_icoCorePadVec_fourierChar {M : ℤ} {H N L : ℕ} (hLH : L + H ≤ 2 * (N + L) + 1)
-    (a : ℤ → ℂ) (t : ℝ) :
+private theorem norm_sum_icoCorePadVec_fourierChar {M : ℤ} {H N L : ℕ}
+    (hLH : L + H ≤ 2 * (N + L) + 1) (a : ℤ → ℂ) (t : ℝ) :
     ‖∑ k : Fin (2 * (N + L) + 1),
         icoCorePadVec M H N L a k *
           (Real.fourierChar ((((k : ℤ) - ((N + L : ℕ) : ℤ) : ℤ) : ℝ) * t) : ℂ)‖ =
@@ -480,7 +472,7 @@ private theorem natFloor_inv_add_pi_sq_div_le {δ : ℝ} (hδ : 0 < δ) (hδ' : 
 
 /-- Centered core additive large sieve for `0 < δ ≤ 1 / 2`: taking taper width `L = ⌊1 / δ⌋₊`
 yields the explicit constant `2 * N + 2 / δ`. -/
-theorem sum_norm_sum_fourierChar_sq_le_of_support {ι : Type*}
+private theorem sum_norm_sum_fourierChar_sq_le_of_support {ι : Type*}
     (s : Finset ι) (x : ι → ℝ) {δ : ℝ} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2)
     (hsep : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → δ ≤ ‖((x i - x j : ℝ) : UnitAddCircle)‖)
     (N : ℕ) (f : EuclideanSpace ℂ (Fin (2 * (N + ⌊1 / δ⌋₊) + 1)))
