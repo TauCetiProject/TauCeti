@@ -8,8 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Basic
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Congruence
 public import TauCeti.Algebra.AlgebraicGroup.SpecialOrthogonal.Smooth
-import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transpose
 
 /-!
 # `SO_l^J` and the special orthogonal group of the identity form
@@ -30,15 +28,16 @@ Conjugation by `P` preserves determinants, so it identifies the determinant-one 
 of the two congruent forms: for every congruence `P C Pᵀ = C'`, the coordinate automorphism of
 conjugation pulls the join of the constant-form Hopf ideal of `C'` and the determinant kernel back
 to the corresponding join for `C`
-(`TauCeti.ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso`). Hence
+(`TauCeti.ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso`). Hence the
+coordinate Hopf algebras are isomorphic,
 
-`SO_l^J ≅ SO_l`
+`O(SO_l^J) ≅ O(SO_l)`
 
-as group schemes over `R`, where `SO_l` is `TauCeti.SpecialOrthogonal.groupScheme`, the special
+as commutative Hopf algebras over `R`, where `O(SO_l)` is
+`TauCeti.SpecialOrthogonal.coordinateHopfAlgebra`, the coordinate Hopf algebra of the special
 orthogonal group of the identity form
-(`TauCeti.AntidiagonalSpecialOrthogonal.coordinateHopfAlgebraIsoSpecialOrthogonal`, an
-isomorphism of coordinate Hopf algebras), and `SO_l^J` is smooth
-over `R` (`TauCeti.AntidiagonalSpecialOrthogonal.smooth_coordinateHopfAlgebra`).
+(`TauCeti.AntidiagonalSpecialOrthogonal.coordinateHopfAlgebraIsoSpecialOrthogonal`), and `SO_l^J`
+is smooth over `R` (`TauCeti.AntidiagonalSpecialOrthogonal.smooth_coordinateHopfAlgebra`).
 
 ## References
 
@@ -53,51 +52,6 @@ namespace TauCeti
 
 universe u
 
-/-! ### Congruence of the determinant-one subgroup schemes -/
-
-namespace ConstantForm
-
-variable {R : Type u} [CommRing R] {n : ℕ}
-
-/-- **Conjugation pulls a determinant-one constant-form Hopf ideal back to the congruent one.** The
-coordinate automorphism of conjugation by `Q` on `GLₙ` pulls the join of the constant-form Hopf
-ideal of `C` and the determinant kernel back to the corresponding join for `Q C Qᵀ`. -/
-theorem sup_specialLinear_comapOfSurjective_conjCoordinateIso (Q : GL (Fin n) R)
-    (C : Matrix (Fin n) (Fin n) R) :
-    (definingHopfIdeal R n C ⊔ SpecialLinear.definingHopfIdeal R n).comapOfSurjective
-        (GeneralLinear.conjCoordinateIso Q).hom.hom
-        (ConcreteCategory.bijective_of_isIso (GeneralLinear.conjCoordinateIso Q).hom).2 =
-      definingHopfIdeal R n
-          ((Q : Matrix (Fin n) (Fin n) R) * C * (Q : Matrix (Fin n) (Fin n) R)ᵀ) ⊔
-        SpecialLinear.definingHopfIdeal R n := by
-  have hC := definingHopfIdeal_comapOfSurjective_conjCoordinateIso Q C
-  rw [GeneralLinear.comapOfSurjective_conjCoordinateIso_eq_conjugate] at hC ⊢
-  refine (HopfIdeal.eq_conjugate_of_forall_mem_iff _ fun A x => ?_).symm
-  simp only [CommHopfAlgCat.quotientPointsSubgroup_sup, Subgroup.mem_inf]
-  refine and_congr ?_ ?_
-  · rw [← hC]
-    exact CommHopfAlgCat.pointConjugation_mem_conjugate_iff _ _ A x
-  · obtain ⟨A⟩ := A
-    refine (SpecialLinear.mem_definingPointsSubgroup_iff_det_eq_one R n _).trans
-      (Iff.trans ?_ (SpecialLinear.mem_definingPointsSubgroup_iff_det_eq_one R n x).symm)
-    rw [map_mul, map_mul, map_inv, GeneralLinear.pointsMulEquiv_mapValue,
-      MulEquiv.apply_symm_apply, Units.val_mul, Units.val_mul, det_mul, det_mul, mul_right_comm,
-      ← det_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one, det_one, one_mul]
-
-/-- Conjugation by `P⁻¹` pulls the determinant-one constant-form Hopf ideal of `C' = P C Pᵀ` back
-to that of `C`. -/
-theorem sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv (P : GL (Fin n) R)
-    {C C' : Matrix (Fin n) (Fin n) R}
-    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
-    (definingHopfIdeal R n C' ⊔ SpecialLinear.definingHopfIdeal R n).comapOfSurjective
-        (GeneralLinear.conjCoordinateIso P⁻¹).hom.hom
-        (ConcreteCategory.bijective_of_isIso (GeneralLinear.conjCoordinateIso P⁻¹).hom).2 =
-      definingHopfIdeal R n C ⊔ SpecialLinear.definingHopfIdeal R n := by
-  rw [sup_specialLinear_comapOfSurjective_conjCoordinateIso, ← hP,
-    GeneralLinearGroup.inv_congruence_congruence]
-
-end ConstantForm
-
 namespace AntidiagonalSpecialOrthogonal
 
 /-! ### The congruence matrix -/
@@ -111,9 +65,25 @@ For `i² = -1` it satisfies `P J_l Pᵀ = 1`. -/
 noncomputable def congrMatrix : Matrix (Fin l) (Fin l) R :=
   (⅟2 * (1 - i)) • (1 : Matrix (Fin l) (Fin l) R) + (⅟2 * (1 + i)) • formMatrix R l
 
+/-- The congruence matrix is `a · 1 + b · J_l`, with `a = (1 - i) / 2` and `b = (1 + i) / 2`. -/
+theorem congrMatrix_def :
+    congrMatrix l i =
+      (⅟2 * (1 - i)) • (1 : Matrix (Fin l) (Fin l) R) + (⅟2 * (1 + i)) • formMatrix R l :=
+  (rfl)
+
 variable {l i}
 
+/-- The entries of the congruence matrix: `a` on the diagonal and `b` on the antidiagonal (their
+sum `1` at the middle entry for odd `l`). -/
+@[simp]
+theorem congrMatrix_apply (j k : Fin l) :
+    congrMatrix l i j k =
+      (if j = k then ⅟2 * (1 - i) else 0) + if k = Fin.rev j then ⅟2 * (1 + i) else 0 := by
+  simp only [congrMatrix_def, Matrix.add_apply, Matrix.smul_apply, Matrix.one_apply,
+    formMatrix_apply, smul_eq_mul, mul_ite, mul_one, mul_zero]
+
 /-- The congruence matrix is symmetric. -/
+@[simp]
 theorem transpose_congrMatrix : (congrMatrix l i)ᵀ = congrMatrix l i := by
   rw [congrMatrix, transpose_add, transpose_smul, transpose_smul, transpose_one,
     transpose_formMatrix]
@@ -149,11 +119,35 @@ theorem coe_congrUnit (hi : i * i = -1) :
     (congrUnit l hi : Matrix (Fin l) (Fin l) R) = congrMatrix l i :=
   (rfl)
 
+/-- The inverse of the congruence unit is `J_l P`. -/
+theorem coe_congrUnit_inv (hi : i * i = -1) :
+    (↑(congrUnit l hi)⁻¹ : Matrix (Fin l) (Fin l) R) = formMatrix R l * congrMatrix l i := by
+  rw [← transpose_congrMatrix (l := l) (i := i)]
+  rfl
+
+/-- The inverse of the congruence matrix is `J_l P`. -/
+@[simp]
+theorem inv_congrMatrix (hi : i * i = -1) :
+    (congrMatrix l i)⁻¹ = formMatrix R l * congrMatrix l i := by
+  rw [← coe_congrUnit hi, ← coe_units_inv, coe_congrUnit_inv, coe_congrUnit]
+
 end CongrMatrix
 
 /-! ### The isomorphism with the special orthogonal group of the identity form -/
 
 variable {R : Type u} [CommRing R] [Invertible (2 : R)] (l : ℕ) {i : R}
+
+/-- Conjugation by the inverse of the congruence matrix pulls the defining Hopf ideal of `SO_l` back
+to that of `SO_l^J`. -/
+theorem specialOrthogonal_comapOfSurjective_conjCoordinateIso_congrUnit_inv (hi : i * i = -1) :
+    (SpecialOrthogonal.definingHopfIdeal R l).comapOfSurjective
+        (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹).hom.hom
+        (ConcreteCategory.bijective_of_isIso
+          (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹).hom).2 =
+      definingHopfIdeal R l := by
+  rw [SpecialOrthogonal.definingHopfIdeal_def, definingHopfIdeal_def]
+  exact ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv (congrUnit l hi)
+    (by rw [coe_congrUnit]; exact congrMatrix_mul_formMatrix_mul_transpose hi)
 
 /-- **`SO_l^J` and `SO_l` have isomorphic coordinate Hopf algebras** over a ring containing `1/2`
 and a square root `i` of `-1`, through conjugation by the inverse of the congruence matrix on
@@ -162,10 +156,16 @@ noncomputable def coordinateHopfAlgebraIsoSpecialOrthogonal (hi : i * i = -1) :
     coordinateHopfAlgebra R l ≅ SpecialOrthogonal.coordinateHopfAlgebra R l :=
   CommHopfAlgCat.quotientIsoOfComapEq (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹)
     (SpecialOrthogonal.definingHopfIdeal R l)
-    (by
-      rw [SpecialOrthogonal.definingHopfIdeal_def, definingHopfIdeal_def]
-      exact ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv (congrUnit l hi)
-        (by rw [coe_congrUnit]; exact congrMatrix_mul_formMatrix_mul_transpose hi))
+    (specialOrthogonal_comapOfSurjective_conjCoordinateIso_congrUnit_inv l hi)
+
+/-- The isomorphism of coordinate Hopf algebras is the quotient isomorphism induced by conjugation
+by the inverse of the congruence matrix on `GL_l`. -/
+theorem coordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1) :
+    coordinateHopfAlgebraIsoSpecialOrthogonal l hi =
+      CommHopfAlgCat.quotientIsoOfComapEq (GeneralLinear.conjCoordinateIso (congrUnit l hi)⁻¹)
+        (SpecialOrthogonal.definingHopfIdeal R l)
+        (specialOrthogonal_comapOfSurjective_conjCoordinateIso_congrUnit_inv l hi) :=
+  (rfl)
 
 /-- The isomorphism of coordinate Hopf algebras is induced by conjugation by the inverse of the
 congruence matrix on the coordinates of `GL_l`. -/
@@ -176,6 +176,15 @@ theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom (hi : i
   rw [coordinateMap_def, SpecialOrthogonal.coordinateMap_def,
     coordinateHopfAlgebraIsoSpecialOrthogonal,
     CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom]
+
+/-- The inverse isomorphism of coordinate Hopf algebras is induced by conjugation by the congruence
+matrix on the coordinates of `GL_l`. -/
+theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_inv (hi : i * i = -1) :
+    SpecialOrthogonal.coordinateMap R l ≫ (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv =
+      (GeneralLinear.conjCoordinateIso (congrUnit l hi)).hom ≫ coordinateMap R l := by
+  rw [Iso.comp_inv_eq, Category.assoc,
+    coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom,
+    GeneralLinear.conjCoordinateIso_inv, Iso.symm_hom, Iso.hom_inv_id_assoc]
 
 /-- **`SO_l^J` is smooth** over a ring containing `1/2` and a square root of `-1`. -/
 theorem smooth_coordinateHopfAlgebra (hi : i * i = -1) :
