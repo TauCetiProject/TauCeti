@@ -52,7 +52,7 @@ namespace TauCeti
 
 /-- `soTwoOneMatrix x y z` lies in `𝔰𝔬(2, 1)`. -/
 theorem soTwoOneMatrix_mem (x y z : ℝ) : soTwoOneMatrix x y z ∈ so' (Fin 2) (Fin 1) ℝ := by
-  rw [mem_so'_iff]
+  rw [mem_so'_iff_forall]
   intro a b
   rcases a with a | a <;> rcases b with b | b <;> fin_cases a <;> fin_cases b <;>
     simp [soTwoOneMatrix, indefiniteDiagonal]
@@ -86,7 +86,7 @@ noncomputable def slTwoLieEquivSoTwoOne : sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ so' (Fi
     ext i j
     fin_cases i <;> fin_cases j <;> simp [soTwoOneMatrix, hX]
   right_inv N := by
-    have h := (mem_so'_iff N.val).mp N.property
+    have h := (mem_so'_iff_forall N.val).mp N.property
     have h₁ := h (.inl 0) (.inl 0)
     have h₂ := h (.inl 1) (.inl 1)
     have h₃ := h (.inl 0) (.inl 1)
