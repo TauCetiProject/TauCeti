@@ -45,6 +45,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
 
 * `TauCeti.existsUnique_isAddHaarMeasure_measure_integer_eq_one`: there is exactly one additive
   Haar measure on `K` giving `𝒪[K]` mass one.
+* `MeasureTheory.Measure.addHaar_smul_integer_of_irreducible`: the maximal ideal `ϖ • 𝒪[K]`
+  has `q⁻¹` times the mass of `𝒪[K]`.
 * `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue`: the Haar character of `a ∈ Kˣ`
   is `|a|_K`; `MeasureTheory.distribHaarChar_eq_zpow` writes it as `q ^ (-v_K(a))`.
 * `MeasureTheory.distribHaarChar_of_isUniformizer`: a uniformizer has character `q⁻¹`.
@@ -54,6 +56,8 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
   for every `a ∈ K`, including `a = 0`.
 * `MeasureTheory.Measure.map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul`: for `a ≠ 0`,
   multiplication by `a` pushes `μ` forward to `|a|_K⁻¹ • μ`.
+* `MeasureTheory.Measure.addHaar_setOf_valuation_eq_one`: the units of `𝒪[K]`, the elements of
+  valuation one, have mass `(1 - q⁻¹) μ 𝒪[K]`.
 
 ## References
 
@@ -78,7 +82,7 @@ interior: it is compact, and open since the topology of `K` is valuative. Mathli
 mass one. -/
 noncomputable def integerPositiveCompacts : PositiveCompacts K where
   carrier := 𝒪[K]
-  isCompact' := isCompact_iff_compactSpace.2 (inferInstanceAs (CompactSpace 𝒪[K]))
+  isCompact' := IsNonarchimedeanLocalField.isCompact_closedBall K 1
   interior_nonempty' := ⟨0, by
     rw [Valuation.isOpen_integer.interior_eq]
     exact zero_mem 𝒪[K]⟩
@@ -86,6 +90,14 @@ noncomputable def integerPositiveCompacts : PositiveCompacts K where
 @[simp]
 theorem coe_integerPositiveCompacts : (integerPositiveCompacts K : Set K) = 𝒪[K] :=
   (rfl)
+
+/-- In a ring with a valuative topology, the elements of valuation one form a measurable set: they
+are the sphere of radius one, which is closed (`Valuation.isClosed_sphere`). In a local field these
+are the units of the ring of integers. -/
+theorem measurableSet_setOf_valuation_eq_one {R : Type*} [Ring R] [ValuativeRel R]
+    [TopologicalSpace R] [IsValuativeTopology R] [MeasurableSpace R] [OpensMeasurableSpace R] :
+    MeasurableSet {x : R | valuation R x = 1} := by
+  simpa only [Valuation.restrict_eq_one_iff] using ((valuation R).isClosed_sphere 1).measurableSet
 
 /-- **The normalized Haar measure of a local field.** There is exactly one additive Haar measure
 on `K` giving the ring of integers `𝒪[K]` mass one, namely
@@ -108,7 +120,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 `ϖ • 𝒪[K]` has `q⁻¹` times the mass of `𝒪[K]`, where `q` is the cardinality of the residue field:
 the box formula `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow` in one
 coordinate. -/
-private theorem measure_smul_integer_of_irreducible [MeasurableSpace K] [BorelSpace K]
+theorem Measure.addHaar_smul_integer_of_irreducible [MeasurableSpace K] [BorelSpace K]
     (μ : Measure K) [μ.IsAddHaarMeasure] {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) :
     μ ((ϖ : K) • (𝒪[K] : Set K)) = (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ * μ 𝒪[K] := by
   have hm : ((↑) : 𝒪[K] → K) '' ↑𝓂[K] = (ϖ : K) • (𝒪[K] : Set K) := by
@@ -135,7 +147,7 @@ theorem distribHaarChar_eq_zpow (x : Kˣ) :
     hchar u 1 (by rw [(valuation K).units_smul_integer hu, ENNReal.coe_one, one_mul])
   have hϖ' : distribHaarChar K (Units.mk0 (ϖ : K) fun h ↦ hϖ.ne_zero (Subtype.ext h)) =
       (Nat.card 𝓀[K] : ℝ≥0)⁻¹ :=
-    hchar _ _ (by simpa [Units.smul_def] using measure_smul_integer_of_irreducible μ hϖ)
+    hchar _ _ (by simpa [Units.smul_def] using μ.addHaar_smul_integer_of_irreducible hϖ)
   simp [hu', hϖ', normalizedValuation_irreducible hϖ, (normalizedValuation_eq_one_iff u).2 hu]
 
 /-- **The Haar character of a local field is the normalized absolute value.** Multiplication
@@ -195,6 +207,23 @@ theorem map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul {a : K} (ha : a ≠
   rw [map_apply (measurable_const_smul a) hs, Set.preimage_smul₀ ha,
     addHaar_smul_eq_normalizedAbsoluteValue_mul, map_inv₀, smul_apply]
   simp
+
+/-- **The Haar mass of the units.** The units of the ring of integers of a nonarchimedean local
+field, the elements of valuation one, have Haar mass `(1 - q⁻¹) μ 𝒪[K]`, where `q` is the
+cardinality of the residue field: they are the complement in `𝒪[K]` of the maximal ideal
+`ϖ 𝒪[K]`, of mass `q⁻¹ μ 𝒪[K]`. -/
+theorem addHaar_setOf_valuation_eq_one :
+    μ {x : K | valuation K x = 1} = (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K] := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have hsub : (ϖ : K) • (𝒪[K] : Set K) ⊆ 𝒪[K] := by
+    rintro _ ⟨y, hy, rfl⟩
+    exact mul_mem ϖ.property hy
+  have hO : IsCompact (𝒪[K] : Set K) := IsNonarchimedeanLocalField.isCompact_closedBall K 1
+  have hcpt := hO.smul (ϖ : K)
+  rw [hϖ.setOf_valuation_eq_one_eq_sdiff, measure_sdiff hsub
+    hcpt.isClosed.measurableSet.nullMeasurableSet hcpt.measure_lt_top.ne,
+    addHaar_smul_integer_of_irreducible μ hϖ,
+    ENNReal.sub_mul fun _ _ ↦ hO.measure_lt_top.ne, one_mul]
 
 end Measure
 
