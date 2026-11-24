@@ -330,17 +330,19 @@ theorem zero_kernelComp (m' : S₀ → S₂ → R) : kernelComp (0 : S₁ → S�
   ext p₁ p₂
   simp [kernelComp_apply]
 
-/-- Composing with the identity kernel on the output generators does not change a kernel. -/
+/-- Composing with the identity kernel `if p = q then 1 else 0` on the output generators does not
+change a kernel. -/
 @[simp]
-theorem kernelComp_one [DecidableEq S₀] (m : S₁ → S₀ → R) :
+theorem kernelComp_ite_eq [DecidableEq S₀] (m : S₁ → S₀ → R) :
     kernelComp m (fun p q : S₀ ↦ if p = q then 1 else 0) = m := by
   ext p₁ p₀
   rw [kernelComp_apply, finsum_eq_single _ p₀ fun q hq ↦ by simp [hq]]
   simp
 
-/-- Composing with the identity kernel on the input generators does not change a kernel. -/
+/-- Composing with the identity kernel `if p = q then 1 else 0` on the input generators does not
+change a kernel. -/
 @[simp]
-theorem one_kernelComp [DecidableEq S₀] (m : S₀ → S₂ → R) :
+theorem ite_eq_kernelComp [DecidableEq S₀] (m : S₀ → S₂ → R) :
     kernelComp (fun p q : S₀ ↦ if p = q then 1 else 0) m = m := by
   ext p₀ p₂
   rw [kernelComp_apply, finsum_eq_single _ p₀ fun q hq ↦ by simp [Ne.symm hq]]
