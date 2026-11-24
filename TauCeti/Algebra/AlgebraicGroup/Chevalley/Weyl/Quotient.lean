@@ -116,6 +116,14 @@ private theorem weylSubgroupQuotientMulEquiv_mk_apply [Nontrivial A] (g : N) :
     D.weylSubgroupQuotientMulEquiv A (QuotientGroup.mk g) = D.residueHom A g :=
   QuotientGroup.liftEquiv_mk H (D.residueHom_surjective A) (D.ker_residueHom A).symm g
 
+/-- The Weyl quotient equivalence sends the class of an actual torus point to the identity. -/
+@[simp]
+theorem weylSubgroupQuotientMulEquiv_mk_torusPoints [Nontrivial A] (s : Fin t.rank → Aˣ) :
+    D.weylSubgroupQuotientMulEquiv A
+        (QuotientGroup.mk ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩) =
+      1 := by
+  rw [D.weylSubgroupQuotientMulEquiv_mk_apply A, D.residueHom_torusPoints A s]
+
 /-- The Weyl quotient equivalence sends the class of a pinned simple Weyl lift to its simple
 reflection. -/
 @[simp]
