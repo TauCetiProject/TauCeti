@@ -14,11 +14,11 @@ import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
-import TauCeti.Analysis.Fourier.PoissonSummation
 import TauCeti.Analysis.Fourier.Torus.Convolution
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
 import TauCeti.Analysis.Fourier.Torus.Uniqueness
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
@@ -41,7 +41,7 @@ that represents `f` almost everywhere. This hypothesis is what
 `TauCeti.UnitAddTorus.mFourierCoeff_eq_prod_smul_of_iteratedFDeriv` provides for the derivatives of
 the lift of a smooth function. The case `k = 0` is **Nikol'skii's inequality**
 `‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`, the gain of integrability of a trigonometric polynomial
-(`TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_zero`).
+(`TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm`).
 
 These are the periodic counterparts of the whole-space inequalities
 `TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`: a block of a
@@ -74,7 +74,8 @@ intermediate trigonometric polynomials, and the gain of integrability is applied
 
 ## Main declarations
 
-* `TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_zero`: Nikol'skii's inequality.
+* `TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm`: Nikol'skii's
+  inequality.
 * `TauCeti.UnitAddTorus.exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul`: Bernstein's
   inequalities for derivatives of every order.
 
@@ -141,29 +142,19 @@ private theorem card_box_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R) :
   push_cast
   linarith
 
-omit [Fintype d] in
-/-- A symbol on `ℝᵈ` vanishing wherever one coordinate exceeds `2` in absolute value has compact
-support. -/
-private theorem hasCompactSupport_of_eq_zero {τ : EuclideanSpace ℝ d → ℂ}
-    (hτ : ∀ (ξ : EuclideanSpace ℝ d) i, 2 < |ξ i| → τ ξ = 0) : HasCompactSupport τ := by
-  refine HasCompactSupport.intro ((EuclideanSpace.equiv d ℝ).toHomeomorph.isCompact_preimage.2
-    (isCompact_univ_pi fun _ ↦ isCompact_Icc (a := (-2 : ℝ)) (b := 2))) fun ξ hξ ↦ ?_
-  simp only [mem_preimage, mem_univ_pi, not_forall] at hξ
-  obtain ⟨i, hi⟩ := hξ
-  exact hτ ξ i (not_le.1 fun h ↦ hi (abs_le.1 h))
-
 /-- **The `L¹` norm of a kernel with a dilated symbol.** Let `τ` be a smooth symbol on `ℝᵈ`
 vanishing wherever one coordinate exceeds `2` in absolute value. By Poisson summation the
 trigonometric polynomial `x ↦ ∑ n, τ (n / R) e_n(x)` is the periodization of the kernel
 `𝓕⁻ (τ (· / R))` on `ℝᵈ`, a dilate of `𝓕⁻ τ`, so its `L¹` norm on the torus is at most
-`∫ ‖𝓕⁻ τ‖`, whatever the scale `R` (`TauCeti.UnitAddTorus.eLpNorm_periodicKernel_le`). -/
+`∫ ‖𝓕⁻ τ‖`, whatever the scale `R` (`SchwartzMap.eLpNorm_periodicKernel_le`). -/
 private theorem integral_norm_sum_box_le [DecidableEq d] {τ : EuclideanSpace ℝ d → ℂ}
     (hτ : ContDiff ℝ ∞ τ) (h0 : ∀ (ξ : EuclideanSpace ℝ d) i, 2 < |ξ i| → τ ξ = 0) {R : ℝ}
     (hR : 0 < R) :
     ∫ x, ‖∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x‖ ≤ ∫ y, ‖𝓕⁻ τ y‖ := by
   -- The dilated symbol `τ (· / R)` as a Schwartz function.
   have hcR : HasCompactSupport fun ξ : EuclideanSpace ℝ d ↦ τ (R⁻¹ • ξ) :=
-    (hasCompactSupport_of_eq_zero h0).comp_smul (inv_ne_zero hR.ne')
+    (EuclideanSpace.hasCompactSupport_of_forall_notMem_Icc (fun _ ↦ -2) (fun _ ↦ 2)
+      fun ξ i hi ↦ h0 ξ i (not_le.1 fun h ↦ hi (abs_le.1 h))).comp_smul (inv_ne_zero hR.ne')
   have hsR : ContDiff ℝ ∞ fun ξ : EuclideanSpace ℝ d ↦ τ (R⁻¹ • ξ) :=
     hτ.comp (contDiff_const_smul _)
   set S : SchwartzMap (EuclideanSpace ℝ d) ℂ := hcR.toSchwartzMap hsR
@@ -186,9 +177,9 @@ private theorem integral_norm_sum_box_le [DecidableEq d] {τ : EuclideanSpace �
     exact integral_norm_fourierInv_comp_smul τ (inv_ne_zero hR.ne')
   have hlint : ∫⁻ x, ‖∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x‖ₑ ≤
       ENNReal.ofReal (∫ y, ‖𝓕⁻ τ y‖) := by
-    have h := eLpNorm_periodicKernel_le S
-    rw [eLpNorm_one_eq_lintegral_eNorm (periodicKernel S).continuous.aestronglyMeasurable] at h
-    simp only [periodicKernel_apply, hsum] at h
+    have h := S.eLpNorm_periodicKernel_le
+    rw [eLpNorm_one_eq_lintegral_eNorm S.periodicKernel.continuous.aestronglyMeasurable] at h
+    simp only [SchwartzMap.periodicKernel_apply, hsum] at h
     rw [← hFS, volume_eq_pi_haarAddCircle]
     exact h
   rw [integral_norm_eq_lintegral_eNorm hcont.aestronglyMeasurable]
@@ -369,37 +360,35 @@ private theorem eLpNorm_derivKernel_le [DecidableEq d] (v : d → ℝ) {R : ℝ}
       (∑ i : d, ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖) * R * ‖v‖) := by
   set T : d → UnitAddTorus d → ℂ := fun i x ↦
     ∑ n ∈ box d R, derivCutoffSymbol i (R⁻¹ • latticePoint n) * mFourier n x
-  have hint (i : d) : Integrable (T i) :=
-    (by fun_prop : Continuous (T i)).integrable_of_hasCompactSupport (.of_compactSpace _)
-  have hT (i : d) : ∫ x, ‖T i x‖ ≤ ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖ :=
-    integral_norm_sum_box_le (contDiff_derivCutoffSymbol i) (derivCutoffSymbol_eq_zero i) hR
-  have hK : derivKernel v R = fun x ↦ ∑ i, (2 * Real.pi * Complex.I * R * v i) * T i x :=
-    funext (derivKernel_eq_sum v hR)
-  have hKint : Integrable (derivKernel v R) := by
-    rw [hK]
-    exact integrable_finsetSum _ fun i _ ↦ (hint i).const_mul _
-  rw [eLpNorm_one_eq_lintegral_eNorm hKint.aestronglyMeasurable,
-    ← ofReal_integral_norm_eq_lintegral_eNorm hKint]
-  refine ENNReal.ofReal_le_ofReal ?_
-  calc ∫ x, ‖derivKernel v R x‖
-      ≤ ∫ x, ∑ i, 2 * Real.pi * R * ‖v‖ * ‖T i x‖ := by
-        refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ norm_nonneg _)
-          (integrable_finsetSum _ fun i _ ↦ (hint i).norm.const_mul _) (ae_of_all _ fun x ↦ ?_)
-        rw [hK]
-        refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
-        have hc : ‖(2 * Real.pi * Complex.I * R * v i : ℂ)‖ = 2 * Real.pi * R * ‖v i‖ := by
-          simp [abs_of_pos hR, abs_of_pos Real.pi_pos]
-        rw [norm_mul, hc]
-        gcongr
-        exact norm_le_pi_norm v i
-    _ = ∑ i, 2 * Real.pi * R * ‖v‖ * ∫ x, ‖T i x‖ := by
-        rw [integral_finsetSum _ fun i _ ↦ (hint i).norm.const_mul _]
-        simp only [integral_const_mul]
-    _ ≤ ∑ i : d, 2 * Real.pi * R * ‖v‖ * ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖ :=
-        Finset.sum_le_sum fun i _ ↦ by gcongr; exact hT i
+  have hT (i : d) :
+      eLpNorm (T i) 1 volume ≤ ENNReal.ofReal (∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖) := by
+    have hc : Continuous (T i) := by fun_prop
+    rw [eLpNorm_one_eq_lintegral_eNorm hc.aestronglyMeasurable,
+      ← ofReal_integral_norm_eq_lintegral_eNorm
+        (hc.integrable_of_hasCompactSupport (.of_compactSpace _))]
+    exact ENNReal.ofReal_le_ofReal
+      (integral_norm_sum_box_le (contDiff_derivCutoffSymbol i) (derivCutoffSymbol_eq_zero i) hR)
+  have hK : derivKernel v R = ∑ i, (2 * Real.pi * Complex.I * R * v i) • T i := by
+    ext x
+    simp only [derivKernel_eq_sum v hR, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, T]
+  rw [hK]
+  refine (eLpNorm_sum_le le_rfl).trans ?_
+  simp only [eLpNorm_const_smul]
+  calc ∑ i, ‖(2 * Real.pi * Complex.I * R * v i : ℂ)‖ₑ * eLpNorm (T i) 1 volume
+      ≤ ∑ i : d, ENNReal.ofReal (2 * Real.pi * R * ‖v‖ * ∫ y, ‖𝓕⁻ (derivCutoffSymbol i) y‖) :=
+        Finset.sum_le_sum fun i _ ↦ by
+          have hc : ‖(2 * Real.pi * Complex.I * R * v i : ℂ)‖ = 2 * Real.pi * R * ‖v i‖ := by
+            simp [abs_of_pos hR, abs_of_pos Real.pi_pos]
+          rw [ENNReal.ofReal_mul (by positivity), ← ofReal_norm, hc]
+          gcongr
+          · exact norm_le_pi_norm v i
+          · exact hT i
     _ = _ := by
-        rw [← Finset.mul_sum]
-        ring
+        rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦
+          mul_nonneg (by positivity) (integral_nonneg fun _ ↦ norm_nonneg _)]
+        congr 1
+        rw [Finset.mul_sum, Finset.sum_mul, Finset.sum_mul]
+        exact Finset.sum_congr rfl fun i _ ↦ by ring
 
 end UnitAddTorus
 
@@ -418,8 +407,8 @@ variable {d : Type*} [Fintype d] {E : Type*} [NormedAddCommGroup E] [NormedSpace
 
 /-- **Reproducing formula.** Let `f` be integrable with spectrum in the ball `‖n‖ ≤ R`, and let
 `g` be integrable with `ĝ = σ • f̂`. If the coefficients `c` of a trigonometric polynomial on the
-box `box d R` agree with `σ` on that ball, then `g` is the convolution of that polynomial with
-`f`. -/
+box `box d R` agree with `σ` on that ball, then `g` agrees almost everywhere with the convolution
+of that polynomial with `f`. -/
 private theorem ae_eq_convolution_of_mFourierCoeff_eq_smul [DecidableEq d] {R : ℝ} (hR : 0 < R)
     {f g : UnitAddTorus d → E} (hf : Integrable f) (hg : Integrable g)
     (hspec : ∀ n, R < ‖n‖ → mFourierCoeff f n = 0) {σ c : (d → ℤ) → ℂ}
@@ -437,7 +426,7 @@ private theorem ae_eq_convolution_of_mFourierCoeff_eq_smul [DecidableEq d] {R : 
 integrable `f : (ℝ / ℤ)^d → E` whose Fourier coefficients vanish outside the ball `‖n‖ ≤ R`,
 `R ≥ 1`, satisfies `‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`. Here `‖n‖` is the supremum norm of
 `n : d → ℤ`. -/
-theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero :
+theorem exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
       {p q : ℝ≥0∞}, 1 ≤ p → p ≤ q → ∀ {R : ℝ}, 1 ≤ R →
       ∀ {f : UnitAddTorus d → E}, Integrable f → (∀ n, R < ‖n‖ → mFourierCoeff f n = 0) →
@@ -588,7 +577,7 @@ theorem exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul :
       eLpNorm g q volume ≤ ENNReal.ofReal (C ^ (k + 1) *
         R ^ ((k : ℝ) + Fintype.card d * (p.toReal⁻¹ - q.toReal⁻¹)) * ∏ l, ‖v l‖) *
           eLpNorm f p volume := by
-  obtain ⟨C₀, hC₀, hnik⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_zero.{u} (d := d)
+  obtain ⟨C₀, hC₀, hnik⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_zero_of_lt_norm.{u} (d := d)
   obtain ⟨C₁, hC₁, hder⟩ :=
     exists_eLpNorm_le_of_mFourierCoeff_eq_prod_derivSymbol_smul.{u} (d := d)
   refine ⟨max C₀ C₁, le_max_of_le_left hC₀, ?_⟩

@@ -181,8 +181,8 @@ variable {X 𝕜 E : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpa
 /-- **Integrals against a dense family of test functions.** On a compact space, if `f` is
 integrable and `∫ x, φ x • f x ∂μ = 0` for every `φ` in a set `S` of continuous `𝕜`-valued
 functions whose span is uniformly dense, then the same holds for every continuous `φ`: integration
-against `f` is an `E`-valued continuous linear map on `C(X, 𝕜)` of norm at most `‖f‖₁`, so its
-kernel is a closed subspace containing `S`. -/
+against `f` is an `E`-valued continuous linear map on `C(X, 𝕜)` of norm at most `‖f‖₁`, so it
+vanishes on the closure of the span of `S`. -/
 theorem Integrable.integral_smul_eq_zero_of_span_closure_eq_top (hf : Integrable f μ)
     {S : Set C(X, 𝕜)} (hS : (Submodule.span 𝕜 S).topologicalClosure = ⊤)
     (h : ∀ φ ∈ S, ∫ x, φ x • f x ∂μ = 0) (φ : C(X, 𝕜)) : ∫ x, φ x • f x ∂μ = 0 := by
@@ -205,16 +205,11 @@ theorem Integrable.integral_smul_eq_zero_of_span_closure_eq_top (hf : Integrable
     exact mul_le_mul_of_nonneg_right (φ.norm_coe_le_norm x) (norm_nonneg _)
   have hLc (φ : C(X, 𝕜)) : Lc φ = ∫ x, φ x • f x ∂μ := by
     simp [Lc, L]
-  -- It vanishes on `S`, hence on its dense span.
-  have hspan : Submodule.span 𝕜 S ≤ LinearMap.ker (Lc : _ →ₗ[𝕜] E) :=
-    Submodule.span_le.2 fun ψ hψ ↦ LinearMap.mem_ker.2 <| by
-      rw [ContinuousLinearMap.coe_coe, hLc]
-      exact h ψ hψ
-  have htop := Submodule.topologicalClosure_minimal _ hspan Lc.isClosed_ker
-  rw [hS, top_le_iff] at htop
-  have hφ : φ ∈ LinearMap.ker (Lc : _ →ₗ[𝕜] E) := htop ▸ Submodule.mem_top
-  rw [← hLc]
-  exact LinearMap.mem_ker.1 hφ
+  -- It vanishes on `S`, hence everywhere, since the span of `S` is dense.
+  have hL0 : Lc = 0 :=
+    ContinuousLinearMap.ext_on (Submodule.dense_iff_topologicalClosure_eq_top.2 hS) fun ψ hψ ↦ by
+      rw [hLc, h ψ hψ, zero_apply]
+  rw [← hLc, hL0, zero_apply]
 
 end DenseSpan
 

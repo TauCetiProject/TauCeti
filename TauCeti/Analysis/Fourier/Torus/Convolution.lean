@@ -34,8 +34,9 @@ spectrum lies where their symbol equals one.
 * `MeasureTheory.Integrable.convolution_sum_mul_mFourier_apply`: convolution with a trigonometric
   polynomial.
 * `MeasureTheory.Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul`: a function whose Fourier
-  coefficients are those of `f` multiplied by `c` on a finite set `s` and vanish off `s` is the
-  convolution of `f` with the trigonometric polynomial `∑ n ∈ s, c n * mFourier n`.
+  coefficients are those of `f` multiplied by `c` on a finite set `s` and vanish off `s` agrees
+  almost everywhere with the convolution of `f` with the trigonometric polynomial
+  `∑ n ∈ s, c n * mFourier n`.
 -/
 
 public section

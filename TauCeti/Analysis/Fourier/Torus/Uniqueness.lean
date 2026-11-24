@@ -16,7 +16,8 @@ import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 On the unit torus `UnitAddTorus d = (ℝ / ℤ)^d` with its volume, the product of the Haar
 probability measures of the circle factors, an integrable function `f` with values in a complex
-Banach space is determined by its Fourier coefficients `mFourierCoeff f n = ∫ e_{-n} • f`.
+Banach space is determined up to almost everywhere equality by its Fourier coefficients
+`mFourierCoeff f n = ∫ e_{-n} • f`.
 
 If all Fourier coefficients of `f` vanish, integration against `f` vanishes on the monomials
 `mFourier n`, hence on every continuous function, because their span is uniformly dense
@@ -34,7 +35,8 @@ almost everywhere the trigonometric polynomial `∑ n ∈ s, mFourier n • mFou
 * `MeasureTheory.Integrable.ae_eq_of_forall_mFourierCoeff_eq`: integrable functions with the same
   Fourier coefficients agree almost everywhere.
 * `MeasureTheory.Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff`: an integrable function with
-  finitely many nonzero Fourier coefficients is a trigonometric polynomial.
+  finitely many nonzero Fourier coefficients agrees almost everywhere with a trigonometric
+  polynomial.
 -/
 
 public section
@@ -62,15 +64,9 @@ theorem Integrable.ae_eq_zero_of_forall_mFourierCoeff_eq_zero (hf : Integrable f
 everywhere. -/
 theorem Integrable.ae_eq_of_forall_mFourierCoeff_eq (hf : Integrable f) (hg : Integrable g)
     (h : ∀ n, mFourierCoeff f n = mFourierCoeff g n) : f =ᵐ[volume] g := by
-  have hsmul {u : UnitAddTorus d → E} (hu : Integrable u) (n : d → ℤ) :
-      Integrable fun z ↦ mFourier (-n) z • u z :=
-    hu.bdd_smul 1 (mFourier (-n)).continuous.aestronglyMeasurable
-      (ae_of_all _ fun z ↦ (norm_mFourier_apply (-n) z).le)
   have hfg := (hf.sub hg).ae_eq_zero_of_forall_mFourierCoeff_eq_zero fun n ↦ by
-    have hn := h n
-    rw [mFourierCoeff_eq_integral_volume, mFourierCoeff_eq_integral_volume] at hn
-    simp only [mFourierCoeff_eq_integral_volume, Pi.sub_apply, smul_sub]
-    rw [integral_sub (hsmul hf n) (hsmul hg n), hn, sub_self]
+    rw [sub_eq_add_neg, ← neg_one_smul ℂ g, mFourierCoeff_add hf (hg.smul _), mFourierCoeff_smul,
+      h n, neg_one_smul, add_neg_cancel]
   filter_upwards [hfg] with x hx
   simpa [sub_eq_zero] using hx
 
