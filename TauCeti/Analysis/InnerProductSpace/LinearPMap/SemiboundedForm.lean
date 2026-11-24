@@ -546,11 +546,9 @@ private def energySpaceIsometryOfModel {c ω : ℝ} (hc : 0 < c)
       ((toOfModel j hj p hp hb).trans ((ofModel j hj p hp hb).toFormSpace _))
   norm_map' x := by
     obtain ⟨u, rfl⟩ := (shiftedCoerciveForm j p hp hc hcoercive).toEnergySpace.surjective x
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), CoerciveHermitianForm.norm_toEnergySpace_sq,
-      shiftedCoerciveForm_form, ContinuousLinearMap.re_shiftedForm_self, LinearEquiv.trans_apply,
-      LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
-      ContinuousLinearEquiv.symm_apply_apply, norm_toFormSpace_sq, ofModel_form_toOfModel,
-      coe_toOfModel]
+    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)]
+    simp [CoerciveHermitianForm.norm_toEnergySpace_sq, shiftedCoerciveForm_form,
+      norm_toFormSpace_sq, ofModel_form_toOfModel]
 
 /-- **A model of a closed form gives a closed form.** If `V` is complete and
 `c * ‖u‖ ^ 2 ≤ re (p u u) + ω * ‖j u‖ ^ 2` with `c > 0`, the form transported to the range of `j`
