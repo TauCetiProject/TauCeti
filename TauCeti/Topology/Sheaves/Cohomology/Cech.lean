@@ -115,11 +115,12 @@ theorem sectionsIsoCechZero_hom_comp_cechCohomologyIsoRightDerivedΓ_hom_app
     (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :
     (sectionsIsoCechZero F).hom ≫ (cechCohomologyIsoRightDerivedΓ 0).hom.app F =
       (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).toRightDerivedZero.app F := by
-  rw [cechCohomologyIsoRightDerivedΓ_hom_app, ← Iso.app_hom, cechCohomologyIsoGodement_app,
-    sectionsIsoCechZero_hom, Category.assoc, reassoc_of% cechCohomologyObjIsoOfIsFlasque_zero_hom
-      ((toGodementResolution (ModuleCat.{u} R) X).app F)
-      (isFlasque_godementResolution_obj_X (ModuleCat.{u} R) X F),
-    ← Iso.app_inv, ← Category.assoc, Iso.comp_inv_eq, Iso.app_hom,
-    toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app]
+  have h := cechCohomologyObjIsoOfIsFlasque_zero_hom
+    ((toGodementResolution (ModuleCat.{u} R) X).app F)
+    (isFlasque_godementResolution_obj_X (ModuleCat.{u} R) X F)
+  rw [← cechCohomologyIsoGodement_app, Iso.app_hom, ← sectionsIsoCechZero_hom_assoc] at h
+  rw [cechCohomologyIsoRightDerivedΓ_hom_app, reassoc_of% h,
+    ← toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app_assoc]
+  simp
 
 end TauCeti.Topology

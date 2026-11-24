@@ -379,17 +379,12 @@ lemma toRightDerivedZero_app_comp_rightDerivedObjIsoOfResolution_hom :
   rw [← cancel_mono ((F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ 0).map φ),
     Category.assoc,
     rightDerivedObjIsoOfResolution_hom_comp_homologyMap F P hinj hP hF ι hK 0 I φ hφ,
-    I.toRightDerivedZero_eq F, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id,
-    Functor.comp_map, HomologicalComplex.homologyFunctor_map, Category.assoc,
-    HomologicalComplex.homologyπ_naturality, HomologicalComplex.liftCycles_comp_cyclesMap_assoc]
-  have h₀ := fromSingle₀Equiv_comp_f_zero (φ := φ) (f := 𝟙 X) (ι' := I.ι)
-    (by rw [Functor.map_id, Category.id_comp, hφ])
-  rw [Category.id_comp] at h₀
-  simp only [HomologicalComplex.isoHomologyπ_hom, Functor.mapHomologicalComplex_map_f,
-    ← F.map_comp, h₀, InjectiveResolution.toRightDerivedZero']
-  -- `(fromSingle₀Equiv _ _ I.ι).val` is `I.ι.f 0` with its source `(single₀ C).obj X).X 0`
-  -- unfolded to `X`; the two sources differ syntactically, so no rewrite relates them
-  rfl
+    I.toRightDerivedZero_eq F]
+  have h₀ : ι.f 0 ≫ φ.f 0 = I.ι.f 0 := by rw [← HomologicalComplex.comp_f, hφ]
+  simp
+  congr 1
+  simp [← cancel_mono (HomologicalComplex.iCycles _ _), I.toRightDerivedZero'_comp_iCycles,
+    ← F.map_comp, h₀]
 
 /-- A functorial resolution by objects of a class adapted to `F` computes `RⁿF`, naturally in
 its argument. The components are the comparisons through arbitrary injective resolutions given
