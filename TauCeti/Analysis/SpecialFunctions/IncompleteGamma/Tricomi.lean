@@ -255,18 +255,9 @@ theorem tricomiIncompleteGamma_eq_integral {a : ℂ} (ha : 0 < a.re) (z : ℂ) :
     tricomiIncompleteGamma a z =
       (Gamma a)⁻¹ * ∫ t in (0 : ℝ)..1, (t : ℂ) ^ (a - 1) * cexp (-(z * t)) := by
   have h1 : (1 : ℂ).re < (a + 1).re := by simpa using ha
-  have hsub := intervalIntegral.integral_comp_sub_left (a := (0 : ℝ)) (b := 1)
-    (fun t : ℝ => (t : ℂ) ^ (a - 1) * cexp (-(z * t))) 1
-  rw [sub_self, sub_zero] at hsub
-  rw [tricomiIncompleteGamma_def, regularizedHGFun_singleton_eq_integral (by simp) h1, ← hsub,
-    add_sub_cancel_right, Gamma_one, one_mul, mul_left_comm,
-    ← intervalIntegral.integral_const_mul]
-  congr 1
-  refine intervalIntegral.integral_congr fun t _ => ?_
-  have he : cexp (-(z * (1 - (t : ℂ)))) = cexp (-z) * cexp (z * t) := by
-    rw [← Complex.exp_add]
-    ring_nf
-  simp only [ofReal_sub, ofReal_one, sub_self, cpow_zero, one_mul, he]
-  ring
+  rw [tricomiIncompleteGamma_def, regularizedHGFun_singleton_eq_exp_mul_integral (by simp) h1]
+  simp only [add_sub_cancel_right, sub_self, cpow_zero, mul_one, Gamma_one, one_mul]
+  rw [Complex.exp_neg]
+  field_simp
 
 end Complex

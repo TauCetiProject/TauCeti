@@ -44,6 +44,8 @@ forms and of non-holomorphic Poincaré series on the upper half-plane.
 * `Complex.whittakerM_sub_half` — `M_{κ,s - 1/2}(z) = e^{-z/2} z^s Γ(2s) 𝐌(s - κ, 2s, z)`.
 * `Complex.isBigO_whittakerM_sub_half_sub_cpow` — `M_{κ,s - 1/2}(z) = z^s (1 + O(z))` near `0`.
 * `Complex.whittakerM_eq_integral` — the Euler-type integral representation (DLMF 13.16.1).
+* `Complex.hasDerivAt_exp_mul_cpow_mul` — the derivative of `e^{-w/2} w^p f(w)` on the slit
+  plane, the reduction step from Kummer's equation to Whittaker's equation.
 * `Complex.hasDerivAt_whittakerM` — the derivative of `M_{κ,μ}` on the slit plane.
 * `Complex.whittakerM_ode` — Whittaker's equation (DLMF 13.14.1).
 * `Complex.whittakerM_zero_half`, `Complex.whittakerM_one_half` — the elementary values
@@ -122,34 +124,19 @@ theorem whittakerM_eq_integral {κ μ : ℂ} (h₁ : 0 < (1 / 2 + μ + κ).re)
   have hab : (1 / 2 + μ - κ).re < (1 + 2 * μ).re := by
     rw [← sub_pos, ← sub_re, hba]
     exact h₁
-  -- Reflect `t ↦ 1 - t` to pass from Kummer's integrand to the Whittaker integrand.
-  have hreflect : (∫ t : ℝ in 0..1,
-      (t : ℂ) ^ (μ + κ - 1 / 2) * (1 - (t : ℂ)) ^ (μ - κ - 1 / 2) * exp (-(z * t))) =
-      exp (-z) * ∫ t : ℝ in 0..1, (t : ℂ) ^ (1 / 2 + μ - κ - 1) *
-        (1 - (t : ℂ)) ^ (1 + 2 * μ - (1 / 2 + μ - κ) - 1) * exp (z * t) := by
-    have hsub := intervalIntegral.integral_comp_sub_left (a := (0 : ℝ)) (b := 1)
-      (fun t : ℝ => (t : ℂ) ^ (μ + κ - 1 / 2) * (1 - (t : ℂ)) ^ (μ - κ - 1 / 2) *
-        exp (-(z * t))) 1
-    rw [sub_self, sub_zero] at hsub
-    rw [← hsub, ← intervalIntegral.integral_const_mul]
-    refine intervalIntegral.integral_congr fun t _ => ?_
-    have he : exp (-(z * (1 - (t : ℂ)))) = exp (-z) * exp (z * t) := by
-      rw [← exp_add]
-      ring_nf
-    have h1 : μ - κ - 1 / 2 = 1 / 2 + μ - κ - 1 := by ring
-    have h2 : μ + κ - 1 / 2 = 1 + 2 * μ - (1 / 2 + μ - κ) - 1 := by ring
-    simp only [ofReal_sub, ofReal_one, sub_sub_cancel]
-    rw [he, h1, h2]
-    ring
-  rw [hreflect, whittakerM_def, regularizedHGFun_singleton_eq_integral h₂ hab, hba]
-  have hexp : exp (z / 2) * exp (-z) = exp (-(z / 2)) := by
+  have h1 : 1 / 2 + μ + κ - 1 = μ + κ - 1 / 2 := by ring
+  have h2 : 1 / 2 + μ - κ - 1 = μ - κ - 1 / 2 := by ring
+  have hexp : exp (-(z / 2)) * exp z = exp (z / 2) := by
     rw [← exp_add]
-    ring_nf
-  rw [← hexp]
-  field_simp
+    congr 1
+    ring
+  rw [whittakerM_def, regularizedHGFun_singleton_eq_exp_mul_integral h₂ hab, hba, h1, h2, ← hexp]
+  ring
 
-/-- The derivative of `e^{-w/2} w^p f(w)` at a point of the slit plane. -/
-private theorem hasDerivAt_exp_mul_cpow_mul {f : ℂ → ℂ} {f' p z : ℂ} (hf : HasDerivAt f f' z)
+/-- The derivative of `e^{-w/2} w^p f(w)` at a point `z` of the slit plane, for a function `f`
+with derivative `f'` at `z`: it is `e^{-z/2} z^p ((p / z - 1/2) f(z) + f')`. This is the step that
+turns Kummer-type equations for `f` into Whittaker's equation for `e^{-w/2} w^p f(w)`. -/
+theorem hasDerivAt_exp_mul_cpow_mul {f : ℂ → ℂ} {f' p z : ℂ} (hf : HasDerivAt f f' z)
     (hz : z ∈ slitPlane) :
     HasDerivAt (fun w => exp (-(w / 2)) * w ^ p * f w)
       (exp (-(z / 2)) * z ^ p * ((p / z - 1 / 2) * f z + f')) z := by

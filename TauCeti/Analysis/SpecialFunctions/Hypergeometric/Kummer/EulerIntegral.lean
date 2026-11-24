@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 
 /-!
@@ -22,8 +22,9 @@ regularized Kummer function. When `0 < re a < re b`, it has the integral represe
 for every complex `z`, with principal powers of the positive reals `t` and `1 - t`. Expanding
 `e^{z t}` in its power series and integrating term by term against the Beta weight turns the
 `n`-th term into `zⁿ / n!` times the Beta integral `B(a + n, b - a)`, which is the `n`-th term of
-`Γ(a) Γ(b - a) 𝐌(a, b, z)`. The interchange is dominated convergence: the exponential series is
-dominated by `e^{‖z‖}` on `[0, 1]`.
+`Γ(a) Γ(b - a) 𝐌(a, b, z)`. The interchange is the termwise Beta integration
+`Complex.hasSum_inv_Gamma_mul_integral_of_hasSum_mul_pow` shared with Euler's integral for the
+Gauss function. The substitution `t ↦ 1 - t` gives the reflected form with weight `e^{-z t}`.
 
 This is the confluent limit of Euler's integral for the Gauss function,
 `Complex.regularizedGaussHGFun_eq_eulerIntegral`, and the integral representation behind the
@@ -32,6 +33,8 @@ Whittaker function `M_{κ,μ}`.
 ## Main results
 
 * `Complex.regularizedHGFun_singleton_eq_integral` — Kummer's integral (DLMF 13.4.1).
+* `Complex.regularizedHGFun_singleton_eq_exp_mul_integral` — its reflected form
+  `𝐌(a, b, z) = (Γ(a) Γ(b - a))⁻¹ e^z ∫₀¹ t ^ (b - a - 1) (1 - t) ^ (a - 1) e^{-z t} dt`.
 
 ## References
 
@@ -48,36 +51,6 @@ open scoped Nat
 
 namespace Complex
 
-/-- The `n`-th term of the exponential series integrated against the Beta weight is the `n`-th
-term of the Kummer series. -/
-private theorem inv_Gamma_mul_integral_mul_pow_div_factorial {a b : ℂ} (ha : 0 < a.re)
-    (hab : a.re < b.re) (z : ℂ) (n : ℕ) :
-    (Gamma a * Gamma (b - a))⁻¹ *
-        (∫ t : ℝ in 0..1, (t : ℂ) ^ (a - 1) * (1 - (t : ℂ)) ^ (b - a - 1) *
-          ((z * t) ^ n / n !)) =
-      regularizedHGFunCoeff {a} {b} n * z ^ n := by
-  have hba : 0 < (b - a).re := by simpa using sub_pos.mpr hab
-  have hint :
-      (∫ t : ℝ in 0..1, (t : ℂ) ^ (a - 1) * (1 - (t : ℂ)) ^ (b - a - 1) *
-          ((z * t) ^ n / n !)) =
-        z ^ n / n ! * betaIntegral (a + n) (b - a) := by
-    rw [betaIntegral, ← intervalIntegral.integral_const_mul]
-    refine intervalIntegral.integral_congr_ae (Eventually.of_forall fun t ht => ?_)
-    rw [uIoc_of_le zero_le_one] at ht
-    have ht0 : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.1.ne'
-    have hpow : (t : ℂ) ^ (a - 1) * (t : ℂ) ^ n = (t : ℂ) ^ (a + n - 1) := by
-      rw [← cpow_natCast, ← cpow_add _ _ ht0, sub_add_eq_add_sub]
-    rw [mul_pow]
-    linear_combination z ^ n / n ! * (1 - (t : ℂ)) ^ (b - a - 1) * hpow
-  have han : 0 < (a + n).re := by
-    simp only [add_re, natCast_re]
-    linarith [n.cast_nonneg (α := ℝ)]
-  have hpoch := Gamma_add_nat_div_Gamma_eq (n := n) a (ne_neg_natCast_of_re_pos ha)
-  have hsum : a + (n : ℂ) + (b - a) = b + n := by ring
-  rw [hint, betaIntegral_eq_Gamma_mul_div (a + n) (b - a) han hba, hsum,
-    regularizedHGFunCoeff_singleton, ← hpoch]
-  field_simp [Gamma_ne_zero_of_re_pos ha, Gamma_ne_zero_of_re_pos hba]
-
 /-- **Kummer's integral** (DLMF 13.4.1): when `0 < re a < re b`, the regularized Kummer function
 is the normalized Beta-weighted Laplace-type integral
 `𝐌(a, b, z) = (Γ(a) Γ(b - a))⁻¹ ∫₀¹ t ^ (a - 1) (1 - t) ^ (b - a - 1) e^{z t} dt`, for every
@@ -86,38 +59,42 @@ theorem regularizedHGFun_singleton_eq_integral {a b : ℂ} (ha : 0 < a.re) (hab 
     (z : ℂ) :
     regularizedHGFun {a} {b} z = (Gamma a * Gamma (b - a))⁻¹ *
       ∫ t : ℝ in 0..1, (t : ℂ) ^ (a - 1) * (1 - (t : ℂ)) ^ (b - a - 1) * exp (z * t) := by
-  have hba : 0 < (b - a).re := by simpa using sub_pos.mpr hab
-  let w : ℝ → ℂ := fun t => (t : ℂ) ^ (a - 1) * (1 - (t : ℂ)) ^ (b - a - 1)
-  have hw_int : IntervalIntegrable w volume 0 1 := betaIntegral_convergent ha hba
-  have hpoly_cont (n : ℕ) : Continuous fun t : ℝ => (z * (t : ℂ)) ^ n / n ! := by fun_prop
-  -- Expand `e^{z t}` in its power series and swap sum and integral by dominated convergence
-  -- against `‖w t‖ e^{‖z‖}`.
-  have hdct := intervalIntegral.hasSum_integral_of_dominated_convergence
-    (F := fun n t => w t * ((z * (t : ℂ)) ^ n / n !))
-    (f := fun t => w t * exp (z * t))
-    (μ := volume) (a := 0) (b := 1)
-    (fun n t => ‖w t‖ * (‖z‖ ^ n / n !))
-    (fun n => by
-      rw [uIoc_of_le zero_le_one]
-      exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-        (hw_int.mul_continuousOn (hpoly_cont n).continuousOn)).aestronglyMeasurable)
-    (fun n => ae_of_all _ fun t ht => by
-      rw [uIoc_of_le zero_le_one] at ht
-      have hzt : ‖z * (t : ℂ)‖ ≤ ‖z‖ := by
-        rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
-        exact mul_le_of_le_one_right (norm_nonneg z) ht.2
-      rw [norm_mul (w t), norm_div, norm_pow, norm_natCast]
-      gcongr)
-    (ae_of_all _ fun t _ => (Real.summable_pow_div_factorial ‖z‖).mul_left ‖w t‖)
-    (by
-      simp_rw [tsum_mul_left]
-      exact hw_int.norm.mul_const _)
-    (ae_of_all _ fun t _ => by
+  have hd : Summable fun n : ℕ => ‖((n ! : ℂ))⁻¹‖ * ‖z‖ ^ n :=
+    (Real.summable_pow_div_factorial ‖z‖).congr fun n => by
+      rw [norm_inv, norm_natCast, div_eq_inv_mul]
+  -- Expand `e^{z t}` in its power series and integrate termwise against the Beta weight.
+  have hkummer := hasSum_inv_Gamma_mul_integral_of_hasSum_mul_pow ha hab hd
+    (g := fun t => exp (z * t)) fun t _ => by
       have h := NormedSpace.expSeries_div_hasSum_exp (z * (t : ℂ))
       rw [← exp_eq_exp_ℂ] at h
-      exact h.mul_left (w t))
-  have hkummer := (hdct.mul_left (Gamma a * Gamma (b - a))⁻¹).congr_fun fun n =>
-    (inv_Gamma_mul_integral_mul_pow_div_factorial ha hab z n).symm
-  exact (hasSum_regularizedHGFun (by simp) z).unique hkummer
+      simpa only [div_eq_inv_mul] using h
+  refine (hasSum_regularizedHGFun (by simp) z).unique (hkummer.congr_fun fun n => ?_)
+  rw [regularizedHGFunCoeff_singleton]
+  ring
+
+/-- **Kummer's integral, reflected** (DLMF 13.4.1 after `t ↦ 1 - t`): when `0 < re a < re b`,
+`𝐌(a, b, z) = (Γ(a) Γ(b - a))⁻¹ e^z ∫₀¹ t ^ (b - a - 1) (1 - t) ^ (a - 1) e^{-z t} dt`, for every
+`z : ℂ`. -/
+theorem regularizedHGFun_singleton_eq_exp_mul_integral {a b : ℂ} (ha : 0 < a.re)
+    (hab : a.re < b.re) (z : ℂ) :
+    regularizedHGFun {a} {b} z = (Gamma a * Gamma (b - a))⁻¹ * exp z *
+      ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - a - 1) * (1 - (t : ℂ)) ^ (a - 1) * exp (-(z * t)) := by
+  have hsub := intervalIntegral.integral_comp_sub_left (a := (0 : ℝ)) (b := 1)
+    (fun t : ℝ => (t : ℂ) ^ (b - a - 1) * (1 - (t : ℂ)) ^ (a - 1) * exp (-(z * t))) 1
+  rw [sub_self, sub_zero] at hsub
+  have hreflect : (∫ t : ℝ in 0..1, (t : ℂ) ^ (a - 1) * (1 - (t : ℂ)) ^ (b - a - 1) * exp (z * t)) =
+      exp z * ∫ t : ℝ in 0..1,
+        (t : ℂ) ^ (b - a - 1) * (1 - (t : ℂ)) ^ (a - 1) * exp (-(z * t)) := by
+    rw [← hsub, ← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr fun t _ => ?_
+    have he : exp (z * t) = exp z * exp (-(z * (1 - (t : ℂ)))) := by
+      rw [← exp_add]
+      congr 1
+      ring
+    simp only [ofReal_sub, ofReal_one, sub_sub_cancel]
+    rw [he]
+    ring
+  rw [regularizedHGFun_singleton_eq_integral ha hab, hreflect]
+  exact (mul_assoc _ _ _).symm
 
 end Complex
