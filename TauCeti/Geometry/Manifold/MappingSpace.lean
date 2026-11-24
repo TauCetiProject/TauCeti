@@ -44,8 +44,6 @@ fundamental group.
 * `ContinuousMap.locallyPathConnectedSpace_of_isManifold`: `C(K, M)` is locally path-connected.
 * `ContinuousMap.semilocallySimplyConnectedSpace_of_isManifold`: `C(K, M)` is semilocally simply
   connected.
-* `TauCeti.semilocallySimplyConnectedSpace_contractibleLoops`: `𝓛₀Q` is semilocally simply
-  connected when `C(S¹, Q)` is, for any space `Q`.
 * `TauCeti.locallyPathConnectedSpace_contractibleLoops_of_isManifold`,
   `TauCeti.semilocallySimplyConnectedSpace_contractibleLoops_of_isManifold`: the same for the
   contractible free loops `𝓛₀M`.
@@ -124,14 +122,6 @@ theorem semilocallySimplyConnectedSpace_of_isManifold :
 end ContinuousMap
 
 namespace TauCeti
-
-/-- The contractible free loops `𝓛₀Q` are semilocally simply connected when the free loop space
-is: a null-homotopy of a loop of contractible free loops stays in `𝓛₀Q`, a union of path
-components. -/
-instance semilocallySimplyConnectedSpace_contractibleLoops {Q : Type*} [TopologicalSpace Q]
-    [SemilocallySimplyConnectedSpace C(Circle, Q)] :
-    SemilocallySimplyConnectedSpace (contractibleLoops Q) :=
-  .subtype_of_pathComponent_subset fun _ ↦ pathComponent_subset_contractibleLoops
 
 include I in
 variable (M) in

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
+public import TauCeti.Topology.MappingSpace.FreeLoop
 public import TauCeti.Topology.PathComponent
 
 /-!
@@ -30,7 +31,9 @@ passes to unions of path components. The corresponding facts for local path-conn
   (`TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset`): a null-homotopy of
   a loop in it never leaves it
   (`TauCeti.homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset`).
-  This generalizes the instance for a single path component.
+  This generalizes the instance for a single path component. In particular the contractible
+  free loops `𝓛₀X` are semilocally simply connected when the free loop space `C(S¹, X)` is
+  (`TauCeti.semilocallySimplyConnectedSpace_contractibleLoops`).
 
 Together these reduce the two hypotheses for a mapping space into a manifold to the case of a
 mapping space into an open subset of a vector space; see
@@ -44,6 +47,8 @@ mapping space into an open subset of a vector space; see
   retracts.
 * `TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset`: semilocal simple
   connectivity passes to unions of path components.
+* `TauCeti.semilocallySimplyConnectedSpace_contractibleLoops`: `𝓛₀X` is semilocally simply
+  connected when `C(S¹, X)` is.
 
 ## References
 
@@ -117,3 +122,11 @@ theorem TauCeti.SemilocallySimplyConnectedSpace.subtype_of_pathComponent_subset
     exact hloops _ (by
       rintro _ ⟨t, rfl⟩
       exact hγ ⟨t, rfl⟩)
+
+/-- The contractible free loops `𝓛₀Q` are semilocally simply connected when the free loop space
+is: a null-homotopy of a loop of contractible free loops stays in `𝓛₀Q`, a union of path
+components. -/
+instance TauCeti.semilocallySimplyConnectedSpace_contractibleLoops {Q : Type*}
+    [TopologicalSpace Q] [SemilocallySimplyConnectedSpace C(Circle, Q)] :
+    SemilocallySimplyConnectedSpace (contractibleLoops Q) :=
+  .subtype_of_pathComponent_subset fun _ ↦ pathComponent_subset_contractibleLoops
