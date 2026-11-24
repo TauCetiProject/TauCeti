@@ -164,7 +164,8 @@ theorem exists_homotopyEquiv_of_d_apply_notMem [IsLocalRing R]
       ∀ k, k ≠ i → k ≠ j → finrank R (N.X k) = finrank R (C.X k) := by
   have hij := rel_of_d_apply_notMem hy
   obtain ⟨s, hs⟩ := Module.isUnimodular_iff.1
-    (TauCeti.IsLocalRing.isUnimodular_iff_notMem_maximalIdeal_smul.2 hy)
+    (Module.isUnimodular_iff_notMem_jacobson_smul_top.2
+      (by rwa [IsLocalRing.ringJacobson_eq_maximalIdeal R]))
   let p := cancelMap C y s
   let e := HomotopyEquiv.ofKernel p (cancelMap_idem hij hne hs) (cancelHomotopy hij)
   -- In each degree the term of `kernel p` is the kernel of a linear form taking the value `1`,

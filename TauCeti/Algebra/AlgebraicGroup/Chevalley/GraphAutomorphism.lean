@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.Root.Subgroup
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
@@ -313,6 +314,22 @@ theorem map_chevalleyGraphAut_symm (hσ : σ ∈ t.diagramSymmetry)
           ((t.scChevalleyDatum ht).pointsPresentation B) f g) := by
   apply (t.chevalleyGraphAut ht hσ B).injective
   rw [MulEquiv.apply_symm_apply, ← map_chevalleyGraphAut, MulEquiv.apply_symm_apply]
+
+/-- Graph automorphisms commute with the Frobenius of the full-weight Chevalley datum,
+pointwise: `γ_σ (Frob g) = Frob (γ_σ g)`. -/
+theorem chevalleyGraphAut_frobenius (hσ : σ ∈ t.diagramSymmetry) (p k : ℕ) (A : Type v)
+    [CommRing A] [ExpChar A p] (g : (t.scChevalleyDatum ht).points A) :
+    t.chevalleyGraphAut ht hσ A ((t.scChevalleyDatum ht).frobenius p k A g) =
+      (t.scChevalleyDatum ht).frobenius p k A (t.chevalleyGraphAut ht hσ A g) := by
+  rw [ChevalleyDatum.frobenius_def]
+  exact (t.map_chevalleyGraphAut ht hσ (iterateFrobenius A p k) g).symm
+
+/-- Graph automorphisms commute with the Frobenius of the full-weight Chevalley datum. -/
+theorem chevalleyGraphAut_comp_frobenius (hσ : σ ∈ t.diagramSymmetry) (p k : ℕ) (A : Type v)
+    [CommRing A] [ExpChar A p] :
+    (t.chevalleyGraphAut ht hσ A).toMonoidHom.comp ((t.scChevalleyDatum ht).frobenius p k A) =
+      ((t.scChevalleyDatum ht).frobenius p k A).comp (t.chevalleyGraphAut ht hσ A).toMonoidHom :=
+  MonoidHom.ext (t.chevalleyGraphAut_frobenius ht hσ p k A)
 
 end
 
