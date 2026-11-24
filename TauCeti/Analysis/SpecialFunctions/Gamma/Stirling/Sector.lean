@@ -146,10 +146,7 @@ theorem norm_iteratedDeriv_stirlingRemainder_lt (k : ℕ) {z : ℂ} (hz : z ∈ 
       (-1 : ℝ) ^ k * ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) := by
     rw [TauCeti.iteratedDeriv_const_div]
     simp only [div_eq_mul_inv, mul_inv]; ring
-  have hk_sq : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by
-    rw [← mul_pow]
-    norm_num
-  rw [hT1_deriv, mul_sub, ← mul_assoc, hk_sq, one_mul] at hG
+  rw [hT1_deriv, mul_sub, ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨k, rfl⟩, one_mul] at hG
   calc ‖iteratedDeriv k stirlingRemainder z‖
       ≤ ((-1 : ℝ) ^ k * iteratedDeriv k (realStirlingSeriesRemainder 1) ‖z‖) /
           Real.cos (z.arg / 2) ^ (k + 2) := hle

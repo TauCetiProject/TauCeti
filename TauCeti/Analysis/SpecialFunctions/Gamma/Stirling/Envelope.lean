@@ -42,7 +42,7 @@ bounds are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`.
   `TauCeti.isCompletelyMonotoneOnIoi_neg_realStirlingSeriesRemainder_even`: Alzer's complete
   monotonicity of `F_m = r_{2m+1}` and `G_m = -r_{2m+2}` on `(0, ∞)`.
 * `TauCeti.sum_stirlingTerm_lt_log_Gamma_sub`, `TauCeti.log_Gamma_sub_lt_sum_stirlingTerm`,
-  `TauCeti.stirling_lt_log_Gamma`, `TauCeti.abs_realStirlingSeriesRemainder_lt_abs_stirlingTerm`,
+  `TauCeti.abs_realStirlingSeriesRemainder_lt_abs_stirlingTerm`,
   `TauCeti.neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos`,
   `TauCeti.neg_one_pow_succ_mul_stirlingTerm_pos`: enveloping inequalities and strict term signs
   on `(0, ∞)`.
@@ -84,13 +84,20 @@ theorem signed_iteratedDeriv_realStirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n
           (u + x) ^ (2 * n + k) := by
     rw [← integral_const_mul]
     exact setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ by ring
-  have hk_sq : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by
-    rw [← mul_pow]
-    norm_num
   rw [← hint_mul]
-  linear_combination ((((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) * (-1 : ℝ) ^ (n + 1) *
-    ∫ u in Ioi (0 : ℝ), ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
-      (u + x) ^ (2 * n + k)) * hk_sq
+  calc
+    (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) *
+        ((-1 : ℝ) ^ k * (((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
+          ∫ u in Ioi (0 : ℝ),
+            ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+              (u + x) ^ (2 * n + k))
+        = (-1 : ℝ) ^ k * (-1 : ℝ) ^ k *
+            ((((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
+              ((-1 : ℝ) ^ (n + 1) *
+                ∫ u in Ioi (0 : ℝ),
+                  ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
+                    (u + x) ^ (2 * n + k))) := by ring
+    _ = _ := by rw [← pow_add, Even.neg_one_pow ⟨k, rfl⟩, one_mul]
 
 /-- For every `n ≥ 1`, `k : ℕ`, and `x > 0`, the signed real Stirling remainder
 `t ↦ (-1)^{n+1} r_n(t)` has strictly alternating `k`-th derivative:
@@ -181,14 +188,6 @@ theorem log_Gamma_sub_lt_sum_stirlingTerm (m : ℕ) {x : ℝ} (hx : 0 < x) :
   have hidx : 2 * m + 2 = (2 * m + 1) + 1 := by omega
   simp only [pow_zero, one_mul, iteratedDeriv_zero, realStirlingSeriesRemainder_def, hidx,
     Finset.Ico_add_one_right_eq_Icc] at h
-  linarith
-
-/-- Leading Stirling lower bound on the positive real axis: for all `x > 0`,
-`(x - 1/2) log x - x + log (2π) / 2 < log (Γ x)`. -/
-theorem stirling_lt_log_Gamma {x : ℝ} (hx : 0 < x) :
-    (x - 1 / 2) * Real.log x - x + Real.log (2 * π) / 2 < Real.log (Real.Gamma x) := by
-  have h := sum_stirlingTerm_lt_log_Gamma_sub 0 hx
-  simp only [Nat.mul_zero, Finset.Icc_eq_empty (by omega : ¬1 ≤ 0), Finset.sum_empty] at h
   linarith
 
 /-- Enveloping bound on `(0, ∞)`: for every `n ≥ 1` and `x > 0`, the Stirling remainder is strictly

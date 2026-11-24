@@ -51,10 +51,6 @@ open scoped Nat
 
 namespace TauCeti
 
-private theorem neg_one_pow_succ_mul_self (k : ℕ) : (-1 : ℝ) ^ (k + 1) * (-1 : ℝ) ^ k = -1 := by
-  rw [pow_succ, mul_right_comm, ← mul_pow]
-  norm_num
-
 /-! ### Digamma brackets on `(0, ∞)` -/
 
 /-- First derivative of `realStirlingSeriesRemainder n` on `(0, ∞)`:
@@ -264,7 +260,7 @@ theorem polygammaStirlingSum_lt_neg_one_pow_mul_iteratedDeriv_digamma {k : ℕ} 
   have h := neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos n (k + 1) hx
   rw [iteratedDeriv_succ_realStirlingSeriesRemainder (2 * n + 1) hk hx] at h
   simp only [Nat.add_sub_cancel, mul_add] at h
-  rw [← mul_assoc, neg_one_pow_succ_mul_self k] at h
+  rw [← mul_assoc, ← pow_add, Odd.neg_one_pow (n := k + 1 + k) ⟨k, by omega⟩] at h
   linarith
 
 /-- **Alzer's upper polygamma bracket** (Alzer 1997, Theorem 9): for every `k ≥ 1`, `n : ℕ`, and
@@ -276,7 +272,7 @@ theorem neg_one_pow_mul_iteratedDeriv_digamma_lt_polygammaStirlingSum {k : ℕ} 
   have hidx : 2 * n + 2 - 1 = 2 * n + 1 := by omega
   rw [iteratedDeriv_fun_neg, iteratedDeriv_succ_realStirlingSeriesRemainder (2 * n + 2) hk hx] at h
   simp only [hidx, mul_neg, mul_add] at h
-  rw [← mul_assoc, neg_one_pow_succ_mul_self k] at h
+  rw [← mul_assoc, ← pow_add, Odd.neg_one_pow (n := k + 1 + k) ⟨k, by omega⟩] at h
   linarith
 
 end TauCeti

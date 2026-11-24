@@ -31,8 +31,7 @@ Consequently, for any measure `μ` on `ℝ` and weight `g : ℝ → ℂ`, integr
 almost-everywhere strong measurability of `g` with respect to `μ.restrict (Ioi 0)` together with
 integrability of `t ↦ ‖g t‖ * (1 + t) ^ s.re`, and is preserved when `s.re` decreases.
 In particular, with respect to Lebesgue measure, every measurable bounded weight `g` yields an
-integrable kernel for `s.re < -1` (`TauCeti.integrableOn_mul_ofReal_add_cpow_of_norm_le`,
-`TauCeti.integrableOn_ofReal_add_cpow`).
+integrable kernel for `s.re < -1` (`TauCeti.integrableOn_mul_ofReal_add_cpow_of_norm_le`).
 Differentiating under the integral sign then shows that
 
 `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ`
@@ -52,9 +51,8 @@ holomorphy and partial-derivative formulas for Carlson's symmetric elliptic inte
   `TauCeti.integrableOn_mul_ofReal_add_cpow_of_re_le` — independence of `z ∈ slitPlane` and
   monotonicity in `s.re`.
 * `TauCeti.integrableOn_mul_ofReal_add_cpow_of_norm_le`,
-  `TauCeti.integrableOn_div_ofReal_add_pow_of_norm_le`,
-  `TauCeti.integrableOn_ofReal_add_cpow` — Lebesgue integrability for bounded measurable weights
-  when `s.re < -1` or for natural-power denominators `k ≥ 2`.
+  `TauCeti.integrableOn_div_ofReal_add_pow_of_norm_le` — Lebesgue integrability for bounded
+  measurable weights when `s.re < -1` or for natural-power denominators `k ≥ 2`.
 * `TauCeti.hasDerivAt_integral_mul_ofReal_add_cpow`,
   `TauCeti.hasDerivAt_integral_div_ofReal_add_pow` — differentiation under the integral sign for
   `w ↦ ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ` and
@@ -193,13 +191,6 @@ theorem integrableOn_div_ofReal_add_pow_of_norm_le {g : ℝ → ℂ}
     exact_mod_cast (by omega : -(k : ℤ) < -1)
   exact (integrableOn_mul_ofReal_add_cpow_of_norm_le hg_meas hg_bdd hz hs).congr_fun
     (fun t _ => mul_cpow_neg_natCast _ _ _) measurableSet_Ioi
-
-/-- For `z ∈ slitPlane` and `s : ℂ` with `s.re < -1`, `t ↦ ((t : ℂ) + z) ^ s` is integrable on
-`(0, ∞)` with respect to Lebesgue measure. -/
-theorem integrableOn_ofReal_add_cpow {z : ℂ} (hz : z ∈ slitPlane) {s : ℂ} (hs : s.re < -1) :
-    IntegrableOn (fun t : ℝ => ((t : ℂ) + z) ^ s) (Ioi 0) := by
-  simpa using integrableOn_mul_ofReal_add_cpow_of_norm_le (g := fun _ => (1 : ℂ))
-    aestronglyMeasurable_const (M := (1 : ℝ)) (Eventually.of_forall fun _ => by norm_num) hz hs
 
 /-- **Differentiation under a slit-plane power integral.** If `z ∈ slitPlane` and
 `t ↦ g t * ((t : ℂ) + z) ^ s` is integrable on `(0, ∞)`, then
