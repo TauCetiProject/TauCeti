@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 public import TauCeti.Algebra.Module.GradedModule.Homology
+import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # The bigrading of unblocked grid homology
@@ -93,7 +94,7 @@ noncomputable def bigradedUnblockedHomologyGrading :
 
 /-- `bigradedUnblockedHomologyGrading` is the homology grading of `bigradedChainMinusGrading`
 transported along `unblockedHomologyIso`. -/
-theorem bigradedUnblockedHomologyGrading_eq :
+theorem bigradedUnblockedHomologyGrading_def :
     G.bigradedUnblockedHomologyGrading R =
       ((G.bigradedChainMinusGrading R).homology
         (G.isHomogeneous_unblockedDifferential_bigradedChainMinusGrading R)
@@ -218,5 +219,155 @@ theorem unblockedHomologyEquiv_mem_bigradedPiece_iff
     obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
     rw [hf]
     exact G'.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R ((hg g _).mpr hz)
+
+section PieceEquiv
+
+private theorem isHomogeneous_of_mem_bigradedUnblockedHomologyPiece
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    (e : G.val.unblockedHomology R ≃ₗ[R] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g) :
+    LinearMap.IsHomogeneous e.toLinearMap
+      (G.bigradedUnblockedHomologyGrading R).piece
+      (G'.bigradedUnblockedHomologyGrading R).piece 0 := by
+  refine LinearMap.isHomogeneous_def.mpr fun g y hy ↦ ?_
+  rw [bigradedUnblockedHomologyGrading_piece] at hy ⊢
+  simpa only [add_zero, LinearEquiv.coe_coe] using he g y hy
+
+/-- An `R`-linear equivalence between unblocked grid homologies that preserves every
+Maslov--Alexander piece also reflects every piece. -/
+theorem mem_bigradedUnblockedHomologyPiece_iff_of_linearEquiv
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    (e : G.val.unblockedHomology R ≃ₗ[R] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g)
+    (g : ℤ × ℤ) (y : G.val.unblockedHomology R) :
+    e y ∈ G'.bigradedUnblockedHomologyPiece R g ↔ y ∈ G.bigradedUnblockedHomologyPiece R g := by
+  simpa only [bigradedUnblockedHomologyGrading_piece] using
+    (G.isHomogeneous_of_mem_bigradedUnblockedHomologyPiece R G' e he).linearEquiv_mem_piece_iff g y
+
+/-- Restrict an `R`-linear equivalence between unblocked grid homologies that preserves every
+Maslov--Alexander piece to an `R`-linear equivalence on each homogeneous piece. -/
+noncomputable def bigradedUnblockedHomologyPieceEquivOfMem
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    (e : G.val.unblockedHomology R ≃ₗ[R] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g)
+    (g : ℤ × ℤ) :
+    G.bigradedUnblockedHomologyPiece R g ≃ₗ[R] G'.bigradedUnblockedHomologyPiece R g :=
+  e.ofSubmodules _ _ (by
+    ext y
+    rw [Submodule.mem_map_equiv]
+    have h := G.mem_bigradedUnblockedHomologyPiece_iff_of_linearEquiv R G' e he g (e.symm y)
+    rw [LinearEquiv.apply_symm_apply] at h
+    exact h.symm)
+
+/-- On underlying homology classes, `bigradedUnblockedHomologyPieceEquivOfMem` agrees with the
+ambient linear equivalence. -/
+@[simp]
+theorem coe_bigradedUnblockedHomologyPieceEquivOfMem
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    (e : G.val.unblockedHomology R ≃ₗ[R] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g)
+    (g : ℤ × ℤ) (y : G.bigradedUnblockedHomologyPiece R g) :
+    (G.bigradedUnblockedHomologyPieceEquivOfMem R G' e he g y : G'.val.unblockedHomology R) =
+      e y :=
+  LinearEquiv.ofSubmodules_apply _ _ _
+
+/-- On underlying homology classes, `(bigradedUnblockedHomologyPieceEquivOfMem).symm` agrees with
+`e.symm`. -/
+@[simp]
+theorem coe_bigradedUnblockedHomologyPieceEquivOfMem_symm
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    (e : G.val.unblockedHomology R ≃ₗ[R] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g)
+    (g : ℤ × ℤ) (y : G'.bigradedUnblockedHomologyPiece R g) :
+    ((G.bigradedUnblockedHomologyPieceEquivOfMem R G' e he g).symm y :
+        G.val.unblockedHomology R) = e.symm y :=
+  LinearEquiv.ofSubmodules_symm_apply _ _ _
+
+/-- A semilinear equivalence between unblocked grid homologies along a ring homomorphism commuting
+with `algebraMap R` that preserves every Maslov--Alexander piece also reflects every piece. -/
+theorem mem_bigradedUnblockedHomologyPiece_iff_of_semilinear
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    {φ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    {φ' : MvPolynomial (Fin m) R →+* MvPolynomial (Fin n) R}
+    [RingHomInvPair φ φ'] [RingHomInvPair φ' φ]
+    (hφ : ∀ r, φ (algebraMap R _ r) = algebraMap R _ r)
+    (e : G.val.unblockedHomology R ≃ₛₗ[φ] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g)
+    (g : ℤ × ℤ) (y : G.val.unblockedHomology R) :
+    e y ∈ G'.bigradedUnblockedHomologyPiece R g ↔ y ∈ G.bigradedUnblockedHomologyPiece R g := by
+  simpa only [LinearEquiv.restrictScalarsOfCommutes_apply] using
+    G.mem_bigradedUnblockedHomologyPiece_iff_of_linearEquiv R G'
+      (e.restrictScalarsOfCommutes R hφ)
+      (fun g y hy ↦ by
+        simpa only [LinearEquiv.restrictScalarsOfCommutes_apply] using he g y hy)
+      g y
+
+/-- Restrict a semilinear equivalence between unblocked grid homologies along a ring homomorphism
+commuting with `algebraMap R` that preserves every Maslov--Alexander piece to an `R`-linear
+equivalence on each homogeneous piece. -/
+noncomputable def bigradedUnblockedHomologyPieceEquivOfSemilinear
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    {φ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    {φ' : MvPolynomial (Fin m) R →+* MvPolynomial (Fin n) R}
+    [RingHomInvPair φ φ'] [RingHomInvPair φ' φ]
+    (hφ : ∀ r, φ (algebraMap R _ r) = algebraMap R _ r)
+    (e : G.val.unblockedHomology R ≃ₛₗ[φ] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g)
+    (g : ℤ × ℤ) :
+    G.bigradedUnblockedHomologyPiece R g ≃ₗ[R] G'.bigradedUnblockedHomologyPiece R g :=
+  G.bigradedUnblockedHomologyPieceEquivOfMem R G' (e.restrictScalarsOfCommutes R hφ)
+    (fun g y hy ↦ by
+      simpa only [LinearEquiv.restrictScalarsOfCommutes_apply] using he g y hy) g
+
+/-- On underlying homology classes, `bigradedUnblockedHomologyPieceEquivOfSemilinear` agrees with
+the ambient semilinear equivalence. -/
+@[simp]
+theorem coe_bigradedUnblockedHomologyPieceEquivOfSemilinear
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    {φ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    {φ' : MvPolynomial (Fin m) R →+* MvPolynomial (Fin n) R}
+    [RingHomInvPair φ φ'] [RingHomInvPair φ' φ]
+    (hφ : ∀ r, φ (algebraMap R _ r) = algebraMap R _ r)
+    (e : G.val.unblockedHomology R ≃ₛₗ[φ] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g)
+    (g : ℤ × ℤ) (y : G.bigradedUnblockedHomologyPiece R g) :
+    (G.bigradedUnblockedHomologyPieceEquivOfSemilinear R G' hφ e he g y :
+        G'.val.unblockedHomology R) = e y := by
+  rw [bigradedUnblockedHomologyPieceEquivOfSemilinear]
+  simpa only [LinearEquiv.restrictScalarsOfCommutes_apply] using
+    G.coe_bigradedUnblockedHomologyPieceEquivOfMem R G' (e.restrictScalarsOfCommutes R hφ)
+      (fun g y hy ↦ by
+        simpa only [LinearEquiv.restrictScalarsOfCommutes_apply] using he g y hy) g y
+
+/-- On underlying homology classes, `(bigradedUnblockedHomologyPieceEquivOfSemilinear).symm`
+agrees with `e.symm`. -/
+@[simp]
+theorem coe_bigradedUnblockedHomologyPieceEquivOfSemilinear_symm
+    {m : ℕ} (G' : OddComponentGridDiagram m)
+    {φ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    {φ' : MvPolynomial (Fin m) R →+* MvPolynomial (Fin n) R}
+    [RingHomInvPair φ φ'] [RingHomInvPair φ' φ]
+    (hφ : ∀ r, φ (algebraMap R _ r) = algebraMap R _ r)
+    (e : G.val.unblockedHomology R ≃ₛₗ[φ] G'.val.unblockedHomology R)
+    (he : ∀ g y, y ∈ G.bigradedUnblockedHomologyPiece R g →
+      e y ∈ G'.bigradedUnblockedHomologyPiece R g)
+    (g : ℤ × ℤ) (y : G'.bigradedUnblockedHomologyPiece R g) :
+    ((G.bigradedUnblockedHomologyPieceEquivOfSemilinear R G' hφ e he g).symm y :
+        G.val.unblockedHomology R) = e.symm y := by
+  rw [bigradedUnblockedHomologyPieceEquivOfSemilinear]
+  simpa only [LinearEquiv.restrictScalarsOfCommutes_symm_apply] using
+    G.coe_bigradedUnblockedHomologyPieceEquivOfMem_symm R G' (e.restrictScalarsOfCommutes R hφ)
+      (fun g y hy ↦ by
+        simpa only [LinearEquiv.restrictScalarsOfCommutes_apply] using he g y hy) g y
+
+end PieceEquiv
 
 end TauCeti.OddComponentGridDiagram

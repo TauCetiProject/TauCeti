@@ -49,19 +49,6 @@ namespace OddComponentGridDiagram
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
   (C : GridDiagram.ColumnCommutationData G.val)
 
-private theorem isHomogeneous_unblockedHomologyCommutationEquiv :
-    LinearMap.IsHomogeneous
-      ((G.val.unblockedHomologyCommutationEquiv C R).restrictScalarsOfCommutes R
-        fun _ ↦ by rw [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]).toLinearMap
-      (G.bigradedUnblockedHomologyGrading R).piece
-      ((G.swapColumns C).bigradedUnblockedHomologyGrading R).piece 0 := by
-  refine LinearMap.isHomogeneous_def.mpr fun p z hz ↦ ?_
-  rw [bigradedUnblockedHomologyGrading_piece] at hz
-  simpa only [add_zero, bigradedUnblockedHomologyGrading_piece, LinearEquiv.coe_coe,
-    LinearEquiv.restrictScalarsOfCommutes_apply,
-    GridDiagram.unblockedHomologyCommutationEquiv_apply] using
-    G.unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece R C hz
-
 /-- The commutation map on `GH⁻` preserves and reflects every Maslov--Alexander piece. -/
 @[simp]
 theorem unblockedHomologyCommutationMap_mem_bigradedPiece_iff
@@ -69,19 +56,27 @@ theorem unblockedHomologyCommutationMap_mem_bigradedPiece_iff
     G.val.unblockedHomologyCommutationMap R C y ∈
         (G.swapColumns C).bigradedUnblockedHomologyPiece R g ↔
       y ∈ G.bigradedUnblockedHomologyPiece R g := by
-  simpa only [bigradedUnblockedHomologyGrading_piece,
-    LinearEquiv.restrictScalarsOfCommutes_apply,
-    GridDiagram.unblockedHomologyCommutationEquiv_apply] using
-    (G.isHomogeneous_unblockedHomologyCommutationEquiv R C).linearEquiv_mem_piece_iff g y
+  simpa only [GridDiagram.unblockedHomologyCommutationEquiv_apply] using
+    G.mem_bigradedUnblockedHomologyPiece_iff_of_semilinear R (G.swapColumns C)
+      (fun _ ↦ by rw [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes])
+      (G.val.unblockedHomologyCommutationEquiv C R)
+      (fun _ _ hz ↦ by
+        simpa only [GridDiagram.unblockedHomologyCommutationEquiv_apply] using
+          G.unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece R C hz)
+      g y
 
 /-- A validated column commutation gives a ground-ring linear equivalence in each Maslov--Alexander
 bidegree of `GH⁻`. -/
 noncomputable def bigradedUnblockedHomologyCommutationEquiv (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g ≃ₗ[R]
       (G.swapColumns C).bigradedUnblockedHomologyPiece R g :=
-  ((LinearEquiv.ofEq _ _ (G.bigradedUnblockedHomologyGrading_piece R g).symm).trans
-    ((G.isHomogeneous_unblockedHomologyCommutationEquiv R C).pieceEquiv g)).trans
-    (LinearEquiv.ofEq _ _ ((G.swapColumns C).bigradedUnblockedHomologyGrading_piece R g))
+  G.bigradedUnblockedHomologyPieceEquivOfSemilinear R (G.swapColumns C)
+    (fun _ ↦ by rw [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes])
+    (G.val.unblockedHomologyCommutationEquiv C R)
+    (fun _ _ hz ↦ by
+      simpa only [GridDiagram.unblockedHomologyCommutationEquiv_apply] using
+        G.unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece R C hz)
+    g
 
 /-- On underlying classes the piece equivalence acts by `unblockedHomologyCommutationMap`. -/
 @[simp]
@@ -90,9 +85,8 @@ theorem coe_bigradedUnblockedHomologyCommutationEquiv (g : ℤ × ℤ)
     (G.bigradedUnblockedHomologyCommutationEquiv R C g y :
         (G.val.swapColumns C.column (finRotate n C.column)).unblockedHomology R) =
       G.val.unblockedHomologyCommutationMap R C y := by
-  simp only [bigradedUnblockedHomologyCommutationEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, LinearMap.IsHomogeneous.coe_pieceEquiv_apply]
-  rw [LinearEquiv.restrictScalarsOfCommutes_apply,
+  rw [bigradedUnblockedHomologyCommutationEquiv,
+    coe_bigradedUnblockedHomologyPieceEquivOfSemilinear,
     GridDiagram.unblockedHomologyCommutationEquiv_apply]
 
 /-- The inverse piece equivalence acts by `(unblockedHomologyCommutationEquiv C R).symm`. -/
@@ -101,10 +95,8 @@ theorem coe_bigradedUnblockedHomologyCommutationEquiv_symm (g : ℤ × ℤ)
     (y : (G.swapColumns C).bigradedUnblockedHomologyPiece R g) :
     ((G.bigradedUnblockedHomologyCommutationEquiv R C g).symm y : G.val.unblockedHomology R) =
       (G.val.unblockedHomologyCommutationEquiv C R).symm y := by
-  simp only [bigradedUnblockedHomologyCommutationEquiv, LinearEquiv.symm_trans_apply,
-    LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
-    LinearMap.IsHomogeneous.coe_pieceEquiv_symm_apply]
-  rw [LinearEquiv.restrictScalarsOfCommutes_symm_apply]
+  rw [bigradedUnblockedHomologyCommutationEquiv]
+  exact G.coe_bigradedUnblockedHomologyPieceEquivOfSemilinear_symm R (G.swapColumns C) _ _ _ g y
 
 end OddComponentGridDiagram
 

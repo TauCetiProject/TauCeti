@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.GradedModule.Homology
 public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
+import TauCeti.KnotTheory.Grid.Grading.Unblocked.Finite
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 
 /-!

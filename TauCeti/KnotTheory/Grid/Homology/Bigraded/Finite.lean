@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.KnotTheory.Grid.Grading.Unblocked.Finite
 public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Basic
 
 /-!
@@ -87,7 +88,7 @@ theorem bigradedUnblockedHomologyPiece_eq_map (g : ℤ × ℤ) :
 `bigradedUnblockedHomologyGrading` is finitely generated over the ground ring. -/
 instance finite_bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
     Module.Finite R ((G.bigradedUnblockedHomologyGrading R).piece g) := by
-  rw [G.bigradedUnblockedHomologyGrading_eq R]
+  rw [G.bigradedUnblockedHomologyGrading_def R]
   infer_instance
 
 /-- Over any commutative ring of characteristic two, each Maslov--Alexander piece of `GH⁻` is

@@ -69,6 +69,7 @@ theorem coarsenGrading_bigradedUnblockedHomologyPiece_snd :
 
 /-- Each Alexander piece of `GH⁻` is the supremum of the Maslov--Alexander pieces with that
 Alexander degree. -/
+@[simp]
 theorem iSup_bigradedUnblockedHomologyPiece_eq_alexanderUnblockedHomologyGrading_piece (a : ℤ) :
     ⨆ m : ℤ, G.bigradedUnblockedHomologyPiece R (m, a) =
       (G.alexanderUnblockedHomologyGrading R).piece a := by

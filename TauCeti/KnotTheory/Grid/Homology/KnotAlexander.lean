@@ -141,6 +141,51 @@ theorem unblockedHomologyIsomorphic_comm :
     hG.UnblockedHomologyIsomorphic hG' R ↔ hG'.UnblockedHomologyIsomorphic hG R :=
   ⟨.symm, .symm⟩
 
+/-- Lift a semilinear map between the unblocked homologies of two knot grids, along a polynomial
+ring homomorphism `σ` commuting with the specialization `V_j ↦ U`, to an `R[U]`-linear map. -/
+noncomputable def unblockedHomologyLinearMapOfSemilinear
+    (hG : G.IsKnot) (hG' : G'.IsKnot)
+    {σ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    (hσ : ∀ p, MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) (σ p) =
+      MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) p)
+    (f : G.unblockedHomology R →ₛₗ[σ] G'.unblockedHomology R) :
+    letI := hG.unblockedHomologyModule R
+    letI := hG'.unblockedHomologyModule R
+    G.unblockedHomology R →ₗ[Polynomial R] G'.unblockedHomology R :=
+  let _ := hG.unblockedHomologyModule R
+  let _ := hG'.unblockedHomologyModule R
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
+  { toFun := f
+    map_add' := map_add f
+    map_smul' := fun q y ↦ by
+      obtain ⟨p, rfl⟩ := MvPolynomial.aeval_const_X_surjective (Fin n) R q
+      rw [hG.aeval_smul_unblockedHomology, LinearMap.map_smulₛₗ, RingHom.id_apply, ← hσ,
+        hG'.aeval_smul_unblockedHomology] }
+
+/-- `unblockedHomologyLinearMapOfSemilinear` acts as the underlying semilinear map. -/
+@[simp]
+theorem unblockedHomologyLinearMapOfSemilinear_apply
+    (hG : G.IsKnot) (hG' : G'.IsKnot)
+    {σ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    (hσ : ∀ p, MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) (σ p) =
+      MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) p)
+    (f : G.unblockedHomology R →ₛₗ[σ] G'.unblockedHomology R)
+    (y : G.unblockedHomology R) :
+    hG.unblockedHomologyLinearMapOfSemilinear hG' hσ f y = f y :=
+  (rfl)
+
+/-- The underlying function of `unblockedHomologyLinearMapOfSemilinear` is that of the original
+semilinear map. -/
+@[simp]
+theorem coe_unblockedHomologyLinearMapOfSemilinear
+    (hG : G.IsKnot) (hG' : G'.IsKnot)
+    {σ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    (hσ : ∀ p, MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) (σ p) =
+      MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) p)
+    (f : G.unblockedHomology R →ₛₗ[σ] G'.unblockedHomology R) :
+    ⇑(hG.unblockedHomologyLinearMapOfSemilinear hG' hσ f) = ⇑f :=
+  (rfl)
+
 /-- A bijection between the unblocked homologies of two knot grids makes them isomorphic as
 Alexander-graded `R[U]`-modules if it preserves the Alexander grading and is semilinear along a
 ring homomorphism `σ` of the polynomial rings that commutes with the evaluation `V_j ↦ U`, such as
@@ -155,15 +200,8 @@ theorem UnblockedHomologyIsomorphic.of_semilinearMap
     hG.UnblockedHomologyIsomorphic hG' R := by
   let _ := hG.unblockedHomologyModule R
   let _ := hG'.unblockedHomologyModule R
-  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
-  let f' : G.unblockedHomology R →ₗ[Polynomial R] G'.unblockedHomology R :=
-    { toFun := f
-      map_add' := map_add f
-      map_smul' := fun q y ↦ by
-        obtain ⟨p, rfl⟩ := MvPolynomial.aeval_const_X_surjective (Fin n) R q
-        rw [hG.aeval_smul_unblockedHomology, LinearMap.map_smulₛₗ, RingHom.id_apply, ← hσ,
-          hG'.aeval_smul_unblockedHomology] }
-  refine ⟨LinearEquiv.ofBijective f' hf, LinearMap.isHomogeneous_def.mpr fun a y hy ↦ ?_⟩
+  refine ⟨LinearEquiv.ofBijective (hG.unblockedHomologyLinearMapOfSemilinear hG' hσ f)
+    (by simpa using hf), LinearMap.isHomogeneous_def.mpr fun a y hy ↦ ?_⟩
   rw [add_zero]
   exact hA a y hy
 

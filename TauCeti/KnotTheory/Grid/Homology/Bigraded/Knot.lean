@@ -324,17 +324,9 @@ theorem BigradedUnblockedHomologyIsomorphic.of_semilinearMap
     hG.BigradedUnblockedHomologyIsomorphic hG' R := by
   let _ := hG.unblockedHomologyModule R
   let _ := hG'.unblockedHomologyModule R
-  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
-  let f' : G.unblockedHomology R →ₗ[Polynomial R] G'.unblockedHomology R :=
-    { toFun := f
-      map_add' := map_add f
-      map_smul' := fun q y ↦ by
-        obtain ⟨p, rfl⟩ := MvPolynomial.aeval_const_X_surjective (Fin n) R q
-        rw [hG.aeval_smul_unblockedHomology, LinearMap.map_smulₛₗ, RingHom.id_apply, ← hσ,
-          hG'.aeval_smul_unblockedHomology] }
-  refine ⟨LinearEquiv.ofBijective f' hf, LinearMap.isHomogeneous_def.mpr fun g y hy ↦ ?_⟩
-  rw [add_zero]
-  exact hMA g y hy
+  refine ⟨LinearEquiv.ofBijective (hG.unblockedHomologyLinearMapOfSemilinear hG' hσ f)
+    (by simpa using hf), LinearMap.isHomogeneous_def.mpr fun g y hy ↦ ?_⟩
+  simpa using hMA g y hy
 
 end GridDiagram.IsKnot
 
