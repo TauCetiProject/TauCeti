@@ -79,6 +79,11 @@ theorem jordanTotient_apply (k n : ℕ) :
 theorem isMultiplicative_jordanTotient (k : ℕ) : (jordanTotient k).IsMultiplicative :=
   isMultiplicative_moebius.mul isMultiplicative_pow.natCast
 
+/-- `J_k 1 = 1`. -/
+@[simp]
+theorem jordanTotient_apply_one (k : ℕ) : jordanTotient k 1 = 1 :=
+  (isMultiplicative_jordanTotient k).map_one
+
 /-- `J_k * ζ = pow k`: Jordan's totient function is the Möbius inverse of `n ↦ n ^ k`. -/
 @[simp]
 theorem jordanTotient_mul_coe_zeta (k : ℕ) :
@@ -170,6 +175,11 @@ theorem dedekindPsi_apply (n : ℕ) :
 @[arith_mult]
 theorem isMultiplicative_dedekindPsi : dedekindPsi.IsMultiplicative :=
   (isMultiplicative_moebius.pmul isMultiplicative_moebius).mul isMultiplicative_id.natCast
+
+/-- `ψ 1 = 1`. -/
+@[simp]
+theorem dedekindPsi_apply_one : dedekindPsi 1 = 1 :=
+  isMultiplicative_dedekindPsi.map_one
 
 /-- The Euler product of the Dedekind ψ function: `ψ n = n * ∏_{p ∣ n} (1 + p⁻¹)` for
 `n ≠ 0`. -/

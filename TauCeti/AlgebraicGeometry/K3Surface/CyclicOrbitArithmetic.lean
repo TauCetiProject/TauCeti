@@ -110,7 +110,7 @@ theorem mathieuFunction_zero : mathieuFunction 0 = 0 := by
 
 @[simp]
 theorem mathieuFunction_one : mathieuFunction 1 = 24 := by
-  simp [mathieuFunction_def, isMultiplicative_dedekindPsi.map_one]
+  simp [mathieuFunction_def]
 
 /-- The value of `ε` at a prime power: `ε (p ^ k) = 24 / (p ^ (k - 1) * (p + 1))` for `k ≠ 0`. -/
 theorem mathieuFunction_prime_pow {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0) :
@@ -341,7 +341,7 @@ theorem IsK3CyclicOrbitData.jordanTotient_mul_cyclicFixedPointCount {n : ℕ} {a
   have hsum := h.sum_jordanTotient_mul hd
   rw [← Nat.cons_self_properDivisors hd0, Finset.sum_cons,
     Finset.sum_eq_single_of_mem 1 (Nat.one_mem_properDivisors_iff_one_lt.2 hd1)] at hsum
-  · simp only [(isMultiplicative_jordanTotient 2).map_one, Nat.totient_one, Nat.cast_one] at hsum
+  · simp only [jordanTotient_apply_one, Nat.totient_one, Nat.cast_one] at hsum
     linarith
   · intro e he he1
     obtain ⟨hed, hlt⟩ := Nat.mem_properDivisors.1 he
