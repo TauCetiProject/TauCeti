@@ -20,7 +20,8 @@ import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 variance its real density is the periodized Gaussian density. Its cdf is the integral
 of that density from `-π`, with zero and one extensions outside the chart. Interior quantiles
 are the unique roots of this integral, vary continuously and strictly increasingly with the
-probability level, and tend to the chart endpoints.
+probability level, and tend to the chart endpoints. Since the chart is bounded, every exponential
+moment of its real coordinate exists.
 
 At variance zero the angle law is the Dirac mass at the chosen representative of the location.
 The location parameter remains a circle point, so the formulas are independent of its real
@@ -100,6 +101,19 @@ theorem ae_mem_Ico_wrappedNormalAngleMeasure (m : AddCircle (2 * π)) (v : ℝ�
   exact ae_of_all _ fun θ ↦ by
     have hπ : -π + 2 * π = π := by ring
     simpa only [mem_Ico, hπ] using (AddCircle.equivIco (2 * π) (-π) θ).property
+
+/-- Every exponential moment of the fixed-chart wrapped normal angle exists. -/
+@[simp]
+theorem integrableExpSet_id_wrappedNormalAngleMeasure (m : AddCircle (2 * π)) (v : ℝ≥0) :
+    integrableExpSet id (wrappedNormalAngleMeasure m v) = univ := by
+  apply eq_univ_of_forall
+  intro t
+  simp only [integrableExpSet, mem_ofPred_eq, id_eq]
+  have hbound : ∀ᵐ x ∂wrappedNormalAngleMeasure m v, x ∈ Icc (-π) π := by
+    filter_upwards [ae_mem_Ico_wrappedNormalAngleMeasure m v] with x hx
+    exact ⟨hx.1, hx.2.le⟩
+  exact integrable_exp_mul_of_mem_Icc measurable_id.aemeasurable
+    hbound
 
 /-- At positive variance the angle law has no atoms. -/
 theorem nullSingletonClass_wrappedNormalAngleMeasure (hv : v ≠ 0) :
