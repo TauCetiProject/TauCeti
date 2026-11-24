@@ -290,7 +290,7 @@ theorem exists_contDiff_lipschitzWith_norm_sub_lt (f : HolderSpace α E Y)
   have hg₀lip : LipschitzWith _ g₀ :=
     (ρ.hasCompactSupport_normed (μ := μ)).lipschitzWith_convolution_left
       (ρ.contDiff_normed (n := 1)) f.continuous.locallyIntegrable hM
-  have hg₀M : ∀ w, ‖g₀ w‖ ≤ M := ρ.norm_normed_convolution_le hM
+  have hg₀M : ∀ w, ‖g₀ w‖ ≤ M := ρ.norm_normed_convolution_le (Eventually.of_forall hM)
   -- `g₀` is bounded and inherits the Hölder bound of `f`, so it lies in the Hölder space.
   let g₁ : E →ᵇ Y := .ofNormedAddCommGroup g₀ hg₀smooth.continuous M hg₀M
   have hg₁ : MemHolder α (g₁ : E → Y) := by
