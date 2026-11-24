@@ -107,6 +107,32 @@ lemma mapHomologicalFunctorFunctor_map_spectralObjectFunctor_map_hom_app_mk₁ {
     Functor.whiskerRight_app, Functor.whiskerLeft_app, evaluation_map_app, ω₁_obj, Functor.comp_map,
     ComposableArrows.mk₁_obj, ComposableArrows.Mk₁.obj]
 
+/-- For integer bounds `a ≤ b`, the value `H^n(a ≤ b)` of the spectral object of the truncations
+of `X` under `H` is `(H.shift n).obj (τ_{≥a} τ_{<b} X)`, for the truncation functors
+`t.truncGE a` and `t.truncLT b`. -/
+lemma mapHomologicalFunctor_spectralObject_H_obj_mk₁_coe (X : C) (n : ℤ) {a b : ℤ}
+    (hab : (a : EInt) ≤ b) :
+    (((t.spectralObject X).mapHomologicalFunctor H).H n).obj
+        (ComposableArrows.mk₁ (homOfLE hab)) =
+      (H.shift n).obj ((t.truncGE a).obj ((t.truncLT b).obj X)) := by
+  rw [mapHomologicalFunctor_spectralObject_H_obj_mk₁, eTruncGE_obj_coe, eTruncLT_obj_coe]
+
+/-- For integer bounds `a ≤ b`, the component at `a ≤ b` of the morphism of spectral objects
+induced by `f : X ⟶ X'` under `H` is, through the identifications
+`mapHomologicalFunctor_spectralObject_H_obj_mk₁_coe` of its source and target, the value of
+`H.shift n` on the map `τ_{≥a} τ_{<b} X ⟶ τ_{≥a} τ_{<b} X'` induced by `f`. -/
+@[reassoc]
+lemma mapHomologicalFunctorFunctor_map_spectralObjectFunctor_map_hom_app_mk₁_comp_eqToHom
+    {X X' : C} (f : X ⟶ X') (n : ℤ) {a b : ℤ} (hab : (a : EInt) ≤ b) :
+    (((SpectralObject.mapHomologicalFunctorFunctor H EInt).map
+        (t.spectralObjectFunctor.map f)).hom n).app (ComposableArrows.mk₁ (homOfLE hab)) ≫
+        eqToHom (t.mapHomologicalFunctor_spectralObject_H_obj_mk₁_coe H X' n hab) =
+      eqToHom (t.mapHomologicalFunctor_spectralObject_H_obj_mk₁_coe H X n hab) ≫
+        (H.shift n).map ((t.truncGE a).map ((t.truncLT b).map f)) := by
+  rw [mapHomologicalFunctorFunctor_map_spectralObjectFunctor_map_hom_app_mk₁,
+    Functor.congr_hom (t.eTruncGE_obj_coe a), Functor.congr_hom (t.eTruncLT_obj_coe b)]
+  simp only [eqToHom_refl, Category.comp_id, Category.id_comp]
+
 /-- The spectral object of the truncations of an object `X ≥ 0` under a homological functor
 vanishing on the objects `≥ 1` is first quadrant. -/
 lemma isFirstQuadrant_mapHomologicalFunctor_spectralObject

@@ -67,13 +67,12 @@ noncomputable def spectralSequenceFirstPageXIso (p q : ℤ) :
       (H.shift p).obj ((singleFunctor C 0).obj ((homologyFunctor C q).obj X)) :=
   ((TStructure.t.spectralObject X).mapHomologicalFunctor H).spectralSequenceFirstPageXIso
       coreE₂Cohomological (⟨p, q⟩ : ℤ × ℤ) q (q + 1 : ℤ) rfl rfl (p + q) rfl ≪≫
-    eqToIso (by
-      rw [TStructure.t.mapHomologicalFunctor_spectralObject_H_obj_mk₁,
-        Triangulated.TStructure.eTruncGE_obj_coe, Triangulated.TStructure.eTruncLT_obj_coe]) ≪≫
+    eqToIso (TStructure.t.mapHomologicalFunctor_spectralObject_H_obj_mk₁_coe H X (p + q) _) ≪≫
     (H.shift (p + q)).mapIso (truncGETruncLTIsoSingleFunctor X q) ≪≫
     (H.shift (p + q)).mapIso (((singleFunctors C).shiftIso (-q) q 0 (by lia)).app _).symm ≪≫
     (H.shiftIso (-q) (p + q) p (by lia)).app _
 
+open Triangulated.TStructure in
 /-- The identification `spectralSequenceFirstPageXIso` of the first page is natural in `X`: the
 morphism of spectral sequences induced by `f : X ⟶ X'` is, at `(p, q)`, the value of `H.shift p`
 on the map `Hᵠ(f)` placed in degree `0`. -/
@@ -91,10 +90,8 @@ lemma spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom {X X' : De
   rw [Abelian.SpectralObject.spectralSequencePageXMap_comp_spectralSequenceFirstPageXIso_hom_assoc
     (X := (TStructure.t.spectralObject X).mapHomologicalFunctor H)
     (Y := (TStructure.t.spectralObject X').mapHomologicalFunctor H),
-    TStructure.t.mapHomologicalFunctorFunctor_map_spectralObjectFunctor_map_hom_app_mk₁]
-  dsimp only [Triangulated.TStructure.eTruncGE_obj_coe, Triangulated.TStructure.eTruncLT_obj_coe]
-  simp only [eqToHom_refl, Category.id_comp]
-  rw [← H.shiftIso_hom_naturality]
+    mapHomologicalFunctorFunctor_map_spectralObjectFunctor_map_hom_app_mk₁_comp_eqToHom_assoc,
+    ← H.shiftIso_hom_naturality]
   simp only [← Functor.map_comp_assoc, truncGETruncLTIsoSingleFunctor_hom_naturality_assoc]
   simp
 
