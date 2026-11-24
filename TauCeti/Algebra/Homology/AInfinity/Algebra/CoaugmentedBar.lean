@@ -144,9 +144,10 @@ theorem letter_reducedProjection_coaugmentedBarDifferential (𝒜 : AInfinityAlg
 theorem taylor_reducedProjection_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A)
     (w : TensorWords R A) :
     𝒜.taylor (reducedProjection R A (𝒜.coaugmentedBarDifferential w)) = 0 := by
-  rw [coaugmentedBarDifferential_def, extendReduced_apply, reducedProjection_reducedInclusion,
-    ← letter_comp_barDifferential, LinearMap.comp_apply, ← LinearMap.comp_apply 𝒜.barDifferential,
-    barDifferential_sq, LinearMap.zero_apply, map_zero]
+  -- It is the letter component of the square of the extension, which vanishes.
+  rw [← letter_reducedProjection_coaugmentedBarDifferential,
+    ← LinearMap.comp_apply 𝒜.coaugmentedBarDifferential]
+  simp
 
 end AInfinityAlgebra
 

@@ -187,7 +187,8 @@ theorem isInsertionBound_of_m_eq_zero {N : ℕ} (hN : ∀ n, N < n → 𝒜.m n 
 
 /-- On the empty word, the Taylor map after inserting `n + 1` copies of `α` is the Taylor map on the
 word `α ⋯ α`. -/
-private theorem insertionTaylor_succ_one (α : A) (n : ℕ) :
+@[simp]
+theorem insertionTaylor_succ_apply_one (α : A) (n : ℕ) :
     𝒜.insertionTaylor α (n + 1) 1 =
       𝒜.taylor (ReducedTensorWords.of R A ⟨n + 1, n.succ_pos⟩
         (PiTensorProduct.tprod R fun _ ↦ α)) := by
@@ -196,20 +197,20 @@ private theorem insertionTaylor_succ_one (α : A) (n : ℕ) :
 
 /-- Under an insertion bound, the Maurer--Cartan equation says that the arity-zero part of the
 twisted Taylor map vanishes. -/
-private theorem IsInsertionBound.sum_insertionTaylor_one {α : A} {T : ℕ}
+theorem IsInsertionBound.sum_insertionTaylor_one {α : A} {T : ℕ}
     (hT : 𝒜.IsInsertionBound α T) (hα : 𝒜.IsMaurerCartan α) :
     ∑ v ∈ Finset.range T, 𝒜.insertionTaylor α v 1 = 0 := by
   have hm (n : ℕ) (hn : T + 1 ≤ n) : 𝒜.m n (fun _ ↦ α) = 0 := by
     obtain ⟨n, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega⟩
     have h := LinearMap.congr_fun (hT (n + 1) (by omega)) 1
-    rw [insertionTaylor_succ_one, 𝒜.taylor_of_tprod_const hα.mem_piece_one _ n.succ_pos,
+    rw [insertionTaylor_succ_apply_one, 𝒜.taylor_of_tprod_const hα.mem_piece_one _ n.succ_pos,
       LinearMap.zero_apply, negOnePowCast_smul_eq_zero_iff] at h
     exact h
   have hsum := ((isMaurerCartan_iff_taylor (N := T) hm).1 hα).2
   rw [map_sum] at hsum
   rw [← Finset.eventually_constant_sum (fun v hv ↦ by rw [hT v hv, LinearMap.zero_apply])
     (Nat.le_succ T), Finset.sum_range_succ']
-  simp only [insertionTaylor_succ_one, hsum, insertionTaylor_zero, LinearMap.comp_apply,
+  simp only [insertionTaylor_succ_apply_one, hsum, insertionTaylor_zero, LinearMap.comp_apply,
     reducedProjection_one, map_zero, add_zero]
 
 variable (𝒜) in
@@ -231,11 +232,14 @@ private theorem isGradedCoderivation_insertionCoderiv (α : A) (v : ℕ) :
 private theorem letter_reducedProjection_insertionCoderiv (α : A) (v : ℕ) (w : TensorWords R A) :
     ReducedTensorWords.letter R A (reducedProjection R A (𝒜.insertionCoderiv α v w)) =
       𝒜.insertionTaylor α v w := by
+  -- The reduced coderivation contributes the positive-arity part of the Taylor map.
+  have hred (z : ReducedTensorWords R A) :
+      ReducedTensorWords.letter R A (ReducedTensorWords.gradedCoderiv (𝒜.grading.shift 1)
+        (𝒜.insertionTaylor α v ∘ₗ reducedInclusion R A) 1 z) =
+        𝒜.insertionTaylor α v (reducedInclusion R A z) :=
+    LinearMap.congr_fun (ReducedTensorWords.letter_comp_gradedCoderiv ..) z
   conv_rhs => rw [← reducedInclusion_reducedProjection_add_algebraMap_counit R A w]
-  rw [insertionCoderiv, LinearMap.add_apply, map_add, map_add, extendReduced_apply,
-    reducedProjection_reducedInclusion, ← LinearMap.comp_apply (ReducedTensorWords.letter R A),
-    ReducedTensorWords.letter_comp_gradedCoderiv, letter_reducedProjection_twistedInsert,
-    map_add, Algebra.algebraMap_eq_smul_one, map_smul, LinearMap.comp_apply]
+  simp [insertionCoderiv, hred, Algebra.algebraMap_eq_smul_one]
 
 /-- The insertion coderivations vanish beyond an insertion bound. -/
 private theorem IsInsertionBound.insertionCoderiv_eq_zero {α : A} {T : ℕ}
@@ -322,9 +326,9 @@ theorem twist_taylor (α : A) (hα : 𝒜.IsMaurerCartan α) (T : ℕ) (hT : �
 theorem twist_eq_twist (α : A) (hα : 𝒜.IsMaurerCartan α) {T T' : ℕ}
     (hT : 𝒜.IsInsertionBound α T) (hT' : 𝒜.IsInsertionBound α T') :
     𝒜.twist α hα T' hT' = 𝒜.twist α hα T hT := by
-  refine ext (by rw [twist_grading, twist_grading]) ?_
-  rw [m_eq_desuspension, m_eq_desuspension, twist_taylor, twist_taylor, twist_grading,
-    twist_grading, ← hT'.twistTaylor_eq (le_max_right T T'), hT.twistTaylor_eq (le_max_left T T')]
+  refine ext_of_taylor (by simp) ?_
+  rw [twist_taylor, twist_taylor, ← hT'.twistTaylor_eq (le_max_right T T'),
+    hT.twistTaylor_eq (le_max_left T T')]
 
 /-- Twisting by zero gives back the algebra. -/
 @[simp]
@@ -333,8 +337,7 @@ theorem twist_zero {T : ℕ} (hT : 𝒜.IsInsertionBound 0 T) :
   have h : 𝒜.twistTaylor 0 T = 𝒜.taylor := by
     rw [← hT.twistTaylor_eq (Nat.le_succ T), twistTaylor, Finset.sum_range_succ']
     simp [insertionTaylor, zero_insertions, LinearMap.comp_assoc]
-  refine ext (twist_grading ..) ?_
-  rw [m_eq_desuspension, m_eq_desuspension, twist_taylor, twist_grading, h]
+  exact ext_of_taylor (twist_grading ..) (by rw [twist_taylor, h])
 
 end AInfinityAlgebra
 
@@ -398,19 +401,15 @@ theorem twist_m_two_apply (h : IsNonUnitalDGAlgebra 𝒜 d) {α : A}
   have h₂ := (h.toAInfinityAlgebra.twist α hα 3
     (h.isInsertionBound_toAInfinityAlgebra α)).taylor_of_two (κ x) y
   rw [twist_grading, toAInfinityAlgebra_grading, InternalGrading.koszulTwist_koszulTwist] at h₂
-  have hins (t : ℕ) (ht : 1 ≤ t) :=
-    h.toAInfinityAlgebra.insertionTaylor_of_eq_zero_of_m_eq_zero α (n := 2) (t := t)
-      (h.toAInfinityAlgebra_m_of_three_le (by omega))
-  have hi : reducedInclusion R A (ReducedTensorWords.of R A (2 : ℕ+)
-      (PiTensorProduct.tprod R ![κ x, y])) = of R A 2 (PiTensorProduct.tprod R ![κ x, y]) :=
-    reducedInclusion_of R A (2 : ℕ+) _
-  have hp : reducedProjection R A (of R A 2 (PiTensorProduct.tprod R ![κ x, y])) =
-      ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![κ x, y]) :=
-    reducedProjection_of_of_pos R A two_pos _
-  rw [← h₂, twist_taylor, twistTaylor_apply, hi, Finset.sum_range_succ, Finset.sum_range_succ,
-    Finset.sum_range_one, hins 1 le_rfl, hins 2 (by omega), add_zero, add_zero,
-    insertionTaylor_zero, LinearMap.comp_apply, hp, taylor_of_two]
-  simp [κ, toAInfinityAlgebra_grading, InternalGrading.koszulTwist_koszulTwist]
+  -- Inserting letters into the two-letter word gives words of length at least three.
+  have hins (t : ℕ) (ht : 1 ≤ t) : h.toAInfinityAlgebra.insertionTaylor α t (reducedInclusion R A
+      (ReducedTensorWords.of R A (2 : ℕ+) (PiTensorProduct.tprod R ![κ x, y]))) = 0 :=
+    (congrArg _ (reducedInclusion_of R A (2 : ℕ+) _)).trans
+      (h.toAInfinityAlgebra.insertionTaylor_of_eq_zero_of_m_eq_zero α (n := 2)
+        (h.toAInfinityAlgebra_m_of_three_le (by omega)) _)
+  rw [← h₂, twist_taylor, twistTaylor_apply]
+  simp [Finset.sum_range_succ, hins 1 le_rfl, hins 2 (by omega), taylor_of_two, κ,
+    InternalGrading.koszulTwist_koszulTwist]
 
 end IsNonUnitalDGAlgebra
 

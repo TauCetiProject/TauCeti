@@ -381,9 +381,7 @@ theorem deconcatenation_cons_pow (a : M) (k : ℕ) (w : TensorWords R M) :
 theorem letter_reducedProjection_cons (x : M) (w : TensorWords R M) :
     ReducedTensorWords.letter R M (reducedProjection R M (cons R M x w)) = counit R M w • x := by
   conv_lhs => rw [← reducedInclusion_reducedProjection_add_algebraMap_counit R M w]
-  rw [cons_apply, reducedProjection_reducedInclusion, map_add, prepend_reducedInclusion,
-    Algebra.algebraMap_eq_smul_one, map_smul, prepend_one, map_add, map_smul,
-    ReducedTensorWords.letter_prepend, ReducedTensorWords.letter_ofLetter, zero_add]
+  simp [cons_apply, Algebra.algebraMap_eq_smul_one]
 
 /-- The word `x y` of length two. -/
 theorem reducedProjection_cons_cons_one (x y : M) :
