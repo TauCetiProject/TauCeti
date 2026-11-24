@@ -57,7 +57,8 @@ comparison through which Burns, Sakamoto and Sano state Poitou–Tate duality an
 * `CharacterModule.tfae_exists_isMatlisGenerator`: for a finite local ring, having a Matlis
   generator, being self-injective and having a simple socle are equivalent.
 * `CharacterModule.isMatlisGenerator_toRatAddCircle`: `k ↦ k / n` is a Matlis generator of
-  `ℤ/n`, while the zero character is never one (`CharacterModule.not_isMatlisGenerator_zero`).
+  `ℤ/n`, while the zero character of a nonzero ring is never one
+  (`CharacterModule.not_isMatlisGenerator_zero`).
 
 ## References
 
