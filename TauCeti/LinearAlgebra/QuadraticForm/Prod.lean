@@ -152,6 +152,16 @@ theorem prod_eq_zero_iff {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M
     Q₁.prod Q₂ = 0 ↔ Q₁ = 0 ∧ Q₂ = 0 := by
   rw [← zero_prod_zero, prod_inj]
 
+/-- The orthogonal product of a nonzero quadratic map with any quadratic map is nonzero. -/
+theorem prod_ne_zero_left {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} (h : Q₁ ≠ 0) :
+    Q₁.prod Q₂ ≠ 0 :=
+  fun h' ↦ h (prod_eq_zero_iff.mp h').1
+
+/-- The orthogonal product of any quadratic map with a nonzero quadratic map is nonzero. -/
+theorem prod_ne_zero_right {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} (h : Q₂ ≠ 0) :
+    Q₁.prod Q₂ ≠ 0 :=
+  fun h' ↦ h (prod_eq_zero_iff.mp h').2
+
 /-- The orthogonal products of members of two submodules of quadratic maps are the span of the
 orthogonal products `Q ⊕ 0` and `0 ⊕ Q'` with `Q` and `Q'` in the respective submodules: this is
 the image of their product submodule under `QuadraticMap.prodLinear`. -/
