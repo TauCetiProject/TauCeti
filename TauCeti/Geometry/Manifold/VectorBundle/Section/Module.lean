@@ -233,6 +233,11 @@ theorem restrict_add (s t : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
   pullback_add s t _
 
 @[simp]
+theorem restrict_sub (s t : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
+    (s - t).restrict U = s.restrict U - t.restrict U :=
+  map_sub (pullbackLinearMap I F n V (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯)) s t
+
+@[simp]
 theorem restrict_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (c • s).restrict U = c • s.restrict U :=
   pullback_smul c s _

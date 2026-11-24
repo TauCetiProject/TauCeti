@@ -72,7 +72,9 @@ ambient differentials along an embedding are stated.
 
 The pullback of a `C^n` vector bundle along a `C^n` map `f`, given as an element of any
 `ContinuousMapClass` rather than as a bundled `C^n` map, is a `C^n` vector bundle
-(`Bundle.Pullback.contMDiffVectorBundle`).
+(`Bundle.Pullback.contMDiffVectorBundle`). In particular, the restriction of a `C^n` vector
+bundle to an open subset, its pullback along the inclusion, is a `C^n` vector bundle
+(`Bundle.Pullback.contMDiffVectorBundle_opens`).
 
 ## References
 
@@ -380,6 +382,13 @@ supplied as a hypothesis. -/
 theorem Bundle.Pullback.contMDiffVectorBundle [ContMDiffVectorBundle n F E IB] {f : K}
     (hf : ContMDiff IB' IB n f) : ContMDiffVectorBundle n F ((f : B' → B) *ᵖ E) IB' :=
   ContMDiffVectorBundle.pullback F E IB' (⟨f, hf⟩ : C^n⟮IB', B'; IB, B⟯)
+
+/-- The restriction of a `C^n` vector bundle to an open subset, its pullback along the inclusion,
+is a `C^n` vector bundle. -/
+instance Bundle.Pullback.contMDiffVectorBundle_opens [ContMDiffVectorBundle n F E IB]
+    (U : TopologicalSpace.Opens B) :
+    ContMDiffVectorBundle n F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, B)) *ᵖ E) IB :=
+  Bundle.Pullback.contMDiffVectorBundle contMDiff_subtypeVal
 
 end ContMDiffVectorBundle
 

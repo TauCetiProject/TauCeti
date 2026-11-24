@@ -73,21 +73,11 @@ charts and local frames.
 public section
 
 open Bundle Filter TopologicalSpace
+open ContMDiffSection (extendAt eventually_extendAt eventually_add_eq_of_opens
+  eventually_smul_eq_of_opens eventually_smul_function_eq_of_opens)
 open scoped ContDiff Manifold Topology
 
 noncomputable section
-
-/-- The restriction of a `C^n` vector bundle to an open subset, its pullback along the inclusion,
-is a `C^n` vector bundle. -/
-instance Bundle.Pullback.contMDiffVectorBundle_opens {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
-    {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {V : M → Type*}
-    [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-    [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V] {n : ℕ∞ω}
-    [ContMDiffVectorBundle n F V I] (U : Opens M) :
-    ContMDiffVectorBundle n F ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) I :=
-  Bundle.Pullback.contMDiffVectorBundle contMDiff_subtypeVal
 
 namespace TauCeti
 
@@ -104,23 +94,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [FiberBundle F' W] [VectorBundle ℝ F' W]
   (U : Opens M)
 
-/-! ### Germs of sections on an open subset -/
-
-/-- A global smooth section of `V` agreeing near `x` with a smooth section of `V|_U`. -/
-private def extendAt (s : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯)
-    (x : U) : Cₛ^∞⟮I; F, V⟯ :=
-  (ContMDiffSection.exists_eventually_eq_of_opens s x).choose
-
-private theorem eventually_extendAt
-    (s : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯) (x : U) :
-    ∀ᶠ y : U in 𝓝 x, extendAt U s x y = s y :=
-  (ContMDiffSection.exists_eventually_eq_of_opens s x).choose_spec
+/-! ### Values of the restriction -/
 
 /-- The value at `x ∈ U` of the restriction of `P` to `U` on `s`: the value at `x` of `P` on a
 global smooth section agreeing with `s` near `x`. -/
 private def restrictValue (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯)
     (s : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯) (x : U) : W x :=
-  P (extendAt U s x) x
+  P (extendAt s x) x
 
 variable {U} {m k : ℕ}
 
@@ -145,7 +125,7 @@ private theorem restrictValue_eq {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞
     {s : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯} {x : U}
     {t : Cₛ^∞⟮I; F, V⟯} (ht : ∀ᶠ y : U in 𝓝 x, t y = s y) :
     restrictValue U P s x = P t x :=
-  apply_eq_of_eventuallyEq hP (eventually_extendAt U s x) ht
+  apply_eq_of_eventuallyEq hP (eventually_extendAt s x) ht
 
 /-- The restriction of `P` applied to `s`, as a smooth section of `W|_U`: near each point it is the
 restriction of `P t` for a global section `t` agreeing with `s` there. -/
@@ -155,8 +135,8 @@ private def restrictSection {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I;
     Cₛ^∞⟮I; F', (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ W⟯ where
   toFun := restrictValue U P s
   contMDiff_toFun x := by
-    refine (((P (extendAt U s x)).restrict U).contMDiff x).congr_of_eventuallyEq ?_
-    filter_upwards [eventually_eventually_nhds.2 (eventually_extendAt U s x)] with y hy
+    refine (((P (extendAt s x)).restrict U).contMDiff x).congr_of_eventuallyEq ?_
+    filter_upwards [eventually_eventually_nhds.2 (eventually_extendAt s x)] with y hy
     rw [restrictValue_eq hP hy, ContMDiffSection.restrict_apply]
 
 private theorem restrictSection_apply {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
@@ -164,44 +144,6 @@ private theorem restrictSection_apply {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] C�
     (s : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯) (x : U) :
     restrictSection hP s x = restrictValue U P s x :=
   (rfl)
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- Global sections agreeing near `x` with two sections of `V|_U` have a sum agreeing near `x`
-with their sum. -/
-private theorem eventually_add_eq
-    {s s' : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯} {x : U}
-    {t t' : Cₛ^∞⟮I; F, V⟯} (h : ∀ᶠ y : U in 𝓝 x, t y = s y)
-    (h' : ∀ᶠ y : U in 𝓝 x, t' y = s' y) :
-    ∀ᶠ y : U in 𝓝 x, (t + t') y = (s + s') y := by
-  filter_upwards [h, h'] with y hy hy'
-  rw [ContMDiffSection.coe_add, Pi.add_apply, hy, hy']
-  -- The sum in the fibre of `V` over `y` is the sum in the fibre of `V|_U`.
-  rfl
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- A global section agreeing near `x` with a section of `V|_U` has a multiple agreeing near `x`
-with the same multiple. -/
-private theorem eventually_smul_eq
-    {s : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯} {x : U}
-    {t : Cₛ^∞⟮I; F, V⟯} (c : ℝ) (h : ∀ᶠ y : U in 𝓝 x, t y = s y) :
-    ∀ᶠ y : U in 𝓝 x, (c • t) y = (c • s) y := by
-  filter_upwards [h] with y hy
-  rw [ContMDiffSection.coe_smul, Pi.smul_apply, hy]
-  -- The scalar action on the fibre of `V` over `y` is that on the fibre of `V|_U`.
-  rfl
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- A global section `t` agreeing near `x` with a section `s` of `V|_U`, multiplied by a function
-`g` on `M` agreeing near `x` with a function `h` on `U`, agrees near `x` with `h • s`. -/
-private theorem eventually_smul_function_eq
-    {s : Cₛ^∞⟮I; F, (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V⟯} {x : U}
-    {t : Cₛ^∞⟮I; F, V⟯} {g : C^∞⟮I, M; ℝ⟯} {h : C^∞⟮I, U; ℝ⟯}
-    (hg : (g : M → ℝ) ∘ Subtype.val =ᶠ[𝓝 x] h) (ht : ∀ᶠ y : U in 𝓝 x, t y = s y) :
-    ∀ᶠ y : U in 𝓝 x, (g • t) y = (h • s) y := by
-  filter_upwards [hg, ht] with y hgy hy
-  rw [ContMDiffSection.smul_apply, ContMDiffSection.smul_apply, ← hgy, hy]
-  -- The scalar action on the fibre of `V` over `y` is that on the fibre of `V|_U`.
-  rfl
 
 /-- The restriction of a differential operator as a linear map between the sections of `V|_U` and
 `W|_U`. -/
@@ -211,17 +153,17 @@ private def restrictLinearMap {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮
       Cₛ^∞⟮I; F', (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ W⟯ where
   toFun := restrictSection hP
   map_add' s s' := ContMDiffSection.ext fun x ↦ by
-    have hs := eventually_extendAt U s x
-    have hs' := eventually_extendAt U s' x
+    have hs := eventually_extendAt s x
+    have hs' := eventually_extendAt s' x
     simp only [ContMDiffSection.coe_add, Pi.add_apply, restrictSection_apply,
-      restrictValue_eq hP (eventually_add_eq hs hs'), restrictValue_eq hP hs,
+      restrictValue_eq hP (eventually_add_eq_of_opens hs hs'), restrictValue_eq hP hs,
       restrictValue_eq hP hs', map_add]
     -- The sum in the fibre of `W` over `x` is the sum in the fibre of `W|_U`.
     rfl
   map_smul' c s := ContMDiffSection.ext fun x ↦ by
-    have hs := eventually_extendAt U s x
+    have hs := eventually_extendAt s x
     simp only [ContMDiffSection.coe_smul, Pi.smul_apply, RingHom.id_apply,
-      restrictSection_apply, restrictValue_eq hP (eventually_smul_eq c hs),
+      restrictSection_apply, restrictValue_eq hP (eventually_smul_eq_of_opens c hs),
       restrictValue_eq hP hs, map_smul]
     -- The scalar action on the fibre of `W` over `x` is that on the fibre of `W|_U`.
     rfl
@@ -251,11 +193,11 @@ private theorem restrictLinearMap_mem {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] C�
       (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯), ∀ᶠ y : U in 𝓝 x, t y = s y := by
     refine Submodule.smul_induction_on hs (fun h hh s _ ↦ ?_) fun s₁ s₂ h₁ h₂ ↦ ?_
     · obtain ⟨g, hg, hgh⟩ := exists_mem_smoothVanishingIdeal_pow_eventuallyEq_comp_subtype_val hh
-      exact ⟨g • extendAt U s x, Submodule.smul_mem_smul hg Submodule.mem_top,
-        eventually_smul_function_eq hgh (eventually_extendAt U s x)⟩
+      exact ⟨g • extendAt s x, Submodule.smul_mem_smul hg Submodule.mem_top,
+        eventually_smul_function_eq_of_opens hgh (eventually_extendAt s x)⟩
     · obtain ⟨t₁, ht₁, hts₁⟩ := h₁
       obtain ⟨t₂, ht₂, hts₂⟩ := h₂
-      exact ⟨t₁ + t₂, add_mem ht₁ ht₂, eventually_add_eq hts₁ hts₂⟩
+      exact ⟨t₁ + t₂, add_mem ht₁ ht₂, eventually_add_eq_of_opens hts₁ hts₂⟩
   rw [restrictLinearMap_apply, restrictValue_eq hP hts]
   exact apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
     (apply_mem_smul_top_of_mem_pow_smul_top hP _ ht)
@@ -279,7 +221,7 @@ def _root_.TopologicalSpace.Opens.restrictSectionDifferentialOperators :
   toFun P := ⟨restrictLinearMap P.property, restrictLinearMap_mem P.property⟩
   map_add' P₁ P₂ := by
     ext s x
-    have hs := eventually_extendAt U s x
+    have hs := eventually_extendAt s x
     simp only [Submodule.coe_add, LinearMap.add_apply, ContMDiffSection.coe_add, Pi.add_apply,
       restrictLinearMap_apply, restrictValue_eq (add_mem P₁.property P₂.property) hs,
       restrictValue_eq P₁.property hs, restrictValue_eq P₂.property hs]
@@ -287,7 +229,7 @@ def _root_.TopologicalSpace.Opens.restrictSectionDifferentialOperators :
     rfl
   map_smul' c P := by
     ext s x
-    have hs := eventually_extendAt U s x
+    have hs := eventually_extendAt s x
     simp only [Submodule.coe_smul, LinearMap.smul_apply, ContMDiffSection.coe_smul, Pi.smul_apply,
       RingHom.id_apply, restrictLinearMap_apply,
       restrictValue_eq (Submodule.smul_mem _ c P.property) hs, restrictValue_eq P.property hs]
@@ -347,7 +289,7 @@ theorem _root_.TopologicalSpace.Opens.eq_coe_restrictSectionDifferentialOperator
       ((P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) t).restrict U) :
     Q = U.restrictSectionDifferentialOperators m P := by
   ext s x
-  have hs := eventually_extendAt U s x
+  have hs := eventually_extendAt s x
   rw [Opens.restrictSectionDifferentialOperators_apply_of_eventuallyEq P hs,
     ← ContMDiffSection.restrict_apply _ U x, ← h, ← sub_eq_zero, ← Pi.sub_apply,
     ← ContMDiffSection.coe_sub, ← map_sub]
@@ -418,23 +360,10 @@ private theorem smulCommutator_pow_apply_restrict {Q : Cₛ^∞⟮I; F, V⟯ →
     rw [pow_succ, pow_succ, mul_apply_eq_comp, mul_apply_eq_comp]
     refine ih (fun t ↦ ?_)
     -- `ContMDiffSection.restrict_smul_function` restricts `f` as a composition with the
-    -- inclusion, which is `ContMDiffMap.restrict`.
-    have hf : f.restrict U = f.comp ⟨Subtype.val, contMDiff_subtypeVal⟩ :=
-      ContMDiffMap.ext fun y ↦ (ContMDiffMap.restrict_apply f U y).trans (rfl)
-    have hft : (f • t).restrict U = f.restrict U • t.restrict U := by
-      rw [hf]
-      exact ContMDiffSection.restrict_smul_function f t U
-    have hfQ : (f • Q t).restrict U = f.restrict U • (Q t).restrict U := by
-      rw [hf]
-      exact ContMDiffSection.restrict_smul_function f (Q t) U
-    have hsub : (Q (f • t) - f • Q t).restrict U = (Q (f • t)).restrict U - (f • Q t).restrict U :=
-      ContMDiffSection.ext fun y ↦ by
-        simp only [ContMDiffSection.coe_sub, Pi.sub_apply]
-        rw [ContMDiffSection.restrict_apply, ContMDiffSection.restrict_apply,
-          ContMDiffSection.restrict_apply]
-        -- The difference in the fibre of `W` over `y` is that in the fibre of `W|_U`.
-        rfl
-    rw [smulCommutator_apply_apply, smulCommutator_apply_apply, ← hft, h, h, hsub, hfQ]
+    -- inclusion.
+    rw [smulCommutator_apply_apply, smulCommutator_apply_apply, ContMDiffMap.restrict_eq_comp,
+      ← ContMDiffSection.restrict_smul_function, h, h, ContMDiffSection.restrict_sub,
+      ContMDiffSection.restrict_smul_function]
 
 /-- **Restriction commutes with commutators.** The commutator of `P|_U` with multiplication by the
 restriction of `f` is the restriction of the commutator `[P, f]`. -/
