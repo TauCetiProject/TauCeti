@@ -95,11 +95,12 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
   `TauCeti.adjointInvariantPolynomials_eq_lieInvariants`: they are Lie invariants, and for
   connected `G` over an algebraically closed field of characteristic zero they are all of them.
 * `TauCeti.nilpotentConeIdeal`: the ideal of the zero fibre of the adjoint quotient.
-* `TauCeti.nilpotentConeComoduleAlgebra`: the descended coaction on its full quotient ring.
+* `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: the ideal
+  is stable under scaling and under the adjoint action.
+* `TauCeti.nilpotentConeComoduleAlgebra`: the descended coaction on the full quotient ring
+  of the nilpotent cone.
 * `TauCeti.polynomialCoact_eval_ι`: evaluation of linear polynomial coactions against
   algebra-valued points agrees with the adjoint action on vectors.
-* `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: it is
-  stable under scaling and under the adjoint action.
 * `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
   `TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`, and
   `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`: invariance of adjoint-invariant
