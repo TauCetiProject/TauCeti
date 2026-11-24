@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
+import Mathlib.AlgebraicGeometry.Cover.QuasiCompact
 import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 import TauCeti.RingTheory.Finiteness.SourceDescent
 
@@ -61,12 +61,14 @@ private theorem LocallyOfFinitePresentation.of_comp_surjective_of_isAffine {R A 
   rw [HasRingHomProperty.Spec_iff (P := @LocallyOfFinitePresentation)]
   rw [HasRingHomProperty.Spec_iff (P := @Smooth)] at ‹Smooth (Spec.map ψ)›
   algebraize [φ.hom, ψ.hom, (φ ≫ ψ).hom]
-  have : IsScalarTower R A Γ(Z, ⊤) := .of_algebraMap_eq' rfl
+  have : IsScalarTower R A Γ(Z, ⊤) := .of_algebraMap_eq' <| by
+    simp only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp]
   have : Module.FaithfullyFlat A Γ(Z, ⊤) := .of_comap_surjective (Spec.map ψ).surjective
   exact Algebra.FinitePresentation.of_smooth_of_faithfullyFlat (A := A) (B := Γ(Z, ⊤))
 
-/-- Over an affine target, local finite presentation descends along any smooth surjection: the
-images of finitely many affine opens of the source already cover the target. -/
+/-- Local finite presentation of a morphism between affine schemes descends along a smooth
+surjection from an arbitrary scheme: the images of finitely many affine opens of the source
+already cover the target. -/
 private theorem LocallyOfFinitePresentation.of_comp_surjective_of_spec {R A : CommRingCat.{u}}
     {X' : Scheme.{u}} (u : X' ⟶ Spec A) (f : Spec A ⟶ Spec R) [Smooth u] [Surjective u]
     [LocallyOfFinitePresentation (u ≫ f)] : LocallyOfFinitePresentation f := by
@@ -76,28 +78,26 @@ private theorem LocallyOfFinitePresentation.of_comp_surjective_of_spec {R A : Co
     HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.Smooth)
   have : IsZariskiLocalAtSource @LocallyOfFinitePresentation.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtSource (Q := @RingHom.FinitePresentation)
-  -- `u` is open, so the images of the affine opens of `X'` form an open cover of `Spec A`.
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
-    (fun W : X'.affineOpens ↦ u '' (W : Set X')) (fun W ↦ u.isOpenMap _ W.val.isOpen)
-    fun x _ ↦ by
-      obtain ⟨y, rfl⟩ := u.surjective x
-      obtain ⟨W, hW, hyW, -⟩ :=
-        TopologicalSpace.Opens.isBasis_iff_nbhd.mp X'.isBasis_affineOpens
-          (TopologicalSpace.Opens.mem_top y)
-      exact Set.mem_iUnion.mpr ⟨⟨W, hW⟩, y, hyW, rfl⟩
-  let g (W : t) : (W.val.val : Scheme) ⟶ Spec A := W.val.val.ι ≫ u
+  -- `u` is open, so the singleton cover by `u` is quasi-compact.
+  let 𝒰 : Scheme.Cover.{0} (Scheme.precoverage ⊤) (Spec A) := u.cover trivial
+  have : QuasiCompactCover 𝒰.toPreZeroHypercover := .of_isOpenMap fun _ ↦ u.isOpenMap
+  obtain ⟨n, _, V, hV, hVU⟩ := QuasiCompactCover.exists_isAffineOpen_of_isCompact
+    𝒰.toPreZeroHypercover (U := ⊤) isCompact_univ
+  -- Every component of `𝒰` is `u`.
+  let W (i : Fin n) : X'.Opens := V i
+  have (i : Fin n) : IsAffine (W i) := hV i
+  have hWU : ⋃ i, u '' (W i : Set X') = Set.univ := hVU
+  let g (i : Fin n) : (W i : Scheme) ⟶ Spec A := (W i).ι ≫ u
   have : Smooth (Sigma.desc g) := IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
   have : Surjective (Sigma.desc g) := by
-    refine Surjective.sigmaDesc_of_union_range_eq_univ (Set.eq_univ_of_univ_subset ?_)
-    refine ht.trans (Set.iUnion₂_subset fun W hW ↦ ?_)
-    rw [← W.val.range_ι, ← Set.range_comp]
-    exact Set.subset_iUnion_of_subset ⟨W, hW⟩ subset_rfl
+    refine Surjective.sigmaDesc_of_union_range_eq_univ ?_
+    simpa [g, Set.range_comp] using hWU
   have : LocallyOfFinitePresentation (Sigma.desc g ≫ Spec.map φ) := by
     have hdesc : Sigma.desc g ≫ Spec.map φ = Sigma.desc fun W ↦ g W ≫ Spec.map φ :=
       Sigma.hom_ext _ _ fun _ ↦ by simp
     rw [hdesc]
     exact IsZariskiLocalAtSource.sigmaDesc fun _ ↦ by
-      rw [Category.assoc]
+      simp only [g, Category.assoc]
       infer_instance
   exact of_comp_surjective_of_isAffine (Sigma.desc g) φ
 

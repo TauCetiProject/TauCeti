@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.Smooth.Basic
 import Mathlib.RingTheory.Finiteness.Descent
 import Mathlib.RingTheory.Smooth.Flat
-import Mathlib.RingTheory.Smooth.NoetherianDescent
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
@@ -64,13 +63,11 @@ private theorem of_algEquiv_tensorProduct (A₁ B₁ : Type*) [CommRing A₁] [C
   -- The finitely presented `R`-algebra `A' = R ⊗[ℤ] A₁` maps to `A`.
   let A' := R ⊗[ℤ] A₁
   let : Algebra A₁ A' := TensorProduct.rightAlgebra
-  let φ : A' →ₐ[R] A := TensorProduct.lift (ofId R A) (ofId A₁ A |>.restrictScalars ℤ)
-    fun _ _ ↦ .all _ _
+  let φ : A' →ₐ[R] A := AlgHom.liftEquiv ℤ R A₁ A (ofId A₁ A |>.restrictScalars ℤ)
   let : Algebra A' A := φ.toAlgebra
   have : IsScalarTower R A' A := .of_algHom φ
   have hφ (a : A₁) : φ (1 ⊗ₜ a) = algebraMap A₁ A a := by
-    rw [TensorProduct.lift_tmul, map_one, one_mul, AlgHom.restrictScalars_apply,
-      Algebra.ofId_apply]
+    rw [AlgHom.liftEquiv_tmul, one_smul, AlgHom.restrictScalars_apply, Algebra.ofId_apply]
   -- The structure map `A₁ → A'` of the right algebra structure is `a ↦ 1 ⊗ₜ a` by definition.
   have : IsScalarTower A₁ A' A := .of_algebraMap_eq fun a ↦ (hφ a).symm
   let : Algebra A' B := ((algebraMap A B).comp (algebraMap A' A)).toAlgebra
