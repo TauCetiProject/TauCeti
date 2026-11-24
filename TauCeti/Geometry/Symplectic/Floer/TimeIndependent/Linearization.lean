@@ -183,19 +183,19 @@ theorem eq_comp_fst_of_floerLinearization_eq_zero (hg : ∀ v w, ω v (J w) = �
   have hu (z : ℝ × ℝ) : ‖fderiv ℝ (fun z : ℝ × ℝ ↦ γ z.1) z‖ ≤ M :=
     (norm_fderiv_comp_fst_le γ z).trans (norm_deriv_eq_norm_fderiv (f := γ) ▸ hM z.1)
   -- For every shift `r`, the difference `η(z) = ξ(z + (0, r)) - ξ(z)` vanishes.
-  have hshift (r : ℝ) : (fun z ↦ ξ (z + (0, r)) - ξ z) = 0 := by
+  have hshift (r : ℝ) : (fun z ↦ ξ (z + (0, r))) - ξ = 0 := by
     have hξr : ContDiff ℝ 2 fun z : ℝ × ℝ ↦ ξ (z + (0, r)) :=
       hξ.comp (contDiff_id.add contDiff_const)
     refine eq_zero_of_floerLinearization_eq_zero (u := fun z ↦ γ z.1) (B := B + B) hg hH ha hc
       ha2π hcM (hγ.comp contDiff_fst) hu (hξr.sub hξ) (fun s t ↦ ?_) (fun s ↦ ?_) (fun z ↦ ?_)
       fun z ↦ ?_
-    · simp only [Prod.mk_add_mk, add_zero, add_right_comm t 1 r, hper]
+    · simp only [Pi.sub_apply, Prod.mk_add_mk, add_zero, add_right_comm t 1 r, hper]
     -- The slices of `η` have mean zero, by periodicity of `t ↦ ξ(s, t)`.
     · have hcont : Continuous fun t ↦ ξ (s, t) := hξ.continuous.comp (.prodMk_right s)
       have hcont' : Continuous fun t ↦ ξ (s, t + r) :=
         hcont.comp (continuous_id.add continuous_const)
       have hperiodic : Function.Periodic (fun t ↦ ξ (s, t)) 1 := hper s
-      simp only [Prod.mk_add_mk, add_zero]
+      simp only [Pi.sub_apply, Prod.mk_add_mk, add_zero]
       rw [intervalIntegral.integral_sub (hcont'.intervalIntegrable 0 1)
           (hcont.intervalIntegrable 0 1), sub_eq_zero,
         intervalIntegral.integral_comp_add_right (fun t ↦ ξ (s, t)), zero_add, add_comm 1 r,
@@ -204,13 +204,12 @@ theorem eq_comp_fst_of_floerLinearization_eq_zero (hg : ∀ v w, ω v (J w) = �
     · have h := floerLinearization_comp_add_right ω (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) ξ (0, r) z
       simp only [Prod.fst_add, add_zero] at h
-      change ω.floerLinearization _ _ _ _ ((fun z ↦ ξ (z + (0, r))) - ξ) z = 0
       rw [floerLinearization_sub ω _ _ _ _ _ _ z (hξr.differentiable two_ne_zero z)
         (hξ.differentiable two_ne_zero z), h, hD, hD, sub_self]
     -- `η` is bounded, since the mean-zero part of `ξ` is.
     · have h := hB (z + (0, r))
       simp only [Prod.fst_add, add_zero] at h
-      rw [← sub_sub_sub_cancel_right _ _ (∫ t in (0 : ℝ)..1, ξ (z.1, t))]
+      rw [Pi.sub_apply, ← sub_sub_sub_cancel_right _ _ (∫ t in (0 : ℝ)..1, ξ (z.1, t))]
       exact (norm_sub_le _ _).trans (add_le_add h (hB z))
   simpa [sub_eq_zero] using congrFun (hshift t) (s, 0)
 
