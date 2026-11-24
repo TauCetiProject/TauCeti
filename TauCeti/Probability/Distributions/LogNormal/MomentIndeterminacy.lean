@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.LogNormal.Basic
+public import TauCeti.Probability.Moments.Determinacy
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
@@ -32,6 +33,8 @@ shift of the real exponent.
 * `logNormalMomentPerturbation` is the resulting measure.
 * `integral_pow_logNormalMomentPerturbation` proves that its `n`th moment is `exp (n² / 2)`.
 * `injOn_logNormalMomentPerturbation` proves that different parameters give different laws.
+* `not_isMomentDeterminate_logNormalMeasure` concludes that the standard log-normal law is not
+  moment-determinate.
 
 ## Reference
 
@@ -280,6 +283,22 @@ theorem injOn_logNormalMomentPerturbation :
   rw [integral_oscillation_logNormalMomentPerturbation hεabs,
     integral_oscillation_logNormalMomentPerturbation hδabs] at hint
   nlinarith [integral_sq_oscillation_logNormalMeasure_pos]
+
+/-- **The standard log-normal law is not determined by its moments.** The member `ε = 1` of the
+Stieltjes family is a different probability measure with the same finite moments. -/
+@[simp]
+theorem not_isMomentDeterminate_logNormalMeasure :
+    ¬(logNormalMeasure 0 1).IsMomentDeterminate := by
+  intro hdet
+  have h₀ : logNormalMomentPerturbation 0 = logNormalMeasure 0 1 := by
+    simp [logNormalMomentPerturbation, ← Pi.one_def]
+  have h₁ : (1 : ℝ) ∈ Icc (-1) 1 := by norm_num
+  have h₁' : |(1 : ℝ)| ≤ 1 := by norm_num
+  have heq := hdet.eq_of_forall_integral_pow_eq (integrable_pow_logNormalMomentPerturbation h₁')
+    fun n ↦ by rw [integral_pow_logNormalMomentPerturbation h₁', ← h₀,
+      integral_pow_logNormalMomentPerturbation (by norm_num)]
+  have := injOn_logNormalMomentPerturbation h₁ (by norm_num) (heq.trans h₀.symm)
+  norm_num at this
 
 /-- The family of log-normal moment perturbations is measurable in its real parameter. -/
 @[fun_prop]
