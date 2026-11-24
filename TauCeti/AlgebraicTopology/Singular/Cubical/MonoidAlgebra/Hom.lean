@@ -133,8 +133,8 @@ theorem cubicalChainDGAlgHom_apply (φ : G →ₜ* G') (a : normalizedCubicalCha
 theorem cubicalChainDGAlgHom_cubicalChainPoint (φ : G →ₜ* G') (g : G) :
     cubicalChainDGAlgHom R φ (cubicalChainPoint G R g) = cubicalChainPoint G' R (φ g) := by
   rw [cubicalChainPoint_def, cubicalChainPoint_def, cubicalChainDGAlgHom_lof, map_ofCube,
-    SingularCube.comp_point]
-  rfl
+    SingularCube.comp_point, ContinuousMonoidHom.coe_toContinuousMap,
+    ContinuousMap.coe_ofClass]
 
 /-- Two DG algebra morphisms out of `C^□_*(G; R)` agree if they agree on chains of each
 dimension. -/
