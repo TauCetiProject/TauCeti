@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.CStarAlgebra.Unitization
 import Mathlib.Algebra.Order.Star.Unitization
@@ -44,6 +45,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
+  space.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`,
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
@@ -52,8 +55,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   algebraic operations.
 * `CStarMatrix.mul_eq_self_of_conjTranspose_mul_eq`: over a star-ordered ring with proper star,
   a rectangular matrix is supported on its initial projection.
-* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
-  `1 × 1` C⋆-matrices, with `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
+* `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`, `CStarMatrix.reindexₐ_apply_apply`:
+  entries of finite sums, of `1 × 1` C⋆-matrices and of reindexed matrices, with
+  `CStarMatrix.norm_toOneByOne`: `‖[a]‖ = ‖a‖`, and
   `CStarMatrix.norm_map_toOneByOne_linearMap`: `‖[φ a]‖ = ‖φ a‖` for a linear map `φ`.
 * `CStarMatrix.norm_map_reindexₐ_linearMap`: reindexing preserves the norm of the entrywise
   image under a linear map.
@@ -70,7 +74,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   star-algebra whose star is proper.
 * `CStarMatrix.sum_star_mul_mul_eq_dotProduct_mulVec`: rewriting a quadratic form as a
   dot product with `mulVec`.
-* `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
+* `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity, with
+  `CStarMatrix.ofMatrix_smul_nonneg` (`[pᵢⱼ b]` is positive for positive `[pᵢⱼ]` and `b`).
 * `CStarMatrix.diag_nonneg_of_nonneg`: the diagonal entries of a positive matrix are positive.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
@@ -276,6 +281,16 @@ theorem toOneByOne_apply [Unique n] [Semiring R] [AddCommMonoid A] [Mul A] [Star
     (a : A) (i j : n) : toOneByOne n R A a i j = a :=
   rfl
 
+/-- The entries of a reindexed C⋆-matrix. Mathlib's `CStarMatrix.reindexₐ_apply` has right-hand
+side `Matrix.reindex e e M i j` with `M` a `CStarMatrix`, which is not type-correct at instance
+transparency, so neither `simp` nor `rw` can continue from it to `Matrix.reindex_apply`; this
+states the entry directly, and `simp` tries it first. -/
+@[simp high]
+theorem reindexₐ_apply_apply {m : Type*} [Fintype m] [Fintype n] [Semiring R] [AddCommMonoid A]
+    [Mul A] [Star A] [Module R A] (e : m ≃ n) (M : CStarMatrix m m A) (i j : n) :
+    reindexₐ R A e M i j = M (e.symm i) (e.symm j) :=
+  (rfl)
+
 variable (R) in
 /-- The transpose of C⋆-matrices, as a linear map. -/
 def transposeₗ {m : Type*} [Semiring R] [AddCommMonoid A] [Module R A] :
@@ -360,6 +375,12 @@ lemma ofMatrixₗ_symm_apply {m : Type*} [AddCommMonoid A] [Semiring R] [Module 
     (M : CStarMatrix m n A) : (ofMatrixₗ (R := R)).symm M = ofMatrix.symm M := (rfl)
 
 end Algebraic
+
+/-- A matrix space over a separable C⋆-algebra with finite index types is separable. -/
+instance instSeparableSpace {m n A : Type*} [Finite m] [Finite n] [NonUnitalCStarAlgebra A]
+    [TopologicalSpace.SeparableSpace A] :
+    TopologicalSpace.SeparableSpace (CStarMatrix m n A) :=
+  inferInstanceAs (TopologicalSpace.SeparableSpace (m → n → A))
 
 variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
@@ -515,6 +536,24 @@ theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
 theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
     ‖diagonalNonUnitalStarAlgHom ℂ n A a‖ ≤ ‖a‖ :=
   NonUnitalStarAlgHom.norm_apply_le _ a
+
+open scoped ComplexOrder in
+/-- The Kronecker product `[pᵢⱼ b]` of a positive scalar matrix `[pᵢⱼ]` and a positive element `b`
+is a positive matrix. -/
+theorem ofMatrix_smul_nonneg {P : CStarMatrix n n ℂ} (hP : 0 ≤ P) {b : A} (hb : 0 ≤ b) :
+    0 ≤ ofMatrix (Matrix.of fun i j => P i j • b) := by
+  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hP
+  refine nonneg_iff_forall_sum_nonneg.mpr fun w => ?_
+  have h : ∑ i, ∑ j, star (w i) * ofMatrix (Matrix.of fun i j => (star R * R) i j • b) i j * w j =
+      ∑ k, star (∑ i, R k i • w i) * b * ∑ j, R k j • w j := by
+    simp only [ofMatrix_apply, Matrix.of_apply, mul_apply, star_apply, Finset.sum_smul,
+      Finset.mul_sum, Finset.sum_mul, Finset.smul_sum, star_sum, star_smul, smul_mul_assoc,
+      mul_smul_comm, smul_smul, mul_assoc]
+    refine (Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans <| Finset.sum_comm.trans <|
+      Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans <| Finset.sum_congr rfl fun _ _ =>
+        Finset.sum_congr rfl fun _ _ => by rw [mul_comm]
+  rw [h]
+  exact Finset.sum_nonneg fun k _ => star_left_conjugate_nonneg hb _
 
 /-- The `1 × 1` C⋆-matrix associated to `a` has norm `‖a‖`. -/
 @[simp]

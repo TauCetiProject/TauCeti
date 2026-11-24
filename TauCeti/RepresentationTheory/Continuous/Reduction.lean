@@ -37,8 +37,8 @@ lattice, while its reduction to the discrete field `𝔽_3` is discontinuous.
 
 * `TauCeti.ContinuousRep.charpoly_reduction_apply`: the characteristic polynomial of `g` on
   the reduction is the reduction of `charpoly (ρ g)`.
-* `TauCeti.ContinuousRep.det_reduction_apply`: the determinant of `g` on the reduction is
-  the residue of `det (ρ g)`.
+* `TauCeti.ContinuousRep.linearMap_det_reduction_apply`: the determinant of `g` on the
+  reduction is the residue of `det (ρ g)`.
 * `TauCeti.ContinuousRep.finite_range_reduction`: over a finite residue field the reduction has
   finite image.
 
@@ -79,9 +79,9 @@ theorem charpoly_reduction_apply [Module.Free A M] (ρ : ContinuousRep Γ A M) (
   rw [charpoly_baseChange_apply, ResidueField.algebraMap_eq]
 
 /-- **The determinant of the reduction** at `g` is the residue of the determinant of `ρ g`. -/
-theorem det_reduction_apply [Module.Free A M] (ρ : ContinuousRep Γ A M) (g : Γ) :
+theorem linearMap_det_reduction_apply [Module.Free A M] (ρ : ContinuousRep Γ A M) (g : Γ) :
     LinearMap.det (ρ.reduction g) = residue A (LinearMap.det (ρ g)) := by
-  rw [det_baseChange_apply, ResidueField.algebraMap_eq]
+  rw [linearMap_det_baseChange_apply, ResidueField.algebraMap_eq]
 
 /-- **Finite image.** Over a finite residue field, the reduction of a continuous representation
 takes only finitely many values. -/
