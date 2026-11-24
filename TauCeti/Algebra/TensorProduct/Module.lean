@@ -156,17 +156,17 @@ noncomputable def tensorPairAction : A ⊗[R] B →ₐ[R] Module.End R (M ⊗[R]
 @[simp]
 theorem tensorPairAction_tmul_one (a : A) (x : M ⊗[R] N) :
     tensorPairAction R M N (a ⊗ₜ[R] (1 : B)) x = a • x := by
-  rw [TensorProduct.AlgebraTensorModule.smul_eq_lsmul_rTensor, tensorPairAction, AlgHom.comp_apply,
-    Algebra.TensorProduct.map_tmul, map_one, Module.endTensorEndAlgHom_apply]
-  rfl
+  induction x using TensorProduct.inductionOn with
+  | tmul m n => simp [TensorProduct.smul_tmul']
+  | add x y hx hy => rw [map_add, smul_add, hx, hy]
 
 /-- The element `1 ⊗ b` acts on `M ⊗[R] N` through the right factor. -/
 @[simp]
 theorem tensorPairAction_one_tmul (b : B) (x : M ⊗[R] N) :
     tensorPairAction R M N ((1 : A) ⊗ₜ[R] b) x = (Algebra.lsmul R R N b).lTensor M x := by
-  rw [tensorPairAction, AlgHom.comp_apply, Algebra.TensorProduct.map_tmul, map_one,
-    Module.endTensorEndAlgHom_apply]
-  rfl
+  induction x using TensorProduct.inductionOn with
+  | tmul m n => simp
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
 
 /-- The element `1 ⊗ b` acts on `M ⊗[R] N` through the right factor, which is the left factor
 of `N ⊗[R] M`. -/
