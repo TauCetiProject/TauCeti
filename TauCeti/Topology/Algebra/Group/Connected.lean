@@ -169,8 +169,8 @@ theorem _root_.Subgroup.isPreconnected_ambientConnectedComponentOfOne (H : Subgr
 /-- The identity component of a closed subgroup is closed. -/
 theorem _root_.Subgroup.isClosed_ambientConnectedComponentOfOne {H : Subgroup G}
     (hH : IsClosed (H : Set G)) : IsClosed (H.ambientConnectedComponentOfOne : Set G) := by
-  rw [Subgroup.ambientConnectedComponentOfOne, Subgroup.coe_map]
-  exact hH.isClosedEmbedding_subtypeVal.isClosedMap _ isClosed_connectedComponent
+  rw [Subgroup.coe_ambientConnectedComponentOfOne]
+  exact hH.connectedComponentIn
 
 /-- A continuous self-map of `G` that maps a subgroup `H` into itself and fixes `1` maps the
 identity component of `H` into itself. -/
@@ -178,11 +178,9 @@ theorem _root_.Subgroup.mapsTo_ambientConnectedComponentOfOne {H : Subgroup G} {
     (hf : Continuous f) (hfH : Set.MapsTo f H H) (hf1 : f 1 = 1) :
     Set.MapsTo f H.ambientConnectedComponentOfOne H.ambientConnectedComponentOfOne := by
   rw [Subgroup.coe_ambientConnectedComponentOfOne]
-  refine Set.mapsTo_iff_image_subset.2 <|
-    (isPreconnected_connectedComponentIn.image f hf.continuousOn).subset_connectedComponentIn
-      ⟨1, mem_connectedComponentIn H.one_mem, hf1⟩ ?_
-  rintro _ ⟨x, hx, rfl⟩
-  exact hfH (connectedComponentIn_subset _ _ hx)
+  have h := (hf.continuousOn.mapsTo_connectedComponentIn H.one_mem).mono_right
+    (connectedComponentIn_mono _ (Set.mapsTo_iff_image_subset.1 hfH))
+  rwa [hf1] at h
 
 open scoped Pointwise in
 /-- In a topological group with finitely many connected components, some positive power of each

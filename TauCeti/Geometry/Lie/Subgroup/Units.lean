@@ -36,9 +36,10 @@ Lie subalgebra; for a closed subgroup its carrier is the exponential-line set.
 * `TauCeti.Lie.unitsLieSubalgebraOfSubgroup`: the Lie algebra of a subgroup of `Rˣ` as a Lie
   subalgebra of `R`, with `TauCeti.Lie.mem_unitsLieSubalgebraOfSubgroup_iff` describing it by
   exponential lines for a closed subgroup.
-* `TauCeti.Lie.conj_mem_unitsLieSubalgebraOfSubgroup`,
-  `TauCeti.Lie.star_mem_unitsLieSubalgebraOfSubgroup`: for a closed subgroup, its Lie algebra is
-  invariant under conjugation by the subgroup, and under a star that preserves the subgroup.
+* `TauCeti.Lie.conj_mem_unitsLieSubalgebraOfSubgroup`: the Lie algebra of a subgroup is invariant
+  under conjugation by the subgroup.
+* `TauCeti.Lie.star_mem_unitsLieSubalgebraOfSubgroup`: the Lie algebra of a closed subgroup is
+  invariant under a star that preserves the subgroup.
 * `TauCeti.Lie.le_of_unitsLieSubalgebraOfSubgroup_le`: a closed connected subgroup lies in every
   closed subgroup whose Lie algebra contains its own.
 -/
@@ -101,14 +102,16 @@ theorem mem_unitsLieSubalgebraOfSubgroup_iff {K : Subgroup Rˣ} (hK : IsClosed (
     (x : R) : x ∈ unitsLieSubalgebraOfSubgroup K ↔ ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ K :=
   unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hK x
 
-/-- The Lie algebra of a closed subgroup `K` of `Rˣ` is invariant under conjugation by `K`. -/
-theorem conj_mem_unitsLieSubalgebraOfSubgroup {K : Subgroup Rˣ} (hK : IsClosed (K : Set Rˣ))
-    {y : Rˣ} (hy : y ∈ K) {x : R} (hx : x ∈ unitsLieSubalgebraOfSubgroup K) :
+/-- The Lie algebra of a subgroup `K` of `Rˣ` is invariant under conjugation by `K`: this is
+`TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`, read through `unitsLieAlgebraLieEquiv`, under which
+the adjoint action is conjugation in `R` (`TauCeti.Lie.unitsLieAlgebraEquiv_Ad`). -/
+theorem conj_mem_unitsLieSubalgebraOfSubgroup {K : Subgroup Rˣ} {y : Rˣ} (hy : y ∈ K) {x : R}
+    (hx : x ∈ unitsLieSubalgebraOfSubgroup K) :
     (y : R) * x * ↑y⁻¹ ∈ unitsLieSubalgebraOfSubgroup K := by
-  rw [mem_unitsLieSubalgebraOfSubgroup_iff hK] at hx ⊢
-  intro t
-  rw [← smul_mul_assoc, ← mul_smul_comm, TauCeti.expUnit_units_conj]
-  exact K.mul_mem (K.mul_mem hy (hx t)) (K.inv_mem hy)
+  rw [mem_unitsLieSubalgebraOfSubgroup] at hx ⊢
+  convert Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) (Subgroup.le_normalizer hy) hx using 1
+  rw [LieEquiv.symm_apply_eq, unitsLieAlgebraLieEquiv_apply, unitsLieAlgebraEquiv_Ad,
+    ← unitsLieAlgebraLieEquiv_apply, LieEquiv.apply_symm_apply]
 
 /-- The Lie algebra of a closed subgroup `K` of `Rˣ` stable under a continuous star is stable under
 the star. -/

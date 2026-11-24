@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.LinearAlgebra.Lagrange
 import TauCeti.Analysis.Matrix.Exponential.Spectrum
 import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.LinearAlgebra.Matrix.EntrywiseSMul
 
 /-!
 # Mostow's lemma on positive conjugations
@@ -31,8 +32,6 @@ whole line through it.
 
 ## Main results
 
-* `Matrix.entrywiseSMulAlgHom`: entrywise scaling by a matrix of real weights, as an algebra
-  homomorphism into the real endomorphisms of `Matrix m n E`.
 * `TauCeti.weight_smul_mem_of_exp_weight_smul_mem`: the form for entrywise weights taking finitely
   many values, for matrices with entries in any real vector space.
 * `Matrix.IsHermitian.commutator_mem_of_exp_mul_mul_exp_neg_mem`: Mostow's lemma.
@@ -49,33 +48,6 @@ public section
 noncomputable section
 
 open NormedSpace
-
-namespace Matrix
-
-variable {m n : Type*}
-
-/-- Entrywise scaling by a real matrix of weights, as a real algebra homomorphism from the weights
-to the real linear endomorphisms of `Matrix m n E`. -/
-def entrywiseSMulAlgHom (E : Type*) [AddCommGroup E] [Module ℝ E] :
-    (m → n → ℝ) →ₐ[ℝ] Module.End ℝ (Matrix m n E) where
-  toFun r :=
-    { toFun Y := of fun i j ↦ r i j • Y i j
-      map_add' Y Z := by ext i j; simp [smul_add]
-      map_smul' c Y := by ext i j; simp [smul_comm (r i j) c] }
-  map_one' := by ext Y i j; simp
-  map_mul' r s := by ext Y i j; simp [mul_smul]
-  map_zero' := by ext Y i j; simp
-  map_add' r s := by ext Y i j; simp [add_smul]
-  commutes' c := by ext Y i j; simp
-
-/-- The entry `(i, j)` of `entrywiseSMulAlgHom E r Y` is `r i j • Y i j`. -/
-@[simp]
-theorem entrywiseSMulAlgHom_apply_apply {E : Type*} [AddCommGroup E] [Module ℝ E]
-    (r : m → n → ℝ) (Y : Matrix m n E) (i : m) (j : n) :
-    entrywiseSMulAlgHom E r Y i j = r i j • Y i j :=
-  (rfl)
-
-end Matrix
 
 namespace TauCeti
 
@@ -103,8 +75,10 @@ theorem weight_smul_mem_of_exp_weight_smul_mem {E : Type*} [AddCommGroup E] [Mod
     exact (Lagrange.eval_interpolate_at_node (v := id) Real.log (Set.injOn_id _) hmem).trans
       (Real.log_exp _)
   have h := Polynomial.aeval_apply_smul_mem_of_le_comap hY q (entrywiseSMulAlgHom E r)
-    fun Y hY ↦ hW Y hY
-  rwa [Polynomial.aeval_algHom_apply, hq] at h
+    fun Y hY ↦ by
+      rw [Submodule.mem_comap, entrywiseSMulAlgHom_apply]
+      exact hW Y hY
+  rwa [Polynomial.aeval_algHom_apply, hq, entrywiseSMulAlgHom_apply] at h
 
 end TauCeti
 

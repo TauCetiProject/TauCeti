@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Cartan.Basic
+public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import TauCeti.Algebra.Ring.Idempotent.Basic
@@ -15,8 +16,7 @@ import TauCeti.Analysis.Matrix.FunctionalCalculus
 import TauCeti.Analysis.Matrix.Exponential.Mostow
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Geometry.Lie.Exponential.Units.Basic
-import TauCeti.Geometry.Lie.Subgroup.CartanChart
-import TauCeti.Geometry.Lie.Subgroup.Units
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.Topology.Algebra.Group.Connected
 
 /-!
@@ -58,9 +58,13 @@ subgroup of `GL(2, ℝ)` stable under transpose, which contains no other point o
 * `Subgroup.exists_mem_coe_eq_exp_smul_of_isClosed`: the line through a positive element `exp X` of
   `H` lies in `H`; `Subgroup.exists_mem_coe_eq_exp_smul_of_pow_mem_connectedComponentOfOne` needs
   only a positive power of `exp X` in the identity component instead of finitely many components.
-* `Subgroup.toUnits_polarUnitary_mem_of_isClosed` and
+* `Subgroup.toUnits_polarUnitary_mem_of_isClosed`,
+  `Subgroup.inv_toUnits_polarUnitary_mul_mem_of_isClosed` and
   `Subgroup.mul_inv_toUnits_polarUnitary_mem_of_isClosed`: the unitary and positive polar factors
   of an element of `H` lie in `H`.
+* `Subgroup.forall_exists_mem_coe_eq_exp_smul_iff_mem_unitsLieSubalgebraOfSubgroup`: the
+  Hermitian part `𝔭_H` is the Hermitian part of the Lie algebra
+  `TauCeti.Lie.unitsLieSubalgebraOfSubgroup H`.
 * `Subgroup.cartanHomeomorphOfIsClosed`: the homeomorphism `K_H × 𝔭_H ≃ₜ H`,
   `(k, X) ↦ k * exp X`, with `val_cartanHomeomorphOfIsClosed_apply`.
 * `Subgroup.existsUnique_unitary_mul_exp_of_isClosed`: every `g ∈ H` is uniquely `k * exp X` with
@@ -79,7 +83,7 @@ public section
 
 noncomputable section
 
-open scoped MatrixOrder Manifold
+open scoped MatrixOrder
 
 open NormedSpace
 open TauCeti.Lie (unitsLieSubalgebraOfSubgroup mem_unitsLieSubalgebraOfSubgroup_iff
@@ -129,8 +133,8 @@ private theorem det_cfc_indicator_mul_ne_zero {g : GL n 𝕜} (hg : Commute (g :
     (c : ℝ) :
     (cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z * g + 1 -
       cfc (Set.indicator {c} (1 : ℝ → ℝ)) Z).det ≠ 0 :=
-  ((isUnit_iff_isUnit_det _).1 ((isIdempotentElem_cfc_indicator (Z := Z) c).isUnit_mul_add_one_sub
-    g.isUnit (commute_cfc_indicator hg c).symm)).ne_zero
+  (isUnit_det_mul_add_one_sub (isIdempotentElem_cfc_indicator (Z := Z) c) g.isUnit
+    (commute_cfc_indicator hg c).symm).ne_zero
 
 private theorem charFun_mul {g h : GL n 𝕜} (hg : Commute (g : Matrix n n 𝕜) Z)
     (hh : Commute (h : Matrix n n 𝕜) Z) :
@@ -157,24 +161,44 @@ private theorem charFun_one : charFun hZ 1 = 0 := by
   simp only [charFun, Matrix.mul_one, add_sub_cancel_left, det_one, norm_one, Real.log_one,
     mul_zero, Finset.sum_const_zero]
 
-/-- The kernel of the character `charFun` on the centralizer of `Z`. -/
-private def charSubgroup : Subgroup (GL n 𝕜) where
-  carrier := {g | Commute (g : Matrix n n 𝕜) Z ∧ charFun hZ g = 0}
-  one_mem' := ⟨Commute.one_left Z, charFun_one hZ⟩
-  mul_mem' {g h} hg hh := ⟨by simpa using hg.1.mul_left hh.1, by
-    simp only [Units.val_mul, charFun_mul hZ hg.1 hh.1, hg.2, hh.2, add_zero]⟩
-  inv_mem' {g} hg := by
-    have hinv : Commute ((g⁻¹ : GL n 𝕜) : Matrix n n 𝕜) Z := by
-      simpa using hg.1.units_inv_left
-    refine ⟨hinv, ?_⟩
-    have := charFun_mul hZ hg.1 hinv
-    rw [Units.mul_inv, hg.2, zero_add, charFun_one] at this
-    exact this.symm
+omit hZ in
+/-- A unit lies in the units of the centralizer of `Z` exactly when it commutes with `Z`. -/
+private theorem mem_units_centralizer_iff {g : GL n 𝕜} :
+    g ∈ (Submonoid.centralizer {Z}).units ↔ Commute (g : Matrix n n 𝕜) Z := by
+  simp only [Submonoid.mem_units_iff, Submonoid.mem_centralizer_iff, Set.mem_singleton_iff,
+    forall_eq]
+  exact ⟨fun h ↦ h.1.symm, fun h ↦ ⟨h.symm, h.units_inv_left.symm⟩⟩
+
+/-- The character `charFun` on the units of the centralizer of `Z`, as a homomorphism to
+`Multiplicative ℝ`. -/
+private def charHom : (Submonoid.centralizer {Z}).units →* Multiplicative ℝ where
+  toFun g := Multiplicative.ofAdd (charFun hZ (g : GL n 𝕜))
+  map_one' := by rw [OneMemClass.coe_one, Units.val_one, charFun_one, ofAdd_zero]
+  map_mul' g h := by
+    rw [← ofAdd_add, ← charFun_mul hZ (mem_units_centralizer_iff.1 g.property)
+      (mem_units_centralizer_iff.1 h.property), Subgroup.coe_mul, Units.val_mul]
+
+/-- The kernel of the character `charFun` on the centralizer of `Z`, as a subgroup of
+`GL n 𝕜`. -/
+private def charSubgroup : Subgroup (GL n 𝕜) :=
+  (charHom hZ).ker.map (Submonoid.centralizer {Z}).units.subtype
+
+private theorem mem_charSubgroup {g : GL n 𝕜} :
+    g ∈ charSubgroup hZ ↔ Commute (g : Matrix n n 𝕜) Z ∧ charFun hZ g = 0 := by
+  simp only [charSubgroup, Subgroup.mem_map, MonoidHom.mem_ker, charHom, MonoidHom.coe_mk,
+    OneHom.coe_mk, ofAdd_eq_one, Subgroup.coe_subtype]
+  refine ⟨?_, fun h ↦ ⟨⟨g, mem_units_centralizer_iff.2 h.1⟩, h.2, rfl⟩⟩
+  rintro ⟨x, hx, rfl⟩
+  exact ⟨mem_units_centralizer_iff.1 x.property, hx⟩
 
 private theorem isClosed_charSubgroup : IsClosed (charSubgroup hZ : Set (GL n 𝕜)) := by
-  have hC : IsClosed {g : GL n 𝕜 | Commute (g : Matrix n n 𝕜) Z} :=
-    isClosed_eq (Units.continuous_val.mul continuous_const)
-      (continuous_const.mul Units.continuous_val)
+  -- Commuting with `Z` is the preimage of the centralizer of `{Z}`, which is closed.
+  have hC : IsClosed {g : GL n 𝕜 | Commute (g : Matrix n n 𝕜) Z} := by
+    convert (Set.isClosed_centralizer {Z}).preimage Units.continuous_val using 1
+    ext g
+    simp only [Set.mem_ofPred_eq, Set.mem_preimage, Set.mem_centralizer_iff,
+      Set.mem_singleton_iff, forall_eq]
+    exact ⟨fun h ↦ h.symm, fun h ↦ h.symm⟩
   have hcont : ContinuousOn (fun g : GL n 𝕜 ↦ charFun hZ g)
       {g : GL n 𝕜 | Commute (g : Matrix n n 𝕜) Z} := by
     simp only [charFun]
@@ -183,6 +207,10 @@ private theorem isClosed_charSubgroup : IsClosed (charSubgroup hZ : Set (GL n �
       norm_ne_zero_iff.2 (det_cfc_indicator_mul_ne_zero hg c)
     exact (((continuous_const.mul Units.continuous_val).add continuous_const).sub
       continuous_const).matrix_det.norm.continuousOn
+  have hset : (charSubgroup hZ : Set (GL n 𝕜)) =
+      {g : GL n 𝕜 | Commute (g : Matrix n n 𝕜) Z} ∩ (fun g : GL n 𝕜 ↦ charFun hZ g) ⁻¹' {0} :=
+    Set.ext fun _ ↦ mem_charSubgroup hZ
+  rw [hset]
   exact hcont.preimage_isClosed_of_isClosed hC isClosed_singleton
 
 end Character
@@ -217,10 +245,11 @@ private theorem eq_zero_of_expUnit_mem (hH : IsClosed (H : Set (GL n 𝕜)))
   have hle : H ≤ charSubgroup hZ :=
     le_of_unitsLieSubalgebraOfSubgroup_le hH hconn (isClosed_charSubgroup hZ) fun Y hY ↦
       (mem_unitsLieSubalgebraOfSubgroup_iff (isClosed_charSubgroup hZ) _).2 fun t ↦
-        ⟨by rw [TauCeti.expUnit_coe]; exact ((hcomm Y hY).smul_left t).exp_left, by
-          rw [TauCeti.expUnit_coe, charFun_exp hZ ((hcomm Y hY).smul_left t), mul_smul_comm,
-            trace_smul, RCLike.smul_re, horth Y hY, mul_zero]⟩
-  have h := (hle hZH).2
+        (mem_charSubgroup hZ).2
+          ⟨by rw [TauCeti.expUnit_coe]; exact ((hcomm Y hY).smul_left t).exp_left, by
+            rw [TauCeti.expUnit_coe, charFun_exp hZ ((hcomm Y hY).smul_left t), mul_smul_comm,
+              trace_smul, RCLike.smul_re, horth Y hY, mul_zero]⟩
+  have h := ((mem_charSubgroup hZ).1 (hle hZH)).2
   rw [TauCeti.expUnit_coe, charFun_exp hZ (Commute.refl Z)] at h
   refine re_trace_mul_conjTranspose_self_eq_zero_iff.1 ?_
   rwa [hZ.eq]
@@ -236,7 +265,7 @@ private theorem mem_lieAlg_of_isPreconnected (hH : IsClosed (H : Set (GL n 𝕜)
   have hXcomm (Y : Matrix n n 𝕜) (hY : Y ∈ (unitsLieSubalgebraOfSubgroup H).toSubmodule) :
       X * Y - Y * X ∈ (unitsLieSubalgebraOfSubgroup H).toSubmodule := by
     refine hX.commutator_mem_of_exp_mul_mul_exp_neg_mem (fun Y hY ↦ ?_) hY
-    have := conj_mem_unitsLieSubalgebraOfSubgroup hH hXH hY
+    have := conj_mem_unitsLieSubalgebraOfSubgroup hXH hY
     rwa [← TauCeti.expUnit_neg, TauCeti.expUnit_coe, TauCeti.expUnit_coe] at this
   obtain ⟨X₁, hX₁, -, Z, hZ, rfl, horth⟩ :=
     hX.exists_add_orthogonal (V := (unitsLieSubalgebraOfSubgroup H).toSubmodule) fun _ ↦
@@ -349,6 +378,19 @@ theorem exists_mem_coe_eq_exp_smul_of_isClosed (hH : IsClosed (H : Set (GL n �
   exists_mem_coe_eq_exp_smul_of_pow_mem_connectedComponentOfOne hH hstar hX hg hgX
     (TauCeti.exists_pow_mem_connectedComponentOfOne _) t
 
+/-- The exponential-line condition of the domain of `Subgroup.cartanHomeomorphOfIsClosed`, written
+through the matrix exponential, is membership in the Lie algebra
+`TauCeti.Lie.unitsLieSubalgebraOfSubgroup H` of a closed subgroup `H` of `GL n 𝕜`, for the
+`ℓ²` operator norm on matrices. -/
+theorem forall_exists_mem_coe_eq_exp_smul_iff_mem_unitsLieSubalgebraOfSubgroup
+    (hH : IsClosed (H : Set (GL n 𝕜))) (X : Matrix n n 𝕜) :
+    (∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X)) ↔
+      X ∈ unitsLieSubalgebraOfSubgroup H := by
+  rw [mem_unitsLieSubalgebraOfSubgroup_iff hH]
+  refine ⟨fun h t ↦ ?_, fun h t ↦ ⟨_, h t, TauCeti.expUnit_coe _⟩⟩
+  obtain ⟨g, hg, hgx⟩ := h t
+  exact expUnit_mem_of_coe_eq hg hgx
+
 variable (H) in
 /-- **The Cartan decomposition of a closed matrix group stable under the conjugate transpose.**
 Let `H` be a closed subgroup of `GL n 𝕜`, for `𝕜 = ℝ` or `ℂ`, stable under the conjugate transpose
@@ -377,10 +419,7 @@ def cartanHomeomorphOfIsClosed (hH : IsClosed (H : Set (GL n 𝕜)))
   let eP : {X : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ,
         ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • (X : Matrix n n 𝕜))} ≃ₜ
       {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H} :=
-    { toFun X := ⟨X.val, (hline _).2 X.property⟩
-      invFun x := ⟨x.val, (hline _).1 x.property⟩
-      continuous_toFun := continuous_subtypeVal.subtype_mk _
-      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
+    (Homeomorph.refl _).subtype fun X ↦ (hline (X : Matrix n n 𝕜)).symm
   exact ((Homeomorph.refl _).prodCongr eP).trans (H.cartanHomeomorph hstar hexp)
 
 /-- The Cartan decomposition of `H` sends `(k, X)` to `k * exp X`. -/
@@ -406,7 +445,8 @@ theorem coe_cartanHomeomorphOfIsClosed_symm_apply_fst (hH : IsClosed (H : Set (G
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (g : H) :
     (((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm g).1 : unitaryGroup n 𝕜) =
       (g : GL n 𝕜).polarUnitary := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply]
+  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
+    Homeomorph.coe_prodCongr, Prod.map_fst, Homeomorph.refl_symm, Homeomorph.refl_apply, id_eq]
   exact Subgroup.coe_cartanHomeomorph_symm_apply_fst _ _ g
 
 /-- The Hermitian factor of the Cartan decomposition of `g ∈ H` is the logarithm of `√(gᴴ g)`. -/
@@ -416,8 +456,11 @@ theorem coe_cartanHomeomorphOfIsClosed_symm_apply_snd (hH : IsClosed (H : Set (G
     ((((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm g).2 : selfAdjoint (Matrix n n 𝕜)) :
         Matrix n n 𝕜) =
       cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply,
-    ← CFC.log]
+  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
+    Homeomorph.coe_prodCongr, Prod.map_snd]
+  -- The inverse of the Hermitian subtype equivalence keeps the value.
+  refine (congrArg Subtype.val (Homeomorph.subtype_symm_apply_coe _ _ _)).trans ?_
+  rw [Homeomorph.refl_symm, Homeomorph.refl_apply, ← CFC.log]
   exact Subgroup.coe_cartanHomeomorph_symm_apply_snd _ _ g
 
 /-- **The global Cartan decomposition** `H = K_H exp 𝔭_H` of a closed subgroup `H` of `GL n 𝕜`
@@ -452,6 +495,15 @@ theorem mul_inv_toUnits_polarUnitary_mem_of_isClosed (hH : IsClosed (H : Set (GL
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {g : GL n 𝕜}
     (hg : g ∈ H) : g * (Unitary.toUnits g.polarUnitary)⁻¹ ∈ H :=
   H.mul_mem hg (H.inv_mem (toUnits_polarUnitary_mem_of_isClosed hH hstar hfin hg))
+
+/-- The positive polar factor `u⁻¹ g` of an element `g = u (u⁻¹ g)` of a closed subgroup `H` of
+`GL n 𝕜` stable under the conjugate transpose, with finitely many connected components, lies in
+`H`. This is the factor `exp X` of the Cartan decomposition `g = u * exp X`; its matrix is
+`√(gᴴ g)`. -/
+theorem inv_toUnits_polarUnitary_mul_mem_of_isClosed (hH : IsClosed (H : Set (GL n 𝕜)))
+    (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) {g : GL n 𝕜}
+    (hg : g ∈ H) : (Unitary.toUnits g.polarUnitary)⁻¹ * g ∈ H :=
+  H.mul_mem (H.inv_mem (toUnits_polarUnitary_mem_of_isClosed hH hstar hfin hg)) hg
 
 /-- **The unitary elements form a maximal compact subgroup** of a closed subgroup `H` of
 `GL n 𝕜` stable under the conjugate transpose, with finitely many connected components. -/
