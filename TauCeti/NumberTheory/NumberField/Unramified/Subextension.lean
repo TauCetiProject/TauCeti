@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.RingTheory.Unramified.AlgEquiv
-import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
 
 /-!
@@ -20,22 +19,20 @@ import TauCeti.NumberTheory.NumberField.SplitsCompletely.GaloisClosure
 Let `K` be a number field and `Ω` an arbitrary extension of `K`. This file compares
 unramifiedness of an ideal `p` of `𝓞 K` in the finite subextensions of `Ω / K`:
 
-* `IntermediateField.isUnramifiedIn_map_iff`: `p` is unramified in a conjugate `σ L` exactly when
-  it is unramified in `L`;
 * `IntermediateField.isUnramifiedIn_sup_iff`: `p` is unramified in a compositum `L₁ ⊔ L₂` exactly
   when it is unramified in `L₁` and in `L₂`;
 * `IntermediateField.isUnramifiedIn_of_le`: unramifiedness descends to subextensions;
-* `IntermediateField.isUnramifiedIn_bot`: every finite place is unramified in `⊥`.
+* `IntermediateField.isUnramifiedIn_bot`: every ideal of `𝓞 K` is unramified in `⊥`.
 
-Unramifiedness is invariant under isomorphisms of extensions (`AlgEquiv.isUnramifiedIn_iff`,
-applied to `NumberField.RingOfIntegers.mapAlgEquiv`). The compositum statement moves the fields
-into an algebraic closure of `L₁ ⊔ L₂`, where they lie in a finite Galois extension of `K`, and
-there reads unramifiedness on inertia groups (`Ideal.isUnramifiedIn_sup_iff`).
+Invariance under conjugation is `Ideal.isUnramifiedIn_map_iff`. Together these show that the finite
+subextensions of `Ω / K` unramified outside a set of places are closed under composita,
+subextensions and conjugation, and contain `⊥`: this is what the compositum
+`TauCeti.RestrictedRamification.maxUnramifiedOutside` of these subextensions needs.
 -/
 
 public section
 
-open IsDedekindDomain Module
+open Module
 
 open scoped NumberField
 
@@ -44,13 +41,6 @@ open NumberField.RingOfIntegers (mapAlgEquiv)
 namespace IntermediateField
 
 variable {K Ω : Type*} [Field K] [NumberField K] [Field Ω] [Algebra K Ω]
-
-omit [NumberField K] in
-/-- **Unramifiedness in a conjugate field.** For `σ : Ω →ₐ[K] Ω`, a place is unramified in
-`σ L` exactly when it is unramified in `L`. -/
-theorem isUnramifiedIn_map_iff (L : IntermediateField K Ω) (σ : Ω →ₐ[K] Ω) (p : Ideal (𝓞 K)) :
-    Algebra.IsUnramifiedIn (𝓞 (L.map σ)) p ↔ Algebra.IsUnramifiedIn (𝓞 L) p :=
-  (mapAlgEquiv (L.equivMap σ)).isUnramifiedIn_iff p |>.symm
 
 /-- Unramifiedness in a compositum, inside a Galois extension `Ω / K`: the three fields are compared
 inside the normal closure of `L₁ ⊔ L₂`, a finite Galois extension of `K`, where unramifiedness is
@@ -71,8 +61,7 @@ private theorem isUnramifiedIn_sup_iff_of_isGalois [IsGalois K Ω] (L₁ L₂ : 
     (mapAlgEquiv (restrictAlgEquiv h₂)).isUnramifiedIn_iff, hsup, Ideal.isUnramifiedIn_sup_iff]
 
 /-- **Unramifiedness in a compositum.** For finite subextensions `L₁` and `L₂` of `Ω / K`, an
-ideal of `𝓞 K` is unramified in `L₁ ⊔ L₂` exactly when it is unramified in `L₁` and in `L₂`.
-The fields are moved into an algebraic closure `Ω'` of `L₁ ⊔ L₂`, which is Galois over `K`. -/
+ideal of `𝓞 K` is unramified in `L₁ ⊔ L₂` exactly when it is unramified in `L₁` and in `L₂`. -/
 theorem isUnramifiedIn_sup_iff (L₁ L₂ : IntermediateField K Ω)
     [FiniteDimensional K L₁] [FiniteDimensional K L₂] (p : Ideal (𝓞 K)) :
     Algebra.IsUnramifiedIn (𝓞 ↥(L₁ ⊔ L₂)) p ↔
@@ -104,14 +93,15 @@ theorem isUnramifiedIn_of_le {L E : IntermediateField K Ω} (h : L ≤ E)
   rw [← sup_eq_right.2 h, isUnramifiedIn_sup_iff] at hE
   exact hE.1
 
+omit [NumberField K] in
 variable (K Ω) in
-/-- **The bottom field is unramified outside every set of places.** -/
-theorem isUnramifiedIn_bot (v : HeightOneSpectrum (𝓞 K)) :
-    Algebra.IsUnramifiedIn (𝓞 (⊥ : IntermediateField K Ω)) v.asIdeal := by
-  rw [(mapAlgEquiv (botEquiv K Ω)).isUnramifiedIn_iff]
+/-- **The bottom field is unramified.** Every ideal of `𝓞 K` is unramified in `⊥`. -/
+@[simp]
+theorem isUnramifiedIn_bot (p : Ideal (𝓞 K)) :
+    Algebra.IsUnramifiedIn (𝓞 (⊥ : IntermediateField K Ω)) p := by
   intro Q _ _
-  refine TauCeti.NumberField.isUnramifiedAway_ramifiedSupport (K := K) (L := K) v ?_ Q
-  rw [TauCeti.NumberField.ramifiedSupport_self]
-  exact Finset.notMem_empty v
+  have : Algebra.FormallyUnramified (𝓞 K) (𝓞 (⊥ : IntermediateField K Ω)) :=
+    .of_surjective (Algebra.ofId (𝓞 K) _) (mapAlgEquiv (botEquiv K Ω)).symm.surjective
+  exact inferInstance
 
 end IntermediateField

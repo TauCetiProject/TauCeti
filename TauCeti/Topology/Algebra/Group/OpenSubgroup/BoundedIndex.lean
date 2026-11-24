@@ -13,12 +13,9 @@ import Mathlib.Topology.Constructions
 /-!
 # Groups with finitely many open subgroups of bounded index
 
-Let `G` be a topological group with only finitely many open subgroups of finite index at most
+Let `G` be a group with a topology, with only finitely many open subgroups of finite index at most
 `n`. Then there are only finitely many continuous homomorphisms from `G` to a finite discrete
-group `Q` with `#Q ≤ n`: the kernel of such a homomorphism is an open subgroup of index at most
-`#Q`, so it contains the intersection `N` of these finitely many subgroups, an open subgroup of
-finite index, and the homomorphism is determined by the map it induces on the finite coset space
-`G ⧸ N`. The property passes to open subgroups of finite index.
+group `Q` with `#Q ≤ n`. The property passes to open subgroups of finite index.
 
 For the Galois group of the maximal extension of a number field unramified outside a finite set
 of places, Hermite's theorem gives this property, and these two statements turn it into the
@@ -38,7 +35,7 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G]
 
-/-- **Finitely many continuous homomorphisms to a finite group.** If a topological group `G` has
+/-- **Finitely many continuous homomorphisms to a finite group.** If a group `G` with a topology has
 only finitely many open subgroups of finite index at most `#Q`, then there are only finitely many
 continuous homomorphisms from `G` to the finite discrete group `Q`. -/
 theorem finite_continuousMonoidHom_of_finite_setOf_isOpen_index_le {Q : Type*} [Group Q]

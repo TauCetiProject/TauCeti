@@ -54,17 +54,16 @@ namespace TauCeti.RestrictedRamification
 
 universe u
 
-variable {K Ω : Type u} [Field K] [NumberField K] [Field Ω] [Algebra K Ω]
+variable {K : Type*} {Ω : Type u} [Field K] [NumberField K] [Field Ω] [Algebra K Ω]
 
 /-- **Open subgroups of bounded index of `G_{K,S}`.** For `Ω / K` normal and `S` finite, the
-group `G_{K,S}` has only finitely many open subgroups of index at most `n`: such a subgroup is the
-fixing subgroup of a subextension of `K_S` of degree at most `n`, and by Hermite's theorem there
-are only finitely many of these. -/
+group `G_{K,S}` has only finitely many open subgroups of index at most `n`. -/
 theorem finite_setOf_isOpen_index_le [Normal K Ω] (S : Set (HeightOneSpectrum (𝓞 K)))
     (hS : S.Finite) (n : ℕ) :
     {W : Subgroup (galoisGroupS K Ω S) | IsOpen (W : Set (galoisGroupS K Ω S)) ∧
       W.index ≤ n}.Finite := by
-  have := isGalois_maxUnramifiedOutside (K := K) (Ω := Ω) S
+  -- such a subgroup is the fixing subgroup of a subextension of `K_S` of degree at most `n`, and
+  -- by Hermite's theorem there are only finitely many of these
   -- `W ↦ fixedField W`, read in `Ω`, is injective on closed subgroups
   let φ : Subgroup (galoisGroupS K Ω S) → IntermediateField K Ω := fun W ↦ lift (fixedField W)
   refine Set.Finite.of_finite_image (f := φ)
@@ -99,7 +98,6 @@ theorem finite_H1_galoisGroupS [Normal K Ω]
     (M : Type u) [AddCommGroup M] [Finite M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction (galoisGroupS K Ω S) M] [ContinuousSMul (galoisGroupS K Ω S) M] :
     Finite (continuousCohomology 1 (ofDiscreteModule ℤ (galoisGroupS K Ω S) M)) := by
-  have := isGalois_maxUnramifiedOutside (K := K) (Ω := Ω) S
   -- the kernel `V` of the action is an open normal subgroup
   let V : Subgroup (galoisGroupS K Ω S) := (MulAction.toPermHom _ M).ker
   have hVmem (g : galoisGroupS K Ω S) : g ∈ V ↔ ∀ m : M, g • m = m := by
