@@ -41,6 +41,9 @@ reparametrization at unit speed is a separate step.
 * `TauCeti.MoorePath.sample_arcStraighteningMap`: the homotopy fixes the sampled vertices.
 * `TauCeti.MoorePath.exists_subset_arcsWithin`: compact families are finely subdivided into arcs
   within an entourage.
+* `TauCeti.MooreFreeLoopSpace.exists_subset_arcsWithin_mapsTo_sample_cyclicDistanceCut`: compact
+  families of free loops are finely subdivided into arcs of small radius and sampled into the
+  distance cuts.
 
 ## References
 
@@ -266,6 +269,13 @@ theorem toMoorePath_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
         (t, toArcsWithin γ) :=
   (rfl)
 
+/-- The straightening homotopy of free Moore loops keeps the base point. -/
+@[simp]
+theorem basepoint_arcStraighteningMap (t : I) (γ : arcsWithin U r) :
+    (arcStraighteningMap hρ hr (t, γ)).basepoint = (γ : MooreFreeLoopSpace X).basepoint := by
+  rw [← source_toMoorePath]
+  simp
+
 /-- The broken loop through the sampled vertices of a free Moore loop whose arcs lie in `U`. -/
 def brokenPathMap : C(arcsWithin U r, MooreFreeLoopSpace X) :=
   (arcStraighteningMap hρ hr).comp ⟨fun γ ↦ (1, γ), by fun_prop⟩
@@ -324,6 +334,22 @@ theorem dist_sample_sub_one_lt_of_mem_arcsWithin {n : ℕ} {r : ℝ} {γ : Moore
     dist (γ.toMoorePath.sample (n + 1) i) (γ.toMoorePath.sample (n + 1) (i - 1)) < r := by
   rw [dist_comm]
   exact sample_sub_one_mem_of_mem_arcsWithin hγ i
+
+/-- **Fine samplings of compact families of free loops.** For a compact family `K` of free Moore
+loops, `r > 0` and `ε > 0` there is `N` such that for every `n ≥ N` the `n + 1` arcs of every loop
+of `K` lie within distance `r` of their initial vertices, and the sampling at `n + 1` times maps `K`
+into the distance cut with any cut-offs `δ i ≥ ε`. -/
+theorem exists_subset_arcsWithin_mapsTo_sample_cyclicDistanceCut {K : Set (MooreFreeLoopSpace X)}
+    (hK : IsCompact K) {r : ℝ} (hr : 0 < r) {ε : ℝ} (hε : 0 < ε) :
+    ∃ N : ℕ, ∀ n ≥ N, K ⊆ arcsWithin {p : X × X | dist p.1 p.2 < r} (n + 1) ∧
+      ∀ δ : Fin (n + 1) → ℝ, (∀ i, ε ≤ δ i) →
+        MapsTo (fun γ : MooreFreeLoopSpace X ↦ γ.toMoorePath.sample (n + 1)) K
+          (cyclicDistanceCut δ) := by
+  obtain ⟨N₁, -, hN₁⟩ := MoorePath.exists_subset_arcsWithin (hK.image continuous_toMoorePath)
+    (Metric.dist_mem_uniformity hr)
+  obtain ⟨N₂, hN₂⟩ := exists_mapsTo_sample_cyclicDistanceCut hK hε
+  exact ⟨max N₁ N₂, fun n hn ↦ ⟨fun γ hγ ↦ mem_arcsWithin.2 (MoorePath.mem_arcsWithin.1
+    (hN₁ (n + 1) (by omega) ⟨γ, hγ, rfl⟩)), hN₂ n (le_of_max_le_right hn)⟩⟩
 
 end MooreFreeLoopSpace
 
