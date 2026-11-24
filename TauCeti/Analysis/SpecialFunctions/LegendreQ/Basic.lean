@@ -706,6 +706,19 @@ private lemma integrableOn_log_mul_base_rpow_neg (ht : 1 < t) {m : ℝ} (hm : 0 
       rw [Real.norm_of_nonneg (log_mul_base_rpow_neg_nonneg ht m u)]
       exact log_mul_base_rpow_neg_le ht hm u)
 
+private lemma sqrt_sq_sub_one_lt_two (ht : 1 < t) (ht2 : t < 2) : √(t ^ 2 - 1) < 2 := by
+  rw [Real.sqrt_lt' two_pos]
+  nlinarith
+
+private lemma exp_log_two_div_sqrt (ht : 1 < t) :
+    Real.exp (Real.log (2 / √(t ^ 2 - 1))) = 2 / √(t ^ 2 - 1) :=
+  Real.exp_log (div_pos two_pos (sqrt_sq_sub_one_pos ht))
+
+/-- For `1 < t < 2` the cut `U = log (2 / √(t² - 1))` is positive. -/
+private lemma log_two_div_sqrt_pos (ht : 1 < t) (ht2 : t < 2) :
+    0 < Real.log (2 / √(t ^ 2 - 1)) :=
+  Real.log_pos ((one_lt_div (sqrt_sq_sub_one_pos ht)).2 (sqrt_sq_sub_one_lt_two ht ht2))
+
 /-- Before the cut `U = log (2 / √(t² - 1))`, the log-weighted integrand is at most
 `b - 1 ≤ (t - 1) + √(t² - 1) eᵘ`, whose integral over `(0, U]` is at most `4` when `t < 2`. -/
 private lemma setIntegral_Ioc_log_mul_base_rpow_neg_le (ht : 1 < t) (ht2 : t < 2) {m : ℝ}
@@ -713,13 +726,10 @@ private lemma setIntegral_Ioc_log_mul_base_rpow_neg_le (ht : 1 < t) (ht2 : t < 2
     ∫ u in Ioc 0 (Real.log (2 / √(t ^ 2 - 1))), Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
       (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤ 4 := by
   have hε0 := sqrt_sq_sub_one_pos ht
-  have hε2 : √(t ^ 2 - 1) < 2 := by
-    rw [Real.sqrt_lt' two_pos]
-    nlinarith
   have htε : t - 1 ≤ √(t ^ 2 - 1) := Real.le_sqrt_of_sq_le (by nlinarith)
+  have hU0 := log_two_div_sqrt_pos ht ht2
+  have hexpU := exp_log_two_div_sqrt ht
   set U := Real.log (2 / √(t ^ 2 - 1))
-  have hU0 : 0 < U := Real.log_pos (by rw [lt_div_iff₀ hε0]; linarith)
-  have hexpU : Real.exp U = 2 / √(t ^ 2 - 1) := Real.exp_log (by positivity)
   have hg : Continuous fun u => (t - 1) + √(t ^ 2 - 1) * Real.exp u := by fun_prop
   refine (setIntegral_mono_on
     ((continuous_log_mul_base_rpow_neg ht m).integrableOn_Icc.mono_set Ioc_subset_Icc_self)
@@ -752,13 +762,14 @@ private lemma setIntegral_Ioc_log_mul_base_rpow_neg_le (ht : 1 < t) (ht2 : t < 2
 /-- After the cut `U = log (2 / √(t² - 1))`, the log-weighted integrand decays like
 `(2 / m) e ^ (-(m / 2) (u - U))`, since `b ≥ e ^ (u - U)`; its integral over `(U, ∞)` is at most
 `4 / m²`. -/
-private lemma setIntegral_Ioi_log_mul_base_rpow_neg_le (ht : 1 < t) {m : ℝ} (hm : 0 < m)
-    (hU0 : 0 ≤ Real.log (2 / √(t ^ 2 - 1))) :
+private lemma setIntegral_Ioi_log_mul_base_rpow_neg_le (ht : 1 < t) (ht2 : t < 2) {m : ℝ}
+    (hm : 0 < m) :
     ∫ u in Ioi (Real.log (2 / √(t ^ 2 - 1))), Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
       (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤ 4 / m ^ 2 := by
   have hε0 := sqrt_sq_sub_one_pos ht
+  have hU0 := (log_two_div_sqrt_pos ht ht2).le
+  have hexpU := exp_log_two_div_sqrt ht
   set U := Real.log (2 / √(t ^ 2 - 1))
-  have hexpU : Real.exp U = 2 / √(t ^ 2 - 1) := Real.exp_log (by positivity)
   have hle (u : ℝ) : Real.log (t + √(t ^ 2 - 1) * Real.cosh u) *
       (t + √(t ^ 2 - 1) * Real.cosh u) ^ (-m) ≤
         2 / m * Real.exp (m / 2 * U) * Real.exp (-(m / 2) * u) := by
@@ -796,10 +807,7 @@ private lemma norm_legendreQ_sub_legendreQ_zero_le {ν : ℂ} (hν : -1 < ν.re)
     ‖legendreQ ν t - legendreQ 0 t‖ ≤ ‖ν‖ * (4 + 4 / min (ν.re + 1) 1 ^ 2) := by
   set m := min (ν.re + 1) 1
   have hm0 : 0 < m := lt_min (by linarith) one_pos
-  have hε0 := sqrt_sq_sub_one_pos ht
-  have hU0 : 0 ≤ Real.log (2 / √(t ^ 2 - 1)) := Real.log_nonneg (by
-    rw [le_div_iff₀ hε0, one_mul]
-    exact ((Real.sqrt_lt' two_pos).2 (by nlinarith)).le)
+  have hU0 := (log_two_div_sqrt_pos ht ht2).le
   have hφ := integrableOn_log_mul_base_rpow_neg ht hm0
   rw [legendreQ, legendreQ, ← integral_sub (integrableOn_legendreQ_integrand hν ht)
     (integrableOn_legendreQ_integrand (by simp) ht)]
@@ -816,7 +824,7 @@ private lemma norm_legendreQ_sub_legendreQ_zero_le {ν : ℂ} (hν : -1 < ν.re)
       measurableSet_Ioi (hφ.mono_set Ioc_subset_Ioi_self) (hφ.mono_set (Ioi_subset_Ioi hU0))]
     gcongr
     · exact setIntegral_Ioc_log_mul_base_rpow_neg_le ht ht2 hm0.le
-    · exact setIntegral_Ioi_log_mul_base_rpow_neg_le ht hm0 hU0
+    · exact setIntegral_Ioi_log_mul_base_rpow_neg_le ht ht2 hm0
 
 /-- The logarithmic singularity of `Q_ν` at `t = 1`: for `-1 < re ν`,
 `Q_ν(t) = -½ log (t - 1) + O(1)` as `t → 1⁺`. -/
@@ -826,17 +834,19 @@ theorem isBigO_legendreQ_add_half_log_nhdsGT_one {ν : ℂ} (hν : -1 < ν.re) :
   filter_upwards [Ioo_mem_nhdsGT (by norm_num : (1 : ℝ) < 2)] with t ⟨ht, ht2⟩
   have hQ0 : legendreQ 0 t + (Real.log (t - 1) / 2 : ℝ) = (Real.log (t + 1) / 2 : ℝ) := by
     rw [legendreQ_zero ht, ← ofReal_add, Real.log_div (by linarith) (by linarith)]
-    ring_nf
+    congr 1
+    ring
   have hl : ‖((Real.log (t + 1) / 2 : ℝ) : ℂ)‖ ≤ Real.log 3 / 2 := by
     rw [norm_real, Real.norm_of_nonneg (div_nonneg (Real.log_nonneg (by linarith)) two_pos.le)]
     gcongr
     linarith
   calc ‖legendreQ ν t + (Real.log (t - 1) / 2 : ℝ)‖
       = ‖(legendreQ ν t - legendreQ 0 t) + (legendreQ 0 t + (Real.log (t - 1) / 2 : ℝ))‖ := by
-        ring_nf
+        congr 1
+        ring
     _ ≤ ‖ν‖ * (4 + 4 / min (ν.re + 1) 1 ^ 2) + Real.log 3 / 2 :=
         (norm_add_le _ _).trans
-          (add_le_add (norm_legendreQ_sub_legendreQ_zero_le hν ht ht2) (hQ0 ▸ hl))
+          (add_le_add (norm_legendreQ_sub_legendreQ_zero_le hν ht ht2) (by rw [hQ0]; exact hl))
     _ = (‖ν‖ * (4 + 4 / min (ν.re + 1) 1 ^ 2) + Real.log 3 / 2) * ‖(1 : ℝ)‖ := by simp
 
 end Complex
