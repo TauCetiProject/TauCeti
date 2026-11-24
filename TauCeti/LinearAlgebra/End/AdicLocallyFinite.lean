@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Finiteness.Ideal
 public import Mathlib.RingTheory.Noetherian.Basic
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Module.Submodule.Finite
+public import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # Adically locally finite endomorphisms
@@ -41,6 +42,9 @@ submodules of a module killed by a power of `I`, and it is detected modulo `I`.
 * `Module.End.isLocallyFinite_iff_exists_fg_le_comap`: over a noetherian ring, local finiteness
   says that every vector lies in a finitely generated submodule which is `T`-stable modulo
   `I ^ n • ⊤`.
+* `Module.End.isLocallyFinite_iff_forall_mapQ_pow`: local finiteness says that in every quotient
+  `M ⧸ I ^ n • ⊤` every orbit lies in a finitely generated submodule, that is, the induced
+  endomorphism is locally finite for the zero ideal (`Module.End.isLocallyFinite_mapQ_bot_iff`).
 * `Module.End.isLocallyFinite_of_finite`, `Module.End.isLocallyFinite_of_range_le_smul_top`:
   every endomorphism of a finite module, and every endomorphism with range in `I • ⊤`, is locally
   finite.
@@ -77,7 +81,7 @@ variable {R M M₂ M₃ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 /-- An endomorphism `T` of `M` is *locally finite* for the ideal `I` if for every `n` and every
 `v : M`, the orbit `(T ^ k) v` lies in `N ⊔ I ^ n • ⊤` for one finitely generated submodule `N`.
 Equivalently, in every quotient `M ⧸ I ^ n • ⊤` every orbit lies in a finitely generated
-submodule. -/
+submodule (`Module.End.isLocallyFinite_iff_forall_mapQ_pow`). -/
 def IsLocallyFinite (T : Module.End R M) (I : Ideal R) : Prop :=
   ∀ (n : ℕ) (v : M), ∃ N : Submodule R M, N.FG ∧ ∀ k : ℕ, (T ^ k) v ∈ N ⊔ I ^ n • ⊤
 
@@ -93,19 +97,6 @@ theorem IsLocallyFinite.mono {J : Ideal R} (hT : T.IsLocallyFinite I) (hIJ : I �
     T.IsLocallyFinite J := fun n v ↦ by
   obtain ⟨N, hN, hv⟩ := hT n v
   exact ⟨N, hN, fun k ↦ sup_le_sup_left (smul_mono_left (Ideal.pow_right_mono hIJ n)) N (hv k)⟩
-
-/-- Iterates of intertwined endomorphisms are intertwined. -/
-private theorem pow_apply_of_comp_eq {T₂ : Module.End R M₂} {T₃ : Module.End R M₃}
-    {g : M₂ →ₗ[R] M₃} (hgT : g ∘ₗ T₂ = T₃ ∘ₗ g) (k : ℕ) (v : M₂) :
-    (T₃ ^ k) (g v) = g ((T₂ ^ k) v) :=
-  LinearMap.congr_fun (commute_pow_left_of_commute hgT.symm k) v
-
-/-- If `P` is mapped into `P ⊔ K` and `K` is `T`-stable, every orbit starting in `P` stays in
-`P ⊔ K`. -/
-private theorem pow_apply_mem_sup {P K : Submodule R M} (hP : P ≤ (P ⊔ K).comap T)
-    (hK : K ≤ K.comap T) {v : M} (hv : v ∈ P) (k : ℕ) : (T ^ k) v ∈ P ⊔ K :=
-  (P ⊔ K).le_comap_pow_of_le_comap (sup_le hP (hK.trans (comap_mono le_sup_right))) k
-    (mem_sup_left hv)
 
 /-- The orbit condition gives finitely generated submodules containing a whole finitely generated
 submodule's orbit modulo `I ^ n • ⊤`. -/
@@ -131,7 +122,7 @@ theorem isLocallyFinite_of_forall_exists_fg_le_comap
     (h : ∀ (n : ℕ) (v : M), ∃ N : Submodule R M, N.FG ∧ v ∈ N ∧ N ≤ (N ⊔ I ^ n • ⊤).comap T) :
     T.IsLocallyFinite I := fun n v ↦ by
   obtain ⟨N, hN, hv, hNT⟩ := h n v
-  exact ⟨N, hN, pow_apply_mem_sup hNT (smul_top_le_comap_smul_top _ T) hv⟩
+  exact ⟨N, hN, fun k ↦ N.le_comap_pow_of_le_comap_sup hNT (smul_top_le_comap_smul_top _ T) k hv⟩
 
 /-! ### Examples -/
 
@@ -282,6 +273,34 @@ theorem isLocallyFinite_of_forall_finite_quotient
   rw [sup_comm, ← comap_map_mkQ, hNtop]
   exact mem_top
 
+/-- The endomorphism induced by `T` on `M ⧸ K`, for a `T`-stable `K`, is locally finite for the
+zero ideal exactly when every `T`-orbit lies in a finitely generated submodule modulo `K`. -/
+theorem isLocallyFinite_mapQ_bot_iff {K : Submodule R M} (hK : K ≤ K.comap T) :
+    IsLocallyFinite (K.mapQ K T hK) ⊥ ↔
+      ∀ v : M, ∃ N : Submodule R M, N.FG ∧ ∀ k : ℕ, (T ^ k) v ∈ N ⊔ K := by
+  have hgT : K.mkQ ∘ₗ T = K.mapQ K T hK ∘ₗ K.mkQ := (mapQ_mkQ _ _ _).symm
+  refine ⟨fun h v ↦ ?_, fun h n w ↦ ?_⟩
+  · obtain ⟨N, hN, hv⟩ := h 1 (K.mkQ v)
+    obtain ⟨N₀, hN₀, rfl⟩ := hN.exists_fg_map_eq_of_le_range (f := K.mkQ) (by simp [range_mkQ])
+    refine ⟨N₀, hN₀, fun k ↦ ?_⟩
+    have hk := hv k
+    rw [pow_one, bot_smul, sup_bot_eq, pow_apply_of_comp_eq hgT] at hk
+    rw [sup_comm, ← comap_map_mkQ]
+    exact mem_comap.2 hk
+  · obtain ⟨v, rfl⟩ := K.mkQ_surjective w
+    obtain ⟨N, hN, hv⟩ := h v
+    refine ⟨N.map K.mkQ, hN.map _, fun k ↦ mem_sup_left ?_⟩
+    have hk := mem_map_of_mem (f := K.mkQ) (hv k)
+    rwa [Submodule.map_sup, mkQ_map_self, sup_bot_eq, ← pow_apply_of_comp_eq hgT] at hk
+
+/-- `T` is locally finite for `I` exactly when, for every `n`, the endomorphism it induces on
+`M ⧸ I ^ n • ⊤` is locally finite for the zero ideal: every orbit in that quotient lies in a
+finitely generated submodule. -/
+theorem isLocallyFinite_iff_forall_mapQ_pow : T.IsLocallyFinite I ↔ ∀ n : ℕ,
+    IsLocallyFinite ((I ^ n • ⊤ : Submodule R M).mapQ (I ^ n • ⊤) T
+      (smul_top_le_comap_smul_top _ T)) ⊥ :=
+  forall_congr' fun _ ↦ (isLocallyFinite_mapQ_bot_iff _).symm
+
 /-- Local finiteness passes to submodules of a module killed by a power of `I`: if `f` is
 injective and intertwines `T₁` with `T₂`, `T₂` is locally finite and `I ^ m • ⊤ = ⊥` in `M₂`,
 then `T₁` is locally finite. -/
@@ -377,19 +396,14 @@ theorem isLocallyFinite_mapQ_smul_top_iff [IsNoetherianRing R] :
     IsLocallyFinite ((I • ⊤ : Submodule R M).mapQ (I • ⊤) T (smul_top_le_comap_smul_top I T)) I ↔
       T.IsLocallyFinite I := by
   set K : Submodule R M := I • ⊤
-  have hgT : K.mkQ ∘ₗ T = K.mapQ K T (smul_top_le_comap_smul_top I T) ∘ₗ K.mkQ :=
-    (mapQ_mkQ _ _ _).symm
-  refine ⟨fun h ↦ isLocallyFinite_iff_forall_exists_fg_sup_smul_top.2 fun v ↦ ?_,
-    fun h ↦ h.of_surjective K.mkQ_surjective hgT⟩
   have hbot : (I • ⊤ : Submodule R (M ⧸ K)) = ⊥ := by
     rw [← K.range_mkQ, ← Submodule.map_top, ← map_smul'', mkQ_map_self]
-  obtain ⟨N, hN, hv⟩ := h 1 (K.mkQ v)
-  obtain ⟨N₀, hN₀, rfl⟩ := hN.exists_fg_map_eq_of_le_range (f := K.mkQ) (by simp [range_mkQ])
-  refine ⟨N₀, hN₀, fun k ↦ ?_⟩
-  have hk := hv k
-  rw [pow_one, hbot, sup_bot_eq, pow_apply_of_comp_eq hgT] at hk
-  rw [sup_comm, ← comap_map_mkQ]
-  exact mem_comap.2 hk
+  refine ⟨fun h ↦ isLocallyFinite_iff_forall_exists_fg_sup_smul_top.2 <|
+    (isLocallyFinite_mapQ_bot_iff (smul_top_le_comap_smul_top I T)).1 fun _ w ↦ ?_,
+    fun h ↦ h.of_surjective K.mkQ_surjective (mapQ_mkQ _ _ _).symm⟩
+  -- The quotient is killed by `I`, so its orbits lie in finitely generated submodules.
+  obtain ⟨N, hN, hw⟩ := h 1 w
+  exact ⟨N, hN, fun k ↦ mem_sup_left (by simpa [hbot] using hw k)⟩
 
 end CommRing
 

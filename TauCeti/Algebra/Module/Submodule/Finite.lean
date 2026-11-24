@@ -119,8 +119,11 @@ theorem Module.Finite.of_isCompl {R M : Type*} [Ring R] [AddCommGroup M] [Module
 
 namespace Submodule
 
-variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
-  [Module R M']
+variable {R M M' : Type*} [AddCommMonoid M] [AddCommMonoid M']
+
+section Semiring
+
+variable [Semiring R] [Module R M] [Module R M']
 
 /-- A finitely generated submodule contained in the range of a linear map is the image of a
 finitely generated submodule of the source. -/
@@ -151,6 +154,10 @@ theorem FG.exists_fg_le_sup {A B C : Submodule R M} (hA : A.FG) (h : A ≤ B ⊔
     exact ⟨C₁ ⊔ C₂, hC₁.sup hC₂, sup_le hC₁C hC₂C,
       sup_le (hA₁.trans (sup_le_sup_left le_sup_left _))
         (hA₂.trans (sup_le_sup_left le_sup_right _))⟩
+
+end Semiring
+
+variable [CommSemiring R] [Module R M]
 
 /-- A finitely generated submodule of `I • N` lies in `I • W` for some finitely generated
 `W ≤ N`. -/
