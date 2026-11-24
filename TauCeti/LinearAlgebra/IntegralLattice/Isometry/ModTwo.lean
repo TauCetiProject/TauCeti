@@ -64,17 +64,17 @@ theorem nondegenerate_polarBilin_reduceModTwo_quadraticForm (hu : L.IsUnimodular
     exact LinearMap.IsPerfPair.bijective_left _
 
 /-- The class of a vector of norm `2` has value `1` under the reduction `Q₂` of `B(x, x) / 2`
-modulo two. In particular `Q₂ [x]` is invertible, as `reductionModTwoHom_rootReflection` needs:
-`invertibleOne.copy _ (reduceModTwo_quadraticForm_mk_of_integralNorm_eq_two hL hx)` is an
-instance. -/
+modulo two. In particular `Q₂ [x]` is invertible, so
+`haveI := invertibleOne.copy _ (reduceModTwo_quadraticForm_mk_of_integralNorm_eq_two hL hx)`
+supplies the `Invertible` argument of `reductionModTwoHom_rootReflection`. -/
 theorem reduceModTwo_quadraticForm_mk_of_integralNorm_eq_two {x : L} (hx : L.integralNorm x = 2) :
     (L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x) = 1 := by
   simp [hx]
 
 /-- The class of a vector of norm `-2` has value `1` under the reduction `Q₂` of `B(x, x) / 2`
-modulo two. In particular `Q₂ [x]` is invertible, as `reductionModTwoHom_negRootReflection`
-needs: `invertibleOne.copy _ (reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two hL hx)` is
-an instance. -/
+modulo two. In particular `Q₂ [x]` is invertible, so
+`haveI := invertibleOne.copy _ (reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two hL hx)`
+supplies the `Invertible` argument of `reductionModTwoHom_negRootReflection`. -/
 theorem reduceModTwo_quadraticForm_mk_of_integralNorm_eq_neg_two {x : L}
     (hx : L.integralNorm x = -2) :
     (L.quadraticForm hL).reduceModTwo (Submodule.Quotient.mk x) = 1 := by
@@ -105,9 +105,7 @@ noncomputable def reductionModTwoHom :
   toFun g := ⟨reductionModTwoEquiv g, QuadraticMap.mem_orthogonalGroup_iff.mpr fun c ↦ by
     induction c using Submodule.Quotient.induction_on with
     | _ x =>
-      rw [reductionModTwoEquiv_apply, reductionHom_apply_mk, QuadraticForm.reduceModTwo_mk,
-        QuadraticForm.reduceModTwo_mk, quadraticForm_apply, quadraticForm_apply,
-        integralNorm_carrierEquiv]⟩
+      simp [reductionModTwoEquiv_apply, integralNorm_carrierEquiv]⟩
   map_one' := Subtype.ext <| LinearEquiv.ext fun c ↦ by simp [reductionModTwoEquiv_apply]
   map_mul' g h := Subtype.ext <| LinearEquiv.ext fun c ↦ by
     simp [reductionModTwoEquiv_apply, mul_apply_eq_comp]

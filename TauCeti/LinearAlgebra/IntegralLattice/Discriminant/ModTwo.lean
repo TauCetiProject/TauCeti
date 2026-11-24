@@ -72,10 +72,8 @@ theorem discriminantQuadraticMap_discriminantGroupScaleEquiv_symm (hu : L.IsUnim
     have hdiv : L.integralNorm y / 2 = k := by
       have : L.integralNorm y = 2 * k := by exact_mod_cast (L.integralNorm_cast y).trans hk
       omega
-    rw [hu.discriminantQuadraticMap_discriminantGroupScaleEquiv_symm_mk two_ne_zero,
-      QuadraticForm.reduceModTwo_mk, quadraticForm_apply, hdiv, ZMod.toRatAddCircle_intCast, hform]
+    simp [hu.discriminantQuadraticMap_discriminantGroupScaleEquiv_symm_mk two_ne_zero, hdiv, hform]
     congr 1
-    push_cast
     ring
 
 /-- The discriminant form of `L(2)` at a class `a`, read off from `Q₂` at its image in `L / 2L`. -/
@@ -98,7 +96,7 @@ private theorem quadratic_eq (hu : L.IsUnimodular) (hL : L.IsEven)
     (a : ((2 : ℤ) • L).discriminantQuadraticModule (hL.smul 2)) :
     (((2 : ℤ) • L).discriminantQuadraticModule (hL.smul 2)).quadratic a =
       ZMod.toRatAddCircle 2 ((L.quadraticForm hL).reduceModTwo (moduleEquivModTwo hu hL a)) :=
-  discriminantQuadraticMap_eq hu hL a
+  (discriminantQuadraticModule_quadratic _ _ a).trans (discriminantQuadraticMap_eq hu hL a)
 
 /-- The `ZMod 2`-linear automorphism of `L / 2L` corresponding to an automorphism of the
 discriminant group of `L(2)`. -/

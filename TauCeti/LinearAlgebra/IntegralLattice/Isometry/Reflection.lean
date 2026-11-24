@@ -194,8 +194,7 @@ theorem negRootReflection_apply_self (x : L) (hx : L.integralNorm x = -2) :
 theorem negRootReflection_mul_self (x : L) (hx : L.integralNorm x = -2) :
     negRootReflection x hx * negRootReflection x hx = 1 := by
   ext y
-  rw [Isometry.mul_apply, negRootReflection, Isometry.ofSmul_apply, Isometry.ofSmul_apply,
-    ← Isometry.mul_apply, rootReflection_mul_self, Isometry.one_apply, Isometry.one_apply]
+  simp [negRootReflection, ← Isometry.mul_apply (rootReflection _ _)]
 
 /-- The inverse of the reflection in a vector of norm `-2` is itself. -/
 @[simp]
