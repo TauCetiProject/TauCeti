@@ -149,12 +149,9 @@ theorem centralCharacterOfForallExistsSmul_congr {N : Type x} [AddCommGroup N] [
     {hN : ∀ f : N →ₗ⁅R,L⁆ N, (∀ g : N →ₗ⁅R,L⁆ N, f.comp g = g.comp f) →
       ∃ c : R, ∀ n, f n = c • n}
     (e : M ≃ₗ⁅R,L⁆ N) :
-    centralCharacterOfForallExistsSmul R L M h = centralCharacterOfForallExistsSmul R L N hN := by
-  ext z
-  refine (centralCharacterOfForallExistsSmul_eq_of_representation_eq_smul fun n => ?_).symm
-  have hm := map_representation R L M N (e : M →ₗ⁅R,L⁆ N) (z : U R L) (e.symm n)
-  rw [representation_eq_centralCharacterOfForallExistsSmul_smul R L M h, map_smul] at hm
-  simpa using hm.symm
+    centralCharacterOfForallExistsSmul R L M h = centralCharacterOfForallExistsSmul R L N hN :=
+  centralCharacterOfBijectiveAlgebraMap_congr
+    (lieModuleEquivEquivLinearEquiv (asModule_ι_smul R L M) (asModule_ι_smul R L N) e)
 
 end Scalar
 
@@ -205,15 +202,15 @@ theorem centerEigenspace_centralCharacter :
 /-- **Equivalent modules have the same central character.** -/
 theorem centralCharacter_congr {N : Type x} [AddCommGroup N] [Module K N] [LieRingModule L N]
     [LieModule K L N] [FiniteDimensional K N] [LieModule.IsIrreducible K L N]
-    (e : M ≃ₗ⁅K,L⁆ N) : centralCharacter K L M = centralCharacter K L N := by
-  have _i : Nontrivial M := LieModule.nontrivial_of_isIrreducible K L M
-  obtain ⟨m, hm⟩ := exists_ne (0 : M)
-  ext z
-  refine (centralCharacter_eq_of_ne_zero_of_representation_eq_smul (m := e m)
-    (by simpa using e.injective.ne hm) ?_).symm
-  have h := map_representation K L M N (e : M →ₗ⁅K,L⁆ N) (z : U K L) m
-  rw [representation_eq_centralCharacter_smul K L M z m, map_smul] at h
-  simpa using h.symm
+    (e : M ≃ₗ⁅K,L⁆ N) : centralCharacter K L M = centralCharacter K L N :=
+  (centralCharacter_eq_centralCharacterOfBijectiveAlgebraMap K (U K L) M
+      (bijective_algebraMap_center_of_bijective
+        (IsSimpleModule.algebraMap_end_bijective_of_isAlgClosed K))).trans <|
+    (centralCharacterOfBijectiveAlgebraMap_congr
+      (lieModuleEquivEquivLinearEquiv (asModule_ι_smul K L M) (asModule_ι_smul K L N) e)).trans
+    (centralCharacter_eq_centralCharacterOfBijectiveAlgebraMap K (U K L) N
+      (bijective_algebraMap_center_of_bijective
+        (IsSimpleModule.algebraMap_end_bijective_of_isAlgClosed K))).symm
 
 /-- Over an algebraically closed field, the central character of a finite-dimensional irreducible
 module is its central character as a module with scalar central endomorphisms. -/
