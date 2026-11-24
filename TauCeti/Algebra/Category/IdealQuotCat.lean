@@ -21,9 +21,9 @@ In Mazur and Rubin's theory of Kolyvagin systems `M` is a Galois representation 
 coefficients in `R`. Local conditions on `T` propagate to the quotients `T ⧸ I T` along this
 category, and a Selmer structure is cartesian when its local conditions are compatible with the
 injective morphisms. Over a local ring with maximal ideal `𝔪 = (ϖ)` these include the maps
-`ϖ ^ (j - i) : T ⧸ 𝔪 ^ i T → T ⧸ 𝔪 ^ j T` for free `T` (`Ideal.injective_smulMapQ_pow`). The
-functor to representations records that the morphisms are equivariant for an action on `T` by
-`R`-linear maps.
+`ϖ ^ (j - i) : T ⧸ 𝔪 ^ i T → T ⧸ 𝔪 ^ j T` for free `T`, `i ≤ j` and `ϖ ^ (j - 1) ≠ 0`
+(`Ideal.smulMapQ_injective_pow`). The functor to representations records that the morphisms are
+equivariant for an action on `T` by `R`-linear maps.
 
 ## Main definitions
 
