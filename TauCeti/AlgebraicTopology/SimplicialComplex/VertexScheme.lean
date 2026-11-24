@@ -81,8 +81,10 @@ variable (K) in
 /-- The faces of the vertex scheme of `K` are the faces of `K`, read as finite sets of points. -/
 noncomputable def vertexSchemeFaceEquiv : Face K.vertexScheme ≃ K.faces :=
   -- `Equiv.finsetSubtypeComm` sends a finite set of vertices to its points, mapped along the
-  -- subtype embedding as in `mem_vertexScheme_iff`.
-  ((Equiv.finsetSubtypeComm (· ∈ K.vertices)).subtypeEquiv fun _ => mem_vertexScheme_iff).trans
+  -- subtype embedding as in `mem_vertexScheme_iff`; the `Iff.rfl` step restates that iff in the
+  -- shape `Equiv.subtypeEquiv` expects, so that `Equiv.subtypeEquiv_apply` rewrites its values.
+  ((Equiv.finsetSubtypeComm (· ∈ K.vertices)).subtypeEquiv fun _ =>
+    mem_vertexScheme_iff.trans Iff.rfl).trans
     (Equiv.subtypeSubtypeEquivSubtype fun hs _ => mem_vertices_of_mem_faces hs)
 
 /-- The face of `K` corresponding to a face of the vertex scheme is its set of points. -/
@@ -90,7 +92,7 @@ noncomputable def vertexSchemeFaceEquiv : Face K.vertexScheme ≃ K.faces :=
 theorem vertexSchemeFaceEquiv_apply_coe (σ : Face K.vertexScheme) :
     (K.vertexSchemeFaceEquiv σ : Finset E) = σ.val.map (Embedding.subtype (· ∈ K.vertices)) := by
   ext x
-  simp [vertexSchemeFaceEquiv, Equiv.finsetSubtypeComm]
+  simp [vertexSchemeFaceEquiv, Equiv.finsetSubtypeComm_apply_coe]
 
 /-- The face of the vertex scheme corresponding to a face of `K` has the points of that face. -/
 @[simp]

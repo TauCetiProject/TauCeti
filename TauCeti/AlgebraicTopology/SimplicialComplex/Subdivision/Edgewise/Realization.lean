@@ -160,7 +160,7 @@ theorem edgewiseSubdivisionRealizationMap_val (x : Realization (K.edgewiseSubdiv
 entries. -/
 theorem edgewiseSubdivisionRealizationMap_vertex (u : K.EdgewiseVertex k) :
     (edgewiseSubdivisionRealizationMap K k (vertex _ u) : ι →₀ ℝ) = edgewisePoint u.val := by
-  rw [edgewiseSubdivisionRealizationMap_val, ← linearExtension_apply, linearExtension_vertex]
+  simp
 
 /-- On a simplex `ρ` of the edgewise subdivision whose vertices have their entries in a face `σ`
 of `K`, the edgewise realization map is the edgewise face map followed by the face inclusion
