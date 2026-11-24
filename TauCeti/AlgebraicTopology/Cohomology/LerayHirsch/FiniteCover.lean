@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.FiberBundle.Trivialization
 public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.FiberwiseBasis
 public import TauCeti.AlgebraicTopology.Cohomology.LerayHirsch.MayerVietoris
+public import TauCeti.Topology.Category.TopCat.Trivialization
 
 /-!
 # The Leray–Hirsch theorem over a base with a finite trivializing cover
@@ -99,8 +99,7 @@ theorem lerayHirschRestrict_inter_biUnion_bijective {κ : Type*} (U : κ → Set
 /-- **The Leray–Hirsch map over a finite open cover.** Let `U i`, `i ∈ s`, be finitely many open
 sets covering `B`. If for each `i` the Leray–Hirsch maps of the restrictions of `p` over all open
 subsets of `U i`, with the restricted classes, are bijective in degrees `m ≤ n`, then so is the
-Leray–Hirsch map of `p`. The proof is induction over `s` with the Mayer–Vietoris gluing step
-`TopCat.lerayHirschRestrict_union_bijective`. -/
+Leray–Hirsch map of `p`. -/
 theorem lerayHirsch_bijective_of_finite_cover {κ : Type*} (U : κ → Set B) (n : ℕ)
     (s : Finset κ) (hU : ∀ i ∈ s, IsOpen (U i)) (hcover : ⋃ i ∈ s, U i = Set.univ)
     (hloc : ∀ i ∈ s, ∀ S : Set B, IsOpen S → S ⊆ U i →
@@ -117,56 +116,40 @@ section Trivialization
 
 variable {E B F : TopCat.{w}} {p : E ⟶ B}
 
-/-- The inclusion `f ↦ t⁻¹(x, f)` of the model fibre `F` into `E` as the fibre of `p` over a point
-`x` of the base set of a trivialization `t` of `p`. -/
-def trivializationFiberInclusion (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) :
-    F ⟶ E :=
-  ofHom ⟨fun f ↦ t.toOpenPartialHomeomorph.symm (x, f),
-    t.toOpenPartialHomeomorph.continuousOn_symm.comp_continuous (Continuous.prodMk_right x)
-      fun _ ↦ t.mem_target.2 hx⟩
-
-@[simp]
-theorem trivializationFiberInclusion_apply (t : Bundle.Trivialization F p) {x : B}
-    (hx : x ∈ t.baseSet) (f : F) :
-    trivializationFiberInclusion t hx f = t.toOpenPartialHomeomorph.symm (x, f) := by
-  simp [trivializationFiberInclusion]
-
 variable {ι : ℕ → Type u} [∀ d, DecidableEq (ι d)]
   (e : ∀ d, ι d → E.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) d)
   [∀ d, Projective (((singularHomologyFunctor (ModuleCat.{w} k) d).obj
     (𝟙_ (ModuleCat.{w} k))).obj F)]
 
 /-- **The Leray–Hirsch map over a trivializing set.** Let `t` be a trivialization of `p` with
-model fibre `F`, whose homology `H_d(F; k)` is projective, and finitely generated for `d ≤ n`.
-Suppose that for every point `x` of the base set of `t` and every `d ≤ n` the classes `e d i`
-restrict along the fibre inclusion `f ↦ t⁻¹(x, f)` to a basis of `Hᵈ(F; k)`. Then the
-Leray–Hirsch map of the restriction of `p` over any `S` contained in the base set of `t` is
-bijective in degree `n`: `t` identifies the restriction with the projection `S × F ⟶ S`, and
-`TopCat.lerayHirsch_fst_bijective_of_fiberwise_basis` applies. -/
+model fibre `F`, whose homology `H_d(F; k)` is projective, and finitely generated for `d ≤ n`, and
+let `S` be contained in the base set of `t`. Suppose that for every point `x` of `S` and every
+`d ≤ n` the classes `e d i` restrict along the fibre inclusion `f ↦ t⁻¹(x, f)` to a basis of
+`Hᵈ(F; k)`. Then the Leray–Hirsch map of the restriction of `p` over `S` is bijective in
+degree `n`. -/
 theorem lerayHirschRestrict_bijective_of_trivialization (t : Bundle.Trivialization F p) {S : Set B}
     (hS : S ⊆ t.baseSet) (n : ℕ)
     (hF : ∀ d ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) d).obj
       (𝟙_ (ModuleCat.{w} k))).obj F))
-    (hc : ∀ x (hx : x ∈ t.baseSet), ∀ d ≤ n,
-      LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap (trivializationFiberInclusion t hx)
-        d (e d i)) ∧
+    (hc : ∀ x (hx : x ∈ S), ∀ d ≤ n,
+      LinearIndependent k (fun i ↦ TopCat.singularCohomologyMap
+        (trivializationFiberInclusion t (hS hx)) d (e d i)) ∧
       ⊤ ≤ Submodule.span k (Set.range fun i ↦
-        TopCat.singularCohomologyMap (trivializationFiberInclusion t hx) d (e d i))) :
+        TopCat.singularCohomologyMap (trivializationFiberInclusion t (hS hx)) d (e d i))) :
     Function.Bijective (lerayHirschRestrict p e S n) := by
   let φ : of S ⊗ F ≅ of (p ⁻¹' S) := isoOfHomeo (t.preimageHomeomorph hS).symm
   have hφ : φ.hom ≫ ofHom (p.hom.restrictPreimage S) = fst (of S) F ≫ 𝟙 (of S) := by
     ext y
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ConcreteCategory.id_apply]
+    -- `φ` applies `(t.preimageHomeomorph hS).symm` on `S × F`, the carrier of `of S ⊗ F`.
+    change p ((t.preimageHomeomorph hS).symm (y.1, y.2)).val = (y.1 : B)
+    rw [t.preimageHomeomorph_symm_apply]
     exact t.proj_symm_apply' (hS y.1.property)
   refine (lerayHirsch_bijective_iff_of_isIso φ.hom (𝟙 _) hφ (fun _ _ _ ↦ rfl)).1
     (lerayHirsch_fst_bijective_of_fiberwise_basis (of S) n _ hF fun x d hd ↦ ?_)
-  have hfib : prodFiberInclusion (of S) F x ≫ φ.hom ≫ ofHom (ContinuousMap.subtypeVal (p ⁻¹' S)) =
-      trivializationFiberInclusion t (hS x.property) := by
-    ext f
-    rw [trivializationFiberInclusion_apply, ConcreteCategory.comp_apply,
-      ConcreteCategory.comp_apply, prodFiberInclusion_apply]
-    rfl
-  simp only [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, hfib]
-  exact hc x (hS x.property) d hd
+  simp only [← ConcreteCategory.comp_apply, ← TopCat.singularCohomologyMap_comp, φ,
+    prodFiberInclusion_comp_preimageHomeomorph_symm]
+  exact hc x x.property d hd
 
 /-- **The Leray–Hirsch theorem over a base with a finite trivializing cover.** Let `p : E ⟶ B` have
 finitely many trivializations `t i`, `i ∈ s`, with model fibre `F`, whose base sets cover `B`;
@@ -189,7 +172,7 @@ theorem lerayHirsch_bijective_of_trivializations {κ : Type*} (s : Finset κ)
   lerayHirsch_bijective_of_finite_cover p e (fun i ↦ (t i).baseSet) n s
     (fun i _ ↦ (t i).open_baseSet) hcover fun i hi _ _ hS m hm ↦
       lerayHirschRestrict_bijective_of_trivialization e (t i) hS m
-        (fun d hd ↦ hF d (hd.trans hm)) fun x hx d hd ↦ hc i hi x hx d (hd.trans hm)
+        (fun d hd ↦ hF d (hd.trans hm)) fun x hx d hd ↦ hc i hi x (hS hx) d (hd.trans hm)
 
 end Trivialization
 
