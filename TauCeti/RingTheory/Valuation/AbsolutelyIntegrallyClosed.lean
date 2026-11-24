@@ -34,15 +34,15 @@ The subring `V₀` is the trace `V ∩ L` of `V` on an algebraically closed subf
 fraction field of `V`. For any subfield `L` of a field containing `V`, this trace is a valuation
 ring whose inclusion into `V` is local (`Subfield.valuationRing_comap` and
 `Subfield.isLocalHom_subtype_comap`, in `TauCeti.RingTheory.Valuation.ValuationRing`). It is
-absolutely integrally closed when `L` is algebraically closed and contained in the fraction field;
-this only uses that `V` is integrally closed.
+absolutely integrally closed when `L` is algebraically closed and contained in the fraction field
+(`Subfield.isAbsolutelyIntegrallyClosed_comap`, in
+`TauCeti.RingTheory.IntegralClosure.AbsolutelyIntegrallyClosed`); this only uses that `V` is
+integrally closed.
 
 ## Main results
 
 * `ValuationSubring.isAbsolutelyIntegrallyClosed`: a valuation subring of an algebraically closed
   field is absolutely integrally closed.
-* `Subfield.isAbsolutelyIntegrallyClosed_comap`: the trace of an integrally closed domain on an
-  algebraically closed subfield of its fraction field is absolutely integrally closed.
 * `TauCeti.exists_injective_isLocalHom_isAbsolutelyIntegrallyClosed`: every local domain has an
   injective local homomorphism to an absolutely integrally closed valuation domain.
 * `TauCeti.exists_subset_valuationRing_subring_cardinalMk_le`: a small absolutely integrally closed
@@ -70,38 +70,6 @@ instance isAbsolutelyIntegrallyClosed {K : Type*} [Field K] [IsAlgClosed K]
   .of_isIntegrallyClosed_of_isAlgClosed K
 
 end ValuationSubring
-
-namespace Subfield
-
-variable {V K : Type*} [CommRing V] [Field K] [Algebra V K] (L : Subfield K)
-
-/-- The trace `V ∩ L` of an integrally closed domain `V`, for instance a valuation ring, on an
-algebraically closed subfield `L` of its fraction field is absolutely integrally closed. -/
-instance isAbsolutelyIntegrallyClosed_comap [IsIntegrallyClosed V] [IsFractionRing V K]
-    [IsAlgClosed L] :
-    TauCeti.IsAbsolutelyIntegrallyClosed (L.toSubring.comap (algebraMap V K)) where
-  exists_root p hp hdeg := by
-    -- A root of `p` in `L` is integral over `V`, hence lies in `V`, hence in `V ∩ L`.
-    set φ : L.toSubring.comap (algebraMap V K) →+* K :=
-      (algebraMap V K).comp (L.toSubring.comap (algebraMap V K)).subtype
-    let g : L.toSubring.comap (algebraMap V K) →+* L :=
-      φ.codRestrict L.toSubring fun x ↦ x.property
-    obtain ⟨y, hy⟩ := IsAlgClosed.exists_root (p.map g)
-      (natDegree_pos_iff_degree_pos.mp ((hp.natDegree_map g).symm ▸ hdeg)).ne'
-    have hy' : p.eval₂ φ (y : K) = 0 := by
-      rw [IsRoot, eval_map] at hy
-      have := congrArg L.subtype hy
-      rwa [hom_eval₂, map_zero] at this
-    obtain ⟨v, hv⟩ := IsIntegrallyClosed.isIntegral_iff.mp
-      (⟨p.map (L.toSubring.comap (algebraMap V K)).subtype, hp.map _, by
-        rwa [eval₂_map]⟩ : IsIntegral V (y : K))
-    have hφinj : Function.Injective φ :=
-      (IsFractionRing.injective V K).comp Subtype.val_injective
-    refine ⟨⟨v, by simp [Subring.mem_comap, hv]⟩, hφinj ?_⟩
-    rw [map_zero, ← eval₂_at_apply]
-    rwa [← hv] at hy'
-
-end Subfield
 
 namespace TauCeti
 
