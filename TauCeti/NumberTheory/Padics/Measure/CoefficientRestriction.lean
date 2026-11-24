@@ -7,8 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
-import Mathlib.Topology.Algebra.Algebra
-import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 
 /-!
 # Restriction of measure coefficients along an embedding
@@ -41,46 +39,26 @@ theorem _root_.RingHom.exists_apply_comp_eq_of_mem_range {O K : Type*}
     (ν : D(X, K))
     (hmem : ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) ∈ Set.range j) :
     ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
-  let := j.toAlgebra
-  have halg : algebraMap O K = j := j.algebraMap_toAlgebra
-  have hlin : ⇑(Algebra.linearMap O K) = j := by
-    funext a
-    rw [Algebra.linearMap_apply, halg]
-  have hlinj : Function.Injective (Algebra.linearMap O K) := by
-    rw [hlin]
-    exact hje.injective
-  let : ContinuousSMul O K := continuousSMul_of_algebraMap O K (by rw [halg]; exact hje.continuous)
-  have hlin_cont : Continuous (Algebra.linearMap O K) := by
-    rw [hlin]
-    exact hje.continuous
-  let J : O →L[O] K := ⟨Algebra.linearMap O K, hlin_cont⟩
-  have hJ : ⇑J = j := by
-    rw [ContinuousLinearMap.coe_mk', hlin]
-  let F : C(X, O) →L[O] K :=
-    ((toCLMEquiv ν).restrictScalars O).comp (J.compLeftContinuous O X)
-  have hF (f : C(X, O)) : F f = ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) := by
-    have hcomp : J.compLeftContinuous O X f = (⟨j, hje.continuous⟩ : C(O, K)).comp f := by
-      have hcomp' := (ContinuousLinearMap.compLeftContinuous_apply O X J f).trans
-        (AddMonoidHom.compLeftContinuous_apply X J.toLinearMap.toAddMonoidHom J.continuous f)
-      rw [hcomp']
-      ext x
-      simp only [ContinuousMap.coe_mk, ContinuousMap.comp_apply, LinearMap.toAddMonoidHom_coe,
-        ContinuousLinearMap.coe_coe, hJ]
-    simp only [F, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-      coe_toCLMEquiv, hcomp]
-  have hmem' (f : C(X, O)) : F.toLinearMap f ∈ (Algebra.linearMap O K).range := by
-    rw [LinearMap.mem_range]
-    obtain ⟨a, ha⟩ := hmem f
-    exact ⟨a, by rw [hlin, ContinuousLinearMap.coe_coe, hF]; exact ha⟩
-  let L := F.toLinearMap.codRestrictOfInjective (Algebra.linearMap O K) hlinj hmem'
-  have hLj (f : C(X, O)) : j (L f) = F f := by
-    rw [← hlin]
-    exact LinearMap.codRestrictOfInjective_comp_apply F.toLinearMap (Algebra.linearMap O K)
-      hlinj hmem' f
+  let J : C(O, K) := ⟨j, hje.continuous⟩
+  have hspec (f : C(X, O)) : j (hmem f).choose = ν (J.comp f) := (hmem f).choose_spec
+  let L : C(X, O) →ₗ[O] O :=
+    { toFun f := (hmem f).choose
+      map_add' f g := hje.injective <| (hspec _).trans <| by
+        have hJ : J.comp (f + g) = J.comp f + J.comp g := by
+          ext x
+          simp [J]
+        simp [hspec, hJ]
+      map_smul' a f := hje.injective <| (hspec _).trans <| by
+        have hJ : J.comp (a • f) = j a • J.comp f := by
+          ext x
+          simp [J]
+        simp [hspec, hJ] }
   have hL : Continuous L := hje.continuous_iff.mpr <| by
-    simpa only [Function.comp_def, hLj] using F.continuous
+    simpa [Function.comp_def, L, hspec] using
+      (map_continuous ν).comp (continuous_postcomp J)
   exact ⟨toCLMEquiv.symm ⟨L, hL⟩, fun f ↦ by
-    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk', hLj, hF]⟩
+    rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk']
+    exact (hspec f).symm⟩
 
 section OperatorNorm
 

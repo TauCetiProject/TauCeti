@@ -62,10 +62,9 @@ The dense-extension construction and its norm proof follow the formal pattern of
 * `AbstractMeasure.eq_extendCoefficients_of_apply_comp`: this property characterises `ι_j(μ)`.
 * `AbstractMeasure.mem_range_extendCoefficients_iff_apply_comp_mem_range`: a measure belongs to
   the range exactly when the integrals of transported tests lie in the coefficient image.
-* `AbstractMeasure.mem_range_extendCoefficients_iff`,
-  `AbstractMeasure.existsUnique_extendCoefficients_eq_iff_norm_le_one`: over a nontrivially
-  normed field `K`, for an embedding `j` onto its closed unit ball, the extensions of
-  coefficients form the closed unit ball of `D(X, K)`.
+* `AbstractMeasure.mem_range_extendCoefficients_iff`: over a nontrivially normed field `K`,
+  for an embedding `j` onto its closed unit ball, the extensions of coefficients form the
+  closed unit ball of `D(X, K)`.
 * `AbstractMeasure.extendCoefficients_comp`: coefficient extension in two stages agrees with
   coefficient extension along the composite.
 * `AbstractMeasure.extendCoefficients_smul`, `AbstractMeasure.extendCoefficients_dirac`,
@@ -456,16 +455,6 @@ theorem mem_range_extendCoefficients_iff (hje : Topology.IsEmbedding j)
     exact norm_toCLMEquiv_extendCoefficients_le j hj μ
   · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
     exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
-
-/-- A measure lies in the closed dual unit ball exactly when it has a unique preimage under
-coefficient extension along the closed-unit-ball embedding. -/
-theorem existsUnique_extendCoefficients_eq_iff_norm_le_one (ν : D(X, K))
-    (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hje : Topology.IsEmbedding j)
-    (hjr : Metric.closedBall 0 1 ⊆ Set.range j) :
-    (∃! μ : D(X, O), extendCoefficients j hj μ = ν) ↔ ‖toCLMEquiv ν‖ ≤ 1 := by
-  let := hje.t2Space
-  rw [(extendCoefficients_injective j hj hje.injective).existsUnique_iff_exists]
-  exact mem_range_extendCoefficients_iff hj hje hjr
 
 end OperatorNorm
 
