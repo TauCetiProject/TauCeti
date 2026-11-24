@@ -15,9 +15,9 @@ import TauCeti.LinearAlgebra.Submodule.FiberProduct
 # Parametric transversality
 
 Let `F : M × S → N` be a smooth family of maps `F (·, s) : M → N` parametrized by a manifold
-`S`, and let `g : Z → N` be a smooth embedding. If `F` is transverse to `g`, then for all
-parameters `s` outside a null set of `S` (`TauCeti.IsNullSet`), the slice `F (·, s)` is
-transverse to `g`; in particular such parameters are dense. This is the parametric
+`S`, and let `g : Z → N` be a smooth map that is a topological embedding. If `F` is transverse
+to `g`, then for all parameters `s` outside a null set of `S` (`TauCeti.IsNullSet`), the slice
+`F (·, s)` is transverse to `g`; in particular such parameters are dense. This is the parametric
 transversality theorem. Transversality of maps `f : X → N` and `g : Z → N` is written, as for
 the transverse fibre products of `TauCeti.transverseFiberProductChartedSpace`, as the equation
 `range (df) ⊔ range (dg) = ⊤` at every pair of points with `f x = g z`.
@@ -139,9 +139,9 @@ theorem isRegularPoint_snd_fst_transverseFiberProduct_iff (hn : 1 ≤ n)
   exact Eq.congr_left ((LinearMap.range_comp _ _).trans (congrArg _ hrange))
 
 /-- **The parametric transversality theorem.** Let `F : M × S → N` be a `C^n` family of maps,
-transverse to a `C^n` embedding `g : Z → N`, where `M` is Lindelöf and
-`n > dim M + dim Z - dim N`, `n ≥ 1`. Then the parameters `s` for which the slice `F (·, s)` is not
-transverse to `g` form a null set of `S`. -/
+transverse to a `C^n` map `g : Z → N` that is a topological embedding, where `M` is Lindelöf
+and `n > dim M + dim Z - dim N`, `n ≥ 1`. Then the parameters `s` for which the slice `F (·, s)`
+is not transverse to `g` form a null set of `S`. -/
 theorem _root_.ContMDiff.isNullSet_setOf_exists_not_transverse [LindelofSpace M]
     [MeasurableSpace ES] [BorelSpace ES]
     (hF : ContMDiff (IM.prod IS) IN n F) (hg : ContMDiff IZ IN n g) (hgi : IsEmbedding g)
@@ -201,8 +201,9 @@ theorem _root_.ContMDiff.isNullSet_setOf_exists_not_transverse [LindelofSpace M]
     ⟨((x, s), z), hxz⟩).1 hreg'
 
 /-- **Generic slices are transverse.** Let `F : M × S → N` be a `C^n` family of maps, transverse
-to a `C^n` embedding `g : Z → N`, where `M` is Lindelöf and `n > dim M + dim Z - dim N`, `n ≥ 1`.
-Then the parameters `s` for which the slice `F (·, s)` is transverse to `g` are dense in `S`. -/
+to a `C^n` map `g : Z → N` that is a topological embedding, where `M` is Lindelöf and
+`n > dim M + dim Z - dim N`, `n ≥ 1`. Then the parameters `s` for which the slice `F (·, s)` is
+transverse to `g` are dense in `S`. -/
 theorem _root_.ContMDiff.dense_setOf_forall_transverse [LindelofSpace M]
     (hF : ContMDiff (IM.prod IS) IN n F) (hg : ContMDiff IZ IN n g) (hgi : IsEmbedding g)
     (hk : ((finrank ℝ EM + finrank ℝ EZ - finrank ℝ EN + 1 : ℕ) : ℕ∞ω) ≤ n)
