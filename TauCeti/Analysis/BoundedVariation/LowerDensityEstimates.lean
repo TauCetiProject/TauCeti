@@ -11,6 +11,8 @@ public import TauCeti.MeasureTheory.Covering.EssentialBoundary
 import Mathlib.Analysis.Calculus.Monotone
 import TauCeti.Analysis.BoundedVariation.CutByBall
 import TauCeti.Analysis.BoundedVariation.DensityEstimates
+import TauCeti.Analysis.BoundedVariation.Isometry
+import TauCeti.Analysis.BoundedVariation.Real
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Analysis.BoundedVariation.Sobolev.Basic
 import TauCeti.Analysis.Calculus.PowerGrowth
@@ -44,6 +46,13 @@ the ball is comparable to `r ^ (n - 1)`. These are the estimates behind the comp
 blow-ups of `s` at points of `∂*s` in De Giorgi's structure theorem. As a first consequence, the
 reduced boundary lies in the essential boundary
 (`TauCeti.reducedBoundary_subset_essentialBoundary`).
+
+In dimension one, with Lebesgue measure, the perimeter bound takes the sharp form
+`1 ≤ |Dχ_s| (closedBall x r)` for every small `r > 0`
+(`TauCeti.eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one`): every small ball
+around `x` meets both `s` and its complement in positive measure, and an open interval charged by
+a set and by its complement has perimeter at least one
+(`TauCeti.Real.one_le_perimeter_of_ordConnected`).
 
 Write `m(ρ) = μ(s ∩ ball x ρ)`. Cutting `s` by the ball of radius `ρ` adds at most `m'(ρ)` to its
 perimeter (`TauCeti.ae_perimeter_inter_ball_le`), and at the reduced boundary
@@ -268,6 +277,42 @@ theorem eventually_ofReal_pow_le_mul_variationMeasure_closedBall
     eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary hx]
     with r h hP
   exact h.trans (mul_le_mul_right hP _)
+
+/-- **The lower density estimate for the perimeter measure in dimension one.** Let `E` have
+dimension one, with Lebesgue measure. At a point `x` of the reduced boundary of `s` in `Ω`, every
+small closed ball around `x` has perimeter measure `|Dχ_s| (closedBall x r)` at least one. -/
+theorem eventually_one_le_variationMeasure_closedBall_of_finrank_eq_one (hn : finrank ℝ E = 1)
+    (hx : x ∈ reducedBoundary volume Ω s) :
+    ∀ᶠ r in 𝓝[>] 0,
+      1 ≤ variationMeasure volume Ω (s.indicator 1) (((↑) : Ω → E) ⁻¹' closedBall x r) := by
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.mem_nhds_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
+  filter_upwards [eventually_perimeter_ball_le_variationMeasure_closedBall_of_mem_reducedBoundary
+    hx, Ioo_mem_nhdsGT hε] with r hr hrε
+  refine le_trans ?_ hr
+  -- Replace `s` by a measurable set agreeing with it on `Ω`.
+  have hts : toMeasurable (volume.restrict (Ω : Set E)) s =ᵐ[volume.restrict (Ω : Set E)] s :=
+    (nullMeasurableSet_restrict_of_mem_reducedBoundary hx).toMeasurable_ae_eq
+  set t := toMeasurable (volume.restrict (Ω : Set E)) s
+  have hxt : x ∈ reducedBoundary volume Ω t := by rwa [reducedBoundary_congr_ae hts]
+  rw [← perimeter_congr_ae (ae_restrict_of_ae_restrict_of_subset
+    ((ball_subset_ball hrε.2.le).trans hεΩ) hts)]
+  -- Transport to the real line along a linear isometry equivalence.
+  let e : ℝ ≃ₗᵢ[ℝ] E :=
+    (OrthonormalBasis.singleton (Fin 1) ℝ).equiv (stdOrthonormalBasis ℝ E) (finCongr hn.symm)
+  have he : MeasurePreserving e := e.measurePreserving
+  rw [← e.perimeter_comap he]
+  have hV : ((Opens.comap (e : C(ℝ, E)) ⟨ball x r, isOpen_ball⟩ : Opens ℝ) : Set ℝ) =
+      e ⁻¹' ball x r := Opens.coe_comap _ _
+  have hmeas (u : Set E) : volume (e ⁻¹' u ∩ e ⁻¹' ball x r) = volume (u ∩ ball x r) := by
+    rw [← preimage_inter, he.measure_preimage_emb e.toMeasurableEquiv.measurableEmbedding]
+  refine Real.one_le_perimeter_of_ordConnected ((measurableSet_toMeasurable _ _).preimage
+    e.continuous.measurable) ?_ ?_ ?_
+  · rw [hV]
+    exact convex_iff_ordConnected.1 ((convex_ball x r).linear_preimage e.toLinearMap)
+  · rw [hV, hmeas]
+    exact (measure_inter_ball_pos hxt hrε.1).ne'
+  · rw [hV, ← preimage_compl, hmeas]
+    exact (measure_inter_ball_pos (s := tᶜ) (by rwa [reducedBoundary_compl]) hrε.1).ne'
 
 /-- **The reduced boundary lies in the essential boundary.** Let `E` have dimension `n ≥ 2` and
 let `μ` be an additive Haar measure. At a point of the reduced boundary of `s` in an open set `Ω`,
