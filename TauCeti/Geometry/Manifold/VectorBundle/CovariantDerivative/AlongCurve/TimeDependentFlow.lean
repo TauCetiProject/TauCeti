@@ -34,7 +34,9 @@ equation only at the tested time, so it applies to the field `X_t` frozen at tha
 gives the variational equation for the family
 (`CovariantDerivative.alongCurve_curveVelocity_timeDependentFlowOf`). The transverse velocity of
 `a ↦ φ_{s,t}(c a)` is `dφ_{s,t}(c' 0)` by the chain rule, and every tangent vector is the
-velocity of a smooth curve; for this last step the manifold is assumed boundaryless.
+velocity of a smooth curve. The manifold is assumed boundaryless throughout, including for the
+family equation: the regularity of the flow in its initial point
+(`TauCeti.contMDiffAt_timeDependentFlowOf_comp`) requires it.
 
 For a time-dependent Hamiltonian `H`, with `X_t` the Hamiltonian vector field of `H_t`, this is
 the equation satisfied by the linearized Hamiltonian flow along a trajectory, whose solutions at

@@ -97,8 +97,9 @@ rotates the orbit at that end.
   (contractible) periodic solutions of `X` and of the shifted field `t ↦ X (t + θ)`.
 * `TauCeti.exists_mem_periodicSolutions_comp_eq`: periodic solutions in `e(K)` of a field agreeing
   there with the pushforward `d e (X_t)` are read through `e` from periodic solutions in `K`.
-* `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
-  preserves the domain and the flow.
+* `TauCeti.timeDependentFlowOf_add_period_add_period`,
+  `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
+  preserves the flow and its domain.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
   of the return map is defined for all time.
 * `TauCeti.mfderiv_timeDependentFlowOf_add_period_apply`: for a jointly `C¹` periodic field, the
@@ -333,17 +334,27 @@ include hX
 
 omit [CompleteSpace E] in
 /-- **The flow of a time-periodic field is invariant under translation of time by a period.** If
-`X (t + T) = X t` for all `t` and the flow from `s` to `t` is defined at `x`, then so is the flow
-from `s + T` to `t + T`, with the same value. -/
+`X (t + T) = X t` for all `t`, the flow from `s + T` to `t + T` is the flow from `s` to `t`. Both
+sides take the junk value outside the flow domain, which is also invariant
+(`TauCeti.timeDependentFlowOf_add_period_of_mem`). -/
+theorem timeDependentFlowOf_add_period_add_period (hT : Periodic X T) (s t : ℝ) :
+    timeDependentFlowOf X (s + T) (t + T) = timeDependentFlowOf X s t := by
+  -- Shifting a `T`-periodic field by `T` does not change it, so neither does shifting its flow.
+  funext y
+  rw [← timeDependentFlowOf_comp_add_right hX T, funext hT]
+
+omit [CompleteSpace E] in
+/-- **The flow domain of a time-periodic field is invariant under translation of time by a
+period.** If `X (t + T) = X t` for all `t` and the flow from `s` to `t` is defined at `x`, then so
+is the flow from `s + T` to `t + T`, with the same value. -/
 theorem timeDependentFlowOf_add_period_of_mem (hT : Periodic X T)
     (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
     ((s + T, t + T), x) ∈ timeDependentFlowDomain X ∧
       timeDependentFlowOf X (s + T) (t + T) x = timeDependentFlowOf X s t x := by
   -- Shifting a `T`-periodic field by `T` does not change it.
-  have hXT : (fun u ↦ X (u + T)) = X := funext hT
-  have h' : ((s, t), x) ∈ timeDependentFlowDomain (fun u ↦ X (u + T)) := by rwa [hXT]
-  refine ⟨(mem_timeDependentFlowDomain_comp_add_right_iff hX T).1 h', ?_⟩
-  rw [← timeDependentFlowOf_comp_add_right hX T, hXT]
+  have h' : ((s, t), x) ∈ timeDependentFlowDomain (fun u ↦ X (u + T)) := by rwa [funext hT]
+  exact ⟨(mem_timeDependentFlowDomain_comp_add_right_iff hX T).1 h',
+    congrFun (timeDependentFlowOf_add_period_add_period hX hT s t) x⟩
 
 omit [CompleteSpace E] in
 /-- If the return map of a time-periodic field fixes `x`, so does its `k`-th iterate: the flow
@@ -453,12 +464,9 @@ theorem mfderiv_timeDependentFlowOf_add_period_apply (hT : Periodic X T)
     mfderiv I I (timeDependentFlowOf X s (t + T)) x v =
       mfderiv I I (timeDependentFlowOf X s t) (timeDependentFlowOf X s (s + T) x)
         (mfderiv I I (timeDependentFlowOf X s (s + T)) x v) := by
-  -- Shifting a `T`-periodic field by `T` does not change it, so neither does shifting its flow.
-  have hshift : timeDependentFlowOf X (s + T) (t + T) = timeDependentFlowOf X s t := by
-    funext y
-    rw [← timeDependentFlowOf_comp_add_right hX T, funext hT]
   rw [mfderiv_timeDependentFlowOf_trans_of_mem hX h
-    (timeDependentFlowOf_add_period_of_mem hX hT ht).1, hshift]
+    (timeDependentFlowOf_add_period_of_mem hX hT ht).1,
+    timeDependentFlowOf_add_period_add_period hX hT]
   -- The goal is `ContinuousLinearMap.comp_apply`, except that the coercion on the left still has
   -- the codomain `TangentSpace I (φ_{s, t + T} x)` of the original derivative, while the composite
   -- lands in `TangentSpace I (φ_{s, t} (φ_{s, s + T} x))`. Both unfold to `E`, so `rfl` closes it,
@@ -576,9 +584,7 @@ theorem semiconj_timeDependentFlowOf_add_period (hT : Periodic X T) (s s' : ℝ)
     Semiconj (timeDependentFlowOf X s s') (timeDependentFlowOf X s (s + T))
       (timeDependentFlowOf X s' (s' + T)) := fun y ↦ by
   -- Flowing from `s` to `s'` is flowing from `s + T` to `s' + T`, since `X` is `T`-periodic.
-  have hper : timeDependentFlowOf X (s + T) (s' + T) = timeDependentFlowOf X s s' :=
-    funext fun z ↦ (timeDependentFlowOf_add_period_of_mem hX hT
-      (by rw [timeDependentFlowDomain_eq_univ hc]; exact mem_univ _)).2
+  have hper := timeDependentFlowOf_add_period_add_period hX hT s s'
   calc timeDependentFlowOf X s s' (timeDependentFlowOf X s (s + T) y)
       = timeDependentFlowOf X (s + T) (s' + T) (timeDependentFlowOf X s (s + T) y) := by
         rw [hper]
