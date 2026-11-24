@@ -40,9 +40,11 @@ conservation of local charges
 (`TauCeti.PositiveCohomologyAssignment.eventually_sum_localCharge_eq`): near each point `z₀` of
 `σ_{w₀}⁻¹(Z)` the local charges of a nearby leaf add up to `I_{z₀}(σ_{w₀})`, and since they are
 nonnegative their total stays bounded. The filter `l` can be the restriction of `𝓝 w₀` to the
-parameters whose leaves meet `Z` finitely; when `Z` has locally finite two-dimensional Hausdorff
-measure these are almost all parameters
-(`TauCeti.PositiveCohomologyAssignment.ae_charge_eq_sum_localCharge`).
+parameters whose leaves meet `Z` finitely. When `P` is a finite-dimensional real normed space with
+an additive Haar measure and `u⁻¹(Z)` has locally finite `μH[dim P]`, almost every leaf with
+compact `σ_w⁻¹(Z)` meets `Z` in a finite set
+(`TauCeti.PositiveCohomologyAssignment.ae_charge_eq_sum_localCharge`); this holds for instance
+when `u` is a local diffeomorphism and `Z` has locally finite two-dimensional Hausdorff measure.
 
 Taking `g(z) = zᵏ`, the power sums of the charge multisets converge, and by Newton's identities so
 do their elementary symmetric functions
@@ -114,11 +116,9 @@ def chargeSum (σ : C(𝔻, Y)) (g : 𝔻 → F) : F :=
 /-- If `σ⁻¹(Z)` is the finite set `s`, the charge-weighted sum is the sum over `s` of the local
 charges times the values of `g`. -/
 theorem chargeSum_eq_sum {σ : C(𝔻, Y)} (s : Finset 𝔻) (hs : ∀ z, σ z ∈ Z ↔ z ∈ s) (g : 𝔻 → F) :
-    A.chargeSum σ g = ∑ z ∈ s, A.localCharge σ z • g z := by
-  have h : IsCompact (σ ⁻¹' Z) := (s.finite_toSet.subset fun w hw ↦ (hs w).1 hw).isCompact
-  refine finsum_eq_sum_of_support_subset _ fun z hz ↦ ?_
-  by_contra hzs
-  exact hz (by simp [A.localCharge_eq_zero h fun hσ ↦ hzs ((hs z).1 hσ)])
+    A.chargeSum σ g = ∑ z ∈ s, A.localCharge σ z • g z :=
+  finsum_eq_sum_of_support_subset _ fun z hz ↦ by_contra fun hzs ↦
+    hz (by simp [A.localCharge_eq_zero_of_notMem s hs hzs])
 
 /-- For a constant function the charge-weighted sum is the integer of the disc times the constant,
 when `σ⁻¹(Z)` is finite. -/
@@ -157,24 +157,21 @@ def chargeMultiset (σ : C(𝔻, Y)) : Multiset 𝔻 :=
 /-- If `σ⁻¹(Z)` is the finite set `s`, the charge multiset is the sum over `s` of the points with
 their local charges as multiplicities. -/
 theorem chargeMultiset_eq_sum {σ : C(𝔻, Y)} (s : Finset 𝔻) (hs : ∀ z, σ z ∈ Z ↔ z ∈ s) :
-    A.chargeMultiset σ = ∑ z ∈ s, (A.localCharge σ z).toNat • {z} := by
-  have h : IsCompact (σ ⁻¹' Z) := (s.finite_toSet.subset fun w hw ↦ (hs w).1 hw).isCompact
-  refine finsum_eq_sum_of_support_subset _ fun z hz ↦ ?_
-  by_contra hzs
-  exact hz (by simp [A.localCharge_eq_zero h fun hσ ↦ hzs ((hs z).1 hσ)])
+    A.chargeMultiset σ = ∑ z ∈ s, (A.localCharge σ z).toNat • {z} :=
+  finsum_eq_sum_of_support_subset _ fun z hz ↦ by_contra fun hzs ↦
+    hz (by simp [A.localCharge_eq_zero_of_notMem s hs hzs])
 
 /-- When `σ⁻¹(Z)` is finite, a point occurs in the charge multiset with multiplicity its local
 charge, negative charges counting as zero. -/
 theorem count_chargeMultiset [DecidableEq 𝔻] {σ : C(𝔻, Y)} (s : Finset 𝔻)
     (hs : ∀ z, σ z ∈ Z ↔ z ∈ s) (z : 𝔻) :
     (A.chargeMultiset σ).count z = (A.localCharge σ z).toNat := by
-  have h : IsCompact (σ ⁻¹' Z) := (s.finite_toSet.subset fun w hw ↦ (hs w).1 hw).isCompact
   rw [A.chargeMultiset_eq_sum s hs, Multiset.count_sum']
   simp_rw [Multiset.count_nsmul, Multiset.count_singleton, mul_ite, mul_one, mul_zero]
   rw [Finset.sum_ite_eq]
   split_ifs with hzs
   · rfl
-  · rw [A.localCharge_eq_zero h fun hσ ↦ hzs ((hs z).1 hσ), Int.toNat_zero]
+  · rw [A.localCharge_eq_zero_of_notMem s hs hzs, Int.toNat_zero]
 
 /-- When `σ⁻¹(Z)` is finite, the charge multiset contains exactly the points of positive local
 charge. -/
@@ -189,7 +186,6 @@ theorem sum_map_chargeMultiset {F : Type*} [AddCommGroup F] {σ : C(𝔻, Y)} (s
     (hs : ∀ z, σ z ∈ Z ↔ z ∈ s) (hpos : ∀ z, σ z ∈ Z → 0 ≤ A.localCharge σ z) (g : 𝔻 → F) :
     ((A.chargeMultiset σ).map g).sum = A.chargeSum σ g := by
   classical
-  have h : IsCompact (σ ⁻¹' Z) := (s.finite_toSet.subset fun w hw ↦ (hs w).1 hw).isCompact
   rw [Finset.sum_multiset_map_count, A.chargeSum_eq_sum s hs]
   -- Both sides are sums of `I_z(σ) g(z)`: over the points of positive charge on the left, over
   -- `s` on the right, and the other points of `s` have charge zero.
@@ -197,7 +193,7 @@ theorem sum_map_chargeMultiset {F : Type*} [AddCommGroup F] {σ : C(𝔻, Y)} (s
     (Finset.sum_congr rfl fun z hz ↦ ?_)
   · rw [Multiset.mem_toFinset, A.mem_chargeMultiset s hs] at hz
     by_contra hzs
-    exact hz.ne' (A.localCharge_eq_zero h fun hσ ↦ hzs ((hs z).1 hσ))
+    exact hz.ne' (A.localCharge_eq_zero_of_notMem s hs hzs)
   · rw [Multiset.mem_toFinset, A.mem_chargeMultiset s hs, not_lt] at hz
     rw [A.count_chargeMultiset s hs, Int.toNat_eq_zero.2 hz, zero_smul]
   · rw [A.count_chargeMultiset s hs, ← natCast_zsmul, Int.toNat_of_nonneg (hpos z ((hs z).2 hz))]
@@ -220,54 +216,6 @@ section Family
 
 variable {P : Type*} [TopologicalSpace P] (u : C(P × 𝔻, Y))
 
-/-- A function continuous at a point `z` of the disc is uniformly close to its value at `z` on a
-round disc about `z`. -/
-private theorem exists_pos_forall_dist_lt {F : Type*} [PseudoMetricSpace F] {g : 𝔻 → F} {z : 𝔻}
-    (hg : ContinuousAt g z) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ ρ > 0, ∀ x : 𝔻, (x : ℂ) ∈ ball (z : ℂ) ρ → dist (g x) (g z) < δ := by
-  have hmem := hg (ball_mem_nhds (g z) hδ)
-  rw [isEmbedding_coe.isInducing.nhds_eq_comap, mem_map, mem_comap] at hmem
-  obtain ⟨t, ht, hts⟩ := hmem
-  obtain ⟨ρ, hρ, hball⟩ := Metric.mem_nhds_iff.1 ht
-  exact ⟨ρ, hρ, fun x hx ↦ hts (hball hx)⟩
-
-/-- Radii for the convergence proof: around the points of a finite set `s₀ ⊆ 𝔻` there are round
-discs `B(z, r z) ⊆ 𝔻`, pairwise disjoint and isolating each point of `s₀` even at twice the radius,
-on which a function continuous at the points of `s₀` varies by less than a given `δ > 0`. -/
-private theorem exists_isolating_radius {F : Type*} [PseudoMetricSpace F] (s₀ : Finset 𝔻)
-    {g : 𝔻 → F} (hg : ∀ z ∈ s₀, ContinuousAt g z) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ r : 𝔻 → ℝ, (∀ z, 0 < r z) ∧ (∀ z : 𝔻, ‖(z : ℂ)‖ + r z ≤ 1) ∧
-      (∀ z w : 𝔻, w ∈ s₀ → (w : ℂ) ∈ ball (z : ℂ) (2 * r z) → w = z) ∧
-      (∀ z ∈ s₀, ∀ x : 𝔻, (x : ℂ) ∈ ball (z : ℂ) (r z) → dist (g x) (g z) < δ) ∧
-      ∀ x : 𝔻, ∀ z ∈ s₀, ∀ z' ∈ s₀, (x : ℂ) ∈ ball (z : ℂ) (r z) →
-        (x : ℂ) ∈ ball (z' : ℂ) (r z') → z = z' := by
-  have hrad : ∀ z : 𝔻, ∃ r > 0, ‖(z : ℂ)‖ + r ≤ 1 ∧
-      (∀ w ∈ s₀, (w : ℂ) ∈ ball (z : ℂ) (2 * r) → w = z) ∧
-      (z ∈ s₀ → ∀ x : 𝔻, (x : ℂ) ∈ ball (z : ℂ) r → dist (g x) (g z) < δ) := by
-    intro z
-    obtain ⟨R, hR, hisoR⟩ := z.exists_pos_forall_mem_ball_eq s₀
-    obtain ⟨ρ, hρ, hgρ⟩ : ∃ ρ > 0, z ∈ s₀ →
-        ∀ x : 𝔻, (x : ℂ) ∈ ball (z : ℂ) ρ → dist (g x) (g z) < δ := by
-      by_cases hz : z ∈ s₀
-      · obtain ⟨ρ, hρ, h⟩ := exists_pos_forall_dist_lt (hg z hz) hδ
-        exact ⟨ρ, hρ, fun _ ↦ h⟩
-      · exact ⟨1, one_pos, fun h ↦ (hz h).elim⟩
-    obtain ⟨r, hr, hrlt, hc⟩ := exists_pos_lt_and_norm_add_le_one z (lt_min (half_pos hR) hρ)
-    refine ⟨r, hr, hc, fun w hw hwb ↦ hisoR w hw (ball_subset_ball ?_ hwb), fun hz x hx ↦
-      hgρ hz x (ball_subset_ball ?_ hx)⟩
-    · linarith [min_le_left (R / 2) ρ]
-    · linarith [min_le_right (R / 2) ρ]
-  choose r hr hc hiso hgr using hrad
-  refine ⟨r, hr, hc, fun z ↦ hiso z, hgr, fun x z hz z' hz' hxz hxz' ↦ ?_⟩
-  -- Two points of `s₀` are at least twice either radius apart, so their discs are disjoint.
-  by_contra hne
-  have h1 : 2 * r z ≤ dist (z' : ℂ) z := not_lt.1 fun h ↦ hne (hiso z z' hz' h).symm
-  have h2 : 2 * r z' ≤ dist (z : ℂ) z' := not_lt.1 fun h ↦ hne (hiso z' z hz h)
-  have := dist_triangle (z : ℂ) x z'
-  rw [mem_ball] at hxz hxz'
-  rw [dist_comm] at hxz
-  linarith [dist_comm (z : ℂ) z']
-
 /-- A double sum of nonnegative integer multiples of differences `g z - g z₀` of norm at most `δ`
 has norm at most `δ` times the sum of the multiplicities. -/
 private theorem norm_sum_sum_zsmul_sub_le {F : Type*} [SeminormedAddCommGroup F]
@@ -281,20 +229,6 @@ private theorem norm_sum_sum_zsmul_sub_le {F : Type*} [SeminormedAddCommGroup F]
   refine (norm_zsmul_le _ _).trans ?_
   rw [Int.norm_eq_abs, abs_of_nonneg hcz, mul_comm δ]
   exact mul_le_mul_of_nonneg_left (hg z₀ hz₀ z hz) hcz
-
-open Classical in
-/-- Splitting a finite sum over `t` along finitely many predicates `p i`, `i ∈ s₀`, such that each
-point of `t` satisfies exactly one of them. -/
-private theorem sum_eq_sum_sum_filter {ι α M : Type*} [AddCommMonoid M] (s₀ : Finset ι)
-    (t : Finset α) (p : ι → α → Prop) (hex : ∀ a ∈ t, ∃ i ∈ s₀, p i a)
-    (huniq : ∀ a ∈ t, ∀ i ∈ s₀, ∀ j ∈ s₀, p i a → p j a → i = j) (f : α → M) :
-    ∑ a ∈ t, f a = ∑ i ∈ s₀, ∑ a ∈ t.filter (p i), f a := by
-  simp_rw [Finset.sum_filter]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun a ha ↦ ?_
-  obtain ⟨i, hi, hai⟩ := hex a ha
-  rw [Finset.sum_eq_single_of_mem i hi fun j hj hji ↦ ite_eq_right_iff.2 fun haj ↦
-    (hji (huniq a ha j hj i hi haj hai)).elim, ite_eq_left_iff.2 fun h ↦ (h hai).elim]
 
 open Classical in
 /-- The data of the convergence proof at `w₀`: if `σ_{w₀}⁻¹(Z)` is the finite set `s₀`, then for
@@ -341,8 +275,7 @@ theorem tendsto_chargeSum [LocallyPathConnectedSpace P] (hZ : IsClosed Z) {K : S
   classical
   set s₀ := h₀.toFinset
   have hs₀ : ∀ z, u (w₀, z) ∈ Z ↔ z ∈ s₀ := fun z ↦ by simp [s₀]
-  rw [Metric.tendsto_nhds]
-  intro ε hε
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
   -- Choose the tolerance `δ` for `g` so that `δ` times the total charge is below `ε`.
   set m : ℝ := ∑ z ∈ s₀, |(A.localCharge (u.curry w₀) z : ℝ)|
   have hm : 0 ≤ m := Finset.sum_nonneg fun _ _ ↦ abs_nonneg _
@@ -360,9 +293,12 @@ theorem tendsto_chargeSum [LocallyPathConnectedSpace P] (hZ : IsClosed Z) {K : S
   -- leaf over `w` add up to the local charge at `z₀`.
   have hsplit : ∑ z ∈ s, A.localCharge (u.curry w) z • g z = ∑ z₀ ∈ s₀,
       ∑ z ∈ s.filter fun z : 𝔻 ↦ (z : ℂ) ∈ ball (z₀ : ℂ) (r z₀),
-        A.localCharge (u.curry w) z • g z :=
-    sum_eq_sum_sum_filter s₀ s (fun z₀ z : 𝔻 ↦ (z : ℂ) ∈ ball (z₀ : ℂ) (r z₀))
-      (fun z hz ↦ hcov z ((hs z).2 hz)) (fun z _ z₀ hz₀ z₁ hz₁ ↦ huniq z z₀ hz₀ z₁ hz₁) _
+        A.localCharge (u.curry w) z • g z := by
+    rw [← Finset.sum_biUnion fun z₀ hz₀ z₁ hz₁ hne ↦ Finset.disjoint_filter.2
+      fun z _ hz₀' hz₁' ↦ hne (huniq z z₀ hz₀ z₁ hz₁ hz₀' hz₁')]
+    refine Finset.sum_congr (Finset.ext fun z ↦ ?_) fun _ _ ↦ rfl
+    simp only [Finset.mem_biUnion, Finset.mem_filter]
+    exact ⟨fun hz ↦ (hcov z ((hs z).2 hz)).imp fun _ h ↦ ⟨h.1, hz, h.2⟩, fun ⟨_, _, hz, _⟩ ↦ hz⟩
   have hsum' : A.chargeSum (u.curry w₀) g = ∑ z₀ ∈ s₀,
       ∑ z ∈ s.filter fun z : 𝔻 ↦ (z : ℂ) ∈ ball (z₀ : ℂ) (r z₀),
         A.localCharge (u.curry w) z • g z₀ := by
@@ -380,8 +316,7 @@ theorem tendsto_chargeSum [LocallyPathConnectedSpace P] (hZ : IsClosed Z) {K : S
         (A.localCharge (u.curry w) z : ℝ)
       = δ * ∑ z₀ ∈ s₀, (A.localCharge (u.curry w₀) z₀ : ℝ) := by
         congr 1
-        refine Finset.sum_congr rfl fun z₀ hz₀ ↦ ?_
-        rw [← Int.cast_sum, hsum z₀ hz₀ s hs]
+        exact Finset.sum_congr rfl fun z₀ hz₀ ↦ by rw [← Int.cast_sum, hsum z₀ hz₀ s hs]
     _ ≤ δ * m := mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun _ _ ↦ le_abs_self _) hδ.le
     _ < ε := by
         rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith)]

@@ -267,6 +267,12 @@ theorem localCharge_eq_zero {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) {z
   refine A.charge_eq_zero _ _ fun w hw ↦ hmiss _ hw ?_
   exact ball_subset_ball hrε.le (mem_range_subdisc.1 ⟨w, rfl⟩)
 
+/-- If `σ⁻¹(Z)` is the finite set `s`, the local charge of `σ` vanishes off `s`. -/
+theorem localCharge_eq_zero_of_notMem {σ : C(𝔻, Y)} (s : Finset 𝔻) (hs : ∀ z, σ z ∈ Z ↔ z ∈ s)
+    {z : 𝔻} (hz : z ∉ s) : A.localCharge σ z = 0 :=
+  A.localCharge_eq_zero (s.finite_toSet.subset fun w hw ↦ (hs w).1 hw).isCompact
+    fun hσ ↦ hz ((hs z).1 hσ)
+
 /-- **Additivity of local charges.** If `σ⁻¹(Z)` is the finite set `s`, the integer of `σ` is the
 sum of its local charges at the points of `s`. -/
 theorem charge_eq_sum_localCharge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)) (s : Finset 𝔻)
@@ -454,7 +460,7 @@ theorem localCharge_nonneg_of_finite {σ : C(𝔻, Y)} (s : Finset 𝔻) (hs : �
     (z : 𝔻) : 0 ≤ A.localCharge σ z := by
   by_cases hz : σ z ∈ Z
   · exact (A.localCharge_pos_of_finite s hs u hu hhol hz).le
-  · exact (A.localCharge_eq_zero (s.finite_toSet.subset fun w hw ↦ (hs w).1 hw).isCompact hz).ge
+  · exact (A.localCharge_eq_zero_of_notMem s hs fun hzs ↦ hz ((hs z).2 hzs)).ge
 
 /-! ### Naturality -/
 
