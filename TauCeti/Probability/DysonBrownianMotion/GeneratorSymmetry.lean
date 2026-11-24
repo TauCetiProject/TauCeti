@@ -26,16 +26,17 @@ The Ornstein–Uhlenbeck Dyson system of size `n` and parameter `β` adds the co
 Off the collision hyperplanes the Hermite beta weight
 `p x = exp (-(β n / 4) ∑ᵢ xᵢ²) ∏_{i<j} |xᵢ - xⱼ| ^ β` is
 `exp (β logVandermonde n x - (β n / 4) ∑ᵢ xᵢ²)`, so its logarithmic gradient is `β n` times the
-drift: `∂ᵢ p = β n (dysonDrift n x i - xᵢ / 2) p` (`hasFDerivAt_hermiteBetaWeight`). Hence the
-generator is in divergence form, `p · dysonOUGenerator β n f = (β n)⁻¹ ∑ᵢ ∂ᵢ (p ∂ᵢ f)`
+drift: `∂ᵢ p = β n (dysonDrift n x i - xᵢ / 2) p` (`hasFDerivAt_hermiteBetaWeight`). Hence, for
+`β ≠ 0`, the generator is in divergence form, `p · dysonOUGenerator β n f = (β n)⁻¹ ∑ᵢ ∂ᵢ (p ∂ᵢ f)`
 (`hermiteBetaWeight_mul_dysonOUGenerator`).
 
-Integrating by parts against test functions `f` that are `C²` with compact support off the
-collision hyperplanes gives the Dirichlet form identity
+For `β ≠ 0`, integrating by parts against test functions `f` that are `C²` with compact support
+off the collision hyperplanes gives the Dirichlet form identity
 `∫ g · dysonOUGenerator β n f · p = -(β n)⁻¹ ∫ ⟨∇g, ∇f⟩ p`
 for every `g` that is `C¹` off the collision hyperplanes, with no boundary terms because `f`
 vanishes near the walls (`integral_mul_dysonOUGenerator_mul_hermiteBetaWeight`). For the Hermite
-beta ensemble this says that the generator is symmetric
+beta ensemble the identity holds for every `β`, since for `β = 0` and `n ≠ 0` the ensemble is the
+zero measure; it says that the generator is symmetric
 (`integral_mul_dysonOUGenerator_hermiteBetaEnsemble_comm`) and annihilates the ensemble,
 `∫ dysonOUGenerator β n f d(hermiteBetaEnsemble β n) = 0`
 (`integral_dysonOUGenerator_hermiteBetaEnsemble`): the ensemble is infinitesimally invariant for the
@@ -170,7 +171,7 @@ private theorem fderiv_hermiteBetaWeight_mul_fderiv_apply {f : (Fin n → ℝ) �
   simp [Pi.single_apply]
 
 /-- **The divergence form of the Ornstein–Uhlenbeck Dyson generator.** At a configuration with
-distinct coordinates, for the Hermite beta weight `p` and `f` of class `C²` at `x`,
+distinct coordinates, for `β ≠ 0`, the Hermite beta weight `p` and `f` of class `C²` at `x`,
 `p · dysonOUGenerator β n f = (β n)⁻¹ ∑ᵢ ∂ᵢ (p ∂ᵢ f)`. -/
 theorem hermiteBetaWeight_mul_dysonOUGenerator (hβ : β ≠ 0) {f : (Fin n → ℝ) → ℝ}
     {x : Fin n → ℝ} (hx : Function.Injective x) (hf : ContDiffAt ℝ 2 f x) :
@@ -269,7 +270,7 @@ private theorem integral_mul_fderiv_hermiteBetaWeight_mul_fderiv {f g : (Fin n �
 
 /-- **Integration by parts for the Ornstein–Uhlenbeck Dyson generator.** Let `f` be `C²` with
 compact support avoiding the collision hyperplanes, and let `g` be `C¹` off the collision
-hyperplanes. Then, against the Hermite beta weight `p`,
+hyperplanes. Then, for `β ≠ 0` and against the Hermite beta weight `p`,
 `∫ g · dysonOUGenerator β n f · p = -(β n)⁻¹ ∫ (∑ᵢ ∂ᵢ g ∂ᵢ f) p`. -/
 theorem integral_mul_dysonOUGenerator_mul_hermiteBetaWeight (hβ : β ≠ 0)
     {f g : (Fin n → ℝ) → ℝ} (hf : ContDiff ℝ 2 f) (hfc : HasCompactSupport f)
