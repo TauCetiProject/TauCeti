@@ -57,6 +57,8 @@ space contains such a family, which gives coordinates on the space.
   basis of `ker f`.
 * `Module.Dual.span_range_comp_eq_top_of_injective`: pulling a spanning family of forms back along
   an injective linear map still spans the dual.
+* `Module.Dual.exists_eq_one`: any nonzero element of a module over a division ring (even when
+  only carrying an `AddCommMonoid` structure) admits a dual functional taking it to `1`.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
@@ -325,6 +327,17 @@ theorem span_range_proj {R ι : Type*} [CommSemiring R] [Finite ι] :
     ext j x
     simp
   rw [h, Basis.span_eq]
+
+/-- Any nonzero vector in a module over a division ring (even when the module only carries an
+`AddCommMonoid` structure, such as a semiring algebra) admits a dual functional taking it to
+`1`. -/
+theorem exists_eq_one (K : Type*) {V : Type*} [DivisionRing K] [AddCommMonoid V] [Module K V]
+    {x : V} (hx : x ≠ 0) : ∃ f : Dual K V, f x = 1 := by
+  -- `Module.Free.of_divisionRing` needs `AddCommGroup V`; `addCommMonoidToAddCommGroup` upgrades
+  -- `[AddCommMonoid V]` definitionally so `Module.Projective K V` synthesizes.
+  let _ := Module.addCommMonoidToAddCommGroup K (M := V)
+  obtain ⟨f, hf⟩ := Projective.exists_dual_ne_zero K hx
+  exact ⟨(LinearMap.mulRight K (f x)⁻¹).comp f, by simp [mul_inv_cancel₀ hf]⟩
 
 end Module.Dual
 

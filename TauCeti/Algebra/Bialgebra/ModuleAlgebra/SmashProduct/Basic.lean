@@ -349,7 +349,8 @@ example : (instSemiring μ).toAddCommMonoid = instAddCommMonoid μ := rfl
 /-- Evaluating `mulLinear` gives the smash product multiplication. -/
 @[simp] theorem mulLinear_apply (x y : μ.SmashProduct) : mulLinear μ x y = x * y := (rfl)
 
-private theorem natCast_def (n : ℕ) : (n : μ.SmashProduct) = μ.smash n 1 := rfl
+/-- The natural-number cast in `A # H` is `n ↦ n # 1`. -/
+theorem natCast_def (n : ℕ) : (n : μ.SmashProduct) = μ.smash n 1 := (rfl)
 
 theorem one_def : (1 : μ.SmashProduct) = μ.smash 1 1 := (rfl)
 
@@ -893,6 +894,10 @@ example {B : Type v} [Semiring B] [Bialgebra ℤ B] {C : Type w} [Ring C]
     (ν : LeftModuleAlgebra ℤ B C) :
     (Ring.toIntAlgebra ν.SmashProduct : Algebra ℤ ν.SmashProduct) = SmashProduct.instAlgebra ν :=
   rfl
+
+/-- The integer cast in `A # H` is `z ↦ z # 1`. -/
+theorem SmashProduct.intCast_def (μ : LeftModuleAlgebra R H A) (z : ℤ) :
+    (z : μ.SmashProduct) = μ.smash z 1 := (rfl)
 
 @[simp]
 theorem neg_smash (μ : LeftModuleAlgebra R H A) (a : A) (h : H) :
