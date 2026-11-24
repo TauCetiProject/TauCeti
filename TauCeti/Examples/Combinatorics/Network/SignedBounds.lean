@@ -126,21 +126,17 @@ theorem isCirculation_circulation : IsCirculation circulation := by
 `circulation`. -/
 theorem eq_circulation {f : Assignment Hom ℤ} (hf : f ∈ Set.Icc lower upper)
     (hc : IsCirculation f) : f = circulation := by
-  have hft := hf.1 false true PUnit.unit
-  have hft' := hf.2 false true PUnit.unit
-  have htf := hf.1 true false PUnit.unit
-  have htf' := hf.2 true false PUnit.unit
-  have hff := hf.1 false false PUnit.unit
-  have hff' := hf.2 false false PUnit.unit
-  have htt := hf.1 true true PUnit.unit
-  have htt' := hf.2 true true PUnit.unit
-  have hex := (isCirculation_iff f).1 hc true
-  simp only [excessAt_def, Fintype.sum_bool, Fintype.univ_punit, sum_singleton] at hex
-  simp only [lower_false_true, upper_false_true, lower_true_false, upper_true_false,
-    lower_false_false, upper_false_false, lower_true_true, upper_true_true] at *
+  -- Conservation at `true` forces equal values on the two arrows between the vertices; the
+  -- lower bound of `false → true` and the upper bound of `true → false` then pin both to `-1`.
+  have hex : f (x := false) (y := true) PUnit.unit = f (x := true) (y := false) PUnit.unit :=
+    sub_eq_zero.1 (excessAt_true f ▸ (isCirculation_iff f).1 hc true)
+  have hft : -1 ≤ f (x := false) (y := true) PUnit.unit := hf.1 false true PUnit.unit
+  have htf : f (x := true) (y := false) PUnit.unit ≤ -1 := hf.2 true false PUnit.unit
   funext x y e
-  cases x <;> cases y <;> cases e <;> simp only [circulation_false_true, circulation_true_false,
-    circulation_false_false, circulation_true_true] <;> omega
+  cases e
+  have hlo := hf.1 x y PUnit.unit
+  have hup := hf.2 x y PUnit.unit
+  cases x <;> cases y <;> simp at hlo hup ⊢ <;> omega
 
 /-- The flow forced by the bounds cannot be cancelled: no feasible circulation vanishes on any
 arrow. -/
@@ -224,7 +220,7 @@ def reversed : ∀ ⦃x y : Bool⦄, Hom x y → Bool :=
 
 /-- Every reversed arrow has a positive lower bound after reversal, so both of its bounds are
 positive. -/
-theorem zero_lt_reorientLower_flip {x y : Bool} (e : Hom x y) (h : reversed e) :
+theorem reorientLower_flip_pos {x y : Bool} (e : Hom x y) (h : reversed e) :
     0 < reorientLower reversed lower upper (ReorientedHom.flip reversed e h) := by
   simpa [reversed] using h
 
@@ -288,30 +284,21 @@ can adjust it. -/
 theorem eq_zero_of_mem_Icc_residualCapacity {r : Assignment (ResidualHom Hom) ℤ}
     (hr : r ∈ Set.Icc 0 (residualCapacity lower upper circulation)) (hc : IsCirculation r) :
     r = 0 := by
-  have hex := (isCirculation_iff r).1 hc true
-  simp only [excessAt_def, Fintype.sum_bool, Fintype.sum_sum_type, Fintype.univ_punit,
-    sum_singleton] at hex
-  have h₁ := hr.1 false true (Sum.inl PUnit.unit)
-  have h₂ := hr.1 false true (Sum.inr PUnit.unit)
-  have h₃ := hr.2 true false (Sum.inl PUnit.unit)
-  have h₄ := hr.2 true false (Sum.inr PUnit.unit)
-  have h₅ := hr.1 true false (Sum.inl PUnit.unit)
-  have h₆ := hr.1 true false (Sum.inr PUnit.unit)
-  have h₇ := hr.2 false false (Sum.inl PUnit.unit)
-  have h₈ := hr.2 false false (Sum.inr PUnit.unit)
-  have h₉ := hr.1 false false (Sum.inl PUnit.unit)
-  have h₁₀ := hr.1 false false (Sum.inr PUnit.unit)
-  have h₁₁ := hr.2 true true (Sum.inl PUnit.unit)
-  have h₁₂ := hr.2 true true (Sum.inr PUnit.unit)
-  have h₁₃ := hr.1 true true (Sum.inl PUnit.unit)
-  have h₁₄ := hr.1 true true (Sum.inr PUnit.unit)
-  simp only [Pi.zero_apply, residualCapacity_inl, residualCapacity_inr, upper_true_false,
-    circulation_true_false, lower_false_true, circulation_false_true, upper_false_false,
-    circulation_false_false, lower_false_false, upper_true_true, circulation_true_true,
-    lower_true_true] at h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀ h₁₁ h₁₂ h₁₃ h₁₄
-  funext x y a
-  cases x <;> cases y <;> rcases a with a | a <;> cases a <;> simp only [Pi.zero_apply] <;>
-    omega
+  -- A residual arrow not from `false` to `true` has capacity at most zero, so it carries zero.
+  have hzero {v w : Bool} (a : ResidualHom Hom v w) (h : ¬(v = false ∧ w = true)) : r a = 0 :=
+    le_antisymm ((hr.2 v w a).trans
+      (not_lt.1 (mt (eq_false_and_eq_true_of_residualCapacity_pos a) h))) (hr.1 v w a)
+  -- Conservation at `true` then says the two residual arrows from `false` to `true` carry zero
+  -- in total, and both carry nonnegative values.
+  have hex : r (x := false) (y := true) (Sum.inl PUnit.unit) +
+      r (x := false) (y := true) (Sum.inr PUnit.unit) = 0 := by
+    simpa [excessAt_def, Fintype.sum_sum_type, hzero] using (isCirculation_iff r).1 hc true
+  have hinl : 0 ≤ r (x := false) (y := true) (Sum.inl PUnit.unit) := hr.1 false true _
+  have hinr : 0 ≤ r (x := false) (y := true) (Sum.inr PUnit.unit) := hr.1 false true _
+  funext v w a
+  cases v <;> cases w
+  case false.true => rcases a with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp only [Pi.zero_apply] <;> omega
+  all_goals exact hzero a (by simp)
 
 /-! ## A feasible reference -/
 
