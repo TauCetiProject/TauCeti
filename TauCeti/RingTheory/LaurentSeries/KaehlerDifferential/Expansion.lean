@@ -57,10 +57,13 @@ private theorem isScalarTower_toAlgebra {k F C : Type*} [CommRing k] [CommRing F
     [Algebra k F] [CommRing C] [Algebra k C] (e : F →ₐ[k] C⸨X⸩) :
     let _ : Algebra F C⸨X⸩ := e.toRingHom.toAlgebra
     IsScalarTower k F C⸨X⸩ :=
+  -- Introduce the induced `F`-algebra structure on `C⸨X⸩` so `liftKaehlerDifferential` applies.
   let _ : Algebra F C⸨X⸩ := e.toRingHom.toAlgebra
   ⟨fun a z f ↦ by
+    -- The `k`-module structure on `C⸨X⸩` found by instance search is coefficientwise.
     have hek : e (a • z) = a • e z := by
       rw [Algebra.smul_def, map_mul, AlgHom.commutes, TauCeti.laurentSeries_algebraMap_mul_eq_smul]
+    -- The induced algebra acts by multiplication with the expansion of the scalar.
     rw [Algebra.smul_def (A := C⸨X⸩) (a • z), Algebra.smul_def (A := C⸨X⸩) z,
       RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, hek,
       ← TauCeti.laurentSeries_algebraMap_mul_eq_smul,
@@ -70,8 +73,13 @@ private noncomputable def laurentDerivation {k F C : Type*} [CommRing k] [CommRi
     [Algebra k F] [CommRing C] [Algebra k C] (e : F →ₐ[k] C⸨X⸩) :
     let _ : Algebra F C⸨X⸩ := e.toRingHom.toAlgebra
     Derivation k F C⸨X⸩ :=
+  -- Equip `C⸨X⸩` with the `F`-algebra structure induced by `e` to restrict
+  -- `laurentSeriesDerivation C` along `e`.
   let _ : Algebra F C⸨X⸩ := e.toRingHom.toAlgebra
   have _ := isScalarTower_toAlgebra e
+  -- `laurentSeriesDerivation C` uses `Algebra.toSMul` on `C⸨X⸩`, while `restrictScalars k`
+  -- uses the coefficientwise `k`-action; both `IsScalarTower k C C⸨X⸩` instances are needed
+  -- and follow because both actions factor through `C`.
   have _ : @IsScalarTower k C C⸨X⸩ Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
     .of_algebraMap_eq fun a ↦ by
       simp only [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply,
