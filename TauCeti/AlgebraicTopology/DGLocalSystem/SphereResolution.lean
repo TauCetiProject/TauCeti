@@ -103,6 +103,14 @@ signed sum of the faces of the cube of Moore paths from the pole along the top c
 def sphereAttachingChain : loopChainAlgebra Sph (spherePolePoint h) k :=
   cubicalChainLof (MooreLoopSpace Sph (spherePolePoint h)) k (m + 1) (sphereAttachingCycleChain h k)
 
+/-- The attaching chain is the image of the attaching cycle `TauCeti.sphereAttachingCycle` in the
+loop chain algebra; this connects it to `TauCeti.sphereLoopHomologyMulRightEquiv`. -/
+theorem sphereAttachingChain_def :
+    sphereAttachingChain h k = cubicalChainLof (MooreLoopSpace Sph (spherePolePoint h)) k (m + 1)
+      ((((normalizedCubicalChainComplex k).obj _).iCycles (m + 1)).hom
+        (sphereAttachingCycle h k)) :=
+  (rfl)
+
 /-- The attaching cycle has dimension `m + 1`. -/
 theorem sphereAttachingChain_mem :
     sphereAttachingChain h k ∈
