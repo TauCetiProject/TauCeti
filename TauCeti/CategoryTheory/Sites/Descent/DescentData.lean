@@ -65,7 +65,6 @@ variable {D₁ D₂ : F.DescentData f}
 `P i j` of `f i` and `f j` with projections `p₁ i j` and `p₂ i j`, a family of morphisms
 `φ i : D₁.obj i ⟶ D₂.obj i` which commutes with the gluing morphisms over every `P i j` is a
 morphism of descent data. -/
-@[expose, simps]
 def homMkOfIsPullback (φ : ∀ i, D₁.obj i ⟶ D₂.obj i) {P : ι → ι → C}
     {p₁ : ∀ i j, P i j ⟶ X i} {p₂ : ∀ i j, P i j ⟶ X j}
     (h : ∀ i j, IsPullback (p₁ i j) (p₂ i j) (f i) (f j))
@@ -90,5 +89,19 @@ def homMkOfIsPullback (φ : ∀ i, D₁.obj i ⟶ D₂.obj i) {P : ι → ι →
     rw [mapComp'_hom_naturality_assoc, ← Functor.map_comp_assoc, comm, Functor.map_comp_assoc,
       mapComp'_inv_naturality]
     simp only [Category.assoc]
+
+/-- The components of `homMkOfIsPullback φ h comm` are the given morphisms `φ i`. -/
+@[simp]
+lemma homMkOfIsPullback_hom (φ : ∀ i, D₁.obj i ⟶ D₂.obj i) {P : ι → ι → C}
+    {p₁ : ∀ i j, P i j ⟶ X i} {p₂ : ∀ i j, P i j ⟶ X j}
+    (h : ∀ i j, IsPullback (p₁ i j) (p₂ i j) (f i) (f j))
+    (comm : ∀ i j, (F.map (p₁ i j).op.toLoc).toFunctor.map (φ i) ≫
+        D₂.hom (p₁ i j ≫ f i) (p₁ i j) (p₂ i j) rfl (h i j).w.symm =
+      D₁.hom (p₁ i j ≫ f i) (p₁ i j) (p₂ i j) rfl (h i j).w.symm ≫
+        (F.map (p₂ i j).op.toLoc).toFunctor.map (φ j)) (i : ι) :
+    (homMkOfIsPullback φ h comm).hom i = φ i :=
+  -- The body of `homMkOfIsPullback` is not exposed, so this is not a `rfl` lemma for `dsimp`
+  -- outside this module.
+  by rfl
 
 end CategoryTheory.Pseudofunctor.DescentData

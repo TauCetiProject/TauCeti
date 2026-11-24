@@ -585,8 +585,10 @@ def fullyFaithfulQcohDescentDataToCoalgebra : (qcohDescentDataToCoalgebra f).Ful
       -- Composites and pullbacks of morphisms of quasi-coherent modules are, by definition, those
       -- of the underlying morphisms of modules.
       exact h)
-  map_preimage _ := rfl
-  preimage_map _ := rfl
+  map_preimage g := Comonad.Coalgebra.Hom.ext <| congrArg InducedCategory.Hom.hom
+    (Pseudofunctor.DescentData.homMkOfIsPullback_hom (fun _ ↦ ObjectProperty.homMk g.f) _ _ _)
+  preimage_map _ := Pseudofunctor.DescentData.hom_ext fun _ ↦
+    (Pseudofunctor.DescentData.homMkOfIsPullback_hom ..).trans rfl
 
 /-- On the descent datum of the pullback `f^* M` of a quasi-coherent module `M` on `S`, the
 coaction is `f^*` of the unit `M ⟶ f_* f^* M`: the coalgebra of Beck's comparison functor. -/
