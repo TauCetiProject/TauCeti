@@ -92,6 +92,18 @@ theorem complexSplitting_splittingPoint :
         (MonoidAlgebra.of ℂ (Multiplicative (ℤ × ℤ))).toHomUnits (.ofAdd (0, 1))) :=
   MulEquiv.apply_symm_apply _ _
 
+/-- Under `ℂ ⊗[ℝ] ℂ[ℤ²] ≃ ℂ[ℤ²] × ℂ[ℤ²]`, the unit `splittingPoint` of `ℂ ⊗[ℝ] ℂ[ℤ²]` is the
+pair of coordinates `(z₁, z₂) = (X^{(1,0)}, X^{(0,1)})`. -/
+theorem complexTensorProductEquivProd_pointsMulEquiv_splittingPoint :
+    complexTensorProductEquivProd _
+        (pointsMulEquiv _ splittingPoint : ℂ ⊗[ℝ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) =
+      (MonoidAlgebra.single (Multiplicative.ofAdd ((1 : ℤ), (0 : ℤ))) (1 : ℂ),
+        MonoidAlgebra.single (Multiplicative.ofAdd ((0 : ℤ), (1 : ℤ))) (1 : ℂ)) := by
+  have h₁ := coe_complexSplitting_fst splittingPoint
+  have h₂ := coe_complexSplitting_snd splittingPoint
+  rw [complexSplitting_splittingPoint] at h₁ h₂
+  exact Prod.ext (h₁.symm.trans (by simp)) (h₂.symm.trans (by simp))
+
 /-- **The character `(p, q)` of `splittingPoint` is `X^{(p,q)}`.** -/
 @[simp]
 theorem characterGroup_splittingPoint (pq : Multiplicative (ℤ × ℤ)) :
@@ -365,15 +377,7 @@ theorem conjSwap_comp_splittingPoint :
     apply (complexTensorProductEquivProd _).injective
     rw [Units.coe_map, MonoidHom.coe_ofClass,
       complexTensorProductEquivProd_lTensor_of_map_smul _ conjSwap_smul]
-    have hu : complexTensorProductEquivProd _
-          (pointsMulEquiv _ splittingPoint : ℂ ⊗[ℝ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) =
-        (MonoidAlgebra.single (Multiplicative.ofAdd ((1 : ℤ), (0 : ℤ))) (1 : ℂ),
-          MonoidAlgebra.single (Multiplicative.ofAdd ((0 : ℤ), (1 : ℤ))) (1 : ℂ)) := by
-      have h₁ := coe_complexSplitting_fst splittingPoint
-      have h₂ := coe_complexSplitting_snd splittingPoint
-      rw [complexSplitting_splittingPoint] at h₁ h₂
-      exact Prod.ext (h₁.symm.trans (by simp)) (h₂.symm.trans (by simp))
-    rw [hu]
+    rw [complexTensorProductEquivProd_pointsMulEquiv_splittingPoint]
     simp
   simpa using congrArg ofConv key
 

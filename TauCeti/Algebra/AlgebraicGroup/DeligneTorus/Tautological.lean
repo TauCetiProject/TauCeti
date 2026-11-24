@@ -209,17 +209,11 @@ theorem mem_hodgeComponent_tautologicalComodule_iff {p q : ℤ} {v : ℂ ⊗[ℝ
   let _ := tautologicalComodule
   let Φ := (Algebra.TensorProduct.comm ℝ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) ℂ).trans
     (complexTensorProductEquivProd _)
-  have hsp : complexTensorProductEquivProd _ (pointsMulEquiv _ splittingPoint) =
-      (MonoidAlgebra.single (Multiplicative.ofAdd ((1 : ℤ), (0 : ℤ))) (1 : ℂ),
-        MonoidAlgebra.single (Multiplicative.ofAdd ((0 : ℤ), (1 : ℤ))) (1 : ℂ)) := by
-    have h₁ := coe_complexSplitting_fst splittingPoint
-    have h₂ := coe_complexSplitting_snd splittingPoint
-    rw [complexSplitting_splittingPoint] at h₁ h₂
-    exact Prod.ext (h₁.symm.trans (by simp)) (h₂.symm.trans (by simp))
   rw [mem_hodgeComponent_iff, ← Φ.injective.eq_iff]
   simp only [Φ, AlgEquiv.trans_apply, comm_endOfPoint_tautologicalComodule,
     Algebra.TensorProduct.comm_smul_left, map_mul]
-  rw [complexTensorProductEquivProd_comm_rTensor, hsp, complexTensorProductEquivProd_tmul]
+  rw [complexTensorProductEquivProd_comm_rTensor,
+    complexTensorProductEquivProd_pointsMulEquiv_splittingPoint, complexTensorProductEquivProd_tmul]
   simp only [Prod.mk_mul_mk, Prod.mk.injEq, map_one, one_smul, algebraMap_monoidAlgebra,
     MonoidAlgebra.single_mul_single, one_mul, mul_one, MonoidAlgebra.single_inj, and_true,
     and_self, EmbeddingLike.apply_eq_iff_eq, ne_eq]
