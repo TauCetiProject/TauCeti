@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.NNNorm
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Basic facts about bounded operators
@@ -39,7 +41,9 @@ neighbourhood of `0` (`Filter.Tendsto.eventually_clm_mapsTo_of_opNorm_tendsto_ze
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
-(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). For a real endomorphism
+`T` with `‖T‖ ≤ M`, `‖a v + b T v‖² ≤ (1 + M²) (a² + b²) ‖v‖²`
+(`ContinuousLinearMap.norm_smul_add_smul_apply_sq_le`). The difference of two
 compositions obeys the three-term estimate
 `‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
 (`ContinuousLinearMap.enorm_comp_sub_comp_le` in extended norms,
@@ -59,10 +63,11 @@ it stays nonzero under a sufficiently small perturbation
 (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
 surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
-same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
+same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`). Conversely, an
+invertible operator `A : E →L F` satisfies `‖x‖ ≤ ‖A.inverse‖ ‖A x‖`
+(`ContinuousLinearMap.IsInvertible.norm_le_norm_inverse_mul_norm`); an invertible
 operator `A` on a normed space cancels against its inverse
-(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
-and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
+(`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`),
 and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
 is invertible if a sufficiently nearby operator is invertible
@@ -79,6 +84,9 @@ sequence `v` of vectors, the weighted norm of the finite Cauchy product
 `∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by the Cauchy product of the
 weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
 (`TauCeti.norm_sum_range_clm_apply_mul_pow_le`).
+
+The sum `a • L v + b • M w` is bounded using separate bounds on both coefficients,
+both operators and both vectors (`ContinuousLinearMap.norm_smul_apply_add_smul_apply_le`).
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
@@ -111,7 +119,8 @@ scalar multiplication by the values of a continuous semilinear map `L` costs at 
 (`ContinuousLinearMap.norm_apply_smul_le_of_support_subset_closedBall`).
 
 The identity operator `1` has operator norm at most one on every seminormed space
-(`ContinuousLinearMap.norm_one_le`).
+(`ContinuousLinearMap.norm_one_le`), and the affine map `z ↦ A z + v` given by a continuous
+semilinear map `A` is `‖A‖₊`-Lipschitz (`ContinuousLinearMap.lipschitzWith_add_const`).
 Bounded linear endomorphisms of a seminormed space act continuously on it
 (`ContinuousLinearMap.instContinuousSMul`).
 -/
@@ -224,12 +233,31 @@ noncomputable abbrev normedAddCommGroup : NormedAddCommGroup (E →SL[σ] F) :=
 
 end Semilinear
 
+/-- The affine map `z ↦ A z + v` given by a continuous semilinear map `A` between seminormed spaces
+is Lipschitz with constant `‖A‖₊`. -/
+theorem lipschitzWith_add_const {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+    (A : E →SL[σ] F) (v : F) : LipschitzWith ‖A‖₊ fun z ↦ A z + v := by
+  simpa using A.lipschitzWith.add (LipschitzWith.const v)
+
 /-- Right scalar multiplication `r ↦ r • e` by `e : E` under a bounded scalar action of a
 seminormed ring `R` is uniformly bounded. -/
 theorem exists_norm_toSpanSingleton_apply_le (R : Type*) {E : Type*} [SeminormedRing R]
     [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] (e : E) :
     ∃ C, ∀ r : R, ‖toSpanSingleton R e r‖ ≤ C * ‖r‖ :=
   ⟨‖e‖, fun r ↦ by simpa only [toSpanSingleton_apply, mul_comm ‖e‖] using norm_smul_le r e⟩
+
+/-- Applying `a + b T`, for a real endomorphism `T` with `‖T‖ ≤ M`, scales the norm squared by at
+most `(1 + M²) (a² + b²)`. -/
+theorem norm_smul_add_smul_apply_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (T : E →L[ℝ] E) {M : ℝ} (hM : ‖T‖ ≤ M) (a b : ℝ) (v : E) :
+    ‖a • v + b • T v‖ ^ 2 ≤ (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by
+  have hTv : ‖T v‖ ≤ M * ‖v‖ := T.le_of_opNorm_le hM v
+  calc ‖a • v + b • T v‖ ^ 2 ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + ‖T v‖ ^ 2) :=
+        TauCeti.norm_smul_add_smul_sq_le a b v (T v)
+    _ ≤ (a ^ 2 + b ^ 2) * (‖v‖ ^ 2 + (M * ‖v‖) ^ 2) := by gcongr
+    _ = (1 + M ^ 2) * (a ^ 2 + b ^ 2) * ‖v‖ ^ 2 := by ring
 
 section SemilinearFamily
 
@@ -260,6 +288,20 @@ end SemilinearFamily
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
 variable [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- Bound a sum of two scaled operator evaluations using separate bounds for both coefficients,
+both operators and their arguments. -/
+theorem norm_smul_apply_add_smul_apply_le {Z : Type*} [SeminormedAddCommGroup Z]
+    [NormedSpace 𝕜 Z] (L : X →L[𝕜] Z) (M : Y →L[𝕜] Z) {a b : 𝕜} {v : X} {w : Y}
+    {A B C D R S : ℝ} (ha : ‖a‖ ≤ A) (hb : ‖b‖ ≤ B) (hL : ‖L‖ ≤ C) (hM : ‖M‖ ≤ D)
+    (hv : ‖v‖ ≤ R) (hw : ‖w‖ ≤ S) : ‖a • L v + b • M w‖ ≤ A * C * R + B * D * S := by
+  refine norm_add_le_of_le ?_ ?_
+  · rw [norm_smul, mul_assoc]
+    exact mul_le_mul ha (L.le_of_opNorm_le_of_le hL hv) (norm_nonneg _)
+      ((norm_nonneg _).trans ha)
+  · rw [norm_smul, mul_assoc]
+    exact mul_le_mul hb (M.le_of_opNorm_le_of_le hM hw) (norm_nonneg _)
+      ((norm_nonneg _).trans hb)
 
 /-- The identity operator `1 : X →L[𝕜] X` has norm at most one, also on the trivial space, where
 Mathlib's `norm_one` does not apply. -/
@@ -407,6 +449,13 @@ theorem norm_inverse_apply_le_of_forall_norm_le {F : Type*} [NormedAddCommGroup 
   simpa [(isInvertible_of_surjective_of_forall_norm_le hL hC).self_apply_inverse]
     using hC (L.inverse y)
 
+/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse,
+`‖x‖ ≤ ‖A⁻¹‖ ‖A x‖`. -/
+theorem IsInvertible.norm_le_norm_inverse_mul_norm {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {A : E →L[𝕜] F} (hA : A.IsInvertible) (x : E) :
+    ‖x‖ ≤ ‖A.inverse‖ * ‖A x‖ := by
+  simpa [hA.inverse_apply_self] using A.inverse.le_opNorm (A x)
+
 /-- The inverse of an invertible operator undoes the operator. -/
 @[simp]
 theorem ringInverse_apply_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
@@ -418,13 +467,6 @@ theorem ringInverse_apply_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
 theorem apply_ringInverse_apply {A : E →L[𝕜] E} (hA : IsUnit A) (y : E) :
     A (Ring.inverse A y) = y := by
   rw [← mul_apply_eq_comp, Ring.mul_inverse_cancel A hA, one_apply_eq_self]
-
-/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse. -/
-theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
-    ‖x‖ ≤ ‖Ring.inverse A‖ * ‖A x‖ := by
-  calc
-    ‖x‖ = ‖Ring.inverse A (A x)‖ := by rw [ringInverse_apply_apply hA]
-    _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
 
 /-- An operator bounded below by `M⁻¹` has an inverse of norm at most `M`. If `A` is not a unit,
 `Ring.inverse A = 0` and the bound is trivial. -/
@@ -649,8 +691,10 @@ theorem exists_norm_clm_apply_le_and_norm_le_of_isUnit {S : Set α} (hS : IsComp
       _ ≤ max 1 (max A B) * ‖v‖ := by
         gcongr
         exact (hA x hx).trans ((le_max_left _ _).trans (le_max_right _ _))
-  · calc ‖v‖ ≤ ‖Ring.inverse (Φ x)‖ * ‖Φ x v‖ :=
-          ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply (hΦS x hx) v
+  · have hΦx := ContinuousLinearMap.isInvertible_iff_isUnit.mpr (hΦS x hx)
+    calc ‖v‖ ≤ ‖Ring.inverse (Φ x)‖ * ‖Φ x v‖ := by
+          simpa only [ContinuousLinearMap.ringInverse_eq_inverse] using
+            hΦx.norm_le_norm_inverse_mul_norm v
       _ ≤ max 1 (max A B) * ‖Φ x v‖ := by
         gcongr
         exact (hB x hx).trans ((le_max_right _ _).trans (le_max_right _ _))

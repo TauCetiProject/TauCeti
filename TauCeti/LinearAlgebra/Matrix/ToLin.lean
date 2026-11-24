@@ -52,6 +52,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   free right modules of coordinate vectors are matrices acting on column vectors.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
+* `LinearMap.sum_toMatrix_mulVec_smul`: the vector whose coordinates are the matrix of `φ` applied
+  to `x` is `φ (∑ j, x j • v j)`.
 * `LinearMap.toLin'_toMatrix_comp_equivFun` and `LinearMap.equivFun_symm_comp_toLin'_toMatrix`:
   the coordinate equivalences of two bases intertwine a linear map with its matrix.
 * `LinearMap.isUnit_toMatrix_iff_bijective`, `LinearMap.isUnit_det_toMatrix_iff_bijective`,
@@ -249,6 +251,14 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
     toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
   rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
     LinearEquiv.apply_symm_apply]
+
+/-- **Vectors through the coefficient matrix.** The vector whose coordinates in the basis `b` are
+the coefficient matrix `LinearMap.toMatrix v b φ` applied to `x` is `φ (∑ j, x j • v j)`. -/
+theorem sum_toMatrix_mulVec_smul {R V M ι κ : Type*} [CommSemiring R] [AddCommMonoid V]
+    [Module R V] [AddCommMonoid M] [Module R M] [Fintype κ] [DecidableEq κ] [Fintype ι]
+    (v : Module.Basis κ R V) (b : Module.Basis ι R M) (φ : V →ₗ[R] M) (x : κ → R) :
+    ∑ c, (toMatrix v b φ *ᵥ x) c • b c = φ (∑ j, x j • v j) := by
+  rw [toMatrix_mulVec_eq_repr, b.sum_repr]
 
 /-- In the coordinates of bases `v` and `b`, a linear map `φ` acts by its matrix
 `LinearMap.toMatrix v b φ`. -/

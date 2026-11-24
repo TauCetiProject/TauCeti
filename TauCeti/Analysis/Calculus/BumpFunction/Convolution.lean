@@ -23,7 +23,7 @@ uniformly continuous on a neighbourhood of `s`. For uniformly continuous functio
 upgrades the pointwise convergence of Mathlib's
 `ContDiffBump.convolution_tendsto_right_of_continuous` to uniform convergence, and allows
 simultaneous approximation of the derivatives of a compactly supported smooth function.
-Normalized-bump convolution also preserves a uniform bound on a function
+Normalized-bump convolution also preserves an almost-everywhere bound on a function
 (`ContDiffBump.norm_normed_convolution_le`) and its Lipschitz constant, since it averages the
 differences of translates (`ContDiffBump.dist_normed_convolution_le_of_dist_sub_le`).
 For `K`-Lipschitz data, the pointwise approximation error is at most `K * ρ.rOut`
@@ -45,6 +45,9 @@ The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Mink
 `ContDiffBump.shrinking`, of radii `R / (n + 1)` and `R / (2 * (n + 1))`. These bumps are all
 rescalings of the first one (`ContDiffBump.shrinking_apply_eq`), so integrals against their
 normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_mul`).
+Integrating a function `H` on a product `X × G` against these bumps in the second variable
+tends to the integral of `H (·, 0)` when `H` is continuous near `X × {0}` and vanishes for the
+first variable outside a compact set (`ContDiffBump.tendsto_integral_shrinking_normed_smul`).
 
 ## References
 
@@ -175,6 +178,61 @@ theorem integral_shrinking_normed_mul {R : ℝ} (hR : 0 < R) (n : ℕ) (f : G �
     _ = _ := by
         simp only [g, smul_eq_mul, integral_const_mul]
         field_simp
+
+/-- **Shrinking bumps in the second factor of a product.** Let `H : X × G → F` be continuous on
+`X × ball 0 δ` and vanish for `x` outside a compact set. For the normalized bumps `ρ_n` of
+`ContDiffBump.shrinking (δ / 2)`, `∫ ρ_n (y) • H (x, y) d(x, y) → ∫ H (x, 0) dx`. This is the
+convergence `ρ_n ⋆ g → g` at `0` (`ContDiffBump.convolution_tendsto_right`) of the function
+`g y = ∫ H (x, -y) dx`, which is continuous near `0`. -/
+theorem tendsto_integral_shrinking_normed_smul {X : Type*} [TopologicalSpace X] [T2Space X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X} [IsFiniteMeasureOnCompacts ν]
+    [SFinite ν] {H : X × G → F} {k : Set X} (hk : IsCompact k)
+    (hHk : ∀ x y, x ∉ k → H (x, y) = 0) {δ : ℝ} (hδ : 0 < δ)
+    (hH : ContinuousOn H (Set.univ ×ˢ ball (0 : G) δ)) :
+    Tendsto (fun n ↦ ∫ q, (shrinking (c := (0 : G)) (half_pos hδ) n).normed μ q.2 • H q ∂ν.prod μ)
+      atTop (𝓝 (∫ x, H (x, 0) ∂ν)) := by
+  set ρ : ℕ → ContDiffBump (0 : G) := shrinking (half_pos hδ)
+  have hball : closedBall (0 : G) (δ / 2) ⊆ ball 0 δ := closedBall_subset_ball (half_lt_self hδ)
+  -- `g y = ∫ H (x, -y) dx` is continuous on `closedBall 0 (δ / 2)`.
+  set g : G → F := fun y ↦ ∫ x, H (x, -y) ∂ν
+  have hg : ContinuousOn g (closedBall 0 (δ / 2)) :=
+    continuousOn_integral_of_compact_support (f := fun y x ↦ H (x, -y)) hk
+      (hH.comp (continuous_snd.prodMk continuous_fst.neg).continuousOn fun q hq ↦
+        ⟨Set.mem_univ _, hball (by simpa using hq.1)⟩) fun y x _ hx ↦ hHk x _ hx
+  set g₀ := (closedBall (0 : G) (δ / 2)).indicator g
+  have hG0 : ContinuousAt g₀ 0 := (hg.continuousAt (closedBall_mem_nhds _ (half_pos hδ))).congr
+    (eventuallyEq_of_mem (closedBall_mem_nhds _ (half_pos hδ)) fun y hy ↦
+      (Set.indicator_of_mem hy g).symm)
+  have hconv := convolution_tendsto_right (μ := μ) (φ := ρ) (g := fun _ ↦ g₀)
+    (k := fun _ ↦ 0) (tendsto_rOut_shrinking _) (Eventually.of_forall fun _ ↦
+      (aestronglyMeasurable_indicator_iff measurableSet_closedBall).2
+        (hg.aestronglyMeasurable measurableSet_closedBall)) (hG0.tendsto.comp tendsto_snd)
+    tendsto_const_nhds
+  rw [show g₀ 0 = ∫ x, H (x, 0) ∂ν by
+    simp only [g₀, Set.indicator_of_mem (mem_closedBall_self (half_pos hδ).le), g, neg_zero]]
+    at hconv
+  refine hconv.congr fun n ↦ ?_
+  -- By Fubini, `∫ ρ_n (y) • H (x, y)` is the convolution `(ρ_n ⋆ g₀) (0) = ∫ ρ_n (y) • g₀ (-y) dy`.
+  have hsupp (y : G) (hy : (ρ n).normed μ y ≠ 0) : -y ∈ closedBall (0 : G) (δ / 2) := by
+    have hy' : y ∈ ball (0 : G) (ρ n).rOut := by
+      rw [← (ρ n).support_normed_eq (μ := μ)]
+      exact hy
+    rw [mem_ball_zero_iff, rOut_shrinking] at hy'
+    rw [mem_closedBall_zero_iff, norm_neg]
+    exact hy'.le.trans (div_le_self (half_pos hδ).le (by linarith [n.cast_nonneg (α := ℝ)]))
+  have hint : Integrable (fun q : X × G ↦ (ρ n).normed μ q.2 • H q) (ν.prod μ) := by
+    refine ((((ρ n).continuous_normed.comp continuous_snd).continuousOn.smul
+      (hH.mono (Set.prod_mono (Set.subset_univ _) hball))).integrableOn_compact
+      (hk.prod (isCompact_closedBall _ _))).integrable_of_forall_notMem_eq_zero fun q hq ↦ ?_
+    by_contra hne
+    have hq' : (ρ n).normed μ q.2 ≠ 0 ∧ H q ≠ 0 := by simpa [not_or] using hne
+    exact hq ⟨by_contra fun hx ↦ hq'.2 (hHk _ _ hx), by simpa using hsupp _ hq'.1⟩
+  rw [convolution_def, integral_prod_symm _ hint]
+  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
+  simp only [zero_sub, ContinuousLinearMap.lsmul_apply, integral_smul]
+  by_cases hy : (ρ n).normed μ y = 0
+  · simp [hy]
+  · simp [g₀, g, Set.indicator_of_mem (hsupp y hy)]
 
 /-- Normalized bumps of shrinking radius approximate a function uniformly on a set `s` when the
 function is uniformly continuous on a `δ`-neighbourhood of `s`. Only the values on that
@@ -375,15 +433,17 @@ theorem ContDiffBump.dist_normed_convolution_le_of_dist_sub_le {G F : Type*}
           (ρ.nonneg_normed t)
     _ = B := by rw [integral_mul_const, ρ.integral_normed, one_mul]
 
-/-- Convolution with a nonnegative normalized bump preserves a uniform bound on the norm. -/
+/-- Convolution with a nonnegative normalized bump preserves an almost-everywhere bound on the
+norm. -/
 theorem ContDiffBump.norm_normed_convolution_le {G F : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [FiniteDimensional ℝ G] [MeasurableSpace G] [BorelSpace G]
     {μ : Measure G} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {g : G → F} (ρ : ContDiffBump (0 : G)) {M : ℝ} (hM : ∀ x, ‖g x‖ ≤ M) (x : G) :
+    {g : G → F} (ρ : ContDiffBump (0 : G)) {M : ℝ} (hM : ∀ᵐ x ∂μ, ‖g x‖ ≤ M) (x : G) :
     ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x‖ ≤ M := by
   simpa only [convolution_def, lsmul_apply, Real.norm_of_nonneg (ρ.nonneg_normed _),
     ρ.integral_normed, one_mul] using
-    TauCeti.norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed hM x
+    TauCeti.norm_integral_kernel_smul_sub_le (μ := μ) ρ.integrable_normed
+      ((μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM)
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/
