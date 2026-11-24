@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Ring.Commute
 public import TauCeti.Analysis.OperatorIdeal.Family.TraceClass.Trace
 
 /-!
@@ -65,35 +66,6 @@ public section
 
 open TauCeti TauCeti.OperatorIdealFamily
 open scoped ENNReal
-
-/-! ### Anticommutator identities in a ring -/
-
-section Ring
-
-variable {R : Type*} [Ring R] {F : R}
-
-/-- If `F² = 1`, the commutator `[F, X]` anticommutes with `F`. -/
-private theorem mul_mul_sub_mul (hF : F * F = 1) (X : R) :
-    F * (F * X - X * F) = -((F * X - X * F) * F) := by
-  have h : F * (F * X - X * F) + (F * X - X * F) * F = F * F * X - X * (F * F) := by
-    noncomm_ring
-  rw [eq_neg_iff_add_eq_zero, h, hF, one_mul, mul_one, sub_self]
-
-/-- If `γ` anticommutes with `F`, then `γ (F X + X F) = -[F, γ X]`. -/
-private theorem mul_mul_add_mul_eq_neg {γ : R} (hγ : γ * F = -(F * γ)) (X : R) :
-    γ * (F * X + X * F) = -(F * (γ * X) - γ * X * F) := by
-  calc γ * (F * X + X * F) = γ * F * X + γ * X * F := by noncomm_ring
-    _ = -(F * γ) * X + γ * X * F := by rw [hγ]
-    _ = _ := by noncomm_ring
-
-/-- If `η` anticommutes with `F`, the anticommutator of `X η` with `F` is `[F, X] η`. -/
-private theorem mul_mul_add_mul_mul_eq {η : R} (hη : F * η = -(η * F)) (X : R) :
-    F * (X * η) + X * η * F = (F * X - X * F) * η := by
-  have h : η * F = -(F * η) := by rw [hη, neg_neg]
-  calc F * (X * η) + X * η * F = F * X * η + X * (η * F) := by noncomm_ring
-    _ = _ := by rw [h]; noncomm_ring
-
-end Ring
 
 namespace ContinuousLinearMap
 
@@ -162,8 +134,8 @@ theorem conditionalTrace_eq_trace (hF : F * F = 1)
   have hcomm : (F * T * F).trace = T.trace := by
     rw [mul_def (F * T), ← trace_comp_comm F hFT, ← mul_def, ← mul_assoc, hF, one_mul]
   rw [conditionalTrace_def, mul_add, ← mul_assoc, hF, one_mul, ← mul_assoc,
-    trace_add hT hFTF, hcomm, ← two_mul, ← mul_assoc,
-    inv_mul_cancel₀ two_ne_zero, one_mul]
+    trace_add hT hFTF, hcomm]
+  ring
 
 /-! ### Linearity on the domain -/
 
@@ -228,20 +200,20 @@ theorem conditionalTrace_eq_zero_of_anticommute (h : F * T = -(T * F)) :
 domain of the conditional trace. -/
 theorem mul_sub_mul_mem_conditionalTraceDomain (hF : F * F = 1) (X : E →L[𝕜] E) :
     F * X - X * F ∈ F.conditionalTraceDomain :=
-  mem_conditionalTraceDomain_of_anticommute (mul_mul_sub_mul hF X)
+  mem_conditionalTraceDomain_of_anticommute (mul_mul_sub_mul_eq_neg_of_mul_self_eq_one hF X)
 
 /-- **The conditional trace kills commutators with `F`.** If `F² = 1`, the commutator
 `[F, X] = F X - X F` with any bounded operator `X` has conditional trace zero. -/
 theorem conditionalTrace_mul_sub_mul (hF : F * F = 1) (X : E →L[𝕜] E) :
     F.conditionalTrace (F * X - X * F) = 0 :=
-  conditionalTrace_eq_zero_of_anticommute (mul_mul_sub_mul hF X)
+  conditionalTrace_eq_zero_of_anticommute (mul_mul_sub_mul_eq_neg_of_mul_self_eq_one hF X)
 
 /-- If `F² = 1` and the grading `γ` anticommutes with `F`, then `γ (F X + X F)` lies in the domain
 of the conditional trace for every bounded operator `X`. -/
 theorem mul_mul_add_mul_mem_conditionalTraceDomain (hF : F * F = 1) {γ : E →L[𝕜] E}
     (hγ : γ * F = -(F * γ)) (X : E →L[𝕜] E) :
     γ * (F * X + X * F) ∈ F.conditionalTraceDomain := by
-  rw [mul_mul_add_mul_eq_neg hγ]
+  rw [mul_mul_add_mul_eq_neg_of_mul_eq_neg_mul hγ]
   exact neg_mem (mul_sub_mul_mem_conditionalTraceDomain hF _)
 
 /-- **The graded conditional trace kills graded commutators with `F`.** If `F² = 1` and the
@@ -250,7 +222,8 @@ grading `γ` anticommutes with `F`, then `Tr′ (γ (F X + X F)) = 0` for every 
 theorem conditionalTrace_mul_mul_add_mul (hF : F * F = 1) {γ : E →L[𝕜] E}
     (hγ : γ * F = -(F * γ)) (X : E →L[𝕜] E) :
     F.conditionalTrace (γ * (F * X + X * F)) = 0 := by
-  rw [mul_mul_add_mul_eq_neg hγ, conditionalTrace_neg, conditionalTrace_mul_sub_mul hF, neg_zero]
+  rw [mul_mul_add_mul_eq_neg_of_mul_eq_neg_mul hγ, conditionalTrace_neg,
+    conditionalTrace_mul_sub_mul hF, neg_zero]
 
 /-- If `η` anticommutes with `F`, then `X η` lies in the domain of the conditional trace exactly
 when `[F, X] η` is trace class. -/
@@ -258,14 +231,14 @@ theorem mul_mem_conditionalTraceDomain_iff_of_anticommute {η : E →L[𝕜] E}
     (hη : F * η = -(η * F)) (X : E →L[𝕜] E) :
     X * η ∈ F.conditionalTraceDomain ↔
       (F * X - X * F) * η ∈ ((traceClass 𝕜).operatorGauge E E).finiteSubmodule := by
-  rw [mem_conditionalTraceDomain, mul_mul_add_mul_mul_eq hη]
+  rw [mem_conditionalTraceDomain, mul_mul_add_mul_mul_eq_of_mul_eq_neg_mul hη]
 
 /-- **The conditional trace of a product with an anticommuting factor.** If `η` anticommutes with
 `F`, then `Tr′ (X η) = ½ Tr (F [F, X] η)` for every bounded operator `X`. -/
 theorem conditionalTrace_mul_of_anticommute {η : E →L[𝕜] E} (hη : F * η = -(η * F))
     (X : E →L[𝕜] E) :
     F.conditionalTrace (X * η) = 2⁻¹ * (F * ((F * X - X * F) * η)).trace := by
-  rw [conditionalTrace_def, mul_mul_add_mul_mul_eq hη]
+  rw [conditionalTrace_def, mul_mul_add_mul_mul_eq_of_mul_eq_neg_mul hη]
 
 /-! ### The trace-norm bound -/
 
