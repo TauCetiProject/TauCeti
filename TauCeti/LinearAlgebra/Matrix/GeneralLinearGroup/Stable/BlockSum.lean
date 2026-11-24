@@ -138,12 +138,8 @@ theorem blockSumGL_vecMul_append (u : GL (Fin m) A × GL (Fin n) A) (v : Fin m �
 
 /-- Block sum is injective: `g` and `h` are the diagonal blocks of `g ⊞ h`. -/
 theorem blockSumGL_injective :
-    Function.Injective (blockSumGL A : GL (Fin m) A × GL (Fin n) A →* GL (Fin (m + n)) A) := by
-  intro u v huv
-  have h := congrArg Units.val huv
-  ext i j
-  · simpa using congr($h (Fin.castAdd n i) (Fin.castAdd n j))
-  · simpa using congr($h (Fin.natAdd m i) (Fin.natAdd m j))
+    Function.Injective (blockSumGL A : GL (Fin m) A × GL (Fin n) A →* GL (Fin (m + n)) A) :=
+  (finSumFinEquiv.reindexGL A).injective.comp fromBlocksGL_injective
 
 /-- The block sum `g ⊞ 1` is the stabilization `g ↦ g ⊕ 1` of `g`. -/
 theorem blockSumGL_one_right (g : GL (Fin m) A) :
