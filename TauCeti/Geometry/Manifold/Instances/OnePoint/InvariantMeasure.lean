@@ -197,7 +197,7 @@ theorem amenable_of_injective_sl2z_of_map_smul_eq {G : Type*} [Group G] [Topolog
   let : DiscreteTopology G := ⟨rfl⟩
   let Γ : Subgroup PSL(2, ℝ) := ι.range.map sl2zToPSL2R
   have hSMul : SMulInvariantMeasure Γ (OnePoint ℝ) μ := ⟨fun γ s hs ↦ by
-    obtain ⟨_, ⟨g, rfl⟩, hγ⟩ := γ.2
+    obtain ⟨_, ⟨g, rfl⟩, hγ⟩ := γ.property
     simp only [Subgroup.smul_def, ← hγ]
     rw [← Measure.map_apply (continuous_const_smul _).measurable hs, hinv g]⟩
   have : Amenable Γ := Γ.amenable_of_discreteTopology_psl hμ

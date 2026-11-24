@@ -18,7 +18,8 @@ embedded submanifold `Q ⊆ M` this is the conormal bundle `N*Q` as a subset of 
 over `q` is the annihilator `TauCeti.CotangentBundle.conormalSpace J I i q` of the tangent image;
 when `di_q` is injective and `M` is finite-dimensional it has dimension `dim M - dim Q`
 (`TauCeti.CotangentBundle.finrank_add_finrank_conormalSpace`), so that `N*Q` has the dimension
-of `M`.
+of `M`. When `Q` is modelled on a space of smaller finite dimension than `M`, every conormal space
+is nonzero (`TauCeti.CotangentBundle.conormalSpace_ne_bot`).
 
 A covector is conormal exactly when the cotangent relation of `i`
 (`TauCeti.CotangentBundle.cotangentRel`) relates it to a zero covector of `T*Q`. By the chain
@@ -92,6 +93,23 @@ theorem finrank_add_finrank_conormalSpace [CompleteSpace 𝕜] [FiniteDimensiona
   -- `TangentSpace I (i q)` is `E` and `TangentSpace J q` is `F` by definition.
   exact StrongDual.finrank_add_finrank_polarSubmodule (𝕜 := 𝕜) (E := E) _
 
+/-- **Conormal spaces in positive codimension are nonzero.** If `Q` is modelled on a space of
+smaller finite dimension than that of `M`, then every conormal space of `i : Q → M` is nonzero,
+whether or not `di_q` is injective. -/
+theorem conormalSpace_ne_bot [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+    (h : finrank 𝕜 F < finrank 𝕜 E) (i : Q → M) (q : Q) : conormalSpace J I i q ≠ ⊥ := by
+  intro hbot
+  -- The tangent image has dimension at most `dim F`, and its annihilator `dim E` minus that.
+  have hsum : finrank 𝕜 (LinearMap.range
+      (mfderiv J I i q : TangentSpace J q →ₗ[𝕜] TangentSpace I (i q))) +
+      finrank 𝕜 (conormalSpace J I i q) = finrank 𝕜 E :=
+    StrongDual.finrank_add_finrank_polarSubmodule (𝕜 := 𝕜) (E := E) _
+  rw [hbot, finrank_bot, add_zero] at hsum
+  have := LinearMap.finrank_range_le (mfderiv J I i q : TangentSpace J q →ₗ[𝕜] TangentSpace I (i q))
+  -- `TangentSpace J q` is `F` by definition.
+  have hF : finrank 𝕜 (TangentSpace J q) = finrank 𝕜 F := (rfl)
+  omega
+
 /-! ### The conormal set -/
 
 /-- The **conormal set** of a map `i : Q → M`: the covectors of `M` at points `i q` which
@@ -99,12 +117,12 @@ annihilate the tangent image `di_q (T_q Q)`. For an embedded submanifold this is
 bundle `N*Q ⊆ T*M`. -/
 def conormal (J : ModelWithCorners 𝕜 F H') (I : ModelWithCorners 𝕜 E H) (i : Q → M) :
     Set (CotangentBundle I M) :=
-  {w | ∃ q, i q = w.proj ∧ w.2 ∘L mfderiv J I i q = 0}
+  {w | ∃ q, i q = w.proj ∧ w.snd ∘L mfderiv J I i q = 0}
 
 /-- A covector is conormal to `i` when it lies over some `i q` and vanishes on the image of
 `di_q`. -/
 theorem mem_conormal_iff {i : Q → M} {w : CotangentBundle I M} :
-    w ∈ conormal J I i ↔ ∃ q, i q = w.proj ∧ w.2 ∘L mfderiv J I i q = 0 :=
+    w ∈ conormal J I i ↔ ∃ q, i q = w.proj ∧ w.snd ∘L mfderiv J I i q = 0 :=
   Iff.rfl
 
 /-- A covector is conormal to `i` exactly when the cotangent relation of `i` relates a zero

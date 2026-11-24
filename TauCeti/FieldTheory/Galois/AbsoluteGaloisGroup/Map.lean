@@ -49,6 +49,8 @@ groups transport between isomorphic fields.
 ## Main results
 
 * `TauCeti.absoluteGaloisGroupMap_commutes`: `τ (absoluteGaloisGroupMap τ g x) = g (τ x)`.
+* `IntermediateField.fixingSubgroup_le_comap_absoluteGaloisGroupMap`: if `τ` maps `E` into `F`,
+  automorphisms fixing `F` pull back to automorphisms fixing `E`.
 * `TauCeti.absoluteGaloisGroupMap_comp`: changing `τ` by an automorphism `h` of `Kˢ` conjugates
   the map by `h`, so a character of `G_K` takes the same values along every `τ`
   (`AddMonoidHom.map_ofMul_absoluteGaloisGroupMap_eq`).
@@ -100,7 +102,7 @@ def absoluteGaloisGroupMap (τ : SeparableClosure K →ₐ[K] SeparableClosure L
       refine ⟨s.image τ, ?_⟩
       rw [adjoin_map, adjoin_adjoin_right, Finset.coe_image]
     · exact τ.injective <| (τ.restrictNormalHom_commutes _ x).trans <|
-        hg ⟨τ x, subset_adjoin _ _ ⟨_, x.2, rfl⟩⟩
+        hg ⟨τ x, subset_adjoin _ _ ⟨_, x.property, rfl⟩⟩
 
 variable (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
@@ -109,6 +111,20 @@ variable (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 theorem absoluteGaloisGroupMap_commutes (g : AbsoluteGaloisGroup L) (x : SeparableClosure K) :
     τ (absoluteGaloisGroupMap τ g x) = g (τ x) :=
   τ.restrictNormalHom_commutes _ x
+
+/-- If an embedding of separable closures maps `E` into `F`, then fixing `F` implies fixing
+`E` after pullback along the induced map of absolute Galois groups. -/
+theorem _root_.IntermediateField.fixingSubgroup_le_comap_absoluteGaloisGroupMap
+    (E : IntermediateField K (SeparableClosure K))
+    (F : IntermediateField L (SeparableClosure L))
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure L) (hτ : Set.MapsTo τ E F) :
+    F.fixingSubgroup ≤ E.fixingSubgroup.comap
+      (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup L →* AbsoluteGaloisGroup K) := by
+  intro g hg
+  rw [Subgroup.mem_comap, IntermediateField.mem_fixingSubgroup_iff]
+  intro x hx
+  exact τ.injective <| (absoluteGaloisGroupMap_commutes τ g x).trans
+    ((IntermediateField.mem_fixingSubgroup_iff _ _).1 hg _ (hτ hx))
 
 /-- `absoluteGaloisGroupMap τ g` is the unique automorphism of `Kˢ` intertwined with `g` by `τ`. -/
 theorem absoluteGaloisGroupMap_eq_iff {g : AbsoluteGaloisGroup L} {h : AbsoluteGaloisGroup K} :

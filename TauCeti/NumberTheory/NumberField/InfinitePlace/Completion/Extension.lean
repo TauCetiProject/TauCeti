@@ -54,7 +54,7 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- A place indexed by the places above `v` carries its proof of lying over `v` as an instance. -/
 instance instLiesOverSubtype (v : InfinitePlace K)
-    (w : {w : InfinitePlace L // w.LiesOver v}) : w.1.LiesOver v := w.2
+    (w : {w : InfinitePlace L // w.LiesOver v}) : w.val.LiesOver v := w.property
 
 /-- A completed extension at an infinite place is finite dimensional: its degree is one or two. -/
 instance (v : InfinitePlace K) (w : InfinitePlace L) [w.LiesOver v] :
@@ -69,7 +69,7 @@ local degree. This includes the real-to-complex case and the value at zero. -/
 @[simp↓]
 theorem completionNormalizedAbsValue_completionMap
     {v : InfinitePlace K} {w : InfinitePlace L} [w.LiesOver v] (x : v.Completion) :
-    completionNormalizedAbsValue w (AbsoluteValue.Completion.map v.1 w.1 x) =
+    completionNormalizedAbsValue w (AbsoluteValue.Completion.map v.val w.val x) =
       completionNormalizedAbsValue v x ^ Module.finrank v.Completion w.Completion := by
   rw [completionNormalizedAbsValue_apply, AbsoluteValue.Completion.norm_map,
     completionNormalizedAbsValue_apply, ← pow_mul, InfinitePlace.mult_mul_finrank]
@@ -82,17 +82,17 @@ normalized absolute value at `v` raised to the global degree. -/
 @[simp↓]
 theorem prod_completionNormalizedAbsValue_completionMap
     (v : InfinitePlace K) (x : v.Completion) :
-    ∏ w : {w : InfinitePlace L // w.LiesOver v}, completionNormalizedAbsValue w.1
-        (@AbsoluteValue.Completion.map K L _ _ _ v.1 w.1.1 w.2 x) =
+    ∏ w : {w : InfinitePlace L // w.LiesOver v}, completionNormalizedAbsValue w.val
+        (@AbsoluteValue.Completion.map K L _ _ _ v.val w.val.val w.property x) =
       completionNormalizedAbsValue v x ^ Module.finrank K L := by
   classical
   have : CharZero K := (algebraMap K L).charZero
   have : NumberField K := NumberField.of_tower ℚ L K
   have h (w : {w : InfinitePlace L // w.LiesOver v}) :
-      completionNormalizedAbsValue w.1
-        (@AbsoluteValue.Completion.map K L _ _ _ v.1 w.1.1 w.2 x) =
-        completionNormalizedAbsValue v x ^ v.inertiaDeg w.1 := by
-    let := w.2
+      completionNormalizedAbsValue w.val
+        (@AbsoluteValue.Completion.map K L _ _ _ v.val w.val.val w.property x) =
+        completionNormalizedAbsValue v x ^ v.inertiaDeg w.val := by
+    let := w.property
     rw [completionNormalizedAbsValue_completionMap,
       InfinitePlace.inertiaDeg_eq_finrank]
   simp_rw [h]

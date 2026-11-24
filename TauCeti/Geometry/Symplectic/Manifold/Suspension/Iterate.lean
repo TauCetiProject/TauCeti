@@ -134,7 +134,7 @@ theorem integralTopForm_mpullback_prodMap_iterateMap_comp_orbitTorus_suspensionF
     integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
       (SmoothForm.mpullback (Prod.map id (iterateMap φ k) ∘ orbitTorus (φ ^ k) hx)
         ((contMDiff_id.prodMap (contMDiff_iterateMap φ k)).comp (contMDiff_orbitTorus hx))
-        (suspensionForm φ σ hσ)).1 = k * d := by
+        (suspensionForm φ σ hσ)).val = k * d := by
   rw [mpullback_prodMap_iterateMap_comp_orbitTorus_suspensionForm, Submodule.coe_smul,
     integralTopForm_smul, AddCircle.integralTopForm_wedge_timeForm, one_mul]
 
@@ -145,7 +145,7 @@ theorem integralTopForm_mpullback_prodMap_iterateMap_comp_orbitTorus_fiberForm
     integralTopForm o
       (SmoothForm.mpullback (Prod.map id (iterateMap φ k) ∘ orbitTorus (φ ^ k) hx)
         ((contMDiff_id.prodMap (contMDiff_iterateMap φ k)).comp (contMDiff_orbitTorus hx))
-        (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0 := by
+        (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).val = 0 := by
   rw [← SmoothForm.mpullback_mpullback _ _ (contMDiff_orbitTorus hx)
       (contMDiff_id.prodMap (contMDiff_iterateMap φ k)),
     SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id (contMDiff_iterateMap φ k),

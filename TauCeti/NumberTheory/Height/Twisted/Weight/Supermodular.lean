@@ -75,7 +75,7 @@ private theorem localWeightBasis_card_filter {L : ι → Dual K V} {U : Submodul
   have ht : t ⊆ b := Finset.filter_subset _ _
   have hli : LinearIndependent K (fun i : t ↦ (L i).comp U.subtype) :=
     (mem_localWeightBases.mp hb).1.comp
-      (fun i : t ↦ (⟨i, ht i.2⟩ : b)) (fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
+      (fun i : t ↦ (⟨i, ht i.property⟩ : b)) (fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h))
   have heq : {i | i ∈ b ∧ c i ≤ r} = (t : Set ι) := by ext i; simp [t]
   have hset : range (fun i : t ↦ (L i).comp U.subtype) =
       (fun i ↦ (L i).comp U.subtype) '' (t : Set ι) := by

@@ -97,7 +97,7 @@ theorem adjoin_eq_top_of_irrelevant_le {s : Set A} (hs : ∀ x ∈ s, ∃ i, 0 <
     obtain ⟨m, c, g, hcg⟩ := Submodule.mem_span_set'.1
       (hspan (HomogeneousIdeal.mem_irrelevant_of_mem 𝒜 hn hx))
     rw [← decompose_of_mem_same 𝒜 hx, ← GradedRing.proj_apply, ← hcg, map_sum]
-    exact S.sum_mem fun i _ ↦ hT _ _ (g i).2
+    exact S.sum_mem fun i _ ↦ hT _ _ (g i).property
   refine top_unique fun x _ ↦ ?_
   rw [← sum_support_decompose 𝒜 x]
   exact S.sum_mem fun n _ ↦ key n _ (SetLike.coe_mem _)
@@ -152,7 +152,7 @@ theorem subalgebra_eq_top_of_irrelevant_le (B : Subalgebra R A) (hB : ∀ x ∈ 
   have hx : x ∈ Algebra.adjoin (𝒜 0) s := adjoin_eq_top_of_irrelevant_le 𝒜 hs h ▸ trivial
   induction hx using Algebra.adjoin_induction with
   | mem x hx => exact hsB hx
-  | algebraMap r => exact hB _ r.2
+  | algebraMap r => exact hB _ r.property
   | add x y _ _ hx hy => exact B.add_mem hx hy
   | mul x y _ _ hx hy => exact B.mul_mem hx hy
 

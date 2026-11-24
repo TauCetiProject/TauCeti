@@ -168,7 +168,7 @@ theorem indClassesK0_eq_top {P : Subgroup G → Prop} (hP : P ⊤) : indClassesK
   -- Write `M` as the module of the representation `σ` it defines, as in `TauCeti.indK0_indK0`.
   let := Module.restrictScalars k k[G] M.obj
   have := IsScalarTower.restrictScalars k k[G] M.obj
-  have : Module.Finite k[G] M.obj := M.2
+  have : Module.Finite k[G] M.obj := M.property
   have : Module.Finite k M.obj := Module.Finite.trans k[G] M.obj
   let σ := Representation.ofModule' (k := k) (G := G) M.obj
   have : Module.Finite k[G] σ.asModule := Module.Finite.of_restrictScalars_finite k _ σ.asModule

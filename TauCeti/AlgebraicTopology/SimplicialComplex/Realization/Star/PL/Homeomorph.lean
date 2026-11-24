@@ -40,49 +40,49 @@ The link formulas F and G are required only on the realized links. The returned 
 piecewise linear on the corresponding closed stars and agree there with
 closedStarHomeomorph hK hL e and its inverse. -/
 theorem exists_isPLOn_closedStarHomeomorph
-    (hK : Topology.IsInducing (fun x : Realization K => (x.1 : ι → ℝ)))
-    (hL : Topology.IsInducing (fun x : Realization L => (x.1 : κ → ℝ)))
+    (hK : Topology.IsInducing (fun x : Realization K => (x.val : ι → ℝ)))
+    (hL : Topology.IsInducing (fun x : Realization L => (x.val : κ → ℝ)))
     (hKc : IsCompact (geometricLink K v)) (hLc : IsCompact (geometricLink L w))
     (e : geometricLink K v ≃ₜ geometricLink L w)
     (F : (ι → ℝ) → (κ → ℝ))
-    (hF : ∀ y : geometricLink K v, F (y.1.1 : ι → ℝ) = (e y).1.1)
-    (hFpl : IsPLOn F (range (fun y : geometricLink K v => (y.1.1 : ι → ℝ))))
+    (hF : ∀ y : geometricLink K v, F (y.val.val : ι → ℝ) = (e y).val.val)
+    (hFpl : IsPLOn F (range (fun y : geometricLink K v => (y.val.val : ι → ℝ))))
     (G : (κ → ℝ) → (ι → ℝ))
-    (hG : ∀ y : geometricLink L w, G (y.1.1 : κ → ℝ) = (e.symm y).1.1)
-    (hGpl : IsPLOn G (range (fun y : geometricLink L w => (y.1.1 : κ → ℝ)))) :
+    (hG : ∀ y : geometricLink L w, G (y.val.val : κ → ℝ) = (e.symm y).val.val)
+    (hGpl : IsPLOn G (range (fun y : geometricLink L w => (y.val.val : κ → ℝ)))) :
     ∃ F' : (ι → ℝ) → (κ → ℝ), ∃ G' : (κ → ℝ) → (ι → ℝ),
       IsPLOn F'
-          (range (fun x : closedStarRealization K {v} => (x.1.1 : ι → ℝ))) ∧
+          (range (fun x : closedStarRealization K {v} => (x.val.val : ι → ℝ))) ∧
         IsPLOn G'
-          (range (fun x : closedStarRealization L {w} => (x.1.1 : κ → ℝ))) ∧
+          (range (fun x : closedStarRealization L {w} => (x.val.val : κ → ℝ))) ∧
         (∀ x : closedStarRealization K {v},
-          F' (x.1.1 : ι → ℝ) = (closedStarHomeomorph hK hL e x).1.1) ∧
+          F' (x.val.val : ι → ℝ) = (closedStarHomeomorph hK hL e x).val.val) ∧
         (∀ x : closedStarRealization L {w},
-          G' (x.1.1 : κ → ℝ) = ((closedStarHomeomorph hK hL e).symm x).1.1) ∧
+          G' (x.val.val : κ → ℝ) = ((closedStarHomeomorph hK hL e).symm x).val.val) ∧
         (∀ x : closedStarRealization K {v},
-          G' (F' (x.1.1 : ι → ℝ)) = (x.1.1 : ι → ℝ)) ∧
+          G' (F' (x.val.val : ι → ℝ)) = (x.val.val : ι → ℝ)) ∧
         (∀ x : closedStarRealization L {w},
-          F' (G' (x.1.1 : κ → ℝ)) = (x.1.1 : κ → ℝ)) := by
+          F' (G' (x.val.val : κ → ℝ)) = (x.val.val : κ → ℝ)) := by
   obtain ⟨F', hF'pl, hF'eq⟩ := exists_isPLOn_closedStarMap hKc e F hF hFpl
   obtain ⟨G', hG'pl, hG'eq⟩ := exists_isPLOn_closedStarMap hLc e.symm G hG hGpl
   have h3 : ∀ x : closedStarRealization K {v},
-      F' (x.1.1 : ι → ℝ) = (closedStarHomeomorph hK hL e x).1.1 := by
+      F' (x.val.val : ι → ℝ) = (closedStarHomeomorph hK hL e x).val.val := by
     intro x
     rw [closedStarHomeomorph_apply]
     exact hF'eq x
   have h4 : ∀ x : closedStarRealization L {w},
-      G' (x.1.1 : κ → ℝ) = ((closedStarHomeomorph hK hL e).symm x).1.1 := by
+      G' (x.val.val : κ → ℝ) = ((closedStarHomeomorph hK hL e).symm x).val.val := by
     intro x
     rw [closedStarHomeomorph_symm_apply]
     exact hG'eq x
   refine ⟨F', G', hF'pl, hG'pl, h3, h4, ?_, ?_⟩
   · intro x
     rw [h3 x, h4]
-    exact congrArg (fun y => (y.1.1 : ι → ℝ))
+    exact congrArg (fun y => (y.val.val : ι → ℝ))
       ((closedStarHomeomorph hK hL e).symm_apply_apply x)
   · intro x
     rw [h4 x, h3]
-    exact congrArg (fun y => (y.1.1 : κ → ℝ))
+    exact congrArg (fun y => (y.val.val : κ → ℝ))
       ((closedStarHomeomorph hK hL e).apply_symm_apply x)
 
 end AbstractSimplicialComplex

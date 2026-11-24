@@ -315,7 +315,7 @@ theorem not_isEquationallyNoetherian_of_injective_pi {κ : Type*} [DecidableEq �
     (hK : {i | ∃ a b : K i, ¬Commute a b}.Infinite) :
     ¬IsEquationallyNoetherian (MonoidHom.id H) := by
   have := hK.to_subtype
-  choose a b hab using fun i : {i | ∃ a b : K i, ¬Commute a b} => i.2
+  choose a b hab using fun i : {i | ∃ a b : K i, ¬Commute a b} => i.property
   choose c hc using fun i : {i | ∃ a b : K i, ¬Commute a b} => hrange i (a i)
   choose d hd using fun i : {i | ∃ a b : K i, ¬Commute a b} => hrange i (b i)
   refine not_isEquationallyNoetherian_of_pairwise_commute (c := c) (d := d)

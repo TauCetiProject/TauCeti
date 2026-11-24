@@ -114,7 +114,7 @@ private theorem pv_not_lt {K : ℕ} (x : PlanarMatching K) {q r : ℕ} (hr : r <
   have hq : q < K := hqr.trans hr
   rw [pv_of_lt x hq] at hrq
   rw [pv_of_lt x hq, pv_of_lt x hr]
-  exact fun h => Equiv.Perm.isNoncrossingMatching_iff.mp x.2
+  exact fun h => Equiv.Perm.isNoncrossingMatching_iff.mp x.property
     (Fin.lt_def.mpr hqr : (⟨q, hq⟩ : Fin K) < ⟨r, hr⟩) (Fin.lt_def.mpr hrq) (Fin.lt_def.mpr h)
 
 /-! ### Inserting a block -/
@@ -212,8 +212,8 @@ private theorem pv_insertBlock (x : PlanarMatching (a + b)) (y : PlanarMatching 
 @[simp]
 theorem insertBlock_val_castAdd_natAdd (x : PlanarMatching (a + b)) (y : PlanarMatching l)
     (j : Fin l) :
-    (x.insertBlock y).1.val (Fin.castAdd b (Fin.natAdd a j)) =
-      Fin.castAdd b (Fin.natAdd a (y.1.val j)) := by
+    (x.insertBlock y).val.val (Fin.castAdd b (Fin.natAdd a j)) =
+      Fin.castAdd b (Fin.natAdd a (y.val.val j)) := by
   ext
   rw [← pv_coe, pv_insertBlock]
   simp only [Fin.val_castAdd, Fin.val_natAdd]
@@ -224,9 +224,9 @@ such a point is shifted past the block when it is one of the last `b` points. -/
 @[simp]
 theorem coe_insertBlock_val_castAdd_castAdd (x : PlanarMatching (a + b)) (y : PlanarMatching l)
     (i : Fin a) :
-    ((x.insertBlock y).1.val (Fin.castAdd b (Fin.castAdd l i)) : ℕ) =
-      if (x.1.val (Fin.castAdd b i) : ℕ) < a then (x.1.val (Fin.castAdd b i) : ℕ)
-      else (x.1.val (Fin.castAdd b i) : ℕ) + l := by
+    ((x.insertBlock y).val.val (Fin.castAdd b (Fin.castAdd l i)) : ℕ) =
+      if (x.val.val (Fin.castAdd b i) : ℕ) < a then (x.val.val (Fin.castAdd b i) : ℕ)
+      else (x.val.val (Fin.castAdd b i) : ℕ) + l := by
   have h := insFn_ins a l (pv x) (pv y) i
   rw [ins_of_lt i.isLt] at h
   rw [← pv_coe, pv_insertBlock]
@@ -238,9 +238,9 @@ the partner of such a point is shifted past the block when it is one of the last
 @[simp]
 theorem coe_insertBlock_val_natAdd (x : PlanarMatching (a + b)) (y : PlanarMatching l)
     (j : Fin b) :
-    ((x.insertBlock y).1.val (Fin.natAdd (a + l) j) : ℕ) =
-      if (x.1.val (Fin.natAdd a j) : ℕ) < a then (x.1.val (Fin.natAdd a j) : ℕ)
-      else (x.1.val (Fin.natAdd a j) : ℕ) + l := by
+    ((x.insertBlock y).val.val (Fin.natAdd (a + l) j) : ℕ) =
+      if (x.val.val (Fin.natAdd a j) : ℕ) < a then (x.val.val (Fin.natAdd a j) : ℕ)
+      else (x.val.val (Fin.natAdd a j) : ℕ) + l := by
   have h := insFn_ins a l (pv x) (pv y) (a + j)
   rw [ins_of_le (show a ≤ a + j by omega)] at h
   rw [← pv_coe, pv_insertBlock]

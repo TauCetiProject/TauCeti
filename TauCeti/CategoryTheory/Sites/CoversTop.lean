@@ -69,10 +69,10 @@ noncomputable def commonRefinement {I₁ I₂ : Type*} {X₁ : I₁ → C} {X₂
     CommonRefinement.{u} J X₁ X₂ where
   I := {W : C // (∃ i, Nonempty (W ⟶ X₁ i)) ∧ ∃ j, Nonempty (W ⟶ X₂ j)}
   X := Subtype.val
-  leftIndex w := w.2.1.choose
-  left w := w.2.1.choose_spec.some
-  rightIndex w := w.2.2.choose
-  right w := w.2.2.choose_spec.some
+  leftIndex w := w.property.1.choose
+  left w := w.property.1.choose_spec.some
+  rightIndex w := w.property.2.choose
+  right w := w.property.2.choose_spec.some
   coversTop A := J.superset_covering (fun Z _ hZ ↦ ⟨⟨Z, hZ⟩, ⟨𝟙 Z⟩⟩)
     (J.intersection_covering (h₁ A) (h₂ A))
 
@@ -84,7 +84,7 @@ theorem jointlyFaithful_overPullback {I : Type*} {Y : I → C} {J : Grothendieck
     JointlyFaithful (fun i ↦ J.overPullback A (Y i)) where
   map_injective {F G φ ψ} h := by
     ext ⟨W⟩
-    refine G.2.hom_ext (hY.cover W) _ _ ?_
+    refine G.property.hom_ext (hY.cover W) _ _ ?_
     rintro ⟨Z, a, ⟨i, ⟨b⟩⟩⟩
     have hi : φ.hom.app (Opposite.op Z) = ψ.hom.app (Opposite.op Z) :=
       congr(($(h i)).hom.app (Opposite.op (Over.mk b)))

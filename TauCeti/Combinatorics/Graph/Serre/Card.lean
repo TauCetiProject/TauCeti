@@ -60,14 +60,15 @@ theorem two_mul_length_of_nodup_map_toGeomEdge {l : List Γ.E}
   classical
   -- The darts of the list and their reverses are distinct, and they are the darts in question.
   let f : {d // d ∈ l} ⊕ {d // d ∈ l} → {e : Γ.E // e ∈ l ∨ Γ.rev e ∈ l} :=
-    Sum.elim (fun d => ⟨d, .inl d.2⟩) fun d => ⟨Γ.rev d, .inr (by rw [rev_rev]; exact d.2)⟩
+    Sum.elim (fun d => ⟨d, .inl d.property⟩) fun d => ⟨Γ.rev d, .inr
+        (by rw [rev_rev]; exact d.property)⟩
   have hf : Function.Bijective f := by
     refine ⟨Function.Injective.sumElim (fun d d' h => Subtype.ext (Subtype.mk.inj h))
       (fun d d' h => Subtype.ext (Γ.rev_injective (Subtype.mk.inj h)))
-      fun d d' h => Γ.rev_notMem_of_nodup_map_toGeomEdge hl d'.2 ?_, fun e => ?_⟩
+      fun d d' h => Γ.rev_notMem_of_nodup_map_toGeomEdge hl d'.property ?_, fun e => ?_⟩
     · rw [← Subtype.mk.inj h]
-      exact d.2
-    · rcases e.2 with h | h
+      exact d.property
+    · rcases e.property with h | h
       · exact ⟨.inl ⟨e, h⟩, rfl⟩
       · exact ⟨.inr ⟨_, h⟩, Subtype.ext (Γ.rev_rev e)⟩
   rw [← Nat.card_congr (Equiv.ofBijective f hf), Nat.card_sum,

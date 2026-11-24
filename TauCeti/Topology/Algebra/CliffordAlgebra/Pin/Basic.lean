@@ -40,7 +40,7 @@ Clifford-algebra subtype topologies. -/
 @[fun_prop]
 theorem continuous_spinToPin : Continuous (spinToPin Q) := by
   apply continuous_induced_rng.mpr
-  exact continuous_subtype_val.congr fun x => (coe_spinToPin_apply x).symm
+  exact continuous_subtypeVal.congr fun x => (coe_spinToPin_apply x).symm
 
 /-- The Pin inclusion into the Lipschitz group is continuous for the canonical
 Clifford-algebra and unit-group topologies. -/
@@ -49,8 +49,8 @@ theorem continuous_pinToLipschitz : Continuous (pinToLipschitz Q) := by
   apply continuous_induced_rng.mpr
   apply Units.continuous_iff.mpr
   constructor
-  · exact continuous_subtype_val.congr fun x => (coe_pinToLipschitz_apply Q x).symm
-  · exact continuous_subtype_val.star.congr fun x => (coe_inv_pinToLipschitz x).symm
+  · exact continuous_subtypeVal.congr fun x => (coe_pinToLipschitz_apply Q x).symm
+  · exact continuous_subtypeVal.star.congr fun x => (coe_inv_pinToLipschitz x).symm
 
 end CliffordAlgebra
 

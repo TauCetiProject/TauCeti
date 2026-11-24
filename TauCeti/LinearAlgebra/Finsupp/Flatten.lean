@@ -22,18 +22,18 @@ public noncomputable section
 
 namespace TauCeti
 private theorem pair_fin_injective (k : ℕ) :
-    Function.Injective (fun p : ℕ × Fin k ↦ Nat.pair p.1 p.2.1) := fun p q hpq ↦ by
+    Function.Injective (fun p : ℕ × Fin k ↦ Nat.pair p.1 p.2.val) := fun p q hpq ↦ by
   have h := congrArg Nat.unpair hpq; rw [Nat.unpair_pair, Nat.unpair_pair, Prod.mk.injEq] at h
   exact Prod.ext h.1 (Fin.ext h.2)
 
 /-- The `𝕜`-linear injection sending `f : ℕ →₀ (Fin k → 𝕜)` to the finitely supported sequence
 with value `f n i` at `Nat.pair n i.1` and `0` outside `{Nat.pair n i.1 | n : ℕ, i : Fin k}`. -/
 def flattenFinsupp (𝕜 : Type*) [Semiring 𝕜] (k : ℕ) : (ℕ →₀ (Fin k → 𝕜)) →ₗ[𝕜] (ℕ →₀ 𝕜) :=
-  (Finsupp.lmapDomain 𝕜 𝕜 fun p : ℕ × Fin k ↦ Nat.pair p.1 p.2.1).comp <|
+  (Finsupp.lmapDomain 𝕜 𝕜 fun p : ℕ × Fin k ↦ Nat.pair p.1 p.2.val).comp <|
     (Finsupp.curryLinearEquiv 𝕜).symm.toLinearMap.comp
       (Finsupp.mapRange.linearEquiv (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin k)).symm).toLinearMap
 theorem flattenFinsupp_apply_pair {𝕜 : Type*} [Semiring 𝕜] (k : ℕ) (f : ℕ →₀ (Fin k → 𝕜))
-    (n : ℕ) (i : Fin k) : flattenFinsupp 𝕜 k f (Nat.pair n i.1) = f n i := by
+    (n : ℕ) (i : Fin k) : flattenFinsupp 𝕜 k f (Nat.pair n i.val) = f n i := by
   simp only [flattenFinsupp, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
     Finsupp.lmapDomain_apply]
   exact (Finsupp.mapDomain_apply_of_injective (pair_fin_injective k) _ (n, i)).trans (by simp)
@@ -46,7 +46,7 @@ theorem flattenFinsupp_apply_pair {𝕜 : Type*} [Semiring 𝕜] (k : ℕ) (f : 
   · simp only [flattenFinsupp, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
       Finsupp.lmapDomain_apply]
     refine Finsupp.mapDomain_of_notMem_range _ _ fun ⟨⟨_, i⟩, hm⟩ ↦ hk ?_
-    simpa only [← hm, Nat.unpair_pair] using i.2
+    simpa only [← hm, Nat.unpair_pair] using i.isLt
 /-- Flattening `ℕ →₀ (Fin k → 𝕜)` into `ℕ →₀ 𝕜` is injective for every `k : ℕ`. -/
 theorem flattenFinsupp_injective (𝕜 : Type*) [Semiring 𝕜] (k : ℕ) :
     Function.Injective (flattenFinsupp 𝕜 k) :=

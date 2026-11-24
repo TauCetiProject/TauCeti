@@ -92,7 +92,7 @@ def rightAlexanderWhitneyDiagonal (P : TopPair.{w}) (u : T ⟶ R ⊗ S) :
   (CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkSingularChainComplex T)
     (P.fst.alexanderWhitneyDiagonal u ≫
       ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S))
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerLeft P u)).1
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerLeft P u)).val
 
 /-- The right relative Alexander–Whitney diagonal of a pair `(X, A)` is the descent of the
 Alexander–Whitney diagonal of `X`, followed by the quotient map on the second factor. -/
@@ -102,7 +102,7 @@ lemma singularChainComplexπ_rightAlexanderWhitneyDiagonal (P : TopPair.{w}) (u 
       P.fst.alexanderWhitneyDiagonal u ≫
         ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S) :=
   (CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkSingularChainComplex T) _
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerLeft P u)).2
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_whiskerLeft P u)).property
 
 /-- The right relative Alexander–Whitney diagonal is natural in maps of pairs. -/
 @[reassoc]
@@ -140,8 +140,8 @@ pair `(X, A)`, the right relative diagonal `C(X, A; T) ⟶ C(X; R) ⊗ C(X, A; S
 homotopy `TopCat.alexanderWhitneyDiagonalKoszulBraidingHomotopy` of `X`, which by naturality
 carries the chains of `A` into the chains of `A × A`. -/
 def rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy (P : TopPair.{w}) (u : T ⟶ R ⊗ S) :
-    _root_.Homotopy (P.rightAlexanderWhitneyDiagonal u ≫ TauCeti.NatChainComplex.koszulBraidingHom
-        ((TopCat.toSSet.obj P.fst).chainComplex R) (P.singularChainComplex S))
+    _root_.Homotopy (P.rightAlexanderWhitneyDiagonal u ≫ (HomologicalComplex.tensorBraiding
+        ((TopCat.toSSet.obj P.fst).chainComplex R) (P.singularChainComplex S)).hom)
       (P.alexanderWhitneyDiagonal (u ≫ (β_ R S).hom)) :=
   -- The chains of `A` go to `C(A; S) ⊗ C(A; R)`, which the quotient map on the first factor kills.
   have hA : (SSet.chainComplexMap (TopCat.toSSet.map P.map) S ⊗ₘ
@@ -151,12 +151,12 @@ def rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy (P : TopPair.{w}) (u : T
       (congrArg (· ⊗ₘ _) (chainComplexMap_comp_singularChainComplexπ P S)).trans
         (HomologicalComplex.zero_tensorHom _)
   have hκ : ((TopCat.toSSet.obj P.fst).chainComplex R ◁ P.singularChainComplexπ S) ≫
-      TauCeti.NatChainComplex.koszulBraidingHom ((TopCat.toSSet.obj P.fst).chainComplex R)
-        (P.singularChainComplex S) =
-      TauCeti.NatChainComplex.koszulBraidingHom ((TopCat.toSSet.obj P.fst).chainComplex R)
-          ((TopCat.toSSet.obj P.fst).chainComplex S) ≫
+      (HomologicalComplex.tensorBraiding ((TopCat.toSSet.obj P.fst).chainComplex R)
+        (P.singularChainComplex S)).hom =
+      (HomologicalComplex.tensorBraiding ((TopCat.toSSet.obj P.fst).chainComplex R)
+          ((TopCat.toSSet.obj P.fst).chainComplex S)).hom ≫
         (P.singularChainComplexπ S ▷ (TopCat.toSSet.obj P.fst).chainComplex R) :=
-    TauCeti.NatChainComplex.koszulBraidingHom_naturality _ _ (𝟙 _) (P.singularChainComplexπ S)
+    HomologicalComplex.tensorBraiding_hom_naturality (𝟙 _) (P.singularChainComplexπ S)
   _root_.Homotopy.descCokernel (TopCat.alexanderWhitneyDiagonalKoszulBraidingHomotopy P.fst u)
     (SSet.chainComplexMap (TopCat.toSSet.map P.map) T) (P.singularChainComplexπ T)
     (P.singularChainComplexπ S ▷ (TopCat.toSSet.obj P.fst).chainComplex R)
@@ -220,7 +220,7 @@ def relativeAlexanderWhitneyDiagonal (U V : Set X) (u : T ⟶ R ⊗ S) :
     (X.alexanderWhitneyDiagonal u ≫
       ((TopPair.ofSubset U).singularChainComplexπ R ⊗ₘ
         (TopPair.ofSubset V).singularChainComplexπ S))
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom U V u)).1
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom U V u)).val
 
 /-- The relative Alexander–Whitney diagonal is the descent of the Alexander–Whitney diagonal of
 `X`, followed by the quotient maps on both factors. -/
@@ -233,7 +233,7 @@ lemma chainComplexπ_relativeAlexanderWhitneyDiagonal (U V : Set X) (u : T ⟶ R
           (TopPair.ofSubset V).singularChainComplexπ S) :=
   (CokernelCofork.IsColimit.desc'
     ((X.smallSingularSubcomplex ![U, V]).pair.isColimitCokernelCoforkChainComplex T) _
-    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom U V u)).2
+    (chainComplexMap_comp_alexanderWhitneyDiagonal_comp_tensorHom U V u)).property
 
 /-- The relative Alexander–Whitney diagonal is natural in maps `f : X ⟶ Y` carrying `U` into `U'`
 and `V` into `V'`. -/

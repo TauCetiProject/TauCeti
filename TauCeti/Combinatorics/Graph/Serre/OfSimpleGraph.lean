@@ -66,7 +66,7 @@ def toSerreGraphArrow {u v : V} (h : G.Adj u v) :
   ⟨⟨(u, v), h⟩, rfl, G.toSerreGraph_tgt _⟩
 
 @[simp] theorem toSerreGraphArrow_val {u v : V} (h : G.Adj u v) :
-    (G.toSerreGraphArrow h).1 = ⟨(u, v), h⟩ := (rfl)
+    (G.toSerreGraphArrow h).val = ⟨(u, v), h⟩ := (rfl)
 
 /-- The ends of an arrow of the Serre graph of `G` are adjacent. -/
 theorem adj_of_toSerreGraph_hom {u v : V}
@@ -232,7 +232,8 @@ theorem isAcyclic_toSerreGraph_iff : G.toSerreGraph.IsAcyclic ↔ G.IsAcyclic :=
   refine ⟨fun h => isAcyclic_iff_subsingleton_path.mpr fun v w => ⟨fun p q => Subtype.ext ?_⟩,
     fun h => (isAcyclic_iff _).mpr fun u p hp => ?_⟩
   · exact (Walk.serrePathEquiv G v w).injective
-      (h.eq_of_isReduced p.2.isTrail.isReduced_toSerrePath q.2.isTrail.isReduced_toSerrePath)
+      (h.eq_of_isReduced p.property.isTrail.isReduced_toSerrePath
+          q.property.isTrail.isReduced_toSerrePath)
   · rw [← G.toSerrePath_serrePathToWalk p, h.isReduced_toSerrePath_iff, Walk.isPath_iff_nil,
       ← Walk.eq_nil_iff_nil] at hp
     rw [← G.toSerrePath_serrePathToWalk p, hp, Walk.toSerrePath_nil]

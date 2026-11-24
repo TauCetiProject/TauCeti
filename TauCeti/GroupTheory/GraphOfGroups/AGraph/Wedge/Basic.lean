@@ -267,10 +267,10 @@ private def wedgeTyp (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i)) : Option (Σ 
 /-- The types of the darts of the wedge. -/
 private def wedgeDartTyp (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i)) :
     (Σ i, Option (Fin (n i))) × Bool → Γ.E
-  | (⟨i, some j⟩, true) => ((t i).dt j).1
-  | (⟨i, some j⟩, false) => Γ.rev ((t i).dt j).1
-  | (⟨i, none⟩, true) => (t i).lastDart.1
-  | (⟨i, none⟩, false) => Γ.rev (t i).lastDart.1
+  | (⟨i, some j⟩, true) => ((t i).dt j).val
+  | (⟨i, some j⟩, false) => Γ.rev ((t i).dt j).val
+  | (⟨i, none⟩, true) => (t i).lastDart.val
+  | (⟨i, none⟩, false) => Γ.rev (t i).lastDart.val
 
 /-- The type of the vertex at position `k` of the `i`-th circle. -/
 private theorem wedgeTyp_wedgePos (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i)) (i : ι)
@@ -283,10 +283,11 @@ private abbrev wedgeHom (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i)) : (wedgeGr
   mapV := wedgeTyp t
   mapE := wedgeDartTyp t
   map_src
-    | (⟨i, some j⟩, true) => ((t i).dt j).2.1.trans (wedgeTyp_wedgePos t i j.castSucc).symm
-    | (⟨i, some j⟩, false) => (Γ.src_rev _).trans ((t i).dt j).2.2
-    | (⟨i, none⟩, true) => (t i).lastDart.2.1.trans (wedgeTyp_wedgePos t i (Fin.last (n i))).symm
-    | (⟨i, none⟩, false) => (Γ.src_rev _).trans (t i).lastDart.2.2
+    | (⟨i, some j⟩, true) => ((t i).dt j).property.1.trans (wedgeTyp_wedgePos t i j.castSucc).symm
+    | (⟨i, some j⟩, false) => (Γ.src_rev _).trans ((t i).dt j).property.2
+    | (⟨i, none⟩, true) => (t i).lastDart.property.1.trans (wedgeTyp_wedgePos t i (Fin.last
+        (n i))).symm
+    | (⟨i, none⟩, false) => (Γ.src_rev _).trans (t i).lastDart.property.2
   map_rev
     | (⟨_, some _⟩, true) | (⟨_, none⟩, true) => rfl
     | (⟨_, some _⟩, false) | (⟨_, none⟩, false) => (Γ.rev_rev _).symm
@@ -295,11 +296,13 @@ private abbrev wedgeHom (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i)) : (wedgeGr
 darts, and the inverse of the last element after the last dart of a circle. -/
 private def wedgeLabel (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i)) :
     ∀ f : (Σ i, Option (Fin (n i))) × Bool, 𝔸.vertexGroup (Γ.src (wedgeDartTyp t f))
-  | (⟨i, some j⟩, true) => MulEquiv.cast (M := 𝔸.vertexGroup) ((t i).dt j).2.1.symm ((t i).lab j)
+  | (⟨i, some j⟩, true) => MulEquiv.cast (M := 𝔸.vertexGroup) ((t i).dt j).property.1.symm
+      ((t i).lab j)
   | (⟨_, some _⟩, false) => 1
-  | (⟨i, none⟩, true) => MulEquiv.cast (M := 𝔸.vertexGroup) (t i).lastDart.2.1.symm (t i).lastLab
+  | (⟨i, none⟩, true) => MulEquiv.cast (M := 𝔸.vertexGroup) (t i).lastDart.property.1.symm
+      (t i).lastLab
   | (⟨i, none⟩, false) => MulEquiv.cast (M := 𝔸.vertexGroup)
-      (((t i).lastDart.2.2.symm.trans (Γ.src_rev _).symm)) (t i).endLab⁻¹
+      (((t i).lastDart.property.2.symm.trans (Γ.src_rev _).symm)) (t i).endLab⁻¹
 
 /-- The wedge of the circles `t i` at a base vertex with vertex group `K`. -/
 private abbrev circleWedge (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i)) (K : Subgroup (𝔸.vertexGroup v₀)) :
@@ -374,8 +377,9 @@ private theorem mapLetter_chain (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
     (circleWedge t K).toHom.mapLetter
         (Letter.dart ((circleWedge t K).graph.dart (⟨i, some k⟩, true))) =
       ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (wedgeTyp_wedgePos t i k.castSucc).symm
-        ((t i).lab k))).comp (Path.ofDart (⟨((t i).dt k).1,
-          ((t i).dt k).2.1.trans (wedgeTyp_wedgePos t i k.castSucc).symm, ((t i).dt k).2.2⟩ :
+        ((t i).lab k))).comp (Path.ofDart (⟨((t i).dt k).val,
+          ((t i).dt k).property.1.trans (wedgeTyp_wedgePos t i k.castSucc).symm,
+              ((t i).dt k).property.2⟩ :
             wedgeTyp t (wedgePos n i k.castSucc) ⟶ (t i).vt k))).comp (Path.ofVertex 1) := by
   -- The labels of the dart and of its reverse are transports of `g_k` and `1`, by definition of
   -- `wedgeLabel`.
@@ -391,9 +395,9 @@ private theorem mapLetter_last (t : ∀ i, IndexedPath 𝔸 v₀ v₀ (n i))
         (Letter.dart ((circleWedge t K).graph.dart (⟨i, none⟩, true))) =
       ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup)
         (wedgeTyp_wedgePos t i (Fin.last (n i))).symm (t i).lastLab)).comp
-          (Path.ofDart (⟨(t i).lastDart.1,
-            (t i).lastDart.2.1.trans (wedgeTyp_wedgePos t i (Fin.last (n i))).symm,
-              (t i).lastDart.2.2⟩ : wedgeTyp t (wedgePos n i (Fin.last (n i))) ⟶ v₀))).comp
+          (Path.ofDart (⟨(t i).lastDart.val,
+            (t i).lastDart.property.1.trans (wedgeTyp_wedgePos t i (Fin.last (n i))).symm,
+              (t i).lastDart.property.2⟩ : wedgeTyp t (wedgePos n i (Fin.last (n i))) ⟶ v₀))).comp
         (Path.ofVertex (t i).endLab) := by
   -- The labels of the dart and of its reverse are transports of `g_n` and `h⁻¹`, by definition of
   -- `wedgeLabel`.
@@ -426,7 +430,7 @@ private theorem mapPath_circlePath_homotopic (t : ∀ i, IndexedPath 𝔸 v₀ v
       (d : (Fin.cons v₀ (t i).vt : Fin (n i + 1) → Γ.V) k ⟶ y) (h : 𝔸.vertexGroup y),
       Path.Homotopic (((circleWedge t K).toHom.mapPath (circlePath t K i k)).comp
         (((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (wedgeTyp_wedgePos t i k).symm g)).comp
-          (Path.ofDart (⟨d.1, d.2.1.trans (wedgeTyp_wedgePos t i k).symm, d.2.2⟩ :
+          (Path.ofDart (⟨d.val, d.property.1.trans (wedgeTyp_wedgePos t i k).symm, d.property.2⟩ :
             wedgeTyp t (wedgePos n i k) ⟶ y))).comp (Path.ofVertex h)))
         (((((t i).pre k).cons (Letter.vertex g)).cons (Letter.dart d)).cons (Letter.vertex h)) := by
   induction k using Fin.induction with
@@ -697,8 +701,8 @@ theorem rank_wedgeGroup_le (p : ι → 𝔸.AlternatingPath v₀ v₀) [Finite {
 
 /-- The circles of the wedge: the indexed paths of the paths of positive length. -/
 private abbrev wedgeCircles (p : ι → 𝔸.AlternatingPath v₀ v₀) (c : {i // (p i).length ≠ 0}) :
-    IndexedPath 𝔸 v₀ v₀ (IndexedPath.ofAlternatingPath (p c) c.2).1 :=
-  (IndexedPath.ofAlternatingPath (p c) c.2).2
+    IndexedPath 𝔸 v₀ v₀ (IndexedPath.ofAlternatingPath (p c) c.property).1 :=
+  (IndexedPath.ofAlternatingPath (p c) c.property).2
 
 /-- The wedge of a family `p` of closed alternating `𝔸`-paths at `v₀`, the `S`-wedge of Kapovich,
 Weidmann and Myasnikov: a base vertex of type `v₀` with vertex group `wedgeGroup p`, generated by
@@ -769,14 +773,14 @@ are the pairs of an edge of a circle and an orientation, by definition. -/
 instance (p : ι → 𝔸.AlternatingPath v₀ v₀) [Finite {i // (p i).length ≠ 0}] :
     Finite (wedge p).graph.E :=
   inferInstanceAs (Finite ((Σ c : {i // (p i).length ≠ 0},
-    Option (Fin (IndexedPath.ofAlternatingPath (p c) c.2).1)) × Bool))
+    Option (Fin (IndexedPath.ofAlternatingPath (p c) c.property).1)) × Bool))
 
 /-- The wedge has finitely many vertices when finitely many paths have positive length: its
 vertices are the base vertex and the inner vertices of the circles, by definition. -/
 instance (p : ι → 𝔸.AlternatingPath v₀ v₀) [Finite {i // (p i).length ≠ 0}] :
     Finite (wedge p).graph.V :=
   inferInstanceAs (Finite (Option (Σ c : {i // (p i).length ≠ 0},
-    Fin (IndexedPath.ofAlternatingPath (p c) c.2).1)))
+    Fin (IndexedPath.ofAlternatingPath (p c) c.property).1)))
 
 instance (p : ι → 𝔸.AlternatingPath v₀ v₀) [Finite {i // (p i).length ≠ 0}] :
     Finite (wedge p).graph.GeomEdge :=
@@ -794,7 +798,8 @@ theorem subgroup_wedge_eq_sup (p : ι → 𝔸.AlternatingPath v₀ v₀) :
     (wedge p).subgroup = (wedgeGroup p).map (π₁.vertexHom Quiver.Path.nil) ⊔
       Subgroup.closure (Set.range fun c : {i // (p i).length ≠ 0} => π₁.mk (p c).toPath) :=
   (subgroup_circleWedge _ _).trans (congrArg (fun s => _ ⊔ Subgroup.closure (Set.range s))
-    (funext fun c => π₁.mk_eq_mk_iff.2 (IndexedPath.toPath_ofAlternatingPath_homotopic _ c.2)))
+    (funext fun c => π₁.mk_eq_mk_iff.2 (IndexedPath.toPath_ofAlternatingPath_homotopic _
+        c.property)))
 
 /-- The wedge of a family of closed alternating paths represents the subgroup of `π₁(𝔸, v₀)`
 generated by the classes of the paths (Kapovich, Weidmann and Myasnikov, Lemma 5.3). -/
@@ -827,7 +832,7 @@ gives a circle with `k` edges. When infinitely many paths have positive length, 
   rcases fintypeOrInfinite {i // (p i).length ≠ 0} with _ | hinf
   · exact (card_geomEdge_circleWedge _ _).trans <| (finsum_eq_sum_of_fintype _).symm.trans <|
       (finsum_congr fun c : {i // (p i).length ≠ 0} =>
-        IndexedPath.ofAlternatingPath_fst_add_one (p c) c.2).trans <|
+        IndexedPath.ofAlternatingPath_fst_add_one (p c) c.property).trans <|
       (finsum_set_coe_eq_finsum_mem (Function.support fun i => (p i).length)).trans
         (finsum_mem_support _)
   · -- Infinitely many paths of positive length: infinitely many edges, and both sides are `0`.

@@ -136,7 +136,7 @@ theorem profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower {A : Subgroup �
     (by
       rw [Subgroup.coe_subgroupOf]
       exact (Subgroup.isClosed_map hA.isCompact _ (continuous_pow p)).preimage
-        continuous_subtype_val)
+        continuous_subtypeVal)
     hA h
 
 /-- `(U^(f) : (U^(f))^p) = p` as a supernatural number, for `f ≥ 1`, and `f ≥ 2` when

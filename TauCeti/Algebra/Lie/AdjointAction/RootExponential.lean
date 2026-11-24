@@ -128,7 +128,7 @@ theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*}
     refine ⟨(l.map fun α ↦ ofLinearEquiv (expAd (x (Sum.inl α) • e α)
         (hnil' α _).exists_pow_apply_eq_zero).toLinearEquiv).prod,
       list_prod_mem fun g hg ↦ ?_,
-      ∑ j, x (Sum.inr j) • (bH j : L), H.sum_mem fun j _ ↦ H.smul_mem _ (bH j).2, ?_⟩
+      ∑ j, x (Sum.inr j) • (bH j : L), H.sum_mem fun j _ ↦ H.smul_mem _ (bH j).property, ?_⟩
     · obtain ⟨α, -, rfl⟩ := List.mem_map.mp hg
       exact ofLinearEquiv_expAd_mem_intLieAlgebra _ (hnil' α _)
     · ext i

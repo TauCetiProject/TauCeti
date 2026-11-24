@@ -118,7 +118,7 @@ noncomputable def thetaFormOfLevel (hL : IsEven L) (hk : finrank ℝ E = 2 * k) 
   slash_action_eq' A hA := by
     obtain ⟨A, hA, rfl⟩ := hA
     rw [← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash,
-      hL.thetaSeries_slash_of_mem_Gamma0 hk (CongruenceSubgroup.Gamma1_in_Gamma0 _ hA)]
+      hL.thetaSeries_slash_of_mem_Gamma0 hk (CongruenceSubgroup.Gamma1_le_Gamma0 _ hA)]
     have hd := (CongruenceSubgroup.mem_Gamma1_iff.mp hA).2
     rw [hd, map_one, one_smul]
   holo' := mdifferentiable_thetaSeries L

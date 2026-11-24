@@ -141,7 +141,7 @@ theorem exists_isTOrthogonalBasis_of_dense_span {v : ℕ → E}
     ∃ (S : Set ℕ) (e : S → E), IsTOrthogonalBasis K t e := by
   obtain ⟨e, he, hspan⟩ := exists_isTOrthogonalFamily_span_image_Iio_eq (K := K) v ht
   -- Discard the zero vectors of `e`; they do not change its span.
-  refine ⟨{n | e n ≠ 0}, fun n ↦ e n, he.comp Subtype.val_injective, fun n ↦ n.2, ?_⟩
+  refine ⟨{n | e n ≠ 0}, fun n ↦ e n, he.comp Subtype.val_injective, fun n ↦ n.property, ?_⟩
   have hrange : range e ⊆ insert 0 (range fun n : {n | e n ≠ 0} ↦ e n) := by
     rintro _ ⟨n, rfl⟩
     by_cases h : e n = 0
@@ -173,7 +173,7 @@ theorem exists_basis_isTOrthogonalFamily [FiniteDimensional K E] {t : ℝ≥0} (
   have htop : ⊤ ≤ span K (range fun i : Fin d ↦ e i) :=
     calc ⊤ = span K (range b₀) := b₀.span_eq.symm
       _ ≤ span K (w '' Iio d) :=
-        span_mono <| range_subset_iff.2 fun i ↦ ⟨i, i.2, by simp [w, d, i.isLt]⟩
+        span_mono <| range_subset_iff.2 fun i ↦ ⟨i, i.isLt, by simp [w, d, i.isLt]⟩
       _ = span K (e '' Iio d) := (hspan d).symm
       _ ≤ span K (range fun i : Fin d ↦ e i) := span_mono <| by
         rintro _ ⟨n, hn, rfl⟩
@@ -303,7 +303,7 @@ theorem _root_.Submodule.exists_linearMap_comp_subtype_eq_norm_le
       ∀ x ∈ D ⊔ G, ‖ψ x‖ ≤ c * ‖φ‖ * ‖x‖ := by
   let E' : Submodule K E := G ⊔ D
   let D' : Submodule K E' := D.comap E'.subtype
-  have hD' : IsClosed (D' : Set E') := hD.preimage continuous_subtype_val
+  have hD' : IsClosed (D' : Set E') := hD.preimage continuous_subtypeVal
   have : FiniteDimensional K (E' ⧸ D') :=
     Module.Finite.equiv (LinearMap.quotientInfEquivSupQuotient G D)
   let e : D' ≃ₗ[K] D := Submodule.comapSubtypeEquivOfLe le_sup_right
@@ -312,7 +312,7 @@ theorem _root_.Submodule.exists_linearMap_comp_subtype_eq_norm_le
   let ψ : E →ₗ[K] F := φ.toLinearMap.comp (e.toLinearMap.comp (p.toLinearMap.comp π))
   refine ⟨ψ, ?_, fun x hx ↦ ?_⟩
   · ext x
-    have hxE' : (x : E) ∈ E' := Submodule.mem_sup_right x.2
+    have hxE' : (x : E) ∈ E' := Submodule.mem_sup_right x.property
     have hπx : π (x : E) = ⟨(x : E), hxE'⟩ := LinearMap.congr_fun hπ ⟨(x : E), hxE'⟩
     have hpx : p ⟨(x : E), hxE'⟩ = e.symm x := hp_id (e.symm x)
     simp [ψ, hπx, hpx]

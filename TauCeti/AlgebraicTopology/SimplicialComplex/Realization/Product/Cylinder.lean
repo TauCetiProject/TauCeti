@@ -57,7 +57,7 @@ def orderedCylinderRealizationHomeomorph :
 /-- The spatial coordinate is the first marginal of the barycentric coordinates. -/
 @[simp]
 theorem orderedCylinderRealizationHomeomorph_fst_val (z : Realization K.orderedCylinder) :
-    (K.orderedCylinderRealizationHomeomorph hK z).1.1 = Finsupp.mapDomain Prod.fst z.1 := by
+    (K.orderedCylinderRealizationHomeomorph hK z).1.val = Finsupp.mapDomain Prod.fst z.val := by
   -- Eliminate the carrier equality before applying the product computation rule.
   unfold orderedCylinderRealizationHomeomorph
   generalize_proofs hfin hEq
@@ -73,7 +73,7 @@ theorem orderedCylinderRealizationHomeomorph_fst_val (z : Realization K.orderedC
 @[simp]
 theorem orderedCylinderRealizationHomeomorph_snd_coe (z : Realization K.orderedCylinder) :
     ((K.orderedCylinderRealizationHomeomorph hK z).2 : ℝ) =
-      Finsupp.mapDomain Prod.snd z.1 1 := by
+      Finsupp.mapDomain Prod.snd z.val 1 := by
   -- Eliminate the carrier equality before applying the product computation rule.
   unfold orderedCylinderRealizationHomeomorph
   generalize_proofs hfin hEq
@@ -91,8 +91,8 @@ theorem orderedCylinderRealizationHomeomorph_snd_coe (z : Realization K.orderedC
 @[simp]
 theorem orderedCylinderRealizationHomeomorph_symm_fst_val (p : Realization K × unitInterval) :
     Finsupp.mapDomain Prod.fst
-      ((K.orderedCylinderRealizationHomeomorph hK).symm p).1 = p.1.1 := by
-  have h := congrArg (fun q => q.1.1)
+      ((K.orderedCylinderRealizationHomeomorph hK).symm p).val = p.1.val := by
+  have h := congrArg (fun q => q.1.val)
     ((K.orderedCylinderRealizationHomeomorph hK).apply_symm_apply p)
   simpa only [orderedCylinderRealizationHomeomorph_fst_val] using h
 
@@ -101,7 +101,7 @@ theorem orderedCylinderRealizationHomeomorph_symm_fst_val (p : Realization K × 
 theorem orderedCylinderRealizationHomeomorph_symm_snd_val_one
     (p : Realization K × unitInterval) :
     Finsupp.mapDomain Prod.snd
-      ((K.orderedCylinderRealizationHomeomorph hK).symm p).1 1 = (p.2 : ℝ) := by
+      ((K.orderedCylinderRealizationHomeomorph hK).symm p).val 1 = (p.2 : ℝ) := by
   have h := congrArg (fun q => (q.2 : ℝ))
     ((K.orderedCylinderRealizationHomeomorph hK).apply_symm_apply p)
   simpa only [orderedCylinderRealizationHomeomorph_snd_coe] using h
@@ -111,7 +111,7 @@ theorem orderedCylinderRealizationHomeomorph_symm_snd_val_one
 theorem orderedCylinderRealizationHomeomorph_symm_snd_val_zero
     (p : Realization K × unitInterval) :
     Finsupp.mapDomain Prod.snd
-      ((K.orderedCylinderRealizationHomeomorph hK).symm p).1 0 = 1 - (p.2 : ℝ) := by
+      ((K.orderedCylinderRealizationHomeomorph hK).symm p).val 0 = 1 - (p.2 : ℝ) := by
   -- Reduce the inverse of the composite to the product inverse and interval inverse.
   unfold orderedCylinderRealizationHomeomorph
   generalize_proofs hfin hEq

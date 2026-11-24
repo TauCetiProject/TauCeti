@@ -191,7 +191,7 @@ theorem lift_mk_le {ι : Type u} {κ : Type v} {v : ι → E} (hv : Orthonormal 
     (c : HilbertBasis κ 𝕜 E) :
     Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #κ := by
   have h := (hv.comp (Equiv.ulift : ULift.{v} ι ≃ ι) Equiv.ulift.injective).mk_le
-    (c.reindex (Equiv.ulift.symm : κ ≃ ULift.{u} κ))
+    (c.reindexOfRepr (Equiv.ulift.symm : κ ≃ ULift.{u} κ))
   rwa [Cardinal.mk_uLift, Cardinal.mk_uLift] at h
 
 end Orthonormal

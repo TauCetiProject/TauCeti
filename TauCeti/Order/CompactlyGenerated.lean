@@ -96,10 +96,10 @@ theorem IsCompactElement.exists_fin_iSup_eq_of_sSup_eq {α : Type*} [CompleteLat
       ∀ i, ⨆ (j) (_ : j ≠ i), u j ≠ a := by
   classical
   have hex : ∃ n, ∃ u : Fin n → α, (∀ i, u i ∈ s) ∧ ⨆ i, u i = a := by
-    obtain ⟨t, ht⟩ := ha.exists_finset_of_le_iSup (fun x : s ↦ x.1)
+    obtain ⟨t, ht⟩ := ha.exists_finset_of_le_iSup (fun x : s ↦ x.val)
       (by rw [← sSup_eq_iSup', hs])
-    refine ⟨t.card, fun i ↦ (t.equivFin.symm i).1.1, fun i ↦ (t.equivFin.symm i).1.2,
-      le_antisymm (iSup_le fun i ↦ (le_sSup (t.equivFin.symm i).1.2).trans hs.le)
+    refine ⟨t.card, fun i ↦ (t.equivFin.symm i).val.val, fun i ↦ (t.equivFin.symm i).val.property,
+      le_antisymm (iSup_le fun i ↦ (le_sSup (t.equivFin.symm i).val.property).trans hs.le)
         (ht.trans (iSup₂_le fun x hx ↦ ?_))⟩
     exact le_iSup_of_le (t.equivFin ⟨x, hx⟩) (by simp)
   obtain ⟨hu, hsup⟩ := (Nat.find_spec hex).choose_spec
@@ -107,9 +107,9 @@ theorem IsCompactElement.exists_fin_iSup_eq_of_sSup_eq {α : Type*} [CompleteLat
   -- Dropping the `i`-th member would give a smaller family with the same supremum.
   let e := Fintype.equivFin {j // j ≠ i}
   refine Nat.find_min hex (show Fintype.card {j // j ≠ i} < Nat.find hex from ?_)
-    ⟨fun k ↦ (Nat.find_spec hex).choose (e.symm k).1, fun k ↦ hu _, ?_⟩
+    ⟨fun k ↦ (Nat.find_spec hex).choose (e.symm k).val, fun k ↦ hu _, ?_⟩
   · rw [Fintype.card_subtype_compl, Fintype.card_fin, Fintype.card_unique]
     exact Nat.sub_one_lt_of_lt i.pos
   · refine Eq.trans ?_ hi
     rw [iSup_subtype']
-    exact e.symm.iSup_comp (g := fun j : {j // j ≠ i} ↦ (Nat.find_spec hex).choose j.1)
+    exact e.symm.iSup_comp (g := fun j : {j // j ≠ i} ↦ (Nat.find_spec hex).choose j.val)

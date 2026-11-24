@@ -37,6 +37,8 @@ conditions on single coordinates, such as polydiscs, are measured.
   volume one.
 * `TauCeti.volume_ball_eq_of_finrank_eq`: in finite-dimensional real inner product spaces of the
   same dimension, open balls of the same radius have equal volume.
+* `Module.Basis.ofReal_sqrt_det_gram_mul_addHaar_preimage_ball`: the Gram density times the
+  measure of a linear preimage of a ball is its Euclidean volume.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
@@ -111,6 +113,37 @@ theorem volume_eq_smul_addHaar (b : Basis ι ℝ E) :
     (volume : Measure E) = ENNReal.ofReal √(Matrix.gram ℝ b).det • b.addHaar := by
   rw [← TauCeti.volume_parallelepiped b (finrank_eq_card_basis b).symm, addHaar_def]
   exact Measure.addHaarMeasure_unique volume b.parallelepiped
+
+/-- **The ellipsoid of an injective linear map.** For an injective linear map `A : D → F` and a
+basis `b` of `D`, `√ det ⟪A (b i), A (b j)⟫ · λ_b(A⁻¹(B_r(0))) = vol(B_r(0) ⊆ ℝⁿ)`. -/
+theorem ofReal_sqrt_det_gram_mul_addHaar_preimage_ball {D F : Type*}
+    [NormedAddCommGroup D] [NormedSpace ℝ D]
+    [MeasurableSpace D] [BorelSpace D] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (b : Basis ι ℝ D) {A : D →ₗ[ℝ] F}
+    (hA : Function.Injective A) (r : ℝ) :
+    ENNReal.ofReal √(Matrix.gram ℝ fun i ↦ A (b i)).det * b.addHaar (A ⁻¹' Metric.ball 0 r) =
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ D))) r) := by
+  have : FiniteDimensional ℝ D := b.finiteDimensional_of_finite
+  let V := LinearMap.range A
+  let : MeasurableSpace V := borel V
+  have : BorelSpace V := ⟨rfl⟩
+  let e : D ≃L[ℝ] V := (LinearEquiv.ofInjective A hA).toContinuousLinearEquiv
+  have he (x : D) : (e x : F) = A x := by
+    simp [e, LinearEquiv.ofInjective_apply]
+  have hpre : A ⁻¹' Metric.ball (0 : F) r = e ⁻¹' Metric.ball (0 : V) r := by
+    ext x
+    simp [← Submodule.norm_coe, he]
+  have hgram : Matrix.gram ℝ (b.map e.toLinearEquiv) = Matrix.gram ℝ fun i ↦ A (b i) := by
+    ext i j
+    simp [Matrix.gram_apply, Submodule.coe_inner, he]
+  have hball := TauCeti.volume_ball_eq_of_finrank_eq
+    (e.toLinearEquiv.finrank_eq.symm.trans finrank_euclideanSpace_fin.symm) (0 : V)
+    (0 : EuclideanSpace ℝ (Fin (finrank ℝ D))) r
+  have hV := congrArg (fun μ : Measure V ↦ μ (Metric.ball 0 r))
+    (b.map e.toLinearEquiv).volume_eq_smul_addHaar
+  simp only [smul_apply, smul_eq_mul] at hV
+  rw [hpre, ← Measure.map_apply e.continuous.measurable measurableSet_ball, b.map_addHaar e,
+    ← hgram, ← hV, hball]
 
 end Module.Basis
 

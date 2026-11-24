@@ -130,7 +130,7 @@ def equivUnitsProdSpecial : AlgebraicK1 R ≃* Rˣ × specialAlgebraicK1 R where
   invFun p := ofUnits R p.1 * p.2
   left_inv x := by simp
   right_inv p := by
-    have hp : det R p.2 = 1 := mem_specialAlgebraicK1_iff.1 p.2.2
+    have hp : det R p.2 = 1 := mem_specialAlgebraicK1_iff.1 p.2.property
     ext <;> simp [hp, mul_comm]
   map_mul' x y := by
     refine Prod.ext (map_mul _ x y) (Subtype.ext ?_)

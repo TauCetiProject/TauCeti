@@ -242,6 +242,7 @@ jobs:
       # and may wait for a depleted GitHub budget. That cold path can be expensive; push deploys
       # skip this scan rather than depending on its runtime.
       - name: Restore the previous pull-request snapshot
+        id: pr-snapshot
         if: env.REFRESH_SITE_DATA == 'true'
         uses: actions/cache/restore@v4
         with:
@@ -249,12 +250,21 @@ jobs:
           # A run-specific key lets a refresh save its snapshot; the prefix restores the newest
           # previous snapshot. This restore and the corresponding save do not run on pushes.
           # Snapshots saved on 2026-11-10 lost the bors receipts and scoreboards beyond GitHub's
-          # comment pagination limit, which cannot be refetched. The v3 prefix skips them; until
-          # a v3 snapshot exists, the exact key below restores the last one before that loss.
+          # comment pagination limit, which cannot be refetched. The v3 prefix skips them.
           key: pr-snapshot-v3-${{ github.run_id }}
           restore-keys: |
             pr-snapshot-v3-
-            pr-snapshot-42716799007
+
+      # The last snapshot before that loss, only when no v3 snapshot was restored. It used to be
+      # a second restore key of the step above, but GitHub then restored it on every run instead
+      # of the newest v3 snapshot (the v3 entries were never read), so each run refetched every
+      # pull request that changed since 9 Nov.
+      - name: Fall back to the last snapshot before the receipt loss
+        if: env.REFRESH_SITE_DATA == 'true' && steps.pr-snapshot.outputs.cache-matched-key == ''
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/pr-snapshot.json
+          key: pr-snapshot-42716799007
 
       # PR history and current queue state come from GitHub rather than git. The generator
       # paginates both the PR connection and each label timeline, and bounds contributor
@@ -913,8 +923,7 @@ jobs:
   # that a GitHub hiccup costs a stale chart rather than a whole missed site publish. What was
   # missing is the other half. A warning annotation notifies nobody, so the PR-statistics step
   # failed on every run for two days, pipeline-health.json was never published at all, and every
-  # run was green. Running after `deploy` keeps the site publishing while making the run red, and
-  # a red scheduled run is what stuck_alerts.py's failing-scheduler detector watches for.
+  # run was green. Running after `deploy` keeps the site publishing while making the run red.
   # Data can go stale two independent ways, and this job reports both. A generator can fail, which
   # is what it was originally written for. Or every generator can succeed and the results never get
   # published, which is what happened across 2026-09-22: pipeline-health.json was derived cleanly on

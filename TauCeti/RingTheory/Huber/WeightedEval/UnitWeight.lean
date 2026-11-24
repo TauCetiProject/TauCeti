@@ -63,29 +63,7 @@ theorem isWeightBounded_singleton_of_norm_le {R S : Type*} [SeminormedCommRing R
     {a : Fin k → S} (ha : ∀ i, ‖a i‖ ≤ c i) :
     IsWeightBounded φ (fun i ↦ ({t i} : Set R)) a := by
   rw [isWeightBounded_singleton_iff_forall_isPowerBounded]
-  intro i
-  refine isPowerBounded_iff.mpr
-    ((isBounded_closedBall_zero (R := S) (max ‖(1 : S)‖ (max C 0))).subset ?_)
-  rintro _ ⟨n, rfl⟩
-  rw [mem_closedBall_zero_iff]
-  cases n with
-  | zero => simp
-  | succ m =>
-    have hci : 0 ≤ c i := (norm_nonneg (a i)).trans (ha i)
-    have hpow_t : ‖φ (t i ^ (m + 1))‖ ≤ max C 0 * ‖t i‖ ^ (m + 1) :=
-      (hφ _).trans <| (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg _)).trans
-        (mul_le_mul_of_nonneg_left (norm_pow_le' (t i) m.succ_pos) (le_max_right C 0))
-    have hpow_a : ‖a i ^ (m + 1)‖ ≤ c i ^ (m + 1) :=
-      (norm_pow_le' (a i) m.succ_pos).trans (pow_le_pow_left₀ (norm_nonneg _) (ha i) _)
-    calc ‖(φ (t i) * a i) ^ (m + 1)‖
-        = ‖φ (t i ^ (m + 1)) * a i ^ (m + 1)‖ := by rw [mul_pow, map_pow]
-      _ ≤ ‖φ (t i ^ (m + 1))‖ * ‖a i ^ (m + 1)‖ := norm_mul_le _ _
-      _ ≤ (max C 0 * ‖t i‖ ^ (m + 1)) * c i ^ (m + 1) :=
-          mul_le_mul hpow_t hpow_a (norm_nonneg _) (by positivity)
-      _ = max C 0 * (‖t i‖ * c i) ^ (m + 1) := by rw [mul_assoc, ← mul_pow]
-      _ ≤ max C 0 * 1 := mul_le_mul_of_nonneg_left
-          (pow_le_one₀ (mul_nonneg (norm_nonneg _) hci) (htc i)) (le_max_right C 0)
-      _ ≤ max ‖(1 : S)‖ (max C 0) := by rw [mul_one]; exact le_max_right _ _
+  exact fun i ↦ isPowerBounded_map_mul_of_norm_le hφ (htc i) (ha i)
 
 /-- If `a` is weight-bounded for singleton weights `Tᵢ = {tᵢ}` along a bounded ring homomorphism
 into a seminormed commutative ring whose norm is power-multiplicative and bounds power-bounded

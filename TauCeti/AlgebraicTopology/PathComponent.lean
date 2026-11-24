@@ -47,10 +47,10 @@ instance instSemilocallySimplyConnectedSpaceSubtypePathComponent
     obtain ⟨U, hU, hloop⟩ := semilocallySimplyConnectedAt_def.mp
       (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (a : X))
     refine semilocallySimplyConnectedAt_def.mpr
-      ⟨Subtype.val ⁻¹' U, continuous_subtype_val.tendsto a hU, fun γ hγ => ?_⟩
+      ⟨Subtype.val ⁻¹' U, continuous_subtypeVal.tendsto a hU, fun γ hγ => ?_⟩
     apply homotopic_pathComponent_of_map_subtypeVal_homotopic x₀
     rw [Path.map_refl]
-    refine hloop (γ.map continuous_subtype_val) ?_
+    refine hloop (γ.map continuous_subtypeVal) ?_
     rintro _ ⟨t, rfl⟩
     exact hγ ⟨t, rfl⟩⟩
 
@@ -70,17 +70,17 @@ noncomputable def _root_.FundamentalGroup.pathComponentMulEquiv (a : pathCompone
     FundamentalGroup (pathComponent x₀) a ≃* FundamentalGroup X (a : X) :=
   MulEquiv.ofBijective
     (FundamentalGroup.map
-      (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a) <| by
+      (⟨Subtype.val, continuous_subtypeVal⟩ : C(pathComponent x₀, X)) a) <| by
     constructor
     · rw [injective_iff_map_eq_one]
       intro ⟨g⟩ hg
       obtain ⟨γ, rfl⟩ := Quotient.exists_rep g
       simp only [Path.Homotopic.Quotient.mk''_eq_mk] at hg
-      have hnull : (γ.map continuous_subtype_val).Homotopic (Path.refl (a : X)) := by
+      have hnull : (γ.map continuous_subtypeVal).Homotopic (Path.refl (a : X)) := by
         refine (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp ?_
         simpa only [Path.Homotopic.Quotient.mk''_eq_mk] using
           (congrArg CategoryTheory.End.asHom (FundamentalGroup.map_fromPath
-            (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a γ)).symm.trans
+            (⟨Subtype.val, continuous_subtypeVal⟩ : C(pathComponent x₀, X)) a γ)).symm.trans
           ((congrArg CategoryTheory.End.asHom hg).trans
             (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk (a : X))))
       refine CategoryTheory.End.ext ((FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mpr ?_)
@@ -89,7 +89,7 @@ noncomputable def _root_.FundamentalGroup.pathComponentMulEquiv (a : pathCompone
       exact hnull
     · intro ⟨g⟩
       obtain ⟨γ, rfl⟩ := Quotient.exists_rep g
-      have hmem : ∀ t, γ t ∈ pathComponent x₀ := γ.mem_pathComponent_of_mem a.2
+      have hmem : ∀ t, γ t ∈ pathComponent x₀ := γ.mem_pathComponent_of_mem a.property
       refine ⟨FundamentalGroup.fromPath
         ⟦Path.codRestrict (x := a) (y := a) γ hmem⟧, ?_⟩
       simp only [Path.Homotopic.Quotient.mk''_eq_mk]
@@ -100,7 +100,7 @@ theorem _root_.FundamentalGroup.pathComponentMulEquiv_apply (a : pathComponent x
     (g : FundamentalGroup (pathComponent x₀) a) :
     FundamentalGroup.pathComponentMulEquiv x₀ a g =
       FundamentalGroup.map
-        (⟨Subtype.val, continuous_subtype_val⟩ : C(pathComponent x₀, X)) a g :=
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(pathComponent x₀, X)) a g :=
   MulEquiv.ofBijective_apply _ _ g
 
 /-- The inverse path-component equivalence corestricts a representative loop to the path
@@ -112,11 +112,11 @@ theorem _root_.FundamentalGroup.pathComponentMulEquiv_symm_fromPath (a : pathCom
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
       FundamentalGroup.fromPath
         (Path.Homotopic.Quotient.mk
-          (Path.codRestrict (x := a) (y := a) γ (γ.mem_pathComponent_of_mem a.2))) := by
+          (Path.codRestrict (x := a) (y := a) γ (γ.mem_pathComponent_of_mem a.property))) := by
   rw [MulEquiv.symm_apply_eq, FundamentalGroup.pathComponentMulEquiv_apply]
   exact congrArg FundamentalGroup.fromPath <| congrArg Path.Homotopic.Quotient.mk <|
     (Path.map_codRestrict (s := pathComponent x₀) (x := a) (y := a) γ
-      (γ.mem_pathComponent_of_mem a.2)).symm
+      (γ.mem_pathComponent_of_mem a.property)).symm
 
 /-- **Simple connectivity of a path component.** The path component of `x₀` is simply connected
 exactly when the fundamental group of the ambient space at `x₀` is trivial. -/

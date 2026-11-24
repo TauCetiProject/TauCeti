@@ -247,7 +247,8 @@ theorem comp_eq_envelopingAugmentation_iff (ε : 𝒜.Augmentation) {hB : IsDGAl
     eB.comp φ = ε.envelopingAugmentation ↔
       (ε.envelopingDGAlgHomEquiv hB φ).val.IsAugmented ε eB.toAInfinityAugmentation := by
   have hsu : (ε.envelopingDGAlgHomEquiv hB φ).val.IsStrictlyUnital ε.isStrictUnit
-      eB.toAInfinityAugmentation.isStrictUnit := by simpa using (ε.envelopingDGAlgHomEquiv hB φ).2
+      eB.toAInfinityAugmentation.isStrictUnit := by simpa using (ε.envelopingDGAlgHomEquiv hB
+          φ).property
   rw [hsu.isAugmented_iff_taylor_comp_inclusion_mem, envelopingDGAlgHomEquiv_comp_inclusion]
   refine ⟨fun h w ↦ ?_, fun h ↦
     ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun w ↦ by simpa using h w⟩
@@ -350,7 +351,7 @@ private theorem linearPart_toEnveloping_unit : ε.toEnveloping.linearPart ε.uni
 
 private theorem linearPart_toEnveloping_coe (x : ε.augmentationIdeal) :
     ε.toEnveloping.linearPart x = ε.reducedAlgebra.toCobarBar.linearPart x := by
-  simp [ε.mem_augmentationIdeal.mp x.2, ε.reducedPart_coe]
+  simp [ε.mem_augmentationIdeal.mp x.property, ε.reducedPart_coe]
 
 private theorem reducedPart_envelopingDifferential
     (z : TensorAlgebra R (ReducedTensorWords R ε.augmentationIdeal)) :
@@ -397,7 +398,7 @@ noncomputable def envelopingContraction :
     simp [-AInfinityHom.linearPart_apply, -linearPart_toEnveloping,
       ε.reducedPart_linearPart_toEnveloping]
   proj_comp_homotopy := LinearMap.ext fun _ ↦ by
-    simp [ε.envelopingAugmentation.mem_augmentationIdeal.mp (ε.redContr.homotopy _).2]
+    simp [ε.envelopingAugmentation.mem_augmentationIdeal.mp (ε.redContr.homotopy _).property]
   homotopy_comp_homotopy := LinearMap.ext fun _ ↦ by simp
 
 @[simp] theorem envelopingContraction_incl :
@@ -668,6 +669,39 @@ theorem fromEnveloping_naturality (eB : DGAlgAugmentation hB) (eC : DGAlgAugment
       fromEnveloping_comp_toEnveloping, AInfinityHom.comp_id, hφ]
     rw [← AInfinityHom.comp_assoc, fromEnveloping_comp_toEnveloping, AInfinityHom.id_comp]
 
+/-- Factoring `(ε.augmentedEnvelopingDGAlgHomEquiv e).symm` through `envelopingMap` and
+`fromEnveloping`. -/
+theorem fromEnveloping_comp_envelopingMap {A : Type uA} [AddCommGroup A] [Module R A]
+    {𝒜 : AInfinityAlgebra R A} {ε : 𝒜.Augmentation}
+    (e : DGAlgAugmentation hB)
+    {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra}
+    (hf : f.IsAugmented ε e.toAInfinityAugmentation) :
+    e.fromEnveloping.comp hf.envelopingMap =
+      ((ε.augmentedEnvelopingDGAlgHomEquiv e).symm ⟨f, hf⟩).val := by
+  have h := ε.augmentedEnvelopingDGAlgHomEquiv_symm_comp_right hf e
+    ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id e.toAInfinityAugmentation⟩
+  simpa only [fromEnveloping, AInfinityAlgebra.Augmentation.envelopingDGAlgHomEquiv_symm_apply,
+    AInfinityAlgebra.Augmentation.augmentedEnvelopingDGAlgHomEquiv_symm_apply_val,
+    AInfinityHom.id_comp] using h.symm
+
 end DGAlgAugmentation
+
+namespace AInfinityAlgebra.Augmentation
+
+/-- Second triangle identity of the augmented enveloping bar–cobar adjunction for `(A, ε)`. -/
+@[simp] theorem fromEnveloping_comp_envelopingMap_toEnveloping
+    {𝒜 : AInfinityAlgebra R A} (ε : 𝒜.Augmentation) :
+    ε.envelopingAugmentation.fromEnveloping.comp ε.isAugmented_toEnveloping.envelopingMap =
+      DGAlgHom.id _ := by
+  have hid :
+      ε.augmentedEnvelopingDGAlgHomEquiv ε.envelopingAugmentation
+          ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩ =
+        ⟨ε.toEnveloping, ε.isAugmented_toEnveloping⟩ :=
+    Subtype.ext <| by
+      rw [augmentedEnvelopingDGAlgHomEquiv_apply_val, envelopingDGAlgHomEquiv_id]
+  rw [ε.envelopingAugmentation.fromEnveloping_comp_envelopingMap ε.isAugmented_toEnveloping, ← hid,
+    Equiv.symm_apply_apply]
+
+end AInfinityAlgebra.Augmentation
 
 end TauCeti

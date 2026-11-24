@@ -124,8 +124,8 @@ theorem isRightDescent_weylCoxeterSystem_iff (w : P.weylGroup) (i : b.support) :
       ¬ b.IsPos (P.weylGroupToPerm w (i : ι)) := by
   rw [CoxeterSystem.IsRightDescent, weylCoxeterSystem_simple,
     length_weylCoxeterSystem_eq, length_weylCoxeterSystem_eq,
-    ncard_inversions_mul_ofIdx_lt_iff P b w (b.isPos_of_mem_support i.2),
-    mem_inversions, and_iff_right (b.isPos_of_mem_support i.2)]
+    ncard_inversions_mul_ofIdx_lt_iff P b w (b.isPos_of_mem_support i.property),
+    mem_inversions, and_iff_right (b.isPos_of_mem_support i.property)]
 
 /-- The specified presentation homomorphism preserves and reflects right descents. -/
 theorem isRightDescent_presentation_iff

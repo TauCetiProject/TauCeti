@@ -141,11 +141,11 @@ theorem continuous_unitaryProdBlockSucc : Continuous (unitaryProdBlockSucc α m)
   refine continuous_induced_rng.2 ?_
   have hcomp : Subtype.val ∘ unitaryProdBlockSucc α m =
       fun cB : unitary α × unitary (Matrix (Fin m) (Fin m) α) ↦
-        cornerBlockSucc (cB.1 : α) cB.2.1 :=
+        cornerBlockSucc (cB.1 : α) cB.2.val :=
     funext coe_unitaryProdBlockSucc
   rw [hcomp]
-  exact (continuous_subtype_val.comp continuous_fst).matrix_cornerBlockSucc
-    (continuous_subtype_val.comp continuous_snd)
+  exact (continuous_subtypeVal.comp continuous_fst).matrix_cornerBlockSucc
+    (continuous_subtypeVal.comp continuous_snd)
 
 /-- The block-diagonal embedding `(c, B) ↦ diag(c, B)` on unitary elements is a topological
 embedding. -/

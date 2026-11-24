@@ -125,8 +125,8 @@ theorem harmonicExponent_le_one_of_isReal (χ : Grossencharacter K 𝔪) {w : In
 exponent `χ.infinityType w.embedding`. -/
 theorem harmonicExponent_of_notMem_infinitePart (χ : Grossencharacter K 𝔪)
     (w : {w : InfinitePlace K // w.IsReal}) (hw : w ∉ 𝔪.infinitePart) :
-    χ.harmonicExponent w.1 = (χ.infinityType w.1.embedding : ZMod 2).val := by
-  rw [χ.harmonicExponent_of_isReal w.2, χ.realParity_eq w hw,
+    χ.harmonicExponent w.val = (χ.infinityType w.val.embedding : ZMod 2).val := by
+  rw [χ.harmonicExponent_of_isReal w.property, χ.realParity_eq w hw,
     AlgebraicInfinityType.toContinuous_realParity]
 
 /-- Neukirch's `Tr(p)`: the total degree `∑_w P_w` of the harmonic polynomial of `χ`. -/
@@ -529,17 +529,18 @@ theorem integral_archGaussian_mul_archWeight_mul_archNorm_cpow (χ : Grossenchar
 
 private theorem unitaryPart_real_mul_pow (χ : Grossencharacter K 𝔪)
     (w : {w : InfinitePlace K // w.IsReal}) (x : Kˣ) :
-    (χ.toHeckeCharacter.unitaryPart.infiniteComponent w.1
-        (Units.map (algebraMap K w.1.Completion).toMonoidHom x) : ℂ) *
+    (χ.toHeckeCharacter.unitaryPart.infiniteComponent w.val
+        (Units.map (algebraMap K w.val.Completion).toMonoidHom x) : ℂ) *
       (((mixedEmbedding K (x : K)).1 w : ℝ) : ℂ) ^
         (χ.toHeckeCharacter.infinityType.realParity w).val =
-      ((normAtPlace w.1 (mixedEmbedding K (x : K)) ^ χ.harmonicExponent w.1 : ℝ) : ℂ) := by
+      ((normAtPlace w.val (mixedEmbedding K (x : K)) ^ χ.harmonicExponent w.val : ℝ) : ℂ) := by
   rw [HeckeCharacter.infiniteComponent_map_algebraMap_eq_realComponent,
     HeckeCharacter.realComponent_eq, χ.infinityType_unitaryPart]
   simp only [Pi.zero_apply, TauCeti.realUnitsCharacter_zero_left]
-  rw [mixedEmbedding_apply_isReal, normAtPlace_apply_of_isReal w.2, mixedEmbedding_apply_isReal,
-    Real.norm_eq_abs, χ.harmonicExponent_of_isReal w.2]
-  have hr0 : embedding_of_isReal w.2 (x : K) ≠ 0 := (map_ne_zero _).mpr x.ne_zero
+  rw [mixedEmbedding_apply_isReal, normAtPlace_apply_of_isReal w.property,
+      mixedEmbedding_apply_isReal,
+    Real.norm_eq_abs, χ.harmonicExponent_of_isReal w.property]
+  have hr0 : embedding_of_isReal w.property (x : K) ≠ 0 := (map_ne_zero _).mpr x.ne_zero
   have hpar := (χ.toHeckeCharacter.infinityType.realParity w).val_lt
   interval_cases (χ.toHeckeCharacter.infinityType.realParity w).val
   · simp
@@ -551,22 +552,22 @@ private theorem unitaryPart_real_mul_pow (χ : Grossencharacter K 𝔪)
 
 private theorem unitaryPart_complex_mul_monomial (χ : Grossencharacter K 𝔪)
     (w : {w : InfinitePlace K // w.IsComplex}) (x : Kˣ) :
-    (χ.toHeckeCharacter.unitaryPart.infiniteComponent w.1
-        (Units.map (algebraMap K w.1.Completion).toMonoidHom x) : ℂ) *
+    (χ.toHeckeCharacter.unitaryPart.infiniteComponent w.val
+        (Units.map (algebraMap K w.val.Completion).toMonoidHom x) : ℂ) *
       TauCeti.complexHarmonicMonomial
         ((AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w)
         ((mixedEmbedding K (x : K)).2 w) =
-      ((normAtPlace w.1 (mixedEmbedding K (x : K)) ^ χ.harmonicExponent w.1 : ℝ) : ℂ) := by
+      ((normAtPlace w.val (mixedEmbedding K (x : K)) ^ χ.harmonicExponent w.val : ℝ) : ℂ) := by
   rw [HeckeCharacter.infiniteComponent_map_algebraMap_eq_complexComponent,
     HeckeCharacter.complexComponent_eq, χ.infinityType_unitaryPart]
   simp only [Pi.zero_apply, TauCeti.coe_complexUnitsCharacter_apply, cpow_zero, one_mul,
     Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
   rw [mixedEmbedding_apply_isComplex, TauCeti.angular_mul_complexHarmonicMonomial,
-    normAtPlace_apply_of_isComplex w.2, mixedEmbedding_apply_isComplex,
+    normAtPlace_apply_of_isComplex w.property, mixedEmbedding_apply_isComplex,
     χ.harmonicExponent_eq_infinityType,
     ContinuousInfinityType.harmonicExponent_eq_of_agreesOnIdentityComponent
-      χ.agreesOnIdentityComponent w.2,
-    ContinuousInfinityType.harmonicExponent_of_isComplex _ w.2, ofReal_pow]
+      χ.agreesOnIdentityComponent w.property,
+    ContinuousInfinityType.harmonicExponent_of_isComplex _ w.property, ofReal_pow]
 
 /-- **Archimedean sign and phase cancellation on `Kˣ`**: for any `x : Kˣ`, multiplying the product
 of the archimedean components of `χ.toHeckeCharacter.unitaryPart` at `x` by

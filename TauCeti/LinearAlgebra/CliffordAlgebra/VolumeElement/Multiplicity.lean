@@ -356,7 +356,7 @@ theorem subsingleton_linearMap_oddVolumeSubmodule_of_ne {μ ν : ℂ}
     Subsingleton
       (S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] oddVolumeSubmodule (E := E) Q o hn ν) :=
   subsingleton_linearMap_of_complexVolume_smul_ne Q o hω
-    (fun x ↦ Subtype.ext ((mem_oddVolumeSubmodule Q o hn ν x.1).mp x.2)) hne
+    (fun x ↦ Subtype.ext ((mem_oddVolumeSubmodule Q o hn ν x.val).mp x.property)) hne
 
 end Intertwiners
 
@@ -459,7 +459,8 @@ private theorem oddVolumeSubmodule_map_smul_of_even
       _ = (complexVolume Q o * ι (Q.baseChange ℂ) w) • (g s : E) := by
         rw [coe_map_even_smul, coe_complexVolumeMulIotaEven]
       _ = μ • (ι (Q.baseChange ℂ) w • (g s : E)) := by
-        rw [hcomm, mul_smul, (mem_oddVolumeSubmodule Q o hn μ (g s).1).mp (g s).2, smul_comm]
+        rw [hcomm, mul_smul, (mem_oddVolumeSubmodule Q o hn μ (g s).val).mp (g s).property,
+            smul_comm]
   | mul a b ha hb => rw [mul_smul, ha, hb, mul_smul]
   | add a b ha hb => rw [add_smul, map_add, ha, hb, add_smul]
 
@@ -513,7 +514,7 @@ private theorem isSimpleRing_even_baseChange : IsSimpleRing ↥(even (Q.baseChan
   have hQnd : Q.Nondegenerate :=
     QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by simpa [hQ] using hv
   refine TauCeti.CliffordAlgebra.isSimpleRing_even_of_odd_finrank
-    (QuadraticForm.Nondegenerate.baseChange (L := ℂ) hQnd) ?_
+    (QuadraticForm.Nondegenerate.baseChange (A := ℂ) hQnd) ?_
   rw [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)]
   exact hn
 

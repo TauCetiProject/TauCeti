@@ -88,7 +88,7 @@ private theorem exists_sub_norm_mem_succ (hπ : ∀ n, Function.Surjective (π n
   have hzero := (H0π_eq_zero_iff ⟨_, hq⟩).1 (Subsingleton.elim _ _)
   obtain ⟨q, hq'⟩ := (Submodule.mem_comap.1 hzero : (π n).hom x ∈ LinearMap.range _)
   obtain ⟨y, rfl⟩ := hπ n q
-  refine ⟨y, y.2, ?_⟩
+  refine ⟨y, y.property, ?_⟩
   -- `Rep.norm_comm` evaluated at `y`; both sides unfold `Rep.norm_apply` and `Rep.hom_comp`.
   have hN : (π n).hom ((M.subrepresentation (F n) (hF n)).ρ.norm y) = (Q n).ρ.norm ((π n).hom y) :=
     congr(($(Rep.norm_comm (π n))).hom y).symm
@@ -120,7 +120,7 @@ private theorem exists_sub_sum_mem_succ (hπ : ∀ n, Function.Surjective (π n)
   obtain ⟨z, hz⟩ :=
     Representation.mem_coinvariantsKer_iff_exists_sum.1 (Submodule.mem_comap.1 hzero)
   choose y hy using fun g ↦ hπ n (z g)
-  refine ⟨fun g ↦ y g, fun g ↦ (y g).2, ?_⟩
+  refine ⟨fun g ↦ y g, fun g ↦ (y g).property, ?_⟩
   have h := hker n (x - ∑ g, ((M.subrepresentation (F n) (hF n)).ρ g (y g) - y g)) <| by
     have hρ g : (π n).hom ((M.subrepresentation (F n) (hF n)).ρ g (y g)) = (Q n).ρ g (z g) := by
       rw [Rep.hom_comm_apply, hy]
@@ -157,7 +157,7 @@ theorem isZero_tateCohomology_zero_of_filtration (hF0 : F 0 = ⊤)
   have hr : ∀ n, r n ∈ F n ∧ ∀ g, M.ρ g (r n) = r n := by
     intro n
     induction n with
-    | zero => exact ⟨hF0 ▸ Submodule.mem_top, m.2⟩
+    | zero => exact ⟨hF0 ▸ Submodule.mem_top, m.property⟩
     | succ n ih =>
       refine ⟨(hY n (r n) ih.1 ih.2).2, fun g ↦ ?_⟩
       -- `r (n + 1)` is `r n - N (Y n (r n))` by the defining recursion.
@@ -210,7 +210,7 @@ theorem isZero_tateCohomology_negOne_of_filtration (hF0 : F 0 = ⊤)
   have hr : ∀ n, r n ∈ F n ∧ M.ρ.norm (r n) = 0 := by
     intro n
     induction n with
-    | zero => exact ⟨hF0 ▸ Submodule.mem_top, m.2⟩
+    | zero => exact ⟨hF0 ▸ Submodule.mem_top, m.property⟩
     | succ n ih =>
       refine ⟨(hY n (r n) ih.1 ih.2).2, ?_⟩
       -- `r (n + 1)` is `r n - D (Y n (r n))` by the defining recursion.

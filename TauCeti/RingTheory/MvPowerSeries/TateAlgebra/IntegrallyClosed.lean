@@ -84,7 +84,7 @@ theorem isIntegrallyClosed_isRestricted_subring_of_isometry {L : Type*} [NormedF
         exact ⟨coeff α (a : _root_.MvPowerSeries σ K), hcoeff.symm⟩
   choose cq hcq using hqL_mem
   let q_ser : _root_.MvPowerSeries σ K := cq
-  let q : T := ⟨q_ser, qL.2.congr fun α ↦ by
+  let q : T := ⟨q_ser, qL.property.congr fun α ↦ by
     rw [← hcq α, Algebra.linearMap_apply, hf_alg, hnorm, _root_.MvPowerSeries.coeff_apply]⟩
   have hψq : ψ q = qL := Subtype.ext <| _root_.MvPowerSeries.ext fun α ↦ by
     rw [coeff_restrictedMap, _root_.MvPowerSeries.coeff_apply, ← hf_alg,

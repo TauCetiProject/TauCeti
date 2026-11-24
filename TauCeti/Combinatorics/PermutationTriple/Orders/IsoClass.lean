@@ -76,7 +76,7 @@ def HasDividingOrders (C : ConnectedIsoClass n) (a b c : ℕ) : Prop :=
 /-- `ConnectedIsoClass.mk t` has dividing orders `(a, b, c)` iff `t.1` does. -/
 @[simp]
 theorem hasDividingOrders_mk (t : ConnectedTriple n) :
-    (mk t).HasDividingOrders a b c ↔ t.1.HasDividingOrders a b c := by
+    (mk t).HasDividingOrders a b c ↔ t.val.HasDividingOrders a b c := by
   rw [HasDividingOrders, forget_mk, PermutationTriple.IsoClass.hasDividingOrders_mk]
 
 /-- Forgetting connectedness preserves `HasDividingOrders`. -/
@@ -86,7 +86,7 @@ theorem hasDividingOrders_forget (C : ConnectedIsoClass n) :
 
 instance (C : ConnectedIsoClass n) (a b c : ℕ) : Decidable (C.HasDividingOrders a b c) :=
   Quotient.recOnSubsingleton' C fun t ↦
-    decidable_of_iff (t.1.HasDividingOrders a b c) (hasDividingOrders_mk t).symm
+    decidable_of_iff (t.val.HasDividingOrders a b c) (hasDividingOrders_mk t).symm
 
 /-- Connected isomorphism classes with dividing orders `(a, b, c)` are the connected elements of
 `PermutationTriple.IsoClass n` satisfying `HasDividingOrders a b c`. -/
@@ -104,7 +104,8 @@ def equivIsoClassSubtypeDividingOrders (n a b c : ℕ) :
 @[simp]
 theorem coe_equivIsoClassSubtypeDividingOrders_apply
     (C : {C : ConnectedIsoClass n // C.HasDividingOrders a b c}) :
-    (equivIsoClassSubtypeDividingOrders n a b c C : PermutationTriple.IsoClass n) = C.1.forget := by
+    (equivIsoClassSubtypeDividingOrders n a b c C : PermutationTriple.IsoClass n) = C.val.forget
+        := by
   rcases C with ⟨C, hC⟩
   obtain ⟨t, rfl⟩ := mk_surjective C
   simp [equivIsoClassSubtypeDividingOrders]
@@ -152,7 +153,7 @@ theorem card_connectedIsoClassesWithDividingOrders (n a b c : ℕ) :
 theorem connectedIsoClassesWithDividingOrders_zero (a b c : ℕ) :
     connectedIsoClassesWithDividingOrders 0 a b c = ∅ := by
   have : IsEmpty (ConnectedIsoClass 0) :=
-    ⟨fun C ↦ let ⟨t, _⟩ := ConnectedIsoClass.mk_surjective C; t.2.ne_zero rfl⟩
+    ⟨fun C ↦ let ⟨t, _⟩ := ConnectedIsoClass.mk_surjective C; t.property.ne_zero rfl⟩
   exact Finset.eq_empty_of_isEmpty _
 
 namespace MarkedIsoClass
@@ -165,7 +166,7 @@ def HasDividingOrders (m : MarkedIsoClass n) (a b c : ℕ) : Prop :=
 /-- `MarkedIsoClass.mk t i` has dividing orders `(a, b, c)` iff `t.1` does. -/
 @[simp]
 theorem hasDividingOrders_mk (t : ConnectedTriple n) (i : Fin n) :
-    (mk t i).HasDividingOrders a b c ↔ t.1.HasDividingOrders a b c := by
+    (mk t i).HasDividingOrders a b c ↔ t.val.HasDividingOrders a b c := by
   rw [HasDividingOrders, forget_mk, ConnectedIsoClass.hasDividingOrders_mk]
 
 /-- Forgetting the marked sheet preserves `HasDividingOrders`. -/

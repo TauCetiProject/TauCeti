@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Levi
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.Distribution.Annihilator
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -61,8 +62,12 @@ has no integral hypersurfaces.
 
 * `TauCeti.IsContactDistribution.exists_isContactFormAt`: a contact structure is locally the kernel
   of a nowhere vanishing `C^n` one-form, which is a contact form at each point of its domain.
+* `TauCeti.IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt`: on a Hausdorff manifold,
+  a smooth contact structure is defined near each point by a smooth one-form on the whole manifold.
 * `TauCeti.isContactDistribution_iff_forall_exists_isContactFormAt`: a `C^n` hyperplane field is a
   contact structure exactly when it is locally the kernel of one-forms that are contact.
+* `TauCeti.IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq`: a smooth
+  one-form whose kernel is a contact structure near a point is a contact form at that point.
 * `TauCeti.SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution`: a smooth one-form
   is a contact form exactly when its kernel is a contact structure.
 * `TauCeti.IsContactDistribution.even_finrank` and `TauCeti.IsContactDistribution.odd_finrank`:
@@ -132,6 +137,14 @@ theorem finrank_quotient (hD : IsContactDistribution I n D) (x : M) :
   have h' := hD.finrank_add_one x
   omega
 
+/-- On a nonempty manifold, the rank `dim M - 1` of a contact structure and the rank `1` of its
+contact line add up to the dimension of `M`. -/
+theorem finrank_sub_one_add_one [Nonempty M] (hD : IsContactDistribution I n D) :
+    finrank ℝ E - 1 + 1 = finrank ℝ E := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  have := hD.finrank_add_one x
+  omega
+
 /-- **Contact hyperplanes have even dimension**, since the Levi form is a nondegenerate alternating
 form with values in a line. -/
 theorem even_finrank (hD : IsContactDistribution I n D) (x : M) : Even (finrank ℝ (D x)) :=
@@ -183,6 +196,33 @@ theorem IsContactDistribution.exists_isContactFormAt [IsManifold I (n + 1) M]
       (zero_lt_one.trans_le hn).ne') ?_).2 ⟨(hαD y hy).1, hD.bijective_distributionLeviForm y⟩
   exact eventually_of_mem (hU.mem_nhds hy) fun z hz ↦ (hαD z hz).2
 
+/-- **A contact structure is defined near each point by a global contact form there.** Every point
+`x` has an open neighbourhood `W` and a smooth one-form `α` on all of `M` such that, at every point
+of `W`, the kernel of `α` is the contact hyperplane and `α` is a contact form. The form is a local
+defining form cut off by a smooth bump function. -/
+theorem IsContactDistribution.exists_smoothForm_ker_eq_isContactFormAt [IsManifold I ∞ M]
+    [T2Space M] (hD : IsContactDistribution I ∞ D) (x : M) :
+    ∃ W : Set M, IsOpen W ∧ x ∈ W ∧ ∃ α : SmoothForm I M ℝ 1,
+      ∀ y ∈ W, RoughForm.ker α.val y = D y ∧ IsContactFormAt α.val y := by
+  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  obtain ⟨U, hU, hxU, α, hα, hαξ⟩ := hD.exists_isContactFormAt (by simp) x
+  obtain ⟨f, -, hfU⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1
+    (hU.mem_nhds hxU)
+  obtain ⟨V, hVf, hV, hxV⟩ := mem_nhds_iff.1 f.eventuallyEq_one
+  have hψ : IsSmoothForm I ∞ (fun y ↦ f y • α y : RoughForm I M ℝ 1) := by
+    rw [isSmoothForm_def]
+    exact f.contMDiff.contMDiffOn.smul_section_of_tsupport hU hfU hα
+  refine ⟨V ∩ U, hV.inter hU, ⟨hxV, hxU⟩, ⟨_, hψ.mem_smoothBundleForms⟩, fun y hy ↦ ?_⟩
+  -- On the open set `V`, where `f = 1`, the cut-off form is the local defining form.
+  have hev : ∀ᶠ z in 𝓝 y, f z • α z = α z := by
+    filter_upwards [hV.mem_nhds hy.1] with z hz
+    rw [show f z = 1 from hVf hz, one_smul]
+  have hval : f y • α y = α y := hev.self_of_nhds
+  refine ⟨?_, (isContactFormAt_congr hval fun v _ w _ ↦ ?_).2 (hαξ y hy.2).2⟩
+  · ext v
+    simp only [RoughForm.mem_ker, hval, ← (hαξ y hy.2).1]
+  · exact congrArg (fun A ↦ A ![v, w]) (mextDeriv_congr_of_eventuallyEq hev)
+
 /-- **Contact structures are the hyperplane fields locally defined by contact forms.** A `C^n`
 distribution `D` of rank `dim E - 1`, with `1 ≤ n`, is a contact structure exactly when near every
 point `x` it is the kernel of some one-form, differentiable at `x`, which is a contact form at
@@ -206,6 +246,20 @@ theorem isContactDistribution_iff_forall_exists_isContactFormAt [IsManifold I (n
     exact ((RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
       (hV.mem_nhds hxV) hαd hαD).1 hα).2
 
+/-- **A smooth one-form defining a contact structure near a point is a contact form there.** If
+the kernel of a smooth one-form `α` is the `C^n` contact structure `D` near `x`, with `1 ≤ n`, then
+`α` is a contact form at `x`. -/
+theorem IsContactDistribution.isContactFormAt_of_eventually_kerDistribution_eq
+    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) {α : SmoothForm I M ℝ 1} {x : M}
+    (hαD : ∀ᶠ y in 𝓝 x, α.kerDistribution y = D y) : IsContactFormAt α.val x := by
+  obtain ⟨V, hV, hxV, X, hX⟩ := isContMDiffDistribution_iff.1 hD.isContMDiffDistribution x
+  refine (RoughForm.isContactFormAt_iff_bijective_distributionLeviForm (hX.of_le hn)
+    (hV.mem_nhds hxV) (α.mdifferentiableAt x)
+    (hαD.mono fun y hy ↦ (SmoothForm.kerDistribution_eq_ker α y).symm.trans hy)).2
+    ⟨?_, hD.bijective_distributionLeviForm x⟩
+  rw [Ne, ← RoughForm.ker_eq_top_iff, ← SmoothForm.kerDistribution_eq_ker, hαD.self_of_nhds]
+  exact hD.ne_top x
+
 /-! ### Kernels of contact forms -/
 
 /-- **A smooth one-form is a contact form exactly when its kernel is a contact structure.** -/
@@ -213,7 +267,7 @@ theorem SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution [ENat
     [IsManifold I (n + 1) M] {α : SmoothForm I M ℝ 1} :
     α.IsContactForm ↔ IsContactDistribution I n α.kerDistribution := by
   -- The kernel of `α` at `x` is all of `T_x M` exactly when `α_x = 0`.
-  have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.1 x ≠ 0 := by
+  have htop (x : M) : α.kerDistribution x ≠ ⊤ ↔ α.val x ≠ 0 := by
     rw [SmoothForm.kerDistribution_eq_ker, Ne, RoughForm.ker_eq_top_iff]
   rw [isContactForm_iff_forall_bijective_distributionLeviForm]
   exact ⟨fun h ↦ ⟨isContMDiffDistribution_kerDistribution fun x ↦ (h x).1,
@@ -226,6 +280,18 @@ theorem SmoothForm.IsContactForm.isContactDistribution_kerDistribution [ENat.LEI
     IsContactDistribution I n α.kerDistribution :=
   isContactForm_iff_isContactDistribution_kerDistribution.1 hα
 
+/-- **Global contact forms of a contact structure are its nowhere-vanishing defining forms.** A
+smooth one-form is a contact form with kernel the contact structure `D` exactly when it vanishes
+nowhere and has kernel `D`. -/
+theorem IsContactDistribution.isContactForm_and_kerDistribution_eq_iff [ENat.LEInfty n]
+    [IsManifold I (n + 1) M] (hD : IsContactDistribution I n D) {α : SmoothForm I M ℝ 1} :
+    α.IsContactForm ∧ α.kerDistribution = D ↔ ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x := by
+  refine ⟨fun ⟨hα, hαD⟩ x ↦ ⟨hα.apply_ne_zero x, ?_⟩, fun h ↦ ?_⟩
+  · rw [← SmoothForm.kerDistribution_eq_ker, hαD]
+  · have hαD : α.kerDistribution = D :=
+      funext fun x ↦ (SmoothForm.kerDistribution_eq_ker α x).trans (h x).2
+    exact ⟨SmoothForm.isContactForm_iff_isContactDistribution_kerDistribution.2 (hαD ▸ hD), hαD⟩
+
 omit [CompleteSpace E] [FiniteDimensional ℝ E] in
 /-- The linear symplectic form on the contact hyperplane `α.kerDistribution x` induced by `dα_x`:
 `(v, w) ↦ dα_x(v, w)`. -/
@@ -236,9 +302,9 @@ def SmoothForm.IsContactForm.kerSymplecticForm {α : SmoothForm I M ℝ 1} (hα 
       (α.kerDistribution x) (α.kerDistribution x)
   have hAlt : B.IsAlt := fun v ↦ by
     rw [LinearMap.domRestrict₁₂_apply]
-    exact (SmoothForm.isAlt_bilinFormAt _ x).self_eq_zero v.1
+    exact (SmoothForm.isAlt_bilinFormAt _ x).self_eq_zero v.val
   have hsep : B.SeparatingLeft := fun v hv ↦ Subtype.ext <|
-    (SmoothForm.isContactForm_iff.1 hα x).2 v.1 (SmoothForm.mem_kerDistribution.1 v.2)
+    (SmoothForm.isContactForm_iff.1 hα x).2 v.val (SmoothForm.mem_kerDistribution.1 v.property)
       fun w hw ↦ by
         have h := hv ⟨w, SmoothForm.mem_kerDistribution.2 hw⟩
         rwa [LinearMap.domRestrict₁₂_apply, ← SmoothForm.mextDeriv_eq_bilinFormAt] at h
@@ -252,7 +318,7 @@ omit [CompleteSpace E] [FiniteDimensional ℝ E] in
 @[simp]
 theorem SmoothForm.IsContactForm.kerSymplecticForm_apply {α : SmoothForm I M ℝ 1}
     (hα : α.IsContactForm) (x : M) (v w : α.kerDistribution x) :
-    hα.kerSymplecticForm x v w = mextDeriv α.1 x ![v.1, w.1] := by
+    hα.kerSymplecticForm x v w = mextDeriv α.val x ![v.val, w.val] := by
   unfold SmoothForm.IsContactForm.kerSymplecticForm
   dsimp only
   rw [LinearMap.domRestrict₁₂_apply, ← SmoothForm.mextDeriv_eq_bilinFormAt]

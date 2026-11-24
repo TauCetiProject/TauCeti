@@ -162,7 +162,7 @@ theorem const_apply_of_lt_of_le (m : ℤ) {i j : ℕ} (hij : i < j) (hj : j ≤ 
 theorem topRow_const (m : ℤ) : (const n m).topRow = fun _ => m := by
   funext i
   rw [topRow_apply]
-  exact const_apply_of_lt_of_le m i.2 le_rfl
+  exact const_apply_of_lt_of_le m i.isLt le_rfl
 
 @[simp]
 theorem rowWeight_const (m : ℤ) : (const n m).rowWeight = fun _ => m := by

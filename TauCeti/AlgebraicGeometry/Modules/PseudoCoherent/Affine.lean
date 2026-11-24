@@ -91,7 +91,7 @@ theorem HasFiniteFreeResolution.isPseudoCoherentOver_moduleSpecΓ {F : (Spec R).
     (G.mapIso iF).toLinearEquiv.toLinearMap ∘ₗ ((G.map (π.f 0)).hom ∘ₗ (e 0).toLinearMap)
   let d (i : ℕ) : (Fin (k (i + 1)) → R) →ₗ[R] (Fin (k i) → R) :=
     (e i).symm.toLinearMap ∘ₗ ((G.map (P.d (i + 1) i)).hom ∘ₗ (e (i + 1)).toLinearMap)
-  have : QuasiIsoAt π 0 := hπ.1 0
+  have : QuasiIsoAt π 0 := hπ.quasiIsoAt 0
   let S₀ : ShortComplex (Spec R).Modules :=
     ShortComplex.mk (P.d 1 0) (π.f 0) (by rw [← π.comm 1 0, single_obj_d, comp_zero])
   obtain ⟨hS₀_ex, hπ₀_epi⟩ :=
@@ -211,20 +211,20 @@ theorem IsPseudoCoherent.isPseudoCoherentOver_sections (hF : F.IsPseudoCoherent)
     {f | ∃ V : X.Opens, X.basicOpen f ≤ V ∧ (F.restrict V.ι).HasFiniteFreeResolution}
   have hs : Ideal.span s = ⊤ := by
     apply hU.iSup_basicOpen_eq_self_iff.mp
-    refine le_antisymm (iSup_le fun f : s ↦ X.basicOpen_le f.1) fun x hxU ↦ ?_
+    refine le_antisymm (iSup_le fun f : s ↦ X.basicOpen_le f.val) fun x hxU ↦ ?_
     obtain ⟨V, hxV, hV⟩ := isPseudoCoherent_iff.mp hF x
     obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ hxU
     exact Opens.mem_iSup.mpr ⟨⟨f, V, hf, hV⟩, hxf⟩
-  have (f : s) : IsLocalization.Away f.1 Γ(X, X.basicOpen f.1) :=
-    hU.isLocalization_basicOpen f.1
-  have (f : s) : IsLocalizedModule.Away f.1 (F.basicOpenRestrict f.1) :=
-    F.isLocalizedModule_basicOpenRestrict hU f.1
+  have (f : s) : IsLocalization.Away f.val Γ(X, X.basicOpen f.val) :=
+    hU.isLocalization_basicOpen f.val
+  have (f : s) : IsLocalizedModule.Away f.val (F.basicOpenRestrict f.val) :=
+    F.isLocalizedModule_basicOpenRestrict hU f.val
   refine TauCeti.Huber.IsPseudoCoherentOver.of_localizationSpan' s hs
-    (Rₚ := fun f ↦ Γ(X, X.basicOpen f.1))
-    (Mₚ := fun f ↦ Γ(F, X.basicOpen f.1)) (fun f ↦ F.basicOpenRestrict f.1) fun f ↦ ?_
-  obtain ⟨V, hfV, hV⟩ := f.2
-  let D : X.Opens := X.basicOpen f.1
-  let hD : IsAffineOpen D := hU.basicOpen f.1
+    (Rₚ := fun f ↦ Γ(X, X.basicOpen f.val))
+    (Mₚ := fun f ↦ Γ(F, X.basicOpen f.val)) (fun f ↦ F.basicOpenRestrict f.val) fun f ↦ ?_
+  obtain ⟨V, hfV, hV⟩ := f.property
+  let D : X.Opens := X.basicOpen f.val
+  let hD : IsAffineOpen D := hU.basicOpen f.val
   have : IsOpenImmersion hD.fromSpec := hD.isOpenImmersion_fromSpec
   have hres : (F.restrict hD.fromSpec).HasFiniteFreeResolution :=
     (hV.restrict (hD.isoSpec.inv ≫ X.homOfLE hfV)).of_iso
@@ -256,9 +256,9 @@ of `X`, the `Γ(X, U)`-module `Γ(F, U)` is pseudo-coherent (Stacks, Lemma 36.10
 theorem isPseudoCoherent_iff_forall_affineOpens (F : X.Modules) :
     F.IsPseudoCoherent ↔
       F.IsQuasicoherent ∧
-        ∀ U : X.affineOpens, TauCeti.Huber.IsPseudoCoherentOver Γ(X, U.1) Γ(F, U.1) ⊤ :=
-  isPseudoCoherent_iff_of_iSup_eq_top (U := fun U : X.affineOpens ↦ U.1)
-    (fun U ↦ U.2) (iSup_affineOpens_eq_top X) F
+        ∀ U : X.affineOpens, TauCeti.Huber.IsPseudoCoherentOver Γ(X, U.val) Γ(F, U.val) ⊤ :=
+  isPseudoCoherent_iff_of_iSup_eq_top (U := fun U : X.affineOpens ↦ U.val)
+    (fun U ↦ U.property) (iSup_affineOpens_eq_top X) F
 
 /-- Unbundled form of `isPseudoCoherent_iff_forall_affineOpens` quantifying over `U : X.Opens` and
 `IsAffineOpen U`. -/
@@ -267,7 +267,7 @@ theorem isPseudoCoherent_iff_forall_isAffineOpen (F : X.Modules) :
       F.IsQuasicoherent ∧
         ∀ U : X.Opens, IsAffineOpen U → TauCeti.Huber.IsPseudoCoherentOver Γ(X, U) Γ(F, U) ⊤ := by
   rw [isPseudoCoherent_iff_forall_affineOpens]
-  exact and_congr_right' ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
+  exact and_congr_right' ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.val U.property⟩
 
 /-- On an affine scheme `X`, `F` is pseudo-coherent if and only if `F` is quasi-coherent and
 `Γ(F, ⊤)` is pseudo-coherent over `Γ(X, ⊤)` (Stacks, Lemma 36.10.2, Tag 08E7). -/

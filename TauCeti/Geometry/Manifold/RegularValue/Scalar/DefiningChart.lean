@@ -60,7 +60,7 @@ theorem IsRegularPoint.exists_partialDiffeomorph_normalForm (hreg : IsRegularPoi
   let V : Opens M := ⟨U, hU⟩
   let f : V → ℝ := ρ ∘ Subtype.val
   let q : V := ⟨p, hp⟩
-  have hf : ContMDiff I 𝓘(ℝ) n f := hρ.comp_contMDiff contMDiff_subtype_val fun x ↦ x.2
+  have hf : ContMDiff I 𝓘(ℝ) n f := hρ.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property
   have hf1 : ContMDiffAt I 𝓘(ℝ) 1 f q := (hf q).of_le hn
   have hregf : IsRegularPoint I 𝓘(ℝ) f q := hreg.comp <| isRegularPoint_iff.2
     ((isLocalDiffeomorph_subtype_val (I := I) (n := 1) (U := V) q).isInvertible_mfderiv

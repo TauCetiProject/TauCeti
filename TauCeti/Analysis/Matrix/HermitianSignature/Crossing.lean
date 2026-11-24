@@ -59,8 +59,9 @@ crossings the path is nondegenerate, so its negative index is constant there by
 
 ## Main results
 
-* `ContinuousLinearMap.sigPos_sub_sigNeg_crossingForm_eq_zero`: the crossing form at a
-  nondegenerate form has signature zero.
+* `ContinuousLinearMap.sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot` and
+  `ContinuousLinearMap.sigPos_sub_sigNeg_crossingForm_eq_zero`: the crossing form at a form with
+  trivial kernel, in particular at a nondegenerate form, has signature zero.
 * `ContinuousLinearMap.sigPos_add_sigNeg_add_finrank_ker`: the two indices of a symmetric form and
   the dimension of its kernel add up to the dimension of the space.
 * `ContinuousLinearMap.eventually_sigNeg_eq_add_sigNeg_crossingForm`: just after a regular
@@ -123,6 +124,14 @@ theorem crossingForm_neg (B V' : E →L[ℝ] E →L[ℝ] ℝ) :
   ext v
   simp
 
+/-- At `B = 0` the crossing form of `B` and `V'` is the quadratic form of `V'` on the whole
+space. -/
+theorem crossingForm_equivalent_of_eq_zero {B V' : E →L[ℝ] E →L[ℝ] ℝ} (hB : B = 0) :
+    (crossingForm B V').Equivalent V'.toBilinForm.toQuadraticMap := by
+  subst hB
+  refine ⟨{ toLinearEquiv := LinearEquiv.ofTop _ (by simp), map_app' := fun v ↦ ?_ }⟩
+  simpa using (crossingForm_apply (0 : E →L[ℝ] E →L[ℝ] ℝ) V' v).symm
+
 /-- A subspace of the kernel of `B` on which the crossing form of `B` and `D` is negative definite
 gives a subspace of `E` of the same dimension, inside the kernel, on which `D` is negative
 definite. -/
@@ -132,26 +141,34 @@ private theorem exists_le_ker_of_posDef_neg_crossingForm (B D : E →L[ℝ] E �
       ∀ x ∈ M, x ≠ 0 → D x x < 0 := by
   refine ⟨M'.map B.ker.subtype, Submodule.finrank_map_subtype_eq _ _, ?_, ?_⟩
   · rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   · rintro _ ⟨y, hy, rfl⟩ hy0
     have hy0' : (⟨y, hy⟩ : M') ≠ 0 := by
       intro h
       exact hy0 (by simpa using congrArg (fun z : M' ↦ ((z : B.ker) : E)) h)
     simpa using hM' ⟨y, hy⟩ hy0'
 
-variable [FiniteDimensional ℝ E] {V : ℝ → E →L[ℝ] E →L[ℝ] ℝ} {t₀ : ℝ}
+/-- The crossing form of a form with trivial kernel lives on the zero space, so its signature
+vanishes. -/
+theorem sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot {B : E →L[ℝ] E →L[ℝ] ℝ}
+    (hB : B.ker = ⊥) (V' : E →L[ℝ] E →L[ℝ] ℝ) :
+    (sigPos (crossingForm B V') : ℤ) - sigNeg (crossingForm B V') = 0 := by
+  have h₀ : Module.finrank ℝ B.ker = 0 := by rw [hB, finrank_bot]
+  have hpos := sigPos_le_finrank (crossingForm B V')
+  have hneg := sigPos_le_finrank (-crossingForm B V')
+  rw [sigPos_neg] at hneg
+  omega
 
 /-- The crossing form of a nondegenerate form lives on the zero space, so its signature
 vanishes. -/
 theorem sigPos_sub_sigNeg_crossingForm_eq_zero {B : E →L[ℝ] E →L[ℝ] ℝ}
     (hB : B.toBilinForm.Nondegenerate) (V' : E →L[ℝ] E →L[ℝ] ℝ) :
     (sigPos (crossingForm B V') : ℤ) - sigNeg (crossingForm B V') = 0 := by
-  have hker : B.ker = ⊥ := by
-    rw [← ker_toBilinForm]
-    exact LinearMap.separatingLeft_iff_ker_eq_bot.1 hB.1
-  have h := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := crossingForm B V')
-  rw [Submodule.finrank_eq_zero.2 hker] at h
-  omega
+  refine sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot ?_ V'
+  rw [← ker_toBilinForm]
+  exact LinearMap.separatingLeft_iff_ker_eq_bot.1 hB.1
+
+variable [FiniteDimensional ℝ E] {V : ℝ → E →L[ℝ] E →L[ℝ] ℝ} {t₀ : ℝ}
 
 /-- The scalar inequality behind the key estimate: a term bounded by `-c₁ a²`, plus `h` times a
 term bounded by `C a² + 2 C a b - c₂ b²`, plus an error bounded by `c₂ h (2 a² + 2 b²) / 8`, is
@@ -267,7 +284,7 @@ private theorem eventually_add_sigNeg_le {l : Filter ℝ} {h : ℝ → ℝ} {D :
       rw [ContinuousLinearMap.coe_coe] at h
       simp [h]), finrank_bot, add_zero] at hdim
   rw [← hNr, ← hM'r, ← hMr, ← hdim]
-  exact le_sigNeg_of_negDef _ fun x hx0 ↦ by simpa using ht x x.2 (by simpa using hx0)
+  exact le_sigNeg_of_negDef _ fun x hx0 ↦ by simpa using ht x x.property (by simpa using hx0)
 
 /-- Lower bound for the positive index: eventually along `l`, the positive index of `V t` is at
 least that of `V t₀` plus that of the crossing form of `V t₀` and `D`. This is the negative-index

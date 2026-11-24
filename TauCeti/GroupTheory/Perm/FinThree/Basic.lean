@@ -380,10 +380,10 @@ theorem fixedPointFree_conjNormal_alternatingGroup_fin_three (a : Fin 3) :
       = (n : Equiv.Perm (Fin 3)) :=
     (MulAut.conjNormal_apply _ _).symm.trans (congrArg Subtype.val hfix)
   refine Subtype.ext ?_
-  rcases (mem_stabilizer_perm_fin_three_iff a _).mp h.2 with h1 | h1
+  rcases (mem_stabilizer_perm_fin_three_iff a _).mp h.property with h1 | h1
   · exact absurd (Subtype.ext h1 : h = 1) hh1
   · rw [h1] at hfix'
-    exact key a n (Equiv.Perm.mem_alternatingGroup.mp n.2) hfix'
+    exact key a n (Equiv.Perm.mem_alternatingGroup.mp n.property) hfix'
 
 /-- **`A₃` is a normal complement to a point stabilizer in `S₃`**: the two have orders `3` and `2`,
 which are coprime and multiply to `3! = 6`. -/

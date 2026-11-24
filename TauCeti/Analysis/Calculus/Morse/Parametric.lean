@@ -462,7 +462,7 @@ theorem _root_.Bundle.Trivialization.bundleMorseCoord_eq (e : Trivialization F (
     bundleMorseCoord F g v =
       e.symm v.proj (parametricMorseCoord (fun z ↦ g ⟨z.1, e.symm z.1 z.2⟩) (v.proj, (e v).2)) :=
   e.symm_parametricMorseCoord_eq_symm_parametricMorseCoord (trivializationAt F V v.proj)
-    ⟨hv, FiberBundle.mem_baseSet_trivializationAt' v.proj⟩ v.2
+    ⟨hv, FiberBundle.mem_baseSet_trivializationAt' v.proj⟩ v.snd
 
 /-- The canonical Morse coordinate of a function on a vector bundle vanishes on the zero
 section. -/

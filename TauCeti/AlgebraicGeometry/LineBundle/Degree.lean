@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
-public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Cohomology.FieldTower
-public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.LineBundle.EulerCharacteristic
 
 /-!
 # The Euler-characteristic degree of a line bundle
@@ -41,6 +40,8 @@ that it is additive.
 * `LineBundleClass.eulerDegree` descends the invariant to isomorphism classes of line bundles;
 * `LineBundleClass.eulerDegree_mk` and `LineBundleClass.eulerDegree_one` are its representative
   and normalization formulas;
+* `LineBundleClass.eulerDegree_eq_eulerCharBelow_sub` expresses the degree as the difference
+  of the truncated Euler characteristics of the class and the tensor-unit class;
 * `InvertibleSheaf.eulerDegree_eq_finrank_mul` and `LineBundleClass.eulerDegree_eq_finrank_mul`
   state that, for a scheme over a field `κ` regarded as a scheme over a subfield `k`, the degree
   over `k` is `[κ : k]` times the degree over `κ`;
@@ -48,6 +49,10 @@ that it is additive.
   `LineBundleClass.finrank_cohomology_zero_trivial_dvd_eulerDegree` state that, when the global
   functions of `X` form a field `κ`, its degree `[κ : k] = dim_k H⁰(X, 𝒪_X)` over `k` divides the
   degree of every line bundle.
+* `InvertibleSheaf.eulerDegree_mul_finrank_cohomology_zero_trivial` and
+  `LineBundleClass.eulerDegree_mul_finrank_cohomology_zero_trivial` compare the degrees for two
+  unrelated structures of `X` over fields `k` and `κ`, when the global functions of `X` form a
+  field: `deg_k L · dim_κ H⁰(X, 𝒪_X) = dim_k H⁰(X, 𝒪_X) · deg_κ L`.
 
 The formula is the rearrangement of Riemann--Roch for curves; see Hartshorne, *Algebraic
 Geometry*, Chapter IV, Section 1.
@@ -147,6 +152,13 @@ lemma eulerDegree_mk (L : InvertibleSheaf X) :
 lemma eulerDegree_one : eulerDegree k (1 : LineBundleClass X) = 0 := by
   rw [← mk_trivial, eulerDegree_mk, InvertibleSheaf.eulerDegree_trivial]
 
+/-- The Euler-characteristic degree of a line-bundle class is the difference of its truncated
+Euler characteristic and that of the tensor-unit class, using the degree-`2` truncation. -/
+lemma eulerDegree_eq_eulerCharBelow_sub (a : LineBundleClass X) :
+    eulerDegree k a = eulerCharBelow k a 2 - eulerCharBelow k (1 : LineBundleClass X) 2 := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [eulerDegree_mk, InvertibleSheaf.eulerDegree_def, eulerCharBelow_mk, eulerCharBelow_one]
+
 end LineBundleClass
 
 section FieldTower
@@ -207,6 +219,34 @@ theorem LineBundleClass.finrank_cohomology_zero_trivial_dvd_eulerDegree (hX : Is
   obtain ⟨L, rfl⟩ := mk_surjective a
   rw [eulerDegree_mk]
   exact L.finrank_cohomology_zero_trivial_dvd_eulerDegree k hX
+
+variable (κ : Type u) [Field κ] [X.Over (Spec (.of κ))]
+
+/-- **The degree over two base fields.** If the global functions of `X` form a field, then for two
+structures of `X` over fields `k` and `κ`, which need not be related, the degrees of an
+invertible sheaf satisfy `deg_k L · dim_κ H⁰(X, 𝒪_X) = dim_k H⁰(X, 𝒪_X) · deg_κ L`. Both sides
+are `dim_k H⁰(X, 𝒪_X) · dim_κ H⁰(X, 𝒪_X)` times the degree over the constant field
+`Γ(X, 𝒪_X)`. -/
+theorem InvertibleSheaf.eulerDegree_mul_finrank_cohomology_zero_trivial (hX : IsField Γ(X, ⊤))
+    (L : InvertibleSheaf X) :
+    L.eulerDegree k * finrank κ (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) =
+      finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) *
+        L.eulerDegree κ := by
+  rw [eulerDegree_def, eulerDegree_def, sub_mul, mul_sub,
+    Scheme.Modules.eulerCharBelow_mul_finrank_cohomology_zero_trivial k κ hX,
+    Scheme.Modules.eulerCharBelow_mul_finrank_cohomology_zero_trivial k κ hX]
+
+/-- **The degree over two base fields.** If the global functions of `X` form a field, then for two
+structures of `X` over fields `k` and `κ`, which need not be related, the degrees of a line-bundle
+class satisfy `deg_k a · dim_κ H⁰(X, 𝒪_X) = dim_k H⁰(X, 𝒪_X) · deg_κ a`. -/
+theorem LineBundleClass.eulerDegree_mul_finrank_cohomology_zero_trivial (hX : IsField Γ(X, ⊤))
+    (a : LineBundleClass X) :
+    eulerDegree k a * finrank κ (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) =
+      finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0) *
+        eulerDegree κ a := by
+  obtain ⟨L, rfl⟩ := mk_surjective a
+  rw [eulerDegree_mk, eulerDegree_mk]
+  exact L.eulerDegree_mul_finrank_cohomology_zero_trivial k κ hX
 
 end ConstantField
 

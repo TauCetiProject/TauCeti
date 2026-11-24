@@ -87,17 +87,14 @@ variable [Coalgebra R H]
 the counit to the factor `H` in position `i + 1` of `M ⊗ H ⊗ ⋯ ⊗ H`. -/
 noncomputable def hochschildCodegeneracy :
     ∀ n, Fin (n + 1) → (hochschildCochains R H M (n + 1) →ₗ[R] hochschildCochains R H M n)
-  | 0, _ => (TensorProduct.rid R M).toLinearMap ∘ₗ Coalgebra.counit.lTensor M
-  | n + 1, i => Fin.lastCases
-      ((TensorProduct.rid R (hochschildCochains R H M (n + 1))).toLinearMap ∘ₗ
-        Coalgebra.counit.lTensor (hochschildCochains R H M (n + 1)))
+  | 0, _ => cofreeCounit R H M
+  | n + 1, i => Fin.lastCases (cofreeCounit R H (hochschildCochains R H M (n + 1)))
       (fun j ↦ (hochschildCodegeneracy n j).rTensor H) i
 
 /-- The last codegeneracy applies the counit to the last factor `H`. -/
 theorem hochschildCodegeneracy_last (n : ℕ) :
     hochschildCodegeneracy R H M n (Fin.last n) =
-      (TensorProduct.rid R (hochschildCochains R H M n)).toLinearMap ∘ₗ
-        Coalgebra.counit.lTensor (hochschildCochains R H M n) := by
+      cofreeCounit R H (hochschildCochains R H M n) := by
   cases n
   · rfl
   · exact Fin.lastCases_last
@@ -107,8 +104,7 @@ theorem hochschildCodegeneracy_last (n : ℕ) :
 theorem hochschildCodegeneracy_last_tmul (n : ℕ) (x : hochschildCochains R H M n) (h : H) :
     hochschildCodegeneracy R H M n (Fin.last n) (x ⊗ₜ[R] h) =
       Coalgebra.counit (R := R) h • x := by
-  rw [hochschildCodegeneracy_last, LinearMap.comp_apply, LinearMap.lTensor_tmul,
-    LinearEquiv.coe_coe, TensorProduct.rid_tmul]
+  rw [hochschildCodegeneracy_last, cofreeCounit_tmul]
 
 /-- The codegeneracies before the last are the codegeneracies one degree lower, tensored
 with `H`. -/
@@ -123,8 +119,8 @@ theorem hochschildCodegeneracy_last_comp_rTensor {m n : ℕ}
     (f : hochschildCochains R H M m →ₗ[R] hochschildCochains R H M n) :
     hochschildCodegeneracy R H M n (Fin.last n) ∘ₗ f.rTensor H =
       f ∘ₗ hochschildCodegeneracy R H M m (Fin.last m) := by
-  rw [hochschildCodegeneracy_last, hochschildCodegeneracy_last, LinearMap.comp_assoc]
-  exact rid_comp_lTensor_counit_comp_rTensor f
+  rw [hochschildCodegeneracy_last, hochschildCodegeneracy_last]
+  exact cofreeCounit_comp_rTensor f
 
 /-- The last codegeneracy commutes with the earlier codegeneracies. -/
 private theorem hochschildCodegeneracy_last_comp (n : ℕ) (i : Fin (n + 1)) :
@@ -297,7 +293,7 @@ theorem hochschildCodegeneracy_comp_hochschildCoface_castSucc {n : ℕ} (i : Fin
   | zero =>
     induction i using Fin.lastCases with
     | last =>
-      rw [hochschildCodegeneracy_last, hochschildCoface_zero_castSucc]
+      rw [hochschildCodegeneracy_last, hochschildCoface_zero_castSucc, cofreeCounit_def]
       exact LinearMap.ext rid_lTensor_counit_coact
     | cast i => exact i.elim0
   | succ n ih =>
@@ -306,7 +302,7 @@ theorem hochschildCodegeneracy_comp_hochschildCoface_castSucc {n : ℕ} (i : Fin
       -- The coaction of the cofree comodule is `cofreeCoact` by definition, so this is its
       -- counit law.
       let := cofree R H (hochschildCochains R H M n)
-      rw [hochschildCodegeneracy_last, hochschildCoface_succ_castSucc_last]
+      rw [hochschildCodegeneracy_last, hochschildCoface_succ_castSucc_last, cofreeCounit_def]
       exact LinearMap.ext (rid_lTensor_counit_coact (R := R) (C := H)
         (M := hochschildCochains R H M n ⊗[R] H))
     | cast i =>
@@ -338,7 +334,7 @@ theorem hochschildCodegeneracy_comp_hochschildCoface_succ {n : ℕ} (i : Fin (n 
       induction i using Fin.lastCases with
       | last =>
         rw [Fin.succ_last, hochschildCoface_succ_castSucc_last, hochschildCodegeneracy_last]
-        exact rTensor_rid_comp_lTensor_counit_comp_cofreeCoact
+        exact rTensor_cofreeCounit_comp_cofreeCoact
       | cast i =>
         rw [Fin.succ_castSucc, hochschildCoface_succ_castSucc_castSucc, ← Fin.succ_castSucc,
           ← LinearMap.rTensor_comp, ih, LinearMap.rTensor_id]

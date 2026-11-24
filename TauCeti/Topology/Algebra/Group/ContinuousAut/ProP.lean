@@ -139,11 +139,11 @@ theorem IsProP.isProP_ker_mapQuotient_proPFrattini {p : ℕ} [Fact p.Prime] (hG 
   -- The automorphism induced by `φ` on the finite `p`-group `G ⧸ N` is trivial modulo the
   -- Frattini subgroup, so some `p`-power of `φ` acts trivially on `G ⧸ N`, and lies in `V`.
   obtain ⟨k, hk⟩ := hP.isPGroup_ker_mapQuotient_frattini
-    ⟨_, hG.mapQuotient_mem_ker_mapQuotient_frattini hN φ.2⟩
+    ⟨_, hG.mapQuotient_mem_ker_mapQuotient_frattini hN φ.property⟩
   refine ⟨k, ?_⟩
   rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
   refine huV (hNu fun x ↦ ?_)
-  have h1 : mapQuotient hN (φ ^ p ^ k).1 = mapQuotient hN 1 := by
+  have h1 : mapQuotient hN (φ ^ p ^ k).val = mapQuotient hN 1 := by
     simpa using congrArg Subtype.val hk
   exact (mapQuotient_eq_iff hN).mp h1 x
 
@@ -185,18 +185,18 @@ theorem ContinuousAut.isEmbedding_pi_mapQuotient_ker_proPFrattini
     (hG : IsTopologicallyFinitelyGenerated G) (p : ℕ) :
     letI : ∀ N : {N : OpenNormalSubgroup G //
         IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G},
-      TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+      TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
     IsEmbedding fun (φ : (mapQuotient (isTopCharacteristic_proPFrattini (G := G) p)).ker)
       (N : {N : OpenNormalSubgroup G //
         IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G}) ↦
-      mapQuotient N.2.1 φ.1 := by
+      mapQuotient N.property.1 φ.val := by
   let _ : ∀ N : {N : OpenNormalSubgroup G //
       IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G},
-    TopologicalSpace (MulAut (G ⧸ (N.1 : Subgroup G))) := fun _ ↦ ⊥
+    TopologicalSpace (MulAut (G ⧸ (N.val : Subgroup G))) := fun _ ↦ ⊥
   exact (isEmbedding_pi_mapQuotient_of_forall_exists_le hG
     (N := fun N : {N : OpenNormalSubgroup G //
-      IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G} ↦ N.1)
-    (fun N ↦ N.2.1) fun M _ ↦
+      IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G} ↦ N.val)
+    (fun N ↦ N.property.1) fun M _ ↦
       let ⟨N, hN, hΦ, hle⟩ := hG.exists_isTopCharacteristic_le_proPFrattini p M.toOpenSubgroup
       ⟨⟨N, hN, hΦ⟩, fun _ hx ↦ hle hx⟩).comp IsEmbedding.subtypeVal
 
@@ -213,26 +213,26 @@ theorem IsProP.range_pi_mapQuotient_ker_proPFrattini {p : ℕ} [Fact p.Prime] (h
     Set.range (fun (φ : (mapQuotient (isTopCharacteristic_proPFrattini (G := G) p)).ker)
         (N : {N : OpenNormalSubgroup G //
           IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G}) ↦
-        mapQuotient N.2.1 φ.1) =
+        mapQuotient N.property.1 φ.val) =
       {σ : ∀ N : {N : OpenNormalSubgroup G //
           IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G},
-          MulAut (G ⧸ (N.1 : Subgroup G)) |
-        (∀ N, σ N ∈ (MulAut.mapQuotient (frattini (G ⧸ (N.1 : Subgroup G)))).ker) ∧
+          MulAut (G ⧸ (N.val : Subgroup G)) |
+        (∀ N, σ N ∈ (MulAut.mapQuotient (frattini (G ⧸ (N.val : Subgroup G)))).ker) ∧
         ∀ ⦃N M : {N : OpenNormalSubgroup G //
-          IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G}⦄ (hle : N.1 ≤ M.1)
-          (q : G ⧸ (N.1 : Subgroup G)),
+          IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G}⦄ (hle : N.val ≤ M.val)
+          (q : G ⧸ (N.val : Subgroup G)),
           QuotientGroup.mapOfLE hle (σ N q) = σ M (QuotientGroup.mapOfLE hle q)} := by
   ext σ
   constructor
   · rintro ⟨φ, rfl⟩
-    exact ⟨fun N ↦ hG.mapQuotient_mem_ker_mapQuotient_frattini N.2.1 φ.2,
-      fun N M hle q ↦ mapOfLE_mapQuotient N.2.1 M.2.1 hle φ.1 q⟩
+    exact ⟨fun N ↦ hG.mapQuotient_mem_ker_mapQuotient_frattini N.property.1 φ.property,
+      fun N M hle q ↦ mapOfLE_mapQuotient N.property.1 M.property.1 hle φ.val q⟩
   · rintro ⟨hker, hσ⟩
     -- The family is cofinal among the open normal subgroups, so it is induced by some `φ`.
     obtain ⟨φ, hφ⟩ := exists_mapQuotient_eq_of_forall_exists_le
       (N := fun N : {N : OpenNormalSubgroup G //
-        IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G} ↦ N.1)
-      (fun N ↦ N.2.1)
+        IsTopCharacteristic G N ∧ (N : Subgroup G) ≤ proPFrattini p G} ↦ N.val)
+      (fun N ↦ N.property.1)
       (fun U ↦
         let ⟨N, hN, hΦ, hle⟩ := hfg.exists_isTopCharacteristic_le_proPFrattini p U.toOpenSubgroup
         ⟨⟨N, hN, hΦ⟩, fun _ hx ↦ hle hx⟩)

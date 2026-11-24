@@ -101,14 +101,14 @@ local notation "𝒯" K => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : S
 minimises `α ↦ x(T - α)` over `Z`), `x(γ - δ) ≤ x(T - γ)`, and `x(T - γ) ≤ x(γ - α)` for every
 `α ∈ Z` farther from `γ` than `δ`. -/
 private noncomputable def cell (Z : Finset K) (γ δ : K) : Set (closedPolydisc 1 K) :=
-  (⋂ α ∈ Z, {x | x.1.toValuativeRel.vle (C (γ - α)) (T - C α)}) ∩
-    {x | x.1.toValuativeRel.vle (C (γ - δ)) (T - C γ)} ∩
+  (⋂ α ∈ Z, {x | x.val.toValuativeRel.vle (C (γ - α)) (T - C α)}) ∩
+    {x | x.val.toValuativeRel.vle (C (γ - δ)) (T - C γ)} ∩
     ⋂ α ∈ Z.filter fun α ↦ ‖γ - δ‖ < ‖γ - α‖, closedSubdisc γ (γ - α)
 
 private theorem mem_cell {Z : Finset K} {γ δ : K} {x : closedPolydisc 1 K} :
-    x ∈ cell Z γ δ ↔ (∀ α ∈ Z, x.1.valuation (C (γ - α)) ≤ x.1.valuation (T - C α)) ∧
-      x.1.valuation (C (γ - δ)) ≤ x.1.valuation (T - C γ) ∧
-      ∀ α ∈ Z, ‖γ - δ‖ < ‖γ - α‖ → x.1.valuation (T - C γ) ≤ x.1.valuation (C (γ - α)) := by
+    x ∈ cell Z γ δ ↔ (∀ α ∈ Z, x.val.valuation (C (γ - α)) ≤ x.val.valuation (T - C α)) ∧
+      x.val.valuation (C (γ - δ)) ≤ x.val.valuation (T - C γ) ∧
+      ∀ α ∈ Z, ‖γ - δ‖ < ‖γ - α‖ → x.val.valuation (T - C γ) ≤ x.val.valuation (C (γ - α)) := by
   simp only [cell, Set.mem_inter_iff, Set.mem_iInter, Set.mem_ofPred_eq, Finset.mem_filter,
     mem_closedSubdisc, ← valuation_le_iff, and_imp, and_assoc]
   refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ forall₂_congr fun α _ ↦
@@ -128,9 +128,9 @@ maximising `‖γ - δ‖` subject to `x(γ - δ) ≤ x(T - γ)`. -/
 private theorem exists_mem_cell {Z : Finset K} (hZ : Z.Nonempty) (x : closedPolydisc 1 K) :
     ∃ γ ∈ Z, ∃ δ ∈ Z, x ∈ cell Z γ δ := by
   classical
-  obtain ⟨γ, hγ, hmin⟩ := Z.exists_min_image (fun α ↦ x.1.valuation (T - C α)) hZ
+  obtain ⟨γ, hγ, hmin⟩ := Z.exists_min_image (fun α ↦ x.val.valuation (T - C α)) hZ
   obtain ⟨δ, hδ, hmax⟩ :=
-    (Z.filter fun α ↦ x.1.valuation (C (γ - α)) ≤ x.1.valuation (T - C γ)).exists_max_image
+    (Z.filter fun α ↦ x.val.valuation (C (γ - α)) ≤ x.val.valuation (T - C γ)).exists_max_image
       (fun α ↦ ‖γ - α‖) ⟨γ, Finset.mem_filter.mpr ⟨hγ, by simp⟩⟩
   rw [Finset.mem_filter] at hδ
   refine ⟨γ, hγ, δ, hδ.1, mem_cell.mpr ⟨fun α hα ↦ ?_, hδ.2, fun α hα hlt ↦ ?_⟩⟩
@@ -143,7 +143,7 @@ private theorem exists_mem_cell {Z : Finset K} (hZ : Z.Nonempty) (x : closedPoly
 /-- On a cell, `γ` minimises `α ↦ x(T - α)` over `Z`. -/
 private theorem valuation_le_of_mem_cell {Z : Finset K} {γ δ α : K} {x : closedPolydisc 1 K}
     (hx : x ∈ cell Z γ δ) (hα : α ∈ Z) :
-    x.1.valuation (T - C γ) ≤ x.1.valuation (T - C α) := by
+    x.val.valuation (T - C γ) ≤ x.val.valuation (T - C α) := by
   -- `T - γ = (T - α) - (γ - α)`, and `x(γ - α) ≤ x(T - α)`
   rw [show T - C γ = (T - C α) - C (γ - α) by rw [map_sub]; ring]
   exact (Valuation.map_sub _ _ _).trans (max_le le_rfl ((mem_cell.mp hx).1 α hα))
@@ -152,8 +152,8 @@ private theorem valuation_le_of_mem_cell {Z : Finset K} {γ δ α : K} {x : clos
 `‖γ - δ‖` from `γ`, and the constant `x(γ - α)` for the others. -/
 private theorem max_valuation_eq_ite_of_mem_cell {Z : Finset K} {γ δ α : K}
     {x : closedPolydisc 1 K} (hx : x ∈ cell Z γ δ) (hα : α ∈ Z) :
-    max (x.1.valuation (T - C γ)) (x.1.valuation (C (γ - α))) =
-      if ‖γ - α‖ ≤ ‖γ - δ‖ then x.1.valuation (T - C γ) else x.1.valuation (C (γ - α)) := by
+    max (x.val.valuation (T - C γ)) (x.val.valuation (C (γ - α))) =
+      if ‖γ - α‖ ≤ ‖γ - δ‖ then x.val.valuation (T - C γ) else x.val.valuation (C (γ - α)) := by
   obtain ⟨-, hlow, hup⟩ := mem_cell.mp hx
   split_ifs with h
   · exact max_eq_left (((closedPolydisc_valuation_weightedC_le_iff x _ _).mpr h).trans hlow)
@@ -166,36 +166,37 @@ other roots. -/
 private theorem valuation_eval₂RingHom_eq_pow_mul_of_mem_cell {Z : Finset K} {γ δ : K}
     {x : closedPolydisc 1 K} (hx : x ∈ cell Z γ δ) {p : Polynomial K}
     (hroots : Multiset.card p.roots = p.natDegree) (hZ : ∀ α ∈ p.roots, α ∈ Z) :
-    x.1.valuation (Polynomial.eval₂RingHom C T p) =
-      x.1.valuation (T - C γ) ^ Multiset.card (p.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) *
-        x.1.valuation (C (p.leadingCoeff *
+    x.val.valuation (Polynomial.eval₂RingHom C T p) =
+      x.val.valuation (T - C γ) ^ Multiset.card (p.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) *
+        x.val.valuation (C (p.leadingCoeff *
           ((p.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map (γ - ·)).prod)) := by
   rw [valuation_eval₂RingHom_eq_of_forall_le x hroots fun α hα ↦
       valuation_le_of_mem_cell hx (hZ α hα),
     Multiset.map_congr rfl fun α hα ↦ max_valuation_eq_ite_of_mem_cell hx (hZ α hα)]
   have h₁ : ((p.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖).map fun α ↦
-      if ‖γ - α‖ ≤ ‖γ - δ‖ then x.1.valuation (T - C γ) else x.1.valuation (C (γ - α))) =
-      (p.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖).map fun _ ↦ x.1.valuation (T - C γ) :=
+      if ‖γ - α‖ ≤ ‖γ - δ‖ then x.val.valuation (T - C γ) else x.val.valuation (C (γ - α))) =
+      (p.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖).map fun _ ↦ x.val.valuation (T - C γ) :=
     Multiset.map_congr rfl fun α hα ↦ ite_eq_left (Multiset.of_mem_filter hα)
   have h₂ : ((p.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map fun α ↦
-      if ‖γ - α‖ ≤ ‖γ - δ‖ then x.1.valuation (T - C γ) else x.1.valuation (C (γ - α))) =
-      (p.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map fun α ↦ x.1.valuation (C (γ - α)) :=
+      if ‖γ - α‖ ≤ ‖γ - δ‖ then x.val.valuation (T - C γ) else x.val.valuation (C (γ - α))) =
+      (p.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map fun α ↦ x.val.valuation (C (γ - α)) :=
     Multiset.map_congr rfl fun α hα ↦ ite_eq_right (Multiset.mem_filter.mp hα).2
   conv_lhs => rw [← Multiset.filter_add_not (fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) p.roots]
   rw [Multiset.map_add, Multiset.prod_add, h₁, h₂]
-  simp [map_multiset_prod, mul_left_comm (x.1.valuation (C p.leadingCoeff))]
+  simp [map_multiset_prod, mul_left_comm (x.val.valuation (C p.leadingCoeff))]
 
 /-- **At a point of the cell with `x(T - γ) = 0`**, `δ = γ` and `γ` is not a root of both of two
 coprime polynomials, so one of the two root counts of
 `valuation_eval₂RingHom_eq_pow_mul_of_mem_cell` vanishes. -/
 private theorem card_filter_eq_zero_or_of_mem_cell {Z : Finset K} {γ δ : K}
-    {x : closedPolydisc 1 K} (hx : x ∈ cell Z γ δ) (h0 : x.1.valuation (T - C γ) = 0)
+    {x : closedPolydisc 1 K} (hx : x ∈ cell Z γ δ) (h0 : x.val.valuation (T - C γ) = 0)
     {f g : Polynomial K} (hfg : IsCoprime f g) :
     Multiset.card (f.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) = 0 ∨
       Multiset.card (g.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) = 0 := by
   have hδ : ‖γ - δ‖ = 0 := by
     have hlow := (mem_cell.mp hx).2.1
-    rwa [h0, le_zero_iff, closedPolydisc_valuation_weightedC_eq_zero_iff, ← norm_eq_zero] at hlow
+    rwa [h0, nonpos_iff_eq_zero, closedPolydisc_valuation_weightedC_eq_zero_iff,
+      ← norm_eq_zero] at hlow
   have hroot {p : Polynomial K}
       (hp : Multiset.card (p.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) ≠ 0) :
       Polynomial.X - Polynomial.C γ ∣ p := by
@@ -216,12 +217,12 @@ private theorem card_filter_eq_zero_or_of_mem_cell {Z : Finset K} {γ δ : K}
 private theorem vle_iff_of_mem_cell [IsAlgClosed K] {Z : Finset K} {γ δ : K}
     {x : closedPolydisc 1 K} (hx : x ∈ cell Z γ δ) {f g : Polynomial K}
     (hZf : ∀ α ∈ f.roots, α ∈ Z) (hZg : ∀ α ∈ g.roots, α ∈ Z) :
-    x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g) ↔
-      x.1.valuation (T - C γ) ^ Multiset.card (f.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) *
-          x.1.valuation (C (f.leadingCoeff *
+    x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g) ↔
+      x.val.valuation (T - C γ) ^ Multiset.card (f.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) *
+          x.val.valuation (C (f.leadingCoeff *
             ((f.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map (γ - ·)).prod)) ≤
-        x.1.valuation (T - C γ) ^ Multiset.card (g.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) *
-          x.1.valuation (C (g.leadingCoeff *
+        x.val.valuation (T - C γ) ^ Multiset.card (g.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) *
+          x.val.valuation (C (g.leadingCoeff *
             ((g.roots.filter fun α ↦ ¬ ‖γ - α‖ ≤ ‖γ - δ‖).map (γ - ·)).prod)) := by
   rw [← valuation_le_iff,
     valuation_eval₂RingHom_eq_pow_mul_of_mem_cell hx IsAlgClosed.card_roots_eq_natDegree hZf,
@@ -233,22 +234,22 @@ is comparing `x(ρ)` with `x(T - γ)`, at a point with `x(T - γ) ≠ 0`: write 
 then cancel `x(T - γ)ʲ` and `x(b)` and compare `(k - j)`-th powers. -/
 private theorem valuation_pow_mul_le_iff {x : closedPolydisc 1 K} {γ ρ a b : K} {j k : ℕ}
     (hjk : j < k) (hb : b ≠ 0) (hρ : ρ ^ (k - j) = a / b)
-    (h0 : x.1.valuation (T - C γ) ≠ 0) :
-    (x.1.valuation (T - C γ) ^ j * x.1.valuation (C a) ≤
-        x.1.valuation (T - C γ) ^ k * x.1.valuation (C b) ↔
-      x.1.valuation (C ρ) ≤ x.1.valuation (T - C γ)) ∧
-    (x.1.valuation (T - C γ) ^ k * x.1.valuation (C b) ≤
-        x.1.valuation (T - C γ) ^ j * x.1.valuation (C a) ↔
-      x.1.valuation (T - C γ) ≤ x.1.valuation (C ρ)) := by
+    (h0 : x.val.valuation (T - C γ) ≠ 0) :
+    (x.val.valuation (T - C γ) ^ j * x.val.valuation (C a) ≤
+        x.val.valuation (T - C γ) ^ k * x.val.valuation (C b) ↔
+      x.val.valuation (C ρ) ≤ x.val.valuation (T - C γ)) ∧
+    (x.val.valuation (T - C γ) ^ k * x.val.valuation (C b) ≤
+        x.val.valuation (T - C γ) ^ j * x.val.valuation (C a) ↔
+      x.val.valuation (T - C γ) ≤ x.val.valuation (C ρ)) := by
   obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hjk.le
   rw [Nat.add_sub_cancel_left] at hρ
-  have ha : x.1.valuation (C a) = x.1.valuation (C ρ) ^ l * x.1.valuation (C b) := by
+  have ha : x.val.valuation (C a) = x.val.valuation (C ρ) ^ l * x.val.valuation (C b) := by
     rw [← map_pow, ← map_pow, ← map_mul, ← map_mul, hρ, div_mul_cancel₀ _ hb]
-  have hb' : 0 < x.1.valuation (C b) :=
-    zero_lt_iff.mpr ((closedPolydisc_valuation_weightedC_eq_zero_iff x b).not.mpr hb)
+  have hb' : 0 < x.val.valuation (C b) :=
+    pos_iff_ne_zero.mpr ((closedPolydisc_valuation_weightedC_eq_zero_iff x b).not.mpr hb)
   rw [ha, pow_add, mul_assoc]
   constructor <;>
-  rw [mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _), mul_le_mul_iff_left₀ hb',
+  rw [mul_le_mul_iff_right₀ (pow_pos (pos_iff_ne_zero.mpr h0) _), mul_le_mul_iff_left₀ hb',
     pow_le_pow_iff_left₀ zero_le zero_le (by omega)]
 
 /-- **The case `m < n` of `isHoledDiscUnion_cell_inter`.** If `m < n`, `e ≠ 0`, and `m = 0` at
@@ -257,14 +258,14 @@ every point of the cell where `x(T - γ)` vanishes, the inequality
 a finite union of holed discs from the cell. -/
 private theorem exists_isHoledDiscUnion_cell_inter_of_lt [IsAlgClosed K] (Z : Finset K)
     (γ δ : K) {m n : ℕ} {c e : K} (he : e ≠ 0) (hmn : m < n)
-    (hm : ∀ x ∈ cell Z γ δ, x.1.valuation (T - C γ) = 0 → m = 0) :
+    (hm : ∀ x ∈ cell Z γ δ, x.val.valuation (T - C γ) = 0 → m = 0) :
     ∃ H : Set (closedPolydisc 1 K), IsHoledDiscUnion (cell Z γ δ ∩ H) ∧
-      ∀ x ∈ cell Z γ δ, (x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
-        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) := by
+      ∀ x ∈ cell Z γ δ, (x.val.valuation (T - C γ) ^ m * x.val.valuation (C c) ≤
+        x.val.valuation (T - C γ) ^ n * x.val.valuation (C e) ↔ x ∈ H) := by
   obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (c / e) (Nat.sub_pos_of_lt hmn)
   refine ⟨_, (isHoledDiscUnion_cell Z γ δ).inter_setOf_vle γ ρ, fun x hx ↦ ?_⟩
   rw [Set.mem_ofPred_eq, ← valuation_le_iff]
-  by_cases h0 : x.1.valuation (T - C γ) = 0
+  by_cases h0 : x.val.valuation (T - C γ) = 0
   · -- here `m = 0`, and `x(c) = 0 ↔ x(ρ) = 0`
     have hm := hm x hx h0
     rw [hm, Nat.sub_zero] at hρ
@@ -278,16 +279,16 @@ private theorem exists_isHoledDiscUnion_cell_inter_of_lt [IsAlgClosed K] (Z : Fi
 of the cell where `x(T - γ)` vanishes, the inequality `x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` holds
 everywhere on the cell or nowhere, according as `‖c‖ ≤ ‖e‖`. -/
 private theorem exists_isHoledDiscUnion_cell_inter_of_eq (Z : Finset K) (γ δ : K) {m n : ℕ}
-    (c e : K) (hmn : m = n) (hm : ∀ x ∈ cell Z γ δ, x.1.valuation (T - C γ) = 0 → m = 0) :
+    (c e : K) (hmn : m = n) (hm : ∀ x ∈ cell Z γ δ, x.val.valuation (T - C γ) = 0 → m = 0) :
     ∃ H : Set (closedPolydisc 1 K), IsHoledDiscUnion (cell Z γ δ ∩ H) ∧
-      ∀ x ∈ cell Z γ δ, (x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
-        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) := by
-  have hiff (x) (hx : x ∈ cell Z γ δ) : x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
-      x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ ‖c‖ ≤ ‖e‖ := by
+      ∀ x ∈ cell Z γ δ, (x.val.valuation (T - C γ) ^ m * x.val.valuation (C c) ≤
+        x.val.valuation (T - C γ) ^ n * x.val.valuation (C e) ↔ x ∈ H) := by
+  have hiff (x) (hx : x ∈ cell Z γ δ) : x.val.valuation (T - C γ) ^ m * x.val.valuation (C c) ≤
+      x.val.valuation (T - C γ) ^ n * x.val.valuation (C e) ↔ ‖c‖ ≤ ‖e‖ := by
     rw [← hmn, ← closedPolydisc_valuation_weightedC_le_iff x]
-    by_cases h0 : x.1.valuation (T - C γ) = 0
+    by_cases h0 : x.val.valuation (T - C γ) = 0
     · rw [hm x hx h0, pow_zero, one_mul, one_mul]
-    · exact mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _)
+    · exact mul_le_mul_iff_right₀ (pow_pos (pos_iff_ne_zero.mpr h0) _)
   by_cases hce : ‖c‖ ≤ ‖e‖
   · exact ⟨Set.univ, by rw [Set.inter_univ]; exact isHoledDiscUnion_cell Z γ δ,
       fun x hx ↦ by simpa [hce] using hiff x hx⟩
@@ -301,8 +302,8 @@ cell. -/
 private theorem exists_isHoledDiscUnion_cell_inter_of_gt [IsAlgClosed K] (Z : Finset K)
     (γ δ : K) {m n : ℕ} {c e : K} (he : e ≠ 0) (hmn : n < m) :
     ∃ H : Set (closedPolydisc 1 K), IsHoledDiscUnion (cell Z γ δ ∩ H) ∧
-      ∀ x ∈ cell Z γ δ, (x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
-        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) := by
+      ∀ x ∈ cell Z γ δ, (x.val.valuation (T - C γ) ^ m * x.val.valuation (C c) ≤
+        x.val.valuation (T - C γ) ^ n * x.val.valuation (C e) ↔ x ∈ H) := by
   by_cases hc : c = 0
   · exact ⟨Set.univ, by rw [Set.inter_univ]; exact isHoledDiscUnion_cell Z γ δ,
       fun x _ ↦ by simp [hc]⟩
@@ -314,7 +315,7 @@ private theorem exists_isHoledDiscUnion_cell_inter_of_gt [IsAlgClosed K] (Z : Fi
     exact hρ.elim he hc
   rw [mem_closedSubdisc, ← valuation_le_iff, and_iff_left (by
     rwa [← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero, not_le, norm_pos_iff])]
-  by_cases h0 : x.1.valuation (T - C γ) = 0
+  by_cases h0 : x.val.valuation (T - C γ) = 0
   · simp only [h0, zero_le, zero_pow (by omega : m ≠ 0), zero_mul]
   · exact (valuation_pow_mul_le_iff hmn hc hρ h0).2
 
@@ -326,7 +327,7 @@ otherwise says `x(T - γ) ≤ x(ρ)` (if `n < m`) or `x(ρ) ≤ x(T - γ)` (if `
 private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g : Polynomial K}
     (hfg : IsCoprime f g) (hg : g ≠ 0) (hZf : ∀ α ∈ f.roots, α ∈ Z) (hZg : ∀ α ∈ g.roots, α ∈ Z)
     (γ δ : K) :
-    IsHoledDiscUnion (cell Z γ δ ∩ {x | x.1.toValuativeRel.vle
+    IsHoledDiscUnion (cell Z γ δ ∩ {x | x.val.toValuativeRel.vle
       (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g)}) := by
   set m := Multiset.card (f.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖)
   set n := Multiset.card (g.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖)
@@ -338,8 +339,8 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
     exact Multiset.of_mem_filter hα (by rw [h0, norm_zero]; exact norm_nonneg _)
   -- it suffices to describe the inequality `x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` on the cell
   suffices ∃ H : Set (closedPolydisc 1 K), IsHoledDiscUnion (cell Z γ δ ∩ H) ∧
-      ∀ x ∈ cell Z γ δ, (x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
-        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) by
+      ∀ x ∈ cell Z γ δ, (x.val.valuation (T - C γ) ^ m * x.val.valuation (C c) ≤
+        x.val.valuation (T - C γ) ^ n * x.val.valuation (C e) ↔ x ∈ H) by
     obtain ⟨H, hH, hiff⟩ := this
     convert hH using 1
     ext x
@@ -360,11 +361,11 @@ the holed disc `D(a, |c|) ∖ ⋃_{(b, d) ∈ H} D⁻(b, |d|)`. -/
 theorem exists_finset_setOf_vle_eq_iUnion_holedDisc [IsAlgClosed K]
     {f g : Polynomial K} (hfg : IsCoprime f g) :
     ∃ P : Finset (K × K × Finset (K × K)),
-      {x : closedPolydisc 1 K | x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T f)
+      {x : closedPolydisc 1 K | x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T f)
         (Polynomial.eval₂RingHom C T g)} =
-        ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q ↦ q.1.2) := by
+        ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.val.1) (fun q ↦ q.val.2) := by
   classical
-  suffices h : IsHoledDiscUnion {x : closedPolydisc 1 K | x.1.toValuativeRel.vle
+  suffices h : IsHoledDiscUnion {x : closedPolydisc 1 K | x.val.toValuativeRel.vle
       (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g)} from
     isHoledDiscUnion_iff.mp h
   rcases eq_or_ne g 0 with rfl | hg
@@ -378,9 +379,9 @@ theorem exists_finset_setOf_vle_eq_iUnion_holedDisc [IsAlgClosed K]
   set Z : Finset K := insert 0 (f.roots.toFinset ∪ g.roots.toFinset)
   have hZf : ∀ α ∈ f.roots, α ∈ Z := fun α hα ↦ by simp [Z, hα]
   have hZg : ∀ α ∈ g.roots, α ∈ Z := fun α hα ↦ by simp [Z, hα]
-  have hcover : {x : closedPolydisc 1 K | x.1.toValuativeRel.vle
+  have hcover : {x : closedPolydisc 1 K | x.val.toValuativeRel.vle
       (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g)} =
-      ⋃ γ ∈ Z, ⋃ δ ∈ Z, cell Z γ δ ∩ {x | x.1.toValuativeRel.vle
+      ⋃ γ ∈ Z, ⋃ δ ∈ Z, cell Z γ δ ∩ {x | x.val.toValuativeRel.vle
         (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g)} := by
     ext x
     simp only [Set.mem_iUnion, Set.mem_inter_iff, exists_prop]
@@ -400,17 +401,17 @@ omit [IsUltrametricDist K] in
 /-- Cancelling `gcd(g, p)` does not change the inequality `x(g) ≤ x(p)` at a point where
 `x(gcd(g, p)) ≠ 0`. -/
 private theorem vle_iff_vle_div_gcd [DecidableEq K] {x : closedPolydisc 1 K} {g p : Polynomial K}
-    (hp : p ≠ 0) (hx : x.1.valuation (Polynomial.eval₂RingHom C T (gcd g p)) ≠ 0) :
-    x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T g) (Polynomial.eval₂RingHom C T p) ↔
-      x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T (g / gcd g p))
+    (hp : p ≠ 0) (hx : x.val.valuation (Polynomial.eval₂RingHom C T (gcd g p)) ≠ 0) :
+    x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T g) (Polynomial.eval₂RingHom C T p) ↔
+      x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T (g / gcd g p))
         (Polynomial.eval₂RingHom C T (p / gcd g p)) := by
   have hh : gcd g p ≠ 0 := fun h0 ↦ hp ((gcd_eq_zero_iff g p).mp h0).2
-  have key : x.1.valuation (Polynomial.eval₂RingHom C T (gcd g p * (g / gcd g p))) ≤
-        x.1.valuation (Polynomial.eval₂RingHom C T (gcd g p * (p / gcd g p))) ↔
-      x.1.valuation (Polynomial.eval₂RingHom C T (g / gcd g p)) ≤
-        x.1.valuation (Polynomial.eval₂RingHom C T (p / gcd g p)) := by
+  have key : x.val.valuation (Polynomial.eval₂RingHom C T (gcd g p * (g / gcd g p))) ≤
+        x.val.valuation (Polynomial.eval₂RingHom C T (gcd g p * (p / gcd g p))) ↔
+      x.val.valuation (Polynomial.eval₂RingHom C T (g / gcd g p)) ≤
+        x.val.valuation (Polynomial.eval₂RingHom C T (p / gcd g p)) := by
     simp only [map_mul]
-    exact mul_le_mul_iff_right₀ (zero_lt_iff.mpr hx)
+    exact mul_le_mul_iff_right₀ (pos_iff_ne_zero.mpr hx)
   rwa [EuclideanDomain.mul_div_cancel' hh (gcd_dvd_left g p),
     EuclideanDomain.mul_div_cancel' hh (gcd_dvd_right g p), valuation_le_iff,
     valuation_le_iff] at key
@@ -422,31 +423,31 @@ points with `x(g) ≤ x(p)` for all `g ∈ G` and `x(p) ≠ 0` are those with `x
 `x(p) ≠ 0` on both sides, and there the common factor `gcd(g, p)` cancels. -/
 private theorem setOf_forall_vle_eq_iInter_div_gcd [DecidableEq K] {G : Finset (Polynomial K)}
     {p : Polynomial K} {c : K} (hc : c ≠ 0) (hcG : Polynomial.C c ∈ G) (hp : p ≠ 0) :
-    {x : closedPolydisc 1 K | (∀ g ∈ G, x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T g)
+    {x : closedPolydisc 1 K | (∀ g ∈ G, x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T g)
         (Polynomial.eval₂RingHom C T p)) ∧
-      ¬ x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0} =
-      ⋂ g ∈ G, {x : closedPolydisc 1 K | x.1.toValuativeRel.vle
+      ¬ x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0} =
+      ⋂ g ∈ G, {x : closedPolydisc 1 K | x.val.toValuativeRel.vle
         (Polynomial.eval₂RingHom C T (g / gcd g p))
         (Polynomial.eval₂RingHom C T (p / gcd g p))} := by
   ext x
-  have hp0 : ¬ x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0 ↔
-      x.1.valuation (Polynomial.eval₂RingHom C T p) ≠ 0 := by
-    rw [Ne, ← le_zero_iff, ← map_zero x.1.valuation, valuation_le_iff]
+  have hp0 : ¬ x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0 ↔
+      x.val.valuation (Polynomial.eval₂RingHom C T p) ≠ 0 := by
+    rw [Ne, ← nonpos_iff_eq_zero, ← map_zero x.val.valuation, valuation_le_iff]
   -- a divisor of a polynomial with nonzero value has nonzero value
   have hdvd {f h : Polynomial K} (hhf : h ∣ f)
-      (hf : x.1.valuation (Polynomial.eval₂RingHom C T f) ≠ 0) :
-      x.1.valuation (Polynomial.eval₂RingHom C T h) ≠ 0 :=
+      (hf : x.val.valuation (Polynomial.eval₂RingHom C T f) ≠ 0) :
+      x.val.valuation (Polynomial.eval₂RingHom C T h) ≠ 0 :=
     ne_zero_of_dvd_ne_zero hf (map_dvd _ (map_dvd _ hhf))
   rw [Set.mem_ofPred_eq, Set.mem_iInter₂, hp0]
   refine ⟨fun ⟨hG, hx⟩ g hg ↦
     (vle_iff_vle_div_gcd hp (hdvd (gcd_dvd_right g p) hx)).mp (hG g hg), fun hG ↦ ?_⟩
   -- the constant `c` has nonzero value, and `x(c) ≤ x(p)` then gives `x(p) ≠ 0`
-  have hcx : x.1.valuation (Polynomial.eval₂RingHom C T (Polynomial.C c)) ≠ 0 := by
+  have hcx : x.val.valuation (Polynomial.eval₂RingHom C T (Polynomial.C c)) ≠ 0 := by
     rwa [Polynomial.coe_eval₂RingHom, Polynomial.eval₂_C, Ne,
       closedPolydisc_valuation_weightedC_eq_zero_iff]
   have hcp := (vle_iff_vle_div_gcd hp (hdvd (gcd_dvd_left _ p) hcx)).mpr (hG _ hcG)
-  have hx : x.1.valuation (Polynomial.eval₂RingHom C T p) ≠ 0 :=
-    fun h0 ↦ hcx (le_zero_iff.mp (h0 ▸ (valuation_le_iff _ _ _).mpr hcp))
+  have hx : x.val.valuation (Polynomial.eval₂RingHom C T p) ≠ 0 :=
+    fun h0 ↦ hcx (nonpos_iff_eq_zero.mp (h0 ▸ (valuation_le_iff _ _ _).mpr hcp))
   exact ⟨fun g hg ↦ (vle_iff_vle_div_gcd hp (hdvd (gcd_dvd_right g p) hx)).mpr (hG g hg), hx⟩
 
 /-- **Every rational subset of the closed unit disc is a finite union of holed discs.** Let `K`
@@ -461,26 +462,26 @@ theorem exists_finset_eq_iUnion_holedDisc_of_mem_spaRationalFamily
     (hU : (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹' U ∈
       spaRationalFamily (powerBoundedSubring (𝒯 K))) :
     ∃ P : Finset (K × K × Finset (K × K)),
-      U = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.1.1) (fun q : p.2.2 ↦ q.1.2) := by
+      U = ⋃ p ∈ P, holedDisc p.1 p.2.1 (fun q : p.2.2 ↦ q.val.1) (fun q : p.2.2 ↦ q.val.2) := by
   classical
   suffices h : IsHoledDiscUnion U from isHoledDiscUnion_iff.mp h
   -- present `U` by polynomials, with a unit constant `c` among the numerators
   obtain ⟨G, p, c, hc, hcG, hV⟩ := (mem_spaRationalFamily_iff_exists_polynomial _).mp hU
-  have hU' : U = {x : closedPolydisc 1 K | (∀ g ∈ G, x.1.toValuativeRel.vle
+  have hU' : U = {x : closedPolydisc 1 K | (∀ g ∈ G, x.val.toValuativeRel.vle
       (Polynomial.eval₂RingHom C T g) (Polynomial.eval₂RingHom C T p)) ∧
-      ¬ x.1.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0} := by
+      ¬ x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0} := by
     ext x
     have hx := Set.ext_iff.mp hV (Homeomorph.setCongr (closedPolydisc_def 1 K) x)
     simp only [Set.mem_preimage, Homeomorph.setCongr_apply, Homeomorph.setCongr_symm_apply,
       mem_rationalSubset_iff, Finset.mem_image, forall_exists_index, and_imp,
       forall_apply_eq_imp_iff₂] at hx
-    have hv : x.1 ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ x.2
+    have hv : x.val ∈ spa (powerBoundedSubring (𝒯 K)) := closedPolydisc_def 1 K ▸ x.property
     exact hx.trans (and_iff_right hv)
   rcases eq_or_ne p 0 with rfl | hp
   · -- no point has `x(0) ≠ 0`
     convert isHoledDiscUnion_empty using 1
     rw [hU', map_zero]
-    exact Set.eq_empty_of_forall_notMem fun x hx ↦ hx.2 (x.1.toValuativeRel.vle_refl 0)
+    exact Set.eq_empty_of_forall_notMem fun x hx ↦ hx.2 (x.val.toValuativeRel.vle_refl 0)
   -- after cancelling common factors, each inequality is between coprime polynomials
   rw [hU', setOf_forall_vle_eq_iInter_div_gcd hc.ne_zero hcG hp]
   exact isHoledDiscUnion_biInter G fun g _ ↦ isHoledDiscUnion_iff.mpr

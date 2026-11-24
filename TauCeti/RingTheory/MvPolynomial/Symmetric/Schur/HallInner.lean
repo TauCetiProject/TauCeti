@@ -153,7 +153,7 @@ theorem hallInner_hsymmPart_left (ν : n.Partition) (hν : ν.parts.card ≤ Fin
   refine (schurPolyBasis σ R n).ext fun μ => ?_
   rw [hallInner_schurPolyBasis_right, Module.Basis.coord_apply,
     schurPolyBasis_repr_of_coe_eq_sum (hsymmPart_eq_sum_kostkaNumber_smul_schurPoly σ ν),
-    ← msymmBasis_repr_schurPoly μ.1 ⟨ν, hν⟩]
+    ← msymmBasis_repr_schurPoly μ.val ⟨ν, hν⟩]
   congr 2
   exact Subtype.ext (coe_schurPolyBasis μ).symm
 

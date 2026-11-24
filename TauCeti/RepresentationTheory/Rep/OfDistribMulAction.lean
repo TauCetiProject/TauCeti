@@ -51,8 +51,8 @@ noncomputable def ofDistribMulActionFixedPointsIso :
     Rep.ofDistribMulAction ℤ (G ⧸ H) (FixedPoints.addSubgroup H M) ≅
       (Rep.ofDistribMulAction ℤ G M).quotientToInvariants H :=
   Rep.mkIso <| .mk (AddEquiv.toIntLinearEquiv
-    { toFun m := ⟨(m : M), fun h ↦ (FixedPoints.mem_addSubgroup H M _).1 m.2 h⟩
-      invFun m := ⟨m.1, (FixedPoints.mem_addSubgroup H M _).2 fun h ↦ m.2 h⟩
+    { toFun m := ⟨(m : M), fun h ↦ (FixedPoints.mem_addSubgroup H M _).1 m.property h⟩
+      invFun m := ⟨m.val, (FixedPoints.mem_addSubgroup H M _).2 fun h ↦ m.property h⟩
       left_inv _ := rfl
       right_inv _ := rfl
       map_add' _ _ := rfl }) fun q ↦ by
@@ -63,14 +63,14 @@ noncomputable def ofDistribMulActionFixedPointsIso :
 /-- `ofDistribMulActionFixedPointsIso` does not move an element of `M`. -/
 @[simp]
 theorem ofDistribMulActionFixedPointsIso_hom_hom_apply_coe (m : FixedPoints.addSubgroup H M) :
-    ((ofDistribMulActionFixedPointsIso M H).hom.hom m).1 = (m : M) :=
+    ((ofDistribMulActionFixedPointsIso M H).hom.hom m).val = (m : M) :=
   (rfl)
 
 /-- The inverse of `ofDistribMulActionFixedPointsIso` does not move an element of `M`. -/
 @[simp]
 theorem ofDistribMulActionFixedPointsIso_inv_hom_apply_coe
     (m : Representation.invariants ((Rep.ofDistribMulAction ℤ G M).ρ.comp H.subtype)) :
-    ((ofDistribMulActionFixedPointsIso M H).inv.hom m).1 = m.1 :=
+    ((ofDistribMulActionFixedPointsIso M H).inv.hom m).val = m.val :=
   (rfl)
 
 end TauCeti

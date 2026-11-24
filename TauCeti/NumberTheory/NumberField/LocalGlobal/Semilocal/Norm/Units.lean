@@ -63,7 +63,7 @@ theorem mem_range_normUnits_adicCompletion_iff (v : HeightOneSpectrum (𝓞 K))
     (a : (v.adicCompletion K)ˣ) :
     a ∈ (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range ↔
       ∃ u : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-          (w.1.adicCompletion L)ˣ,
+          (w.val.adicCompletion L)ˣ,
         (∏ᶠ w, Algebra.normUnits (v.adicCompletion K) (u w)) = a :=
   Algebra.mem_range_normUnits_iff_of_algEquiv (v.adicCompletionSemilocalEquiv K (𝓞 L) L) a
 
@@ -71,7 +71,7 @@ theorem mem_range_normUnits_adicCompletion_iff (v : HeightOneSpectrum (𝓞 K))
 above the place. Real and complex places are both retained. -/
 theorem mem_range_normUnits_completion_iff (v : InfinitePlace K) (a : v.Completionˣ) :
     a ∈ (Algebra.normUnits v.Completion (S := v.Completion ⊗[K] L)).range ↔
-      ∃ u : (w : {w : InfinitePlace L // w.LiesOver v}) → w.1.Completionˣ,
+      ∃ u : (w : {w : InfinitePlace L // w.LiesOver v}) → w.val.Completionˣ,
         (∏ᶠ w, Algebra.normUnits v.Completion (u w)) = a :=
   Algebra.mem_range_normUnits_iff_of_algEquiv (GlobalNumberFields.infiniteSemilocalEquiv L v) a
 
@@ -80,20 +80,20 @@ above it whenever at least one of those extensions is unramified. -/
 theorem exists_unit_preimages_of_isUnramifiedAt (v : HeightOneSpectrum (𝓞 K))
     (a : (v.adicCompletion K)ˣ) (ha : Valued.v (a : v.adicCompletion K) = 1)
     (hU : ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal) :
+      Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal) :
     ∃ u : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
-        (w.1.adicCompletion L)ˣ,
+        (w.val.adicCompletion L)ˣ,
       (∏ᶠ w, Algebra.normUnits (v.adicCompletion K) (u w)) = a ∧
-        ∀ w, Valued.v (u w : w.1.adicCompletion L) = 1 := by
+        ∀ w, Valued.v (u w : w.val.adicCompletion L) = 1 := by
   classical
   obtain ⟨w, hw⟩ := hU
-  let : Algebra.IsUnramifiedAt (𝓞 K) w.1.asIdeal := hw
+  let : Algebra.IsUnramifiedAt (𝓞 K) w.val.asIdeal := hw
   have haU : a ∈ unitFiltration (v.adicCompletion K) 0 := by
     apply (mem_unitFiltration_adicCompletion_iff v).mpr
     refine ⟨ha, ?_⟩
     simpa [ha] using (Valued.v : Valuation (v.adicCompletion K) ℤᵐ⁰).map_sub
       (a : v.adicCompletion K) 1
-  rw [← map_normUnits_unitFiltration (v.adicCompletion K) (w.1.adicCompletion L) 0] at haU
+  rw [← map_normUnits_unitFiltration (v.adicCompletion K) (w.val.adicCompletion L) 0] at haU
   obtain ⟨b, hb, hba⟩ := Subgroup.mem_map.mp haU
   refine ⟨Pi.mulSingle w b, ?_, ?_⟩
   · rw [finprod_eq_single _ w]
@@ -104,7 +104,7 @@ theorem exists_unit_preimages_of_isUnramifiedAt (v : HeightOneSpectrum (𝓞 K))
     by_cases hw' : w' = w
     · subst w'
       simp only [Pi.mulSingle_eq_same]
-      exact ((mem_unitFiltration_adicCompletion_iff w.1).mp hb).1
+      exact ((mem_unitFiltration_adicCompletion_iff w.val).mp hb).1
     · simp [Pi.mulSingle_eq_of_ne hw']
 
 /-- **Local norms at a finite place of degree one.** If some completion `L_w` of `L` above the
@@ -112,12 +112,12 @@ finite place `v` has degree one over `K_v`, then every element of `K_vˣ` is a n
 étale algebra `K_v ⊗[K] L`. -/
 theorem mem_range_normUnits_adicCompletion_of_finrank_eq_one (v : HeightOneSpectrum (𝓞 K))
     (hv : ∃ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-      Module.finrank (v.adicCompletion K) (w.1.adicCompletion L) = 1)
+      Module.finrank (v.adicCompletion K) (w.val.adicCompletion L) = 1)
     (a : (v.adicCompletion K)ˣ) :
     a ∈ (Algebra.normUnits (v.adicCompletion K) (S := v.adicCompletion K ⊗[K] L)).range := by
   classical
   obtain ⟨w, hw⟩ := hv
-  obtain ⟨b, hb⟩ := mem_normGroup_iff.1 (pow_finrank_mem_normGroup (w.1.adicCompletion L) a)
+  obtain ⟨b, hb⟩ := mem_normGroup_iff.1 (pow_finrank_mem_normGroup (w.val.adicCompletion L) a)
   rw [mem_range_normUnits_adicCompletion_iff]
   refine ⟨Pi.mulSingle w b, ?_⟩
   rw [finprod_eq_single _ w fun w' hw' ↦ by simp [Pi.mulSingle_eq_of_ne hw']]
@@ -129,12 +129,12 @@ infinite place `v` has degree one over `K_v`, then every element of `K_vˣ` is a
 étale algebra `K_v ⊗[K] L`. -/
 theorem mem_range_normUnits_completion_of_finrank_eq_one (v : InfinitePlace K)
     (hv : ∃ w : {w : InfinitePlace L // w.LiesOver v},
-      Module.finrank v.Completion w.1.Completion = 1)
+      Module.finrank v.Completion w.val.Completion = 1)
     (a : v.Completionˣ) :
     a ∈ (Algebra.normUnits v.Completion (S := v.Completion ⊗[K] L)).range := by
   classical
   obtain ⟨w, hw⟩ := hv
-  obtain ⟨b, hb⟩ := Algebra.pow_finrank_mem_range_normUnits v.Completion (S := w.1.Completion) a
+  obtain ⟨b, hb⟩ := Algebra.pow_finrank_mem_range_normUnits v.Completion (S := w.val.Completion) a
   rw [mem_range_normUnits_completion_iff]
   refine ⟨Pi.mulSingle w b, ?_⟩
   rw [finprod_eq_single _ w fun w' hw' ↦ by simp [Pi.mulSingle_eq_of_ne hw']]

@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Calculus.Deriv.Second
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
@@ -37,6 +38,8 @@ remainder bound `TauCeti.abs_sub_taylorWithinEval_le` along the segment `[0, 1]`
   `s ↦ f (x + s • y)` has derivative `fderiv 𝕜 (fderiv 𝕜 f) (x + t • y) y y` at `t`.
 * `ContDiffAt.deriv_deriv_comp_add_smul` and `ContDiffAt.deriv_deriv_deriv_comp_add_smul`: the
   second and third derivatives of `s ↦ f (x + s • y)` at `t` in curried `fderiv` form.
+* `TauCeti.deriv_deriv_quadratic_add_line`: adding `c / 2 * t ^ 2` to an affine-line
+  restriction adds `c` to its second derivative at zero.
 * `ContDiffAt.iteratedDeriv_comp_add_smul`: the `n`-th derivative of `s ↦ f (x + s • y)` at `t`
   is `iteratedFDeriv 𝕜 n f (x + t • y) (fun _ ↦ y)`.
 * `TauCeti.norm_map_add_sub_sum_iteratedFDeriv_le`: Taylor's remainder bound of order `n` along a
@@ -110,6 +113,41 @@ theorem ContDiffAt.deriv_deriv_deriv_comp_add_smul (hf : ContDiffAt 𝕜 3 f (x 
     hf.iteratedDeriv_comp_add_smul (n := 3)
 
 end LineDerivatives
+
+section QuadraticLine
+
+open Filter
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Adding `c / 2 * t ^ 2` to the restriction of `f` to the line through `x` in direction `v`
+adds `c` to its second derivative at zero. Differentiability of `f` is needed only near `x`,
+and differentiability of its Fréchet derivative only at `x`. -/
+theorem TauCeti.deriv_deriv_quadratic_add_line {f : E → ℝ} {x : E}
+    (hf : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y)
+    (hf' : DifferentiableAt ℝ (fderiv ℝ f) x) (v : E) (c : ℝ) :
+    deriv (deriv (fun t : ℝ ↦ f (x + t • v) + c / 2 * t ^ 2)) 0 =
+      fderiv ℝ (fderiv ℝ f) x v v + c := by
+  have hline : HasDerivAt (deriv fun t : ℝ ↦ f (x + t • v))
+      (fderiv ℝ (fderiv ℝ f) x v v) 0 := by
+    have hfd : DifferentiableAt ℝ (fderiv ℝ f) (x + (0 : ℝ) • v) := by
+      simpa only [zero_smul, add_zero] using hf'
+    simpa only [zero_smul, add_zero] using
+      hfd.hasDerivAt_deriv_comp_add_smul (by simpa only [zero_smul, add_zero] using hf)
+  have hpoly (t : ℝ) : HasDerivAt (fun s : ℝ ↦ c / 2 * s ^ 2) (c * t) t := by
+    convert (hasDerivAt_pow 2 t).const_mul (c / 2) using 1; ring
+  have htend : Tendsto (fun t : ℝ ↦ x + t • v) (𝓝 0) (𝓝 x) :=
+    Continuous.tendsto' (by fun_prop) 0 x (by simp)
+  have heq : deriv (fun t : ℝ ↦ f (x + t • v) + c / 2 * t ^ 2) =ᶠ[𝓝 (0 : ℝ)]
+      fun t ↦ deriv (fun s : ℝ ↦ f (x + s • v)) t + c * t := by
+    filter_upwards [htend.eventually hf] with t ht
+    have hd : DifferentiableAt ℝ (fun s : ℝ ↦ f (x + s • v)) t :=
+      ht.comp t (by fun_prop)
+    simpa only [Pi.add_apply, (hpoly t).deriv] using deriv_fun_add hd (hpoly t).differentiableAt
+  rw [heq.deriv_eq]
+  exact (hline.add (by simpa using (hasDerivAt_id (0 : ℝ)).const_mul c)).deriv
+
+end QuadraticLine
 
 section RemainderBound
 

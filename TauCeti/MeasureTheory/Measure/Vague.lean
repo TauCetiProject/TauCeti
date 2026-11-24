@@ -10,14 +10,40 @@ public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.Topology.UrysohnsLemma
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
+import TauCeti.MeasureTheory.Integral.CompactlySupported
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
-# Continuity sets under vague convergence
+# Continuity sets and compact sets under vague convergence
 
-Convergence of locally finite measures against continuous compactly supported real functions
-implies convergence of their masses on relatively compact measurable continuity sets.
-Unlike weak convergence of finite measures, this allows measures with infinite total mass.
-The localization uses a compactly supported cutoff equal to one on the set's closure.
+Locally finite measures `μs i` converge vaguely to `μ` if `∫ f ∂μs i → ∫ f ∂μ` for every
+continuous compactly supported real function `f`. Unlike weak convergence of finite measures,
+this allows measures with infinite total mass. This file proves the two parts of the
+portmanteau theorem that survive localization:
+
+* the masses converge on relatively compact measurable sets whose boundary has zero limit mass
+  (`MeasureTheory.Measure.tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported`);
+* the mass of a compact set is upper semicontinuous, `limsup μs i K ≤ μ K`
+  (`MeasureTheory.Measure.limsup_measure_le_of_tendsto_integral_compactlySupported`).
+
+Both reduce to the portmanteau theorem for finite measures: weighting by a nonnegative compactly
+supported continuous function `χ` turns vague convergence into weak convergence of the finite
+measures `χ μs i`
+(`MeasureTheory.Measure.tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported`), and
+these agree with `μs i` on the set when `χ` is a cutoff equal to one there
+(`MeasureTheory.withDensity_apply_eq_self_of_eqOn_one`).
+
+In the other direction, a mass bound on an open neighbourhood `V` of a compact set `K` passes to
+the limit measure of `K` (`IsCompact.measure_le_of_tendsto_integral`). This holds on a locally
+compact space with measurable open sets, with `R1Space` in place of Hausdorffness, for a limit
+measure that is finite on compact sets; nothing is required of the approximating measures. It
+tests against a compactly supported cutoff whose integral lies between the masses of `K` and of
+`V` (`IsCompact.exists_compactlySupported_measure_le_integral_le`).
+
+## References
+
+* P. Mattila, *Geometry of Sets and Measures in Euclidean Spaces*, Chapter 1 (weak convergence
+  of Radon measures).
 -/
 
 public section
@@ -32,6 +58,28 @@ variable {X ι : Type*} [MeasurableSpace X] [TopologicalSpace X] [BorelSpace X]
   {l : Filter ι} {μs : ι → Measure X} {μ : Measure X}
   [∀ i, IsLocallyFiniteMeasure (μs i)] [IsLocallyFiniteMeasure μ]
 
+omit [T2Space X] [LocallyCompactSpace X] [HasOuterApproxClosed X] in
+/-- **Localization of vague convergence.** Weighting by a nonnegative compactly supported
+continuous function `χ` turns vague convergence of locally finite measures into weak convergence
+of the finite measures `χ μs i`. -/
+theorem tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported
+    (h : ∀ f : C_c(X, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μs i) l (𝓝 (∫ x, f x ∂μ)))
+    (χ : C(X, ℝ)) (hχc : HasCompactSupport χ) (hχ0 : ∀ x, 0 ≤ χ x) :
+    Tendsto (β := FiniteMeasure X) (fun i ↦ ⟨(μs i).withDensity fun x ↦ ENNReal.ofReal (χ x),
+        isFiniteMeasure_withDensity_ofReal
+          (χ.continuous.integrable_of_hasCompactSupport hχc).hasFiniteIntegral⟩) l
+      (𝓝 ⟨μ.withDensity fun x ↦ ENNReal.ofReal (χ x), isFiniteMeasure_withDensity_ofReal
+        (χ.continuous.integrable_of_hasCompactSupport hχc).hasFiniteIntegral⟩) := by
+  have hint (ρ : Measure X) (f : X → ℝ) :
+      ∫ x, f x ∂ρ.withDensity (fun x ↦ ENNReal.ofReal (χ x)) = ∫ x, χ x * f x ∂ρ := by
+    rw [integral_withDensity_eq_integral_toReal_smul χ.continuous.measurable.ennreal_ofReal
+      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+    simp only [ENNReal.toReal_ofReal (hχ0 _), smul_eq_mul]
+  refine FiniteMeasure.tendsto_iff_forall_integral_tendsto.2 fun f ↦ ?_
+  let g : C_c(X, ℝ) := ⟨χ * f.toContinuousMap, HasCompactSupport.mul_right hχc⟩
+  simpa only [FiniteMeasure.toMeasure_mk, hint, g, CompactlySupportedContinuousMap.coe_mk,
+    ContinuousMap.mul_apply, BoundedContinuousFunction.coe_toContinuousMap] using h g
+
 /-- Vague convergence implies convergence on relatively compact measurable sets whose
 boundary has zero limit mass. The measures need not have finite total mass. -/
 theorem tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported
@@ -41,36 +89,49 @@ theorem tendsto_measure_of_null_frontier_of_tendsto_integral_compactlySupported
     Tendsto (fun i ↦ μs i s) l (𝓝 (μ s)) := by
   obtain ⟨χ, hχone, hχcomp, -, hχrange⟩ :=
     exists_continuousMap_one_of_isCompact_subset_isOpen hsc isOpen_univ (subset_univ _)
-  let w : X → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (χ x)
-  have hw : Measurable w := χ.continuous.measurable.ennreal_ofReal
-  have hfinite (ν : Measure X) [IsLocallyFiniteMeasure ν] :
-      IsFiniteMeasure (ν.withDensity w) := by
-    apply isFiniteMeasure_withDensity
-    exact (lintegral_ofReal_ne_top_iff_integrable χ.continuous.aestronglyMeasurable
-      (ae_of_all _ fun x ↦ (hχrange x).1)).2
-      (χ.continuous.integrable_of_hasCompactSupport hχcomp)
-  let νs : ι → FiniteMeasure X := fun i ↦ ⟨(μs i).withDensity w, hfinite (μs i)⟩
-  let ν : FiniteMeasure X := ⟨μ.withDensity w, hfinite μ⟩
-  have hint (ρ : Measure X) (f : X → ℝ) :
-      ∫ x, f x ∂ρ.withDensity w = ∫ x, χ x * f x ∂ρ := by
-    rw [integral_withDensity_eq_integral_toReal_smul hw
-      (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
-    simp only [w, ENNReal.toReal_ofReal (hχrange _).1, smul_eq_mul]
-  have hn : Tendsto νs l (𝓝 ν) := by
-    apply FiniteMeasure.tendsto_iff_forall_integral_tendsto.2
-    intro f
-    let g : C_c(X, ℝ) := ⟨χ * f.toContinuousMap, HasCompactSupport.mul_right hχcomp⟩
-    simpa only [νs, ν, FiniteMeasure.toMeasure_mk, hint, g,
-      CompactlySupportedContinuousMap.coe_mk,
-      ContinuousMap.mul_apply, BoundedContinuousFunction.coe_toContinuousMap] using h g
-  have heq (ρ : Measure X) : ρ.withDensity w s = ρ s := by
-    rw [withDensity_apply _ hs]
-    calc
-      ∫⁻ x in s, w x ∂ρ = ∫⁻ _ in s, 1 ∂ρ :=
-        setLIntegral_congr_fun hs fun x hx ↦ by simp [w, hχone (subset_closure hx)]
-      _ = ρ s := by simp
-  simpa only [νs, ν, FiniteMeasure.toMeasure_mk, heq] using
-    FiniteMeasure.tendsto_measure_of_null_frontier_of_tendsto hn
-      ((withDensity_absolutelyContinuous μ w) hboundary)
+  have hχs : EqOn (fun x ↦ ENNReal.ofReal (χ x)) 1 s := fun x hx ↦ by
+    simp [hχone (subset_closure hx)]
+  simpa only [FiniteMeasure.toMeasure_mk, withDensity_apply_eq_self_of_eqOn_one hs hχs] using
+    FiniteMeasure.tendsto_measure_of_null_frontier_of_tendsto
+      (tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported h χ hχcomp
+        fun x ↦ (hχrange x).1)
+      ((withDensity_absolutelyContinuous μ _) hboundary)
+
+/-- **Portmanteau theorem for compact sets under vague convergence.** The limit superior of the
+masses of a compact set is at most its mass for the limit measure. The measures need not have
+finite total mass. -/
+theorem limsup_measure_le_of_tendsto_integral_compactlySupported
+    (h : ∀ f : C_c(X, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μs i) l (𝓝 (∫ x, f x ∂μ)))
+    {K : Set X} (hK : IsCompact K) :
+    limsup (fun i ↦ μs i K) l ≤ μ K := by
+  obtain ⟨χ, hχone, hχcomp, -, hχrange⟩ :=
+    exists_continuousMap_one_of_isCompact_subset_isOpen hK isOpen_univ (subset_univ _)
+  have hχK : EqOn (fun x ↦ ENNReal.ofReal (χ x)) 1 K := fun x hx ↦ by simp [hχone hx]
+  simpa only [FiniteMeasure.toMeasure_mk,
+    withDensity_apply_eq_self_of_eqOn_one hK.isClosed.measurableSet hχK] using
+    FiniteMeasure.limsup_measure_closed_le_of_tendsto
+      (tendsto_withDensity_ofReal_of_tendsto_integral_compactlySupported h χ hχcomp
+        fun x ↦ (hχrange x).1) hK.isClosed
 
 end MeasureTheory.Measure
+
+section CompactMassBound
+
+open MeasureTheory
+
+variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X] [R1Space X] [LocallyCompactSpace X]
+  [OpensMeasurableSpace X]
+
+/-- Under convergence against compactly supported continuous functions, a mass bound on an
+open neighbourhood passes to the measure of a compact subset for the limiting measure. -/
+theorem IsCompact.measure_le_of_tendsto_integral {ι : Type*} {l : Filter ι} [NeBot l]
+    {K V : Set X} (hK : IsCompact K) (hV : IsOpen V) (hKV : K ⊆ V)
+    {μ : Measure X} [IsFiniteMeasureOnCompacts μ] {σ : ι → Measure X} {C : ℝ≥0∞}
+    (hbound : ∀ᶠ i in l, σ i V ≤ C)
+    (hlim : ∀ f : C_c(X, ℝ), Tendsto (fun i => ∫ x, f x ∂σ i) l
+      (𝓝 (∫ x, f x ∂μ))) : μ K ≤ C := by
+  obtain ⟨f, hfK, hfV⟩ := hK.exists_compactlySupported_measure_le_integral_le hV hKV
+  exact (hfK μ).trans (le_of_tendsto ((ENNReal.continuous_ofReal.tendsto _).comp (hlim f))
+    (hbound.mono fun i hi ↦ (hfV (σ i)).trans hi))
+
+end CompactMassBound

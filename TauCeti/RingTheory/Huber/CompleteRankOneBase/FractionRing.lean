@@ -120,7 +120,7 @@ theorem mulArchimedean_valueGroup₀_of_integers {K : Type*} [Field K] [Algebra 
   obtain ⟨β, rfl⟩ : ∃ β : K, w β = y := ValueGroup₀.restrict₀_surjective (v : K →*₀ Γ₀) y
   have hβ0 : w β ≠ 0 := ne_of_gt (zero_lt_one.trans hy)
   have hβinv_lt : w β⁻¹ < 1 := by
-    rw [map_inv₀, inv_lt_one₀ (zero_lt_iff.mpr hβ0)]
+    rw [map_inv₀, inv_lt_one₀ (pos_iff_ne_zero.mpr hβ0)]
     exact hy
   obtain ⟨d, hd⟩ := hv.exists_of_le_one (v.restrict_le_one_iff.mp hβinv_lt.le)
   have hd_not_unit : ¬ IsUnit d := fun hu ↦
@@ -133,8 +133,8 @@ theorem mulArchimedean_valueGroup₀_of_integers {K : Type*} [Field K] [Algebra 
   have hϖ_le : (w (algebraMap O K ϖ))⁻¹ ≤ w β ^ N := by
     have hdN : w (algebraMap O K d) ^ N ≤ w (algebraMap O K ϖ) := by
       simpa only [map_pow] using hw_dvd hN
-    rw [hd, map_inv₀, inv_pow, inv_le_comm₀ (zero_lt_iff.mpr (pow_ne_zero N hβ0))
-      (zero_lt_iff.mpr hϖ0)] at hdN
+    rw [hd, map_inv₀, inv_pow, inv_le_comm₀ (pos_iff_ne_zero.mpr (pow_ne_zero N hβ0))
+      (pos_iff_ne_zero.mpr hϖ0)] at hdN
     exact hdN
   -- `α = a / ϖ ^ m` gives `w(α) ≤ w(ϖ)⁻¹ ^ m ≤ w(β) ^ (N * m)`.
   obtain ⟨m, a, hma⟩ := IsLocalization.Away.surj ϖ α

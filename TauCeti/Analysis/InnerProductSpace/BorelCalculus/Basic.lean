@@ -11,6 +11,7 @@ public import Mathlib.Topology.UrysohnsLemma
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.DiagonalMeasure
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.DominatedConvergence
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.OfRepresentation
+public import TauCeti.MeasureTheory.MeasurableSpace.Subtype
 
 /-!
 # The Borel functional calculus of a normal operator
@@ -48,6 +49,7 @@ commutes with every spectral projection, equivalently with every value of the Bo
 * `ContinuousLinearMap.spectralPVM_proj_eq_zero_iff`: the spectral measure has full support.
 * `ContinuousLinearMap.mul_spectralPVM_proj_preimage_singleton`,
   `ContinuousLinearMap.spectralPVM_proj_preimage_singleton_apply_eq_self_iff`,
+  `ContinuousLinearMap.range_spectralPVM_proj_preimage_singleton`,
   `ContinuousLinearMap.spectralPVM_proj_preimage_singleton_eq_zero_iff`: the spectral projection
   of a point `z` is the projection onto the eigenspace of `z`, so it vanishes exactly when `z` is
   not an eigenvalue.
@@ -229,11 +231,10 @@ theorem spectralPVM_proj_eq_zero_iff {U : Set (spectrum ℂ a)} (hU : IsOpen U) 
 the eigenspace of `a` for `z`: `a P({z}) = z P({z})`. -/
 theorem mul_spectralPVM_proj_preimage_singleton (z : ℂ) :
     a * a.spectralPVM.proj (Subtype.val ⁻¹' {z})
-        ((measurableSet_singleton z).preimage measurable_subtype_coe) =
+        (measurableSet_preimage_val_singleton z) =
       z • a.spectralPVM.proj (Subtype.val ⁻¹' {z})
-        ((measurableSet_singleton z).preimage measurable_subtype_coe) := by
-  have hS := (measurableSet_singleton z).preimage
-    (measurable_subtype_coe (p := (· ∈ spectrum ℂ a)))
+        (measurableSet_preimage_val_singleton z) := by
+  have hS := measurableSet_preimage_val_singleton (p := (· ∈ spectrum ℂ a)) z
   -- On the preimage of `{z}` the coordinate function is the constant `z`.
   have hmul : BoundedBorelFunction.ofContinuousMap
       ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)) * BoundedBorelFunction.indicator _ hS 1 =
@@ -252,9 +253,8 @@ theorem mul_spectralPVM_proj_preimage_singleton (z : ℂ) :
 exactly when `ξ` lies in the eigenspace of `a` for `z`. -/
 theorem spectralPVM_proj_preimage_singleton_apply_eq_self_iff (z : ℂ) (ξ : H) :
     a.spectralPVM.proj (Subtype.val ⁻¹' {z})
-        ((measurableSet_singleton z).preimage measurable_subtype_coe) ξ = ξ ↔ a ξ = z • ξ := by
-  have hS := (measurableSet_singleton z).preimage
-    (measurable_subtype_coe (p := (· ∈ spectrum ℂ a)))
+        (measurableSet_preimage_val_singleton z) ξ = ξ ↔ a ξ = z • ξ := by
+  have hS := measurableSet_preimage_val_singleton (p := (· ∈ spectrum ℂ a)) z
   refine ⟨fun h => ?_, fun h => ?_⟩
   · simpa [h] using congr($(a.mul_spectralPVM_proj_preimage_singleton z) ξ)
   -- Conversely, `(w - z)(a) ξ = 0`, so the diagonal measure of `ξ` lives on the point `z`.
@@ -275,12 +275,25 @@ theorem spectralPVM_proj_preimage_singleton_apply_eq_self_iff (z : ℂ) (ξ : H)
 vanishes exactly when `z` is not an eigenvalue of the normal operator `a`. -/
 theorem spectralPVM_proj_preimage_singleton_eq_zero_iff (z : ℂ) :
     a.spectralPVM.proj (Subtype.val ⁻¹' {z})
-        ((measurableSet_singleton z).preimage measurable_subtype_coe) = 0 ↔
+        (measurableSet_preimage_val_singleton z) = 0 ↔
       ∀ x, a x = z • x → x = 0 := by
   refine ⟨fun h x hx => ?_, fun hz => ?_⟩
   · rw [← (a.spectralPVM_proj_preimage_singleton_apply_eq_self_iff z x).mpr hx, h,
       zero_apply]
   · ext ξ
     exact hz _ (by simpa using congr($(a.mul_spectralPVM_proj_preimage_singleton z) ξ))
+
+/-- **Point masses are eigenspaces.** The spectral projection of a point `z` projects onto the
+eigenspace of `a` at `z`. -/
+theorem range_spectralPVM_proj_preimage_singleton (z : ℂ) :
+    LinearMap.range (a.spectralPVM.proj (Subtype.val ⁻¹' {z})
+        (measurableSet_preimage_val_singleton z) : H →ₗ[ℂ] H) =
+      Module.End.eigenspace (a : H →ₗ[ℂ] H) z := by
+  ext ξ
+  rw [Module.End.mem_eigenspace_iff, coe_coe,
+    ← a.spectralPVM_proj_preimage_singleton_apply_eq_self_iff]
+  refine ⟨?_, fun h => ⟨ξ, h⟩⟩
+  rintro ⟨η, rfl⟩
+  exact a.spectralPVM.proj_apply_proj _ _ η
 
 end ContinuousLinearMap

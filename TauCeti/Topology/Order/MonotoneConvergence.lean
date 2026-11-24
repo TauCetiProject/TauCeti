@@ -40,7 +40,7 @@ theorem tendsto_atTop_ciSup_of_monotoneOn_Ici [ConditionallyCompletePartialOrder
   by_cases h : (atTop : Filter ι).NeBot
   · have := (atTop_neBot_iff.1 h).2
     exact tendsto_comp_val_Ici_atTop.mp <|
-      tendsto_atTop_ciSup (fun s t hst ↦ hf s.2 t.2 hst) (by rwa [← image_eq_range])
+      tendsto_atTop_ciSup (fun s t hst ↦ hf s.property t.property hst) (by rwa [← image_eq_range])
   · rw [not_neBot.1 h]
     exact tendsto_bot
 
@@ -52,7 +52,7 @@ theorem tendsto_atTop_ciInf_of_antitoneOn_Ici [ConditionallyCompletePartialOrder
   by_cases h : (atTop : Filter ι).NeBot
   · have := (atTop_neBot_iff.1 h).2
     exact tendsto_comp_val_Ici_atTop.mp <|
-      tendsto_atTop_ciInf (fun s t hst ↦ hf s.2 t.2 hst) (by rwa [← image_eq_range])
+      tendsto_atTop_ciInf (fun s t hst ↦ hf s.property t.property hst) (by rwa [← image_eq_range])
   · rw [not_neBot.1 h]
     exact tendsto_bot
 

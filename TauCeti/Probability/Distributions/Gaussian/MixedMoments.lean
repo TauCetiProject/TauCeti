@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.Moments
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Fourth mixed moments of Gaussian laws
@@ -32,7 +33,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal Nat
+open scoped Nat
 
 namespace ProbabilityTheory.IsGaussian
 
@@ -43,19 +44,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 including real or complex observables and the empty product. -/
 theorem integrable_prod_clm (μ : Measure E) [IsGaussian μ]
     {ι 𝕜 : Type*} [RCLike 𝕜] (s : Finset ι) (L : ι → E →L[ℝ] 𝕜) (c : ι → 𝕜) :
-    Integrable (fun x ↦ ∏ i ∈ s, (L i x + c i)) μ := by
-  classical
-  by_cases hs : s = ∅
-  · simp [hs]
-  have hcard : (s.card : ℝ≥0∞) ≠ 0 := by
-    exact_mod_cast Finset.card_ne_zero.mpr (Finset.nonempty_iff_ne_empty.mpr hs)
-  have hLp := MemLp.fun_prod (s := s) (p := fun _ ↦ (s.card : ℝ≥0∞))
-    (fun i _ ↦ ((memLp_map_measure_iff (by fun_prop) (by fun_prop)).1
-      (IsGaussian.memLp_id (μ.map (L i)) _ (by simp))).add (memLp_const (c i)))
-  have hexp : (∑ _i ∈ s, (s.card : ℝ≥0∞)⁻¹)⁻¹ = 1 := by
-    simp [nsmul_eq_mul, hcard, ENNReal.mul_inv_cancel]
-  rw [hexp] at hLp
-  exact memLp_one_iff_integrable.mp hLp
+    Integrable (fun x ↦ ∏ i ∈ s, (L i x + c i)) μ :=
+  TauCeti.integrable_fun_prod_of_memLp_card fun i _ ↦
+    ((memLp_map_measure_iff (by fun_prop) (by fun_prop)).1
+      (IsGaussian.memLp_id (μ.map (L i)) _ (by simp))).add (memLp_const (c i))
 
 /-- An affine linear observable times a finite product of affine linear observables is
 integrable under a Gaussian measure, for real or complex observables. -/

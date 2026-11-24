@@ -42,6 +42,7 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.volumeForm_one`: the volume form `σ¹ / 1!` is `σ` itself.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
 * `TauCeti.SmoothTwoForm.volumeForm_smul`: the volume form of `c • σ` is `cⁿ` times that of `σ`.
@@ -88,8 +89,16 @@ def volumeForm (σ : SmoothTwoForm I M) (n : ℕ) : SmoothForm I M ℝ (2 * n) :
 /-- The symplectic volume form at a point is `σⁿ / n!` for the value of `σ` there. -/
 @[simp]
 theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
-    (σ.volumeForm n).1 x = ((n.factorial : ℝ)⁻¹) • (σ.1 x).wedgePow n := by
+    (σ.volumeForm n).val x = ((n.factorial : ℝ)⁻¹) • (σ.val x).wedgePow n := by
   rw [volumeForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply]
+
+/-- The symplectic volume form `σ¹ / 1!` is the two-form `σ` itself. On a surface it is the
+volume form of `σ`. -/
+@[simp]
+theorem volumeForm_one (σ : SmoothTwoForm I M) : σ.volumeForm 1 = σ := by
+  ext x v
+  simp only [volumeForm_apply, Nat.factorial_one, Nat.cast_one, inv_one, one_smul,
+    ContinuousAlternatingMap.wedgePow_one_apply, Fin.cast_refl, Function.comp_id]
 
 /-- Rescaling the two-form by `c` rescales its symplectic volume form by `cⁿ`. -/
 @[simp]
@@ -105,11 +114,11 @@ theorem volumeForm_smul (c : ℝ) (σ : SmoothTwoForm I M) (n : ℕ) :
 theorem IsNondegenerate.volumeForm_apply_reindex (h : σ.IsNondegenerate) {x : M}
     {b : Basis (Fin n × Fin 2) ℝ (TangentSpace I x)}
     (hb : (h.symplecticFormAt x).IsDarbouxBasis b) :
-    (σ.volumeForm n).1 x (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
+    (σ.volumeForm n).val x (b.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2)))) =
       1 := by
-  have hσ (v w : TangentSpace I x) : σ.1 x ![v, w] = h.symplecticFormAt x v w := by
+  have hσ (v w : TangentSpace I x) : σ.val x ![v, w] = h.symplecticFormAt x v w := by
     rw [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
-  have hval := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (σ.1 x) (m := n) b
+  have hval := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (σ.val x) (m := n) b
     (fun i j ↦ by rw [hσ, hb.apply_fst_fst])
     (fun i j ↦ by rw [hσ, hb.apply_fst_snd])
   rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply, Basis.coe_reindex_finProdFinEquiv,
@@ -119,19 +128,19 @@ theorem IsNondegenerate.volumeForm_apply_reindex (h : σ.IsNondegenerate) {x : M
 dimension `2 * n`, a smooth two-form is fiberwise nondegenerate exactly when its volume form
 `σⁿ / n!` vanishes nowhere. -/
 theorem isNondegenerate_iff_volumeForm_apply_ne_zero [FiniteDimensional ℝ E]
-    (hn : finrank ℝ E = 2 * n) : σ.IsNondegenerate ↔ ∀ x, (σ.volumeForm n).1 x ≠ 0 := by
+    (hn : finrank ℝ E = 2 * n) : σ.IsNondegenerate ↔ ∀ x, (σ.volumeForm n).val x ≠ 0 := by
   rw [isNondegenerate_iff_separatingLeft]
   refine forall_congr' fun x ↦ ?_
   rw [volumeForm_apply, smul_ne_zero_iff, and_iff_right (by positivity)]
   simp only [SmoothBundleForm.eval₂_apply]
   -- The tangent space `T_x M` is the model space `E`.
-  exact (ContinuousAlternatingMap.wedgePow_ne_zero_iff hn (σ.1 x)).symm
+  exact (ContinuousAlternatingMap.wedgePow_ne_zero_iff hn (σ.val x)).symm
 
 /-- **The symplectic volume form of a nondegenerate two-form vanishes nowhere**, on a manifold
 modelled on a space of dimension `2 * n`. -/
 theorem IsNondegenerate.volumeForm_apply_ne_zero [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) (hn : finrank ℝ E = 2 * n) (x : M) :
-    (σ.volumeForm n).1 x ≠ 0 :=
+    (σ.volumeForm n).val x ≠ 0 :=
   (isNondegenerate_iff_volumeForm_apply_ne_zero hn).1 h x
 
 /-- The **symplectic orientation** of a manifold modelled on a space of dimension `2 * n` with a
@@ -139,7 +148,7 @@ fiberwise nondegenerate two-form `σ`: the orientation on which the volume form 
 positive. -/
 def IsNondegenerate.volumeOrientation [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
     (hn : finrank ℝ E = 2 * n) : Manifold.Orientation I M (Fin (2 * n)) :=
-  Manifold.Orientation.ofTopForm hn (σ.volumeForm n).1
+  Manifold.Orientation.ofTopForm hn (σ.volumeForm n).val
     ((σ.volumeForm n).isSmoothForm.of_le bot_le) (h.volumeForm_apply_ne_zero hn)
 
 /-- A tangent basis is positive for the symplectic orientation exactly when the symplectic volume
@@ -148,7 +157,7 @@ theorem IsNondegenerate.orientation_eq_orientationAt_volumeOrientation_iff [Fini
     (h : σ.IsNondegenerate) (hn : finrank ℝ E = 2 * n) {x : M}
     (b : Basis (Fin (2 * n)) ℝ (TangentSpace I x)) :
     b.orientation = Manifold.Orientation.orientationAt (h.volumeOrientation hn) x ↔
-      0 < (σ.volumeForm n).1 x b :=
+      0 < (σ.volumeForm n).val x b :=
   Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff hn _ _ b
 
 /-- **The symplectic orientation is the linear symplectic orientation on each tangent space**:
@@ -170,10 +179,10 @@ theorem IsNondegenerate.orientationAt_volumeOrientation [FiniteDimensional ℝ E
 then it pulls the volume form `τⁿ / n!` back to `σⁿ / n!`. -/
 theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
     [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-    [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {f : M → N} (hf : mpullback I J f τ.1 = σ.1) :
-    mpullback I J f (τ.volumeForm n).1 = (σ.volumeForm n).1 := by
+    [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {f : M → N} (hf : mpullback I J f τ.val = σ.val) :
+    mpullback I J f (τ.volumeForm n).val = (σ.volumeForm n).val := by
   ext x v
-  have hx : σ.1 x = (τ.1 (f x)).compContinuousLinearMap (mfderiv I J f x) := by
+  have hx : σ.val x = (τ.val (f x)).compContinuousLinearMap (mfderiv I J f x) := by
     ext w
     rw [← hf, mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
       Function.comp_def]

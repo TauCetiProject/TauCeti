@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
+import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Alternating pullbacks and postcompositions
@@ -41,6 +42,8 @@ form a complex vector space, and these operations are complex-linear or conjugat
   `A` and then along `B` is pulling back along `A.comp B`.
 * `ContinuousAlternatingMap.compContinuousLinearMap_fst_add_snd_apply`: the two-form
   `pr₁^* ω₁ + pr₂^* ω₂` on a product evaluated on two vectors.
+* `ContinuousAlternatingMap.map_linearDependent`: an alternating map vanishes on linearly
+  dependent families.
 -/
 
 public section
@@ -181,11 +184,17 @@ theorem compContinuousLinearMap_fst_add_snd_apply (ω₁ : V [⋀^Fin 2]→L[R] 
     (ω₁.compContinuousLinearMap (ContinuousLinearMap.fst R V W) +
         ω₂.compContinuousLinearMap (ContinuousLinearMap.snd R V W)) ![p, q] =
       ω₁ ![p.1, q.1] + ω₂ ![p.2, q.2] := by
-  have h₁ : Prod.fst ∘ ![p, q] = ![p.1, q.1] := by ext i; fin_cases i <;> rfl
-  have h₂ : Prod.snd ∘ ![p, q] = ![p.2, q.2] := by ext i; fin_cases i <;> rfl
-  simp [h₁, h₂]
+  simp [Matrix.comp_vec2]
 
 end Prod
+
+/-- A continuous alternating map vanishes on a linearly dependent family. -/
+theorem map_linearDependent {R M N ι : Type*} [Ring R] [IsDomain R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    [Module.IsTorsionFree R N] (f : M [⋀^ι]→L[R] N) (v : ι → M) (h : ¬LinearIndependent R v) :
+    f v = 0 := by
+  rw [← coe_toAlternatingMap]
+  exact f.toAlternatingMap.map_linearDependent v h
 
 end ContinuousAlternatingMap
 
