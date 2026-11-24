@@ -101,10 +101,10 @@ variable [Fintype ι]
 /-- The **block row** of a finite family `a = (aₖ)` of maps `E →ₗ[𝕜] F`: the map
 `y ↦ ∑ₖ aₖ yₖ` from the Euclidean product of copies of `E`, that is, the block row matrix with
 entries `aₖ`. It is linear in the family. -/
-noncomputable def blockRow : (ι → E →ₗ[𝕜] F) →ₗ[𝕜] PiLp 2 (fun _ : ι ↦ E) →ₗ[𝕜] F where
-  toFun a := ∑ k, a k ∘ₗ PiLp.projₗ 2 (fun _ : ι ↦ E) k
-  map_add' a b := by simp [Finset.sum_add_distrib, add_comp]
-  map_smul' c a := by simp [Finset.smul_sum, smul_comp]
+noncomputable def blockRow : (ι → E →ₗ[𝕜] F) →ₗ[𝕜] PiLp 2 (fun _ : ι ↦ E) →ₗ[𝕜] F := by
+  classical
+  exact lcomp 𝕜 F (WithLp.linearEquiv 2 𝕜 (ι → E)).toLinearMap ∘ₗ
+    (lsum 𝕜 (fun _ : ι ↦ E) 𝕜).toLinearMap
 
 @[simp]
 theorem blockRow_apply (a : ι → E →ₗ[𝕜] F) (y : PiLp 2 fun _ : ι ↦ E) :
@@ -119,27 +119,30 @@ theorem norm_blockColumn_apply_sq (a : ι → E →ₗ[𝕜] F) (x : E) :
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
 /-- The adjoint of the block row of `(aₖ)` is the block column of `(aₖ†)`. -/
+@[simp]
 theorem adjoint_blockRow (a : ι → E →ₗ[𝕜] F) :
     (blockRow a).adjoint = blockColumn fun k ↦ (a k).adjoint := by
   refine ((eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
   simp [PiLp.inner_apply, inner_sum, adjoint_inner_left]
 
 /-- The adjoint of the block column of `(aₖ)` is the block row of `(aₖ†)`. -/
+@[simp]
 theorem adjoint_blockColumn (a : ι → E →ₗ[𝕜] F) :
     (blockColumn a).adjoint = blockRow fun k ↦ (a k).adjoint := by
-  simpa using (congrArg LinearMap.adjoint (adjoint_blockRow fun k ↦ (a k).adjoint)).symm
+  rw [← adjoint_adjoint (blockRow fun k ↦ (a k).adjoint), adjoint_blockRow]
+  simp only [adjoint_adjoint]
 
 /-- The Gram operator of the block column is the column square `∑ₖ aₖ† aₖ`. -/
 theorem adjoint_blockColumn_comp_blockColumn (a : ι → E →ₗ[𝕜] F) :
     (blockColumn a).adjoint ∘ₗ blockColumn a = ∑ k, (a k).adjoint ∘ₗ a k := by
   ext x
-  simp [adjoint_blockColumn]
+  simp
 
 /-- The target Gram operator of the block row is the row square `∑ₖ aₖ aₖ†`. -/
 theorem blockRow_comp_adjoint_blockRow (a : ι → E →ₗ[𝕜] F) :
     blockRow a ∘ₗ (blockRow a).adjoint = ∑ k, a k ∘ₗ (a k).adjoint := by
   ext x
-  simp [adjoint_blockRow]
+  simp
 
 /-! ### The column and row Schatten norms -/
 
