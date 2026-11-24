@@ -55,6 +55,8 @@ The sum of the lower bounds bounds the support of the product
 and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
 `HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
 of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
+`HahnSeries.commute_C_iff` characterizes when a Hahn series commutes with a constant series `C c`:
+each coefficient commutes with `c`.
 -/
 
 public section
@@ -252,5 +254,12 @@ theorem coeff_pow_nsmul_of_forall_le [Semiring R] {x : HahnSeries Γ R} {a : Γ}
   | succ n ih =>
     rw [pow_succ, succ_nsmul, coeff_mul_add_of_forall_le (nsmul_le_of_mem_support_pow hx n) hx,
       ih, pow_succ]
+
+/-- A Hahn series commutes with the constant series `C c` exactly when each of its coefficients
+commutes with `c`. -/
+theorem commute_C_iff [NonAssocSemiring R] {x : HahnSeries Γ R} {c : R} :
+    Commute x (C c) ↔ ∀ g, Commute (x.coeff g) c := by
+  simp only [commute_iff_eq, HahnSeries.ext_iff, funext_iff, C_apply, coeff_mul_single_zero,
+    coeff_single_zero_mul]
 
 end HahnSeries

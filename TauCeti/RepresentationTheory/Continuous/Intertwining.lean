@@ -31,6 +31,8 @@ one.
   continuous representation, with `Representation.toContRepresentation_toRepresentation` recovering
   the original representation and `ContRepresentation.toRepresentation_toContRepresentation`
   recovering a continuous one.
+* `Representation.toContinuousLinearEquiv`: a group element acts by a continuous linear
+  equivalence, with the same underlying linear map as the original representation.
 
 The file also records that continuous intertwiners from a finitely generated representation to a
 Noetherian one form a finitely generated module, over any commutative ring and without
@@ -216,5 +218,53 @@ theorem toContRepresentation_toRepresentation (ρ : Representation 𝕜 G V) :
 theorem _root_.ContRepresentation.toRepresentation_toContRepresentation
     (π : ContRepresentation 𝕜 G V) : π.toRepresentation.toContRepresentation = π :=
   DFunLike.ext _ _ fun _ ↦ ContinuousLinearMap.ext fun _ ↦ rfl
+
+end Representation
+
+namespace Representation
+
+variable {𝕜 G V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Group G]
+  [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [ContinuousSMul 𝕜 V] [T2Space V] [FiniteDimensional 𝕜 V]
+
+/-- A group element in a finite-dimensional Hausdorff representation acts by a continuous linear
+equivalence. This equips the linear equivalence from `Representation.asGroupHom` with automatic
+continuity. -/
+noncomputable def toContinuousLinearEquiv (ρ : Representation 𝕜 G V) (g : G) : V ≃L[𝕜] V :=
+  (LinearMap.GeneralLinearGroup.toLinearEquiv (ρ.asGroupHom g)).toContinuousLinearEquiv
+
+/-- The continuous linear equivalence associated to a group element has its original linear
+map. -/
+@[simp]
+theorem toContinuousLinearEquiv_toLinearMap (ρ : Representation 𝕜 G V) (g : G) :
+    (ρ.toContinuousLinearEquiv g : V →ₗ[𝕜] V) = ρ g :=
+  (rfl)
+
+/-- The continuous linear equivalence associated to a group element acts as the representation. -/
+@[simp]
+theorem toContinuousLinearEquiv_apply (ρ : Representation 𝕜 G V) (g : G) (v : V) :
+    ρ.toContinuousLinearEquiv g v = ρ g v :=
+  (rfl)
+
+/-- The identity element acts by the identity continuous linear equivalence. -/
+@[simp]
+theorem toContinuousLinearEquiv_one (ρ : Representation 𝕜 G V) :
+    ρ.toContinuousLinearEquiv 1 = ContinuousLinearEquiv.refl 𝕜 V := by
+  ext v
+  simp
+
+/-- The inverse equivalence acts as the inverse group element of the representation. -/
+@[simp]
+theorem toContinuousLinearEquiv_symm_apply (ρ : Representation 𝕜 G V) (g : G) (v : V) :
+    (ρ.toContinuousLinearEquiv g).symm v = ρ g⁻¹ v := by
+  apply (ρ.toContinuousLinearEquiv g).injective
+  simp
+
+/-- Multiplication acts by composition of the associated continuous linear equivalences. -/
+theorem toContinuousLinearEquiv_mul (ρ : Representation 𝕜 G V) (g h : G) :
+    ρ.toContinuousLinearEquiv (g * h) =
+      (ρ.toContinuousLinearEquiv h).trans (ρ.toContinuousLinearEquiv g) := by
+  ext v
+  simp
 
 end Representation

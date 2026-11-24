@@ -135,10 +135,9 @@ theorem isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
       hRunge.isCompact hRunge.subset hU hKU hf hε,
     fun happrox => ?_⟩
   refine isRungeCompactPair_iff.mpr ⟨hΩ, hK, hKΩ,
-    hΩ.isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt fun a ha ε hε => ?_⟩
-  exact happrox {a}ᶜ isOpen_compl_singleton (fun z hz hza => ha.2 (hza ▸ hz))
-    (fun z => (z - a)⁻¹)
-    ((differentiableOn_id.sub (differentiableOn_const a)).inv fun _ hz => sub_ne_zero.mpr hz) ε hε
+    isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt hΩ fun a ha ↦
+      happrox {a}ᶜ isOpen_compl_singleton (fun z hz hza ↦ ha.2 (hza ▸ hz)) _
+        ((differentiableOn_id.sub_const a).inv fun _ hz ↦ sub_ne_zero.2 hz)⟩
 
 /-- For an open set `Ω ⊆ ℂ` and a compact subset `K ⊆ Ω`, `holomorphicHull Ω K` coincides with
 `TauCeti.fillIn K Ω`, the union of `K` and all connected components of `Ω \ K` whose closures are
