@@ -23,8 +23,8 @@ action descends to a faithful, transitive action of the projective unitary group
 
 `PU(n + 1) = U(n + 1) ⧸ {c • 1 : |c| = 1}`
 
-(`TauCeti.ProjectiveUnitaryGroup (Fin (n + 1)) ℂ`) on `CPⁿ`. So `PU(n + 1)` acts by symmetries of
-the Fubini–Study Hermitian form, which unitary matrices preserve
+(`TauCeti.ProjectiveUnitaryGroup (Fin (n + 1)) ℂ`) on `CPⁿ`. Separately, unitary matrices
+preserve the homogeneous Fubini–Study Hermitian form on `ℂⁿ⁺¹`
 (`LinearIsometry.fubiniStudyHermitian_map_map_map`).
 
 The kernel computation and the descent to a faithful action follow Mathlib's treatment of the
@@ -225,6 +225,7 @@ theorem coe_stabilizerBasePointEquiv_symm (B : unitaryGroup (Fin n) ℂ) :
 
 /-- The isomorphism of the stabilizer of `[e₀]` in `PU(n + 1)` with `U(n)` sends the class of
 `diag(c, B)` to `star c • B`. -/
+@[simp]
 theorem stabilizerBasePointEquiv_mk_prodBlockSucc (cB : unitary ℂ × unitaryGroup (Fin n) ℂ)
     (h : (UnitaryGroup.prodBlockSucc ℂ n cB : ProjectiveUnitaryGroup (Fin (n + 1)) ℂ) ∈
       MulAction.stabilizer (ProjectiveUnitaryGroup (Fin (n + 1)) ℂ) (basePoint n)) :

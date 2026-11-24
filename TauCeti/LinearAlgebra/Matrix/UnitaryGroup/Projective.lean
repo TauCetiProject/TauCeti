@@ -166,6 +166,14 @@ theorem prodQuotientDiagonalEquiv_mk (cB : unitary R × unitaryGroup n R) :
       scalarHom n R (star cB.1) * cB.2 :=
   (rfl)
 
+/-- The inverse of `(U(1) × U(n)) ⧸ U(1)_diag ≃* U(n)` sends `B` to the class of `(1, B)`. -/
+@[simp]
+theorem prodQuotientDiagonalEquiv_symm_apply (B : unitaryGroup n R) :
+    (prodQuotientDiagonalEquiv n R).symm B =
+      (((1 : unitary R), B) : (unitary R × unitaryGroup n R) ⧸
+        ((MonoidHom.id (unitary R)).prod (scalarHom n R)).range) :=
+  (MulEquiv.symm_apply_eq _).2 (by simp)
+
 end Matrix.UnitaryGroup
 
 namespace TauCeti
