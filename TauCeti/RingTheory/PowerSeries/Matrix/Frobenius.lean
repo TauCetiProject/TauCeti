@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.IsAlgClosed.FrobeniusFixedPoints
-public import TauCeti.RingTheory.PowerSeries.MatrixGauge
+public import TauCeti.RingTheory.PowerSeries.Matrix.Gauge
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!

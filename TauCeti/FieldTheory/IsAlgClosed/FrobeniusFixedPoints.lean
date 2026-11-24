@@ -10,7 +10,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.FieldTheory.Perfect
-import Mathlib.LinearAlgebra.Quotient.Basic
+import TauCeti.LinearAlgebra.LinearIndependent.Iterate
+import TauCeti.LinearAlgebra.LinearMap.FixedPoints
 
 /-!
 # Fixed vectors of Frobenius-semilinear maps over algebraically closed fields
@@ -130,70 +131,6 @@ end IsAlgClosed
 namespace LinearMap
 
 variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V]
-
-/-- For a map `F` and a nonzero vector `v` of a finite-dimensional space, some initial segment
-`v, F v, …, Fⁿ v` of the orbit is linearly independent and spans `Fⁿ⁺¹ v`. -/
-private theorem exists_linearIndependent_iterate [FiniteDimensional k V] (F : V → V) {v : V}
-    (hv : v ≠ 0) :
-    ∃ n, LinearIndependent k (fun i : Fin (n + 1) ↦ F^[i] v) ∧
-      F^[n + 1] v ∈ span k (Set.range fun i : Fin (n + 1) ↦ F^[i] v) := by
-  classical
-  have key (m : ℕ) (h : ∀ j < m, F^[j] v ∉ span k (Set.range fun i : Fin j ↦ F^[i] v)) :
-      LinearIndependent k (fun i : Fin m ↦ F^[i] v) := by
-    induction m with
-    | zero => exact linearIndependent_empty_type
-    | succ m ih =>
-      have hsnoc : (fun i : Fin (m + 1) ↦ F^[i] v) =
-          Fin.snoc (fun i : Fin m ↦ F^[i] v) (F^[m] v) := by
-        funext i
-        refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> simp
-      rw [hsnoc, linearIndependent_finSnoc]
-      exact ⟨ih fun j hj ↦ h j (by omega), h m (by omega)⟩
-  have hex : ∃ m, F^[m] v ∈ span k (Set.range fun i : Fin m ↦ F^[i] v) := by
-    by_contra! h
-    have := (key (finrank k V + 1) fun j _ ↦ h j).fintype_card_le_finrank
-    simp at this
-  obtain ⟨m, hm, hmin⟩ : ∃ m, F^[m] v ∈ span k (Set.range fun i : Fin m ↦ F^[i] v) ∧
-      ∀ j < m, F^[j] v ∉ span k (Set.range fun i : Fin j ↦ F^[i] v) :=
-    ⟨Nat.find hex, Nat.find_spec hex, fun j hj ↦ Nat.find_min hex hj⟩
-  obtain _ | n := m
-  · simp [hv] at hm
-  · exact ⟨n, key _ hmin, hm⟩
-
-/-- The span of the fixed vectors of a semilinear map is mapped into itself. -/
-private theorem span_fixedPoints_le_comap {σ : k →+* k} (F : V →ₛₗ[σ] V) :
-    span k (fixedPoints F) ≤ (span k (fixedPoints F)).comap F :=
-  span_le.2 fun x hx ↦ by
-    rw [SetLike.mem_coe, mem_comap, hx.eq]
-    exact subset_span hx
-
-/-- For an injective `σ`-semilinear map `F` with `σ` surjective, the map induced on the quotient by
-the span of the fixed vectors is injective. -/
-private theorem injective_mapQ_span_fixedPoints {σ : k →+* k} (hσ : Surjective σ)
-    {F : V →ₛₗ[σ] V} (hF : Injective F) :
-    Injective ((span k (fixedPoints F)).mapQ _ F (span_fixedPoints_le_comap F)) := by
-  set U := span k (fixedPoints F)
-  -- every element of `U` is the image of an element of `U`
-  have hUsurj (u : V) (hu : u ∈ U) : ∃ u' ∈ U, F u' = u := by
-    induction hu using span_induction with
-    | mem x hx => exact ⟨x, subset_span hx, hx⟩
-    | zero => exact ⟨0, zero_mem _, map_zero F⟩
-    | add x y _ _ hx hy =>
-      obtain ⟨x', hx', rfl⟩ := hx
-      obtain ⟨y', hy', rfl⟩ := hy
-      exact ⟨x' + y', add_mem hx' hy', map_add F _ _⟩
-    | smul c x _ hx =>
-      obtain ⟨x', hx', rfl⟩ := hx
-      obtain ⟨c', rfl⟩ := hσ c
-      exact ⟨c' • x', smul_mem _ _ hx', map_smulₛₗ F _ _⟩
-  rw [injective_iff_map_eq_zero]
-  intro y hy
-  obtain ⟨w, rfl⟩ := Submodule.Quotient.mk_surjective U y
-  rw [mapQ_apply, Submodule.Quotient.mk_eq_zero] at hy
-  obtain ⟨u', hu', hFu⟩ := hUsurj _ hy
-  rw [Submodule.Quotient.mk_eq_zero, ← hF hFu]
-  exact hu'
-
 variable {p f : ℕ} [Fact p.Prime] [CharP k p] [IsAlgClosed k]
 
 /-- **A nonzero fixed vector.** Over an algebraically closed field `k` of characteristic `p`, an
@@ -206,7 +143,7 @@ theorem exists_ne_zero_isFixedPt_of_injective [FiniteDimensional k V] [Nontrivia
   have hq : 1 < q := Nat.one_lt_pow hf (Fact.out : p.Prime).one_lt
   have hσ (c : k) : _root_.iterateFrobenius k p f c = c ^ q := _root_.iterateFrobenius_def p f c
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  obtain ⟨n, hli, hspan⟩ := exists_linearIndependent_iterate (k := k) F hv
+  obtain ⟨n, hli, hspan⟩ := exists_linearIndependent_iterate_mem_span (K := k) F hv
   obtain ⟨a', ha'⟩ := (mem_span_range_iff_exists_fun k).1 hspan
   -- the coefficients of the relation `Fⁿ⁺¹ v = ∑ aᵢ Fⁱ v`, indexed by `ℕ`
   set a : ℕ → k := fun i ↦ if h : i < n + 1 then a' ⟨i, h⟩ else 0
@@ -230,12 +167,13 @@ theorem exists_ne_zero_isFixedPt_of_injective [FiniteDimensional k V] [Nontrivia
       sum_pow_char_pow p f _ _
     rw [hpow]
     simp only [hd_def]
-    rw [Finset.sum_range_succ _ (j + 1), Nat.sub_self, pow_zero, pow_one, zero_add, pow_one]
+    rw [Finset.sum_range_succ _ (j + 1)]
     congr 1
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    have hi : i ≤ j := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-    rw [show j + 1 - i = j - i + 1 by omega, mul_pow, ← pow_mul (a i), ← pow_mul t, ← pow_succ,
-      ← pow_succ]
+    · refine Finset.sum_congr rfl fun i hi ↦ ?_
+      have hi : i ≤ j := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+      rw [show j + 1 - i = j - i + 1 by omega]
+      ring
+    · simp
   have hdn : d n = t := ht
   refine ⟨∑ j ∈ Finset.range (n + 1), d j • F^[j] v, fun hx ↦ ht0 ?_, ?_⟩
   · have := Fintype.linearIndependent_iff.1 hli (fun i ↦ d i)
