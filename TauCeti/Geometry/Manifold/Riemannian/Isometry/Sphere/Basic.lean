@@ -41,9 +41,10 @@ manifold. With `E = EuclideanSpace ℝ (Fin 4)` this is the spherical model geom
   on it.
 * `TauCeti.exists_linearIsometryEquiv_unitSphereEquiv_apply_eq_self_and_mfderiv_eq`: equal-norm
   tangent vectors at the same point are related by the differential of a sphere restriction fixing
-  that point. The ambient images under the differential of inclusion are related by the same
-  linear isometry, using `TauCeti.exists_linearIsometryEquiv_apply_eq_self_and_apply_eq` and
-  Mathlib's `Submodule.reflection_sub`.
+  that point.
+
+The tangent-vector transitivity of the point stabilizer is adapted from Giada Franz's local
+formalization.
 
 ## References
 
@@ -185,11 +186,14 @@ instance isPretransitive_isom_sphere :
   .of_smul_eq LinearIsometryEquiv.unitSphereIsomHom fun {e x} ↦ e.unitSphereIsomHom_smul x
 
 /-- Equal-norm tangent vectors at a point of the round sphere are related by the differential
-of an ambient linear isometry's sphere restriction fixing that point. The fixed-point equality
+of an ambient linear isometry's sphere restriction fixing that point. The same isometry sends the
+first vector's image under the differential of inclusion to the second's. The fixed-point equality
 identifies the target tangent space with the source tangent space. -/
 theorem exists_linearIsometryEquiv_unitSphereEquiv_apply_eq_self_and_mfderiv_eq
     (x : sphere (0 : E) 1) {u u' : TangentSpace (𝓡 n) x} (h : ‖u‖ = ‖u'‖) :
     ∃ (e : E ≃ₗᵢ[ℝ] E) (hx : e.unitSphereEquiv x = x),
+      e (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x u) =
+        mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x u' ∧
       (hx ▸ mfderiv (𝓡 n) (𝓡 n) e.unitSphereEquiv x u) = u' := by
   obtain ⟨e, he, hu⟩ := exists_linearIsometryEquiv_apply_eq_self_and_apply_eq (x : E)
     (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x u)
@@ -198,7 +202,7 @@ theorem exists_linearIsometryEquiv_unitSphereEquiv_apply_eq_self_and_mfderiv_eq
     (by simp only [inner_coe_mvfderiv_subtypeVal_sphere])
   have hx : e.unitSphereEquiv x = x :=
     Subtype.ext (by simpa only [LinearIsometryEquiv.coe_unitSphereEquiv_apply] using he)
-  refine ⟨e, hx, ?_⟩
+  refine ⟨e, hx, hu, ?_⟩
   have hd := e.mvfderiv_coe_sphere_unitSphereEquiv (k := n) x u
   rw [hu] at hd
   suffices ∀ (y : sphere (0 : E) 1) (hy : y = x) (v : TangentSpace (𝓡 n) y),

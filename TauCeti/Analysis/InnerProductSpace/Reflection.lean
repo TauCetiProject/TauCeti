@@ -22,9 +22,10 @@ import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
 reflection across `K`, as a bounded operator, as `2 P_K - 1`, and a linear isometry mapping `K`
 onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`).
-`TauCeti.exists_linearIsometryEquiv_apply_eq_self_and_apply_eq` uses Mathlib's
-`Submodule.reflection_sub` to send equal-norm vectors with the same inner product against a fixed
-vector to one another while fixing that vector. Two vectors of
+Equal-norm vectors with the same inner product against a fixed vector are related by a linear
+isometry fixing that vector (`TauCeti.exists_linearIsometryEquiv_apply_eq_self_and_apply_eq`).
+This fixed-vector isometry theorem is adapted from Giada Franz's local formalization and builds on
+Mathlib's `Submodule.reflection_sub`. Two vectors of
 the same norm with a real inner product are exchanged by the reflection in the hyperplane
 orthogonal to their difference (`Submodule.reflection_sub_of_inner_comm`). In Euclidean
 space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
