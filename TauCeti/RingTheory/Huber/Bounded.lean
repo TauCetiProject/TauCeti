@@ -144,15 +144,6 @@ theorem IsBounded.exists_pow_mul_subset {S U : Set M} {a : M} (hS : IsBounded S)
   obtain ⟨n, hn⟩ := ha.exists_pow_mem_of_mem_nhds hV
   exact ⟨n, (Set.mul_subset_mul_right (Set.singleton_subset_iff.mpr hn)).trans hVS⟩
 
-/-- In a `T₁` monoid with zero, an element `x` such that every power `aᵏ` of a topologically
-nilpotent `a` divides `x` with quotient in a fixed bounded set `S` is zero. -/
-theorem IsBounded.eq_zero_of_forall_eq_pow_mul [T1Space M] {S : Set M} (hS : IsBounded S) {a : M}
-    (ha : IsTopologicallyNilpotent a) {x : M} (hx : ∀ k : ℕ, ∃ y ∈ S, x = a ^ k * y) : x = 0 := by
-  by_contra hne
-  obtain ⟨k, hk⟩ := hS.exists_pow_mul_subset ha (isOpen_compl_singleton.mem_nhds (Ne.symm hne))
-  obtain ⟨y, hy, rfl⟩ := hx k
-  exact hk (Set.mul_mem_mul (Set.mem_singleton _) hy) rfl
-
 /-- A family tending to zero, times a family eventually in a bounded set, tends to zero. -/
 theorem IsBounded.tendsto_mul {S : Set M} (hS : IsBounded S) {ι : Type*} {l : Filter ι}
     {a b : ι → M} (ha : Tendsto a l (𝓝 0)) (hb : ∀ᶠ i in l, b i ∈ S) :

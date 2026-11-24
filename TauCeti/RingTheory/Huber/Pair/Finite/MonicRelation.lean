@@ -142,7 +142,7 @@ private theorem module_finite_topologicalClosure (φ : A →+* B) (hφ : Continu
   have hu := hϖ.map hφ
   have htB₀ (i : Fin n) : t i ∈ B₀ :=
     hB₀ ▸ Subring.le_topologicalClosure _ (Subring.subset_closure (Or.inr ⟨i, rfl⟩))
-  set J : Ideal B₀ := (Ideal.span {ϖ}).map (algebraMap P.ringOfDefinition B₀)
+  set J : Ideal B₀ := (Ideal.span {ϖ}).map (algebraMap P.ringOfDefinition B₀) with hJdef
   -- the classes of the `tᵢ` modulo `J` are integral, since a power of `pᵢ(tᵢ)` lies in `ϖ B₀`
   have hint (i : Fin n) : IsIntegral P.ringOfDefinition (Ideal.Quotient.mk J ⟨t i, htB₀ i⟩) := by
     obtain ⟨N, y, hy, hN⟩ := ((hpt i).eventually_mem
@@ -163,13 +163,13 @@ private theorem module_finite_topologicalClosure (φ : A →+* B) (hφ : Continu
   -- Nakayama's lemma for the `ϖ`-adically complete `A₀` and the `ϖ`-adically separated `B₀`
   have : IsAdicComplete (Ideal.span {ϖ}) P.ringOfDefinition :=
     P.isAdicComplete_span_singleton ϖ hϖ
-  have : IsHausdorff (Ideal.span {ϖ}) B₀ := ⟨fun x hx ↦ Subtype.ext <|
-    hbdd.eq_zero_of_forall_eq_pow_mul hu.isTopologicallyNilpotent fun k ↦ by
-      have hk := SModEq.sub_mem.mp (hx k)
-      rw [sub_zero, Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul,
-        Submodule.mem_smul_pointwise_iff_exists] at hk
-      obtain ⟨y, -, hy⟩ := hk
-      exact ⟨y, y.property, by simp [← hy, Algebra.smul_def, halg]⟩⟩
+  have hϖB₀ : φ ϖ ∈ B₀ := halg ϖ ▸ (algebraMap P.ringOfDefinition B₀ ϖ).property
+  have hJ : J = Ideal.span {(⟨φ ϖ, hϖB₀⟩ : B₀)} := by
+    rw [hJdef, Ideal.map_span, Set.image_singleton]
+    exact congrArg (fun b ↦ Ideal.span {b}) (Subtype.ext (halg ϖ))
+  have : IsHausdorff J B₀ := hJ ▸ (B₀.isAdic_span_singleton_of_isOpen_of_isBounded hopen hbdd hu
+    hϖB₀).isHausdorff_iff.mpr inferInstance
+  have : IsHausdorff (Ideal.span {ϖ}) B₀ := IsHausdorff.map_algebraMap_iff.mp this
   have : Module.Finite P.ringOfDefinition
       (B₀ ⧸ (Ideal.span {ϖ} • ⊤ : Submodule P.ringOfDefinition B₀)) := by
     rw [Ideal.smul_top_eq_map]
