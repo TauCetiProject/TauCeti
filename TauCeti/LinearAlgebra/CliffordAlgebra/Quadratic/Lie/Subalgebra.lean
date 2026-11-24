@@ -59,6 +59,8 @@ scope.
   quadratic elements.
 * `CliffordAlgebra.map_mem_quadraticLieSubalgebra`: the algebra map induced by a quadratic
   isometry preserves the quadratic elements.
+* `CliffordAlgebra.quadraticLieSubalgebraCongr`: an isometric equivalence of quadratic forms
+  induces a Lie algebra equivalence of their quadratic elements.
 * `CliffordAlgebra.quadraticLieSubalgebra_le_evenOdd_zero`,
   `CliffordAlgebra.quadraticLieSubalgebra_le_even` and
   `CliffordAlgebra.quadraticLieSubalgebra_le_filtration_two`: the quadratic elements are
@@ -290,6 +292,82 @@ theorem map_mem_quadraticLieSubalgebra (f : Q →qᵢ Q₂) {x : CliffordAlgebra
         LieSubalgebra.mem_toSubmodule]
       exact bivector_mem_quadraticLieSubalgebra Q₂ _ _
   exact key hx
+
+/-- An isometric equivalence carries the quadratic elements onto the quadratic elements. -/
+private theorem map_quadraticLieSubalgebra_equivOfIsometry (e : Q.IsometryEquiv Q₂) :
+    (quadraticLieSubalgebra Q).map ((equivOfIsometry e).toLieEquiv :
+      CliffordAlgebra Q →ₗ⁅R⁆ CliffordAlgebra Q₂) = quadraticLieSubalgebra Q₂ := by
+  ext y
+  rw [LieSubalgebra.mem_map]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact map_mem_quadraticLieSubalgebra e.toIsometry hx
+  · intro hy
+    refine ⟨equivOfIsometry e.symm y, map_mem_quadraticLieSubalgebra e.symm.toIsometry hy, ?_⟩
+    rw [LieEquiv.coe_toLieHom, AlgEquiv.toLieEquiv_apply, ← equivOfIsometry_symm,
+      AlgEquiv.apply_symm_apply]
+
+/-- **Transport of the quadratic elements along an isometry.** An isometric equivalence
+`e : Q.IsometryEquiv Q₂` induces a Lie algebra equivalence between the quadratic elements of the
+two Clifford algebras: the restriction of `CliffordAlgebra.equivOfIsometry e`. -/
+noncomputable def quadraticLieSubalgebraCongr (e : Q.IsometryEquiv Q₂) :
+    quadraticLieSubalgebra Q ≃ₗ⁅R⁆ quadraticLieSubalgebra Q₂ :=
+  LieEquiv.ofSubalgebras _ _ (equivOfIsometry e).toLieEquiv
+    (map_quadraticLieSubalgebra_equivOfIsometry e)
+
+/-- The quadratic element underlying the transport is the image under the induced Clifford map. -/
+@[simp]
+theorem coe_quadraticLieSubalgebraCongr_apply (e : Q.IsometryEquiv Q₂)
+    (x : quadraticLieSubalgebra Q) :
+    (quadraticLieSubalgebraCongr e x : CliffordAlgebra Q₂) = map e.toIsometry x := by
+  rw [quadraticLieSubalgebraCongr, LieEquiv.ofSubalgebras_apply, AlgEquiv.toLieEquiv_apply,
+    equivOfIsometry_apply]
+
+/-- The transport sends the Clifford bivector of `a` and `b` to the bivector of their images. -/
+@[simp]
+theorem quadraticLieSubalgebraCongr_bivector (e : Q.IsometryEquiv Q₂) (a b : M) :
+    quadraticLieSubalgebraCongr e ⟨bivector Q a b, bivector_mem_quadraticLieSubalgebra Q a b⟩ =
+      ⟨bivector Q₂ (e a) (e b), bivector_mem_quadraticLieSubalgebra Q₂ (e a) (e b)⟩ := by
+  ext
+  rw [coe_quadraticLieSubalgebraCongr_apply, map_bivector,
+    QuadraticMap.IsometryEquiv.toIsometry_apply, QuadraticMap.IsometryEquiv.toIsometry_apply]
+
+/-- The transport intertwines the commutator actions on the Clifford generators. -/
+theorem lie_quadraticLieSubalgebraCongr_ι (e : Q.IsometryEquiv Q₂)
+    (x : quadraticLieSubalgebra Q) (m : M) :
+    ⁅(quadraticLieSubalgebraCongr e x : CliffordAlgebra Q₂), ι Q₂ (e m)⁆ =
+      map e.toIsometry ⁅(x : CliffordAlgebra Q), ι Q m⁆ := by
+  rw [coe_quadraticLieSubalgebraCongr_apply, Ring.lie_def, Ring.lie_def, map_sub, map_mul,
+    map_mul, map_apply_ι, QuadraticMap.IsometryEquiv.toIsometry_apply]
+
+/-- The identity isometry induces the identity on quadratic elements. -/
+@[simp]
+theorem quadraticLieSubalgebraCongr_refl :
+    quadraticLieSubalgebraCongr (QuadraticMap.IsometryEquiv.refl Q) = LieEquiv.refl := by
+  ext x
+  rw [coe_quadraticLieSubalgebraCongr_apply, ← equivOfIsometry_apply, equivOfIsometry_refl,
+    AlgEquiv.coe_refl, id_eq, LieEquiv.refl_apply]
+
+/-- The inverse isometry induces the inverse transport. -/
+@[simp]
+theorem quadraticLieSubalgebraCongr_symm (e : Q.IsometryEquiv Q₂) :
+    (quadraticLieSubalgebraCongr e).symm = quadraticLieSubalgebraCongr e.symm := by
+  ext x
+  rw [quadraticLieSubalgebraCongr, LieEquiv.ofSubalgebras_symm_apply,
+    AlgEquiv.toLieEquiv_symm_apply, equivOfIsometry_symm, equivOfIsometry_apply,
+    coe_quadraticLieSubalgebraCongr_apply]
+
+/-- A composite isometry induces the composite transport. -/
+@[simp]
+theorem quadraticLieSubalgebraCongr_trans {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e₁ : Q.IsometryEquiv Q₂) (e₂ : Q₂.IsometryEquiv Q₃) :
+    (quadraticLieSubalgebraCongr e₁).trans (quadraticLieSubalgebraCongr e₂) =
+      quadraticLieSubalgebraCongr (e₁.trans e₂) := by
+  ext x
+  rw [LieEquiv.trans_apply, coe_quadraticLieSubalgebraCongr_apply,
+    coe_quadraticLieSubalgebraCongr_apply, coe_quadraticLieSubalgebraCongr_apply,
+    ← equivOfIsometry_apply, ← equivOfIsometry_apply, ← equivOfIsometry_apply,
+    ← equivOfIsometry_trans, AlgEquiv.trans_apply]
 
 end Map
 

@@ -58,7 +58,7 @@ theorem pointMap_ofIsogeny_baseChangeFrobenius (P : (W⁄K).toAffine.Point) :
     (ofIsogeny (baseChangeFrobenius K W)).pointMap P =
       Point.map (FiniteField.frobeniusAlgHom F K) P := by
   rw [pointMap_eq_iff, tautologicalPoint_ofIsogeny,
-    ← reductionOfDegreeEqOne_eq_iff _ (pointEquivDegreeOnePlace _ P).2,
+    ← reductionOfDegreeEqOne_eq_iff _ (pointEquivDegreeOnePlace _ P).property,
     reductionOfDegreeEqOne_tautologicalPoint_baseChangeFrobenius]
 
 variable [Algebra.IsAlgebraic F K]

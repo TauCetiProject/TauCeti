@@ -30,11 +30,14 @@ makes the homotopy groups of a Kan complex well defined.
   (`SSet.PtSimplex.Homotopy.relStruct₀`): restricting the homotopy to the `n + 1` nondegenerate
   `(n + 1)`-simplices `SSet.prodStdSimplex₁.ι i` of the prism `Δ[n] ⊗ Δ[1]` gives a chain of
   `RelStruct`s from `q` to `p`.
+* In any simplicial set and for `n = 0`, a homotopy from `p` to `q` restricts to an edge from `p`
+  to `q`, that is, a `RelStruct₀ q p` (`SSet.PtSimplex.Homotopy.relStruct₀Zero`).
 * Products in the sense of `MulStruct` are well defined up to `RelStruct₀`
   (`SSet.PtSimplex.MulStruct.unique`, `SSet.PtSimplex.MulStruct.unique'`), and morphisms of
   simplicial sets carry `MulStruct`s to `MulStruct`s (`SSet.PtSimplex.MulStruct.postcomp`).
 
-The case `n = 0`, where `RelStruct₀` is an edge between vertices, is not treated here.
+Apart from the last comparison, the case `n = 0`, where `RelStruct₀` is an edge between
+vertices, is not treated here.
 
 ## References
 
@@ -288,6 +291,23 @@ noncomputable def relStruct₀ [KanComplex X] : RelStruct₀ p q := by
     | succ i hi => exact hi.trans (ρ h i).relStruct₀
   exact ((this (Fin.last _)).copy rfl (face_last h)).symm
 
+/-- A homotopy from `p` to `q` between pointed `0`-simplices restricts to an edge from `p` to `q`,
+that is, a `RelStruct₀ q p` (see `SSet.PtSimplex.RelStruct₀.equiv₀`). Unlike
+`SSet.PtSimplex.Homotopy.relStruct₀` in positive dimension, this needs no Kan condition. -/
+noncomputable def relStruct₀Zero {p q : X.PtSimplex 0 x} (h : Homotopy p q) :
+    RelStruct₀ q p where
+  map := prodStdSimplex₁.ι 0 ≫ h.h
+  δ_castSucc_map := by
+    rw [prodStdSimplex₁.δ_castSucc_ι_assoc, Fin.castSucc_zero,
+      prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_zero, h.h₁]
+  δ_succ_map := by
+    -- `(0 : Fin 1).succ` is `Fin.last 1` by computation, which `rw` cannot see.
+    rw [prodStdSimplex₁.δ_succ_ι_assoc]
+    exact (congrArg (· ≫ h.h)
+      (prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_last (p := 0))).trans h.h₀
+  δ_map_of_lt j hj := absurd hj (Fin.not_lt_zero _)
+  δ_map_of_gt j hj := absurd hj (not_lt.2 (Fin.le_last j))
+
 end Homotopy
 
 namespace RelStruct₀
@@ -314,6 +334,31 @@ private lemma stdSimplex_map_comp_map_eq_const {d : ℕ} (θ : ⦋d⦌ ⟶ ⦋n 
     rw [Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc, hδ, hδ,
       (by simpa using h.δ_castSucc_map : stdSimplex.δ 0 ≫ h.map = p.map), p.δ_map, comp_const]
 
+/-- The collapse `Δ[n] ⊗ Δ[1] ⟶ Δ[n + 1]` of a simplex `(a, b)` whose first component lies in
+`∂Δ[n]` is a simplex `θ` of `Δ[n + 1]` which misses a vertex `v > 1`, or misses both vertices `0`
+and `1`. -/
+private lemma collapse_boundary_misses_vertex {d : ℕ} {a : Δ[n] _⦋d⦌} (ha : a ∈ (∂Δ[n]).obj _)
+    (b : Δ[1] _⦋d⦌) {θ : ⦋d⦌ ⟶ ⦋n + 1⦌}
+    (hθ : θ = SimplexCategory.Hom.mk ((prodStdSimplex₁.collapseOrderHom n).comp
+      ((stdSimplex.objEquiv a).toOrderHom.prod (stdSimplex.objEquiv b).toOrderHom))) :
+    (∃ v : Fin (n + 2), 1 < v ∧ ∀ t, θ.toOrderHom t ≠ v) ∨
+      ∀ t, θ.toOrderHom t ≠ 0 ∧ θ.toOrderHom t ≠ 1 := by
+  subst hθ
+  obtain ⟨j, hj⟩ := (mem_boundary_iff_notMem_range a).1 ha
+  obtain rfl | ⟨j, rfl⟩ := j.eq_zero_or_eq_succ
+  · refine Or.inr fun t ↦ ?_
+    have hat : a t ≠ 0 := fun h' ↦ hj ⟨t, h'⟩
+    simp only [Fin.ne_iff_vne, Fin.val_zero] at hat
+    simp [prodStdSimplex₁.collapseOrderHom_apply, Fin.ext_iff, hat]
+  · refine Or.inl ⟨j.succ.succ, by simp [Fin.lt_def], fun t ↦ ?_⟩
+    have hat : a t ≠ j.succ := fun h' ↦ hj ⟨t, h'⟩
+    simp only [SimplexCategory.Hom.toOrderHom_mk, OrderHom.comp_coe, Function.comp_apply,
+      OrderHom.prod_coe, prodStdSimplex₁.collapseOrderHom_apply]
+    split_ifs
+    · simp only [ne_eq, Fin.ext_iff, Fin.val_castLE, Fin.val_succ]
+      lia
+    · exact fun h' ↦ hat (Fin.succ_injective _ h')
+
 /-- Given `h : RelStruct₀ p q`, the homotopy from `q` to `p` obtained by precomposing the
 `(n + 1)`-simplex of `h` with the map `Δ[n] ⊗ Δ[1] ⟶ Δ[n + 1]` which collapses the edges
 `{k} × Δ[1]` for `k ≠ 0`. -/
@@ -326,12 +371,13 @@ noncomputable def homotopy : Homotopy q p where
     rw [← Category.assoc, prodStdSimplex₁.ι₁_collapse]
     simpa using h.δ_castSucc_map
   rel := by
-    -- A simplex of `∂Δ[n] ⊗ Δ[1]` misses a vertex `j` of `Δ[n]` in its first projection, so its
-    -- image under `collapse` misses `j + 1` if `j ≠ 0`, and both `0` and `1` if `j = 0`.
+    -- A simplex of `∂Δ[n] ⊗ Δ[1]` is sent by `collapse` to a simplex of `Δ[n + 1]` missing a
+    -- vertex `v > 1`, or both `0` and `1` (`collapse_boundary_misses_vertex`), on which `h.map` is
+    -- constant (`stdSimplex_map_comp_map_eq_const`).
     rw [Subcomplex.ofSimplex_ι, comp_const, comp_const]
     refine hom_ext_uliftYoneda fun ⟨d⟩ φ ↦ ?_
-    let a : Δ[n] _⦋d⦌ := (yonedaEquiv φ).1.1
-    have ha : a ∈ (∂Δ[n]).obj _ := (yonedaEquiv φ).1.2
+    let a : Δ[n] _⦋d⦌ := (yonedaEquiv φ).1.val
+    have ha : a ∈ (∂Δ[n]).obj _ := (yonedaEquiv φ).1.property
     have : φ ≫ ∂Δ[n].ι ▷ Δ[1] ≫ prodStdSimplex₁.collapse n =
         stdSimplex.map (SimplexCategory.Hom.mk ((prodStdSimplex₁.collapseOrderHom n).comp
           ((stdSimplex.objEquiv a).toOrderHom.prod
@@ -341,21 +387,7 @@ noncomputable def homotopy : Homotopy q p where
       -- both sides are the simplex `collapse` assigns to `yonedaEquiv φ`, by definition
       rfl
     rw [reassoc_of% this, comp_const]
-    apply stdSimplex_map_comp_map_eq_const
-    obtain ⟨j, hj⟩ := (mem_boundary_iff_notMem_range a).1 ha
-    obtain rfl | ⟨j, rfl⟩ := j.eq_zero_or_eq_succ
-    · refine Or.inr fun t ↦ ?_
-      have hat : a t ≠ 0 := fun h' ↦ hj ⟨t, h'⟩
-      simp only [Fin.ne_iff_vne, Fin.val_zero] at hat
-      simp [prodStdSimplex₁.collapseOrderHom_apply, Fin.ext_iff, hat]
-    · refine Or.inl ⟨j.succ.succ, by simp [Fin.lt_def], fun t ↦ ?_⟩
-      have hat : a t ≠ j.succ := fun h' ↦ hj ⟨t, h'⟩
-      simp only [SimplexCategory.Hom.toOrderHom_mk, OrderHom.comp_coe, Function.comp_apply,
-        OrderHom.prod_coe, prodStdSimplex₁.collapseOrderHom_apply]
-      split_ifs
-      · simp only [ne_eq, Fin.ext_iff, Fin.val_castLE, Fin.val_succ]
-        lia
-      · exact fun h' ↦ hat (Fin.succ_injective _ h')
+    exact stdSimplex_map_comp_map_eq_const h _ (collapse_boundary_misses_vertex ha _ rfl)
 
 end RelStruct₀
 

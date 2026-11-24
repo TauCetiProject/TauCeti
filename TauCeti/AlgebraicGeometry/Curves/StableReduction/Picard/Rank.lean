@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Basic
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Rank of the Picard group of a numerical type
@@ -59,9 +60,8 @@ private lemma intersectionRat_mulVec_multiplicityRat :
   calc
     T.intersectionRat.mulVec (fun j ↦ ((T.multiplicity j : ℤ) : ℚ)) i =
         ((T.intersection.mulVec (fun j ↦ (T.multiplicity j : ℤ)) i : ℤ) : ℚ) := by
-      simpa [intersectionRat, Function.comp_def] using
-        (RingHom.map_mulVec (Int.castRingHom ℚ) T.intersection
-          (fun j ↦ (T.multiplicity j : ℤ)) i).symm
+      simpa [intersectionRat] using
+        congrFun (Matrix.map_intCast_mulVec T.intersection fun j ↦ (T.multiplicity j : ℤ)) i
     _ = 0 := by rw [congrFun T.intersection_mulVec_multiplicity i]; simp
 
 private lemma intersection_mulVec_eq_zero_of_vecMul_eq_zero {v : T.Component → ℤ}
@@ -76,8 +76,7 @@ private lemma intersectionRat_mulVec_eq_zero_of_vecMul_eq_zero {v : T.Component 
   calc
     T.intersectionRat.mulVec (fun j ↦ (v j : ℚ)) i =
         ((T.intersection.mulVec v i : ℤ) : ℚ) := by
-      simpa [intersectionRat, Function.comp_def] using
-        (RingHom.map_mulVec (Int.castRingHom ℚ) T.intersection v i).symm
+      simpa [intersectionRat] using congrFun (Matrix.map_intCast_mulVec T.intersection v) i
     _ = 0 := by rw [congrFun hv' i]; simp
 
 private lemma intersectionRat_offDiagonal_nonneg (i j : T.Component) (hij : i ≠ j) :

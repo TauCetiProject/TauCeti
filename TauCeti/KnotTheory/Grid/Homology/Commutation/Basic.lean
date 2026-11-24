@@ -126,7 +126,8 @@ theorem unblockedHomologyCommutationMap_unblockedHomologyClass
     (z : LinearMap.ker (G.unblockedDifferential R)) :
     G.unblockedHomologyCommutationMap R C (G.unblockedHomologyClass R z) =
       (G').unblockedHomologyClass R
-        ⟨G.commutationMap R C z, G.commutationMap_mem_ker_unblockedDifferential R C z.2⟩ := by
+        ⟨G.commutationMap R C z, G.commutationMap_mem_ker_unblockedDifferential R C z.property⟩
+            := by
   simp only [unblockedHomologyCommutationMap, LinearMap.comp_apply, LinearEquiv.coe_coe]
   rw [LinearEquiv.symm_apply_eq]
   simp only [CategoryTheory.Iso.toLinearEquiv_apply (G.unblockedHomologyIso R),
@@ -148,12 +149,12 @@ theorem unblockedHomologyClass_commutationMap_withTurnRow_commutationMap (t : Fi
       p • c + (G').commutationMap R (C.withTurnRow t) (G.commutationMap R C c))
     (z : LinearMap.ker (G.unblockedDifferential R)) :
     G.unblockedHomologyClass R
-        ⟨_, G.commutationMap_withTurnRow_commutationMap_mem_ker R C t z.2⟩ =
+        ⟨_, G.commutationMap_withTurnRow_commutationMap_mem_ker R C t z.property⟩ =
       p • G.unblockedHomologyClass R z := by
   rw [← map_smul, ← sub_eq_zero, ← map_sub, unblockedHomologyClass_eq_zero_iff]
   refine ⟨H z, ?_⟩
   have h := hH z
-  rw [LinearMap.mem_ker.mp z.2, map_zero, add_zero] at h
+  rw [LinearMap.mem_ker.mp z.property, map_zero, add_zero] at h
   rw [h, Submodule.coe_sub, Submodule.coe_smul, sub_eq_add_neg, ← neg_smul, CharTwo.neg_eq,
     add_comm]
 
@@ -170,10 +171,10 @@ variable (C : GridDiagram.ColumnTurn n)
 /-- The commutation map of a column turn `C` on `GH⁻` raises the full Maslov--Alexander bidegree
 by `G.commutationBidegree C`. -/
 theorem unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add
-    {g : ℤ × ℤ} {y : G.1.unblockedHomology R}
+    {g : ℤ × ℤ} {y : G.val.unblockedHomology R}
     (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
-    G.1.unblockedHomologyCommutationMap R C y ∈
-      (G.swapColumns C).bigradedUnblockedHomologyPiece R (g + G.1.commutationBidegree C) := by
+    G.val.unblockedHomologyCommutationMap R C y ∈
+      (G.swapColumns C).bigradedUnblockedHomologyPiece R (g + G.val.commutationBidegree C) := by
   obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
   rw [GridDiagram.unblockedHomologyCommutationMap_unblockedHomologyClass]
   apply unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece
@@ -182,16 +183,16 @@ theorem unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add
 /-- The commutation map of a column turn `C` on `GH⁻` raises the Alexander grading by the
 Alexander component of `G.commutationBidegree C`. -/
 theorem unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece_add
-    {a : ℤ} {y : G.1.unblockedHomology R}
+    {a : ℤ} {y : G.val.unblockedHomology R}
     (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
-    G.1.unblockedHomologyCommutationMap R C y ∈
+    G.val.unblockedHomologyCommutationMap R C y ∈
       ((G.swapColumns C).alexanderUnblockedHomologyGrading R).piece
-        (a + (G.1.commutationBidegree C).2) := by
+        (a + (G.val.commutationBidegree C).2) := by
   rw [G.mem_alexanderUnblockedHomologyGrading_piece_iff R,
     G.mem_alexanderHomologyGrading_piece_iff] at hy
   obtain ⟨z, hz, hzy⟩ := hy
-  obtain rfl : y = G.1.unblockedHomologyClass R z := by
-    apply (ModuleCat.mono_iff_injective (G.1.unblockedHomologyIso R).hom).mp inferInstance
+  obtain rfl : y = G.val.unblockedHomologyClass R z := by
+    apply (ModuleCat.mono_iff_injective (G.val.unblockedHomologyIso R).hom).mp inferInstance
     rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass, hzy]
   rw [GridDiagram.unblockedHomologyCommutationMap_unblockedHomologyClass,
     (G.swapColumns C).mem_alexanderUnblockedHomologyGrading_piece_iff R,
@@ -201,21 +202,21 @@ theorem unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_pi
 
 end Turn
 
-variable (C : GridDiagram.ColumnCommutationData G.1)
+variable (C : GridDiagram.ColumnCommutationData G.val)
 
 /-- The commutation map on `GH⁻` preserves the full Maslov--Alexander bigrading. -/
 theorem unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece
-    {g : ℤ × ℤ} {y : G.1.unblockedHomology R}
+    {g : ℤ × ℤ} {y : G.val.unblockedHomology R}
     (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
-    G.1.unblockedHomologyCommutationMap R C y ∈
+    G.val.unblockedHomologyCommutationMap R C y ∈
       (G.swapColumns C).bigradedUnblockedHomologyPiece R g := by
   simpa using G.unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add R C hy
 
 /-- The commutation map on `GH⁻` preserves the Alexander grading. -/
 theorem unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece
-    {a : ℤ} {y : G.1.unblockedHomology R}
+    {a : ℤ} {y : G.val.unblockedHomology R}
     (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
-    G.1.unblockedHomologyCommutationMap R C y ∈
+    G.val.unblockedHomologyCommutationMap R C y ∈
       ((G.swapColumns C).alexanderUnblockedHomologyGrading R).piece a := by
   simpa using
     G.unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece_add R C hy

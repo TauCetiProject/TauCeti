@@ -110,13 +110,13 @@ noncomputable def shiftCochain (n p : ℤ) :
   apply LinearMap.isHomogeneous_shift_piece_iff.mpr
   simpa only [LinearMap.smul_apply, Submodule.subtype_apply,
     InternalGrading.ofDecomposition_piece, LinearMap.restrictScalars_smul] using
-    (dgRightModuleCochains.mem_iff.mp f.2).smul (negOnePowCast R (n * p))
+    (dgRightModuleCochains.mem_iff.mp f.property).smul (negOnePowCast R (n * p))
 
 /-- On underlying maps the cochain shift is multiplication by its Koszul sign. -/
 @[simp]
 theorem shiftCochain_apply (n p : ℤ)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) p)
-    (x : M) : (shiftCochain M N n p f).1 x = (n * p).negOnePow • f.1 x := by
+    (x : M) : (shiftCochain M N n p f).val x = (n * p).negOnePow • f.val x := by
   dsimp only [shiftCochain, LinearMap.codRestrict_apply, LinearMap.smul_apply,
     Submodule.subtype_apply]
   exact (negOnePow_smul_eq_negOnePowCast_smul _ _).symm
@@ -144,14 +144,14 @@ theorem shift_one_differential_apply (x : M) : (M.shift 1).differential x = -M.d
 @[simp]
 theorem shiftCochain_zero
     (n : ℤ) (f : dgRightModuleCochains (R := R) (A := A)
-      (ℳ := M.grading) (ℳN := N.grading) 0) : (shiftCochain M N n 0 f).1 = f.1 := by
+      (ℳ := M.grading) (ℳN := N.grading) 0) : (shiftCochain M N n 0 f).val = f.val := by
   ext x
   simp
 
 /-- The shift multiplies an odd homotopy by `(-1)^n`. -/
 theorem shiftCochain_neg_one_apply (n : ℤ)
     (k : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) (-1))
-    (x : M) : (shiftCochain M N n (-1) k).1 x = n.negOnePow • k.1 x := by
+    (x : M) : (shiftCochain M N n (-1) k).val x = n.negOnePow • k.val x := by
   simp
 
 end Cochains
@@ -281,11 +281,11 @@ theorem closedHom_closedShiftFunctor_map (n : ℤ)
   calc
     closedHom ((closedShiftFunctor n).map f) =
         (dgHomLinearEquivCochains (M.shift n) (N.shift n) 0
-          (dgClosedHom R ((closedShiftFunctor n).map f))).1 := closedHom_eq _
+          (dgClosedHom R ((closedShiftFunctor n).map f))).val := closedHom_eq _
     _ = (dgHomLinearEquivCochains (M.shift n) (N.shift n) 0
-        (shiftDGMap n 0 (dgClosedHom R f))).1 :=
+        (shiftDGMap n 0 (dgClosedHom R f))).val :=
       congrArg (fun c : DGHom R 0 (M.shift n) (N.shift n) ↦
-        (dgHomLinearEquivCochains (M.shift n) (N.shift n) 0 c).1) hmap
+        (dgHomLinearEquivCochains (M.shift n) (N.shift n) 0 c).val) hmap
     _ = closedHom f := by
       rw [dgHomLinearEquivCochains_shiftDGMap, shiftCochain_zero]
       exact (closedHom_eq f).symm
