@@ -37,9 +37,7 @@ Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue m
 of the pullback Lebesgue measure to `(0,T]`, that is `TauCeti.Probability.timeMeasure T`
 (`TauCeti.BrownianIntegrable.memLp_timeMeasure`). Pathwise membership uses native `MemLp`, so
 square energy means a finite nonnegative lower integral, never the default value of a divergent
-Bochner integral. Product-`L²` convergence to zero of differences between two predictable process
-families yields convergence to zero in measure of the pathwise square energy of their difference
-(`TauCeti.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm`).
+Bochner integral.
 
 ## References
 
@@ -292,23 +290,5 @@ theorem BrownianIntegrable.simpleHolding_of_bdd [IsFiniteMeasure P]
   BrownianIntegrable.simpleHolding ha fun j hj ↦
     let ⟨C, hC⟩ := hb j hj
     MemLp.of_bound ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (.of_forall hC)
-
-/-- Product-`L²` convergence to zero of differences between two families of strongly predictable
-processes implies that the pathwise square energy of their difference tends to zero in
-`Q`-measure. -/
-theorem tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
-    {ι Ω' E κ : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
-    [OrderClosedTopology ι] [MeasurableSpace ι] [OpensMeasurableSpace ι]
-    {mΩ' : MeasurableSpace Ω'} {ℱ' : Filtration ι mΩ'}
-    {μ : Measure ι} {Q : Measure Ω'} [SFinite μ] [SFinite Q] [SeminormedAddCommGroup E]
-    {l : Filter κ} {F G : κ → ι → Ω' → E}
-    (hF : ∀ k, IsStronglyPredictable ℱ' (F k))
-    (hG : ∀ k, IsStronglyPredictable ℱ' (G k))
-    (hl2 : Tendsto (fun k ↦ eLpNorm (fun p : ι × Ω' ↦ F k p.1 p.2 - G k p.1 p.2) 2
-      (μ.prod Q)) l (𝓝 0))
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    Tendsto (fun k ↦ Q {ω | ε ≤ ∫⁻ s, ‖F k s ω - G k s ω‖ₑ ^ 2 ∂μ}) l (𝓝 0) :=
-  TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-    (fun k ↦ (((hF k).sub (hG k)).mono ℱ'.predictable_le_prod).aestronglyMeasurable) hl2 hε
 
 end TauCeti

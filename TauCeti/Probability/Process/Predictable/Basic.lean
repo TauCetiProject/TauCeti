@@ -11,6 +11,7 @@ public import Mathlib.Topology.Order.Cadlag
 public import TauCeti.Order.Interval.Set.Prod
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Basic
 
 /-!
 # Elementary predictable sets and predictability of adapted processes
@@ -45,25 +46,6 @@ public section
 
 open MeasureTheory ProbabilityTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
-
-/-- Extending an `mΩ`-strongly measurable function `a` by zero outside a time set `T` yields an
-`mProd`-strongly measurable function on `ι × Ω`, provided every `mΩ`-measurable rectangle `T ×ˢ A`
-is `mProd`-measurable. -/
-theorem MeasureTheory.StronglyMeasurable.indicator_prod
-    {ι Ω E : Type*} {mΩ : MeasurableSpace Ω} {mProd : MeasurableSpace (ι × Ω)}
-    [TopologicalSpace E] [Zero E] {a : Ω → E} (ha : StronglyMeasurable[mΩ] a)
-    {T : Set ι} (hT : ∀ ⦃A : Set Ω⦄, MeasurableSet[mΩ] A → MeasurableSet[mProd] (T ×ˢ A)) :
-    StronglyMeasurable[mProd] (fun p : ι × Ω ↦ T.indicator (fun _ ↦ a p.2) p.1) := by
-  classical
-  let S : Set (ι × Ω) := T ×ˢ univ
-  have hS : MeasurableSet[mProd] S := hT MeasurableSet.univ
-  have hproj : @Measurable S Ω inferInstance mΩ (fun p : S ↦ p.val.2) := by
-    intro A hA
-    refine ⟨T ×ˢ A, hT hA, ?_⟩
-    ext p
-    simp [S, p.property.1]
-  simpa [S, indicator_apply] using
-    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
 
 /-- A height strongly measurable for the filtration at the left endpoint `s`, extended by zero
 outside `(s, t]`, is strongly predictable. -/

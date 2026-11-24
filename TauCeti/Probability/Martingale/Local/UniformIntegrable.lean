@@ -10,7 +10,7 @@ public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Probability.Martingale.LpLimit
-import TauCeti.Probability.Process.Stopping
+import TauCeti.Probability.Process.LocalProperty
 
 /-!
 # Uniformly integrable localizations of martingales
@@ -48,17 +48,6 @@ variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
   {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {τ : ℕ → Ω → WithTop ι} {p : ℝ≥0∞}
 
 namespace ProbabilityTheory.IsPreLocalizingSequence
-
-/-- The native stopped stages of a pre-localizing sequence converge almost surely at each
-fixed time. Eventually both the stopping and the positive-stopping-time indicator disappear. -/
-theorem ae_tendsto_stoppedProcess [Zero E] [TopologicalSpace E]
-    (hτ : IsPreLocalizingSequence ℱ τ P) (X : ι → Ω → E) (t : ι) :
-    ∀ᵐ ω ∂P, Tendsto (fun n ↦ MeasureTheory.stoppedProcess
-      (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n) t ω) atTop (𝓝 (X t ω)) := by
-  filter_upwards [ae_eventuallyEq_stoppedProcess X t hτ.tendsto_top, hτ.tendsto_top] with ω hω htop
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [hω, (WithTop.tendsto_nhds_top_iff _).mp htop ⊥] with n hn hpos
-  rw [stoppedProcess_indicator_comm, indicator_of_mem hpos, hn]
 
 /-- Uniform `Lᵖ` integrability of native stopped stages at a fixed time gives an `Lᵖ` value
 of the original process. No adaptation, martingale, or exponent restriction is required. -/

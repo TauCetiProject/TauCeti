@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.LocalProperty
-import TauCeti.Probability.Process.Stopping
+import TauCeti.Probability.Process.LocalProperty
 
 /-!
 # Dominated local martingales
@@ -51,13 +51,8 @@ theorem StronglyAdapted.martingale_of_locally_martingale_of_dominated [SigmaFini
   obtain ⟨τ, hτ, hmart⟩ := hlocal
   let Z := fun n ↦ MeasureTheory.stoppedProcess
     (fun s ↦ {ω | ⊥ < τ n ω}.indicator (X s)) (τ n)
-  have hlim (t : ι) : ∀ᵐ ω ∂P, Tendsto (fun n ↦ Z n t ω) atTop (𝓝 (X t ω)) := by
-    filter_upwards [ae_eventuallyEq_stoppedProcess X t hτ.tendsto_top,
-      hτ.tendsto_top] with ω hω htop
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [hω, (WithTop.tendsto_nhds_top_iff _).mp htop ⊥] with n hn hpos
-    dsimp only [Z]
-    rw [stoppedProcess_indicator_comm, Set.indicator_of_mem hpos, hn]
+  have hlim (t : ι) : ∀ᵐ ω ∂P, Tendsto (fun n ↦ Z n t ω) atTop (𝓝 (X t ω)) :=
+    hτ.ae_tendsto_stoppedProcess X t
   have hZbound (t : ι) (b : Ω → ℝ)
       (hb : ∀ᵐ ω ∂P, ∀ s ≤ t, ‖X s ω‖ ≤ b ω) (n : ℕ) :
       ∀ᵐ ω ∂P, ‖Z n t ω‖ ≤ b ω := by

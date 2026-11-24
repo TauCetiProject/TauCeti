@@ -11,8 +11,6 @@ public import TauCeti.Probability.BrownianMotion.Filtered
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
@@ -244,26 +242,25 @@ theorem locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I) :
   obtain ⟨n, τ, a, -, ha, henergy, -⟩ := hI.exists_approx N
   let E (k : ℕ) (ω : Ω) : ℝ≥0∞ :=
     ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure N
-  choose φ hφ using fun j : ℕ ↦ ((henergy 1 zero_lt_one).eventually (gt_mem_nhds
-    (ENNReal.pow_pos (ENNReal.inv_pos.mpr ENNReal.ofNat_ne_top : (0 : ℝ≥0∞) < 2⁻¹) j))).exists
-  have hsum : (∑' j : ℕ, P {ω | 1 ≤ E (φ j) ω}) ≠ ∞ :=
-    ne_top_of_le_ne_top (by rw [ENNReal.tsum_geometric_two]; exact ENNReal.ofNat_ne_top)
-      (tsum_le_tsum fun j ↦ (hφ j).le)
-  filter_upwards [ae_eventually_notMem hsum] with ω hω
-  obtain ⟨j, hj⟩ := hω.exists
+  have hnull : P {ω | ∀ k, 1 ≤ E k ω} = 0 :=
+    nonpos_iff_eq_zero.mp <| ge_of_tendsto' (henergy 1 zero_lt_one) fun k ↦
+      measure_mono (s := {ω | ∀ k, 1 ≤ E k ω}) fun _ hω ↦ hω k
+  have hae : ∀ᵐ ω ∂P, ∃ k, E k ω < 1 := by
+    rw [ae_iff]
+    simpa [not_exists, not_lt] using hnull
+  filter_upwards [hae] with ω ⟨k, hk⟩
   rw [← NNReal.coe_natCast N, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
-  have hpred := Finance.isStronglyPredictable_simpleHolding (ha (φ j))
-  have hL : MemLp (fun s ↦ Finance.simpleHolding (τ (φ j)) (n (φ j)) (a (φ j)) s ω) 2
-      (timeMeasure N) :=
+  have hpred := Finance.isStronglyPredictable_simpleHolding (ha k)
+  have hL : MemLp (fun s ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω) 2 (timeMeasure N) :=
     MemLp.of_bound hpred.stronglyMeasurable_path.aestronglyMeasurable
-      (∑ i ∈ range (n (φ j)), ‖a (φ j) i ω‖) (.of_forall fun s ↦ by
+      (∑ i ∈ range (n k), ‖a k i ω‖) (.of_forall fun s ↦ by
         rw [Finance.simpleHolding_def]
         exact (norm_sum_le _ _).trans (sum_le_sum fun _ _ ↦ norm_indicator_le_norm_self _ _))
-  have hdiff : MemLp (fun s ↦ Finance.simpleHolding (τ (φ j)) (n (φ j)) (a (φ j)) s ω - H s ω) 2
+  have hdiff : MemLp (fun s ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω) 2
       (timeMeasure N) :=
     ((hpred.stronglyMeasurable_path.sub
         hI.isStronglyPredictable.stronglyMeasurable_path).aestronglyMeasurable
-      |>.memLp_two_iff_lintegral_enorm_sq_lt_top).mpr (lt_trans (not_le.mp hj) ENNReal.one_lt_top)
+      |>.memLp_two_iff_lintegral_enorm_sq_lt_top).mpr (lt_trans hk ENNReal.one_lt_top)
   exact (hL.sub hdiff).ae_eq (.of_forall fun _ ↦ sub_sub_cancel _ _)
 
 /-! ### Elementary and constant integrands -/

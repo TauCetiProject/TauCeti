@@ -84,14 +84,13 @@ private theorem tendstoInMeasure_stoppedProcess_simpleGains_dyadicCeilTime
         min_eq_left hle, WithTop.untopA, WithTop.untopD_coe]
     · rw [MeasureTheory.stoppedProcess_eq_of_ge (τ := fun ω ↦ dyadicCeilTime k (σ ω)) hlt.le,
         min_eq_right hlt.le]
-  exact fun ε hε ↦ tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using tendsto_finsetSum S fun s hs ↦ hgains_s hs ε hε) (fun _ ↦ zero_le) fun m ↦
-    (measure_mono fun ω hω ↦ by
+  exact fun ε hε ↦ tendsto_measure_of_subset_biUnion_finset S (fun s hs ↦ hgains_s hs ε hε)
+    fun m ω hω ↦ by
       let s := (min (T : WithTop ℝ≥0) (dyadicCeilTime k (σ ω))).untopA
       have hs : s ∈ S := hrange ω
       dsimp only at hω
       rw [Set.mem_ofPred_eq, hstop _ ω, hstop _ ω] at hω
-      exact mem_biUnion hs hω).trans (measure_biUnion_finset_le S _)
+      exact mem_biUnion hs hω
 
 private theorem tendstoInMeasure_stoppedProcess_diag
     (hW : IsFilteredPreBrownianReal ℱ W P)

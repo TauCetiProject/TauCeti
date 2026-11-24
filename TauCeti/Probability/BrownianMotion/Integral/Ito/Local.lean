@@ -152,7 +152,7 @@ private theorem isItoIntegral_of_stopped_stages
       tendsto_measure_lintegral_of_ae_eventually_eqOn
         (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
         (fun k ↦ (hHs k).isStronglyPredictable) hH (fun _ hε ↦
-          TauCeti.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
+          IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
             (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k))
             (fun k ↦ (hHs k).isStronglyPredictable) hl2_hold hε)
         (heq.mono fun _ hω ↦ hω T),

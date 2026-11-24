@@ -144,7 +144,7 @@ theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
   have hIto : IsItoIntegral ℱ P W H I :=
     ⟨hH.isStronglyPredictable, hIpath.mono fun _ h ↦ h.1, fun t ↦
       ⟨n, τ, a, fun m ↦ (hτ m).monotoneOn, ha,
-        fun _ hε ↦ TauCeti.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
+        fun _ hε ↦ IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
           (fun m ↦ Finance.isStronglyPredictable_simpleHolding (ha m))
           (fun _ ↦ hH.isStronglyPredictable) (herr t) hε,
         tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩
@@ -170,7 +170,7 @@ theorem IsItoIntegral.ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
   obtain ⟨n, τ, a, -, -, hτ, ha, -, -, hmem, herr, hlim⟩ :=
     exists_simpleHolding_tendsto_l2Integral hW hH
   exact hI.ae_eq_of_tendstoInMeasure hW (fun m ↦ (hτ m).monotoneOn) ha
-    (fun _ hε ↦ TauCeti.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
+    (fun _ hε ↦ IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
       (fun m ↦ Finance.isStronglyPredictable_simpleHolding (ha m))
       (fun _ ↦ hH.isStronglyPredictable) (herr T) hε)
     ((MeasureTheory.tendstoInMeasure_of_tendsto_Lp (hlim T)).congr_left

@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.Process.StochasticInterval
 public import TauCeti.Probability.Process.StoppingApproximation
-import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Integral.Indicator
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
@@ -120,7 +120,6 @@ theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_dyadicCeilTim
   let D (k : ℕ) (ω : Ω) : ℝ≥0∞ := ∫⁻ s,
     ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
       if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2 ∂Probability.timeMeasure T
-  let F (k : ℕ) (ω : Ω) : ℝ≥0∞ := if ε ≤ D k ω then 0 else D k ω
   have hpred (k : ℕ) : IsStronglyPredictable ℱ (fun s ω ↦
       (if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
         if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0) :=
@@ -128,43 +127,32 @@ theorem LocallyBrownianIntegrable.tendsto_measure_lintegral_ite_le_dyadicCeilTim
       (hH.ite_le hσ).isStronglyPredictable
   have hDm (k : ℕ) : Measurable (D k) :=
     ((hpred k).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2 |>.lintegral_prod_left'
-  have hFm (k : ℕ) : Measurable (F k) :=
-    Measurable.ite (measurableSet_le measurable_const (hDm k)) measurable_const (hDm k)
-  have hFlim : Tendsto (fun k ↦ P {ω | ε ≤ F k ω}) atTop (𝓝 0) := by
-    refine tendsto_const_nhds.congr fun k ↦ ?_
-    have h_empty : {ω | ε ≤ F k ω} = ∅ := by
-      ext ω
-      simp only [F, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
-      split_ifs with h
-      · exact hε.not_ge
-      · exact h
-    rw [h_empty, measure_empty]
-  refine MeasureTheory.tendsto_measure_ge_of_ae_eventually_le hDm hFm hFlim ?_
-  filter_upwards [hH.ae_memLp] with ω hω
-  have hT : MemLp (fun s ↦ H s ω) 2 (Probability.timeMeasure T) := by
-    simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using hω T
-  have hdom (k : ℕ) (s : ℝ≥0) :
-      ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
-        if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2 ≤ ‖H s ω‖ₑ ^ 2 := by
-    by_cases hs : (s : WithTop ℝ≥0) ≤ σ ω
-    · rw [ite_eq_left (hs.trans (le_dyadicCeilTime k (σ ω))), ite_eq_left hs]; simp
-    · rw [ite_eq_right hs, sub_zero]; split_ifs <;> simp
-  have hpt (s : ℝ≥0) : Tendsto (fun k ↦
-      ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
-        if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2) atTop (𝓝 0) := by
-    by_cases hs : (s : WithTop ℝ≥0) ≤ σ ω
-    · refine tendsto_const_nhds.congr fun k ↦ ?_
-      rw [ite_eq_left (hs.trans (le_dyadicCeilTime k (σ ω))), ite_eq_left hs]; simp
-    · refine tendsto_const_nhds.congr' <|
-        ((tendsto_dyadicCeilTime (σ ω)).eventually (eventually_lt_nhds (lt_of_not_ge hs))).mono
-          fun k hk ↦ by dsimp only; rw [ite_eq_right hk.not_ge, ite_eq_right hs]; simp
-  have hD0 : Tendsto (fun k ↦ D k ω) atTop (𝓝 0) := by
-    simpa [D] using tendsto_lintegral_of_dominated_convergence (fun s ↦ ‖H s ω‖ₑ ^ 2)
-      (fun k ↦ (hpred k).stronglyMeasurable_path.measurable.eNorm.pow_const 2)
-      (fun k ↦ .of_forall (hdom k))
-      ((AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top
-        hT.aestronglyMeasurable).mp hT).ne (.of_forall hpt)
-  exact (hD0.eventually (eventually_lt_nhds hε)).mono fun k hk ↦ by
-    simp only [F, hk.not_ge, ↓reduceIte, le_rfl]
+  simpa only [measure_empty] using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop
+    MeasurableSet.empty (fun k ↦ measurableSet_le measurable_const (hDm k)) <| by
+    filter_upwards [hH.ae_memLp] with ω hω
+    have hT : MemLp (fun s ↦ H s ω) 2 (Probability.timeMeasure T) := by
+      simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using hω T
+    have hdom (k : ℕ) (s : ℝ≥0) :
+        ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
+          if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2 ≤ ‖H s ω‖ₑ ^ 2 := by
+      by_cases hs : (s : WithTop ℝ≥0) ≤ σ ω
+      · rw [ite_eq_left (hs.trans (le_dyadicCeilTime k (σ ω))), ite_eq_left hs]; simp
+      · rw [ite_eq_right hs, sub_zero]; split_ifs <;> simp
+    have hpt (s : ℝ≥0) : Tendsto (fun k ↦
+        ‖(if (s : WithTop ℝ≥0) ≤ dyadicCeilTime k (σ ω) then H s ω else 0) -
+          if (s : WithTop ℝ≥0) ≤ σ ω then H s ω else 0‖ₑ ^ 2) atTop (𝓝 0) := by
+      by_cases hs : (s : WithTop ℝ≥0) ≤ σ ω
+      · refine tendsto_const_nhds.congr fun k ↦ ?_
+        rw [ite_eq_left (hs.trans (le_dyadicCeilTime k (σ ω))), ite_eq_left hs]; simp
+      · refine tendsto_const_nhds.congr' <|
+          ((tendsto_dyadicCeilTime (σ ω)).eventually (eventually_lt_nhds (lt_of_not_ge hs))).mono
+            fun k hk ↦ by dsimp only; rw [ite_eq_right hk.not_ge, ite_eq_right hs]; simp
+    have hD0 : Tendsto (fun k ↦ D k ω) atTop (𝓝 0) := by
+      simpa [D] using tendsto_lintegral_of_dominated_convergence (fun s ↦ ‖H s ω‖ₑ ^ 2)
+        (fun k ↦ (hpred k).stronglyMeasurable_path.measurable.eNorm.pow_const 2)
+        (fun k ↦ .of_forall (hdom k))
+        ((AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top
+          hT.aestronglyMeasurable).mp hT).ne (.of_forall hpt)
+    exact (hD0.eventually (eventually_lt_nhds hε)).mono fun k hk ↦ by simp [hk.not_ge]
 
 end TauCeti
