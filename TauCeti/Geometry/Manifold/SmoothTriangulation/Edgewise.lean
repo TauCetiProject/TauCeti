@@ -259,7 +259,7 @@ theorem eventually_norm_secantMap_sub_lt_edgewiseSubdivision {f : Realization K 
   -- of `K` spanned by the entries of its vertices.
   let ρ := carrier _ x
   let y : StandardSimplex ρ.val := ⟨x.val, mem_convexHull_carrier _ x⟩
-  have hy : faceInclusion _ ρ y = x := Subtype.ext (faceInclusion_val _ _ _)
+  have hy : faceInclusion _ ρ y = x := faceInclusion_mk_val _ _ _ _
   let σ : Face K := ⟨_, biUnion_image_mem_of_mem_edgewiseSubdivision ρ.property⟩
   have hρσ : ∀ u ∈ ρ.val, ∀ l, u.val l ∈ σ.val := fun u hu l =>
     mem_biUnion.mpr ⟨u, hu, mem_image_of_mem _ (mem_univ l)⟩
