@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.NormSplit.Basic
 import TauCeti.RepresentationTheory.Rep.Free
+import TauCeti.RepresentationTheory.Rep.Projective
 
 /-!
 # Higman's criterion for projectivity
@@ -96,10 +97,7 @@ endomorphisms. -/
 theorem moduleProjective_iff_id_mem_range_norm_linHom (A : Rep.{u} k G)
     [Module.Projective k A.V] :
     Module.Projective (MonoidAlgebra k G) A.ρ.asModule ↔
-      LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm := by
-  refine ⟨fun h ↦ ?_, moduleProjective_of_id_mem_range_norm_linHom A⟩
-  have : Projective A := by
-    rwa [← equivalenceModuleMonoidAlgebra.map_projective_iff, ← IsProjective.iff_projective]
-  exact id_mem_range_norm_linHom_of_projective A
+      LinearMap.id ∈ LinearMap.range (Representation.linHom A.ρ A.ρ).norm :=
+  (projective_iff_moduleProjective A).symm.trans (projective_iff_id_mem_range_norm_linHom A)
 
 end Rep
