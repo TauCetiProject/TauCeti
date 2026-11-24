@@ -55,6 +55,8 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
   the number of preimages.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
   and a constant map into a manifold of positive dimension has degree `0`.
+* `TauCeti.degree_eq_zero_of_forall_eq`: a map all of whose values coincide, into a manifold of
+  positive dimension, has degree `0`.
 * `TauCeti.degree_of_isEmpty`: a map to an empty manifold has degree `0`.
 * `TauCeti.degree_eq_zero_of_not_exists`: a map with no regular value has degree `0`.
 * `Diffeomorph.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt`,
@@ -298,6 +300,17 @@ theorem degree_const (hpos : 0 < Module.finrank ℝ E') (y₀ : N) :
   split_ifs
   · exact degreeAtRegularValue_const hpos y₀ _
   · rfl
+
+/-- A map all of whose values coincide, into a manifold of positive dimension, has degree `0`. -/
+theorem degree_eq_zero_of_forall_eq (hpos : 0 < Module.finrank ℝ E') (hc : ∀ x x', f x = f x') :
+    degree o o' f = 0 := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
+  · rcases isEmpty_or_nonempty N with hN | ⟨⟨y₀⟩⟩
+    · exact degree_of_isEmpty
+    · rw [show f = fun _ ↦ y₀ from funext hM.elim]
+      exact degree_const hpos y₀
+  · rw [show f = fun _ ↦ f x₀ from funext fun x ↦ hc x x₀]
+    exact degree_const hpos (f x₀)
 
 end TauCeti
 

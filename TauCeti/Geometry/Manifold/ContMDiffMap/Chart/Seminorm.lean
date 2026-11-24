@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import Mathlib.Topology.ContinuousMap.Compact
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # Compact chart seminorms
@@ -188,6 +189,20 @@ theorem chartCkSeminorm_eq_zero_of_eventuallyEq_zero (x : M)
   refine le_antisymm ((chartCkSeminorm_le_iff x K k hk f le_rfl).mpr fun m hm z hz ↦ ?_)
     (apply_nonneg _ _)
   rw [chartIteratedFDeriv_eq_zero_of_eventuallyEq_zero x m _ z (hf z hz), norm_zero]
+
+/-- The compact chart `C^k` seminorm of a constant map is at most the norm of its value: in every
+chart a constant map has vanishing coordinate derivatives of positive order. -/
+theorem chartCkSeminorm_const_le (x : M)
+    (K : TopologicalSpace.Compacts (extChartAt I x).target) (k : ℕ) (hk : k ≤ n) (v : F) :
+    chartCkSeminorm x K k hk (const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) ≤ ‖v‖ := by
+  refine (chartCkSeminorm_le_iff x K k hk _ (norm_nonneg v)).mpr fun m _ z _ ↦ ?_
+  have hconst : (const v : C^n⟮I, M; 𝓘(𝕜, F), F⟯) ∘ (extChartAt I x).symm = fun _ ↦ v :=
+    funext fun _ ↦ const_apply v _
+  rw [chartIteratedFDeriv_self_target_apply, hconst]
+  rcases eq_or_ne m 0 with rfl | hm
+  · rw [norm_iteratedFDerivWithin_zero]
+  · rw [iteratedFDerivWithin_const_of_ne hm, Pi.zero_apply, norm_zero]
+    exact norm_nonneg v
 
 /-- Positive strict `C^k` control is equivalent to pointwise strict control of every coordinate
 derivative through order `k`. -/

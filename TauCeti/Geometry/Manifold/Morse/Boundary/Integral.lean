@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
-public import TauCeti.LinearAlgebra.Finsupp.SignReversal
+public import TauCeti.LinearAlgebra.Finsupp.IntMatrixMap
 
 /-!
 # The integral Morse boundary
@@ -270,8 +270,7 @@ and for `R = ℤ` this is the integral Morse boundary; otherwise it is built fro
 noncomputable def signedMorseBoundary (hf : IsMorse 𝓘(ℝ, E) f) (R : Type*) [Ring R] :
     (criticalPoints 𝓘(ℝ, E) f →₀ R) →ₗ[R] (criticalPoints 𝓘(ℝ, E) f →₀ R) :=
   haveI := hf.finite_criticalPoints.to_subtype
-  Finsupp.linearCombination R fun p ↦
-    Finsupp.ofSupportFinite (fun q ↦ (hX.signedMorseBoundaryCoeff 𝔬 p q : R)) (toFinite _)
+  Finsupp.intMatrixMap R (hX.signedMorseBoundaryCoeff 𝔬)
 
 variable (hf : IsMorse 𝓘(ℝ, E) f) {R : Type*} [Ring R]
 
@@ -281,16 +280,18 @@ boundary of `p`. -/
 theorem signedMorseBoundary_apply (c : criticalPoints 𝓘(ℝ, E) f →₀ R)
     (q : criticalPoints 𝓘(ℝ, E) f) :
     hX.signedMorseBoundary 𝔬 hf R c q =
-      c.sum fun p a ↦ a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) := by
-  simp [signedMorseBoundary, Finsupp.linearCombination_apply, Finsupp.ofSupportFinite_coe]
+      c.sum fun p a ↦ a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) :=
+  haveI := hf.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_apply _ c q
 
 /-- The coefficient of `q` in the Morse boundary of `a • p` is `a` times the boundary coefficient
 `signedMorseBoundaryCoeff` of `q` in the boundary of `p`. -/
 @[simp]
 theorem signedMorseBoundary_single_apply (p q : criticalPoints 𝓘(ℝ, E) f) (a : R) :
     hX.signedMorseBoundary 𝔬 hf R (Finsupp.single p a) q =
-      a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) := by
-  rw [signedMorseBoundary_apply, Finsupp.sum_single_index (zero_mul _)]
+      a * (hX.signedMorseBoundaryCoeff 𝔬 p q : R) :=
+  haveI := hf.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_single_apply _ p a q
 
 /-- **Change of coefficients.** An additive map `g : R → R'`, for instance a ring homomorphism,
 applied to the coefficients of the chains, intertwines the Morse boundaries with coefficients in `R`
@@ -298,11 +299,9 @@ and in `R'`: the boundary coefficients are integers, and `g` commutes with integ
 theorem mapRange_signedMorseBoundary {R' F : Type*} [Ring R'] [FunLike F R R']
     [AddMonoidHomClass F R R'] (g : F) (c : criticalPoints 𝓘(ℝ, E) f →₀ R) :
     Finsupp.mapRange g (map_zero g) (hX.signedMorseBoundary 𝔬 hf R c) =
-      hX.signedMorseBoundary 𝔬 hf R' (Finsupp.mapRange g (map_zero g) c) := by
-  ext q
-  rw [Finsupp.mapRange_apply, signedMorseBoundary_apply, signedMorseBoundary_apply,
-    Finsupp.sum_mapRange_index (fun _ ↦ zero_mul _), map_finsuppSum]
-  simp only [← zsmul_eq_mul', map_zsmul]
+      hX.signedMorseBoundary 𝔬 hf R' (Finsupp.mapRange g (map_zero g) c) :=
+  haveI := hf.finite_criticalPoints.to_subtype
+  Finsupp.mapRange_intMatrixMap _ g c
 
 /-- **Reversing orientations conjugates the boundary.** The Morse boundary for the orientations
 reversed at the critical points of `S` is the conjugate of the original boundary by the
@@ -312,12 +311,9 @@ theorem signedMorseBoundary_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f))
     [DecidablePred (· ∈ S)] :
     hX.signedMorseBoundary (𝔬.reverse S) hf R =
       (Finsupp.signReversal R S).toLinearMap ∘ₗ hX.signedMorseBoundary 𝔬 hf R ∘ₗ
-        (Finsupp.signReversal R S).toLinearMap := by
-  refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-  rw [signedMorseBoundary_single_apply, Finsupp.signReversal_single, Finsupp.signReversal_apply,
-    signedMorseBoundaryCoeff_reverse]
-  by_cases hp : p ∈ S <;> by_cases hq : q ∈ S <;> simp [hp, hq]
+        (Finsupp.signReversal R S).toLinearMap :=
+  haveI := hf.finite_criticalPoints.to_subtype
+  Finsupp.intMatrixMap_eq_signReversal_comp _ S S (signedMorseBoundaryCoeff_reverse S)
 
 /-- **The mod-two reduction of the boundary coefficients.** Under the Morse–Smale condition, the
 integral boundary coefficient `signedMorseBoundaryCoeff` of `q` in the boundary of `p`, reduced

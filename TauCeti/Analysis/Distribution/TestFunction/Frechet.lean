@@ -41,6 +41,7 @@ sets, `LinearMap.exists_schwartzKernel_supportedIn`.
   `𝓓^{n}_{K}(E, F)` completely metrizable, hence a Baire space and barrelled.
 * `ContDiffMapSupportedIn.supSeminorm_apply_eq_of_scalars`: the seminorms `N_{≤i}` do not depend
   on the field of scalars.
+* `ContDiffMapSupportedIn.supSeminorm_mono`: the seminorms `N_{≤i}` increase with `i`.
 * `ContDiffMapSupportedIn.supSeminorm_eq_zero_iff`: each seminorm `N_{≤i}` vanishes only at zero.
 * `ContDiffMapSupportedIn.withSeminorms_supSeminorm_self`: for finite `ℓ`, the single seminorm
   `max_{j ≤ ℓ} N_j` defines the topology of `𝓓^{ℓ}_{K}(E, F)`.
@@ -145,6 +146,13 @@ theorem supSeminorm_apply_eq_of_scalars (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
       (seminorm_apply_eq_of_scalars _ f).trans_le (Seminorm.le_finset_sup_apply hj))
     (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
       (seminorm_apply_eq_of_scalars _ f).symm.trans_le (Seminorm.le_finset_sup_apply hj))
+
+/-- The seminorms `max_{j ≤ i} N_j` increase with `i`. -/
+theorem supSeminorm_mono : Monotone (ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K) := by
+  intro i j hij
+  -- By definition `max_{k ≤ i} N_k` is the supremum of the `N_k` over `Finset.Iic i`.
+  unfold ContDiffMapSupportedIn.supSeminorm
+  exact Finset.sup_mono (Finset.Iic_subset_Iic.2 hij)
 
 /-- Each seminorm `max_{j ≤ i} N_j` vanishes only at zero, since it bounds the sup norm `N_0`. -/
 theorem supSeminorm_eq_zero_iff (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :

@@ -46,6 +46,9 @@ A real coercive quadratic form also loses at most the size of a perturbation of 
 (`sub_norm_mul_norm_sq_le_inner`) and stays nonnegative under a small perturbation and scalar
 shift (`inner_add_smul_id_nonneg_of_norm_sub_le`), which gives the convexity
 of perturbed barrier functions, for instance in the Monge–Ampère viscosity argument.
+Conjugating a coercive operator `A₀` by a map `M` with a right inverse `N` keeps it coercive, with
+constant `c / (‖N‖ + 1)²` (`ContinuousLinearMap.mul_norm_sq_le_inner_comp_comp_adjoint`); this is
+how the ellipticity of a non-divergence-form operator survives a change of variables.
 
 ## Provenance
 
@@ -293,6 +296,37 @@ theorem inner_add_smul_id_nonneg_of_norm_sub_le {A D : F →L[ℝ] F} {κ t : �
       inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
   rw [h₂]
   nlinarith [sub_norm_mul_norm_sq_le_inner hA D v, mul_nonneg (sub_nonneg.2 hD) (sq_nonneg ‖v‖)]
+
+/-- **Conjugating a coercive operator by a map with a right inverse.** If `M ∘ N = id` and
+`λ ‖ξ‖² ≤ ⟪A₀ ξ, ξ⟫` with `λ ≥ 0`, then `λ / (‖N‖ + 1)² ‖ξ‖² ≤ ⟪M A₀ M† ξ, ξ⟫`. With `M = DΨ(Φ x)`
+and `N = DΦ(x)` for mutually inverse changes of variables `Φ` and `Ψ`, this is the ellipticity of
+the principal coefficients `DΨ ∘ A ∘ DΨ†` of a non-divergence-form equation pulled back along
+`Φ`. -/
+theorem mul_norm_sq_le_inner_comp_comp_adjoint [CompleteSpace F] {M N : F →L[ℝ] F}
+    (hMN : M ∘L N = ContinuousLinearMap.id ℝ F) {A₀ : F →L[ℝ] F} {lam : ℝ} (hlam : 0 ≤ lam)
+    (hA₀ : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A₀ ξ, ξ⟫_ℝ) (ξ : F) :
+    lam / (‖N‖ + 1) ^ 2 * ‖ξ‖ ^ 2 ≤ ⟪(M ∘L A₀ ∘L M.adjoint) ξ, ξ⟫_ℝ := by
+  -- `ξ = N† (M† ξ)`, so `‖ξ‖ ≤ (‖N‖ + 1) ‖M† ξ‖`.
+  have hξ : N.adjoint (M.adjoint ξ) = ξ := by
+    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hMN,
+      ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+  have hnorm : ‖ξ‖ ≤ (‖N‖ + 1) * ‖M.adjoint ξ‖ :=
+    calc ‖ξ‖ = ‖N.adjoint (M.adjoint ξ)‖ := by rw [hξ]
+      _ ≤ ‖N.adjoint‖ * ‖M.adjoint ξ‖ := N.adjoint.le_opNorm _
+      _ ≤ (‖N‖ + 1) * ‖M.adjoint ξ‖ := by
+        rw [LinearIsometryEquiv.norm_map]
+        gcongr
+        linarith
+  have hinner : ⟪(M ∘L A₀ ∘L M.adjoint) ξ, ξ⟫_ℝ = ⟪A₀ (M.adjoint ξ), M.adjoint ξ⟫_ℝ := by
+    rw [ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_inner_right,
+      ContinuousLinearMap.comp_apply]
+  rw [hinner]
+  refine le_trans ?_ (hA₀ _)
+  have hsq : ‖ξ‖ ^ 2 ≤ (‖N‖ + 1) ^ 2 * ‖M.adjoint ξ‖ ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg ξ) hnorm 2
+  rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+  nlinarith
 
 end Real
 
