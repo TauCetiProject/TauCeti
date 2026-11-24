@@ -107,9 +107,9 @@ theorem surjective_parameterProj_criticalHessian_mvfderivCLM_iff (hn : 2 ≤ n)
     isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
   have hf : ContMDiffAt I 𝓘(ℝ) 2 f x :=
     (f.contMDiff.of_le (WithTop.coe_le_coe.2 hn)).contMDiffAt
-  -- The critical Hessian maps `TangentSpace I x`, which is `E`, to its dual, of the same
-  -- dimension, so it is invertible exactly when it is onto.
-  exact ⟨fun hs ↦ ⟨hf, mem_criticalPoints.1 hx, isInvertible_of_surjective (E := E) hs⟩,
+  -- The critical Hessian maps `TangentSpace I x` to its dual, of the same dimension, so it is
+  -- invertible exactly when it is onto.
+  exact ⟨fun hs ↦ ⟨hf, mem_criticalPoints.1 hx, isInvertible_of_surjective hs⟩,
     fun ⟨_, _, hinv⟩ ↦ hinv.surjective⟩
 
 end TauCeti

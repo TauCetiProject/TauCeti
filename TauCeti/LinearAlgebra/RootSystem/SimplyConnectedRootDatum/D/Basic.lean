@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.Algebra.Group.Submonoid.Closure
@@ -30,8 +30,8 @@ The classical model is `ℤ ^ n` with the dot product: the `2 * n * (n - 1)` roo
 Bourbaki simple roots are `αᵢ = eᵢ - eᵢ₊₁` for `i + 1 < n` together with the fork root
 `α_{n-1} = e_{n-2} + e_{n-1}`. That model, its enumeration by `Fin (2 * n * (n - 1))` with the
 simple roots first, the expansion of every root in the simple roots, their linear independence and
-reflection in a root are all supplied by `TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD` and are
-consumed here rather than rebuilt.
+reflection in a root are all supplied by `TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic`
+and are consumed here rather than rebuilt.
 
 Type `Dₙ` is simply laced, so `α^∨ = α` under the dot product and both pinned lattices are images
 of the one classical model:
@@ -80,7 +80,7 @@ here.
 The coordinates and the node numbering follow Bourbaki, *Lie Groups and Lie Algebras, Chapters
 4--6*, Plate IV, and Humphreys, *Introduction to Lie Algebras and Representation Theory*, section
 12.1. The layout of the file follows its sibling
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A` (#2594), whose type-agnostic
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic` (#2594), whose type-agnostic
 scaffolding — the perfect pairing, the pinned support, the Cartan-type criterion and the coroot
 span — now lives in `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic` and is shared
 with this file.
@@ -123,7 +123,7 @@ private lemma typeDWeight_apply (hn : 4 ≤ n) (x : Fin n → ℤ) (j : Fin n) :
 against the coefficients of a root evaluates the vector on that root, because the coefficients
 reconstruct the root. -/
 private lemma typeDWeight_dotProduct_coordinates (hn : 4 ≤ n) (x : Fin n → ℤ) (y : TypeDRoot n) :
-    typeDWeight n hn x ⬝ᵥ typeDSimpleRootCoordinates n hn y = x ⬝ᵥ y.1 := by
+    typeDWeight n hn x ⬝ᵥ typeDSimpleRootCoordinates n hn y = x ⬝ᵥ y.val := by
   have hleft : typeDWeight n hn x ⬝ᵥ typeDSimpleRootCoordinates n hn y =
       ∑ j : Fin n, typeDSimpleRootCoordinates n hn y j • (x ⬝ᵥ typeDSimpleRoot n hn j) := by
     simp only [dotProduct, typeDWeight_apply, smul_eq_mul]
@@ -134,12 +134,12 @@ private lemma typeDWeight_dotProduct_coordinates (hn : 4 ≤ n) (x : Fin n → �
   exact Finset.sum_congr rfl fun j _ => (dotProduct_smul _ _ _).symm
 
 private lemma typeDWeight_injective (hn : 4 ≤ n) :
-    Injective fun x : TypeDRoot n => typeDWeight n hn x.1 := by
+    Injective fun x : TypeDRoot n => typeDWeight n hn x.val := by
   intro x y hxy
-  have hxy' : typeDWeight n hn x.1 = typeDWeight n hn y.1 := hxy
+  have hxy' : typeDWeight n hn x.val = typeDWeight n hn y.val := hxy
   -- The difference of two roots is the combination of the simple roots with the difference of
   -- their coordinates, and the hypothesis makes it orthogonal to every simple root.
-  have hexp : x.1 - y.1 = ∑ i : Fin n,
+  have hexp : x.val - y.val = ∑ i : Fin n,
       (typeDSimpleRootCoordinates n hn x - typeDSimpleRootCoordinates n hn y) i •
         typeDSimpleRoot n hn i := by
     simp only [Pi.sub_apply, sub_smul, Finset.sum_sub_distrib,
@@ -151,9 +151,9 @@ private lemma typeDWeight_injective (hn : 4 ≤ n) :
   rw [← hexp, ← typeDWeight_apply hn, map_sub, hxy', sub_self, Pi.zero_apply]
 
 private lemma typeDSimpleRootCoordinates_injective (hn : 4 ≤ n) :
-    Injective fun x : TypeDRoot n => typeDSimpleRootCoordinates n hn x.1 := by
+    Injective fun x : TypeDRoot n => typeDSimpleRootCoordinates n hn x.val := by
   intro x y h
-  have h' : typeDSimpleRootCoordinates n hn x.1 = typeDSimpleRootCoordinates n hn y.1 := h
+  have h' : typeDSimpleRootCoordinates n hn x.val = typeDSimpleRootCoordinates n hn y.val := h
   refine Subtype.ext ?_
   rw [← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot x),
     ← sum_smul_typeDSimpleRootCoordinates hn (even_sum_typeDRoot y), h']
@@ -161,8 +161,8 @@ private lemma typeDSimpleRootCoordinates_injective (hn : 4 ≤ n) :
 /-! ## Reflections -/
 
 private lemma typeDWeight_typeDRootReflection (hn : 4 ≤ n) (u v : TypeDRoot n) :
-    typeDWeight n hn (typeDRootReflection u v).1 =
-      typeDWeight n hn v.1 - (v.1 ⬝ᵥ u.1) • typeDWeight n hn u.1 := by
+    typeDWeight n hn (typeDRootReflection u v).val =
+      typeDWeight n hn v.val - (v.val ⬝ᵥ u.val) • typeDWeight n hn u.val := by
   rw [typeDRootReflection_val, map_sub, map_smul]
 
 /-- Reflection in the root indexed by `k`, transported to the enumeration of the roots. -/
@@ -177,23 +177,23 @@ private lemma typeDRootEquiv_typeDReflectionPerm (hn : 4 ≤ n) (k l : Fin (2 * 
   simp [typeDReflectionPerm]
 
 private lemma typeDReflectionPerm_root (hn : 4 ≤ n) (k l : Fin (2 * n * (n - 1))) :
-    typeDWeight n hn (typeDRootEquiv n hn l).1 -
-        (typeDWeight n hn (typeDRootEquiv n hn l).1 ⬝ᵥ
+    typeDWeight n hn (typeDRootEquiv n hn l).val -
+        (typeDWeight n hn (typeDRootEquiv n hn l).val ⬝ᵥ
           typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k)) •
-          typeDWeight n hn (typeDRootEquiv n hn k).1 =
-      typeDWeight n hn (typeDRootEquiv n hn (typeDReflectionPerm n hn k l)).1 := by
+          typeDWeight n hn (typeDRootEquiv n hn k).val =
+      typeDWeight n hn (typeDRootEquiv n hn (typeDReflectionPerm n hn k l)).val := by
   rw [typeDRootEquiv_typeDReflectionPerm, typeDWeight_typeDRootReflection,
     typeDWeight_dotProduct_coordinates]
 
 private lemma typeDReflectionPerm_coroot (hn : 4 ≤ n) (k l : Fin (2 * n * (n - 1))) :
     typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn l) -
-        (typeDWeight n hn (typeDRootEquiv n hn k).1 ⬝ᵥ
+        (typeDWeight n hn (typeDRootEquiv n hn k).val ⬝ᵥ
           typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn l)) •
           typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k) =
       typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn (typeDReflectionPerm n hn k l)) := by
   rw [typeDRootEquiv_typeDReflectionPerm, typeDSimpleRootCoordinates_typeDRootReflection,
     typeDWeight_dotProduct_coordinates,
-    dotProduct_comm (typeDRootEquiv n hn k).1 (typeDRootEquiv n hn l).1]
+    dotProduct_comm (typeDRootEquiv n hn k).val (typeDRootEquiv n hn l).val]
 
 /-! ## The pinned root datum -/
 
@@ -206,13 +206,13 @@ cocharacter lattice in the simple-coroot basis. The `2 * n * (n - 1)` roots are 
 noncomputable def typeDSimplyConnectedRootDatum (n : ℕ) (hn : 4 ≤ n) :
     RootDatum (Fin (2 * n * (n - 1))) (Fin n → ℤ) (Fin n → ℤ) where
   toLinearMap := dotProductBilin ℤ ℤ
-  root := ⟨fun k => typeDWeight n hn (typeDRootEquiv n hn k).1,
+  root := ⟨fun k => typeDWeight n hn (typeDRootEquiv n hn k).val,
     (typeDWeight_injective hn).comp (typeDRootEquiv n hn).injective⟩
   coroot := ⟨fun k => typeDSimpleRootCoordinates n hn (typeDRootEquiv n hn k),
     (typeDSimpleRootCoordinates_injective hn).comp (typeDRootEquiv n hn).injective⟩
   root_coroot_two k :=
     (typeDWeight_dotProduct_coordinates hn _ (typeDRootEquiv n hn k)).trans
-      (typeDRootEquiv n hn k).2
+      (typeDRootEquiv n hn k).property
   reflectionPerm := typeDReflectionPerm n hn
   reflectionPerm_root := typeDReflectionPerm_root hn
   reflectionPerm_coroot := typeDReflectionPerm_coroot hn
@@ -224,7 +224,7 @@ private lemma toLinearMap_eq_dotProductBilin (hn : 4 ≤ n) :
   rfl
 
 private lemma root_eq_typeDWeight (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) :
-    (typeDSimplyConnectedRootDatum n hn).root k = typeDWeight n hn (typeDRootEquiv n hn k).1 :=
+    (typeDSimplyConnectedRootDatum n hn).root k = typeDWeight n hn (typeDRootEquiv n hn k).val :=
   rfl
 
 private lemma coroot_eq_typeDSimpleRootCoordinates (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) :
@@ -252,7 +252,7 @@ says `⟨ωᵢ, αⱼ^∨⟩ = δᵢⱼ`. -/
 the pairing of the `k`-th classical root with the `j`-th simple root. -/
 theorem root_typeDSimplyConnectedRootDatum (hn : 4 ≤ n) (k : Fin (2 * n * (n - 1))) (j : Fin n) :
     (typeDSimplyConnectedRootDatum n hn).root k j =
-      (typeDRootEquiv n hn k).1 ⬝ᵥ typeDSimpleRoot n hn j := by
+      (typeDRootEquiv n hn k).val ⬝ᵥ typeDSimpleRoot n hn j := by
   rw [root_eq_typeDWeight, typeDWeight_apply]
 
 /-- The `k`-th coroot of the pinned datum, in the simple-coroot basis: type `Dₙ` is simply laced,

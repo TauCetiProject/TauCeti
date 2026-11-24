@@ -88,7 +88,7 @@ theorem isOpen_integratedCharacterSet :
   rw [isOpen_iff_mem_nhds]
   intro ω hω
   obtain ⟨f, hf⟩ := (π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp hω
-  apply mem_of_superset ((isOpen_ne_fun ((eval_continuous _).comp continuous_subtype_val)
+  apply mem_of_superset ((isOpen_ne_fun ((eval_continuous _).comp continuous_subtypeVal)
     continuous_const).mem_nhds hf)
   intro ψ hψ
   exact (π.mem_integratedCharacterSet_iff hcont hbdd A hA ψ).mpr ⟨f, hψ⟩
@@ -100,32 +100,32 @@ integrated form. -/
 noncomputable def integratedCharacterToPontryaginDual
     (ω : π.integratedCharacterSet hcont hbdd A hA) : PontryaginDual (Multiplicative G) :=
   Classical.choose
-    (π.existsUnique_pontryaginDual_of_integratedOperatorL1 hbdd hπ A hA ω.1
-      ((π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp ω.2))
+    (π.existsUnique_pontryaginDual_of_integratedOperatorL1 hbdd hπ A hA ω.val
+      ((π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp ω.property))
 
 /-- The defining multiplier identity for the group character detected by an integrated
 character. -/
 theorem integratedCharacterToPontryaginDual_spec
     (ω : π.integratedCharacterSet hcont hbdd A hA) (g : G) (f : G →₁[μ] ℂ) :
-    ω.1
+    ω.val
         ⟨π.integratedOperatorL1 hcont hbdd μ
           (Lp.compMeasurePreserving (fun t => -g + t)
             (measurePreserving_add_left μ (-g)) f), hA _⟩ =
       (π.integratedCharacterToPontryaginDual hcont hbdd A hA hπ ω (.ofAdd g) : ℂ) *
-        ω.1 ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ :=
+        ω.val ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ :=
   (Classical.choose_spec
-    (π.existsUnique_pontryaginDual_of_integratedOperatorL1 hbdd hπ A hA ω.1
-      ((π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp ω.2))).1 g f
+    (π.existsUnique_pontryaginDual_of_integratedOperatorL1 hbdd hπ A hA ω.val
+      ((π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp ω.property))).1 g f
 
 /-- Local quotient formula for the group character detected by an integrated character. -/
 theorem coe_integratedCharacterToPontryaginDual_apply_eq_div
     (ω : π.integratedCharacterSet hcont hbdd A hA) (g : G) (f : G →₁[μ] ℂ)
-    (hf : ω.1 ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0) :
+    (hf : ω.val ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ ≠ 0) :
     (π.integratedCharacterToPontryaginDual hcont hbdd A hA hπ ω (.ofAdd g) : ℂ) =
-      ω.1 ⟨π.integratedOperatorL1 hcont hbdd μ
+      ω.val ⟨π.integratedOperatorL1 hcont hbdd μ
         (Lp.compMeasurePreserving (fun t => -g + t)
           (measurePreserving_add_left μ (-g)) f), hA _⟩ /
-        ω.1 ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ :=
+        ω.val ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩ :=
   (eq_div_iff hf).2
     (π.integratedCharacterToPontryaginDual_spec hcont hbdd A hA hπ ω g f).symm
 
@@ -140,7 +140,7 @@ theorem continuous_integratedCharacterToPontryaginDual :
   apply continuous_induced_rng.mpr
   rw [continuous_iff_continuousAt]
   rintro ⟨ω, g⟩
-  obtain ⟨f, hf⟩ := (π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp ω.2
+  obtain ⟨f, hf⟩ := (π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp ω.property
   let a : A := ⟨π.integratedOperatorL1 hcont hbdd μ f, hA f⟩
   let v : Multiplicative G → A := fun g =>
     ⟨π.integratedOperatorL1 hcont hbdd μ
@@ -151,25 +151,25 @@ theorem continuous_integratedCharacterToPontryaginDual :
     refine ((π.continuous_comp_integratedOperatorL1 (hcont := hcont) (hbdd := hbdd) f).comp
       continuous_toAdd).congr fun g => ?_
     exact π.comp_integratedOperatorL1 (hcont := hcont) (hbdd := hbdd) g.toAdd f
-  have heval (b : A) : Continuous fun p : D × Multiplicative G => (p.1.1 b : ℂ) :=
-    (eval_continuous b).comp (continuous_subtype_val.comp (continuous_subtype_val.comp
+  have heval (b : A) : Continuous fun p : D × Multiplicative G => (p.1.val b : ℂ) :=
+    (eval_continuous b).comp (continuous_subtypeVal.comp (continuous_subtypeVal.comp
       continuous_fst))
   -- Characters are uniformly bounded, so `ω(v g') - ω(v g)` is small uniformly in `ω`.
-  have hnum : ContinuousAt (fun p : D × Multiplicative G => (p.1.1 (v p.2) : ℂ)) (ω, g) := by
-    have hsmall : Tendsto (fun p : D × Multiplicative G => p.1.1 (v p.2 - v g)) (𝓝 (ω, g))
+  have hnum : ContinuousAt (fun p : D × Multiplicative G => (p.1.val (v p.2) : ℂ)) (ω, g) := by
+    have hsmall : Tendsto (fun p : D × Multiplicative G => p.1.val (v p.2 - v g)) (𝓝 (ω, g))
         (𝓝 0) := by
-      refine squeeze_zero_norm (fun p => AlgHom.norm_apply_le_self_mul_norm_one p.1.1 _) ?_
-      simpa using ((hv.comp continuous_snd).sub (continuous_const (y := v g))).norm.mul_const
-        ‖(1 : A)‖ |>.tendsto (ω, g)
-    have h : Tendsto (fun p : D × Multiplicative G => (p.1.1 (v p.2) : ℂ)) (𝓝 (ω, g))
-        (𝓝 (ω.1 (v g) + 0)) :=
+      refine squeeze_zero_norm (fun p => NonUnitalAlgHom.norm_apply_le_self p.1.val _) ?_
+      simpa using ((hv.comp continuous_snd).sub (continuous_const (y := v g))).norm
+        |>.tendsto (ω, g)
+    have h : Tendsto (fun p : D × Multiplicative G => (p.1.val (v p.2) : ℂ)) (𝓝 (ω, g))
+        (𝓝 (ω.val (v g) + 0)) :=
       ((heval (v g)).continuousAt.tendsto.add hsmall).congr fun p => by simp
     rwa [add_zero] at h
-  have hden : Continuous fun p : D × Multiplicative G => (p.1.1 a : ℂ) := heval a
+  have hden : Continuous fun p : D × Multiplicative G => (p.1.val a : ℂ) := heval a
   have hquot : ContinuousAt (fun p : D × Multiplicative G =>
-      p.1.1 (v p.2) / p.1.1 a) (ω, g) :=
+      p.1.val (v p.2) / p.1.val a) (ω, g) :=
     hnum.div hden.continuousAt (by simpa only [a] using hf)
-  have hden_ne : ∀ᶠ p in 𝓝 (ω, g), p.1.1 a ≠ 0 :=
+  have hden_ne : ∀ᶠ p in 𝓝 (ω, g), p.1.val a ≠ 0 :=
     hden.continuousAt.eventually_ne (by simpa only [a] using hf)
   -- `Circle` is a non-reducible type synonym for the unit-sphere subtype of `ℂ`, so
   -- `continuous_induced_rng` leaves the goal in terms of `Subtype.val`, which `simp` cannot

@@ -36,7 +36,7 @@ theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
   obtain ⟨k, rfl⟩ := h
   have hn : n ≠ 0 := left_ne_zero_of_mul hm
   have hk : k ≠ 0 := right_ne_zero_of_mul hm
-  rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn), ← Complex.exp_nat_mul]
+  rw [Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hn), ← Complex.exp_natCast_mul]
   congr 1
   push_cast
   field_simp
@@ -44,7 +44,7 @@ theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
 /-- For natural numbers `k` and `n`, `exp(2πi k / n)` is the `k`-th power of `exp(2πi / n)`. -/
 theorem exp_two_pi_I_mul_div (k n : ℕ) :
     exp (2 * Real.pi * I * (k / n)) = exp (2 * Real.pi * I / n) ^ k := by
-  rw [← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul]
   congr 1
   ring
 

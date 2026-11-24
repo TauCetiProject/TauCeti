@@ -74,7 +74,7 @@ theorem isJordanCurve_insert_infty_range_of_isProperMap
     {f : ℝ → X} (hf : IsProperMap f) (hinj : Function.Injective f) :
     IsJordanCurve (insert OnePoint.infty (((↑) : X → OnePoint X) '' range f)) := by
   rw [← range_onePointMap f, ← image_univ]
-  have h := isClosedEmbedding_onePointMap
+  have h := isClosedEmbedding_onePointMap_iff.2
     (Topology.IsClosedEmbedding.of_continuous_injective_isClosedMap
       hf.continuous hinj hf.isClosedMap)
   obtain ⟨e⟩ := isJordanCurve_iff.mp isJordanCurve_univ_onePoint_real

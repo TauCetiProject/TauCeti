@@ -71,7 +71,7 @@ theorem stellarSubdivision_join_inl {σ : Finset α} (hσ : σ.Nonempty) (v : α
   have : τ.toLeft ∈ K → τ.Nonempty := fun h => by
     obtain ⟨a, ha⟩ := hne _ h
     exact ⟨Sum.inl a, mem_toLeft.mp ha⟩
-  have herase : v ∈ τ.toLeft → τ.toLeft ≠ ∅ := fun h => Finset.nonempty_iff_ne_empty.mp ⟨v, h⟩
+  have herase : v ∈ τ.toLeft → τ.toLeft ≠ ∅ := fun h => Finset.ne_empty_iff_nonempty.mpr ⟨v, h⟩
   have hnew : v ∈ τ.toLeft →
       (τ.erase (Sum.inl v) ∪ σ.map Function.Embedding.inl).Nonempty :=
     fun _ => hσ.map.mono subset_union_right

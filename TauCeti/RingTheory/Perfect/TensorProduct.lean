@@ -75,7 +75,7 @@ theorem frobeniusRootIdeal_subtype_rTensor_injective [IsReduced C] (f : A) :
   have exists_eq (t : frobeniusRootIdeal A p f ⊗[A] C) : ∃ n c, t = ρ n ⊗ₜ c := by
     induction t with
     | tmul x c =>
-      obtain ⟨n, a, ha⟩ := mem_frobeniusRootIdeal.mp x.2
+      obtain ⟨n, a, ha⟩ := mem_frobeniusRootIdeal.mp x.property
       exact ⟨n, a • c, tmul_eq ha c⟩
     | add t₁ t₂ h₁ h₂ =>
       obtain ⟨m, c₁, rfl⟩ := h₁

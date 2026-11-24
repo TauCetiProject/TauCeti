@@ -147,14 +147,14 @@ theorem mem_indexedJoin_realization_iff {x : (Σ i, A i) →₀ ℝ} :
 
 /-- The carrier of a point in an indexed join contains at most one vertex over each index. -/
 theorem realization_support_injOn_fst (x : (indexedJoin A).Realization) :
-    Set.InjOn Sigma.fst (x.1.support : Set (Σ i, A i)) :=
+    Set.InjOn Sigma.fst (x.val.support : Set (Σ i, A i)) :=
   (mem_indexedJoin_iff.mp ((indexedJoin A).support_mem x)).2
 
 /-- Two different vertices over the same index cannot both have nonzero barycentric coordinate in
 the realization of an indexed join. -/
 theorem realization_apply_eq_zero_of_fst_eq {x : (indexedJoin A).Realization}
-    {v w : Σ i, A i} (hvw : v.1 = w.1) (hne : v ≠ w) : x.1 v = 0 ∨ x.1 w = 0 := by
-  by_cases hv : x.1 v = 0
+    {v w : Σ i, A i} (hvw : v.1 = w.1) (hne : v ≠ w) : x.val v = 0 ∨ x.val w = 0 := by
+  by_cases hv : x.val v = 0
   · exact Or.inl hv
   · refine Or.inr (not_ne_iff.mp fun hw => ?_)
     exact hne (realization_support_injOn_fst x
@@ -162,13 +162,13 @@ theorem realization_apply_eq_zero_of_fst_eq {x : (indexedJoin A).Realization}
 
 /-- The subjoin of a family supported on a finite set of indices. -/
 abbrev finiteSubjoin (A : ι → Type v) (s : Finset ι) :
-    AbstractSimplicialComplex (Σ i : s, A i.1) :=
-  indexedJoin fun i : s => A i.1
+    AbstractSimplicialComplex (Σ i : s, A i.val) :=
+  indexedJoin fun i : s => A i.val
 
 /-- A face of a finite subjoin is a nonempty set of vertices with distinct underlying indices. -/
-theorem mem_finiteSubjoin_iff {s : Finset ι} {σ : Finset (Σ i : s, A i.1)} :
+theorem mem_finiteSubjoin_iff {s : Finset ι} {σ : Finset (Σ i : s, A i.val)} :
     σ ∈ finiteSubjoin A s ↔
-      σ.Nonempty ∧ Set.InjOn (fun v => v.1.1) (σ : Set (Σ i : s, A i.1)) := by
+      σ.Nonempty ∧ Set.InjOn (fun v => v.1.val) (σ : Set (Σ i : s, A i.val)) := by
   rw [finiteSubjoin, mem_indexedJoin_iff]
   constructor
   · rintro ⟨hne, hinj⟩
@@ -186,7 +186,7 @@ def subjoinInclusion (A : ι → Type v) (s : Set ι) :
 /-- A subjoin inclusion preserves the labelled vertex. -/
 @[simp]
 theorem subjoinInclusion_apply (A : ι → Type v) (s : Set ι)
-    (v : Σ i : s, A i) : subjoinInclusion A s v = ⟨v.1.1, v.2⟩ :=
+    (v : Σ i : s, A i) : subjoinInclusion A s v = ⟨v.1.val, v.2⟩ :=
   (rfl)
 
 /-- The subjoin inclusion is injective on vertices. -/
@@ -206,7 +206,7 @@ def finiteSubjoinRealizationInclusion (A : ι → Type v) (s : Finset ι) :
 theorem finiteSubjoinRealizationInclusion_val (A : ι → Type v) (s : Finset ι)
     (x : (finiteSubjoin A s).Realization) :
     (finiteSubjoinRealizationInclusion A s x : (Σ i, A i) →₀ ℝ) =
-      Finsupp.mapDomain (subjoinInclusion A s) x.1 := by
+      Finsupp.mapDomain (subjoinInclusion A s) x.val := by
   rw [finiteSubjoinRealizationInclusion,
     PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val]
 
@@ -220,9 +220,9 @@ theorem finiteSubjoinRealizationInclusion_injective (A : ι → Type v) (s : Fin
 of the full indexed join. -/
 @[simp]
 theorem finiteSubjoinRealizationInclusion_vertex (A : ι → Type v) (s : Finset ι)
-    (v : Σ i : s, A i.1) :
+    (v : Σ i : s, A i.val) :
     finiteSubjoinRealizationInclusion A s ((finiteSubjoin A s).vertex v) =
-      (indexedJoin A).vertex ⟨v.1.1, v.2⟩ := by
+      (indexedJoin A).vertex ⟨v.1.val, v.2⟩ := by
   apply Subtype.ext
   simp only [finiteSubjoinRealizationInclusion_val, AbstractSimplicialComplex.vertex_val,
     Finsupp.mapDomain_single, subjoinInclusion_apply]
@@ -250,7 +250,7 @@ theorem isCone_restrict_indexedJoin_insert (V : Finset (Σ i, A i)) (i : ι) (a 
   refine ⟨hσ.2, ?_⟩
   rintro ⟨w, hw, hwi⟩
   obtain ⟨u, hu, rfl⟩ := Finset.mem_image.mp hw
-  rcases u.2 with huV | hua
+  rcases u.property with huV | hua
   · exact hi (Finset.mem_image.mpr ⟨u, huV, hwi⟩)
   · exact hv (Finset.mem_image.mpr ⟨u, hu, hua⟩)
 

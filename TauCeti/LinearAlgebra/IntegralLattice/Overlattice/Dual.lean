@@ -93,16 +93,16 @@ namespace IntermediateCarrier
 /-- The dual submodule of an intermediate carrier `L ≤ M ≤ Lᵛ`, which is again an intermediate
 carrier. -/
 def dual (M : L.IntermediateCarrier) : L.IntermediateCarrier :=
-  ⟨L.form.dualSubmodule M.1, by
+  ⟨L.form.dualSubmodule M.val, by
       intro x hx y hy
       rw [L.isSymm.eq]
-      exact M.2.2 hy x hx, by
+      exact M.property.2 hy x hx, by
       intro x hx y hy
-      exact hx y (M.2.1 hy)⟩
+      exact hx y (M.property.1 hy)⟩
 
 /-- The underlying submodule of the dual carrier is the dual submodule. -/
 @[simp]
-theorem coe_dual (M : L.IntermediateCarrier) : (dual M).1 = L.form.dualSubmodule M.1 :=
+theorem coe_dual (M : L.IntermediateCarrier) : (dual M).val = L.form.dualSubmodule M.val :=
   (rfl)
 
 /-- The dual of the smallest intermediate carrier, the carrier of `L` itself, is the largest one,
@@ -154,7 +154,7 @@ theorem mem_discriminantSubgroup_dual_iff (M : L.IntermediateCarrier)
         exact (L.discriminantPairing_mk_eq_zero_iff x y).mpr
           (hx y ((L.mk_mem_discriminantSubgroup_iff M y).mp hb))
     · intro hx y hy
-      have hyd : y ∈ L.dualCarrier := M.2.2 hy
+      have hyd : y ∈ L.dualCarrier := M.property.2 hy
       exact (L.discriminantPairing_mk_eq_zero_iff x ⟨y, hyd⟩).mp
         (hx _ ((L.mk_mem_discriminantSubgroup_iff M ⟨y, hyd⟩).mpr hy))
 
@@ -163,14 +163,14 @@ variable [L.IsNondegenerate]
 /-- The dual carrier of the lattice carried by an integral intermediate carrier is the dual
 intermediate carrier. -/
 theorem IsIntegral.toIntegralLattice_dualCarrier {M : L.IntermediateCarrier} (hM : IsIntegral M) :
-    hM.toIntegralLattice.dualCarrier = (dual M).1 := by
+    hM.toIntegralLattice.dualCarrier = (dual M).val := by
   rw [coe_dual, IntegralLattice.dualCarrier, hM.toIntegralLattice_form,
     hM.toIntegralLattice_carrier]
 
 /-- Since `L ≤ M`, the dual carrier of `M` is contained in the dual carrier of `L`. -/
 theorem IsIntegral.dualCarrier_le {M : L.IntermediateCarrier} (hM : IsIntegral M) :
     hM.toIntegralLattice.dualCarrier ≤ L.dualCarrier := fun _ hx ↦
-  (dual M).2.2 (by rwa [hM.toIntegralLattice_dualCarrier] at hx)
+  (dual M).property.2 (by rwa [hM.toIntegralLattice_dualCarrier] at hx)
 
 /-- **The dual of an intermediate carrier is the orthogonal complement of its subgroup.** Under
 the correspondence between intermediate carriers and subgroups of the discriminant group, taking
@@ -195,7 +195,7 @@ noncomputable def IsIntegral.dualClassHom {M : L.IntermediateCarrier} (hM : IsIn
 @[simp]
 theorem IsIntegral.dualClassHom_apply {M : L.IntermediateCarrier} (hM : IsIntegral M)
     (y : hM.toIntegralLattice.dualCarrier) :
-    hM.dualClassHom y = Submodule.Quotient.mk ⟨(y : V), hM.dualCarrier_le y.2⟩ := (rfl)
+    hM.dualClassHom y = Submodule.Quotient.mk ⟨(y : V), hM.dualCarrier_le y.property⟩ := (rfl)
 
 /-- The discriminant class of a vector of `Mᵛ` is orthogonal to `H = M / L`, because the dual
 of an intermediate carrier corresponds to the orthogonal complement of its subgroup. -/
@@ -205,15 +205,16 @@ theorem IsIntegral.dualClassHom_mem_orthogonalComplement {M : L.IntermediateCarr
       L.discriminantBilinearModule.orthogonalComplement (L.discriminantSubgroup M) := by
   rw [← discriminantSubgroup_dual, hM.dualClassHom_apply]
   exact (L.mk_mem_discriminantSubgroup_iff (dual M) _).mpr
-    (by rw [← hM.toIntegralLattice_dualCarrier]; exact y.2)
+    (by rw [← hM.toIntegralLattice_dualCarrier]; exact y.property)
 
 /-- **Double duality for intermediate carriers.** -/
 @[simp]
 theorem dual_dual (M : L.IntermediateCarrier) : dual (dual M) = M := by
+  have := Submodule.IsLattice.free ℚ M.val
   refine Subtype.ext ?_
   rw [coe_dual, coe_dual]
   simpa only [L.form_flip] using
-    LinearMap.BilinForm.dualSubmodule_dualSubmodule_flip L.form L.form_nondegenerate M.1
+    LinearMap.BilinForm.dualSubmodule_dualSubmodule_flip L.form L.form_nondegenerate M.val
 
 /-- Passing to the dual carrier is injective. -/
 theorem dual_injective : Function.Injective (dual (L := L)) := by
@@ -433,14 +434,14 @@ first overlattice. -/
 theorem fst_mem_dualCarrier_orthogonalSum (hP : IsIntegral P) (hQ : IsIntegral Q)
     (y : (hP.orthogonalSum hQ).toIntegralLattice.dualCarrier) :
     (y : V × W).1 ∈ hP.toIntegralLattice.dualCarrier :=
-  ((mem_dualCarrier_orthogonalSum_iff hP hQ (y : V × W)).mp y.2).1
+  ((mem_dualCarrier_orthogonalSum_iff hP hQ (y : V × W)).mp y.property).1
 
 /-- The second component of a dual vector of the assembled overlattice is a dual vector of the
 second overlattice. -/
 theorem snd_mem_dualCarrier_orthogonalSum (hP : IsIntegral P) (hQ : IsIntegral Q)
     (y : (hP.orthogonalSum hQ).toIntegralLattice.dualCarrier) :
     (y : V × W).2 ∈ hQ.toIntegralLattice.dualCarrier :=
-  ((mem_dualCarrier_orthogonalSum_iff hP hQ (y : V × W)).mp y.2).2
+  ((mem_dualCarrier_orthogonalSum_iff hP hQ (y : V × W)).mp y.property).2
 
 end IntermediateCarrier
 

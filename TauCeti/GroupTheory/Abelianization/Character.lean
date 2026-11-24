@@ -6,20 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Abelianization.Finite
-public import Mathlib.GroupTheory.FiniteAbelian.Duality
+public import TauCeti.GroupTheory.FiniteAbelian.Duality
 
 /-!
 # Extending characters through a group homomorphism
 
-A character on the source of a group homomorphism extends to its target exactly when it
-kills the inverse image of the target's commutator subgroup, provided the target has finite
-abelianization and the coefficient monoid has enough roots of unity for that abelianization.
-For subgroup inclusions, this says that a character extends precisely when it kills the
-intersection with the ambient commutator subgroup.
-
-This combines the universal property of abelianization with Mathlib's extension theorem for
-characters of subgroups of finite abelian groups. It is useful for describing the kernel of
-character transgression for central extensions.
+A character extends along any group homomorphism exactly when it kills the inverse image of the
+target's commutator subgroup, provided the target has finite abelianization and the coefficient
+monoid has enough roots of unity for that abelianization. For subgroup inclusions, this says that
+a character extends precisely when it kills the intersection with the ambient commutator
+subgroup. This follows by applying `MonoidHom.exists_comp_eq_iff_ker_le_ker`, the extension
+criterion along a homomorphism into a finite commutative group, to the composite with the
+abelianization map. It is useful for describing the kernel of character transgression for
+central extensions.
 
 ## References
 
@@ -30,9 +29,8 @@ public section
 
 namespace MonoidHom
 
-variable {B E R : Type*} [Group B] [Group E] [CommMonoid R]
-  [Finite (Group.Abelianization E)] [HasEnoughRootsOfUnity R (Monoid.exponent (Group.Abelianization
-      E))]
+variable {B E R : Type*} [Group B] [CommMonoid R] [Group E] [Finite (Group.Abelianization E)]
+  [HasEnoughRootsOfUnity R (Monoid.exponent (Group.Abelianization E))]
 
 /-- A character extends along a group homomorphism exactly when it kills the inverse image
 of the target's commutator subgroup. Only the target's abelianization needs to be finite. -/
@@ -42,12 +40,8 @@ theorem exists_comp_eq_iff_comap_commutator_le_ker (f : B →* E) (χ : B →* R
   · rintro ⟨ψ, rfl⟩ x hx
     exact Group.Abelianization.commutator_le_ker ψ hx
   · intro hχ
-    let q := (Group.Abelianization.of.comp f).rangeRestrict
-    have hq : q.ker ≤ χ.ker := by
-      simpa only [q, ker_rangeRestrict, ← comap_ker, Group.Abelianization.ker_of] using hχ
-    obtain ⟨ψ, hψ⟩ := domRestrict_surjective (M := R) _
-      (q.liftOfSurjective (Group.Abelianization.of.comp f).rangeRestrict_surjective ⟨χ, hq⟩)
-    refine ⟨ψ.comp Group.Abelianization.of, MonoidHom.ext fun b ↦ ?_⟩
-    simpa [q] using DFunLike.congr_fun hψ (q b)
+    obtain ⟨ψ, hψ⟩ := (exists_comp_eq_iff_ker_le_ker (Group.Abelianization.of.comp f) χ).mpr
+      (by rwa [← comap_ker, Group.Abelianization.ker_of])
+    exact ⟨ψ.comp Group.Abelianization.of, hψ⟩
 
 end MonoidHom

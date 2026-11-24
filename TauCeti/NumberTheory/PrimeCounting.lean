@@ -40,6 +40,7 @@ convergence of the cutoffs therefore transports in both directions with this exp
 ## Main results
 
 * `Nat.primesLE_filter_lt`: filtering `Nat.primesLE n` by `· < n` recovers `Nat.primesBelow n`.
+* `Nat.Prime.filter_dvd_primesLE`: the only prime `r ≤ n` divisible by a prime `p` is `p`.
 * `Nat.primesBelow_eq_image_nth`, `Nat.primesLE_eq_image_nth`: the primes below a bound are the
   first primes in increasing order.
 * `Nat.prod_primesLE_eq_prod_range_nth`: a product over the primes `p ≤ n` is the product over
@@ -69,6 +70,18 @@ theorem primesLE_filter_lt (n : ℕ) :
   ext p
   simp only [mem_filter, mem_primesLE, mem_primesBelow]
   exact ⟨fun ⟨⟨_, hp⟩, hlt⟩ ↦ ⟨hlt, hp⟩, fun ⟨hlt, hp⟩ ↦ ⟨⟨hlt.le, hp⟩, hlt⟩⟩
+
+/-- The only prime `r ≤ n` divisible by a prime `p` is `p` itself, present when `p ≤ n`. -/
+theorem Prime.filter_dvd_primesLE {p : ℕ} (hp : p.Prime) (n : ℕ) :
+    {r ∈ primesLE n | p ∣ r} = if p ≤ n then {p} else ∅ := by
+  ext r
+  simp only [mem_filter, mem_primesLE]
+  split_ifs with h
+  · simp only [mem_singleton]
+    exact ⟨fun ⟨⟨_, hr⟩, hpr⟩ ↦ ((prime_dvd_prime_iff_eq hp hr).1 hpr).symm,
+      by rintro rfl; exact ⟨⟨h, hp⟩, dvd_rfl⟩⟩
+  · simp only [notMem_empty, iff_false, not_and]
+    exact fun ⟨hrn, hr⟩ hpr ↦ h <| ((prime_dvd_prime_iff_eq hp hr).1 hpr) ▸ hrn
 
 /-- The primes below `n` are the first `π' n` primes. -/
 theorem primesBelow_eq_image_nth (n : ℕ) :
@@ -115,6 +128,11 @@ theorem primeCounting_add_one_le (n : ℕ) : primeCounting (n + 1) ≤ primeCoun
   rw [primeCounting_eq_primeCounting'_succ, primeCounting_eq_primeCounting'_succ, primeCounting',
     count_succ]
   split_ifs <;> omega
+
+/-- There are at most `n` primes `p ≤ n`. -/
+theorem primeCounting_le_self (n : ℕ) : primeCounting n ≤ n := by
+  rw [← primesLE_card_eq_primeCounting, primesLE_eq_filter_Ioc_zero]
+  exact (card_filter_le _ _).trans (by simp)
 
 /-- The prime counting function at the `k`-th prime, counting from `nth Nat.Prime 0 = 2`,
 is `k + 1`. -/

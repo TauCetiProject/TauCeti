@@ -10,9 +10,9 @@ module
 -- supplies the relabelling the proof feeds to Mathlib's `RootPairing.Base.equivOfCartanMatrixEq`.
 -- It re-exports `Mathlib.LinearAlgebra.RootSystem.CartanMatrix`, hence that theorem.
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
+import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 -- `TauCeti.LinearAlgebra.RootSystem.Height` supplies `RootPairing.Base.ext`, used in a proof only.
 import TauCeti.LinearAlgebra.RootSystem.Height
-import TauCeti.LinearAlgebra.RootSystem.Span
 
 /-!
 # Root systems of the same Dynkin type are isomorphic
@@ -30,10 +30,10 @@ type `t` are each labelled by the nodes of `t`, and composing the two labellings
 supports compatibly with the Cartan matrices.
 
 Without `[IsRootSystem]` or equal ambient base rings, `RootPairing.Base.indexEquivOfCartanMatrixEq`
-adapts `RootPairing.Base.apply_mem_range_root_of_cartanMatrixEq` and
-`RootPairing.Base.equivOfCartanMatrixEq` from `Mathlib.LinearAlgebra.RootSystem.CartanMatrix` to
-the integral root lattices `P.rootSpan ℤ ≃ₗ[ℤ] P₂.rootSpan ℤ`, yielding a bijection `ι ≃ ι₂`
-between root index types.
+transports simple-root coefficient columns (`RootPairing.Base.rootCoefficients`) along `e.symm`
+using `RootPairing.Base.iUnion_orbit_single_eq_range_rootCoefficients` and
+`Matrix.comp_equiv_mem_orbit`, yielding a bijection `ι ≃ ι₂` between root index types that
+intertwines `P.rootSpanMem ℤ` with `b.toWeightBasisInt.equiv b₂.toWeightBasisInt e`.
 
 ## Main results
 
@@ -50,11 +50,7 @@ between root index types.
 
 This file proves `nonempty_equiv_of_hasCartanType`. See Bourbaki, *Lie Groups and Lie Algebras,
 Chapters 4-6*, chapter VI, §4, and Humphreys, *Introduction to Lie Algebras and Representation
-Theory*, §11.1, for the isomorphism theorem in the classical language. The cross-ring root-index
-bijection `RootPairing.Base.indexEquivOfCartanMatrixEq` adapts
-`RootPairing.Base.apply_mem_range_root_of_cartanMatrixEq` and
-`RootPairing.Base.equivOfCartanMatrixEq` from `Mathlib.LinearAlgebra.RootSystem.CartanMatrix` to
-`P.rootSpan ℤ`.
+Theory*, §11.1, for the isomorphism theorem in the classical language.
 -/
 
 public section
@@ -68,80 +64,83 @@ variable {ι R M N ι₂ R₂ M₂ N₂ : Type*}
   [CommRing R₂] [IsDomain R₂] [CharZero R₂]
   [AddCommGroup M₂] [Module R₂ M₂] [AddCommGroup N₂] [Module R₂ N₂]
   {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
-  {P₂ : RootPairing ι₂ R₂ M₂ N₂} [P₂.IsCrystallographic]
+  {P₂ : RootPairing ι₂ R₂ M₂ N₂} [Finite ι₂] [P₂.IsCrystallographic] [P₂.IsReduced]
 
-omit [IsDomain R₂] [CharZero R₂] in
-/-- Adapts `RootPairing.Base.apply_mem_range_root_of_cartanMatrixEq` from
-`Mathlib.LinearAlgebra.RootSystem.CartanMatrix` to `P.rootSpan ℤ`, dropping `[IsRootSystem]` and
-allowing distinct characteristic-zero scalar rings. -/
-private lemma apply_rootSpanMem_mem_range_of_cartanMatrixEq
+private lemma comp_mem_range_rootCoefficients
     (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
-    (f : P.rootSpan ℤ ≃ₗ[ℤ] P₂.rootSpan ℤ)
-    (hf : ∀ i : b.support, f (P.rootSpanMem ℤ i) = P₂.rootSpanMem ℤ (e i))
     (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : ι) :
-    f (P.rootSpanMem ℤ i) ∈ Set.range (P₂.rootSpanMem ℤ) := by
-  have hcomm : ∀ k : b.support,
-      f.toLinearMap.comp (P.reflectionRootSpan ℤ k).toLinearMap =
-        (P₂.reflectionRootSpan ℤ (e k)).toLinearMap.comp f.toLinearMap := fun k =>
-    b.toWeightBasisInt.ext fun j => by
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, toWeightBasisInt_apply, hf,
-        P.reflectionRootSpan_rootSpanMem_eq_sub ℤ, P₂.reflectionRootSpan_rootSpanMem_eq_sub ℤ,
-        map_sub, map_zsmul, ← b.cartanMatrixIn_def ℤ, ← b₂.cartanMatrixIn_def ℤ, he]
-  refine b.induction_reflect i
-    (p := fun idx => f (P.rootSpanMem ℤ idx) ∈ Set.range (P₂.rootSpanMem ℤ)) ?_
-    (fun j hj => ⟨e ⟨j, hj⟩, (hf ⟨j, hj⟩).symm⟩) ?_
-  · rintro j ⟨l, hl⟩
-    exact ⟨P₂.reflectionPerm l l, by
-      rw [P.rootSpanMem_reflectionPerm_self ℤ, map_neg, ← hl,
-        P₂.rootSpanMem_reflectionPerm_self ℤ]⟩
-  · rintro j k ⟨l, hl⟩ hk
-    have hstep := LinearMap.congr_fun (hcomm ⟨k, hk⟩) (P.rootSpanMem ℤ j)
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, reflectionRootSpan_rootSpanMem,
-      ← hl] at hstep
-    exact ⟨P₂.reflectionPerm (e ⟨k, hk⟩) l, hstep.symm⟩
+    b.rootCoefficients i ∘ e.symm ∈ Set.range b₂.rootCoefficients := by
+  classical
+  obtain ⟨k, hk⟩ := Set.mem_iUnion.mp
+    (b.iUnion_orbit_single_eq_range_rootCoefficients.ge ⟨i, rfl⟩)
+  rw [← b₂.iUnion_orbit_single_eq_range_rootCoefficients, Set.mem_iUnion]
+  refine ⟨e k, ?_⟩
+  have h := Matrix.comp_equiv_mem_orbit b.cartanMatrix b.cartanMatrix_apply_same
+    b₂.cartanMatrix_apply_same e.symm (fun u v ↦ by simpa using he (e.symm u) (e.symm v)) hk
+  have hs : (Pi.single k 1 : b.support → ℤ) ∘ e.symm = Pi.single (e k) 1 := by
+    ext u; simp [Pi.single_apply, e.symm_apply_eq]
+  rwa [hs] at h
 
 /-- **A Cartan-matrix-preserving bijection between the simple roots of two finite reduced
 crystallographic root pairings extends to a bijection between their root index types**, without
-requiring `[IsRootSystem]` or equal ambient scalar rings. Adapts
-`RootPairing.Base.equivOfCartanMatrixEq` from `Mathlib.LinearAlgebra.RootSystem.CartanMatrix` to
-the integral root lattice `P.rootSpan ℤ`. -/
-noncomputable def indexEquivOfCartanMatrixEq [Finite ι₂] [P₂.IsReduced]
+requiring `[IsRootSystem]` or equal ambient scalar rings. -/
+noncomputable def indexEquivOfCartanMatrixEq
     (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
     (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) : ι ≃ ι₂ :=
-  let f : P.rootSpan ℤ ≃ₗ[ℤ] P₂.rootSpan ℤ := b.toWeightBasisInt.equiv b₂.toWeightBasisInt e
-  have hf_supp : ∀ i : b.support, f (P.rootSpanMem ℤ i) = P₂.rootSpanMem ℤ (e i) := fun i => by
-    rw [← b.toWeightBasisInt_apply i, Module.Basis.equiv_apply, b₂.toWeightBasisInt_apply]
-  have hbij : Set.BijOn f (Set.range (P.rootSpanMem ℤ)) (Set.range (P₂.rootSpanMem ℤ)) :=
-    ⟨by rintro _ ⟨i, rfl⟩
-        exact apply_rootSpanMem_mem_range_of_cartanMatrixEq b b₂ e f hf_supp he i,
-     f.injective.injOn,
-     by rintro y ⟨j, rfl⟩
-        obtain ⟨i, hi⟩ := apply_rootSpanMem_mem_range_of_cartanMatrixEq b₂ b e.symm f.symm
-          (fun i => f.injective (by simp [hf_supp])) (fun u v => by simp [(he _ _).symm]) j
-        exact ⟨P.rootSpanMem ℤ i, Set.mem_range_self i, by rw [hi, f.apply_symm_apply]⟩⟩
-  (Equiv.ofInjective (P.rootSpanMem ℤ) (P.rootSpanMem_injective ℤ)).trans <|
-    hbij.equiv.trans (Equiv.ofInjective (P₂.rootSpanMem ℤ) (P₂.rootSpanMem_injective ℤ)).symm
+  have hbij : Set.BijOn (· ∘ e.symm)
+      (Set.range b.rootCoefficients) (Set.range b₂.rootCoefficients) :=
+    ⟨by rintro _ ⟨i, rfl⟩; exact comp_mem_range_rootCoefficients b b₂ e he i,
+     fun c₁ _ c₂ _ h ↦ funext fun k ↦ by simpa using congrFun h (e k),
+     by rintro _ ⟨j, rfl⟩
+        exact ⟨b₂.rootCoefficients j ∘ e,
+          comp_mem_range_rootCoefficients b₂ b e.symm
+            (fun u v ↦ by simpa using (he (e.symm u) (e.symm v)).symm) j,
+          funext fun _ ↦ by simp⟩⟩
+  (Equiv.ofInjective b.rootCoefficients b.rootCoefficients_injective).trans <|
+    hbij.equiv.trans (Equiv.ofInjective b₂.rootCoefficients b₂.rootCoefficients_injective).symm
+
+private theorem rootCoefficients_indexEquivOfCartanMatrixEq
+    (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
+    (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : ι) :
+    b₂.rootCoefficients (b.indexEquivOfCartanMatrixEq b₂ e he i) =
+      b.rootCoefficients i ∘ e.symm := by
+  simp only [indexEquivOfCartanMatrixEq, Equiv.trans_apply]
+  exact Equiv.apply_ofInjective_symm b₂.rootCoefficients_injective _
 
 /-- `RootPairing.Base.indexEquivOfCartanMatrixEq` intertwines `rootSpanMem ℤ` with the linear
 equivalence `b.toWeightBasisInt.equiv b₂.toWeightBasisInt e` of root lattices. -/
 @[simp]
-theorem rootSpanMem_indexEquivOfCartanMatrixEq [Finite ι₂] [P₂.IsReduced]
+theorem rootSpanMem_indexEquivOfCartanMatrixEq
     (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
     (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : ι) :
     P₂.rootSpanMem ℤ (b.indexEquivOfCartanMatrixEq b₂ e he i) =
       b.toWeightBasisInt.equiv b₂.toWeightBasisInt e (P.rootSpanMem ℤ i) := by
-  simp only [indexEquivOfCartanMatrixEq, Equiv.trans_apply]
-  exact Equiv.apply_ofInjective_symm (P₂.rootSpanMem_injective ℤ) _
+  have hspan : P.rootSpanMem ℤ i = ∑ k, b.rootCoefficients i k • b.toWeightBasisInt k :=
+    Subtype.ext <| by
+      dsimp only [RootPairing.rootSpanMem]
+      rw [Submodule.coe_sum]
+      simp_rw [SetLike.val_smul, b.coe_toWeightBasisInt_apply]
+      exact (b.sum_rootCoefficients_smul_root i).symm
+  rw [hspan, map_sum]
+  apply Subtype.ext
+  dsimp only [RootPairing.rootSpanMem]
+  rw [Submodule.coe_sum, ← b₂.sum_rootCoefficients_smul_root]
+  simp_rw [rootCoefficients_indexEquivOfCartanMatrixEq, Function.comp_apply, map_zsmul,
+    Module.Basis.equiv_apply, SetLike.val_smul, b₂.coe_toWeightBasisInt_apply]
+  exact (e.sum_comp fun u ↦ b.rootCoefficients i (e.symm u) • P₂.root u).symm.trans
+    (Finset.sum_congr rfl fun k _ ↦ by simp)
 
 /-- `RootPairing.Base.indexEquivOfCartanMatrixEq` extends `e` on simple-root indices. -/
 @[simp]
-theorem indexEquivOfCartanMatrixEq_apply_support [Finite ι₂] [P₂.IsReduced]
+theorem indexEquivOfCartanMatrixEq_apply_support
     (b : P.Base) (b₂ : P₂.Base) (e : b.support ≃ b₂.support)
     (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) (i : b.support) :
     b.indexEquivOfCartanMatrixEq b₂ e he i = e i := by
-  apply P₂.rootSpanMem_injective ℤ
-  rw [rootSpanMem_indexEquivOfCartanMatrixEq, ← b.toWeightBasisInt_apply i,
-    Module.Basis.equiv_apply, b₂.toWeightBasisInt_apply]
+  classical
+  apply b₂.rootCoefficients_injective
+  rw [rootCoefficients_indexEquivOfCartanMatrixEq, b.rootCoefficients_coe i,
+    b₂.rootCoefficients_coe (e i)]
+  ext u; simp [Pi.single_apply, e.symm_apply_eq]
 
 end IndexEquiv
 

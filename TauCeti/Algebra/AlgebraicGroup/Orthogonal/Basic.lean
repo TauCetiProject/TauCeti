@@ -132,8 +132,8 @@ private noncomputable def pointsSubgroupToOrthogonalGroup
     (g : CommHopfAlgCat.quotientPointsSubgroup
       (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
       (CommAlgCat.of R A)) : Matrix.orthogonalGroup (Fin n) A :=
-  ⟨(GeneralLinear.pointsMulEquiv n g.1 : Matrix (Fin n) (Fin n) A),
-    (mem_definingPointsSubgroup_iff R n g.1).mp g.2⟩
+  ⟨(GeneralLinear.pointsMulEquiv n g.val : Matrix (Fin n) (Fin n) A),
+    (mem_definingPointsSubgroup_iff R n g.val).mp g.property⟩
 
 /-- Regard an orthogonal matrix as a point in the cut-out ambient subgroup, through the unit
 `Unitary.toUnits` it defines in the matrix ring. -/
@@ -145,7 +145,7 @@ private noncomputable def orthogonalGroupToPointsSubgroup
   ⟨(GeneralLinear.pointsMulEquiv (R := R) (A := A) n).symm (Unitary.toUnits g),
     (mem_definingPointsSubgroup_iff R n _).mpr (by
       rw [MulEquiv.apply_symm_apply]
-      exact Unitary.val_toUnits_apply g ▸ g.2)⟩
+      exact Unitary.val_toUnits_apply g ▸ g.property)⟩
 
 /-- The unit attached to an orthogonal matrix wrapped from a general linear element is that
 element: both have the same underlying matrix. -/
@@ -177,7 +177,7 @@ private noncomputable def definingPointsSubgroupMulEquiv :
     exact Unitary.val_toUnits_apply g
   map_mul' g h :=
     Subtype.ext (congrArg (fun M : GL (Fin n) A => (M : Matrix (Fin n) (Fin n) A))
-      (map_mul (GeneralLinear.pointsMulEquiv (R := R) (A := A) n) g.1 h.1))
+      (map_mul (GeneralLinear.pointsMulEquiv (R := R) (A := A) n) g.val h.val))
 
 /-- **The points identification**: the group of algebra-valued points of the orthogonal
 coordinate Hopf algebra is the orthogonal group of the value algebra. -/

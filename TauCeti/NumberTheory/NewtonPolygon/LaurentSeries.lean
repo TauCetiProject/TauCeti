@@ -54,6 +54,18 @@ degree `u`, with extreme coefficients `lc(a_l)` and `lc(a_u)`. So the multiplici
 slope, which for a split polynomial counts its roots of order `-σ`, is the degree minus the
 order of vanishing of the initial polynomial at `σ`.
 
+At the slope `σ = -ord(c)`, the translation `Y ↦ Y + c` acts on the Newton polygon through the
+initial polynomial. The multiplicity of `σ` as a slope of `P (Y + c)` is the degree of `in_σ (P)`
+minus the multiplicity of `lc(c)` as a root of `in_σ (P)`, and the number of slopes of `P (Y + c)`
+below `σ` is that root multiplicity minus the multiplicity of `c` as a root of `P`. For a split
+polynomial, the roots `r` with `ord(r) > ord(c)` move up to the slope `σ`, while those with
+`ord(r) = ord(c)` and `lc(r) = lc(c)` leave it: for `r ≠ c` to slopes below `σ`, and `r = c` to
+the root `0` of `P (Y + c)`, which contributes no slope. In particular, the leading coefficient of
+a root `c` of `P` is a root of the initial polynomial at the slope `-c.order`, which is `-ord(c)`
+for `c ≠ 0`; for `c = 0` this slope is `0` and `lc(0) = 0`. The supporting values at slopes at
+least `-ord(c)` and the slopes above `-ord(c)` do not move; this holds for every real additive
+valuation (`TauCeti.NumberTheory.NewtonPolygon.Taylor`).
+
 ## Main definitions
 
 * `Polynomial.initialPolynomial P σ`: the initial polynomial of `P` at slope `σ`.
@@ -94,6 +106,14 @@ order of vanishing of the initial polynomial at `σ`.
 * `Polynomial.count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial`: the
   multiplicity of a slope `σ` is the degree minus the order of vanishing at `Y = 0` of the
   initial polynomial at `σ`.
+* `Polynomial.rootMultiplicity_le_rootMultiplicity_initialPolynomial`: if `ord(c) = -σ`, the
+  multiplicity of `c` as a root of `P` is at most that of `lc(c)` as a root of `in_σ (P)`.
+* `Polynomial.isRoot_initialPolynomial_leadingCoeff_of_isRoot`: the leading coefficient of a root
+  `c` of `P` is a root of the initial polynomial of `P` at the slope `-c.order`.
+* `Polynomial.count_newtonSlopes_taylor_of_realAddVal_eq` and
+  `Polynomial.rootMultiplicity_initialPolynomial_of_realAddVal_eq`: if `ord(c) = -σ`, the slopes of
+  `P (Y + c)` equal to `σ` and below `σ` are counted by the multiplicity of `lc(c)` as a root of
+  `in_σ (P)`.
 
 ## References
 
@@ -512,7 +532,7 @@ theorem initialPolynomial_comp_C_mul_X (P : R⸨X⸩[X]) {c : R⸨X⸩} (hc : c 
   · simp [hn]
   simp only [comp_C_mul_X_coeff, ite_mul, zero_mul]
   refine if_congr (forall_congr' fun m => ?_)
-    (by rw [HahnSeries.leadingCoeff_mul, TauCeti.hahnSeries_leadingCoeff_pow]) rfl
+    (by rw [HahnSeries.leadingCoeff_mul, HahnSeries.leadingCoeff_pow]) rfl
   by_cases hm : P.coeff m = 0
   · simp [hm]
   have hord {k : ℕ} (hk : P.coeff k ≠ 0) :
@@ -672,5 +692,75 @@ theorem count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial 
     natTrailingDegree_initialPolynomial_of_isFiniteFace hface]
 
 end Face
+
+/-! ### Translation of the slopes on the face -/
+
+section TaylorRoots
+
+/-- If `ord(c) = -σ`, the multiplicity of `c` as a root of `P` is at most the multiplicity of
+`lc(c)` as a root of the initial polynomial `in_σ (P)`: taking initial polynomials sends
+`(Y - c) ^ k` to `(Y - lc(c)) ^ k`. -/
+theorem rootMultiplicity_le_rootMultiplicity_initialPolynomial (P : R⸨X⸩[X]) {σ : ℝ}
+    {c : R⸨X⸩} (hσ : realAddVal R c = ((-σ : ℝ) : WithTop ℝ)) :
+    P.rootMultiplicity c ≤ (P.initialPolynomial σ).rootMultiplicity c.leadingCoeff := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · simp
+  have hX : (X - C c).initialPolynomial σ = X - C c.leadingCoeff := by
+    simpa [HahnSeries.leadingCoeff_neg, sub_eq_add_neg] using
+      initialPolynomial_taylor_of_realAddVal_eq (X : R⸨X⸩[X]) (c := -c)
+        (by rwa [AddValuation.map_neg])
+  rw [le_rootMultiplicity_iff (initialPolynomial_ne_zero σ hP), ← hX, ← initialPolynomial_pow]
+  exact _root_.map_dvd (initialPolynomialHom R σ) (pow_rootMultiplicity_dvd P c)
+
+/-- **The leading coefficient of a root is a root of the initial polynomial.** If `c` is a root of
+`P`, then its leading coefficient `lc(c)` is a root of the initial polynomial of `P` at the slope
+`-c.order`, which is `-ord(c)` when `c ≠ 0`. This is the necessary condition behind the
+Newton–Puiseux algorithm: the leading terms `a t ^ γ` of the roots of `P` are read from the roots
+`a` of the initial polynomials. For `c = 0` the slope is `0` and `lc(0) = 0`. -/
+theorem isRoot_initialPolynomial_leadingCoeff_of_isRoot {P : R⸨X⸩[X]} {c : R⸨X⸩}
+    (h : P.IsRoot c) : (P.initialPolynomial (-c.order)).IsRoot c.leadingCoeff := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- The zero root: the constant coefficient of `P` vanishes, and so does that of `in P`.
+    rw [IsRoot, ← coeff_zero_eq_eval_zero] at h
+    simp [IsRoot, ← coeff_zero_eq_eval_zero, coeff_initialPolynomial, h]
+  have hσ : realAddVal R c = ((-(-c.order : ℝ) : ℝ) : WithTop ℝ) := by
+    rw [neg_neg, realAddVal_of_ne_zero hc]
+  -- The constant coefficient of `in P (Y + lc(c)) = in (P (Y + c))` is that of `P (Y + c)`, zero.
+  rw [IsRoot, ← taylor_coeff_zero, ← initialPolynomial_taylor_of_realAddVal_eq P hσ,
+    coeff_initialPolynomial, taylor_coeff_zero, h.eq_zero]
+  simp
+
+end TaylorRoots
+
+section TaylorSlopes
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- **Translation of the slopes, on the face.** If `ord(c) = -σ`, the multiplicity of `σ` as a
+slope of the Newton polygon of `P (Y + c)` is the degree of the initial polynomial `in_σ (P)` minus
+the multiplicity of `lc(c)` as a root of `in_σ (P)`. For a split polynomial, the translation moves
+the roots `r` with `ord(r) > ord(c)` up to the slope `σ`, and moves those with `ord(r) = ord(c)` and
+`lc(r) = lc(c)` off it: for `r ≠ c` to slopes below `σ`, and `r = c` to the root `0`, which
+contributes no slope. -/
+theorem count_newtonSlopes_taylor_of_realAddVal_eq (P : R⸨X⸩[X]) {σ : ℝ} {c : R⸨X⸩}
+    (hσ : realAddVal R c = ((-σ : ℝ) : WithTop ℝ)) :
+    ((taylor c P).newtonSlopes (realAddVal R)).count σ =
+      (P.initialPolynomial σ).natDegree -
+        (P.initialPolynomial σ).rootMultiplicity c.leadingCoeff := by
+  rw [count_newtonSlopes_eq_natDegree_sub_natTrailingDegree_initialPolynomial,
+    initialPolynomial_taylor_of_realAddVal_eq P hσ, natDegree_taylor, natTrailingDegree_taylor]
+
+/-- **Translation of the slopes, below the face.** If `ord(c) = -σ`, the multiplicity of `lc(c)`
+as a root of the initial polynomial `in_σ (P)` is the multiplicity of `c` as a root of `P` plus the
+number of slopes of the Newton polygon of `P (Y + c)` below `σ`, counted with multiplicity. For a
+split polynomial, these slopes are those of the roots `r ≠ c` of `P` with `ord(r - c) > ord(c)`. -/
+theorem rootMultiplicity_initialPolynomial_of_realAddVal_eq (P : R⸨X⸩[X]) {σ : ℝ} {c : R⸨X⸩}
+    (hσ : realAddVal R c = ((-σ : ℝ) : WithTop ℝ)) :
+    (P.initialPolynomial σ).rootMultiplicity c.leadingCoeff =
+      P.rootMultiplicity c + (((taylor c P).newtonSlopes (realAddVal R)).filter (· < σ)).card := by
+  rw [← natTrailingDegree_taylor, ← natTrailingDegree_taylor,
+    ← initialPolynomial_taylor_of_realAddVal_eq P hσ, natTrailingDegree_initialPolynomial]
+
+end TaylorSlopes
 
 end Polynomial

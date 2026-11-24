@@ -180,10 +180,11 @@ theorem exists_injective_end_of_inverted_coordinate_eq_zero {ι : Type*} {E : ι
     ∃ φ : {x : ℝ // g x = 0} → ι, Injective φ ∧
       ∀ x, ∀ᶠ z in 𝓝[upperHalfPlaneSet] ((x : ℝ) : ℂ), f z ∈ E (φ x) := by
   choose φ hφ using fun x : {x : ℝ // g x = 0} =>
-    exists_eventually_mem_of_inverted_coordinate_eq_zero hgc hgf hgne x.2 hfU.mapsTo hEo hEd hEU
+    exists_eventually_mem_of_inverted_coordinate_eq_zero hgc hgf hgne x.property hfU.mapsTo hEo hEd
+        hEU
   refine ⟨φ, fun x x' h => Subtype.ext ?_, hφ⟩
   exact eq_of_eventually_mem_of_inverted_coordinate_eq_zero hgc hgd hgf hgne hfU.injOn
-    (hfU.image_eq ▸ hE (φ x)) x.2 x'.2 (hφ x) (h ▸ hφ x')
+    (hfU.image_eq ▸ hE (φ x)) x.property x'.property (hφ x) (h ▸ hφ x')
 
 /-- **Finitely many ends give finitely many accesses to infinity.**  Under the hypotheses of
 `TauCeti.exists_injective_end_of_inverted_coordinate_eq_zero`, if there are only finitely many

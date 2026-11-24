@@ -271,7 +271,7 @@ theorem isUnramifiedAt_of_integralIdealsPrimeTo (h : IsAdmissibleModulus K L �
     (I : integralIdealsPrimeTo 𝔪)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
     Algebra.IsUnramifiedAt (𝓞 K) Q := by
-  obtain ⟨hI, hS⟩ := Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)
+  obtain ⟨hI, hS⟩ := Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)
   have : (I : Ideal (𝓞 K)).IsPrime := Ideal.isPrime_of_liesOver Q _
   let v : HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hI⟩
   have : Q.LiesOver v.asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
@@ -337,7 +337,7 @@ theorem isAdmissibleModulus_of_isUnramifiedAt [IsGalois K L]
   have hinf' (v : InfinitePlace K) : infiniteLocalArtinAt K L v (v.ideleInfiniteCoord x) = 1 := by
     by_cases hv : ∃ v' ∈ 𝔪.infinitePart, (v' : InfinitePlace K) = v
     · obtain ⟨v', hv', rfl⟩ := hv
-      exact infiniteLocalArtinAt_eq_one_of_pos v'.2
+      exact infiniteLocalArtinAt_eq_one_of_pos v'.property
         ((mem_ideleCongruenceSubgroup_iff.1 hx).2.2 v' hv')
     · push Not at hv
       obtain ⟨w, rfl⟩ := InfinitePlace.comap_surjective (K := L) v

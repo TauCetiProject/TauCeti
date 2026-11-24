@@ -213,7 +213,7 @@ private theorem measurable_inverseWishartPDFReal_comp {γ : Type*} [MeasurableSp
   classical
   have hrpow : Measurable fun z : ℝ × ℝ => z.1 ^ z.2 := by fun_prop
   have hg' : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ) :=
-    measurable_subtype_coe.comp hg
+    measurable_subtypeVal.comp hg
   have hdetg : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ).det :=
     (Continuous.matrix_det continuous_id).measurable.comp hg'
   have hdetT : Measurable fun c => (T c).det :=
@@ -375,7 +375,7 @@ theorem inverseWishartMeasure_of_posDef (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
     have hrpow : Measurable fun z : ℝ × ℝ => z.1 ^ z.2 := by fun_prop
     have hdet : Measurable fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         (B : Matrix (Fin p) (Fin p) ℝ).det :=
-      (Continuous.matrix_det continuous_id).measurable.comp measurable_subtype_coe
+      (Continuous.matrix_det continuous_id).measurable.comp measurable_subtypeVal
     exact (hrpow.comp (hdet.prodMk measurable_const)).ennreal_ofReal
   -- A density supported on the cone may equally be taken against the restricted measure.
   have hrestrict : ∀ f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → ℝ≥0∞,
@@ -411,8 +411,8 @@ theorem inverseWishartMeasure_of_posDef (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
           (nonsingularWishartPDF n S⁻¹)).map symmetricInv := by
         rw [hrestrict _ fun A hA => nonsingularWishartPDF_of_not_posDef n S⁻¹ hA]
     _ = ((symmetricLebesgue p).restrict C).withDensity (inverseWishartPDF n S) :=
-        Measure.map_withDensity_eq_withDensity measurable_symmetricInv hw
-          (measurable_inverseWishartPDF n S) hmap hfactor
+        Measure.map_withDensity_eq_withDensity measurable_symmetricInv.aemeasurable hw.aemeasurable
+          (measurable_inverseWishartPDF n S).aemeasurable hmap hfactor
     _ = (symmetricLebesgue p).withDensity (inverseWishartPDF n S) :=
         (hrestrict _ fun A hA => inverseWishartPDF_of_not_posDef n S hA).symm
 

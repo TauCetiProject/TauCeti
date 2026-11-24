@@ -98,18 +98,20 @@ variable (k : Type u) (A : Type v) [Field k] [Ring A] [Algebra k A] [FiniteDimen
 algebra, as a translation on their isomorphism classes. -/
 noncomputable def arTranslation :
     ARTranslation fun M : ModuleCat.{max u v w} A ↦ Module.Finite A M where
-  obj M _ := arTranslate k M
+  obj M _ := arTranslate k k M
   prop_obj _ _ := inferInstance
-  nonempty_iso_obj_of_iso _ _ e := nonempty_iso_arTranslate_of_iso k e
-  indecomposable_obj_iff M _ hI := indecomposable_arTranslate_iff k M hI
-  injective_obj_iff M _ := injective_arTranslate_iff k M
+  nonempty_iso_obj_of_iso _ _ e := nonempty_iso_arTranslate_of_iso k k e
+  indecomposable_obj_iff M _ hI :=
+    indecomposable_arTranslate_iff (length_quotient_linearMap_self_eq_one k) M hI
+  injective_obj_iff M _ := injective_arTranslate_iff (length_quotient_linearMap_self_eq_one k) M
   nonempty_iso_of_nonempty_iso_obj _ _ hiM hiN hpM :=
-    (nonempty_iso_arTranslate_iff k hiM hiN hpM).mp
-  exists_nonempty_iso_obj N _ hiN hinj := exists_nonempty_iso_arTranslate k N hiN hinj
+    (nonempty_iso_arTranslate_iff (length_quotient_linearMap_self_eq_one k) hiM hiN hpM).mp
+  exists_nonempty_iso_obj N _ hiN hinj :=
+    exists_nonempty_iso_arTranslate (length_quotient_linearMap_self_eq_one k) N hiN hinj
 
 @[simp]
 theorem arTranslation_obj (M : ModuleCat.{max u v w} A) (hM : Module.Finite A M) :
-    (arTranslation k A).obj M hM = arTranslate k M :=
+    (arTranslation k A).obj M hM = arTranslate k k M :=
   (rfl)
 
 end ModuleCat

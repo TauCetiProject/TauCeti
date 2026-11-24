@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Topology.MetricSpace.Antilipschitz
 import TauCeti.Topology.MetricSpace.Bounded
 
 /-!
@@ -15,7 +16,11 @@ import TauCeti.Topology.MetricSpace.Bounded
 
 Results on the `d`-dimensional Hausdorff measure `μH[d]`: it is counting measure in dimension
 zero, the fiber measures of a map continuous on a compact or σ-compact set are measurable, and
-countable covers by closed balls of small radii bound `μH[d]` from above.
+countable covers by closed balls of small radii bound `μH[d]` from above. Inverse-Lipschitz
+control on a set gives a lower image-measure bound. Lipschitz and inverse-Lipschitz maps
+transport a.e. assertions forward and backward respectively, giving null-set and a.e.
+equivalences for bi-Lipschitz parametrizations in every nonnegative real dimension.
+No measurability of the parameter set or its image is required for these transport results.
 
 ## Zero-dimensional Hausdorff measure
 
@@ -49,6 +54,11 @@ diameter at most `2 r`.
 
 ## Main declarations
 
+* `AntilipschitzWith.le_hausdorffMeasure_image_of_domRestrict`: localized lower image-measure bound.
+* `AntilipschitzWith.ae_hausdorffMeasure_of_image` and
+  `LipschitzOnWith.ae_hausdorffMeasure_image`: one-sided a.e. transport.
+* `LipschitzOnWith.hausdorffMeasure_image_eq_zero_iff` and
+  `LipschitzOnWith.ae_hausdorffMeasure_image_iff`: bi-Lipschitz null-set and a.e. transport.
 * `TauCeti.hausdorffMeasure_zero_eq_count`: zero-dimensional Hausdorff measure is counting
   measure.
 * `IsCompact.measurable_hausdorffMeasure_inter_preimage`: fiber measures of a continuous map on a
@@ -70,6 +80,76 @@ public section
 
 open Set MeasureTheory Measure Metric Filter
 open scoped ENNReal NNReal Topology
+
+namespace AntilipschitzWith
+
+variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  {L : ℝ≥0} {f : X → Y} {s : Set X}
+
+/-- Inverse-Lipschitz control on `s` bounds its raw Hausdorff measure by that of its image. -/
+theorem le_hausdorffMeasure_image_of_domRestrict
+    (hi : AntilipschitzWith L (s.domRestrict f)) {d : ℝ} (hd : 0 ≤ d) :
+    μH[d] s ≤ (L : ℝ≥0∞) ^ d * μH[d] (f '' s) := by
+  have hle := hi.le_hausdorffMeasure_image hd Set.univ
+  rw [← isometry_subtypeVal.hausdorffMeasure_image (Or.inl hd) (Set.univ : Set s),
+    Set.image_univ, Subtype.range_coe, Set.image_univ, Set.range_domRestrict] at hle
+  exact hle
+
+/-- Inverse-Lipschitz control on a parameter set pulls a.e. assertions on its image back
+for raw Hausdorff measure. No Lipschitz hypothesis on the parametrization is needed. -/
+theorem ae_hausdorffMeasure_of_image (hi : AntilipschitzWith L (s.domRestrict f))
+    {d : ℝ} (hd : 0 ≤ d) {p : Y → Prop}
+    (h : ∀ᵐ y ∂(μH[d] : Measure Y), y ∈ f '' s → p y) :
+    ∀ᵐ x ∂(μH[d] : Measure X), x ∈ s → p (f x) := by
+  simp only [ae_iff, not_imp, ofPred_and, ofPred_mem_eq] at h ⊢
+  rw [← Set.image_inter_preimage f s {y | ¬p y}] at h
+  rw [← Set.preimage_ofPred_eq (f := f) (p := fun y => ¬p y)]
+  have hle := (hi.domRestrict_mono Set.inter_subset_left).le_hausdorffMeasure_image_of_domRestrict
+    (s := s ∩ f ⁻¹' {y | ¬p y}) hd
+  exact nonpos_iff_eq_zero.mp (hle.trans_eq (by rw [h, mul_zero]))
+
+end AntilipschitzWith
+
+namespace LipschitzOnWith
+
+variable {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+  [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+  {K L : ℝ≥0} {f : X → Y} {s : Set X}
+
+/-- A bi-Lipschitz parametrization preserves and reflects raw Hausdorff null sets in every
+nonnegative real dimension, without measurability assumptions on the parameter set. -/
+theorem hausdorffMeasure_image_eq_zero_iff
+    (hf : LipschitzOnWith K f s) (hi : AntilipschitzWith L (s.domRestrict f))
+    {d : ℝ} (hd : 0 ≤ d) : μH[d] (f '' s) = 0 ↔ μH[d] s = 0 := by
+  constructor
+  · intro h
+    exact nonpos_iff_eq_zero.mp ((hi.le_hausdorffMeasure_image_of_domRestrict hd).trans_eq
+      (by simp [h]))
+  · intro h
+    exact nonpos_iff_eq_zero.mp ((hf.hausdorffMeasure_image_le hd).trans_eq (by simp [h]))
+
+/-- Lipschitz maps send parameter-a.e. assertions to image-a.e. assertions for raw Hausdorff
+measure. No inverse-Lipschitz or injectivity hypothesis is needed. -/
+theorem ae_hausdorffMeasure_image (hf : LipschitzOnWith K f s) {d : ℝ} (hd : 0 ≤ d)
+    {p : Y → Prop} (h : ∀ᵐ x ∂(μH[d] : Measure X), x ∈ s → p (f x)) :
+    ∀ᵐ y ∂(μH[d] : Measure Y), y ∈ f '' s → p y := by
+  simp only [ae_iff, not_imp, ofPred_and, ofPred_mem_eq] at h ⊢
+  rw [← Set.preimage_ofPred_eq (f := f) (p := fun y => ¬p y)] at h
+  rw [← Set.image_inter_preimage f s {y | ¬p y}]
+  exact nonpos_iff_eq_zero.mp
+    (((hf.mono Set.inter_subset_left).hausdorffMeasure_image_le hd).trans_eq
+      (by rw [h, mul_zero]))
+
+/-- Almost-everywhere assertions on a bi-Lipschitz image are equivalent to their pullbacks
+for raw Hausdorff measure in any nonnegative real dimension. -/
+theorem ae_hausdorffMeasure_image_iff (hf : LipschitzOnWith K f s)
+    (hi : AntilipschitzWith L (s.domRestrict f)) {d : ℝ} (hd : 0 ≤ d) {p : Y → Prop} :
+    (∀ᵐ y ∂(μH[d] : Measure Y), y ∈ f '' s → p y) ↔
+      ∀ᵐ x ∂(μH[d] : Measure X), x ∈ s → p (f x) := by
+  exact ⟨hi.ae_hausdorffMeasure_of_image hd, hf.ae_hausdorffMeasure_image hd⟩
+
+end LipschitzOnWith
 
 namespace TauCeti
 

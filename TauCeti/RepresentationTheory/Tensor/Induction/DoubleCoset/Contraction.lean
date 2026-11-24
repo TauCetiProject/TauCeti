@@ -96,7 +96,7 @@ theorem smoothTensorInducedMackeyResolutionContraction_ι_apply_smoothTensorIndu
     (x : ⨂[R] D : DoubleCoset.Quotient (V : Set G) (U : Set G),
       ⨂[R] _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V, A.obj.V) :
     ((smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).ι.hom
-        ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x)).1 =
+        ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x)).val =
       PiTensorProduct.map (fun _ ↦ PiTensorProduct.map
         (fun _ ↦ A.obj.gradedResolutionAugmentation)) x := by
   let e := (smoothDiscreteι R V).mapIso
@@ -113,7 +113,7 @@ theorem smoothTensorInducedMackeyResolutionContraction_ι_apply_smoothTensorIndu
       ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x))
   have hc := hm.symm.trans hc
   have hres := congrArg
-    (fun f ↦ (f ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x)).1)
+    (fun f ↦ (f ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x)).val)
     (TopRep.resFunctor_map_hom V.subtype
       (smoothTensorInducedGradedResolutionContraction U hU s A hA).ι)
   have haug := smoothTensorInducedGradedResolutionContraction_ι_apply U hU s A hA
@@ -126,7 +126,7 @@ coefficient Mackey comparison and then augments every orbit factor. -/
 theorem smoothTensorInducedMackeyResolutionContraction_ι_apply
     (y : ((toSmoothDiscrete R G).obj
       (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj.V) :
-    ((smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).ι.hom y).1 =
+    ((smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).ι.hom y).val =
       PiTensorProduct.map (fun _ ↦ PiTensorProduct.map
         (fun _ ↦ A.obj.gradedResolutionAugmentation))
         ((smoothTensorInducedMackeyIso U V hU r hr t s A).inv.hom.hom y) := by
@@ -147,7 +147,7 @@ theorem smoothTensorInducedMackeyResolutionContraction_proj_apply
     (smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).proj z =
       smoothTensorInducedGradedResolutionProjection U A
         ((smoothTensorInducedMackeyIso U V hU r hr t s
-          (smoothGradedResolutionFunctor.obj A)).hom.hom.hom z.1) := by
+          (smoothGradedResolutionFunctor.obj A)).hom.hom.hom z.val) := by
   unfold smoothTensorInducedMackeyResolutionContraction
   refine (TopRep.ResolutionContraction.ofIso_proj_apply _ _ z).trans ?_
   rw [TopRep.ResolutionContraction.res_proj]
@@ -160,12 +160,12 @@ theorem smoothTensorInducedMackeyResolutionContraction_proj_apply
 comparison. -/
 @[simp] theorem smoothTensorInducedMackeyResolutionContraction_hom_apply (n : ℕ)
     (z : ((smoothTensorInducedMackeyResolution U V hU r hr t s A hA).X (n + 1)).V) :
-    ((smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).hom n z).1 =
+    ((smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).hom n z).val =
       (smoothTensorInducedMackeyIso U V hU r hr t s
         (smoothGradedResolutionFunctor.obj A)).inv.hom.hom
         (smoothTensorInducedGradedResolutionHomotopy U A
           ((smoothTensorInducedMackeyIso U V hU r hr t s
-            (smoothGradedResolutionFunctor.obj A)).hom.hom.hom z.1)) := by
+            (smoothGradedResolutionFunctor.obj A)).hom.hom.hom z.val)) := by
   unfold smoothTensorInducedMackeyResolutionContraction
   refine (congrArg Subtype.val (TopRep.ResolutionContraction.ofIso_hom_apply _ _ n z)).trans ?_
   refine (smoothTensorInducedMackeyResolutionResIso_inv_f_apply

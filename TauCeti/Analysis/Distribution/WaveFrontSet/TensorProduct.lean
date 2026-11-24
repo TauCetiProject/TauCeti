@@ -105,7 +105,7 @@ variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   (S : 𝓓'(Ω, ℂ)) (T : 𝓓'(O, ℂ)) (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
   (hW : MapsTo (prodContinuousLinearEquiv 2 ℝ E D) W V)
 
-omit [FiniteDimensional ℝ D] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
 /-- **The localized Fourier transform of a tensor product.** For a cutoff
 `χ (x, y) = φ x * ψ y` on `W ⊆ WithLp 2 (E × D)`, the localized Fourier transform of `S ⊗ T` at
 `(ξ, η)` is the product of the localized Fourier transforms of `S` at `ξ` and of `T` at `η`. -/
@@ -155,7 +155,7 @@ private theorem exists_prod_cutoff {p : WithLp 2 (E × D)} (hp : p ∈ W) {U₁ 
   exact ⟨φ, ψ, χ, fun _ hx ↦ (hφ hx).1.1, fun _ hy ↦ (hψ hy).1.1,
     by simp [hχ, hφp, hψp], localFourier_transportCLM_tensorProduct S T hV hW hχ⟩
 
-omit [FiniteDimensional ℝ D] in
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
 /-- Around a point `p` of `W`, given properties `P` and `Q` of cutoffs that are satisfied by
 cutoffs supported in every neighbourhood of `p.fst` and of `p.snd` respectively, some cutoffs with
 these properties have a product cutoff on `W` supported in a prescribed neighbourhood `U` of `p`. -/
