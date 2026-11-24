@@ -128,6 +128,8 @@ end InfiniteOrder
 `Spec ℤ[x_i, i ∈ σ] ⟶ Spec ℤ`, which is formally smooth. -/
 theorem formallySmooth_affineSpace (σ : Type u) (S : Scheme.{u}) :
     FormallySmooth (𝔸(σ; S) ↘ S) := by
+  -- `Spec (ULift ℤ)` is terminal, so `terminal.from (Spec (ULift ℤ))` is an isomorphism; this
+  -- instance makes it formally smooth for the `infer_instance` on `Spec.map C ≫ terminal.from _`.
   have := isIso_of_isTerminal specULiftZIsTerminal.{u} terminalIsTerminal (terminal.from _)
   have : FormallySmooth (Spec.map (CommRingCat.ofHom
       (MvPolynomial.C : ULift.{u} ℤ →+* MvPolynomial σ (ULift.{u} ℤ)))) := by
@@ -137,6 +139,9 @@ theorem formallySmooth_affineSpace (σ : Type u) (S : Scheme.{u}) :
   have : FormallySmooth (terminal.from (Spec (.of (MvPolynomial σ (ULift.{u} ℤ))))) := by
     rw [← terminal.comp_from (Spec.map (CommRingCat.ofHom MvPolynomial.C))]
     infer_instance
+  -- By definition `𝔸(σ; S)` is `pullback (terminal.from S) (terminal.from (Spec ℤ[σ]))` and its
+  -- structure map `𝔸(σ; S) ↘ S` is `pullback.fst`; Mathlib's own instances for `𝔸(σ; S) ↘ S`
+  -- (`IsAffineHom`, `Surjective`, `SmoothOfRelativeDimension`) use this same unfolding.
   exact FormallySmooth.pullback_fst (terminal.from S) _
 
 /-- **Affine space of dimension `0` is formally étale**: for `σ` empty, `𝔸(σ; S) ⟶ S` is an
