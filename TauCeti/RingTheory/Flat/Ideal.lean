@@ -199,8 +199,8 @@ section CharP
 variable {A : Type*} [CommRing A] [Module A M]
 
 /-- Over a ring `A` of characteristic `m`, a module flat over `ℤ ⧸ m` satisfies the torsion
-condition of `Module.Projective.of_quotient_smul_top` for every integer `k`: an element killed by
-`k` lies in `ann(k) • M`. -/
+condition of `Module.Projective.of_quotient_smul_top` for every natural number `k`: an element
+killed by `k` lies in `ann(k) • M`. -/
 theorem mem_annihilator_smul_top_of_smul_eq_zero {m : ℕ} [CharP A m] [Module (ZMod m) M]
     [Flat (ZMod m) M] (k : ℕ) (x : M) (hx : (k : A) • x = 0) :
     x ∈ (Ideal.span {(k : A)}).annihilator • (⊤ : Submodule A M) := by
