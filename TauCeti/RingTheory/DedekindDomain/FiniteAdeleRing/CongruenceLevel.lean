@@ -45,9 +45,9 @@ the residue fields of `R` are finite.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel_le_level1`, `level1_le_level0` and the
   monotonicity lemmas `principalLevel_mono`, `level1_mono`, `level0_mono`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel_bot`: `K(0) = {1}`.
-* `IsDedekindDomain.FiniteAdeleRing.upperRightHom_mem_level1` and
-  `upperRightHom_algebraMap_mem_principalLevel_iff`: the unipotent matrices `[[1, b], [0, 1]]`
-  in `K₁(N)` and `K(N)`.
+* `IsDedekindDomain.FiniteAdeleRing.upperRightHom_mem_level1`,
+  `upperRightHom_mem_principalLevel_iff` and `upperRightHom_algebraMap_mem_principalLevel_iff`:
+  the unipotent matrices `[[1, b], [0, 1]]` in `K₁(N)` and `K(N)`.
 * `IsDedekindDomain.FiniteAdeleRing.isOpen_principalLevel`, `isCompact_principalLevel` and their
   analogues for `K₀(N)` and `K₁(N)`.
 
@@ -296,41 +296,39 @@ theorem principalLevel_bot : principalLevel K (⊥ : Ideal R) = ⊥ := by
 variable {K}
 
 open Matrix.GeneralLinearGroup in
+/-- The unipotent matrix `[[1, b], [0, 1]]` with integral `b` is the image of the unipotent
+matrix of `GL₂(Ô)` with entry `b`. -/
+theorem integralGL_upperRightHom (b : integralAdeles R K) :
+    integralGL K 2 (upperRightHom b) = upperRightHom (b : 𝔸ᶠ[R, K]) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+open Matrix.GeneralLinearGroup in
 /-- The unipotent matrix `[[1, b], [0, 1]]` lies in `K₁(N)` for every integral `b` and every
 ideal `N`. -/
 theorem upperRightHom_mem_level1 {b : 𝔸ᶠ[R, K]} (hb : b ∈ integralAdeles R K) (N : Ideal R) :
     upperRightHom b ∈ level1 K N := by
-  refine mem_level1_iff.mpr ⟨fun i j ↦ ?_, fun i j ↦ ?_, ?_, ?_⟩
-  · fin_cases i <;> fin_cases j <;> simp [zero_mem, one_mem, hb]
-  · fin_cases i <;> fin_cases j <;> simp [zero_mem, one_mem, hb]
-  · convert zero_mem (completedIdeal K N)
-    exact Subtype.ext (by simp)
-  · convert zero_mem (completedIdeal K N)
-    exact Subtype.ext (by simp)
+  rw [← integralGL_upperRightHom ⟨b, hb⟩]
+  exact Subgroup.mem_map_of_mem _ (GL2K1.mem_iff.mpr (by simp))
+
+open Matrix.GeneralLinearGroup in
+/-- For integral `b`, the unipotent matrix `[[1, b], [0, 1]]` lies in `K(N)` exactly when
+`b ∈ NÔ`. -/
+theorem upperRightHom_mem_principalLevel_iff {b : 𝔸ᶠ[R, K]} (hb : b ∈ integralAdeles R K)
+    {N : Ideal R} :
+    upperRightHom b ∈ principalLevel K N ↔ (⟨b, hb⟩ : integralAdeles R K) ∈ completedIdeal K N := by
+  rw [principalLevel_eq_map_ker, ← integralGL_upperRightHom ⟨b, hb⟩,
+    Subgroup.mem_map_iff_mem (integralGL_injective K 2), mem_ker_map_quotientMk_iff]
+  refine ⟨fun h ↦ by simpa using h 0 1, fun h i j ↦ ?_⟩
+  fin_cases i <;> fin_cases j <;> simp [h]
 
 open Matrix.GeneralLinearGroup in
 /-- For a nonzero ideal `N` and `r ∈ R`, the unipotent matrix `[[1, r], [0, 1]]` lies in `K(N)`
 exactly when `r ∈ N`. -/
 theorem upperRightHom_algebraMap_mem_principalLevel_iff {N : Ideal R} (hN₀ : N ≠ ⊥) {r : R} :
     upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ principalLevel K N ↔ r ∈ N := by
-  have hr := (integralAdeles R K).algebraMap_mem r
-  refine ⟨fun h ↦ ?_, fun h ↦ mem_principalLevel_iff.mpr ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩⟩
-  · obtain ⟨hg, -, h⟩ := mem_principalLevel_iff.mp h
-    refine (algebraMap_mem_completedIdeal_iff (K := K) hN₀).mp ?_
-    convert h 0 1 using 1
-    exact Subtype.ext (by simp)
-  · fin_cases i <;> fin_cases j <;> simp [zero_mem, one_mem, hr]
-  · fin_cases i <;> fin_cases j <;> simp [zero_mem, one_mem, hr]
-  · have h' := (algebraMap_mem_completedIdeal_iff (K := K) hN₀).mpr h
-    fin_cases i <;> fin_cases j
-    · convert zero_mem (completedIdeal K N)
-      exact Subtype.ext (by simp)
-    · convert h' using 1
-      exact Subtype.ext (by simp)
-    · convert zero_mem (completedIdeal K N)
-      exact Subtype.ext (by simp)
-    · convert zero_mem (completedIdeal K N)
-      exact Subtype.ext (by simp)
+  rw [upperRightHom_mem_principalLevel_iff ((integralAdeles R K).algebraMap_mem r)]
+  exact algebraMap_mem_completedIdeal_iff hN₀
 
 variable (K)
 
