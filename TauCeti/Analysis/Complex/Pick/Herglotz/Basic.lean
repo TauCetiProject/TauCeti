@@ -202,8 +202,8 @@ theorem subtractedResolventKernel_im (z : ℂ) (t : ℝ) :
 theorem subtractedResolventKernel_ofReal_mul_I_im (y t : ℝ) :
     (subtractedResolventKernel (y * I) t).im = y / (t ^ 2 + y ^ 2) := by
   rw [subtractedResolventKernel_im, normSq_apply]
-  simp
-  ring_nf
+  simp only [mul_im, mul_re, ofReal_re, ofReal_im, I_re, I_im, sub_re, sub_im]
+  ring
 
 /-- The subtracted resolvent kernel at a nonreal point is integrable against every measure `ν` of
 finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`. -/
@@ -265,6 +265,21 @@ theorem integrable_subtractedResolventKernel_iff {nu : Measure ℝ} {z : ℂ} (h
       ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤ :=
   ⟨fun h ↦ lintegral_lt_top_of_integrable_im hz h.im,
     fun h ↦ integrable_subtractedResolventKernel h hz⟩
+
+/-- At a nonreal point, the integral of the subtracted resolvent kernel against a measure `ν`
+without finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν` is `0`, since the kernel is not integrable. -/
+theorem integral_subtractedResolventKernel_eq_zero {nu : Measure ℝ}
+    (hnu : ¬∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤) {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, subtractedResolventKernel z t ∂nu = 0 :=
+  integral_undef (mt (integrable_subtractedResolventKernel_iff hz).1 hnu)
+
+/-- At a nonreal point, the integral of the imaginary part of the subtracted resolvent kernel
+against a measure `ν` without finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν` is `0`, since it is not
+integrable. -/
+theorem integral_im_subtractedResolventKernel_eq_zero {nu : Measure ℝ}
+    (hnu : ¬∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤) {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, (subtractedResolventKernel z t).im ∂nu = 0 :=
+  integral_undef (mt (integrable_im_subtractedResolventKernel_iff hz).1 hnu)
 
 /-- **Herglotz representation of a Pick function.** A function holomorphic on the upper
 half-plane with nonnegative imaginary part is `F z = Re F(i) + b z + ∫ ((t - z)⁻¹ -
@@ -348,8 +363,7 @@ theorem tendsto_im_div_of_eq_subtractedResolventKernel_add {F : ℂ → ℂ} {a 
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [eventually_gt_atTop 0] with y hy
   have hz : (y : ℂ) * I ∈ UpperHalfPlane.upperHalfPlaneSet := by simpa using hy
-  rw [hrep _ hz, integral_undef (mt (integrable_subtractedResolventKernel_iff
-    (ne_of_gt hz)).1 hnu)]
+  rw [hrep _ hz, integral_subtractedResolventKernel_eq_zero hnu (ne_of_gt hz)]
   simp only [add_zero, add_im, ofReal_im, mul_im, ofReal_re, I_im, I_re, mul_zero, mul_one,
     zero_mul, zero_add]
   field_simp

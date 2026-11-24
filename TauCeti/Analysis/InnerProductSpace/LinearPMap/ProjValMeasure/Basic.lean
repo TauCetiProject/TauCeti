@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Basic
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
@@ -12,7 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Reducing
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
-public import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
 /-!
 # The spectral measure of a self-adjoint partial linear map

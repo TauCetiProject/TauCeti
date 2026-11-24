@@ -16,7 +16,7 @@ Let `F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` on the upper h
 representation (`TauCeti.exists_eq_subtractedResolventKernel_add`). If `y |Im F(i y)|` stays
 bounded as `y → ∞`, then
 
-* the linear coefficient vanishes, `b = 0`;
+* the linear coefficient vanishes, `b = 0` (this needs only `Im F(i y) / y → 0`);
 * `ν` is a finite measure when it has finite weighted mass `∫ (1 + t ^ 2)⁻¹ dν`, as in the
   Herglotz representation, and then its total mass is `ν(ℝ) = lim y Im F(i y)`.
 
@@ -32,13 +32,15 @@ For the resolvent transform, a finite `ν` splits the subtracted kernel, so
 
 ## Main results
 
-* `TauCeti.eq_zero_of_eq_subtractedResolventKernel_add_of_bound`: `b = 0`.
+* `TauCeti.eq_zero_of_eq_subtractedResolventKernel_add_of_tendsto`: `b = 0` as soon as
+  `Im F(i y) / y → 0`, and `TauCeti.eq_zero_of_eq_subtractedResolventKernel_add_of_bound` under
+  the bound on `y |Im F(i y)|`.
 * `TauCeti.isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound`: `ν` is finite when it
   has finite weighted mass.
 * `TauCeti.tendsto_mul_im_of_eq_subtractedResolventKernel_add_of_bound`:
   `y Im F(i y) → ν.real univ`.
-* `TauCeti.eq_add_resolventTransform_of_eq_subtractedResolventKernel_add`: for finite `ν`, the
-  unsubtracted form `F z = c + b z + ∫ (t - z)⁻¹ dν(t)`.
+* `TauCeti.integral_subtractedResolventKernel_eq`: for finite `ν`, the unsubtracted form
+  `∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t) = ∫ (t - z)⁻¹ dν(t) - ∫ t / (1 + t ^ 2) dν(t)`.
 * `TauCeti.eq_resolventTransform_of_eq_subtractedResolventKernel_add_of_bound`:
   `F z = ∫ (t - z)⁻¹ dν(t)` on the upper half-plane.
 
@@ -58,13 +60,21 @@ namespace TauCeti
 
 variable {F : ℂ → ℂ} {a b C : ℝ} {nu : Measure ℝ}
 
+/-- If `Im F(i y) / y → 0` as `y → ∞`, the linear coefficient of a Herglotz representation of `F`
+vanishes. -/
+theorem eq_zero_of_eq_subtractedResolventKernel_add_of_tendsto
+    (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
+      F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
+    (h : Tendsto (fun y : ℝ ↦ (F (y * I)).im / y) atTop (𝓝 0)) : b = 0 :=
+  tendsto_nhds_unique (tendsto_im_div_of_eq_subtractedResolventKernel_add hrep) h
+
 /-- If `y |Im F(i y)|` is eventually bounded, the linear coefficient of a Herglotz representation
 of `F` vanishes. -/
 theorem eq_zero_of_eq_subtractedResolventKernel_add_of_bound
     (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
       F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu)
     (hbound : ∀ᶠ y : ℝ in atTop, y * |(F (y * I)).im| ≤ C) : b = 0 := by
-  refine tendsto_nhds_unique (tendsto_im_div_of_eq_subtractedResolventKernel_add hrep) ?_
+  refine eq_zero_of_eq_subtractedResolventKernel_add_of_tendsto hrep ?_
   refine squeeze_zero_norm' ?_ (tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero) :
     Tendsto (fun y : ℝ ↦ C / y ^ 2) atTop (𝓝 0))
   filter_upwards [hbound, eventually_gt_atTop 0] with y hy hy0
@@ -79,17 +89,15 @@ theorem mul_im_eq_of_eq_subtractedResolventKernel_add
       F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu) {y : ℝ} (hy : 0 < y) :
     y * (F (y * I)).im = b * y ^ 2 + ∫ t, y ^ 2 / (t ^ 2 + y ^ 2) ∂nu := by
   have hz : (y : ℂ) * I ∈ UpperHalfPlane.upperHalfPlaneSet := by simpa using hy
-  have hK : ∀ t, (subtractedResolventKernel (y * I) t).im = y / (t ^ 2 + y ^ 2) :=
-    subtractedResolventKernel_ofReal_mul_I_im y
   rw [hrep _ hz]
   have him : (∫ t, subtractedResolventKernel (y * I) t ∂nu).im = ∫ t, y / (t ^ 2 + y ^ 2) ∂nu := by
-    by_cases hi : Integrable (subtractedResolventKernel (y * I)) nu
-    · rw [← RCLike.im_to_complex, ← integral_im hi]
-      simp_rw [RCLike.im_to_complex, hK]
-    · rw [integral_undef hi, integral_undef fun h ↦ hi (integrable_subtractedResolventKernel
-        (lintegral_lt_top_of_integrable_im (ne_of_gt hz) (h.congr (.of_forall fun t ↦
-          (hK t).symm))) (ne_of_gt hz))]
-      simp
+    simp_rw [← subtractedResolventKernel_ofReal_mul_I_im y]
+    by_cases hnu : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤
+    · rw [← RCLike.im_to_complex, ← integral_im (integrable_subtractedResolventKernel hnu
+        (ne_of_gt hz))]
+      rfl
+    · rw [integral_subtractedResolventKernel_eq_zero hnu (ne_of_gt hz),
+        integral_im_subtractedResolventKernel_eq_zero hnu (ne_of_gt hz), zero_im]
   simp only [add_im, ofReal_im, mul_im, ofReal_re, I_im, I_re, mul_zero, mul_one, zero_add, him]
   rw [mul_add, ← integral_const_mul]
   congr 1
@@ -164,10 +172,13 @@ theorem tendsto_mul_im_of_eq_subtractedResolventKernel_add_of_bound
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [eventually_gt_atTop 0] with y hy
     have hz : ((y : ℂ) * I).im ≠ 0 := by simpa using hy.ne'
-    refine (integral_undef fun h ↦ hnu (lintegral_lt_top_of_integrable_im hz
-      ((h.const_mul y⁻¹).congr (.of_forall fun t ↦ ?_)))).symm
-    simp only [subtractedResolventKernel_ofReal_mul_I_im]
-    field_simp
+    calc (0 : ℝ) = y * ∫ t, (subtractedResolventKernel (y * I) t).im ∂nu := by
+          rw [integral_im_subtractedResolventKernel_eq_zero hnu hz, mul_zero]
+      _ = _ := by
+          rw [← integral_const_mul]
+          congr 1 with t
+          rw [subtractedResolventKernel_ofReal_mul_I_im]
+          ring
   -- With finite weighted mass, `ν` is finite and this is the total-mass asymptotic.
   have := isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound hnu hrep hbound
   have h := ((continuous_re.tendsto _).comp
@@ -178,14 +189,23 @@ theorem tendsto_mul_im_of_eq_subtractedResolventKernel_add_of_bound
   simp only [ofReal_zero, zero_add, sub_zero] at hm
   simp [← hm]
 
-/-- **The unsubtracted form.** For a finite measure `ν`, a Herglotz representation
-`F z = a + b z + ∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t)` splits as
-`F z = c + b z + ∫ (t - z)⁻¹ dν(t)` with `c = a - ∫ t / (1 + t ^ 2) dν(t)`. -/
-theorem eq_add_resolventTransform_of_eq_subtractedResolventKernel_add [IsFiniteMeasure nu]
-    (hrep : ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
-      F z = a + b * z + ∫ t, subtractedResolventKernel z t ∂nu) :
-    ∀ z ∈ UpperHalfPlane.upperHalfPlaneSet,
-      F z = (a - ∫ t, (t : ℂ) / (1 + (t : ℂ) ^ 2) ∂nu) + b * z + resolventTransform nu z := by
+/-- At a nonreal point, the resolvent transform of a measure `ν` without finite weighted mass
+`∫ (1 + t ^ 2)⁻¹ dν` is `0`, since the resolvent kernel is not integrable. -/
+theorem resolventTransform_eq_zero (hnu : ¬∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤) {z : ℂ}
+    (hz : z.im ≠ 0) : resolventTransform nu z = 0 := by
+  rw [resolventTransform_apply]
+  refine integral_undef fun (h : Integrable (resolvent (R := ℝ) z) nu) ↦
+    hnu (lintegral_lt_top_of_integrable_im hz (h.im.congr (.of_forall fun t ↦ ?_)))
+  simp only [RCLike.im_to_complex, Complex.im_resolvent_real,
+    subtractedResolventKernel_im, normSq_apply, sub_re, ofReal_re, sub_im, ofReal_im]
+  ring
+
+/-- **The unsubtracted form.** For a finite measure `ν` and a nonreal `z`, the integral of the
+subtracted resolvent kernel splits as
+`∫ ((t - z)⁻¹ - t / (1 + t ^ 2)) dν(t) = ∫ (t - z)⁻¹ dν(t) - ∫ t / (1 + t ^ 2) dν(t)`. -/
+theorem integral_subtractedResolventKernel_eq [IsFiniteMeasure nu] {z : ℂ} (hz : z.im ≠ 0) :
+    ∫ t, subtractedResolventKernel z t ∂nu =
+      resolventTransform nu z - ∫ t, (t : ℂ) / (1 + (t : ℂ) ^ 2) ∂nu := by
   have hcast (t : ℝ) : (t : ℂ) / (1 + (t : ℂ) ^ 2) = ((t / (1 + t ^ 2) : ℝ) : ℂ) := by
     push_cast; rfl
   have hr : Integrable (fun t : ℝ ↦ t / (1 + t ^ 2)) nu := by
@@ -197,16 +217,14 @@ theorem eq_add_resolventTransform_of_eq_subtractedResolventKernel_add [IsFiniteM
     nlinarith [abs_nonneg t, sq_abs t, sq_nonneg (|t| - 1)]
   have hint : Integrable (fun t : ℝ ↦ (t : ℂ) / (1 + (t : ℂ) ^ 2)) nu :=
     hr.ofReal.congr (.of_forall fun t ↦ (hcast t).symm)
-  intro z hz
   have hi : Integrable (fun t : ℝ ↦ ((t : ℂ) - z)⁻¹) nu :=
-    (integrable_resolvent_of_im_ne_zero (μ := nu) (ne_of_gt hz)).congr
+    (integrable_resolvent_of_im_ne_zero (μ := nu) hz).congr
       (.of_forall fun t ↦ resolvent_real_eq_inv z t)
   have hk : (fun t ↦ subtractedResolventKernel z t) =
       fun t : ℝ ↦ ((t : ℂ) - z)⁻¹ - (t : ℂ) / (1 + (t : ℂ) ^ 2) :=
     funext fun t ↦ subtractedResolventKernel_def z t
-  rw [hrep z hz, resolventTransform_apply, hk, integral_sub hi hint]
+  rw [resolventTransform_apply, hk, integral_sub hi hint]
   simp_rw [resolvent_real_eq_inv]
-  ring
 
 /-- **The resolvent case.** If `y ‖F(i y)‖` is eventually bounded, a function with a Herglotz
 representation with measure `ν` is the resolvent transform `∫ (t - z)⁻¹ dν(t)` of `ν` on the upper
@@ -227,28 +245,22 @@ theorem eq_resolventTransform_of_eq_subtractedResolventKernel_add_of_bound
       Tendsto (fun y : ℝ ↦ resolventTransform nu (y * I)) atTop (𝓝 0) := by
     by_cases hnu : ∫⁻ t, ENNReal.ofReal (1 + t ^ 2)⁻¹ ∂nu < ⊤
     · have := isFiniteMeasure_of_eq_subtractedResolventKernel_add_of_bound hnu hrep him
-      refine ⟨_, fun z hz ↦ by
-        simpa using eq_add_resolventTransform_of_eq_subtractedResolventKernel_add hrep z hz, ?_⟩
+      refine ⟨a - ∫ t, (t : ℂ) / (1 + (t : ℂ) ^ 2) ∂nu, fun z hz ↦ ?_, ?_⟩
+      · rw [hrep z hz, integral_subtractedResolventKernel_eq (ne_of_gt hz)]
+        push_cast
+        ring
       refine squeeze_zero_norm' ?_ (tendsto_const_nhds.div_atTop tendsto_id :
         Tendsto (fun y : ℝ ↦ nu.real Set.univ / y) atTop (𝓝 0))
       filter_upwards [eventually_gt_atTop 0] with y hy
       rw [le_div_iff₀ hy, mul_comm]
       exact mul_norm_resolventTransform_ofReal_mul_I_le hy
     · -- Without finite weighted mass, neither kernel is integrable.
-      have hm (z : ℂ) (hz : z.im ≠ 0) : resolventTransform nu z = 0 := by
-        rw [resolventTransform_apply]
-        refine integral_undef fun (h : Integrable (resolvent (R := ℝ) z) nu) ↦
-          hnu (lintegral_lt_top_of_integrable_im hz
-          (h.im.congr (.of_forall fun t ↦ ?_)))
-        simp only [RCLike.im_to_complex, Complex.im_resolvent_real,
-          subtractedResolventKernel_im, normSq_apply, sub_re, ofReal_re, sub_im, ofReal_im]
-        ring
       refine ⟨a, fun z hz ↦ ?_, tendsto_const_nhds.congr' ?_⟩
-      · rw [hrep z hz, integral_undef (mt (integrable_subtractedResolventKernel_iff
-          (ne_of_gt hz)).1 hnu), hm z (ne_of_gt hz)]
+      · rw [hrep z hz, integral_subtractedResolventKernel_eq_zero hnu (ne_of_gt hz),
+          resolventTransform_eq_zero hnu (ne_of_gt hz)]
         simp
       · filter_upwards [eventually_gt_atTop 0] with y hy
-        exact (hm _ (by simpa using hy.ne')).symm
+        exact (resolventTransform_eq_zero hnu (by simpa using hy.ne')).symm
   suffices hc : c = 0 by
     intro z hz
     rw [hrep' z hz, hc, zero_add]

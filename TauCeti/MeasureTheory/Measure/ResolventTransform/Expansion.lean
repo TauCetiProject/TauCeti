@@ -67,7 +67,7 @@ theorem hasSum_resolvent_real {z c : ℂ} {x : ℝ} (h : ‖(x : ℂ) - c‖ < �
   · ext n
     rw [mul_pow, pow_succ]
     ring
-  · rw [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap, hx, inv_neg, mul_inv, neg_mul]
+  · rw [resolvent_real_eq_inv, hx, inv_neg, mul_inv, neg_mul]
 
 end Complex
 

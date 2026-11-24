@@ -77,8 +77,7 @@ theorem lipschitzWith_resolvent_real {z : ℂ} (hz : z.im ≠ 0) :
   calc
     dist (resolvent z x) (resolvent z y) =
         |x - y| / (‖(x : ℂ) - z‖ * ‖(y : ℂ) - z‖) := by
-      simp only [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap]
-      rw [dist_inv_inv₀ hx hy,
+      rw [resolvent_real_eq_inv, resolvent_real_eq_inv, dist_inv_inv₀ hx hy,
         dist_sub_right, Complex.isometry_ofReal.dist_eq, Real.dist_eq]
     _ ≤ |x - y| / (|z.im| * |z.im|) :=
       div_le_div_of_nonneg_left (abs_nonneg _) (by positivity)
@@ -199,10 +198,8 @@ theorem resolventTransform_map_affine (a b : ℝ) (hb : b ≠ 0) (z : ℂ) :
         (a : ℂ) + (b : ℂ) * x - z = (b : ℂ) * ((x : ℂ) - (z - a) / b) := by
       field_simp [hb]
       ring
-    simp only [resolvent, Ring.inverse_eq_inv']
+    rw [Complex.resolvent_real_eq_inv, Complex.resolvent_real_eq_inv]
     push_cast
-    -- `resolvent` unfolds with `algebraMap ℝ ℂ`; restore the plain coercion so `hfactor` matches.
-    simp only [Complex.coe_algebraMap]
     rw [hfactor, mul_inv_rev]
     ring
   calc
