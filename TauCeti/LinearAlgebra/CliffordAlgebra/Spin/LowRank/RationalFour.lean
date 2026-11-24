@@ -70,7 +70,7 @@ theorem rationalNonsplitQuaternaryForm_discr' :
 @[simp]
 theorem nondegenerate_rationalNonsplitQuaternaryForm :
     rationalNonsplitQuaternaryForm.Nondegenerate := by
-  apply QuadraticMap.nondegenerate_weightedSumSquares
+  apply QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr
   intro i
   exact isRegular_iff_ne_zero.mpr (by fin_cases i <;> norm_num)
 

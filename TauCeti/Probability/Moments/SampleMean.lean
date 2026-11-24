@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Independence.Integration
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.Convex.FiniteMean
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
 # Second moments of sample means
@@ -77,6 +78,18 @@ theorem integral_norm_sum_sq_of_pairwise_indepFun [IsFiniteMeasure μ] {X : ι �
   exact integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
     (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
     (fun i hi j hj hij ↦ hcross i hi j hj hij.symm)
+
+/-- For centered, pairwise independent square-integrable variables on a probability space,
+a common second-moment bound controls the mean norm of their sum. -/
+theorem integral_norm_sum_le_of_pairwise_indepFun [IsProbabilityMeasure μ]
+    {X : ι → Ω → E} {s : Finset ι} (hX : ∀ i ∈ s, MemLp (X i) 2 μ)
+    (hmean : ∀ i ∈ s, μ[X i] = 0) (hindep : Set.Pairwise ↑s fun i j ↦ X i ⟂ᵢ[μ] X j)
+    {v : ℝ} (hv : ∀ i ∈ s, ∫ ω, ‖X i ω‖ ^ 2 ∂μ ≤ v) :
+    (∫ ω, ‖∑ i ∈ s, X i ω‖ ∂μ) ≤ Real.sqrt (s.card * v) := by
+  refine (le_of_abs_le ((memLp_finsetSum s hX).norm.integrable_sq.abs_integral_le_sqrt_integral_sq
+    prob_le_one)).trans ?_
+  rw [integral_norm_sum_sq_of_pairwise_indepFun hX hmean hindep]
+  exact Real.sqrt_le_sqrt ((sum_le_sum hv).trans_eq (by simp [nsmul_eq_mul]))
 
 /-- The second moment of a linear form in pairwise independent centered coordinates is the
 sum of the coordinate second moments weighted by the squared coefficients. -/

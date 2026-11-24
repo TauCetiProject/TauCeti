@@ -259,7 +259,8 @@ theorem curvatureAction_kulkarniNomizu_innerₗ {h k : BilinForm ℝ V} (hh : h.
     (hk : k.IsSymm) :
     curvatureAction (kulkarniNomizu h (innerₗ V)) k =
       LinearMap.trace ℝ V (bilinFormToEnd h ∘ₗ bilinFormToEnd k) • innerₗ V +
-        bilinFormTrace k • h - (innerₗ V).comp (bilinFormToEnd h ∘ₗ bilinFormToEnd k) -
+        LinearMap.BilinMap.metricTrace k • h -
+        (innerₗ V).comp (bilinFormToEnd h ∘ₗ bilinFormToEnd k) -
         (innerₗ V).comp (bilinFormToEnd k ∘ₗ bilinFormToEnd h) := by
   classical
   set b := stdOrthonormalBasis ℝ V
@@ -298,9 +299,9 @@ theorem curvatureAction_kulkarniNomizu_innerₗ {h k : BilinForm ℝ V} (hh : h.
     rw [LinearMap.BilinForm.inner_bilinFormToEnd_left, hk.eq _ v,
       ← LinearMap.BilinForm.inner_bilinFormToEnd_left k v, real_inner_comm,
       LinearMap.BilinForm.inner_bilinFormToEnd_left]
-  have h2 : (∑ p, ∑ q, k (b p) (b q) * ⟪b p, b q⟫_ℝ) = bilinFormTrace k := by
+  have h2 : (∑ p, ∑ q, k (b p) (b q) * ⟪b p, b q⟫_ℝ) = LinearMap.BilinMap.metricTrace k := by
     simp only [orthonormal_iff_ite.mp b.orthonormal, mul_ite, mul_one, mul_zero,
-      Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, bilinFormTrace_eq_sum k b]
+      Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, LinearMap.BilinMap.metricTrace_eq_sum k b]
   rw [hexp, h2, h3, h4, ← LinearMap.BilinForm.trace_bilinFormToEnd_comp_bilinFormToEnd b hh]
   simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.comp_apply,
     innerₗ_apply_apply, smul_eq_mul, H, K]
@@ -333,9 +334,11 @@ theorem IsAlgebraicCurvature.scalar_reactionTensor {r : FourTensor V}
 theorem reactionTensor_kulkarniNomizu_innerₗ {k : BilinForm ℝ V} (hk : k.IsSymm) :
     reactionTensor (kulkarniNomizu k (innerₗ V)) =
       kulkarniNomizu (LinearMap.trace ℝ V (bilinFormToEnd k ∘ₗ bilinFormToEnd k) • innerₗ V +
-          bilinFormTrace k • k - (2 : ℝ) • (innerₗ V).comp (bilinFormToEnd k ∘ₗ bilinFormToEnd k))
+          LinearMap.BilinMap.metricTrace k • k -
+          (2 : ℝ) • (innerₗ V).comp (bilinFormToEnd k ∘ₗ bilinFormToEnd k))
         (innerₗ V) +
-      kulkarniNomizu k (((Module.finrank ℝ V : ℝ) - 2) • k + bilinFormTrace k • innerₗ V) := by
+      kulkarniNomizu k
+        (((Module.finrank ℝ V : ℝ) - 2) • k + LinearMap.BilinMap.metricTrace k • innerₗ V) := by
   have hg : LinearMap.BilinForm.IsSymm (innerₗ V) :=
     LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner
   rw [← reactionBilinear_self, reactionBilinear_kulkarniNomizu_innerₗ_right
@@ -455,7 +458,8 @@ theorem boehmWilkingDiscrepancy_eq {r : FourTensor V} (hr : IsAlgebraicCurvature
     LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.comp_apply,
     LinearMap.add_comp, LinearMap.comp_add, LinearMap.smul_comp, LinearMap.comp_smul,
     LinearMap.id_comp, LinearMap.comp_id, map_add, map_smul, LinearMap.trace_id,
-    LinearMap.BilinForm.trace_bilinFormToEnd, bilinFormTrace_tracelessRicci, bilinFormTrace_inner,
+    LinearMap.BilinForm.trace_bilinFormToEnd, metricTrace_tracelessRicci,
+    LinearMap.BilinMap.metricTrace_inner,
     innerₗ_apply_apply, LinearMap.BilinForm.inner_bilinFormToEnd_left, smul_eq_mul]
   generalize hα : 1 + 2 * ((Module.finrank ℝ V : ℝ) - 1) * a = α at ha ⊢
   generalize hβ : 1 + ((Module.finrank ℝ V : ℝ) - 2) * b = β at hb ⊢

@@ -13,8 +13,10 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 # Entrywise hard thresholding of matrices
 
 Hard thresholding keeps entries with norm strictly greater than the threshold.
-The operator norm error is controlled by the entrywise tolerance and the operator norm
-of the support pattern of the reference matrix.
+If every row and every column retains at most `s` entries, each of norm at most `M`, the
+thresholded matrix has operator norm at most `s * M` by the finite Schur test. The operator norm
+error is controlled by the entrywise tolerance and the operator norm of the support pattern of
+the reference matrix.
 
 ## References
 
@@ -63,6 +65,49 @@ theorem IsHermitian.hardThreshold [SeminormedAddCommGroup 𝕜] [StarAddMonoid �
     (A.hardThreshold τ).IsHermitian := by
   refine IsHermitian.ext fun i j ↦ ?_
   simp only [hardThreshold_apply, apply_ite star, star_zero, ← norm_star (A j i), hA.apply]
+
+/-- If at most `s` entries of a finite family have norm above `t`, and each of them has norm at
+most `M ≥ 0`, the norms of the hard-thresholded family sum to at most `s * M`. -/
+private theorem sum_norm_ite_lt_norm_le [SeminormedAddGroup 𝕜] {ι : Type*} [Fintype ι]
+    (f : ι → 𝕜) (t : ℝ) {s : ℕ} {M : ℝ} (hM : 0 ≤ M)
+    (hs : (Finset.univ.filter fun k ↦ t < ‖f k‖).card ≤ s)
+    (hentry : ∀ k, t < ‖f k‖ → ‖f k‖ ≤ M) :
+    ∑ k, ‖if t < ‖f k‖ then f k else 0‖ ≤ s * M := by
+  calc
+    _ ≤ ∑ _k ∈ Finset.univ.filter (fun k ↦ t < ‖f k‖), M := by
+      simp_rw [apply_ite norm, norm_zero, ← Finset.sum_filter]
+      exact Finset.sum_le_sum fun k hk ↦ hentry k (Finset.mem_filter.1 hk).2
+    _ ≤ _ := by
+      rw [Finset.sum_const, nsmul_eq_mul]
+      exact mul_le_mul_of_nonneg_right (Nat.cast_le.2 hs) hM
+
+open scoped Matrix.Norms.L2Operator in
+/-- If each row and each column has at most `s` retained entries and each has norm at most `M`,
+the hard-thresholded matrix has Euclidean operator norm at most `s * M`. -/
+theorem l2_opNorm_hardThreshold_le [RCLike 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
+    (A : Matrix m n 𝕜) (t : ℝ) {s : ℕ} {M : ℝ} (hM : 0 ≤ M)
+    (hrow : ∀ i, (Finset.univ.filter fun j ↦ t < ‖A i j‖).card ≤ s)
+    (hcol : ∀ j, (Finset.univ.filter fun i ↦ t < ‖A i j‖).card ≤ s)
+    (hentry : ∀ i j, t < ‖A i j‖ → ‖A i j‖ ≤ M) :
+    ‖A.hardThreshold t‖ ≤ s * M := by
+  have h := (A.hardThreshold t).l2_opNorm_le_sqrt_mul_of_row_col_sum_le (r := s * M) (c := s * M)
+    (fun i ↦ by simpa only [hardThreshold_apply] using
+      sum_norm_ite_lt_norm_le (A i) t hM (hrow i) (hentry i))
+    (fun j ↦ by simpa only [hardThreshold_apply] using
+      sum_norm_ite_lt_norm_le (fun i ↦ A i j) t hM (hcol j) (hentry · j))
+  rwa [Real.sqrt_mul_self (by positivity)] at h
+
+open scoped Matrix.Norms.L2Operator in
+/-- If each row has at most `s` retained entries and each has norm at most `M`,
+the hard-thresholded Hermitian matrix has Euclidean operator norm at most `s * M`. -/
+theorem IsHermitian.l2_opNorm_hardThreshold_le [RCLike 𝕜] [Fintype n] [DecidableEq n]
+    {A : Matrix n n 𝕜} (hA : A.IsHermitian) (t : ℝ) {s : ℕ} {M : ℝ} (hM : 0 ≤ M)
+    (hs : ∀ i, (Finset.univ.filter fun j ↦ t < ‖A i j‖).card ≤ s)
+    (hentry : ∀ i j, t < ‖A i j‖ → ‖A i j‖ ≤ M) :
+    ‖A.hardThreshold t‖ ≤ s * M :=
+  -- By symmetry, the column counts are the row counts.
+  A.l2_opNorm_hardThreshold_le t hM hs
+    (fun j ↦ by simpa only [← hA.apply j, norm_star] using hs j) hentry
 
 /-- Hard thresholding is measurable in the matrix at any fixed threshold. -/
 @[fun_prop]

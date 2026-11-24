@@ -34,7 +34,8 @@ particular, re-modelling any finite-dimensional Lie group over `ℝ` or `ℂ` on
 `EuclideanSpace 𝕜 (Fin d)`).
 
 This file also proves that the integer power maps of a `C^n` Lie group are `C^n`, and packages
-inversion as a `C^n` diffeomorphism.
+inversion, and its composites `g ↦ a * g ^ (±1)` with left translations, as `C^n`
+diffeomorphisms.
 
 ## Main results
 
@@ -55,6 +56,8 @@ inversion as a `C^n` diffeomorphism.
   a Lie group are `C^n`.
 * `TauCeti.Lie.invDiffeomorph`, `TauCeti.Lie.negDiffeomorph`: inversion, and negation, in a Lie
   group as a `C^n` diffeomorphism.
+* `TauCeti.Lie.mulZPowDiffeomorph`, `TauCeti.Lie.addZSMulDiffeomorph`: the maps `g ↦ a * g ^ e`,
+  and `g ↦ a + e • g`, for `e = ±1`, as `C^n` diffeomorphisms.
 
 ## References
 
@@ -255,6 +258,31 @@ theorem invDiffeomorph_apply (g : G) : invDiffeomorph I n G g = g⁻¹ :=
 
 @[to_additive (attr := simp)]
 theorem invDiffeomorph_symm : (invDiffeomorph I n G).symm = invDiffeomorph I n G :=
+  (rfl)
+
+/-- For `e = ±1`, the map `g ↦ a * g ^ e` of a `C^n` Lie group as a `C^n` diffeomorphism: the
+identity or inversion, followed by left translation by `a`. -/
+@[to_additive
+  /-- For `e = ±1`, the map `g ↦ a + e • g` of a `C^n` additive Lie group as a `C^n`
+  diffeomorphism: the identity or negation, followed by translation by `a`. -/]
+def mulZPowDiffeomorph (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) {G : Type*} [TopologicalSpace G]
+    [ChartedSpace H G] [Group G] [LieGroup I n G] (a : G) (e : ℤ) (he : e * e = 1) :
+    G ≃ₘ^n⟮I, I⟯ G where
+  toFun g := a * g ^ e
+  invFun g := (a⁻¹ * g) ^ e
+  left_inv g := by simp only [inv_mul_cancel_left, ← zpow_mul, he, zpow_one]
+  right_inv g := by simp only [← zpow_mul, he, zpow_one, mul_inv_cancel_left]
+  contMDiff_toFun := contMDiff_const.mul (TauCeti.contMDiff_zpow e)
+  contMDiff_invFun := (TauCeti.contMDiff_zpow e).comp (contMDiff_const.mul contMDiff_id)
+
+@[to_additive (attr := simp)]
+theorem mulZPowDiffeomorph_apply (a g : G) (e : ℤ) (he : e * e = 1) :
+    mulZPowDiffeomorph I n a e he g = a * g ^ e :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem mulZPowDiffeomorph_symm_apply (a g : G) (e : ℤ) (he : e * e = 1) :
+    (mulZPowDiffeomorph I n a e he).symm g = (a⁻¹ * g) ^ e :=
   (rfl)
 
 end TauCeti.Lie
