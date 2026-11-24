@@ -26,8 +26,6 @@ the unipotent radical of their parabolics.
 
 public section
 
-open CategoryTheory
-
 namespace TauCeti.GeneralLinear
 
 universe u
@@ -43,19 +41,10 @@ theorem eq_augmentation_weightLevi_of_isNormal_of_smoothUnipotent
     (hU : smoothUnipotentCommHopfAlgProperty k
       (FiniteTypeCommHopfAlgCat.quotient (weightLeviFiniteTypeCoordinateHopfAlgebra k w) I)) :
     I = HopfIdeal.augmentation k (weightLeviFiniteTypeCoordinateHopfAlgebra k w) := by
-  -- The named finite-type package has an unexposed body. This local presentation has
-  -- the coordinate algebra as its carrier, so its reducedness and comodule instances
-  -- are those of that algebra. The object lemma below supplies the explicit transport.
-  let H : FiniteTypeCommHopfAlgCat k :=
-    ⟨weightLeviCoordinateHopfAlgebra k w,
-      inferInstanceAs (Algebra.FiniteType k (weightLeviCoordinateHopfAlgebra k w))⟩
-  let _ : IsReduced H :=
-    inferInstanceAs (IsReduced (weightLeviCoordinateHopfAlgebra k w))
   let _ : Comodule k (weightLeviCoordinateHopfAlgebra k w) (Fin N → k) :=
     weightLeviStandardComodule k w
-  exact HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful_of_iso
-    k H (Fin N → k) (weightLeviFiniteTypeCoordinateHopfAlgebra k w)
-    (eqToIso (weightLeviFiniteTypeCoordinateHopfAlgebra_obj k w).symm)
+  exact HopfIdeal.eq_augmentation_of_isNormal_of_smoothUnipotent_of_isFaithful
+    k (weightLeviFiniteTypeCoordinateHopfAlgebra k w) (Fin N → k)
     (isCompletelyReducible_weightLeviStandardComodule w k)
     (isFaithful_weightLeviStandardComodule k w) I hI hU
 

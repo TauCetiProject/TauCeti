@@ -159,7 +159,7 @@ theorem exists_span_eq_top_forall_rationalSubset_subset [IsHuberRing A] (Aplus :
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
     (fun i ↦ Subtype.val ⁻¹' rationalSubset Aplus (T i) (s i))
     (fun i ↦ isOpen_val_preimage_rationalSubset Aplus (T i) (s i)) fun v _ ↦
-      (Set.mem_iUnion.mp (hcov v.2)).elim fun i hi ↦ Set.mem_iUnion_of_mem i hi
+      (Set.mem_iUnion.mp (hcov v.property)).elim fun i hi ↦ Set.mem_iUnion_of_mem i hi
   have hcov' : spa Aplus ⊆ ⋃ i : t, rationalSubset Aplus (T i) (s i) := fun v hv ↦ by
     obtain ⟨i, hi, hvi⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ ⟨v, hv⟩))
     exact Set.mem_iUnion.mpr ⟨⟨i, hi⟩, hvi⟩
@@ -189,7 +189,7 @@ theorem exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_u
   have hfg : ∃ J : Ideal A, J.FG ∧ (⊤ : Ideal A).radical = J.radical := ⟨⊤, Ideal.fg_top A, rfl⟩
   -- the restriction `r x` of each point to its characteristic subgroup stays in the spectrum
   let r : spa Aplus → spa Aplus := fun x ↦
-    ⟨restrictToIdeal x ⊤ hfg, restrictToIdeal_mem_spa x.2 ⊤ hfg⟩
+    ⟨restrictToIdeal x ⊤ hfg, restrictToIdeal_mem_spa x.property ⊤ hfg⟩
   -- `r x` has a rational neighbourhood `W x`, presented as `R(T x/s x)`, inside a member
   -- `V (j x)` of the cover
   choose j W hW hxW hWV using fun x ↦ (Set.iUnion_eq_univ_iff.mp hcov (r x)).imp fun i hi ↦
@@ -206,7 +206,8 @@ theorem exists_span_eq_top_forall_rationalSubset_subset_of_isOpen_of_iUnion_eq_u
   have hx : ∀ x : spa Aplus, (x : Spv A) ∈ rationalSubset Aplus (T' x) (u x) := fun x ↦ by
     rw [rationalSubset_def, ← restrictToIdealCodRestrict_preimage ⊤ hfg
       (isAdmissible_of_one_mem (h1 x))]
-    exact ⟨x.2, by simpa only [Set.mem_preimage, coe_restrictToIdealCodRestrict] using hrT' x⟩
+    exact ⟨x.property,
+        by simpa only [Set.mem_preimage, coe_restrictToIdealCodRestrict] using hrT' x⟩
   obtain ⟨S, hS, hsub⟩ := exists_span_eq_top_forall_rationalSubset_subset Aplus hplus
     (fun x ↦ (Ideal.eq_top_iff_one _).mpr (Ideal.subset_span (h1 x)))
     fun v hv ↦ Set.mem_iUnion_of_mem _ (hx ⟨v, hv⟩)

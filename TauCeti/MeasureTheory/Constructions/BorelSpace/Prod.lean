@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
+public import Mathlib.MeasureTheory.MeasurableSpace.Prod
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.Compactness.SigmaCompact
 
@@ -77,7 +78,7 @@ theorem Continuous.measurable_prod_of_sigmaCompact
   have hlocal (n : ℕ) : Measurable (fun p : X × K n => f (p.1, p.2)) := by
     have := isCompact_iff_compactSpace.1 (hK n)
     exact Continuous.measurable_prod_of_sigmaCompact_of_compact
-      (hf.comp (continuous_id.prodMap continuous_subtype_val))
+      (hf.comp (continuous_id.prodMap continuous_subtypeVal))
   intro s hs
   have heq : f ⁻¹' s = ⋃ n : ℕ,
       (fun p : X × K n => (p.1, (p.2 : Y))) ''
@@ -94,7 +95,7 @@ theorem Continuous.measurable_prod_of_sigmaCompact
   rw [heq]
   exact MeasurableSet.iUnion fun n =>
     (MeasurableEmbedding.id.prodMap
-      (MeasurableEmbedding.subtype_coe (hK n).measurableSet)).measurableSet_image'
+      (MeasurableEmbedding.subtypeVal (hK n).measurableSet)).measurableSet_image'
         (hlocal n hs)
 
 /-- If the product of two topological spaces, the second nonempty, has the Borel property

@@ -178,12 +178,12 @@ along `IndexCoding.ofEncodableWith`, joined by one countable conjunction. Indice
 sentence carry `⊤`. -/
 noncomputable def conjunction (T : L.Theoryω) (hT : T.Countable) : L.Sentenceω :=
   BoundedFormulaInf.iInfAlong (TauCeti.IndexCoding.ofEncodableWith hT.toEncodable)
-    fun φ : T => φ.1
+    fun φ : T => φ.val
 
 /-- The conjunction of a countable theory is the coded conjunction of its sentences. -/
 theorem conjunction_def (T : L.Theoryω) (hT : T.Countable) :
     T.conjunction hT = BoundedFormulaInf.iInfAlong
-      (TauCeti.IndexCoding.ofEncodableWith hT.toEncodable) fun φ : T => φ.1 :=
+      (TauCeti.IndexCoding.ofEncodableWith hT.toEncodable) fun φ : T => φ.val :=
   (rfl)
 
 /-- **A countable theory is one sentence.** A structure satisfies the conjunction of a countable

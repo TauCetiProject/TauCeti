@@ -370,7 +370,7 @@ theorem level_top_le_comap (u : L.ground) :
   rw [Submodule.mem_comap, Formation.mem_level]
   intro v hv
   have hconj : (u : G)⁻¹ * v * (u : G) ∈ L.top := by
-    simpa using L.conj_mem_top (L.ground.toSubgroup.inv_mem u.2) hv
+    simpa using L.conj_mem_top (L.ground.toSubgroup.inv_mem u.property) hv
   have hvu : v * (u : G) = (u : G) * ((u : G)⁻¹ * v * (u : G)) := by group
   calc F.toRep.ρ v (F.toRep.ρ (u : G) x)
       = F.toRep.ρ (v * (u : G)) x := by rw [map_mul, mul_apply_eq_comp]
@@ -393,7 +393,7 @@ theorem groundRep_apply_coe (u : L.ground) (x : F.level L.top) :
 instance : Representation.IsTrivial ((L.groundRep F).comp L.relativeTop.subtype) where
   out s := by
     ext x
-    exact (F.mem_level.1 x.2) _ (Subgroup.mem_subgroupOf.1 s.2)
+    exact (F.mem_level.1 x.property) _ (Subgroup.mem_subgroupOf.1 s.property)
 
 /-- The **coefficient module of a layer**: the top level `A^V` with the induced action of the
 Galois group `U ⧸ V`. Its underlying module is the level itself, not an isomorphic copy. -/
@@ -421,7 +421,7 @@ theorem invariants_rep :
     exact congrArg Subtype.val (hx (QuotientGroup.mk (⟨u, hu⟩ : L.ground)))
   · intro hx γ
     induction γ using QuotientGroup.induction_on with
-    | H u => exact Subtype.ext (hx u u.2)
+    | H u => exact Subtype.ext (hx u u.property)
 
 /-- The identification `(A^V)^{U/V} ≃ A^U` of the invariants of the coefficient module with the
 ground level. It moves no element of the ambient module. -/
@@ -457,10 +457,10 @@ def coeffFixedPointsEquiv :
   toFun x := ⟨e.symm (x : F.level L.top), (FixedPoints.mem_addSubgroup _ _ _).2 fun v =>
     e.injective <| (he _ _).trans <| by
       rw [e.apply_symm_apply]
-      exact (Formation.mem_level _).1 x.2 _ (Subgroup.mem_subgroupOf.1 v.2)⟩
+      exact (Formation.mem_level _).1 x.property _ (Subgroup.mem_subgroupOf.1 v.property)⟩
   invFun m := ⟨e m, (Formation.mem_level _).2 fun v hv =>
     (he v m).symm.trans <| congrArg e <|
-      (FixedPoints.mem_addSubgroup _ _ _).1 m.2 ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩
+      (FixedPoints.mem_addSubgroup _ _ _).1 m.property ⟨⟨v, L.top_le_ground hv⟩, hv⟩⟩
   left_inv _ := Subtype.ext (e.apply_symm_apply _)
   right_inv _ := Subtype.ext (e.symm_apply_apply _)
   map_add' _ _ := Subtype.ext (map_add e.symm _ _)
@@ -625,7 +625,7 @@ theorem norm_apply_coe_of_mem_level_ground (x : F.level L.top)
   have hconst : ∀ γ : L.Gal, (((L.rep F).ρ γ x : F.level L.top) : F.toRep.V) = x := by
     intro γ
     induction γ using QuotientGroup.induction_on with
-    | H u => exact (F.mem_level.1 hx) u u.2
+    | H u => exact (F.mem_level.1 hx) u u.property
   rw [L.norm_apply_coe F x, Finset.sum_congr rfl fun γ _ ↦ hconst γ,
     L.degree_eq_natCard_gal]
   simp [Nat.card_eq_fintype_card]

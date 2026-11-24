@@ -215,7 +215,7 @@ private theorem surjective_codRestrict_comp {A : Type*} {A₁ : Type*} {B : Type
   obtain ⟨u, hu⟩ := hf (y : B)
   have hu' : u ∈ LinearMap.range a₁ := by
     rw [ha]
-    have hzero : b₀ (f u) = 0 := by rw [hu]; exact y.2
+    have hzero : b₀ (f u) = 0 := by rw [hu]; exact y.property
     simpa [hbf] using hzero
   obtain ⟨z, hz⟩ := hu'
   exact ⟨z, Subtype.ext (by simp [hz, hu])⟩

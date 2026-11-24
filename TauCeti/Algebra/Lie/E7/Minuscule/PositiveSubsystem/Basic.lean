@@ -143,14 +143,14 @@ noncomputable def positiveSubsystemDefiningIdeal :
     HopfIdeal ℤ (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ 56) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemDefiningIdeal rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-    positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1)
+    positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val)
 
 /-- The positive subsystem defining ideal is the generic torus-subsystem common-kernel ideal. -/
 theorem positiveSubsystemDefiningIdeal_def :
     positiveSubsystemDefiningIdeal =
       TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemDefiningIdeal rootGen cartanGen rep
         lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-        positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1) := by
+        positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val) := by
   rw [positiveSubsystemDefiningIdeal]
 
 /-- **Coordinate universal property of the positive subsystem.** A Hopf ideal is contained in
@@ -169,7 +169,7 @@ theorem le_positiveSubsystemDefiningIdeal_iff
   rw [positiveSubsystemDefiningIdeal_def]
   have hiff := le_kostantTorusSubsystemDefiningIdeal_iff rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-    positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1) J
+    positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val) J
   constructor
   · intro hJ
     have h := hiff.mp hJ
@@ -186,14 +186,14 @@ positive simple-root subgroups and the represented weight torus. -/
 noncomputable def positiveSubsystemGroupScheme : Grp (Over (Spec (CommRingCat.of ℤ))) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupScheme rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-    positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1)
+    positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val)
 
 /-- The positive carrier is the generic Kostant torus-subsystem for the positive simple roots. -/
 theorem positiveSubsystemGroupScheme_def :
     positiveSubsystemGroupScheme =
       TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupScheme rootGen cartanGen rep
         lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-        positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1) := by
+        positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val) := by
   rw [positiveSubsystemGroupScheme]
 
 /-- The positive subsystem is the quotient spectrum cut out by its named defining ideal. -/
@@ -218,7 +218,7 @@ theorem positiveSubsystemInclusion_comp_carrierι :
       eqToHom positiveSubsystemGroupScheme_def ≫
         TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemGroupSchemeι rootGen cartanGen rep
           lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-          positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1) := by
+          positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val) := by
   rw [positiveSubsystemInclusion, carrierι_def]
   simpa only [Category.assoc] using congrArg
     (fun f => eqToHom positiveSubsystemGroupScheme_def ≫ f)
@@ -244,7 +244,7 @@ noncomputable def positiveSubsystemClosedSubgroup : ClosedSubgroupScheme groupSc
 inclusion. -/
 @[simp]
 theorem coe_positiveSubsystemClosedSubgroup :
-    positiveSubsystemClosedSubgroup.1 = Subobject.mk positiveSubsystemInclusion :=
+    positiveSubsystemClosedSubgroup.val = Subobject.mk positiveSubsystemInclusion :=
   ClosedSubgroupScheme.coe_mk _
 
 /-- The named positive closed subgroup agrees with the generic Kostant torus subsystem. -/
@@ -263,7 +263,7 @@ noncomputable def positiveRootSubgroup (i : Fin 7) :
     AdditiveGroup.groupScheme ℤ ⟶ positiveSubsystemGroupScheme :=
   TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToTorusSubsystem rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-    positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1)
+    positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.val)
     (inl_mem_positiveSimpleRoots i) ≫ eqToHom positiveSubsystemGroupScheme_def.symm
 
 /-- The positive simple-root subgroup is the corresponding generic Kostant subsystem map,
@@ -272,7 +272,7 @@ theorem positiveRootSubgroup_def (i : Fin 7) :
     positiveRootSubgroup i =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToTorusSubsystem rootGen cartanGen rep
           lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-          positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1)
+          positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.val)
           (inl_mem_positiveSimpleRoots i) ≫
         eqToHom positiveSubsystemGroupScheme_def.symm := by
   rw [positiveRootSubgroup]
@@ -305,7 +305,7 @@ noncomputable def positiveWeightTorus :
     SplitTorus.groupScheme ℤ (Fin 7) ⟶ positiveSubsystemGroupScheme :=
   TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToTorusSubsystem rootGen cartanGen rep
     lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-    positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1) ≫
+    positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.val) ≫
       eqToHom positiveSubsystemGroupScheme_def.symm
 
 /-- The positive weight torus is the generic Kostant subsystem torus map, transported to the
@@ -314,7 +314,7 @@ theorem positiveWeightTorus_def :
     positiveWeightTorus =
       TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToTorusSubsystem rootGen cartanGen rep
           lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-          positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.1) ≫
+          positiveSimpleRoots (fun k => isNilpotent_rep_serreRootGenerator k.val) ≫
         eqToHom positiveSubsystemGroupScheme_def.symm := by
   rw [positiveWeightTorus]
 
@@ -346,11 +346,11 @@ torus factor. -/
 theorem positiveSubsystemClosedSubgroup_le_iff (P : ClosedSubgroupScheme groupScheme) :
     positiveSubsystemClosedSubgroup ≤ P ↔
       (∀ i : Fin 7, ∃! f : AdditiveGroup.groupScheme ℤ ⟶
-        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-          f ≫ P.1.arrow = rootSubgroup (.inl i)) ∧
+        (P.val : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.val.arrow = rootSubgroup (.inl i)) ∧
       ∃! f : SplitTorus.groupScheme ℤ (Fin 7) ⟶
-        (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))),
-          f ≫ P.1.arrow = weightTorus := by
+        (P.val : Grp (Over (Spec (CommRingCat.of ℤ)))),
+          f ≫ P.val.arrow = weightTorus := by
   rw [positiveSubsystemClosedSubgroup_eq_kostantTorusSubsystemClosedSubgroup,
     kostantTorusSubsystemClosedSubgroup_le_iff]
   constructor
@@ -379,7 +379,7 @@ theorem positiveSubsystemGroupScheme_hom_ext {Y : _root_.CommHopfAlgCat.{0} ℤ}
   apply (cancel_epi (eqToHom positiveSubsystemGroupScheme_def.symm)).1
   apply kostantTorusSubsystemGroupScheme_hom_ext rootGen cartanGen rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight positiveSimpleRoots
-    (fun i => isNilpotent_rep_serreRootGenerator i.1)
+    (fun i => isNilpotent_rep_serreRootGenerator i.val)
     (eqToHom positiveSubsystemGroupScheme_def.symm ≫ φ)
     (eqToHom positiveSubsystemGroupScheme_def.symm ≫ ψ)
   · intro i hi
@@ -397,7 +397,7 @@ noncomputable def positiveSubsystemToUpperTriangular :
     TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemToUpperTriangular
       rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis
       e7MinusculeWeight rootWeight7 positiveSimpleRoots
-      (fun i => isNilpotent_rep_serreRootGenerator i.1)
+      (fun i => isNilpotent_rep_serreRootGenerator i.val)
       isCartanWeightVector_latticeBasis (fun i _ => lie_cartanGenerator_rootGenerator i)
       positiveRootWeight_strict
 
@@ -413,7 +413,7 @@ theorem positiveSubsystemToUpperTriangular_comp_inclusion :
   rw [TauCeti.UniversalEnvelopingAlgebra.kostantTorusSubsystemToUpperTriangular_comp_inclusion
       rootGen cartanGen rep
       lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-      rootWeight7 positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1)
+      rootWeight7 positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val)
       isCartanWeightVector_latticeBasis (fun i _ => lie_cartanGenerator_rootGenerator i)
       positiveRootWeight_strict]
 
@@ -427,7 +427,7 @@ instance isClosedImmersion_positiveSubsystemToUpperTriangular :
     TauCeti.UniversalEnvelopingAlgebra.isClosedImmersion_kostantTorusSubsystemToUpperTriangular
       rootGen cartanGen rep
         lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis e7MinusculeWeight
-        rootWeight7 positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.1)
+        rootWeight7 positiveSimpleRoots (fun i => isNilpotent_rep_serreRootGenerator i.val)
         isCartanWeightVector_latticeBasis (fun i _ => lie_cartanGenerator_rootGenerator i)
         positiveRootWeight_strict
 
@@ -442,7 +442,7 @@ theorem isSolvable_points_positiveSubsystem (A : Type v) [CommRing A] :
   exact TauCeti.UniversalEnvelopingAlgebra.isSolvable_points_kostantTorusSubsystem
     rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice latticeBasis
     e7MinusculeWeight rootWeight7 positiveSimpleRoots
-    (fun i => isNilpotent_rep_serreRootGenerator i.1)
+    (fun i => isNilpotent_rep_serreRootGenerator i.val)
     isCartanWeightVector_latticeBasis (fun i _ => lie_cartanGenerator_rootGenerator i)
     positiveRootWeight_strict A
 

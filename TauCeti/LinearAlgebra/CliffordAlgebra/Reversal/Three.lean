@@ -75,7 +75,7 @@ theorem exists_add_reverseEven_eq_smul_one_of_finrank_eq_three
   obtain ⟨e, he, o, ho, heo⟩ := Submodule.mem_sup.mp (hsplit hxfiltration)
   have hxeven : (x : CliffordAlgebra Q) ∈ evenOdd Q 0 := by
     rw [← even_toSubmodule Q]
-    exact x.2
+    exact x.property
   -- Since `x` and its `E` component are even, parity disjointness kills the odd component.
   have hoEven : o ∈ evenOdd Q 0 := by
     have hsub := Submodule.sub_mem (evenOdd Q 0) hxeven (hEeven he)

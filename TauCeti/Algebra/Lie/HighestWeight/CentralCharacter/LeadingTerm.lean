@@ -187,7 +187,7 @@ end Filtration
 
 section Symmetrization
 
-variable {K : Type} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
   (b : (IsKilling.rootSystem H).Base)

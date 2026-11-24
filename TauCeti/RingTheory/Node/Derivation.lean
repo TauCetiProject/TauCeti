@@ -92,19 +92,19 @@ private def polynomialDerivation (u : DerivationValues (M := M) a) :
     Derivation R (polynomialRing (R := R)) M := by
   letI := polynomialModule (M := M) a
   letI := polynomialScalarTower (M := M) a
-  exact MvPolynomial.mkDerivation R u.1
+  exact MvPolynomial.mkDerivation R u.val
 
 private lemma polynomialDerivation_relation (u : DerivationValues (M := M) a) :
     polynomialDerivation a u (X 0 * X 1 - C a) = 0 := by
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup (NodeAlgebra R a)
   let _ := polynomialModule (M := M) a
-  have hu : coord a 1 • u.1 0 + coord a 0 • u.1 1 = 0 :=
-    (mem_derivationValues_iff a u.1).mp u.2
+  have hu : coord a 1 • u.val 0 + coord a 0 • u.val 1 = 0 :=
+    (mem_derivationValues_iff a u.val).mp u.property
   rw [map_sub, Derivation.leibniz]
   simp only [polynomialDerivation, MvPolynomial.mkDerivation_X,
     MvPolynomial.derivation_C, sub_zero]
   -- Unfold the polynomial action to use the Jacobian relation in `M`.
-  change (mk a (X 0)) • u.1 1 + (mk a (X 1)) • u.1 0 = 0
+  change (mk a (X 0)) • u.val 1 + (mk a (X 1)) • u.val 0 = 0
   simpa only [mk_X, add_comm] using hu
 
 private lemma polynomialDerivation_ker (u : DerivationValues (M := M) a)
@@ -154,12 +154,12 @@ private def derivationOfValues (u : DerivationValues (M := M) a) :
   exact d.leibniz p q
 
 private lemma derivationOfValues_coord (u : DerivationValues (M := M) a) (i : Fin 2) :
-    derivationOfValues a u (coord a i) = u.1 i := by
+    derivationOfValues a u (coord a i) = u.val i := by
   rw [← mk_X a i]
   simp only [derivationOfValues, Derivation.coe_mk', descendedLinearMap_mk]
   let _ := polynomialModule (M := M) a
   let _ := polynomialScalarTower (M := M) a
-  exact MvPolynomial.mkDerivation_X R u.1 i
+  exact MvPolynomial.mkDerivation_X R u.val i
 
 omit [IsScalarTower R (NodeAlgebra R a) M] in
 /-- An `R`-derivation of the nodal algebra is uniquely determined by its values on the two
@@ -188,13 +188,13 @@ def derivationEquivValues :
 /-- Evaluation of the derivation equivalence at a coordinate. -/
 @[simp]
 lemma derivationEquivValues_apply (D : Derivation R (NodeAlgebra R a) M)
-    (i : Fin 2) : (derivationEquivValues a D).1 i = D (coord a i) := by
+    (i : Fin 2) : (derivationEquivValues a D).val i = D (coord a i) := by
   rfl
 
 /-- Evaluation of the inverse equivalence at a coordinate. -/
 @[simp]
 lemma derivationEquivValues_symm_apply (u : DerivationValues (M := M) a) (i : Fin 2) :
-    ((derivationEquivValues a).symm u) (coord a i) = u.1 i :=
+    ((derivationEquivValues a).symm u) (coord a i) = u.val i :=
   derivationOfValues_coord a u i
 
 end TauCeti.NodeAlgebra

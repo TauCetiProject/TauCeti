@@ -302,7 +302,7 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_ne_zero_pair (hσ : Function.S
     (hdet : Q.det ≠ 0) {u x y : n → K} (hx : x ∉ K ∙ u) (hy : y ∉ K ∙ u) :
     ∃ v : n → K, (σ ∘ v) ⬝ᵥ (Q *ᵥ u) = 0 ∧ (σ ∘ v) ⬝ᵥ (Q *ᵥ x) ≠ 0 ∧
       (σ ∘ v) ⬝ᵥ (Q *ᵥ y) ≠ 0 := by
-  obtain ⟨w, hwu, hwx, hwy⟩ := (nondegenerate_of_det_ne_zero hdet).separatingRight
+  obtain ⟨w, hwu, hwx, hwy⟩ := (Matrix.Nondegenerate.of_det_ne_zero hdet).separatingRight
     |>.separatingLeft_transpose.exists_ortho_and_not_ortho_pair_of_notMem_span hx hy
   rw [dotProduct_transpose_mulVec] at hwu hwx hwy
   obtain ⟨v, rfl⟩ := hσ.comp_left w

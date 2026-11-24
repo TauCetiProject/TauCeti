@@ -115,7 +115,7 @@ theorem Isometry.hasBesicovitchCovering {α β : Type*} [MetricSpace α] [Metric
 /-- A subspace of a metric space with the Besicovitch covering property has it too. -/
 instance Subtype.hasBesicovitchCovering {α : Type*} [MetricSpace α] [HasBesicovitchCovering α]
     (p : α → Prop) : HasBesicovitchCovering (Subtype p) :=
-  isometry_subtype_coe.hasBesicovitchCovering
+  isometry_subtypeVal.hasBesicovitchCovering
 
 /-! ### Differentiation along concentric closed balls -/
 

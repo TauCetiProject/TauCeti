@@ -83,24 +83,38 @@ whose vertices are smaller than `v`, and to which `v` can be adjoined, goes to i
 def cone (v : ι) (n : ℕ) : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain K R (n + 1) :=
   open Classical in
   linearCombination R fun c ↦
-    if h : (∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K then single (c.cone v h.1 h.2) 1 else 0
+    if h : (∀ w ∈ c.val.val, w < v) ∧ insert v c.val.val ∈ K then single (c.cone v h.1 h.2) 1 else 0
 
 variable {R}
 
 /-- The cone operator sends a multiple of a cell that can be coned off at `v` to the same
 multiple of its cone. -/
 @[simp]
-theorem cone_single {v : ι} {n : ℕ} (c : RealizationCell K n) (hlt : ∀ w ∈ c.1.1, w < v)
-    (hK : insert v c.1.1 ∈ K) (a : R) :
+theorem cone_single {v : ι} {n : ℕ} (c : RealizationCell K n) (hlt : ∀ w ∈ c.val.val, w < v)
+    (hK : insert v c.val.val ∈ K) (a : R) :
     cone R v n (single c a) = single (c.cone v hlt hK) a := by
   simp [cone, iff_true_intro hlt, hK]
 
 /-- The cone operator sends a multiple of a cell that cannot be coned off at `v` to `0`. -/
 @[simp]
 theorem cone_single_of_not {v : ι} {n : ℕ} (c : RealizationCell K n)
-    (h : ¬((∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K)) (a : R) :
+    (h : ¬((∀ w ∈ c.val.val, w < v) ∧ insert v c.val.val ∈ K)) (a : R) :
     cone R v n (single c a) = 0 := by
   simp [cone, h]
+
+/-- Every cell in the support of a cone is the cone on a cell of the original chain that can be
+coned off. -/
+theorem exists_eq_cone_of_mem_support_cone {v : ι} {n : ℕ} {z : OrderedSimplicialChain K R n}
+    {d : RealizationCell K (n + 1)} (hd : d ∈ (cone R v n z).support) :
+    ∃ e ∈ z.support, ∃ (hlt : ∀ x ∈ e.val.val, x < v) (hK : insert v e.val.val ∈ K),
+      d = e.cone v hlt hK := by
+  classical
+  rw [← z.sum_single, Finsupp.sum, map_sum] at hd
+  obtain ⟨e, he, hd⟩ := Finsupp.mem_support_finsetSum _ hd
+  by_cases h : (∀ x ∈ e.val.val, x < v) ∧ insert v e.val.val ∈ K
+  · rw [cone_single e h.1 h.2] at hd
+    exact ⟨e, he, h.1, h.2, Finset.mem_singleton.mp (Finsupp.support_single_subset hd)⟩
+  · simp [cone_single_of_not e h] at hd
 
 end Semiring
 
@@ -110,7 +124,7 @@ variable {R : Type v} [Ring R]
 and joined to `v` by an edge, the boundary of its cone is its augmentation times `[v]`, minus the
 chain. -/
 theorem boundary_cone_zero {v : ι} {z : OrderedSimplicialChain K R 0}
-    (hz : ∀ c ∈ z.support, (∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K) :
+    (hz : ∀ c ∈ z.support, (∀ w ∈ c.val.val, w < v) ∧ insert v c.val.val ∈ K) :
     boundary R 0 (cone R v 0 z) =
       single (RealizationCell.vertex K v) (linearCombination R (fun _ ↦ (1 : R)) z) - z := by
   classical
@@ -129,7 +143,7 @@ theorem boundary_cone_zero {v : ι} {z : OrderedSimplicialChain K R 0}
 be coned off at `v`, the boundary of its cone is the cone on its boundary plus
 `(-1) ^ (n + 2)` times the chain. -/
 theorem boundary_cone_succ {v : ι} {n : ℕ} {z : OrderedSimplicialChain K R (n + 1)}
-    (hz : ∀ c ∈ z.support, (∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K) :
+    (hz : ∀ c ∈ z.support, (∀ w ∈ c.val.val, w < v) ∧ insert v c.val.val ∈ K) :
     boundary R (n + 1) (cone R v (n + 1) z) =
       cone R v n (boundary R n z) + (-1 : R) ^ (n + 2) • z := by
   classical
@@ -158,11 +172,11 @@ be coned off at a common vertex. -/
 private theorem exists_cone_vertex_of_cone
     (h : ∀ s : Finset ι, ∃ v, (∀ w ∈ s, w < v) ∧ ∀ σ ∈ K, σ ⊆ s → insert v σ ∈ K) {n : ℕ}
     (z : OrderedSimplicialChain K R n) :
-    ∃ v, ∀ c ∈ z.support, (∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K := by
+    ∃ v, ∀ c ∈ z.support, (∀ w ∈ c.val.val, w < v) ∧ insert v c.val.val ∈ K := by
   classical
-  obtain ⟨v, hlt, hK⟩ := h (z.support.biUnion fun c ↦ c.1.1)
+  obtain ⟨v, hlt, hK⟩ := h (z.support.biUnion fun c ↦ c.val.val)
   exact ⟨v, fun c hc ↦ ⟨fun w hw ↦ hlt w (Finset.mem_biUnion.mpr ⟨c, hc, hw⟩),
-    hK _ c.1.2 (Finset.subset_biUnion_of_mem (fun c ↦ c.1.1) hc)⟩⟩
+    hK _ c.val.property (Finset.subset_biUnion_of_mem (fun c ↦ c.val.val) hc)⟩⟩
 
 variable {R}
 variable (h : ∀ s : Finset ι, ∃ v, (∀ w ∈ s, w < v) ∧ ∀ σ ∈ K, σ ⊆ s → insert v σ ∈ K)

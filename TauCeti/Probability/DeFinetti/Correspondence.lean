@@ -110,12 +110,12 @@ def deFinettiEquiv [StandardBorelSpace α] :
       have h' : Measure.deFinettiBarycenter π₁.toMeasure =
           Measure.deFinettiBarycenter π₂.toMeasure :=
         congrArg (fun r : {ρ : ProbabilityMeasure (ℕ → α) // ExchangeableLaw ρ.toMeasure} =>
-          ProbabilityMeasure.toMeasure r.1) h
+          ProbabilityMeasure.toMeasure r.val) h
       simp only [Measure.deFinettiBarycenter_def] at h'
       exact ProbabilityMeasure.toMeasure_injective
         (TauCeti.MeasureTheory.Measure.ext_of_bind_infinitePi_eq h'),
       fun ρ => by
-        obtain ⟨π, hπ, -⟩ := ρ.2.existsUnique_mixingLaw
+        obtain ⟨π, hπ, -⟩ := ρ.property.existsUnique_mixingLaw
         exact ⟨π, Subtype.ext (ProbabilityMeasure.toMeasure_injective hπ.symm)⟩⟩
 
 @[simp]
