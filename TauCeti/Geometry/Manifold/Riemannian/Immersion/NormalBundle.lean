@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
@@ -246,12 +245,6 @@ theorem orthogonalNormalSpaceEquivQuotient_symm_mk (v : TangentSpace J (f x)) :
     Submodule.Quotient.eq, Submodule.coe_orthogonalProjectionOnto_apply]
   have h := (orthogonalNormalSpace I J f x).sub_starProjection_mem_orthogonal v
   rwa [orthogonal_orthogonalNormalSpace] at h
-
-/-- **The quotient norm equals the normal norm.** For a normal vector `w`, the quotient norm of its
-class `[w]` in `T_{f x} N ⧸ range df_x` is the norm of `w`. -/
-theorem norm_orthogonalNormalSpaceEquivQuotient (w : orthogonalNormalSpace I J f x) :
-    ‖orthogonalNormalSpaceEquivQuotient f x w‖ = ‖(w : TangentSpace J (f x))‖ :=
-  (orthogonalNormalSpaceEquivQuotient f x).norm_map w
 
 end QuotientComparison
 
