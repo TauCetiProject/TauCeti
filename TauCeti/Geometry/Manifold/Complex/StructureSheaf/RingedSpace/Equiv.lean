@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.AlgHom
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.RingedSpace
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.RingedSpace.Basic
 import Mathlib.Tactic.TFAE
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
@@ -16,7 +16,7 @@ import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
 This file characterizes which morphisms between the holomorphic locally ringed spaces
 `locallyRingedSpace I X` and `locallyRingedSpace J Y` (constructed in
-`StructureSheaf.RingedSpace`) come from complex analytic maps:
+`StructureSheaf.RingedSpace.Basic`) come from complex analytic maps:
 
 * On arbitrary complex charted spaces `X` and `Y` (with no manifold, boundaryless, or
   finite-dimensionality hypotheses), `c_app_algebraMap_tfae` proves that for any morphism
@@ -489,6 +489,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [Top
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
   (e : OpenPartialHomeomorph Y H') (he : e ∈ maximalAtlas J ω Y)
 
+include he in
+/-- The `i`-th linear coordinate function of an extended holomorphic chart `e.extend J`, centered
+at `z : E'`, as a holomorphic section on `⟨e.source, e.open_source⟩`. -/
+def extendCoordSection {ι : Type*} (b : Module.Basis ι ℂ E') (z : E') (i : ι) :
+    (holomorphicStructureSheaf J Y).obj.obj (op ⟨e.source, e.open_source⟩) :=
+  ofContMDiff (fun y : (⟨e.source, e.open_source⟩ : Opens Y) ↦ b.coord i (e.extend J y.val - z))
+    fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
+      (n := ω)).contMDiff.contMDiffAt.comp y
+      (((e.contMDiffAt_extend he y.property).comp y contMDiff_subtypeVal.contMDiffAt).sub
+        contMDiffAt_const)
+
+include he in
+/-- Evaluating `e.extendCoordSection he b z i` at `y` gives `b.coord i (e.extend J y.val - z)`. -/
+@[simp]
+theorem extendCoordSection_apply {ι : Type*} (b : Module.Basis ι ℂ E') (z : E') (i : ι)
+    (y : (⟨e.source, e.open_source⟩ : Opens Y)) :
+    toFun J Y (op ⟨e.source, e.open_source⟩) (e.extendCoordSection he b z i) y =
+      b.coord i (e.extend J y.val - z) :=
+  ofContMDiff_apply _ _ y
+
 private theorem extend_base_sub_eq_sum_of_c_app_top_algebraMap
     {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ E')
     (φ : (locallyRingedSpace I X).toPresheafedSpace ⟶
@@ -497,19 +517,13 @@ private theorem extend_base_sub_eq_sum_of_c_app_top_algebraMap
       algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj ⊤))) c)
     (z : E') (w : ↥((Opens.map φ.base).obj ⟨e.source, e.open_source⟩)) :
     ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
-        ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
-          (ofContMDiff (fun y : (⟨e.source, e.open_source⟩ : Opens Y) ↦
-              b.coord i (e.extend J y.val - z))
-            fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
-              (n := ω)).contMDiff.contMDiffAt.comp y
-              (((e.contMDiffAt_extend he y.property).comp y
-                contMDiff_subtypeVal.contMDiffAt).sub contMDiffAt_const)))
+        ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom (e.extendCoordSection he b z i))
         w • b i =
       e.extend J (φ.base w.val) - z := by
   refine (Finset.sum_congr rfl fun i _ ↦ ?_).trans (b.sum_repr (e.extend J (φ.base w.val) - z))
   exact congrArg (· • b i)
     ((c_app_apply_of_c_app_top_algebraMap φ hφ ⟨e.source, e.open_source⟩ _ w).trans
-      (ofContMDiff_apply _ _ ⟨φ.base w.val, w.property⟩))
+      (e.extendCoordSection_apply he b z i ⟨φ.base w.val, w.property⟩))
 
 include he in
 /-- **Chart-independent local coordinate recovery.** In *any* holomorphic chart `e` for a model
@@ -526,13 +540,7 @@ theorem base_eq_symm_sum_of_c_app_top_algebraMap
     (z : E') (w : ↥((Opens.map φ.base).obj ⟨e.source, e.open_source⟩)) :
     φ.base w.val = (e.extend J).symm (z +
       ∑ i : ι, toFun I X (op ((Opens.map φ.base).obj ⟨e.source, e.open_source⟩))
-        ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom
-          (ofContMDiff (fun y : (⟨e.source, e.open_source⟩ : Opens Y) ↦
-              b.coord i (e.extend J y.val - z))
-            fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
-              (n := ω)).contMDiff.contMDiffAt.comp y
-              (((e.contMDiffAt_extend he y.property).comp y
-                contMDiff_subtypeVal.contMDiffAt).sub contMDiffAt_const)))
+        ((φ.c.app (op ⟨e.source, e.open_source⟩)).hom (e.extendCoordSection he b z i))
         w • b i) := by
   rw [extend_base_sub_eq_sum_of_c_app_top_algebraMap e he b φ hφ z w, add_sub_cancel,
     (e.extend J).left_inv (by rw [e.extend_source]; exact w.property)]
@@ -575,12 +583,7 @@ theorem contMDiff_base_of_c_app_top_algebraMap : ContMDiff I J ω φ.base := by
   rw [← contMDiffAt_subtype_iff (U := V) (x := ⟨x₀, hx₀⟩)]
   let b := Module.finBasis ℂ E'
   let t : Fin (Module.finrank ℂ E') → (holomorphicStructureSheaf I X).obj.obj (op V) := fun i ↦
-    (φ.c.app (op U)).hom
-      (ofContMDiff (fun y : U ↦ b.coord i (e.extend J y.val - 0))
-        fun y ↦ ((LinearMap.toContinuousLinearMap (b.coord i)).contDiff
-          (n := ω)).contMDiff.contMDiffAt.comp y
-          (((e.contMDiffAt_extend he y.property).comp y contMDiff_subtypeVal.contMDiffAt).sub
-            contMDiffAt_const))
+    (φ.c.app (op U)).hom (e.extendCoordSection he b 0 i)
   let G : V → E' := fun w ↦ ∑ i, t i w • b i
   have hG_cm : ContMDiff I 𝓘(ℂ, E') ω G := fun w ↦ ContMDiffAt.sum fun i _ ↦
     ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (b i)).contDiff
@@ -786,8 +789,8 @@ theorem holomorphicMapLocalRingedEquivalence_restrict_val (f : C^ω⟮I, X; J, Y
         (locallyRingedSpace I X).ofRestrict (Opens.isOpenEmbedding (X := TopCat.of X) U) ≫
         (holomorphicMapLocalRingedEquivalence I X J Y f).val := by
   rw [restrictLocallyRingedSpaceIso_inv_comp_ofRestrict_assoc,
-    holomorphicMapLocalRingedEquivalence_restrict]
-  rfl
+    holomorphicMapLocalRingedEquivalence_restrict,
+    LocallyRingedSpaceCLinearHom.val_comp, LocallyRingedSpaceCLinearHom.val_ofContMDiff]
 
 end SymmAndComp
 

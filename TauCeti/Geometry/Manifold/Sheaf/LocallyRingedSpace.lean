@@ -121,6 +121,14 @@ theorem locallyRingedSpace_c_app_apply
   exact (smoothSheafCommRing.evalHom_germ IM 𝓘(𝕜) M 𝕜 _ x hx _).symm.trans
     (h.trans (smoothSheafCommRing.evalHom_germ IN 𝓘(𝕜) N 𝕜 V _ hx g))
 
+/-- `ChartedSpace.locallyRingedSpaceMap` acts on sections by precomposition with `f`. -/
+theorem locallyRingedSpaceMap_c_app_apply (f : M → N) (hf : ContMDiff IM IN ∞ f)
+    {V : Opens N} (g : (smoothSheafCommRing IN 𝓘(𝕜) N 𝕜).presheaf.obj (op V))
+    {x : M} (hx : f x ∈ V) :
+    ((locallyRingedSpaceMap f hf).c.app (op V) g).val ⟨x, hx⟩ = g ⟨f x, hx⟩ :=
+  locallyRingedSpace_c_app_apply (locallyRingedSpaceMap f hf)
+    (preservesValues_locallyRingedSpaceMap f hf) g hx
+
 /-- The chart coordinate `ℓ ∘ extChartAt IN y`, as a smooth function on the chart domain. -/
 private def chartCoordinateSection [IsManifold IN ∞ N] (y : N) (ℓ : EN →L[𝕜] 𝕜) :
     (smoothSheafCommRing IN 𝓘(𝕜) N 𝕜).presheaf.obj (op ⟨(chartAt HN y).source,

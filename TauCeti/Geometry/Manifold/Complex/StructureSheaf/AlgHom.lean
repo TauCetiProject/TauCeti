@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Separated
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.LocalRing.AlgHom
 
 /-!
