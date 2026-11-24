@@ -31,8 +31,9 @@ and the derivatives of `exp (ℓ / 2) - 1` inherit this decay by the Leibniz rul
 `(0, 1)` together with all its derivatives, at every rate `c < 1 / 2`. This upgrades the
 zeroth-order convergence `TauCeti.Vortex.exists_norm_sub_referenceField_le_mul_exp`.
 
-These are estimates for one smooth vortex; uniformity over compact families of divisors and decay
-of derivatives in the divisor parameters are not treated here.
+These are estimates for one smooth vortex. Their uniform version over the vortices whose zeros lie
+in a fixed disc is `TauCeti.Analysis.PDE.Vortex.FramedGauge.UniformDerivativeDecay`; decay of
+derivatives in the divisor parameters is not treated here.
 
 ## Main results
 
