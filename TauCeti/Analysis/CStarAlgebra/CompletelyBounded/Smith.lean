@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyBounded.Basic
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.CStarAlgebra.Unitization
@@ -15,10 +14,10 @@ import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 /-!
 # Smith's lemma and completely bounded maps into commutative C⋆-algebras
 
-For a linear map `u : A → M_n(ℂ)` from a C⋆-algebra into the `n × n` matrices, **Smith's lemma**
-says that the cb norm is attained at level `n`: `‖u‖_cb = ‖uₙ‖`. Every bound on the level-`n`
-amplification `uₙ : M_n(A) → M_n(M_n(ℂ))` bounds every amplification `uₘ`, so `u` is completely
-bounded exactly when `uₙ` is bounded.
+For a linear map `u : A → M_n(ℂ)` from a C⋆-algebra into the `n × n` matrices (indexed by any
+finite type), **Smith's lemma** says that the cb norm is attained at level `n`:
+`‖u‖_cb = ‖uₙ‖`. Every bound on the level-`n` amplification `uₙ : M_n(A) → M_n(M_n(ℂ))` bounds
+every amplification `uₘ`, so `u` is completely bounded exactly when `uₙ` is bounded.
 
 For a bounded linear map `u : A → B` into a commutative C⋆-algebra, the cb norm equals the norm:
 `‖u‖_cb = ‖u‖`.
@@ -67,7 +66,7 @@ section Smith
 
 /-- Gram–Schmidt factorization of `n` vectors `vᵣ = (v k r)ₖ ∈ ℂ^κ`: `v k r = ∑ t, e t k * v' t r`
 for pairwise orthogonal vectors `e t` of norm at most `1`, with `‖v'‖ = ‖v‖`. -/
-private theorem exists_factor {κ : Type*} [Fintype κ] {n : ℕ} (v : κ → Fin n → ℂ) :
+private theorem exists_factor_fin {κ : Type*} [Fintype κ] {n : ℕ} (v : κ → Fin n → ℂ) :
     ∃ (e : Fin n → κ → ℂ) (v' : Fin n → Fin n → ℂ),
       (∀ k r, v k r = ∑ t, e t k * v' t r) ∧
       (∀ t t', t ≠ t' → ∑ k, e t k * star (e t' k) = 0) ∧
@@ -113,48 +112,44 @@ private theorem exists_factor {κ : Type*} [Fintype κ] {n : ℕ} (v : κ → Fi
     simp_rw [hparseval, EuclideanSpace.norm_sq_eq, c]
     exact Finset.sum_comm
 
-variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+/-- Gram–Schmidt factorization of vectors `vᵣ = (v k r)ₖ ∈ ℂ^κ` indexed by a finite type `ι`:
+`v k r = ∑ t, e t k * v' t r` for pairwise orthogonal vectors `e t` of norm at most `1`, with
+`‖v'‖ = ‖v‖`. -/
+private theorem exists_factor {κ ι : Type*} [Fintype κ] [Fintype ι] (v : κ → ι → ℂ) :
+    ∃ (e : ι → κ → ℂ) (v' : ι → ι → ℂ),
+      (∀ k r, v k r = ∑ t, e t k * v' t r) ∧
+      (∀ t t', t ≠ t' → ∑ k, e t k * star (e t' k) = 0) ∧
+      (∀ t, ∑ k, ‖e t k‖ ^ 2 ≤ 1) ∧
+      ∑ t, ∑ r, ‖v' t r‖ ^ 2 = ∑ k, ∑ r, ‖v k r‖ ^ 2 := by
+  classical
+  let σ := Fintype.equivFin ι
+  obtain ⟨e, v', hv, he, he₁, hv'⟩ := exists_factor_fin fun k i => v k (σ.symm i)
+  refine ⟨fun t => e (σ t), fun t r => v' (σ t) (σ r), fun k r => ?_,
+    fun t t' h => he _ _ (σ.injective.ne h), fun t => he₁ _, ?_⟩
+  · rw [← σ.symm_apply_apply r, hv, ← σ.sum_comp]
+    simp
+  · calc ∑ t, ∑ r, ‖v' (σ t) (σ r)‖ ^ 2 = ∑ t, ∑ r, ‖v' t r‖ ^ 2 :=
+          (Finset.sum_congr rfl fun t _ => σ.sum_comp fun r => ‖v' (σ t) r‖ ^ 2).trans
+            (σ.sum_comp fun t => ∑ r, ‖v' t r‖ ^ 2)
+      _ = ∑ k, ∑ r, ‖v k (σ.symm r)‖ ^ 2 := hv'
+      _ = _ := Finset.sum_congr rfl fun k _ => σ.symm.sum_comp fun r => ‖v k r‖ ^ 2
 
-/-- The vectors `(∑ t, e t k • a t)ₖ`, for pairwise orthogonal `e t ∈ ℂ^κ` of norm at most `1`:
-a contraction of Hilbert `A`-modules. -/
-private theorem norm_equiv_symm_sum_smul_le {κ : Type*} [Fintype κ] {n : ℕ} {e : Fin n → κ → ℂ}
-    (he : ∀ t t', t ≠ t' → ∑ k, e t k * star (e t' k) = 0) (he₁ : ∀ t, ∑ k, ‖e t k‖ ^ 2 ≤ 1)
-    (a : C⋆ᵐᵒᵈ(A, Fin n → A)) :
-    ‖(equiv A (κ → A)).symm fun k => ∑ t, e t k • a t‖ ≤ ‖a‖ := by
-  have key : ∑ k, (∑ t, e t k • a t) * star (∑ t, e t k • a t) =
-      ∑ t, (∑ k, ‖e t k‖ ^ 2) • (a t * star (a t)) := by
-    simp only [star_sum, star_smul, Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun t _ => ?_
-    rw [Finset.sum_comm, Finset.sum_eq_single t]
-    · rw [← Finset.sum_smul]
-      rw [← Complex.coe_smul]
-      congr 1
-      push_cast
-      exact Finset.sum_congr rfl fun k _ => by rw [RCLike.star_def, RCLike.mul_conj]; rfl
-    · exact fun t' _ h => by rw [← Finset.sum_smul, he t' t h, zero_smul]
-    · simp
-  rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero, pi_norm_sq, pi_norm_sq]
-  simp only [equiv_symm_pi_apply, inner_def]
-  rw [key]
-  exact CStarAlgebra.norm_le_norm_of_le_of_nonneg
-    (Finset.sum_le_sum fun t _ => smul_le_of_le_one_left (mul_star_self_nonneg _) (he₁ t))
-    (Finset.sum_nonneg fun t _ => smul_nonneg (by positivity) (mul_star_self_nonneg _))
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 /-- The compression `[∑ k l, (e t k * star (f t' l)) • x k l]_{t t'}` of `x ∈ M_κ(A)` to `M_n(A)`
 by the vectors `e t, f t' ∈ ℂ^κ`. -/
-private def compress {κ : Type*} [Fintype κ] {n : ℕ} (e f : Fin n → κ → ℂ)
-    (x : CStarMatrix κ κ A) : CStarMatrix (Fin n) (Fin n) A :=
+private def compress {κ ι : Type*} [Fintype κ] (e f : ι → κ → ℂ)
+    (x : CStarMatrix κ κ A) : CStarMatrix ι ι A :=
   CStarMatrix.ofMatrix (Matrix.of fun t t' => ∑ k, ∑ l, (e t k * star (f t' l)) • x k l)
 
 omit [PartialOrder A] [StarOrderedRing A] in
-private theorem compress_apply {κ : Type*} [Fintype κ] {n : ℕ} (e f : Fin n → κ → ℂ)
-    (x : CStarMatrix κ κ A) (t t' : Fin n) :
+private theorem compress_apply {κ ι : Type*} [Fintype κ] (e f : ι → κ → ℂ)
+    (x : CStarMatrix κ κ A) (t t' : ι) :
     compress e f x t t' = ∑ k, ∑ l, (e t k * star (f t' l)) • x k l :=
   (rfl)
 
 /-- Compressing by pairwise orthogonal vectors of norm at most `1` does not increase norms. -/
-private theorem norm_compress_le {κ : Type*} [Fintype κ] {n : ℕ} {e f : Fin n → κ → ℂ}
+private theorem norm_compress_le {κ ι : Type*} [Fintype κ] [Fintype ι] {e f : ι → κ → ℂ}
     (he : ∀ t t', t ≠ t' → ∑ k, e t k * star (e t' k) = 0) (he₁ : ∀ t, ∑ k, ‖e t k‖ ^ 2 ≤ 1)
     (hf : ∀ t t', t ≠ t' → ∑ k, f t k * star (f t' k) = 0) (hf₁ : ∀ t, ∑ k, ‖f t k‖ ^ 2 ≤ 1)
     (x : CStarMatrix κ κ A) : ‖compress e f x‖ ≤ ‖x‖ := by
@@ -183,10 +178,10 @@ private theorem norm_compress_le {κ : Type*} [Fintype κ] {n : ℕ} {e f : Fin 
 omit [PartialOrder A] [StarOrderedRing A] in
 /-- The pairing of the level-`κ` amplification of `u : A → M_n(ℂ)`, read in `M_{κ × n}(ℂ)`,
 with vectors `v, w ∈ ℂ^{κ × n}`. -/
-private theorem inner_toCLM_comp_map {κ : Type*} [Fintype κ] {n : ℕ}
-    (u : A →ₗ[ℂ] CStarMatrix (Fin n) (Fin n) ℂ) (x : CStarMatrix κ κ A)
-    (v w : C⋆ᵐᵒᵈ(ℂ, κ × Fin n → ℂ)) :
-    ⟪w, CStarMatrix.toCLM (CStarMatrix.compStarAlgEquiv ℂ κ (Fin n) ℂ (x.map u)) v⟫_ℂ =
+private theorem inner_toCLM_comp_map {κ ι : Type*} [Fintype κ] [Fintype ι]
+    (u : A →ₗ[ℂ] CStarMatrix ι ι ℂ) (x : CStarMatrix κ κ A)
+    (v w : C⋆ᵐᵒᵈ(ℂ, κ × ι → ℂ)) :
+    ⟪w, CStarMatrix.toCLM (CStarMatrix.compStarAlgEquiv ℂ κ ι ℂ (x.map u)) v⟫_ℂ =
       ∑ r, ∑ s, u (∑ k, ∑ l, (v (k, r) * star (w (l, s))) • x k l) r s := by
   simp only [pi_inner, CStarMatrix.toCLM_apply_eq_sum, equiv_symm_pi_apply, inner_def,
     CStarMatrix.compStarAlgEquiv_apply, CStarMatrix.map_apply, map_sum, map_smul,
@@ -205,10 +200,10 @@ private theorem inner_toCLM_comp_map {κ : Type*} [Fintype κ] {n : ℕ}
 omit [PartialOrder A] [StarOrderedRing A] in
 /-- Factoring the test vectors `v = e v'` and `w = f w'` turns the scalar compression of `x` into
 the scalar compression of `compress e f x`. -/
-private theorem sum_smul_eq_sum_smul_compress {κ : Type*} [Fintype κ] {n : ℕ}
-    {e f : Fin n → κ → ℂ} {v w : κ → Fin n → ℂ} {v' w' : Fin n → Fin n → ℂ}
+private theorem sum_smul_eq_sum_smul_compress {κ ι : Type*} [Fintype κ] [Fintype ι]
+    {e f : ι → κ → ℂ} {v w : κ → ι → ℂ} {v' w' : ι → ι → ℂ}
     (hv : ∀ k r, v k r = ∑ t, e t k * v' t r) (hw : ∀ l s, w l s = ∑ t, f t l * w' t s)
-    (x : CStarMatrix κ κ A) (r s : Fin n) :
+    (x : CStarMatrix κ κ A) (r s : ι) :
     ∑ k, ∑ l, (v k r * star (w l s)) • x k l =
       ∑ t, ∑ t', (v' t r * star (w' t' s)) • compress e f x t t' := by
   simp only [hv, hw, compress_apply, star_sum, star_mul, Finset.sum_mul, Finset.mul_sum,
@@ -223,42 +218,33 @@ private theorem sum_smul_eq_sum_smul_compress {κ : Type*} [Fintype κ] {n : ℕ
     _ = _ := Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
         Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring_nf
 
-/-- For `v : C⋆ᵐᵒᵈ(ℂ, ι → ℂ)`, `‖v‖ ^ 2 = ∑ i, ‖v i‖ ^ 2`. -/
-private theorem norm_sq_eq_sum {ι : Type*} [Fintype ι] (v : C⋆ᵐᵒᵈ(ℂ, ι → ℂ)) :
-    ‖v‖ ^ 2 = ∑ i, ‖v i‖ ^ 2 := by
-  rw [pi_norm_sq]
-  simp only [inner_def, RCLike.star_def, RCLike.mul_conj]
-  norm_cast
-  exact Real.norm_of_nonneg (by positivity)
-
 /-- **Smith's lemma.** For a linear map `u : A → M_n(ℂ)`, a bound `‖uₙ y‖ ≤ c ‖y‖` on the
 level-`n` amplification bounds every amplification: `‖uₘ x‖ ≤ c ‖x‖` for `x ∈ M_κ(A)`. -/
-theorem norm_map_le_of_forall_norm_map_le {n : ℕ} {u : A →ₗ[ℂ] CStarMatrix (Fin n) (Fin n) ℂ}
-    {c : ℝ} (hc : 0 ≤ c) (h : ∀ y : CStarMatrix (Fin n) (Fin n) A, ‖y.map u‖ ≤ c * ‖y‖)
+theorem norm_map_le_of_forall_norm_map_le {ι : Type*} [Fintype ι] {u : A →ₗ[ℂ] CStarMatrix ι ι ℂ}
+    {c : ℝ} (hc : 0 ≤ c) (h : ∀ y : CStarMatrix ι ι A, ‖y.map u‖ ≤ c * ‖y‖)
     {κ : Type*} [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map u‖ ≤ c * ‖x‖ := by
-  rw [← StarAlgEquiv.norm_map (CStarMatrix.compStarAlgEquiv ℂ κ (Fin n) ℂ)]
+  rw [← StarAlgEquiv.norm_map (CStarMatrix.compStarAlgEquiv ℂ κ ι ℂ)]
   refine (CStarMatrix.norm_le_of_forall_inner_le
-    (M := CStarMatrix.compStarAlgEquiv ℂ κ (Fin n) ℂ (x.map u)) (C := c.toNNReal * ‖x‖₊)
+    (M := CStarMatrix.compStarAlgEquiv ℂ κ ι ℂ (x.map u)) (C := c.toNNReal * ‖x‖₊)
     fun v w => ?_).trans_eq (by rw [NNReal.coe_mul, Real.coe_toNNReal _ hc, coe_nnNorm])
   obtain ⟨e, v', hv, he, he₁, hv'⟩ := exists_factor fun k r => v (k, r)
   obtain ⟨f, w', hw, hf, hf₁, hw'⟩ := exists_factor fun l s => w (l, s)
-  let V : C⋆ᵐᵒᵈ(ℂ, Fin n × Fin n → ℂ) := (equiv ℂ (Fin n × Fin n → ℂ)).symm fun p => v' p.1 p.2
-  let W : C⋆ᵐᵒᵈ(ℂ, Fin n × Fin n → ℂ) := (equiv ℂ (Fin n × Fin n → ℂ)).symm fun p => w' p.1 p.2
+  let V : C⋆ᵐᵒᵈ(ℂ, ι × ι → ℂ) := (equiv ℂ (ι × ι → ℂ)).symm fun p => v' p.1 p.2
+  let W : C⋆ᵐᵒᵈ(ℂ, ι × ι → ℂ) := (equiv ℂ (ι × ι → ℂ)).symm fun p => w' p.1 p.2
   have hV : ‖V‖ = ‖v‖ := by
     rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_eq_sum, norm_sq_eq_sum,
       Fintype.sum_prod_type, Fintype.sum_prod_type]
-    exact hv'
+    simpa only [V, equiv_symm_pi_apply] using hv'
   have hW : ‖W‖ = ‖w‖ := by
     rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_eq_sum, norm_sq_eq_sum,
       Fintype.sum_prod_type, Fintype.sum_prod_type]
-    exact hw'
-  let Z := CStarMatrix.compStarAlgEquiv ℂ (Fin n) (Fin n) ℂ ((compress e f x).map u)
-  have key : ⟪w, CStarMatrix.toCLM (CStarMatrix.compStarAlgEquiv ℂ κ (Fin n) ℂ (x.map u)) v⟫_ℂ =
+    simpa only [W, equiv_symm_pi_apply] using hw'
+  let Z := CStarMatrix.compStarAlgEquiv ℂ ι ι ℂ ((compress e f x).map u)
+  have key : ⟪w, CStarMatrix.toCLM (CStarMatrix.compStarAlgEquiv ℂ κ ι ℂ (x.map u)) v⟫_ℂ =
       ⟪W, CStarMatrix.toCLM Z V⟫_ℂ := by
     rw [inner_toCLM_comp_map, inner_toCLM_comp_map]
     refine Finset.sum_congr rfl fun r _ => Finset.sum_congr rfl fun s _ => ?_
-    rw [sum_smul_eq_sum_smul_compress hv hw x r s]
-    rfl
+    simp only [sum_smul_eq_sum_smul_compress hv hw x r s, V, W, equiv_symm_pi_apply]
   have hZ : ‖Z‖ ≤ c * ‖x‖ := by
     rw [StarAlgEquiv.norm_map]
     exact (h _).trans (mul_le_mul_of_nonneg_left (norm_compress_le he he₁ hf hf₁ x) hc)
@@ -272,9 +258,9 @@ theorem norm_map_le_of_forall_norm_map_le {n : ℕ} {u : A →ₗ[ℂ] CStarMatr
 
 /-- A linear map `u : A → M_n(ℂ)` is completely bounded exactly when its level-`n` amplification
 is bounded. -/
-theorem isCompletelyBounded_iff_exists_bound_level {n : ℕ}
-    {u : A →ₗ[ℂ] CStarMatrix (Fin n) (Fin n) ℂ} :
-    IsCompletelyBounded u ↔ ∃ c : ℝ, ∀ y : CStarMatrix (Fin n) (Fin n) A, ‖y.map u‖ ≤ c * ‖y‖ := by
+theorem isCompletelyBounded_iff_exists_bound_level {ι : Type*} [Fintype ι]
+    {u : A →ₗ[ℂ] CStarMatrix ι ι ℂ} :
+    IsCompletelyBounded u ↔ ∃ c : ℝ, ∀ y : CStarMatrix ι ι A, ‖y.map u‖ ≤ c * ‖y‖ := by
   refine ⟨fun hu => ⟨cbNorm u, fun y => norm_map_le_cbNorm_mul hu y⟩, fun ⟨c, hc⟩ => ?_⟩
   refine isCompletelyBounded_iff_exists_bound.mpr ⟨max c 0, fun m x =>
     norm_map_le_of_forall_norm_map_le (le_max_right _ _) (fun y => (hc y).trans ?_) x⟩
@@ -282,17 +268,16 @@ theorem isCompletelyBounded_iff_exists_bound_level {n : ℕ}
 
 /-- For a completely bounded `u : A → M_n(ℂ)`, `‖u‖_cb ≤ c` exactly when `c` bounds the level-`n`
 amplification. -/
-theorem cbNorm_le_iff_level {n : ℕ} {u : A →ₗ[ℂ] CStarMatrix (Fin n) (Fin n) ℂ}
+theorem cbNorm_le_iff_level {ι : Type*} [Fintype ι] {u : A →ₗ[ℂ] CStarMatrix ι ι ℂ}
     (hu : IsCompletelyBounded u) {c : ℝ} (hc : 0 ≤ c) :
-    cbNorm u ≤ c ↔ ∀ y : CStarMatrix (Fin n) (Fin n) A, ‖y.map u‖ ≤ c * ‖y‖ :=
+    cbNorm u ≤ c ↔ ∀ y : CStarMatrix ι ι A, ‖y.map u‖ ≤ c * ‖y‖ :=
   ⟨fun h y => (norm_map_le_cbNorm_mul hu y).trans (by gcongr),
     fun h => cbNorm_le_of_bound hc fun _ x => norm_map_le_of_forall_norm_map_le hc h x⟩
 
 /-- **Smith's lemma**, `‖u‖_cb = ‖uₙ‖`: the cb norm of `u : A → M_n(ℂ)` is the operator norm of
 its level-`n` amplification `uₙ : M_n(A) → M_n(M_n(ℂ))`. -/
-theorem cbNorm_eq_opNorm_level {n : ℕ} {u : A →ₗ[ℂ] CStarMatrix (Fin n) (Fin n) ℂ}
-    (uₙ : CStarMatrix (Fin n) (Fin n) A →L[ℂ]
-      CStarMatrix (Fin n) (Fin n) (CStarMatrix (Fin n) (Fin n) ℂ))
+theorem cbNorm_eq_opNorm_level {ι : Type*} [Fintype ι] {u : A →ₗ[ℂ] CStarMatrix ι ι ℂ}
+    (uₙ : CStarMatrix ι ι A →L[ℂ] CStarMatrix ι ι (CStarMatrix ι ι ℂ))
     (huₙ : ∀ y, uₙ y = y.map u) : cbNorm u = ‖uₙ‖ := by
   have hu : IsCompletelyBounded u :=
     isCompletelyBounded_iff_exists_bound_level.mpr ⟨‖uₙ‖, fun y => huₙ y ▸ uₙ.le_opNorm y⟩
@@ -360,8 +345,10 @@ private theorem norm_map_le_opNorm_mul_of_comm (u : A →L[ℂ] B) {κ : Type*} 
   have hι : Function.Injective (CStarMatrix.mapₙₐ (n := κ) ι) := fun M N h => by
     ext i j
     exact Unitization.inr_injective (congr($h i j))
-  have hmap : CStarMatrix.mapₙₐ ι (x.map (u : A →ₗ[ℂ] B)) = x.map (u' : A →ₗ[ℂ] Unitization ℂ B) :=
-    rfl
+  have hmap : CStarMatrix.mapₙₐ ι (x.map (u : A →ₗ[ℂ] B)) =
+      x.map (u' : A →ₗ[ℂ] Unitization ℂ B) := by
+    refine CStarMatrix.ext fun i j => ?_
+    simp [u', ι, CStarMatrix.mapₙₐ_apply]
   rw [← NonUnitalStarAlgHom.norm_map _ hι, hmap]
   exact (norm_map_le_opNorm_mul_of_unital u' x).trans (by
     gcongr

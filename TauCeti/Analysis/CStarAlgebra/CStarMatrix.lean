@@ -68,6 +68,9 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   matrix.
 * `WithCStarModule.norm_equiv_symm_pi_smul`: the vector `(vᵢ a)ᵢ` of the Hilbert `A`-module `Aᵐ`
   has norm `‖v‖ ‖a‖`.
+* `WithCStarModule.norm_sq_eq_sum`: `‖v‖ ^ 2 = ∑ i, ‖vᵢ‖ ^ 2` for `v` in the Hilbert space `ℂᵐ`.
+* `WithCStarModule.norm_equiv_symm_sum_smul_le`: multiplying by pairwise orthogonal scalar columns
+  of norm at most `1` is a contraction `Aⁿ → Aᵐ` of Hilbert `A`-modules.
 * `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
   `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
   `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
@@ -455,6 +458,40 @@ theorem _root_.WithCStarModule.norm_equiv_symm_pi_smul (v : C⋆ᵐᵒᵈ(ℂ, m
     pi_inner, pi_inner]
   simp only [equiv_symm_pi_apply, inner_def, smul_mul_smul_comm, star_smul, ← Finset.sum_smul,
     norm_smul, CStarRing.norm_self_mul_star, sq]
+
+/-- For a vector `v` of the Hilbert space `ℂᵐ`, `‖v‖ ^ 2 = ∑ i, ‖v i‖ ^ 2`. -/
+theorem _root_.WithCStarModule.norm_sq_eq_sum (v : C⋆ᵐᵒᵈ(ℂ, m → ℂ)) :
+    ‖v‖ ^ 2 = ∑ i, ‖v i‖ ^ 2 := by
+  rw [pi_norm_sq]
+  simp only [inner_def, RCLike.star_def, RCLike.mul_conj]
+  norm_cast
+  exact Real.norm_of_nonneg (by positivity)
+
+/-- The vector `(∑ t, e t i • a t)ᵢ` of the Hilbert `A`-module `Aᵐ`, for pairwise orthogonal
+scalar vectors `e t ∈ ℂᵐ` of norm at most `1`, has norm at most `‖a‖`: the map `a ↦ (∑ t, e t i •
+a t)ᵢ` is a contraction `Aⁿ → Aᵐ`. -/
+theorem _root_.WithCStarModule.norm_equiv_symm_sum_smul_le {e : n → m → ℂ}
+    (he : ∀ t t', t ≠ t' → ∑ i, e t i * star (e t' i) = 0) (he₁ : ∀ t, ∑ i, ‖e t i‖ ^ 2 ≤ 1)
+    (a : C⋆ᵐᵒᵈ(A, n → A)) :
+    ‖(equiv A (m → A)).symm fun i => ∑ t, e t i • a t‖ ≤ ‖a‖ := by
+  have key : ∑ i, (∑ t, e t i • a t) * star (∑ t, e t i • a t) =
+      ∑ t, (∑ i, ‖e t i‖ ^ 2) • (a t * star (a t)) := by
+    simp only [star_sum, star_smul, Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun t _ => ?_
+    rw [Finset.sum_comm, Finset.sum_eq_single t]
+    · rw [← Finset.sum_smul, ← Complex.coe_smul]
+      congr 1
+      push_cast
+      exact Finset.sum_congr rfl fun i _ => by simp [RCLike.star_def, RCLike.mul_conj]
+    · exact fun t' _ h => by rw [← Finset.sum_smul, he t' t h, zero_smul]
+    · simp
+  rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero, pi_norm_sq, pi_norm_sq]
+  simp only [equiv_symm_pi_apply, inner_def]
+  rw [key]
+  exact CStarAlgebra.norm_le_norm_of_le_of_nonneg
+    (Finset.sum_le_sum fun t _ => smul_le_of_le_one_left (mul_star_self_nonneg _) (he₁ t))
+    (Finset.sum_nonneg fun t _ => smul_nonneg (by positivity) (mul_star_self_nonneg _))
 
 /-- Compressing a matrix over a C⋆-algebra by scalar vectors does not increase norms:
 `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. -/
