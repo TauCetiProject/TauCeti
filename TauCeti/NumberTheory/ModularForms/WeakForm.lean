@@ -41,12 +41,13 @@ form on a subgroup containing `-1` vanishes.
 * `TauCeti.IsWeakForm.mono`, `TauCeti.IsWeakForm.add`, `TauCeti.IsWeakForm.smul`,
   `TauCeti.IsWeakForm.mul`, `TauCeti.IsWeakForm.pow`: closure properties.
 * `TauCeti.IsWeakForm.slash`: slashing by `g` gives a weak form on the conjugate `g⁻¹ Γ g`.
-* `ModularForm.isWeakForm`, `TauCeti.exists_modularForm_coe_eq_iff`: modular forms are the weak
-  forms bounded at every cusp.
+* `ModularFormClass.isWeakForm`, `TauCeti.exists_modularForm_coe_eq_iff`: modular forms are the
+  weak forms bounded at every cusp.
 * `TauCeti.IsWeakForm.meromorphicAt_cuspFunction_slash`,
   `TauCeti.isWeakForm_iff_meromorphicAt_cuspFunction`: weak forms are the holomorphic invariant
   functions with meromorphic cusp germs.
-* `TauCeti.IsWeakForm.eq_zero_of_neg_one_mem`: in odd weight, `-1 ∈ Γ` forces `f = 0`.
+* `TauCeti.eq_zero_of_slash_neg_one_eq`, `TauCeti.IsWeakForm.eq_zero_of_neg_one_mem`: in odd
+  weight, invariance under `-1` forces `f = 0`.
 * `TauCeti.isWeakForm_inv_discriminant`, `TauCeti.not_exists_modularForm_coe_eq_inv_discriminant`:
   `Δ⁻¹` is a weak form and not a modular form.
 
@@ -226,29 +227,33 @@ theorem isWeakForm_iff_meromorphicAt_cuspFunction [Γ.FiniteIndex] :
 
 /-! ### Odd weight -/
 
-/-- In odd weight, a weak form on a subgroup containing `-1` vanishes, because
-`f ∣[k] (-1) = -f`. -/
-theorem IsWeakForm.eq_zero_of_neg_one_mem (hf : IsWeakForm Γ k f) (hΓ : -1 ∈ Γ) (hk : Odd k) :
-    f = 0 := by
+/-- In odd weight, a function invariant under the weight-`k` slash action of `-1` vanishes,
+because `f ∣[k] (-1) = -f`. -/
+theorem eq_zero_of_slash_neg_one_eq (h : f ∣[k] (-1 : SL(2, ℤ)) = f) (hk : Odd k) : f = 0 := by
   funext τ
   have hneg : f ∣[k] (-1 : SL(2, ℤ)) = -f := by
     rw [SL_slash, show ((-1 : SL(2, ℤ)) : GL (Fin 2) ℝ) = -1 from mapGL_neg_one, slash_neg_one,
       hk.neg_one_zpow, neg_one_mul]
-  have hτ : -f τ = f τ := congr_fun (hneg.symm.trans (hf.slash_eq _ hΓ)) τ
+  have hτ : -f τ = f τ := congr_fun (hneg.symm.trans h) τ
   simpa using (by linear_combination -hτ : (2 : ℂ) * f τ = 0)
+
+/-- In odd weight, a weak form on a subgroup containing `-1` vanishes. -/
+theorem IsWeakForm.eq_zero_of_neg_one_mem (hf : IsWeakForm Γ k f) (hΓ : -1 ∈ Γ) (hk : Odd k) :
+    f = 0 :=
+  eq_zero_of_slash_neg_one_eq (hf.slash_eq _ hΓ) hk
 
 /-! ### Modular forms -/
 
-/-- The function underlying a modular form on a finite-index subgroup `Γ` is a weak form on `Γ`
-of the same weight. -/
-theorem _root_.ModularForm.isWeakForm [Γ.FiniteIndex] (F : ModularForm Γ k) :
-    IsWeakForm Γ k F where
-  mdifferentiable := ModularFormClass.holo F
+/-- The function underlying a modular form on a finite-index subgroup `Γ`, or more generally an
+element of any `ModularFormClass` such as a cusp form, is a weak form on `Γ` of the same weight. -/
+theorem _root_.ModularFormClass.isWeakForm {F : Type*} [FunLike F ℍ ℂ]
+    [ModularFormClass F (Γ.map (mapGL ℝ)) k] [Γ.FiniteIndex] (f : F) : IsWeakForm Γ k f where
+  mdifferentiable := ModularFormClass.holo f
   slash_eq γ hγ := by
     rw [SL_slash]
-    exact SlashInvariantFormClass.slash_action_eq F _ (Subgroup.mem_map_of_mem _ hγ)
+    exact SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)
   exists_isBigO_exp g :=
-    ⟨0, (ModularFormClass.bdd_at_infty_slash F g).trans (isBigO_of_le _ fun _ ↦ by simp)⟩
+    ⟨0, (ModularFormClass.bdd_at_infty_slash f g).trans (isBigO_of_le _ fun _ ↦ by simp)⟩
 
 /-- **Modular forms are the weak forms bounded at every cusp.** On a finite-index subgroup `Γ`, a
 function is the function of a modular form of weight `k` on `Γ` exactly when it is a weak form of
@@ -259,7 +264,7 @@ theorem exists_modularForm_coe_eq_iff [Γ.FiniteIndex] :
       IsWeakForm Γ k f ∧ ∀ g : SL(2, ℤ), IsBoundedAtImInfty (f ∣[k] g) := by
   refine ⟨?_, fun ⟨hf, hbdd⟩ ↦ ?_⟩
   · rintro ⟨F, rfl⟩
-    exact ⟨F.isWeakForm, fun g ↦ ModularFormClass.bdd_at_infty_slash F g⟩
+    exact ⟨ModularFormClass.isWeakForm F, fun g ↦ ModularFormClass.bdd_at_infty_slash F g⟩
   refine ⟨{ toFun := f
             slash_action_eq' := ?_
             holo' := hf.mdifferentiable
