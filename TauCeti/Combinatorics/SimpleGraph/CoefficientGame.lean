@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
 public import TauCeti.Combinatorics.SimpleGraph.Finite
+import TauCeti.LinearAlgebra.Matrix.ZMatrix
 
 /-!
 # Coefficient reflections and stuck vectors
@@ -22,7 +23,10 @@ null vectors. The companion module `TauCeti.Combinatorics.SimpleGraph.AdditiveFu
 zero propagation and positivity for nonzero nonnegative vectors with nonnegative Cartan image
 on a preconnected graph; see `SimpleGraph.Preconnected.pos_of_graphCartanMatrix_mulVec_nonneg`.
 In particular, nonzero nonnegative null vectors are strictly positive, allowing the
-positive-additive-function theory to be applied.
+positive-additive-function theory to be applied. When `2I - A` is positive definite, as on a
+Dynkin diagram, every nonzero nonnegative vector has a precarious vertex; hence the graph contains
+no copy of a graph carrying a nonzero nonnegative weight `m` with `2 * m u ≤ ∑_{w ∼ u} m w`
+(`SimpleGraph.not_isContained_of_posDef_of_two_mul_le_sum`).
 
 All constructions commute with actual graph isomorphisms. Integer vectors give the coefficient
 game. The Cartan criteria require only a partial order compatible with addition; the
@@ -138,6 +142,61 @@ theorem isStuck_and_forall_not_isPrecarious_iff_graphCartanMatrix_mulVec_eq_zero
     fun h ↦ ⟨h.ge, Pi.le_def.mp h.le⟩⟩
 
 end Cartan
+
+/-- A natural-valued position, read in `ℤ^V`, is stuck without precarious vertices exactly when
+it is an additive function: `∑_{j ∼ i} a j = 2 * a i` at every vertex. -/
+theorem isStuck_and_forall_not_isPrecarious_natCast_iff_sum_eq_two_mul (a : V → ℕ) :
+    (G.IsStuck (fun i ↦ (a i : ℤ)) ∧ ∀ i, ¬ G.IsPrecarious (fun i ↦ (a i : ℤ)) i) ↔
+      ∀ i, ∑ j ∈ G.neighborFinset i, a j = 2 * a i := by
+  rw [isStuck_and_forall_not_isPrecarious_iff_graphCartanMatrix_mulVec_eq_zero, funext_iff]
+  refine forall_congr' fun i ↦ ?_
+  rw [graphCartanMatrix_mulVec_apply, Pi.zero_apply, sub_eq_zero, eq_comm]
+  exact_mod_cast Iff.rfl
+
+/-- **On a graph with positive definite `2I - A`, every nonzero nonnegative vector has a
+precarious vertex**, that is a vertex at which the coordinate of `(2I - A) a` is positive. -/
+theorem exists_isPrecarious_of_posDef {R : Type*} [Ring R] [LinearOrder R] [IsOrderedAddMonoid R]
+    [PosMulMono R] [StarRing R] [TrivialStar R]
+    (hC : (G.graphCartanMatrix R).PosDef) {a : V → R} (ha0 : 0 ≤ a) (ha : a ≠ 0) :
+    ∃ i, G.IsPrecarious a i := by
+  simpa only [isPrecarious_iff_graphCartanMatrix_mulVec_pos] using hC.exists_mulVec_pos ha0 ha
+
+omit [Fintype V] in
+/-- **A graph with positive definite `2I - A` contains no graph carrying a nonzero nonnegative
+superadditive weight.** If `2I - A` is positive definite, then `G` contains no copy, induced or
+not, of a locally finite graph `H` carrying a nonzero weight `m ≥ 0` with
+`2 * m u ≤ ∑_{w ∼ u} m w` at every vertex. -/
+theorem not_isContained_of_posDef_of_two_mul_le_sum [Finite V] {R : Type*} [Ring R]
+    [LinearOrder R] [IsOrderedAddMonoid R] [PosMulMono R] [StarRing R] [TrivialStar R]
+    (hC : (G.graphCartanMatrix R).PosDef) {W : Type*} {H : SimpleGraph W} [H.LocallyFinite]
+    {m : W → R} (hm0 : 0 ≤ m) (hm : m ≠ 0)
+    (hle : ∀ u, 2 * m u ≤ ∑ w ∈ H.neighborFinset u, m w) : ¬ H ⊑ G := by
+  have := Fintype.ofFinite V
+  rintro ⟨f⟩
+  -- Extend the weight by zero along the copy.
+  set x : V → R := Function.extend f m 0
+  have hx (u : W) : x (f u) = m u := f.injective.extend_apply m 0 u
+  have hx0 (v : V) (hv : v ∉ Set.range f) : x v = 0 := Function.extend_apply' m (0 : V → R) v hv
+  have hx0le : 0 ≤ x := fun v ↦ by
+    by_cases hv : v ∈ Set.range f
+    · obtain ⟨u, rfl⟩ := hv
+      rw [hx]
+      exact hm0 u
+    · exact (hx0 v hv).ge
+  have hxne : x ≠ 0 := fun h ↦ hm (funext fun u ↦ by rw [← hx, h, Pi.zero_apply, Pi.zero_apply])
+  -- `x` has no precarious vertex, which contradicts positive definiteness.
+  obtain ⟨v, hv⟩ := G.exists_isPrecarious_of_posDef hC hx0le hxne
+  rw [isPrecarious_iff_graphCartanMatrix_mulVec_pos, graphCartanMatrix_mulVec_apply, sub_pos] at hv
+  refine hv.not_ge ?_
+  by_cases hv' : v ∈ Set.range f
+  · -- At a vertex of the copy, the neighbours in `G` include the images of the neighbours in `H`.
+    obtain ⟨u, rfl⟩ := hv'
+    rw [hx]
+    exact (hle u).trans ((sum_congr rfl fun w _ ↦ (hx w).symm).trans_le
+      (f.sum_neighborFinset_comp_le fun w _ _ ↦ hx0le w))
+  · -- Off the copy, `x` vanishes and its neighbour sum is nonnegative.
+    rw [hx0 v hv', mul_zero]
+    exact sum_nonneg fun w _ ↦ hx0le w
 
 section Relabel
 
