@@ -30,10 +30,11 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
-Locally uniform convergence along a filter `l` passes to any family of indices tending to `l`,
-for instance to a subsequence (`TendstoLocallyUniformlyOn.comp_tendsto`,
-`TendstoLocallyUniformly.comp_tendsto`), and a family that does not depend on its index
-converges locally uniformly to its constant value (`TauCeti.tendstoLocallyUniformly_const`).
+Uniform and locally uniform convergence along a filter `l` pass to any family of indices tending
+to `l`, for instance to a subsequence (`TendstoUniformlyOn.comp_tendsto`,
+`TendstoLocallyUniformlyOn.comp_tendsto`, `TendstoLocallyUniformly.comp_tendsto`), and a family
+that does not depend on its index converges locally uniformly to its constant value
+(`TauCeti.tendstoLocallyUniformly_const`).
 Locally uniform convergence on the whole space gives pointwise convergence
 (`TendstoLocallyUniformly.tendsto_at`).
 
@@ -63,6 +64,14 @@ initial points.
 public section
 
 open Filter Set Topology Uniformity
+
+/-- Uniform convergence along `p` passes to any filter `q` that `g` maps into `p`; for instance,
+from a sequence to a subsequence. -/
+theorem TendstoUniformlyOn.comp_tendsto {ι ι' α β : Type*} [UniformSpace β] {F : ι → α → β}
+    {f : α → β} {p : Filter ι} {s : Set α} {g : ι' → ι} {q : Filter ι'}
+    (h : TendstoUniformlyOn F f p s) (hg : Tendsto g q p) :
+    TendstoUniformlyOn (F ∘ g) f q s :=
+  fun u hu ↦ hg.eventually (h u hu)
 
 /-- Locally uniform convergence along `p` passes to any filter `q` that `g` maps into `p`; for
 instance, from a sequence to a subsequence. -/
