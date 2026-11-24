@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.InvariantForm.Positive
 public import TauCeti.Geometry.Manifold.Riemannian.LieGroup.BiInvariant
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
@@ -98,12 +98,13 @@ theorem ricciTensor_mulInvariantVectorField (hcov : cov.IsLeviCivitaConnection)
   -- `-¼ (ad b ∘ ad a)`.
   have hconj : ((cov.curvatureTensor g).flip (mulInvariantVectorField a g)).flip
       (mulInvariantVectorField b g) =
-      e.conj (-(4 : ℝ)⁻¹ • (ad ℝ (TangentSpace I (1 : G)) b ∘ₗ ad ℝ _ a)) := by
+      e.toLinearEquiv.conj (-(4 : ℝ)⁻¹ • (ad ℝ (TangentSpace I (1 : G)) b ∘ₗ ad ℝ _ a)) := by
     refine LinearMap.ext fun w ↦ ?_
-    obtain ⟨c, rfl⟩ : ∃ c, e c = w := e.surjective w
+    obtain ⟨c, rfl⟩ := e.toLinearEquiv.surjective w
     rw [LinearEquiv.conj_apply_apply, LinearEquiv.symm_apply_apply]
-    simp only [e, TauCeti.mulInvariantVectorFieldEquiv_apply, LinearMap.flip_apply,
-      LinearMap.smul_apply, LinearMap.comp_apply, ad_apply]
+    simp only [e, ContinuousLinearEquiv.coe_toLinearEquiv,
+      TauCeti.mulInvariantVectorFieldEquiv_apply, LinearMap.flip_apply, LinearMap.smul_apply,
+      LinearMap.comp_apply, ad_apply]
     rw [show ⁅b, ⁅a, c⁆⁆ = ⁅⁅c, a⁆, b⁆ by
       rw [← lie_skew ⁅c, a⁆ b, ← lie_skew c a, lie_neg, neg_neg]]
     exact hcov.curvatureTensor_mulInvariantVectorField hL had c a b g
@@ -167,34 +168,21 @@ theorem posDef_ricciTensor_iff_center_eq_bot (hcov : cov.IsLeviCivitaConnection)
     (g : G) :
     (LinearMap.BilinMap.toQuadraticMap (cov.ricciTensor g)).PosDef ↔
       center ℝ (TangentSpace I (1 : G)) = ⊥ := by
-  rw [LieSubmodule.eq_bot_iff]
-  constructor
-  · intro hpos a ha
-    by_contra hne
-    have h := hpos (TauCeti.mulInvariantVectorFieldEquiv I g a)
-      ((TauCeti.mulInvariantVectorFieldEquiv I g).map_ne_zero_iff.2 hne)
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, TauCeti.mulInvariantVectorFieldEquiv_apply,
-      (hcov.ricciTensor_mulInvariantVectorField_self_eq_zero_iff hL had a g).2 ha] at h
-    exact lt_irrefl 0 h
-  · intro hcenter u hu
-    obtain ⟨a, rfl⟩ := (TauCeti.mulInvariantVectorFieldEquiv I g).surjective u
-    rw [LinearMap.BilinMap.toQuadraticMap_apply]
-    refine (hcov.ricciTensor_self_nonneg hL had g _).lt_of_ne' fun h ↦ hu ?_
-    rw [TauCeti.mulInvariantVectorFieldEquiv_apply] at h
-    rw [hcenter a ((hcov.ricciTensor_mulInvariantVectorField_self_eq_zero_iff hL had a g).1 h),
-      map_zero]
-
-omit [T2Space G] [IsContMDiffRiemannianBundle I 1 E (fun g : G ↦ TangentSpace I g)] in
-/-- The negative of the Killing form is invariant under the adjoint action, so an inner product
-at the identity equal to `-B` is ad-invariant. -/
-private theorem lieInvariant_innerₗ_of_inner_eq_neg_killingForm
-    (hB : ∀ a b : TangentSpace I (1 : G),
-      inner ℝ a b = -killingForm ℝ (TangentSpace I (1 : G)) a b) :
-    LinearMap.BilinForm.lieInvariant (TangentSpace I (1 : G))
-      (innerₗ (TangentSpace I (1 : G))) := by
-  intro x y z
-  simp only [innerₗ_apply_apply, hB]
-  rw [LieModule.traceForm_lieInvariant ℝ _ _ x y z]
+  rw [← LinearMap.BilinForm.posDef_neg_killingForm_iff_center_eq_bot_of_posDef
+    (innerₗ (TangentSpace I (1 : G))) (LinearMap.BilinForm.isSymm_iff.2 isSymm_inner)
+    (fun _ ↦ real_inner_self_pos.2) had]
+  let e := TauCeti.mulInvariantVectorFieldEquiv I g
+  -- Transported to the identity, the Ricci quadratic form at `g` is `¼` of that of `-B`.
+  have h (a : TangentSpace I (1 : G)) :
+      0 < LinearMap.BilinMap.toQuadraticMap (cov.ricciTensor g) (e a) ↔
+        0 < (-killingForm ℝ (TangentSpace I (1 : G))).toQuadraticMap a := by
+    rw [LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinMap.toQuadraticMap_apply,
+      TauCeti.mulInvariantVectorFieldEquiv_apply, hcov.ricciTensor_mulInvariantVectorField hL had,
+      LinearMap.neg_apply, LinearMap.neg_apply, neg_mul, ← mul_neg,
+      mul_pos_iff_of_pos_left (by norm_num)]
+  refine ⟨fun hpos a ha ↦ (h a).1 (hpos (e a) (e.map_ne_zero_iff.2 ha)), fun hpos u hu ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := e.surjective u
+  exact (h a).2 (hpos a (e.map_ne_zero_iff.1 hu))
 
 /-- A left-invariant metric whose inner product at the identity is the negative of the Killing
 form, `⟪a, b⟫ = -B(a, b)`, is **Einstein with constant `¼`**: `Ric = ¼ g` at every point. Such an
@@ -206,13 +194,18 @@ theorem ricciTensor_eq_of_inner_eq_neg_killingForm (hcov : cov.IsLeviCivitaConne
       inner ℝ a b = -killingForm ℝ (TangentSpace I (1 : G)) a b)
     (g : G) :
     cov.ricciTensor g = (4 : ℝ)⁻¹ • innerₗ (TangentSpace I g) := by
+  -- The inner product `-B` is ad-invariant because the Killing form is.
+  have had : LinearMap.BilinForm.lieInvariant (TangentSpace I (1 : G))
+      (innerₗ (TangentSpace I (1 : G))) := by
+    intro x y z
+    simp only [innerₗ_apply_apply, hB]
+    rw [LieModule.traceForm_lieInvariant ℝ _ _ x y z]
   refine LinearMap.ext₂ fun u v ↦ ?_
   obtain ⟨a, rfl⟩ := (TauCeti.mulInvariantVectorFieldEquiv I g).surjective u
   obtain ⟨b, rfl⟩ := (TauCeti.mulInvariantVectorFieldEquiv I g).surjective v
   rw [LinearMap.smul_apply, LinearMap.smul_apply, innerₗ_apply_apply, smul_eq_mul,
     TauCeti.mulInvariantVectorFieldEquiv_apply, TauCeti.mulInvariantVectorFieldEquiv_apply,
-    hcov.ricciTensor_mulInvariantVectorField hL
-      (lieInvariant_innerₗ_of_inner_eq_neg_killingForm hB), hL, hB]
+    hcov.ricciTensor_mulInvariantVectorField hL had, hL, hB]
   ring
 
 /-- A left-invariant metric whose inner product at the identity is the negative of the Killing
