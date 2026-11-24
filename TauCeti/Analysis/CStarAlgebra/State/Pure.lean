@@ -26,8 +26,8 @@ point of the state space.
 
 ## Main results
 
-* `TauCeti.apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero`: a state vanishing at a projection
-  `q` kills `a q` and `q a`.
+* `TauCeti.apply_mul_eq_zero_of_apply_star_mul_eq_zero`: a state vanishing at `b⋆ b` kills `a b`.
+* `TauCeti.apply_mul_eq_zero_of_apply_mul_star_eq_zero`: a state vanishing at `b b⋆` kills `b a`.
 * `TauCeti.eq_of_mem_stateSpace_of_apply_one_sub_eq_zero`: a state vanishing at `1 - p` is `ω`.
 * `TauCeti.mem_extremePoints_stateSpace_of_mul_mul_eq_smul`: `ω` is an extreme point of the state
   space.
@@ -48,17 +48,25 @@ namespace TauCeti
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {ω φ : WeakDual ℂ A}
   {p : A}
 
-/-- A state that vanishes at a self-adjoint idempotent `q` kills every product `a * q` and
-`q * a`. -/
-theorem apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero (hφ : φ ∈ stateSpace A)
-    {q : A} (hq : IsStarProjection q) (hφq : φ q = 0) (a : A) : φ (a * q) = 0 ∧ φ (q * a) = 0 := by
+/-- A state that vanishes at `b⋆ b` kills every product `a * b`, by the Cauchy–Schwarz
+inequality. -/
+theorem apply_mul_eq_zero_of_apply_star_mul_eq_zero (hφ : φ ∈ stateSpace A) {b : A}
+    (hb : φ (star b * b) = 0) (a : A) : φ (a * b) = 0 := by
   obtain ⟨f, -, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  have hfq : f q = 0 := by simpa using hφq
-  have h₁ := PositiveLinearMap.norm_map_mul_star_le f a q
-  have h₂ := PositiveLinearMap.norm_map_star_mul_le f q a
-  simp only [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hfq, norm_zero, Real.sqrt_zero,
-    mul_zero, zero_mul, norm_le_zero_iff] at h₁ h₂
-  simpa using ⟨h₁, h₂⟩
+  have hfb : f (star b * b) = 0 := by simpa using hb
+  have h := PositiveLinearMap.norm_map_star_mul_le f (star a) b
+  simp only [star_star, hfb, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
+  simpa using h
+
+/-- A state that vanishes at `b b⋆` kills every product `b * a`, by the Cauchy–Schwarz
+inequality. -/
+theorem apply_mul_eq_zero_of_apply_mul_star_eq_zero (hφ : φ ∈ stateSpace A) {b : A}
+    (hb : φ (b * star b) = 0) (a : A) : φ (b * a) = 0 := by
+  obtain ⟨f, -, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
+  have hfb : f (b * star b) = 0 := by simpa using hb
+  have h := PositiveLinearMap.norm_map_mul_star_le f b (star a)
+  simp only [star_star, hfb, norm_zero, Real.sqrt_zero, zero_mul, norm_le_zero_iff] at h
+  simpa using h
 
 /-- **A state supported on a minimal projection is determined.** Let `p` be a projection with
 `p a p = ω(a) p` for every `a`. A state `φ` with `φ(1 - p) = 0` is `ω`. -/
@@ -70,8 +78,10 @@ theorem eq_of_mem_stateSpace_of_apply_one_sub_eq_zero (hp : IsStarProjection p)
     exact hφp.symm
   refine DFunLike.ext _ _ fun a ↦ ?_
   have ha : a * p = p * a * p + (1 - p) * (a * p) := by noncomm_ring
-  have h₁ := (apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero hφ hq hφp a).1
-  have h₂ := (apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero hφ hq hφp (a * p)).2
+  have h₁ := apply_mul_eq_zero_of_apply_star_mul_eq_zero hφ
+    (by rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hφp]) a
+  have h₂ := apply_mul_eq_zero_of_apply_mul_star_eq_zero hφ
+    (by rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hφp]) (a * p)
   calc φ a = φ (a * p) + φ (a * (1 - p)) := by rw [← map_add, ← mul_add, add_sub_cancel, mul_one]
     _ = ω a := by rw [h₁, add_zero, ha]; simp [h₂, hpap, hφ1]
 
