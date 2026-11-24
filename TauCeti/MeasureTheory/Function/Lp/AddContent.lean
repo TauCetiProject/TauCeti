@@ -218,9 +218,9 @@ private theorem integral_linftyIndicator {s : Set α} (hs : MeasurableSet s) :
 private theorem integral_nonneg {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) : 0 ≤ integral μ ν φ := by
   have h₁ : integral μ ν 1 = ν univ := by
     simpa using integral_linftyIndicator hν₀ hνμ MeasurableSet.univ
-  refine (integral μ ν).toLinearMap.apply_nonneg_of_abs_apply_le_mul_norm (fun ψ => ?_)
+  refine LinearMapClass.apply_nonneg_of_abs_apply_le_mul_norm (integral μ ν) (fun ψ => ?_)
     (Lp.norm_norm_smul_one_sub_le_of_nonneg hφ)
-  rw [ContinuousLinearMap.coe_coe, h₁, ← Real.norm_eq_abs]
+  rw [h₁, ← Real.norm_eq_abs]
   exact norm_integral_apply_le hν₀ hνμ ψ
 
 variable (ν) in
@@ -279,13 +279,13 @@ def addContentLpTopEquiv :
   toFun M := ⟨M.toLinearMap.toAddContentLpTop, M.toAddContentLpTop_nonneg,
     fun _ hs h => M.toLinearMap.toAddContentLpTop_of_measure_eq_zero hs h,
     fun _ hs => M.toLinearMap.toAddContentLpTop_of_not_measurableSet hs⟩
-  invFun ν := ofAddContentLpTop ν.1 (fun s _ => ν.2.1 s) ν.2.2.1
+  invFun ν := ofAddContentLpTop ν.val (fun s _ => ν.property.1 s) ν.property.2.1
   left_inv := ofAddContentLpTop_toAddContentLpTop
   right_inv ν := by
     ext s
     by_cases hs : MeasurableSet s
     · exact toAddContentLpTop_ofAddContentLpTop_apply _ _ hs
-    · rw [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs, ν.2.2.2 s hs]
+    · rw [LinearMap.toAddContentLpTop_of_not_measurableSet _ hs, ν.property.2.2 s hs]
 
 /-- The content of `M` under `addContentLpTopEquiv` is `M.toLinearMap.toAddContentLpTop`. -/
 @[simp]
@@ -300,7 +300,8 @@ theorem addContentLpTopEquiv_symm_apply
     (ν : {ν : AddContent ℝ {s : Set α | MeasurableSet s} //
       (∀ s, 0 ≤ ν s) ∧ (∀ s, MeasurableSet s → μ s = 0 → ν s = 0) ∧
         ∀ s, ¬MeasurableSet s → ν s = 0}) :
-    (addContentLpTopEquiv μ).symm ν = ofAddContentLpTop ν.1 (fun s _ => ν.2.1 s) ν.2.2.1 :=
+    (addContentLpTopEquiv μ).symm ν = ofAddContentLpTop ν.val
+        (fun s _ => ν.property.1 s) ν.property.2.1 :=
   (rfl)
 
 /-! ### Contents on the null-measurable sets
@@ -323,12 +324,12 @@ def addContentLpTopCompletionEquiv :
     AddContent.completion_nonneg _ (fun s _ => M.toAddContentLpTop_nonneg s),
     fun _ => AddContent.completion_of_measure_eq_zero _,
     fun _ => AddContent.completion_of_not_nullMeasurableSet _⟩
-  invFun ν := ofAddContentLpTop (ν.1.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
-    (fun s _ => by simpa using ν.2.1 s) fun s _ h => by simpa using ν.2.2.1 s h
+  invFun ν := ofAddContentLpTop (ν.val.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
+    (fun s _ => by simpa using ν.property.1 s) fun s _ h => by simpa using ν.property.2.1 s h
   left_inv M := ext_linftyIndicator fun s hs => by simp [hs]
-  right_inv ν := Subtype.ext <| AddContent.completion_eq _ ν.2.2.1 (fun u hu => by
+  right_inv ν := Subtype.ext <| AddContent.completion_eq _ ν.property.2.1 (fun u hu => by
     rw [toAddContentLpTop_ofAddContentLpTop_apply _ _ hu, AddContent.map_apply, preimage_id])
-    ν.2.2.2
+    ν.property.2.2
 
 /-- The content of `M` under `addContentLpTopCompletionEquiv` extends its content on the
 measurable sets. -/
@@ -346,8 +347,8 @@ theorem addContentLpTopCompletionEquiv_symm_apply
     (ν : {ν : AddContent ℝ {s : Set α | NullMeasurableSet s μ} //
       (∀ s, 0 ≤ ν s) ∧ (∀ s, μ s = 0 → ν s = 0) ∧ ∀ s, ¬NullMeasurableSet s μ → ν s = 0}) :
     (addContentLpTopCompletionEquiv μ).symm ν =
-      ofAddContentLpTop (ν.1.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
-        (fun s _ => by simpa using ν.2.1 s) fun s _ h => by simpa using ν.2.2.1 s h :=
+      ofAddContentLpTop (ν.val.map id fun _ hu => MeasurableSet.nullMeasurableSet hu)
+        (fun s _ => by simpa using ν.property.1 s) fun s _ h => by simpa using ν.property.2.1 s h :=
   (rfl)
 
 section Group
@@ -379,8 +380,8 @@ theorem forall_apply_leftTranslation_eq_iff (M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ) 
 exactly when its content on the null-measurable sets is invariant under left translation. -/
 theorem forall_apply_leftTranslation_eq_iff_completion (M : Lp ℝ ∞ ν →ₚ[ℝ] ℝ) :
     (∀ (g : G) φ, M (Lp.leftTranslation ν ∞ ℝ g φ) = M φ) ↔
-      ∀ (g : G) s, (addContentLpTopCompletionEquiv ν M).1 (g • s) =
-        (addContentLpTopCompletionEquiv ν M).1 s := by
+      ∀ (g : G) s, (addContentLpTopCompletionEquiv ν M).val (g • s) =
+        (addContentLpTopCompletionEquiv ν M).val s := by
   simp only [coe_addContentLpTopCompletionEquiv_apply, AddContent.forall_completion_smul_eq_iff,
     forall_apply_leftTranslation_eq_iff]
 

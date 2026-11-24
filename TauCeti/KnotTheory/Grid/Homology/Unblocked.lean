@@ -223,14 +223,14 @@ theorem exists_sub_map_mem_range_unblockedDifferential_of_surjective
       c - f z ∈ LinearMap.range (G.unblockedDifferential R) := by
   obtain ⟨y, hy⟩ := h (G.unblockedHomologyClass R ⟨c, hc⟩)
   obtain ⟨z, rfl⟩ := G'.unblockedHomologyClass_surjective R y
-  have hz : f z ∈ LinearMap.ker (G.unblockedDifferential R) := hf z z.2
+  have hz : f z ∈ LinearMap.ker (G.unblockedDifferential R) := hf z z.property
   rw [hF z hz] at hy
   have he : G.unblockedHomologyClass R (⟨c, hc⟩ - ⟨f z, hz⟩) = 0 := by
     calc
       _ = G.unblockedHomologyClass R ⟨c, hc⟩ -
           G.unblockedHomologyClass R ⟨f z, hz⟩ := map_sub _ _ _
       _ = 0 := sub_eq_zero.mpr hy.symm
-  exact ⟨z, z.2, (G.unblockedHomologyClass_eq_zero_iff R _).1 he⟩
+  exact ⟨z, z.property, (G.unblockedHomologyClass_eq_zero_iff R _).1 he⟩
 
 /-- A class-compatible injective map on unblocked homology reflects boundaries of cycles. -/
 theorem mem_range_unblockedDifferential_of_map_mem_range_of_injective
@@ -326,7 +326,7 @@ theorem unblockedHomologyEquivOfIntertwining_unblockedHomologyClass
     (z : LinearMap.ker (G.unblockedDifferential R)) :
     G.unblockedHomologyEquivOfIntertwining R G' e he (G.unblockedHomologyClass R z) =
       G'.unblockedHomologyClass R
-        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining R G' e he z.2⟩ := by
+        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining R G' e he z.property⟩ := by
   simp only [unblockedHomologyEquivOfIntertwining, LinearEquiv.trans_apply,
     LinearEquiv.symm_apply_eq]
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
@@ -344,9 +344,7 @@ variable replaced by one fixed variable `V_c`. -/
 private theorem smul_eq_rename_const_smul (hG : G.IsKnot) (c : Fin n)
     (p : MvPolynomial (Fin n) R) (x : G.unblockedHomology R) :
     p • x = MvPolynomial.rename (fun _ => c) p • x :=
-  smul_unblockedHomology_eq_rename_smul _ (fun c' =>
-    ((G.isKnot_iff_componentPerm_isCycle).mp hG).sameCycle (G.componentPerm_apply_ne_self c')
-      (G.componentPerm_apply_ne_self c)) p x
+  smul_unblockedHomology_eq_rename_smul _ (fun c' => hG.sameCycle_componentPerm c' c) p x
 
 /-- On a knot grid the unblocked grid homology is annihilated by the kernel of the evaluation
 `R[V₀, …, V_{n-1}] → R[U]` sending every variable to `U`. -/

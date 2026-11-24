@@ -183,7 +183,7 @@ theorem hasSum_perturbX (f : A⟨X⟩) :
   have h := hasSum_weightedEval_of_forall_isPowerBounded
     (continuous_weightedC isWeightFamily_one_weight).continuousAt
     (fun i ↦ (isPowerBounded_weightedX_one_weight i).add (hε i))
-    (mem_weightedRestrictedSubring.mp f.2)
+    (mem_weightedRestrictedSubring.mp f.property)
   rwa [← perturbX_apply ε hε, show weightedEvalTerm _ _ _ = _ from
     funext (weightedEvalTerm_def _ _ _)] at h
 

@@ -33,11 +33,14 @@ theory.
 * `TauCeti.AlgebraicGeometry.CodimensionOnePoint.finite_setOfPred_notMem`: a nonempty open of an
   irreducible scheme with Noetherian underlying space misses only finitely many codimension-one
   points.
+* `TauCeti.AlgebraicGeometry.CodimensionOnePoint.mapOfIsOpenImmersion`: pushforward of a
+  codimension-one point along an open immersion, with its injectivity, range characterization,
+  and functoriality lemmas.
 -/
 
 public section
 
-open Order AlgebraicGeometry TopologicalSpace
+open CategoryTheory Order AlgebraicGeometry TopologicalSpace
 
 namespace TauCeti
 
@@ -50,8 +53,10 @@ that is, the generic point of an irreducible closed subset of codimension one. -
 abbrev CodimensionOnePoint (X : Scheme.{u}) : Type u :=
   {x : X // coheight x = 1}
 
+namespace CodimensionOnePoint
+
 /-- A codimension-one point admits no codimension-one generization other than itself. -/
-lemma CodimensionOnePoint.eq_of_specializes {X : Scheme.{u}} {x y : CodimensionOnePoint X}
+lemma eq_of_specializes {X : Scheme.{u}} {x y : CodimensionOnePoint X}
     (h : (y : X) ⤳ (x : X)) : y = x := by
   refine Subtype.ext (h.antisymm ?_).eq
   by_contra hxy
@@ -61,15 +66,60 @@ lemma CodimensionOnePoint.eq_of_specializes {X : Scheme.{u}} {x y : CodimensionO
 
 /-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
 but finitely many codimension-one points. -/
-lemma CodimensionOnePoint.finite_setOfPred_notMem {X : Scheme.{u}} [IrreducibleSpace X]
+lemma finite_setOfPred_notMem {X : Scheme.{u}} [IrreducibleSpace X]
     [NoetherianSpace X] (U : X.Opens) [Nonempty U] :
     {x : CodimensionOnePoint X | (x : X) ∉ U}.Finite := by
   have hU := U.isOpen.isClosed_compl
   have : QuasiSober ((U : Set X)ᶜ : Set X) := hU.isClosedEmbedding_subtypeVal.quasiSober
   refine ((NoetherianSpace.finite_coheight_one_of_closure_ne_univ (p := (U : Set X)ᶜ) ?_).preimage
-    Subtype.val_injective.injOn).subset fun x hx ↦ ⟨hx, x.2⟩
+    Subtype.val_injective.injOn).subset fun x hx ↦ ⟨hx, x.property⟩
   rw [hU.closure_eq]
   exact fun h ↦ (Set.nonempty_coe_sort.mp ‹Nonempty U›).ne_empty (compl_eq_top.mp h)
+
+/-- Pushforward of a codimension-one point along an open immersion. -/
+def mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    (y : CodimensionOnePoint U) : CodimensionOnePoint X :=
+  ⟨j y, (coheight_eq_of_isOpenImmersion j).trans y.property⟩
+
+/-- Coercing `CodimensionOnePoint.mapOfIsOpenImmersion j y` to `X` gives `j y`. -/
+@[simp] theorem coe_mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    (y : CodimensionOnePoint U) : (mapOfIsOpenImmersion j y : X) = j y := (rfl)
+
+/-- `CodimensionOnePoint.mapOfIsOpenImmersion j` is injective. -/
+theorem mapOfIsOpenImmersion_injective {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j] :
+    Function.Injective (mapOfIsOpenImmersion j) :=
+  fun _ _ h ↦ Subtype.ext (j.isOpenEmbedding.injective (congrArg Subtype.val h))
+
+/-- `CodimensionOnePoint.mapOfIsOpenImmersion j` is injective in simp normal form. -/
+@[simp] theorem mapOfIsOpenImmersion_eq_iff {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    {y₁ y₂ : CodimensionOnePoint U} :
+    mapOfIsOpenImmersion j y₁ = mapOfIsOpenImmersion j y₂ ↔ y₁ = y₂ :=
+  (mapOfIsOpenImmersion_injective j).eq_iff
+
+/-- A codimension-one point lies in the range of `mapOfIsOpenImmersion j` iff its underlying point
+lies in `Set.range j` (not `@[simp]`; see `range_mapOfIsOpenImmersion`). -/
+theorem mem_range_mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    {η : CodimensionOnePoint X} :
+    η ∈ Set.range (mapOfIsOpenImmersion j) ↔ (η : X) ∈ Set.range j :=
+  ⟨fun ⟨y, hy⟩ ↦ ⟨y, congrArg Subtype.val hy⟩, fun ⟨u, hu⟩ ↦
+    ⟨⟨u, (coheight_eq_of_isOpenImmersion j).symm.trans (hu.symm ▸ η.property)⟩, Subtype.ext hu⟩⟩
+
+/-- The range of `mapOfIsOpenImmersion j` is the preimage of `Set.range j` under coercion. -/
+@[simp] theorem range_mapOfIsOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j] :
+    Set.range (mapOfIsOpenImmersion j) = Subtype.val ⁻¹' Set.range j :=
+  Set.ext fun _ ↦ mem_range_mapOfIsOpenImmersion j
+
+/-- Pushforward of codimension-one points along the identity is the identity. -/
+@[simp] theorem mapOfIsOpenImmersion_id {X : Scheme.{u}} (y : CodimensionOnePoint X) :
+    mapOfIsOpenImmersion (𝟙 X) y = y := Subtype.ext (by simp)
+
+/-- Pushforward of codimension-one points is functorial under composition of open immersions. -/
+@[simp] theorem mapOfIsOpenImmersion_comp {U V X : Scheme.{u}} (f : U ⟶ V) (g : V ⟶ X)
+    [IsOpenImmersion f] [IsOpenImmersion g] (y : CodimensionOnePoint U) :
+    mapOfIsOpenImmersion (f ≫ g) y = mapOfIsOpenImmersion g (mapOfIsOpenImmersion f y) :=
+  Subtype.ext (Scheme.Hom.comp_apply f g y.val)
+
+end CodimensionOnePoint
 
 end AlgebraicGeometry
 

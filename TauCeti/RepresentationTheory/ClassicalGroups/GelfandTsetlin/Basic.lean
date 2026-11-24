@@ -205,7 +205,7 @@ theorem topRow_apply (P : GTPattern n) (i : Fin n) : P.topRow i = P i n := (rfl)
 the top row is one of them, so it is a dominant weight of `GL n`; `TauCeti.GTPattern.topWeight`
 packages it as one. -/
 theorem topRow_antitone (P : GTPattern n) : Antitone P.topRow :=
-  fun _ i' h => P.entry_anti h i'.2
+  fun _ i' h => P.entry_anti h i'.isLt
 
 /-- The top row of a Gelfand-Tsetlin pattern, as a dominant weight of `GL n`. -/
 def topWeight (P : GTPattern n) : DominantWeight n := ⟨P.topRow, P.topRow_antitone⟩
@@ -379,7 +379,7 @@ theorem rowWeight_truncate (P : GTPattern (n + 1)) (r : Fin n) :
 theorem interlaces_topRow_truncate (P : GTPattern (n + 1)) :
     Interlaces P.topRow (truncate P).topRow :=
   interlaces_iff.mpr fun i =>
-    ⟨by simpa using P.entry_le_entry_succ_row i.2 (by omega),
+    ⟨by simpa using P.entry_le_entry_succ_row i.isLt (by omega),
       by simpa using P.entry_succ_succ_le_entry (i := (i : ℕ)) (j := n) (by omega)⟩
 
 /-- Prepend the row `l` on top of a pattern with `n` rows whose own top row it interlaces. -/
@@ -433,7 +433,7 @@ theorem extend_apply_top_of_le (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : 
 theorem topRow_extend (Q : GTPattern n) (l : Fin (n + 1) → ℤ) (h : Interlaces l Q.topRow) :
     (extend Q l h).topRow = l := by
   funext i
-  rw [topRow_apply, extend_apply_top Q l h i.2]
+  rw [topRow_apply, extend_apply_top Q l h i.isLt]
 
 /-- Prepending a top row preserves every earlier row-weight coordinate. -/
 @[simp↓]
@@ -495,20 +495,20 @@ together with a basis vector of the corresponding constituent. -/
 def truncateEquiv (l : Fin (n + 1) → ℤ) :
     {P : GTPattern (n + 1) // P.topRow = l} ≃ {Q : GTPattern n // Interlaces l Q.topRow} where
   toFun := fun ⟨P, hP⟩ => ⟨truncate P, hP ▸ interlaces_topRow_truncate P⟩
-  invFun Q := ⟨extend Q.1 l Q.2, topRow_extend _ _ _⟩
+  invFun Q := ⟨extend Q.val l Q.property, topRow_extend _ _ _⟩
   left_inv := by rintro ⟨P, rfl⟩; exact Subtype.ext (extend_truncate P)
   right_inv Q := Subtype.ext (truncate_extend _ _ _)
 
 @[simp]
 theorem truncateEquiv_apply_coe (l : Fin (n + 1) → ℤ)
     (P : {P : GTPattern (n + 1) // P.topRow = l}) :
-    (truncateEquiv l P).1 = truncate P.1 :=
+    (truncateEquiv l P).val = truncate P.val :=
   (rfl)
 
 @[simp]
 theorem truncateEquiv_symm_apply_coe (l : Fin (n + 1) → ℤ)
     (Q : {Q : GTPattern n // Interlaces l Q.topRow}) :
-    ((truncateEquiv l).symm Q).1 = extend Q.1 l Q.2 :=
+    ((truncateEquiv l).symm Q).val = extend Q.val l Q.property :=
   (rfl)
 
 /-! ### Finitely many patterns share a top row -/
@@ -522,7 +522,7 @@ instance finite_topRow_eq (l : Fin n → ℤ) : Finite {P : GTPattern n // P.top
   · set a : ℤ := min (l ⟨n - 1, by omega⟩) 0 with ha
     set b : ℤ := max (l ⟨0, hn⟩) 0 with hb
     have hmem : ∀ (P : {P : GTPattern n // P.topRow = l}) (i j : ℕ),
-        P.1 i j ∈ Set.Icc a b := by
+        P.val i j ∈ Set.Icc a b := by
       rintro ⟨P, rfl⟩ i j
       by_cases hij : i < j ∧ j ≤ n
       · exact ⟨(min_le_left _ _).trans (P.entry_mem_Icc hij.1 hij.2).1,
@@ -530,7 +530,7 @@ instance finite_topRow_eq (l : Fin n → ℤ) : Finite {P : GTPattern n // P.top
       · rw [P.entry_eq_zero (by omega)]
         exact ⟨min_le_right _ _, le_max_right _ _⟩
     refine Finite.of_injective
-      (fun P => fun (i j : Fin (n + 1)) => (⟨P.1 i j, hmem P i j⟩ : Set.Icc a b)) ?_
+      (fun P => fun (i j : Fin (n + 1)) => (⟨P.val i j, hmem P i j⟩ : Set.Icc a b)) ?_
     rintro ⟨P, _⟩ ⟨P', _⟩ hPP'
     refine Subtype.ext (GTPattern.ext fun i j => ?_)
     by_cases hi : i < n + 1
@@ -538,6 +538,12 @@ instance finite_topRow_eq (l : Fin n → ℤ) : Finite {P : GTPattern n // P.top
       · exact congrArg Subtype.val (congrFun (congrFun hPP' ⟨i, hi⟩) ⟨j, hj⟩)
       · rw [P.entry_eq_zero (by omega), P'.entry_eq_zero (by omega)]
     · rw [P.entry_eq_zero (by omega), P'.entry_eq_zero (by omega)]
+
+/-- Any refinement of a fixed-top-row pattern subtype is finite. -/
+instance finite_topRow_eq_and (l : Fin n → ℤ) (p : GTPattern n → Prop) :
+    Finite {P : GTPattern n // P.topRow = l ∧ p P} :=
+  Finite.of_injective (fun P => (⟨P.val, P.property.1⟩ : {P : GTPattern n // P.topRow = l}))
+    fun _ _ h => Subtype.ext (by simpa using h)
 
 /-! ### The counts in low rank -/
 
@@ -559,10 +565,10 @@ theorem card_topRow_one_eq_one (l : Fin 1 → ℤ) : Nat.card {P : GTPattern 1 /
 length one. -/
 def equivOne : GTPattern 1 ≃ (Fin 1 → ℤ) where
   toFun := topRow
-  invFun l := (default : {P : GTPattern 1 // P.topRow = l}).1
+  invFun l := (default : {P : GTPattern 1 // P.topRow = l}).val
   left_inv P := congrArg Subtype.val
     (Subsingleton.elim (default : {X : GTPattern 1 // X.topRow = P.topRow}) ⟨P, rfl⟩)
-  right_inv l := (default : {P : GTPattern 1 // P.topRow = l}).2
+  right_inv l := (default : {P : GTPattern 1 // P.topRow = l}).property
 
 @[simp]
 theorem equivOne_apply (P : GTPattern 1) : equivOne P = P.topRow := (rfl)
@@ -578,10 +584,10 @@ theorem card_topRow_two_eq_toNat_sub_add_one (l : Fin 2 → ℤ) :
   have e₂ : {Q : GTPattern 1 // Interlaces l Q.topRow} ≃ {m : Fin 1 → ℤ // Interlaces l m} :=
     Equiv.subtypeEquiv equivOne fun _ => Iff.rfl
   have e₃ : {m : Fin 1 → ℤ // Interlaces l m} ≃ Set.Icc (l 1) (l 0) :=
-    { toFun := fun m => ⟨m.1 0, ⟨m.2.succ_le 0, m.2.le_castSucc 0⟩⟩
-      invFun := fun x => ⟨fun _ => x.1, interlaces_iff.mpr fun i => by
+    { toFun := fun m => ⟨m.val 0, ⟨m.property.succ_le 0, m.property.le_castSucc 0⟩⟩
+      invFun := fun x => ⟨fun _ => x.val, interlaces_iff.mpr fun i => by
         obtain rfl : i = 0 := Subsingleton.elim _ _
-        exact ⟨x.2.2, x.2.1⟩⟩
+        exact ⟨x.property.2, x.property.1⟩⟩
       left_inv := fun m => by
         refine Subtype.ext (funext fun i => ?_)
         obtain rfl : i = 0 := Subsingleton.elim _ _

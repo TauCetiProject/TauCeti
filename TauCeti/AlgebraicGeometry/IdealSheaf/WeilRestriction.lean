@@ -79,14 +79,14 @@ of `S`, it is the content (the ideal of `1 × 1` minors) of the ideal `I(g⁻¹ 
 projective `Γ(S, U)`-module `Γ(Y, g⁻¹ U)`. -/
 noncomputable def weilRestriction (I : Y.IdealSheafData) : S.IdealSheafData where
   ideal U := letI := (g.app U).hom.toAlgebra
-    ((I.ideal ⟨g ⁻¹ᵁ U, U.2.preimage g⟩).restrictScalars Γ(S, U)).minorsIdeal 1
+    ((I.ideal ⟨g ⁻¹ᵁ U, U.property.preimage g⟩).restrictScalars Γ(S, U)).minorsIdeal 1
   map_ideal_basicOpen U f := by
-    have hle : g ⁻¹ᵁ S.basicOpen f ≤ g ⁻¹ᵁ U.1 := g.preimage_mono (S.basicOpen_le f)
+    have hle : g ⁻¹ᵁ S.basicOpen f ≤ g ⁻¹ᵁ U.val := g.preimage_mono (S.basicOpen_le f)
     -- `Γ(Y, g⁻¹ D(f))` is the pushout of `Γ(S, D(f))` and `Γ(Y, g⁻¹ U)` over `Γ(S, U)`
     have hpush := (isIso_pushoutSection_iff (IsPullback.of_horiz_isIso ⟨by simp⟩ :
       IsPullback (𝟙 Y) g g (𝟙 S)) (S.basicOpen_le f) le_rfl (UY := g ⁻¹ᵁ S.basicOpen f)
-      (by simpa using hle)).1 (isIso_pushoutSection_of_isAffineOpen _ _ _ _ U.2
-        (S.affineBasicOpen f).2 (U.2.preimage g))
+      (by simpa using hle)).1 (isIso_pushoutSection_of_isAffineOpen _ _ _ _ U.property
+        (S.affineBasicOpen f).property (U.property.preimage g))
     simp only [Scheme.Hom.appLE_eq_app] at hpush
     simp only [Scheme.Hom.appLE, Scheme.Hom.id_app] at hpush
     algebraize [(g.app U).hom, (S.presheaf.map (homOfLE (S.basicOpen_le f)).op).hom,
@@ -100,10 +100,10 @@ noncomputable def weilRestriction (I : Y.IdealSheafData) : S.IdealSheafData wher
     have := g.projective_app U
     have key := Ideal.minorsIdeal_one_restrictScalars_map (A := Γ(S, U))
       (A' := Γ(S, S.basicOpen f)) (B' := Γ(Y, g ⁻¹ᵁ S.basicOpen f))
-      (I.ideal ⟨g ⁻¹ᵁ U, U.2.preimage g⟩)
+      (I.ideal ⟨g ⁻¹ᵁ U, U.property.preimage g⟩)
     simp only [RingHom.algebraMap_toAlgebra] at key
-    have hI := I.map_ideal (U := ⟨g ⁻¹ᵁ S.basicOpen f, (S.affineBasicOpen f).2.preimage g⟩)
-      (V := ⟨g ⁻¹ᵁ U, U.2.preimage g⟩) hle
+    have hI := I.map_ideal (U := ⟨g ⁻¹ᵁ S.basicOpen f, (S.affineBasicOpen f).property.preimage g⟩)
+      (V := ⟨g ⁻¹ᵁ U, U.property.preimage g⟩) hle
     dsimp only at hI
     -- `rw [hI] at key` fails to find the coerced affine opens; transport along `hI` instead
     exact key.symm.trans
@@ -113,13 +113,14 @@ noncomputable def weilRestriction (I : Y.IdealSheafData) : S.IdealSheafData wher
 of `1 × 1` minors) of the ideal `I(g⁻¹ U)` of the projective `Γ(S, U)`-module `Γ(Y, g⁻¹ U)`. -/
 theorem weilRestriction_ideal (I : Y.IdealSheafData) (U : S.affineOpens) :
     (I.weilRestriction g).ideal U = letI := (g.app U).hom.toAlgebra
-      ((I.ideal ⟨g ⁻¹ᵁ U, U.2.preimage g⟩).restrictScalars Γ(S, U)).minorsIdeal 1 :=
+      ((I.ideal ⟨g ⁻¹ᵁ U, U.property.preimage g⟩).restrictScalars Γ(S, U)).minorsIdeal 1 :=
   (rfl)
 
 /-- The Weil restriction is monotone: a smaller closed subscheme has a smaller Weil restriction. -/
 theorem weilRestriction_mono : Monotone (weilRestriction g) := fun I J h U ↦ by
   let := (g.app U).hom.toAlgebra
-  exact Submodule.minorsIdeal_mono (R := Γ(S, U)) (fun x hx ↦ h ⟨g ⁻¹ᵁ U, U.2.preimage g⟩ hx) 1
+  exact Submodule.minorsIdeal_mono (R := Γ(S, U)) (fun x hx ↦ h ⟨g ⁻¹ᵁ U,
+      U.property.preimage g⟩ hx) 1
 
 /-- The Weil restriction of `Y` itself is `S`. -/
 @[simp]
@@ -133,9 +134,9 @@ variable {g} in
 with `t(V) ⊆ U`, the restriction `Γ(S, U) → Γ(T, V)` kills the ideal of `I.weilRestriction g`
 over `U` exactly when `I(g⁻¹ U)` vanishes on the corresponding affine open of `T ×_S Y`. -/
 private theorem weilRestriction_ideal_le_ker_iff (I : Y.IdealSheafData) {T : Scheme.{u}}
-    (t : T ⟶ S) (U : S.affineOpens) (V : T.affineOpens) (hV : V.1 ≤ t ⁻¹ᵁ U) :
+    (t : T ⟶ S) (U : S.affineOpens) (V : T.affineOpens) (hV : V.val ≤ t ⁻¹ᵁ U) :
     (I.weilRestriction g).ideal U ≤ RingHom.ker (t.appLE U V hV).hom ↔
-      I.ideal ⟨g ⁻¹ᵁ U, U.2.preimage g⟩ ≤ RingHom.ker ((pullback.snd t g).appLE (g ⁻¹ᵁ U)
+      I.ideal ⟨g ⁻¹ᵁ U, U.property.preimage g⟩ ≤ RingHom.ker ((pullback.snd t g).appLE (g ⁻¹ᵁ U)
         (pullback.snd t g ⁻¹ᵁ g ⁻¹ᵁ U ⊓ pullback.fst t g ⁻¹ᵁ V) inf_le_left).hom := by
   set P := pullback.snd t g ⁻¹ᵁ g ⁻¹ᵁ U ⊓ pullback.fst t g ⁻¹ᵁ V
   -- the sections of `T ×_S Y` over `P` are the pushout of `Γ(T, V)` and `Γ(Y, g⁻¹ U)`
@@ -143,7 +144,7 @@ private theorem weilRestriction_ideal_le_ker_iff (I : Y.IdealSheafData) {T : Sch
       ((pullback.snd t g).appLE (g ⁻¹ᵁ U) P inf_le_left)
       ((pullback.fst t g).appLE V P inf_le_right) := by
     have := isIso_pushoutSection_of_isAffineOpen (IsPullback.of_hasPullback t g).flip hV le_rfl
-      rfl U.2 V.2 (U.2.preimage g)
+      rfl U.property V.property (U.property.preimage g)
     rwa [isIso_pushoutSection_iff, Scheme.Hom.appLE_eq_app] at this
   algebraize [(g.app U).hom, (t.appLE U V hV).hom,
     ((pullback.snd t g).appLE (g ⁻¹ᵁ U) P inf_le_left).hom,
@@ -160,50 +161,41 @@ private theorem weilRestriction_ideal_le_ker_iff (I : Y.IdealSheafData) {T : Sch
   -- the two sides agree after unfolding `P`
   rfl
 
+/-- A morphism `t : T ⟶ S` whose kernel contains the Weil restriction of `I` kills `I` after base
+change along `g`. -/
+private theorem le_ker_snd_of_weilRestriction_le_ker (I : Y.IdealSheafData) {T : Scheme.{u}}
+    (t : T ⟶ S) (h : I.weilRestriction g ≤ t.ker) : I ≤ (pullback.snd t g).ker := by
+  refine I.le_ker_of_forall_exists _ fun p ↦ ?_
+  -- near `p`, choose affine opens `US ⊆ S` and `UT ⊆ t⁻¹ US`
+  obtain ⟨US, hUS, hpUS, -⟩ := exists_isAffineOpen_mem_and_subset
+    (x := g (pullback.snd t g p)) (U := ⊤) (TopologicalSpace.Opens.mem_top _)
+  have htp : t (pullback.fst t g p) = g (pullback.snd t g p) := by
+    rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]
+  obtain ⟨UT, hUT, hpUT, hUTle⟩ := exists_isAffineOpen_mem_and_subset
+    (x := pullback.fst t g p) (U := t ⁻¹ᵁ US) (t.mem_preimage.2 (htp ▸ hpUS))
+  have hUTle' : UT ≤ t ⁻¹ᵁ US := SetLike.coe_subset_coe.1 hUTle
+  -- over `UT`, the content of `I(g⁻¹ US)` vanishes, so `I(g⁻¹ US)` vanishes on `T ×_S Y`
+  exact ⟨⟨g ⁻¹ᵁ US, hUS.preimage g⟩, _, inf_le_left,
+    TopologicalSpace.Opens.mem_inf.2 ⟨(pullback.snd t g).mem_preimage.2 (g.mem_preimage.2 hpUS),
+      (pullback.fst t g).mem_preimage.2 hpUT⟩,
+    (weilRestriction_ideal_le_ker_iff I t ⟨US, hUS⟩ ⟨UT, hUT⟩ hUTle').1
+      ((I.weilRestriction g).ideal_le_ker_appLE h ⟨US, hUS⟩ hUTle')⟩
+
+/-- The converse: if `I` vanishes after base change along `g`, the Weil restriction of `I`
+vanishes on `T`. -/
+private theorem weilRestriction_le_ker_of_le_ker_snd (I : Y.IdealSheafData) {T : Scheme.{u}}
+    (t : T ⟶ S) (h : I ≤ (pullback.snd t g).ker) : I.weilRestriction g ≤ t.ker :=
+  (I.weilRestriction g).le_ker_iff t |>.2 fun U UT hUTle _ ha ↦
+    (weilRestriction_ideal_le_ker_iff I t U UT hUTle).2
+      (I.ideal_le_ker_appLE h ⟨g ⁻¹ᵁ U, U.property.preimage g⟩ inf_le_left) ha
+
 /-- **The universal property of the Weil restriction of a closed subscheme.** Let `g : Y ⟶ S` be
 finite locally free and `I` an ideal sheaf on `Y`. A morphism `t : T ⟶ S` factors through the
 closed subscheme of `I.weilRestriction g` exactly when the base change `T ×_S Y ⟶ Y` of `t`
 factors through the closed subscheme `V(I)`. -/
 theorem weilRestriction_le_ker_iff (I : Y.IdealSheafData) {T : Scheme.{u}} (t : T ⟶ S) :
-    I.weilRestriction g ≤ t.ker ↔ I ≤ (pullback.snd t g).ker := by
-  constructor
-  · intro h
-    refine le_ofIdeals_iff.2 fun V x hx ↦ RingHom.mem_ker.2 <|
-      (pullback t g).IsSheaf.section_ext fun p hp ↦ ?_
-    -- near `p`, choose affine opens `US ⊆ S`, `V' ⊆ V ∩ g⁻¹ US` and `UT ⊆ t⁻¹ US`
-    obtain ⟨_, ⟨US, hUS, rfl⟩, hpUS, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
-      (Set.mem_univ (g (pullback.snd t g p))) isOpen_univ
-    have hpVUS : pullback.snd t g p ∈ V.1 ⊓ g ⁻¹ᵁ US := ⟨hp, hpUS⟩
-    obtain ⟨_, ⟨V', hV', rfl⟩, hpV', hV'le⟩ :=
-      Y.isBasis_affineOpens.exists_subset_of_mem_open hpVUS (V.1 ⊓ g ⁻¹ᵁ US).2
-    have htp : t (pullback.fst t g p) = g (pullback.snd t g p) := by
-      rw [← Scheme.Hom.comp_apply, pullback.condition, Scheme.Hom.comp_apply]
-    have hpUS' : t (pullback.fst t g p) ∈ (US : Set S) := htp ▸ hpUS
-    obtain ⟨_, ⟨UT, hUT, rfl⟩, hpUT, hUTle⟩ :=
-      T.isBasis_affineOpens.exists_subset_of_mem_open hpUS' (t ⁻¹ᵁ US).2
-    have hW : pullback.snd t g ⁻¹ᵁ V' ⊓ pullback.fst t g ⁻¹ᵁ UT ≤ pullback.snd t g ⁻¹ᵁ V.1 :=
-      inf_le_left.trans ((pullback.snd t g).preimage_mono fun y hy ↦ (hV'le hy).1)
-    refine ⟨_, hW, ⟨hpV', hpUT⟩, ?_⟩
-    -- over `UT`, the content of `I(g⁻¹ US)` vanishes, so `I(g⁻¹ US)` vanishes on `T ×_S Y`
-    have hcore := (weilRestriction_ideal_le_ker_iff I t ⟨US, hUS⟩ ⟨UT, hUT⟩ hUTle).1
-      ((h ⟨US, hUS⟩).trans ((t.ideal_ker_le _).trans (t.ker_app_le_ker_appLE hUTle)))
-    have hV'V : (⟨V', hV'⟩ : Y.affineOpens) ≤ V := fun y hy ↦ (hV'le hy).1
-    have := I.ideal_le_ker_appLE_of_le (pullback.snd t g) (U' := ⟨V', hV'⟩)
-      (fun y hy ↦ (hV'le hy).2) (inf_le_inf_right _ ((pullback.snd t g).preimage_mono
-        fun y hy ↦ (hV'le hy).2)) _ inf_le_left hcore (I.ideal_le_comap_ideal hV'V hx)
-    rw [RingHom.mem_ker, ← CommRingCat.comp_apply, Scheme.Hom.map_appLE] at this
-    simpa [Scheme.Hom.appLE] using this
-  · intro h
-    refine le_ofIdeals_iff.2 fun U a ha ↦ RingHom.mem_ker.2 <|
-      T.IsSheaf.section_ext fun q hq ↦ ?_
-    obtain ⟨_, ⟨UT, hUT, rfl⟩, hqUT, hUTle⟩ :=
-      T.isBasis_affineOpens.exists_subset_of_mem_open hq (t ⁻¹ᵁ U.1).2
-    refine ⟨UT, hUTle, hqUT, ?_⟩
-    have := (weilRestriction_ideal_le_ker_iff I t U ⟨UT, hUT⟩ hUTle).2
-      ((h ⟨g ⁻¹ᵁ U, U.2.preimage g⟩).trans
-        (((pullback.snd t g).ideal_ker_le _).trans
-          ((pullback.snd t g).ker_app_le_ker_appLE inf_le_left))) ha
-    simpa [Scheme.Hom.appLE] using this
+    I.weilRestriction g ≤ t.ker ↔ I ≤ (pullback.snd t g).ker :=
+  ⟨le_ker_snd_of_weilRestriction_le_ker g I t, weilRestriction_le_ker_of_le_ker_snd g I t⟩
 
 variable {g} in
 /-- The universal property of the Weil restriction, for a base change `Y'` of `Y` given by any

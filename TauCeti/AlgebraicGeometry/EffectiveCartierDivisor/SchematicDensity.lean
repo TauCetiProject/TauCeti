@@ -59,7 +59,7 @@ theorem IsEffectiveCartier.isSchemeTheoreticallyDominant_support_compl_ι
   have hle : X.basicOpen (a x) ≤ I.support.compl := by
     -- membership in `I.support.compl` is by definition non-membership in `I.support`
     intro y hy hyI
-    have hyU : y ∈ (U x).1 := X.basicOpen_le (a x) hy
+    have hyU : y ∈ (U x).val := X.basicOpen_le (a x) hy
     rw [SetLike.mem_coe, mem_support_iff_of_mem hyU, hUa x, Scheme.mem_zeroLocus_iff] at hyI
     exact hyI (a x) (Ideal.mem_span_singleton_self _) hy
   have hs0 : X.presheaf.map (homOfLE (X.basicOpen_le (a x))).op s = 0 := by
@@ -67,13 +67,13 @@ theorem IsEffectiveCartier.isSchemeTheoreticallyDominant_support_compl_ι
     have hs' := ι.ideal_ker_le (U x) hs
     rw [RingHom.mem_ker, Scheme.Opens.ι_app] at hs'
     -- `D(a x)` lies in the part of `U x` that meets the complement of the support.
-    have h : X.basicOpen (a x) ≤ ι ''ᵁ ι ⁻¹ᵁ (U x).1 := fun y hy ↦
+    have h : X.basicOpen (a x) ≤ ι ''ᵁ ι ⁻¹ᵁ (U x).val := fun y hy ↦
       ⟨⟨y, hle hy⟩, X.basicOpen_le (a x) hy, rfl⟩
-    rw [show homOfLE (X.basicOpen_le (a x)) = homOfLE h ≫ homOfLE (ι.image_preimage_le (U x).1)
+    rw [show homOfLE (X.basicOpen_le (a x)) = homOfLE h ≫ homOfLE (ι.image_preimage_le (U x).val)
       from Subsingleton.elim _ _, op_comp, Functor.map_comp, CommRingCat.comp_apply]
     exact (congrArg _ hs').trans (map_zero _)
   -- Restriction to `D(a x)` is the localization at the nonzerodivisor `a x`, hence injective.
-  have := (U x).2.isLocalization_basicOpen (a x)
+  have := (U x).property.isLocalization_basicOpen (a x)
   refine (IsLocalization.injective_iff_isRegular (Submonoid.powers (a x))
     (S := Γ(X, X.basicOpen (a x)))).mpr ?_ (hs0.trans (map_zero _).symm)
   rintro ⟨_, n, rfl⟩

@@ -70,13 +70,13 @@ variable {ι : Type*} [DecidableEq ι] (π : ι → Type*) {s t u : Finset ι}
 @[simp]
 theorem restrict₂_piFinsetUnion_left (h : Disjoint s t) (x : (∀ i : s, π i) × ∀ i : t, π i) :
     restrict₂ subset_union_left (piFinsetUnion π h x) = x.1 :=
-  funext fun i ↦ piFinsetUnion_left π h i.2 _
+  funext fun i ↦ piFinsetUnion_left π h i.property _
 
 /-- Restricting `Equiv.piFinsetUnion π h (f, g)` to `t` gives `g`. -/
 @[simp]
 theorem restrict₂_piFinsetUnion_right (h : Disjoint s t) (x : (∀ i : s, π i) × ∀ i : t, π i) :
     restrict₂ subset_union_right (piFinsetUnion π h x) = x.2 :=
-  funext fun i ↦ piFinsetUnion_right π h i.2 _
+  funext fun i ↦ piFinsetUnion_right π h i.property _
 
 /-- The inverse of `Equiv.piFinsetUnion` takes the restrictions to the two pieces. -/
 @[simp]

@@ -275,7 +275,7 @@ lemma fundamentalGroupMulEquiv_eq_windingNumberIso [hp : Fact (0 < p)] {x : AddC
   induction γ using Path.Homotopic.Quotient.ind with
   | _ γ =>
     obtain ⟨f, hf, hf0⟩ := (isCoveringMap_coe p).exists_path_lifts γ.toContinuousMap e
-      (γ.source.trans e.2.symm)
+      (γ.source.trans e.property.symm)
     have hm := (isCoveringMap_coe p).monodromy_eq_apply_one hf hf0
     have hn := (fundamentalGroupMulEquiv_apply_eq_iff p hp.out.ne' e
       (FundamentalGroup.fromPath (.mk γ)) _).mp rfl

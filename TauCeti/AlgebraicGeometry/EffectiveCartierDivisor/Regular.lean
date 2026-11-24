@@ -46,20 +46,20 @@ theorem IsEffectiveCartier.isRegularLocalRing_stalk_of_mem_support
     {x : X} (hx : x ∈ I.support) : IsRegularLocalRing (X.presheaf.stalk x) := by
   obtain ⟨U, hxU, a, ha, hUa⟩ := (isEffectiveCartier_iff I).mp hI x
   have : IsNoetherianRing Γ(X, U) := IsLocallyNoetherian.component_noetherian U
-  have hV : IsAffineOpen (I.subschemeι ⁻¹ᵁ U.1) := U.2.preimage I.subschemeι
+  have hV : IsAffineOpen (I.subschemeι ⁻¹ᵁ U.val) := U.property.preimage I.subschemeι
   have : IsLocallyNoetherian I.subscheme :=
     LocallyOfFiniteType.isLocallyNoetherian I.subschemeι
-  have : IsNoetherianRing Γ(I.subscheme, I.subschemeι ⁻¹ᵁ U.1) :=
+  have : IsNoetherianRing Γ(I.subscheme, I.subschemeι ⁻¹ᵁ U.val) :=
     IsLocallyNoetherian.component_noetherian ⟨_, hV⟩
-  have : IsRegularRing Γ(I.subscheme, I.subschemeι ⁻¹ᵁ U.1) :=
+  have : IsRegularRing Γ(I.subscheme, I.subschemeι ⁻¹ᵁ U.val) :=
     (TauCeti.AlgebraicGeometry.isRegularRing_iff_isRegularLocalRing_stalk hV).mpr
       fun y _ ↦ hD y
   have : IsRegularRing (Γ(X, U) ⧸ I.ideal U) :=
     .of_ringEquiv (I.subschemeObjIso U).commRingCatIsoToRingEquiv
   have : IsRegularRing (Γ(X, U) ⧸ Ideal.span {a}) := hUa ▸ ‹IsRegularRing _›
-  let P := (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal
+  let P := (U.property.primeIdealOf ⟨x, hxU⟩).asIdeal
   let := TopCat.Presheaf.algebra_section_stalk X.presheaf ⟨x, hxU⟩
-  have := U.2.isLocalization_stalk ⟨x, hxU⟩
+  have := U.property.isLocalization_stalk ⟨x, hxU⟩
   have haP : a ∈ P := by
     by_contra haP
     have hunit := (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) P a).mpr haP

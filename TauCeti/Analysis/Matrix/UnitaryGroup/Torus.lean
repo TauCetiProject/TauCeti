@@ -141,7 +141,7 @@ theorem mem_unitaryTorus_iff {g : unitaryGroup n ℂ} :
   refine ⟨fun ⟨z, hz⟩ => hz ▸ isDiag_diagonal _, fun hg => ?_⟩
   -- The diagonal entries of a diagonal unitary matrix are unitary, so lie on the circle.
   have hunit :=
-    Pi.mem_unitary_iff.mp <| diagonal_mem_unitary.mp (hg.diagonal_diag.symm ▸ g.2)
+    Pi.mem_unitary_iff.mp <| diagonal_mem_unitary.mp (hg.diagonal_diag.symm ▸ g.property)
   refine ⟨fun i => ⟨(g : Matrix n n ℂ) i i,
     mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (hunit i))⟩, Subtype.ext ?_⟩
   exact hg.diagonal_diag
@@ -158,19 +158,26 @@ theorem comap_toUnits_upperTriangularGroup_eq_unitaryTorus (ι : Type*) [Fintype
 instance : IsMulCommutative (unitaryTorus n) :=
   Subgroup.range_isMulCommutative _
 
+/-- **A matrix commuting with every diagonal unitary matrix is diagonal.** It suffices to test
+against `diag(1, …, -1, …, 1)`, with `-1` in a single position. -/
+theorem isDiag_of_forall_commute_unitaryTorusHom {M : Matrix n n ℂ}
+    (h : ∀ z, (unitaryTorusHom n z : Matrix n n ℂ) * M = M * unitaryTorusHom n z) : M.IsDiag :=
+  fun i j hij => by
+    let z : n → Circle := Pi.mulSingle i (Circle.exp Real.pi)
+    have hcomm : Commute (diagonal fun k => (z k : ℂ)) M := by
+      rw [← coe_unitaryTorusHom]
+      exact h z
+    exact apply_eq_zero_of_commute_diagonal hcomm fun h => Circle.exp_pi_ne_one <| by
+      simpa [z, Pi.mulSingle_eq_of_ne hij.symm] using Circle.coe_inj.mp h
+
 /-- **The diagonal torus of `U(n)` is its own centralizer**: a unitary matrix commuting with every
 diagonal unitary matrix is diagonal. -/
 theorem centralizer_unitaryTorus :
-    Subgroup.centralizer (unitaryTorus n : Set (unitaryGroup n ℂ)) = unitaryTorus n := by
-  refine le_antisymm (fun g hg => mem_unitaryTorus_iff.mpr fun i j hij => ?_)
+    Subgroup.centralizer (unitaryTorus n : Set (unitaryGroup n ℂ)) = unitaryTorus n :=
+  le_antisymm (fun _ hg => mem_unitaryTorus_iff.mpr <| isDiag_of_forall_commute_unitaryTorusHom
+      fun z => congrArg Subtype.val
+        (Subgroup.mem_centralizer_iff.mp hg _ (unitaryTorusHom_mem_unitaryTorus z)))
     (Subgroup.le_centralizer _)
-  let z : n → Circle := Pi.mulSingle i (Circle.exp Real.pi)
-  have hcomm : Commute (diagonal fun k => (z k : ℂ)) (g : Matrix n n ℂ) := by
-    have h := congrArg Subtype.val
-      (Subgroup.mem_centralizer_iff.mp hg _ (unitaryTorusHom_mem_unitaryTorus z))
-    rwa [Submonoid.coe_mul, Submonoid.coe_mul, coe_unitaryTorusHom] at h
-  exact apply_eq_zero_of_commute_diagonal hcomm fun h => Circle.exp_pi_ne_one <| by
-    simpa [z, Pi.mulSingle_eq_of_ne hij.symm] using Circle.coe_inj.mp h
 
 /-- **The diagonal torus is a maximal commutative subgroup of `U(n)`**: a commutative subgroup
 containing it is equal to it. In particular the diagonal torus is a maximal torus of `U(n)`. -/

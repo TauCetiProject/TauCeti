@@ -205,10 +205,10 @@ noncomputable def IsGroebnerBasis.restrictSupportEquivMapWeightedHomogeneousSubm
       ((Ideal.Quotient.mkₐ R I).toLinearMap ∘ₗ Submodule.subtype _)
       fun r ↦ Submodule.mem_map_of_mem <| by
         rw [weightedHomogeneousSubmodule_eq_finsupp_supported]
-        exact restrictSupport_mono R Set.inter_subset_right r.2)
+        exact restrictSupport_mono R Set.inter_subset_right r.property)
     ⟨fun r₁ r₂ hr ↦ Subtype.ext <| eq_of_sub_mem_of_mem_restrictSupport
-        (restrictSupport_mono R Set.inter_subset_left r₁.2)
-        (restrictSupport_mono R Set.inter_subset_left r₂.2)
+        (restrictSupport_mono R Set.inter_subset_left r₁.property)
+        (restrictSupport_mono R Set.inter_subset_left r₂.property)
         (Ideal.Quotient.eq.1 (congrArg Subtype.val hr)),
       by
         rintro ⟨_, f, hf, rfl⟩
@@ -245,7 +245,7 @@ theorem IsGroebnerBasis.coe_restrictSupportEquivMapWeightedHomogeneousSubmodule_
       ⟨Ideal.Quotient.mk I f, hf⟩)
   rw [restrictSupportEquivMapWeightedHomogeneousSubmodule_apply_coe] at hr
   exact ((h.normalForm_eq_iff hG).2
-    ⟨restrictSupport_mono R Set.inter_subset_left r.2, Ideal.Quotient.eq.1 hr.symm⟩).symm
+    ⟨restrictSupport_mono R Set.inter_subset_left r.property, Ideal.Quotient.eq.1 hr.symm⟩).symm
 
 /-- **The graded standard monomial basis.** For an ideal `I` which is homogeneous for the grading
 by the weight `w`, the images of the standard monomials of `I` of weight `n` form a basis of the

@@ -244,7 +244,7 @@ theorem exists_convexSection_subset_convexSection :
   set t : ℝ := 2 * lam / (Cr * Lam)
   have ht : 0 < t := by positivity
   have hstep : (C₁ : ℝ) * Lam * (2 * h) ^ n * t < lam * h ^ n :=
-    step_mul_pow_lt n C₁.2 (NNReal.coe_pos.2 hlam) (NNReal.coe_pos.2 hLam) hh
+    step_mul_pow_lt n C₁.property (NNReal.coe_pos.2 hlam) (NNReal.coe_pos.2 hLam) hh
   have hw := hC₁ G (fun p => u p + (-ℓ) p + c) lam Lam h (2 * h) hGo hSb
     (convexOn_convexSection_add_linearMap hu (-ℓ) c)
     (continuousOn_closure_convexSection_add_linearMap huc hℓ.neg hSΩ c) hfr hlow

@@ -80,6 +80,8 @@ the smoothing arcs suppresses them; neither step raises the genus.
 * `TauCeti.PDCode.detachedCircleCount D c t`: the circles of the smoothing of `c` that meet no
   other crossing.
 * `TauCeti.PDCode.resolveCrossing D c t`: the code with the crossing `c` smoothed.
+* `TauCeti.PDCode.resolvedTurn D c t`: the half-edge matching smoothing `c` and following
+  `crossingTurn` at every other crossing.
 * `TauCeti.PDCode.resolveCrossingResolvedCircleEquiv D c t s`: the resolved circles of a state of
   the resolution are those of `D` smoothed by the extended state `c.insertNth t s`.
 
@@ -87,6 +89,9 @@ the smoothing arcs suppresses them; neither step raises the genus.
 
 * `TauCeti.PDCode.stateLoopCount_insertNth`: a state of `D` leaves as many circles as its
   restriction leaves in the corresponding resolution.
+* `TauCeti.PDCode.two_mul_componentCount_resolveCrossing`: twice the component count of a
+  resolution is the orbit count of `resolvedTurn * edgePair` plus twice the crossing-free
+  component count of `D`.
 * `TauCeti.PDCode.kauffmanBracket_eq_resolveCrossing`: the skein relation of the Kauffman bracket.
 * `TauCeti.PDCode.componentCount_resolveCrossing_cases`: the numbers of components of the two
   resolutions are both one less than that of `D`, or one more and the same in some order.
@@ -446,6 +451,99 @@ theorem stateLoopCount_insertNth (s : Fin n → Bool) :
   obtain ⟨r, hr⟩ := R.even_orbitCount_statePerm s
   omega
 
+/-- Smooth the single crossing `c` of `D` by its `A`-smoothing (`t = true`) or `B`-smoothing
+(`t = false`), while passing straight to the opposite slot (`TauCeti.PDCode.crossingTurn`) at
+every other crossing. -/
+def resolvedTurn : Perm (Fin (4 * (n + 1))) :=
+  D.halfEdge.permCongr ((crossingSlotEquiv (n + 1)).permCongr
+    (Equiv.prodCongrRight fun j ↦
+      if j = c then slotSmoothing (bif t then D.overPair c else !D.overPair c)
+      else oppositeCrossingSlot))
+
+/-- The defining equation of `TauCeti.PDCode.resolvedTurn`. -/
+theorem resolvedTurn_def :
+    D.resolvedTurn c t = D.halfEdge.permCongr ((crossingSlotEquiv (n + 1)).permCongr
+      (Equiv.prodCongrRight fun j ↦
+        if j = c then slotSmoothing (bif t then D.overPair c else !D.overPair c)
+        else oppositeCrossingSlot)) := (rfl)
+
+/-- At the smoothed crossing `c`, `resolvedTurn` reconnects slots by the chosen local smoothing. -/
+@[simp] theorem resolvedTurn_crossing_self (k : Fin 4) :
+    D.resolvedTurn c t (D.halfEdge (crossingSlotEquiv (n + 1) (c, k))) =
+      D.crossing c (slotSmoothing (bif t then D.overPair c else !D.overPair c) k) := by
+  simp [resolvedTurn]
+
+/-- Away from `c`, `resolvedTurn` moves to the opposite slot just as `crossingTurn` does. -/
+@[simp] theorem resolvedTurn_crossing_of_ne {j : Fin (n + 1)} (hj : j ≠ c) (k : Fin 4) :
+    D.resolvedTurn c t (D.halfEdge (crossingSlotEquiv (n + 1) (j, k))) =
+      D.crossing j (oppositeCrossingSlot k) := by
+  simp [resolvedTurn, hj]
+
+/-- Applying `resolvedTurn` twice returns every half-edge. -/
+@[simp] theorem resolvedTurn_apply_apply (h : Fin (4 * (n + 1))) :
+    D.resolvedTurn c t (D.resolvedTurn c t h) = h := by
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+  obtain ⟨⟨j, k⟩, rfl⟩ := (crossingSlotEquiv (n + 1)).surjective x
+  by_cases hj : j = c
+  · subst hj
+    simp
+  · simp [hj]
+
+/-- `resolvedTurn` is a perfect matching of the half-edge labels. -/
+theorem isPerfectMatching_resolvedTurn : IsPerfectMatching (D.resolvedTurn c t) := by
+  refine isPerfectMatching_iff.mpr ⟨D.resolvedTurn_apply_apply c t, fun h hh ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := D.halfEdge.surjective h
+  obtain ⟨⟨j, k⟩, rfl⟩ := (crossingSlotEquiv (n + 1)).surjective x
+  by_cases hj : j = c
+  · subst hj
+    rw [resolvedTurn_crossing_self, crossing_apply, D.halfEdge.apply_eq_iff_eq,
+      (crossingSlotEquiv (n + 1)).apply_eq_iff_eq, Prod.mk.injEq] at hh
+    exact slotSmoothing_ne _ _ hh.2
+  · rw [resolvedTurn_crossing_of_ne D c t hj, crossing_apply, D.halfEdge.apply_eq_iff_eq,
+      (crossingSlotEquiv (n + 1)).apply_eq_iff_eq, Prod.mk.injEq] at hh
+    exact Fin.oppositeCrossingSlot_ne _ hh.2
+
+/-- Mirroring exchanges the two smoothings of `resolvedTurn`. -/
+@[simp] theorem resolvedTurn_mirror : D.mirror.resolvedTurn c t = D.resolvedTurn c !t := by
+  rw [resolvedTurn_def, resolvedTurn_def, mirror_halfEdge]
+  congr 3
+  funext j
+  split_ifs <;> cases t <;> simp
+
+/-- On `Fin (4 * n) ⊕ Fin 4`, `resolvedTurn` acts by `crossingTurn` on the resolution of `c` and
+by the local smoothing on the four slots of `c`. -/
+private theorem permCongr_resolvedTurn :
+    (D.slotEquiv c).symm.permCongr (D.resolvedTurn c t) =
+      Perm.sumCongr (D.resolveCrossing c t).crossingTurn (D.localSmoothing c t) := by
+  ext x : 1
+  rcases x with y | k
+  · obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective y
+    have hR : (D.resolveCrossing c t).crossingTurn (crossingSlotEquiv n (i, k)) =
+        crossingSlotEquiv n (i, oppositeCrossingSlot k) := by
+      simpa [crossing_resolveCrossing] using (D.resolveCrossing c t).crossingTurn_crossing i k
+    rw [permCongr_apply, symm_symm, Equiv.symm_apply_eq]
+    simp [slotEquiv_inl, hR, c.succAbove_ne i]
+  · rw [permCongr_apply, symm_symm, Equiv.symm_apply_eq]
+    simp [slotEquiv_inr, localSmoothing]
+
+/-- **Component count after resolving a crossing.** Twice the component count of
+`D.resolveCrossing c t` equals the number of directed traversal orbits of
+`D.resolvedTurn c t * D.edgePair.val` plus twice the crossing-free component count of `D`,
+accounting for any detached circles at `c`. -/
+theorem two_mul_componentCount_resolveCrossing :
+    2 * (D.resolveCrossing c t).componentCount =
+      orbitCount (D.resolvedTurn c t * D.edgePair.val) + 2 * D.crossinglessComponentCount := by
+  set R := D.resolveCrossing c t
+  have horb : orbitCount (D.resolvedTurn c t * D.edgePair.val) =
+      orbitCount R.componentPerm + 2 * D.detachedCircleCount c t := by
+    rw [← Equiv.orbitCount_permCongr (D.slotEquiv c).symm, Equiv.permCongr_mul,
+      permCongr_resolvedTurn, ← slotMatching_val, ← orbitCount_mul_add_detachedCircleCount,
+      ← componentPerm_def]
+  rw [componentCount_eq, crossingComponentCount_def, horb,
+    resolveCrossing_crossinglessComponentCount]
+  obtain ⟨r, hr⟩ := R.even_orbitCount_componentPerm
+  omega
+
 /-- **The skein relation of the Kauffman bracket** at a crossing `c`: the bracket of `D` is `a`
 times the bracket of the `A`-resolution of `c` plus `a⁻¹` times the bracket of its
 `B`-resolution. -/
@@ -609,6 +707,14 @@ the `A`- and `B`-smoothings. -/
   · funext i
     simp
 
+/-- Mirroring exchanges the detached circle counts of the two resolutions of `c`. -/
+@[simp] theorem detachedCircleCount_mirror :
+    D.mirror.detachedCircleCount c t = D.detachedCircleCount c !t := by
+  have h := congrArg PDCode.crossinglessComponentCount (D.mirror_resolveCrossing c (!t))
+  simp only [mirror_crossinglessComponentCount, resolveCrossing_crossinglessComponentCount,
+    Bool.not_not] at h
+  omega
+
 /-- An arc of `D` joining two slots of `c`. -/
 private theorem slotMatching_val_inr_eq_inr_iff (k l : Fin 4) :
     (D.slotMatching c).val (.inr k) = .inr l ↔
@@ -738,6 +844,58 @@ theorem resolveCrossing_edgePair_val_of_edgePair_val_eq_crossing_twice {i j : Fi
   · -- The second reconnection continues the arc to `S m`, and the first continues it to `S m'`.
     rw [D.pinchedTwice_val_of_val_eq_inr c (D.pinchedOnce_val_inl_of_val_eq_inr_two c hM₁ hB) hB,
       D.pinchedOnce_val_of_val_eq_inr c hM₂ hA, hM₃]
+
+/-- No fifth slot can avoid two disjoint local-smoothing pairs on `Fin 4`. -/
+private theorem slotSmoothing_exhaust (b : Bool) (l₁ l₂ l₃ : Fin 4)
+    (hl₂₁ : l₂ ≠ l₁) (hl₂S₁ : l₂ ≠ slotSmoothing b l₁)
+    (hl₃₁ : l₃ ≠ l₁) (hl₃S₁ : l₃ ≠ slotSmoothing b l₁)
+    (hl₃₂ : l₃ ≠ l₂) (hl₃S₂ : l₃ ≠ slotSmoothing b l₂) : False := by
+  have hs₁₁ := Fin.val_ne_of_ne (slotSmoothing_ne b l₁)
+  have hs₂₂ := Fin.val_ne_of_ne (slotSmoothing_ne b l₂)
+  have hs₂₁ : (slotSmoothing b l₂).val ≠ l₁.val := Fin.val_ne_of_ne fun h ↦
+    hl₂S₁ (by rw [← h, slotSmoothing_apply_apply])
+  have hs₂s₁ : (slotSmoothing b l₂).val ≠ (slotSmoothing b l₁).val :=
+    Fin.val_ne_of_ne ((slotSmoothing b).injective.ne hl₂₁)
+  have := Fin.val_ne_of_ne hl₂₁
+  have := Fin.val_ne_of_ne hl₂S₁
+  have := Fin.val_ne_of_ne hl₃₁
+  have := Fin.val_ne_of_ne hl₃S₁
+  have := Fin.val_ne_of_ne hl₃₂
+  have := Fin.val_ne_of_ne hl₃S₂
+  omega
+
+/-- Following `D.edgePair` and `slotSmoothing b` from a crossing `c.succAbove i ≠ c` through `c`
+twice cannot land at `c` a third time. -/
+theorem crossing_ne_of_slotSmoothing_twice {b : Bool} {i : Fin n} {k l₁ l₂ l₃ : Fin 4}
+    {j₃ : Fin (n + 1)}
+    (h₁ : D.edgePair.val (D.crossing (c.succAbove i) k) = D.crossing c l₁)
+    (h₂ : D.edgePair.val (D.crossing c (slotSmoothing b l₁)) = D.crossing c l₂)
+    (h₃ : D.edgePair.val (D.crossing c (slotSmoothing b l₂)) = D.crossing j₃ l₃) :
+    j₃ ≠ c := by
+  intro hj₃c
+  subst j₃
+  have hl₂₁ : l₂ ≠ l₁ := fun h ↦ by
+    have := D.edgePair.val.injective (h₁.trans (h ▸ h₂.symm))
+    exact c.succAbove_ne i (D.crossing_eq_crossing_iff.mp this).1
+  have hl₂S₁ : l₂ ≠ slotSmoothing b l₁ := fun h ↦
+    D.edgePair.apply_ne _ (h ▸ h₂)
+  have hl₃₁ : l₃ ≠ l₁ := fun h ↦ by
+    have := (D.edgePair.apply_eq_of_apply_eq h₁).symm.trans
+      (D.edgePair.apply_eq_of_apply_eq (h ▸ h₃))
+    exact c.succAbove_ne i (D.crossing_eq_crossing_iff.mp this).1
+  have hl₃S₁ : l₃ ≠ slotSmoothing b l₁ := fun h ↦ by
+    have : D.crossing c (slotSmoothing b l₂) = D.crossing c l₂ := by
+      rw [← D.edgePair.apply_apply (D.crossing c (slotSmoothing b l₂)), h₃, h, h₂]
+    exact slotSmoothing_ne b l₂ (D.crossing_eq_crossing_iff.mp this).2
+  have hl₃₂ : l₃ ≠ l₂ := fun h ↦ by
+    have := D.edgePair.val.injective (h₂.trans (h ▸ h₃).symm)
+    exact hl₂₁ ((slotSmoothing_apply_apply b l₁ ▸
+      slotSmoothing_apply_apply b l₂ ▸
+      congrArg (slotSmoothing b)
+        (D.crossing_eq_crossing_iff.mp this).2).symm)
+  have hl₃S₂ : l₃ ≠ slotSmoothing b l₂ := fun h ↦
+    D.edgePair.apply_ne _ (h ▸ h₃)
+  exact slotSmoothing_exhaust b l₁ l₂ l₃ hl₂₁ hl₂S₁ hl₃₁ hl₃S₁ hl₃₂ hl₃S₂
 
 /-! ### Planarity of a resolution
 

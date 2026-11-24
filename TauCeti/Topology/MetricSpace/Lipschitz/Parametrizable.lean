@@ -281,7 +281,7 @@ theorem of_isBounded_of_subset_ker {E : Type*} [NormedAddCommGroup E] [NormedSpa
     (hSf : S ⊆ LinearMap.ker f) : IsLipschitzParametrizable (Module.finrank ℝ E - 1) S := by
   -- Pull `S` back to the kernel, parametrize it there, and push it forward again: `S` is the
   -- image of its own preimage exactly because it lies in the kernel.
-  have hiso : Isometry (Subtype.val : LinearMap.ker f → E) := isometry_subtype_coe
+  have hiso : Isometry (Subtype.val : LinearMap.ker f → E) := isometry_subtypeVal
   have h := (of_isBounded (hiso.antilipschitzWith.isBounded_preimage hS)).image hiso.lipschitzWith
   rwa [Set.image_preimage_eq_of_subset (by rwa [Subtype.range_coe]),
     Nat.eq_sub_of_add_eq (Module.Dual.finrank_ker_add_one_of_ne_zero hf)] at h

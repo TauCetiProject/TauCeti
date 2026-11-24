@@ -69,13 +69,13 @@ instance isPerfPair_domRestrict₁₂_componentSpace [Finite ι] [P.IsRootSystem
     by_cases hj : P.componentOf j = C
     · simpa [LinearMap.domRestrict₁₂_apply] using
         LinearMap.congr_fun hx ⟨P.coroot j, hj ▸ coroot_mem_corootComponentSpace j⟩
-    · exact coroot'_eq_zero_of_mem_componentSpace hj x.2
+    · exact coroot'_eq_zero_of_mem_componentSpace hj x.property
   · refine injective_iff_map_eq_zero _ |>.mpr fun y hy ↦ Subtype.ext ?_
     refine P.flip.eq_zero_iff_forall_coroot'_eq_zero.mpr fun j ↦ ?_
     by_cases hj : P.componentOf j = C
     · simpa [LinearMap.domRestrict₁₂_apply] using
         LinearMap.congr_fun hy ⟨P.root j, hj ▸ root_mem_componentSpace j⟩
-    · exact root'_eq_zero_of_mem_corootComponentSpace hj y.2
+    · exact root'_eq_zero_of_mem_corootComponentSpace hj y.property
 
 /-- The **root pairing of an irreducible component** of a finite root system over a field: the roots
 and coroots of the component, on the component space and its coroot analogue. The reflection
@@ -83,9 +83,9 @@ permutations are those of the ambient pairing, by `RootPairing.componentOf_refle
 noncomputable def componentPairing [Finite ι] [P.IsRootSystem] (C : P.Component) :
     RootPairing C.supp K (P.componentSpace C) (P.corootComponentSpace C) where
   toLinearMap := P.toLinearMap.domRestrict₁₂ _ _
-  root := ⟨fun i ↦ ⟨P.root i, root_mem_componentSpace_of_mem_supp i.2⟩,
+  root := ⟨fun i ↦ ⟨P.root i, root_mem_componentSpace_of_mem_supp i.property⟩,
     fun _ _ h ↦ Subtype.ext (P.root.injective (congrArg Subtype.val h))⟩
-  coroot := ⟨fun i ↦ ⟨P.coroot i, coroot_mem_corootComponentSpace_of_mem_supp i.2⟩,
+  coroot := ⟨fun i ↦ ⟨P.coroot i, coroot_mem_corootComponentSpace_of_mem_supp i.property⟩,
     fun _ _ h ↦ Subtype.ext (P.coroot.injective (congrArg Subtype.val h))⟩
   root_coroot_two i := P.root_coroot_two i
   reflectionPerm i := (P.reflectionPerm i).subtypeEquiv fun j ↦ by
@@ -147,11 +147,11 @@ theorem nonorthogonalGraph_componentPairing :
 instance isRootSystem_componentPairing : (P.componentPairing C).IsRootSystem where
   span_root_eq_top :=
     (Submodule.span_range_subtype_eq_top_iff _ fun i : C.supp ↦
-      root_mem_componentSpace_of_mem_supp i.2).mpr <| by
+      root_mem_componentSpace_of_mem_supp i.property).mpr <| by
         rw [componentSpace_def, Set.image_eq_range]
   span_coroot_eq_top :=
     (Submodule.span_range_subtype_eq_top_iff _ fun i : C.supp ↦
-      coroot_mem_corootComponentSpace_of_mem_supp i.2).mpr <| by
+      coroot_mem_corootComponentSpace_of_mem_supp i.property).mpr <| by
         rw [corootComponentSpace_def, Set.image_eq_range]
 
 /-- **The root pairing of an irreducible component is irreducible.** -/
@@ -160,9 +160,15 @@ instance isIrreducible_componentPairing [NeZero (2 : K)] : (P.componentPairing C
     rw [nonorthogonalGraph_componentPairing]
     exact C.connected_toSimpleGraph
 
-instance isCrystallographic_componentPairing [P.IsCrystallographic] :
-    (P.componentPairing C).IsCrystallographic where
-  exists_value i j := IsValuedIn.exists_value (P := P) (S := ℤ) (i : ι) j
+instance isValuedIn_componentPairing (S : Type*) [CommRing S] [Algebra S K] [P.IsValuedIn S] :
+    (P.componentPairing C).IsValuedIn S where
+  exists_value i j := IsValuedIn.exists_value (P := P) (S := S) (i : ι) j
+
+/-- The `S`-valued pairings of the component pairing are those of the ambient pairing. -/
+@[simp]
+theorem componentPairing_pairingIn (S : Type*) [CommRing S] [Algebra S K] [P.IsValuedIn S]
+    (i j : C.supp) : (P.componentPairing C).pairingIn S i j = P.pairingIn S i j :=
+  (rfl)
 
 instance isReduced_componentPairing [P.IsReduced] : (P.componentPairing C).IsReduced where
   eq_or_eq_neg i j hij := by
@@ -197,7 +203,7 @@ noncomputable def componentPairingEquiv (e : P.Equiv Q) (C : P.Component) :
   indexEquiv := e.indexEquiv.subtypeEquiv fun _ ↦ e.indexEquiv_mem_supp_iff.symm
   weight_coweight_transpose := by
     ext y x
-    simpa using e.toLinearMap_weightEquiv x.1 y.1
+    simpa using e.toLinearMap_weightEquiv x.val y.val
   root_weightMap := by
     ext i
     simp [Hom.root_weightMap_apply]

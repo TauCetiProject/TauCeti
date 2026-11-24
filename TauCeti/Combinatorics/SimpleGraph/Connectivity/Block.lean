@@ -285,8 +285,8 @@ private theorem IsBlock.not_isCutVertex_induce_union (hB : G.IsBlock B)
     (x : ↑(B ∪ C)) : ¬(G.induce (B ∪ C)).IsCutVertex x := by
   classical
   -- One of the two common vertices survives deletion of `x` and serves as a hub.
-  obtain ⟨z, hzB, hzC, hzx⟩ : ∃ z, z ∈ B ∧ z ∈ C ∧ z ≠ x.1 := by
-    by_cases hxu : x.1 = u
+  obtain ⟨z, hzB, hzC, hzx⟩ : ∃ z, z ∈ B ∧ z ∈ C ∧ z ≠ x.val := by
+    by_cases hxu : x.val = u
     · exact ⟨v, hvB, hvC, fun hvx ↦ huv (hxu.symm.trans hvx.symm)⟩
     · exact ⟨u, huB, huC, Ne.symm hxu⟩
   let zU : ↑(B ∪ C) := ⟨z, Or.inl hzB⟩
@@ -294,8 +294,8 @@ private theorem IsBlock.not_isCutVertex_induce_union (hB : G.IsBlock B)
   have connect (a : ↑(B ∪ C)) (hax : a ≠ x) :
       ∃ p : (G.induce (B ∪ C)).Walk a zU,
         ∀ y ∈ p.support, y ≠ x := by
-    have hax' : a.1 ≠ x.1 := fun h ↦ hax (Subtype.ext h)
-    obtain ⟨p, hp⟩ : ∃ p : G.Walk a.1 z, ∀ y ∈ p.support, y ∈ B ∪ C ∧ y ≠ x.1 := by
+    have hax' : a.val ≠ x.val := fun h ↦ hax (Subtype.ext h)
+    obtain ⟨p, hp⟩ : ∃ p : G.Walk a.val z, ∀ y ∈ p.support, y ∈ B ∪ C ∧ y ≠ x.val := by
       rcases a.property with haB | haC
       · obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne hB.connected
           hB.not_isCutVertex haB hzB hax' hzx

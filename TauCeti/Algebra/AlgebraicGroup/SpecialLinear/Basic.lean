@@ -48,6 +48,8 @@ reductivity, or base-change theorem is asserted here.
 * `TauCeti.SpecialLinear.det_map_genericMatrix_coordinateMap` and
   `TauCeti.SpecialLinear.adjoin_range_map_genericMatrix`: the generic matrix of `SLₙ` has
   determinant one, and its entries generate `O(SLₙ)`.
+* `TauCeti.SpecialLinear.hopfIdealPointsSubgroup_definingHopfIdeal`: the matrix subgroup cut out
+  by the determinant-kernel Hopf ideal is the kernel of the determinant.
 * `TauCeti.SpecialLinear.pointsMulEquiv`: the natural multiplicative equivalence between quotient
   Hopf points and `Matrix.SpecialLinearGroup`.
 * `TauCeti.SpecialLinear.ofConv_pointsMulEquiv_symm_genericMatrix` and
@@ -180,7 +182,7 @@ theorem adjoin_range_map_genericMatrix :
       GeneralLinear.map_antipode_genericMatrix, ← Matrix.map_apply (f := q),
       GeneralLinear.map_inv_genericMatrix, BialgHom.coe_toAlgHom]
     rw [hinv]
-    exact (M.adjugate i j).2
+    exact (M.adjugate i j).property
 
 /-- The special-linear coordinate Hopf algebra bundled with its finite-type algebra property. -/
 noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
@@ -220,7 +222,7 @@ theorem mem_definingPointsSubgroup_iff_det_eq_one
 
 /-- The matrix subgroup cut out by the determinant-kernel Hopf ideal is the kernel of the
 determinant. -/
-private theorem hopfIdealPointsSubgroup_definingHopfIdeal :
+theorem hopfIdealPointsSubgroup_definingHopfIdeal :
     GeneralLinear.hopfIdealPointsSubgroup n (definingHopfIdeal R n) A =
       (Matrix.GeneralLinearGroup.det : GL (Fin n) A →* Aˣ).ker := by
   ext g
@@ -256,6 +258,15 @@ theorem pointsMulEquiv_toGL
   rw [pointsMulEquiv, MulEquiv.trans_apply, MulEquiv.trans_apply,
     ← Matrix.SpecialLinearGroup.toGLKerEquiv_apply_coe, MulEquiv.apply_symm_apply,
     MulEquiv.subgroupCongr_apply, GeneralLinear.coe_hopfIdealPointsSubgroupMulEquiv_apply]
+
+/-- Companion of `pointsMulEquiv_toGL` in the form consumers hold: the ambient point is the
+composite with `coordinateMap`, the normal form of `quotientPointsHom` under
+`CommHopfAlgCat.quotientPointsHom_apply`. -/
+theorem toGL_pointsMulEquiv
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n) (CommAlgCat.of R A)) :
+    Matrix.SpecialLinearGroup.toGL (pointsMulEquiv (R := R) (A := A) n f) =
+      GeneralLinear.pointsMulEquiv n (toConv (f.ofConv.comp (coordinateMap R n).hom)) := by
+  rw [← pointsMulEquiv_toGL, CommHopfAlgCat.quotientPointsHom_apply]
 
 /-- The ambient point attached to a special-linear matrix is the general-linear point attached to
 its canonical inclusion. -/

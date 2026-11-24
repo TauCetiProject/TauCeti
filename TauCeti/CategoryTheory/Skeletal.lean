@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Skeletal
+public import Mathlib.Data.Set.Finite.Range
 
 /-!
 # Comparing objects in the skeleton of a full subcategory
@@ -29,6 +30,9 @@ example the isomorphism classes of simple representations or of line bundles.
 * `CategoryTheory.ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso`: two objects of a full
   subcategory have the same class in its skeleton exactly when they are isomorphic in the ambient
   category;
+* `CategoryTheory.ObjectProperty.finite_skeleton_iff_exists_finite_forall_exists_iso`: a full
+  subcategory has finitely many isomorphism classes exactly when a finite set of objects of the
+  ambient category contains a copy of each of its objects;
 * `CategoryTheory.ObjectProperty.skeletonLift` descends a function on a full subcategory that is
   invariant under isomorphism in the ambient category to its skeleton, with computation rule
   `CategoryTheory.ObjectProperty.skeletonLift_toSkeleton`.
@@ -49,6 +53,27 @@ underlying objects are isomorphic. -/
 theorem toSkeleton_eq_toSkeleton_iff_nonempty_iso {X Y : C} (hX : P X) (hY : P Y) :
     toSkeleton (⟨X, hX⟩ : P.FullSubcategory) = toSkeleton ⟨Y, hY⟩ ↔ Nonempty (X ≅ Y) :=
   toSkeleton_eq_toSkeleton_iff.trans P.fullyFaithfulι.isoEquiv.nonempty_congr
+
+/-- A full subcategory has finitely many isomorphism classes exactly when a finite set of objects
+of the ambient category contains a copy of each of its objects. -/
+theorem finite_skeleton_iff_exists_finite_forall_exists_iso :
+    Finite (Skeleton P.FullSubcategory) ↔
+      ∃ S : Set C, S.Finite ∧ ∀ X, P X → ∃ Y ∈ S, Nonempty (X ≅ Y) := by
+  refine ⟨fun h ↦ ?_, fun ⟨S, hS, h⟩ ↦ ?_⟩
+  · -- One object from each isomorphism class.
+    refine ⟨Set.range fun x : Skeleton P.FullSubcategory ↦ ((fromSkeleton _).obj x).obj,
+      Set.finite_range _, fun X hX ↦ ?_⟩
+    let Y : P.FullSubcategory := ⟨X, hX⟩
+    exact ⟨_, ⟨toSkeleton Y, rfl⟩, ⟨(P.ι.mapIso (fromSkeletonToSkeletonIso Y)).symm⟩⟩
+  · -- Send each class to a member of `S` isomorphic to its objects: this map is injective.
+    have := hS.to_subtype
+    choose q hq he using fun x : Skeleton P.FullSubcategory ↦ h _ ((fromSkeleton _).obj x).property
+    refine Finite.of_injective (fun x ↦ (⟨q x, hq x⟩ : S)) fun x y hxy ↦ ?_
+    obtain ⟨ex⟩ := he x
+    obtain ⟨ey⟩ := he y
+    rw [← toSkeleton_fromSkeleton_obj x, ← toSkeleton_fromSkeleton_obj y]
+    exact (P.toSkeleton_eq_toSkeleton_iff_nonempty_iso _ _).mpr
+      ⟨ex ≪≫ eqToIso (congrArg Subtype.val hxy) ≪≫ ey.symm⟩
 
 /-- Descend a function on a full subcategory that is invariant under isomorphism of the underlying
 objects of the ambient category to the skeleton of the full subcategory. -/

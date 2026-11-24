@@ -123,7 +123,7 @@ variable {hJ : ∀ t x, ω.Tames (J t x)}
 /-- The negative plane structure is tamed by `ω`. -/
 theorem tames_negativePlaneAlmostComplex (h₀ : ω.Compatible J₀) (w : ℂ) (x : M) :
     ω.Tames (negativePlaneAlmostComplex h₀ J hJ w x) :=
-  (h₀.cayleyEquiv.symm _).2
+  (h₀.cayleyEquiv.symm _).property
 
 /-- The Cayley transform of the negative plane structure, relative to `J₀`, is
 `β(-s(w) - 1) • cayley (J (t(w)) x)`. This characterizes the structure, since the Cayley transform

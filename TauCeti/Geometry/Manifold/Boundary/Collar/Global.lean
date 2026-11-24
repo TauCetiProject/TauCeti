@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import TauCeti.Topology.Instances.Real.IcoScale
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 import Mathlib.Tactic.NormNum
 import Mathlib.Topology.LocalAtTarget
 
@@ -117,20 +118,20 @@ theorem reparam_isOpenEmbedding {e : Ico (0 : ℝ) 1 → Ico (0 : ℝ) 1}
 /-- Shrinking the depth of a collar by a factor in `(0,1]` preserves collar data. -/
 theorem scale (r : ℝ) (hr : r ∈ Ioc (0 : ℝ) 1) :
     IsCollar f (c ∘ Prod.map id fun t : Ico (0 : ℝ) 1 =>
-      ⟨r * t, mul_nonneg hr.1.le t.2.1,
-        (mul_le_of_le_one_left t.2.1 hr.2).trans_lt t.2.2⟩) := by
+      ⟨r * t, mul_nonneg hr.1.le t.property.1,
+        (mul_le_of_le_one_left t.property.1 hr.2).trans_lt t.property.2⟩) := by
   -- `t ↦ r * t` is the scaling `[0, 1) ≃ₜ [0, r)` followed by the inclusion of the open set
   -- `[0, r)` of depths below `r`.
   have hincl :
       IsOpenEmbedding (inclusion (Ico_subset_Ico_right hr.2 : Ico (0 : ℝ) r ⊆ Ico 0 1)) := by
     refine ⟨.inclusion _, ?_⟩
     rw [range_inclusion]
-    convert (isOpen_Iio (a := r)).preimage continuous_subtype_val using 1
+    convert (isOpen_Iio (a := r)).preimage continuous_subtypeVal using 1
     ext y
-    exact and_iff_right y.2.1
+    exact and_iff_right y.property.1
   refine h.reparam_isOpenEmbedding ?_ (Subtype.ext (mul_zero r))
   convert hincl.comp (icoScale hr.1).isOpenEmbedding with t
-  exact Subtype.ext (coe_icoScale hr.1 t).symm
+  exact (coe_icoScale hr.1 t).symm
 
 /-- Reparametrizing the boundary of a collar by a homeomorphism preserves it. -/
 theorem comp_homeomorph (e : P ≃ₜ N) :
@@ -141,6 +142,13 @@ theorem comp_homeomorph (e : P ≃ₜ N) :
 theorem isOpenEmbedding_comp {g : M → P} (hg : IsOpenEmbedding g) :
     IsCollar (g ∘ f) (g ∘ c) :=
   ⟨hg.comp h.isOpenEmbedding, fun x => congrArg g (h.apply_zero x)⟩
+
+/-- An open partial homeomorphism `e` carries a collar inside its source to a collar: `e ∘ c` is a
+collar of `e ∘ f`. Applied to `e.symm`, this moves a collar inside the target of a chart of a
+manifold into the manifold. -/
+theorem openPartialHomeomorph_comp (e : OpenPartialHomeomorph M P) (hc : range c ⊆ e.source) :
+    IsCollar (e ∘ f) (e ∘ c) :=
+  ⟨e.isOpenEmbedding_comp h.isOpenEmbedding hc, fun x ↦ congrArg e (h.apply_zero x)⟩
 
 /-- Restricting a collar along an open subset of its base preserves collar data. -/
 theorem restrict {U : Set N} (hU : IsOpen U) :

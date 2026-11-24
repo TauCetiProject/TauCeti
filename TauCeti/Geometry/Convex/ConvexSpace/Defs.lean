@@ -11,19 +11,28 @@ public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 /-!
 # Faces of the standard simplex
 
-Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f`.  An arbitrary
-map adds weights over its fibres.  An injective map embeds a standard simplex as a face of a larger
-one and keeps the weights of a point, so it is injective; a point supported on its range comes from
-the smaller simplex (`StdSimplex.comap`).  For `f = j.succAbove` its image is the
-facet on which the `j`-th weight vanishes; for the last vertex this facet is the smaller simplex
-with a zero last weight appended.  A function taking a constant value on every facet
+Complements to Mathlib's `Convexity.StdSimplex`, mostly about the maps `StdSimplex.map f`.  A point
+is determined by its weight function (`StdSimplex.toFun_comp_weights_injective`), and
+`StdSimplex.extendWeights p` inverts the weight function on its range, sending every other
+function to the fallback point `p`.  An arbitrary map adds weights over its fibres.  An injective
+map embeds a standard simplex as a face of a larger one and keeps the weights of a point, so it is
+injective; a point `y` can be pulled back along any map `f` restricting to a bijection from the
+full preimage of `y`'s support onto `y`'s support (`StdSimplex.comap`).  Over strict ordered
+semirings, `StdSimplex.map_comap` recovers `y` under that bijection hypothesis on `y`'s support,
+and `StdSimplex.comap_map` recovers `x` from `x.map f` when `f` restricts to a bijection from the
+full preimage of `(x.map f)`'s support onto `(x.map f)`'s support.  For `f = j.succAbove` its image
+is the facet on which the `j`-th weight vanishes; for the last vertex this facet is the smaller
+simplex with a zero last weight appended.  A function taking a constant value on every facet
 takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, meet in the
 codimension-two face opposite both: a common point of the two facets comes from that face through
 both composites of face maps, the two sides of the simplicial identity
 `SimplexCategory.δ_comp_δ`.
 
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights of a point `x` of
-`StdSimplex R (Fin n)` lie between `0` and `1`.
+`StdSimplex R (Fin n)` lie between `0` and `1`. Scalar pushforward `StdSimplex.mapRange` along an
+additive homomorphism sending `1` to `1` and nonnegative elements to nonnegative elements applies
+the homomorphism to each weight, and over strict ordered semirings on both scalar types it commutes
+with `StdSimplex.map` (`StdSimplex.mapRange_map`).
 -/
 
 public section
@@ -34,16 +43,50 @@ section AddCommMonoid
 
 variable {R : Type*} [LE R] [AddCommMonoid R] [One R]
 
+/-- A point of a standard simplex is determined by its weight function. -/
+theorem toFun_comp_weights_injective {X : Type*} :
+    Function.Injective fun p : StdSimplex R X ↦ (p.weights : X → R) := by
+  rintro ⟨w, _, _⟩ ⟨w', _, _⟩ h
+  obtain rfl : w = w' := DFunLike.coe_injective h
+  rfl
+
+variable {ι : Type*}
+
+/-- Read a weight vector as a simplex point when it lies in the simplex, using `p` elsewhere.
+This supplies probability parameters for mixtures supported on a simplex. -/
+noncomputable def extendWeights (p : StdSimplex R ι) (w : ι → R) : StdSimplex R ι :=
+  Function.extend (fun q : StdSimplex R ι ↦ (q.weights : ι → R)) id (fun _ ↦ p) w
+
+/-- The inverse weight map is extended with constant fallback value `p`. -/
+theorem extendWeights_def (p : StdSimplex R ι) :
+    p.extendWeights =
+      Function.extend (fun q : StdSimplex R ι ↦ (q.weights : ι → R)) id (fun _ ↦ p) := (rfl)
+
+/-- Extending the inverse of the weight embedding recovers every simplex point. -/
+@[simp]
+theorem extendWeights_weights (p q : StdSimplex R ι) :
+    p.extendWeights q.weights = q :=
+  toFun_comp_weights_injective.extend_apply _ _ q
+
+/-- Extending the inverse weight map preserves every vector in the simplex. -/
+@[simp]
+theorem weights_extendWeights_of_mem_range (p : StdSimplex R ι) {w : ι → R}
+    (hw : w ∈ Set.range (fun q : StdSimplex R ι ↦ (q.weights : ι → R))) :
+    ⇑(p.extendWeights w).weights = w := by
+  obtain ⟨q, rfl⟩ := hw
+  rw [extendWeights_weights]
+
+/-- A vector outside the simplex is sent to the chosen fallback point. -/
+@[simp]
+theorem extendWeights_of_notMem_range (p : StdSimplex R ι) {w : ι → R}
+    (hw : w ∉ Set.range (fun q : StdSimplex R ι ↦ (q.weights : ι → R))) :
+    p.extendWeights w = p :=
+  Function.extend_apply' _ _ _ hw
+
 /-- A point of the triangle `StdSimplex R (Fin 3)` is determined by its three weights. -/
 theorem ext_fin_three {x y : StdSimplex R (Fin 3)} (h0 : x.weights 0 = y.weights 0)
-    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y := by
-  cases x
-  cases y
-  congr 1
-  exact Finsupp.ext fun
-    | ⟨0, _⟩ => h0
-    | ⟨1, _⟩ => h1
-    | ⟨2, _⟩ => h2
+    (h1 : x.weights 1 = y.weights 1) (h2 : x.weights 2 = y.weights 2) : x = y :=
+  toFun_comp_weights_injective <| funext fun | 0 => h0 | 1 => h1 | 2 => h2
 
 /-- The three weights of a point of the standard `2`-simplex add up to `1`. -/
 @[simp]
@@ -58,7 +101,35 @@ theorem weights_one_add_weights_two_le_one [AddRightMono R] (x : StdSimplex R (F
   rw [← x.total_fin_three, add_assoc]
   exact le_add_of_nonneg_left (x.nonneg 0)
 
+variable {X Y : Type*}
+
+/-- A point `y` of `StdSimplex R Y` pulled back to `StdSimplex R X` along a map `f : X → Y` that
+restricts to a bijection from the full preimage of `y`'s support onto `y`'s support. When `R` is a
+strict ordered semiring, `StdSimplex.map_comap` recovers `y` under this bijection hypothesis on
+`y`'s support, and `StdSimplex.comap_map` recovers `x` from `x.map f` when `f` restricts to a
+bijection from the full preimage of `(x.map f)`'s support onto `(x.map f)`'s support. -/
+noncomputable def comap {f : X → Y} (y : StdSimplex R Y)
+    (hf : Set.BijOn f (f ⁻¹' ↑y.weights.support) ↑y.weights.support) : StdSimplex R X where
+  weights := Finsupp.comapDomain f y.weights hf.injOn
+  nonneg a := by simpa using y.nonneg (f a)
+  total := (Finsupp.sum_comapDomain f y.weights (fun _ r ↦ r) hf).trans y.total
+
+/-- The weights of a pulled back point are the pulled back weights. -/
+theorem weights_comap {f : X → Y} (y : StdSimplex R Y)
+    (hf : Set.BijOn f (f ⁻¹' ↑y.weights.support) ↑y.weights.support) :
+    (comap y hf).weights = Finsupp.comapDomain f y.weights hf.injOn :=
+  (rfl)
+
+/-- The weight of a pulled back point at `a` is the weight of the point at `f a`. -/
+@[simp]
+theorem weights_comap_apply {f : X → Y} (y : StdSimplex R Y)
+    (hf : Set.BijOn f (f ⁻¹' ↑y.weights.support) ↑y.weights.support) (a : X) :
+    (comap y hf).weights a = y.weights (f a) := by
+  rw [weights_comap, Finsupp.comapDomain_apply]
+
 end AddCommMonoid
+
+section Semiring
 
 variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y : Type*}
 
@@ -80,61 +151,51 @@ theorem map_injective {f : X → Y} (hf : f.Injective) : (map (R := R) f).Inject
   ext a
   rw [← weights_map_apply_of_injective hf, h, weights_map_apply_of_injective hf]
 
-/-- Sums of the weights of a mapped standard simplex over a set are sums of the weights over its
-preimage. -/
+/-- Sums of the weights of a mapped standard simplex over the vertices in its support satisfying a
+predicate equal the sum of the weights over the preimage in the original support. -/
+theorem sum_filter_support_weights_map (f : X → Y) (x : StdSimplex R X)
+    (P : Y → Prop) [DecidablePred P] :
+    ∑ y ∈ (x.map f).weights.support.filter P, (x.map f).weights y =
+      ∑ a ∈ x.weights.support.filter (fun a ↦ P (f a)), x.weights a := by
+  have h := Finsupp.sum_mapDomain_index (f := f) (s := x.weights)
+    (h := fun y r ↦ if P y then r else 0) (by simp) (fun _ _ _ ↦ by split_ifs <;> simp)
+  simpa only [← weights_map, Finsupp.sum, ← Finset.sum_filter] using h
+
+/-- Sums of the weights of a mapped standard simplex over a predicate on a finite vertex type
+equal the sum of the weights over its preimage. -/
 theorem sum_filter_weights_map [Fintype X] [Fintype Y] (f : X → Y) (x : StdSimplex R X)
     (P : Y → Prop) [DecidablePred P] :
     ∑ y ∈ Finset.univ.filter P, (x.map f).weights y =
       ∑ a ∈ Finset.univ.filter (fun a ↦ P (f a)), x.weights a := by
+  rw [Finset.sum_filter, Finset.sum_filter,
+    ← Finsupp.sum_fintype (x.map f).weights (fun y r ↦ if P y then r else 0) (by simp),
+    ← Finsupp.sum_fintype x.weights (fun a r ↦ if P (f a) then r else 0) (by simp)]
+  simpa only [Finsupp.sum, ← Finset.sum_filter] using sum_filter_support_weights_map f x P
+
+/-- Pulling back a point `y` along a map `f` that restricts to a bijection from the full preimage
+of `y`'s support onto `y`'s support, and then mapping forward along `f`, recovers `y`. -/
+@[simp]
+theorem map_comap {f : X → Y} (y : StdSimplex R Y)
+    (hf : Set.BijOn f (f ⁻¹' ↑y.weights.support) ↑y.weights.support) : (comap y hf).map f = y := by
+  rw [← weights_inj, weights_map, weights_comap, Finsupp.mapDomain]
+  exact (Finsupp.sum_comapDomain f y.weights Finsupp.single hf).trans (Finsupp.sum_single y.weights)
+
+/-- Mapping a point `x` forward along a map `f` that restricts to a bijection from the full
+preimage of `(x.map f)`'s support onto `(x.map f)`'s support, and pulling back again, recovers
+`x`. -/
+@[simp]
+theorem comap_map {f : X → Y} (x : StdSimplex R X)
+    (hf : Set.BijOn f (f ⁻¹' ↑(x.map f).weights.support) ↑(x.map f).weights.support) :
+    comap (x.map f) hf = x := by
   classical
-  rw [Finset.sum_filter, Finset.sum_filter, weights_map,
-    ← Finsupp.sum_fintype (Finsupp.mapDomain f x.weights) (fun y r ↦ if P y then r else 0)
-      (by simp),
-    Finsupp.sum_mapDomain_index (by simp) (fun _ _ _ ↦ by split_ifs <;> simp),
-    Finsupp.sum_fintype _ _ (by simp)]
-
-/-- A point of `StdSimplex R Y` whose weights are supported on the range of an injective map
-`f : X → Y`, pulled back to `StdSimplex R X`: a right inverse of `StdSimplex.map f` on its range
-(`StdSimplex.map_comap`), and a left inverse of it (`StdSimplex.comap_map`). -/
-noncomputable def comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
-    (h : ↑y.weights.support ⊆ Set.range f) : StdSimplex R X where
-  weights := Finsupp.comapDomain f y.weights hf.injOn
-  nonneg a := by simp
-  total := by
-    have := y.total
-    rwa [← Finsupp.mapDomain_comapDomain f hf y.weights h,
-      Finsupp.sum_mapDomain_index (by simp) (by simp)] at this
-
-omit [IsStrictOrderedRing R] in
-/-- The weights of a pulled back point are the pulled back weights. -/
-theorem weights_comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
-    (h : ↑y.weights.support ⊆ Set.range f) :
-    (comap hf y h).weights = Finsupp.comapDomain f y.weights hf.injOn :=
-  (rfl)
-
-omit [IsStrictOrderedRing R] in
-/-- The weight of a pulled back point at `a` is the weight of the point at `f a`. -/
-@[simp]
-theorem weights_comap_apply {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
-    (h : ↑y.weights.support ⊆ Set.range f) (a : X) :
-    (comap hf y h).weights a = y.weights (f a) := by
-  rw [weights_comap, Finsupp.comapDomain_apply]
-
-/-- Pulling back a point along an injective map whose range contains its support, and then mapping
-forward again, recovers the point. -/
-@[simp]
-theorem map_comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
-    (h : ↑y.weights.support ⊆ Set.range f) : (comap hf y h).map f = y := by
-  rw [← weights_inj, weights_map, weights_comap]
-  exact Finsupp.mapDomain_comapDomain f hf y.weights h
-
-/-- Mapping a point forward along an injective map and pulling it back again recovers the
-point. -/
-@[simp]
-theorem comap_map {f : X → Y} (hf : f.Injective) (x : StdSimplex R X)
-    (h : ↑(x.map f).weights.support ⊆ Set.range f) : comap hf (x.map f) h = x := by
+  have hS : (x.weights.support : Set X) ⊆ f ⁻¹' ↑(x.map f).weights.support := by
+    rw [weights_map, Finsupp.support_mapDomain_of_nonneg x.nonneg f, Finset.coe_image]
+    exact Set.subset_preimage_image f _
   ext a
-  rw [weights_comap_apply, weights_map_apply_of_injective hf]
+  rw [weights_comap_apply]
+  by_cases ha : f a ∈ (x.map f).weights.support
+  · rw [weights_map, Finsupp.mapDomain_apply' _ _ hS hf.injOn ha]
+  · rw [Finsupp.notMem_support_iff.mp ha, Finsupp.notMem_support_iff.mp fun h ↦ ha (hS h)]
 
 /-- A point of a standard simplex lies on the facet opposite `j` exactly when its `j`-th weight
 vanishes. -/
@@ -153,6 +214,13 @@ theorem weights_map_succAbove_of_eq {n : ℕ} {j k : Fin (n + 1)} {i : Fin n}
     (h : j.succAbove i = k) (x : StdSimplex R (Fin n)) :
     (x.map j.succAbove).weights k = x.weights i :=
   h ▸ weights_map_apply_of_injective Fin.succAbove_right_injective x i
+
+/-- On the face of the standard `2`-simplex opposite the vertex `0`, the weights `w₁` and `w₂`
+sum to `1`. -/
+theorem weights_one_add_weights_two_map_succAbove_zero (z : StdSimplex R (Fin 2)) :
+    (z.map (Fin.succAbove 0)).weights 1 + (z.map (Fin.succAbove 0)).weights 2 = 1 := by
+  rw [weights_map_succAbove_of_eq (j := 0) (i := 0) (k := 1) rfl,
+    weights_map_succAbove_of_eq (j := 0) (i := 1) (k := 2) rfl, total_fin_two]
 
 omit [IsStrictOrderedRing R] in
 /-- The facet of the standard simplex on `Fin (n + 1)` opposite its last vertex, the points with
@@ -211,6 +279,11 @@ theorem exists_map_succAbove_of_map_succAbove_eq {n : ℕ} {j k : Fin (n + 2)} (
     rwa [Fin.succAbove_pred_of_lt _ _ hjk, Fin.predAbove_of_le_castSucc _ _ hle] at this
   rw [← h, ← map_comp, ← hcomp, map_comp]
 
+end Semiring
+
+section PrefixSum
+
+variable {R : Type*} [Preorder R] [AddCommMonoid R] [IsOrderedAddMonoid R] [One R]
 
 /-- The prefix sums of the weights of a point of a standard simplex on `Fin n` are
 nonnegative. -/
@@ -224,6 +297,90 @@ theorem prefixSum_weights_le_one {n : ℕ} (x : StdSimplex R (Fin n)) (N : ℕ) 
     TauCeti.prefixSum N x.weights ≤ 1 := by
   have : TauCeti.prefixSum N x.weights ≤ TauCeti.prefixSum (max N n) x.weights :=
     TauCeti.monotone_prefixSum x.nonneg (le_max_left N n)
-  rwa [TauCeti.prefixSum_of_le (le_max_right _ _), total_of_fintype] at this
+  rw [TauCeti.prefixSum_of_le (le_max_right _ _)] at this
+  exact this.trans_eq (by simpa [Finsupp.sum_fintype] using x.total)
+
+end PrefixSum
+
+section MapRange
+
+variable {R S T X Y : Type*} [LE R] [AddCommMonoid R] [One R] [LE S] [AddCommMonoid S] [One S]
+  [LE T] [AddCommMonoid T] [One T]
+
+/-- Push a point of a standard simplex forward along an additive homomorphism on its weights which
+sends `1` to `1` and nonnegative elements to nonnegative elements, such as casting rational
+barycentric coordinates into an ordered field. -/
+noncomputable def mapRange (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+    (w : StdSimplex R X) : StdSimplex S X where
+  weights := w.weights.mapRange f (map_zero f)
+  nonneg x := by simpa using hf _ (w.nonneg x)
+  total := by
+    rw [Finsupp.sum_mapRange_index (by simp), ← map_finsuppSum f w.weights fun _ r ↦ r,
+      w.total, hf₁]
+
+/-- Scalar pushforward applies `Finsupp.mapRange` to the weight vector. -/
+theorem weights_mapRange (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+    (w : StdSimplex R X) : (w.mapRange f hf₁ hf).weights = w.weights.mapRange f (map_zero f) :=
+  (rfl)
+
+/-- Scalar pushforward applies the homomorphism to each weight. -/
+@[simp]
+theorem weights_mapRange_apply (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+    (w : StdSimplex R X) (x : X) : (w.mapRange f hf₁ hf).weights x = f (w.weights x) := by
+  rw [weights_mapRange, Finsupp.mapRange_apply]
+
+/-- Scalar pushforward along a homomorphism which is injective on nonnegative elements is
+injective. -/
+theorem mapRange_injective {f : R →+ S} (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+    (hfinj : Set.InjOn f {r | 0 ≤ r}) :
+    Function.Injective (mapRange (X := X) f hf₁ hf) := fun w₁ w₂ h ↦
+  toFun_comp_weights_injective <| funext fun x ↦
+    hfinj (w₁.nonneg x) (w₂.nonneg x) <| by simpa using congr(($h).weights x)
+
+/-- Scalar pushforward along a homomorphism which sends no nonzero nonnegative element to `0`
+preserves the support of weights. -/
+@[simp]
+theorem support_weights_mapRange {f : R →+ S} (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r)
+    (hf₀ : ∀ r, 0 ≤ r → f r = 0 → r = 0) (w : StdSimplex R X) :
+    (w.mapRange f hf₁ hf).weights.support = w.weights.support := by
+  ext x
+  simp only [Finsupp.mem_support_iff, weights_mapRange_apply]
+  exact ⟨fun h h₀ ↦ h (h₀ ▸ map_zero f), fun h h₀ ↦ h (hf₀ _ (w.nonneg x) h₀)⟩
+
+/-- Scalar pushforward along the identity homomorphism is the identity. -/
+@[simp]
+theorem mapRange_id (w : StdSimplex R X) : w.mapRange (AddMonoidHom.id R) rfl (fun _ ↦ id) = w :=
+  toFun_comp_weights_injective <| funext fun _ ↦ by simp
+
+/-- Scalar pushforward preserves composition of homomorphisms. -/
+theorem mapRange_comp (g : S →+ T) (hg₁ : g 1 = 1) (hg : ∀ s, 0 ≤ s → 0 ≤ g s) (f : R →+ S)
+    (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (w : StdSimplex R X) :
+    (w.mapRange f hf₁ hf).mapRange g hg₁ hg =
+      w.mapRange (g.comp f) ((congrArg g hf₁).trans hg₁) (fun r hr ↦ hg _ (hf r hr)) :=
+  toFun_comp_weights_injective <| funext fun _ ↦ by simp
+
+end MapRange
+
+section MapRangeOrderedSemiring
+
+variable {R S X Y : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] [PartialOrder S]
+  [Semiring S] [IsStrictOrderedRing S]
+
+/-- Scalar pushforward sends each vertex point mass to the corresponding vertex point mass. -/
+@[simp]
+theorem mapRange_single (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (x : X) :
+    (single x).mapRange f hf₁ hf = single x := by
+  ext y
+  by_cases h : x = y <;> simp [h, hf₁]
+
+/-- Scalar pushforward commutes with pushing vertices forward along a map. -/
+theorem mapRange_map (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0 ≤ f r) (g : X → Y)
+    (w : StdSimplex R X) :
+    (w.map g).mapRange f hf₁ hf = (w.mapRange f hf₁ hf).map g := by
+  apply StdSimplex.ext
+  rw [weights_mapRange, weights_map, weights_map, weights_mapRange]
+  exact (Finsupp.mapDomain_mapRange g w.weights f (map_zero f) (map_add f)).symm
+
+end MapRangeOrderedSemiring
 
 end Convexity.StdSimplex

@@ -222,7 +222,7 @@ def evaluationFreeIso (W : Cᵒᵖ) :
 
 /-- The `i`-th coordinate of a section of `free I` under `evaluationFreeIso` is its image under
 the `i`-th projection `free I ⟶ R` of the biproduct decomposition of `free I`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem evaluationFreeIso_hom_comp_proj (W : Cᵒᵖ) (i : I) :
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
     ((evaluationFreeIso (R := R) I W).hom ≫ ModuleCat.ofHom (LinearMap.proj i) =

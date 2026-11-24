@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.ChangeOfVariables
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.AlmostDiagonal
-import TauCeti.Analysis.FunctionalSpaces.BesovSpace.ChangeOfVariables
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
@@ -59,6 +59,8 @@ So multiplication by `g` is almost diagonal, and for `N > |s|` it is bounded on 
   functions of temperate growth whose derivatives of order at most `⌊|s|⌋₊ + 1` are bounded.
 * `TauCeti.BesovSpace.smulLeftCLM`: the multiplication as a bounded operator on `B^s_{p,q}`, with
   operator norm at most `C G` (`TauCeti.BesovSpace.exists_norm_smulLeftCLM_le`).
+* `TauCeti.BesovSpace.compCLM_smulLeftCLM`: pulling back `g u` along a diffeomorphism `Φ` gives
+  `(g ∘ Φ) Φ^* u`.
 
 ## References
 
@@ -86,21 +88,21 @@ open TemperedDistribution
 
 /-- **Off-diagonal decay of a multiplication between Littlewood–Paley blocks.** Let `M` be a
 natural number. There is `K`, depending only on `φ` and `M`, with the following property. Let `g`
-be a function of temperate growth whose derivatives of order at most `M` are bounded by `G`, let
-`1 ≤ p ≤ ∞`, and let the block `Δₖ u` of a tempered distribution be an `Lᵖ` function `f`. Then
-for every `j` the block `Δⱼ (g f)` is an `Lᵖ` function of norm at most
-`K G 2^{-M |j - k|} ‖f‖_p`. This is the case `Φ = id` of
+be a function whose derivatives of order at most `M` are bounded by `G`, let `1 ≤ p ≤ ∞`, and let
+the block `Δₖ u` of a tempered distribution be an `Lᵖ` function `f`. Then for every `j` the block
+`Δⱼ (g f)` is an `Lᵖ` function of norm at most `K G 2^{-M |j - k|} ‖f‖_p`. If `g` does not have
+temperate growth, `g f` is the junk value `0`. This is the case `Φ = id` of
 `TauCeti.exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le`. -/
 theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le
     (φ : ContDiffBump (0 : E)) (M : ℕ) :
-    ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {g : E → ℂ} {G : ℝ}, g.HasTemperateGrowth →
+    ∃ K : ℝ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {g : E → ℂ} {G : ℝ},
       (∀ n ≤ M, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ G) → ∀ (j k : ℕ) (u : 𝓢'(E, F))
       (f : Lp F p (volume : Measure E)), littlewoodPaleyBlock F φ k u = f →
       ∃ v : Lp F p (volume : Measure E),
         littlewoodPaleyBlock F φ j (smulLeftCLM F g (f : 𝓢'(E, F))) = v ∧
         ‖v‖ ≤ K * G * (2 : ℝ) ^ (-(M * |(j : ℝ) - k|)) * ‖f‖ := by
   obtain ⟨K, hK, h⟩ := exists_littlewoodPaleyBlock_smulLeftCLM_compCLM_eq_and_norm_le (F := F) φ 1 M
-  refine ⟨K, hK, fun {p} _ {g G} hg hgG j k u f hf ↦ ?_⟩
+  refine ⟨K, hK, fun {p} _ {g G} hgG j k u f hf ↦ ?_⟩
   have hid : ((Equiv.refl E : E ≃ E) : E → E).HasTemperateGrowth := by
     simpa using (ContinuousLinearMap.id ℝ E).hasTemperateGrowth
   have hid' : ((Equiv.refl E).symm : E → E).HasTemperateGrowth := by
@@ -110,7 +112,7 @@ theorem exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le
   have hidL (n : ℕ) (hn : 1 ≤ n) (x : E) : ‖iteratedFDeriv ℝ n (Equiv.refl E) x‖ ≤ 1 := by
     simpa using norm_iteratedFDeriv_id_le_one (𝕜 := ℝ) hn x
   simpa only [compCLM_refl, ContinuousLinearMap.id_apply] using h hid hid'
-    (fun n h₁ _ x ↦ hidL n h₁ x) (fun n h₁ _ x ↦ by simpa using hidL n h₁ x) hg hgG j k u f hf
+    (fun n h₁ _ x ↦ hidL n h₁ x) (fun n h₁ _ x ↦ by simpa using hidL n h₁ x) hgG j k u f hf
 
 /-! ### Multiplication on Besov spaces -/
 
@@ -129,11 +131,11 @@ theorem BesovSpace.exists_toDistr_eq_smulLeftCLM_and_norm_le (φ : ContDiffBump 
   -- `2^{-N |j - k|}`.
   obtain ⟨K, hK, hblock⟩ := exists_littlewoodPaleyBlock_smulLeftCLM_eq_and_norm_le (F := F) φ N
   refine ⟨K * ∑' d : ℤ, ((2 : ℝ) ^ (|s| - N)) ^ d.natAbs, by positivity,
-    fun {g G} hg hgG {p q} _ _ u ↦ ?_⟩
+    fun {g G} _ hgG {p q} _ _ u ↦ ?_⟩
   obtain ⟨hG, -⟩ := nonneg_and_norm_le_of_norm_iteratedFDeriv_le hgG
   obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_le
     (smulLeftCLM F g) hN (mul_nonneg hK hG) u fun j k ↦
-      hblock hg hgG j k u.toDistr (u.block k) (u.coe_block k).symm
+      hblock hgG j k u.toDistr (u.block k) (u.coe_block k).symm
   exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 
 end TauCeti
@@ -208,5 +210,19 @@ theorem exists_norm_smulLeftCLM_le (φ : ContDiffBump (0 : E)) {N : ℕ} (hN : |
   obtain ⟨v, hv, hvn⟩ := hmul hg hgG (p := p) (q := q) u
   have : smulLeftCLM F φ s p q g hg hbd u = v := ext (by simp [hv])
   rwa [this]
+
+/-- Pulling back `g u` along `Φ` on `B^s_{p,q}` gives `(g ∘ Φ) Φ^* u`. -/
+theorem compCLM_smulLeftCLM {Φ : E ≃ E}
+    (hΦ : (Φ : E → E).HasTemperateGrowth) (hΨ : (Φ.symm : E → E).HasTemperateGrowth)
+    (hΦb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
+    (hΨb : ∀ n, 1 ≤ n → n ≤ ⌊|s|⌋₊ + 2 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C)
+    {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C)
+    (hbdΦ : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (g ∘ Φ) x‖ ≤ C)
+    (u : BesovSpace F φ s p q) :
+    BesovSpace.compCLM F φ s p q Φ hΦ hΨ hΦb hΨb (smulLeftCLM F φ s p q g hg hbd u) =
+      smulLeftCLM F φ s p q (g ∘ Φ) (hg.comp hΦ) hbdΦ
+        (BesovSpace.compCLM F φ s p q Φ hΦ hΨ hΦb hΨb u) :=
+  ext (by simp [TemperedDistribution.compCLM_smulLeftCLM hΦ hΨ hg])
 
 end TauCeti.BesovSpace

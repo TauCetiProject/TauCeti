@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
+import TauCeti.AlgebraicTopology.Cohomology.Cup.SquareModTwo
 
 /-!
 # The singular cohomology of real projective space
@@ -24,6 +26,14 @@ so it is projective. The universal coefficient theorem with projective homology
   for odd `N`, in degree `N`. So over such a ring `RPᴺ` has the cohomology of a point for even `N`,
   and that of the sphere `Sᴺ` for odd `N`.
 
+In every case the cohomology of `RPᴺ` vanishes above degree `N`.
+
+Over `𝔽₂` the cup square of a degree-one class is nonzero when `N ≥ 2`: it is the Bockstein of the
+class for `0 ⟶ ℤ/2 ⟶ ℤ/4 ⟶ ℤ/2 ⟶ 0`, and `H₁(RPᴺ; ℤ) = ℤ/2` is killed by `2`
+(`TopCat.singularCup_self_eq_zero_iff_of_two_smul_eq_zero`). So the generator `α` of
+`H¹(RPᴺ; 𝔽₂)` has `α ⌣ α ≠ 0`, the first step of the computation of the cohomology ring
+`𝔽₂[α] / (α ^ (N + 1))`.
+
 These are the inputs to the cup length of `RPᴺ`, and so to the cup-length lower bound for its
 Lusternik–Schnirelmann category.
 
@@ -33,20 +43,26 @@ Lusternik–Schnirelmann category.
   cohomology of `RPᴺ` when `2 = 0`.
 * `TauCeti.RealProjectiveSpace.finrank_singularCohomology_of_isUnit_two`: the ranks of the
   cohomology of `RPᴺ` when `2` is a unit.
+* `TauCeti.RealProjectiveSpace.subsingleton_singularCohomology_of_lt`: when `2 = 0` or `2` is a
+  unit, the cohomology of `RPᴺ` vanishes above degree `N`.
 * `TauCeti.RealProjectiveSpace.subsingleton_singularCohomology_of_isUnit_two`: when `2` is a unit,
   the cohomology of `RPᴺ` vanishes in every positive degree other than an odd `N`.
+* `TauCeti.RealProjectiveSpace.subsingleton_singularCohomology_of_lt`: the cohomology of `RPᴺ`
+  vanishes above degree `N`.
+* `TauCeti.RealProjectiveSpace.singularCup_self_eq_zero_iff`: for `N ≥ 2`, the cup square on
+  `H¹(RPᴺ; 𝔽₂)` vanishes only at `0`.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 2.2, Example 2.42, and Section 3.1, Theorem 3.2.
+  Section 2.2, Example 2.42, Section 3.1, Theorem 3.2, and Section 3.2, Theorem 3.12.
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Limits Module
+open CategoryTheory Limits Module MonoidalCategory
 
 namespace TauCeti.RealProjectiveSpace
 
@@ -143,6 +159,13 @@ theorem finrank_singularCohomology_of_two_eq_zero [Nontrivial k] (h2 : (2 : k) =
       (isZero_singularHomology_of_lt (N := N) k (Nat.lt_of_not_le hd))
     exact finrank_zero_of_subsingleton
 
+/-- If `2 = 0` or `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes above degree `N`. -/
+theorem subsingleton_singularCohomology_of_lt (h2 : (2 : k) = 0 ∨ IsUnit (2 : k))
+    (M : ModuleCat.{0} k) {d : ℕ} (hd : N < d) :
+    Subsingleton ((TopCat.of (RealProjectiveSpace N)).singularCohomology (ModuleCat.of k k) k M
+      d) :=
+  subsingleton_singularCohomology_of_isZero h2 M (isZero_singularHomology_of_lt k hd)
+
 /-- If `2` is a unit in `k`, then `Hᵈ(RPᴺ; k, M)` vanishes in every positive degree `d`, except in
 degree `N` when `N` is odd. -/
 theorem subsingleton_singularCohomology_of_isUnit_two (h2 : IsUnit (2 : k)) (M : ModuleCat.{0} k)
@@ -165,5 +188,16 @@ theorem finrank_singularCohomology_of_isUnit_two [Nontrivial k] (h2 : IsUnit (2 
   · have := subsingleton_singularCohomology_of_isUnit_two (N := N) h2 (ModuleCat.of k k)
       (d := d) (fun h ↦ hd (.inl h)) fun h ↦ Nat.not_odd_iff_even.1 fun hN ↦ hd (.inr ⟨h, hN⟩)
     exact finrank_zero_of_subsingleton
+
+/-- **The mod-two cup square on `H¹(RPᴺ)`.** For `N ≥ 2`, a class `w ∈ H¹(RPᴺ; 𝔽₂)` has
+`w ⌣ w = 0` only when `w = 0`. In particular the generator of `H¹(RPᴺ; 𝔽₂)` has nonzero square. -/
+theorem singularCup_self_eq_zero_iff (hN : 2 ≤ N)
+    {w : (TopCat.of (RealProjectiveSpace N)).singularCohomology (𝟙_ (ModuleCat.{0} (ZMod 2)))
+      (ZMod 2) (𝟙_ (ModuleCat.{0} (ZMod 2))) 1} :
+    (TopCat.of (RealProjectiveSpace N)).singularCup (ZMod 2) (λ_ _).inv (λ_ _).hom 1 1 2 rfl w w =
+      0 ↔ w = 0 :=
+  TopCat.singularCup_self_eq_zero_iff_of_two_smul_eq_zero _ fun c ↦
+    (singularHomologyIntLinearEquivOfOdd odd_one hN).injective <| by
+      rw [map_zsmul, map_zero, two_zsmul, CharTwo.add_self_eq_zero]
 
 end TauCeti.RealProjectiveSpace

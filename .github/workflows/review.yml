@@ -77,13 +77,13 @@ jobs:
     # (tauceti-review in TauCetiReview, or tauceti from TauCetiWorker). Merging is independent:
     # The queue service admits green PRs independently of this gate. Re-enable by setting the variable.
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
-    # Pinned to a TauCetiReview commit; bump deliberately (an unpinned @main lets an upstream change
-    # break every contributor's review at once, and this workflow inherits TauCeti's secrets).
-    # Re-pin together with .github/actions/checkout-merge-policy. The called workflow checks out
-    # its own commit, supplied explicitly as review_ref.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@ddb128180df46b7cc8e0a53188871578f2510498
+    # Pinned to a TauCetiReview commit: the called workflow refuses anything but a full commit SHA
+    # as review_ref, and this workflow inherits TauCeti's secrets. The merge policy itself is read
+    # from TauCetiReview main (.github/actions/checkout-merge-policy); bump this pin deliberately,
+    # passing the same SHA as review_ref.
+    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@9f6561e2c2b86813b779de548cc49b6434fd8e58
     with:
-      review_ref: ddb128180df46b7cc8e0a53188871578f2510498
+      review_ref: 9f6561e2c2b86813b779de548cc49b6434fd8e58
       tools_repository: TauCetiProject/TauCetiTools
       tools_ref: main
       pr: ${{ needs.resolve.outputs.pr }}

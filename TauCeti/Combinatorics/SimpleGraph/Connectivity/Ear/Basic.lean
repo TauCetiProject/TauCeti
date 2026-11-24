@@ -40,6 +40,8 @@ and Whitney's open ear characterization are proved in
 * `SimpleGraph.EarDecomposition G H`: a finite ear decomposition in `G` with final subgraph `H`.
 * `SimpleGraph.EarDecomposition.IsOpen`: predicate that a decomposition starts from a cycle and
   adds only open ears.
+* `SimpleGraph.EarDecomposition.IsVertexStart`: predicate that a decomposition starts from a single
+  vertex.
 
 ## Main results
 
@@ -62,11 +64,11 @@ and Whitney's open ear characterization are proved in
 
 All projection and predicate bodies (`Ear.kind`, `Ear.toWalk`, `Ear.toSubgraph`, `Ear.adjoin`,
 `EarStart.IsCycle`, `EarDecomposition.initial`, `EarDecomposition.kindAt`,
-`EarDecomposition.walkAt`, `EarDecomposition.IsOpen`) remain unexposed, with characteristic
-`@[simp]` lemmas proved via `:= (rfl)` so downstream consumers do not rely on definitional
-unfolding. Only the three length-transforming combinators `EarDecomposition.copy`,
-`EarDecomposition.snoc`, and `EarDecomposition.prefix` carry `@[expose]` so dependent `Fin` indices
-over `.length` compute in types.
+`EarDecomposition.walkAt`, `EarDecomposition.IsOpen`, `EarDecomposition.IsVertexStart`) remain
+unexposed, with characteristic `@[simp]` lemmas proved via `:= (rfl)` so downstream consumers do
+not rely on definitional unfolding. Only the three length-transforming combinators
+`EarDecomposition.copy`, `EarDecomposition.snoc`, and `EarDecomposition.prefix` carry `@[expose]`
+so dependent `Fin` indices over `.length` compute in types.
 
 ## References
 
@@ -214,6 +216,11 @@ def copy {H' : G.Subgraph} (e : G.Ear H) (h : H = H') : G.Ear H' :=
 theorem copy_rfl (e : G.Ear H) : e.copy rfl = e := by cases e <;> rfl
 
 @[simp]
+theorem copy_copy {H' H'' : G.Subgraph} (e : G.Ear H) (h₁ : H = H') (h₂ : H' = H'') :
+    (e.copy h₁).copy h₂ = e.copy (h₁.trans h₂) := by
+  subst h₁; subst h₂; cases e <;> rfl
+
+@[simp]
 theorem kind_copy {H' : G.Subgraph} (e : G.Ear H) (h : H = H') : (e.copy h).kind = e.kind := by
   cases e <;> rfl
 
@@ -326,12 +333,12 @@ theorem isEdgeConnected_two_adjoin (hH : H.coe.IsEdgeConnected 2) (e : G.Ear H) 
     intro a b ha hb
     induction f using Sym2.ind with
     | _ x y =>
-      by_cases hxy : H.Adj x.1 y.1
-      · let fH : Sym2 H.verts := s(⟨x.1, H.edge_vert hxy⟩, ⟨y.1, H.edge_vert hxy.symm⟩)
+      by_cases hxy : H.Adj x.val y.val
+      · let fH : Sym2 H.verts := s(⟨x.val, H.edge_vert hxy⟩, ⟨y.val, H.edge_vert hxy.symm⟩)
         have hr : (H.coe.deleteEdges {fH}).Reachable ⟨a, ha⟩ ⟨b, hb⟩ :=
           (isEdgeConnected_two_iff_forall_preconnected.mp hH) fH ⟨a, ha⟩ ⟨b, hb⟩
         let φ : H.coe.deleteEdges {fH} →g e.adjoin.coe.deleteEdges {s(x, y)} :=
-          { toFun z := ⟨z.1, hadj_le.1 z.2⟩
+          { toFun z := ⟨z.val, hadj_le.1 z.property⟩
             map_rel' {z₁ z₂} h := by
               rw [deleteEdges_adj, Set.mem_singleton_iff] at h ⊢
               refine ⟨(e.adjoin.coe_adj _ _).mpr (hadj_le.2 ((H.coe_adj _ _).mp h.1)),
@@ -411,6 +418,16 @@ theorem isCycle_vertex (v : V) : (EarStart.vertex (G := G) v).IsCycle ↔ False 
 theorem isCycle_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
     (EarStart.cycle c hc).IsCycle ↔ True := (Iff.rfl)
 
+/-- Whether an initial witness `s : G.EarStart H` is a cycle is decidable by case analysis. -/
+instance instDecidableIsCycle : (s : G.EarStart H) → Decidable s.IsCycle
+  | .vertex v => isFalse (isCycle_vertex v).mp
+  | .cycle c hc => isTrue ((isCycle_cycle c hc).mpr trivial)
+
+/-- Equal cycle walks yield heterogeneously equal cycle initial witnesses. -/
+theorem heq_cycle_of_eq {u : V} {c₁ c₂ : G.Walk u u} (hc₁ : c₁.IsCycle) (hc₂ : c₂.IsCycle)
+    (h : c₁ = c₂) : HEq (EarStart.cycle c₁ hc₁) (EarStart.cycle c₂ hc₂) := by
+  subst h; rfl
+
 /-- Transporting an initial stage along an equality of its subgraphs preserves whether it is a
 cycle. -/
 @[simp]
@@ -418,6 +435,20 @@ theorem isCycle_eqRec {K L : G.Subgraph} (h : K = L) (s : G.EarStart K) :
     (h ▸ s).IsCycle ↔ s.IsCycle := by
   subst h
   rfl
+
+/-- A non-cycle initial subgraph is a singleton subgraph. -/
+theorem exists_singletonSubgraph_of_not_isCycle :
+    ∀ {s : G.EarStart H}, ¬s.IsCycle → ∃ v : V, H = G.singletonSubgraph v
+  | .vertex v, _ => ⟨v, rfl⟩
+  | .cycle c hc, h => False.elim (h ((isCycle_cycle c hc).mpr trivial))
+
+/-- A cycle initial subgraph has at least one edge. -/
+theorem edgeSet_nonempty_of_isCycle : ∀ {s : G.EarStart H}, s.IsCycle → H.edgeSet.Nonempty
+  | .vertex v, h => False.elim ((isCycle_vertex v).mp h)
+  | .cycle c hc, _ => by
+      obtain ⟨e, he⟩ := List.exists_mem_of_ne_nil c.edges
+        (by intro h; simpa [← c.length_edges, h] using Walk.not_nil_iff_lt_length.mp hc.not_nil)
+      exact ⟨e, (Walk.mem_edges_toSubgraph c).mpr he⟩
 
 /-- Every valid initial subgraph is connected. -/
 theorem connected : ∀ _ : G.EarStart H, H.Connected
@@ -520,6 +551,27 @@ theorem IsOpen.kindAt_eq_open {d : G.EarDecomposition H} (hd : d.IsOpen) (i : Fi
 theorem IsOpen.earAt_kind_eq_open {d : G.EarDecomposition H} (hd : d.IsOpen) (i : Fin d.length) :
     (d.earAt i).kind = .«open» := hd.2 i
 
+/-- An ear decomposition starts from a single vertex when its initial subgraph is a singleton
+subgraph `G.singletonSubgraph v`. -/
+def IsVertexStart (d : G.EarDecomposition H) : Prop :=
+  ∃ v : V, d.initial = G.singletonSubgraph v
+
+theorem isVertexStart_iff (d : G.EarDecomposition H) :
+    d.IsVertexStart ↔ ∃ v : V, d.initial = G.singletonSubgraph v := (Iff.rfl)
+
+/-- An ear decomposition starts from a single vertex if and only if its initial witness is not a
+cycle. -/
+theorem isVertexStart_iff_not_start_isCycle (d : G.EarDecomposition H) :
+    d.IsVertexStart ↔ ¬d.start.IsCycle := by
+  constructor
+  · rintro ⟨v, hv⟩ hc
+    obtain ⟨e, he⟩ := d.start.edgeSet_nonempty_of_isCycle hc
+    rw [d.subgraphAfter_zero, hv] at he
+    simp at he
+  · intro hnc
+    obtain ⟨v, hv⟩ := d.start.exists_singletonSubgraph_of_not_isCycle hnc
+    exact ⟨v, d.subgraphAfter_zero.symm.trans hv⟩
+
 /-- Reindex the target subgraph of an ear decomposition along `H = H'` without changing any data
 fields. -/
 @[expose]
@@ -575,6 +627,10 @@ theorem kindAt_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H')
 theorem isOpen_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
     (d.copy h).IsOpen ↔ d.IsOpen := (Iff.rfl)
 
+@[simp]
+theorem isVertexStart_copy {H' : G.Subgraph} (d : G.EarDecomposition H) (h : H = H') :
+    (d.copy h).IsVertexStart ↔ d.IsVertexStart := by simp [isVertexStart_iff]
+
 /-! ### Constructors: `vertex`, `cycle`, `snoc`, and `prefix` -/
 
 /-- The zero-ear decomposition starting at a single vertex `v`. -/
@@ -601,6 +657,8 @@ theorem start_vertex (v : V) :
         (motive := fun K _ ↦ G.EarStart K) (.vertex v) := (rfl)
 
 @[simp] theorem not_isOpen_vertex (v : V) : ¬(vertex G v).IsOpen := fun h ↦ h.1
+
+@[simp] theorem isVertexStart_vertex (v : V) : (vertex G v).IsVertexStart := ⟨v, initial_vertex v⟩
 
 /-- The zero-ear decomposition starting at a cycle `c`. -/
 def cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) : G.EarDecomposition c.toSubgraph where
@@ -632,6 +690,12 @@ theorem start_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
 @[simp]
 theorem isOpen_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) : (cycle c hc).IsOpen :=
   ⟨trivial, fun i ↦ i.elim0⟩
+
+@[simp]
+theorem not_isVertexStart_cycle {u : V} (c : G.Walk u u) (hc : c.IsCycle) :
+    ¬(cycle c hc).IsVertexStart := by
+  rw [isVertexStart_iff_not_start_isCycle]
+  exact not_not_intro (isOpen_cycle c hc).start_isCycle
 
 /-- Append one ear `e : G.Ear H` to the end of an ear decomposition `d : G.EarDecomposition H`. -/
 @[expose]
@@ -729,6 +793,10 @@ theorem isOpen_snoc (d : G.EarDecomposition H) (e : G.Ear H) :
   · exact Fin.lastCases (by simpa only [kindAt_snoc_last] using he)
       (fun i ↦ by simpa only [kindAt_snoc_castSucc] using hk i)
 
+@[simp]
+theorem isVertexStart_snoc (d : G.EarDecomposition H) (e : G.Ear H) :
+    (d.snoc e).IsVertexStart ↔ d.IsVertexStart := by simp [isVertexStart_iff]
+
 /-- The initial segment of `d` consisting of its first `k` ears, forming an ear decomposition of
 `d.subgraphAfter k`. -/
 @[expose]
@@ -773,6 +841,10 @@ theorem kindAt_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) (j : F
 theorem IsOpen.prefix {d : G.EarDecomposition H} (hd : d.IsOpen) (k : Fin (d.length + 1)) :
     (d.prefix k).IsOpen :=
   ⟨hd.1, fun j ↦ hd.2 (j.castLE k.is_le)⟩
+
+@[simp]
+theorem isVertexStart_prefix (d : G.EarDecomposition H) (k : Fin (d.length + 1)) :
+    (d.prefix k).IsVertexStart ↔ d.IsVertexStart := by simp [isVertexStart_iff]
 
 /-! ### Prefix monotonicity and induction -/
 

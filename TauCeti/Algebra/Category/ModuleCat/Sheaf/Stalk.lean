@@ -116,7 +116,6 @@ def sheafificationStalkEquiv :
     (sheafificationStalkMap_bijective S P x)
 
 /-- The sheafification stalk equivalence sends a germ to the germ of its unit image. -/
-@[simp]
 theorem sheafificationStalkEquiv_germ (U : Opens X) (hx : x ∈ U) (m : P.obj (op U)) :
     dsimp% only [presheaf_obj_coe, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
       sheafCompose_obj_obj]
@@ -129,7 +128,6 @@ theorem sheafificationStalkEquiv_germ (U : Opens X) (hx : x ∈ U) (m : P.obj (o
   sheafificationStalkMap_germ S P x U hx m
 
 /-- The inverse equivalence sends the germ of a unit image back to its original germ. -/
-@[simp]
 theorem sheafificationStalkEquiv_symm_germ_unit
     (U : Opens X) (hx : x ∈ U) (m : P.obj (op U)) :
     dsimp% only [presheaf_obj_coe, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.Geometry.Manifold.Instances.Icc.CollaredSmoothTransition
 public import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic
@@ -70,8 +71,9 @@ glued map is shown to be an immersion with `TauCeti.isImmersion_iff_forall_isImm
 needs the model of `N` to be finite-dimensional. The same criterion for the isotopy track
 requires that assumption in `ofSmoothIsotopy` as well as `trans` and statements depending on them.
 
-The traces of diffeotopies and smooth isotopies are reparametrized by `Real.smoothTransition`,
-which is `C^∞` but not analytic; `ofDiffeotopy`, `ofSourceDiffeotopy`, `ofDiffeotopies` and
+The traces of diffeotopies and smooth isotopies are reparametrized by the collared smooth
+transition `TauCeti.collaredSmoothTransitionUnit`, built from `Real.smoothTransition`, which is
+`C^∞` but not analytic; `ofDiffeotopy`, `ofSourceDiffeotopy`, `ofDiffeotopies` and
 `ofSmoothIsotopy` therefore assume `n ≤ ∞`.
 
 ## References
@@ -311,7 +313,6 @@ theorem trans_apply_of_lt [FiniteDimensional ℝ E'] (F : Concordance f g) (G : 
   rw [coe_trans, stack_apply_of_lt _ _ x ht]
 
 /-! ### Diffeotopies -/
-
 
 /-- The diffeomorphism `(y, t) ↦ (Φ (ρ t, y), t)` of `N × ℝ`, where `ρ` is the smooth transition
 from `0` to `1`. -/

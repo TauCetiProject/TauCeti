@@ -12,6 +12,9 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.LinearAlgebra.Complex.LinearPart
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # Pointwise and integrated energy for curves into almost complex manifolds
@@ -70,8 +73,17 @@ $J$-holomorphic curves.
   energy--area identity for the manifold derivative of a pseudoholomorphic curve.
 * `IsPseudoholomorphicWithinAt.mfderivWithin_stdComplexLineEnergyDensity_eq_two_mul_twoForm`:
   energy--area identity for the within-set derivative of a pseudoholomorphic curve.
+* `TauCeti.SmoothTwoForm.Tames.eval₂_mfderiv_nonneg`: under tameness, the symplectic area density
+  of a curve satisfying the Cauchy--Riemann equation is nonnegative.
+* `TauCeti.SmoothTwoForm.Tames.exists_pos_eval₂_mfderiv`: under tameness, a nonconstant
+  differentiable curve satisfying the Cauchy--Riemann equation has positive symplectic area
+  density somewhere.
+* `TauCeti.SmoothTwoForm.continuous_eval₂_mfderiv`: continuity of the symplectic area density
+  of a `C¹` curve.
 * `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm`: the Wirtinger
-  identity on manifolds.
+  identity on manifolds, and
+  `TauCeti.SmoothTwoForm.Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add`: its
+  refinement `e(F) = 2 ω(F ∂s, F ∂t) + 2 e(∂bar F)` through the complex-antilinear part of `F`.
 * `TauCeti.SmoothTwoForm.Compatible.two_mul_twoForm_le_stdComplexLineEnergyDensity`: the Wirtinger
   inequality on manifolds, and
   `TauCeti.SmoothTwoForm.Compatible.stdComplexLineEnergyDensity_eq_two_mul_twoForm_iff`:
@@ -311,6 +323,50 @@ namespace SmoothTwoForm
 
 variable {form : SmoothTwoForm I M} {J : SmoothAlmostComplexStructure I M} {x : M}
 
+/-- Under tameness, the symplectic area density `ω(∂ₛu, ∂ₜu)` of a curve `u` satisfying the
+Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` at `z` is nonnegative. No differentiability is assumed:
+the equation is stated for `mfderiv`, which is zero where `u` is not differentiable. -/
+lemma Tames.eval₂_mfderiv_nonneg (htame : form.Tames J) {u : ℝ × ℝ → M} {z : ℝ × ℝ}
+    (hCR : mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag =
+      J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)) :
+    0 ≤ SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) := by
+  have h := htame.stdComplexLineEnergyDensity_nonneg (u z)
+    (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z).toLinearMap
+  rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq hCR)
+    |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm] at h
+  exact (mul_nonneg_iff_of_pos_left two_pos).1 h
+
+/-- Under tameness, a nonconstant differentiable curve `u` satisfying the Cauchy--Riemann equation
+`∂ₜu = J(u) ∂ₛu` has positive symplectic area density `ω(∂ₛu, ∂ₜu)` somewhere. -/
+theorem Tames.exists_pos_eval₂_mfderiv (htame : form.Tames J) {u : ℝ × ℝ → M}
+    (hu : MDifferentiable (modelWithCornersSelf ℝ (ℝ × ℝ)) I u)
+    (hCR : ∀ z, mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag =
+      J (u z) (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal))
+    (hnc : ∃ z w, u z ≠ u w) :
+    ∃ z, 0 < SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) := by
+  by_contra! h
+  -- Where the area density vanishes, so does the energy density `2 ω(∂ₛu, ∂ₜu)`, hence `du`.
+  have hzero : ∀ w, mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u w = 0 := fun w ↦ by
+    refine (htame.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff (u w) _).1 ?_
+    rw [(isComplexLinearMap_mfderiv_of_stdComplexLineImag_eq (hCR w))
+      |>.stdComplexLineEnergyDensity_eq_two_mul_twoForm]
+    exact mul_eq_zero_of_right 2 (le_antisymm (h w) (htame.eval₂_mfderiv_nonneg (hCR w)))
+  obtain ⟨z, w, hzw⟩ := hnc
+  exact hzw (hu.apply_eq_of_mfderiv_eq_zero hzero z w)
+
+/-- For a `C¹` map `u`, the area density `ω(∂ₛu, ∂ₜu)` is continuous. -/
+theorem continuous_eval₂_mfderiv (form : SmoothTwoForm I M) {u : ℝ × ℝ → M}
+    (hu : ContMDiff (modelWithCornersSelf ℝ (ℝ × ℝ)) I 1 u) :
+    Continuous fun z ↦ SmoothBundleForm.eval₂ form (u z)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineReal)
+      (mfderiv (modelWithCornersSelf ℝ (ℝ × ℝ)) I u z stdComplexLineImag) :=
+  ((form.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
+    simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+
 /-- **Wirtinger identity on manifolds.** For an invariant pair `(form, J)`, the standard energy
 density minus twice the symplectic area density is the Cauchy--Riemann defect square:
 $$e(F) - 2 \omega_x(F \partial_s, F \partial_t) =
@@ -359,6 +415,50 @@ lemma Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm (hinv : form.Inv
   have halt2 := congrArg Neg.neg <|
     LinearMap.IsAlt.neg (SmoothForm.isAlt_bilinFormAt form x) w (J x w)
   simp only [SmoothForm.bilinFormAt_apply] at halt1 halt2
+  linarith
+
+/-- The energy density of a real-linear map `F` from the standard complex line into a tangent
+space, for a two-form invariant under `J`, is twice its symplectic area density plus twice the
+energy density of its complex-antilinear part:
+`e(F) = 2 ω(F ∂s, F ∂t) + 2 e(∂bar F)`. -/
+lemma Invariant.stdComplexLineEnergyDensity_eq_two_mul_twoForm_add (hinv : form.Invariant J)
+    (x : M) (F : (ℝ × ℝ) →ₗ[ℝ] TangentSpace I x) :
+    form.stdComplexLineEnergyDensity J x F =
+      2 * SmoothBundleForm.eval₂ form x (F stdComplexLineReal) (F stdComplexLineImag) +
+        2 * form.stdComplexLineEnergyDensity J x
+          (complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
+            (J.almostComplexStructureAt x).toLinearMap F) := by
+  set L := J.toEndomorphism x
+  -- Applying `J` at `x` is, by definition of its coercion, applying the endomorphism `L`.
+  have hJL (v : TangentSpace I x) : J x v = L v := (rfl)
+  have hLL (v : TangentSpace I x) : L (L v) = -v := by rw [← hJL, ← hJL, J.apply_apply]
+  -- The values of `∂bar F` on `∂s` and `∂t` are `b` and `-J b`, for `b = (F ∂s + J F ∂t) / 2`.
+  set b : TangentSpace I x := (2⁻¹ : ℝ) • (F stdComplexLineReal + L (F stdComplexLineImag))
+  have hAs : complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
+      (J.almostComplexStructureAt x).toLinearMap F stdComplexLineReal = b := by
+    simp only [complexAntilinearPart_apply, AlmostComplexStructure.product_apply_stdComplexLineReal,
+      SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+      ContinuousLinearMap.coe_coe, b, L]
+  have hAt : complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
+      (J.almostComplexStructureAt x).toLinearMap F stdComplexLineImag = -L b := by
+    simp only [complexAntilinearPart_apply, AlmostComplexStructure.product_apply_stdComplexLineImag,
+      SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+      ContinuousLinearMap.coe_coe, b, map_neg, map_smul, map_add, hLL]
+    module
+  -- So `e(∂bar F) = 2 ω(b, J b) = ω(a, J a) / 2` for `a = 2 b`, and by the Wirtinger identity
+  -- `e(F) - 2 ω(F ∂s, F ∂t) = ω(a, J a)`.
+  have hwirt := hinv.stdComplexLineEnergyDensity_sub_two_mul_twoForm x F
+  rw [stdComplexLineEnergyDensity_def form J x (complexAntilinearPart _ _ F), hAs, hAt]
+  simp only [hJL, map_neg, hLL, neg_neg] at hwirt ⊢
+  have hb : SmoothBundleForm.eval₂ form x b (L b) = (2⁻¹ : ℝ) * (2⁻¹ : ℝ) *
+      SmoothBundleForm.eval₂ form x (F stdComplexLineReal + L (F stdComplexLineImag))
+        (L (F stdComplexLineReal + L (F stdComplexLineImag))) := by
+    simp only [← SmoothForm.bilinFormAt_apply, b, map_smul, LinearMap.smul_apply, smul_eq_mul]
+    ring
+  have hneg : SmoothBundleForm.eval₂ form x (-L b) b = SmoothBundleForm.eval₂ form x b (L b) := by
+    simp only [← SmoothForm.bilinFormAt_apply, map_neg, LinearMap.neg_apply]
+    rw [LinearMap.IsAlt.neg (SmoothForm.isAlt_bilinFormAt form x) (L b) b]
+  rw [hneg, hb]
   linarith
 
 /-- **Wirtinger inequality on manifolds.** For a compatible pair `(form, J)`, twice the symplectic

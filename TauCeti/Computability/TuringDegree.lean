@@ -90,6 +90,12 @@ noncomputable def oracle (A : Set ℕ) : ℕ →. ℕ :=
 theorem oracle_apply (A : Set ℕ) (n : ℕ) : A.oracle n = Part.some (A.indicator 1 n) :=
   (rfl)
 
+/-- The oracle of `A` is its characteristic function `A.indicator 1`, lifted to a partial
+function. -/
+theorem oracle_eq_indicator (A : Set ℕ) :
+    A.oracle = ((A.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) :=
+  (rfl)
+
 /-- A set's characteristic function is computable in its own oracle. -/
 theorem computableIn_indicator (A : Set ℕ) : ComputableIn {A.oracle} (A.indicator 1 : ℕ → ℕ) :=
   RecursiveIn.of_eq (RecursiveIn.oracle A.oracle rfl) fun n => A.oracle_apply n

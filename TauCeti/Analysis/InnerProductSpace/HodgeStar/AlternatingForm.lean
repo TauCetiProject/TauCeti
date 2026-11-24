@@ -53,7 +53,9 @@ metric this expresses the star through the inverse metric and the volume of the 
 * `Orientation.alternatingFormInner_formHodgeStar_left`: in an even middle degree the star is an
   involution and is self-adjoint.
 * `Orientation.wedge_apply_orthonormalBasis`: in an even middle degree, the wedge of two forms on a
-  positively oriented orthonormal basis is `⟨α, ⋆β⟩`.
+  positively oriented orthonormal basis is `⟨α, ⋆β⟩`, and
+  `Orientation.wedge_apply_orthonormalBasis_eq_inner` reads it as `⟪y, ⋆x⟫` for the elements
+  `x, y ∈ ⋀ᵏ V` representing `α` and `β`.
 * `Orientation.two_mul_finrank_eigenspace_formHodgeStar_one`: in an even positive middle degree
   `k` of an `n`-dimensional space, the self-dual forms have dimension `n.choose k / 2`; likewise
   the anti-self-dual forms.
@@ -129,7 +131,7 @@ theorem wedge_formHodgeStar_apply {k l : ℕ} (hkl : k + l = finrank ℝ V)
   -- The wedge of forms is the form of the exterior product `a ∧ ⋆b`, a top-degree element whose
   -- volume is `⟪a, b⟫`.
   set z : ⋀[ℝ]^(finrank ℝ V) V := ⟨_, by
-    rw [← hkl]; exact (wedge ℝ V k l a (o.hodgeStar hkl b)).2⟩
+    rw [← hkl]; exact (wedge ℝ V k l a (o.hodgeStar hkl b)).property⟩
   rw [formHodgeStar_alternatingFormEquiv, ← alternatingFormEquiv_wedge,
     alternatingFormEquiv_apply, alternatingFormInner_alternatingFormEquiv,
     ← o.wedgePairing_hodgeStar hkl, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _ z rfl]
@@ -247,6 +249,26 @@ theorem wedge_apply_orthonormalBasis {k : ℕ} (hk : Even k) (hkk : k + k = finr
     simp
   rw [o.wedge_formHodgeStar_apply hkk, hv, o.volumeForm_robust b hb,
     ← OrthonormalBasis.coe_toBasis, Basis.det_self, mul_one]
+
+/-- The element of `⋀ˡ V` representing the Hodge star of a form `α` is the Hodge star of the
+element representing `α`. -/
+@[simp]
+theorem alternatingFormEquiv_symm_formHodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+    (alternatingFormEquiv V l).symm (o.formHodgeStar hkl α) =
+      o.hodgeStar hkl ((alternatingFormEquiv V k).symm α) := by
+  simp [formHodgeStar]
+
+/-- **The wedge of two middle-degree forms through the elements representing them**: in an even
+middle degree, `(α ∧ β)(b₁, …, bₙ) = ⟪y, ⋆x⟫` for a positively oriented orthonormal basis `b`,
+where `x, y ∈ ⋀ᵏ V` represent `α` and `β`, `α v = ⟪x, v₁ ∧ ⋯ ∧ vₖ⟫`. -/
+theorem wedge_apply_orthonormalBasis_eq_inner {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.orientation = o)
+    (α β : V [⋀^Fin k]→L[ℝ] ℝ) :
+    α.wedge β (b ∘ finCongr (hkk.trans _i.out)) =
+      ⟪(alternatingFormEquiv V k).symm β, o.hodgeStar hkk ((alternatingFormEquiv V k).symm α)⟫ := by
+  rw [o.wedge_apply_orthonormalBasis hk hkk b hb, ← o.alternatingFormInner_formHodgeStar_left hk,
+    alternatingFormInner_comm, alternatingFormInner_apply, alternatingFormEquiv_symm_formHodgeStar]
 
 /-- In a middle degree, the eigenspaces of the Hodge star of forms are those of the Hodge star of
 `⋀ᵏ V`, read along `TauCeti.alternatingFormEquiv`. -/

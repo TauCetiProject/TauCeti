@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
 public import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Data.Finset.Union
 
 /-!
 # Basic abstract simplicial complex API
@@ -51,6 +52,11 @@ namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} {K L : PreAbstractSimplicialComplex ι} {σ : Finset ι} {v : ι}
 
+/-- A finite set belongs to the underlying face set of a precomplex exactly when it is a face of
+the precomplex. -/
+theorem mem_faces : σ ∈ K.faces ↔ σ ∈ K :=
+  Iff.rfl
+
 /-- A face belongs to the image complex exactly when it is the image of a face of the source
 complex. -/
 theorem mem_map_iff {κ : Type*} [DecidableEq κ] {f : ι → κ}
@@ -80,6 +86,13 @@ theorem finite_faces_map_iff_of_injective {κ : Type*} [DecidableEq κ]
     (f : ι → κ) (hf : Function.Injective f) : (K.map f).faces.Finite ↔ K.faces.Finite := by
   rw [faces_map]
   exact Set.finite_image_iff (Finset.image_injective hf).injOn
+
+/-- Every precomplex with finitely many faces is supported on a finite set of ambient vertices. -/
+theorem exists_finset_subset_of_finite_faces (hfin : K.faces.Finite) :
+    ∃ V : Finset ι, ∀ σ ∈ K, σ ⊆ V := by
+  classical
+  exact ⟨hfin.toFinset.biUnion id, fun σ hσ _ hx =>
+    Finset.mem_biUnion.mpr ⟨σ, hfin.mem_toFinset.mpr hσ, hx⟩⟩
 
 /-- A finite set is a face of an intersection of two precomplexes exactly when it is a face of
 both. -/
@@ -142,6 +155,79 @@ theorem map_bot {κ : Type*} [DecidableEq κ] (f : ι → κ) :
   eq_bot_iff.mpr fun _ hτ => by
     obtain ⟨_, hρ, -⟩ := mem_map_iff.mp hτ
     exact hρ.elim
+
+/-- Two pre-abstract simplicial complexes have the same image under an injective vertex map if and
+only if they are equal. -/
+theorem map_inj_of_injective {κ : Type*} [DecidableEq κ] (f : ι → κ)
+    (hf : Function.Injective f) : K.map f = L.map f ↔ K = L :=
+  (map_injective hf).eq_iff
+
+/-- The image of a precomplex under any vertex map is void if and only if the source precomplex is
+void. -/
+@[simp]
+theorem map_eq_bot_iff {κ : Type*} [DecidableEq κ] (f : ι → κ) :
+    K.map f = ⊥ ↔ K = ⊥ := by
+  constructor
+  · intro h
+    refine SetLike.ext fun σ => ⟨fun hσ => ?_, False.elim⟩
+    have hmem : σ.image f ∈ K.map f := mem_map_iff.mpr ⟨σ, hσ, rfl⟩
+    rw [h] at hmem
+    exact hmem
+  · rintro rfl
+    exact map_bot f
+
+/-- The finite set of all vertices occurring in faces of a finite-face precomplex. -/
+noncomputable def faceUnion [DecidableEq ι] (hK : K.faces.Finite) : Finset ι :=
+  hK.toFinset.biUnion id
+
+/-- A vertex belongs to `faceUnion hK` if and only if its singleton is a face of `K`. -/
+@[simp]
+theorem mem_faceUnion [DecidableEq ι] (hK : K.faces.Finite) :
+    v ∈ faceUnion hK ↔ ({v} : Finset ι) ∈ K := by
+  simp only [faceUnion, Finset.mem_biUnion, Set.Finite.mem_toFinset, id_eq, mem_faces]
+  exact ⟨fun ⟨σ, hσ, hv⟩ => singleton_mem_of_mem hσ hv,
+    fun hv => ⟨{v}, hv, Finset.mem_singleton_self v⟩⟩
+
+/-- Every face of a finite-face precomplex is contained in `faceUnion hK`. -/
+theorem subset_faceUnion [DecidableEq ι] (hK : K.faces.Finite) (hσ : σ ∈ K) :
+    σ ⊆ faceUnion hK :=
+  Finset.subset_biUnion_of_mem id (hK.mem_toFinset.mpr hσ)
+
+/-- `faceUnion hK` is contained in a finset `s` if and only if every face of `K` is contained
+in `s`. -/
+theorem faceUnion_subset_iff [DecidableEq ι] (hK : K.faces.Finite) {s : Finset ι} :
+    faceUnion hK ⊆ s ↔ ∀ σ ∈ K, σ ⊆ s := by
+  simp only [faceUnion, Finset.biUnion_subset, Set.Finite.mem_toFinset, id_eq, mem_faces]
+
+/-- The vertex finset of a finite-face precomplex is empty if and only if the precomplex is
+void. -/
+@[simp]
+theorem faceUnion_eq_empty_iff [DecidableEq ι] (hK : K.faces.Finite) :
+    faceUnion hK = ∅ ↔ K = ⊥ := by
+  rw [Finset.eq_empty_iff_forall_notMem, eq_bot_iff]
+  refine ⟨fun h σ hσ => ?_, fun h v hv => h ((mem_faceUnion hK).mp hv)⟩
+  obtain ⟨v, hv⟩ := (K.isRelLowerSet_faces hσ).1
+  exact h v ((mem_faceUnion hK).mpr (singleton_mem_of_mem hσ hv))
+
+/-- The vertex finset of the void precomplex is empty. -/
+@[simp]
+theorem faceUnion_bot [DecidableEq ι]
+    (h : (⊥ : PreAbstractSimplicialComplex ι).faces.Finite) :
+    faceUnion h = ∅ :=
+  (faceUnion_eq_empty_iff h).mpr rfl
+
+/-- `faceUnion` is monotone with respect to subcomplex inclusion. -/
+theorem faceUnion_mono [DecidableEq ι] (hKL : K ≤ L)
+    (hK : K.faces.Finite) (hL : L.faces.Finite) :
+    faceUnion hK ⊆ faceUnion hL :=
+  fun _ hv => (mem_faceUnion hL).mpr (hKL ((mem_faceUnion hK).mp hv))
+
+/-- Mapping a finite-face precomplex along any vertex map images its vertex finset. -/
+theorem faceUnion_map {κ : Type*} [DecidableEq ι] [DecidableEq κ] (f : ι → κ)
+    (hK : K.faces.Finite) (hKf : (K.map f).faces.Finite) :
+    faceUnion hKf = (faceUnion hK).image f := by
+  ext y
+  simp only [mem_faceUnion, singleton_mem_map_iff, Finset.mem_image]
 
 end PreAbstractSimplicialComplex
 

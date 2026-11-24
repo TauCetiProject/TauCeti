@@ -44,15 +44,15 @@ variable {ι M N 𝕜 V : Type*} [AddCommGroup M] [AddCommGroup N]
 /-- Summation by parts for the endpoint of an LS path: the last orbit weight plus its
 break-time-weighted changes of direction. -/
 theorem endpoint_toPLPath_eq_last_add_sum (π : LSPath P b lam) (f : M →+ V) :
-    (π.toPLPath 𝕜 f).endpoint = f ((π.dir (Fin.last _)).1 • lam) +
+    (π.toPLPath 𝕜 f).endpoint = f ((π.dir (Fin.last _)).val • lam) +
       ∑ j : Fin π.length, (π.time j.castSucc.succ : 𝕜) •
-        (f ((π.dir j.castSucc).1 • lam) - f ((π.dir j.succ).1 • lam)) := by
+        (f ((π.dir j.castSucc).val • lam) - f ((π.dir j.succ).val • lam)) := by
   rw [endpoint_toPLPath]
   simp only [duration_def, Rat.cast_sub, sub_smul, smul_sub, Finset.sum_sub_distrib]
   rw [Fin.sum_univ_castSucc (fun j : Fin (π.length + 1) ↦
-    (π.time j.succ : 𝕜) • f ((π.dir j).1 • lam)),
+    (π.time j.succ : 𝕜) • f ((π.dir j).val • lam)),
     Fin.sum_univ_succ (fun j : Fin (π.length + 1) ↦
-      (π.time j.castSucc : 𝕜) • f ((π.dir j).1 • lam))]
+      (π.time j.castSucc : 𝕜) • f ((π.dir j).val • lam))]
   simp only [Fin.succ_last, π.time_last, Rat.cast_one, one_smul, Fin.castSucc_zero,
     π.time_zero, Rat.cast_zero, zero_smul, zero_add, Fin.succ_castSucc]
   abel
@@ -63,11 +63,11 @@ of scalar pairings. -/
 theorem exists_mem_rootSpan_endpoint_eq_add (π : LSPath P b lam)
     (hlam : lam ∈ dominantChamber P b) (f : M →+ V) :
     ∃ m ∈ P.rootSpan ℤ,
-      (π.toPLPath 𝕜 f).endpoint = f ((π.dir (Fin.last _)).1 • lam + m) := by
+      (π.toPLPath 𝕜 f).endpoint = f ((π.dir (Fin.last _)).val • lam + m) := by
   classical
   have hcorrection (j : Fin π.length) : ∃ m ∈ P.rootSpan ℤ,
       (π.time j.castSucc.succ : 𝕜) •
-        (f ((π.dir j.castSucc).1 • lam) - f ((π.dir j.succ).1 • lam)) = f m := by
+        (f ((π.dir j.castSucc).val • lam) - f ((π.dir j.succ).val • lam)) = f m := by
     obtain ⟨C, hhead, hlast, hC⟩ := π.exists_isAChain j
     simpa only [hhead, hlast] using hC.exists_mem_rootSpan_smul_sub_eq hlam f
   choose m hm heq using hcorrection

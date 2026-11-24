@@ -46,14 +46,14 @@ namespace SimpleGraph
 /-- The pair-color system of a simple graph: an ordered distinct pair has color `true` exactly
 when it is an edge. The palette reversal is the identity, since adjacency is symmetric. -/
 def toPairColorSystem : PairColorSystem Bool V where
-  color p := decide (G.Adj p.1.1 p.1.2)
+  color p := decide (G.Adj p.val.1 p.val.2)
   rev := id
   rev_involutive _ := rfl
   color_rev p := by simp [G.adj_comm]
 
 @[simp]
 theorem toPairColorSystem_color (p : {p : V × V // p.1 ≠ p.2}) :
-    G.toPairColorSystem.color p = decide (G.Adj p.1.1 p.1.2) :=
+    G.toPairColorSystem.color p = decide (G.Adj p.val.1 p.val.2) :=
   (rfl)
 
 @[simp]

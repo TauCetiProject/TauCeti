@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Analysis.CStarAlgebra.Multiplier
+public import Mathlib.RingTheory.TwoSidedIdeal.Lattice
 public import TauCeti.Topology.ApproximateUnit
 import TauCeti.Analysis.Normed.Operator.Dense
 
@@ -43,6 +44,9 @@ either side vanishes.
 
 ## Main definitions
 
+* `DoubleCentralizer.ofUnitalAlgEquiv`, `DoubleCentralizer.ofUnitalStarAlgEquiv`: for a unital
+  normed (`⋆`-)algebra `A`, the canonical inclusion `A → 𝓜(𝕜, A)` is an (`⋆`-)algebra isomorphism
+  with inverse `m ↦ m.fst 1`.
 * `DoubleCentralizer.ofCentral`: the double centralizer built from a pair of functions satisfying
   the centrality condition, for a complete algebra with zero annihilators.
 * `DoubleCentralizer.coeStarAlgEquiv`: a unital normed star algebra is star-isomorphic to its
@@ -72,8 +76,13 @@ either side vanishes.
 * `DoubleCentralizer.exists_clm_tendsto_fst`: along a bounded left approximate unit, a norm-bounded
   multiplicative action of `A` on a Banach space with dense essential subspace converges at
   `m.fst e` to a bounded operator extending `m`.
+* `DoubleCentralizer.continuous_fst_of_opNorm_le`, `DoubleCentralizer.continuous_snd_of_opNorm_le`:
+  pointwise strict continuity on a norm-bounded family upgrades to joint continuity on `X × A`.
 * `DoubleCentralizer.eq_zero_of_forall_mul_coe_eq_zero`,
   `DoubleCentralizer.eq_zero_of_forall_coe_mul_eq_zero`: the image of `A` is an essential ideal.
+* `DoubleCentralizer.forall_commute_iff_fst_eq_snd`, `DoubleCentralizer.mem_center_iff`:
+  with zero annihilators, a multiplier is central if and only if its left and right centralizers
+  agree on `A`.
 
 ## References
 
@@ -160,6 +169,59 @@ variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedA
 theorem coe_one : ((1 : A) : 𝓜(𝕜, A)) = 1 :=
   ext_fst_snd (fun _ => by simp) (fun _ => by simp)
 
+@[simp] theorem snd_one_eq_fst_one (m : 𝓜(𝕜, A)) : m.snd 1 = m.fst 1 := by
+  simpa using m.central 1 1
+
+theorem fst_apply_eq_fst_one_mul (m : 𝓜(𝕜, A)) (a : A) : m.fst a = m.fst 1 * a := by
+  simpa using (m.central 1 a).symm
+
+theorem snd_apply_eq_mul_fst_one (m : 𝓜(𝕜, A)) (a : A) : m.snd a = a * m.fst 1 := by
+  simpa using m.central a 1
+
+/-- Every multiplier of a unital normed algebra `A` is the image of `m.fst 1 : A`. -/
+@[simp] theorem coe_fst_one (m : 𝓜(𝕜, A)) : ((m.fst 1 : A) : 𝓜(𝕜, A)) = m :=
+  ext_fst_snd (fun a => (fst_apply_eq_fst_one_mul m a).symm)
+    (fun a => (snd_apply_eq_mul_fst_one m a).symm)
+
+variable (𝕜 A) in
+/-- For a unital normed algebra `A`, the canonical inclusion `A → 𝓜(𝕜, A)` is an algebra
+isomorphism with inverse `m ↦ m.fst 1`. -/
+def ofUnitalAlgEquiv : A ≃ₐ[𝕜] 𝓜(𝕜, A) where
+  toFun a := a
+  invFun m := m.fst 1
+  left_inv a := by simp
+  right_inv := coe_fst_one
+  map_mul' := coe_mul
+  map_add' := coe_add
+  commutes' k := ext_fst_snd (fun _ => by simp [Algebra.algebraMap_eq_smul_one])
+    (fun _ => by simp [Algebra.algebraMap_eq_smul_one])
+
+@[simp] theorem ofUnitalAlgEquiv_apply (a : A) : ofUnitalAlgEquiv 𝕜 A a = a := (rfl)
+
+@[simp] theorem ofUnitalAlgEquiv_symm_apply (m : 𝓜(𝕜, A)) :
+    (ofUnitalAlgEquiv 𝕜 A).symm m = m.fst 1 := (rfl)
+
+theorem coe_surjective : Function.Surjective (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) :=
+  (ofUnitalAlgEquiv 𝕜 A).surjective
+
+theorem coe_bijective : Function.Bijective (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) :=
+  (ofUnitalAlgEquiv 𝕜 A).bijective
+
+variable (𝕜 A) in
+/-- For a unital normed `⋆`-algebra `A`, the canonical inclusion `A → 𝓜(𝕜, A)` is a unital
+`⋆`-algebra isomorphism with inverse `m ↦ m.fst 1`. -/
+def ofUnitalStarAlgEquiv [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A] :
+    A ≃⋆ₐ[𝕜] 𝓜(𝕜, A) where
+  __ := ofUnitalAlgEquiv 𝕜 A
+  map_smul' := coe_smul
+  map_star' := coe_star
+
+@[simp] theorem ofUnitalStarAlgEquiv_apply [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A]
+    [NormedStarGroup A] (a : A) : ofUnitalStarAlgEquiv 𝕜 A a = a := (rfl)
+
+@[simp] theorem ofUnitalStarAlgEquiv_symm_apply [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A]
+    [NormedStarGroup A] (m : 𝓜(𝕜, A)) : (ofUnitalStarAlgEquiv 𝕜 A).symm m = m.fst 1 := (rfl)
+
 end Unital
 
 section FaithfulMulOpposite
@@ -192,12 +254,6 @@ end FaithfulMulOpposite
 section UnitalEquiv
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
-
-/-- In a unital algebra, every multiplier is the image of its left centralizer evaluated at
-`1`. -/
-@[simp]
-theorem coe_fst_one (m : 𝓜(𝕜, A)) : ((m.fst 1 : A) : 𝓜(𝕜, A)) = m := by
-  rw [← mul_coe_eq_coe_fst, coe_one, mul_one]
 
 variable [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A]
 
@@ -487,6 +543,22 @@ theorem exists_clm_tendsto_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   exact ⟨T, fun a => ContinuousLinearMap.ext fun x =>
     tendsto_nhds_unique (hT (L a x)) (happ a x), hT⟩
 
+/-- A pointwise continuous family of operator-norm-bounded left centralizers is jointly continuous
+on `X × A`. -/
+theorem continuous_fst_of_opNorm_le {X : Type*} [TopologicalSpace X] {m : X → 𝓜(𝕜, A)}
+    (hC : ∀ x, ‖(m x).fst‖ ≤ C) (hm : ∀ a, Continuous fun x => (m x).fst a) :
+    Continuous fun p : X × A => (m p.1).fst p.2 :=
+  continuous_prod_of_continuous_lipschitzWith' _ C.toNNReal
+    (fun x => (m x).fst.lipschitzWith.weaken <| (hC x).trans (Real.le_coe_toNNReal C)) hm
+
+/-- A pointwise continuous family of operator-norm-bounded right centralizers is jointly continuous
+on `X × A`. -/
+theorem continuous_snd_of_opNorm_le {X : Type*} [TopologicalSpace X] {m : X → 𝓜(𝕜, A)}
+    (hC : ∀ x, ‖(m x).snd‖ ≤ C) (hm : ∀ a, Continuous fun x => (m x).snd a) :
+    Continuous fun p : X × A => (m p.1).snd p.2 :=
+  continuous_prod_of_continuous_lipschitzWith' _ C.toNNReal
+    (fun x => (m x).snd.lipschitzWith.weaken <| (hC x).trans (Real.le_coe_toNNReal C)) hm
+
 end Norm
 
 /-! ### Essentiality of the canonical ideal -/
@@ -510,6 +582,31 @@ theorem eq_zero_of_forall_coe_mul_eq_zero {m : 𝓜(𝕜, A)} (h : ∀ a : A, (a
     FaithfulSMul.eq_of_smul_eq_smul (α := A) fun c => ?_) fun a => by simp [hsnd]
   rw [op_smul_eq_mul, op_smul_eq_mul]
   simp [← m.central, hsnd]
+
+/-- With zero left and right annihilators, a multiplier commutes with every multiplier if and only
+if its left and right centralizers agree on `A`. -/
+theorem forall_commute_iff_fst_eq_snd {m : 𝓜(𝕜, A)} :
+    (∀ n : 𝓜(𝕜, A), Commute m n) ↔ ∀ a : A, m.fst a = m.snd a := by
+  refine ⟨fun h a => coe_injective (𝕜 := 𝕜) ?_, fun h n => ext_fst fun c =>
+    MulOpposite.op_injective <| FaithfulSMul.eq_of_smul_eq_smul (α := A) fun d => ?_⟩
+  · rw [← mul_coe_eq_coe_fst, ← coe_mul_eq_coe_snd]
+    exact h a
+  · simp only [op_smul_eq_mul, mul_fst, mul_apply_eq_comp]
+    calc d * m.fst (n.fst c)
+        = d * m.snd (n.fst c) := by rw [h]
+      _ = m.snd (d * n.fst c) := (snd_mul m d (n.fst c)).symm
+      _ = m.snd (n.snd d * c) := by rw [n.central]
+      _ = n.snd d * m.snd c := snd_mul m (n.snd d) c
+      _ = d * n.fst (m.snd c) := n.central d (m.snd c)
+      _ = d * n.fst (m.fst c) := by rw [h]
+
+/-- With zero left and right annihilators, a multiplier lies in the center of `𝓜(𝕜, A)` if and
+only if its left and right centralizers agree on `A`. -/
+theorem mem_center_iff {m : 𝓜(𝕜, A)} :
+    m ∈ Subring.center 𝓜(𝕜, A) ↔ ∀ a : A, m.fst a = m.snd a :=
+  Subring.mem_center_iff.trans <|
+    (forall_congr' fun g => (commute_iff_eq (a := g) (b := m)).symm.trans Commute.symm_iff).trans
+      forall_commute_iff_fst_eq_snd
 
 end Essential
 

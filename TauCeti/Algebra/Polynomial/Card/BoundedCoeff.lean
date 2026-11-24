@@ -104,7 +104,7 @@ theorem ncard_natDegree_le_coeff_mem_pi (d : ℕ) (s : Fin (d + 1) → Finset R)
   · -- Every coefficient vector `c` is that of the polynomial `ofFn (d + 1) c`.
     intro hc
     have hcoeff (i : Fin (d + 1)) : (ofFn (d + 1) c).coeff i = c i :=
-      ofFn_coeff_eq_val_of_lt c i.2
+      ofFn_coeff_eq_val_of_lt c i.isLt
     refine ⟨ofFn (d + 1) c, ⟨Nat.le_of_lt_succ (ofFn_natDegree_lt d.succ_pos c), fun i => ?_⟩,
       funext hcoeff⟩
     rw [hcoeff]

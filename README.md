@@ -143,10 +143,11 @@ The author of a pull request may also post `self-tested` to add the `self-tested
 or `-self-tested` to remove it. Comments from anyone else, and comments on issues, are
 ignored for this label. The label is a persistent declaration that the author runs local verification: leave it in
 place through fix and rebase pushes, and remove it if verification fails or is incomplete.
-Admission checks trusted-team membership and source scope directly; no separate Actions
+The label counts from any author. Admission checks source scope directly; no separate Actions
 receipt is required. Since the label skips PR CI, admission also runs PR CI's diff guards (the
 ones `lake lint` runs) on the exact head, and explains on the PR any head that fails them.
-Reviews on the current head and staging tests still run.
+If a PR build runs on the current head and fails, the label is removed and the PR follows the
+ordinary failed-build path. Reviews on the current head and staging tests still run.
 
 ## Mathlib dependency
 
@@ -245,9 +246,9 @@ lake lint
 
 `lake test` runs the inexpensive local axiom checks on changed modules and the module-system
 check. `lake lint` runs source guards, source style, shim checks, changed-module environment
-and documentation lint, and PR CI's diff guards: review size (2000 added lines, 2000 removed
+and documentation lint, and PR CI's diff guards: review size (3000 added lines, 2000 removed
 lines, 2000 files; a Lake-pin bump is exempt from the line caps), new `.lean` files of at most
-1000 lines, and changes only under `TauCeti/`, `TauCeti.lean`, the Lake pins and
+1250 lines, and changes only under `TauCeti/`, `TauCeti.lean`, the Lake pins and
 `docbuild/docs/references.bib`. They calculate scope offline from local Git history, against the
 merge base with the canonical `main`, including edits and new library files; untracked files
 outside `TauCeti/` are ignored. `lake lint -- --base <rev>` measures from another base. Full

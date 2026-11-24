@@ -257,7 +257,7 @@ noncomputable def gamma1QuotientEquivExactOrder :
       fun z z' h ↦ by
         obtain ⟨γ, hγ⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
         obtain ⟨C, hC⟩ := UpperHalfPlane.exists_smul_pointedWeierstrassCurve_eq_iff.mpr
-          ⟨γ, γ.2, hγ⟩
+          ⟨γ, γ.property, hγ⟩
         exact MulAction.orbitRel_apply.mpr (MulAction.mem_orbit_iff.mpr ⟨C, Subtype.ext hC⟩))
     ⟨fun q q' ↦ Quotient.inductionOn₂ q q' fun z z' h ↦ by
         obtain ⟨C, hC⟩ := MulAction.mem_orbit_iff.mp
@@ -267,7 +267,7 @@ noncomputable def gamma1QuotientEquivExactOrder :
         exact Quotient.sound (MulAction.orbitRel_apply.mpr
           (MulAction.mem_orbit_iff.mpr ⟨⟨γ, hγ⟩, hγz⟩)),
       fun q ↦ Quotient.inductionOn q fun X ↦ by
-        obtain ⟨z, C, hC⟩ := UpperHalfPlane.exists_smul_pointedWeierstrassCurve_eq X.2
+        obtain ⟨z, C, hC⟩ := UpperHalfPlane.exists_smul_pointedWeierstrassCurve_eq X.property
         exact ⟨⟦z⟧, Quotient.sound (MulAction.orbitRel_apply.mpr
           (MulAction.mem_orbit_iff.mpr
             ⟨C⁻¹, Subtype.ext (by rw [SubMulAction.val_smul, ← hC, inv_smul_smul])⟩))⟩⟩

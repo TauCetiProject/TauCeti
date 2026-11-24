@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Basic
+import Mathlib.Logic.Equiv.Fintype
 
 /-!
 # Stellar equivalence of simplicial complexes
@@ -56,6 +57,11 @@ common enlarged vertex type and allows arbitrary injective relabelings.
 * `PreAbstractSimplicialComplex.StellarEquivalentUpToRelabeling.dimension_eq`,
   `finite_faces_iff`, and `ne_bot_iff`: intrinsic stellar equivalence preserves dimension,
   face finiteness, and nonvoidness.
+* `PreAbstractSimplicialComplex.stellarEquivalentUpToRelabeling_map_embedding`,
+  `stellarEquivalentUpToRelabeling_simplex_of_card_eq`, and
+  `stellarEquivalentUpToRelabeling_simplexBoundary_of_card_eq`: self-embeddings preserve intrinsic
+  stellar equivalence, so simplices and simplex boundaries of equal vertex cardinality are
+  intrinsically stellar equivalent.
 -/
 
 public section
@@ -150,11 +156,31 @@ theorem stellarEquivalent_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
     StellarEquivalent K (stellarSubdivision K σ v) :=
   (isStellarMove_stellarSubdivision hσ hv).stellarEquivalent
 
+/-- Starring any nonempty finset at a fresh vertex produces a stellar-equivalent complex. -/
+theorem stellarEquivalent_stellarSubdivision_of_nonempty (hσne : σ.Nonempty)
+    (hv : ({v} : Finset ι) ∉ K) : StellarEquivalent K (stellarSubdivision K σ v) := by
+  by_cases hσ : σ ∈ K
+  · exact stellarEquivalent_stellarSubdivision hσ hv
+  · rw [stellarSubdivision_eq_self_of_notMem hv hσne hσ]
+
 /-- Stellar equivalence is an equivalence relation. -/
 theorem equivalence_stellarEquivalent : Equivalence (StellarEquivalent (ι := ι)) :=
-  Relation.EqvGen.is_equivalence _
+  Relation.EqvGen.equivalence _
 
 namespace StellarEquivalent
+
+/-- Dependent eliminator for `StellarEquivalent`, supplying the intermediate equivalence witnesses
+in the symmetric and transitive steps. -/
+@[elab_as_elim]
+protected theorem induction {motive : ∀ A B, StellarEquivalent A B → Prop}
+    {K L : PreAbstractSimplicialComplex ι} (h : StellarEquivalent K L)
+    (rel : ∀ A B (hm : IsStellarMove A B), motive A B hm.stellarEquivalent)
+    (refl : ∀ A, motive A A (.refl A))
+    (symm : ∀ A B (hAB : StellarEquivalent A B), motive A B hAB → motive B A hAB.symm)
+    (trans : ∀ A B C (hAB : StellarEquivalent A B) (hBC : StellarEquivalent B C),
+      motive A B hAB → motive B C hBC → motive A C (hAB.trans hBC)) :
+    motive K L h :=
+  Relation.EqvGen.rec rel refl symm trans h
 
 /-- To prove a property of stellar equivalent complexes, it suffices to prove it for a stellar
 move and show that it is reflexive, symmetric, and transitive. -/
@@ -162,12 +188,9 @@ theorem induction_on (h : StellarEquivalent K L)
     {P : PreAbstractSimplicialComplex ι → PreAbstractSimplicialComplex ι → Prop}
     (rel : ∀ A B, IsStellarMove A B → P A B) (refl : ∀ A, P A A)
     (symm : ∀ A B, P A B → P B A)
-    (trans : ∀ A B C, P A B → P B C → P A C) : P K L := by
-  induction h with
-  | rel A B h => exact rel A B h
-  | refl => exact refl _
-  | symm A B _ ih => exact symm A B ih
-  | trans A B C _ _ ih₁ ih₂ => exact trans A B C ih₁ ih₂
+    (trans : ∀ A B C, P A B → P B C → P A C) : P K L :=
+  h.induction (motive := fun A B _ => P A B) rel refl (fun A B _ => symm A B)
+    (fun A B C _ _ => trans A B C)
 
 /-- An injective relabeling carries a stellar equivalence to one between the image complexes. -/
 theorem map {κ : Type*} [DecidableEq κ] (h : StellarEquivalent K L)
@@ -241,20 +264,31 @@ theorem of_common_relabeling (f g : ι ↪ (ι ⊕ ℕ))
     (h : StellarEquivalent (K.map f) (L.map g)) : StellarEquivalentUpToRelabeling K L :=
   Relation.EqvGen.rel _ _ ⟨f, g, h⟩
 
+/-- Dependent eliminator for `StellarEquivalentUpToRelabeling`, supplying the intermediate
+equivalence witnesses in the symmetric and transitive steps. -/
+@[elab_as_elim]
+protected theorem induction {motive : ∀ A B, StellarEquivalentUpToRelabeling A B → Prop}
+    {K L : PreAbstractSimplicialComplex ι} (h : StellarEquivalentUpToRelabeling K L)
+    (rel : ∀ A B (f g : ι ↪ (ι ⊕ ℕ)) (he : StellarEquivalent (A.map f) (B.map g)),
+      motive A B (of_common_relabeling f g he))
+    (refl : ∀ A, motive A A (.refl A))
+    (symm : ∀ A B (hAB : StellarEquivalentUpToRelabeling A B),
+      motive A B hAB → motive B A hAB.symm)
+    (trans : ∀ A B C (hAB : StellarEquivalentUpToRelabeling A B)
+        (hBC : StellarEquivalentUpToRelabeling B C),
+      motive A B hAB → motive B C hBC → motive A C (hAB.trans hBC)) :
+    motive K L h :=
+  Relation.EqvGen.rec (fun A B ⟨f, g, he⟩ => rel A B f g he) refl symm trans h
+
 /-- To prove a property of intrinsically stellar equivalent complexes, it suffices to prove it
 for a common-relabeling generator and show that it is reflexive, symmetric, and transitive. -/
 theorem induction_on (h : StellarEquivalentUpToRelabeling K L)
     {P : PreAbstractSimplicialComplex ι → PreAbstractSimplicialComplex ι → Prop}
     (rel : ∀ A B (f g : ι ↪ (ι ⊕ ℕ)), StellarEquivalent (A.map f) (B.map g) → P A B)
     (refl : ∀ A, P A A) (symm : ∀ A B, P A B → P B A)
-    (trans : ∀ A B C, P A B → P B C → P A C) : P K L := by
-  induction h with
-  | rel A B h =>
-      obtain ⟨f, g, he⟩ := h
-      exact rel A B f g he
-  | refl => exact refl _
-  | symm A B _ ih => exact symm A B ih
-  | trans A B C _ _ ih₁ ih₂ => exact trans A B C ih₁ ih₂
+    (trans : ∀ A B C, P A B → P B C → P A C) : P K L :=
+  h.induction (motive := fun A B _ => P A B) rel refl (fun A B _ => symm A B)
+    (fun A B C _ _ => trans A B C)
 
 /-- An injective relabeling transports intrinsic stellar equivalence. -/
 theorem map {κ : Type*} [DecidableEq κ]
@@ -349,5 +383,35 @@ theorem ne_bot (h : StellarEquivalentUpToRelabeling K L) (hL : L ≠ ⊥) : K �
   h.ne_bot_iff.mpr hL
 
 end StellarEquivalentUpToRelabeling
+
+/-- Relabeling a complex along any self-embedding `e : ι ↪ ι` yields an intrinsically stellar
+equivalent complex. -/
+theorem stellarEquivalentUpToRelabeling_map_embedding (K : PreAbstractSimplicialComplex ι)
+    (e : ι ↪ ι) : StellarEquivalentUpToRelabeling K (K.map e) := by
+  let inl : ι ↪ ι ⊕ ℕ := ⟨Sum.inl, Sum.inl_injective⟩
+  exact .of_common_relabeling (e.trans inl) inl
+    (by simpa only [Function.Embedding.trans_apply, map_map, Function.comp_def] using .refl _)
+
+/-- Two simplices on vertex sets of the same cardinality are intrinsically stellar equivalent. -/
+theorem stellarEquivalentUpToRelabeling_simplex_of_card_eq {V W : Finset ι}
+    (hVW : V.card = W.card) : StellarEquivalentUpToRelabeling (simplex V) (simplex W) := by
+  obtain ⟨e, he⟩ := Equiv.Perm.exists_map_finset_eq V W hVW
+  have himg : V.image e = W := by
+    simpa only [Finset.map_eq_image, Equiv.coe_toEmbedding] using he
+  simpa only [Equiv.coe_toEmbedding, map_simplex, himg] using
+    stellarEquivalentUpToRelabeling_map_embedding (simplex V) e.toEmbedding
+
+/-- Two simplex boundaries on vertex sets of the same cardinality are intrinsically stellar
+equivalent. -/
+theorem stellarEquivalentUpToRelabeling_simplexBoundary_of_card_eq {V W : Finset ι}
+    (hVW : V.card = W.card) :
+    StellarEquivalentUpToRelabeling (simplexBoundary V) (simplexBoundary W) := by
+  obtain ⟨e, he⟩ := Equiv.Perm.exists_map_finset_eq V W hVW
+  have himg : V.image e = W := by
+    simpa only [Finset.map_eq_image, Equiv.coe_toEmbedding] using he
+  have hmap : (simplexBoundary V).map e = simplexBoundary W := by
+    simpa only [Equiv.coe_toEmbedding, himg] using map_simplexBoundary V e.toEmbedding
+  simpa only [Equiv.coe_toEmbedding, hmap] using
+    stellarEquivalentUpToRelabeling_map_embedding (simplexBoundary V) e.toEmbedding
 
 end PreAbstractSimplicialComplex

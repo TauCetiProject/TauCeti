@@ -345,7 +345,7 @@ theorem gradedPieceOf_exponentSumKer_sup_span_gradedPowIter_eq_top (m : ℕ) :
   rw [eq_top_iff]
   rintro z -
   obtain ⟨y, rfl⟩ := gradedMk_surjective m z
-  obtain ⟨a, ha⟩ := dvd_exponentSum_of_mem_pLowerCentralSeries y.2 i
+  obtain ⟨a, ha⟩ := dvd_exponentSum_of_mem_pLowerCentralSeries y.property i
   set c : ZMod p := PadicInt.toZMod a with hc
   have hwmem : of i ^ p ^ m ∈ pLowerCentralSeries p (freeProP p X) m := by
     simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p (of i)) m
@@ -427,7 +427,7 @@ theorem span_range_gradedPowIter_le_gradedPieceOf_exponentSumKer (j : ℕ) :
       gradedPieceOf p (exponentSumKer p X i) j := by
   rw [span_le]
   rintro _ ⟨a, rfl⟩
-  exact gradedPowIter_gradedMkZero_mem_gradedPieceOf (of_mem_exponentSumKer a.2) j
+  exact gradedPowIter_gradedMkZero_mem_gradedPieceOf (of_mem_exponentSumKer a.property) j
 
 end GradedPieces
 
@@ -881,9 +881,9 @@ theorem gradedPieceOf_exponentSumKer_eq_map_basisModificationDelta_sup_gradedPow
       rw [ha]
       exact mem_sup_left (mem_sup_left
         (gradedPowIter_gradedMkZero_mem_map_basisModificationDelta_pi hm hc hb hi))
-    · exact mem_sup_left (mem_sup_right (subset_span ⟨⟨a, a.2, ha⟩, rfl⟩))
+    · exact mem_sup_left (mem_sup_right (subset_span ⟨⟨a, a.property, ha⟩, rfl⟩))
   · rintro _ ⟨a, rfl⟩
-    exact gradedPowIter_gradedMkZero_mem_gradedPieceOf (of_mem_exponentSumKer a.2.1) _
+    exact gradedPowIter_gradedMkZero_mem_gradedPieceOf (of_mem_exponentSumKer a.property.1) _
 
 end ConstrainedSpan
 

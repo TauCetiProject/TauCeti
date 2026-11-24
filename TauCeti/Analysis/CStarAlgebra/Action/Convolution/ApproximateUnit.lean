@@ -264,7 +264,7 @@ theorem exists_isApproximateUnit_norm_le_one [StarOrderedRing A] [BorelSpace G]
     ∃ l : Filter (ConvolutionAlgebra α μ), l.IsApproximateUnit ∧ ∀ᶠ u in l, ‖u‖ ≤ 1 := by
   -- One normalized bump inside each neighbourhood of `1`, indexed as a net shrinking to `1`.
   choose φ hφ using fun U : {U : Set G // U ∈ 𝓝 (1 : G)} =>
-    exists_nonneg_tsupport_subset_integral_eq_one μ U.2
+    exists_nonneg_tsupport_subset_integral_eq_one μ U.property
   set l := comap Subtype.val (𝓝 (1 : G)).smallSets
   have : l.NeBot := comap_neBot fun t ht => by
     obtain ⟨V, hV, hVt⟩ := eventually_smallSets.1 ht

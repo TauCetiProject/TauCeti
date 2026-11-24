@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Primary
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Ideal
 import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.Data.Nat.ModEq
-import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.QuarticReciprocity.IntCast
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
-# The quartic supplementary law for `1 + i`
+# The quartic supplementary laws for `1 + i`, `1 - i`, and `2`
 
 Let `K = ℚ(i)`, given as a number field with `IsCyclotomicExtension {4} ℚ K`, so that
 `𝓞 K = ℤ[i]`, and let `i` be a primitive fourth root of unity in `𝓞 K`. For every primary Gaussian
@@ -25,7 +25,11 @@ integer `λ = a + b i`, the quartic power residue symbol of `1 + i` at `λ 𝓞 
 `((1 + i) / λ)₄ = i ^ ((a - b - b² - 1) / 4)`.
 
 In particular, for every rational integer `m ≡ 1 (mod 4)`, including negative and composite
-denominators, `((1 + i) / m)₄ = i ^ ((m - 1) / 4)`.
+denominators, `((1 + i) / m)₄ = i ^ ((m - 1) / 4)`, and more generally
+`((1 + i) / m)₄ = i ^ ((m * χ₄(m) - 1) / 4)` for every odd integer `m`. Applying the law to the
+primitive root `-i` and combining with `2 = (1 + i)(1 - i)` gives the conjugate and dyadic laws
+`((1 - i) / λ)₄ = i ^ (-((a + b - b² - 1) / 4))` and `(2 / λ)₄ = i ^ (-(b / 2))`; in particular
+`(2 / (a + b i))₄ = 1` if and only if `8 ∣ b` whenever `a` is odd.
 
 The proof proceeds in two stages:
 
@@ -58,6 +62,14 @@ The proof proceeds in two stages:
   the exponent `(a - b - b² - 1) / 4` is additive modulo `4` on products of primary elements.
 * `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_one_add_toInteger`:
   `((1 + i) / (a + b i))₄ = i ^ ((a - b - b² - 1) / 4)` for every primary `a + b i`.
+* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_intCast_mk_one_add_toInteger_of_odd`:
+  `((1 + i) / m)₄ = i ^ ((m * χ₄(m) - 1) / 4)` for every odd integer `m`.
+* `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_one_sub_toInteger`:
+  `((1 - i) / (a + b i))₄ = i ^ (-((a + b - b² - 1) / 4))` for every primary `a + b i`.
+* `TauCeti.IsPrimaryGaussian.powerResidueSymbolIdeal_mk_two`:
+  `(2 / (a + b i))₄ = i ^ (-(b / 2))` for every primary `a + b i`.
+* `IsPrimitiveRoot.powerResidueSymbolIdeal_span_add_mul_mk_two_eq_one_iff`:
+  `(2 / (a + b i))₄ = 1 ↔ 8 ∣ b` for odd `a`.
 
 ## References
 
@@ -226,9 +238,15 @@ private theorem symbol_one_add_nat_prime (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
     congr 1
     omega
 
-private theorem symbol_one_add_int (hζ : IsPrimitiveRoot ζ 4) {m : ℤ} (hm : Odd m) :
+/-- **The rational-denominator supplement for `1 + i` at an odd integer.** For every odd integer
+`m`, including negative and composite `m`, the quartic symbol of `1 + i` at `m 𝓞 K` is
+`i ^ ((m * χ₄(m) - 1) / 4)`, where `χ₄` is the non-principal Dirichlet character modulo `4`. -/
+theorem powerResidueSymbolIdeal_span_intCast_mk_one_add_toInteger_of_odd
+    (hζ : IsPrimitiveRoot ζ 4) {m : ℤ} (hm : Odd m) :
     ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4
-      (Ideal.Quotient.mk _ (1 + hζ.toInteger)) : 𝓞 K) : K) = ζ ^ rationalExponent m := by
+      (Ideal.Quotient.mk _ (1 + hζ.toInteger)) : 𝓞 K) : K) =
+        ζ ^ ((m * ZMod.χ₄ m - 1) / 4) := by
+  rw [← rationalExponent]
   induction m using UniqueFactorizationMonoid.induction_on_prime with
   | h₁ => exact (Int.not_odd_zero hm).elim
   | h₂ m hunit =>
@@ -273,7 +291,7 @@ theorem powerResidueSymbolIdeal_span_intCast_mk_one_add_toInteger
     ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4
       (Ideal.Quotient.mk _ (1 + hζ.toInteger)) : 𝓞 K) : K) = ζ ^ ((m - 1) / 4) := by
   have hodd : Odd m := Int.odd_iff.mpr (by simp only [Int.ModEq] at hm; omega)
-  rw [symbol_one_add_int hζ hodd, rationalExponent,
+  rw [hζ.powerResidueSymbolIdeal_span_intCast_mk_one_add_toInteger_of_odd hodd,
     ZMod.χ₄_int_one_mod_four hm, mul_one]
 
 section Examples
@@ -313,17 +331,6 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
   {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
 
 /-! ### Integrality and multiplicativity of the exponent -/
-
-/-- **Integrality of the `1 + i` supplement exponent.** For primary `a + b i` in `𝓞 K = ℤ[i]`,
-the integer `a - b - b² - 1` is divisible by `4`. -/
-theorem IsPrimaryGaussian.four_dvd_sub_sub_sq_sub_one {a b : ℤ}
-    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
-    4 ∣ a - b - b ^ 2 - 1 := by
-  have hπ := hζ.isPrimaryGaussian_add_mul_iff.mp hx
-  simp only [Int.ModEq] at hπ
-  obtain ⟨u, rfl⟩ : ∃ u, a = 2 * u + 1 := ⟨(a - 1) / 2, by omega⟩
-  obtain ⟨r, rfl⟩ : ∃ r, b = 2 * (u + 2 * r) := ⟨(b - 2 * u) / 4, by omega⟩
-  exact ⟨-r - (u + 2 * r) ^ 2, by ring⟩
 
 /-- **Multiplicativity of the `1 + i` supplement exponent.** For primary `a₁ + b₁ i` and
 `a₂ + b₂ i` in `𝓞 K = ℤ[i]`, the exponent `(a - b - b² - 1) / 4` of their product
@@ -611,6 +618,92 @@ theorem IsPrimaryGaussian.powerResidueSymbolIdeal_mk_one_add_toInteger {a b : �
     simp only [zero_mul, sub_zero, add_zero, zero_pow (by decide : 2 ≠ 0)] at hexp
     exact zpow_eq_zpow_of_modEq hζ.pow_eq_one hexp.symm
 
+/-- **The supplementary law for `1 - i`.** If `λ = a + b i` is primary in `𝓞 K = ℤ[i]`, then
+`((1 - i) / λ)_4 = i ^ (-((a + b - b ^ 2 - 1) / 4))`, the symbol being taken at `λ 𝓞 K` and read
+in `K`. -/
+theorem IsPrimaryGaussian.powerResidueSymbolIdeal_mk_one_sub_toInteger {a b : ℤ}
+    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    ((powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
+      (Ideal.Quotient.mk _ (1 - hζ.toInteger)) : 𝓞 K) : K) =
+        ζ ^ (-((a + b - b ^ 2 - 1) / 4)) := by
+  have hneg : -ζ = ζ⁻¹ := eq_inv_of_mul_eq_one_left (by
+    rw [neg_mul, ← pow_two, hζ.sq_eq_neg_one, neg_neg])
+  have hζ' : IsPrimitiveRoot (-ζ) 4 := hneg.symm ▸ hζ.inv
+  have hi' : hζ'.toInteger = -hζ.toInteger := by
+    apply RingOfIntegers.coe_injective
+    rw [map_neg]
+    exact hζ'.coe_toInteger.trans (congrArg Neg.neg hζ.coe_toInteger.symm)
+  have h1 : 1 - hζ.toInteger = 1 + hζ'.toInteger := by rw [hi', sub_eq_add_neg]
+  have h2 : (a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger =
+      (a : 𝓞 K) + ((-b : ℤ) : 𝓞 K) * hζ'.toInteger := by
+    rw [hi']; push_cast; ring
+  have hx' : IsPrimaryGaussian ((a : 𝓞 K) + ((-b : ℤ) : 𝓞 K) * hζ'.toInteger) := h2 ▸ hx
+  rw [h1, h2, hx'.powerResidueSymbolIdeal_mk_one_add_toInteger, hneg, inv_zpow,
+    ← zpow_neg, sub_neg_eq_add, neg_sq]
+
+/-- **The supplementary law for `2` in quartic reciprocity.** If `λ = a + b i` is primary in
+`𝓞 K = ℤ[i]`, then `(2 / λ)_4 = i ^ (-(b / 2))`, the symbol being taken at `λ 𝓞 K` and read in
+`K`. -/
+theorem IsPrimaryGaussian.powerResidueSymbolIdeal_mk_two {a b : ℤ}
+    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    ((powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
+      (Ideal.Quotient.mk _ 2) : 𝓞 K) : K) = ζ ^ (-(b / 2)) := by
+  have htwo : (2 : 𝓞 K) = (1 + hζ.toInteger) * (1 - hζ.toInteger) := by
+    linear_combination hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
+  rw [htwo, map_mul, map_mul]
+  simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap]
+  rw [hx.powerResidueSymbolIdeal_mk_one_add_toInteger,
+    hx.powerResidueSymbolIdeal_mk_one_sub_toInteger,
+    ← zpow_add₀ (hζ.ne_zero (by decide))]
+  congr 1
+  obtain ⟨q, hq⟩ := hx.four_dvd_sub_sub_sq_sub_one
+  have hx' := (hζ.isPrimaryGaussian_add_mul_iff (a := a) (b := b)).mp hx
+  obtain ⟨m, rfl⟩ : ∃ m, b = 2 * m := ⟨b / 2, by simp only [Int.ModEq] at hx'; omega⟩
+  omega
+
+/-- **Gauss's criterion for `2` in quartic reciprocity.** For integers `a` and `b` with `a` odd,
+the quartic residue symbol `(2 / (a + b i))_4` in `𝓞 K = ℤ[i]` equals `1` if and only if
+`8 ∣ b`. -/
+theorem _root_.IsPrimitiveRoot.powerResidueSymbolIdeal_span_add_mul_mk_two_eq_one_iff {ζ : K}
+    (hζ : IsPrimitiveRoot ζ 4) {a b : ℤ} (ha : Odd a) :
+    powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
+      (Ideal.Quotient.mk _ 2) = 1 ↔ 8 ∣ b := by
+  rcases Int.even_or_odd b with hb | hb
+  · wlog hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) generalizing a b
+    · have hx' : IsPrimaryGaussian (((-a : ℤ) : 𝓞 K) + ((-b : ℤ) : 𝓞 K) * hζ.toInteger) := by
+        rw [hζ.isPrimaryGaussian_add_mul_iff] at hx ⊢
+        obtain ⟨k, rfl⟩ := ha
+        obtain ⟨l, rfl⟩ := hb
+        simp only [Int.ModEq] at hx ⊢
+        omega
+      have h := this ha.neg hb.neg hx'
+      have heq : ((-a : ℤ) : 𝓞 K) + ((-b : ℤ) : 𝓞 K) * hζ.toInteger =
+          -((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger) := by push_cast; ring
+      rwa [heq, span_singleton_neg, dvd_neg] at h
+    have hcoe : (((powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
+        (Ideal.Quotient.mk _ 2) : 𝓞 K) : K) = 1) ↔
+        powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
+          (Ideal.Quotient.mk _ 2) = 1 := by exact_mod_cast Iff.rfl
+    rw [← hcoe, hx.powerResidueSymbolIdeal_mk_two, hζ.zpow_eq_one_iff_dvd, dvd_neg]
+    obtain ⟨l, rfl⟩ := hb
+    omega
+  · set i := hζ.toInteger
+    have hsq : i ^ 2 = -1 := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
+    have hnu : ¬ IsUnit (1 + i) := by
+      simpa using hζ.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four (a := 1) (b := 1)
+    obtain ⟨k, hk⟩ : ∃ k, a - b = 2 * k :=
+      ⟨(a - b) / 2, by obtain ⟨u, rfl⟩ := ha; obtain ⟨v, rfl⟩ := hb; omega⟩
+    have hdvd2 : 1 + i ∣ (2 : 𝓞 K) := ⟨1 - i, by linear_combination hsq⟩
+    have hdvdx : 1 + i ∣ (a : 𝓞 K) + (b : 𝓞 K) * i := by
+      refine ⟨(k : 𝓞 K) * (1 - i) + b, ?_⟩
+      have hk' : (a : 𝓞 K) - b = 2 * k := by exact_mod_cast hk
+      linear_combination hk' + (k : 𝓞 K) * hsq
+    have hncop : ¬ IsCoprime (span {(2 : 𝓞 K)}) (span {(a : 𝓞 K) + (b : 𝓞 K) * i}) := by
+      rw [isCoprime_span_singleton_iff]
+      exact fun hcop ↦ hnu (hcop.isUnit_of_dvd' hdvd2 hdvdx)
+    rw [powerResidueSymbolIdeal_mk_eq_zero_iff.mpr hncop]
+    exact iff_of_false zero_ne_one (by obtain ⟨l, rfl⟩ := hb; omega)
+
 section Examples
 
 variable (hζ : IsPrimitiveRoot ζ 4)
@@ -641,6 +734,27 @@ example : ((powerResidueSymbolIdeal (span {((3 : ℤ) : 𝓞 K) + ((-6 : ℤ) : 
     (by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide)]
   have hmod : ((3 - (-6) - (-6) ^ 2 - 1 : ℤ) / 4) ≡ 1 [ZMOD 4] := by decide
   rw [zpow_eq_zpow_of_modEq hζ.pow_eq_one hmod, zpow_one]
+
+/- `(2 / (-1 + 2i))_4 = -i`, `(2 / (1 + 4i))_4 = -1`, and `(2 / (-3 + 8i))_4 = 1` at the primary
+primes above `5`, `17`, and `73`. -/
+example : ((powerResidueSymbolIdeal (span {((-1 : ℤ) : 𝓞 K) + ((2 : ℤ) : 𝓞 K) * hζ.toInteger}) 4
+    (Ideal.Quotient.mk _ 2) : 𝓞 K) : K) = -ζ := by
+  have hx : IsPrimaryGaussian (((-1 : ℤ) : 𝓞 K) + ((2 : ℤ) : 𝓞 K) * hζ.toInteger) := by
+    rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
+  rw [hx.powerResidueSymbolIdeal_mk_two]
+  norm_num
+  exact inv_eq_of_mul_eq_one_left (by rw [neg_mul, ← pow_two, hζ.sq_eq_neg_one, neg_neg])
+
+example : ((powerResidueSymbolIdeal (span {((1 : ℤ) : 𝓞 K) + ((4 : ℤ) : 𝓞 K) * hζ.toInteger}) 4
+    (Ideal.Quotient.mk _ 2) : 𝓞 K) : K) = -1 := by
+  have hx : IsPrimaryGaussian (((1 : ℤ) : 𝓞 K) + ((4 : ℤ) : 𝓞 K) * hζ.toInteger) := by
+    rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
+  rw [hx.powerResidueSymbolIdeal_mk_two]
+  norm_num [hζ.sq_eq_neg_one]
+
+example : powerResidueSymbolIdeal (span {((-3 : ℤ) : 𝓞 K) + ((8 : ℤ) : 𝓞 K) * hζ.toInteger}) 4
+    (Ideal.Quotient.mk _ 2) = 1 :=
+  (hζ.powerResidueSymbolIdeal_span_add_mul_mk_two_eq_one_iff (by decide)).mpr (by decide)
 
 end Examples
 

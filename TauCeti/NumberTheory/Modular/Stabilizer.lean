@@ -100,7 +100,7 @@ theorem trace_sq_lt_four_of_smul_eq_self_of_not_mem_center {γ : SL(2, ℤ)}
   · unfold Matrix.GeneralLinearGroup.IsElliptic Matrix.IsElliptic at hell
     rw [Matrix.discr_fin_two, hd, Matrix.trace_fin_two] at hell
     simp only [Matrix.SpecialLinearGroup.mapGL_coe_matrix,
-      Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+      Matrix.SpecialLinearGroup.map_apply_coe, Matrix.map_apply,
       algebraMap_int_eq, Int.coe_castRingHom] at hell
     rw [Matrix.trace_fin_two]
     exact_mod_cast (by linarith :

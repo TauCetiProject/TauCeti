@@ -131,8 +131,8 @@ directions. -/
 def subgroupMap (e : G ≃ₜ* H) (K : Subgroup G) :
     K ≃ₜ* K.map ((e : G ≃* H) : G →* H) where
   toMulEquiv := (e : G ≃* H).subgroupMap K
-  continuous_toFun := (e.continuous.comp continuous_subtype_val).subtype_mk _
-  continuous_invFun := (e.symm.continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (e.continuous.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (e.symm.continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- `ContinuousMulEquiv.subgroupMap` applies the isomorphism. -/
 @[simp]
@@ -204,16 +204,16 @@ theorem forall_exists_mem_sInf_of_directedOn {c : Set (Subgroup (A × G))}
     (hsurj : ∀ K ∈ c, ∀ g : G, ∃ a : A, (a, g) ∈ K) (g : G) : ∃ a : A, (a, g) ∈ sInf c := by
   rcases c.eq_empty_or_nonempty with rfl | hne
   · exact ⟨1, by simp⟩
-  let F : c → Set A := fun K ↦ {a | (a, g) ∈ K.1}
+  let F : c → Set A := fun K ↦ {a | (a, g) ∈ K.val}
   have : Nonempty c := hne.to_subtype
   have hFclosed (K : c) : IsClosed (F K) :=
-    (hclosed K K.2).preimage (continuous_id.prodMk continuous_const)
+    (hclosed K K.property).preimage (continuous_id.prodMk continuous_const)
   have hFdir : Directed (· ⊇ ·) F := by
     rintro ⟨K, hK⟩ ⟨L, hL⟩
     obtain ⟨M, hM, hMK, hML⟩ := hdir K hK L hL
     exact ⟨⟨M, hM⟩, fun _ ha ↦ hMK ha, fun _ ha ↦ hML ha⟩
   obtain ⟨a, ha⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed F hFdir
-    (fun K ↦ hsurj K K.2 g) (fun K ↦ (hFclosed K).isCompact) hFclosed
+    (fun K ↦ hsurj K K.property g) (fun K ↦ (hFclosed K).isCompact) hFclosed
   exact ⟨a, Subgroup.mem_sInf.mpr fun K hK ↦ Set.mem_iInter.mp ha ⟨K, hK⟩⟩
 
 /-- A closed subgroup of `A × G` projecting onto `G`, with `A` compact, contains a minimal closed

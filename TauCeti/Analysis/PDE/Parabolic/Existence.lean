@@ -58,7 +58,7 @@ derivative is `u' = f - A u ∈ L²(a, b; V*)`
 (`TauCeti.gelfandDual_eq_of_forall_setIntegral_eq_add_inner`). For a Gelfand triple this gives
 existence of a weak solution of `u' + A(t) u = f`, `u(a) = u₀`
 (`TauCeti.exists_hasWeakLineDerivOn_gelfandDual`), which the energy estimate in
-`TauCeti.Analysis.PDE.Parabolic.EnergyEstimate` shows to be unique when `β ≥ 0`. Separability
+`TauCeti.Analysis.PDE.Parabolic.EnergyEstimate.Basic` shows to be unique when `β ≥ 0`. Separability
 makes `t ↦ A(t) u(t)` strongly measurable as a function into `V*`
 (`MeasureTheory.MemLp.clm_apply_of_forall_aestronglyMeasurable`, a consequence of Pettis'
 theorem), which a weak derivative in `L²(a, b; V*)` needs.
@@ -231,7 +231,7 @@ private theorem mem_testFunctions {φ : ℝ → V} :
 
 private theorem memLp_testFunctions (φ : testFunctions V b) :
     MemLp (φ : ℝ → V) 2 (volume.restrict (Ioo a b)) := by
-  exact (φ.2.1.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
+  exact (φ.property.1.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
     measurableSet_Ioo Ioo_subset_Icc_self).mono_exponent le_top
 
 variable (a) in
@@ -257,7 +257,7 @@ private noncomputable def variationalForm (ι : V →L[ℝ] H)
     { toFun := fun u =>
         ∫ t in Ioo a b, (A t (u t) ((φ : ℝ → V) t) - ⟪ι (u t), ι (deriv (φ : ℝ → V) t)⟫_ℝ)
       map_add' := fun u v => by
-        obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.2.1
+        obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.property.1
         rw [← integral_add (hK u).1 (hK v).1]
         refine integral_congr_ae ?_
         filter_upwards [Lp.coeFn_add u v] with t ht
@@ -271,18 +271,18 @@ private noncomputable def variationalForm (ι : V →L[ℝ] H)
           inner_smul_left, RCLike.conj_to_real]
         ring }
     (by
-      obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.2.1
+      obtain ⟨K, hK⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.property.1
       exact ⟨K, fun u => (hK u).2⟩)
   map_add' φ ψ := by
     ext u
-    obtain ⟨K₁, hK₁⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.2.1
-    obtain ⟨K₂, hK₂⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound ψ.2.1
+    obtain ⟨K₁, hK₁⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound φ.property.1
+    obtain ⟨K₂, hK₂⟩ := exists_forall_integrable_and_abs_integral_le ι hA hA_bound ψ.property.1
     simp only [add_apply, LinearMap.mkContinuousOfExistsBound_apply,
       LinearMap.coe_mk, AddHom.coe_mk]
     rw [← integral_add (hK₁ u).1 (hK₂ u).1]
     refine integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
-    have hφ := φ.2.1.differentiable one_ne_zero t
-    have hψ := ψ.2.1.differentiable one_ne_zero t
+    have hφ := φ.property.1.differentiable one_ne_zero t
+    have hψ := ψ.property.1.differentiable one_ne_zero t
     simp only [Submodule.coe_add, Pi.add_apply, deriv_add hφ hψ, map_add, inner_add_right]
     ring
   map_smul' c φ := by
@@ -292,7 +292,7 @@ private noncomputable def variationalForm (ι : V →L[ℝ] H)
     rw [← integral_const_mul]
     refine integral_congr_ae (Filter.Eventually.of_forall fun t => ?_)
     simp only [Submodule.coe_smul, Pi.smul_apply,
-      deriv_const_smul c (φ.2.1.differentiable one_ne_zero t), map_smul, inner_smul_right,
+      deriv_const_smul c (φ.property.1.differentiable one_ne_zero t), map_smul, inner_smul_right,
       smul_eq_mul]
     ring
 
@@ -318,7 +318,8 @@ private theorem mul_norm_sq_add_le_variationalForm (ι : V →L[ℝ] H) (hab : a
     filter_upwards [coeFn_testFunctionsToL2 φ] with t ht
     rw [ht, real_inner_self_eq_norm_sq]
   rw [← hnorm, variationalForm_apply]
-  refine (mul_setIntegral_norm_sq_add_le ι hab hA hA_bound hA_coercive φ.2.1 φ.2.2).trans_eq
+  refine (mul_setIntegral_norm_sq_add_le ι hab hA hA_bound hA_coercive φ.property.1
+      φ.property.2).trans_eq
     (integral_congr_ae ?_)
   filter_upwards [coeFn_testFunctionsToL2 φ] with t ht
   rw [ht]

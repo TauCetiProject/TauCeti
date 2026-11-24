@@ -23,6 +23,8 @@ order counts the factors vanishing there. No enumeration or countability assumpt
 index type is needed.
 
 Natural multiplicities are allowed under the weighted condition `∑ i, m i * ‖a i‖² < ∞`.
+The grouped product of the powers `E₁(a i * z) ^ m i` and the repeated-index product over
+`Σ i, Fin (m i)` converge locally uniformly to the same entire function.
 The analytic order counts the repeated vanishing factors; for injective slopes this is exactly
 the prescribed multiplicity.
 These are the convergence and divisor ingredients of Hadamard factorization at order one.
@@ -196,7 +198,9 @@ private theorem summable_sigma_norm_sq_weierstrass :
     Summable (fun p : Σ i, Fin (m i) ↦ ‖a p.1‖ ^ 2) :=
   (TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm
 
-private theorem tprod_weierstrassFactor_one_pow_eq_sigma (z : ℂ) :
+/-- The product with natural multiplicities is the product over the repeated index
+`Σ i, Fin (m i)`, in which the slope `a i` occurs `m i` times. -/
+theorem tprod_weierstrassFactor_one_pow_eq_tprod_sigma (z : ℂ) :
     (∏' i, weierstrassFactor 1 (a i * z) ^ m i) =
       ∏' p : Σ i, Fin (m i), weierstrassFactor 1 (a p.1 * z) := by
   have hσ := summable_sigma_norm_sq_weierstrass a m hm
@@ -211,7 +215,7 @@ theorem differentiable_tprod_weierstrassFactor_one_pow :
     Differentiable ℂ (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) := by
   have heq : (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) =
       (fun z ↦ ∏' p : Σ i, Fin (m i), weierstrassFactor 1 (a p.1 * z)) :=
-    funext (tprod_weierstrassFactor_one_pow_eq_sigma a m hm)
+    funext (tprod_weierstrassFactor_one_pow_eq_tprod_sigma a m hm)
   rw [heq]
   exact differentiable_tprod_weierstrassFactor_one _
     (summable_sigma_norm_sq_weierstrass a m hm)
@@ -223,7 +227,7 @@ theorem analyticOrderAt_tprod_weierstrassFactor_one_pow (z : ℂ) :
       ({p : Σ j, Fin (m j) | a p.1 * z = 1}.ncard : ℕ∞) := by
   have heq : (fun w ↦ ∏' j, weierstrassFactor 1 (a j * w) ^ m j) =
       (fun w ↦ ∏' p : Σ j, Fin (m j), weierstrassFactor 1 (a p.1 * w)) :=
-    funext (tprod_weierstrassFactor_one_pow_eq_sigma a m hm)
+    funext (tprod_weierstrassFactor_one_pow_eq_tprod_sigma a m hm)
   rw [heq]
   exact analyticOrderAt_tprod_weierstrassFactor_one _
     (summable_sigma_norm_sq_weierstrass a m hm) z
@@ -267,7 +271,7 @@ theorem hasProdUniformlyOn_weierstrassFactor_one_pow {K : Set ℂ} (hK : Bornolo
   filter_upwards [(TauCeti.tendsto_finset_sigma_univ_atTop (κ := fun i ↦ Fin (m i))).eventually
     (h0 u hu)] with s hs z hz
   have hsz := hs z hz
-  simpa only [← tprod_weierstrassFactor_one_pow_eq_sigma a m hm,
+  simpa only [← tprod_weierstrassFactor_one_pow_eq_tprod_sigma a m hm,
     Finset.prod_sigma, Finset.prod_const, Finset.card_univ, Fintype.card_fin] using hsz
 
 /-- Products with natural multiplicities converge locally uniformly on the whole plane. -/
@@ -278,11 +282,20 @@ theorem hasProdLocallyUniformlyOn_weierstrassFactor_one_pow :
   intro K _ hK
   exact hasProdUniformlyOn_weierstrassFactor_one_pow a m hm hK.isBounded
 
+/-- The repeated-index product, in which the slope `a i` occurs `m i` times, converges locally
+uniformly on the whole plane to the product with natural multiplicities. -/
+theorem hasProdLocallyUniformlyOn_sigma_weierstrassFactor_one :
+    HasProdLocallyUniformlyOn (fun (p : Σ i, Fin (m i)) z ↦ weierstrassFactor 1 (a p.1 * z))
+      (fun z ↦ ∏' i, weierstrassFactor 1 (a i * z) ^ m i) Set.univ := by
+  rw [funext (tprod_weierstrassFactor_one_pow_eq_tprod_sigma a m hm)]
+  exact hasProdLocallyUniformlyOn_weierstrassFactor_one _
+    (summable_sigma_norm_sq_weierstrass a m hm)
+
 /-- The weighted product vanishes exactly at a root whose prescribed multiplicity is nonzero. -/
 theorem tprod_weierstrassFactor_one_pow_eq_zero_iff (z : ℂ) :
     (∏' i, weierstrassFactor 1 (a i * z) ^ m i) = 0 ↔
       ∃ i, m i ≠ 0 ∧ a i * z = 1 := by
-  rw [tprod_weierstrassFactor_one_pow_eq_sigma a m hm,
+  rw [tprod_weierstrassFactor_one_pow_eq_tprod_sigma a m hm,
     tprod_weierstrassFactor_one_eq_zero_iff _ (summable_sigma_norm_sq_weierstrass a m hm)]
   constructor
   · rintro ⟨⟨i, k⟩, hi⟩

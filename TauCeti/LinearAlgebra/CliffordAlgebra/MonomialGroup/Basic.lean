@@ -166,6 +166,8 @@ For a finite orthogonal basis whose generators square to `±1` it is the finite 
 def monomialGroup (v : I → M) : Subgroup (CliffordAlgebra Q)ˣ :=
   Subgroup.closure {u | (u : CliffordAlgebra Q) = -1 ∨ ∃ i, (u : CliffordAlgebra Q) = ι Q (v i)}
 
+section Family
+
 variable {Q} (v : I → M)
 
 /-- The defining generators of the group of signed monomials. -/
@@ -277,8 +279,8 @@ theorem involute_eq_or_eq_neg_of_mem_monomialGroup {u : (CliffordAlgebra Q)ˣ}
 /-- **The grade involution as an automorphism of the group of signed monomials.** For an orthogonal
 basis it sends the signed monomial `±e_s` to `±(-1) ^ #s e_s`. -/
 noncomputable def monomialGroupInvolute : monomialGroup Q v ≃* monomialGroup Q v where
-  toFun g := ⟨_, units_map_involute_mem_monomialGroup v g.2⟩
-  invFun g := ⟨_, units_map_involute_mem_monomialGroup v g.2⟩
+  toFun g := ⟨_, units_map_involute_mem_monomialGroup v g.property⟩
+  invFun g := ⟨_, units_map_involute_mem_monomialGroup v g.property⟩
   left_inv _ := Subtype.ext (Units.ext (involute_involute _))
   right_inv _ := Subtype.ext (Units.ext (involute_involute _))
   map_mul' _ _ := Subtype.ext (map_mul _ _ _)
@@ -495,7 +497,7 @@ theorem mul_self_mem_monomialGroupSign (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i
       rw [← mul_inv_rev]
       rcases ih with h | h <;> simp [h]
   refine (mem_monomialGroupSign_iff v).mpr ?_
-  rcases key u.2 with h | h
+  rcases key u.property with h | h
   · exact Or.inl (Subtype.ext h)
   · exact Or.inr (Subtype.ext h)
 
@@ -516,10 +518,10 @@ the characters with values in the units of a ring as well as the sign characters
 def monomialGroupSignCharEquiv {H : Type*} [Group H] :
     {χ : monomialGroup Q v →* H // χ (monomialGroupEpsilon Q v) = 1} ≃
       ((monomialGroup Q v ⧸ monomialGroupSign Q v) →* H) where
-  toFun χ := QuotientGroup.lift _ χ.1 fun u hu ↦ by
+  toFun χ := QuotientGroup.lift _ χ.val fun u hu ↦ by
     rcases (mem_monomialGroupSign_iff v).mp hu with rfl | rfl
     · exact map_one _
-    · exact χ.2
+    · exact χ.property
   invFun ψ := ⟨ψ.comp (QuotientGroup.mk' (monomialGroupSign Q v)), by
     have hε := (QuotientGroup.eq_one_iff (N := monomialGroupSign Q v)
       (monomialGroupEpsilon Q v)).mpr (monomialGroupEpsilon_mem_monomialGroupSign v)
@@ -534,7 +536,7 @@ quotient taking the class of a group element to its value. -/
 theorem monomialGroupSignCharEquiv_apply_mk {H : Type*} [Group H]
     (χ : {χ : monomialGroup Q v →* H // χ (monomialGroupEpsilon Q v) = 1})
     (u : monomialGroup Q v) :
-    monomialGroupSignCharEquiv v χ (QuotientGroup.mk u) = χ.1 u :=
+    monomialGroupSignCharEquiv v χ (QuotientGroup.mk u) = χ.val u :=
   (rfl)
 
 /-- The inverse of `CliffordAlgebra.monomialGroupSignCharEquiv` sends a monoid map of the quotient
@@ -542,7 +544,7 @@ to its composite with the quotient map. -/
 @[simp]
 theorem monomialGroupSignCharEquiv_symm_apply_coe {H : Type*} [Group H]
     (ψ : (monomialGroup Q v ⧸ monomialGroupSign Q v) →* H) (u : monomialGroup Q v) :
-    ((monomialGroupSignCharEquiv v).symm ψ).1 u = ψ (QuotientGroup.mk u) :=
+    ((monomialGroupSignCharEquiv v).symm ψ).val u = ψ (QuotientGroup.mk u) :=
   (rfl)
 
 /-! ### The group algebra of the group of signed monomials -/
@@ -619,6 +621,12 @@ theorem monomialGroupAlgHom_surjective (hv : Submodule.span R (Set.range v) = �
 private theorem isUnit_of_eq_one_or_neg_one (hQ : ∀ i, Q (v i) = 1 ∨ Q (v i) = -1) (i : I) :
     IsUnit (Q (v i)) := by
   rcases hQ i with h | h <;> simp [h]
+
+end Family
+
+variable {Q}
+
+section NormalForm
 
 variable [Invertible (2 : R)] [LinearOrder I] {b : Module.Basis I R M}
 
@@ -723,7 +731,7 @@ noncomputable def monomialGroupEquiv [Nontrivial R]
       · exact ((basis Q b).ne_neg (Invertible.ne_zero 2) s t h).elim
       · exact ((basis Q b).ne_neg (Invertible.ne_zero 2) t s h.symm).elim
       · rw [(basis Q b).injective h]
-    · obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp u.2
+    · obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp u.property
       · exact ⟨(s, 1), Subtype.ext (Units.ext (by rw [hval, hs, Units.val_one, one_smul]))⟩
       · exact ⟨(s, -1), Subtype.ext (Units.ext (by rw [hval, hs, Units.val_neg, Units.val_one,
           neg_one_smul]))⟩
@@ -738,7 +746,12 @@ theorem coe_monomialGroupEquiv_apply [Nontrivial R]
       (p.2 : ℤ) • basis Q b p.1 :=
   (exists_monomialGroup_val_eq_zsmul_basis hb hQ p).choose_spec
 
-omit [LinearOrder I] in
+end NormalForm
+
+section NatCard
+
+variable [Invertible (2 : R)] {b : Module.Basis I R M}
+
 /-- **The order of the group of signed monomials**: for an orthogonal basis over a nontrivial ring
 in which `2` is invertible, indexed by a type with `n` elements and whose generators square to `±1`,
 the group has `2 ^ (n + 1)` elements, the `±e_s` for the `2 ^ n` index sets `s`. -/
@@ -748,6 +761,12 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
   let : LinearOrder I := WellOrderingRel.isWellOrder.linearOrder
   rw [← Nat.card_congr (monomialGroupEquiv hb hQ)]
   simp [Nat.card_eq_fintype_card, Fintype.card_finset, pow_succ]
+
+end NatCard
+
+section CenterBasis
+
+variable [Invertible (2 : R)] [LinearOrder I] {b : Module.Basis I R M}
 
 /-- A signed basis monomial is central in the finite monomial subgroup exactly when it can be
 written as `±e_s` with `s` empty, or with `s` the full index set of odd cardinality, for an
@@ -807,7 +826,12 @@ theorem mem_center_monomialGroup_iff [Fintype I]
     · simpa only [Subgroup.coe_mul, Units.val_mul, hs, mul_neg, neg_mul] using
         congrArg Neg.neg (hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
 
-omit [LinearOrder I] in
+end CenterBasis
+
+section FiniteAndQuotientCard
+
+variable [Invertible (2 : R)] {b : Module.Basis I R M}
+
 /-- **The group of signed monomials of a finite orthogonal basis is finite.** -/
 theorem finite_monomialGroup [Finite I]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
@@ -824,7 +848,6 @@ theorem finite_monomialGroup [Finite I]
 
 /-! ### The quotient by the sign subgroup of an orthogonal basis -/
 
-omit [LinearOrder I] in
 /-- **The quotient by the sign subgroup has `2 ^ n` elements**, one for each of the `2 ^ n` index
 sets: the group of signed monomials has `2 ^ (n + 1)` elements and the sign subgroup has two. -/
 theorem natCard_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
@@ -834,7 +857,13 @@ theorem natCard_quotient_monomialGroupSign [Fintype I] [Nontrivial R]
   rw [natCard_monomialGroup hb hQ, natCard_monomialGroupSign b two_ne_zero, pow_succ] at h
   exact (Nat.eq_of_mul_eq_mul_right two_pos h).symm
 
+end FiniteAndQuotientCard
+
 /-! ### The Clifford algebra as a quotient of the group algebra -/
+
+section GroupAlgebraQuotient
+
+variable [Invertible (2 : R)] [LinearOrder I] {b : Module.Basis I R M}
 
 /-- **The kernel of the group algebra map is generated by `ε + 1`**: for an orthogonal basis whose
 generators square to `±1`, an element of the group algebra of the group of signed monomials maps to
@@ -856,7 +885,7 @@ theorem ker_monomialGroupAlgHom (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
       z - ψ (monomialGroupAlgHom Q b z) ∈ Ideal.span {x} := by
     induction z using MonoidAlgebra.induction_on with
     | of g =>
-      obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.2
+      obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.property
       · obtain rfl : g = u s := Subtype.ext (Units.ext (hs.trans (hu s).symm))
         rw [monomialGroupAlgHom_of, hu, Module.Basis.constr_basis, sub_self]
         exact zero_mem _
@@ -912,7 +941,7 @@ private noncomputable def monomialGroupLiftAux (hb : (QuadraticMap.associated Q)
     CliffordAlgebra Q →ₐ[R] A :=
   (Ideal.Quotient.liftₐ _ (MonoidAlgebra.lift R A _ f) fun _ hz ↦
       RingHom.mem_ker.mp ((Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
-        (by simp [RingHom.mem_ker, f.2]))) hz)).comp
+        (by simp [RingHom.mem_ker, f.property]))) hz)).comp
     (monomialGroupAlgebraQuotientEquiv hb hQ).symm.toAlgHom
 
 /-- `CliffordAlgebra.monomialGroupLiftAux hb hQ f` sends the value of `g` to `f g`. -/
@@ -920,7 +949,7 @@ private theorem monomialGroupLiftAux_apply_coe (hb : (QuadraticMap.associated Q)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
     (f : {f : monomialGroup Q b →* A // f (monomialGroupEpsilon Q b) = -1})
     (g : monomialGroup Q b) :
-    monomialGroupLiftAux hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.1 g := by
+    monomialGroupLiftAux hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.val g := by
   simp only [monomialGroupLiftAux, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     monomialGroupAlgebraQuotientEquiv_symm_apply_coe]
   exact MonoidAlgebra.lift_of ..
@@ -952,7 +981,7 @@ theorem monomialGroupLift_apply_coe (hb : (QuadraticMap.associated Q).IsOrthoᵢ
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
     (f : {f : monomialGroup Q b →* A // f (monomialGroupEpsilon Q b) = -1})
     (g : monomialGroup Q b) :
-    monomialGroupLift hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.1 g :=
+    monomialGroupLift hb hQ f ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = f.val g :=
   monomialGroupLiftAux_apply_coe hb hQ f g
 
 /-- The monoid map attached by `CliffordAlgebra.monomialGroupLift` to an algebra map `F` from the
@@ -961,12 +990,13 @@ Clifford algebra is `F` applied to the values of the group elements. -/
 theorem monomialGroupLift_symm_apply_coe (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {A : Type*} [Ring A] [Algebra R A]
     (F : CliffordAlgebra Q →ₐ[R] A) (g : monomialGroup Q b) :
-    ((monomialGroupLift hb hQ).symm F).1 g = F ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
+    ((monomialGroupLift hb hQ).symm F).val g = F ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) :=
   (rfl)
+
+end GroupAlgebraQuotient
 
 /-! ### Conjugacy classes -/
 
-omit [Invertible (2 : R)] [LinearOrder I] in
 /-- **A noncentral signed monomial is conjugate exactly to itself and its negative**: for pairwise
 orthogonal vectors, a signed monomial `u` that is not central anticommutes with some signed
 monomial `g`, and conjugation by `g` sends it to `-u`. -/
@@ -985,7 +1015,6 @@ theorem monomialGroup_isConj_iff_of_notMem_center
     · refine isConj_iff.mpr ⟨g, Subtype.ext ?_⟩
       simp only [Subgroup.coe_mul, Subgroup.coe_inv, hw, hc.eq, neg_mul, mul_inv_cancel_right]
 
-omit [Invertible (2 : R)] [LinearOrder I] in
 /-- **A noncentral conjugacy class of signed monomials has two elements**, `u` and `-u`, for
 pairwise orthogonal vectors. -/
 theorem natCard_carrier_monomialGroup_of_notMem_center
@@ -1012,7 +1041,9 @@ theorem natCard_carrier_monomialGroup_of_notMem_center
     · simpa only [Subgroup.coe_mul, hneg] using hc.eq
   rw [hcarrier, Nat.card_coe_set_eq, Set.ncard_pair hne]
 
-variable [Nontrivial R] [Fintype I]
+section CenterEquiv
+
+variable [Invertible (2 : R)] [LinearOrder I] {b : Module.Basis I R M} [Nontrivial R] [Fintype I]
 
 /-- A signed monomial `ε • e_s` is central exactly when its support `s` is empty or is the full
 index set of odd cardinality. -/
@@ -1040,7 +1071,12 @@ theorem monomialGroupEquiv_mem_center_iff
     refine ⟨p.1, ?_, hc⟩
     rcases Int.units_eq_one_or p.2 with h | h <;> simp [h]
 
-omit [LinearOrder I] in
+end CenterEquiv
+
+section ConjClassesCard
+
+variable [Invertible (2 : R)] {b : Module.Basis I R M} [Nontrivial R] [Fintype I]
+
 /-- The centre of the group of signed monomials has two elements for each of its supports: the
 empty set and, in odd dimension, the full index set. -/
 private theorem natCard_center_monomialGroup
@@ -1060,7 +1096,6 @@ private theorem natCard_center_monomialGroup
   rw [Nat.card_congr e, Nat.card_prod]
   simp [Nat.card_eq_fintype_card]
 
-omit [LinearOrder I] in
 /-- **The centre of the group of signed monomials in even dimension** has two elements, `1` and
 `ε = -1`, for an orthogonal basis whose generators square to `±1`, indexed by a type of even
 cardinality. -/
@@ -1075,7 +1110,6 @@ theorem natCard_center_monomialGroup_of_even
   rw [natCard_center_monomialGroup hb hQ, Nat.card_congr (Equiv.subtypeEquivRight hsupp)]
   simp
 
-omit [LinearOrder I] in
 /-- **The centre of the group of signed monomials in odd dimension** has four elements, `±1` and
 `±ω` for `ω = e_univ` the volume element, for an orthogonal basis whose generators square to `±1`,
 indexed by a type of odd cardinality. -/
@@ -1094,7 +1128,6 @@ theorem natCard_center_monomialGroup_of_odd
   rw [natCard_center_monomialGroup hb hQ, Nat.card_congr (Equiv.subtypeEquivRight hsupp),
     Nat.card_eq_fintype_card, Fintype.card_coe, Finset.card_pair hne]
 
-omit [LinearOrder I] in
 /-- Twice the number of conjugacy classes of the group of signed monomials is the order of the
 group plus the order of its centre, since every noncentral class has two elements. -/
 private theorem two_mul_natCard_conjClasses_monomialGroup
@@ -1110,7 +1143,6 @@ private theorem two_mul_natCard_conjClasses_monomialGroup
     (fun _ _ hij ↦ QuadraticMap.associated_isOrtho.mp (hb hij))
     fun hu ↦ (ConjClasses.mk_bijOn _).mapsTo hu hC
 
-omit [LinearOrder I] in
 /-- **The number of conjugacy classes of the group of signed monomials in even dimension**: for an
 orthogonal basis of `n` vectors, `n` even, whose generators square to `±1`, the group has
 `2 ^ n + 1` conjugacy classes, its two central elements and the `2 ^ n - 1` pairs `{u, -u}`. -/
@@ -1122,7 +1154,6 @@ theorem natCard_conjClasses_monomialGroup_of_even
   rw [natCard_center_monomialGroup_of_even hb hQ hn, pow_succ] at h
   omega
 
-omit [LinearOrder I] in
 /-- **The number of conjugacy classes of the group of signed monomials in odd dimension**: for an
 orthogonal basis of `n` vectors, `n` odd, whose generators square to `±1`, the group has
 `2 ^ n + 2` conjugacy classes, its four central elements and the `2 ^ n - 2` pairs `{u, -u}`. -/
@@ -1134,9 +1165,14 @@ theorem natCard_conjClasses_monomialGroup_of_odd
   rw [natCard_center_monomialGroup_of_odd hb hQ hn, pow_succ] at h
   omega
 
+end ConjClassesCard
+
 /-! ### The support homomorphism and the characters trivial on `ε` -/
 
-omit [Fintype I] in
+section Support
+
+variable [Invertible (2 : R)] [LinearOrder I] {b : Module.Basis I R M} [Nontrivial R]
+
 /-- The support of a signed monomial `±e_s`, read off its parametrization, is `s`. -/
 private theorem monomialGroupEquiv_symm_fst_of_val_eq
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
@@ -1150,7 +1186,6 @@ private theorem monomialGroupEquiv_symm_fst_of_val_eq
     · exact ⟨-1, Subtype.ext (Units.ext (by simp [hg]))⟩
   rw [← he, Equiv.symm_apply_apply]
 
-omit [Fintype I] in
 /-- **The support homomorphism.** For an orthogonal basis whose generators square to `±1`, the
 signed monomial `±e_s` is sent to the indicator vector of `s` in `(ZMod 2) ^ I`, written
 multiplicatively. It is a homomorphism because `e_s * e_t = ±e_{s ∆ t}`; it is onto when `I` is
@@ -1165,8 +1200,8 @@ noncomputable def monomialGroupSupport (hb : (QuadraticMap.associated Q).IsOrtho
     rw [monomialGroupEquiv_symm_fst_of_val_eq hb hQ (s := ∅) (Or.inl (by simp)),
       Finset.coe_empty, Set.indicator_empty', ofAdd_zero]
   map_mul' g h := by
-    obtain ⟨s, hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.2
-    obtain ⟨t, ht⟩ := (mem_monomialGroup_iff hb hQ).mp h.2
+    obtain ⟨s, hs⟩ := (mem_monomialGroup_iff hb hQ).mp g.property
+    obtain ⟨t, ht⟩ := (mem_monomialGroup_iff hb hQ).mp h.property
     have hst := mul_eq_or_of_eq_basis_or hb hQ hs ht
     rw [← Units.val_mul, ← Subgroup.coe_mul] at hst
     rw [monomialGroupEquiv_symm_fst_of_val_eq hb hQ hst,
@@ -1178,7 +1213,6 @@ noncomputable def monomialGroupSupport (hb : (QuadraticMap.associated Q).IsOrtho
     by_cases his : i ∈ s <;> by_cases hit : i ∈ t <;>
       simp [Set.mem_symmDiff, his, hit, CharTwo.add_self_eq_zero]
 
-omit [Fintype I] in
 /-- The support of a signed monomial `±e_s` is the indicator vector of `s`. -/
 theorem monomialGroupSupport_apply_of_val_eq (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {g : monomialGroup Q b} {s : Finset I}
@@ -1188,7 +1222,6 @@ theorem monomialGroupSupport_apply_of_val_eq (hb : (QuadraticMap.associated Q).I
   simp only [monomialGroupSupport, MonoidHom.coe_mk, OneHom.coe_mk,
     monomialGroupEquiv_symm_fst_of_val_eq hb hQ hg]
 
-omit [Fintype I] in
 /-- The support of the signed monomial `ε • e_s` is the indicator vector of `s`. -/
 @[simp]
 theorem monomialGroupSupport_monomialGroupEquiv (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
@@ -1197,7 +1230,6 @@ theorem monomialGroupSupport_monomialGroupEquiv (hb : (QuadraticMap.associated Q
   monomialGroupSupport_apply_of_val_eq hb hQ <| by
     rcases Int.units_eq_one_or p.2 with h | h <;> simp [h]
 
-omit [Fintype I] in
 /-- A signed monomial has trivial support exactly when it is `1` or `ε = -1`. -/
 theorem monomialGroupSupport_eq_one_iff (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {g : monomialGroup Q b} :
@@ -1217,7 +1249,6 @@ theorem monomialGroupSupport_eq_one_iff (hb : (QuadraticMap.associated Q).IsOrth
     ← ofAdd_zero, EmbeddingLike.apply_eq_iff_eq, hs]
   rcases Int.units_eq_one_or e with rfl | rfl <;> simp
 
-omit [Fintype I] in
 /-- **The kernel of the support homomorphism** is the sign subgroup `{1, ε}`. -/
 theorem ker_monomialGroupSupport (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
@@ -1225,7 +1256,6 @@ theorem ker_monomialGroupSupport (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
   Subgroup.ext fun _ ↦ by
     rw [MonoidHom.mem_ker, monomialGroupSupport_eq_one_iff, mem_monomialGroupSign_iff]
 
-omit [Fintype I] in
 /-- **The support homomorphism is onto** for a finite index type: the indicator vector of `s` is
 the support of `e_s`. -/
 theorem monomialGroupSupport_surjective [Finite I] (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
@@ -1245,7 +1275,6 @@ theorem monomialGroupSupport_surjective [Finite I] (hb : (QuadraticMap.associate
     rw [Set.indicator_of_notMem hnot]
     exact ((hbinary _).resolve_right hi).symm
 
-omit [Fintype I] in
 /-- **The group of signed monomials modulo the sign subgroup is the elementary abelian group
 `(ZMod 2) ^ I`**, for an orthogonal basis indexed by a finite type whose generators square to `±1`:
 the class of a signed monomial is sent to its support. -/
@@ -1255,7 +1284,6 @@ noncomputable def monomialGroupQuotientEquiv [Finite I]
   (QuotientGroup.quotientMulEquivOfEq (ker_monomialGroupSupport hb hQ).symm).trans
     (QuotientGroup.quotientKerEquivOfSurjective _ (monomialGroupSupport_surjective hb hQ))
 
-omit [Fintype I] in
 /-- `CliffordAlgebra.monomialGroupQuotientEquiv` sends the class of a signed monomial to its
 support. -/
 @[simp]
@@ -1264,7 +1292,6 @@ theorem monomialGroupQuotientEquiv_mk [Finite I] (hb : (QuadraticMap.associated 
     monomialGroupQuotientEquiv hb hQ g = monomialGroupSupport hb hQ g :=
   (rfl)
 
-omit [Fintype I] in
 /-- **The sign characters trivial on `ε`.** For a finite index set `t`, the character of the group
 of signed monomials sending `±e_s` to `(-1) ^ #(s ∩ t)`
 (`CliffordAlgebra.monomialGroupCharacter_apply_of_val_eq`). It is the support homomorphism
@@ -1277,7 +1304,6 @@ noncomputable def monomialGroupCharacter (hb : (QuadraticMap.associated Q).IsOrt
   map_one' := by simp
   map_mul' g h := by simp [Finset.sum_add_distrib, uzpow_add]
 
-omit [Fintype I] in
 /-- The sign character `χ_t` sends a signed monomial `±e_s` to `(-1) ^ #(s ∩ t)`. -/
 theorem monomialGroupCharacter_apply_of_val_eq (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (t : Finset I) {g : monomialGroup Q b} {s : Finset I}
@@ -1289,7 +1315,6 @@ theorem monomialGroupCharacter_apply_of_val_eq (hb : (QuadraticMap.associated Q)
     Finset.mem_coe, Pi.one_apply, Finset.sum_boole, Finset.filter_mem_eq_inter, uzpow_natCast]
   rw [Finset.inter_comm]
 
-omit [Fintype I] in
 /-- The sign character `χ_t` sends the signed monomial `ε • e_s` to `(-1) ^ #(s ∩ t)`. -/
 @[simp]
 theorem monomialGroupCharacter_monomialGroupEquiv (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
@@ -1298,7 +1323,6 @@ theorem monomialGroupCharacter_monomialGroupEquiv (hb : (QuadraticMap.associated
   monomialGroupCharacter_apply_of_val_eq hb hQ t <| by
     rcases Int.units_eq_one_or p.2 with h | h <;> simp [h]
 
-omit [Fintype I] in
 /-- The sign characters are trivial on `ε = -1`. -/
 @[simp]
 theorem monomialGroupCharacter_monomialGroupEpsilon (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
@@ -1307,7 +1331,6 @@ theorem monomialGroupCharacter_monomialGroupEpsilon (hb : (QuadraticMap.associat
   rw [monomialGroupCharacter_apply_of_val_eq hb hQ t (s := ∅) (Or.inr (by simp))]
   simp
 
-omit [Fintype I] in
 /-- Distinct index sets give distinct sign characters: `χ_t` takes the value `-1` at the
 generator `e_i` exactly when `i ∈ t`. -/
 theorem monomialGroupCharacter_injective (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
@@ -1322,7 +1345,6 @@ theorem monomialGroupCharacter_injective (hb : (QuadraticMap.associated Q).IsOrt
   by_cases hit : i ∈ t <;> by_cases hit' : i ∈ t' <;>
     simp [Finset.singleton_inter_of_notMem, hit, hit'] at hi ⊢
 
-omit [Fintype I] in
 /-- **The characters trivial on `ε` are the sign characters.** For an orthogonal basis indexed by a
 finite type whose generators square to `±1`, every character of the group of signed monomials with
 values in a domain of characteristic not two which is trivial on `ε = -1` is the sign character
@@ -1371,5 +1393,7 @@ theorem existsUnique_monomialGroupCharacter_eq [Finite I]
   refine ⟨_, hex, fun t ht ↦ monomialGroupCharacter_injective hb hQ
     (MonoidHom.ext fun x ↦ hcast ?_)⟩
   rw [← MonoidHom.comp_apply, ← MonoidHom.comp_apply, ht, hex]
+
+end Support
 
 end CliffordAlgebra

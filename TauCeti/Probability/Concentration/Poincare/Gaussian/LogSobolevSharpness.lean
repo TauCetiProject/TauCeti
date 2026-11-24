@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 public import Mathlib.Probability.Distributions.Gaussian.Real
 import Mathlib.Probability.Moments.SubGaussian
@@ -35,7 +36,7 @@ theorem entropy_exp_half_sq_gaussianReal (a : ℝ) :
     (gaussianReal 0 1).entropy (fun x => exp (a * x / 2) ^ 2) =
       (a ^ 2 / 2) * exp (a ^ 2 / 2) := by
   simp_rw [pow_two, Real.exp_half_mul_exp_half]
-  rw [Measure.entropy_def, gaussian_exp_integral, Real.log_exp]
+  rw [Measure.entropy_def, integral_exp_mul_gaussianReal, Real.log_exp]
   have hint : (∫ x : ℝ, exp (a * x) * log (exp (a * x)) ∂gaussianReal 0 1) =
       a * ∫ x : ℝ, x * exp (a * x) ∂gaussianReal 0 1 := by
     rw [← integral_const_mul]
@@ -43,7 +44,7 @@ theorem entropy_exp_half_sq_gaussianReal (a : ℝ) :
     filter_upwards with x
     rw [Real.log_exp]
     ring
-  rw [hint, gaussian_x_exp_integral]
+  rw [hint, integral_mul_exp_mul_gaussianReal, NNReal.coe_one]
   ring_nf
 
 /-- The gradient energy of the exponential test under the standard Gaussian. -/
@@ -62,7 +63,8 @@ theorem integral_sq_norm_fderiv_exp_half_gaussianReal (a : ℝ) :
     rw [hx, mul_pow, sq_abs, pow_two (exp (a * x / 2)),
       Real.exp_half_mul_exp_half]
     ring
-  rw [heq, integral_const_mul, gaussian_exp_integral]
+  rw [heq, integral_const_mul, integral_exp_mul_gaussianReal]
+  norm_num
 
 /-- The exponential test attains equality in the logarithmic Sobolev bound at constant `1`. -/
 theorem entropy_exp_half_sq_eq_two_energy_gaussianReal (a : ℝ) :
@@ -96,7 +98,7 @@ theorem one_le_of_logSobolevInequality_gaussianReal {C : ℝ}
     simp_rw [f, pow_two, Real.exp_half_mul_exp_half]
     exact integrable_exp_mul_gaussianReal 1
   have hf2log : Integrable (fun x => f x ^ 2 * log (f x ^ 2)) (gaussianReal 0 1) := by
-    have h := gaussian_x_exp_integrable 1
+    have h := integrable_mul_exp_mul_gaussianReal 0 1 1
     convert h using 1
     funext x
     simp only [f, one_mul]

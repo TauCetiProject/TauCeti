@@ -162,7 +162,7 @@ private def residual (I : GlobalFormInvariants K) (c δ : Kˣ) : GlobalFormInvar
   finiteHasse v :=
     I.finiteHasse v * hilbertSymbol (v.unitAtFinitePlace c) (v.unitAtFinitePlace (δ * c))
   realPositiveIndex w :=
-    I.realPositiveIndex w - if 0 < embedding_of_isReal w.2 (c : K) then 1 else 0
+    I.realPositiveIndex w - if 0 < embedding_of_isReal w.property (c : K) then 1 else 0
 
 variable {I : GlobalFormInvariants K}
 
@@ -171,7 +171,7 @@ open _root_.QuadraticForm in
 where the positive index is. -/
 private theorem eq_prod_residual (hn : 1 ≤ I.rank) {c δ : Kˣ} (hδ : squareClass δ = I.discr)
     (h : (QuadraticMap.weightedSumSquares K ![(c : K)]).Nondegenerate)
-    (hpos : ∀ w, 0 < embedding_of_isReal w.2 (c : K) → 0 < I.realPositiveIndex w) :
+    (hpos : ∀ w, 0 < embedding_of_isReal w.property (c : K) → 0 < I.realPositiveIndex w) :
     I = (globalInvariants (QuadraticMap.weightedSumSquares K ![(c : K)]) h).prod
       (residual I c δ) := by
   rw [globalInvariants_weightedSumSquares_fin_one]
@@ -196,8 +196,8 @@ private theorem eq_prod_residual (hn : 1 ≤ I.rank) {c δ : Kˣ} (hδ : squareC
 discriminant is the class of `(-1)^q` for its negative index `q`. -/
 private theorem discrAtRealPlace_residual (hI : I.IsAdmissible) {c δ : Kˣ}
     (hδ : squareClass δ = I.discr)
-    (hneg : ∀ w, embedding_of_isReal w.2 (c : K) < 0 → 0 < I.realNegativeIndex w)
-    (hpos : ∀ w, 0 < embedding_of_isReal w.2 (c : K) → 0 < I.realPositiveIndex w)
+    (hneg : ∀ w, embedding_of_isReal w.property (c : K) < 0 → 0 < I.realNegativeIndex w)
+    (hpos : ∀ w, 0 < embedding_of_isReal w.property (c : K) → 0 < I.realPositiveIndex w)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (residual I c δ).discrAtRealPlace w =
       (residual I c δ).realNegativeIndex w • squareClass (-1 : ℝˣ) := by
@@ -206,7 +206,7 @@ private theorem discrAtRealPlace_residual (hI : I.IsAdmissible) {c δ : Kˣ}
   rw [discrAtRealPlace_def, ← hδ, ← squareClass_unitAtRealPlace, realNegativeIndex_def] at hd
   simp only [discrAtRealPlace_def, realNegativeIndex_def, residual]
   rw [← squareClass_unitAtRealPlace, map_mul, squareClass_mul, hd]
-  rcases ((map_ne_zero (embedding_of_isReal w.2)).mpr c.ne_zero).lt_or_gt with hc | hc
+  rcases ((map_ne_zero (embedding_of_isReal w.property)).mpr c.ne_zero).lt_or_gt with hc | hc
   · -- Where `c` is negative, the negative index drops by one and `[c] = [-1]`.
     have hq := hneg w hc
     rw [realNegativeIndex_def] at hq
@@ -234,8 +234,8 @@ private theorem discrAtRealPlace_residual (hI : I.IsAdmissible) {c δ : Kˣ}
 /-- The real Hasse sign of the residual system differs from that of `I` by the real symbol
 `(c, δ c)_w`. -/
 private theorem realHasse_residual (hI : I.IsAdmissible) {c δ : Kˣ} (hδ : squareClass δ = I.discr)
-    (hneg : ∀ w, embedding_of_isReal w.2 (c : K) < 0 → 0 < I.realNegativeIndex w)
-    (hpos : ∀ w, 0 < embedding_of_isReal w.2 (c : K) → 0 < I.realPositiveIndex w)
+    (hneg : ∀ w, embedding_of_isReal w.property (c : K) < 0 → 0 < I.realNegativeIndex w)
+    (hpos : ∀ w, 0 < embedding_of_isReal w.property (c : K) → 0 < I.realPositiveIndex w)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (residual I c δ).realHasse w =
       I.realHasse w * hilbertSymbol (unitAtRealPlace w c) (unitAtRealPlace w (δ * c)) := by
@@ -244,7 +244,7 @@ private theorem realHasse_residual (hI : I.IsAdmissible) {c δ : Kˣ} (hδ : squ
   simp only [discrAtRealPlace_def, realNegativeIndex_def, residual,
     ← squareClass_unitAtRealPlace] at hdc
   simp only [realHasse_def, realNegativeIndex_def, residual]
-  rcases ((map_ne_zero (embedding_of_isReal w.2)).mpr c.ne_zero).lt_or_gt with hc | hc
+  rcases ((map_ne_zero (embedding_of_isReal w.property)).mpr c.ne_zero).lt_or_gt with hc | hc
   · -- At a place where `c` is negative the negative index drops by one, from `m + 1` to `m`,
     -- and the symbol `(c, δ c)_w` is the sign `(-1)^m` of `δ c`.
     have hq := hneg w hc
@@ -280,8 +280,8 @@ positive, and negative only where its negative index is positive. Then `I` is th
 of the system of the line `⟨c⟩` and an admissible system. -/
 theorem exists_isAdmissible_eq_prod (hI : I.IsAdmissible) (hn : 4 ≤ I.rank) (c : Kˣ)
     (h : (QuadraticMap.weightedSumSquares K ![(c : K)]).Nondegenerate)
-    (hpos : ∀ w, 0 < embedding_of_isReal w.2 (c : K) → 0 < I.realPositiveIndex w)
-    (hneg : ∀ w, embedding_of_isReal w.2 (c : K) < 0 → 0 < I.realNegativeIndex w) :
+    (hpos : ∀ w, 0 < embedding_of_isReal w.property (c : K) → 0 < I.realPositiveIndex w)
+    (hneg : ∀ w, embedding_of_isReal w.property (c : K) < 0 → 0 < I.realNegativeIndex w) :
     ∃ J : GlobalFormInvariants K, J.IsAdmissible ∧
       I = (globalInvariants (QuadraticMap.weightedSumSquares K ![(c : K)]) h).prod J := by
   obtain ⟨δ, hδ⟩ : ∃ δ : Kˣ, squareClass δ = I.discr := ⟨_, squareClass_toMul_out I.discr⟩
@@ -322,8 +322,8 @@ theorem exists_isAdmissible_eq_prod_iff (hI : I.IsAdmissible) (hn : 4 ≤ I.rank
     (h : (QuadraticMap.weightedSumSquares K ![(c : K)]).Nondegenerate) :
     (∃ J : GlobalFormInvariants K, J.IsAdmissible ∧
       I = (globalInvariants (QuadraticMap.weightedSumSquares K ![(c : K)]) h).prod J) ↔
-      ∀ w, (0 < embedding_of_isReal w.2 (c : K) → 0 < I.realPositiveIndex w) ∧
-        (embedding_of_isReal w.2 (c : K) < 0 → 0 < I.realNegativeIndex w) := by
+      ∀ w, (0 < embedding_of_isReal w.property (c : K) → 0 < I.realPositiveIndex w) ∧
+        (embedding_of_isReal w.property (c : K) < 0 → 0 < I.realNegativeIndex w) := by
   refine ⟨fun ⟨J, hJ, hIJ⟩ w => ?_, fun hc =>
     hI.exists_isAdmissible_eq_prod hn c h (fun w => (hc w).1) fun w => (hc w).2⟩
   have hle := hJ.realPositiveIndex_le_rank w
@@ -350,12 +350,12 @@ theorem exists_eq_prod (hI : I.IsAdmissible) (hn : 4 ≤ I.rank) :
     QuadraticMap.nondegenerate_weightedSumSquares fun i => by
       fin_cases i
       simp [isRegular_iff_ne_zero]
-  have hpos (w) (hw : 0 < embedding_of_isReal w.2 (c : K)) : 0 < I.realPositiveIndex w := by
+  have hpos (w) (hw : 0 < embedding_of_isReal w.property (c : K)) : 0 < I.realPositiveIndex w := by
     by_contra hp
     have := (GlobalNumberFields.signHom_apply_eq_one_iff c w).mpr hw
     simp only [hc, hp, ↓reduceIte] at this
     exact absurd this (by decide)
-  have hneg (w) (hw : embedding_of_isReal w.2 (c : K) < 0) : 0 < I.realNegativeIndex w := by
+  have hneg (w) (hw : embedding_of_isReal w.property (c : K) < 0) : 0 < I.realNegativeIndex w := by
     have hp : ¬0 < I.realPositiveIndex w := by
       intro hp
       have := (GlobalNumberFields.signHom_apply_eq_neg_one_iff c w).mpr hw

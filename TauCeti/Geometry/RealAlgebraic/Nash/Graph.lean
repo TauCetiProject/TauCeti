@@ -69,7 +69,7 @@ private theorem isSemialgebraic_graph_of_polynomial_relation_of_not_nullified {n
         simpa only [eval₂_id] using hsign q (Finset.mem_union_left _ hq) C hC)
     obtain ⟨i, hi⟩ := D.exists_eq_root_of_continuous (k := ⟨P, Finset.mem_singleton_self P⟩)
       (continuousOn_iff_continuous_domRestrict.mp (hf.mono hCs))
-      (fun x ↦ hne x.1 (hCs x.2)) (fun x ↦ hrel x.1 (hCs x.2))
+      (fun x ↦ hne x.val (hCs x.property)) (fun x ↦ hrel x.val (hCs x.property))
     convert (D.isSemialgebraicStack (h𝒞.isSemialgebraic hC)).isSemialgebraic_sectionSet i using 1
     ext y
     simp only [mem_ofPred_eq, mem_image_cylinder, mem_sectionSet]

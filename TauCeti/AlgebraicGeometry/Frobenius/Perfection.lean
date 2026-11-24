@@ -102,9 +102,8 @@ theorem IsUniversalHomeomorphism.SpecMap_of_isPRadical [IsPRadical φ.hom p] (hB
   -- A field receiving a map from `B` has characteristic `p`, and is reduced, so two maps into it
   -- agreeing on `A` agree.
   have : CharP K p :=
-    (CharP.charP_iff_prime_eq_zero Fact.out).2 (by rw [← map_natCast g₁.hom, hB, map_zero])
-  ext1
-  exact IsPRadical.injective_comp K φ.hom p (congrArg CommRingCat.Hom.hom hg)
+    (CharP.charP_iff_prime_eq_zero Fact.out).2 (by rw [← map_natCast g₁, hB, map_zero])
+  exact IsPRadical.injective_comp K φ.hom p hg
 
 /-- **The perfection of an affine scheme is a universal homeomorphism**: for a ring `A` of
 characteristic `p`, the map `Spec (PerfectClosure A p) ⟶ Spec A` is a universal homeomorphism. -/
@@ -236,9 +235,9 @@ from `f` of the colimit perfection of `Γ(X, U)`. -/
 theorem coequifibered_toPerfectionPresheaf :
     ((toOpensFunctor X).op.whiskerLeft (X.toPerfectionPresheaf p hX)).Coequifibered :=
   coequifibered_iff_forall_isLocalizationAway.mpr fun U f ↦
-    have := U.2.isLocalization_basicOpen f
+    have := U.property.isLocalization_basicOpen f
     ColimitPerfection.isLocalization_away (A' := Γ(X, X.basicOpen f))
-      (hA := natCast_app_eq_zero hX U.1) f (natCast_app_eq_zero hX _)
+      (hA := natCast_app_eq_zero hX U.val) f (natCast_app_eq_zero hX _)
 
 /-- The relative gluing datum of the perfection of `X`: the affine schemes
 `Spec (ColimitPerfection Γ(X, U))` over the affine opens `U` of `X`. -/
@@ -270,7 +269,7 @@ instance isOpenImmersion_perfectionCover_f (U : X.AffineZariskiSite) :
 
 theorem perfectionCover_X (U : X.AffineZariskiSite) :
     (X.perfectionCover p hX).X U =
-      Spec (.of (ColimitPerfection Γ(X, U.1) p (natCast_app_eq_zero hX U.1))) :=
+      Spec (.of (ColimitPerfection Γ(X, U.val) p (natCast_app_eq_zero hX U.val))) :=
   (rfl)
 
 /-- Over an affine open `U` of `X`, the structure morphism of the perfection is `Spec` of the map
@@ -278,7 +277,7 @@ from `Γ(X, U)` to its colimit perfection. -/
 @[reassoc (attr := simp)]
 theorem perfectionCover_f_fromPerfection (U : X.AffineZariskiSite) :
     (X.perfectionCover p hX).f U ≫ X.fromPerfection p hX =
-      Spec.map ((X.toPerfectionPresheaf p hX).app (op U.1)) ≫ U.2.fromSpec :=
+      Spec.map ((X.toPerfectionPresheaf p hX).app (op U.val)) ≫ U.property.fromSpec :=
   relativeGluingData_cover_f_toBase (X.coequifibered_toPerfectionPresheaf p hX) U
 
 /-- The map from the ring of sections of `X` over an open to its colimit perfection is
@@ -289,14 +288,14 @@ instance isPRadical_toPerfectionPresheaf_app (U : X.Opensᵒᵖ) :
 
 /-- The preimage of an affine open `U` of `X` in the perfection is the chart over `U`. -/
 theorem fromPerfection_preimage (U : X.AffineZariskiSite) :
-    X.fromPerfection p hX ⁻¹ᵁ U.1 = ((X.perfectionCover p hX).f U).opensRange :=
+    X.fromPerfection p hX ⁻¹ᵁ U.val = ((X.perfectionCover p hX).f U).opensRange :=
   relativeGluingData_toBase_preimage (X.coequifibered_toPerfectionPresheaf p hX) U
 
 /-- **The perfection is affine-locally the colimit perfection**: over an affine open `U` of `X`,
 the perfection of `X` is `Spec (ColimitPerfection Γ(X, U))`. -/
 theorem isPullback_perfectionCover (U : X.AffineZariskiSite) :
-    IsPullback (Spec.map ((X.toPerfectionPresheaf p hX).app (op U.1)) ≫ U.2.isoSpec.inv)
-      ((X.perfectionCover p hX).f U) U.1.ι (X.fromPerfection p hX) :=
+    IsPullback (Spec.map ((X.toPerfectionPresheaf p hX).app (op U.val)) ≫ U.property.isoSpec.inv)
+      ((X.perfectionCover p hX).f U) U.val.ι (X.fromPerfection p hX) :=
   isPullback_relativeGluingData_cover (X.coequifibered_toPerfectionPresheaf p hX) U
 
 /-- The structure morphism of the perfection is affine. -/
@@ -308,12 +307,13 @@ perfection of `X` exactly when it holds for `Spec` of the maps from the rings of
 over its affine opens to their colimit perfections. -/
 theorem fromPerfection_iff (P : MorphismProperty Scheme.{u}) [IsZariskiLocalAtTarget P] :
     P (X.fromPerfection p hX) ↔ ∀ U : X.affineOpens,
-      P (Spec.map (CommRingCat.ofHom (ColimitPerfection.of _ p (natCast_app_eq_zero hX U.1)))) := by
+      P (Spec.map (CommRingCat.ofHom (ColimitPerfection.of _ p (natCast_app_eq_zero hX U.val))))
+          := by
   rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := P) _ (iSup_affineOpens_eq_top X)]
   refine forall_congr' fun U ↦ ?_
   -- Over `U`, the restriction of the structure morphism is the chart of the perfection over `U`.
-  have h := X.isPullback_perfectionCover p hX ⟨U.1, U.2⟩
-  have h' := isPullback_morphismRestrict (X.fromPerfection p hX) U.1
+  have h := X.isPullback_perfectionCover p hX ⟨U.val, U.property⟩
+  have h' := isPullback_morphismRestrict (X.fromPerfection p hX) U.val
   rw [← P.cancel_left_of_respectsIso (h.isoIsPullback _ _ h').hom,
     h.isoIsPullback_hom_fst _ _ h', P.cancel_right_of_respectsIso, toPerfectionPresheaf_app]
   -- The two sides differ only in the affine open: the repackaged `⟨U.1, U.2⟩ : X.AffineZariskiSite`
@@ -333,15 +333,15 @@ theorem natCast_perfection_eq_zero : (p : Γ(X.perfection p hX, ⊤)) = 0 :=
 perfections, which are perfect. -/
 instance isPerfect_perfection : IsPerfect (X.perfection p hX) p :=
   IsPerfect.of_openCover (X.perfectionCover p hX)
-    (fun U ↦ isPerfect_Spec_colimitPerfection (natCast_app_eq_zero hX U.1))
+    (fun U ↦ isPerfect_Spec_colimitPerfection (natCast_app_eq_zero hX U.val))
 
 /-- **A perfect scheme is its own perfection**: the structure morphism of the perfection of a
 perfect scheme is an isomorphism. -/
 instance isIso_fromPerfection [IsPerfect X p] : IsIso (X.fromPerfection p hX) := by
   refine (MorphismProperty.isomorphisms.iff _).1
     ((X.fromPerfection_iff p hX (MorphismProperty.isomorphisms Scheme)).2 fun U ↦ ?_)
-  have : IsIso (CommRingCat.ofHom (ColimitPerfection.of Γ(X, U.1) p
-      (natCast_app_eq_zero hX U.1))) :=
+  have : IsIso (CommRingCat.ofHom (ColimitPerfection.of Γ(X, U.val) p
+      (natCast_app_eq_zero hX U.val))) :=
     (ConcreteCategory.isIso_iff_bijective _).2 (ColimitPerfection.bijective_of _ p _)
   exact (MorphismProperty.isomorphisms.iff _).2 inferInstance
 
@@ -355,10 +355,10 @@ omit [IsPerfect T p] in
 /-- A morphism to the perfection of `X` maps the preimage of an affine open `U` of `X` into the
 chart of the perfection over `U`. -/
 private theorem range_comp_subset_range_perfectionCover_f (c : T ⟶ X.perfection p hX)
-    (U : X.AffineZariskiSite) {W : T.Opens} (hW : W ≤ (c ≫ X.fromPerfection p hX) ⁻¹ᵁ U.1) :
+    (U : X.AffineZariskiSite) {W : T.Opens} (hW : W ≤ (c ≫ X.fromPerfection p hX) ⁻¹ᵁ U.val) :
     Set.range (W.ι ≫ c) ⊆ Set.range ((X.perfectionCover p hX).f U) := by
   rintro _ ⟨x, rfl⟩
-  have hx : c (W.ι x) ∈ X.fromPerfection p hX ⁻¹ᵁ U.1 := hW x.2
+  have hx : c (W.ι x) ∈ X.fromPerfection p hX ⁻¹ᵁ U.val := hW x.property
   rw [fromPerfection_preimage] at hx
   exact hx
 
@@ -368,20 +368,20 @@ theorem perfection_hom_ext {a b : T ⟶ X.perfection p hX}
     (h : a ≫ X.fromPerfection p hX = b ≫ X.fromPerfection p hX) : a = b := by
   refine (T.openCoverOfIsOpenCover _
     ((Scheme.AffineZariskiSite.isOpenCover_toOpens X).comap
-      (a ≫ X.fromPerfection p hX).base.1)).hom_ext _ _
+      (a ≫ X.fromPerfection p hX).base.hom')).hom_ext _ _
     fun (U : X.AffineZariskiSite) ↦ ?_
   -- Over the preimage `W` of the affine open `U`, both morphisms land in the chart over `U`, which
   -- is the spectrum of a `p`-radical extension of `Γ(X, U)`.
-  let W := (a ≫ X.fromPerfection p hX) ⁻¹ᵁ U.1
+  let W := (a ≫ X.fromPerfection p hX) ⁻¹ᵁ U.val
   let ι := (X.perfectionCover p hX).f U
   have : IsOpenImmersion ι := X.isOpenImmersion_perfectionCover_f p hX U
-  let φ := (X.toPerfectionPresheaf p hX).app (op U.1)
+  let φ := (X.toPerfectionPresheaf p hX).app (op U.val)
   -- After composing to `X`, a lift `l` of `W.ι ≫ c` to the chart is `W.ι ≫ c ≫ fromPerfection`.
   have key (c : T ⟶ X.perfection p hX) (l : (W : Scheme) ⟶ (X.perfectionCover p hX).X U)
       (hl : l ≫ ι = W.ι ≫ c) :
-      (l ≫ Spec.map φ) ≫ U.2.fromSpec = W.ι ≫ c ≫ X.fromPerfection p hX := by
+      (l ≫ Spec.map φ) ≫ U.property.fromSpec = W.ι ≫ c ≫ X.fromPerfection p hX := by
     have h₁ := X.perfectionCover_f_fromPerfection p hX U
-    calc (l ≫ Spec.map φ) ≫ U.2.fromSpec = l ≫ ι ≫ X.fromPerfection p hX := by
+    calc (l ≫ Spec.map φ) ≫ U.property.fromSpec = l ≫ ι ≫ X.fromPerfection p hX := by
           simp only [ι, h₁, φ]
           exact Category.assoc _ _ _
       _ = W.ι ≫ c ≫ X.fromPerfection p hX := by simp only [reassoc_of% hl]
@@ -389,21 +389,21 @@ theorem perfection_hom_ext {a b : T ⟶ X.perfection p hX}
     (range_comp_subset_range_perfectionCover_f a U le_rfl)
   have hb := IsOpenImmersion.lift_fac ι (W.ι ≫ b)
     (range_comp_subset_range_perfectionCover_f b U (h ▸ le_rfl))
-  have hl := (IsPerfect.bijective_comp_SpecMap φ W (natCast_app_eq_zero hX U.1)).1
-    ((cancel_mono U.2.fromSpec).1 ((key a _ ha).trans
+  have hl := (IsPerfect.bijective_comp_SpecMap φ W (natCast_app_eq_zero hX U.val)).1
+    ((cancel_mono U.property.fromSpec).1 ((key a _ ha).trans
       ((congrArg (W.ι ≫ ·) h).trans (key b _ hb).symm)))
   exact ha.symm.trans ((congrArg (· ≫ ι) hl).trans hb)
 
 /-- The lift of a morphism `T ⟶ X` from a perfect scheme `T` to the chart of the perfection of
 `X` over an affine open `U`, defined on the preimage of `U`. -/
 private def liftPerfectionCover (g : T ⟶ X) (U : X.AffineZariskiSite) :
-    (g ⁻¹ᵁ U.1 : Scheme) ⟶ X.perfection p hX :=
-  (IsPerfect.homSpecEquiv ((X.toPerfectionPresheaf p hX).app (op U.1)) (g ⁻¹ᵁ U.1)
-      (natCast_app_eq_zero hX U.1)).symm ((g ∣_ U.1) ≫ U.2.isoSpec.hom) ≫
+    (g ⁻¹ᵁ U.val : Scheme) ⟶ X.perfection p hX :=
+  (IsPerfect.homSpecEquiv ((X.toPerfectionPresheaf p hX).app (op U.val)) (g ⁻¹ᵁ U.val)
+      (natCast_app_eq_zero hX U.val)).symm ((g ∣_ U.val) ≫ U.property.isoSpec.hom) ≫
     (X.perfectionCover p hX).f U
 
 private theorem liftPerfectionCover_fromPerfection (g : T ⟶ X) (U : X.AffineZariskiSite) :
-    liftPerfectionCover (hX := hX) g U ≫ X.fromPerfection p hX = (g ⁻¹ᵁ U.1).ι ≫ g := by
+    liftPerfectionCover (hX := hX) g U ≫ X.fromPerfection p hX = (g ⁻¹ᵁ U.val).ι ≫ g := by
   -- The rewrites are spelled out as a chain of equalities: the small affine Zariski site is not
   -- reducibly a subtype, so `rw` cannot abstract its elements.
   rw [liftPerfectionCover]
@@ -411,7 +411,7 @@ private theorem liftPerfectionCover_fromPerfection (g : T ⟶ X) (U : X.AffineZa
   refine (_ ≫= X.perfectionCover_f_fromPerfection p hX U).trans ?_
   refine (IsPerfect.homSpecEquiv_symm_comp_assoc _ _ _ _ _).trans ?_
   refine (Category.assoc _ _ _).trans ?_
-  exact (_ ≫= U.2.isoSpec_hom_fromSpec).trans (morphismRestrict_ι g U.1)
+  exact (_ ≫= U.property.isoSpec_hom_fromSpec).trans (morphismRestrict_ι g U.val)
 
 /-- **The universal property of the perfection.** For a perfect scheme `T`, composition with the
 structure morphism `X^perf ⟶ X` is a bijection from morphisms `T ⟶ X^perf` to morphisms
@@ -420,7 +420,7 @@ theorem bijective_comp_fromPerfection :
     Function.Bijective fun g : T ⟶ X.perfection p hX ↦ g ≫ X.fromPerfection p hX := by
   refine ⟨fun a b h ↦ perfection_hom_ext h, fun g ↦ ?_⟩
   let 𝒱 := T.openCoverOfIsOpenCover _
-    ((Scheme.AffineZariskiSite.isOpenCover_toOpens X).comap g.base.1)
+    ((Scheme.AffineZariskiSite.isOpenCover_toOpens X).comap g.base.hom')
   -- Glue the lifts over the preimages of the affine opens of `X`; they agree on overlaps by
   -- uniqueness of lifts from perfect schemes.
   have (U : X.AffineZariskiSite) : IsPerfect (𝒱.X U) p := IsPerfect.opens _

@@ -19,7 +19,8 @@ as embedded open subspaces.
 
 The base change `TopCat.pullbackFst g p` of a morphism `p : E ⟶ B` along `g : B' ⟶ B` has the
 same fibres as `p`: its fibre over `b'` is the fibre of `p` over `g b'`
-(`TopCat.Hom.fiberPullbackFstIso`). A map `f` over `B` induces a map of base changes
+(`TopCat.Hom.fiberPullbackFstIso`, identified with the square's induced fibre map by
+`CategoryTheory.CommSq.fiberMap_pullbackSnd`). A map `f` over `B` induces a map of base changes
 (`TopCat.pullbackMapOfCompEq`), which is `f` on these fibres
 (`TopCat.Hom.fiberPullbackFstIso_hom_naturality`).
 The inclusion `e ↦ (k, e)` of a fibre of `p` into the base change along `g` at a point `k` over
@@ -83,14 +84,15 @@ variable {E E' B B' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
 over `B`, that is with `f ≫ p' = p`. -/
 def pullbackMapOfCompEq (g : B' ⟶ B) (hf : f ≫ p' = p) :
     TopCat.of { x : B' × E // g x.1 = p x.2 } ⟶ TopCat.of { x : B' × E' // g x.1 = p' x.2 } :=
-  TopCat.ofHom ⟨fun x ↦ ⟨(x.1.1, f x.1.2), x.2.trans (ConcreteCategory.congr_hom hf x.1.2).symm⟩,
-    (by fun_prop : Continuous fun x : { x : B' × E // g x.1 = p x.2 } ↦ (x.1.1, f x.1.2)
+  TopCat.ofHom ⟨fun x ↦ ⟨(x.val.1, f x.val.2), x.property.trans (ConcreteCategory.congr_hom hf
+      x.val.2).symm⟩,
+    (by fun_prop : Continuous fun x : { x : B' × E // g x.1 = p x.2 } ↦ (x.val.1, f x.val.2)
       ).subtype_mk _⟩
 
 @[simp]
 lemma coe_pullbackMapOfCompEq_apply (g : B' ⟶ B) (hf : f ≫ p' = p)
     (x : TopCat.of { x : B' × E // g x.1 = p x.2 }) :
-    (pullbackMapOfCompEq g hf x : B' × E') = (x.1.1, f x.1.2) :=
+    (pullbackMapOfCompEq g hf x : B' × E') = (x.val.1, f x.val.2) :=
   (rfl)
 
 @[reassoc (attr := simp)]
@@ -130,11 +132,11 @@ variable {E B B' : TopCat.{u}}
 def fiberPullbackFstIso (p : E ⟶ B) (g : B' ⟶ B) (b' : B') :
     (TopCat.pullbackFst g p).fiber b' ≅ p.fiber (g b') :=
   TopCat.isoOfHomeo
-    { toFun x := ⟨x.1.1.2, by
-        rw [Set.mem_preimage, Set.mem_singleton_iff, ← x.1.2]
-        exact congrArg g x.2⟩
-      invFun e := ⟨⟨(b', e.1), e.2.symm⟩, rfl⟩
-      left_inv x := Subtype.ext (Subtype.ext (Prod.ext x.2.symm rfl))
+    { toFun x := ⟨x.val.val.2, by
+        rw [Set.mem_preimage, Set.mem_singleton_iff, ← x.val.property]
+        exact congrArg g x.property⟩
+      invFun e := ⟨⟨(b', e.val), e.property.symm⟩, rfl⟩
+      left_inv x := Subtype.ext (Subtype.ext (Prod.ext x.property.symm rfl))
       right_inv _ := rfl
       continuous_toFun := by fun_prop
       continuous_invFun := by fun_prop }
@@ -151,11 +153,11 @@ lemma fiberPullbackFstIso_hom_comp_fiberι (p : E ⟶ B) (g : B' ⟶ B) (b' : B'
 -- indexing, so `simp` never matches the left-hand sides of these two lemmas; use `rw` instead.
 lemma fiberPullbackFstIso_hom_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B')
     (x : (TopCat.pullbackFst g p).fiber b') :
-    ((p.fiberPullbackFstIso g b').hom x : E) = x.1.1.2 := (rfl)
+    ((p.fiberPullbackFstIso g b').hom x : E) = x.val.val.2 := (rfl)
 
 lemma fiberPullbackFstIso_inv_apply_coe (p : E ⟶ B) (g : B' ⟶ B) (b' : B') (x : p.fiber (g b')) :
     ((p.fiberPullbackFstIso g b').inv x : ↑(TopCat.of { q : B' × E // g q.1 = p q.2 })) =
-      ⟨(b', x.1), x.2.symm⟩ := (rfl)
+      ⟨(b', x.val), x.property.symm⟩ := (rfl)
 
 /-- The inclusion `e ↦ (k, e)` of the fibre of `p` over `b` into the base change
 `{(k, e) | g k = p e}` of `p` along `g : K ⟶ B`, at a point `k` of `K` over `b`. For `b = g k` it
@@ -164,12 +166,12 @@ is the inclusion of the fibre of the base change over `k`, read through
 `B`, as for the end points of a path. -/
 def pullbackFiberι {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
     (h : g k = b) : p.fiber b ⟶ TopCat.of {x : K × E // g x.1 = p x.2} :=
-  TopCat.ofHom ⟨fun e ↦ ⟨(k, e.1), h.trans (e.2 : p e.1 = b).symm⟩, by fun_prop⟩
+  TopCat.ofHom ⟨fun e ↦ ⟨(k, e.val), h.trans (e.property : p e.val = b).symm⟩, by fun_prop⟩
 
 /-- The inclusion of a fibre into a base change sends `e` to `(k, e)`. -/
 @[simp]
 lemma coe_pullbackFiberι_apply {K : TopCat.{u}} (p : E ⟶ B) (g : K ⟶ B) {k : K} {b : B}
-    (h : g k = b) (e : p.fiber b) : (p.pullbackFiberι g h e : K × E) = (k, e.1) :=
+    (h : g k = b) (e : p.fiber b) : (p.pullbackFiberι g h e : K × E) = (k, e.val) :=
   (rfl)
 
 /-- The inclusion of a fibre into a base change at `k`, followed by the projection to the parameter
@@ -212,7 +214,7 @@ lemma fiberPullbackFstIso_hom_naturality {E' : TopCat.{u}} {p : E ⟶ B} {p' : E
   -- `rw` cannot see through the base point `(𝟙 B') b'` of the fibre map, so compare the points of
   -- `E'` directly: both sides send `x` to `f x.1.1.2`.
   ext x
-  exact (congrArg (fun y : TopCat.of { x : B' × E' // g x.1 = p' x.2 } ↦ y.1.2)
+  exact (congrArg (fun y : TopCat.of { x : B' × E' // g x.1 = p' x.2 } ↦ y.val.2)
     (sq'.fiberMap_apply_coe b' x)).trans
     (sq.fiberMap_apply_coe (g b') ((p.fiberPullbackFstIso g b').hom x)).symm
 
@@ -231,15 +233,15 @@ of `p'` along `h' : K' ⟶ B'`, induced by a map of fibrations, that is, a commu
 def pullbackMapOfCompEq (sq : CommSq f p p' g) {h : K ⟶ B} {h' : K' ⟶ B'} (φ : K ⟶ K')
     (hφ : φ ≫ h' = h ≫ g) :
     TopCat.of {x : K × E // h x.1 = p x.2} ⟶ TopCat.of {x : K' × E' // h' x.1 = p' x.2} :=
-  TopCat.ofHom ⟨fun x ↦ ⟨(φ x.1.1, f x.1.2), (ConcreteCategory.congr_hom hφ x.1.1).trans
-      ((congrArg g x.2).trans (ConcreteCategory.congr_hom sq.w x.1.2).symm)⟩,
-    (by fun_prop : Continuous fun x : {x : K × E // h x.1 = p x.2} ↦ (φ x.1.1, f x.1.2)
+  TopCat.ofHom ⟨fun x ↦ ⟨(φ x.val.1, f x.val.2), (ConcreteCategory.congr_hom hφ x.val.1).trans
+      ((congrArg g x.property).trans (ConcreteCategory.congr_hom sq.w x.val.2).symm)⟩,
+    (by fun_prop : Continuous fun x : {x : K × E // h x.1 = p x.2} ↦ (φ x.val.1, f x.val.2)
       ).subtype_mk _⟩
 
 @[simp]
 lemma coe_pullbackMapOfCompEq_apply (sq : CommSq f p p' g) {h : K ⟶ B} {h' : K' ⟶ B'}
     (φ : K ⟶ K') (hφ : φ ≫ h' = h ≫ g) (x : TopCat.of {x : K × E // h x.1 = p x.2}) :
-    (sq.pullbackMapOfCompEq φ hφ x : K' × E') = (φ x.1.1, f x.1.2) :=
+    (sq.pullbackMapOfCompEq φ hφ x : K' × E') = (φ x.val.1, f x.val.2) :=
   (rfl)
 
 @[reassoc (attr := simp)]
@@ -288,5 +290,14 @@ lemma pullbackFiberι_comp_pullbackMapOfCompEq (sq : CommSq f p p' g) {h : K ⟶
   ext x
   · rfl
   · exact (sq.fiberMap_apply_coe b x).symm
+
+/-- The map on fibres over `b'` induced by the canonical pullback square of `p : E ⟶ B` along
+`g : B' ⟶ B` is the canonical isomorphism `p.fiberPullbackFstIso g b'`. -/
+lemma fiberMap_pullbackSnd {E B B' : TopCat.{u}} {p : E ⟶ B} {g : B' ⟶ B}
+    (sq : CommSq (TopCat.pullbackSnd g p) (TopCat.pullbackFst g p) p g) (b' : B') :
+    sq.fiberMap b' = (p.fiberPullbackFstIso g b').hom := by
+  ext x
+  exact (sq.fiberMap_apply_coe b' x).trans
+    ((TopCat.pullbackSnd_apply g p x.val).trans (p.fiberPullbackFstIso_hom_apply_coe g b' x).symm)
 
 end CategoryTheory.CommSq
