@@ -49,6 +49,7 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `Real.exists_abs_iteratedDeriv_succ_tanh_le` — every derivative of positive order of
   `Real.tanh` is `1 - tanh x ^ 2 ≤ 4 * exp (-(2 * |x|))` times a polynomial in `tanh x`, so it is
   at most a constant times `exp (-(2 * |x|))`: `Real.tanh` converges to `±1` in every `C^k` norm.
+* `Real.exp_le_two_mul_cosh` — `exp x ≤ 2 * cosh x`.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
 * `Real.cosh_add_le_exp_abs_mul_cosh` — `cosh (x + y) ≤ exp |y| * cosh x`: a shift by `y` changes
@@ -325,6 +326,10 @@ theorem one_sub_exp_neg_div_le_exp (l : ℝ) :
     rw [hsq] at h
     rw [div_le_iff₀ hl]
     linarith
+
+/-- `exp x ≤ 2 * cosh x`: the hyperbolic cosine is at least half the exponential. -/
+theorem exp_le_two_mul_cosh (x : ℝ) : exp x ≤ 2 * cosh x := by
+  linarith [cosh_add_sinh x, sinh_lt_cosh x]
 
 /-- The hyperbolic cosine tends to infinity at `+∞`: it is at least `exp x / 2`. -/
 theorem tendsto_cosh_atTop : Filter.Tendsto cosh Filter.atTop Filter.atTop := by
