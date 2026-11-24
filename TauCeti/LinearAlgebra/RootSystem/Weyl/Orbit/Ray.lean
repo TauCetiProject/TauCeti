@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.RootSystem.Base
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.Ray
-public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
-import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
+import TauCeti.LinearAlgebra.RootSystem.Positive
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Rays and translates of Weyl orbits of weights
@@ -27,12 +29,9 @@ Each Weyl orbit is stable under root reflections. For a root pairing over `ℤ`,
 the reflection `s_i` in the root `αᵢ` to the reflection in `f αᵢ` along a linear form agreeing
 with the coroot `αᵢ^∨`, so the image `f (W λ)` is stable under the latter. This is the hypothesis
 under which the root operators preserve paths with velocities in `f (W λ)`; see
-`TauCeti/RepresentationTheory/LSPath/OrbitStable.lean`.
-
-If such forms are given for all simple roots of a base, every element of the Weyl group acts on
-`f (M)` through a linear automorphism of the vector space, a product of these reflections. So
-`f (W λ)` is a finite orbit of a group of linear automorphisms, and again no two of its distinct
-points lie in the same ray, whether or not `f` is injective.
+`TauCeti/RepresentationTheory/LSPath/OrbitStable.lean`. When `f` admits a compatible family of
+simple-coroot forms, it is automatically injective on each Weyl orbit and separates distinct orbit
+points by rays.
 
 ## Main results
 
@@ -43,10 +42,10 @@ points lie in the same ray, whether or not `f` is injective.
 * `RootPairing.mapsTo_preReflection_image_orbit_weylGroup`: the image `f (W λ)` of a Weyl orbit
   in a vector space is stable under the reflection in an image root `f αᵢ`, along a linear form
   agreeing with the coroot `αᵢ^∨`.
-* `RootPairing.exists_linearEquiv_apply_eq_smul`: given such forms for the simple roots of a
-  base, every Weyl-group element acts on `f (M)` through a linear automorphism.
-* `RootPairing.pairwise_not_sameRay_image_orbit_weylGroup`: given such forms for the simple roots
-  of a base, no two distinct points of the image `f (W λ)` lie in the same ray.
+* `RootPairing.injOn_orbit_of_compatible`: an additive map from the weight lattice equipped with
+  compatible simple-coroot forms is injective on each Weyl orbit.
+* `RootPairing.pairwise_not_sameRay_image_orbit_of_compatible`: no two distinct points in the
+  image of a Weyl orbit under a compatible realization lie on the same ray.
 -/
 
 public section
@@ -117,57 +116,72 @@ theorem mapsTo_preReflection_image_orbit_weylGroup (i : ι) {F : Module.Dual �
   rw [mul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul,
     P.map_reflection_eq_preReflection i hF]
 
-variable [Finite ι] [P.IsReduced] (b : P.Base) {F : b.support → Module.Dual 𝕜 V}
+/-- An additive map from the weight lattice that pulls back a family of linear forms to the simple
+coroots is injective on every Weyl orbit. -/
+theorem injOn_orbit_of_compatible (b : P.Base) [Finite ι] [CharZero 𝕜]
+    {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) (lam : M) :
+    Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam) := by
+  rintro _ ⟨w₁, rfl⟩ _ ⟨w₂, rfl⟩ heq
+  have hsub : f (w₁ • lam - w₂ • lam) = 0 := by rw [map_sub, heq, sub_self]
+  have hzero : ∀ i ∈ b.support, P.coroot' i (w₁ • lam - w₂ • lam) = 0 := fun i hi ↦ by
+    apply Int.cast_injective (α := 𝕜)
+    rw [← hF ⟨i, hi⟩, hsub, map_zero, Int.cast_zero]
+  have hroot : w₁ • lam - w₂ • lam ∈ P.rootSpan ℤ := by
+    simpa only [sub_sub_sub_cancel_right] using
+      sub_mem (weylGroup.smul_sub_mem_rootSpan w₁ lam) (weylGroup.smul_sub_mem_rootSpan w₂ lam)
+  exact sub_eq_zero.mp <| P.eq_zero_of_mem_rootSpan_of_forall_coroot'_eq_zero hroot
+    (P.coroot'_eq_zero_of_forall_mem_support b hzero)
 
-/-- Given linear forms `F i` agreeing with the simple coroots on the weight lattice, every element
-`w` of the Weyl group acts on `f (M)` through a linear automorphism of `V`: a product of the
-reflections in the image simple roots `f αᵢ` along the forms `F i`. -/
-theorem exists_linearEquiv_apply_eq_smul
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = (P.coroot' i m : 𝕜)) (w : P.weylGroup) :
-    ∃ R : V ≃ₗ[𝕜] V, ∀ m, R (f m) = f (w • m) := by
-  obtain ⟨l, rfl⟩ := TauCeti.exists_wordProd_eq P b w
-  induction l with
-  | nil => exact ⟨LinearEquiv.refl 𝕜 V, fun m ↦ by simp⟩
-  | cons i l ih =>
-    obtain ⟨R, hR⟩ := ih
-    have h2 : F i (f (P.root i)) = 2 := by
-      rw [hF, P.root_coroot'_eq_pairing, P.pairing_same, Int.cast_ofNat]
-    refine ⟨R.trans (Module.reflection h2), fun m ↦ ?_⟩
-    rw [LinearEquiv.trans_apply, hR, Module.reflection_apply, TauCeti.wordProd_cons, mul_smul,
-      weylGroup.ofIdx_smul, Equiv.reflection_smul, P.map_reflection_eq_preReflection i (hF i),
-      Module.preReflection_apply]
-
-/-- **No two distinct points of a realized Weyl orbit lie in the same ray.** Given linear forms
-`F i` agreeing with the simple coroots on the weight lattice, the image `f (W λ)` of a Weyl orbit
-is a finite orbit of the group of linear automorphisms of `V` that act on `f (M)` through the Weyl
-group. The map `f` need not be injective. -/
-theorem pairwise_not_sameRay_image_orbit_weylGroup [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-    (hF : ∀ (i : b.support) (m : M), F i (f m) = (P.coroot' i m : 𝕜)) (lam : M) :
-    (f '' MulAction.orbit P.weylGroup lam).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
-  -- The linear automorphisms of `V` acting on `f (M)` through some element of the Weyl group.
-  let G : Subgroup (V ≃ₗ[𝕜] V) :=
-    { carrier := {R | ∃ w : P.weylGroup, ∀ m, R (f m) = f (w • m)}
-      mul_mem' := by
-        rintro R R' ⟨w, hw⟩ ⟨w', hw'⟩
-        exact ⟨w * w', fun m ↦ by rw [mul_apply_eq_comp, hw', hw, mul_smul]⟩
-      one_mem' := ⟨1, fun m ↦ by simp⟩
-      inv_mem' := by
-        rintro R ⟨w, hw⟩
-        refine ⟨w⁻¹, fun m ↦ ?_⟩
-        rw [LinearEquiv.coe_inv, LinearEquiv.symm_apply_eq, hw, smul_inv_smul] }
-  have horbit : MulAction.orbit G (f lam) = f '' MulAction.orbit P.weylGroup lam := by
-    ext v
-    constructor
-    · rintro ⟨⟨R, w, hw⟩, rfl⟩
-      exact ⟨w • lam, ⟨w, rfl⟩, (hw lam).symm⟩
-    · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
-      obtain ⟨R, hR⟩ := P.exists_linearEquiv_apply_eq_smul b hF w
-      exact ⟨⟨R, w, hR⟩, hR lam⟩
-  have := P.finite_weylGroup_of_base b
-  have hfin : (MulAction.orbit G (f lam)).Finite :=
-    horbit ▸ (Set.finite_range _).image f
-  rw [← horbit]
-  exact fun u hu v hv huv h ↦ huv (h.eq_of_mem_orbit hu hv hfin)
+/-- In any compatible realization `(𝕜, V, f, F)`, no two distinct points of a realized Weyl orbit
+lie on the same ray. -/
+theorem pairwise_not_sameRay_image_orbit_of_compatible (b : P.Base) [Finite ι]
+    [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {F : b.support → Module.Dual 𝕜 V}
+    (hF : ∀ (i : b.support) (x : M), F i (f x) = (P.coroot' i x : 𝕜)) (lam : M) :
+    (Set.range fun w : P.weylGroup ↦ f (w • lam)).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v := by
+  rintro _ ⟨w₁, rfl⟩ _ ⟨w₂, rfl⟩ hne hray
+  -- If every simple coroot kills an orbit point, the Weyl group fixes it, so the orbit is a
+  -- singleton, contradicting `hne`.
+  have hcollapse {w : P.weylGroup} (hzero : ∀ i ∈ b.support, P.coroot' i (w • lam) = 0) :
+      False := by
+    have hinv := TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b hzero w⁻¹
+    rw [inv_smul_smul] at hinv
+    have hfix (u : P.weylGroup) : u • lam = w • lam :=
+      (TauCeti.smul_eq_self_of_forall_coroot'_eq_zero b (fun i hi ↦ hinv ▸ hzero i hi) u).trans
+        hinv
+    exact hne (congrArg f ((hfix w₁).trans (hfix w₂).symm))
+  have hw_ne_zero (w : P.weylGroup) : f (w • lam) ≠ 0 := fun h0 ↦
+    hcollapse fun i hi ↦ Int.cast_injective (α := 𝕜) (by
+      rw [← hF ⟨i, hi⟩, h0, map_zero, Int.cast_zero])
+  obtain ⟨r₁, r₂, hr₁, hr₂, hsmul⟩ := hray.exists_pos (hw_ne_zero w₁) (hw_ne_zero w₂)
+  have hcoroot : ∀ j : ι,
+      r₁ * (P.coroot' j (w₁ • lam) : 𝕜) = r₂ * (P.coroot' j (w₂ • lam) : 𝕜) := by
+    simpa only [eq_intCast] using
+      P.mul_coroot'_eq_of_forall_mem_support b (𝕜 := 𝕜) fun i hi ↦ by
+        simpa only [eq_intCast, map_smul, smul_eq_mul, hF ⟨i, hi⟩] using congrArg (F ⟨i, hi⟩) hsmul
+  let := Fintype.ofFinite ι
+  have hS : r₁ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 =
+      r₂ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 := by
+    calc r₁ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2
+        = ∑ j : ι, (r₁ * (P.coroot' j (w₁ • lam) : 𝕜)) ^ 2 := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl fun j _ ↦ by ring
+      _ = ∑ j : ι, (r₂ * (P.coroot' j (w₂ • lam) : 𝕜)) ^ 2 :=
+          Finset.sum_congr rfl fun j _ ↦ congrArg (· ^ 2) (hcoroot j)
+      _ = r₂ ^ 2 * ∑ j : ι, (P.coroot' j (w₂ • lam) : 𝕜) ^ 2 := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl fun j _ ↦ by ring
+      _ = r₂ ^ 2 * ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 := by
+          simpa only [eq_intCast] using
+            congrArg (r₂ ^ 2 * ·)
+              ((P.sum_coroot'_sq_smul (𝕜 := 𝕜) w₂ lam).trans
+                (P.sum_coroot'_sq_smul (𝕜 := 𝕜) w₁ lam).symm)
+  by_cases hsum0 : ∑ j : ι, (P.coroot' j (w₁ • lam) : 𝕜) ^ 2 = 0
+  · rw [Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ sq_nonneg _] at hsum0
+    exact hcollapse fun i _ ↦ Int.cast_eq_zero.mp (sq_eq_zero_iff.mp (hsum0 i (Finset.mem_univ i)))
+  · have hr : r₁ = r₂ := (sq_eq_sq₀ hr₁.le hr₂.le).mp (mul_right_cancel₀ hsum0 hS)
+    rw [hr] at hsmul
+    exact hne (smul_right_injective V hr₂.ne' hsmul)
 
 end Realization
 

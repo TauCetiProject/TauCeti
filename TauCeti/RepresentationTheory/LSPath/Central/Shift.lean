@@ -105,19 +105,6 @@ theorem sum_map_snd_shiftTimed (χ : V) (p : List (𝕜 × V)) :
 
 end Algebra
 
-section Reverse
-
-variable {𝕜 V : Type*} [Semiring 𝕜] [AddCommGroup V] [Module 𝕜 V]
-
-/-- Reversing a shifted presentation is shifting the reversed presentation by the opposite
-velocity: the segment `(d, v + d • χ)` reverses to `(d, -v + d • (-χ))`. -/
-@[simp]
-theorem reverseTimed_shiftTimed (χ : V) (p : List (𝕜 × V)) :
-    reverseTimed (shiftTimed χ p) = shiftTimed (-χ) (reverseTimed p) := by
-  simp [reverseTimed_def, shiftTimed_def, List.map_reverse, Function.comp_def, smul_neg, add_comm]
-
-end Reverse
-
 section OrderedField
 
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
@@ -168,12 +155,6 @@ theorem minHeight_ofSegments_shiftTimed {f : Module.Dual 𝕜 V} {χ : V} (hχ :
     rcases x with ⟨d, v⟩
     simp [listMinHeight_cons, ih, hχ]
 
-/-- The endpoint of the shifted path is the old endpoint plus the total linear displacement. -/
-theorem endpoint_ofSegments_shiftTimed (χ : V) (p : List (𝕜 × V)) :
-    (ofSegments 𝕜 ((shiftTimed χ p).map Prod.snd)).endpoint =
-      (ofSegments 𝕜 (p.map Prod.snd)).endpoint + duration p • χ := by
-  simp only [endpoint_ofSegments, sum_map_snd_shiftTimed]
-
 end OrderedField
 
 /-! ### Central shifts on time–weight graphs -/
@@ -182,6 +163,12 @@ section Graph
 
 variable {𝕜 V : Type*} [Field 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V]
+
+/-- The endpoint of the shifted path is the old endpoint plus the total linear displacement. -/
+theorem endpoint_ofSegments_shiftTimed (χ : V) (p : List (𝕜 × V)) :
+    (ofSegments 𝕜 ((shiftTimed χ p).map Prod.snd)).endpoint =
+      (ofSegments 𝕜 (p.map Prod.snd)).endpoint + duration p • χ := by
+  simp only [endpoint_ofSegments, sum_map_snd_shiftTimed]
 
 /-- Add the linear path of velocity `χ` while retaining time as the first coordinate.
 Unlike a shift on arbitrary paths in `V`, this is well-defined on reparametrization classes. -/

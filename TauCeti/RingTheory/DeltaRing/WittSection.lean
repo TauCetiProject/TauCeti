@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.WittVector.Truncated
+public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
 import Mathlib.Tactic.FinCases
 
