@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Irreducible
+public import Mathlib.RepresentationTheory.Submodule
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.RepresentationTheory.Intertwining
 
@@ -52,7 +53,14 @@ subrepresentations of a representation on a module over a ring form a modular la
 `ρ ≃ ρ₁ × ρ₂`: `Submodule.prodEquivOfIsCompl` supplies the linear isomorphism and each `ρ g`,
 being additive and preserving both summands, supplies the equivariance.  Being about
 `Submodule.prodEquivOfIsCompl`, it asks for the coefficients to be a ring and the module to be a
-group, as that construction does.
+group, as that construction does.  Its first component is the projection
+`Submodule.projectionOnto` along the complement, which therefore intertwines
+(`Subrepresentation.isIntertwiningMap_projectionOnto`); its transpose, given by
+`Representation.IsIntertwiningMap.dualMap`, extends linear forms on `ρ₁` by zero on `ρ₂`, which
+includes the dual of `ρ₁` equivariantly into the dual of `ρ`. Annihilators exchange
+subrepresentations of `ρ` and of its dual: `Subrepresentation.dualAnnihilator` and
+`Subrepresentation.dualCoannihilator` carry `Submodule.dualAnnihilator` and
+`Submodule.dualCoannihilator`.
 
 The subrepresentations whose underlying submodule is finitely generated form a join-semilattice
 (`Subrepresentation.instSemilatticeSupFG`), as the finitely generated submodules do in Mathlib, so
@@ -60,13 +68,16 @@ they can index a filtered colimit.
 
 Restriction along a surjective monoid homomorphism identifies the lattices of invariant
 submodules, keeping the underlying submodule in both directions. In particular it preserves
-irreducibility, as does restriction along a monoid isomorphism.
+irreducibility, as does restriction along a monoid isomorphism. Restriction of an algebra action
+along a monoid homomorphism whose image spans the algebra keeps the invariant submodules too
+(`AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top`).
 
 ## Main results
 
 * `MonoidHom.resSubrepresentationOrderIso`
 * `MonoidHom.isIrreducible_comp_surjective_iff`
 * `MulEquiv.isIrreducible_comp_equiv_iff`
+* `AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top`
 * `Subrepresentation.mem_toSubmodule`
 * `Subrepresentation.toSubmodule_bot`
 * `Subrepresentation.toSubmodule_top`
@@ -88,11 +99,16 @@ irreducibility, as does restriction along a monoid isomorphism.
 * `Subrepresentation.subtype_eq_zero_iff`
 * `Subrepresentation.subtype_surjective_iff`
 * `Subrepresentation.isIntertwiningMap_dualRestrict`
+* `Subrepresentation.dualAnnihilator`
+* `Subrepresentation.mem_dualAnnihilator`
+* `Subrepresentation.dualCoannihilator`
+* `Subrepresentation.mem_dualCoannihilator`
 * `Subrepresentation.coe_toRepresentation_asAlgebraHom_apply`
 * `Subrepresentation.asModuleEquivAsSubmodule`
 * `Subrepresentation.intertwiningMapEquivLinearMapAsSubmodule`
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
+* `Subrepresentation.isIntertwiningMap_projectionOnto`
 * `Subrepresentation.instSemilatticeSupFG`
 -/
 
@@ -251,6 +267,56 @@ theorem isIntertwiningMap_dualRestrict {k H V : Type*} [CommSemiring k] [Group H
     Representation.IsIntertwiningMap τ.dual S.toRepresentation.dual S.toSubmodule.dualRestrict :=
   Representation.IsIntertwiningMap.dualMap ⟨fun _ _ ↦ rfl⟩
 
+section Annihilator
+
+variable {k H V : Type*} [CommSemiring k] [Group H] [AddCommMonoid V] [Module k V]
+  {τ : Representation k H V}
+
+/-- The annihilator of a subrepresentation of `τ`, the linear forms vanishing on it, as a
+subrepresentation of the dual `τ.dual`. -/
+def dualAnnihilator (S : Subrepresentation τ) : Subrepresentation τ.dual where
+  toSubmodule := S.toSubmodule.dualAnnihilator
+  apply_mem_toSubmodule g φ hφ := by
+    rw [Submodule.mem_dualAnnihilator] at hφ ⊢
+    intro v hv
+    simpa [Representation.dual_apply, Module.Dual.transpose_apply] using
+      hφ _ (S.apply_mem_toSubmodule g⁻¹ hv)
+
+@[simp]
+theorem toSubmodule_dualAnnihilator (S : Subrepresentation τ) :
+    S.dualAnnihilator.toSubmodule = S.toSubmodule.dualAnnihilator :=
+  (rfl)
+
+/-- A linear form lies in the annihilator of a subrepresentation exactly when it vanishes on it. -/
+@[simp]
+theorem mem_dualAnnihilator {S : Subrepresentation τ} {φ : Module.Dual k V} :
+    φ ∈ S.dualAnnihilator ↔ ∀ v ∈ S, φ v = 0 :=
+  Submodule.mem_dualAnnihilator φ
+
+/-- The coannihilator of a subrepresentation of the dual `τ.dual`, the vectors on which all its
+linear forms vanish, as a subrepresentation of `τ`. -/
+def dualCoannihilator (S : Subrepresentation τ.dual) : Subrepresentation τ where
+  toSubmodule := S.toSubmodule.dualCoannihilator
+  apply_mem_toSubmodule g v hv := by
+    rw [Submodule.mem_dualCoannihilator] at hv ⊢
+    intro φ hφ
+    simpa [Representation.dual_apply, Module.Dual.transpose_apply] using
+      hv _ (S.apply_mem_toSubmodule g⁻¹ hφ)
+
+@[simp]
+theorem toSubmodule_dualCoannihilator (S : Subrepresentation τ.dual) :
+    S.dualCoannihilator.toSubmodule = S.toSubmodule.dualCoannihilator :=
+  (rfl)
+
+/-- A vector lies in the coannihilator of a subrepresentation of the dual exactly when all its
+linear forms vanish on it. -/
+@[simp]
+theorem mem_dualCoannihilator {S : Subrepresentation τ.dual} {v : V} :
+    v ∈ S.dualCoannihilator ↔ ∀ φ ∈ S, φ v = 0 :=
+  Submodule.mem_dualCoannihilator v
+
+end Annihilator
+
 /-- The group-algebra action on a subrepresentation, coerced to the ambient module, is the
 original group-algebra action. -/
 @[simp]
@@ -391,6 +457,22 @@ theorem equivProdOfIsCompl_symm_apply {ρ₁ ρ₂ : Subrepresentation ρ} (h : 
   -- inferred `@[defeq]`.
   (rfl)
 
+/-- **The projection onto a summand along a complementary subrepresentation intertwines.** For
+complementary subrepresentations `ρ₁` and `ρ₂` of `ρ`, the linear projection
+`Submodule.projectionOnto` of `W` onto `ρ₁` along `ρ₂` intertwines `ρ` with `ρ₁`. -/
+theorem isIntertwiningMap_projectionOnto {ρ₁ ρ₂ : Subrepresentation ρ} (h : IsCompl ρ₁ ρ₂) :
+    Representation.IsIntertwiningMap ρ ρ₁.toRepresentation
+      (ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h)) := by
+  -- `Submodule.projectionOnto` is the first component of the inverse of
+  -- `Submodule.prodEquivOfIsCompl` (`Submodule.prodEquivOfIsCompl_symm_apply`), which
+  -- `equivProdOfIsCompl_apply` identifies with the splitting.
+  obtain ⟨f, hf⟩ : ∃ f : Representation.IntertwiningMap ρ ρ₁.toRepresentation,
+      f.toLinearMap = ρ₁.toSubmodule.projectionOnto ρ₂.toSubmodule (isCompl_toSubmodule.mpr h) :=
+    ⟨(Representation.IntertwiningMap.fst A ρ₁.toRepresentation ρ₂.toRepresentation).comp
+      (equivProdOfIsCompl h).toIntertwiningMap,
+      LinearMap.ext fun v => by simp [equivProdOfIsCompl_apply]⟩
+  exact hf ▸ ⟨f.isIntertwining⟩
+
 end Splitting
 
 section FG
@@ -450,6 +532,27 @@ theorem resSubrepresentationOrderIso_symm_apply_toSubmodule (f : H →* K)
   (rfl)
 
 end MonoidHom
+
+/-- **Invariance under a spanning monoid is invariance under the whole algebra.** If the image of
+`φ : H →* B` spans the `R`-algebra `B`, a submodule is invariant under the restriction along `φ`
+of an algebra action `F` exactly when it is invariant under every `F b`. -/
+theorem AlgHom.mem_invtSubmodule_toMonoidHom_comp_iff_of_span_eq_top {R B H M : Type*}
+    [CommSemiring R] [Semiring B] [Algebra R B] [Monoid H] [AddCommMonoid M] [Module R M]
+    (F : B →ₐ[R] Module.End R M) (φ : H →* B) (hφ : Submodule.span R (Set.range φ) = ⊤)
+    (p : Submodule R M) :
+    p ∈ Representation.invtSubmodule ((F : B →* Module.End R M).comp φ) ↔
+      ∀ b, p ∈ Module.End.invtSubmodule (F b) := by
+  -- The restricted action acts by `F (φ g)`.
+  simp only [Representation.mem_invtSubmodule, MonoidHom.comp_apply, AlgHom.coe_toMonoidHom]
+  refine ⟨fun hp b ↦ ?_, fun hp g ↦ hp (φ g)⟩
+  -- The elements of `B` whose action preserves `p` form a submodule containing the image of `φ`.
+  have hmem (c : B) : c ∈ (p.compatibleMaps p).comap F.toLinearMap ↔
+      p ∈ Module.End.invtSubmodule (F c) := by
+    rw [Submodule.mem_comap, AlgHom.coe_toLinearMap, Submodule.mem_compatibleMaps,
+      Module.End.mem_invtSubmodule]
+  have hle : Submodule.span R (Set.range φ) ≤ (p.compatibleMaps p).comap F.toLinearMap :=
+    Submodule.span_le.2 <| Set.range_subset_iff.2 fun g ↦ (hmem (φ g)).2 (hp g)
+  exact (hmem b).1 ((hφ ▸ hle) (Submodule.mem_top (x := b)))
 
 section Irreducible
 
