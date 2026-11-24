@@ -32,7 +32,9 @@ integrality of `δ ^ b * x` is that of `δ ^ a * x` times the integer `δ ^ (b -
 bounds for products, sums and powers hold for any `δ ∈ K`; raising the exponent is stated for a
 natural number `δ`. The integrality half of this bookkeeping holds in any commutative ring
 (`IsIntegral.pow_add_mul_mul` and its neighbours), and Liouville's inequality for a number of known
-size is `NumberField.one_le_pow_mul_norm_embedding_mul_pow`.
+size is `NumberField.one_le_pow_mul_norm_embedding_mul_pow`. These lemmas are the unbundled house
+half of the bundled size predicate `AlgSize` in Michail Karatarakis's formalization of Baker's
+theorem.
 
 ## Main results
 
@@ -57,6 +59,10 @@ size is `NumberField.one_le_pow_mul_norm_embedding_mul_pow`.
 
 * M. Hindry and J. H. Silverman, *Diophantine Geometry: An Introduction*, GTM 201, Part D.
 * A. Baker, *Transcendental Number Theory*, Chapter 2.
+* M. Karatarakis, formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`,
+  commit `1d51891b5be7ceeca95b4583cad39e0681c5e453`,
+  `Mathlib/NumberTheory/Transcendental/Baker/AlgSize.lean`, Apache 2.0): the bundled size
+  calculus `AlgSize`.
 -/
 
 public section

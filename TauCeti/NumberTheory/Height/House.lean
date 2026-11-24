@@ -435,7 +435,10 @@ theorem _root_.NumberField.one_le_norm_mul_house_pow {K : Type*} [Field K] [Numb
 number field `K` of degree `d` and `δ ^ a * α` is an algebraic integer of house at most `H`, then
 `1 ≤ ‖σ δ‖ ^ a ‖σ α‖ Hᵈ⁻¹` for every embedding `σ : K →+* ℂ`. For an integer denominator `δ`,
 `‖σ δ‖ = |δ|`. This is `NumberField.one_le_norm_mul_house_pow` applied to `δ ^ a * α`, with its
-house bounded by `H`. -/
+house bounded by `H`. It is an unbundled form of `AlgSize.one_le` in Michail Karatarakis's
+formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`, commit
+`1d51891b5be7ceeca95b4583cad39e0681c5e453`, files `AlgSize.lean` and `Liouville.lean` in
+`Mathlib/NumberTheory/Transcendental/Baker/`, Apache 2.0). -/
 theorem _root_.NumberField.one_le_pow_mul_norm_embedding_mul_pow {K : Type*} [Field K]
     [NumberField K] {δ α : K} (hδ : δ ≠ 0) (hα : α ≠ 0) {a : ℕ} {H : ℝ}
     (hint : IsIntegral ℤ (δ ^ a * α)) (hH : NumberField.house (δ ^ a * α) ≤ H) (σ : K →+* ℂ) :

@@ -91,7 +91,11 @@ public section
 /-! ### Clearing denominators of sums, products and powers
 
 If `δ ^ a * α` is integral, then `δ ^ a` clears the denominator of `α`. The lemmas below give
-exponents that clear the denominators of sums, products and powers of such elements. -/
+exponents that clear the denominators of sums, products and powers of such elements. They isolate
+and generalize the integrality half of the bundled size predicate `AlgSize` in Michail
+Karatarakis's formalization of Baker's theorem (`mkaratarakis/mathlib4`, branch `baker`, commit
+`1d51891b5be7ceeca95b4583cad39e0681c5e453`,
+`Mathlib/NumberTheory/Transcendental/Baker/AlgSize.lean`, Apache 2.0). -/
 
 section Denominators
 
