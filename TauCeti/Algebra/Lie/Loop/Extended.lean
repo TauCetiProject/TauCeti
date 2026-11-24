@@ -573,20 +573,16 @@ theorem extendedToProd_lie (x y : E') :
           ay • degreeDerivation R L px.fst,
         (TrivialLieModule.equiv R P R).symm (residuePairing R ℤ L Φ px.fst py.fst)), 0) := by
   dsimp only
-  -- `extendedResidueExtension` is a `def`, not reducible to `ofTwoCocycle.derivationExtension`.
-  rw [extendedToProd]
-  erw [ofTwoCocycle.derivationToProd_lie]
-  refine Prod.ext ((ofProd c).symm.injective ?_) rfl
-  rw [Equiv.symm_apply_apply, ← coe_ofProdLinearEquiv_symm, map_sub, map_add, map_smul, map_smul]
-  have hx := (Equiv.apply_symm_apply (ofProd c) (extendedToProd Φ hΦ hΦs x).fst).symm
-  have hy := (Equiv.apply_symm_apply (ofProd c) (extendedToProd Φ hΦ hΦs y).fst).symm
-  rw [extendedToProd] at hx hy
-  conv_lhs =>
-    erw [hx, hy]
-    rw [bracket_ofTwoCocycle, ofTwoCocycle.derivation_ofProd, ofTwoCocycle.derivation_ofProd]
-  simp [trivial_lie_zero, sub_eq_add_neg, twoCocycleOfBilinear_coe,
-    twoCochainOfBilinear_apply_apply]
-  rfl
+  have hcoc (u v : P) :
+      (TrivialLieModule.equiv R P R).symm (residuePairing R ℤ L Φ u v) =
+        (c : twoCochain R P (TrivialLieModule R P R)) u v := by
+    simp [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply]
+  rw [hcoc]
+  -- `extendedResidueExtension` is a `def` whose `LieRing` and `Module` instances are
+  -- definitionally equal to `ofTwoCocycle.derivationExtension`, and `extendedToProd` unfolds to
+  -- `ofTwoCocycle.derivationToProd`.
+  exact ofTwoCocycle.derivationToProd_lie_ofProd c (degreeDerivation R L)
+    (residuePairing_degreeDerivation_add Φ hΦ hΦs) x y
 
 /-- **`extendedBilinForm` is `ĝ'`-invariant**: `B(⁅x, y⁆, w) + B(y, ⁅x, w⁆) = 0`. -/
 theorem extendedBilinForm_lieInvariant : (extendedBilinForm Φ hΦ hΦs).lieInvariant E' := by

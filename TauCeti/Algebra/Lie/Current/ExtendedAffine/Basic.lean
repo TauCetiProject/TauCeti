@@ -132,16 +132,22 @@ theorem exists_eq_add_smul_degreeElement (y : E') :
     ∃ (x : E) (t : R), y = toExtendedResidueExtension Φ hΦ hΦs x + t • degreeElement Φ hΦ hΦs :=
   ofTwoCocycle.exists_eq_add_smul_derivationElement c d₀ _ y
 
+/-- The degree derivation on `ĝ` agrees with `ofTwoCocycle.derivation` for `t d/dt`. -/
+theorem vectorFieldExtensionDerivation_single_one_eq_derivation :
+    vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) =
+      ofTwoCocycle.derivation c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs) := by
+  ext x
+  obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective x
+  rw [vectorFieldExtensionDerivation_ofProd, ofTwoCocycle.derivation_ofProd]
+
 /-- **The degree element acts by the degree derivation**: `⁅d, x⁆ = t x'` for `x ∈ ĝ`. -/
 theorem lie_degreeElement_toExtendedResidueExtension (x : E) :
     ⁅degreeElement Φ hΦ hΦs, toExtendedResidueExtension Φ hΦ hΦs x⁆ =
       toExtendedResidueExtension Φ hΦ hΦs
         (vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) x) := by
-  refine (ofTwoCocycle.lie_derivationElement_toDerivationExtension c d₀
-    (residuePairing_degreeDerivation_add Φ hΦ hΦs) x).trans ?_
-  congr 1
-  obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective x
-  rw [ofTwoCocycle.derivation_ofProd, vectorFieldExtensionDerivation_ofProd]
+  rw [vectorFieldExtensionDerivation_single_one_eq_derivation]
+  exact ofTwoCocycle.lie_derivationElement_toDerivationExtension c d₀
+    (residuePairing_degreeDerivation_add Φ hΦ hΦs) x
 
 /-- **The degree element on modes**: `⁅d, x_n⁆ = n x_n` for `x_n = r tⁿ ⊗ x`. -/
 theorem lie_degreeElement_toExtendedResidueExtension_ofProd_single_tmul (n : ℤ) (r : R) (x : L) :
@@ -183,9 +189,7 @@ private theorem vectorFieldEnvelopingDerivation_ι_derivation (x : ofTwoCocycle 
     (dU : Module.End R UK) (CentralQuotient.ι (centralElement c) a x) =
       CentralQuotient.ι (centralElement c) a
         (ofTwoCocycle.derivation c d₀ (residuePairing_degreeDerivation_add Φ hΦ hΦs) x) := by
-  rw [vectorFieldEnvelopingDerivation_ι]
-  obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective x
-  rw [vectorFieldExtensionDerivation_ofProd, ofTwoCocycle.derivation_ofProd]
+  rw [vectorFieldEnvelopingDerivation_ι, vectorFieldExtensionDerivation_single_one_eq_derivation]
 
 /-- The algebra map `U(ĝ) / (ι K - a) → U(ĝ') / (ι K - a)` induced by the inclusion of `ĝ` in the
 extended affine algebra `ĝ'`. -/

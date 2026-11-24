@@ -455,6 +455,25 @@ theorem derivationToProd_lie (x y : derivationExtension c D hD) :
             derivation c D hD (derivationToProd c D hD x).fst, 0) :=
   congrArg (derivationToProd c D hD) (LieDerivation.lie_lineHom_eq_mk (derivation c D hD) x y)
 
+/-- The Lie bracket in `derivationExtension c D hD` in `(L × M) × R` coordinates. -/
+theorem derivationToProd_lie_ofProd (x y : derivationExtension c D hD) :
+    let px := (ofProd c).symm (derivationToProd c D hD x).fst
+    let py := (ofProd c).symm (derivationToProd c D hD y).fst
+    let ax := (derivationToProd c D hD x).snd
+    let ay := (derivationToProd c D hD y).snd
+    derivationToProd c D hD ⁅x, y⁆ =
+      (ofProd c (⁅px.fst, py.fst⁆ + ax • D py.fst - ay • D px.fst,
+        (c : twoCochain R L M) px.fst py.fst), 0) := by
+  dsimp only
+  rw [derivationToProd_lie]
+  refine Prod.ext ((ofProd c).symm.injective ?_) rfl
+  rw [Equiv.symm_apply_apply, ← coe_ofProdLinearEquiv_symm, map_sub, map_add, map_smul, map_smul]
+  have hx := (Equiv.apply_symm_apply (ofProd c) (derivationToProd c D hD x).fst).symm
+  have hy := (Equiv.apply_symm_apply (ofProd c) (derivationToProd c D hD y).fst).symm
+  conv_lhs =>
+    rw [hx, hy, bracket_ofTwoCocycle, derivation_ofProd, derivation_ofProd]
+  simp [trivial_lie_zero, sub_eq_add_neg]
+
 /-- The inclusion of `ofTwoCocycle c` into `derivationExtension c D hD` is injective. -/
 theorem toDerivationExtension_injective :
     Function.Injective (toDerivationExtension c D hD) :=
