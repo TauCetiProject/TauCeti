@@ -32,8 +32,8 @@ local orientations in the base, as for the orientation double cover of a manifol
 
 * `IsLocalHomeomorph.localOrientationEquiv_trans`: the correspondence restricted along an open
   embedding.
-* `IsLocalHomeomorph.localOrientationEquiv_eq_localOrientationEquiv`: for an open embedding it is
-  the correspondence of local orientations by excision.
+* `IsLocalHomeomorph.localOrientationEquiv_eq_isOpenEmbedding_localOrientationEquiv`: for an
+  open embedding it is the correspondence of local orientations by excision.
 * `IsLocalHomeomorph.localOrientationEquiv_localOrientationTransport`: the correspondence
   intertwines the transport of local orientations along path classes.
 
@@ -106,8 +106,8 @@ lemma localOrientationEquiv_trans (hπ : IsLocalHomeomorph π) {W : Type w} [Top
 
 /-- For an open embedding, the correspondence of local orientations of `π` as a local
 homeomorphism is its correspondence as an open embedding. -/
-lemma localOrientationEquiv_eq_localOrientationEquiv (hπ : IsLocalHomeomorph π)
-    (hπ' : IsOpenEmbedding π) (x : M) (d : ℕ) :
+lemma localOrientationEquiv_eq_isOpenEmbedding_localOrientationEquiv
+    (hπ : IsLocalHomeomorph π) (hπ' : IsOpenEmbedding π) (x : M) (d : ℕ) :
     hπ.localOrientationEquiv x d = hπ'.localOrientationEquiv x d :=
   Equiv.ext fun z ↦ Subtype.ext <| by
     rw [coe_localOrientationEquiv, IsOpenEmbedding.coe_localOrientationEquiv,
