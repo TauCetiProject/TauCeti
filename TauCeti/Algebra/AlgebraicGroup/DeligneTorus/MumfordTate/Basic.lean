@@ -42,6 +42,9 @@ ideals it needs no argument that the kernel of `H → ℝ ⊗[ℚ] H → O(S)` i
   when `h` is trivial.
 * `TauCeti.DeligneTorus.comapOfSurjective_mumfordTateHopfIdeal`: an isomorphism of affine groups
   over `ℚ` carries the Mumford–Tate group of `h` to that of its composite with `h`.
+* `TauCeti.DeligneTorus.mumfordTateQuotientIsoOfIso`: for an isomorphism `e : H ≅ L` of
+  coordinate Hopf algebras, the coordinate isomorphism between the Mumford–Tate group of `h` and
+  that of its twist by `e`.
 * `TauCeti.DeligneTorus.exists_finset_sup_eq_mumfordTateHopfIdeal`: for noetherian `H`, `MT(h)`
   is the intersection of finitely many closed `ℚ`-subgroups through which `h` factors.
 
@@ -159,6 +162,35 @@ theorem comapOfSurjective_mumfordTateHopfIdeal (e : H ≅ L)
       mumfordTateHopfIdeal (baseChangeMap (K := ℝ) e.hom ≫ h) := by
   rw [mumfordTateHopfIdeal, mumfordTateHopfIdeal, comapOfSurjective_contractHopfIdeal,
     comapOfSurjective_commonKernelHopfIdeal]
+
+/-- **The Mumford–Tate groups of `h` and of its twist by an isomorphism are isomorphic.** For an
+isomorphism `e : H ≅ L` of coordinate Hopf algebras, contravariantly an isomorphism `G' ≅ G` of
+affine groups over `ℚ`, and `h : S → G'_ℝ`, the coordinate isomorphism between the Mumford–Tate
+group of the composite `S → G'_ℝ → G_ℝ` and that of `h`, induced by `e`. -/
+noncomputable def mumfordTateQuotientIsoOfIso (e : H ≅ L)
+    (h : baseChange (K := ℝ) L ⟶ _root_.CommHopfAlgCat.of ℝ S) :
+    quotient H (mumfordTateHopfIdeal (baseChangeMap (K := ℝ) e.hom ≫ h)) ≅
+      quotient L (mumfordTateHopfIdeal h) :=
+  quotientIsoOfComapEq e _ (comapOfSurjective_mumfordTateHopfIdeal e h)
+
+/-- The isomorphism of Mumford–Tate groups induced by `e` commutes with their embeddings into the
+ambient groups. -/
+@[reassoc (attr := simp)]
+theorem mkQuotient_comp_mumfordTateQuotientIsoOfIso_hom (e : H ≅ L)
+    (h : baseChange (K := ℝ) L ⟶ _root_.CommHopfAlgCat.of ℝ S) :
+    mkQuotient H (mumfordTateHopfIdeal (baseChangeMap (K := ℝ) e.hom ≫ h)) ≫
+        (mumfordTateQuotientIsoOfIso e h).hom =
+      e.hom ≫ mkQuotient L (mumfordTateHopfIdeal h) :=
+  mkQuotient_comp_quotientIsoOfComapEq_hom _ _ _
+
+/-- The inverse of the isomorphism of Mumford–Tate groups induced by `e` commutes with their
+embeddings into the ambient groups. -/
+@[reassoc (attr := simp)]
+theorem mkQuotient_comp_mumfordTateQuotientIsoOfIso_inv (e : H ≅ L)
+    (h : baseChange (K := ℝ) L ⟶ _root_.CommHopfAlgCat.of ℝ S) :
+    mkQuotient L (mumfordTateHopfIdeal h) ≫ (mumfordTateQuotientIsoOfIso e h).inv =
+      e.inv ≫ mkQuotient H (mumfordTateHopfIdeal (baseChangeMap (K := ℝ) e.hom ≫ h)) :=
+  mkQuotient_comp_quotientIsoOfComapEq_inv _ _ _
 
 /-- **Finiteness of the Mumford–Tate group.** For a noetherian coordinate Hopf algebra `H`, for
 instance `H = O(GL(V))`, the Mumford–Tate ideal of `h` is the supremum of finitely many Hopf
