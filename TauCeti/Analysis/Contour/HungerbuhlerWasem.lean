@@ -15,6 +15,7 @@ public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
 public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.ConditionDischarge
 import TauCeti.Analysis.Contour.InvSubCPVExistence
 import TauCeti.Analysis.Contour.Residue.Assembly
@@ -175,8 +176,8 @@ theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : I
       ∑ s ∈ S, windingNumber γ a b s * residue f s :=
     Finset.sum_filter_mem_mul_eq S U fun s hsU ↦ isNullHomologous_iff.mp hnull s hsU
   rwa [PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero
-    (PolarPartDecomposition.ofMeromorphic hf' hmero') hU hγ_imm.isPiecewiseC1On hγU hclosed
-    hnull, zero_add, hsum] at h
+    (PolarPartDecomposition.ofMeromorphic hf' hmero') hU
+    hγ_imm.isPiecewiseC1On.absolutelyContinuousOnInterval hγU hclosed hnull, zero_add, hsum] at h
 
 /-- **Half-residue: the winding-`½` on-cycle case of HW Thm 3.3** — the `S = {s}`
 specialisation: when the generalized winding number of the closed, null-homologous immersion
