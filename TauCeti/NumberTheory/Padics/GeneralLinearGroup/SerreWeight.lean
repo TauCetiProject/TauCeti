@@ -10,8 +10,9 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
-import Mathlib.Data.Nat.Prime.Factorial
+import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import TauCeti.Data.Nat.Factorial.NatCast
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Unitriangular
 import TauCeti.RingTheory.MvPolynomial.Finrank
@@ -38,9 +39,8 @@ This file constructs them and proves:
 * `σ_{n,m}` only depends on `m` modulo `ℓ - 1`, because `det(r(g))` lies in `𝔽_ℓ^×`
   (`TauCeti.serreWeight_eq_of_modEq`);
 * `σ_{n,m}` is absolutely irreducible for `n < ℓ`: it is irreducible over every field of
-  characteristic `ℓ` (`TauCeti.isIrreducible_serreWeight`). The images of the unitriangular
-  matrices with parameters `0, …, n` in `SL₂(𝔽_ℓ)` already act irreducibly
-  (`TauCeti.isIrreducible_polynomialRep_comp_map`);
+  characteristic `ℓ` (`TauCeti.isIrreducible_serreWeight`), because `GL₂(ℤ_ℓ)` acts irreducibly
+  on `Sym^n k²` through `GL₂(k)` (`TauCeti.isIrreducible_polynomialRep_comp_map`);
 * for `n, n' < ℓ`, `σ_{n,m} ≅ σ_{n',m'}` exactly when `n = n'` and `m ≡ m' [ZMOD ℓ - 1]`
   (`TauCeti.nonempty_equiv_serreWeight_iff`), so the `ℓ (ℓ - 1)` weights are pairwise
   non-isomorphic.
@@ -141,9 +141,8 @@ theorem isIrreducible_serreWeight {n : ℕ} (hn : n < ℓ) (m : ℤ) :
     (serreWeight ℓ k n m).IsIrreducible := by
   rw [serreWeight_def, Representation.isIrreducible_charTwist_iff,
     ← GeneralLinearGroup.map_comp]
-  refine isIrreducible_polynomialRep_comp_map _ fun h ↦ ?_
-  rw [CharP.cast_eq_zero_iff k ℓ, Nat.Prime.dvd_factorial Fact.out] at h
-  omega
+  exact isIrreducible_polynomialRep_comp_map _
+    ((IsUnit.natCast_factorial_iff_of_charP ℓ).mpr hn).ne_zero
 
 /-- A matrix reducing to an upper unitriangular matrix acts on a Serre weight by the substitution
 of standard vectors alone: its determinant twist is trivial. -/
@@ -191,9 +190,9 @@ private theorem modEq_of_linearEquiv {n : ℕ} (hn : n < ℓ) {m m' : ℤ}
   -- it is a multiple of `xⁿ`.
   obtain ⟨c, hc⟩ : ∃ c : k, (F v₀ : MvPolynomial (Fin 2) k) = c • X 0 ^ n := by
     refine exists_eq_smul_X_zero_pow_of_polynomialAction_transvection_eq
-      (x := fun j : Fin (n + 1) ↦ (j : k)) (fun a b hab ↦ Fin.ext ?_)
+      (injective_natCast_fin_of_factorial_ne_zero
+        ((IsUnit.natCast_factorial_iff_of_charP ℓ).mpr hn).ne_zero)
       (F v₀).property fun j ↦ ?_
-    · exact ((CharP.natCast_eq_natCast k ℓ).mp hab).eq_of_lt_of_lt (by omega) (by omega)
     set g : GL (Fin 2) ℤ_[ℓ] := transvectionUnit (i := 0) (j := 1) (by decide) (j : ℤ_[ℓ])
     have hg : (GeneralLinearGroup.map (ZMod.castHom dvd_rfl k) (GeneralLinearGroup.map
         PadicInt.toZMod g) : Matrix (Fin 2) (Fin 2) k) = transvection 0 1 (j : k) := by
@@ -208,11 +207,11 @@ private theorem modEq_of_linearEquiv {n : ℕ} (hn : n < ℓ) {m m' : ℤ}
   have hru : IsUnit ((r : ℕ) : ℤ_[ℓ]) := PadicInt.isUnit_iff.mpr <|
     PadicInt.norm_natCast_eq_one_iff.mpr ((ZMod.isUnit_iff_coprime r ℓ).mp (hr ▸ a₀.isUnit)).symm
   set u : kˣ := Units.map (ZMod.castHom dvd_rfl k : ZMod ℓ →* k) a₀
-  set g := GeneralLinearGroup.mk'' (diagonal ![((r : ℕ) : ℤ_[ℓ]), 1]) (by simpa using hru)
+  set g := diagGL ![hru.unit, 1]
   have hg : (GeneralLinearGroup.map (ZMod.castHom dvd_rfl k) (GeneralLinearGroup.map
       PadicInt.toZMod g) : Matrix (Fin 2) (Fin 2) k) = diagonal ![(u : k), 1] := by
-    ext a b
-    fin_cases a <;> fin_cases b <;> simp [g, u, GeneralLinearGroup.map_apply, ← hr]
+    rw [map_diagGL, map_diagGL, diagGL_coe]
+    simp [u, ← hr]
   -- Comparing the two eigenvalues of `g` on the line of `F v₀`.
   have hcomp := hF g v₀
   rw [coe_serreWeight_apply_of_map_eq_diagonal hg (c := 1) (one_smul k _).symm, map_smul,

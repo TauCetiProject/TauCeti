@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Irreducible
 public import TauCeti.RingTheory.MvPolynomial.PolynomialOperator
+import TauCeti.Data.Nat.Factorial.NatCast
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 import TauCeti.LinearAlgebra.PolynomialFamily
 import TauCeti.RepresentationTheory.Subrepresentation
@@ -51,6 +52,8 @@ of `!![1, 0; t, 1]` on `xᵈ = e_0` in the same way gives `(d choose k) e_k ∈ 
   form of degree `d`.
 * `TauCeti.isIrreducible_polynomialRep_comp`: the forms of degree `d` are an irreducible
   representation of any group whose image in `GL₂(K)` contains both unitriangular families.
+* `TauCeti.isIrreducible_polynomialRep_comp_map`: the forms of degree `d` are an irreducible
+  representation of `GL₂(R)` acting through `R →+* K`, when `d !` is nonzero in `K`.
 
 ## References
 
@@ -230,29 +233,19 @@ theorem isIrreducible_polynomialRep_comp {G : Type*} [Monoid G] (φ : G →* GL 
 
 /-- **The binary forms of degree `d` are an irreducible representation of `GL₂(R)`** acting
 through any ring homomorphism `R →+* K` to a field in which `d !` is nonzero, that is, of
-characteristic zero or greater than `d`. The images of the integral unitriangular matrices with
-parameters `0, …, d` already act irreducibly. For instance the reduction `GL₂(ℤ_ℓ) → GL₂(𝔽_ℓ)`
-gives an irreducible representation of `GL₂(ℤ_ℓ)` on `Sym^d 𝔽_ℓ²` for every `d < ℓ`. -/
+characteristic zero or greater than `d`. For instance the reduction `GL₂(ℤ_ℓ) → GL₂(𝔽_ℓ)` gives an
+irreducible representation of `GL₂(ℤ_ℓ)` on `Sym^d 𝔽_ℓ²` for every `d < ℓ`. The proof applies
+`TauCeti.isIrreducible_polynomialRep_comp` to the unitriangular matrices with parameters
+`0, …, d`. -/
 theorem isIrreducible_polynomialRep_comp_map {R : Type*} [CommRing R] (f : R →+* K)
     (hd : (d.factorial : K) ≠ 0) :
     Representation.IsIrreducible
       ((polynomialRep (Fin 2) K d).comp (GeneralLinearGroup.map f)) := by
-  -- The positive integers up to `d` divide `d !`, so they are nonzero in `K`.
-  have hpos {m : ℕ} (hm : 0 < m) (hmd : m ≤ d) : (m : K) ≠ 0 := fun h ↦
-    hd (by obtain ⟨c, hc⟩ := Nat.dvd_factorial hm hmd; rw [hc, Nat.cast_mul, h, zero_mul])
-  refine isIrreducible_polynomialRep_comp _ (fun n hn ↦ ?_) (x := fun i : Fin (d + 1) ↦ (i : K))
-    (fun a b hab ↦ ?_)
+  refine isIrreducible_polynomialRep_comp _ (fun n hn h ↦ hd ?_)
+    (injective_natCast_fin_of_factorial_ne_zero hd)
     (fun i ↦ ⟨transvectionUnit (i := 0) (j := 1) (by decide) (i : R), by simp⟩)
     (fun i ↦ ⟨transvectionUnit (i := 1) (j := 0) (by decide) (i : R), by simp⟩)
-  · intro h
-    refine hd ?_
-    rw [← Nat.choose_mul_factorial_mul_factorial hn, Nat.cast_mul, Nat.cast_mul, h, zero_mul,
-      zero_mul]
-  · -- Distinct parameters differ by a positive integer at most `d`.
-    dsimp only at hab
-    by_contra hne
-    rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hne) with h | h
-    · exact hpos (Nat.sub_pos_of_lt h) (by omega) (by rw [Nat.cast_sub h.le, hab, sub_self])
-    · exact hpos (Nat.sub_pos_of_lt h) (by omega) (by rw [Nat.cast_sub h.le, hab, sub_self])
+  rw [← Nat.choose_mul_factorial_mul_factorial hn, Nat.cast_mul, Nat.cast_mul, h, zero_mul,
+    zero_mul]
 
 end TauCeti

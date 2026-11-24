@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
+import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
 # Binary monomials
@@ -129,28 +130,15 @@ polynomial `f` of degree `d` in two variables is `∑_{i ≤ d} f_(d - i, i) e_i
 theorem sum_coeff_smul_polynomialMonomial {f : MvPolynomial (Fin 2) R} (hf : f.IsHomogeneous d) :
     ∑ i ∈ Finset.range (d + 1),
       f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) • polynomialMonomial R d i = f := by
-  ext s
-  simp only [coeff_sum, smul_eq_C_mul, coeff_C_mul, coeff_polynomialMonomial, mul_ite, mul_one,
-    mul_zero]
-  by_cases hs : s 0 + s 1 = d
-  · -- Only the binary monomial with exponent `s` contributes.
-    have hs' : Finsupp.single 0 (d - s 1) + Finsupp.single 1 (s 1) = s := by
-      ext j
-      fin_cases j
-      · simp
-        omega
-      · simp
-    rw [Finset.sum_eq_single (s 1), hs', ite_eq_left_iff.mpr fun h ↦ (h ⟨by omega, rfl⟩).elim]
-    · refine fun i _ hi ↦ ite_eq_right_iff.mpr fun h ↦ (hi ?_).elim
-      simpa using congrArg (· 1) h.2
-    · simp
-      omega
-  · -- A coefficient off degree `d` vanishes, and no binary monomial of degree `d` has exponent `s`.
-    rw [hf.coeff_eq_zero (by simpa [Finsupp.degree_eq_sum] using hs)]
-    refine Finset.sum_eq_zero fun i _ ↦ ite_eq_right_iff.mpr fun h ↦ (hs ?_).elim
-    rw [← h.2]
-    simp
-    omega
+  -- Expand `f` in the monomial basis, reindexed by the exponent of `y` through
+  -- `finsuppDegreeFinTwoEquiv` composed with `Fin.revPerm`.
+  refine Eq.trans ?_ (congrArg Subtype.val (((homogeneousMonomialBasis (R := R) d).reindex
+    ((finsuppDegreeFinTwoEquiv d).trans Fin.revPerm)).sum_repr ⟨f, hf⟩))
+  rw [← Fin.sum_univ_eq_sum_range (fun i : ℕ ↦
+    f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) • polynomialMonomial R d i),
+    Submodule.coe_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [polynomialMonomial_eq_monomial i.is_le, Nat.sub_sub_self i.is_le]
 
 variable (R d i) in
 /-- **The weight of `e_i^d` is `(d - i, i)`**: the diagonal matrix `diag(t₀, t₁)` scales the
