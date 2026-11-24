@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 
@@ -64,18 +65,11 @@ theorem exists_rescale_eq_one_of_pow_eq_coboundary {m : ℕ} (hm : m.Coprime (Na
     · exact ⟨1, rfl, fun g h ↦ by simp [Nat.card_eq_zero_of_infinite]⟩
   have hd₁ : d 1 = 1 := by
     simpa [IsFactorSet.one_left (α := α)] using (hd 1 1).symm
-  let u := Nat.gcdA m (Nat.card G)
-  let v := Nat.gcdB m (Nat.card G)
-  have huv : (m : ℤ) * u + Nat.card G * v = 1 := by
-    rw [← Nat.gcd_eq_gcd_ab, hm.gcd_eq_one, Nat.cast_one]
+  obtain ⟨u, v, huv⟩ := TauCeti.exists_zpow_mul_zpow_eq_of_coprime (G := kˣ) hm
   refine ⟨fun g ↦ (d g ^ u * b g ^ v)⁻¹, by simp [hd₁, hb₁], fun g h ↦ ?_⟩
-  rw [mul_eq_one_iff_inv_eq, eq_comm]
-  calc α g h = (α g h ^ m) ^ u * (α g h ^ Nat.card G) ^ v := by
-        rw [← zpow_natCast, ← zpow_natCast, ← zpow_mul, ← zpow_mul, ← zpow_add, huv, zpow_one]
-    _ = _ := by
-        rw [hd, hb]
-        simp only [mul_zpow, inv_zpow, mul_inv, inv_inv]
-        ac_rfl
+  rw [mul_eq_one_iff_inv_eq, eq_comm, ← huv (α g h), hd, hb]
+  simp only [mul_zpow, inv_zpow, mul_inv, inv_inv]
+  ac_rfl
 
 end CommSemiring
 

@@ -10,17 +10,18 @@ public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Finite
 public import TauCeti.GroupTheory.SemidirectProduct
+public import TauCeti.RepresentationTheory.FDRep.Scalar
 public import TauCeti.RepresentationTheory.ProjectiveRepresentation.Basic
 
 /-!
 # Gallagher's normalized extension to a semidirect product
 
-Let a finite group `A` act on a group `Γ` by automorphisms, and let `ρ` be a representation of
-`Γ` on a finite-dimensional vector space `V` over a field `F` whose only `Γ`-equivariant
-endomorphisms are the scalars. Suppose that `ρ` is isomorphic to each of its twists
-`g ↦ ρ (a • g)`, and that `|A|` is coprime to `dim V`. Then `ρ` extends to exactly one
-representation `ρ*` of the semidirect product `Γ ⋊ A` on the same space `V` in which every element
-of `A` acts with determinant `1`.
+Let a finite group `A` act on a group `Γ` by automorphisms through `φ : A →* MulAut Γ`, and
+let `ρ` be a representation of `Γ` on a finite-dimensional vector space `V` over a field `F` whose
+only `Γ`-equivariant endomorphisms are the scalars. Suppose that `ρ` is isomorphic to each of its
+twists `g ↦ ρ (φ a g)`, and that `|A|` is coprime to `dim V`. Then `ρ` extends to exactly one
+representation `ρ*` of the semidirect product `Γ ⋊[φ] A` on the same space `V` in which every
+element of `A` acts with determinant `1`.
 
 This is the representation-theoretic input to Glauberman's canonical extension of an invariant
 irreducible character of `Γ` to `Γ ⋊ A` under a coprime action. Neither finiteness of `Γ` nor
@@ -56,16 +57,15 @@ open Module SemidirectProduct
 
 namespace Representation
 
-variable {F Γ A V : Type*} [Field F] [Group Γ] [Group A] [MulDistribMulAction A Γ]
+variable {F Γ A V : Type*} [Field F] [Group Γ] [Group A] {φ : A →* MulAut Γ}
   [AddCommGroup V] [Module F V] {ρ : Representation F Γ V}
 
 /-- An extension of `ρ` to `Γ ⋊ A` intertwines `ρ` with its twist by each element of `A`. -/
 private theorem extension_inr_mul
-    {ρ' : Representation F (Γ ⋊[MulDistribMulAction.toMulAut A Γ] A) V}
+    {ρ' : Representation F (Γ ⋊[φ] A) V}
     (h : ∀ g, ρ' (inl g) = ρ g) (a : A) (g : Γ) :
-    ρ' (inr a) * ρ g = ρ (a • g) * ρ' (inr a) := by
-  rw [← h, ← h, ← map_mul, ← map_mul, inr_mul_inl, MulDistribMulAction.toMulAut_apply,
-    MulDistribMulAction.toMulEquiv_apply]
+    ρ' (inr a) * ρ g = ρ (φ a g) * ρ' (inr a) := by
+  rw [← h, ← h, ← map_mul, ← map_mul, inr_mul_inl]
 
 omit [Group A] in
 /-- If `|A|` is coprime to a dimension `0`, then `A` is trivial. -/
@@ -75,13 +75,13 @@ private theorem subsingleton_of_coprime_finrank_eq_zero
   exact hcop.1
 
 /-- **Uniqueness of the normalized extension.** If every `Γ`-equivariant endomorphism of `V` is a
-scalar and `|A|` is coprime to `dim V`, then two representations of `Γ ⋊ A` that both restrict to
+scalar and `|A|` is coprime to `dim V`, then two representations of `Γ ⋊[φ] A` that both restrict to
 `ρ` on `Γ` and act with determinant `1` on `A` are equal. -/
 theorem semidirectProduct_extension_det_eq_one_unique
     (hscalar : ∀ f : Module.End F V, (∀ g, Commute f (ρ g)) →
       ∃ c : F, f = algebraMap F (Module.End F V) c)
     (hcop : (Nat.card A).Coprime (finrank F V))
-    {ρ₁ ρ₂ : Representation F (Γ ⋊[MulDistribMulAction.toMulAut A Γ] A) V}
+    {ρ₁ ρ₂ : Representation F (Γ ⋊[φ] A) V}
     (h₁ : ∀ g, ρ₁ (inl g) = ρ g) (h₂ : ∀ g, ρ₂ (inl g) = ρ g)
     (hd₁ : ∀ a, (ρ₁ (inr a)).det = 1) (hd₂ : ∀ a, (ρ₂ (inr a)).det = 1) : ρ₁ = ρ₂ := by
   suffices hinr : ∀ a, ρ₁ (inr a) = ρ₂ (inr a) by
@@ -95,17 +95,16 @@ theorem semidirectProduct_extension_det_eq_one_unique
   -- `ρ₁ (inr a)⁻¹ ρ₂ (inr a)` commutes with `ρ`, so it is a scalar `c`.
   obtain ⟨c, hc⟩ := hscalar (ρ₁ (inr a⁻¹) * ρ₂ (inr a)) fun g ↦ by
     refine (commute_iff_eq _ _).2 ?_
-    rw [mul_assoc, extension_inr_mul h₂, ← mul_assoc, extension_inr_mul h₁, inv_smul_smul,
-      mul_assoc]
+    rw [mul_assoc, extension_inr_mul h₂, ← mul_assoc, extension_inr_mul h₁, map_inv,
+      MulAut.inv_apply_self, mul_assoc]
   have hrel : ρ₂ (inr a) = ρ₁ (inr a) * algebraMap F (Module.End F V) c := by
     rw [← hc, ← mul_assoc, ← map_mul, ← map_mul, mul_inv_cancel, map_one, map_one, one_mul]
   -- The scalar `c` has order dividing both `dim V` and `|A|`.
   have hm : c ^ finrank F V = 1 := by
-    have := congrArg LinearMap.det hrel
-    rwa [map_mul, hd₂, hd₁, one_mul, Module.algebraMap_end_eq_smul_id, LinearMap.det_smul,
-      LinearMap.det_id, mul_one, eq_comm] at this
+    simpa [hd₁, hd₂, Module.algebraMap_end_eq_smul_id, eq_comm] using
+      congrArg LinearMap.det hrel
   have hn : c ^ Nat.card A = 1 := by
-    have hpow (ρ' : Representation F (Γ ⋊[MulDistribMulAction.toMulAut A Γ] A) V) :
+    have hpow (ρ' : Representation F (Γ ⋊[φ] A) V) :
         ρ' (inr a) ^ Nat.card A = 1 := by
       rw [← map_pow, ← map_pow, pow_card_eq_one', map_one, map_one]
     have := congrArg (· ^ Nat.card A) hrel
@@ -114,28 +113,6 @@ theorem semidirectProduct_extension_det_eq_one_unique
   have hc₁ : c = 1 := by simpa [hcop.gcd_eq_one] using pow_gcd_eq_one.2 ⟨hn, hm⟩
   rw [hrel, hc₁, map_one, mul_one]
 
-/-- **Schur's lemma for twists.** If the only `Γ`-equivariant endomorphisms of `V ≠ 0` are the
-scalars, two operators implementing the same twist of `ρ` differ by a nonzero scalar. -/
-private theorem exists_unit_of_intertwines [Nontrivial V]
-    (hscalar : ∀ f : Module.End F V, (∀ g, Commute f (ρ g)) →
-      ∃ c : F, f = algebraMap F (Module.End F V) c)
-    {a : A} {U U' : V ≃ₗ[F] V} (hU : ∀ g x, U (ρ g x) = ρ (a • g) (U x))
-    (hU' : ∀ g x, U' (ρ g x) = ρ (a • g) (U' x)) :
-    ∃ c : Fˣ, ∀ x, U x = (c : F) • U' x := by
-  obtain ⟨c, hc⟩ := hscalar ((U'.symm : V →ₗ[F] V) * U) fun g ↦ by
-    refine (commute_iff_eq _ _).2 (LinearMap.ext fun x ↦ ?_)
-    simp only [mul_apply_eq_comp, LinearEquiv.coe_coe, hU]
-    rw [LinearEquiv.symm_apply_eq, hU', LinearEquiv.apply_symm_apply]
-  have hx (x : V) : U x = c • U' x := by
-    have := LinearMap.congr_fun hc x
-    simp only [mul_apply_eq_comp, LinearEquiv.coe_coe, Module.algebraMap_end_apply] at this
-    rw [← map_smul, ← this, LinearEquiv.apply_symm_apply]
-  have hc₀ : c ≠ 0 := by
-    rintro rfl
-    obtain ⟨x, hx₀⟩ := exists_ne (0 : V)
-    exact hx₀ (U.injective (by simp [hx]))
-  exact ⟨Units.mk0 c hc₀, hx⟩
-
 /-- The operators implementing the twists of `ρ` can be chosen to form a homomorphism from `A` to
 `GL(V)` when `|A|` is coprime to `dim V`: their factor set has a coboundary as its `dim V`-th
 power, by taking determinants, and is therefore a coboundary. -/
@@ -143,22 +120,22 @@ private theorem exists_monoidHom_intertwines [Nontrivial V]
     (hscalar : ∀ f : Module.End F V, (∀ g, Commute f (ρ g)) →
       ∃ c : F, f = algebraMap F (Module.End F V) c)
     (hcop : (Nat.card A).Coprime (finrank F V))
-    (htwist : ∀ a : A, Nonempty (ρ.Equiv (ρ.comp (MulDistribMulAction.toMonoidHom Γ a)))) :
-    ∃ π : A →* (V ≃ₗ[F] V), ∀ a g x, π a (ρ g x) = ρ (a • g) (π a x) := by
+    (htwist : ∀ a : A, Nonempty (ρ.Equiv (ρ.comp (φ a).toMonoidHom))) :
+    ∃ π : A →* (V ≃ₗ[F] V), ∀ a g x, π a (ρ g x) = ρ (φ a g) (π a x) := by
   classical
   -- Operators implementing the twists, normalized at `1`.
-  have hT₀ (a : A) : ∃ U : V ≃ₗ[F] V, ∀ g x, U (ρ g x) = ρ (a • g) (U x) := by
+  have hT₀ (a : A) : ∃ U : V ≃ₗ[F] V, ∀ g x, U (ρ g x) = ρ (φ a g) (U x) := by
     obtain ⟨e⟩ := htwist a
     exact ⟨e.toLinearEquiv, fun g x ↦ by
       simpa using LinearMap.congr_fun (e.toIntertwiningMap.isIntertwining' g) x⟩
   choose T₀ hT₀ using hT₀
   let T (a : A) : V ≃ₗ[F] V := if a = 1 then 1 else T₀ a
-  have hT (a : A) (g : Γ) (x : V) : T a (ρ g x) = ρ (a • g) (T a x) := by
+  have hT (a : A) (g : Γ) (x : V) : T a (ρ g x) = ρ (φ a g) (T a x) := by
     by_cases ha : a = 1 <;> simp [T, ha, hT₀]
   -- They form a projective representation of `A`, with factor set `α`.
   have hα (a b : A) : ∃ c : Fˣ, ∀ x, T a (T b x) = (c : F) • T (a * b) x :=
-    exists_unit_of_intertwines hscalar (U := (T b).trans (T a))
-      (fun g x ↦ by simp [hT, mul_smul]) (hT (a * b))
+    exists_unit_smul_of_intertwines (σ := ρ.comp (φ (a * b)).toMonoidHom) hscalar
+      ((T b).trans (T a)) (T (a * b)) (fun g x ↦ by simp [hT]) (hT (a * b))
   choose α hα using hα
   have hproj : TauCeti.IsProjectiveRep T α :=
     TauCeti.IsProjectiveRep.of_map_one_mul_apply (by simp [T]) hα
@@ -187,20 +164,18 @@ private theorem exists_monoidHom_intertwines_det_eq_one
     (hscalar : ∀ f : Module.End F V, (∀ g, Commute f (ρ g)) →
       ∃ c : F, f = algebraMap F (Module.End F V) c)
     (hcop : (Nat.card A).Coprime (finrank F V))
-    (htwist : ∀ a : A, Nonempty (ρ.Equiv (ρ.comp (MulDistribMulAction.toMonoidHom Γ a)))) :
+    (htwist : ∀ a : A, Nonempty (ρ.Equiv (ρ.comp (φ a).toMonoidHom))) :
     ∃ π : A →* (V ≃ₗ[F] V),
-      (∀ a g x, π a (ρ g x) = ρ (a • g) (π a x)) ∧ ∀ a, LinearEquiv.det (π a) = 1 := by
+      (∀ a g x, π a (ρ g x) = ρ (φ a g) (π a x)) ∧ ∀ a, LinearEquiv.det (π a) = 1 := by
   rcases (finrank F V).eq_zero_or_pos with h0 | hpos
   · have := subsingleton_of_coprime_finrank_eq_zero hcop h0
     exact ⟨1, fun a g x ↦ by simp [Subsingleton.elim a 1], fun a ↦ by simp⟩
   have : Nontrivial V := Module.nontrivial_of_finrank_pos hpos
   obtain ⟨π₁, hπ₁⟩ := exists_monoidHom_intertwines hscalar hcop htwist
   let δ : A →* Fˣ := LinearEquiv.det.comp π₁
-  let u := Nat.gcdA (finrank F V) (Nat.card A)
-  let v := Nat.gcdB (finrank F V) (Nat.card A)
-  have huv : (finrank F V : ℤ) * u + Nat.card A * v = 1 := by
-    rw [← Nat.gcd_eq_gcd_ab, hcop.symm.gcd_eq_one, Nat.cast_one]
-  -- Twisting by `δ ^ (-u)` makes every determinant `δ ^ (1 - u * dim V) = (δ ^ |A|) ^ v = 1`.
+  obtain ⟨u, v, huv⟩ := TauCeti.exists_zpow_mul_zpow_eq_of_coprime (G := Fˣ) hcop.symm
+  -- Since `δ ^ |A| = 1`, we have `δ = (δ ^ dim V) ^ u`, so twisting by `δ ^ (-u)` makes every
+  -- determinant `δ ^ (-u * dim V) * δ = 1`.
   let e : A →* Fˣ := (zpowGroupHom (-u)).comp δ
   have hproj : TauCeti.IsProjectiveRep
       (fun a ↦ (π₁ a).trans (LinearEquiv.smulOfUnit (e a))) (1 : A → A → Fˣ) := by
@@ -212,25 +187,27 @@ private theorem exists_monoidHom_intertwines_det_eq_one
       (e a : F) • (π₁ a : V →ₗ[F] V) :=
     LinearMap.ext fun x ↦ by simp
   have hδ : δ a ^ Nat.card A = 1 := by rw [← map_pow, pow_card_eq_one', map_one]
-  have hexp : -u * (finrank F V : ℤ) + 1 = Nat.card A * v := by linarith
   have he : e a ^ finrank F V * δ a = 1 := by
+    have := huv (δ a)
+    rw [hδ, one_zpow, mul_one] at this
+    rw [← this]
     simp only [e, MonoidHom.comp_apply, zpowGroupHom_apply]
-    rw [← zpow_natCast, ← zpow_mul, ← zpow_add_one, hexp, zpow_mul, zpow_natCast, hδ, one_zpow]
+    group
   ext
   simp only [LinearEquiv.coe_det, hcoe, LinearMap.det_smul, Units.val_one]
   simpa [δ, LinearEquiv.coe_det] using congrArg Units.val he
 
 /-- **Gallagher's normalized extension, existence.** Let a group `A` act on `Γ` by
-automorphisms, and let `ρ` be a representation of `Γ` whose `Γ`-equivariant endomorphisms are all
-scalars and which is isomorphic to its twist `g ↦ ρ (a • g)` by every `a ∈ A`. If `|A|` is coprime
-to `dim V`, then `ρ` extends to a representation of `Γ ⋊ A` on `V` in which every element of `A`
-acts with determinant `1`. -/
+automorphisms through `φ`, and let `ρ` be a representation of `Γ` whose `Γ`-equivariant
+endomorphisms are all scalars and which is isomorphic to its twist `g ↦ ρ (φ a g)` by every
+`a ∈ A`. If `|A|` is coprime to `dim V`, then `ρ` extends to a representation of `Γ ⋊[φ] A` on `V`
+in which every element of `A` acts with determinant `1`. -/
 theorem exists_semidirectProduct_extension_det_eq_one
     (hscalar : ∀ f : Module.End F V, (∀ g, Commute f (ρ g)) →
       ∃ c : F, f = algebraMap F (Module.End F V) c)
     (hcop : (Nat.card A).Coprime (finrank F V))
-    (htwist : ∀ a : A, Nonempty (ρ.Equiv (ρ.comp (MulDistribMulAction.toMonoidHom Γ a)))) :
-    ∃ ρ' : Representation F (Γ ⋊[MulDistribMulAction.toMulAut A Γ] A) V,
+    (htwist : ∀ a : A, Nonempty (ρ.Equiv (ρ.comp (φ a).toMonoidHom))) :
+    ∃ ρ' : Representation F (Γ ⋊[φ] A) V,
       (∀ g, ρ' (inl g) = ρ g) ∧ ∀ a, (ρ' (inr a)).det = 1 := by
   obtain ⟨π, hπ, hdet⟩ := exists_monoidHom_intertwines_det_eq_one hscalar hcop htwist
   let ρΓ : Γ →* (V ≃ₗ[F] V) :=
@@ -244,23 +221,22 @@ theorem exists_semidirectProduct_extension_det_eq_one
     have := hπ a g ((π a).symm x)
     rw [LinearEquiv.apply_symm_apply] at this
     simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply,
-      MulDistribMulAction.toMulAut_apply, MulDistribMulAction.toMulEquiv_apply,
       mul_apply_eq_comp, LinearEquiv.coe_inv, hρΓx]
     exact this.symm
   · simpa using hρΓ g
   · simpa [← LinearEquiv.coe_det] using congrArg Units.val (hdet a)
 
-/-- **Gallagher's normalized extension.** Let a group `A` act on `Γ` by automorphisms, and
-let `ρ` be a representation of `Γ` whose `Γ`-equivariant endomorphisms are all scalars and which
-is isomorphic to its twist `g ↦ ρ (a • g)` by every `a ∈ A`. If `|A|` is coprime to `dim V`, then
-`ρ` has exactly one extension to a representation of `Γ ⋊ A` on `V` in which every element of `A`
-acts with determinant `1`. -/
+/-- **Gallagher's normalized extension.** Let a group `A` act on `Γ` by automorphisms through
+`φ`, and let `ρ` be a representation of `Γ` whose `Γ`-equivariant endomorphisms are all scalars and
+which is isomorphic to its twist `g ↦ ρ (φ a g)` by every `a ∈ A`. If `|A|` is coprime to `dim V`,
+then `ρ` has exactly one extension to a representation of `Γ ⋊[φ] A` on `V` in which every element
+of `A` acts with determinant `1`. -/
 theorem existsUnique_semidirectProduct_extension_det_eq_one
     (hscalar : ∀ f : Module.End F V, (∀ g, Commute f (ρ g)) →
       ∃ c : F, f = algebraMap F (Module.End F V) c)
     (hcop : (Nat.card A).Coprime (finrank F V))
-    (htwist : ∀ a : A, Nonempty (ρ.Equiv (ρ.comp (MulDistribMulAction.toMonoidHom Γ a)))) :
-    ∃! ρ' : Representation F (Γ ⋊[MulDistribMulAction.toMulAut A Γ] A) V,
+    (htwist : ∀ a : A, Nonempty (ρ.Equiv (ρ.comp (φ a).toMonoidHom))) :
+    ∃! ρ' : Representation F (Γ ⋊[φ] A) V,
       (∀ g, ρ' (inl g) = ρ g) ∧ ∀ a, (ρ' (inr a)).det = 1 := by
   obtain ⟨ρ', hρ'⟩ := exists_semidirectProduct_extension_det_eq_one hscalar hcop htwist
   exact ⟨ρ', hρ', fun ρ'' hρ'' ↦
