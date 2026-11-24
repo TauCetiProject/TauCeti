@@ -13,9 +13,9 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Basic
 A morphism of schemes `f : X ⟶ Y` is an *alteration* if it is proper, dominant, and finite over
 some nonempty open `U ⊆ Y` (Stacks, Definition 29.52.12 (0AB0), where `X` and `Y` are integral).
 For integral schemes this says that `f` is proper and surjective and that the function field of
-`X` is a finite extension of that of `Y`. Alterations generalize modifications; when `X` and `Y`
-are integral, the modifications are exactly the alterations of generic degree one. De Jong's
-theorem resolves singularities up to alterations.
+`X` is a finite extension of that of `Y`. Modifications of nonempty schemes are alterations; when
+`X` and `Y` are integral, the modifications are exactly the alterations of generic degree one.
+De Jong's theorem resolves singularities up to alterations.
 
 ## Main definitions
 

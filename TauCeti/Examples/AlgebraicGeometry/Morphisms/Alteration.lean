@@ -9,12 +9,11 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicGeometry.Morphisms.Alteration
 
 /-!
-# An alteration that is not a modification
+# An alteration of degree two
 
 The morphism `Spec ℂ ⟶ Spec ℝ` is finite and surjective, hence an alteration
-(`TauCeti.AlgebraicGeometry.isAlteration_of_isFinite`). Its generic degree is
-`[ℂ : ℝ] = 2`, so it is not a modification: the predicate `IsAlteration` admits genuinely finite
-covers of degree greater than one.
+(`TauCeti.AlgebraicGeometry.isAlteration_of_isFinite`). Its generic degree is `[ℂ : ℝ] = 2`: the
+predicate `IsAlteration` admits finite covers of degree greater than one.
 -/
 
 public section
