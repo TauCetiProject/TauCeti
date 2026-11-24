@@ -21,6 +21,8 @@ Given a finite measure `μ` on a compact manifold `M` and a differentiability or
 
 * `TauCeti.Manifold.meanZeroSmoothFunctions`: the submodule of `C^n` functions on `M` with
   vanishing integral against `μ`.
+* `TauCeti.Manifold.meanZeroSmoothFunctions.mk`: bundle a `C^n` function of vanishing integral as
+  an element of `meanZeroSmoothFunctions`.
 
 ## Main results
 
@@ -28,6 +30,8 @@ Given a finite measure `μ` on a compact manifold `M` and a differentiability or
   `meanZeroSmoothFunctions I M μ n`.
 * `TauCeti.Manifold.integral_coe_meanZeroSmoothFunctions_eq_zero`: the integral of a bundled
   mean-zero `C^n` function against `μ` is zero.
+* `TauCeti.Manifold.meanZeroSmoothFunctions.coe_mk`: coercion of `meanZeroSmoothFunctions.mk` to a
+  function.
 -/
 
 public section
@@ -65,5 +69,18 @@ theorem mem_meanZeroSmoothFunctions_iff {u : C^n⟮I, M; ℝ⟯} :
 theorem integral_coe_meanZeroSmoothFunctions_eq_zero (u : meanZeroSmoothFunctions I M μ n) :
     ∫ x, u.val x ∂μ = 0 :=
   mem_meanZeroSmoothFunctions_iff.1 u.property
+
+/-- Bundle a `C^n` function with vanishing integral against `μ` as an element of
+`meanZeroSmoothFunctions I M μ n`. -/
+def meanZeroSmoothFunctions.mk {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f)
+    (hf0 : ∫ x, f x ∂μ = 0) : meanZeroSmoothFunctions I M μ n :=
+  ⟨⟨f, hf⟩, mem_meanZeroSmoothFunctions_iff.2 hf0⟩
+
+/-- Coercing `meanZeroSmoothFunctions.mk hf hf0` to a function recovers `f`. -/
+@[simp]
+theorem meanZeroSmoothFunctions.coe_mk {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f)
+    (hf0 : ∫ x, f x ∂μ = 0) :
+    ((meanZeroSmoothFunctions.mk hf hf0).val : M → ℝ) = f :=
+  ContMDiffMap.coeFn_mk f hf
 
 end TauCeti.Manifold

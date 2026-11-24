@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
-import TauCeti.MeasureTheory.Integral.ConnectedComponent
 
 /-!
 # Harmonic functions on closed Riemannian manifolds
@@ -77,23 +76,19 @@ theorem eq_of_laplaceBeltrami_eq_of_integral_eq [PreconnectedSpace M] {u v : M �
     (hΔ : ∀ x, laplaceBeltrami I u x = laplaceBeltrami I v x)
     (hint : ∫ x, u x ∂riemannianVolume I M = ∫ x, v x ∂riemannianVolume I M) :
     u = v := by
-  have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
-  have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
   have hΔ0 : ∀ x, laplaceBeltrami I (u - v) x = 0 := fun x ↦ by
     rw [laplaceBeltrami_sub I hu hv, hΔ x, sub_self]
   have hconst : ∀ x y, (u - v) x = (u - v) y :=
     apply_eq_of_laplaceBeltrami_eq_zero (hu.sub hv) hΔ0
-  have hlc : IsLocallyConstant (u - v) :=
-    IsLocallyConstant.of_constant_on_connected_components fun x y _ ↦ (hconst x y).symm
   have hint0 : ∫ x, (u - v) x ∂riemannianVolume I M = 0 := by
     rw [Pi.sub_def, integral_sub
       (hu.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace u))
       (hv.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace v)),
       hint, sub_self]
   ext x
-  refine sub_eq_zero.1
-    (hlc.apply_eq_zero_of_setIntegral_connectedComponent_eq_zero
-      (measure_ne_top (riemannianVolume I M) _) ?_)
-  simpa [PreconnectedSpace.connectedComponent_eq_univ x] using hint0
+  have : Nonempty M := ⟨x⟩
+  rw [show (fun y ↦ (u - v) y) = fun _ ↦ (u - v) x from funext fun y ↦ hconst y x,
+    integral_const, smul_eq_mul, mul_eq_zero] at hint0
+  exact sub_eq_zero.1 (hint0.resolve_left measureReal_univ_ne_zero)
 
 end TauCeti.Manifold
