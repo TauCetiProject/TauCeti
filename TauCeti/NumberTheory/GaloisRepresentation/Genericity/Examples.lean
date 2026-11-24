@@ -125,23 +125,15 @@ section DecomposedGeneric
 open Ideal Module
 open scoped _root_.NumberField
 
-/-- Every rational prime splits completely in `ℚ`: there is one prime of `𝓞 ℚ` above it. -/
-private theorem ncard_primesOver_rat (p : ℕ) [Fact p.Prime] :
-    ((span {(p : ℤ)}).primesOver (𝓞 ℚ)).ncard = finrank ℚ ℚ := by
-  obtain ⟨Q, hQ⟩ : ((span {(p : ℤ)}).primesOver (𝓞 ℚ)).Nonempty :=
-    Set.nonempty_coe_sort.mp inferInstance
-  have := hQ.1
-  have := hQ.2
-  exact (_root_.NumberField.ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot ℚ ℚ _ Q).mpr
-    (Subsingleton.elim _ _)
-
 /-- For `F = ℚ`, the prime `2` is decomposed generic for the trivial representation of rank two
 over `𝔽₃`. -/
 theorem isDecomposedGenericPrime_one_two :
     (1 : Gal(ℚ/ℚ) →* GL (Fin 2) (ZMod 3)).IsDecomposedGenericPrime 2 := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   refine MonoidHom.isDecomposedGenericPrime_iff.mpr
-    ⟨Nat.prime_two, by decide, ncard_primesOver_rat 2, fun Q _ _ σ _ ↦ ?_⟩
+    ⟨Nat.prime_two, by decide,
+      (_root_.NumberField.ncard_primesOver_ringOfIntegers_rat 2).trans (finrank_self ℚ).symm,
+      fun Q _ _ σ _ ↦ ?_⟩
   exact_mod_cast (isGenericAt_one_and_not_isGenericAt_one_one_and_not_isStronglyGenericAt_one _
     σ).1
 
