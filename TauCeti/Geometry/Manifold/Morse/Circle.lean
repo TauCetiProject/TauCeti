@@ -292,27 +292,9 @@ circle being read as `ℝ` through the local real lifts, it is multiplication by
 `-2 δ sin (2 (t - r))`. -/
 theorem mvfderiv_circleCosTwo_coe (δ r t : ℝ) :
     mvfderiv 𝓘(ℝ) (circleCosTwo δ r) (t : AddCircle (2 * π)) =
-      (-(2 * δ) * Real.sin (2 * (t - r))) • ContinuousLinearMap.id ℝ ℝ := by
-  -- Both sides are derivatives at `t` of the composite with the quotient map `ℝ → S¹`.
-  have h₁ : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (circleCosTwo δ r ∘ ((↑) : ℝ → AddCircle (2 * π))) t
-      (mfderiv 𝓘(ℝ) 𝓘(ℝ) (circleCosTwo δ r) t) :=
-    ((((contMDiff_circleCosTwo δ r) t).mdifferentiableAt (by simp)).hasMFDerivAt.comp t
-      (hasMFDerivAt_coe (2 * π) t)).congr_mfderiv (ContinuousLinearMap.comp_id _)
-  -- The derivative `smulRight 1 c` of a real function is multiplication by `c`.
-  have hc : (1 : ℝ →L[ℝ] ℝ).smulRight (-(2 * δ) * Real.sin (2 * (t - r))) =
-      (-(2 * δ) * Real.sin (2 * (t - r))) • ContinuousLinearMap.id ℝ ℝ :=
-    ContinuousLinearMap.ext fun v ↦ by
-      rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, smul_apply,
-        ContinuousLinearMap.id_apply, smul_eq_mul, smul_eq_mul, mul_comm]
-  have h₂ : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (circleCosTwo δ r ∘ ((↑) : ℝ → AddCircle (2 * π))) t
-      ((-(2 * δ) * Real.sin (2 * (t - r))) • ContinuousLinearMap.id ℝ ℝ) := by
-    rw [show circleCosTwo δ r ∘ ((↑) : ℝ → AddCircle (2 * π)) =
-      fun y ↦ δ * Real.cos (2 * (y - r)) from funext fun y ↦ circleCosTwo_coe δ r y]
-    exact ((hasDerivAt_cos_two δ r t).hasFDerivAt.congr_fderiv hc).hasMFDerivAt
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [mvfderiv_apply_eq_mfderiv_apply, h₁.mfderiv.symm.trans h₂.mfderiv]
-  -- The two sides differ only in reading the tangent vector `v ∈ T_t S¹` as a real number.
-  rfl
+      (1 : ℝ →L[ℝ] ℝ).smulRight (-(2 * δ) * Real.sin (2 * (t - r))) :=
+  AddCircle.mvfderiv_eq_smulRight_of_hasDerivAt <| by
+    simpa only [Function.comp_def, circleCosTwo_coe] using hasDerivAt_cos_two δ r t
 
 /-- At a point `x` of the circle with lift `y`, the angle `2 (y - r)` has the sine and cosine of the
 class of `2 (θ - r)`; these do not depend on the lift. -/

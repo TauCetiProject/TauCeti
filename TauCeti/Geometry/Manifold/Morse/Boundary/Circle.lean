@@ -236,6 +236,24 @@ private theorem circleCosTwo_coe_add_pi_div_four (δ r : ℝ) (j : ℕ) :
   rw [circleCosTwo_coe, show 2 * (r + j * π + π / 4 - r) = π / 2 + (j : ℝ) * (2 * π) by ring,
     Real.cos_add_nat_mul_two_pi, Real.cos_pi_div_two, mul_zero]
 
+/-- At the maxima `r + n π`, `f = δ`. -/
+private theorem circleCosTwo_coe_add_nat_mul_pi (δ r : ℝ) (n : ℕ) :
+    circleCosTwo δ r ((r + n * π : ℝ) : AddCircle (2 * π)) = δ := by
+  rw [circleCosTwo_coe, show 2 * (r + n * π - r) = (n : ℝ) * (2 * π) by ring,
+    Real.cos_nat_mul_two_pi, mul_one]
+
+/-- At the minimum `r + j π - π / 2`, `f = -δ`. -/
+private theorem circleCosTwo_coe_add_nat_mul_pi_sub_pi_div_two (δ r : ℝ) (j : ℕ) :
+    circleCosTwo δ r ((r + j * π - π / 2 : ℝ) : AddCircle (2 * π)) = -δ := by
+  rw [circleCosTwo_coe, show 2 * (r + j * π - π / 2 - r) = -π + (j : ℝ) * (2 * π) by ring,
+    Real.cos_add_nat_mul_two_pi, Real.cos_neg, Real.cos_pi, mul_neg_one]
+
+/-- At the minimum `r + j π + π / 2`, `f = -δ`. -/
+private theorem circleCosTwo_coe_add_nat_mul_pi_add_pi_div_two (δ r : ℝ) (j : ℕ) :
+    circleCosTwo δ r ((r + j * π + π / 2 : ℝ) : AddCircle (2 * π)) = -δ := by
+  rw [circleCosTwo_coe, show 2 * (r + j * π + π / 2 - r) = π + (j : ℝ) * (2 * π) by ring,
+    Real.cos_add_nat_mul_two_pi, Real.cos_pi, mul_neg_one]
+
 /-- At the point `r + j π + π / 4`, the sine `sin (2 (θ - r))` is `1`. -/
 private theorem sin_two_mul_add_pi_div_four_sub (r : ℝ) (j : ℕ) :
     Real.sin (2 * (r + j * π + π / 4 - r)) = 1 := by
@@ -276,13 +294,11 @@ theorem coe_mem_stableSet_circleCosTwoMin (hδ : 0 < δ)
     (fun t ht ↦ by rw [uIcc_of_le ht]; exact fun s hs ↦ hs.1)
     (fun t ht ↦ ⟨fun he ↦ by
       have h := hle t ht
-      rw [he, circleCosTwo_coe, show 2 * (r + j * π - r) = ((j : ℕ) : ℝ) * (2 * π) by ring,
-        Real.cos_nat_mul_two_pi] at h
+      rw [he, circleCosTwo_coe_add_nat_mul_pi] at h
       linarith, fun he ↦ by
       have h := hle t ht
-      rw [he, circleCosTwo_coe,
-        show 2 * (r + j * π + π - r) = ((j + 1 : ℕ) : ℝ) * (2 * π) by push_cast; ring,
-        Real.cos_nat_mul_two_pi] at h
+      rw [he, show r + j * π + π = r + ((j + 1 : ℕ) : ℝ) * π by push_cast; ring,
+        circleCosTwo_coe_add_nat_mul_pi] at h
       linarith⟩)
     (Ici_mem_atTop 0) (Flow.mem_stableSet.1 hac)
   -- As `f c ≤ 0`, `c` is the minimum `q_j`.
@@ -321,14 +337,10 @@ theorem coe_mem_unstableSet_circleCosTwoMax (hδ : 0 < δ)
     (fun t ht ↦ by rw [uIcc_of_ge ht]; exact fun s hs ↦ hs.2)
     (fun t ht ↦ ⟨fun he ↦ by
       have h := hge t ht
-      rw [he, circleCosTwo_coe,
-        show 2 * (r + j * π - π / 2 - r) = -π + ((j : ℕ) : ℝ) * (2 * π) by ring,
-        Real.cos_add_nat_mul_two_pi, Real.cos_neg, Real.cos_pi] at h
+      rw [he, circleCosTwo_coe_add_nat_mul_pi_sub_pi_div_two] at h
       linarith, fun he ↦ by
       have h := hge t ht
-      rw [he, circleCosTwo_coe,
-        show 2 * (r + j * π + π / 2 - r) = π + ((j : ℕ) : ℝ) * (2 * π) by ring,
-        Real.cos_add_nat_mul_two_pi, Real.cos_pi] at h
+      rw [he, circleCosTwo_coe_add_nat_mul_pi_add_pi_div_two] at h
       linarith⟩)
     (Iic_mem_atBot 0) (Flow.mem_unstableSet.1 hac)
   -- As `f c ≥ 0`, `c` is the maximum `p_j`.
@@ -408,9 +420,9 @@ private theorem signedMorseBoundaryCoeff_circleCosTwo_self (hδ : 0 < δ)
   have hd : mvfderiv 𝓘(ℝ) (circleCosTwo δ r) z (b ⟨0, by simp⟩) = -(2 * δ) := by
     have hb0 : b ⟨0, by simp⟩ = 1 := by simp [b]
     rw [mvfderiv_circleCosTwo_coe, sin_two_mul_add_pi_div_four_sub, mul_one, hb0]
-    -- The map `c • id` is applied to `1`, a tangent vector of the circle read in `ℝ`.
-    exact (smul_apply (ContinuousLinearMap.id ℝ ℝ) (-(2 * δ)) 1).trans
-      (by rw [ContinuousLinearMap.id_apply, smul_eq_mul, mul_one])
+    -- The map `u ↦ u • c` is applied to `1`, a tangent vector of the circle read in `ℝ`.
+    exact (ContinuousLinearMap.smulRight_apply (c := (1 : ℝ →L[ℝ] ℝ)) (x := (1 : ℝ))).trans
+      (by rw [one_apply_eq_self, one_smul])
   have hs : 𝔬.augmentationSign (circleCosTwoMinCrit δ r j) *
         (SignType.sign (mvfderiv 𝓘(ℝ) (circleCosTwo δ r) z (b ⟨0, by simp⟩)) : ℤ) =
       -𝔬.augmentationSign (circleCosTwoMinCrit δ r j) := by
