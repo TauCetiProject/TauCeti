@@ -52,6 +52,8 @@ point-set description of the end; the identification of the primitive on it with
   interior of a Liouville domain stays outside the domain.
 * `TauCeti.IsLiouvilleDomain.injOn_flowOf`: for a complete Liouville field, the trajectories
   through the boundary are disjoint.
+* `TauCeti.IsLiouvilleDomain.flowOf_mem_iff_of_mem_frontier`: for a complete Liouville field, the
+  trajectory of a boundary point lies in the domain exactly at nonpositive times.
 * `TauCeti.IsLiouvilleDomain.preimage_flowOf`: for a complete Liouville field, the images of a
   Liouville domain under the Liouville flow are Liouville domains.
 * `TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`: the cylindrical end of a completion,
@@ -145,6 +147,25 @@ theorem injOn_flowOf (h : IsLiouvilleDomain ω α W)
     le_antisymm (not_lt.1 (hlt hq hp hpq'.symm)) (not_lt.1 (hlt hp hq hpq'))
   refine Prod.ext ?_ h₂
   rw [← flowOf_zero Z p.1, ← flowOf_zero Z q.1, ← neg_add_cancel p.2, hgrp, hgrp, hpq', h₂]
+
+/-- **The Liouville trajectory of a boundary point lies in the domain exactly at nonpositive
+times.** If the Liouville field `Z` of a Liouville domain `W` is complete, with flow `ψ`, and `y`
+is a boundary point of `W`, then `ψ_t(y) ∈ W` exactly when `t ≤ 0`. -/
+theorem flowOf_mem_iff_of_mem_frontier (h : IsLiouvilleDomain ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hc : IsCompleteVectorField Z) {y : M}
+    (hy : y ∈ frontier W) {t : ℝ} : flowOf Z t y ∈ W ↔ t ≤ 0 := by
+  have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
+  refine ⟨fun ht ↦ not_lt.1 fun ht' ↦ h.flowOf_notMem hZ hy.2 ht' (hc.mem_flowDomain _ _) ht,
+    fun ht ↦ ?_⟩
+  rcases ht.lt_or_eq with ht | rfl
+  · -- Otherwise `ψ_t(y)` is not interior, and flowing it forward for `-t > 0` gives `y ∉ W`.
+    by_contra hn
+    refine h.flowOf_notMem hZ (fun hi ↦ hn (interior_subset hi)) (neg_pos.2 ht)
+      (hc.mem_flowDomain _ _) ?_
+    rw [flowOf_neg_flowOf hZs (hc.mem_flowDomain _ _)]
+    exact h.isClosed.frontier_subset hy
+  · rw [flowOf_zero Z]
+    exact h.isClosed.frontier_subset hy
 
 /-- **The Liouville flow carries Liouville domains to Liouville domains.** If the Liouville field
 `Z` of a Liouville domain `W` is complete, then for every time `t` the preimage of `W` under the
@@ -315,10 +336,8 @@ omit [FiniteDimensional ℝ E] in
 exactly at nonpositive times. -/
 theorem flowOf_mem_iff_of_mem_frontier (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.val = α.val) {y : M} (hy : y ∈ frontier W) {t : ℝ} :
-    flowOf Z t y ∈ W ↔ t ≤ 0 := by
-  refine ⟨fun ht ↦ not_lt.1 fun ht' ↦ h.flowOf_notMem hZ hy.2 ht'
-    ((h.isCompleteVectorField hZ).mem_flowDomain _ _) ht, fun ht ↦ ?_⟩
-  simpa using h.flowOf_neg_mem hZ (h.isClosed.frontier_subset hy) (neg_nonneg.2 ht)
+    flowOf Z t y ∈ W ↔ t ≤ 0 :=
+  h.toIsLiouvilleDomain.flowOf_mem_iff_of_mem_frontier hZ (h.isCompleteVectorField hZ) hy
 
 /-- Every point of a completion outside the interior of the Liouville domain is reached from the
 boundary by the forward Liouville flow, at a nonnegative time. -/
