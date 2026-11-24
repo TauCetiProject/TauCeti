@@ -9,8 +9,6 @@ public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Orientation
 public import TauCeti.Analysis.Convex.Topology
 
-import TauCeti.AlgebraicTopology.Cohomology.Point
-
 /-!
 # Cohomology with compact supports of a real normed space
 
@@ -220,8 +218,7 @@ theorem isZero_compactSupportCohomology_of_starConvex {U : TopCat.{v}} {j : U �
     (hj : IsOpenEmbedding j) {y : E} (hU : StarConvex ℝ y (Set.range j)) {n : ℕ}
     (h : n ≠ finrank ℝ E) : IsZero (U.compactSupportCohomology R k N n) := by
   rcases isEmpty_or_nonempty U with hU₀ | hU₀
-  · exact (TauCeti.isZero_singularCohomology_of_isEmpty R k N U n).of_iso
-      (compactSupportCohomologyIsoOfCompactSpace n)
+  · exact isZero_compactSupportCohomology_of_isEmpty R k N n
   · have := isIso_compactSupportCohomologyExtend_of_starConvex R k N hj hU n
     exact (isZero_compactSupportCohomology_euclidean R N h).of_iso
       (asIso (compactSupportCohomologyExtend hj n))

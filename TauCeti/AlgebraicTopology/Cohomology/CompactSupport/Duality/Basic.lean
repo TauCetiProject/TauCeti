@@ -325,8 +325,7 @@ theorem bijective_dualityMap_of_cofinal
 theorem bijective_dualityMap_of_isEmpty [IsEmpty M] :
     Function.Bijective (o.dualityMap hn L p q h) := by
   have hc : IsZero ((TopCat.of M).compactSupportCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :=
-    (isZero_singularCohomology_of_isEmpty _ ℤ L (TopCat.of M) p).of_iso
-      (TopCat.compactSupportCohomologyIsoOfCompactSpace p)
+    TopCat.isZero_compactSupportCohomology_of_isEmpty _ ℤ L p
   have hh : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
       (TopCat.of M)) :=
     isZero_singularHomology_of_isEmpty L _ q

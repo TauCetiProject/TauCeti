@@ -91,8 +91,7 @@ theorem isZero_compactSupportCohomology_of_iSup_eq_top {ι : Type*} [Preorder ι
   rcases isEmpty_or_nonempty ι with hι | hι
   · -- An empty family covers only the empty space.
     have : IsEmpty X := Opens.isEmpty_of_iSup_eq_top hcover
-    exact (TauCeti.isZero_singularCohomology_of_isEmpty R k M X n).of_iso
-      (compactSupportCohomologyIsoOfCompactSpace n)
+    exact isZero_compactSupportCohomology_of_isEmpty R k M n
   rw [ModuleCat.isZero_iff_subsingleton]
   refine ⟨fun x x' ↦ ?_⟩
   obtain ⟨i, z, rfl⟩ := exists_compactSupportCohomologyExtend_eq_of_iSup_eq_top hU hcover x
@@ -163,7 +162,6 @@ theorem isZero_compactSupportCohomology_iSup_of_pairwise_disjoint {ι : Type*} {
     (fun _ _ hd ↦ isZero_compactSupportCohomology_sup_of_disjoint hd)
     (fun _ ht ↦ isZero_compactSupportCohomology_iSup_of_monotone ht) hs h
   have : IsEmpty ((toTopCat X).obj ⊥) := ⟨fun x ↦ x.property⟩
-  exact (TauCeti.isZero_singularCohomology_of_isEmpty R k M _ n).of_iso
-    (compactSupportCohomologyIsoOfCompactSpace n)
+  exact isZero_compactSupportCohomology_of_isEmpty R k M n
 
 end TopCat
