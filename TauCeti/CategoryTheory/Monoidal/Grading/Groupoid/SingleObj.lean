@@ -82,11 +82,12 @@ def singleObjFunctorEquiv (G : Type w) [Monoid G] :
     (fun S ↦ ⟨⟨MulOpposite.op (F.map (degree S)),
       MulOpposite.op ((liftCoreEquiv.symm F).deg S).iso.inv,
       MulOpposite.unop_injective <| by
-        change F.map (degree S) ≫ ((liftCoreEquiv.symm F).deg S).iso.inv = 𝟙 _
-        rw [← liftCoreEquiv_symm_deg_iso_hom]; exact ((liftCoreEquiv.symm F).deg S).iso.hom_inv_id,
+        rw [MulOpposite.unop_mul, MulOpposite.unop_op, MulOpposite.unop_op, MulOpposite.unop_one,
+          ← SingleObj.comp_as_mul, ← SingleObj.id_as_one, ← liftCoreEquiv_symm_deg_iso_hom]
+        exact ((liftCoreEquiv.symm F).deg S).iso.hom_inv_id,
       MulOpposite.unop_injective <| by
-        change ((liftCoreEquiv.symm F).deg S).iso.inv ≫ F.map (degree S) = 𝟙 _
-        rw [← liftCoreEquiv_symm_deg_iso_hom]
+        rw [MulOpposite.unop_mul, MulOpposite.unop_op, MulOpposite.unop_op, MulOpposite.unop_one,
+          ← SingleObj.comp_as_mul, ← SingleObj.id_as_one, ← liftCoreEquiv_symm_deg_iso_hom]
         exact ((liftCoreEquiv.symm F).deg S).iso.inv_hom_id⟩, rfl⟩)
     fun S T U f hf ↦ MulOpposite.unop_injective <| by
       simpa [SingleObj.comp_as_mul, SingleObj.id_as_one, eqToHom_core_singleObj_iso_hom,

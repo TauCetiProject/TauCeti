@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
+import Mathlib.RingTheory.SimpleRing.DivisionRing
 
 /-!
 # The constructor `End.of` and the algebraic structure of `End X`
@@ -124,9 +125,7 @@ surjective, it is bijective. -/
 theorem bijective_algebraMap_end_of_surjective (X : C) [Nontrivial (End X)]
     (hsurj : Function.Surjective (algebraMap k (End X))) :
     Function.Bijective (algebraMap k (End X)) :=
-  ⟨fun a b hab ↦ by_contra fun h ↦ one_ne_zero (α := End X) <| by
-    rw [← map_one (algebraMap k (End X)), ← mul_inv_cancel₀ (sub_ne_zero.mpr h),
-      map_mul, map_sub, hab, sub_self, zero_mul], hsurj⟩
+  ⟨(algebraMap k (End X)).injective, hsurj⟩
 
 /-- Packaging scalar endomorphisms as an algebra isomorphism: if `End X` is nontrivial and
 `algebraMap k (End X)` is surjective, then `End X` is isomorphic as a `k`-algebra to `k`. -/

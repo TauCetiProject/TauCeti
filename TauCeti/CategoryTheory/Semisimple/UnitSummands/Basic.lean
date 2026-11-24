@@ -206,44 +206,24 @@ private theorem ι_equiv (i : (chosenTensorUnitDecomp C).ι) :
       ((chosenTensorUnitDecomp C).equiv.apply_symm_apply _).symm
   rintro j rfl hk; simp
 
+/-- Resolution of the identity of `𝟙_ C` as the sum of the unit-summand projections followed by
+the inclusions. -/
+theorem sum_π_comp_ι [Fintype (UnitSimpleClasses C)] :
+    ∑ I : UnitSimpleClasses C, π I ≫ ι I = 𝟙 (𝟙_ C) := by
+  let d := chosenTensorUnitDecomp C
+  rw [← Fintype.sum_equiv d.equiv (fun i ↦ π (d.equiv i) ≫ ι (d.equiv i))
+    (fun I ↦ π I ≫ ι I) (fun _ ↦ rfl)]
+  have hterm : ∀ i : d.ι, π (d.equiv i) ≫ ι (d.equiv i) =
+      d.iso.hom ≫ biproduct.π d.summands i ≫ biproduct.ι d.summands i ≫ d.iso.inv := fun i ↦ by
+    dsimp only [d]; rw [π_equiv, ι_equiv]; simp only [Category.assoc, Iso.hom_inv_id_assoc]
+  simp_rw [hterm, ← Category.assoc, ← Preadditive.sum_comp, Category.assoc, ← Preadditive.comp_sum,
+    biproduct.total]; simp
+
 /-- `tensorUnitBicone` is a bilimit, realizing `𝟙_ C` as the biproduct of its simple summand
 classes `UnitSimpleClasses C`. -/
 def tensorUnitBiconeIsBilimit : (tensorUnitBicone (C := C)).IsBilimit :=
-  let d := chosenTensorUnitDecomp C
-  { isLimit := Fan.IsLimit.mk _
-      (fun s ↦ (biproduct.lift fun i ↦ s.proj (d.equiv i) ≫ (d.summandIso i).inv) ≫ d.iso.inv)
-      (fun s I ↦ by
-        dsimp only [d, Fan.proj, Bicone.toCone_π_app, tensorUnitBicone, π]
-        simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.lift_π_assoc]
-        exact (fun {J K : UnitSimpleClasses C} (h : J = K) ↦ by subst h; simp)
-          (d.equiv.apply_symm_apply I))
-      (fun s m hm ↦ by
-        dsimp only [Bicone.toCone_pt, tensorUnitBicone] at m ⊢
-        rw [← cancel_mono d.iso.hom]; apply biproduct.hom_ext; intro i
-        simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, biproduct.lift_π]
-        have hm' := hm (d.equiv i)
-        dsimp only [d, Fan.proj, Bicone.toCone_π_app, tensorUnitBicone] at hm' ⊢
-        rw [π_equiv] at hm'
-        rw [← Category.assoc, ← cancel_mono ((chosenTensorUnitDecomp C).summandIso i).hom]
-        simpa [Category.assoc] using hm')
-    isColimit := Cofan.IsColimit.mk _
-      (fun s ↦ d.iso.hom ≫ biproduct.desc fun i ↦ (d.summandIso i).hom ≫ s.inj (d.equiv i))
-      (fun s I ↦ by
-        dsimp only [d, Cofan.inj, Bicone.toCocone_ι_app, tensorUnitBicone, ι]
-        simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.ι_desc]
-        exact (fun {J K : UnitSimpleClasses C} (h : J = K) ↦ by subst h; simp :
-          ∀ {J K : UnitSimpleClasses C} (h : J = K),
-            eqToHom (congrArg (fun X : UnitSimpleClasses C ↦ X.repr) h) ≫ s.ι.app ⟨K⟩ =
-              s.ι.app ⟨J⟩)
-          (d.equiv.apply_symm_apply I).symm)
-      (fun s m hm ↦ by
-        dsimp only [Bicone.toCocone_pt, tensorUnitBicone] at m ⊢
-        rw [← cancel_epi d.iso.inv]; apply biproduct.hom_ext'; intro i
-        simp only [Iso.inv_hom_id_assoc, biproduct.ι_desc]
-        have hm' := hm (d.equiv i)
-        dsimp only [d, Cofan.inj, Bicone.toCocone_ι_app, tensorUnitBicone] at hm' ⊢
-        rw [ι_equiv] at hm'; rw [← cancel_epi ((chosenTensorUnitDecomp C).summandIso i).inv]
-        simpa [Category.assoc] using hm') }
+  letI := Fintype.ofFinite (UnitSimpleClasses C)
+  isBilimitOfTotal (tensorUnitBicone (C := C)) sum_π_comp_ι
 
 /-- Morphisms into `𝟙_ C` are determined by postcomposition with the canonical projections
 `π I`. -/
@@ -259,42 +239,21 @@ theorem hom_ext' {X : C} {f g : 𝟙_ C ⟶ X} (h : ∀ I : UnitSimpleClasses C,
 instance hasBiproduct : HasBiproduct (fun I : UnitSimpleClasses C ↦ I.repr) :=
   HasBiproduct.mk ⟨tensorUnitBicone (C := C), tensorUnitBiconeIsBilimit (C := C)⟩
 
-/-- Resolution of the identity of `𝟙_ C` as the sum of the unit-summand projections followed by
-the inclusions. -/
-theorem sum_π_comp_ι [Fintype (UnitSimpleClasses C)] :
-    ∑ I : UnitSimpleClasses C, π I ≫ ι I = 𝟙 (𝟙_ C) := by
-  let d := chosenTensorUnitDecomp C
-  rw [← Fintype.sum_equiv d.equiv (fun i ↦ π (d.equiv i) ≫ ι (d.equiv i))
-    (fun I ↦ π I ≫ ι I) (fun _ ↦ rfl)]
-  have hterm : ∀ i : d.ι, π (d.equiv i) ≫ ι (d.equiv i) =
-      d.iso.hom ≫ biproduct.π d.summands i ≫ biproduct.ι d.summands i ≫ d.iso.inv := fun i ↦ by
-    dsimp only [d]; rw [π_equiv, ι_equiv]; simp only [Category.assoc, Iso.hom_inv_id_assoc]
-  simp_rw [hterm, ← Category.assoc, ← Preadditive.sum_comp, Category.assoc, ← Preadditive.comp_sum,
-    biproduct.total]; simp
-
 section
 variable [HasBiproduct (fun I : UnitSimpleClasses C ↦ I.repr)]
 
 /-- Canonical isomorphism between `𝟙_ C` and the biproduct of its simple summand classes
 `UnitSimpleClasses C`. -/
 def tensorUnitIsoBiproduct : 𝟙_ C ≅ ⨁ fun I : UnitSimpleClasses C ↦ I.repr :=
-  (tensorUnitBiconeIsBilimit (C := C)).isLimit.conePointUniqueUpToIso (biproduct.isLimit _)
+  biproduct.uniqueUpToIso _ (tensorUnitBiconeIsBilimit (C := C))
 @[reassoc (attr := simp)] theorem tensorUnitIsoBiproduct_hom_π (I : UnitSimpleClasses C) :
     (tensorUnitIsoBiproduct (C := C)).hom ≫ biproduct.π _ I = π I :=
-  (biproduct.isLimit _).conePointUniqueUpToIso_inv_comp
-    (tensorUnitBiconeIsBilimit (C := C)).isLimit ⟨I⟩
+  (biproduct.uniqueUpToIso_hom _ (tensorUnitBiconeIsBilimit (C := C)) =≫ _).trans
+    (biproduct.lift_π _ I)
 @[reassoc (attr := simp)] theorem ι_tensorUnitIsoBiproduct_inv (I : UnitSimpleClasses C) :
-    biproduct.ι _ I ≫ (tensorUnitIsoBiproduct (C := C)).inv = ι I := by
-  classical
-  rw [Iso.comp_inv_eq]; apply (biproduct.isLimit _).hom_ext; rintro ⟨J⟩
-  simp only [Category.assoc, tensorUnitIsoBiproduct_hom_π, biproduct.ι_π, Bicone.toCone_π_app]
-  by_cases h : I = J <;> [subst h; skip] <;> simp [*, ι_comp_π_ne]
-@[reassoc (attr := simp)] theorem tensorUnitIsoBiproduct_inv_π (I : UnitSimpleClasses C) :
-    (tensorUnitIsoBiproduct (C := C)).inv ≫ π I = biproduct.π _ I := by
-  rw [Iso.inv_comp_eq, tensorUnitIsoBiproduct_hom_π]
-@[reassoc (attr := simp)] theorem ι_tensorUnitIsoBiproduct_hom (I : UnitSimpleClasses C) :
-    ι I ≫ (tensorUnitIsoBiproduct (C := C)).hom = biproduct.ι _ I := by
-  rw [← ι_tensorUnitIsoBiproduct_inv (C := C) I, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+    biproduct.ι _ I ≫ (tensorUnitIsoBiproduct (C := C)).inv = ι I :=
+  (_ ≫= biproduct.uniqueUpToIso_inv _ (tensorUnitBiconeIsBilimit (C := C))).trans
+    (biproduct.ι_desc _ I)
 end
 
 /-- Every simple unit summand is tensor-idempotent: `I.repr ⊗ I.repr ≅ I.repr`. -/

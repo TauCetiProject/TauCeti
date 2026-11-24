@@ -313,25 +313,34 @@ private theorem freeLift_map_freeDeg (γ : GroupoidGrading C G) (S : SimpleClass
   eq_of_heq <| Quiver.heq_of_homOfEq_ext _ _ <|
     Prefunctor.congr_hom (Quiver.FreeGroupoid.lift_spec (prefunctorOfGrading γ)) (.mk S)
 
-/-- Extend a `GroupoidGrading C G` to a functor `universalGradingGroupoid C ⥤ G`. -/
-def lift (γ : GroupoidGrading C G) : universalGradingGroupoid C ⥤ G :=
-  toQuotientFunctor ⋙ CategoryTheory.Quotient.lift (Rel C)
-    (Quiver.FreeGroupoid.lift (prefunctorOfGrading γ)) fun _ _ _ _ ⟨S, T, U, f, hf⟩ ↦ by
+private def liftQuotient (γ : GroupoidGrading C G) : CategoryTheory.Quotient (Rel C) ⥤ G :=
+  CategoryTheory.Quotient.lift (Rel C) (Quiver.FreeGroupoid.lift (prefunctorOfGrading γ))
+    fun _ _ _ _ ⟨S, T, U, f, hf⟩ ↦ by
       simp only [CategoryTheory.Functor.map_comp, eqToHom_map, freeLift_map_freeDeg]
       exact γ.deg_comp f hf
+
+/-- Extend a `GroupoidGrading C G` to a functor `universalGradingGroupoid C ⥤ G`. -/
+def lift (γ : GroupoidGrading C G) : universalGradingGroupoid C ⥤ G :=
+  toQuotientFunctor ⋙ liftQuotient γ
+
+private theorem fromQuotient_comp_lift (γ : GroupoidGrading C G) :
+    fromQuotientFunctor (C := C) ⋙ lift γ = liftQuotient γ := by
+  rw [lift, ← CategoryTheory.Functor.assoc, fromQuotient_comp_toQuotient,
+    CategoryTheory.Functor.id_comp]
+
 @[simp] theorem lift_mkObj (γ : GroupoidGrading C G) (I : UnitSimpleClasses C) :
-    (lift γ).obj (mkObj I) = γ.obj I := by
-  unfold universalGradingGroupoid instGroupoid lift mkObj quotFunctor toQuotientFunctor
-    fromQuotientFunctor; rfl
+    (lift γ).obj (mkObj I) = γ.obj I :=
+  (CategoryTheory.Functor.congr_obj (fromQuotient_comp_lift γ) _).trans <|
+    (CategoryTheory.Quotient.lift_obj_functor_obj (Rel C) _ _ _).trans
+      (Prefunctor.congr_obj (Quiver.FreeGroupoid.lift_spec (prefunctorOfGrading γ)) ⟨I⟩)
+
 @[simp] theorem lift_degree (γ : GroupoidGrading C G) (S : SimpleClasses C) :
     (lift γ).map (degree S) =
-      eqToHom (lift_mkObj γ _) ≫ γ.deg S ≫ eqToHom (lift_mkObj γ _).symm := by
-  refine (conj_eqToHom_iff_heq _ _ (lift_mkObj γ _) (lift_mkObj γ _)).2 ?_
-  have h : (lift γ).map (degree S) ≍
-      (Quiver.FreeGroupoid.lift (prefunctorOfGrading γ)).map (freeGeneratingDeg C S) := by
-    unfold universalGradingGroupoid instGroupoid lift degree quotFunctor toQuotientFunctor
-      fromQuotientFunctor; rfl
-  exact h.trans (heq_of_eq (freeLift_map_freeDeg γ S))
+      eqToHom (lift_mkObj γ _) ≫ γ.deg S ≫ eqToHom (lift_mkObj γ _).symm :=
+  (conj_eqToHom_iff_heq _ _ (lift_mkObj γ _) (lift_mkObj γ _)).2 <|
+    (CategoryTheory.Functor.hcongr_hom (fromQuotient_comp_lift γ) _).trans <|
+      (heq_of_eq (CategoryTheory.Quotient.lift_map_functor_map (Rel C) _ _ _)).trans
+        (heq_of_eq (freeLift_map_freeDeg γ S))
 @[simp] theorem lift_degreeOf (γ : GroupoidGrading C G) (X : C) [Simple X] :
     (lift γ).map (degreeOf X) =
       eqToHom (lift_mkObj γ _) ≫ γ.degOf X ≫ eqToHom (lift_mkObj γ _).symm := by
