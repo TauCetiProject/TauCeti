@@ -19,9 +19,9 @@ import Mathlib.Tactic.NoncommRing
 # Normalization of Fredholm modules
 
 The operator `F` of a Fredholm module `(H, π, F)` only satisfies `F² = 1` modulo operators that
-become compact after multiplication by `π(a)`. The index pairing and the Chern character are
-built from modules with `F² = 1` exactly, and every Fredholm module can be brought to that form
-in two steps.
+become compact after multiplication by `π(a)`. The odd index pairing, through the projection
+`(1 + F) / 2`, and the Chern character are built from modules with `F² = 1` exactly, and every
+Fredholm module can be brought to that form in two steps.
 
 1. **The sine replacement.** For a self-adjoint `F` the operator `sin (π F / 2)`, defined by the
    continuous functional calculus, is a self-adjoint contraction. It still has compact commutators

@@ -25,8 +25,9 @@ C⋆-subalgebra of `E →L[ℂ] E`, and therefore closed under the continuous fu
 
 For a Fredholm module `(H, π, F)` the operator `F` lies in the essential commutant of the range of
 `π`, so every continuous function of a self-adjoint `F` again has compact commutators with the
-representation. This is what allows `F` to be replaced by a function of itself, such as the
-contraction `sin (π F / 2)`, without leaving the class of Fredholm modules.
+representation. When `F` is replaced by a function of itself, such as the contraction
+`sin (π F / 2)`, this gives the compact-commutator axiom of a Fredholm module; the compactness of
+the defect `(f(F)² - 1) π(a)` needs a separate argument about the function `f`.
 
 ## References
 
