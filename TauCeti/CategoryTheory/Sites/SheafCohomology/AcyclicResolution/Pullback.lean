@@ -79,6 +79,8 @@ theorem pullback_resolutionClass {n : ℕ} {U : C} {V : D} (ψ : V ⟶ u.obj U)
         (d_freeYonedaSheafSectionsEquiv_comp_map pb c ψ s hs) := by
   refine ((pb.obj F).H'AddEquivExt n V).injective ?_
   rw [pullback_apply, resolutionClass_def, resolutionClass_def, AddEquiv.apply_symm_apply]
+  -- `H'AddEquivExt` applied to the inverse of `H'AddEquivExt` of the class of `s` is the `Ext`
+  -- class `R.extMk ι … s`, but only up to unfolding the equivalence, so the goal is restated.
   change (Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp
       ((R.extMk ι hι hι' hR _ _).mapExactFunctor pb) (zero_add n) = _
   rw [R.mapExactFunctor_extMk pb ι hι hι' hR hpι hpι' hpR, CochainComplex.mk₀_comp_extMk]

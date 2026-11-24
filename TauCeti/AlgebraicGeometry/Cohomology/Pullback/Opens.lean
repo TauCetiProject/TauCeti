@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback.Resolution
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
+import TauCeti.AlgebraicGeometry.Cohomology.InjectiveResolution
 
 /-!
 # Cohomology of an open as cohomology of the open subscheme
@@ -19,15 +20,17 @@ the open `W` to the cohomology of the open subscheme `W` with coefficients in th
 It is injective (`AlgebraicGeometry.Scheme.Opens.cohomologyOnPullbackι_injective`).
 
 The target is a module over the global functions of the open subscheme `W`, which are the
-functions on the open `W` of `X` (`AlgebraicGeometry.Scheme.Opens.topIso`). So functions defined
-only on `W` act on `Hⁿ(W, M)` through this map. The source has no such action: it is a module only
-over the global functions of `X`. On classes of sections of an injective resolution `P` of `M`,
+functions on the open `W` of `X` (`AlgebraicGeometry.Scheme.Opens.topIso`). The library's
+`Module` instance on the source `cohomologyOn M n W` is over the global functions `Γ(X, ⊤)`
+only (`AlgebraicGeometry.Scheme.Modules.cohomologyOnModule`), so this map is how functions on `W`
+are made to act on `Hⁿ(W, M)` here. On classes of sections of an injective resolution `P` of `M`,
 the action is multiplication of sections
 (`AlgebraicGeometry.Scheme.Opens.cohomologyOnPullbackι_resolutionClass_smul`), because pullback
 along `W.ι` sends the class of a section of `P` to the class of its pullback
 (`AlgebraicGeometry.Scheme.Opens.cohomologyOnPullbackι_resolutionClass`), and global functions act
 on classes of sections by multiplication
-(`AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_globalSectionsSmul_resolutionClass`).
+(`AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_globalSectionsSmul_resolutionClass`, in
+`TauCeti.AlgebraicGeometry.Cohomology.InjectiveResolution`).
 
 Module pullback along an open immersion is restriction, so it is exact
 (`AlgebraicGeometry.Scheme.Hom.preservesLimits_pullback_of_isOpenImmersion`) and preserves
@@ -43,61 +46,6 @@ universe u
 
 noncomputable section
 
-namespace AlgebraicGeometry.Scheme.Modules
-
-variable {X Y : Scheme.{u}} (f : Y ⟶ X) [IsOpenImmersion f]
-
-/-- Module pullback along an open immersion preserves injective modules, since restriction does. -/
-instance injective_pullback_obj_of_isOpenImmersion (I : X.Modules) [Injective I] :
-    Injective ((Scheme.Modules.pullback f).obj I) :=
-  Injective.of_iso ((Scheme.Modules.restrictFunctorIsoPullback f).app I) inferInstance
-
-variable {Z : Scheme.{u}} (G : X.Modules ⥤ Z.Modules) [G.Additive] [PreservesFiniteLimits G]
-  [PreservesFiniteColimits G] {M : X.Modules} (P : InjectiveResolution M)
-
-/-- **Global functions act on classes of sections.** Let `G` be an exact functor from modules on
-`X` to modules on `Z` and `P` an injective resolution of `M`. Multiplication by a global function
-`c` on `Z` sends the class in `Hⁿ(V, G(M))` of a section `u` of `G(Pⁿ)` over `V` to the class of
-`c • u`. -/
-lemma cohomologyOnMap_globalSectionsSmul_resolutionClass {n : ℕ} (V : Z.Opens) (c : Γ(Z, ⊤))
-    (u : Γ(G.obj (P.cocomplex.X n), V)) (hu : (G.map (P.cocomplex.d n (n + 1))).app V u = 0) :
-    haveI : Mono ((G ⋙ toSheaf Z).map (P.ι.f 0)) := Functor.map_mono _ _
-    cohomologyOnMap ((G.obj M).globalSectionsSmul c) n V
-      (CategoryTheory.Sheaf.H'.resolutionClass
-        (K := ((G ⋙ toSheaf Z).mapHomologicalComplex _).obj P.cocomplex)
-        ((G ⋙ toSheaf Z).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d _) (P.exact₀_map _)
-        (P.exactAt_succ_map _) V u hu) =
-      CategoryTheory.Sheaf.H'.resolutionClass
-        (K := ((G ⋙ toSheaf Z).mapHomologicalComplex _).obj P.cocomplex)
-        ((G ⋙ toSheaf Z).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d _) (P.exact₀_map _)
-        (P.exactAt_succ_map _) V (Z.presheaf.map V.leTop.op c • u) (by
-          change (G.map (P.cocomplex.d n (n + 1))).app V (_ • u) = 0
-          rw [Scheme.Modules.Hom.app_smul, hu, smul_zero]) := by
-  have : Mono ((G ⋙ toSheaf Z).map (P.ι.f 0)) := Functor.map_mono _ _
-  let ψ₀ : (G.mapHomologicalComplex _).obj P.cocomplex ⟶
-      (G.mapHomologicalComplex _).obj P.cocomplex :=
-    { f k := (G.obj (P.cocomplex.X k)).globalSectionsSmul c
-      comm' i j _ := Scheme.Modules.globalSectionsSmul_naturality _ c }
-  let ψ : ((G ⋙ toSheaf Z).mapHomologicalComplex _).obj P.cocomplex ⟶
-      ((G ⋙ toSheaf Z).mapHomologicalComplex _).obj P.cocomplex :=
-    ((toSheaf Z).mapHomologicalComplex _).map ψ₀
-  have hψ : (G ⋙ toSheaf Z).map (P.ι.f 0) ≫ ψ.f 0 =
-      (toSheaf Z).map ((G.obj M).globalSectionsSmul c) ≫ (G ⋙ toSheaf Z).map (P.ι.f 0) := by
-    exact ((toSheaf Z).map_comp _ _).symm.trans ((congrArg (toSheaf Z).map
-      (Scheme.Modules.globalSectionsSmul_naturality _ c).symm).trans ((toSheaf Z).map_comp _ _))
-  refine (CategoryTheory.Sheaf.H'.cohomologyPresheafFunctor_map_app_resolutionClass
-    (K := ((G ⋙ toSheaf Z).mapHomologicalComplex _).obj P.cocomplex)
-    (K' := ((G ⋙ toSheaf Z).mapHomologicalComplex _).obj P.cocomplex)
-    ((G ⋙ toSheaf Z).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d _) (P.exact₀_map _)
-    (P.exactAt_succ_map _) V ((G ⋙ toSheaf Z).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d _)
-    (P.exact₀_map _) (P.exactAt_succ_map _) (ψ := ψ) hψ u hu).trans ?_
-  congr 1
-  change ((G.obj (P.cocomplex.X n)).globalSectionsSmul c).app V u = _
-  rw [globalSectionsSmul_app]
-  rfl
-
-end AlgebraicGeometry.Scheme.Modules
-
 namespace AlgebraicGeometry.Scheme.Opens
 
 variable {X : Scheme.{u}} (W : X.Opens)
@@ -110,13 +58,23 @@ def cohomologyOnPullbackι (M : X.Modules) (n : ℕ) :
     cohomologyOn M n W ⟶ cohomologyOn ((Scheme.Modules.pullback W.ι).obj M) n ⊤ :=
   W.ι.cohomologyOnPullback M n W ≫ cohomologyOnRes _ n W.ι_preimage_self.ge
 
+/-- Unfolding `cohomologyOnPullbackι`: pullback on cohomology along `W.ι`, then restriction from
+`W.ι⁻¹ W` to all of `W`. -/
+lemma cohomologyOnPullbackι_def (M : X.Modules) (n : ℕ) :
+    W.cohomologyOnPullbackι M n =
+      W.ι.cohomologyOnPullback M n W ≫ cohomologyOnRes _ n W.ι_preimage_self.ge :=
+  (rfl)
+
+/-- `cohomologyOnPullbackι_def` evaluated at a class `x`. -/
+lemma cohomologyOnPullbackι_apply (M : X.Modules) (n : ℕ) (x : cohomologyOn M n W) :
+    W.cohomologyOnPullbackι M n x =
+      cohomologyOnRes _ n W.ι_preimage_self.ge (W.ι.cohomologyOnPullback M n W x) :=
+  (rfl)
+
 /-- Pullback along the inclusion of an open `W` sends the class of a section `s` of the term `Pⁿ`
 of an injective resolution to the class of the pullback of `s`, restricted to all of `W`. -/
 lemma cohomologyOnPullbackι_resolutionClass {M : X.Modules} (P : InjectiveResolution M) {n : ℕ}
     (s : Γ(P.cocomplex.X n, W)) (hs : (P.cocomplex.d n (n + 1)).app W s = 0) :
-    haveI : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
-    haveI : Mono ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).map (P.ι.f 0)) :=
-      Functor.map_mono _ _
     W.cohomologyOnPullbackι M n
         (CategoryTheory.Sheaf.H'.resolutionClass
           (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
@@ -130,14 +88,14 @@ lemma cohomologyOnPullbackι_resolutionClass {M : X.Modules} (P : InjectiveResol
           refine (ConcreteCategory.congr_hom (((Scheme.Modules.pullback W.ι).map
             (P.cocomplex.d n (n + 1))).mapPresheaf.naturality
               (homOfLE W.ι_preimage_self.ge).op) _).trans ?_
+          -- The naturality square is stated for the underlying presheaf map `mapPresheaf`; its
+          -- components are definitionally the `Hom.app` of the module map.
           change ((Scheme.Modules.pullback W.ι).obj (P.cocomplex.X (n + 1))).presheaf.map _
             (((Scheme.Modules.pullback W.ι).map (P.cocomplex.d n (n + 1))).app _
               (W.ι.pullbackSections (P.cocomplex.X n) W s)) = 0
           rw [W.ι.pullbackSections_naturality (M := P.cocomplex.X n) (U := W), hs, map_zero,
             map_zero]) := by
-  have : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
-  have : Mono ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).map (P.ι.f 0)) := Functor.map_mono _ _
-  change cohomologyOnRes _ n _ (W.ι.cohomologyOnPullback M n W _) = _
+  refine (cohomologyOnPullbackι_apply W M n _).trans ?_
   refine (congrArg (cohomologyOnRes _ n _)
     (Scheme.Hom.cohomologyOnPullback_resolutionClass W.ι P W s hs)).trans ?_
   exact CategoryTheory.Sheaf.H'.cohomologyPresheaf_map_resolutionClass
@@ -151,22 +109,26 @@ term of an injective resolution of `M`, to `a • y`, where `y` is the image of 
 `a` acts on `Hⁿ(W, M|_W)` as a global function of the open subscheme `W`. -/
 lemma cohomologyOnPullbackι_resolutionClass_smul {M : X.Modules} (P : InjectiveResolution M)
     {n : ℕ} (a : Γ(X, W)) (s : Γ(P.cocomplex.X n, W)) (hs : (P.cocomplex.d n (n + 1)).app W s = 0) :
-    haveI : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
     W.cohomologyOnPullbackι M n
         (CategoryTheory.Sheaf.H'.resolutionClass
           (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
           (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) W (a • s)
           (by
+            -- The differential of the complex of abelian sheaves is, by definition, `Hom.app`
+            -- of the module differential, which is linear over functions on `W`.
             change (P.cocomplex.d n (n + 1)).app W (a • s) = 0
             rw [Scheme.Modules.Hom.app_smul, hs, smul_zero])) =
       W.topIso.inv a • W.cohomologyOnPullbackι M n
         (CategoryTheory.Sheaf.H'.resolutionClass
           (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
           (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _) W s hs) := by
-  have : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
   have hsc : W.toScheme.presheaf.map (homOfLE W.ι_preimage_self.ge).op ((W.ι.app W).hom a) =
       W.toScheme.presheaf.map (⊤ : W.toScheme.Opens).leTop.op (W.topIso.inv a) := by
     simp only [Scheme.Opens.toScheme_presheaf_map, Scheme.Opens.ι_app, Scheme.Opens.topIso_inv]
+    -- Both sides are restrictions of `a` along composites of inclusions of opens of `X`. The
+    -- first map is applied through `CommRingCat.Hom.hom` and the others through
+    -- `ConcreteCategory.hom`, which agree only up to unfolding, so `erw` is needed to combine the
+    -- maps; the resulting inclusions of opens are then equal since `X.Opens` is a preorder.
     erw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← Functor.map_comp,
       ← Functor.map_comp]
     rfl
@@ -183,8 +145,6 @@ lemma cohomologyOnPullbackι_resolutionClass_smul {M : X.Modules} (P : Injective
 theorem cohomologyOnPullbackι_injective (M : X.Modules) (n : ℕ) :
     Function.Injective (W.cohomologyOnPullbackι M n) := by
   let P := injectiveResolution M
-  have : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
-  have : Mono ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).map (P.ι.f 0)) := Functor.map_mono _ _
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
   obtain ⟨s, hs, rfl⟩ := CategoryTheory.Sheaf.H'.resolutionClass_surjective
     (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))

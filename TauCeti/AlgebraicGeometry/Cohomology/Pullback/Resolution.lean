@@ -42,8 +42,6 @@ theorem cohomologyOnPullback_resolutionClass {n : ℕ} (U : X.Opens)
     (s : (((toSheaf X).mapHomologicalComplex _).obj P.cocomplex |>.X n).obj.obj (op U))
     (hs : ((((toSheaf X).mapHomologicalComplex _).obj P.cocomplex).d n (n + 1)).hom.app (op U) s =
       0) :
-    haveI : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
-    haveI : Mono ((Scheme.Modules.pullback g ⋙ toSheaf Y).map (P.ι.f 0)) := Functor.map_mono _ _
     g.cohomologyOnPullback M n U
         (CategoryTheory.Sheaf.H'.resolutionClass
           (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
@@ -57,12 +55,13 @@ theorem cohomologyOnPullback_resolutionClass {n : ℕ} (U : X.Opens)
             (P.cocomplex.d n (n + 1)) s).trans ?_
           rw [show (P.cocomplex.d n (n + 1)).app U s = 0 from hs, map_zero]
           rfl) := by
-  have : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
-  have : Mono ((Scheme.Modules.pullback g ⋙ toSheaf Y).map (P.ι.f 0)) := Functor.map_mono _ _
   let pb := (Opens.map g.base).sheafPullback AddCommGrpCat.{u}
     (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y)
   have : Mono (pb.map ((toSheaf X).map (P.ι.f 0))) := Functor.map_mono _ _
   refine (cohomologyOnPullback_apply g M n U _).trans ?_
+  -- The resolution `pb (toSheaf X P)` appears as `(toSheaf X ⋙ pb)` applied to `P` in the
+  -- hypotheses supplied by `InjectiveResolution` and as nested `mapHomologicalComplex` in the
+  -- target; these agree only up to unfolding, hence the `by exact` wrappers and `erw [key]`.
   have key := CategoryTheory.Sheaf.H'.pullback_sheafPullback_resolutionClass (Opens.map g.base)
     (R := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex)
     ((toSheaf X).map (P.ι.f 0)) (P.map_ι_f_zero_comp_d _) (P.exact₀_map _) (P.exactAt_succ_map _)

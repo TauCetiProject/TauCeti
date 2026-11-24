@@ -16,14 +16,16 @@ For a morphism of schemes `f : X ⟶ Y` and a sheaf of modules `M` on `X`, the p
 `𝒪_Y`-modules `V ↦ Hⁿ(f⁻¹ V, M)` (`AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheaf`) is
 identified with cohomology on preimages by
 `AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheafToPresheafIso`. Over an open `V`, a function
-`r` on `V` acts on its sections, but `Hⁿ(f⁻¹ V, M)` is only a module over the global functions of
-`X`. It becomes a module over the functions on `f⁻¹ V` once read in the cohomology
-`Hⁿ(f⁻¹ V, M|_{f⁻¹ V})` of the open subscheme `f⁻¹ V`, through the injective map
+`r` on `V` acts on its sections. The library's `Module` instance on `Hⁿ(f⁻¹ V, M)`
+(`AlgebraicGeometry.Scheme.Modules.cohomologyOnModule`) is over the global functions of `X` only,
+so to compare, we read `Hⁿ(f⁻¹ V, M)` in the cohomology `Hⁿ(f⁻¹ V, M|_{f⁻¹ V})` of the open
+subscheme `f⁻¹ V`, a module over the functions on `f⁻¹ V`, through the injective map
 `AlgebraicGeometry.Scheme.Opens.cohomologyOnPullbackι`. There the action of `r` is the action of
 its pullback `f^* r`
 (`Scheme.Hom.cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul`).
-For `V = ⊤` and global `r` this is
-`AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheafToPresheafIso_hom_app_smul`.
+The existing `AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheafToPresheafIso_hom_app_smul`
+handles restrictions of global functions of `Y`, acting on `Hⁿ(f⁻¹ U, M)` itself; the lemma here
+handles arbitrary functions on `V`, after applying `cohomologyOnPullbackι`.
 
 The proof computes the identification on homology classes of cycles of the injective resolution
 used to build the presheaf: the class of a cycle `s ∈ Γ(f⁻¹ V, Pⁿ)` goes to the class of `s` in
@@ -94,6 +96,9 @@ private lemma homologyπ_comp_higherDirectImagePresheafToPresheafIso_hom (M : X.
     rw [← cancel_mono ((t.mapHomologicalComplexCompHomologyFunctorIso _ n).hom.app Kmod),
       Category.assoc, Iso.inv_hom_id_app, Category.assoc,
       Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app]
+    -- `(t.mapHomologicalComplex _).obj Kmod).sc n` and `(Kmod.sc n).map t` are the same short
+    -- complex only up to unfolding `mapHomologicalComplex`, so `erw` is needed to rewrite with
+    -- `homologyπ_comp_mapHomologyIso_hom`, and `rfl` closes the remaining unfolding.
     erw [Category.comp_id, ShortComplex.homologyπ_comp_mapHomologyIso_hom (Kmod.sc n) t,
       Iso.inv_hom_id_assoc]
     rfl
@@ -115,6 +120,9 @@ private lemma homologyπ_comp_higherDirectImagePresheafToPresheafIso_hom (M : X.
     rw [← Category.assoc, ← Functor.map_comp, Iso.inv_hom_id]
     exact (congrArg (· ≫ _) (t.map_id _)).trans (Category.id_comp _)
   rw [hG, reassoc_of% a1]
+  -- `pushforwardSectionsComplexIso` relates `t` applied to `f_* P` and `W` applied to `P` only up
+  -- to unfolding `mapHomologicalComplex`, so the naturality rewrites need `erw`; the final `rfl`
+  -- unfolds the abbreviation `cyclesComparison`.
   erw [HomologicalComplex.homologyπ_naturality_assoc, reassoc_of% a3]
   rw [Functor.map_comp]
   rfl
@@ -141,6 +149,9 @@ private lemma cyclesComparison_comp_iCycles (M : X.Modules) (n : ℕ) :
   have b3 : ((Kmod.sc n).mapCyclesIso t).inv ≫ ((t.mapHomologicalComplex _).obj Kmod).iCycles n =
       t.map (Kmod.iCycles n) :=
     ShortComplex.mapCyclesIso_inv_comp_iCycles (Kmod.sc n) t
+  -- Reassociate and apply `b1`, `b2`, `b3`. The objects between the factors agree only up to
+  -- unfolding `mapHomologicalComplex` (the cycles of `t` applied to `f_* P` versus `W` applied to
+  -- `P`), so `rw [Category.assoc]` fails with a motive type error and the chain is built by hand.
   refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans
     (congrArg (_ ≫ ·) b1))).trans ?_)
   exact (congrArg (((Kmod.sc n).mapCyclesIso t).inv ≫ ·) b2).trans b3
@@ -155,7 +166,6 @@ lemma higherDirectImagePresheafToPresheafIso_hom_app_homologyπ (M : X.Modules) 
         _).obj (injectiveResolution M).cocomplex).cycles n).obj (.op V)) :
     letI := Functor.additive_of_preserves_binary_products
       (Modules.pushforward f ⋙ Modules.toPresheafOfModules Y)
-    haveI : Mono ((toSheaf X).map ((injectiveResolution M).ι.f 0)) := Functor.map_mono _ _
     (f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op V)
         (((injectiveResolution M).isoRightDerivedObj
           (Modules.pushforward f ⋙ Modules.toPresheafOfModules Y) n).inv.app (.op V)
@@ -174,12 +184,13 @@ lemma higherDirectImagePresheafToPresheafIso_hom_app_homologyπ (M : X.Modules) 
             ((((Modules.pushforward f ⋙ Modules.toPresheafOfModules Y).mapHomologicalComplex
               _).obj (injectiveResolution M).cocomplex).iCycles_d n (n + 1))) z
           exact h) := by
-  have : Mono ((toSheaf X).map ((injectiveResolution M).ι.f 0)) := Functor.map_mono _ _
   have e1 := ConcreteCategory.congr_hom
     (NatTrans.congr_app (homologyπ_comp_higherDirectImagePresheafToPresheafIso_hom f M n) (op V)) z
   have e2 := ConcreteCategory.congr_hom
     (NatTrans.congr_app (cyclesComparison_comp_iCycles f M n) (op V)) z
   simp only [NatTrans.comp_app] at e1 e2
+  -- The middle `rfl` only splits the composite `W.map (homologyπ ≫ cohomologyPresheafIso.hom)`
+  -- evaluated at `op V`, which is evaluation at `op (f ⁻¹ᵁ V)`, into its two factors.
   refine e1.trans (Eq.trans (b := ((injectiveResolution M).cohomologyPresheafIso n).hom.app
     (op (f ⁻¹ᵁ V)) (((abComplex M).homologyπ n).app (op (f ⁻¹ᵁ V))
       ((cyclesComparison f M n).app (op V) z))) rfl ?_)
@@ -190,8 +201,9 @@ lemma higherDirectImagePresheafToPresheafIso_hom_app_homologyπ (M : X.Modules) 
 the action of a function `r` on `V` on the sections over `V` of the presheaf of modules
 `V ↦ Hⁿ(f⁻¹ V, M)` is, read in the cohomology `Hⁿ(f⁻¹ V, M|_{f⁻¹ V})` of the open subscheme
 `f⁻¹ V` through `Scheme.Opens.cohomologyOnPullbackι`, the action of its pullback `f^* r`, a global
-function of `f⁻¹ V`. For `V = ⊤` this is `higherDirectImagePresheafToPresheafIso_hom_app_smul`
-read through the injective map `cohomologyOnPullbackι`. -/
+function of `f⁻¹ V`. Unlike `higherDirectImagePresheafToPresheafIso_hom_app_smul`, which handles
+restrictions of global functions of `Y` acting on `Hⁿ(f⁻¹ V, M)` itself, `r` is an arbitrary
+function on `V`, and the action is compared after applying `cohomologyOnPullbackι`. -/
 theorem cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul (M : X.Modules)
     (n : ℕ) (V : Y.Opens) (r : Γ(Y, V)) (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op V)) :
     (f ⁻¹ᵁ V).cohomologyOnPullbackι M n ((f.higherDirectImagePresheafToPresheafIso M n).hom.app
@@ -204,7 +216,6 @@ theorem cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_sm
   let P := injectiveResolution M
   let Kmod := (F.mapHomologicalComplex _).obj P.cocomplex
   let A := P.isoRightDerivedObj F n
-  have : Mono ((toSheaf X).map (P.ι.f 0)) := Functor.map_mono _ _
   obtain ⟨y, rfl⟩ : ∃ y, A.inv.app (op V) y = x :=
     ⟨A.hom.app (op V) x, by
       rw [← ConcreteCategory.comp_apply, ← PresheafOfModules.comp_app, A.hom_inv_id]
@@ -227,6 +238,10 @@ theorem cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_sm
     ((Kmod.iCycles n).app (op V) z) (by
       exact ConcreteCategory.congr_hom (congrArg (fun φ ↦ PresheafOfModules.Hom.app φ (op V))
         (Kmod.iCycles_d n (n + 1))) z)
+  -- `key` is stated with `f.app V r` acting on sections of `P` over `f⁻¹ V`, while the goal has
+  -- `r` acting on the same sections of the pushforward `f_* P` over `V`; the two scalar actions
+  -- agree definitionally, so after `convert` the remaining goals are this `map_smul` and the
+  -- (propositional) cocycle conditions.
   convert key using 3
   congr 2
   · exact _root_.map_smul ((Kmod.iCycles n).app (op V)).hom r z

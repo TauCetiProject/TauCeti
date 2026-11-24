@@ -38,6 +38,15 @@ variable {C : Type*} [Category* C] [Abelian C] {D : Type*} [Category* D] [Abelia
   (hGι' : (ShortComplex.mk (G.map ι) (((G.mapHomologicalComplex _).obj K).d 0 1) hGι).Exact)
   (hGK : ∀ j, ((G.mapHomologicalComplex _).obj K).ExactAt (j + 1))
 
+omit [HasExt.{w} C] [HasExt.{w'} D] in
+/-- The identification of cycles `G(Zᵏ) ≅ Zᵏ(G(K))`, followed by the inclusion of the cycles of
+`G(K)`, is `G` applied to the inclusion of the cycles of `K`. -/
+@[reassoc]
+private lemma mapCyclesIso_inv_comp_iCycles (k : ℕ) :
+    ((K.sc k).mapCyclesIso G).inv ≫ ((G.mapHomologicalComplex _).obj K).iCycles k =
+      G.map (K.iCycles k) :=
+  (K.sc k).mapCyclesIso_inv_comp_iCycles G
+
 include hι' hK hGι' hGK in
 /-- An exact functor sends the class of the truncated resolution `F ⟶ K⁰ ⟶ ⋯ ⟶ Kⁿ ⟶ Zⁿ⁺¹` to the
 class of the truncated resolution of its image, through the identification of cycles. -/
@@ -47,9 +56,7 @@ lemma mapExactFunctor_resolutionExtClass (n : ℕ) :
         (resolutionExtClass ((G.mapHomologicalComplex _).obj K) (G.map ι) hGι hGι' hGK n)
         (zero_add _) := by
   let L := (G.mapHomologicalComplex _).obj K
-  have hc (k : ℕ) : ((K.sc k).mapCyclesIso G).inv ≫ ((G.mapHomologicalComplex _).obj K).iCycles k =
-      G.map (K.iCycles k) :=
-    (K.sc k).mapCyclesIso_inv_comp_iCycles G
+  have hc := mapCyclesIso_inv_comp_iCycles G K
   induction n with
   | zero =>
     have hS := K.shortExact_resolution_zero ι hι hι' hK
@@ -95,11 +102,8 @@ theorem mapExactFunctor_extMk {P : C} {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.
   | succ n =>
     rw [extMk_of_deg_succ, extMk_of_deg_succ, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
       K.mapExactFunctor_resolutionExtClass G ι hι hι' hK hGι hGι' hGK n, Ext.mk₀_comp_mk₀_assoc]
-    have hc : ((K.sc (n + 1)).mapCyclesIso G).inv ≫
-        ((G.mapHomologicalComplex _).obj K).iCycles (n + 1) = G.map (K.iCycles (n + 1)) :=
-      (K.sc (n + 1)).mapCyclesIso_inv_comp_iCycles G
     congr 2
-    simp [← cancel_mono (((G.mapHomologicalComplex _).obj K).iCycles (n + 1)), hc,
-      ← G.map_comp]
+    simp [← cancel_mono (((G.mapHomologicalComplex _).obj K).iCycles (n + 1)),
+      mapCyclesIso_inv_comp_iCycles, ← G.map_comp]
 
 end CochainComplex
