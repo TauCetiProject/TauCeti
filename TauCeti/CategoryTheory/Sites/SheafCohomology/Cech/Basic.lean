@@ -43,6 +43,8 @@ be added or removed.
 ## Main definitions
 
 * `TauCeti.CategoryTheory.cechXIso`: the canonical product coordinates on each Čech term.
+* `TauCeti.CategoryTheory.cechComplexπ`: the canonical projection from degree `n` of `Č(U, P)`
+  onto the factor indexed by a tuple `c : Fin (n + 1) → ι`.
 
 * `TauCeti.CategoryTheory.cechAugmentation U hT P`: the augmentation of the Čech complex of `P`
   for `U`; its degree `0` component restricts a section over `T` along each map to `T`
@@ -137,6 +139,20 @@ def cechXIso (n : ℕ) :
 lemma cechXIso_hom_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechXIso U P n).hom ≫ Pi.π _ a = (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) :=
   Category.id_comp _
+
+/-- The canonical projection from degree `n` of the Čech complex `Č(U, P)` to the factor indexed
+by a tuple `c : Fin (n + 1) → ι`. Using this wrapper keeps the domain syntactically equal to
+`((cechComplexFunctor U).obj P).X n` during rewriting. -/
+@[expose]
+def cechComplexπ (n : ℕ) (c : Fin (n + 1) → ι) :
+    ((cechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j))) :=
+  Pi.π (fun d : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (d j)))) c
+
+/-- `cechComplexπ` is definitionally the product projection `Pi.π`. -/
+theorem cechComplexπ_eq (n : ℕ) (c : Fin (n + 1) → ι) :
+    cechComplexπ U P n c =
+      Pi.π (fun d : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (d j)))) c :=
+  (rfl)
 
 /-! ### The Čech complex in degrees `0` and `1`
 
