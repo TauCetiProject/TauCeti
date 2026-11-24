@@ -68,8 +68,11 @@ statement here is topological; the real smooth diffeomorphism is supplied in
   positive upper-triangular remainder.
 * `TauCeti.iwasawaHomeomorph_symm_mul_fst`: the unitary factor is equivariant for left
   multiplication by unitary matrices.
-* `TauCeti.iwasawaHomeomorph_symm_fst_col_zero`: a unit first column is also the first column of
-  the unitary factor.
+* `Matrix.GeneralLinearGroup.iwasawaUnitaryFactor`: the unitary factor as an element of the
+  unitary group, continuous and equivariant for left multiplication by unitary matrices.
+* `Matrix.GeneralLinearGroup.col_zero_eq_smul_col_zero_iwasawaUnitaryFactor`,
+  `Matrix.GeneralLinearGroup.col_zero_iwasawaUnitaryFactor`: the first column of `g` is a positive
+  multiple of the first column of the unitary factor, and equal to it when it is a unit vector.
 * `TauCeti.coe_iwasawaHomeomorph_symm_diagonal`,
   `TauCeti.coe_iwasawaHomeomorph_symm_unitriangular`: formulas for the other two factors.
 * `Matrix.GeneralLinearGroup.existsUnique_iwasawa`: every invertible matrix over `𝕜` is uniquely
@@ -372,47 +375,6 @@ theorem iwasawaHomeomorph_symm_mul_fst {k : GL (Fin n) 𝕜}
     inv_mul_cancel_left]
   exact (iwasawaHomeomorph_symm_unitary_eq_iff g _ hK).mp rfl
 
-/-- If the first column of `g` is a unit vector, it is also the first column of the unitary
-Iwasawa factor of `g`. In general that column is the first column of `g` normalised, the first
-vector of the Gram–Schmidt process. -/
-theorem iwasawaHomeomorph_symm_fst_col_zero {n : ℕ} (g : GL (Fin (n + 1)) 𝕜)
-    (hg : star ((g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0) ⬝ᵥ
-      (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 = 1) :
-    ((((iwasawaHomeomorph 𝕜 (n + 1)).symm g).1 : GL (Fin (n + 1)) 𝕜) :
-        Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 =
-      (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 := by
-  set k : GL (Fin (n + 1)) 𝕜 := (((iwasawaHomeomorph 𝕜 (n + 1)).symm g).1 : GL (Fin (n + 1)) 𝕜)
-  have hk : k ∈ unitarySubgroup (GL (Fin (n + 1)) 𝕜) :=
-    ((iwasawaHomeomorph 𝕜 (n + 1)).symm g).1.property
-  obtain ⟨hT, hpos⟩ := (iwasawaHomeomorph_symm_unitary_eq_iff g k hk).mp rfl
-  set b : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜 :=
-    ((k⁻¹ * g : GL (Fin (n + 1)) 𝕜) : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) with hbdef
-  -- `g = k b`, and the first column of the upper triangular `b` is `b 0 0` times `e₀`.
-  have hgk : (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) =
-      (k : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) * b := by
-    rw [hbdef, ← Units.val_mul, mul_inv_cancel_left]
-  have hb : b.col 0 = b 0 0 • Pi.single 0 1 := by
-    ext i
-    rcases eq_or_ne i 0 with rfl | hi
-    · simp
-    · rw [col_apply, Pi.smul_apply, Pi.single_eq_of_ne hi, smul_zero,
-        hT (Fin.pos_iff_ne_zero.mpr hi)]
-  have hcol : (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 =
-      b 0 0 • (k : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 := by
-    rw [hgk, col_mul_eq_mulVec_col, hb, mulVec_smul, mulVec_single_one]
-  -- The first column of the unitary `k` is a unit vector, so `b 0 0` is a positive real number
-  -- of absolute value one.
-  have hkk : star ((k : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0) ⬝ᵥ
-      (k : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 = 1 := by
-    have h := congrFun (congrFun (Units.inv_mul k) 0) 0
-    rw [coe_inv_eq_star_of_mem_unitarySubgroup hk] at h
-    simpa [Matrix.mul_apply, dotProduct, Matrix.star_apply] using h
-  obtain ⟨x, hx, hxb⟩ := RCLike.pos_iff_exists_ofReal.mp (hpos 0)
-  rw [hcol, ← hxb, star_smul, smul_dotProduct, dotProduct_smul, hkk, RCLike.star_def,
-    RCLike.conj_ofReal, smul_eq_mul, smul_eq_mul, mul_one, ← RCLike.ofReal_mul,
-    ← RCLike.ofReal_one, RCLike.ofReal_inj, mul_self_eq_one_iff] at hg
-  rw [hcol, ← hxb, hg.resolve_right (by linarith), RCLike.ofReal_one, one_smul]
-
 /-- The real diagonal factor consists of the real parts of the triangular remainder's diagonal. -/
 theorem coe_iwasawaHomeomorph_symm_diagonal (g : GL (Fin n) 𝕜) :
     ((((iwasawaHomeomorph 𝕜 n).symm g).2.1 : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) =
@@ -444,5 +406,97 @@ theorem existsUnique_iwasawa {𝕜 : Type*} [RCLike 𝕜] {n : ℕ} (g : GL (Fin
       (x.1 : GL (Fin n) 𝕜) * map (algebraMap ℝ 𝕜) (x.2.1 : GL (Fin n) ℝ) *
         (x.2.2 : GL (Fin n) 𝕜) = g :=
   (iwasawaHomeomorph 𝕜 n).bijective.existsUnique g
+
+variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
+
+/-- The **unitary Iwasawa factor** of an invertible matrix `g`, the first factor of
+`TauCeti.iwasawaHomeomorph`, as an element of the unitary group (the orthogonal group when
+`𝕜 = ℝ`). Its columns are the Gram–Schmidt orthonormalisation of the columns of `g`. -/
+def iwasawaUnitaryFactor (g : GL (Fin n) 𝕜) : unitaryGroup (Fin n) 𝕜 :=
+  unitarySubgroupUnitsEquiv ((iwasawaHomeomorph 𝕜 n).symm g).1
+
+theorem coe_iwasawaUnitaryFactor (g : GL (Fin n) 𝕜) :
+    (g.iwasawaUnitaryFactor : Matrix (Fin n) (Fin n) 𝕜) =
+      ((((iwasawaHomeomorph 𝕜 n).symm g).1 : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) :=
+  (rfl)
+
+/-- The unitary Iwasawa factor depends continuously on the matrix. -/
+theorem continuous_iwasawaUnitaryFactor :
+    Continuous (iwasawaUnitaryFactor (𝕜 := 𝕜) (n := n)) :=
+  (Units.continuous_val.comp (continuous_subtypeVal.comp
+    (continuous_fst.comp (iwasawaHomeomorph 𝕜 n).symm.continuous))).subtype_mk _
+
+/-- The unitary Iwasawa factor is equivariant for left multiplication by unitary matrices. -/
+theorem iwasawaUnitaryFactor_toUnits_mul (A : unitaryGroup (Fin n) 𝕜) (g : GL (Fin n) 𝕜) :
+    iwasawaUnitaryFactor (Unitary.toUnits A * g) = A * g.iwasawaUnitaryFactor := by
+  have hA : Unitary.toUnits A ∈ unitarySubgroup (GL (Fin n) 𝕜) :=
+    mem_unitarySubgroup_GL_iff_mem_unitaryGroup.mpr (by simp)
+  refine Subtype.ext ?_
+  rw [coe_iwasawaUnitaryFactor, iwasawaHomeomorph_symm_mul_fst hA, Units.val_mul,
+    Unitary.val_toUnits_apply, Submonoid.coe_mul, coe_iwasawaUnitaryFactor]
+
+/-- The remainder `star U * g` of `g` after its unitary Iwasawa factor `U` is upper triangular
+with positive diagonal. -/
+private theorem star_iwasawaUnitaryFactor_mul (g : GL (Fin n) 𝕜) :
+    (star (g.iwasawaUnitaryFactor : Matrix (Fin n) (Fin n) 𝕜) * g).IsUpperTriangular ∧
+      ∀ i, 0 < (star (g.iwasawaUnitaryFactor : Matrix (Fin n) (Fin n) 𝕜) * g) i i := by
+  have hk := ((iwasawaHomeomorph 𝕜 n).symm g).1.property
+  have h := (iwasawaHomeomorph_symm_unitary_eq_iff g _ hk).mp rfl
+  rw [Units.val_mul, coe_inv_eq_star_of_mem_unitarySubgroup hk] at h
+  exact h
+
+/-- The first column of an invertible matrix `g` is the first column of its unitary Iwasawa factor
+`U`, scaled by the top-left entry of the upper triangular remainder `star U * g`. -/
+theorem col_zero_eq_smul_col_zero_iwasawaUnitaryFactor {n : ℕ} (g : GL (Fin (n + 1)) 𝕜) :
+    (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 =
+      (star (g.iwasawaUnitaryFactor : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) * g) 0 0 •
+        (g.iwasawaUnitaryFactor : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 := by
+  set U := (g.iwasawaUnitaryFactor : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) with hUdef
+  -- The remainder `b = star U * g` is upper triangular, so its first column is `b 0 0 • e₀`.
+  have hT := (star_iwasawaUnitaryFactor_mul g).1
+  rw [← hUdef] at hT
+  have hcol : (star U * g).col 0 = (star U * g) 0 0 • Pi.single 0 1 := by
+    ext i
+    rcases eq_or_ne i 0 with rfl | hi
+    · simp
+    · rw [col_apply, Pi.smul_apply, Pi.single_eq_of_ne hi, smul_zero,
+        hT (Fin.pos_iff_ne_zero.mpr hi)]
+  -- Since `U` is unitary, `g = U * (star U * g)`.
+  have hg : (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) = U * (star U * g) := by
+    rw [← Matrix.mul_assoc, Unitary.mul_star_self_of_mem g.iwasawaUnitaryFactor.property,
+      Matrix.one_mul]
+  conv_lhs => rw [hg]
+  rw [col_mul_eq_mulVec_col, hcol, mulVec_smul, mulVec_single_one]
+
+/-- If the first column of `g` is a unit vector, it is also the first column of the unitary
+Iwasawa factor of `g`. In general that column is the first column of `g` normalised, the first
+vector of the Gram–Schmidt process (`col_zero_eq_smul_col_zero_iwasawaUnitaryFactor`). -/
+theorem col_zero_iwasawaUnitaryFactor {n : ℕ} (g : GL (Fin (n + 1)) 𝕜)
+    (hg : star ((g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0) ⬝ᵥ
+      (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 = 1) :
+    (g.iwasawaUnitaryFactor : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 =
+      (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 := by
+  set U := (g.iwasawaUnitaryFactor : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) with hUdef
+  -- The scaling factor is a positive real number `x`.
+  have hpos := (star_iwasawaUnitaryFactor_mul g).2 0
+  rw [← hUdef] at hpos
+  obtain ⟨x, hx, hxb⟩ := RCLike.pos_iff_exists_ofReal.mp hpos
+  have hcol : (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 = (x : 𝕜) • U.col 0 := by
+    rw [hxb]
+    exact col_zero_eq_smul_col_zero_iwasawaUnitaryFactor g
+  -- The first column of the unitary `U` is a unit vector.
+  have hU : star (U.col 0) ⬝ᵥ U.col 0 = 1 := by
+    have h : (star U * U) 0 0 = 1 := by
+      rw [Unitary.star_mul_self_of_mem g.iwasawaUnitaryFactor.property, one_apply_eq]
+    simpa [Matrix.mul_apply, dotProduct, Matrix.star_apply] using h
+  -- So the squared length of `x • U.col 0` is `x * x`, which must be `1`.
+  have hsq : star ((x : 𝕜) • U.col 0) ⬝ᵥ ((x : 𝕜) • U.col 0) = ((x * x : ℝ) : 𝕜) := by
+    simp only [star_smul, smul_dotProduct, dotProduct_smul, hU, RCLike.star_def,
+      RCLike.conj_ofReal, smul_eq_mul, mul_one, RCLike.ofReal_mul]
+  have hxx : x * x = 1 := by
+    rw [← hcol, hg] at hsq
+    exact_mod_cast hsq.symm
+  have hx1 : x = 1 := by nlinarith
+  rw [hcol, hx1, RCLike.ofReal_one, one_smul]
 
 end Matrix.GeneralLinearGroup

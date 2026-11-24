@@ -301,6 +301,26 @@ theorem orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
       LinearIsometryEquiv.unitSphereDiffHom m (Matrix.UnitaryGroup.toLinearIsometryEquiv A) :=
   (rfl)
 
+/-- The diffeomorphism induced by an orthogonal matrix `A` is the restriction of the linear
+isometry of `A` to the unit sphere. Not a simp lemma: `TauCeti.orthogonalToDiffSphere_apply`
+unfolds the inclusion first. -/
+theorem coe_orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
+    ⇑(orthogonalToDiffSphere n m A) =
+      (Matrix.UnitaryGroup.toLinearIsometryEquiv A).unitSphereEquiv :=
+  (rfl)
+
+open Matrix in
+/-- In Euclidean coordinates, the diffeomorphism induced by an orthogonal matrix `A` multiplies a
+point of the sphere by `A`. -/
+theorem ofLp_orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    (orthogonalToDiffSphere n m A x : EuclideanSpace ℝ (Fin (n + 1))).ofLp =
+      (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) *ᵥ (x : EuclideanSpace ℝ (Fin (n + 1))).ofLp := by
+  rw [coe_orthogonalToDiffSphere, LinearIsometryEquiv.coe_unitSphereEquiv_apply,
+    Matrix.UnitaryGroup.toLinearIsometryEquiv_apply, WithLp.ofLp_toLp]
+
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` is injective, so `O(n + 1)` is realised as a
 subgroup of `Diff(Sⁿ)`. -/
 theorem orthogonalToDiffSphere_injective (n : ℕ) (m : ℕ∞ω) :
