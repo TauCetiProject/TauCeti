@@ -60,6 +60,11 @@ private theorem hasRightQuotientFDerivAt_of_eqOn_add_mul {a b q : ℍ} (hs : IsO
   ((hasRightQuotientFDerivAt_const_mul b q).const_add a).congr_of_eventuallyEq
     (eventually_of_mem (hs.mem_nhds hq) hab)
 
+/-- Quaternionic conjugation maps open sets to open sets. -/
+private theorem isOpen_star (hs : IsOpen s) : IsOpen (star s) := by
+  rw [← Set.star_preimage]
+  exact hs.preimage continuous_star
+
 /-- Pointwise left quotient differentiability on an open set implies real smoothness.
 The regularity is a consequence, not a hypothesis, of the one-sided derivative condition. -/
 theorem LeftQuotientDifferentiableOn.contDiffOn (hf : LeftQuotientDifferentiableOn f s)
@@ -172,9 +177,8 @@ theorem leftQuotientDifferentiableOn_iff_affine_on_connectedComponentIn (hs : Is
 /-- Pointwise right quotient differentiability on an open set implies real smoothness. -/
 theorem RightQuotientDifferentiableOn.contDiffOn (hf : RightQuotientDifferentiableOn f s)
     (hs : IsOpen s) {n : ℕ∞ω} : ContDiffOn ℝ n f s := by
-  have ho : IsOpen (star s) := Set.star_preimage (s := s) ▸ hs.preimage continuous_star
   have hT : ContDiffOn ℝ n (fun x ↦ star (f (star x))) (star s) :=
-    (leftQuotientDifferentiableOn_star_star_iff.mpr hf).contDiffOn ho
+    (leftQuotientDifferentiableOn_star_star_iff.mpr hf).contDiffOn (isOpen_star hs)
   have hc := (starL' ℝ : ℍ ≃L[ℝ] ℍ).contDiff.comp_contDiffOn
     (hT.comp (starL' ℝ : ℍ ≃L[ℝ] ℍ).contDiff.contDiffOn fun x hx ↦ Set.star_mem_star.mpr hx)
   simpa [Function.comp_def] using hc
@@ -184,10 +188,9 @@ pointwise existence of a right quotient slope is equivalent to a single right-af
 `q ↦ a + b * q`. Only the function's values on the set are constrained. -/
 theorem rightQuotient_rigidity (hs : IsOpen s) (hc : IsPreconnected s) :
     RightQuotientDifferentiableOn f s ↔ ∃ a b : ℍ, ∀ q ∈ s, f q = a + b * q := by
-  have ho : IsOpen (star s) := Set.star_preimage (s := s) ▸ hs.preimage continuous_star
   have hc' : IsPreconnected (star s) := by
     simpa only [Set.image_star] using hc.image star continuous_star.continuousOn
-  rw [← leftQuotientDifferentiableOn_star_star_iff, leftQuotient_rigidity ho hc']
+  rw [← leftQuotientDifferentiableOn_star_star_iff, leftQuotient_rigidity (isOpen_star hs) hc']
   constructor
   · rintro ⟨a, b, hab⟩
     refine ⟨star a, star b, fun q hq ↦ ?_⟩
@@ -244,7 +247,8 @@ theorem twoSidedQuotient_rigidity (hs : IsOpen s) (hc : IsPreconnected s) :
     have hqr := (rightQuotientDifferentiableOn_iff.mp hr q hq).hasRightQuotientFDerivAt
     have him : b.im = 0 := HasLeftQuotientFDerivAt.im_eq_zero_of_hasRightQuotientFDerivAt
       (hasLeftQuotientFDerivAt_of_eqOn_add_mul hs hq hab) hqr
-    have hb : (b.re : ℍ) = b := by rw [← add_zero (b.re : ℍ), ← him, re_add_im]
+    -- A quaternion with zero imaginary part is its real part.
+    have hb : (b.re : ℍ) = b := by simpa [him] using re_add_im b
     refine ⟨a, b.re, fun x hx ↦ ?_⟩
     rw [hab x hx, ← mul_coe_eq_smul, hb]
   · rintro ⟨a, r, har⟩
