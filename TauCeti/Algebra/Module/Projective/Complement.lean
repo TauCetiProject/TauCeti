@@ -29,6 +29,8 @@ quotient extends to the ambient module.
   a complement is projective.
 * `LinearMap.isComplemented_ker_of_surjective`: the kernel of a surjection onto a projective
   module is a direct summand.
+* `Submodule.isComplemented_of_projective_quotient`: a submodule with projective quotient is a
+  direct summand.
 * `LinearMap.isComplemented_range_of_projective_quotient`,
   `LinearMap.isComplemented_ker_of_projective_quotient`: a map into a projective module with
   projective cokernel has complemented range and kernel.
@@ -75,12 +77,18 @@ theorem isComplemented_ker_of_surjective [Module.Projective R P] (g : N →ₗ[R
   rw [← ker_comp_of_ker_eq_bot g (ker_eq_bot_of_inverse hs)]
   exact ⟨_, (LinearMap.IsIdempotentElem.isCompl hidem).symm⟩
 
+/-- A submodule with projective quotient is a direct summand: it is the kernel of the quotient
+map. -/
+theorem _root_.Submodule.isComplemented_of_projective_quotient (W : Submodule R N)
+    [Module.Projective R (N ⧸ W)] : IsComplemented W := by
+  simpa using isComplemented_ker_of_surjective W.mkQ W.mkQ_surjective
+
 variable {M : Type*} [AddCommGroup M] [Module R M] (f : M →ₗ[R] N)
 
 /-- A linear map whose cokernel is projective has complemented range. -/
 theorem isComplemented_range_of_projective_quotient [Module.Projective R (N ⧸ range f)] :
-    IsComplemented (range f) := by
-  simpa using isComplemented_ker_of_surjective (range f).mkQ (range f).mkQ_surjective
+    IsComplemented (range f) :=
+  (range f).isComplemented_of_projective_quotient
 
 /-- A linear map into a projective module whose cokernel is projective has complemented
 kernel. -/
@@ -94,7 +102,6 @@ theorem isComplemented_ker_of_projective_quotient [Module.Projective R N]
 every linear map `W → N` is the restriction of a linear map `M → N`. -/
 theorem surjective_comp_subtype_of_projective_quotient {W : Submodule R M}
     [Module.Projective R (M ⧸ W)] : Function.Surjective fun φ : M →ₗ[R] N ↦ φ ∘ₗ W.subtype :=
-  surjective_comp_subtype_of_isComplemented <| by
-    simpa using isComplemented_ker_of_surjective W.mkQ W.mkQ_surjective
+  surjective_comp_subtype_of_isComplemented W.isComplemented_of_projective_quotient
 
 end LinearMap

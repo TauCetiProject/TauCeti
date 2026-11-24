@@ -73,12 +73,8 @@ noncomputable def schemeDualIso (h : ∀ p, rankAtStalk (R := R) M p = k + l) :
     fun _ _ _ _ _ _ f N ↦ by rw [baseChangeDualEquiv_map, toSchemeHom_map]
   inv := homOfPoints (fun A _ _ K ↦ toSchemeHom ((baseChangeDualEquiv A h).symm K))
     fun _ _ _ _ _ _ f K ↦ by rw [baseChangeDualEquiv_symm_map, toSchemeHom_map]
-  hom_inv_id := scheme_hom_ext fun A _ _ N ↦ by
-    rw [toSchemeHom_comp_homOfPoints_assoc, toSchemeHom_comp_homOfPoints,
-      Equiv.symm_apply_apply, Category.comp_id]
-  inv_hom_id := scheme_hom_ext fun A _ _ K ↦ by
-    rw [toSchemeHom_comp_homOfPoints_assoc, toSchemeHom_comp_homOfPoints,
-      Equiv.apply_symm_apply, Category.comp_id]
+  hom_inv_id := scheme_hom_ext fun A _ _ N ↦ by simp
+  inv_hom_id := scheme_hom_ext fun A _ _ K ↦ by simp
 
 /-- **`schemeDualIso` on points.** The morphism classifying `N` over an `R`-algebra `A`, composed
 with `schemeDualIso h`, classifies the annihilator of `N` in `A ⊗[R] M^∨`
@@ -102,8 +98,7 @@ theorem toSchemeHom_comp_schemeDualIso_inv (h : ∀ p, rankAtStalk (R := R) M p 
 @[reassoc (attr := simp)]
 theorem schemeDualIso_hom_toSpec (h : ∀ p, rankAtStalk (R := R) M p = k + l) :
     (schemeDualIso h).hom ≫ toSpec R (Module.Dual R M) l = toSpec R M k :=
-  scheme_hom_ext fun A _ _ N ↦ by
-    rw [toSchemeHom_comp_schemeDualIso_hom_assoc, toSchemeHom_toSpec, toSchemeHom_toSpec]
+  scheme_hom_ext fun A _ _ N ↦ by simp
 
 /-- The inverse of `schemeDualIso h` lies over `Spec R`. -/
 @[reassoc (attr := simp)]

@@ -79,8 +79,11 @@ annihilator `N^⊥ ⊆ P^∨` of `N ∈ G(k, P; A)` is a point of `G(l, P^∨; A
 surjective restriction `P^∨ → N^∨` onto a finite projective module of rank `l`. -/
 noncomputable def dualAnnihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l) (N : G(k, P; A)) :
     G(l, Module.Dual A P; A) :=
-  ofSurjective N.toSubmodule.dualRestrict (show Function.Surjective N.toSubmodule.dualRestrict from
-    LinearMap.surjective_comp_subtype_of_projective_quotient) fun p ↦ by
+  ofSurjective N.toSubmodule.dualRestrict (by
+    have : ⇑N.toSubmodule.dualRestrict = fun φ : Module.Dual A P ↦ φ ∘ₗ N.toSubmodule.subtype :=
+      funext fun φ ↦ LinearMap.ext fun x ↦ Submodule.dualRestrict_apply _ φ x
+    rw [this]
+    exact LinearMap.surjective_comp_subtype_of_projective_quotient) fun p ↦ by
     rw [TauCeti.Module.rankAtStalk_dual]
     exact rankAtStalk_toSubmodule h N p
 
@@ -88,8 +91,7 @@ noncomputable def dualAnnihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l) 
 theorem toSubmodule_dualAnnihilator (h : ∀ p, rankAtStalk (R := A) P p = k + l)
     (N : G(k, P; A)) :
     (N.dualAnnihilator h).toSubmodule = N.toSubmodule.dualAnnihilator := by
-  simp only [dualAnnihilator, toSubmodule_ofSurjective]
-  rfl
+  rw [dualAnnihilator, toSubmodule_ofSurjective, Submodule.dualRestrict_ker_eq_dualAnnihilator]
 
 /-- **The coannihilator of a point.** If `P` is finite projective of constant rank `k + l`, the
 coannihilator `K^⊥ ⊆ P` of `K ∈ G(l, P^∨; A)`, the vectors killed by every functional in `K`, is a
@@ -104,8 +106,8 @@ theorem toSubmodule_dualCoannihilator (h : ∀ p, rankAtStalk (R := A) P p = k +
     (K : G(l, Module.Dual A P; A)) :
     (K.dualCoannihilator h).toSubmodule = K.toSubmodule.dualCoannihilator := by
   rw [dualCoannihilator, LinearEquiv.toSubmodule_grassmannianCongr_apply,
-    toSubmodule_dualAnnihilator, Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm]
-  rfl
+    toSubmodule_dualAnnihilator, Submodule.map_equiv_eq_comap_symm, LinearEquiv.symm_symm,
+    Submodule.dualCoannihilator, Module.evalEquiv_toLinearMap]
 
 /-- **Duality of Grassmannians.** If `P` is finite projective of constant rank `k + l`, taking
 annihilators identifies the rank-`k` quotients of `P` with the rank-`l` quotients of its dual
@@ -161,10 +163,7 @@ theorem mem_baseChangeDualEquiv_iff (h : ∀ p, rankAtStalk (R := R) M p = k + l
     (N : G(k, A ⊗[R] M; A)) (ξ : A ⊗[R] Module.Dual R M) :
     ξ ∈ (baseChangeDualEquiv A h N).toSubmodule ↔
       ∀ x ∈ N.toSubmodule, baseChangeEvaluation (R := R) (M := M) (A := A) ξ x = 0 := by
-  rw [baseChangeDualEquiv, Equiv.trans_apply, LinearEquiv.toSubmodule_grassmannianCongr_apply,
-    Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, LinearEquiv.symm_symm, dualEquiv_apply,
-    toSubmodule_dualAnnihilator, Submodule.mem_dualAnnihilator]
-  simp
+  simp [baseChangeDualEquiv, Submodule.mem_map_equiv]
 
 /-- **The inverse of `baseChangeDualEquiv` on points.** An element `x` of `A ⊗[R] M` lies in the
 point corresponding to `K` exactly when every `ξ ∈ K` kills it under the pairing of `A ⊗[R] M^∨`
@@ -174,15 +173,8 @@ theorem mem_baseChangeDualEquiv_symm_iff (h : ∀ p, rankAtStalk (R := R) M p = 
     (K : G(l, A ⊗[R] Module.Dual R M; A)) (x : A ⊗[R] M) :
     x ∈ ((baseChangeDualEquiv A h).symm K).toSubmodule ↔
       ∀ ξ ∈ K.toSubmodule, baseChangeEvaluation (R := R) (M := M) (A := A) ξ x = 0 := by
-  rw [baseChangeDualEquiv, Equiv.symm_trans_apply, LinearEquiv.grassmannianCongr_symm,
-    dualEquiv_symm_apply, toSubmodule_dualCoannihilator, Submodule.mem_dualCoannihilator,
-    LinearEquiv.toSubmodule_grassmannianCongr_apply, LinearEquiv.symm_symm]
-  let e := baseChangeEvaluationEquiv (R := R) (A := A) (M := M)
-  refine ⟨fun H ξ hξ ↦ ?_, fun H φ hφ ↦ ?_⟩
-  · have := H (e ξ) (Submodule.mem_map_of_mem hξ)
-    rwa [baseChangeEvaluationEquiv_apply] at this
-  · have := H (e.symm φ) (by simpa using hφ)
-    rwa [← baseChangeEvaluationEquiv_apply, LinearEquiv.apply_symm_apply] at this
+  simp [baseChangeDualEquiv, Submodule.mem_dualCoannihilator, Submodule.mem_map,
+    -Submodule.mem_map_equiv]
 
 /-- **Naturality of `baseChangeDualEquiv`.** For `f : A →ₐ[R] B`, the point corresponding to the
 base change of `N` is the base change of the point corresponding to `N`. -/

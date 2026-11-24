@@ -207,8 +207,7 @@ instance finite_toSubmodule [Module.Finite R M] (N : G(k, M; R)) :
 /-- A point of a Grassmannian of a projective module is a projective module. -/
 instance projective_toSubmodule [Module.Projective R M] (N : G(k, M; R)) :
     Module.Projective R N.toSubmodule := by
-  obtain ⟨T, hT⟩ := N.toSubmodule.mkQ.isComplemented_ker_of_surjective N.toSubmodule.mkQ_surjective
-  rw [Submodule.ker_mkQ] at hT
+  obtain ⟨_, hT⟩ := N.toSubmodule.isComplemented_of_projective_quotient
   exact .of_isCompl hT
 
 /-- **Quotients of rank `k` are subbundles of rank `l`.** If `M` is finite flat of constant rank
