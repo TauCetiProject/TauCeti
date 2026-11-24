@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Star.BigOperators
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.Algebra.Star.Unitary
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
+public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 
 /-!
 # The star structure on a twisted group algebra with unitary factor set
@@ -31,6 +32,8 @@ The coefficient at the identity is a positive trace for this star structure:
 * `TauCeti.IsUnitaryFactorSet`: a factor set with unitary values.
 * `TauCeti.TwistedMonoidAlgebra.instStarRing` and `TauCeti.TwistedMonoidAlgebra.instStarModule`:
   the conjugate-linear star structure on `k_α[G]` for a unitary factor set.
+* `TauCeti.TwistedMonoidAlgebra.identityCoefficient`: over `ℂ`, the coefficient at the identity
+  as a positive functional.
 
 ## Main results
 
@@ -43,6 +46,8 @@ The coefficient at the identity is a positive trace for this star structure:
   `TauCeti.TwistedMonoidAlgebra.repr_star_mul_self_apply_one_nonneg` and
   `TauCeti.TwistedMonoidAlgebra.repr_star_mul_self_apply_one_eq_zero_iff`: the coefficient at
   the identity is a faithful positive trace.
+* `TauCeti.TwistedMonoidAlgebra.nullSubmodule_identityCoefficient`: over `ℂ`, the coefficient at
+  the identity has trivial GNS null space.
 
 ## References
 
@@ -238,6 +243,32 @@ theorem repr_star_mul_self_apply_one_eq_zero_iff [NoZeroDivisors k]
   · exact Finsupp.mem_support_iff.1 hg h'
 
 end Order
+
+section Complex
+
+open scoped ComplexOrder
+
+variable {α : G → G → ℂˣ} [IsFactorSet α] [IsUnitaryFactorSet α]
+
+/-- Over `ℂ`, **the coefficient at the identity** as a positive functional on `ℂ_α[G]`. -/
+noncomputable def identityCoefficient : StarPositiveFunctional (twistedMonoidAlgebra ℂ G α) where
+  toLinearMap := (basis ℂ G α).coord 1
+  square_nonneg := repr_star_mul_self_apply_one_nonneg
+
+/-- `identityCoefficient` evaluates as the coefficient at the identity. -/
+@[simp]
+theorem identityCoefficient_apply (x : twistedMonoidAlgebra ℂ G α) :
+    identityCoefficient x = (basis ℂ G α).repr x 1 :=
+  (rfl)
+
+/-- The coefficient at the identity is faithful: its GNS null space is trivial. -/
+theorem nullSubmodule_identityCoefficient :
+    (identityCoefficient : StarPositiveFunctional (twistedMonoidAlgebra ℂ G α)).nullSubmodule =
+      ⊥ := by
+  ext x
+  simp
+
+end Complex
 
 end TwistedMonoidAlgebra
 
