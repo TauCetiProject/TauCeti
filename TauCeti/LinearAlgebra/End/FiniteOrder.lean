@@ -29,12 +29,9 @@ integral domain, and so is every root of its characteristic polynomial when the 
 finite and free; and if `n` is invertible in the coefficient field then `f` is semisimple, because
 `X ^ n - 1` is then squarefree.
 
-The roots of unity are algebraic integers, so as soon as the characteristic polynomial splits the
-trace, being the sum of those roots, is one too. Splitting is not a real hypothesis: base change to
-an algebraic closure leaves the trace alone beyond transporting it along the field embedding
-(`LinearMap.trace_baseChange`), and an element of the base field whose image is integral over `ℤ`
-was already integral over `ℤ`. So the trace of an endomorphism of finite order is an algebraic
-integer over **any** field.
+If `f ^ a = f ^ b` with `a ≠ b`, then `f` is integral over any ring `R` below `k`, and so is its
+trace. Finite order is the case `b = 0`: the trace of an endomorphism of finite order is an
+algebraic integer over **any** field.
 
 Over an algebraically closed field semisimplicity is diagonalizability, so the eigenspaces of such
 an `f` decompose the space. Every power of `f` acts on the `μ`-eigenspace as the scalar `μ ^ m`,
@@ -147,8 +144,7 @@ theorem isIntegral_trace_of_pow_eq_pow {R : Type*} [CommRing R] [Algebra R k] {f
 
 omit [FiniteDimensional k V] in
 /-- **The trace of an endomorphism of finite order is an algebraic integer**, over an arbitrary
-field: `f ^ n = f ^ 0` with `n ≠ 0`, so this is a case of
-`Module.End.isIntegral_trace_of_pow_eq_pow`. -/
+field: if `f ^ n = 1` with `n ≠ 0`, then the trace of `f` is integral over `ℤ`. -/
 theorem isIntegral_trace_of_pow_eq_one {f : End k V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
     IsIntegral ℤ (LinearMap.trace k V f) :=
   isIntegral_trace_of_pow_eq_pow hn (by rwa [pow_zero])
