@@ -86,6 +86,10 @@ results go up only.
   by the conjugate matrix `conjScale d γ` does.
 * `ModularForm.diamondOp_levelRaise`, `TauCeti.CuspForm.diamondOpCusp_levelRaise`: `V_d`
   intertwines diamond operators between a divisor level and any multiple of the raised level.
+* `TauCeti.slash_scaleGL_mem_functionCharSpace_of_dvd`: the nebentypus transport for a bare
+  function. For `d * M ∣ N` the slash by `diag(d, 1)` carries the `χ`-invariant functions of
+  weight `k` for `Γ₀(M)` into the `χ ∘ (ZMod N)ˣ → (ZMod M)ˣ`-invariant functions for `Γ₀(N)`;
+  the two statements below are this one read on the underlying function of `V_d f`.
 * `TauCeti.ModularForm.levelRaise_mem_modFormCharSpace_of_dvd`,
   `TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd`: the nebentypus transport, stated
   at every level `N` with `d * M ∣ N`. Since the `diag(d, 1)`-conjugate of a `Γ₀(N)` matrix lies
@@ -1081,6 +1085,19 @@ theorem CuspForm.diamondOpCusp_levelRaise {M d N : ℕ} [NeZero d]
     CuspForm.coe_levelRaise, coe_diamondOpCusp k _ ⟨conjScale d γ c hc, hm⟩ (heq.trans (by
       rw [hγ]))]
 
+/-- **The nebentypus of a raised function.** For `d * M ∣ N`, the slash by `diag(d, 1)`
+carries a `χ`-invariant function of weight `k` for `Γ₀(M)` to a function invariant for `Γ₀(N)`
+under `χ ∘ (ZMod N)ˣ → (ZMod M)ˣ`. No analytic condition on `f` is involved: the
+`diag(d, 1)`-conjugate of a `Γ₀(N)` matrix lies in `Γ₀(M)` with the same lower-right entry. -/
+theorem slash_scaleGL_mem_functionCharSpace_of_dvd {M d N : ℕ} [NeZero d] (hdvd : d * M ∣ N)
+    {χ : (ZMod M)ˣ →* ℂˣ} {f : ℍ → ℂ} (hf : f ∈ functionCharSpace k χ) :
+    f ∣[k] scaleGL d ∈
+      functionCharSpace k (χ.comp (ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd))) := by
+  refine (mem_functionCharSpace_iff _ _ _).mpr fun γ ↦ ?_
+  obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
+  rw [slash_scaleGL_slash_mapGL f γ hc, slash_mapGL_eq_smul_of_mem_functionCharSpace hf ⟨_, hm⟩,
+    ModularForm.smul_slash_of_det_pos k val_det_scaleGL_pos, heq, MonoidHom.comp_apply]
+
 /-- **The nebentypus of a level-raise.** For `d * M ∣ N`, `V_d` carries `M_k(Γ₁(M), χ)` into
 `M_k(Γ₁(N), χ ∘ (ZMod N)ˣ → (ZMod M)ˣ)`: the character of `V_d f` at level `N` is the character
 of `f` read along the reduction map. The target level is any multiple of `d * M`. -/
@@ -1089,11 +1106,9 @@ theorem ModularForm.levelRaise_mem_modFormCharSpace_of_dvd {M d N : ℕ} [NeZero
     {f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
     levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) f ∈
       modFormCharSpace k (χ.comp (ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd))) := by
-  rw [mem_modFormCharSpace_iff_nebentypus] at hf ⊢
-  intro γ
-  obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
-  rw [MonoidHom.comp_apply, ← heq]
-  exact ModularForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
+  rw [← coe_mem_functionCharSpace_iff, ModularForm.coe_levelRaise]
+  exact Submodule.smul_mem _ _ (slash_scaleGL_mem_functionCharSpace_of_dvd hdvd
+    ((coe_mem_functionCharSpace_iff k χ f).mpr hf))
 
 /-- **The nebentypus of a level-raise (cusp forms).** For `d * M ∣ N`, `V_d` carries
 `S_k(Γ₁(M), χ)` into `S_k(Γ₁(N), χ ∘ (ZMod N)ˣ → (ZMod M)ˣ)`: the character of `V_d f` at level
@@ -1107,11 +1122,9 @@ theorem CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd {M d N : ℕ} [NeZero d
     {f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
     levelRaise d (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) f ∈
       cuspFormCharSpace k (χ.comp (ZMod.unitsMap ((Dvd.intro_left d rfl).trans hdvd))) := by
-  rw [mem_cuspFormCharSpace_iff_nebentypus] at hf ⊢
-  intro γ
-  obtain ⟨c, hc, hm, heq⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N hdvd γ
-  rw [MonoidHom.comp_apply, ← heq]
-  exact CuspForm.coe_levelRaise_slash_eq_smul _ f γ hc (hf ⟨_, hm⟩)
+  rw [← coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace, CuspForm.coe_levelRaise]
+  exact Submodule.smul_mem _ _ (slash_scaleGL_mem_functionCharSpace_of_dvd hdvd
+    ((coe_mem_functionCharSpace_iff_mem_cuspFormCharSpace k χ f).mpr hf))
 
 /-- **The `T`-factorisation lift carries the label of the element it lifts.** Reduced to a level
 `M ∣ N`, the nebentypus label of a `Γ₀(N)` element `γ` whose lower-right entry differs from that
