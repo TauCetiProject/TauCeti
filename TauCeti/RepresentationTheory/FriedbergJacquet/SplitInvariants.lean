@@ -42,7 +42,7 @@ evaluated through `Sum.elim (fun p => A p.1 p.2) (fun p => B p.1 p.2)`.
   exactly when it is the pullback of a conjugation-invariant polynomial function on matrices
   (`TauCeti.FriedbergJacquet.Split.mem_invariants_iff_exists_contractionPullback`), so pulling back
   along the signed contraction is an isomorphism from the conjugation invariants
-  `Matrix.conjInvariants` onto the invariants of both groups
+  `TauCeti.Matrix.conjInvariants` onto the invariants of both groups
   (`TauCeti.FriedbergJacquet.Split.invariantsEquiv`). This reduces the quotient to the adjoint
   quotient of `gl_n`.
 
