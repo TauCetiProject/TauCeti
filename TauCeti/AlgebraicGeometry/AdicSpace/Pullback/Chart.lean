@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Pullback.Affinoid
 public import TauCeti.AlgebraicGeometry.AdicSpace.Pullback.OpenImmersion
 
+import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Mono
+
 /-!
 # Affinoid charts of a fibre product of adic spaces
 
@@ -28,7 +30,9 @@ charts, so it does not depend on how `Z` was glued from affinoid charts.
 * `TauCeti.AdicSpace.restrictInfIsoCompletedTensor`: the isomorphism
   `Z|_{p⁻¹(U) ∩ q⁻¹(V)} ≅ Spa((B, B⁺) ⊗̂_A (C, C⁺))`.
 * `TauCeti.AdicSpace.restrictInfIsoCompletedTensor_hom_inl`,
-  `TauCeti.AdicSpace.restrictInfIsoCompletedTensor_hom_inr`: its compatibility with the
+  `TauCeti.AdicSpace.restrictInfIsoCompletedTensor_hom_inr`,
+  `TauCeti.AdicSpace.restrictInfIsoCompletedTensor_inv_inl`,
+  `TauCeti.AdicSpace.restrictInfIsoCompletedTensor_inv_inr`: its compatibility with the
   projections.
 
 ## References
@@ -82,18 +86,12 @@ theorem isPullback_comapOfPair_completedTensor_of_iso {f : X ⟶ S} {g : Y ⟶ S
       (eU.hom ≫ comapOfPair hSA hTB φ ≫ eW.inv) (eV.hom ≫ comapOfPair hSA hUC ψ ≫ eW.inv) :=
     (affinoid_isPullback hSA hTB hUC hTU φ ψ hφ hψ).of_iso' (Iso.refl _) eU eV eW
       (by simp) (by simp) (by simp) (by simp)
-  have hf' : eU.hom ≫ comapOfPair hSA hTB φ ≫ eW.inv ≫ S.ofRestrict W = X.ofRestrict U ≫ f := by
-    rw [← hf, Iso.hom_inv_id_assoc]
-  have hg' : eV.hom ≫ comapOfPair hSA hUC ψ ≫ eW.inv ≫ S.ofRestrict W = Y.ofRestrict V ≫ g := by
-    rw [← hg, Iso.hom_inv_id_assoc]
-  have hbot : IsPullback (eV.hom ≫ comapOfPair hSA hUC ψ ≫ eW.inv) (𝟙 _) (S.ofRestrict W)
-      (Y.ofRestrict V ≫ g) :=
-    IsPullback.of_vert_isIso_mono ⟨by simpa only [Category.id_comp, Category.assoc] using hg'⟩
-  simpa only [Category.comp_id, Category.assoc, hf'] using hpull.paste_vert hbot
+  simpa only [Category.assoc, ← hf, ← hg, Iso.hom_inv_id_assoc] using
+    hpull.comp_mono (S.ofRestrict W)
 
 variable {p : Z ⟶ X} {q : Z ⟶ Y} {f : X ⟶ S} {g : Y ⟶ S}
 
-/-- **Chart independence of the fibre product** (AdicEtaleGeometry A0.6): for a pullback square
+/-- **Affinoid chart of a fibre product**: for a pullback square
 `IsPullback p q f g` and charts `W ≅ Spa(A, A⁺)` of `S`, `U ≅ Spa(B, B⁺)` of `X` and
 `V ≅ Spa(C, C⁺)` of `Y` on which `f` and `g` are given by adic morphisms of Huber pairs, with
 `(B, B⁺) ⊗̂_A (C, C⁺)` sheafy, the open subspace `p⁻¹(U) ∩ q⁻¹(V)` of `Z` is
@@ -133,5 +131,29 @@ theorem restrictInfIsoCompletedTensor_hom_inr (hs : IsPullback p q f g)
         comapOfPair hUC hTU (Pair.completedTensor.inr A TB UC) ≫ eV.inv =
       liftRestrict q inf_le_right :=
   IsPullback.isoIsPullback_hom_snd _ _ _ _
+
+/-- The inverse of `restrictInfIsoCompletedTensor` is compatible with the first projections:
+it carries `Spa(inl)` to the restriction of `p`. -/
+@[reassoc (attr := simp)]
+theorem restrictInfIsoCompletedTensor_inv_inl (hs : IsPullback p q f g)
+    (hTU : IsSheafyForEveryPresentation (TB.completedTensor A UC).plus)
+    (hφ : φ.toRingHom = algebraMap A B) (hψ : ψ.toRingHom = algebraMap A C)
+    (hf : eU.inv ≫ X.ofRestrict U ≫ f = comapOfPair hSA hTB φ ≫ eW.inv ≫ S.ofRestrict W)
+    (hg : eV.inv ≫ Y.ofRestrict V ≫ g = comapOfPair hSA hUC ψ ≫ eW.inv ≫ S.ofRestrict W) :
+    (restrictInfIsoCompletedTensor hs hTU hφ hψ hf hg).inv ≫ liftRestrict p inf_le_left =
+      comapOfPair hTB hTU (Pair.completedTensor.inl A TB UC) ≫ eU.inv :=
+  IsPullback.isoIsPullback_inv_fst _ _ _ _
+
+/-- The inverse of `restrictInfIsoCompletedTensor` is compatible with the second projections:
+it carries `Spa(inr)` to the restriction of `q`. -/
+@[reassoc (attr := simp)]
+theorem restrictInfIsoCompletedTensor_inv_inr (hs : IsPullback p q f g)
+    (hTU : IsSheafyForEveryPresentation (TB.completedTensor A UC).plus)
+    (hφ : φ.toRingHom = algebraMap A B) (hψ : ψ.toRingHom = algebraMap A C)
+    (hf : eU.inv ≫ X.ofRestrict U ≫ f = comapOfPair hSA hTB φ ≫ eW.inv ≫ S.ofRestrict W)
+    (hg : eV.inv ≫ Y.ofRestrict V ≫ g = comapOfPair hSA hUC ψ ≫ eW.inv ≫ S.ofRestrict W) :
+    (restrictInfIsoCompletedTensor hs hTU hφ hψ hf hg).inv ≫ liftRestrict q inf_le_right =
+      comapOfPair hUC hTU (Pair.completedTensor.inr A TB UC) ≫ eV.inv :=
+  IsPullback.isoIsPullback_inv_snd _ _ _ _
 
 end TauCeti.AdicSpace
