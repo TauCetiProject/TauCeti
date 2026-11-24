@@ -159,8 +159,8 @@ namespace Diffeotopy
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- A diffeotopy preserving `σ` at every time is homotopic, relative to both time ends, to a
 diffeotopy whose motion on `[0, 1]` is the restriction of a smooth family `φ_u`, `u ∈ ℝ`, of
-diffeomorphisms preserving `σ`: reparametrize it to be stationary near both time ends and extend
-it by its end maps. -/
+diffeomorphisms preserving `σ`. This is `TauCeti.Diffeotopy.exists_homotopic_timeSlice_eq_comp`,
+whose time slices `φ_{c u}` are time slices of `Φ` and so preserve `σ`. -/
 private theorem exists_homotopic_apply_eq {σ : SmoothForm I M ℝ 2} {Φ : Diffeotopy I ∞ M}
     (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) :
     ∃ (Φ' : Diffeotopy I ∞ M) (φ : ℝ → M ≃ M), Φ'.Homotopic Φ ∧
@@ -169,33 +169,15 @@ private theorem exists_homotopic_apply_eq {σ : SmoothForm I M ℝ 2} {Φ : Diff
       ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ φ p.1 p.2) ∧
       ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ (φ p.1).symm p.2) ∧
       ∀ u, mpullback I I (φ u) (σ : RoughForm I M ℝ 2) = σ := by
-  -- The collared transition `c`, constant near both ends of `[0, 1]`, reparametrizes `Φ`.
-  set c : ℝ → unitInterval := collaredSmoothTransitionUnit
-  have hc : ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) ∞ c := contMDiff_collaredSmoothTransitionUnit le_rfl
-  let ρ : C^∞⟮𝓡∂ 1, unitInterval; 𝓡∂ 1, unitInterval⟯ :=
-    ⟨fun t ↦ c t, hc.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))⟩
-  have hρ₀ : ρ 0 = 0 := collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num)
-  have hρ₁ : ρ 1 = 1 := collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num)
+  obtain ⟨Φ', c, hhom, -, hslice, hφ, hφ'⟩ := Φ.exists_homotopic_timeSlice_eq_comp le_rfl
   have hφ_coe (u : ℝ) : ⇑(Φ.timeSlice (c u)).toEquiv = Φ.timeSlice (c u) :=
     Diffeomorph.coe_toEquiv _
   have hφ_symm (u : ℝ) (y : M) : (Φ.timeSlice (c u)).toEquiv.symm y = Φ.symm (c u, y) := by
     rw [← symm_timeSlice_apply, ← Diffeomorph.coe_toEquiv, Diffeomorph.symm_toEquiv]
-  refine ⟨Φ.reparam ρ, fun u ↦ (Φ.timeSlice (c u)).toEquiv, Φ.reparam_homotopic hρ₀ hρ₁,
-    fun t ↦ ?_, fun s y ↦ ?_, ?_, ?_, fun u ↦ ?_⟩
-  · have hslice : (Φ.reparam ρ).timeSlice t = Φ.timeSlice (c t) :=
-      Diffeomorph.ext fun x ↦ by
-        rw [timeSlice_apply, timeSlice_apply, reparam_apply_of_map_zero _ hρ₀]
-        rfl
-    rw [hslice]
-    exact hΦ _
-  · rw [hφ_coe, timeSlice_apply, reparam_apply_of_map_zero _ hρ₀]
-    rfl
-  · exact (Φ.contMDiff.comp (hc.prodMap contMDiff_id)).congr fun p ↦ by
-      rw [hφ_coe, timeSlice_apply]
-      rfl
-  · refine (Φ.symm.contMDiff.comp (hc.prodMap contMDiff_id)).congr fun p ↦ ?_
-    rw [hφ_symm]
-    rfl
+  refine ⟨Φ', fun u ↦ (Φ.timeSlice (c u)).toEquiv, hhom, fun t ↦ hslice t ▸ hΦ _,
+    fun s y ↦ ?_, hφ.congr fun p ↦ ?_, hφ'.congr fun p ↦ hφ_symm p.1 p.2, fun u ↦ ?_⟩
+  · rw [hφ_coe, ← hslice, timeSlice_apply]
+  · rw [hφ_coe, timeSlice_apply]
   · rw [hφ_coe]
     exact funext (mem_diffeomorphStabilizer_iff_forall.1 (hΦ (c u)))
 
