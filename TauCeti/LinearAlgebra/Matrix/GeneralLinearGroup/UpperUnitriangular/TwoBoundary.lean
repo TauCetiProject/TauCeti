@@ -26,7 +26,8 @@ agree with the identity except in row `0` at columns `j ≥ n - s` and in column
 
 The corner `(0, n)` lies in both ranges and is one coordinate. Writing `g = 1 + X`, the product
 of two such strictly upper triangular `X` is supported at the corner, and more precisely the
-support condition is stable under multiplication on either side by upper triangular matrices.
+support condition is stable under multiplication on either side by upper triangular matrices, so
+it is preserved by conjugation by them (`TauCeti.IsTwoBoundary.isUpperTriangular_mul_mul`).
 Hence `P_(r,s)` is a normal subgroup of `Uₙ₊₁(R)` for all `n`, `r`, `s`, it contains the
 corner subgroup `Z = U^n = P_(0,0)` (`twoBoundarySubgroup_zero_zero`), and every entry other
 than the corner is additive on it. For `r, s < n` its noncorner entries, the `s` first-row entries
@@ -37,7 +38,7 @@ extension `0 → Z → P_(r,s) → P_(r,s)/Z → 0` splits. If `r + s ≥ n` and
 `P_(r,s)` is not abelian in general: for `n = 4`, `r = s = 2` the transvections `e₀₂(1)` and
 `e₂₄(1)` have commutator `e₀₄(1)`.
 
-For `r, s ≤ n - 2` the subgroup lies in `U²`, the derived subgroup of `Uₙ₊₁(R)`
+For `r, s ≤ n - 2` the subgroup lies in `U²`, the matrices vanishing on the first superdiagonal
 (`twoBoundarySubgroup_le_superdiagonalSubgroup`). These subgroups govern the refined lifting
 problem for homomorphisms of Galois groups into `Uₙ₊₁(𝔽_p)/Z` studied by Harpaz and Wittenberg.
 
@@ -177,6 +178,18 @@ private theorem Supported.mul_apply_eq_zero {X Y : Matrix (Fin (n + 1)) (Fin (n 
     omega
   · rw [hX i k hik, zero_mul]
 
+/-- The two-boundary support condition is preserved by multiplying on the left and on the right by
+upper triangular matrices `T` and `T'` with `T * T' = 1`; in particular by conjugation by an
+invertible upper triangular matrix. -/
+theorem IsTwoBoundary.isUpperTriangular_mul_mul {M T T' : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
+    (hM : IsTwoBoundary n r s M) (hT : T.IsUpperTriangular) (hT' : T'.IsUpperTriangular)
+    (hTT' : T * T' = 1) : IsTwoBoundary n r s (T * M * T') := by
+  rw [isTwoBoundary_iff_supported] at hM ⊢
+  have heq : T * M * T' - 1 = T * (M - 1) * T' := by
+    rw [mul_sub, sub_mul, mul_one, hTT']
+  rw [heq]
+  exact (hM.isUpperTriangular_mul hT).mul_isUpperTriangular hT'
+
 end Ring
 
 namespace UpperUnitriangularGroup
@@ -244,18 +257,10 @@ private theorem supported_of_mem {g : upperUnitriangularGroup (Fin (n + 1)) R}
 /-- The two-boundary subgroup `P_(r,s)` is normal in `Uₙ₊₁(R)`. -/
 instance twoBoundarySubgroup_normal : (twoBoundarySubgroup (R := R) n r s).Normal where
   conj_mem g hg u := by
-    rw [mem_twoBoundarySubgroup_iff, isTwoBoundary_iff_supported]
-    set U := ((u : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    set Uinv := (((u⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
-      Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    set G := ((g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
-    have hUU : U * Uinv = 1 := coe_mul_coe_inv u
-    have heq : U * G * Uinv - 1 = U * (G - 1) * Uinv := by
-      rw [mul_sub, sub_mul, mul_one, hUU]
+    rw [mem_twoBoundarySubgroup_iff]
     simp only [Subgroup.coe_mul, Units.val_mul]
-    rw [heq]
-    exact ((supported_of_mem hg).isUpperTriangular_mul
-      (isUpperTriangular u)).mul_isUpperTriangular (isUpperTriangular u⁻¹)
+    exact IsTwoBoundary.isUpperTriangular_mul_mul hg (isUpperTriangular u)
+      (isUpperTriangular u⁻¹) (coe_mul_coe_inv u)
 
 /-- The two-boundary subgroups increase with `r` and `s`. -/
 theorem twoBoundarySubgroup_mono {r' s' : ℕ} (hr : r ≤ r') (hs : s ≤ s') :
@@ -287,7 +292,7 @@ theorem superdiagonalSubgroup_le_twoBoundarySubgroup :
     twoBoundarySubgroup_mono (Nat.zero_le r) (Nat.zero_le s)
 
 /-- If `r + m ≤ n` and `s + m ≤ n`, then `P_(r,s)` lies in `U^m`. For `m = 2` this places
-`P_(r,s)` in the derived subgroup of `Uₙ₊₁(R)` whenever `r, s ≤ n - 2`. -/
+`P_(r,s)` in `U²` whenever `r, s ≤ n - 2`. -/
 theorem twoBoundarySubgroup_le_superdiagonalSubgroup {m : ℕ} (hr : r + m ≤ n)
     (hs : s + m ≤ n) :
     twoBoundarySubgroup (R := R) n r s ≤ superdiagonalSubgroup (n := n + 1) m := by
@@ -480,10 +485,10 @@ private theorem isUpperUnitriangular_one_add_boundaryMatrix (c : R) (a : Fin s �
 /-- The element of `P_(r,s)` with corner entry `c`, first-row entries `a k` at `(0, n - s + k)`
 and last-column entries `b k` at `(k + 1, n)`, all other entries above the diagonal being zero.
 Values with no valid position are dropped: `c` when `n = 0` (the corner is then diagonal), the
-`a k` with `k = 0` or `k ≥ n` when `s ≥ n` (diagonal, corner or outside the matrix), and `b (n - 1)`
-when `r ≥ n` (diagonal). For `0 < n` and `r, s < n` nothing is dropped, and the coordinates of
-`twoBoundaryMk c a b` are `c`, `a` and `b` (`twoBoundaryMk_apply_zero_last`,
-`twoBoundaryHom_twoBoundaryMk`). -/
+`a k` with `k = 0` or `k ≥ n` when `s ≥ n` (diagonal, corner or outside the matrix), and the
+`b k` with `k ≥ n - 1` when `r ≥ n` (diagonal or outside the matrix). For `0 < n` and
+`r, s < n` nothing is dropped, and the coordinates of `twoBoundaryMk c a b` are `c`, `a` and `b`
+(`twoBoundaryMk_apply_zero_last`, `twoBoundaryHom_twoBoundaryMk`). -/
 noncomputable def twoBoundaryMk (c : R) (a : Fin s → R) (b : Fin r → R) :
     twoBoundarySubgroup (R := R) n r s :=
   ⟨⟨(isUpperUnitriangular_one_add_boundaryMatrix c a b).toGL,
