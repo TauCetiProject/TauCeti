@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpecialOrthogonal
-public import TauCeti.Topology.Algebra.OrthogonalGroup
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
 
 /-!
@@ -83,6 +82,11 @@ theorem mem_sectionFrames_iff {p : OrthonormalFrameBundle ℝ F E V} :
     p ∈ sectionFrames F σ v₀ ↔ p.frame v₀ = σ p.proj :=
   Iff.rfl
 
+/-- The frame `φ` over `y` is adapted to `σ` when it sends `v₀` to `σ y`. -/
+theorem mk_mem_sectionFrames_iff {y : B} {φ : V ≃ₗᵢ[ℝ] E y} :
+    (⟨y, φ⟩ : OrthonormalFrameBundle ℝ F E V) ∈ sectionFrames F σ v₀ ↔ φ v₀ = σ y :=
+  Iff.rfl
+
 variable [CompleteSpace V]
 
 /-- An orthogonal transformation keeps a frame adapted to `σ` adapted exactly when it fixes
@@ -90,9 +94,9 @@ variable [CompleteSpace V]
 theorem smul_mem_sectionFrames_iff {p : OrthonormalFrameBundle ℝ F E V}
     (hp : p ∈ sectionFrames F σ v₀) {g : unitary (V →L[ℝ] V)} :
     op g • p ∈ sectionFrames F σ v₀ ↔ g ∈ MulAction.stabilizer (unitary (V →L[ℝ] V)) v₀ := by
-  change p.frame ((g : V →L[ℝ] V) v₀) = σ p.proj ↔ _
-  rw [← hp, p.frame.injective.eq_iff, MulAction.mem_stabilizer_iff]
-  rfl
+  simp only [mem_sectionFrames_iff, frame_smul_apply, proj_smul, unop_op]
+  rw [← hp, p.frame.injective.eq_iff, MulAction.mem_stabilizer_iff, Submonoid.smul_def,
+    ContinuousLinearMap.smul_def]
 
 /-- The orthogonal transformations carrying a frame adapted to `σ` to an adapted frame are those
 fixing `v₀`, which therefore act on the adapted frames on the right, freely and transitively on
@@ -107,25 +111,6 @@ end Action
 section Trivialization
 
 variable {N : ℕ}
-
-/-- The rotation `sphereRotation b y` of `ℝᴺ` taking the unit vector `b` to the unit vector
-`y ≠ -b`, as an orthogonal transformation. -/
-private def rotation (b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-    unitary (EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)) :=
-  (matrixSpecialOrthogonalContinuousMulEquivEuclidean (Fin N) (sphereRotation b y) :
-    unitary (EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)))
-
-private theorem rotation_apply {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
-    (rotation b y : EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)) b = y := by
-  rw [rotation, coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean,
-    ← WithLp.toLp_ofLp (p := 2) (b : EuclideanSpace ℝ (Fin N)), Matrix.toEuclideanCLM_toLp,
-    sphereRotation_mulVec h, WithLp.toLp_ofLp]
-
-private theorem continuousOn_rotation (b : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-    ContinuousOn (rotation b) {-b}ᶜ :=
-  continuous_subtypeVal.comp_continuousOn
-    ((matrixSpecialOrthogonalContinuousMulEquivEuclidean (Fin N)).continuous.comp_continuousOn
-      (continuousOn_sphereRotation b))
 
 variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type*} [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
@@ -192,32 +177,23 @@ theorem exists_trivialization_sectionFrames
   have hx := mem_baseSet_trivializationAt F E x
   by_cases hux : u x = -b
   · -- Near `x`, compose the rotation taking `-v₀` to `u` with `-1`.
-    have hb : -b ≠ b := fun h ↦ by
-      have h' : v₀ = -v₀ := (congrArg Subtype.val h).symm
-      have h2 : (2 : ℝ) • v₀ = 0 := by
-        rw [two_smul]
-        nth_rewrite 1 [h']
-        exact neg_add_cancel v₀
-      rcases smul_eq_zero.1 h2 with h2 | h2
-      · norm_num at h2
-      · rw [h2, norm_zero] at hv₀
-        exact zero_ne_one hv₀
+    have hb : -b ≠ b := (ne_neg_of_mem_unit_sphere ℝ b).symm
     refine exists_trivialization_of_correction e cF (U := e.baseSet ∩ u ⁻¹' {-(-b)}ᶜ)
       inter_subset_left (hu.isOpen_inter_preimage e.open_baseSet isOpen_compl_singleton)
-      (c := fun y ↦ rotation (-b) (u y) * -1)
-      (((continuousOn_rotation (-b)).comp (hu.mono inter_subset_left)
+      (c := fun y ↦ sphereRotationUnitary (-b) (u y) * -1)
+      (((continuousOn_sphereRotationUnitary (-b)).comp (hu.mono inter_subset_left)
         fun _ hy ↦ hy.2).mul continuousOn_const)
       (fun y hy ↦ ?_) ⟨hx, by simpa [hux] using hb⟩
-    have := rotation_apply hy.2
+    have := sphereRotationUnitary_apply_of_ne hy.2
     simp only [coe_neg_sphere] at this
     simpa [u, b, Unitary.coe_neg] using this
   · -- Near `x`, the rotation taking `v₀` to `u` adapts the local frame.
     refine exists_trivialization_of_correction e cF (U := e.baseSet ∩ u ⁻¹' {-b}ᶜ)
       inter_subset_left (hu.isOpen_inter_preimage e.open_baseSet isOpen_compl_singleton)
-      (c := fun y ↦ rotation b (u y))
-      ((continuousOn_rotation b).comp (hu.mono inter_subset_left) fun _ hy ↦ hy.2)
+      (c := fun y ↦ sphereRotationUnitary b (u y))
+      ((continuousOn_sphereRotationUnitary b).comp (hu.mono inter_subset_left) fun _ hy ↦ hy.2)
       (fun y hy ↦ ?_) ⟨hx, hux⟩
-    simpa [u, b] using rotation_apply hy.2
+    simpa [u, b] using sphereRotationUnitary_apply_of_ne hy.2
 
 end Trivialization
 
