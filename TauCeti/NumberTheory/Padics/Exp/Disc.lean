@@ -52,7 +52,7 @@ gives the norm identities without any multiplicativity of the norm. The bound is
 power of `p`, so the exponent `n - 1` cannot be lowered; it is sharper than the bound
 `r₀ ^ n ≤ ‖n!‖` of `TauCeti.amiceRadius_pow_le_norm_factorial`. Since `‖n‖ ≥ ‖n!‖`, the terms
 `zⁿ / n` of the logarithm series obey the same bound. The convergence of the logarithm series on
-`‖z‖ < 1` (`NormedSpace.logSeries_summable_of_norm_lt_one`) and `exp (n • x) = exp x ^ n` need no
+`‖z‖ < 1` (`NormedSpace.hasSum_log_of_norm_sub_one_lt_one`) and `exp (n • x) = exp x ^ n` need no
 ultrametric hypothesis on `A`. The two inverse
 identities evaluate the formal identities `log (exp X) = X` and `exp (log (1 + X)) = 1 + X`
 through `PowerSeries.eq_of_hasSum_of_subst_eq_X`.
@@ -80,8 +80,6 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 * `TauCeti.norm_exp_of_norm_lt`: `‖exp x‖ = 1`.
 * `TauCeti.norm_neg_one_pow_div_natCast_smul_pow_le`: the corresponding bound for the logarithm
   series.
-* `TauCeti.hasSum_log_of_norm_sub_one_lt_one`: for `‖y - 1‖ < 1`,
-  `log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`.
 * `TauCeti.norm_log_of_norm_sub_one_lt`: `‖log y‖ = ‖y - 1‖`.
 * `TauCeti.log_exp_of_norm_lt`, `TauCeti.exp_log_of_norm_sub_one_lt`: the exponential and the
   logarithm are inverse.
@@ -220,13 +218,6 @@ private theorem hasSum_exp_sub_one {x : A} (hx : ‖x‖ < amiceRadius p 0) :
   · simp
   · simp [hn, PowerSeries.coeff_exp_sub_one_of_ne_zero hn]
 
-/-- **The logarithm series on the open unit disc about `1`.** For `‖y - 1‖ < 1`,
-`log y = ∑ (-1) ^ (n + 1) (y - 1) ^ n / n`. -/
-theorem hasSum_log_of_norm_sub_one_lt_one {y : A} (hy : ‖y - 1‖ < 1) :
-    HasSum (fun n : ℕ ↦ ((-1) ^ (n + 1) / n : ℚ_[p]) • (y - 1) ^ n) (log y) := by
-  rw [log_eq_tsum ℚ_[p]]
-  exact (logSeries_summable_of_norm_lt_one ℚ_[p] A hy).hasSum
-
 /-- For `‖x‖ < r₀` and every natural number `n`, `exp (n • x) = exp x ^ n`. -/
 theorem exp_nsmul_of_norm_lt (n : ℕ) {x : A} (hx : ‖x‖ < amiceRadius p 0) :
     exp (n • x) = exp x ^ n := by
@@ -286,13 +277,14 @@ theorem norm_exp_of_norm_lt [NormOneClass A] {x : A} (hx : ‖x‖ < amiceRadius
 logarithm. -/
 private theorem hasSum_coeff_log_smul_pow {y : A} (hy : ‖y - 1‖ < 1) :
     HasSum (fun n ↦ PowerSeries.coeff n (PowerSeries.log ℚ_[p]) • (y - 1) ^ n) (log y) := by
-  simpa only [PowerSeries.coeff_log_eq_neg_one_pow_div] using hasSum_log_of_norm_sub_one_lt_one hy
+  simpa only [PowerSeries.coeff_log_eq_neg_one_pow_div] using
+    hasSum_log_of_norm_sub_one_lt_one ℚ_[p] hy
 
 /-- **The `p`-adic logarithm preserves norms on the disc of radius `r₀` about `1`.** For
 `‖y - 1‖ < r₀`, `‖log y‖ = ‖y - 1‖`. -/
 theorem norm_log_of_norm_sub_one_lt {y : A} (hy : ‖y - 1‖ < amiceRadius p 0) :
     ‖log y‖ = ‖y - 1‖ :=
-  norm_eq_of_hasSum (hasSum_log_of_norm_sub_one_lt_one (p := p) (hy.trans (amiceRadius_lt_one 0)))
+  norm_eq_of_hasSum (hasSum_log_of_norm_sub_one_lt_one ℚ_[p] (hy.trans (amiceRadius_lt_one 0)))
     (by simp) (by simp) hy fun n ↦ by
       simpa using norm_neg_one_pow_div_natCast_smul_pow_le (p := p) (y - 1) (n := n + 2) (by omega)
 
