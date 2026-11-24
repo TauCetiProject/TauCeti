@@ -26,7 +26,9 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
   (`Complex.UnitDisc.instConnectedSpace`) and not compact
   (`Complex.UnitDisc.instNoncompactSpace`). A point outside a set of the disc with closed image in
   `ℂ` is the centre of a round disc missing that set
-  (`Complex.UnitDisc.exists_pos_forall_notMem_ball`).
+  (`Complex.UnitDisc.exists_pos_forall_notMem_ball`); in particular every point of the disc is
+  isolated from the other points of a finite subset
+  (`Complex.UnitDisc.exists_pos_forall_mem_ball_eq`).
 * The closed unit disc `Complex.UnitClosedDisc` is a compact, contractible, second countable
   Hausdorff space, homeomorphic to the subtype `Metric.closedBall 0 1` it is a type synonym of
   (`Complex.UnitClosedDisc.homeomorphClosedBall`).
@@ -98,6 +100,15 @@ theorem exists_pos_forall_notMem_ball {K : Set 𝔻} (hK : IsClosed (((↑) : �
   obtain ⟨R, hR, hRK⟩ := Metric.isOpen_iff.1 hK.isOpen_compl (z : ℂ) fun ⟨w, hw, hwz⟩ ↦
     hz (coe_injective hwz ▸ hw)
   exact ⟨R, hR, fun w hw hwb ↦ hRK hwb ⟨w, hw, rfl⟩⟩
+
+/-- Every point `z` of the unit disc has a round neighbourhood `B(z, R)` containing no point of a
+finite set `s ⊆ 𝔻` other than `z`. -/
+theorem exists_pos_forall_mem_ball_eq (z : 𝔻) (s : Finset 𝔻) :
+    ∃ R > 0, ∀ w ∈ s, (w : ℂ) ∈ ball (z : ℂ) R → w = z := by
+  classical
+  obtain ⟨R, hR, hmiss⟩ := exists_pos_forall_notMem_ball (K := ((s.erase z : Finset 𝔻) : Set 𝔻))
+    ((s.erase z).finite_toSet.image _).isClosed (z := z) (by simp)
+  exact ⟨R, hR, fun w hw hwb ↦ by_contra fun hwz ↦ hmiss w (by simpa [hwz] using hw) hwb⟩
 
 /-- Circle rotations act jointly continuously on the bundled open unit disc. -/
 instance instContinuousSMulCircle : ContinuousSMul Circle 𝔻 :=

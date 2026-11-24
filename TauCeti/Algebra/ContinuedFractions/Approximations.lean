@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.ContinuedFractions.Computation.Approximations
+public import Mathlib.Algebra.ContinuedFractions.Determinant
 
 /-!
-# Integrality of continuants, and bounds and signs for the errors of convergents
+# Integrality of continuants, partial denominators, and bounds for the errors of convergents
 
 For the continued fraction `GenContFract.of v` of an element `v` of a floor field, this file
 proves some complements to Mathlib's
@@ -18,17 +19,21 @@ convergent `(of v).convs n`, and `bₙ₊₁` is the partial denominator given b
 
 * `GenContFract.exists_int_contsAux_eq`: the continuants `contsAux n = ⟨Aₙ₋₁, Bₙ₋₁⟩` are pairs of
   integers, since the partial numerators are `1` and the partial denominators are integers.
+* `GenContFract.of_nums_mul_dens_succ_sub`: if the continued fraction has not terminated at `n`,
+  then `Aₙ Bₙ₊₁ - Bₙ Aₙ₊₁ = (-1) ^ (n + 1)`. This is Mathlib's `SimpContFract.determinant` for
+  `SimpContFract.of v`, stated for `of v`.
 * `GenContFract.of_den_le_partDen_add_one_mul_den`: `Bₙ₊₁ ≤ (bₙ₊₁ + 1) Bₙ`. Together with
   Mathlib's lower bound `GenContFract.le_of_succ_get?_den`, `bₙ₊₁ Bₙ ≤ Bₙ₊₁`, this places the
   ratio `Bₙ₊₁ / Bₙ` between `bₙ₊₁` and `bₙ₊₁ + 1`.
+* `GenContFract.exists_sub_convs_eq_neg_one_pow_div`: if the continued fraction has not
+  terminated at `n`, then `v - Aₙ / Bₙ = (-1) ^ n / D` for some `D` with
+  `0 < D < Bₙ (Bₙ + Bₙ₊₁)`. This is Mathlib's `GenContFract.sub_convs_eq` with
+  `D = Bₙ (ξₙ₊₁ Bₙ + Bₙ₋₁)`, where the complete quotient `ξₙ₊₁` is less than `bₙ₊₁ + 1` and
+  `Bₙ₊₁ = bₙ₊₁ Bₙ + Bₙ₋₁`. It gives both the sign and the size of the error.
 * `GenContFract.one_div_lt_abs_sub_convs`: if the continued fraction has not terminated at `n`,
   then `1 / (Bₙ (Bₙ + Bₙ₊₁)) < |v - Aₙ / Bₙ|`. Together with Mathlib's upper bound
   `GenContFract.abs_sub_convs_le`, `|v - Aₙ / Bₙ| ≤ 1 / (Bₙ Bₙ₊₁)`, this determines the error
-  of a convergent up to a factor of two. The proof writes the error exactly as
-  `1 / (Bₙ (ξₙ₊₁ Bₙ + Bₙ₋₁))` (Mathlib's `GenContFract.sub_convs_eq`), where the complete
-  quotient `ξₙ₊₁` is less than `bₙ₊₁ + 1`, and uses `Bₙ₊₁ = bₙ₊₁ Bₙ + Bₙ₋₁`.
-* `GenContFract.neg_one_pow_mul_sub_convs_pos`: before termination the convergents alternate
-  around `v`, the error `v - Aₙ / Bₙ` having the sign of `(-1) ^ n`.
+  of a convergent up to a factor of two.
 * `GenContFract.exists_nat_partDens_get?_eq`: the partial denominators are natural numbers.
 * `GenContFract.two_le_of_partDen_of_terminatedAt_succ`: the last partial denominator of a
   terminating expansion is at least `2`.
@@ -66,7 +71,17 @@ theorem exists_int_contsAux_eq (v : K) (n : ℕ) :
       push_cast
       ring_nf
 
-variable [IsStrictOrderedRing K] {v : K} {n : ℕ}
+variable {v : K} {n : ℕ}
+
+/-- The determinant identity `Aₙ Bₙ₊₁ - Bₙ Aₙ₊₁ = (-1) ^ (n + 1)` for the continuants of the
+continued fraction of `v`, before it terminates. This is `SimpContFract.determinant` for
+`SimpContFract.of v`, whose underlying continued fraction is `of v`. -/
+theorem of_nums_mul_dens_succ_sub (hn : ¬(of v).TerminatedAt n) :
+    (of v).nums n * (of v).dens (n + 1) - (of v).dens n * (of v).nums (n + 1) =
+      (-1) ^ (n + 1) :=
+  (SimpContFract.of v).determinant hn
+
+variable [IsStrictOrderedRing K]
 
 /-- The next convergent denominator is at most the current one times one plus the next
 partial denominator. Together with `le_of_succ_get?_den`, this bounds their ratio. -/
@@ -85,10 +100,12 @@ theorem of_den_le_partDen_add_one_mul_den {b : K}
     contsAux_recurrence hs rfl rfl, of_partNum_eq_one (partNum_eq_s_a hs),
     one_mul, add_mul] using add_le_add_right hprev (gp.b * ((of v).contsAux (n + 1)).b)
 
-/-- The error of a convergent exceeds `1 / (Bₙ (Bₙ + Bₙ₊₁))`. Together with
-`GenContFract.abs_sub_convs_le` this determines `|v - Aₙ / Bₙ|` up to a factor of two. -/
-theorem one_div_lt_abs_sub_convs (hn : ¬(of v).TerminatedAt n) :
-    1 / ((of v).dens n * ((of v).dens n + (of v).dens (n + 1))) < |v - (of v).convs n| := by
+/-- The exact error of a convergent before termination: `v - Aₙ / Bₙ = (-1) ^ n / D` for a
+positive `D` less than `Bₙ (Bₙ + Bₙ₊₁)`. Here `D = Bₙ (ξₙ₊₁ Bₙ + Bₙ₋₁)`, where the complete quotient
+`ξₙ₊₁` is less than `bₙ₊₁ + 1` and `Bₙ₊₁ = bₙ₊₁ Bₙ + Bₙ₋₁`. -/
+theorem exists_sub_convs_eq_neg_one_pow_div (hn : ¬(of v).TerminatedAt n) :
+    ∃ D : K, 0 < D ∧ D < (of v).dens n * ((of v).dens n + (of v).dens (n + 1)) ∧
+      v - (of v).convs n = (-1) ^ n / D := by
   obtain ⟨gp, hs⟩ : ∃ gp, (of v).s.get? n = some gp := Option.ne_none_iff_exists'.1 hn
   obtain ⟨ifp', hstream', hb⟩ := IntFractPair.exists_succ_get?_stream_of_gcf_of_get?_eq_some hs
   obtain ⟨ifp, hstream, hfr, rfl⟩ := IntFractPair.succ_nth_stream_eq_some_iff.1 hstream'
@@ -102,19 +119,27 @@ theorem one_div_lt_abs_sub_convs (hn : ¬(of v).TerminatedAt n) :
     simp [IntFractPair.of]
   set B := ((of v).contsAux (n + 1)).b
   set pB := ((of v).contsAux n).b
+  -- `fib_le_of_contsAux_b` at `n + 1` asks for non-termination at `n + 1 - 2`, that is, at `n - 1`.
+  have hterm : ¬(of v).TerminatedAt (n + 1 - 2) := mt (terminated_stable (by omega)) hn
   have hB : 0 < B :=
-    (fib_le_of_contsAux_b (v := v) (n := n + 1)
-      (Or.inr (mt (terminated_stable (n.sub_le 1)) hn))).trans_lt'
+    (fib_le_of_contsAux_b (v := v) (n := n + 1) (Or.inr hterm)).trans_lt'
       (mod_cast Nat.fib_pos.2 n.succ_pos)
   have hpB : 0 ≤ pB := zero_le_of_contsAux_b
   have hfr' : 0 < ifp.fr⁻¹ :=
     inv_pos.2 ((IntFractPair.nth_stream_fr_nonneg hstream).lt_of_ne' hfr)
-  have herr : |v - (of v).convs n| = 1 / (B * (ifp.fr⁻¹ * B + pB)) := by
-    rw [sub_convs_eq hstream, ite_eq_right hfr, abs_div, abs_neg_one_pow,
-      abs_of_pos (by positivity)]
-  rw [herr, hdens, hdens']
-  refine one_div_lt_one_div_of_lt (by positivity) (mul_lt_mul_of_pos_left ?_ hB)
-  linarith [mul_lt_mul_of_pos_right (Int.lt_floor_add_one ifp.fr⁻¹) hB]
+  refine ⟨B * (ifp.fr⁻¹ * B + pB), by positivity, ?_, ?_⟩
+  · rw [hdens, hdens']
+    refine mul_lt_mul_of_pos_left ?_ hB
+    linarith [mul_lt_mul_of_pos_right (Int.lt_floor_add_one ifp.fr⁻¹) hB]
+  · rw [sub_convs_eq hstream, ite_eq_right hfr]
+
+/-- The error of a convergent exceeds `1 / (Bₙ (Bₙ + Bₙ₊₁))`. Together with
+`GenContFract.abs_sub_convs_le` this determines `|v - Aₙ / Bₙ|` up to a factor of two. -/
+theorem one_div_lt_abs_sub_convs (hn : ¬(of v).TerminatedAt n) :
+    1 / ((of v).dens n * ((of v).dens n + (of v).dens (n + 1))) < |v - (of v).convs n| := by
+  obtain ⟨D, hD, hlt, herr⟩ := exists_sub_convs_eq_neg_one_pow_div hn
+  rw [herr, abs_div, abs_neg_one_pow, abs_of_pos hD]
+  exact one_div_lt_one_div_of_lt hD hlt
 
 /-- Before termination, the partial denominator `bₙ₊₁` exists and is a natural number. -/
 theorem exists_nat_partDens_get?_eq (hn : ¬(of v).TerminatedAt n) :
@@ -150,23 +175,5 @@ theorem two_le_of_partDen_of_terminatedAt_succ {b : K} (hb : (of v).partDens.get
   simp only [IntFractPair.of]
   have h1 : (1 : ℤ) < ⌊ifp'.fr⁻¹⌋ := by exact_mod_cast hlt
   exact_mod_cast h1
-
-/-- Before termination, the convergents alternate around `v`: the error `v - Aₙ / Bₙ` is
-nonzero and has the sign of `(-1) ^ n`. -/
-theorem neg_one_pow_mul_sub_convs_pos (hn : ¬(of v).TerminatedAt n) :
-    0 < (-1) ^ n * (v - (of v).convs n) := by
-  obtain ⟨ifp', hstream'⟩ := Option.ne_none_iff_exists'.1
-    (mt of_terminatedAt_n_iff_succ_nth_intFractPair_stream_eq_none.2 hn)
-  obtain ⟨ifp, hstream, hfr, -⟩ := IntFractPair.succ_nth_stream_eq_some_iff.1 hstream'
-  have hB : 0 < ((of v).contsAux (n + 1)).b :=
-    (fib_le_of_contsAux_b (v := v) (n := n + 1)
-      (Or.inr (mt (terminated_stable (n.sub_le 1)) hn))).trans_lt'
-      (mod_cast Nat.fib_pos.2 n.succ_pos)
-  have hpB : 0 ≤ ((of v).contsAux n).b := zero_le_of_contsAux_b
-  have hfr' : 0 < ifp.fr⁻¹ :=
-    inv_pos.2 ((IntFractPair.nth_stream_fr_nonneg hstream).lt_of_ne' hfr)
-  have hsq : ((-1 : K) ^ n) * (-1) ^ n = 1 := by rw [← mul_pow]; simp
-  rw [sub_convs_eq hstream, ite_eq_right hfr, mul_div_assoc', hsq]
-  positivity
 
 end GenContFract

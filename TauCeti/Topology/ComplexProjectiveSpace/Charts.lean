@@ -298,6 +298,17 @@ theorem affineParam_mem_affineOpen_iff (k l : Fin (n + 1)) (z : Fin n → ℂ) :
     affineParam k z ∈ affineOpen l ↔ Fin.insertNth (α := fun _ ↦ ℂ) k 1 z l ≠ 0 := by
   simp [mem_affineOpen_iff]
 
+/-- The point `affineParam k 0`, whose only nonzero homogeneous coordinate is the coordinate `k`,
+lies in the affine open `X_l ≠ 0` exactly when `l = k`. -/
+@[simp↓ high]
+theorem affineParam_zero_mem_affineOpen_iff (k l : Fin (n + 1)) :
+    affineParam k 0 ∈ affineOpen l ↔ l = k := by
+  rw [affineParam_mem_affineOpen_iff]
+  rcases eq_or_ne l k with rfl | h
+  · simp
+  · obtain ⟨j, rfl⟩ := Fin.exists_succAbove_eq h
+    simp
+
 /-- The transition between standard affine charts is the usual homogeneous-ratio formula. -/
 @[simp↓]
 theorem affineChart_transition (k l : Fin (n + 1)) (z : Fin n → ℂ) (j : Fin n) :

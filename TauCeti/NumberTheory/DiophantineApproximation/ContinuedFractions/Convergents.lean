@@ -28,6 +28,12 @@ neighbours:
 * `|qₙ ξ - pₙ| = aₙ₊₂ |qₙ₊₁ ξ - pₙ₊₁| + |qₙ₊₂ ξ - pₙ₊₂|`, hence the errors strictly decrease in
   absolute value.
 
+The sign, vanishing and determinant statements restate, in this notation,
+`Real.neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos`,
+`Real.den_convergent_mul_sub_num_convergent_eq_zero` and
+`Real.num_convergent_mul_den_convergent_succ_sub` from
+`TauCeti.NumberTheory.DiophantineApproximation.ContinuedFractions.Basic`.
+
 Mathlib's `GenContFract.abs_sub_convs_le` gives the bound `|qₙ ξ - pₙ| ≤ 1 / qₙ₊₁` only
 non-strictly; the strict bound needs the next error to be nonzero.
 
@@ -157,13 +163,9 @@ theorem strictMono_convDen_succ (hξ : Irrational ξ) : StrictMono fun n ↦ ξ.
 not terminated at `n`. -/
 theorem convNum_mul_convDen_succ_sub_convNum_succ_mul_convDen (h : ¬(of ξ).TerminatedAt n) :
     ξ.convNum n * ξ.convDen (n + 1) - ξ.convNum (n + 1) * ξ.convDen n = (-1) ^ (n + 1) := by
-  -- `SimpContFract.of ξ` is `of ξ` bundled with its simplicity proof, so its determinant
-  -- formula applies to `of ξ`.
-  have hdet : (of ξ).nums n * (of ξ).dens (n + 1) - (of ξ).dens n * (of ξ).nums (n + 1) =
-      (-1) ^ (n + 1) := (SimpContFract.of ξ).determinant h
-  rw [← cast_convNum, ← cast_convNum, ← cast_convDen, ← cast_convDen] at hdet
-  exact_mod_cast (by linear_combination hdet : (ξ.convNum n * ξ.convDen (n + 1) -
-    ξ.convNum (n + 1) * ξ.convDen n : ℝ) = (-1) ^ (n + 1))
+  rw [← num_convergent_mul_den_convergent_succ_sub ξ h, convNum_def, convNum_def, convDen_def,
+    convDen_def]
+  ring
 
 /-! ### The signed error -/
 
@@ -203,24 +205,19 @@ theorem convErr_mul_convDen_succ_sub_convErr_succ_mul_convDen (h : ¬(of ξ).Ter
 
 /-- Before termination, the error `qₙ ξ - pₙ` is nonzero and has the sign of `(-1) ^ n`. -/
 theorem neg_one_pow_mul_convErr_pos (h : ¬(of ξ).TerminatedAt n) :
-    0 < (-1) ^ n * ξ.convErr n := by
-  rw [convErr_eq_convDen_mul_sub_convergent, ← convs_eq_convergent, mul_left_comm]
-  exact mul_pos (by exact_mod_cast convDen_pos ξ n) (neg_one_pow_mul_sub_convs_pos h)
+    0 < (-1) ^ n * ξ.convErr n :=
+  neg_one_pow_mul_den_convergent_mul_sub_num_convergent_pos ξ h
 
 /-- The error vanishes exactly when the expansion has terminated. -/
-theorem convErr_eq_zero_iff : ξ.convErr n = 0 ↔ (of ξ).TerminatedAt n := by
-  refine ⟨fun h ↦ by_contra fun ht ↦ (neg_one_pow_mul_convErr_pos ht).ne' (by rw [h, mul_zero]),
-    fun h ↦ ?_⟩
-  rw [convErr_eq_convDen_mul_sub_convergent, ← convs_eq_convergent,
-    ← of_correctness_of_terminatedAt h, sub_self, mul_zero]
+theorem convErr_eq_zero_iff : ξ.convErr n = 0 ↔ (of ξ).TerminatedAt n :=
+  ⟨fun h ↦ by_contra fun ht ↦ (neg_one_pow_mul_convErr_pos ht).ne' (by rw [h, mul_zero]),
+    den_convergent_mul_sub_num_convergent_eq_zero ξ⟩
 
 /-- The absolute error is `(-1) ^ n (qₙ ξ - pₙ)`; this holds after termination too, where both
 sides vanish. -/
 theorem abs_convErr (ξ : ℝ) (n : ℕ) : |ξ.convErr n| = (-1) ^ n * ξ.convErr n := by
-  have hnonneg : 0 ≤ (-1) ^ n * ξ.convErr n := by
-    by_cases h : (of ξ).TerminatedAt n
-    · rw [convErr_eq_zero_iff.2 h, mul_zero]
-    · exact (neg_one_pow_mul_convErr_pos h).le
+  have hnonneg : 0 ≤ (-1) ^ n * ξ.convErr n :=
+    neg_one_pow_mul_den_convergent_mul_sub_num_convergent_nonneg ξ n
   rw [← abs_of_nonneg hnonneg, abs_mul, abs_neg_one_pow, one_mul]
 
 /-- **Alternation of the convergents.** Before termination, the error `qₙ ξ - pₙ` is positive
