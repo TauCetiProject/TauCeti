@@ -18,6 +18,7 @@ import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.ZMod.Ico
 
 /-!
 # Kontsevich's finite polylogarithm and the residue dilogarithm
@@ -83,19 +84,16 @@ theorem finitePolylog_def (n : ℤ) :
     finitePolylog p n = ∑ k ∈ Ico 1 p, C ((k : ZMod p) ^ n)⁻¹ * X ^ k :=
   (rfl)
 
-/-- The residues `1, …, p - 1` are nonzero in `𝔽_p`. -/
-private lemma natCast_ne_zero_of_mem_Ico {k : ℕ} (hk : k ∈ Ico 1 p) : (k : ZMod p) ≠ 0 := by
-  rw [mem_Ico] at hk
-  rw [Ne, ZMod.natCast_eq_zero_iff]
-  exact Nat.not_dvd_of_pos_of_lt hk.1 hk.2
-
-private lemma two_ne_zero_of_ne_two (hp2 : p ≠ 2) : (2 : ZMod p) ≠ 0 :=
-  Ring.two_ne_zero (by rwa [ZMod.ringChar_zmod_n])
-
 theorem coeff_finitePolylog (n : ℤ) (k : ℕ) :
     (finitePolylog p n).coeff k = if k ∈ Ico 1 p then ((k : ZMod p) ^ n)⁻¹ else 0 := by
   simp only [finitePolylog_def, finsetSum_coeff, coeff_C_mul_X_pow]
   exact sum_ite_eq _ _ _
+
+/-- Evaluating `li_{n,p}` in an algebra over `𝔽_p`. -/
+theorem aeval_finitePolylog {A : Type*} [Semiring A] [Algebra (ZMod p) A] (n : ℤ) (x : A) :
+    aeval x (finitePolylog p n) =
+      ∑ k ∈ Ico 1 p, algebraMap (ZMod p) A ((k : ZMod p) ^ n)⁻¹ * x ^ k := by
+  simp [finitePolylog_def, aeval_def]
 
 theorem eval_finitePolylog (n : ℤ) (x : ZMod p) :
     (finitePolylog p n).eval x = ∑ k ∈ Ico 1 p, ((k : ZMod p) ^ n)⁻¹ * x ^ k := by
@@ -111,10 +109,10 @@ theorem X_mul_derivative_finitePolylog (n : ℤ) :
     X * derivative (finitePolylog p n) = finitePolylog p (n - 1) := by
   rw [finitePolylog_def, finitePolylog_def, derivative_sum, mul_sum]
   refine sum_congr rfl fun k hk ↦ ?_
-  have hk0 := natCast_ne_zero_of_mem_Ico hk
-  have hk1 : 1 ≤ k := (mem_Ico.1 hk).1
-  rw [derivative_C_mul_X_pow, zpow_sub_one₀ hk0, mul_inv, inv_inv, ← mul_assoc, mul_comm X,
-    mul_assoc, ← pow_succ', Nat.sub_add_cancel hk1]
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' (mem_Ico.1 hk).1
+  rw [derivative_C_mul_X_pow, zpow_sub_one₀ (ZMod.natCast_ne_zero_of_mem_Ico hk), mul_inv, inv_inv,
+    Nat.add_sub_cancel]
+  ring
 
 /-- The finite polylogarithm has degree `p - 1`. -/
 theorem natDegree_finitePolylog (n : ℤ) : (finitePolylog p n).natDegree = p - 1 := by
@@ -128,7 +126,7 @@ theorem natDegree_finitePolylog (n : ℤ) : (finitePolylog p n).natDegree = p - 
     omega
   · have hmem : p - 1 ∈ Ico 1 p := by rw [mem_Ico]; omega
     rw [coeff_finitePolylog, ite_eq_left hmem]
-    exact inv_ne_zero (zpow_ne_zero _ (natCast_ne_zero_of_mem_Ico hmem))
+    exact inv_ne_zero (zpow_ne_zero _ (ZMod.natCast_ne_zero_of_mem_Ico hmem))
 
 /-- The value `li_{n,p}(1) = ∑_{k=1}^{p-1} k ^ (-n)` is `-1` if `p - 1 ∣ n` and `0` otherwise. -/
 theorem eval_one_finitePolylog (n : ℤ) :
@@ -139,31 +137,17 @@ theorem eval_one_finitePolylog (n : ℤ) :
   have hd0 : (p : ℤ) - 1 ≠ 0 := by have := hp.out.two_le; omega
   set m := ((-n) % ((p : ℤ) - 1)).toNat
   have hm' : (m : ℤ) = (-n) % ((p : ℤ) - 1) := Int.toNat_of_nonneg (Int.emod_nonneg _ hd0)
-  have hunit : ∀ u : (ZMod p)ˣ, ((u : ZMod p) ^ n)⁻¹ = (u : ZMod p) ^ m := by
-    intro u
-    rw [← Units.val_zpow_eq_zpow_val, ← Units.val_inv_eq_inv_val, ← zpow_neg,
-      zpow_eq_zpow_emod' (-n) (ZMod.units_pow_card_sub_one_eq_one p u), hd, ← hm',
-      zpow_natCast, Units.val_pow_eq_pow_val]
-  have hsum : ∑ k ∈ Ico 1 p, ((k : ZMod p) ^ n)⁻¹ = ∑ u : (ZMod p)ˣ, (u : ZMod p) ^ m := by
-    refine sum_bij' (fun k hk ↦ Units.mk0 (k : ZMod p) (natCast_ne_zero_of_mem_Ico hk))
-      (fun u _ ↦ (u : ZMod p).val) (fun _ _ ↦ mem_univ _) ?_ ?_ ?_ ?_
-    · intro u _
-      rw [mem_Ico]
-      refine ⟨Nat.pos_of_ne_zero fun h ↦ u.ne_zero ?_, ZMod.val_lt _⟩
-      rwa [ZMod.val_eq_zero] at h
-    · intro k hk
-      simp [ZMod.val_natCast, Nat.mod_eq_of_lt (mem_Ico.1 hk).2]
-    · intro u _
-      ext
-      simp
-    · intro k hk
-      rw [← hunit, Units.val_mk0]
+  have hunit (u : (ZMod p)ˣ) : ((u : ZMod p) ^ n)⁻¹ = (u : ZMod p) ^ m := by
+    have h := zpow_eq_zpow_emod' (-n) (ZMod.units_pow_card_sub_one_eq_one p u)
+    rw [hd, ← hm', zpow_natCast, zpow_neg] at h
+    exact_mod_cast h
   rw [eval_finitePolylog]
   simp only [one_pow, mul_one]
-  rw [hsum, FiniteField.sum_pow_units, ZMod.card]
+  rw [ZMod.sum_Ico_one_natCast_eq_sum_units fun x ↦ (x ^ n)⁻¹]
+  simp only [hunit]
+  rw [FiniteField.sum_pow_units, ZMod.card]
   congr 1
-  rw [← Int.natCast_dvd_natCast, hd, hm', Int.dvd_iff_emod_eq_zero, Int.emod_emod,
-    ← Int.dvd_iff_emod_eq_zero, Int.dvd_neg]
+  simp [← Int.natCast_dvd_natCast, hd, hm', Int.emod_def, dvd_sub_left]
 
 /-- At `-1`, the finite polylogarithm of even index vanishes for odd `p`: the terms for `k` and
 `p - k` cancel. -/
@@ -187,7 +171,8 @@ theorem eval_neg_one_finitePolylog (hp2 : p ≠ 2) {n : ℤ} (hn : Even n) :
       - ((k : ZMod p) ^ n)⁻¹ * (-1) ^ (p - k) * hk
   have : (2 : ZMod p) * ∑ k ∈ Ico 1 p, ((k : ZMod p) ^ n)⁻¹ * (-1) ^ k = 0 := by
     linear_combination hrefl
-  exact (mul_eq_zero.1 this).resolve_left (two_ne_zero_of_ne_two hp2)
+  exact (mul_eq_zero.1 this).resolve_left
+    (mod_cast CharP.cast_ne_zero_of_ne_of_prime (ZMod p) Nat.prime_two hp2)
 
 /-- For `p > 3`, `1` is a double root of the finite dilogarithm `li_{2,p}`. -/
 theorem sq_X_sub_one_dvd_finitePolylog_two (hp3 : 3 < p) : (X - 1) ^ 2 ∣ finitePolylog p 2 := by
@@ -195,19 +180,17 @@ theorem sq_X_sub_one_dvd_finitePolylog_two (hp3 : 3 < p) : (X - 1) ^ 2 ∣ finit
     have := natDegree_finitePolylog (p := p) 2
     rw [h, natDegree_zero] at this
     omega
+  -- Neither `li_{2,p}(1)` nor `li_{1,p}(1)` sees a multiple of `p - 1`.
+  have hnd {m : ℤ} (hm0 : 0 < m) (hm : m ≤ 2) : ¬(p : ℤ) - 1 ∣ m := fun hd ↦ by
+    have := Int.le_of_dvd hm0 hd
+    omega
   have hroot : 1 < (finitePolylog p 2).rootMultiplicity 1 := by
     rw [one_lt_rootMultiplicity_iff_isRoot hne, IsRoot, IsRoot, eval_one_finitePolylog,
-      ite_eq_right]
-    · refine ⟨rfl, ?_⟩
-      have h := congrArg (eval 1) (X_mul_derivative_finitePolylog (p := p) 2)
-      rw [eval_mul, eval_X, one_mul] at h
-      rw [h, eval_one_finitePolylog, ite_eq_right]
-      intro hd
-      have := Int.le_of_dvd (by norm_num) hd
-      omega
-    · intro hd
-      have := Int.le_of_dvd (by norm_num) hd
-      omega
+      ite_eq_right (hnd (by norm_num) le_rfl)]
+    refine ⟨rfl, ?_⟩
+    have h := congrArg (eval 1) (X_mul_derivative_finitePolylog (p := p) 2)
+    rw [eval_mul, eval_X, one_mul] at h
+    rw [h, eval_one_finitePolylog, ite_eq_right (hnd (by norm_num) (by norm_num))]
   simpa using (pow_dvd_pow (X - C 1) hroot).trans (pow_rootMultiplicity_dvd _ 1)
 
 variable (p) in
@@ -232,18 +215,19 @@ theorem natDegree_finiteDilogCofactor : (finiteDilogCofactor p).natDegree = p - 
 
 /-- `g_p(1) = -1/2`: the finite dilogarithm has a root of multiplicity exactly two at `1`. -/
 theorem eval_one_finiteDilogCofactor (hp3 : 3 < p) : (finiteDilogCofactor p).eval 1 = -2⁻¹ := by
-  have h2 := two_ne_zero_of_ne_two (p := p) (by omega)
-  -- Differentiate `X * li_{2,p}' = li_{1,p}` and `X * li_{1,p}' = li_{0,p}`, and evaluate at `1`.
-  have h21 := X_mul_derivative_finitePolylog (p := p) 2
-  have h10 := X_mul_derivative_finitePolylog (p := p) 1
-  norm_num at h21 h10
-  have e10 := congrArg (eval 1) h10
-  have d21 := congrArg (fun q ↦ eval 1 (derivative q)) h21
-  simp only [eval_mul, eval_X, one_mul, derivative_mul, derivative_X, eval_add] at e10 d21
-  rw [eval_one_finitePolylog, ite_eq_left (dvd_zero _)] at e10
-  -- Substituting `li_{2,p} = (X - 1) ^ 2 * g_p`, the left side of `d21` becomes `2 g_p(1)`.
-  rw [← sq_X_sub_one_mul_finiteDilogCofactor hp3] at d21
-  simp [derivative_mul, derivative_pow] at d21
+  have h2 : (2 : ZMod p) ≠ 0 :=
+    mod_cast CharP.cast_ne_zero_of_ne_of_prime (ZMod p) Nat.prime_two (by omega : p ≠ 2)
+  -- Evaluating `X * li_{1,p}' = li_{0,p}` at `1` gives `li_{1,p}'(1) = li_{0,p}(1) = -1`.
+  have e10 : eval 1 (derivative (finitePolylog p 1)) = -1 := by
+    have h := congrArg (eval 1) (X_mul_derivative_finitePolylog (p := p) 1)
+    rwa [eval_mul, eval_X, one_mul, sub_self, eval_one_finitePolylog,
+      ite_eq_left (dvd_zero _)] at h
+  -- Differentiating `X * li_{2,p}' = li_{1,p}` with `li_{2,p} = (X - 1) ^ 2 * g_p` and evaluating
+  -- at `1`, the left side becomes `2 g_p(1)`.
+  have d21 : 2 * eval 1 (finiteDilogCofactor p) = eval 1 (derivative (finitePolylog p 1)) := by
+    have h := congrArg (fun q ↦ eval 1 (derivative q)) (X_mul_derivative_finitePolylog (p := p) 2)
+    rw [← sq_X_sub_one_mul_finiteDilogCofactor hp3, show (2 : ℤ) - 1 = 1 by norm_num] at h
+    simpa [derivative_mul, derivative_pow] using h
   field_simp
   linear_combination d21 + e10
 
@@ -270,6 +254,7 @@ theorem residueDilogValue_zero : residueDilogValue p (0 : F) = 0 := by
 theorem residueDilogValue_one : residueDilogValue p (1 : F) = 0 := by
   rw [residueDilogValue_def, sub_self, zero_pow hp.out.ne_zero, div_zero]
 
+@[simp]
 theorem residueDilogValue_neg_one : residueDilogValue p (-1 : F) = 0 := by
   rcases eq_or_ne p 2 with rfl | hp2
   · -- In characteristic `2`, `-1 = 1`.
@@ -309,13 +294,14 @@ private lemma card_filter_residueDilogValue_eq_le [DecidableEq F] (hp3 : 3 < p) 
       sub_self, zero_pow (show p - 2 ≠ 0 by omega), mul_zero, sub_zero, eval_zero] at h1
     rw [← map_one (algebraMap (ZMod p) F), aeval_algebraMap_apply_eq_algebraMap_eval,
       eval_one_finiteDilogCofactor hp3, map_eq_zero_iff _ (algebraMap (ZMod p) F).injective] at h1
-    simp [two_ne_zero_of_ne_two (p := p) (by omega)] at h1
+    simp only [neg_eq_zero, inv_eq_zero] at h1
+    exact CharP.cast_ne_zero_of_ne_of_prime (ZMod p) Nat.prime_two (by omega) (mod_cast h1)
   refine card_le_degree_of_subset_roots fun x hx ↦ ?_
   rw [mem_val, mem_filter] at hx
   have hx1 : x ≠ 1 := fun h ↦ hs (h ▸ hx.1)
-  rw [mem_roots hP, IsRoot, eval_sub, eval_map_algebraMap, eval_mul, eval_C, eval_pow, eval_sub,
-    eval_X, eval_one, sub_eq_zero, ← div_eq_iff (pow_ne_zero _ (sub_ne_zero.2 hx1)),
-    ← residueDilogValue_eq_div hp3 hx1, hx.2]
+  have hy := hx.2
+  rw [residueDilogValue_eq_div hp3 hx1, div_eq_iff (pow_ne_zero _ (sub_ne_zero.2 hx1))] at hy
+  simp [P, mem_roots hP, hy]
 
 variable [Finite F]
 
@@ -377,10 +363,9 @@ theorem span_residueDilogValue_eq_top (hp3 : 3 < p) :
 theorem span_residueDilogValue_sub_eq_top (hp3 : 3 < p) :
     Submodule.span (ZMod p) (Set.image2 (fun x x' ↦ residueDilogValue p x - residueDilogValue p x')
       ({0, 1}ᶜ : Set F) {0, 1}ᶜ) = ⊤ := by
-  have h2 : (2 : F) ≠ 0 := by
-    rw [← map_ofNat (algebraMap (ZMod p) F) 2]
-    exact (map_ne_zero_iff _ (algebraMap (ZMod p) F).injective).2
-      (two_ne_zero_of_ne_two (by omega))
+  have hp2 : p ≠ 2 := by omega
+  have : CharP F p := charP_of_injective_algebraMap' (ZMod p) p
+  have h2 : (2 : F) ≠ 0 := mod_cast CharP.cast_ne_zero_of_ne_of_prime F Nat.prime_two hp2
   have hneg : (-1 : F) ∈ ({0, 1}ᶜ : Set F) := by
     simp only [Set.mem_compl_iff, Set.mem_insert_iff, Set.mem_singleton_iff, not_or, neg_eq_zero,
       one_ne_zero, not_false_eq_true, true_and]
