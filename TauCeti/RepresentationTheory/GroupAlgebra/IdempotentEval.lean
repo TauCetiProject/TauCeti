@@ -40,12 +40,13 @@ variable {O H G : Type*} [CommRing O] [CommGroup H] [Fintype H] [CommGroup G]
 
 /-- When `#H` is a unit in `O`, a character `χ` evaluates to `1` on its own character idempotent
 `e_χ`. No domain hypothesis on `O` is required. -/
-theorem charEval_charIdempotent_self (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) :
+@[simp]
+theorem charEval_charIdempotent_self (hH : IsUnit (Fintype.card H : O)) (χ : H →* Oˣ) :
     χ.charEval (TauCeti.charIdempotent χ) = 1 := by
   let := Fintype.ofFinite (⊤ : Subgroup H)
   rw [TauCeti.charIdempotent_eq_smul_subgroupCharSum, map_smul,
     MonoidHom.charEval_subgroupCharSum_of_le_ker χ⁻¹ χ ⊤ (fun h _ ↦ by simp [MonoidHom.mem_ker]),
-    Subgroup.card_top, smul_eq_mul, Ring.inverse_mul_cancel _ hH]
+    Subgroup.card_top, smul_eq_mul, Nat.card_eq_fintype_card, Ring.inverse_mul_cancel _ hH]
 
 /-- Over a domain, a character `ψ` vanishes on the character idempotent `e_χ` of any distinct
 character `χ ≠ ψ`. No unit hypothesis on `#H` is required. -/
@@ -64,7 +65,7 @@ theorem charEval_charIdempotent [IsDomain O] [DecidableEq (H →* Oˣ)]
     ψ.charEval (TauCeti.charIdempotent χ) = if χ = ψ then 1 else 0 := by
   split_ifs with h
   · subst h
-    exact charEval_charIdempotent_self hH χ
+    exact charEval_charIdempotent_self (Nat.card_eq_fintype_card (α := H) ▸ hH) χ
   · exact charEval_charIdempotent_of_ne h
 
 omit [Fintype H] in

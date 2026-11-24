@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.RingTheory.Filtration
+import Mathlib.Tactic.LinearCombination
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Finite
 
 /-!
@@ -94,7 +95,8 @@ theorem mem_range_algebraMap_of_pow_eq_of_isUnit [IsNoetherianRing R] [Module.Fi
       refine ⟨c + (u - c ^ n) * c₁, ?_⟩
       have : s - algebraMap R S (c + (u - c ^ n) * c₁) =
           algebraMap R S (u - c ^ n) * (w - algebraMap R S c₁) := by
-        rw [map_add, map_mul, ← sub_sub, hw, mul_sub]
+        rw [map_add, map_mul]
+        linear_combination hw
       rw [this, pow_succ]
       exact Ideal.mul_mem_mul ht hc₁
   -- The class of `s` in `S ⧸ R` lies in every `𝔪(R)ᵏ (S ⧸ R)`, so it vanishes by Krull.

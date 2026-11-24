@@ -50,7 +50,8 @@ variable {O G : Type*} [CommRing O] [CommGroup G] {P H : Subgroup G}
 theorem componentProj_mapDomainAlgHom_charIdempotent_self [Fintype H] (hPH : P.IsComplement' H)
     (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) :
     componentProj hPH χ (mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)) = 1 := by
-  rw [componentProj_mapDomainAlgHom_right, χ.charEval_charIdempotent_self hH, map_one]
+  rw [componentProj_mapDomainAlgHom_right,
+    χ.charEval_charIdempotent_self (Nat.card_eq_fintype_card (α := H) ▸ hH), map_one]
 
 /-- Multiplying any `x ∈ O[G]` by the embedded character idempotent `e_χ` agrees with multiplying
 the `P`-component lift `componentProj hPH χ x` by `e_χ`. -/

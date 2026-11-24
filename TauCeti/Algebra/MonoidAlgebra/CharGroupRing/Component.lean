@@ -123,7 +123,7 @@ theorem one_sub_charIdempotent_mem_ker_proj (H : Subgroup G) [Fintype H]
   rw [RingHom.mem_ker, proj_eq_zero_iff]
   intro ψ hψ
   rw [map_sub, map_one, MonoidAlgebra.mapDomainAlgHom_apply, ψ.charEval_mapDomain, hψ,
-    χ.charEval_charIdempotent_self hH, sub_self]
+    χ.charEval_charIdempotent_self (Nat.card_eq_fintype_card (α := H) ▸ hH), sub_self]
 
 section DomainNoFin
 
@@ -167,7 +167,7 @@ theorem ker_proj_eq_span_one_sub_charIdempotent (H : Subgroup G) [Fintype H]
             (MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ) * x) = 0 := by
           rw [hx, map_zero]
         rw [map_mul, MonoidAlgebra.mapDomainAlgHom_apply, ψ.charEval_mapDomain, hψ,
-          χ.charEval_charIdempotent_self hH, one_mul] at h0
+          χ.charEval_charIdempotent_self (Nat.card_eq_fintype_card (α := H) ▸ hH), one_mul] at h0
         exact h0
 
 /-- **Idempotent corner description of a character component**: for a finite commutative group `G`,
@@ -238,10 +238,7 @@ noncomputable def piComponentAlgEquiv (H : Subgroup G)
 theorem piComponentAlgEquiv_apply (H : Subgroup G) (hH : IsUnit (Nat.card H : O))
     (x : MonoidAlgebra O G) (χ : H →* Oˣ) :
     piComponentAlgEquiv H hH x χ = proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ} x := by
-  rw [piComponentAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.piCongrRight_apply,
-    AlgEquiv.ofBijective_apply, AlgHom.pi_apply, AlgEquiv.trans_apply,
-    Ideal.Quotient.mkₐ_eq_mk, Ideal.quotientEquivAlgOfEq_mk,
-    Ideal.quotientKerAlgEquivOfSurjective_mk]
+  simp [piComponentAlgEquiv]
 
 /-- Projecting `(piComponentAlgEquiv H hH).symm f` onto the `χ`-component recovers `f χ`. -/
 @[simp]
