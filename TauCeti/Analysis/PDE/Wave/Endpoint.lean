@@ -131,7 +131,6 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
     ∃ K : ℝ≥0, ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
       m =ᵐ[volume] (fun ξ ↦ ψ (((2 : ℝ) ^ j)⁻¹ • ξ)) →
       ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
-      Integrable (fun s ↦ Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-s) (F s))) →
         ‖∫ s, Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-s) (F s))‖ₑ ≤
           K * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (((Module.finrank ℝ E : ℝ) + 1) /
             ((Module.finrank ℝ E : ℝ) - 1) / 4)) *
@@ -156,7 +155,7 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
     (by norm_num)
     (by rw [← NNReal.holderConjugate_coe_iff, Real.holderConjugate_iff]; norm_num)
     (le_of_eq (by rw [← hn_def, hr₄inv]; push_cast; field_simp; ring))
-  refine ⟨K, fun j m hm F hF hPF ↦ (hK j m hm F hF hPF).trans_eq ?_⟩
+  refine ⟨K, fun j m hm F hF ↦ (hK j m hm F hF).trans_eq ?_⟩
   rw [← hn_def, hr₄inv, show n / 2 - n * (2⁻¹ - (2 * (n - 1))⁻¹) - 1 / ((4 : ℝ≥0) : ℝ) =
     (n + 1) / (n - 1) / 4 by push_cast; field_simp; ring]
 
@@ -166,21 +165,15 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
 private theorem enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_mul_le {c κ : ℝ}
     (hc : 0 < c) {b : ℝ≥0∞} {K : ℝ≥0} {m : Lp ℂ ∞ (volume : Measure E)}
     (hK : ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
-      Integrable (fun s ↦ Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-s) (F s))) →
         ‖∫ s, Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-s) (F s))‖ₑ ≤
           K * ENNReal.ofReal (c ^ (κ / 4)) *
             eLpNorm (fun s ↦ eLpNorm (F s) b volume) ((4 / 3 : ℝ≥0) : ℝ≥0∞) volume)
-    {G : ℝ → Lp ℂ 2 (volume : Measure E)} (hG : AEStronglyMeasurable G)
-    (hVG : Integrable fun t ↦
-      Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-(c ^ κ * t)) (G t))) :
+    {G : ℝ → Lp ℂ 2 (volume : Measure E)} (hG : AEStronglyMeasurable G) :
     ‖∫ t, Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-(c ^ κ * t)) (G t))‖ₑ ≤
       K * eLpNorm (fun t ↦ eLpNorm (G t) b volume) ((4 / 3 : ℝ≥0) : ℝ≥0∞) volume := by
   have hμ : 0 < c ^ κ := Real.rpow_pos_of_pos hc κ
   have hμ' : (c ^ κ)⁻¹ ≠ 0 := inv_ne_zero hμ.ne'
   -- The substituted forcing `G ((c^κ)⁻¹ ·)`.
-  have hint : Integrable fun s ↦ Lp.fourierMultiplierCLM ℂ (star m)
-      (halfWavePropagator ℂ (-s) (G ((c ^ κ)⁻¹ * s))) := by
-    simpa only [← mul_assoc, mul_inv_cancel₀ hμ.ne', one_mul] using hVG.comp_mul_left' hμ'
   rw [show (∫ t, Lp.fourierMultiplierCLM ℂ (star m) (halfWavePropagator ℂ (-(c ^ κ * t)) (G t))) =
       |(c ^ κ)⁻¹| • ∫ s, Lp.fourierMultiplierCLM ℂ (star m)
         (halfWavePropagator ℂ (-s) (G ((c ^ κ)⁻¹ * s))) by
@@ -190,7 +183,7 @@ private theorem enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_mul_l
     ((4 / 3 : ℝ≥0) : ℝ≥0∞)
   simp only [smul_eq_mul, Module.finrank_self, Nat.cast_one, abs_of_pos hμ] at hdil
   refine (mul_le_mul_of_nonneg_left (hK (fun s ↦ G ((c ^ κ)⁻¹ * s))
-    (hG.comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_smul volume hμ')) hint)
+    (hG.comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_smul volume hμ')))
       zero_le).trans_eq ?_
   rw [hdil, abs_inv, abs_of_pos hμ, Real.eNorm_eq_ofReal (inv_nonneg.2 hμ.le),
     show (1 : ℝ) / ((4 / 3 : ℝ≥0) : ℝ≥0∞).toReal = 3 / 4 by norm_num]
@@ -298,10 +291,10 @@ private theorem exists_enorm_integral_fourierMultiplierCLM_halfWavePropagator_ne
         (norm_halfWavePropagator_comp_fourierMultiplierCLM_le (B := B)
           (hm.mono fun ξ h ↦ h ▸ hB _) _))
     (hA j m hm)
-    (fun G hG hVG ↦ by
-      simp_rw [hV] at hVG ⊢
+    (fun G hG _ ↦ by
+      simp_rw [hV]
       exact enorm_integral_fourierMultiplierCLM_halfWavePropagator_neg_mul_le
-        (zpow_pos two_pos j) (hK j m hm) hG hVG)
+        (zpow_pos two_pos j) (hK j m hm) hG)
     (fun G hG ↦ by
       simp_rw [hV, halfWavePropagator_def]
       exact (Lp.fourierMultiplierCLM ℂ (star m)).continuous.comp_aestronglyMeasurable
