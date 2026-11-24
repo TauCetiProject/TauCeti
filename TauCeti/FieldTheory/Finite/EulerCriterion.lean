@@ -37,6 +37,8 @@ characteristic two where every element is already a square).
   `n`-th powers in a finite field.
 * `TauCeti.FiniteField.pow_card_div_two_eq_neg_one`: a nonsquare `r` satisfies
   `r ^ (#F / 2) = -1`.
+* `TauCeti.FiniteField.card_sub_one_dvd_card_sub_one`: in a finite extension `F'/F` of finite
+  fields, `#F - 1 ∣ #F' - 1`.
 * `TauCeti.FiniteField.algebraMap_pow_card_sub_one_div`: for `n ∣ #F - 1`, raising `a ∈ F` to the
   Euler exponent `(#F' - 1) / n` in a finite extension `F'/F` agrees with raising
   `a ^ ((#F - 1) / n)` to the extension degree `[F' : F]`.
@@ -97,6 +99,15 @@ section Extension
 
 variable {F F' : Type*} [Field F] [Field F'] [Finite F'] [Algebra F F']
 
+variable (F F') in
+/-- In a finite extension `F'/F` of finite fields, `#F - 1` divides `#F' - 1`, since
+`#F' = #F ^ [F' : F]`. -/
+theorem card_sub_one_dvd_card_sub_one : Nat.card F - 1 ∣ Nat.card F' - 1 := by
+  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
+  have : Module.Finite F F' := .of_finite
+  rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
+  exact Nat.sub_one_dvd_pow_sub_one _ _
+
 /-- In a finite extension `F'/F` of finite fields with `n ∣ #F - 1`, raising `a ∈ F` to the Euler
 exponent `(#F' - 1) / n` in `F'` agrees with raising `a ^ ((#F - 1) / n)` to the extension degree
 `[F' : F]`. -/
@@ -105,9 +116,7 @@ theorem algebraMap_pow_card_sub_one_div {n : ℕ} (hn : n ∣ Nat.card F - 1) (a
       algebraMap F F' ((a ^ ((Nat.card F - 1) / n)) ^ Module.finrank F F') := by
   have : Finite F := Finite.of_injective _ (algebraMap F F').injective
   have : Module.Finite F F' := .of_finite
-  have hq : Nat.card F - 1 ∣ Nat.card F' - 1 := by
-    rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
-    exact Nat.sub_one_dvd_pow_sub_one _ _
+  have hq := card_sub_one_dvd_card_sub_one F F'
   have hdiv : (Nat.card F' - 1) / n =
       (Nat.card F - 1) / n * ((Nat.card F' - 1) / (Nat.card F - 1)) := by
     rw [Nat.div_mul_right_comm hn, Nat.mul_div_cancel' hq]
@@ -120,11 +129,7 @@ theorem exists_pow_eq_algebraMap_iff_pow_finrank_eq_one {n : ℕ} (hn : n ∣ Na
     {a : F} (ha : a ≠ 0) :
     (∃ b : F', b ^ n = algebraMap F F' a) ↔
       (a ^ ((Nat.card F - 1) / n)) ^ Module.finrank F F' = 1 := by
-  have : Finite F := Finite.of_injective _ (algebraMap F F').injective
-  have : Module.Finite F F' := .of_finite
-  have hn' : n ∣ Nat.card F' - 1 := by
-    rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
-    exact dvd_trans hn (Nat.sub_one_dvd_pow_sub_one _ _)
+  have hn' : n ∣ Nat.card F' - 1 := hn.trans (card_sub_one_dvd_card_sub_one F F')
   rw [exists_pow_eq_iff_pow_card_sub_one_div_eq_one hn'
       ((map_ne_zero_iff _ (algebraMap F F').injective).mpr ha),
     algebraMap_pow_card_sub_one_div hn, map_eq_one_iff _ (algebraMap F F').injective]
@@ -138,11 +143,8 @@ theorem norm_eq_one_iff_exists_pow_eq {a : F'} (ha : a ≠ 0) :
     Algebra.norm F a = 1 ↔ ∃ b : F', b ^ (Nat.card F - 1) = a := by
   have : Finite F := Finite.of_injective _ (algebraMap F F').injective
   have : Module.Finite F F' := .of_finite
-  have hq : Nat.card F - 1 ∣ Nat.card F' - 1 := by
-    rw [Module.natCard_eq_pow_finrank (K := F) (V := F')]
-    exact Nat.sub_one_dvd_pow_sub_one _ _
-  rw [exists_pow_eq_iff_pow_card_sub_one_div_eq_one hq ha, ← FiniteField.algebraMap_norm_eq_pow,
-    map_eq_one_iff _ (algebraMap F F').injective]
+  rw [exists_pow_eq_iff_pow_card_sub_one_div_eq_one (card_sub_one_dvd_card_sub_one F F') ha,
+    ← FiniteField.algebraMap_norm_eq_pow, map_eq_one_iff _ (algebraMap F F').injective]
 
 /-- **Criterion for `p`-th powers in a finite field extension.** For a prime `p`, an element
 `a ∈ F` becomes a `p`-th power in a finite extension `F'/F` of finite fields if and only if either

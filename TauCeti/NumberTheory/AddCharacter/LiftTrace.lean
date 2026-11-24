@@ -130,13 +130,8 @@ variable (E) in
 /-- For a finite separable extension of fields, the lift of a primitive additive character through
 the trace is primitive. -/
 theorem IsPrimitive.liftTrace {ψ : AddChar F R} (hψ : ψ.IsPrimitive) :
-    (ψ.liftTrace E).IsPrimitive := by
-  intro b hb h
-  -- The lift of `ψ` is nontrivial, so its shift by the unit `b` is nontrivial too.
-  have h1 : ψ.liftTrace E ≠ 1 := liftTrace_eq_one_iff.not.2 fun h1 ↦ hψ one_ne_zero (by simp [h1])
-  refine h1 (ext _ _ fun x ↦ ?_)
-  simpa only [mulShift_apply, mul_inv_cancel_left₀ hb, one_apply] using
-    DFunLike.congr_fun h (b⁻¹ * x)
+    (ψ.liftTrace E).IsPrimitive :=
+  IsPrimitive.of_ne_one (liftTrace_eq_one_iff.not.2 fun h1 ↦ hψ one_ne_zero (by simp [h1]))
 
 end Field
 

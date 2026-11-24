@@ -223,14 +223,12 @@ the power `#E / 2`. -/
 private theorem card_div_two_eq (hF : ringChar F ≠ 2) :
     Fintype.card E / 2 =
       (Fintype.card E - 1) / (Fintype.card F - 1) * (Fintype.card F / 2) := by
-  have : Module.Finite F E := .of_finite
   have hq := FiniteField.odd_card_of_char_ne_two hF
   have hq1 : 1 < Fintype.card F := Fintype.one_lt_card
   have hpos : 0 < Fintype.card E := Fintype.card_pos
   obtain ⟨m, hm⟩ : Fintype.card F - 1 ∣ Fintype.card E - 1 := by
-    rw [Fintype.card_eq_nat_card, Fintype.card_eq_nat_card,
-      Module.natCard_eq_pow_finrank (K := F) (V := E)]
-    exact Nat.sub_one_dvd_pow_sub_one _ _
+    simpa only [Fintype.card_eq_nat_card] using
+      TauCeti.FiniteField.card_sub_one_dvd_card_sub_one F E
   have h2 : Fintype.card F - 1 = 2 * (Fintype.card F / 2) := by omega
   rw [hm, Nat.mul_div_cancel_left _ (by omega)]
   rw [h2] at hm
@@ -246,6 +244,7 @@ variable [DecidableEq F] [DecidableEq E]
 finite fields, the quadratic character of `F` composed with the norm is the quadratic character
 of `E`: a nonzero `x ∈ E` is a square exactly when its norm is a square in `F`. In characteristic
 two both characters are trivial. -/
+@[simp]
 theorem liftNorm_quadraticChar : (quadraticChar F).liftNorm E = quadraticChar E := by
   have : Module.Finite F E := .of_finite
   ext x
