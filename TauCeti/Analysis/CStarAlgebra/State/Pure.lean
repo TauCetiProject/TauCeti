@@ -26,8 +26,10 @@ point of the state space.
 
 ## Main results
 
-* `TauCeti.apply_mul_eq_zero_of_apply_star_mul_eq_zero`: a state vanishing at `b⋆ b` kills `a b`.
-* `TauCeti.apply_mul_eq_zero_of_apply_mul_star_eq_zero`: a state vanishing at `b b⋆` kills `b a`.
+* `PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero`: a positive linear functional
+  vanishing at `b⋆ b` kills `a b`.
+* `PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero`: a positive linear functional
+  vanishing at `b b⋆` kills `b a`.
 * `TauCeti.eq_of_mem_stateSpace_of_apply_one_sub_eq_zero`: a state vanishing at `1 - p` is `ω`.
 * `TauCeti.mem_extremePoints_stateSpace_of_mul_mul_eq_smul`: `ω` is an extreme point of the state
   space.
@@ -43,30 +45,34 @@ public section
 open WeakDual
 open scoped ComplexOrder
 
+namespace PositiveLinearMap
+
+variable {A F : Type*} [NonUnitalRing A] [PartialOrder A] [StarRing A] [StarOrderedRing A]
+  [Module ℂ A] [SelfAdjointDecompose A] [StarModule ℂ A] [IsScalarTower ℂ A A]
+  [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
+
+/-- A positive linear functional that vanishes at `b⋆ b` kills every product `a * b`, by the
+Cauchy–Schwarz inequality. -/
+theorem map_mul_eq_zero_of_map_star_mul_eq_zero (f : F) {b : A} (hb : f (star b * b) = 0)
+    (a : A) : f (a * b) = 0 := by
+  have h := norm_map_star_mul_le f (star a) b
+  simp only [star_star, hb, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
+  exact h
+
+/-- A positive linear functional that vanishes at `b b⋆` kills every product `b * a`, by the
+Cauchy–Schwarz inequality. -/
+theorem map_mul_eq_zero_of_map_mul_star_eq_zero (f : F) {b : A} (hb : f (b * star b) = 0)
+    (a : A) : f (b * a) = 0 := by
+  have h := norm_map_mul_star_le f b (star a)
+  simp only [star_star, hb, norm_zero, Real.sqrt_zero, zero_mul, norm_le_zero_iff] at h
+  exact h
+
+end PositiveLinearMap
+
 namespace TauCeti
 
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {ω φ : WeakDual ℂ A}
   {p : A}
-
-/-- A state that vanishes at `b⋆ b` kills every product `a * b`, by the Cauchy–Schwarz
-inequality. -/
-theorem apply_mul_eq_zero_of_apply_star_mul_eq_zero (hφ : φ ∈ stateSpace A) {b : A}
-    (hb : φ (star b * b) = 0) (a : A) : φ (a * b) = 0 := by
-  obtain ⟨f, -, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  have hfb : f (star b * b) = 0 := by simpa using hb
-  have h := PositiveLinearMap.norm_map_star_mul_le f (star a) b
-  simp only [star_star, hfb, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
-  simpa using h
-
-/-- A state that vanishes at `b b⋆` kills every product `b * a`, by the Cauchy–Schwarz
-inequality. -/
-theorem apply_mul_eq_zero_of_apply_mul_star_eq_zero (hφ : φ ∈ stateSpace A) {b : A}
-    (hb : φ (b * star b) = 0) (a : A) : φ (b * a) = 0 := by
-  obtain ⟨f, -, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  have hfb : f (b * star b) = 0 := by simpa using hb
-  have h := PositiveLinearMap.norm_map_mul_star_le f b (star a)
-  simp only [star_star, hfb, norm_zero, Real.sqrt_zero, zero_mul, norm_le_zero_iff] at h
-  simpa using h
 
 /-- **A state supported on a minimal projection is determined.** Let `p` be a projection with
 `p a p = ω(a) p` for every `a`. A state `φ` with `φ(1 - p) = 0` is `ω`. -/
@@ -76,12 +82,19 @@ theorem eq_of_mem_stateSpace_of_apply_one_sub_eq_zero (hp : IsStarProjection p)
   have hφ1 : φ p = 1 := by
     rw [map_sub, map_one_of_mem_stateSpace hφ, sub_eq_zero] at hφp
     exact hφp.symm
+  obtain ⟨f, -, hf⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
+  have hφf (x : A) : φ x = f x := by rw [← hf]; rfl
+  have hfq : f (1 - p) = 0 := by rw [← hφf, hφp]
   refine DFunLike.ext _ _ fun a ↦ ?_
   have ha : a * p = p * a * p + (1 - p) * (a * p) := by noncomm_ring
-  have h₁ := apply_mul_eq_zero_of_apply_star_mul_eq_zero hφ
-    (by rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hφp]) a
-  have h₂ := apply_mul_eq_zero_of_apply_mul_star_eq_zero hφ
-    (by rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hφp]) (a * p)
+  have h₁ : φ (a * (1 - p)) = 0 := by
+    rw [hφf]
+    exact PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero f
+      (by rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hfq]) a
+  have h₂ : φ ((1 - p) * (a * p)) = 0 := by
+    rw [hφf]
+    exact PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero f
+      (by rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hfq]) (a * p)
   calc φ a = φ (a * p) + φ (a * (1 - p)) := by rw [← map_add, ← mul_add, add_sub_cancel, mul_one]
     _ = ω a := by rw [h₁, add_zero, ha]; simp [h₂, hpap, hφ1]
 
