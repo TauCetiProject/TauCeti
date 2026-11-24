@@ -9,9 +9,11 @@ public import TauCeti.Geometry.Manifold.Flow.Complete
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Translation
 
 /-!
@@ -1369,45 +1371,24 @@ theorem contMDiffAt_totalSpaceMk_mfderiv_timeDependentFlowOf {m n : ℕ∞} (hmn
     ContMDiffAt 𝓘(ℝ, ℝ) I.tangent m (fun u ↦ Bundle.TotalSpace.mk' E (timeDependentFlowOf X s u x)
       (mfderiv I I (timeDependentFlowOf X s u) x v)) t := by
   have hn : 1 ≤ n := le_add_self.trans hmn
-  set W := {q : ℝ × M | ((s, q.1), q.2) ∈ timeDependentFlowDomain X}
-  have hW : IsOpen W :=
-    (isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).preimage (by fun_prop)
-  have hf : ContMDiffOn (𝓘(ℝ, ℝ).prod I) I n (fun q : ℝ × M ↦ timeDependentFlowOf X s q.1 q.2)
-      W := fun q hq ↦ (contMDiffAt_uncurry_timeDependentFlowOf hn hX hq).contMDiffWithinAt
   -- The tangent vector `(0, v)` to `ℝ × M` at `(u, x)` varies smoothly with `u`.
   have hlift : ContMDiff 𝓘(ℝ, ℝ) (𝓘(ℝ, ℝ).prod I).tangent m
       (fun u : ℝ ↦ (equivTangentBundleProd 𝓘(ℝ, ℝ) ℝ I M).symm (⟨u, 0⟩, ⟨x, v⟩)) :=
     contMDiff_equivTangentBundleProd_symm.comp
       ((contMDiff_tangentBundle_mk_zero contMDiff_id).prodMk
         (contMDiff_tangentBundle_mk_constBase (v := fun _ ↦ @id E v) contMDiff_const x))
-  have hmn' : (m : WithTop ℕ∞) + 1 ≤ n := by exact_mod_cast hmn
-  have htan := ((hf.contMDiffOn_tangentMapWithin hmn' hW.uniqueMDiffOn)
-    ((equivTangentBundleProd 𝓘(ℝ, ℝ) ℝ I M).symm (⟨t, 0⟩, ⟨x, v⟩)) h).contMDiffAt
-    (((FiberBundle.continuous_proj (ℝ × E) (TangentSpace (𝓘(ℝ, ℝ).prod I) : ℝ × M → Type _)
-      ).isOpen_preimage _ hW).mem_nhds h)
-  refine (htan.comp t (hlift t)).congr_of_eventuallyEq ?_
+  -- The differential of the uncurried flow carries this lift to a `C^m` field along the trajectory.
+  refine (ContMDiffAt.mfderiv_apply_sectionAlong (contMDiffAt_uncurry_timeDependentFlowOf hn hX h)
+    (b := fun u : ℝ ↦ (u, x)) (s := fun _ ↦ ((0, v) : ℝ × E)) (hlift t)
+    (by exact_mod_cast hmn)).congr_of_eventuallyEq ?_
+  have hW : IsOpen {q : ℝ × M | ((s, q.1), q.2) ∈ timeDependentFlowDomain X} :=
+    (isOpen_timeDependentFlowDomain (hX.of_le (by exact_mod_cast hn))).preimage (by fun_prop)
   filter_upwards [(continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
-    (hW.mem_nhds (show (t, x) ∈ W from h))] with u (hu : (u, x) ∈ W)
-  have hfu : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I
-      (fun q : ℝ × M ↦ timeDependentFlowOf X s q.1 q.2) (u, x) :=
-    ((hf _ hu).contMDiffAt (hW.mem_nhds hu)).mdifferentiableAt
-      (by exact_mod_cast (one_pos.trans_le hn).ne')
-  -- The derivative in the second factor is the full derivative on `(0, v)`.
-  have hcurry : mfderiv I I (timeDependentFlowOf X s u) x =
-      (mfderiv (𝓘(ℝ, ℝ).prod I) I (fun q : ℝ × M ↦ timeDependentFlowOf X s q.1 q.2) (u, x)).comp
-        (mfderiv I (𝓘(ℝ, ℝ).prod I) (fun y : M ↦ (u, y)) x) :=
-    mfderiv_comp_of_eq hfu (mdifferentiableAt_const.prodMk mdifferentiableAt_id) rfl
-  rw [mfderiv_prod_right] at hcurry
-  -- `(equivTangentBundleProd _ _ _ _).symm` pairs the base points and the tangent vectors.
-  have hpt : (equivTangentBundleProd 𝓘(ℝ, ℝ) ℝ I M).symm (⟨u, 0⟩, ⟨x, v⟩) = ⟨(u, x), (0, v)⟩ :=
-    rfl
-  rw [Function.comp_apply, hpt]
-  simp only [tangentMapWithin, mfderivWithin_of_isOpen hW hu, hcurry]
-  -- `mfderiv_prod_right` types `inr` into `TangentSpace 𝓘(ℝ, ℝ) u × TangentSpace I x`, which is
-  -- `TangentSpace (𝓘(ℝ, ℝ).prod I) (u, x)` only up to unfolding `TangentSpace`, so
-  -- `ContinuousLinearMap.comp_apply` and `inr_apply` do not rewrite here. The goal is the
-  -- definitional equality `(D.comp (inr ℝ _ _)) v = D (0, v)` inside `TotalSpace.mk'`.
-  rfl
+    (hW.mem_nhds (show (t, x) ∈ _ from h))] with u (hu : ((s, u), x) ∈ timeDependentFlowDomain X)
+  -- On the vertical vector `(0, v)`, the differential of the uncurried flow is that of `φ_{s, u}`.
+  exact congrArg (Bundle.TotalSpace.mk' E _) (MDifferentiableAt.mfderiv_uncurry_apply_zero_mk
+    ((contMDiffAt_uncurry_timeDependentFlowOf hn hX hu).mdifferentiableAt
+      (by exact_mod_cast (one_pos.trans_le hn).ne')) v).symm
 
 variable (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
     (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))

@@ -493,7 +493,7 @@ theorem mfderiv_timeDependentFlowOf_add_period_apply_of_eq [FiniteDimensional �
   -- image point, the second at `x`, which it equals.
   exact (mfderiv_timeDependentFlowOf_add_period_apply hX hT h hRt v).trans
     ((mfderiv_comp_apply x hφR hR v).symm.trans
-      ((DFunLike.congr_fun (mfderiv_comp_of_apply_eq_self hφ hR hfix.eq) v).trans
+      ((mfderiv_comp_apply_of_eq x hφ hR hfix.eq v).trans
         (congrArg (mfderiv I I (timeDependentFlowOf X s t) x) hv)))
 
 omit [CompleteSpace E] in
