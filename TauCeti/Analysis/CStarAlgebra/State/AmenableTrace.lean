@@ -296,12 +296,6 @@ theorem IsUniformAmenableTrace.comp (hσ : σ.IsUniformAmenableTrace) (f : F) :
       simpa using (h (f a)).trans
         (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f a) hε.le)
 
-/-- Pulling back along a star isomorphism and then along its inverse recovers the functional. -/
-private theorem comp_ofClass_comp_ofClass_symm (e : A ≃⋆ₐ[ℂ] B) (σ : B →P[ℂ] ℂ) :
-    (σ.comp (.ofClass e)).comp (.ofClass e.symm) = σ := by
-  ext b
-  simp
-
 /-- Amenability of traces is invariant under star isomorphisms. -/
 theorem isAmenableTrace_comp_iff (e : A ≃⋆ₐ[ℂ] B) :
     (σ.comp (.ofClass e)).IsAmenableTrace ↔ σ.IsAmenableTrace :=
