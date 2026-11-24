@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Injective
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
+import Mathlib.LinearAlgebra.Matrix.Unique
 
 /-!
 # General linear stability theorems and finite-rank descriptions of `K₁`
@@ -99,16 +100,15 @@ theorem ofUnits_surjective {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
     Function.Surjective (ofUnits R) := by
   intro x
   obtain ⟨h, rfl⟩ := mk_surjective hR le_rfl x
-  -- The only entry of `h` is a unit, with inverse the only entry of `h⁻¹`.
-  have entry (g g' : GL (Fin 1) R) : (g * g' : GL (Fin 1) R) 0 0 = g 0 0 * g' 0 0 := by
-    simp [Units.val_mul, Matrix.mul_apply]
-  refine ⟨⟨h 0 0, (h⁻¹ : GL (Fin 1) R) 0 0, ?_, ?_⟩, ?_⟩
-  · rw [← entry, mul_inv_cancel, Units.val_one, Matrix.one_apply_eq]
-  · rw [← entry, inv_mul_cancel, Units.val_one, Matrix.one_apply_eq]
+  -- The ring isomorphism `M₁(R) ≃+* R` reads off the only entry of `h`, a unit.
+  refine ⟨Units.map (uniqueRingEquiv (m := Fin 1) (A := R)).toMonoidHom h, ?_⟩
   rw [ofUnits_apply]
   congr 1
-  ext i j
-  simp [Subsingleton.elim i 0, Subsingleton.elim j 0]
+  ext : 1
+  apply uniqueRingEquiv.injective
+  simp only [GeneralLinearGroup.coe_scalar, Units.coe_map, scalar_apply, uniqueRingEquiv_apply,
+    diagonal_apply_eq]
+  exact uniqueRingEquiv_apply _
 
 /-- When `R` has Bass stable range at most `s` and `s ≤ n` (including at the boundary `n = s` where
 injective stability need not yet hold), `K₁(R)` is the quotient of `GL (Fin n) R` by the actual

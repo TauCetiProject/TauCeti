@@ -53,6 +53,9 @@ isomorphism `K₁(D) ≃* Dˣᵃᵇ`.
 * `TauCeti.dieudonneDet_stabilizeGL`, `TauCeti.dieudonneDet_scalar_fin_one`: the determinant is
   compatible with stabilization `g ↦ g ⊕ 1`, and sends the `1 × 1` matrix `(d)`, hence
   `diag(d, 1, …, 1)`, to the class of `d`.
+* `TauCeti.dieudonneDet_diagGL_mulSingle`, `TauCeti.dieudonneDet_diagGL`: the determinant sends
+  the diagonal matrix with `d` in any position `i` and `1` elsewhere to the class of `d`, and an
+  invertible diagonal matrix to the product of the classes of its entries.
 * `TauCeti.dieudonneDet_surjective`: `Δₙ` is surjective for `n ≥ 1`.
 * `TauCeti.ker_dieudonneDet`: `ker Δₙ = Eₙ(D)` for `n ≥ 2`.
 * `TauCeti.dieudonneDet_fin_two_of_ne_zero`, `TauCeti.dieudonneDet_fin_two_of_eq_zero`: the
@@ -179,9 +182,10 @@ private theorem det₂_transvection_zero_one (x : D) (g : GL (Fin 2) D) :
       Matrix (Fin 2) (Fin 2) D) = det₂ (g : Matrix (Fin 2) (Fin 2) D) := by
   set g' := transvectionUnit (show (0 : Fin 2) ≠ 1 by decide) x * g
   have h0 : ∀ k, g' 0 k = g 0 k + x * g 1 k := fun k ↦ by
-    simp [g', Units.val_mul, coe_transvectionUnit_eq_one_add_single, add_mul, single_mul_apply_same]
+    simp only [g', Units.val_mul, transvectionUnit_mul_apply_same]
   have h1 : ∀ k, g' 1 k = g 1 k := fun k ↦ by
-    simp [g', Units.val_mul, coe_transvectionUnit_eq_one_add_single, add_mul]
+    simp only [g', Units.val_mul,
+      transvectionUnit_mul_apply_of_ne _ x _ (show (1 : Fin 2) ≠ 0 by decide)]
   by_cases hc : g 1 0 = 0
   · have ha := apply_one_zero_ne_zero g |>.mt (not_not.mpr hc)
     rw [det₂_of_ne_zero ha, det₂_of_ne_zero (by rwa [h0, hc, mul_zero, add_zero])]
@@ -198,9 +202,10 @@ private theorem det₂_transvection_one_zero (x : D) (g : GL (Fin 2) D) :
       Matrix (Fin 2) (Fin 2) D) = det₂ (g : Matrix (Fin 2) (Fin 2) D) := by
   set g' := transvectionUnit (show (1 : Fin 2) ≠ 0 by decide) x * g
   have h0 : ∀ k, g' 0 k = g 0 k := fun k ↦ by
-    simp [g', Units.val_mul, coe_transvectionUnit_eq_one_add_single, add_mul]
+    simp only [g', Units.val_mul,
+      transvectionUnit_mul_apply_of_ne _ x _ (show (0 : Fin 2) ≠ 1 by decide)]
   have h1 : ∀ k, g' 1 k = g 1 k + x * g 0 k := fun k ↦ by
-    simp [g', Units.val_mul, coe_transvectionUnit_eq_one_add_single, add_mul, single_mul_apply_same]
+    simp only [g', Units.val_mul, transvectionUnit_mul_apply_same]
   by_cases ha : g 0 0 = 0
   · rw [det₂_of_eq_zero ha, det₂_of_eq_zero (by rwa [h0])]
     simp [h0, h1, ha]
@@ -210,18 +215,22 @@ private theorem det₂_transvection_one_zero (x : D) (g : GL (Fin 2) D) :
     simp only [add_mul, mul_assoc, mul_inv_cancel_left₀ ha]
     abel
 
+/-- The matrix `diag(u, 1)` of `GL₂(D)`: the stabilization of the `1 × 1` matrix `(u)`. -/
+private abbrev diag₂ (u : Dˣ) : GL (Fin 2) D :=
+  stabilizeGL D (show 1 ≤ 2 by decide) (GeneralLinearGroup.scalar (Fin 1) u)
+
+private theorem coe_diag₂ (u : Dˣ) :
+    (diag₂ u : Matrix (Fin 2) (Fin 2) D) = diagonal ![(u : D), 1] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [coe_stabilizeGL_apply]
+
 /-- `Δ₂` is multiplied by `[u]` when the first row is multiplied on the left by `u`. -/
-private theorem det₂_stabilizeGL_mul (u : Dˣ) (g : GL (Fin 2) D) :
-    det₂ ((stabilizeGL D (show 1 ≤ 2 by decide) (GeneralLinearGroup.scalar (Fin 1) u) * g :
-      GL (Fin 2) D) : Matrix (Fin 2) (Fin 2) D) =
+private theorem det₂_diag₂_mul (u : Dˣ) (g : GL (Fin 2) D) :
+    det₂ ((diag₂ u * g : GL (Fin 2) D) : Matrix (Fin 2) (Fin 2) D) =
       Group.Abelianization.of u * det₂ (g : Matrix (Fin 2) (Fin 2) D) := by
-  set g' := stabilizeGL D (show 1 ≤ 2 by decide) (GeneralLinearGroup.scalar (Fin 1) u) * g
-  have hS : ((stabilizeGL D (show 1 ≤ 2 by decide) (GeneralLinearGroup.scalar (Fin 1) u) :
-      GL (Fin 2) D) : Matrix (Fin 2) (Fin 2) D) = diagonal ![(u : D), 1] := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [coe_stabilizeGL_apply]
-  have h0 : ∀ k, g' 0 k = u * g 0 k := fun k ↦ by simp [g', Units.val_mul, hS]
-  have h1 : ∀ k, g' 1 k = g 1 k := fun k ↦ by simp [g', Units.val_mul, hS]
+  set g' := diag₂ u * g
+  have h0 : ∀ k, g' 0 k = u * g 0 k := fun k ↦ by simp [g', Units.val_mul, coe_diag₂]
+  have h1 : ∀ k, g' 1 k = g 1 k := fun k ↦ by simp [g', Units.val_mul, coe_diag₂]
   by_cases ha : g 0 0 = 0
   · rw [det₂_of_eq_zero ha, det₂_of_eq_zero (by rw [h0, ha, mul_zero])]
     simp only [h0, h1]
@@ -232,10 +241,9 @@ private theorem det₂_stabilizeGL_mul (u : Dˣ) (g : GL (Fin 2) D) :
       simp only [_root_.mul_inv_rev, mul_assoc, inv_mul_cancel_left₀ u.ne_zero]
     rw [hs, abClass_mul u.ne_zero ha, abClass_coe, mul_assoc]
 
-private theorem det₂_stabilizeGL (u : Dˣ) :
-    det₂ ((stabilizeGL D (show 1 ≤ 2 by decide) (GeneralLinearGroup.scalar (Fin 1) u) :
-      GL (Fin 2) D) : Matrix (Fin 2) (Fin 2) D) = Group.Abelianization.of u := by
-  simpa [det₂_one] using det₂_stabilizeGL_mul u 1
+private theorem det₂_diag₂ (u : Dˣ) :
+    det₂ ((diag₂ u : GL (Fin 2) D) : Matrix (Fin 2) (Fin 2) D) = Group.Abelianization.of u := by
+  simpa [det₂_one] using det₂_diag₂_mul u 1
 
 /-- The elements `e` of `GL₂(D)` with `Δ₂(e g) = Δ₂(g)` for every `g` form a subgroup. -/
 private def det₂Stabilizer : Subgroup (GL (Fin 2) D) where
@@ -256,12 +264,10 @@ private theorem elementarySubgroup_le_det₂Stabilizer :
 
 /-- Every matrix of `GL₂(D)` is an elementary matrix times `diag(u, 1)`. -/
 private theorem exists_mem_elementarySubgroup_mul (g : GL (Fin 2) D) :
-    ∃ e ∈ elementarySubgroup (Fin 2) D, ∃ u : Dˣ,
-      g = e * stabilizeGL D (show 1 ≤ 2 by decide) (GeneralLinearGroup.scalar (Fin 1) u) := by
+    ∃ e ∈ elementarySubgroup (Fin 2) D, ∃ u : Dˣ, g = e * diag₂ u := by
   obtain ⟨u, hu⟩ := AlgebraicK1.ofUnits_surjective (hasStableRangeLE_one_of_isLocalRing D)
     (AlgebraicK1.mk D 2 g)
-  refine ⟨g * (stabilizeGL D (show 1 ≤ 2 by decide) (GeneralLinearGroup.scalar (Fin 1) u))⁻¹,
-    ?_, u, by rw [inv_mul_cancel_right]⟩
+  refine ⟨g * (diag₂ u)⁻¹, ?_, u, by rw [inv_mul_cancel_right]⟩
   rw [← AlgebraicK1.ker_mk_eq_elementarySubgroup (hasStableRangeLE_one_of_isLocalRing D) le_rfl,
     MonoidHom.mem_ker, map_mul, map_inv, AlgebraicK1.mk_stabilizeGL, ← AlgebraicK1.ofUnits_apply,
     hu, mul_inv_cancel]
@@ -274,7 +280,7 @@ private def det₂Hom : GL (Fin 2) D →* Group.Abelianization Dˣ where
     obtain ⟨e, he, u, rfl⟩ := exists_mem_elementarySubgroup_mul g
     have he' := elementarySubgroup_le_det₂Stabilizer he
     simp only [mul_assoc]
-    rw [he', he', det₂_stabilizeGL_mul, det₂_stabilizeGL]
+    rw [he', he', det₂_diag₂_mul, det₂_diag₂]
 
 private theorem det₂Hom_apply (g : GL (Fin 2) D) :
     det₂Hom g = det₂ (g : Matrix (Fin 2) (Fin 2) D) :=
@@ -303,7 +309,7 @@ private theorem k1ToAb_mk (g : GL (Fin 2) D) :
 private theorem k1ToAb_ofUnits (u : Dˣ) :
     k1ToAb (AlgebraicK1.ofUnits D u) = Group.Abelianization.of u := by
   rw [AlgebraicK1.ofUnits_apply, ← AlgebraicK1.mk_stabilizeGL (show 1 ≤ 2 by decide), k1ToAb_mk,
-    det₂_stabilizeGL]
+    det₂_diag₂]
 
 end TwoByTwo
 
@@ -385,6 +391,43 @@ theorem dieudonneDet_stabilizeGL {m n : ℕ} (h : m ≤ n) (g : GL (Fin m) D) :
 theorem dieudonneDet_scalar_fin_one (u : Dˣ) :
     dieudonneDet D 1 (GeneralLinearGroup.scalar (Fin 1) u) = Group.Abelianization.of u := by
   rw [dieudonneDet_apply, ← AlgebraicK1.ofUnits_apply, AlgebraicK1.dieudonneDetEquiv_ofUnits]
+
+/-- `diag(u, 1, …, 1)`, the stabilization of the `1 × 1` matrix `(u)`, is the diagonal matrix with
+`u` in position `0`. -/
+private theorem stabilizeGL_scalar_fin_one {n : ℕ} (hn : 1 ≤ n) (u : Dˣ) :
+    stabilizeGL D hn (GeneralLinearGroup.scalar (Fin 1) u) = diagGL (Pi.mulSingle ⟨0, hn⟩ u) := by
+  ext a b
+  rw [coe_stabilizeGL_apply, diagGL_apply]
+  by_cases ha : (a : ℕ) = 0 <;> by_cases hb : (b : ℕ) = 0 <;>
+    simp [ha, hb, eq_comm (a := (0 : ℕ)), Matrix.one_apply, Pi.mulSingle_apply, Fin.ext_iff,
+      Matrix.scalar_apply]
+
+/-- **The Dieudonné determinant of `diag(1, …, u, …, 1)`.** The diagonal matrix with `u` in
+position `i` and `1` elsewhere has Dieudonné determinant the class of `u`. -/
+theorem dieudonneDet_diagGL_mulSingle {n : ℕ} (i : Fin n) (u : Dˣ) :
+    dieudonneDet D n (diagGL (Pi.mulSingle i u)) = Group.Abelianization.of u := by
+  have hn : 1 ≤ n := i.pos
+  -- Conjugating by the permutation matrix of the transposition `(0 i)` moves `u` to position `0`,
+  -- and conjugation does not change a value in the abelian group `Dˣᵃᵇ`.
+  have hσ : diagGL (Pi.mulSingle i u) = permutationGL (Equiv.swap ⟨0, hn⟩ i) *
+      diagGL (Pi.mulSingle ⟨0, hn⟩ u) * (permutationGL (Equiv.swap ⟨0, hn⟩ i))⁻¹ := by
+    rw [permutationGL_mul_diagGL_mul_inv]
+    congr 1
+    funext a
+    simp [Pi.mulSingle_apply, Equiv.swap_apply_eq_iff]
+  rw [hσ, map_mul, map_mul, map_inv, mul_inv_cancel_comm, ← stabilizeGL_scalar_fin_one hn,
+    dieudonneDet_stabilizeGL, dieudonneDet_scalar_fin_one]
+
+/-- The Dieudonné determinant of an invertible diagonal matrix is the product of the classes of
+its diagonal entries. -/
+@[simp]
+theorem dieudonneDet_diagGL {n : ℕ} (t : Fin n → Dˣ) :
+    dieudonneDet D n (diagGL t) = ∏ i, Group.Abelianization.of (t i) := by
+  have h : (dieudonneDet D n).comp diagGL =
+      ∏ i, Group.Abelianization.of.comp (Pi.evalMonoidHom (fun _ : Fin n ↦ Dˣ) i) :=
+    MonoidHom.pi_ext fun i u ↦ by
+      simp [dieudonneDet_diagGL_mulSingle, Pi.mulSingle_apply, apply_ite]
+  simpa using DFunLike.congr_fun h t
 
 /-- The Dieudonné determinant kills elementary matrices. -/
 @[simp]

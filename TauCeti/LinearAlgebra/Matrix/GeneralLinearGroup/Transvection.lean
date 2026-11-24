@@ -170,6 +170,17 @@ theorem transvectionUnit_mulVec (hij : i ≠ j) (c : A) (v : n → A) :
   ext k
   rcases eq_or_ne k i with rfl | hk <;> simp [*]
 
+/-- Left multiplication by a transvection is the elementary row operation adding `c` times the
+`j`-th row to the `i`-th one: the `i`-th row of the product. -/
+theorem transvectionUnit_mul_apply_same {m : Type*} (hij : i ≠ j) (c : A) (M : Matrix n m A)
+    (b : m) : ((transvectionUnit hij c : Matrix n n A) * M) i b = M i b + c * M j b := by
+  simp [coe_transvectionUnit_eq_one_add_single, Matrix.add_mul]
+
+/-- Left multiplication by a transvection leaves every row other than the `i`-th unchanged. -/
+theorem transvectionUnit_mul_apply_of_ne {m : Type*} (hij : i ≠ j) (c : A) (M : Matrix n m A)
+    {a : n} (ha : a ≠ i) (b : m) : ((transvectionUnit hij c : Matrix n n A) * M) a b = M a b := by
+  simp [coe_transvectionUnit_eq_one_add_single, Matrix.add_mul, ha]
+
 /-- The transvection of parameter zero is the identity. -/
 @[simp]
 theorem transvectionUnit_zero (hij : i ≠ j) : transvectionUnit hij (0 : A) = 1 :=
