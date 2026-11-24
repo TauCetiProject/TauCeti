@@ -201,6 +201,16 @@ theorem realizationToAmbient_mem_space (x : Realization K.vertexScheme) :
     K.realizationToAmbient x ∈ K.space :=
   range_realizationToAmbient (K := K) ▸ mem_range_self x
 
+/-- The comparison point belongs to the convex hull of the image in `E` of a face of the vertex
+scheme exactly when its barycentric support is contained in that face. -/
+theorem realizationToAmbient_mem_convexHull_map_iff (σ : Face K.vertexScheme)
+    (x : Realization K.vertexScheme) :
+    K.realizationToAmbient x ∈
+      convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) ↔
+        x.val.support ⊆ σ.val := by
+  rw [← range_realizationToAmbient_comp_faceInclusion, range_comp,
+    realizationToAmbient_injective.mem_set_image, mem_range_faceInclusion_iff]
+
 /-- The comparison point belongs to the convex hull of a face exactly when its barycentric
 support is contained in that face. -/
 @[simp]
@@ -209,12 +219,8 @@ theorem realizationToAmbient_mem_convexHull_iff (σ : Face K.vertexScheme)
     K.realizationToAmbient x ∈
       convexHull ℝ (Subtype.val '' (σ.val : Set K.vertices)) ↔
         x.val.support ⊆ σ.val := by
-  have h : K.realizationToAmbient x ∈
-      convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) ↔
-        x.val.support ⊆ σ.val := by
-    rw [← range_realizationToAmbient_comp_faceInclusion, range_comp,
-      (realizationToAmbient_injective).mem_set_image, mem_range_faceInclusion_iff]
-  simpa only [Finset.coe_map, Embedding.coe_subtype] using h
+  simpa only [Finset.coe_map, Embedding.coe_subtype] using
+    realizationToAmbient_mem_convexHull_map_iff σ x
 
 /-- The comparison point belongs to the convex hull of a face of `K` exactly when its barycentric
 support is contained in the corresponding face of the vertex scheme. -/
@@ -223,9 +229,7 @@ theorem realizationToAmbient_mem_convexHull_face_iff (s : K.faces)
     (x : Realization K.vertexScheme) :
     K.realizationToAmbient x ∈ convexHull ℝ (s : Set E) ↔
       x.val.support ⊆ (K.vertexSchemeFaceEquiv.symm s).val := by
-  conv_lhs => rw [← map_vertexSchemeFaceEquiv_symm_apply_coe s]
-  rw [← range_realizationToAmbient_comp_faceInclusion, range_comp,
-    realizationToAmbient_injective.mem_set_image, mem_range_faceInclusion_iff]
+  rw [← realizationToAmbient_mem_convexHull_map_iff, map_vertexSchemeFaceEquiv_symm_apply_coe]
 
 /-- The comparison map is its own secant map, since it linearly extends the vertex inclusion. -/
 @[simp]
@@ -235,13 +239,12 @@ theorem secantMap_realizationToAmbient :
 
 /-! ### Subcomplexes -/
 
-attribute [local instance] Classical.decEq
-
 /-- For a subcomplex `K ≤ L`, the realization of the inclusion of vertex schemes followed by the
 comparison map of `L` is the comparison map of `K`. -/
 @[simp]
 theorem realizationToAmbient_realizationMap_vertexSchemeInclusion
-    {L : SimplicialComplex ℝ E} (h : K ≤ L) (x : Realization K.vertexScheme) :
+    {L : SimplicialComplex ℝ E} [DecidableEq L.vertices] (h : K ≤ L)
+    (x : Realization K.vertexScheme) :
     L.realizationToAmbient ((vertexSchemeInclusion h).realizationMap x) =
       K.realizationToAmbient x := by
   simp only [realizationToAmbient, linearExtension_realizationMap, coe_vertexSchemeInclusion,
@@ -250,7 +253,7 @@ theorem realizationToAmbient_realizationMap_vertexSchemeInclusion
 /-- For a subcomplex `K ≤ L`, the comparison map of `K` factors through the realization of the
 inclusion of vertex schemes and the comparison map of `L`. -/
 theorem realizationToAmbient_comp_realizationMap_vertexSchemeInclusion
-    {L : SimplicialComplex ℝ E} (h : K ≤ L) :
+    {L : SimplicialComplex ℝ E} [DecidableEq L.vertices] (h : K ≤ L) :
     L.realizationToAmbient ∘ (vertexSchemeInclusion h).realizationMap = K.realizationToAmbient :=
   funext (realizationToAmbient_realizationMap_vertexSchemeInclusion h)
 

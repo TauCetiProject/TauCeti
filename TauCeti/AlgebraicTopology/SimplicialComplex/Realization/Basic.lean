@@ -509,7 +509,7 @@ theorem isQuotientMap_sigma_faceInclusion (K : AbstractSimplicialComplex ι) :
     obtain ⟨y, hy⟩ := mem_range_faceInclusion_carrier K x
     exact ⟨⟨carrier K x, y⟩, hy⟩
   · rw [isClosed_iff_faceInclusion, isClosed_sigma_iff]
-    rfl
+    simp only [preimage_preimage]
 
 /-- A continuous map from the realization into a Hausdorff space is closed when the images of the
 closed simplices form a locally finite family: the image of a closed set is the locally finite
