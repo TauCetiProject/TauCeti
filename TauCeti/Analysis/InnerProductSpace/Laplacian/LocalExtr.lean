@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Calculus.DerivativeTest
-public import TauCeti.Topology.Order.LocalExtr
 
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 
@@ -26,10 +25,6 @@ each diagonal Hessian entry at a local extremum.
 * `TauCeti.not_isLocalMax_of_laplacian_pos` / `TauCeti.not_isLocalMin_of_laplacian_neg`: a
   strictly subharmonic function (`0 < Δ f x`) has no interior local maximum, the classical first
   step of the maximum principle; the superharmonic mirror image has no interior local minimum.
-* `TauCeti.laplacian_nonneg_of_isMinOn_prod`: if `(x, s)` minimizes `q` over `K × S` with `x` in
-  the interior of `K`, the Laplacian of `y ↦ q y (γ y)` is nonnegative at `x` for every local
-  section `γ` of `S` through `s` along which this function is `C²` at `x`. This is the Laplacian
-  test for a lower envelope `x ↦ min_{s ∈ S} q x s`.
 -/
 
 public section
@@ -64,16 +59,5 @@ theorem not_isLocalMax_of_laplacian_pos (hf : ContDiffAt ℝ 2 f x) (hlap : 0 < 
 /-- A strictly superharmonic `C²` function (`Δ f x < 0`) has no interior local minimum at `x`. -/
 theorem not_isLocalMin_of_laplacian_neg (hf : ContDiffAt ℝ 2 f x) (hlap : Δ f x < 0) :
     ¬ IsLocalMin f x := fun hmin => (laplacian_nonneg_of_isLocalMin hf hmin).not_gt hlap
-
-open Topology in
-/-- **The Laplacian test for a lower envelope.** If `(x, s)` minimizes `q` over `K × S` and `x`
-lies in the interior of `K`, then for every local section `γ` of `S` through `s` such that
-`y ↦ q y (γ y)` is `C²` at `x`, the Laplacian of `y ↦ q y (γ y)` is nonnegative at `x`. -/
-theorem laplacian_nonneg_of_isMinOn_prod {ι : Type*} {K : Set E} {S : Set ι} {q : E → ι → ℝ}
-    {s : ι} {γ : E → ι} (hx : x ∈ interior K)
-    (hmin : IsMinOn (fun p : E × ι ↦ q p.1 p.2) (K ×ˢ S) (x, s)) (hγx : γ x = s)
-    (hγ : ∀ᶠ y in 𝓝 x, γ y ∈ S) (hcd : ContDiffAt ℝ 2 (fun y ↦ q y (γ y)) x) :
-    0 ≤ Δ (fun y ↦ q y (γ y)) x :=
-  laplacian_nonneg_of_isLocalMin hcd (isLocalMin_of_isMinOn_prod hx hmin hγx hγ)
 
 end TauCeti

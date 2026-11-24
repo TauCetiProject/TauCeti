@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.DriftMaximumPrinciple
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Order.LocalExtr
 
 /-!
 # The minimum principle for lower envelopes and least eigenvalues
@@ -18,8 +19,7 @@ cannot be applied to it directly. It can be tested instead: if `(x₀, s₀)` mi
 `K × S` with `x₀` in the interior of `K`, and `γ` is a local section of `S` through `s₀`, then `x₀`
 is an interior local minimum of `y ↦ q y (γ y)` (`TauCeti.isLocalMin_of_isMinOn_prod`). If this
 function is `C²` at `x₀`, its first derivative vanishes and its Laplacian is nonnegative there
-(`TauCeti.laplacian_nonneg_of_isMinOn_prod`, in
-`TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr`). The parameter `s₀` is a minimizing
+(`TauCeti.laplacian_nonneg_of_isLocalMin`). The parameter `s₀` is a minimizing
 parameter at `x₀`, so a differential inequality need only be checked at minimizing parameters,
 along any convenient section through them, for instance a moving frame.
 
