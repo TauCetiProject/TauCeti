@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Birational.RationalMap
+public import Mathlib.AlgebraicGeometry.Birational.Dominant
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Composition
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.GraphClosure
 
 /-!
@@ -33,6 +34,15 @@ Mathlib's instances make the factorization `V → Γ_f` quasi-compact and domina
 that `Γ_f` is supported on the closure of the image of `V`, and Tau Ceti's
 `Scheme.Hom.isIntegral_image` (same file) gives that `Γ_f` is integral when `X` is integral.
 
+For `X` reduced, `Γ_f` does not depend on the representative: the graph of any partial map
+representing `f` has the same kernel as `γ_f`. If moreover `Y` is separated and `f` is a rational
+map over a separated base `S`, then `γ_f` factors through the closed subscheme `X ×_S Y` of
+`X × Y`, and `Γ_f` is the graph closure over `S` of the representative of `f` on its domain of
+definition. The graph closure API then gives the properties of the projections: `π_1` is proper
+when `Y` is proper over `S`, an isomorphism over the domain of definition of `f`, and a
+modification; `π_2` is surjective when `f` is dominant and `X` is proper over `S`; and over a
+field `Γ_f` has the dimension of `X`.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.RationalMap.graphLift`: the morphism `γ_f = (ι_V, g) : V → X × Y`.
@@ -41,11 +51,23 @@ that `Γ_f` is supported on the closure of the image of `V`, and Tau Ceti's
 * `AlgebraicGeometry.Scheme.RationalMap.graphFst`, `AlgebraicGeometry.Scheme.RationalMap.graphSnd`:
   the projections `π_1` and `π_2`.
 * `AlgebraicGeometry.Scheme.RationalMap.toGraph`: the factorization `V → Γ_f` of `γ_f`.
+* `AlgebraicGeometry.Scheme.RationalMap.graphIsoGraphClosure`: for an `S`-rational map from a
+  reduced scheme to a separated scheme, with `S` separated, the isomorphism of `Γ_f` with the graph
+  closure in `X ×_S Y` of the representative of `f` on its domain of definition.
 
 ## Main results
 
 * `AlgebraicGeometry.Scheme.RationalMap.isIntegral_graph`: the graph of a rational map out of an
   integral scheme is integral when `γ_f` is quasi-compact, for instance when `X` is Noetherian.
+* `AlgebraicGeometry.Scheme.RationalMap.ker_opensGraph_eq_ker_graphLift`: independence of the
+  representative.
+* `AlgebraicGeometry.Scheme.RationalMap.isProper_graphFst`,
+  `AlgebraicGeometry.Scheme.RationalMap.isIso_graphFst_restrict` and
+  `AlgebraicGeometry.Scheme.RationalMap.isModification_graphFst`: `π_1` is proper, an isomorphism
+  over the domain of definition of `f`, and a modification.
+* `AlgebraicGeometry.Scheme.RationalMap.surjective_graphSnd`: `π_2` is surjective for dominant `f`.
+* `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_graph`: over a field, `Γ_f` has the
+  dimension of `X`.
 
 ## References
 
@@ -64,7 +86,7 @@ namespace AlgebraicGeometry.Scheme.RationalMap
 
 universe u
 
-variable {X Y : Scheme.{u}} (f : X ⤏ Y)
+variable {X Y S : Scheme.{u}} (f : X ⤏ Y)
 
 /-- The morphism `γ_f = (ι_V, g) : V → X × Y` for the representative `(V, g)` of `f`, with
 `X × Y` the fibre product over the terminal scheme. -/
@@ -112,5 +134,162 @@ instance isIntegral_graph [IsIntegral X] [QuasiCompact (graphLift f)] : IsIntegr
   have : Nonempty f.representative.domain :=
     f.representative.dense_domain.nonempty.to_subtype
   inferInstance
+
+section Representative
+
+variable [IsReduced X]
+
+/-- **Independence of the representative.** For `X` reduced, the graph of every partial map `g`
+representing `f` has the same kernel as `γ_f`, so the same scheme-theoretic image `Γ_f`. -/
+theorem ker_opensGraph_eq_ker_graphLift (g : X.PartialMap Y) (hg : g.toRationalMap = f) :
+    (opensGraph (terminal.from X) (terminal.from Y) g.domain g.hom
+      (terminal.hom_ext _ _)).ker = (graphLift f).ker := by
+  -- `g` and the representative of `f` agree on a dense open `W`, and restricting a graph to a
+  -- dense open does not change its kernel
+  obtain ⟨W, hW, hWg, hWf, e⟩ :=
+    PartialMap.toRationalMap_eq_iff.mp (hg.trans f.toRationalMap_representative.symm)
+  rw [graphLift, ← ker_opensGraph_homOfLE_comp hW hWg, ← ker_opensGraph_homOfLE_comp hW hWf]
+  rw [PartialMap.restrict_hom, PartialMap.restrict_hom] at e
+  congr 2
+
+end Representative
+
+section Base
+
+variable (sX : X ⟶ S) (sY : Y ⟶ S)
+
+/-- The closed immersion `X ×_S Y → X × Y` for a separated `S`. -/
+private def pullbackToProd :
+    pullback sX sY ⟶ pullback (terminal.from X) (terminal.from Y) :=
+  pullback.mapDesc sX sY (terminal.from S) ≫
+    (pullback.congrHom (terminal.hom_ext _ _) (terminal.hom_ext _ _)).hom
+
+private instance [S.IsSeparated] : IsClosedImmersion (pullbackToProd sX sY) := by
+  unfold pullbackToProd
+  infer_instance
+
+@[reassoc (attr := simp)]
+private theorem pullbackToProd_fst :
+    pullbackToProd sX sY ≫ pullback.fst _ _ = pullback.fst sX sY := by
+  simp [pullbackToProd]
+
+@[reassoc (attr := simp)]
+private theorem pullbackToProd_snd :
+    pullbackToProd sX sY ≫ pullback.snd _ _ = pullback.snd sX sY := by
+  simp [pullbackToProd]
+
+variable [IsReduced X] [Y.IsSeparated] [S.IsSeparated] [f.IsOver sX sY]
+
+private theorem ker_imageι_comp_pullbackToProd :
+    ((opensGraph sX sY f.toPartialMap.domain f.toPartialMap.hom
+      (f.toPartialMap.over sX sY)).imageι ≫ pullbackToProd sX sY).ker = (graphι f).ker := by
+  rw [Scheme.Hom.ker_comp, IdealSheafData.ker_subschemeι, ← Scheme.Hom.ker_comp,
+    IdealSheafData.ker_subschemeι, ← ker_opensGraph_eq_ker_graphLift f f.toPartialMap
+      f.toRationalMap_toPartialMap]
+  congr 1
+  apply pullback.hom_ext <;> simp
+
+/-- **The graph lies in `X ×_S Y`.** For `X` reduced, `Y` and `S` separated and an `S`-rational
+map `f : X ⤏ Y`, the graph `Γ_f ⊆ X × Y` is isomorphic to the graph closure in `X ×_S Y` of the
+representative of `f` on its domain of definition, compatibly with the projections. -/
+def graphIsoGraphClosure :
+    graph f ≅ graphClosure sX sY f.toPartialMap.domain f.toPartialMap.hom
+      (f.toPartialMap.over sX sY) :=
+  have := IsClosedImmersion.isIso_lift _ _ (ker_imageι_comp_pullbackToProd f sX sY)
+  asIso (IsClosedImmersion.lift _ (graphι f) (ker_imageι_comp_pullbackToProd f sX sY).le)
+
+/-- The isomorphism `graphIsoGraphClosure` is compatible with the first projections. -/
+@[reassoc (attr := simp)]
+theorem graphIsoGraphClosure_hom_graphClosureFst :
+    (graphIsoGraphClosure f sX sY).hom ≫ graphClosureFst sX sY f.toPartialMap.domain
+      f.toPartialMap.hom (f.toPartialMap.over sX sY) = graphFst f := by
+  rw [graphClosureFst_def, ← pullbackToProd_fst, ← Category.assoc _ (pullbackToProd sX sY),
+    graphIsoGraphClosure, asIso_hom, IsClosedImmersion.lift_fac_assoc]
+  exact (graphClosureFst_def _ _ _ _ _).symm
+
+/-- The isomorphism `graphIsoGraphClosure` is compatible with the second projections. -/
+@[reassoc (attr := simp)]
+theorem graphIsoGraphClosure_hom_graphClosureSnd :
+    (graphIsoGraphClosure f sX sY).hom ≫ graphClosureSnd sX sY f.toPartialMap.domain
+      f.toPartialMap.hom (f.toPartialMap.over sX sY) = graphSnd f := by
+  rw [graphClosureSnd_def, ← pullbackToProd_snd, ← Category.assoc _ (pullbackToProd sX sY),
+    graphIsoGraphClosure, asIso_hom, IsClosedImmersion.lift_fac_assoc]
+  exact (graphClosureSnd_def _ _ _ _ _).symm
+
+end Base
+
+section Projections
+
+variable [IsReduced X]
+
+/-- **The first projection of the graph is proper** when `Y` is proper over a separated base `S`
+over which `f` is defined. -/
+theorem isProper_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f.IsOver sX sY]
+    [IsProper sY] : IsProper (graphFst f) := by
+  have : Y.IsSeparated := ⟨by rw [← terminal.comp_from sY]; infer_instance⟩
+  rw [← graphIsoGraphClosure_hom_graphClosureFst f sX sY]
+  infer_instance
+
+/-- **The first projection of the graph is an isomorphism over the domain of definition** of
+`f`, for `X` reduced, `Y` separated and the inclusion of the domain quasi-compact (for instance
+when `X` is locally Noetherian). -/
+instance isIso_graphFst_restrict [Y.IsSeparated] [QuasiCompact f.domain.ι] :
+    IsIso (graphFst f ∣_ f.domain) := by
+  -- the domain of `f.toPartialMap` is `f.domain` by definition
+  have : QuasiCompact f.toPartialMap.domain.ι := ‹QuasiCompact f.domain.ι›
+  have : f.IsOver (terminal.from X) (terminal.from Y) :=
+    ⟨⟨f.representative, inferInstance, f.toRationalMap_representative⟩⟩
+  rw [← graphIsoGraphClosure_hom_graphClosureFst f (terminal.from X) (terminal.from Y),
+    morphismRestrict_comp]
+  have h : IsIso (graphClosureFst (terminal.from X) (terminal.from Y) f.toPartialMap.domain
+      f.toPartialMap.hom (f.toPartialMap.over _ _) ∣_ f.toPartialMap.domain) := inferInstance
+  -- `h` is about the restriction over `f.toPartialMap.domain`, which is `f.domain` by definition
+  exact IsIso.comp_isIso' (isPullback_morphismRestrict _ _).isIso_fst_of_isIso h
+
+/-- **The first projection of the graph is a modification** when `Y` is proper over a separated
+base `S` over which `f` is defined and the inclusion of the domain of definition of `f` is
+quasi-compact: it is proper, and an isomorphism over that dense open. -/
+theorem isModification_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f.IsOver sX sY]
+    [IsProper sY] [QuasiCompact f.domain.ι] : IsModification (graphFst f) := by
+  have : Y.IsSeparated := ⟨by rw [← terminal.comp_from sY]; infer_instance⟩
+  -- the domain of `f.toPartialMap` is `f.domain` by definition
+  have : QuasiCompact f.toPartialMap.domain.ι := ‹QuasiCompact f.domain.ι›
+  have := isModification_graphClosureFst (hg := f.toPartialMap.over sX sY) f.dense_domain
+  rw [← graphIsoGraphClosure_hom_graphClosureFst f sX sY]
+  infer_instance
+
+/-- **The second projection of the graph of a dominant rational map is surjective** when `X` is
+proper over a separated base `S` over which `f` is defined. -/
+theorem surjective_graphSnd [Y.IsSeparated] (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated]
+    [f.IsOver sX sY]
+    [IsProper sX] [f.IsDominant] : Surjective (graphSnd f) := by
+  rw [← graphIsoGraphClosure_hom_graphClosureSnd f sX sY]
+  suffices Surjective (graphClosureSnd sX sY f.toPartialMap.domain f.toPartialMap.hom
+      (f.toPartialMap.over sX sY)) from inferInstance
+  have : IsDominant f.toPartialMap.hom := by
+    rw [← PartialMap.isDominant_toRationalMap_iff, f.toRationalMap_toPartialMap]
+    infer_instance
+  -- the range of the second projection is closed and contains the dense range of `f`
+  refine ⟨Set.range_eq_univ.mp ?_⟩
+  rw [← (Scheme.Hom.isClosedMap _).isClosed_range.closure_eq, ← Set.univ_subset_iff,
+    ← f.toPartialMap.hom.denseRange.closure_range]
+  refine closure_mono ?_
+  rintro _ ⟨x, rfl⟩
+  exact ⟨_, congr($(toGraphClosure_graphClosureSnd sX sY _ _ (f.toPartialMap.over sX sY)) x)⟩
+
+/-- **The dimension of the graph.** Over a field `K`, for `X` reduced and irreducible, `Y`
+separated and `f : X ⤏ Y` a `K`-rational map with `X` and `Y` locally of finite type over `K`,
+the graph `Γ_f` has the topological Krull dimension of `X`. -/
+theorem topologicalKrullDim_graph [Y.IsSeparated] {K : Type u} [Field K]
+    (sX : X ⟶ Spec (.of K)) (sY : Y ⟶ Spec (.of K)) [IrreducibleSpace X] [f.IsOver sX sY]
+    [LocallyOfFiniteType sX] [LocallyOfFiniteType sY] :
+    topologicalKrullDim (graph f) = topologicalKrullDim X := by
+  have := LocallyOfFiniteType.isLocallyNoetherian sX
+  have : Nonempty f.toPartialMap.domain := f.dense_domain.nonempty.to_subtype
+  rw [← topologicalKrullDim_graphClosure (f.toPartialMap.over sX sY)]
+  exact IsHomeomorph.topologicalKrullDim_eq _
+    (graphIsoGraphClosure f sX sY).hom.homeomorph.isHomeomorph
+
+end Projections
 
 end AlgebraicGeometry.Scheme.RationalMap
