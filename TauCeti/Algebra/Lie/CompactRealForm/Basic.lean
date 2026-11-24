@@ -12,7 +12,9 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Lie.BaseChange.Hom
+public import TauCeti.LinearAlgebra.Basis.Semilinear
 public import TauCeti.LinearAlgebra.Complex.RealForm
+import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
 import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.LinearAlgebra.Trace.Semilinear
 
@@ -54,13 +56,17 @@ complex subalgebra, and `-B(x, ω y)` is bilinear rather than Hermitian.
 ## Main results
 
 * `TauCeti.IsLieConjugation.killingForm_map`: `B(τ x, τ y) = conj B(x, y)`.
-* `TauCeti.killingHermitianForm_conj_symm`: `H_τ(y, x) = conj H_τ(x, y)`.
+* `TauCeti.killingHermitianForm_conj_symm`: `H_τ(y, x) = conj H_τ(x, y)`, and
+  `TauCeti.IsLieConjugation.killingHermitianForm_lie_left`: `H_τ(⁅z, x⁆, y) = -H_τ(x, ⁅τ z, y⁆)`.
 * `TauCeti.IsLieConjugation.killingForm_realForm`: the Killing form of the real form is the
   restriction of the Killing form of `L`.
 * `TauCeti.IsCompactConjugation.killingForm_realForm_neg`: the Killing form of a compact real form
   is negative definite.
-* `Module.Basis.isLieConjugation_conj`: the conjugation fixing a basis with real structure
-  constants is a conjugation of Lie algebras.
+* `Module.Basis.isLieConjugation_coordConj`: the conjugation of the coordinates in a basis with
+  real structure constants is a conjugation of Lie algebras.
+* `TauCeti.IsCompactConjugation.isKilling` and `TauCeti.IsCompactConjugation.finiteDimensional`:
+  a complex Lie algebra with a compact conjugation is finite-dimensional with nondegenerate Killing
+  form.
 
 ## References
 
@@ -177,47 +183,48 @@ theorem complexificationEquiv_symm_coe (y : hτ.realForm) :
     hτ.complexificationEquiv.symm y = 1 ⊗ₜ y := by
   rw [LieEquiv.symm_apply_eq, complexificationEquiv_tmul, one_smul]
 
+/-- Real-form descent intertwines the conjugation of `ℂ ⊗[ℝ] 𝔲` with `τ`. -/
+@[simp]
+theorem complexificationEquiv_tmulConj (u : ℂ ⊗[ℝ] hτ.realForm) :
+    hτ.complexificationEquiv (tmulConj hτ.realForm u) = τ (hτ.complexificationEquiv u) := by
+  induction u with
+  | tmul c y => simp [tmulConj_tmul]
+  | add u v hu hv => rw [map_add, map_add, hu, hv, map_add, map_add]
+
 /-- **A real basis of the real form is a complex basis of `L`**, through real-form descent. -/
 noncomputable def complexBasis {ι : Type*} (b : Module.Basis ι ℝ hτ.realForm) :
     Module.Basis ι ℂ L :=
-  (Algebra.TensorProduct.basis ℂ b).map hτ.complexificationEquiv.toLinearEquiv
+  hτ.isBaseChange_incl.basis b
 
 variable {ι : Type*} (b : Module.Basis ι ℝ hτ.realForm)
 
 /-- The complex basis consists of the vectors of the real basis. -/
 @[simp]
-theorem complexBasis_apply (i : ι) : hτ.complexBasis b i = b i := by
-  rw [complexBasis, Module.Basis.map_apply, Algebra.TensorProduct.basis_apply,
-    LieEquiv.coe_toLinearEquiv, complexificationEquiv_tmul, one_smul]
+theorem complexBasis_apply (i : ι) : hτ.complexBasis b i = b i :=
+  hτ.isBaseChange_incl.basis_apply b i
 
 /-- `τ` fixes the complex basis built from a basis of the real form. -/
 theorem apply_complexBasis (i : ι) : τ (hτ.complexBasis b i) = hτ.complexBasis b i := by
   rw [complexBasis_apply, apply_coe_realForm]
 
 /-- The complex coordinates of an element of the real form are its real coordinates. -/
+@[simp]
 theorem complexBasis_repr_coe (y : hτ.realForm) (i : ι) :
-    (hτ.complexBasis b).repr y i = (b.repr y i : ℂ) := by
-  have h : hτ.complexificationEquiv.toLinearEquiv.symm y = 1 ⊗ₜ y := by
-    rw [LinearEquiv.symm_apply_eq, LieEquiv.coe_toLinearEquiv, complexificationEquiv_tmul,
-      one_smul]
-  rw [complexBasis, Module.Basis.map_repr, LinearEquiv.trans_apply, h,
-    Algebra.TensorProduct.basis_repr_tmul, one_smul, Finsupp.mapRange_apply,
-    Complex.coe_algebraMap]
+    (hτ.complexBasis b).repr y i = (b.repr y i : ℂ) :=
+  hτ.isBaseChange_incl.basis_repr_comp_apply b y i
+
+/-- `τ` is the conjugation of the coordinates in the complex basis built from a basis of the real
+form. -/
+theorem eq_coordConj_complexBasis : τ = (hτ.complexBasis b).coordConj.toLinearMap :=
+  (hτ.complexBasis b).ext fun i ↦ by
+    rw [apply_complexBasis, LinearEquiv.coe_coe, Module.Basis.coordConj_self]
 
 /-- `τ` conjugates the coordinates in the complex basis built from a basis of the real form. -/
+@[simp]
 theorem complexBasis_repr_apply (x : L) (i : ι) :
     (hτ.complexBasis b).repr (τ x) i = star ((hτ.complexBasis b).repr x i) := by
-  have hx : x ∈ Submodule.span ℂ (Set.range (hτ.complexBasis b)) := (hτ.complexBasis b).mem_span x
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨j, rfl⟩ := hx
-    classical
-    rw [apply_complexBasis, Module.Basis.repr_self, Finsupp.single_apply]
-    split_ifs <;> simp
-  | zero => simp
-  | add x y _ _ hx hy => simp only [map_add, Finsupp.add_apply, hx, hy, star_add]
-  | smul c x _ hx => rw [τ.map_smulₛₗ, map_smul, map_smul, Finsupp.smul_apply,
-      Finsupp.smul_apply, hx, smul_eq_mul, smul_eq_mul, star_mul', starRingEnd_apply]
+  rw [LinearMap.congr_fun (hτ.eq_coordConj_complexBasis b) x, LinearEquiv.coe_coe,
+    Module.Basis.repr_coordConj]
 
 /-- **The Killing form of the real form is the restriction of the Killing form of `L`.** In a
 real basis of `𝔲` the matrix of `ad X ∘ ad Y` for `X, Y ∈ 𝔲` is the same over `ℝ` and over `ℂ`. -/
@@ -232,14 +239,14 @@ theorem killingForm_realForm (x y : hτ.realForm) :
       TauCeti.LinearMap.trace_eq_zero_of_not_finite hL, LinearMap.zero_apply, LinearMap.zero_apply,
       Complex.ofReal_zero]
   rw [not_not] at hfin
-  let b := Module.finBasis ℝ hτ.realForm
-  rw [killingForm_apply_apply, killingForm_apply_apply, LinearMap.trace_eq_matrix_trace ℝ b,
-    LinearMap.trace_eq_matrix_trace ℂ (hτ.complexBasis b), Matrix.trace, Matrix.trace,
-    Complex.ofReal_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [Matrix.diag_apply, LinearMap.toMatrix_apply, LinearMap.coe_comp, Function.comp_apply,
-    LieAlgebra.ad_apply, complexBasis_apply]
-  rw [← complexBasis_repr_coe, LieSubalgebra.coe_bracket, LieSubalgebra.coe_bracket]
+  -- Transport along real-form descent, then use the base-change formula for the Killing form.
+  rw [← one_smul ℂ (x : L), ← one_smul ℂ (y : L), ← complexificationEquiv_tmul,
+    ← complexificationEquiv_tmul, LieAlgebra.killingForm_of_equiv_apply]
+  -- The Killing form is the trace form of the adjoint representation.
+  change ((LieModule.traceForm ℝ hτ.realForm hτ.realForm x y : ℝ) : ℂ) =
+    LieModule.traceForm ℂ (ℂ ⊗[ℝ] hτ.realForm) (ℂ ⊗[ℝ] hτ.realForm) (1 ⊗ₜ x) (1 ⊗ₜ y)
+  rw [LieModule.traceForm_baseChange, LinearMap.BilinForm.baseChange_tmul, one_mul,
+    Algebra.smul_def, mul_one, Complex.coe_algebraMap]
 
 end IsLieConjugation
 
@@ -281,13 +288,106 @@ theorem killingHermitianForm_smul_right (c : ℂ) (x y : L) :
     killingHermitianForm τ x (c • y) = star c * killingHermitianForm τ x y := by
   simp [killingHermitianForm_def]
 
+/-- The Hermitian Killing form is odd in the first argument. -/
+@[simp]
+theorem killingHermitianForm_neg_left (x y : L) :
+    killingHermitianForm τ (-x) y = -killingHermitianForm τ x y := by
+  simp [killingHermitianForm_def]
+
+/-- The Hermitian Killing form is odd in the second argument. -/
+@[simp]
+theorem killingHermitianForm_neg_right (x y : L) :
+    killingHermitianForm τ x (-y) = -killingHermitianForm τ x y := by
+  simp [killingHermitianForm_def]
+
+/-- The Hermitian Killing form is subtractive in the first argument. -/
+@[simp]
+theorem killingHermitianForm_sub_left (x x' y : L) :
+    killingHermitianForm τ (x - x') y =
+      killingHermitianForm τ x y - killingHermitianForm τ x' y := by
+  simp only [killingHermitianForm_def, map_sub, LinearMap.sub_apply, neg_sub_neg, neg_sub]
+
+/-- The Hermitian Killing form is subtractive in the second argument. -/
+@[simp]
+theorem killingHermitianForm_sub_right (x y y' : L) :
+    killingHermitianForm τ x (y - y') =
+      killingHermitianForm τ x y - killingHermitianForm τ x y' := by
+  simp only [killingHermitianForm_def, map_sub, neg_sub_neg, neg_sub]
+
+/-- The Hermitian Killing form is additive over finite sums in the first argument. -/
+theorem killingHermitianForm_sum_left {ι : Type*} (s : Finset ι) (f : ι → L) (y : L) :
+    killingHermitianForm τ (∑ i ∈ s, f i) y = ∑ i ∈ s, killingHermitianForm τ (f i) y := by
+  simp only [killingHermitianForm_def, map_sum, LinearMap.sum_apply, Finset.sum_neg_distrib]
+
+/-- The Hermitian Killing form is additive over finite sums in the second argument. -/
+theorem killingHermitianForm_sum_right {ι : Type*} (s : Finset ι) (x : L) (g : ι → L) :
+    killingHermitianForm τ x (∑ i ∈ s, g i) = ∑ i ∈ s, killingHermitianForm τ x (g i) := by
+  simp only [killingHermitianForm_def, map_sum, Finset.sum_neg_distrib]
+
 /-- **The Hermitian Killing form of a conjugation is Hermitian**: `H_τ(y, x) = conj H_τ(x, y)`. -/
 theorem killingHermitianForm_conj_symm (hτ : IsLieConjugation τ)
     (x y : L) : killingHermitianForm τ y x = star (killingHermitianForm τ x y) := by
   rw [killingHermitianForm_def, killingHermitianForm_def, star_neg, ← hτ.killingForm_map,
     hτ.apply_apply, LieModule.traceForm_comm]
 
+/-- A conjugation conjugates its Hermitian Killing form: `H_τ(τ x, τ y) = conj H_τ(x, y)`. -/
+theorem IsLieConjugation.killingHermitianForm_map (hτ : IsLieConjugation τ) (x y : L) :
+    killingHermitianForm τ (τ x) (τ y) = star (killingHermitianForm τ x y) := by
+  rw [killingHermitianForm_def, killingHermitianForm_def, hτ.killingForm_map, star_neg]
+
+/-- **Invariance of the Hermitian Killing form**: `ad z` is adjoint to `-ad (τ z)`, that is
+`H_τ(⁅z, x⁆, y) = -H_τ(x, ⁅τ z, y⁆)`. -/
+theorem IsLieConjugation.killingHermitianForm_lie_left (hτ : IsLieConjugation τ) (z x y : L) :
+    killingHermitianForm τ ⁅z, x⁆ y = -killingHermitianForm τ x ⁅τ z, y⁆ := by
+  rw [killingHermitianForm_def, killingHermitianForm_def, hτ.map_lie, hτ.apply_apply, neg_neg,
+    ← lie_skew, map_neg, LinearMap.neg_apply, neg_neg, LieModule.traceForm_apply_lie_apply]
+
+/-- A conjugation is compact exactly when its Hermitian Killing form is positive definite. -/
+theorem isCompactConjugation_iff :
+    IsCompactConjugation τ ↔
+      IsLieConjugation τ ∧ ∀ x : L, x ≠ 0 → 0 < killingHermitianForm τ x x :=
+  ⟨fun h ↦ ⟨h.toIsLieConjugation, h.pos⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
 namespace IsCompactConjugation
+
+section Complex
+
+variable (hτ : IsCompactConjugation τ)
+include hτ
+
+/-- The Hermitian Killing form of a compact conjugation is nonnegative on the diagonal. -/
+theorem nonneg (x : L) : 0 ≤ killingHermitianForm τ x x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  · exact (hτ.pos x hx).le
+
+/-- The Hermitian Killing form of a compact conjugation vanishes at `(x, x)` only for `x = 0`. -/
+theorem eq_zero_iff {x : L} : killingHermitianForm τ x x = 0 ↔ x = 0 :=
+  ⟨fun h ↦ by_contra fun hx ↦ (hτ.pos x hx).ne' h, fun h ↦ by simp [h]⟩
+
+/-- **A complex Lie algebra with a compact conjugation is finite-dimensional**: in infinite
+dimension the Killing form vanishes, so `H_τ` cannot be positive definite on a nonzero vector. -/
+theorem finiteDimensional : FiniteDimensional ℂ L := by
+  by_contra hfin
+  have : Nontrivial L := by
+    by_contra h
+    rw [not_nontrivial_iff_subsingleton] at h
+    exact hfin inferInstance
+  obtain ⟨x, hx⟩ := exists_ne (0 : L)
+  refine (hτ.pos x hx).ne' ?_
+  rw [killingHermitianForm_def, killingForm_apply_apply,
+    TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, LinearMap.zero_apply, neg_zero]
+
+/-- **The Killing form of a complex Lie algebra with a compact conjugation is nondegenerate**: if
+`B(y, x) = 0` for all `y`, then `H_τ(x, x) = -B(τ x, x) = 0`, so `x = 0`. -/
+theorem isKilling : LieAlgebra.IsKilling ℂ L where
+  killingCompl_top_eq_bot := by
+    refine eq_bot_iff.mpr fun x hx ↦ ?_
+    rw [LieIdeal.mem_killingCompl] at hx
+    rw [LieSubmodule.mem_bot, ← hτ.eq_zero_iff, killingHermitianForm_def,
+      LieModule.traceForm_comm, hx (τ x) (LieSubmodule.mem_top _), neg_zero]
+
+end Complex
 
 variable [LieAlgebra ℝ L] [IsScalarTower ℝ ℂ L] (hτ : IsCompactConjugation τ)
 
@@ -309,9 +409,10 @@ namespace Module.Basis
 
 variable {L ι : Type*} [LieRing L] [LieAlgebra ℂ L] (c : Module.Basis ι ℂ L)
 
-/-- **The conjugation fixing a basis with real structure constants preserves brackets.** -/
-theorem isLieConjugation_conj (h : ∀ i j, c.conj ⁅c i, c j⁆ = ⁅c i, c j⁆) :
-    TauCeti.IsLieConjugation c.conj where
+/-- **The conjugation of the coordinates in a basis with real structure constants preserves
+brackets.** -/
+theorem isLieConjugation_coordConj (h : ∀ i j, c.coordConj ⁅c i, c j⁆ = ⁅c i, c j⁆) :
+    TauCeti.IsLieConjugation c.coordConj.toLinearMap where
   map_lie x y := by
     have hx : x ∈ Submodule.span ℂ (Set.range c) := c.mem_span x
     induction hx using Submodule.span_induction with
@@ -321,13 +422,13 @@ theorem isLieConjugation_conj (h : ∀ i j, c.conj ⁅c i, c j⁆ = ⁅c i, c j�
       induction hy using Submodule.span_induction with
       | mem y hy =>
         obtain ⟨j, rfl⟩ := hy
-        rw [h, conj_self, conj_self]
+        rw [LinearEquiv.coe_coe, h, coordConj_self, coordConj_self]
       | zero => simp
       | add y y' _ _ hy hy' => rw [lie_add, map_add, hy, hy', map_add, lie_add]
       | smul a y _ hy => rw [lie_smul, LinearMap.map_smulₛₗ, hy, LinearMap.map_smulₛₗ, lie_smul]
     | zero => simp
     | add x x' _ _ hx hx' => rw [add_lie, map_add, hx, hx', map_add, add_lie]
     | smul a x _ hx => rw [smul_lie, LinearMap.map_smulₛₗ, hx, LinearMap.map_smulₛₗ, smul_lie]
-  involutive := c.conj_involutive
+  involutive := c.coordConj_coordConj
 
 end Module.Basis

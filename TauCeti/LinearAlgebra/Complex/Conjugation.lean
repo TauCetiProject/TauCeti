@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Basic
-public import TauCeti.LinearAlgebra.Basis.Semilinear
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.Complex.Module
@@ -56,8 +55,6 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   `TauCeti.complexification_ext` says the two coordinates determine the vector.
 * `LinearEquiv.conjugationOfComplexification`: the tensor conjugation transported through a
   complexification equivalence `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`.
-* `Module.Basis.conj`: the conjugation fixing a basis, which conjugates the coordinates
-  (`Module.Basis.repr_conj`).
 
 ## Main statements
 
@@ -326,14 +323,16 @@ theorem _root_.LinearMap.liftBaseChange_complex_injective_of_conj (f : W →ₗ[
   rw [hf (h₁.trans (map_zero f).symm), hf (h₂.trans (map_zero f).symm)]
   simp
 
-/-- A conjugate-linear map is real-linear, for any real structure compatible with the complex
-one. -/
-theorem _root_.LinearMap.map_real_smul (K : E →ₛₗ[starRingEnd ℂ] E) (r : ℝ) (x : E) :
-    K (r • x) = r • K x := by
+end LiftBaseChange
+
+/-- A conjugate-linear map is real-linear, for any real structures compatible with the complex
+ones. -/
+@[simp]
+theorem _root_.LinearMap.map_real_smul {E F : Type*} [AddCommMonoid E] [Module ℂ E] [Module ℝ E]
+    [IsScalarTower ℝ ℂ E] [AddCommMonoid F] [Module ℂ F] [Module ℝ F] [IsScalarTower ℝ ℂ F]
+    (K : E →ₛₗ[starRingEnd ℂ] F) (r : ℝ) (x : E) : K (r • x) = r • K x := by
   rw [← algebraMap_smul ℂ r x, K.map_smulₛₗ, ← algebraMap_smul ℂ r (K x), Complex.coe_algebraMap,
     starRingEnd_apply, Complex.star_def, Complex.conj_ofReal]
-
-end LiftBaseChange
 
 /-! ### The complexification of the real points -/
 
@@ -742,33 +741,3 @@ theorem conjugationOfComplexification_realPointsEquiv (hK : Function.Involutive 
   ((realPointsEquiv hK).conjugationOfComplexification_unique K fun w ↦ by simp).symm
 
 end TauCeti
-
-namespace Module.Basis
-
-variable {V ι : Type*} [AddCommGroup V] [Module ℂ V] (c : Module.Basis ι ℂ V)
-
-/-- The **conjugation fixing a basis** of a complex vector space: it conjugates the coordinates.
-The basis may be infinite; the coordinates of a vector are finitely supported. -/
-noncomputable def conj : V →ₛₗ[starRingEnd ℂ] V :=
-  c.semilinearMap (starRingEnd ℂ) c
-
-/-- `Module.Basis.conj` conjugates the coordinates. -/
-@[simp]
-theorem repr_conj (x : V) (i : ι) : c.repr (c.conj x) i = star (c.repr x i) :=
-  c.repr_semilinearMap_apply (starRingEnd ℂ) c x i
-
-/-- `Module.Basis.conj` fixes the basis. -/
-@[simp]
-theorem conj_self (i : ι) : c.conj (c i) = c i :=
-  c.semilinearMap_apply_self (starRingEnd ℂ) c i
-
-/-- `Module.Basis.conj` is an involution. -/
-@[simp]
-theorem conj_conj (x : V) : c.conj (c.conj x) = x :=
-  c.ext_elem fun j ↦ by simp
-
-/-- `Module.Basis.conj` is an involution. -/
-theorem conj_involutive : Function.Involutive c.conj :=
-  c.conj_conj
-
-end Module.Basis

@@ -30,8 +30,8 @@ root vectors can then be rescaled into a Chevalley system for it
 (`TauCeti.exists_isChevalleySystem_of_isAlgClosed`).
 
 The root vectors and the simple coroots form a basis of `L` whose structure constants are integers.
-The conjugation `σ` of the coordinates in this basis (`Module.Basis.conj`) therefore preserves
-brackets (`Module.Basis.isLieConjugation_conj`), and it commutes with `ω`, which preserves the
+The conjugation `σ` of the coordinates in this basis (`Module.Basis.coordConj`) therefore preserves
+brackets (`Module.Basis.isLieConjugation_coordConj`), and it commutes with `ω`, which preserves the
 integral span of the basis. Their composite `τ = σ ∘ ω`
 (`TauCeti.IsChevalleySystem.compactConjugation`) is a conjugation with `τ (x α) = -x (-α)` and
 `τ α∨ = -α∨`.
@@ -88,8 +88,8 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℂ L] [FiniteDimensional ℂ L] [I
   (hx : IsChevalleySystem ω x) (b : (rootSystem H).Base)
 
 /-- The conjugation fixing the root vectors and simple coroots fixes the Chevalley Lie lattice. -/
-theorem conj_eq_self_of_mem_chevalleyLieLattice {z : L} (hz : z ∈ hx.chevalleyLieLattice) :
-    (hx.toIsSl2System.rootSimpleCorootFieldBasis b).conj z = z := by
+theorem coordConj_eq_self_of_mem_chevalleyLieLattice {z : L} (hz : z ∈ hx.chevalleyLieLattice) :
+    (hx.toIsSl2System.rootSimpleCorootFieldBasis b).coordConj z = z := by
   lift z to hx.chevalleyLieLattice using hz with w
   have h : (w : L) = ∑ k, (hx.rootSimpleCorootBasis b).repr w k •
       hx.toIsSl2System.rootSimpleCorootFieldBasis b k := by
@@ -99,7 +99,7 @@ theorem conj_eq_self_of_mem_chevalleyLieLattice {z : L} (hz : z ∈ hx.chevalley
     rw [SetLike.val_smul, coe_rootSimpleCorootBasis]
   rw [h, map_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [map_zsmul, Module.Basis.conj_self]
+  rw [map_zsmul, Module.Basis.coordConj_self]
 
 /-- The basis of root vectors and simple coroots lies in the Chevalley Lie lattice. -/
 theorem rootSimpleCorootFieldBasis_mem_chevalleyLieLattice (k : H.root ⊕ b.support) :
@@ -119,16 +119,17 @@ theorem apply_rootSimpleCorootFieldBasis_mem_chevalleyLieLattice (k : H.root ⊕
 
 /-- The conjugation fixing the root vectors and simple coroots commutes with the Chevalley
 involution. -/
-theorem conj_apply_comm (z : L) :
-    (hx.toIsSl2System.rootSimpleCorootFieldBasis b).conj (ω z) =
-      ω ((hx.toIsSl2System.rootSimpleCorootFieldBasis b).conj z) := by
-  have h : (hx.toIsSl2System.rootSimpleCorootFieldBasis b).conj.comp
+theorem coordConj_apply_comm (z : L) :
+    (hx.toIsSl2System.rootSimpleCorootFieldBasis b).coordConj (ω z) =
+      ω ((hx.toIsSl2System.rootSimpleCorootFieldBasis b).coordConj z) := by
+  have h : (hx.toIsSl2System.rootSimpleCorootFieldBasis b).coordConj.toLinearMap.comp
       ω.toLieHom.toLinearMap =
-      ω.toLieHom.toLinearMap.comp (hx.toIsSl2System.rootSimpleCorootFieldBasis b).conj :=
+      ω.toLieHom.toLinearMap.comp
+        (hx.toIsSl2System.rootSimpleCorootFieldBasis b).coordConj.toLinearMap :=
     (hx.toIsSl2System.rootSimpleCorootFieldBasis b).ext fun k ↦ by
       simp only [LinearMap.comp_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom,
-        Module.Basis.conj_self]
-      exact hx.conj_eq_self_of_mem_chevalleyLieLattice b
+        LinearEquiv.coe_coe, Module.Basis.coordConj_self]
+      exact hx.coordConj_eq_self_of_mem_chevalleyLieLattice b
         (hx.apply_rootSimpleCorootFieldBasis_mem_chevalleyLieLattice b k)
   exact DFunLike.congr_fun h z
 
@@ -136,11 +137,11 @@ theorem conj_apply_comm (z : L) :
 the conjugation of the coordinates in the basis of root vectors and simple coroots of `b`. It sends
 `x α` to `-x (-α)` and `α∨` to `-α∨`. -/
 noncomputable def compactConjugation : L →ₛₗ[starRingEnd ℂ] L :=
-  (hx.toIsSl2System.rootSimpleCorootFieldBasis b).conj.comp ω.toLieHom.toLinearMap
+  (hx.toIsSl2System.rootSimpleCorootFieldBasis b).coordConj.toLinearMap.comp ω.toLieHom.toLinearMap
 
 /-- The compact conjugation is `ω` followed by the conjugation of coordinates. -/
 theorem compactConjugation_apply (z : L) :
-    hx.compactConjugation b z = (hx.toIsSl2System.rootSimpleCorootFieldBasis b).conj (ω z) :=
+    hx.compactConjugation b z = (hx.toIsSl2System.rootSimpleCorootFieldBasis b).coordConj (ω z) :=
   (rfl)
 
 /-- The compact conjugation sends `x α` to `-x (-α)`. -/
@@ -148,27 +149,28 @@ theorem compactConjugation_apply (z : L) :
 theorem compactConjugation_rootVector (α : Weight ℂ H L) :
     hx.compactConjugation b (x α) = -x (-α) := by
   rw [compactConjugation_apply, hx.map_root, map_neg,
-    hx.conj_eq_self_of_mem_chevalleyLieLattice b (hx.rootVector_mem_chevalleyLieLattice _)]
+    hx.coordConj_eq_self_of_mem_chevalleyLieLattice b (hx.rootVector_mem_chevalleyLieLattice _)]
 
 /-- The compact conjugation sends `α∨` to `-α∨`. -/
 @[simp]
 theorem compactConjugation_coroot (α : Weight ℂ H L) :
     hx.compactConjugation b (coroot α) = -(coroot α : L) := by
   rw [compactConjugation_apply, hx.map_coroot, map_neg,
-    hx.conj_eq_self_of_mem_chevalleyLieLattice b (hx.coroot_mem_chevalleyLieLattice _)]
+    hx.coordConj_eq_self_of_mem_chevalleyLieLattice b (hx.coroot_mem_chevalleyLieLattice _)]
 
 /-- **The compact conjugation is a conjugation.** -/
 theorem isLieConjugation_compactConjugation : IsLieConjugation (hx.compactConjugation b) where
   map_lie y z := by
-    have hσ := (hx.toIsSl2System.rootSimpleCorootFieldBasis b).isLieConjugation_conj
-      fun i j ↦ hx.conj_eq_self_of_mem_chevalleyLieLattice b <|
+    have hσ := (hx.toIsSl2System.rootSimpleCorootFieldBasis b).isLieConjugation_coordConj
+      fun i j ↦ hx.coordConj_eq_self_of_mem_chevalleyLieLattice b <|
         hx.chevalleyLieLattice.lie_mem (hx.rootSimpleCorootFieldBasis_mem_chevalleyLieLattice b i)
           (hx.rootSimpleCorootFieldBasis_mem_chevalleyLieLattice b j)
     rw [compactConjugation_apply, compactConjugation_apply, compactConjugation_apply,
-      LieEquiv.map_lie, hσ.map_lie]
+      LieEquiv.map_lie]
+    simpa only [LinearEquiv.coe_coe] using hσ.map_lie (ω y) (ω z)
   involutive z := by
-    rw [compactConjugation_apply, compactConjugation_apply, ← hx.conj_apply_comm b,
-      Module.Basis.conj_conj, hx.involutive z]
+    rw [compactConjugation_apply, compactConjugation_apply, ← hx.coordConj_apply_comm b,
+      Module.Basis.coordConj_coordConj, hx.involutive z]
 
 /-! ### Positivity of the Hermitian Killing form -/
 
@@ -181,7 +183,7 @@ theorem compactConjugation_eq_sum (v : L) :
   rw [map_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [LinearMap.map_smulₛₗ, compactConjugation_apply,
-    hx.conj_eq_self_of_mem_chevalleyLieLattice b
+    hx.coordConj_eq_self_of_mem_chevalleyLieLattice b
       (hx.apply_rootSimpleCorootFieldBasis_mem_chevalleyLieLattice b k), starRingEnd_apply]
 
 /-- The Hermitian Killing form of the compact conjugation, in the coordinates of the basis of root
@@ -213,11 +215,11 @@ theorem killingHermitianForm_compactConjugation_self (v : L) :
             coroot (i : Weight ℂ H L))) : ℂ) := by
   have hcart (α : H.root) (j : b.support) :
       killingForm ℂ L (x α) (coroot (j : Weight ℂ H L)) = 0 :=
-    hx.toIsSl2System.killingForm_rootVector_cartan (H.isNonZero_coe_root α) _
+    hx.toIsSl2System.killingForm_rootVector_cartan_eq_zero (H.isNonZero_coe_root α) _
   have hcart' (i : b.support) (β : H.root) :
       killingForm ℂ L (coroot (i : Weight ℂ H L)) (x (-(β : Weight ℂ H L))) = 0 := by
     rw [LieModule.traceForm_comm]
-    exact hx.toIsSl2System.killingForm_rootVector_cartan
+    exact hx.toIsSl2System.killingForm_rootVector_cartan_eq_zero
       (Weight.IsNonZero.neg (H.isNonZero_coe_root β)) _
   rw [hx.killingHermitianForm_compactConjugation_eq_sum b, Fintype.sum_sum_type]
   simp only [Fintype.sum_sum_type, IsSl2System.rootSimpleCorootFieldBasis_inl,

@@ -98,18 +98,14 @@ theorem killingForm_eq_sum_root (h h' : H) :
 /-- **The roots separate the points of the Cartan subalgebra**: a point on which every root
 vanishes is zero. -/
 theorem eq_zero_of_forall_root_apply_eq_zero {h : H} (hh : ∀ γ ∈ H.root, γ h = 0) : h = 0 := by
-  refine (Module.forall_dual_apply_eq_zero_iff K h).mp fun f ↦ ?_
-  have hf : f ∈ Submodule.span K
-      ({α : Weight K H L | α.IsNonZero}.image (Weight.toLinear K H L)) := by
-    rw [span_weight_isNonZero_eq_top]
-    trivial
-  induction hf using Submodule.span_induction with
-  | mem g hg =>
-    obtain ⟨γ, hγ, rfl⟩ := hg
-    exact hh γ (by simpa [LieSubalgebra.root] using hγ)
-  | zero => rfl
-  | add f g _ _ hf hg => simp [hf, hg]
-  | smul c f _ hf => simp [hf]
+  -- `h` lies in the kernel of every weight: the zero weight vanishes, and the others are roots.
+  have hmem : h ∈ ⨅ α : Weight K H L, α.ker := by
+    refine Submodule.mem_iInf _ |>.mpr fun α ↦ ?_
+    rw [LinearMap.mem_ker, Weight.toLinear_apply]
+    by_cases hα : α.IsZero
+    · exact congr_fun hα h
+    · exact hh α (by simpa [LieSubalgebra.root] using hα)
+  rwa [iInf_ker_weight_eq_bot, Submodule.mem_bot] at hmem
 
 omit [CharZero K] [FiniteDimensional K L] in
 /-- The roots of a Lie algebra with non-degenerate Killing form are closed under negation, so a
