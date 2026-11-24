@@ -41,19 +41,7 @@ theorem connectedAugmentation_weightedHomogeneousSubmodule_eq_constantCoeff
     TauCeti.GradedAlgebra.connectedAugmentation hneg hzero φ = constantCoeff φ := by
   rcases subsingleton_or_nontrivial R with _ | _
   · exact Subsingleton.elim _ _
-  have hw : ∀ i, 0 < w i := fun i ↦ by
-    classical
-    rcases lt_trichotomy (w i) 0 with hlt | h0 | hgt
-    · have hX : (X i : MvPolynomial σ R) ∈ weightedHomogeneousSubmodule R w (w i) :=
-        isWeightedHomogeneous_X R w i
-      rw [hneg (w i) hlt, Submodule.mem_bot] at hX
-      exact absurd (congrArg (·.coeff (Finsupp.single i 1)) hX) (by simp)
-    · have hX : (X i : MvPolynomial σ R) ∈ weightedHomogeneousSubmodule R w 0 :=
-        h0 ▸ isWeightedHomogeneous_X R w i
-      obtain ⟨c, hc⟩ := hzero (X i) hX
-      have h1 := congrArg (·.coeff (Finsupp.single i 1)) hc
-      simp [Algebra.linearMap_apply, algebraMap_eq, coeff_C, eq_comm (a := (0 : σ →₀ ℕ))] at h1
-    · exact hgt
+  have hw : ∀ i, 0 < w i := weight_pos_of_connected hneg hzero
   have h := congrArg constantCoeff
     (TauCeti.GradedAlgebra.algebraMap_connectedAugmentation hneg hzero φ)
   have hdec : (DirectSum.decompose (weightedHomogeneousSubmodule R w) φ 0 : MvPolynomial σ R) =

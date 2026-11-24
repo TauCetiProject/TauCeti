@@ -30,11 +30,16 @@ for `ℤ`.
 * `MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero`,
   `MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range`: negative-degree vanishing and
   degree-zero characterization of `MvPolynomial.weightedHomogeneousSubmodule R w`.
+* `MvPolynomial.weight_pos_of_connected`: converse positivity of weights when
+  `MvPolynomial.weightedHomogeneousSubmodule R w` is connected and nonnegatively graded over a
+  nontrivial ring.
 -/
 
 public section
 
 namespace MvPolynomial
+
+section OrderedAddMonoid
 
 variable {σ R M : Type*} [CommSemiring R] [AddCommMonoid M] [PartialOrder M]
   [IsOrderedAddMonoid M]
@@ -78,5 +83,37 @@ theorem weightedHomogeneousSubmodule_zero_eq_range {w : σ → M} (hw : ∀ i, 0
   · rintro ⟨c, rfl⟩
     rw [Algebra.linearMap_apply, algebraMap_eq]
     exact isWeightedHomogeneous_C w c
+
+end OrderedAddMonoid
+
+section LinearOrder
+
+variable {σ R M : Type*} [CommSemiring R] [Nontrivial R] [AddCommMonoid M] [LinearOrder M]
+
+/-- If `MvPolynomial σ R` is nonnegatively `M`-graded and connected for a weight function
+`w : σ → M` over a nontrivial ring `R`, then every variable has strictly positive weight. -/
+theorem weight_pos_of_connected {w : σ → M}
+    (hneg : ∀ m < 0, weightedHomogeneousSubmodule R w m = ⊥)
+    (hzero : ∀ ψ ∈ weightedHomogeneousSubmodule R w 0,
+      ψ ∈ LinearMap.range (Algebra.linearMap R (MvPolynomial σ R))) (i : σ) :
+    0 < w i := by
+  classical
+  rcases lt_trichotomy (w i) 0 with hlt | h0 | hgt
+  · have hX : (X i : MvPolynomial σ R) ∈ weightedHomogeneousSubmodule R w (w i) :=
+      isWeightedHomogeneous_X R w i
+    rw [hneg (w i) hlt, Submodule.mem_bot] at hX
+    have h1 := congrArg (·.coeff (Finsupp.single i 1)) hX
+    rw [coeff_X_same, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply] at h1
+    exact absurd h1 one_ne_zero
+  · have hX : (X i : MvPolynomial σ R) ∈ weightedHomogeneousSubmodule R w 0 :=
+      h0 ▸ isWeightedHomogeneous_X R w i
+    obtain ⟨c, hc⟩ := hzero (X i) hX
+    have h1 := congrArg (·.coeff (Finsupp.single i 1)) hc
+    rw [Algebra.linearMap_apply, algebraMap_eq, coeff_C, coeff_X_same,
+      ite_eq_right (Finsupp.single_ne_zero.mpr one_ne_zero).symm] at h1
+    exact absurd h1 zero_ne_one
+  · exact hgt
+
+end LinearOrder
 
 end MvPolynomial

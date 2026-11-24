@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.Ideal.Span
+import TauCeti.Algebra.Category.GradedModuleCat.Free.Idempotent
 import TauCeti.Algebra.Category.GradedModuleCat.Retract.PID
-import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Range
 
 /-!
 # Homogeneous splittings and bases of degree-zero idempotents over a PID
@@ -47,6 +47,15 @@ universe uk uA uI
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
+private theorem retract_ofIso_trans_r_comp_i {C : Type*} [Category C] {X Y Z : C}
+    (Φ : X ≅ Y) (r : Retract Y Z) :
+    ((Retract.ofIso Φ).trans r).r ≫ ((Retract.ofIso Φ).trans r).i = r.r ≫ r.i := by
+  -- Unfold `(Retract.ofIso Φ).trans r` so `Φ.inv ≫ Φ.hom` cancels in the middle.
+  calc ((Retract.ofIso Φ).trans r).r ≫ ((Retract.ofIso Φ).trans r).i
+      = (r.r ≫ Φ.inv) ≫ (Φ.hom ≫ r.i) := rfl
+    _ = r.r ≫ (Φ.inv ≫ Φ.hom) ≫ r.i := by simp only [Category.assoc]
+    _ = r.r ≫ r.i := by rw [Φ.inv_hom_id, Category.id_comp]
+
 /-- **Homogeneous splitting of a degree-zero idempotent on a finite shifted free module `I → A`.**
 Over a connected nonnegatively graded algebra `A` over a PID `k`, any degree-zero idempotent
 `p : (I → A) →ₗ[A] (I → A)` (`[Finite I]`) splits homogeneously through a finite shifted free
@@ -74,29 +83,21 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
   let eD : GradedModuleCat.free 𝒜 (d ∘ ULift.down) ≃ₗ[A] (Fin n → A) :=
     (DirectSum.linearEquivFunOnFintype A (ULift.{uI} (Fin n)) (fun _ ↦ A)).trans
       (LinearEquiv.piCongrLeft A (fun _ ↦ A) Equiv.ulift)
-  have heD_symm : ∀ (q : ℤ) (u : Fin n → A),
-      eD.symm u ∈ (GradedModuleCat.free 𝒜 (d ∘ ULift.down)).grading.piece q ↔
-        ∀ i, u i ∈ 𝒜 (q - d i) := fun q u ↦ by
-    dsimp only [eD]
-    rw [LinearEquiv.symm_trans_apply,
-      GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff]
-    exact ⟨fun h i ↦ h (ULift.up i), fun h j ↦ h j.down⟩
   let rD := (Retract.ofIso Φ).trans rR
   let ι : (Fin n → A) →ₗ[A] (I → A) :=
     eF.toLinearMap ∘ₗ rD.i.hom ∘ₗ eD.symm.toLinearMap
   let π : (I → A) →ₗ[A] (Fin n → A) :=
     eD.toLinearMap ∘ₗ rD.r.hom ∘ₗ eF.symm.toLinearMap
   refine ⟨n, d, ι, π, ?_, ?_, ?_, ?_⟩
+  -- 1. Section property: `π ∘ₗ ι = id`, from `rD.i ≫ rD.r = 𝟙 _`.
   · refine LinearMap.ext fun u ↦ ?_
     have hret : rD.r.hom (rD.i.hom (eD.symm u)) = eD.symm u :=
       LinearMap.congr_fun (congrArg GradedModuleCat.Hom.hom rD.retract) _
     simp [ι, π, hret]
-  · have hri : rD.r ≫ rD.i = GradedModuleCat.freeEndOfPiEnd s p hhom := by
-      calc rD.r ≫ rD.i = (rR.r ≫ Φ.inv) ≫ (Φ.hom ≫ rR.i) := rfl
-        _ = rR.r ≫ (Φ.inv ≫ Φ.hom) ≫ rR.i := by simp only [Category.assoc]
-        _ = rR.r ≫ rR.i := by rw [Φ.inv_hom_id, Category.id_comp]
-        _ = GradedModuleCat.freeEndOfPiEnd s p hhom :=
-          GradedModuleCat.retractRangeOfPiIdempotent_r_comp_i s p hp hhom
+  -- 2. Idempotent factorization: `ι ∘ₗ π = p`, from `rD.r ≫ rD.i = freeEndOfPiEnd s p hhom`.
+  · have hri : rD.r ≫ rD.i = GradedModuleCat.freeEndOfPiEnd s p hhom :=
+      (retract_ofIso_trans_r_comp_i Φ rR).trans
+        (GradedModuleCat.retractRangeOfPiIdempotent_r_comp_i s p hp hhom)
     refine LinearMap.ext fun v ↦ ?_
     have hv : rD.i.hom (rD.r.hom (eF.symm v)) =
         (GradedModuleCat.freeEndOfPiEnd s p hhom).hom (eF.symm v) :=
@@ -106,11 +107,19 @@ theorem exists_homogeneous_splitting_of_idempotent_of_connected
     rw [hv]
     dsimp only [eF]
     rw [GradedModuleCat.hom_freeEndOfPiEnd_apply, LinearEquiv.apply_symm_apply]
-  · exact fun q u hu ↦ (GradedModuleCat.mem_free_piece_iff 𝒜 s q _).mp
-      (GradedModuleCat.map_mem rD.i ((heD_symm q u).mpr hu))
-  · exact fun q v hv ↦ (heD_symm q (π v)).mp <| by
-      simpa [π] using GradedModuleCat.map_mem rD.r
-        ((GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q v).mpr hv)
+  -- 3. Homogeneity of `ι`: push degree-`q` tuples across `eD.symm`, `rD.i`, and `eF`.
+  · exact fun q u hu ↦ (GradedModuleCat.mem_free_piece_iff 𝒜 s q _).mp <|
+      GradedModuleCat.map_mem rD.i <|
+        (GradedModuleCat.linearEquivFunOnFintype_trans_piCongrLeft_symm_mem_free_piece_iff
+          𝒜 Equiv.ulift d q u).mpr hu
+  -- 4. Homogeneity of `π`: push degree-`q` tuples across `eF.symm`, `rD.r`, and `eD`.
+  · exact fun q v hv ↦
+      (GradedModuleCat.linearEquivFunOnFintype_trans_piCongrLeft_symm_mem_free_piece_iff
+        𝒜 (Equiv.ulift : ULift.{uI} (Fin n) ≃ Fin n) d q (π v)).mp <| by
+          simp only [π, eD, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+            LinearEquiv.symm_apply_apply]
+          exact GradedModuleCat.map_mem rD.r
+            ((GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff 𝒜 s q v).mpr hv)
 
 /-- **Homogeneous basis of the image of a degree-zero idempotent on `I → A`.**
 Over a connected nonnegatively graded algebra `A` over a PID `k`, the range of any degree-zero

@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.Foam.EquivariantRing.Basic
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.RingTheory.PrincipalIdealDomain
-import TauCeti.Algebra.Module.GradedModule.Idempotent.PID
+import TauCeti.Algebra.Category.GradedModuleCat.Retract.Idempotent
 
 /-!
 # Homogeneous splittings and bases of idempotents over the equivariant foam ring

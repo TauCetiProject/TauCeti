@@ -73,10 +73,7 @@ theorem diag_one_zero_degree (N : ℕ) (a b : ℤ) :
       (d : Fin n → ℤ),
       (∀ i j, (basis i).val j ∈ EquivariantRing.grading N (d i - ![a, b] j)) ∧
       Multiset.map d Finset.univ.val = {a} := by
-  let proj₀ : (Fin 2 → EquivariantRing N) →ₗ[EquivariantRing N] EquivariantRing N :=
-    LinearMap.proj 0
-  let p := (LinearMap.toSpanSingleton (EquivariantRing N)
-    (Fin 2 → EquivariantRing N) ![1, 0]).comp proj₀
+  intro proj₀ p
   have hw : ∀ j : Fin 2, (![1, 0] : Fin 2 → EquivariantRing N) j ∈
       EquivariantRing.grading N (![a, b] 0 - ![a, b] j) := by
     intro j
@@ -105,11 +102,7 @@ theorem e1_offDiag_degree (N : ℕ) :
       (d : Fin n → ℤ),
       (∀ i j, (basis i).val j ∈ EquivariantRing.grading (N + 1) (d i - ![2, 0] j)) ∧
       Multiset.map d Finset.univ.val = {2}) := by
-  let proj₀ : (Fin 2 → EquivariantRing (N + 1)) →ₗ[EquivariantRing (N + 1)]
-    EquivariantRing (N + 1) := LinearMap.proj 0
-  let w : Fin 2 → EquivariantRing (N + 1) := ![1, MvPolynomial.X 0]
-  let p := (LinearMap.toSpanSingleton (EquivariantRing (N + 1))
-    (Fin 2 → EquivariantRing (N + 1)) w).comp proj₀
+  intro proj₀ w p
   have hw : ∀ j : Fin 2, w j ∈ EquivariantRing.grading (N + 1) (![2, 0] 0 - ![2, 0] j) := by
     intro j
     fin_cases j

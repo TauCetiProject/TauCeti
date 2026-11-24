@@ -37,10 +37,11 @@ noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (s : I �
     Retract (rangeObjOfPiEnd s p hhom) (free 𝒜 s) :=
   let eF := DirectSum.linearEquivFunOnFintype A I (fun _ ↦ A)
   let p' := freeEndOfPiEnd s p hhom
+  have hp_idem : IsIdempotentElem (p : Module.End A (I → A)) := by
+    rw [IsIdempotentElem, Module.End.mul_eq_comp, hp]
   have hp' : IsIdempotentElem p'.hom := by
     rw [hom_freeEndOfPiEnd]
-    exact IsIdempotentElem.map (show IsIdempotentElem (p : Module.End A (I → A)) from hp)
-      eF.symm.conjRingEquiv
+    exact IsIdempotentElem.map hp_idem eF.symm.conjRingEquiv
   { i := ofHom (LinearMap.range p'.hom).subtype
       (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
         rw [add_zero]

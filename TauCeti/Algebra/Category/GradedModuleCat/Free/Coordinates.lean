@@ -19,8 +19,10 @@ Transporting `I → A` to `GradedModuleCat.free 𝒜 s` via `DirectSum.linearEqu
 a coordinate membership criterion and graded endomorphisms and range objects in
 `GradedModuleCat 𝒜` for any degree-zero endomorphism of `I → A`:
 
-* `TauCeti.GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff`: tuple membership in
-  the degree-`p` piece of `free 𝒜 d`.
+* `TauCeti.GradedModuleCat.linearEquivFunOnFintype_symm_mem_free_piece_iff`,
+  `TauCeti.GradedModuleCat.linearEquivFunOnFintype_trans_piCongrLeft_symm_mem_free_piece_iff`:
+  tuple membership in the degree-`p` piece of `free 𝒜 d` and its reindexing along an
+  equivalence.
 * `TauCeti.GradedModuleCat.freeEndOfPiEnd`, `TauCeti.GradedModuleCat.rangeObjOfPiEnd`,
   `TauCeti.GradedModuleCat.rangeEquivRangeObj`: graded endomorphism and graded range object in
   `GradedModuleCat 𝒜` associated to a degree-zero endomorphism of `I → A`.
@@ -47,6 +49,20 @@ theorem linearEquivFunOnFintype_symm_mem_free_piece_iff (𝒜 : ℤ → Submodul
   rw [mem_free_piece_iff]
   refine forall_congr' fun i ↦ ?_
   rw [← DirectSum.linearEquivFunOnFintype_apply A, LinearEquiv.apply_symm_apply]
+
+/-- Under `(DirectSum.linearEquivFunOnFintype A α _).trans (LinearEquiv.piCongrLeft A _ e)`,
+the inverse image of a tuple `u : β → A` lies in the degree-`p` piece of `free 𝒜 (d ∘ e)`
+exactly when `∀ b, u b ∈ 𝒜 (p - d b)`. -/
+theorem linearEquivFunOnFintype_trans_piCongrLeft_symm_mem_free_piece_iff
+    (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜]
+    {α β : Type*} [Fintype α] (e : α ≃ β) (d : β → ℤ) (p : ℤ) (u : β → A) :
+    ((DirectSum.linearEquivFunOnFintype A α (fun _ ↦ A)).trans
+      (LinearEquiv.piCongrLeft A (fun _ ↦ A) e)).symm u ∈
+        (free 𝒜 (d ∘ e)).grading.piece p ↔ ∀ b, u b ∈ 𝒜 (p - d b) := by
+  rw [LinearEquiv.symm_trans_apply, linearEquivFunOnFintype_symm_mem_free_piece_iff]
+  simp only [LinearEquiv.piCongrLeft, LinearEquiv.symm_symm, LinearEquiv.piCongrLeft'_apply,
+    Equiv.symm_symm, Function.comp_apply]
+  exact e.forall_congr_right (q := fun b ↦ u b ∈ 𝒜 (p - d b))
 
 omit [GradedAlgebra 𝒜] in
 /-- Transporting a degree-zero endomorphism of `I → A` to `GradedModuleCat.free 𝒜 s`. -/

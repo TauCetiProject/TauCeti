@@ -103,7 +103,7 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
     (d : Fin n → ℤ) (hb : ∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) :
     Multiset.map d Finset.univ.val = {s i₀} := by
   have hp_eq : p = (LinearMap.proj i₀).smulRight w := LinearMap.ext fun v ↦ hp v
-  have hleft : Function.LeftInverse (fun v : I → A ↦ v i₀)
+  have hleft : Function.LeftInverse (LinearMap.proj i₀ : (I → A) →ₗ[A] A)
       (LinearMap.toSpanSingleton A (I → A) w) := fun a ↦ by simp [hw₀]
   have hrange : LinearMap.range (LinearMap.toSpanSingleton A (I → A) w) = LinearMap.range p := by
     rw [LinearMap.range_toSpanSingleton, hp_eq,
@@ -114,7 +114,9 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
   have hb₀ : ∀ (i : Fin 1) (j : I), (b₀ i).val j ∈ 𝒜 (s i₀ - s j) := fun i j ↦ by
     have hval : (b₀ i).val = w := by
       rw [Module.Basis.map_apply, Module.Basis.singleton_apply]
-      simp [e₁, LinearEquiv.ofLeftInverse]
+      dsimp only [e₁]
+      rw [LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
+        LinearEquiv.ofLeftInverse_apply, LinearMap.toSpanSingleton_apply, one_smul]
     rw [hval]
     exact hw j
   have h := multiset_map_eq_of_homogeneous_basis_range hneg hzero s p
