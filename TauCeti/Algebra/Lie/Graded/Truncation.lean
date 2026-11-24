@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.Graded.Supported
 public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.PositiveDegrees.Grading
 public import Mathlib.Algebra.Lie.Nilpotent
-import TauCeti.Algebra.PositiveDegrees.Subquotient
 
 /-!
 # Degree ideals and nilpotent truncations
@@ -253,9 +252,8 @@ theorem ker_truncationMap_eq_iSup {k l : ℕ} (h : k ≤ l) :
       ⨆ n : {n : N // (k : ℤ) < d.degree n}, d.truncatedGrading ℒ l n := by
     rw [hlift, LieIdeal.ker_liftQ_mkQ,
       LieIdeal.coe_map_of_surjective (d.degreeIdeal ℒ l).surjective_mkQ,
-      degreeIdeal_toSubmodule, degreeSubmodule_def, Submodule.map_iSup]
-    simp only [truncatedGrading_eq]
-    exact iSup_congr fun n => by rw [LieIdeal.coe_mkQ]
+      degreeIdeal_toSubmodule, LieIdeal.coe_mkQ, ← d.degreeSubmodule_map,
+      ← funext (d.truncatedGrading_eq ℒ l), degreeSubmodule_def]
   rw [hpieces]
   apply le_antisymm
   · refine iSup_le fun n => ?_

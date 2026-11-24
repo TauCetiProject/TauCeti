@@ -25,36 +25,6 @@ public section
 
 namespace TauCeti
 
-section LinearMap
-
-variable {ι R M M' : Type*} [AddCommMonoid ι] [Semiring R]
-  [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M']
-  {d : PositiveDegrees ι} {ℳ : ι → Submodule R M}
-
-namespace IsPositiveGrading
-
-/-- Taking linear images of the homogeneous pieces preserves positive support. -/
-instance map [IsPositiveGrading d ℳ] (f : M →ₗ[R] M') :
-    IsPositiveGrading d (fun i => (ℳ i).map f) where
-  eq_bot i hi := by rw [eq_bot (d := d) (ℒ := ℳ) i hi, Submodule.map_bot]
-
-/-- Taking preimages under an injective linear map preserves positive support. -/
-theorem comap [IsPositiveGrading d ℳ] (f : M' →ₗ[R] M) (hf : Function.Injective f) :
-    IsPositiveGrading d (fun i => (ℳ i).comap f) where
-  eq_bot i hi := by
-    rw [eq_bot (d := d) (ℒ := ℳ) i hi, Submodule.comap_bot,
-      LinearMap.ker_eq_bot_of_injective hf]
-
-end IsPositiveGrading
-
-/-- Taking linear images of the pieces commutes with forming a degree submodule. -/
-theorem PositiveDegrees.degreeSubmodule_map (d : PositiveDegrees ι)
-    (ℳ : ι → Submodule R M) (f : M →ₗ[R] M') (k : ℕ) :
-    d.degreeSubmodule (fun i => (ℳ i).map f) k = (d.degreeSubmodule ℳ k).map f := by
-  rw [degreeSubmodule_def, degreeSubmodule_def, Submodule.map_iSup]
-
-end LinearMap
-
 section Submodule
 
 variable {ι R S M : Type*} [AddCommMonoid ι] [DecidableEq ι] [Semiring R] [Semiring S]
@@ -69,16 +39,16 @@ instance IsPositiveGrading.submodule [IsPositiveGrading d G.piece] :
   exact IsPositiveGrading.comap (U.subtype.restrictScalars R) Subtype.val_injective
 
 /-- At every cutoff a homogeneous submodule inherits the restricted degree filtration. -/
+@[simp]
 theorem PositiveDegrees.degreeSubmodule_submodule (d : PositiveDegrees ι) (k : ℕ) :
     d.degreeSubmodule (G.submodule U hU).piece k =
       (d.degreeSubmodule G.piece k).comap (U.subtype.restrictScalars R) := by
-  ext x
-  change x ∈ d.degreeSubmodule (G.submodule U hU).piece k ↔
-    (x : M) ∈ d.degreeSubmodule G.piece k
-  rw [d.mem_degreeSubmodule_iff, d.mem_degreeSubmodule_iff]
-  simp only [← G.coe_decompose_submodule U hU]
-  exact ⟨fun h i hi => congrArg Subtype.val (h i hi),
-    fun h i hi => Subtype.val_injective (h i hi)⟩
+  simpa only [degreeSubmodule_def, DirectSum.degreeTail_def, iSup_subtype, Nat.cast_succ,
+    Int.add_one_le_iff] using
+    (LinearMap.comap_degreeTail_eq_of_injective (U.subtype.restrictScalars R)
+      (G.submodule U hU).piece G.piece Subtype.val_injective (fun _ _ hx => by
+        simpa only [LinearMap.restrictScalars_apply, Submodule.subtype_apply] using
+          (G.mem_submodule_piece U hU).mp hx) d.degree (k + 1)).symm
 
 end Submodule
 
@@ -97,6 +67,7 @@ instance IsPositiveGrading.quotient [IsPositiveGrading d G.piece] :
 
 /-- At every cutoff the degree filtration of a homogeneous quotient is the image of the
 ambient filtration. -/
+@[simp]
 theorem PositiveDegrees.degreeSubmodule_quotient (d : PositiveDegrees ι) (k : ℕ) :
     d.degreeSubmodule (G.quotient U hU).piece k =
       (d.degreeSubmodule G.piece k).map (U.mkQ.restrictScalars R) := by
