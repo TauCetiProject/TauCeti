@@ -138,11 +138,9 @@ theorem comapVeronese_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : veronese 
       const (i := d * i) (j := d * j) (by push_cast; rw [h]; ring) (r : A) (s : A)
         (mem_veroneseGrading.mp hr) (mem_veroneseGrading.mp hs) V
         ((hUV.trans (Scheme.Hom.preimage_mono _ hU)).trans
-          (veroneseIso_inv_preimage_basicOpen 𝒜 d s).le) := by
-  refine ext fun (q : V) ↦ ?_
-  simp only [comapVeronese_apply, const_apply]
-  -- `@`: instance search does not find that ideals of points of `Proj` are prime
-  exact @Localization.localRingHom_mk ..
+          (veroneseIso_inv_preimage_basicOpen 𝒜 d s).le) :=
+  ext <| comapFun_const (toIdeal_asHomogeneousIdeal_veroneseIso_inv 𝒜 d) hUV (δ := (d * ·))
+    (fun _ _ ↦ mem_veroneseGrading.mp) (fun i j h ↦ by push_cast; rw [h]; ring) h r s hr hs hU
 
 /-- The section `r / 1` induced by an element `r` of degree `j` of `A^{(d)}` pulls back to the
 section `r / 1` induced by `r` as an element of degree `d j` of `A`. -/

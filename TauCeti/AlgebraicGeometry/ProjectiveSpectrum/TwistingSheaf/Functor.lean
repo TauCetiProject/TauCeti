@@ -39,8 +39,9 @@ the structure sheaf.
 * `AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.comapFun`: the pointwise pullback of
   localization-valued functions along a continuous map and a ring homomorphism contracting prime
   ideals. `AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.isLocallyFraction_comapFun` proves
-  preservation of local fractions with a specified degree change; together they also give the
-  pullback along `Proj A ≅ Proj A^{(d)}` for a Veronese subalgebra.
+  preservation of local fractions with a specified degree change, and
+  `AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.comapFun_const` evaluates it on fractions;
+  together they also give the pullback along `Proj A ≅ Proj A^{(d)}` for a Veronese subalgebra.
 * `AlgebraicGeometry.Proj.twistingSheaf.comap f hf hUV`: the map
   `Γ(U, 𝒪_{Proj 𝒜}(n)) → Γ(V, 𝒪_{Proj ℬ}(n))` for `V` contained in the preimage of `U`.
 * `AlgebraicGeometry.Proj.twistingSheafMap f hf n`: the morphism of sheaves of modules
@@ -178,6 +179,26 @@ variable {A B C σ τ ψ : Type u} [CommRing A] [SetLike σ A] [AddSubgroupClass
   {𝒜 : ℕ → σ} {ℬ : ℕ → τ} {𝒞 : ℕ → ψ} [GradedRing 𝒜] [GradedRing ℬ] [GradedRing 𝒞]
   (f : 𝒜 →+*ᵍ ℬ) (hf : ℬ₊ ≤ 𝒜₊.map f) {n : ℤ}
 
+namespace ProjectiveSpectrum.TwistingSheaf
+
+/-- If `g` sends `𝒜 i` into `ℬ (δ i)` for a map `δ : ℕ → ℕ` sending degree differences `n` to
+`n'`, the pullback of the fraction `r / s` of degree `n` is the fraction `g r / g s` of degree
+`n'`. -/
+theorem comapFun_const {φ : C(ProjectiveSpectrum.top ℬ, ProjectiveSpectrum.top 𝒜)}
+    {g : A →+* B}
+    (hφ : ∀ y, (φ y).asHomogeneousIdeal.toIdeal = y.asHomogeneousIdeal.toIdeal.comap g)
+    {U : (Proj 𝒜).Opens} {V : (Proj ℬ).Opens} (hUV : V.carrier ⊆ φ ⁻¹' U.carrier) {δ : ℕ → ℕ}
+    (hδ : ∀ i ⦃a : A⦄, a ∈ 𝒜 i → g a ∈ ℬ (δ i)) {n' : ℤ}
+    (hn : ∀ i j : ℕ, (j : ℤ) = i + n → (δ j : ℤ) = δ i + n') {i j : ℕ} (h : (j : ℤ) = i + n)
+    (r s : A) (hr : r ∈ 𝒜 j) (hs : s ∈ 𝒜 i) (hU : U ≤ Proj.basicOpen 𝒜 s) (y : V) :
+    comapFun φ g hφ hUV (Proj.twistingSheaf.const h r s hr hs U hU).val y =
+      (Proj.twistingSheaf.const (hn i j h) (g r) (g s) (hδ j hr) (hδ i hs) V
+        fun z hz hsz ↦ hU (hUV hz) ((SetLike.ext_iff.mp (hφ z) s).mpr hsz)).val y :=
+  -- `@`: instance search does not find that ideals of points of `Proj` are prime
+  (comapFun_apply ..).trans (@Localization.localRingHom_mk ..)
+
+end ProjectiveSpectrum.TwistingSheaf
+
 namespace Proj
 
 namespace twistingSheaf
@@ -246,10 +267,9 @@ theorem comap_const {i j : ℕ} (h : (j : ℤ) = i + n) (r s : A) (hr : r ∈ �
     (hU : U ≤ basicOpen 𝒜 s) :
     comap f hf hUV (const h r s hr hs U hU) =
       const h (f r) (f s) (Graded.map_mem f hr) (Graded.map_mem f hs) V
-        (hUV.trans fun _ hy ↦ hU hy) := by
-  refine ext fun (y : V) ↦ ?_
-  simp only [comap_apply, const_apply]
-  exact localizationsMap_mk ..
+        (hUV.trans fun _ hy ↦ hU hy) :=
+  ext <| comapFun_const (fun _ ↦ rfl) hUV (δ := fun i ↦ i) (fun _ _ ha ↦ Graded.map_mem f ha)
+    (fun _ _ h ↦ h) h r s hr hs hU
 
 /-- The pullback of sections is multiplicative. -/
 @[simp]
