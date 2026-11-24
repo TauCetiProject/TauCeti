@@ -273,7 +273,7 @@ private theorem norm_evalTerm_pow {k N : ℕ} (h : ‖t‖ ^ N = (p : ℝ)⁻¹ 
 private theorem norm_mul_pow_mul_div_pow_le (a : ℤ_[p]) (n : Fin 2 →₀ ℕ) :
     ‖padicIntAlgebraMap p K a * t ^ n 0 * ((p : K) / t) ^ n 1‖ ≤
       ‖t‖ ^ n 0 * ((p : ℝ) * ‖t‖)⁻¹ ^ n 1 := by
-  rw [norm_mul, norm_mul, norm_pow, norm_pow, norm_div, norm_natCast_prime_eq_inv,
+  rw [norm_mul, norm_mul, norm_pow, norm_pow, norm_div, norm_natCast_p,
     norm_padicIntAlgebraMap, mul_inv, div_eq_mul_inv, mul_assoc]
   exact mul_le_of_le_one_left (by positivity) (PadicInt.norm_le_one a)
 

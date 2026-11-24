@@ -61,6 +61,6 @@ theorem exists_norm_pow_eq_inv_pow (p : ℕ) [Fact p.Prime] {K : Type*} [NormedF
     [NormedAlgebra ℚ_[p] K] [IsAlgClosed K] (k : ℕ) {N : ℕ} (hN : 0 < N) :
     ∃ t : K, ‖t‖ ^ N = (p : ℝ)⁻¹ ^ k := by
   obtain ⟨t, ht⟩ := IsAlgClosed.exists_pow_nat_eq ((p : K) ^ k) hN
-  exact ⟨t, by rw [← norm_pow, ht, norm_pow, norm_natCast_prime_eq_inv]⟩
+  exact ⟨t, by rw [← norm_pow, ht, norm_pow, norm_natCast_p]⟩
 
 end TauCeti

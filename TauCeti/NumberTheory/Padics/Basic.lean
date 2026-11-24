@@ -37,7 +37,7 @@ when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K
 (including the zero seminorm) it maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it
 is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
 `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
-(`TauCeti.norm_natCast_prime_eq_inv`), and a nonzero integer `n` has norm at least
+(`TauCeti.norm_natCast_p`), and a nonzero integer `n` has norm at least
 `1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`).
 
 Two continuous ring homomorphisms from `ℚ_[p]` to a Hausdorff semiring are equal
@@ -179,7 +179,7 @@ theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = 
   rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
 
 /-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, the prime `p` has norm `p⁻¹`. -/
-theorem norm_natCast_prime_eq_inv [NormOneClass K] : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
+theorem norm_natCast_p [NormOneClass K] : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
   rw [norm_natCast_eq_norm_padic (p := p), Padic.norm_p]
 
 /-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, an integer `n` has norm at least `1 / |n|`,
