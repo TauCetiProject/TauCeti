@@ -9,6 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
+public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
 public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
@@ -87,6 +89,10 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
   `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
+* `TauCeti.twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint`: up to sign,
+  `F ↦ (u ↦ u ⌟ F)` is the identification `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` of
+  `⋀² V` with the skew-adjoint endomorphisms for the inner product, so it is injective
+  (`TauCeti.twoVectorContraction_injective`).
 -/
 
 public section
@@ -579,6 +585,33 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
     inner_twoVectorContraction_apply_self, inner_twoVectorContraction_apply_self] at h
   rw [real_inner_comm _ u]
   linarith
+
+/-- The skew endomorphism `u ↦ u ⌟ F` is the negative of the image of `F` under the
+identification `LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint` of `⋀² V` with the skew-adjoint
+endomorphisms for the inner product, whose sign is chosen to match the Clifford bivector action. -/
+theorem twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint (F : ⋀[ℝ]^2 V) :
+    twoVectorContraction F =
+      -(LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
+        (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner) F : Module.End ℝ V) := by
+  let : LieRing (Module.End ℝ V) := LieRing.ofAssociativeRing
+  let : LieAlgebra ℝ (Module.End ℝ V) := LieAlgebra.ofAssociativeAlgebra
+  -- Both sides are linear in `F`, so it suffices to compare them on pure wedges.
+  have key : (twoVectorContractionₗ : ⋀[ℝ]^2 V →ₗ[ℝ] Module.End ℝ V) =
+      -((skewAdjointLieSubalgebra (innerₗ V)).toSubmodule.subtype ∘ₗ
+        (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
+          (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)).toLinearMap) := by
+    refine linearMap_ext_ιMulti_two fun a b ↦ ?_
+    ext u
+    simp [real_inner_comm u]
+  exact LinearMap.congr_fun key F
+
+/-- A two-vector is determined by its skew endomorphism `u ↦ u ⌟ X`. -/
+theorem twoVectorContraction_injective :
+    Function.Injective (twoVectorContraction : ⋀[ℝ]^2 V → Module.End ℝ V) := fun X Y h ↦ by
+  refine (LinearMap.BilinForm.exteriorSquareEquivSkewAdjoint (innerₗ V) bijective_innerₗ
+    (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)).injective (Subtype.ext ?_)
+  rw [← neg_inj, ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint,
+    ← twoVectorContraction_eq_neg_exteriorSquareEquivSkewAdjoint, h]
 
 end TwoVectorContraction
 

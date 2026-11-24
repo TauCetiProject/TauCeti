@@ -33,6 +33,7 @@ such a ring commutes with `δ` exactly when it commutes with the Frobenius lifts
 * `TauCeti.DeltaRing.IsDeltaMap`: ring homomorphisms of `δ`-rings commuting with `δ`.
 * `TauCeti.DeltaRing.IsFrobeniusLift`: ring endomorphisms lifting the `p`-th power map modulo `p`.
 * `TauCeti.DeltaRing.frobenius`: the Frobenius lift `x ↦ x ^ p + p * δ x`.
+* `TauCeti.DeltaRing.IsPerfect`: the Frobenius lift of a `δ`-ring is bijective.
 * `TauCeti.DeltaRing.ofFrobeniusLift`: the `δ`-structure of a Frobenius lift on a ring in which
   `p` is a nonzerodivisor.
 * `TauCeti.DeltaRing.equivFrobeniusLift`: on a ring in which `p` is a nonzerodivisor,
@@ -43,6 +44,7 @@ such a ring commutes with `δ` exactly when it commutes with the Frobenius lifts
 * `TauCeti.DeltaRing.IsDeltaMap.comp_frobenius`: `δ`-maps intertwine the Frobenius lifts.
 * `TauCeti.DeltaRing.isDeltaMap_iff_comp_frobenius`: if `p` is a nonzerodivisor on the target,
   the converse holds.
+* `TauCeti.DeltaRing.isPerfect_int`: `ℤ` is a perfect `δ`-ring.
 * `TauCeti.DeltaRing.isDeltaMap_intCastRingHom`: the ring homomorphism `ℤ →+* A` into a
   `δ`-ring is a `δ`-map, so `δ` of the image in `A` of an integer `n` is the image in `A` of the
   exact integer quotient `(n - n ^ p) / p` (`delta_intCast`).
@@ -370,6 +372,19 @@ theorem ext_of_frobenius (hA : IsRegular (p : A)) {δ₁ δ₂ : DeltaRing p A}
   have h₂ := @frobenius_sub_pow p A _ _ δ₂ x
   rw [← h₁, ← h₂, h x]
 
+variable (p A) in
+/-- A `δ`-ring is **perfect** if its Frobenius lift `φ` is bijective (Bhatt and Scholze,
+*Prisms and prismatic cohomology*, §2). A prism on a perfect `δ`-ring is a perfect prism. -/
+def IsPerfect : Prop :=
+  Function.Bijective (frobenius p A)
+
+theorem isPerfect_iff : IsPerfect p A ↔ Function.Bijective (frobenius p A) :=
+  Iff.rfl
+
+/-- The Frobenius lift of a perfect `δ`-ring is bijective. -/
+theorem IsPerfect.bijective (h : IsPerfect p A) : Function.Bijective (frobenius p A) :=
+  h
+
 end Frobenius
 
 section OfFrobeniusLift
@@ -471,6 +486,10 @@ instance instSubsingletonInt : Subsingleton (DeltaRing p ℤ) :=
 `simp` already proves it by `frobenius_ofFrobeniusLift`. -/
 theorem frobenius_int : frobenius p ℤ = RingHom.id ℤ :=
   frobenius_ofFrobeniusLift _ _ _
+
+/-- `ℤ` is a perfect `δ`-ring, since its Frobenius is the identity. -/
+theorem isPerfect_int : IsPerfect p ℤ := by
+  simpa [isPerfect_iff, frobenius_int] using Function.bijective_id
 
 /-- The `δ`-operation on `ℤ` is `n ↦ (n - n ^ p) / p`; the division is exact since `p` divides
 `n - n ^ p`. -/
