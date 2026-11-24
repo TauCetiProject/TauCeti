@@ -27,7 +27,7 @@ example (y : ℕ) :
       (atom (L := (constantsOn Unit).graphLanguage)
         (GraphRelation.graph (show (constantsOn Unit).Functions 0 from ())) ![y]) = true ↔
       y = 3 := by
-  rw [eval_graphCode_graph]
+  rw [eval_graphCode_graph_eq_true]
   simp [eq_comm]
 
 -- With a function symbol on an infinite carrier, the graph codes are not closed.
