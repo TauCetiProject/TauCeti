@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Matrix.Reindex
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.Order.Preorder.Finite
 
@@ -51,15 +52,6 @@ namespace Module.Basis
 
 variable {K E : Type*} [Semiring K] [AddCommMonoid E] [Module K E] {n : ℕ}
 
-/-- Expanding a vector `x` in a basis `b` and reading its `l`-th coordinate in a basis `e` writes
-`e.repr x l` as `∑ m, b.repr x m * e.repr (b m) l`, in the multiplication order valid over a
-possibly noncommutative semiring. -/
-private theorem sum_repr_mul_repr_noncomm {ι : Type*} [Fintype ι]
-    (b e : Basis ι K E) (x : E) (l : ι) :
-    ∑ m, b.repr x m * e.repr (b m) l = e.repr x l := by
-  have h := congrArg (fun y ↦ e.repr y l) (b.sum_repr x)
-  simpa only [map_sum, map_smul, Finsupp.finsetSum_apply, Finsupp.smul_apply, smul_eq_mul] using h
-
 /-- If `b` has vanishing `e`-coordinates from `p` to `¬p` and the `p`-block matrix ring is
 Dedekind-finite, then `e` also has vanishing `b`-coordinates from `p` to `¬p`. -/
 private theorem repr_eq_zero_of_block_zero_left {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -73,7 +65,7 @@ private theorem repr_eq_zero_of_block_zero_left {ι : Type*} [Fintype ι] [Decid
     rw [Fintype.sum_of_injective Subtype.val Subtype.val_injective _
       (fun r ↦ e.repr (b j) r * b.repr (e r) l)
       (fun r hr ↦ by rw [h j r j.property fun hpr ↦ hr ⟨⟨r, hpr⟩, rfl⟩, zero_mul]) (fun _ ↦ rfl)]
-    simpa [repr_self, Finsupp.single_apply] using sum_repr_mul_repr_noncomm e b (b j) l
+    simpa [repr_self, Finsupp.single_apply] using b.sum_repr_mul_repr' e (b j) l
   let A : Matrix P P K := .of fun j r ↦ e.repr (b j) r
   let B : Matrix P P K := .of fun r l ↦ b.repr (e r) l
   have hBA : B * A = 1 := mul_eq_one_comm.1 <| by
@@ -99,7 +91,7 @@ private theorem repr_eq_zero_of_block_zero_right {ι : Type*} [Fintype ι] [Deci
       (fun r ↦ b.repr (e j) r * e.repr (b r) l)
       (fun r hr ↦ by rw [h r l (not_not.1 fun hpr ↦ hr ⟨⟨r, hpr⟩, rfl⟩) l.property, mul_zero])
       (fun _ ↦ rfl)]
-    simpa [repr_self, Finsupp.single_apply] using sum_repr_mul_repr_noncomm b e (e j) l
+    simpa [repr_self, Finsupp.single_apply] using e.sum_repr_mul_repr' b (e j) l
   let D : Matrix S S K := .of fun r l ↦ e.repr (b r) l
   let W : Matrix S S K := .of fun j r ↦ b.repr (e j) r
   have hDW : D * W = 1 := mul_eq_one_comm.1 <| by
@@ -157,7 +149,7 @@ theorem flag_eq_of_triangular [IsDedekindFiniteMonoid K] (b : Basis (Fin n) K E)
   -- `b i` contributes, by triangularity of `b` and of the columns of `e` after the `i`-th.
   have hexp (j : Fin n) (hji : j ≤ i) :
       b.repr (e j) i * e.repr (b i) i = if j = i then 1 else 0 := by
-    have h := sum_repr_mul_repr_noncomm b e (e j) i
+    have h := e.sum_repr_mul_repr' b (e j) i
     rw [Finset.sum_eq_single i (fun m _ hmi ↦ ?_) (by simp)] at h
     · simpa [repr_self, Finsupp.single_apply] using h
     rcases hmi.lt_or_gt with hmi | hmi
@@ -173,29 +165,6 @@ theorem flag_eq_of_triangular [IsDedekindFiniteMonoid K] (b : Basis (Fin n) K E)
 section Det
 
 variable {ι α R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι] [DecidableEq ι]
-
-omit [Fintype ι] [DecidableEq ι] in
-/-- A finite type with a map `f` into a preorder admits an injective ranking into `ℕ` that
-strictly increases along `f i < f j`: order by the number of indices strictly below along `f`,
-breaking ties via `Fintype.equivFin`. -/
-private theorem exists_injective_nat_lt_of_apply_lt [Finite ι] [Preorder α] (f : ι → α) :
-    ∃ g : ι → ℕ, Function.Injective g ∧ ∀ i j, f i < f j → g i < g j := by
-  classical
-  have := Fintype.ofFinite ι
-  let : Preorder ι := Preorder.lift f
-  let e := Fintype.equivFin ι
-  let r (i : ι) : Fin (Fintype.card ι + 1) :=
-    ⟨#{j | j < i}, Nat.lt_succ_of_le (card_filter_le univ _)⟩
-  let g (i : ι) : ℕ := finProdFinEquiv (r i, e i)
-  refine ⟨g, fun i j hij ↦ e.injective <| congrArg Prod.snd <|
-    finProdFinEquiv.injective <| Fin.val_injective hij, fun i j hij ↦ ?_⟩
-  have hrank : #{k | k < i} < #{k | k < j} := TauCeti.card_filter_lt_lt_card_filter_lt hij
-  have hmul : Fintype.card ι * (#{k | k < i} + 1) ≤ Fintype.card ι * #{k | k < j} :=
-    Nat.mul_le_mul_left _ hrank
-  rw [mul_add_one] at hmul
-  have hi := (e i).isLt
-  simp only [g, r, finProdFinEquiv_apply_val]
-  omega
 
 /-- The determinant of a family `v` that is triangular with respect to a basis `b` along a map
 `f` into a preorder, in the sense that each `v i - c i • b i` is a combination of the `b j` with
@@ -213,7 +182,7 @@ theorem det_eq_prod_of_sub_smul_mem_span_image_apply_lt [Preorder α] (b : Basis
     rwa [map_sub, map_smul, Finsupp.sub_apply, Finsupp.smul_apply, repr_self, smul_eq_mul,
       sub_eq_zero] at h0
   -- The matrix of `v` in `b` is block triangular for an injective ranking refining `f`.
-  obtain ⟨g, hg_inj, hlt⟩ := exists_injective_nat_lt_of_apply_lt f
+  obtain ⟨g, hg_inj, hlt⟩ := TauCeti.exists_injective_nat_lt_of_apply_lt f
   have htri : (b.toMatrix v).BlockTriangular g := by
     intro i j (hji : g j < g i)
     rw [toMatrix_apply, hrepr _ _ fun hij ↦ (hlt i j hij).not_gt hji,
