@@ -189,7 +189,7 @@ theorem smulIterCoeff_succ_zero (D : Derivation R A A) (b : A) (n : ℕ) :
   | succ n ih => rw [smulIterCoeff, ih, map_zero, mul_zero]
 
 /-- The expansion of `(b • D)^[n]` involves only the iterates `D^[k]` with `k ≤ n`. -/
-theorem smulIterCoeff_of_lt (D : Derivation R A A) (b : A) {n k : ℕ} (h : n < k) :
+theorem smulIterCoeff_eq_zero_of_lt (D : Derivation R A A) (b : A) {n k : ℕ} (h : n < k) :
     smulIterCoeff D b n k = 0 := by
   induction n generalizing k with
   | zero => simp [smulIterCoeff_zero_left, h.ne']
@@ -204,7 +204,7 @@ theorem smulIterCoeff_self (D : Derivation R A A) (b : A) (n : ℕ) :
   induction n with
   | zero => simp [smulIterCoeff_zero_left]
   | succ n ih =>
-    simp [smulIterCoeff_succ_succ, ih, smulIterCoeff_of_lt D b n.lt_succ_self, pow_succ']
+    simp [smulIterCoeff_succ_succ, ih, smulIterCoeff_eq_zero_of_lt D b n.lt_succ_self, pow_succ']
 
 /-- The coefficient of `D` in the expansion of `(b • D)^[n + 1]` is `(b • D)^[n] b`. -/
 theorem smulIterCoeff_succ_one (D : Derivation R A A) (b : A) (n : ℕ) :
@@ -246,7 +246,7 @@ theorem iterate_smul_apply_eq_sum (D : Derivation R A A) (b y : A) (n : ℕ) :
         congr 1
         · exact Finset.sum_congr rfl fun k _ ↦ by ring
         · ring
-      · simp [smulIterCoeff_of_lt D b n.lt_succ_self]
+      · simp [smulIterCoeff_eq_zero_of_lt D b n.lt_succ_self]
     rw [Function.iterate_succ_apply', ih, smul_apply, map_sum, Finset.sum_range_succ' _ (n + 1)]
     simp only [leibniz, smul_eq_mul, smulIterCoeff, Finset.sum_add_distrib, add_mul,
       Function.iterate_succ_apply', Function.iterate_zero_apply]
