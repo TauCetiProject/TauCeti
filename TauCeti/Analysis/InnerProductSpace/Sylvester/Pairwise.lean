@@ -30,8 +30,10 @@ In finite dimension, and for every unitarily invariant norm, this is
 
 The constant is the mass `∫ |r| = π / 2` of the real Haagerup–Zsidó kernel `r`, which inverts
 the variable outside the unit interval: `∫ r(t) sin (a t / δ) dt = δ / a` for `|a| ≥ δ`
-(`TauCeti.HaagerupZsido.integral_realKernel_mul_sin_mul_div`). For pairwise orthogonal finite
-families `(uᵢ)` and `(vⱼ)` and real numbers with `|αᵢ - βⱼ| ≥ δ`, expanding
+(`TauCeti.HaagerupZsido.integral_realKernel_mul_sin_mul_div`), so finite combinations of the
+reciprocals `(αᵢ - βⱼ)⁻¹` are kernel integrals of sines
+(`TauCeti.HaagerupZsido.sum_sum_inv_sub_mul_eq_inv_mul_integral_realKernel_mul`). For pairwise
+orthogonal finite families `(uᵢ)` and `(vⱼ)` and real numbers with `|αᵢ - βⱼ| ≥ δ`, expanding
 `sin (a - b) = sin a cos b - cos a sin b` and using `sin² + cos² = 1` gives the Hilbert-type
 inequality
 
@@ -153,42 +155,15 @@ theorem mul_norm_sum_sum_inv_sub_mul_inner_le {u : ι → E} {v : κ → F}
       π / 2 * (‖C‖ * (‖∑ i ∈ s, u i‖ * ‖∑ j ∈ t, v j‖)) := by
   rcases le_or_gt δ 0 with hδ | hδ
   · exact (mul_nonpos_of_nonpos_of_nonneg hδ (norm_nonneg _)).trans (by positivity)
-  set c : ι → κ → 𝕜 := fun i j ↦ ⟪u i, C (v j)⟫_𝕜
-  -- The kernel integral of each scaled sine, with its `𝕜`-valued coefficient.
-  have hint (i j) : Integrable fun τ ↦
-      (realKernel τ : 𝕜) * ((Real.sin (α i * (τ / δ) - β j * (τ / δ)) : 𝕜) * c i j) :=
-    ((integrable_realKernel_mul_sin ((α i - β j) / δ)).ofReal (𝕜 := 𝕜)).mul_const (c i j)
-      |>.congr (.of_forall fun τ ↦ by
-        beta_reduce
-        rw [show α i * (τ / δ) - β j * (τ / δ) = (α i - β j) / δ * τ by ring]
-        push_cast
-        ring)
-  have hterm (i) (hi : i ∈ s) (j) (hj : j ∈ t) : ∫ τ, (realKernel τ : 𝕜) *
-      ((Real.sin (α i * (τ / δ) - β j * (τ / δ)) : 𝕜) * c i j) =
-        ((δ * (α i - β j)⁻¹ : ℝ) : 𝕜) * c i j := by
-    rw [← integral_realKernel_mul_sin_mul_div hδ (h i hi j hj), ← integral_ofReal,
-      ← integral_mul_const]
-    exact integral_congr_ae (.of_forall fun τ ↦ by beta_reduce; rw [sub_mul]; push_cast; ring)
-  -- Each reciprocal is `δ⁻¹` times a kernel integral of a sine.
-  have hrep : ∑ i ∈ s, ∑ j ∈ t, ((α i - β j)⁻¹ : ℝ) * c i j = (δ⁻¹ : 𝕜) *
-      ∫ τ, (realKernel τ : 𝕜) *
-        ∑ i ∈ s, ∑ j ∈ t, (Real.sin (α i * (τ / δ) - β j * (τ / δ)) : 𝕜) * c i j := by
-    simp only [mul_sum]
-    rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint i j, mul_sum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [integral_finsetSum _ fun j _ ↦ hint i j, mul_sum]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [hterm i hi j hj]
-    have hδ' : (δ : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr hδ.ne'
-    push_cast
-    field_simp
   set K := ‖C‖ * (‖∑ i ∈ s, u i‖ * ‖∑ j ∈ t, v j‖)
-  rw [hrep, norm_mul, norm_inv, RCLike.norm_ofReal, abs_of_pos hδ, ← mul_assoc,
-    mul_inv_cancel₀ hδ.ne', one_mul]
+  -- Each reciprocal is `δ⁻¹` times a kernel integral of a sine.
+  rw [sum_sum_inv_sub_mul_eq_inv_mul_integral_realKernel_mul hδ h, norm_mul, norm_inv,
+    RCLike.norm_ofReal, abs_of_pos hδ, ← mul_assoc, mul_inv_cancel₀ hδ.ne', one_mul]
   calc _ ≤ ∫ τ, |realKernel τ| * K :=
         norm_integral_le_of_norm_le (integrable_realKernel.abs.mul_const _)
           (.of_forall fun τ ↦ by
             rw [norm_mul, RCLike.norm_ofReal]
+            simp only [sub_mul]
             exact mul_le_mul_of_nonneg_left
               (norm_sum_sum_sin_sub_mul_inner_le hu hv _ _ C) (abs_nonneg _))
     _ = π / 2 * K := by rw [integral_mul_const, integral_abs_realKernel]
