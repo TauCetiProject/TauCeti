@@ -370,6 +370,55 @@ theorem regradeBidualIso_inv_f (k : ℤ) :
         (embeddingUpIntDownIntSub_f n k)).hom ≫ (K.regradeBidualXIso n k).inv :=
   (rfl)
 
+variable {K} in
+/-- The identifications `regradeBidualXIso` intertwine the double transposes of a morphism
+`φ : K ⟶ L` and of its regrading. -/
+@[reassoc]
+private theorem regradeBidualXIso_naturality (φ : K ⟶ L) (k : ℤ) :
+    (TauCeti.linearHomComplexPrecomp R (TauCeti.linearHomComplexPrecomp R
+        (restrictionMap φ (embeddingUpIntDownIntSub n)) _) _).f k ≫
+        (L.regradeBidualXIso n k).hom =
+      (K.regradeBidualXIso n k).hom ≫ (linearDualMap (linearDualMap φ)).f (n - k) := by
+  refine ModuleCat.hom_ext (LinearMap.ext fun y ↦ LinearMap.ext fun f ↦ ?_)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [regradeBidualXIso_hom_apply, linearDualMap_f_apply, regradeBidualXIso_hom_apply,
+    CochainComplex.linearDualXEquiv_linearHomComplexPrecomp_f_apply]
+  congr 1
+  refine (CochainComplex.linearDualXEquiv _ (add_neg_cancel k)).injective
+    (LinearMap.ext fun x ↦ ?_)
+  rw [CochainComplex.linearDualXEquiv_linearHomComplexPrecomp_f_apply,
+    restrictionMap_f' _ _ ((embeddingUpIntDownIntSub_f n k).trans (neg_neg (n - k)).symm)]
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, LinearEquiv.apply_symm_apply,
+    Iso.inv_hom_id_apply]
+  exact (linearDualMap_f_apply φ _ f _).symm
+
+variable {K} in
+/-- **Naturality.** The comparison `regradeBidualIso` intertwines the double transposes of a
+morphism `φ : K ⟶ L` and of its regrading. -/
+@[reassoc]
+theorem regradeBidualIso_hom_naturality (φ : K ⟶ L) :
+    TauCeti.linearHomComplexPrecomp R (TauCeti.linearHomComplexPrecomp R
+        (restrictionMap φ (embeddingUpIntDownIntSub n)) _) _ ≫ (L.regradeBidualIso n).hom =
+      (K.regradeBidualIso n).hom ≫
+        restrictionMap (linearDualMap (linearDualMap φ)) (embeddingUpIntDownIntSub n) := by
+  ext k : 1
+  rw [comp_f, comp_f, regradeBidualIso_hom_f, regradeBidualIso_hom_f,
+    restrictionMap_f' _ _ (embeddingUpIntDownIntSub_f n k)]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, regradeBidualXIso_naturality_assoc]
+
+variable {K} in
+/-- **Naturality of the inverse.** The inverse of the comparison `regradeBidualIso` intertwines
+the double transposes of a morphism `φ : K ⟶ L` and of its regrading. -/
+@[reassoc]
+theorem regradeBidualIso_inv_naturality (φ : K ⟶ L) :
+    restrictionMap (linearDualMap (linearDualMap φ)) (embeddingUpIntDownIntSub n) ≫
+        (L.regradeBidualIso n).inv =
+      (K.regradeBidualIso n).inv ≫
+        TauCeti.linearHomComplexPrecomp R (TauCeti.linearHomComplexPrecomp R
+          (restrictionMap φ (embeddingUpIntDownIntSub n)) _) _ := by
+  rw [Iso.eq_inv_comp, ← Category.assoc, ← regradeBidualIso_hom_naturality, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
+
 /-- **The bidual maps of the two gradings differ by `(-1)^n`.** The regrading by `n` of the
 chain-compatible bidual map of `K` is `(-1)^n` times the chain-compatible bidual map of the
 regrading `C^k = K_(n-k)`, followed by the identification `regradeBidualIso` of the double duals.
