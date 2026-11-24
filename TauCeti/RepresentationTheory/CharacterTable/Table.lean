@@ -59,7 +59,9 @@ take their familiar Hermitian form, because inversion conjugates character value
   is the latter summed one column at a time, the form in which `TauCeti.IsCharacterTableSpec` asks
   for it;
   `TauCeti.characterPairing_ofCharacter_irreducibleRepresentation_orthonormal` is the same relation
-  phrased as orthonormality for the character pairing.
+  phrased as orthonormality for the character pairing, and
+  `TauCeti.sum_mul_inv_of_mem_irreducibleCharacters` is the same relation for the set of
+  irreducible characters, free of the enumeration and of division.
 * `TauCeti.exists_irreducibleCharacter_eq_one`: the trivial character is a row of the table, and
   every other row is nonconstant
   (`TauCeti.exists_irreducibleCharacter_ne_characterDegree`).
@@ -152,6 +154,13 @@ theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
     [CategoryTheory.Simple X] : X.character ∈ irreducibleCharacters k G :=
   have := FDRep.isIrreducible_of_simple X
   TauCeti.character_mem_irreducibleCharacters X.ρ
+
+/-- An irreducible character does not vanish at the identity, where its value is its degree. -/
+theorem apply_one_ne_zero_of_mem_irreducibleCharacters [CharZero k] {f : G → k}
+    (hf : f ∈ irreducibleCharacters k G) : f 1 ≠ 0 := by
+  obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hf
+  rw [Representation.char_one, Nat.cast_ne_zero]
+  exact hρ.finrank_pos.ne'
 
 variable [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
@@ -306,6 +315,32 @@ theorem characterDegree_dvd_card [CharZero k] (i : Fin (Nat.card (ConjClasses G)
 
 end Enumeration
 
+section Subsingleton
+
+variable {k : Type u} [Field k] [IsAlgClosed k]
+
+/-- A group with one element has the trivial character as its only irreducible character. -/
+theorem irreducibleCharacters_of_subsingleton {G : Type v} [Group G] [Subsingleton G] :
+    irreducibleCharacters k G = {fun _ => 1} := by
+  let : Invertible (Nat.card G : k) := invertibleOfNonzero (by simp)
+  obtain ⟨i, hi⟩ := exists_irreducibleCharacter_eq_one k G
+  have : Subsingleton (ConjClasses G) := ⟨fun a b => by
+    obtain ⟨x, rfl⟩ := ConjClasses.mk_surjective a
+    obtain ⟨y, rfl⟩ := ConjClasses.mk_surjective b
+    rw [Subsingleton.elim x y]⟩
+  have hcard : Nat.card (irreducibleCharacters k G) = 1 := by
+    rw [card_irreducibleCharacters, Nat.card_eq_one_iff_unique]
+    exact ⟨inferInstance, ⟨ConjClasses.mk 1⟩⟩
+  obtain ⟨⟨f, hf⟩, hx⟩ := Nat.card_eq_one_iff_exists.mp hcard
+  have h1 : (fun _ : G => (1 : k)) ∈ irreducibleCharacters k G := hi ▸ irreducibleCharacter_mem k i
+  ext g
+  refine ⟨fun hg => ?_, fun hg => (Set.mem_singleton_iff.mp hg) ▸ h1⟩
+  have e1 := congrArg Subtype.val (hx ⟨g, hg⟩)
+  have e2 := congrArg Subtype.val (hx ⟨_, h1⟩)
+  exact Set.mem_singleton_iff.mpr (e1.trans e2.symm)
+
+end Subsingleton
+
 section Table
 
 variable (k : Type u) (G : Type v) [Field k] [Group G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
@@ -409,6 +444,44 @@ theorem card_inv_mul_sum_characterTable_mul_characterTable_inv
   exact characterPairing_ofCharacter_irreducibleRepresentation_orthonormal i j
 
 end RowOrthogonality
+
+section Orthonormal
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
+  [NeZero (Nat.card G : k)]
+
+open scoped Classical in
+/-- **Row orthogonality for the set of irreducible characters**, in a form free of division: the
+sum `∑ g, β g β' g⁻¹` is `|G|` when `β = β'` and `0` otherwise. -/
+theorem sum_mul_inv_of_mem_irreducibleCharacters {β β' : G → k}
+    (hβ : β ∈ irreducibleCharacters k G) (hβ' : β' ∈ irreducibleCharacters k G) :
+    ∑ g, β g * β' g⁻¹ = if β = β' then (Nat.card G : k) else 0 := by
+  have hG : (Nat.card G : k) ≠ 0 := NeZero.ne _
+  let : Invertible (Nat.card G : k) := invertibleOfNonzero hG
+  obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hβ
+  obtain ⟨n', ρ', hρ', rfl⟩ := mem_irreducibleCharacters_iff.mp hβ'
+  split_ifs with h
+  · rw [← h]
+    have key := Representation.char_orthonormal ρ ρ
+    rw [ite_eq_left ⟨Representation.Equiv.refl ρ⟩] at key
+    field_simp at key
+    simpa using key
+  · have key := Representation.char_orthonormal ρ ρ'
+    rw [ite_eq_right fun ⟨e⟩ => h (Representation.char_iso e).symm] at key
+    exact (mul_eq_zero.mp key).resolve_left (inv_ne_zero hG)
+
+/-- An irreducible character has norm `|G|`: `∑ g, β g β g⁻¹ = |G|`. -/
+theorem sum_mul_inv_self_of_mem_irreducibleCharacters {β : G → k}
+    (hβ : β ∈ irreducibleCharacters k G) : ∑ g, β g * β g⁻¹ = Nat.card G := by
+  simpa using sum_mul_inv_of_mem_irreducibleCharacters hβ hβ
+
+/-- Distinct irreducible characters are orthogonal: `∑ g, β g β' g⁻¹ = 0`. -/
+theorem sum_mul_inv_eq_zero_of_mem_irreducibleCharacters {β β' : G → k}
+    (hβ : β ∈ irreducibleCharacters k G) (hβ' : β' ∈ irreducibleCharacters k G) (h : β ≠ β') :
+    ∑ g, β g * β' g⁻¹ = 0 := by
+  simpa [h] using sum_mul_inv_of_mem_irreducibleCharacters hβ hβ'
+
+end Orthonormal
 
 section Nonconstant
 

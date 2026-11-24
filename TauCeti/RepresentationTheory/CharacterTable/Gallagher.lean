@@ -16,8 +16,9 @@ let `χ` be an irreducible character of `G` extending `θ`, that is, `χ n = θ 
 **Gallagher's theorem** says that `β ↦ χ · (β ∘ π)`, for `π : G → G ⧸ N`, is a bijection from the
 irreducible characters of `G ⧸ N` onto the irreducible characters of `G` lying over `θ`
 (`TauCeti.gallagher_bijOn`). Here a character `ψ` of `G` lies over `θ` when
-`∑ n ∈ N, ψ n θ n⁻¹ ≠ 0`, that is, when `θ` occurs in the restriction of `ψ` to `N`; these form the
-set `TauCeti.irreducibleCharactersOver`.
+`∑ n ∈ N, ψ n θ n⁻¹ ≠ 0`; over an algebraically closed field of characteristic zero this says
+that `θ` occurs in the restriction of `ψ` to `N`. These form the set
+`TauCeti.irreducibleCharactersOver`.
 
 The proof is character-theoretic. Its key input is that the restriction of `χ` to every coset of
 `N` has the same norm: `∑ n ∈ N, χ (g n) χ (g n)⁻¹ = |N|` for every `g`
@@ -62,64 +63,36 @@ universe u v
 variable (k : Type u) {G : Type v} [Field k] [Group G]
 
 /-- **The irreducible characters of `G` lying over `θ`**, `Irr(G | θ)`: for a function `θ` on a
-subgroup `N`, the irreducible characters `ψ` of `G` with `∑ n ∈ N, ψ n θ n⁻¹ ≠ 0`. For an
-irreducible character `θ` of `N` the sum is `|N|` times the multiplicity of `θ` in the restriction
-of `ψ` to `N`, so these are the irreducible characters whose restriction contains `θ`. -/
+subgroup `N`, the irreducible characters `ψ` of `G` with `∑ n ∈ N, ψ n θ n⁻¹ ≠ 0`. Over an
+algebraically closed field of characteristic zero and for an irreducible character `θ` of `N`, the
+sum is `|N|` times the multiplicity of `θ` in the restriction of `ψ` to `N`, so these are the
+irreducible characters whose restriction contains `θ`. -/
 def irreducibleCharactersOver (N : Subgroup G) [Fintype N] (θ : N → k) : Set (G → k) :=
   {ψ | ψ ∈ irreducibleCharacters k G ∧ ∑ n : N, ψ n * θ n⁻¹ ≠ 0}
 
 variable {k}
 
 /-- Membership in `TauCeti.irreducibleCharactersOver` unfolded. -/
+@[simp]
 theorem mem_irreducibleCharactersOver_iff {N : Subgroup G} [Fintype N] {θ : N → k} {ψ : G → k} :
     ψ ∈ irreducibleCharactersOver k N θ ↔
       ψ ∈ irreducibleCharacters k G ∧ ∑ n : N, ψ n * θ n⁻¹ ≠ 0 :=
   Iff.rfl
 
-/-- An irreducible character does not vanish at the identity, where its value is its degree. -/
-theorem apply_one_ne_zero_of_mem_irreducibleCharacters [CharZero k] {H : Type*} [Group H]
-    {β : H → k}
-    (hβ : β ∈ irreducibleCharacters k H) : β 1 ≠ 0 := by
-  obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hβ
-  rw [Representation.char_one, Nat.cast_ne_zero]
-  exact hρ.finrank_pos.ne'
+/-- The irreducible characters lying over `θ` are irreducible characters. -/
+theorem irreducibleCharactersOver_subset {N : Subgroup G} [Fintype N] (θ : N → k) :
+    irreducibleCharactersOver k N θ ⊆ irreducibleCharacters k G :=
+  fun _ hψ => hψ.1
 
-section Orthonormal
-
-variable {H : Type v} [Group H] [Fintype H] [IsAlgClosed k] [NeZero (Nat.card H : k)]
-
-open scoped Classical in
-/-- **Row orthogonality for the set of irreducible characters**, in a form free of division: the
-sum `∑ h, β h β' h⁻¹` is `|H|` when `β = β'` and `0` otherwise. -/
-theorem sum_mul_inv_of_mem_irreducibleCharacters {β β' : H → k}
-    (hβ : β ∈ irreducibleCharacters k H) (hβ' : β' ∈ irreducibleCharacters k H) :
-    ∑ h, β h * β' h⁻¹ = if β = β' then (Nat.card H : k) else 0 := by
-  have hH : (Nat.card H : k) ≠ 0 := NeZero.ne _
-  let : Invertible (Nat.card H : k) := invertibleOfNonzero hH
-  obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hβ
-  obtain ⟨n', ρ', hρ', rfl⟩ := mem_irreducibleCharacters_iff.mp hβ'
-  split_ifs with h
-  · rw [← h]
-    have key := Representation.char_orthonormal ρ ρ
-    rw [ite_eq_left ⟨Representation.Equiv.refl ρ⟩] at key
-    field_simp at key
-    simpa using key
-  · have key := Representation.char_orthonormal ρ ρ'
-    rw [ite_eq_right fun ⟨e⟩ => h (Representation.char_iso e).symm] at key
-    exact (mul_eq_zero.mp key).resolve_left (inv_ne_zero hH)
-
-/-- An irreducible character has norm `|H|`: `∑ h, β h β h⁻¹ = |H|`. -/
-theorem sum_mul_inv_self_of_mem_irreducibleCharacters {β : H → k}
-    (hβ : β ∈ irreducibleCharacters k H) : ∑ h, β h * β h⁻¹ = Nat.card H := by
-  simpa using sum_mul_inv_of_mem_irreducibleCharacters hβ hβ
-
-/-- Distinct irreducible characters are orthogonal: `∑ h, β h β' h⁻¹ = 0`. -/
-theorem sum_mul_inv_eq_zero_of_mem_irreducibleCharacters {β β' : H → k}
-    (hβ : β ∈ irreducibleCharacters k H) (hβ' : β' ∈ irreducibleCharacters k H) (h : β ≠ β') :
-    ∑ h, β h * β' h⁻¹ = 0 := by
-  simpa [h] using sum_mul_inv_of_mem_irreducibleCharacters hβ hβ'
-
-end Orthonormal
+/-- Over the trivial subgroup, every irreducible character lies over any function that does not
+vanish at the identity. -/
+theorem irreducibleCharactersOver_bot [CharZero k] [Fintype (⊥ : Subgroup G)]
+    {θ : (⊥ : Subgroup G) → k} (hθ : θ 1 ≠ 0) :
+    irreducibleCharactersOver k ⊥ θ = irreducibleCharacters k G := by
+  refine (irreducibleCharactersOver_subset θ).antisymm fun ψ h =>
+    mem_irreducibleCharactersOver_iff.mpr ⟨h, ?_⟩
+  rw [Fintype.sum_subsingleton _ 1]
+  simpa using mul_ne_zero (apply_one_ne_zero_of_mem_irreducibleCharacters h) hθ
 
 section Coset
 
@@ -139,9 +112,9 @@ private theorem linHom_mul_sum_linHom_eq (ρ : Representation k G V) (N : Subgro
       have hv : v = 0 := by simpa using DFunLike.congr_fun h0 v
       simp [hv]⟩
     simp [finrank_zero_of_subsingleton] at hfin
-  let σ := Representation.linHom ρ ρ
+  set σ := Representation.linHom ρ ρ
+  set S : Module.End k (V →ₗ[k] V) := ∑ n : N, σ n
   refine LinearMap.ext fun f => ?_
-  let S : Module.End k (V →ₗ[k] V) := ∑ n : N, σ n
   have hinv (m : N) : σ m (S f) = S f := by
     simp only [S, LinearMap.sum_apply, map_sum]
     exact Fintype.sum_equiv (Equiv.mulLeft m) _ _ fun n => by
@@ -157,24 +130,20 @@ private theorem linHom_mul_sum_linHom_eq (ρ : Representation k G V) (N : Subgro
         exact h.symm }
   obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' _ hid).mp hfin φ
   have hSf : S f = c • LinearMap.id := congr(($hc).toLinearMap).symm
-  change σ g (S f) = S f
-  rw [hSf, map_smul, Representation.linHom_apply, LinearMap.id_comp,
+  rw [mul_apply_eq_comp, hSf, map_smul, Representation.linHom_apply, LinearMap.id_comp,
     ← Module.End.mul_eq_comp, ← map_mul, mul_inv_cancel, map_one, Module.End.one_eq_id]
 
 variable [IsAlgClosed k] [CharZero k]
 
 /-- **A character restricting irreducibly to `N` has norm `|N|` on every coset of `N`**: if the
 restriction to `N` of the character of `ρ` is an irreducible character of `N`, then
-`∑ n ∈ N, χ (g n) χ (g n)⁻¹ = |N|` for every `g ∈ G`.
-
-The left side is the trace of `σ g ∘ S` for the conjugation action `σ` of `G` on `End V` and
-`S = ∑ n ∈ N, σ n`. The values of `S` are `N`-equivariant, hence scalars, hence fixed by `σ g`.
-The space `V` need not be assumed finite-dimensional: otherwise the character vanishes, and its
-restriction is not irreducible. -/
+`∑ n ∈ N, χ (g n) χ (g n)⁻¹ = |N|` for every `g ∈ G`. The space `V` need not be assumed
+finite-dimensional. -/
 theorem sum_character_mul_mul_character_mul_inv_eq_card (ρ : Representation k G V)
     (N : Subgroup G) [Fintype N]
     (hθ : (fun n : N => ρ.character n) ∈ irreducibleCharacters k N) (g : G) :
     ∑ n : N, ρ.character (g * n) * ρ.character (g * n)⁻¹ = Nat.card N := by
+  -- Otherwise the character vanishes, and its restriction is not irreducible.
   have : FiniteDimensional k V := by
     by_contra hV
     refine apply_one_ne_zero_of_mem_irreducibleCharacters hθ ?_
@@ -190,6 +159,8 @@ theorem sum_character_mul_mul_character_mul_inv_eq_card (ρ : Representation k G
     have hρN (n : N) : ρN.character n = ρ.character n := rfl
     simp only [hρN, Subgroup.coe_inv, hnorm, inv_mul_cancel₀ hN] at h
     exact_mod_cast h.symm
+  -- The left side is the trace of `σ g ∘ S` for the conjugation action `σ` of `G` on `End V` and
+  -- `S = ∑ n ∈ N, σ n`, whose values are scalars, hence fixed by `σ g`.
   let σ := Representation.linHom ρ ρ
   have hterm (x : G) : ρ.character x * ρ.character x⁻¹ = σ.character x := by
     rw [Representation.char_linHom, mul_comm]
@@ -202,22 +173,21 @@ theorem sum_character_mul_mul_character_mul_inv_eq_card (ρ : Representation k G
     _ = Nat.card N := by
         rw [← hnorm, map_sum]
         refine Finset.sum_congr rfl fun n _ => ?_
-        rw [hterm]
-        rfl
+        rw [hterm, Representation.character]
 
 /-- **Multiplication by a character restricting irreducibly to a normal subgroup `N` is an
 isometry on functions inflated from `G ⧸ N`**: if `χ` is the character of `ρ` and its restriction
 to `N` is irreducible, then for all `β β' : G ⧸ N → k`,
-`∑ g, χ g β g · χ g⁻¹ β' g⁻¹ = |N| ∑ q, β q β' q⁻¹`. Grouping the left side by cosets of `N`, the
-coset of `q` contributes `β q β' q⁻¹` times the norm of `χ` on that coset, which is `|N|` by
-`TauCeti.sum_character_mul_mul_character_mul_inv_eq_card`. -/
+`∑ g, χ g β g · χ g⁻¹ β' g⁻¹ = |N| ∑ q, β q β' q⁻¹`. -/
 theorem sum_mul_comp_mk_mul_mul_comp_mk_inv [Fintype G] (ρ : Representation k G V)
     (N : Subgroup G) [N.Normal] [Fintype (G ⧸ N)]
     (hθ : (fun n : N => ρ.character n) ∈ irreducibleCharacters k N) (β β' : G ⧸ N → k) :
     ∑ g : G, ρ.character g * β g * (ρ.character g⁻¹ * β' (g⁻¹ : G)) =
       Nat.card N * ∑ q : G ⧸ N, β q * β' q⁻¹ := by
   classical
-  -- The fibre of `q` is the coset `q.out N`, on which `χ` has norm `|N|`.
+  -- Group the left side by cosets of `N`: the coset of `q` contributes `β q β' q⁻¹` times the
+  -- norm of `χ` on that coset. The fibre of `q` is the coset `q.out N`, on which `χ` has
+  -- norm `|N|`.
   have hfib (q : G ⧸ N) :
       ∑ g ∈ univ.filter (fun g : G => (g : G ⧸ N) = q), ρ.character g * ρ.character g⁻¹ =
         Nat.card N := by
@@ -247,12 +217,12 @@ variable [Finite G] [IsAlgClosed k] [CharZero k]
 variable {N : Subgroup G} [N.Normal] {χ : G → k}
 
 /-- **The product of `χ` with an inflated irreducible character is irreducible**, when `χ` is an
-irreducible character of `G` restricting irreducibly to the normal subgroup `N`: its norm is that of
-`β` by `TauCeti.sum_mul_comp_mk_mul_mul_comp_mk_inv`. -/
+irreducible character of `G` restricting irreducibly to the normal subgroup `N`. -/
 theorem mul_comp_mk_mem_irreducibleCharacters (hχ : χ ∈ irreducibleCharacters k G)
     (hθ : (fun n : N => χ n) ∈ irreducibleCharacters k N) {β : G ⧸ N → k}
     (hβ : β ∈ irreducibleCharacters k (G ⧸ N)) :
     (fun g : G => χ g * β g) ∈ irreducibleCharacters k G := by
+  -- Its norm is that of `β` by `TauCeti.sum_mul_comp_mk_mul_mul_comp_mk_inv`.
   classical
   have := Fintype.ofFinite G
   obtain ⟨d, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hχ
@@ -268,29 +238,24 @@ theorem mul_comp_mk_mem_irreducibleCharacters (hχ : χ ∈ irreducibleCharacter
   refine mem_irreducibleCharacters_of_characterPairing_self_eq_one
     (f := ⟨_, virtualCharacters_le_classFunction hv⟩) hv ?_ (n := d * m) ?_
   · rw [ClassFunction.characterPairing_apply]
-    change (Nat.card G : k)⁻¹ *
-      ∑ g : G, ρ.character g * σ.character g * (ρ.character g⁻¹ * σ.character (g⁻¹ : G)) = 1
+    dsimp only
     rw [sum_mul_comp_mk_mul_mul_comp_mk_inv ρ N hθ,
       sum_mul_inv_self_of_mem_irreducibleCharacters hβ, hG]
     field_simp
-  · change ρ.character 1 * σ.character ((1 : G) : G ⧸ N) = _
-    simp
+  · simp
 
 /-- **Every irreducible character of `G` over `θ` is a product `χ · (β ∘ π)`**, for `χ` an
-irreducible character of `G` extending the irreducible character `θ` of the normal subgroup `N`.
-
-If `ψ` were orthogonal to every `χ · β`, it would be orthogonal to `χ · ρ_{G ⧸ N}`, where
-`ρ_{G ⧸ N} = ∑ β(1) β` is the regular character, which is `|G : N|` on `N` and `0` elsewhere; but
-that pairing is `|G : N|` times `∑ n ∈ N, ψ n θ n⁻¹ ≠ 0`. -/
+irreducible character of `G` extending the irreducible character `θ` of the normal subgroup `N`. -/
 theorem exists_mem_irreducibleCharacters_eq_mul_comp_mk [Fintype N] {θ : N → k}
     (hχ : χ ∈ irreducibleCharacters k G) (hres : ∀ n : N, χ n = θ n)
     (hθ : θ ∈ irreducibleCharacters k N) {ψ : G → k} (hψ : ψ ∈ irreducibleCharactersOver k N θ) :
     ∃ β ∈ irreducibleCharacters k (G ⧸ N), (fun g : G => χ g * β g) = ψ := by
+  -- If `ψ` were orthogonal to every `χ · β`, it would be orthogonal to `χ · ρ_{G ⧸ N}`, where
+  -- `ρ_{G ⧸ N} = ∑ β(1) β` is the regular character, which is `|G : N|` on `N` and `0` elsewhere;
+  -- but that pairing is `|G : N|` times `∑ n ∈ N, ψ n θ n⁻¹ ≠ 0`.
   classical
   have := Fintype.ofFinite G
-  have hθ' : (fun n : N => χ n) ∈ irreducibleCharacters k N := by
-    convert hθ using 1
-    exact funext hres
+  have hθ' : (fun n : N => χ n) ∈ irreducibleCharacters k N := funext hres ▸ hθ
   obtain ⟨hψ, hsum⟩ := hψ
   by_contra hcon
   have hzero (i : Fin (Nat.card (ConjClasses (G ⧸ N)))) :
@@ -330,22 +295,16 @@ theorem exists_mem_irreducibleCharacters_eq_mul_comp_mk [Fintype N] {θ : N → 
 /-- **Gallagher's correspondence.** Let `N` be a normal subgroup of the finite group `G`, `θ` an
 irreducible character of `N` and `χ` an irreducible character of `G` extending `θ`. Then
 `β ↦ χ · (β ∘ π)` is a bijection from the irreducible characters of `G ⧸ N` onto the irreducible
-characters of `G` lying over `θ`, over an algebraically closed field of characteristic zero.
-
-Multiplication by `χ` preserves the character pairing of inflated functions
-(`TauCeti.sum_mul_comp_mk_mul_mul_comp_mk_inv`), so the products are irreducible
-(`TauCeti.mul_comp_mk_mem_irreducibleCharacters`) and pairwise distinct; on `N` the product
-`χ · β` is `β(1) θ`, so it lies over `θ`. Surjectivity is
-`TauCeti.exists_mem_irreducibleCharacters_eq_mul_comp_mk`. -/
+characters of `G` lying over `θ`, over an algebraically closed field of characteristic zero. -/
 theorem gallagher_bijOn [Fintype N] {θ : N → k} (hχ : χ ∈ irreducibleCharacters k G)
     (hθ : θ ∈ irreducibleCharacters k N) (hres : ∀ n : N, χ n = θ n) :
     Set.BijOn (fun (β : G ⧸ N → k) (g : G) => χ g * β g)
       (irreducibleCharacters k (G ⧸ N)) (irreducibleCharactersOver k N θ) := by
+  -- Multiplication by `χ` preserves the character pairing of inflated functions, so the products
+  -- are irreducible and pairwise distinct.
   classical
   have := Fintype.ofFinite G
-  have hθ' : (fun n : N => χ n) ∈ irreducibleCharacters k N := by
-    convert hθ using 1
-    exact funext hres
+  have hθ' : (fun n : N => χ n) ∈ irreducibleCharacters k N := funext hres ▸ hθ
   have hN0 : (Nat.card N : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have hQ0 : (Nat.card (G ⧸ N) : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   obtain ⟨d, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hχ
