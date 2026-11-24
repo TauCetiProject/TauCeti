@@ -55,9 +55,10 @@ of `A` with `‖γ‖ ≤ ‖τ‖` restricting to a positive functional `τ` of
 `PositiveContinuousLinearMap.norm_eq_of_apply_map_eq` for `‖γ‖ = ‖τ‖`), by the approximate unit
 estimate `PositiveContinuousLinearMap.norm_apply_sub_apply_mul_mul_le`. Such an extension is
 therefore unique when the range of `f` absorbs `f(b) a f(b)`
-(`PositiveContinuousLinearMap.eq_of_apply_map_eq`), and a positive functional of norm one extends
-along an injective `f` (`PositiveContinuousLinearMap.exists_apply_map_eq`), through the unitization
-`τ⁺¹` and the injective unital star homomorphism `B⁺¹ → A⁺¹`.
+(`PositiveContinuousLinearMap.eq_of_apply_map_eq`), and every positive functional extends along an
+injective `f` to one of the same norm (`PositiveContinuousLinearMap.exists_apply_map_eq`): a state
+extends through the unitization `τ⁺¹` and the injective unital star homomorphism `B⁺¹ → A⁺¹`, and
+a nonzero `τ` is reduced to the state `τ / ‖τ‖`.
 
 ## References
 
@@ -196,6 +197,27 @@ namespace PositiveContinuousLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+section Smul
+
+variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+
+/-- `c • τ` for a real `c ≥ 0`, as a positive functional. -/
+private noncomputable def smulOfNonneg {c : ℝ} (hc : 0 ≤ c) (τ : B →P[ℂ] ℂ) : B →P[ℂ] ℂ where
+  toPositiveLinearMap := PositiveLinearMap.mk₀ ((c : ℂ) • (τ : B →L[ℂ] ℂ) : B →L[ℂ] ℂ)
+    fun x hx ↦ by
+      simpa using mul_nonneg (Complex.zero_le_real.mpr hc) (τ.map_nonneg hx)
+  cont := ((c : ℂ) • (τ : B →L[ℂ] ℂ)).continuous
+
+private theorem smulOfNonneg_apply {c : ℝ} (hc : 0 ≤ c) (τ : B →P[ℂ] ℂ) (b : B) :
+    smulOfNonneg hc τ b = (c : ℂ) • τ b :=
+  rfl
+
+private theorem toContinuousLinearMap_smulOfNonneg {c : ℝ} (hc : 0 ≤ c) (τ : B →P[ℂ] ℂ) :
+    (smulOfNonneg hc τ : B →L[ℂ] ℂ) = (c : ℂ) • (τ : B →L[ℂ] ℂ) :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
+
+end Smul
+
 section Hom
 
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -249,11 +271,10 @@ theorem eq_of_apply_map_eq (f : F) (hf : ∀ (b : B) (a : A), ∃ c, f c = f b *
   obtain ⟨c, hc⟩ := hf e a
   rw [← hc, h₁, h₂]
 
-/-- **Existence of the extension.** Every positive functional of norm one on `B` is the
-restriction, along an injective star homomorphism `f : B → A`, of a positive functional of norm
-one on `A`. -/
-theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) {τ : B →P[ℂ] ℂ}
-    (hτ : ‖(τ : B →L[ℂ] ℂ)‖ = 1) :
+/-- A positive functional of norm one on `B` is the restriction, along an injective star
+homomorphism `f : B → A`, of a positive functional of norm one on `A`. -/
+private theorem exists_apply_map_eq_of_norm_eq_one (f : F) (hf : Function.Injective f)
+    {τ : B →P[ℂ] ℂ} (hτ : ‖(τ : B →L[ℂ] ℂ)‖ = 1) :
     ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ b, γ (f b) = τ b := by
   let g := Unitization.starMap (NonUnitalStarAlgHom.ofClass f)
   have hτ' : StrongDual.toWeakDual (τ.unitization : Unitization ℂ B →L[ℂ] ℂ) ∈
@@ -274,6 +295,27 @@ theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) {τ : B →P[ℂ
   have := (ofClass ω : Unitization ℂ A →L[ℂ] ℂ).le_opNorm (a : Unitization ℂ A)
   rw [hω1, Unitization.norm_inr] at this
   simpa [γ] using this
+
+/-- **Existence of the extension.** Every positive functional `τ` on `B` is the restriction,
+along an injective star homomorphism `f : B → A`, of a positive functional on `A` of the same
+norm. For `τ ≠ 0` this extends the state `τ / ‖τ‖` and rescales. -/
+theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) (τ : B →P[ℂ] ℂ) :
+    ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : B →L[ℂ] ℂ)‖ ∧ ∀ b, γ (f b) = τ b := by
+  set N := ‖(τ : B →L[ℂ] ℂ)‖
+  rcases (norm_nonneg (τ : B →L[ℂ] ℂ)).eq_or_lt with h0 | hN
+  · refine ⟨0, by simp [N, ← h0], fun b ↦ ?_⟩
+    have := (τ : B →L[ℂ] ℂ).le_opNorm b
+    rw [← h0, zero_mul, norm_le_zero_iff, coe_toContinuousLinearMap] at this
+    simp [this]
+  obtain ⟨γ, hγ, h⟩ := exists_apply_map_eq_of_norm_eq_one f hf
+    (τ := smulOfNonneg (inv_nonneg.mpr hN.le) τ) (by
+      rw [toContinuousLinearMap_smulOfNonneg, norm_smul, Complex.norm_real, Real.norm_eq_abs,
+        abs_of_pos (inv_pos.mpr hN), inv_mul_cancel₀ hN.ne'])
+  refine ⟨smulOfNonneg hN.le γ, ?_, fun b ↦ ?_⟩
+  · rw [toContinuousLinearMap_smulOfNonneg, norm_smul, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_pos hN, hγ, mul_one]
+  · rw [smulOfNonneg_apply, h, smulOfNonneg_apply, smul_smul, ← Complex.ofReal_mul,
+      mul_inv_cancel₀ hN.ne', Complex.ofReal_one, one_smul]
 
 end Hom
 

@@ -17,9 +17,10 @@ import TauCeti.Analysis.CStarAlgebra.State.Unitization
 
 Let `I` be a closed two-sided ideal of a possibly nonunital C⋆-algebra `A`, a nonunital
 C⋆-algebra in its own right (`TwoSidedIdeal.nonUnitalCStarAlgebra`) with the order induced from
-`A` (`TwoSidedIdeal.instStarOrderedRingOfIsClosed`). Every state `τ` of `I` extends uniquely to a
-state `γ` of `A`, `γ(a) = lim_e τ(eae)` along every increasing approximate unit `e` of `I`, and
-the extension of a tracial state is tracial. The extension formula, uniqueness and existence are
+`A` (`TwoSidedIdeal.instStarOrderedRingOfIsClosed`). Every positive functional `τ` of `I` extends
+uniquely to a positive functional `γ` of `A` of the same norm, in particular every state to a
+state, with `γ(a) = lim_e τ(eae)` along every increasing approximate unit `e` of `I`, and the
+extension of a tracial state is tracial. The extension formula, uniqueness and existence are
 first proved along a star homomorphism `f : B → A` of C⋆-algebras, and specialized to the
 inclusion of `I`.
 
@@ -38,9 +39,11 @@ This file specializes them to a closed ideal.
   approximate unit of `I`.
 * `PositiveContinuousLinearMap.eq_of_apply_coe_eq`: uniqueness of the extension from a closed
   ideal.
-* `PositiveContinuousLinearMap.exists_apply_coe_eq`: a state extends from a closed ideal.
-* `PositiveContinuousLinearMap.existsUnique_apply_coe_eq`: a state of `I` has exactly one
-  extension to a state of `A`.
+* `PositiveContinuousLinearMap.exists_apply_coe_eq`: a positive functional extends from a closed
+  ideal without increasing its norm.
+* `PositiveContinuousLinearMap.existsUnique_apply_coe_eq`: a positive functional of `I` has
+  exactly one extension to a positive functional of `A` of the same norm; for a state, exactly one
+  extension to a state.
 * `PositiveContinuousLinearMap.re_apply_mul_star_le_of_apply_coe_eq`: an extension `γ` of a
   tracial state of `I` satisfies `Re γ(a a⋆) ≤ Re γ(a⋆ a)`.
 * `PositiveContinuousLinearMap.isTracialState_of_apply_coe_eq`: the extension of a tracial state
@@ -119,20 +122,21 @@ theorem eq_of_apply_coe_eq {τ : I →P[ℂ] ℂ} {γ₁ γ₂ : A →P[ℂ] ℂ
       by simp [TwoSidedIdeal.starAlgHom_apply]⟩) hγ₁ hγ₂
     (by simpa using h₁) (by simpa using h₂)
 
-/-- **Existence of the extension** from a closed ideal: every positive functional of norm one on a
-closed ideal `I` of `A` is the restriction of a positive functional of norm one on `A`. -/
-theorem exists_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[ℂ] ℂ)‖ = 1) :
-    ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ c : I, γ c = τ c := by
-  simpa using exists_apply_map_eq I.starAlgHom I.starAlgHom_injective hτ
+/-- **Existence of the extension** from a closed ideal: every positive functional on a closed
+ideal `I` of `A` is the restriction of a positive functional on `A` of the same norm. -/
+theorem exists_apply_coe_eq (τ : I →P[ℂ] ℂ) :
+    ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : I →L[ℂ] ℂ)‖ ∧ ∀ c : I, γ c = τ c := by
+  simpa using exists_apply_map_eq I.starAlgHom I.starAlgHom_injective τ
 
-/-- **Extension of states from closed ideals.** A state `τ` of a closed ideal `I` of `A` is the
-restriction of exactly one state of `A`, given by `lim_e τ(eae)` along every increasing
-approximate unit of `I` (`tendsto_apply_mul_mul_of_apply_coe_eq'`). -/
-theorem existsUnique_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[ℂ] ℂ)‖ = 1) :
-    ∃! γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ c : I, γ c = τ c := by
-  obtain ⟨γ, hγ, h⟩ := exists_apply_coe_eq hτ
-  exact ⟨γ, ⟨hγ, h⟩, fun γ' ⟨hγ', h'⟩ ↦
-    eq_of_apply_coe_eq (hγ'.trans hτ.symm).le (hγ.trans hτ.symm).le h' h⟩
+/-- **Extension of positive functionals from closed ideals.** A positive functional `τ` of a
+closed ideal `I` of `A` is the restriction of exactly one positive functional on `A` of the same
+norm, given by `lim_e τ(eae)` along every increasing approximate unit of `I`
+(`tendsto_apply_mul_mul_of_apply_coe_eq'`). For a state `τ`, this is the unique extension to a
+state of `A`. -/
+theorem existsUnique_apply_coe_eq (τ : I →P[ℂ] ℂ) :
+    ∃! γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : I →L[ℂ] ℂ)‖ ∧ ∀ c : I, γ c = τ c := by
+  obtain ⟨γ, hγ, h⟩ := exists_apply_coe_eq τ
+  exact ⟨γ, ⟨hγ, h⟩, fun γ' ⟨hγ', h'⟩ ↦ eq_of_apply_coe_eq hγ'.le hγ.le h' h⟩
 
 /-- A positive functional `γ` of norm at most one on `A` restricting to a tracial state `τ` of a
 closed ideal `I` satisfies `Re γ(a a⋆) ≤ Re γ(a⋆ a)`:
@@ -188,9 +192,9 @@ theorem isTracialState_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : τ.IsTracia
 of `A` extends uniquely to a tracial state of `A`. -/
 theorem IsTracialState.existsUnique_isTracialState_apply_coe_eq {τ : I →P[ℂ] ℂ}
     (hτ : τ.IsTracialState) : ∃! γ : A →P[ℂ] ℂ, γ.IsTracialState ∧ ∀ c : I, γ c = τ c := by
-  obtain ⟨γ, ⟨hγ, h⟩, huniq⟩ := existsUnique_apply_coe_eq (A := A) hτ.norm_eq_one
-  exact ⟨γ, ⟨isTracialState_of_apply_coe_eq hτ hγ.le h, h⟩, fun γ' ⟨hγ', h'⟩ ↦
-    huniq γ' ⟨hγ'.norm_eq_one, h'⟩⟩
+  obtain ⟨γ, ⟨hγ, h⟩, huniq⟩ := existsUnique_apply_coe_eq (A := A) τ
+  exact ⟨γ, ⟨isTracialState_of_apply_coe_eq hτ (hγ.trans hτ.norm_eq_one).le h, h⟩,
+    fun γ' ⟨hγ', h'⟩ ↦ huniq γ' ⟨hγ'.norm_eq_one.trans hτ.norm_eq_one.symm, h'⟩⟩
 
 end Ideal
 
