@@ -53,14 +53,12 @@ variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {ω �
 theorem apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero (hφ : φ ∈ stateSpace A)
     {q : A} (hq : IsStarProjection q) (hφq : φ q = 0) (a : A) : φ (a * q) = 0 ∧ φ (q * a) = 0 := by
   obtain ⟨f, -, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.1 hφ
-  have hfq : f q = 0 := hφq
+  have hfq : f q = 0 := by simpa using hφq
   have h₁ := PositiveLinearMap.norm_map_mul_star_le f a q
   have h₂ := PositiveLinearMap.norm_map_star_mul_le f q a
-  rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hfq, norm_zero, Real.sqrt_zero,
-    mul_zero] at h₁
-  rw [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hfq, norm_zero, Real.sqrt_zero,
-    zero_mul] at h₂
-  exact ⟨norm_le_zero_iff.1 h₁, norm_le_zero_iff.1 h₂⟩
+  simp only [hq.isSelfAdjoint.star_eq, hq.isIdempotentElem.eq, hfq, norm_zero, Real.sqrt_zero,
+    mul_zero, zero_mul, norm_le_zero_iff] at h₁ h₂
+  simpa using ⟨h₁, h₂⟩
 
 /-- **A state supported on a minimal projection is determined.** Let `p` be a projection with
 `p a p = ω(a) p` for every `a`. A state `φ` with `φ(1 - p) = 0` is `ω`. -/
@@ -75,8 +73,7 @@ theorem eq_of_mem_stateSpace_of_apply_one_sub_eq_zero (hp : IsStarProjection p)
   have h₁ := (apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero hφ hq hφp a).1
   have h₂ := (apply_mul_eq_zero_of_mem_stateSpace_of_apply_eq_zero hφ hq hφp (a * p)).2
   calc φ a = φ (a * p) + φ (a * (1 - p)) := by rw [← map_add, ← mul_add, add_sub_cancel, mul_one]
-    _ = ω a := by rw [h₁, add_zero, ha, map_add, h₂, add_zero, hpap, map_smul, hφ1, smul_eq_mul,
-      mul_one]
+    _ = ω a := by rw [h₁, add_zero, ha]; simp [h₂, hpap, hφ1]
 
 /-- **Vector-type states are pure.** Let `ω` be a state and `p` a projection with `ω(p) = 1` and
 `p a p = ω(a) p` for every `a`. Then `ω` is an extreme point of the state space. -/

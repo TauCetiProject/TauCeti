@@ -20,8 +20,8 @@ projection `ξ ξ⋆` compresses every matrix `a` to `⟪ξ, a ξ⟫ ξ ξ⋆`, 
 ## Main declarations
 
 * `TauCeti.vectorFunctional`: the vector functional of `ξ`.
-* `TauCeti.lineProjection`: the rank-one projection `ξ ξ⋆`, a projection for a unit vector `ξ`
-  (`TauCeti.isStarProjection_lineProjection`).
+* `TauCeti.vecMulVecStar`: the rank-one matrix `ξ ξ⋆`, the projection onto the line of `ξ` for
+  a unit vector `ξ` (`TauCeti.isStarProjection_vecMulVecStar`).
 * `TauCeti.vectorFunctional_mem_stateSpace`: the vector functional of a unit vector is a state.
 * `TauCeti.vectorFunctional_mem_extremePoints_stateSpace`: it is a pure state.
 -/
@@ -51,29 +51,30 @@ theorem vectorFunctional_apply (ξ : n → ℂ) (a : CStarMatrix n n ℂ) :
     vectorFunctional ξ a = star ξ ⬝ᵥ (ofMatrix.symm a *ᵥ ξ) :=
   (rfl)
 
-/-- The rank-one projection `ξ ξ⋆` onto the line of a unit vector `ξ`. -/
-def lineProjection {m : Type*} (ξ : m → ℂ) : CStarMatrix m m ℂ := ofMatrix (vecMulVec ξ (star ξ))
+/-- The rank-one matrix `ξ ξ⋆ = vecMulVec ξ (star ξ)`. For a unit vector `ξ` it is the projection
+onto the line of `ξ`, by `TauCeti.isStarProjection_vecMulVecStar`. -/
+def vecMulVecStar {m : Type*} (ξ : m → ℂ) : CStarMatrix m m ℂ := ofMatrix (vecMulVec ξ (star ξ))
 
-/-- The rank-one projection `ξ ξ⋆`, read as an ordinary matrix. -/
+/-- The rank-one matrix `ξ ξ⋆`, read as an ordinary matrix. -/
 @[simp]
-theorem ofMatrix_symm_lineProjection {m : Type*} (ξ : m → ℂ) :
-    ofMatrix.symm (lineProjection ξ) = vecMulVec ξ (star ξ) :=
+theorem ofMatrix_symm_vecMulVecStar {m : Type*} (ξ : m → ℂ) :
+    ofMatrix.symm (vecMulVecStar ξ) = vecMulVec ξ (star ξ) :=
   (rfl)
 
-/-- The rank-one projection of a unit vector is a projection. -/
-theorem isStarProjection_lineProjection {ξ : n → ℂ} (hξ : star ξ ⬝ᵥ ξ = 1) :
-    IsStarProjection (lineProjection ξ) where
+/-- For a unit vector `ξ`, the rank-one matrix `ξ ξ⋆` is a projection. -/
+theorem isStarProjection_vecMulVecStar {ξ : n → ℂ} (hξ : star ξ ⬝ᵥ ξ = 1) :
+    IsStarProjection (vecMulVecStar ξ) where
   isIdempotentElem := ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_mul, ofMatrix_symm_lineProjection, vecMulVec_mul_vecMulVec, hξ, one_smul]
+    rw [ofMatrix_symm_mul, ofMatrix_symm_vecMulVecStar, vecMulVec_mul_vecMulVec, hξ, one_smul]
   isSelfAdjoint := ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_star, ofMatrix_symm_lineProjection, conjTranspose_vecMulVec, star_star]
+    rw [ofMatrix_symm_star, ofMatrix_symm_vecMulVecStar, conjTranspose_vecMulVec, star_star]
 
-/-- The rank-one projection compresses every matrix to a multiple of itself:
+/-- The rank-one matrix `ξ ξ⋆` compresses every matrix to a multiple of itself:
 `(ξ ξ⋆) a (ξ ξ⋆) = ⟪ξ, a ξ⟫ ξ ξ⋆`. -/
-theorem lineProjection_mul_mul (ξ : n → ℂ) (a : CStarMatrix n n ℂ) :
-    lineProjection ξ * a * lineProjection ξ = vectorFunctional ξ a • lineProjection ξ := by
+theorem vecMulVecStar_mul_mul (ξ : n → ℂ) (a : CStarMatrix n n ℂ) :
+    vecMulVecStar ξ * a * vecMulVecStar ξ = vectorFunctional ξ a • vecMulVecStar ξ := by
   apply ofMatrix.symm.injective
-  simp only [ofMatrix_symm_mul, ofMatrix_symm_smul, ofMatrix_symm_lineProjection,
+  simp only [ofMatrix_symm_mul, ofMatrix_symm_smul, ofMatrix_symm_vecMulVecStar,
     vectorFunctional_apply]
   rw [vecMulVec_mul, vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, vecMulVec_smul]
 
@@ -92,8 +93,8 @@ theorem vectorFunctional_mem_extremePoints_stateSpace {ξ : n → ℂ} (hξ : st
     vectorFunctional ξ ∈ Set.extremePoints ℝ (stateSpace (CStarMatrix n n ℂ)) := by
   classical
   refine mem_extremePoints_stateSpace_of_mul_mul_eq_smul (vectorFunctional_mem_stateSpace hξ)
-    (isStarProjection_lineProjection hξ) (lineProjection_mul_mul ξ) ?_
-  rw [vectorFunctional_apply, ofMatrix_symm_lineProjection, vecMulVec_mulVec, hξ,
+    (isStarProjection_vecMulVecStar hξ) (vecMulVecStar_mul_mul ξ) ?_
+  rw [vectorFunctional_apply, ofMatrix_symm_vecMulVecStar, vecMulVec_mulVec, hξ,
     MulOpposite.op_one, one_smul, hξ]
 
 end TauCeti
