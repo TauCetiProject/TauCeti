@@ -38,8 +38,8 @@ lower bounds behind exponents of approximation.
   satisfy `q ‖q α‖ ‖q β‖ ≤ 1`.
 * `Real.exists_rat_abs_sub_lt_and_den_le`: for every real `ξ` and real `X ≥ 1` there is a
   rational `r` with `r.den ≤ X` and `|ξ - r| < 1 / (r.den X)`.
-* `TauCeti.one_div_mul_le_abs_div_sub_div`: distinct fractions `a/q ≠ a'/q'` with positive
-  denominators satisfy `1/(q q') ≤ |a/q - a'/q'|`.
+* `TauCeti.one_div_mul_le_abs_div_sub_div`: in a linearly ordered field, distinct fractions
+  `a/q ≠ a'/q'` with positive integer denominators satisfy `1/(q q') ≤ |a/q - a'/q'|`.
 
 ## Implementation notes
 
@@ -307,17 +307,18 @@ theorem _root_.Real.exists_rat_abs_sub_lt_and_den_le (ξ : ℝ) {X : ℝ} (hX : 
   gcongr
   exact Nat.lt_floor_add_one X
 
-/-- Distinct fractions `a/q ≠ a'/q'` with positive denominators are at distance at least
-`1/(q q')`, since `a q' - q a'` is a nonzero integer. -/
-theorem one_div_mul_le_abs_div_sub_div {a a' q q' : ℤ} (hq : 0 < q) (hq' : 0 < q')
-    (h : (a : ℝ) / q ≠ a' / q') : 1 / ((q : ℝ) * q') ≤ |(a : ℝ) / q - a' / q'| := by
-  have hq0 : (0 : ℝ) < q := by exact_mod_cast hq
-  have hq0' : (0 : ℝ) < q' := by exact_mod_cast hq'
+/-- In a linearly ordered field, distinct fractions `a/q ≠ a'/q'` with positive integer
+denominators are at distance at least `1/(q q')`, since `a q' - q a'` is a nonzero integer. -/
+theorem one_div_mul_le_abs_div_sub_div {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {a a' q q' : ℤ} (hq : 0 < q) (hq' : 0 < q')
+    (h : (a : K) / q ≠ a' / q') : 1 / ((q : K) * q') ≤ |(a : K) / q - a' / q'| := by
+  have hq0 : (0 : K) < q := by exact_mod_cast hq
+  have hq0' : (0 : K) < q' := by exact_mod_cast hq'
   have hne : a * q' - q * a' ≠ 0 := by
     refine fun h' => h ?_
-    rw [div_eq_div_iff hq0.ne' hq0'.ne', mul_comm (a' : ℝ)]
+    rw [div_eq_div_iff hq0.ne' hq0'.ne', mul_comm (a' : K)]
     exact_mod_cast sub_eq_zero.1 h'
-  have hone : (1 : ℝ) ≤ |((a * q' - q * a' : ℤ) : ℝ)| := by
+  have hone : (1 : K) ≤ |((a * q' - q * a' : ℤ) : K)| := by
     exact_mod_cast Int.one_le_abs hne
   push_cast at hone
   rw [div_sub_div _ _ hq0.ne' hq0'.ne', abs_div, abs_of_pos (mul_pos hq0 hq0')]
