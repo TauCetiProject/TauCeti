@@ -44,6 +44,8 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq`: global sections are determined by
   their restrictions to the affine opens, and
   `AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp` composes restriction homomorphisms.
+* `AlgebraicGeometry.Scheme.restrictionAlgebra`: for opens `V ≤ U`, `Γ(X, V)` as a
+  `Γ(X, U)`-algebra through restriction of functions.
 * `AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover`: a quasi-compact open is covered by
   finitely many affine opens contained in it, in the form used by sheaf gluing.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
@@ -220,6 +222,18 @@ theorem _root_.AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp {V U W : X.Ope
       (X.presheaf.map (homOfLE (hVU.trans hUW)).op).hom := by
   rw [← CommRingCat.hom_comp, ← Functor.map_comp]
   rfl
+
+/-- `Γ(X, V)` as a `Γ(X, U)`-algebra through restriction of functions, for opens `V ≤ U`. -/
+abbrev _root_.AlgebraicGeometry.Scheme.restrictionAlgebra {V : X.Opens} (hVU : V ≤ U) :
+    Algebra Γ(X, U) Γ(X, V) :=
+  (X.presheaf.map (homOfLE hVU).op).hom.toAlgebra
+
+/-- The algebra map of `Scheme.restrictionAlgebra` is restriction of functions. -/
+theorem _root_.AlgebraicGeometry.Scheme.algebraMap_restrictionAlgebra {V : X.Opens}
+    (hVU : V ≤ U) :
+    letI := Scheme.restrictionAlgebra hVU
+    algebraMap Γ(X, U) Γ(X, V) = (X.presheaf.map (homOfLE hVU).op).hom :=
+  RingHom.algebraMap_toAlgebra _
 
 /-- **Global sections are determined by their restrictions to the affine opens.** -/
 theorem _root_.AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq (X : Scheme.{u})

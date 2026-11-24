@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.EReal.Operations
+public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 public import TauCeti.Algebra.Homology.ModuleCat.HomologyImage
 
@@ -23,8 +24,9 @@ when `σ` is represented at no level and `-∞` when it is represented at every 
 
 **Valuation properties.** Like the filtration levels of chains in Usher's framework of
 Floer-type complexes, the spectral invariant behaves as a non-Archimedean valuation:
-`ρ(0) = -∞`, `ρ(-σ) = ρ(σ)`, `ρ(r • σ) ≤ ρ(σ)`, and for an increasing filtration
-`ρ(σ + τ) ≤ max ρ(σ) ρ(τ)`.
+`ρ(0) = -∞`, `ρ(-σ) = ρ(σ)`, `ρ(r • σ) ≤ ρ(σ)` with equality for a unit `r`, and for an
+increasing filtration `ρ(σ + τ) ≤ max ρ(σ) ρ(τ)`, with equality when `ρ(σ) ≠ ρ(τ)`
+(`TauCeti.spectralInvariant_add_eq_max_of_ne`).
 
 **Shifts of filtrations.** If a linear map `f : M → N` carries `I a` into `J (a + E)` for every
 `a`, then `ρ_J(f σ) ≤ ρ_I(σ) + E` (`TauCeti.spectralInvariant_map_le`). This is the algebraic
@@ -34,11 +36,17 @@ complex of a Hamiltonian `H⁺` to that of `H⁻` raises the action by at most
 with a common symplectic homology group, so the spectral invariant of a class of that group with
 respect to `H⁻` exceeds the one with respect to `H⁺` by at most `E`
 (`TauCeti.spectralInvariant_symm_apply_le_of_comp_eq`). Exchanging the two Hamiltonians bounds
-the difference by the Hofer norm of `H⁺ - H⁻`.
+the difference by the Hofer norm of `H⁺ - H⁻`. Shifting the levels of a filtration by `E`
+shifts spectral invariants by `-E` (`TauCeti.spectralInvariant_comp_add_right`).
 
 **Spectrality.** Suppose that the filtration is left continuous, every `I a` being the union of
 the `I b` for `b < a`, and that it does not jump just after any level outside a set `S`. Then a
-finite spectral invariant lies in `S` (`TauCeti.mem_of_spectralInvariant_eq_coe`).
+finite spectral invariant lies in `S` (`TauCeti.mem_of_spectralInvariant_eq_coe`). The same holds
+for any filtration, without left continuity, when `S` is closed and the filtration does not grow
+on intervals `[a, b]` disjoint from `S` (`TauCeti.mem_of_spectralInvariant_eq_coe_of_isClosed`).
+If `S` is closed and discrete and the filtration does not grow on intervals `(a, b]` disjoint from
+`S`, then a finite spectral invariant `r` is attained: `σ ∈ I r`
+(`TauCeti.mem_apply_of_spectralInvariant_eq_coe`).
 
 **Filtered homology.** For a complex of modules `K` filtered in degree `n` by submodules
 `F a ⊆ K.X n`, the induced filtration of the homology `H_n(K)` consists of the classes represented
@@ -68,7 +76,13 @@ invariants of homology classes by at most `E` (`TauCeti.spectralInvariant_homolo
 * `TauCeti.spectralInvariant_add_le`: the triangle inequality `ρ(σ + τ) ≤ max ρ(σ) ρ(τ)`.
 * `TauCeti.spectralInvariant_map_le`: maps shifting the filtration by `E` raise the spectral
   invariant by at most `E`.
+* `TauCeti.spectralInvariant_add_eq_max_of_ne`: the equality case of the triangle inequality.
 * `TauCeti.mem_of_spectralInvariant_eq_coe`: spectrality for a left continuous filtration.
+* `TauCeti.mem_of_spectralInvariant_eq_coe_of_isClosed`,
+  `TauCeti.exists_mem_spectralInvariant_eq`: spectrality for a filtration changing only at the
+  points of a closed set.
+* `TauCeti.mem_apply_of_spectralInvariant_eq_coe`: a finite spectral invariant is attained for a
+  closed discrete spectrum.
 * `TauCeti.spectralInvariant_homologyMap_le`: chain maps shifting the filtration by `E` raise
   spectral invariants of homology classes by at most `E`.
 * `TauCeti.exists_spectralInvariant_eq`: with finitely many generators, the spectral invariant of
@@ -103,6 +117,10 @@ noncomputable def spectralInvariant (I : ℝ → Submodule R M) (σ : M) : EReal
 
 variable {I : ℝ → Submodule R M} {J : ℝ → Submodule R N} {σ τ : M}
 
+theorem spectralInvariant_def :
+    spectralInvariant I σ = ⨅ (a : ℝ) (_ : σ ∈ I a), (a : EReal) := by
+  rw [spectralInvariant]
+
 /-- A lower bound for the spectral invariant is a lower bound for every level at which `σ` is
 represented. -/
 theorem le_spectralInvariant_iff {x : EReal} :
@@ -112,6 +130,12 @@ theorem le_spectralInvariant_iff {x : EReal} :
 /-- The spectral invariant is at most every level at which `σ` is represented. -/
 theorem spectralInvariant_le_of_mem {a : ℝ} (h : σ ∈ I a) : spectralInvariant I σ ≤ a :=
   iInf₂_le a h
+
+/-- If `y ∈ J a` whenever `σ ∈ I a`, then the spectral invariant of `y` is at most that of `σ`. -/
+theorem spectralInvariant_le_of_imp {S P : Type*} [Ring S] [AddCommGroup P] [Module S P]
+    {J : ℝ → Submodule S P} {y : P} (h : ∀ a, σ ∈ I a → y ∈ J a) :
+    spectralInvariant J y ≤ spectralInvariant I σ :=
+  le_spectralInvariant_iff.2 fun a ha ↦ spectralInvariant_le_of_mem (h a ha)
 
 /-- The spectral invariant is below `x` exactly when `σ` is represented at a level below `x`. -/
 theorem spectralInvariant_lt_iff {x : EReal} :
@@ -137,6 +161,11 @@ theorem spectralInvariant_le_iff (hI : Monotone I) {a : ℝ} :
 @[simp]
 theorem spectralInvariant_eq_top_iff : spectralInvariant I σ = ⊤ ↔ ∀ a : ℝ, σ ∉ I a := by
   simp [spectralInvariant]
+
+/-- The spectral invariant is below `+∞` exactly when `σ` is represented at some level. -/
+@[simp]
+theorem spectralInvariant_lt_top_iff : spectralInvariant I σ < ⊤ ↔ ∃ a : ℝ, σ ∈ I a := by
+  simp [spectralInvariant_lt_iff]
 
 /-- If `σ` is represented at every level, its spectral invariant is `-∞`. -/
 theorem spectralInvariant_eq_bot_of_forall_mem (h : ∀ a : ℝ, σ ∈ I a) :
@@ -164,11 +193,23 @@ theorem spectralInvariant_neg : spectralInvariant I (-σ) = spectralInvariant I 
 /-- A larger filtration gives smaller spectral invariants. -/
 theorem spectralInvariant_anti {I' : ℝ → Submodule R M} (h : ∀ a, I a ≤ I' a) :
     spectralInvariant I' σ ≤ spectralInvariant I σ :=
-  le_spectralInvariant_iff.2 fun _ ha ↦ spectralInvariant_le_of_mem (h _ ha)
+  spectralInvariant_le_of_imp fun _ ha ↦ h _ ha
 
 /-- Multiplying by a scalar does not raise the spectral invariant. -/
 theorem spectralInvariant_smul_le (r : R) : spectralInvariant I (r • σ) ≤ spectralInvariant I σ :=
   le_spectralInvariant_iff.2 fun _ ha ↦ spectralInvariant_le_of_mem (Submodule.smul_mem _ r ha)
+
+/-- Acting by an element of a group of scalars does not change the spectral invariant. -/
+@[simp]
+theorem spectralInvariant_smul {G : Type*} [Group G] [MulAction G M] [SMul G R]
+    [IsScalarTower G R M] (g : G) : spectralInvariant I (g • σ) = spectralInvariant I σ :=
+  le_antisymm (spectralInvariant_le_of_imp fun a ha ↦ (I a).smul_of_tower_mem g ha)
+    (spectralInvariant_le_of_imp fun a ha ↦ by simpa using (I a).smul_of_tower_mem g⁻¹ ha)
+
+/-- Multiplying by a unit does not change the spectral invariant. -/
+theorem spectralInvariant_smul_of_isUnit {r : R} (hr : IsUnit r) :
+    spectralInvariant I (r • σ) = spectralInvariant I σ := by
+  simpa using spectralInvariant_smul (I := I) (σ := σ) hr.unit
 
 /-- **The triangle inequality** for spectral invariants of an increasing filtration:
 `ρ(σ + τ) ≤ max ρ(σ) ρ(τ)`. -/
@@ -178,17 +219,38 @@ theorem spectralInvariant_add_le (hI : Monotone I) :
   · exact mem_of_spectralInvariant_lt hI ((le_max_left _ _).trans_lt ha)
   · exact mem_of_spectralInvariant_lt hI ((le_max_right _ _).trans_lt ha)
 
-/-- **Maps shifting the filtration.** If `f` carries `I a` into `J (a + E)` for every level `a`,
-then `ρ_J(f σ) ≤ ρ_I(σ) + E`. -/
-theorem spectralInvariant_map_le (f : M →ₗ[R] N) {E : ℝ} (h : ∀ a, (I a).map f ≤ J (a + E))
-    (σ : M) : spectralInvariant J (f σ) ≤ spectralInvariant I σ + E := by
+/-- If `y ∈ J (a + E)` whenever `σ ∈ I a`, then `ρ_J(y) ≤ ρ_I(σ) + E`. The two modules may be
+over different rings, so this also covers semilinear maps. -/
+theorem spectralInvariant_le_add_of_imp {S P : Type*} [Ring S] [AddCommGroup P] [Module S P]
+    {J : ℝ → Submodule S P} {y : P} (E : ℝ) (h : ∀ a, σ ∈ I a → y ∈ J (a + E)) :
+    spectralInvariant J y ≤ spectralInvariant I σ + E := by
   refine EReal.le_of_forall_lt_iff_le.1 fun z hz ↦ ?_
   have hlt : spectralInvariant I σ < ((z - E : ℝ) : EReal) := by
     rw [EReal.coe_sub]
     exact (EReal.lt_sub_iff_add_lt (.inl (EReal.coe_ne_bot E)) (.inl (EReal.coe_ne_top E))).2 hz
   obtain ⟨a, ha, haz⟩ := spectralInvariant_lt_iff.1 hlt
-  refine (spectralInvariant_le_of_mem (h a ⟨σ, ha, rfl⟩)).trans (EReal.coe_le_coe_iff.2 ?_)
+  refine (spectralInvariant_le_of_mem (h a ha)).trans (EReal.coe_le_coe_iff.2 ?_)
   linarith [EReal.coe_lt_coe_iff.1 haz]
+
+/-- **Maps shifting the filtration.** If `f` carries `I a` into `J (a + E)` for every level `a`,
+then `ρ_J(f σ) ≤ ρ_I(σ) + E`. -/
+theorem spectralInvariant_map_le (f : M →ₗ[R] N) {E : ℝ} (h : ∀ a, (I a).map f ≤ J (a + E))
+    (σ : M) : spectralInvariant J (f σ) ≤ spectralInvariant I σ + E :=
+  spectralInvariant_le_add_of_imp E fun a ha ↦ h a ⟨σ, ha, rfl⟩
+
+/-- Raising the levels of a filtration by `E` lowers spectral invariants by `E`. -/
+theorem spectralInvariant_comp_add_right (E : ℝ) :
+    spectralInvariant (fun a ↦ I (a + E)) σ = spectralInvariant I σ - E := by
+  refine le_antisymm ?_ ?_
+  · rw [sub_eq_add_neg, ← EReal.coe_neg]
+    exact spectralInvariant_le_add_of_imp (-E) fun a ha ↦ by simpa using ha
+  · rw [EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot E)) (.inl (EReal.coe_ne_top E))]
+    exact spectralInvariant_le_add_of_imp E fun a ha ↦ ha
+
+/-- Lowering the levels of a filtration by `E` raises spectral invariants by `E`. -/
+theorem spectralInvariant_comp_sub_right (E : ℝ) :
+    spectralInvariant (fun a ↦ I (a - E)) σ = spectralInvariant I σ + E := by
+  simpa [sub_eq_add_neg] using spectralInvariant_comp_add_right (I := I) (σ := σ) (-E)
 
 /-- Transporting a filtration along a linear equivalence does not change spectral
 invariants. -/
@@ -226,6 +288,95 @@ theorem mem_of_spectralInvariant_eq_coe (hI : Monotone I)
     (hI.comp (Subtype.mono_coe _)).directed_le).1 (hleft r hσ)
   have := hr ▸ spectralInvariant_le_of_mem hσb
   exact (EReal.coe_le_coe_iff.1 this).not_gt hb
+
+/-- If the spectral invariant of `σ` is a real number `r`, then for every `ε > 0` the element `σ`
+is represented at some level in `[r, r + ε)`. -/
+theorem exists_mem_Ico_of_spectralInvariant_eq_coe {r ε : ℝ} (hr : spectralInvariant I σ = r)
+    (hε : 0 < ε) : ∃ b ∈ Set.Ico r (r + ε), σ ∈ I b := by
+  obtain ⟨b, hσb, hb⟩ := spectralInvariant_lt_iff.mp
+    (hr.trans_lt (EReal.coe_lt_coe_iff.mpr (lt_add_of_pos_right r hε)))
+  exact ⟨b, ⟨EReal.coe_le_coe_iff.mp (hr ▸ spectralInvariant_le_of_mem hσb),
+    EReal.coe_lt_coe_iff.mp hb⟩, hσb⟩
+
+/-- **Spectrality for a closed set.** If the filtration only changes at the points of a closed
+set `S`, in the sense that `I b ≤ I a` whenever `a ≤ b` and `[a, b]` does not meet `S`, then a
+finite spectral invariant lies in `S`. Neither monotonicity nor left continuity is needed. -/
+theorem mem_of_spectralInvariant_eq_coe_of_isClosed {S : Set ℝ} (hS : IsClosed S)
+    (hIS : ∀ a b, a ≤ b → Disjoint S (Set.Icc a b) → I b ≤ I a) {r : ℝ}
+    (hr : spectralInvariant I σ = r) : r ∈ S := by
+  by_contra hrS
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hS.isOpen_compl r hrS
+  obtain ⟨b, ⟨hrb, hb⟩, hσb⟩ := exists_mem_Ico_of_spectralInvariant_eq_coe hr (half_pos hε)
+  have hdisj : Disjoint S (Set.Icc (r - ε / 2) b) := by
+    refine Set.disjoint_left.mpr fun t htS ht ↦ hball ?_ htS
+    rw [Real.ball_eq_Ioo]
+    exact ⟨by linarith [ht.1], by linarith [ht.2]⟩
+  have hle := spectralInvariant_le_of_mem (hIS _ _ (by linarith) hdisj hσb)
+  rw [hr, EReal.coe_le_coe_iff] at hle
+  linarith
+
+/-- **The spectral invariant is attained.** If the filtration only changes at the points of a
+closed discrete set `S`, in the sense that `I b ≤ I a` whenever `a ≤ b` and `(a, b]` does not meet
+`S`, as for the sublevel sets of a function with values in `S`, then `σ` is represented at its
+spectral invariant when it is finite. -/
+theorem mem_apply_of_spectralInvariant_eq_coe {S : Set ℝ} (hS : Sᶜ ∈ Filter.codiscrete ℝ)
+    (hIS : ∀ a b, a ≤ b → Disjoint S (Set.Ioc a b) → I b ≤ I a) {r : ℝ}
+    (hr : spectralInvariant I σ = r) : σ ∈ I r := by
+  obtain ⟨ε, hε, hball⟩ :=
+    Metric.mem_nhdsWithin_iff.mp (mem_codiscrete_iff_forall_mem_nhdsNE.mp hS r)
+  obtain ⟨b, ⟨hrb, hb⟩, hσb⟩ := exists_mem_Ico_of_spectralInvariant_eq_coe hr hε
+  refine hIS r b hrb (Set.disjoint_left.mpr fun t htS ht ↦ hball ⟨?_, ht.1.ne'⟩ htS) hσb
+  rw [Real.ball_eq_Ioo]
+  exact ⟨by linarith [ht.1], by linarith [ht.2]⟩
+
+/-- For an increasing filtration, the spectral invariant of `σ` is at least every level at which
+`σ` is not represented. -/
+theorem le_spectralInvariant_of_notMem (hI : Monotone I) {a : ℝ} (h : σ ∉ I a) :
+    (a : EReal) ≤ spectralInvariant I σ :=
+  not_lt.mp (mt (mem_of_spectralInvariant_lt hI) h)
+
+/-- For an increasing filtration, the spectral invariant of a nonzero element is at least every
+level at which the filtration vanishes. -/
+theorem le_spectralInvariant_of_eq_bot (hI : Monotone I) {a : ℝ} (h : I a = ⊥) (hσ : σ ≠ 0) :
+    (a : EReal) ≤ spectralInvariant I σ :=
+  le_spectralInvariant_of_notMem hI fun hσa ↦ hσ ((Submodule.mem_bot R).mp (h ▸ hσa))
+
+/-- **Spectrality for a closed set**, for an increasing filtration and an element which is not
+represented at some level and is represented at another: its spectral invariant is a real number
+in `S`. -/
+theorem exists_mem_spectralInvariant_eq (hI : Monotone I) {S : Set ℝ} (hS : IsClosed S)
+    (hIS : ∀ a b, a ≤ b → Disjoint S (Set.Icc a b) → I b ≤ I a) {a b : ℝ} (hσa : σ ∉ I a)
+    (hσb : σ ∈ I b) : ∃ s ∈ S, spectralInvariant I σ = s := by
+  have htop : spectralInvariant I σ ≠ ⊤ :=
+    ((spectralInvariant_le_of_mem hσb).trans_lt (EReal.coe_lt_top b)).ne
+  have hbot : spectralInvariant I σ ≠ ⊥ :=
+    ((EReal.bot_lt_coe a).trans_le (le_spectralInvariant_of_notMem hI hσa)).ne'
+  exact ⟨_, mem_of_spectralInvariant_eq_coe_of_isClosed hS hIS (EReal.coe_toReal htop hbot).symm,
+    (EReal.coe_toReal htop hbot).symm⟩
+
+/-- The triangle inequality for differences: `ρ(σ - τ) ≤ max ρ(σ) ρ(τ)`. -/
+theorem spectralInvariant_sub_le (hI : Monotone I) :
+    spectralInvariant I (σ - τ) ≤ max (spectralInvariant I σ) (spectralInvariant I τ) := by
+  simpa [sub_eq_add_neg] using spectralInvariant_add_le hI (σ := σ) (τ := -τ)
+
+/-- The equality case of the triangle inequality: adding an element of strictly smaller spectral
+invariant does not change the spectral invariant. -/
+theorem spectralInvariant_add_eq_of_lt (hI : Monotone I)
+    (h : spectralInvariant I τ < spectralInvariant I σ) :
+    spectralInvariant I (σ + τ) = spectralInvariant I σ := by
+  refine le_antisymm ((spectralInvariant_add_le hI).trans (max_le le_rfl h.le)) ?_
+  have hσ := spectralInvariant_sub_le hI (I := I) (σ := σ + τ) (τ := τ)
+  rw [add_sub_cancel_right] at hσ
+  exact (le_max_iff.mp hσ).resolve_right h.not_ge
+
+/-- Elements with distinct spectral invariants: the spectral invariant of their sum is the larger
+of the two. -/
+theorem spectralInvariant_add_eq_max_of_ne (hI : Monotone I)
+    (h : spectralInvariant I σ ≠ spectralInvariant I τ) :
+    spectralInvariant I (σ + τ) = max (spectralInvariant I σ) (spectralInvariant I τ) := by
+  rcases h.lt_or_gt with h | h
+  · rw [max_eq_right h.le, add_comm, spectralInvariant_add_eq_of_lt hI h]
+  · rw [max_eq_left h.le, spectralInvariant_add_eq_of_lt hI h]
 
 end Module
 

@@ -38,6 +38,8 @@ localization is.
   by the same power does not change a homogeneous fraction.
 
 * `HomogeneousLocalization.Away.mk_self`: the homogeneous fraction `f / f` is one.
+* `HomogeneousLocalization.Away.algHom_ext`: algebra homomorphisms out of `A_{(f)}` are
+  determined by their values on the homogeneous fractions `a / fⁿ`.
 * `HomogeneousLocalization.Away.lift_mk`: `lift` sends `a / fⁿ` to `φ a * ((φ f)ⁿ)⁻¹`.
 * `HomogeneousLocalization.Away.lift_algebraMap`: `lift` restricts to `φ` on the degree-zero
   part `𝒜 0`.
@@ -310,6 +312,17 @@ noncomputable def Away.mkLinearMap {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ
 @[simp]
 theorem Away.mkLinearMap_apply {f : A} {d : ι} (hf : f ∈ 𝒜 d) (n : ℕ)
     (a : 𝒜 (n • d)) : Away.mkLinearMap (𝒜 := 𝒜) hf n a = Away.mk 𝒜 hf n a a.property := (rfl)
+
+/-- Two algebra homomorphisms out of `A_{(f)}` agree once they agree on every homogeneous
+fraction `a / fⁿ`. -/
+theorem Away.algHom_ext {B : Type*} [Semiring B] [Algebra R B] {f : A} {d : ι} (hf : f ∈ 𝒜 d)
+    {g₁ g₂ : Away 𝒜 f →ₐ[R] B}
+    (h : ∀ (n : ℕ) (a : A) (ha : a ∈ 𝒜 (n • d)),
+      g₁ (Away.mk 𝒜 hf n a ha) = g₂ (Away.mk 𝒜 hf n a ha)) :
+    g₁ = g₂ :=
+  AlgHom.ext fun z ↦ by
+    obtain ⟨n, a, ha, rfl⟩ := Away.mk_surjective 𝒜 hf z
+    exact h n a ha
 
 /-- Raise the denominator of a homogeneous fraction without changing the fraction. -/
 def Away.promoteNumerator {f : A} {d : ι} (hf : f ∈ 𝒜 d)

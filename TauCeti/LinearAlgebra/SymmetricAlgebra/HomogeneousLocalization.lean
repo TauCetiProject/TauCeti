@@ -22,7 +22,11 @@ Let `M` be a module over a commutative ring `R`, and grade the symmetric algebra
   `Sym(M)_(x)`; it takes the value `1` at `x` (`TauCeti.SymmetricAlgebra.awayLinearMap_self`,
   in simp-normal form `HomogeneousLocalization.Away.mk_self`).
 * `AlgHom.apply_awayMk_eq_lift`: an algebra homomorphism `ψ` on `Sym(M)_(x)` evaluates a
-  homogeneous fraction `a / xⁿ` as `a` at the linear form `m ↦ ψ (m / x)`.
+  homogeneous fraction `a / xⁿ` as `a` at any linear map agreeing with `m ↦ ψ (m / x)`.
+* `AlgHom.chartFunctional`: the linear map `m ↦ ψ (m / x)` of an algebra homomorphism `ψ` on
+  `Sym(M)_(x)`; it takes the value `1` at `x` (`AlgHom.chartFunctional_self`).
+* `AlgHom.apply_awayMk_eq_lift_chartFunctional`: such a `ψ` evaluates `a / xⁿ` as `a` at its
+  functional.
 -/
 
 public section
@@ -91,5 +95,36 @@ theorem _root_.AlgHom.apply_awayMk_eq_lift {A : Type w} [CommRing A] [Algebra R 
       apply val_injective
       simp [Away.val_mk, Localization.mk_mul, pow_succ']
     rw [this, map_mul, iha, map_mul, SymmetricAlgebra.lift_ι_apply, hv]
+
+/-- The linear map `m ↦ ψ (m / x)` of an `R`-algebra homomorphism `ψ` on the standard chart
+`D₊(x)` of a linear form `x`. -/
+noncomputable def _root_.AlgHom.chartFunctional {A : Type w} [CommRing A] [Algebra R A] {x : M}
+    (ψ : Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x) →ₐ[R] A) : M →ₗ[R] A :=
+  ψ.toLinearMap ∘ₗ awayLinearMap R x
+
+/-- The functional of `ψ` sends `m` to `ψ (m / x)`. -/
+theorem _root_.AlgHom.chartFunctional_apply {A : Type w} [CommRing A] [Algebra R A] {x : M}
+    (ψ : Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x) →ₐ[R] A) (m : M) :
+    ψ.chartFunctional m =
+      ψ (Away.mk _ (ι_mem_homogeneousSubmodule R M x) 1 (SymmetricAlgebra.ι R M m) (by simp)) := by
+  simp [AlgHom.chartFunctional]
+
+/-- The functional of `ψ` takes the value `1` on the chart coordinate `x`. -/
+@[simp]
+theorem _root_.AlgHom.chartFunctional_self {A : Type w} [CommRing A] [Algebra R A] {x : M}
+    (ψ : Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x) →ₐ[R] A) :
+    ψ.chartFunctional x = 1 := by
+  simp [AlgHom.chartFunctional]
+
+/-- On the standard chart `D₊(x)` of a linear form `x`, an `R`-algebra homomorphism `ψ`
+evaluates a homogeneous fraction `a / xⁿ` as the polynomial `a` evaluated at its functional
+`m ↦ ψ (m / x)`. -/
+theorem _root_.AlgHom.apply_awayMk_eq_lift_chartFunctional {A : Type w} [CommRing A]
+    [Algebra R A] {x : M}
+    (ψ : Away (homogeneousSubmodule R M) (SymmetricAlgebra.ι R M x) →ₐ[R] A)
+    {n : ℕ} {a : SymmetricAlgebra R M} (ha : a ∈ homogeneousSubmodule R M n) :
+    ψ (Away.mk _ (ι_mem_homogeneousSubmodule R M x) n a (by rwa [smul_eq_mul, mul_one])) =
+      SymmetricAlgebra.lift ψ.chartFunctional a :=
+  ψ.apply_awayMk_eq_lift _ (fun m ↦ (ψ.chartFunctional_apply m).symm) ha
 
 end TauCeti.SymmetricAlgebra

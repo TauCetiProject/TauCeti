@@ -363,12 +363,10 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_and_tendstoLocallyUniform
   have hC1 (i : Fin 4) : ContDiff ℝ 1 (fun z ↦ x z i - y z i) := by
     have hdi := mem_sobolevFields.1 hd i
     simp only [Pi.sub_apply, PiLp.sub_apply] at hdi
-    refine TemperedDistribution.contDiff_of_mem_realSobolevFunctions ?_ hdi ?_
-    · rw [Complex.finrank_real_complex]
-      push_cast
-      linarith
-    · exact ((EuclideanSpace.proj i).continuous.comp hxc).sub
-        ((EuclideanSpace.proj i).continuous.comp hyc)
+    exact TemperedDistribution.contDiff_of_mem_realSobolevFunctions
+      (finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)) hdi
+      (((EuclideanSpace.proj i).continuous.comp hxc).sub
+        ((EuclideanSpace.proj i).continuous.comp hyc))
   have hω : ContDiff ℝ (1 : ℕ) (gaugeForm v) := by
     have heq : gaugeForm v = fun z ↦ (x z 0 - y z 0) • reCLM + (x z 1 - y z 1) • imCLM :=
       funext fun z ↦ (gaugeTransform_eq_iff.1 hv z).1

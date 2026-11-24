@@ -21,9 +21,9 @@ a nonzero vector of `V`, so the closed points of the projective space of lines i
 The point is read on the standard chart `D₊(φ)` of a linear coordinate `φ` not vanishing at it.
 This chart is the spectrum of a finitely generated `k`-algebra, so by the Nullstellensatz the
 point is the kernel of a `k`-algebra homomorphism `ψ` on it
-(`PrimeSpectrum.exists_kernelPoint_eq_of_isClosed`); the functional is `c ↦ ψ (c / φ)`, and
-`ψ` evaluates every homogeneous fraction `a / φⁿ` as `a` at this functional
-(`AlgHom.apply_awayMk_eq_lift`).
+(`PrimeSpectrum.exists_kernelPoint_eq_of_isClosed`); the functional is `c ↦ ψ (c / φ)`
+(`AlgHom.chartFunctional`), and `ψ` evaluates every homogeneous fraction `a / φⁿ` as `a` at this
+functional (`AlgHom.apply_awayMk_eq_lift_chartFunctional`).
 
 ## Main declarations
 
@@ -80,15 +80,11 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
     exact hx.preimage (Proj.awayι _ _ hφ one_pos).continuous
   obtain ⟨ψ, rfl⟩ := PrimeSpectrum.exists_kernelPoint_eq_of_isClosed (k := k) y hy
   -- The point is given by the functional `c ↦ ψ (c / φ)` on linear coordinates.
-  let v : Module.Dual k N := ψ.toLinearMap ∘ₗ awayLinearMap k φ
-  have key {n : ℕ} {a : SymmetricAlgebra k N} (ha : a ∈ homogeneousSubmodule k N n) :=
-    ψ.apply_awayMk_eq_lift v (fun c ↦ by simp [v]) ha
-  refine ⟨v, fun hv ↦ ?_, fun n hn s hs ↦ ?_⟩
+  refine ⟨ψ.chartFunctional, fun hv ↦ ?_, fun n hn s hs ↦ ?_⟩
   · -- The functional takes the value `1` on the chart coordinate `φ`.
-    have := key hφ
-    rw [← awayLinearMap_apply, awayLinearMap_self, map_one, SymmetricAlgebra.lift_ι_apply, hv,
-      LinearMap.zero_apply] at this
-    exact one_ne_zero this
+    have := ψ.chartFunctional_self
+    rw [hv, LinearMap.zero_apply] at this
+    exact zero_ne_one this
   · -- Read membership in `x` on the chart, where `s` becomes `s / φⁿ`.
     rw [← not_iff_not, ← Proj.mem_basicOpen, ← Scheme.Hom.mem_preimage,
       Proj.awayι_preimage_basicOpen _ hφ one_pos hs hn]
@@ -97,8 +93,8 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
     -- is applied by unification rather than by rewriting.
     refine (PrimeSpectrum.mem_basicOpen (Away.isLocalizationElem hφ hs) _).trans ?_
     rw [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
-    have := key (n := n) (a := s ^ 1) (by simpa using hs)
-    rw [map_pow, pow_one (SymmetricAlgebra.lift v s)] at this
+    have := ψ.apply_awayMk_eq_lift_chartFunctional (n := n) (a := s ^ 1) (by simpa using hs)
+    rw [map_pow, pow_one (SymmetricAlgebra.lift ψ.chartFunctional s)] at this
     exact not_congr (Iff.of_eq (congrArg (· = (0 : k)) this))
 
 end ProjectiveSpectrum
