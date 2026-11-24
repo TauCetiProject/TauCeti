@@ -17,6 +17,7 @@ import TauCeti.Algebra.Algebra.Equiv
 import Mathlib.Algebra.Ring.Commute
 import Mathlib.Data.Fintype.Pi
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
+import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 import TauCeti.FieldTheory.Galois.Basic
 import TauCeti.FieldTheory.Separable.PrimeDegree
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
@@ -31,7 +32,8 @@ of an element of `F` to another square root of it, so `σ x = x` or `σ x = -x`.
 also allows the radicands to come from a smaller semiring. Consequently an automorphism is
 known on such roots once its signs on them are, and a group of automorphisms in which only the
 identity fixes each of `n` square roots has at most `2ⁿ` elements. Conversely, a square root
-generating a quadratic extension is negated by an automorphism.
+generating a quadratic extension is negated by an automorphism, and in a normal extension with
+`2 ≠ 0` a square root fixed by every automorphism lies in the base field.
 
 ## Main results
 
@@ -40,6 +42,8 @@ generating a quadratic extension is negated by an automorphism.
   `y` generating a quadratic extension `K⟮y⟯ / K`.
 * `TauCeti.two_ne_zero_of_sq_eq`: a separable square root outside the base field
   forces `2 ≠ 0` in the base field.
+* `TauCeti.mem_range_algebraMap_of_sq_eq_of_forall_apply_eq`: in a normal extension, with
+  `2 ≠ 0` in the base field, a square root fixed by every automorphism lies in the base field.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_eq_four_of_exists_apply_eq_neg`: a finite subgroup of order at most four
@@ -103,6 +107,26 @@ theorem two_ne_zero_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
   have hmem : α ∈ K⟮α⟯ := IntermediateField.mem_adjoin_simple_self K α
   rw [h, IntermediateField.adjoin_simple_eq_bot_iff.mpr
     (IntermediateField.mem_bot.mpr ⟨c, rfl⟩)] at hmem
+  exact IntermediateField.mem_bot.mp hmem
+
+/-- **A square root fixed by every automorphism lies in the base field.** In a normal extension
+`L/K` with `2 ≠ 0` in `K`, if `a ^ 2 ∈ K` and every `K`-automorphism of `L` fixes `a`, then
+`a ∈ K`. The hypothesis `2 ≠ 0` is needed: in characteristic `2` a square root of a nonsquare is
+purely inseparable, so every automorphism fixes it. -/
+theorem mem_range_algebraMap_of_sq_eq_of_forall_apply_eq {K L : Type*} [Field K] [Field L]
+    [Algebra K L] [Normal K L] {a : L} {c : K} (ha : a ^ 2 = algebraMap K L c)
+    (h2 : (2 : K) ≠ 0) (hfix : ∀ g : L ≃ₐ[K] L, g a = a) :
+    a ∈ Set.range (algebraMap K L) := by
+  by_cases hc : c = 0
+  · subst hc
+    exact ⟨0, by rw [map_zero, eq_comm, ← pow_eq_zero_iff two_ne_zero, ha, map_zero]⟩
+  -- `a` is a root of the separable polynomial `X² - c`, and it lies in the perfect closure
+  have hsep : IsSeparable K a :=
+    (Polynomial.separable_X_pow_sub_C c (by exact_mod_cast h2) hc).of_dvd
+      (minpoly.dvd K a (by simp [ha]))
+  have hmem : a ∈ separableClosure K L ⊓ perfectClosure K L :=
+    ⟨mem_separableClosure_iff.mpr hsep, mem_perfectClosure_iff_fixed.mpr hfix⟩
+  rw [separableClosure_inf_perfectClosure] at hmem
   exact IntermediateField.mem_bot.mp hmem
 
 end TauCeti

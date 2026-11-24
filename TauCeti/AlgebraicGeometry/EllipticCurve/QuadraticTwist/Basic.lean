@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 public import TauCeti.FieldTheory.Galois.Restriction
 public import TauCeti.RingTheory.Norm.Quadratic
 -- Proof-only: `Point.cast_some`, the coordinates of a point transported along `AddEquiv.cast`.
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 
 /-!
@@ -53,6 +54,10 @@ change of variables, again over any commutative ring in which the relevant param
 * `WeierstrassCurve.exists_smul_eq_quadraticTwistOf_quadraticTwistOf`,
   `WeierstrassCurve.exists_smul_quadraticTwistOf_eq`: the double twist is isomorphic to the
   original curve, and changing the generator moves the twist by a change of variables.
+* `WeierstrassCurve.exists_smul_quadraticTwistOf_zero_eq`: in characteristic other than `2`,
+  completing the square makes the trace parameter `0`.
+* `WeierstrassCurve.exists_smul_eq_quadraticTwistOf_zero_neg_sq`: in characteristic other than
+  `2`, the twist by `(0, -c²)` with `c ≠ 0` is trivial.
 * `WeierstrassCurve.isElliptic_quadraticTwistOf_trace_norm`,
   `WeierstrassCurve.exists_smul_quadraticTwistOf_trace_norm_eq`: the twist by the trace and norm
   of a generator `θ` of a *separable* quadratic extension `L/K` is elliptic when `E` is.
@@ -428,6 +433,27 @@ variable {K : Type*} [Field K] (E : WeierstrassCurve K) (t n : K)
 theorem isElliptic_quadraticTwistOf [E.IsElliptic] (hD : t ^ 2 - 4 * n ≠ 0) :
     (E.quadraticTwistOf t n).IsElliptic :=
   (E.isElliptic_quadraticTwistOf_iff t n).mpr ⟨isUnit_iff_ne_zero.mpr hD, ‹E.IsElliptic›⟩
+
+/-- **Completing the square.** In characteristic other than `2`, the twist by parameters `(t, n)`
+is the twist by `(0, -D / 4)`, the trace and norm of a square root of `D / 4`, where
+`D = t² - 4n`. -/
+theorem exists_smul_quadraticTwistOf_zero_eq (h2 : (2 : K) ≠ 0) :
+    ∃ C : VariableChange K,
+      C • E.quadraticTwistOf 0 (-((t ^ 2 - 4 * n) / 4)) = E.quadraticTwistOf t n := by
+  have h4 := TauCeti.four_ne_zero_of_two_ne_zero h2
+  obtain ⟨C, hC⟩ := E.exists_smul_quadraticTwistOf_eq t n (a := 1) (-(t / 2)) isUnit_one
+  refine ⟨C⁻¹, ?_⟩
+  rw [inv_smul_eq_iff, hC]
+  congr 1 <;> field_simp <;> ring
+
+/-- **Twisting by a split quadratic with trace `0`.** In characteristic other than `2`, the twist
+by `(0, -c²)`, the trace and norm of a root of `(x + c)(x - c)`, is isomorphic to `E` when
+`c ≠ 0`. -/
+theorem exists_smul_eq_quadraticTwistOf_zero_neg_sq (h2 : (2 : K) ≠ 0) {c : K} (hc : c ≠ 0) :
+    ∃ C : VariableChange K, C • E = E.quadraticTwistOf 0 (-c ^ 2) := by
+  obtain ⟨C, hC⟩ := E.exists_smul_eq_quadraticTwistOf_add_mul (-c) c
+    (isUnit_iff_ne_zero.mpr (by rw [sub_neg_eq_add, ← two_mul]; exact mul_ne_zero h2 hc))
+  exact ⟨C, by rw [hC, neg_add_cancel, neg_mul, ← sq]⟩
 
 variable {L : Type*} [CommRing L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 
