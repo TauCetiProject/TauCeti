@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.Algebra.Hom.Rat
 import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.AlgebraicGeometry.AlgebraicSpace.Category
 
@@ -15,8 +14,8 @@ import TauCeti.AlgebraicGeometry.AlgebraicSpace.Category
 The embedded empty scheme is initial and the embedded spectrum of the integers is terminal, so
 `Hom(h_∅, F)` and `Hom(F, h_{Spec ℤ})` are points for every algebraic space `F`, whereas there is
 no morphism from the spectrum of a field to the empty scheme. Since the embedding of schemes is
-fully faithful, the endomorphisms of `h_{Spec K}` over `h_{Spec ℚ}` for a quadratic Galois extension
-`K/ℚ` are the two Galois automorphisms of `K`.
+fully faithful, the endomorphisms of `h_{Spec K}` over `h_{Spec ℚ}` for a quadratic extension `K/ℚ`,
+which is necessarily Galois, are exactly the images of the two Galois automorphisms of `K`.
 -/
 
 open CategoryTheory Limits Opposite AlgebraicGeometry TauCeti.AlgebraicGeometry Spaces AlgSpace
@@ -38,28 +37,30 @@ example (k : Type u) [Field k] :
     IsEmpty (ofScheme.obj (Spec (.of k)) ⟶ ofScheme.obj (∅ : Scheme.{u})) :=
   ⟨fun f ↦ IsEmpty.elim inferInstance ((ofScheme.preimage f).base (Nonempty.some inferInstance))⟩
 
--- For a quadratic Galois extension `K/ℚ`, the endomorphisms of `h_{Spec K}` over `h_{Spec ℚ}` are
--- the two Galois automorphisms.
-example (K : Type) [Field K] [Algebra ℚ K] [FiniteDimensional ℚ K] [IsGalois ℚ K]
-    (hK : Module.finrank ℚ K = 2) :
+-- For a quadratic extension `K/ℚ` (necessarily Galois), the endomorphisms of `h_{Spec K}` over
+-- `h_{Spec ℚ}` are exactly the images of the Galois automorphisms of `K`, and there are two.
+example (K : Type) [Field K] [Algebra ℚ K] (hK : Module.finrank ℚ K = 2) :
+    Set.BijOn (fun σ : K ≃ₐ[ℚ] K ↦ ofScheme.map (Spec.map (CommRingCat.ofHom (σ : K →+* K))))
+      Set.univ {φ | φ ≫ ofScheme.map (Spec.algebraMap ℚ K) = ofScheme.map (Spec.algebraMap ℚ K)} ∧
     Nat.card {φ : ofScheme.obj (Spec (.of K)) ⟶ ofScheme.obj (Spec (.of K)) //
-      φ ≫ ofScheme.map (Spec.map (CommRingCat.ofHom (algebraMap ℚ K))) =
-        ofScheme.map (Spec.map (CommRingCat.ofHom (algebraMap ℚ K)))} = 2 := by
-  let π := Spec.map (CommRingCat.ofHom (algebraMap ℚ K))
-  -- Every endomorphism of `Spec K` lies over `Spec ℚ`, since ring maps out of `ℚ` are unique.
-  have hπ (g : Spec (.of K) ⟶ Spec (.of K)) : g ≫ π = π := by
-    rw [← Spec.map_preimage g, ← Spec.map_comp]
-    exact congrArg Spec.map (CommRingCat.hom_ext (RingHom.ext_rat _ _))
-  -- Endomorphisms of `Spec K` are ring endomorphisms of `K`.
-  let s : (Spec (.of K) ⟶ Spec (.of K)) ≃ (K →+* K) :=
-    { toFun g := (Spec.preimage g).hom
-      invFun r := Spec.map (CommRingCat.ofHom r)
-      left_inv g := by simp
-      right_inv r := by simp }
+      φ ≫ ofScheme.map (Spec.algebraMap ℚ K) = ofScheme.map (Spec.algebraMap ℚ K)} = 2 := by
+  -- A degree-two extension of `ℚ` is finite and, being separable, Galois.
+  have : FiniteDimensional ℚ K := Module.finite_of_finrank_pos (by omega)
+  have : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  -- Full faithfulness of `ofScheme`, then Mathlib's `Spec.homEquivAlgHom`, then the fact that
+  -- `ℚ`-algebra endomorphisms of a finite extension are automorphisms.
   let e : {φ : ofScheme.obj (Spec (.of K)) ⟶ ofScheme.obj (Spec (.of K)) //
-      φ ≫ ofScheme.map π = ofScheme.map π} ≃ (K ≃ₐ[ℚ] K) :=
-    (((Functor.FullyFaithful.ofFullyFaithful ofScheme).homEquiv.subtypeEquiv fun g ↦ by
-        simp [← Functor.map_comp, hπ g]).symm.trans
-      (Equiv.subtypeUnivEquiv hπ)).trans
-      (s.trans ((RingHom.equivRatAlgHom K K).trans (algEquivEquivAlgHom ℚ K).symm))
+      φ ≫ ofScheme.map (Spec.algebraMap ℚ K) = ofScheme.map (Spec.algebraMap ℚ K)} ≃
+      (K ≃ₐ[ℚ] K) :=
+    ((Functor.FullyFaithful.ofFullyFaithful ofScheme).homEquiv.subtypeEquiv fun _ ↦ by
+        simp only [Functor.FullyFaithful.homEquiv_apply, ← Functor.map_comp,
+          ofScheme.map_injective.eq_iff]).symm.trans
+      (Spec.homEquivAlgHom.trans (algEquivEquivAlgHom ℚ K).toEquiv.symm)
+  -- The inverse of `e` is the map in the statement, by unfolding the equivalences.
+  have he (σ : K ≃ₐ[ℚ] K) : (e.symm σ).val =
+      ofScheme.map (Spec.map (CommRingCat.ofHom (σ : K →+* K))) := rfl
+  refine ⟨⟨fun σ _ ↦ by simpa only [he, Set.mem_ofPred_eq] using (e.symm σ).property,
+    fun σ _ τ _ h ↦ e.symm.injective (Subtype.ext (by simpa only [he] using h)),
+    fun φ hφ ↦ ⟨e ⟨φ, hφ⟩, trivial, by
+      simpa only [he] using congrArg Subtype.val (e.symm_apply_apply ⟨φ, hφ⟩)⟩⟩, ?_⟩
   rw [Nat.card_congr e, IsGalois.card_aut_eq_finrank, hK]
