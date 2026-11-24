@@ -23,15 +23,14 @@ the coordinates of `a`. Two lifts differ by a tuple of sections in the kernel of
   `n → ker (Γ(T', ⊤) → Γ(T, ⊤))`.
 * `TauCeti.AffineSpaceLifts.nonempty_lifts`: a lift exists when `i` is a closed immersion and `T'`
   is affine.
-* `TauCeti.AffineSpaceLifts.ker_appTop_eq_ideal_ker`: for `T'` affine and `i` quasi-compact, the
-  kernel is `Γ(T', I)` for the ideal sheaf `I = i.ker`.
+* `TauCeti.AffineSpaceLifts.ker_appTop_eq_ideal_ker`: for `T'` affine, the kernel is `Γ(T', I)`
+  for the ideal sheaf `I = i.ker`.
 
-For `n` a singleton and `i` a square-zero closed immersion of affine schemes, this is the check of
-SchemeAndStackFoundations §4.1: the lifts of `T ⟶ 𝔸¹_S` along `T ⟶ T'` form a torsor under
-`Γ(T, I)`.
+For `n` a singleton and `T'` affine, the lifts of `T ⟶ 𝔸¹_S` along a closed immersion `T ⟶ T'`
+form a torsor under `Γ(T', I)`.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 universe u
 
@@ -50,9 +49,6 @@ structure Lifts : Type u where
   /-- The lift restricts to `a` along `i`. -/
   comp_eq : i ≫ hom = a
 
-/-- The kernel of the restriction `Γ(T', ⊤) → Γ(T, ⊤)` along `i`. -/
-abbrev LiftKer : Ideal Γ(T', ⊤) := RingHom.ker i.appTop.hom
-
 variable {i g a}
 
 namespace Lifts
@@ -60,12 +56,16 @@ namespace Lifts
 /-- The coordinates of a lift. -/
 def coords (b : Lifts i g a) (j : n) : Γ(T', ⊤) := b.hom.appTop (AffineSpace.coord S j)
 
+/-- The coordinates of a lift are the pullbacks of the coordinates of `𝔸(n; S)`. -/
+theorem hom_appTop_coord (b : Lifts i g a) (j : n) :
+    b.hom.appTop (AffineSpace.coord S j) = b.coords j :=
+  (rfl)
+
 /-- The coordinates of a lift restrict to the coordinates of `a`. -/
+@[simp]
 theorem appTop_coords (b : Lifts i g a) (j : n) :
     i.appTop (b.coords j) = a.appTop (AffineSpace.coord S j) := by
-  have : (i ≫ b.hom).appTop (AffineSpace.coord S j) = i.appTop (b.coords j) := by
-    rfl
-  rw [← this, b.comp_eq]
+  rw [← hom_appTop_coord, ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, b.comp_eq]
 
 /-- `a` lies over `i ≫ g` as soon as a lift exists. -/
 theorem comp_over (b : Lifts i g a) : a ≫ 𝔸(n; S) ↘ S = i ≫ g := by
@@ -86,35 +86,42 @@ def mk' (v : n → Γ(T', ⊤)) (hv : ∀ j, i.appTop (v j) = a.appTop (AffineSp
     exact AffineSpace.hom_ext (by simp [ha]) fun j ↦ by simp [hv]⟩
 
 @[simp]
+theorem hom_mk' (v : n → Γ(T', ⊤))
+    (hv : ∀ j, i.appTop (v j) = a.appTop (AffineSpace.coord S j))
+    (ha : a ≫ 𝔸(n; S) ↘ S = i ≫ g) : (mk' v hv ha).hom = AffineSpace.homOfVector g v :=
+  (rfl)
+
+@[simp]
 theorem coords_mk' (v : n → Γ(T', ⊤))
     (hv : ∀ j, i.appTop (v j) = a.appTop (AffineSpace.coord S j))
     (ha : a ≫ 𝔸(n; S) ↘ S = i ≫ g) (j : n) : (mk' v hv ha).coords j = v j := by
-  simp [mk', coords]
+  rw [← hom_appTop_coord, hom_mk', AffineSpace.homOfVector_appTop_coord]
 
 end Lifts
 
 /-- Translating a lift by a tuple of sections of the kernel. -/
-instance instVAddLifts : VAdd (n → LiftKer i) (Lifts i g a) where
+instance instVAddLifts : VAdd (n → RingHom.ker i.appTop.hom) (Lifts i g a) where
   vadd k b := Lifts.mk' (fun j ↦ b.coords j + k j)
-    (fun j ↦ by simp [b.appTop_coords, RingHom.mem_ker.mp (k j).property]) b.comp_over
+    (fun j ↦ by simp [RingHom.mem_ker.mp (k j).property]) b.comp_over
 
 @[simp]
-theorem coords_vadd (k : n → LiftKer i) (b : Lifts i g a) (j : n) :
+theorem Lifts.coords_vadd (k : n → RingHom.ker i.appTop.hom) (b : Lifts i g a) (j : n) :
     (k +ᵥ b).coords j = b.coords j + k j :=
   Lifts.coords_mk' _ _ _ j
 
 /-- The difference of two lifts, a tuple of sections of the kernel. -/
-instance instVSubLifts : VSub (n → LiftKer i) (Lifts i g a) where
-  vsub b b' j := ⟨b.coords j - b'.coords j, by simp [b.appTop_coords, b'.appTop_coords]⟩
+instance instVSubLifts : VSub (n → RingHom.ker i.appTop.hom) (Lifts i g a) where
+  vsub b b' j := ⟨b.coords j - b'.coords j, by simp⟩
 
 @[simp]
-theorem coe_vsub_apply (b b' : Lifts i g a) (j : n) :
+theorem Lifts.coe_vsub_apply (b b' : Lifts i g a) (j : n) :
     ((b -ᵥ b') j : Γ(T', ⊤)) = b.coords j - b'.coords j :=
-  rfl
+  (rfl)
 
 /-- **The lifts form a torsor.** When `a` has a lift along `i`, its lifts form a torsor under
 `n → ker (Γ(T', ⊤) → Γ(T, ⊤))`. -/
-instance instAddTorsorLifts [Nonempty (Lifts i g a)] : AddTorsor (n → LiftKer i) (Lifts i g a) where
+instance instAddTorsorLifts [Nonempty (Lifts i g a)] :
+    AddTorsor (n → RingHom.ker i.appTop.hom) (Lifts i g a) where
   zero_vadd b := Lifts.ext fun j ↦ by simp
   add_vadd k k' b := Lifts.ext fun j ↦ by simp [add_comm, add_left_comm]
   vsub_vadd' b b' := Lifts.ext fun j ↦ by simp
@@ -128,11 +135,10 @@ theorem nonempty_lifts [IsAffine T'] [IsClosedImmersion i] (ha : a ≫ 𝔸(n; S
   choose v hv using fun j ↦ hsurj (a.appTop (AffineSpace.coord S j))
   exact ⟨Lifts.mk' v hv ha⟩
 
-/-- For `T'` affine and `i` quasi-compact, the kernel of `Γ(T', ⊤) → Γ(T, ⊤)` is the module of
-global sections of the ideal sheaf of `i`. -/
-theorem ker_appTop_eq_ideal_ker [IsAffine T'] [QuasiCompact i] :
-    LiftKer i = i.ker.ideal ⟨⊤, isAffineOpen_top T'⟩ := by
-  rw [Scheme.Hom.ker_apply]
-  rfl
+/-- For `T'` affine, the kernel of `Γ(T', ⊤) → Γ(T, ⊤)` is the module of global sections of the
+ideal sheaf of `i`. -/
+theorem ker_appTop_eq_ideal_ker [IsAffine T'] :
+    RingHom.ker i.appTop.hom = i.ker.ideal ⟨⊤, isAffineOpen_top T'⟩ := by
+  simp [Scheme.ker_of_isAffine]
 
 end TauCeti.AffineSpaceLifts
