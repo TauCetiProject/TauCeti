@@ -50,8 +50,10 @@ of `ℓ` (`actionLip_integral_smul_le`), and the average is close to `a` when `f
 probability density concentrated near `1` (`norm_integral_smul_sub_le`). The weights used are
 the normalized bumps `g ↦ max (δ - ℓ g) 0`.
 
-For an ergodic action of a compact group these are the properties which make the restriction of
-`actionLip` to the self-adjoint part a closed Lip-norm in Rieffel's sense.
+These are the properties of `actionLip` used, together with a compactness argument for ergodic
+actions of compact groups with a continuous length function, to show that its restriction to the
+self-adjoint part is a closed Lip-norm in Rieffel's sense. That compactness argument is not part
+of this file.
 
 ## References
 
