@@ -52,7 +52,11 @@ arbitrary pseudometric space, before any geodesic interpolation is chosen.
 The tuples of the cut with a prescribed first vertex `x` form the **based distance cut**
 `𝓛ⁿ_x Q` (`TauCeti.basedCyclicDistanceCut`). Their closed broken geodesics are loops based at `x`,
 and repeating the first vertex maps based cuts into each other
-(`TauCeti.basedCyclicDistanceCutRepeatFirstIterate`).
+(`TauCeti.basedCyclicDistanceCutRepeatFirstIterate`). The maps of the sequence of cuts keep the
+first vertex, so the based cuts at `x` form a sequence of their own
+(`TauCeti.basedCyclicDistanceCutFunctor`), whose singular homology has the singular homology of
+the based loop space as its colimit
+(`TauCeti.Manifold.isColimitMapCoconeSingularHomologyBasedCyclicDistanceCutCocone`).
 
 The sampling of compact families of free Moore loops into these cuts is in
 `TauCeti.Topology.PathSpace.Moore.Sampling`.
@@ -67,6 +71,7 @@ The sampling of compact families of free Moore loops into these cuts is in
   `TauCeti.basedCyclicDistanceCutRestrict`, the restriction to them of a map of cuts keeping the
   first vertex, such as `TauCeti.basedCyclicDistanceCutRepeatFirstIterate`.
 * `TauCeti.cyclicDistanceCutFunctor`: the sequence of cuts for growing cut-offs.
+* `TauCeti.basedCyclicDistanceCutFunctor`: the sequence of based cuts at `x`.
 
 ## Main results
 
@@ -538,6 +543,64 @@ theorem cyclicDistanceCutFunctor_map_homOfLE (h0 : 0 ≤ δ 0 0)
       ih (cutoff_sub_le_of_forall_le_succ hδ n k),
       cyclicDistanceCutFunctor_map_homOfLE_succ X h0 hδ (n + k) h₀ h₁ h₂]
     exact cyclicDistanceCutRepeatFirst_cyclicDistanceCutRepeatFirstIterate _ h h₀ h₁ h₂ q
+
+/-- The maps of the sequence of distance cuts keep the first vertex. -/
+theorem coe_cyclicDistanceCutFunctor_map_apply_zero (h0 : 0 ≤ δ 0 0)
+    (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {n m : ℕ} (f : n ⟶ m)
+    (q : cyclicDistanceCut (X := X) (δ n)) :
+    (((cyclicDistanceCutFunctor X h0 hδ).map f).hom q).val 0 = q.val 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le (leOfHom f)
+  rw [Subsingleton.elim f (homOfLE (Nat.le_add_right n k)),
+    cyclicDistanceCutFunctor_map_homOfLE X h0 hδ n k (cutoff_sub_le_of_forall_le_succ hδ n k)]
+  exact coe_cyclicDistanceCutRepeatFirstIterate_apply_zero k _ q
+
+/-- **The sequence of based distance cuts** `𝓛⁰_x X → 𝓛¹_x X → 𝓛²_x X → ⋯`: the based distance
+cut at `x` with cut-offs `δ n` at the stage `n`, and the restrictions of the maps of the sequence
+of distance cuts (`TauCeti.cyclicDistanceCutFunctor`), which keep the first vertex. -/
+@[expose, implicit_reducible]
+def basedCyclicDistanceCutFunctor (h0 : 0 ≤ δ 0 0) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (x : X) :
+    ℕ ⥤ TopCat where
+  obj n := TopCat.of (basedCyclicDistanceCut (δ n) x)
+  map f := TopCat.ofHom (basedCyclicDistanceCutRestrict
+    ((cyclicDistanceCutFunctor X h0 hδ).map f).hom
+    (coe_cyclicDistanceCutFunctor_map_apply_zero X h0 hδ f) x)
+  map_id n := by
+    ext q : 2
+    exact (coe_basedCyclicDistanceCutRestrict_apply _
+      (coe_cyclicDistanceCutFunctor_map_apply_zero X h0 hδ _) x q).trans
+        (ConcreteCategory.congr_hom ((cyclicDistanceCutFunctor X h0 hδ).map_id n) q.val)
+  map_comp f g := by
+    ext q : 2
+    refine (coe_basedCyclicDistanceCutRestrict_apply _
+      (coe_cyclicDistanceCutFunctor_map_apply_zero X h0 hδ _) x q).trans ?_
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.hom_ofHom,
+      coe_basedCyclicDistanceCutRestrict_apply, ConcreteCategory.hom_ofHom,
+      coe_basedCyclicDistanceCutRestrict_apply]
+    exact ConcreteCategory.congr_hom ((cyclicDistanceCutFunctor X h0 hδ).map_comp f g) q.val
+
+/-- The maps of the sequence of based distance cuts are those of the sequence of distance cuts. -/
+@[simp]
+theorem coe_basedCyclicDistanceCutFunctor_map_apply (h0 : 0 ≤ δ 0 0)
+    (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (x : X) {n m : ℕ} (f : n ⟶ m)
+    (q : basedCyclicDistanceCut (X := X) (δ n) x) :
+    (((basedCyclicDistanceCutFunctor X h0 hδ x).map f).hom q).val =
+      ((cyclicDistanceCutFunctor X h0 hδ).map f).hom q.val :=
+  coe_basedCyclicDistanceCutRestrict_apply _
+    (coe_cyclicDistanceCutFunctor_map_apply_zero X h0 hδ f) x q
+
+/-- **The maps of the sequence of based distance cuts.** The map from the stage `n` to the stage
+`n + k` repeats the first vertex `k` more times
+(`TauCeti.basedCyclicDistanceCutRepeatFirstIterate`). -/
+theorem basedCyclicDistanceCutFunctor_map_homOfLE (h0 : 0 ≤ δ 0 0)
+    (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (x : X) (n k : ℕ)
+    (h : ∀ j : Fin (n + k + 1), δ n ⟨j - k, by omega⟩ ≤ δ (n + k) j) :
+    ((basedCyclicDistanceCutFunctor X h0 hδ x).map (homOfLE (Nat.le_add_right n k))).hom =
+      basedCyclicDistanceCutRepeatFirstIterate k h x := by
+  ext q : 1
+  refine Subtype.ext ?_
+  rw [coe_basedCyclicDistanceCutFunctor_map_apply,
+    cyclicDistanceCutFunctor_map_homOfLE X h0 hδ n k h,
+    basedCyclicDistanceCutRepeatFirstIterate_eq_restrict, coe_basedCyclicDistanceCutRestrict_apply]
 
 end Sequence
 
