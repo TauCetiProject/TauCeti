@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.FieldEmbedding
-public import TauCeti.Topology.Sequences.Small
+public import TauCeti.Topology.Bases
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.RingTheory.Algebraic.Cardinality
 public import Mathlib.Topology.Algebra.Module.Cardinality
@@ -15,8 +15,8 @@ public import Mathlib.Topology.Algebra.Module.Cardinality
 # The cardinality of `ℚ_[p]` and complex embeddings of `p`-adic coefficient fields
 
 The field `ℚ_[p]` has the cardinality `𝔠` of the continuum: it is a complete nontrivially
-normed field, so it has at least `𝔠` elements, and every element is a limit of a sequence of
-rational numbers, so it has at most `ℵ₀ ^ ℵ₀ = 𝔠` elements. An algebraic extension of `ℚ_[p]`,
+normed field, so it has at least `𝔠` elements, and the rational numbers are dense in it, so it is
+second countable and has at most `𝔠` elements. An algebraic extension of `ℚ_[p]`,
 such as an algebraic closure of `ℚ_[p]`, then has cardinality `𝔠` as well.
 
 Consequently an algebraically closed algebraic extension `E` of `ℚ_[p]` is abstractly isomorphic
@@ -55,11 +55,9 @@ variable (p : ℕ) [Fact p.Prime]
 @[simp]
 theorem cardinalMk_eq_continuum : #ℚ_[p] = 𝔠 := by
   refine le_antisymm ?_ (continuum_le_cardinal_of_nontriviallyNormedField ℚ_[p])
-  calc #ℚ_[p] = #(closure (Set.range ((↑) : ℚ → ℚ_[p]))) := by
-        rw [(Padic.denseRange_ratCast p).closure_range, mk_univ]
-    _ ≤ #(Set.range ((↑) : ℚ → ℚ_[p])) ^ ℵ₀ := Set.cardinalMk_closure_le _
-    _ ≤ ℵ₀ ^ ℵ₀ := power_le_power_right (mk_range_le.trans mk_le_aleph0)
-    _ = 𝔠 := aleph0_power_aleph0
+  -- `ℚ` is dense, so `ℚ_[p]` is separable, hence second countable.
+  have := TopologicalSpace.SeparableSpace.of_denseRange _ (Padic.denseRange_ratCast p)
+  exact TauCeti.mk_le_continuum_of_secondCountableTopology ℚ_[p]
 
 /-- An algebraic extension of `ℚ_[p]`, for instance an algebraic closure of `ℚ_[p]`, has the
 cardinality of the continuum. -/

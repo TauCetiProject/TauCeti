@@ -93,26 +93,38 @@ namespace IsTranscendenceBasis
 
 open Cardinal
 
-universe u₁ u₂
+universe u₁ u₂ u₃ u₄
 
 variable {R : Type*} {A : Type u₁} {B : Type u₂} [CommRing R] [Nontrivial R] [CommRing A]
   [NoZeroDivisors A] [CommRing B] [NoZeroDivisors B] [Algebra R A] [Algebra R B]
-  {ι : Type u₁} {κ : Type u₂} {v : ι → A} {w : κ → B}
+  {ι : Type u₃} {κ : Type u₄} {v : ι → A} {w : κ → B}
 
 /-- If the domain `A` has transcendence degree over `R` at most that of the domain `B`, then the
 index type of a transcendence basis of `A` embeds into that of a transcendence basis of `B`. -/
 theorem nonempty_embedding_of_lift_trdeg_le (hv : IsTranscendenceBasis R v)
     (hw : IsTranscendenceBasis R w)
     (h : lift.{u₂} (Algebra.trdeg R A) ≤ lift.{u₁} (Algebra.trdeg R B)) : Nonempty (ι ↪ κ) := by
-  rw [← hv.cardinalMk_eq_trdeg, ← hw.cardinalMk_eq_trdeg] at h
-  exact lift_mk_le'.1 h
+  -- Lift `#ι = trdeg R A`, `#κ = trdeg R B` and `h` to the common universe `max u₁ u₂ u₃ u₄`.
+  have h1 := congrArg lift.{max u₂ u₄} hv.lift_cardinalMk_eq_trdeg
+  have h2 := congrArg lift.{max u₁ u₃} hw.lift_cardinalMk_eq_trdeg
+  have h3 := lift_le.{max u₃ u₄}.2 h
+  simp only [lift_lift] at h1 h2 h3
+  refine lift_mk_le'.1 (lift_le.{max u₁ u₂}.1 ?_)
+  rw [lift_lift, lift_lift]
+  exact h1.trans_le (h3.trans_eq h2.symm)
 
 /-- If the domains `A` and `B` have the same transcendence degree over `R`, then the index types
 of transcendence bases of `A` and of `B` are in bijection. -/
 theorem nonempty_equiv_of_lift_trdeg_eq (hv : IsTranscendenceBasis R v)
     (hw : IsTranscendenceBasis R w)
     (h : lift.{u₂} (Algebra.trdeg R A) = lift.{u₁} (Algebra.trdeg R B)) : Nonempty (ι ≃ κ) := by
-  rw [← hv.cardinalMk_eq_trdeg, ← hw.cardinalMk_eq_trdeg] at h
-  exact lift_mk_eq'.1 h
+  -- Lift `#ι = trdeg R A`, `#κ = trdeg R B` and `h` to the common universe `max u₁ u₂ u₃ u₄`.
+  have h1 := congrArg lift.{max u₂ u₄} hv.lift_cardinalMk_eq_trdeg
+  have h2 := congrArg lift.{max u₁ u₃} hw.lift_cardinalMk_eq_trdeg
+  have h3 := congrArg lift.{max u₃ u₄} h
+  simp only [lift_lift] at h1 h2 h3
+  refine lift_mk_eq'.1 (lift_inj.{_, max u₁ u₂}.1 ?_)
+  rw [lift_lift, lift_lift]
+  exact h1.trans (h3.trans h2.symm)
 
 end IsTranscendenceBasis
