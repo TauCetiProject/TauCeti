@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.NumberTheory.DirichletCharacter.Basic
-import TauCeti.NumberTheory.DirichletCharacter.Primitive.Basic
+public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Basic
 
 /-!
 # Primitive Dirichlet characters bundled with their conductor
@@ -16,8 +14,9 @@ One Dirichlet character can be presented at every multiple of its conductor. The
 `TauCeti.PrimitiveDirichletCharacter` bundles a primitive complex Dirichlet character with its
 level, which is then its conductor, so that a bundle cannot carry a second level: the principal
 character modulo `6` and the character modulo `1` have the same bundle `1`. It is the Dirichlet
-counterpart of `PrimitiveRayClassCharacter`, built on Mathlib's `DirichletCharacter` so that the
-L-function of a bundle `ψ` is Mathlib's `ψ.character.LFunction`.
+counterpart of `TauCeti.LFunctions.PrimitiveRayClassCharacter`, built on Mathlib's
+`DirichletCharacter` so that the L-function of a bundle `ψ` is Mathlib's
+`ψ.character.LFunction`.
 
 ## Main definitions
 
@@ -62,6 +61,7 @@ namespace PrimitiveDirichletCharacter
 variable {N M L : ℕ}
 
 /-- The level of a bundle is the conductor of its character. -/
+@[simp]
 theorem conductor_character (ψ : PrimitiveDirichletCharacter) :
     ψ.character.conductor = ψ.level :=
   ψ.isPrimitive
@@ -99,6 +99,7 @@ noncomputable def of [NeZero N] (χ : DirichletCharacter ℂ N) : PrimitiveDiric
   ⟨⟨χ.conductor, Nat.pos_of_ne_zero χ.conductor_ne_zero⟩, χ.primitiveCharacter,
     χ.primitiveCharacter_isPrimitive⟩
 
+/-- The level of the bundle of `χ` is the conductor of `χ`. -/
 @[simp]
 theorem level_of [NeZero N] (χ : DirichletCharacter ℂ N) : ((of χ).level : ℕ) = χ.conductor :=
   (rfl)
@@ -130,19 +131,24 @@ theorem of_character (ψ : PrimitiveDirichletCharacter) : of ψ.character = ψ :
 /-- **The bundle does not depend on the presentation**: a character and its lift to a multiple of
 its level have the same bundle. -/
 @[simp]
-theorem of_changeLevel [NeZero M] [NeZero N] (h : M ∣ N) (χ : DirichletCharacter ℂ M) :
-    of (changeLevel h χ) = of χ :=
-  of_eq_iff.2 ⟨(level_of_dvd χ).trans h, by
+theorem of_changeLevel [NeZero N] (h : M ∣ N) (χ : DirichletCharacter ℂ M) :
+    of (changeLevel h χ) =
+      haveI : NeZero M := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne N) h⟩
+      of χ := by
+  have : NeZero M := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne N) h⟩
+  exact of_eq_iff.2 ⟨(level_of_dvd χ).trans h, by
     rw [changeLevel_trans _ (level_of_dvd χ) h, changeLevel_character_of]⟩
 
 /-- The trivial bundle: the character modulo `1`. -/
 noncomputable instance : One PrimitiveDirichletCharacter :=
   ⟨⟨1, 1, isPrimitive_one_level_one⟩⟩
 
+/-- The trivial bundle has level `1`. -/
 @[simp]
 theorem level_one : (1 : PrimitiveDirichletCharacter).level = 1 :=
   (rfl)
 
+/-- The character of the trivial bundle is the character modulo `1`. -/
 @[simp]
 theorem character_one : (1 : PrimitiveDirichletCharacter).character = 1 :=
   (rfl)
@@ -156,26 +162,29 @@ theorem of_one [NeZero N] : of (1 : DirichletCharacter ℂ N) = 1 :=
 noncomputable instance : Inv PrimitiveDirichletCharacter :=
   ⟨fun ψ => ⟨ψ.level, ψ.character⁻¹, ψ.isPrimitive.inv⟩⟩
 
+/-- The inverse of a bundle has the same level. -/
 @[simp]
 theorem level_inv (ψ : PrimitiveDirichletCharacter) : ψ⁻¹.level = ψ.level :=
   (rfl)
 
+/-- The character of the inverse of a bundle is the inverse of its character. -/
 @[simp]
 theorem character_inv (ψ : PrimitiveDirichletCharacter) : ψ⁻¹.character = ψ.character⁻¹ :=
   (rfl)
-
-/-- Inversion of bundles is an involution. -/
-noncomputable instance : InvolutiveInv PrimitiveDirichletCharacter where
-  inv_inv ψ := eq_of_changeLevel_eq dvd_rfl dvd_rfl (congrArg _ (inv_inv ψ.character))
 
 /-- The bundle of the inverse of a character is the inverse of its bundle. -/
 @[simp]
 theorem of_inv [NeZero N] (χ : DirichletCharacter ℂ N) : of χ⁻¹ = (of χ)⁻¹ :=
   of_eq_iff.2 ⟨level_of_dvd χ, by rw [character_inv, map_inv, changeLevel_character_of]⟩
 
+/-- Inversion of bundles is an involution. -/
+noncomputable instance : InvolutiveInv PrimitiveDirichletCharacter where
+  inv_inv ψ := by rw [← of_character ψ, ← of_inv, ← of_inv, inv_inv]
+
+/-- The trivial bundle is its own inverse. -/
 @[simp]
-theorem inv_one : (1 : PrimitiveDirichletCharacter)⁻¹ = 1 :=
-  eq_of_changeLevel_eq (L := 1) dvd_rfl dvd_rfl (congrArg _ (_root_.inv_one))
+theorem inv_one : (1 : PrimitiveDirichletCharacter)⁻¹ = 1 := by
+  rw [← of_one (N := 1), ← of_inv, _root_.inv_one]
 
 end PrimitiveDirichletCharacter
 
