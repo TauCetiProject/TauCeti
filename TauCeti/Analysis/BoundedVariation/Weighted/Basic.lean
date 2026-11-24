@@ -41,6 +41,8 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
   and perimeter.
 * `TauCeti.gaussianWeight E`, `TauCeti.gaussianPerimeter U`: the Gaussian weight and the
   Gaussian perimeter.
+* `LinearIsometryEquiv.gaussianWeight_apply`, `LinearIsometryEquiv.gaussianWeight_comp`: the
+  Gaussian weight is invariant under linear isometry equivalences.
 * `TauCeti.weightedVariation_eq_iSup_trace_fderiv`: for a differentiable weight, the weighted
   variation pairs `u` with the divergences of the fields `e^{−W} X`.
 * `TauCeti.integral_divergenceCLM_sub_fderiv_mul_exp_neg_eq_zero`: for a `C¹` weight, the weighted
@@ -98,6 +100,20 @@ theorem contDiff_gaussianWeight {n : WithTop ℕ∞} : ContDiff ℝ n (gaussianW
     funext gaussianWeight_def
   rw [h]
   exact ((contDiff_norm_sq ℝ).div_const _).add contDiff_const
+
+/-- The Gaussian weight is invariant under linear isometry equivalences:
+`W_{E'}(e x) = W_E(x)`. -/
+@[simp]
+theorem _root_.LinearIsometryEquiv.gaussianWeight_apply {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace ℝ E'] (e : E ≃ₗᵢ[ℝ] E') (x : E) :
+    gaussianWeight E' (e x) = gaussianWeight E x := by
+  simp [gaussianWeight_def, e.toLinearEquiv.finrank_eq]
+
+/-- The Gaussian weight is invariant under linear isometry equivalences, in composed form. -/
+@[simp]
+theorem _root_.LinearIsometryEquiv.gaussianWeight_comp {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace ℝ E'] (e : E ≃ₗᵢ[ℝ] E') : gaussianWeight E' ∘ e = gaussianWeight E :=
+  funext e.gaussianWeight_apply
 
 end GaussianWeight
 
