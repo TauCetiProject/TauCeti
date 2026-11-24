@@ -226,30 +226,12 @@ variable (R M q)
 /-- The product of the Grassmannians of a finite module is proper over the base. -/
 instance isProper_flagGrassmannianProduct_hom [Module.Finite R M] :
     IsProper (flagGrassmannianProduct R M q).hom := by
-  let Y (i : Fin n) : Over (Spec (.of R)) := Over.mk (toSpec R M (q i))
-  have : IsProper (∏ᶜ Y).hom := MorphismProperty.piObj_hom_mem @IsProper Y fun i ↦
+  rw [flagGrassmannianProduct_def]
+  -- Instance search cannot unify the class `@IsProper` with a `MorphismProperty Scheme`
+  -- metavariable, so the closure instance is supplied by name.
+  have := Over.isClosedUnderFiniteProducts @IsProper (X := Spec (.of R))
+  exact (MorphismProperty.overObj @IsProper).prop_product fun i ↦
     inferInstanceAs (IsProper (toSpec R M (q i)))
-  -- Compare the product with the explicit product of the Grassmannians through their
-  -- universal properties.
-  let f : flagGrassmannianProduct R M q ⟶ ∏ᶜ Y :=
-    Pi.lift fun i ↦ Over.homMk (flagGrassmannianProductπ R M q i)
-      (flagGrassmannianProductπ_toSpec R M q i)
-  let g : ∏ᶜ Y ⟶ flagGrassmannianProduct R M q :=
-    flagGrassmannianProductLift R M q (fun i ↦ (Pi.π Y i).left) fun i ↦ Over.w (Pi.π Y i)
-  have hf (i : Fin n) : (f ≫ Pi.π Y i).left = flagGrassmannianProductπ R M q i := by
-    simp [f]
-  have hg (i : Fin n) : g.left ≫ flagGrassmannianProductπ R M q i = (Pi.π Y i).left :=
-    flagGrassmannianProductLift_π R M q _ _ i
-  have : IsIso f := ⟨g, flagGrassmannianProduct_hom_ext R M q fun i ↦ by
-      rw [Over.comp_left, Category.assoc, hg, ← Over.comp_left, hf, Over.id_left,
-        Category.id_comp],
-    Pi.hom_ext _ _ fun i ↦ by
-      rw [Category.assoc, Category.id_comp]
-      ext1
-      rw [Over.comp_left, hf, hg]⟩
-  have : IsIso f.left := (Over.forget _).map_isIso f
-  rw [← Over.w f]
-  infer_instance
 
 /-- **The flag scheme of a finite module is proper** over the base: it is a closed subscheme of
 a finite product of proper Grassmannians. -/

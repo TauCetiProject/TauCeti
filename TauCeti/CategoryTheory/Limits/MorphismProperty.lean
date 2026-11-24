@@ -58,12 +58,4 @@ instance Over.isClosedUnderFiniteProducts [HasFiniteWidePullbacks T] [P.IsMultip
   have : P.RespectsIso := MorphismProperty.IsStableUnderBaseChange.respectsIso
   exact .mk'
 
-/-- The structure morphism of a finite product in `Over X` has every property, stable under
-composition and base change and containing the identities, that all factors have. -/
-theorem MorphismProperty.piObj_hom_mem [HasFiniteWidePullbacks T] [P.IsMultiplicative]
-    [P.IsStableUnderBaseChange]
-    {J : Type*} [Finite J] (Y : J → Over X) [HasProduct Y] (h : ∀ j, P (Y j).hom) :
-    P (∏ᶜ Y).hom :=
-  (P.overObj (X := X)).prop_product h
-
 end CategoryTheory
