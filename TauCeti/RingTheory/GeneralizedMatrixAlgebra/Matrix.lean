@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Unique
 public import TauCeti.RingTheory.GeneralizedMatrixAlgebra.Basic
 public import TauCeti.RingTheory.Idempotents.Matrix
 
@@ -42,27 +43,19 @@ namespace Matrix
 
 variable (A n : Type*) [CommSemiring A] [Fintype n] [DecidableEq n]
 
-/-- The scalars `A ≃ M₁(A)`, `a ↦ a • 1`. -/
-private def finOneAlgEquiv : A ≃ₐ[A] Matrix (Fin 1) (Fin 1) A :=
-  AlgEquiv.ofBijective (Algebra.ofId A (Matrix (Fin 1) (Fin 1) A))
-    ⟨fun a b h ↦ by simpa [algebraMap_eq_diagonal] using congrFun (congrFun h 0) 0,
-      fun m ↦ ⟨m 0 0, by
-        ext k l
-        simp [algebraMap_eq_diagonal, Subsingleton.elim k 0, Subsingleton.elim l 0]⟩⟩
-
-private theorem finOneAlgEquiv_apply (a : A) :
-    finOneAlgEquiv A a = algebraMap A (Matrix (Fin 1) (Fin 1) A) a :=
-  (rfl)
-
 /-- The identification of the corner of `Eᵢᵢ` in `Mₙ(A)` with `M₁(A)`, through the `(i, i)`
-entry. -/
+entry followed by Mathlib's `Matrix.uniqueRingEquiv`, upgraded to an `A`-algebra isomorphism. -/
 private def scalarCornerEquiv (i : n) :
     (isIdempotentElem_single_one (α := A) i).Corner ≃ₐ[A] Matrix (Fin 1) (Fin 1) A :=
-  (cornerSingleOneAlgEquiv A i).trans (finOneAlgEquiv A)
+  (cornerSingleOneAlgEquiv A i).trans <| AlgEquiv.ofRingEquiv (f := uniqueRingEquiv.symm) fun a ↦ by
+    ext k l
+    simp [algebraMap_eq_diagonal, Subsingleton.elim k l]
+    rfl
 
 private theorem trace_scalarCornerEquiv_compress (i : n) (x : Matrix n n A) :
     (scalarCornerEquiv A n i ((isIdempotentElem_single_one i).compress x)).trace = x i i := by
-  simp [scalarCornerEquiv, finOneAlgEquiv_apply, algebraMap_eq_diagonal]
+  simp [scalarCornerEquiv, trace_fin_one]
+  rfl
 
 private theorem sum_trace_scalarCornerEquiv_compress (x : Matrix n n A) :
     ∑ i, (scalarCornerEquiv A n i ((isIdempotentElem_single_one i).compress x)).trace =
