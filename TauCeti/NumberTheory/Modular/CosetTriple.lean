@@ -151,36 +151,21 @@ theorem permS_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) �
     (g : PSL(2, ℤ)) :
     permS Γ' e (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
       g⁻¹ * (S : PSL(2, ℤ)) * g ∈ Γ' := by
-  rw [permS, modularTriple_σ1]
-  exact e.permutationRepresentation_quotient_apply_eq_self_iff S g
+  rw [permS, modularTriple_σ1]; exact e.permutationRepresentation_quotient_apply_eq_self_iff S g
 
 /-- `(modularTriple Γ' e).σ0` fixes `e (g Γ')` if and only if `g⁻¹ * U * g ∈ Γ'`. -/
 theorem modularTriple_σ0_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (g : PSL(2, ℤ)) :
     (modularTriple Γ' e).σ0 (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
       g⁻¹ * (U : PSL(2, ℤ)) * g ∈ Γ' := by
-  rw [modularTriple_σ0]
-  exact e.permutationRepresentation_quotient_apply_eq_self_iff U g
+  rw [modularTriple_σ0]; exact e.permutationRepresentation_quotient_apply_eq_self_iff U g
 
 /-- `permR Γ' e` fixes `e (g Γ')` if and only if `g⁻¹ * R * g ∈ Γ'`. -/
 theorem permR_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (g : PSL(2, ℤ)) :
     permR Γ' e (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
       g⁻¹ * (R : PSL(2, ℤ)) * g ∈ Γ' := by
-  rw [permR]
-  exact e.permutationRepresentation_quotient_apply_eq_self_iff R g
-
-/-- If `permS Γ' e` fixes `x`, then `S` fixes `e.symm x`. -/
-theorem smul_symm_of_permS_eq (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
-    {x : Fin n} (hx : permS Γ' e x = x) :
-    (S : PSL(2, ℤ)) • e.symm x = e.symm x :=
-  e.smul_symm_of_permutationRepresentation_eq hx
-
-/-- If `permR Γ' e` fixes `x`, then `R` fixes `e.symm x`. -/
-theorem smul_symm_of_permR_eq (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
-    {x : Fin n} (hx : permR Γ' e x = x) :
-    (R : PSL(2, ℤ)) • e.symm x = e.symm x :=
-  e.smul_symm_of_permutationRepresentation_eq hx
+  rw [permR]; exact e.permutationRepresentation_quotient_apply_eq_self_iff R g
 
 /-- The period of `permT Γ' e` at `e (g Γ')` divides `h` iff `g⁻¹ T ^ h g ∈ Γ'`. -/
 theorem minimalPeriod_permT_dvd_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
@@ -199,19 +184,12 @@ theorem minimalPeriod_permT_mk_dvd_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, 
   rw [minimalPeriod_permT_dvd_iff, Subgroup.mem_liftSL, QuotientGroup.mk_mul,
     QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow]
 
-/-- Every point has positive minimal period under `permT Γ' e`. -/
-theorem minimalPeriod_permT_pos (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
-    (x : Fin n) : 0 < Function.minimalPeriod (permT Γ' e) x :=
-  Function.minimalPeriod_pos_of_mem_periodicPts ⟨orderOf (permT Γ' e), orderOf_pos _, by
-    simp [Function.IsPeriodicPt, Function.IsFixedPt, ← Equiv.Perm.coe_pow]⟩
-
 /-- The period of `permT Γ' e` at `e (g Γ')` is the least positive `h` with `g⁻¹ T ^ h g ∈ Γ'`. -/
 theorem minimalPeriod_permT_eq_sInf (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (g : PSL(2, ℤ)) :
     Function.minimalPeriod (permT Γ' e) (e (g : PSL(2, ℤ) ⧸ Γ')) =
       sInf {h : ℕ | 0 < h ∧ g⁻¹ * (T : PSL(2, ℤ)) ^ h * g ∈ Γ'} := by
-  rw [Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]
-  congr 1; ext h
+  rw [Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]; congr 1; ext h
   simp only [Set.mem_ofPred_eq, Function.IsPeriodicPt, Function.IsFixedPt,
     Equiv.Perm.iterate_eq_pow, permT_pow_apply_eq_iff]
 
@@ -219,8 +197,7 @@ theorem minimalPeriod_permT_eq_sInf (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ
 least positive `h` with `σ T ^ h σ⁻¹ ∈ Γ'.liftSL`. -/
 theorem minimalPeriod_permT_mk_inv_eq_sInf (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (σ : SL(2, ℤ)) :
-    Function.minimalPeriod (permT Γ' e)
-        (e (((σ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) =
+    Function.minimalPeriod (permT Γ' e) (e (((σ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) =
       sInf {h : ℕ | 0 < h ∧ σ * _root_.ModularGroup.T ^ h * σ⁻¹ ∈ Γ'.liftSL} := by
   rw [minimalPeriod_permT_eq_sInf]; congr 1; ext h
   simp [Subgroup.mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow]

@@ -140,17 +140,14 @@ lemma periodic_quotientFunc (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
 period. -/
 lemma periodic_quotientFunc_out (f : F) (c : CuspTranslationOrbit 𝒢) :
     Periodic (quotientFunc f c.out ∘ ofComplex) (cuspTranslationOrbitWidth c : ℝ) :=
-  periodic_quotientFunc f c.out
+  cuspTranslationOrbitWidth_def c ▸ periodic_quotientFunc f c.out
 
-/-- The product of the norm factors over one cusp translation orbit is the Galois product of that
-orbit's factor at its own width. -/
-lemma prod_cuspTranslationOrbit_quotientFunc [𝒢.IsFiniteRelIndex 𝒮ℒ] (f : F)
-    (c : CuspTranslationOrbit 𝒢) (τ : ℍ) :
-    ∏ x : ZMod (cuspTranslationOrbitWidth c),
-        quotientFunc f (TSL ^ (ZMod.cast x : ℤ) • c.out) τ =
-      galoisProd (cuspTranslationOrbitWidth c) (quotientFunc f c.out) τ := by
+private lemma prod_zmod_quotientFunc_eq_galoisProd (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)
+    (w : ℕ) [NeZero w] (τ : ℍ) :
+    ∏ x : ZMod w, quotientFunc f (TSL ^ (ZMod.cast x : ℤ) • q) τ =
+      galoisProd w (quotientFunc f q) τ := by
   rw [galoisProd_apply]
-  refine Finset.prod_nbij' ZMod.val (fun j ↦ (j : ZMod (cuspTranslationOrbitWidth c)))
+  refine Finset.prod_nbij' ZMod.val (fun j ↦ (j : ZMod w))
     (fun x _ ↦ Finset.mem_range.mpr (ZMod.val_lt x)) (fun _ _ ↦ Finset.mem_univ _)
     (fun x _ ↦ (ZMod.natCast_zmod_val x)) (fun j hj ↦ ZMod.val_cast_of_lt (Finset.mem_range.mp hj))
     fun x _ ↦ ?_
@@ -162,6 +159,15 @@ lemma prod_cuspTranslationOrbit_quotientFunc [𝒢.IsFiniteRelIndex 𝒮ℒ] (f 
   rw [coe_vadd, ofComplex_apply_of_im_pos him, ← ZMod.natCast_val (R := ℤ)]
   push_cast
   ring
+
+/-- The product of the norm factors over one cusp translation orbit is the Galois product of that
+orbit's factor at its own width. -/
+lemma prod_cuspTranslationOrbit_quotientFunc [𝒢.IsFiniteRelIndex 𝒮ℒ] (f : F)
+    (c : CuspTranslationOrbit 𝒢) (τ : ℍ) :
+    ∏ x : ZMod (cuspTranslationOrbitWidth c),
+        quotientFunc f (TSL ^ (ZMod.cast x : ℤ) • c.out) τ =
+      galoisProd (cuspTranslationOrbitWidth c) (quotientFunc f c.out) τ :=
+  prod_zmod_quotientFunc_eq_galoisProd f c.out (cuspTranslationOrbitWidth c) τ
 
 end Product
 
@@ -219,12 +225,7 @@ lemma qExpansionOrderAtCusp_quotientFunc_TSL_zpow_smul (f : F)
   have hw : 0 < minimalPeriod (TSL • ·) q := Nat.pos_of_neZero _
   have hper : Periodic (quotientFunc f (TSL ^ j • q) ∘ ofComplex)
       ((minimalPeriod (TSL • ·) q : ℕ) : ℝ) :=
-    (by
-      rw [← cuspTranslationOrbitWidth_mk, ← cuspTranslationOrbitWidth_mk q]
-      exact congrArg cuspTranslationOrbitWidth
-        (Quotient.sound ⟨⟨TSL ^ j, Subgroup.mem_zpowers_iff.mpr ⟨j, rfl⟩⟩, rfl⟩) :
-      minimalPeriod (TSL • ·) (TSL ^ j • q) = minimalPeriod (TSL • ·) q) ▸
-      periodic_quotientFunc f (TSL ^ j • q)
+    minimalPeriod_zpow_smul TSL j q ▸ periodic_quotientFunc f (TSL ^ j • q)
   rw [qExpansionOrderAtCusp_def, qExpansionOrderAtCusp_def,
     ← qExpansion_one_galoisProd_order_eq hw hper
       (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)
@@ -254,10 +255,12 @@ lemma slashInvariantForm_norm_apply_eq_prod_galoisProd (f : F) (τ : ℍ) :
     ← Equiv.prod_comp (Subgroup.quotientEquivSigmaZMod (𝒢.subgroupOf 𝒮ℒ) TSL).symm
       (fun q ↦ quotientFunc f q τ), Fintype.prod_sigma]
   refine Finset.prod_congr rfl fun c _ ↦ ?_
-  rw [← prod_cuspTranslationOrbit_quotientFunc f c τ]
+  have : NeZero (minimalPeriod (TSL • ·) c.out) := by
+    rw [← cuspTranslationOrbitWidth_def]; infer_instance
+  rw [cuspTranslationOrbitWidth_def,
+    ← prod_zmod_quotientFunc_eq_galoisProd f c.out (minimalPeriod (TSL • ·) c.out) τ]
   exact Finset.prod_congr rfl fun x _ ↦ by
     rw [Subgroup.quotientEquivSigmaZMod_symm_apply]
-    rfl
 
 end Decomposition
 
@@ -381,8 +384,9 @@ section ValenceFormula
 `[SL(2, ℤ) : 𝒢 ⊓ SL(2, ℤ)]`. -/
 lemma sum_cuspTranslationOrbitWidth [𝒢.IsFiniteRelIndex 𝒮ℒ] :
     ∑ c : CuspTranslationOrbit 𝒢, cuspTranslationOrbitWidth c =
-      Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :=
-  ((𝒢.subgroupOf 𝒮ℒ).index_eq_card ▸
+      Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) := by
+  simp_rw [cuspTranslationOrbitWidth_def]
+  exact ((𝒢.subgroupOf 𝒮ℒ).index_eq_card ▸
     Subgroup.index_eq_sum_minimalPeriod (𝒢.subgroupOf 𝒮ℒ) TSL).symm
 
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]

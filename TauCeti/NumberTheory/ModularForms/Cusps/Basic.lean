@@ -272,7 +272,7 @@ theorem _root_.Subgroup.strictPeriods_eq_zmultiples_integerCuspWidth (H : Subgro
       rw [← Int.cast_natCast, hneg, Int.cast_neg]
       exact neg_mem hx
   obtain ⟨k, hk⟩ := Int.natCast_dvd.mpr (TauCeti.Subgroup.natCast_mem_strictPeriods_iff.mp hnat)
-  exact AddSubgroup.mem_zmultiples_iff.mpr ⟨k, by rw [zsmul_eq_mul, hk, mul_comm]; push_cast; rfl⟩
+  exact AddSubgroup.mem_zmultiples_iff.mpr ⟨k, by rw [zsmul_eq_mul, hk, mul_comm]; push_cast; ring⟩
 
 end IntegerCuspWidth
 

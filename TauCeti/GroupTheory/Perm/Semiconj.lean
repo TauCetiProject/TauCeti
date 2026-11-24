@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Dynamics.PeriodicPts.Defs
+public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import Mathlib.Data.ZMod.QuotientGroup
 
@@ -98,28 +99,22 @@ def cycleQuotientMap (h : Semiconj f σ τ) :
   Quotient.map f fun _ _ hxy ↦ hxy.map h
 
 /-- `h.cycleQuotientMap` sends the cycle of `x` to the cycle of `f x`. -/
-@[simp]
-theorem cycleQuotientMap_mk (h : Semiconj f σ τ) (x : α) :
-    h.cycleQuotientMap (Quotient.mk _ x) = Quotient.mk _ (f x) :=
-  (rfl)
+@[simp] theorem cycleQuotientMap_mk (h : Semiconj f σ τ) (x : α) :
+    h.cycleQuotientMap (Quotient.mk _ x) = Quotient.mk _ (f x) := (rfl)
 
 /-- The cycle length of `f x` divides the cycle length of `x`, at the level of cycle quotients. -/
 theorem minimalPeriod_cycleQuotientMap_dvd (h : Semiconj f σ τ)
     (q : Quotient (SameCycle.setoid σ)) :
-    Quotient.lift (s := SameCycle.setoid τ) (Function.minimalPeriod τ)
-        (fun _ _ hxy ↦ hxy.minimalPeriod_eq) (h.cycleQuotientMap q) ∣
-      Quotient.lift (s := SameCycle.setoid σ) (Function.minimalPeriod σ)
-        (fun _ _ hxy ↦ hxy.minimalPeriod_eq) q := by
+    τ.cycleQuotientPeriod (h.cycleQuotientMap q) ∣ σ.cycleQuotientPeriod q := by
   induction q using Quotient.ind with | _ x =>
+  rw [cycleQuotientMap_mk, cycleQuotientPeriod_mk, cycleQuotientPeriod_mk]
   exact h.minimalPeriod_dvd x
 
 /-- For a finite permutation semiconjugacy, the sum of the cycle lengths of `σ` over the fibre of
 `h.cycleQuotientMap` above `c` equals the number of points of `α` mapped into `c`. -/
 theorem sum_minimalPeriod_cycleQuotientMap_fiber_eq_natCard [Finite α]
     (h : Semiconj f σ τ) (c : Quotient (SameCycle.setoid τ)) :
-    ∑ᶠ q ∈ {q | h.cycleQuotientMap q = c},
-        Quotient.lift (s := SameCycle.setoid σ) (Function.minimalPeriod σ)
-          (fun _ _ hxy ↦ hxy.minimalPeriod_eq) q =
+    ∑ᶠ q ∈ {q | h.cycleQuotientMap q = c}, σ.cycleQuotientPeriod q =
       Nat.card {y : α // Quotient.mk (SameCycle.setoid τ) (f y) = c} := by
   classical
   have := Fintype.ofFinite α
@@ -127,34 +122,25 @@ theorem sum_minimalPeriod_cycleQuotientMap_fiber_eq_natCard [Finite α]
   have hSfin : ({q | h.cycleQuotientMap q = c} : Set _).Finite := Set.toFinite _
   let t : Finset (Quotient (SameCycle.setoid σ)) :=
     Finset.univ.filter (fun q ↦ h.cycleQuotientMap q = c)
-  rw [finsum_mem_eq_finite_toFinset_sum _ hSfin,
-    show hSfin.toFinset = t by ext; simp [t]]
-  have hcard : ∀ q ∈ t,
-      Quotient.lift (s := SameCycle.setoid σ) (Function.minimalPeriod σ)
-          (fun _ _ hxy ↦ hxy.minimalPeriod_eq) q =
-        (Finset.univ.filter (fun y : α ↦ Quotient.mk (SameCycle.setoid σ) y = q)).card := by
-    intro q _
-    induction q using Quotient.ind with | _ x =>
-    rw [Quotient.lift_mk, ← Perm.natCard_fiber_quotientMk_sameCycle σ x, Nat.card_eq_fintype_card,
-      Fintype.card_subtype]
+  rw [finsum_mem_eq_finite_toFinset_sum _ hSfin, show hSfin.toFinset = t by ext; simp [t]]
+  have hcard : ∀ q ∈ t, σ.cycleQuotientPeriod q =
+      (Finset.univ.filter (fun y : α ↦ Quotient.mk (SameCycle.setoid σ) y = q)).card := by
+    intro q _; induction q using Quotient.ind with | _ x =>
+    rw [cycleQuotientPeriod_mk, ← Perm.natCard_fiber_quotientMk_sameCycle σ x,
+      Nat.card_eq_fintype_card, Fintype.card_subtype]
   rw [Finset.sum_congr rfl hcard, Finset.sum_card_fiberwise_eq_card_filter,
     Nat.card_eq_fintype_card, Fintype.card_subtype]
-  congr 1; ext y
-  simp [t]
+  congr 1; ext y; simp [t]
 
 /-- If every fibre of `f` has `k` elements, then the cycle lengths of `σ` over a cycle `c` of `τ`
 sum to `k` times the cycle length of `c`. -/
 theorem sum_minimalPeriod_cycleQuotientMap_fiber_eq_mul [Finite α] [Finite β]
     (h : Semiconj f σ τ) {k : ℕ} (hk : ∀ b : β, Nat.card {a : α // f a = b} = k)
     (c : Quotient (SameCycle.setoid τ)) :
-    ∑ᶠ q ∈ {q | h.cycleQuotientMap q = c},
-        Quotient.lift (s := SameCycle.setoid σ) (Function.minimalPeriod σ)
-          (fun _ _ hxy ↦ hxy.minimalPeriod_eq) q =
-      k * Quotient.lift (s := SameCycle.setoid τ) (Function.minimalPeriod τ)
-          (fun _ _ hxy ↦ hxy.minimalPeriod_eq) c := by
+    ∑ᶠ q ∈ {q | h.cycleQuotientMap q = c}, σ.cycleQuotientPeriod q =
+      k * τ.cycleQuotientPeriod c := by
   classical
-  have := Fintype.ofFinite α
-  have := Fintype.ofFinite β
+  have := Fintype.ofFinite α; have := Fintype.ofFinite β
   let eSigma :
       {y : α // Quotient.mk (SameCycle.setoid τ) (f y) = c} ≃
         Σ x : {x : β // Quotient.mk (SameCycle.setoid τ) x = c}, {y : α // f y = x.val} :=
@@ -163,14 +149,11 @@ theorem sum_minimalPeriod_cycleQuotientMap_fiber_eq_mul [Finite α] [Finite β]
       left_inv := fun ⟨_, _⟩ ↦ rfl
       right_inv := fun ⟨⟨_, _⟩, ⟨_, rfl⟩⟩ ↦ rfl }
   have hcyc : Nat.card {x : β // Quotient.mk (SameCycle.setoid τ) x = c} =
-      Quotient.lift (s := SameCycle.setoid τ) (Function.minimalPeriod τ)
-        (fun _ _ hxy ↦ hxy.minimalPeriod_eq) c := by
+      τ.cycleQuotientPeriod c := by
     induction c using Quotient.ind with | _ x =>
-    exact Perm.natCard_fiber_quotientMk_sameCycle τ x
+    rw [cycleQuotientPeriod_mk]; exact Perm.natCard_fiber_quotientMk_sameCycle τ x
   calc
-    ∑ᶠ q ∈ {q | h.cycleQuotientMap q = c},
-        Quotient.lift (s := SameCycle.setoid σ) (Function.minimalPeriod σ)
-          (fun _ _ hxy ↦ hxy.minimalPeriod_eq) q
+    ∑ᶠ q ∈ {q | h.cycleQuotientMap q = c}, σ.cycleQuotientPeriod q
       = Nat.card {y : α // Quotient.mk (SameCycle.setoid τ) (f y) = c} :=
         h.sum_minimalPeriod_cycleQuotientMap_fiber_eq_natCard c
     _ = ∑ x : {x : β // Quotient.mk (SameCycle.setoid τ) x = c},
@@ -178,11 +161,8 @@ theorem sum_minimalPeriod_cycleQuotientMap_fiber_eq_mul [Finite α] [Finite β]
         rw [Nat.card_congr eSigma, Nat.card_eq_fintype_card, Fintype.card_sigma]
         simp_rw [Nat.card_eq_fintype_card]
     _ = Nat.card {x : β // Quotient.mk (SameCycle.setoid τ) x = c} * k := by
-        simp_rw [hk, Finset.sum_const, Finset.card_univ, smul_eq_mul,
-          ← Nat.card_eq_fintype_card]
-    _ = k * Quotient.lift (s := SameCycle.setoid τ) (Function.minimalPeriod τ)
-          (fun _ _ hxy ↦ hxy.minimalPeriod_eq) c := by
-        rw [mul_comm, hcyc]
+        simp_rw [hk, Finset.sum_const, Finset.card_univ, smul_eq_mul, ← Nat.card_eq_fintype_card]
+    _ = k * τ.cycleQuotientPeriod c := by rw [mul_comm, hcyc]
 
 /-- If every fibre of `f` has `k` elements, then the ratios of cycle lengths of `σ` over a cycle
 `c` of `τ` to the cycle length of `c` sum to `k`. -/
@@ -190,23 +170,17 @@ theorem sum_minimalPeriod_div_cycleQuotientMap_fiber_eq [Finite α] [Finite β]
     (h : Semiconj f σ τ) {k : ℕ} (hk : ∀ b : β, Nat.card {a : α // f a = b} = k)
     (c : Quotient (SameCycle.setoid τ)) :
     ∑ᶠ q ∈ {q | h.cycleQuotientMap q = c},
-        (Quotient.lift (s := SameCycle.setoid σ) (Function.minimalPeriod σ)
-            (fun _ _ hxy ↦ hxy.minimalPeriod_eq) q /
-          Quotient.lift (s := SameCycle.setoid τ) (Function.minimalPeriod τ)
-            (fun _ _ hxy ↦ hxy.minimalPeriod_eq) c) = k := by
+        (σ.cycleQuotientPeriod q / τ.cycleQuotientPeriod c) = k := by
   classical
   have := Fintype.ofFinite β
-  have hpos :
-      0 < Quotient.lift (s := SameCycle.setoid τ) (Function.minimalPeriod τ)
-        (fun _ _ hxy ↦ hxy.minimalPeriod_eq) c := by
+  have hpos : 0 < τ.cycleQuotientPeriod c := by
     induction c using Quotient.ind with | _ x =>
-    exact minimalPeriod_pos_of_mem_periodicPts ⟨orderOf τ, orderOf_pos _, by
-      simp [IsPeriodicPt, IsFixedPt, ← coe_pow]⟩
+    rw [cycleQuotientPeriod_mk]; exact τ.minimalPeriod_pos x
   have hSfin : ({q | h.cycleQuotientMap q = c} : Set _).Finite := Set.toFinite _
   refine Nat.eq_of_mul_eq_mul_right hpos ?_
   rw [← h.sum_minimalPeriod_cycleQuotientMap_fiber_eq_mul hk c,
-    finsum_mem_eq_finite_toFinset_sum _ hSfin,
-    finsum_mem_eq_finite_toFinset_sum _ hSfin, Finset.sum_mul]
+    finsum_mem_eq_finite_toFinset_sum _ hSfin, finsum_mem_eq_finite_toFinset_sum _ hSfin,
+    Finset.sum_mul]
   exact Finset.sum_congr rfl fun q hq ↦
     Nat.div_mul_cancel ((hSfin.mem_toFinset.mp hq) ▸ h.minimalPeriod_cycleQuotientMap_dvd q)
 
@@ -217,12 +191,10 @@ namespace TauCeti
 /-- If `f` intertwines the permutations `σ` and `τ` of finite types and every fibre of `f` has at
 most `s` points, then `σ` has at most `s` times as many cycles as `τ`. -/
 theorem orbitCount_le_mul_orbitCount_of_semiconj [Finite α] [Finite β] {f : α → β}
-    {σ : Perm α} {τ : Perm β} (h : Semiconj f σ τ) {s : ℕ}
-    (hs : ∀ y, (f ⁻¹' {y}).ncard ≤ s) :
+    {σ : Perm α} {τ : Perm β} (h : Semiconj f σ τ) {s : ℕ} (hs : ∀ y, (f ⁻¹' {y}).ncard ≤ s) :
     orbitCount σ ≤ s * orbitCount τ := by
   classical
-  let Q := Quotient (SameCycle.setoid τ)
-  have := Fintype.ofFinite Q
+  let Q := Quotient (SameCycle.setoid τ); have := Fintype.ofFinite Q
   -- Each cycle of `σ` is the cycle of a point lying over the representative of the cycle below.
   have hsurj : Surjective fun p : Σ c : Q, f ⁻¹' {c.out} ↦
       Quotient.mk (SameCycle.setoid σ) p.2.val := by

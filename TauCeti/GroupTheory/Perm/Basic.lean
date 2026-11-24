@@ -11,6 +11,7 @@ public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Data.Fintype.Pigeonhole
 import Mathlib.Data.ZMod.QuotientGroup
+import Mathlib.Dynamics.PeriodicPts.Lemmas
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 import Mathlib.Tactic.Abel
@@ -227,6 +228,21 @@ theorem natCard_fiber_quotientMk_sameCycle (x : α) :
   refine Nat.card_congr (Equiv.subtypeEquivRight fun y ↦ ?_)
   simp only [Set.mem_ofPred_eq, Quotient.eq]
   exact sameCycle_comm
+
+/-- Every point has positive minimal period under a permutation of a finite type. -/
+theorem minimalPeriod_pos [Finite α] (x : α) : 0 < Function.minimalPeriod σ x := by
+  have := Fintype.ofFinite α
+  exact Function.minimalPeriod_pos_of_mem_periodicPts (σ.injective.mem_periodicPts x)
+
+/-- The cycle length of a cycle-quotient class `q : Quotient (SameCycle.setoid σ)`. -/
+noncomputable def cycleQuotientPeriod : Quotient (SameCycle.setoid σ) → ℕ :=
+  Quotient.lift (Function.minimalPeriod σ) fun _ _ h ↦ h.minimalPeriod_eq
+
+/-- On the cycle of `x`, `cycleQuotientPeriod` is `Function.minimalPeriod σ x`. -/
+@[simp]
+theorem cycleQuotientPeriod_mk (x : α) :
+    σ.cycleQuotientPeriod (Quotient.mk _ x) = Function.minimalPeriod σ x :=
+  (rfl)
 
 /-- If a single cycle of `σ` passes through every point, then every point has minimal period
 `Nat.card α`. If `α` is infinite, then both sides are `0`. -/
