@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct
 public import TauCeti.MeasureTheory.Measure.Count.Topology
 public import Mathlib.Topology.Instances.ZMod
-import TauCeti.Topology.Algebra.InfiniteSum.Group
 
 /-!
 # Examples for convergent restricted products of local Haar measures

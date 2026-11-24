@@ -892,7 +892,8 @@ theorem convergentHaarProduct_congr_finset (B : ∀ i, K i) [Fact (∀ i, IsOpen
 
 /-- Rescaling the local Haar measure at one index `j` by `c` rescales `convergentHaarProduct` by
 `c`, whether or not `j` lies in the exceptional set `S`. -/
-@[to_additive /-- Rescaling the local additive Haar measure at one index `j` by `c` rescales
+@[to_additive convergentAddHaarProduct_eq_smul_of_eq_smul
+/-- Rescaling the local additive Haar measure at one index `j` by `c` rescales
 `convergentAddHaarProduct` by `c`, whether or not `j` lies in the exceptional set `S`. -/]
 theorem convergentHaarProduct_eq_smul_of_eq_smul (B : ∀ i, K i)
     [Fact (∀ i, IsOpen (B i : Set (G i)))]
