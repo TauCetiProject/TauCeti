@@ -18,7 +18,7 @@ This file extends `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint` with:
   `Over.map`, `Over.mapId`, `Over.mapComp`, and `Over.mapCongr` to `GeometricPoint.map f`,
   `mapId`, `mapComp`, and `mapCongr`, together with the associativity and unit coherence laws
   (`mapComp_assoc`, `mapId_comp`, `comp_mapId`).
-* **Algebraic vs. separable closures**: `ofAlgClosure` and `ofAlgClosureToSepClosure`, showing that
+* **Algebraic vs. separable closures**: `fromAlgClosure` and `algClosureToSepClosure`, showing that
   `Spec kbar ⟶ Spec ksep` is an isomorphism in `GeometricPoint S` if and only if the base field is
   perfect, while always inducing an isomorphism of points and étale stalks
   (`isIso_toPointFunctor_map`, `stalkIso`).
@@ -56,7 +56,7 @@ noncomputable def toOverFullyFaithful (S : Scheme.{u}) : (toOver S).FullyFaithfu
 -- coherence statements.
 /-- Pushforward of geometric points along a scheme morphism `f : X ⟶ Y`, lifting `Over.map f`
 through `toOver`. -/
-@[expose, simps! obj_hom map_hom]
+@[expose, simps! obj_Ω obj_hom map_hom]
 noncomputable def map {X Y : Scheme.{u}} (f : X ⟶ Y) : GeometricPoint X ⥤ GeometricPoint Y where
   obj s := ⟨s.Ω, s.hom ≫ f⟩
   map φ := (toOverFullyFaithful Y).preimage ((Over.map f).map ((toOver X).map φ))
@@ -141,6 +141,7 @@ theorem mapComp_assoc {W X Y Z : Scheme.{u}} (f : W ⟶ X) (g : X ⟶ Y) (h : Y 
         (mapComp f (g ≫ h)).hom.app s ≫ (mapComp g h).hom.app ((map f).obj s) := by
   ext : 1
   simp only [comp_hom, map_map_hom, mapComp_hom_app_hom, mapCongr_hom_app_hom]
+  -- `((map f).obj s).Ω` is definitionally `s.Ω` in the implicit target object of `𝟙`.
   rfl
 
 /-- Left unit coherence for `mapId` and `mapComp`. -/
@@ -149,6 +150,8 @@ theorem mapId_comp {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
       (mapCongr (Category.id_comp f)).hom.app s := by
   ext : 1
   simp only [mapCongr_hom_app_hom]
+  -- `comp_hom`, `map_map_hom`, `mapComp_hom_app_hom`, `mapId_hom_app_hom` unfold definitionally
+  -- up to `(Functor.comp_obj`/`Functor.id_obj)` and `((map _).obj s).Ω` defeqs.
   rfl
 
 /-- Right unit coherence for `mapComp` and `mapId`. -/
@@ -157,6 +160,7 @@ theorem comp_mapId {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
       (mapCongr (Category.comp_id f)).hom.app s := by
   ext : 1
   simp only [comp_hom, mapComp_hom_app_hom, mapId_hom_app_hom, mapCongr_hom_app_hom]
+  -- `((map f).obj s).Ω` is definitionally `s.Ω` in the implicit target object of `𝟙`.
   rfl
 
 end Map
@@ -167,54 +171,56 @@ variable {S : Scheme.{u}}
 
 /-- The canonical morphism from the algebraically closed geometric point over `s` to `s`,
 exhibiting that algebraically closed points give the same stalks as separably closed ones. -/
-noncomputable def ofAlgClosure (s : GeometricPoint S) :
+noncomputable def fromAlgClosure (s : GeometricPoint S) :
     ofOver s.hom (AlgebraicClosure s.Ω) ⟶ s :=
   homOfRingHom (algebraMap s.Ω (AlgebraicClosure s.Ω)) rfl
 
-/-- The ring homomorphism underlying `ofAlgClosure s` is `algebraMap s.Ω (AlgebraicClosure s.Ω)`. -/
+/-- The ring homomorphism underlying `fromAlgClosure s` is
+`algebraMap s.Ω (AlgebraicClosure s.Ω)`. -/
 @[simp]
-theorem Hom.ringHom_ofAlgClosure (s : GeometricPoint S) :
-    (ofAlgClosure s).ringHom = algebraMap s.Ω (AlgebraicClosure s.Ω) :=
+theorem Hom.ringHom_fromAlgClosure (s : GeometricPoint S) :
+    (fromAlgClosure s).ringHom = algebraMap s.Ω (AlgebraicClosure s.Ω) :=
   Hom.ringHom_homOfRingHom _ _
 
-/-- `ofAlgClosure s` is an isomorphism in `GeometricPoint S` if and only if `s.Ω` is already
-algebraically closed (whereas `(toPointFunctor S).map (ofAlgClosure s)` is always an isomorphism
+/-- `fromAlgClosure s` is an isomorphism in `GeometricPoint S` if and only if `s.Ω` is already
+algebraically closed (whereas `(toPointFunctor S).map (fromAlgClosure s)` is always an isomorphism
 by `isIso_toPointFunctor_map`). -/
-theorem isIso_ofAlgClosure_iff (s : GeometricPoint S) :
-    IsIso (ofAlgClosure s) ↔ IsAlgClosed s.Ω := by
-  rw [Hom.isIso_iff_ringHom_surjective, Hom.ringHom_ofAlgClosure,
+theorem isIso_fromAlgClosure_iff (s : GeometricPoint S) :
+    IsIso (fromAlgClosure s) ↔ IsAlgClosed s.Ω := by
+  rw [Hom.isIso_iff_ringHom_surjective, Hom.ringHom_fromAlgClosure,
     ← IsAlgClosed.iff_algebraMap_surjective s.Ω (AlgebraicClosure s.Ω)]
 
-/-- For a separably closed separable extension `Ω` of a field `K`, `ofAlgClosure (ofOver a Ω)` is
-an isomorphism in `GeometricPoint S` if and only if `K` is perfect. -/
-theorem isIso_ofAlgClosure_ofOver_iff_perfectField {K : Type u} [Field K] (a : Spec (.of K) ⟶ S)
+/-- For a separably closed separable extension `Ω` of a field `K`,
+`fromAlgClosure (ofOver a Ω)` is an isomorphism in `GeometricPoint S` if and only if `K` is
+perfect. -/
+theorem isIso_fromAlgClosure_ofOver_iff_perfectField {K : Type u} [Field K] (a : Spec (.of K) ⟶ S)
     (Ω : Type u) [Field Ω] [IsSepClosed Ω] [Algebra K Ω] [Algebra.IsSeparable K Ω] :
-    IsIso (ofAlgClosure (ofOver a Ω)) ↔ PerfectField K := by
-  rw [isIso_ofAlgClosure_iff]
+    IsIso (fromAlgClosure (ofOver a Ω)) ↔ PerfectField K := by
+  rw [isIso_fromAlgClosure_iff]
   exact IsSepClosed.isAlgClosed_iff_perfectField K Ω
 
-/-- The canonical morphism from `ofOver a (AlgebraicClosure K)` to `ofOver a (SeparableClosure K)`.
-It is an isomorphism in `GeometricPoint S` if and only if `K` is perfect
-(`isIso_ofAlgClosureToSepClosure_iff_perfectField`), while its image under `toPointFunctor S` is
-always an isomorphism (`isIso_toPointFunctor_map`). -/
-noncomputable def ofAlgClosureToSepClosure {K : Type u} [Field K] (a : Spec (.of K) ⟶ S) :
+/-- The canonical morphism from `ofOver a (AlgebraicClosure K)` to
+`ofOver a (SeparableClosure K)`. It is an isomorphism in `GeometricPoint S` if and only if `K` is
+perfect (`isIso_algClosureToSepClosure_iff_perfectField`), while its image under `toPointFunctor S`
+is always an isomorphism (`isIso_toPointFunctor_map`). -/
+noncomputable def algClosureToSepClosure {K : Type u} [Field K] (a : Spec (.of K) ⟶ S) :
     ofOver a (AlgebraicClosure K) ⟶ ofOver a (SeparableClosure K) :=
   homOfAlgHom a (IsScalarTower.toAlgHom K (SeparableClosure K) (AlgebraicClosure K))
 
-/-- The ring homomorphism underlying `ofAlgClosureToSepClosure a` is the canonical inclusion
+/-- The ring homomorphism underlying `algClosureToSepClosure a` is the canonical inclusion
 `SeparableClosure K →+* AlgebraicClosure K`. -/
 @[simp]
-theorem Hom.ringHom_ofAlgClosureToSepClosure {K : Type u} [Field K] (a : Spec (.of K) ⟶ S) :
-    (ofAlgClosureToSepClosure a).ringHom =
+theorem Hom.ringHom_algClosureToSepClosure {K : Type u} [Field K] (a : Spec (.of K) ⟶ S) :
+    (algClosureToSepClosure a).ringHom =
       algebraMap (SeparableClosure K) (AlgebraicClosure K) :=
   Hom.ringHom_homOfAlgHom _ _
 
-/-- `ofAlgClosureToSepClosure a` is an isomorphism in `GeometricPoint S` if and only if `K` is
+/-- `algClosureToSepClosure a` is an isomorphism in `GeometricPoint S` if and only if `K` is
 perfect. -/
-theorem isIso_ofAlgClosureToSepClosure_iff_perfectField {K : Type u} [Field K]
+theorem isIso_algClosureToSepClosure_iff_perfectField {K : Type u} [Field K]
     (a : Spec (.of K) ⟶ S) :
-    IsIso (ofAlgClosureToSepClosure a) ↔ PerfectField K := by
-  rw [Hom.isIso_iff_ringHom_surjective, Hom.ringHom_ofAlgClosureToSepClosure]
+    IsIso (algClosureToSepClosure a) ↔ PerfectField K := by
+  rw [Hom.isIso_iff_ringHom_surjective, Hom.ringHom_algClosureToSepClosure]
   have : Algebra.IsAlgebraic (SeparableClosure K) (AlgebraicClosure K) :=
     Algebra.IsAlgebraic.tower_top (K := K) (L := SeparableClosure K) (A := AlgebraicClosure K)
   rw [← IsAlgClosed.iff_algebraMap_surjective (SeparableClosure K) (AlgebraicClosure K),

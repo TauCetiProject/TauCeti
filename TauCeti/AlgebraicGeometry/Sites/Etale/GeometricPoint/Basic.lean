@@ -398,7 +398,9 @@ theorem stalkIso_inv {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂) :
 theorem stalkIso_id (s : GeometricPoint S) :
     stalkIso (𝟙 s) (A := A) = Iso.refl _ := by
   ext1
-  simp
+  simp only [stalkIso_hom, CategoryTheory.Functor.map_id,
+    GrothendieckTopology.Point.Hom.sheafFiber_id, Iso.refl_hom]
+  -- `(toPointFunctor S).obj s` is defeq to `pointSmallEtale s.hom` in the implicit arg of `𝟙`.
   rfl
 
 /-- Stalk isomorphisms are contravariantly functorial in morphisms of geometric points. -/
@@ -406,7 +408,9 @@ theorem stalkIso_id (s : GeometricPoint S) :
 theorem stalkIso_comp {s₁ s₂ s₃ : GeometricPoint S} (φ : s₁ ⟶ s₂) (ψ : s₂ ⟶ s₃) :
     stalkIso (φ ≫ ψ) (A := A) = (stalkIso ψ).trans (stalkIso φ) := by
   ext1
-  simp
+  simp only [stalkIso_hom, CategoryTheory.Functor.map_comp,
+    GrothendieckTopology.Point.Hom.sheafFiber_comp, Iso.trans_hom]
+  -- `(toPointFunctor S).obj s₂` is defeq to `pointSmallEtale s₂.hom` in the implicit arg of `≫`.
   rfl
 
 end StalkIso

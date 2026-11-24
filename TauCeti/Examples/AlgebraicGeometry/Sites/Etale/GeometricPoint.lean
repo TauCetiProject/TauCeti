@@ -19,14 +19,14 @@ This file collects concrete calculations illustrating the general theory of geom
 Galois actions on stalks, and the stalk Frobenius:
 
 * **The complex point of `Spec ℝ`**: the automorphism group of `ofOver (𝟙 (Spec (.of ℝ))) ℂ` is
-  `Gal(ℂ/ℝ)` (`galComplexRealMulEquivAutOp`), and complex conjugation acts on the two-element stalk
-  of `Spec ℂ ⟶ Spec ℝ` as a fixed-point-free involution.
+  `Gal(ℂ/ℝ)` (`ofOverComplexRealAutMulEquiv`), and complex conjugation acts on the two-element
+  stalk of `Spec ℂ ⟶ Spec ℝ` as a fixed-point-free involution.
 * **The quadratic extension `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`**: the stalk at `kbar` has cardinality `2`
   and `stalkFrobenius` exchanges its two points, coinciding with `stalkArithmeticFrobenius`.
 * **Fifth roots of unity `μ_5` over `Spec 𝔽_2`**: the stalk at `kbar` is `rootsOfUnity 5 kbar`,
   `stalkFrobenius` acts by `ζ ↦ ζ ^ 3` (since `3 · 2 ≡ 1 [MOD 5]`), `stalkArithmeticFrobenius`
   acts by `ζ ↦ ζ ^ 2`, and the two automorphisms are distinct on this stalk.
-* **Rational function fields `K(X)`**: the morphism `ofAlgClosureToSepClosure` from
+* **Rational function fields `K(X)`**: the morphism `algClosureToSepClosure` from
   `Spec (AlgebraicClosure (RatFunc K))` to `Spec (SeparableClosure (RatFunc K))` is an isomorphism
   in `GeometricPoint` if and only if `CharZero K` (in particular, it is not an isomorphism for
   `𝔽_p(t)`); see `isIso_toPointFunctor_map` for why every morphism induces an isomorphism of
@@ -45,9 +45,9 @@ section ComplexReal
 
 /-- The automorphism group of the geometric point `Spec ℂ ⟶ Spec ℝ` is `Gal(ℂ/ℝ)` (with opposite
 multiplication, since `Spec (σ * τ) = Spec σ ≫ Spec τ`). -/
-noncomputable def galComplexRealMulEquivAutOp :
+noncomputable def ofOverComplexRealAutMulEquiv :
     Gal(ℂ/ℝ) ≃* (Aut (ofOver (𝟙 (Spec (.of ℝ))) ℂ))ᵐᵒᵖ :=
-  galMulEquivAutOp (𝟙 (Spec (.of ℝ))) ℂ
+  ofOverAutMulEquiv (𝟙 (Spec (.of ℝ))) ℂ
 
 /-- The stalk of `FiniteEtaleScheme.toSheaf` of `Spec ℂ ⟶ Spec ℝ` at `Spec ℂ` has two elements. -/
 theorem natCard_specComplex_stalk :
@@ -65,7 +65,7 @@ theorem conjAe_specComplex_stalk_ne_self
       ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
         ((FiniteEtaleScheme.spec (.of ℝ)).obj
           (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ))))) :
-    (galStalkAut (𝟙 (Spec (.of ℝ))) ℂ Complex.conjAe).asIso.hom.app
+    (ofOverGaloisStalkAction (𝟙 (Spec (.of ℝ))) ℂ Complex.conjAe).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
           ((FiniteEtaleScheme.spec (.of ℝ)).obj
             (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ)))) z ≠
@@ -75,7 +75,7 @@ theorem conjAe_specComplex_stalk_ne_self
   let φ : ℂ →ₐ[ℝ] ℂ := toSheafSpecStalkEquiv ℝ ℂ B z
   have hφ : φ = Complex.conjAe.toAlgHom.comp φ :=
     (congrArg (toSheafSpecStalkEquiv ℝ ℂ B) h).symm.trans
-      (toSheafSpecStalkEquiv_galStalkAut ℝ ℂ B Complex.conjAe z)
+      (toSheafSpecStalkEquiv_ofOverGaloisStalkAction ℝ ℂ B Complex.conjAe z)
   have hv := DFunLike.congr_fun hφ Complex.I
   rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, Complex.conjAe_coe] at hv
   rcases Complex.real_algHom_eq_id_or_conj φ with hid | hconj
@@ -86,12 +86,13 @@ theorem conjAe_specComplex_stalk_ne_self
 
 /-- Complex conjugation acts as an involution on the stalk of `Spec ℂ ⟶ Spec ℝ` at `Spec ℂ`. -/
 theorem conjAe_specComplex_stalk_involutive :
-    Function.Involutive ((galStalkAut (𝟙 (Spec (.of ℝ))) ℂ Complex.conjAe).asIso.hom.app
-      ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
-        ((FiniteEtaleScheme.spec (.of ℝ)).obj
-          (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ))))) := by
+    Function.Involutive
+      ((ofOverGaloisStalkAction (𝟙 (Spec (.of ℝ))) ℂ Complex.conjAe).asIso.hom.app
+        ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
+          ((FiniteEtaleScheme.spec (.of ℝ)).obj
+            (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ))))) := by
   intro z
-  rw [← galStalkAut_mul_app_apply]
+  rw [← ofOverGaloisStalkAction_mul_app_apply]
   have hsq : Complex.conjAe * Complex.conjAe = 1 := by
     ext x
     simp
@@ -237,21 +238,21 @@ end FifthRootsOverF2
 section ImperfectFunctionField
 
 /-- For any field `K` and any `a : Spec (.of (RatFunc K)) ⟶ S`, the morphism
-`ofAlgClosureToSepClosure a` is an isomorphism in `GeometricPoint S` if and only if `K` has
-characteristic zero (whereas `(toPointFunctor S).map (ofAlgClosureToSepClosure a)` is always an
+`algClosureToSepClosure a` is an isomorphism in `GeometricPoint S` if and only if `K` has
+characteristic zero (whereas `(toPointFunctor S).map (algClosureToSepClosure a)` is always an
 isomorphism by `isIso_toPointFunctor_map`). -/
-theorem isIso_ofAlgClosureToSepClosure_ratFunc_iff {S : Scheme.{u}} {K : Type u} [Field K]
+theorem isIso_algClosureToSepClosure_ratFunc_iff {S : Scheme.{u}} {K : Type u} [Field K]
     (a : Spec (.of (RatFunc K)) ⟶ S) :
-    IsIso (ofAlgClosureToSepClosure a) ↔ CharZero K :=
-  (isIso_ofAlgClosureToSepClosure_iff_perfectField a).trans
+    IsIso (algClosureToSepClosure a) ↔ CharZero K :=
+  (isIso_algClosureToSepClosure_iff_perfectField a).trans
     (TauCeti.RatFunc.perfectField_iff_charZero K)
 
 /-- For `k = 𝔽_p(t)`, the morphism `Spec (AlgebraicClosure k) ⟶ Spec (SeparableClosure k)` over
 `Spec k` is not an isomorphism in `GeometricPoint (Spec (.of (RatFunc (ZMod p))))` (though by
 `isIso_toPointFunctor_map` its image under `toPointFunctor` is an isomorphism). -/
-theorem not_isIso_ofAlgClosureToSepClosure_ratFunc_zmod (p : ℕ) [Fact p.Prime] :
-    ¬ IsIso (ofAlgClosureToSepClosure (𝟙 (Spec (.of (RatFunc (ZMod p)))))) := by
-  rw [isIso_ofAlgClosureToSepClosure_ratFunc_iff]
+theorem not_isIso_algClosureToSepClosure_ratFunc_zmod (p : ℕ) [Fact p.Prime] :
+    ¬ IsIso (algClosureToSepClosure (𝟙 (Spec (.of (RatFunc (ZMod p)))))) := by
+  rw [isIso_algClosureToSepClosure_ratFunc_iff]
   intro h
   exact (Fact.out : p.Prime).ne_zero (CharP.eq (ZMod p) inferInstance (CharP.ofCharZero (ZMod p)))
 
