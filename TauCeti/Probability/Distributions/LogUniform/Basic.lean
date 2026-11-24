@@ -64,7 +64,8 @@ theorem logUniformMeasure_of_pos (ha : 0 < a) (hab : a < b) :
     logUniformMeasure a b = (uniformMeasure (log a) (log b)).map exp := by
   rw [logUniformMeasure, ite_eq_left ⟨ha, hab⟩]
 
-/-- If `Y` is uniform on `(log a, log b]`, then `exp Y` is log-uniform on `(a, b]`. -/
+/-- For `0 < a < b`, if `Y` is uniform on `(log a, log b]`, then `exp Y` is log-uniform on
+`(a, b]`. -/
 theorem hasLaw_logUniformMeasure_of_hasLaw_uniformMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {Y : Ω → ℝ} (ha : 0 < a) (hab : a < b)
     (hY : HasLaw Y (uniformMeasure (log a) (log b)) P) :
@@ -105,7 +106,8 @@ theorem map_log_logUniformMeasure (ha : 0 < a) (hab : a < b) :
     Measure.map_map measurable_log measurable_exp]
   simp only [Function.comp_def, log_exp, Measure.map_id']
 
-/-- If `X` is log-uniform on `(a, b]`, then `log X` is uniform on `(log a, log b]`. -/
+/-- For `0 < a < b`, if `X` is log-uniform on `(a, b]`, then `log X` is uniform on
+`(log a, log b]`. -/
 theorem hasLaw_log_logUniformMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {X : Ω → ℝ} (ha : 0 < a) (hab : a < b)
     (hX : HasLaw X (logUniformMeasure a b) P) :
