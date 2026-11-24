@@ -43,7 +43,7 @@ vector bundle `V` with a connection `∇`: if `B` is differentiable as a section
   trace of a field of bilinear forms is the metric trace of its covariant derivative.
 * `CovariantDerivative.IsMetricCompatible.covariantDerivative_metricTrace`: the covariant
   derivative of the metric trace of a differentiable field of bundle-valued bilinear maps is the
-  metric trace of its covariant derivative, and `CovariantDerivative.mdifferentiableAt_metricTrace`
+  metric trace of its covariant derivative, and `MDifferentiableAt.metricTrace`
   records that this metric trace is differentiable.
 * `CovariantDerivative.IsMetricCompatible.mvfderiv_metricTrace_apply_eq_sum`: the same identity
   along a tangent vector, in an orthonormal basis.
@@ -114,6 +114,21 @@ theorem IsMetricCompatible.sum_apply_chartDualFrame_cancel {W : Type*} [AddCommG
   conv_rhs => rw [← (sum_inner_chartDualFrame_smul x hxc (cov (F j) x v)).1]
   simp only [← hFdef, ← hDdef, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply]
 
+omit [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
+/-- Near `x`, the metric trace of a field of continuous bilinear maps equals the finite sum of
+sections obtained by pairing it with the chart-local frame and its metric-dual frame. -/
+private theorem eventually_metricTrace_toLinearMap₁₂_eq_sum_chartDualFrame
+    {N : M → Type*} [∀ y, AddCommGroup (N y)] [∀ y, Module ℝ (N y)]
+    [∀ y, TopologicalSpace (N y)] [∀ y, IsTopologicalAddGroup (N y)]
+    [∀ y, ContinuousSMul ℝ (N y)]
+    (B : Π y : M, TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] N y) (x : M) :
+    ∀ᶠ y in 𝓝 x,
+      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (B y)) =
+        (∑ i, fun y ↦ B y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y)) y :=
+  (eventually_metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x)
+    (fun y ↦ ContinuousLinearMap.toLinearMap₁₂ (B y))).mono fun y hy ↦ by
+      simp only [hy, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, Finset.sum_apply]
+
 /-- **Covariant differentiation commutes with the metric trace.** For a connection compatible
 with the metric and a field of bilinear forms `b` pairing sections differentiable at `x` to
 functions differentiable at `x`, the derivative at `x` of the metric trace of `b` is the metric
@@ -143,9 +158,8 @@ theorem IsMetricCompatible.mvfderiv_metricTrace
   -- At `x`, the metric trace of `∇b` is `∑ᵢ (∇b)(Fᵢ, Dᵢ)`.
   have htr : (fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (b y)))
       =ᶠ[𝓝 x] fun y ↦ ∑ i, b y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y) :=
-    (eventually_metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x)
-      (fun y ↦ ContinuousLinearMap.toLinearMap₁₂ (b y))).mono fun y hy ↦ by
-        simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] using hy
+    (eventually_metricTrace_toLinearMap₁₂_eq_sum_chartDualFrame b x).mono fun y hy ↦ by
+      simpa only [Finset.sum_apply] using hy
   rw [htr.mvfderiv_eq,
     TauCeti.mvfderiv_fun_sum fun i _ ↦ hb (hF i) (hD i), sum_apply,
     metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x), sum_apply]
@@ -205,15 +219,14 @@ private theorem mdifferentiableAt_sum_apply_chartDualFrame
 /-- The metric trace of a field `B` of `V`-valued bilinear maps on the tangent spaces is a section
 of `V` which is differentiable wherever `B` is differentiable as a section of the bundle
 `Hom(TM, Hom(TM, V))` of bilinear maps. -/
-theorem mdifferentiableAt_metricTrace
+theorem _root_.MDifferentiableAt.metricTrace
     (hB : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] F)
       (E := fun z ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] V z) y (B y)) x) :
     MDiffAt (T% fun y ↦ LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (B y)))
       x :=
   (mdifferentiableAt_sum_apply_chartDualFrame hB).congr_of_eventuallyEq
-    ((eventually_metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x)
-      (fun y ↦ ContinuousLinearMap.toLinearMap₁₂ (B y))).mono fun y hy ↦ by
-        simp only [hy, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, Finset.sum_apply])
+    ((eventually_metricTrace_toLinearMap₁₂_eq_sum_chartDualFrame B x).mono
+      fun y hy ↦ congrArg (TotalSpace.mk' F y) hy)
 
 /-- **Covariant differentiation commutes with the metric trace**, for a field `B` of bilinear maps
 on the tangent spaces with values in a vector bundle `V`. If the connection `∇ᵀ` on the tangent
@@ -235,14 +248,9 @@ theorem IsMetricCompatible.covariantDerivative_metricTrace
   have hF := mdifferentiableAt_chartLocalFrame (I := I) x hxb
   have hD := mdifferentiableAt_chartDualFrame (I := I) x hxb
   -- Near `x`, `tr_g B` is `∑ᵢ B(Fᵢ, Dᵢ)` in the chart frame `Fᵢ` and its metric-dual frame `Dᵢ`.
-  have hloc : ∀ᶠ y in 𝓝 x,
-      LinearMap.BilinMap.metricTrace (ContinuousLinearMap.toLinearMap₁₂ (B y)) =
-        (∑ i, fun y ↦ B y (chartLocalFrame (I := I) x i y) (chartDualFrame (I := I) x i y)) y :=
-    (eventually_metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x)
-      (fun y ↦ ContinuousLinearMap.toLinearMap₁₂ (B y))).mono fun y hy ↦ by
-        simp only [hy, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, Finset.sum_apply]
-  rw [covV.isCovariantDerivativeOnUniv.congr_of_eventuallyEq (mdifferentiableAt_metricTrace hB)
-      (mdifferentiableAt_sum_apply_chartDualFrame hB) Filter.univ_mem hloc,
+  rw [covV.isCovariantDerivativeOnUniv.congr_of_eventuallyEq hB.metricTrace
+      (mdifferentiableAt_sum_apply_chartDualFrame hB) Filter.univ_mem
+      (eventually_metricTrace_toLinearMap₁₂_eq_sum_chartDualFrame B x),
     covV.isCovariantDerivativeOnUniv.sum fun i _ ↦ mdifferentiableAt_apply_chartDualFrame hB i,
     sum_apply, metricTrace_eq_sum_chartDualFrame x (mem_chart_source H x)]
   -- Differentiate each term by the Leibniz rule; the terms with `∇Fᵢ` and `∇Dᵢ` cancel.

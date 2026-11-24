@@ -57,7 +57,7 @@ theorem satisfiesGradientRicciSolitonEquation_add_const_iff (f : M → ℝ) (a c
     funext x
     rw [mgradient_def, mgradient_def, mvfderiv_add_const]
   simp only [satisfiesGradientRicciSolitonEquation_iff,
-    hessian_eq_inner_leviCivitaConnection_mgradient, hgrad]
+    I.hessian_eq_inner_leviCivitaConnection_mgradient, hgrad]
 
 /-- A constant potential gives exactly the Einstein equation for the ambient metric. -/
 @[simp]

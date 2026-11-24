@@ -17,21 +17,22 @@ import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 On a finite-dimensional real inner product space `E`, the metric trace
 `LinearMap.BilinMap.metricTrace` of a continuous bilinear map `H : E →L E →L F` is bounded by
-`dim E * ‖H‖`, so it is a continuous linear functional `TauCeti.traceL` on the space of continuous
+`dim E * ‖H‖`, so it is a continuous linear map `TauCeti.traceL` on the space of continuous
 bilinear maps. In an orthonormal basis `eᵢ` it is `H ↦ ∑ᵢ H eᵢ eᵢ`. The Laplacian is the trace of
 the second Fréchet derivative (`TauCeti.laplacian_eq_traceL`).
 
 ## Main declarations
 
 * `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous
-  linear functional.
+  linear map.
 * `ContinuousLinearMap.traceL_apply_eq_metricTrace`: it is the metric trace
   `LinearMap.BilinMap.metricTrace` of the underlying bilinear map.
 * `ContinuousLinearMap.traceL_apply`: in the standard orthonormal basis it is the sum of the
   diagonal values.
 * `ContinuousLinearMap.norm_traceL_apply_le`: `‖traceL H‖ ≤ dim E * ‖H‖`.
-* `ContinuousLinearMap.traceL_flip`, `TauCeti.traceL_innerSL`: the trace is invariant under
-  transposition, and the trace of the inner product is the dimension.
+* `ContinuousLinearMap.traceL_flip`, `ContinuousLinearMap.traceL_bilinearComp_linearIsometryEquiv`,
+  `TauCeti.traceL_innerSL`: the trace is invariant under transposition and pullback along a linear
+  isometric equivalence, and the trace of the inner product is the dimension.
 * `ContinuousLinearMap.traceL_smulRight`: the trace of the rank-one map `f.smulRight A` is `A`
   evaluated at the Riesz representative of `f`.
 -/
@@ -53,10 +54,10 @@ private theorem norm_metricTrace_toLinearMap₁₂_le (H : E →L[ℝ] E →L[�
   rw [mul_comm] at h
   simpa [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ E)] using h
 
-/-- The metric trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous linear
-functional: `LinearMap.BilinMap.metricTrace` of the underlying bilinear map, which is bounded by
-the dimension of `E` times the norm of `H`. The Laplacian is the trace of the second Fréchet
-derivative (`TauCeti.laplacian_eq_traceL`). -/
+/-- The metric trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map, as a continuous linear map:
+`LinearMap.BilinMap.metricTrace` of the underlying bilinear map, which is bounded by the dimension
+of `E` times the norm of `H`. The Laplacian is the trace of the second Fréchet derivative
+(`TauCeti.laplacian_eq_traceL`). -/
 noncomputable def traceL : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
   (LinearMap.BilinMap.metricTrace ∘ₗ ContinuousLinearMap.toLinearMap₁₂).mkContinuous
     (Module.finrank ℝ E) fun H : E →L[ℝ] E →L[ℝ] F ↦ norm_metricTrace_toLinearMap₁₂_le H
@@ -86,6 +87,21 @@ theorem _root_.ContinuousLinearMap.norm_traceL_apply_le (H : E →L[ℝ] E →L[
     traceL B.flip = traceL B := by
   rw [B.flip.traceL_apply_eq_metricTrace, B.traceL_apply_eq_metricTrace,
     ContinuousLinearMap.toLinearMap₁₂_flip, LinearMap.BilinMap.metricTrace_flip]
+
+/-- The trace of a continuous bilinear map is invariant under pulling back along a linear
+isometric equivalence `e : E ≃ₗᵢ[ℝ] E'`. -/
+@[simp] theorem _root_.ContinuousLinearMap.traceL_bilinearComp_linearIsometryEquiv
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+    (H : E' →L[ℝ] E' →L[ℝ] F) (e : E ≃ₗᵢ[ℝ] E') :
+    traceL (H.bilinearComp (e : E →L[ℝ] E') (e : E →L[ℝ] E')) = traceL H := by
+  have he : ((e : E →L[ℝ] E') : E →ₗ[ℝ] E') = e.toLinearEquiv.toLinearMap :=
+    LinearMap.ext fun _ ↦ by
+      simp only [ContinuousLinearMap.coe_coe, LinearIsometryEquiv.coe_coe'', LinearEquiv.coe_coe,
+        LinearIsometryEquiv.coe_toLinearEquiv]
+  rw [ContinuousLinearMap.traceL_apply_eq_metricTrace,
+    ContinuousLinearMap.traceL_apply_eq_metricTrace,
+    ContinuousLinearMap.toLinearMap₁₂_bilinearComp, he, ← LinearMap.compl₁₂]
+  exact LinearMap.BilinMap.metricTrace_compl₁₂_linearIsometryEquiv H.toLinearMap₁₂ e
 
 /-- The trace of the real inner product is the dimension of the space. -/
 @[simp] theorem traceL_innerSL :

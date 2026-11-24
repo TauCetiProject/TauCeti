@@ -198,8 +198,8 @@ noncomputable def hessian (I : ModelWithCorners ℝ E H) {M : Type*} [Topologica
   I.hessianForm f x v w
 
 /-- The scalar Hessian of `f` is `⟪∇_v grad f, w⟫` for the Levi–Civita connection. -/
-theorem hessian_eq_inner_leviCivitaConnection_mgradient (I : ModelWithCorners ℝ E H) {M : Type*}
-    [TopologicalSpace M]
+theorem _root_.ModelWithCorners.hessian_eq_inner_leviCivitaConnection_mgradient
+    (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
@@ -233,7 +233,7 @@ theorem leviCivitaConnection_mgradient_eq_zero_of_hessian_eq_zero
     CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v = 0 := by
   apply ext_inner_right ℝ
   intro w
-  simpa only [hessian_eq_inner_leviCivitaConnection_mgradient, inner_zero_left] using hzero w
+  simpa only [I.hessian_eq_inner_leviCivitaConnection_mgradient, inner_zero_left] using hzero w
 
 end HessianGradient
 
@@ -251,7 +251,7 @@ theorem leviCivitaConnection_mgradient_of_hessian_eq_mul_inner [IsManifold I 2 M
     CovariantDerivative.leviCivitaConnection I M (mgradient I f) x u = a • u := by
   apply ext_inner_right ℝ
   intro v
-  rw [← hessian_eq_inner_leviCivitaConnection_mgradient, h, real_inner_smul_left]
+  rw [← I.hessian_eq_inner_leviCivitaConnection_mgradient, h, real_inner_smul_left]
 
 /-- The Hessian applied to a vector field and a differentiable vector field is the directional
 derivative of the directional derivative of `f`, minus the derivative in the covariant derivative
@@ -290,7 +290,7 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
     simpa only [Function.comp_apply] using hinner
   have hgrad := inner_mgradient (I := I) (f := f) (x := x)
     ((CovariantDerivative.leviCivitaConnection I M W) x (V x))
-  rw [hessian_eq_inner_leviCivitaConnection_mgradient]
+  rw [I.hessian_eq_inner_leviCivitaConnection_mgradient]
   linarith
 
 /-- The Hessian of a twice continuously differentiable function is symmetric for the
@@ -563,7 +563,7 @@ protected theorem _root_.HasCompactSupport.laplaceBeltrami {f : M → ℝ}
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :
     hessian I (fun _ : M ↦ c) x v w = 0 := by
-  simp [hessian_eq_inner_leviCivitaConnection_mgradient]
+  simp [I.hessian_eq_inner_leviCivitaConnection_mgradient]
 
 /-- The Hessian of the zero function is zero. -/
 @[simp]
@@ -590,7 +590,7 @@ theorem _root_.ModelWithCorners.hessianForm_add_of_mdifferentiableAt_mgradient {
 
 /-- The Hessian is additive at `x` when both functions are differentiable near `x` and their
 gradients are differentiable at `x`. -/
-theorem hessian_add_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+theorem _root_.ModelWithCorners.hessian_add_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
     (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
     (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
     (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
@@ -612,7 +612,8 @@ theorem _root_.ModelWithCorners.hessianForm_smul_of_mdifferentiableAt_mgradient 
 
 /-- The Hessian commutes with constant scalar multiplication at a point where the gradient is
 differentiable. -/
-theorem hessian_smul_of_mdifferentiableAt_mgradient (c : ℝ) {f : M → ℝ} {x : M}
+theorem _root_.ModelWithCorners.hessian_smul_of_mdifferentiableAt_mgradient (c : ℝ) {f : M → ℝ}
+    {x : M}
     (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
     (v w : TangentSpace I x) :
     hessian I (c • f) x v w = c * hessian I f x v w := by
@@ -629,7 +630,7 @@ theorem _root_.ModelWithCorners.hessianForm_neg_of_mdifferentiableAt_mgradient {
     neg_one_smul ℝ (I.hessianForm f x)]
 
 /-- Negating a function negates its Hessian at a point where its gradient is differentiable. -/
-theorem hessian_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
+theorem _root_.ModelWithCorners.hessian_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
     (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
     (v w : TangentSpace I x) :
     hessian I (-f) x v w = -hessian I f x v w := by
@@ -656,7 +657,7 @@ theorem _root_.ModelWithCorners.hessianForm_sub_of_mdifferentiableAt_mgradient {
 
 /-- The Hessian respects subtraction at `x` when both functions are differentiable near `x` and
 their gradients are differentiable at `x`. -/
-theorem hessian_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+theorem _root_.ModelWithCorners.hessian_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
     (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
     (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
     (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
@@ -690,7 +691,7 @@ theorem _root_.ModelWithCorners.hessianForm_zero (x : M) : I.hessianForm (0 : M 
 theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) (v w : TangentSpace I x) :
     hessian I (f + g) x v w = hessian I f x v w + hessian I g x v w :=
-  hessian_add_of_mdifferentiableAt_mgradient I
+  I.hessian_add_of_mdifferentiableAt_mgradient
     (.of_forall fun y ↦ (hf y).mdifferentiableAt two_ne_zero)
     (.of_forall fun y ↦ (hg y).mdifferentiableAt two_ne_zero)
     (mdifferentiableAt_mgradient (hf x)) (mdifferentiableAt_mgradient (hg x)) v w
@@ -699,7 +700,7 @@ theorem hessian_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
 theorem hessian_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (x : M) (v w : TangentSpace I x) :
     hessian I (c • f) x v w = c * hessian I f x v w :=
-  hessian_smul_of_mdifferentiableAt_mgradient I c (mdifferentiableAt_mgradient (hf x)) v w
+  I.hessian_smul_of_mdifferentiableAt_mgradient c (mdifferentiableAt_mgradient (hf x)) v w
 
 /-- The Laplace–Beltrami operator vanishes on constants. -/
 @[simp]
@@ -755,7 +756,8 @@ theorem laplaceBeltrami_eq_zero_of_notMem_tsupport {f : M → ℝ} {x : M}
 
 /-- The Laplace–Beltrami operator is additive at `x` when both functions are differentiable near
 `x` and their gradients are differentiable at `x`. -/
-theorem laplaceBeltrami_add_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+theorem _root_.ModelWithCorners.laplaceBeltrami_add_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M}
     (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
     (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
     (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
@@ -768,7 +770,7 @@ theorem laplaceBeltrami_add_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x 
 theorem laplaceBeltrami_add_of_contMDiffAt {f g : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
     laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x :=
-  laplaceBeltrami_add_of_mdifferentiableAt_mgradient I (hf.eventually_mdifferentiableAt two_ne_zero)
+  I.laplaceBeltrami_add_of_mdifferentiableAt_mgradient (hf.eventually_mdifferentiableAt two_ne_zero)
     (hg.eventually_mdifferentiableAt two_ne_zero) (mdifferentiableAt_mgradient hf)
     (mdifferentiableAt_mgradient hg)
 
@@ -819,7 +821,8 @@ theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
 gradient is differentiable. -/
-theorem laplaceBeltrami_smul_of_mdifferentiableAt_mgradient (c : ℝ) {f : M → ℝ} {x : M}
+theorem _root_.ModelWithCorners.laplaceBeltrami_smul_of_mdifferentiableAt_mgradient (c : ℝ)
+    {f : M → ℝ} {x : M}
     (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x := by
   simp only [I.laplaceBeltrami_eq_metricTrace_hessianForm,
@@ -830,7 +833,7 @@ function is `C²`. -/
 theorem laplaceBeltrami_smul_of_contMDiffAt (c : ℝ) {f : M → ℝ} {x : M}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) :
     laplaceBeltrami I (c • f) x = c * laplaceBeltrami I f x :=
-  laplaceBeltrami_smul_of_mdifferentiableAt_mgradient I c (mdifferentiableAt_mgradient hf)
+  I.laplaceBeltrami_smul_of_mdifferentiableAt_mgradient c (mdifferentiableAt_mgradient hf)
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication on `C²` functions. -/
 theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
@@ -839,7 +842,8 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
 
 /-- Negating a function negates its Laplace–Beltrami operator at a point where its gradient is
 differentiable. -/
-theorem laplaceBeltrami_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : M}
+theorem _root_.ModelWithCorners.laplaceBeltrami_neg_of_mdifferentiableAt_mgradient {f : M → ℝ}
+    {x : M}
     (hf : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x) :
     laplaceBeltrami I (-f) x = -laplaceBeltrami I f x := by
   -- Instance search for `AddGroup` on the continuous bilinear forms on `T_x M` times out; supply it
@@ -851,11 +855,12 @@ theorem laplaceBeltrami_neg_of_mdifferentiableAt_mgradient {f : M → ℝ} {x : 
 /-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
 theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
     laplaceBeltrami I (-f) x = -laplaceBeltrami I f x :=
-  laplaceBeltrami_neg_of_mdifferentiableAt_mgradient I (mdifferentiableAt_mgradient (hf x))
+  I.laplaceBeltrami_neg_of_mdifferentiableAt_mgradient (mdifferentiableAt_mgradient (hf x))
 
 /-- The Laplace–Beltrami operator respects subtraction at `x` when both functions are
 differentiable near `x` and their gradients are differentiable at `x`. -/
-theorem laplaceBeltrami_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x : M}
+theorem _root_.ModelWithCorners.laplaceBeltrami_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ}
+    {x : M}
     (hf : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) f y)
     (hg : ∀ᶠ y in nhds x, MDifferentiableAt I 𝓘(ℝ) g y)
     (hf' : MDifferentiableAt I I.tangent (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x)
@@ -871,7 +876,7 @@ theorem laplaceBeltrami_sub_of_mdifferentiableAt_mgradient {f g : M → ℝ} {x 
 theorem laplaceBeltrami_sub {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
     laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x :=
-  laplaceBeltrami_sub_of_mdifferentiableAt_mgradient I
+  I.laplaceBeltrami_sub_of_mdifferentiableAt_mgradient
     ((hf x).eventually_mdifferentiableAt two_ne_zero)
     ((hg x).eventually_mdifferentiableAt two_ne_zero) (mdifferentiableAt_mgradient (hf x))
     (mdifferentiableAt_mgradient (hg x))
@@ -933,7 +938,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v₁ v₂ w : TangentSpace I x) :
     hessian I f x (v₁ + v₂) w = hessian I f x v₁ w + hessian I f x v₂ w := by
-  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, map_add, inner_add_left]
+  simp only [hessian, map_add, add_apply]
 
 @[simp] theorem hessian_smul_left (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -941,7 +946,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (r : ℝ) (v w : TangentSpace I x) :
     hessian I f x (r • v) w = r * hessian I f x v w := by
-  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, map_smul, real_inner_smul_left]
+  simp only [hessian, map_smul, smul_apply, smul_eq_mul]
 
 @[simp] theorem hessian_zero_left (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -949,7 +954,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (w : TangentSpace I x) :
     hessian I f x 0 w = 0 := by
-  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, map_zero, inner_zero_left]
+  simp only [hessian, map_zero, zero_apply]
 
 @[simp] theorem hessian_add_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -957,7 +962,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v w₁ w₂ : TangentSpace I x) :
     hessian I f x v (w₁ + w₂) = hessian I f x v w₁ + hessian I f x v w₂ := by
-  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, inner_add_right]
+  simp only [hessian, map_add]
 
 @[simp] theorem hessian_smul_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -965,7 +970,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (r : ℝ) (v w : TangentSpace I x) :
     hessian I f x v (r • w) = r * hessian I f x v w := by
-  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, real_inner_smul_right]
+  simp only [hessian, map_smul, smul_eq_mul]
 
 @[simp] theorem hessian_zero_right (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] [IsManifold I 2 M]
@@ -973,7 +978,7 @@ theorem divergence_eq_sum_inner (I : ModelWithCorners ℝ E H) {M : Type*} [Topo
     [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
     (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     hessian I f x v 0 = 0 := by
-  simp only [hessian_eq_inner_leviCivitaConnection_mgradient, inner_zero_right]
+  simp only [hessian, map_zero]
 
 /-- The Laplace–Beltrami operator is the trace of the scalar Hessian in every orthonormal basis. -/
 theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M]
@@ -1119,7 +1124,7 @@ theorem hessian_eq_iteratedFDeriv_model_space
     hessian (modelWithCornersSelf ℝ F) f x v w =
       iteratedFDeriv ℝ 2 f x
         ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w] := by
-  rw [hessian_eq_inner_leviCivitaConnection_mgradient]
+  rw [ModelWithCorners.hessian_eq_inner_leviCivitaConnection_mgradient]
   have hm : mgradient (modelWithCornersSelf ℝ F) f = ∇ f :=
     funext fun y ↦ mgradient_eq_gradient f y
   have hmgrad : DifferentiableAt ℝ (mgradient (modelWithCornersSelf ℝ F) f) x := by

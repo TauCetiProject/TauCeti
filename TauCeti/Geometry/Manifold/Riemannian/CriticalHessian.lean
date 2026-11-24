@@ -112,7 +112,7 @@ theorem hessian_eq_criticalHessian_sub (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (v w
     hessian I f x v w = criticalHessian I f x v w -
       mvfderiv I f x
         (CovariantDerivative.leviCivitaConnection I M (FiberBundle.extend E w) x v) := by
-  rw [hessian_eq_inner_leviCivitaConnection_mgradient]
+  rw [I.hessian_eq_inner_leviCivitaConnection_mgradient]
   exact inner_covariantDerivative_mgradient_eq_criticalHessian_sub hf
     (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) v w
 

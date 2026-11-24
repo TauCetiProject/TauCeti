@@ -23,9 +23,9 @@ Let `V` be a vector bundle over a Riemannian manifold `M`, with a connection `�
 for any orthonormal basis `eᵢ` of the tangent space (`CovariantDerivative.diracOperator_eq_sum`).
 The contraction is the metric trace `LinearMap.BilinMap.metricTrace`, against the canonical
 covariant tensor `InnerProductSpace.canonicalCovariantTensor`, so the definition involves no
-choice of frame (`CovariantDerivative.diracOperator_eq_metricTrace`). As a function of `∇σ` at
-`x` it is the linear contraction `LinearMap.metricTraceCompl₂` of `c x`
-(`CovariantDerivative.diracOperator_def`), so its algebraic laws are those of that linear map.
+choice of frame. As a function of `∇σ` at `x` it is the linear contraction
+`LinearMap.metricTraceCompl₂` of `c x` (`CovariantDerivative.diracOperator_def`), so its algebraic
+laws are those of that linear map.
 
 When `V` is a Hermitian Clifford module, so that `c(v)² = -‖v‖²` and each `c(v)` is
 skew-adjoint, and `∇` is compatible with `c` and the Levi-Civita connection, this is the Dirac
@@ -107,8 +107,8 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 /-- The **Dirac operator** `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ` of a connection `∇` and a Clifford
 multiplication `c` at `x`: the metric contraction `LinearMap.metricTraceCompl₂` of `c x` against
 `∇σ x` (`diracOperator_def`), that is the metric trace of the bilinear map `(u, w) ↦ c(u) (∇_w σ)`
-on the tangent space (`diracOperator_eq_metricTrace`). In an orthonormal basis it is the sum
-`∑ᵢ c(eᵢ) ∇_{eᵢ} σ` (`diracOperator_eq_sum`). -/
+on the tangent space. In an orthonormal basis it is the sum `∑ᵢ c(eᵢ) ∇_{eᵢ} σ`
+(`diracOperator_eq_sum`). -/
 def diracOperator (σ : Π y : M, V y) (x : M) : V x :=
   (ContinuousLinearMap.toLinearMap₁₂ (c x)).metricTraceCompl₂ (cov σ x).toLinearMap
 
@@ -119,20 +119,14 @@ theorem diracOperator_def (σ : Π y : M, V y) (x : M) :
       (ContinuousLinearMap.toLinearMap₁₂ (c x)).metricTraceCompl₂ (cov σ x).toLinearMap := by
   rw [diracOperator]
 
-/-- The Dirac operator is the metric trace of the Clifford pairing `(u, w) ↦ c(u) (∇_w σ)`,
-the bilinear map `c x` precomposed in its second argument with `∇ σ x`. -/
-theorem diracOperator_eq_metricTrace (σ : Π y : M, V y) (x : M) :
-    cov.diracOperator c σ x = LinearMap.BilinMap.metricTrace
-      ((ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (cov σ x).toLinearMap) := by
-  rw [diracOperator_def, LinearMap.metricTraceCompl₂_apply]
-
 /-- **The Dirac operator in an orthonormal frame.** For every orthonormal basis `eᵢ` of the
 tangent space at `x`, `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ`. In particular the sum does not depend on the
 basis. -/
 theorem diracOperator_eq_sum (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     cov.diracOperator c σ x = ∑ i, c x (b i) (cov σ x (b i)) := by
-  rw [diracOperator_eq_metricTrace, LinearMap.BilinMap.metricTrace_eq_sum _ b]
+  rw [diracOperator_def, LinearMap.metricTraceCompl₂_apply,
+    LinearMap.BilinMap.metricTrace_eq_sum _ b]
   simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
     ContinuousLinearMap.coe_coe]
 

@@ -163,7 +163,7 @@ theorem laplaceBeltrami_norm_sq_mgradient (hf : ContMDiff I 𝓘(ℝ) ∞ f) (x 
           CovariantDerivative.leviCivitaConnection I M (mgradient I f) x (b i)⟫_ℝ =
         ∑ j, hessian I f x (b i) (b j) ^ 2 := by
     rw [← b.sum_inner_mul_inner]
-    simp only [hessian_eq_inner_leviCivitaConnection_mgradient, real_inner_comm (b _), sq]
+    simp only [I.hessian_eq_inner_leviCivitaConnection_mgradient, real_inner_comm (b _), sq]
   rw [laplaceBeltrami_eq_sum_hessian I _ x b]
   simp only [(CovariantDerivative.isMetricCompatible_leviCivitaConnection I).hessian_norm_sq hG x,
     hnorm]

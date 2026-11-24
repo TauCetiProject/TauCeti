@@ -439,6 +439,8 @@ and the fourth to `v`. -/
 def ricciSlice (r : FourTensor V) (u v : V) : BilinForm ℝ V :=
   ((toLinearMap₄ r).flip u).compr₂ (LinearMap.applyₗ v)
 
+/-- Evaluation of `ricciSlice r u v` on `(x, y)` evaluates `r` on `(x, u, y, v)`, with `u` and `v`
+fixed in the second and fourth slots. -/
 @[simp]
 theorem ricciSlice_apply (r : FourTensor V) (u v x y : V) :
     ricciSlice r u v x y = r ![x, u, y, v] := by

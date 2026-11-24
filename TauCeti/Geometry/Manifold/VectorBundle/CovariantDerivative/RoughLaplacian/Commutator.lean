@@ -124,7 +124,7 @@ theorem covariantDerivative_roughLaplacian_eq_sum
     funext y
     rw [roughLaplacian_def, Pi.neg_apply,
       secondCovariantDerivative_eq_toLinearMap₁₂_hom cov covT hσ y]
-  rw [hlap, cov.isCovariantDerivativeOnUniv.neg (mdifferentiableAt_metricTrace hD2x), neg_apply,
+  rw [hlap, cov.isCovariantDerivativeOnUniv.neg hD2x.metricTrace, neg_apply,
     hcov.covariantDerivative_metricTrace cov hD2x v, LinearMap.BilinMap.metricTrace_eq_sum _ b]
   simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 

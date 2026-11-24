@@ -95,9 +95,8 @@ noncomputable def metricTrace : BilinMap ℝ W N →ₗ[ℝ] N :=
 /-- The metric trace is evaluation on the canonical covariant tensor. -/
 theorem metricTrace_apply (B : BilinMap ℝ W N) :
     metricTrace B = TensorProduct.lift B (InnerProductSpace.canonicalCovariantTensor W) := by
-  have h : TensorProduct.uncurry (.id ℝ) W W N B = TensorProduct.lift B :=
-    TensorProduct.lift.unique fun m n ↦ TensorProduct.uncurry_apply B m n
-  rw [metricTrace, LinearMap.comp_apply, h, LinearMap.applyₗ_apply_apply]
+  rw [metricTrace, LinearMap.comp_apply, LinearMap.applyₗ_apply_apply, TensorProduct.uncurry]
+  simp only [LinearMap.coe_mk, AddHom.coe_mk]
 
 /-- In an orthonormal basis, the metric trace is the sum of the diagonal values. -/
 theorem metricTrace_eq_sum {ι : Type*} [Fintype ι] (B : BilinMap ℝ W N)

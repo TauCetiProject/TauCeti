@@ -87,7 +87,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace `TauCeti.traceL` of the second
   Fréchet derivative (`TauCeti.traceL` and its API live in
   `TauCeti/Analysis/InnerProductSpace/Trace/Continuous.lean`).
-* `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
+* `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear map
   of the second iterated Fréchet derivative.
 * `TauCeti.laplacian_fun_sum`: the Laplacian of a finite sum of `C²` functions is the sum of
   their Laplacians.
@@ -139,14 +139,14 @@ variable
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
-continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
+continuous linear map `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
 theorem laplacian_eq_traceL (f : E → F) (x : E) :
     Δ f x = traceL (fderiv ℝ (fderiv ℝ f) x) := by
   rw [ContinuousLinearMap.traceL_apply, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
   simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- The Laplacian of a function is the trace of its second iterated Fréchet derivative, expressed
-as a continuous linear functional of `iteratedFDeriv ℝ 2 f x` in the standard orthonormal basis. -/
+as a continuous linear map of `iteratedFDeriv ℝ 2 f x` in the standard orthonormal basis. -/
 theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
     Δ f x = (∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
       ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (iteratedFDeriv ℝ 2 f x) := by
