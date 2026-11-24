@@ -61,9 +61,8 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
   scalar matrices with central entry, and is the center of `GL n A`.
 * `Equiv.map_reindexGL_elementarySubgroup`, `Equiv.reindexGL_mem_elementarySubgroup_iff`:
   relabelling the indices preserves the elementary subgroup.
-* `Equiv.reindexGL_sumAssoc_fromBlocksGL`, `Equiv.reindexGL_sumCongr_fromBlocksGL`,
-  `Equiv.reindexGL_sumComm_fromBlocksGL`: reindexing block diagonal matrices along
-  `Equiv.sumAssoc`, `Equiv.sumCongr` and `Equiv.sumComm`.
+* `Equiv.reindexGL_sumAssoc_fromBlocksGL`, `Equiv.reindexGL_sumCongr_fromBlocksGL`: reindexing
+  block diagonal matrices along `Equiv.sumAssoc` and `Equiv.sumCongr`.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
 * `Matrix.GeneralLinearGroup.eq_fromBlocksGL_mul_upperBlockGL`: block upper-triangular
@@ -641,13 +640,6 @@ theorem reindexGL_sumCongr_fromBlocksGL {m₁ m₂ k₁ k₂ : Type*} [Decidable
       fromBlocksGL (e₁.reindexGL A u, e₂.reindexGL A v) := by
   refine Units.ext ?_
   ext (i | j) (p | q) <;> simp
-
-/-- Swapping the two summands of the index type swaps the blocks of a block diagonal invertible
-matrix. -/
-theorem reindexGL_sumComm_fromBlocksGL (u : GL n A) (v : GL m A) :
-    (Equiv.sumComm n m).reindexGL A (fromBlocksGL (u, v)) = fromBlocksGL (v, u) := by
-  ext : 1
-  simp [Equiv.sumComm]
 
 end Equiv
 

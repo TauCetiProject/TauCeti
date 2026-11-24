@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Prod
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable.BlockSum
 
 /-!
 # Calculations in algebraic `K₁`
@@ -19,7 +19,8 @@ additively as in the usual notation `[u]`:
 * the class does not depend on how the index type is enumerated, nor on a relabelling of the
   indices, and conjugate matrices have the same class;
 * the class of a block diagonal matrix is the sum of the classes of its blocks,
-  `[diag(u, v)] = [u] + [v]`.
+  `[diag(u, v)] = [u] + [v]`, which reduces to the contiguous block sum formula
+  `TauCeti.AlgebraicK1.mk_blockSumGL` over `Fin`.
 
 It then computes `K₁` of the zero ring, which is trivial, and of a product of two rings,
 `K₁(A × B) ≅ K₁(A) × K₁(B)` through the two projections. The latter holds because an invertible
@@ -34,8 +35,6 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
 
 ## Main results
 
-* `TauCeti.AlgebraicK1.mk_reindexGL`: relabelling the indices of a matrix by a permutation does
-  not change its class.
 * `TauCeti.AlgebraicK1.mkOfFintype_eq_mk_reindexGL`: the class of a matrix over a finite index
   type is the class of its reindexing along any enumeration of the index type.
 * `TauCeti.AlgebraicK1.mkOfFintype_reindexGL`,
@@ -43,6 +42,8 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
 * `TauCeti.AlgebraicK1.mkOfFintype_fromBlocksGL`: the block sum formula
   `[diag(u, v)] = [u] + [v]`.
 * `TauCeti.AlgebraicK1.instSubsingleton`: `K₁` of the zero ring is trivial.
+* `TauCeti.AlgebraicK1.prodEquiv_apply`, `TauCeti.AlgebraicK1.prodEquiv_symm_mk`: the isomorphism
+  `K₁(A × B) ≃* K₁(A) × K₁(B)` and its inverse on classes.
 
 ## References
 
@@ -65,14 +66,6 @@ variable {A : Type*} [Ring A]
 
 /-! ## Relabelling indices -/
 
-/-- **Relabelling invariance**: permuting the rows and columns of an invertible matrix by the
-same permutation does not change its class in algebraic `K₁`, since the permuted matrix is a
-conjugate of the original one by a permutation matrix. -/
-@[simp]
-theorem mk_reindexGL {n : ℕ} (σ : Equiv.Perm (Fin n)) (u : GL (Fin n) A) :
-    mk A n (σ.reindexGL A u) = mk A n u := by
-  rw [← permutationGL_mul_mul_inv, map_mul, map_mul, map_inv, mul_inv_cancel_comm]
-
 variable (A) in
 /-- The class in algebraic `K₁` of an invertible matrix indexed by an arbitrary finite type `ι`:
 the class of its reindexing along an enumeration `ι ≃ Fin n`. By
@@ -86,11 +79,13 @@ variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq
 reindexing along **any** enumeration `ι ≃ Fin n`. -/
 theorem mkOfFintype_eq_mk_reindexGL {n : ℕ} (e : ι ≃ Fin n) (u : GL ι A) :
     mkOfFintype A ι u = mk A n (e.reindexGL A u) := by
-  obtain rfl : Fintype.card ι = n := Fintype.card_fin n ▸ Fintype.card_congr e
-  -- `e` differs from the enumeration `Fintype.equivFin ι` by a permutation of `Fin n`.
-  have h : e = (Fintype.equivFin ι).trans ((Fintype.equivFin ι).symm.trans e) := by
-    rw [← Equiv.trans_assoc, Equiv.self_trans_symm, Equiv.refl_trans]
-  rw [h, ← Equiv.reindexGL_trans_reindexGL, MulEquiv.trans_apply, mk_reindexGL]
+  -- Reindexing along `e` is reindexing along the enumeration `Fintype.equivFin ι`, followed by
+  -- the relabelling `(Fintype.equivFin ι).symm.trans e` of `Fin`, which does not change classes.
+  have h : e.reindexGL A u =
+      ((Fintype.equivFin ι).symm.trans e).reindexGL A ((Fintype.equivFin ι).reindexGL A u) := by
+    ext : 1
+    simp [Function.comp_def]
+  rw [h, mk_reindexGL]
   rfl
 
 /-- Over the index type `Fin n`, the class of an invertible matrix is `TauCeti.AlgebraicK1.mk`. -/
@@ -103,9 +98,11 @@ index types does not change its class in algebraic `K₁`. -/
 @[simp]
 theorem mkOfFintype_reindexGL (e : ι ≃ κ) (u : GL ι A) :
     mkOfFintype A κ (e.reindexGL A u) = mkOfFintype A ι u := by
-  rw [mkOfFintype_eq_mk_reindexGL (e.symm.trans (Fintype.equivFin ι)), ← MulEquiv.trans_apply,
-    Equiv.reindexGL_trans_reindexGL, ← Equiv.trans_assoc, Equiv.self_trans_symm,
-    Equiv.refl_trans, mkOfFintype_eq_mk_reindexGL (Fintype.equivFin ι)]
+  rw [mkOfFintype_eq_mk_reindexGL (e.symm.trans (Fintype.equivFin ι)),
+    mkOfFintype_eq_mk_reindexGL (Fintype.equivFin ι)]
+  congr 1
+  ext : 1
+  simp [Function.comp_def]
 
 /-- **Conjugation invariance**: conjugate invertible matrices have the same class in algebraic
 `K₁`. -/
@@ -116,29 +113,21 @@ theorem mkOfFintype_mul_mul_inv (g u : GL ι A) :
 
 /-! ## Block sums -/
 
-/-- The class of the block diagonal matrix `u ⊕ 1` is the class of `u`. -/
-theorem mkOfFintype_fromBlocksGL_one (u : GL ι A) :
-    mkOfFintype A (ι ⊕ κ) (fromBlocksGL (u, 1)) = mkOfFintype A ι u := by
-  set e := Fintype.equivFin ι
-  set f := Fintype.equivFin κ
-  rw [mkOfFintype_eq_mk_reindexGL ((e.sumCongr f).trans finSumFinEquiv),
-    ← Equiv.reindexGL_trans_reindexGL, MulEquiv.trans_apply,
-    Equiv.reindexGL_sumCongr_fromBlocksGL, map_one, ← stabilizeGL_eq_reindexGL_fromBlocksGL,
-    mk_stabilizeGL, mkOfFintype_eq_mk_reindexGL e]
-
-/-- The class of the block diagonal matrix `1 ⊕ v` is the class of `v`. -/
-theorem mkOfFintype_one_fromBlocksGL (v : GL κ A) :
-    mkOfFintype A (ι ⊕ κ) (fromBlocksGL (1, v)) = mkOfFintype A κ v := by
-  rw [← mkOfFintype_reindexGL (Equiv.sumComm ι κ), Equiv.reindexGL_sumComm_fromBlocksGL,
-    mkOfFintype_fromBlocksGL_one]
-
 /-- **The block sum formula**: the class of a block diagonal matrix `u ⊕ v` is the product of the
 classes of its blocks, `[diag(u, v)] = [u] + [v]` in additive notation. -/
 @[simp]
 theorem mkOfFintype_fromBlocksGL (u : GL ι A) (v : GL κ A) :
     mkOfFintype A (ι ⊕ κ) (fromBlocksGL (u, v)) = mkOfFintype A ι u * mkOfFintype A κ v := by
-  have h : ((u, v) : GL ι A × GL κ A) = (u, 1) * (1, v) := by simp
-  rw [h, map_mul, map_mul, mkOfFintype_fromBlocksGL_one, mkOfFintype_one_fromBlocksGL]
+  set e := Fintype.equivFin ι
+  set f := Fintype.equivFin κ
+  -- Relabel both blocks along their enumerations; the result is a contiguous block sum.
+  have h : finSumFinEquiv.reindexGL A (fromBlocksGL (e.reindexGL A u, f.reindexGL A v)) =
+      blockSumGL A (e.reindexGL A u, f.reindexGL A v) := by
+    ext : 1
+    rw [coe_blockSumGL, Equiv.coe_reindexGL, coe_fromBlocksGL, reindex_apply]
+  rw [← mkOfFintype_reindexGL (e.sumCongr f), Equiv.reindexGL_sumCongr_fromBlocksGL,
+    mkOfFintype_eq_mk_reindexGL finSumFinEquiv, h, mk_blockSumGL,
+    ← mkOfFintype_eq_mk_reindexGL, ← mkOfFintype_eq_mk_reindexGL]
 
 /-- Applying a ring homomorphism to the entries commutes with taking classes over an arbitrary
 finite index type. -/
@@ -170,43 +159,32 @@ variable {B : Type*} [Ring B]
 /-- The class in `K₁(A × B)` of the invertible matrix over `A × B` whose two components are the
 invertible matrices `u` over `A` and `v` over `B`. -/
 private def mkProd (n : ℕ) : GL (Fin n) A × GL (Fin n) B →* AlgebraicK1 (A × B) :=
-  (mk (A × B) n).comp ((Units.mapEquiv (Matrix.prodRingEquiv (Fin n) A B).toMulEquiv).trans
-    MulEquiv.prodUnits).symm.toMonoidHom
+  (mk (A × B) n).comp (prodEquivGL (Fin n) A B).symm.toMonoidHom
 
 /-- The class of a pair is unchanged by stabilizing both matrices. -/
 private theorem mkProd_stabilizeGL {m n : ℕ} (h : m ≤ n) (p : GL (Fin m) A × GL (Fin m) B) :
     mkProd n (stabilizeGL A h p.1, stabilizeGL B h p.2) = mkProd m p := by
-  rw [mkProd, mkProd, MonoidHom.comp_apply, MonoidHom.comp_apply, ← mk_stabilizeGL h]
+  simp only [mkProd, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, ← mk_stabilizeGL h]
   congr 1
-  ext i j : 2
-  -- The entries of the pairing are the pairs of entries by definition, but `simp` cannot reach
-  -- them: the coercion produced by `MulEquiv.prodUnits` goes through the monoid structure of the
-  -- matrix ring, which `TauCeti.coe_stabilizeGL_apply` does not match syntactically.
-  change (stabilizeGL A h p.1 i j, stabilizeGL B h p.2 i j) = _
-  -- Both sides are computed entrywise: the block of `p` in the corner, identity entries elsewhere.
-  simp only [coe_stabilizeGL_apply]
-  split_ifs
-  · rfl
-  · simp only [Matrix.one_apply]
-    split_ifs <;> rfl
-
-/-- An invertible matrix over `A × B` has the class of the pair of its two components. -/
-private theorem mkProd_unitsMap_fst_snd {n : ℕ} (w : GL (Fin n) (A × B)) :
-    mkProd n (Units.map (RingHom.fst A B).mapMatrix.toMonoidHom w,
-      Units.map (RingHom.snd A B).mapMatrix.toMonoidHom w) = mk (A × B) n w :=
-  congrArg (mk (A × B) n) (Units.ext (by ext <;> rfl))
+  -- Stabilization commutes with the two projections `A × B → A` and `A × B → B`.
+  rw [MulEquiv.symm_apply_eq]
+  ext : 1
+  · rw [prodEquivGL_apply_fst, ← stabilizeGL_map, ← prodEquivGL_apply_fst,
+      MulEquiv.apply_symm_apply]
+  · rw [prodEquivGL_apply_snd, ← stabilizeGL_map, ← prodEquivGL_apply_snd,
+      MulEquiv.apply_symm_apply]
 
 /-- The first projection sends the class of a pair to the class of its first matrix. -/
 private theorem map_fst_mkProd {n : ℕ} (p : GL (Fin n) A × GL (Fin n) B) :
     map (RingHom.fst A B) (mkProd n p) = mk A n p.1 := by
-  rw [mkProd, MonoidHom.comp_apply, map_mk]
-  exact congrArg (mk A n) (Units.ext (by ext; rfl))
+  rw [mkProd, MonoidHom.comp_apply, map_mk, MulEquiv.coe_toMonoidHom, ← prodEquivGL_apply_fst,
+    MulEquiv.apply_symm_apply]
 
 /-- The second projection sends the class of a pair to the class of its second matrix. -/
 private theorem map_snd_mkProd {n : ℕ} (p : GL (Fin n) A × GL (Fin n) B) :
     map (RingHom.snd A B) (mkProd n p) = mk B n p.2 := by
-  rw [mkProd, MonoidHom.comp_apply, map_mk]
-  exact congrArg (mk B n) (Units.ext (by ext; rfl))
+  rw [mkProd, MonoidHom.comp_apply, map_mk, MulEquiv.coe_toMonoidHom, ← prodEquivGL_apply_snd,
+    MulEquiv.apply_symm_apply]
 
 /-- The homomorphism `K₁(A) →* K₁(A × B)` sending the class of `u` to the class of the pair
 `(u, 1)`. -/
@@ -228,16 +206,12 @@ def prodEquiv : AlgebraicK1 (A × B) ≃* AlgebraicK1 A × AlgebraicK1 B where
   invFun := inlK1.coprod inrK1
   left_inv x := by
     obtain ⟨n, w, rfl⟩ := exists_mk x
-    suffices ∀ p : GL (Fin n) A × GL (Fin n) B,
-        inlK1.coprod inrK1 ((map (RingHom.fst A B)).prod (map (RingHom.snd A B)) (mkProd n p)) =
-          mkProd n p by
-      rw [← mkProd_unitsMap_fst_snd]
-      exact this _
-    intro p
-    -- Split the pair `p` as `(p.1, 1) * (1, p.2)`.
-    conv_rhs => rw [show p = (p.1, 1) * (1, p.2) by simp, map_mul]
-    simp only [MonoidHom.prod_apply, MonoidHom.coprod_apply, map_fst_mkProd, map_snd_mkProd,
-      inlK1, inrK1, lift_mk, MonoidHom.comp_apply, MonoidHom.inl_apply, MonoidHom.inr_apply]
+    -- Write `w` through its pair of components `p`, and split `p` as `(p.1, 1) * (1, p.2)`.
+    obtain ⟨p, rfl⟩ := (prodEquivGL (Fin n) A B).symm.surjective w
+    calc inlK1.coprod inrK1 ((map (RingHom.fst A B)).prod (map (RingHom.snd A B)) (mkProd n p))
+        _ = mkProd n (p.1, 1) * mkProd n (1, p.2) := by
+          simp [map_fst_mkProd, map_snd_mkProd, inlK1, inrK1]
+        _ = mkProd n p := by rw [← map_mul, Prod.fst_mul_snd]
   right_inv y := by
     obtain ⟨x, y⟩ := y
     obtain ⟨m, u, rfl⟩ := exists_mk x
@@ -251,6 +225,16 @@ projections. -/
 theorem prodEquiv_apply (x : AlgebraicK1 (A × B)) :
     prodEquiv A B x = (map (RingHom.fst A B) x, map (RingHom.snd A B) x) :=
   (rfl)
+
+/-- The inverse of `K₁(A × B) ≃* K₁(A) × K₁(B)` sends the pair of classes of invertible matrices
+`u` over `A` and `v` over `B` of the same size to the class of the invertible matrix over `A × B`
+with components `u` and `v`. -/
+@[simp]
+theorem prodEquiv_symm_mk {n : ℕ} (u : GL (Fin n) A) (v : GL (Fin n) B) :
+    (prodEquiv A B).symm (mk A n u, mk B n v) =
+      mk (A × B) n ((prodEquivGL (Fin n) A B).symm (u, v)) := by
+  rw [MulEquiv.symm_apply_eq, prodEquiv_apply]
+  exact Prod.ext (map_fst_mkProd (u, v)).symm (map_snd_mkProd (u, v)).symm
 
 end Prod
 
