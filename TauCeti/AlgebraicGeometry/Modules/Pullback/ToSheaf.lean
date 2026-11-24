@@ -95,22 +95,16 @@ private lemma toSheaf_map_unit_comp (a : Z ⟶ W) (b : W ⟶ X) (M : X.Modules) 
             (Opens.grothendieckTopology Z)).map ((toSheafPullbackComparison b).app M) ≫
           (toSheafPullbackComparison a).app ((Scheme.Modules.pullback b).obj M) ≫
           (toSheaf Z).map ((Scheme.Modules.pullbackComp a b).hom.app M)) := by
-  have ha := toSheafPullbackComparison_unit a ((Scheme.Modules.pullback b).obj M)
-  have hb := toSheafPullbackComparison_unit b M
-  have hc := Scheme.Modules.unit_comp_pushforward_map_pullbackComp_inv_app a b M
-  have hu : (Scheme.Modules.pullbackPushforwardAdjunction (a ≫ b)).unit.app M =
-      (Scheme.Modules.pullbackPushforwardAdjunction b).unit.app M ≫
-        (Scheme.Modules.pushforward b).map
-          ((Scheme.Modules.pullbackPushforwardAdjunction a).unit.app
-            ((Scheme.Modules.pullback b).obj M)) ≫
-        (Scheme.Modules.pushforwardComp a b).hom.app _ ≫
-        (Scheme.Modules.pushforward (a ≫ b)).map
-          ((Scheme.Modules.pullbackComp a b).hom.app M) := by
-    rw [← reassoc_of% hc, ← Functor.map_comp, Iso.inv_hom_id_app]
+  have hu : (pullbackPushforwardAdjunction (a ≫ b)).unit.app M =
+      (pullbackPushforwardAdjunction b).unit.app M ≫
+        (pushforward b).map ((pullbackPushforwardAdjunction a).unit.app ((pullback b).obj M)) ≫
+        (pushforwardComp a b).hom.app _ ≫
+          (pushforward (a ≫ b)).map ((pullbackComp a b).hom.app M) := by
+    rw [← reassoc_of% unit_comp_pushforward_map_pullbackComp_inv_app a b M,
+      ← Functor.map_comp, Iso.inv_hom_id_app]
     simp
-  rw [hu]
-  simp only [Functor.map_comp]
-  rw [reassoc_of% hb]
+  simp only [hu, Functor.map_comp]
+  rw [reassoc_of% toSheafPullbackComparison_unit b M]
   refine (Category.assoc _ _ _).trans (congrArg
     (((Opens.map b.base).sheafAdjunctionContinuous AddCommGrpCat.{u}
       (Opens.grothendieckTopology X) (Opens.grothendieckTopology W)).unit.app
@@ -127,29 +121,25 @@ private lemma toSheaf_map_unit_comp (a : Z ⟶ W) (b : W ⟶ X) (M : X.Modules) 
     (Opens.grothendieckTopology X) (Opens.grothendieckTopology W)).map
       ((toSheafPullbackComparison b).app M) ≫ ·) ?_
   -- The pushforward along `a ≫ b` is the composite of the pushforwards, definitionally.
-  have e : (toSheaf X).map ((Scheme.Modules.pushforward b).map
-        ((Scheme.Modules.pullbackPushforwardAdjunction a).unit.app
-          ((Scheme.Modules.pullback b).obj M)) ≫
-        (Scheme.Modules.pushforwardComp a b).hom.app _) =
+  have e : (toSheaf X).map ((pushforward b).map
+        ((pullbackPushforwardAdjunction a).unit.app ((pullback b).obj M)) ≫
+        (pushforwardComp a b).hom.app _) =
       ((Opens.map b.base).sheafPushforwardContinuous AddCommGrpCat.{u}
         (Opens.grothendieckTopology X) (Opens.grothendieckTopology W)).map
-        ((toSheaf W).map ((Scheme.Modules.pullbackPushforwardAdjunction a).unit.app
-          ((Scheme.Modules.pullback b).obj M))) :=
+        ((toSheaf W).map ((pullbackPushforwardAdjunction a).unit.app ((pullback b).obj M))) :=
     congrArg (toSheaf X).map (Category.comp_id _)
   refine (congrArg (· ≫ _) e).trans ?_
-  rw [ha]
+  rw [toSheafPullbackComparison_unit a]
   -- `pushforwardComp a b` has identity components (`Scheme.Modules.pushforwardComp_hom_app_app`)
-  -- between modules whose underlying abelian sheaves agree definitionally, so its image under
-  -- `toSheaf` is the identity.
-  have h0 : (toSheaf X).map ((Scheme.Modules.pushforwardComp a b).hom.app
-      ((Scheme.Modules.pullback a).obj ((Scheme.Modules.pullback b).obj M))) = 𝟙 _ :=
+  -- between definitionally equal abelian sheaves, so its image under `toSheaf` is the identity.
+  have h0 : (toSheaf X).map ((pushforwardComp a b).hom.app
+      ((pullback a).obj ((pullback b).obj M))) = 𝟙 _ :=
     CategoryTheory.Functor.map_id _ _
   refine (congrArg (_ ≫ ·) ((congrArg (· ≫ _) h0).trans (Category.id_comp _))).trans ?_
   refine (congrArg (· ≫ _) (Functor.map_comp _ _ _)).trans ((Category.assoc _ _ _).trans ?_)
   refine congrArg (_ ≫ _ ≫ ·) ?_
-  -- On sections over an open `U` of `X`, both sides are `(pullbackComp a b).hom.app M` over
-  -- `a⁻¹ b⁻¹ U`: the module pushforward along `a ≫ b` and the abelian pushforwards along `a` and
-  -- then `b` both evaluate at that open.
+  -- Over an open `U` of `X`, both sides are `(pullbackComp a b).hom.app M` over `a⁻¹ b⁻¹ U`, since
+  -- the pushforward along `a ≫ b` and those along `a` then `b` evaluate at that open.
   ext U x
   rfl
 
