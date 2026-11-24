@@ -52,6 +52,8 @@ unary operation squares to zero
 * `TauCeti.CurvedAInfinityAlgebra.m_one_curvature`: the arity-zero identity `m₁(m₀) = 0`.
 * `TauCeti.CurvedAInfinityAlgebra.differential_differential`: the arity-one identity
   `m₁(m₁(a)) = m₂(a, m₀) - m₂(m₀, a)`.
+* `TauCeti.CurvedAInfinityAlgebra.stasheff_arity_two_of_m_three_eq_zero`: when `m₃` vanishes, the
+  unary operation is a graded derivation of `m₂`.
 * `CurvedAInfinityAlgebra.StrictUnit.differential_differential_eq_zero_of_curvature_eq_smul`:
   for curvature a scalar multiple of a strict unit, the unary operation squares to zero.
 
@@ -157,6 +159,29 @@ theorem differential_differential (x : A) :
   have h := 𝒜.stasheff 1 (fun _ ↦ p) (fun _ ↦ y) fun _ _ ↦ hy
   rw [AInfinity.curvedStasheffSum_one, ← curvature, sub_eq_zero] at h
   simp [L, Q, h₀, eq_sub_of_add_eq h]
+
+/-- **The arity-two curved Stasheff identity when `m₃` vanishes**: the unary operation is a
+graded derivation of `m₂`, with the Koszul sign determined by the degree of the first input. -/
+theorem stasheff_arity_two_of_m_three_eq_zero (hm₃ : 𝒜.m 3 = 0) (x y : A) (p : ℤ)
+    (hx : x ∈ 𝒜.grading.piece p) :
+    𝒜.m 1 ![𝒜.m 2 ![x, y]] =
+      𝒜.m 2 ![𝒜.m 1 ![x], y] + negOnePowCast R p • 𝒜.m 2 ![x, 𝒜.m 1 ![y]] := by
+  let L : A →ₗ[R] A := 𝒜.differential ∘ₗ (𝒜.m 2).curryRight ![x]
+  let Q : A →ₗ[R] A := (𝒜.m 2).curryRight ![𝒜.m 1 ![x]] +
+    negOnePowCast R p • ((𝒜.m 2).curryRight ![x] ∘ₗ 𝒜.differential)
+  suffices L y = Q y by simpa [L, Q] using this
+  refine LinearMap.congr_fun (𝒜.grading.linearMap_ext fun q z hz ↦ ?_) y
+  let e : ℕ → ℤ := fun i ↦ if i = 0 then p else q
+  let a : ℕ → A := fun i ↦ if i = 0 then x else z
+  have ha : ∀ i < 2, a i ∈ 𝒜.grading.piece (e i) := by
+    intro i hi
+    rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
+    · simpa [a, e] using hx
+    · simpa [a, e] using hz
+  have h := 𝒜.stasheff 2 e a ha
+  rw [AInfinity.curvedStasheffSum_of_m_succ_eq_zero _ _ _ hm₃,
+    AInfinity.stasheffSum_two_eq_zero_iff] at h
+  simpa [L, Q, a, e] using h
 
 /-! ### Strict units -/
 

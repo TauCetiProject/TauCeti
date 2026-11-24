@@ -231,22 +231,8 @@ theorem isCurvedDGAlgebra (𝒜' : CurvedAInfinityAlgebra R A)
   map_mem {p a} ha := by
     simpa [hG] using 𝒜'.differential_mem_piece (p := p) (by simpa [hG] using ha)
   leibniz {p a} ha b := by
-    let L : A →ₗ[R] A := 𝒜'.differential ∘ₗ LinearMap.mulLeft R a
-    let Q : A →ₗ[R] A := LinearMap.mulLeft R (𝒜'.differential a) +
-      p.negOnePow • (LinearMap.mulLeft R a ∘ₗ 𝒜'.differential)
-    refine LinearMap.congr_fun (𝒜'.grading.linearMap_ext (f := L) (g := Q)
-      fun q y hy ↦ ?_) b
-    let e : ℕ → ℤ := fun i ↦ if i = 0 then p else q
-    let x : ℕ → A := fun i ↦ if i = 0 then a else y
-    have hx : ∀ i < 2, x i ∈ 𝒜'.grading.piece (e i) := by
-      intro i hi
-      rcases (by omega : i = 0 ∨ i = 1) with rfl | rfl
-      · simpa [x, e, hG] using ha
-      · simpa [x, e] using hy
-    have h := 𝒜'.stasheff 2 e x hx
-    rw [AInfinity.curvedStasheffSum_of_m_succ_eq_zero _ _ _ hm₃,
-      AInfinity.stasheffSum_two_eq_zero_iff] at h
-    simpa [L, Q, x, e, hm₂, ← negOnePow_smul_eq_negOnePowCast_smul] using h
+    have := 𝒜'.stasheff_arity_two_of_m_three_eq_zero hm₃ a b p (by simpa [hG] using ha)
+    simpa [hm₂, ← negOnePow_smul_eq_negOnePowCast_smul] using this
   curvature_mem := by simpa [hG] using 𝒜'.curvature_mem
   sq_eq a := by rw [differential_differential, hm₂, hm₂]
   map_curvature := 𝒜'.differential_curvature
