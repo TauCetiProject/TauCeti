@@ -113,8 +113,7 @@ theorem norm_propagatorDysonTerm_le_of_norm_le {m : ℝ → ℝ} (hP : Integrabl
     ‖propagatorDysonTerm P s n t‖ ≤ |∫ r in s..t, m r| ^ n / n ! := by
   refine (norm_propagatorDysonTerm_le hP hs n ht).trans ?_
   gcongr ?_ ^ _ / _
-  simpa only [Real.norm_eq_abs] using norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖P r‖)
-    ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hPm)) hm
+  exact intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le hm hPm
 
 /-- **The Dyson expansion of the propagator.** For `s, t ∈ [a, b]`, the Dyson terms sum to
 `N_P(t, s)`. -/

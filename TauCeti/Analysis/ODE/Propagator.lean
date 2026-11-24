@@ -303,9 +303,7 @@ theorem norm_propagator_le_of_norm_le {m : ℝ → ℝ} (hP : IntervalIntegrable
     Iff.mpr integrableOn_Icc_iff_integrableOn_Ioc (by simpa only [uIoc] using hP.def')
   refine (norm_propagator_le hP'
     ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩).trans
-    (exp_le_exp.2 ?_)
-  simpa only [Real.norm_eq_abs] using norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖P r‖)
-    ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hPm)) hm
+    (exp_le_exp.2 (intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le hm hPm))
 
 /-- The propagator `N_P(t, s)` is continuous in `s ∈ [a, b]` in the operator norm. -/
 theorem continuousOn_propagator_right (hP : IntegrableOn P (Icc a b)) (ht : t ∈ Icc a b) :

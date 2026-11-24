@@ -18,11 +18,12 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 Let `E` be a complex Banach space, `U ⊆ ℂ` open, and `P : ℂ → ℝ → E →L[ℂ] E` a family of
 coefficients such that `P z` is integrable on `[a, b]` for every `z ∈ U`, `z ↦ P z r` is
 holomorphic on `U` for almost every `r ∈ [a, b]`, and for every compact `K ⊆ U` there is an
-integrable `m_K` on `[a, b]` with `‖P z r‖ ≤ m_K r` for almost every `r ∈ [a, b]` and all
-`z ∈ K`. Then for `s, t ∈ [a, b]` the propagator `z ↦ N_{P z}(t, s)` is holomorphic on `U`
-(`TauCeti.differentiableOn_propagator`), hence analytic (`TauCeti.analyticOnNhd_propagator`); an
-entire family of coefficients has entire propagators (`TauCeti.differentiable_propagator`), for
-instance the affine family `z • A + B r` (`TauCeti.differentiable_propagator_smul_add`).
+integrable `m_K` on `[a, b]` such that, for almost every `r ∈ [a, b]`, `‖P z r‖ ≤ m_K r` for all
+`z ∈ K` (the null set does not depend on `z`). Then for `s, t ∈ [a, b]` the propagator
+`z ↦ N_{P z}(t, s)` is holomorphic on `U` (`TauCeti.differentiableOn_propagator`), hence
+analytic (`TauCeti.analyticOnNhd_propagator`); an entire family of coefficients has entire
+propagators (`TauCeti.differentiable_propagator`), for instance the affine family `z • A + B r`
+(`TauCeti.differentiable_propagator_smul_add`).
 
 Each Dyson term `D_{n+1}(t) = ∫ r in s..t, P z r ∘L D_n(r)` is a parametric integral of an
 integrand holomorphic in `z` and dominated on compact sets, hence holomorphic in `z`
@@ -97,8 +98,9 @@ variable [CompleteSpace E]
 /-- **Holomorphic dependence of the propagator on a parameter.** Let `U ⊆ ℂ` be open and
 `P : ℂ → ℝ → E →L[ℂ] E` such that `P z` is integrable on `[a, b]` for `z ∈ U`, `z ↦ P z r` is
 holomorphic on `U` for almost every `r ∈ [a, b]`, and for every compact `K ⊆ U` there is an
-integrable `m` on `[a, b]` with `‖P z r‖ ≤ m r` for all `z ∈ K` and almost every `r ∈ [a, b]`.
-Then for `s, t ∈ [a, b]` the propagator `z ↦ N_{P z}(t, s)` is holomorphic on `U`. -/
+integrable `m` on `[a, b]` such that, for almost every `r ∈ [a, b]`, `‖P z r‖ ≤ m r` for all
+`z ∈ K` (the null set does not depend on `z`). Then for `s, t ∈ [a, b]` the propagator
+`z ↦ N_{P z}(t, s)` is holomorphic on `U`. -/
 theorem differentiableOn_propagator (hU : IsOpen U)
     (hP : ∀ z ∈ U, IntegrableOn (P z) (Icc a b))
     (hPd : ∀ᵐ r, r ∈ Icc a b → DifferentiableOn ℂ (P · r) U)
@@ -150,9 +152,8 @@ theorem differentiable_propagator (hP : ∀ z, IntegrableOn (P z) (Icc a b))
     (hPd.mono fun _ hr hr' ↦ (hr hr').differentiableOn) (fun K _ hK ↦ hm K hK) hs ht
 
 /-- **Affine dependence on the parameter.** For `A : E →L[ℂ] E` and a coefficient `B` integrable on
-`[a, b]`, the propagator of `z • A + B` is entire in `z` for `s, t ∈ [a, b]`; on a compact set
-`K` with `‖z‖ ≤ R` the domination is `R ‖A‖ + ‖B r‖`. The Dirac coefficient of the nonlinear
-Fourier transform has this form. -/
+`[a, b]`, the propagator of `z • A + B` is entire in `z` for `s, t ∈ [a, b]`. The Dirac
+coefficient of the nonlinear Fourier transform has this form. -/
 theorem differentiable_propagator_smul_add (A : E →L[ℂ] E) {B : ℝ → E →L[ℂ] E}
     (hB : IntegrableOn B (Icc a b)) (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
     Differentiable ℂ fun z : ℂ ↦ propagator (fun r ↦ z • A + B r) t s := by
