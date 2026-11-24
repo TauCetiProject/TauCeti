@@ -144,6 +144,11 @@ theorem mem_primitiveClasses {A : Multiset ℕ} {x : AddCircle (1 : ℚ)} :
   classical
   rw [← Multiset.count_pos, count_primitiveClasses, Multiset.count_pos]
 
+/-- For positive `a`, the class of `1 / a` lies in `α(A)` exactly when `a ∈ A`. -/
+theorem coe_one_div_mem_primitiveClasses {A : Multiset ℕ} {a : ℕ} (ha : 0 < a) :
+    ((1 / a : ℚ) : AddCircle (1 : ℚ)) ∈ primitiveClasses A ↔ a ∈ A := by
+  rw [mem_primitiveClasses, AddCircle.addOrderOf_period_div ha]
+
 /-- `α(A)` has `∑_{a ∈ A} φ(a)` elements. -/
 @[simp]
 theorem card_primitiveClasses (A : Multiset ℕ) :
@@ -174,11 +179,10 @@ theorem lcm_map_addOrderOf_primitiveClasses {A : Multiset ℕ} (hA : 0 ∉ A) :
   rw [← Multiset.lcm_dedup, ← Multiset.lcm_dedup A]
   refine congrArg _ ((Multiset.Nodup.ext (Multiset.nodup_dedup _)
     (Multiset.nodup_dedup _)).mpr fun a ↦ ?_)
-  simp only [Multiset.mem_dedup, Multiset.mem_map, mem_primitiveClasses]
-  refine ⟨fun ⟨_, hx, hxa⟩ ↦ hxa ▸ hx, fun ha ↦ ?_⟩
-  have ha0 : 0 < a := Nat.pos_of_ne_zero fun h ↦ hA (h ▸ ha)
-  exact ⟨_, (AddCircle.addOrderOf_period_div (p := (1 : ℚ)) ha0).symm ▸ ha,
-    AddCircle.addOrderOf_period_div ha0⟩
+  simp only [Multiset.mem_dedup, Multiset.mem_map]
+  refine ⟨fun ⟨_, hx, hxa⟩ ↦ hxa ▸ mem_primitiveClasses.mp hx, fun ha ↦ ?_⟩
+  have ha0 : 0 < a := Nat.pos_of_ne_zero (ne_of_mem_of_not_mem ha hA)
+  exact ⟨_, (coe_one_div_mem_primitiveClasses ha0).mpr ha, AddCircle.addOrderOf_period_div ha0⟩
 
 /-- Scaling by an integer prime to `a` permutes the classes of order `a`. -/
 theorem map_zsmul_primitiveClasses_singleton {a : ℕ} {u : ℤ} (hu : IsCoprime u a) :
@@ -339,6 +343,11 @@ theorem isGaloisStable_toParameters : D.toParameters.IsGaloisStable := by
   exact ⟨map_zsmul_primitiveClasses fun a ha ↦ h a (Multiset.mem_add.mpr (.inl ha)),
     map_zsmul_primitiveClasses fun b hb ↦ h b (Multiset.mem_add.mpr (.inr hb))⟩
 
+/-- The parameter pair of a cyclotomic datum is fixed by negation. -/
+@[simp]
+theorem neg_toParameters : -D.toParameters = D.toParameters :=
+  D.isGaloisStable_toParameters.neg_eq
+
 /-- The parameter pairs of cyclotomic data are exactly the Galois-stable pairs. -/
 theorem range_toParameters :
     Set.range toParameters = {P : Parameters | P.IsGaloisStable} := by
@@ -363,10 +372,9 @@ theorem range_toParameters :
     rintro rfl
     exact (Multiset.mem_add.mp hn).elim hA0 hB0
   · refine Multiset.disjoint_left.mpr fun {a} ha hb ↦ ?_
-    have ha0 : 0 < a := Nat.pos_of_ne_zero fun h ↦ hA0 (h ▸ ha)
-    have hg := AddCircle.addOrderOf_period_div (p := (1 : ℚ)) ha0
-    exact P.notMem_β_of_mem_α (hA ▸ mem_primitiveClasses.mpr (hg.symm ▸ ha))
-      (hB ▸ mem_primitiveClasses.mpr (hg.symm ▸ hb))
+    have ha0 : 0 < a := Nat.pos_of_ne_zero (ne_of_mem_of_not_mem ha hA0)
+    exact P.notMem_β_of_mem_α (hA ▸ (coe_one_div_mem_primitiveClasses ha0).mpr ha)
+      (hB ▸ (coe_one_div_mem_primitiveClasses ha0).mpr hb)
   · rw [← card_primitiveClasses, ← card_primitiveClasses, hA, hB, P.card_eq]
 
 /-- A Galois-stable parameter pair is the pair of a unique cyclotomic datum. -/

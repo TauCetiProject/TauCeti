@@ -442,6 +442,10 @@ theorem isGaloisStable_neg : (-P).IsGaloisStable ↔ P.IsGaloisStable := by
   intro Q hQ u hu
   rw [← Q.neg_scale (Q.denominator_neg ▸ hu), hQ.scale_eq]
 
+/-- A Galois-stable pair is fixed by negation, which is scaling by `-1`. -/
+theorem IsGaloisStable.neg_eq {P : Parameters} (hP : P.IsGaloisStable) : -P = P :=
+  P.scale_neg_one.symm.trans (hP.scale_eq _)
+
 @[simp]
 theorem isGaloisStable_swap : P.swap.IsGaloisStable ↔ P.IsGaloisStable := by
   simp only [isGaloisStable_iff, swap_α, swap_β, denominator_swap, and_comm]
