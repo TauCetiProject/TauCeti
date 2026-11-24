@@ -81,9 +81,7 @@ theorem replaceBoundsWith_toPrefunctor :
       e.toPrefunctor := by
   refine e.eq_toPrefunctor_of_obj_map _ ?_ ?_
   · intro x
-    simpa only [toPrefunctor_obj] using
-      congrArg (fun f : V ≃ W => f x)
-        (replaceBoundsWith_vertexEquiv e lower upper h lower' upper' h' map_lower map_upper)
+    simp
   · intro x y a
     exact
       ((replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).toPrefunctor_map
@@ -106,26 +104,14 @@ theorem replaceBoundsWith_totalHomEquiv :
 theorem replaceBoundsWith_mapPath {x y : V} (p : ArrowWalk N.Hom x y) :
     (replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper).mapPath p =
       e.mapPath p := by
-  let f := replaceBoundsWith e lower upper h lower' upper' h' map_lower map_upper
-  have hF : f.toPrefunctor = e.toPrefunctor :=
-    replaceBoundsWith_toPrefunctor e lower upper h lower' upper' h' map_lower map_upper
-  have cast_mapPath_eq (F : @Prefunctor V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom))
-      (h_obj : ∀ z,
-        @Prefunctor.obj V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F z = e.vertexEquiv z)
-      (hF : F = e.toPrefunctor) :
-      @Quiver.Path.cast W ⟨N'.Hom⟩ _ _ _ _ (h_obj x) (h_obj y)
-        (@Prefunctor.mapPath V (Quiver.mk N.Hom) W (Quiver.mk N'.Hom) F x y p) =
-          e.mapPath p := by
-    subst F
-    exact e.mapPath_eq_toPrefunctor_mapPath p
-  exact
-    (f.mapPath_eq_toPrefunctor_mapPath p).symm.trans
-      (cast_mapPath_eq f.toPrefunctor
-        (fun z ↦ by
-          simpa only [toPrefunctor_obj] using
-            congrArg (fun g : V ≃ W => g z)
-              (replaceBoundsWith_vertexEquiv e lower upper h lower' upper' h' map_lower map_upper))
-        hF)
+  induction p with
+  | nil =>
+      rw [mapPath_nil, mapPath_nil]
+      change ArrowWalk.nil (e.vertexEquiv x) = ArrowWalk.nil (e.vertexEquiv x)
+      rfl
+  | cons p a ih =>
+      rw [mapPath_cons, mapPath_cons, ih, replaceBoundsWith_homEquiv_apply]
+      rfl
 
 /-- Arbitrary corresponding bound replacements retain assignment transport. -/
 @[simp]
