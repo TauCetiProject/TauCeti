@@ -27,7 +27,6 @@ contractible, in particular simply connected, in its subspace topology.
 
 ## Main results
 
-* `TauCeti.Lie.secondCountableTopology_posUpperTriangularGroup`: `AN` is second countable.
 * `TauCeti.Lie.ImmersedLieSubgroupData.lieExp_bijective_of_posUpperTriangular`: the intrinsic
   exponential of a connected immersed subgroup of `AN` is bijective.
 * `TauCeti.Lie.ImmersedLieSubgroupData.posUpperTriangularLieExpDiffeomorph`: it is a global
@@ -37,12 +36,12 @@ contractible, in particular simply connected, in its subspace topology.
   subgroup is closed and its presentation is a closed embedding.
 * `TauCeti.Lie.ImmersedLieSubgroupData.contractibleSpace_of_posUpperTriangular`: the intrinsic
   group is contractible.
-* `TauCeti.Lie.coe_integralLeafSubgroup_posUpperTriangular`: the connected subgroup of a Lie
+* `LieSubalgebra.coe_integralLeafSubgroup_posUpperTriangular`: the connected subgroup of a Lie
   subalgebra `S` is the exponential image of `S`.
-* `TauCeti.Lie.bijOn_lieExp_integralLeafSubgroup_posUpperTriangular`: the exponential is a
+* `LieSubalgebra.bijOn_lieExp_integralLeafSubgroup_posUpperTriangular`: the exponential is a
   bijection from `S` onto it.
-* `TauCeti.Lie.isClosed_integralLeafSubgroup_posUpperTriangular`: it is closed.
-* `TauCeti.Lie.contractibleSpace_integralLeafSubgroup_posUpperTriangular`: it is contractible in
+* `LieSubalgebra.isClosed_integralLeafSubgroup_posUpperTriangular`: it is closed.
+* `LieSubalgebra.contractibleSpace_integralLeafSubgroup_posUpperTriangular`: it is contractible in
   its subspace topology.
 -/
 
@@ -75,10 +74,6 @@ local notation "Model" => LieSubalgebra.toSubmodule
   (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Mat)) AN)
 local notation "Alg" => LeftInvariantDerivation 𝓘(ℝ, Model) AN
 
-private theorem coe_posUpperTriangularExpDiffeomorph :
-    ⇑(posUpperTriangularExpDiffeomorph (𝕜 := 𝕜) n) = lieExp :=
-  funext (posUpperTriangularExpDiffeomorph_apply n)
-
 namespace ImmersedLieSubgroupData
 
 /-- **Exponential coordinates on connected subgroups of the positive triangular group.** The
@@ -87,14 +82,14 @@ structure, is bijective. -/
 theorem lieExp_bijective_of_posUpperTriangular {K : Subgroup AN}
     (d : ImmersedLieSubgroupData 𝓘(ℝ, Model) K) :
     Bijective (lieExp : LeftInvariantDerivation d.I' d.X → d.X) :=
-  d.lieExp_bijective_of_diffeomorph _ coe_posUpperTriangularExpDiffeomorph
+  d.lieExp_bijective_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 /-- The exponential of a connected immersed Lie subgroup of `AN` as a global diffeomorphism. -/
 def posUpperTriangularLieExpDiffeomorph {K : Subgroup AN}
     (d : ImmersedLieSubgroupData 𝓘(ℝ, Model) K) :
     Diffeomorph 𝓘(ℝ, LeftInvariantDerivation d.I' d.X) d.I'
       (LeftInvariantDerivation d.I' d.X) d.X ∞ :=
-  d.lieExpDiffeomorphOfDiffeomorph _ coe_posUpperTriangularExpDiffeomorph
+  d.lieExpDiffeomorphOfDiffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 /-- The exponential diffeomorphism of a connected immersed subgroup of `AN` is its Lie
 exponential. -/
@@ -109,20 +104,20 @@ range. -/
 theorem coe_eq_image_lieExp_of_posUpperTriangular {K : Subgroup AN}
     (d : ImmersedLieSubgroupData 𝓘(ℝ, Model) K) :
     (K : Set AN) = lieExp '' (d.lieMapToHom.range : Set Alg) :=
-  d.coe_eq_image_lieExp_of_diffeomorph _ coe_posUpperTriangularExpDiffeomorph
+  d.coe_eq_image_lieExp_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 /-- Every connected immersed Lie subgroup of `AN` is closed. -/
 theorem isClosed_of_posUpperTriangular {K : Subgroup AN}
     (d : ImmersedLieSubgroupData 𝓘(ℝ, Model) K) :
     IsClosed (K : Set AN) :=
-  d.isClosed_of_diffeomorph _ coe_posUpperTriangularExpDiffeomorph
+  d.isClosed_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 /-- The presentation of a connected immersed Lie subgroup of `AN` is a closed embedding for the
 intrinsic topology of its source. -/
 theorem isClosedEmbedding_toHom_of_posUpperTriangular {K : Subgroup AN}
     (d : ImmersedLieSubgroupData 𝓘(ℝ, Model) K) :
     Topology.IsClosedEmbedding d.toHom :=
-  d.isClosedEmbedding_toHom_of_diffeomorph _ coe_posUpperTriangularExpDiffeomorph
+  d.isClosedEmbedding_toHom_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 /-- The intrinsic Lie group of a connected immersed subgroup of `AN` is contractible. -/
 theorem contractibleSpace_of_posUpperTriangular {K : Subgroup AN}
@@ -134,7 +129,11 @@ end ImmersedLieSubgroupData
 
 end Immersed
 
-section IntegralLeaf
+end TauCeti.Lie
+
+namespace LieSubalgebra
+
+open TauCeti TauCeti.Lie
 
 variable {n : ℕ} {𝕜 : Type} [RCLike 𝕜]
 
@@ -144,43 +143,28 @@ local notation "Model" => LieSubalgebra.toSubmodule
   (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Mat)) AN)
 local notation "Alg" => LeftInvariantDerivation 𝓘(ℝ, Model) AN
 
-/-- The positive triangular group is second countable. -/
-instance secondCountableTopology_posUpperTriangularGroup : SecondCountableTopology AN := by
-  have : SecondCountableTopology (GL (Fin n) 𝕜) :=
-    Units.isEmbedding_embedProduct.secondCountableTopology
-  exact TopologicalSpace.Subtype.secondCountableTopology _
-
 /-- The connected Lie subgroup of `AN` generated by a Lie subalgebra `S` is the exponential image
 of `S`. -/
 theorem coe_integralLeafSubgroup_posUpperTriangular (S : LieSubalgebra ℝ Alg) :
-    (S.integralLeafSubgroup (I := 𝓘(ℝ, Model)) : Set AN) = lieExp '' (S : Set Alg) := by
-  rw [(S.integralLeafSubgroupData (I := 𝓘(ℝ, Model))).coe_eq_image_lieExp_of_posUpperTriangular,
-    LieSubalgebra.range_lieMapToHom_integralLeafSubgroupData]
+    (S.integralLeafSubgroup (I := 𝓘(ℝ, Model)) : Set AN) = lieExp '' (S : Set Alg) :=
+  S.coe_integralLeafSubgroup_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 /-- The exponential maps a Lie subalgebra `S` of the Lie algebra of `AN` bijectively onto the
 connected Lie subgroup it generates. -/
 theorem bijOn_lieExp_integralLeafSubgroup_posUpperTriangular (S : LieSubalgebra ℝ Alg) :
-    BijOn lieExp (S : Set Alg) (S.integralLeafSubgroup (I := 𝓘(ℝ, Model)) : Set AN) := by
-  rw [coe_integralLeafSubgroup_posUpperTriangular]
-  exact (lieExp_posUpperTriangular_injective n).injOn.bijOn_image
+    BijOn lieExp (S : Set Alg) (S.integralLeafSubgroup (I := 𝓘(ℝ, Model)) : Set AN) :=
+  S.bijOn_lieExp_integralLeafSubgroup_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 /-- The connected Lie subgroup of `AN` generated by a Lie subalgebra is closed. -/
 theorem isClosed_integralLeafSubgroup_posUpperTriangular (S : LieSubalgebra ℝ Alg) :
     IsClosed (S.integralLeafSubgroup (I := 𝓘(ℝ, Model)) : Set AN) :=
-  (S.integralLeafSubgroupData (I := 𝓘(ℝ, Model))).isClosed_of_posUpperTriangular
+  S.isClosed_integralLeafSubgroup_of_diffeomorph _ (coe_posUpperTriangularExpDiffeomorph n)
 
 /-- The connected Lie subgroup of `AN` generated by a Lie subalgebra is contractible, hence
 simply connected, in its subspace topology. -/
 theorem contractibleSpace_integralLeafSubgroup_posUpperTriangular (S : LieSubalgebra ℝ Alg) :
-    ContractibleSpace (S.integralLeafSubgroup (I := 𝓘(ℝ, Model))) := by
-  have : ContractibleSpace (S : Set Alg) :=
-    (S.toSubmodule.convex).contractibleSpace ⟨0, S.zero_mem⟩
-  let h := ((posUpperTriangularExpDiffeomorph (𝕜 := 𝕜) n).toHomeomorph.image (S : Set Alg)).trans
-    (Homeomorph.setCongr (t := (S.integralLeafSubgroup (I := 𝓘(ℝ, Model)) : Set AN))
-      (by rw [coe_integralLeafSubgroup_posUpperTriangular, ← coe_posUpperTriangularExpDiffeomorph]
-          rfl))
-  exact h.symm.contractibleSpace
+    ContractibleSpace (S.integralLeafSubgroup (I := 𝓘(ℝ, Model))) :=
+  S.contractibleSpace_integralLeafSubgroup_of_diffeomorph _
+    (coe_posUpperTriangularExpDiffeomorph n)
 
-end IntegralLeaf
-
-end TauCeti.Lie
+end LieSubalgebra
