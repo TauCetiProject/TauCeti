@@ -128,7 +128,6 @@ theorem mem_partiallyLaurent_iff {f : LaurentRing R K} :
     exact ⟨⟨m, hf m hm⟩, rfl⟩
 
 /-- The ordinary partially Laurent subalgebra is spanned by its permitted monomials. -/
-@[simp]
 theorem partiallyLaurent_toSubmodule :
     (partiallyLaurent R S).toSubmodule = Submodule.span R
       ((fun m : K →₀ ℤ ↦ AddMonoidAlgebra.single m (1 : R)) ''

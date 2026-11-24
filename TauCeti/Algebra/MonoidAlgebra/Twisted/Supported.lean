@@ -36,7 +36,6 @@ def supported : Subalgebra R (twistedMonoidAlgebra R G α) :=
       exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨a * b, by dsimp only; rw [map_mul]⟩))
 
 /-- The underlying module is the span of the monomials in the image. -/
-@[simp]
 theorem supported_toSubmodule :
     (supported α f).toSubmodule = Submodule.span R (Set.range fun m ↦
       (of (f m) : twistedMonoidAlgebra R G α)) :=
@@ -149,23 +148,20 @@ instance : IsFactorSet (pullbackFactorSet α g) := IsFactorSet.comp g α
 /-- Pullback along an injective monoid map identifies the twisted algebra with its supported
 ambient subalgebra. -/
 def supportedEquiv (hf : Function.Injective g) :
-    twistedMonoidAlgebra R N (pullbackFactorSet α g) ≃ₐ[R] supported α g := by
+    twistedMonoidAlgebra R N (pullbackFactorSet α g) ≃ₐ[R] supported α g :=
   let F := lift (α := pullbackFactorSet α g) (supportedBasis α g hf)
     (supportedBasis_one α g hf) (supportedBasis_mul α g hf)
   let e := (basis R N (pullbackFactorSet α g)).equiv (supportedBasis α g hf) (Equiv.refl N)
-  have he : F.toLinearMap = e.toLinearMap := by
-    apply (basis R N (pullbackFactorSet α g)).ext
-    intro m
-    dsimp only [e, AlgHom.toLinearMap_apply, LinearEquiv.coe_coe]
-    rw [Module.Basis.equiv_apply]
-    simp only [basis_apply, F, lift_of, Equiv.refl_apply]
-  apply AlgEquiv.ofBijective F
-  have hb : Function.Bijective e := e.bijective
-  have hfun : (F : _ → _) = e := by
-    funext x
-    have hx := LinearMap.congr_fun he x
-    simpa only [AlgHom.toLinearMap_apply, LinearEquiv.coe_coe] using hx
-  rwa [hfun]
+  AlgEquiv.ofBijective F (by
+    have he : F.toLinearMap = e.toLinearMap := by
+      apply (basis R N (pullbackFactorSet α g)).ext
+      intro m
+      dsimp only [e, AlgHom.toLinearMap_apply, LinearEquiv.coe_coe]
+      rw [Module.Basis.equiv_apply]
+      simp only [basis_apply, F, lift_of, Equiv.refl_apply]
+    have hfun : (F : _ → _) = (e : _ → _) := congrArg DFunLike.coe he
+    rw [hfun]
+    exact e.bijective)
 
 /-- The supported equivalence sends each source basis element to the restricted basis vector. -/
 @[simp]

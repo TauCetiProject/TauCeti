@@ -54,7 +54,8 @@ theorem partiallyLaurentIndex_toAdd (a : Multiplicative (LaurentRing.nonnegOutsi
     AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
     AddSubmonoid.subtype_apply, toAdd_ofAdd]
 
-private theorem partiallyLaurentIndex_injective :
+/-- Permitted coordinate exponents embed injectively in the ambient lattice. -/
+theorem partiallyLaurentIndex_injective :
     Function.Injective (partiallyLaurentIndex b S) := by
   intro a c h
   apply Multiplicative.toAdd.injective
@@ -73,7 +74,9 @@ private theorem of_partiallyLaurentIndex (a : Multiplicative (LaurentRing.nonneg
       monomial u Λ (b.repr.symm (a.toAdd : I →₀ ℤ)) := by
   rw [monomial_def, ← partiallyLaurentIndex_toAdd, ofAdd_toAdd]
 
-private theorem mem_range_partiallyLaurentIndex_iff (a : Multiplicative L) :
+/-- The index image consists exactly of lattice vectors whose coordinates are nonnegative
+outside the inverted set. -/
+theorem mem_range_partiallyLaurentIndex_iff (a : Multiplicative L) :
     a ∈ Set.range (partiallyLaurentIndex b S) ↔ ∀ i ∉ S, 0 ≤ b.repr a.toAdd i := by
   constructor
   · rintro ⟨c, rfl⟩
@@ -91,7 +94,6 @@ noncomputable def partiallyLaurent (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L)
   TwistedMonoidAlgebra.supported (factorSet u Λ) (partiallyLaurentIndex b S)
 
 /-- The underlying module is the span of the permitted normalized monomials. -/
-@[simp]
 theorem partiallyLaurent_toSubmodule :
     (partiallyLaurent u Λ b S).toSubmodule =
       Submodule.span R ((fun a ↦ monomial u Λ (b.repr.symm a)) ''
@@ -103,6 +105,7 @@ theorem partiallyLaurent_toSubmodule :
           Multiplicative.toAdd := rfl
   simp only [of_partiallyLaurentIndex, hComp, Multiplicative.toAdd.surjective.range_comp,
     Set.image_eq_range]
+  -- The carrier-set subtype is definitionally the additive-submonoid subtype.
   rfl
 
 /-- Membership is support on lattice exponents with nonnegative coordinates outside `S`. -/
@@ -126,7 +129,7 @@ theorem smul_monomial_mem_partiallyLaurent_iff (r : R) (a : L) :
     r • monomial u Λ a ∈ partiallyLaurent u Λ b S ↔ r = 0 ∨ ∀ i ∉ S, 0 ≤ b.repr a i := by
   rw [partiallyLaurent, monomial_def, TwistedMonoidAlgebra.smul_of_mem_supported_iff,
     mem_range_partiallyLaurentIndex_iff]
-  rfl
+  simp only [toAdd_ofAdd]
 
 /-- A normalized monomial is permitted if its coordinates are allowed or its scalars are trivial. -/
 @[simp]
@@ -188,16 +191,19 @@ theorem partiallyLaurentBasis_repr_apply (f : partiallyLaurent u Λ b S)
     (a : LaurentRing.nonnegOutside S) :
     (partiallyLaurentBasis u Λ b S).repr f a =
       (basis u Λ).repr (f : QuantumTorus R L u Λ) (b.repr.symm (a : I →₀ ℤ)) := by
-  let hb := TwistedMonoidAlgebra.supportedBasis (factorSet u Λ) (partiallyLaurentIndex b S)
-    partiallyLaurentIndex_injective
-  let x : TwistedMonoidAlgebra.supported (factorSet u Λ) (partiallyLaurentIndex b S) := f
   calc
-    _ = hb.repr x (Multiplicative.ofAdd a) := hb.repr_reindex_apply x Multiplicative.toAdd a
+    _ = (TwistedMonoidAlgebra.supportedBasis (factorSet u Λ) (partiallyLaurentIndex b S)
+          partiallyLaurentIndex_injective).repr
+        (f : TwistedMonoidAlgebra.supported (factorSet u Λ) (partiallyLaurentIndex b S))
+        (Multiplicative.ofAdd a) :=
+      (TwistedMonoidAlgebra.supportedBasis (factorSet u Λ) (partiallyLaurentIndex b S)
+        partiallyLaurentIndex_injective).repr_reindex_apply f Multiplicative.toAdd a
+    _ = (TwistedMonoidAlgebra.basis R (Multiplicative L) (factorSet u Λ)).repr
+        (f : QuantumTorus R L u Λ) (partiallyLaurentIndex b S (Multiplicative.ofAdd a)) :=
+      TwistedMonoidAlgebra.supportedBasis_repr_apply _ _ _ _ _
     _ = _ := by
-      simp only [hb, TwistedMonoidAlgebra.supportedBasis_repr_apply, basis_eq_reindex,
-        Module.Basis.repr_reindex_apply, Multiplicative.toAdd_symm_eq,
-        partiallyLaurentIndex_ofAdd]
-      rfl
+      rw [basis_eq_reindex, Module.Basis.repr_reindex_apply]
+      simp only [Multiplicative.toAdd_symm_eq, partiallyLaurentIndex_ofAdd]
 
 /-- Increasing the inverted set preserves each permitted basis vector intrinsically. -/
 @[simp]
