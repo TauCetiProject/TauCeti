@@ -80,13 +80,11 @@ private def piLpStripTracesInv : (∀ i, (C i).stripTraces) →L[ℂ] (piLp C q�
 
 private theorem piLpStripTracesFwd_apply_fst (g : (piLp C q₀ q₁).stripTraces) (i : ι) (t : ℝ) :
     (piLpStripTracesFwd C q₀ q₁ g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).1 t =
-      (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 t i := by
-  simp [piLpStripTracesFwd]
+      (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 t i := by simp [piLpStripTracesFwd]
 
 private theorem piLpStripTracesFwd_apply_snd (g : (piLp C q₀ q₁).stripTraces) (i : ι) (t : ℝ) :
     (piLpStripTracesFwd C q₀ q₁ g i : C₀(ℝ, X₀ i) × C₀(ℝ, X₁ i)).2 t =
-      (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 t i := by
-  simp [piLpStripTracesFwd]
+      (g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 t i := by simp [piLpStripTracesFwd]
 
 private theorem piLpStripTracesInv_apply_fst (h : ∀ i, (C i).stripTraces) (t : ℝ) (j : ι) :
     ((piLpStripTracesInv C q₀ q₁ h : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 t) j =
@@ -95,8 +93,7 @@ private theorem piLpStripTracesInv_apply_fst (h : ∀ i, (C i).stripTraces) (t :
   simp only [piLpStripTracesInv, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.proj_apply, Submodule.coe_sum, Prod.fst_sum, WithLp.ofLp_sum,
     stripTracesMap_apply_fst, PiLp.singleCLM_apply]
-  rw [Fintype.sum_eq_single j (fun i hij => PiLp.single_eq_of_ne q₀ hij.symm _),
-    PiLp.single_eq_same]
+  rw [Fintype.sum_eq_single j (fun _ h => PiLp.single_eq_of_ne _ h.symm _), PiLp.single_eq_same]
 
 private theorem piLpStripTracesInv_apply_snd (h : ∀ i, (C i).stripTraces) (t : ℝ) (j : ι) :
     ((piLpStripTracesInv C q₀ q₁ h : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 t) j =
@@ -105,8 +102,7 @@ private theorem piLpStripTracesInv_apply_snd (h : ∀ i, (C i).stripTraces) (t :
   simp only [piLpStripTracesInv, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.proj_apply, Submodule.coe_sum, Prod.snd_sum, WithLp.ofLp_sum,
     stripTracesMap_apply_snd, PiLp.singleCLM_apply]
-  rw [Fintype.sum_eq_single j (fun i hij => PiLp.single_eq_of_ne q₁ hij.symm _),
-    PiLp.single_eq_same]
+  rw [Fintype.sum_eq_single j (fun _ h => PiLp.single_eq_of_ne _ h.symm _), PiLp.single_eq_same]
 
 /-- Admissible boundary traces for `CompatibleCouple.piLp C q₀ q₁` identify canonically with tuples
 of admissible boundary traces `∀ i, (C i).stripTraces` via coordinatewise projection. -/
@@ -160,10 +156,9 @@ private theorem piLpStripTracesEquiv_apply (g : (piLp C q₀ q₁).stripTraces) 
 /-- `stripFunction` evaluation at `z` on a trace pair assembled with
 `(piLpStripTracesEquiv C q₀ q₁).symm h` projects coordinatewise to `(C i).stripFunction (h i) z`. -/
 @[simp] theorem piLpSumEquiv_stripFunction_piLpStripTracesEquiv_symm (h : ∀ i, (C i).stripTraces)
-    (z : ℂ) (i : ι) :
-    piLpSumEquiv C q₀ q₁
-        ((piLp C q₀ q₁).stripFunction ((piLpStripTracesEquiv C q₀ q₁).symm h) z) i =
-      (C i).stripFunction (h i) z := by
+    (z : ℂ) (i : ι) : piLpSumEquiv C q₀ q₁
+      ((piLp C q₀ q₁).stripFunction ((piLpStripTracesEquiv C q₀ q₁).symm h) z) i =
+    (C i).stripFunction (h i) z := by
   rw [← stripFunction_piLpStripTracesEquiv_apply, ContinuousLinearEquiv.apply_symm_apply]
 
 end
@@ -202,15 +197,29 @@ private def piLpCLEInv :
 
 private theorem piLpCLEFwd_mk (g : (piLp C q₀ q₁).stripTraces) :
     piLpCLEFwd C q₀ q₁ q θ (mk θ g) =
-      WithLp.toLp q fun i => mk θ (piLpStripTracesEquiv C q₀ q₁ g i) :=
-  PiLp.ext fun i => by simp [piLpCLEFwd, map_mk, piLpStripTracesEquiv, piLpStripTracesFwd]
+      WithLp.toLp q fun i => mk θ (piLpStripTracesEquiv C q₀ q₁ g i) := by
+  refine PiLp.ext fun i => ?_
+  simp only [piLpCLEFwd, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    PiLp.continuousLinearEquiv_symm_apply, ContinuousLinearMap.pi_apply, map_mk, PiLp.toLp_apply]
+  exact congrArg (mk θ) (Subtype.ext (Prod.ext
+    (ZeroAtInftyContinuousMap.ext fun _ => by simp [piLpStripTracesEquiv_apply_fst])
+    (ZeroAtInftyContinuousMap.ext fun _ => by simp [piLpStripTracesEquiv_apply_snd])))
 
 private theorem piLpCLEInv_mk (h : ∀ i, (C i).stripTraces) :
     piLpCLEInv C q₀ q₁ q θ (WithLp.toLp q fun i => mk θ (h i)) =
       mk θ ((piLpStripTracesEquiv C q₀ q₁).symm h) := by
+  classical
   simp only [piLpCLEInv, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     PiLp.proj_apply, map_mk, ← map_sum]
-  congr 1; simp [piLpStripTracesEquiv, piLpStripTracesInv]
+  refine congrArg (mk θ) (Subtype.ext (Prod.ext
+    (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => ?_)
+    (ZeroAtInftyContinuousMap.ext fun t => PiLp.ext fun j => ?_)))
+  · simp only [Submodule.coe_sum, Prod.fst_sum, FunLike.coe_sum, Finset.sum_apply, WithLp.ofLp_sum,
+      stripTracesMap_apply_fst, PiLp.singleCLM_apply, piLpStripTracesEquiv_symm_apply_fst]
+    rw [Fintype.sum_eq_single j (fun _ h => PiLp.single_eq_of_ne _ h.symm _), PiLp.single_eq_same]
+  · simp only [Submodule.coe_sum, Prod.snd_sum, FunLike.coe_sum, Finset.sum_apply, WithLp.ofLp_sum,
+      stripTracesMap_apply_snd, PiLp.singleCLM_apply, piLpStripTracesEquiv_symm_apply_snd]
+    rw [Fintype.sum_eq_single j (fun _ h => PiLp.single_eq_of_ne _ h.symm _), PiLp.single_eq_same]
 
 /-- Coordinatewise continuous linear equivalence between `(piLp C q₀ q₁).ComplexMethodSpace θ` and
 `PiLp q (fun i => (C i).ComplexMethodSpace θ)`. Unlike `piLpEquiv`, this topological isomorphism
@@ -234,10 +243,9 @@ private theorem piLpContinuousLinearEquiv_apply (u : (piLp C q₀ q₁).ComplexM
     piLpContinuousLinearEquiv C q₀ q₁ q θ (mk θ g) i = mk θ (piLpStripTracesEquiv C q₀ q₁ g i) := by
   rw [piLpContinuousLinearEquiv_apply, piLpCLEFwd_mk, PiLp.toLp_apply]
 
-@[simp] theorem toSum_piLpContinuousLinearEquiv_apply
-    (u : (piLp C q₀ q₁).ComplexMethodSpace θ) (i : ι) :
-    toSum (piLpContinuousLinearEquiv C q₀ q₁ q θ u i) = piLpSumEquiv C q₀ q₁ (toSum u) i := by
-  obtain ⟨g, rfl⟩ := mk_surjective u; simp [toSum_mk]
+@[simp] theorem toSum_piLpContinuousLinearEquiv_apply (u : (piLp C q₀ q₁).ComplexMethodSpace θ)
+    (i : ι) : toSum (piLpContinuousLinearEquiv C q₀ q₁ q θ u i) =
+    piLpSumEquiv C q₀ q₁ (toSum u) i := by obtain ⟨g, rfl⟩ := mk_surjective u; simp [toSum_mk]
 
 @[simp] theorem piLpContinuousLinearEquiv_symm_mk (h : ∀ i, (C i).stripTraces) :
     (piLpContinuousLinearEquiv C q₀ q₁ q θ).symm (WithLp.toLp q fun i => mk θ (h i)) =
@@ -265,12 +273,20 @@ variable (C : ∀ i, CompatibleCouple ℂ (X₀ i) (X₁ i) (V i)) {q₀ q₁ : 
 private theorem norm_piLpContinuousLinearEquiv_zero (u : (piLp C q₀ q₁).ComplexMethodSpace 0) :
     ‖piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 u‖ = ‖u‖ := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  rw [← PiLp.norm_norm (piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g))]; simp [PiLp.norm_norm]
+  calc ‖piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g)‖
+      = ‖WithLp.toLp q₀ fun i => ‖(g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).1 0 i‖‖ := by
+        rw [← PiLp.norm_norm (piLpContinuousLinearEquiv C q₀ q₁ q₀ 0 (mk 0 g))]
+        simp only [piLpContinuousLinearEquiv_mk_apply, norm_mk_zero, piLpStripTracesEquiv_apply_fst]
+    _ = ‖mk 0 g‖ := (PiLp.norm_norm _).trans (norm_mk_zero g).symm
 
 private theorem norm_piLpContinuousLinearEquiv_one (u : (piLp C q₀ q₁).ComplexMethodSpace 1) :
     ‖piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 u‖ = ‖u‖ := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  rw [← PiLp.norm_norm (piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g))]; simp [PiLp.norm_norm]
+  calc ‖piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g)‖
+      = ‖WithLp.toLp q₁ fun i => ‖(g : C₀(ℝ, PiLp q₀ X₀) × C₀(ℝ, PiLp q₁ X₁)).2 0 i‖‖ := by
+        rw [← PiLp.norm_norm (piLpContinuousLinearEquiv C q₀ q₁ q₁ 1 (mk 1 g))]
+        simp only [piLpContinuousLinearEquiv_mk_apply, norm_mk_one, piLpStripTracesEquiv_apply_snd]
+    _ = ‖mk 1 g‖ := (PiLp.norm_norm _).trans (norm_mk_one g).symm
 
 private theorem norm_piLpContinuousLinearEquiv_le {q : ℝ≥0∞} [Fact (1 ≤ q)] {θ : ℝ}
     (hq : q⁻¹ = ENNReal.ofReal (1 - θ) * q₀⁻¹ + ENNReal.ofReal θ * q₁⁻¹)
@@ -289,14 +305,12 @@ private theorem norm_piLpContinuousLinearEquiv_le {q : ℝ≥0∞} [Fact (1 ≤ 
         let a (i : ι) := (1 - θ)⁻¹ * ∫ t, ‖g.val.1 t i‖ * stripPoisson₀ θ t
         let b (i : ι) := θ⁻¹ * ∫ t, ‖g.val.2 t i‖ * stripPoisson₁ θ t
         have ha_norm := (ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le g.val.1
-          (sub_pos.2 hθ1) (integrable_stripPoisson₀ θ)
-          (ae_of_all _ fun t => (stripPoisson₀_pos hθoo t).le)
-          (integral_stripPoisson₀ ⟨hθ0, hθ1.le⟩)).trans
+          (sub_pos.2 hθ1) (integrable_stripPoisson₀ θ) (ae_of_all _ fun t =>
+            (stripPoisson₀_pos hθoo t).le) (integral_stripPoisson₀ ⟨hθ0, hθ1.le⟩)).trans
           ((norm_fst_le g.val).trans_eq (Submodule.norm_coe g))
         have hb_norm := (ZeroAtInftyContinuousMap.norm_toLp_integral_weighted_le g.val.2 hθ0
-          (integrable_stripPoisson₁ θ)
-          (ae_of_all _ fun t => (stripPoisson₁_pos hθoo t).le)
-          (integral_stripPoisson₁ ⟨hθ0.le, hθ1⟩)).trans
+          (integrable_stripPoisson₁ θ) (ae_of_all _ fun t =>
+            (stripPoisson₁_pos hθoo t).le) (integral_stripPoisson₁ ⟨hθ0.le, hθ1⟩)).trans
           ((norm_snd_le g.val).trans_eq (Submodule.norm_coe g))
         refine ((PiLp.norm_mono (y := WithLp.toLp q fun i => a i ^ (1 - θ) * b i ^ θ)
           fun i => ?_).trans (TauCeti.norm_toLp_rpow_mul_rpow_le
@@ -311,10 +325,9 @@ private theorem norm_piLpContinuousLinearEquiv_le {q : ℝ≥0∞} [Fact (1 ≤ 
             (norm_mk_le_integral_stripPoisson_rpow_mul_rpow hθoo
               (piLpStripTracesEquiv C q₀ q₁ g i)).trans (le_abs_self _)
         · exact (mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) ha_norm (sub_pos.2 hθ1).le)
-            (Real.rpow_le_rpow (norm_nonneg _) hb_norm hθ0.le)
-            (Real.rpow_nonneg (norm_nonneg _) _) (Real.rpow_nonneg (norm_nonneg _) _)).trans_eq
-            (by rw [← Real.rpow_add_of_nonneg (norm_nonneg _) (sub_pos.2 hθ1).le hθ0.le,
-              sub_add_cancel, Real.rpow_one])
+            (Real.rpow_le_rpow (norm_nonneg _) hb_norm hθ0.le) (Real.rpow_nonneg (norm_nonneg _) _)
+            (Real.rpow_nonneg (norm_nonneg _) _)).trans_eq (by rw [← Real.rpow_add_of_nonneg
+              (norm_nonneg _) (sub_pos.2 hθ1).le hθ0.le, sub_add_cancel, Real.rpow_one])
   · rw [eq_zero_of_notMem hθ u, map_zero, norm_zero, norm_zero]
 
 private theorem norm_piLpCLE_symm_le_of_mk {q : ℝ≥0∞} {θ : ℝ}

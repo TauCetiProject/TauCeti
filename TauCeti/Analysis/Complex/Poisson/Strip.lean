@@ -301,7 +301,8 @@ theorem norm_deriv_holoPoisson₀_le {a : ℝ} (ha : 0 < a) {ζ : ℂ} (hζ : ζ
   rw [(hasDerivAt_holoPoisson₀ (one_add_exp_I_pi_mul_ne_zero h1ζ)).deriv, norm_neg,
     ← (hasDerivAt_holoPoisson₁ (one_add_exp_I_pi_mul_ne_zero h1ζ)).deriv]
   refine (norm_deriv_holoPoisson₁_le (sub_lt_self 1 ha)
-    ⟨by simp; linarith [hζ.2], by simp; linarith [hζ.1]⟩).trans_eq ?_
+    ⟨by rw [Complex.sub_re, Complex.one_re]; linarith [hζ.2],
+      by rw [Complex.sub_re, Complex.one_re]; linarith [hζ.1]⟩).trans_eq ?_
   rw [show π * (1 - a) = π - π * a by ring, Real.cos_pi_sub]; ring
 
 /-- For an integrable function `u : ℝ → ℂ` and `ζ` in the open unit strip,

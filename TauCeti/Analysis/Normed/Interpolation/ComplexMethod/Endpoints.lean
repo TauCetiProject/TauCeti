@@ -54,9 +54,10 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
     simp only [c, norm_mul, Complex.norm_exp, neg_re, ofReal_re, norm_stripGaussian, ← Real.exp_add]
   have hc_zero : ‖c ((0 : ℝ) : ℂ)‖ = 1 := by rw [hc_norm]; simp
   have hc_fst (t : ℝ) : ‖c (t * I)‖ = Real.exp (-(A * t ^ 2)) := by
-    rw [hc_norm]; congr 1; simp; ring
+    rw [hc_norm]; congr 1; simp only [mul_I_re, ofReal_im, neg_zero, mul_I_im, ofReal_re]; ring
   have hc_snd (t : ℝ) : ‖c (1 + t * I)‖ = Real.exp (-(A * (1 + t ^ 2))) := by
-    rw [hc_norm]; congr 1; simp; ring
+    rw [hc_norm]; congr 1; simp only [add_re, one_re, mul_I_re, ofReal_im, neg_zero, add_zero,
+      add_im, one_im, mul_I_im, ofReal_re, zero_add]; ring
   have hc_le (z : ℂ) (hz : z ∈ verticalClosedStrip 0 1) : ‖c z‖ ≤ 1 := by
     rw [hc_norm]
     exact Real.exp_le_one_iff.2 <| by
@@ -87,14 +88,12 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
 
 /-- At `θ = 0`, the quotient norm of an admissible trace pair is the norm in `X₀` of its left
 boundary trace at `0`. -/
-@[simp] theorem norm_mk_zero (g : C.stripTraces) :
-    ‖mk 0 g‖ = ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 0‖ :=
+@[simp] theorem norm_mk_zero (g : C.stripTraces) : ‖mk 0 g‖ = ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1 0‖ :=
   le_antisymm (norm_mk_zero_le g) (by simpa only [toFst_mk] using norm_toFst_le (mk 0 g))
 
 /-- At `θ = 1`, the quotient norm of an admissible trace pair is the norm in `X₁` of its right
 boundary trace at `0`. -/
-@[simp] theorem norm_mk_one (g : C.stripTraces) :
-    ‖mk 1 g‖ = ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 0‖ := by
+@[simp] theorem norm_mk_one (g : C.stripTraces) : ‖mk 1 g‖ = ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2 0‖ := by
   rw [← (swap C 1).norm_map (mk 1 g), swap_mk, sub_self, norm_mk_zero]
   simp only [stripTracesSwap_apply_fst, neg_zero]
 

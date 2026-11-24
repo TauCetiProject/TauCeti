@@ -148,7 +148,8 @@ private theorem norm_contracted_smul_fst_le {δ T κ ε : ℝ} (hδ : 0 < δ) (h
   refine norm_contracted_smul_le_of_tail_and_core hδ hκ hε g (t * I)
     (by simp [verticalClosedStrip]) t _ (hg₀ t) fun ht => ?_
   rw [re_holoPotential g hδ (mapsTo_contracted_verticalStrip hε
-    (by simp; constructor <;> linarith [hε.1]))]
+    (by simp only [mem_verticalStrip_iff, mem_Ioo, mul_I_re, ofReal_im, neg_zero]
+        constructor <;> linarith [hε.1]))]
   dsimp only; rw [contracted_mul_I]
   simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im, zero_add]
   linarith [happrox₀ t (abs_le.1 (not_le.1 ht).le), ZeroAtInftyContinuousMap.log_add_logMaxDiv
@@ -164,7 +165,8 @@ private theorem norm_contracted_smul_snd_le {δ T κ ε : ℝ} (hδ : 0 < δ) (h
   refine norm_contracted_smul_le_of_tail_and_core hδ hκ hε g (1 + t * I)
     (by simp [verticalClosedStrip]) t _ (hg₁ t) fun ht => ?_
   rw [re_holoPotential g hδ (mapsTo_contracted_verticalStrip hε
-    (by simp; constructor <;> linarith [hε.1]))]
+    (by simp only [mem_verticalStrip_iff, mem_Ioo, add_re, one_re, mul_I_re, ofReal_im, neg_zero,
+          add_zero]; constructor <;> linarith [hε.1]))]
   dsimp only; rw [contracted_one_add_mul_I]
   simp only [add_re, ofReal_re, mul_I_re, ofReal_im, neg_zero, add_zero, add_im, mul_I_im, zero_add]
   linarith [happrox₁ t (abs_le.1 (not_le.1 ht).le), ZeroAtInftyContinuousMap.log_add_logMaxDiv
