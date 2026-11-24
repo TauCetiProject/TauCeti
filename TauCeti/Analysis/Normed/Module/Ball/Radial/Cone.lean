@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
-public import Mathlib.Analysis.Normed.Module.Normalize
+public import TauCeti.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.Normed.Module.RCLike.Basic
 
 /-!
@@ -24,7 +24,8 @@ two canonical ways:
 On the ray through a unit vector `u`, `sphereExtend f` is constant for `r > 0`
 (`TauCeti.sphereExtend_smul_of_pos`) while `sphereCone f` is `r • u ↦ r • f u`
 (`TauCeti.sphereCone_smul_coe`). The cone is continuous when `f` is continuous and bounded
-(`TauCeti.continuous_sphereCone`), since near the origin it is bounded by a multiple of the norm.
+(`TauCeti.continuous_sphereCone`), since near the origin it is bounded by a multiple of the norm,
+and Lipschitz when `f` is Lipschitz and bounded (`LipschitzWith.sphereCone`).
 
 When `f` maps the unit sphere of `E` to the unit sphere of `F`, the cone preserves norms, and taking
 cones is compatible with composition (`TauCeti.sphereCone_sphereCone`). So a homeomorphism `σ`
@@ -48,6 +49,10 @@ extension used in the Alexander trick.
 * `TauCeti.sphereCone_smul_coe`: the cone sends `r • u` to `r • f u` for `r ≥ 0`.
 * `TauCeti.sphereCone_smul`: the cone is positively homogeneous.
 * `TauCeti.continuous_sphereCone`: the cone over a continuous bounded map is continuous.
+* `TauCeti.sphereCone_eq_norm_smul_sphereDirection`: the cone in terms of the direction map
+  `TauCeti.sphereDirection`.
+* `LipschitzWith.sphereCone`: the cone over an `L`-Lipschitz map bounded by `M` is
+  `(M + 2L)`-Lipschitz.
 * `TauCeti.norm_sphereCone`: the cone over a map into the unit sphere preserves norms.
 * `TauCeti.sphereCone_sphereCone`, `Homeomorph.sphereCone_trans`: the cone over a composite is the
   composite of the cones.
@@ -61,6 +66,7 @@ public section
 noncomputable section
 
 open Metric Set Filter Topology
+open scoped NNReal
 
 namespace TauCeti
 
@@ -160,6 +166,50 @@ theorem continuous_sphereCone (hf : Continuous f) {c : ℝ} (hc : ∀ u, ‖f u�
       exact ((continuous_subtypeVal.comp continuous_snd).smul (hf.comp continuous_fst)).comp
         (homeomorphUnitSphereProd E).continuous
     exact hcont.continuousAt (isOpen_compl_singleton.mem_nhds hx)
+
+/-- The cone over `f` at `x` is `‖x‖ • f` of the direction of `x`, whatever direction `e` the
+direction map assigns to the origin. -/
+theorem sphereCone_eq_norm_smul_sphereDirection (e : sphere (0 : E) 1) (x : E) :
+    sphereCone f x = ‖x‖ • f (sphereDirection e x) := by
+  conv_lhs => rw [← norm_smul_sphereDirection e x]
+  exact sphereCone_smul_coe (norm_nonneg x) _
+
+/-- The cone over an `L`-Lipschitz map `g` on the unit sphere with `‖g‖ ≤ M` is
+`(M + 2L)`-Lipschitz on the whole space. -/
+theorem _root_.LipschitzWith.sphereCone {g : sphere (0 : E) 1 → F} {L M : ℝ≥0}
+    (hg : LipschitzWith L g) (hM : ∀ u, ‖g u‖ ≤ M) : LipschitzWith (M + 2 * L) (sphereCone g) := by
+  refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
+  rcases isEmpty_or_nonempty (sphere (0 : E) 1) with hE | ⟨⟨e⟩⟩
+  · -- Without unit vectors every vector is zero.
+    have h0 (z : E) : z = 0 :=
+      (eq_zero_or_exists_eq_smul_coe_sphere z).resolve_right fun ⟨_, _, u, _⟩ ↦ hE.false u
+    simp [h0 x, h0 y]
+  have hxy : |‖x‖ - ‖y‖| ≤ dist x y := by
+    rw [dist_eq_norm]
+    exact abs_norm_sub_norm_le x y
+  -- Inside this proof the bare name `sphereCone` refers to this theorem, hence the qualification.
+  calc dist (TauCeti.sphereCone g x) (TauCeti.sphereCone g y)
+      = ‖(‖x‖ - ‖y‖) • g (sphereDirection e x) +
+          ‖y‖ • (g (sphereDirection e x) - g (sphereDirection e y))‖ := by
+        rw [sphereCone_eq_norm_smul_sphereDirection e x,
+          sphereCone_eq_norm_smul_sphereDirection e y, dist_eq_norm, sub_smul, smul_sub]
+        congr 1
+        abel
+    _ ≤ |‖x‖ - ‖y‖| * M + ‖y‖ * (L * dist (sphereDirection e x) (sphereDirection e y)) := by
+        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+        · rw [norm_smul, Real.norm_eq_abs]
+          exact mul_le_mul_of_nonneg_left (hM _) (abs_nonneg _)
+        · rw [norm_smul, norm_norm, ← dist_eq_norm]
+          exact mul_le_mul_of_nonneg_left (hg.dist_le_mul _ _) (norm_nonneg _)
+    _ ≤ dist x y * M + L * (2 * dist x y) := by
+        have h2 := norm_mul_dist_sphereDirection_le e x y
+        rw [← dist_eq_norm] at h2
+        rw [mul_left_comm]
+        exact add_le_add (mul_le_mul_of_nonneg_right hxy M.coe_nonneg)
+          (mul_le_mul_of_nonneg_left h2 L.coe_nonneg)
+    _ = ((M + 2 * L : ℝ≥0) : ℝ) * dist x y := by
+        push_cast
+        ring
 
 /-- **The cone over a composite is the composite of the cones**, when the inner map takes values in
 the unit sphere. -/
