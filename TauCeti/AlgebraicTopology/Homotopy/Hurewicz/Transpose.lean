@@ -43,19 +43,6 @@ open TauCeti
 
 variable {X : Type} [TopologicalSpace X] {x : X}
 
-/-- Transposing a square commutes with pushing it forward along a based map. -/
-theorem congr_swap_map {Y : Type} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y)
-    (p : Ω^ (Fin 2) X x) :
-    _root_.GenLoop.congr y (Equiv.swap 0 1) (GenLoop.map f hf p) =
-      GenLoop.map f hf (_root_.GenLoop.congr x (Equiv.swap 0 1) p) :=
-  GenLoop.ext _ _ fun _ ↦ by simp only [congr_apply, GenLoop.map_apply]
-
-/-- Transposing a square twice gives the square back. -/
-@[simp]
-theorem congr_swap_congr_swap (p : Ω^ (Fin 2) X x) :
-    _root_.GenLoop.congr x (Equiv.swap 0 1) (_root_.GenLoop.congr x (Equiv.swap 0 1) p) = p :=
-  GenLoop.ext _ _ fun _ ↦ by simp only [congr_apply, Equiv.swap_apply_self]
-
 /-- **Transposing a square multiplies its Hurewicz class by a universal sign.** There is one unit
 `σ` of `ℤ` such that for every generalized loop `p : I² → X` at `x`, in every space `X`, the
 integral Hurewicz class of the transposed square `(s, t) ↦ p (t, s)` is `σ` times that of `p`. -/
@@ -69,7 +56,7 @@ theorem exists_forall_hurewicz_congr_swap_eq_units_smul :
   have key (X : Type) [TopologicalSpace X] (x : X) (p : Ω^ (Fin 2) X x) :
       (hurewicz (ModuleCat.of ℤ ℤ) (_root_.GenLoop.congr x (Equiv.swap 0 1) p)).hom 1 =
         k • (hurewicz (ModuleCat.of ℤ ℤ) p).hom 1 := by
-    conv_lhs => rw [← map_toSphere_sphereGenLoop p, congr_swap_map, hurewicz_map,
+    conv_lhs => rw [← map_toSphere_sphereGenLoop p, congr_map, hurewicz_map,
       ModuleCat.hom_comp, LinearMap.comp_apply, ← hk, map_zsmul]
     conv_rhs => rw [hurewicz_eq_hurewicz_sphereGenLoop_comp, ModuleCat.hom_comp,
       LinearMap.comp_apply]
@@ -77,7 +64,9 @@ theorem exists_forall_hurewicz_congr_swap_eq_units_smul :
   -- infinite order, so `k * k = 1`.
   have hkk : k * k = 1 := by
     have h := key _ _ (_root_.GenLoop.congr _ (Equiv.swap 0 1) (sphereGenLoop 2))
-    rw [congr_swap_congr_swap, ← hk, smul_smul] at h
+    have hswap := congr_symm_congr (Equiv.swap (0 : Fin 2) 1) (sphereGenLoop 2)
+    rw [Equiv.symm_swap] at hswap
+    rw [hswap, ← hk, smul_smul] at h
     have hinj := (ConcreteCategory.bijective_of_isIso
       (hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2))).1
     have h' : (hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop 2)).hom (k * k) =

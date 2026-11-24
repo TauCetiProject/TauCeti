@@ -462,7 +462,7 @@ private def capFreeLoopPath (p : Path γ (Path.refl x)) :
 
 /-- The path of contractible free loops traced by a disc `p` bounding `γ`, run from its centre to
 `γ`. -/
-private def capCoverPath (hγ : γ.toCircle ∈ contractibleLoops X) (p : Path γ (Path.refl x)) :
+def capCoverPath (hγ : γ.toCircle ∈ contractibleLoops X) (p : Path γ (Path.refl x)) :
     Path (constContractibleLoop x) (⟨γ.toCircle, hγ⟩ : contractibleLoops X) :=
   (Path.subtypeHomeomorphOfPathComponentSubset
     (pathComponent_constContractibleLoop_subset x)).symm (capFreeLoopPath p)
@@ -485,7 +485,9 @@ private theorem map_subtypeVal_capCoverPath (hγ : γ.toCircle ∈ contractibleL
     rw [capCoverPath, Path.map_coe, Function.comp_apply,
       Path.coe_subtypeHomeomorphOfPathComponentSubset_symm_apply]
 
-private theorem coe_capCoverPath_apply (hγ : γ.toCircle ∈ contractibleLoops X)
+/-- At time `t`, the path of contractible free loops of a disc `p` is the free loop of
+`p (σ t)`. -/
+theorem coe_capCoverPath_apply (hγ : γ.toCircle ∈ contractibleLoops X)
     (p : Path γ (Path.refl x)) (t : I) :
     (capCoverPath hγ p t : C(Circle, X)) = (p (σ t)).toCircle := by
   rw [capCoverPath, Path.coe_subtypeHomeomorphOfPathComponentSubset_symm_apply, capFreeLoopPath]
@@ -544,12 +546,12 @@ def RawCap.toCapCover (hγ : γ.toCircle ∈ contractibleLoops X) (D : RawCap γ
     D))
 
 /-- The point of the cap cover of the class of a disc `p` is the class of its path of free loops. -/
-private theorem RawCap.toCapCover_mk (hγ : γ.toCircle ∈ contractibleLoops X)
+theorem RawCap.toCapCover_mk (hγ : γ.toCircle ∈ contractibleLoops X)
     (p : Path γ (Path.refl x)) :
     RawCap.toCapCover ω c hγ (Path.Homotopic.Quotient.mk p) =
       Quotient.mk'' (UniversalCover.mk ⟨γ.toCircle, hγ⟩
         (Path.Homotopic.Quotient.mk (capCoverPath hγ p))) :=
-  rfl
+  (rfl)
 
 /-- The point of the cap cover of a raw cap of `γ` lies over `γ`. -/
 @[simp]
@@ -567,6 +569,9 @@ private theorem ofContractibleLoopsHomotopyGroup_sphereLoopPath (β : Ω (Ω X x
       (torusHurewiczSign : ℤ) • SphericalPeriodGroup.ofHomotopyGroup ω c x
         (Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
           (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β)))) := by
+  -- Mathlib defines `pi1MulEquivFundamentalGroup` as the quotient of `genLoopEquivOfUnique (Fin 1)`
+  -- (`homotopyGroupEquivFundamentalGroupOfUnique_mk_asHom`), so its inverse sends the class of a
+  -- loop to the class of the corresponding generalized loop by definition.
   have h : HomotopyGroup.pi1MulEquivFundamentalGroup.symm
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (sphereLoopPath β))) =
         ⟦(genLoopEquivOfUnique (Fin 1)).symm (sphereLoopPath β)⟧ :=
@@ -616,12 +621,12 @@ theorem RawCap.toCapCover_vadd (hγ : γ.toCircle ∈ contractibleLoops X) (a : 
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β))) +ᵥ
           (show RawCap γ from Path.Homotopic.Quotient.mk p) =
         (show RawCap γ from Path.Homotopic.Quotient.mk (p.trans β)) := by
-    rw [RawCap.vadd_def, toMul_ofMul, MulEquiv.symm_apply_apply]
-    rfl
+    rw [RawCap.vadd_def, toMul_ofMul, MulEquiv.symm_apply_apply, FundamentalGroupoid.comp_eq,
+      Path.Homotopic.Quotient.mk_trans]
   rw [hvadd, RawCap.toCapCover_mk, RawCap.toCapCover_mk, capCoverPath_trans,
     ← ofContractibleLoopsHomotopyGroup_sphereLoopPath, ofContractibleLoopsHomotopyGroup_vadd_mk,
-    MulEquiv.apply_symm_apply, UniversalCover.smul_mk]
-  rfl
+    MulEquiv.apply_symm_apply, UniversalCover.smul_mk, FundamentalGroup.inv_def,
+    Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_symm]
 
 namespace SphericalCapClass
 

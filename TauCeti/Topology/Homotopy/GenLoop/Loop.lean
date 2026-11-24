@@ -38,6 +38,17 @@ theorem congr_apply (e : M ≃ N) (p : Ω^ M X x) (t : I^N) :
     _root_.GenLoop.congr x e p t = p fun m => t (e m) :=
   rfl
 
+/-- Reindexing the cube directions commutes with pushing forward along a based map. -/
+theorem congr_map (e : M ≃ N) (f : C(X, Y)) (hf : f x = y) (p : Ω^ M X x) :
+    _root_.GenLoop.congr y e (map f hf p) = map f hf (_root_.GenLoop.congr x e p) :=
+  ext _ _ fun _ => by simp only [congr_apply, map_apply]
+
+/-- Reindexing along `e` and then along `e.symm` gives the generalized loop back. -/
+@[simp]
+theorem congr_symm_congr (e : M ≃ N) (p : Ω^ M X x) :
+    _root_.GenLoop.congr x e.symm (_root_.GenLoop.congr x e p) = p :=
+  ext _ _ fun _ => by simp only [congr_apply, Equiv.symm_apply_apply]
+
 @[simp]
 theorem genLoopGenLoopEquiv_apply (p : Ω^ M (Ω^ N X x) _root_.GenLoop.const) (y : I^(M ⊕ N)) :
     _root_.GenLoop.genLoopGenLoopEquiv x p y =
@@ -223,7 +234,7 @@ theorem _root_.ContinuousMap.genLoopLoopHomeomorph_map (f : C(X, Y)) (hf : f x =
   exact (genLoopLoopHomeomorph_apply_eq y k _).trans
     ((congrArg (congr y finSumFinEquiv)
       (ContinuousMap.genLoopLoopSumHomeomorph_map f hf F hFf _ p)).trans
-      ((ext _ _ fun _ => by simp only [congr_apply, map_apply]).trans
+      ((congr_map _ f hf _).trans
         (congrArg (map f hf) (genLoopLoopHomeomorph_apply_eq x k p).symm)))
 
 end GenLoop

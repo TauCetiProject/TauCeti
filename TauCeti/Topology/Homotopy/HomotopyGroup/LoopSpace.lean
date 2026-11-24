@@ -112,10 +112,7 @@ theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (h
     (e : M ≃ N) (a : HomotopyGroup M X x) :
     map f hf (congrEquiv e a) = congrEquiv e (map f hf a) := by
   induction a using Quotient.inductionOn
-  rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk]
-  -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`
-  refine congrArg _ (GenLoop.ext _ _ fun t => ?_)
-  simp only [GenLoop.congr_apply, GenLoop.map_apply]
+  rw [congrEquiv_mk, map_mk, map_mk, congrEquiv_mk, GenLoop.congr_map]
 
 /-- The map induced on the homotopy group indexed by `M` is the map induced on the group indexed
 by `N`, conjugated by the reindexing `e : M ≃ N` of the cube directions. -/
