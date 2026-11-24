@@ -244,6 +244,23 @@ lemma higherDirectImageSectionsAddEquiv_naturality {M N : X.Modules} [M.IsQuasic
     (f.higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
       M n hV y).symm
 
+/-- The identification `higherDirectImageSectionsAddEquiv` of `Hⁿ(f⁻¹ V, M)` with the sections of
+`Rⁿ f_* M` over an affine open `V` is linear over the global functions of `Y`, acting on
+`Hⁿ(f⁻¹ V, M)` through their pullbacks along `f` and on sections through restriction to `V`. -/
+lemma higherDirectImageSectionsAddEquiv_appTop_smul {V : Y.Opens} (hV : IsAffineOpen V)
+    (r : Γ(Y, ⊤)) (c : cohomologyOn M n (f ⁻¹ᵁ V)) :
+    f.higherDirectImageSectionsAddEquiv M n hV (f.appTop r • c) =
+      Y.presheaf.map V.leTop.op r • f.higherDirectImageSectionsAddEquiv M n hV c := by
+  obtain ⟨x, rfl⟩ : ∃ x : ((f.higherDirectImagePresheaf n).obj M).obj (op V),
+      (f.higherDirectImagePresheafToPresheafIso M n).hom.app (op V) x = c :=
+    ⟨_, Iso.inv_hom_id_apply ((f.higherDirectImagePresheafToPresheafIso M n).app _) c⟩
+  refine (congrArg (f.higherDirectImageSectionsAddEquiv M n hV)
+    (f.higherDirectImagePresheafToPresheafIso_hom_app_smul M n r V x).symm).trans ?_
+  refine (higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
+    f M n hV _).trans (((f.higherDirectImagePresheafSectionsLinearEquiv M n hV).map_smul _ x).trans
+      (congrArg _ (higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
+        f M n hV x).symm))
+
 /-- Over an affine open `V`, the identification of `Hⁿ(f⁻¹ V, M)` with the sections of
 `Rⁿ f_* M` sends a class to the section defined by the corresponding section of the presheaf
 `V ↦ Hⁿ(f⁻¹ V, M)`. -/
