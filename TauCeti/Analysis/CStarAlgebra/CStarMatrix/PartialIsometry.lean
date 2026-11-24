@@ -188,7 +188,7 @@ variable [Fintype k] [Fintype l] [Fintype m] [Fintype n] [Fintype o]
 @[simp] theorem isPartialIsometry_blockSum_iff [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
     {v : CStarMatrix m l A} {w : CStarMatrix o n A} :
     (blockSum v w).IsPartialIsometry ↔ v.IsPartialIsometry ∧ w.IsPartialIsometry := by
-  rw [isPartialIsometry_iff, blockSum_conjTranspose, blockSum_mul, blockSum_mul, blockSum_inj]; rfl
+  simp only [isPartialIsometry_iff, blockSum_conjTranspose, blockSum_mul, blockSum_inj]
 protected theorem IsPartialIsometry.blockSum [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
     {v : CStarMatrix m l A} {w : CStarMatrix o n A} (hv : v.IsPartialIsometry)
     (hw : w.IsPartialIsometry) : (CStarMatrix.blockSum v w).IsPartialIsometry :=
@@ -204,7 +204,7 @@ protected theorem IsPartialIsometry.blockSum [NonUnitalNonAssocSemiring A] [Star
 @[simp] theorem isPartialIsometry_amplify_iff [DecidableEq k] [Nonempty k]
     [NonUnitalNonAssocSemiring A] [StarAddMonoid A] {v : CStarMatrix m n A} :
     (amplify k v).IsPartialIsometry ↔ v.IsPartialIsometry := by
-  rw [isPartialIsometry_iff, amplify_conjTranspose, amplify_mul, amplify_mul, amplify_inj]; rfl
+  simp only [isPartialIsometry_iff, amplify_conjTranspose, amplify_mul, amplify_inj]
 section
 variable [NonUnitalRing A] [StarRing A] [PartialOrder A] [StarOrderedRing A] [IsProperStar A]
   {v : CStarMatrix m n A}

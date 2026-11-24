@@ -608,15 +608,13 @@ variable (M : CStarMatrix m n A)
 @[simp] theorem amplify_conjTranspose [AddMonoid A] [StarAddMonoid A] :
     (amplify k M).conjTranspose = amplify k M.conjTranspose :=
   ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_conjTranspose, ofMatrix_symm_amplify, ofMatrix_symm_amplify,
+    simp only [ofMatrix_symm_conjTranspose, ofMatrix_symm_amplify,
       Matrix.conjTranspose_reindex, Matrix.blockDiagonal_conjTranspose]
-    rfl
 @[simp] theorem map_amplify [Zero A] [Zero B] {f : A → B} (hf : f 0 = 0) :
     (amplify k M).map f = amplify k (M.map f) :=
   ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_map, ofMatrix_symm_amplify, ofMatrix_symm_amplify, Matrix.reindex_apply,
+    simp only [ofMatrix_symm_map, ofMatrix_symm_amplify, Matrix.reindex_apply,
       ← Matrix.submatrix_map, Matrix.blockDiagonal_map _ f hf]
-    rfl
 end
 @[simp] theorem amplify_zero [Zero A] : amplify k (0 : CStarMatrix m n A) = 0 := by
   ext i j; simp [amplify_apply]

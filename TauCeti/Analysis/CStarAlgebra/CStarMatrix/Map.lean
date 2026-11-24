@@ -216,10 +216,9 @@ theorem conjTranspose_permMatrix_mul_mul_permMatrix_eq_reindexₐ [Fintype m] [F
     (permMatrix A e).conjTranspose * M * permMatrix A e = reindexₐ R A e M := by
   classical
   apply ofMatrix.symm.injective
-  rw [ofMatrix_symm_mul, ofMatrix_symm_mul, conjTranspose_permMatrix, ofMatrix_symm_permMatrix,
-    ofMatrix_symm_permMatrix, ofMatrix_symm_reindexₐ, PEquiv.toMatrix_toPEquiv_mul,
-    PEquiv.mul_toMatrix_toPEquiv, Matrix.submatrix_submatrix]
-  rfl
+  simp only [ofMatrix_symm_mul, conjTranspose_permMatrix, ofMatrix_symm_permMatrix,
+    ofMatrix_symm_reindexₐ, PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv,
+    Matrix.submatrix_submatrix, Matrix.reindex_apply, Function.comp_id, Function.id_comp]
 /-- Conjugating `N` by `(permMatrix A e)` on the left and its adjoint on the right computes
 `reindexₐ R A e.symm N`. -/
 theorem permMatrix_mul_mul_conjTranspose_permMatrix_eq_reindexₐ_symm [Fintype m] [Fintype n]
