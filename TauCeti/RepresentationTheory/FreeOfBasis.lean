@@ -217,10 +217,8 @@ theorem freeEquivOfMonomialBasis_symm_basis (i : ι) (h : G) :
     (ρ.freeEquivOfMonomialBasis b e hb).symm (b (e ⟨i, h⟩)) =
       Finsupp.single i (MonoidAlgebra.single h
         (b.repr (ρ h⁻¹ (b (e ⟨i, h⟩))) (e ⟨i, 1⟩))) := by
-  rw [← (ρ.freeEquivOfMonomialBasis b e hb).symm_apply_apply
-    (Finsupp.single i (MonoidAlgebra.single h (b.repr (ρ h⁻¹ (b (e ⟨i, h⟩))) (e ⟨i, 1⟩))))]
-  congr 1
-  rw [freeEquivOfMonomialBasis_single, ← map_smul]
+  apply EquivLike.injective (ρ.freeEquivOfMonomialBasis b e hb)
+  rw [Equiv.apply_symm_apply, freeEquivOfMonomialBasis_single, ← map_smul]
   have hinv := apply_basis_eq_repr_smul ρ b e hb h⁻¹ h i
   rw [inv_mul_cancel] at hinv
   rw [← hinv, ρ.self_inv_apply]
