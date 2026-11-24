@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Prod
 public import TauCeti.Algebra.Lie.Basic
-import Mathlib.LinearAlgebra.Projection
+public import TauCeti.Algebra.Lie.Hom
 
 /-!
 # Products of Lie modules
@@ -443,12 +443,14 @@ theorem prodEquivOfIsCompl_symm_fst_add_snd (x : L) :
 
 /-- The inverse of `prodEquivOfIsCompl` composed with the inclusion of the first ideal is the first
 factor inclusion. -/
+@[simp]
 theorem prodEquivOfIsCompl_symm_comp_incl_left :
     (prodEquivOfIsCompl I J h).symm.toLieHom.comp I.incl = LieHom.inl R I J := by
   ext x <;> simp
 
 /-- The inverse of `prodEquivOfIsCompl` composed with the inclusion of the second ideal is the
 second factor inclusion. -/
+@[simp]
 theorem prodEquivOfIsCompl_symm_comp_incl_right :
     (prodEquivOfIsCompl I J h).symm.toLieHom.comp J.incl = LieHom.inr R I J := by
   ext x <;> simp

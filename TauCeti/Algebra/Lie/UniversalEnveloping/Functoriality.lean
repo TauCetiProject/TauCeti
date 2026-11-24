@@ -210,15 +210,6 @@ theorem mapEquiv_toAlgHom (e : LieEquiv R L M) :
     (mapEquiv R e).toAlgHom = map R e.toLieHom :=
   by rw [mapEquiv, AlgEquiv.toAlgHom_ofAlgHom]
 
-/-- Mapping an element along a Lie homomorphism and then along a Lie equivalence is mapping it
-along their composite. -/
-theorem _root_.UniversalEnvelopingAlgebra.mapEquiv_map_apply (e : LieEquiv R M N) (g : LieHom R L M)
-    (a : _root_.UniversalEnvelopingAlgebra R L) :
-    mapEquiv R e (map R g a) = map R (e.toLieHom.comp g) a := by
-  have h : (mapEquiv R e).toAlgHom.comp (map R g) = map R (e.toLieHom.comp g) := by
-    rw [mapEquiv_toAlgHom, map_comp]
-  exact AlgHom.congr_fun h a
-
 /-- The algebra equivalence induced by a Lie equivalence acts on canonical generators by that Lie
 equivalence. -/
 -- `simp`-normal form is `mapEquiv_ι'`, since `simp` unfolds `ι` through `ι_apply`.

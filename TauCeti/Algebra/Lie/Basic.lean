@@ -28,8 +28,6 @@ This file supplies general constructions for Lie modules that are missing from M
   module.
 * `LieHom.lieIdealComap`: a Lie homomorphism restricted to the preimage of a Lie ideal, as a
   Lie homomorphism into that ideal.
-* `LieHom.restrict`: a Lie homomorphism restricted to Lie subalgebras it maps into each other, and
-  its specialization `LieHom.restrictIdeal` to Lie ideals.
 
 ## Main results
 
@@ -556,29 +554,6 @@ injective. -/
 theorem _root_.LieHom.lieIdealComap_injective (hf : Function.Injective f) :
     Function.Injective (f.lieIdealComap I) := fun x y h ↦
   Subtype.ext (hf (by simpa using congrArg Subtype.val h))
-
-/-- The restriction of a Lie homomorphism `f` to Lie subalgebras `S` and `T` with `f(S) ⊆ T`, as
-a Lie homomorphism `S → T`. Its linear map is `LinearMap.restrict`. -/
-def _root_.LieHom.restrict {S : LieSubalgebra R L} {T : LieSubalgebra R L'}
-    (hf : ∀ x ∈ S, f x ∈ T) : S →ₗ⁅R⁆ T :=
-  { (f : L →ₗ[R] L').restrict (p := S.toSubmodule) (q := T.toSubmodule) hf with
-    map_lie' := Subtype.ext (f.map_lie _ _) }
-
-@[simp]
-theorem _root_.LieHom.coe_restrict_apply {S : LieSubalgebra R L} {T : LieSubalgebra R L'}
-    (hf : ∀ x ∈ S, f x ∈ T) (x : S) : (f.restrict hf x : L') = f x :=
-  (rfl)
-
-/-- The restriction of a Lie homomorphism `f` to Lie ideals `J` and `J'` with `f(J) ⊆ J'`, as a Lie
-homomorphism `J → J'`: `LieHom.restrict` for the underlying Lie subalgebras. -/
-def _root_.LieHom.restrictIdeal {J : LieIdeal R L} {J' : LieIdeal R L'}
-    (hf : ∀ x ∈ J, f x ∈ J') : J →ₗ⁅R⁆ J' :=
-  f.restrict (S := J) (T := J') hf
-
-@[simp]
-theorem _root_.LieHom.coe_restrictIdeal_apply {J : LieIdeal R L} {J' : LieIdeal R L'}
-    (hf : ∀ x ∈ J, f x ∈ J') (x : J) : (f.restrictIdeal hf x : L') = f x :=
-  (rfl)
 
 end Adjoint
 

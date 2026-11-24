@@ -107,14 +107,16 @@ theorem _root_.UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_map_incl_left
     (a : _root_.UniversalEnvelopingAlgebra R I) :
     envelopingEquivOfIsCompl R I J h (map R I.incl a) =
       (symmetricAlgebraEquiv R I).symm a ⊗ₜ[R] (1 : UJ) := by
-  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply, mapEquiv_map_apply,
+  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply, ← AlgEquiv.toAlgHom_apply (mapEquiv R _),
+    mapEquiv_toAlgHom, ← AlgHom.comp_apply, ← map_comp,
     LieIdeal.prodEquivOfIsCompl_symm_comp_incl_left, productEnveloping_map_inl]
 
 /-- On the inclusion of `J`, `envelopingEquivOfIsCompl` is one tensored with the element. -/
 @[simp]
 theorem _root_.UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_map_incl_right (u : UJ) :
     envelopingEquivOfIsCompl R I J h (map R J.incl u) = (1 : SI) ⊗ₜ[R] u := by
-  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply, mapEquiv_map_apply,
+  rw [envelopingEquivOfIsCompl, AlgEquiv.trans_apply, ← AlgEquiv.toAlgHom_apply (mapEquiv R _),
+    mapEquiv_toAlgHom, ← AlgHom.comp_apply, ← map_comp,
     LieIdeal.prodEquivOfIsCompl_symm_comp_incl_right, productEnveloping_map_inr]
 
 /-- The inverse of `envelopingEquivOfIsCompl` sends a pure tensor `a ⊗ u` to the product of the
@@ -124,9 +126,15 @@ theorem _root_.UniversalEnvelopingAlgebra.envelopingEquivOfIsCompl_symm_tmul (a 
     (envelopingEquivOfIsCompl R I J h).symm (a ⊗ₜ[R] u) =
       map R I.incl (symmetricAlgebraEquiv R I a) * map R J.incl u := by
   apply (envelopingEquivOfIsCompl R I J h).injective
-  rw [AlgEquiv.apply_symm_apply, map_mul, envelopingEquivOfIsCompl_map_incl_left,
-    envelopingEquivOfIsCompl_map_incl_right, AlgEquiv.symm_apply_apply,
-    Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+  simp [Algebra.TensorProduct.tmul_mul_tmul]
+
+/-- The algebra homomorphism underlying `envelopingEquivOfIsCompl`: the map induced by the inverse
+of addition `I × J ≃ L`, followed by `productEnveloping`. -/
+theorem envelopingEquivOfIsCompl_toAlgHom :
+    (envelopingEquivOfIsCompl R I J h).toAlgHom = (productEnveloping R I J).toAlgHom.comp
+      (map R (LieIdeal.prodEquivOfIsCompl I J h).symm.toLieHom) := by
+  rw [← mapEquiv_toAlgHom]
+  rfl
 
 end IsCompl
 
@@ -146,15 +154,11 @@ theorem envelopingEquivOfIsCompl_naturality (f : L →ₗ⁅R⁆ L') (hI : ∀ x
   have hσ : ((f.restrictIdeal hI).prodMap (f.restrictIdeal hJ)).comp
       (LieIdeal.prodEquivOfIsCompl I J h).symm.toLieHom =
         (LieIdeal.prodEquivOfIsCompl I' J' h').symm.toLieHom.comp f :=
-    LieHom.ext fun x ↦ (LieIdeal.prodEquivOfIsCompl_symm_map I J h h' f hI hJ x).symm
-  calc _ = ((Algebra.TensorProduct.map
-          (SymmetricAlgebra.map R (f.restrictIdeal hI : I →ₗ[R] I'))
-          (map R (f.restrictIdeal hJ))).comp (productEnveloping R I J).toAlgHom).comp
-          (mapEquiv R (LieIdeal.prodEquivOfIsCompl I J h).symm).toAlgHom := rfl
-    _ = (productEnveloping R I' J').toAlgHom.comp
-          (map R ((LieIdeal.prodEquivOfIsCompl I' J' h').symm.toLieHom.comp f)) := by
-      rw [productEnveloping_naturality, mapEquiv_toAlgHom, AlgHom.comp_assoc, ← map_comp, hσ]
-    _ = _ := by rw [map_comp, ← mapEquiv_toAlgHom, ← AlgHom.comp_assoc]; rfl
+    LieHom.ext fun x ↦ by
+      rw [LieHom.comp_apply, LieHom.comp_apply, LieHom.prodMap_apply, LieEquiv.coe_toLieHom,
+        LieEquiv.coe_toLieHom, LieIdeal.prodEquivOfIsCompl_symm_map I J h h' f hI hJ x]
+  rw [envelopingEquivOfIsCompl_toAlgHom, envelopingEquivOfIsCompl_toAlgHom, ← AlgHom.comp_assoc,
+    productEnveloping_naturality, AlgHom.comp_assoc, ← map_comp, hσ, map_comp, AlgHom.comp_assoc]
 
 end IsComplNaturality
 
@@ -199,8 +203,8 @@ theorem centerEquivOfIsCompl_symm_tmul (a : SI) (c : ZJ) :
     ((centerEquivOfIsCompl R I J h).symm (a ⊗ₜ[R] c) : UL) =
       map R I.incl (symmetricAlgebraEquiv R I a) * map R J.incl (c : UJ) := by
   rw [← envelopingEquivOfIsCompl_symm_tmul R I J h, AlgEquiv.eq_symm_apply,
-    ← centerEquivOfIsCompl_inclusion, AlgEquiv.apply_symm_apply, Algebra.TensorProduct.map_tmul,
-    AlgHom.id_apply, Subalgebra.coe_val]
+    ← centerEquivOfIsCompl_inclusion]
+  simp
 
 end IsComplCenter
 
