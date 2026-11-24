@@ -169,10 +169,10 @@ theorem tensorNormCocycleClass_eq_degreeZeroClass
     (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d 0 (0 + 1)).hom z = 0) :
     tensorNormCocycleClass U t z hz =
       ContinuousCohomology.degreeZeroClass (trivialF2 G)
-        ((trivialF2Equiv G).symm (trivialF2Equiv U.toSubgroup (z.1 1)))
+        ((trivialF2Equiv G).symm (trivialF2Equiv U.toSubgroup (z.val 1)))
         (fun g ↦ trivialF2_ρ_apply_apply G g _) := by
   have ha : (trivialF2 U.toSubgroup).gradedResolutionProjection
-      ((trivialF2 U.toSubgroup).cochainToGradedResolution 0 z) = z.1 1 := by
+      ((trivialF2 U.toSubgroup).cochainToGradedResolution 0 z) = z.val 1 := by
     rw [TopRep.cochainToGradedResolution_apply, TopRep.gradedResolutionProjection_lof_zero]
   rw [tensorNormCocycleClass_def, Subgroup.smoothTensorInducedDiagonalClass_eq_degreeZeroClass,
     ContinuousCohomology.coeffMap_def]

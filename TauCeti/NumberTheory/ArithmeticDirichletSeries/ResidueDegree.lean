@@ -214,14 +214,14 @@ theorem sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum {s : ℝ} (hs : 
 /-- The Dirichlet series over the primes of residue degree above one converges for every
 `s > 1/2`, in particular at `s = 1`. -/
 theorem summable_absNorm_rpow_higherDegreePrimes {s : ℝ} (hs : 1 / 2 < s) :
-    Summable fun 𝔭 : higherDegreePrimes K ↦ (Ideal.absNorm 𝔭.1.asIdeal : ℝ) ^ (-s) := by
+    Summable fun 𝔭 : higherDegreePrimes K ↦ (Ideal.absNorm 𝔭.val.asIdeal : ℝ) ^ (-s) := by
   classical
   refine summable_of_sum_le (c := Module.finrank ℚ K * ∑' m : ℕ, (m : ℝ) ^ (-(2 * s)))
     (fun 𝔭 ↦ Real.rpow_nonneg (Nat.cast_nonneg _) _) fun u ↦ ?_
   have := sum_absNorm_rpow_higherDegreePrimes_le_finrank_mul_tsum (K := K) hs
     (F := u.image Subtype.val) (fun 𝔭 h𝔭 ↦ by
       obtain ⟨𝔮, -, rfl⟩ := Finset.mem_image.mp h𝔭
-      exact 𝔮.2)
+      exact 𝔮.property)
   rwa [Finset.sum_image fun _ _ _ _ h ↦ Subtype.ext h] at this
 
 /-- Uniformly in `s ≥ 1`, the partial Dirichlet sum over the primes of residue degree above one is
@@ -237,7 +237,7 @@ theorem primeIdealZetaSum_higherDegreePrimes_le {s : ℝ} (hs : 1 ≤ s) :
     (K := K) (s := s) (by linarith)
     (F := u.image Subtype.val) (fun 𝔭 h𝔭 ↦ by
       obtain ⟨𝔮, -, rfl⟩ := Finset.mem_image.mp h𝔭
-      exact 𝔮.2)
+      exact 𝔮.property)
   rw [Finset.sum_image fun _ _ _ _ h ↦ Subtype.ext h] at hsum
   refine hsum.trans ?_
   rw [mul_comm (2 : ℝ) (Module.finrank ℚ K : ℝ)]

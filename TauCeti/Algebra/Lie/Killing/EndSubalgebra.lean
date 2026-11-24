@@ -78,7 +78,7 @@ theorem eq_zero_of_forall_commute (q : Module.End K V) (hcomm : ∀ z ∈ L, Com
       map_lie' := fun {z w} ↦ Subtype.ext <| by
         simp only [LinearMap.toFun_eq_coe, LieSubmodule.coe_bracket, LinearMap.coe_restrict_apply,
           coe_bracket_of_module, Module.End.lie_apply]
-        exact congr($((hcomm z z.2).eq) (w : V)).symm }
+        exact congr($((hcomm z z.property).eq) (w : V)).symm }
   obtain ⟨c, hc⟩ := TauCeti.exists_forall_apply_eq_smul K L (N i) f
   have hres : q.restrict (hinv (N i)) = c • LinearMap.id := LinearMap.ext hc
   have hc0 : c = 0 := by

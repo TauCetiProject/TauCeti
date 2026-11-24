@@ -91,7 +91,8 @@ theorem exists_lift_modelOrientation_eq (o : Orientation I M ι)
     (m : _root_.Orientation ℝ E ι) :
     ∃ l : OrientationLift I M ι, mk l = o ∧ l.modelOrientation = m := by
   obtain ⟨l, rfl⟩ := o.exists_lift
-  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m l.card_eq with h | h
+  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m
+    (Nat.card_eq_fintype_card.trans l.card_eq) with h | h
   · exact ⟨l, rfl, h⟩
   · exact ⟨l.flip, (mk_eq_mk_iff _ _).mpr (.inr rfl), by
       rw [OrientationLift.flip_modelOrientation, h]
@@ -106,6 +107,10 @@ theorem inductionOn {p : Orientation I M ι → Prop} (o : Orientation I M ι)
 /-- The index type has the dimension of the model space. -/
 theorem card_eq (o : Orientation I M ι) : Fintype.card ι = Module.finrank ℝ E :=
   Quotient.inductionOn o OrientationLift.card_eq
+
+/-- An orientation indexed by the empty finite type has a zero-dimensional model. -/
+theorem finrank_eq_zero (o : Orientation I M (Fin 0)) : Module.finrank ℝ E = 0 :=
+  o.card_eq.symm.trans (Fintype.card_fin 0)
 
 /-- The tangent space has the dimension encoded by the orientation index. -/
 theorem finrank_tangentSpace_eq (o : Orientation I M ι) (x : M) :
@@ -136,6 +141,34 @@ def reindex {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι
 @[simp]
 theorem reindex_mk {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : OrientationLift I M ι) :
     (mk o).reindex e = mk (o.reindex e) := (rfl)
+
+/-- Reindexing along the identity equivalence does not change an orientation. -/
+@[simp]
+theorem reindex_refl (o : Orientation I M ι) : o.reindex (Equiv.refl ι) = o := by
+  induction o using Orientation.inductionOn with | h l =>
+    rw [reindex_mk]
+    congr 1
+    ext α x <;> simp
+
+/-- Reindexing a manifold orientation along a composite of equivalences is the same as reindexing
+along each in turn. -/
+theorem reindex_trans {ι' ι'' : Type*} [Fintype ι'] [Fintype ι'']
+    (e : ι ≃ ι') (e' : ι' ≃ ι'') (o : Orientation I M ι) :
+    o.reindex (e.trans e') = (o.reindex e).reindex e' := by
+  induction o using Orientation.inductionOn with | h l =>
+  rw [reindex_mk, reindex_mk, reindex_mk]
+  exact congrArg mk (OrientationLift.ext (by
+    simp only [OrientationLift.reindex_modelOrientation, _root_.Orientation.reindex_trans])
+    (funext fun α ↦ funext fun x ↦ by simp only [OrientationLift.reindex_sign]))
+
+/-- Reindexing a manifold orientation along two casts `Fin m ≃ Fin n ≃ Fin k` is reindexing along
+their composite cast. -/
+@[simp]
+theorem reindex_finCongr_reindex_finCongr {m n k : ℕ} (h : m = n) (h' : n = k)
+    (o : Orientation I M (Fin m)) :
+    (o.reindex (finCongr h)).reindex (finCongr h') = o.reindex (finCongr (h.trans h')) := by
+  subst h h'
+  rw [finCongr_refl, reindex_refl]
 
 variable [IsManifold I 1 M]
 
@@ -257,39 +290,6 @@ theorem reindex_neg {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientatio
     (funext fun α ↦ funext fun x ↦ by
       simp only [OrientationLift.reindex_sign, OrientationLift.neg_sign]))
 
-omit [IsManifold I 1 M] in
-/-- Reindexing a manifold orientation along `Equiv.refl` leaves it unchanged. -/
-@[simp]
-theorem reindex_refl (o : Orientation I M ι) : o.reindex (Equiv.refl ι) = o := by
-  induction o using Orientation.inductionOn with | h l =>
-  rw [reindex_mk]
-  exact congrArg mk (OrientationLift.ext (by
-    simp only [OrientationLift.reindex_modelOrientation, _root_.Orientation.reindex_refl,
-      Equiv.refl_apply])
-    (funext fun α ↦ funext fun x ↦ by simp only [OrientationLift.reindex_sign]))
-
-omit [IsManifold I 1 M] in
-/-- Reindexing a manifold orientation along a composite of equivalences is the same as reindexing
-along each in turn. -/
-theorem reindex_trans {ι' ι'' : Type*} [Fintype ι'] [Fintype ι'']
-    (e : ι ≃ ι') (e' : ι' ≃ ι'') (o : Orientation I M ι) :
-    o.reindex (e.trans e') = (o.reindex e).reindex e' := by
-  induction o using Orientation.inductionOn with | h l =>
-  rw [reindex_mk, reindex_mk, reindex_mk]
-  exact congrArg mk (OrientationLift.ext (by
-    simp only [OrientationLift.reindex_modelOrientation, _root_.Orientation.reindex_trans])
-    (funext fun α ↦ funext fun x ↦ by simp only [OrientationLift.reindex_sign]))
-
-omit [IsManifold I 1 M] in
-/-- Reindexing a manifold orientation along two casts `Fin m ≃ Fin n ≃ Fin k` is reindexing along
-their composite cast. -/
-@[simp]
-theorem reindex_finCongr_reindex_finCongr {m n k : ℕ} (h : m = n) (h' : n = k)
-    (o : Orientation I M (Fin m)) :
-    (o.reindex (finCongr h)).reindex (finCongr h') = o.reindex (finCongr (h.trans h')) := by
-  subst h h'
-  rw [finCongr_refl, reindex_refl]
-
 /-- Construct a manifold orientation from a locally constant orientation of its tangent bundle.
 The choice of model orientation affects only its representative lift. -/
 def ofVectorBundleOrientation (model : _root_.Orientation ℝ E ι)
@@ -367,6 +367,15 @@ theorem real_eq_model :
 theorem orientationAt_real (x : ℝ) :
     orientationAt real x = (Module.Basis.singleton (Fin 1) ℝ).orientation := by
   rw [real_eq_model, orientationAt_model]
+
+/-- The basis of the tangent line of `ℝ` at `x` given by the unit vector `1` is positively
+oriented for the standard orientation. -/
+theorem orientation_map_fromTangentSpace_symm_singleton (x : ℝ) :
+    ((Module.Basis.singleton (Fin 1) ℝ).map
+        (NormedSpace.fromTangentSpace (𝕜 := ℝ) x).symm.toLinearEquiv).orientation =
+      real.orientationAt x := by
+  rw [Module.Basis.orientation_map, ContinuousLinearEquiv.toLinearEquiv_symm,
+    ← _root_.Orientation.map_symm, Equiv.symm_apply_eq, real_eq_model, map_orientationAt_model]
 
 /-- Cast a manifold orientation along an equality of models on the same model vector space and
 chart carrier. -/

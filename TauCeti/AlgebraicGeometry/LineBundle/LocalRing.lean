@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
-public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration
+public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalBasis
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 

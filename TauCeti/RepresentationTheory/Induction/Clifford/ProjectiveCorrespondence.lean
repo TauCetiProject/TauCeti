@@ -95,7 +95,7 @@ theorem tensorRep_inclusion_tmul (n : N) (x : A) (y : X) :
     h.tensorRep hU (Subgroup.inclusion (le_inertia A) n) (x ⊗ₜ y) = A.ρ n x ⊗ₜ y := by
   have hn : ((Subgroup.inclusion (le_inertia A) n : inertia A) :
       inertia A ⧸ N.subgroupOf (inertia A)) = 1 :=
-    (QuotientGroup.eq_one_iff _).2 (Subgroup.mem_subgroupOf.2 n.2)
+    (QuotientGroup.eq_one_iff _).2 (Subgroup.mem_subgroupOf.2 n.property)
   rw [tensorRep_tmul, h.apply_inclusion, hn, hU.map_one, FunLike.coe_one_eq_id, id_eq]
 
 /-- **Vectors of `X` as `N`-intertwiners into `A ⊗ X`**: `y` gives `x ↦ x ⊗ y`, an intertwiner
@@ -254,8 +254,7 @@ theorem eq_bot_or_eq_top_of_homAction_mem {W : Type w} [AddCommGroup W] [Module 
     (p : Submodule k (IntertwiningMap A.ρ (σ.comp (Subgroup.inclusion (le_inertia A)))))
     (hp : ∀ q, ∀ ψ ∈ p, h.homAction σ q ψ ∈ p) : p = ⊥ ∨ p = ⊤ :=
   ((h.isIrreducible_tensorRep_iff (h.isProjectiveRep_homAction σ)).1
-    (isIrreducible_of_linearEquiv (h.tensorRepEquiv σ hφ).symm.toLinearEquiv
-      (h.tensorRepEquiv σ hφ).symm.toIntertwiningMap.isIntertwining inferInstance)).2 p hp
+    ((h.tensorRepEquiv σ hφ).symm.isIrreducible inferInstance)).2 p hp
 
 end Field
 

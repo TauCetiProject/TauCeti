@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GCDMonoid.Finset
-public import TauCeti.LinearAlgebra.ExteriorPower.Basic
+public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
-import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
+import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.LinearAlgebra.Submodule.Primitive
 
 /-!
@@ -129,7 +130,7 @@ theorem _root_.Matrix.exists_det_submatrix_eq_sign_mul_plucker (A : Matrix (Fin 
 
 /-- The empty family has Plücker coordinate `1`. -/
 @[simp]
-theorem plucker_of_isEmpty (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
+theorem plucker_fin_zero (x : Fin 0 → ι → R) (s : powersetCard ι 0) : plucker x s = 1 :=
   Matrix.det_isEmpty
 
 /-- The Plücker coordinate of a single vector at the singleton `{i}` is its `i`-th coordinate. -/
@@ -151,12 +152,8 @@ theorem plucker_map (f : R →+* S) (x : Fin p → ι → R) (s : powersetCard �
 /-- The maximal minors of a matrix with a ring homomorphism applied to all entries are the
 images of the maximal minors of the matrix. -/
 theorem _root_.Matrix.plucker_row_map (f : R →+* S) (A : Matrix (Fin p) ι R) :
-    plucker (A.map f).row = f ∘ plucker A.row := by
-  have h : (A.map f).row = fun i k ↦ f (A.row i k) := by
-    ext i k
-    simp
-  ext s
-  rw [h, plucker_map, Function.comp_apply]
+    plucker (A.map f).row = f ∘ plucker A.row :=
+  funext fun s ↦ plucker_map f A.row s
 
 /-- Replacing a family by its product with a square matrix `A` multiplies its Plücker
 coordinates by `det A`. -/
@@ -381,18 +378,9 @@ theorem exists_plucker_eq_mul_plucker_compl_or_eq_neg (hm : p + q = Fintype.card
   have hsurj : Function.Surjective (Matrix.of y).mulVec := hy.mulVec_surjective
   choose w hw using fun j ↦ hsurj (Pi.single j 1)
   -- The vectors orthogonal to every `y j` are the span of `x`, by counting dimensions.
-  have hker : LinearMap.ker (Matrix.of y).mulVecLin ≤ Submodule.span K (range x) := by
-    have hle : Submodule.span K (range x) ≤ LinearMap.ker (Matrix.of y).mulVecLin := by
-      rw [Submodule.span_le]
-      rintro _ ⟨i, rfl⟩
-      ext j
-      simp [Matrix.mulVec, dotProduct_comm, hxy]
-    refine (Submodule.eq_of_le_of_finrank_eq hle ?_).ge
-    have h := LinearMap.finrank_range_add_finrank_ker (Matrix.of y).mulVecLin
-    rw [LinearMap.range_eq_top.2 hsurj, finrank_top, Module.finrank_fin_fun,
-      Module.finrank_fintype_fun_eq_card] at h
-    rw [finrank_span_eq_card hx, Fintype.card_fin]
-    omega
+  have hker := (Matrix.ker_mulVecLin_eq_span_of_dotProduct_eq_zero (A := Matrix.of y)
+    (by simpa only [Fintype.card_fin] using hm) hx (by rwa [Matrix.row_of])
+    (by simpa only [Matrix.row_of] using hxy)).le
   obtain ⟨e⟩ : Nonempty (Fin p ⊕ Fin q ≃ ι) := ⟨Fintype.equivOfCardEq (by simp [hm])⟩
   set D := (Matrix.of fun a b ↦ Sum.elim x w a (e b)).det
   have key : ∀ t, ∃ ε : ℤˣ, plucker y t * D = ((ε : ℤ) : K) * plucker x (compl hm t) := by
@@ -430,7 +418,8 @@ theorem gcd_plucker_eq_one [IsDomain R] [IsPrincipalIdealRing R] [NormalizedGCDM
     Finset.univ.gcd (plucker fun i ↦ (b i : ι → R)) = 1 := by
   classical
   -- Saturation makes the finitely generated quotient torsion-free, hence free over the PID.
-  have : Module.IsTorsionFree R ((ι → R) ⧸ N) := N.isTorsionFree_quotient_of_smul_mem hN
+  have : Module.IsTorsionFree R ((ι → R) ⧸ N) :=
+    Submodule.isTorsionFree_quotient_iff.mpr fun c z hc ↦ hN c z hc.ne_zero
   obtain ⟨P, hP⟩ := N.exists_isCompl_iff_isTorsionFree_quotient.mpr inferInstance
   let π := b.repr.toLinearMap ∘ₗ N.projectionOnto P hP
   let y : Fin p → ι → R := fun i j ↦ π (Pi.single j 1) i

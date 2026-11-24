@@ -40,27 +40,13 @@ noncomputable section
 every field, including in rank zero and when weight blocks repeat. -/
 theorem reductiveCommHopfAlgProperty_weightLeviFiniteTypeCoordinateHopfAlgebra
     (k : Type u) [Field k] {N : ℕ} (w : Fin N → ℤ) :
-    reductiveCommHopfAlgProperty k (weightLeviFiniteTypeCoordinateHopfAlgebra k w) := by
-  let e : FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k)
-      (weightLeviFiniteTypeCoordinateHopfAlgebra k w) ≅
-        weightLeviFiniteTypeCoordinateHopfAlgebra (AlgebraicClosure k) w :=
-    FiniteTypeCommHopfAlgCat.baseChangeIsoOfObjIso
-      (weightLeviFiniteTypeCoordinateHopfAlgebra_obj k w)
-      (weightLeviFiniteTypeCoordinateHopfAlgebra_obj (AlgebraicClosure k) w)
-      (weightLeviCoordinateHopfAlgebraBaseChangeIso k (AlgebraicClosure k) w)
-  apply reductiveCommHopfAlgProperty_of_geometricFiber_iso k _ _
-    (by
-      exact (smoothCommHopfAlgProperty_iff _).mp <|
-        (smoothCommHopfAlgProperty k).prop_of_iso
-          (eqToIso (weightLeviFiniteTypeCoordinateHopfAlgebra_obj k w).symm)
-          ((smoothCommHopfAlgProperty_iff _).mpr inferInstance))
-    (by
-      rw [weightLeviFiniteTypeCoordinateHopfAlgebra_obj]
-      exact geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebra k w)
-    e
-  intro I hI hU
-  exact eq_augmentation_weightLevi_of_isNormal_of_smoothUnipotent
-    (AlgebraicClosure k) w I hI hU
+    reductiveCommHopfAlgProperty k (weightLeviFiniteTypeCoordinateHopfAlgebra k w) :=
+  reductiveCommHopfAlgProperty_of_geometricFiber_iso k _
+    (weightLeviFiniteTypeCoordinateHopfAlgebra (AlgebraicClosure k) w) inferInstance
+    (geometricallyConnectedCommHopfAlgProperty_weightLeviCoordinateHopfAlgebra k w)
+    (ObjectProperty.isoMk _
+      (weightLeviCoordinateHopfAlgebraBaseChangeIso k (AlgebraicClosure k) w))
+    (eq_augmentation_weightLevi_of_isNormal_of_smoothUnipotent (AlgebraicClosure k) w)
 
 end
 

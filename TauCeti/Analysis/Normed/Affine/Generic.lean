@@ -272,9 +272,9 @@ theorem hyperplane_subset_closure_sdiff_of_finrank {ι : Sort*} [Countable ι]
   intro ε hε
   obtain ⟨z, hz, hzE⟩ := A.exists_mem_open_avoid_of_finrank_lt E
     (fun i => by have := hE i; omega) (U := Subtype.val ⁻¹' Metric.ball x ε)
-    (Metric.isOpen_ball.preimage continuous_subtype_val)
+    (Metric.isOpen_ball.preimage continuous_subtypeVal)
     ⟨⟨x, AffineSubspace.self_mem_mk' x _⟩, Metric.mem_ball_self hε⟩
-  exact ⟨z, ⟨hA z z.2, fun hzZ => by
+  exact ⟨z, ⟨hA z z.property, fun hzZ => by
     obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hZE hzZ)
     exact hzE i hi⟩, by simpa [dist_comm] using hz⟩
 
@@ -290,15 +290,15 @@ variable {V P : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- Generic points of a finite exceptional arrangement form an open set. -/
 theorem isOpen_isGeneric (E : ExceptionalArrangement ℝ P) : IsOpen {x | E.IsGeneric x} := by
   convert
-    AffineSubspace.isOpen_genericLocus (fun S : E.exceptions => S.1) using 1
+    AffineSubspace.isOpen_genericLocus (fun S : E.exceptions => S.val) using 1
   ext x
   simp [isGeneric_iff]
 
 /-- Generic points of a finite exceptional arrangement form a dense set. -/
 theorem dense_isGeneric (E : ExceptionalArrangement ℝ P) : Dense {x | E.IsGeneric x} := by
   convert
-    AffineSubspace.dense_genericLocus (fun S : E.exceptions => S.1)
-      (fun S => E.proper S.1 S.2) using 1
+    AffineSubspace.dense_genericLocus (fun S : E.exceptions => S.val)
+      (fun S => E.proper S.val S.property) using 1
   ext x
   simp [isGeneric_iff]
 
@@ -307,8 +307,8 @@ theorem dense_iInter_isGeneric {ι : Type*} [Countable ι]
     (E : ι → ExceptionalArrangement ℝ P) : Dense {x | ∀ i, (E i).IsGeneric x} := by
   convert
     AffineSubspace.dense_genericLocus
-      (fun p : Σ i, (E i).exceptions => p.2.1)
-      (fun p => (E p.1).proper p.2.1 p.2.2) using 1
+      (fun p : Σ i, (E i).exceptions => p.2.val)
+      (fun p => (E p.1).proper p.2.val p.2.property) using 1
   ext x
   simp [isGeneric_iff, Sigma.forall]
 
@@ -316,7 +316,7 @@ theorem dense_iInter_isGeneric {ι : Type*} [Countable ι]
 theorem isGδ_iInter_isGeneric {ι : Type*} [Countable ι]
     (E : ι → ExceptionalArrangement ℝ P) : IsGδ {x | ∀ i, (E i).IsGeneric x} := by
   convert
-    AffineSubspace.isGδ_genericLocus (fun p : Σ i, (E i).exceptions => p.2.1) using 1
+    AffineSubspace.isGδ_genericLocus (fun p : Σ i, (E i).exceptions => p.2.val) using 1
   ext x
   simp [isGeneric_iff, Sigma.forall]
 

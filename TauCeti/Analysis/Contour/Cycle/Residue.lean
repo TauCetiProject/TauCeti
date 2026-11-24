@@ -98,7 +98,7 @@ theorem integral_eq_analyticRemainder_add_sum (decomp : PolarPartDecomposition f
       + 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s := by
   classical
   -- The single-curve splitting, applied to each generator in the canonical support.
-  have hgen : ∀ γ ∈ FreeAbelianGroup.support C,
+  have hgen : ∀ γ ∈ FreeAddCommGroup.support C,
       (∫ t in γ.a..γ.b, deriv (⇑γ) t • f (γ t))
         = (∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
           + 2 * (Real.pi : ℂ) * Complex.I *
@@ -108,7 +108,7 @@ theorem integral_eq_analyticRemainder_add_sum (decomp : PolarPartDecomposition f
       (fun t ht hmem ↦ hoff _ (Finset.mem_coe.mp hmem) (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩))
   calc
     integral f C
-        = ∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
+        = ∑ γ ∈ FreeAddCommGroup.support C, FreeAddCommGroup.coeff γ C •
             ((∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
               + 2 * (Real.pi : ℂ) * Complex.I *
                   ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s) := by

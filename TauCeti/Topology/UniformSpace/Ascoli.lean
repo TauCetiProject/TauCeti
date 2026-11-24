@@ -38,7 +38,7 @@ theorem tendstoUniformlyOn_of_tendsto {ι X α : Type*}
   have h := (EquicontinuousOn.tendsto_uniformOnFun_iff_pi' (𝔖 := {K}) (by simpa using hK)
     (by simpa using hF) L f).2 <| by
       rw [sUnion_singleton]
-      exact tendsto_pi_nhds.2 fun x => hFf x x.2
+      exact tendsto_pi_nhds.2 fun x => hFf x x.property
   exact UniformOnFun.tendsto_iff_tendstoUniformlyOn.1 h K rfl
 
 end EquicontinuousOn

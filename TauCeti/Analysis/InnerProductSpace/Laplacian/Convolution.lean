@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -26,19 +28,38 @@ orthonormal basis (`TauCeti.laplacian_eq_sum_fderiv_fderiv_apply`).
 This is how a convolution against a fundamental solution, such as the Newtonian potential, is
 shown to solve Poisson's equation: the Laplacian moves onto the smooth compactly supported
 factor, where the distributional identity for the kernel applies
-(`TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`).
+(`TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`). For rough `f`, pairing with
+`Δφ` and exchanging the integrals instead moves the Laplacian onto the kernel, so that
+`-Δ (K ⋆ f) = f` in the sense of distributions
+(`TauCeti.integral_laplacian_mul_convolution_of_forall_integral_laplacian_mul_sub`).
+
+It is also how a distributional solution of `Δu = v` on an open set `Ω` is regularized: the
+Laplacian of the mollification `ρ ⋆ u` at `y` is the pairing of `u` with the Laplacian of the
+reflected translate `t ↦ ρ (y - t)` (`TauCeti.reflectTranslateTestFunction`), a test function on
+`Ω` when `y - t ∈ Ω` for every `t` in the support of `ρ`. At such points
+`Δ (ρ ⋆ u) y = (ρ ⋆ v) y`
+(`TauCeti.laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq`); when `Ω` is the whole
+space, this holds everywhere.
 
 ## Main declarations
 
 * `HasCompactSupport.laplacian_convolution_right`: `Δ (f ⋆[L, μ] g) = f ⋆[L, μ] Δ g`.
 * `TauCeti.laplacian_convolution_eq_neg_of_integral_laplacian_mul`: if `-ΔK = δ` in the sense of
   distributions, then `-Δ (K ⋆ f) = f` for every `C²` function `f` with compact support.
+* `TauCeti.integral_laplacian_mul_convolution_of_forall_integral_laplacian_mul_sub`: if
+  `∫ Δφ (x) K(x - t) dx = -φ t` for every pole `t`, then `∫ Δφ (K ⋆ f) = -∫ φ f` for every
+  integrable `f` with compact support.
+* `TauCeti.laplacian_reflectTranslateTestFunction`: the Laplacian of the reflected translate
+  `t ↦ ρ (y - t)` is `t ↦ Δρ (y - t)`.
+* `TauCeti.laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq`: if `Δu = v` in the sense
+  of distributions on `Ω` and `ρ` is smooth with compact support, then
+  `Δ (ρ ⋆ u) y = (ρ ⋆ v) y` whenever `y - t ∈ Ω` for every `t` in the support of `ρ`.
 -/
 
 public section
 
 open ContinuousLinearMap InnerProductSpace Laplacian MeasureTheory
-open scoped Convolution
+open scoped ContDiff Convolution Distributions
 
 variable {E E₀ E' F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [SFinite μ] [μ.IsAddLeftInvariant]
@@ -103,5 +124,48 @@ theorem laplacian_convolution_eq_neg_of_integral_laplacian_mul [μ.IsNegInvarian
     _ = φ ((-f) x) := by
         rw [hKΔ _ hφf (hc.comp_left φ.map_zero) x]
         simp
+
+/-- **Convolution with a fundamental solution solves Poisson's equation weakly.** Let `K` be
+locally integrable and let `φ` be `C²` with compact support, with `∫ Δφ (x) K(x - t) dx = -φ t`
+for every pole `t`, as when `-ΔK = δ` in the sense of distributions. Then for every integrable `f`
+with compact support, `∫ Δφ (K ⋆ f) = -∫ φ f`: tested against `φ`, `-Δ (K ⋆ f) = f`. -/
+theorem integral_laplacian_mul_convolution_of_forall_integral_laplacian_mul_sub
+    [μ.IsAddRightInvariant] [μ.IsNegInvariant] {K φ f : E → ℝ} (hK : LocallyIntegrable K μ)
+    (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ)
+    (hΔ : ∀ t, ∫ x, Δ φ x * K (x - t) ∂μ = -φ t) (hf : Integrable f μ)
+    (hfc : HasCompactSupport f) :
+    ∫ x, Δ φ x * (K ⋆[lsmul ℝ ℝ, μ] f) x ∂μ = -∫ x, φ x * f x ∂μ := by
+  rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hφ.continuous_laplacian
+    hφc.laplacian hK hf hfc, ← integral_neg]
+  simp_rw [hΔ, mul_neg, mul_comm]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The Laplacian of the reflected translate `t ↦ ρ (y - t)` is the reflected translate of the
+Laplacian of `ρ`. -/
+@[simp]
+theorem laplacian_reflectTranslateTestFunction {Ω : TopologicalSpace.Opens E} (ρ : E → F)
+    (y : E) (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ)
+    (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) (t : E) :
+    Δ (reflectTranslateTestFunction ρ y hρ hρc hy : E → F) t = Δ ρ (y - t) := by
+  have hcomp : (reflectTranslateTestFunction ρ y hρ hρc hy : E → F) = fun s ↦ ρ (y - s) := by
+    ext s
+    simp
+  rw [hcomp]
+  exact congrFun (laplacian_comp_sub_left ρ y) t
+
+/-- **Mollifying a distributional solution of `Δu = v`.** Let `Δu = v` in the sense of
+distributions on the open set `Ω`: `∫ Δφ • u = ∫ φ • v` for every test function `φ` on `Ω`. If `ρ`
+is smooth with compact support and `y - t ∈ Ω` for every `t` in the support of `ρ`, then the
+mollification `ρ ⋆ u` satisfies `Δ (ρ ⋆ u) y = (ρ ⋆ v) y`. -/
+theorem laplacian_convolution_apply_eq_of_integral_laplacian_smul_eq [μ.IsNegInvariant]
+    {Ω : TopologicalSpace.Opens E} {u v : E → F} (hu : LocallyIntegrable u μ)
+    (huv : ∀ φ : 𝓓(Ω, ℝ), ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = ∫ x, (φ : E → ℝ) x • v x ∂μ)
+    {ρ : E → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) {y : E}
+    (hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω) :
+    Δ (ρ ⋆[lsmul ℝ ℝ, μ] u) y = (ρ ⋆[lsmul ℝ ℝ, μ] v) y := by
+  rw [← convolution_flip, hρc.laplacian_convolution_right _ hu (hρ.of_le (by simp)),
+    convolution_def, ← convolution_flip, convolution_def]
+  simpa only [flip_apply, lsmul_apply, reflectTranslateTestFunction_apply,
+    laplacian_reflectTranslateTestFunction] using huv (reflectTranslateTestFunction ρ y hρ hρc hy)
 
 end TauCeti

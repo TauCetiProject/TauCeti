@@ -74,7 +74,7 @@ theorem exists_isOpen_chartIteratedFDeriv_mem_iff_isManifoldStronglyPseudoconvex
       curry (chartIteratedFDeriv g a 2 hr z) =
         fderiv ℝ (fderiv ℝ (g ∘ (chartAt E a).symm)) z := by
     rw [chartIteratedFDeriv_self_target_apply,
-      iteratedFDerivWithin_of_isOpen 2 (isOpen_extChartAt_target a) z.2]
+      iteratedFDerivWithin_of_isOpen 2 (isOpen_extChartAt_target a) z.property]
     ext v w
     simp [curry, iteratedFDeriv_two_apply]
   have htest (g : C^r⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (a : M)
@@ -83,7 +83,7 @@ theorem exists_isOpen_chartIteratedFDeriv_mem_iff_isManifoldStronglyPseudoconvex
         IsManifoldStronglyPseudoconvexAt E q g ((extChartAt 𝓘(ℝ, E) a).symm z) := by
     rw [Set.mem_preimage, hjet, Set.mem_ofPred_eq, ← leviForm_def,
       ← isStronglyPseudoconvexAt_iff]
-    have hz : z.1 ∈ (chartAt E a).target := by simpa using z.2
+    have hz : z.val ∈ (chartAt E a).target := by simpa using z.property
     have hx := (chartAt E a).map_target hz
     simpa only [extChartAt_coe_symm, modelWithCornersSelf_coe_symm, Function.comp_id,
       (chartAt E a).right_inv hz] using

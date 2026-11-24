@@ -28,7 +28,7 @@ give commuting generated-group points, while a class-two root string
 [xᵢ(s), xⱼ(t)] = xₖ(cst).
 ```
 
-The file also transports the multiply-laced relation from
+The file also transports the multiply-laced relations from
 `Scheme/MultiplyLacedRelations.lean` and the type-`G₂` relation from
 `Scheme/Relations/G2/Basic.lean`, together with its short-pair counterpart in
 `Scheme/Relations/G2/ShortPair.lean`. All these relations hold intrinsically on the
@@ -42,14 +42,16 @@ The file also transports the multiply-laced relation from
   commutatorElement_kostantRootSubgroupToGenerated_of_lie_eq`: the class-two Chevalley relation
   inside the generated group scheme.
 * `TauCeti.UniversalEnvelopingAlgebra.
-  commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq`: the multiply-laced
-  Chevalley relation inside the generated group scheme.
+  commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq` and
+  `commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_rev_eq`: the multiply-laced
+  Chevalley relations inside the generated group scheme in both root orders.
 * `TauCeti.UniversalEnvelopingAlgebra.
   kostantRootSubgroupToGenerated_mul_of_lie_eq_three_nsmul`: the type-`G₂` Chevalley relation
   inside the generated group scheme.
 
 ## References
 
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 26--27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
@@ -158,7 +160,7 @@ points is the product of the factored `k`- and `l`-root points. -/
 theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
-    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
+    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0)
     (p q r s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (AdditiveGroup.groupScheme ℤ).X)
     (hr : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A r) =
@@ -178,7 +180,7 @@ theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq
   apply (GeneralLinear.schemePointsMulEquiv n A).injective
   simpa only [map_commutatorElement, map_mul] using
     commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq
-      e h ρ M hM b A hij hiij hil hjk hjl
+      e h ρ M hM b A hij hiij hil hjk
         (hnil i) (hnil j) (hnil k) (hnil l) p q r s hr hs
 
 /-- The multiply-laced Chevalley commutator relation inside the generated group scheme, with
@@ -186,7 +188,7 @@ both output points written explicitly at parameters `c t u` and `d t² u`. -/
 theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq'
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
-    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
+    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0)
     (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (AdditiveGroup.groupScheme ℤ).X) :
     ⁅p ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b i).hom.hom,
@@ -202,7 +204,64 @@ theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq'
               Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q)))) ≫
         (kostantRootSubgroupToGenerated e h ρ M hM hnil b l).hom.hom) :=
   commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq
-    e h ρ M hM b hnil A hij hiij hil hjk hjl p q _ _
+    e h ρ M hM b hnil A hij hiij hil hjk p q _ _
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
+      (congrArg Multiplicative.toAdd
+        ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
+
+/-- **Steinberg's reversed multiply-laced Chevalley commutator relation inside the generated Kostant
+group scheme.** The indices `i, j, k, l` correspond to `α, β, α + β, α + 2β`. If `r` and `s` have
+parameters `c t u` and `-d t u²`, then the commutator of the factored `i`- and `j`-root points is
+the product of the factored `k`- and `l`-root points. -/
+theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_rev_eq
+    {i j k l : I} {c d : ℤ}
+    (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
+    (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
+    (p q r s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X)
+    (hr : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A r) =
+      (c : A) * (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q)))
+    (hs : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A s) =
+      (-d : A) * (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+        Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q) ^ 2)) :
+    ⁅p ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b i).hom.hom,
+      q ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b j).hom.hom⁆ =
+      (r ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b k).hom.hom) *
+        (s ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b l).hom.hom) := by
+  apply kostantGeneratedGroupSchemeι_monoidHom_injective e h ρ M hM b hnil A
+  rw [map_commutatorElement, map_mul]
+  simp only [IsMonHom.monoidHom_apply, Category.assoc, ← Grp.comp_hom_hom,
+    kostantRootSubgroupToGenerated_comp_ι]
+  apply (GeneralLinear.schemePointsMulEquiv n A).injective
+  simpa only [map_commutatorElement, map_mul] using
+    commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_rev_eq
+      e h ρ M hM b A hij hjji hjl hik
+        (hnil i) (hnil j) (hnil k) (hnil l) p q r s hr hs
+
+/-- The reversed multiply-laced Chevalley commutator relation inside the generated group scheme,
+with both output points written explicitly at parameters `c t u` and `-d t u²`. -/
+theorem commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_rev_eq'
+    {i j k l : I} {c d : ℤ}
+    (hij : ⁅e i, e j⁆ = c • e k) (hjji : ⁅e j, ⁅e j, e i⁆⁆ = (2 * d) • e l)
+    (hjl : ⁅e j, e l⁆ = 0) (hik : ⁅e i, e k⁆ = 0)
+    (p q : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
+      (AdditiveGroup.groupScheme ℤ).X) :
+    ⁅p ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b i).hom.hom,
+      q ≫ (kostantRootSubgroupToGenerated e h ρ M hM hnil b j).hom.hom⁆ =
+      ((AdditiveGroup.schemePointsMulEquiv A).symm
+          (Multiplicative.ofAdd ((c : A) *
+            (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+              Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q)))) ≫
+        (kostantRootSubgroupToGenerated e h ρ M hM hnil b k).hom.hom) *
+      ((AdditiveGroup.schemePointsMulEquiv A).symm
+          (Multiplicative.ofAdd ((-d : A) *
+            (Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A p) *
+              Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q) ^ 2))) ≫
+        (kostantRootSubgroupToGenerated e h ρ M hM hnil b l).hom.hom) :=
+  commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_rev_eq
+    e h ρ M hM b hnil A hij hjji hjl hik p q _ _
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
       (congrArg Multiplicative.toAdd

@@ -53,7 +53,7 @@ noncomputable def analyticAffineChartProdHomeomorph (σ : Φ.cones) (τ : Ψ.con
     (Φ.prod Ψ).analyticAffineChartDiagram.obj (Φ.prodCone Ψ σ τ) ≃ₜ
       Φ.analyticAffineChartDiagram.obj σ × Ψ.analyticAffineChartDiagram.obj τ :=
   AffineSemigroupComplexPoint.prodHomeomorph
-    (dualSemigroupProdEquiv Φ.lattice Ψ.lattice σ.1 τ.1)
+    (dualSemigroupProdEquiv Φ.lattice Ψ.lattice σ.val τ.val)
     ((Φ.prod Ψ).analyticChartGenerators (Φ.prodCone Ψ σ τ)).2
     (Φ.analyticChartGenerators σ).2 (Ψ.analyticChartGenerators τ).2
 
@@ -100,7 +100,7 @@ theorem analyticAffineChartProdHomeomorph_snd (σ : Φ.cones) (τ : Ψ.cones)
 theorem coe_analyticAffineChartProdHomeomorph (σ : Φ.cones) (τ : Ψ.cones) :
     ⇑(Φ.analyticAffineChartProdHomeomorph Ψ σ τ) =
       AffineSemigroupComplexPoint.prodEquiv
-        (dualSemigroupProdEquiv Φ.lattice Ψ.lattice σ.1 τ.1) := by
+        (dualSemigroupProdEquiv Φ.lattice Ψ.lattice σ.val τ.val) := by
   rw [analyticAffineChartProdHomeomorph]
   exact AffineSemigroupComplexPoint.coe_prodHomeomorph _ _ _ _
 
@@ -109,7 +109,7 @@ theorem coe_analyticAffineChartProdHomeomorph (σ : Φ.cones) (τ : Ψ.cones) :
 theorem coe_analyticAffineChartProdHomeomorph_symm (σ : Φ.cones) (τ : Ψ.cones) :
     ⇑(Φ.analyticAffineChartProdHomeomorph Ψ σ τ).symm =
       (AffineSemigroupComplexPoint.prodEquiv
-        (dualSemigroupProdEquiv Φ.lattice Ψ.lattice σ.1 τ.1)).symm := by
+        (dualSemigroupProdEquiv Φ.lattice Ψ.lattice σ.val τ.val)).symm := by
   rw [analyticAffineChartProdHomeomorph]
   exact AffineSemigroupComplexPoint.coe_prodHomeomorph_symm _ _ _ _
 

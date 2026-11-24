@@ -67,10 +67,10 @@ private theorem injective_of_forall_mem_ker_norm (hG : IsPGroup p G) (ρ : Repre
     have := congrFun (congrArg Subtype.val (hy g⁻¹)) 1
     simpa [hσ] using this
   have hnorm : ρ.norm ((y : G → W) 1 : V) = 0 := by
-    have := y.2
+    have := y.property
     rw [LinearMap.mem_ker, hf] at this
     simpa [Representation.norm, hconst] using this
-  have hmem : ((y : G → W) 1 : V) ∈ Coinvariants.ker ρ ⊓ W := ⟨h hnorm, ((y : G → W) 1).2⟩
+  have hmem : ((y : G → W) 1 : V) ∈ Coinvariants.ker ρ ⊓ W := ⟨h hnorm, ((y : G → W) 1).property⟩
   rw [hW, Submodule.mem_bot] at hmem
   exact hy0 (Subtype.ext (funext fun g ↦ Subtype.ext (by simpa [hconst g] using hmem)))
 

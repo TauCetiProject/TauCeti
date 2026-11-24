@@ -190,7 +190,7 @@ private lemma mulSupport_pp_dvd_p_aux (p : ℕ) (hp : p.Prime)
     have h := congr_arg (fun g : GL (Fin 2) ℚ ↦ (↑g : Matrix (Fin 2) (Fin 2) ℚ) i j) h_gl
     simp only [natDiagGL_coe 2 _ ha_pos, natDiagGL_coe 2 _ h1p, natDiagGL_coe 2 _ h1pk,
       Matrix.diagonal_apply, Units.val_mul, mapGL_coe_matrix, Matrix.mul_apply,
-      map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, algebraMap_int_eq,
+      map_apply_coe, Matrix.map_apply, algebraMap_int_eq,
       Int.coe_castRingHom] at h
     simp only [Matrix.diagonal_apply, Matrix.mul_apply]
     exact_mod_cast h
@@ -328,8 +328,8 @@ private lemma mulSupport_pp_exists_prod_eq (k : ℕ) (a : Fin 2 → ℕ)
   obtain ⟨La, hLa, Ra, hRa, h_prod_eq⟩ := h_prod_mem
   obtain ⟨SL_La, hSL_La⟩ := (mem_SLnZ_iff 2).mp hLa
   obtain ⟨SL_Ra, hSL_Ra⟩ := (mem_SLnZ_iff 2).mp hRa
-  obtain ⟨SL_i₀, hSL_i₀⟩ := (mem_SLnZ_iff 2).mp q.1.out.2
-  obtain ⟨SL_j₀, hSL_j₀⟩ := (mem_SLnZ_iff 2).mp q.2.out.2
+  obtain ⟨SL_i₀, hSL_i₀⟩ := (mem_SLnZ_iff 2).mp q.1.out.property
+  obtain ⟨SL_j₀, hSL_j₀⟩ := (mem_SLnZ_iff 2).mp q.2.out.property
   refine ⟨SL_i₀, SL_j₀, SL_La, SL_Ra, ?_⟩
   rw [hSL_i₀, hSL_j₀, hSL_La, hSL_Ra]
   exact h_prod_eq

@@ -35,7 +35,7 @@ Over an ultrametric seminormed commutative ring, a product majorant
   (`Matrix.norm_charCoeff_le_of_principalMinor_le`);
 * if `r` tends to zero along the cofinite filter and the ring is complete, the principal
   minors of each size form a summable family (`Matrix.summable_principalMinor_of_le_prod`);
-* if `ρ * r i ≤ q` off a finite set `T` and `ρ * r i ≤ B` everywhere, with `ρ > 0`,
+* if `ρ * r i ≤ q` off a finite set `T` and `ρ * r i ≤ B` everywhere, with `0 ≤ ρ`,
   `0 ≤ q` and `1 ≤ B`, then `‖A.charCoeff n‖ * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`
   (`Matrix.norm_charCoeff_mul_pow_le_of_le_prod`);
 * if `r` tends to zero along the cofinite filter and the ring is normed, the series is
@@ -133,7 +133,7 @@ theorem charCoeff_def (A : Matrix ι ι R) (n : ℕ) :
 @[simp]
 theorem charCoeff_zero (A : Matrix ι ι R) : A.charCoeff 0 = 1 := by
   rw [charCoeff_def, tsum_eq_single ⟨∅, card_empty⟩ fun s hs ↦
-    (hs (Subtype.ext (card_eq_zero.mp s.2))).elim]
+    (hs (Subtype.ext (card_eq_zero.mp s.property))).elim]
   simp
 
 /-- **Extension by zero.** If every row of `A` outside the range of an embedding `e` vanishes,
@@ -145,19 +145,20 @@ theorem charCoeff_submatrix_of_row_eq_zero (A : Matrix κ κ R) (e : ι ↪ κ)
   rw [charCoeff_def, charCoeff_def]
   congr 1
   let g : {s : Finset ι // s.card = n} → {t : Finset κ // t.card = n} :=
-    fun s ↦ ⟨s.1.map e, by rw [card_map, s.2]⟩
+    fun s ↦ ⟨s.val.map e, by rw [card_map, s.property]⟩
   have hg : Function.Injective g := fun s t h ↦
     Subtype.ext (Finset.map_injective e (congrArg Subtype.val h))
   refine (tsum_congr fun s : {s : Finset ι // s.card = n} ↦
-    principalMinor_submatrix A e s.1).trans (hg.tsum_eq (f := fun t ↦ A.principalMinor t.1) ?_)
+    principalMinor_submatrix A e s.val).trans (hg.tsum_eq (f := fun t ↦ A.principalMinor t.val) ?_)
   intro t ht
   -- A nonzero principal minor only involves indices in the range of `e`.
-  have hrange (i : κ) (hi : i ∈ t.1) : i ∈ Set.range e := by_contra fun hi' ↦
+  have hrange (i : κ) (hi : i ∈ t.val) : i ∈ Set.range e := by_contra fun hi' ↦
     ht (principalMinor_eq_zero_of_row_eq_zero hi fun j _ ↦ hA i hi' j)
-  have hmap : (t.1.preimage e e.injective.injOn).map e = t.1 := by
+  have hmap : (t.val.preimage e e.injective.injOn).map e = t.val := by
     classical
     rw [map_eq_image, image_preimage, filter_true_of_mem hrange]
-  exact ⟨⟨t.1.preimage e e.injective.injOn, by rw [← card_map e, hmap, t.2]⟩, Subtype.ext hmap⟩
+  exact ⟨⟨t.val.preimage e e.injective.injOn, by rw [← card_map e, hmap, t.property]⟩,
+      Subtype.ext hmap⟩
 
 /-- The coefficients of the principal-minor series do not depend on the enumeration of the
 index type. -/
@@ -198,7 +199,7 @@ theorem charCoeff_smul [ContinuousConstSMul R R] [T2Space R] (c : R) {A : Matrix
   have hsum : ∑' s : {s : Finset ι // s.card = n}, (c • A).principalMinor s =
       c ^ n * ∑' s : {s : Finset ι // s.card = n}, A.principalMinor s := by
     rw [← smul_eq_mul, ← hA.tsum_const_smul]
-    exact tsum_congr fun s ↦ by rw [principalMinor_smul, s.2, smul_eq_mul]
+    exact tsum_congr fun s ↦ by rw [principalMinor_smul, s.property, smul_eq_mul]
   rw [charCoeff_def, charCoeff_def, hsum, mul_left_comm]
 
 /-- The principal-minor series `det (1 - T A)`, whose coefficients are `Matrix.charCoeff`. -/
@@ -311,7 +312,7 @@ theorem norm_charCoeff_le_of_principalMinor_le {A : Matrix ι ι R} {n : ℕ}
     ‖A.charCoeff n‖ ≤ C := by
   have hsum : ‖∑' s : {s : Finset ι // s.card = n}, A.principalMinor s‖ ≤ C :=
     IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hC fun s ↦
-      hs s s.2
+      hs s s.property
   rw [charCoeff_def]
   rcases neg_one_pow_eq_or R n with hn | hn <;> simpa [hn] using hsum
 
@@ -344,13 +345,13 @@ theorem summable_principalMinor_of_le_prod [CompleteSpace R] {A : Matrix ι ι R
   intro i hi
   rw [Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
   intro hri
-  have herase : ∏ j ∈ s.1.erase i, r j ≤ M' ^ n := by
-    calc ∏ j ∈ s.1.erase i, r j ≤ ∏ _j ∈ s.1.erase i, M' :=
+  have herase : ∏ j ∈ s.val.erase i, r j ≤ M' ^ n := by
+    calc ∏ j ∈ s.val.erase i, r j ≤ ∏ _j ∈ s.val.erase i, M' :=
           prod_le_prod₀ (fun j _ ↦ hr₀ j) fun j _ ↦ (hM ⟨j, rfl⟩).trans (le_max_right _ _)
-      _ = M' ^ (s.1.erase i).card := prod_const M'
-      _ ≤ M' ^ n := pow_le_pow_right₀ hM' (card_erase_le.trans s.2.le)
-  have hprod : ∏ j ∈ s.1, r j < ε := by
-    calc ∏ j ∈ s.1, r j = r i * ∏ j ∈ s.1.erase i, r j := (mul_prod_erase _ _ hi).symm
+      _ = M' ^ (s.val.erase i).card := prod_const M'
+      _ ≤ M' ^ n := pow_le_pow_right₀ hM' (card_erase_le.trans s.property.le)
+  have hprod : ∏ j ∈ s.val, r j < ε := by
+    calc ∏ j ∈ s.val, r j = r i * ∏ j ∈ s.val.erase i, r j := (mul_prod_erase _ _ hi).symm
       _ ≤ r i * M' ^ n := mul_le_mul_of_nonneg_left herase (hr₀ i)
       _ < ε / M' ^ n * M' ^ n := mul_lt_mul_of_pos_right hri hM'₀
       _ = ε := div_mul_cancel₀ ε hM'₀.ne'
@@ -358,13 +359,13 @@ theorem summable_principalMinor_of_le_prod [CompleteSpace R] {A : Matrix ι ι R
   exact hs.not_gt hprod
 
 /-- **Uniform tail bound from principal minors.** Suppose the principal minors are bounded
-by products of nonnegative `r i`, and let `ρ > 0`, `0 ≤ q`,
+by products of nonnegative `r i`, and let `0 ≤ ρ`, `0 ≤ q`,
 `1 ≤ B`, and `T` a finite set of indices with `ρ * r i ≤ q` off `T` and `ρ * r i ≤ B`
 everywhere. Then `‖A.charCoeff n‖ * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`, with truncated subtraction
 in the exponent. The bound depends on `A` only through `r`. -/
 theorem norm_charCoeff_mul_pow_le_of_le_prod {A : Matrix ι ι R} {r : ι → ℝ}
     (hA : ∀ s : Finset ι, ‖A.principalMinor s‖ ≤ ∏ i ∈ s, r i)
-    {ρ q B : ℝ} (hρ : 0 < ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset ι)
+    {ρ q B : ℝ} (hρ : 0 ≤ ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset ι)
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) (n : ℕ) :
     ‖A.charCoeff n‖ * ρ ^ n ≤ B ^ T.card * q ^ (n - T.card) :=
   TauCeti.mul_pow_le_of_forall_prod_le (TauCeti.nonneg_of_norm_principalMinor_le_prod hA)
@@ -412,12 +413,12 @@ theorem summable_principalMinor [CompleteSpace R] {A : Matrix ι ι R} {r : ι �
     Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s :=
   summable_principalMinor_of_le_prod (norm_principalMinor_le hA) hr n
 
-/-- **Uniform tail bound.** Suppose `r` bounds the rows of `A`, and let `ρ > 0`, `0 ≤ q`,
+/-- **Uniform tail bound.** Suppose `r` bounds the rows of `A`, and let `0 ≤ ρ`, `0 ≤ q`,
 `1 ≤ B`, and `T` a finite set of indices with `ρ * r i ≤ q` off `T` and `ρ * r i ≤ B`
 everywhere. Then `‖A.charCoeff n‖ * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`, with truncated subtraction
 in the exponent. The bound depends on `A` only through `r`. -/
 theorem norm_charCoeff_mul_pow_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : ∀ i j, ‖A i j‖ ≤ r i)
-    {ρ q B : ℝ} (hρ : 0 < ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset ι)
+    {ρ q B : ℝ} (hρ : 0 ≤ ρ) (hq₀ : 0 ≤ q) (hB : 1 ≤ B) (T : Finset ι)
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) (n : ℕ) :
     ‖A.charCoeff n‖ * ρ ^ n ≤ B ^ T.card * q ^ (n - T.card) :=
   norm_charCoeff_mul_pow_le_of_le_prod (norm_principalMinor_le hA)

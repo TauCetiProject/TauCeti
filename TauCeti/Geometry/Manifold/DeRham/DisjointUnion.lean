@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.Poincare.Pairing
+public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 public import Mathlib.LinearAlgebra.DFinsupp
 
 import TauCeti.Topology.Sets.Opens
@@ -44,14 +44,14 @@ variable {E H M F ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topolo
 private theorem ext_roughForm_iSup {γ₁ γ₂ : RoughForm I (⨆ i, U i : Opens M) F k}
     (h : ∀ i, TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) γ₁ =
       TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) γ₂) : γ₁ = γ₂ := by
-  funext x; obtain ⟨i, hi⟩ := Opens.mem_iSup.mp x.2; ext v
+  funext x; obtain ⟨i, hi⟩ := Opens.mem_iSup.mp x.property; ext v
   have hx := DFunLike.congr_fun (congrFun (h i) ⟨x, hi⟩) v
   rwa [mpullback_inclusion_apply, mpullback_inclusion_apply] at hx
 
 private def piecewiseRoughForm (U : ι → Opens M) (η : ∀ i, RoughForm I (U i) F k) :
     RoughForm I (⨆ i, U i : Opens M) F k :=
-  fun x ↦ η (Classical.choose (Opens.mem_iSup.mp x.2))
-    ⟨x, Classical.choose_spec (Opens.mem_iSup.mp x.2)⟩
+  fun x ↦ η (Classical.choose (Opens.mem_iSup.mp x.property))
+    ⟨x, Classical.choose_spec (Opens.mem_iSup.mp x.property)⟩
 
 private theorem mpullback_inclusion_piecewiseRoughForm (hdisj : Pairwise (Disjoint on U))
     (η : ∀ i, RoughForm I (U i) F k) (i : ι) :
@@ -59,10 +59,11 @@ private theorem mpullback_inclusion_piecewiseRoughForm (hdisj : Pairwise (Disjoi
   funext y; ext v; rw [mpullback_inclusion_apply]
   have haux : ∀ {j : ι} (hj : (y : M) ∈ U j), (η j ⟨y, hj⟩ : E [⋀^Fin k]→L[ℝ] F) = η i y := by
     intro j hj
-    obtain rfl := hdisj.eq fun h ↦ (h.le_bot ⟨hj, y.2⟩).elim
+    obtain rfl := hdisj.eq fun h ↦ (h.le_bot ⟨hj, y.property⟩).elim
     rfl
   exact DFunLike.congr_fun
-    (haux (Classical.choose_spec (Opens.mem_iSup.mp (Opens.inclusion (le_iSup U i) y).2))) v
+    (haux (Classical.choose_spec
+      (Opens.mem_iSup.mp (Opens.inclusion (le_iSup U i) y).property))) v
 
 variable (I) in
 /-- Smooth forms on a union of pairwise disjoint opens `U i` are linearly equivalent to families of
@@ -72,9 +73,10 @@ def SmoothForm.piEquiv [IsManifold I 1 M] (hdisj : Pairwise (Disjoint on U)) (k 
   toFun φ i := SmoothForm.mpullback (Opens.inclusion (le_iSup U i)) (contMDiff_inclusion _) φ
   map_add' φ ψ := funext fun _ ↦ map_add _ φ ψ
   map_smul' c φ := funext fun _ ↦ map_smul _ c φ
-  invFun η := ⟨piecewiseRoughForm U fun i ↦ (η i).1,
-    (IsSmoothForm.of_mpullback_inclusion (le_iSup U) (fun x ↦ Opens.mem_iSup.mp x.2) fun i ↦ by
-      rw [mpullback_inclusion_piecewiseRoughForm hdisj]; exact (η i).isSmoothForm
+  invFun η := ⟨piecewiseRoughForm U fun i ↦ (η i).val,
+    (IsSmoothForm.of_mpullback_inclusion (le_iSup U) (fun x ↦ Opens.mem_iSup.mp x.property)
+      fun i ↦ by
+        rw [mpullback_inclusion_piecewiseRoughForm hdisj]; exact (η i).isSmoothForm
     ).mem_smoothBundleForms⟩
   left_inv _ := Subtype.ext <| ext_roughForm_iSup fun _ ↦ by
     dsimp only; rw [mpullback_inclusion_piecewiseRoughForm hdisj, SmoothForm.coe_mpullback]
@@ -113,7 +115,7 @@ theorem deRhamCohomology.bijective_pi_map (hdisj : Pairwise (Disjoint on U)) (k 
         (contMDiff_inclusion _) k) := by
   refine ⟨(injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_, fun c ↦ ?_⟩
   · obtain ⟨φ, rfl⟩ := deRhamCohomology.mk_surjective I k c
-    have hexact (i : ι) : SmoothForm.piEquiv I hdisj k φ.1 i ∈ exactForms I (U i) k := by
+    have hexact (i : ι) : SmoothForm.piEquiv I hdisj k φ.val i ∈ exactForms I (U i) k := by
       simpa only [LinearMap.pi_apply, Pi.zero_apply, deRhamCohomology.map_mk,
         deRhamCohomology.mk_eq_zero_iff, closedForms.coe_mpullback,
         SmoothForm.piEquiv_apply] using congrFun hc i
@@ -130,18 +132,18 @@ theorem deRhamCohomology.bijective_pi_map (hdisj : Pairwise (Disjoint on U)) (k 
         (SmoothForm.piEquiv I hdisj (m + 1)).injective (funext fun i ↦ ?_)⟩
       rw [SmoothForm.piEquiv_mextDerivₗ, LinearEquiv.apply_symm_apply, hη]
   · choose φ hφ using fun i ↦ deRhamCohomology.mk_surjective I k (c i)
-    let Φ := (SmoothForm.piEquiv I hdisj k).symm (fun i ↦ (φ i).1)
+    let Φ := (SmoothForm.piEquiv I hdisj k).symm (fun i ↦ (φ i).val)
     have hΦ : Φ ∈ closedForms I (⨆ i, U i : Opens M) k :=
       (mem_closedForms_iff_mextDerivₗ_eq_zero I Φ).mpr <|
         (SmoothForm.piEquiv I hdisj (k + 1)).injective <| funext fun i ↦ by
           rw [SmoothForm.piEquiv_mextDerivₗ, map_zero, Pi.zero_apply]
           simpa only [Φ, LinearEquiv.apply_symm_apply] using
-            (mem_closedForms_iff_mextDerivₗ_eq_zero I (φ i).1).mp (φ i).2
+            (mem_closedForms_iff_mextDerivₗ_eq_zero I (φ i).val).mp (φ i).property
     refine ⟨deRhamCohomology.mk I k ⟨Φ, hΦ⟩, funext fun i ↦ ?_⟩
     rw [LinearMap.pi_apply, deRhamCohomology.map_mk, ← hφ i]
     exact congrArg (deRhamCohomology.mk I k) <| Subtype.ext <|
       (closedForms.coe_mpullback _ _ _ _).trans <|
-        congrFun ((SmoothForm.piEquiv I hdisj k).apply_symm_apply (fun j ↦ (φ j).1)) i
+        congrFun ((SmoothForm.piEquiv I hdisj k).apply_symm_apply (fun j ↦ (φ j).val)) i
 
 /-- **De Rham cohomology of a disjoint open union.** -/
 def deRhamCohomology.piEquiv (hdisj : Pairwise (Disjoint on U)) (k : ℕ) :
@@ -174,7 +176,7 @@ private theorem mpullback_inclusion_lsum_extendByZero (hdisj : Pairwise (Disjoin
     (f : Π₀ i, compactlySupportedForms I (U i) k) (j : ι) :
     TauCeti.mpullback I I (Opens.inclusion (le_iSup U j))
       ((DFinsupp.lsum ℝ (fun i ↦ extendByZero (le_iSup U i) k) f :
-        SmoothForm I (⨆ i, U i : Opens M) ℝ k).1) = (f j : SmoothForm I (U j) ℝ k).1 := by
+        SmoothForm I (⨆ i, U i : Opens M) ℝ k).val) = (f j : SmoothForm I (U j) ℝ k).val := by
   induction f using DFinsupp.induction with
   | h0 => funext y; simp only [map_zero, Submodule.coe_zero, mpullback_inclusion_apply]; rfl
   | ha i ψ f _ _ ih =>
@@ -184,37 +186,38 @@ private theorem mpullback_inclusion_lsum_extendByZero (hdisj : Pairwise (Disjoin
     · subst hij; rw [DFinsupp.single_eq_same, coe_extendByZero,
         RoughForm.mpullback_inclusion_extendByZero]
     · have hzero : TauCeti.mpullback I I (Opens.inclusion (le_iSup U j))
-          ((extendByZero (le_iSup U i) k ψ : SmoothForm I (⨆ i, U i : Opens M) ℝ k).1) = 0 := by
+          ((extendByZero (le_iSup U i) k ψ : SmoothForm I (⨆ i, U i : Opens M) ℝ k).val) = 0 := by
         rw [coe_extendByZero, RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero]
         exact funext fun y ↦ RoughForm.extendByZero_apply_of_notMem _
-          fun hy ↦ ((hdisj hij).le_bot ⟨hy, y.2⟩).elim
+          fun hy ↦ ((hdisj hij).le_bot ⟨hy, y.property⟩).elim
       rw [hzero, DFinsupp.single_eq_of_ne (Ne.symm hij), Submodule.coe_zero, Submodule.coe_zero]
 
 omit [DecidableEq ι] in
 private theorem exists_extendByZero_eq_restrict (hdisj : Pairwise (Disjoint on U)) {k : ℕ}
     (φ : compactlySupportedForms I (⨆ i, U i : Opens M) k) (i : ι) :
     ∃ ψ : compactlySupportedForms I (U i) k,
-      ((extendByZero (le_iSup U i) k ψ : SmoothForm I (⨆ j, U j : Opens M) ℝ k).1) =
+      ((extendByZero (le_iSup U i) k ψ : SmoothForm I (⨆ j, U j : Opens M) ℝ k).val) =
         RoughForm.extendByZero (⨆ j, U j : Opens M)
-          (TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) φ.1.1) := by
+          (TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) φ.val.val) := by
   let W : Opens M := ⨆ j, U j
   let θ : RoughForm I W ℝ k :=
-    RoughForm.extendByZero W (TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) φ.1.1)
+    RoughForm.extendByZero W (TauCeti.mpullback I I (Opens.inclusion (le_iSup U i)) φ.val.val)
   have hθ_smooth : IsSmoothForm I ∞ θ :=
-    IsSmoothForm.of_mpullback_inclusion (le_iSup U) (fun x ↦ Opens.mem_iSup.mp x.2) fun j ↦ by
+    IsSmoothForm.of_mpullback_inclusion (le_iSup U) (fun x ↦ Opens.mem_iSup.mp x.property)
+      fun j ↦ by
       by_cases hij : i = j
       · subst hij; dsimp only [θ]
         rw [RoughForm.mpullback_inclusion_extendByZero,
-          ← SmoothForm.coe_mpullback (Opens.inclusion (le_iSup U i)) (contMDiff_inclusion _) φ.1]
+          ← SmoothForm.coe_mpullback (Opens.inclusion (le_iSup U i)) (contMDiff_inclusion _) φ.val]
         exact (SmoothForm.mpullback (Opens.inclusion (le_iSup U i))
-          (contMDiff_inclusion _) φ.1).isSmoothForm
+          (contMDiff_inclusion _) φ.val).isSmoothForm
       · have hzero : TauCeti.mpullback I I (Opens.inclusion (le_iSup U j)) θ = 0 := by
           dsimp only [θ]; rw [RoughForm.mpullback_inclusion_extendByZero_eq_extendByZero]
           exact funext fun y ↦ RoughForm.extendByZero_apply_of_notMem _
-            fun hy ↦ ((hdisj hij).le_bot ⟨hy, y.2⟩).elim
+            fun hy ↦ ((hdisj hij).le_bot ⟨hy, y.property⟩).elim
         exact hzero ▸ IsSmoothForm.zero ∞
   have hθ_supp : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) θ ⊆
-      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1.1 ∩
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.val.val ∩
         (((↑) : W → M) ⁻¹' (U i : Set M)) :=
     closure_minimal
       (fun x (hx0 : θ x ≠ 0) ↦ by
@@ -224,14 +227,19 @@ private theorem exists_extendByZero_eq_restrict (hdisj : Pairwise (Disjoint on U
         dsimp only [θ]; rw [RoughForm.extendByZero_apply_of_mem _ hxi, mpullback_inclusion_apply]
         exact hφ0)
       ((_root_.isClosed_tsupport _).inter
-        (Opens.isClopen_preimage_coe_of_pairwise_disjoint hdisj i).isClosed)
+        (TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
+          (fun j ↦ (U j).comap ⟨Subtype.val, continuous_subtypeVal⟩)
+          (eq_top_iff.mpr fun x _ ↦ let ⟨j, hj⟩ := Opens.mem_iSup.mp x.property;
+            Opens.mem_iSup.mpr ⟨j, hj⟩)
+          (fun _ _ hjk ↦ disjoint_iff_inf_le.mpr fun _ ⟨hj, hk⟩ ↦
+            (hdisj hjk).le_bot ⟨hj, hk⟩) i).isClosed)
   let Θ : compactlySupportedForms I W k :=
     ⟨⟨θ, hθ_smooth.mem_smoothBundleForms⟩, (mem_compactlySupportedForms I).mpr <|
-      ((mem_compactlySupportedForms I).mp φ.2).of_isClosed_subset (_root_.isClosed_tsupport _)
-        (hθ_supp.trans inter_subset_left)⟩
+      ((mem_compactlySupportedForms I).mp φ.property).of_isClosed_subset
+        (_root_.isClosed_tsupport _) (hθ_supp.trans inter_subset_left)⟩
   obtain ⟨ψ, hψ⟩ := (mem_range_extendByZero_iff (le_iSup U i) (φ := Θ)).mpr
     (hθ_supp.trans inter_subset_right)
-  exact ⟨ψ, congrArg (fun χ : compactlySupportedForms I W k ↦ χ.1.1) hψ⟩
+  exact ⟨ψ, congrArg (fun χ : compactlySupportedForms I W k ↦ χ.val.val) hψ⟩
 
 variable (I) in
 /-- Summing extensions by zero from pairwise disjoint opens `U i` is bijective on compactly
@@ -242,20 +250,20 @@ theorem bijective_lsum_extendByZero (hdisj : Pairwise (Disjoint on U)) (k : ℕ)
   · rw [← mpullback_inclusion_lsum_extendByZero hdisj k f₁ j,
       ← mpullback_inclusion_lsum_extendByZero hdisj k f₂ j, hf]
   · choose ψ hψ using exists_extendByZero_eq_restrict hdisj φ
-    obtain ⟨s, hs⟩ := ((mem_compactlySupportedForms I).mp φ.2).elim_finite_subcover
+    obtain ⟨s, hs⟩ := ((mem_compactlySupportedForms I).mp φ.property).elim_finite_subcover
       (fun i ↦ {x : (⨆ j, U j : Opens M) | (x : M) ∈ U i})
-      (fun i ↦ (U i).isOpen.preimage continuous_subtype_val) fun x _ ↦
-        let ⟨i, hi⟩ := Opens.mem_iSup.mp x.2; mem_iUnion.mpr ⟨i, hi⟩
-    refine ⟨DFinsupp.mk s (fun i ↦ ψ i.1),
+      (fun i ↦ (U i).isOpen.preimage continuous_subtypeVal) fun x _ ↦
+        let ⟨i, hi⟩ := Opens.mem_iSup.mp x.property; mem_iUnion.mpr ⟨i, hi⟩
+    refine ⟨DFinsupp.mk s (fun i ↦ ψ i.val),
       Subtype.ext <| Subtype.ext <| ext_roughForm_iSup fun j ↦ ?_⟩
     rw [mpullback_inclusion_lsum_extendByZero hdisj, DFinsupp.mk_apply]
     split_ifs with hjs
-    · rw [← RoughForm.mpullback_inclusion_extendByZero (le_iSup U j) (ψ j).1.1,
+    · rw [← RoughForm.mpullback_inclusion_extendByZero (le_iSup U j) (ψ j).val.val,
         ← coe_extendByZero (le_iSup U j), hψ j, RoughForm.mpullback_inclusion_extendByZero]
     · rw [Submodule.coe_zero, Submodule.coe_zero]; funext y; rw [mpullback_inclusion_apply]
       refine (_root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) fun hyK ↦ ?_).symm
       obtain ⟨i, his, hyi⟩ := mem_iUnion₂.mp (hs hyK)
-      exact hjs ((hdisj.eq fun h ↦ (h.le_bot ⟨y.2, hyi⟩).elim) ▸ his)
+      exact hjs ((hdisj.eq fun h ↦ (h.le_bot ⟨y.property, hyi⟩).elim) ▸ his)
 
 variable (I) in
 /-- **Compactly supported forms on a disjoint open union.** -/
@@ -297,11 +305,11 @@ variable [IsManifold I 2 M]
 /-- Relating extension by zero of closed forms to `compactlySupportedForms.dfinsuppEquiv`. -/
 theorem coe_lsum_extendByZero (hdisj : Pairwise (Disjoint on U)) (l : ℕ)
     (φ : Π₀ i, compactlySupportedClosedForms I (U i) l) :
-    (DFinsupp.lsum ℝ (fun i ↦ extendByZero (le_iSup U i) l) φ).1 =
+    (DFinsupp.lsum ℝ (fun i ↦ extendByZero (le_iSup U i) l) φ).val =
       (compactlySupportedForms.dfinsuppEquiv I hdisj l
         (DFinsupp.mapRange.linearMap
           (fun i ↦ Submodule.inclusion
-            (compactlySupportedClosedForms_le_compactlySupportedForms I l)) φ)).1 :=
+            (compactlySupportedClosedForms_le_compactlySupportedForms I l)) φ)).val :=
   LinearMap.congr_fun
     (f := (compactlySupportedClosedForms I (⨆ i, U i : Opens M) l).subtype.comp
       (DFinsupp.lsum ℝ fun i ↦ extendByZero (le_iSup U i) l))
@@ -329,25 +337,25 @@ theorem bijective_lsum_extendByZero (hdisj : Pairwise (Disjoint on U)) (l : ℕ)
       Submodule.coe_inclusion, Subtype.ext_iff] using
       congrArg Subtype.val (DFunLike.congr_fun h i)
   · let φ := (compactlySupportedForms.dfinsuppEquiv I hdisj l).symm
-      ⟨Φ.1, compactlySupportedClosedForms_le_compactlySupportedForms I l Φ.2⟩
+      ⟨Φ.val, compactlySupportedClosedForms_le_compactlySupportedForms I l Φ.property⟩
     have hd : compactlySupportedForms.mextDerivₗ I (⨆ i, U i : Opens M) l
         (compactlySupportedForms.dfinsuppEquiv I hdisj l φ) = 0 :=
       Subtype.ext <| by
         rw [LinearEquiv.apply_symm_apply, compactlySupportedForms.coe_mextDerivₗ,
           Submodule.coe_zero]
-        exact (mem_closedForms_iff_mextDerivₗ_eq_zero I Φ.1).mp
-          (compactlySupportedClosedForms_le_closedForms I l Φ.2)
+        exact (mem_closedForms_iff_mextDerivₗ_eq_zero I Φ.val).mp
+          (compactlySupportedClosedForms_le_closedForms I l Φ.property)
     rw [compactlySupportedForms.mextDerivₗ_dfinsuppEquiv] at hd
-    have hclosed (i : ι) : (φ i).1 ∈ closedForms I (U i) l := by
+    have hclosed (i : ι) : (φ i).val ∈ closedForms I (U i) l := by
       have hi := congrArg Subtype.val <| DFunLike.congr_fun
         ((compactlySupportedForms.dfinsuppEquiv I hdisj (l + 1)).map_eq_zero_iff.mp hd) i
       rw [DFinsupp.mapRange.linearMap_apply, DFinsupp.mapRange_apply, DFinsupp.zero_apply,
         compactlySupportedForms.coe_mextDerivₗ, Submodule.coe_zero] at hi
-      exact (mem_closedForms_iff_mextDerivₗ_eq_zero I (φ i).1).mpr hi
+      exact (mem_closedForms_iff_mextDerivₗ_eq_zero I (φ i).val).mpr hi
     let liftClosed (i : ι) (ψ : compactlySupportedForms I (U i) l) :
         compactlySupportedClosedForms I (U i) l :=
-      if h : ψ.1 ∈ closedForms I (U i) l then
-        ⟨ψ.1, (mem_compactlySupportedClosedForms I).mpr ⟨ψ.2, h⟩⟩
+      if h : ψ.val ∈ closedForms I (U i) l then
+        ⟨ψ.val, (mem_compactlySupportedClosedForms I).mpr ⟨ψ.property, h⟩⟩
       else 0
     let φc := φ.mapRange liftClosed fun i ↦ by simp [liftClosed]
     have hφc : DFinsupp.mapRange.linearMap
@@ -396,9 +404,9 @@ private theorem lsum_extendByZero_mapRange_mk (hdisj : Pairwise (Disjoint on U))
 private theorem mem_exactCompactlySupportedForms_of_dfinsuppEquiv
     (hdisj : Pairwise (Disjoint on U)) {l : ℕ}
     {φ : Π₀ i, compactlySupportedClosedForms I (U i) l}
-    (hexact : (compactlySupportedClosedForms.dfinsuppEquiv I hdisj l φ).1 ∈
+    (hexact : (compactlySupportedClosedForms.dfinsuppEquiv I hdisj l φ).val ∈
       exactCompactlySupportedForms I (⨆ i, U i : Opens M) l) (i : ι) :
-    (φ i).1 ∈ exactCompactlySupportedForms I (U i) l := by
+    (φ i).val ∈ exactCompactlySupportedForms I (U i) l := by
   classical
   rw [compactlySupportedClosedForms.dfinsuppEquiv, LinearEquiv.ofBijective_apply,
     compactlySupportedClosedForms.coe_lsum_extendByZero hdisj l φ] at hexact
@@ -426,7 +434,7 @@ private theorem mem_exactCompactlySupportedForms_of_dfinsuppEquiv
     have hcomp := DFunLike.congr_fun
       ((compactlySupportedForms.dfinsuppEquiv I hdisj (m + 1)).injective hd) i
     simp only [DFinsupp.mapRange.linearMap_apply, DFinsupp.mapRange_apply] at hcomp
-    exact ⟨(ψ i).1, (ψ i).2, by
+    exact ⟨(ψ i).val, (ψ i).property, by
       rw [← compactlySupportedForms.coe_mextDerivₗ]; exact congrArg Subtype.val hcomp⟩
 
 variable (I) in

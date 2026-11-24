@@ -61,7 +61,7 @@ theorem transvectionParameterBaseChange_mk (Q : QuadraticForm R M) (u : M)
     transvectionParameterBaseChange (A := A) Q u (Submodule.Quotient.mk w) =
       Submodule.Quotient.mk ⟨1 ⊗ₜ[R] (w : M), by
         rw [LinearMap.mem_ker, polarBilin_apply_apply, QuadraticForm.polar_baseChange_tmul]
-        have hw : polar Q u w = 0 := LinearMap.mem_ker.mp w.2
+        have hw : polar Q u w = 0 := LinearMap.mem_ker.mp w.property
         simp [hw]⟩ := by
   let : AddCommGroup (A ⊗[R] M) := TensorProduct.addCommGroup
   rw [transvectionParameterBaseChange, Submodule.mapQ_apply]
