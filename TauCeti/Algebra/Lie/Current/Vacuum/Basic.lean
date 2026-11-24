@@ -85,7 +85,7 @@ base ring is an arbitrary commutative ring.
   vacuum generates the vacuum module under the modes of the current fields.
 * `TauCeti.CurrentAlgebra.ncoeff_zero_currentField_ncoeff_currentField_vacuum`,
   `TauCeti.CurrentAlgebra.ncoeff_one_currentField_ncoeff_currentField_vacuum` and
-  `TauCeti.CurrentAlgebra.ncoeff_currentField_ncoeff_currentField_vacuum_of_two_le`: the
+  `TauCeti.CurrentAlgebra.ncoeff_currentField_ncoeff_currentField_vacuum_eq_zero_of_two_le`: the
   nonnegative modes on the states `y₋₁|0⟩`.
 * `TauCeti.CurrentAlgebra.vacuumCoordinateAction_smul`: the coordinate action is semilinear along
   the lift to `U`.
@@ -287,7 +287,7 @@ theorem ncoeff_one_currentField_ncoeff_currentField_vacuum (x y : L) :
     ncoeff_currentField_vacuum_eq_zero _ le_rfl, -ncoeff_currentField]
 
 /-- **The higher products of generating states vanish:** `xₙ y₋₁|0⟩ = 0` for `n ≥ 2`. -/
-theorem ncoeff_currentField_ncoeff_currentField_vacuum_of_two_le (x y : L) {n : ℤ}
+theorem ncoeff_currentField_ncoeff_currentField_vacuum_eq_zero_of_two_le (x y : L) {n : ℤ}
     (hn : 2 ≤ n) : ((J x)[[n]]) (((J y)[[-1]]) (vacuum Φ hΦ hΦs a)) = 0 := by
   simp [ncoeff_currentField_ncoeff_currentField_vacuum_of_nonneg Φ hΦ hΦs a x y (by omega : 0 ≤ n),
     ncoeff_currentField_vacuum_eq_zero _ (by omega : 0 ≤ n - 1), show n - 1 ≠ 0 by omega,

@@ -41,7 +41,7 @@ vacuum module identities of `TauCeti.Algebra.Lie.Current.Vacuum.Basic`:
 * `x₁ y₋₁|0⟩ = -a Φ(x, y) |0⟩`
   (`TauCeti.CurrentAlgebra.ncoeff_one_currentField_ncoeff_currentField_vacuum`);
 * `xₙ y₋₁|0⟩ = 0` for `n ≥ 2`
-  (`TauCeti.CurrentAlgebra.ncoeff_currentField_ncoeff_currentField_vacuum_of_two_le`).
+  (`TauCeti.CurrentAlgebra.ncoeff_currentField_ncoeff_currentField_vacuum_eq_zero_of_two_le`).
 
 With `Φ = -κ` and `a = 1` these are the operator product expansion
 `J^x(z) J^y(w) ∼ κ(x, y) / (z - w)² + J^{[x, y]}(w) / (z - w)` of the affine vertex algebra.
