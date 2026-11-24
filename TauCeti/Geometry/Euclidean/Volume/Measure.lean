@@ -453,12 +453,9 @@ space. -/
 theorem euclideanHausdorffMeasure_restrict_closedBall {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
     (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.closedBall x r) =
       volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
-  let e := (stdOrthonormalBasis ℝ T).repr
   rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_closedBall,
     ← Subtype.coe_mk x hx, isometry_subtype_coe.preimage_closedBall,
-    ← e.measurePreserving.measure_preimage measurableSet_closedBall.nullMeasurableSet,
-    e.preimage_closedBall, Measure.addHaar_closedBall_center volume (e.symm 0),
-    Measure.addHaar_closedBall_center volume (⟨x, hx⟩ : T)]
+    TauCeti.volume_closedBall_eq_of_finrank_eq finrank_euclideanSpace_fin.symm _ 0 r]
 
 /-- If `μHE[k]` restricts to the same measure on a subspace `T₁` of dimension `k` and on a
 subspace `T₂`, then `T₁ ≤ T₂`: every ball about a point of `T₁` has positive mass. -/

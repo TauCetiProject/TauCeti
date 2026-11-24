@@ -31,7 +31,8 @@ countably `k`-rectifiable set `Γ`, that is, the weight of a rectifiable `k`-var
 
 ## Main results
 
-* `MeasureTheory.Measure.blowUp_apply_vadd_smul`: `μ_{x,r}(A) = r ^ (-k) μ (x + r • A)`.
+* `MeasureTheory.Measure.blowUp_apply_vadd_smul`: `μ_{x,r}(A) = r ^ (-k) μ (x + r • A)` for
+  `r > 0`.
 * `MeasureTheory.Measure.blowUp_euclideanHausdorffMeasure`: the blow-ups of `μHE[k]` are `μHE[k]`.
 * `AffineSubspace.blowUp_euclideanHausdorffMeasure_restrict`: at a point `x` of an affine subspace
   `A`, the blow-ups of `μHE[k]⌞A` are `μHE[k]⌞A.direction`.
@@ -80,13 +81,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   {μ : Measure E} {k : ℕ} {x : E} {r : ℝ}
 
 /-- The `k`-dimensional blow-up `μ_{x,r}` of a measure `μ` at `x` at scale `r`: the push-forward of
-`μ` by the dilation `y ↦ r⁻¹ • (y - x)`, multiplied by `r ^ (-k)`. For `r > 0` it gives a set `A`
-the mass `r ^ (-k) μ (x + r • A)`. Only positive scales are meaningful. -/
+`μ` by the dilation `y ↦ r⁻¹ • (y - x)`, multiplied by `(ENNReal.ofReal r)⁻¹ ^ k`, which is
+`r ^ (-k)` for `r > 0`. For `r > 0` it gives a set `A` the mass `r ^ (-k) μ (x + r • A)`. Only
+positive scales are meaningful. -/
 noncomputable def blowUp (μ : Measure E) (k : ℕ) (x : E) (r : ℝ) : Measure E :=
   (ENNReal.ofReal r)⁻¹ ^ k • μ.map fun y ↦ r⁻¹ • (y - x)
 
-/-- The mass of a measurable set `s` under a blow-up is `r ^ (-k)` times the mass of its preimage
-under the dilation. -/
+/-- The mass of a measurable set `s` under a blow-up is `(ENNReal.ofReal r)⁻¹ ^ k` times the mass
+of its preimage under the dilation; for `r > 0` the factor is `r ^ (-k)`. -/
 theorem blowUp_apply {s : Set E} (hs : MeasurableSet s) :
     μ.blowUp k x r s = (ENNReal.ofReal r)⁻¹ ^ k * μ ((fun y ↦ r⁻¹ • (y - x)) ⁻¹' s) := by
   rw [blowUp, smul_apply, map_apply (by fun_prop) hs, smul_eq_mul]
@@ -127,7 +129,7 @@ private theorem preimage_dilation (hr : r ≠ 0) (s : Set E) :
   simp [add_comm]
 
 /-- **The defining identity of blow-ups.** For `r ≠ 0`, a blow-up gives a measurable set `s` the
-mass `r ^ (-k) μ (x + r • s)`. -/
+mass `(ENNReal.ofReal r)⁻¹ ^ k * μ (x + r • s)`, that is `r ^ (-k) μ (x + r • s)` for `r > 0`. -/
 theorem blowUp_apply_vadd_smul (hr : r ≠ 0) {s : Set E} (hs : MeasurableSet s) :
     μ.blowUp k x r s = (ENNReal.ofReal r)⁻¹ ^ k * μ (x +ᵥ r • s) := by
   rw [blowUp_apply hs, preimage_dilation hr]
