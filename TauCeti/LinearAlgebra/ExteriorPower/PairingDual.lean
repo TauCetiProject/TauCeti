@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.ExteriorPower.Pairing
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.Logic.Function.Basic
 
 /-!
 # Exterior powers of the dual of a finite projective module
@@ -63,27 +64,15 @@ theorem bijective_pairingDual_of_projective [Module.Finite R M] [Module.Projecti
   -- `M` is a retract `p ∘ₗ s = id` of `F = Fin k → R`, and so is the pairing of `M` of that of
   -- `F` by naturality.
   obtain ⟨k, p, s, -, -, hps⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  have hF := bijective_pairingDual R (Fin k → R) n
-  have hp := LinearMap.congr_fun (pairingDual_comp_map_dualMap n p)
-  have hs := LinearMap.congr_fun (pairingDual_comp_map_dualMap n s)
   have hsp : ∀ x : ⋀[R]^n (Dual R M), map n s.dualMap (map n p.dualMap x) = x := fun x ↦ by
     rw [← LinearMap.comp_apply, ← map_comp, LinearMap.dualMap_comp_dualMap, hps,
       LinearMap.dualMap_id, map_id, LinearMap.id_apply]
   have hps' : ∀ φ : Dual R (⋀[R]^n M), (map n s).dualMap ((map n p).dualMap φ) = φ := fun φ ↦ by
     rw [← LinearMap.comp_apply, LinearMap.dualMap_comp_dualMap, ← map_comp, hps, map_id,
       LinearMap.dualMap_id, LinearMap.id_apply]
-  refine ⟨fun x y hxy ↦ ?_, fun φ ↦ ?_⟩
-  · -- Pulling back along `p` is injective after pairing with `F`, and `s` undoes it.
-    rw [← hsp x, ← hsp y]
-    refine congrArg _ (hF.1 ?_)
-    simp only [LinearMap.comp_apply] at hp
-    rw [hp, hp, hxy]
-  · -- The preimage under the pairing of `F` of the pullback of `φ` along `p`, pulled back
-    -- along `s`, pairs to `φ`.
-    obtain ⟨y, hy⟩ := hF.2 ((map n p).dualMap φ)
-    refine ⟨map n s.dualMap y, ?_⟩
-    simp only [LinearMap.comp_apply] at hs
-    rw [hs, hy, hps']
+  exact Function.bijective_of_retract (bijective_pairingDual R (Fin k → R) n)
+    (LinearMap.congr_fun (pairingDual_comp_map_dualMap n p))
+    (LinearMap.congr_fun (pairingDual_comp_map_dualMap n s)) hsp hps'
 
 variable (R M) in
 /-- **The exterior power of the dual of a finite projective module is the dual of its exterior
@@ -97,6 +86,13 @@ def pairingDualEquiv [Module.Finite R M] [Module.Projective R M] (n : ℕ) :
 @[simp]
 theorem coe_pairingDualEquiv [Module.Finite R M] [Module.Projective R M] (n : ℕ) :
     ⇑(pairingDualEquiv R M n) = pairingDual R M n :=
+  (rfl)
+
+/-- The linear map underlying `exteriorPower.pairingDualEquiv` is the pairing
+`exteriorPower.pairingDual`. -/
+@[simp]
+theorem toLinearMap_pairingDualEquiv [Module.Finite R M] [Module.Projective R M] (n : ℕ) :
+    (pairingDualEquiv R M n).toLinearMap = pairingDual R M n :=
   (rfl)
 
 /-- `exteriorPower.pairingDualEquiv` pairs `φ₁ ∧ ⋯ ∧ φₙ` with `v₁ ∧ ⋯ ∧ vₙ` to `det (φⱼ vᵢ)`. -/

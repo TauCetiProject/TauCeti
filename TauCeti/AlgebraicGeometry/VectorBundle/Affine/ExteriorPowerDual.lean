@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ExteriorPower
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Affine
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Dual
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Bidual
@@ -55,21 +56,11 @@ noncomputable section
 
 variable {R : CommRingCat.{u}}
 
-/-- The `n`-th exterior power of a finite projective module, as a finite projective module. -/
-@[expose]
-def finiteProjectiveExteriorPower (M : (finiteProjectiveModules R).FullSubcategory)
-    (n : ℕ) : (finiteProjectiveModules R).FullSubcategory :=
-  have := (finiteProjectiveModules_iff.mp M.property).1
-  have := (finiteProjectiveModules_iff.mp M.property).2
-  ⟨M.obj.exteriorPower n, finiteProjectiveModules_iff.mpr
-    ⟨inferInstanceAs (Module.Finite R (⋀[R]^n M.obj)),
-      inferInstanceAs (Module.Projective R (⋀[R]^n M.obj))⟩⟩
-
 /-- The sheaf associated with `⋀ⁿ M` is the `n`-th exterior power of the sheaf associated with a
 module `M`, as finite locally free sheaves. -/
 def finiteProjectiveEquivExteriorPowerIso
     (M : (finiteProjectiveModules R).FullSubcategory) (n : ℕ) :
-    (finiteProjectiveEquiv R).functor.obj (finiteProjectiveExteriorPower M n) ≅
+    (finiteProjectiveEquiv R).functor.obj (FiniteProjectiveModules.exteriorPower M n) ≅
       (exteriorPower (Spec R) n).obj ((finiteProjectiveEquiv R).functor.obj M) :=
   ObjectProperty.isoMk _ (tildeExteriorPowerIso n M.obj ≪≫
     eqToIso (exteriorPower_obj_obj (X := Spec R) n ((finiteProjectiveEquiv R).functor.obj M)).symm)
@@ -81,7 +72,7 @@ def exteriorPowerFiniteProjectiveEquivDualIso
     (exteriorPower (Spec R) n).obj
         ((finiteProjectiveEquiv R).functor.obj (FiniteProjectiveModules.dual R M)) ≅
       (finiteProjectiveEquiv R).functor.obj
-        (FiniteProjectiveModules.dual R (finiteProjectiveExteriorPower M n)) :=
+        (FiniteProjectiveModules.dual R (FiniteProjectiveModules.exteriorPower M n)) :=
   have := (finiteProjectiveModules_iff.mp M.property).1
   have := (finiteProjectiveModules_iff.mp M.property).2
   ObjectProperty.isoMk _ (eqToIso (exteriorPower_obj_obj (X := Spec R) n
@@ -89,13 +80,8 @@ def exteriorPowerFiniteProjectiveEquivDualIso
     (tildeExteriorPowerIso n (ModuleCat.of R (Module.Dual R M.obj))).symm ≪≫
     (tilde.functor R).mapIso (exteriorPower.pairingDualEquiv R M.obj n).toModuleIso)
 
-/-- The underlying module of `finiteProjectiveExteriorPower M n` is `⋀ⁿ M`. -/
-@[simp]
-theorem finiteProjectiveExteriorPower_obj (M : (finiteProjectiveModules R).FullSubcategory)
-    (n : ℕ) : (finiteProjectiveExteriorPower M n).obj = M.obj.exteriorPower n :=
-  (rfl)
-
 /-- The comparison `finiteProjectiveEquivExteriorPowerIso` is `tildeExteriorPowerIso`. -/
+@[simp]
 theorem finiteProjectiveEquivExteriorPowerIso_hom_hom
     (M : (finiteProjectiveModules R).FullSubcategory) (n : ℕ) :
     (finiteProjectiveEquivExteriorPowerIso M n).hom.hom =
@@ -104,8 +90,19 @@ theorem finiteProjectiveEquivExteriorPowerIso_hom_hom
           ((finiteProjectiveEquiv R).functor.obj M)).symm :=
   (rfl)
 
+/-- The inverse of the comparison `finiteProjectiveEquivExteriorPowerIso` is the inverse of
+`tildeExteriorPowerIso`. -/
+@[simp]
+theorem finiteProjectiveEquivExteriorPowerIso_inv_hom
+    (M : (finiteProjectiveModules R).FullSubcategory) (n : ℕ) :
+    (finiteProjectiveEquivExteriorPowerIso M n).inv.hom =
+      eqToHom (exteriorPower_obj_obj (X := Spec R) n ((finiteProjectiveEquiv R).functor.obj M)) ≫
+        (tildeExteriorPowerIso n M.obj).inv :=
+  (rfl)
+
 /-- The sheaf comparison `exteriorPowerFiniteProjectiveEquivDualIso` is the sheafified pairing
 `exteriorPower.pairingDual`. -/
+@[simp]
 theorem exteriorPowerFiniteProjectiveEquivDualIso_hom_hom
     (M : (finiteProjectiveModules R).FullSubcategory) (n : ℕ) :
     (exteriorPowerFiniteProjectiveEquivDualIso M n).hom.hom =
@@ -132,7 +129,7 @@ def exteriorPowerDualIsoOfFiniteProjective (M : (finiteProjectiveModules R).Full
       dual ((exteriorPower (Spec R) n).obj ((finiteProjectiveEquiv R).functor.obj M)) :=
   (exteriorPower (Spec R) n).mapIso (finiteProjectiveEquivDualIso R M).symm ≪≫
     exteriorPowerFiniteProjectiveEquivDualIso M n ≪≫
-    finiteProjectiveEquivDualIso R (finiteProjectiveExteriorPower M n) ≪≫
+    finiteProjectiveEquivDualIso R (FiniteProjectiveModules.exteriorPower M n) ≪≫
     dualIsoOfIso (finiteProjectiveEquivExteriorPowerIso M n).symm
 
 /-- `exteriorPowerDualIsoOfFiniteProjective` is the sheafified pairing
@@ -143,7 +140,7 @@ theorem exteriorPowerDualIsoOfFiniteProjective_def
     exteriorPowerDualIsoOfFiniteProjective M n =
       (exteriorPower (Spec R) n).mapIso (finiteProjectiveEquivDualIso R M).symm ≪≫
         exteriorPowerFiniteProjectiveEquivDualIso M n ≪≫
-        finiteProjectiveEquivDualIso R (finiteProjectiveExteriorPower M n) ≪≫
+        finiteProjectiveEquivDualIso R (FiniteProjectiveModules.exteriorPower M n) ≪≫
         dualIsoOfIso (finiteProjectiveEquivExteriorPowerIso M n).symm :=
   (rfl)
 
