@@ -77,16 +77,14 @@ theorem zsmul_of_finiteProjectiveModulesRegular_injective [InvariantBasisNumber 
   -- Write `z = n - m` with `n m : ℕ`, so that `n[A] = m[A]`, that is `[Aⁿ] = [Aᵐ]`.
   obtain ⟨n, m, rfl⟩ : ∃ n m : ℕ, z = n - m := ⟨z.toNat, (-z).toNat, by omega⟩
   rw [zmultiplesHom_apply, sub_smul, sub_eq_zero, natCast_zsmul, natCast_zsmul,
-    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := finiteProjectiveModulesFree A n)
-      (finiteProjectiveModulesFreeLinearEquiv A n) (finiteProjectiveModulesRegularLinearEquiv A),
-    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := finiteProjectiveModulesFree A m)
-      (finiteProjectiveModulesFreeLinearEquiv A m) (finiteProjectiveModulesRegularLinearEquiv A),
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := ⟨ModuleCat.of A (Fin n → A),
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _) (.refl _ _),
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := ⟨ModuleCat.of A (Fin m → A),
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _) (.refl _ _),
     SplitK0.of_eq_of_iff_stableEquivalent, stableEquivalent_iff] at hz
   obtain ⟨k, ⟨e⟩⟩ := hz
   have := eq_of_fin_equiv A <| (LinearEquiv.piFinAppend A A n k).trans <|
-    (((finiteProjectiveModulesFreeLinearEquiv A n).symm.prodCongr (.refl _ _)).trans <|
-      e.trans ((finiteProjectiveModulesFreeLinearEquiv A m).prodCongr (.refl _ _))).trans
-      (LinearEquiv.piFinAppend A A m k).symm
+    e.trans (LinearEquiv.piFinAppend A A m k).symm
   omega
 
 /-- The class of a stably free finitely generated projective `A`-module is an integer multiple
@@ -107,11 +105,9 @@ theorem exists_zsmul_eq_of_isStablyFree
   refine ⟨(Fintype.card (Module.Free.ChooseBasisIndex A (P.obj × N)) : ℤ) -
     Fintype.card (Module.Free.ChooseBasisIndex A N), ?_⟩
   rw [sub_smul, natCast_zsmul, natCast_zsmul,
-    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := PN) eP
-      (finiteProjectiveModulesRegularLinearEquiv A),
-    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := N') eN
-      (finiteProjectiveModulesRegularLinearEquiv A),
-    hPN, add_sub_cancel_right]
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := PN) eP (.refl _ _),
+    ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := N') eN (.refl _ _), hPN,
+    add_sub_cancel_right]
 
 /-- If every finitely generated projective `A`-module is stably free, every class in the split
 `K₀` of finitely generated projective `A`-modules is an integer multiple of `[A]`. -/
@@ -157,8 +153,8 @@ the class of a free module to its rank. -/
 theorem rankEquiv_of [StrongRankCondition A] (P : (finiteProjectiveModules A).FullSubcategory)
     [Module.Free A P.obj] : rankEquiv A h (SplitK0.of.{u} P) = finrank A P.obj := by
   rw [SplitK0.of_eq_nsmul_of_linearEquiv_fin (R' := finiteProjectiveModulesRegular A)
-    (Module.finBasis A P.obj).equivFun (finiteProjectiveModulesRegularLinearEquiv A),
-    ← natCast_zsmul, rankEquiv_zsmul_of_finiteProjectiveModulesRegular]
+    (Module.finBasis A P.obj).equivFun (.refl _ _), ← natCast_zsmul,
+    rankEquiv_zsmul_of_finiteProjectiveModulesRegular]
 
 end FiniteProjectiveModules
 

@@ -118,10 +118,8 @@ between arbitrary objects of `C`. -/
 theorem preadditiveCoyonedaObj_map_bijective (hP : IsProgenerator P) (X Y : C) :
     Function.Bijective ((preadditiveCoyonedaObj P).map : (X ⟶ Y) → _) := by
   have := hP.projective
-  refine ⟨fun f₁ f₂ hf ↦ ?_, fun φ ↦ ?_⟩
-  · obtain ⟨Q, π, hQ, hπ⟩ := hP.exists_epi_additiveClosure X
-    refine (cancel_epi π).mp ((TauCeti.preadditiveCoyonedaObj_map_bijective hQ Y).1 ?_)
-    rw [Functor.map_comp, Functor.map_comp, hf]
+  have := (isSeparator_iff_faithful_preadditiveCoyonedaObj P).mp hP.isSeparator
+  refine ⟨fun _ _ h ↦ (preadditiveCoyonedaObj P).map_injective h, fun φ ↦ ?_⟩
   · obtain @⟨Q₀, Q₁, u, c, hc, hQ₀, hQ₁⟩ := hP.presented_additiveClosure X
     obtain ⟨h, hh⟩ := (TauCeti.preadditiveCoyonedaObj_map_bijective hQ₁ Y).2
       ((preadditiveCoyonedaObj P).map c.π ≫ φ)

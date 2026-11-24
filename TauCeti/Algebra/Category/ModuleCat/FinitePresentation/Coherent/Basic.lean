@@ -84,27 +84,24 @@ theorem hasWeakKernels_finiteProjectiveModules_of_hasKernels
     let f' := ι.map f
     let K := kernel f'
     obtain ⟨n, q, hq⟩ := Module.Finite.exists_fin' R K.obj
-    let F := finiteProjectiveModulesFree R n
-    let eF : F.obj ≅ ModuleCat.of R (Fin n → R) :=
-      (finiteProjectiveModulesFreeLinearEquiv R n).toModuleIso
-    let q' : F.obj ⟶ K.obj := eF.hom ≫ ModuleCat.ofHom q
-    let w : F ⟶ P := ObjectProperty.homMk (q' ≫ (kernel.ι f').hom)
+    let F : (finiteProjectiveModules R).FullSubcategory :=
+      ⟨ModuleCat.of R (Fin n → R), finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
+    let w : F ⟶ P := ObjectProperty.homMk (ModuleCat.ofHom q ≫ (kernel.ι f').hom)
     have hwf : w ≫ f = 0 := ObjectProperty.hom_ext _ <| by
-      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, w,
-        Category.assoc]
-      exact (congrArg (q' ≫ ·) congr($(kernel.condition f').hom)).trans Limits.comp_zero
+      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, w]
+      exact (congrArg (ModuleCat.ofHom q ≫ ·) congr($(kernel.condition f').hom)).trans
+        Limits.comp_zero
     refine HasWeakLimit.mk ⟨KernelFork.ofι w hwf, Fork.IsWeakLimit.mk' _ fun s ↦ ?_⟩
     have hs : ι.map s.ι ≫ f' = 0 := by
       rw [← ι.map_comp, KernelFork.condition, ι.map_zero]
     let u : ι.obj s.pt ⟶ K := kernel.lift f' (ι.map s.ι) hs
     have hu : u.hom ≫ (kernel.ι f').hom = s.ι.hom := congr($(kernel.lift_ι f' (ι.map s.ι) hs).hom)
-    have : Epi (ModuleCat.ofHom q) := (ModuleCat.epi_iff_surjective _).mpr hq
-    have : Epi q' := epi_comp _ _
-    let v : s.pt.obj ⟶ F.obj := Projective.factorThru u.hom q'
+    have : Epi (ModuleCat.ofHom q : F.obj ⟶ K.obj) := (ModuleCat.epi_iff_surjective _).mpr hq
+    let v : s.pt.obj ⟶ F.obj := Projective.factorThru u.hom (ModuleCat.ofHom q)
     refine ⟨ObjectProperty.homMk v, ObjectProperty.hom_ext _ ?_⟩
     simp only [ObjectProperty.FullSubcategory.comp_hom, KernelFork.ι_ofι, ObjectProperty.homMk_hom,
-      w, ← Category.assoc]
-    rw [Projective.factorThru_comp, hu]
+      w]
+    rw [← Category.assoc, Projective.factorThru_comp, hu]
 
 instance [IsCoherentRing R] : HasWeakKernels (finiteProjectiveModules R).FullSubcategory :=
   hasWeakKernels_finiteProjectiveModules_of_hasKernels R
@@ -116,33 +113,36 @@ theorem isCoherentRing_of_hasWeakKernels_finiteProjectiveModules
     [HasWeakKernels (finiteProjectiveModules R).FullSubcategory] : IsCoherentRing R := by
   rw [isCoherentRing_iff, Module.isCoherent_iff_forall_fg_ker]
   refine ⟨inferInstance, fun n f ↦ ?_⟩
-  let F := finiteProjectiveModulesFree R n
-  let eF : F.obj ≅ ModuleCat.of R (Fin n → R) :=
-    (finiteProjectiveModulesFreeLinearEquiv R n).toModuleIso
+  let F : (finiteProjectiveModules R).FullSubcategory :=
+    ⟨ModuleCat.of R (Fin n → R), finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
   let eR : (finiteProjectiveModulesRegular R).obj ≅ ModuleCat.of R R :=
-    (finiteProjectiveModulesRegularLinearEquiv R).toModuleIso
+    eqToIso (finiteProjectiveModulesRegular_obj R)
   let φ : F ⟶ finiteProjectiveModulesRegular R :=
-    ObjectProperty.homMk (eF.hom ≫ ModuleCat.ofHom f ≫ eR.inv)
-  suffices hker : LinearMap.ker f = LinearMap.range ((weakKernel.ι φ).hom ≫ eF.hom).hom by
+    ObjectProperty.homMk (ModuleCat.ofHom f ≫ eR.inv)
+  suffices hker : LinearMap.ker f = LinearMap.range (weakKernel.ι φ).hom.hom by
     rw [hker]
-    exact Submodule.fg_range ((weakKernel.ι φ).hom ≫ eF.hom).hom
+    exact Submodule.fg_range (weakKernel.ι φ).hom.hom
   apply le_antisymm
   · intro x hx
     let g : finiteProjectiveModulesRegular R ⟶ F :=
-      ObjectProperty.homMk
-        (eR.hom ≫ ModuleCat.ofHom (LinearMap.toSpanSingleton R (Fin n → R) x) ≫ eF.inv)
-    have hg : g ≫ φ = 0 := ObjectProperty.hom_ext _ <| ModuleCat.hom_ext <| LinearMap.ext fun r ↦ by
-      simp [g, φ, LinearMap.mem_ker.mp hx]
-    have hu : ((weakKernel.ι φ).hom ≫ eF.hom).hom
-          ((weakKernel.lift φ g hg).hom.hom (eR.inv.hom (1 : R))) =
-        (g.hom ≫ eF.hom).hom (eR.inv.hom (1 : R)) :=
-      congrArg (fun k ↦ (k.hom ≫ eF.hom).hom (eR.inv.hom (1 : R))) (weakKernel.lift_ι φ g hg)
+      ObjectProperty.homMk (eR.hom ≫ ModuleCat.ofHom (LinearMap.toSpanSingleton R (Fin n → R) x))
+    have hg : g ≫ φ = 0 := ObjectProperty.hom_ext _ <| by
+      simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom,
+        ObjectProperty.zero_hom, g, φ, Category.assoc]
+      have hfx : ModuleCat.ofHom (LinearMap.toSpanSingleton R (Fin n → R) x) ≫
+          ModuleCat.ofHom f = 0 := ModuleCat.hom_ext <| LinearMap.ext fun (r : R) ↦ by
+        simp [LinearMap.mem_ker.mp hx]
+      rw [← Category.assoc (ModuleCat.ofHom (LinearMap.toSpanSingleton R (Fin n → R) x)),
+        hfx, Limits.zero_comp, Limits.comp_zero]
+    have hu : (weakKernel.ι φ).hom.hom ((weakKernel.lift φ g hg).hom.hom (eR.inv.hom (1 : R))) =
+        g.hom.hom (eR.inv.hom (1 : R)) :=
+      congrArg (fun k ↦ k.hom.hom (eR.inv.hom (1 : R))) (weakKernel.lift_ι φ g hg)
     exact ⟨_, by simpa [g] using hu⟩
   · rintro _ ⟨y, rfl⟩
-    have hw : (weakKernel.ι φ).hom ≫ φ.hom = 0 := congr($(weakKernel.condition φ).hom)
-    have hy : ((weakKernel.ι φ).hom ≫ φ.hom ≫ eR.hom).hom y = 0 := by
-      simp [← Category.assoc, hw]
-    simpa [LinearMap.mem_ker, φ] using hy
+    have hw : ((weakKernel.ι φ).hom ≫ φ.hom ≫ eR.hom).hom y = 0 := by
+      rw [← Category.assoc, ← ObjectProperty.FullSubcategory.comp_hom, weakKernel.condition,
+        ObjectProperty.zero_hom, Limits.zero_comp, ModuleCat.hom_zero, LinearMap.zero_apply]
+    simpa [LinearMap.mem_ker, φ] using hw
 
 variable {R}
 

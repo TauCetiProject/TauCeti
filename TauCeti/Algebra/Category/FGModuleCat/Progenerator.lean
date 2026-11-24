@@ -59,8 +59,6 @@ variable {R : Type u} [Ring R]
 `FGModuleCat R`. -/
 theorem isProgenerator_of_projective_of_isGenerator (P : FGModuleCat.{v} R)
     [Module.Projective R P] [TauCeti.Module.IsGenerator R P] : IsProgenerator P :=
-  have : (ModuleCat.isFG.{v} R).ι.PreservesEpimorphisms :=
-    inferInstanceAs (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesEpimorphisms
   have := (ModuleCat.isFG.{v} R).projective_of_moduleProjective P
   (ModuleCat.isFG.{v} R).isProgenerator_of_projective_of_isGenerator le_rfl P
 
@@ -71,8 +69,6 @@ theorem isProgenerator_iff [Small.{v} R] (P : FGModuleCat.{v} R) :
     IsProgenerator P ↔ Module.Projective R P ∧ TauCeti.Module.IsGenerator R P :=
   let eR : Shrink.{v} R ≃ₗ[R] R := Shrink.linearEquiv.{v} R R
   have : Module.Finite R (Shrink.{v} R) := Module.Finite.equiv eR.symm
-  have : (ModuleCat.isFG.{v} R).ι.PreservesEpimorphisms :=
-    inferInstanceAs (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesEpimorphisms
   (ModuleCat.isFG.{v} R).isProgenerator_iff_moduleProjective_and_isGenerator le_rfl
     (R₀ := FGModuleCat.of R (Shrink.{v} R)) eR P
 

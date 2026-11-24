@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Basic
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.CategoryTheory.Functor.MapBijective
+public import TauCeti.CategoryTheory.ObjectProperty.Retract
 public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 public import TauCeti.CategoryTheory.Preadditive.Yoneda
 

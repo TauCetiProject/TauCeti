@@ -66,18 +66,13 @@ noncomputable def finitePresentationEquivalenceModCompEvaluationIso :
   Functor.isoWhiskerRight (finitePresentationEquivalenceModCompιIso R) _ ≪≫
     NatIso.ofComponents (fun M ↦
       (ModuleCat.homAddEquiv.trans
-        (((finiteProjectiveModulesRegularLinearEquiv R).arrowCongrAddEquiv (.refl R M.obj)).trans
-          (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv)).toAddCommGrpIso) fun {M N} f ↦ by
-      ext (g : (finiteProjectiveModulesRegular R).obj ⟶ M.obj)
+        (LinearMap.ringLmapEquivSelf R ℕ M.obj).toAddEquiv).toAddCommGrpIso) fun {M N} f ↦ by
+      ext (g : ModuleCat.of R R ⟶ M.obj)
       -- Unfold `toAddCommGrpIso` and `restrictedPreadditiveYoneda`; both sides evaluate to
-      -- `f.hom (g.hom ((finiteProjectiveModulesRegularLinearEquiv R).symm 1))`.
+      -- `f.hom (g.hom 1)`.
       change
-        LinearMap.ringLmapEquivSelf R ℕ N.obj
-          ((finiteProjectiveModulesRegularLinearEquiv R).arrowCongrAddEquiv (.refl R N.obj)
-            (ModuleCat.homAddEquiv (g ≫ f.hom))) =
-        f.hom (LinearMap.ringLmapEquivSelf R ℕ M.obj
-          ((finiteProjectiveModulesRegularLinearEquiv R).arrowCongrAddEquiv (.refl R M.obj)
-            (ModuleCat.homAddEquiv g)))
-      simp
+        LinearMap.ringLmapEquivSelf R ℕ N.obj (ModuleCat.homAddEquiv (g ≫ f.hom)) =
+        f.hom (LinearMap.ringLmapEquivSelf R ℕ M.obj (ModuleCat.homAddEquiv g))
+      rfl
 
 end TauCeti

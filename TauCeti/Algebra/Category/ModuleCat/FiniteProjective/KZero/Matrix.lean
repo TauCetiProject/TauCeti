@@ -108,9 +108,7 @@ module. -/
 theorem of_finiteProjectiveModulesRegular_matrix :
     SplitK0.of.{u} (finiteProjectiveModulesRegular (Matrix ι ι R)) =
       Fintype.card ι • SplitK0.of.{u} (matrixColumn R ι) := by
-  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ ↦ matrixColumn R ι)
-      ((finiteProjectiveModulesRegularLinearEquiv (Matrix ι ι R)).trans
-        (Matrix.linearEquivPi ι R)),
+  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ ↦ matrixColumn R ι) (Matrix.linearEquivPi ι R),
     Finset.sum_const, Finset.card_univ]
 
 /-! ### The Morita isomorphism -/
@@ -144,9 +142,7 @@ theorem matrixK0Equiv_of (M : (finiteProjectiveModules R).FullSubcategory)
 theorem matrixK0Equiv_of_finiteProjectiveModulesRegular :
     matrixK0Equiv R ι (SplitK0.of.{u} (finiteProjectiveModulesRegular R)) =
       SplitK0.of.{u} (matrixColumn R ι) :=
-  matrixK0Equiv_of R ι _ _
-    ((ModuleCat.toMatrixModCat R ι).mapIso
-      (finiteProjectiveModulesRegularLinearEquiv R).toModuleIso).toLinearEquiv
+  matrixK0Equiv_of R ι _ _ (.refl _ _)
 
 /-- The inverse Morita isomorphism sends the class of the column module to `[R]`. -/
 @[simp]

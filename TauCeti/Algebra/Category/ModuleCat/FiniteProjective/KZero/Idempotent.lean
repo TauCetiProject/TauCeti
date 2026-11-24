@@ -500,11 +500,10 @@ theorem kZeroEquiv_of_mk_one (m : ℕ) :
     .piCongrRight fun _ ↦ (MulOpposite.opLinearEquiv Rᵐᵒᵖ).symm
   have htop : range (mulVecBilin R Rᵐᵒᵖ (1 : Matrix (Fin m) (Fin m) R)) = ⊤ :=
     range_eq_top.2 fun v ↦ ⟨v, one_mulVec v⟩
-  rw [kZeroEquiv_of_mk _ (finiteProjectiveModulesFree Rᵐᵒᵖ m)
-    ((finiteProjectiveModulesFreeLinearEquiv Rᵐᵒᵖ m).trans
-      (L.trans (LinearEquiv.ofTop _ htop).symm))]
-  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (finiteProjectiveModulesFreeLinearEquiv Rᵐᵒᵖ m)
-    (finiteProjectiveModulesRegularLinearEquiv Rᵐᵒᵖ)
+  rw [kZeroEquiv_of_mk _ ⟨ModuleCat.of Rᵐᵒᵖ (Fin m → Rᵐᵒᵖ),
+    finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
+    (L.trans (LinearEquiv.ofTop _ htop).symm)]
+  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _) (.refl _ _)
 
 /-- **Every class in `K₀(R)` is `[eRⁿ] - m[R]`.** Every element of `K₀(R)` is the difference of
 the class of the image of an idempotent matrix `e` acting on column vectors and the class of a

@@ -38,6 +38,7 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
 * The finitely generated modules are closed under finite products and direct summands, and
   `FGModuleCat R` has finite biproducts.
+* `FGModuleCat.preservesEpimorphisms_ι`: an epimorphism of `FGModuleCat R` is surjective.
 * `FGModuleCat.preservesMonomorphisms_ι`: a monomorphism of `FGModuleCat R` is injective.
 * `ModuleCat.isFG_isClosedUnderSubobjects`: over a left Noetherian ring, finitely generated modules
   are closed under subobjects.
@@ -230,6 +231,12 @@ instance : (ModuleCat.isFG.{v} R).IsStableUnderRetracts where
     have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
     refine (ModuleCat.isFG_iff M).mpr (Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, ?_⟩)
     simp [← ModuleCat.comp_apply]
+
+/-- **An epimorphism of finitely generated modules is surjective**: the inclusion
+`FGModuleCat R ⥤ ModuleCat R` preserves epimorphisms, over any ring `R`. -/
+instance _root_.FGModuleCat.preservesEpimorphisms_ι :
+    (ModuleCat.isFG.{v} R).ι.PreservesEpimorphisms :=
+  inferInstanceAs (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesEpimorphisms
 
 /-- **A monomorphism of finitely generated modules is injective**: the inclusion
 `FGModuleCat R ⥤ ModuleCat R` preserves monomorphisms, over any ring `R`. -/
