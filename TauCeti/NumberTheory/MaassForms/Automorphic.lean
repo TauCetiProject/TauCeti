@@ -97,6 +97,15 @@ public theorem IsAutomorphic.apply_smul (hf : IsAutomorphic N χ f) {γ : SL(2, 
     (hγ : γ ∈ Gamma0 N) (z : ℍ) : f (γ • z) = χ ((γ 1 1 : ℤ) : ZMod N) * f z :=
   isAutomorphic_iff.mp hf γ hγ z
 
+/-- **Transport of the automorphy law through a conjugation**: if `g γ = γ' g` in `GL(2, ℝ)`
+with `γ' = !![a', b'; c', d'] ∈ Γ₀(N)`, then `f(g γ z) = χ(d') f(g z)`. -/
+public theorem IsAutomorphic.apply_smul_smul_of_mul_eq (hf : IsAutomorphic N χ f)
+    {g : GL (Fin 2) ℝ} {γ γ' : SL(2, ℤ)} (hg : g * mapGL ℝ γ = mapGL ℝ γ' * g)
+    (hγ' : γ' ∈ Gamma0 N) (z : ℍ) :
+    f (g • γ • z) = χ ((γ' 1 1 : ℤ) : ZMod N) * f (g • z) := by
+  rw [← Matrix.SpecialLinearGroup.mapGL_smul (R := ℤ) γ, ← mul_smul, hg, mul_smul,
+    Matrix.SpecialLinearGroup.mapGL_smul, hf.apply_smul hγ']
+
 /-- The zero function is automorphic for every character. -/
 @[simp]
 public theorem isAutomorphic_zero : IsAutomorphic N χ 0 :=
@@ -173,9 +182,7 @@ public theorem isAutomorphic_const_iff (c : ℂ) :
 public theorem IsAutomorphic.comp_J_smul (hf : IsAutomorphic N χ f) :
     IsAutomorphic N χ (fun z ↦ f (J • z)) := by
   refine isAutomorphic_iff.mpr fun γ hγ z ↦ ?_
-  rw [← Matrix.SpecialLinearGroup.mapGL_smul (R := ℤ) γ,
-    ← mul_smul, J_mul_mapGL, mul_smul, Matrix.SpecialLinearGroup.mapGL_smul,
-    hf.apply_smul (conjJ_mem_Gamma0 hγ)]
+  rw [hf.apply_smul_smul_of_mul_eq (J_mul_mapGL γ) (conjJ_mem_Gamma0 hγ)]
   simp
 
 /-- **Automorphy is invariant under the reflection** `z ↦ -conj z`: the reflection preserves the
@@ -196,9 +203,8 @@ character `χ`, then `z ↦ f(-1/(Nz))`, the composition with the action of the 
 public theorem IsAutomorphic.comp_frickeGL_smul (hf : IsAutomorphic N χ f) :
     IsAutomorphic N χ⁻¹ (fun z ↦ f (frickeGL ℝ N • z)) := by
   refine isAutomorphic_iff.mpr fun γ hγ z ↦ ?_
-  rw [← Matrix.SpecialLinearGroup.mapGL_smul (R := ℤ) γ,
-    ← mul_smul, frickeGL_mul_mapGL ℝ ⟨γ, hγ⟩, mul_smul, Matrix.SpecialLinearGroup.mapGL_smul,
-    hf.apply_smul (frickeConjSL_mem_Gamma0 ⟨γ, hγ⟩)]
+  rw [hf.apply_smul_smul_of_mul_eq (frickeGL_mul_mapGL ℝ ⟨γ, hγ⟩)
+    (frickeConjSL_mem_Gamma0 ⟨γ, hγ⟩)]
   congr 1
   -- the conjugate has lower-right entry `a`, the inverse of `d` modulo `N`
   have h : χ ((γ 0 0 : ℤ) : ZMod N) * χ ((γ 1 1 : ℤ) : ZMod N) = 1 := by
@@ -227,9 +233,7 @@ public theorem IsAutomorphic.comp_scaleGL_smul {M d : ℕ} [NeZero d] {χ : Diri
   obtain ⟨c, hc, hm, -⟩ := exists_conjScale_mem_Gamma0_of_dvd d M N h ⟨γ, hγ⟩
   have hconj : scaleGL d * mapGL ℝ γ = mapGL ℝ (conjScale d γ c hc) * scaleGL d :=
     mul_inv_eq_iff_eq_mul.mp (mapGL_conjScale γ c hc)
-  rw [← Matrix.SpecialLinearGroup.mapGL_smul (R := ℤ) γ,
-    ← mul_smul, hconj, mul_smul, Matrix.SpecialLinearGroup.mapGL_smul, hf.apply_smul hm,
-    conjScale_apply_one_one]
+  rw [hf.apply_smul_smul_of_mul_eq hconj hm, conjScale_apply_one_one]
   congr 1
   -- the lower-right entry is a unit modulo `N`, whose reduction modulo `M` is read by `χ`
   have hu := IsUnit.of_mul_eq_one_right _
