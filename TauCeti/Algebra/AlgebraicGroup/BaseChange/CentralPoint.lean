@@ -102,12 +102,14 @@ end HopfAlgebra
 
 namespace CommHopfAlgCat
 
-variable {k : Type u} {K : Type v} [CommRing k] [CommRing K] [Algebra k K]
+universe w x
+
+variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
 
 /-- The bundled base-change equivalence on points preserves and reflects universal centrality. -/
 @[simp]
 theorem isCentralPoint_baseChangePointsMulEquiv_iff
-    (H : _root_.CommHopfAlgCat.{v} k) (A : CommAlgCat.{v} K)
+    (H : _root_.CommHopfAlgCat.{v} k) (A : CommAlgCat.{x} K)
     (g : HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) :
     HopfAlgebra.IsCentralPoint (baseChangePointsMulEquiv (K := K) A H g) ↔
       HopfAlgebra.IsCentralPoint g := by
@@ -121,7 +123,55 @@ theorem isCentralPoint_baseChangePointsMulEquiv_iff
     rw [baseChangePointsMulEquiv_apply_apply,
       AlgHom.baseChangePointsMulEquiv_symm_apply]
   rw [he]
-  exact HopfAlgebra.isCentralPoint_baseChangePointsMulEquiv_symm_iff g
+  constructor
+  · intro hg
+    have hg' := (HopfAlgebra.isCentralPoint_iff_commute_includeRight _).mp hg
+    rw [HopfAlgebra.isCentralPoint_def]
+    intro B _ _ φ h
+    let _ : Algebra k B := Algebra.compHom B (algebraMap k K)
+    let _ : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
+    rw [commute_iff_eq]
+    apply (AlgHom.baseChangePointsMulEquiv
+      (k := k) (K := K) (A := H) (R := B)).symm.injective
+    simp only [map_mul]
+    rw [AlgHom.baseChangePointsMulEquiv_symm_mapValue]
+    let h' := (AlgHom.baseChangePointsMulEquiv
+      (k := k) (K := K) (A := H) (R := B)).symm h
+    have hcomm := hg'.map
+      (AlgHom.mapValue (H := H)
+        (Algebra.TensorProduct.productMap (φ.restrictScalars k) h'.ofConv))
+    simpa only [AlgHom.mapValue_apply, ← AlgHom.comp_assoc,
+      Algebra.TensorProduct.productMap_left, AlgHom.comp_id,
+      Algebra.TensorProduct.productMap_right, toConv_ofConv, AlgHom.comp_apply] using hcomm.eq
+  · intro hg
+    have hg' := (HopfAlgebra.isCentralPoint_iff_commute_includeRight g).mp hg
+    rw [HopfAlgebra.isCentralPoint_def]
+    intro B _ _ φ h
+    let _ : Algebra K B :=
+      (φ.toRingHom.comp (algebraMap K A)).toAlgebra
+    let _ : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq fun r ↦ by
+      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+        ← IsScalarTower.algebraMap_apply k K A]
+      exact (φ.commutes r).symm
+    let φK : A →ₐ[K] B :=
+      { φ.toRingHom with
+        commutes' := fun r ↦ by
+          rw [RingHom.algebraMap_toAlgebra]
+          rfl }
+    rw [commute_iff_eq]
+    apply (AlgHom.baseChangePointsMulEquiv
+      (k := k) (K := K) (A := H) (R := B)).injective
+    simp only [map_mul]
+    have hφ : φK.restrictScalars k = φ := AlgHom.ext fun _ ↦ rfl
+    rw [← hφ, ← AlgHom.mapValue_baseChangePointsMulEquiv φK]
+    let h' := AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := B) h
+    have hcomm := hg'.map
+      (AlgHom.mapValue (H := baseChange (K := K) H)
+        (Algebra.TensorProduct.productMap φK h'.ofConv))
+    simpa only [AlgHom.mapValue_apply, ← AlgHom.comp_assoc,
+      Algebra.TensorProduct.productMap_left, AlgHom.comp_id,
+      Algebra.TensorProduct.productMap_right, toConv_ofConv,
+      MulEquiv.apply_symm_apply, h'] using hcomm.eq
 
 end CommHopfAlgCat
 

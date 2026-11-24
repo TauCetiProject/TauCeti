@@ -30,6 +30,8 @@ Conjugation therefore carries subgroup points to subgroup points after base chan
   ideal is contained in the normal core of its extension.
 * `TauCeti.CommHopfAlgCat.isNormal_mapBaseChangeHopfIdeal_iff`: transport of Hopf ideals along a
   `k`-algebra equivalence preserves and reflects normality.
+* `TauCeti.CommHopfAlgCat.mapBaseChangeHopfIdeal_normalCore`: transport of Hopf ideals along a
+  `k`-algebra equivalence commutes with taking the normal core.
 
 ## References
 
@@ -87,7 +89,7 @@ private theorem isNormal_mapBaseChangeHopfIdeal
   let _ : Algebra K₁ K₂ := e.toRingHom.toAlgebra
   let _ : IsScalarTower k K₁ K₂ :=
     IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
-  unfold mapBaseChangeHopfIdeal
+  rw [mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerBialgEquiv e (fun _ ↦ rfl)]
   exact (isNormal_baseChangeHopfIdeal hI).comapOfSurjective_of_bijective _
     (EquivLike.injective
       (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂).symm)
@@ -102,5 +104,24 @@ theorem isNormal_mapBaseChangeHopfIdeal_iff
     (mapBaseChangeHopfIdeal e I).IsNormal ↔ I.IsNormal :=
   ⟨fun h ↦ by simpa only [mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal] using
     isNormal_mapBaseChangeHopfIdeal e.symm h, isNormal_mapBaseChangeHopfIdeal e⟩
+
+/-- Transport along a `k`-algebra equivalence commutes with taking the normal core. -/
+@[simp]
+theorem mapBaseChangeHopfIdeal_normalCore
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂] [Algebra k K₁] [Algebra k K₂]
+    (e : K₁ ≃ₐ[k] K₂) (I : HopfIdeal K₁ (baseChange (K := K₁) H)) :
+    mapBaseChangeHopfIdeal e I.normalCore = (mapBaseChangeHopfIdeal e I).normalCore := by
+  refine le_antisymm ?_ ?_
+  · refine (HopfIdeal.le_normalCore_iff_of_isNormal _ _ ?_).mpr ?_
+    · exact (isNormal_mapBaseChangeHopfIdeal_iff e _).mpr (HopfIdeal.isNormal_normalCore I)
+    · exact mapBaseChangeHopfIdeal_mono e I.normalCore_le
+  · rw [← mapBaseChangeHopfIdeal_mapBaseChangeHopfIdeal_symm e
+        (mapBaseChangeHopfIdeal e I).normalCore,
+      mapBaseChangeHopfIdeal_le_mapBaseChangeHopfIdeal_iff]
+    refine (HopfIdeal.le_normalCore_iff_of_isNormal _ _ ?_).mpr ?_
+    · exact (isNormal_mapBaseChangeHopfIdeal_iff e.symm _).mpr (HopfIdeal.isNormal_normalCore _)
+    · simpa only [mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal] using
+        mapBaseChangeHopfIdeal_mono e.symm
+          (HopfIdeal.normalCore_le (mapBaseChangeHopfIdeal e I))
 
 end TauCeti.CommHopfAlgCat
