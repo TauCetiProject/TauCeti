@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Geometric
 public import TauCeti.AlgebraicTopology.UniversalCover.Action
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FundamentalGroup.Opposite
 
@@ -31,6 +32,13 @@ pinned by `TauCeti.Deck.IsRegular.deckFundamentalGroupEquiv`.
 * `TauCeti.UniversalCover.isRegular_proj`: regularity of the universal-cover projection.
 * `TauCeti.UniversalCover.deckFundamentalGroupEquiv`: the deck group of the universal cover is
   the opposite fundamental group.
+* `TauCeti.UniversalCover.deckFundamentalGroupEquiv_symm_mk_apply_basepointLift`: the deck
+  transformation of the class of a loop `p` in the geometric fundamental group
+  `TauCeti.GeometricFundamentalGroup X x₀ = (FundamentalGroup X x₀)ᵐᵒᵖ` sends the base lift to the
+  endpoint of the lift of `p`.
+* `TauCeti.UniversalCover.liftPath_trans_apply_one`: the lift of `p.trans q` from the base lift
+  ends at the image of the base lift under the deck transformation of `q` followed by that of
+  `p`, the homomorphism law for first-traverse concatenation.
 
 ## References
 
@@ -127,5 +135,38 @@ lemma deckFundamentalGroupEquiv_symm_op
   change ((isCoveringMap x₀).monodromy g.toPath (basepointLift x₀) :
     UniversalCover x₀) = (loopDeck x₀ g⁻¹).val (basepointLift x₀)
   simpa only [deck.smul_eq_apply, loopDeck_apply] using monodromy_basepointLift x₀ g
+
+section Geometric
+
+variable [LocallyPathConnectedSpace X] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+
+/-- **Endpoint formula.** The deck transformation of the class of a loop `p` in the geometric
+fundamental group sends the base lift to the endpoint of the lift of `p` starting at the base
+lift. -/
+theorem deckFundamentalGroupEquiv_symm_mk_apply_basepointLift (p : Path x₀ x₀) :
+    ((deckFundamentalGroupEquiv x₀).symm (GeometricFundamentalGroup.mk p)).val
+        (basepointLift x₀) =
+      (isCoveringMap x₀).liftPath p (basepointLift x₀)
+        (p.source.trans (basepointLift x₀).property.symm) 1 := by
+  have h := (isRegular_proj x₀).deckFundamentalGroupEquiv_unop_monodromy (isCoveringMap x₀)
+    (basepointLift x₀) ((deckFundamentalGroupEquiv x₀).symm (GeometricFundamentalGroup.mk p))
+  -- Mathlib has no lemma for `FundamentalGroup.toPath (FundamentalGroup.fromPath γ) = γ`; both
+  -- are reducible abbreviations, so `coe_monodromy_mk` matches the loop class directly.
+  rw [← deckFundamentalGroupEquiv, MulEquiv.apply_symm_apply, MulOpposite.unop_op,
+    (isCoveringMap x₀).coe_monodromy_mk, deck.smul_eq_apply] at h
+  exact h.symm
+
+/-- **The homomorphism law by path lifting.** The lift of `p.trans q` from the base lift ends at
+the image of the base lift under the deck transformation of `q` followed by that of `p`. -/
+theorem liftPath_trans_apply_one (p q : Path x₀ x₀) :
+    (isCoveringMap x₀).liftPath (p.trans q) (basepointLift x₀)
+        ((p.trans q).source.trans (basepointLift x₀).property.symm) 1 =
+      ((deckFundamentalGroupEquiv x₀).symm (GeometricFundamentalGroup.mk p)).val
+        (((deckFundamentalGroupEquiv x₀).symm (GeometricFundamentalGroup.mk q)).val
+          (basepointLift x₀)) := by
+  rw [← deckFundamentalGroupEquiv_symm_mk_apply_basepointLift]
+  simp
+
+end Geometric
 
 end TauCeti.UniversalCover

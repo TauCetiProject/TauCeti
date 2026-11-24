@@ -211,8 +211,7 @@ theorem rieszSymbolLp_smul_rieszSymbolLp (v w : E) :
 
 /-- The `L^∞` norm of the Riesz symbol is at most `‖v‖`. -/
 theorem norm_rieszSymbolLp_le (v : E) : ‖rieszSymbolLp v‖ ≤ ‖v‖ := by
-  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable _)]
-  refine ENNReal.toReal_le_of_le_ofReal (by positivity) (eLpNormEssSup_le_of_ae_bound ?_)
+  refine Lp.norm_le_of_ae_bound_top (norm_nonneg v) ?_
   filter_upwards [coeFn_rieszSymbolLp v] with ξ hξ
   rw [hξ]
   exact norm_rieszSymbol_le v ξ

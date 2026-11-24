@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Compact.Convolution
 public import TauCeti.RepresentationTheory.Continuous.Representative
 public import TauCeti.RepresentationTheory.Continuous.RightRegular
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.RepresentationTheory.Continuous.StronglyContinuous
 
 /-!
 # The finite-dimensional representations carried by convolution eigenspaces
@@ -147,11 +148,8 @@ representation of `G`. -/
 theorem continuous_convolutionEigenspaceRepresentation (k : C(G, 𝕜)) {μ : 𝕜} (hμ : μ ≠ 0) :
     Continuous (convolutionEigenspaceRepresentation k μ) := by
   have := finiteDimensional_eigenspace_convolutionOperator k hμ
-  rw [continuous_clm_apply]
-  intro f
-  rw [Topology.IsInducing.subtypeVal.continuous_iff]
-  simpa only [Function.comp_def, coe_convolutionEigenspaceRepresentation_apply] using
-    (haarProb G).continuous_rightRegular_apply 2 ENNReal.ofNat_ne_top (f : Lp 𝕜 2 (haarProb G))
+  exact ContRepresentation.continuous_subrepresentation_of_finiteDimensional
+    ((haarProb G).continuous_rightRegular_apply 2 ENNReal.ofNat_ne_top)
 
 /-! ### The eigenvectors are representative functions -/
 
