@@ -14,14 +14,15 @@ public import TauCeti.Topology.VectorBundle.LineTwistedBidual
 
 Line-twisted evaluation `TauCeti.bundleLineTwistedBidual`, from a vector bundle `V` to
 `Hom(Hom(V, D), D)` for a line bundle `D`, is a smooth section of the hom bundle, because its
-expression in every pair of frames is the constant map `NormedSpace.inclusionInDoubleDual`. For a
+expression in the preferred frames of `V` and `D` at each base point is the constant map
+`NormedSpace.inclusionInDoubleDual`. For a
 finite-dimensional model fibre the induced map of total spaces and its inverse are smooth. No
 regularity of the transition functions of `V` or `D` is used, and no metric, orientation or
 generator of `D` is chosen.
 
 Applied pointwise, the inverse identification therefore transports compactly supported smooth
 sections, and it does so continuously for the test topologies in both directions, since it is
-constant in frames. Thus the bundle tests of `Hom(Hom(V, D), D)` are, as topological vector
+constant in these frames. Thus the bundle tests of `Hom(Hom(V, D), D)` are, as topological vector
 spaces, the bundle tests of `V` (`TauCeti.BundleTest.lineTwistedBidualEquiv`). For `V` the bundle
 of alternating forms and `D` the density line, the source is the space of tests on which
 distributional sections of `Hom(V, D)` act.

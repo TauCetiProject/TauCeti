@@ -23,26 +23,27 @@ a generator of `D` or an orientation: a frame is used only to transport continui
 evaluation formula `TauCeti.bundleLineTwistedBidual_apply` shows that the result does not depend
 on it.
 
-In the hom-bundle charts induced by any frames of `V` and `D`, the map is the constant map
-`NormedSpace.inclusionInDoubleDual` of the model fibre, because the transition of the line `D`
-cancels between the two hom factors (`TauCeti.bundleLineTwistedBidual_inCoordinates`). For a
-finite-dimensional model fibre over a complete field, evaluation is an isomorphism
-(`TauCeti.bundleLineTwistedBidualEquiv`), whose inverse is the inverse of the same constant map in
-every frame.
+In the hom-bundle charts induced by the preferred frames of `V` and `D` at any base point `a`,
+the map is the constant map `NormedSpace.inclusionInDoubleDual` of the model fibre, because the
+transition of the line `D` cancels between the two hom factors
+(`TauCeti.bundleLineTwistedBidual_inCoordinates`). For a finite-dimensional model fibre over a
+complete field, evaluation is an isomorphism (`TauCeti.bundleLineTwistedBidualEquiv`), whose
+inverse is the inverse of the same constant map in these frames.
 
 For `D` the density line of a manifold and `V` its bundle of alternating `k`-forms, this is the
 identification of `Hom(Hom(Λᵏ T*M, |Λ|), |Λ|)`, the bundle whose compactly supported sections are
 tested by the distributional sections of `Hom(Λᵏ T*M, |Λ|)`, with `Λᵏ T*M` itself. Its fibrewise
-algebra on tensor products is `TauCeti.lineTwistedBidualEquiv`; the trivial line gives
-`TauCeti.bundleDoubleDual`.
+algebraic counterpart on tensor products is `TauCeti.lineTwistedBidualEquiv`, in
+`TauCeti.LinearAlgebra.Dual.LineTwistedBidual`. The trivial line `Bundle.Trivial M 𝕜` gives
+evaluation into the continuous double dual of each fibre.
 
 ## Main declarations
 
 * `TauCeti.bundleLineTwistedBidual`: fibrewise evaluation `V x →L (V x →L D x) →L D x`.
-* `TauCeti.bundleLineTwistedBidual_inCoordinates`: in every pair of frames it is
-  `NormedSpace.inclusionInDoubleDual` of the model fibre.
+* `TauCeti.bundleLineTwistedBidual_inCoordinates`: in the preferred frames at any base point it
+  is `NormedSpace.inclusionInDoubleDual` of the model fibre.
 * `TauCeti.bundleLineTwistedBidualEquiv`: the finite-dimensional isomorphism.
-* `TauCeti.bundleLineTwistedBidualEquiv_symm_inCoordinates`: its inverse in every pair of frames.
+* `TauCeti.bundleLineTwistedBidualEquiv_symm_inCoordinates`: its inverse in the same frames.
 -/
 
 public section
@@ -85,8 +86,8 @@ theorem bundleLineTwistedBidual_apply (x : M) (v : V x) (φ : V x →L[𝕜] D x
     (trivializationAt F V x).symm_apply_apply_mk (mem_baseSet_trivializationAt F V x),
     (trivializationAt 𝕜 D x).symm_apply_apply_mk (mem_baseSet_trivializationAt 𝕜 D x)]
 
-/-- In any pair of frames of `V` and `D`, line-twisted evaluation is the model-fibre evaluation
-map: the transition of the line `D` cancels between the two hom factors. -/
+/-- In the preferred frames of `V` and `D` at a base point `a`, line-twisted evaluation is the
+model-fibre evaluation map: the transition of the line `D` cancels between the two hom factors. -/
 theorem bundleLineTwistedBidual_inCoordinates (a : M) {x : M}
     (hxV : x ∈ (trivializationAt F V a).baseSet) (hxD : x ∈ (trivializationAt 𝕜 D a).baseSet) :
     ContinuousLinearMap.inCoordinates F V (StrongDual 𝕜 (StrongDual 𝕜 F))
@@ -149,8 +150,8 @@ theorem apply_bundleLineTwistedBidualEquiv_symm (x : M) (Φ : (V x →L[𝕜] D 
   simpa using (bundleLineTwistedBidualEquiv_apply (F := F) V D x
     ((bundleLineTwistedBidualEquiv (F := F) V D x).symm Φ) φ).symm
 
-/-- In any pair of frames, the inverse identification is the inverse of the model-fibre
-evaluation map. This pins its behaviour under changes of frame of both `V` and `D`. -/
+/-- In the preferred frames of `V` and `D` at a base point `a`, the inverse identification is the
+inverse of the model-fibre evaluation map. -/
 theorem bundleLineTwistedBidualEquiv_symm_inCoordinates (a : M) {x : M}
     (hxV : x ∈ (trivializationAt F V a).baseSet) (hxD : x ∈ (trivializationAt 𝕜 D a).baseSet) :
     ContinuousLinearMap.inCoordinates (StrongDual 𝕜 (StrongDual 𝕜 F))

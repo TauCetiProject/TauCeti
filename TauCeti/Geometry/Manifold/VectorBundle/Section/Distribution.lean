@@ -344,14 +344,9 @@ theorem continuous_map_of_inCoordinates_eq_const (ϕ : ∀ x, V₁ x →L[ℝ] V
     intro a s x
     have hx₁ := hU₁ a x.property
     have hx₂ := hU₂ a x.property
-    rw [Trivialization.frameCoordinates_apply, Trivialization.frameCoordinates_apply,
-      ← hc a x hx₁ hx₂,
-      ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply, ← (e₁ a).continuousLinearMapAt_apply_of_mem ℝ hx₁,
-      (e₁ a).symmL_continuousLinearMapAt hx₁, (e₂ a).continuousLinearMapAt_apply_of_mem ℝ hx₂,
-      mapLinearMap_apply]
-    -- `ϕ'` is `ϕ` with its fibre maps read as linear maps.
-    rfl
+    rw [← hc a x hx₁ hx₂]
+    simp [ϕ', e₁, e₂, ContinuousLinearMap.inCoordinates, Trivialization.frameCoordinates_apply,
+      Trivialization.linearMapAt_apply, Trivialization.symm_apply_apply_mk, hx₁, hx₂]
   let := frameTopology (I := I) (n := ∞) e₁ U hU₁
   let := frameTopology (I := I) (n := ∞) e₂ U hU₂
   let := compactlySupportedTopology (I := I) (n := ∞) e₂ U hU₂
@@ -363,10 +358,10 @@ theorem continuous_map_of_inCoordinates_eq_const (ϕ : ∀ x, V₁ x →L[ℝ] V
   refine (continuous_compactlySupportedTopology_iff e₁ U hU₁
     (mapCompactlySupported ϕ' hϕ)).2 fun K ↦ ?_
   -- On a fixed-compact stage the map stays in the same stage of the target.
-  have hK : Continuous fun s : supportedIn I F₁ ∞ V₁ K ↦
-      (⟨mapLinearMap ϕ' hϕ s, mapLinearMap_mem_supportedIn ϕ' hϕ s.property⟩ :
-        supportedIn I F₂ ∞ V₂ K) :=
-    (hΦ.comp continuous_subtypeVal).subtype_mk _
+  have hK : Continuous (mapSupportedIn ϕ' hϕ K) :=
+    ((hΦ.comp continuous_subtypeVal).subtype_mk fun s ↦
+      mapLinearMap_mem_supportedIn ϕ' hϕ s.property).congr fun s ↦
+        Subtype.ext (coe_mapSupportedIn ϕ' hϕ K s).symm
   exact ((ContMDiffSection.continuous_ofSupportedIn e₂ U hU₂ K).comp hK).congr fun s ↦
     Subtype.ext (by simp)
 

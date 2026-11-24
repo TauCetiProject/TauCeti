@@ -81,6 +81,22 @@ def formEquiv : TestForm I M k ≃L[ℝ]
     BundleTest I (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) :=
   BundleTest.lineTwistedBidualEquiv I _ _ (DensityBundle I M)
 
+/-- The `k`-form of a test form is computed pointwise by the inverse of line-twisted bidual
+evaluation. -/
+theorem formEquiv_apply (s : TestForm I M k) (x : M) :
+    formEquiv s x = (bundleLineTwistedBidualEquiv (F := E [⋀^Fin k]→L[ℝ] ℝ)
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) (DensityBundle I M) x).symm (s x) :=
+  BundleTest.lineTwistedBidualEquiv_apply s x
+
+/-- The test form of a compactly supported smooth `k`-form is computed pointwise by line-twisted
+bidual evaluation. -/
+theorem formEquiv_symm_apply
+    (α : BundleTest I (E [⋀^Fin k]→L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ))
+    (x : M) :
+    formEquiv.symm α x = bundleLineTwistedBidualEquiv (F := E [⋀^Fin k]→L[ℝ] ℝ)
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) (DensityBundle I M) x (α x) :=
+  BundleTest.lineTwistedBidualEquiv_symm_apply α x
+
 /-- The `k`-form of a test form `s` is characterized by its pairings: a density-valued `k`-vector
 `φ` at `x` takes on it the value `s x φ`. -/
 @[simp]
