@@ -155,10 +155,6 @@ theorem IsMatlisGenerator.linearEquiv_symm_apply_self (hχ : χ.IsMatlisGenerato
     hχ.linearEquiv.symm χ = 1 :=
   hχ.linearEquiv.symm_apply_eq.mpr (one_smul R χ).symm
 
-theorem IsMatlisGenerator.linearEquiv_symm_apply_smul (hχ : χ.IsMatlisGenerator) (r : R) :
-    hχ.linearEquiv.symm (r • χ) = r := by
-  simp
-
 /-- **Uniqueness of Matlis generators.** Over a finite ring, any two Matlis generators differ by a
 unique unit. -/
 theorem IsMatlisGenerator.existsUnique_units_smul_eq (hχ : χ.IsMatlisGenerator)
