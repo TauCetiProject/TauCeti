@@ -471,6 +471,20 @@ theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (
     (isometry_smul_add_coe c).map_euclideanHausdorffMeasure]
   exact congrArg _ hrange.symm
 
+/-- **A hyperplane has infinite Hausdorff measure.** For a unit vector `ν` of a space of dimension
+`n ≥ 2`, the hyperplane `{x | ⟪x, ν⟫ = c}` has infinite `μHE[n - 1]` measure. -/
+theorem euclideanHausdorffMeasure_setOf_inner_eq_eq_top (hF : 2 ≤ finrank ℝ F) (hν : ‖ν‖ = 1)
+    (c : ℝ) : μHE[finrank ℝ F - 1] {x | ⟪x, ν⟫ = c} = ∞ := by
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  have : Nontrivial (ℝ ∙ ν)ᗮ := by
+    have h := (ℝ ∙ ν).finrank_add_finrank_orthogonal
+    rw [finrank_span_singleton hν0] at h
+    exact (Module.finrank_pos_iff (R := ℝ)).1 (by omega)
+  rw [← Measure.restrict_apply_univ, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    Measure.map_apply (isometry_smul_add_coe c).continuous.measurable MeasurableSet.univ,
+    preimage_univ]
+  exact measure_univ_of_isAddLeftInvariant _
+
 /-- **Isodiametric inequality on a hyperplane.** For a unit vector `ν` of a space of dimension `n`,
 the part of a set `t` on the hyperplane `{x | ⟪x, ν⟫ = c}` has
 `μHE[n - 1] (t ∩ {x | ⟪x, ν⟫ = c}) ≤ (ediam t / 2) ^ (n - 1) ω_{n-1}`, where `ω_{n-1}` is the volume

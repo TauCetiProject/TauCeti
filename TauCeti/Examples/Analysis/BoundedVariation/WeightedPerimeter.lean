@@ -48,12 +48,7 @@ example : weightedPerimeter (0 : EuclideanSpace ℝ (Fin 2) → ℝ) ⊤ {x | x 
     ext x
     simp [ν, EuclideanSpace.inner_single_right]
   rw [weightedPerimeter_zero_weight, hset, perimeter_setOf_inner_lt hν, Opens.coe_top,
-    univ_inter, ← Measure.restrict_apply_univ, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
-    Measure.map_apply (by fun_prop) MeasurableSet.univ, preimage_univ]
-  have : Fact (Module.finrank ℝ (EuclideanSpace ℝ (Fin 2)) = 0 + 1 + 1) := ⟨by simp⟩
-  have : Nontrivial (ℝ ∙ ν)ᗮ := Module.nontrivial_of_finrank_eq_succ
-    (Submodule.finrank_orthogonal_span_singleton (n := 0 + 1)
-      (norm_ne_zero_iff.1 (hν ▸ one_ne_zero)))
-  exact measure_univ_of_isAddLeftInvariant _
+    univ_inter]
+  exact euclideanHausdorffMeasure_setOf_inner_eq_eq_top (by simp) hν 0
 
 end TauCeti.Examples.WeightedPerimeter
