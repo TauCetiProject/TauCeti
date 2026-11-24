@@ -499,21 +499,18 @@ class group. -/
 theorem exists_eval_mul_eval_eq_eval_principalForm (f : BinaryQuadraticForm ℤ) (x y z w : ℤ) :
     ∃ u v, f.eval x y * f.eval z w = (principalForm f.discrim).eval u v := by
   have hD := discrim_emod_four_eq_zero_or_one f
+  have he := discrim_emod_two f
   obtain ⟨a, b, c⟩ := f
   rcases Int.even_or_odd' b with ⟨k, rfl | rfl⟩
-  · have he : (⟨a, 2 * k, c⟩ : BinaryQuadraticForm ℤ).discrim % 2 = 0 :=
-      Int.emod_eq_zero_of_dvd ⟨2 * k ^ 2 - 2 * a * c, by rw [discrim_def, discrim]; ring⟩
-    refine ⟨a * x * z + c * y * w + k * (x * w + y * z), y * z - x * w,
+  · refine ⟨a * x * z + c * y * w + k * (x * w + y * z), y * z - x * w,
       mul_left_cancel₀ (four_ne_zero (α := ℤ)) ?_⟩
-    rw [four_mul_eval_principalForm hD, he, discrim_def, discrim, eval_mk, eval_mk]
+    rw [four_mul_eval_principalForm hD, he, show 2 * k % 2 = 0 by omega, discrim_def, discrim,
+      eval_mk, eval_mk]
     ring
-  · have he : (⟨a, 2 * k + 1, c⟩ : BinaryQuadraticForm ℤ).discrim % 2 = 1 := by
-      rw [discrim_def, discrim, show (2 * k + 1) ^ 2 - 4 * a * c =
-        1 + 2 * (2 * k ^ 2 + 2 * k - 2 * a * c) by ring, Int.add_mul_emod_self_left]
-      rfl
-    refine ⟨a * x * z + c * y * w + k * (x * w + y * z) + x * w, y * z - x * w,
+  · refine ⟨a * x * z + c * y * w + k * (x * w + y * z) + x * w, y * z - x * w,
       mul_left_cancel₀ (four_ne_zero (α := ℤ)) ?_⟩
-    rw [four_mul_eval_principalForm hD, he, discrim_def, discrim, eval_mk, eval_mk]
+    rw [four_mul_eval_principalForm hD, he, show (2 * k + 1) % 2 = 1 by omega, discrim_def,
+      discrim, eval_mk, eval_mk]
     ring
 
 /-- The principal form is primitive. -/

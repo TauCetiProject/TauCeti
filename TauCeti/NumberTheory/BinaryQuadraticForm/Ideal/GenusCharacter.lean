@@ -62,14 +62,19 @@ private theorem genusChar_out_mk (f : S) :
   obtain ⟨γ, hγ⟩ := Quotient.mk_out (s := orbitRel SL(2, ℤ) S) f
   rw [← hγ, SubMulAction.val_smul, hfχ.genusChar_smul]
 
+/-- `F` sends Dirichlet compositions to products: any two proper classes in `S` have
+representatives `(a, B, a'C)` and `(a', B, aC)` whose composition `(aa', B, C)` lies in `S`, with
+class sent by `F` to the product of their images. -/
+private def MapsCompositionToMul : Prop :=
+  ∀ q₁ q₂, ∃ (a a' B C : ℤ) (f g h : S), Quotient.mk _ f = q₁ ∧ Quotient.mk _ g = q₂ ∧
+      (f : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ ∧ (g : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
+      (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩ ∧ F q₁ * F q₂ = F (Quotient.mk _ h)
+
 /-- The genus character transported along a bijection `F` from the proper classes in `S` to a
 monoid, which sends the principal class to `1` and Dirichlet compositions to products. -/
 private noncomputable def genusCharHom (p : S) (hp : (p : BinaryQuadraticForm ℤ) = principalForm D)
     (hFp : F (Quotient.mk _ p) = 1)
-    (hF : ∀ q₁ q₂, ∃ (a a' B C : ℤ) (f g h : S), Quotient.mk _ f = q₁ ∧ Quotient.mk _ g = q₂ ∧
-      (f : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ ∧ (g : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
-      (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩ ∧ F q₁ * F q₂ = F (Quotient.mk _ h))
-    [NeZero m] : G →* R where
+    (hF : MapsCompositionToMul F) [NeZero m] : G →* R where
   toFun c := genusChar χ (F.symm c).out
   map_one' := by
     rw [F.symm_apply_eq.mpr hFp.symm, genusChar_out_mk hS hχ, hp, hχ.genusChar_principalForm]
@@ -84,17 +89,15 @@ private noncomputable def genusCharHom (p : S) (hp : (p : BinaryQuadraticForm �
 
 variable {F} {p : S} {hp : (p : BinaryQuadraticForm ℤ) = principalForm D}
   {hFp : F (Quotient.mk _ p) = 1}
-  {hF : ∀ q₁ q₂, ∃ (a a' B C : ℤ) (f g h : S), Quotient.mk _ f = q₁ ∧ Quotient.mk _ g = q₂ ∧
-      (f : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ ∧ (g : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
-      (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩ ∧ F q₁ * F q₂ = F (Quotient.mk _ h)}
   [NeZero m]
 
-private theorem genusCharHom_apply_mk (f : S) :
+private theorem genusCharHom_apply_mk {hF : MapsCompositionToMul F} (f : S) :
     genusCharHom hS hχ F p hp hFp hF (F (Quotient.mk _ f)) = genusChar χ f := by
   rw [genusCharHom, MonoidHom.coe_mk, OneHom.coe_mk, Equiv.symm_apply_apply]
   exact genusChar_out_mk hS hχ f
 
-private theorem genusCharHom_sq (c : G) : genusCharHom hS hχ F p hp hFp hF (c ^ 2) = 1 := by
+private theorem genusCharHom_sq {hF : MapsCompositionToMul F} (c : G) :
+    genusCharHom hS hχ F p hp hFp hF (c ^ 2) = 1 := by
   obtain ⟨q, rfl⟩ := F.surjective c
   induction q using Quotient.inductionOn with | h f => ?_
   rw [map_pow, genusCharHom_apply_mk]

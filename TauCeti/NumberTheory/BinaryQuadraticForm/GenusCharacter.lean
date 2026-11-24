@@ -78,10 +78,18 @@ noncomputable def genusChar (χ : MulChar (ZMod n) R) (f : BinaryQuadraticForm �
   let v := Classical.epsilon fun v : ℤ × ℤ ↦ IsUnit ((f.eval v.1 v.2 : ℤ) : ZMod n)
   χ (f.eval v.1 v.2)
 
+/-- Unfolding `genusChar`: it is the value of `χ` at the value of `f` at the chosen point. -/
+private theorem genusChar_def (χ : MulChar (ZMod n) R) (f : BinaryQuadraticForm ℤ) :
+    genusChar χ f = χ (f.eval
+      (Classical.epsilon fun v : ℤ × ℤ ↦ IsUnit ((f.eval v.1 v.2 : ℤ) : ZMod n)).1
+      (Classical.epsilon fun v : ℤ × ℤ ↦ IsUnit ((f.eval v.1 v.2 : ℤ) : ZMod n)).2) :=
+  rfl
+
 /-- A form taking no value prime to `n` has genus character `0`. -/
 theorem genusChar_eq_zero {χ : MulChar (ZMod n) R} {f : BinaryQuadraticForm ℤ}
-    (hf : ∀ x y : ℤ, ¬ IsUnit ((f.eval x y : ℤ) : ZMod n)) : genusChar χ f = 0 :=
-  χ.map_nonunit (hf _ _)
+    (hf : ∀ x y : ℤ, ¬ IsUnit ((f.eval x y : ℤ) : ZMod n)) : genusChar χ f = 0 := by
+  rw [genusChar_def]
+  exact χ.map_nonunit (hf _ _)
 
 /-- A primitive form takes a value prime to any nonzero `n` (Cox, Lemma 2.25). -/
 theorem IsPrimitive.exists_isUnit_eval {f : BinaryQuadraticForm ℤ} (hf : f.IsPrimitive)
@@ -115,8 +123,9 @@ theorem apply_eval_eq_apply_eval {f : BinaryQuadraticForm ℤ} (hχ : IsGenusCha
 /-- The genus character of a form is the value of `χ` at any of its values prime to the
 modulus. -/
 theorem genusChar_eq {f : BinaryQuadraticForm ℤ} (hχ : IsGenusChar f.discrim χ) {x y : ℤ}
-    (h : IsUnit ((f.eval x y : ℤ) : ZMod n)) : genusChar χ f = χ (f.eval x y) :=
-  hχ.apply_eval_eq_apply_eval
+    (h : IsUnit ((f.eval x y : ℤ) : ZMod n)) : genusChar χ f = χ (f.eval x y) := by
+  rw [genusChar_def]
+  exact hχ.apply_eval_eq_apply_eval
     (Classical.epsilon_spec (p := fun v : ℤ × ℤ ↦ IsUnit ((f.eval v.1 v.2 : ℤ) : ZMod n))
       ⟨(x, y), h⟩) h
 
@@ -141,8 +150,9 @@ theorem genusChar_smul {f : BinaryQuadraticForm ℤ} (hχ : IsGenusChar f.discri
 
 /-- The genus character of the principal form is `1`. -/
 theorem genusChar_principalForm {D : ℤ} (hχ : IsGenusChar D χ) :
-    genusChar χ (principalForm D) = 1 :=
-  hχ _ _ (Classical.epsilon_spec (p := fun v : ℤ × ℤ ↦
+    genusChar χ (principalForm D) = 1 := by
+  rw [genusChar_def]
+  exact hχ _ _ (Classical.epsilon_spec (p := fun v : ℤ × ℤ ↦
     IsUnit (((principalForm D).eval v.1 v.2 : ℤ) : ZMod n)) ⟨(1, 0), by simp⟩)
 
 /-- **The genus character is multiplicative under Dirichlet composition.** The composition
@@ -258,9 +268,9 @@ theorem isGenusChar_χ₈' {N : ℤ} (hN : N % 8 = 0 ∨ N % 8 = 6) : IsGenusCha
     (hval X Y).resolve_left (hu.map ZMod.χ₈').ne_zero
   rw [intCast_zmod_eight hN, Int.cast_ofNat]
 
-/-- At discriminant `-20` the character `δ` separates the two proper classes: the form
-`2x² + 2xy + 3y²` represents `3 ≡ 3 mod 4`, so its genus character is `-1`, while that of the
-principal form `x² + 5y²` is `1`. -/
+/-- At discriminant `-20` the form `2x² + 2xy + 3y²` has `δ`-genus character `-1`, since it
+represents `3 ≡ 3 mod 4`. This differs from the value `1` of the principal form `x² + 5y²`
+(`IsGenusChar.genusChar_principalForm`). -/
 theorem genusChar_χ₄_mk_two_two_three : genusChar ZMod.χ₄ ⟨2, 2, 3⟩ = -1 := by
   have hχ : IsGenusChar (⟨2, 2, 3⟩ : BinaryQuadraticForm ℤ).discrim ZMod.χ₄ := by
     rw [discrim_def, discrim, show (2 : ℤ) ^ 2 - 4 * 2 * 3 = 4 * -5 by norm_num]
