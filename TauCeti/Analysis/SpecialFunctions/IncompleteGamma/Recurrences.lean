@@ -129,10 +129,23 @@ theorem lowerIncompleteGamma_add_one {a : ℂ} (ha : ∀ m : ℕ, a ≠ -m) (z :
   ring
 
 /-- **DLMF 8.8.3** for `γ`: `γ(a + 2, z) = (a + z + 1) γ(a + 1, z) − a z γ(a, z)` for
-`a ∉ −ℕ` and every `z`. -/
-theorem lowerIncompleteGamma_add_two {a : ℂ} (ha : ∀ m : ℕ, a ≠ -m) (z : ℂ) :
+`a ≠ 0, −1` and every `z`. At `a = −m` with `m ≥ 2` all three values `γ(−m, z)`,
+`γ(−m + 1, z)` and `γ(−m + 2, z)` are Mathlib's junk value `0`, since `Γ` vanishes there. -/
+theorem lowerIncompleteGamma_add_two {a : ℂ} (ha0 : a ≠ 0) (ha1 : a ≠ -1) (z : ℂ) :
     lowerIncompleteGamma (a + 2) z =
       (a + z + 1) * lowerIncompleteGamma (a + 1) z - a * z * lowerIncompleteGamma a z := by
+  by_cases ha : ∀ m : ℕ, a ≠ -m
+  swap
+  -- at `a = −(k + 2)` the parameters `a`, `a + 1`, `a + 2` are poles of `Γ`
+  · push Not at ha
+    obtain ⟨m, rfl⟩ := ha
+    rcases m with _ | _ | k
+    · simp at ha0
+    · simp at ha1
+    have h1 : -((k + 1 + 1 : ℕ) : ℂ) + 1 = -((k + 1 : ℕ) : ℂ) := by push_cast; ring
+    have h2 : -((k + 1 + 1 : ℕ) : ℂ) + 2 = -(k : ℂ) := by push_cast; ring
+    simp only [h1, h2, lowerIncompleteGamma_def, Gamma_neg_nat_eq_zero, zero_mul, mul_zero,
+      sub_zero]
   rcases eq_or_ne z 0 with rfl | hz
   · simp
   have h0 := lowerIncompleteGamma_add_one ha z
