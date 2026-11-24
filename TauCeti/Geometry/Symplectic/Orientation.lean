@@ -323,7 +323,8 @@ theorem Tames.orientation_reindex (hJ : ω.Tames J) (hb : ∀ i, b (i, 1) = J (b
     fin_cases a
     · simpa [d] using hxv j
     · simpa [d, hb] using hyv j
-  have hdet : 0 < b.det d := b.det_pos_of_sub_smul_mem_span_image_fst_lt hcoef htri
+  have hdet : 0 < b.det d := b.det_pos_of_sub_smul_mem_span_image_apply_lt Prod.fst one_pos
+    (fun _ _ ↦ mul_pos) hcoef htri
   have hbasis := b.is_basis_iff_det.2 hdet.ne'.isUnit
   set D := Basis.mk hbasis.1 hbasis.2.ge
   have hDd : ⇑D = d := Basis.coe_mk _ _
