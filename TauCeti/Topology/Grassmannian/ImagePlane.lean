@@ -133,13 +133,7 @@ theorem range_coe_imagePlane_apply (x : {x : (E →L[ℝ] F) × grassmannian E k
 /-- The points of `G(F, k)` whose plane lies in a given subspace `S` form a closed set. -/
 theorem isClosed_setOf_range_le (S : Submodule ℝ F) :
     IsClosed {Q : grassmannian F k | (Q : F →L[ℝ] F).range ≤ S} := by
-  -- The plane of `Q` lies in `S` exactly when the projection onto `S` fixes `Q`.
-  have h (Q : F →L[ℝ] F) : Q.range ≤ S ↔ S.starProjection ∘L Q = Q := by
-    refine ⟨fun hQ ↦ ext fun x ↦ S.starProjection_eq_self_iff.mpr (hQ ⟨x, rfl⟩), ?_⟩
-    rintro hQ _ ⟨x, rfl⟩
-    rw [← hQ]
-    exact S.starProjection_apply_mem _
-  simp_rw [h]
+  simp_rw [← Submodule.starProjection_comp_eq_self_iff]
   exact isClosed_eq (continuous_const.clm_comp continuous_subtypeVal) continuous_subtypeVal
 
 end grassmannian
