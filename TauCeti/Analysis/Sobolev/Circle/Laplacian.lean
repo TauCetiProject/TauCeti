@@ -346,8 +346,7 @@ theorem laplacian_ne_single_zero (T : ℝ) (h : s + 2 ≤ t) (a : CircleSobolev 
 
 private theorem one_add_laplacianSymbol (T : ℝ) (n : ℤ) :
     1 + laplacianSymbol T n = ((1 + (2 * π * n / T) ^ 2 : ℝ) : ℂ) := by
-  push_cast [laplacianSymbol_def]
-  rfl
+  rw [laplacianSymbol_def, ofReal_add, ofReal_one]
 
 /-- For `T ≠ 0`, the symbol `1 + (2πn/T)²` of `1 + Δ` is elliptic of order `2`. -/
 private theorem isTheta_one_add_laplacianSymbol (hT : T ≠ 0) :
