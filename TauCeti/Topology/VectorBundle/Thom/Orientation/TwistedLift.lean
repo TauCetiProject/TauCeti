@@ -119,37 +119,17 @@ theorem neg_one_smul_eq_deckThomPairMap_fst_apply
   Pullback.totalSpace_ext ((neg_one_smul_eq_deck v.proj).trans (deckThomPairMap_fst_proj v).symm)
     ((lift_smul _ v).trans (lift_deckThomPairMap_fst v).symm)
 
-omit [Fintype ι] in
-/-- The action `thomPairFstMulAction` of `ℤˣ` on the total space of the Thom pair of the bundle
-pulled back to the orientation cover is continuous: `-1` acts by the lifted deck involution.
+/-- The continuity `thomPairFstMulAction_continuousConstSMul` of the action of `ℤˣ` on the total
+space of the Thom pair of the bundle pulled back to the orientation cover. -/
+local instance : ContinuousConstSMul ℤˣ
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst :=
+  thomPairFstMulAction_continuousConstSMul
 
-Like `thomPairFstMulAction`, it is not a global instance; the statements below use it as a local
-instance. -/
-theorem thomPairFstMulAction_continuousConstSMul : ContinuousConstSMul ℤˣ
-    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst where
-  continuous_const_smul u := by
-    rcases Int.units_eq_one_or u with rfl | rfl
-    · simp_rw [one_smul]
-      exact continuous_id
-    · simp_rw [neg_one_smul_eq_deckThomPairMap_fst_apply]
-      exact (TopPair.Hom.fst (deckThomPairMap F E ι)).hom.continuous
-
-attribute [local instance] thomPairFstMulAction_continuousConstSMul
-
-omit [Fintype ι] in
-/-- The action `thomPairSndMulAction` of `ℤˣ` on the nonzero vectors of the Thom pair of the bundle
-pulled back to the orientation cover is continuous, as on the total space.
-
-Like `thomPairSndMulAction`, it is not a global instance; the statements below use it as a local
-instance. -/
-theorem thomPairSndMulAction_continuousConstSMul : ContinuousConstSMul ℤˣ
-    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd where
-  continuous_const_smul u :=
-    ((continuous_const_smul u : Continuous fun v : (thomPair F
-      ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).fst ↦ u • v).comp
-        continuous_subtypeVal).subtype_mk _
-
-attribute [local instance] thomPairSndMulAction_continuousConstSMul
+/-- The continuity `thomPairSndMulAction_continuousConstSMul` of the action of `ℤˣ` on the nonzero
+vectors of the Thom pair of the bundle pulled back to the orientation cover. -/
+local instance : ContinuousConstSMul ℤˣ
+    (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)).snd :=
+  thomPairSndMulAction_continuousConstSMul
 
 omit [Fintype ι] in
 /-- The unit `-1` acts on the total space of the pulled-back bundle by the lift of the deck
