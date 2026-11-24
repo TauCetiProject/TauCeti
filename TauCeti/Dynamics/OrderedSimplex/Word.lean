@@ -54,8 +54,10 @@ linear maps.
 * `TauCeti.wordMap u x`: the map `F_u` of the word `u`, read chronologically.
 * `TauCeti.wordDelay u x`: the delay `T_u (w)`.
 * `TauCeti.wordMove u`: the linear map `γ_u = γ_{a_m} ⋯ γ_{a₁}` of `ℝ^{d+2}`.
+* `TauCeti.wordMoveConeSpan u`: the restriction of `γ_u` to `coneSpan d`.
 * `TauCeti.unaccelWordMove js`: the chronological linear map of an unaccelerated word in
   `Fin (d + 1)`.
+* `TauCeti.unaccelWordMoveConeSpan js`: the restriction of `unaccelWordMove js` to `coneSpan d`.
 * `TauCeti.wordCount d x r`: the renewal count `N (w, r)`.
 * `TauCeti.expandWord u`: expansion of an accelerated word into its unaccelerated word.
 
@@ -67,9 +69,10 @@ linear maps.
 * `TauCeti.contDiffOn_wordMap`, `TauCeti.contDiffOn_wordDelay`: smoothness on `orderedSimplex d`.
 * `TauCeti.wordMove_of_mem_orderedCone`, `TauCeti.wordDelay_simplexChart`,
   `TauCeti.wordCount_simplexChart_smul`, `TauCeti.wordMove_mem_coneSpan`,
-  `TauCeti.unaccelWordMove_mem_coneSpan`: the homogeneous identity
+  `TauCeti.unaccelWordMove_mem_coneSpan`, `TauCeti.wordMoveConeSpan_append`,
+  `TauCeti.unaccelWordMoveConeSpan_append`: the homogeneous identity
   `γ_u y = y_n e^{T_u (w)} (F_u (w), 1)`, `T_u (w) = log ((γ_u y)_n / y_n)`, scale invariance,
-  and preservation of `coneSpan d`.
+  and preservation of `coneSpan d` with its restricted action.
 * `TauCeti.length_mul_log_le_wordDelay`, `TauCeti.fst_add_three_le_two_mul_exp_wordDelay`: on the
   simplex `T_u (w) ≥ |u| log (3 / 2)`, and every letter `(A, j)` of `u` has
   `A + 3 ≤ 2 e^{T_u (w)}`.
@@ -263,6 +266,10 @@ theorem wordMove_cons (a : ℕ × Fin d) (u : List (ℕ × Fin d)) :
     wordMove (a :: u) = wordMove u * accelMove a :=
   (rfl)
 
+theorem wordMove_cons_apply (a : ℕ × Fin d) (u : List (ℕ × Fin d)) (y : Fin (d + 2) → ℝ) :
+    wordMove (a :: u) y = wordMove u (accelMove a y) := by
+  rw [wordMove_cons, mul_apply_eq_comp]
+
 theorem wordMove_singleton (a : ℕ × Fin d) : wordMove [a] = accelMove a := by
   simp
 
@@ -274,6 +281,11 @@ theorem unaccelWordMove_nil : unaccelWordMove ([] : List (Fin (d + 1))) = 1 :=
 theorem unaccelWordMove_cons (j : Fin (d + 1)) (js : List (Fin (d + 1))) :
     unaccelWordMove (j :: js) = unaccelWordMove js * linearMove j :=
   (rfl)
+
+theorem unaccelWordMove_cons_apply (j : Fin (d + 1)) (js : List (Fin (d + 1)))
+    (y : Fin (d + 2) → ℝ) :
+    unaccelWordMove (j :: js) y = unaccelWordMove js (linearMove j y) := by
+  rw [unaccelWordMove_cons, mul_apply_eq_comp]
 
 theorem unaccelWordMove_singleton (j : Fin (d + 1)) :
     unaccelWordMove [j] = linearMove j := by
@@ -301,19 +313,58 @@ theorem unaccelWordMove_mapsTo_orderedCone (js : List (Fin (d + 1))) :
     MapsTo (unaccelWordMove js) (orderedCone d) (orderedCone d) := by
   induction js with
   | nil => exact mapsTo_id _
-  | cons j _ ih => exact ih.comp (linearMove_mapsTo_orderedCone j)
+  | cons j _ ih =>
+    intro y hy
+    rw [unaccelWordMove_cons_apply]
+    exact ih (linearMove_mapsTo_orderedCone j hy)
 
 /-- Every unaccelerated linear word move preserves the hyperplane `coneSpan d`. -/
 theorem unaccelWordMove_mem_coneSpan (js : List (Fin (d + 1))) {y : Fin (d + 2) → ℝ}
     (hy : y ∈ coneSpan d) : unaccelWordMove js y ∈ coneSpan d := by
   induction js generalizing y with
   | nil => exact hy
-  | cons j _ ih => exact ih (linearMove_mem_coneSpan j y)
+  | cons j _ ih =>
+    rw [unaccelWordMove_cons_apply]
+    exact ih (linearMove_mem_coneSpan j y)
 
 /-- Every unaccelerated linear word move maps `coneSpan d` into itself. -/
 theorem unaccelWordMove_mapsTo_coneSpan (js : List (Fin (d + 1))) :
     MapsTo (unaccelWordMove js) (coneSpan d) (coneSpan d) :=
   fun _ hy => unaccelWordMove_mem_coneSpan js hy
+
+/-- The restriction of `unaccelWordMove js` to the invariant hyperplane `coneSpan d`. -/
+noncomputable def unaccelWordMoveConeSpan (js : List (Fin (d + 1))) :
+    Module.End ℝ (coneSpan d) :=
+  (unaccelWordMove js).restrict fun _ hy => unaccelWordMove_mem_coneSpan js hy
+
+@[simp]
+theorem coe_unaccelWordMoveConeSpan_apply (js : List (Fin (d + 1))) (y : coneSpan d) :
+    (unaccelWordMoveConeSpan js y : Fin (d + 2) → ℝ) = unaccelWordMove js y := by
+  rw [unaccelWordMoveConeSpan, LinearMap.coe_restrict_apply]
+
+@[simp]
+theorem unaccelWordMoveConeSpan_nil :
+    unaccelWordMoveConeSpan ([] : List (Fin (d + 1))) = 1 := by
+  ext y i
+  simp
+
+@[simp]
+theorem unaccelWordMoveConeSpan_cons (j : Fin (d + 1)) (js : List (Fin (d + 1))) :
+    unaccelWordMoveConeSpan (j :: js) = unaccelWordMoveConeSpan js * linearMoveConeSpan j := by
+  ext y i
+  simp [mul_apply_eq_comp]
+
+theorem unaccelWordMoveConeSpan_singleton (j : Fin (d + 1)) :
+    unaccelWordMoveConeSpan [j] = linearMoveConeSpan j := by
+  simp
+
+/-- Concatenation law for unaccelerated linear word moves restricted to `coneSpan d`. -/
+@[simp]
+theorem unaccelWordMoveConeSpan_append (js₁ js₂ : List (Fin (d + 1))) :
+    unaccelWordMoveConeSpan (js₁ ++ js₂) =
+      unaccelWordMoveConeSpan js₂ * unaccelWordMoveConeSpan js₁ := by
+  ext y i
+  simp [mul_apply_eq_comp]
 
 /-- **The homogeneous identity** for words in chart coordinates:
 `γ_u (w, 1) = e^{T_u (w)} (F_u (w), 1)` on the simplex. -/
@@ -363,12 +414,45 @@ theorem wordMove_mem_coneSpan (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ
     (hy : y ∈ coneSpan d) : wordMove u y ∈ coneSpan d := by
   induction u generalizing y with
   | nil => exact hy
-  | cons a _ ih => exact ih (accelMove_mem_coneSpan a y)
+  | cons a _ ih =>
+    rw [wordMove_cons_apply]
+    exact ih (accelMove_mem_coneSpan a y)
 
 /-- Every accelerated linear word move maps `coneSpan d` into itself. -/
 theorem wordMove_mapsTo_coneSpan (u : List (ℕ × Fin d)) :
     MapsTo (wordMove u) (coneSpan d) (coneSpan d) :=
   fun _ hy => wordMove_mem_coneSpan u hy
+
+/-- The restriction of `wordMove u` to the invariant hyperplane `coneSpan d`. -/
+noncomputable def wordMoveConeSpan (u : List (ℕ × Fin d)) : Module.End ℝ (coneSpan d) :=
+  (wordMove u).restrict fun _ hy => wordMove_mem_coneSpan u hy
+
+@[simp]
+theorem coe_wordMoveConeSpan_apply (u : List (ℕ × Fin d)) (y : coneSpan d) :
+    (wordMoveConeSpan u y : Fin (d + 2) → ℝ) = wordMove u y := by
+  rw [wordMoveConeSpan, LinearMap.coe_restrict_apply]
+
+@[simp]
+theorem wordMoveConeSpan_nil : wordMoveConeSpan ([] : List (ℕ × Fin d)) = 1 := by
+  ext y i
+  simp
+
+@[simp]
+theorem wordMoveConeSpan_cons (a : ℕ × Fin d) (u : List (ℕ × Fin d)) :
+    wordMoveConeSpan (a :: u) = wordMoveConeSpan u * accelMoveConeSpan a := by
+  ext y i
+  simp [mul_apply_eq_comp]
+
+theorem wordMoveConeSpan_singleton (a : ℕ × Fin d) :
+    wordMoveConeSpan [a] = accelMoveConeSpan a := by
+  simp
+
+/-- Concatenation law for accelerated linear word moves restricted to `coneSpan d`. -/
+@[simp]
+theorem wordMoveConeSpan_append (u v : List (ℕ × Fin d)) :
+    wordMoveConeSpan (u ++ v) = wordMoveConeSpan v * wordMoveConeSpan u := by
+  ext y i
+  simp [mul_apply_eq_comp]
 
 /-- The word map `F_u` is the projective action of `γ_u` on the ordered cone. -/
 theorem simplexChart_wordMove (u : List (ℕ × Fin d)) {y : Fin (d + 2) → ℝ}
@@ -532,6 +616,27 @@ theorem finite_support_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ order
     fun a ha =>
       fst_add_three_le_of_branchDelay_le hx ((mem_support_wordCount_branchMap_iff hx r a).1 ha)
 
+private theorem ncard_nil_union_biUnion_cons {α : Type*} (P : Prop) [Decidable P]
+    {T : Set α} (hT : T.Finite) {S : α → Set (List α)} (hS : ∀ a ∈ T, (S a).Finite) :
+    ({u : List α | u = [] ∧ P} ∪ ⋃ a ∈ T, List.cons a '' S a).ncard =
+      (if P then 1 else 0) + ∑ a ∈ hT.toFinset, (S a).ncard := by
+  have hdisj : Disjoint {u : List α | u = [] ∧ P} (⋃ a ∈ T, List.cons a '' S a) := by
+    rw [disjoint_left]
+    rintro _ ⟨rfl, -⟩ h
+    simp at h
+  have hpair : T.PairwiseDisjoint fun a => List.cons a '' S a := by
+    intro a _ b _ hab
+    rw [Function.onFun, disjoint_left]
+    rintro _ ⟨u, -, rfl⟩ ⟨v, -, h⟩
+    exact hab (List.cons.inj h).1.symm
+  rw [ncard_union_eq hdisj ((finite_singleton []).subset fun _ hu => hu.1)
+    (hT.biUnion fun a ha => (hS a ha).image _),
+    hT.ncard_biUnion (fun a ha => (hS a ha).image _) hpair]
+  congr 1
+  · split_ifs with h <;> simp [h]
+  · simp only [ncard_image_of_injective _ List.cons_injective]
+    rw [finsum_mem_eq_finite_toFinset_sum _ hT]
+
 /-- **The renewal equation** `N (w, r) = 1{r ≥ 0} + ∑_a N (F_a w, r - τ_a (w))` on the simplex:
 the empty word counts exactly when `r ≥ 0`, and a nonempty word `a :: u` counts exactly when `u`
 counts at `F_a w` with the delay `τ_a (w)` subtracted. The sum is finite
@@ -561,23 +666,9 @@ theorem wordCount_eq_add_finsum {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d
         exact ⟨a, ha, u, hu, rfl, rfl⟩
       · rintro ⟨b, -, v, hv, rfl, rfl⟩
         linarith
-  have hdisj : Disjoint {u : List (ℕ × Fin d) | u = [] ∧ 0 ≤ r} (⋃ a ∈ T, List.cons a '' S a) := by
-    rw [disjoint_left]
-    rintro _ ⟨rfl, -⟩ h
-    simp at h
-  have hpair : T.PairwiseDisjoint fun a => List.cons a '' S a := by
-    intro a _ b _ hab
-    rw [Function.onFun, disjoint_left]
-    rintro _ ⟨u, -, rfl⟩ ⟨v, -, h⟩
-    exact hab (List.cons.inj h).1.symm
-  rw [wordCount_def, hdecomp, ncard_union_eq hdisj ((finite_singleton []).subset fun _ hu => hu.1)
-    (hT.biUnion fun a _ => (hS a).image _),
-    hT.ncard_biUnion (fun a _ => (hS a).image _) hpair]
-  congr 1
-  · split_ifs with h <;> simp [h]
-  · simp only [ncard_image_of_injective _ List.cons_injective]
-    rw [finsum_mem_eq_finite_toFinset_sum _ hT, finsum_eq_sum _ hT]
-    rfl
+  rw [wordCount_def, hdecomp, ncard_nil_union_biUnion_cons _ hT fun a _ => hS a,
+    finsum_eq_sum _ hT]
+  rfl
 
 private theorem hasSum_wordCount_branchMap {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
     (r : ℝ) :
@@ -646,7 +737,9 @@ private theorem unaccelWordMove_preserves_strict {d : ℕ} (hd : 1 ≤ d) (js : 
     IsStrictOrderedCone (unaccelWordMove js y) := by
   induction js generalizing y with
   | nil => exact hy
-  | cons j _ ih => exact ih (linearMove_preserves_strict hd j hy)
+  | cons j _ ih =>
+    rw [unaccelWordMove_cons_apply]
+    exact ih (linearMove_preserves_strict hd j hy)
 
 private theorem linearMove_last_gt {d : ℕ} (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ}
     (hy : IsStrictOrderedCone y) :
@@ -660,6 +753,7 @@ private theorem unaccelWordMove_last_ge {d : ℕ} (hd : 1 ≤ d) (js : List (Fin
   induction js generalizing y with
   | nil => exact le_rfl
   | cons j _ ih =>
+    rw [unaccelWordMove_cons_apply]
     exact (linearMove_last_gt j hy).le.trans (ih (linearMove_preserves_strict hd j hy))
 
 private theorem unaccelWordMove_append_singleton {d : ℕ} (l : List (Fin (d + 1)))
@@ -766,6 +860,7 @@ private theorem unaccelWordMove_expandWord_singleton (a : ℕ × Fin d) :
     Module.End.mul_eq_comp]
 
 /-- Expanding an accelerated word preserves its linear move. -/
+@[simp]
 theorem unaccelWordMove_expandWord (u : List (ℕ × Fin d)) :
     unaccelWordMove (expandWord u) = wordMove u := by
   induction u with
@@ -774,6 +869,13 @@ theorem unaccelWordMove_expandWord (u : List (ℕ × Fin d)) :
     have hcons : expandWord (a :: u) = expandWord ([a] ++ u) := rfl
     rw [hcons, expandWord_append, unaccelWordMove_append, unaccelWordMove_expandWord_singleton,
       ih, wordMove_cons]
+
+/-- Expanding an accelerated word preserves its linear move restricted to `coneSpan d`. -/
+@[simp]
+theorem unaccelWordMoveConeSpan_expandWord (u : List (ℕ × Fin d)) :
+    unaccelWordMoveConeSpan (expandWord u) = wordMoveConeSpan u := by
+  ext y i
+  simp
 
 private theorem expandWord_ne_last_cons (u : List (ℕ × Fin d)) (t : List (Fin (d + 1))) :
     expandWord u ≠ Fin.last d :: t := by

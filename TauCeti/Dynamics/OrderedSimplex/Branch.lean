@@ -43,21 +43,24 @@ In Lean a letter is `a : ℕ × Fin d`, the pair `(A, j - 1)`, and `γ_j` is `li
 * `TauCeti.unaccelBranchMap j x`: the unaccelerated branch `F_j` in chart coordinates for
   `j : Fin (d + 1)`.
 * `TauCeti.linearMove j`: the linear map `γ_{j+1}` of `ℝ^{d+2}`.
+* `TauCeti.linearMoveConeSpan j`: the restriction of `γ_{j+1}` to `coneSpan d`.
 * `TauCeti.accelMove a`: the accelerated linear map `γ_{n-1}^A γ_j` of `ℝ^{d+2}`.
+* `TauCeti.accelMoveConeSpan a`: the restriction of `γ_{n-1}^A γ_j` to `coneSpan d`.
 * `TauCeti.simplexPointCoordFDeriv k`, `TauCeti.branchMapCoordFDeriv a x i`,
   `TauCeti.unaccelBranchMapCoordFDeriv j x i`: coordinatewise Fréchet derivative functionals.
 
 ## Main results
 
 * `TauCeti.accelMove_simplexLift`, `TauCeti.accelMove_of_mem_orderedCone`,
-  `TauCeti.accelMove_mem_coneSpan`: the homogeneous identity
+  `TauCeti.accelMove_mem_coneSpan`, `TauCeti.accelMoveConeSpan_eq`: the homogeneous identity
   `γ_{n-1}^A γ_j y = y_n q_a (w) (F_a (w), 1)`, which identifies `F_a` as the projective action
   of `γ_{n-1}^A γ_j` and `q_a` as the growth factor of the last coordinate, and preservation of the
   hyperplane `coneSpan d`.
 * `TauCeti.branchMap_mem_orderedSimplex`, `TauCeti.mapsTo_branchMap`,
-  `TauCeti.unaccelBranchMap_mem_orderedSimplex`, `TauCeti.simplexChart_linearMove`: each
-  accelerated or unaccelerated branch maps the ordered simplex into itself and intertwines the
-  corresponding linear move.
+  `TauCeti.unaccelBranchMap_mem_orderedSimplex`, `TauCeti.simplexPoint_unaccelBranchMap_last`,
+  `TauCeti.simplexChart_linearMove`: each accelerated or unaccelerated branch maps the ordered
+  simplex into itself, reconstructs its last coordinate, and intertwines the corresponding linear
+  move.
 * `TauCeti.add_three_div_two_le_branchDenom`, `TauCeti.branchDenom_le_add_two`,
   `TauCeti.log_three_halves_le_branchDelay`: on the simplex `(A + 3) / 2 ≤ q_a ≤ A + 2`, so
   every delay is at least `log (3 / 2)`.
@@ -528,6 +531,15 @@ theorem linearMove_mem_coneSpan (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
   rw [mem_coneSpan_iff, linearMove_eq_snoc_sum]
   simp
 
+/-- The restriction of `linearMove j` to the invariant hyperplane `coneSpan d`. -/
+noncomputable def linearMoveConeSpan (j : Fin (d + 1)) : Module.End ℝ (coneSpan d) :=
+  (linearMove j).restrict fun y _ => linearMove_mem_coneSpan j y
+
+@[simp]
+theorem coe_linearMoveConeSpan_apply (j : Fin (d + 1)) (y : coneSpan d) :
+    (linearMoveConeSpan j y : Fin (d + 2) → ℝ) = linearMove j y := by
+  rw [linearMoveConeSpan, LinearMap.coe_restrict_apply]
+
 /-- The penultimate coordinate of `γ_j y` is always the last coordinate `y_n`. -/
 theorem linearMove_penultimate (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
     linearMove j y (Fin.last d).castSucc = y (Fin.last (d + 1)) := by
@@ -593,6 +605,20 @@ theorem unaccelBranchMap_last (x : Fin d → ℝ) :
   simp [unaccelBranchMap_apply]
   ring_nf
 
+/-- The last coordinate of the image of an unaccelerated branch is
+`1 / (2 - simplexPoint x j)`. -/
+theorem simplexPoint_unaccelBranchMap_last (j : Fin (d + 1)) {x : Fin d → ℝ}
+    (hx : 2 - simplexPoint x j ≠ 0) :
+    simplexPoint (unaccelBranchMap j x) (Fin.last d) = 1 / (2 - simplexPoint x j) := by
+  have hsum : ∑ i, simplexPoint x (j.succAbove i) = 1 - simplexPoint x j := by
+    have := Fin.sum_univ_succAbove (simplexPoint x) j
+    rw [sum_simplexPoint] at this
+    linarith
+  rw [simplexPoint_last]
+  simp only [unaccelBranchMap_apply, ← Finset.sum_div, hsum]
+  field_simp
+  ring
+
 /-- Projective normalisation intertwines `linearMove j` (`j : Fin (d + 1)`) and
 `unaccelBranchMap j` on `orderedCone d`. -/
 theorem simplexChart_linearMove (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ}
@@ -651,6 +677,14 @@ theorem unaccelBranchMapCoordFDeriv_def (j : Fin (d + 1)) (x : Fin d → ℝ) (i
         (simplexPointCoordFDeriv (j.succAbove i) +
           unaccelBranchMap j x i • simplexPointCoordFDeriv j) :=
   (rfl)
+
+/-- For `j : Fin d`, `unaccelBranchMapCoordFDeriv j.castSucc` specializes to
+`branchMapCoordFDeriv (0, j)`. -/
+@[simp]
+theorem unaccelBranchMapCoordFDeriv_castSucc (j : Fin d) (x : Fin d → ℝ) (i : Fin d) :
+    unaccelBranchMapCoordFDeriv j.castSucc x i = branchMapCoordFDeriv (0, j) x i := by
+  simp [unaccelBranchMapCoordFDeriv_def, branchMapCoordFDeriv_def, branchDenom_def]
+  ring_nf
 
 /-- Coordinatewise Fréchet derivative of `unaccelBranchMap j` at a point where
 `2 - simplexPoint x j ≠ 0`. -/
@@ -843,5 +877,42 @@ theorem accelMove_mem_coneSpan (a : ℕ × Fin d) (y : Fin (d + 2) → ℝ) :
     exact linearMove_mem_coneSpan j.castSucc y
   · rw [accelMove_succ]
     exact linearMove_mem_coneSpan (Fin.last d) _
+
+/-- The restriction of `accelMove a` to the invariant hyperplane `coneSpan d`. -/
+noncomputable def accelMoveConeSpan (a : ℕ × Fin d) : Module.End ℝ (coneSpan d) :=
+  (accelMove a).restrict fun y _ => accelMove_mem_coneSpan a y
+
+@[simp]
+theorem coe_accelMoveConeSpan_apply (a : ℕ × Fin d) (y : coneSpan d) :
+    (accelMoveConeSpan a y : Fin (d + 2) → ℝ) = accelMove a y := by
+  rw [accelMoveConeSpan, LinearMap.coe_restrict_apply]
+
+/-- The restricted accelerated move equals
+`(linearMoveConeSpan (Fin.last d) ^ a.1).comp (linearMoveConeSpan a.2.castSucc)`. -/
+theorem accelMoveConeSpan_eq (a : ℕ × Fin d) :
+    accelMoveConeSpan a =
+      (linearMoveConeSpan (Fin.last d) ^ a.1).comp (linearMoveConeSpan a.2.castSucc) := by
+  ext y i
+  have hpow :
+      ∀ (n : ℕ) (x : coneSpan d),
+        ((linearMoveConeSpan (Fin.last d) ^ n) x : Fin (d + 2) → ℝ) =
+          (linearMove (Fin.last d) ^ n) x := by
+    intro n x
+    rw [linearMoveConeSpan, Module.End.pow_restrict, LinearMap.coe_restrict_apply]
+  simp only [coe_accelMoveConeSpan_apply, accelMove_def, LinearMap.comp_apply,
+    hpow, coe_linearMoveConeSpan_apply]
+
+@[simp]
+theorem accelMoveConeSpan_zero (j : Fin d) :
+    accelMoveConeSpan (0, j) = linearMoveConeSpan j.castSucc := by
+  ext y i
+  simp
+
+@[simp]
+theorem accelMoveConeSpan_succ (A : ℕ) (j : Fin d) :
+    accelMoveConeSpan (A + 1, j) =
+      (linearMoveConeSpan (Fin.last d)).comp (accelMoveConeSpan (A, j)) := by
+  ext y i
+  simp [LinearMap.comp_apply]
 
 end TauCeti

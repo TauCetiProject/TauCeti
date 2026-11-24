@@ -23,6 +23,15 @@ namespace TauCeti
 variable {𝕜 E 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] {f g : E → 𝕜'} {f' g' : E →L[𝕜] 𝕜'} {s : Set E} {x : E}
 
+private theorem div_fderiv_eq (hq : g x ≠ 0) :
+    f x • ((-ContinuousLinearMap.mulLeftRight 𝕜 𝕜' (g x)⁻¹ (g x)⁻¹).comp g') +
+      (g x)⁻¹ • f' = (g x)⁻¹ • (f' - (f x / g x) • g') := by
+  ext v
+  simp only [add_apply, smul_apply, neg_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.mulLeftRight_apply, sub_apply, smul_eq_mul]
+  field_simp
+  ring
+
 /-- Fréchet quotient rule for `HasStrictFDerivAt`: if `f` and `g` have strict Fréchet derivatives
 `f'` and `g'` at `x` and `g x ≠ 0`, then `f / g` has strict Fréchet derivative
 `(g x)⁻¹ • (f' - (f x / g x) • g')` at `x`. -/
@@ -32,12 +41,7 @@ theorem _root_.HasStrictFDerivAt.div (hf : HasStrictFDerivAt f f' x) (hg : HasSt
     HasStrictFDerivAt (f / g) ((g x)⁻¹ • (f' - (f x / g x) • g')) x := by
   rw [div_eq_mul_inv]
   have hmul := hf.mul ((hasStrictFDerivAt_inv' hq).comp x hg)
-  refine hmul.congr_fderiv ?_
-  ext v
-  simp only [add_apply, smul_apply, neg_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.mulLeftRight_apply, sub_apply, smul_eq_mul]
-  field_simp
-  ring
+  exact hmul.congr_fderiv (div_fderiv_eq hq)
 
 /-- Fréchet quotient rule for `HasFDerivWithinAt`: if `f` and `g` have Fréchet derivatives `f'`
 and `g'` within `s` at `x` and `g x ≠ 0`, then `f / g` has Fréchet derivative
@@ -48,12 +52,7 @@ theorem _root_.HasFDerivWithinAt.div (hf : HasFDerivWithinAt f f' s x)
     HasFDerivWithinAt (f / g) ((g x)⁻¹ • (f' - (f x / g x) • g')) s x := by
   rw [div_eq_mul_inv]
   have hmul := hf.mul ((hasFDerivAt_inv' hq).comp_hasFDerivWithinAt x hg)
-  refine hmul.congr_fderiv ?_
-  ext v
-  simp only [add_apply, smul_apply, neg_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.mulLeftRight_apply, sub_apply, smul_eq_mul, Function.comp_apply]
-  field_simp
-  ring
+  exact hmul.congr_fderiv (div_fderiv_eq hq)
 
 /-- Fréchet quotient rule for `HasFDerivAt`: if `f` and `g` have Fréchet derivatives `f'` and `g'`
 at `x` and `g x ≠ 0`, then `f / g` has Fréchet derivative
