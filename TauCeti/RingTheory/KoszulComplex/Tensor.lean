@@ -57,8 +57,8 @@ noncomputable section
 universe u
 
 open CategoryTheory MonoidalCategory HomologicalComplex CliffordAlgebra
-open TauCeti.exteriorPower (wedgeTensor coe_wedgeTensor_tmul proj coe_proj_of_mem proj_coe
-  sum_coe_wedgeTensor_map_proj)
+open TauCeti.exteriorPower (wedgeTensor coe_wedgeTensor_tmul prodEquivTensor
+  prodEquivTensor_symm_lof)
 open scoped TensorProduct
 
 namespace TauCeti
@@ -108,9 +108,7 @@ private def fromKoszulLinear (n : ℕ) :
     ⋀[R]^n (M × N) →ₗ[R] (koszulComplex φ ⊗ koszulComplex ψ).X n :=
   ∑ i : Fin (n + 1),
     (ιTensorObj (koszulComplex φ) (koszulComplex ψ) i (n - i) n (by omega)).hom ∘ₗ
-      TensorProduct.map (proj R M i) (proj R N (n - i)) ∘ₗ
-        (GradedTensorProduct.of R _ _).symm.toLinearMap ∘ₗ
-          (ExteriorAlgebra.prodEquivTensor R M N).toLinearMap ∘ₗ (⋀[R]^n (M × N)).subtype
+      DirectSum.component R _ _ i ∘ₗ (prodEquivTensor R M N n).toLinearMap
 
 /-- The inverse comparison map in degree `n`. -/
 private def fromKoszul (n : ℕ) :
@@ -120,49 +118,40 @@ private def fromKoszul (n : ℕ) :
 private theorem fromKoszul_apply (n : ℕ) (x : ⋀[R]^n (M × N)) :
     (fromKoszul φ ψ n).hom x = ∑ i : Fin (n + 1),
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) i (n - i) n (by omega)).hom
-        (TensorProduct.map (proj R M i) (proj R N (n - i))
-          ((GradedTensorProduct.of R _ _).symm (ExteriorAlgebra.prodEquivTensor R M N x))) :=
-  by
+        (prodEquivTensor R M N n x i) := by
   -- `fromKoszul` is `ModuleCat.ofHom` of `fromKoszulLinear`, whose source is only definitionally
   -- the term `(koszulComplex (φ.coprod ψ)).X n`, so `ModuleCat.hom_ofHom` does not rewrite.
   change fromKoszulLinear φ ψ n x = _
-  simp only [fromKoszulLinear, LinearMap.coe_sum, Finset.sum_apply, LinearMap.comp_apply]
+  rw [fromKoszulLinear, LinearMap.sum_apply]
+  -- Each summand is the defining composite applied to `x`, which unfolds by `LinearMap.comp_apply`
+  -- and `DirectSum.apply_eq_component` (both `rfl`). They cannot be rewritten here: `component`
+  -- lands in `⋀ⁱ M ⊗ ⋀ⁿ⁻ⁱ N`, which is only definitionally the source of `ιTensorObj`, so
+  -- `rw` and `simp` meet a motive that is not type-correct.
   rfl
 
 private theorem fromKoszul_wedgeTensor_tmul (p q n : ℕ) (h : p + q = n) (a : ⋀[R]^p M)
     (b : ⋀[R]^q N) :
     (fromKoszul φ ψ n).hom (wedgeTensor R M N p q n h (a ⊗ₜ b)) =
       (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
-  have key : ∀ (q' : ℕ) (_ : q' = q) (h' : p + q' = n),
-      (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q' n h').hom
-          (proj R M p a ⊗ₜ proj R N q' b) =
-        (ιTensorObj (koszulComplex φ) (koszulComplex ψ) p q n h).hom (a ⊗ₜ b) := by
-    rintro q' rfl h'
-    rw [proj_coe, proj_coe]
-  rw [fromKoszul_apply, coe_wedgeTensor_tmul, ← ExteriorAlgebra.prodEquivTensor_symm_tmul,
-    AlgEquiv.apply_symm_apply, GradedTensorProduct.of_symm_of]
-  simp only [TensorProduct.map_tmul]
-  rw [Finset.sum_eq_single ⟨p, by omega⟩]
-  · exact key _ (by simp; omega) _
-  · rintro i - hi
-    have : proj R M i a = 0 := Subtype.ext <| by
-      rw [coe_proj_of_mem a.property, ite_eq_right fun h ↦ hi (Fin.ext h.symm)]
-      rfl
-    rw [this, TensorProduct.zero_tmul]
+  obtain rfl : q = n - p := by omega
+  let i : Fin (n + 1) := ⟨p, by omega⟩
+  rw [← prodEquivTensor_symm_lof (i := i) (t := a ⊗ₜ b), fromKoszul_apply,
+    LinearEquiv.apply_symm_apply, Fintype.sum_eq_single i fun j hj ↦ ?_, DirectSum.lof_apply]
+  -- The summand index is `(i : ℕ)` for `i = ⟨p, _⟩`, which is definitionally `p`.
+  · rfl
+  · rw [DirectSum.lof_eq_of, DirectSum.of_eq_of_ne _ _ _ hj]
     exact map_zero _
-  · simp
 
 private theorem toKoszul_fromKoszul (n : ℕ) (x : ⋀[R]^n (M × N)) :
     (toKoszul φ ψ n).hom ((fromKoszul φ ψ n).hom x) = x := by
   rw [fromKoszul_apply, map_sum]
-  simp only [toKoszul_ιTensorObj_apply]
+  simp only [toKoszul_ιTensorObj_apply, ← prodEquivTensor_symm_lof]
   -- The sum is taken in the term `(koszulComplex (φ.coprod ψ)).X n` of the Koszul complex, which
   -- is only definitionally the exterior power `⋀ⁿ (M × N)`.
-  change (∑ i : Fin (n + 1), wedgeTensor R M N i (n - i) n (by omega) _ : ⋀[R]^n (M × N)) = x
-  refine Subtype.ext ?_
-  rw [Submodule.coe_sum, sum_coe_wedgeTensor_map_proj]
-  simp [proj_coe]
-
+  change (∑ i : Fin (n + 1), (prodEquivTensor R M N n).symm
+    (DirectSum.lof R _ _ i (prodEquivTensor R M N n x i)) : ⋀[R]^n (M × N)) = x
+  rw [← map_sum]
+  simp only [DirectSum.lof_eq_of, DirectSum.sum_univ_of, LinearEquiv.symm_apply_apply]
 
 /-- Morphisms out of a summand `⋀ᵖ M ⊗ ⋀^q N` of `K(φ) ⊗ K(ψ)` agree once they agree on pure
 tensors. -/
