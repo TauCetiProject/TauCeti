@@ -489,6 +489,18 @@ theorem cutoff_sub_le_of_forall_le_succ (hδ : ∀ n i j, δ n i ≤ δ (n + 1) 
   · exact le_of_eq (congrArg (δ n) (Fin.ext (Nat.sub_zero _)))
   · exact cutoff_le_of_forall_le_succ_of_lt hδ (by omega) _ _
 
+/-- For cut-offs which grow from each stage to the next and start nonnegative, the sum of the
+cut-offs of a stage `n` is at most `m + 1` times every cut-off of a later stage `m`. This is the
+condition under which sampling the broken geodesics through the tuples of the stage `n` at `m + 1`
+equally spaced times lands in the distance cut of the stage `m`. -/
+theorem sum_cutoff_le_mul_cutoff (h0 : 0 ≤ δ 0 0) (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) {n m : ℕ}
+    (h : n < m) (j : Fin (m + 1)) : ∑ i, δ n i ≤ ((m + 1 : ℕ) : ℝ) * δ m j := by
+  have hj : 0 ≤ δ m j := h0.trans (cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 j)
+  calc ∑ i, δ n i ≤ ∑ _ : Fin (n + 1), δ m j :=
+        Finset.sum_le_sum fun i _ ↦ cutoff_le_of_forall_le_succ_of_lt hδ h i j
+    _ = ((n + 1 : ℕ) : ℝ) * δ m j := by simp
+    _ ≤ ((m + 1 : ℕ) : ℝ) * δ m j := mul_le_mul_of_nonneg_right (by exact_mod_cast (by omega)) hj
+
 variable (X)
 
 /-- **The sequence of distance cuts** `𝓛⁰X → 𝓛¹X → 𝓛²X → ⋯`: the distance cut with cut-offs
