@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivation
 import Mathlib.Data.Nat.Choose.Dvd
+import Mathlib.Data.Nat.Factorial.NatCast
+import Mathlib.RingTheory.Derivation.MapCoeffs
 public import Mathlib.RingTheory.Derivation.Lie
 public import TauCeti.Algebra.Lie.AdjointAction.Frobenius
 public import TauCeti.Algebra.Lie.Basic
@@ -47,8 +49,13 @@ its vanishing on the derivations dual to a basis of exact Kähler differentials,
 compatibility with conjugation by a unit `u`: the `p`-th power of the operator `D - u⁻¹ D(u)` is
 the operator `D^[p] - u⁻¹ D^[p](u)` built in the same way from `D^[p]`. In the language of
 connections, the rank-one connection `d - du/u` on `A`, whose horizontal section is `u`, has
-vanishing `p`-curvature. The behaviour
-of `pPow` on multiples `a • D` by elements `a : A` (Hochschild's formula) is not treated here.
+vanishing `p`-curvature.
+
+On multiples `a • D` by elements `a : A`, the `p`-th power obeys Hochschild's formula
+`(a • D)^[p] = a ^ p • D^[p] + (a • D)^[p - 1] a • D` (`pPow_smul`), which underlies the
+`p`-linearity `ψ(a • D) = a ^ p • ψ(D)` of the `p`-curvature. It follows from the vanishing of
+the middle coefficients `c p k`, `2 ≤ k < p`, of the expansion `(a • D)^[p] = ∑ c p k * D^[k]`
+(`smulIterCoeff_eq_zero_of_mem_Ico`).
 
 ## Main declarations
 
@@ -62,6 +69,9 @@ of `pPow` on multiples `a • D` by elements `a : A` (Hochschild's formula) is n
   `pPow`.
 * `Derivation.toLinearMapRestrictedLieHom`: the inclusion into `Module.End R A`, with its
   restricted structure `f ↦ f ^ p`, is a restricted morphism.
+* `Derivation.smulIterCoeff_eq_zero_of_mem_Ico`: the middle coefficients of the expansion of
+  `(a • D)^[p]` vanish.
+* `Derivation.pPow_smul`: Hochschild's formula for `(a • D)^[p]`, `a : A`.
 * `Derivation.pPow_baseChange`: `pPow` commutes with scalar extension `S ⊗[R] -`.
 * `Derivation.pPow_extendOfIsLocalization`: `pPow` commutes with extension to a localization.
 * `Derivation.pPow_dualDerivation_eq_zero`: the `p`-th powers of the derivations dual to a basis
@@ -69,12 +79,23 @@ of `pPow` on multiples `a • D` by elements `a : A` (Hochschild's formula) is n
 * `Derivation.sub_mulLeft_inv_mul_pow_expChar`: `(D - u⁻¹ D(u)) ^ p = D^[p] - u⁻¹ D^[p](u)` in
   `Module.End R A`, for a unit `u`.
 
+## Implementation notes
+
+Expanding `(a • D)^[p] = ∑ k ≤ p, c k • D^[k]` with coefficients `c k` computed from `a` and `D`,
+Hochschild's formula says that the coefficients `c k` with `2 ≤ k < p` vanish. These coefficients
+are natural along ring homomorphisms that intertwine the derivations (`map_smulIterCoeff`), so it
+suffices to show that they vanish after extending `D` to `A[X]` by `X ↦ 1`. There the operator
+`∑ 2 ≤ k < p, c k • D^[k]` is a derivation killing `X`, so it kills every `X ^ k`, while its value
+at `X ^ k` is `k ! • c k` once the lower coefficients vanish.
+
 ## References
 
 * N. Jacobson, *Abstract derivation and Lie algebras*, Trans. Amer. Math. Soc. **42** (1937),
   206--224.
 * N. M. Katz, *Nilpotent connections and the monodromy theorem: applications of a result of
-  Turrittin*, Publ. Math. IHÉS **39** (1970), 175--232, §5.0.
+  Turrittin*, Publ. Math. IHÉS **39** (1970), 175--232, §5.0 and Proposition 5.3.
+* G. Hochschild, *Simple algebras with purely inseparable splitting fields of exponent 1*,
+  Trans. Amer. Math. Soc. **79** (1955), 477--489.
 -/
 
 public section
@@ -236,6 +257,92 @@ theorem pPow_extendOfIsLocalization {T : Type*} [CommRing T] [Algebra R T] [Alge
   simp [extendOfIsLocalization_algebraMap, (h.iterate_right p a).symm, pow_apply_eq_iterate]
 
 end CommRing
+
+/-! ### Hochschild's formula -/
+
+section Hochschild
+
+variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
+
+/-- The expansion `iterate_smul_apply_eq_sum` for `n ≥ 2`, with its extreme coefficients
+`c n 0 = 0` and `c n n = b ^ n` made explicit. -/
+private theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {n : ℕ}
+    (hn : 2 ≤ n) : (b • D)^[n] y = b ^ n * D^[n] y + smulIterCoeff D b n 1 * D y +
+      ∑ k ∈ Finset.Ico 2 n, smulIterCoeff D b n k * D^[k] y := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
+  -- Split off the top term `k = n`, then the bottom terms `k = 0` and `k = 1`.
+  rw [iterate_smul_apply_eq_sum, Finset.sum_range_succ, Finset.range_eq_Ico,
+    Finset.sum_eq_sum_Ico_succ_bot (by omega), Finset.sum_eq_sum_Ico_succ_bot (by omega)]
+  simp only [smulIterCoeff_self, smulIterCoeff_succ_zero, zero_mul, zero_add,
+    Function.iterate_one]
+  ring
+
+variable (p : ℕ) [Fact p.Prime] [CharP A p]
+
+/-- If some `x` satisfies `D x = 1`, the middle coefficients `c p k`, `2 ≤ k < p`, of the
+expansion of `(b • D)^[p]` vanish. The operator `T = ∑ 2 ≤ k < p, c p k • D^[k]` is a derivation,
+as `(b • D)^[p] - b ^ p • D^[p] - c p 1 • D`. It kills `x`, hence every `x ^ k`, while
+`T (x ^ k) = c p k * k !` once the coefficients below `k` vanish. -/
+private theorem smulIterCoeff_eq_zero_of_apply_eq_one (D : Derivation ℤ A A) {x : A}
+    (hx : D x = 1) (b : A) {k : ℕ} (hk : k ∈ Finset.Ico 2 p) : smulIterCoeff D b p k = 0 := by
+  have hp := (Fact.out : p.Prime)
+  have hDx (k j : ℕ) := iterate_apply_pow_of_apply_eq_one D hx k j
+  let T : Derivation ℤ A A := (b • D).pPow p - b ^ p • D.pPow p - smulIterCoeff D b p 1 • D
+  have hT (z : A) : T z = ∑ k ∈ Finset.Ico 2 p, smulIterCoeff D b p k * D^[k] z := by
+    simp only [T, sub_apply, smul_apply, pPow_apply, iterate_smul_apply_eq_add_sum D b z hp.two_le,
+      smul_eq_mul]
+    ring
+  have hTx (k : ℕ) : T (x ^ k) = 0 := by
+    have h : T x = 0 := by
+      rw [hT]
+      refine Finset.sum_eq_zero fun j hj ↦ ?_
+      rw [← pow_one x, hDx, Nat.descFactorial_eq_zero_iff_lt.mpr
+        (by simp only [Finset.mem_Ico] at hj; omega)]
+      simp
+    simp [leibniz_pow, h]
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+  have h := hTx k
+  rw [hT, Finset.sum_eq_single k] at h
+  · rw [hDx, Nat.descFactorial_self, Nat.sub_self, pow_zero, mul_one] at h
+    exact ((IsUnit.natCast_factorial_iff_of_charP p).mpr
+      (Finset.mem_Ico.mp hk).2).mul_left_eq_zero.mp h
+  · intro j hj hjk
+    rcases lt_or_gt_of_ne hjk with hlt | hlt
+    · rw [ih j hlt hj, zero_mul]
+    · rw [hDx, Nat.descFactorial_eq_zero_iff_lt.mpr hlt]
+      simp
+  · exact fun h ↦ absurd hk h
+
+open Polynomial in
+/-- In characteristic `p`, the middle coefficients `c p k`, `2 ≤ k < p`, of the expansion
+`(b • D)^[p] = ∑ k ≤ p, c p k * D^[k]` (`iterate_smul_apply_eq_sum`) vanish. -/
+theorem smulIterCoeff_eq_zero_of_mem_Ico (D : Derivation R A A) (b : A) {k : ℕ}
+    (hk : k ∈ Finset.Ico 2 p) : smulIterCoeff D b p k = 0 := by
+  -- Extend `D` to `A[X]` by `X ↦ 1` and transport the vanishing back along the injective `C`.
+  let : Differential A := ⟨D.restrictScalars ℤ⟩
+  -- With this instance, `Differential.deriv y` is `D.restrictScalars ℤ y`, that is, `D y`.
+  have hderiv (y : A) : Differential.deriv y = D y := D.restrictScalars_apply ℤ y
+  apply C_injective
+  rw [map_smulIterCoeff C D (Differential.implicitDeriv 1)
+    (fun y ↦ by rw [Differential.implicitDeriv_C, hderiv]), map_zero]
+  exact smulIterCoeff_eq_zero_of_apply_eq_one p _ (Differential.implicitDeriv_X 1) (C b) hk
+
+/-- **Hochschild's formula** (Hochschild 1955; Katz, Proposition 5.3, due to Deligne). In
+characteristic `p`, for `a : A`, `(a • D)^[p] = a ^ p • D^[p] + (a • D)^[p - 1] a • D`: the
+`p`-th power is `p`-homogeneous for the scalars of `A` up to a multiple of `D`. -/
+theorem pPow_smul (a : A) (D : Derivation R A A) :
+    (a • D).pPow p = a ^ p • D.pPow p + ((a • D)^[p - 1] a) • D := by
+  have hp := (Fact.out : p.Prime)
+  have h₁ : smulIterCoeff D a p 1 = (a • D)^[p - 1] a := by
+    obtain ⟨q, hq⟩ := Nat.exists_eq_add_one_of_ne_zero hp.ne_zero
+    rw [hq, smulIterCoeff_succ_one, Nat.add_sub_cancel]
+  ext y
+  rw [pPow_apply, iterate_smul_apply_eq_add_sum D a y hp.two_le,
+    Finset.sum_eq_zero fun k hk ↦ by rw [smulIterCoeff_eq_zero_of_mem_Ico p D a hk, zero_mul], h₁]
+  simp [pPow_apply]
+
+end Hochschild
 
 /-! ### Conjugation by a unit -/
 
