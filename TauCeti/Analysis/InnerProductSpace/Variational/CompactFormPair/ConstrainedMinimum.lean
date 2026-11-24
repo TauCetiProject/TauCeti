@@ -467,9 +467,8 @@ theorem exists_minimum_on_unitConstraint_of_surjective (P : CompactFormPair 𝕜
     rw [← Set.image_inter_preimage, ← Set.image_inter (toWeakSpace 𝕜 E).injective]
     congr 1
     ext v
-    simp only [mem_inter_iff, mem_preimage, mem_Iic, LinearEquiv.symm_apply_apply,
-      mem_ofPred_eq, S₀]
-    exact ⟨fun ⟨⟨hvW, hvu₀⟩, hvb⟩ => ⟨⟨hvW, hvu₀⟩, hvW, hvb⟩, fun ⟨h1, _, hvb⟩ => ⟨h1, hvb⟩⟩
+    simp [S₀]
+    tauto
   exact TauCeti.exists_isMinOn_of_isCompact_toWeakSpace_sublevel ⟨u₀, hu₀, le_rfl⟩ hcomp hlsc
 
 end WeakCompactness
@@ -480,29 +479,31 @@ variable {𝕜 E H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup H] [NormedSpace 𝕜 H]
 
+omit [NormedAddCommGroup H] [NormedSpace 𝕜 H] in
+private theorem surjective_inclusionInDoubleDual_hilbert :
+    Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 E) :=
+  have : UniformConvexSpace E :=
+    let _ : InnerProductSpace ℝ E := InnerProductSpace.rclikeToReal 𝕜 E
+    inferInstance
+  TauCeti.surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := 𝕜) (E := E)
+
 /-- **Constrained Rayleigh minimum** on a Hilbert form domain: for a complete inner-product space
 `E` and a norm-closed submodule `W ≤ H` containing a nonzero image of `P.inclusion`, `P.energy`
 attains its minimum on `P.unitConstraint W`. -/
 theorem exists_minimum_on_unitConstraint (P : CompactFormPair 𝕜 E H)
     (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H))
     (hne : ∃ u : E, P.inclusion u ∈ W ∧ P.inclusion u ≠ 0) :
-    ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u := by
-  have : UniformConvexSpace E :=
-    let _ : InnerProductSpace ℝ E := InnerProductSpace.rclikeToReal 𝕜 E
-    inferInstance
-  exact P.exists_minimum_on_unitConstraint_of_surjective
-    (TauCeti.surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := 𝕜) (E := E)) W hW hne
+    ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u :=
+  P.exists_minimum_on_unitConstraint_of_surjective
+    (surjective_inclusionInDoubleDual_hilbert (𝕜 := 𝕜) (E := E)) W hW hne
 
 /-- On a Hilbert form domain, the set of constrained minimizers on `P.unitConstraint W` is
 norm-compact whenever `W` is norm-closed. -/
 theorem isCompact_minimizers_unitConstraint (P : CompactFormPair 𝕜 E H)
     (W : Submodule 𝕜 H) (hW : IsClosed (W : Set H)) :
-    IsCompact {u ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) u} := by
-  have : UniformConvexSpace E :=
-    let _ : InnerProductSpace ℝ E := InnerProductSpace.rclikeToReal 𝕜 E
-    inferInstance
-  exact P.isCompact_minimizers_unitConstraint_of_surjective
-    (TauCeti.surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := 𝕜) (E := E)) W hW
+    IsCompact {u ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) u} :=
+  P.isCompact_minimizers_unitConstraint_of_surjective
+    (surjective_inclusionInDoubleDual_hilbert (𝕜 := 𝕜) (E := E)) W hW
 
 end Hilbert
 
@@ -563,6 +564,8 @@ private theorem re_shift_form_eq_zero_of_isMinOn (P : CompactFormPair 𝕜 E H)
       RCLike.re ((P.shift (-P.energy u)).form u w) = 0 := by
   have hquad : ∀ v : E, P.inclusion v ∈ W → P.energy u * ‖P.inclusion v‖ ^ 2 ≤ P.energy v :=
     P.isMinOn_unitConstraint_iff_forall_mul_norm_sq_le.mp hmin
+  -- Construct local `ℝ`-scalar instances via `restrictScalars` for `P.restrictScalars`
+  -- rather than adding redundant `[NormedSpace ℝ]` / `[IsScalarTower ℝ 𝕜]` hypotheses.
   let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
   let _ : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
   let _ : NormedSpace ℝ H := NormedSpace.restrictScalars ℝ 𝕜 H
@@ -582,10 +585,7 @@ private theorem re_shift_form_eq_zero_of_isMinOn (P : CompactFormPair 𝕜 E H)
   have hB : LinearMap.IsSymm B := ⟨fun x y => by
     rw [hB_apply, hB_apply, RingHom.id_apply, P'.hermitian x.1 y.1, star_trivial]⟩
   have hBu : B ⟨u, hu.1⟩ ⟨u, hu.1⟩ = 0 := by
-    rw [hB_diag]
-    dsimp only
-    rw [hu.2]
-    ring
+    simp [hB_diag, hu.2]
   have hker : ⟨u, hu.1⟩ ∈ LinearMap.ker B := (B.apply_apply_same_eq_zero_iff hs hB).mp hBu
   intro w hwW
   have h := LinearMap.congr_fun (LinearMap.mem_ker.mp hker) ⟨w, hwW⟩
@@ -602,15 +602,16 @@ theorem equation_of_constrained_minimum (P : CompactFormPair 𝕜 E H)
     (hmin : IsMinOn P.energy (P.unitConstraint W) u) :
     ∀ v : E, P.inclusion v ∈ W →
       P.form u v = (P.energy u : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 := by
+  -- Construct local `ℝ`-scalar instances via `restrictScalars` for `StrongDual.extendRCLikeL`
+  -- rather than adding redundant `[NormedSpace ℝ]` / `[IsScalarTower ℝ 𝕜]` hypotheses.
   let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
   let _ : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
   let V : Submodule 𝕜 E := W.comap P.inclusion.toLinearMap
   let φ : StrongDual 𝕜 V := ((P.shift (-P.energy u)).form u).comp V.subtypeL
   have hre : (StrongDual.extendRCLikeL (𝕜 := 𝕜) (F := V)).symm φ = 0 := by
     ext w
-    rw [StrongDual.extendRCLikeL_symm_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.coe_restrictScalars', RCLike.reCLM_apply, zero_apply]
-    exact P.re_shift_form_eq_zero_of_isMinOn W hu hmin w.1 w.2
+    simpa [φ, StrongDual.extendRCLikeL_symm_apply] using
+      P.re_shift_form_eq_zero_of_isMinOn W hu hmin w.1 w.2
   have hφ : φ = 0 := (StrongDual.extendRCLikeL (𝕜 := 𝕜) (F := V)).symm.injective
     (by simpa only [map_zero] using hre)
   intro v hvW

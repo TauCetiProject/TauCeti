@@ -451,8 +451,7 @@ private def piProj (𝕜 : Type*) [RCLike 𝕜] {ι : Type*} (E : ι → Type*)
 omit [Fintype ι] in
 private theorem piProj_apply (u : PiLp 2 E) (i : ι) :
     piProj 𝕜 E i u = u i := by
-  rw [piProj, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearMap.proj_apply, PiLp.continuousLinearEquiv_apply]
+  simp [piProj]
 
 private def piInclusion (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
     PiLp 2 E →L[𝕜] PiLp 2 H :=
@@ -466,9 +465,8 @@ private theorem coe_piInclusion (P : ∀ i, CompactFormPair 𝕜 (E i) (H i)) :
       (PiLp.continuousLinearEquiv 2 𝕜 H).symm ∘
         (Pi.map fun i => (P i).inclusion) ∘
         (PiLp.continuousLinearEquiv 2 𝕜 E) := by
-  rw [piInclusion, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearMap.coe_piMap']
+  funext u
+  simp [piInclusion]
 
 omit [Fintype ι] in
 private theorem piInclusion_apply (P : ∀ i, CompactFormPair 𝕜 (E i) (H i))
@@ -577,9 +575,7 @@ private def restrictScalarsForm (P : CompactFormPair 𝕜 E H) : E →L⋆[ℝ] 
 omit [NormedSpace ℝ H] [IsScalarTower ℝ 𝕜 H] in
 private theorem restrictScalarsForm_apply (P : CompactFormPair 𝕜 E H) (u v : E) :
     restrictScalarsForm P u v = RCLike.re (P.form u v) := by
-  rw [restrictScalarsForm, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    StrongDual.extendRCLikeL_symm_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_restrictScalars', RCLike.reCLM_apply, formAsRealLinear_apply]
+  simp [restrictScalarsForm, formAsRealLinear, StrongDual.extendRCLikeL_symm_apply]
 
 /-- View a compact form pair over `𝕜` as a real compact form pair on the same underlying spaces
 with real symmetric bilinear form `(u, v) ↦ Re (P.form u v)`. -/
