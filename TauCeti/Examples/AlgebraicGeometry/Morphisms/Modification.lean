@@ -16,7 +16,6 @@ import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 import TauCeti.AlgebraicGeometry.Scheme.Normal
-import TauCeti.AlgebraicGeometry.Morphisms.Modification.Finite
 
 /-!
 # Checks: modifications
@@ -238,10 +237,11 @@ example : Dense (PrimeSpectrum.basicOpen (X : k[X]) : Set (PrimeSpectrum k[X])) 
     IsIso (gmToLine k ∣_ PrimeSpectrum.basicOpen (X : k[X])) ∧
     Scheme.BirationalOver (gmToLine k) (𝟙 _) := by
   have hd := dense_basicOpen_X k
-  refine ⟨hd, gmToLine_preimage k, inferInstance,
-    (gmToLine k).birationalOver_of_isIso_morphismRestrict _ hd ?_⟩
-  rw [gmToLine_preimage]
-  simp
+  refine ⟨hd, gmToLine_preimage k, inferInstance, ?_⟩
+  have h := (gmToLine k).birationalOver_of_isIso_morphismRestrict (𝟙 _) _ hd (by
+    rw [gmToLine_preimage]
+    simp)
+  simpa using h
 
 -- `𝔾_m → 𝔸¹` is not proper, so it is not a modification: its image `D(x)` is open, nonempty and
 -- not everything, so it is not closed in the connected line.
