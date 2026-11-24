@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
-import TauCeti.Algebra.Group.ZMultiples
+import TauCeti.Algebra.Order.Group.Subgroup
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 
@@ -40,9 +40,10 @@ different path components. This file defines the subgroup of spherical classes.
   classes of `X × Y` are the images of those of `X` under a slice inclusion `x ↦ (x, y)`
   (`TauCeti.sphericalClasses_prod_eq_map`). In particular those of `Sⁿ⁺¹ × Y` are the integer
   multiples of the class of the slice `Sⁿ⁺¹ × {y}`
-  (`TauCeti.sphericalClasses_sphere_prod_eq_zmultiples`). Hence the value of a homomorphism `ω` on
-  a spherical class of `Sⁿ⁺¹ × Y` is an integer multiple of `a = ω [Sⁿ⁺¹ × {y}]`
-  (`TauCeti.exists_apply_eq_zsmul_apply_sphereSliceClass`), and if `a > 0` every positive such
+  (`TauCeti.sphericalClasses_sphere_prod_eq_zmultiples`). Hence the values of a homomorphism `ω`
+  on the spherical classes of `Sⁿ⁺¹ × Y` are the integer multiples of `a = ω [Sⁿ⁺¹ × {y}]`
+  (`TauCeti.map_sphericalClasses_sphere_prod_eq_zmultiples`,
+  `TauCeti.exists_apply_eq_zsmul_apply_sphereSliceClass`), and if `a > 0` every positive such
   value is at least `a` (`TauCeti.apply_sphereSliceClass_le`). This is the topological part of
   the area gap in Gromov's proof of nonsqueezing, for `S² × Tᵏ`.
 
@@ -278,6 +279,17 @@ theorem sphericalClasses_sphere_prod_eq_zmultiples [PathConnectedSpace Y] (y : Y
     ← zmultiples_hurewicz_sphereGenLoop, AddMonoidHom.map_zmultiples,
     LinearMap.toAddMonoidHom_coe, sphereSliceClass]
 
+/-- **Spherical areas of `Sⁿ⁺¹ × Y`.** If `Y` is path-connected and `πₙ₊₁(Y, y)` is trivial, the
+values of a homomorphism `ω` on the spherical classes of `Sⁿ⁺¹ × Y` are exactly the integer
+multiples of its value on the class of the slice `Sⁿ⁺¹ × {y}`. -/
+theorem map_sphericalClasses_sphere_prod_eq_zmultiples {G : Type*} [AddGroup G]
+    [PathConnectedSpace Y] (y : Y) {n : ℕ} [Subsingleton (HomotopyGroup (Fin (n + 1)) Y y)]
+    (ω : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y)) →+ G) :
+    (sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y) n).map ω =
+      AddSubgroup.zmultiples (ω (sphereSliceClass Y y n)) := by
+  rw [sphericalClasses_sphere_prod_eq_zmultiples y n, AddMonoidHom.map_zmultiples]
+
 /-- **Spherical areas of `Sⁿ⁺¹ × Y` are multiples of the area of a slice.** If `Y` is
 path-connected and `πₙ₊₁(Y, y)` is trivial, the value of a homomorphism `ω` on a spherical class
 of `Sⁿ⁺¹ × Y` is an integer multiple of its value on the class of the slice `Sⁿ⁺¹ × {y}`. -/
@@ -289,25 +301,23 @@ theorem exists_apply_eq_zsmul_apply_sphereSliceClass {G : Type*} [AddGroup G]
       (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y))}
     (hc : c ∈ sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y) n) :
     ∃ k : ℤ, ω c = k • ω (sphereSliceClass Y y n) := by
-  rw [sphericalClasses_sphere_prod_eq_zmultiples y n] at hc
-  obtain ⟨k, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1 hc
-  exact ⟨k, map_zsmul ω k _⟩
+  obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1
+    (map_sphericalClasses_sphere_prod_eq_zmultiples y ω ▸ AddSubgroup.mem_map_of_mem ω hc)
+  exact ⟨k, hk.symm⟩
 
 /-- **The area gap of `Sⁿ⁺¹ × Y`.** If `Y` is path-connected and `πₙ₊₁(Y, y)` is trivial, and the
 homomorphism `ω` is positive on the class of the slice `Sⁿ⁺¹ × {y}`, then every positive value of
 `ω` on a spherical class of `Sⁿ⁺¹ × Y` is at least its value on the slice. -/
-theorem apply_sphereSliceClass_le {G : Type*} [AddCommGroup G] [PartialOrder G]
-    [IsOrderedAddMonoid G] [PathConnectedSpace Y] {y : Y} {n : ℕ}
-    [Subsingleton (HomotopyGroup (Fin (n + 1)) Y y)]
+theorem apply_sphereSliceClass_le {G : Type*} [AddGroup G] [Preorder G] [AddLeftMono G]
+    [PathConnectedSpace Y] {y : Y} {n : ℕ} [Subsingleton (HomotopyGroup (Fin (n + 1)) Y y)]
     (ω : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
       (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y)) →+ G)
     (ha : 0 < ω (sphereSliceClass Y y n))
     {c : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
       (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y))}
     (hc : c ∈ sphericalClasses (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1 × Y) n)
-    (hpos : 0 < ω c) : ω (sphereSliceClass Y y n) ≤ ω c := by
-  rw [sphericalClasses_sphere_prod_eq_zmultiples y n] at hc
-  exact le_of_mem_zmultiples ha
-    (AddMonoidHom.map_zmultiples ω _ ▸ AddSubgroup.mem_map_of_mem ω hc) hpos
+    (hpos : 0 < ω c) : ω (sphereSliceClass Y y n) ≤ ω c :=
+  le_of_mem_zmultiples ha
+    (map_sphericalClasses_sphere_prod_eq_zmultiples y ω ▸ AddSubgroup.mem_map_of_mem ω hc) hpos
 
 end TauCeti

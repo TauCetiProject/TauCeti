@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Group.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Lemmas
 
@@ -21,8 +20,7 @@ group `H`, then any element that an additive endomorphism of `H` sends to `g` is
 of `ℤ`, and every surjective additive endomorphism of `H` is an involution. A homomorphism out of
 an infinite cyclic group is injective as soon as some element has image of infinite order. Free
 generation `n ↦ n • g` is transported along additive equivalences, and generation of the whole
-group is transported along surjective additive maps. In a partially ordered group, a positive
-element of `zmultiples a` for `a > 0` is at least `a`.
+group is transported along surjective additive maps.
 
 ## Main declarations
 
@@ -81,14 +79,6 @@ theorem zmultiples_apply_eq_top_of_surjective {F H : Type*} [AddGroup H] [FunLik
   rw [← AddMonoidHom.coe_ofClass g, ← AddMonoidHom.map_zmultiples, hp, ← AddMonoidHom.range_eq_map,
     AddMonoidHom.range_eq_top]
   exact hg
-
-/-- In a partially ordered additive group, a positive element of `zmultiples a` for `a > 0` is at
-least `a`: it is `k • a` with `k ≥ 1`. -/
-theorem le_of_mem_zmultiples {A : Type*} [AddCommGroup A] [PartialOrder A] [IsOrderedAddMonoid A]
-    {a b : A} (ha : 0 < a) (hb : b ∈ zmultiples a) (hpos : 0 < b) : a ≤ b := by
-  obtain ⟨k, rfl⟩ := mem_zmultiples_iff.1 hb
-  have hk : (0 : ℤ) < k := (zsmul_lt_zsmul_iff_left ha).1 (by rwa [zero_zsmul])
-  simpa using zsmul_le_zsmul_left ha.le hk
 
 end TauCeti
 

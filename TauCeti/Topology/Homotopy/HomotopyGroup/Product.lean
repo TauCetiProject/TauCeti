@@ -178,6 +178,7 @@ theorem prod_map_fst_map_snd (a : HomotopyGroup N (X × Y) (x, y)) :
 
 /-- The map induced by a pair `(f, g)` of continuous maps into a product sends a homotopy class to
 the product of its images under `f` and `g`. -/
+@[simp low]
 theorem map_prodMk {W : Type*} [TopologicalSpace W] {w : W} (f : C(W, X)) (g : C(W, Y))
     (hf : f w = x) (hg : g w = y) (a : HomotopyGroup N W w) :
     map (f.prodMk g) (Prod.ext hf hg : f.prodMk g w = (x, y)) a =
