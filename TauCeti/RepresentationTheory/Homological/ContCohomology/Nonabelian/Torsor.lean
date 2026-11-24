@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
-public import Mathlib.Algebra.Torsor.Defs
+public import TauCeti.Algebra.Torsor.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -137,9 +137,6 @@ end Iso
 
 variable (P : SmoothTorsor.{u, v, w} G A)
 
-private theorem eq_inv_sdiv_smul {X : Type*} [Torsor A X] (x y : X) : y = (x /ₛ y)⁻¹ • x := by
-  rw [inv_sdiv_eq_sdiv_rev, sdiv_smul]
-
 variable [TopologicalSpace A] [ContinuousMul G]
 
 /-- The **cocycle of a smooth torsor at a point** `x`: the cocycle `f` with
@@ -161,8 +158,8 @@ noncomputable def cocycle (x : P.carrier) : Cocycle G A where
     -- With `a = x /ₛ (g • x)` and `b = x /ₛ (h • x)`, so that `g • x = a⁻¹ • x` and
     -- `h • x = b⁻¹ • x`, compute `(g * h) • x = (g • b)⁻¹ • a⁻¹ • x = (a * g • b)⁻¹ • x`.
     have hgh : (g * h) • x = ((x /ₛ (g • x)) * g • (x /ₛ (h • x)))⁻¹ • x := by
-      conv_lhs => rw [mul_smul, eq_inv_sdiv_smul x (h • x), P.smul_distrib_smul,
-        eq_inv_sdiv_smul x (g • x), smul_smul]
+      conv_lhs => rw [mul_smul, ← inv_sdiv_smul x (h • x), P.smul_distrib_smul,
+        ← inv_sdiv_smul x (g • x), smul_smul]
       rw [mul_inv_rev, smul_inv']
     rw [hgh, sdiv_smul_eq_sdiv_div, sdiv_self, one_div, inv_inv]
 
@@ -172,7 +169,7 @@ theorem cocycle_apply (x : P.carrier) (g : G) : P.cocycle x g = x /ₛ (g • x)
 
 /-- The defining property of the cocycle at `x`: `g • x = (f g)⁻¹ • x`. -/
 theorem smul_eq_inv_cocycle_smul (x : P.carrier) (g : G) : g • x = (P.cocycle x g)⁻¹ • x :=
-  eq_inv_sdiv_smul x (g • x)
+  (inv_sdiv_smul x (g • x)).symm
 
 theorem cocycle_apply_eq_iff {x : P.carrier} {g : G} {a : A} :
     P.cocycle x g = a ↔ g • x = a⁻¹ • x := by
