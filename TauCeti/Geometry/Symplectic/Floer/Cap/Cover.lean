@@ -51,21 +51,22 @@ kernel is normal, and over a path-connected `X` the cover is regular, with deck 
 fibre is a torsor under `Γ` (`TauCeti.Floer.instAddTorsorCapCoverFiber`): the difference of two
 points of a fibre is the period class of the loop relating them (`TauCeti.Floer.CapCover.vsub_mk`).
 The cap classes of a contractible loop are also a `Γ`-torsor
-(`TauCeti.Floer.SphericalCapClass.instAddTorsor`).
+(`TauCeti.Floer.SphericalCapClass.instAddTorsor`), where `Γ` acts by gluing spheres at the centre
+of a cap. A class `a ∈ π₂(X, x)`, read as a loop of based loops at the constant loop, has period
+class the class of `a` in `Γ`
+(`SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_contractibleLoopHomotopyGroupHom`).
 
 **The fibre over a based loop is its set of cap classes.** A raw cap `D` of a loop `γ` at `x` is
 the class of a path in `Ω X x` from `γ` to the constant loop. Run backwards and read in the
 contractible free loops, it is a path from the constant loop at `x` to `γ`, so it gives a point of
 the cap cover over `γ` (`TauCeti.Floer.RawCap.toCapCover`). Gluing a sphere `a ∈ π₂(X, x)` at the
-centre of the disc prepends to this path the loop of free loops swept by the sphere, whose torus is
-the square of `a` with its two directions exchanged. So the point moves by `u` times the class of
-`a` in `Γ` (`TauCeti.Floer.RawCap.toCapCover_vadd`), where `u = ±1` is the universal
-`TauCeti.torusHurewiczSign` relating torus classes of loops of based loops to Hurewicz classes. In
-particular the point depends only on the cap class (`TauCeti.Floer.SphericalCapClass.toCapCover`),
-and, both being `Γ`-torsors, the cap classes of `γ` are in bijection with the fibre over `γ`
+centre of the disc prepends to this path the loop of free loops swept by the sphere, whose torus
+class is the Hurewicz class of `a` (`TauCeti.freeLoopTorusClassHom_eq_hurewiczIntHom`). So the
+point moves by the class of `a` in `Γ` (`TauCeti.Floer.RawCap.toCapCover_vadd`). In particular the
+point depends only on the cap class (`TauCeti.Floer.SphericalCapClass.toCapCover`), and, both being
+`Γ`-torsors, the cap classes of `γ` are in bijection with the fibre over `γ`
 (`TauCeti.Floer.SphericalCapClass.capCoverFiberEquiv`). The bijection carries recapping by `g` to
-the deck transformation of `u • g` (`TauCeti.Floer.SphericalCapClass.capCoverFiberEquiv_vadd`).
-The value of the sign `u` is not computed here.
+the deck transformation of `g` (`TauCeti.Floer.SphericalCapClass.capCoverFiberEquiv_vadd`).
 
 ## Main definitions
 
@@ -92,6 +93,8 @@ The value of the sign `u` is not computed here.
   number.
 * `TauCeti.Floer.SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_surjective`: the period
   homomorphism is onto for a path-connected `X`.
+* `SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup_contractibleLoopHomotopyGroupHom`: the
+  period class of a sphere, read as a loop of based loops, is its class in the period group.
 * `TauCeti.Floer.isCoveringMap_capCoverProj`, `TauCeti.Floer.isRegular_capCoverProj`: the cap
   cover is a covering space, regular over a path-connected `X`.
 * `TauCeti.Floer.mem_range_mapOfEq_capCoverProj_iff`: a loop of contractible loops lifts to a loop
@@ -102,7 +105,7 @@ The value of the sign `u` is not computed here.
   the loop relating them.
 * `TauCeti.Floer.RawCap.toCapCover_vadd`, `TauCeti.Floer.SphericalCapClass.toCapCover_vadd`,
   `TauCeti.Floer.SphericalCapClass.capCoverFiberEquiv_vadd`: recapping by `g` moves the point of
-  the cap cover by `TauCeti.torusHurewiczSign • g`.
+  the cap cover by `g`.
 
 ## References
 
@@ -194,6 +197,22 @@ theorem ofContractibleLoopsHomotopyGroup_surjective [PathConnectedSpace X] (x : 
     simp only [area_ofContractibleLoopsHomotopyGroup, chern_ofContractibleLoopsHomotopyGroup,
       area_ofHomotopyGroup, chern_ofHomotopyGroup, toMul_ofMul, MulEquiv.apply_symm_apply,
       ofMul_toMul, hg]
+
+/-- **The period class of a sphere read as a loop of contractible loops is its class in the
+period group.** A class `a ∈ π₂(X, x)` is a loop at the constant loop of based loops at `x`
+(`TauCeti.contractibleLoopHomotopyGroupHom`), hence of contractible free loops; its period class is
+the class of the sphere `a`, since the torus it sweeps out has the Hurewicz class of `a`
+(`TauCeti.freeLoopTorusClassHom_freeLoopHomotopyGroupHom`). -/
+@[simp]
+theorem ofContractibleLoopsHomotopyGroup_contractibleLoopHomotopyGroupHom (x : X)
+    (a : HomotopyGroup (Fin 2) X x) :
+    ofContractibleLoopsHomotopyGroup ω c x
+        (Additive.ofMul (contractibleLoopHomotopyGroupHom x 0 a)) =
+      ofHomotopyGroup ω c x (Additive.ofMul a) := by
+  refine PeriodGroup.ext ?_ ?_ <;>
+    simp only [area_ofContractibleLoopsHomotopyGroup, chern_ofContractibleLoopsHomotopyGroup,
+      toMul_ofMul, contractibleLoopsHomotopyGroupMulEquiv_contractibleLoopHomotopyGroupHom,
+      freeLoopTorusClassHom_freeLoopHomotopyGroupHom, area_ofHomotopyGroup, chern_ofHomotopyGroup]
 
 end TauCeti.Floer.SphericalPeriodGroup
 
@@ -568,12 +587,12 @@ theorem RawCap.capCoverProj_toCapCover (D : RawCap γ) :
   exact subgroupQuotientProj_mk _ _ _
 
 /-- The period class of the loop of contractible free loops traced by a double loop `β` is the
-torus–Hurewicz sign times the class of the sphere of `β`. -/
+class of the sphere of `β`. -/
 private theorem ofContractibleLoopsHomotopyGroup_sphereLoopPath (β : Ω (Ω X x) (Path.refl x)) :
     SphericalPeriodGroup.ofContractibleLoopsHomotopyGroup ω c x
         (Additive.ofMul (HomotopyGroup.pi1MulEquivFundamentalGroup.symm
           (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (sphereLoopPath β))))) =
-      (torusHurewiczSign : ℤ) • SphericalPeriodGroup.ofHomotopyGroup ω c x
+      SphericalPeriodGroup.ofHomotopyGroup ω c x
         (Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
           (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β)))) := by
   -- Mathlib defines `pi1MulEquivFundamentalGroup` as the quotient of `genLoopEquivOfUnique (Fin 1)`
@@ -583,7 +602,7 @@ private theorem ofContractibleLoopsHomotopyGroup_sphereLoopPath (β : Ω (Ω X x
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (sphereLoopPath β))) =
         ⟦(genLoopEquivOfUnique (Fin 1)).symm (sphereLoopPath β)⟧ :=
     rfl
-  have htorus := freeLoopTorusClassHom_eq_torusHurewiczSign_smul β
+  have htorus := freeLoopTorusClassHom_eq_hurewiczIntHom β
     (GenLoop.map ⟨Subtype.val, continuous_subtypeVal⟩ (coe_constContractibleLoop x)
       ((genLoopEquivOfUnique (Fin 1)).symm (sphereLoopPath β))) fun t ↦ by
         rw [GenLoop.map_apply, GenLoop.genLoopEquivOfUnique_symm_apply]
@@ -598,7 +617,7 @@ private theorem ofContractibleLoopsHomotopyGroup_sphereLoopPath (β : Ω (Ω X x
     simp only [SphericalPeriodGroup.area_ofContractibleLoopsHomotopyGroup,
       SphericalPeriodGroup.chern_ofContractibleLoopsHomotopyGroup,
       SphericalPeriodGroup.area_ofHomotopyGroup, SphericalPeriodGroup.chern_ofHomotopyGroup,
-      map_zsmul, toMul_ofMul, hmap, htorus]
+      toMul_ofMul, hmap, htorus]
 
 /-- Every sphere at `x` is the class of a double loop at the constant loop. -/
 private theorem exists_ofMul_fundamentalGroupLoopSpaceMulEquiv_eq (a : Additive (π_ 2 X x)) :
@@ -645,7 +664,7 @@ private theorem RawCap.toCapCover_vadd_of_mem_ker {a : Additive (π_ 2 X x)}
   rw [RawCap.toCapCover_vadd_mk, RawCap.toCapCover_mk]
   refine Quotient.sound ⟨⟨_, ?_⟩, rfl⟩
   rw [mem_capCoverSubgroup_iff, ofContractibleLoopsHomotopyGroup_sphereLoopPath,
-    AddMonoidHom.mem_ker.1 ha, smul_zero]
+    AddMonoidHom.mem_ker.1 ha]
 
 namespace SphericalCapClass
 
@@ -676,13 +695,12 @@ end SphericalCapClass
 variable [PathConnectedSpace X] [LocallyPathConnectedSpace (contractibleLoops X)]
   [SemilocallySimplyConnectedSpace (contractibleLoops X)]
 
-/-- **Gluing a sphere to a disc moves its point of the cap cover by the sign times its class.**
-For a sphere `a ∈ π₂(X, x)` and a raw cap `D`, the point of the cap cover of `a +ᵥ D` is that of
-`D` moved by `torusHurewiczSign` times the class of `a` in the spherical period group. -/
+/-- **Gluing a sphere to a disc moves its point of the cap cover by its class.** For a sphere
+`a ∈ π₂(X, x)` and a raw cap `D`, the point of the cap cover of `a +ᵥ D` is that of `D` moved by
+the class of `a` in the spherical period group. -/
 theorem RawCap.toCapCover_vadd (a : Additive (π_ 2 X x)) (D : RawCap γ) :
     (a +ᵥ D).toCapCover ω c =
-      ((torusHurewiczSign : ℤ) • SphericalPeriodGroup.ofHomotopyGroup ω c x a) +ᵥ
-        D.toCapCover ω c := by
+      SphericalPeriodGroup.ofHomotopyGroup ω c x a +ᵥ D.toCapCover ω c := by
   obtain ⟨β, rfl⟩ := exists_ofMul_fundamentalGroupLoopSpaceMulEquiv_eq a
   obtain ⟨p, rfl⟩ := Path.Homotopic.Quotient.mk_surjective D
   rw [RawCap.toCapCover_vadd_mk, RawCap.toCapCover_mk,
@@ -691,10 +709,9 @@ theorem RawCap.toCapCover_vadd (a : Additive (π_ 2 X x)) (D : RawCap γ) :
 
 namespace SphericalCapClass
 
-/-- **Recapping moves the point of the cap cover by the torus–Hurewicz sign times the period
-class.** -/
+/-- **Recapping moves the point of the cap cover by the period class.** -/
 theorem toCapCover_vadd (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
-    toCapCover ω c (g +ᵥ q) = ((torusHurewiczSign : ℤ) • g) +ᵥ toCapCover ω c q := by
+    toCapCover ω c (g +ᵥ q) = g +ᵥ toCapCover ω c q := by
   obtain ⟨a, rfl⟩ := SphericalPeriodGroup.ofHomotopyGroup_surjective (ω := ω) (c := c) x g
   induction q using induction_on with
   | h D => rw [ofHomotopyGroup_vadd_mk, toCapCover_mk, toCapCover_mk, RawCap.toCapCover_vadd]
@@ -706,32 +723,29 @@ private def toCapCoverFiber (hγ : γ.toCircle ∈ contractibleLoops X)
 
 private theorem toCapCoverFiber_vadd (hγ : γ.toCircle ∈ contractibleLoops X)
     (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
-    toCapCoverFiber hγ (g +ᵥ q) = ((torusHurewiczSign : ℤ) • g) +ᵥ toCapCoverFiber hγ q :=
+    toCapCoverFiber hγ (g +ᵥ q) = g +ᵥ toCapCoverFiber hγ q :=
   Subtype.ext ((toCapCover_vadd g q).trans
     (CapCover.coe_vadd_fiber (x := x) _ (toCapCoverFiber hγ q)).symm)
 
 /-- Sending a cap class to its point of the fibre of the cap cover is a bijection: both are torsors
-under the spherical period group, and the map is equivariant up to the torus–Hurewicz sign. -/
+under the spherical period group, and the map is equivariant. -/
 private theorem bijective_toCapCoverFiber (hγ : γ.toCircle ∈ contractibleLoops X)
     [Nonempty (RawCap γ)] : Function.Bijective (toCapCoverFiber (ω := ω) (c := c) hγ) := by
   refine ⟨fun q q' h ↦ ?_, fun e ↦ ?_⟩
   · -- `q'` is `q` recapped by `q' -ᵥ q`, which therefore acts trivially on the fibre.
-    have h' : ((torusHurewiczSign : ℤ) • (q' -ᵥ q)) +ᵥ toCapCoverFiber hγ q =
+    have h' : (q' -ᵥ q) +ᵥ toCapCoverFiber hγ q =
         (0 : SphericalPeriodGroup ω c) +ᵥ toCapCoverFiber hγ q := by
       rw [← toCapCoverFiber_vadd, vsub_vadd, zero_vadd, h]
-    have h0 : q' -ᵥ q = 0 := by
-      rw [← torusHurewiczSign_smul_smul (q' -ᵥ q), (vadd_right_cancel_iff _).1 h', smul_zero]
-    exact (vsub_eq_zero_iff_eq.1 h0).symm
-  · -- Recapping a cap class by the sign times the difference reaches any point of the fibre.
+    exact (vsub_eq_zero_iff_eq.1 ((vadd_right_cancel_iff _).1 h')).symm
+  · -- Recapping a cap class by the difference reaches any point of the fibre.
     obtain ⟨q₀⟩ : Nonempty (SphericalCapClass ω c γ) := inferInstance
-    refine ⟨((torusHurewiczSign : ℤ) • (e -ᵥ toCapCoverFiber hγ q₀)) +ᵥ q₀, ?_⟩
-    rw [toCapCoverFiber_vadd, torusHurewiczSign_smul_smul, vsub_vadd]
+    exact ⟨(e -ᵥ toCapCoverFiber hγ q₀) +ᵥ q₀, by rw [toCapCoverFiber_vadd, vsub_vadd]⟩
 
 variable (ω c) in
 /-- **The fibre of the cap cover over a contractible loop at `x` is its set of cap classes.** For a
 loop `γ` at `x` with a raw cap, sending a cap class to its point of the cap cover is a bijection
 onto the fibre of the cap cover over `γ`. It intertwines the actions of the spherical period group
-up to the torus–Hurewicz sign (`TauCeti.Floer.SphericalCapClass.capCoverFiberEquiv_vadd`). -/
+(`TauCeti.Floer.SphericalCapClass.capCoverFiberEquiv_vadd`). -/
 def capCoverFiberEquiv (hγ : γ.toCircle ∈ contractibleLoops X) [Nonempty (RawCap γ)] :
     SphericalCapClass ω c γ ≃ capCoverProj ω c x ⁻¹' {⟨γ.toCircle, hγ⟩} :=
   Equiv.ofBijective (toCapCoverFiber hγ) (bijective_toCapCoverFiber hγ)
@@ -743,13 +757,11 @@ theorem coe_capCoverFiberEquiv_apply (hγ : γ.toCircle ∈ contractibleLoops X)
     (capCoverFiberEquiv ω c hγ q : CapCover ω c x) = toCapCover ω c q := by
   rfl
 
-/-- **The fibre equivalence intertwines recapping with the deck action**, up to the
-torus–Hurewicz sign: recapping a cap class by `g` moves its point of the cap cover by
-`torusHurewiczSign • g`. -/
+/-- **The fibre equivalence intertwines recapping with the deck action**: recapping a cap class by
+`g` moves its point of the cap cover by `g`. -/
 theorem capCoverFiberEquiv_vadd (hγ : γ.toCircle ∈ contractibleLoops X) [Nonempty (RawCap γ)]
     (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
-    capCoverFiberEquiv ω c hγ (g +ᵥ q) =
-      ((torusHurewiczSign : ℤ) • g) +ᵥ capCoverFiberEquiv ω c hγ q :=
+    capCoverFiberEquiv ω c hγ (g +ᵥ q) = g +ᵥ capCoverFiberEquiv ω c hγ q :=
   toCapCoverFiber_vadd hγ g q
 
 end SphericalCapClass

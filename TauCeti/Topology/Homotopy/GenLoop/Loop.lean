@@ -43,18 +43,6 @@ theorem congr_map (e : M ≃ N) (f : C(X, Y)) (hf : f x = y) (p : Ω^ M X x) :
     _root_.GenLoop.congr y e (map f hf p) = map f hf (_root_.GenLoop.congr x e p) :=
   ext _ _ fun _ => by simp only [congr_apply, map_apply]
 
-/-- The inverse of reindexing along `e` is reindexing along `e.symm`. -/
-@[simp]
-theorem congr_symm (e : M ≃ N) :
-    (_root_.GenLoop.congr x e).symm = _root_.GenLoop.congr x e.symm :=
-  rfl
-
-/-- Reindexing along `e` and then along `e.symm` gives the generalized loop back. -/
-@[simp]
-theorem congr_symm_congr (e : M ≃ N) (p : Ω^ M X x) :
-    _root_.GenLoop.congr x e.symm (_root_.GenLoop.congr x e p) = p := by
-  rw [← congr_symm, Homeomorph.symm_apply_apply]
-
 @[simp]
 theorem genLoopGenLoopEquiv_apply (p : Ω^ M (Ω^ N X x) _root_.GenLoop.const) (y : I^(M ⊕ N)) :
     _root_.GenLoop.genLoopGenLoopEquiv x p y =

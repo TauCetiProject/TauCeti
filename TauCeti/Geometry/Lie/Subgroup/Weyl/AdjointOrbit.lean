@@ -38,6 +38,8 @@ identity component of `Z_G(Y)`.
   are in one orbit of `N(T)`.
 * `TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_iff`: two elements of `𝔱` lie in
   one adjoint orbit of `G` exactly when they lie in one orbit of the Weyl group.
+* `TauCeti.Lie.IsMaximalTorus.range_Ad_inter_lieSubalgebraOfSubgroup`: the adjoint orbit of
+  `X ∈ 𝔱` meets `𝔱` exactly in the `N(T)`-orbit of `X`.
 
 ## References
 
@@ -102,6 +104,22 @@ theorem IsMaximalTorus.exists_mem_normalizer_Ad_eq {T : Subgroup G} (hT : IsMaxi
   refine ⟨c * g, hn, ?_⟩
   rw [Ad_mul, LieEquiv.trans_apply, hg]
   exact mem_stabilizer_continuousAdjointRepresentation_iff.mp (connectedComponentIn_subset _ _ hc)
+
+/-- **The adjoint orbit of an element of `𝔱` meets `𝔱` in its normalizer orbit.** For a maximal
+torus `T` of a compact Lie group and `X` in its Lie algebra `𝔱`, the elements of `𝔱` of the form
+`Ad_g X` are exactly the `Ad_n X` with `n` in the normalizer of `T`. -/
+theorem IsMaximalTorus.range_Ad_inter_lieSubalgebraOfSubgroup {T : Subgroup G}
+    (hT : IsMaximalTorus T) {X : LeftInvariantDerivation I G}
+    (hX : X ∈ lieSubalgebraOfSubgroup (I := I) T) :
+    Set.range (fun g : G ↦ Ad (I := I) g X) ∩ lieSubalgebraOfSubgroup (I := I) T =
+      Set.range fun n : Subgroup.normalizer (T : Set G) ↦ Ad (I := I) (n : G) X := by
+  ext Y
+  constructor
+  · rintro ⟨⟨g, hg⟩, hY⟩
+    obtain ⟨n, hn, hnX⟩ := hT.exists_mem_normalizer_Ad_eq hX hY hg
+    exact ⟨⟨n, hn⟩, hnX⟩
+  · rintro ⟨n, rfl⟩
+    exact ⟨⟨n, rfl⟩, Ad_mem_lieSubalgebraOfSubgroup n.property hX⟩
 
 /-- **An adjoint orbit meets the Lie algebra of a maximal torus in one Weyl orbit.** Two elements
 of the Lie algebra of a maximal torus `T` of a compact Lie group lie in one adjoint orbit exactly

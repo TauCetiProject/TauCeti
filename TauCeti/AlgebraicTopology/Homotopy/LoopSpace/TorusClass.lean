@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Spherical
-public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Transpose
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FreeLoop
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
 public import TauCeti.AlgebraicTopology.Singular.Cubical.CrossProduct.Complex
+
+import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Sign
 
 /-!
 # Torus classes of loops of free loops
@@ -37,11 +38,14 @@ torus of a loop of constant loops is degenerate, so its class vanishes
 constant loop are exactly the Hurewicz classes of `π₂(Q, x)`
 (`TauCeti.range_cubicalFreeLoopTorusClassHom_const`), and the same holds in singular homology
 (`TauCeti.range_freeLoopTorusClassHom_const`): the torus classes at a constant loop are spherical
-(`TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`). More precisely, a double loop `β` at
-the constant loop of `Ω Q x`, read as a loop of free loops, sweeps out the square of `β` with its
-two directions exchanged, so its torus class is a universal sign `TauCeti.torusHurewiczSign` times
-the Hurewicz class of the element of `π₂(Q, x)` it represents
-(`TauCeti.freeLoopTorusClassHom_eq_torusHurewiczSign_smul`).
+(`TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`). More precisely, the loop of based
+loops of a class `a ∈ π₂(Q, x)` (`TauCeti.freeLoopHomotopyGroupHom`) has torus class exactly the
+Hurewicz class of `a` (`TauCeti.freeLoopTorusClassHom_freeLoopHomotopyGroupHom`), and likewise a
+double loop at the constant loop of `Ω Q x`, read as a loop of free loops, has torus class the
+Hurewicz class of the element of `π₂(Q, x)` it represents
+(`TauCeti.freeLoopTorusClassHom_eq_hurewiczIntHom`). The torus is the transpose of the double loop,
+which negates the cubical Hurewicz class, and the Hurewicz map is minus the cubical Hurewicz map on
+`π₂`; the two signs cancel.
 
 This is the transgression from loops of contractible free loops to spherical classes through which
 the period and first Chern number of capped loops are read in Floer theory.
@@ -52,17 +56,17 @@ the period and first Chern number of capped loops are read in Floer theory.
 * `TauCeti.freeLoopTorusHomology`: the torus map `H^□ₖ(𝓛Q; R) ⟶ H^□ₖ₊₁(Q; R)`.
 * `TauCeti.cubicalFreeLoopTorusClassHom`: the torus class `π₁(𝓛Q, γ) → H^□₂(Q; R)`.
 * `TauCeti.freeLoopTorusClassHom`: the torus class `π₁(𝓛Q, γ) → H₂(Q; ℤ)` in singular homology.
-* `TauCeti.torusHurewiczSign`: the universal sign relating torus classes of loops of based loops to
-  Hurewicz classes.
 
 ## Main results
 
 * `TauCeti.range_cubicalFreeLoopTorusClassHom_const`, `TauCeti.range_freeLoopTorusClassHom_const`:
   at the constant loop at `x`, the torus classes are the Hurewicz classes of `π₂(Q, x)`.
-* `TauCeti.freeLoopTorusClassHom_eq_torusHurewiczSign_smul`: the torus class of a loop of based
-  loops is the torus–Hurewicz sign times its Hurewicz class.
 * `TauCeti.freeLoopTorusClassHom_const_mem_sphericalClasses`: the torus classes of loops of free
   loops at a constant loop are spherical.
+* `TauCeti.freeLoopTorusClassHom_freeLoopHomotopyGroupHom`: the torus class of the loop of based
+  loops of `a ∈ π₂(Q, x)` is the Hurewicz class of `a`.
+* `TauCeti.freeLoopTorusClassHom_eq_hurewiczIntHom`: the torus class of a double loop read as a
+  loop of free loops is its Hurewicz class.
 
 ## References
 
@@ -556,19 +560,57 @@ theorem freeLoopTorusClassHom_const_mem_sphericalClasses (x : Q)
     range_freeLoopTorusClassHom_const x ▸ ⟨a, rfl⟩
   exact hb ▸ hurewiczIntHom_mem_sphericalClasses x b
 
-/-- The torus class of a loop of based loops is a universal sign times its Hurewicz class; see
-`TauCeti.freeLoopTorusClassHom_eq_torusHurewiczSign_smul`. -/
-private theorem exists_forall_freeLoopTorusClassHom_eq_units_smul_hurewiczIntHom :
-    ∃ u : ℤˣ, ∀ (Q : Type) [TopologicalSpace Q] (x : Q) (β : Ω (Ω Q x) (Path.refl x))
-      (Λ : Ω^ (Fin 1) C(Circle, Q) (ContinuousMap.const Circle x)),
-      (∀ t, Λ t = (β (t 0)).toCircle) →
-        freeLoopTorusClassHom Q _ (Additive.ofMul ⟦Λ⟧) =
-          (u : ℤ) • hurewiczIntHom Q x 1 (Additive.ofMul
-            (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
-              (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β)))) := by
-  obtain ⟨ε, hε⟩ := HomotopyGroup.exists_hurewicz_eq_units_smul_cubicalHurewicz 0
-  obtain ⟨k, hk⟩ := GenLoop.exists_forall_hurewicz_congr_swap_eq_units_smul
-  refine ⟨ε * k, fun Q _ x β Λ hβ ↦ ?_⟩
+/-- **The torus class of a sphere read as a loop of based loops is its Hurewicz class.** A class
+`a ∈ π₂(Q, x)` is a loop at the constant loop of based loops at `x`
+(`TauCeti.freeLoopHomotopyGroupHom`); the torus that loop sweeps out has the Hurewicz class of
+`a`. The torus has the loop parameter as its first coordinate and the family parameter as its
+second, the transpose of the double loop of `a`; the sign of the transposition cancels the sign
+between the Hurewicz and cubical Hurewicz maps on `π₂`. -/
+@[simp]
+theorem freeLoopTorusClassHom_freeLoopHomotopyGroupHom (x : Q) (a : HomotopyGroup (Fin 2) Q x) :
+    freeLoopTorusClassHom Q (ContinuousMap.const Circle x)
+        (Additive.ofMul (freeLoopHomotopyGroupHom x 0 a)) =
+      hurewiczIntHom Q x 1 (Additive.ofMul a) := by
+  obtain ⟨b, rfl⟩ := (basedMapCircleHomotopyGroupMulEquiv x 0).surjective a
+  rw [freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv,
+    basedMapCircleHomotopyGroupMulEquiv_apply]
+  induction b using Quotient.inductionOn with | h β => ?_
+  -- `Λ` is the loop of free loops of `β`; its torus is the transposed square of `β`
+  let Λ : Ω^ (Fin 1) C(Circle, Q) (ContinuousMap.const Circle x) :=
+    GenLoop.map ⟨Subtype.val, continuous_subtypeVal⟩ rfl β
+  have hΛ (t : Fin 1 → I) : Λ t 1 = x := by
+    rw [GenLoop.map_apply]
+    exact (β t).property
+  let G : Ω^ (Fin 2) Q x := GenLoop.genLoopLoopHomeomorph x 1
+    (GenLoop.map ⟨basedMapCircleOneHomeomorphPath x, (basedMapCircleOneHomeomorphPath x).continuous⟩
+      ((Homeomorph.symm_apply_eq _).1 (basedMapCircleOneHomeomorphPath_symm_refl x)).symm β)
+  have hG : GenLoop.freeLoopTorus Λ hΛ = GenLoop.congr x (Equiv.swap 0 1) G := by
+    ext z
+    rw [GenLoop.freeLoopTorus_apply, GenLoop.congr_apply, GenLoop.genLoopLoopHomeomorph_apply]
+    simp only [Λ, GenLoop.map_apply, ContinuousMap.coe_mk, basedMapCircleOneHomeomorphPath_apply]
+    -- the family coordinate of the transposed square is `z 1` and its loop coordinate `z 0`
+    simp [Fin.fin_one_eq_zero]
+  rw [HomotopyGroup.map_mk, freeLoopTorusClassHom_apply, HomotopyGroup.map_mk,
+    HomotopyGroup.pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph]
+  refine (congrArg (singularCubicalHomologyIso ℤ (TopCat.of Q) 2).inv.hom
+    (cubicalFreeLoopTorusClassHom_eq_cubicalHurewicz ℤ Λ hΛ)).trans
+      (Eq.trans ?_ ((GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz ℤ G).symm.trans
+        (hurewiczIntHom_mk G).symm))
+  rw [hG, GenLoop.cubicalHurewicz_congr_swap, map_neg,
+    show (-1 : ℤ) ^ (1 * (1 + 1) / 2) = -1 by norm_num, neg_one_smul]
+
+/-- **The torus class of a double loop read as a loop of free loops is its Hurewicz class.** A
+double loop `β` at the constant loop of `Ω Q x`, read as the loop `Λ` of free loops `t ↦ β t`, has
+torus class the Hurewicz class of the element of `π₂(Q, x)` it represents
+(`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`). The torus of `Λ` is the square of `β` with its
+two directions exchanged, and the sign of the transposition cancels the sign between the Hurewicz
+and cubical Hurewicz maps on `π₂`. -/
+theorem freeLoopTorusClassHom_eq_hurewiczIntHom {x : Q} (β : Ω (Ω Q x) (Path.refl x))
+    (Λ : Ω^ (Fin 1) C(Circle, Q) (ContinuousMap.const Circle x))
+    (hβ : ∀ t, Λ t = (β (t 0)).toCircle) :
+    freeLoopTorusClassHom Q _ (Additive.ofMul ⟦Λ⟧) =
+      hurewiczIntHom Q x 1 (Additive.ofMul (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β)))) := by
   have hΛ (t : Fin 1 → I) : Λ t 1 = x := by rw [hβ, Path.toCircle_one]
   -- The torus swept out by `Λ` is the transposed square of `β`.
   have htorus : GenLoop.freeLoopTorus Λ hΛ =
@@ -577,44 +619,13 @@ private theorem exists_forall_freeLoopTorusClassHom_eq_units_smul_hurewiczIntHom
       rw [GenLoop.freeLoopTorus_apply, hβ, Path.toCircle_unitToCircle, GenLoop.congr_apply,
         GenLoop.fromDoubleLoop_apply]
       simp
-  have hεε : (ε : ℤ) * ε = 1 := Int.units_coe_mul_self ε
-  have hcube := hε Q x ⟦GenLoop.freeLoopTorus Λ hΛ⟧
-  rw [HomotopyGroup.hurewicz_mk, HomotopyGroup.cubicalHurewicz_mk] at hcube
-  have hswap := hk Q x (GenLoop.fromDoubleLoop β)
-  rw [← htorus, hcube] at hswap
-  rw [freeLoopTorusClassHom_apply, cubicalFreeLoopTorusClassHom_eq_cubicalHurewicz ℤ Λ hΛ,
-    HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk, hurewiczIntHom_mk,
-    Units.val_mul, ← smul_smul, ← hswap]
-  -- The two homology groups differ only in the spelling `0 + 2` of their degree.
-  exact (((smul_smul _ _ _).trans (congrArg (· • _) hεε)).trans (one_smul _ _)).symm
-
-/-- **The torus–Hurewicz sign**: the unit `u` of `ℤ` such that, in every space, the torus class of
-a loop of based loops is `u` times the Hurewicz class of the element of `π₂` it represents
-(`TauCeti.freeLoopTorusClassHom_eq_torusHurewiczSign_smul`). It collects the sign of the
-transposition of a square, which exchanges the loop and family directions, and that of the
-cubical–simplicial comparison of Hurewicz classes; its value is not computed here. -/
-noncomputable def torusHurewiczSign : ℤˣ :=
-  exists_forall_freeLoopTorusClassHom_eq_units_smul_hurewiczIntHom.choose
-
-/-- **The torus class of a loop of based loops is a universal sign times its Hurewicz class.** A
-double loop `β` at the constant loop of `Ω Q x`, read as the loop `Λ` of free loops `t ↦ β t`, has
-torus class `torusHurewiczSign` times the Hurewicz class of the element of `π₂(Q, x)` it represents
-(`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`). The torus of `Λ` is the square of `β` with its
-two directions exchanged. -/
-theorem freeLoopTorusClassHom_eq_torusHurewiczSign_smul {x : Q} (β : Ω (Ω Q x) (Path.refl x))
-    (Λ : Ω^ (Fin 1) C(Circle, Q) (ContinuousMap.const Circle x))
-    (hβ : ∀ t, Λ t = (β (t 0)).toCircle) :
-    freeLoopTorusClassHom Q _ (Additive.ofMul ⟦Λ⟧) =
-      (torusHurewiczSign : ℤ) • hurewiczIntHom Q x 1 (Additive.ofMul
-        (HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv
-          (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk β)))) :=
-  exists_forall_freeLoopTorusClassHom_eq_units_smul_hurewiczIntHom.choose_spec Q x β Λ hβ
-
-/-- Multiplying twice by the torus–Hurewicz sign is the identity, since it is a unit of `ℤ`. -/
-@[simp]
-theorem torusHurewiczSign_smul_smul {G : Type*} [AddCommGroup G] (g : G) :
-    (torusHurewiczSign : ℤ) • (torusHurewiczSign : ℤ) • g = g := by
-  rw [smul_smul, Int.units_coe_mul_self, one_smul]
+  rw [HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk, hurewiczIntHom_mk]
+  refine (congrArg (singularCubicalHomologyIso ℤ (TopCat.of Q) 2).inv.hom
+    (cubicalFreeLoopTorusClassHom_eq_cubicalHurewicz ℤ Λ hΛ)).trans
+      (Eq.trans ?_ (GenLoop.hurewicz_hom_one_eq_neg_one_pow_smul_cubicalHurewicz ℤ
+        (GenLoop.fromDoubleLoop β)).symm)
+  rw [htorus, GenLoop.cubicalHurewicz_congr_swap, map_neg,
+    show (-1 : ℤ) ^ (1 * (1 + 1) / 2) = -1 by norm_num, neg_one_smul]
 
 end Singular
 

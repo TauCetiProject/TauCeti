@@ -11,6 +11,7 @@ public import Mathlib.Order.LiminfLimsup
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Integral.PolarCoord
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Fourier.Wirtinger
@@ -239,11 +240,6 @@ theorem circleLIntegral_eq_lintegral_Ioc (g : ℂ → ℝ≥0∞) (ζ : ℂ) (ρ
   exact congrArg _ (setLIntegral_congr Ioo_ae_eq_Ioc)
 
 /-! ### Polar Fubini -/
-
-private theorem continuous_circleMap_uncurry (ζ : ℂ) :
-    Continuous fun p : ℝ × ℝ => circleMap ζ p.1 p.2 := by
-  simp only [circleMap]
-  fun_prop
 
 /-- **Polar Fubini for the lower integral.** Integrating the circle integrals of a measurable
 weight over all radii recovers its plane integral, whatever centre the circles are taken about.
