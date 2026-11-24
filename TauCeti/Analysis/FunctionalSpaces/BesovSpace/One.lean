@@ -78,15 +78,15 @@ theorem block_one (j : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).block j = if j = 0
 @[simp] theorem block_one_succ (j : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).block (j + 1) = 0 := by
   simp [block_one]
 
-/-- For every `m ≥ 1`, the low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` equals `1 ∈ L^∞`. -/
-@[simp] theorem lowPass_one_succ (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass (m + 1) = 1 := by
-  induction m with
-  | zero => rw [lowPass_succ, lowPass_zero_right, block_one_zero, zero_add]
-  | succ m ih => rw [lowPass_succ, ih, block_one_succ, add_zero]
-
 /-- The low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` is `0` at `m = 0` and `1` for `m ≥ 1`. -/
 theorem lowPass_one (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass m = if m = 0 then 0 else 1 := by
+  rw [lowPass_eq_ite_of_block_eq_zero (m := 0) (fun k hk ↦ by rw [block_one, ite_eq_right hk]),
+    block_one_zero]
   rcases m with _ | m <;> simp
+
+/-- For every `m ≥ 1`, the low-frequency cut-off `S_m 1` of `1 ∈ B^s_{∞,q}` equals `1 ∈ L^∞`. -/
+@[simp] theorem lowPass_one_succ (m : ℕ) : (1 : BesovSpace ℂ φ s ∞ q).lowPass (m + 1) = 1 := by
+  simp [lowPass_one]
 
 /-- The Besov norm of `1 ∈ B^s_{∞,q}` is `1`. -/
 instance [Fact (1 ≤ q)] : NormOneClass (BesovSpace ℂ φ s ∞ q) where
