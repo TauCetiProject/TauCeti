@@ -27,7 +27,8 @@ unital C⋆- and concrete von Neumann probability space.
 ## Main definitions
 
 * `MeasureTheory.Measure.freeConv`: free additive convolution on `ℝ` (`μ ⊞ ν` under
-  `open scoped FreeProbability`), defaulting to `0` outside compactly supported probability laws.
+  `open scoped TauCeti.FreeProbability`), defaulting to `0` outside compactly supported probability
+  laws.
 
 ## Main results
 
@@ -76,7 +77,7 @@ def freeConv (μ ν : Measure ℝ) : Measure ℝ :=
   else 0
 
 /-- Scoped notation `μ ⊞ ν` for the free additive convolution of measures on `ℝ`. -/
-scoped[FreeProbability] infixr:80 " ⊞ " => MeasureTheory.Measure.freeConv
+scoped[TauCeti.FreeProbability] infixr:80 " ⊞ " => MeasureTheory.Measure.freeConv
 
 private theorem freeConv_def_of_isCompactProbabilityMeasure {μ ν : Measure ℝ}
     [hμp : IsProbabilityMeasure μ] [hνp : IsProbabilityMeasure ν]
@@ -89,18 +90,18 @@ private theorem freeConv_def_of_isCompactProbabilityMeasure {μ ν : Measure ℝ
   simp [freeConv, IsCompactProbabilityMeasure, hμp, hνp, hμ, hν]
 
 /-- Outside compactly supported probability measures, `freeConv` returns `0`. -/
-theorem freeConv_eq_zero_of_not {μ ν : Measure ℝ}
+theorem freeConv_undef {μ ν : Measure ℝ}
     (h : ¬(μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure)) :
     μ.freeConv ν = 0 := by
   simp [freeConv, h]
 
 /-- Convolving the zero measure on the left gives `0`. -/
 @[simp] theorem zero_freeConv (μ : Measure ℝ) : (0 : Measure ℝ).freeConv μ = 0 :=
-  freeConv_eq_zero_of_not fun h => not_isProbabilityMeasure_zero h.1.1
+  freeConv_undef fun h => not_isProbabilityMeasure_zero h.1.1
 
 /-- Convolving the zero measure on the right gives `0`. -/
 @[simp] theorem freeConv_zero (μ : Measure ℝ) : μ.freeConv (0 : Measure ℝ) = 0 :=
-  freeConv_eq_zero_of_not fun h => not_isProbabilityMeasure_zero h.2.1
+  freeConv_undef fun h => not_isProbabilityMeasure_zero h.2.1
 
 /-- The free convolution of compactly supported probability laws is a probability measure. -/
 theorem isProbabilityMeasure_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
@@ -118,7 +119,7 @@ instance isZeroOrProbabilityMeasure_freeConv (μ ν : Measure ℝ) :
     IsZeroOrProbabilityMeasure (μ.freeConv ν) := by
   by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1; have := isProbabilityMeasure_freeConv h.1.2 h.2.2; infer_instance
-  · rw [freeConv_eq_zero_of_not h]; infer_instance
+  · rw [freeConv_undef h]; infer_instance
 
 /-- The free additive convolution of any two measures has compact topological support. -/
 theorem isCompact_support_freeConv (μ ν : Measure ℝ) : IsCompact (μ.freeConv ν).support := by
@@ -126,14 +127,14 @@ theorem isCompact_support_freeConv (μ ν : Measure ℝ) : IsCompact (μ.freeCon
   · have := h.1.1; have := h.2.1
     rw [freeConv_def_of_isCompactProbabilityMeasure h.1.2 h.2.2]
     exact PositiveLinearMap.isCompact_support_law _ _
-  · simp [freeConv_eq_zero_of_not h]
+  · simp [freeConv_undef h]
 
 /-- `μ.freeConv ν` is a probability measure iff both `μ` and `ν` are compactly supported probability
 measures. -/
 @[simp] theorem isProbabilityMeasure_freeConv_iff {μ ν : Measure ℝ} :
     IsProbabilityMeasure (μ.freeConv ν) ↔
       μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure :=
-  ⟨fun hp => by by_contra h; exact not_isProbabilityMeasure_zero (freeConv_eq_zero_of_not h ▸ hp),
+  ⟨fun hp => by by_contra h; exact not_isProbabilityMeasure_zero (freeConv_undef h ▸ hp),
     fun ⟨⟨_, hμc⟩, ⟨_, hνc⟩⟩ => isProbabilityMeasure_freeConv hμc hνc⟩
 
 /-- `μ.freeConv ν` equals `0` iff at least one of `μ` or `ν` is not a compactly supported
@@ -181,11 +182,20 @@ theorem IsFreelyIndependentElements.law_add {φ : A →ₚ[ℂ] ℂ} {a : ι →
     (hai : IsSelfAdjoint (a i)) (haj : IsSelfAdjoint (a j)) :
     φ.law (a i + a j) = (φ.law (a i)).freeConv (φ.law (a j)) := by
   have := φ.isProbabilityMeasure_law hφ hai; have := φ.isProbabilityMeasure_law hφ haj
-  obtain ⟨B, _, _, _, ψ, g, hψ, hg_free, hg1, hg2, -, -, hg1_law, hg2_law, hadd_law⟩ :=
-    Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv
-      (φ.isCompact_support_law (a i)) (φ.isCompact_support_law (a j))
-  exact (ha.law_add_eq_of_law_eq hg_free hφ hψ hij Bool.false_ne_true.symm hai haj hg1 hg2
-    hg1_law.symm hg2_law.symm).trans hadd_law
+  have := isCompact_iff_compactSpace.mp (φ.isCompact_support_law (a i))
+  have := isCompact_iff_compactSpace.mp (φ.isCompact_support_law (a j))
+  let τ : Bool → Measure ℝ := (cond · (φ.law (a i)) (φ.law (a j)))
+  have : ∀ b : Bool, IsProbabilityMeasure (τ b) := fun b => by cases b <;> infer_instance
+  have : ∀ b : Bool, CompactSpace (τ b).support := fun b => by
+    cases b <;> exact isCompact_iff_compactSpace.mp (φ.isCompact_support_law _)
+  exact (ha.law_add_eq_of_law_eq (FreeLawRealization.isFreelyIndependentElements_generator τ) hφ
+    (FreeLawRealization.state_one τ) hij Bool.false_ne_true.symm hai haj
+    (FreeLawRealization.isSelfAdjoint_generator τ true)
+    (FreeLawRealization.isSelfAdjoint_generator τ false)
+    (FreeLawRealization.law_generator τ true).symm
+    (FreeLawRealization.law_generator τ false).symm).trans
+    (Measure.freeConv_def_of_isCompactProbabilityMeasure
+      (φ.isCompact_support_law (a i)) (φ.isCompact_support_law (a j))).symm
 
 /-- **Realization-independence of free additive convolution (subalgebras).** -/
 theorem IsFreelyIndependent.law_add {φ : A →ₚ[ℂ] ℂ} {B : ι → Subalgebra ℂ A}
@@ -208,6 +218,24 @@ theorem IsFreelyIndependentElements.law_add_add {φ : A →ₚ[ℂ] ℂ} {a : ι
     (add_mem (Algebra.subset_adjoin ⟨i, by simp [f, hik], rfl⟩)
       (Algebra.subset_adjoin ⟨j, by simp [f, hjk], rfl⟩))
     (Algebra.subset_adjoin ⟨k, by simp [f], rfl⟩) (hai.add haj) hak, ha.law_add hφ hij hai haj]
+
+private theorem IsFreelyIndependentElements.law_smul_add_algebraMap_add {φ : A →ₚ[ℂ] ℂ}
+    {a : ι → A} (ha : IsFreelyIndependentElements φ.toLinearMap a) (hφ : φ 1 = 1)
+    {i j : ι} (hij : i ≠ j) (hai : IsSelfAdjoint (a i)) (haj : IsSelfAdjoint (a j))
+    (r₁ c₁ r₂ c₂ : ℝ) :
+    φ.law ((r₁ • a i + algebraMap ℝ A c₁) + (r₂ • a j + algebraMap ℝ A c₂)) =
+      ((φ.law (a i)).map fun x => r₁ * x + c₁).freeConv
+        ((φ.law (a j)).map fun x => r₂ * x + c₂) := by
+  have hadd := (isFreelyIndependentElements_iff.mp ha).law_add hφ hij
+    (add_mem (((Algebra.adjoin ℂ {a i}).restrictScalars ℝ).smul_mem
+        (Algebra.self_mem_adjoin_singleton ℂ (a i)) r₁)
+      (((Algebra.adjoin ℂ {a i}).restrictScalars ℝ).algebraMap_mem c₁))
+    (add_mem (((Algebra.adjoin ℂ {a j}).restrictScalars ℝ).smul_mem
+        (Algebra.self_mem_adjoin_singleton ℂ (a j)) r₂)
+      (((Algebra.adjoin ℂ {a j}).restrictScalars ℝ).algebraMap_mem c₂))
+    (((IsSelfAdjoint.all r₁).smul hai).add (IsSelfAdjoint.algebraMap A (.all c₁)))
+    (((IsSelfAdjoint.all r₂).smul haj).add (IsSelfAdjoint.algebraMap A (.all c₂)))
+  rwa [φ.law_smul_add_algebraMap hai r₁ c₁, φ.law_smul_add_algebraMap haj r₂ c₂] at hadd
 
 namespace FreeLawRealization
 
@@ -240,10 +268,15 @@ namespace MeasureTheory.Measure
 theorem freeConv_comm (μ ν : Measure ℝ) : μ.freeConv ν = ν.freeConv μ := by
   by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1
-    obtain ⟨A, _, _, _, φ, g, hφ, hg_free, hg1, hg2, -, -, hg1_law, hg2_law, hadd_law⟩ :=
-      exists_isFreelyIndependentElements_law_add_eq_freeConv h.1.2 h.2.2
-    rw [← hadd_law, add_comm, hg_free.law_add hφ Bool.false_ne_true hg2 hg1, hg2_law, hg1_law]
-  · rw [freeConv_eq_zero_of_not h, freeConv_eq_zero_of_not fun ⟨hν, hμ⟩ => h ⟨hμ, hν⟩]
+    let τ : Bool → Measure ℝ := (cond · μ ν)
+    have : ∀ b : Bool, IsProbabilityMeasure (τ b) := fun b => by cases b <;> infer_instance
+    have : ∀ b : Bool, CompactSpace (τ b).support := fun b => by
+      cases b <;> exact isCompact_iff_compactSpace.mp (by first | exact h.1.2 | exact h.2.2)
+    simpa [τ] using
+      (TauCeti.FreeLawRealization.law_add_generator τ Bool.false_ne_true.symm).symm.trans
+        ((congrArg (TauCeti.FreeLawRealization.state τ).law (add_comm _ _)).trans
+          (TauCeti.FreeLawRealization.law_add_generator τ Bool.false_ne_true))
+  · rw [freeConv_undef h, freeConv_undef fun ⟨hν, hμ⟩ => h ⟨hμ, hν⟩]
 
 instance : Std.Commutative (α := Measure ℝ) freeConv := ⟨freeConv_comm⟩
 
@@ -270,10 +303,10 @@ theorem freeConv_assoc (μ ν ρ : Measure ℝ) :
       simpa [g, τ, Matrix.cons_val_two] using hfree.law_add_add h1
         (by decide : (1 : Fin 3) ≠ 2) (by decide) (by decide) (hsa 1) (hsa 2) (hsa 0)
     rw [← hL, freeConv_comm μ (ν.freeConv ρ), ← hR, add_assoc, add_comm (g 0)]
-  · rw [freeConv_eq_zero_of_not fun ⟨⟨hp, _⟩, hρ⟩ =>
+  · rw [freeConv_undef fun ⟨⟨hp, _⟩, hρ⟩ =>
         h ⟨(isProbabilityMeasure_freeConv_iff.mp hp).1,
           (isProbabilityMeasure_freeConv_iff.mp hp).2, hρ⟩,
-      freeConv_eq_zero_of_not fun ⟨hμ, ⟨hp, _⟩⟩ =>
+      freeConv_undef fun ⟨hμ, ⟨hp, _⟩⟩ =>
         h ⟨hμ, (isProbabilityMeasure_freeConv_iff.mp hp).1,
           (isProbabilityMeasure_freeConv_iff.mp hp).2⟩]
 
@@ -285,23 +318,24 @@ theorem freeConv_map_affine {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsP
     (hμ : IsCompact μ.support) (hν : IsCompact ν.support) (a c b : ℝ) :
     (μ.map fun x => a + b * x).freeConv (ν.map fun x => c + b * x) =
       (μ.freeConv ν).map fun x => a + c + b * x := by
-  obtain ⟨A, _, _, _, φ, g, hφ, hg_free, hg1_sa, hg2_sa, -, -, hg1_law, hg2_law, hsum_law⟩ :=
-    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
+  let τ : Bool → Measure ℝ := (cond · μ ν)
+  have : ∀ i : Bool, IsProbabilityMeasure (τ i) := fun i => by cases i <;> infer_instance
+  have : ∀ i : Bool, CompactSpace (τ i).support := fun i => by
+    cases i <;> exact isCompact_iff_compactSpace.mp ‹_›
+  let φ := TauCeti.FreeLawRealization.state τ
+  have hg1 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ true
+  have hg2 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ false
   have hfun (d : ℝ) : (fun x : ℝ => b * x + d) = fun x => d + b * x := funext fun _ => add_comm _ _
-  have hadd := (TauCeti.isFreelyIndependentElements_iff.mp hg_free).law_add hφ
-    Bool.false_ne_true.symm
-    (add_mem (((Algebra.adjoin ℂ {g true}).restrictScalars ℝ).smul_mem
-        (Algebra.self_mem_adjoin_singleton ℂ (g true)) b)
-      (((Algebra.adjoin ℂ {g true}).restrictScalars ℝ).algebraMap_mem a))
-    (add_mem (((Algebra.adjoin ℂ {g false}).restrictScalars ℝ).smul_mem
-        (Algebra.self_mem_adjoin_singleton ℂ (g false)) b)
-      (((Algebra.adjoin ℂ {g false}).restrictScalars ℝ).algebraMap_mem c))
-    (((IsSelfAdjoint.all b).smul hg1_sa).add (IsSelfAdjoint.algebraMap A (.all a)))
-    (((IsSelfAdjoint.all b).smul hg2_sa).add (IsSelfAdjoint.algebraMap A (.all c)))
-  rw [φ.law_smul_add_algebraMap hg1_sa b a, hfun a, hg1_law,
-    φ.law_smul_add_algebraMap hg2_sa b c, hfun c, hg2_law] at hadd
+  have hadd :=
+    (TauCeti.FreeLawRealization.isFreelyIndependentElements_generator τ).law_smul_add_algebraMap_add
+      (TauCeti.FreeLawRealization.state_one τ) Bool.false_ne_true.symm hg1 hg2 b a b c
+  simp only [TauCeti.FreeLawRealization.law_generator, τ, Bool.cond_true, Bool.cond_false,
+    hfun] at hadd
+  have hsum : φ.law (TauCeti.FreeLawRealization.generator τ true +
+      TauCeti.FreeLawRealization.generator τ false) = μ.freeConv ν :=
+    TauCeti.FreeLawRealization.law_add_generator τ Bool.false_ne_true.symm
   rw [← hadd, add_add_add_comm, ← smul_add, ← map_add,
-    φ.law_smul_add_algebraMap (hg1_sa.add hg2_sa) b (a + c), hfun (a + c), hsum_law]
+    φ.law_smul_add_algebraMap (hg1.add hg2) b (a + c), hfun (a + c), hsum]
 
 /-- Translating `μ` by `a` and `ν` by `b` translates `μ.freeConv ν` by `a + b`, unconditionally. -/
 theorem freeConv_map_add (μ ν : Measure ℝ) (a b : ℝ) :
@@ -311,8 +345,8 @@ theorem freeConv_map_add (μ ν : Measure ℝ) (a b : ℝ) :
     (σ.isCompactProbabilityMeasure_map_homeomorph_iff (Homeomorph.addLeft c)).mp
   by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1; simpa using freeConv_map_affine h.1.2 h.2.2 a b 1
-  · rw [freeConv_eq_zero_of_not fun ⟨h1, h2⟩ => h ⟨hcp μ a h1, hcp ν b h2⟩,
-      freeConv_eq_zero_of_not h, Measure.map_zero]
+  · rw [freeConv_undef fun ⟨h1, h2⟩ => h ⟨hcp μ a h1, hcp ν b h2⟩,
+      freeConv_undef h, Measure.map_zero]
 
 /-- Scaling compactly supported probability measures by `b` scales `μ.freeConv ν` by `b`. -/
 theorem freeConv_map_mul {μ ν : Measure ℝ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
@@ -329,20 +363,26 @@ theorem neg_freeConv_neg (μ ν : Measure ℝ) : μ.neg.freeConv ν.neg = (μ.fr
     exact id
   by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
   · have := h.1.1; have := h.2.1; simpa [Measure.neg_def] using freeConv_map_mul h.1.2 h.2.2 (-1)
-  · rw [freeConv_eq_zero_of_not fun ⟨h1, h2⟩ => h ⟨hcp μ h1, hcp ν h2⟩,
-      freeConv_eq_zero_of_not h]; simp [Measure.neg_def]
+  · rw [freeConv_undef fun ⟨h1, h2⟩ => h ⟨hcp μ h1, hcp ν h2⟩,
+      freeConv_undef h]; simp [Measure.neg_def]
 
 /-- Convolving on the left with `Measure.dirac a` translates `μ` by `a`. -/
 @[simp] theorem dirac_freeConv (a : ℝ) {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : IsCompact μ.support) : (Measure.dirac a).freeConv μ = μ.map (a + ·) := by
-  obtain ⟨A, _, _, _, φ, g, hφ, hg_free, -, hg_sa, -, -, -, hg_law, -⟩ :=
-    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hμ
-  have hadd := (TauCeti.isFreelyIndependentElements_iff.mp hg_free).law_add hφ
-    Bool.false_ne_true.symm (((Algebra.adjoin ℂ {g true}).restrictScalars ℝ).algebraMap_mem a)
-    (Algebra.self_mem_adjoin_singleton ℂ (g false)) (IsSelfAdjoint.algebraMap A (.all a)) hg_sa
-  rw [φ.law_algebraMap_of_apply_one hφ a, hg_law, add_comm, ← one_smul ℝ (g false),
-    φ.law_smul_add_algebraMap hg_sa 1 a, hg_law] at hadd
-  simpa [add_comm] using hadd.symm
+  have := isCompact_iff_compactSpace.mp hμ
+  let τ : Bool → Measure ℝ := fun _ => μ
+  let φ := TauCeti.FreeLawRealization.state τ
+  have hg1 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ true
+  have hg2 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ false
+  have hadd :=
+    (TauCeti.FreeLawRealization.isFreelyIndependentElements_generator τ).law_smul_add_algebraMap_add
+      (TauCeti.FreeLawRealization.state_one τ) Bool.false_ne_true.symm hg1 hg2 0 a 1 0
+  simp only [TauCeti.FreeLawRealization.law_generator, τ, zero_mul, zero_add,
+    Measure.map_const, measure_univ, one_smul, one_mul, add_zero, Measure.map_id'] at hadd
+  rw [← hadd, zero_smul, zero_add, map_zero, add_zero, add_comm,
+    ← one_smul ℝ (TauCeti.FreeLawRealization.generator τ false),
+    φ.law_smul_add_algebraMap hg2 1 a, TauCeti.FreeLawRealization.law_generator]
+  simp [τ, add_comm]
 
 /-- Convolving on the right with `Measure.dirac a` translates `μ` by `a`. -/
 @[simp] theorem freeConv_dirac {μ : Measure ℝ} [IsProbabilityMeasure μ] (hμ : IsCompact μ.support)
@@ -371,12 +411,22 @@ theorem support_freeConv_subset_Icc {μ ν : Measure ℝ} {m₁ M₁ m₂ M₂ :
     (μ.freeConv ν).support ⊆ Set.Icc (m₁ + m₂) (M₁ + M₂) := by
   by_cases hp : IsProbabilityMeasure μ ∧ IsProbabilityMeasure ν
   · obtain ⟨_, _⟩ := hp
-    obtain ⟨A, _, _, _, φ, g, -, -, hg1, hg2, hspec1, hspec2, -, -, hadd_law⟩ :=
-      exists_isFreelyIndependentElements_law_add_eq_freeConv
-        (isCompact_Icc.of_isClosed_subset Measure.isClosed_support hμI)
-        (isCompact_Icc.of_isClosed_subset Measure.isClosed_support hνI)
-    exact hadd_law ▸ φ.support_law_add_subset_Icc hg1 hg2 (hspec1 ▸ hμI) (hspec2 ▸ hνI)
-  · simp [freeConv_eq_zero_of_not fun h => hp ⟨h.1.1, h.2.1⟩]
+    let τ : Bool → Measure ℝ := (cond · μ ν)
+    have : ∀ i : Bool, IsProbabilityMeasure (τ i) := fun i => by cases i <;> infer_instance
+    have : ∀ i : Bool, CompactSpace (τ i).support := fun i => by
+      cases i <;> exact isCompact_iff_compactSpace.mp
+        (isCompact_Icc.of_isClosed_subset Measure.isClosed_support ‹_›)
+    have hsum : (TauCeti.FreeLawRealization.state τ).law
+        (TauCeti.FreeLawRealization.generator τ true +
+          TauCeti.FreeLawRealization.generator τ false) = μ.freeConv ν :=
+      TauCeti.FreeLawRealization.law_add_generator τ Bool.false_ne_true.symm
+    rw [← hsum]
+    exact (TauCeti.FreeLawRealization.state τ).support_law_add_subset_Icc
+      (TauCeti.FreeLawRealization.isSelfAdjoint_generator τ true)
+      (TauCeti.FreeLawRealization.isSelfAdjoint_generator τ false)
+      ((TauCeti.FreeLawRealization.spectrum_generator τ true).trans_subset hμI)
+      ((TauCeti.FreeLawRealization.spectrum_generator τ false).trans_subset hνI)
+  · simp [freeConv_undef fun h => hp ⟨h.1.1, h.2.1⟩]
 
 /-! ### Formal R-series, free cumulants, mean, and variance -/
 
@@ -386,12 +436,25 @@ theorem rSeries_integral_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ
     TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂(μ.freeConv ν)) id =
       TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂μ) id +
         TauCeti.rSeries (fun f : ℝ → ℝ => ∫ x, f x ∂ν) id := by
-  obtain ⟨A, _, _, _, φ, g, hφ, hg_free, hg1, hg2, -, -, hg1_law, hg2_law, hadd_law⟩ :=
-    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
+  let τ : Bool → Measure ℝ := (cond · μ ν)
+  have : ∀ i : Bool, IsProbabilityMeasure (τ i) := fun i => by cases i <;> infer_instance
+  have : ∀ i : Bool, CompactSpace (τ i).support := fun i => by
+    cases i <;> exact isCompact_iff_compactSpace.mp ‹_›
+  let φ := TauCeti.FreeLawRealization.state τ
+  have hg1 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ true
+  have hg2 := TauCeti.FreeLawRealization.isSelfAdjoint_generator τ false
+  have h1 : φ.law (TauCeti.FreeLawRealization.generator τ true) = μ :=
+    TauCeti.FreeLawRealization.law_generator τ true
+  have h2 : φ.law (TauCeti.FreeLawRealization.generator τ false) = ν :=
+    TauCeti.FreeLawRealization.law_generator τ false
+  have hsum : φ.law (TauCeti.FreeLawRealization.generator τ true +
+      TauCeti.FreeLawRealization.generator τ false) = μ.freeConv ν :=
+    TauCeti.FreeLawRealization.law_add_generator τ Bool.false_ne_true.symm
   apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [map_add, ← hadd_law, ← hg1_law, ← hg2_law, φ.map_ofReal_rSeries_integral_law (hg1.add hg2),
+  rw [map_add, ← hsum, ← h1, ← h2, φ.map_ofReal_rSeries_integral_law (hg1.add hg2),
     φ.map_ofReal_rSeries_integral_law hg1, φ.map_ofReal_rSeries_integral_law hg2]
-  exact hg_free.rSeries_add hφ Bool.false_ne_true.symm
+  exact (TauCeti.FreeLawRealization.isFreelyIndependentElements_generator τ).rSeries_add
+    (TauCeti.FreeLawRealization.state_one τ) Bool.false_ne_true.symm
 
 /-- **Additivity of free cumulants under free additive convolution.** -/
 theorem freeCumulant_integral_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]

@@ -48,14 +48,25 @@ namespace TauCeti.Probability
       semicircleReal (m₁ + m₂) (v₁ + v₂) := by
   have hcentred : (semicircleReal 0 v₁).freeConv (semicircleReal 0 v₂) =
       semicircleReal 0 (v₁ + v₂) := by
-    obtain ⟨A, _, _, _, φ, g, -, hg_free, hg1_sa, hg2_sa, -, -, hg1_law, hg2_law, hadd_law⟩ :=
-      Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv
-        (isCompact_support_semicircleReal 0 v₁) (isCompact_support_semicircleReal 0 v₂)
+    let τ : Bool → Measure ℝ := (cond · (semicircleReal 0 v₁) (semicircleReal 0 v₂))
+    have : ∀ i : Bool, IsProbabilityMeasure (τ i) := fun i => by
+      cases i <;> exact isProbabilityMeasure_semicircleReal 0 _
+    have : ∀ i : Bool, CompactSpace (τ i).support := fun i => by
+      cases i <;> exact isCompact_iff_compactSpace.mp (isCompact_support_semicircleReal 0 _)
+    let φ := FreeLawRealization.state τ
+    let g := FreeLawRealization.generator τ
+    have hg1 := FreeLawRealization.isSelfAdjoint_generator τ true
+    have hg2 := FreeLawRealization.isSelfAdjoint_generator τ false
     have hsum : IsSemicircular φ.toLinearMap (g true + g false) (((v₁ + v₂ : ℝ≥0) : ℝ) : ℂ) := by
-      simpa [NNReal.coe_add] using hg_free.isSemicircular_add Bool.false_ne_true.symm
-        ((φ.law_eq_semicircleReal_iff hg1_sa v₁).mp hg1_law)
-        ((φ.law_eq_semicircleReal_iff hg2_sa v₂).mp hg2_law)
-    exact hadd_law.symm.trans <| (φ.law_eq_semicircleReal_iff (hg1_sa.add hg2_sa) _).mpr hsum
+      simpa [NNReal.coe_add] using
+        (FreeLawRealization.isFreelyIndependentElements_generator τ).isSemicircular_add
+          Bool.false_ne_true.symm
+          ((φ.law_eq_semicircleReal_iff hg1 v₁).mp
+            (FreeLawRealization.law_generator τ true))
+          ((φ.law_eq_semicircleReal_iff hg2 v₂).mp
+            (FreeLawRealization.law_generator τ false))
+    exact (FreeLawRealization.law_add_generator τ Bool.false_ne_true.symm).symm.trans <|
+      (φ.law_eq_semicircleReal_iff (hg1.add hg2) _).mpr hsum
   have hshift (m : ℝ) (v : ℝ≥0) :
       semicircleReal m v = (semicircleReal 0 v).map fun x => m + 1 * x := by
     simpa using (map_affine_semicircleReal 0 m 1 v).symm

@@ -34,7 +34,9 @@ states.
 * `TauCeti.FreeLawRealization.HilbertSpace`, `TauCeti.FreeLawRealization.vacuum`,
   `TauCeti.FreeLawRealization.vectorState`, `TauCeti.FreeLawRealization.algebra`,
   `TauCeti.FreeLawRealization.state`, `TauCeti.FreeLawRealization.factor`,
-  `TauCeti.FreeLawRealization.generator`: C⋆-free product realization of `μ`.
+  `TauCeti.FreeLawRealization.generator`,
+  `TauCeti.FreeLawRealization.spectrumHomeomorphSupport`: C⋆-free product realization of `μ` and
+  spectrum–support homeomorphism.
 * `TauCeti.FreeLawRealization.vonNeumannAlgebra`, `TauCeti.FreeLawRealization.toVonNeumannAlgebra`,
   `TauCeti.FreeLawRealization.vonNeumannState`, `TauCeti.FreeLawRealization.vonNeumannGenerator`:
   generated concrete von Neumann realization of `μ`.
@@ -117,6 +119,10 @@ variable {ι : Type*} [DecidableEq ι] (μ : ι → Measure ℝ)
 
 -- Keep `HilbertSpace` an unexposed `def` with explicit Hilbert-space instances so internal factor
 -- functionals stay private while definitions here unify with `ReducedFreeProduct.HilbertSpace`.
+-- Under the `module` system, public `Type`-valued instances (`NormedAddCommGroup`,
+-- `InnerProductSpace`) are exposed and cannot reference `private` declarations
+-- (`factorFunctional`, `factorFunctional_one`), so they inline the underlying definition;
+-- `CompleteSpace` is `Prop`-valued (hence private-bodied) and can use `factorFunctional μ`.
 /-- The completed GNS Hilbert space of the reduced free product realizing `μ`. -/
 def HilbertSpace : Type _ :=
   ReducedFreeProduct.HilbertSpace (factorFunctional μ) (factorFunctional_one μ)
@@ -133,9 +139,9 @@ instance : InnerProductSpace ℂ (HilbertSpace μ) :=
       (ContinuousMap.integralPositiveLinearMap ((μ i).comap ((↑) : (μ i).support → ℝ))))
     (fun i => by simp [StarPositiveFunctional.ofPositiveLinearMap_apply])))
 
-instance : CompleteSpace (HilbertSpace μ) := by
-  exact inferInstanceAs
-    (CompleteSpace (ReducedFreeProduct.HilbertSpace (factorFunctional μ) (factorFunctional_one μ)))
+instance : CompleteSpace (HilbertSpace μ) :=
+  inferInstanceAs (CompleteSpace
+    (ReducedFreeProduct.HilbertSpace (factorFunctional μ) (factorFunctional_one μ)))
 
 /-- The unit cyclic vacuum vector in `HilbertSpace μ`. -/
 def vacuum : HilbertSpace μ :=
@@ -227,13 +233,10 @@ theorem factor_injective (i : ι) : Function.Injective (factor μ i) := by
   have hstate : state μ (factor μ i (star f * f)) = 0 := by
     rw [map_mul, map_star, hf, star_zero, zero_mul, map_zero]
   rw [state_factor] at hstate
-  have hfun : (fun t : (μ i).support => (star f * f) t) = fun t => ((‖f t‖ ^ 2 : ℝ) : ℂ) := by
-    ext t
+  have hfun (t : (μ i).support) : (star f * f) t = ((‖f t‖ ^ 2 : ℝ) : ℂ) := by
     simp [Complex.conj_mul']
-  rw [show (∫ t, (star f * f) t ∂(μ i).comap ((↑) : (μ i).support → ℝ)) =
-      ∫ t, ((‖f t‖ ^ 2 : ℝ) : ℂ) ∂(μ i).comap ((↑) : (μ i).support → ℝ) from
-    integral_congr_ae (Filter.Eventually.of_forall fun t => congrFun hfun t),
-    integral_complex_ofReal, Complex.ofReal_eq_zero] at hstate
+  simp_rw [hfun] at hstate
+  rw [integral_complex_ofReal, Complex.ofReal_eq_zero] at hstate
   refine ContinuousMap.ext fun t => by_contra fun ht => ?_
   have hpos : 0 < ∫ x, ‖f x‖ ^ 2 ∂(μ i).comap ((↑) : (μ i).support → ℝ) :=
     integral_pos_of_integrable_nonneg_ne_zero (f.continuous.norm.pow 2)
@@ -281,32 +284,41 @@ theorem isSelfAdjoint_generator (i : ι) : IsSelfAdjoint (generator μ i) :=
   rintro _ ⟨x, rfl⟩
   exact x.property
 
-private theorem restrict_comp_factorHomeomorph_symm (i : ι) :
-    (ContinuousMap.restrict (spectrum ℂ (generator μ i)) (ContinuousMap.id ℂ)).comp
-      ((((isSelfAdjoint_generator μ i).spectrumRestricts.homeomorph
-          (f := (Complex.reCLM : C(ℂ, ℝ)))).trans
-        (Homeomorph.setCongr (spectrum_generator μ i))).symm :
-        C((μ i).support, spectrum ℂ (generator μ i))) = factorCoordinate μ i := by
-  ext x
-  simp [factorCoordinate, SpectrumRestricts.homeomorph, Set.MapsTo.restrict, Subtype.map,
+/-- The canonical homeomorphism identifying `spectrum ℂ (generator μ i)` with `(μ i).support`. -/
+def spectrumHomeomorphSupport (i : ι) : spectrum ℂ (generator μ i) ≃ₜ (μ i).support :=
+  ((isSelfAdjoint_generator μ i).spectrumRestricts.homeomorph
+    (f := (Complex.reCLM : C(ℂ, ℝ)))).trans (Homeomorph.setCongr (spectrum_generator μ i))
+
+/-- Coercing `spectrumHomeomorphSupport μ i x` to `ℝ` takes the real part of `x`. -/
+@[simp] theorem coe_spectrumHomeomorphSupport (i : ι) (x : spectrum ℂ (generator μ i)) :
+    ((spectrumHomeomorphSupport μ i x : (μ i).support) : ℝ) = (x : ℂ).re := by
+  simp [spectrumHomeomorphSupport, SpectrumRestricts.homeomorph, Set.MapsTo.restrict,
+    Homeomorph.setCongr, Subtype.map]
+
+/-- Coercing `(spectrumHomeomorphSupport μ i).symm x` to `ℂ` embeds `x : (μ i).support` into
+`ℂ`. -/
+@[simp] theorem coe_symm_spectrumHomeomorphSupport (i : ι) (x : (μ i).support) :
+    (((spectrumHomeomorphSupport μ i).symm x : spectrum ℂ (generator μ i)) : ℂ) = (x : ℝ) := by
+  simp [spectrumHomeomorphSupport, SpectrumRestricts.homeomorph, Set.MapsTo.restrict, Subtype.map,
     Homeomorph.setCongr]
 
-/-- Under the spectrum–support identification for `generator μ i`, `factor μ i` is the complex
-continuous functional calculus `cfcHom` of `generator μ i`. -/
+private theorem restrict_comp_factorHomeomorph_symm (i : ι) :
+    (ContinuousMap.restrict (spectrum ℂ (generator μ i)) (ContinuousMap.id ℂ)).comp
+      ((spectrumHomeomorphSupport μ i).symm : C((μ i).support, spectrum ℂ (generator μ i))) =
+      factorCoordinate μ i := by
+  ext x
+  simp [factorCoordinate]
+
+/-- Under the spectrum–support identification `spectrumHomeomorphSupport μ i`, `factor μ i` is
+the complex continuous functional calculus `cfcHom` of `generator μ i`. -/
 theorem factor_eq_cfcHom (i : ι) :
     factor μ i =
       (cfcHom (isSelfAdjoint_generator μ i).isStarNormal).comp
         (ContinuousMap.compStarAlgHom' ℂ ℂ
-          ((((isSelfAdjoint_generator μ i).spectrumRestricts.homeomorph
-              (f := (Complex.reCLM : C(ℂ, ℝ)))).trans
-            (Homeomorph.setCongr (spectrum_generator μ i)) :
-            spectrum ℂ (generator μ i) ≃ₜ (μ i).support) :
-            C(spectrum ℂ (generator μ i), (μ i).support))) := by
-  let e : spectrum ℂ (generator μ i) ≃ₜ (μ i).support :=
-    ((isSelfAdjoint_generator μ i).spectrumRestricts.homeomorph
-      (f := (Complex.reCLM : C(ℂ, ℝ)))).trans (Homeomorph.setCongr (spectrum_generator μ i))
+          (spectrumHomeomorphSupport μ i : C(spectrum ℂ (generator μ i), (μ i).support))) := by
   let φ : C(spectrum ℂ (generator μ i), ℂ) →⋆ₐ[ℂ] algebra μ :=
-    (factor μ i).comp (ContinuousMap.compStarAlgHom' ℂ ℂ (e.symm : C(_, _)))
+    (factor μ i).comp
+      (ContinuousMap.compStarAlgHom' ℂ ℂ ((spectrumHomeomorphSupport μ i).symm : C(_, _)))
   have hφ : Continuous φ := by
     open scoped CStarAlgebra in
     exact (map_continuous (factor μ i)).comp (ContinuousMap.continuous_precomp _)
@@ -319,18 +331,15 @@ theorem factor_eq_cfcHom (i : ι) :
   simp only [StarAlgHom.comp_apply, ContinuousMap.compStarAlgHom'_apply]
   rw [hcfc]
   simp only [φ, StarAlgHom.comp_apply, ContinuousMap.compStarAlgHom'_apply]
-  exact congrArg (factor μ i) (ContinuousMap.ext fun x => by simp [e])
+  exact congrArg (factor μ i) (ContinuousMap.ext fun x => by simp)
 
 /-- Applying `factor μ i` to any continuous function `f : C((μ i).support, ℂ)` computes the
-continuous functional calculus of `generator μ i` transported along the spectrum–support
-identification. -/
+continuous functional calculus of `generator μ i` transported along
+`spectrumHomeomorphSupport μ i`. -/
 theorem factor_apply_eq_cfcHom (i : ι) (f : C((μ i).support, ℂ)) :
     factor μ i f =
       cfcHom (isSelfAdjoint_generator μ i).isStarNormal
-        (f.comp ((((isSelfAdjoint_generator μ i).spectrumRestricts.homeomorph
-            (f := (Complex.reCLM : C(ℂ, ℝ)))).trans
-          (Homeomorph.setCongr (spectrum_generator μ i)) :
-          spectrum ℂ (generator μ i) ≃ₜ (μ i).support) :
+        (f.comp (spectrumHomeomorphSupport μ i :
           C(spectrum ℂ (generator μ i), (μ i).support))) :=
   DFunLike.congr_fun (factor_eq_cfcHom μ i) f
 
@@ -346,7 +355,10 @@ theorem factor_realToRCLike_eq_cfcHom (i : ι) (f : C((μ i).support, ℝ)) :
   simp only [SpectrumRestricts.starAlgHom_apply]
   refine congrArg (cfcHom (isSelfAdjoint_generator μ i).isStarNormal)
     (ContinuousMap.ext fun x => ?_)
-  simp [SpectrumRestricts.homeomorph, Set.MapsTo.restrict]; rfl
+  simp only [ContinuousMap.comp_apply, ContinuousMap.realToRCLike_apply, ContinuousMap.coe_mk,
+    Complex.coe_algebraMap]
+  exact congrArg (fun y : (μ i).support => ((f y : ℝ) : ℂ))
+    (Subtype.ext (by simp [Subtype.map, Homeomorph.setCongr]))
 
 /-- The canonical generators in `algebra μ` are freely independent for `state μ`. -/
 theorem isFreelyIndependentElements_generator :

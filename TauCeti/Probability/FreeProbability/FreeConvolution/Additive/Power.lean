@@ -321,10 +321,10 @@ instance isZeroOrProbabilityMeasure_freeConvPow (μ : Measure ℝ) :
   | _ + 1 => by rw [freeConvPow_succ]; infer_instance
 
 /-- For `n ≠ 0`, outside compactly supported probability measures `freeConvPow` is `0`. -/
-theorem freeConvPow_eq_zero_of_not {μ : Measure ℝ} {n : ℕ} (hn : n ≠ 0)
+theorem freeConvPow_undef {μ : Measure ℝ} {n : ℕ} (hn : n ≠ 0)
     (h : ¬μ.IsCompactProbabilityMeasure) : μ.freeConvPow n = 0 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  exact freeConv_eq_zero_of_not fun h' => h h'.2
+  exact freeConv_undef fun h' => h h'.2
 
 /-- Every free convolution power of any measure on `ℝ` has compact topological support. -/
 theorem isCompact_support_freeConvPow (μ : Measure ℝ) :
@@ -351,7 +351,7 @@ probability measure. -/
   · simp only [hn, false_or]
     exact ⟨fun hp => by
       by_contra h
-      exact not_isProbabilityMeasure_zero (freeConvPow_eq_zero_of_not hn h ▸ hp),
+      exact not_isProbabilityMeasure_zero (freeConvPow_undef hn h ▸ hp),
       fun ⟨_, hμ⟩ => isProbabilityMeasure_freeConvPow hμ n⟩
 
 /-- `μ.freeConvPow n` equals `0` iff `n ≠ 0` and `μ` is not a compactly supported
@@ -376,7 +376,7 @@ theorem freeConvPow_add (μ : Measure ℝ) (m n : ℕ) :
         exact (freeConv_dirac_zero (isCompact_support_freeConvPow μ m)).symm
       · rcases eq_or_ne m 0 with rfl | hm
         · simp
-        · simp [freeConvPow_eq_zero_of_not hm h]
+        · simp [freeConvPow_undef hm h]
   | succ n ih =>
       rw [Nat.add_succ, freeConvPow_succ, freeConvPow_succ, ih, freeConv_assoc]
 
