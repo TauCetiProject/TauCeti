@@ -125,34 +125,6 @@ section ClosedImmersion
 variable {X Y X' Y' : Scheme.{u}} {i : X ⟶ Y} {i' : X' ⟶ Y'} {g : X' ⟶ X} {f : Y' ⟶ Y}
   [IsClosedImmersion i] [IsClosedImmersion i']
 
-/-- For a closed immersion `i'`, the open `i'.coborderRange` is all of `Y'`; the morphism
-`i'.coborderRange ⟶ i.coborderRange` induced by `f : Y' ⟶ Y` through these identifications. -/
-def coborderRangeMap (i : X ⟶ Y) [IsClosedImmersion i] (i' : X' ⟶ Y') [IsClosedImmersion i']
-    (f : Y' ⟶ Y) : (i'.coborderRange : Scheme.{u}) ⟶ i.coborderRange :=
-  i'.coborderRange.ι ≫ f ≫ inv i.coborderRange.ι
-
-/-- The morphism `coborderRangeMap i i' f` is the inclusion of `i'.coborderRange`, followed by `f`
-and the inverse of the inclusion of `i.coborderRange`. -/
-theorem coborderRangeMap_def (i : X ⟶ Y) [IsClosedImmersion i] (i' : X' ⟶ Y')
-    [IsClosedImmersion i'] (f : Y' ⟶ Y) :
-    coborderRangeMap i i' f = i'.coborderRange.ι ≫ f ≫ inv i.coborderRange.ι :=
-  (rfl)
-
-/-- The morphism `coborderRangeMap i i' f`, followed by the inclusion of `i.coborderRange`, is
-the inclusion of `i'.coborderRange` followed by `f`. -/
-@[reassoc (attr := simp)]
-theorem coborderRangeMap_ι (f : Y' ⟶ Y) :
-    coborderRangeMap i i' f ≫ i.coborderRange.ι = i'.coborderRange.ι ≫ f := by
-  simp [coborderRangeMap]
-
-/-- A pullback square of closed immersions gives a pullback square of the closed immersions
-`liftCoborder` into the opens `coborderRange`, which are isomorphic to the targets. -/
-theorem isPullback_liftCoborder (h : IsPullback i' g f i) :
-    IsPullback i'.liftCoborder g (coborderRangeMap i i' f) i.liftCoborder :=
-  h.of_iso (Iso.refl _) (asIso i'.coborderRange.ι).symm (Iso.refl _)
-    (asIso i.coborderRange.ι).symm (by simp [← cancel_mono i'.coborderRange.ι]) (by simp)
-    (by simp [← cancel_mono i.coborderRange.ι]) (by simp [← cancel_mono i.coborderRange.ι])
-
 /-- **Normal cone algebras under base change.** For a pullback square `h` exhibiting the closed
 immersion `i' : X' ⟶ Y'` as the base change of the closed immersion `i : X ⟶ Y` along
 `f : Y' ⟶ Y`, with projection `g : X' ⟶ X`, the morphism `g^* (⨁ₙ Iⁿ/Iⁿ⁺¹) ⟶ ⨁ₙ I'ⁿ/I'ⁿ⁺¹` from
