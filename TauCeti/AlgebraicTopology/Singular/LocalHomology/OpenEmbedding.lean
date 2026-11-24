@@ -41,6 +41,8 @@ restrict to open subsets and are compared along homeomorphisms.
   preserves and reflects vanishing of local homology.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap`: the map induced by an
   open embedding undoes the inverse of this isomorphism.
+* `TauCeti.localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_comp`: the same for a map
+  composed with a local section lifting an open embedding.
 * `TauCeti.localHomologyMap_comp_localHomologyRestriction_singleton`: these isomorphisms are
   natural with respect to restriction to a point.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding_id`,
@@ -131,6 +133,20 @@ lemma localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap [T1Space N] {j
     (localHomologyIsoOfIsOpenEmbedding R hj x k).inv ≫ localHomologyMap R ⟨j, hj.continuous⟩ h k =
       𝟙 _ := by
   rw [Iso.inv_comp_eq, Category.comp_id, localHomologyIsoOfIsOpenEmbedding_hom]
+
+/-- If `j : M → N` is an open embedding into a `T₁` space and `s : M → P` lifts `j` through
+`π : P → N`, that is `π (s z) = j z` for all `z`, then `s_* ≫ π_*` undoes the inverse of
+`localHomologyIsoOfIsOpenEmbedding`. -/
+@[reassoc, elementwise]
+lemma localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap_comp [T1Space N] {j : M → N}
+    (hj : IsOpenEmbedding j) (x : M) (π : C(P, N)) (s : C(M, P)) (hπs : ∀ z, π (s z) = j z)
+    {T : Set P} (hs : s ⁻¹' T ⊆ {x}) (hπ : π ⁻¹' {j x} ⊆ T) (k : ℕ) :
+    (localHomologyIsoOfIsOpenEmbedding R hj x k).inv ≫ localHomologyMap R s hs k ≫
+        localHomologyMap R π hπ k =
+      𝟙 _ := by
+  rw [localHomologyMap_comp,
+    localHomologyMap_congr R (j₂ := ⟨j, hj.continuous⟩) (ContinuousMap.ext hπs) _ k,
+    localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap]
 
 /-- **Naturality of the local isomorphisms of an open embedding.** For `j ⁻¹' T ⊆ S` and a point
 `x` with `j x ∈ T`, the map `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j` followed by restriction
