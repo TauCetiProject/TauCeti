@@ -20,8 +20,9 @@ The proof uses the Weitzenböck formula at a vortex
 (`gaugeFixedOperator_gaugeFixedAdjoint_of_equation_eq_zero`). The magnetic first-order terms
 complete to covariant-gradient squares, while the two potentials are
 `P = |α|²/4` and `1/8 + P/2`. Integrating the squared-norm Bochner identity eliminates the
-Laplacian. At a continuous field with `|α| → 1`, the squared mass `P` is bounded
-(`exists_forall_sq_add_sq_le`, `memLp_top_sq_add_sq`) and exceeds every `a < 1/4` outside a disc
+Laplacian. At a continuous field with `|α| → 1`, the squared mass `P` and the section coordinates
+are bounded (`exists_forall_sq_add_sq_le`, `memLp_top_sq_add_sq`,
+`memLp_top_apply_of_eq_two_or_eq_three`), and `P` exceeds every `a < 1/4` outside a disc
 (`exists_exterior_lt_mass`); together these are the hypotheses of the stationary Schrödinger
 theory for `-Δ + P` (`exists_memLp_top_sq_add_sq_and_le`).
 
@@ -136,6 +137,20 @@ theorem memLp_top_sq_add_sq (hx : Continuous x)
     (ae_of_all _ fun z ↦ ?_)
   rw [Real.norm_of_nonneg (by positivity)]
   exact hM z
+
+/-- The section coordinates of a continuous field whose section has unit modulus at infinity are
+bounded. -/
+theorem memLp_top_apply_of_eq_two_or_eq_three (hx : Continuous x)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {i : Fin 4}
+    (hi : i = 2 ∨ i = 3) : MemLp (fun z ↦ x z i) ⊤ volume := by
+  obtain ⟨M, hM⟩ := exists_forall_sq_add_sq_le hx hlim
+  have hxi : Continuous fun z ↦ x z i := by fun_prop
+  refine memLp_top_of_bound hxi.aestronglyMeasurable (M + 1) (ae_of_all _ fun z ↦ ?_)
+  rw [Real.norm_eq_abs]
+  have hz := hM z
+  rcases hi with rfl | rfl
+  · nlinarith [sq_nonneg (|x z 2| - 1), sq_abs (x z 2), sq_nonneg (x z 3), abs_nonneg (x z 2)]
+  · nlinarith [sq_nonneg (|x z 3| - 1), sq_abs (x z 3), sq_nonneg (x z 2), abs_nonneg (x z 3)]
 
 /-- At a continuous field with a unit-modulus end, the squared mass `P = |α|² / 4 = x₂² + x₃²`
 satisfies the hypotheses of the stationary Schrödinger theory for `-Δ + P`: it is essentially
