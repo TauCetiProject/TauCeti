@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.OpenSet
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 
 /-!
@@ -59,6 +59,8 @@ section (`TauCeti.HolderSection.toSection`), which is continuous. Conversely a s
   components, and `TauCeti.HolderSection.continuous_toSection`: the underlying section is
   continuous.
 * `TauCeti.HolderSection.norm_coord_toSection_le`: the readings are bounded by the norm.
+* `TauCeti.HolderSection.continuous_coord_toSection`: the readings at a point depend continuously
+  on the element.
 * `TauCeti.FiniteBundleAtlas.memHolderSection_iff_exists_toSection_eq`: the sections with
   `C^{k,α}` readings are exactly the underlying sections of the elements of `C^{k,α}(V)`.
 
@@ -266,6 +268,15 @@ theorem norm_coord_toSection_le (w : HolderSection A k α) (i : Fin A.n) (y : A.
     ‖A.coord i (toSection w) y‖ ≤ ‖w‖ := by
   rw [coord_toSection]
   exact (CkHolderSpaceOn.norm_apply_le _ y).trans (norm_component_le w i)
+
+/-- The reading of the underlying section of an element of `C^{k,α}(V)` at a point of the image of
+a chart depends continuously on the element. -/
+theorem continuous_coord_toSection {i : Fin A.n} {y : E} (hy : y ∈ A.image i) :
+    Continuous fun w : HolderSection A k α ↦ A.coord i (toSection w) y := by
+  refine ((CkHolderSpaceOn.continuous_extend_apply hy).comp
+    ((continuous_apply i).comp continuous_subtypeVal)).congr fun w ↦ ?_
+  rw [Function.comp_apply, Function.comp_apply, coord_toSection w i ⟨y, hy⟩,
+    ← CkHolderSpaceOn.extend_apply]
 
 /-- The element of `C^{k,α}(V)` defined by a section whose readings are `C^{k,α}`. -/
 def ofSection (s : ∀ x, V x) (hs : A.MemHolderSection k α s) : HolderSection A k α :=

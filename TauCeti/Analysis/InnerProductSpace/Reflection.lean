@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors, Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5,
-  OpenAI GPT-6
+  OpenAI GPT-6, Giada Franz
 -/
 module
 
@@ -21,7 +21,11 @@ import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
 reflection across `K`, as a bounded operator, as `2 P_K - 1`, and a linear isometry mapping `K`
-onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`). Two vectors of
+onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`).
+Equal-norm vectors with the same inner product against a fixed vector are related by a linear
+isometry fixing that vector (`TauCeti.exists_linearIsometryEquiv_apply_eq_self_and_apply_eq`).
+This fixed-vector isometry theorem is adapted from Giada Franz's local formalization and builds on
+Mathlib's `Submodule.reflection_sub`. Two vectors of
 the same norm with a real inner product are exchanged by the reflection in the hyperplane
 orthogonal to their difference (`Submodule.reflection_sub_of_inner_comm`). In Euclidean
 space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
@@ -498,6 +502,15 @@ namespace TauCeti
 open scoped RealInnerProductSpace ContDiff
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Equal-norm vectors with the same inner product against `x` are related by an ambient
+linear isometry fixing `x`. -/
+theorem exists_linearIsometryEquiv_apply_eq_self_and_apply_eq (x v w : F)
+    (hnorm : ‖v‖ = ‖w‖) (hinner : ⟪x, v⟫ = ⟪x, w⟫) :
+    ∃ e : F ≃ₗᵢ[ℝ] F, e x = x ∧ e v = w := by
+  refine ⟨(ℝ ∙ (v - w))ᗮ.reflection, ?_, Submodule.reflection_sub hnorm⟩
+  apply Submodule.reflection_mem_subspace_eq_self
+  simp only [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_right, hinner, sub_self]
 
 /-- Reflecting in the hyperplane orthogonal to `a + b`, for vectors `a` and `b` of the same norm,
 sends `-a` to `b`. This is `Submodule.reflection_sub` for `-a` and `b`. -/

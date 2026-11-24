@@ -160,7 +160,8 @@ theorem zeroCharge_eq_sum {ι : Type} [Fintype ι] {f : C(Y, ℂ)} {σ : C(𝔻,
     ⟨((↑) : 𝔻 → ℂ) ⁻¹' ball (c i) (r i), isOpen_ball.preimage Complex.UnitDisc.continuous_coe⟩
   have hU : Pairwise fun i j ↦ Disjoint (U i : Set 𝔻) (U j) := fun i j hij ↦
     (hdisj hij).preimage _
-  rw [zeroCharge, O.localDegree_eq_sum o _ Complex.finrank_real_complex (f.comp σ) h (U := U) hU
+  rw [zeroCharge, O.localDegree_eq_sum o _ Complex.finrank_real_complex (f.comp σ) h (U := U)
+    (fun i j hij ↦ (hU hij).mono inter_subset_right inter_subset_right)
     fun z hz ↦ mem_iUnion.2 (hcov z hz)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   -- The subdisc map, read as a map onto the open subset `U i`.

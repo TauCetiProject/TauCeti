@@ -25,6 +25,7 @@ import Mathlib.RingTheory.LocalRing.Quotient
 -- ideal of a local ring, the quotient as a local ring and its residue field, and the properness of
 -- `𝔭ᵉ`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 import TauCeti.RingTheory.LocalRing.Quotient
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
@@ -83,6 +84,8 @@ formula for `K₀` gives `[GL₂(ℤ₂) : K₀(4)] = 6`, not five.
 ## Main results
 
 * `TauCeti.GL2K0.mem_iff`, `TauCeti.GL2K1.mem_iff`: the entry conditions.
+* `TauCeti.GL2K0_mono`, `TauCeti.GL2K1_mono`: the levels are monotone in `I`.
+* `TauCeti.GL2K1.ker_map_le`: the kernel of reduction modulo `I` lies in `K₁(I)`.
 * `TauCeti.GL2K1.rightRel_iff`, `TauCeti.GL2K0.rightRel_iff`: right cosets are determined by the
   bottom row modulo `I`, exactly or up to a unit, over every commutative ring.
 * `TauCeti.GL2K1.rightCosetEquiv`, `TauCeti.GL2K0.rightCosetEquiv`: over a local ring, the right
@@ -189,6 +192,33 @@ theorem relIndex_GL2K0 :
   rw [Subgroup.relIndex, subgroupOf_GL2K0, Subgroup.index_ker]
 
 end GL2K1
+
+/-! ### Monotonicity and the kernel of reduction -/
+
+/-- `K₀` is monotone in the ideal. -/
+theorem GL2K0_mono : Monotone (GL2K0 (A := A)) :=
+  fun _ _ hIJ _ hg ↦ GL2K0.mem_iff.mpr (hIJ (GL2K0.mem_iff.mp hg))
+
+/-- `K₁` is monotone in the ideal. -/
+theorem GL2K1_mono : Monotone (GL2K1 (A := A)) := fun _ _ hIJ _ hg ↦
+  GL2K1.mem_iff.mpr ⟨hIJ (GL2K1.mem_iff.mp hg).1, hIJ (GL2K1.mem_iff.mp hg).2⟩
+
+/-- `K₀` of the unit ideal is all of `GL₂(A)`. -/
+@[simp]
+theorem GL2K0_top : GL2K0 (⊤ : Ideal A) = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ GL2K0.mem_iff.mpr Submodule.mem_top
+
+/-- `K₁` of the unit ideal is all of `GL₂(A)`. -/
+@[simp]
+theorem GL2K1_top : GL2K1 (⊤ : Ideal A) = ⊤ :=
+  eq_top_iff.mpr fun _ _ ↦ GL2K1.mem_iff.mpr ⟨Submodule.mem_top, Submodule.mem_top⟩
+
+/-- The kernel of reduction modulo `I` is contained in `K₁(I)`. -/
+theorem GL2K1.ker_map_le :
+    (Matrix.GeneralLinearGroup.map (n := Fin 2) (Ideal.Quotient.mk I)).ker ≤ GL2K1 I := by
+  intro g hg
+  rw [Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff] at hg
+  simpa using And.intro (hg 1 0) (hg 1 1)
 
 /-! ### The bottom row modulo `I` -/
 
