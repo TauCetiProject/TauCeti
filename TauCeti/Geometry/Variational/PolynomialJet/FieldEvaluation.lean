@@ -17,7 +17,8 @@ derivatives. A *field* is a family `f : α → B` of field components, and coord
 locate the base point. Evaluating a polynomial jet expression along the field substitutes
 `xⱼ ↦ x j` for the base coordinates and the derivative `uᵃ_I ↦ ∂^I fᵃ` for the field-jet
 coordinates, where `∂^I = ∏ᵢ δᵢ ^ I i` is the monomial `TauCeti.multiIndexDeriv` in the
-commuting derivations.
+commuting derivations. We write `j f` for the jets `∂^I fᵃ` of the field and `p(x, j f)` for the
+value of `p` under this substitution, which is `TauCeti.PolynomialJet.fieldEval`.
 
 When the coordinates are dual to the derivations in direction `i`, `δᵢ xⱼ = [i = j]`,
 differentiating the evaluation of `p` is evaluating its total derivative:
@@ -75,7 +76,8 @@ theorem fieldEval_X_field (a : α) (I : ι →₀ ℕ) :
 open Classical in
 /-- **Total derivatives are derivatives along fields.** If the coordinates are dual to the
 derivations in direction `i`, then differentiating the evaluation of a polynomial jet expression
-along a field is evaluating its total derivative: `δᵢ (p(x, j f)) = (Dᵢ p)(x, j f)`. -/
+along a field is evaluating its total derivative: `δᵢ (p(x, j f)) = (Dᵢ p)(x, j f)`, where
+`p(x, j f)` is `fieldEval δ hδ x f p`, substituting `x j` for `xⱼ` and `∂^I fᵃ` for `uᵃ_I`. -/
 theorem apply_fieldEval (i : ι) (hx : ∀ j, δ i (x j) = if i = j then 1 else 0)
     (p : PolynomialJet R ι α) :
     δ i (fieldEval δ hδ x f p) = fieldEval δ hδ x f (totalDeriv i p) := by
