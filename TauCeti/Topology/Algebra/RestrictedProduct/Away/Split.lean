@@ -49,7 +49,7 @@ variable {ι : Type*} [DecidableEq ι] {G : ι → Type*} {K : ι → Type*} [�
 
 /-- The splitting of `Πʳ i, [G i, B i]` at a finite set `T` of indices, as the product of the
 finite product `Π i : T, G i` with the restricted product over the complement of `T`. -/
-@[expose, to_additive addRestrictedProductSplit /-- The splitting of `Πʳ i, [G i, B i]` at a
+@[to_additive addRestrictedProductSplit /-- The splitting of `Πʳ i, [G i, B i]` at a
 finite set `T` of indices, as the product of the finite product `Π i : T, G i` with the restricted
 product over the complement of `T`. -/]
 def restrictedProductSplit (B : ∀ i, K i) (T : Finset ι) :

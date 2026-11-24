@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
-public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Right
 public import TauCeti.Topology.Algebra.RestrictedProduct.Away.Split
 public import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.Pi
 import TauCeti.Algebra.BigOperators.Finprod
 
 /-!
-# Fubini and functoriality for restricted products of Haar measures
+# Fubini for restricted products of Haar measures
 
 Let `(G i)` be a countable family of second-countable locally compact groups with open subgroups
 `B i` and left Haar measures `μ i` with `μ i (B i) = 1` for all but finitely many `i`, and let
@@ -32,17 +31,12 @@ of a factorizable function `x ↦ ∏ᶠ i, f i (x i)` is the finitary product `
 the local integrals (`integral_restrictedHaar_finprod`), and such a function is integrable when
 every `f i` is (`integrable_restrictedHaar_finprod`).
 
-A family of isomorphisms of topological groups `φ i : G i ≃ₜ* H i` carrying `B i` onto `B' i` at
-almost every index pushes `restrictedHaar` to the restricted product of the pushforwards
-`(μ i).map (φ i)` (`map_restrictedProductCongrRight_restrictedHaar`).
-
 ## Main definitions and results
 
 * `TauCeti.measurePreserving_restrictedProductSplit`,
   `TauCeti.integral_restrictedHaar_eq_integral_integral`: Fubini for `restrictedHaar`.
 * `TauCeti.integral_restrictedHaar_finprod`, `TauCeti.integrable_restrictedHaar_finprod`:
   integrals of factorizable functions.
-* `TauCeti.map_restrictedProductCongrRight_restrictedHaar`: functoriality of `restrictedHaar`.
 
 ## References
 
@@ -149,6 +143,21 @@ theorem measurePreserving_restrictedProductSplit :
   refine ⟨hΦ, ?_⟩
   rw [← key, map_map hΦ hΨ, MulEquiv.self_comp_symm, Measure.map_id]
 
+/-- `measurePreserving_restrictedProductSplit` for the inverse of the measurable equivalence
+`restrictedProductSplitMeasurableEquiv B T`, the form used to transfer integrals and
+integrability. -/
+@[to_additive measurePreserving_addRestrictedProductSplitMeasurableEquiv_symm
+/-- `measurePreserving_addRestrictedProductSplit` for the inverse of the measurable equivalence
+`addRestrictedProductSplitMeasurableEquiv B T`. -/]
+private theorem measurePreserving_restrictedProductSplitMeasurableEquiv_symm :
+    MeasurePreserving (restrictedProductSplitMeasurableEquiv B T).symm
+      ((Measure.pi fun i : T ↦ μ i.val).prod
+        (restrictedHaar (fun i : {i // i ∉ T} ↦ B i.val) (fun i ↦ μ i.val)
+          (Subtype.val_injective.tendsto_cofinite.eventually hμB))) (restrictedHaar B μ hμB) := by
+  have h := measurePreserving_restrictedProductSplit B μ hμB T
+  rw [← coe_restrictedProductSplitMeasurableEquiv] at h
+  exact h.symm
+
 /-- **Fubini's theorem for `restrictedHaar`.** For every finite set `T` of indices, the integral
 of an integrable function over `Πʳ i, [G i, B i]` is the iterated integral over the finite product
 `Π i : T, G i` of the integral over the restricted product over the complement of `T`. -/
@@ -163,12 +172,12 @@ theorem integral_restrictedHaar_eq_integral_integral {E : Type*} [NormedAddCommG
         ∂restrictedHaar (fun i : {i // i ∉ T} ↦ B i.val) (fun i ↦ μ i.val)
           (Subtype.val_injective.tendsto_cofinite.eventually hμB)
         ∂Measure.pi fun i : T ↦ μ i.val := by
-  have h := (measurePreserving_restrictedProductSplit B μ hμB T).symm
-    (restrictedProductSplitMeasurableEquiv B T)
+  have h := measurePreserving_restrictedProductSplitMeasurableEquiv_symm B μ hμB T
+  have hf' := (h.integrable_comp_emb
+    (restrictedProductSplitMeasurableEquiv B T).symm.measurableEmbedding (g := f)).mpr hf
   rw [← h.integral_comp' f]
-  refine integral_prod (fun y ↦ f ((restrictedProductSplit B T).symm y)) ?_
-  exact (h.integrable_comp_emb (restrictedProductSplitMeasurableEquiv B T).symm.measurableEmbedding
-    (g := f)).mpr hf
+  rw [coe_restrictedProductSplitMeasurableEquiv_symm] at hf' ⊢
+  exact integral_prod _ hf'
 
 end Fubini
 
@@ -214,8 +223,7 @@ theorem integral_restrictedHaar_finprod {𝕜 : Type*} [RCLike 𝕜] {f : ∀ i,
       Pi.one_def, setIntegral_const, measureReal_def, restrictedHaar_box_self,
       finprod_eq_one_of_forall_eq_one fun i : {i // i ∉ T} ↦ (hT i.val i.property).2]
     simp
-  have h := (measurePreserving_restrictedProductSplit B μ hμB T).symm
-    (restrictedProductSplitMeasurableEquiv B T)
+  have h := measurePreserving_restrictedProductSplitMeasurableEquiv_symm B μ hμB T
   rw [← h.integral_comp' fun x ↦ ∏ᶠ i, f i (x i)]
   simp_rw [coe_restrictedProductSplitMeasurableEquiv_symm,
     finprod_restrictedProductSplit_symm B T fun i hi ↦ (hT i hi).1]
@@ -236,8 +244,7 @@ theorem integrable_restrictedHaar_finprod {𝕜 : Type*} [RCLike 𝕜] {f : ∀ 
     Integrable (fun x ↦ ∏ᶠ i, f i (x i)) (restrictedHaar B μ hμB) := by
   classical
   obtain ⟨T, hT⟩ := exists_finset_eq_indicator_and_measure_eq_one B μ hμB hfB
-  have h := (measurePreserving_restrictedProductSplit B μ hμB T).symm
-    (restrictedProductSplitMeasurableEquiv B T)
+  have h := measurePreserving_restrictedProductSplitMeasurableEquiv_symm B μ hμB T
   refine (h.integrable_comp_emb (restrictedProductSplitMeasurableEquiv B T).symm.measurableEmbedding
     (g := fun x ↦ ∏ᶠ i, f i (x i))).mp ?_
   have hbox : MeasurableSet (box fun i : {i // i ∉ T} ↦ (B i.val : Set (G i.val)) :
@@ -252,75 +259,5 @@ theorem integrable_restrictedHaar_finprod {𝕜 : Type*} [RCLike 𝕜] {f : ∀ 
   exact ENNReal.one_ne_top
 
 end Measure
-
-section Functoriality
-
-variable {ι : Type*} [Countable ι]
-variable {G : ι → Type*} [∀ i, Group (G i)] [∀ i, TopologicalSpace (G i)]
-  [∀ i, IsTopologicalGroup (G i)] [∀ i, LocallyCompactSpace (G i)]
-  [∀ i, SecondCountableTopology (G i)] [∀ i, MeasurableSpace (G i)] [∀ i, BorelSpace (G i)]
-variable {H : ι → Type*} [∀ i, Group (H i)] [∀ i, TopologicalSpace (H i)]
-  [∀ i, IsTopologicalGroup (H i)] [∀ i, LocallyCompactSpace (H i)]
-  [∀ i, SecondCountableTopology (H i)] [∀ i, MeasurableSpace (H i)] [∀ i, BorelSpace (H i)]
-
-omit [Countable ι] [∀ i, IsTopologicalGroup (G i)] [∀ i, LocallyCompactSpace (G i)]
-  [∀ i, SecondCountableTopology (G i)] [∀ i, IsTopologicalGroup (H i)]
-  [∀ i, LocallyCompactSpace (H i)] [∀ i, SecondCountableTopology (H i)] in
-/-- If the isomorphisms `φ i : G i ≃ₜ* H i` carry `U i` onto `U' i` for all but finitely many `i`
-and `μ i (U i) = 1` for all but finitely many `i`, then the pushforwards `(μ i).map (φ i)` give
-`U' i` measure one for all but finitely many `i`. -/
-@[to_additive eventually_map_addEquiv_apply_eq_one
-/-- If the isomorphisms `φ i : G i ≃ₜ+ H i` carry `U i` onto `U' i` for all but finitely many `i`
-and `μ i (U i) = 1` for all but finitely many `i`, then the pushforwards `(μ i).map (φ i)` give
-`U' i` measure one for all but finitely many `i`. -/]
-theorem eventually_map_mulEquiv_apply_eq_one
-    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
-    [Fact (∀ i, IsOpen (U' i : Set (H i)))]
-    (φ : ∀ i, G i ≃ₜ* H i) (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
-    (μ : ∀ i, Measure (G i)) (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
-    ∀ᶠ i in cofinite, (μ i).map (φ i) (U' i) = 1 := by
-  filter_upwards [hφ, hμU] with i hbij hi
-  rw [map_apply (show Measurable (φ i) from (φ i).continuous.measurable)
-    (Fact.out (p := ∀ i, IsOpen (U' i : Set (H i))) i).measurableSet, ← hbij.image_eq,
-    (φ i).injective.preimage_image, hi]
-
-/-- **Functoriality of `restrictedHaar`.** Let `φ i : G i ≃ₜ* H i` be isomorphisms of
-topological groups carrying `U i` onto `U' i` for all but finitely many `i`. The induced
-isomorphism `restrictedProductCongrRight` of restricted products pushes `restrictedHaar U μ` to the
-restricted Haar product of the pushforwards `(μ i).map (φ i)`. -/
-@[to_additive map_addRestrictedProductCongrRight_restrictedAddHaar
-/-- **Functoriality of `restrictedAddHaar`.** Let `φ i : G i ≃ₜ+ H i` be isomorphisms of
-topological additive groups carrying `U i` onto `U' i` for all but finitely many `i`. The induced
-isomorphism `addRestrictedProductCongrRight` of restricted products pushes `restrictedAddHaar U μ`
-to the restricted additive Haar product of the pushforwards `(μ i).map (φ i)`. -/]
-theorem map_restrictedProductCongrRight_restrictedHaar
-    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
-    [Fact (∀ i, IsOpen (U i : Set (G i)))] [Fact (∀ i, IsOpen (U' i : Set (H i)))]
-    (φ : ∀ i, G i ≃ₜ* H i) (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
-    (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
-    (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
-    (restrictedHaar U μ hμU).map
-        (restrictedProductCongrRight U U' (fun i ↦ (φ i).toMulEquiv) hφ) =
-      restrictedHaar U' (fun i ↦ (μ i).map (φ i))
-        (eventually_map_mulEquiv_apply_eq_one U U' φ hφ μ hμU) := by
-  have hμU' := eventually_map_mulEquiv_apply_eq_one U U' φ hφ μ hμU
-  have hΦ := (continuous_restrictedProductCongrRight U U' (fun i ↦ (φ i).toMulEquiv) hφ
-    fun i ↦ (φ i).continuous).measurable
-  refine eq_restrictedHaar_of_box U' _ hμU' fun C hC hCU' ↦ ?_
-  have hpre : restrictedProductCongrRight U U' (fun i ↦ (φ i).toMulEquiv) hφ ⁻¹' box C =
-      box fun i ↦ φ i ⁻¹' C i := by
-    ext x
-    simp only [mem_preimage, mem_box, restrictedProductCongrRight_apply]
-    -- `(φ i).toMulEquiv` and `φ i` have the same underlying function by definition; Mathlib has
-    -- no `simp` lemma for this coercion
-    rfl
-  have hCU : ∀ᶠ i in cofinite, φ i ⁻¹' C i = U i := by
-    filter_upwards [hCU', hφ] with i hi hbij
-    rw [hi, ← hbij.image_eq, (φ i).injective.preimage_image]
-  rw [map_apply hΦ (measurableSet_box fun i ↦ (hC i).measurableSet), hpre,
-    restrictedHaar_box_eq_finprod U μ hμU hCU]
-  exact finprod_congr fun i ↦ (map_apply (φ i).measurable (hC i).measurableSet).symm
-
-end Functoriality
 
 end TauCeti

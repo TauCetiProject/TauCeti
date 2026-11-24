@@ -578,9 +578,11 @@ variable {ι : Type*} [DecidableEq ι] [Countable ι] {G : ι → Type*} {K : ι
 @[to_additive (attr := fun_prop) measurable_addRestrictedProductSplit
 /-- `addRestrictedProductSplit B T` is measurable. -/]
 theorem measurable_restrictedProductSplit : Measurable (restrictedProductSplit B T) := by
-  refine Measurable.prodMk ?_ ?_
-  · exact measurable_pi_iff.mpr fun i ↦ measurable_eval i.val
-  · exact measurable_rng_iff.mpr fun i ↦ measurable_eval (R := G) i.val
+  refine Measurable.prod (measurable_pi_iff.mpr fun i ↦ ?_) (measurable_rng_iff.mpr fun i ↦ ?_)
+  · simp_rw [restrictedProductSplit_apply_fst]
+    exact measurable_eval i.val
+  · simp_rw [restrictedProductSplit_apply_snd]
+    exact measurable_eval (R := G) i.val
 
 /-- The inverse of `restrictedProductSplit B T` is measurable. -/
 @[to_additive (attr := fun_prop) measurable_addRestrictedProductSplit_symm
@@ -595,7 +597,7 @@ theorem measurable_restrictedProductSplit_symm :
     exact (measurable_eval (R := fun i : {i // i ∉ T} ↦ G i.val) ⟨i, hi⟩).comp measurable_snd
 
 /-- `restrictedProductSplit B T` as a measurable equivalence. -/
-@[expose, to_additive addRestrictedProductSplitMeasurableEquiv
+@[to_additive addRestrictedProductSplitMeasurableEquiv
 /-- `addRestrictedProductSplit B T` as a measurable equivalence. -/]
 noncomputable def restrictedProductSplitMeasurableEquiv :
     (Πʳ i, [G i, B i]) ≃ᵐ (Π i : T, G i) × Πʳ i : {i // i ∉ T}, [G i.val, B i.val] where

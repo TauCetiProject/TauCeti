@@ -19,6 +19,7 @@ import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.MeasureTheory.Group.ModularCharacter
 import TauCeti.MeasureTheory.Group.OpenSubgroup.Basic
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Algebra.InfiniteSum.Group
 
 /-!
@@ -54,6 +55,11 @@ measures on `Πʳ i, [G i, B i]` in two regimes:
 Every definition and theorem about these measures has an additive counterpart
 (`TauCeti.restrictedAddHaar`, `TauCeti.convergentAddHaarProduct`, …) via `@[to_additive]`.
 
+A family of isomorphisms of topological groups `φ i : G i ≃ₜ* H i` carrying `U i` onto `U' i` at
+almost every index pushes `restrictedHaar` to the restricted product of the pushforwards
+`(μ i).map (φ i)` (`TauCeti.map_restrictedProductCongrRight_restrictedHaar`); the change of
+reference family `TauCeti.map_restrictedProductCongr_restrictedHaar` is its identity case.
+
 Right-translating boxes under `TauCeti.restrictedHaar` computes the modular character of a locally
 compact restricted product as the finitary product of the modular characters of its coordinates
 (`RestrictedProduct.modularCharacter_eq_finprod`); in particular a restricted product of unimodular
@@ -76,6 +82,8 @@ groups is unimodular (`RestrictedProduct.modularCharacter_eq_one`).
   `TauCeti.regular_restrictedHaar`, `TauCeti.isLocallyFiniteMeasure_restrictedHaar`,
   `TauCeti.sigmaFinite_restrictedHaar`, `TauCeti.isMulRightInvariant_restrictedHaar`,
   `TauCeti.isInvInvariant_restrictedHaar`,
+  `TauCeti.eventually_map_mulEquiv_apply_eq_one`,
+  `TauCeti.map_restrictedProductCongrRight_restrictedHaar`,
   `TauCeti.map_restrictedProductCongr_restrictedHaar`.
 * `TauCeti.exists_unique_convergentHaarProduct`, `TauCeti.convergentHaarProduct`,
   `TauCeti.convergentHaarProduct_unique`, `TauCeti.convergentHaarProduct_eq_smul_restrictedHaar`,
@@ -675,6 +683,70 @@ instance isMulRightInvariant_restrictedHaar [∀ i, (μ i).IsMulRightInvariant] 
 
 end
 
+section Functoriality
+
+variable {H : ι → Type*} [∀ i, Group (H i)] [∀ i, TopologicalSpace (H i)]
+  [∀ i, IsTopologicalGroup (H i)] [∀ i, LocallyCompactSpace (H i)]
+  [∀ i, SecondCountableTopology (H i)] [∀ i, MeasurableSpace (H i)] [∀ i, BorelSpace (H i)]
+
+omit [Countable ι] [∀ i, IsTopologicalGroup (G i)] [∀ i, LocallyCompactSpace (G i)]
+  [∀ i, SecondCountableTopology (G i)] [∀ i, IsTopologicalGroup (H i)]
+  [∀ i, LocallyCompactSpace (H i)] [∀ i, SecondCountableTopology (H i)] in
+/-- If the isomorphisms `φ i : G i ≃ₜ* H i` carry `U i` onto `U' i` for all but finitely many `i`
+and `μ i (U i) = 1` for all but finitely many `i`, then the pushforwards `(μ i).map (φ i)` give
+`U' i` measure one for all but finitely many `i`. -/
+@[to_additive eventually_map_addEquiv_apply_eq_one
+/-- If the isomorphisms `φ i : G i ≃ₜ+ H i` carry `U i` onto `U' i` for all but finitely many `i`
+and `μ i (U i) = 1` for all but finitely many `i`, then the pushforwards `(μ i).map (φ i)` give
+`U' i` measure one for all but finitely many `i`. -/]
+theorem eventually_map_mulEquiv_apply_eq_one
+    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    [Fact (∀ i, IsOpen (U' i : Set (H i)))]
+    (φ : ∀ i, G i ≃ₜ* H i) (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
+    (μ : ∀ i, Measure (G i)) (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
+    ∀ᶠ i in cofinite, (μ i).map (φ i) (U' i) = 1 := by
+  filter_upwards [hφ, hμU] with i hbij hi
+  rw [map_apply (show Measurable (φ i) from (φ i).continuous.measurable)
+    (Fact.out (p := ∀ i, IsOpen (U' i : Set (H i))) i).measurableSet, ← hbij.image_eq,
+    (φ i).injective.preimage_image, hi]
+
+/-- **Functoriality of `restrictedHaar`.** Let `φ i : G i ≃ₜ* H i` be isomorphisms of
+topological groups carrying `U i` onto `U' i` for all but finitely many `i`. The induced
+isomorphism `restrictedProductCongrRight` of restricted products pushes `restrictedHaar U μ` to the
+restricted Haar product of the pushforwards `(μ i).map (φ i)`. -/
+@[to_additive map_addRestrictedProductCongrRight_restrictedAddHaar
+/-- **Functoriality of `restrictedAddHaar`.** Let `φ i : G i ≃ₜ+ H i` be isomorphisms of
+topological additive groups carrying `U i` onto `U' i` for all but finitely many `i`. The induced
+isomorphism `addRestrictedProductCongrRight` of restricted products pushes `restrictedAddHaar U μ`
+to the restricted additive Haar product of the pushforwards `(μ i).map (φ i)`. -/]
+theorem map_restrictedProductCongrRight_restrictedHaar
+    (U : ∀ i, Subgroup (G i)) (U' : ∀ i, Subgroup (H i))
+    [Fact (∀ i, IsOpen (U i : Set (G i)))] [Fact (∀ i, IsOpen (U' i : Set (H i)))]
+    (φ : ∀ i, G i ≃ₜ* H i) (hφ : ∀ᶠ i in cofinite, Set.BijOn (φ i) (U i) (U' i))
+    (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
+    (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
+    (restrictedHaar U μ hμU).map
+        (restrictedProductCongrRight U U' (fun i ↦ (φ i).toMulEquiv) hφ) =
+      restrictedHaar U' (fun i ↦ (μ i).map (φ i))
+        (eventually_map_mulEquiv_apply_eq_one U U' φ hφ μ hμU) := by
+  have hμU' := eventually_map_mulEquiv_apply_eq_one U U' φ hφ μ hμU
+  have hΦ := (continuous_restrictedProductCongrRight U U' (fun i ↦ (φ i).toMulEquiv) hφ
+    fun i ↦ (φ i).continuous).measurable
+  refine eq_restrictedHaar_of_box U' _ hμU' fun C hC hCU' ↦ ?_
+  have hpre : restrictedProductCongrRight U U' (fun i ↦ (φ i).toMulEquiv) hφ ⁻¹' box C =
+      box fun i ↦ φ i ⁻¹' C i := by
+    ext x
+    simp only [mem_preimage, mem_box, restrictedProductCongrRight_apply,
+      ContinuousMulEquiv.toMulEquiv_eq_coe, ContinuousMulEquiv.coe_toMulEquiv]
+  have hCU : ∀ᶠ i in cofinite, φ i ⁻¹' C i = U i := by
+    filter_upwards [hCU', hφ] with i hi hbij
+    rw [hi, ← hbij.image_eq, (φ i).injective.preimage_image]
+  rw [map_apply hΦ (measurableSet_box fun i ↦ (hC i).measurableSet), hpre,
+    restrictedHaar_box_eq_finprod U μ hμU hCU]
+  exact finprod_congr fun i ↦ (map_apply (φ i).measurable (hC i).measurableSet).symm
+
+end Functoriality
+
 /-- **Independence of the integral model for `restrictedHaar`.** If two families of open subgroups
 `U` and `U'` agree cofinitely, then `restrictedProductCongr U U' h` pushes `restrictedHaar` for `U`
 directly to `restrictedHaar` for `U'` with no scalar factor. -/
@@ -686,20 +758,17 @@ theorem map_restrictedProductCongr_restrictedHaar (U U' : ∀ i, Subgroup (G i))
     [Fact (∀ i, IsOpen (U i : Set (G i)))] [Fact (∀ i, IsOpen (U' i : Set (G i)))]
     (h : ∀ᶠ i in cofinite, U i = U' i)
     (μ : ∀ i, Measure (G i)) [∀ i, (μ i).IsHaarMeasure]
-    (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) (hμU' : ∀ᶠ i in cofinite, μ i (U' i) = 1) :
+    (hμU : ∀ᶠ i in cofinite, μ i (U i) = 1) :
     (restrictedHaar U μ hμU).map (restrictedProductCongr U U' h) =
-      restrictedHaar U' μ hμU' := by
-  have _ : LocallyCompactSpace (Πʳ i, [G i, (U' i : Set (G i))]) :=
-    locallyCompactSpace_of_group G (eventually_isCompact_of_eventually_measure_eq_one U' μ hμU')
-  have _ : ((restrictedHaar U μ hμU).map
-      (restrictedProductCongr U U' h)).IsHaarMeasure :=
-    (restrictedProductCongr U U' h).isHaarMeasure_map (restrictedHaar U μ hμU)
-      (continuous_restrictedProductCongr U U' h) (continuous_restrictedProductCongr_symm U U' h)
-  refine restrictedHaar_unique U' μ hμU' fun C hCmeas hCU' ↦ ?_
-  rw [map_apply (continuous_restrictedProductCongr U U' h).measurable (measurableSet_box hCmeas),
-    preimage_restrictedProductCongr_box,
-    restrictedHaar_box_eq_finprod U μ hμU
-      (by filter_upwards [hCU', h] with i h1 h2; rw [h1, h2])]
+      restrictedHaar U' μ (hμU.congr (h.mono fun i hi ↦ by rw [hi])) := by
+  have hφ : ∀ᶠ i in cofinite, Set.BijOn (ContinuousMulEquiv.refl (G i)) (U i) (U' i) := by
+    filter_upwards [h] with i hi
+    simpa [hi] using Set.bijOn_id (U' i : Set (G i))
+  have hcongr : restrictedProductCongr U U' h =
+      restrictedProductCongrRight U U' (fun i ↦ (ContinuousMulEquiv.refl (G i)).toMulEquiv) hφ :=
+    MulEquiv.ext fun x ↦ by ext i; simp [restrictedProductCongrRight_apply]
+  rw [hcongr, map_restrictedProductCongrRight_restrictedHaar U U' _ hφ μ hμU]
+  simp only [ContinuousMulEquiv.coe_refl, Measure.map_id]
 
 end NormalizedRestrictedHaar
 
@@ -1153,7 +1222,7 @@ theorem map_restrictedProductCongr_convergentHaarProduct (U U' : ∀ i, Subgroup
     convergentHaarProduct_eq_smul_restrictedHaar U' S₀ hU'compact₀ μ hconv'₀ μ'
       hμ'_mem (fun i hi ↦ hUU' i hi ▸ hμ'_notMem i hi) hμ'U',
     Measure.map_smul _ (continuous_restrictedProductCongr U U' h).measurable.aemeasurable,
-    map_restrictedProductCongr_restrictedHaar U U' h μ' hμ'U hμ'U']
+    map_restrictedProductCongr_restrictedHaar U U' h μ' hμ'U]
   exact congrArg (· • _) (congrArg Real.toNNReal
       (tprod_congr fun i ↦ by rw [hUU' i.val i.property]))
 
