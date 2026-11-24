@@ -11,6 +11,7 @@ public import TauCeti.Analysis.VonNeumannAlgebra.Basic
 import Mathlib.Algebra.Order.Star.Projection
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Topology.Algebra.Module.ClosedSubmodule
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # The projection lattice in von Neumann algebras
@@ -270,6 +271,7 @@ private noncomputable def closedRangeEquiv (M : VonNeumannAlgebra H) :
 noncomputable def closedRangeOrderIso (M : VonNeumannAlgebra H) :
     M.Projection ≃o closedProjectionSublattice M where
   toEquiv := closedRangeEquiv M
+  -- Defining property of the `CompleteLattice` order transferred along `closedRangeEquiv M`.
   map_rel_iff' := Iff.rfl
 
 @[simp]
@@ -296,11 +298,13 @@ theorem closedRangeHom_apply (M : VonNeumannAlgebra H) (p : M.Projection) :
 
 theorem le_iff_closedRange_le {p q : M.Projection} :
     p ≤ q ↔ p.closedRange ≤ q.closedRange :=
+  -- Defining property of the order transferred from `closedProjectionSublattice M`.
   Iff.rfl
 
 theorem le_iff_range_le {p q : M.Projection} :
-    p ≤ q ↔ (p : H →L[ℂ] H).range ≤ (q : H →L[ℂ] H).range :=
-  Iff.rfl
+    p ≤ q ↔ (p : H →L[ℂ] H).range ≤ (q : H →L[ℂ] H).range := by
+  rw [le_iff_closedRange_le, ← ClosedSubmodule.toSubmodule_le_toSubmodule,
+    toSubmodule_closedRange, toSubmodule_closedRange]
 
 @[simp, norm_cast]
 theorem coe_le_coe {p q : M.Projection} : (p : H →L[ℂ] H) ≤ q ↔ p ≤ q := by
@@ -311,6 +315,14 @@ theorem le_iff_mul_eq_right {p q : M.Projection} :
     p ≤ q ↔ (q : H →L[ℂ] H) * p = p := by
   rw [← coe_le_coe]
   exact p.isStarProjection.le_iff_mul_eq_right q.isStarProjection
+
+/-- A bundled projection fixes an operator `a` on the left if and only if its closed range contains
+the closure of `a.range`. -/
+theorem mul_eq_right_iff_closure_range_le (p : M.Projection) (a : H →L[ℂ] H) :
+    (p : H →L[ℂ] H) * a = a ↔ a.range.closure ≤ p.closedRange := by
+  rw [ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
+    p.isStarProjection.isIdempotentElem a,
+    ← toSubmodule_closedRange, ← Submodule.closure_le]
 
 theorem le_iff_mul_eq_left {p q : M.Projection} :
     p ≤ q ↔ (p : H →L[ℂ] H) * q = p := by
@@ -556,10 +568,10 @@ embedding. -/
 def inclusion {M N : VonNeumannAlgebra H} (hMN : M ≤ N) : M.Projection ↪o N.Projection where
   toFun p := ⟨p, p.isStarProjection, hMN p.coe_mem⟩
   inj' _ _ h := Projection.ext (congrArg (fun q : N.Projection => (q : H →L[ℂ] H)) h)
-  map_rel_iff' := by
-    intro p q
-    rw [← coe_le_coe, ← coe_le_coe]
-    rfl
+  map_rel_iff' {p q} := by
+    change (⟨p, p.isStarProjection, hMN p.coe_mem⟩ : N.Projection) ≤
+      ⟨q, q.isStarProjection, hMN q.coe_mem⟩ ↔ p ≤ q
+    rw [← coe_le_coe, ← coe_le_coe, coe_mk, coe_mk]
 
 @[simp, norm_cast]
 theorem coe_inclusion {M N : VonNeumannAlgebra H} (hMN : M ≤ N) (p : M.Projection) :

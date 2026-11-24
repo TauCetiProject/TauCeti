@@ -78,21 +78,13 @@ theorem centralSupport_mem_commutant (M : VonNeumannAlgebra H) (a : H →L[ℂ] 
     M.centralSupport a ∈ M.commutant :=
   (mem_inf.1 (M.centralSupportProjection a).coe_mem).2
 
-/-- A bundled projection fixes an operator `a` on the left if and only if its closed range contains
-the closure of `a.range`. -/
-private theorem projection_mul_eq_right_iff {M' : VonNeumannAlgebra H}
-    (p : M'.Projection) (a : H →L[ℂ] H) :
-    (p : H →L[ℂ] H) * a = a ↔ a.range.closure ≤ p.closedRange := by
-  rw [ContinuousLinearMap.IsIdempotentElem.mul_eq_right_iff
-    p.isStarProjection.isIdempotentElem a,
-    ← Projection.toSubmodule_closedRange, ← Submodule.closure_le]
-
 @[simp]
 theorem centralSupport_mul_self (M : VonNeumannAlgebra H) (a : H →L[ℂ] H) :
     M.centralSupport a * a = a := by
-  rw [← coe_centralSupportProjection, projection_mul_eq_right_iff,
+  rw [← coe_centralSupportProjection, Projection.mul_eq_right_iff_closure_range_le,
     centralSupportProjection, Projection.closedRange_sInf]
-  exact le_sInf (Set.forall_mem_image.2 fun z hz => (projection_mul_eq_right_iff z a).1 hz)
+  exact le_sInf (Set.forall_mem_image.2 fun z hz =>
+    (Projection.mul_eq_right_iff_closure_range_le z a).1 hz)
 
 theorem mul_centralSupport_self {M : VonNeumannAlgebra H} {a : H →L[ℂ] H} (ha : a ∈ M) :
     a * M.centralSupport a = a := by
@@ -104,8 +96,8 @@ theorem mul_centralSupport_self {M : VonNeumannAlgebra H} {a : H →L[ℂ] H} (h
 theorem centralSupportProjection_le_iff {M : VonNeumannAlgebra H} {a : H →L[ℂ] H}
     {z : (M ⊓ M.commutant).Projection} :
     M.centralSupportProjection a ≤ z ↔ (z : H →L[ℂ] H) * a = a :=
-  ⟨fun h => (projection_mul_eq_right_iff z a).2 <|
-      ((projection_mul_eq_right_iff (M.centralSupportProjection a) a).1
+  ⟨fun h => (Projection.mul_eq_right_iff_closure_range_le z a).2 <|
+      ((Projection.mul_eq_right_iff_closure_range_le (M.centralSupportProjection a) a).1
         (M.centralSupport_mul_self a)).trans (Projection.le_iff_closedRange_le.1 h),
     fun hz => sInf_le hz⟩
 
@@ -130,9 +122,10 @@ theorem centralSupport_le_iff {M : VonNeumannAlgebra H} {a z : H →L[ℂ] H}
 theorem centralSupportProjection_mono_of_range_le {M : VonNeumannAlgebra H} {a b : H →L[ℂ] H}
     (h : a.range ≤ b.range) :
     M.centralSupportProjection a ≤ M.centralSupportProjection b := by
-  rw [centralSupportProjection_le_iff, projection_mul_eq_right_iff]
+  rw [centralSupportProjection_le_iff, Projection.mul_eq_right_iff_closure_range_le]
   exact Submodule.closure_le.2 <| h.trans <| Submodule.closure_le.1 <|
-    (projection_mul_eq_right_iff (M.centralSupportProjection b) b).1 (M.centralSupport_mul_self b)
+    (Projection.mul_eq_right_iff_closure_range_le (M.centralSupportProjection b) b).1
+      (M.centralSupport_mul_self b)
 
 /-- Central support is monotone with respect to range inclusion. -/
 theorem centralSupport_mono_of_range_le {M : VonNeumannAlgebra H} {a b : H →L[ℂ] H}

@@ -59,7 +59,7 @@ theorem polarFactor_mem_adjoin (x : H →L[ℂ] H) : x.polarFactor ∈ adjoin {x
 belongs to `M`. -/
 theorem polarFactor_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx : x ∈ M) :
     x.polarFactor ∈ M :=
-  (adjoin_le_iff.2 (Set.singleton_subset_iff.2 hx)) (polarFactor_mem_adjoin x)
+  adjoin_singleton_le hx (polarFactor_mem_adjoin x)
 
 /-- The orthogonal projection onto `(ker x)ᗮ` (the initial projection of `x`) belongs to
 `adjoin {x}`. -/
@@ -71,7 +71,7 @@ theorem starProjection_orthogonal_ker_mem_adjoin (x : H →L[ℂ] H) :
 /-- If `x ∈ M`, then the orthogonal projection onto `(ker x)ᗮ` belongs to `M`. -/
 theorem starProjection_orthogonal_ker_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx : x ∈ M) :
     x.kerᗮ.starProjection ∈ M :=
-  (adjoin_le_iff.2 (Set.singleton_subset_iff.2 hx)) (starProjection_orthogonal_ker_mem_adjoin x)
+  adjoin_singleton_le hx (starProjection_orthogonal_ker_mem_adjoin x)
 
 /-- The orthogonal projection onto `ker x` belongs to `adjoin {x}`. -/
 theorem starProjection_ker_mem_adjoin (x : H →L[ℂ] H) :
@@ -84,7 +84,7 @@ theorem starProjection_ker_mem_adjoin (x : H →L[ℂ] H) :
 /-- If `x ∈ M`, then the orthogonal projection onto `ker x` belongs to `M`. -/
 theorem starProjection_ker_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx : x ∈ M) :
     x.ker.starProjection ∈ M :=
-  (adjoin_le_iff.2 (Set.singleton_subset_iff.2 hx)) (starProjection_ker_mem_adjoin x)
+  adjoin_singleton_le hx (starProjection_ker_mem_adjoin x)
 
 /-- The orthogonal projection onto the closure of `range x` (the final projection of `x`) belongs to
 `adjoin {x}`. -/
@@ -96,7 +96,6 @@ theorem starProjection_topologicalClosure_range_mem_adjoin (x : H →L[ℂ] H) :
 /-- If `x ∈ M`, then the orthogonal projection onto the closure of `range x` belongs to `M`. -/
 theorem starProjection_topologicalClosure_range_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H}
     (hx : x ∈ M) : x.range.topologicalClosure.starProjection ∈ M :=
-  (adjoin_le_iff.2 (Set.singleton_subset_iff.2 hx))
-    (starProjection_topologicalClosure_range_mem_adjoin x)
+  adjoin_singleton_le hx (starProjection_topologicalClosure_range_mem_adjoin x)
 
 end VonNeumannAlgebra

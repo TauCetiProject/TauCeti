@@ -163,7 +163,7 @@ functional calculus belongs to `M`. -/
 theorem borelCalculus_mem {M : VonNeumannAlgebra H} (ha : a ∈ M)
     (f : BoundedBorelFunction (spectrum ℂ a)) :
     a.borelCalculus f ∈ M :=
-  (adjoin_le_iff.2 (Set.singleton_subset_iff.2 ha)) (borelCalculus_mem_adjoin a f)
+  adjoin_singleton_le ha (borelCalculus_mem_adjoin a f)
 
 variable {a} in
 /-- If a normal operator `a` belongs to a von Neumann algebra `M`, then every spectral projection of
@@ -171,7 +171,7 @@ variable {a} in
 theorem spectralPVM_proj_mem {M : VonNeumannAlgebra H} (ha : a ∈ M)
     {B : Set (spectrum ℂ a)} (hB : MeasurableSet B) :
     a.spectralPVM.proj B hB ∈ M :=
-  (adjoin_le_iff.2 (Set.singleton_subset_iff.2 ha)) (spectralPVM_proj_mem_adjoin a hB)
+  adjoin_singleton_le ha (spectralPVM_proj_mem_adjoin a hB)
 
 /-- The range of the Borel functional calculus of `a` generates `adjoin {a}`. -/
 @[simp]
