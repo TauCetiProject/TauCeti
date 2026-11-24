@@ -17,7 +17,7 @@ The subalgebra `ℂ·1` of a unital C⋆-algebra `A` has the unique state `c·1 
 two kinds of extension:
 
 * the vector states `a ↦ ⟪ξ, a ξ⟫` of unit vectors `ξ` are pure, by
-  `TauCeti.vectorFunctional_mem_extremePoints_stateSpace`;
+  `CStarMatrix.vectorFunctional_mem_extremePoints_stateSpace`;
 * the normalized trace of `M₂`, a state by `CStarMatrix.normalizedTraceState_mem_stateSpace`, is
   the midpoint of the vector states of the two standard basis vectors, which differ, so it is not
   pure.

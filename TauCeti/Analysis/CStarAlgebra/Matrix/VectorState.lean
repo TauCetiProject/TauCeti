@@ -23,23 +23,23 @@ normalized trace is the average of the vector states of the standard basis vecto
 
 ## Main declarations
 
-* `TauCeti.vectorFunctional`: the vector functional of `ξ`.
-* `TauCeti.ofMatrix_rankOneHermitianProjector_mul_mul`: for a unit vector `ξ`, the projection
+* `CStarMatrix.vectorFunctional`: the vector functional of `ξ`.
+* `CStarMatrix.ofMatrix_rankOneHermitianProjector_mul_mul`: for a unit vector `ξ`, the projection
   `ξ ξ⋆` compresses `a` to `⟪ξ, a ξ⟫ ξ ξ⋆`.
-* `TauCeti.vectorFunctional_mem_stateSpace`: the vector functional of a unit vector is a state.
-* `TauCeti.vectorFunctional_mem_extremePoints_stateSpace`: it is a pure state.
-* `TauCeti.normalizedTraceState_eq_sum_smul_vectorFunctional`: the normalized trace is the average
-  of the vector states of the standard basis vectors.
+* `CStarMatrix.vectorFunctional_mem_stateSpace`: the vector functional of a unit vector is a state.
+* `CStarMatrix.vectorFunctional_mem_extremePoints_stateSpace`: it is a pure state.
+* `CStarMatrix.normalizedTraceState_eq_sum_smul_vectorFunctional`: the normalized trace is the
+  average of the vector states of the standard basis vectors.
 -/
 
 public section
 
 noncomputable section
 
-open Matrix CStarMatrix
+open Matrix TauCeti
 open scoped ComplexOrder
 
-namespace TauCeti
+namespace CStarMatrix
 
 variable {n : Type*} [Fintype n]
 
@@ -98,4 +98,4 @@ theorem normalizedTraceState_eq_sum_smul_vectorFunctional [DecidableEq n] :
   refine DFunLike.ext _ _ fun a ↦ ?_
   simp [_root_.sum_apply, normalizedTrace_eq_sum, Finset.mul_sum, Complex.real_smul]
 
-end TauCeti
+end CStarMatrix
