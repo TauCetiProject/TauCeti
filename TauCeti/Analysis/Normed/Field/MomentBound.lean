@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Vandermonde
-import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.LinearAlgebra.Vandermonde
 
@@ -122,9 +121,9 @@ theorem norm_le_of_moment_bound {ι : Type*} [Fintype ι] {β : ι → K} (hβ :
 /-- **Grouping a weighted moment by roots.** The weighted moment of a finite family of roots `α`
 with weights `w` is the weighted moment of the distinct roots in the image of `α`, each weighted by
 the total weight of the indices carrying it. -/
-theorem sum_mul_pow_eq_sum_image_mul_pow {ι : Type*} [Fintype ι] [DecidableEq K] (α w : ι → K)
-    (n : ℕ) :
-    ∑ i, w i * α i ^ n = ∑ b : univ.image α, (∑ i with α i = b, w i) * (b : K) ^ n := by
+theorem sum_mul_pow_eq_sum_image_mul_pow {R ι : Type*} [Semiring R] [DecidableEq R] [Fintype ι]
+    (α w : ι → R) (n : ℕ) :
+    ∑ i, w i * α i ^ n = ∑ b : univ.image α, (∑ i with α i = b, w i) * (b : R) ^ n := by
   rw [← sum_fiberwise_of_maps_to (g := α) fun i _ ↦ mem_image_of_mem α (mem_univ i),
     ← sum_coe_sort (univ.image α)]
   refine sum_congr rfl fun b _ ↦ ?_
@@ -192,30 +191,25 @@ theorem norm_lt_of_moment_isLittleO {ι : Type*} [Fintype ι] {β : ι → K}
     (hβ : Function.Injective β) {c : ι → K} {R : ℝ} (hR : 0 < R)
     (ho : (fun n ↦ ∑ i, c i * β i ^ n) =o[atTop] fun n ↦ R ^ n) {k : ι} (hk : c k ≠ 0) :
     ‖β k‖ < R := by
-  -- Transport the roots to `Fin d`, where the Vandermonde matrix lives, and recover the weighted
-  -- power `c k * β k ^ n` from the window of moments of orders `n, …, n + d - 1`.
+  -- Transport the roots to `Fin d`, where the Vandermonde matrix lives, and bound the moments
+  -- eventually by `ε * R ^ n` with `ε` small against the window constant `W`.
   let e := Fintype.equivFin ι
-  have hrec : (fun n ↦ c k * β k ^ n) = fun n ↦ ∑ j, (vandermonde (β ∘ e.symm))⁻¹ j (e k) *
-      ∑ i, c i * β i ^ (n + (j : ℕ)) := funext fun n ↦ by
-    have h := mul_pow_eq_sum_inv_vandermonde_mul_sum_mul_pow_add (hβ.comp e.symm.injective)
-      (c ∘ e.symm) n (e k)
-    simp only [Function.comp_apply, Equiv.symm_apply_apply] at h
-    rw [h]
-    exact sum_congr rfl fun j _ ↦ by rw [e.symm.sum_comp fun i ↦ c i * β i ^ (n + (j : ℕ))]
-  -- Each shifted moment is `o(R ^ (n + j)) = o(R ^ n)`, hence so is the recovered power.
-  have hko : (fun n ↦ c k * β k ^ n) =o[atTop] fun n ↦ R ^ n := by
-    rw [hrec]
-    refine IsLittleO.fun_sum fun j _ ↦ IsLittleO.const_mul_left ?_ _
-    refine (ho.comp_tendsto (tendsto_add_atTop_nat (j : ℕ))).trans_isBigO ?_
-    simpa [Function.comp_def, pow_add, mul_comm] using
-      isBigO_const_mul_self (R ^ (j : ℕ)) (fun n : ℕ ↦ R ^ n) atTop
-  -- If `R ≤ ‖β k‖`, then `‖c k‖ * R ^ n ≤ ‖c k * β k ^ n‖ ≤ ‖c k‖ / 2 * R ^ n` for large `n`.
-  by_contra! hle
+  set W := ∑ j, ‖(vandermonde (β ∘ e.symm))⁻¹ j (e k)‖ * R ^ (j : ℕ)
+  have hW : 0 ≤ W := sum_nonneg fun j _ ↦ by positivity
   have hck : 0 < ‖c k‖ := norm_pos_iff.2 hk
-  obtain ⟨n, hn⟩ := (hko.def (half_pos hck)).exists
-  have hRn : 0 < R ^ n := pow_pos hR n
-  rw [norm_mul, norm_pow, Real.norm_of_nonneg hRn.le] at hn
-  have := mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hR.le hle n) hck.le
+  have hε : 0 < ‖c k‖ / (W + 1) := by positivity
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (ho.def hε)
+  have h := norm_mul_norm_pow_le_of_moment_bound (hβ.comp e.symm.injective) (c := c ∘ e.symm)
+    (fun m hm ↦ by simpa [e.symm.sum_comp fun i ↦ c i * β i ^ m, abs_of_pos hR] using hN m hm)
+    (e k) le_rfl
+  simp only [Function.comp_apply, Equiv.symm_apply_apply] at h
+  -- If `R ≤ ‖β k‖`, then `‖c k‖ * R ^ N ≤ ‖c k‖ / (W + 1) * R ^ N * W < ‖c k‖ * R ^ N`.
+  by_contra! hle
+  have hRN : 0 < R ^ N := pow_pos hR N
+  have hεW : ‖c k‖ / (W + 1) * W < ‖c k‖ := by
+    rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith
+  have := mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hR.le hle N) hck.le
   nlinarith
 
 /-- **Roots of nonzero total weight lie strictly inside the radius of little-o moments.** Let `α`

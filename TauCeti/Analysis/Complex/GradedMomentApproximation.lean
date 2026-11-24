@@ -90,13 +90,8 @@ private theorem sum_sum_ite_eq_sum_ite_of_tendsto {p : ℝ} (hp : 1 < p) {r s : 
   have hmoment : ∀ n : ℕ, ∑ t, wt t * root t ^ n =
       (∑ i : Fin (r + 1), (-1 : ℂ) ^ (i : ℕ) * ∑ k, α i k ^ n) -
         P.eval₂ (algebraMap ℚ ℂ) ((p ^ n : ℝ) : ℂ) := fun n ↦ by
-    simp only [Fintype.sum_sum_type, Fintype.sum_sigma, root, wt, Sum.elim_inl, Sum.elim_inr,
-      mul_sum, eval₂_eq_sum, Polynomial.sum_def, ← sum_coe_sort P.support, neg_mul,
-      sum_neg_distrib, ← sub_eq_add_neg, eq_ratCast]
-    congr 1
-    refine sum_congr rfl fun m _ ↦ ?_
-    push_cast
-    ring
+    simp [root, wt, Fintype.sum_sum_type, Fintype.sum_sigma, mul_sum, eval₂_eq_sum,
+      Polynomial.sum_def, ← sum_coe_sort P.support, sub_eq_add_neg, pow_right_comm]
   -- The error is `o(R ^ n)` for `R = p ^ (s / 2)`.
   have hR : 0 < p ^ ((s : ℝ) / 2) := Real.rpow_pos_of_pos (zero_lt_one.trans hp) _
   have ho : (fun n ↦ ∑ t, wt t * root t ^ n) =o[atTop] fun n ↦ (p ^ ((s : ℝ) / 2)) ^ n := by
@@ -131,10 +126,8 @@ coefficients carried by the powers equal to `p ^ j` add up to `P_j`. -/
 private theorem sum_ite_ofReal_pow_eq_coeff {p : ℝ} (hp : 1 < p) (P : ℚ[X]) (j : ℕ) :
     (∑ m ∈ P.support, if ((p ^ m : ℝ) : ℂ) = ((p ^ j : ℝ) : ℂ) then (P.coeff m : ℂ) else 0) =
       P.coeff j := by
-  have hp0 : 0 ≤ p := zero_le_one.trans hp.le
-  have hinj : ∀ m, ((p ^ m : ℝ) : ℂ) = ((p ^ j : ℝ) : ℂ) ↔ m = j := fun m ↦
-    ⟨fun h ↦ by simpa using eq_of_rpow_div_two_eq hp (x := 2 * m) (y := 2 * j) (by
-      rw [← norm_ofReal_pow_eq_rpow hp0, ← norm_ofReal_pow_eq_rpow hp0, h]), fun h ↦ h ▸ rfl⟩
+  have hinj : ∀ m, ((p ^ m : ℝ) : ℂ) = ((p ^ j : ℝ) : ℂ) ↔ m = j := fun m ↦ by
+    rw [Complex.ofReal_inj, pow_right_inj₀ (zero_lt_one.trans hp) hp.ne']
   simp only [hinj, sum_ite_eq', mem_support_iff, ne_eq, ite_not]
   split_ifs with h <;> simp [h]
 
@@ -173,11 +166,10 @@ theorem graded_polynomial_approximation {p : ℝ} (hp : 1 < p) {r s : ℕ}
     by_contra! hk
     have h := hcancel (z := α i k) (hweight i k ▸ hle hi)
     rw [sum_sum_ite_eq_sum_ite_of_norm_eq hp hweight i (hweight i k),
-      sum_eq_zero fun m _ ↦ ite_eq_right (Ne.symm (hk m)), ← sum_filter, sum_const,
-      nsmul_eq_mul] at h
-    simp only [mul_eq_zero, Nat.cast_eq_zero, card_eq_zero, filter_eq_empty_iff, mem_univ,
-      forall_const, pow_eq_zero_iff', neg_eq_zero, one_ne_zero, false_and, or_false] at h
-    exact h rfl
+      sum_eq_zero fun m _ ↦ ite_eq_right (Ne.symm (hk m))] at h
+    -- The signed count of the nonempty fibre of `α i k` in degree `i` is nonzero.
+    rw [← sum_filter, sum_const, nsmul_eq_mul] at h
+    exact mul_ne_zero (Nat.cast_ne_zero.2 (card_ne_zero_of_mem (a := k) (by simp))) (by simp) h
   refine ⟨fun i hi hodd ↦ ?_, fun i hi j hij ↦ ?_, fun j hj hr ↦ ?_⟩
   · -- An odd degree has no power of `p` of its absolute value.
     by_contra hb
@@ -193,9 +185,8 @@ theorem graded_polynomial_approximation {p : ℝ} (hp : 1 < p) {r s : ℕ}
       (by rw [norm_ofReal_pow_eq_rpow hp0, ← hij]; exact hle hi)
     rw [sum_sum_ite_eq_sum_ite_of_norm_eq hp hweight i
       (by rw [norm_ofReal_pow_eq_rpow hp0, hij]), sum_ite_ofReal_pow_eq_coeff hp] at h
-    simp only [hall, ite_true, sum_const, card_univ, Fintype.card_fin, hij, pow_mul, neg_one_sq,
-      one_pow, nsmul_eq_mul, mul_one] at h
-    exact_mod_cast h.symm
+    have hcount : ((b i : ℕ) : ℂ) = P.coeff j := by simpa [hall, hij, pow_mul] using h
+    exact_mod_cast hcount.symm
   · -- Above degree `r` there is nothing to cancel the coefficient `P_j`.
     have h := hcancel (z := ((p ^ j : ℝ) : ℂ))
       (by rw [norm_ofReal_pow_eq_rpow hp0]; exact hle hj)
