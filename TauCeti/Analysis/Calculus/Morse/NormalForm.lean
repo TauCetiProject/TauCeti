@@ -86,7 +86,7 @@ differentiability order, including order zero.
 * `TauCeti.hessianAverage`: the averaged Hessian along a segment, normalised so that
   `TauCeti.hessianAverage_zero` identifies its value at `0` with the Hessian.
 * `TauCeti.map_add_eq_add_hessianAverage`: the second-order Taylor formula it satisfies.
-* `TauCeti.hessianAverage_comp_continuousLinearEquiv_apply`: the averaged Hessian under a linear
+* `TauCeti.hessianAverage_comp_continuousLinearEquiv`: the averaged Hessian under a linear
   change of variables.
 * `TauCeti.morseCongruence`: the canonical congruence `√(B₀⁻¹ ∘ B)` comparing a form `B` with a
   reference form `B₀`, with `TauCeti.eventually_morseCongruence_apply` (it is a congruence),
@@ -233,14 +233,37 @@ theorem hessianAverage_symm (hf : ContDiff ℝ 2 f) (x v w w' : E) :
 
 omit [CompleteSpace F] in
 /-- **The averaged Hessian under a linear change of variables.** For a continuous linear
-equivalence `e`, the averaged Hessian of `f ∘ e` at `x` in the direction `v`, applied to `w` and
-`w'`, is that of `f` at `e x` in the direction `e v`, applied to `e w` and `e w'`. -/
+equivalence `e`, the averaged Hessian of `f ∘ e` at `x` in the direction `v` is the pullback along
+`e` of that of `f` at `e x` in the direction `e v`. No differentiability is needed. -/
+theorem hessianAverage_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (f : E → F) (e : G ≃L[ℝ] E) (x v : G) :
+    hessianAverage (f ∘ e) x v =
+      (hessianAverage f (e x) (e v)).bilinearComp (e : G →L[ℝ] E) (e : G →L[ℝ] E) := by
+  -- Pulling bilinear forms back along `e` is a continuous linear equivalence, so it commutes
+  -- with the integral without any integrability assumption.
+  let L := e.symm.arrowCongr (e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ F))
+  have hL (B : E →L[ℝ] E →L[ℝ] F) :
+      L B = B.bilinearComp (e : G →L[ℝ] E) (e : G →L[ℝ] E) := by
+    ext w w'
+    simp [L]
+  simp only [← hL, hessianAverage_eq_integral_Icc]
+  -- Naming the operator spaces lets their normed-space instances be synthesized before `L` is
+  -- unified against them.
+  rw [← ContinuousLinearEquiv.integral_comp_comm (𝕜 := ℝ) (E := E →L[ℝ] E →L[ℝ] F)
+    (F := G →L[ℝ] G →L[ℝ] F) (L := L)]
+  refine setIntegral_congr_fun measurableSet_Icc fun t _ ↦ ?_
+  ext w w'
+  simp [hL, e.fderiv_fderiv_comp_right_apply_apply]
+
+omit [CompleteSpace F] in
+/-- **The averaged Hessian under a linear change of variables**, evaluated: for a continuous
+linear equivalence `e`, the averaged Hessian of `f ∘ e` at `x` in the direction `v`, applied to
+`w` and `w'`, is that of `f` at `e x` in the direction `e v`, applied to `e w` and `e w'`. -/
 theorem hessianAverage_comp_continuousLinearEquiv_apply {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (hf : ContDiff ℝ 2 f) (e : G ≃L[ℝ] E) (x v w w' : G) :
+    [NormedSpace ℝ G] (f : E → F) (e : G ≃L[ℝ] E) (x v w w' : G) :
     hessianAverage (f ∘ e) x v w w' = hessianAverage f (e x) (e v) (e w) (e w') := by
-  rw [hessianAverage_apply (hf.comp e.contDiff), hessianAverage_apply hf]
-  refine intervalIntegral.integral_congr fun t _ ↦ ?_
-  simp only [e.fderiv_fderiv_comp_right_apply_apply, map_add, map_smul]
+  rw [hessianAverage_comp_continuousLinearEquiv]
+  rfl
 
 omit [CompleteSpace F] in
 /-- **The averaged Hessian is local near the segment.** If `f₁` and `f₂` agree near every point
@@ -306,22 +329,10 @@ theorem morseCongruence_bilinearComp {E' : Type*} [NormedAddCommGroup E'] [Norme
     morseCongruence (B₁.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
         (B.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)) =
       (e.symm : E →L[ℝ] E') ∘L morseCongruence B₁ B ∘L (e : E' →L[ℝ] E) := by
-  -- Pulling back conjugates the comparison operator `B₁⁻¹ ∘ B`; when `B₁` is not invertible,
-  -- neither is its pullback, and both comparison operators vanish.
   have hcomp : (B₁.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)).inverse ∘L
       B.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E) =
-      e.symm.conjContinuousAlgEquiv (B₁.inverse ∘L B) := by
-    by_cases hB₁ : B₁.IsInvertible
-    · exact ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp hB₁ B e e
-    · have hback : ((B₁.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)).bilinearComp
-          (e.symm : E →L[ℝ] E') (e.symm : E →L[ℝ] E')) = B₁ := by
-        ext w w'
-        simp
-      have hpull : ¬ (B₁.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)).IsInvertible :=
-        fun h ↦ hB₁ (hback ▸ h.bilinearComp e.symm e.symm)
-      ext w
-      simp [ContinuousLinearMap.inverse_of_not_isInvertible hpull,
-        ContinuousLinearMap.inverse_of_not_isInvertible hB₁]
+      e.symm.conjContinuousAlgEquiv (B₁.inverse ∘L B) :=
+    ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp B₁ B e e
   rw [morseCongruence_def, morseCongruence_def, hcomp, ← ContinuousAlgEquiv.map_sqrtNearOne,
     ContinuousLinearEquiv.conjContinuousAlgEquiv_apply, ContinuousLinearEquiv.symm_symm]
 

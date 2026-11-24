@@ -199,14 +199,9 @@ theorem isIntegralModularForm_iff_forall_isElliptic : IsIntegralModularForm k f 
   let W := Universal.curve.map (MvPolynomial.map (Int.castRingHom CoordinateRing))
   let C := (TauCeti.WeierstrassChange.ChangeRing.universalChange ℤ).map
     (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing))
-  have hℤ : Function.Injective (Int.castRingHom CoordinateRing) := by
-    -- Evaluating a coordinate change at the identity retracts the integer inclusion.
-    apply Function.LeftInverse.injective (g := (1 : VariableChange ℤ).specialize)
-    intro n
-    simp only [Int.coe_castRingHom, map_intCast, Int.cast_id]
   have hΔ : W.Δ ≠ 0 := by
     rw [map_Δ]
-    exact (map_ne_zero_iff _ (MvPolynomial.map_injective _ hℤ)).mpr
+    exact (map_ne_zero_iff _ (MvPolynomial.map_injective _ (Int.castRingHom _).injective_int)).mpr
       Universal.curve_Δ_ne_zero
   let S := Localization.Away W.Δ
   let φ := algebraMap (MvPolynomial Coeff CoordinateRing) S
@@ -228,9 +223,6 @@ theorem isIntegralModularForm_smul_iff {n : ℤ} (hn : n ≠ 0) :
   refine ⟨fun h ↦ isIntegralModularForm_iff_universal.2 ?_, fun hf ↦ hf.smul n⟩
   -- The ring `Γ = ℤ[u, u⁻¹, r, s, t][a₁, ⋯, a₆]` has no additive torsion, so the universal
   -- transformation law of `n • f` can be divided by `n`.
-  have : CharZero TauCeti.WeierstrassChange.Universal.CoordinateRing :=
-    charZero_of_injective_algebraMap (IsLocalization.injective _
-      (powers_le_nonZeroDivisors_of_noZeroDivisors (X_ne_zero (R := ℤ) (σ := Fin 4) 0)))
   have := isIntegralModularForm_iff_universal.1 h
   rw [zsmul_eq_mul, map_mul, map_mul, map_intCast, map_intCast, mul_left_comm] at this
   exact mul_left_cancel₀ (Int.cast_ne_zero.mpr hn) this

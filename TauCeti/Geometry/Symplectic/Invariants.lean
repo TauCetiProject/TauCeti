@@ -56,6 +56,8 @@ vectors again form a symplectic subspace
   representation by linear isometries preserving `ω` form a symplectic subspace.
 * `TauCeti.SymplecticForm.apply_mem_orthogonal`: the symplectic complement of a subspace stable
   under a group preserving `ω` is stable too.
+* `TauCeti.SymplecticForm.apply_mem_orthogonal_range`: in particular so is the symplectic
+  complement of the image of an equivariant linear map.
 * `TauCeti.SymplecticForm.IsSymplectic.invariants_normalSubrepresentation`: when the invariants
   are symplectic, the normal representation has no nonzero fixed vector.
 * `TauCeti.SymplecticForm.isSymplectic_invariants`: the fixed vectors of a continuous symplectic
@@ -129,6 +131,14 @@ theorem apply_mem_orthogonal (hρ : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) {L
   rw [← ρ.self_inv_apply g y, hρ]
   exact hv _ (hL g⁻¹ y hy)
 
+/-- The symplectic complement of the image of an equivariant linear map into a representation
+preserving `ω` is stable under the representation. -/
+theorem apply_mem_orthogonal_range (hρ : ∀ g u v, ω (ρ g u) (ρ g v) = ω u v) {W : Type*}
+    [AddCommGroup W] [Module ℝ W] {σ : Representation ℝ G W} {ι : W →ₗ[ℝ] V}
+    (hισ : ∀ g w, ι (σ g w) = ρ g (ι w)) (g : G) {v : V}
+    (hv : v ∈ ω.orthogonal (LinearMap.range ι)) : ρ g v ∈ ω.orthogonal (LinearMap.range ι) :=
+  apply_mem_orthogonal hρ (by rintro g _ ⟨w, rfl⟩; exact ⟨σ g w, hισ g w⟩) g hv
+
 variable (ω) in
 /-- The **normal representation** of a representation `ρ` preserving `ω`: the restriction of `ρ`
 to the symplectic complement `(V^G)^ω` of its invariants. When `V` is finite-dimensional and the
@@ -159,7 +169,7 @@ theorem IsSymplectic.invariants_normalSubrepresentation
     (ω.normalSubrepresentation hρ).toRepresentation.invariants = ⊥ := by
   rw [Submodule.eq_bot_iff]
   intro v hv
-  refine Subtype.ext ((Submodule.disjoint_def.1 (isSymplectic_iff_disjoint.1 h)) v ?_ v.2)
+  refine Subtype.ext ((Submodule.disjoint_def.1 (isSymplectic_iff_disjoint.1 h)) v ?_ v.property)
   intro g
   simpa [Subrepresentation.toRepresentation_apply_coe] using
     congrArg Subtype.val ((Representation.mem_invariants _ v).1 hv g)

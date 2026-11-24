@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
+import TauCeti.Topology.Homotopy.HomotopyGroup.TransAt
 import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 
 /-!
@@ -27,6 +28,10 @@ image `j_* ⟦a⟧` under a based map `j : Y → ΩᴹX` to the class of `t ↦ 
 The shift is natural in based maps (`TauCeti.MooreLoopSpace.homotopyGroupMulEquiv_map`), so the
 Moore loop map of `f` is bijective on `πₖ(ΩᴹX, 1)` for positive `k` exactly when `f` is bijective
 on `πₖ₊₁(X, x)` (`TauCeti.MooreLoopSpace.bijective_homotopyGroup_map_iff`).
+
+Reversing Moore loops inverts the positive homotopy groups of the Moore loop space
+(`TauCeti.MooreLoopSpace.homotopyGroup_map_symm`): under the shift it reverses the loop coordinate
+of a cube.
 
 The unit is not special: concatenation in front with a Moore loop `γ` is a homotopy equivalence
 of the Moore loop space carrying the unit to `γ`, so the positive homotopy groups of `ΩᴹX` at
@@ -116,6 +121,33 @@ theorem exists_congrEquiv_homotopyGroupMulEquiv_map_mk {Y : Type*} [TopologicalS
     GenLoop.homeomorphOfUnique_symm_apply, ContinuousMap.coe_mk, hl, hr]
   -- The shift applies the forward map of `homotopyEquivPath`, which is its coercion.
   exact congrArg (· (t none)) (homotopyEquivPath_apply (j (a fun m ↦ t (some m))))
+
+/-- **Reversal of Moore loops inverts the positive homotopy groups of the Moore loop space.**
+Under the loop-space shift, reversing every loop of a family reverses the loop coordinate of the
+corresponding cube, which inverts its class. -/
+@[simp]
+theorem homotopyGroup_map_symm (x : X) (n : ℕ) (a : π_ (n + 1) (MooreLoopSpace X x) 1) :
+    HomotopyGroup.map ⟨symm, continuous_symm⟩ symm_one a = a⁻¹ := by
+  let s : C(MooreLoopSpace X x, MooreLoopSpace X x) := ⟨symm, continuous_symm⟩
+  obtain ⟨p, ha⟩ := Quotient.exists_rep a
+  -- the shifts of the classes of `p` and of its reversal `GenLoop.map s p` in cube coordinates
+  obtain ⟨γ, hγ, hγeq⟩ := exists_congrEquiv_homotopyGroupMulEquiv_map_mk s symm_one p
+  obtain ⟨γ₀, hγ₀, hγ₀eq⟩ :=
+    exists_congrEquiv_homotopyGroupMulEquiv_map_mk s symm_one (GenLoop.map s symm_one p)
+  have hp : HomotopyGroup.map s symm_one
+      (⟦GenLoop.map s symm_one p⟧ : π_ (n + 1) (MooreLoopSpace X x) 1) = a := by
+    rw [HomotopyGroup.map_mk, ← ha]
+    exact congrArg _ (GenLoop.ext _ _ fun t ↦ by simp [s])
+  rw [hp] at hγ₀eq
+  rw [ha] at hγeq
+  -- the shifted cube of the reversed family is the shifted cube reversed in the loop coordinate
+  have hsymm : γ = GenLoop.symmAt none γ₀ := GenLoop.ext _ _ fun t ↦ by
+    rw [hγ, GenLoop.symmAt_apply, hγ₀]
+    simp [s, Function.update_of_ne]
+  refine (homotopyGroupMulEquiv x n).injective
+    ((HomotopyGroup.congrMulEquiv (finSuccEquivLast (n := n + 1))).injective ?_)
+  rw [MulEquiv.map_inv, MulEquiv.map_inv, HomotopyGroup.congrMulEquiv_apply,
+    HomotopyGroup.congrMulEquiv_apply, hγeq, hγ₀eq, hsymm, HomotopyGroup.inv_spec]
 
 /-- The Moore loop map of `f` is bijective on `πₖ(ΩᴹX, 1)` for positive `k` exactly when `f` is
 bijective on `πₖ₊₁(X, x)`. -/

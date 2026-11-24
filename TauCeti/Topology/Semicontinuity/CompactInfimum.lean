@@ -36,8 +36,12 @@ and in particular of continuous functions, which is `upperSemicontinuous_iInf`.
   the infimum of a lower semicontinuous function if and only if it holds pointwise.
 * `LowerSemicontinuous.iInf_of_compactSpace`: the partial infimum of a jointly lower
   semicontinuous function over a compact first factor is lower semicontinuous.
-* `Continuous.iInf_of_compactSpace`: the partial infimum of a jointly continuous function over a
-  compact first factor is continuous.
+* `Continuous.iInf_of_compactSpace`, `Continuous.iSup_of_compactSpace`: the partial infimum and
+  supremum of a jointly continuous function over a compact first factor are continuous.
+* `Continuous.iInf_apply_of_compactSpace`, `Continuous.iSup_apply_of_compactSpace`: the same for a
+  curried function `f : Y → X → β`, as `y ↦ ⨅ x, f y x` and `y ↦ ⨆ x, f y x`.
+* `Continuous.bddAbove_range_of_compactSpace`, `Continuous.le_ciSup_of_compactSpace`: a continuous
+  function `g` on a compact space is bounded above, so `g x ≤ ⨆ x', g x'`.
 -/
 
 public section
@@ -103,3 +107,40 @@ theorem Continuous.iInf_of_compactSpace [CompactSpace X] [TopologicalSpace β] [
     Continuous fun y => ⨅ x, f (x, y) := by
   simpa only [image_univ, sInf_range] using
     isCompact_univ.continuous_sInf (f := fun y x => f (x, y)) (hf.comp continuous_swap)
+
+/-- The supremum of a jointly continuous function over a compact first factor is a continuous
+function of the second variable. -/
+theorem Continuous.iSup_of_compactSpace [CompactSpace X] [TopologicalSpace β] [OrderTopology β]
+    {f : X × Y → β} (hf : Continuous f) :
+    Continuous fun y => ⨆ x, f (x, y) :=
+  Continuous.iInf_of_compactSpace (β := βᵒᵈ) hf
+
+namespace Continuous
+
+variable [CompactSpace X] [TopologicalSpace β] [OrderTopology β] {f : Y → X → β}
+
+/-- The infimum `y ↦ ⨅ x, f y x` of a jointly continuous curried function over a compact factor is
+continuous; this is `Continuous.iInf_of_compactSpace` for `f : Y → X → β`. -/
+theorem iInf_apply_of_compactSpace (hf : Continuous (Function.uncurry f)) :
+    Continuous fun y => ⨅ x, f y x :=
+  Continuous.iInf_of_compactSpace (hf.comp continuous_swap)
+
+/-- The supremum `y ↦ ⨆ x, f y x` of a jointly continuous curried function over a compact factor is
+continuous; this is `Continuous.iSup_of_compactSpace` for `f : Y → X → β`. -/
+theorem iSup_apply_of_compactSpace (hf : Continuous (Function.uncurry f)) :
+    Continuous fun y => ⨆ x, f y x :=
+  Continuous.iSup_of_compactSpace (hf.comp continuous_swap)
+
+end Continuous
+
+/-- A continuous function on a compact space, with values in a nonempty linear order whose closed
+intervals `Ici a` are closed, is bounded above. -/
+theorem Continuous.bddAbove_range_of_compactSpace [CompactSpace X] {γ : Type*} [LinearOrder γ]
+    [TopologicalSpace γ] [ClosedIciTopology γ] [Nonempty γ] {g : X → γ} (hg : Continuous g) :
+    BddAbove (range g) :=
+  (isCompact_range hg).bddAbove
+
+/-- A continuous function `g` on a compact space satisfies `g x ≤ ⨆ x', g x'`. -/
+theorem Continuous.le_ciSup_of_compactSpace [CompactSpace X] [TopologicalSpace β]
+    [ClosedIciTopology β] {g : X → β} (hg : Continuous g) (x : X) : g x ≤ ⨆ x', g x' :=
+  le_ciSup hg.bddAbove_range_of_compactSpace x

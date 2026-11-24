@@ -174,7 +174,7 @@ noncomputable def upperTriangularAlgEquiv :
   { (toMatrixAlgHom k).codRestrict _ (blockTriangular_toMatrixAlgHom k) with
     invFun := fun M ↦ ofMatrixLinear k M
     left_inv := ofMatrixLinear_toMatrixAlgHom k
-    right_inv := fun M ↦ Subtype.ext (toMatrixAlgHom_ofMatrixLinear k M.2) }
+    right_inv := fun M ↦ Subtype.ext (toMatrixAlgHom_ofMatrixLinear k M.property) }
 
 private theorem coe_upperTriangularAlgEquiv (f : pathAlgebra k (Kronecker A)) :
     (upperTriangularAlgEquiv (A := A) k f : Matrix (Fin 2) (Fin 2) k) = toMatrixAlgHom k f :=

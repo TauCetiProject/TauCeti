@@ -97,7 +97,7 @@ theorem locallyFinite_dirichletFace (p : X) : LocallyFinite (dirichletFace (G :=
 element moving the centre. This does not assert that every equality face is a boundary face
 in an arbitrary metric space. -/
 theorem frontier_dirichletDomain_subset_iUnion_dirichletFace (p : X) :
-    frontier (dirichletDomain G p) ⊆ ⋃ g : {g : G // g • p ≠ p}, dirichletFace p g.1 := by
+    frontier (dirichletDomain G p) ⊆ ⋃ g : {g : G // g • p ≠ p}, dirichletFace p g.val := by
   intro x hx
   have hxD : x ∈ dirichletDomain G p :=
     (isClosed_dirichletDomain G p).closure_subset (frontier_subset_closure hx)

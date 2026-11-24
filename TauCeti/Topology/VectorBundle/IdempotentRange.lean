@@ -82,11 +82,11 @@ section Topology
 parameter `F'` of `Bundle.TotalSpace` plays no role. -/
 instance instTopologicalSpaceTotalSpaceRange (F' : Type*) (p : B → F →L[𝕜] F) :
     TopologicalSpace (TotalSpace F' fun x ↦ (p x).range) :=
-  .induced (fun v ↦ (v.proj, (v.2 : F))) inferInstance
+  .induced (fun v ↦ (v.proj, (v.snd : F))) inferInstance
 
 /-- The total space of the ranges of a family of operators on `F` is embedded in `B × F`. -/
 theorem isEmbedding_totalSpace_range (F' : Type*) (p : B → F →L[𝕜] F) :
-    IsEmbedding fun v : TotalSpace F' (fun x ↦ (p x).range) ↦ (v.proj, (v.2 : F)) := by
+    IsEmbedding fun v : TotalSpace F' (fun x ↦ (p x).range) ↦ (v.proj, (v.snd : F)) := by
   refine ⟨⟨rfl⟩, fun ⟨x, v⟩ ⟨y, w⟩ h ↦ ?_⟩
   obtain rfl : x = y := congrArg Prod.fst h
   exact congrArg (TotalSpace.mk x) (Subtype.ext (congrArg Prod.snd h))
@@ -112,7 +112,7 @@ isomorphism `φ` of the model fibre with the range of `p x₀`. -/
 noncomputable def rangeTrivialization :
     Trivialization F' (π F' fun x ↦ (p x).range) where
   toFun v := (v.proj, φ.symm ((p x₀).rangeRestrict
-    ((p v.proj * p x₀ + (1 - p v.proj) * (1 - p x₀))⁻¹ʳ v.2)))
+    ((p v.proj * p x₀ + (1 - p v.proj) * (1 - p x₀))⁻¹ʳ v.snd)))
   invFun q := TotalSpace.mk' F' (E := fun x ↦ (p x).range) q.1
     ((p q.1).rangeRestrict ((p q.1 * p x₀ + (1 - p q.1) * (1 - p x₀)) (φ q.2)))
   source := π F' (fun x ↦ (p x).range) ⁻¹' {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))}
@@ -146,7 +146,7 @@ noncomputable def rangeTrivialization :
     refine Continuous.continuousOn ((isEmbedding_totalSpace_range F' p).continuous_iff.mpr ?_)
     exact continuous_fst.prodMk ((hp.comp continuous_fst).clm_apply
       ((continuous_intertwiner hp x₀ |>.comp continuous_fst).clm_apply
-        (continuous_subtype_val.comp (φ.continuous.comp continuous_snd))))
+        (continuous_subtypeVal.comp (φ.continuous.comp continuous_snd))))
   baseSet := {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))}
   open_baseSet := isOpen_setOf_isUnit_intertwiner hp x₀
   source_eq := rfl
@@ -172,7 +172,7 @@ theorem mem_baseSet_rangeTrivialization_iff {x : B} :
 where `U x = p x * p x₀ + (1 - p x) * (1 - p x₀)`. -/
 theorem rangeTrivialization_apply (v : TotalSpace F' fun x ↦ (p x).range) :
     rangeTrivialization hp hidem x₀ φ v = (v.proj, φ.symm ((p x₀).rangeRestrict
-      ((p v.proj * p x₀ + (1 - p v.proj) * (1 - p x₀))⁻¹ʳ v.2))) :=
+      ((p v.proj * p x₀ + (1 - p v.proj) * (1 - p x₀))⁻¹ʳ v.snd))) :=
   (rfl)
 
 /-- The inverse of the trivialization at `x₀` sends `(x, v)` to `U x (φ v)` in the range of `p x`,
@@ -286,7 +286,7 @@ space of the direct sum of the ranges of `p x` and of `1 - p x` onto `B × F`, o
 def rangeProdRangeOneSubHomeomorph (F' F'' : Type*) (hp : Continuous p)
     (hidem : ∀ x, IsIdempotentElem (p x)) :
     TotalSpace (F' × F'') ((fun x ↦ (p x).range) ×ᵇ fun x ↦ (1 - p x).range) ≃ₜ B × F where
-  toFun v := (v.proj, (v.2.1 : F) + v.2.2)
+  toFun v := (v.proj, (v.snd.1 : F) + v.snd.2)
   invFun q := ⟨q.1, ((p q.1).rangeRestrict q.2, (1 - p q.1).rangeRestrict q.2)⟩
   left_inv := by
     rintro ⟨x, w₁, w₂⟩
@@ -327,7 +327,7 @@ inside the type of the total space, so their left-hand sides are not in simp nor
 /-- The homeomorphism adds the two components of a vector of the direct sum. -/
 theorem rangeProdRangeOneSubHomeomorph_apply
     (v : TotalSpace (F' × F'') ((fun x ↦ (p x).range) ×ᵇ fun x ↦ (1 - p x).range)) :
-    rangeProdRangeOneSubHomeomorph F' F'' hp hidem v = (v.proj, (v.2.1 : F) + v.2.2) :=
+    rangeProdRangeOneSubHomeomorph F' F'' hp hidem v = (v.proj, (v.snd.1 : F) + v.snd.2) :=
   (rfl)
 
 /-- The inverse homeomorphism splits a vector of `F` by the projections `p x` and `1 - p x`. -/

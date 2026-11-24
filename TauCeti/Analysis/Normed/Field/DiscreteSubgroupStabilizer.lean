@@ -63,8 +63,8 @@ theorem finite_stabilizer_units (hL : L ≠ ⊥) : Finite (MulAction.stabilizer 
   have hfin := L.toAddSubgroup.finite_inter (isBounded_closedBall (x := (0 : 𝕜)) (r := ‖l₀‖))
   have := hfin.to_subtype
   refine Finite.of_injective (β := ↥(closedBall (0 : 𝕜) ‖l₀‖ ∩ (L : Set 𝕜)))
-    (fun u ↦ ⟨(u : 𝕜ˣ) * l₀, ?_, (mem_stabilizer_units_iff.mp u.2).1 l₀ hl₀⟩) fun u v h ↦ ?_
-  · simp [norm_mul, norm_eq_one_of_mem_stabilizer hL u.2]
+    (fun u ↦ ⟨(u : 𝕜ˣ) * l₀, ?_, (mem_stabilizer_units_iff.mp u.property).1 l₀ hl₀⟩) fun u v h ↦ ?_
+  · simp [norm_mul, norm_eq_one_of_mem_stabilizer hL u.property]
   · exact Subtype.ext (Units.ext (mul_right_cancel₀ hl₀0 (congrArg Subtype.val h)))
 
 end Submodule

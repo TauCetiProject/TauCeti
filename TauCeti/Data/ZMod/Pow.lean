@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -13,17 +12,15 @@ public import Mathlib.Data.ZMod.Basic
 
 If `x ^ n = 1` in a monoid, then the power `x ^ a.val` of `x` at the canonical representative of
 a residue `a : ZMod n` is multiplicative in `a`. At `n = 2` and `x = -1` this is the sign
-`(-1) ^ a.val` of a residue modulo two. A finite sum of residues in a commutative monoid gives the
-product of the powers, and a product of residues gives the iterated power. The residue
-of a natural number `c` gives the power `x ^ c`, and the residue `-1` gives the inverse of `x`.
+`(-1) ^ a.val` of a residue modulo two. A product of residues gives the iterated power. The residue
+of a natural number `c` gives the power `x ^ c`, and negating a residue inverts the power.
 
 ## Main results
 
 * `TauCeti.pow_val_add`: `x ^ (a + b).val = x ^ a.val * x ^ b.val` when `x ^ n = 1`.
-* `TauCeti.pow_val_sum`: `x ^ (∑ i ∈ s, f i).val = ∏ i ∈ s, x ^ (f i).val` when `x ^ n = 1`.
 * `TauCeti.pow_val_mul`: `x ^ (a * b).val = (x ^ a.val) ^ b.val` when `x ^ n = 1`.
 * `TauCeti.pow_val_natCast`: `x ^ (c : ZMod n).val = x ^ c` when `x ^ n = 1`.
-* `TauCeti.pow_val_neg_one`: `x ^ (-1 : ZMod n).val = x⁻¹` when `x ^ n = 1` and `n ≠ 0`.
+* `TauCeti.pow_val_neg`: `x ^ (-a).val = (x ^ a.val)⁻¹` when `x ^ n = 1` and `n ≠ 0`.
 * `TauCeti.pow_mul_val_inv`: `x ^ (k * (k⁻¹ : ZMod n).val) = x` when `x ^ n = 1` and `k` is prime
   to `n`.
 -/
@@ -37,16 +34,6 @@ namespace TauCeti
 theorem pow_val_add {M : Type*} [Monoid M] {n : ℕ} [NeZero n] {x : M} (hx : x ^ n = 1)
     (a b : ZMod n) : x ^ (a + b).val = x ^ a.val * x ^ b.val := by
   rw [ZMod.val_add, ← pow_eq_pow_mod _ hx, pow_add]
-
-/-- **A power at a finite sum of residues is the product of the powers:** if `x ^ n = 1` in a
-commutative monoid, then `x ^ (∑ i ∈ s, f i).val = ∏ i ∈ s, x ^ (f i).val`. -/
-theorem pow_val_sum {M : Type*} [CommMonoid M] {n : ℕ} [NeZero n] {x : M} (hx : x ^ n = 1)
-    {ι : Type*} (s : Finset ι) (f : ι → ZMod n) :
-    x ^ (∑ i ∈ s, f i).val = ∏ i ∈ s, x ^ (f i).val := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert _ _ ha ih => rw [Finset.sum_insert ha, Finset.prod_insert ha, pow_val_add hx, ih]
 
 /-- **A power at a product of residues is an iterated power:** if `x ^ n = 1`, then
 `x ^ (a * b).val = (x ^ a.val) ^ b.val` for `a b : ZMod n`. -/
@@ -64,18 +51,17 @@ theorem pow_val_one {M : Type*} [Monoid M] {n : ℕ} {x : M} (hx : x ^ n = 1) :
     x ^ (1 : ZMod n).val = x := by
   simpa using pow_val_natCast hx 1
 
-/-- If `x ^ n = 1` with `n ≠ 0`, then the power of `x` at the residue `-1` is the inverse of `x`. -/
-theorem pow_val_neg_one {G : Type*} [DivisionMonoid G] {n : ℕ} [NeZero n] {x : G}
-    (hx : x ^ n = 1) : x ^ (-1 : ZMod n).val = x⁻¹ := by
-  have h := pow_val_add hx (-1) 1
-  rw [neg_add_cancel, ZMod.val_zero, pow_zero, pow_val_one hx] at h
-  exact eq_inv_of_mul_eq_one_left h.symm
+/-- If `x ^ n = 1` with `n ≠ 0`, then the power of `x` at the negative of a residue `a` is the
+inverse of the power at `a`. -/
+theorem pow_val_neg {G : Type*} [DivisionMonoid G] {n : ℕ} [NeZero n] {x : G}
+    (hx : x ^ n = 1) (a : ZMod n) : x ^ (-a).val = (x ^ a.val)⁻¹ := by
+  refine eq_inv_of_mul_eq_one_left ?_
+  rw [← pow_val_add hx, neg_add_cancel, ZMod.val_zero, pow_zero]
 
 /-- If `x ^ n = 1` and `k` is prime to `n`, then raising `x` to the power `k` and then to the
 representative of the inverse of `k` modulo `n` gives back `x`. -/
 theorem pow_mul_val_inv {M : Type*} [Monoid M] {n k : ℕ} {x : M} (hx : x ^ n = 1)
     (hk : k.Coprime n) : x ^ (k * (k⁻¹ : ZMod n).val) = x := by
-  rw [← pow_val_natCast hx, Nat.cast_mul, ZMod.mul_val_inv hk, ← Nat.cast_one, pow_val_natCast hx,
-    pow_one]
+  rw [← pow_val_natCast hx, Nat.cast_mul, ZMod.mul_val_inv hk, pow_val_one hx]
 
 end TauCeti

@@ -10,16 +10,32 @@ public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 /-!
 # Entries of Cartan matrices
 
-An entry equal to `-1` in the generalized type-`E` Cartan matrix has distinct row and
-column indices. This supplies the distinctness hypothesis for adjacent-root Serre relations.
-The type-`B` entry characterizations identify the oriented double edge and consecutive nodes.
-The exponents of the higher Serre relations of type `G₂` are `0`, `3`, `1` and `0`
-(`CartanMatrix.toNat_neg_G₂`).
+Entry characterizations of the standard Cartan matrices across arbitrary rank:
+
+* `CartanMatrix.A_apply_eq_neg_one_iff`: entries equal to `-1` in the type-`A` Cartan matrix are
+  exactly consecutive pairs of indices.
+* `CartanMatrix.B_apply_eq_neg_two_iff` and `CartanMatrix.B_apply_neg_iff`: the oriented double
+  edge and consecutive nodes of the type-`B` Cartan matrix.
+* `CartanMatrix.D_apply_eq_neg_one_iff`: entries equal to `-1` in the type-`D` Cartan matrix
+  connect consecutive stem indices and connect the branch node `n - 3` to the two fork leaves
+  `n - 2` and `n - 1` (vacuously none when `n ≤ 2`).
+* `CartanMatrix.E_ne_of_eq_neg_one`: an entry equal to `-1` in the generalized type-`E` Cartan
+  matrix has distinct row and column indices, supplying the distinctness hypothesis for
+  adjacent-root Serre relations.
+* `CartanMatrix.toNat_neg_G₂`: the exponents of the higher Serre relations of type `G₂` are `0`,
+  `3`, `1` and `0`.
 -/
 
 public section
 
 namespace CartanMatrix
+
+/-- Entries equal to `-1` in the type-`A` Cartan matrix are exactly consecutive pairs of
+indices. -/
+lemma A_apply_eq_neg_one_iff {n : ℕ} (i j : Fin n) :
+    A n i j = -1 ↔ i.val + 1 = j.val ∨ j.val + 1 = i.val := by
+  simp only [A, Matrix.of_apply, Fin.ext_iff]
+  split_ifs <;> simp_all
 
 /-- The unique double entry in the type-B Cartan matrix is the oriented last edge. -/
 lemma B_apply_eq_neg_two_iff {n : ℕ} (i j : Fin n) :
@@ -32,6 +48,18 @@ lemma B_apply_neg_iff {n : ℕ} (i j : Fin n) :
     B n i j < 0 ↔ i.val + 1 = j.val ∨ j.val + 1 = i.val := by
   simp only [B, Matrix.of_apply, Fin.ext_iff]
   split_ifs <;> omega
+
+/-- Entries equal to `-1` in the type-`D` Cartan matrix connect consecutive stem indices (where the
+larger index satisfies `+ 2 < n`) and connect the branch index `n - 3` to the two fork leaves
+`n - 2` and `n - 1`, in every rank `n` (with no `-1` entries when `n ≤ 2`). -/
+lemma D_apply_eq_neg_one_iff {n : ℕ} (i j : Fin n) :
+    D n i j = -1 ↔
+      (i.val + 1 = j.val ∧ j.val + 2 < n) ∨
+      (j.val + 1 = i.val ∧ i.val + 2 < n) ∨
+      (i.val + 3 = n ∧ (j.val + 2 = n ∨ j.val + 1 = n)) ∨
+      (j.val + 3 = n ∧ (i.val + 2 = n ∨ i.val + 1 = n)) := by
+  simp only [D, Matrix.of_apply, Fin.ext_iff]
+  (split_ifs <;> simp_all) <;> omega
 
 /-- Nodes joined by an entry `-1` in the type-`E` Cartan matrix are distinct, in every rank. -/
 theorem E_ne_of_eq_neg_one {n : ℕ} {i j : Fin n} (hij : E n i j = -1) : i ≠ j := by

@@ -124,7 +124,8 @@ theorem coe_pathOperation_op_apply {n : ℕ} (X : Fin (n + 1) → Cᵒᵖ) (d : 
       negOnePowCast R (AInfinity.opExp n fun k ↦ if h : k < n then d ⟨k, h⟩ else 0) •
         homProjection (unop (X (Fin.last n))) (unop (X 0))
           (𝒞.m n fun i ↦
-            homInclusion (unop (X i.rev.rev.succ)) (unop (X i.rev.rev.castSucc)) (x i.rev).1) := by
+            homInclusion (unop (X i.rev.rev.succ)) (unop (X i.rev.rev.castSucc)) (x i.rev).val)
+                := by
   rw [coe_pathOperation_apply, 𝒞.op_m_apply (fun k ↦ if h : k < n then d ⟨k, h⟩ else 0) _
     fun i ↦ by simp, map_smul, homProjection_opTotalHomEquiv]
   simp only [opTotalHomEquiv_symm_homInclusion]

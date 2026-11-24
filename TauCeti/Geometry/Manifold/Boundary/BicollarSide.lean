@@ -75,20 +75,20 @@ namespace IsBicollar
 /-- The nonnegative half of a bicollar, read in the half-space model of the normal direction and
 viewed in the side `C`. -/
 private def collarPiece (hC : b ⁻¹' C = univ ×ˢ Ici 0) : N × EuclideanHalfSpace 1 → C :=
-  codRestrict (fun p => b (p.1, p.2.1 0)) C fun p => by
-    have hp : (p.1, p.2.1 0) ∈ b ⁻¹' C := by
+  codRestrict (fun p => b (p.1, p.2.val 0)) C fun p => by
+    have hp : (p.1, p.2.val 0) ∈ b ⁻¹' C := by
       rw [hC]
-      exact ⟨mem_univ _, p.2.2⟩
+      exact ⟨mem_univ _, p.2.property⟩
     exact hp
 
 omit [TopologicalSpace M] [TopologicalSpace N] in
 private theorem coe_collarPiece (hC : b ⁻¹' C = univ ×ˢ Ici 0) (p : N × EuclideanHalfSpace 1) :
-    (collarPiece hC p : M) = b (p.1, p.2.1 0) :=
+    (collarPiece hC p : M) = b (p.1, p.2.val 0) :=
   (rfl)
 
 private theorem isOpenEmbedding_collarPiece (hb : IsBicollar f b)
     (hC : b ⁻¹' C = univ ×ˢ Ici 0) : IsOpenEmbedding (collarPiece hC) := by
-  have hcoord : IsEmbedding fun s : EuclideanHalfSpace 1 => s.1 0 :=
+  have hcoord : IsEmbedding fun s : EuclideanHalfSpace 1 => s.val 0 :=
     Function.LeftInverse.isEmbedding EuclideanHalfSpace.normalRay_normalCoord
       EuclideanHalfSpace.continuous_normalRay (by fun_prop)
   refine ⟨((hb.isOpenEmbedding.isEmbedding.comp (IsEmbedding.id.prodMap hcoord)).codRestrict
@@ -100,12 +100,12 @@ private theorem isOpenEmbedding_collarPiece (hb : IsBicollar f b)
       exact ⟨_, (coe_collarPiece hC p).symm⟩
     · have hp' : p ∈ b ⁻¹' C := by
         rw [mem_preimage, hp]
-        exact x.2
+        exact x.property
       rw [hC] at hp'
       refine ⟨(p.1, EuclideanHalfSpace.normalRay p.2), Subtype.ext ?_⟩
       rw [coe_collarPiece, EuclideanHalfSpace.normalRay_coe_apply, max_eq_left hp'.2, ← hp]
   rw [hrange]
-  exact hb.isOpenEmbedding.isOpen_range.preimage continuous_subtype_val
+  exact hb.isOpenEmbedding.isOpen_range.preimage continuous_subtypeVal
 
 private theorem collarPiece_apply_zero (hb : IsBicollar f b) (hC : b ⁻¹' C = univ ×ˢ Ici 0)
     (y : N) : (collarPiece hC (y, 0) : M) = f y := by
@@ -124,7 +124,7 @@ private def collarChart (hC : b ⁻¹' C = univ ×ˢ Ici 0) (hb : IsBicollar f b
 omit [ChartedSpace (EuclideanSpace ℝ (Fin (n + 1))) M] in
 private theorem collarChart_spec (hb : IsBicollar f b) (hC : b ⁻¹' C = univ ×ˢ Ici 0) (y : N)
     {x : C} (hx : (x : M) = f y) :
-    x ∈ (collarChart (n := n) hC hb y).source ∧ (collarChart (n := n) hC hb y x).1 0 = 0 := by
+    x ∈ (collarChart (n := n) hC hb y).source ∧ (collarChart (n := n) hC hb y x).val 0 = 0 := by
   have : Nonempty (N × EuclideanHalfSpace 1) := ⟨(y, 0)⟩
   have hxy : x = collarPiece hC (y, 0) := Subtype.ext (by rw [hx, collarPiece_apply_zero hb])
   have hsymm : ((isOpenEmbedding_collarPiece hb hC).toOpenPartialHomeomorph _).symm x = (y, 0) := by
@@ -144,13 +144,13 @@ omit [ChartedSpace (EuclideanSpace ℝ (Fin (n + 1))) M] [TopologicalSpace N]
   [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
 private theorem isOpenEmbedding_inclusion_sdiff (hCo : IsOpen (C \ range f)) :
     IsOpenEmbedding (inclusion (sdiff_subset : C \ range f ⊆ C)) :=
-  IsOpenEmbedding.inclusion sdiff_subset (hCo.preimage continuous_subtype_val)
+  IsOpenEmbedding.inclusion sdiff_subset (hCo.preimage continuous_subtypeVal)
 
 /-- The chart of a side of a bicollar at a point `x` off the image of `f`: a chart of `M` at `x`,
 followed by a homeomorphism of `ℝⁿ⁺¹` onto the open half-space. -/
 private def interiorChart (hCo : IsOpen (C \ range f)) (x : C) (hx : (x : M) ∉ range f) :
     OpenPartialHomeomorph C (EuclideanHalfSpace (n + 1)) :=
-  haveI : Nonempty ↥(C \ range f) := ⟨⟨x, x.2, hx⟩⟩
+  haveI : Nonempty ↥(C \ range f) := ⟨⟨x, x.property, hx⟩⟩
   ((isOpenEmbedding_inclusion_sdiff hCo).toOpenPartialHomeomorph _).symm.trans
     ((hCo.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph _).trans
       ((chartAt (EuclideanSpace ℝ (Fin (n + 1))) (x : M)).trans
@@ -159,18 +159,19 @@ private def interiorChart (hCo : IsOpen (C \ range f)) (x : C) (hx : (x : M) ∉
 omit [TopologicalSpace N] [ChartedSpace (EuclideanSpace ℝ (Fin n)) N] in
 private theorem interiorChart_spec (hCo : IsOpen (C \ range f)) (x : C)
     (hx : (x : M) ∉ range f) :
-    x ∈ (interiorChart (n := n) hCo x hx).source ∧ 0 < (interiorChart (n := n) hCo x hx x).1 0 := by
-  have : Nonempty ↥(C \ range f) := ⟨⟨x, x.2, hx⟩⟩
+    x ∈ (interiorChart (n := n) hCo x hx).source ∧ 0 < (interiorChart (n := n) hCo x hx x).val 0
+        := by
+  have : Nonempty ↥(C \ range f) := ⟨⟨x, x.property, hx⟩⟩
   have hinc := isOpenEmbedding_inclusion_sdiff hCo
-  have hsymm : (hinc.toOpenPartialHomeomorph _).symm x = ⟨x, x.2, hx⟩ := by
-    have h := hinc.toOpenPartialHomeomorph_left_inv (x := (⟨x, x.2, hx⟩ : ↥(C \ range f)))
+  have hsymm : (hinc.toOpenPartialHomeomorph _).symm x = ⟨x, x.property, hx⟩ := by
+    have h := hinc.toOpenPartialHomeomorph_left_inv (x := (⟨x, x.property, hx⟩ : ↥(C \ range f)))
     exact h
   refine ⟨?_, ?_⟩
   · simp only [interiorChart, OpenPartialHomeomorph.trans_source,
       OpenPartialHomeomorph.symm_source, IsOpenEmbedding.toOpenPartialHomeomorph_target,
       IsOpenEmbedding.toOpenPartialHomeomorph_source, IsOpenEmbedding.toOpenPartialHomeomorph_apply,
       preimage_univ, inter_univ, univ_inter, mem_inter_iff, mem_preimage, hsymm]
-    refine ⟨⟨⟨x, x.2, hx⟩, rfl⟩, mem_chart_source _ _⟩
+    refine ⟨⟨⟨x, x.property, hx⟩, rfl⟩, mem_chart_source _ _⟩
   · simp only [interiorChart, OpenPartialHomeomorph.coe_trans, Function.comp_apply, hsymm,
       IsOpenEmbedding.toOpenPartialHomeomorph_apply]
     rw [EuclideanHalfSpace.interiorEmbedding_coe_apply_zero]
@@ -186,7 +187,7 @@ private def sideChart (hb : IsBicollar f b) (hC : b ⁻¹' C = univ ×ˢ Ici 0)
 private theorem sideChart_spec (hb : IsBicollar f b) (hC : b ⁻¹' C = univ ×ˢ Ici 0)
     (hCo : IsOpen (C \ range f)) (x : C) :
     x ∈ (sideChart (n := n) hb hC hCo x).source ∧
-      ((sideChart (n := n) hb hC hCo x x).1 0 = 0 ↔ (x : M) ∈ range f) := by
+      ((sideChart (n := n) hb hC hCo x x).val 0 = 0 ↔ (x : M) ∈ range f) := by
   by_cases h : (x : M) ∈ range f
   · rw [sideChart, dite_eq_left h]
     exact (collarChart_spec hb hC _ h.choose_spec.symm).imp_right fun h0 => iff_of_true h0 h

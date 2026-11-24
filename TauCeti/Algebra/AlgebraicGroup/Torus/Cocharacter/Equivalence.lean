@@ -13,9 +13,9 @@ public import TauCeti.RepresentationTheory.GaloisLattice.Duality
 # Classification of tori by cocharacter lattices
 
 The cocharacter-lattice functor is naturally isomorphic to the integral dual of the
-character-lattice functor. Over a perfect field it is therefore an equivalence: continuous
+character-lattice functor. Over any field it is therefore an equivalence: continuous
 integral Galois lattices classify tori covariantly, or their coordinate Hopf algebras
-contravariantly. The comparison of functors itself holds over every field.
+contravariantly.
 
 ## References
 
@@ -105,9 +105,9 @@ theorem cocharacterLatticeFunctorIsoDual_hom_app_apply (T : TorusCommHopfAlgCat 
   -- Evaluate the categorical equality after cancelling all object transports.
   exact congrArg (fun g ↦ g.hom y x) h
 
-/-- Over a perfect field, the geometric cocharacter-lattice functor classifies tori.
+/-- Over any field, the geometric cocharacter-lattice functor classifies tori.
 Its variance is contravariant here because the source consists of coordinate Hopf algebras. -/
-noncomputable instance cocharacterLatticeFunctor_isEquivalence [PerfectField k] :
+noncomputable instance cocharacterLatticeFunctor_isEquivalence :
     (cocharacterLatticeFunctor (k := k)).IsEquivalence :=
   Functor.isEquivalence_of_iso (cocharacterLatticeFunctorIsoDual (k := k)).symm
 

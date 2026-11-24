@@ -54,7 +54,6 @@ theorem tateComplex_map_smul {M N : Rep k G} (c : k) (f : M ⟶ N) :
   -- In negative degrees the component is that of `chainsMap`; the remaining goal compares the
   -- scalar action on `tateComplex` morphisms with the one on `inhomogeneousChains` morphisms.
   · simp only [CochainComplex.ConnectData.map_f, hchains, HomologicalComplex.smul_f_apply]
-    rfl
 
 /-- The Tate complex is a `k`-linear functor of the representation. -/
 instance : (tateComplexFunctor k G).Linear k where

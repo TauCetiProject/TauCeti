@@ -233,17 +233,17 @@ private theorem face_head_eq_of_next {p : Fin n} {j : Fin w.length}
 one face on the sides used by clasp insertion. -/
 theorem face_edgePair_closingHalfEdge_eq_of_exists (i : Fin (n - 1))
     (hp : w.crossingsAt (strand i) ≠ []) (hq : w.crossingsAt (strandSucc i) ≠ [])
-    (hi : ∃ j : Fin w.length, w[j.1].1 = i) :
+    (hi : ∃ j : Fin w.length, w[j.val].1 = i) :
     w.closure.face (w.closure.edgePair.val (w.closingHalfEdge (strand i) hp)) =
       w.closure.face (w.closingHalfEdge (strandSucc i) hq) := by
   classical
-  let S := Finset.univ.filter fun j : Fin w.length => w[j.1].1 = i
+  let S := Finset.univ.filter fun j : Fin w.length => w[j.val].1 = i
   have hS : S.Nonempty := by
     obtain ⟨j, hj⟩ := hi
     exact ⟨j, by simp [S, hj]⟩
   let j := S.min' hS
-  have hj : w[j.1].1 = i := (Finset.mem_filter.mp (S.min'_mem hS)).2
-  have hfirst (t : Fin w.length) (ht : t < j) : w[t.1].1 ≠ i := by
+  have hj : w[j.val].1 = i := (Finset.mem_filter.mp (S.min'_mem hS)).2
+  have hfirst (t : Fin w.length) (ht : t < j) : w[t.val].1 ≠ i := by
     intro hti
     have hle := S.min'_le t (by simp [S, hti])
     exact (not_le_of_gt ht) hle
@@ -252,7 +252,7 @@ theorem face_edgePair_closingHalfEdge_eq_of_exists (i : Fin (n - 1))
   have hleft := w.face_head_eq_of_next hl
     (fun t => w.closure.face (w.closure.crossing t (w.incomingSlot t (strand i))))
     (fun t ht htj => by
-      have hpos : strand i = strandSucc w[t.1].1 :=
+      have hpos : strand i = strandSucc w[t.val].1 :=
         (w.mem_crossingsAt.mp ht).resolve_left (fun h => hfirst t htj (by
           apply Fin.ext
           simpa only [val_strand] using congrArg Fin.val h.symm))
@@ -261,7 +261,7 @@ theorem face_edgePair_closingHalfEdge_eq_of_exists (i : Fin (n - 1))
     (fun t => w.closure.face (w.closure.edgePair.val
       (w.closure.crossing t (w.incomingSlot t (strandSucc i)))))
     (fun t ht htj => by
-      have hpos : strandSucc i = strand w[t.1].1 :=
+      have hpos : strandSucc i = strand w[t.val].1 :=
         (w.mem_crossingsAt.mp ht).resolve_right
           (fun h => hfirst t htj (by
             apply Fin.ext
@@ -282,11 +282,11 @@ theorem face_edgePair_closingHalfEdge_eq_of_exists (i : Fin (n - 1))
   simpa only [← crossing_apply] using hmiddle.symm
 
 private theorem same_side_of_mem_crossingsAt (i : Fin (n - 1))
-    (hi : ∀ j : Fin w.length, w[j.1].1 ≠ i) {p : Fin n} {j k : Fin w.length}
+    (hi : ∀ j : Fin w.length, w[j.val].1 ≠ i) {p : Fin n} {j k : Fin w.length}
     (hj : j ∈ w.crossingsAt p) (hk : k ∈ w.crossingsAt p) :
-    decide ((w[j.1].1 : ℕ) < i) = decide ((w[k.1].1 : ℕ) < i) := by
-  have hji : (w[j.1].1 : ℕ) ≠ i := fun h => hi j (Fin.ext h)
-  have hki : (w[k.1].1 : ℕ) ≠ i := fun h => hi k (Fin.ext h)
+    decide ((w[j.val].1 : ℕ) < i) = decide ((w[k.val].1 : ℕ) < i) := by
+  have hji : (w[j.val].1 : ℕ) ≠ i := fun h => hi j (Fin.ext h)
+  have hki : (w[k.val].1 : ℕ) ≠ i := fun h => hi k (Fin.ext h)
   simp only [mem_crossingsAt, Fin.ext_iff, val_strand, val_strandSucc] at hj hk
   simp only [decide_eq_decide]
   omega
@@ -295,7 +295,7 @@ private theorem same_side_of_mem_crossingsAt (i : Fin (n - 1))
 lie in different connected components of the underlying crossing graph. -/
 theorem closingHalfEdge_not_mem_orbit_of_forall_ne (i : Fin (n - 1))
     (hp : w.crossingsAt (strand i) ≠ []) (hq : w.crossingsAt (strandSucc i) ≠ [])
-    (hi : ∀ j : Fin w.length, w[j.1].1 ≠ i) :
+    (hi : ∀ j : Fin w.length, w[j.val].1 ≠ i) :
     w.closingHalfEdge (strandSucc i) hq ∉
       MulAction.orbit w.closure.toPermutationTriple.monodromyGroup
         (w.closingHalfEdge (strand i) hp) := by
@@ -303,7 +303,7 @@ theorem closingHalfEdge_not_mem_orbit_of_forall_ne (i : Fin (n - 1))
   let side := fun h : Fin (4 * w.length) =>
     decide ((w[((crossingSlotEquiv w.length).symm h).1.val].1 : ℕ) < i)
   have hside (j : Fin w.length) (s : Fin 4) :
-      side (w.closure.crossing j s) = decide ((w[j.1].1 : ℕ) < i) := by
+      side (w.closure.crossing j s) = decide ((w[j.val].1 : ℕ) < i) := by
     simp [side]
   have hout {j : Fin w.length} {p : Fin n} (hj : j ∈ w.crossingsAt p) :
       side (w.closure.edgePair.val (w.closure.crossing j (w.outgoingSlot j p))) =
@@ -335,7 +335,7 @@ theorem closingHalfEdge_not_mem_orbit_of_forall_ne (i : Fin (n - 1))
   rintro ⟨g, hg⟩
   have h := w.closure.toPermutationTriple.apply_eq_of_mem_monodromyGroup (f := side)
     (fun x => by simpa only [toPermutationTriple_σ0] using hrot x)
-    (fun x => by simpa only [toPermutationTriple_σ1] using hedge x) g.2
+    (fun x => by simpa only [toPermutationTriple_σ1] using hedge x) g.property
     (w.closingHalfEdge (strand i) hp)
   -- The permutation action on half-edges is evaluation.
   have hg' : g.val (w.closingHalfEdge (strand i) hp) =
@@ -362,7 +362,7 @@ theorem closingHalfEdge_clasp_face_condition (i : Fin (n - 1))
       w.closingHalfEdge (strandSucc i) hq ∉
         MulAction.orbit w.closure.toPermutationTriple.monodromyGroup
           (w.closingHalfEdge (strand i) hp) := by
-  by_cases hi : ∃ j : Fin w.length, w[j.1].1 = i
+  by_cases hi : ∃ j : Fin w.length, w[j.val].1 = i
   · exact Or.inl (w.face_edgePair_closingHalfEdge_eq_of_exists i hp hq hi)
   · exact Or.inr (w.closingHalfEdge_not_mem_orbit_of_forall_ne i hp hq (by simpa using hi))
 

@@ -76,18 +76,18 @@ private abbrev RationalNhd (x : spa Aplus) : Type v :=
 /-- The rational germ map of a rational neighbourhood of `x`, as a ring homomorphism. -/
 private noncomputable abbrev rationalNhdGerm {x : spa Aplus} (i : RationalNhd P x) :
     (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-        i.1.pres.completionLocObj →+* (presentationLimitPresheafInCommRingCat P Aplus).stalk x :=
-  (presentationLimitRationalGerm hAplus i.1.pres i.1.isOpen_span x i.2).hom
+        i.val.pres.completionLocObj →+* (presentationLimitPresheafInCommRingCat P Aplus).stalk x :=
+  (presentationLimitRationalGerm hAplus i.val.pres i.val.isOpen_span x i.property).hom
 
 /-- The comparison map between the coordinate rings of two rational neighbourhoods of `x`, as a
 ring homomorphism. -/
 private noncomputable abbrev rationalNhdMap {x : spa Aplus} {i j : RationalNhd P x}
-    (h : spaBasicOpen Aplus j.1.pres.num j.1.pres.den ≤
-      spaBasicOpen Aplus i.1.pres.num i.1.pres.den) :
+    (h : spaBasicOpen Aplus j.val.pres.num j.val.pres.den ≤
+      spaBasicOpen Aplus i.val.pres.num i.val.pres.den) :
     (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-        i.1.pres.completionLocObj →+*
+        i.val.pres.completionLocObj →+*
       (TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).obj
-        j.1.pres.completionLocObj :=
+        j.val.pres.completionLocObj :=
   ((TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ TopCommRingCat CommRingCat).map
     (homOfRationalSubsetSubset Aplus hAplus (spaBasicOpen_le_spaBasicOpen_iff.mp h))).hom
 
@@ -96,13 +96,13 @@ omit hAplus in
 refinement. -/
 private theorem exists_rationalNhd_le_le {x : spa Aplus} (i j : RationalNhd P x) :
     ∃ k : RationalNhd P x,
-      spaBasicOpen Aplus k.1.pres.num k.1.pres.den ≤
-        spaBasicOpen Aplus i.1.pres.num i.1.pres.den ∧
-      spaBasicOpen Aplus k.1.pres.num k.1.pres.den ≤
-        spaBasicOpen Aplus j.1.pres.num j.1.pres.den := by
-  refine ⟨⟨i.1.commonRefinement j.1, ?_⟩, ?_, ?_⟩
+      spaBasicOpen Aplus k.val.pres.num k.val.pres.den ≤
+        spaBasicOpen Aplus i.val.pres.num i.val.pres.den ∧
+      spaBasicOpen Aplus k.val.pres.num k.val.pres.den ≤
+        spaBasicOpen Aplus j.val.pres.num j.val.pres.den := by
+  refine ⟨⟨i.val.commonRefinement j.val, ?_⟩, ?_, ?_⟩
   · rw [PresentationIndex.commonRefinement_pres, spaBasicOpen_commonRefinement]
-    exact ⟨i.2, j.2⟩
+    exact ⟨i.property, j.property⟩
   · rw [PresentationIndex.commonRefinement_pres, spaBasicOpen_commonRefinement]
     exact inf_le_left
   · rw [PresentationIndex.commonRefinement_pres, spaBasicOpen_commonRefinement]
@@ -110,12 +110,12 @@ private theorem exists_rationalNhd_le_le {x : spa Aplus} (i j : RationalNhd P x)
 
 /-- Rational germs are compatible with the comparison maps. -/
 private theorem rationalNhdGerm_rationalNhdMap {x : spa Aplus} {i j : RationalNhd P x}
-    (h : spaBasicOpen Aplus j.1.pres.num j.1.pres.den ≤
-      spaBasicOpen Aplus i.1.pres.num i.1.pres.den) (a) :
+    (h : spaBasicOpen Aplus j.val.pres.num j.val.pres.den ≤
+      spaBasicOpen Aplus i.val.pres.num i.val.pres.den) (a) :
     rationalNhdGerm hAplus j (rationalNhdMap hAplus h a) = rationalNhdGerm hAplus i a := by
   rw [rationalNhdGerm, rationalNhdGerm, rationalNhdMap, ← CommRingCat.comp_apply,
-    presentationLimitRationalGerm_res hAplus i.1.pres j.1.pres
-      i.1.isOpen_span j.1.isOpen_span h x j.2]
+    presentationLimitRationalGerm_res hAplus i.val.pres j.val.pres
+      i.val.isOpen_span j.val.isOpen_span h x j.property]
 
 /-- The germ maps of the rational neighbourhoods of `x` have directed images. -/
 private theorem directed_range_rationalNhdGerm (x : spa Aplus) :
@@ -137,17 +137,18 @@ variable (hP : P.ringOfDefinition ≤ Aplus)
 
 /-- The point of a rational neighbourhood is a pullback of the point of any smaller one. -/
 private theorem comap_rationalNhdMap {x : spa Aplus} {i j : RationalNhd P x}
-    (h : spaBasicOpen Aplus j.1.pres.num j.1.pres.den ≤
-      spaBasicOpen Aplus i.1.pres.num i.1.pres.den) :
-    comap (rationalNhdMap hAplus h) (rationalLocalizationPoint hP j.1.pres x j.2) =
-      rationalLocalizationPoint hP i.1.pres x i.2 :=
-  comap_homOfRationalSubsetSubset_rationalLocalizationPoint hP hAplus i.1.pres j.1.pres h x j.2
+    (h : spaBasicOpen Aplus j.val.pres.num j.val.pres.den ≤
+      spaBasicOpen Aplus i.val.pres.num i.val.pres.den) :
+    comap (rationalNhdMap hAplus h) (rationalLocalizationPoint hP j.val.pres x j.property) =
+      rationalLocalizationPoint hP i.val.pres x i.property :=
+  comap_homOfRationalSubsetSubset_rationalLocalizationPoint hP hAplus i.val.pres j.val.pres h x
+      j.property
 
 /-- An element of a rational coordinate ring with zero germ at `x` is in the support of the point
 of `x`. -/
 private theorem vle_zero_of_rationalNhdGerm_eq_zero {x : spa Aplus} {i : RationalNhd P x} {a}
     (ha : rationalNhdGerm hAplus i a = 0) :
-    (rationalLocalizationPoint hP i.1.pres x i.2).toValuativeRel.vle a 0 := by
+    (rationalLocalizationPoint hP i.val.pres x i.property).toValuativeRel.vle a 0 := by
   obtain ⟨q, hq, hxq, h, hqa⟩ := exists_map_homOfRationalSubsetSubset_eq_zero hAplus ha
   -- `rationalNhdMap` is an `abbrev`; this is `hqa` after reducible unfolding.
   have hqa' : rationalNhdMap hAplus (j := ⟨⟨q, hq, le_top⟩, hxq⟩) h a = 0 := hqa
@@ -159,10 +160,10 @@ neighbourhoods. -/
 private theorem rationalNhd_compat {x : spa Aplus} (i j : RationalNhd P x) (a b) (a' b')
     (ha : rationalNhdGerm hAplus i a = rationalNhdGerm hAplus j a')
     (hb : rationalNhdGerm hAplus i b = rationalNhdGerm hAplus j b')
-    (hab : (rationalLocalizationPoint hP i.1.pres x i.2).toValuativeRel.vle a b) :
-    (rationalLocalizationPoint hP j.1.pres x j.2).toValuativeRel.vle a' b' := by
+    (hab : (rationalLocalizationPoint hP i.val.pres x i.property).toValuativeRel.vle a b) :
+    (rationalLocalizationPoint hP j.val.pres x j.property).toValuativeRel.vle a' b' := by
   obtain ⟨k, hki, hkj⟩ := exists_rationalNhd_le_le i j
-  set w := rationalLocalizationPoint hP k.1.pres x k.2
+  set w := rationalLocalizationPoint hP k.val.pres x k.property
   -- in the common neighbourhood `k`, the two lifts of each germ differ by an element of the
   -- support, so they have the same value
   have hsupp {c c' : _} (hc : rationalNhdGerm hAplus i c = rationalNhdGerm hAplus j c') :
@@ -184,7 +185,8 @@ private theorem rationalNhd_compat {x : spa Aplus} (i j : RationalNhd P x) (a b)
 noncomputable def presentationLimitStalkValuation (x : spa Aplus) :
     Spv ((presentationLimitPresheafInCommRingCat P Aplus).stalk x) :=
   ofDirected (fun i : RationalNhd P x ↦ rationalNhdGerm hAplus i)
-    (w := fun i ↦ rationalLocalizationPoint hP i.1.pres x i.2) (rationalNhd_compat hAplus hP)
+    (w := fun i ↦ rationalLocalizationPoint hP i.val.pres x i.property)
+        (rationalNhd_compat hAplus hP)
     (directed_range_rationalNhdGerm hAplus x) (exists_mem_range_rationalNhdGerm hAplus x)
 
 /-- **The stalk valuation restricts to the rational points**: its pullback along the germ map of
@@ -208,7 +210,7 @@ theorem eq_presentationLimitStalkValuation {x : spa Aplus}
       comap (presentationLimitRationalGerm hAplus p hp x hx).hom v =
         rationalLocalizationPoint hP p x hx) :
     v = presentationLimitStalkValuation hAplus hP x :=
-  eq_ofDirected _ _ _ _ fun i ↦ hv i.1.pres i.1.isOpen_span i.2
+  eq_ofDirected _ _ _ _ fun i ↦ hv i.val.pres i.val.isOpen_span i.property
 
 /-- **The stalk valuation lies over `x`**: pulled back to `A` along the structure map `A → A⟨p⟩`
 and the germ map of a rational neighbourhood `R(p)` of `x`, the stalk valuation at `x` is `x`.
