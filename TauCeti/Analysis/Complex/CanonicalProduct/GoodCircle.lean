@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import TauCeti.Analysis.Complex.CanonicalProduct.ElementaryFactor
+import TauCeti.Analysis.Normed.Group.SummableNormInvRpow
 import TauCeti.Analysis.SpecialFunctions.Integrals.PosLog
+import TauCeti.Analysis.SpecialFunctions.Log.PosLog
 
 /-!
 # Cartan's good-circle estimate for Weierstrass primary products
@@ -18,15 +20,17 @@ that on the whole circle `‖z‖ = r` the genus-`p` primary product is bounded 
 `exp (-(C * r ^ τ)) ≤ ‖∏' i, E_p(z / a i)‖`, with the explicit constant
 `C = ((log 2 + 12 * sqrt 6 + p) * 4 ^ τ + p + 2) * ∑' i, ‖a i‖⁻¹ ^ τ`
 (`Complex.exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_div`).
-This is the minimum-modulus step of finite-order Hadamard factorization: on these circles the
-real part of the entire logarithm of `f / (z ^ m * P)` is `O(r ^ τ)`.
+This is the minimum-modulus step of finite-order Hadamard factorization: with a growth bound on
+`f` of order below `τ`, it bounds the real part of the entire logarithm of `f / (z ^ m * P)` above
+by `O(r ^ τ)` on these circles.
 
 The proof splits the zeros at `4 * R`. A far zero has `‖z / a‖ ≤ 1 / 2`, where
 `-log ‖E_p w‖ ≤ 2 * ‖w‖ ^ (p + 1) ≤ 2 * ‖w‖ ^ τ`. A near zero contributes at most
 `log⁺ (1 / |1 - r / ‖a‖|) + p * (1 + (r / ‖a‖) ^ τ)`
 (`Complex.neg_log_norm_one_sub_le_posLog_one_div_abs_one_sub_norm` and the whole-plane bound
 `Complex.neg_log_norm_weierstrassFactor_le_mul_max`). There are only finitely many near zeros,
-at most `(4 * R) ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ`, and Cartan's averaging over `(R, 2 * R]`
+at most `(4 * R) ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ` (`Summable.finite_setOf_ne_zero_norm_le` and
+`Summable.card_le_rpow_mul_tsum`), and Cartan's averaging over `(R, 2 * R]`
 (`Finset.exists_mem_Ioc_notMem_sum_mul_posLog_one_div_abs_one_sub_div_le`) chooses `r` away from
 their moduli with the sum of their logarithmic singularities at most a universal constant times
 their number. The bound holds for every finite partial product, hence for the unordered product.
@@ -55,18 +59,6 @@ public section
 open Filter Topology
 
 namespace Complex
-
-/-- Off the unit circle, `-log ‖1 - w‖` is at most the logarithmic singularity of the modulus:
-`|1 - ‖w‖| ≤ ‖1 - w‖`. The hypothesis is needed: for `w = exp (θ * I)` with small `θ ≠ 0` the
-right side is the junk value `log⁺ (1 / 0) = 0`, while `‖1 - w‖ < 1`. -/
-theorem neg_log_norm_one_sub_le_posLog_one_div_abs_one_sub_norm {w : ℂ} (hw : ‖w‖ ≠ 1) :
-    -Real.log ‖1 - w‖ ≤ Real.posLog (1 / |1 - ‖w‖|) := by
-  have h0 : 0 < |1 - ‖w‖| := abs_pos.mpr (sub_ne_zero.mpr hw.symm)
-  have hle : |1 - ‖w‖| ≤ ‖1 - w‖ := by simpa using abs_norm_sub_norm_le (1 : ℂ) w
-  calc
-    -Real.log ‖1 - w‖ ≤ -Real.log |1 - ‖w‖| := neg_le_neg (Real.log_le_log h0 hle)
-    _ = Real.log (1 / |1 - ‖w‖|) := by rw [one_div, Real.log_inv]
-    _ ≤ Real.posLog (1 / |1 - ‖w‖|) := le_max_right _ _
 
 /-- The lower bound for one rescaled factor on the circle `‖z‖ = r`, split at `4 * R`. -/
 private lemma neg_log_norm_weierstrassFactor_div_le (p : ℕ) {τ R r : ℝ} (hpτ : (p : ℝ) ≤ τ)
@@ -108,38 +100,11 @@ private lemma neg_log_norm_weierstrassFactor_div_le (p : ℕ) {τ R r : ℝ} (hp
     rw [hw] at h2
     linarith [mul_nonneg hp hx]
 
-/-- The nonzero points of modulus at most `4 * R` are finitely many. -/
-private lemma finite_setOf_ne_zero_norm_le {ι : Type*} {τ : ℝ} (hτ : 0 ≤ τ) {a : ι → ℂ}
-    (ha : Summable fun i ↦ ‖a i‖⁻¹ ^ τ) {R : ℝ} (hR : 0 < R) :
-    {i | a i ≠ 0 ∧ ‖a i‖ ≤ 4 * R}.Finite := by
-  have hε : 0 < (4 * R)⁻¹ ^ τ := Real.rpow_pos_of_pos (by positivity) τ
-  refine (eventually_cofinite.mp (ha.tendsto_cofinite_zero.eventually (gt_mem_nhds hε))).subset
-    fun i hi ↦ not_lt.mpr ?_
-  exact Real.rpow_le_rpow (by positivity) (inv_anti₀ (norm_pos_iff.mpr hi.1) hi.2) hτ
-
-/-- The number of nonzero points of modulus at most `4 * R` is at most
-`(4 * R) ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ`. -/
-private lemma card_le_mul_tsum {ι : Type*} {τ : ℝ} (hτ : 0 ≤ τ) {a : ι → ℂ}
-    (ha : Summable fun i ↦ ‖a i‖⁻¹ ^ τ) {R : ℝ} (hR : 0 < R) (s : Finset ι)
-    (hs : ∀ i ∈ s, a i ≠ 0 ∧ ‖a i‖ ≤ 4 * R) :
-    (s.card : ℝ) ≤ (4 * R) ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ := by
-  calc
-    (s.card : ℝ) = ∑ i ∈ s, 1 := by simp
-    _ ≤ ∑ i ∈ s, (4 * R) ^ τ * ‖a i‖⁻¹ ^ τ := by
-      refine Finset.sum_le_sum fun i hi ↦ ?_
-      have hpos : 0 < ‖a i‖ := norm_pos_iff.mpr (hs i hi).1
-      rw [← Real.mul_rpow (by positivity) (by positivity), ← div_eq_mul_inv]
-      exact Real.one_le_rpow ((one_le_div hpos).mpr (hs i hi).2) hτ
-    _ ≤ (4 * R) ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ := by
-      rw [← Finset.mul_sum]
-      gcongr
-      exact ha.sum_le_tsum s fun i _ ↦ by positivity
-
 /-- The good-circle bound for every finite partial product, once the radius `r` avoids the
 moduli of the near zeros and controls the sum of their logarithmic singularities. -/
 private lemma exp_neg_le_norm_prod_weierstrassFactor_div {ι : Type*} (p : ℕ) {τ R r : ℝ}
     (hpτ : (p : ℝ) ≤ τ) (hτp : τ ≤ p + 1) {a : ι → ℂ} (ha : Summable fun i ↦ ‖a i‖⁻¹ ^ τ)
-    (hr0 : 0 < r) (hr : r ≤ 2 * R) {near : Finset ι}
+    (hr : r ≤ 2 * R) {near : Finset ι}
     (hnear : ∀ i, i ∈ near ↔ a i ≠ 0 ∧ ‖a i‖ ≤ 4 * R)
     (hsum : ∑ i ∈ near, Real.posLog (1 / |1 - r / ‖a i‖|) ≤
       (Real.log 2 + 12 * Real.sqrt 6) * near.card)
@@ -148,11 +113,13 @@ private lemma exp_neg_le_norm_prod_weierstrassFactor_div {ι : Type*} (p : ℕ) 
     Real.exp (-(((Real.log 2 + 12 * Real.sqrt 6 + p) * 4 ^ τ + p + 2) *
       (∑' i, ‖a i‖⁻¹ ^ τ) * r ^ τ)) ≤ ‖∏ i ∈ s, weierstrassFactor p (z / a i)‖ := by
   classical
+  have hr0 : 0 ≤ r := hz ▸ norm_nonneg z
   have hfac (i : ι) := neg_log_norm_weierstrassFactor_div_le p hpτ hτp hr hz (hra i)
   have hpow : ∑ i ∈ s, (r / ‖a i‖) ^ τ ≤ r ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ := by
-    simp only [div_eq_mul_inv, Real.mul_rpow hr0.le (inv_nonneg.mpr (norm_nonneg _)),
+    simp only [div_eq_mul_inv, Real.mul_rpow hr0 (inv_nonneg.mpr (norm_nonneg _)),
       ← Finset.mul_sum]
-    exact mul_le_mul_of_nonneg_left (ha.sum_le_tsum s fun i _ ↦ by positivity) (by positivity)
+    exact mul_le_mul_of_nonneg_left (ha.sum_le_tsum s fun i _ ↦ by positivity)
+      (Real.rpow_nonneg hr0 τ)
   have hite : ∑ i ∈ s, (if a i ≠ 0 ∧ ‖a i‖ ≤ 4 * R then
       Real.posLog (1 / |1 - r / ‖a i‖|) + p else 0) ≤
         ∑ i ∈ near, (Real.posLog (1 / |1 - r / ‖a i‖|) + p) := by
@@ -194,7 +161,7 @@ theorem exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_di
         (∑' i, ‖a i‖⁻¹ ^ τ) * r ^ τ)) ≤ ‖∏' i, weierstrassFactor p (z / a i)‖ := by
   classical
   have hτ : 0 ≤ τ := (Nat.cast_nonneg p).trans hpτ
-  set near := (finite_setOf_ne_zero_norm_le hτ ha hR).toFinset
+  set near := (ha.finite_setOf_ne_zero_norm_le hτ (4 * R)).toFinset
   have hnear (i : ι) : i ∈ near ↔ a i ≠ 0 ∧ ‖a i‖ ≤ 4 * R := Set.Finite.mem_toFinset _
   obtain ⟨r, hr, hrbad, hsum⟩ :=
     near.exists_mem_Ioc_notMem_sum_mul_posLog_one_div_abs_one_sub_div_le (fun _ ↦ 1)
@@ -208,13 +175,13 @@ theorem exists_mem_Ioc_forall_norm_eq_exp_neg_le_norm_tprod_weierstrassFactor_di
       · simpa [h] using hr0.ne'
       · linarith [hr.2, lt_of_not_ge (not_and.mp ((hnear i).not.mp hi) h)]
   have hcard : (near.card : ℝ) ≤ 4 ^ τ * r ^ τ * ∑' i, ‖a i‖⁻¹ ^ τ := by
-    refine (card_le_mul_tsum hτ ha hR near fun i hi ↦ (hnear i).mp hi).trans ?_
+    refine (ha.card_le_rpow_mul_tsum hτ (by linarith) fun i hi ↦ (hnear i).mp hi).trans ?_
     rw [← Real.mul_rpow (by norm_num) hr0.le]
     gcongr
     linarith [hr.1]
   refine ⟨r, hr, fun z hz ↦ ?_⟩
-  have hpartial := exp_neg_le_norm_prod_weierstrassFactor_div p hpτ hτp ha hr0 hr.2 hnear hsum
-    hcard hra hz
+  have hpartial := exp_neg_le_norm_prod_weierstrassFactor_div p hpτ hτp ha hr.2 hnear hsum hcard
+    hra hz
   by_cases hm : Multipliable fun i ↦ weierstrassFactor p (z / a i)
   · exact ge_of_tendsto' hm.hasProd.norm hpartial
   · rw [tprod_eq_one_of_not_multipliable hm, norm_one, Real.exp_le_one_iff, neg_nonpos]
