@@ -236,7 +236,26 @@ theorem _root_.Filter.Tendsto.hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X
   exact hprod.congr_fun fun i ↦ by
     rw [coe_polynomialHom_one_sub_C_mul_X, _root_.PowerSeries.evalAt_one_sub_C_mul_X]
 
-/-- **Gauss-norm bound for a Weierstrass product.** When every `cᵢ` satisfies `‖cᵢ‖ * r < B`
+/-- **Closed Gauss-norm bound for a Weierstrass product.** When every `cᵢ` satisfies
+`‖cᵢ‖ * r ≤ B` (`0 ≤ r`, `0 ≤ B ≤ 1`), the infinite product `∏' i, (1 - cᵢ X)` is within `≤ B` of
+`1` in the Gauss norm at radius `r` (both when it converges and, via the `tprod` default `1`, when
+it does not). -/
+theorem gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_le {ι : Type*} {c : ι → R}
+    {r B : ℝ} (hr : 0 ≤ r) (hB0 : 0 ≤ B) (hB1 : B ≤ 1) (hle : ∀ i, ‖c i‖ * r ≤ B) :
+    (((∏' i, _root_.PowerSeries.IsEntire.polynomialHom
+      (1 - Polynomial.C (c i) * Polynomial.X) :
+        _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧) - 1).gaussNorm norm r ≤ B := by
+  by_cases hm : Multipliable fun i ↦
+      _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (c i) * Polynomial.X)
+  · refine gaussNorm_sub_one_le_of_hasProd hm.hasProd hr hB0 hB1 fun i ↦ ?_
+    rw [coe_polynomialHom_one_sub_C_mul_X,
+      TauCeti.PowerSeries.gaussNorm_one_sub_C_mul_X_sub_one (c i) hr]
+    exact hle i
+  · rw [tprod_eq_one_of_not_multipliable hm, OneMemClass.coe_one, sub_self,
+      _root_.PowerSeries.gaussNorm_zero norm r norm_zero]
+    exact hB0
+
+/-- **Strict Gauss-norm bound for a Weierstrass product.** When every `cᵢ` satisfies `‖cᵢ‖ * r < B`
 (`0 ≤ r`, `0 < B ≤ 1`), the infinite product `∏' i, (1 - cᵢ X)` is within `< B` of `1` in the
 Gauss norm at radius `r` (both when it converges and, via the `tprod` default `1`, when it does
 not). -/

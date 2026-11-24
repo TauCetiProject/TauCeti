@@ -71,7 +71,7 @@ infinitesimally above or below `c`, giving refined Tate-algebra points next to t
   over ultrametric seminormed rings.
 * `PowerSeries.HasGaussNorm.isRestricted_of_abs_lt`: boundedness gives restrictedness inside.
 * `TauCeti.PowerSeries.gaussNorm_eq_of_forall_le`: a dominating coefficient attains the norm;
-  `PowerSeries.gaussNorm_zero_right`: at radius `0`, the Gauss norm is the norm of the
+  `PowerSeries.gaussNorm_at_zero`: at radius `0`, the Gauss norm is the norm of the
   constant coefficient.
 * `TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le`: monotonicity in the radius;
   `TauCeti.PowerSeries.tendsto_gaussNorm_of_isRestricted`: right continuity for restricted series.
@@ -230,7 +230,7 @@ theorem gaussNorm_eq_of_forall_le {S : Type*} [Semiring S] {v : S → ℝ} {a : 
 
 /-- At radius `0`, only the constant term contributes to the Gauss norm when its value is
 nonnegative. -/
-theorem _root_.PowerSeries.gaussNorm_zero_right_of_nonneg {S : Type*} [Semiring S] {v : S → ℝ}
+theorem _root_.PowerSeries.gaussNorm_at_zero_of_nonneg {S : Type*} [Semiring S] {v : S → ℝ}
     (a : PowerSeries S) (hv : 0 ≤ v (_root_.PowerSeries.constantCoeff a)) :
     a.gaussNorm v 0 = v (_root_.PowerSeries.constantCoeff a) := by
   simpa using gaussNorm_eq_of_forall_le (s := 0) fun m ↦ by
@@ -238,9 +238,9 @@ theorem _root_.PowerSeries.gaussNorm_zero_right_of_nonneg {S : Type*} [Semiring 
 
 /-- At radius `0`, the Gauss norm of a power series is the norm of its constant coefficient. -/
 @[simp]
-theorem _root_.PowerSeries.gaussNorm_zero_right (a : PowerSeries R) :
+theorem _root_.PowerSeries.gaussNorm_at_zero (a : PowerSeries R) :
     a.gaussNorm norm 0 = ‖_root_.PowerSeries.constantCoeff a‖ :=
-  _root_.PowerSeries.gaussNorm_zero_right_of_nonneg a (norm_nonneg _)
+  _root_.PowerSeries.gaussNorm_at_zero_of_nonneg a (norm_nonneg _)
 
 /-- Bounded nonnegative weighted coefficients at `s` remain bounded at every radius `0 ≤ r ≤ s`. -/
 theorem _root_.PowerSeries.HasGaussNorm.of_le {S : Type*} [Semiring S] {v : S → ℝ}
