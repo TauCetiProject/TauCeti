@@ -253,6 +253,13 @@ theorem norm_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
   simp only [norm_def, inner_def, h, hz, RCLike.re_to_complex, Complex.re_ofReal_mul,
     Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
 
+variable (E) in
+/-- The zero element of a hermitian vector bundle has norm zero at every embedding. -/
+@[simp]
+protected theorem norm_zero (σ : K →+* ℂ) : E.norm σ 0 = 0 := by
+  let := E.metric.core σ
+  simp [norm_def, inner_def, InnerProductSpace.Core.inner_zero_left]
+
 section Trivial
 
 variable (σ : K →+* ℂ)
