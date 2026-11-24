@@ -34,7 +34,8 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 
 For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
 `√(ab) ≤ (a + b) / 2`, as `NNReal.sqrt_mul_le_half_add` states in `ℝ≥0`, and the square of
-`√a - √b` expands to `a + b - 2√(ab)`.
+`√a - √b` expands to `a + b - 2√(ab)`. An eventually nonnegative function tends to `0` along a
+filter exactly when its square root does.
 
 The square root is subadditive and `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, and two displacement
 estimates compare the square-root and inverse-square-root functions with the identity near `1`.
@@ -105,6 +106,8 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
 * `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 * `Real.sqrt_bounds_of_abs_sub_le`: `√y / r ≤ √x ≤ r √y` when `|x - y| ≤ (1 - r⁻²) y`
   and `1 ≤ r`.
+* `Real.tendsto_sqrt_nhds_zero_iff`: an eventually nonnegative function tends to `0` exactly when
+  its square root does.
 * `TauCeti.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
   divergence of the normalization of an `(n + 1) × (n + 1)` random matrix.
 
@@ -739,6 +742,15 @@ theorem exists_forall_sqrt_le_quadratic_add_cubic (d L₀ Q₀ C₀ : ℝ) (hd :
         nlinarith [mul_le_mul_of_nonneg_left hr2 hQ, mul_le_mul_of_nonneg_left hr3 hB]
   exact (Real.sqrt_le_sqrt hyz).trans
     (sqrt_expansion_bound hd hdc hr hr1 ha' hq' hδ he)
+
+open Filter Topology in
+/-- An eventually nonnegative real function tends to `0` exactly when its square root does. -/
+theorem tendsto_sqrt_nhds_zero_iff {α : Type*} {l : Filter α} {f : α → ℝ}
+    (hf : ∀ᶠ x in l, 0 ≤ f x) :
+    Tendsto (fun x ↦ √(f x)) l (𝓝 0) ↔ Tendsto f l (𝓝 0) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simpa using h.sqrt⟩
+  refine (by simpa using h.pow 2 : Tendsto (fun x ↦ √(f x) ^ 2) l (𝓝 0)).congr' ?_
+  filter_upwards [hf] with x hx using sq_sqrt hx
 
 end Real
 
