@@ -14,7 +14,7 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.TaylorSeries
 import TauCeti.Analysis.Calculus.FDeriv.Analytic
-import TauCeti.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.Complex.Taylor.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Data.Nat.Choose.Sum
 

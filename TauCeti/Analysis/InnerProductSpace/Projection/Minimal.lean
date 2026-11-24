@@ -56,6 +56,8 @@ finite tail convex combinations `w n ∈ convexHull ℝ (f '' Set.Ici n)` that c
 * `TauCeti.exists_tendsto_sum_smul_of_isBounded_range`: explicit-coefficient form giving finite sets
   `s n : Finset ℕ` and nonnegative weights `w n` summing to `1` such that
   `∑ i ∈ s n, w n i • f (n + i)` converges in norm.
+* `TauCeti.exists_mem_forall_norm_le_of_isComplete_convex`: over any `RCLike` field, a nonempty
+  complete convex set has an element of least norm.
 -/
 
 public section
@@ -248,5 +250,37 @@ theorem exists_tendsto_sum_smul_of_isBounded_range {f : ℕ → E}
 end Complete
 
 end InnerProduct
+
+section RCLike
+
+open scoped InnerProductSpace
+
+/-- **Minimal-norm element of a complete convex set.** In an inner product space over an `RCLike`
+field `𝕜`, a nonempty complete set which is convex for a real scalar action compatible with that
+of `𝕜` has an element of least norm. The field `𝕜` is explicit, since only the instances on `E`
+mention it. -/
+theorem exists_mem_forall_norm_le_of_isComplete_convex (𝕜 : Type*) {E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+    {C : Set E} (hne : C.Nonempty)
+    (hc : IsComplete C) (hconv : Convex ℝ C) : ∃ η ∈ C, ∀ w ∈ C, ‖η‖ ≤ ‖w‖ := by
+  -- The real inner product `re ⟪x, y⟫` is built on the given `NormedSpace ℝ E`, rather than taken
+  -- from `InnerProductSpace.rclikeToReal`, whose real scalar action is the restriction of the
+  -- `𝕜`-action and is not syntactically the given one in which `C` is convex.
+  let : InnerProductSpace ℝ E :=
+    { ‹NormedSpace ℝ E› with
+      inner x y := RCLike.re ⟪x, y⟫_𝕜
+      norm_sq_eq_re_inner := norm_sq_eq_re_inner
+      conj_inner_symm x y := inner_re_symm (𝕜 := 𝕜) y x
+      add_left x y z := by rw [inner_add_left, map_add]
+      smul_left x y r := by
+        rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), inner_smul_left, RCLike.conj_ofReal,
+          RCLike.re_ofReal_mul, conj_trivial] }
+  obtain ⟨η, hηC, hη⟩ := exists_norm_eq_iInf_of_complete_convex hne hc hconv 0
+  refine ⟨η, hηC, fun w hw ↦ ?_⟩
+  have := ciInf_le (f := fun w : C ↦ ‖(0 : E) - w‖)
+    ⟨0, forall_mem_range.2 fun _ ↦ norm_nonneg _⟩ ⟨w, hw⟩
+  rwa [← hη, zero_sub, norm_neg, zero_sub, norm_neg] at this
+
+end RCLike
 
 end TauCeti

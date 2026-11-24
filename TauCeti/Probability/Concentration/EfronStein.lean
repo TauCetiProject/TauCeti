@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Moments.Variance
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 
 /-!
 # The Efron–Stein inequality
@@ -17,9 +18,9 @@ independent coordinates, stated on `Measure.pi` over an arbitrary finite index t
 with all other coordinates frozen.
 
 The two-factor law of total variance `evariance_prod_eq` and Jensen bound
-`evariance_integral_prod_le` yield the two-factor Efron–Stein inequality `evariance_prod_le`. The
-finite-coordinate proof is by induction on the number of coordinates, followed by transport along
-an equivalence `Fin n ≃ ι`.
+`MeasureTheory.Integrable.evariance_integral_prod_le` yield the two-factor Efron–Stein inequality
+`evariance_prod_le`. The finite-coordinate proof is by induction on the number of coordinates,
+followed by transport along an equivalence `Fin n ≃ ι`.
 
 ## Main results
 
@@ -132,7 +133,7 @@ private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
     -- Step 3: the first-coordinate term is the `i = 0` summand.
     have h2 := lintegral_evariance_piFinSuccAbove_symm_zero μ hf
     calc evariance f (Measure.pi μ) = evariance F _ := hEv
-      _ ≤ _ := evariance_prod_le hFL
+      _ ≤ _ := evariance_prod_le hFL.aestronglyMeasurable
       _ ≤ (∑ j : Fin n, ∫⁻ x, G (Fin.succAbove 0 j) x ∂Measure.pi μ) +
           ∫⁻ x, G 0 x ∂Measure.pi μ := add_le_add h1 h2.le
       _ = ∑ i, ∫⁻ x, G i x ∂Measure.pi μ := by rw [Fin.sum_univ_succAbove _ 0, add_comm]

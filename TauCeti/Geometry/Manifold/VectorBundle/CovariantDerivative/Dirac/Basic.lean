@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
@@ -20,8 +20,11 @@ Let `V` be a vector bundle over a Riemannian manifold `M`, with a connection `�
 `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ`,
 
 for any orthonormal basis `eᵢ` of the tangent space (`CovariantDerivative.diracOperator_eq_sum`).
-The contraction is against the canonical covariant tensor
-`InnerProductSpace.canonicalCovariantTensor`, so the definition involves no choice of frame.
+The contraction is the metric trace `LinearMap.BilinMap.metricTrace`, against the canonical
+covariant tensor `InnerProductSpace.canonicalCovariantTensor`, so the definition involves no
+choice of frame. As a function of `∇σ` at `x` it is the linear contraction
+`LinearMap.metricTraceCompl₂` of `c x` (`CovariantDerivative.diracOperator_def`), so its algebraic
+laws are those of that linear map.
 
 When `V` is a Hermitian Clifford module, so that `c(v)² = -‖v‖²` and each `c(v)` is
 skew-adjoint, and `∇` is compatible with `c` and the Levi-Civita connection, this is the Dirac
@@ -56,8 +59,9 @@ equations. None of these hypotheses is used by the first-order calculus of this 
   (`diracOperator_linearMap_apply_eq_neg`); for a parallel grading `γ` anticommuting with `c`,
   such as the chirality of an even-dimensional Clifford module, this gives `D γ = -γ D`.
 * **Change of connection.** Adding to `∇` a one-form `A` with values in the endomorphisms of `V`
-  adds the term of order zero `∑ᵢ c(eᵢ) A(eᵢ)` to `D` (`diracOperator_addOneForm`). When
-  `A(w) = θ(w) L` for a real one-form `θ` and an endomorphism `L`, this term is `c(θ♯) L`
+  adds the term of order zero `∑ᵢ c(eᵢ) A(eᵢ)`, the metric trace of `(u, w) ↦ c(u) A(w)`, to `D`
+  (`diracOperator_addOneForm`). When `A(w) σ = θ(w) v` at `x` for a real one-form `θ` and a
+  vector `v` of the fibre, this term is `c(θ♯) v`
   (`diracOperator_addOneForm_of_forall_apply_eq`). For the spin connection of `A + a`, with `a`
   an imaginary one-form on the determinant line, `∇_{A + a} = ∇_A + a / 2`, so this is the law
   `D_{A + a} = D_A + c(a) / 2`. More generally, if `A_x(σ_x) = ⟪u, ·⟫ v`, the change is `c(u) v`
@@ -100,17 +104,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 /-- The **Dirac operator** `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ` of a connection `∇` and a Clifford
-multiplication `c` at `x`: the metric contraction of the bilinear map `(u, w) ↦ c(u) (∇_w σ)`
+multiplication `c` at `x`: the metric contraction `LinearMap.metricTraceCompl₂` of `c x` against
+`∇σ x` (`diracOperator_def`), that is the metric trace of the bilinear map `(u, w) ↦ c(u) (∇_w σ)`
 on the tangent space. In an orthonormal basis it is the sum `∑ᵢ c(eᵢ) ∇_{eᵢ} σ`
 (`diracOperator_eq_sum`). -/
 def diracOperator (σ : Π y : M, V y) (x : M) : V x :=
-  TensorProduct.lift.equiv (.id ℝ) (TangentSpace I x) (TangentSpace I x) (V x)
-    (LinearMap.mk₂ ℝ (fun u w ↦ c x u (cov σ x w))
-      (fun u u' w ↦ by simp only [map_add, add_apply])
-      (fun a u w ↦ by simp only [map_smul, smul_apply])
-      (fun u w w' ↦ by simp only [map_add])
-      (fun a u w ↦ by simp only [map_smul]))
-    (InnerProductSpace.canonicalCovariantTensor (TangentSpace I x))
+  (ContinuousLinearMap.toLinearMap₁₂ (c x)).metricTraceCompl₂ (cov σ x).toLinearMap
+
+/-- The Dirac operator at `x` is the metric contraction of `c x` against `∇σ x`, a linear map in
+`∇σ x`. -/
+theorem diracOperator_def (σ : Π y : M, V y) (x : M) :
+    cov.diracOperator c σ x =
+      (ContinuousLinearMap.toLinearMap₁₂ (c x)).metricTraceCompl₂ (cov σ x).toLinearMap := by
+  rw [diracOperator]
 
 /-- **The Dirac operator in an orthonormal frame.** For every orthonormal basis `eᵢ` of the
 tangent space at `x`, `D σ = ∑ᵢ c(eᵢ) ∇_{eᵢ} σ`. In particular the sum does not depend on the
@@ -118,14 +124,16 @@ basis. -/
 theorem diracOperator_eq_sum (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
     cov.diracOperator c σ x = ∑ i, c x (b i) (cov σ x (b i)) := by
-  rw [diracOperator, InnerProductSpace.canonicalCovariantTensor_eq_sum _ b, map_sum]
-  simp only [TensorProduct.lift.equiv_apply, LinearMap.mk₂_apply]
+  rw [diracOperator_def, LinearMap.metricTraceCompl₂_apply,
+    LinearMap.BilinMap.metricTrace_eq_sum _ b]
+  simp only [LinearMap.compl₂_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+    ContinuousLinearMap.coe_coe]
 
 /-- The Dirac operator of a section whose covariant derivative vanishes at `x` vanishes at `x`.
 In particular `D 0 = 0`. -/
 theorem diracOperator_eq_zero_of_eq_zero (x : M) (hσ : cov σ x = 0) :
     cov.diracOperator c σ x = 0 := by
-  simp [diracOperator_eq_sum cov c σ x (stdOrthonormalBasis ℝ (TangentSpace I x)), hσ]
+  rw [diracOperator_def, hσ, ContinuousLinearMap.toLinearMap_zero, map_zero]
 
 /-- The Dirac operator of the zero section is zero. -/
 @[simp]
@@ -136,7 +144,7 @@ theorem diracOperator_zero [VectorBundle ℝ F V] (x : M) :
 /-- The Dirac operator at `x` depends on `σ` only through its covariant derivative `∇σ` at `x`. -/
 theorem diracOperator_congr {x : M} (h : cov σ x = cov τ x) :
     cov.diracOperator c σ x = cov.diracOperator c τ x := by
-  simp only [diracOperator_eq_sum cov c _ x (stdOrthonormalBasis ℝ (TangentSpace I x)), h]
+  rw [diracOperator_def, diracOperator_def, h]
 
 /-- **Locality.** For sections differentiable at `x`, the Dirac operator at `x` depends only on
 their germ at `x`. -/
@@ -149,17 +157,16 @@ theorem diracOperator_congr_of_eventuallyEq {x : M} (hσ : MDiffAt (T% σ) x)
 /-- The Dirac operator is additive on sections differentiable at the point. -/
 theorem diracOperator_add {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
     cov.diracOperator c (σ + τ) x = cov.diracOperator c σ x + cov.diracOperator c τ x := by
-  simp only [diracOperator_eq_sum cov c _ x (stdOrthonormalBasis ℝ (TangentSpace I x)),
-    cov.isCovariantDerivativeOnUniv.add hσ hτ, add_apply, map_add,
-    Finset.sum_add_distrib]
+  rw [diracOperator_def, diracOperator_def,
+    diracOperator_def, cov.isCovariantDerivativeOnUniv.add hσ hτ,
+    ContinuousLinearMap.toLinearMap_add, map_add]
 
 /-- The Dirac operator commutes with multiplication of a differentiable section by a
 constant. -/
 theorem diracOperator_const_smul {x : M} (a : ℝ) (hσ : MDiffAt (T% σ) x) :
     cov.diracOperator c (a • σ) x = a • cov.diracOperator c σ x := by
-  simp only [diracOperator_eq_sum cov c _ x (stdOrthonormalBasis ℝ (TangentSpace I x)),
-    cov.isCovariantDerivativeOnUniv.smul_const a hσ, smul_apply, map_smul,
-    Finset.smul_sum]
+  rw [diracOperator_def, diracOperator_def,
+    cov.isCovariantDerivativeOnUniv.smul_const a hσ, ContinuousLinearMap.toLinearMap_smul, map_smul]
 
 /-- The Dirac operator commutes with negation of a differentiable section. -/
 theorem diracOperator_neg {x : M} (hσ : MDiffAt (T% σ) x) :
@@ -182,10 +189,13 @@ For a gauge transformation `u` commuting with `c` and the transformed connection
 theorem diracOperator_eq_apply_of_eq_comp (cov' : _root_.CovariantDerivative I F V) {x : M}
     (g : V x →L[ℝ] V x) (hg : ∀ v, g ∘L c x v = c x v ∘L g) (h : cov' τ x = g ∘L cov σ x) :
     cov'.diracOperator c τ x = g (cov.diracOperator c σ x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [diracOperator_eq_sum cov' c τ x b, diracOperator_eq_sum cov c σ x b, h, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  exact (DFunLike.congr_fun (hg (b i)) (cov σ x (b i))).symm
+  rw [diracOperator_def, diracOperator_def, h,
+    ContinuousLinearMap.toLinearMap_comp]
+  exact LinearMap.metricTraceCompl₂_comp (ContinuousLinearMap.toLinearMap₁₂ (c x))
+    (ContinuousLinearMap.toLinearMap₁₂ (c x)) (g : V x →ₗ[ℝ] V x) g (fun u s ↦ by
+      simpa only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply,
+        ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply]
+        using (DFunLike.congr_fun (hg u) s).symm) _
 
 /-! ### The Leibniz rule and the principal symbol -/
 
@@ -199,12 +209,15 @@ multiplication by `f` is Clifford multiplication by the gradient of `f`. -/
 theorem diracOperator_smul {x : M} (hf : MDiffAt f x) (hσ : MDiffAt (T% σ) x) :
     cov.diracOperator c (f • σ) x =
       f x • cov.diracOperator c σ x + c x (TauCeti.Manifold.mgradient I f x) (σ x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [TauCeti.Manifold.mgradient_def, Riemannian.Tensor.rieszDual_eq_sum _ b,
-    diracOperator_eq_sum cov c _ x b, diracOperator_eq_sum cov c _ x b,
-    cov.isCovariantDerivativeOnUniv.leibniz hσ hf]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_add, map_smul,
-    map_sum, FunLike.coe_sum, Finset.sum_apply, Finset.sum_add_distrib, Finset.smul_sum]
+  -- The Leibniz correction contracts `c x` against the rank-one map `w ↦ ⟪grad f, w⟫ • σ x`.
+  rw [diracOperator_def, diracOperator_def,
+    cov.isCovariantDerivativeOnUniv.leibniz hσ hf, ContinuousLinearMap.toLinearMap_add,
+    ContinuousLinearMap.toLinearMap_smul, ContinuousLinearMap.coe_smulRight,
+    TauCeti.Manifold.toLinearMap_mvfderiv_eq_innerₗ_mgradient, map_add, map_smul,
+    LinearMap.metricTraceCompl₂_apply _
+      ((innerₗ _ (TauCeti.Manifold.mgradient I f x)).smulRight (σ x)),
+    LinearMap.BilinMap.metricTrace_compl₂_innerₗ_smulRight,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
 
 /-- **The principal symbol of the Dirac operator.** The commutator of `D` with multiplication by a
 function `f` is Clifford multiplication by its gradient: `D (f σ) - f D σ = c(grad f) σ`. -/
@@ -241,30 +254,17 @@ end Leibniz
 /-! ### Change of connection -/
 
 /-- **Change of connection.** Adding to `∇` a one-form `A` with values in the endomorphisms of
-`V` adds `∑ᵢ c(eᵢ) A(eᵢ) σ` to the Dirac operator, for every orthonormal basis `eᵢ` of the
-tangent space at `x`. -/
+`V` adds to the Dirac operator the metric trace of the pairing `(u, w) ↦ c(u) (A(w) σ)`, that is
+`∑ᵢ c(eᵢ) A(eᵢ) σ` in any orthonormal basis `eᵢ` of the tangent space at `x`
+(`LinearMap.BilinMap.metricTrace_eq_sum`). -/
 theorem diracOperator_addOneForm (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y)
-    (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
+    (σ : Π y : M, V y) (x : M) :
     (cov.addOneForm A).diracOperator c σ x =
-      cov.diracOperator c σ x + ∑ i, c x (b i) (A x (σ x) (b i)) := by
-  rw [diracOperator_eq_sum _ c σ x b, diracOperator_eq_sum cov c σ x b, addOneForm_apply]
-  simp only [add_apply, map_add, Finset.sum_add_distrib]
-
-/-- **Change of connection by a scalar one-form.** If the endomorphism-valued one-form `A` is
-`A(w) = θ(w) L` at `x`, for a real covector `θ` and an endomorphism `L` of the fibre, then adding
-`A` to `∇` adds `c(θ♯) L σ` to the Dirac operator at `x`, where `θ♯` is the metric dual of `θ`.
-For the spin connection of a unitary connection on the determinant line, changing the connection
-by an imaginary one-form `a = i θ` changes the spin connection by `a / 2`, that is `L = i / 2`,
-and this is the law `D_{A + a} = D_A + c(a) / 2`. -/
-theorem diracOperator_addOneForm_of_forall_apply_eq [IsManifold I 1 M]
-    (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) (σ : Π y : M, V y) {x : M}
-    (θ : TangentSpace I x →L[ℝ] ℝ) (L : V x →L[ℝ] V x) (hA : ∀ s w, A x s w = θ w • L s) :
-    (cov.addOneForm A).diracOperator c σ x =
-      cov.diracOperator c σ x + c x (Riemannian.Tensor.rieszDual x θ) (L (σ x)) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [cov.diracOperator_addOneForm c A σ x b, Riemannian.Tensor.rieszDual_eq_sum θ b]
-  simp only [hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply, smul_apply]
+      cov.diracOperator c σ x + LinearMap.BilinMap.metricTrace
+        ((ContinuousLinearMap.toLinearMap₁₂ (c x)).compl₂ (A x (σ x)).toLinearMap) := by
+  rw [diracOperator_def, diracOperator_def,
+    addOneForm_apply, ContinuousLinearMap.toLinearMap_add, map_add,
+    LinearMap.metricTraceCompl₂_apply _ (A x (σ x)).toLinearMap]
 
 /-- **Change of connection by an inner-product one-form.** If the one-form `A` acts on `σ` at `x`
 by `A_x(σ_x)(w) = ⟪u, w⟫ v`, then adding it to `∇` adds `c(u) v` to the Dirac operator at `x`.
@@ -275,12 +275,27 @@ theorem diracOperator_addOneForm_of_apply_eq_inner_smul
     (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) {x : M} {u : TangentSpace I x}
     {v : V x} (hA : ∀ w, A x (σ x) w = ⟪u, w⟫ • v) :
     (cov.addOneForm A).diracOperator c σ x = cov.diracOperator c σ x + c x u v := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [cov.diracOperator_addOneForm c A σ x b]
-  congr 1
-  conv_rhs => rw [← b.sum_repr' u]
-  simp only [hA, map_smul, map_sum, FunLike.coe_sum, Finset.sum_apply, smul_apply,
-    real_inner_comm u]
+  -- The correction contracts `c x` against the rank-one map `w ↦ ⟪u, w⟫ • v`.
+  have hA' : (A x (σ x)).toLinearMap = (innerₗ (TangentSpace I x) u).smulRight v :=
+    LinearMap.ext fun w ↦ by
+      rw [ContinuousLinearMap.coe_coe, hA, LinearMap.smulRight_apply, innerₗ_apply_apply]
+  rw [cov.diracOperator_addOneForm c A σ x, hA',
+    LinearMap.BilinMap.metricTrace_compl₂_innerₗ_smulRight,
+    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+
+/-- **Change of connection by a scalar one-form.** If the endomorphism-valued one-form `A` acts on
+`σ` at `x` as `A(w)(σ_x) = θ(w) v`, for a real covector `θ` and a vector `v` of the fibre, then
+adding `A` to `∇` adds `c(θ♯) v` to the Dirac operator at `x`, where `θ♯` is the metric dual of
+`θ`. For the spin connection of a unitary connection on the determinant line, changing the
+connection by an imaginary one-form `a = i θ` changes the spin connection by `a / 2`, that is
+`v = (i / 2) σ_x`, and this is the law `D_{A + a} = D_A + c(a) / 2`. -/
+theorem diracOperator_addOneForm_of_forall_apply_eq [IsManifold I 1 M]
+    (A : Π y : M, V y →L[ℝ] TangentSpace I y →L[ℝ] V y) (σ : Π y : M, V y) {x : M}
+    (θ : TangentSpace I x →L[ℝ] ℝ) (v : V x) (hA : ∀ w, A x (σ x) w = θ w • v) :
+    (cov.addOneForm A).diracOperator c σ x =
+      cov.diracOperator c σ x + c x (Riemannian.Tensor.rieszDual x θ) v :=
+  cov.diracOperator_addOneForm_of_apply_eq_inner_smul c A fun w ↦ by
+    rw [hA, Riemannian.Tensor.inner_rieszDual]
 
 /-! ### Gradings -/
 
@@ -294,9 +309,17 @@ theorem apply_diracOperator_eq_neg_smul {x : M} (γ : Module.End ℝ (V x)) (a :
     (hc : ∀ (v : TangentSpace I x) (s : V x), γ (c x v s) = -c x v (γ s))
     (hσ : ∀ w, γ (cov σ x w) = a • cov σ x w) :
     γ (cov.diracOperator c σ x) = -(a • cov.diracOperator c σ x) := by
-  rw [diracOperator_eq_sum cov c σ x (stdOrthonormalBasis ℝ (TangentSpace I x)), map_sum,
-    Finset.smul_sum, ← Finset.sum_neg_distrib]
-  simp only [hc, hσ, map_smul]
+  -- `γ` intertwines the Clifford pairing with its negative, and `γ ∘ ∇σ = a • ∇σ` at `x`.
+  have hA : γ ∘ₗ (cov σ x).toLinearMap = a • (cov σ x).toLinearMap :=
+    LinearMap.ext fun w ↦ by
+      rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, hσ, LinearMap.smul_apply,
+        ContinuousLinearMap.coe_coe]
+  have h := LinearMap.metricTraceCompl₂_comp (ContinuousLinearMap.toLinearMap₁₂ (c x))
+    (ContinuousLinearMap.toLinearMap₁₂ (c x)) γ (-γ) (fun u s ↦ by
+      simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, LinearMap.neg_apply, hc,
+        neg_neg]) (cov σ x).toLinearMap
+  rw [hA, map_smul, LinearMap.neg_apply] at h
+  rw [diracOperator_def, h, neg_neg]
 
 /-! ### Naturality between bundles -/
 
@@ -312,6 +335,15 @@ variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
   (cW : Π x : M, TangentSpace I x →L[ℝ] W x →L[ℝ] W x)
   (L : Π x : M, V x →ₗ[ℝ] W x)
 
+omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] in
+/-- If `L` intertwines the connections along `σ` at `x`, `∇^W (L σ) = L ∇^V σ`, then the
+covariant derivative of `L σ` at `x` is `L ∘ ∇σ` as a linear map. -/
+private theorem toLinearMap_covariantDerivative_eq_comp {x : M}
+    (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
+    (covW (fun y ↦ L y (σ y)) x).toLinearMap = L x ∘ₗ (cov σ x).toLinearMap :=
+  LinearMap.ext fun w ↦ by
+    rw [ContinuousLinearMap.coe_coe, hL, LinearMap.comp_apply, ContinuousLinearMap.coe_coe]
+
 /-- **Naturality of the Dirac operator.** Let `L` be a fibrewise linear map from `V` to `W` which
 intertwines the Clifford multiplications at `x`, `L c_V(v) = c_W(v) L`, and the connections along
 `σ` at `x`, `∇^W (L σ) = L ∇^V σ`. Then `D_W (L σ) = L (D_V σ)` at `x`. For `L` a gauge
@@ -321,9 +353,11 @@ theorem diracOperator_linearMap_apply {x : M}
     (hc : ∀ (v : TangentSpace I x) (s : V x), L x (c x v s) = cW x v (L x s))
     (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
     covW.diracOperator cW (fun y ↦ L y (σ y)) x = L x (cov.diracOperator c σ x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [diracOperator_eq_sum covW cW _ x b, diracOperator_eq_sum cov c _ x b, map_sum]
-  simp only [hL, hc]
+  rw [diracOperator_def, diracOperator_def,
+    toLinearMap_covariantDerivative_eq_comp cov covW L hL]
+  exact LinearMap.metricTraceCompl₂_comp (ContinuousLinearMap.toLinearMap₁₂ (c x))
+    (ContinuousLinearMap.toLinearMap₁₂ (cW x)) (L x) (L x) (fun u s ↦ by
+    simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, hc]) _
 
 /-- **Anti-naturality of the Dirac operator.** If the fibrewise linear map `L` anticommutes with
 the Clifford multiplications at `x`, `L c_V(v) = -c_W(v) L`, and intertwines the connections along
@@ -334,10 +368,12 @@ theorem diracOperator_linearMap_apply_eq_neg {x : M}
     (hc : ∀ (v : TangentSpace I x) (s : V x), L x (c x v s) = -cW x v (L x s))
     (hL : ∀ w, covW (fun y ↦ L y (σ y)) x w = L x (cov σ x w)) :
     covW.diracOperator cW (fun y ↦ L y (σ y)) x = -L x (cov.diracOperator c σ x) := by
-  set b := stdOrthonormalBasis ℝ (TangentSpace I x)
-  rw [diracOperator_eq_sum covW cW _ x b, diracOperator_eq_sum cov c _ x b, map_sum,
-    ← Finset.sum_neg_distrib]
-  simp only [hL, hc, neg_neg]
+  rw [diracOperator_def, diracOperator_def,
+    toLinearMap_covariantDerivative_eq_comp cov covW L hL, ← LinearMap.neg_apply]
+  exact LinearMap.metricTraceCompl₂_comp (ContinuousLinearMap.toLinearMap₁₂ (c x))
+    (ContinuousLinearMap.toLinearMap₁₂ (cW x)) (L x) (-L x) (fun u s ↦ by
+    simp only [ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, LinearMap.neg_apply, hc,
+      neg_neg]) _
 
 end Naturality
 

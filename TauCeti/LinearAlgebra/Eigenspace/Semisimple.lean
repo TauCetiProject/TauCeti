@@ -31,6 +31,8 @@ of the `μ`-eigenspace.
 * `Module.End.IsFinitelySemisimple.rootMultiplicity_charpoly`: for a semisimple endomorphism, the
   multiplicity of a root `μ` of the characteristic polynomial is the dimension of the
   `μ`-eigenspace.
+* `Module.End.IsSemisimple.aeval_apply_eq_zero_of_mem_maxGenEigenspace`: for a semisimple
+  endomorphism `f` and a polynomial `p`, a vector killed by a power of `p(f)` is killed by `p(f)`.
 -/
 
 public section
@@ -79,5 +81,14 @@ theorem IsFinitelySemisimple.rootMultiplicity_charpoly {f : End K V}
     (hf : f.IsFinitelySemisimple) (μ : K) :
     f.charpoly.rootMultiplicity μ = finrank K (f.eigenspace μ) := by
   rw [← LinearMap.finrank_maxGenEigenspace_eq, hf.maxGenEigenspace_eq_eigenspace]
+
+open Polynomial in
+/-- For a semisimple endomorphism `f` and a polynomial `p`, the endomorphism `p(f)` is semisimple,
+so every vector killed by a power of `p(f)` is killed by `p(f)`. -/
+theorem IsSemisimple.aeval_apply_eq_zero_of_mem_maxGenEigenspace {f : End K V}
+    (hf : f.IsSemisimple) {p : K[X]} {v : V} (hv : v ∈ (aeval f p).maxGenEigenspace 0) :
+    aeval f p v = 0 := by
+  rw [(hf.aeval p).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace, mem_eigenspace_iff] at hv
+  simpa using hv
 
 end Module.End
