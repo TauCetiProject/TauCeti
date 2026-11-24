@@ -292,7 +292,7 @@ theorem sum_proj_preimage_singleton (P : ProjValMeasure X H) (s : SimpleFunc X �
   have h : ∑ c ∈ s.range, BoundedBorelFunction.indicator (s ⁻¹' {c}) (s.measurableSet_fiber c) 1
       = 1 := by
     ext x
-    rw [BoundedBorelFunction.sum_apply, Finset.sum_eq_single_of_mem (s x) (s.mem_range_self x)]
+    rw [sum_apply, Finset.sum_eq_single_of_mem (s x) (s.mem_range_self x)]
     · simp
     · intro c _ hc
       simp [Ne.symm hc]

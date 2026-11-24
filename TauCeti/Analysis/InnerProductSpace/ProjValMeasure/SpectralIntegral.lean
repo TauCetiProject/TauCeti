@@ -550,7 +550,7 @@ theorem spectralIntegral_coe_boundedBorelFunction (P : ProjValMeasure X H)
 theorem spectralIntegral_zero (P : ProjValMeasure X H) :
     P.spectralIntegral 0 measurable_const = 0 := by
   have h := P.spectralIntegral_coe_boundedBorelFunction 0
-  simp only [BoundedBorelFunction.coe_zero, map_zero] at h
+  simp only [FunLike.coe_zero, map_zero] at h
   refine h.trans (LinearPMap.ext (by simp) ?_)
   simp
 

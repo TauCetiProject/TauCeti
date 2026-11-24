@@ -122,7 +122,7 @@ private theorem representationBorelOperatorAux_add (f g : BoundedBorelFunction K
   ContinuousLinearMap.ext fun ξ => ext_inner_left ℂ fun ψ => by
     rw [_root_.add_apply, inner_add_right, inner_representationBorelOperatorAux,
       inner_representationBorelOperatorAux, inner_representationBorelOperatorAux]
-    simp only [BoundedBorelFunction.coe_add, Pi.add_apply]
+    simp only [FunLike.coe_add, Pi.add_apply]
     exact VectorMeasure.integral_add (f.integrable _) (g.integrable _)
 
 private theorem representationBorelOperatorAux_ofContinuousMap (g : C(K, ℂ)) :

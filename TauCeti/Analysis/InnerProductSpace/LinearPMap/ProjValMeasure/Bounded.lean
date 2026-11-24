@@ -66,7 +66,7 @@ private theorem cayley_mul_integral (hA : IsSelfAdjoint A)
   filter_upwards [h1] with w hw
   simp only [BoundedBorelFunction.coe_mul, Pi.mul_apply,
     BoundedBorelFunction.ofContinuousMap_apply, pull,
-    BoundedBorelFunction.compStarAlgHom'_apply, BoundedBorelFunction.coe_add,
+    BoundedBorelFunction.compStarAlgHom'_apply, FunLike.coe_add,
     BoundedBorelFunction.coe_sub, BoundedBorelFunction.coe_smul, Pi.add_apply,
     Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
   -- Evaluate the continuous coordinate and the pulled-back symbols in the same scalar form.
@@ -146,7 +146,7 @@ theorem _root_.IsSelfAdjoint.mem_graph_spectralCut (hA : IsSelfAdjoint A) (B : S
   let f := BoundedBorelFunction.indicator B hB 1
   let g := cutSymbol B hB c r hr hcr + (c : ℂ) • f
   have hfg (s : ℝ) : (s : ℂ) * f s = g s := by
-    simp only [g, BoundedBorelFunction.add_apply, BoundedBorelFunction.smul_apply,
+    simp only [g, _root_.add_apply, BoundedBorelFunction.smul_apply,
       cutSymbol, BoundedBorelFunction.ofFunction_apply, f,
       BoundedBorelFunction.indicator_apply]
     by_cases hs : s ∈ B
