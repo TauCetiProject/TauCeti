@@ -156,11 +156,8 @@ theorem lift_eval_smul_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K 
     (hp : p ∈ lieInvariants K L (Dual K L)) (x : L) :
     lift (Dual.eval K L (g • x)) p = lift (Dual.eval K L x) p := by
   -- Evaluation at `g x` is evaluation at `x` after the transpose of `g`.
-  have h : lift (Dual.eval K L (g • x)) =
-      (lift (Dual.eval K L x)).comp (map K (g : Module.End K L).dualMap) := by
-    refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
-    simp [Units.smul_def]
-  rw [h, AlgHom.comp_apply, map_dualMap_apply_of_mem_intLieAlgebra hg hp]
+  rw [Units.smul_def, Module.End.smul_def, ← lift_eval_map_dualMap,
+    map_dualMap_apply_of_mem_intLieAlgebra hg hp]
 
 section Grading
 
@@ -225,11 +222,8 @@ theorem lift_eval_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
     (hp : lieModuleDerivation K L (Dual K L) h p = 0) (s : Kˣ) (x : L) :
     lift (Dual.eval K L (gradingAut hh s x)) p = lift (Dual.eval K L x) p := by
   -- Evaluation at `gradingAut hh s x` is evaluation at `x` after the transpose.
-  have h : lift (Dual.eval K L (gradingAut hh s x)) =
-      (lift (Dual.eval K L x)).comp (map K (gradingAut hh s : L →ₗ[K] L).dualMap) := by
-    refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
-    simp
-  rw [h, AlgHom.comp_apply, map_dualMap_gradingAut_apply hh hp]
+  exact (lift_eval_map_dualMap K (gradingAut hh s : L →ₗ[K] L) x p).symm.trans
+    (congrArg _ (map_dualMap_gradingAut_apply hh hp s))
 
 end Grading
 

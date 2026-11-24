@@ -231,12 +231,11 @@ theorem sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn (hs : IsPreconn
       fun y ↦ sphericalPendulumHamiltonian y) s) {t₀ : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     sphericalPendulumEnergyMomentum (γ t) = sphericalPendulumEnergyMomentum (γ t₀) := by
   have hI := isIntegrableSystem_sphericalPendulumEnergyMomentumVec
-  have hσ := isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
   have hH : (fun x ↦ sphericalPendulumEnergyMomentumVec x 0) =
       fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumHamiltonian y :=
     funext sphericalPendulumEnergyMomentumVec_apply_zero
   -- Each component of `F` is a first integral of the energy, and is smooth.
-  have h (i : Fin 2) := (hH ▸ hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hσ hs hγ
+  have h (i : Fin 2) := (hH ▸ hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hs hγ
     (fun u _ ↦ ((contMDiff_pi_module_iff.1 hI.contMDiff i) (γ u)).mdifferentiableAt (by simp))
     ht₀ ht
   exact Prod.ext (by simpa using h 0) (by simpa using h 1)
@@ -400,6 +399,12 @@ theorem sphericalPendulumPeriod_pos (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
     (intervalIntegrable_inv_sqrt_two_mul_sub_mul_one_sub_sq_sub_sq hj hz₀ hV)
     (fun z hz ↦ inv_pos.2 (Real.sqrt_pos.2 (two_mul_sub_mul_one_sub_sq_sub_sq_pos hj hz₀ hV hz)))
     (sphericalPendulumLowerTurningPoint_lt_sphericalPendulumUpperTurningPoint hj hz₀ hV)
+
+/-- On the domain of distinct nonpolar turning points, the period of the height is positive. -/
+theorem sphericalPendulumPeriod_pos_of_mem
+    (hc : (h, j) ∈ sphericalPendulumTurningPointDomain) : 0 < sphericalPendulumPeriod h j :=
+  let ⟨hj, _, hz₀, hV⟩ := mem_sphericalPendulumTurningPointDomain_iff.1 hc
+  sphericalPendulumPeriod_pos hj hz₀ hV
 
 /-- **The period as a regular integral.** Above the curve of relative equilibria, the substitution
 `z = (z₋ + z₊) / 2 + (z₊ - z₋) / 2 · sin θ` between the turning points `z₋ < z₊` turns the period

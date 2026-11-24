@@ -116,13 +116,13 @@ theorem hasseDeriv_monomial (d m : σ →₀ ℕ) (a : R) :
     intro hn
     by_cases hdm : d ≤ m
     · exact absurd ((tsub_eq_iff_eq_add_of_le hdm).1 hn.symm).symm h
-    · simp [prod_choose_eq_zero hdm]
+    · simp [prod_choose_eq_zero_iff.2 hdm]
 
 /-- Every Hasse derivative of positive order kills constants. -/
 @[simp]
 theorem hasseDeriv_C {d : σ →₀ ℕ} (hd : d ≠ 0) (a : R) : hasseDeriv d (C a) = 0 := by
   rw [← monomial_zero_eq_C_apply, hasseDeriv_monomial,
-    prod_choose_eq_zero (by simpa [nonpos_iff_eq_zero] using hd)]
+    prod_choose_eq_zero_iff.2 (by simpa [nonpos_iff_eq_zero] using hd)]
   simp
 
 /-- Every Hasse derivative of positive order kills the constant series `1`. -/
