@@ -167,7 +167,7 @@ noncomputable abbrev tensorIso (X Y : Pivotalization e) :
 
 /-- The tensor product of two morphisms of the pivotalization intertwines the isomorphisms of the
 tensor products with their double right duals. -/
-theorem tensorHom_comp_tensorIso_hom {X₁ Y₁ X₂ Y₂ : Pivotalization e} (f : X₁ ⟶ Y₁)
+private theorem tensorHom_comp_tensorIso_hom {X₁ Y₁ X₂ Y₂ : Pivotalization e} (f : X₁ ⟶ Y₁)
     (g : X₂ ⟶ Y₂) :
     (f.hom ⊗ₘ g.hom) ≫ (tensorIso Y₁ Y₂).hom =
       (tensorIso X₁ X₂).hom ≫ (doubleRightDualFunctor C).map (f.hom ⊗ₘ g.hom) := by
@@ -199,7 +199,7 @@ noncomputable abbrev tensorUnit : Pivotalization e where
 
 /-- The associator of `C` intertwines the isomorphisms of the two bracketings of a triple tensor
 product of objects of the pivotalization with their double right duals. -/
-theorem associator_hom_comp_iso_hom (X Y Z : Pivotalization e) :
+private theorem associator_hom_comp_iso_hom (X Y Z : Pivotalization e) :
     (α_ X.obj Y.obj Z.obj).hom ≫ (tensorObj X (tensorObj Y Z)).iso.hom =
       (tensorObj (tensorObj X Y) Z).iso.hom ≫
         (doubleRightDualFunctor C).map (α_ X.obj Y.obj Z.obj).hom := by
@@ -215,7 +215,7 @@ theorem associator_hom_comp_iso_hom (X Y Z : Pivotalization e) :
 
 /-- The left unitor of `C` intertwines the isomorphisms of `𝟙 ⊗ X` and of `X` with their double
 right duals. -/
-theorem leftUnitor_hom_comp_iso_hom (X : Pivotalization e) :
+private theorem leftUnitor_hom_comp_iso_hom (X : Pivotalization e) :
     (λ_ X.obj).hom ≫ X.iso.hom =
       (tensorObj tensorUnit X).iso.hom ≫ (doubleRightDualFunctor C).map (λ_ X.obj).hom := by
   simp only [tensorObj, tensorUnit, Iso.trans_hom, tensorIso_hom, Functor.Monoidal.μIso_hom,
@@ -225,7 +225,7 @@ theorem leftUnitor_hom_comp_iso_hom (X : Pivotalization e) :
 
 /-- The right unitor of `C` intertwines the isomorphisms of `X ⊗ 𝟙` and of `X` with their double
 right duals. -/
-theorem rightUnitor_hom_comp_iso_hom (X : Pivotalization e) :
+private theorem rightUnitor_hom_comp_iso_hom (X : Pivotalization e) :
     (ρ_ X.obj).hom ≫ X.iso.hom =
       (tensorObj X tensorUnit).iso.hom ≫ (doubleRightDualFunctor C).map (ρ_ X.obj).hom := by
   simp only [tensorObj, tensorUnit, Iso.trans_hom, tensorIso_hom, Functor.Monoidal.μIso_hom,
@@ -242,11 +242,13 @@ noncomputable instance : MonoidalCategoryStruct (Pivotalization e) where
   whiskerRight f Y := ⟨f.hom ▷ Y.obj, by
     rw [← tensorHom_id]
     exact tensorHom_comp_tensorIso_hom f (𝟙 Y)⟩
-  tensorHom f g := ⟨f.hom ⊗ₘ g.hom, tensorHom_comp_tensorIso_hom f g⟩
+  -- The proof obligations are private lemmas, which the body of this exposed instance may cite
+  -- only inside tactic blocks; hence `by exact`.
+  tensorHom f g := ⟨f.hom ⊗ₘ g.hom, by exact tensorHom_comp_tensorIso_hom f g⟩
   tensorUnit := tensorUnit
-  associator X Y Z := isoMk (α_ X.obj Y.obj Z.obj) (associator_hom_comp_iso_hom X Y Z)
-  leftUnitor X := isoMk (λ_ X.obj) (leftUnitor_hom_comp_iso_hom X)
-  rightUnitor X := isoMk (ρ_ X.obj) (rightUnitor_hom_comp_iso_hom X)
+  associator X Y Z := isoMk (α_ X.obj Y.obj Z.obj) (by exact associator_hom_comp_iso_hom X Y Z)
+  leftUnitor X := isoMk (λ_ X.obj) (by exact leftUnitor_hom_comp_iso_hom X)
+  rightUnitor X := isoMk (ρ_ X.obj) (by exact rightUnitor_hom_comp_iso_hom X)
 
 /-- The underlying object of a tensor product in the pivotalization. -/
 @[simp]
