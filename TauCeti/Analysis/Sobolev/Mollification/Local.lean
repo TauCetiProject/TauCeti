@@ -32,7 +32,7 @@ ball lies in `V`, and whose `Lᵖ` seminorm on any measurable subset of such poi
 As the outer radii of the bumps shrink to zero, these mollifications converge to `u` in `L^q(U)`
 and their derivatives converge to `Du` in `Lᵖ(U)` for finite exponents `1 ≤ q, p < ∞` and every
 open `U` with compact closure inside `V ≤ Ω` (provided `u` is locally `L^q` on `V` and `Du` is
-locally `Lᵖ` on `V`). If `u` is continuous on `Ω`, the mollifications also converge uniformly to
+locally `Lᵖ` on `V`). If `u` is continuous on `V`, the mollifications also converge uniformly to
 `u` on `closure U`.
 
 ## Main declarations
@@ -164,13 +164,13 @@ theorem HasWeakFDerivOn.tendsto_eLpNorm_fderiv_normed_convolution_indicator_sub
   refine eLpNorm_congr_ae ?_
   filter_upwards [(ae_restrict_mem isClosed_closure.measurableSet).filter_mono
     (ae_mono (Measure.restrict_mono_set μ subset_closure))] with x hx
-  have hball : closedBall x (φ i).rOut ⊆ V := fun y hy => hsV <| by
-    rw [← thickening_closure]
-    exact mem_thickening_iff.2 ⟨x, hx, (mem_closedBall.1 hy).trans_lt hi⟩
+  have hball : closedBall x (φ i).rOut ⊆ V :=
+    (closedBall_subset_ball hi).trans <|
+      (ball_subset_thickening hx δ).trans (thickening_closure.subset.trans hsV)
   simp only [Pi.sub_apply, hu.fderiv_normed_convolution_indicator hVc hVΩ (φ i) hball]
 
 /-- Shared interior mollification construction with separate finite exponents `q` (for `u`) and
-`p` (for `Du`), and an optional uniform convergence conclusion when `u` is continuous on `Ω`. -/
+`p` (for `Du`), and an optional uniform convergence conclusion when `u` is continuous on `V`. -/
 private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
     {U V : Opens E} (hUc : IsCompact (closure (U : Set E))) (hUV : closure (U : Set E) ⊆ V)
     (hVΩ : V ≤ Ω) {q p : ℝ≥0∞} (hq1 : 1 ≤ q) (hq : q ≠ (∞ : ℝ≥0∞))
@@ -179,7 +179,7 @@ private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
     (hp1 : 1 ≤ p) (hp : p ≠ (∞ : ℝ≥0∞)) (hDup : MemLpLoc p V Du μ) :
     ∃ un : ℕ → E → F, (∀ n, ContDiff ℝ ∞ (un n)) ∧
       (∀ n, eLpNorm (fderiv ℝ (un n)) p (μ.restrict U) ≤ eLpNorm Du p (μ.restrict V)) ∧
-      (ContinuousOn u Ω → TendstoUniformlyOn un u atTop (closure (U : Set E))) ∧
+      (ContinuousOn u V → TendstoUniformlyOn un u atTop (closure (U : Set E))) ∧
       Tendsto (fun n => eLpNorm (un n - u) q (μ.restrict U)) atTop (𝓝 0) ∧
       Tendsto (fun n => eLpNorm (fderiv ℝ (un n) - Du) p (μ.restrict U)) atTop (𝓝 0) := by
   have : CompleteSpace F := hu.completeSpace
@@ -196,11 +196,10 @@ private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
   have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) :=
     ContDiffBump.tendsto_rOut_shrinking hδ2
   have hDuW : MemLp Du p (μ.restrict W) := hDup.memLp_restrict_of_isCompact_closure hWc hclW
-  have hball (n : ℕ) : ∀ x ∈ (U : Set E), closedBall x (φ n).rOut ⊆ W := fun x hx y hy =>
-    mem_thickening_iff.2 ⟨x, subset_closure hx, (mem_closedBall.1 hy).trans_lt <| by
-      simp only [φ, ContDiffBump.rOut_shrinking]
-      exact (div_le_self hδ2.le (by linarith [n.cast_nonneg' (α := ℝ)])).trans_lt
-        (half_lt_self hδ)⟩
+  have hball (n : ℕ) : ∀ x ∈ (U : Set E), closedBall x (φ n).rOut ⊆ W := fun x hx =>
+    (closedBall_subset_ball
+      ((ContDiffBump.rOut_shrinking_le hδ2 n).trans_lt (half_lt_self hδ))).trans
+      (ball_subset_thickening (subset_closure hx) δ)
   refine ⟨fun n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] (W : Set E).indicator u,
     fun n => hu.locallyIntegrableOn.contDiff_normed_convolution_indicator
       W.isOpen.measurableSet.nullMeasurableSet hWc hWΩ (φ n),
@@ -208,7 +207,7 @@ private theorem exists_interior_mollification (hu : HasWeakFDerivOn μ Ω u Du)
       (φ n) (hball n) hp1).trans
       (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_closure.trans hclW) le_rfl)),
     fun huc => ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator
-      W.isOpen.measurableSet.nullMeasurableSet hWc (huc.mono hWΩ) hδ subset_rfl hφ,
+      W.isOpen.measurableSet.nullMeasurableSet hWc (huc.mono hclW) hδ subset_rfl hφ,
     tendsto_eLpNorm_normed_convolution_indicator_sub hq hφ
       W.isOpen.measurableSet.nullMeasurableSet ((self_subset_thickening hδ _).trans hUW)
       (huW W hWc hclW),
@@ -236,7 +235,7 @@ theorem HasWeakFDerivOn.exists_contDiff_tendsto_eLpNorm (hu : HasWeakFDerivOn μ
 /-- **Local smooth approximation in `W^{1,p}` and uniformly on `closure U` for continuous `u`.**
 -/
 theorem HasWeakFDerivOn.exists_contDiff_tendstoUniformlyOn (hu : HasWeakFDerivOn μ Ω u Du)
-    (huc : ContinuousOn u Ω) {U V : Opens E} (hUc : IsCompact (closure (U : Set E)))
+    {U V : Opens E} (huc : ContinuousOn u V) (hUc : IsCompact (closure (U : Set E)))
     (hUV : closure (U : Set E) ⊆ V) (hVΩ : V ≤ Ω) {p : ℝ≥0∞} (hp1 : 1 ≤ p)
     (hp : p ≠ (∞ : ℝ≥0∞)) (hDup : MemLpLoc p V Du μ) :
     ∃ un : ℕ → E → F, (∀ n, ContDiff ℝ ∞ (un n)) ∧
@@ -248,7 +247,7 @@ theorem HasWeakFDerivOn.exists_contDiff_tendstoUniformlyOn (hu : HasWeakFDerivOn
       (hWV : closure (W : Set E) ⊆ V) : MemLp u p (μ.restrict W) := by
     have : IsFiniteMeasure (μ.restrict (W : Set E)) :=
       isFiniteMeasure_restrict.2 ((measure_mono subset_closure).trans_lt hWc.measure_lt_top).ne
-    exact ((huc.mono (hWV.trans hVΩ)).memLp_top_restrict_of_subset_isCompact hWc
+    exact ((huc.mono hWV).memLp_top_restrict_of_subset_isCompact hWc
       W.isOpen.measurableSet subset_closure).mono_exponent le_top
   obtain ⟨un, hcd, hbound, hunif, hu_conv, hDu_conv⟩ :=
     exists_interior_mollification hu hUc hUV hVΩ hp1 hp huW hp1 hp hDup

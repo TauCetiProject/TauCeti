@@ -98,8 +98,8 @@ theorem enorm_convolution_sub_setAverage_ball_le {ρ : E → ℝ} {f : E → F} 
         have hcoeff : ENNReal.ofReal (C / μ.real (ball 0 r)) = ENNReal.ofReal C / μ (ball x r) := by
           rw [ENNReal.ofReal_div_of_pos hBreal_pos, ofReal_measureReal hBtop,
             ← Measure.addHaar_ball_center]
-        rw [hcoeff, setLAverage_eq, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul,
-          mul_assoc, mul_left_comm]
+        rw [hcoeff, setLAverage_eq, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul]
+        ring
 
 /-- **Mean deviation from a mollified value.** Under the hypotheses of
 `TauCeti.enorm_convolution_sub_setAverage_ball_le`, the average distance on `ball x r` between `f`

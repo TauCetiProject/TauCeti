@@ -409,10 +409,8 @@ theorem tendsto_eLpNorm_normed_convolution_sub_restrict [CompleteSpace F] {I : T
   refine eLpNorm_congr_ae ?_
   filter_upwards [(ae_restrict_mem isClosed_closure.measurableSet).filter_mono
     (ae_mono (Measure.restrict_mono_set mu (subset_closure (s := s))))] with x hx
-  have hball : ball x (phi i).rOut ⊆ t := fun y hy ↦ by
-    dsimp only [t]
-    rw [← thickening_closure]
-    exact mem_thickening_iff.2 ⟨x, hx, (mem_ball.1 hy).trans hi⟩
+  have hball : ball x (phi i).rOut ⊆ t :=
+    (ball_subset_ball hi.le).trans ((ball_subset_thickening hx δ).trans thickening_closure.subset)
   exact congrArg (· - f x) ((phi i).normed_convolution_indicator_eq_of_ball_subset hball)
 
 /-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
