@@ -51,12 +51,20 @@ is a cycle.
   graded left module laws, with square-zero derived from the row equation and DG Leibniz rule.
 * `rowFiniteTwistedDifferential_mapDomain`: relabelling generators compatibly with the rows
   commutes with the differentials.
+* `rowFiniteTwistedDifferential_congr`: the differential of a vector depends only on the rows of
+  the generators in its support.
+* `RowFiniteTwistingCocycle.ofComapDomain`: the restriction of rows to an injectively labelled
+  set of generators closed under taking rows, with
+  `RowFiniteTwistingCocycle.rowFiniteTwistedDifferential_mapDomain_ofComapDomain` relating the two
+  differentials.
 * `rowFiniteTwistedDifferential_mem_supported`: the generators whose rows stay in a set of
   generators span a differential submodule.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
   row is the vanishing of its twisted differential.
 * The zero cocycle, whose differential is the coefficient differential alone
   (`rowFiniteTwistedDifferential_zero`).
+* `forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain`: relative cycles being
+  relative boundaries is invariant under relabelling the generators along an injection.
 * `linearCombination_rowFiniteTwistedDifferential` and
   `forall_linearCombination_rowFiniteTwistedDifferential_iff`: maps out of the free module
   commute with the differentials exactly when they do so on generators.
@@ -487,6 +495,13 @@ theorem rowFiniteTwistedDifferential_apply (m : P → P →₀ A) (f : P →₀ 
         f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • m x) := by
   simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, rowFiniteSignedMap_apply]
 
+/-- The differential on a vector depends only on the rows of the generators in its support. -/
+theorem rowFiniteTwistedDifferential_congr {m m' : P → P →₀ A} {f : P →₀ A}
+    (hm : ∀ x ∈ f.support, m x = m' x) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f =
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m' f := by
+  simp only [rowFiniteTwistedDifferential, LinearMap.add_apply, rowFiniteSignedMap_congr hm]
+
 /-- With zero rows, the differential is the coefficient differential alone. -/
 @[simp]
 theorem rowFiniteTwistedDifferential_zero :
@@ -572,6 +587,78 @@ theorem mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero (m : P → P �
     rw [show ind y - k + 1 = -(k - ind y) + 1 by ring, Int.negOnePow_succ, Int.negOnePow_neg,
       Units.neg_smul]
   rw [hD, sub_eq_zero]
+
+/-- Let an injection `e : P → P'` pick out generators whose rows `m (e x)` only involve generators
+in the range of `e`. Then relabelling along `e` intertwines the differential of the rows read back
+on `P` with that of the original rows. -/
+private theorem rowFiniteTwistedDifferential_mapDomain_comapDomain {P' : Type uP'}
+    (m : P' → P' →₀ A) (e : P → P') (he : Function.Injective e)
+    (hsupp : ∀ x, ↑(m (e x)).support ⊆ Set.range e) (f : P →₀ A) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.mapDomain e f) =
+      Finsupp.mapDomain e (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d)
+        (fun x ↦ Finsupp.comapDomain e (m (e x)) he.injOn) f) :=
+  rowFiniteTwistedDifferential_mapDomain e _
+    (fun x ↦ (Finsupp.mapDomain_comapDomain _ he _ (hsupp x)).symm) f
+
+namespace RowFiniteTwistingCocycle
+
+variable {P' : Type uP'} {ind' : P' → ℤ}
+
+/-- **Restricting rows to a row-closed set of generators.** Let an injection `e : P → P'` pick
+out generators whose rows `m (e x)` only involve generators in the range of `e`, are homogeneous
+for the indices `ind` on `P`, and are cycles of the differential of `m`. Then the rows read back
+on `P` form a row-finite twisting cocycle. The rows of the other generators of `P'` are
+irrelevant, and need not form a cocycle. -/
+noncomputable def ofComapDomain (m : P' → P' →₀ A) (e : P → P') (he : Function.Injective e)
+    (hsupp : ∀ x, ↑(m (e x)).support ⊆ Set.range e)
+    (hgr : ∀ x y, m (e x) (e y) ∈ 𝒜 (ind y - ind x + 1))
+    (htw : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (m (e x)) = 0) :
+    RowFiniteTwistingCocycle 𝒜 d P ind where
+  m x := Finsupp.comapDomain e (m (e x)) he.injOn
+  mem_graded x y := hgr x y
+  twisting x := by
+    refine (mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero _ fun y ↦ hgr x y).2 ?_
+    apply Finsupp.mapDomain_injective he
+    rw [← rowFiniteTwistedDifferential_mapDomain_comapDomain m e he hsupp,
+      Finsupp.mapDomain_comapDomain _ he _ (hsupp x), Finsupp.mapDomain_zero]
+    exact htw x
+
+section OfComapDomain
+
+variable {m : P' → P' →₀ A} {e : P → P'} {he : Function.Injective e}
+  {hsupp : ∀ x, ↑(m (e x)).support ⊆ Set.range e}
+  {hgr : ∀ x y, m (e x) (e y) ∈ 𝒜 (ind y - ind x + 1)}
+  {htw : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (m (e x)) = 0}
+
+/-- A restricted row is the original row read back along `e`. -/
+theorem ofComapDomain_m (x : P) :
+    (ofComapDomain m e he hsupp hgr htw).m x = Finsupp.comapDomain e (m (e x)) he.injOn :=
+  (rfl)
+
+/-- The coefficients of a restricted row are those of the original row. -/
+@[simp]
+theorem ofComapDomain_m_apply (x y : P) :
+    (ofComapDomain m e he hsupp hgr htw).m x y = m (e x) (e y) :=
+  Finsupp.comapDomain_apply _ _ _ _
+
+/-- Relabelling a restricted row along `e` recovers the original row. -/
+@[simp]
+theorem mapDomain_ofComapDomain_m (x : P) :
+    Finsupp.mapDomain e ((ofComapDomain m e he hsupp hgr htw).m x) = m (e x) :=
+  Finsupp.mapDomain_comapDomain _ he _ (hsupp x)
+
+/-- Relabelling along `e` intertwines the differential of the restricted cocycle with that of
+the original rows. -/
+theorem rowFiniteTwistedDifferential_mapDomain_ofComapDomain (f : P →₀ A) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.mapDomain e f) =
+      Finsupp.mapDomain e
+        (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (ofComapDomain m e he hsupp hgr htw).m
+          f) :=
+  rowFiniteTwistedDifferential_mapDomain_comapDomain m e he hsupp f
+
+end OfComapDomain
+
+end RowFiniteTwistingCocycle
 
 section Maps
 
@@ -776,6 +863,48 @@ theorem rowFiniteSignedMap_eq_of_forall_mem_support (hM : IsDGLeftModule h ℳ d
     simp only [Finsupp.single_add, map_add]
     rw [ha, hb]
     abel
+
+omit [IsScalarTower R A M] [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] in
+/-- **Relative boundaries along a relabelling of generators.** Let an injection `φ : P → P'`
+intertwine the differentials of the rows `mP` and `m` and the images `cP` and `c`. Then every
+relative cycle of `cP` with target in `N` is a relative boundary with target in `N` exactly when
+the same holds for the vectors of `P' →₀ A` supported on the range of `φ`, with primitives
+supported there too. -/
+theorem forall_exists_rowFiniteTwistedDifferential_eq_iff_of_mapDomain {P' : Type uP'}
+    (φ : P → P') (hφ : Function.Injective φ) {mP : P → P →₀ A} {m : P' → P' →₀ A}
+    (hD : ∀ f, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.mapDomain φ f) =
+      Finsupp.mapDomain φ (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP f))
+    {cP : P → M} {c : P' → M} (hc : ∀ x, c (φ x) = cP x) (N : Set M) :
+    (∀ (u : P →₀ A) (w : M), rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP u = 0 →
+      Finsupp.linearCombination A cP u = dM w → w ∈ N → ∃ (u' : P →₀ A) (w' : M), w' ∈ N ∧
+        rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP u' = u ∧
+          Finsupp.linearCombination A cP u' + dM w' = w) ↔
+    ∀ (f : P' →₀ A) (w : M), ↑f.support ⊆ Set.range φ →
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f = 0 →
+        Finsupp.linearCombination A c f = dM w → w ∈ N → ∃ (f' : P' →₀ A) (w' : M),
+          ↑f'.support ⊆ Set.range φ ∧ w' ∈ N ∧
+            rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f' = f ∧
+              Finsupp.linearCombination A c f' + dM w' = w := by
+  classical
+  have hsupp (u : P →₀ A) : ↑(Finsupp.mapDomain φ u).support ⊆ Set.range φ := fun y hy ↦ by
+    obtain ⟨x, -, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support hy)
+    exact ⟨x, rfl⟩
+  have hL (u : P →₀ A) :
+      Finsupp.linearCombination A c (Finsupp.mapDomain φ u) = Finsupp.linearCombination A cP u := by
+    rw [Finsupp.linearCombination_mapDomain]
+    exact congrArg (Finsupp.linearCombination A · u) (funext hc)
+  have hD₀ (u : P →₀ A) :
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.mapDomain φ u) = 0 ↔
+        rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP u = 0 := by
+    rw [hD, ← Finsupp.mapDomain_zero (f := φ), (Finsupp.mapDomain_injective hφ).eq_iff]
+  refine ⟨fun H f w hf hDf hfw hw ↦ ?_, fun H u w hDu huw hw ↦ ?_⟩
+  · rw [← Finsupp.mapDomain_comapDomain φ hφ f hf] at hDf hfw ⊢
+    obtain ⟨u', w', hw', hDu', huw'⟩ := H _ w ((hD₀ _).1 hDf) (by rwa [← hL]) hw
+    exact ⟨Finsupp.mapDomain φ u', w', hsupp u', hw', by rw [hD, hDu'], by rwa [hL]⟩
+  · obtain ⟨f', w', hf', hw', hDf', hfw'⟩ :=
+      H (Finsupp.mapDomain φ u) w (hsupp u) ((hD₀ u).2 hDu) (by rwa [hL]) hw
+    rw [← Finsupp.mapDomain_comapDomain φ hφ f' hf'] at hDf' hfw'
+    exact ⟨_, w', hw', Finsupp.mapDomain_injective hφ (by rw [← hD, hDf']), by rwa [← hL]⟩
 
 end Maps
 

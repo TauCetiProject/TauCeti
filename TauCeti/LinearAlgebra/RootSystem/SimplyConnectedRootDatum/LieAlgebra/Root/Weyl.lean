@@ -172,8 +172,7 @@ Chevalley involution. -/
       (t.simplyConnectedRootDatum ht).reflectionPerm
         ((t.simplyConnectedRootDatum ht).reflectionPerm α β)
         ((t.simplyConnectedRootDatum ht).reflectionPerm α β) :=
-    (RootPairing.Equiv.reflection
-      (t.simplyConnectedRootDatum ht) α).toHom.indexEquiv_reflectionPerm β β
+    (t.simplyConnectedRootDatum ht).reflectionPerm_reflectionPerm_self_right α β
   have hinv := (t.chevalleyInvolution ht).toLieHom.map_weylAut
     (t.isSl2Triple_chevalleySystem ht α)
     (t.isNilpotent_ad_chevalleySystem ht α).exists_pow_apply_eq_zero

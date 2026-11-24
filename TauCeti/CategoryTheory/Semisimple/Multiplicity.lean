@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import TauCeti.CategoryTheory.Semisimple.Basic
 public import TauCeti.CategoryTheory.Simple.Classes
 public import Mathlib.Data.Finsupp.Basic
