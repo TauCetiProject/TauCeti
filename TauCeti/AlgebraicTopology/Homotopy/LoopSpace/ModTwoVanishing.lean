@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Acyclic
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ReducedHomology
 public import TauCeti.AlgebraicTopology.Homotopy.ZModVanishing
@@ -17,7 +18,7 @@ import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
 Serre's mod-two vanishing theorem says that the higher homotopy groups at a base point with
 trivial fundamental group and mod-two acyclic ambient space are uniquely two-divisible
-(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo`). This file
+(`TauCeti.bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod`). This file
 applies it to the component `Ω₀X` of the constant loop in the loop space of a pointed space
 `(X, x)`, the space of contractible loops at `x`.
 
@@ -98,10 +99,11 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_lo
   have : Subsingleton (π_ 1 (pathComponent (Path.refl x)) c₀) :=
     ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
       (HomotopyGroup.pathLoopSpaceMulEquiv 0)).toEquiv.subsingleton_congr.2 ‹_›
-  (isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo_ringEquiv
-    (RingEquiv.refl (ZMod 2)) (y := c₀) (n := n) fun q hq _ ↦
-      ModuleCat.isZero_iff_subsingleton.2
-        (subsingleton_singularChains_homology_of_forall_succ (ZMod 2) hX (by omega))).of_addEquiv
+  ((isUniquelyTwoDivisible_iff _).2
+    (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv
+      (RingEquiv.refl (ZMod 2)) (y := c₀) (n := n) fun q hq _ ↦
+        ModuleCat.isZero_iff_subsingleton.2
+          (subsingleton_singularChains_homology_of_forall_succ (ZMod 2) hX (by omega)))).of_addEquiv
     ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
       (HomotopyGroup.pathLoopSpaceMulEquiv (n + 1))).toAdditive
 
@@ -118,10 +120,11 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_mo
   have : Subsingleton (π_ 1 (pathComponent (1 : MooreLoopSpace X x)) c₀) :=
     ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
       (MooreLoopSpace.homotopyGroupMulEquiv x 0)).toEquiv.subsingleton_congr.2 ‹_›
-  (isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo_ringEquiv
-    (RingEquiv.refl (ZMod 2)) (y := c₀) (n := n) fun q hq _ ↦
-      ModuleCat.isZero_iff_subsingleton.2
-        (subsingleton_singularChains_homology_of_forall_succ (ZMod 2) hX (by omega))).of_addEquiv
+  ((isUniquelyTwoDivisible_iff _).2
+    (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv
+      (RingEquiv.refl (ZMod 2)) (y := c₀) (n := n) fun q hq _ ↦
+        ModuleCat.isZero_iff_subsingleton.2
+          (subsingleton_singularChains_homology_of_forall_succ (ZMod 2) hX (by omega)))).of_addEquiv
     ((HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).trans
       (MooreLoopSpace.homotopyGroupMulEquiv x (n + 1))).toAdditive
 

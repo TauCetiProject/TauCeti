@@ -19,16 +19,13 @@ induces isomorphisms on singular homology with coefficients in any module. Since
 `TauCeti.cwApproximation X x₀` corresponding to the path component of a point `y : X` is a retract
 of `TauCeti.sigmaCWApproximation X`, vanishing of singular homology of `X` transfers to that
 path-connected, Hausdorff CW approximation
-(`TauCeti.isZero_singularHomology_cwApproximation_of_isZero`, and more generally for arbitrary
-module coefficients `TauCeti.isZero_singularHomologyFunctor_cwApproximation_of_isZero`).
+(`TauCeti.isZero_singularHomologyFunctor_cwApproximation_of_isZero`).
 
 ## Main results
 
 * `TauCeti.isZero_singularHomologyFunctor_cwApproximation_of_isZero`: singular homology vanishing
   with arbitrary module coefficients transfers to the CW approximation of the path component of a
   point.
-* `TauCeti.isZero_singularHomology_cwApproximation_of_isZero`: ring-coefficient specialization for
-  `TauCeti.singularChains`.
 -/
 
 public section
@@ -71,14 +68,5 @@ theorem isZero_singularHomologyFunctor_cwApproximation_of_isZero {Y : Type v}
       c (cwApproximationBasepoint (TopCat.of Y) x₀) p
   refine (IsZero.iff_id_eq_zero (H.obj Z)).2 ?_
   rw [← H.map_id, ← hcomp, H.map_comp, hS.eq_of_tgt (H.map ι) 0, Limits.zero_comp]
-
-/-- The CW approximation of the path component of `y` inherits singular homology vanishing from
-`Y`, for `TauCeti.singularChains R`. -/
-theorem isZero_singularHomology_cwApproximation_of_isZero {Y : Type u} [TopologicalSpace Y]
-    (y : Y) (R : Type u) [Ring R] (q : ℕ)
-    (hY : IsZero (((singularChains R).obj (TopCat.of Y)).homology q)) :
-    IsZero (((singularChains R).obj
-      (cwApproximation (TopCat.of Y) (Quotient.out (ZerothHomotopy.mk y)))).homology q) :=
-  isZero_singularHomologyFunctor_cwApproximation_of_isZero y (ModuleCat.of R R) q hY
 
 end TauCeti

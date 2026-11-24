@@ -319,7 +319,7 @@ theorem subsingleton_homotopyGroup_of_isZero_singularHomology_int {Y : Type} [To
   have hH : ∀ j, j + 2 ≤ n + 2 →
       IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) (j + 2)).obj
         (ModuleCat.of ℤ (ULift.{0} ℤ))).obj Z) := fun j hj ↦ by
-    have hz := isZero_singularHomology_cwApproximation_of_isZero y ℤ (j + 2)
+    have hz := isZero_singularHomologyFunctor_cwApproximation_of_isZero y (ModuleCat.of ℤ ℤ) (j + 2)
       (hY (j + 2) (by omega) hj)
     exact hz.of_iso (((singularHomologyFunctor (ModuleCat.{0} ℤ) (j + 2)).mapIso
       (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso).app Z)

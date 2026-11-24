@@ -107,6 +107,11 @@ private lemma homotopyEquivalences_zsmul_add_proj {X : Type u} [TopologicalSpace
       (ModuleCat.of (ULift.{u} ℤ) (ULift.{u} ℤ)) q
   exact (ChainComplex.quasiIso_iff_of_projective (zsmulAddProjEndo x m)).1 hqi
 
+/-- Left-tensoring `X` with `Y` agrees with right-tensoring `Y` with `X`. -/
+private lemma tensorLeft_obj_eq_tensorRight_obj {C : Type*} [Category C] [MonoidalCategory C]
+    (X Y : C) : (MonoidalCategory.tensorLeft X).obj Y = (MonoidalCategory.tensorRight Y).obj X :=
+  rfl
+
 /-- If `X` is path-connected and multiplication by `m` is bijective on every positive lifted
 integral singular homology group of `X`, then `H_{n + 1}(X; M) = 0` for every `ℤ`-module `M`
 annihilated by `m`. -/
@@ -139,9 +144,9 @@ theorem isZero_singularHomology_of_bijective_zsmul_int {X : Type u} [Topological
   have hkill : m • 𝟙 (FCh.obj (C.obj (TopCat.of X))) = 0 := by
     ext q : 1
     let G := MonoidalCategory.tensorRight ((C.obj (TopCat.of X)).X q)
-    -- `(FCh.obj D).X q` is `F.obj (D.X q) = M' ⊗ D.X q = G.obj M'`, so `G` pulls out `m • 𝟙 M'`.
-    change m • 𝟙 (G.obj M') = 0
-    rw [← G.map_id, ← G.map_zsmul, hM0, G.map_zero]
+    rw [HomologicalComplex.zsmul_f_apply, HomologicalComplex.id_f, HomologicalComplex.zero_f,
+      Functor.mapHomologicalComplex_obj_X, tensorLeft_obj_eq_tensorRight_obj,
+      ← G.map_id, ← G.map_zsmul, hM0, G.map_zero]
   let H := HomologicalComplex.homologyFunctor (ModuleCat.{u} (ULift.{u} ℤ)) (.down ℕ) (n + 1)
   have hP : Limits.IsZero (H.obj (FCh.obj (C.obj (TopCat.of PUnit.{u + 1})))) :=
     (isZero_singularHomologyFunctor_of_contractibleSpace

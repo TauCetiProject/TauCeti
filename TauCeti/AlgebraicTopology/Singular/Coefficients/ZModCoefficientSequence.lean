@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Category.ModuleCat.ZModCoefficientSequence
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.Bockstein
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
 
+import Mathlib.Data.Nat.Factorization.Induction
 import Mathlib.Data.Nat.Prime.Basic
 import TauCeti.Algebra.Category.ModuleCat.AB
 import TauCeti.Algebra.Homology.Linear
@@ -433,23 +434,22 @@ theorem isZero_singularHomology_zmod_iff_forall_prime (X : TopCat.{u}) (m : ℕ)
         IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
           (ModuleCat.of ℤ (ULift.{u} (ZMod p)))).obj X) := by
   refine ⟨fun h p _ hpm ↦ X.isZero_singularHomology_zmod_of_dvd hpm n h, ?_⟩
-  revert ‹NeZero m›
-  induction m using Nat.strong_induction_on with
-  | ind m ih =>
-    intro _ h
-    by_cases hm1 : m = 1
-    · subst hm1
-      rw [isZero_singularHomology_zmod_iff, ModuleCat.isZero_iff_subsingleton]
-      exact Module.subsingleton (ZMod 1) _
-    · have hp : m.minFac.Prime := Nat.minFac_prime hm1
-      have hpm : m.minFac ∣ m := Nat.minFac_dvd m
-      have hdiv_pos : 0 < m / m.minFac :=
-        Nat.div_pos (Nat.le_of_dvd (NeZero.pos m) hpm) hp.pos
-      have : NeZero m.minFac := ⟨hp.ne_zero⟩
-      have : NeZero (m / m.minFac) := ⟨hdiv_pos.ne'⟩
-      have hlt : m / m.minFac < m := Nat.div_lt_self (NeZero.pos m) hp.one_lt
-      rw [← Nat.mul_div_cancel' hpm, isZero_singularHomology_zmod_mul_iff]
-      exact ⟨h m.minFac hp hpm,
-        ih (m / m.minFac) hlt fun q hq hqd ↦ h q hq (hqd.trans (Nat.div_dvd_of_dvd hpm))⟩
+  have hm : m ≠ 0 := NeZero.ne m
+  clear ‹NeZero m›
+  revert hm
+  induction m using Nat.recOnMul with
+  | zero => intro hm _; exact (hm rfl).elim
+  | one =>
+    intro _ _
+    rw [isZero_singularHomology_zmod_iff, ModuleCat.isZero_iff_subsingleton]
+    exact Module.subsingleton (ZMod 1) _
+  | prime p hp => exact fun _ h ↦ h p hp dvd_rfl
+  | mul a b iha ihb =>
+    intro hab h
+    have : NeZero a := ⟨left_ne_zero_of_mul hab⟩
+    have : NeZero b := ⟨right_ne_zero_of_mul hab⟩
+    exact (X.isZero_singularHomology_zmod_mul_iff a b n).2
+      ⟨iha (NeZero.ne a) fun p hp hpa ↦ h p hp (hpa.trans (dvd_mul_right a b)),
+       ihb (NeZero.ne b) fun p hp hpb ↦ h p hp (hpb.trans (dvd_mul_left b a))⟩
 
 end TopCat

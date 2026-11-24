@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Topology.Homotopy.HomotopyGroup
-public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Algebra.Group.Equiv.Pow
@@ -25,10 +24,11 @@ trivial, and let `m : ℕ`. If the singular homology `H_q(Y; ℤ/m)` vanishes in
 (`TauCeti.bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod`). No Hausdorff,
 path-connectedness, CW, or finite-generation assumption is needed on `Y`, and `m` need not be
 prime or nonzero. For `m = 2` this is the **mod-two vanishing theorem**: if `π₁(Y, y)` is trivial
-and the reduced mod-two singular homology of `Y` vanishes in every degree, then every higher
-homotopy group `π_{n + 2}(Y, y)` is uniquely two-divisible
-(`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo`), hence
-becomes a `ℤ[1/2]`-module and satisfies `π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`.
+and the reduced mod-two singular homology of `Y` vanishes in every degree, then multiplication by
+`2` is bijective on every higher homotopy group `π_{n + 2}(Y, y)`
+(`TauCeti.bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod`), so
+`π_{n + 2}(Y, y)` is uniquely two-divisible, becomes a `ℤ[1/2]`-module, and satisfies
+`π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`.
 
 The class of groups `G` with `G ⊗ ℤ/2 = 0` is not a Serre class (it contains `ℚ` but not `ℤ`), so
 this is not a case of the Hurewicz theorem modulo a Serre class; it is proved directly, one
@@ -55,11 +55,6 @@ homotopy group at a time, along the Whitehead tower
   `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_ringEquiv`,
   `TauCeti.bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod`: sharp
   finite-range and reduced-homology mod-`m` vanishing theorems in any universe `u`.
-* `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo`,
-  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo_ringEquiv`,
-  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo`,
-  `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo_ringEquiv`:
-  the mod-two vanishing theorems in any universe `u`.
 
 ## References
 
@@ -120,16 +115,6 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod {Y : Type 
       exact ((TopCat.of Y).isZero_singularHomology_zmod_iff_of_ringEquiv
         (ULift.ringEquiv : ULift.{u} (ZMod m) ≃+* ZMod m) q).1 (hY q hq1 hq2)
 
-/-- Vanishing of reduced singular homology in all degrees implies vanishing of ordinary singular
-homology in every nonzero degree. -/
-private lemma isZero_singularHomology_of_isZero_reduced {R : Type*} [Ring R]
-    (M : ModuleCat.{u} R) {Y : Type u} [TopologicalSpace Y]
-    (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor M q).obj (TopCat.of Y)))
-    {q : ℕ} (hq : q ≠ 0) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj M).obj (TopCat.of Y)) := by
-  obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
-  exact (hY (q' + 1)).of_iso ((reducedSingularHomologySuccIso M q').app (TopCat.of Y)).symm
-
 /-- **Reduced-homology mod-`m` vanishing theorem with ring coefficients.** If `π₁(Y, y)` is trivial
 and the reduced singular homology of `Y` with coefficients in a ring `k ≃+* ZMod m` in the universe
 of `Y` vanishes in every degree, then multiplication by `m` is a bijection on every higher homotopy
@@ -140,8 +125,10 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_ringEqui
     (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) q).obj (TopCat.of Y)))
     (n : ℕ) : Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
   bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv e fun q hq _ ↦ by
-    rw [← singularHomologyFunctor_obj_obj]
-    exact isZero_singularHomology_of_isZero_reduced (ModuleCat.of k k) hY (by omega)
+    rw [← singularHomologyFunctor_obj_obj,
+      isZero_singularHomologyFunctor_iff_isZero_reducedSingularHomologyFunctor (ModuleCat.of k k)
+        (TopCat.of Y) (by omega)]
+    exact hY q
 
 /-- **Reduced-homology mod-`m` vanishing theorem.** If `π₁(Y, y)` is trivial and the reduced
 singular homology of `Y` with coefficients in the lifted integer module `ℤ/m` vanishes in every
@@ -153,54 +140,7 @@ theorem bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod {Y 
       (ModuleCat.of ℤ (ULift.{u} (ZMod m))) q).obj (TopCat.of Y))) (n : ℕ) :
     Function.Bijective fun a : Additive (π_ (n + 2) Y y) ↦ (m : ℤ) • a :=
   bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod fun q hq _ ↦
-    isZero_singularHomology_of_isZero_reduced (ModuleCat.of ℤ (ULift.{u} (ZMod m))) hY (by omega)
-
-/-- **Sharp finite-range mod-two vanishing theorem with ring coefficients.** If `π₁(Y, y)` is
-trivial and `H_q(Y; k) = 0` for all `2 ≤ q ≤ n + 3` for a ring `k ≃+* ZMod 2` in the universe of
-`Y`, then `π_{n + 2}(Y, y)` is uniquely two-divisible. -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo_ringEquiv
-    {k : Type u} [CommRing k] (e : k ≃+* ZMod 2) {Y : Type u} [TopologicalSpace Y] {y : Y}
-    [Subsingleton (π_ 1 Y y)] {n : ℕ}
-    (hY : ∀ q, 2 ≤ q → q ≤ n + 3 →
-      IsZero (((singularChains k).obj (TopCat.of Y)).homology q)) :
-    IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
-  (isUniquelyTwoDivisible_iff _).2
-    (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_ringEquiv e hY)
-
-/-- **Sharp finite-range mod-two vanishing theorem.** If `π₁(Y, y)` is trivial and `H_q(Y; ℤ/2) = 0`
-(with lifted integer-module coefficients) for all `2 ≤ q ≤ n + 3`, then `π_{n + 2}(Y, y)` is
-uniquely two-divisible. -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_modTwo {Y : Type u}
-    [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)] {n : ℕ}
-    (hY : ∀ q, 2 ≤ q → q ≤ n + 3 →
-      IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) q).obj
-        (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj (TopCat.of Y))) :
-    IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
-  (isUniquelyTwoDivisible_iff _).2
-    (bijective_zsmul_homotopyGroup_of_isZero_singularHomology_zmod hY)
-
-/-- **The mod-two vanishing theorem with ring coefficients.** If `π₁(Y, y)` is trivial and the
-reduced mod-two singular homology of `Y` with coefficients in a ring `k ≃+* ZMod 2` in the
-universe of `Y` vanishes in every degree, then every higher homotopy group `π_{n + 2}(Y, y)` is
-uniquely two-divisible. -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo_ringEquiv
-    {k : Type u} [CommRing k] (e : k ≃+* ZMod 2) {Y : Type u} [TopologicalSpace Y] {y : Y}
-    [Subsingleton (π_ 1 Y y)]
-    (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor (ModuleCat.of k k) q).obj (TopCat.of Y)))
-    (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
-  (isUniquelyTwoDivisible_iff _).2
-    (bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_ringEquiv e hY n)
-
-/-- **The mod-two vanishing theorem.** If `π₁(Y, y)` is trivial and the reduced mod-two singular
-homology of `Y` with coefficients in the lifted integer module `ℤ/2` vanishes in every degree, then
-every higher homotopy group `π_{n + 2}(Y, y)` is uniquely two-divisible (hence is a `ℤ[1/2]`-module
-and satisfies `π_{n + 2}(Y, y) ⊗ 𝔽₂ = 0`). -/
-theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_reducedSingularHomology_modTwo {Y : Type u}
-    [TopologicalSpace Y] {y : Y} [Subsingleton (π_ 1 Y y)]
-    (hY : ∀ q, IsZero ((reducedSingularHomologyFunctor
-      (ModuleCat.of ℤ (ULift.{u} (ZMod 2))) q).obj (TopCat.of Y))) (n : ℕ) :
-    IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
-  (isUniquelyTwoDivisible_iff _).2
-    (bijective_zsmul_homotopyGroup_of_isZero_reducedSingularHomology_zmod hY n)
+    (isZero_singularHomologyFunctor_iff_isZero_reducedSingularHomologyFunctor
+      (ModuleCat.of ℤ (ULift.{u} (ZMod m))) (TopCat.of Y) (by omega)).2 (hY q)
 
 end TauCeti

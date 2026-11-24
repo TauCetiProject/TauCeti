@@ -130,7 +130,7 @@ theorem prop_homotopyGroup_of_subsingleton_singularHomology {Y : Type u} [Topolo
   have hXk (q : ℕ) (hq1 : 2 ≤ q) (hq2 : q ≤ n + 2 + r) :
       Subsingleton (((singularChains k).obj X).homology q) :=
     ModuleCat.isZero_iff_subsingleton.1 <|
-      isZero_singularHomology_cwApproximation_of_isZero y k q <|
+      isZero_singularHomologyFunctor_cwApproximation_of_isZero y (ModuleCat.of k k) q <|
         ModuleCat.isZero_iff_subsingleton.2 (hY q hq1 hq2)
   -- Climb the Whitehead tower: the first homotopy group of each stage has `P`, so the fibres of its
   -- next cover are `k`-acyclic, and so is the cover.

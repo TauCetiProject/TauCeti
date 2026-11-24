@@ -600,6 +600,21 @@ theorem isIso_singularHomologyMap_of_isIso_fiber_to_point (hp : serreFibrations 
     isoModSerre_singularHomologyMap_of_fiber_to_point IsZero IsZero le_rfl hp k
       fun b q hq ↦ (ObjectProperty.isoModSerre_isZero_iff _).2 (hfib b q hq)
 
+/-- A path-connected space whose positive-degree `R`-homology vanishes in degree `q` has the
+`R`-homology of a point in degree `q`. -/
+private lemma isIso_singularHomologyMap_to_point_of_isZero {X : _root_.TopCat.{u}}
+    [PathConnectedSpace X] (R : Type u) [Ring R] (q : ℕ)
+    (hX : q ≠ 0 → IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).obj X)) :
+    IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+      (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from X)) := by
+  rcases eq_or_ne q 0 with rfl | hq0
+  · -- In degree zero both augmentations are isomorphisms, and the map commutes with them.
+    exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) _)
+  · -- In positive degrees both groups vanish; the point is contractible.
+    exact (hX hq0).isIso
+      (isZero_singularHomologyFunctor_of_contractibleSpace _ (_root_.TopCat.of PUnit) hq0) _
+
 /-- **A Serre fibration with acyclic fibres is a homology isomorphism.** Let `p : E ⟶ B` be a Serre
 fibration whose fibres are path-connected and have no `R`-homology in the positive degrees
 `q ≤ k`. Then `p` induces an isomorphism `Hₖ(E; R) ≅ Hₖ(B; R)`. -/
@@ -611,13 +626,7 @@ theorem isIso_singularHomologyMap_of_isZero_fiber (hp : serreFibrations p) (R : 
       (ModuleCat.of R R)).map p) := by
   refine isIso_singularHomologyMap_of_isIso_fiber_to_point hp R k fun b q hq ↦ ?_
   have := hconn b
-  rcases eq_or_ne q 0 with rfl | hq0
-  · -- In degree zero both augmentations are isomorphisms, and the map commutes with them.
-    exact IsIso.of_isIso_fac_right
-      (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) _)
-  · -- In positive degrees both groups vanish; the point is contractible.
-    exact (hfib b q hq0 hq).isIso
-      (isZero_singularHomologyFunctor_of_contractibleSpace _ (_root_.TopCat.of PUnit) hq0) _
+  exact isIso_singularHomologyMap_to_point_of_isZero R q fun hq0 ↦ hfib b q hq0 hq
 
 /-- **Fibre homology comparison along a path.** For a Serre fibration `p : E ⟶ B`, points `b₀, b₁`
 in the same path component of `B`, and a ring `R`, the map from `p⁻¹(b₀)` to a point induces an
@@ -628,30 +637,8 @@ theorem isIso_singularHomologyMap_fiber_to_point_iff_of_joined (hp : serreFibrat
       (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₀))) ↔
       IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₁))) := by
-  let γ : Path b₀ b₁ := h.somePath
-  let H := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)
-  have htr : IsIso (fiberHomologyTransport hp (ModuleCat.of R R) q γ) := by
-    have hmap : IsIso ((serreFiberLocalSystem hp (ModuleCat.of R R) q).map
-        (Path.Homotopic.Quotient.mk γ : (⟨b₀⟩ : FundamentalGroupoid B) ⟶ ⟨b₁⟩)) := inferInstance
-    rw [serreFiberLocalSystem_map_mk] at hmap
-    have hcomp : IsIso (fiberHomologyTransport hp (ModuleCat.of R R) q γ ≫
-        (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q ⟨b₁⟩).inv) :=
-      IsIso.of_isIso_comp_left (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q ⟨b₀⟩).hom _
-    exact IsIso.of_isIso_comp_right _
-      (serreFiberLocalSystemObjIso hp (ModuleCat.of R R) q ⟨b₁⟩).inv
-  have hfac : fiberHomologyTransport hp (ModuleCat.of R R) q γ ≫
-      H.map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₁)) =
-      H.map (_root_.TopCat.isTerminalPUnit.from (p.fiber b₀)) := by
-    have h₁ : p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 1)
-        (TopCat.pathEquiv.symm γ).hom₁ ≫ _root_.TopCat.isTerminalPUnit.from _ =
-        _root_.TopCat.isTerminalPUnit.from (p.fiber b₁) :=
-      _root_.TopCat.isTerminalPUnit.hom_ext _ _
-    have h₀ : p.pullbackFiberι (TopCat.pathEquiv.symm γ).hom (k := 0)
-        (TopCat.pathEquiv.symm γ).hom₀ ≫ _root_.TopCat.isTerminalPUnit.from _ =
-        _root_.TopCat.isTerminalPUnit.from (p.fiber b₀) :=
-      _root_.TopCat.isTerminalPUnit.hom_ext _ _
-    rw [← h₁, H.map_comp, fiberHomologyTransport_comp_map_pullbackFiberι_assoc, ← H.map_comp, h₀]
-  rw [← hfac, isIso_comp_left_iff]
+  rw [← fiberHomologyTransport_comp_map_isTerminalPUnit_from hp (ModuleCat.of R R) q h.somePath,
+    isIso_comp_left_iff]
 
 /-- **A Serre fibration over a path-connected base whose fibre over one point has the homology of
 a point is a homology isomorphism.** Let `p : E ⟶ B` be a Serre fibration over a path-connected
@@ -680,13 +667,9 @@ theorem isIso_singularHomologyMap_of_isZero_fiber_of_pathConnectedSpace
     IsIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) k).obj
       (ModuleCat.of R R)).map p) := by
   refine isIso_singularHomologyMap_of_isIso_fiber_to_point_of_pathConnectedSpace hp b₀ R k
-    fun q hq ↦ ?_
-  cases q with
-  | zero => exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε _ _)
-  | succ q =>
-    exact (hfib q hq).isIso
-      (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of R R)
-        (_root_.TopCat.of PUnit) q.succ_ne_zero) _
+    fun q hq ↦ isIso_singularHomologyMap_to_point_of_isZero R q fun hq0 ↦ ?_
+  obtain ⟨q', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq0
+  exact hfib q' hq
 
 end TopCat
 

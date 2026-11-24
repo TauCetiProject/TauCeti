@@ -26,7 +26,8 @@ need not be prime or nonzero.
 
 The proof passes to the CW approximation of the path component of `x` (preserving positive homotopy
 groups via `TauCeti.cwApproximationPathComponentHomotopyGroupMulEquiv` and singular homology
-vanishing via `TauCeti.isZero_singularHomology_cwApproximation_of_isZero`), identifies `π_{n + 2}`
+vanishing via `TauCeti.isZero_singularHomologyFunctor_cwApproximation_of_isZero`), identifies
+`π_{n + 2}`
 with lifted integral homology via `HomotopyGroup.cubicalHurewiczSingularHomologyUliftAddEquiv`, and
 applies the mod-`m` coefficient sequence (`TopCat.bijective_zsmul_singularHomology_of_isZero_zmod`).
 Both adjacent vanishing hypotheses matter: degree `n + 2` gives surjectivity of multiplication by
