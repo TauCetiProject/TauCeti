@@ -8,13 +8,13 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.SquareChartPartition
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 
 /-!
 # Sobolev spaces of distributions on bundle tests
@@ -79,6 +79,9 @@ equations of the subspace are closed.
   `TauCeti.SquareChartPartition.sobolevSpaceEquiv`: the Sobolev space represents exactly the
   functionals that are `H^s` with respect to the partition.
 * `TauCeti.SquareChartPartition.norm_ofMemSobolev_sq`: the pinned norm.
+* `TauCeti.SquareChartPartition.inclusion`: the norm-nonincreasing inclusion `H^s ⊆ H^r` for
+  `r ≤ s`, representing the same functionals; it is compact for `r < s`
+  (`TauCeti.SquareChartPartition.isCompactOperator_inclusion`).
 
 The independence of the space from the partition, up to equivalent norms, needs the Sobolev
 estimates for multiplication by cutoffs and for chart changes, and is not proved here.
@@ -588,6 +591,61 @@ theorem norm_ofMemSobolev_sq {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemS
     ‖A.ofMemSobolev s hT‖ ^ 2 = ∑ i, ∑ j, ‖(hT.localization i j).toBesselPotentialSpace‖ ^ 2 := by
   rw [← Submodule.norm_coe, PiLp.norm_sq_eq_of_L2, Fintype.sum_prod_type]
   simp only [ofMemSobolev_apply]
+
+/-! ### The inclusions between the Sobolev spaces -/
+
+variable {s} {r : ℝ}
+
+/-- The **inclusion `H^s ⊆ H^r`** of the Sobolev spaces of `A`, for `r ≤ s`: the inclusion
+`H^s(E, ℂ) ⊆ H^r(E, ℂ)` (`BesselPotentialSpace.inclusion`) in every component
+(`TauCeti.SquareChartPartition.inclusion_apply`). It represents the same functional on bundle
+tests (`TauCeti.SquareChartPartition.toDistribution_inclusion`). -/
+def inclusion (h : r ≤ s) : A.sobolevSpace s →L[ℝ] A.sobolevSpace r :=
+  (((PiLp.continuousLinearEquiv 2 ℂ _).symm.toContinuousLinearMap ∘L
+      ContinuousLinearMap.pi fun k : ι × Fin (Module.finrank ℝ F) ↦
+        BesselPotentialSpace.inclusion h ∘L PiLp.proj 2 (fun _ ↦ H^{s}(E, ℂ)) k).restrictScalars
+      ℝ ∘L (A.sobolevSpace s).subtypeL).codRestrict (A.sobolevSpace r) fun u ↦
+    (A.mem_sobolevSpace r).2 fun k ↦ by
+      simpa [BesselPotentialSpace.toDistr_inclusion] using u.property k
+
+@[simp]
+theorem inclusion_apply (h : r ≤ s) (u : A.sobolevSpace s) (k : ι × Fin (Module.finrank ℝ F)) :
+    (A.inclusion h u).val k = BesselPotentialSpace.inclusion h (u.val k) :=
+  (rfl)
+
+/-- The inclusion `H^s ⊆ H^r` does not change the represented functional on bundle tests. -/
+@[simp]
+theorem toDistribution_inclusion (h : r ≤ s) (u : A.sobolevSpace s) :
+    A.toDistribution r (A.inclusion h u) = A.toDistribution s u := by
+  simp [toDistribution_apply]
+
+@[simp]
+theorem inclusion_ofMemSobolev (h : r ≤ s) {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemSobolev s T) : A.inclusion h (A.ofMemSobolev s hT) = A.ofMemSobolev r (hT.mono h) :=
+  A.toDistribution_injective r (by simp)
+
+theorem inclusion_injective (h : r ≤ s) : Function.Injective (A.inclusion h) := fun u u' huu' ↦
+  A.toDistribution_injective s <| by
+    rw [← A.toDistribution_inclusion h u, ← A.toDistribution_inclusion h u', huu']
+
+@[simp]
+theorem inclusion_self (u : A.sobolevSpace s) : A.inclusion le_rfl u = u :=
+  A.toDistribution_injective s (A.toDistribution_inclusion le_rfl u)
+
+@[simp]
+theorem inclusion_inclusion {t : ℝ} (h₁ : r ≤ s) (h₂ : t ≤ r) (u : A.sobolevSpace s) :
+    A.inclusion h₂ (A.inclusion h₁ u) = A.inclusion (h₂.trans h₁) u :=
+  A.toDistribution_injective t (by simp)
+
+/-- The inclusion `H^s ⊆ H^r` does not increase the norm. -/
+theorem norm_inclusion_apply_le (h : r ≤ s) (u : A.sobolevSpace s) : ‖A.inclusion h u‖ ≤ ‖u‖ := by
+  rw [← Submodule.norm_coe, ← Submodule.norm_coe u, PiLp.norm_eq_of_L2, PiLp.norm_eq_of_L2]
+  gcongr with k
+  exact BesselPotentialSpace.norm_inclusion_apply_le h _
+
+theorem norm_inclusion_le (h : r ≤ s) : ‖A.inclusion h‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
+    simpa using A.norm_inclusion_apply_le h u
 
 end Sobolev
 
