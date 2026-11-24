@@ -65,31 +65,26 @@ theorem HarmonicOnNhd.exists_mem_openSegment_laplacian_comp_ne_zero {p q : E}
     (hh : HarmonicOnNhd h (segment ℝ p q)) (hF : ∀ y ∈ segment ℝ p q, ContDiffAt ℝ 2 F (h y))
     (hne : deriv F (h p) ≠ deriv F (h q)) :
     ∃ y ∈ openSegment ℝ p q, Δ (F ∘ h) y ≠ 0 := by
-  -- Apply the mean value theorem to `t ↦ F' (h (γ t))` along `γ t = p + t • (q - p)`.
-  set γ : ℝ → E := fun t ↦ p + t • (q - p) with hγ_def
-  have hγ (t : ℝ) : HasDerivAt γ (q - p) t := by
-    have := ((hasDerivAt_id' t).smul_const (q - p)).const_add p
-    rwa [one_smul] at this
-  have hseg {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : γ t ∈ segment ℝ p q := by
-    rw [segment_eq_image']
-    exact ⟨t, ht, rfl⟩
+  -- Apply the mean value theorem to `t ↦ F' (h (γ t))` along `γ = AffineMap.lineMap p q`.
+  set γ : ℝ →ᵃ[ℝ] E := AffineMap.lineMap p q
+  have hseg {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : γ t ∈ segment ℝ p q := lineMap_mem_segment ℝ p q ht
   have hd (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : HasDerivAt (fun t ↦ deriv F (h (γ t)))
       (deriv (deriv F) (h (γ t)) * fderiv ℝ h (γ t) (q - p)) t := by
     have hhγ : HasDerivAt (h ∘ γ) (fderiv ℝ h (γ t) (q - p)) t :=
-      (((hh _ (hseg ht)).1.differentiableAt (by norm_num)).hasFDerivAt).comp_hasDerivAt t (hγ t)
+      (((hh _ (hseg ht)).1.differentiableAt (by norm_num)).hasFDerivAt).comp_hasDerivAt t
+        AffineMap.hasDerivAt_lineMap
     exact (((hF _ (hseg ht)).derivWithin (m := 1) (by norm_num)).differentiableAt
       (by norm_num)).hasDerivAt.comp t hhγ
   have hcont : ContinuousOn (fun t ↦ deriv F (h (γ t))) (Icc 0 1) :=
     fun t ht ↦ (hd t ht).continuousAt.continuousWithinAt
   obtain ⟨t, ht, hslope⟩ := exists_hasDerivAt_eq_slope _ _ zero_lt_one hcont
     fun t ht ↦ hd t (Ioo_subset_Icc_self ht)
-  have hγ0 : γ 0 = p := by simp [hγ_def]
-  have hγ1 : γ 1 = q := by simp [hγ_def]
-  rw [hγ0, hγ1, sub_zero, div_one] at hslope
+  simp only [γ, AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one, sub_zero,
+    div_one] at hslope
   -- Both factors of the derivative are nonzero at `γ t`, since the slope is.
   obtain ⟨hF₂, hdh⟩ := mul_ne_zero_iff.1 (hslope ▸ sub_ne_zero.2 hne.symm)
   have hgrad : ∇ h (γ t) ≠ 0 := fun h0 ↦ hdh (by rw [← inner_gradient_left, h0, inner_zero_left])
-  refine ⟨γ t, by rw [openSegment_eq_image']; exact ⟨t, ht, rfl⟩, ?_⟩
+  refine ⟨γ t, lineMap_mem_openSegment ℝ p q ht, ?_⟩
   have hγt := hseg (Ioo_subset_Icc_self ht)
   rw [(hh _ hγt).laplacian_comp (hF _ hγt)]
   exact mul_ne_zero hF₂ (pow_ne_zero 2 (norm_ne_zero_iff.2 hgrad))

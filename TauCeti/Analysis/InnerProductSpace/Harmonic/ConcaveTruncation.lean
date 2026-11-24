@@ -57,13 +57,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 theorem laplacian_concaveTruncation_comp {x : E} (hh : HarmonicAt h x) :
     Δ (concaveTruncation a b ∘ h) x =
       deriv (deriv (concaveTruncation a b)) (h x) * ‖∇ h x‖ ^ 2 :=
-  hh.laplacian_comp ((contDiff_concaveTruncation a b).of_le (by simp)).contDiffAt
+  hh.laplacian_comp (contDiff_concaveTruncation a b).contDiffAt
 
 /-- **The concave truncation of a harmonic function is superharmonic.** For `a ≤ b` and `h`
 harmonic at `x`, `Δ (concaveTruncation a b ∘ h) x ≤ 0`. -/
 theorem laplacian_concaveTruncation_comp_nonpos (hab : a ≤ b) {x : E} (hh : HarmonicAt h x) :
     Δ (concaveTruncation a b ∘ h) x ≤ 0 :=
-  hh.laplacian_comp_nonpos ((contDiff_concaveTruncation a b).of_le (by simp)).contDiffAt
+  hh.laplacian_comp_nonpos (contDiff_concaveTruncation a b).contDiffAt
     (deriv_deriv_concaveTruncation_nonpos hab _)
 
 /-- **Strict superharmonicity of the concave truncation.** For `a < b` and `h` harmonic near a
@@ -76,7 +76,7 @@ theorem exists_mem_openSegment_laplacian_concaveTruncation_comp_neg (hab : a < b
     rw [deriv_concaveTruncation_of_le_left hab.le hp, deriv_concaveTruncation_of_right_le hab hq]
     exact one_ne_zero
   obtain ⟨y, hy, hne⟩ := hh.exists_mem_openSegment_laplacian_comp_ne_zero
-    (fun _ _ ↦ ((contDiff_concaveTruncation a b).of_le (by simp)).contDiffAt) hne
+    (fun _ _ ↦ (contDiff_concaveTruncation a b).contDiffAt) hne
   exact ⟨y, hy, (laplacian_concaveTruncation_comp_nonpos hab.le
     (hh y (openSegment_subset_segment ℝ p q hy))).lt_of_ne hne⟩
 

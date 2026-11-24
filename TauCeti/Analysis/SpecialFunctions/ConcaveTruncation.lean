@@ -30,7 +30,8 @@ metrics of positive scalar curvature on a torus. The harmonic side of that argum
 
 * `TauCeti.concaveTruncation`: the truncation.
 * `TauCeti.contDiff_concaveTruncation`, `TauCeti.monotone_concaveTruncation`,
-  `TauCeti.concaveOn_concaveTruncation`: it is smooth, nondecreasing and concave.
+  `TauCeti.concaveOn_concaveTruncation`: it is smooth (`C^n` for every `n : ℕ∞`), nondecreasing
+  and concave.
 * `TauCeti.concaveTruncation_of_le_left`, `TauCeti.concaveTruncation_of_right_le`: it is the
   identity on `(-∞, a]` and constant on `[b, ∞)`.
 * `TauCeti.deriv_concaveTruncation_of_le_left`, `TauCeti.deriv_concaveTruncation_of_right_le`: its
@@ -97,11 +98,19 @@ theorem deriv_concaveTruncation (a b s : ℝ) :
   (hasDerivAt_concaveTruncation a b s).deriv
 
 /-- The concave truncation is differentiable. -/
+@[fun_prop]
 theorem differentiable_concaveTruncation (a b : ℝ) : Differentiable ℝ (concaveTruncation a b) :=
   fun s ↦ (hasDerivAt_concaveTruncation a b s).differentiableAt
 
-/-- The concave truncation is smooth. -/
-theorem contDiff_concaveTruncation (a b : ℝ) : ContDiff ℝ ∞ (concaveTruncation a b) := by
+/-- The concave truncation is continuous. -/
+@[fun_prop]
+theorem continuous_concaveTruncation (a b : ℝ) : Continuous (concaveTruncation a b) :=
+  (differentiable_concaveTruncation a b).continuous
+
+/-- The concave truncation is smooth: it is `C^n` for every `n : ℕ∞`. -/
+@[fun_prop]
+theorem contDiff_concaveTruncation {n : ℕ∞} (a b : ℝ) : ContDiff ℝ n (concaveTruncation a b) := by
+  refine ContDiff.of_le ?_ (WithTop.coe_le_coe.2 le_top)
   refine contDiff_infty_iff_deriv.2 ⟨differentiable_concaveTruncation a b, ?_⟩
   rw [funext (deriv_concaveTruncation a b)]
   exact contDiff_const.sub (smoothTransition.contDiff.comp
