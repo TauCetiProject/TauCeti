@@ -67,6 +67,9 @@ and proves:
   of order `m`, with `k` leading terms equal to zero;
 * `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
   classical symbol of order `m - 1`;
+* `TauCeti.ClassicalSymbol.replacePrincipal`: the classical symbol `b + χ(ξ) (a - b_m)(x, ξ)`
+  obtained from `b` by replacing its principal symbol with `a`. It keeps the lower order terms
+  and, for the same cutoff, the remainders after `N ≥ 1` terms;
 * the exact sequence `0 → S^{m-1}_cl → S^m_cl → H^m → 0`: the principal symbol is surjective
   (`TauCeti.ClassicalSymbol.principal_surjective`), its kernel is the image of the classical
   symbols of order `m - 1` (`TauCeti.ClassicalSymbol.principal_eq_zero_iff_exists_inclusion`,
@@ -752,6 +755,52 @@ theorem inclusion_tail_add_ofHomogeneous :
   ext <| Symbol.ext <| funext fun p => by simp
 
 end Tail
+
+/-! ### Replacing the principal symbol -/
+
+section ReplacePrincipal
+
+variable (χ : FrequencyCutoff (CoordinateSpace n)) (b : ClassicalSymbol n V W m)
+  (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+
+/-- The classical symbol obtained from `b` by replacing its principal symbol with `a`:
+`b + χ(ξ) (a - b_m)(x, ξ)`. It has principal symbol `a` and the lower order terms of `b`. -/
+def replacePrincipal : ClassicalSymbol n V W m :=
+  b + ofHomogeneous χ (a - b.principal)
+
+@[simp]
+theorem toSymbol_replacePrincipal :
+    (b.replacePrincipal χ a).toSymbol = b.toSymbol + cutoffSymbol χ (a - b.principal) := by
+  simp [replacePrincipal]
+
+@[simp]
+theorem principal_replacePrincipal : (b.replacePrincipal χ a).principal = a := by
+  simp [replacePrincipal, principal_add]
+
+@[simp]
+theorem term_replacePrincipal_succ (j : ℕ) :
+    (b.replacePrincipal χ a).term (j + 1) = b.term (j + 1) := by
+  simp [replacePrincipal]
+
+/-- Replacing the principal symbol does not change the remainders after `N ≥ 1` terms for the
+cutoff `χ` used in the replacement. -/
+@[simp]
+theorem remainder_replacePrincipal_succ (N : ℕ) :
+    (b.replacePrincipal χ a).remainder χ (N + 1) = b.remainder χ (N + 1) := by
+  ext1
+  funext p
+  have h0 : ((b.replacePrincipal χ a).term 0).coefficient p = a.coefficient p := by
+    rw [← coefficient_principal, principal_replacePrincipal]
+  simp only [coefficient_remainder, Finset.sum_range_succ', h0, toSymbol_replacePrincipal,
+    term_replacePrincipal_succ, Symbol.coefficient_add, Pi.add_apply, coefficient_cutoffSymbol,
+    HomogeneousSymbol.coefficient_sub, Pi.sub_apply, smul_sub, ← coefficient_principal]
+  abel
+
+@[simp]
+theorem replacePrincipal_principal : b.replacePrincipal χ b.principal = b := by
+  simp [replacePrincipal]
+
+end ReplacePrincipal
 
 /-! ### The principal symbol sequence
 
