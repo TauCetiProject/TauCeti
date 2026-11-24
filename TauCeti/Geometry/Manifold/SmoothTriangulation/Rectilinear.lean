@@ -15,9 +15,9 @@ A geometric simplicial complex `K` in a real normed space `V` is read as an abst
 through its vertex scheme, and the comparison map `K.realizationToAmbient : |K.vertexScheme| → V`
 (`TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Geometric`) sends a point with
 barycentric coordinates `x` to `∑ v, x v • v`. This map is linear in barycentric coordinates on
-every closed simplex and injective, so it is its own secant map
-(`Geometry.SimplicialComplex.secantMap_realizationToAmbient`). Its star-immersion property is
-proved in `TauCeti.Geometry.Manifold.SmoothTriangulation.Geometric`.
+every closed simplex, so it is its own secant map
+(`Geometry.SimplicialComplex.secantMap_realizationToAmbient`). It is also injective, and its
+star-immersion property is proved in `TauCeti.Geometry.Manifold.SmoothTriangulation.Geometric`.
 
 Following the comparison map by a map `F : V → M` into a manifold gives an immersion of a
 closed simplex as soon as `F` is `Cⁿ` on that simplex with a derivative injective on the
@@ -108,11 +108,7 @@ theorem isSmoothTriangulation_realizationHomeomorph_trans
       F ∘ K.realizationToAmbient ∘ faceInclusion K.vertexScheme σ := by
     funext y
     simp only [comp_apply, Homeomorph.trans_apply]
-    have hmem : K.realizationToAmbient (faceInclusion _ σ y) ∈
-        convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set V) := by
-      rw [← range_realizationToAmbient_comp_faceInclusion σ]
-      exact mem_range_self y
-    rw [hFf _ hmem]
+    rw [hFf _ (realizationToAmbient_faceInclusion_mem_convexHull σ y)]
     exact congrArg f (Subtype.ext (coe_realizationHomeomorph_apply hK _))
   rw [h]
   exact isSimplexImmersion_comp_realizationToAmbient_comp_faceInclusion σ

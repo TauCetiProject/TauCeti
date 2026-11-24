@@ -183,12 +183,12 @@ theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
     range (fun x : StandardSimplex ρ.val =>
       ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).val : ι → ℝ)) =
       convexHull ℝ (range fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)) := by
-  convert range_linearExtension_comp_faceInclusion
-    (fun u : K.EdgewiseVertex k => (edgewisePoint u.val : ι → ℝ)) ρ using 1
+  rw [← range_linearExtension_comp_faceInclusion
+    (fun u : K.EdgewiseVertex k => (edgewisePoint u.val : ι → ℝ)) ρ]
   congr 1
   funext x
-  rw [Function.comp_apply, edgewiseSubdivisionRealizationMap_val, linearExtension_apply]
-  exact Finsupp.apply_linearCombination ℝ (Finsupp.lcoeFun (R := ℝ)) _ _
+  simp only [Function.comp_apply, edgewiseSubdivisionRealizationMap_val, linearExtension_apply,
+    Finsupp.linearCombination_apply, Finsupp.coe_sum, Finsupp.coe_smul]
 
 /-- The edgewise realization map is continuous for the weak topologies on both realizations. -/
 theorem continuous_edgewiseSubdivisionRealizationMap :

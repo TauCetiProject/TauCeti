@@ -124,14 +124,22 @@ theorem range_realizationToAmbient_comp_faceInclusion (σ : Face K.vertexScheme)
   rw [← range_vertexScheme_face_coe]
   exact range_linearExtension_comp_faceInclusion _ σ
 
+/-- The comparison map sends each point of the closed simplex of a face of the vertex scheme into
+the convex hull of that face in `E`. -/
+theorem realizationToAmbient_faceInclusion_mem_convexHull (σ : Face K.vertexScheme)
+    (y : StandardSimplex σ.val) :
+    K.realizationToAmbient (faceInclusion K.vertexScheme σ y) ∈
+      convexHull ℝ (σ.val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
+  rw [← range_realizationToAmbient_comp_faceInclusion σ]
+  exact mem_range_self y
+
 /-- The comparison map sends a point of the realization into the closed simplex of `K` spanned by
 the carrier of the point. -/
 private theorem realizationToAmbient_mem_convexHull_carrier (x : Realization K.vertexScheme) :
     K.realizationToAmbient x ∈ convexHull ℝ
       ((carrier K.vertexScheme x).val.map (Embedding.subtype (· ∈ K.vertices)) : Set E) := by
-  rw [← range_realizationToAmbient_comp_faceInclusion]
   obtain ⟨y, hy⟩ := mem_range_faceInclusion_carrier K.vertexScheme x
-  exact ⟨y, congrArg K.realizationToAmbient hy⟩
+  simpa only [hy] using realizationToAmbient_faceInclusion_mem_convexHull _ y
 
 /-- Two points of the realization whose barycentric supports lie in a common face and which have
 the same image under the comparison map are equal. -/
@@ -266,8 +274,7 @@ theorem isClosedMap_codRestrict_realizationToAmbient [T2Space K.space]
   -- Each closed simplex is carried into the closed simplex of the corresponding face of `K`.
   rintro _ ⟨y, rfl⟩
   simp only [comp_apply, mem_preimage, val_codRestrict_apply, vertexSchemeFaceEquiv_apply_coe]
-  rw [← range_realizationToAmbient_comp_faceInclusion σ]
-  exact mem_range_self y
+  exact realizationToAmbient_faceInclusion_mem_convexHull σ y
 
 /-- If addition and real scalar multiplication on `E` are continuous, `E` is Hausdorff, and the
 closed simplices of `K` form a locally finite family in `E`, the
