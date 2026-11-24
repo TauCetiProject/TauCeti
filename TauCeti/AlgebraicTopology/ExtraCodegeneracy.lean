@@ -43,6 +43,16 @@ this file follows.
   `AlgebraicTopology.opFunctorCompAlternatingCofaceMapComplexIso`, which multiplies the
   contracting homotopy by `(-1) ^ (n + 1)` in degree `n + 1`.
 
+## Implementation notes
+
+Unlike Mathlib's `SimplicialObject.Augmented`, the type `CosimplicialObject.Augmented` is not
+`@[implicit_reducible]`. A goal mentioning a projection such as `X.right` of an augmented
+cosimplicial object `X` is therefore not type-correct at the transparency used by `simp`, `dsimp`
+and `rw`, which fail on it (`simp made no progress`, with the note that the target is not
+type-correct under the `implicit` transparency level). Mathlib's dual proofs in
+`Mathlib.AlgebraicTopology.ExtraDegeneracy` close such goals by `simp`; here the proofs compose
+the component equations by hand instead.
+
 ## References
 
 * [Paul G. Goerss, John F. Jardine, *Simplicial Homotopy Theory*][goerss-jardine-2009]
@@ -92,6 +102,8 @@ def map {D : Type*} [Category D] (ed : ExtraCodegeneracy X) (F : C ⥤ D) :
   s n := F.map (ed.s n)
   -- The augmentation of the image is `F` applied to the augmentation, after the identity
   -- components of `Functor.constComp`; the cofaces and codegeneracies are their images by `F`.
+  -- `simp [← F.map_comp]` fails on these goals (see the implementation notes), so we compose
+  -- the equations by hand.
   ε_comp_s' := (assoc _ _ _).trans ((id_comp _).trans
     ((F.map_comp _ _).symm.trans ((congrArg F.map ed.ε_comp_s').trans (F.map_id _))))
   δ₁_comp_s₀ := (F.map_comp _ _).symm.trans ((congrArg F.map ed.δ₁_comp_s₀).trans
@@ -205,9 +217,8 @@ lemma ε_app_comp_toSingle₀Equiv_symm_s' (ed : ExtraCodegeneracy X) :
     AlternatingCofaceMapComplex.ε.app X ≫
       (CochainComplex.toSingle₀Equiv ((alternatingCofaceMapComplex C).obj X.right) X.left).symm
         ed.s' = 𝟙 _ :=
-  -- The projections of augmented objects are stated for `Comma`, so `simp` and `rw` cannot
-  -- match the degree `0` components of these cochain maps; we compose the component equations
-  -- directly instead.
+  -- `simp` and `rw` fail on the degree `0` components of these cochain maps (see the
+  -- implementation notes), so we compose the component equations directly instead.
   HomologicalComplex.from_single_hom_ext <|
     ((HomologicalComplex.comp_f _ _ 0).trans
       ((congrArg₂ (· ≫ ·) (AlternatingCofaceMapComplex.ε_app_f_zero X)
@@ -227,8 +238,8 @@ def homotopyEquiv (ed : ExtraCodegeneracy X) :
   homotopyHomInvId := Homotopy.ofEq ed.ε_app_comp_toSingle₀Equiv_symm_s'
   homotopyInvHomId := Homotopy.equivSubZero.symm <|
     Homotopy.mkCochainComplex _ (fun n ↦ -ed.s n)
-      -- The projections of augmented objects are stated for `Comma`, so `simp` and `rw` cannot
-      -- match the components of these cochain maps; we compose the component equations directly.
+      -- `simp` and `rw` fail on the components of these cochain maps (see the implementation
+      -- notes), so we compose the component equations directly.
       (by
         have h : ((CochainComplex.toSingle₀Equiv ((alternatingCofaceMapComplex C).obj X.right)
             X.left).symm ed.s' ≫ AlternatingCofaceMapComplex.ε.app X).f 0 =
@@ -276,9 +287,9 @@ def homotopyEquivOfOpFunctor (ed : ExtraCodegeneracy (opFunctor.obj X)) :
       ((alternatingCofaceMapComplex C).obj X.right) where
   hom := AlternatingCofaceMapComplex.ε.app X
   inv := (opFunctorCompAlternatingCofaceMapComplexIso.inv.app X.right) ≫ ed.homotopyEquiv.inv
-  -- The projections of augmented objects are stated for `Comma`, so `simp` and `rw` cannot
-  -- rewrite these composites; we compose the equations directly. The augmentation of `X` is that
-  -- of its reversal followed by the sign comparison.
+  -- `simp` and `rw` fail on these composites (see the implementation notes), so we compose the
+  -- equations directly. The augmentation of `X` is that of its reversal followed by the sign
+  -- comparison.
   homotopyHomInvId := Homotopy.ofEq <|
     (congrArg (· ≫ _) (ε_app_comp_opFunctorCompAlternatingCofaceMapComplexIso_hom_app X).symm).trans
       ((assoc _ _ _).trans ((congrArg (AlternatingCofaceMapComplex.ε.app (opFunctor.obj X) ≫ ·)
@@ -327,6 +338,10 @@ lemma homotopyEquivOfOpFunctor_homotopyInvHomId_hom_succ
       (opFunctorCompAlternatingCofaceMapComplexIso.inv.app X.right).f (n + 1) ≫
         ed.homotopyEquiv.homotopyInvHomId.hom (n + 1) n ≫
           (opFunctorCompAlternatingCofaceMapComplexIso.hom.app X.right).f n :=
+    -- By the definitions of `homotopyEquivOfOpFunctor`, `Homotopy.trans`, `Homotopy.compLeft`,
+    -- `Homotopy.compRight` and `Homotopy.ofEq`, the left side unfolds to `0 + (i ≫ h ≫ j + 0)`
+    -- for the composite `i ≫ h ≫ j` on the right. `simp` with their `_hom` lemmas fails on
+    -- this goal (see the implementation notes), so we rely on that unfolding.
     (zero_add _).trans (add_zero _)
   rw [h, homotopyEquiv_homotopyInvHomId_hom_succ,
     opFunctorCompAlternatingCofaceMapComplexIso_inv_app_f,

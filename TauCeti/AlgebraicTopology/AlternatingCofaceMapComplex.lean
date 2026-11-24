@@ -112,8 +112,9 @@ def ε [HasZeroObject C] :
     (congrArg (X.hom.app ⦋0⦌ ≫ ·) (alternatingCofaceMapComplex_obj_d X.right 0)).trans
       (app_zero_comp_objD_zero X.hom)⟩
   naturality X Y f := HomologicalComplex.from_single_hom_ext <| by
-    -- The projections of augmented objects are stated for `Comma`, so `simp` and `rw` cannot
-    -- match the degree `0` components inside the composite functors; we compose the component
+    -- `CosimplicialObject.Augmented` is not `@[implicit_reducible]`, unlike Mathlib's
+    -- `SimplicialObject.Augmented`, so a goal mentioning `X.right` is not type-correct at the
+    -- transparency of `simp` and `rw`, which fail on it. We compose the degree `0` component
     -- equations directly instead.
     refine (congrArg₂ (· ≫ ·) (CochainComplex.single₀_map_f_zero f.left)
       (CochainComplex.fromSingle₀Equiv_symm_apply_f_zero (Y.hom.app ⦋0⦌) _)).trans
