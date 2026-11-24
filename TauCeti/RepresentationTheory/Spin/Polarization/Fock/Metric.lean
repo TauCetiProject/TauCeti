@@ -72,9 +72,6 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
   orthonormal basis of `W` identifies the wedge-basis form with the exterior Gram form `H`.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_fockAction_left`: the normalized Fock action is
   a `*`-representation for the wedge-basis metric of an orthonormal polarization basis.
-* `AlmostComplexStructure.sesqExteriorAlgebra_domRestrict₁₂_degreeScaling_of_mem_exteriorPower`:
-  the `2 ^ p` degree-`p` scaling factor for the exterior Gram form of an arbitrary real bilinear
-  form `g`, which specializes to the native Fock metric in the Euclidean case.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower` and
   `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_spinAction_left`: the `2 ^ p`
   degree-`p` scaling factor and `*`-representation property for the native action.
@@ -379,28 +376,6 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure
   {Q : QuadraticForm ℝ V} [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
   (hQ : Q.Nondegenerate) {r : ℂˣ} (hr : (r : ℂ) = Real.sqrt 2)
 include hr
-
-/-- **Degree-`p` scaling factor `2 ^ p` for the exterior Gram form**: for an arbitrary real
-bilinear form `g`, its restricted complexified exterior Gram form
-`H = ((g.sesqComplexification).domRestrict₁₂ W W).sesqExteriorAlgebra`, and the degree scaling
-`T` by `√2`, the pullback `H (T s) (T t)` is `2 ^ p` times `H s t` for `s` in `⋀^p W`. When
-`g` is the Euclidean inner product `innerₗ V` (with `Q v = -g v v`), this gives the degree-`p`
-scaling of the native Fock metric. -/
-theorem sesqExteriorAlgebra_domRestrict₁₂_degreeScaling_of_mem_exteriorPower
-    (g : LinearMap.BilinForm ℝ V) {p : ℕ}
-    {s : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W}
-    (hs : s ∈ ⋀[ℂ]^p (J.spinPolarizationData hQJ hQ).W)
-    (t : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
-    ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
-        (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W).sesqExteriorAlgebra
-        (degreeScaling r s) (degreeScaling r t) =
-      2 ^ p * ((LinearMap.BilinForm.sesqComplexification g).domRestrict₁₂
-        (J.spinPolarizationData hQJ hQ).W (J.spinPolarizationData hQJ hQ).W).sesqExteriorAlgebra
-        s t := by
-  have hr2 : starRingEnd ℂ (r : ℂ) * r = 2 := by
-    rw [hr, ← Complex.star_def]
-    simpa using Complex.star_mul_self_ofReal_sqrt zero_le_two
-  rw [LinearMap.sesqExteriorAlgebra_degreeScaling_degreeScaling_of_mem_exteriorPower _ r hs t, hr2]
 
 /-- **The native Fock metric has degree-`p` factor `2 ^ p`**: for the metric `H` making the wedge
 basis of `b` orthonormal and the degree scaling `T` by `√2`, the pullback `H (T s) (T t)` is
