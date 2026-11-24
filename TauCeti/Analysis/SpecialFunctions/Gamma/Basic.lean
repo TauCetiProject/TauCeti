@@ -80,8 +80,6 @@ sides of either limit being `0` at the poles `s = -k`. The second limit is the a
 * `Complex.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast`,
   `Real.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast` — `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`
   for all `s` and `n`, including at the nonpositive integer poles of `Γ`.
-* `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
-  `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 * `Complex.Gamma_mul_sin_pi_mul` — Euler's reflection formula in reciprocal form:
   `Γ(s) * sin (π * s) = π / Γ(1 - s)` for `s ∉ -ℕ`, including at positive integers where both
   sides vanish.
@@ -404,38 +402,6 @@ theorem inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast (s : ℝ) (n :
 end Real
 
 namespace Complex
-
-open Finset in
-/-- A finite alternating sum of reciprocal Gamma values: for `a ∉ −ℕ`,
-`∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))`. This is the coefficient
-identity behind the expansion of Tricomi's incomplete Gamma function in powers of `−z`
-(DLMF 8.7.1). -/
-theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n)
-    (m : ℕ) :
-    ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m - i : ℕ) + 1)) =
-      (-1) ^ m / (m ! * (a + m)) * (Gamma a)⁻¹ := by
-  induction m generalizing a with
-  | zero =>
-    have ha0 : a ≠ 0 := by simpa using ha 0
-    simp [Gamma_add_one a ha0, mul_comm]
-  | succ m ih =>
-    have ha1 : ∀ n : ℕ, a + 1 ≠ -n := fun n h => ha (n + 1) (by push_cast; linear_combination h)
-    have ha0 : a ≠ 0 := by simpa using ha 0
-    have ham : a + (m + 1 : ℕ) ≠ 0 := fun h => ha (m + 1) (by linear_combination h)
-    have hΓ : Gamma a ≠ 0 := Gamma_ne_zero ha
-    rw [sum_range_succ, Nat.sub_self, Nat.cast_zero, add_zero]
-    have hsum : ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m + 1 - i : ℕ) + 1)) =
-        ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + 1 + (m - i : ℕ) + 1)) := by
-      refine sum_congr rfl fun i hi => ?_
-      rw [Nat.sub_add_comm (Nat.lt_succ_iff.1 (mem_range.1 hi))]
-      push_cast
-      ring_nf
-    rw [hsum, ih ha1, Gamma_add_one a ha0, Nat.factorial_succ]
-    push_cast at ham ⊢
-    have hm : (m : ℂ) + 1 ≠ 0 := by norm_cast
-    have ham' : a + 1 + m ≠ 0 := fun h => ham (by linear_combination h)
-    field_simp
-    ring
 
 open scoped Real in
 /-- Euler's reflection formula in reciprocal form: for `s ∉ -ℕ`,

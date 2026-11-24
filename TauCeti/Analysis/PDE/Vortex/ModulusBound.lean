@@ -418,9 +418,8 @@ theorem exists_abs_curvature_le_mul_exp_of_forall_le_norm_sub (m : ℕ) {c : ℝ
           K * Real.exp (-(c * ρ)) := by
   obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_forall_le_norm_sub m hc₀ hc
   refine ⟨K / 8, by positivity, fun x D hx hsol hframe hD z ρ hρ ↦ ?_⟩
-  have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have h₁ := normSq_le_one_of_tendsto ((hxi 2).of_le (by simp)) ((hxi 3).of_le (by simp)) hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) z
+  have h₁ :=
+    normSq_le_one_of_tendsto_sectionValue_mul_inv_pow (hx.of_le (by simp)) hsol hframe z
   rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
   linarith [hK x D hx hsol hframe hD z ρ hρ]
 

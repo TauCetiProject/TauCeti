@@ -124,6 +124,14 @@ theorem IsPTypical.monomialCurve_pow {F : FormalGroup R} [F.IsComm] {p : ℕ}
   rw [monomialCurve_eq_verschiebungCurve_homothetyCurve]
   exact (hF.tautologicalCurve.homothetyCurve c).verschiebungCurve_pow hp n
 
+/-- A finite formal-group sum `∑^F_{j ∈ s} t_j X ^ (p ^ j)` of monomial curves in prime-power
+degrees on a `p`-typical law is `p`-typical. -/
+theorem IsPTypical.sum_monomialCurve_pow {F : FormalGroup R} [F.IsComm] {p : ℕ}
+    (hF : F.IsPTypical p) (hp : p.Prime) (s : Finset ℕ) (t : ℕ → R) :
+    (∑ j ∈ s, F.monomialCurve (p ^ j) (pow_ne_zero j hp.ne_zero) (t j)).IsPTypical p :=
+  (mem_pTypicalCurveSubgroup F p _).mp <| AddSubgroup.sum_mem _ fun j _ ↦
+    (mem_pTypicalCurveSubgroup F p _).mpr (hF.monomialCurve_pow hp j _)
+
 /-- Base change along a ring homomorphism preserves `p`-typicality of formal group laws. -/
 theorem IsPTypical.map {F : FormalGroup R} [F.IsComm] {p : ℕ} (hF : F.IsPTypical p)
     (φ : R →+* S) : (F.map φ).IsPTypical p := by

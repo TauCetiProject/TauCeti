@@ -385,6 +385,15 @@ theorem bijective_comp_toCobarBar :
   funext φ
   exact (cobarBarHomEquiv_symm_apply 𝒜 hD φ).symm
 
+/-- Every `A∞` morphism `f : A ⟶ D` into a DG algebra factors through `toCobarBar` via
+`cobarBarHomEquiv 𝒜 hD f`. -/
+@[simp]
+theorem toAInfinityHom_cobarBarHomEquiv_comp_toCobarBar
+    (f : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) :
+    (cobarBarHomEquiv 𝒜 hD f).toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp
+        𝒜.toCobarBar = f := by
+  rw [← cobarBarHomEquiv_symm_apply 𝒜 hD, Equiv.symm_apply_apply]
+
 /-- Universal factorization characterization: `φ : Ω Tᶜ(sA) ⟶ D` is the DG algebra lift of
 `g : A ⟶ D` if and only if `φ ∘ 𝒜.toCobarBar = g`. -/
 theorem eq_cobarBarHomEquiv_iff
