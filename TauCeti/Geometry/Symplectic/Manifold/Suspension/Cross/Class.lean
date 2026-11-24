@@ -31,8 +31,8 @@ has zero period on cross products
 (`closedFormHomologyPeriod_verticalForm_singularHomologyCrossBilinear_eq_zero`). So the vertical
 area `∫_C u^* ω_v` vanishes, and the `Ω`-area `∫_C u^* Ω` is `±` the period of `ds ∧ dt` on
 `α × a`. When `C` is the torus `ℝ / pℤ × ℝ / qℤ`, oriented as the product of its circles, and `μ`
-is its class `[ℝ / pℤ] × [ℝ / qℤ]`, the sign is `+`
-(`integralTopForm_mpullback_suspensionForm_of_singularHomologyMap_eq`).
+is its class `[ℝ / pℤ] × [ℝ / qℤ]`, the sign is `+`, by
+`integralTopForm_mpullback_suspensionForm_of_singularHomologyMap_addCircleProdFundamentalClass_eq`.
 
 Now let `u` be pseudoholomorphic for an almost complex structure `j` on `C`, positive for `o`, and
 an almost complex structure `J` on `X_φ` of block form along the image of `u` (`J ∂_s = T`, `J`
@@ -57,8 +57,8 @@ All declarations are in the namespace `TauCeti.SmoothMappingTorus`.
   surface whose class lies in the cross summand has zero vertical area.
 * `exists_closedFormHomologyPeriod_wedgeTimeForm_eq_mul_integralTopForm`: its `Ω`-area is `±` the
   period of `ds ∧ dt` on its class.
-* `integralTopForm_mpullback_suspensionForm_of_singularHomologyMap_eq`: for a torus with its
-  product class, the `Ω`-area is that period.
+* for a torus with its product class, the `Ω`-area is that period:
+`integralTopForm_mpullback_suspensionForm_of_singularHomologyMap_addCircleProdFundamentalClass_eq`.
 * `range_eq_range_orbitTorus_of_singularHomologyMap_eq`: the image of a nonconstant
   pseudoholomorphic closed surface whose class lies in the cross summand is an orbit torus over a
   primitive closed orbit.
@@ -154,8 +154,9 @@ circles, to `X_φ`, and suppose that the image `u_*[T]` of the class of the toru
 product `α × a` of a class `α` of positive degree of the circle with a class `a` of the mapping
 torus. Then the `Ω`-area `∫_T u^* Ω` is the period of the closed form `ds ∧ dt` on `α × a`, with no
 sign: the class of the torus is positive for its product orientation. -/
-theorem integralTopForm_mpullback_suspensionForm_of_singularHomologyMap_eq {p q : ℝ}
-    [Fact (0 < p)] [Fact (0 < q)]
+theorem
+    integralTopForm_mpullback_suspensionForm_of_singularHomologyMap_addCircleProdFundamentalClass_eq
+    {p q : ℝ} [Fact (0 < p)] [Fact (0 < q)]
     {u : AddCircle p × AddCircle q → UnitAddCircle × SmoothMappingTorus φ}
     (hσc : σ.IsClosed) (hu : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (h : i + k = 2) (hi : i ≠ 0)
