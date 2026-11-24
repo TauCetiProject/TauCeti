@@ -521,12 +521,16 @@ theorem upperSemicirclePath_apply (t : unitInterval) :
     upperSemicirclePath t = Circle.upperSemicircle (Circle.semicircleCoord t) :=
   (rfl)
 
+/-- The lower semicircle path is the complex conjugate of the upper semicircle path, as a
+function. -/
+theorem coe_lowerSemicirclePath :
+    (lowerSemicirclePath : unitInterval → ℂ) = starRingEnd ℂ ∘ upperSemicirclePath :=
+  (Path.cast_coe _ _ _).trans (Path.map_coe _ _)
+
 /-- The lower semicircle path is the complex conjugate of the upper semicircle path. -/
 theorem lowerSemicirclePath_eq_conj (t : unitInterval) :
-    lowerSemicirclePath t = starRingEnd ℂ (upperSemicirclePath t) := by
-  have h : (lowerSemicirclePath : unitInterval → ℂ) = starRingEnd ℂ ∘ upperSemicirclePath :=
-    (Path.cast_coe _ _ _).trans (Path.map_coe _ _)
-  exact congrFun h t
+    lowerSemicirclePath t = starRingEnd ℂ (upperSemicirclePath t) :=
+  congrFun coe_lowerSemicirclePath t
 
 theorem lowerSemicirclePath_apply (t : unitInterval) :
     lowerSemicirclePath t = ((Circle.upperSemicircle (Circle.semicircleCoord t))⁻¹ : Circle) := by
@@ -556,9 +560,7 @@ theorem upperSemicirclePath_injective : Function.Injective upperSemicirclePath :
   Circle.semicircleCoord.injective (Circle.upperSemicircle_injective (Circle.coe_injective h))
 
 theorem lowerSemicirclePath_injective : Function.Injective lowerSemicirclePath := by
-  have h : (lowerSemicirclePath : unitInterval → ℂ) = starRingEnd ℂ ∘ upperSemicirclePath :=
-    (Path.cast_coe _ _ _).trans (Path.map_coe _ _)
-  rw [h]
+  rw [coe_lowerSemicirclePath]
   exact (starRingEnd ℂ).injective.comp upperSemicirclePath_injective
 
 /-- The upper and lower semicircle paths cover the unit circle. -/

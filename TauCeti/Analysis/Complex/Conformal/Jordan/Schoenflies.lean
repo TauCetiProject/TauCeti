@@ -141,8 +141,7 @@ theorem exists_homeomorph_sphere_eq_of_mem
     ∃ e : ℂ ≃ₜ ℂ, e 0 = p ∧ (∀ u : sphere (0 : ℂ) 1, e u = φ u) ∧
       e '' sphere 0 1 = C ∧ e '' ball 0 1 = filledHull C \ C ∧
       e '' closedBall 0 1 = filledHull C := by
-  have hC : IsJordanCurve C :=
-    isJordanCurve_iff.mpr ⟨φ.symm.trans (sphereCircleHomeomorph 0 one_pos)⟩
+  have hC : IsJordanCurve C := (isJordanCurve_sphere 0 one_pos).of_homeomorph φ
   obtain ⟨e₀, he₀0, he₀S, he₀B, he₀CB⟩ := hC.exists_homeomorph_image_sphere_of_mem hp
   let ψ : sphere (0 : ℂ) 1 ≃ₜ C :=
     (e₀.image (sphere 0 1)).trans (Homeomorph.setCongr he₀S)
@@ -167,8 +166,7 @@ theorem exists_homeomorph_sphere_eq (φ : sphere (0 : ℂ) 1 ≃ₜ C) :
     ∃ e : ℂ ≃ₜ ℂ, (∀ u : sphere (0 : ℂ) 1, e u = φ u) ∧
       e '' sphere 0 1 = C ∧ e '' ball 0 1 = filledHull C \ C ∧
       e '' closedBall 0 1 = filledHull C := by
-  have hC : IsJordanCurve C :=
-    isJordanCurve_iff.mpr ⟨φ.symm.trans (sphereCircleHomeomorph 0 one_pos)⟩
+  have hC : IsJordanCurve C := (isJordanCurve_sphere 0 one_pos).of_homeomorph φ
   obtain ⟨p, hp⟩ := hC.nonempty_filledHull_sdiff
   obtain ⟨e, -, he⟩ := exists_homeomorph_sphere_eq_of_mem hp φ
   exact ⟨e, he⟩

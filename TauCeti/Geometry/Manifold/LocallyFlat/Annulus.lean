@@ -307,9 +307,24 @@ section LowDim
 
 open Function
 
+private lemma image_and_injOn_sheet_of_eq_segment {α : Type*} {h : α × I → ℝ} {u : α}
+    {x y : ℝ} (hxy : x ≠ y) (hhu : ∀ t : I, h (u, t) = Path.segment x y t) :
+    h '' ({u} ×ˢ univ) = range (Path.segment x y) ∧ InjOn h ({u} ×ˢ univ) := by
+  refine ⟨Subset.antisymm ?_ ?_, ?_⟩
+  · rintro _ ⟨⟨_, t⟩, ⟨rfl, _⟩, rfl⟩
+    exact ⟨t, (hhu t).symm⟩
+  · rintro _ ⟨t, rfl⟩
+    exact ⟨(u, t), ⟨rfl, trivial⟩, hhu t⟩
+  · rintro ⟨u₁, t₁⟩ ⟨hu₁, _⟩ ⟨u₂, t₂⟩ ⟨hu₂, _⟩ heq
+    simp only [mem_singleton_iff] at hu₁ hu₂
+    subst hu₁ hu₂
+    rw [hhu, hhu] at heq
+    exact Prod.ext rfl (Path.segment_injective_of_ne hxy heq)
+
 private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → ℝ}
     (hf : Injective f) (hg : Injective g) (hsub : range g ⊆ filledHull (range f) \ range f) :
     CoboundAnnulus f g := by
+  -- Describe `sphere (0 : ℝ) 1` as `{um, up}` and order the endpoints `a < c < d < b`.
   let um : sphere (0 : ℝ) 1 := ⟨-1, by simp⟩
   let up : sphere (0 : ℝ) 1 := ⟨1, by simp⟩
   have hu_eq (u : sphere (0 : ℝ) 1) : u = um ∨ u = up := by
@@ -347,6 +362,7 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
     if (p.1 : ℝ) ≤ 0 then Path.segment a c p.2 else Path.segment b d p.2
   have hh_neg (t : I) : h (um, t) = Path.segment a c t := by simp [h, um]
   have hh_pos (t : I) : h (up, t) = Path.segment b d t := by simp [h, up]
+  -- Continuity and single-sheet images/injectivity.
   have := discreteTopology_sphere_of_finrank_eq_one (Module.finrank_self ℝ) (0 : ℝ) 1
   have hh_cont : Continuous h := by
     rw [continuous_prod_of_discrete_left]
@@ -361,29 +377,14 @@ private theorem coboundAnnulus_of_injective_real {f g : sphere (0 : ℝ) 1 → �
   have hdisj : Disjoint (range (Path.segment a c)) (range (Path.segment b d)) := by
     rw [hrange_ac, hrange_bd]
     exact Set.disjoint_left.mpr fun _ h1 h2 => by linarith [h1.2, h2.1]
-  have himg_neg : h '' ({um} ×ˢ univ) = range (Path.segment a c) :=
-    Subset.antisymm (by rintro _ ⟨⟨_, t⟩, ⟨rfl, _⟩, rfl⟩; exact ⟨t, (hh_neg t).symm⟩)
-      (by rintro _ ⟨t, rfl⟩; exact ⟨(um, t), ⟨rfl, trivial⟩, hh_neg t⟩)
-  have himg_pos : h '' ({up} ×ˢ univ) = range (Path.segment b d) :=
-    Subset.antisymm (by rintro _ ⟨⟨_, t⟩, ⟨rfl, _⟩, rfl⟩; exact ⟨t, (hh_pos t).symm⟩)
-      (by rintro _ ⟨t, rfl⟩; exact ⟨(up, t), ⟨rfl, trivial⟩, hh_pos t⟩)
+  obtain ⟨himg_neg, hh_inj_neg⟩ := image_and_injOn_sheet_of_eq_segment hac.ne hh_neg
+  obtain ⟨himg_pos, hh_inj_pos⟩ := image_and_injOn_sheet_of_eq_segment hdb.ne' hh_pos
   have huniv_prod : (univ : Set (sphere (0 : ℝ) 1 × I)) = {um} ×ˢ univ ∪ {up} ×ˢ univ := by
     rw [← union_prod, singleton_union, ← huniv, univ_prod_univ]
-  have hh_inj_neg : InjOn h ({um} ×ˢ univ) := by
-    rintro ⟨u₁, t₁⟩ ⟨hu₁, _⟩ ⟨u₂, t₂⟩ ⟨hu₂, _⟩ heq
-    simp only [mem_singleton_iff] at hu₁ hu₂
-    subst hu₁ hu₂
-    rw [hh_neg, hh_neg] at heq
-    exact Prod.ext rfl (Path.segment_injective_of_ne hac.ne heq)
-  have hh_inj_pos : InjOn h ({up} ×ˢ univ) := by
-    rintro ⟨u₁, t₁⟩ ⟨hu₁, _⟩ ⟨u₂, t₂⟩ ⟨hu₂, _⟩ heq
-    simp only [mem_singleton_iff] at hu₁ hu₂
-    subst hu₁ hu₂
-    rw [hh_pos, hh_pos] at heq
-    exact Prod.ext rfl (Path.segment_injective_of_ne hdb.ne' heq)
   have hh_inj : Injective h := by
     rw [← injOn_univ, huniv_prod]
     exact hh_inj_neg.union_of_disjoint_image hh_inj_pos (by rwa [himg_neg, himg_pos])
+  -- Conclude `CoboundAnnulus f g` from the closed embedding `h`.
   have : CompactSpace (sphere (0 : ℝ) 1) := isCompact_iff_compactSpace.mp (isCompact_sphere 0 1)
   rw [coboundAnnulus_iff]
   refine ⟨h, (hh_cont.isClosedEmbedding hh_inj).isEmbedding, ?_, ?_, ?_⟩

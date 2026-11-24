@@ -181,6 +181,12 @@ theorem isJordanCurve_image_homeomorph_iff (e : X ≃ₜ Y) :
     IsJordanCurve (e '' C) ↔ IsJordanCurve C :=
   ⟨fun h => e.symm_image_image C ▸ h.image_homeomorph e.symm, fun h => h.image_homeomorph e⟩
 
+/-- A set homeomorphic to a Jordan curve is a Jordan curve. -/
+theorem IsJordanCurve.of_homeomorph {D : Set Y} (hD : IsJordanCurve D) (φ : D ≃ₜ C) :
+    IsJordanCurve C := by
+  obtain ⟨e⟩ := hD
+  exact ⟨φ.symm.trans e⟩
+
 /-- **The range of a continuous injection from a space homeomorphic to `Circle` into a Hausdorff
 space is a Jordan curve.** -/
 theorem isJordanCurve_range [T2Space Y] {Z : Type*} [TopologicalSpace Z] (e : Z ≃ₜ Circle)

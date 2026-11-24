@@ -28,10 +28,8 @@ namespace Set
 theorem Icc_sdiff_Ioo {α : Type*} [LinearOrder α] {a b c d : α}
     (hac : a ≤ c) (hcd : c ≤ d) (hdb : d ≤ b) :
     Icc a b \ Ioo c d = Icc a c ∪ Icc d b := by
-  rw [sdiff_eq, ← Ioi_inter_Iio, compl_inter, compl_Ioi, compl_Iio,
-    inter_comm, union_inter_distrib_right, ← Ici_inter_Iic]
-  rw [← inter_assoc, inter_comm (Iic c), inter_assoc, Iic_inter_Iic, min_eq_left (hcd.trans hdb),
-    Ici_inter_Iic]
-  rw [← inter_assoc, Ici_inter_Ici, sup_eq_left.mpr (hac.trans hcd), Ici_inter_Iic]
+  ext x
+  simp only [mem_sdiff, mem_Icc, mem_Ioo, mem_union]
+  grind
 
 end Set

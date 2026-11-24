@@ -207,7 +207,7 @@ theorem exists_homeomorph_unitInterval_prod_filledHull {a b c d : ℂ}
   let φ : sphere (0 : ℂ) 1 ≃ₜ ↥(range top ∪ range bot ∪ range left ∪ range right) :=
     eQ.symm.trans ψ
   have hC : IsJordanCurve (range top ∪ range bot ∪ range left ∪ range right) :=
-    isJordanCurve_iff.mpr ⟨φ.symm.trans (sphereCircleHomeomorph 0 one_pos)⟩
+    (isJordanCurve_sphere 0 one_pos).of_homeomorph φ
   obtain ⟨e, heφ, -, -, heCB⟩ := exists_homeomorph_sphere_eq φ
   let Φ : I × I ≃ₜ filledHull (range top ∪ range bot ∪ range left ∪ range right) :=
     sq.trans ((e.image (closedBall 0 1)).trans (Homeomorph.setCongr heCB))
