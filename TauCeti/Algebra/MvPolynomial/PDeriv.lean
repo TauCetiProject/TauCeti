@@ -49,6 +49,8 @@ difference of their constant coefficients.
 * `MvPolynomial.vars_pderiv_subset`: partial differentiation introduces no new variables.
 * `MvPolynomial.hasFiniteSupport_pderiv`: only finitely many partial derivatives of a polynomial
   are nonzero.
+* `MvPolynomial.derivation_apply_eq_sum_vars`: every derivation `D` on `MvPolynomial σ R` satisfies
+  `D p = ∑ i ∈ p.vars, pderiv i p • D (X i)`.
 * `MvPolynomial.totalDegree_iterate_pderiv_le`: the `k`-th iterated partial derivative has total
   degree at most `totalDegree p - k`.
 * `MvPolynomial.degreeOf_iterate_pderiv_le`: the `k`-th iterated partial derivative along `Xᵢ` has
@@ -130,6 +132,20 @@ theorem hasFiniteSupport_pderiv {κ M : Type*} [Zero M] {e : κ → σ} (he : Fu
   refine (p.vars.finite_toSet.preimage he.injOn).subset fun k hk ↦ ?_
   by_contra h
   exact hk (by simp only [pderiv_eq_zero_of_notMem_vars h, hφ])
+
+/-- Every `R`-linear derivation `D` on `MvPolynomial σ R` (with `σ` possibly infinite) expands in
+the variables of `p`: `D p = ∑ i ∈ p.vars, pderiv i p • D (X i)`. -/
+theorem derivation_apply_eq_sum_vars {M : Type*} [AddCommMonoid M] [Module R M]
+    [Module (MvPolynomial σ R) M] [IsScalarTower R (MvPolynomial σ R) M]
+    (D : Derivation R (MvPolynomial σ R) M) (p : MvPolynomial σ R) :
+    D p = ∑ i ∈ p.vars, pderiv i p • D (X i) := by
+  classical
+  -- `q ↦ ∑ i ∈ p.vars, pderiv i q • D (X i)` is a derivation agreeing with `D` on `p.vars`
+  let D' : Derivation R (MvPolynomial σ R) M :=
+    ∑ i ∈ p.vars, (LinearMap.toSpanSingleton _ _ (D (X i))).compDer (pderiv i)
+  have hD' : ∀ q, D' q = ∑ i ∈ p.vars, pderiv i q • D (X i) := fun q ↦ by simp [D']
+  rw [← hD']
+  exact derivation_eq_of_forall_mem_vars fun j hj ↦ by simp [hD', pderiv_X, Pi.single_apply, hj]
 
 /-- Partial differentiation lowers the total degree by at least one. -/
 theorem totalDegree_pderiv_le (i : σ) (p : MvPolynomial σ R) :

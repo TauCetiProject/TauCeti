@@ -9,8 +9,8 @@ public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.Geometry.Variational.PolynomialJet.Basic
 public import TauCeti.RingTheory.Kaehler.DeRham.LieDerivative
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
+import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-import TauCeti.RingTheory.Kaehler.MvPolynomial
 
 /-!
 # The variational bicomplex of polynomial jets
