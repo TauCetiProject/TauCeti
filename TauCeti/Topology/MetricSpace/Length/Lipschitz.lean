@@ -17,6 +17,10 @@ joining curve of length `L < r`, and its arclength factorization
 `BoundedVariationOn.exists_arclength_factorization` reparametrizes it at constant speed `L`
 on `[0, 1]`.
 
+These paths split distances approximately (`TauCeti.IsLengthSpace.exists_dist_le_of_dist_le_add`):
+a point within `s + t` of `p` is within `t + ε` of a point within `s` of `p`, for nonnegative
+`s` and `t` and positive `ε`. This is an input for compactness of complete balls.
+
 Such uniformly Lipschitz paths form compact families in a proper space, which is how minimizing
 paths are obtained as limits of nearly minimizing ones.
 
@@ -73,28 +77,18 @@ theorem IsLengthSpace.exists_dist_le_of_dist_le_add [IsLengthSpace X] {p x : X} 
   by_cases hxs : dist p x ≤ s
   · exact ⟨x, hxs, by rw [dist_self]; positivity⟩
   rw [not_le] at hxs
-  set r := dist p x + ε with _hr_def
+  set r := dist p x + ε
   have hr : 0 < r := by positivity
   obtain ⟨f, hf0, hf1, hf⟩ := IsLengthSpace.exists_lipschitz_path (x := p) (y := x)
     (r := r) (by linarith)
   have hsr : s / r ≤ 1 := (div_le_one hr).2 (by linarith)
   let τ : unitInterval := ⟨s / r, div_nonneg hs hr.le, hsr⟩
-  have hK : ((r.toNNReal : ℝ≥0) : ℝ) = r := Real.coe_toNNReal _ hr.le
   refine ⟨f τ, ?_, ?_⟩
-  · have h := hf.dist_le_mul 0 τ
-    rw [hf0, hK, Subtype.dist_eq, Real.dist_eq] at h
-    have hτ : |((0 : unitInterval) : ℝ) - (τ : ℝ)| = s / r := by
-      simp only [Icc.coe_zero, zero_sub, abs_neg, τ]
-      exact abs_of_nonneg (div_nonneg hs hr.le)
-    rw [hτ, mul_div_cancel₀ _ hr.ne'] at h
-    exact h
+  · simpa [hf0, Real.coe_toNNReal _ hr.le, Subtype.dist_eq, τ, Real.dist_eq,
+      abs_of_nonneg (div_nonneg hs hr.le), mul_div_cancel₀ _ hr.ne'] using hf.dist_le_mul 0 τ
   · have h := hf.dist_le_mul τ 1
-    rw [hf1, hK, Subtype.dist_eq, Real.dist_eq] at h
-    have hτ : |(τ : ℝ) - ((1 : unitInterval) : ℝ)| = 1 - s / r := by
-      simp only [Icc.coe_one, τ]
-      rw [abs_of_nonpos (by linarith)]
-      ring
-    rw [hτ, mul_sub, mul_one, mul_div_cancel₀ _ hr.ne'] at h
+    simp [hf1, Real.coe_toNNReal _ hr.le, Subtype.dist_eq, τ, Real.dist_eq,
+      abs_of_nonpos (sub_nonpos.mpr hsr), mul_sub, mul_div_cancel₀ _ hr.ne'] at h
     linarith
 
 end TauCeti

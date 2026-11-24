@@ -35,11 +35,9 @@ so the condition on the radius is empty and every closed ball is compact. The re
   locally compact length space is compact.
 * `TauCeti.IsLengthSpace.properSpace_of_completeSpace`: the Hopf–Rinow–Cohn-Vossen theorem, a
   complete locally compact length space is proper.
-* `TauCeti.isComplete_closedBall_of_ofReal_lt_infEDist_compl_range_coe`: a closed ball whose
-  radius is less than the extended distance from its center to the ideal boundary of the
-  completion is complete.
-* `TauCeti.IsLengthSpace.isCompact_closedBall_of_ofReal_lt_infEDist_compl_range_coe`: such a
-  closed ball is compact.
+* `TauCeti.IsLengthSpace.isCompact_closedBall_of_ofReal_lt_infEDist_compl_range_coe`: a closed
+  ball whose radius is less than the extended distance from its center to the ideal boundary
+  of the completion is compact.
 
 ## References
 
