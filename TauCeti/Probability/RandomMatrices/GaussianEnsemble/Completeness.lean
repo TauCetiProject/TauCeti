@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrices.GaussianEnsemble.Basic
-import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.LinearAlgebra.Matrix.Trace.Contraction
 
 /-!
@@ -94,13 +94,14 @@ ensemble, `∑ p, E p a b * E p c d` is `n⁻¹` when `(c, d) = (b, a)` and `0` 
 theorem sum_gaussianEnsemble_single_apply_mul_apply_of_ne_one (hβ : β ≠ 1) (a b c d : Fin n) :
     ∑ p, gaussianEnsemble β n (Pi.single p 1) a b * gaussianEnsemble β n (Pi.single p 1) c d =
       if b = c ∧ a = d then (n : ℂ)⁻¹ else 0 := by
-  have h2 := Complex.inv_ofReal_sqrt_natCast_sq 2
-  push_cast at h2
-  rcases lt_trichotomy a b with hab | rfl | hab <;>
+  have hn := Complex.mul_self_ofReal_sqrt (Nat.cast_nonneg (α := ℝ) n)
+  have h2 := Complex.mul_self_ofReal_sqrt (zero_le_two (α := ℝ))
+  push_cast at hn h2
+  rcases lt_trichotomy a b with hab | hab | hab <;>
     simp [Pi.single_apply, apply_ite ((↑) : ℝ → ℂ), mul_add, add_mul, add_div, sub_div, mul_sub,
-      sub_mul, ite_div, ite_mul, mul_ite, Finset.sum_add_distrib, Finset.sum_sub_distrib, *,
+      sub_mul, ite_div, ite_mul, mul_ite, Finset.sum_add_distrib, Finset.sum_sub_distrib, hβ, hab,
       Matrix.single_apply] <;>
-    split_ifs <;> grind [Complex.inv_ofReal_sqrt_natCast_sq, Complex.I_sq]
+    split_ifs <;> grind [Complex.I_sq]
 
 /-- **Entry covariance for `β = 1`.** For the coordinate matrices `E p` of the real symmetric
 ensemble, `∑ p, E p a b * E p c d` is `n⁻¹` times the number of the conditions
@@ -109,13 +110,13 @@ coordinate `(min a b, max a b)`. -/
 theorem sum_gaussianEnsemble_one_single_apply_mul_apply (a b c d : Fin n) :
     ∑ p, gaussianEnsemble 1 n (Pi.single p 1) a b * gaussianEnsemble 1 n (Pi.single p 1) c d =
       (n : ℂ)⁻¹ * ((if a = c ∧ b = d then 1 else 0) + if b = c ∧ a = d then 1 else 0) := by
-  have h2 : ((Real.sqrt 2 : ℝ) : ℂ) ^ 2 = 2 := by
-    rw [← Complex.ofReal_pow, Real.sq_sqrt zero_le_two]
-    norm_num
-  rcases lt_trichotomy a b with hab | rfl | hab <;>
-    simp [Pi.single_apply, apply_ite ((↑) : ℝ → ℂ), mul_add, ite_mul, mul_ite, *,
+  have hn := Complex.mul_self_ofReal_sqrt (Nat.cast_nonneg (α := ℝ) n)
+  have h2 := Complex.mul_self_ofReal_sqrt (zero_le_two (α := ℝ))
+  push_cast at hn h2
+  rcases lt_trichotomy a b with hab | hab | hab <;>
+    simp [Pi.single_apply, apply_ite ((↑) : ℝ → ℂ), mul_add, ite_mul, mul_ite, hab,
       Matrix.single_apply] <;>
-    split_ifs <;> grind [Complex.inv_ofReal_sqrt_natCast_sq]
+    split_ifs <;> grind
 
 /-- **Completeness relation for `β ≠ 1`.** Weighting each coordinate matrix of the Hermitian
 ensemble by its `(a, b)` entry and summing gives `n⁻¹` times the matrix unit at `(b, a)`. -/

@@ -22,8 +22,7 @@ This file records a weighted form `|√t - √s| max (√t) (√s) ^ γ ≤ |t -
 slope at most `|δ|`, that the radial
 profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`, and the
 Gaussian normalization `√(4 / π) = 2 / √π`. The elementary square-root bounds, identities and
-limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt`. Finally, the
-complex cast of `(√m)⁻¹` squares to `m⁻¹` for a natural number `m`.
+limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt`.
 
 ## Main results
 
@@ -41,8 +40,6 @@ complex cast of `(√m)⁻¹` squares to `m⁻¹` for a natural number `m`.
 * `Real.hasDerivAt_div_mul_add_sqrt_sq_add`: the function `y ↦ α / (β y + √(y² + c))` has an
   explicit derivative where `y² + c` and the denominator do not vanish.
 * `TauCeti.sqrt_four_div_pi`: `√(4/π) = 2/√π`.
-* `Complex.inv_ofReal_sqrt_natCast_sq`: for a natural number `m`, the complex cast of `(√m)⁻¹`
-  squares to `m⁻¹`.
 
 ## References
 
@@ -169,15 +166,6 @@ theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β c : ℝ) {y : ℝ} (hyc : y ^ 
   ring
 
 end Real
-
-namespace Complex
-
-/-- The square of the complex cast of `(√m)⁻¹`, for a natural number `m`, is `m⁻¹`. -/
-theorem inv_ofReal_sqrt_natCast_sq (m : ℕ) : ((√m : ℝ) : ℂ)⁻¹ ^ 2 = (m : ℂ)⁻¹ := by
-  rw [inv_pow, ← ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
-  simp
-
-end Complex
 
 namespace TauCeti
 
