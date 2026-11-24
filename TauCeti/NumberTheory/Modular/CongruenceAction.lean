@@ -40,12 +40,12 @@ its index `8` divides the order `192` of `Q_8` and the order obstruction is sile
 
 ## Main results
 
-* `TauCeti.ModularGroup.hom_ext_T_tPrime`: homomorphisms out of `SL(2, ℤ)` agreeing on `T` and
-  `T′` are equal.
 * `TauCeti.ModularGroup.isCongruenceSubgroup_iff_existsUnique_comp_map_eq`,
   `TauCeti.ModularGroup.isCongruenceSubgroup_iff_exists_map_T_tPrime`: `Γ ≤ SL(2, ℤ)` is a
   congruence subgroup iff its coset action factors through `SL(2, ℤ/M)`, for `M` a nonzero
   multiple of the strict level of `Γ`.
+* `TauCeti.ModularGroup.ker_mk'_comp_map_intCast_zmod`: the kernel of `SL(2, ℤ) → Q_M` is
+  `Γ(M) ⊔ ⟨-1⟩`.
 * `TauCeti.ModularGroup.ker_permutationRepresentation_comp_mk'`: the kernel of the coset action of
   `PSL(2, ℤ)` on `PSL(2, ℤ) ⧸ Γ'`, read on `SL(2, ℤ)`, is the normal core of `±Γ'`.
 * `TauCeti.ModularGroup.isCongruenceSubgroup_liftSL_iff_forall_mem_Gamma`,
@@ -74,11 +74,6 @@ public section
 namespace TauCeti.ModularGroup
 
 open _root_.ModularGroup _root_.CongruenceSubgroup _root_.Matrix.SpecialLinearGroup Equiv
-
-/-- Homomorphisms out of `SL(2, ℤ)` that agree on `T` and on `T′ = !![1, 0; 1, 1]` are equal. -/
-theorem hom_ext_T_tPrime {G : Type*} [Monoid G] {f g : SL(2, ℤ) →* G} (hT : f T = g T)
-    (hT' : f tPrime = g tPrime) : f = g :=
-  MonoidHom.eq_of_eqOn_dense closure_T_tPrime (by rintro x (rfl | rfl) <;> assumption)
 
 variable {n M : ℕ} [NeZero M]
 
@@ -109,11 +104,8 @@ theorem isCongruenceSubgroup_iff_exists_map_T_tPrime (hM : Γ.strictLevel ∣ M)
       ∃ φ : SL(2, ZMod M) →* Perm β,
         φ (map (Int.castRingHom (ZMod M)) T) = e.permutationRepresentation T ∧
           φ (map (Int.castRingHom (ZMod M)) tPrime) = e.permutationRepresentation tPrime := by
-  rw [isCongruenceSubgroup_iff_existsUnique_comp_map_eq e hM]
-  refine ⟨fun ⟨φ, hφ, _⟩ ↦ ⟨φ, by simp [← hφ]⟩, fun ⟨φ, hT, hT'⟩ ↦ ⟨φ, ?_, fun ψ hψ ↦ ?_⟩⟩
-  · exact hom_ext_T_tPrime hT hT'
-  · refine (MonoidHom.cancel_right map_intCast_zmod_surjective).mp (hψ.trans ?_)
-    exact (hom_ext_T_tPrime hT hT').symm
+  rw [isCongruenceSubgroup_iff_existsUnique_comp_map_eq e hM,
+    existsUnique_comp_eq_iff_exists_map_T_tPrime map_intCast_zmod_surjective]
 
 end SL
 
@@ -145,19 +137,13 @@ private theorem Gamma_le_liftSL_iff :
 
 variable {Γ' e}
 
-/-- For `M ≠ 0` a multiple of the general level of `Γ'`, `±Γ'` is a congruence subgroup exactly
-when it contains `Γ(M)`. -/
-private theorem isCongruenceSubgroup_liftSL_iff_Gamma_le (hM : generalLevel Γ' e ∣ M) :
-    IsCongruenceSubgroup Γ'.liftSL ↔ Gamma M ≤ Γ'.liftSL :=
-  isCongruenceSubgroup_iff_Gamma_le_of_dvd (generalLevel_eq_strictLevel_liftSL Γ' e ▸ hM)
-
 /-- **Congruence as triviality of the action of `Γ(M)`.** For `M ≠ 0` a multiple of the general
 level of `Γ' ≤ PSL(2, ℤ)`, the full preimage `±Γ'` is a congruence subgroup exactly when every
 element of `Γ(M)` acts trivially on the cosets of `Γ'`. -/
 theorem isCongruenceSubgroup_liftSL_iff_forall_mem_Gamma (hM : generalLevel Γ' e ∣ M) :
     IsCongruenceSubgroup Γ'.liftSL ↔
       ∀ γ ∈ Gamma M, e.permutationRepresentation (γ : PSL(2, ℤ)) = 1 := by
-  rw [isCongruenceSubgroup_liftSL_iff_Gamma_le hM, Gamma_le_liftSL_iff Γ' e]
+  rw [isCongruenceSubgroup_liftSL_iff_Gamma_le_of_dvd hM, Gamma_le_liftSL_iff Γ' e]
   simp only [IsConcreteLE.le_iff, MonoidHom.mem_ker, MonoidHom.comp_apply, QuotientGroup.mk'_apply]
 
 omit [NeZero M] in
@@ -166,6 +152,17 @@ private theorem surjective_mk'_comp_map :
     Function.Surjective ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod M)))).comp
       (map (Int.castRingHom (ZMod M)))) :=
   (QuotientGroup.mk'_surjective _).comp map_intCast_zmod_surjective
+
+omit [NeZero M] in
+/-- The kernel of the reduction `SL(2, ℤ) → Q_M = SL(2, ℤ/M) / ⟨-1⟩` is `Γ(M) ⊔ ⟨-1⟩`. -/
+theorem ker_mk'_comp_map_intCast_zmod :
+    ((QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod M)))).comp
+      (map (Int.castRingHom (ZMod M)))).ker = Gamma M ⊔ Subgroup.zpowers (-1) := by
+  have hneg : map (Int.castRingHom (ZMod M)) (-1 : SL(2, ℤ)) = -1 := by
+    ext i j
+    simp
+  rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', ← hneg, ← MonoidHom.map_zpowers,
+    Subgroup.comap_map_eq, ker_map_intCast_zmod, sup_comm]
 
 /-- **Congruence as factorization through `Q_M = SL(2, ℤ/M) / ⟨-1⟩`.** For `M ≠ 0` a multiple of
 the general level of `Γ' ≤ PSL(2, ℤ)`, the full preimage `±Γ'` is a congruence subgroup exactly
@@ -176,30 +173,11 @@ theorem isCongruenceSubgroup_liftSL_iff_existsUnique_comp_eq (hM : generalLevel 
       ∃! φ : SL(2, ZMod M) ⧸ Subgroup.zpowers (-1) →* Perm (Fin n),
         φ.comp ((QuotientGroup.mk' _).comp (map (Int.castRingHom (ZMod M)))) =
           e.permutationRepresentation.comp (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) := by
-  have hneg : map (Int.castRingHom (ZMod M)) (-1 : SL(2, ℤ)) = -1 := by
-    ext i j
-    simp
-  have hcenter : ((-1 : SL(2, ℤ)) : PSL(2, ℤ)) = 1 :=
-    QuotientGroup.eq_one_iff _ |>.mpr (by simp [mem_center_iff_eq_one_or_eq_neg_one])
   rw [MonoidHom.existsUnique_comp_eq_iff_ker_le _ _ surjective_mk'_comp_map,
-    isCongruenceSubgroup_liftSL_iff_Gamma_le hM, Gamma_le_liftSL_iff Γ' e,
-    ← MonoidHom.comap_ker (QuotientGroup.mk' (Subgroup.zpowers (-1 : SL(2, ZMod M)))),
-    QuotientGroup.ker_mk', ← hneg, ← MonoidHom.map_zpowers, Subgroup.comap_map_eq,
-    ker_map_intCast_zmod, sup_le_iff, iff_and_self]
-  -- `-1` is central, so it acts trivially on the cosets of `Γ'`
-  exact fun _ ↦ (Subgroup.zpowers_le).mpr (by simp [hcenter])
-
-/-- In `PSL(2, ℤ)`, `T′ = U * S` with `U = S T⁻¹`, so `T′` acts on cosets by `σ0 * σ1`. -/
-private theorem permutationRepresentation_coe_tPrime :
-    e.permutationRepresentation (tPrime : PSL(2, ℤ)) =
-      (modularTriple Γ' e).σ0 * (modularTriple Γ' e).σ1 := by
-  have h : U * S = -tPrime := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [U_def, Matrix.mul_apply, Fin.sum_univ_two]
-  rw [modularTriple_σ0, modularTriple_σ1, ← map_mul, ← QuotientGroup.mk_mul, h]
-  congr 1
-  rw [QuotientGroup.eq, mem_center_iff_eq_one_or_eq_neg_one]
-  simp
+    isCongruenceSubgroup_liftSL_iff_Gamma_le_of_dvd hM, Gamma_le_liftSL_iff Γ' e,
+    ker_mk'_comp_map_intCast_zmod, sup_le_iff, iff_self_and]
+  -- `-1` has trivial class in `PSL(2, ℤ)`, so it acts trivially on the cosets of `Γ'`
+  exact fun _ ↦ (Subgroup.zpowers_le).mpr (by simp)
 
 /-- **Congruence through the generators `T` and `T′`**, the form of Hsu's test. For `M ≠ 0` a
 multiple of the general level of `Γ' ≤ PSL(2, ℤ)`, the full preimage `±Γ'` is a congruence
@@ -212,12 +190,9 @@ theorem isCongruenceSubgroup_liftSL_iff_exists_map_T_tPrime (hM : generalLevel �
           φ (map (Int.castRingHom (ZMod M)) tPrime) =
             (modularTriple Γ' e).σ0 * (modularTriple Γ' e).σ1 := by
   rw [isCongruenceSubgroup_liftSL_iff_existsUnique_comp_eq hM,
+    existsUnique_comp_eq_iff_exists_map_T_tPrime surjective_mk'_comp_map,
     ← permutationRepresentation_coe_tPrime, permT, modularTriple_σinf]
-  refine ⟨fun ⟨φ, hφ, _⟩ ↦ ⟨φ, by simpa using DFunLike.congr_fun hφ T,
-    by simpa using DFunLike.congr_fun hφ tPrime⟩, fun ⟨φ, hT, hT'⟩ ↦ ⟨φ, ?_, fun ψ hψ ↦ ?_⟩⟩
-  · exact hom_ext_T_tPrime hT hT'
-  · exact (MonoidHom.cancel_right surjective_mk'_comp_map).mp
-      (hψ.trans (hom_ext_T_tPrime hT hT').symm)
+  rfl
 
 /-- **Noncongruence witnesses.** For `M ≠ 0` a multiple of the general level of `Γ' ≤ PSL(2, ℤ)`,
 the full preimage `±Γ'` is not a congruence subgroup exactly when some `γ ∈ Γ(M)` moves the base
@@ -227,11 +202,8 @@ theorem not_isCongruenceSubgroup_liftSL_iff_exists_mem_Gamma (hM : generalLevel 
       ∃ γ ∈ Gamma M,
         e.permutationRepresentation (γ : PSL(2, ℤ)) (e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) ≠
           e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ') := by
-  rw [isCongruenceSubgroup_liftSL_iff_Gamma_le hM, IsConcreteLE.not_le_iff_exists]
-  refine exists_congr fun γ ↦ and_congr_right fun _ ↦ not_congr ?_
-  rw [Equiv.permutationRepresentation_apply, Equiv.symm_apply_apply, e.apply_eq_iff_eq,
-    MulAction.Quotient.smul_mk, smul_eq_mul, mul_one, QuotientGroup.eq, mul_one, inv_mem_iff,
-    Subgroup.mem_liftSL]
+  rw [isCongruenceSubgroup_liftSL_iff_Gamma_le_of_dvd hM, IsConcreteLE.not_le_iff_exists]
+  simp [Equiv.permutationRepresentation_apply, QuotientGroup.eq, Subgroup.mem_liftSL]
 
 end PSL
 
@@ -268,8 +240,8 @@ theorem not_isCongruenceSubgroup_liftSL_of_modularTriple_eq_indexEightTriple
   -- in `PSL(2, ℤ)`, `γ` is the word `T⁴ S T⁻² S T⁻⁵ S T⁻² S T⁻¹`, whose `SL(2, ℤ)` value is `-γ`
   have hword : (γ : PSL(2, ℤ)) =
       ((T ^ 4 * S * T⁻¹ ^ 2 * S * T⁻¹ ^ 5 * S * T⁻¹ ^ 2 * S * T⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) := by
-    rw [QuotientGroup.eq, mem_center_iff_eq_one_or_eq_neg_one]
-    exact Or.inr (by decide +kernel)
+    rw [show γ = -(T ^ 4 * S * T⁻¹ ^ 2 * S * T⁻¹ ^ 5 * S * T⁻¹ ^ 2 * S * T⁻¹) from
+      Subtype.ext (by decide +kernel), Matrix.ProjectiveSpecialLinearGroup.mk_neg]
   have hmove : e.permutationRepresentation (γ : PSL(2, ℤ)) 0 = 5 := by
     simp only [hword, QuotientGroup.mk_mul, QuotientGroup.mk_pow, QuotientGroup.mk_inv, map_mul,
       map_pow, map_inv, hS, hT]

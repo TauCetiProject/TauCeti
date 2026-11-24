@@ -25,8 +25,10 @@ along `modularEquiv` gives Millington's dictionary and subgroup counts for `PSL(
 
 * **The modular triple (`TauCeti.ModularGroup.modularTriple`).** Its components are the coset
   permutations of `U`, `S`, and `T` (`permS`, `permT`, and `permR` for `S`, `T`, and `R = S T`).
-  Via `TauCeti.ModularGroup.modularTriple_eq_cosetTriple`, it is connected with stabilizer `Γ'` at
-  `e 1`, monodromy `PSL(2, ℤ) ⧸ Γ'.normalCore`, and `IsRegular ↔ Γ'.Normal`.
+  The coset permutation of `T′ = !![1, 0; 1, 1]` is `σ0 * σ1`
+  (`TauCeti.ModularGroup.permutationRepresentation_coe_tPrime`). Via
+  `TauCeti.ModularGroup.modularTriple_eq_cosetTriple`, the triple is connected with stabilizer `Γ'`
+  at `e 1`, monodromy `PSL(2, ℤ) ⧸ Γ'.normalCore`, and `IsRegular ↔ Γ'.Normal`.
 * **Opposite and mirror conventions.** Passing from right cosets `Γ' g` to left cosets via
   `g Γ' ↦ Γ' g⁻¹` gives `TauCeti.ModularGroup.ofRightCosetPerms`
   (`modularTriple_quotientRightRel_eq_ofRightCosetPerms`,
@@ -90,6 +92,18 @@ noncomputable def modularTriple (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) �
 /-- The `∞`-component of `modularTriple Γ' e` is the coset permutation of `T`. -/
 @[simp] theorem modularTriple_σinf (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     (modularTriple Γ' e).σinf = e.permutationRepresentation (T : PSL(2, ℤ)) := (rfl)
+
+/-- In `PSL(2, ℤ)`, `T′ = U * S` with `U = S T⁻¹`, so `T′ = !![1, 0; 1, 1]` acts on cosets by
+`σ0 * σ1`. -/
+theorem permutationRepresentation_coe_tPrime (Γ' : Subgroup PSL(2, ℤ))
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    e.permutationRepresentation (tPrime : PSL(2, ℤ)) =
+      (modularTriple Γ' e).σ0 * (modularTriple Γ' e).σ1 := by
+  have h : U * S = -tPrime := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [U_def, Matrix.mul_apply, Fin.sum_univ_two]
+  rw [modularTriple_σ0, modularTriple_σ1, ← map_mul, ← QuotientGroup.mk_mul, h,
+    ProjectiveSpecialLinearGroup.mk_neg]
 
 /-- The coset permutation of `S`, equal to `(modularTriple Γ' e).σ1`. -/
 noncomputable abbrev permS (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : Perm (Fin n) :=

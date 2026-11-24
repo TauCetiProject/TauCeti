@@ -37,6 +37,11 @@ and hence also its opposite group.
   `TauCeti.ModularGroup.coe_T_mul_coe_S_sq_mul_coe_S`: the matrix `T′ = (1 0; 1 1)` and
   `U² * S = T′`.
 * `TauCeti.ModularGroup.closure_T_tPrime`: `T` and `T′` generate `SL(2, ℤ)`.
+* `TauCeti.ModularGroup.hom_ext_T_tPrime`: homomorphisms out of `SL(2, ℤ)` agreeing on `T` and
+  `T′` are equal.
+* `TauCeti.ModularGroup.existsUnique_comp_eq_iff_exists_map_T_tPrime`: a homomorphism out of
+  `SL(2, ℤ)` factors through a surjection `π` iff some homomorphism agrees with it on `π T` and
+  `π T′`.
 -/
 
 public section
@@ -156,6 +161,21 @@ theorem closure_T_tPrime : Subgroup.closure {T, tPrime} = (⊤ : Subgroup SL(2, 
   have hT' : tPrime ∈ Subgroup.closure {T, tPrime} := Subgroup.subset_closure (by simp)
   have hS : S = (T * tPrime⁻¹ * T)⁻¹ := by decide +kernel
   exact Set.pair_subset (hS ▸ inv_mem (mul_mem (mul_mem hT (inv_mem hT')) hT)) hT
+
+/-- Homomorphisms out of `SL(2, ℤ)` that agree on `T` and on `T′ = !![1, 0; 1, 1]` are equal. -/
+theorem hom_ext_T_tPrime {G : Type*} [Monoid G] {f g : SL(2, ℤ) →* G} (hT : f T = g T)
+    (hT' : f tPrime = g tPrime) : f = g :=
+  MonoidHom.eq_of_eqOn_dense closure_T_tPrime (by rintro x (rfl | rfl) <;> assumption)
+
+/-- **Factorization through the generators `T` and `T′`.** For a surjective homomorphism
+`π : SL(2, ℤ) →* H`, a homomorphism `f` out of `SL(2, ℤ)` factors through `π`, necessarily
+uniquely, exactly when some homomorphism out of `H` agrees with `f` on `π T` and on `π T′`. -/
+theorem existsUnique_comp_eq_iff_exists_map_T_tPrime {H G : Type*} [Monoid H] [Monoid G]
+    {π : SL(2, ℤ) →* H} (hπ : Function.Surjective π) (f : SL(2, ℤ) →* G) :
+    (∃! φ : H →* G, φ.comp π = f) ↔ ∃ φ : H →* G, φ (π T) = f T ∧ φ (π tPrime) = f tPrime := by
+  refine ⟨fun ⟨φ, hφ, _⟩ ↦ ⟨φ, by simp [← hφ]⟩, fun ⟨φ, hT, hT'⟩ ↦ ⟨φ, ?_, fun ψ hψ ↦ ?_⟩⟩
+  · exact hom_ext_T_tPrime hT hT'
+  · exact (MonoidHom.cancel_right hπ).mp (hψ.trans (hom_ext_T_tPrime hT hT').symm)
 
 /-- In `PSL(2, ℤ)`, `U² * S = T′` for `U = T * S`; in `SL(2, ℤ)` the product is `-T′`. -/
 @[simp]
