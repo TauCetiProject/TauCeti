@@ -92,7 +92,7 @@ theorem exists_bfzOccurrence_eq_of_fst (w : List (Fin r × Bool)) (i : Fin r)
     ∃ n, bfzOccurrence w i n = k := by
   have h : k ∈ Set.range (bfzOccurrence w i) := by
     simpa only [range_bfzOccurrence, Set.mem_ofPred_eq] using hk
-  exact h
+  exact Set.mem_range.mp h
 
 /-- An occurrence is specified by its colour and the number of equal-colour positions before it. -/
 theorem bfzOccurrence_eq_iff (w : List (Fin r × Bool)) (i : Fin r)
@@ -120,22 +120,10 @@ theorem bfzOccurrence_zero (w : List (Fin r × Bool)) (i : Fin r)
   refine ⟨by simp, ?_⟩
   rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff]
   intro k hk hlt
-  have hklt : (k : ℕ) < r := by
-    have hi := i.rev.isLt
-    have hl := Fin.lt_def.mp hlt
-    simp only [Fin.val_castAdd] at hl
-    omega
-  have hkc : k = (⟨k, hklt⟩ : Fin r).castAdd w.length := Fin.ext rfl
-  have he : (⟨k, hklt⟩ : Fin r).rev = i := by
-    have hletter := (mem_bfzOccurrencePositions w i k).mp hk
-    rw [hkc, bfzLetter_castAdd] at hletter
-    exact hletter
-  have he' : (⟨k, hklt⟩ : Fin r) = i.rev := by
-    simpa only [Fin.rev_rev] using congrArg Fin.rev he
-  have heval := congrArg Fin.val he'
-  have hl := Fin.lt_def.mp hlt
-  simp only [Fin.val_castAdd] at hl heval
-  omega
+  have hklt : (k : ℕ) < r :=
+    (Fin.lt_def.mp hlt).trans (by simpa only [Fin.val_castAdd] using i.rev.isLt)
+  exact (ne_of_lt hlt) ((bfzLetter_fst_eq_iff_of_lt w i hklt).mp
+    ((mem_bfzOccurrencePositions w i k).mp hk))
 
 /-- Successive occurrence numbers are successive BFZ positions of that simple index. -/
 theorem bfzSuccessor_bfzOccurrence_succ (w : List (Fin r × Bool)) (i : Fin r)
