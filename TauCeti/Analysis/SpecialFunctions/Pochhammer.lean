@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Norm bounds for Pochhammer polynomials
@@ -28,12 +29,17 @@ complex vertical line by the evaluated ascending Pochhammer polynomial.
   `‖(ascPochhammer R n).eval x‖ ≤ (ascPochhammer ℝ n).eval ‖x‖`.
 * `TauCeti.norm_ascPochhammer_eval_le_ascFactorial`: if `‖x‖ ≤ M` for `M : ℕ`, then
   `‖(ascPochhammer R n).eval x‖ ≤ M.ascFactorial n`.
+* `TauCeti.norm_ascPochhammer_eval_le_pow`: `‖(ascPochhammer R j).eval x‖ ≤ (‖x‖ + j) ^ j`.
+* `TauCeti.norm_ascPochhammer_eval_le_pow_mul_factorial`: for `‖x‖ ≤ N`,
+  `‖(ascPochhammer R m).eval x‖ ≤ (m + N) ^ N * m!`.
 * `TauCeti.norm_endpoints_le_norm_ascPochhammer_eval`: the first and last factor norms are
   bounded by the polynomial norm when every intermediate real factor has absolute value at
   least one.
 -/
 
 public section
+
+open scoped Nat
 
 namespace TauCeti
 
@@ -66,6 +72,37 @@ theorem norm_ascPochhammer_eval_le_ascFactorial {R : Type*} [SeminormedRing R] [
     ‖(ascPochhammer R n).eval x‖ ≤ M.ascFactorial n :=
   (norm_ascPochhammer_eval_le_of_norm_le n hx).trans_eq
     (ascPochhammer_nat_eq_natCast_ascFactorial ℝ M n)
+
+/-- In a seminormed ring with `‖1‖ = 1`, the rising Pochhammer evaluation at `x` has norm at most
+`(‖x‖ + j) ^ j`. -/
+theorem norm_ascPochhammer_eval_le_pow {R : Type*} [SeminormedRing R] [NormOneClass R]
+    (j : ℕ) (x : R) :
+    ‖(ascPochhammer R j).eval x‖ ≤ (‖x‖ + j) ^ j := by
+  refine (norm_ascPochhammer_eval_le j x).trans ?_
+  rw [ascPochhammer_eval_eq_prod_range]
+  calc ∏ i ∈ Finset.range j, (‖x‖ + i)
+      ≤ ∏ _i ∈ Finset.range j, (‖x‖ + j) := by
+        gcongr with i hi
+        exact (Finset.mem_range.mp hi).le
+    _ = (‖x‖ + j) ^ j := by simp
+
+/-- In a seminormed ring with `‖1‖ = 1`, if `‖x‖ ≤ N` for a natural number `N`, then
+`‖(ascPochhammer R m).eval x‖ ≤ (m + N) ^ N * m!`. -/
+theorem norm_ascPochhammer_eval_le_pow_mul_factorial {R : Type*} [SeminormedRing R] [NormOneClass R]
+    {x : R} {N : ℕ} (hx : ‖x‖ ≤ N) (m : ℕ) :
+    ‖(ascPochhammer R m).eval x‖ ≤ (m + N : ℝ) ^ N * m ! := by
+  refine (norm_ascPochhammer_eval_le_ascFactorial m hx).trans ?_
+  have h1 : N.ascFactorial m ≤ (m + N)! := by
+    rcases Nat.eq_zero_or_pos N with rfl | hN
+    · cases m <;> simp [Nat.zero_ascFactorial]
+    · calc N.ascFactorial m
+          ≤ (N - 1)! * N.ascFactorial m := Nat.le_mul_of_pos_left _ (Nat.factorial_pos _)
+        _ = (N + m - 1)! := Nat.factorial_mul_ascFactorial' N m hN
+        _ ≤ (m + N)! := Nat.factorial_le (by omega)
+  have h2 : (m + N)! ≤ (m + N) ^ N * m ! := by
+    rw [← Nat.factorial_mul_ascFactorial m N, Nat.mul_comm]
+    exact Nat.mul_le_mul_right _ (Nat.ascFactorial_le_pow_add m N)
+  exact_mod_cast h1.trans h2
 
 /-- If the intermediate real factors have absolute value at least one, the norm of the
 ascending Pochhammer polynomial bounds the product of its first and last factor norms on a

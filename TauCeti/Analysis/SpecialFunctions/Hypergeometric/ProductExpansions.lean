@@ -6,31 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-public import TauCeti.Analysis.Analytic.TaylorSeries
-public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Orr
 public import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
 import Mathlib.Algebra.Order.Antidiag.Prod
-import Mathlib.Analysis.Analytic.Binomial
 import Mathlib.Analysis.Analytic.Uniqueness
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Normed.Module.Convex
-import TauCeti.Analysis.Analytic.OfScalars
-import TauCeti.Analysis.Polynomial.Pochhammer
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.Data.Nat.Factorial.Basic
-import TauCeti.RingTheory.Binomial
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Product expansions of the Gauss hypergeometric function
 
-This file supplements `TauCeti.Analysis.SpecialFunctions.Hypergeometric.Orr` with basic identities
-and power-series/Taylor characterizations for `TauCeti.orrCoefficient` (DLMF 15.16.1–15.16.2), and
-proves the Burchnall–Chaundy two-variable product expansion (DLMF 15.16.3) of the Gauss
+This file proves the Burchnall–Chaundy two-variable product expansion (DLMF 15.16.3) of the Gauss
 hypergeometric function on its open convergence region.
 
 For `‖z‖ < 1`, `‖ζ‖ < 1`, and `‖z + ζ - z * ζ‖ < 1`, combining
@@ -44,213 +36,23 @@ $$\mathbf{F}(a, b; c; z) \, \mathbf{F}(a, b; c; \zeta)
 
 ## Main results
 
-* `TauCeti.map_orrCoefficient`, `TauCeti.orrCoefficient_one`, `TauCeti.orrCoefficient_comm`,
-  `TauCeti.orrCoefficient_zero_left`, `TauCeti.orrCoefficient_zero_right`,
-  `TauCeti.orrCoefficient_add_self`: basic algebraic identities for `TauCeti.orrCoefficient`.
-* `TauCeti.hasFPowerSeriesOnBall_ordinaryHypergeometric_mul_ordinaryHypergeometric_sub`: DLMF
-  15.16.1 Cayley–Orr product expansion in `HasFPowerSeriesOnBall` form over `RCLike` scalars.
-* `Complex.hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric`,
-  `Complex.coeff_taylorSeries_one_sub_cpow_mul_ordinaryHypergeometric`,
-  `Complex.eq_orrCoefficient_of_eventually_hasSum`: DLMF 15.16.2 generating-function power-series
-  and Taylor-coefficient characterizations.
 * `Complex.hasSum_regularizedGaussHGFun_mul_regularizedGaussHGFun`,
   `Complex.hasSum_ordinaryHypergeometric_mul_ordinaryHypergeometric`: DLMF 15.16.3
   Burchnall–Chaundy two-variable product expansion in regularized and ordinary forms.
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, §15.16, equations 15.16.1–15.16.3.
-* A. Cayley, *On a theorem relating to hypergeometric series*, Philos. Mag. (4) **16** (1858),
-  356–357.
-* W. McF. Orr, *Theorems relating to the product of two hypergeometric series*, Trans. Cambridge
-  Philos. Soc. **17** (1899), 1–15.
-* W. N. Bailey, *Generalized Hypergeometric Series*, Cambridge Univ. Press, 1935, §10.1.
+* NIST Digital Library of Mathematical Functions, §15.16, equation 15.16.3.
 * J. L. Burchnall and T. W. Chaundy, *Expansions of Appell's double hypergeometric functions*,
   Quart. J. Math. Oxford Ser. **11** (1940), 249–270.
 -/
 
 public section
 
-open Filter Finset Polynomial
+open Filter Finset
 open scoped Nat Topology BigOperators
 
-namespace TauCeti
-
-/-! ### Additional identities and power-series forms (DLMF 15.16.1–15.16.2) -/
-
-private theorem orrCoefficient_eq_sum_range {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂]
-    (a b c : 𝕂) (s : ℕ) :
-    orrCoefficient a b c s =
-      ∑ k ∈ range (s + 1),
-        ordinaryHypergeometricCoefficient (2 * a) (2 * b) (2 * c - 1) k *
-          Ring.multichoose (c - a - b) (s - k) := by
-  rw [orrCoefficient_def]
-  exact Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-    (fun k l ↦ ordinaryHypergeometricCoefficient (2 * a) (2 * b) (2 * c - 1) k *
-      Ring.multichoose (c - a - b) l) s
-
-/-- Ring homomorphisms between characteristic-zero fields commute with `orrCoefficient`. -/
-@[simp]
-theorem map_orrCoefficient {𝕂 L F : Type*} [Field 𝕂] [CharZero 𝕂] [Field L] [CharZero L]
-    [FunLike F 𝕂 L] [RingHomClass F 𝕂 L] (f : F) (a b c : 𝕂) (s : ℕ) :
-    f (orrCoefficient a b c s) = orrCoefficient (f a) (f b) (f c) s := by
-  have hp (m : ℕ) (x : 𝕂) :
-      f ((ascPochhammer 𝕂 m).eval x) = (ascPochhammer L m).eval (f x) := by
-    simpa using (Polynomial.eval_map_apply (f := (f : 𝕂 →+* L)) (p := ascPochhammer 𝕂 m) x).symm
-  simp [orrCoefficient_def, ordinaryHypergeometricCoefficient,
-    TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, hp, map_ofNat]
-
-/-- The first Orr coefficient is `(c - a - b) + 4ab / (2c - 1)` (with `/ 0 = 0` when
-`2c = 1`). -/
-@[simp]
-theorem orrCoefficient_one {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂] (a b c : 𝕂) :
-    orrCoefficient a b c 1 = c - a - b + 4 * a * b / (2 * c - 1) := by
-  rw [orrCoefficient_eq_sum_range, sum_range_succ, sum_range_one]
-  simp only [Nat.sub_zero, Nat.sub_self,
-    TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
-    ordinaryHypergeometricCoefficient, ascPochhammer_zero, Polynomial.eval_one,
-    ascPochhammer_one, Polynomial.eval_X, Nat.factorial_zero, Nat.factorial_one,
-    Nat.cast_one, inv_one, div_eq_mul_inv]
-  ring
-
-/-- The Orr coefficients are symmetric in `a` and `b`. -/
-theorem orrCoefficient_comm {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂] (a b c : 𝕂) (s : ℕ) :
-    orrCoefficient a b c s = orrCoefficient b a c s := by
-  rw [orrCoefficient_def, orrCoefficient_def]
-  refine sum_congr rfl fun p _ ↦ ?_
-  have hsub : c - b - a = c - a - b := by ring
-  simp only [ordinaryHypergeometricCoefficient, hsub]
-  ring
-
-/-- When `a = 0`, only the `k = 0` term of `orrCoefficient` survives, leaving
-`Ring.multichoose (c - b) s`. -/
-@[simp]
-theorem orrCoefficient_zero_left {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂] (b c : 𝕂) (s : ℕ) :
-    orrCoefficient 0 b c s = Ring.multichoose (c - b) s := by
-  rw [orrCoefficient_eq_sum_range, sum_eq_single 0]
-  · simp [ordinaryHypergeometricCoefficient]
-  · intro k _ hk
-    simp [ordinaryHypergeometricCoefficient, ascPochhammer_ne_zero_eval_zero 𝕂 hk]
-  · simp
-
-/-- When `b = 0`, only the `k = 0` term of `orrCoefficient` survives, leaving
-`Ring.multichoose (c - a) s`. -/
-@[simp]
-theorem orrCoefficient_zero_right {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂] (a c : 𝕂) (s : ℕ) :
-    orrCoefficient a 0 c s = Ring.multichoose (c - a) s := by
-  rw [orrCoefficient_comm, orrCoefficient_zero_left]
-
-/-- When `c = a + b`, the binomial factor reduces to `1` and `orrCoefficient a b (a + b) s` reduces
-to the single hypergeometric coefficient
-`ordinaryHypergeometricCoefficient (2a) (2b) (2(a + b) - 1) s`. -/
-@[simp]
-theorem orrCoefficient_add_self {𝕂 : Type*} [Field 𝕂] [CharZero 𝕂] (a b : 𝕂) (s : ℕ) :
-    orrCoefficient a b (a + b) s =
-      ordinaryHypergeometricCoefficient (2 * a) (2 * b) (2 * (a + b) - 1) s := by
-  rw [orrCoefficient_eq_sum_range, sum_eq_single s]
-  · simp
-  · intro k hk hne
-    have hpos : s - k ≠ 0 := Nat.sub_ne_zero_of_lt (lt_of_le_of_ne (mem_range_succ_iff.mp hk) hne)
-    have hsub : a + b - a - b = 0 := by ring
-    rw [hsub, TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
-      ascPochhammer_ne_zero_eval_zero 𝕂 hpos, mul_zero, mul_zero]
-  · simp
-
-/-- **Cayley–Orr product expansion on the unit ball (DLMF 15.16.1, `HasFPowerSeriesOnBall` form).**
-In any Banach division algebra `𝔸` over an `RCLike` scalar field `𝕂`, when `2 * c - 1` avoids the
-nonpositive integers, `₂F₁(a, b; c - 1/2; z) * ₂F₁(c - a, c - b; c + 1/2; z)` is represented on the
-open unit ball around `0` by the scalar power series with coefficients
-`((c)_s / (c + 1/2)_s) * orrCoefficient a b c s`. -/
-theorem hasFPowerSeriesOnBall_ordinaryHypergeometric_mul_ordinaryHypergeometric_sub
-    {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]
-    [CompleteSpace 𝔸] (a b : 𝕂) {c : 𝕂} (hc : ∀ n : ℕ, 2 * c - 1 ≠ -n) :
-    HasFPowerSeriesOnBall
-      (fun z : 𝔸 ↦ ₂F₁ a b (c - 1 / 2) z * ₂F₁ (c - a) (c - b) (c + 1 / 2) z)
-      (FormalMultilinearSeries.ofScalars 𝔸 fun s : ℕ ↦
-        (ascPochhammer 𝕂 s).eval c / (ascPochhammer 𝕂 s).eval (c + 1 / 2) *
-          orrCoefficient a b c s) 0 1 := by
-  have hcoeff (s : ℕ) :
-      ∑ k ∈ range (s + 1),
-        ordinaryHypergeometricCoefficient a b (c - 1 / 2) k *
-          ordinaryHypergeometricCoefficient (c - a) (c - b) (c + 1 / 2) (s - k) =
-        (ascPochhammer 𝕂 s).eval c / (ascPochhammer 𝕂 s).eval (c + 1 / 2) *
-          orrCoefficient a b c s := by
-    rw [← Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (fun k l ↦ ordinaryHypergeometricCoefficient a b (c - 1 / 2) k *
-        ordinaryHypergeometricCoefficient (c - a) (c - b) (c + 1 / 2) l)]
-    exact sum_antidiagonal_ordinaryHypergeometricCoefficient_mul_eq_mul_orrCoefficient hc s
-  simpa only [hcoeff] using
-    (hasFPowerSeriesOnBall_ordinaryHypergeometric 𝔸 a b (c - 1 / 2)).mul_ofScalars
-      (hasFPowerSeriesOnBall_ordinaryHypergeometric 𝔸 (c - a) (c - b) (c + 1 / 2))
-
-end TauCeti
-
 namespace Complex
-
-/-! ### Generating function power series and Taylor coefficients (DLMF 15.16.2) -/
-
-/-- **Generating function of the Orr coefficients (DLMF 15.16.2, `HasFPowerSeriesOnBall` form).**
-On the open unit disk, `(1 - z) ^ (a + b - c) * ₂F₁(2a, 2b; 2c - 1; z)` is represented by the
-scalar power series with coefficients `TauCeti.orrCoefficient a b c`. Classical DLMF 15.16.2
-requires `2 * c - 1 ∉ -ℕ` (outside terminating cases); at `2 * c - 1 ∈ -ℕ` both
-`₂F₁(2a, 2b; 2c - 1; z)` and `TauCeti.orrCoefficient` zero out summands with `(2 * c - 1)_k = 0`
-via `0⁻¹ = 0`. -/
-theorem hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric (a b c : ℂ) :
-    HasFPowerSeriesOnBall
-      (fun z : ℂ ↦ (1 - z) ^ (a + b - c) * ₂F₁ (2 * a) (2 * b) (2 * c - 1) z)
-      (FormalMultilinearSeries.ofScalars ℂ (TauCeti.orrCoefficient a b c)) 0 1 := by
-  have h1 := one_div_one_sub_cpow_hasFPowerSeriesOnBall_zero (c - a - b)
-  have h2 := TauCeti.hasFPowerSeriesOnBall_ordinaryHypergeometric ℂ (2 * a) (2 * b) (2 * c - 1)
-  have hmul := h2.mul_ofScalars h1
-  have hchoose (j : ℕ) : Ring.choose (c - a - b + j - 1) j = Ring.multichoose (c - a - b) j := by
-    have hsub : c - a - b + j - 1 - j + 1 = c - a - b := by ring
-    rw [Ring.choose_eq_smul, Polynomial.descPochhammer_smeval_eq_ascPochhammer, hsub,
-      Polynomial.ascPochhammer_smeval_eq_eval, smul_eq_mul,
-      TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
-  have hser :
-      (FormalMultilinearSeries.ofScalars ℂ fun s ↦
-        ∑ k ∈ range (s + 1),
-          ordinaryHypergeometricCoefficient (2 * a) (2 * b) (2 * c - 1) k *
-            Ring.choose (c - a - b + ((s - k : ℕ) : ℂ) - 1) (s - k)) =
-      FormalMultilinearSeries.ofScalars ℂ (TauCeti.orrCoefficient a b c) := by
-    congr 1; ext s
-    rw [TauCeti.orrCoefficient_eq_sum_range]
-    exact sum_congr rfl fun k _ ↦ by rw [hchoose]
-  rw [hser] at hmul
-  refine hmul.congr fun z _ ↦ ?_
-  dsimp only
-  have hneg : -(c - a - b) = a + b - c := by ring
-  rw [one_div, ← cpow_neg, hneg, mul_comm]
-
-/-- The Taylor coefficients at `0` of `(1 - z) ^ (a + b - c) * ₂F₁(2a, 2b; 2c - 1; z)` are
-`TauCeti.orrCoefficient a b c` (DLMF 15.16.2; classical when `2 * c - 1 ∉ -ℕ`, and reflecting
-`0⁻¹ = 0` truncation of summands with `(2 * c - 1)_k = 0` when `2 * c - 1 ∈ -ℕ`). -/
-theorem coeff_taylorSeries_one_sub_cpow_mul_ordinaryHypergeometric (a b c : ℂ) (s : ℕ) :
-    PowerSeries.coeff s
-      (TauCeti.taylorSeries
-        (fun z : ℂ ↦ (1 - z) ^ (a + b - c) * ₂F₁ (2 * a) (2 * b) (2 * c - 1) z) 0) =
-      TauCeti.orrCoefficient a b c s := by
-  rw [(hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric
-    a b c).hasFPowerSeriesAt.coeff_taylorSeries, FormalMultilinearSeries.coeff_ofScalars]
-
-/-- Uniqueness of the generating-function coefficients in DLMF 15.16.2: any sequence `A : ℕ → ℂ`
-whose power series represents `(1 - z) ^ (a + b - c) * ₂F₁(2a, 2b; 2c - 1; z)` in a neighborhood of
-`0` equals `TauCeti.orrCoefficient a b c` (classical when `2 * c - 1 ∉ -ℕ`, and matching the
-`0⁻¹ = 0` truncation of `(2 * c - 1)_k = 0` summands when `2 * c - 1 ∈ -ℕ`). -/
-theorem eq_orrCoefficient_of_eventually_hasSum (a b c : ℂ) {A : ℕ → ℂ}
-    (hA : ∀ᶠ z in 𝓝 (0 : ℂ), HasSum (fun s : ℕ ↦ A s * z ^ s)
-      ((1 - z) ^ (a + b - c) * ₂F₁ (2 * a) (2 * b) (2 * c - 1) z)) :
-    A = TauCeti.orrCoefficient a b c := by
-  have hpA : HasFPowerSeriesAt
-      (fun z : ℂ ↦ (1 - z) ^ (a + b - c) * ₂F₁ (2 * a) (2 * b) (2 * c - 1) z)
-      (FormalMultilinearSeries.ofScalars ℂ A) 0 :=
-    hasFPowerSeriesAt_iff.mpr <| hA.mono fun z hz ↦ by
-      simpa only [zero_add, FormalMultilinearSeries.coeff_ofScalars, smul_eq_mul,
-        mul_comm] using hz
-  exact FormalMultilinearSeries.ofScalars_series_injective ℂ ℂ
-    (hpA.eq_formalMultilinearSeries
-      (hasFPowerSeriesOnBall_one_sub_cpow_mul_ordinaryHypergeometric a b c).hasFPowerSeriesAt)
-
 
 /-! ### Burchnall–Chaundy two-variable product expansion (DLMF 15.16.3) -/
 
@@ -559,8 +361,6 @@ private theorem bcDoubleTerm_antidiag_eq (a b c z ζ : ℂ) {n s : ℕ} (hsn : s
         regularizedGaussHGFun (a + n) (b + n) (c + n + s) z *
         ((regularizedGaussHGFunSeries a b c).coeff n * ζ ^ n) := by
   have hadd_n : s + (n - s) = n := Nat.add_sub_of_le hsn
-  have hch : (n.choose s : ℂ) * (n ! : ℂ)⁻¹ = (s ! : ℂ)⁻¹ * ((n - s)! : ℂ)⁻¹ := by
-    rw [mul_comm, Nat.inv_factorial_mul_choose (K := ℂ) n s (n - s) hadd_n]
   have hshift (x : ℂ) : x + (s : ℂ) + (n - s : ℕ) = x + n := by
     rw [add_assoc, ← Nat.cast_add, hadd_n]
   have hΓ := (inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (c + s) (n - s)).symm
@@ -572,15 +372,27 @@ private theorem bcDoubleTerm_antidiag_eq (a b c z ζ : ℂ) {n s : ℕ} (hsn : s
   have hc2_shift : c + 2 * (s : ℂ) + (n - s : ℕ) = c + n + s := by
     have htwo : c + 2 * (s : ℂ) = c + s + s := by ring
     rw [htwo, hshift (c + s), add_right_comm]
-  simp only [bcDoubleTerm, bcGenPref, bcPref, coeff_regularizedGaussHGFunSeries, hshift a, hshift b,
-    hc2_shift, div_eq_mul_inv, mul_inv, mul_pow]
-  rw [← hΓ, ← hp a, ← hp b, ← hζn]
-  linear_combination (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ (n - s)).eval (a + s) *
-    (ascPochhammer ℂ s).eval b * (ascPochhammer ℂ (n - s)).eval (b + s) *
-    (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) *
-    (ascPochhammer ℂ (n - s)).eval (c + s) * (Gamma (c + n))⁻¹ *
-    z ^ s * ζ ^ s * ζ ^ (n - s) * (1 - z) ^ (n - s) *
-    regularizedGaussHGFun (a + n) (b + n) (c + n + s) z * hch.symm
+  calc bcDoubleTerm a b c z ζ (s, n - s)
+      = (ascPochhammer ℂ n).eval a * (ascPochhammer ℂ n).eval b *
+          (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) *
+          (ascPochhammer ℂ (n - s)).eval (c + s) * (Gamma (c + n))⁻¹ *
+          z ^ s * (1 - z) ^ (n - s) *
+          regularizedGaussHGFun (a + n) (b + n) (c + n + s) z * ζ ^ n *
+          ((s ! : ℂ)⁻¹ * ((n - s)! : ℂ)⁻¹) := by
+        simp only [bcDoubleTerm, bcGenPref, bcPref, hshift a, hshift b, hc2_shift,
+          div_eq_mul_inv, mul_inv, mul_pow]
+        rw [← hΓ, ← hp a, ← hp b, ← hζn]
+        ring
+    _ = (ascPochhammer ℂ n).eval a * (ascPochhammer ℂ n).eval b *
+          (ascPochhammer ℂ s).eval (c - a) * (ascPochhammer ℂ s).eval (c - b) *
+          (ascPochhammer ℂ (n - s)).eval (c + s) * (Gamma (c + n))⁻¹ *
+          z ^ s * (1 - z) ^ (n - s) *
+          regularizedGaussHGFun (a + n) (b + n) (c + n + s) z * ζ ^ n *
+          ((n ! : ℂ)⁻¹ * (n.choose s : ℂ)) := by
+        rw [Nat.inv_factorial_mul_choose (K := ℂ) n s (n - s) hadd_n]
+    _ = _ := by
+        simp only [coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
+        ring
 
 private theorem hasSum_bcTerm_of_add_norm_lt (a b c : ℂ) {z ζ : ℂ}
     (hzv : ‖z‖ + ‖ζ * (1 - z)‖ < 1) :

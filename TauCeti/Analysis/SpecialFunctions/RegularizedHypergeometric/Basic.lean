@@ -795,22 +795,30 @@ theorem hasSum_regularizedGaussHGFun_add (a b c : ℂ) {z w : ℂ} (hzw : ‖z�
   refine (((hasSum_regularizedGaussHGFun (a + n) (b + n) (c + n) hz).mul_left
     ((ascPochhammer ℂ n).eval a * (ascPochhammer ℂ n).eval b / n ! * w ^ n)).congr_fun
     fun k => ?_).unique hterm
+  have hp_eq : p = FormalMultilinearSeries.ofScalars ℂ p.coeff :=
+    (FormalMultilinearSeries.ofScalars_coeff p).symm
   have hp_apply : ((p.changeOriginSeries n k) fun _ => z) (fun _ => w) =
-      ((n + k).choose k : ℂ) * (regularizedGaussHGFunSeries a b c).coeff (n + k) *
-        (z ^ k * w ^ n) := by
-    have h := FormalMultilinearSeries.changeOriginSeries_ofScalars_apply
-      (regularizedGaussHGFunSeries a b c).coeff z w n k
-    simpa only [p, FormalMultilinearSeries.ofScalars_coeff, nsmul_eq_mul, smul_eq_mul,
-      mul_assoc] using h
+      ((n + k).choose k : ℂ) * p.coeff (n + k) * (z ^ k * w ^ n) := by
+    nth_rw 1 [hp_eq]
+    rw [FormalMultilinearSeries.changeOriginSeries_ofScalars_apply,
+      nsmul_eq_mul, smul_eq_mul, mul_assoc]
   have hc_eq : c + ((n + k : ℕ) : ℂ) = c + n + k := by push_cast; ring
-  have hch := (Nat.inv_factorial_mul_inv_factorial (K := ℂ) k n).symm
-  rw [Nat.add_comm k n] at hch
-  simp only [hp_apply, coeff_regularizedGaussHGFunSeries, TauCeti.ascPochhammer_add_eval a n k,
-    TauCeti.ascPochhammer_add_eval b n k, hc_eq, div_eq_mul_inv, mul_inv]
-  linear_combination
-    (ascPochhammer ℂ n).eval a * (ascPochhammer ℂ k).eval (a + n) *
-      (ascPochhammer ℂ n).eval b * (ascPochhammer ℂ k).eval (b + n) *
-      (Gamma (c + n + k))⁻¹ * w ^ n * z ^ k * hch
+  calc ((p.changeOriginSeries n k) fun _ => z) (fun _ => w)
+      = (ascPochhammer ℂ (n + k)).eval a * (ascPochhammer ℂ (n + k)).eval b *
+          (Gamma (c + (n + k : ℕ)))⁻¹ * (z ^ k * w ^ n) *
+          (((n + k)! : ℂ)⁻¹ * ((n + k).choose k : ℂ)) := by
+        rw [hp_apply, coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
+        ring
+    _ = (ascPochhammer ℂ n).eval a * (ascPochhammer ℂ k).eval (a + n) *
+          (ascPochhammer ℂ n).eval b * (ascPochhammer ℂ k).eval (b + n) *
+          (Gamma (c + n + k))⁻¹ * w ^ n * z ^ k * ((k ! : ℂ)⁻¹ * (n ! : ℂ)⁻¹) := by
+        rw [Nat.inv_factorial_mul_choose (K := ℂ) (n + k) k n (Nat.add_comm k n),
+          TauCeti.ascPochhammer_add_eval a n k, TauCeti.ascPochhammer_add_eval b n k, hc_eq]
+        ring
+    _ = (ascPochhammer ℂ n).eval a * (ascPochhammer ℂ n).eval b / n ! * w ^ n *
+          ((regularizedGaussHGFunSeries (a + n) (b + n) (c + n)).coeff k * z ^ k) := by
+        simp only [coeff_regularizedGaussHGFunSeries, div_eq_mul_inv, mul_inv]
+        ring
 
 section
 

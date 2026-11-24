@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Smeval
@@ -21,10 +20,9 @@ import Mathlib.Tactic.LinearCombination
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
 over general rings, together with their sums over integer intervals and their forward
-differences, evaluation and inverse-shift identities for ascending Pochhammer polynomials
-`ascPochhammer R n` over general semirings and division semirings, the Chu–Vandermonde
-identity over commutative rings, and the nonvanishing of ascending Pochhammer polynomials off the
-nonpositive integers.
+differences, evaluation identities for ascending Pochhammer polynomials `ascPochhammer R n`
+over general semirings, the Chu–Vandermonde identity over commutative rings, and the
+nonvanishing of ascending Pochhammer polynomials off the nonpositive integers.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
 The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
@@ -67,8 +65,6 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   second kind `S(m, j)`.
 * `TauCeti.ascPochhammer_succ_left_eval`: `(x)_{m + 1} = x * (x + 1)_m`.
 * `TauCeti.ascPochhammer_add_eval`: `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`.
-* `TauCeti.inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval`:
-  `((x)_m)⁻¹ = (x + m) * ((x)_{m + 1})⁻¹` for `x + m ≠ 0`.
 * `TauCeti.ascPochhammer_eval_eq_prod_range`: `(x)ₙ = x (x + 1) ⋯ (x + n - 1)` as a product over
   `Finset.range n`.
 * `TauCeti.ascPochhammer_eval_neg_natCast`: `(−n)ₖ = (−1)ᵏ k! C(n, k)`.
@@ -360,13 +356,6 @@ theorem ascPochhammer_add_eval [Semiring R] (x : R) (k m : ℕ) :
   | succ m ih =>
     rw [← add_assoc, ascPochhammer_succ_eval, ih, ascPochhammer_succ_eval, mul_assoc,
       Nat.cast_add, add_assoc]
-
-/-- Stepping an inverse rising Pochhammer evaluation from `m` to `m + 1`: when `x + m ≠ 0`,
-`((x)_m)⁻¹ = (x + m) * ((x)_{m + 1})⁻¹`. -/
-theorem inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval [DivisionSemiring R]
-    {x : R} {m : ℕ} (hx : x + m ≠ 0) :
-    ((ascPochhammer R m).eval x)⁻¹ = (x + m) * ((ascPochhammer R (m + 1)).eval x)⁻¹ := by
-  rw [ascPochhammer_succ_eval, mul_inv_rev, ← mul_assoc, mul_inv_cancel₀ hx, one_mul]
 
 /-- The rising factorial `(x)ₙ` is the product `x (x + 1) ⋯ (x + n - 1)` over
 `Finset.range n`, the ascending counterpart of `descPochhammer_eval_eq_prod_range`. -/

@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Analysis.Polynomial.Pochhammer
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -78,9 +78,8 @@ sides of either limit being `0` at the poles `s = -k`. The second limit is the a
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
   specialization giving factorial decay of the reciprocal Gamma function along natural-number
   shifts on `[1, ∞)`.
-* `Complex.exists_norm_inv_Gamma_add_natCast_le` and `Real.exists_abs_inv_Gamma_add_natCast_le` —
-  polynomial-times-inverse-factorial bounds along natural-number shifts for arbitrary complex or
-  real `s`.
+* `Complex.exists_norm_inv_Gamma_add_natCast_le` — polynomial-times-inverse-factorial bound
+  along natural-number shifts for arbitrary complex `s`.
 * `Complex.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast`,
   `Real.inv_Gamma_eq_ascPochhammer_eval_mul_inv_Gamma_add_natCast` — `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`
   for all `s` and `n`, including at the nonpositive integer poles of `Γ`.
@@ -413,16 +412,6 @@ theorem inv_Gamma_add_natCast_le {s : ℝ} (hs : 1 ≤ s) (k : ℕ) :
   have h := Complex.norm_inv_Gamma_add_natCast_le (s := s) (by simpa using hs) k
   have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
   rwa [hcast, hnorm (s + k) (by positivity), hnorm s (by positivity)] at h
-
-/-- For every real parameter `s`, `|(Γ(s + k))⁻¹|` is bounded by a polynomial in `k + 1`
-divided by `k!`, the real specialization of `Complex.exists_norm_inv_Gamma_add_natCast_le`. -/
-theorem exists_abs_inv_Gamma_add_natCast_le (s : ℝ) :
-    ∃ C : ℝ, ∃ M : ℕ, 0 ≤ C ∧ ∀ k : ℕ, |(Gamma (s + k))⁻¹| ≤ C * ((k : ℝ) + 1) ^ M / k ! := by
-  obtain ⟨C, M, hC, h⟩ := Complex.exists_norm_inv_Gamma_add_natCast_le (s : ℂ)
-  refine ⟨C, M, hC, fun k => ?_⟩
-  have hcast : (s : ℂ) + k = ((s + k : ℝ) : ℂ) := by push_cast; ring
-  simpa only [hcast, Complex.Gamma_ofReal, ← Complex.ofReal_inv, Complex.norm_real,
-    Real.norm_eq_abs] using h k
 
 /-- For every real `s` and natural `n`, `(Γ s)⁻¹ = (s)_n (Γ(s + n))⁻¹`, including at the
 nonpositive integer poles of `Γ`. -/
