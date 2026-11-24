@@ -124,10 +124,11 @@ def quotientTwistedHomologyThomIso {P : TopPair.{u}} {ψ : thomPair F E ⟶ P}
       LocalCoefficientSystem.twistedHomology
         (hB.associatedLocalSystem k (D ⊗ Rep.of (Representation.ofLinearCharacter χ))) q :=
   haveI := quasiIso_singularChainsRepCap_thomPair hP hp₀ χ hφ hu
-  TopPair.twistedHomologyIsoOfQuasiIsoSingularChainsRepCap hfst hsnd hP hB hp₀ χ hφ D q
+  TopPair.twistedHomologyIsoTwistedHomologyOfQuasiIso hfst hsnd hP hB χ D
+    ((thomPair F E).singularChainsRepCap hp₀ χ hφ hP) q
 
 /-- The isomorphism `TauCeti.quotientTwistedHomologyThomIso` is
-`TopPair.twistedHomologyIsoOfQuasiIsoSingularChainsRepCap` for the equivariant cap product with the
+`TopPair.twistedHomologyIsoTwistedHomologyOfQuasiIso` for the equivariant cap product with the
 Thom cocycle, which is a quasi-isomorphism by `TauCeti.quasiIso_singularChainsRepCap_thomPair`. -/
 theorem quotientTwistedHomologyThomIso_def {P : TopPair.{u}} {ψ : thomPair F E ⟶ P}
     (hfst : IsQuotientCoveringMap (TopPair.Hom.fst ψ) G)
@@ -144,7 +145,8 @@ theorem quotientTwistedHomologyThomIso_def {P : TopPair.{u}} {ψ : thomPair F E 
     (D : Rep.{u} k G) (q : ℕ) :
     quotientTwistedHomologyThomIso hfst hsnd hB hP hp₀ χ hφ hu D q =
       haveI := quasiIso_singularChainsRepCap_thomPair hP hp₀ χ hφ hu
-      TopPair.twistedHomologyIsoOfQuasiIsoSingularChainsRepCap hfst hsnd hP hB hp₀ χ hφ D q :=
+      TopPair.twistedHomologyIsoTwistedHomologyOfQuasiIso hfst hsnd hP hB χ D
+        ((thomPair F E).singularChainsRepCap hp₀ χ hφ hP) q :=
   (rfl)
 
 /-- **The Thom isomorphism of a quotient of an equivariant vector bundle, with constant
@@ -168,10 +170,11 @@ def quotientSingularHomologyThomIso {P : TopPair.{u}} {ψ : thomPair F E ⟶ P}
       LocalCoefficientSystem.twistedHomology
         (hB.associatedLocalSystem k (Rep.of (Representation.ofLinearCharacter χ))) q :=
   haveI := quasiIso_singularChainsRepCap_thomPair hP hp₀ χ hφ hu
-  TopPair.singularHomologyIsoOfQuasiIsoSingularChainsRepCap hfst hsnd hP hB hp₀ χ hφ q
+  TopPair.singularHomologyIsoTwistedHomologyOfQuasiIso hfst hsnd hP hB χ
+    ((thomPair F E).singularChainsRepCap hp₀ χ hφ hP) q
 
 /-- The isomorphism `TauCeti.quotientSingularHomologyThomIso` is
-`TopPair.singularHomologyIsoOfQuasiIsoSingularChainsRepCap` for the equivariant cap product with the
+`TopPair.singularHomologyIsoTwistedHomologyOfQuasiIso` for the equivariant cap product with the
 Thom cocycle, which is a quasi-isomorphism by `TauCeti.quasiIso_singularChainsRepCap_thomPair`. -/
 theorem quotientSingularHomologyThomIso_def {P : TopPair.{u}} {ψ : thomPair F E ⟶ P}
     (hfst : IsQuotientCoveringMap (TopPair.Hom.fst ψ) G)
@@ -188,7 +191,8 @@ theorem quotientSingularHomologyThomIso_def {P : TopPair.{u}} {ψ : thomPair F E
     (q : ℕ) :
     quotientSingularHomologyThomIso hfst hsnd hB hP hp₀ χ hφ hu q =
       haveI := quasiIso_singularChainsRepCap_thomPair hP hp₀ χ hφ hu
-      TopPair.singularHomologyIsoOfQuasiIsoSingularChainsRepCap hfst hsnd hP hB hp₀ χ hφ q :=
+      TopPair.singularHomologyIsoTwistedHomologyOfQuasiIso hfst hsnd hP hB χ
+        ((thomPair F E).singularChainsRepCap hp₀ χ hφ hP) q :=
   (rfl)
 
 end TauCeti

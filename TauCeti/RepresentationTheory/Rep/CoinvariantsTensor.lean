@@ -190,6 +190,14 @@ theorem tensorLeftCompCoinvariantsTensorObjIso_hom_app (D A X : Rep.{u} k G) :
       (coinvariantsFunctor k G).map (α_ D A X).inv := by
   simp [tensorLeftCompCoinvariantsTensorObjIso]
 
+/-- The inverse of `Rep.tensorLeftCompCoinvariantsTensorObjIso` at `X` is the map on coinvariants
+induced by the associator. -/
+@[simp]
+theorem tensorLeftCompCoinvariantsTensorObjIso_inv_app (D A X : Rep.{u} k G) :
+    (tensorLeftCompCoinvariantsTensorObjIso D A).inv.app X =
+      (coinvariantsFunctor k G).map (α_ D A X).hom := by
+  simp [tensorLeftCompCoinvariantsTensorObjIso]
+
 end Monoid
 
 section Group

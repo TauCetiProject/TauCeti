@@ -24,17 +24,18 @@ and pushing forward along `p₀` is a chain map of complexes of representations
 
 (`TopPair.singularChainsRepCap`). Suppose that `(X, A)` maps to a pair `(Q, Q₀)` by quotient
 covering maps `X ⟶ Q` and `A ⟶ Q₀`, and that `Y ⟶ Z` is a quotient covering map, all for the
-action of `G`. This file shows that if the equivariant cap product is a quasi-isomorphism, then for
-every representation `D` of `G` it computes the homology of `(Q, Q₀)` twisted by the local system
-`L_D` associated to `D` as the homology of `Z` twisted by the local system associated to `D ⊗ k_χ`,
+action of `G`. This file shows that any quasi-isomorphism `C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]` of
+complexes of representations, such as the equivariant cap product when it is one, computes for
+every representation `D` of `G` the homology of `(Q, Q₀)` twisted by the local system `L_D`
+associated to `D` as the homology of `Z` twisted by the local system associated to `D ⊗ k_χ`,
 shifted by `n`:
 
 `H_{q + n}(Q, Q₀; L_D) ≅ H_q(Z; L_{D ⊗ k_χ})`
 
-(`TopPair.twistedHomologyIsoOfQuasiIsoSingularChainsRepCap`). For the trivial representation `D = k`
+(`TopPair.twistedHomologyIsoTwistedHomologyOfQuasiIso`). For the trivial representation `D = k`
 the local system `L_D` is the constant system `k`, which gives
 `H_{q + n}(Q, Q₀; k) ≅ H_q(Z; L_{k_χ})`
-(`TopPair.singularHomologyIsoOfQuasiIsoSingularChainsRepCap`).
+(`TopPair.singularHomologyIsoTwistedHomologyOfQuasiIso`).
 
 The free actions make both complexes projective, so applying the tensor coinvariants `(D ⊗ -)_G`
 to the quasi-isomorphism gives a quasi-isomorphism
@@ -62,9 +63,10 @@ cocycle `φ` is done in this file.
 
 ## Main definitions
 
-* `TopPair.twistedHomologyIsoOfQuasiIsoSingularChainsRepCap`: an equivariant cap product which is a
-  quasi-isomorphism identifies `H_{q + n}(Q, Q₀; L_D)` with `H_q(Z; L_{D ⊗ k_χ})`.
-* `TopPair.singularHomologyIsoOfQuasiIsoSingularChainsRepCap`: the case of the trivial
+* `TopPair.twistedHomologyIsoTwistedHomologyOfQuasiIso`: a quasi-isomorphism
+  `C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]` identifies `H_{q + n}(Q, Q₀; L_D)` with
+  `H_q(Z; L_{D ⊗ k_χ})`.
+* `TopPair.singularHomologyIsoTwistedHomologyOfQuasiIso`: the case of the trivial
   representation, `H_{q + n}(Q, Q₀; k) ≅ H_q(Z; L_{k_χ})`.
 
 ## References
@@ -90,25 +92,24 @@ variable {P' P : TopPair.{u}} {k : Type u} [CommRing k] {G : Type u} [Group G]
   (hfst : IsQuotientCoveringMap (Hom.fst π) G) (hsnd : IsQuotientCoveringMap (Hom.snd π) G)
   (hP : ∀ (g : G) x, P'.map (g • x) = g • P'.map x)
   {Y Z : TopCat.{u}} [MulAction G Y] {p : Y ⟶ Z} (hY : IsQuotientCoveringMap p G)
-  {p₀ : P'.fst ⟶ Y} (hp₀ : ∀ (g : G) x, p₀ (g • x) = g • p₀ x) (χ : G →* kˣ) {n : ℕ}
-  {φ : (P'.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles n}
-  (hφ : haveI := hfst.toContinuousConstSMul
-    IsSemiInvariantCocycle χ φ)
-  (D : Rep.{u} k G)
+  (χ : G →* kˣ) {n : ℕ} (D : Rep.{u} k G)
 
-/-- **Twisted homology of a quotient pair from an equivariant cap product.** Let `G` act on a pair
-`(X, A)` and on a space `Y`, let `(X, A) ⟶ (Q, Q₀)` restrict to quotient covering maps `X ⟶ Q` and
-`A ⟶ Q₀` and let `Y ⟶ Z` be a quotient covering map, all for the action of `G`. If the
-equivariant cap product `C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]` with a relative cocycle `φ` of degree
-`n`, semi-invariant for a character `χ`, followed by the push-forward along an equivariant map
-`X ⟶ Y`, is a quasi-isomorphism, then for every representation `D` of `G`,
+/-- **Twisted homology of a quotient pair from a shifted twisted quasi-isomorphism.** Let `G` act
+on a pair `(X, A)` and on a space `Y`, let `(X, A) ⟶ (Q, Q₀)` restrict to quotient covering maps
+`X ⟶ Q` and `A ⟶ Q₀` and let `Y ⟶ Z` be a quotient covering map, all for the action of `G`. A
+quasi-isomorphism `f : C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]` of complexes of representations, for a
+character `χ : G →* kˣ`, gives for every representation `D` of `G`
 `H_{q + n}(Q, Q₀; L_D) ≅ H_q(Z; L_{D ⊗ k_χ})`, where `L_D` and `L_{D ⊗ k_χ}` are the local systems
-associated to `D` and to `D ⊗ k_χ`. -/
-def twistedHomologyIsoOfQuasiIsoSingularChainsRepCap
-    [(haveI := hfst.toContinuousConstSMul
+associated to `D` and to `D ⊗ k_χ`. The main example of `f` is the equivariant cap product
+`TopPair.singularChainsRepCap` with a semi-invariant relative cocycle. -/
+def twistedHomologyIsoTwistedHomologyOfQuasiIso
+    (f : haveI := hfst.toContinuousConstSMul
       haveI := hsnd.toContinuousConstSMul
       haveI := hY.toContinuousConstSMul
-      QuasiIso (P'.singularChainsRepCap hp₀ χ hφ hP))] (q : ℕ) :
+      P'.singularChainsRep k G hP ⟶
+        (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
+          (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n))
+    [QuasiIso f] (q : ℕ) :
     P.twistedHomology (hfst.associatedLocalSystem k D) (q + n) ≅
       LocalCoefficientSystem.twistedHomology
         (hY.associatedLocalSystem k (D ⊗ Rep.of (Representation.ofLinearCharacter χ))) q :=
@@ -116,8 +117,7 @@ def twistedHomologyIsoOfQuasiIsoSingularChainsRepCap
   haveI := hsnd.toContinuousConstSMul
   haveI := hY.toContinuousConstSMul
   haveI := hY.isCancelSMul
-  P'.twistedHomologyIsoHomologyCoinvariantsTensorObj k hfst hsnd hP D
-      (P'.singularChainsRepCap hp₀ χ hφ hP) (q + n) ≪≫
+  P'.twistedHomologyIsoHomologyCoinvariantsTensorObj k hfst hsnd hP D f (q + n) ≪≫
     (HomologicalComplex.homologyFunctor _ _ (q + n)).mapIso
       (HomologicalComplex.mapExtendIso _ _ (ComplexShape.embeddingDownNatAdd n)) ≪≫
     HomologicalComplex.extendHomologyIso _ (ComplexShape.embeddingDownNatAdd n)
@@ -130,23 +130,25 @@ def twistedHomologyIsoOfQuasiIsoSingularChainsRepCap
         hY.coinvariantsTensorSingularChainsRepIsoTwisted k
           (D ⊗ Rep.of (Representation.ofLinearCharacter χ)))
 
-/-- The isomorphism `twistedHomologyIsoOfQuasiIsoSingularChainsRepCap` is the identification of
-`H_{q + n}(Q, Q₀; L_D)` with the homology of `(D ⊗ (k_χ ⊗ C(Y; k))[n])_G` induced by the equivariant
-cap product, followed by the commutation of the coinvariants with the shift, the removal of the
-shift, the associator and the identification of `((D ⊗ k_χ) ⊗ C(Y; k))_G` with the chains of `Z`
-twisted by the local system associated to `D ⊗ k_χ`. -/
-theorem twistedHomologyIsoOfQuasiIsoSingularChainsRepCap_def
-    [(haveI := hfst.toContinuousConstSMul
+/-- The isomorphism `twistedHomologyIsoTwistedHomologyOfQuasiIso` is the identification of
+`H_{q + n}(Q, Q₀; L_D)` with the homology of `(D ⊗ (k_χ ⊗ C(Y; k))[n])_G` induced by `f`, followed
+by the commutation of the coinvariants with the shift, the removal of the shift, the associator and
+the identification of `((D ⊗ k_χ) ⊗ C(Y; k))_G` with the chains of `Z` twisted by the local system
+associated to `D ⊗ k_χ`. -/
+theorem twistedHomologyIsoTwistedHomologyOfQuasiIso_def
+    (f : haveI := hfst.toContinuousConstSMul
       haveI := hsnd.toContinuousConstSMul
       haveI := hY.toContinuousConstSMul
-      QuasiIso (P'.singularChainsRepCap hp₀ χ hφ hP))] (q : ℕ) :
+      P'.singularChainsRep k G hP ⟶
+        (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
+          (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n))
+    [QuasiIso f] (q : ℕ) :
     haveI := hfst.toContinuousConstSMul
     haveI := hsnd.toContinuousConstSMul
     haveI := hY.toContinuousConstSMul
     haveI := hY.isCancelSMul
-    twistedHomologyIsoOfQuasiIsoSingularChainsRepCap hfst hsnd hP hY hp₀ χ hφ D q =
-      P'.twistedHomologyIsoHomologyCoinvariantsTensorObj k hfst hsnd hP D
-          (P'.singularChainsRepCap hp₀ χ hφ hP) (q + n) ≪≫
+    twistedHomologyIsoTwistedHomologyOfQuasiIso hfst hsnd hP hY χ D f q =
+      P'.twistedHomologyIsoHomologyCoinvariantsTensorObj k hfst hsnd hP D f (q + n) ≪≫
         (HomologicalComplex.homologyFunctor _ _ (q + n)).mapIso
           (HomologicalComplex.mapExtendIso _ _ (ComplexShape.embeddingDownNatAdd n)) ≪≫
         HomologicalComplex.extendHomologyIso _ (ComplexShape.embeddingDownNatAdd n)
@@ -160,45 +162,49 @@ theorem twistedHomologyIsoOfQuasiIsoSingularChainsRepCap_def
               (D ⊗ Rep.of (Representation.ofLinearCharacter χ))) :=
   (rfl)
 
-/-- **Homology of a quotient pair from an equivariant cap product.** Under the hypotheses of
-`TopPair.twistedHomologyIsoOfQuasiIsoSingularChainsRepCap`, the relative singular homology of
+/-- **Homology of a quotient pair from a shifted twisted quasi-isomorphism.** Under the hypotheses
+of `TopPair.twistedHomologyIsoTwistedHomologyOfQuasiIso`, the relative singular homology of
 `(Q, Q₀)` with coefficients in `k` is the homology of `Z` twisted by the local system associated to
 the one-dimensional representation `k_χ`, shifted by `n`: `H_{q + n}(Q, Q₀; k) ≅ H_q(Z; L_{k_χ})`.
 It is the case of the trivial representation `D = k`, whose associated local system is the constant
 system `k` (`IsQuotientCoveringMap.associatedLocalSystemTrivialIso`). -/
-def singularHomologyIsoOfQuasiIsoSingularChainsRepCap
-    [(haveI := hfst.toContinuousConstSMul
+def singularHomologyIsoTwistedHomologyOfQuasiIso
+    (f : haveI := hfst.toContinuousConstSMul
       haveI := hsnd.toContinuousConstSMul
       haveI := hY.toContinuousConstSMul
-      QuasiIso (P'.singularChainsRepCap hp₀ χ hφ hP))] (q : ℕ) :
+      P'.singularChainsRep k G hP ⟶
+        (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
+          (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n))
+    [QuasiIso f] (q : ℕ) :
     P.singularHomology (ModuleCat.of k k) (q + n) ≅
       LocalCoefficientSystem.twistedHomology
         (hY.associatedLocalSystem k (Rep.of (Representation.ofLinearCharacter χ))) q :=
   (P.twistedHomologyConstantIso (ModuleCat.of k k) (q + n)).symm ≪≫
     (HomologicalComplex.homologyFunctor _ _ (q + n)).mapIso
       (P.twistedChainComplexCoefficientIso (hfst.associatedLocalSystemTrivialIso k k).symm) ≪≫
-    twistedHomologyIsoOfQuasiIsoSingularChainsRepCap hfst hsnd hP hY hp₀ χ hφ (Rep.trivial k G k)
-      q ≪≫
+    twistedHomologyIsoTwistedHomologyOfQuasiIso hfst hsnd hP hY χ (Rep.trivial k G k) f q ≪≫
     (HomologicalComplex.homologyFunctor _ _ q).mapIso
       (LocalCoefficientSystem.twistedChainComplexCoefficientIso
         ((hY.associatedLocalSystemFunctor k).mapIso
           (λ_ (Rep.of (Representation.ofLinearCharacter χ)))))
 
-/-- The isomorphism `singularHomologyIsoOfQuasiIsoSingularChainsRepCap` is
-`twistedHomologyIsoOfQuasiIsoSingularChainsRepCap` for the trivial representation `k`, between the
+/-- The isomorphism `singularHomologyIsoTwistedHomologyOfQuasiIso` is
+`twistedHomologyIsoTwistedHomologyOfQuasiIso` for the trivial representation `k`, between the
 identification of the constant system `k` with the local system associated to `k` and the left
 unitor `k ⊗ k_χ ≅ k_χ`. -/
-theorem singularHomologyIsoOfQuasiIsoSingularChainsRepCap_def
-    [(haveI := hfst.toContinuousConstSMul
+theorem singularHomologyIsoTwistedHomologyOfQuasiIso_def
+    (f : haveI := hfst.toContinuousConstSMul
       haveI := hsnd.toContinuousConstSMul
       haveI := hY.toContinuousConstSMul
-      QuasiIso (P'.singularChainsRepCap hp₀ χ hφ hP))] (q : ℕ) :
-    singularHomologyIsoOfQuasiIsoSingularChainsRepCap hfst hsnd hP hY hp₀ χ hφ q =
+      P'.singularChainsRep k G hP ⟶
+        (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
+          (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n))
+    [QuasiIso f] (q : ℕ) :
+    singularHomologyIsoTwistedHomologyOfQuasiIso hfst hsnd hP hY χ f q =
       (P.twistedHomologyConstantIso (ModuleCat.of k k) (q + n)).symm ≪≫
         (HomologicalComplex.homologyFunctor _ _ (q + n)).mapIso
           (P.twistedChainComplexCoefficientIso (hfst.associatedLocalSystemTrivialIso k k).symm) ≪≫
-        twistedHomologyIsoOfQuasiIsoSingularChainsRepCap hfst hsnd hP hY hp₀ χ hφ
-          (Rep.trivial k G k) q ≪≫
+        twistedHomologyIsoTwistedHomologyOfQuasiIso hfst hsnd hP hY χ (Rep.trivial k G k) f q ≪≫
         (HomologicalComplex.homologyFunctor _ _ q).mapIso
           (LocalCoefficientSystem.twistedChainComplexCoefficientIso
             ((hY.associatedLocalSystemFunctor k).mapIso
