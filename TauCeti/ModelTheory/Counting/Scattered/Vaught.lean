@@ -56,10 +56,12 @@ theorem vaughtConjecture_iff_bfScattered :
       [Countable (Σ n, L.Relations n)] (φ : L.Sentenceω),
       BFScattered (modelsOf (V := ℕ) φ) → Countable (Quotient (isoSetoidOn ℕ φ)) := by
   rw [vaughtConjecture_iff_nat]
-  refine forall_congr' fun L => forall_congr' fun _ => forall_congr' fun _ =>
-    forall_congr' fun φ => ?_
-  exact countable_quotient_comap_isoSetoid_or_hasPerfectAntichainOn_iff_bfScattered_imp
-    (measurableSet_modelsOf φ)
+  constructor
+  · intro h L _ _ φ hscat
+    exact (h L φ).resolve_right (Setoid.isThinOn_iff.1 hscat.isThinOn)
+  · intro h L _ _ φ
+    exact or_iff_not_imp_right.2 fun hthin =>
+      h L φ (isThinOnNatModels_iff.2 hthin).bfScattered_modelsOf
 
 /-- When `ℵ₁ < 𝔠`, the cardinal Vaught conjecture is equivalent to countability of the models
 on `ℕ` of every back-and-forth scattered sentence. CH implies `CardinalVaughtConjecture`

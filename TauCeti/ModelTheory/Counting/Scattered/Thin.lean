@@ -31,10 +31,6 @@ thin (`TauCeti.BFScattered.isThinOn`).
   is thin for isomorphism.
 * `TauCeti.bfScattered_modelsOf_iff_isThinOnNatModels`: a sentence with countable branching is
   thin on `ℕ` exactly when its model class on `ℕ` is back-and-forth scattered.
-* `TauCeti.countable_quotient_comap_isoSetoid_or_hasPerfectAntichainOn_iff_bfScattered_imp`: for
-  any Borel set of configurations on `ℕ`, having countably many isomorphism classes or a perfect
-  antichain is equivalent to having countably many isomorphism classes whenever the set is
-  back-and-forth scattered.
 
 ## References
 
@@ -82,16 +78,5 @@ theorem bfScattered_modelsOf_iff_isThinOnNatModels {ι : Type*} [Countable ι]
     BFScattered (modelsOf (V := ℕ) φ) ↔ IsThinOnNatModels φ :=
   ⟨fun h => isThinOnNatModels_iff_isThinOn.2 h.isThinOn,
     IsThinOnNatModels.bfScattered_modelsOf⟩
-
-/-- For any Borel set `K` of configurations on `ℕ` in a countable relational vocabulary, having
-countably many isomorphism classes or a perfect antichain is equivalent to having countably many
-isomorphism classes whenever `K` is back-and-forth scattered. -/
-theorem countable_quotient_comap_isoSetoid_or_hasPerfectAntichainOn_iff_bfScattered_imp
-    [∀ n, Countable (L.Relations n)] (hK : MeasurableSet K) :
-    (Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ∨
-        (isoSetoid L ℕ).HasPerfectAntichainOn K) ↔
-      (BFScattered K → Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)))) := by
-  rw [or_iff_not_imp_right, ← Setoid.isThinOn_iff]
-  exact ⟨fun h hscat => h hscat.isThinOn, fun h hthin => h (BFScattered.of_isThinOn hK hthin)⟩
 
 end TauCeti

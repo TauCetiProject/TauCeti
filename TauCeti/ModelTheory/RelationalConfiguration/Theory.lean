@@ -42,7 +42,7 @@ homeomorphism `e.onConfiguration` carries `modelsOfTheory T` onto
   `modelsOfTheory_singleton`, `modelsOfTheory_insert`, `modelsOfTheory_union`,
   `modelsOfTheory_iUnion`, and `modelsOfTheory_anti`: set-theoretic laws for model classes of
   theories.
-* `TauCeti.RelationalConfiguration.modelsOf_conjunction_image_toOmega`: every first-order
+* `TauCeti.RelationalConfiguration.modelsOfTheory_eq_modelsOf_conjunction`: every first-order
   theory whose `L_{ω₁ω}` image is countable (in particular every theory in a countable relational
   vocabulary, by `Set.to_countable`) has the same model class as a single `L_{ω₁ω}` sentence.
 * `TauCeti.RelationalConfiguration.measurableSet_modelsOfTheory_of_countable`,
@@ -133,13 +133,12 @@ theorem modelsOfTheory_anti : Antitone (modelsOfTheory (L := L) (V := V)) :=
 
 /-- **A countable first-order theory has the model class of one `L_{ω₁ω}` sentence**: the coded
 conjunction of the images of its sentences under `BoundedFormula.toOmega`. -/
-@[simp]
-theorem modelsOf_conjunction_image_toOmega {T : L.Theory}
+theorem modelsOfTheory_eq_modelsOf_conjunction {T : L.Theory}
     (hT : (BoundedFormula.toOmega '' T).Countable) :
-    modelsOf (V := V) (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT) =
-      modelsOfTheory T := by
+    modelsOfTheory (V := V) T =
+      modelsOf (Theoryω.conjunction (BoundedFormula.toOmega '' T) hT) := by
   ext c
-  rw [mem_modelsOf, mem_modelsOfTheory,
+  rw [mem_modelsOfTheory, mem_modelsOf,
     @Theoryω.realize_conjunction_iff L _ V c.toStructure hT,
     @Theoryω.model_image_toOmega_iff L V c.toStructure T]
 
@@ -222,23 +221,15 @@ variable {L : Language.{u, v}} {L' : Language.{u', v'}} [L.IsRelational] [L'.IsR
 
 namespace LHom
 
-/-- A reduct configuration along `g` models `T` if and only if the original configuration models
-the translated theory `g.onTheory T`. -/
-@[simp high]
+/-- A configuration models the translated theory `g.onTheory T` if and only if its reduct
+configuration along `g` models `T`. -/
 theorem mem_modelsOfTheory_reductConfiguration_iff (g : L →ᴸ L') (c : RelationalConfiguration L' V)
     (T : L.Theory) :
-    g.reductConfiguration c ∈ modelsOfTheory T ↔ c ∈ modelsOfTheory (g.onTheory T) := by
+    c ∈ modelsOfTheory (g.onTheory T) ↔ g.reductConfiguration c ∈ modelsOfTheory T := by
   rw [mem_modelsOfTheory, mem_modelsOfTheory, g.toStructure_reductConfiguration]
   let := c.toStructure
   let := g.reduct V
-  exact (g.onTheory_model T).symm
-
-/-- Pulling back `modelsOfTheory T` along `g.reductConfiguration` yields
-`modelsOfTheory (g.onTheory T)`. -/
-@[simp]
-theorem preimage_reductConfiguration_modelsOfTheory (g : L →ᴸ L') (T : L.Theory) :
-    g.reductConfiguration ⁻¹' modelsOfTheory (V := V) T = modelsOfTheory (g.onTheory T) :=
-  Set.ext fun c => g.mem_modelsOfTheory_reductConfiguration_iff c T
+  exact g.onTheory_model T
 
 end LHom
 
@@ -250,7 +241,7 @@ variable (e : L ≃ᴸ L')
 only if the configuration lies in `modelsOfTheory T`. -/
 theorem mem_modelsOfTheory_onConfiguration_iff (c : RelationalConfiguration L V) (T : L.Theory) :
     e.onConfiguration c ∈ modelsOfTheory (e.toLHom.onTheory T) ↔ c ∈ modelsOfTheory T := by
-  rw [← e.toLHom.mem_modelsOfTheory_reductConfiguration_iff,
+  rw [e.toLHom.mem_modelsOfTheory_reductConfiguration_iff,
     toLHom_reductConfiguration_onConfiguration]
 
 /-- Pulling back `modelsOfTheory (e.toLHom.onTheory T)` along `e.onConfiguration` recovers
