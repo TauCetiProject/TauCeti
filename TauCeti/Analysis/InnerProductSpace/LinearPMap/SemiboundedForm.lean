@@ -300,14 +300,10 @@ private theorem exists_norm_le_of_shift {β : ℝ} (hβ : q.IsAdmissibleShift β
 /-- The form spaces of two shifts are the same space with equivalent norms: the identity of the
 form domain is a continuous linear equivalence between them. -/
 def formSpaceEquiv {β : ℝ} (hβ : q.IsAdmissibleShift β) :
-    q.FormSpace α hα ≃L[𝕜] q.FormSpace β hβ where
-  __ := (q.toFormSpace hα).symm.trans (q.toFormSpace hβ)
-  continuous_toFun :=
-    let ⟨C, hC⟩ := q.exists_norm_le_of_shift hα hβ
-    AddMonoidHomClass.continuous_of_bound ((q.toFormSpace hα).symm.trans (q.toFormSpace hβ)) C hC
-  continuous_invFun :=
-    let ⟨C, hC⟩ := q.exists_norm_le_of_shift hβ hα
-    AddMonoidHomClass.continuous_of_bound ((q.toFormSpace hβ).symm.trans (q.toFormSpace hα)) C hC
+    q.FormSpace α hα ≃L[𝕜] q.FormSpace β hβ :=
+  ((q.toFormSpace hα).symm.trans (q.toFormSpace hβ)).toContinuousLinearEquivOfBounds
+    (q.exists_norm_le_of_shift hα hβ).choose (q.exists_norm_le_of_shift hβ hα).choose
+    (q.exists_norm_le_of_shift hα hβ).choose_spec (q.exists_norm_le_of_shift hβ hα).choose_spec
 
 /-- `TauCeti.SemiboundedForm.formSpaceEquiv` is the identity of the form domain. -/
 @[simp]
@@ -519,32 +515,53 @@ theorem isLowerBound_ofModel {γ : ℝ} (hγ : ∀ u, γ * ‖j u‖ ^ 2 ≤ re 
   rw [ofModel_form_toOfModel, coe_toOfModel]
   exact hγ u
 
+/-- A shifted coercivity bound `c * ‖u‖ ^ 2 ≤ re (p u u) + ω * ‖j u‖ ^ 2` with `c > 0` makes
+`ω + 1` an admissible shift of the transported form. -/
+private theorem isAdmissibleShift_ofModel {c ω : ℝ} (hc : 0 < c)
+    (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ re (p u u) + ω * ‖j u‖ ^ 2) :
+    (ofModel j hj p hp hb).IsAdmissibleShift (ω + 1) := by
+  refine ⟨-ω, isLowerBound_ofModel j hj p hp hb fun u ↦ ?_, by linarith⟩
+  nlinarith [hcoercive u, sq_nonneg ‖u‖]
+
+/-- The form `p` shifted by `ω + 1` along `j`, coercive under a shifted coercivity bound. -/
+private def shiftedCoerciveForm {c ω : ℝ} (hc : 0 < c)
+    (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ re (p u u) + ω * ‖j u‖ ^ 2) : CoerciveHermitianForm 𝕜 V :=
+  ⟨ContinuousLinearMap.shiftedForm j p (ω + 1), ContinuousLinearMap.shiftedForm_eq_star j hp _,
+    c, hc, ContinuousLinearMap.mul_norm_sq_le_re_shiftedForm_self j (by linarith) hcoercive⟩
+
+private theorem shiftedCoerciveForm_form {c ω : ℝ} (hc : 0 < c)
+    (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ re (p u u) + ω * ‖j u‖ ^ 2) :
+    (shiftedCoerciveForm j p hp hc hcoercive).form = ContinuousLinearMap.shiftedForm j p (ω + 1) :=
+  rfl
+
+/-- The energy space of the shifted model form is isometric to the form space of the transported
+form for the shift `ω + 1`, through `u ↦ j u`. -/
+private def energySpaceIsometryOfModel {c ω : ℝ} (hc : 0 < c)
+    (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ re (p u u) + ω * ‖j u‖ ^ 2) :
+    (shiftedCoerciveForm j p hp hc hcoercive).EnergySpace ≃ₗᵢ[𝕜]
+      (ofModel j hj p hp hb).FormSpace (ω + 1)
+        (isAdmissibleShift_ofModel j hj p hp hb hc hcoercive) where
+  toLinearEquiv :=
+    ((shiftedCoerciveForm j p hp hc hcoercive).toEnergySpace.symm.toLinearEquiv).trans
+      ((toOfModel j hj p hp hb).trans ((ofModel j hj p hp hb).toFormSpace _))
+  norm_map' x := by
+    obtain ⟨u, rfl⟩ := (shiftedCoerciveForm j p hp hc hcoercive).toEnergySpace.surjective x
+    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), CoerciveHermitianForm.norm_toEnergySpace_sq,
+      shiftedCoerciveForm_form, ContinuousLinearMap.re_shiftedForm_self, LinearEquiv.trans_apply,
+      LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.symm_apply_apply, norm_toFormSpace_sq, ofModel_form_toOfModel,
+      coe_toOfModel]
+
 /-- **A model of a closed form gives a closed form.** If `V` is complete and
 `c * ‖u‖ ^ 2 ≤ re (p u u) + ω * ‖j u‖ ^ 2` with `c > 0`, the form transported to the range of `j`
 is closed. -/
 theorem isClosed_ofModel [CompleteSpace V] {c ω : ℝ} (hc : 0 < c)
     (hcoercive : ∀ u, c * ‖u‖ ^ 2 ≤ re (p u u) + ω * ‖j u‖ ^ 2) :
-    (ofModel j hj p hp hb).IsClosed := by
-  set q := ofModel j hj p hp hb
-  have hα : q.IsAdmissibleShift (ω + 1) := by
-    refine ⟨-ω, isLowerBound_ofModel j hj p hp hb fun u ↦ ?_, by linarith⟩
-    nlinarith [hcoercive u, sq_nonneg ‖u‖]
-  rw [q.isClosed_iff_completeSpace hα]
-  let a : CoerciveHermitianForm 𝕜 V :=
-    ⟨ContinuousLinearMap.shiftedForm j p (ω + 1), ContinuousLinearMap.shiftedForm_eq_star j hp _,
-      c, hc, ContinuousLinearMap.mul_norm_sq_le_re_shiftedForm_self j (by linarith) hcoercive⟩
-  let e₀ : a.EnergySpace ≃ₗ[𝕜] q.FormSpace (ω + 1) hα :=
-    (a.toEnergySpace.symm : a.EnergySpace ≃ₗ[𝕜] V).trans
-      ((toOfModel j hj p hp hb).trans (q.toFormSpace hα))
-  let e : a.EnergySpace ≃ₗᵢ[𝕜] q.FormSpace (ω + 1) hα :=
-    { e₀ with
-      norm_map' x := by
-        obtain ⟨u, rfl⟩ := a.toEnergySpace.surjective x
-        rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), a.norm_toEnergySpace_sq,
-          ContinuousLinearMap.re_shiftedForm_self]
-        simp [e₀, q, norm_toFormSpace_sq, ofModel_form_toOfModel] }
-  exact (completeSpace_congr (e := e.toContinuousLinearEquiv.toEquiv)
-    e.toContinuousLinearEquiv.isUniformEmbedding).mp inferInstance
+    (ofModel j hj p hp hb).IsClosed :=
+  (ofModel j hj p hp hb).isClosed_iff_completeSpace
+    (isAdmissibleShift_ofModel j hj p hp hb hc hcoercive) |>.mpr <|
+    (energySpaceIsometryOfModel j hj p hp hb hc hcoercive).toIsometryEquiv.completeSpace_iff.mp
+      inferInstance
 
 /-- The range of `j` is dense when `j` has dense range. -/
 theorem dense_ofModel_domain (hdense : DenseRange j) :
