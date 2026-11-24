@@ -301,22 +301,25 @@ theorem isNondegenerateQuadraticFamily_of_mem_span_of_mul_self_eq_one_of_mul_sel
 
 open Polynomial
 
-/-- The real polynomial `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`, whose complex roots are
-`±a ± bi`. -/
-private noncomputable def ffPoly (a b : ℝ) : ℝ[X] :=
+/-- The **focus-focus polynomial** `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` of `a + bi`, the
+real even polynomial whose complex roots are `±a ± bi`. For `A ∈ sp(V, ω)`, the vectors killed by a
+power of its value at `A` form the focus-focus block of `A` for the eigenvalue `a + bi`. -/
+noncomputable def focusFocusPolynomial (a b : ℝ) : ℝ[X] :=
   (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) * (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2))
 
-/-- The polynomial `ffPoly a b` is even. -/
-private theorem ffPoly_comp_neg_X (a b : ℝ) : (ffPoly a b).comp (-X) = ffPoly a b := by
-  simp only [ffPoly, mul_comp, add_comp, sub_comp, pow_comp, X_comp, C_comp]
+/-- The polynomial `focusFocusPolynomial a b` is even. -/
+theorem focusFocusPolynomial_comp_neg_X (a b : ℝ) :
+    (focusFocusPolynomial a b).comp (-X) = focusFocusPolynomial a b := by
+  simp only [focusFocusPolynomial, mul_comp, add_comp, sub_comp, pow_comp, X_comp, C_comp]
   ring
 
 /-- The complex roots of `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)`, `b ≠ 0`, are the numbers
 `±a ± bi`, so their real and imaginary parts have absolute values `|a|` and `|b|`. -/
-private theorem abs_re_eq_and_abs_im_eq_of_aeval_ffPoly_eq_zero {a b : ℝ} (hb : b ≠ 0) {w : ℂ}
-    (hw : aeval w (ffPoly a b) = 0) : |w.re| = |a| ∧ |w.im| = |b| := by
-  have hf : aeval w (ffPoly a b) = ((w - a) ^ 2 + (b : ℂ) ^ 2) * ((w + a) ^ 2 + (b : ℂ) ^ 2) := by
-    simp only [ffPoly, map_mul, map_add, map_sub, map_pow, aeval_X, aeval_C,
+theorem abs_re_eq_and_abs_im_eq_of_aeval_focusFocusPolynomial_eq_zero {a b : ℝ} (hb : b ≠ 0) {w : ℂ}
+    (hw : aeval w (focusFocusPolynomial a b) = 0) : |w.re| = |a| ∧ |w.im| = |b| := by
+  have hf : aeval w (focusFocusPolynomial a b) =
+      ((w - a) ^ 2 + (b : ℂ) ^ 2) * ((w + a) ^ 2 + (b : ℂ) ^ 2) := by
+    simp only [focusFocusPolynomial, map_mul, map_add, map_sub, map_pow, aeval_X, aeval_C,
       Complex.coe_algebraMap]
     push_cast
     ring
@@ -348,14 +351,14 @@ private theorem abs_re_eq_and_abs_im_eq_of_aeval_ffPoly_eq_zero {a b : ℝ} (hb 
 /-- For distinct points `a + bi` and `a' + b'i` of the open first quadrant, the polynomial
 `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` and the reflection of its analogue for `(a', b')` are
 coprime. -/
-private theorem isCoprime_ffPoly {a b a' b' : ℝ} (ha : 0 < a) (hb : 0 < b) (ha' : 0 < a')
+theorem isCoprime_focusFocusPolynomial {a b a' b' : ℝ} (ha : 0 < a) (hb : 0 < b) (ha' : 0 < a')
     (hb' : 0 < b') (hne : a ≠ a' ∨ b ≠ b') :
-    IsCoprime (ffPoly a b) ((ffPoly a' b').comp (-X)) := by
-  rw [ffPoly_comp_neg_X]
+    IsCoprime (focusFocusPolynomial a b) ((focusFocusPolynomial a' b').comp (-X)) := by
+  rw [focusFocusPolynomial_comp_neg_X]
   refine (isCoprime_iff_aeval_ne_zero_of_isAlgClosed ℝ ℂ _ _).2 fun w ↦ ?_
   by_contra! hw
-  obtain ⟨h₁, h₂⟩ := abs_re_eq_and_abs_im_eq_of_aeval_ffPoly_eq_zero hb.ne' hw.1
-  obtain ⟨h₁', h₂'⟩ := abs_re_eq_and_abs_im_eq_of_aeval_ffPoly_eq_zero hb'.ne' hw.2
+  obtain ⟨h₁, h₂⟩ := abs_re_eq_and_abs_im_eq_of_aeval_focusFocusPolynomial_eq_zero hb.ne' hw.1
+  obtain ⟨h₁', h₂'⟩ := abs_re_eq_and_abs_im_eq_of_aeval_focusFocusPolynomial_eq_zero hb'.ne' hw.2
   rw [abs_of_pos ha] at h₁
   rw [abs_of_pos hb] at h₂
   rw [abs_of_pos ha'] at h₁'
@@ -370,7 +373,8 @@ private theorem isCoprime_ffPoly {a b a' b' : ℝ} (ha : 0 < a) (hb : 0 < b) (ha
 roots `±a ± bi` of `f`, they take the values `±1` and `±i`. -/
 private theorem exists_odd_mul_self_eq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     ∃ p₁ p₂ s₁ s₂ : ℝ[X], p₁.comp (-X) = -p₁ ∧ p₂.comp (-X) = -p₂ ∧
-      p₁ * p₁ = 1 + s₁ * ffPoly a b ∧ p₂ * p₂ = -1 + s₂ * ffPoly a b := by
+      p₁ * p₁ = 1 + s₁ * focusFocusPolynomial a b ∧
+        p₂ * p₂ = -1 + s₂ * focusFocusPolynomial a b := by
   set c₁ := (2 * a * (a ^ 2 + b ^ 2))⁻¹
   set c₂ := (2 * b * (a ^ 2 + b ^ 2))⁻¹
   have hc₁ : C c₁ * (2 * C a * (C a ^ 2 + C b ^ 2)) = 1 := by
@@ -385,28 +389,37 @@ private theorem exists_odd_mul_self_eq {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     ring
   · simp only [mul_comp, add_comp, pow_comp, X_comp, C_comp]
     ring
-  · simp only [ffPoly, map_mul, map_add, map_sub, map_pow, map_ofNat]
+  · simp only [focusFocusPolynomial, map_mul, map_add, map_sub, map_pow, map_ofNat]
     linear_combination (C c₁ * (2 * C a * (C a ^ 2 + C b ^ 2)) + 1) * hc₁
-  · simp only [ffPoly, map_mul, map_add, map_sub, map_pow, map_ofNat]
+  · simp only [focusFocusPolynomial, map_mul, map_add, map_sub, map_pow, map_ofNat]
     linear_combination (-(C c₂ * (2 * C b * (C a ^ 2 + C b ^ 2)) + 1)) * hc₂
 
-/-- If `A ∈ sp(V, ω)` has the eigenvalue `a + bi`, `a, b ≠ 0`, with eigenvector `v + iw`, then `v`
-lies in the subspace of vectors killed by a power of `(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)`,
-which has dimension at least four. -/
-private theorem four_le_finrank_block {A : Module.End ℝ V}
-    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
-    {v w : V} (hv : v ≠ 0) (hAv : A v = a • v - b • w) (hAw : A w = b • v + a • w) :
-    4 ≤ finrank ℝ ((aeval A (ffPoly a b)).maxGenEigenspace 0) := by
-  set G := (aeval A (ffPoly a b)).maxGenEigenspace 0
-  have hGs : ω.IsSymplectic G := ω.isSymplectic_maxGenEigenspace_aeval hA (ffPoly_comp_neg_X a b)
-  -- `v` is killed by `A² - 2aA + a² + b²`, hence by the polynomial defining `G`.
+omit [FiniteDimensional ℝ V] in
+/-- If an endomorphism `A` has the eigenvalue `a + bi` with eigenvector `v + iw`, that is
+`A v = a v - b w` and `A w = b v + a w`, then `(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)` kills
+`v`. -/
+theorem aeval_focusFocusPolynomial_apply_eq_zero {A : Module.End ℝ V} {a b : ℝ} {v w : V}
+    (hAv : A v = a • v - b • w) (hAw : A w = b • v + a • w) :
+    aeval A (focusFocusPolynomial a b) v = 0 := by
+  -- `v` is killed by the factor `A² - 2aA + a² + b²`.
   have hq : aeval A (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) v = 0 := by
     simp only [map_add, map_sub, map_mul, aeval_X, aeval_C, LinearMap.add_apply,
       LinearMap.sub_apply, pow_two, mul_apply_eq_comp, Algebra.algebraMap_eq_smul_one,
       LinearMap.smul_apply, one_apply_eq_self, hAv, hAw, map_sub, map_smul]
     module
-  have hfv : aeval A (ffPoly a b) v = 0 := by
-    rw [ffPoly, mul_comm, map_mul, mul_apply_eq_comp, hq, map_zero]
+  rw [focusFocusPolynomial, mul_comm, map_mul, mul_apply_eq_comp, hq, map_zero]
+
+/-- If `A ∈ sp(V, ω)` has the eigenvalue `a + bi`, `a, b ≠ 0`, with eigenvector `v + iw`, then `v`
+lies in the subspace of vectors killed by a power of `(A² - 2aA + a² + b²)(A² + 2aA + a² + b²)`,
+which has dimension at least four. -/
+theorem four_le_finrank_maxGenEigenspace_aeval_focusFocusPolynomial {A : Module.End ℝ V}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0)
+    {v w : V} (hv : v ≠ 0) (hAv : A v = a • v - b • w) (hAw : A w = b • v + a • w) :
+    4 ≤ finrank ℝ ((aeval A (focusFocusPolynomial a b)).maxGenEigenspace 0) := by
+  set G := (aeval A (focusFocusPolynomial a b)).maxGenEigenspace 0
+  have hGs : ω.IsSymplectic G :=
+    ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusPolynomial_comp_neg_X a b)
+  have hfv := aeval_focusFocusPolynomial_apply_eq_zero hAv hAw
   have hvG : v ∈ G := (Module.End.mem_maxGenEigenspace _ _ _).2 ⟨1, by simpa using hfv⟩
   obtain ⟨r, hr⟩ := (ω.restrict G hGs.nondegenerate_restrict).even_finrank
   have hpos : finrank ℝ G ≠ 0 := fun h0 ↦
@@ -421,8 +434,9 @@ private theorem four_le_finrank_block {A : Module.End ℝ V}
     have hAAv : (A ^ 2) v = κ • v := by
       simpa [pow_two, mul_apply_eq_comp, LinearMap.coe_restrict_apply] using
         congrArg Subtype.val (LinearMap.congr_fun hκ ⟨v, hvG⟩)
-    have hf : ffPoly a b = ((X + C (a ^ 2 + b ^ 2)) ^ 2 - C (4 * a ^ 2) * X).comp (X ^ 2) := by
-      simp only [ffPoly, add_comp, sub_comp, mul_comp, pow_comp, X_comp, C_comp]
+    have hf : focusFocusPolynomial a b =
+        ((X + C (a ^ 2 + b ^ 2)) ^ 2 - C (4 * a ^ 2) * X).comp (X ^ 2) := by
+      simp only [focusFocusPolynomial, add_comp, sub_comp, mul_comp, pow_comp, X_comp, C_comp]
       simp only [map_mul, map_add, map_pow, map_ofNat]
       ring
     rw [hf, aeval_comp, aeval_X_pow, Module.End.aeval_apply_of_mem_apply_eq_smul hAAv] at hfv
@@ -456,21 +470,25 @@ restriction of `Q` to `G` spans the focus-focus block of a Darboux basis of `G`.
 private theorem exists_isDarbouxBasis_block (h : ω.IsNondegenerateQuadraticFamily Q)
     {P : QuadraticForm ℝ V} (hP : P ∈ Submodule.span ℝ (Set.range Q)) {a b : ℝ} (ha : 0 < a)
     (hb : 0 < b)
-    (hG : finrank ℝ ((aeval (ω.hamiltonianEnd P) (ffPoly a b)).maxGenEigenspace 0) = 4) :
-    ∃ b' : Basis (Fin 2 × Fin 2) ℝ ((aeval (ω.hamiltonianEnd P) (ffPoly a b)).maxGenEigenspace 0),
+    (hG : finrank ℝ
+      ((aeval (ω.hamiltonianEnd P) (focusFocusPolynomial a b)).maxGenEigenspace 0) = 4) :
+    ∃ b' : Basis (Fin 2 × Fin 2) ℝ
+        ((aeval (ω.hamiltonianEnd P) (focusFocusPolynomial a b)).maxGenEigenspace 0),
       (ω.restrict _ (ω.isSymplectic_maxGenEigenspace_aeval
         (ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra P)
-        (ffPoly_comp_neg_X a b)).nondegenerate_restrict).IsDarbouxBasis b' ∧
+        (focusFocusPolynomial_comp_neg_X a b)).nondegenerate_restrict).IsDarbouxBasis b' ∧
       Submodule.span ℝ (Set.range fun i ↦
-          (Q i).comp ((aeval (ω.hamiltonianEnd P) (ffPoly a b)).maxGenEigenspace 0).subtype) =
+          (Q i).comp
+            ((aeval (ω.hamiltonianEnd P) (focusFocusPolynomial a b)).maxGenEigenspace 0).subtype) =
         Submodule.span ℝ (Set.range (focusFocus b')) := by
   set A := ω.hamiltonianEnd P with hA_def
-  set G := (aeval A (ffPoly a b)).maxGenEigenspace 0
+  set G := (aeval A (focusFocusPolynomial a b)).maxGenEigenspace 0
   have hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm :=
     ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra P
-  have hGs : ω.IsSymplectic G := ω.isSymplectic_maxGenEigenspace_aeval hA (ffPoly_comp_neg_X a b)
+  have hGs : ω.IsSymplectic G :=
+    ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusPolynomial_comp_neg_X a b)
   set ω' := ω.restrict G hGs.nondegenerate_restrict
-  have hnd := h.restrict_maxGenEigenspace_aeval hP (ffPoly_comp_neg_X a b)
+  have hnd := h.restrict_maxGenEigenspace_aeval hP (focusFocusPolynomial_comp_neg_X a b)
   have hcomm {R : QuadraticForm ℝ V} (hR : R ∈ Submodule.span ℝ (Set.range Q)) (p : ℝ[X]) :
       Commute (aeval A p) (ω.hamiltonianEnd R) :=
     commute_aeval_hamiltonianEnd_of_mem_span h.quadraticPoissonBracket_eq_zero hP hR p
@@ -479,9 +497,9 @@ private theorem exists_isDarbouxBasis_block (h : ω.IsNondegenerateQuadraticFami
   -- The focus-focus pair on `G`: odd polynomials `p₁`, `p₂` with `p₁(A)² = 1`, `p₂(A)² = -1`.
   obtain ⟨p₁, p₂, s₁, s₂, hp₁, hp₂, hp₁sq, hp₂sq⟩ := exists_odd_mul_self_eq ha hb
   -- On `G`, `p(A)² = r(A) + s(A) f(A)` acts as `r(A)`, since `f(A)` kills `G`.
-  have hsq {p r s : ℝ[X]} (hp : p * p = r + s * ffPoly a b) {v : V} (hv : v ∈ G) :
+  have hsq {p r s : ℝ[X]} (hp : p * p = r + s * focusFocusPolynomial a b) {v : V} (hv : v ∈ G) :
       aeval A p (aeval A p v) = aeval A r v := by
-    have hf : aeval A (ffPoly a b) v = 0 :=
+    have hf : aeval A (focusFocusPolynomial a b) v = 0 :=
       (h.isSemisimple_hamiltonianEnd hP).aeval_apply_eq_zero_of_mem_maxGenEigenspace hv
     simpa [hf] using LinearMap.congr_fun (congrArg (aeval A) hp) v
   -- The forms on `G` whose Hamiltonian endomorphisms are the restrictions of `p₁(A)`, `p₂(A)`.
@@ -575,18 +593,20 @@ theorem exists_isDarbouxBasis_span_eq_span_focusFocusBlocks
   set c : Fin k → ℝ := fun j ↦ (e j : ℂ).im
   have ha (j : Fin k) : 0 < a j := (hs0 _ (e j).property).1
   have hc (j : Fin k) : 0 < c j := (hs0 _ (e j).property).2
-  set G : Fin k → Submodule ℝ V := fun j ↦ (aeval A (ffPoly (a j) (c j))).maxGenEigenspace 0
+  set G : Fin k → Submodule ℝ V := fun j ↦
+    (aeval A (focusFocusPolynomial (a j) (c j))).maxGenEigenspace 0
   have hGs (j : Fin k) : ω.IsSymplectic (G j) :=
-    ω.isSymplectic_maxGenEigenspace_aeval hA (ffPoly_comp_neg_X _ _)
+    ω.isSymplectic_maxGenEigenspace_aeval hA (focusFocusPolynomial_comp_neg_X _ _)
   have horth : Pairwise fun j j' ↦ ∀ v ∈ G j, ∀ w ∈ G j', ω v w = 0 := by
     intro j j' hjj' v hv w hw
     refine ((LinearMap.mem_skewAdjointSubmodule A).1 hA).apply_eq_zero_of_mem_maxGenEigenspace_aeval
-      (isCoprime_ffPoly (ha j) (hc j) (ha j') (hc j') ?_) hv hw
+      (isCoprime_focusFocusPolynomial (ha j) (hc j) (ha j') (hc j') ?_) hv hw
     by_contra! hre
     exact hjj' (e.injective (Subtype.ext (Complex.ext hre.1 hre.2)))
   have hG4 : ∀ j, finrank ℝ (G j) = 4 := finrank_eq_four_of_four_le hs hGs horth fun j ↦ by
     obtain ⟨v, w, hv, hAv, hAw⟩ := hPs _ (e j).property
-    exact four_le_finrank_block hA (ha j).ne' (hc j).ne' hv hAv hAw
+    exact four_le_finrank_maxGenEigenspace_aeval_focusFocusPolynomial hA (ha j).ne' (hc j).ne' hv
+      hAv hAw
   -- A Darboux basis of each block in which the restricted family spans the focus-focus pair; they
   -- assemble to a Darboux basis of `V`.
   choose b' hb' hspan' using fun j ↦ exists_isDarbouxBasis_block h hP (ha j) (hc j) (hG4 j)
