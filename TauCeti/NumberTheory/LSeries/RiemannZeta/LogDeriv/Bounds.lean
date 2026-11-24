@@ -50,10 +50,8 @@ and `Im s ≠ 0`.
 * `TauCeti.neg_re_logDeriv_riemannZeta_le`: for every `t₀ > 1`, the two inputs
   `-Re (ζ′/ζ)(1 + δ + 2 i t) ≤ C log |t|` and
   `-Re (ζ′/ζ)(1 + δ + i t) ≤ -1 / (1 + δ - β) + C log |t|` (at a zero `β + i t`) of the 3-4-1
-  argument at height `|t| ≥ t₀` (Davenport §13), for every `δ > 0`. This is the `K = ℚ` case of
-  ZerosOfLFunctions 6.4d. Its statement follows chrisflav's PR
-  https://github.com/TauCetiProject/TauCeti/pull/45143; the proof here derives it from the two
-  bounds above.
+  argument at height `|t| ≥ t₀` (Davenport §13), for every `δ ≥ 0`. Its statement follows
+  chrisflav's PR https://github.com/TauCetiProject/TauCeti/pull/45143.
 
 ## References
 
@@ -194,13 +192,13 @@ theorem exists_neg_re_logDeriv_riemannZeta_le_inv_add_mul_log_of_im_ne_zero :
           (σ := 9 / 8) (by norm_num) hs9.le
     linarith
 
-/-- **ZerosOfLFunctions 6.4d at `K = ℚ`, off the real axis.** For every `t₀ > 1` there is `C`
-such that, for `δ > 0` and `|t| ≥ t₀`, `-Re (ζ′/ζ)(1 + δ + 2it) ≤ C log |t|`, and
+/-- **3-4-1 inputs for `-Re (ζ′/ζ)` at height `t`.** For every `t₀ > 1` there is `C`
+such that, for `δ ≥ 0` and `|t| ≥ t₀`, `-Re (ζ′/ζ)(1 + δ + 2it) ≤ C log |t|`, and
 `-Re (ζ′/ζ)(1 + δ + it) ≤ -1 / (1 + δ - β) + C log |t|` whenever `β + it` is a zero of `ζ`: the
 two inputs of the 3-4-1 argument at height `t` (Davenport §13). The threshold keeps `log |t|`
 positive. -/
 theorem neg_re_logDeriv_riemannZeta_le (t₀ : ℝ) (ht₀ : 1 < t₀) :
-    ∃ C : ℝ, ∀ δ : ℝ, 0 < δ → ∀ t : ℝ, t₀ ≤ |t| →
+    ∃ C : ℝ, ∀ δ : ℝ, 0 ≤ δ → ∀ t : ℝ, t₀ ≤ |t| →
       -(logDeriv riemannZeta (1 + δ + 2 * t * I)).re ≤ C * Real.log |t| ∧
         ∀ β : ℝ, riemannZeta (β + t * I) = 0 →
           -(logDeriv riemannZeta (1 + δ + t * I)).re ≤ -1 / (1 + δ - β) + C * Real.log |t| := by
