@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.DualNumber.Map
 public import TauCeti.Algebra.TrivSqZeroExt.MapEquiv
 
@@ -14,12 +15,13 @@ public import TauCeti.Algebra.TrivSqZeroExt.MapEquiv
 Let `R` be a commutative semiring. An `R`-algebra endomorphism `f` of the dual numbers `R[ε]`
 sends `ε` to an element `a + b • ε` squaring to zero, that is, with `a ^ 2 = 0` and `2 * a * b = 0`.
 For an automorphism `φ` the coefficient `b` is a unit over every `R`, because applying `φ` to
-`φ.symm ε` supplies an inverse coefficient; so `a ^ 2 = 0` and `2 * a = 0`. When `R` has no
-nonzero such `a` — for instance when `R` is reduced, or when `2` is invertible in `R` — this
-forces `a = 0`, and `φ ε = b • ε`. Since an algebra map out of `R[ε]` is determined by its value
-on `ε`, the automorphisms of `R[ε]` are then exactly the maps `ε ↦ u • ε` for the units `u` of `R`,
-that is, the maps `TauCeti.TrivSqZeroExt.mapEquiv e` for the linear automorphisms `e` of `R`:
-`TauCeti.DualNumber.mapEquivMulEquiv` is a group isomorphism `(R ≃ₗ[R] R) ≃* (R[ε] ≃ₐ[R] R[ε])`.
+`φ.symm ε` supplies an inverse coefficient; so `a ^ 2 = 0` and `2 * a = 0`. Since an algebra map
+out of `R[ε]` is determined by its value on `ε`, the automorphism `φ` is `ε ↦ u • ε` for a unit `u`,
+that is, `e.trivSqZeroExtCongr` for a linear automorphism `e` of `R`, exactly when `a = 0`
+(`AlgEquiv.exists_trivSqZeroExtCongr_eq_iff`). When `R` has no nonzero `a` with `a ^ 2 = 0` and
+`2 * a = 0` — for instance when `R` is reduced, or when `2` is invertible in `R` — this always
+holds, and `TauCeti.DualNumber.linearEquivEquivAlgEquiv` is a group isomorphism
+`(R ≃ₗ[R] R) ≃* (R[ε] ≃ₐ[R] R[ε])`.
 
 The hypothesis is also necessary: if `a ≠ 0` satisfies `a ^ 2 = 0` and `2 * a = 0`, then
 `ε ↦ a + ε` defines an automorphism of `R[ε]` (with inverse `ε ↦ -a + ε` when `R` is a ring, since
@@ -30,8 +32,10 @@ The hypothesis is also necessary: if `a ≠ 0` satisfies `a ^ 2 = 0` and `2 * a 
 
 * `AlgEquiv.isUnit_snd_apply_eps`: for an automorphism, the coefficient of `ε` in the
   image of `ε` is a unit.
-* `TauCeti.DualNumber.mapEquivMulEquiv`: the automorphism group of `R[ε]` is the group of linear
-  automorphisms of `R`, acting on the coefficient of `ε`.
+* `AlgEquiv.exists_trivSqZeroExtCongr_eq_iff`: an automorphism is `ε ↦ u • ε` for a unit `u`
+  exactly when the image of `ε` has zero `R`-component.
+* `TauCeti.DualNumber.linearEquivEquivAlgEquiv`: the automorphism group of `R[ε]` is the group of
+  linear automorphisms of `R`, acting on the coefficient of `ε`.
 -/
 
 public section
@@ -40,14 +44,32 @@ open DualNumber TrivSqZeroExt
 
 variable {R : Type*} [CommSemiring R]
 
+/-- The `ε`-coefficient of the image of `ε` under `e.trivSqZeroExtCongr` is `e 1`. -/
+private theorem snd_trivSqZeroExtCongr_apply_eps (e : R ≃ₗ[R] R) :
+    (e.trivSqZeroExtCongr ε).snd = e 1 := by
+  rw [LinearEquiv.coe_trivSqZeroExtCongr, snd_map, snd_eps, LinearEquiv.coe_coe]
+
 namespace AlgEquiv
 
 /-- An automorphism of the dual numbers multiplies `ε`, up to an `R`-component, by a unit. -/
 theorem isUnit_snd_apply_eps (φ : R[ε] ≃ₐ[R] R[ε]) : IsUnit (φ ε).snd :=
   -- Applying `φ` to `φ.symm ε` gives back `ε`, whose `ε`-coefficient is `1`.
   IsUnit.of_mul_eq_one (φ.symm ε).snd <| (mul_comm _ _).trans <|
-    (TauCeti.DualNumber.snd_apply_eq_snd_mul_snd_apply_eps φ (φ.symm ε)).symm.trans <| by
+    (DualNumber.snd_apply_eq_snd_mul_snd_apply_eps φ (φ.symm ε)).symm.trans <| by
       rw [φ.apply_symm_apply, snd_eps]
+
+/-- An automorphism `φ` of the dual numbers is `e.trivSqZeroExtCongr` for a linear automorphism `e`
+of `R`, that is, `ε ↦ u • ε` for a unit `u`, exactly when `φ ε` has zero `R`-component. -/
+theorem exists_trivSqZeroExtCongr_eq_iff (φ : R[ε] ≃ₐ[R] R[ε]) :
+    (∃ e : R ≃ₗ[R] R, e.trivSqZeroExtCongr = φ) ↔ (φ ε).fst = 0 := by
+  refine ⟨fun ⟨e, he⟩ ↦ he ▸ by simp, fun h ↦ ?_⟩
+  -- The multiplication by the unit `(φ ε).snd` sends `ε` to `(φ ε).snd • ε = φ ε`.
+  obtain ⟨u, hu⟩ := φ.isUnit_snd_apply_eps
+  refine ⟨DistribMulAction.toLinearEquiv R R u,
+    coe_toAlgHom_injective <| DualNumber.algHom_ext <| TrivSqZeroExt.ext ?_ ?_⟩
+  · simp [h, Units.smul_def]
+  · rw [coe_toAlgHom, coe_toAlgHom, snd_trivSqZeroExtCongr_apply_eps, ← hu,
+      DistribMulAction.toLinearEquiv_apply, Units.smul_def, smul_eq_mul, mul_one]
 
 end AlgEquiv
 
@@ -62,46 +84,32 @@ theorem fst_algEquiv_apply_eps_eq_zero (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 
   have h : φ ε * φ ε = 0 := by rw [← map_mul, eps_mul_eps, map_zero]
   refine hR _ ?_ (φ.isUnit_snd_apply_eps.mul_left_eq_zero.mp ?_)
   · rw [pow_two, ← fst_mul, h, fst_zero]
-  · have h' := congrArg snd h
-    rwa [DualNumber.snd_mul, snd_zero, mul_comm (φ ε).snd, ← two_mul, ← mul_assoc] at h'
-
-/-- If `R` has no nonzero `a` with `a ^ 2 = 0` and `2 * a = 0`, for instance if `R` is reduced or
-`2` is invertible in `R`, then every automorphism of the dual numbers is
-`TauCeti.TrivSqZeroExt.mapEquiv e` for some linear automorphism `e` of `R`. -/
-theorem exists_mapEquiv_eq (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 → a = 0)
-    (φ : R[ε] ≃ₐ[R] R[ε]) : ∃ e : R ≃ₗ[R] R, TrivSqZeroExt.mapEquiv e = φ := by
-  obtain ⟨u, hu⟩ := φ.isUnit_snd_apply_eps
-  refine ⟨LinearEquiv.smulOfUnit u, AlgEquiv.coe_toAlgHom_injective <| DualNumber.algHom_ext ?_⟩
-  ext
-  · simp [fst_algEquiv_apply_eps_eq_zero hR]
-  · simp [← hu, LinearEquiv.smulOfUnit, Units.smul_def]
+  · calc 2 * (φ ε).fst * (φ ε).snd = (φ ε).fst * (φ ε).snd + (φ ε).snd * (φ ε).fst := by ring
+      _ = 0 := by simpa [DualNumber.snd_mul] using congrArg snd h
 
 /-- **The automorphisms of the dual numbers.** If `R` has no nonzero `a` with `a ^ 2 = 0` and
 `2 * a = 0`, for instance if `R` is reduced or `2` is invertible in `R`, then every `R`-algebra
-automorphism `φ` of `R[ε]` is `TauCeti.TrivSqZeroExt.mapEquiv e` for a unique linear automorphism
-`e` of `R`, namely the multiplication by the unit `(φ ε).snd`; composition corresponds to
-composition. -/
-noncomputable def mapEquivMulEquiv (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 → a = 0) :
+automorphism `φ` of `R[ε]` is `e.trivSqZeroExtCongr` for a unique linear automorphism `e` of `R`,
+namely the multiplication by the unit `(φ ε).snd`; composition corresponds to composition. -/
+noncomputable def linearEquivEquivAlgEquiv (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 → a = 0) :
     (R ≃ₗ[R] R) ≃* (R[ε] ≃ₐ[R] R[ε]) :=
-  MulEquiv.ofBijective (TrivSqZeroExt.mapEquivHom R R) <| by
-    rw [TrivSqZeroExt.coe_mapEquivHom]
-    exact ⟨TrivSqZeroExt.mapEquiv_injective, exists_mapEquiv_eq hR⟩
+  MulEquiv.ofBijective (TrivSqZeroExt.congrHom R R) <| by
+    rw [TrivSqZeroExt.coe_congrHom]
+    exact ⟨LinearEquiv.trivSqZeroExtCongr_injective, fun φ ↦
+      φ.exists_trivSqZeroExtCongr_eq_iff.mpr (fst_algEquiv_apply_eps_eq_zero hR φ)⟩
 
 @[simp]
-theorem mapEquivMulEquiv_apply (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 → a = 0) (e : R ≃ₗ[R] R) :
-    mapEquivMulEquiv hR e = TrivSqZeroExt.mapEquiv e := by
-  rw [mapEquivMulEquiv, MulEquiv.ofBijective_apply, TrivSqZeroExt.coe_mapEquivHom]
+theorem linearEquivEquivAlgEquiv_apply (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 → a = 0)
+    (e : R ≃ₗ[R] R) : linearEquivEquivAlgEquiv hR e = e.trivSqZeroExtCongr := by
+  rw [linearEquivEquivAlgEquiv, MulEquiv.ofBijective_apply, TrivSqZeroExt.coe_congrHom]
 
 /-- The linear automorphism of `R` attached to an automorphism `φ` of `R[ε]` is the multiplication
 by the `ε`-coefficient of `φ ε`. -/
 @[simp]
-theorem mapEquivMulEquiv_symm_apply_apply (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 → a = 0)
-    (φ : R[ε] ≃ₐ[R] R[ε]) (r : R) : (mapEquivMulEquiv hR).symm φ r = r * (φ ε).snd := by
-  -- The `ε`-coefficient of `φ ε` is the value of the linear automorphism at `1`.
-  have h : (mapEquivMulEquiv hR).symm φ 1 = (φ ε).snd := by
-    simpa only [mapEquivMulEquiv_apply, TrivSqZeroExt.coe_mapEquiv, map_eps, snd_smul, snd_eps,
-      smul_eq_mul, mul_one, LinearEquiv.coe_coe] using
-      congrArg (fun ψ ↦ (ψ ε).snd) ((mapEquivMulEquiv hR).apply_symm_apply φ)
-  rw [← h, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+theorem linearEquivEquivAlgEquiv_symm_apply_apply (hR : ∀ a : R, a ^ 2 = 0 → 2 * a = 0 → a = 0)
+    (φ : R[ε] ≃ₐ[R] R[ε]) (r : R) : (linearEquivEquivAlgEquiv hR).symm φ r = r * (φ ε).snd := by
+  obtain ⟨e, rfl⟩ := (linearEquivEquivAlgEquiv hR).surjective φ
+  rw [MulEquiv.symm_apply_apply, linearEquivEquivAlgEquiv_apply,
+    snd_trivSqZeroExtCongr_apply_eps, ← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
 
 end TauCeti.DualNumber

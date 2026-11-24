@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 
 /-!
@@ -25,8 +23,8 @@ algebra.
 
 For a single form `Q`, the algebra automorphisms that map the vectors onto themselves form a
 subgroup `CliffordAlgebra.vectorStabilizer Q` of all algebra automorphisms (the stabilizer of the
-vectors under the pointwise action), and `equivOfIsometry` identifies it with the orthogonal
-group of `Q`.
+vectors under the pointwise action). When `ι Q` and `algebraMap R (CliffordAlgebra Q)` are
+injective, `equivOfIsometry` identifies it with the orthogonal group of `Q`.
 
 The condition can be read on the degree filtration `CliffordAlgebra.filtration`: when `2` is
 invertible and `R` is reduced, preserving the vectors is equivalent to preserving its first step
@@ -36,16 +34,19 @@ invertible and `R` is reduced, preserving the vectors is equivalent to preservin
 ## Main definitions
 
 * `CliffordAlgebra.isometryEquivOfιRangeMap`: the isometry underlying an algebra equivalence
-  that maps the vectors onto the vectors.
+  that maps the vectors onto the vectors, when both generator maps and the scalar map of the
+  target are injective.
 * `CliffordAlgebra.vectorStabilizer`: the group of algebra automorphisms of `CliffordAlgebra Q`
   that map the vectors onto themselves.
-* `CliffordAlgebra.orthogonalGroupEquivVectorStabilizer`: the group isomorphism from the
-  orthogonal group of `Q` onto `vectorStabilizer Q`, given by `equivOfIsometry`.
+* `CliffordAlgebra.orthogonalGroupEquivVectorStabilizer`: when `ι Q` and the scalar map are
+  injective, the group isomorphism from the orthogonal group of `Q` onto `vectorStabilizer Q`,
+  given by `equivOfIsometry`.
 
 ## Main results
 
-* `CliffordAlgebra.ι_range_map_eq_iff_existsUnique`: an algebra equivalence maps the vectors onto
-  the vectors if and only if it is `equivOfIsometry f` for a unique isometry `f`.
+* `CliffordAlgebra.ι_range_map_eq_iff_existsUnique`: when both generator maps and the scalar map
+  of the target are injective, an algebra equivalence maps the vectors onto the vectors if and only
+  if it is `equivOfIsometry f` for a unique isometry `f`.
 
 ## References
 
@@ -78,8 +79,9 @@ variable (Q : QuadraticForm R M₁)
 `LinearMap.range (ι Q)` onto themselves: the stabilizer of the vectors under the pointwise action
 of the automorphism group on submodules.
 
-When `2` is invertible, `CliffordAlgebra.orthogonalGroupEquivVectorStabilizer` identifies these
-with the automorphisms `equivOfIsometry f` induced by the isometries of `Q`. -/
+When `ι Q` and `algebraMap R (CliffordAlgebra Q)` are injective, for instance when `2` is
+invertible, `CliffordAlgebra.orthogonalGroupEquivVectorStabilizer` identifies these with the
+automorphisms `equivOfIsometry f` induced by the isometries of `Q`. -/
 def vectorStabilizer : Subgroup (CliffordAlgebra Q ≃ₐ[R] CliffordAlgebra Q) :=
   MulAction.stabilizer _ (LinearMap.range (ι Q))
 
@@ -113,9 +115,7 @@ private noncomputable def ιRangeMapLinearEquiv
 private theorem ι_ιRangeMapLinearEquiv (φ : CliffordAlgebra Q₁ ≃ₐ[R] CliffordAlgebra Q₂)
     (h : (LinearMap.range (ι Q₁)).map φ.toLinearMap = LinearMap.range (ι Q₂)) (v : M₁) :
     ι Q₂ (ιRangeMapLinearEquiv hι₁ hι₂ φ h v) = φ (ι Q₁ v) := by
-  rw [ιRangeMapLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    LinearEquiv.ofInjective_symm_apply, LinearEquiv.ofSubmodules_apply,
-    LinearEquiv.ofInjective_apply, AlgEquiv.toLinearEquiv_apply]
+  simp [ιRangeMapLinearEquiv]
 
 variable (hA : Function.Injective (algebraMap R (CliffordAlgebra Q₂)))
 
@@ -181,11 +181,11 @@ theorem ι_range_map_eq_iff_existsUnique (φ : CliffordAlgebra Q₁ ≃ₐ[R] Cl
     (LinearMap.range (ι Q₁)).map φ.toLinearMap = LinearMap.range (ι Q₂) ↔
       ∃! f : Q₁.IsometryEquiv Q₂, equivOfIsometry f = φ := by
   refine ⟨fun h ↦ ⟨isometryEquivOfιRangeMap hι₁ hι₂ hA φ h,
-    equivOfIsometry_isometryEquivOfιRangeMap hι₁ hι₂ hA φ h, fun f hf ↦ ?_⟩, ?_⟩
-  · subst hf
-    exact (isometryEquivOfιRangeMap_equivOfIsometry hι₁ hι₂ hA f).symm
-  · rintro ⟨f, rfl, -⟩
-    exact ι_range_map_equivOfIsometry f
+    equivOfIsometry_isometryEquivOfιRangeMap hι₁ hι₂ hA φ h, fun f hf ↦
+      equivOfIsometry_injective hι₂ <|
+        hf.trans (equivOfIsometry_isometryEquivOfιRangeMap hι₁ hι₂ hA φ h).symm⟩, ?_⟩
+  rintro ⟨f, rfl, -⟩
+  exact ι_range_map_equivOfIsometry f
 
 end IsometryEquiv
 
@@ -216,8 +216,8 @@ noncomputable def orthogonalGroupEquivVectorStabilizer :
 theorem coe_orthogonalGroupEquivVectorStabilizer_apply
     (f : TauCeti.QuadraticMap.orthogonalGroup Q) :
     (orthogonalGroupEquivVectorStabilizer Q hι hA f : CliffordAlgebra Q ≃ₐ[R] CliffordAlgebra Q) =
-      equivOfIsometry (TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q f) := by
-  rw [orthogonalGroupEquivVectorStabilizer, MulEquiv.coe_mk, Equiv.coe_fn_mk]
+      equivOfIsometry (TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q f) :=
+  (rfl)
 
 /-- On generators, `orthogonalGroupEquivVectorStabilizer Q hι hA f` applies `f`. -/
 theorem orthogonalGroupEquivVectorStabilizer_apply_ι
@@ -232,9 +232,11 @@ action on generators. -/
 theorem ι_orthogonalGroupEquivVectorStabilizer_symm_apply (φ : vectorStabilizer Q) (v : M₁) :
     ι Q (((orthogonalGroupEquivVectorStabilizer Q hι hA).symm φ : M₁ ≃ₗ[R] M₁) v) =
       (φ : CliffordAlgebra Q ≃ₐ[R] CliffordAlgebra Q) (ι Q v) := by
-  simp only [orthogonalGroupEquivVectorStabilizer, MulEquiv.symm_mk, MulEquiv.coe_mk,
-    Equiv.coe_fn_symm_mk, TauCeti.QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv_symm,
-    ι_isometryEquivOfιRangeMap]
+  -- Apply the forward generator equation to the preimage of `φ`.
+  have h := orthogonalGroupEquivVectorStabilizer_apply_ι Q hι hA
+    ((orthogonalGroupEquivVectorStabilizer Q hι hA).symm φ) v
+  rw [MulEquiv.apply_symm_apply] at h
+  exact h.symm
 
 include hι hA in
 /-- If the generator map `ι` and the scalar map `algebraMap R (CliffordAlgebra Q)` are injective,

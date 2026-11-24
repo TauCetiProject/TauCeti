@@ -13,16 +13,16 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Zero
 
 When `M` is subsingleton, the Clifford algebra `CliffordAlgebra Q` is `R`: the identity is its
 only automorphism, and it lies in the vector stabilizer
-(`TauCeti.CliffordAlgebra.vectorStabilizer_eq_top_of_subsingleton`).
+(`QuadraticMap.vectorStabilizer_eq_top_of_subsingleton`).
 -/
 
 public section
 
 universe u v
 
-namespace TauCeti.CliffordAlgebra
+namespace QuadraticMap
 
-open _root_.CliffordAlgebra
+open CliffordAlgebra
 
 /-- **The case `M = 0`.** When `M` is subsingleton, the only automorphism of `CliffordAlgebra Q`
 is the identity, and it maps the vectors onto themselves. -/
@@ -31,4 +31,4 @@ theorem vectorStabilizer_eq_top_of_subsingleton {R : Type u} [CommRing R] {M : T
     vectorStabilizer Q = ⊤ :=
   Subsingleton.elim _ _
 
-end TauCeti.CliffordAlgebra
+end QuadraticMap
