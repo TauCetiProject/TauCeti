@@ -442,7 +442,8 @@ theorem finrank_range_harmonicSphereRestriction_pos {m : ℕ}
         (m + e).choose e + (m + e).choose (e + 1) + (m + e + 1).choose (e + 1 + 1) := by
       rw [Nat.choose_succ_succ', Nat.choose_succ_succ']
     have hlt : (m + e).choose e < (m + e + 1 + 1).choose (e + 1 + 1) := by omega
-    convert hlt using 1; congr 1
+    rw [show m + (e + 2) - 2 = m + e by omega, Nat.add_sub_cancel]
+    simpa only [Nat.add_assoc] using hlt
   · simpa using Nat.choose_pos (show d ≤ m + d by omega)
 
 end Field
