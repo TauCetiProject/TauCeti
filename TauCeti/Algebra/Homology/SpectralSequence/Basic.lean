@@ -12,7 +12,8 @@ public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 
 The components of an isomorphism `e : E ≅ E'` of spectral sequences at each position of each page
 are inverse to each other (`CategoryTheory.SpectralSequence.hom_inv_id_hom_f`,
-`CategoryTheory.SpectralSequence.inv_hom_id_hom_f`).
+`CategoryTheory.SpectralSequence.inv_hom_id_hom_f`), and any isomorphism of spectral sequences
+induces isomorphisms on every page (`CategoryTheory.SpectralSequence.isIso_hom_of_isIso`).
 -/
 
 public section
@@ -37,5 +38,12 @@ lemma inv_hom_id_hom_f (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
     (e.inv.hom r hr).f pq ≫ (e.hom.hom r hr).f pq = 𝟙 _ := by
   rw [← HomologicalComplex.comp_f, ← comp_hom _ _ r hr, e.inv_hom_id, id_hom,
     HomologicalComplex.id_f]
+
+/-- An isomorphism of spectral sequences induces an isomorphism on every page. -/
+instance isIso_hom_of_isIso (f : E ⟶ E') [IsIso f] (r : ℤ) (hr : r₀ ≤ r) :
+    IsIso (f.hom r hr) :=
+  ⟨⟨(inv f).hom r hr,
+    by rw [← comp_hom _ _ r hr, IsIso.hom_inv_id, id_hom],
+    by rw [← comp_hom _ _ r hr, IsIso.inv_hom_id, id_hom]⟩⟩
 
 end CategoryTheory.SpectralSequence

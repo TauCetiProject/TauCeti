@@ -694,9 +694,14 @@ lemma mapIso_isoOfEq (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : 
   ext hB hZ (by rw [π_mapIso', π_isoOfEq_hom, ofLE_comp_ofLE_assoc])
 
 lemma mapIso_injective : Function.Injective (P.mapIso (Y := Y)) := fun e₁ e₂ h ↦ by
-  dsimp only [mapIso] at h
-  injection h with _ _ hiso
-  exact Iso.ext ((cancel_epi P.iso.hom).mp (congrArg Iso.hom hiso))
+  have hπ : P.π ≫ e₁.hom = P.π ≫ e₂.hom := by
+    have : ∀ {Q₁ Q₂ : SubquotientPresentation A Y} (_ : Q₁ = Q₂)
+        (h₁ : P.Z ≤ Q₁.Z) (h₂ : P.Z ≤ Q₂.Z),
+        ofLE P.Z Q₁.Z h₁ ≫ Q₁.π = ofLE P.Z Q₂.Z h₂ ≫ Q₂.π := by
+      rintro Q _ rfl _ _; rfl
+    simpa only [π_mapIso', ofLE_comp_ofLE_assoc, ofLE_refl, Category.id_comp] using
+      this h (P.mapIso_Z e₁).ge (P.mapIso_Z e₂).ge
+  exact Iso.ext ((cancel_epi P.π).mp hπ)
 
 end MapIso
 
@@ -829,11 +834,20 @@ lemma exists_preimage_le_preimage_iff (f : A ⟶ A')
     (S : Subobject X) (S' : Subobject X') :
     (Subobject.exists f).obj (P.preimage S) ≤ P'.preimage S' ↔
       (Subobject.exists (P.mapInduced P' f hZ hB)).obj S ≤ S' := by
-  rw [Subobject.exists_eq_imageSubobject, Subobject.exists_eq_imageSubobject,
-    ← imageSubobject_comp_eq_of_epi (P.preimageπ S), imageSubobject_le_iff_factors,
-    imageSubobject_le_iff_factors, ← ofLE_arrow (P.preimage_le_Z S), Category.assoc,
-    ← P.liftZ_arrow P' f hZ, ← Category.assoc, P'.factors_preimage_iff, Category.assoc,
-    P.preimageπ_arrow_assoc, P.π_mapInduced]
+  have hL : (Subobject.exists f).obj (P.preimage S) ≤ P'.preimage S' ↔
+      (P'.preimage S').Factors ((P.preimage S).arrow ≫ f) := by
+    rw [Subobject.exists_eq_imageSubobject, imageSubobject_le_iff_factors]
+  have hR : (Subobject.exists (P.mapInduced P' f hZ hB)).obj S ≤ S' ↔
+      S'.Factors (S.arrow ≫ P.mapInduced P' f hZ hB) := by
+    rw [Subobject.exists_eq_imageSubobject, imageSubobject_le_iff_factors]
+  have hLift : (P.preimage S).arrow ≫ f =
+      (ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫ P.liftZ P' f hZ) ≫ P'.Z.arrow := by
+    simp
+  have hProj : (ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫ P.liftZ P' f hZ) ≫ P'.π =
+      P.preimageπ S ≫ S.arrow ≫ P.mapInduced P' f hZ hB := by
+    simp
+  rw [hL, hLift, P'.factors_preimage_iff, hProj, hR, ← imageSubobject_le_iff_factors,
+    ← imageSubobject_le_iff_factors, imageSubobject_comp_eq_of_epi]
 
 end MapInduced
 

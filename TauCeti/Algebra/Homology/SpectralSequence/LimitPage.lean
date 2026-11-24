@@ -303,8 +303,8 @@ variable [E.HasInfiniteCyclesAt pq] [E.HasInfiniteBoundariesAt pq]
 noncomputable def limitPageIsoPageX (s : ℤ) (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs) :
     E.limitPage pq ≅ (E.page s hs).X pq :=
   (E.limitPagePresentation pq).isoOfEq (E.pagePresentation pq s hs)
-    (by simpa using E.infiniteBoundaries_eq_of_forall_dTo_eq_zero pq hs fun _ ↦ h.dTo_eq_zero)
-    (by simpa using E.infiniteCycles_eq_of_forall_dFrom_eq_zero pq hs fun _ ↦ h.dFrom_eq_zero)
+    (by simpa using E.infiniteBoundaries_eq_of_stabilisesAt pq hs h)
+    (by simpa using E.infiniteCycles_eq_of_stabilisesAt pq hs h)
 
 /-- Compatibility of `limitPageIsoPageX` with `pageXIsoOfStabilises`. -/
 theorem limitPageIsoPageX_trans_pageXIsoOfStabilises {s r : ℤ} (hs : r₀ ≤ s)
@@ -652,45 +652,18 @@ theorem Hom.limitPageMap_comp_limitPageIsoFromPage_hom {E E' : SpectralSequence 
     [(E'.fromPage s hs).HasInfiniteCyclesAt pq] [(E'.fromPage s hs).HasInfiniteBoundariesAt pq] :
     f.limitPageMap pq ≫ (E'.limitPageIsoFromPage pq s hs).hom =
       (E.limitPageIsoFromPage pq s hs).hom ≫ (f.fromPage s hs).limitPageMap pq := by
-  have hm := f.mapInduced_pagePresentation pq s hs
-  have hZs : (Subobject.exists ((E.pagePresentation pq s hs).mapInduced
-        (E'.pagePresentation pq s hs) ((f.hom r₀).f pq)
-        (f.exists_cyclesSubobject_le pq s hs) (f.exists_boundariesSubobject_le pq s hs))).obj
-        ((E.fromPage s hs).limitPagePresentation pq).Z ≤
-      ((E'.fromPage s hs).limitPagePresentation pq).Z := by
-    rw [limitPagePresentation_Z, limitPagePresentation_Z, hm]
-    simpa only [Hom.fromPage_hom] using (f.fromPage s hs).exists_infiniteCycles_le pq
-  have hBs : (Subobject.exists ((E.pagePresentation pq s hs).mapInduced
-        (E'.pagePresentation pq s hs) ((f.hom r₀).f pq)
-        (f.exists_cyclesSubobject_le pq s hs) (f.exists_boundariesSubobject_le pq s hs))).obj
-        ((E.fromPage s hs).limitPagePresentation pq).B ≤
-      ((E'.fromPage s hs).limitPagePresentation pq).B := by
-    rw [limitPagePresentation_B, limitPagePresentation_B, hm]
-    simpa only [Hom.fromPage_hom] using (f.fromPage s hs).exists_infiniteBoundaries_le pq
-  have hZtr : (Subobject.exists ((f.hom r₀).f pq)).obj
-        ((E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq)).Z ≤
-      ((E'.pagePresentation pq s hs).trans
-        ((E'.fromPage s hs).limitPagePresentation pq)).Z :=
-    ((E.pagePresentation pq s hs).exists_preimage_le_preimage_iff (E'.pagePresentation pq s hs)
-      ((f.hom r₀).f pq) (f.exists_cyclesSubobject_le pq s hs)
-      (f.exists_boundariesSubobject_le pq s hs) _ _).mpr hZs
-  have hBtr : (Subobject.exists ((f.hom r₀).f pq)).obj
-        ((E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq)).B ≤
-      ((E'.pagePresentation pq s hs).trans
-        ((E'.fromPage s hs).limitPagePresentation pq)).B :=
-    ((E.pagePresentation pq s hs).exists_preimage_le_preimage_iff (E'.pagePresentation pq s hs)
-      ((f.hom r₀).f pq) (f.exists_cyclesSubobject_le pq s hs)
-      (f.exists_boundariesSubobject_le pq s hs) _ _).mpr hBs
-  have hcomp : ((E.pagePresentation pq s hs).trans
-        ((E.fromPage s hs).limitPagePresentation pq)).mapInduced
-      ((E'.pagePresentation pq s hs).trans ((E'.fromPage s hs).limitPagePresentation pq))
-      ((f.hom r₀).f pq) hZtr hBtr = (f.fromPage s hs).limitPageMap pq := by
-    refine (SubquotientPresentation.mapInduced_trans (E.pagePresentation pq s hs)
-      (E'.pagePresentation pq s hs) _ _ ((f.hom r₀).f pq) _ _ hZs hBs).trans ?_
-    exact SubquotientPresentation.mapInduced_congr rfl rfl
-      (hm.trans (by simp [Hom.fromPage_hom])) _ _ _ _
+  -- Combine page-level and rebased limit-page naturality via `MapsTo.trans`.
+  have hmaps := (pagePresentation_mapsTo pq f s hs).trans
+    (SubquotientPresentation.mapsTo_mapInduced ((E.fromPage s hs).limitPagePresentation pq)
+      ((E'.fromPage s hs).limitPagePresentation pq) (((f.fromPage s hs).hom s le_rfl).f pq)
+      (by simpa using (f.fromPage s hs).exists_infiniteCycles_le pq)
+      (by simpa using (f.fromPage s hs).exists_infiniteBoundaries_le pq))
   rw [Hom.limitPageMap, limitPageIsoFromPage, limitPageIsoFromPage,
-    SubquotientPresentation.mapInduced_comp_isoOfEq_hom, hcomp]
+    SubquotientPresentation.mapInduced_comp_isoOfEq_hom
+      (Q := (E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq))
+      (hB := by simpa using E.infiniteBoundaries_eq_preimage_fromPage pq s hs)
+      (hZ := by simpa using E.infiniteCycles_eq_preimage_fromPage pq s hs)]
+  exact congrArg (_ ≫ ·) (hmaps.mapInduced_eq _ _)
 
 end Rebasing
 

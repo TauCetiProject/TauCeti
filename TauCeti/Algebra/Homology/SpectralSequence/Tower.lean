@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.Algebra.Homology.SpectralSequence.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.SubquotientPresentation
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
@@ -261,16 +262,6 @@ lemma boundariesSubobject_le_cyclesSubobject (r r' : ℤ) (hr : r₀ ≤ r) (hr'
   · exact (E.boundariesSubobject_le_cyclesSubobject_self pq r hr).trans
       (E.cyclesSubobject_anti pq hr' h)
 
-/-- The differential `dFrom pq` on page `r` vanishes iff every differential leaving `pq` does. -/
-lemma page_dFrom_eq_zero_iff (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    (E.page r hr).dFrom pq = 0 ↔ ∀ pq' : κ, (E.page r hr).d pq pq' = 0 :=
-  (E.page r hr).dFrom_eq_zero_iff pq
-
-/-- The differential `dTo pq` on page `r` vanishes iff every differential entering `pq` does. -/
-lemma page_dTo_eq_zero_iff (r : ℤ) (hr : r₀ ≤ r := by lia) :
-    (E.page r hr).dTo pq = 0 ↔ ∀ pq' : κ, (E.page r hr).d pq' pq = 0 :=
-  (E.page r hr).dTo_eq_zero_iff pq
-
 /-- The cycles do not change from the page `r` to the page `r + 1` exactly when the differential
 of the page `r` leaving `pq` vanishes. -/
 lemma cyclesSubobject_add_one_eq_iff (r : ℤ) (hr : r₀ ≤ r) :
@@ -395,16 +386,12 @@ lemma pullback_boundariesSubobject_of_iso (pq : κ) (e : E ≅ E') (r : ℤ) (hr
 lemma exists_cyclesSubobject_eq_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (Subobject.exists ((e.hom.hom r₀).f pq)).obj (E.cyclesSubobject pq r hr) =
       E'.cyclesSubobject pq r hr := by
-  have : IsIso ((e.hom.hom r₀).f pq) :=
-    ⟨⟨(e.inv.hom r₀).f pq, hom_inv_id_hom_f e r₀ le_rfl pq, inv_hom_id_hom_f e r₀ le_rfl pq⟩⟩
   rw [← pullback_cyclesSubobject_of_iso pq e r hr, Subobject.exists_pullback_eq_self_of_epi]
 
 /-- An isomorphism `e : E ≅ E'` carries `B_r(E, pq)` onto `B_r(E', pq)`. -/
 lemma exists_boundariesSubobject_eq_of_iso (e : E ≅ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (Subobject.exists ((e.hom.hom r₀).f pq)).obj (E.boundariesSubobject pq r hr) =
       E'.boundariesSubobject pq r hr := by
-  have : IsIso ((e.hom.hom r₀).f pq) :=
-    ⟨⟨(e.inv.hom r₀).f pq, hom_inv_id_hom_f e r₀ le_rfl pq, inv_hom_id_hom_f e r₀ le_rfl pq⟩⟩
   rw [← pullback_boundariesSubobject_of_iso pq e r hr, Subobject.exists_pullback_eq_self_of_epi]
 
 end Naturality
@@ -468,11 +455,11 @@ lemma StabilisesAt.dTo_eq_zero {r : ℤ} (hsr : s ≤ r) :
 
 lemma StabilisesAt.d_out {r : ℤ} (hsr : s ≤ r) (pq' : κ) :
     (E.page r (hs.trans hsr)).d pq pq' = 0 :=
-  (E.page_dFrom_eq_zero_iff pq r (hs.trans hsr)).mp (h.dFrom_eq_zero hsr) pq'
+  ((E.page r (hs.trans hsr)).dFrom_eq_zero_iff pq).mp (h.dFrom_eq_zero hsr) pq'
 
 lemma StabilisesAt.d_in {r : ℤ} (hsr : s ≤ r) (pq' : κ) :
     (E.page r (hs.trans hsr)).d pq' pq = 0 :=
-  (E.page_dTo_eq_zero_iff pq r (hs.trans hsr)).mp (h.dTo_eq_zero hsr) pq'
+  ((E.page r (hs.trans hsr)).dTo_eq_zero_iff pq).mp (h.dTo_eq_zero hsr) pq'
 
 /-- Stabilisation from page `s` persists to every later page `s' ≥ s`. -/
 lemma StabilisesAt.of_le {s' : ℤ} (hss' : s ≤ s') : E.StabilisesAt pq s' (hs.trans hss') :=
@@ -507,8 +494,9 @@ lemma stabilisesAt_iff_forall_d_eq_zero (s : ℤ) (hs : r₀ ≤ s := by lia) :
     E.StabilisesAt pq s hs ↔ ∀ (r : ℤ) (hsr : s ≤ r) (pq' : κ),
       (E.page r (hs.trans hsr)).d pq pq' = 0 ∧ (E.page r (hs.trans hsr)).d pq' pq = 0 :=
   ⟨fun h _ hsr pq' ↦ ⟨h.d_out hsr pq', h.d_in hsr pq'⟩,
-   fun h r hsr ↦ ⟨(E.page_dFrom_eq_zero_iff pq r (hs.trans hsr)).mpr (fun pq' ↦ (h r hsr pq').1),
-     (E.page_dTo_eq_zero_iff pq r (hs.trans hsr)).mpr (fun pq' ↦ (h r hsr pq').2)⟩⟩
+   fun h r hsr ↦
+     ⟨((E.page r (hs.trans hsr)).dFrom_eq_zero_iff pq).mpr (fun pq' ↦ (h r hsr pq').1),
+      ((E.page r (hs.trans hsr)).dTo_eq_zero_iff pq).mpr (fun pq' ↦ (h r hsr pq').2)⟩⟩
 
 /-- `E` is both regular and coregular at `pq` iff it stabilises at `pq` from some page. -/
 lemma isRegularAt_and_isCoregularAt_iff_exists_stabilisesAt :
@@ -592,8 +580,9 @@ noncomputable def pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s) (h : E.Stabil
     (hsr : s ≤ r) : (E.page s hs).X pq ≅ (E.page r (hs.trans hsr)).X pq :=
   Int.leInduction (motive := fun r hsr ↦ (E.page s hs).X pq ≅ (E.page r (hs.trans hsr)).X pq)
     (Iso.refl _)
-    (fun t hst e ↦ e ≪≫ (((E.page t (hs.trans hst)).sc pq).cyclesIsoX₂ (h.dFrom_eq_zero hst)).symm
-      ≪≫ ((E.page t (hs.trans hst)).sc pq).asIsoHomologyπ (h.dTo_eq_zero hst) ≪≫
+    (fun t hst e ↦ e ≪≫
+      (E.page t (hs.trans hst)).XIsoHomologyOfDEqZero pq
+        (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst) ≪≫
       E.iso t (t + 1) pq rfl (hs.trans hst)) r hsr
 
 @[simp]
@@ -604,8 +593,8 @@ lemma pageXIsoOfStabilises_add_one (s : ℤ) (hs : r₀ ≤ s) (h : E.Stabilises
     (hst : s ≤ t) :
     E.pageXIsoOfStabilises pq s hs h (t + 1) (Int.le_add_one hst) =
       E.pageXIsoOfStabilises pq s hs h t hst ≪≫
-        (((E.page t (hs.trans hst)).sc pq).cyclesIsoX₂ (h.dFrom_eq_zero hst)).symm ≪≫
-        ((E.page t (hs.trans hst)).sc pq).asIsoHomologyπ (h.dTo_eq_zero hst) ≪≫
+        (E.page t (hs.trans hst)).XIsoHomologyOfDEqZero pq
+          (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst) ≪≫
         E.iso t (t + 1) pq rfl (hs.trans hst) := Int.leInduction_add_one _ _ t hst
 
 /-- When `E` stabilises at `pq` from page `s`, `pagePresentation` on page `r ≥ s` is the
@@ -617,16 +606,20 @@ lemma pagePresentation_eq_mapIso_pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s
   induction r, hsr using Int.leInduction with
   | base => rw [pageXIsoOfStabilises_self, SubquotientPresentation.mapIso_refl]
   | succ t hst ih =>
+    have hiso : (((E.page t (hs.trans hst)).sc pq).cyclesIsoX₂ (h.dFrom_eq_zero hst)).symm ≪≫
+        ((E.page t (hs.trans hst)).sc pq).asIsoHomologyπ (h.dTo_eq_zero hst) =
+        (E.page t (hs.trans hst)).XIsoHomologyOfDEqZero pq
+          (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst) :=
+      Iso.ext (by simp [HomologicalComplex.XIsoHomologyOfDEqZero_hom]; rfl)
     rw [pagePresentation_add_one E pq t (hs.trans hst), ih,
       pageXIsoOfStabilises_add_one E pq s hs h t hst,
       ShortComplex.homologyPresentation_eq_refl_mapIso _ (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst),
-      SubquotientPresentation.trans_mapIso]
+      hiso, SubquotientPresentation.trans_mapIso]
     have htr : ((E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst)).trans
         (SubquotientPresentation.refl (((E.page t (hs.trans hst)).sc pq).X₂)) =
       (E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst) :=
       SubquotientPresentation.trans_refl _
     rw [htr, SubquotientPresentation.mapIso_trans, SubquotientPresentation.mapIso_trans]
-    simp only [Iso.trans_assoc]
 
 /-- Composition compatibility of `pageXIsoOfStabilises` for `s ≤ t ≤ r`. -/
 lemma pageXIsoOfStabilises_trans {s t r : ℤ} (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs)
@@ -681,20 +674,14 @@ lemma Hom.pageXIsoOfStabilises_naturality (f : E ⟶ E') (pq : κ) (s : ℤ) (hs
     (h : E.StabilisesAt pq s hs) (h' : E'.StabilisesAt pq s hs) (r : ℤ) (hsr : s ≤ r) :
     (f.hom s hs).f pq ≫ (E'.pageXIsoOfStabilises pq s hs h' r hsr).hom =
       (E.pageXIsoOfStabilises pq s hs h r hsr).hom ≫ (f.hom r (hs.trans hsr)).f pq := by
-  have hmap := (SubquotientPresentation.mapInduced_mapIso (E.pagePresentation pq s hs)
-      (E'.pagePresentation pq s hs) (E.pageXIsoOfStabilises pq s hs h r hsr)
-      (E'.pageXIsoOfStabilises pq s hs h' r hsr) ((f.hom r₀).f pq)
-      (f.exists_cyclesSubobject_le pq s hs)
-      (f.exists_boundariesSubobject_le pq s hs)).symm.trans <|
-    (SubquotientPresentation.mapInduced_congr
-      (E.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h r hsr)
-      (E'.pagePresentation_eq_mapIso_pageXIsoOfStabilises pq s hs h' r hsr) rfl
-      (f.exists_cyclesSubobject_le pq r (hs.trans hsr))
-      (f.exists_boundariesSubobject_le pq r (hs.trans hsr))
-      (f.exists_cyclesSubobject_le pq s hs) (f.exists_boundariesSubobject_le pq s hs)).symm.trans
-    (f.mapInduced_pagePresentation pq r (hs.trans hsr))
-  rw [f.mapInduced_pagePresentation pq s hs] at hmap
-  rw [← hmap, Iso.hom_inv_id_assoc]
+  induction r, hsr using Int.leInduction with
+  | base => simp
+  | succ t hst ih =>
+    rw [pageXIsoOfStabilises_add_one E' pq s hs h' t hst,
+      pageXIsoOfStabilises_add_one E pq s hs h t hst]
+    simp only [Iso.trans_hom, Category.assoc]
+    rw [reassoc_of% ih, HomologicalComplex.XIsoHomologyOfDEqZero_hom_naturality_assoc,
+      f.comm t (t + 1) pq rfl (hs.trans hst)]
 
 variable (e : E ≅ E')
 include e
@@ -702,10 +689,6 @@ include e
 /-- Isomorphic spectral sequences have the same vanishing differentials on every page. -/
 lemma page_d_eq_zero_iff_of_iso (r : ℤ) (hr : r₀ ≤ r) (i j : κ) :
     (E.page r hr).d i j = 0 ↔ (E'.page r hr).d i j = 0 := by
-  have : IsIso ((e.hom.hom r hr).f i) :=
-    ((pageFunctor C c r₀ r hr ⋙ HomologicalComplex.eval C (c r) i).mapIso e).isIso_hom
-  have : IsIso ((e.hom.hom r hr).f j) :=
-    ((pageFunctor C c r₀ r hr ⋙ HomologicalComplex.eval C (c r) j).mapIso e).isIso_hom
   have hcomm := (e.hom.hom r hr).comm i j
   exact ⟨fun h ↦ (cancel_epi ((e.hom.hom r hr).f i)).mp (by rw [comp_zero, hcomm, h, zero_comp]),
     fun h ↦ (cancel_mono ((e.hom.hom r hr).f j)).mp (by rw [zero_comp, ← hcomm, h, comp_zero])⟩
