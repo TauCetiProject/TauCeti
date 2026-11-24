@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-import TauCeti.NumberTheory.DirichletCharacter.Primitive
+import TauCeti.NumberTheory.DirichletCharacter.Primitive.Basic
 
 /-!
 # Primitive Dirichlet characters bundled with their conductor
