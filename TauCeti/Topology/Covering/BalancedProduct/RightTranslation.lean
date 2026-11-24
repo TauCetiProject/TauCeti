@@ -277,24 +277,23 @@ section ZeroSection
 variable {z₀ : Z} (hz₀ : z₀ ∈ MulAction.fixedPoints K Z)
 
 /-- The zero section `g K ↦ [g, z₀]` of the projection of `G ×_K Z` onto `G ⧸ K`, for a point
-`z₀` of `Z` fixed by `K`. It is well defined because `[g h, z₀] = [g, h • z₀] = [g, z₀]` for
-`h ∈ K`. -/
+`z₀` of `Z` fixed by `K`. It is the orbit map `g ↦ g • [1, z₀]`, which descends to `G ⧸ K` because
+`K` stabilizes `[1, z₀]`: `h • [1, z₀] = [1, h • z₀] = [1, z₀]` for `h ∈ K`. -/
 def zeroSectionRightTranslation : G ⧸ K → BalancedProduct K K.RightTranslation Z :=
-  Quotient.lift (fun g ↦ mk K (K.toRightTranslation g) z₀) fun g g' hg ↦ by
-    have h := mk_toRightTranslation_mul g ⟨g⁻¹ * g', QuotientGroup.leftRel_apply.1 hg⟩ z₀
-    rwa [hz₀, mul_inv_cancel_left, eq_comm] at h
+  MulAction.ofQuotientStabilizer G (mk K (K.toRightTranslation 1) z₀) ∘
+    Subgroup.quotientMapOfLE fun h hh ↦ by
+      simpa [hz₀ ⟨h, hh⟩] using (mk_toRightTranslation_one_smul ⟨h, hh⟩ z₀).symm
 
 /-- The zero section sends `g K` to `[g, z₀]`. -/
 @[simp]
 theorem zeroSectionRightTranslation_mk (g : G) :
-    zeroSectionRightTranslation hz₀ (g : G ⧸ K) = mk K (K.toRightTranslation g) z₀ :=
-  (rfl)
+    zeroSectionRightTranslation hz₀ (g : G ⧸ K) = mk K (K.toRightTranslation g) z₀ := by
+  simp [zeroSectionRightTranslation]
 
 /-- The zero section is a section of the projection onto `G ⧸ K`. -/
-theorem proj_zeroSectionRightTranslation :
-    Function.LeftInverse (proj Z Subgroup.RightTranslation.quotientMk_smul)
-      (zeroSectionRightTranslation hz₀) := by
-  intro x
+@[simp]
+theorem proj_zeroSectionRightTranslation (x : G ⧸ K) :
+    proj Z Subgroup.RightTranslation.quotientMk_smul (zeroSectionRightTranslation hz₀ x) = x := by
   induction x using QuotientGroup.induction_on with
   | H g => simp [proj_mk]
 
@@ -309,13 +308,8 @@ theorem zeroSectionRightTranslation_smul (k : G) (x : G ⧸ K) :
 theorem range_zeroSectionRightTranslation :
     Set.range (zeroSectionRightTranslation hz₀) =
       MulAction.orbit G (mk K (K.toRightTranslation 1) z₀) := by
-  ext y
-  constructor
-  · rintro ⟨x, rfl⟩
-    induction x using QuotientGroup.induction_on with
-    | H g => exact ⟨g, by simp⟩
-  · rintro ⟨g, rfl⟩
-    exact ⟨g, by simp⟩
+  rw [← QuotientGroup.mk_surjective.range_comp]
+  exact congrArg Set.range (funext fun g ↦ by simp)
 
 end ZeroSection
 

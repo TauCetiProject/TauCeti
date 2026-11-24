@@ -319,8 +319,8 @@ theorem contMDiff_liftRightTranslation {EM HM : Type*} [NormedAddCommGroup EM] [
 
 /-- **The zero section is smooth**: for a point `z₀` of `Z` fixed by `K`, the map
 `g K ↦ [g, z₀]` from the homogeneous space `G ⧸ K`, with the charts
-`Subgroup.quotientChartedSpaceOfIsClosed`, is smooth. It descends from `g ↦ [g, z₀]` along the
-submersion `G → G ⧸ K`. -/
+`Subgroup.quotientChartedSpaceOfIsClosed`, is smooth. It descends along the submersion
+`G → G ⧸ K` from the orbit map `g ↦ g • [1, z₀]`, which is smooth because `G` acts smoothly. -/
 theorem contMDiff_zeroSectionRightTranslation {z₀ : Z} (hz₀ : z₀ ∈ MulAction.fixedPoints K Z) :
     letI := rightTranslationChartedSpace K Z I IZ F
     letI := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
@@ -328,15 +328,14 @@ theorem contMDiff_zeroSectionRightTranslation {z₀ : Z} (hz₀ : z₀ ∈ MulAc
       𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ (zeroSectionRightTranslation hz₀) := by
   let _ := rightTranslationChartedSpace K Z I IZ F
   let _ := Subgroup.quotientChartedSpaceOfIsClosed I ‹IsClosed (K : Set G)›
+  have := contMDiffSMul_rightTranslation (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)
   refine ((Subgroup.isSubmersion_quotientMk (I := I) ‹_›).contMDiff_comp_iff
     QuotientGroup.mk_surjective le_rfl).1 ?_
   have hcomp : zeroSectionRightTranslation hz₀ ∘ (QuotientGroup.mk : G → G ⧸ K) =
-      Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) ∘
-        fun g ↦ (K.toRightTranslation g, z₀) :=
-    funext fun g ↦ zeroSectionRightTranslation_mk hz₀ g
+      fun g ↦ g • mk K (K.toRightTranslation 1) z₀ :=
+    funext fun g ↦ by simp
   rw [hcomp]
-  exact (isSubmersion_quotientMk_rightTranslation (I := I) (IZ := IZ) (F := F)).contMDiff.comp
-    ((Subgroup.RightTranslation.contMDiff_toRightTranslation (I := I) ∞).prodMk contMDiff_const)
+  exact ContMDiffSMul.contMDiff_smul_const _
 
 /-- **The zero section is a smooth embedding.** For a point `z₀` of `Z` fixed by `K`, the map
 `G ⧸ K → G ×_K Z`, `g K ↦ [g, z₀]`, is a smooth embedding onto the `G`-orbit of `[1, z₀]`
