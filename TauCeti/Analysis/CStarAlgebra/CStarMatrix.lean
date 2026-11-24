@@ -71,6 +71,8 @@ diagonal embedding `b ↦ diag(b, …, b)`.
 * `WithCStarModule.norm_sq_eq_sum`: `‖v‖ ^ 2 = ∑ i, ‖vᵢ‖ ^ 2` for `v` in the Hilbert space `ℂᵐ`.
 * `WithCStarModule.norm_equiv_symm_sum_smul_le`: multiplying by pairwise orthogonal scalar columns
   of norm at most `1` is a contraction `Aⁿ → Aᵐ` of Hilbert `A`-modules.
+* `CStarMatrix.norm_compress_le`: compressing `x ∈ M_{m,n}(A)` by pairwise orthogonal scalar
+  vectors of norm at most `1` (`CStarMatrix.compress`) does not increase norms.
 * `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
   `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
   `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
@@ -524,6 +526,47 @@ theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → �
     positivity
   have h3 : 0 < ‖z‖ * (‖z‖ * ‖z‖) := by positivity
   nlinarith
+
+/-- The compression `[∑ k l, (e t k * star (f t' l)) • x k l]_{t t'}` of `x ∈ M_{m,n}(A)` to
+`M_{ι,ι'}(A)` by the scalar vectors `e t ∈ ℂᵐ` and `f t' ∈ ℂⁿ`. -/
+def compress {ι ι' : Type*} (e : ι → m → ℂ) (f : ι' → n → ℂ) (x : CStarMatrix m n A) :
+    CStarMatrix ι ι' A :=
+  ofMatrix (Matrix.of fun t t' => ∑ k, ∑ l, (e t k * star (f t' l)) • x k l)
+
+omit [PartialOrder A] [StarOrderedRing A] in
+@[simp]
+theorem compress_apply {ι ι' : Type*} (e : ι → m → ℂ) (f : ι' → n → ℂ) (x : CStarMatrix m n A)
+    (t : ι) (t' : ι') : compress e f x t t' = ∑ k, ∑ l, (e t k * star (f t' l)) • x k l :=
+  (rfl)
+
+/-- Compressing a matrix over a C⋆-algebra by pairwise orthogonal scalar vectors of norm at most
+`1` does not increase norms: `‖compress e f x‖ ≤ ‖x‖`. -/
+theorem norm_compress_le {ι ι' : Type*} [Fintype ι] [Fintype ι'] {e : ι → m → ℂ}
+    {f : ι' → n → ℂ} (he : ∀ t t', t ≠ t' → ∑ k, e t k * star (e t' k) = 0)
+    (he₁ : ∀ t, ∑ k, ‖e t k‖ ^ 2 ≤ 1) (hf : ∀ t t', t ≠ t' → ∑ l, f t l * star (f t' l) = 0)
+    (hf₁ : ∀ t, ∑ l, ‖f t l‖ ^ 2 ≤ 1) (x : CStarMatrix m n A) : ‖compress e f x‖ ≤ ‖x‖ := by
+  refine norm_le_of_forall_inner_le (C := ‖x‖₊) fun a b => ?_
+  let a' : C⋆ᵐᵒᵈ(A, m → A) := (equiv A (m → A)).symm fun k => ∑ t, e t k • a t
+  let b' : C⋆ᵐᵒᵈ(A, n → A) := (equiv A (n → A)).symm fun l => ∑ t, f t l • b t
+  have h : ⟪b, toCLM (compress e f x) a⟫_A = ⟪b', toCLM x a'⟫_A := by
+    simp only [pi_inner, toCLM_apply_eq_sum, equiv_symm_pi_apply, inner_def,
+      compress_apply, a', b', star_sum, star_smul, Finset.sum_mul, Finset.mul_sum, smul_mul_assoc,
+      mul_smul_comm, Finset.smul_sum, smul_smul]
+    simp only [← Fintype.sum_prod_type']
+    -- reindex `(t', t, k, l) ↦ (l, t', k, t)`
+    exact Fintype.sum_equiv
+      ⟨fun p => (p.2.2.2, p.1, p.2.2.1, p.2.1), fun p => (p.2.1, p.2.2.2, p.2.2.1, p.1),
+        fun _ => rfl, fun _ => rfl⟩ _ _ fun _ => by
+      dsimp only [Equiv.coe_fn_mk]
+      rw [mul_comm (e _ _)]
+  rw [h]
+  calc ‖⟪b', toCLM x a'⟫_A‖ ≤ ‖b'‖ * ‖toCLM x a'‖ := norm_inner_le _
+    _ ≤ ‖b‖ * (‖x‖ * ‖a‖) := by
+      gcongr
+      · exact norm_equiv_symm_sum_smul_le hf hf₁ b
+      · exact ((toCLM x).le_opNorm a').trans
+          (mul_le_mul_of_nonneg_left (norm_equiv_symm_sum_smul_le he he₁ a) (norm_nonneg _))
+    _ = _ := by simp only [coe_nnNorm]; ring
 
 end Compression
 
