@@ -65,23 +65,23 @@ private theorem derivFun_add (f g : holomorphicFunctions U) :
   apply Subtype.ext
   ext z
   have heq : extend (f + g) =ᶠ[𝓝 (z : ℂ)] extend f + extend g := by
-    filter_upwards [U.isOpen.mem_nhds z.2] with w hw
+    filter_upwards [U.isOpen.mem_nhds z.property] with w hw
     simp [extend_apply _ ⟨w, hw⟩]
   simp only [derivFun, Subalgebra.coe_add, ContinuousMap.add_apply, of_apply]
   rw [heq.deriv_eq, deriv_add
-    ((differentiableOn_extend f).differentiableAt (U.isOpen.mem_nhds z.2))
-    ((differentiableOn_extend g).differentiableAt (U.isOpen.mem_nhds z.2))]
+    ((differentiableOn_extend f).differentiableAt (U.isOpen.mem_nhds z.property))
+    ((differentiableOn_extend g).differentiableAt (U.isOpen.mem_nhds z.property))]
 
 private theorem derivFun_smul (c : ℂ) (f : holomorphicFunctions U) :
     derivFun (c • f) = c • derivFun f := by
   apply Subtype.ext
   ext z
   have heq : extend (c • f) =ᶠ[𝓝 (z : ℂ)] c • extend f := by
-    filter_upwards [U.isOpen.mem_nhds z.2] with w hw
+    filter_upwards [U.isOpen.mem_nhds z.property] with w hw
     simp [extend_apply _ ⟨w, hw⟩]
   simp only [derivFun, SetLike.val_smul, ContinuousMap.smul_apply, of_apply]
   rw [heq.deriv_eq, deriv_const_smul c
-    ((differentiableOn_extend f).differentiableAt (U.isOpen.mem_nhds z.2))]
+    ((differentiableOn_extend f).differentiableAt (U.isOpen.mem_nhds z.property))]
 
 private theorem continuous_derivFun : Continuous (derivFun (U := U)) := by
   refine continuous_iff_continuousAt.mpr fun f ↦ ?_
@@ -126,7 +126,7 @@ theorem deriv_of (g : ℂ → ℂ) (hg : DifferentiableOn ℂ g U) :
   ext z
   rw [deriv_apply, of_apply]
   apply EventuallyEq.deriv_eq
-  filter_upwards [U.isOpen.mem_nhds z.2] with w hw
+  filter_upwards [U.isOpen.mem_nhds z.property] with w hw
   exact (extend_apply (of U g hg) ⟨w, hw⟩).trans (of_apply g hg ⟨w, hw⟩)
 
 /-- Constant holomorphic functions have derivative `0`. -/
@@ -135,7 +135,7 @@ theorem deriv_algebraMap (c : ℂ) : deriv (algebraMap ℂ (holomorphicFunctions
   apply Subtype.ext
   ext z
   have heq : extend (algebraMap ℂ (holomorphicFunctions U) c) =ᶠ[𝓝 (z : ℂ)] fun _ ↦ c := by
-    filter_upwards [U.isOpen.mem_nhds z.2] with w hw
+    filter_upwards [U.isOpen.mem_nhds z.property] with w hw
     simp [extend_apply _ ⟨w, hw⟩]
   simp only [deriv_apply, Subalgebra.coe_zero, ContinuousMap.zero_apply]
   rw [heq.deriv_eq, deriv_const]
@@ -152,21 +152,16 @@ theorem deriv_natCast (n : ℕ) : deriv (n : holomorphicFunctions U) = 0 := by
 
 /-- Complex differentiation commutes with negation. -/
 @[simp]
-theorem deriv_neg (f : holomorphicFunctions U) : deriv (-f) = -deriv f := by
-  have h : deriv (-f) + deriv f = 0 := by
-    have h0 : -f + f = 0 := by apply Subtype.ext; simp
-    rw [← (deriv (U := U)).map_add (-f) f, h0, (deriv (U := U)).map_zero]
-  apply Subtype.ext
-  simpa only [Subalgebra.coe_neg] using eq_neg_of_add_eq_zero_left (congrArg Subtype.val h)
+theorem deriv_neg (f : holomorphicFunctions U) : deriv (-f) = -deriv f :=
+  -- `AddMonoidHom.mk'` bridges the `Subalgebra` semiring `AddCommMonoid` and ring `AddCommGroup`
+  -- instances without unfolding the unexposed `holomorphicFunctions`.
+  map_neg (AddMonoidHom.mk' (deriv (U := U)) (deriv (U := U)).map_add) f
 
 /-- Complex differentiation commutes with subtraction. -/
 @[simp]
 theorem deriv_sub (f g : holomorphicFunctions U) :
-    deriv (f - g) = deriv f - deriv g := by
-  have hfg : f - g = f + -g := by apply Subtype.ext; simp [sub_eq_add_neg]
-  rw [hfg, (deriv (U := U)).map_add f (-g), deriv_neg]
-  apply Subtype.ext
-  simp [sub_eq_add_neg]
+    deriv (f - g) = deriv f - deriv g :=
+  map_sub (AddMonoidHom.mk' (deriv (U := U)) (deriv (U := U)).map_add) f g
 
 /-- Every integer cast `(n : holomorphicFunctions U)` has derivative `0`. -/
 @[simp]
@@ -189,13 +184,13 @@ theorem deriv_mul (f g : holomorphicFunctions U) :
   apply Subtype.ext
   ext z
   have heq : extend (f * g) =ᶠ[𝓝 (z : ℂ)] extend f * extend g := by
-    filter_upwards [U.isOpen.mem_nhds z.2] with w hw
+    filter_upwards [U.isOpen.mem_nhds z.property] with w hw
     simp [extend_apply _ ⟨w, hw⟩]
   simp only [deriv_apply, Subalgebra.coe_add, Subalgebra.coe_mul, ContinuousMap.add_apply,
     ContinuousMap.mul_apply]
   rw [heq.deriv_eq, _root_.deriv_mul
-    ((differentiableOn_extend f).differentiableAt (U.isOpen.mem_nhds z.2))
-    ((differentiableOn_extend g).differentiableAt (U.isOpen.mem_nhds z.2)),
+    ((differentiableOn_extend f).differentiableAt (U.isOpen.mem_nhds z.property))
+    ((differentiableOn_extend g).differentiableAt (U.isOpen.mem_nhds z.property)),
     extend_apply, extend_apply]
   ring
 
@@ -231,7 +226,7 @@ theorem restrict_deriv (h : V ≤ U) (f : holomorphicFunctions U) :
   symm
   simp only [restrict_apply, deriv_apply]
   apply EventuallyEq.deriv_eq
-  filter_upwards [V.isOpen.mem_nhds z.2] with w hw
+  filter_upwards [V.isOpen.mem_nhds z.property] with w hw
   simp only [extend_apply _ ⟨w, hw⟩, restrict_apply, extend_apply _ ⟨w, h hw⟩]
 
 end Deriv
@@ -269,7 +264,7 @@ theorem norm_restrictContinuousMap_deriv_le {K : Set ℂ} [CompactSpace K] (hKU 
   rw [ContinuousMap.norm_le _ (div_nonneg hM0 hδ.le)]
   intro z
   simpa only [restrictContinuousMap_apply_eq_extend] using
-    norm_extend_deriv_le_of_cthickening_subset hδ hδU f hM z.2
+    norm_extend_deriv_le_of_cthickening_subset hδ hδU f hM z.property
 
 /-- Quantitative Cauchy bound for differences of derivatives on a compact subset `K ⊆ U` with
 `cthickening δ K ⊆ U`. -/
@@ -298,7 +293,7 @@ theorem iterate_deriv_apply (k : ℕ) (f : holomorphicFunctions U) (z : U) :
   | succ k ih =>
     rw [iterate_succ_apply', deriv_apply, iteratedDeriv_succ]
     apply EventuallyEq.deriv_eq
-    filter_upwards [U.isOpen.mem_nhds z.2] with w hw
+    filter_upwards [U.isOpen.mem_nhds z.property] with w hw
     exact (extend_apply _ ⟨w, hw⟩).trans (ih f ⟨w, hw⟩)
 
 /-- On `U`, the zero extension of `deriv^[k] f` agrees with `iteratedDeriv k (extend f)`. -/
@@ -369,7 +364,7 @@ private theorem bddAbove_range_norm_deriv_unitDiscPowDivSucc (n : ℕ) :
   rintro _ ⟨z, rfl⟩
   dsimp only
   rw [deriv_unitDiscPowDivSucc, of_apply, norm_pow]
-  exact pow_le_one₀ (norm_nonneg _) (mem_ball_zero_iff.mp z.2).le
+  exact pow_le_one₀ (norm_nonneg _) (mem_ball_zero_iff.mp z.property).le
 
 private theorem bddAbove_range_norm_unitDiscPowDivSucc (n : ℕ) :
     BddAbove (range fun z : (⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ) ↦
@@ -381,7 +376,7 @@ private theorem bddAbove_range_norm_unitDiscPowDivSucc (n : ℕ) :
     simpa only [Nat.cast_add, Nat.cast_one] using Complex.norm_natCast (n + 1)
   rw [unitDiscPowDivSucc_apply, norm_div, norm_pow, hnorm]
   exact div_le_div_of_nonneg_right
-    (pow_le_one₀ (norm_nonneg _) (mem_ball_zero_iff.mp z.2).le) (by positivity)
+    (pow_le_one₀ (norm_nonneg _) (mem_ball_zero_iff.mp z.property).le) (by positivity)
 
 /-- Over the whole open unit disc, the supremum of $|f_n'(z)| = |z^n|$ is `1` for every `n : ℕ`. -/
 theorem iSup_norm_deriv_unitDiscPowDivSucc (n : ℕ) :
@@ -393,10 +388,12 @@ theorem iSup_norm_deriv_unitDiscPowDivSucc (n : ℕ) :
     rw [deriv_unitDiscPowDivSucc, of_apply, norm_pow]
   simp_rw [hval]
   have hbdd : BddAbove (range fun z : (⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ) ↦ ‖(z : ℂ)‖ ^ n) :=
-    ⟨1, by rintro _ ⟨z, rfl⟩; exact pow_le_one₀ (norm_nonneg _) (mem_ball_zero_iff.mp z.2).le⟩
+    ⟨1, by
+      rintro _ ⟨z, rfl⟩
+      exact pow_le_one₀ (norm_nonneg _) (mem_ball_zero_iff.mp z.property).le⟩
   refine le_antisymm ?_ ?_
   · have : Nonempty (⟨ball (0 : ℂ) 1, isOpen_ball⟩ : Opens ℂ) := ⟨⟨0, mem_ball_self one_pos⟩⟩
-    exact ciSup_le fun z ↦ pow_le_one₀ (norm_nonneg _) (mem_ball_zero_iff.mp z.2).le
+    exact ciSup_le fun z ↦ pow_le_one₀ (norm_nonneg _) (mem_ball_zero_iff.mp z.property).le
   · have hr_tend : Tendsto (fun k : ℕ ↦ (1 - 1 / ((k : ℝ) + 2)) ^ n) atTop (𝓝 1) := by
       have h0 : Tendsto (fun k : ℕ ↦ 1 / ((k : ℝ) + 2)) atTop (𝓝 0) := by
         simpa only [Nat.cast_add, Nat.cast_one, add_assoc, one_add_one_eq_two] using

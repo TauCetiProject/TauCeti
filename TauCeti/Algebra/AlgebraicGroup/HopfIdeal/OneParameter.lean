@@ -63,4 +63,14 @@ theorem expPointAt_mem_quotientPointsSubgroup (I : HopfIdeal R H)
   intro x hx
   rw [expPointAt_apply, I.expPointPolynomial_apply_eq_zero hd hD hx, map_zero]
 
+/-- **The exponential point of a subgroup tangent vector lies in the closed subgroup.** -/
+theorem toConv_expPoint_mem_quotientPointsSubgroup (I : HopfIdeal R H)
+    {d : Derivation R H (CounitAlgebra R H R)} (hd : d ∈ I.lieSubalgebra (B := R))
+    (hD : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) :
+    WithConv.toConv (expPoint d hD) ∈
+      CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I
+        (CommAlgCat.of R R) := by
+  rw [← expPointAt_one]
+  exact I.expPointAt_mem_quotientPointsSubgroup hd hD (1 : R)
+
 end TauCeti.HopfIdeal

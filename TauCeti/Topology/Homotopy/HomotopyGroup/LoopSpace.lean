@@ -9,6 +9,7 @@ public import TauCeti.Topology.Homotopy.GenLoop.Loop
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
+import TauCeti.Topology.PathComponent
 
 /-!
 # The loop-space shift for higher homotopy groups
@@ -57,6 +58,8 @@ concatenation in the matching direction.
   `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space. It sends the
   class of a double loop `β` to the class of its square `GenLoop.fromDoubleLoop β`
   (`HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_fromPath_mk`).
+* `HomotopyGroup.mul_comm_pathLoopSpace`: the homotopy groups `π_(m + 1)(Ω X, refl x)` of the
+  loop space are commutative, including the fundamental group.
 * `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: the path components of the double loop space
   `Ω (Ω X x) (Path.refl x)` are the elements of `π₂(X, x)`.
 
@@ -242,7 +245,7 @@ theorem HomotopyGroup.mk_eq_mk_iff_joined [IsEmpty N] {p q : Ω^ N X x} :
     (⟦p⟧ : HomotopyGroup N X x) = ⟦q⟧ ↔ Joined (p 0) (q 0) := by
   refine (homotopyGroupEquivZerothHomotopyOfIsEmpty N x).apply_eq_iff_eq.symm.trans ?_
   rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
-  exact ⟨Quotient.exact, fun h ↦ ZerothHomotopy.sound h.somePath⟩
+  exact ZerothHomotopy.mk_eq_mk_iff
 
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the
@@ -450,6 +453,13 @@ theorem pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph (m : ℕ)
     finSumFinEquiv_apply_left, finSumFinEquiv_apply_right, GenLoop.genLoopLoopHomeomorph_apply]
   -- `Fin.castSucc` is `Fin.castAdd 1`, and `Fin.natAdd` sends the point of `Fin 1` to `Fin.last`
   rw [Fin.castSucc, Subsingleton.elim (default : Fin 1) (Fin.last 0), Fin.natAdd_last]
+
+/-- **The homotopy groups of the loop space are commutative**, in every positive degree: the shift
+`pathLoopSpaceMulEquiv` embeds `π_(m + 1)(Ω X, refl x)` in the commutative group `π_(m + 2)(X, x)`.
+In degree one this is the commutativity of the fundamental group of a loop space. -/
+theorem mul_comm_pathLoopSpace (m : ℕ) (a b : π_ (m + 1) (Ω X x) (Path.refl x)) :
+    a * b = b * a :=
+  (pathLoopSpaceMulEquiv m).injective <| by rw [_root_.map_mul, _root_.map_mul, mul_comm]
 
 /-- **The fundamental group of the loop space is the second homotopy group**:
 `π₁(Ω X x, refl x) ≃* π₂(X, x)`, the case `m = 0` of `pathLoopSpaceMulEquiv` read through

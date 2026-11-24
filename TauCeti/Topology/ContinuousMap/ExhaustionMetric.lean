@@ -185,23 +185,14 @@ theorem continuousMapDist_eq_of_forall_dist_restrict_eq {f g : C(X, Y)} {c : ℝ
     K.continuousMapDist f g = c / (1 + c) := by
   simp_rw [continuousMapDist_def, hc, tsum_mul_right, TauCeti.tsum_half_pow_succ, one_mul]
 
-private theorem dist_restrict_const_of_nonempty (hK : (K 0).Nonempty) (a b : Y) (n : ℕ) :
-    dist ((ContinuousMap.const X a).restrict (K n))
-      ((ContinuousMap.const X b).restrict (K n)) = dist a b := by
-  refine le_antisymm ?_ ?_
-  · refine (ContinuousMap.dist_le dist_nonneg).mpr fun _ ↦ ?_
-    simp
-  · obtain ⟨x, hx⟩ := hK.mono (K.subset n.zero_le)
-    simpa using ContinuousMap.dist_apply_le_dist
-      (f := (ContinuousMap.const X a).restrict (K n))
-      (g := (ContinuousMap.const X b).restrict (K n)) ⟨x, hx⟩
-
 /-- If stage `0` of `K` is nonempty, the comparison distance between two constant maps
 `ContinuousMap.const X a` and `ContinuousMap.const X b` equals `dist a b / (1 + dist a b)`. -/
 theorem continuousMapDist_const_of_nonempty (hK : (K 0).Nonempty) (a b : Y) :
     K.continuousMapDist (ContinuousMap.const X a) (ContinuousMap.const X b) =
       dist a b / (1 + dist a b) :=
-  K.continuousMapDist_eq_of_forall_dist_restrict_eq (K.dist_restrict_const_of_nonempty hK a b)
+  K.continuousMapDist_eq_of_forall_dist_restrict_eq fun n ↦ by
+    have : Nonempty (K n) := (hK.mono (K.subset n.zero_le)).to_subtype
+    exact ContinuousMap.dist_const a b
 
 /-- Summability of the companion comparison series formed with `min 1 s_n`. -/
 theorem summable_half_pow_succ_mul_min_one_dist_restrict (f g : C(X, Y)) :
@@ -243,9 +234,13 @@ theorem half_tsum_min_one_eq_continuousMapDist_const (hK : (K 0).Nonempty) {a b 
         min 1 (dist ((ContinuousMap.const X a).restrict (K n))
           ((ContinuousMap.const X b).restrict (K n)))) =
       K.continuousMapDist (ContinuousMap.const X a) (ContinuousMap.const X b) := by
+  have hdist (n : ℕ) :
+      dist ((ContinuousMap.const X a).restrict (K n))
+        ((ContinuousMap.const X b).restrict (K n)) = dist a b := by
+    have : Nonempty (K n) := (hK.mono (K.subset n.zero_le)).to_subtype
+    exact ContinuousMap.dist_const a b
   rw [K.continuousMapDist_const_of_nonempty hK, hab]
-  simp_rw [K.dist_restrict_const_of_nonempty hK a b, hab, min_self, mul_one,
-    TauCeti.tsum_half_pow_succ]
+  simp_rw [hdist, hab, min_self, mul_one, TauCeti.tsum_half_pow_succ]
   norm_num
 
 /-- Upper comparison of `K.continuousMapDist` against the `min 1 s_n` series. -/
@@ -351,7 +346,7 @@ theorem uniformity_eq_iInf_continuousMapDist :
       (pow_le_pow_of_le_one (by norm_num) (by norm_num) n.le_succ).trans_lt hn
     refine hb₁.mem_iff.mpr ⟨(n, ε / 2), half_pos hε, fun fg hfg ↦ ?_⟩
     have hsup : dist (fg.1.restrict (K n)) (fg.2.restrict (K n)) < ε / 2 :=
-      (ContinuousMap.dist_lt_iff (half_pos hε)).mpr fun x ↦ hfg x.1 x.2
+      (ContinuousMap.dist_lt_iff (half_pos hε)).mpr fun x ↦ hfg x.val x.property
     exact (K.continuousMapDist_le_dist_restrict_add_half_pow_succ fg.1 fg.2 n).trans_lt
       (by linarith)
   · rintro ⟨n, ε⟩ hε

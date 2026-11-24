@@ -64,10 +64,10 @@ theorem discr_atRealPlace (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
     let hQw : (atRealPlace Q place).Nondegenerate :=
       QuadraticForm.Nondegenerate.atRealPlace hQ place
     TauCeti.RegularFormClass.discr (TauCeti.formClass (atRealPlace Q place) hQw) =
-      (embedding_of_isReal place.2).squareClassMap
+      (embedding_of_isReal place.property).squareClassMap
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) := by
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let _ : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
+  let _ : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
   simp only [atRealPlace_def]
   rw [QuadraticForm.formClass_baseChange Q hQ, TauCeti.RegularFormClass.discr_baseChange,
     RingHom.algebraMap_toAlgebra]
@@ -95,7 +95,7 @@ theorem squareClassMap_discr_formClass_eq_realNegativeIndex_nsmul
     (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
     (place : {w : InfinitePlace K // w.IsReal}) :
     letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-    (embedding_of_isReal place.2).squareClassMap
+    (embedding_of_isReal place.property).squareClassMap
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) =
       Q.realNegativeIndex place • TauCeti.squareClass (-1 : ℝˣ) := by
   rw [← discr_atRealPlace, discr_formClass_eq_sigNeg_nsmul, realNegativeIndex_eq_sigNeg]
@@ -106,7 +106,7 @@ theorem squareClassMap_discr_formClass_eq_finrank_sub_realPositiveIndex_nsmul
     (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
     (place : {w : InfinitePlace K // w.IsReal}) :
     letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-    (embedding_of_isReal place.2).squareClassMap
+    (embedding_of_isReal place.property).squareClassMap
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) =
       (Module.finrank K V - Q.realPositiveIndex place) • TauCeti.squareClass (-1 : ℝˣ) := by
   have hsum := realPositiveIndex_add_realNegativeIndex_eq_finrank hQ place
@@ -119,7 +119,7 @@ theorem squareClassMap_discr_formClass_eq_zero_iff_even_realNegativeIndex
     (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
     (place : {w : InfinitePlace K // w.IsReal}) :
     letI : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-    (embedding_of_isReal place.2).squareClassMap
+    (embedding_of_isReal place.property).squareClassMap
         (TauCeti.RegularFormClass.discr (TauCeti.formClass Q hQ)) = 0 ↔
       Even (Q.realNegativeIndex place) := by
   rw [squareClassMap_discr_formClass_eq_realNegativeIndex_nsmul,

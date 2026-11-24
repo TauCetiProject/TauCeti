@@ -161,8 +161,8 @@ theorem heckeSum_comp_of_mem {γ : G} (hγ : γ ∈ Γ₂) :
     -- `aᵥ γ = δ (γ⁻¹ τᵥ)⁻¹` is a `Γ₁`-multiple of the representative of the class of `γ⁻¹ τᵥ`,
     -- which is the class `γ⁻¹ • v`.
     obtain ⟨γ₁, hγ₁, hsplit⟩ :=
-      exists_mem_out_mul_inv_eq_mul_rightCosetRep D (mul_mem (inv_mem hγ) v.out.2)
-    have hmk : (QuotientGroup.mk ⟨γ⁻¹ * (v.out : G), mul_mem (inv_mem hγ) v.out.2⟩ :
+      exists_mem_out_mul_inv_eq_mul_rightCosetRep D (mul_mem (inv_mem hγ) v.out.property)
+    have hmk : (QuotientGroup.mk ⟨γ⁻¹ * (v.out : G), mul_mem (inv_mem hγ) v.out.property⟩ :
         DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) = (⟨γ, hγ⟩ : Γ₂)⁻¹ • v :=
       MulAction.Quotient.mk_smul_out _ (⟨γ, hγ⟩ : Γ₂)⁻¹ v
     have hprod : rightCosetRep D v * γ =
@@ -188,10 +188,10 @@ theorem heckeSum_comp_of_mem_normalizer {g : G} (hg : g ∈ Δ')
     heckeSum D ρ hD hΓ₂ q ∘ₛₗ ρ ⟨g, hg⟩ = u ∘ₛₗ heckeSum D ρ hD hΓ₂ q := by
   classical
   have hdc := doubleCoset_eq_of_mem hconj
-  have hcover := doubleCoset_eq_iUnion_rightCosets_conj hg₁ hg₂ (rightCosetRep D)
+  have hcover := (doubleCoset_conj_eq_iUnion_rightCosets_conj_iff hg₁ hg₂ (rightCosetRep D)).mpr
     (doubleCoset_eq_iUnion_rightCosetRep D)
   rw [hdc] at hcover
-  have hinj := injective_rightCoset_conj (rightCosetRep D) hg₁
+  have hinj := (injective_rightCoset_conj_iff (rightCosetRep D) hg₁).mpr
     (op_rightCosetRep_smul_injective D)
   have hmem (v : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) :
       g⁻¹ * rightCosetRep D v * g ∈ Δ' := by

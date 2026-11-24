@@ -311,7 +311,7 @@ theorem cauchy_map_iff_tendsto_comparisonDist {ι : Type*} {p : Filter ι}
     Cauchy (map F p) ↔
       p.NeBot ∧
         Tendsto (fun ij : ι × ι ↦ comparisonDist U (F ij.1) (F ij.2)) (p ×ˢ p) (𝓝 0) := by
-  rw [← isUniformEmbedding_subtype_val.isUniformInducing.cauchy_map_iff, Filter.map_map,
+  rw [← isUniformEmbedding_subtypeVal.isUniformInducing.cauchy_map_iff, Filter.map_map,
     (U.compactExhaustion 0).cauchy_map_iff_tendsto_continuousMapDist]
   simp only [Function.comp_apply, ← continuousMapDist_def, ← comparisonDist_def]
 
@@ -322,7 +322,7 @@ theorem cauchy_map_iff_forall_isCompact_uniformCauchySeqOn {ι : Type*} {p : Fil
     Cauchy (map F p) ↔
       p.NeBot ∧
         ∀ K, IsCompact K → K ⊆ U → UniformCauchySeqOn (fun i ↦ extend (F i)) p K := by
-  rw [← isUniformEmbedding_subtype_val.isUniformInducing.cauchy_map_iff, Filter.map_map,
+  rw [← isUniformEmbedding_subtypeVal.isUniformInducing.cauchy_map_iff, Filter.map_map,
     ContinuousMap.cauchy_map_iff_forall_isCompact_uniformCauchySeqOn]
   refine and_congr_right fun _ ↦ ⟨fun h K hK hKU ↦ ?_, fun h s hs ↦ ?_⟩
   · have hpre : IsCompact (((↑) : U → ℂ) ⁻¹' K) :=
@@ -331,8 +331,8 @@ theorem cauchy_map_iff_forall_isCompact_uniformCauchySeqOn {ι : Type*} {p : Fil
     intro u hu
     exact (hc u hu).mono fun ij hij z hz ↦ by
       simpa only [Function.comp_apply, extend_apply _ ⟨z, hKU hz⟩] using hij ⟨z, hKU hz⟩ hz
-  · have himg : IsCompact (((↑) : U → ℂ) '' s) := hs.image continuous_subtype_val
-    have hsub : ((↑) : U → ℂ) '' s ⊆ U := by rintro _ ⟨z, -, rfl⟩; exact z.2
+  · have himg : IsCompact (((↑) : U → ℂ) '' s) := hs.image continuous_subtypeVal
+    have hsub : ((↑) : U → ℂ) '' s ⊆ U := by rintro _ ⟨z, -, rfl⟩; exact z.property
     simpa only [Function.comp_def, extend_apply] using
       ((h _ himg hsub).comp ((↑) : U → ℂ)).mono (subset_preimage_image ((↑) : U → ℂ) s)
 

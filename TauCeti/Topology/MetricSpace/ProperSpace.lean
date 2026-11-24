@@ -9,6 +9,7 @@ public import Mathlib.Order.Filter.AtTopBot.Archimedean
 public import Mathlib.Topology.MetricSpace.Bounded
 public import Mathlib.Topology.MetricSpace.Thickening
 public import Mathlib.Topology.Sets.Opens
+import TauCeti.Topology.Compactness.SigmaCompact
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
@@ -28,8 +29,7 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
 For an open subset `Ω` around a basepoint `p`, the explicit stages
 `closedBall p (n + 1) \ thickening (n + 1)⁻¹ Ωᶜ` form an ambient compact exhaustion of `Ω` and
 pull back to `TopologicalSpace.Opens.compactExhaustion`, generalizing the ambient exhaustion stage
-construction of `IsOpen.exists_isFilledIn_compact_exhaustion` in
-`TauCeti/Analysis/Normed/Module/Exhaustion.lean`.
+construction of `TauCeti.filledExhaustion` in `TauCeti/Analysis/Normed/Module/Exhaustion.lean`.
 
 ## Main results
 
@@ -41,14 +41,12 @@ construction of `IsOpen.exists_isFilledIn_compact_exhaustion` in
   exhaustion by compact sets with the divergence condition, namely by the closed balls about `p`.
 * `TauCeti.properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist`: the
   equivalence.
-* `IsOpen.exists_iUnion_isOpen_isCompact_closure`: in a proper space, every open set is the union
-  of an increasing sequence of open sets with compact closures inside it.
-* `TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`: the same exhaustion of an
-  open set `Ω`, as a sequence of `Opens` whose traces on the subspace `Ω` cover it.
-* `TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_iUnion_eq`: an exhaustion of an
-  open set `Ω` by open sets with compact closures, each closure inside the next set.
+* `CompactExhaustion.closedBall`: the closed balls of natural radius about a point, as a
+  `CompactExhaustion` of a proper space; a point `x` first enters it at the index `⌈dist x p⌉₊`
+  (`CompactExhaustion.find_closedBall`).
 * `Metric.isCompact_closedBall_sdiff_thickening`,
   `Metric.closedBall_sdiff_thickening_subset_interior`,
+  `Metric.iUnion_closedBall_sdiff_thickening_compl`,
   `IsOpen.iUnion_closedBall_sdiff_thickening_compl`: ambient stage compactness, interior nesting,
   and union for `closedBall p (n + 1) \ thickening (n + 1)⁻¹ sᶜ`.
 * `TopologicalSpace.Opens.compactExhaustion`: explicit `CompactExhaustion` of an open set `Ω`
@@ -66,7 +64,6 @@ construction of `IsOpen.exists_isFilledIn_compact_exhaustion` in
 public section
 
 open Filter Metric Set Topology
-open scoped ENNReal
 
 namespace TauCeti
 
@@ -120,84 +117,34 @@ theorem properSpace_iff_exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist (p
   ⟨fun _ ↦ exists_isCompact_monotone_iUnion_eq_univ_tendsto_dist p,
     fun ⟨_, hKc, _, _, hK⟩ ↦ properSpace_of_isCompact_of_tendsto_dist hKc hK⟩
 
-/-- **Exhaustion of an open set.** In a proper pseudometric space, an open set `U` is the union of
-an increasing sequence of open sets `V n` whose closures are compact subsets of `U`. -/
-theorem _root_.IsOpen.exists_iUnion_isOpen_isCompact_closure [ProperSpace α] {U : Set α}
-    (hU : IsOpen U) :
-    ∃ V : ℕ → Set α, (∀ n, IsOpen (V n)) ∧ (∀ n, IsCompact (closure (V n))) ∧
-      (∀ n, closure (V n) ⊆ U) ∧ Monotone V ∧ ⋃ n, V n = U := by
-  rcases U.eq_empty_or_nonempty with rfl | ⟨p, -⟩
-  · exact ⟨fun _ ↦ ∅, fun _ ↦ isOpen_empty, fun _ ↦ by simp, fun _ ↦ by simp,
-      fun _ _ _ ↦ le_rfl, by simp⟩
-  -- `V n` consists of the points within `n` of `p` at distance more than `1 / (n + 1)` from `Uᶜ`.
-  let V : ℕ → Set α := fun n ↦ ball p n ∩ {x | ((n : ℝ≥0∞) + 1)⁻¹ < infEDist x Uᶜ}
-  have hclosure (n : ℕ) :
-      closure (V n) ⊆ closedBall p n ∩ {x | ((n : ℝ≥0∞) + 1)⁻¹ ≤ infEDist x Uᶜ} :=
-    closure_inter_subset.trans (inter_subset_inter closure_ball_subset_closedBall
-      (closure_lt_subset_le continuous_const continuous_infEDist))
-  refine ⟨V, fun n ↦ isOpen_ball.inter (isOpen_lt continuous_const continuous_infEDist),
-    fun n ↦ (isCompact_closedBall p n).of_isClosed_subset isClosed_closure
-      ((hclosure n).trans inter_subset_left), fun n x hx ↦ ?_, fun m n hmn x hx ↦ ?_, ?_⟩
-  · by_contra hxU
-    have h := (hclosure n hx).2
-    rw [mem_ofPred_eq, infEDist_zero_of_mem hxU] at h
-    simp at h
-  · exact ⟨ball_subset_ball (by exact_mod_cast hmn) hx.1,
-      lt_of_le_of_lt (ENNReal.inv_le_inv.2 (by gcongr)) hx.2⟩
-  · refine subset_antisymm (iUnion_subset fun n x hx ↦ ?_) fun x hx ↦ ?_
-    · by_contra hxU
-      have h := hx.2
-      rw [mem_ofPred_eq, infEDist_zero_of_mem hxU] at h
-      exact not_lt_zero h
-    have hpos : infEDist x Uᶜ ≠ 0 := fun h ↦
-      ((mem_iff_infEDist_zero_of_closed hU.isClosed_compl).2 h) hx
-    obtain ⟨k, hk⟩ := ENNReal.exists_inv_nat_lt hpos
-    obtain ⟨m, hm⟩ := exists_nat_gt (dist x p)
-    refine mem_iUnion.2 ⟨max k m, mem_ball.2 (hm.trans_le (by exact_mod_cast le_max_right k m)),
-      lt_of_le_of_lt (ENNReal.inv_le_inv.2 ?_) hk⟩
-    exact (Nat.cast_le.2 (le_max_left k m)).trans le_self_add
-
-/-- **Exhaustion of an open set by opens.** In a proper pseudometric space, an open set `Ω` is the
-union of an increasing sequence of open sets `V n` whose closures are compact subsets of `Ω`; the
-traces of the `V n` on the subspace `Ω` cover it. -/
-theorem _root_.TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq [ProperSpace α]
-    (Ω : TopologicalSpace.Opens α) :
-    ∃ V : ℕ → TopologicalSpace.Opens α, (∀ n, IsCompact (closure (V n : Set α))) ∧
-      (∀ n, closure (V n : Set α) ⊆ Ω) ∧ Monotone V ∧ ⋃ n, (V n : Set α) = Ω ∧
-      ⋃ n, ((↑) : Ω → α) ⁻¹' (V n : Set α) = univ := by
-  obtain ⟨V, hVo, hVc, hVΩ, hVmono, hVU⟩ := Ω.isOpen.exists_iUnion_isOpen_isCompact_closure
-  refine ⟨fun n ↦ ⟨V n, hVo n⟩, hVc, hVΩ, fun _ _ h ↦ hVmono h, hVU, ?_⟩
-  simp only [← preimage_iUnion, TopologicalSpace.Opens.coe_mk, hVU]
-  exact Subtype.coe_preimage_self _
-
-/-- **Nested exhaustion of an open set.** In a proper pseudometric space, an open set `Ω` is the
-union of a sequence of open sets `V n` with compact closures, the closure of each lying in the next.
-It is a subsequence of the exhaustion
-`TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`. -/
-theorem _root_.TopologicalSpace.Opens.exists_isCompact_closure_subset_succ_iUnion_eq
-    [ProperSpace α] (Ω : TopologicalSpace.Opens α) :
-    ∃ V : ℕ → TopologicalSpace.Opens α, (∀ n, IsCompact (closure (V n : Set α))) ∧
-      (∀ n, closure (V n : Set α) ⊆ V (n + 1)) ∧ ⋃ n, (V n : Set α) = Ω := by
-  obtain ⟨V, hVc, hVΩ, hVmono, hVU, -⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
-  -- Each closure lies in a strictly later set of the exhaustion.
-  have hg : ∀ m, ∃ N, m < N ∧ closure (V m : Set α) ⊆ V N := fun m => by
-    obtain ⟨N, hN⟩ := (hVc m).elim_directed_cover (fun n => (V n : Set α))
-      (fun n => (V n).isOpen) ((hVΩ m).trans hVU.symm.subset)
-      (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hVmono h))
-    exact ⟨max N (m + 1), by omega, hN.trans (SetLike.coe_subset_coe.2 (hVmono (le_max_left ..)))⟩
-  choose g hgm hgV using hg
-  have hle : ∀ n, n ≤ g^[n] 0 := fun n => by
-    induction n with
-    | zero => exact le_rfl
-    | succ n ih =>
-      rw [Function.iterate_succ_apply']
-      exact ih.trans_lt (hgm _)
-  refine ⟨fun n => V (g^[n] 0), fun n => hVc _, fun n => ?_, subset_antisymm
-    (iUnion_subset fun n => hVU ▸ subset_iUnion (fun n => (V n : Set α)) _)
-    (hVU.symm.subset.trans (iUnion_mono fun n => SetLike.coe_subset_coe.2 (hVmono (hle n))))⟩
-  simpa only [Function.iterate_succ_apply'] using hgV (g^[n] 0)
-
 end TauCeti
+
+namespace CompactExhaustion
+
+variable {α : Type*} [PseudoMetricSpace α] [ProperSpace α]
+
+/-- The compact exhaustion of a proper pseudometric space by the closed balls of natural radius
+about a point `p`. Its `n`th set is `Metric.closedBall p n`, and a point `x` first enters it at the
+index `⌈dist x p⌉₊` (`CompactExhaustion.find_closedBall`). -/
+def closedBall (p : α) : CompactExhaustion α where
+  toFun n := Metric.closedBall p n
+  isCompact' n := isCompact_closedBall p n
+  subset_interior_succ' n :=
+    (closedBall_subset_ball (by simp)).trans ball_subset_interior_closedBall
+  iUnion_eq' := iUnion_closedBall_nat p
+
+@[simp]
+theorem closedBall_apply (p : α) (n : ℕ) : closedBall p n = Metric.closedBall p n :=
+  (rfl)
+
+/-- A point `x` first enters the closed balls of natural radius about `p` at the index
+`⌈dist x p⌉₊`. -/
+@[simp]
+theorem find_closedBall (p x : α) : (closedBall p).find x = ⌈dist x p⌉₊ :=
+  le_antisymm ((closedBall p).mem_iff_find_le.1 (mem_closedBall.2 (Nat.le_ceil _)))
+    (Nat.ceil_le.2 (mem_closedBall.1 ((closedBall p).mem_find x)))
+
+end CompactExhaustion
 
 namespace Metric
 
@@ -220,16 +167,16 @@ theorem closedBall_sdiff_thickening_subset_interior (p : α) (s : Set α) {r₁ 
   exact ⟨mem_ball.mpr ((mem_closedBall.mp hx₁).trans_lt hr),
     fun h ↦ hx₂ (cthickening_subset_thickening' hδ₁ hδ s h)⟩
 
-end Metric
-
-/-- Every open set `s` in a pseudometric space is the union of the stages
-`closedBall p (n + 1) \ thickening (n + 1)⁻¹ sᶜ` around any basepoint `p`. -/
-theorem IsOpen.iUnion_closedBall_sdiff_thickening_compl {α : Type*} [PseudoMetricSpace α]
-    {s : Set α} (hs : IsOpen s) (p : α) :
-    (⋃ n : ℕ, closedBall p (n + 1) \ thickening (n + 1 : ℝ)⁻¹ sᶜ) = s := by
-  refine Subset.antisymm (iUnion_subset fun _ ↦ sdiff_thickening_compl_subset _ _ (by positivity))
-    fun x hx ↦ ?_
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hs x hx
+/-- For any set `s` in a pseudometric space and basepoint `p`, the union of the stages
+`closedBall p (n + 1) \ thickening (n + 1)⁻¹ sᶜ` is `interior s`. -/
+theorem iUnion_closedBall_sdiff_thickening_compl (p : α) (s : Set α) :
+    (⋃ n : ℕ, closedBall p (n + 1) \ thickening (n + 1 : ℝ)⁻¹ sᶜ) = interior s := by
+  refine Subset.antisymm (iUnion_subset fun n ↦ (closedBall_sdiff_thickening_subset_interior p sᶜ
+      (r₁ := (n : ℝ) + 1) (r₂ := (n : ℝ) + 1 + 1) (δ₁ := ((n : ℝ) + 1)⁻¹)
+      (δ₂ := ((n : ℝ) + 1 + 1)⁻¹) (by linarith) (by positivity)
+      (inv_strictAnti₀ (by positivity) (by linarith))).trans
+    (interior_mono (sdiff_thickening_compl_subset _ _ (by positivity)))) fun x hx ↦ ?_
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp (mem_interior_iff_mem_nhds.mp hx)
   obtain ⟨n, hn⟩ := exists_nat_ge (max (dist x p) ε⁻¹)
   have hn₁ : dist x p ≤ n := (le_max_left _ _).trans hn
   have hn₂ : ε⁻¹ < n + 1 := ((le_max_right _ _).trans hn).trans_lt (by linarith)
@@ -239,6 +186,15 @@ theorem IsOpen.iUnion_closedBall_sdiff_thickening_compl {α : Type*} [PseudoMetr
   rw [mem_ball, dist_comm]
   exact hxy.trans (inv_lt_of_inv_lt₀ hε hn₂)
 
+end Metric
+
+/-- Every open set `s` in a pseudometric space is the union of the stages
+`closedBall p (n + 1) \ thickening (n + 1)⁻¹ sᶜ` around any basepoint `p`. -/
+theorem IsOpen.iUnion_closedBall_sdiff_thickening_compl {α : Type*} [PseudoMetricSpace α]
+    {s : Set α} (hs : IsOpen s) (p : α) :
+    (⋃ n : ℕ, closedBall p (n + 1) \ thickening (n + 1 : ℝ)⁻¹ sᶜ) = s := by
+  rw [Metric.iUnion_closedBall_sdiff_thickening_compl, hs.interior_eq]
+
 namespace TopologicalSpace.Opens
 
 variable {α : Type*} [PseudoMetricSpace α]
@@ -247,19 +203,15 @@ variable {α : Type*} [PseudoMetricSpace α]
 `Ω` consisting of points within distance `n + 1` of a basepoint `p` and outside the
 `(n + 1)⁻¹`-thickening of `Ωᶜ` form a `CompactExhaustion` of the subspace `Ω`. -/
 noncomputable def compactExhaustion [ProperSpace α] (Ω : TopologicalSpace.Opens α) (p : α) :
-    CompactExhaustion Ω where
-  toFun n := ((↑) : Ω → α) ⁻¹' (closedBall p (n + 1) \ thickening (n + 1 : ℝ)⁻¹ (Ω : Set α)ᶜ)
-  isCompact' n := Topology.IsInducing.subtypeVal.isCompact_preimage'
-    (isCompact_closedBall_sdiff_thickening p (n + 1) (n + 1 : ℝ)⁻¹ (Ω : Set α)ᶜ)
-    (Subtype.range_coe ▸ sdiff_thickening_compl_subset _ _ (by positivity))
-  subset_interior_succ' n :=
-    (preimage_mono (closedBall_sdiff_thickening_subset_interior p (Ω : Set α)ᶜ
+    CompactExhaustion Ω :=
+  CompactExhaustion.subtype Ω
+    (fun n ↦ closedBall p (n + 1) \ thickening (n + 1 : ℝ)⁻¹ (Ω : Set α)ᶜ)
+    (fun n ↦ isCompact_closedBall_sdiff_thickening p (n + 1) (n + 1 : ℝ)⁻¹ (Ω : Set α)ᶜ)
+    (fun _ ↦ sdiff_thickening_compl_subset _ _ (by positivity))
+    (fun n ↦ closedBall_sdiff_thickening_subset_interior p (Ω : Set α)ᶜ
       (by push_cast; linarith) (by positivity)
-      (inv_strictAnti₀ (by positivity) (by push_cast; linarith)))).trans
-      (preimage_interior_subset_interior_preimage continuous_subtype_val)
-  iUnion_eq' := by
-    rw [← preimage_iUnion, Ω.isOpen.iUnion_closedBall_sdiff_thickening_compl p]
-    exact Subtype.coe_preimage_self _
+      (inv_strictAnti₀ (by positivity) (by push_cast; linarith)))
+    (Ω.isOpen.iUnion_closedBall_sdiff_thickening_compl p).symm.subset
 
 /-- Stage `n` of `Ω.compactExhaustion p` is the preimage in `Ω` of
 `closedBall p (n + 1) \ thickening (n + 1)⁻¹ Ωᶜ`. -/
@@ -298,7 +250,7 @@ theorem compactExhaustion_top [ProperSpace α] (p : α) (n : ℕ) :
 @[simp]
 theorem compactExhaustion_bot [ProperSpace α] (p : α) (n : ℕ) :
     (⊥ : TopologicalSpace.Opens α).compactExhaustion p n = ∅ :=
-  eq_empty_of_forall_notMem fun x _ ↦ x.2
+  eq_empty_of_forall_notMem fun x _ ↦ x.property
 
 /-- If the unit ball around `p` lies in `Ω`, then every stage of `Ω.compactExhaustion p` is
 nonempty. -/
