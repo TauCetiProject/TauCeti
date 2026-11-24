@@ -521,10 +521,17 @@ theorem exists_mem_nhds_setOf_fderiv_eq_zero_eq_pair_of_mul_neg
   have hξ : Tendsto (fun σ ↦ (c σ).2) (𝓝 0) (𝓝 x) := by
     simpa [hc0] using hcd.continuousAt.snd.tendsto
   obtain ⟨ε₁, hε₁, hε₁U⟩ := Metric.eventually_nhds_iff.1 (hξ.eventually (ball_mem_nhds x hr))
+  -- At a transverse point the kernel of the Hessian is the line through `v`.
+  have hker : (fderiv ℝ (fderiv ℝ (f t)) x).ker = ℝ ∙ v :=
+    le_antisymm (fun u hu ↦ by
+      obtain ⟨a, rfl⟩ := exists_eq_smul_of_fderiv_fderiv_apply_eq_zero (hf.of_le (by norm_num))
+        hs hv0 hv hu
+      exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self v))
+      ((Submodule.span_singleton_le_iff_mem _ _).2 hv)
   obtain ⟨ηr, hηr, hηrI⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1
-    (eventually_nhdsGT_morseIndex_eq hf hs hv hκ hc0 hc')
+    (eventually_nhdsGT_morseIndex_eq hf hker hκ hc0 hc')
   obtain ⟨ηl, hηl, hηlI⟩ := mem_nhdsLT_iff_exists_Ioo_subset.1
-    (eventually_nhdsLT_morseIndex_eq hf hs hv hκ hc0 hc')
+    (eventually_nhdsLT_morseIndex_eq hf hker hκ hc0 hc')
   obtain ⟨δ₁, hfold₁, hδ₁⟩ := (hfold.and (Ioo_mem_nhdsGT
     (lt_min (lt_min hδ₀.1 hε₁) (lt_min (mem_Ioi.1 hηr) (neg_pos.2 (mem_Iio.1 hηl)))))).exists
   obtain ⟨⟨hδ₁₀, hδ₁ε⟩, hδ₁r, hδ₁l⟩ : (δ₁ < δ₀ ∧ δ₁ < ε₁) ∧ δ₁ < ηr ∧ δ₁ < -ηl := by

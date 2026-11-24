@@ -41,7 +41,8 @@ pair of critical points for `s > 0` has indices `k + 1` and `k`
 (`TauCeti.morseIndex_separatedSum_birthDeathPotential_neg_sqrt`,
 `TauCeti.morseIndex_separatedSum_birthDeathPotential_sqrt`). Nothing about the curve beyond its
 velocity at `0` enters: the statement concerns the Hessians along it, whose Morse indices are
-defined whether or not the points are critical.
+defined whether or not the points are critical. Nor is transversality needed beyond its
+consequence that the kernel of the Hessian is the line `ℝ v`, which the theorems assume instead.
 
 The proof views `σ ↦ Hess(f τ(σ))_{ξ(σ)}` as a path of symmetric bilinear forms through the
 Hessian at `(t₀, x₀)`, with derivative `(u, w) ↦ D³(f t₀)_{x₀} (v, u, w)` at `0`, since the
@@ -105,12 +106,11 @@ theorem exists_hasDerivAt_fderiv_fderiv_comp (hf : ContDiffAt ℝ 3 (uncurry f) 
   rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right (hH.differentiableAt one_ne_zero)]
   simp [H]
 
-variable (hf : ContDiffAt ℝ 3 (uncurry f) (t, x))
-  (hs : Surjective (fderiv ℝ (fun w : ℝ × E ↦ fderiv ℝ (f w.1) w.2) (t, x))) {v : E}
-  (hv : fderiv ℝ (fderiv ℝ (f t)) x v = 0)
+variable (hf : ContDiffAt ℝ 3 (uncurry f) (t, x)) {v : E}
+  (hker : (fderiv ℝ (fderiv ℝ (f t)) x).ker = ℝ ∙ v)
   (hκ : fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v ≠ 0) {c : ℝ → ℝ × E}
   (hc0 : c 0 = (t, x)) (hc' : HasDerivAt c (0, v) 0)
-include hf hs hv hκ hc0 hc'
+include hf hker hκ hc0 hc'
 
 /-- The path of Hessians along a curve through `(t, x)` with velocity `(0, v)` has a regular
 crossing at `0`, with crossing form of negative index `1` exactly when `κ < 0` and positive index
@@ -128,13 +128,6 @@ private theorem exists_hasDerivAt_crossingForm :
   obtain ⟨B', hB', hB'v⟩ := exists_hasDerivAt_fderiv_fderiv_comp hf hc0 hc'
   have hf2 : ContDiffAt ℝ 2 (uncurry f) (t, x) := hf.of_le (by norm_num)
   have hκ' : B' v v ≠ 0 := by rwa [hB'v]
-  have hv0 : v ≠ 0 := by rintro rfl; simp at hκ
-  -- At a transverse point the kernel of the Hessian is the line through `v`.
-  have hker : (fderiv ℝ (fderiv ℝ (f t)) x).ker = ℝ ∙ v :=
-    le_antisymm (fun u hu ↦ by
-      obtain ⟨a, rfl⟩ := exists_eq_smul_of_fderiv_fderiv_apply_eq_zero hf2 hs hv0 hv hu
-      exact Submodule.smul_mem _ a (Submodule.mem_span_singleton_self v))
-      ((Submodule.span_singleton_le_iff_mem _ _).2 hv)
   rw [hc0]
   -- The derivative within any set, through the Fréchet derivative: the generic
   -- `HasDerivAt.hasDerivWithinAt` needs the normed instances on the space of forms.
@@ -144,29 +137,31 @@ private theorem exists_hasDerivAt_crossingForm :
   · rw [ContinuousLinearMap.sigNeg_crossingForm_of_ker_eq_span_singleton hker hκ', hB'v]
   · rw [ContinuousLinearMap.sigPos_crossingForm_of_ker_eq_span_singleton hker hκ', hB'v]
 
-/-- **The Morse index just after a birth–death point.** Let the family, jointly `C³`, be
-transverse at `(t, x)`, and let `v` be a kernel vector of the Hessian of `f t` at `x` with
-`κ = D³(f t)_x (v, v, v) ≠ 0`. Along a curve `c` through `(t, x)` with velocity `(0, v)`, the
-Morse index of `f (c σ).1` at `(c σ).2` for `σ > 0` close to `0` is the Morse index of `f t` at
-`x`, plus one if `κ < 0`. Neither `x` nor the points of the curve need to be critical. -/
+/-- **The Morse index just after a birth–death point.** Let the family be jointly `C³` at
+`(t, x)`, let the kernel of the Hessian of `f t` at `x` be the line spanned by `v`, as it is at a
+transverse point, and let `κ = D³(f t)_x (v, v, v) ≠ 0`. Along a curve `c` through `(t, x)` with
+velocity `(0, v)`, the Morse index of `f (c σ).1` at `(c σ).2` for `σ > 0` close to `0` is the
+Morse index of `f t` at `x`, plus one if `κ < 0`. Neither `x` nor the points of the curve need to be
+critical, and the family need not be transverse. -/
 theorem eventually_nhdsGT_morseIndex_eq :
     ∀ᶠ σ in 𝓝[>] 0, morseIndex (f (c σ).1) (c σ).2 =
       morseIndex (f t) x + if fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v < 0 then 1 else 0 := by
-  obtain ⟨B', hB', hsymm, hreg, hneg, -⟩ := exists_hasDerivAt_crossingForm hf hs hv hκ hc0 hc'
+  obtain ⟨B', hB', hsymm, hreg, hneg, -⟩ := exists_hasDerivAt_crossingForm hf hker hκ hc0 hc'
   filter_upwards [ContinuousLinearMap.eventually_sigNeg_eq_add_sigNeg_crossingForm hsymm (hB' _)
     hreg] with σ hσ
   rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_def, hessianQuadraticForm_def, hσ,
     hneg, hc0]
 
-/-- **The Morse index just before a birth–death point.** Let the family, jointly `C³`, be
-transverse at `(t, x)`, and let `v` be a kernel vector of the Hessian of `f t` at `x` with
-`κ = D³(f t)_x (v, v, v) ≠ 0`. Along a curve `c` through `(t, x)` with velocity `(0, v)`, the
-Morse index of `f (c σ).1` at `(c σ).2` for `σ < 0` close to `0` is the Morse index of `f t` at
-`x`, plus one if `0 < κ`. Neither `x` nor the points of the curve need to be critical. -/
+/-- **The Morse index just before a birth–death point.** Let the family be jointly `C³` at
+`(t, x)`, let the kernel of the Hessian of `f t` at `x` be the line spanned by `v`, as it is at a
+transverse point, and let `κ = D³(f t)_x (v, v, v) ≠ 0`. Along a curve `c` through `(t, x)` with
+velocity `(0, v)`, the Morse index of `f (c σ).1` at `(c σ).2` for `σ < 0` close to `0` is the
+Morse index of `f t` at `x`, plus one if `0 < κ`. Neither `x` nor the points of the curve need to be
+critical, and the family need not be transverse. -/
 theorem eventually_nhdsLT_morseIndex_eq :
     ∀ᶠ σ in 𝓝[<] 0, morseIndex (f (c σ).1) (c σ).2 =
       morseIndex (f t) x + if 0 < fderiv ℝ (fderiv ℝ (fderiv ℝ (f t))) x v v v then 1 else 0 := by
-  obtain ⟨B', hB', hsymm, hreg, -, hpos⟩ := exists_hasDerivAt_crossingForm hf hs hv hκ hc0 hc'
+  obtain ⟨B', hB', hsymm, hreg, -, hpos⟩ := exists_hasDerivAt_crossingForm hf hker hκ hc0 hc'
   filter_upwards [ContinuousLinearMap.eventually_sigNeg_eq_add_sigPos_crossingForm hsymm (hB' _)
     hreg] with σ hσ
   rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_def, hessianQuadraticForm_def, hσ,
