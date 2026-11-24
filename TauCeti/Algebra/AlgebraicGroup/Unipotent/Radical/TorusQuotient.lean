@@ -15,7 +15,7 @@ import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Recognition
 import TauCeti.Algebra.AlgebraicGroup.Torus.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.DiagonalizableQuotient
+import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Diagonalizable.Quotient
 
 /-!
 # The unipotent radical when the quotient is a torus
