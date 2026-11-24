@@ -35,6 +35,12 @@ regularity. The space `𝒞^r` contains bounded functions with no decay, so Schw
 not dense in it; extending the estimate from Schwartz functions to distributions is a separate
 step.
 
+For scalar symbols (`TauCeti.Symbol n ℂ ℂ m`, acting on complex-valued functions) the estimate
+holds more generally on `B^r_{p,∞}` for every `1 ≤ p ≤ ∞`, which includes `𝒞^r` at `p = ∞`:
+that is `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_toBesovSpaceCLM_quantizeUniformCLM_le`
+in `TauCeti.Analysis.Pseudodifferential.Besov`. This file treats operator-valued symbols
+`TauCeti.Symbol n V W m` between finite-dimensional spaces, for `p = q = ∞` only.
+
 ## The argument
 
 Write `â(θ, ξ)` for the Fourier transform of the position slice `x ↦ a(x, ξ)` at `θ`. Since `a`
