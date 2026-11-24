@@ -179,8 +179,8 @@ variable {k H : Type*} [Field k] [Ring H] [HopfAlgebra k H]
 convolution inverse is `α ∘ S`, see `AlgHom.antipodeComp` and `WithConv.algHom_inv_apply`. -/
 theorem modularCharacter_antipode_antipode (hH : finrank k (leftIntegral k H) = 1) (h : H) :
     modularCharacter k H (antipode k (antipode k h)) = modularCharacter k H h := by
-  have := DFunLike.congr_fun (AlgHom.antipodeComp_antipodeComp (modularCharacterAlgHom hH)) h
-  rwa [AlgHom.antipodeComp_apply, AlgHom.antipodeComp_apply] at this
+  simpa only [modularCharacterAlgHom_apply] using
+    (modularCharacterAlgHom hH).apply_antipode_antipode h
 
 end Hopf
 

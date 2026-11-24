@@ -138,6 +138,13 @@ lemma antipodeComp_antipodeComp (f : H →ₐ[R] A) : antipodeComp (antipodeComp
   simpa only [WithConv.algHom_inv_def, ofConv_toConv] using
     congrArg WithConv.ofConv (inv_inv (toConv f))
 
+/-- Pointwise form of `antipodeComp_antipodeComp`: an algebra homomorphism into a commutative
+algebra is invariant under the square of the antipode, `f (S (S h)) = f h`. -/
+@[simp]
+lemma apply_antipode_antipode (f : H →ₐ[R] A) (h : H) :
+    f (antipode R (antipode R h)) = f h := by
+  simpa only [antipodeComp_apply] using DFunLike.congr_fun (antipodeComp_antipodeComp f) h
+
 end Hopf
 
 section Bialgebra
