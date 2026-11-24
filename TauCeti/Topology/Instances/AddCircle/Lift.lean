@@ -121,7 +121,7 @@ theorem continuous_prod_of_lift {Y Y' : Type*} [TopologicalSpace Y] [Topological
   have hq : IsOpenQuotientMap (Prod.map ((↑) : ℝ → AddCircle T) (id : Y → Y)) :=
     QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id
   rw [← hq.continuous_comp_iff]
-  convert (continuous_quotient_mk'.prodMap continuous_id).comp hG using 1
+  convert (QuotientAddGroup.continuous_mk.prodMap continuous_id).comp hG using 1
   funext ⟨x, y⟩
   exact hψ x y
 
