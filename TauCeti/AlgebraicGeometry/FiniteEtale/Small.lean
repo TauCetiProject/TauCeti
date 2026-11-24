@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.CommAlgCat.FiniteType
+public import TauCeti.Algebra.Category.CommAlgCat.FiniteEtale
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
+public import TauCeti.CategoryTheory.Aut.Basic
 public import TauCeti.CategoryTheory.Functor.LocallySmall
 
 /-!
@@ -23,12 +24,11 @@ Over an affine base the covers are anti-equivalent to finite étale algebras ove
 global functions (`TauCeti.FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme`
 transported along `AlgebraicGeometry.Scheme.isoSpec`). Finite étale algebras are of finite type,
 so they form an essentially small category by Mathlib's essential smallness of finitely generated
-algebras (`TauCeti.essentiallySmall_commAlgCatFiniteEtale`).
+algebras (`TauCeti.essentiallySmall_commAlgCatFiniteEtale`, in
+`TauCeti.Algebra.Category.CommAlgCat.FiniteEtale`).
 
 ## Main results
 
-* `TauCeti.essentiallySmall_commAlgCatFiniteEtale`: finite étale `R`-algebras form an essentially
-  small category.
 * `TauCeti.FiniteEtaleScheme.essentiallySmall_of_isAffine`: finite étale covers of an affine
   scheme form an essentially small category.
 * `TauCeti.FiniteEtaleScheme.small_aut_fiber`: if the finite étale covers of `S` form an
@@ -46,16 +46,6 @@ open CategoryTheory AlgebraicGeometry
 universe v u
 
 namespace TauCeti
-
-/-- Finite étale algebras over a ring `R : Type u` form a `u`-essentially small category: they
-are of finite type, and finitely generated `R`-algebras form one. -/
-instance essentiallySmall_commAlgCatFiniteEtale (R : Type u) [CommRing R] :
-    EssentiallySmall.{u} (CommAlgCat.FiniteEtale.{v} R) :=
-  essentiallySmall_of_fully_faithful
-    (ObjectProperty.ιOfLE (P' := fun A : CommAlgCat.{v} R ↦ Algebra.FiniteType R A)
-      fun A (hA : CommAlgCat.finiteEtale R A) ↦ by
-        have := hA.1
-        infer_instance)
 
 namespace FiniteEtaleScheme
 
