@@ -77,7 +77,7 @@ requiring the reference measure itself to be sigma-finite.
   does not change the mass of that set.
 * `MeasureTheory.absolutelyContinuous_withDensity_ofReal`: a measure is absolutely continuous with
   respect to itself weighted by an almost-everywhere positive real density.
-* `MeasureTheory.ae_of_ae_restrict_withDensity_ne_top`: weighted σ-finite localization
+* `MeasureTheory.ae_of_forall_lintegral_ne_top_ae_restrict`: weighted σ-finite localization
   principle reducing a global a.e. goal to restrictions of finite weighted mass.
 * `MeasureTheory.withDensity_eq_iff_of_sigmaFinite_withDensity`: two a.e. measurable densities
   presenting the same sigma-finite weighted measure agree almost everywhere against the reference
@@ -366,9 +366,9 @@ theorem absolutelyContinuous_withDensity_ofReal {α : Type*} [MeasurableSpace α
   withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
 
 /-- **Weighted σ-finite localization principle.** To prove a property `p` holds `μ`-almost
-everywhere, it suffices to prove it on every measurable set `s` of finite `μ.withDensity w`-mass,
-provided `μ.withDensity w` is σ-finite. -/
-theorem ae_of_ae_restrict_withDensity_ne_top {α : Type*} [MeasurableSpace α]
+everywhere, it suffices to prove it on every measurable set `s` on which `w` has finite Lebesgue
+integral (`∫⁻ x, w x ∂μ.restrict s ≠ ∞`), provided `μ.withDensity w` is σ-finite. -/
+theorem ae_of_forall_lintegral_ne_top_ae_restrict {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {w : α → ℝ≥0∞} [SigmaFinite (μ.withDensity w)] {p : α → Prop}
     (hp : ∀ s : Set α, MeasurableSet s → ∫⁻ x, w x ∂μ.restrict s ≠ ∞ → ∀ᵐ x ∂μ.restrict s, p x) :
     ∀ᵐ x ∂μ, p x := by
@@ -390,7 +390,7 @@ theorem withDensity_eq_iff_of_sigmaFinite_withDensity {α : Type*} [MeasurableSp
     {μ : Measure α} {f g : α → ℝ≥0∞} [SigmaFinite (μ.withDensity f)]
     (hf : AEMeasurable f μ) (hg : AEMeasurable g μ) :
     μ.withDensity f = μ.withDensity g ↔ f =ᵐ[μ] g := by
-  refine ⟨fun hfg ↦ ae_of_ae_restrict_withDensity_ne_top (w := f) fun s hs hfin ↦ ?_,
+  refine ⟨fun hfg ↦ ae_of_forall_lintegral_ne_top_ae_restrict (w := f) fun s hs hfin ↦ ?_,
     withDensity_congr_ae⟩
   have heq : (μ.restrict s).withDensity f = (μ.restrict s).withDensity g := by
     rw [← restrict_withDensity hs, ← restrict_withDensity hs]
@@ -439,7 +439,7 @@ theorem eq_withDensity_div_of_eq_withDensity_mul {α : Type*} [MeasurableSpace �
   -- σ-finiteness of `L` ensures `G x * h x < ∞` `μ`-almost everywhere.
   have : SigmaFinite (μ.withDensity fun x ↦ G x * h x) := hL ▸ inferInstance
   have hLlt : ∀ᵐ x ∂μ, G x * h x < ∞ :=
-    ae_of_ae_restrict_withDensity_ne_top (w := fun x ↦ G x * h x) fun _ _ hfin ↦
+    ae_of_forall_lintegral_ne_top_ae_restrict (w := fun x ↦ G x * h x) fun _ _ hfin ↦
       ae_lt_top' hLm.restrict hfin
   -- `G` is nonzero `L`-a.e., hence `P`-a.e., so `G x = 0` forces `g x * h x = 0` `μ`-a.e.
   have hZ : ∀ᵐ x ∂μ, G x = 0 → g x * h x = 0 := by
