@@ -24,7 +24,10 @@ underlying chain maps, so it preserves and reflects quasi-isomorphisms
 The construction follows the change-of-rings interface of Mathlib's
 `ModuleCat.restrictScalarsId` and `ModuleCat.restrictScalarsComp`, with the additional grading and
 differential conditions of DG modules. Restriction also carries homotopy retract data to homotopy
-retract data (`TauCeti.DGRightModuleCat.restrictScalars_homotopyRetract`).
+retract data (`TauCeti.DGRightModuleCat.restrictScalars_homotopyRetract`). A map of underlying
+modules that is semilinear along the algebra morphism is a morphism into the restricted module
+(`TauCeti.DGRightModuleCat.restrictScalarsHomMk`), as for Mathlib's
+`ModuleCat.semilinearMapAddEquiv`.
 
 ## References
 
@@ -138,6 +141,46 @@ theorem restrictScalarsEquiv_symm_differential (f : DGAlgHom hA hB)
   (restrictScalarsEquiv f M).injective <| by
     rw [restrictScalarsEquiv_differential, LinearEquiv.apply_symm_apply,
       LinearEquiv.apply_symm_apply]
+
+/-- A **morphism into a restriction of scalars** `M ⟶ f^* N`, from a map of the underlying modules
+over the ground ring that is semilinear along `f` for the actions, `φ (x · a) = φ x · f a`,
+preserves the degrees and commutes with the differentials. -/
+noncomputable def restrictScalarsHomMk (f : DGAlgHom hA hB) {M : DGRightModuleCat.{uR, uA, uM} hA}
+    {N : DGRightModuleCat.{uR, uB, uM} hB} (φ : M →ₗ[R] N)
+    (hsmul : ∀ (a : A) (x : M), φ (op a • x) = op (f a) • φ x)
+    (hmem : ∀ (q : ℤ) (x : M), x ∈ M.grading q → φ x ∈ N.grading q)
+    (hd : ∀ x, φ (M.differential x) = N.differential (φ x)) :
+    M ⟶ (restrictScalars f).obj N where
+  toLinearMap :=
+    { toFun x := (restrictScalarsEquiv f N).symm (φ x)
+      map_add' x y := by rw [map_add, map_add]
+      map_smul' a x := by
+        apply (restrictScalarsEquiv f N).injective
+        rw [RingHom.id_apply, restrictScalarsEquiv_smul, LinearEquiv.apply_symm_apply,
+          LinearEquiv.apply_symm_apply, ← hsmul, op_unop] }
+  map_mem' hx := (mem_restrictScalars_obj_grading f N _ _).2 <| by
+    simpa only [LinearMap.coe_mk, AddHom.coe_mk, LinearEquiv.apply_symm_apply] using hmem _ _ hx
+  map_d' x := (restrictScalarsEquiv_symm_differential f N (φ x)).trans (congrArg _ (hd x).symm)
+
+/-- The morphism `restrictScalarsHomMk f φ` is `φ` on underlying elements. -/
+@[simp]
+theorem restrictScalarsEquiv_restrictScalarsHomMk_apply (f : DGAlgHom hA hB)
+    {M : DGRightModuleCat.{uR, uA, uM} hA} {N : DGRightModuleCat.{uR, uB, uM} hB} (φ : M →ₗ[R] N)
+    (hsmul : ∀ (a : A) (x : M), φ (op a • x) = op (f a) • φ x)
+    (hmem : ∀ (q : ℤ) (x : M), x ∈ M.grading q → φ x ∈ N.grading q)
+    (hd : ∀ x, φ (M.differential x) = N.differential (φ x)) (x : M) :
+    restrictScalarsEquiv f N (restrictScalarsHomMk f φ hsmul hmem hd x) = φ x :=
+  (restrictScalarsEquiv f N).apply_symm_apply (φ x)
+
+/-- Transporting an element along an equality of restrictions of scalars, coming from an equality
+`f = f'` of DG algebra morphisms, does not change the underlying element. -/
+@[simp]
+theorem restrictScalarsEquiv_eqToHom_apply {f f' : DGAlgHom hA hB} (hf : f = f')
+    (M : DGRightModuleCat.{uR, uB, uM} hB)
+    (h : (restrictScalars f).obj M = (restrictScalars f').obj M) (x : (restrictScalars f).obj M) :
+    restrictScalarsEquiv f' M (eqToHom h x) = restrictScalarsEquiv f M x := by
+  subst hf
+  rw [eqToHom_refl, id_apply]
 
 /-- The bundled restricted object is the object obtained by bundling the unbundled restriction.
 This is the identity isomorphism; it is named because `restrictScalars` is not exposed, so the

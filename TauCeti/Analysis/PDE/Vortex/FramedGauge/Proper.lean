@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Chart
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
-import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Quotient
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
@@ -30,7 +32,9 @@ which also gives the closedness of the orbit relation
 whenever the fields do
 (`TauCeti.Vortex.SobolevFieldSpace.exists_gaugeTransform_eq_and_tendsto`). This is the sequential
 form of the properness of the action of `G_(k+1)` on `A_m^k`, the property of the action that the
-quotient `A_m^k / G_(k+1)` needs besides a slice.
+quotient `A_m^k / G_(k+1)` needs besides a slice. Since it holds along every filter, in particular
+along ultrafilters, the action is proper in the sense of Mathlib's `ProperSMul`
+(`TauCeti.Vortex.SobolevFieldSpace.properSMul`).
 
 The argument has three steps.
 
@@ -66,6 +70,8 @@ The argument has three steps.
   fields converge to the gauge between the limits.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_gaugeTransform_eq_and_tendsto`: the sequential
   properness of the action.
+* `TauCeti.Vortex.SobolevFieldSpace.properSMul`: the action of `G_(k+1)` on `A_m^k`, `k ≥ 3`, is
+  proper.
 
 ## References
 
@@ -520,6 +526,20 @@ theorem exists_gaugeTransform_eq_and_tendsto (hk : 2 < k) {ι : Type*} {l : Filt
   obtain ⟨v, hvG, hv, -⟩ := exists_mem_sobolevGaugeGroup_and_tendstoLocallyUniformly hk hxy hx hy
   refine ⟨(toSubgroup hs).symm ⟨v, hvG⟩, ?_, tendsto_of_gaugeTransform_eq hk hxy ?_ hx hy⟩ <;>
     simpa using hv
+
+variable (f m) [Fact (1 < k)] in
+/-- **The action of `G_(k+1)` on `A_m^k` is proper**, for an integer `k ≥ 3`: the map
+`(u, x) ↦ (u · x, x)` is a proper map. -/
+theorem properSMul (hs : 1 < (k : ℝ) + 1) (hk : 2 < k) :
+    ProperSMul (SobolevTopologicalGaugeGroup hs) (SobolevFieldSpace f m k) := by
+  refine properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨inferInstance, fun 𝒰 x₁ x₂ h ↦ ?_⟩
+  -- The fields `x` and `u · x` along `𝒰` converge to `x₂` and `x₁`.
+  have hx := h.snd_nhds
+  have hy := h.fst_nhds
+  simp only at hx hy
+  obtain ⟨u, hu, hconv⟩ := exists_gaugeTransform_eq_and_tendsto hk (us := Prod.fst)
+    (fun p ↦ (coe_smul p.1 p.2).symm) hx hy
+  exact ⟨u, ext (by rw [coe_smul, hu]), hconv⟩
 
 end SobolevFieldSpace
 

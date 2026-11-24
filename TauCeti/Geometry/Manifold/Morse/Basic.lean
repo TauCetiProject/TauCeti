@@ -229,6 +229,11 @@ theorem isMorseOn_univ {I : ModelWithCorners ℝ E H} : IsMorseOn I f univ ↔ I
 theorem isMorseOn_empty {I : ModelWithCorners ℝ E H} : IsMorseOn I f ∅ :=
   ⟨contMDiffOn_empty, fun _ hx ↦ hx.elim⟩
 
+/-- Every function on an empty manifold is Morse. -/
+theorem isMorse_of_isEmpty [IsEmpty M] {I : ModelWithCorners ℝ E H} : IsMorse I f := by
+  rw [← isMorseOn_univ, univ_eq_empty_iff.2 ‹_›]
+  exact isMorseOn_empty
+
 /-- A function is Morse exactly when it is smooth and all of its critical points are
 nondegenerate. -/
 theorem isMorse_iff {I : ModelWithCorners ℝ E H} :

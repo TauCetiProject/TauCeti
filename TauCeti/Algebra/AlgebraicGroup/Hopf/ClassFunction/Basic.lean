@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.CentralPoint
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 
 /-!
 # Regular class functions
@@ -36,6 +37,8 @@ Laurent polynomial is a class function on the multiplicative group.
 * `TauCeti.HopfAlgebra.mem_classFunctions_iff`: the equalizer equation `c*(f) = 1 ⊗ f`.
 * `TauCeti.HopfAlgebra.mem_classFunctions_iff_forall`: invariance under conjugation of points
   with values in every commutative algebra.
+* `TauCeti.HopfAlgebra.pointConjugationAlgHom_apply_of_mem_classFunctions`: conjugation by a
+  rational point fixes class functions.
 * `TauCeti.HopfAlgebra.classFunctionsMap`: the algebra map of class functions induced by a
   bialgebra map, with `classFunctionsMap_id` and `classFunctionsMap_comp`.
 * `TauCeti.HopfAlgebra.classFunctions_eq_top_iff_isCocomm`: all functions are class functions
@@ -97,6 +100,12 @@ theorem apply_mul_mul_inv_of_mem_classFunctions {f : H} (hf : f ∈ classFunctio
     (g * x * g⁻¹).ofConv f = x.ofConv f := by
   rw [← productMap_comp_conjugationAlgHom g x, AlgHom.comp_apply, mem_classFunctions_iff.mp hf,
     Algebra.TensorProduct.productMap_apply_tmul, map_one, one_mul]
+
+/-- **Conjugation by a rational point fixes every class function.** -/
+theorem pointConjugationAlgHom_apply_of_mem_classFunctions {f : H}
+    (hf : f ∈ classFunctions k H) (g : WithConv (H →ₐ[k] k)) :
+    pointConjugationAlgHom g f = f := by
+  simpa [mem_classFunctions_iff.mp hf] using LinearMap.apply_pointConjugationAlgHom LinearMap.id g f
 
 /-- **Class functions are the conjugation-invariant functions.** An element `f` is a class
 function exactly when `f(g * x * g⁻¹) = f(x)` for all points `g` and `x` with values in every

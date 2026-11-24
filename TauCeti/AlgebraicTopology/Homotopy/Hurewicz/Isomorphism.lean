@@ -201,32 +201,32 @@ private theorem cubicalHurewiczHom_surjective (e : R ≃+* ℤ)
   obtain ⟨z, rfl⟩ := (K R X).moduleCat_homologyπ_surjective (n + 2) a
   let D := basedCubeDeformation hX
   let g : NormalizedCubicalChain X R (n + 2) :=
-    D.retractChain R (n + 2) (chainTo ((K R X).iCycles (n + 2) z))
+    D.endChain R (n + 2) (chainTo ((K R X).iCycles (n + 2) z))
   have hg : g ∈ Submodule.span R
       (NormalizedCubicalChain.ofCube X R '' {c | c.IsBased (n + 2) x}) :=
-    D.retractChain_mem_span R _
+    D.endChain_mem_span R _
   refine ⟨basedClassHomOfRingEquiv x n e g, ?_⟩
   rw [cubicalHurewiczHom_basedClassHomOfRingEquiv e g hg]
   have hcycle : basedCycle g hg =
-      HomologicalComplex.cyclesMap (D.retractChainMap R) (n + 2) z := by
+      HomologicalComplex.cyclesMap (D.endChainMap R) (n + 2) z := by
     apply (K R X).moduleCat_iCycles_injective
     apply (chainEquiv R).injective
     refine (iCycles_basedCycle g hg).trans ?_
     rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
-    exact (D.normalizedCubicalChainComplexXEquiv_retractChainMap_f_apply R (n + 2)
+    exact (D.normalizedCubicalChainComplexXEquiv_endChainMap_f_apply R (n + 2)
       ((K R X).iCycles (n + 2) z)).symm
   rw [hcycle]
   calc
     (K R X).homologyπ (n + 2)
-        (HomologicalComplex.cyclesMap (D.retractChainMap R) (n + 2) z) =
-        HomologicalComplex.homologyMap (D.retractChainMap R) (n + 2)
+        (HomologicalComplex.cyclesMap (D.endChainMap R) (n + 2) z) =
+        HomologicalComplex.homologyMap (D.endChainMap R) (n + 2)
           ((K R X).homologyπ (n + 2) z) := by
             simpa only [ModuleCat.comp_apply] using
               (ConcreteCategory.congr_hom
-                (HomologicalComplex.homologyπ_naturality (D.retractChainMap R) (n + 2)) z).symm
+                (HomologicalComplex.homologyπ_naturality (D.endChainMap R) (n + 2)) z).symm
     _ = (K R X).homologyπ (n + 2) z := by
       have hm := Homotopy.homologyMap_eq
-        (BasedCubeDeformation.retractHomotopy (X := TopCat.of X) (n := n + 2) (x := x) D R)
+        (CubeDeformation.endHomotopy (X := TopCat.of X) D.toCubeDeformation R)
         (n + 2)
       simpa only [HomologicalComplex.homologyMap_id, ModuleCat.id_apply] using
         (ConcreteCategory.congr_hom hm ((K R X).homologyπ (n + 2) z)).symm
@@ -263,14 +263,14 @@ private theorem basedClassHom_ofCube_eq_zero_of_boundary_eq (e : R ≃+* ℤ)
     NormalizedCubicalChain.basedClassHom x n (NormalizedCubicalChain.ofCube X ℤ c) = 0 := by
   let D := basedCubeDeformation hX
   have hret : NormalizedCubicalChain.boundary X R (n + 2)
-      (D.retractChain R (n + 3) (chainTo b)) = NormalizedCubicalChain.ofCube X R c := by
-    rw [D.boundary_retractChain, hboundary, D.retractChain_ofCube, D.retract_of_isBased hp]
+      (D.endChain R (n + 3) (chainTo b)) = NormalizedCubicalChain.ofCube X R c := by
+    rw [D.boundary_endChain, hboundary, D.endChain_ofCube, D.endCube_of_isBased hp]
   rw [← basedClassHomOfRingEquiv_ofCube e, ← hret]
   simp only [basedClassHomOfRingEquiv, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe,
     NormalizedCubicalChain.mapRingHom_boundary]
   exact NormalizedCubicalChain.basedClassHom_boundary_of_mem_span
     (NormalizedCubicalChain.mapRingHom_mem_span_ofCube (↑e : R →+* ℤ)
-      (D.retractChain_mem_span R (chainTo b)))
+      (D.endChain_mem_span R (chainTo b)))
 
 private theorem cubicalHurewiczHom_injective (e : R ≃+* ℤ)
     (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x)) :

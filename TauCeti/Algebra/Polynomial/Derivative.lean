@@ -21,6 +21,11 @@ of derivatives under coefficient maps.
 The derivative of a cubic `a (X - e₁)(X - e₂)(X - e₃)` at the root `e₁` is
 `a (e₁ - e₂)(e₁ - e₃)`.
 The roots of all nonzero iterated derivatives of a polynomial form a finite set.
+If `p.derivative ≠ 0` (always the case for nonconstant `p` in characteristic zero), then at a
+root of `p` of multiplicity `m` the root multiplicity of `p.derivative` is at least `m - 1`, so a
+simple root of `p` need not be a root of `p.derivative`; together with the roots of
+`p.derivative` that are not roots of `p`, this bounds `p.roots` as a multiset in terms of
+`p.derivative.roots` and the distinct roots of `p`.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -47,6 +52,10 @@ Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a
 Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 `leadingCoeff p · leadingCoeff q · deg q`.
 
+Over a possibly noncommutative semiring, the derivative of `f ^ n` is the sum of the `n` products
+`f ^ k * f′ * f ^ (n - 1 - k)` (`Polynomial.derivative_pow_eq_sum`), the form of `derivative_pow`
+that does not move `f′` past powers of `f`.
+
 In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
 vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
 
@@ -71,6 +80,41 @@ theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
     fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
   exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
     fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+/-- If `p.derivative ≠ 0`, then at each root of `p` of multiplicity `m` the root multiplicity of
+`p.derivative` is at least `m - 1`, in any characteristic (so a simple root of `p` need not be a
+root of `p.derivative`); the distinct roots of `p.derivative` that are not roots of `p` come on
+top. Counted with multiplicity, `p.roots` together with those extra roots is therefore bounded
+by `p.derivative.roots` together with one copy of each distinct root of `p`. The hypothesis is
+needed: over `ZMod 2`, `X ^ 2` has roots `{0, 0}` and derivative `0`. -/
+theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero
+    [DecidableEq R] {p : R[X]} (hp : p.derivative ≠ 0) :
+    p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
+      p.derivative.roots + p.roots.toFinset.val := by
+  refine Multiset.le_iff_count.2 fun x ↦ ?_
+  simp only [Multiset.count_add, Multiset.count_eq_of_nodup (Finset.nodup _), Finset.mem_val,
+    Finset.mem_sdiff, Multiset.mem_toFinset]
+  by_cases hx : x ∈ p.roots
+  · have := rootMultiplicity_sub_one_le_derivative_rootMultiplicity_of_ne_zero p x hp
+    simp only [hx, count_roots, ite_true, not_true_eq_false, and_false, ite_false]
+    omega
+  · simp only [hx, Multiset.count_eq_zero.2 hx, ite_false, not_false_eq_true, and_true,
+      zero_add, add_zero]
+    split_ifs with hx'
+    exacts [Multiset.count_pos.2 hx', Nat.zero_le _]
+
+/-- In characteristic zero, the bound of
+`roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero` holds
+for every `p`: if `p.derivative = 0`, then `p` is constant and both sides are `0`. -/
+theorem roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset
+    [CharZero R] [DecidableEq R] (p : R[X]) :
+    p.roots + (p.derivative.roots.toFinset \ p.roots.toFinset).val ≤
+      p.derivative.roots + p.roots.toFinset.val := by
+  rcases eq_or_ne p.derivative 0 with hp | hp
+  · rw [eq_C_of_derivative_eq_zero hp]
+    simp
+  · exact
+      roots_add_roots_derivative_sdiff_roots_le_roots_derivative_add_roots_toFinset_of_ne_zero hp
 
 end Polynomial
 
@@ -298,5 +342,19 @@ theorem derivative_not_surjective_of_charP {R : Type*} [Semiring R] [Nontrivial 
   rw [← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne p)),
     CharP.cast_eq_zero, mul_zero] at this
   exact zero_ne_one this
+
+/-- **The derivative of a power, without commutativity.**  Over any semiring, the derivative of
+`f ^ n` is the sum over the `n` positions of the factor that is differentiated. Over a commutative
+semiring this is `Polynomial.derivative_pow`. -/
+theorem derivative_pow_eq_sum {R : Type*} [Semiring R] (f : R[X]) (n : ℕ) :
+    derivative (f ^ n) = ∑ k ∈ Finset.range n, f ^ k * derivative f * f ^ (n - 1 - k) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, derivative_mul, ih, Finset.sum_mul, Finset.sum_range_succ, Nat.add_sub_cancel,
+      Nat.sub_self, pow_zero, mul_one]
+    congr 1
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    rw [mul_assoc, ← pow_succ, show n - 1 - k + 1 = n - k by grind]
 
 end Polynomial

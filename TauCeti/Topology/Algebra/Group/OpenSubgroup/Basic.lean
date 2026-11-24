@@ -29,6 +29,9 @@ preimages. These apply to arbitrary open subgroups, without normality. Separate 
 multiplication makes the target coset spaces discrete; the preimage criterion only needs this
 on the target group of the homomorphism.
 
+A compact set meets only finitely many left cosets of an open subgroup
+(`IsCompact.finite_image_mk`), since the coset space is discrete.
+
 ## Main instances and results
 
 * `OpenSubgroup.instSeparatelyContinuousMul`, `OpenSubgroup.instContinuousMul`,
@@ -40,6 +43,8 @@ on the target group of the homomorphism.
 * `OpenSubgroup.directedOn_ge_isCompact_and_le`, `OpenSubgroup.isCoinitial_isCompact_and_le`:
   compact open subgroups below a given open subgroup `U₀` are downward-directed, and when `U₀` is
   compact they form a coinitial family in `OpenSubgroup G`.
+* `IsCompact.finite_image_mk`: a compact set meets only finitely many left cosets of an open
+  subgroup.
 -/
 
 public section
@@ -183,3 +188,10 @@ theorem continuous_mk_comap_iff [SeparatelyContinuousMul H] (U : OpenSubgroup H)
     exact h.isOpen_preimage _ (isOpen_discrete _)
 
 end OpenSubgroup
+
+/-- A compact set meets only finitely many left cosets of an open subgroup. -/
+theorem IsCompact.finite_image_mk {G : Type*} [Group G] [TopologicalSpace G]
+    [SeparatelyContinuousMul G] {K : Set G} (hK : IsCompact K) (W : OpenSubgroup G) :
+    (((↑) : G → G ⧸ (W : Subgroup G)) '' K).Finite := by
+  have := QuotientGroup.discreteTopology W.isOpen
+  exact (hK.image continuous_quotient_mk').finite_of_discrete
