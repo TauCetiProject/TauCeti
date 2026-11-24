@@ -32,24 +32,24 @@ evaluated through `Sum.elim (fun p => A p.1 p.2) (fun p => B p.1 p.2)`.
 
 * **The quotient by the second group.** A polynomial is invariant under `h • (A, B) = (A h⁻¹, h B)`
   exactly when it is a polynomial in the entries of `-(A * B)`, and that polynomial is unique
-  (`TauCeti.FriedbergJacquet.range_contractionPullback`,
-  `TauCeti.FriedbergJacquet.contractionPullback_injective`). So pulling back along the signed
+  (`TauCeti.FriedbergJacquet.Split.range_contractionPullback`,
+  `TauCeti.FriedbergJacquet.Split.contractionPullback_injective`). So pulling back along the signed
   contraction is an isomorphism from the polynomial functions on matrices onto the invariant
-  ring (`TauCeti.FriedbergJacquet.rightInvariantsEquiv`): the contraction is the categorical
+  ring (`TauCeti.FriedbergJacquet.Split.rightInvariantsEquiv`): the contraction is the categorical
   quotient by the second group, and it is equivariant for the first group acting on matrices by
-  conjugation (`TauCeti.FriedbergJacquet.eval_contractionPullback_mul_mul_inv`).
+  conjugation (`TauCeti.FriedbergJacquet.Split.eval_contractionPullback_mul_mul_inv`).
 * **The quotient by both groups.** Consequently a polynomial is invariant under both groups
   exactly when it is the pullback of a conjugation-invariant polynomial function on matrices
-  (`TauCeti.FriedbergJacquet.mem_invariants_iff_exists_contractionPullback`), so pulling back
+  (`TauCeti.FriedbergJacquet.Split.mem_invariants_iff_exists_contractionPullback`), so pulling back
   along the signed contraction is an isomorphism from the conjugation invariants
   `Matrix.conjInvariants` onto the invariants of both groups
-  (`TauCeti.FriedbergJacquet.invariantsEquiv`). This reduces the quotient to the adjoint
+  (`TauCeti.FriedbergJacquet.Split.invariantsEquiv`). This reduces the quotient to the adjoint
   quotient of `gl_n`.
 
 The proof is the classical one. If `B` is invertible, acting by `h = B⁻¹` moves `(A, B)` to
 `(A * B, 1)`, so an invariant `P` satisfies `P(A, B) = P(A * B, 1)`; the polynomial
 `Q(Z) = P(-Z, 1)`, the pullback of `P` along the section `Z ↦ (-Z, 1)` of the contraction
-(`TauCeti.FriedbergJacquet.sectionPullback`), therefore agrees with `P` on the pairs with `B`
+(`TauCeti.FriedbergJacquet.Split.sectionPullback`), therefore agrees with `P` on the pairs with `B`
 invertible. Multiplying by the generic determinant of `B` turns this into an identity at every
 point, hence into an identity of polynomials over an infinite field, and the generic determinant
 is a nonzero element of a domain.
@@ -58,27 +58,31 @@ The field must be infinite: over `𝔽₂` in rank one `GL₁` is trivial, every
 invariant, and `A` is not a polynomial in `A * B`. Over `ℤ`, where `GL₁ = {±1}`, the invariant
 `A ^ 2` is not a polynomial in `A * B` either.
 
+All declarations describe the split coordinate model, so they live in the namespace
+`TauCeti.FriedbergJacquet.Split`; the unqualified Friedberg–Jacquet names are left for the
+nonsplit Hermitian model.
+
 ## Main definitions
 
-* `TauCeti.FriedbergJacquet.contractionPullback`: the pullback of polynomial functions along
+* `TauCeti.FriedbergJacquet.Split.contractionPullback`: the pullback of polynomial functions along
   the signed contraction `(A, B) ↦ -(A * B)`.
-* `TauCeti.FriedbergJacquet.sectionPullback`: the pullback along its section `Z ↦ (-Z, 1)`.
-* `TauCeti.FriedbergJacquet.rightInvariants`, `TauCeti.FriedbergJacquet.invariants`: the
+* `TauCeti.FriedbergJacquet.Split.sectionPullback`: the pullback along its section `Z ↦ (-Z, 1)`.
+* `TauCeti.FriedbergJacquet.Split.rightInvariants`, `TauCeti.FriedbergJacquet.Split.invariants`: the
   polynomials invariant under the second group, and under both groups.
-* `TauCeti.FriedbergJacquet.rightInvariantsEquiv`: the isomorphism from polynomial functions on
-  matrices onto the invariants of the second group.
-* `TauCeti.FriedbergJacquet.invariantsEquiv`: the isomorphism from the conjugation invariants
+* `TauCeti.FriedbergJacquet.Split.rightInvariantsEquiv`: the isomorphism from polynomial
+  functions on matrices onto the invariants of the second group.
+* `TauCeti.FriedbergJacquet.Split.invariantsEquiv`: the isomorphism from the conjugation invariants
   onto the invariants of both groups.
 
 ## Main results
 
-* `TauCeti.FriedbergJacquet.sectionPullback_comp_contractionPullback`: the section splits the
+* `TauCeti.FriedbergJacquet.Split.sectionPullback_comp_contractionPullback`: the section splits the
   pullback, which is therefore injective.
-* `TauCeti.FriedbergJacquet.range_contractionPullback`: the invariants of the second group are
+* `TauCeti.FriedbergJacquet.Split.range_contractionPullback`: the invariants of the second group are
   exactly the pullbacks along the signed contraction.
-* `TauCeti.FriedbergJacquet.contractionPullback_mem_invariants_iff`,
-  `TauCeti.FriedbergJacquet.map_contractionPullback_conjInvariants` and
-  `TauCeti.FriedbergJacquet.mem_invariants_iff_exists_contractionPullback`: the invariants of
+* `TauCeti.FriedbergJacquet.Split.contractionPullback_mem_invariants_iff`,
+  `TauCeti.FriedbergJacquet.Split.map_contractionPullback_conjInvariants` and
+  `TauCeti.FriedbergJacquet.Split.mem_invariants_iff_exists_contractionPullback`: the invariants of
   both groups are exactly the pullbacks of conjugation-invariant polynomial functions on
   matrices.
 
@@ -92,7 +96,7 @@ public section
 
 open MvPolynomial
 
-namespace TauCeti.FriedbergJacquet
+namespace TauCeti.FriedbergJacquet.Split
 
 section CommRing
 
@@ -204,7 +208,7 @@ def invariants : Subalgebra R (MvPolynomial (n × n ⊕ n × n) R) where
 
 variable {R n}
 
-/-- Membership in `TauCeti.FriedbergJacquet.rightInvariants`, unfolded. -/
+/-- Membership in `TauCeti.FriedbergJacquet.Split.rightInvariants`, unfolded. -/
 theorem mem_rightInvariants_iff {P : MvPolynomial (n × n ⊕ n × n) R} :
     P ∈ rightInvariants R n ↔ ∀ (h : GL n R) (A B : Matrix n n R),
       eval (Sum.elim (fun p => (A * (h⁻¹ : GL n R)) p.1 p.2)
@@ -212,7 +216,7 @@ theorem mem_rightInvariants_iff {P : MvPolynomial (n × n ⊕ n × n) R} :
           eval (Sum.elim (fun p => A p.1 p.2) fun p => B p.1 p.2) P :=
   Iff.rfl
 
-/-- Membership in `TauCeti.FriedbergJacquet.invariants`, unfolded. -/
+/-- Membership in `TauCeti.FriedbergJacquet.Split.invariants`, unfolded. -/
 theorem mem_invariants_iff {P : MvPolynomial (n × n ⊕ n × n) R} :
     P ∈ invariants R n ↔ ∀ (g h : GL n R) (A B : Matrix n n R),
       eval (Sum.elim (fun p => ((g : Matrix n n R) * A * (h⁻¹ : GL n R)) p.1 p.2)
@@ -355,4 +359,4 @@ theorem coe_invariantsEquiv_symm_apply [Infinite K] (P : invariants K n) :
 
 end Field
 
-end TauCeti.FriedbergJacquet
+end TauCeti.FriedbergJacquet.Split
