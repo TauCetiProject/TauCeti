@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Homotopy.MappingCone
+import Mathlib.Topology.Order.ProjIcc
 
 /-!
 # Homotopy invariance of mapping cones
@@ -38,6 +39,114 @@ namespace TauCeti
 namespace MappingCone
 
 section HomotopyInvariance
+
+/-- Clamped rescaling `(s, t) ↦ min (s * (1 + t)) 1` on `unitInterval × unitInterval`. -/
+private def scaleClamp : C(I × I, I) where
+  toFun p := Set.projIcc (0 : ℝ) 1 zero_le_one ((p.1 : ℝ) * (1 + (p.2 : ℝ)))
+  continuous_toFun := continuous_projIcc.comp
+    ((continuous_subtypeVal.comp _root_.continuous_fst).mul
+      (continuous_const.add (continuous_subtypeVal.comp _root_.continuous_snd)))
+
+/-- The real value of `scaleClamp p` is `min (p.1 * (1 + p.2)) 1`. -/
+@[simp]
+private theorem coe_scaleClamp (p : I × I) :
+    (scaleClamp p : ℝ) = min ((p.1 : ℝ) * (1 + (p.2 : ℝ))) 1 := by
+  have h0 : 0 ≤ min 1 ((p.1 : ℝ) * (1 + (p.2 : ℝ))) :=
+    le_min zero_le_one (mul_nonneg p.1.property.1 (by linarith [p.2.property.1]))
+  simp [scaleClamp, Set.coe_projIcc, max_eq_right h0, min_comm]
+
+private theorem scaleClamp_of_ge_one {p : I × I} (hp : 1 ≤ (p.1 : ℝ) * (1 + (p.2 : ℝ))) :
+    scaleClamp p = 1 :=
+  Set.projIcc_of_right_le zero_le_one hp
+
+private theorem coe_scaleClamp_of_le_one {p : I × I} (hp : (p.1 : ℝ) * (1 + (p.2 : ℝ)) ≤ 1) :
+    (scaleClamp p : ℝ) = (p.1 : ℝ) * (1 + (p.2 : ℝ)) := by
+  have hmem : (p.1 : ℝ) * (1 + (p.2 : ℝ)) ∈ I :=
+    ⟨mul_nonneg p.1.property.1 (by linarith [p.2.property.1]), hp⟩
+  exact congrArg Subtype.val (Set.projIcc_of_mem zero_le_one hmem)
+
+@[simp]
+private theorem scaleClamp_zero_left (t : I) : scaleClamp (0, t) = 0 := by
+  simp [scaleClamp]
+
+@[simp]
+private theorem scaleClamp_one_left (t : I) : scaleClamp (1, t) = 1 :=
+  scaleClamp_of_ge_one (by simpa using le_add_of_nonneg_right (a := (1 : ℝ)) t.property.1)
+
+@[simp]
+private theorem scaleClamp_zero_right (s : I) : scaleClamp (s, 0) = s := by
+  simp [scaleClamp]
+
+/-- Clamped shift `(s, t) ↦ max (s * (1 + t) - 1) 0` on `unitInterval × unitInterval`. -/
+private def shiftClamp : C(I × I, I) where
+  toFun p := Set.projIcc (0 : ℝ) 1 zero_le_one ((p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1)
+  continuous_toFun := continuous_projIcc.comp
+    (((continuous_subtypeVal.comp _root_.continuous_fst).mul
+      (continuous_const.add (continuous_subtypeVal.comp _root_.continuous_snd))).sub
+      continuous_const)
+
+/-- The real value of `shiftClamp p` is `max (p.1 * (1 + p.2) - 1) 0`. -/
+@[simp]
+private theorem coe_shiftClamp (p : I × I) :
+    (shiftClamp p : ℝ) = max ((p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1) 0 := by
+  have hle : (p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1 ≤ 1 := by
+    nlinarith [p.1.property.1, p.1.property.2, p.2.property.1, p.2.property.2]
+  simp [shiftClamp, Set.coe_projIcc, min_eq_right hle, max_comm]
+
+private theorem shiftClamp_of_le_one {p : I × I} (hp : (p.1 : ℝ) * (1 + (p.2 : ℝ)) ≤ 1) :
+    shiftClamp p = 0 :=
+  Set.projIcc_of_le_left zero_le_one (sub_nonpos.mpr hp)
+
+private theorem coe_shiftClamp_of_ge_one {p : I × I} (hp : 1 ≤ (p.1 : ℝ) * (1 + (p.2 : ℝ))) :
+    (shiftClamp p : ℝ) = (p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1 := by
+  have hmem : (p.1 : ℝ) * (1 + (p.2 : ℝ)) - 1 ∈ I :=
+    ⟨sub_nonneg.mpr hp,
+      by nlinarith [p.1.property.1, p.1.property.2, p.2.property.1, p.2.property.2]⟩
+  exact congrArg Subtype.val (Set.projIcc_of_mem zero_le_one hmem)
+
+@[simp]
+private theorem shiftClamp_zero_left (t : I) : shiftClamp (0, t) = 0 :=
+  shiftClamp_of_le_one (by norm_num)
+
+@[simp]
+private theorem shiftClamp_one_left (t : I) : shiftClamp (1, t) = t := by
+  simp [shiftClamp]
+
+@[simp]
+private theorem shiftClamp_zero_right (s : I) : shiftClamp (s, 0) = 0 :=
+  shiftClamp_of_le_one (by simpa using s.property.2)
+
+/-- Linear homotopy `((r, s), t) ↦ (Set.Icc.convexComb (scaleClamp (s, t)) s r,
+Set.Icc.convexComb (shiftClamp (s, t)) t r)` from `(scaleClamp (s, t), shiftClamp (s, t))` at
+`r = 0` to `(s, t)` at `r = 1`. -/
+private def warpHomotopy : C((I × I) × I, I × I) where
+  toFun q :=
+    (Set.Icc.convexComb (scaleClamp (q.1.2, q.2)) q.1.2 q.1.1,
+     Set.Icc.convexComb (shiftClamp (q.1.2, q.2)) q.2 q.1.1)
+  continuous_toFun := by
+    refine Continuous.prodMk ?_ ?_ <;> fun_prop
+
+private theorem warpHomotopy_apply (q : (I × I) × I) :
+    warpHomotopy q =
+      (Set.Icc.convexComb (scaleClamp (q.1.2, q.2)) q.1.2 q.1.1,
+       Set.Icc.convexComb (shiftClamp (q.1.2, q.2)) q.2 q.1.1) := (rfl)
+
+@[simp]
+private theorem warpHomotopy_zero_left (s t : I) :
+    warpHomotopy ((0, s), t) = (scaleClamp (s, t), shiftClamp (s, t)) := by
+  simp [warpHomotopy_apply]
+
+@[simp]
+private theorem warpHomotopy_one_left (s t : I) : warpHomotopy ((1, s), t) = (s, t) := by
+  simp [warpHomotopy_apply]
+
+@[simp]
+private theorem warpHomotopy_fst_zero (r t : I) : (warpHomotopy ((r, 0), t)).1 = 0 := by
+  simp [warpHomotopy_apply]
+
+@[simp]
+private theorem warpHomotopy_one_mid (r t : I) : warpHomotopy ((r, 1), t) = (1, t) := by
+  simp [warpHomotopy_apply]
 
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
   {φ₀ φ₁ : A →⋆ₙₐ[ℂ] B}

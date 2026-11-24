@@ -12,6 +12,7 @@ public import TauCeti.Topology.Homeomorph.Interval
 public import TauCeti.Topology.UnitInterval.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Topology.Covering.FundamentalGroupCircle
+import Mathlib.Topology.Order.ProjIcc
 
 /-!
 # Cone and suspension C⋆-algebras
@@ -217,6 +218,31 @@ theorem toPath_comp_map (φ : A →⋆ₙₐ[ℂ] B) :
 end Basic
 
 section Contraction
+
+/-- Truncated shift `(t, s) ↦ max (s - t) 0` on `unitInterval × unitInterval`. -/
+private noncomputable def truncatedShift : C(I × I, I) where
+  toFun p := Set.projIcc (0 : ℝ) 1 zero_le_one ((p.2 : ℝ) - (p.1 : ℝ))
+  continuous_toFun := continuous_projIcc.comp
+    ((continuous_subtypeVal.comp continuous_snd).sub (continuous_subtypeVal.comp continuous_fst))
+
+/-- The real value of `truncatedShift p` is `max (p.2 - p.1) 0`. -/
+@[simp]
+private theorem coe_truncatedShift (p : I × I) :
+    (truncatedShift p : ℝ) = max ((p.2 : ℝ) - (p.1 : ℝ)) 0 := by
+  simp [truncatedShift, Set.coe_projIcc,
+    min_eq_right ((sub_le_self _ p.1.property.1).trans p.2.property.2), max_comm]
+
+@[simp]
+private theorem truncatedShift_zero_right (t : I) : truncatedShift (t, 0) = 0 :=
+  Set.projIcc_of_le_left zero_le_one (by simpa using t.property.1)
+
+@[simp]
+private theorem truncatedShift_zero_left (s : I) : truncatedShift (0, s) = s := by
+  simp [truncatedShift]
+
+@[simp]
+private theorem truncatedShift_one_left (s : I) : truncatedShift (1, s) = 0 :=
+  Set.projIcc_of_le_left zero_le_one (sub_nonpos.mpr s.property.2)
 
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 
