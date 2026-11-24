@@ -60,10 +60,9 @@ private noncomputable def intertwiningMapBaseChangeHom (ρ : Representation K G 
         ((IntertwiningMap.toLinearMapl (ρ := ρ) (σ := σ)).baseChange L x)
       isIntertwining' g := by
         have h0 : intertwiningDefectAt ρ σ g ∘ₗ IntertwiningMap.toLinearMapl (ρ := ρ) (σ := σ) =
-            0 := LinearMap.ext fun f => by
-          simpa [intertwiningDefectAt_apply, sub_eq_zero] using (f.isIntertwining' g).symm
-        refine (sub_eq_zero.mp ?_).symm
-        rw [← intertwiningDefectAt_apply, intertwiningDefectAt_homBaseChangeEquiv,
+            0 := LinearMap.ext fun f => intertwiningDefectAt_eq_zero_iff.mpr (f.isIntertwining' g)
+        refine intertwiningDefectAt_eq_zero_iff.mp ?_
+        rw [intertwiningDefectAt_homBaseChangeEquiv,
           LinearMap.baseChange_eq_lTensor, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, h0,
           LinearMap.lTensor_zero, LinearMap.zero_apply, map_zero] }
   map_add' x y := IntertwiningMap.ext (by simp)
@@ -97,13 +96,11 @@ private theorem intertwiningMapBaseChangeHom_bijective (ρ : Representation K G 
         c x i ∘ₗ ρ g = σ g ∘ₗ c x i := by
       have h0 : (intertwiningDefectAt ρ σ g).lTensor L x = 0 := by
         apply e.injective
-        rw [← intertwiningDefectAt_homBaseChangeEquiv, LinearEquiv.apply_symm_apply, map_zero,
-          intertwiningDefectAt_apply, F.isIntertwining']
-        exact sub_self (_ : L ⊗[K] V →ₗ[L] L ⊗[K] W)
+        rw [← intertwiningDefectAt_homBaseChangeEquiv, LinearEquiv.apply_symm_apply, map_zero]
+        exact intertwiningDefectAt_eq_zero_iff.mpr (F.isIntertwining' g)
       have := (b.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft
         (intertwiningDefectAt ρ σ g) x).mp h0 i
-      rw [intertwiningDefectAt_apply, sub_eq_zero] at this
-      exact this.symm
+      exact intertwiningDefectAt_eq_zero_iff.mp this
     let f (i : Module.Free.ChooseBasisIndex K L) : IntertwiningMap ρ σ := ⟨c x i, hcoeff i⟩
     refine ⟨∑ i ∈ (c x).support, b i ⊗ₜ[K] f i, IntertwiningMap.ext ?_⟩
     rw [toLinearMap_intertwiningMapBaseChangeHom, ← e.eq_symm_apply, map_sum, ← hxdef]

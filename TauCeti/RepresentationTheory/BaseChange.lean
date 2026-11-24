@@ -554,6 +554,11 @@ theorem intertwiningDefectAt_apply (ρ : Representation K G V) (σ : Representat
     (f : V →ₗ[K] W) : intertwiningDefectAt ρ σ g f = σ g ∘ₗ f - f ∘ₗ ρ g :=
   (rfl)
 
+/-- The intertwining defect at `g` vanishes exactly when `f` intertwines the actions of `g`. -/
+theorem intertwiningDefectAt_eq_zero_iff {ρ : Representation K G V} {σ : Representation K G W}
+    {g : G} {f : V →ₗ[K] W} : intertwiningDefectAt ρ σ g f = 0 ↔ f ∘ₗ ρ g = σ g ∘ₗ f := by
+  rw [intertwiningDefectAt_apply, sub_eq_zero, eq_comm]
+
 /-- **The intertwining defect of a base-changed map is the base change of its defect**: the
 intertwining defect at `g` of `f.baseChange L` for the base-changed representations is the base
 change of the defect of `f`. -/
@@ -577,8 +582,7 @@ private theorem mem_ker_intertwiningDefect {ρ : Representation K G V}
     f ∈ LinearMap.ker (intertwiningDefect ρ σ) ↔ ∀ g, f ∘ₗ ρ g = σ g ∘ₗ f := by
   rw [LinearMap.mem_ker, funext_iff]
   refine forall_congr' fun g => ?_
-  rw [intertwiningDefect, LinearMap.pi_apply, intertwiningDefectAt_apply, Pi.zero_apply,
-    sub_eq_zero, eq_comm]
+  rw [intertwiningDefect, LinearMap.pi_apply, Pi.zero_apply, intertwiningDefectAt_eq_zero_iff]
 
 /-- The intertwiner space is the kernel of the intertwining defect. -/
 private def intertwiningMapEquivKerDefect (ρ : Representation K G V)
@@ -602,11 +606,8 @@ theorem intertwiningDefectAt_homBaseChangeEquiv [Module.Projective K V] [Module.
         ((intertwiningDefectAt ρ σ g).lTensor L x) := by
   induction x with
   | tmul a h =>
-    rw [LinearMap.lTensor_tmul, IsBaseChange.equiv_tmul, IsBaseChange.equiv_tmul,
-      LinearMap.baseChangeHom_apply, LinearMap.baseChangeHom_apply,
-      ← intertwiningDefectAt_baseChange, intertwiningDefectAt_apply, intertwiningDefectAt_apply,
-      LinearMap.comp_smul, LinearMap.smul_comp]
-    exact (smul_sub a (_ : L ⊗[K] V →ₗ[L] L ⊗[K] W) _).symm
+    simp only [LinearMap.lTensor_tmul, IsBaseChange.equiv_tmul, LinearMap.baseChangeHom_apply,
+      map_smul, intertwiningDefectAt_baseChange]
   | add x y hx hy =>
     simp only [map_add, ← hx, ← hy]
 
@@ -621,17 +622,12 @@ private theorem intertwiningDefect_homBaseChangeEquiv [Fintype G] [DecidableEq G
       = ((TensorProduct.piRight K L L _).trans
           (LinearEquiv.piCongrRight fun _ ↦ (LinearMap.isBaseChange_baseChangeHom K L V W).equiv))
           (TensorProduct.AlgebraTensorModule.lTensor L L (intertwiningDefect ρ σ) x) := by
-  induction x with
-  | add x y hx hy => simp [hx, hy]
-  | tmul a f =>
-    funext g
-    -- the defect is linear, so both sides are `a • (intertwiningDefect ρ σ f g)`
-    -- base-changed to `L`
-    simp only [IsBaseChange.equiv_tmul, LinearMap.baseChangeHom_apply, map_smul,
-      intertwiningDefect, LinearMap.pi_apply, intertwiningDefectAt_baseChange,
-      TensorProduct.AlgebraTensorModule.lTensor_tmul, LinearEquiv.trans_apply,
-      LinearEquiv.piCongrRight_apply, TensorProduct.piRight_apply,
-      TensorProduct.piRightHom_tmul]
+  funext g
+  simp only [intertwiningDefect, LinearMap.pi_apply, intertwiningDefectAt_homBaseChangeEquiv,
+    LinearEquiv.trans_apply, LinearEquiv.piCongrRight_apply, TensorProduct.piRight_apply]
+  -- `x ↦ (L ⊗ defect) x g` is `L ⊗ (defect at g)`
+  congr 1
+  induction x <;> simp_all
 
 /-- Pulling back the base-changed intertwining kernel along scalar extension of linear maps gives
 the kernel of the scalar-extended defect. -/
