@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.ComplexManifold
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.TopologicalAddGroup
+public import TauCeti.Geometry.Lie.RestrictScalars
+public import TauCeti.Geometry.Manifold.Algebra.TypeTags
 
 /-!
 # Complex elliptic curves are complex Lie groups
@@ -34,6 +36,8 @@ the group isomorphism between the points of `C • W` and of `W` is a biholomorp
 
 * `WeierstrassCurve.Projective.Point.instLieAddGroup`: the points of a complex elliptic curve
   form a complex Lie group, analytic and so `C^r` for every `r`.
+* `WeierstrassCurve.Projective.Point.instLieGroupMultiplicativeReal`: written multiplicatively and
+  with scalars restricted to `ℝ`, they form a real Lie group.
 * `WeierstrassCurve.Projective.Point.diffeomorphVariableChange`: the change of variables `C` is a
   biholomorphism between the points of `C • W` and of `W`.
 
@@ -136,6 +140,11 @@ compact Riemann surface `W.Point` is analytic, and so `C^r` for every `r`. -/
 instance instLieAddGroup (r : ℕ∞ω) : LieAddGroup 𝓘(ℂ) r W.Point where
   contMDiff_add := contMDiff_add'
   contMDiff_neg := contMDiff_neg'
+
+/-- **The points of a complex elliptic curve form a real Lie group**: the complex Lie group
+`W.Point`, written multiplicatively, with scalars restricted to `ℝ`. -/
+instance instLieGroupMultiplicativeReal (r : ℕ∞ω) : LieGroup 𝓘(ℝ, ℂ) r (Multiplicative W.Point) :=
+  LieGroup.restrictScalars_self (𝕜 := ℂ) ℝ
 
 section VariableChange
 

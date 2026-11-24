@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
+import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Negative powers in `Lᵖ` near the origin and shifted interval powers
@@ -20,7 +20,9 @@ On an interval `(0, c)`, the power `t ↦ t ^ (-a)` is in `Lᵖ` for every finit
 `intervalIntegral.integrableOn_Ioo_rpow_iff`. For `a = 1 / 2` it shows that the derivative
 `(2 √t)⁻¹` of `t ↦ √t` is in `Lᵖ(0, c)` for `p < 2`. Translating `(0, b - a)` to `(a, b)` also
 gives the shifted integrability criterion `TauCeti.integrableOn_Ioo_sub_rpow_iff`: for `a < b`,
-`t ↦ (t - a) ^ s` is integrable on `(a, b)` if and only if `-1 < s`.
+`t ↦ (t - a) ^ s` is integrable on `(a, b)` if and only if `-1 < s`. On an upper ray `(a, ∞)`,
+`a > 0`, a power `t ^ p` with `p < -1` stays integrable after multiplication by the fractional part
+`{t} ∈ [0, 1)` (`TauCeti.integrableOn_rpow_mul_fract`).
 
 At infinity, the inverse natural power `t ↦ t⁻¹ ^ k` is integrable on `(c, ∞)` for `0 < c` and
 `2 ≤ k` (`TauCeti.integrableOn_Ioi_inv_pow`), the natural-power form of Mathlib's
@@ -65,5 +67,14 @@ theorem integrableOn_Ioi_inv_pow {k : ℕ} {c : ℝ} (hk : 2 ≤ k) (hc : 0 < c)
   · have : (2 : ℝ) ≤ k := by exact_mod_cast hk
     linarith
   · simp only [Real.rpow_neg (hc.trans ht).le, Real.rpow_natCast, inv_pow]
+
+/-- The fractional part `{t} ∈ [0, 1)` weighted by `t^p` is integrable on `(a, ∞)` for `a > 0`
+and `p < -1`. -/
+theorem integrableOn_rpow_mul_fract {p a : ℝ} (hp : p < -1) (ha : 0 < a) :
+    IntegrableOn (fun t : ℝ ↦ t ^ p * Int.fract t) (Ioi a) :=
+  (integrableOn_Ioi_rpow_of_lt hp ha).mul_bdd measurable_fract.aestronglyMeasurable
+    (ae_of_all _ fun t ↦ by
+      rw [Real.norm_of_nonneg (Int.fract_nonneg t)]
+      exact (Int.fract_lt_one t).le)
 
 end TauCeti

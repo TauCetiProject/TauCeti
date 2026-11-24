@@ -35,15 +35,18 @@ homotopy identity above.
 
 ## Main results
 
-* `TauCeti.TypeDStructure.typeABoxMapOfHom_add_of_isBounded` and
+* `TauCeti.TypeDStructure.typeABoxMapOfHom_add_of_isBounded`,
+  `TauCeti.TypeDStructure.typeABoxMapOfHom_add_of_lt` and
   `TauCeti.TypeDStructure.typeABoxMapOfHom_add_of_act_eq_zero`: the induced maps are additive in
   the morphism, `T_{f+g} = T_f + T_g`.
 * `TauCeti.TypeDStructure.typeABoxHomotopy_apply_eq_sum`: the induced homotopy as a finite sum
   over paths of generators.
-* `TauCeti.TypeDStructure.typeABoxMapOfHom_add_typeABoxMapOfHom_of_isBounded` and
+* `TauCeti.TypeDStructure.typeABoxMapOfHom_add_typeABoxMapOfHom_of_isBounded`,
+  `TauCeti.TypeDStructure.typeABoxMapOfHom_add_typeABoxMapOfHom_of_lt` and
   `TauCeti.TypeDStructure.typeABoxMapOfHom_add_typeABoxMapOfHom_of_act_eq_zero`: homotopic
   morphisms induce homotopic chain maps, `T_f + T_g = ∂' ∘ T_H + T_H ∘ ∂`, when the type `D`
-  structure, respectively the modules, the morphisms and the homotopy, are bounded.
+  structure is bounded or has a height, respectively when the modules, the morphisms and the
+  homotopy are bounded.
 
 ## References
 
@@ -91,6 +94,14 @@ theorem typeABoxMapOfHom_add_of_isBounded (N : TypeDStructure d ι X) (hN : N.Is
     N.typeABoxMapOfHom (f + g) = N.typeABoxMapOfHom f + N.typeABoxMapOfHom g := by
   obtain ⟨K, hK⟩ := hN.exists_matrixAct_eq_zero
   exact typeABoxMapOfHom_add_of_bound N f g (K := K) (hK _) (hK _) (hK _)
+
+/-- **The induced maps are additive in the morphism, for a type `D` structure with a height:**
+`T_{f+g} = T_f + T_g` when a height on the generators strictly increases along every nonzero
+coefficient of `N`. -/
+theorem typeABoxMapOfHom_add_of_lt (N : TypeDStructure d ι X) (h : X → ℕ)
+    (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (f g : UngradedAInfinityRightModuleHom Mm Mm') :
+    N.typeABoxMapOfHom (f + g) = N.typeABoxMapOfHom f + N.typeABoxMapOfHom g :=
+  N.typeABoxMapOfHom_add_of_isBounded (N.isBounded_of_lt h hh) f g
 
 /-- **The induced maps are additive in the morphism, for bounded modules and morphisms:**
 `T_{f+g} = T_f + T_g` when the operations of `M` and `M'` and the components of `f` and `g`
@@ -191,6 +202,18 @@ theorem typeABoxMapOfHom_add_typeABoxMapOfHom_of_isBounded (N : TypeDStructure d
   exact typeABoxMapOfHom_add_typeABoxMapOfHom_of_bound N H (K := K) (hK _) (hK _)
     (N.typeABoxDifferential_typeABoxMapOfHom_of_isBounded H.toConeHom hN)
     (N.typeABoxMapOfHom_add_of_isBounded hN f g) φ
+
+/-- **Homotopic morphisms induce homotopic chain maps, for a type `D` structure with a height.**
+Over a ring of characteristic two, if a height on the generators strictly increases along every
+nonzero coefficient of `N`, a homotopy `H` between morphisms `f` and `g` of `A∞` modules gives
+`T_f + T_g = ∂' ∘ T_H + T_H ∘ ∂`. -/
+theorem typeABoxMapOfHom_add_typeABoxMapOfHom_of_lt (N : TypeDStructure d ι X) (h : X → ℕ)
+    (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (H : UngradedAInfinityRightModuleHom.Homotopy f g)
+    (φ : X → M) :
+    N.typeABoxMapOfHom f φ + N.typeABoxMapOfHom g φ =
+      N.typeABoxDifferential Mm' (N.typeABoxHomotopy H φ) +
+        N.typeABoxHomotopy H (N.typeABoxDifferential Mm φ) :=
+  N.typeABoxMapOfHom_add_typeABoxMapOfHom_of_isBounded (N.isBounded_of_lt h hh) H φ
 
 /-- **Homotopic morphisms of bounded modules induce homotopic chain maps.** Over a ring of
 characteristic two, if the operations of `M` and `M'`, the components of `f` and `g` and those of
