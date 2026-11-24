@@ -117,6 +117,7 @@ theorem mem_formalPoints_iff_charOfPoint {I : Ideal A} {f : WithConv (MonoidAlge
 
 /-- A point reduces to the identity modulo `I` exactly when it sends every group-like
 `single g 1` to an element congruent to `1` modulo `I`. -/
+@[simp]
 theorem mem_formalPoints {I : Ideal A} {f : WithConv (MonoidAlgebra R G →ₐ[R] A)} :
     f ∈ formalPoints R G I ↔ ∀ g, f.ofConv (MonoidAlgebra.single g 1) - 1 ∈ I :=
   forall_congr' fun g ↦ by rw [Ideal.mem_principalUnitGroup, charOfPoint_apply_coe]
