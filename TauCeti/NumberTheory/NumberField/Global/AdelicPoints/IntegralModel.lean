@@ -86,7 +86,7 @@ theorem ofFiniteType_baseChangeEquiv (C : _root_.CommHopfAlgCat.{w'} (S.integer 
     (ofFiniteType C e).baseChangeEquiv = e := (rfl)
 
 /-- An `R`-model `C₀` of `H` induces an `S`-integral model for every `S` by scalar extension. -/
-@[expose] noncomputable def ofBaseRing (S : Set (HeightOneSpectrum R))
+noncomputable def ofBaseRing (S : Set (HeightOneSpectrum R))
     (C₀ : _root_.CommHopfAlgCat.{w'} R) [Algebra.FiniteType R C₀] (e : K ⊗[R] C₀ ≃ₐc[K] H) :
     IntegralModel R K H S :=
   letI := Algebra.FiniteType.baseChange (R := R) (A := C₀) (S.integer K)
@@ -95,10 +95,23 @@ theorem ofFiniteType_baseChangeEquiv (C : _root_.CommHopfAlgCat.{w'} (S.integer 
 
 /-- Canonical `(S.integer K)`-algebra equivalence identifying `(ofBaseRing S C₀ e).coordinate` with
 `S.integer K ⊗[R] C₀`. -/
-@[expose] noncomputable def ofBaseRingCoordinateEquiv (S : Set (HeightOneSpectrum R))
+noncomputable def ofBaseRingCoordinateEquiv (S : Set (HeightOneSpectrum R))
     (C₀ : _root_.CommHopfAlgCat.{w'} R) [Algebra.FiniteType R C₀] (e : K ⊗[R] C₀ ≃ₐc[K] H) :
     (ofBaseRing S C₀ e).coordinate ≃ₐ[S.integer K] S.integer K ⊗[R] C₀ :=
   C₀.baseChangeAlgEquiv (K := S.integer K)
+
+/-- Action of `(ofBaseRing S C₀ e).baseChangeEquiv` on a pure tensor. -/
+@[simp]
+theorem ofBaseRing_baseChangeEquiv_tmul (S : Set (HeightOneSpectrum R))
+    (C₀ : _root_.CommHopfAlgCat.{w'} R) [Algebra.FiniteType R C₀] (e : K ⊗[R] C₀ ≃ₐc[K] H)
+    (c : K) (m : (ofBaseRing S C₀ e).coordinate) :
+    (ofBaseRing S C₀ e).baseChangeEquiv (c ⊗ₜ[S.integer K] m) =
+      e (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv R (S.integer K) C₀ K
+        (c ⊗ₜ[S.integer K] ofBaseRingCoordinateEquiv S C₀ e m)) := by
+  exact congrArg (fun x : S.integer K ⊗[R] C₀ ↦
+      e (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv R (S.integer K) C₀ K
+        (c ⊗ₜ[S.integer K] x)))
+    (C₀.baseChangeAlgEquiv_apply (K := S.integer K) m).symm
 
 /-- The generic-fibre coordinate algebra `H` of `M` is finitely presented over `K`. -/
 theorem finitePresentation_genericFiber (M : IntegralModel R K H S) :
@@ -145,13 +158,9 @@ theorem toGenericFiber_ofBaseRingCoordinateEquiv_symm_tmul (S : Set (HeightOneSp
     (ofBaseRing S C₀ e).toGenericFiber
         ((ofBaseRingCoordinateEquiv S C₀ e).symm (c ⊗ₜ[R] m)) =
       e ((c : K) ⊗ₜ[R] m) := by
-  have h₁ : (ofBaseRing S C₀ e).toGenericFiber
-        ((ofBaseRingCoordinateEquiv S C₀ e).symm (c ⊗ₜ[R] m)) =
-      e (Bialgebra.TensorProduct.baseChangeTowerBialgEquiv R (S.integer K) C₀ K
-        (1 ⊗ₜ[S.integer K] C₀.baseChangeAlgEquiv.symm (c ⊗ₜ[R] m))) := rfl
-  have h₂ := Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_tmul R (S.integer K) C₀ K 1 c m
-  rw [h₁, CommHopfAlgCat.baseChangeAlgEquiv_symm_apply, h₂, Algebra.smul_def, mul_one]
-  rfl
+  rw [toGenericFiber_apply, ofBaseRing_baseChangeEquiv_tmul, AlgEquiv.apply_symm_apply,
+    Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_tmul, Subalgebra.smul_def, smul_eq_mul,
+    mul_one]
 
 /-- Any integral model admits a finite `(S.integer K)`-algebra generating set for
 `M.coordinate`. -/
@@ -238,6 +247,19 @@ private theorem algebraMap_coe_mem {S : Set (HeightOneSpectrum R)} {A : Type w} 
     algebraMap K A (x : K) ∈ B := by
   have h := B.algebraMap_mem x
   rwa [IsScalarTower.algebraMap_apply (S.integer K) K A] at h
+
+private theorem induction_tensorProduct_ofConv {k₀ L₀ C : Type*}
+    [CommRing k₀] [CommRing L₀] [Algebra k₀ L₀] [CommRing C] [Algebra k₀ C] [Algebra L₀ K]
+    (f : L₀ ⊗[k₀] C → H) (hf_add : ∀ x y, f (x + y) = f x + f y)
+    (hf : ∀ (c : L₀) (m : C), f (c ⊗ₜ[k₀] m) = algebraMap L₀ K c • f (1 ⊗ₜ[k₀] m))
+    (P : H → Prop)
+    (hadd : ∀ {x y : H}, P x → P y → P (x + y))
+    (hsmul : ∀ (c : L₀) {x : H}, P x → P (algebraMap L₀ K c • x))
+    (hm : ∀ m : C, P (f (1 ⊗ₜ[k₀] m))) (t : L₀ ⊗[k₀] C) :
+    P (f t) := by
+  refine TensorProduct.inductionOn t (fun c m ↦ ?_) fun x y hx hy ↦ ?_
+  · rw [hf]; exact hsmul c (hm m)
+  · rw [hf_add]; exact hadd hx hy
 
 /-- Membership in `M.subalgebraPoints B` reduces to an `(S.integer K)`-algebra generating
 family. -/
@@ -355,14 +377,19 @@ theorem mem_localPoints_ofBaseRing_iff (S : Set (HeightOneSpectrum R))
   · simpa only [toGenericFiber_ofBaseRingCoordinateEquiv_symm_tmul, Subalgebra.coe_one] using
       h ((ofBaseRingCoordinateEquiv S C₀ e).symm (1 ⊗ₜ[R] m))
   · rw [← (ofBaseRingCoordinateEquiv S C₀ e).symm_apply_apply t]
-    refine TensorProduct.inductionOn (ofBaseRingCoordinateEquiv S C₀ e t)
-      (fun c m ↦ ?_) fun _ _ hx hy ↦ by rw [map_add, map_add, map_add]; exact add_mem hx hy
-    rw [toGenericFiber_ofBaseRingCoordinateEquiv_symm_tmul,
-      show (c : K) ⊗ₜ[R] m = (c : K) • (1 ⊗ₜ[R] m) by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one],
-      map_smul, map_smul, Algebra.smul_def]
-    exact mul_mem ((v.algebraMap_mem_adicCompletionIntegers_iff (c : K)).mpr (c.property v hv))
-      (h m)
+    refine induction_tensorProduct_ofConv (K := K) (H := H)
+      (fun x ↦ (ofBaseRing S C₀ e).toGenericFiber ((ofBaseRingCoordinateEquiv S C₀ e).symm x))
+      (fun x y ↦ by simp only [map_add])
+      (fun c m ↦ by
+        simp only [toGenericFiber_ofBaseRingCoordinateEquiv_symm_tmul, Subalgebra.coe_one,
+          Subalgebra.algebraMap_apply]
+        rw [← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one])
+      (fun x ↦ g.ofConv x ∈ v.adicCompletionIntegers K)
+      (fun hx hy ↦ by rw [map_add]; exact add_mem hx hy)
+      (fun c _ hx ↦ by
+        rw [map_smul, Algebra.smul_def]
+        exact mul_mem ((v.algebraMap_mem_adicCompletionIntegers_iff _).mpr (c.property v hv)) hx)
+      (fun m ↦ by simpa using h m) _
 
 /-- `M.localPoints v hv` is an open subgroup of `AdelicPoints.LocalPoints R K H v`. -/
 theorem isOpen_localPoints (M : IntegralModel R K H S) (v : HeightOneSpectrum R) (hv : v ∉ S) :
@@ -539,14 +566,20 @@ theorem subalgebraPoints_enlarge (M : IntegralModel R K H S) (hSS' : S ⊆ S')
     rw [M.toGenericFiber_enlargeCoordinateEquiv_symm_tmul hSS', Subalgebra.coe_one, one_smul] at hm
     simpa only [← SetLike.mem_coe, hBB'] using hm
   · rw [← (M.enlargeCoordinateEquiv hSS').symm_apply_apply t]
-    exact TensorProduct.inductionOn (M.enlargeCoordinateEquiv hSS' t)
+    refine induction_tensorProduct_ofConv (K := K) (H := H)
+      (fun x ↦ (M.enlarge hSS').toGenericFiber ((M.enlargeCoordinateEquiv hSS').symm x))
+      (fun x y ↦ by simp only [map_add])
       (fun c m ↦ by
-        rw [M.toGenericFiber_enlargeCoordinateEquiv_symm_tmul hSS', map_smul, Algebra.smul_def]
-        have hc : algebraMap K A (c : K) ∈ B' := algebraMap_coe_mem B' c
-        have hm : g.ofConv (M.toGenericFiber m) ∈ B' := by
-          simpa only [← SetLike.mem_coe, ← hBB'] using h m
-        exact B'.mul_mem hc hm)
-      fun _ _ hx hy ↦ by rw [map_add, map_add, map_add]; exact B'.add_mem hx hy
+        simp only [M.toGenericFiber_enlargeCoordinateEquiv_symm_tmul hSS', Subalgebra.coe_one,
+          one_smul, Subalgebra.algebraMap_apply])
+      (fun x ↦ g.ofConv x ∈ B')
+      (fun hx hy ↦ by rw [map_add]; exact B'.add_mem hx hy)
+      (fun c _ hx ↦ by
+        rw [map_smul, Algebra.smul_def]
+        exact B'.mul_mem (algebraMap_coe_mem B' c) hx)
+      (fun m ↦ by
+        simpa only [M.toGenericFiber_enlargeCoordinateEquiv_symm_tmul hSS', Subalgebra.coe_one,
+          one_smul, ← SetLike.mem_coe, ← hBB'] using h m) _
 
 /-- Enlarging `S` to `S'` leaves `localPoints` unchanged at every place `v ∉ S'`. -/
 @[simp]
@@ -576,15 +609,25 @@ theorem eventually_localPoints_ofConv_mem {S : Set (HeightOneSpectrum R)}
     (M : IntegralModel R K H S) (h : H) :
     ∀ᶠ v in cofinite, ∀ (hv : v ∉ S), ∀ g ∈ M.localPoints v hv,
       g.ofConv h ∈ v.adicCompletionIntegers K := by
-  suffices ∀ t : K ⊗[S.integer K] M.coordinate, ∀ᶠ v in cofinite, ∀ (hv : v ∉ S),
-      ∀ g ∈ M.localPoints v hv, g.ofConv (M.baseChangeEquiv t) ∈ v.adicCompletionIntegers K by
-    simpa only [M.baseChangeEquiv.apply_symm_apply] using this (M.baseChangeEquiv.symm h)
-  intro t; refine TensorProduct.inductionOn t (fun c m ↦ ?_) (fun _ _ hx hy ↦ ?_)
-  · filter_upwards [(algebraMap K (FiniteAdeleRing R K) c).property] with v hc hv g hg
-    rw [M.baseChangeEquiv_tmul, map_smul, Algebra.smul_def]
-    exact mul_mem hc ((M.mem_localPoints_iff hv).mp hg m)
-  · filter_upwards [hx, hy] with v hvx hvy hv g hg
-    rw [map_add, map_add]; exact add_mem (hvx hv g hg) (hvy hv g hg)
+  rw [← M.baseChangeEquiv.apply_symm_apply h]
+  refine induction_tensorProduct_ofConv (K := K) (H := H)
+    (fun x ↦ M.baseChangeEquiv x)
+    (fun x y ↦ by simp only [map_add])
+    (fun c m ↦ by
+      rw [M.baseChangeEquiv_tmul, M.baseChangeEquiv_tmul, one_smul, Algebra.algebraMap_self,
+        RingHom.id_apply])
+    (fun x ↦ ∀ᶠ v in cofinite, ∀ (hv : v ∉ S), ∀ g ∈ M.localPoints v hv,
+      g.ofConv x ∈ v.adicCompletionIntegers K)
+    (fun hx hy ↦ by
+      filter_upwards [hx, hy] with v hvx hvy hv g hg
+      rw [map_add]; exact add_mem (hvx hv g hg) (hvy hv g hg))
+    (fun c _ hx ↦ by
+      filter_upwards [(algebraMap K (FiniteAdeleRing R K) c).property, hx] with v hc hxv hv g hg
+      rw [map_smul, Algebra.smul_def]; exact mul_mem hc (hxv hv g hg))
+    (fun m ↦ Filter.Eventually.of_forall fun v hv g hg ↦ by
+      rw [M.baseChangeEquiv_tmul, one_smul]
+      exact (M.mem_localPoints_iff hv).mp hg m)
+    (M.baseChangeEquiv.symm h)
 
 /-- When `S` is finite, for every `h : H`, eventually every `g ∈ M.level v` maps `h` into `𝒪_v`. -/
 theorem eventually_level_ofConv_mem {S : Set (HeightOneSpectrum R)}
@@ -613,7 +656,7 @@ theorem level_eventuallyEq {S₁ S₂ : Set (HeightOneSpectrum R)}
   exact le_antisymm h₁₂ h₂₁
 
 /-- Canonical `S`-integral model of `Spec K`, with coordinate ring `S.integer K`. -/
-@[expose] noncomputable def trivial (R K : Type*) [CommRing R] [IsDedekindDomain R] [Field K]
+noncomputable def trivial (R K : Type*) [CommRing R] [IsDedekindDomain R] [Field K]
     [Algebra R K] [IsFractionRing R K] (S : Set (HeightOneSpectrum R)) :
     IntegralModel R K K S where
   coordinate := _root_.CommHopfAlgCat.of (S.integer K) (S.integer K)
@@ -622,45 +665,57 @@ theorem level_eventuallyEq {S₁ S₂ : Set (HeightOneSpectrum R)}
 
 /-- Canonical `(S.integer K)`-algebra equivalence identifying `(trivial R K S).coordinate` with
 `S.integer K`. -/
-@[expose] noncomputable def trivialCoordinateEquiv (R K : Type*) [CommRing R] [IsDedekindDomain R]
+noncomputable def trivialCoordinateEquiv (R K : Type*) [CommRing R] [IsDedekindDomain R]
     [Field K] [Algebra R K] [IsFractionRing R K] (S : Set (HeightOneSpectrum R)) :
     (trivial R K S).coordinate ≃ₐ[S.integer K] S.integer K :=
   AlgEquiv.refl
+
+/-- Action of `(trivial R K S).baseChangeEquiv` on a pure tensor. -/
+@[simp]
+theorem trivial_baseChangeEquiv_tmul (c : K) (m : (trivial R K S).coordinate) :
+    (trivial R K S).baseChangeEquiv (c ⊗ₜ[S.integer K] m) =
+      Algebra.TensorProduct.rid (S.integer K) K K
+        (c ⊗ₜ[S.integer K] trivialCoordinateEquiv R K S m) := (rfl)
 
 /-- `(trivial R K S).toGenericFiber` sends `m` to `(trivialCoordinateEquiv R K S m : K)`. -/
 @[simp]
 theorem trivial_toGenericFiber (x : (trivial R K S).coordinate) :
     (trivial R K S).toGenericFiber x = (trivialCoordinateEquiv R K S x : K) := by
-  have h₁ : (trivial R K S).toGenericFiber x =
-      Algebra.TensorProduct.rid (S.integer K) K K
-        ((1 : K) ⊗ₜ[S.integer K] trivialCoordinateEquiv R K S x) := rfl
-  exact h₁.trans <|
-    (Algebra.TensorProduct.rid_tmul K (trivialCoordinateEquiv R K S x) (1 : K)).trans <| by
-      rw [Algebra.smul_def, mul_one]
-      rfl
+  rw [toGenericFiber_apply, trivial_baseChangeEquiv_tmul, Algebra.TensorProduct.rid_tmul,
+    Subalgebra.smul_def, smul_eq_mul, mul_one]
+
+/-- Every `A`-valued `K`-point of `Spec K` evaluates `(trivial R K S).toGenericFiber m` via
+`algebraMap K A`. -/
+theorem trivial_ofConv_toGenericFiber {A : Type w} [CommRing A] [Algebra K A]
+    (g : WithConv (K →ₐ[K] A)) (m : (trivial R K S).coordinate) :
+    g.ofConv ((trivial R K S).toGenericFiber m) =
+      algebraMap K A (trivialCoordinateEquiv R K S m : K) := by
+  have hcomm := g.ofConv.commutes (trivialCoordinateEquiv R K S m : K)
+  rw [Algebra.algebraMap_self, RingHom.id_apply] at hcomm
+  rw [trivial_toGenericFiber, hcomm]
+
+/-- Every `A`-valued `K`-point of `Spec K` lies in `(trivial R K S).subalgebraPoints B` for any
+`(S.integer K)`-subalgebra `B` of `A`. -/
+@[simp]
+theorem subalgebraPoints_trivial {A : Type w} [CommRing A] [Algebra K A]
+    (B : Subalgebra (S.integer K) A) :
+    (trivial R K S).subalgebraPoints B = ⊤ := by
+  rw [eq_top_iff]; intro g _
+  rw [mem_subalgebraPoints_iff]; intro m
+  rw [trivial_ofConv_toGenericFiber]
+  exact algebraMap_coe_mem B _
 
 /-- Every `v`-adic point of `Spec K` is integral at `v ∉ S`. -/
 @[simp]
 theorem localPoints_trivial (v : HeightOneSpectrum R) (hv : v ∉ S) :
-    (trivial R K S).localPoints v hv = ⊤ := by
-  rw [eq_top_iff]; intro g _
-  rw [mem_localPoints_iff]; intro m
-  have hcomm := g.ofConv.commutes (trivialCoordinateEquiv R K S m : K)
-  rw [Algebra.algebraMap_self, RingHom.id_apply] at hcomm
-  rw [trivial_toGenericFiber, hcomm]
-  exact (v.algebraMap_mem_adicCompletionIntegers_iff _).mpr
-    ((trivialCoordinateEquiv R K S m).property v hv)
+    (trivial R K S).localPoints v hv = ⊤ :=
+  subalgebraPoints_trivial _
 
 /-- Every `K`-rational point of `Spec K` is `T`-integral for any `T ⊇ S`. -/
 @[simp]
 theorem globalPoints_trivial (T : Set (HeightOneSpectrum R)) (hST : S ⊆ T) :
-    (trivial R K S).globalPoints T hST = ⊤ := by
-  rw [eq_top_iff]; intro g _
-  rw [mem_globalPoints_iff]; intro m
-  have hcomm := g.ofConv.commutes (trivialCoordinateEquiv R K S m : K)
-  rw [Algebra.algebraMap_self, RingHom.id_apply] at hcomm
-  rw [trivial_toGenericFiber, hcomm]
-  exact Set.integer_mono K hST (trivialCoordinateEquiv R K S m).property
+    (trivial R K S).globalPoints T hST = ⊤ :=
+  subalgebraPoints_trivial _
 
 end IntegralModel
 

@@ -13,7 +13,7 @@ public import TauCeti.Topology.Algebra.PointTopology.Group
 
 For a `k`-bialgebra `H` and commutative topological `k`-algebras,
 `TauCeti.PointTopology.prodContinuousMulEquiv` and `TauCeti.PointTopology.piContinuousMulEquiv`
-show that the algebraic convolution equivalences `AlgHom.prodPointsMulEquiv` and
+show that the algebraic convolution equivalences `AlgHom.prodValueMulEquiv` and
 `AlgHom.piValueMulEquiv` are multiplicative homeomorphisms (`≃ₜ*`) for the point topology, with
 coordinates given by post-composition with the coefficient projections (and isomorphisms of
 topological monoids, or of topological groups when `H` is a Hopf algebra, whenever the coefficient
@@ -54,30 +54,30 @@ semirings, this is an isomorphism of topological monoids (and of topological gro
 Hopf algebra). -/
 noncomputable def prodContinuousMulEquiv :
     WithConv (H →ₐ[k] R₁ × R₂) ≃ₜ* WithConv (H →ₐ[k] R₁) × WithConv (H →ₐ[k] R₂) where
-  toMulEquiv := AlgHom.prodPointsMulEquiv
+  toMulEquiv := AlgHom.prodValueMulEquiv
   continuous_toFun :=
     ((AlgHom.continuous_mapValue continuous_fst).prodMk
       (AlgHom.continuous_mapValue continuous_snd)).congr fun x ↦
-      Prod.ext (AlgHom.prodPointsMulEquiv_apply_fst x).symm
-        (AlgHom.prodPointsMulEquiv_apply_snd x).symm
+      Prod.ext (AlgHom.prodValueMulEquiv_apply_fst x).symm
+        (AlgHom.prodValueMulEquiv_apply_snd x).symm
   continuous_invFun := continuous_withConv_iff.2 fun h ↦
     (((continuous_eval_ofConv h).comp continuous_fst).prodMk
       ((continuous_eval_ofConv h).comp continuous_snd)).congr fun p ↦ by
         simp only [Function.comp_apply, MulEquiv.invFun_eq_symm,
-          AlgHom.prodPointsMulEquiv_symm_apply_ofConv]
+          AlgHom.prodValueMulEquiv_symm_apply_ofConv]
 
 @[simp]
 theorem prodContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] R₁ × R₂)) :
     prodContinuousMulEquiv k H R₁ R₂ x =
       (AlgHom.mapValue (AlgHom.fst k R₁ R₂) x, AlgHom.mapValue (AlgHom.snd k R₁ R₂) x) :=
-  Prod.ext (AlgHom.prodPointsMulEquiv_apply_fst x) (AlgHom.prodPointsMulEquiv_apply_snd x)
+  Prod.ext (AlgHom.prodValueMulEquiv_apply_fst x) (AlgHom.prodValueMulEquiv_apply_snd x)
 
 /-- The point paired from `(x, y)` takes the value `(x h, y h)` at `h`. -/
 @[simp]
 theorem prodContinuousMulEquiv_symm_apply_apply
     (p : WithConv (H →ₐ[k] R₁) × WithConv (H →ₐ[k] R₂)) (h : H) :
     (prodContinuousMulEquiv k H R₁ R₂).symm p h = (p.1 h, p.2 h) :=
-  AlgHom.prodPointsMulEquiv_symm_apply_ofConv p h
+  AlgHom.prodValueMulEquiv_symm_apply_ofConv p h
 
 end BialgebraProd
 
@@ -102,6 +102,13 @@ noncomputable def piContinuousMulEquiv :
       funext i
       simp only [Function.comp_apply, MulEquiv.invFun_eq_symm, AlgHom.piValueMulEquiv_symm_apply]
 
+/-- The underlying `MulEquiv` of `piContinuousMulEquiv k H R` is `AlgHom.piValueMulEquiv`. -/
+@[simp]
+theorem coe_piContinuousMulEquiv :
+    (piContinuousMulEquiv k H R :
+      WithConv (H →ₐ[k] ∀ i, R i) ≃* ∀ i, WithConv (H →ₐ[k] R i)) =
+      AlgHom.piValueMulEquiv := (rfl)
+
 variable {k H R}
 
 /-- Evaluating `piContinuousMulEquiv k H R x` at `i` applies `AlgHom.mapValue`. -/
@@ -109,10 +116,8 @@ variable {k H R}
 theorem piContinuousMulEquiv_apply (x : WithConv (H →ₐ[k] ∀ i, R i)) (i : ι) :
     piContinuousMulEquiv k H R x i = AlgHom.mapValue (Pi.evalAlgHom k R i) x :=
   WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
-    have hcoe : (piContinuousMulEquiv k H R x i).ofConv h =
-        (AlgHom.piValueMulEquiv x i).ofConv h := rfl
-    rw [hcoe, AlgHom.piValueMulEquiv_apply]
-    simp
+    rw [piContinuousMulEquiv, ContinuousMulEquiv.coe_mk, AlgHom.piValueMulEquiv_apply]
+    simp [AlgHom.mapValue_apply]
 
 /-- Evaluating `(piContinuousMulEquiv k H R).symm f` on `h : H` at `i` gives `(f i).ofConv h`. -/
 @[simp]

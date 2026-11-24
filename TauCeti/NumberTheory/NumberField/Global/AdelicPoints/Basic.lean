@@ -481,13 +481,12 @@ noncomputable def piInfiniteContinuousMulEquiv (K H : Type*) [Field K] [Semiring
 theorem piInfiniteContinuousMulEquiv_apply {K H : Type*} [Field K] [Semiring H] [Bialgebra K H]
     (x : InfinitePoints K H) (w : InfinitePlace K) :
     piInfiniteContinuousMulEquiv K H x w = infiniteLocalProjection K H w x := by
-  refine WithConv.ofConv_injective <| AlgHom.ext fun h ↦ ?_
-  have hpi := congrArg (fun p ↦ p.ofConv h)
-    (PointTopology.piContinuousMulEquiv_apply
-      (R := fun w : InfinitePlace K ↦ w.Completion) x w)
-  rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
-    Pi.evalAlgHom_apply (R := K) (A := fun w : InfinitePlace K ↦ w.Completion)] at hpi
-  simpa only [infiniteLocalProjection_apply_apply, piInfiniteContinuousMulEquiv] using hpi
+  ext h
+  rw [piInfiniteContinuousMulEquiv,
+    PointTopology.piContinuousMulEquiv_apply (R := fun w : InfinitePlace K ↦ w.Completion)]
+  simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+    infiniteLocalProjection_apply_apply]
+  exact Pi.evalAlgHom_apply ..
 
 /-- Evaluating `(piInfiniteContinuousMulEquiv K H).symm f` on `h : H` at `w` gives
 `(f w).ofConv h`. -/

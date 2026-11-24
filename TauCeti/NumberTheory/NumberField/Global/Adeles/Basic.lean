@@ -195,13 +195,15 @@ instance InfiniteAdeleRing.instNontrivialOfNonempty [Nonempty (InfinitePlace K)]
 
 /-- The adele ring is nontrivial when its infinite factor is nontrivial (for instance over any
 number field). -/
-instance AdeleRing.instNontrivialOfInfinite [Nontrivial (InfiniteAdeleRing K)] :
+instance AdeleRing.instNontrivialOfNontrivialInfiniteAdeleRing
+    [Nontrivial (InfiniteAdeleRing K)] :
     Nontrivial (AdeleRing R K) :=
   inferInstanceAs <| Nontrivial (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
 
 /-- The adele ring is nontrivial when its finite factor is nontrivial (for instance whenever `R`
 is not a field). -/
-instance AdeleRing.instNontrivialOfFinite [Nontrivial (IsDedekindDomain.FiniteAdeleRing R K)] :
+instance AdeleRing.instNontrivialOfNontrivialFiniteAdeleRing
+    [Nontrivial (IsDedekindDomain.FiniteAdeleRing R K)] :
     Nontrivial (AdeleRing R K) :=
   inferInstanceAs <| Nontrivial (InfiniteAdeleRing K × IsDedekindDomain.FiniteAdeleRing R K)
 

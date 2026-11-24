@@ -293,27 +293,24 @@ theorem map_sIntegralAdelicPoints (M : IntegralModel R K H S) (hS : S.Finite)
           AdelicPoints.FiniteAdelicPoints R K H ≃* RestrictedProductGroup M.level) :
           AdelicPoints.FiniteAdelicPoints R K H →* RestrictedProductGroup M.level) =
       integralSubgroupOf M.level (fun v ↦ if v ∈ T then ⊤ else M.level v) := by
-  ext y; rw [Subgroup.mem_map, mem_integralSubgroupOf]
-  refine ⟨?_, fun hy ↦ ⟨(M.finiteAdelicPointsContinuousMulEquiv hS).symm y, ?_,
-    (M.finiteAdelicPointsContinuousMulEquiv hS).apply_symm_apply y⟩⟩
-  · rintro ⟨x, hx, rfl⟩ v; by_cases hv : v ∈ T
+  ext y
+  change y ∈ (M.sIntegralAdelicPoints T hST).map
+      (M.finiteAdelicPointsContinuousMulEquiv hS :
+        AdelicPoints.FiniteAdelicPoints R K H ≃* RestrictedProductGroup M.level).toMonoidHom ↔ _
+  rw [Subgroup.mem_map_equiv, mem_integralSubgroupOf,
+    M.mem_sIntegralAdelicPoints_iff_forall_localPoints hST]
+  have hy (v : HeightOneSpectrum R) :
+      AdelicPoints.finiteLocalProjection R K H v
+        ((M.finiteAdelicPointsContinuousMulEquiv hS :
+          AdelicPoints.FiniteAdelicPoints R K H ≃* RestrictedProductGroup M.level).symm y) =
+        y v :=
+    congrArg (· v) ((M.finiteAdelicPointsContinuousMulEquiv hS).apply_symm_apply y)
+  simp only [hy]
+  refine ⟨fun h v ↦ ?_, fun h v hv ↦ ?_⟩
+  · by_cases hv : v ∈ T
     · simp [hv]
-    · have hx' :
-          (((M.finiteAdelicPointsContinuousMulEquiv hS :
-              AdelicPoints.FiniteAdelicPoints R K H ≃* RestrictedProductGroup M.level) :
-              AdelicPoints.FiniteAdelicPoints R K H →* RestrictedProductGroup M.level) x) v =
-            AdelicPoints.finiteLocalProjection R K H v x :=
-        M.finiteAdelicPointsContinuousMulEquiv_apply hS x v
-      simp only [hv, ↓reduceIte, M.level_of_notMem (fun hvS ↦ hv (hST hvS)), hx']
-      exact (M.mem_sIntegralAdelicPoints_iff_forall_localPoints hST).mp hx v hv
-  · rw [M.mem_sIntegralAdelicPoints_iff_forall_localPoints hST]; intro v hv
-    have hproj : AdelicPoints.finiteLocalProjection R K H v
-        ((M.finiteAdelicPointsContinuousMulEquiv hS).symm y) = y v := by
-      rw [← M.finiteAdelicPointsContinuousMulEquiv_apply hS]
-      exact DFunLike.congr_fun ((M.finiteAdelicPointsContinuousMulEquiv hS).apply_symm_apply y) v
-    have hv' := hy v
-    simp only [hv, ↓reduceIte, M.level_of_notMem (fun hvS ↦ hv (hST hvS))] at hv'
-    rwa [hproj]
+    · simp [hv, M.level_of_notMem (fun hvS ↦ hv (hST hvS)), h v hv]
+  · simpa [hv, M.level_of_notMem (fun hvS ↦ hv (hST hvS))] using h v
 
 /-- `M.finiteAdelicPointsContinuousMulEquiv hS` maps `M.sIntegralAdelicPoints S Set.Subset.rfl`
 onto `integralSubgroup M.level`. -/
