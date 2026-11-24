@@ -151,14 +151,8 @@ theorem banachIsotypicProjector_comp_of_not_equiv (σ : ContRepresentation k G W
   let ρ := π.subrepresentation S.toSubmodule fun g _ hu ↦ S.apply_mem_toSubmodule g hu
   have hρ : Continuous ρ := continuous_subrepresentation_of_finiteDimensional hπ
   let w := isotypicProjector ρ hρ τ hτ ⟨v, hvS⟩
-  have hw : ρ.toRepresentation.asModuleEquiv.symm w ∈
-      isotypicComponent k[G] ρ.toRepresentation.asModule τ.toRepresentation.asModule := by
-    rw [← range_isotypicProjector ρ hρ τ hτ hτirr]
-    exact (Subrepresentation.mem_asSubmodule_iff
-      (σ := (isotypicProjector ρ hρ τ hτ).toIntertwiningMap.range)).mpr
-        ((Representation.IntertwiningMap.mem_range _ _ _ _).mpr ⟨_, rfl⟩)
   have h0 := isotypicProjector_apply_of_mem_isotypicComponent_of_not_equiv ρ hρ σ hσ hσirr τ
-    hτirr hne w hw
+    hτirr hne w (isotypicProjector_apply_mem_isotypicComponent ρ hρ τ hτ hτirr _)
   simp only [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
     ContIntertwiningMap.toContinuousLinearMap_apply, ContIntertwiningMap.toContinuousLinearMap_zero,
     zero_apply]

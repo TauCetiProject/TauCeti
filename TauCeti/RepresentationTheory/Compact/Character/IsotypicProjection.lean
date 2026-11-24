@@ -46,6 +46,8 @@ Mathlib's `isotypicComponent` of type `sigma`.
   vanishes on the isotypic component of every irreducible of another isomorphism type.
 * `ContRepresentation.range_isotypicProjector`: the range of the projector is precisely Mathlib's
   `isotypicComponent`.
+* `ContRepresentation.isotypicProjector_apply_mem_isotypicComponent`: every output of the
+  projector lies in that isotypic component.
 * `ContRepresentation.isotypicProjector_idempotent`: the projector is idempotent.
 
 ## Implementation notes
@@ -423,6 +425,17 @@ theorem range_isotypicProjector
       (⟨x, hx⟩ : tau.toSubmodule)
     exact ⟨x, happly⟩
 
+/-- Every output of the character projector lies in the selected isotypic component. -/
+theorem isotypicProjector_apply_mem_isotypicComponent
+    (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
+    (hirr : Representation.IsIrreducible sigma.toRepresentation) (v : V) :
+    rho.toRepresentation.asModuleEquiv.symm (isotypicProjector rho hrho sigma hsigma v) ∈
+      isotypicComponent k[G] rho.toRepresentation.asModule sigma.toRepresentation.asModule := by
+  rw [← range_isotypicProjector rho hrho sigma hsigma hirr]
+  exact (Subrepresentation.mem_asSubmodule_iff
+    (σ := (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap.range)).mpr
+      ((Representation.IntertwiningMap.mem_range _ _ _ _).mpr ⟨v, rfl⟩)
+
 /-- A vector belongs to the selected isotypic component exactly when the character projector fixes
 it. -/
 @[simp]
@@ -434,13 +447,8 @@ theorem mem_isotypicComponent_iff_isotypicProjector_apply
   constructor
   · exact isotypicProjector_apply_of_mem_isotypicComponent rho hrho sigma hsigma hirr v
   · intro hfix
-    have hmem : v ∈ (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap.range :=
-      (Representation.IntertwiningMap.mem_range _ _ _ _).mpr ⟨v, hfix⟩
-    have hrange : rho.toRepresentation.asModuleEquiv.symm v ∈
-        (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap.range.asSubmodule :=
-      (Subrepresentation.mem_asSubmodule_iff
-        (σ := (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap.range)).mpr hmem
-    rwa [range_isotypicProjector rho hrho sigma hsigma hirr] at hrange
+    rw [← hfix]
+    exact isotypicProjector_apply_mem_isotypicComponent rho hrho sigma hsigma hirr v
 
 /-- The character isotypic projector is idempotent. -/
 @[simp]
@@ -452,16 +460,8 @@ theorem isotypicProjector_idempotent
   ext v
   simp only [ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
     ContIntertwiningMap.toContinuousLinearMap_apply]
-  apply isotypicProjector_apply_of_mem_isotypicComponent rho hrho sigma hsigma hirr
-  have hmem : isotypicProjector rho hrho sigma hsigma v ∈
-      (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap.range :=
-    (Representation.IntertwiningMap.mem_range _ _ _ _).mpr ⟨v, rfl⟩
-  have hrange : rho.toRepresentation.asModuleEquiv.symm
-      (isotypicProjector rho hrho sigma hsigma v) ∈
-      (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap.range.asSubmodule :=
-    (Subrepresentation.mem_asSubmodule_iff
-      (σ := (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap.range)).mpr hmem
-  rwa [range_isotypicProjector rho hrho sigma hsigma hirr] at hrange
+  exact isotypicProjector_apply_of_mem_isotypicComponent rho hrho sigma hsigma hirr _
+    (isotypicProjector_apply_mem_isotypicComponent rho hrho sigma hsigma hirr v)
 
 end Normed
 
