@@ -93,12 +93,13 @@ theorem kunnethSpectralSequenceFirstPageXIso_hom_naturality (p k : ℕ) :
 /-- The morphism of Künneth spectral sequences in the first variable on the first page, under the
 identifications `HomologicalComplex.kunnethFirstPageXIsoTorSum` with the terms of the complexes
 `HomologicalComplex.kunnethTorSumComplex`: it is the morphism of complexes
-`HomologicalComplex.kunnethTorSumComplexMap f L q` induced by the maps `Hᵢ(f)`. -/
+`HomologicalComplex.kunnethTorSumComplexMap` induced by the maps `Hᵢ(f)`. -/
 @[reassoc]
 theorem kunnethFirstPageXIsoTorSum_hom_naturality (p q : ℕ) :
     ((kunnethSpectralSequenceMapLeft f L).hom 2).f (-(q : ℤ) - 2 * p, p) ≫
         (kunnethFirstPageXIsoTorSum K' L p q).hom =
-      (kunnethFirstPageXIsoTorSum K L p q).hom ≫ (kunnethTorSumComplexMap f L q).f p := by
+      (kunnethFirstPageXIsoTorSum K L p q).hom ≫
+        (kunnethTorSumComplexMap L (fun i ↦ homologyMap f i) q).f p := by
   rw [kunnethFirstPageXIsoTorSum_eq, kunnethFirstPageXIsoTorSum_eq, Iso.trans_hom, Iso.trans_hom,
     kunnethSpectralSequenceFirstPageXIso_hom_naturality_assoc,
     tensorObjIsoKunnethTorSumComplexX_hom_naturality, Category.assoc]
@@ -114,17 +115,29 @@ theorem kunnethSpectralSequenceSecondPageXIso_hom_naturality (p q : ℕ) :
       (kunnethSpectralSequenceSecondPageXIso K L p q).hom ≫
         GradedObject.mapBifunctorMapMap (Tor (ModuleCat.{u} R) p) (fun x ↦ x.1 + x.2)
           (fun i ↦ homologyMap f i) (𝟙 fun j ↦ L.homology j) q := by
+  -- the square of cycles: the first-page morphism, on cycles, followed by the lift to the cycles
+  -- of `kunnethTorSumComplex K' L q`, is the lift to the cycles of `kunnethTorSumComplex K L q`
+  -- followed by the map induced by `kunnethTorSumComplexMap`
+  have hcycles : cyclesMap ((kunnethSpectralSequenceMapLeft f L).hom 2) (-(q : ℤ) - 2 * p, p) ≫
+      (kunnethTorSumComplex K' L q).liftCycles
+        (((kunnethSpectralSequence K' L).page 2).iCycles (-(q : ℤ) - 2 * p, p) ≫
+          (kunnethFirstPageXIsoTorSum K' L p q).hom) (p - 1) (by cases p <;> simp)
+        (by rw [Category.assoc, iCycles_kunnethFirstPageXIsoTorSum_hom_d]) =
+      (kunnethTorSumComplex K L q).liftCycles
+        (((kunnethSpectralSequence K L).page 2).iCycles (-(q : ℤ) - 2 * p, p) ≫
+          (kunnethFirstPageXIsoTorSum K L p q).hom) (p - 1) (by cases p <;> simp)
+        (by rw [Category.assoc, iCycles_kunnethFirstPageXIsoTorSum_hom_d]) ≫
+      cyclesMap (kunnethTorSumComplexMap L (fun i ↦ homologyMap f i) q) p := by
+    rw [comp_liftCycles, liftCycles_comp_cyclesMap]
+    congr 1
+    rw [cyclesMap_i_assoc, kunnethFirstPageXIsoTorSum_hom_naturality, Category.assoc]
   rw [← cancel_epi (((kunnethSpectralSequence K L).page 2).homologyπ (-(q : ℤ) - 2 * p, p) ≫
     ((kunnethSpectralSequence K L).iso 2 3 (-(q : ℤ) - 2 * p, p)).hom)]
   rw [Category.assoc, Category.assoc,
     reassoc_of% (homologyπ_kunnethSpectralSequenceSecondPageXIso_hom K L p q),
     ← (kunnethSpectralSequenceMapLeft f L).comm_assoc 2 3, homologyπ_naturality_assoc,
-    homologyπ_kunnethSpectralSequenceSecondPageXIso_hom,
+    homologyπ_kunnethSpectralSequenceSecondPageXIso_hom, reassoc_of% hcycles,
     ← kunnethTorSumComplexHomologyIso_hom_naturality, homologyπ_naturality_assoc]
-  refine (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) ?_).trans (Category.assoc _ _ _))
-  rw [← cancel_mono ((kunnethTorSumComplex K' L q).iCycles p)]
-  simp only [Category.assoc, liftCycles_i, liftCycles_i_assoc, cyclesMap_i, cyclesMap_i_assoc,
-    kunnethFirstPageXIsoTorSum_hom_naturality]
 
 section Right
 

@@ -42,7 +42,8 @@ the map induced in homology by the components `φ.f p` on the columns
   `HomologicalComplex₂.rowFiltrationSpectralSequenceMap`: the induced morphisms, compatible
   with identities and composition, and their column versions
   `HomologicalComplex₂.columnFiltrationSpectralObjectMap`,
-  `HomologicalComplex₂.columnFiltrationSpectralSequenceMap`.
+  `HomologicalComplex₂.columnFiltrationSpectralSequenceMap`, the latter described by
+  `HomologicalComplex₂.columnFiltrationSpectralSequenceMap_eq`.
 * `HomologicalComplex₂.rowFiltrationSpectralObjectMap_abutment_naturality`,
   `HomologicalComplex₂.columnFiltrationSpectralObjectMap_abutment_naturality`: the induced
   morphisms on the abutments.
@@ -159,6 +160,14 @@ bicomplexes: that of the row filtrations of the flipped bicomplexes. -/
 abbrev columnFiltrationSpectralSequenceMap :
     K.columnFiltrationSpectralSequence ⟶ L.columnFiltrationSpectralSequence :=
   rowFiltrationSpectralSequenceMap ((flipFunctor C _ _).map φ)
+
+/-- The morphism of the spectral sequences of the column filtrations is that of the row
+filtrations along the morphism `K.flip ⟶ L.flip` of flipped bicomplexes induced by `φ`. -/
+lemma columnFiltrationSpectralSequenceMap_eq :
+    columnFiltrationSpectralSequenceMap φ =
+      rowFiltrationSpectralSequenceMap (K := K.flip) (L := L.flip) ((flipFunctor C _ _).map φ) :=
+  -- `(flipFunctor C _ _).obj K` is `K.flip` by definition
+  (rfl)
 
 -- The identity of `(flipFunctor C _ _).obj K` is that of `K.flip` only after unfolding
 -- `flipFunctor`, so the lemmas on the flipped bicomplexes are applied up to that unfolding.
@@ -295,13 +304,10 @@ lemma columnFiltrationSpectralSequenceFirstPageXIso_hom_naturality (p k : ℕ) :
         HomologicalComplex.homologyMap (φ.f p) k := by
   rw [columnFiltrationSpectralSequenceFirstPageXIso_eq,
     columnFiltrationSpectralSequenceFirstPageXIso_eq, Iso.trans_hom, Iso.trans_hom,
-    HomologicalComplex.homologyMapIso_hom, HomologicalComplex.homologyMapIso_hom]
-  -- `(flipFunctor C _ _).map φ` is a morphism `K.flip ⟶ L.flip` only after unfolding
-  -- `flipFunctor`, so the naturality on the flipped bicomplexes is applied up to that unfolding
-  refine (rowFiltrationSpectralSequenceFirstPageXIso_hom_naturality_assoc
-    ((flipFunctor C _ _).map φ) _ p k _ _).trans ?_
-  rw [Category.assoc, ← HomologicalComplex.homologyMap_comp,
-    ← HomologicalComplex.homologyMap_comp]
+    HomologicalComplex.homologyMapIso_hom, HomologicalComplex.homologyMapIso_hom,
+    columnFiltrationSpectralSequenceMap_eq,
+    rowFiltrationSpectralSequenceFirstPageXIso_hom_naturality_assoc, Category.assoc,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
   congr 2
   ext q
   simp

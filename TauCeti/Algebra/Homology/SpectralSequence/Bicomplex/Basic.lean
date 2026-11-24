@@ -389,6 +389,24 @@ lemma mapTotalRow_succ (s : ℕ) :
       HomologicalComplex.extendMap (mapTotalRow s (rowsSuccMap φ)) (embeddingDownNatAdd 1) :=
   (rfl)
 
+omit [HasFiniteCoproducts C] in
+/-- The identity of a bicomplex induces the identity of its rows. -/
+@[simp]
+lemma mapTotalRow_id (s : ℕ) : mapTotalRow s (𝟙 K) = 𝟙 _ := by
+  induction s generalizing K with
+  | zero => simp
+  | succ s ih => rw [mapTotalRow_succ, rowsSuccMap_id, ih, HomologicalComplex.extendMap_id]
+
+omit [HasFiniteCoproducts C] in
+/-- The morphisms of rows induced by morphisms of bicomplexes are compatible with composition. -/
+@[simp]
+lemma mapTotalRow_comp (s : ℕ) :
+    mapTotalRow s (φ ≫ ψ) = mapTotalRow s φ ≫ mapTotalRow s ψ := by
+  induction s generalizing K L M with
+  | zero => simp
+  | succ s ih =>
+    simp only [mapTotalRow_succ, rowsSuccMap_comp, ih, HomologicalComplex.extendMap_comp]
+
 /-- The inclusions of the rows `s` into the total complexes of the rows `≥ s` are natural. -/
 @[reassoc]
 lemma totalRowι_naturality (s : ℕ) :
@@ -848,10 +866,17 @@ lemma totalRowHomologyIso_hom_naturality (s k : ℕ) :
   induction s generalizing K L with
   | zero => simp
   | succ s ih =>
+    have e : ((HomologicalComplex.eval C (down ℕ) s).mapHomologicalComplex (down ℕ)).map
+        (rowsSuccMap φ) =
+        ((HomologicalComplex.eval C (down ℕ) (s + 1)).mapHomologicalComplex (down ℕ)).map φ := by
+      ext p
+      exact rowsSuccMap_f_f φ p s
+    have h := ih (rowsSuccMap φ)
+    rw [e] at h
     simp only [mapTotalRow_succ, totalRowHomologyIso_succ, Iso.trans_hom,
       HomologicalComplex.extendHomologyIso_hom_naturality_assoc, Category.assoc]
     -- The row `s` of `K.rowsSucc` is the row `s + 1` of `K` by definition.
-    exact congrArg (_ ≫ ·) (ih (rowsSuccMap φ))
+    exact congrArg (_ ≫ ·) h
 
 end MapAbelian
 
