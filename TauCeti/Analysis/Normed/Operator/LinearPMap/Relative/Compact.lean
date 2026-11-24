@@ -45,8 +45,10 @@ symmetric relatively compact perturbations preserve self-adjointness, is in
 * `LinearPMap.IsRelativelyCompact V A`: `V` is `A`-compact, and
   `LinearPMap.isRelativelyCompact_iff_exists_isCompact_of_pos`: one radius suffices.
 * `LinearPMap.isRelativelyCompact_iff_isCompactOperator_compResolvent`: the resolvent
-  characterization, and `LinearPMap.IsRelativelyCompact.exists_isCompactOperator_compResolvent`,
-  its bundled compact operator.
+  characterization, `LinearPMap.isRelativelyCompact_iff_exists_isCompactOperator`, its form with
+  a bundled compact operator, and
+  `LinearPMap.IsRelativelyCompact.exists_isCompactOperator_compResolvent`, that operator for a
+  given `A`-compact map.
 * `LinearPMap.IsRelativelyCompact.add`, `.neg`, `.sub`, `.smul`,
   `LinearPMap.isRelativelyCompact_zero`, `LinearPMap.isRelativelyCompact_neg_iff`,
   `LinearPMap.isRelativelyCompact_neg_right_iff` and
@@ -330,19 +332,39 @@ theorem isRelativelyCompact_iff_isCompactOperator_compResolvent (hz : z ∈ A.re
 
 end Characterization
 
-/-- At a point `z` of the resolvent set of `A`, an `A`-compact map `V` composed with the
-resolvent `(z I - A)⁻¹` is a compact operator `K : E →SL[σ] G`. -/
-theorem IsRelativelyCompact.exists_isCompactOperator_compResolvent [NontriviallyNormedField 𝕜₂]
-    {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] [AddCommGroup G] [TopologicalSpace G] [Module 𝕜₂ G]
-    [IsTopologicalAddGroup G] [ContinuousSMul 𝕜₂ G] {V : E →ₛₗ.[σ] G}
-    (hV : V.IsRelativelyCompact A) (hz : z ∈ A.resolventSet) :
-    ∃ K : E →SL[σ] G, IsCompactOperator K ∧
-      ∀ y, V ⟨A.resolvent z y, hV.domain_le (resolvent_mem_domain hz y)⟩ = K y := by
-  obtain ⟨h, hc⟩ := (isRelativelyCompact_iff_isCompactOperator_compResolvent hz).1 hV
-  refine ⟨.mkOfIsCompactOperator hc, ?_, fun y ↦ ?_⟩
+section Bundled
+
+variable [NontriviallyNormedField 𝕜₂] {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ] [AddCommGroup G]
+  [TopologicalSpace G] [Module 𝕜₂ G] [IsTopologicalAddGroup G] [ContinuousSMul 𝕜₂ G]
+  {V : E →ₛₗ.[σ] G}
+
+/-- **The bundled resolvent characterization of relative compactness.** At a point `z` of the
+resolvent set of `A`, the map `V` is `A`-compact exactly when `dom A ⊆ dom V` and `V` composed
+with the resolvent `(z I - A)⁻¹` is a compact operator `K : E →SL[σ] G`. -/
+theorem isRelativelyCompact_iff_exists_isCompactOperator (hz : z ∈ A.resolventSet) :
+    V.IsRelativelyCompact A ↔ ∃ h : A.domain ≤ V.domain, ∃ K : E →SL[σ] G, IsCompactOperator K ∧
+      ∀ y, V ⟨A.resolvent z y, h (resolvent_mem_domain hz y)⟩ = K y := by
+  rw [isRelativelyCompact_iff_isCompactOperator_compResolvent hz]
+  refine exists_congr fun h ↦ ⟨fun hc ↦ ⟨.mkOfIsCompactOperator hc, ?_, fun y ↦ ?_⟩, ?_⟩
   · rw [ContinuousLinearMap.coe_mkOfIsCompactOperator]
     exact hc
   · rw [ContinuousLinearMap.coe_mkOfIsCompactOperator, compResolvent_apply]
+  · rintro ⟨K, hK, hKV⟩
+    have hK' : ⇑(compResolvent h hz) = K :=
+      funext fun y ↦ (compResolvent_apply h hz y).trans (hKV y)
+    rw [hK']
+    exact hK
+
+/-- At a point `z` of the resolvent set of `A`, an `A`-compact map `V` composed with the
+resolvent `(z I - A)⁻¹` is a compact operator `K : E →SL[σ] G`. -/
+theorem IsRelativelyCompact.exists_isCompactOperator_compResolvent
+    (hV : V.IsRelativelyCompact A) (hz : z ∈ A.resolventSet) :
+    ∃ K : E →SL[σ] G, IsCompactOperator K ∧
+      ∀ y, V ⟨A.resolvent z y, hV.domain_le (resolvent_mem_domain hz y)⟩ = K y := by
+  obtain ⟨_, hK⟩ := (isRelativelyCompact_iff_exists_isCompactOperator hz).1 hV
+  exact hK
+
+end Bundled
 
 /-- **Compact resolvent difference.** If `V : E →ₗ.[𝕜] E` is `A`-compact, then at every point `z`
 of the resolvent sets of both `A` and `A + V` the difference `R_{A+V}(z) - R_A(z)` is a compact
