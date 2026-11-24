@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.SinSqWeight
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Parametric
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
@@ -87,6 +88,7 @@ public section
 noncomputable section
 
 open Set Function unitInterval
+open TauCeti (sinSqWeight sinSqWeight_def sinSqWeight_mem contDiff_sinSqWeight)
 open scoped Manifold ContDiff
 
 namespace AddCircle
@@ -243,15 +245,6 @@ private theorem deriv_interpolate_pos (hw : ∀ s, w s ∈ Icc 0 1) (hF : ContDi
   rw [hd.deriv]
   exact one_sub_add_mul_pos (hw s).1 (hw s).2 (hpos x)
 
-/-- The weight `sin (π t / 2) ^ 2`, rising analytically from `0` at `t = 0` to `1` at `t = 1`. -/
-private def sinSqWeight (t : ℝ) : ℝ := Real.sin (Real.pi * t / 2) ^ 2
-
-private theorem sinSqWeight_mem (t : ℝ) : sinSqWeight t ∈ Icc 0 1 :=
-  ⟨sq_nonneg _, Real.sin_sq_le_one _⟩
-
-private theorem contDiff_sinSqWeight : ContDiff ℝ n sinSqWeight :=
-  (Real.contDiff_sin.comp ((contDiff_const.mul contDiff_id).div_const 2)).pow 2
-
 variable (hF : ContDiff ℝ n F) (hn : n ≠ 0) (hper : ∀ x, F (x + T) = F x + T)
   (hpos : ∀ x, 0 < deriv F x)
 
@@ -267,14 +260,16 @@ def diffeotopyOfLift : TauCeti.Diffeotopy 𝓘(ℝ) n (AddCircle T) where
   fst_apply := fst_prodDiffeomorphOfLift _ _ _ _ _ _
   snd_apply_zero' θ := by
     induction θ using QuotientAddGroup.induction_on with
-    | H x => simp [interpolate, sinSqWeight]
+    | H x => simp [interpolate]
 
 /-- At time `t` the diffeotopy `diffeotopyOfLift` is the circle map with lift
 `x ↦ x + sin (π t / 2) ^ 2 (F x - x)`. -/
 @[simp]
 theorem diffeotopyOfLift_apply_coe (t : I) (x : ℝ) :
     diffeotopyOfLift hF hn hper hpos (t, (x : AddCircle T)) =
-      ((x + Real.sin (Real.pi * t / 2) ^ 2 * (F x - x) : ℝ) : AddCircle T) := (rfl)
+      ((x + Real.sin (Real.pi * t / 2) ^ 2 * (F x - x) : ℝ) : AddCircle T) := by
+  rw [← sinSqWeight_def]
+  rfl
 
 /-- The diffeotopy `diffeotopyOfLift` ends at the circle diffeomorphism with lift `F`. -/
 theorem diffeotopyOfLift_final_apply_coe (x : ℝ) :
@@ -289,11 +284,11 @@ theorem exists_diffeotopyOfLift_apply_coe_eq {s : ℝ} (hs : s ∈ Icc (0 : ℝ)
       ((x + s * (F x - x) : ℝ) : AddCircle T) := by
   -- The weight rises continuously from `0` to `1`, so it takes the value `s`.
   have hends : Icc (sinSqWeight 0) (sinSqWeight 1) = Icc 0 1 := by
-    simp [sinSqWeight]
+    simp
   obtain ⟨t, ht, hts⟩ := intermediate_value_Icc zero_le_one
-    (contDiff_sinSqWeight (n := 0)).continuous.continuousOn (hends ▸ hs)
+    (contDiff_sinSqWeight (k := 0)).continuous.continuousOn (hends ▸ hs)
   refine ⟨⟨t, ht⟩, fun x ↦ ?_⟩
-  rw [diffeotopyOfLift_apply_coe, ← hts, sinSqWeight]
+  rw [diffeotopyOfLift_apply_coe, ← hts, sinSqWeight_def]
 
 end Interpolation
 
