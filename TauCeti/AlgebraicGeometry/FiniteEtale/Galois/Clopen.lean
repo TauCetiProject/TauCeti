@@ -86,6 +86,17 @@ theorem coe_mapAutFiberEquivOfMono (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g]
     ⇑(mapAutFiberEquivOfMono g h) = mapAutFiber g h :=
   (rfl)
 
+/-- The inverse of `mapAutFiberEquivOfMono g h` precomposes with the extension functor `map g`,
+after identifying `pullback g ⋙ fiber y` with `fiber x`. -/
+@[simp]
+theorem mapAutFiberEquivOfMono_symm_apply (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g]
+    {x : Spec (.of Ω) ⟶ T} {y : Spec (.of Ω) ⟶ S} (h : x ≫ g = y) (τ : Aut (fiber y)) :
+    (mapAutFiberEquivOfMono g h).symm τ =
+      ((mapPullbackAdj g).mapAutWhiskeringLeftEquiv (fiber x)).symm
+        ((pullbackCompFiberIso g x ≪≫ eqToIso (congrArg fiber h)).symm.conjAut τ) := by
+  rw [← Iso.conjAut_symm_apply]
+  rfl
+
 /-- For a finite étale monomorphism `g`, the induced homomorphism of étale fundamental groups is
 bijective. -/
 theorem mapAutFiber_bijective_of_mono (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g]

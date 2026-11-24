@@ -82,12 +82,13 @@ lemma mapAutWhiskeringLeftEquiv_apply (σ : Aut F) :
   (rfl)
 
 /-- The inverse of `mapAutWhiskeringLeftEquiv adj F` is precomposition with `E` followed by
-conjugation by the isomorphism `F ≅ E ⋙ P ⋙ F` given by the unit of `adj.whiskerLeft K`. It is a
-right inverse because `P` sends the counit at `Y` to the inverse of the unit at `P.obj Y`. -/
+conjugation by the isomorphism `F ≅ E ⋙ P ⋙ F` given by the unit of `adj.whiskerLeft K`. -/
 @[simp]
 lemma mapAutWhiskeringLeftEquiv_symm_apply (τ : Aut (P ⋙ F)) :
     (adj.mapAutWhiskeringLeftEquiv F).symm τ = (asIso ((adj.whiskerLeft K).unit.app F)).symm.conjAut
       (((Functor.whiskeringLeft C D K).obj E).mapAut (P ⋙ F) τ) := by
+  -- It is a right inverse because `P` sends the counit at `Y` to the inverse of the unit at
+  -- `P.obj Y`.
   rw [MulEquiv.symm_apply_eq]
   refine Aut.ext (Iso.ext (NatTrans.ext (funext fun Y ↦ ?_)))
   have h := τ.asIso.hom.naturality (adj.counit.app Y)
