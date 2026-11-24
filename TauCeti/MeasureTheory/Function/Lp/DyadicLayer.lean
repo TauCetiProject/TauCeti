@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 public import TauCeti.MeasureTheory.Function.DecreasingRearrangement
@@ -63,7 +64,8 @@ everywhere measurable and the layers `b ↦ (F b)ₖ` are almost everywhere stro
   `MeasureTheory.Lp.eLpNorm_dyadicLayer_le`: size and support of a layer.
 * `MeasureTheory.Lp.tendsto_sum_range_dyadicLayer`: the layers sum to the function, with partial
   sums of norm at most its norm (`MeasureTheory.Lp.norm_sum_range_dyadicLayer_le`).
-* `MeasureTheory.AEStronglyMeasurable.dyadicLayer`: measurability of the layers of a family.
+* `MeasureTheory.AEStronglyMeasurable.dyadicLayer`, `MeasureTheory.Integrable.dyadicLayer`:
+  measurability and integrability of the layers of a family.
 
 ## References
 
@@ -252,6 +254,14 @@ theorem enorm_dyadicLayer_le_enorm (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :
     ∀ᵐ x ∂μ, ‖dyadicLayer k g x‖ₑ ≤ ‖g x‖ₑ := by
   filter_upwards [norm_dyadicLayer_le_min hp0 k g] with x hx
   exact eNorm_le_iff_norm_le.2 (hx.trans (min_le_left _ _))
+
+/-- The `k`-th dyadic layers of an integrable family `F : β → Lᵖ` form an integrable family. -/
+theorem _root_.MeasureTheory.Integrable.dyadicLayer [Fact (1 ≤ p)] {β : Type*}
+    [MeasurableSpace β] {ν : Measure β} {F : β → Lp E p μ} (hF : Integrable F ν) (k : ℤ) :
+    Integrable (fun b ↦ dyadicLayer k (F b)) ν :=
+  hF.norm.mono' (hF.aestronglyMeasurable.dyadicLayer k) (ae_of_all _ fun b ↦
+    Lp.norm_le_norm_of_ae_le ((enorm_dyadicLayer_le_enorm
+      (zero_lt_one.trans_le Fact.out).ne' k (F b)).mono fun _ hx ↦ eNorm_le_iff_norm_le.1 hx))
 
 /-- The `k`-th dyadic layer of `g` vanishes where `‖g‖ₑ ≤ f*(2ᵏ⁺¹)`. -/
 theorem dyadicLayer_eq_zero_of_enorm_le (hp0 : p ≠ 0) (k : ℤ) (g : Lp E p μ) :

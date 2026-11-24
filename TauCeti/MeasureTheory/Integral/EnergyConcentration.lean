@@ -80,7 +80,8 @@ found by extracting a convergent subsequence of the energies of a fixed small ba
 of `Z`, whose annuli about `z` lie in compact subsets of `Ω \ Z`; the bound is Fatou's lemma off
 those balls. A point at which energy at least `δ` concentrates carries mass at least `δ`
 (`TauCeti.le_of_tendsto_setIntegral_ball`), since the energy of `f` on small punctured balls tends
-to zero.
+to zero; when energy `δ` concentrates at every point of `Z`, both steps together give
+`TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration`.
 
 ## Main results
 
@@ -105,6 +106,8 @@ to zero.
   no energy created.
 * `TauCeti.le_of_tendsto_setIntegral_ball`: the mass at a concentration point of threshold `δ` is
   at least `δ`.
+* `TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration`:
+  the masses along a subsequence, each at least `δ` at points where energy `δ` concentrates.
 * `TauCeti.eventually_tendsto_setIntegral_ball_congr`: the mass at a point only depends on the
   densities near it.
 
@@ -614,6 +617,33 @@ theorem exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le
     simp only [hm]
     exact setIntegral_add_sum_le_of_tendsto_setIntegral_ball hΩ hr hballΩ hsep he hint hE hf
       (fun y hy ↦ hlim.tendsto_at hy) hψ.tendsto_atTop hAz
+
+/-- **Energy masses at energy concentration points.** In
+`TauCeti.exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le`, suppose moreover
+that energy at least `δ` concentrates at every point of `Z`: for every `ε > 0`, eventually
+`δ ≤ ∫_{B_ε(z) ∩ Ω} e n`. Then the concentration persists along the subsequence `ψ`, and every
+point of `Z` carries a mass `m z ≥ δ` (`TauCeti.le_of_tendsto_setIntegral_ball`). -/
+theorem exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le_of_concentration
+    {e : ℕ → X → ℝ} {f : X → ℝ} {Z : Finset X} (hΩ : IsOpen Ω) (hZΩ : ↑Z ⊆ Ω)
+    (he : ∀ n, ∀ y ∈ Ω, 0 ≤ e n y) (hint : ∀ n, IntegrableOn (e n) Ω μ)
+    (hE : ∀ n, ∫ y in Ω, e n y ∂μ ≤ E) (hlim : TendstoLocallyUniformlyOn e f atTop (Ω \ ↑Z))
+    (hconc : ∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, e n y ∂μ) :
+    ∃ (ψ : ℕ → ℕ) (m : X → ℝ), StrictMono ψ ∧ IntegrableOn f (Ω \ ↑Z) μ ∧
+      (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, e (ψ n) y ∂μ) ∧
+      (∀ z ∈ Z, δ ≤ m z) ∧
+      (∀ z ∈ Z, ∀ᶠ ε in 𝓝[>] 0, Tendsto (fun n ↦ ∫ y in ball z ε, e (ψ n) y ∂μ) atTop
+        (𝓝 (m z + ∫ y in ball z ε \ {z}, f y ∂μ))) ∧
+      ∫ y in Ω \ ↑Z, f y ∂μ + ∑ z ∈ Z, m z ≤ E := by
+  obtain ⟨ψ, m, hψ, hf, hm, hmE⟩ :=
+    exists_strictMono_tendsto_setIntegral_ball_and_setIntegral_add_sum_le hΩ hZΩ he hint hE hlim
+  have hconcψ (z : X) (hz : z ∈ Z) (ε : ℝ) (hε : 0 < ε) :
+      ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω, e (ψ n) y ∂μ :=
+    hψ.tendsto_atTop.eventually (hconc z hz ε hε)
+  refine ⟨ψ, m, hψ, hf, hconcψ, fun z hz ↦ ?_, hm, hmE⟩
+  -- A punctured ball about `z` avoids the other points of `Z`, so `f` is integrable there.
+  obtain ⟨r, hr, -, hrS⟩ :=
+    exists_pos_ball_subset_and_ball_sdiff_singleton_subset_sdiff hΩ Z.finite_toSet (hZΩ hz)
+  exact le_of_tendsto_setIntegral_ball hΩ (hZΩ hz) hr (hf.mono_set hrS) (hm z hz) (hconcψ z hz)
 
 end Mass
 

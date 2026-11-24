@@ -30,6 +30,9 @@ same formula computes its coefficients.
   are the signed coefficients of `∏ i, (X - C (x i))`.
 * `Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq`: a monic polynomial whose roots are listed by
   `x` on a finite set `s` is the product of the linear factors `X - C (x i)` over `s`.
+* `Polynomial.coeff_reverse_eq_esymm_roots_of_card`: for a polynomial with as many roots as its
+  degree, the coefficient `a_k` of `X^(n-k)`, extended by `0` for `k > n`, is
+  `a₀ (-1)ᵏ e_k(roots)`.
 
 Evaluated at a point `v`, the product `P(v) = ∏_{w ∈ s} (v - w)` of a multiset `s` of `m` elements
 is `vᵐ + ∑_{j=1}^{m} (-1)ʲ e_j(s) v^(m-j)`, and its derivative at a root `v ∈ s` is
@@ -83,6 +86,18 @@ theorem eq_prod_X_sub_C_of_monic_of_roots_eq {f : R[X]} {s : Finset σ} {x : σ 
     f = ∏ i ∈ s, (X - C (x i)) := by
   rw [← prod_multiset_X_sub_C_of_monic_of_roots_card_eq hf (by simp [hroots, hdeg]), hroots,
     Multiset.map_map, Function.comp_def, Finset.prod_map_val]
+
+/-- **Vieta's formulas, indexed from the leading term.** If `p = a₀ Xⁿ + a₁ Xⁿ⁻¹ + ⋯ + aₙ` has
+`n` roots with multiplicity, then for every `k` the coefficient `a_k = p.reverse.coeff k` (which is
+`0` for `k > n`) is `a₀ * (-1) ^ k * e_k(roots p)`. -/
+theorem coeff_reverse_eq_esymm_roots_of_card {p : R[X]}
+    (hroots : Multiset.card p.roots = p.natDegree) (k : ℕ) :
+    p.reverse.coeff k = p.leadingCoeff * (-1) ^ k * p.roots.esymm k := by
+  rw [coeff_reverse]
+  rcases le_or_gt k p.natDegree with hk | hk
+  · rw [revAt_le hk, coeff_eq_esymm_roots_of_card hroots (Nat.sub_le _ _), Nat.sub_sub_self hk]
+  · rw [revAt_eq_self_of_lt hk, coeff_eq_zero_of_natDegree_lt hk,
+      Multiset.esymm_of_card_lt (hroots ▸ hk), mul_zero]
 
 end Polynomial
 
