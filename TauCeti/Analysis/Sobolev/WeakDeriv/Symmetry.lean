@@ -37,7 +37,7 @@ public section
 namespace TauCeti
 
 open LineDeriv MeasureTheory TopologicalSpace
-open scoped Distributions InnerProductSpace
+open scoped Distributions
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}

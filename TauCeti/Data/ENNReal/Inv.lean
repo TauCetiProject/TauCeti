@@ -57,8 +57,6 @@ is at most `2 b`.
 * `ENNReal.exists_lt_ne_top_le`: given `a < x`, produces a finite `x₀` with `a < x₀ ≤ x`.
 * `ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one`: truncates `a < p ≤ ∞` above a
   finite `r ≤ p` while preserving `p₀⁻¹ + q⁻¹ < 1`.
-* `ENNReal.exists_one_lt_ne_top_le_and_inv_add_inv_le_one`: replaces `p, q > 1` with
-  `p⁻¹ + q⁻¹ ≤ 1` by finite `p₀ ≤ p` and `q₀ ≤ q` with `1 < p₀`, `1 < q₀`, and `p₀⁻¹ + q₀⁻¹ ≤ 1`.
 * `ENNReal.inv_add_inv_two_lt_one_iff`: `p⁻¹ + 2⁻¹ < 1 ↔ 2 < p`.
 -/
 
@@ -314,28 +312,6 @@ theorem exists_nnreal_lt_and_le_and_inv_add_inv_lt_one {a : ℝ≥0} {p q r : �
       calc (p₀ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 - q⁻¹ + q⁻¹ :=
             ENNReal.add_lt_add_right (lt_of_lt_of_le hq_lt le_rfl).ne_top hp₀_lt
         _ = 1 := tsub_add_cancel_of_le hq_lt.le
-
-/-- Given `1 < p` and `1 < q` in `ℝ≥0∞` with `p⁻¹ + q⁻¹ ≤ 1` (allowing `p = ∞` or `q = ∞`),
-there exist finite exponents `p₀ ≤ p` and `q₀ ≤ q` with `1 < p₀`, `1 < q₀`, and
-`p₀⁻¹ + q₀⁻¹ ≤ 1`. -/
-theorem exists_one_lt_ne_top_le_and_inv_add_inv_le_one {p q : ℝ≥0∞}
-    (hp : 1 < p) (hq : 1 < q) (hpq : p⁻¹ + q⁻¹ ≤ 1) :
-    ∃ p₀ q₀ : ℝ≥0∞, p₀ ≠ ∞ ∧ q₀ ≠ ∞ ∧ 1 < p₀ ∧ 1 < q₀ ∧ p₀ ≤ p ∧ q₀ ≤ q ∧
-      p₀⁻¹ + q₀⁻¹ ≤ 1 := by
-  rcases eq_or_ne p ∞ with rfl | hpt <;> rcases eq_or_ne q ∞ with rfl | hqt
-  · exact ⟨2, 2, ofNat_ne_top, ofNat_ne_top, one_lt_two, one_lt_two, le_top, le_top,
-      inv_two_add_inv_two.le⟩
-  · refine ⟨(1 - q⁻¹)⁻¹, q, inv_ne_top.2 (tsub_pos_of_lt (ENNReal.inv_lt_one.2 hq)).ne',
-      hqt, ?_, hq, le_top, le_rfl, ?_⟩
-    · rw [← ENNReal.inv_lt_inv, inv_inv, inv_one]
-      exact ENNReal.sub_lt_self one_ne_top one_ne_zero (ENNReal.inv_ne_zero.2 hqt)
-    · rw [inv_inv, tsub_add_cancel_of_le (ENNReal.inv_le_one.2 hq.le)]
-  · refine ⟨p, (1 - p⁻¹)⁻¹, hpt,
-      inv_ne_top.2 (tsub_pos_of_lt (ENNReal.inv_lt_one.2 hp)).ne', hp, ?_, le_rfl, le_top, ?_⟩
-    · rw [← ENNReal.inv_lt_inv, inv_inv, inv_one]
-      exact ENNReal.sub_lt_self one_ne_top one_ne_zero (ENNReal.inv_ne_zero.2 hpt)
-    · rw [inv_inv, add_tsub_cancel_of_le (ENNReal.inv_le_one.2 hp.le)]
-  · exact ⟨p, q, hpt, hqt, hp, hq, le_rfl, le_rfl, hpq⟩
 
 /-- In `ℝ≥0∞`, `p⁻¹ + 2⁻¹ < 1` holds if and only if `2 < p`. -/
 theorem inv_add_inv_two_lt_one_iff {p : ℝ≥0∞} : p⁻¹ + 2⁻¹ < 1 ↔ 2 < p :=

@@ -5,32 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-public import Mathlib.Analysis.Calculus.BumpFunction.Normed
-public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.TestFunction
-public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.Normed.Affine.MazurUlam
-public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.Analysis.Distribution.TestFunction.Integral
+import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # Inner-product pairings and Riesz transport on test functions
 
 Let `Ω` be an open set of a real normed space `E` and `V` a real inner product space. A test
-function `φ ∈ 𝓓^{n}(Ω, V)` pairs with a field `w : E → V` through the inner product, and the
-integrals `∫ ⟪φ, w⟫` are the natural way to test a vector-valued equation. This file records that
-these pairings, and those with the directional derivatives of `φ` (`1 ≤ n`), are integrable for
-locally integrable `w`, that they pass to `L¹`, uniform-operator, and `Lᵖ` mollification limits on
-any set containing the support of `φ`, and proves the fundamental lemma of the calculus of
-variations in this form: a locally integrable field is determined almost everywhere on `Ω` by its
-pairings with `𝓓(Ω, V)`.
+function `φ ∈ 𝓓(Ω, V)` pairs with a field `w : E → V` through the inner product, and the integrals
+`∫ ⟪φ, w⟫` are the natural way to test a vector-valued equation. This file records that these
+pairings, and those with the coordinate derivatives of `φ`, are integrable for locally integrable
+`w`, and proves the fundamental lemma of the calculus of variations in this form: a locally
+integrable field is determined almost everywhere on `Ω` by its pairings with `𝓓(Ω, V)`.
 
 For real or complex Hilbert coefficients, `TestFunction.rieszEquiv` is a real continuous
 linear equivalence to dual-valued tests, conjugating the coefficient scalar action. The original
@@ -41,18 +34,10 @@ completeness of the coefficient space.
 
 ## Main results
 
-* `TestFunction.integrable_inner`: `x ↦ ⟪φ x, w x⟫` is integrable for `φ ∈ 𝓓^{n}(Ω, V)` and `w`
-  locally integrable on `Ω`.
-* `TestFunction.integrable_inner_fderiv`: `x ↦ ⟪∂_v φ x, w x⟫` is integrable for `φ ∈ 𝓓^{n}(Ω, V)`
-  (`1 ≤ n`) and `w` locally integrable on `Ω`.
-* `TestFunction.tendsto_integral_inner_of_tendsto_lintegral_enorm_sub`: `∫ ⟪φ, g i⟫ → ∫ ⟪φ, g₀⟫`
-  when `g i → g₀` in `L¹` on a set containing `tsupport φ`.
-* `TestFunction.tendsto_integral_inner_clm_of_tendstoUniformlyOn`:
-  `∫ ⟪φ, A i · (u ·)⟫ → ∫ ⟪φ, B · (u ·)⟫` when `A i` is eventually continuous on `tsupport φ`,
-  `A i → B` uniformly on `tsupport φ`, and `u` is locally integrable on `Ω`.
-* `TestFunction.tendsto_integral_inner_bilin_normed_convolution`:
-  `∫ ⟪φ, B ((ρ i ⋆ 1_W U) ·) (u ·)⟫` converges to `∫ ⟪φ, B (U ·) (u ·)⟫` when `U ∈ Lᵖ(W)`,
-  `u ∈ L^q(W)` and `p⁻¹ + q⁻¹ ≤ 1`.
+* `TestFunction.integrable_inner`: `x ↦ ⟪φ x, w x⟫` is integrable for `w` locally integrable
+  on `Ω`.
+* `TestFunction.integrable_inner_fderiv`: `x ↦ ⟪∂_v φ x, w x⟫` is integrable for `w` locally
+  integrable on `Ω`.
 * `TauCeti.ae_eq_of_forall_integral_inner_eq`: two locally integrable fields with the same
   pairings against every `φ ∈ 𝓓(Ω, V)` agree almost everywhere on `Ω`. The target `V` need only
   be complete; the proof tests against `ψ • c` for scalar test functions `ψ` and a constant
@@ -66,8 +51,8 @@ completeness of the coefficient space.
 
 public section
 
-open Filter MeasureTheory Set TopologicalSpace
-open scoped ContDiff Convolution Distributions ENNReal InnerProductSpace Topology
+open MeasureTheory TopologicalSpace
+open scoped InnerProductSpace ContDiff Distributions
 
 section RealPairings
 
@@ -77,74 +62,18 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
 
 namespace TestFunction
 
-/-- A `C^n` test function paired with a locally integrable field is integrable. -/
-theorem integrable_inner {n : ℕ∞} {w : E → V} (hw : LocallyIntegrableOn w Ω μ)
-    (φ : 𝓓^{n}(Ω, V)) : Integrable (fun x => ⟪(φ : E → V) x, w x⟫_ℝ) μ :=
+/-- A test function paired with a locally integrable field is integrable. -/
+theorem integrable_inner {w : E → V} (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, V)) :
+    Integrable (fun x => ⟪(φ : E → V) x, w x⟫_ℝ) μ :=
   φ.integrable_bilin (innerSL ℝ) hw
 
-/-- A directional derivative of a `C^n` test function (`1 ≤ n`), paired with a locally integrable
-field, is integrable. -/
-theorem integrable_inner_fderiv {n : ℕ∞} {w : E → V} (hw : LocallyIntegrableOn w Ω μ)
-    (φ : 𝓓^{n}(Ω, V)) (v : E) (hn : 1 ≤ n := by simp) :
-    Integrable (fun x => ⟪fderiv ℝ (φ : E → V) x v, w x⟫_ℝ) μ := by
-  have hn0 : (0 : ℕ∞) + 1 ≤ n := by simpa using hn
-  have hne : (n : WithTop ℕ∞) ≠ 0 := mod_cast (zero_lt_one.trans_le hn).ne'
-  refine ((lineDerivCLM ℝ v φ : 𝓓^{0}(Ω, V)).integrable_inner hw).congr (.of_forall fun x => ?_)
-  dsimp only
-  rw [lineDerivCLM_apply_of_le hn0, (φ.contDiff.differentiable hne x).lineDeriv_eq_fderiv]
-
-omit [OpensMeasurableSpace E] in
-/-- If `g i → g₀` in `L¹(s)` on a set `s` containing the topological support of `φ`, then the
-inner-product pairings `∫ x, ⟪φ x, g i x⟫_ℝ ∂μ` converge to `∫ x, ⟪φ x, g₀ x⟫_ℝ ∂μ`.
-The approximating pairings need only be eventually integrable, and the limiting pairing needs
-only to be almost everywhere strongly measurable. -/
-theorem tendsto_integral_inner_of_tendsto_lintegral_enorm_sub {n : ℕ∞} {ι : Type*}
-    {l : Filter ι} {s : Set E} (φ : 𝓓^{n}(Ω, V)) (hφs : tsupport (φ : E → V) ⊆ s)
-    {g : ι → E → V} {g₀ : E → V}
-    (hg : ∀ᶠ i in l, Integrable (fun x => ⟪(φ : E → V) x, g i x⟫_ℝ) μ)
-    (hg₀ : AEStronglyMeasurable (fun x => ⟪(φ : E → V) x, g₀ x⟫_ℝ) μ)
-    (hlim : Tendsto (fun i => ∫⁻ x in s, ‖g i x - g₀ x‖ₑ ∂μ) l (𝓝 0)) :
-    Tendsto (fun i => ∫ x, ⟪(φ : E → V) x, g i x⟫_ℝ ∂μ) l
-      (𝓝 (∫ x, ⟪(φ : E → V) x, g₀ x⟫_ℝ ∂μ)) := by
-  simpa only [innerSL_apply_apply ℝ] using
-    φ.tendsto_integral_bilin_of_tendsto_lintegral_enorm_sub (innerSL ℝ) hφs
-      (by simpa only [innerSL_apply_apply ℝ] using hg)
-      (by simpa only [innerSL_apply_apply ℝ] using hg₀) hlim
-
-/-- Pairing a `C^n` test function `φ` against `x ↦ A i x (u x)` converges to
-`∫ x, ⟪φ x, B x (u x)⟫_ℝ ∂μ` when `A i → B` uniformly on `tsupport φ`, `A i` is eventually
-continuous on `tsupport φ`, and `u` is locally integrable on `Ω`. -/
-theorem tendsto_integral_inner_clm_of_tendstoUniformlyOn {n : ℕ∞}
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} {l : Filter ι}
-    (φ : 𝓓^{n}(Ω, V)) {u : E → F} (hu : LocallyIntegrableOn u Ω μ)
-    {A : ι → E → F →L[ℝ] V} {B : E → F →L[ℝ] V}
-    (hA : ∀ᶠ i in l, ContinuousOn (A i) (tsupport (φ : E → V)))
-    (hunif : TendstoUniformlyOn A B l (tsupport (φ : E → V))) :
-    Tendsto (fun i => ∫ x, ⟪(φ : E → V) x, A i x (u x)⟫_ℝ ∂μ) l
-      (𝓝 (∫ x, ⟪(φ : E → V) x, B x (u x)⟫_ℝ ∂μ)) := by
-  simpa only [innerSL_apply_apply ℝ] using
-    φ.tendsto_integral_bilin_clm_of_tendstoUniformlyOn (innerSL ℝ) hu hA hunif
-
-omit [OpensMeasurableSpace E] in
-/-- Pairing a `C^n` test function supported in a null-measurable set `W` against
-`x ↦ B (((ρ i).normed μ ⋆ 1_W U) x) (u x)` converges to `∫ x, ⟪φ x, B (U x) (u x)⟫_ℝ ∂μ` when
-`U ∈ Lᵖ(W)`, `u ∈ L^q(W)` and `p⁻¹ + q⁻¹ ≤ 1` (allowing `p = ∞` or `q = ∞`). -/
-theorem tendsto_integral_inner_bilin_normed_convolution
-    [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure]
-    {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {n : ℕ∞}
-    (B : F →L[ℝ] G →L[ℝ] V) {p q : ℝ≥0∞} (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    {W : Set E} (hW : NullMeasurableSet W μ) (φ : 𝓓^{n}(Ω, V))
-    (hφW : tsupport (φ : E → V) ⊆ W) {U : E → F} (hU : MemLp U p (μ.restrict W))
-    {u : E → G} (hu : MemLp u q (μ.restrict W))
-    {ι : Type*} {l : Filter ι} {ρ : ι → ContDiffBump (0 : E)}
-    (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0)) :
-    Tendsto (fun i => ∫ x, ⟪(φ : E → V) x,
-        B (((ρ i).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] W.indicator U) x)
-          (u x)⟫_ℝ ∂μ)
-      l (𝓝 (∫ x, ⟪(φ : E → V) x, B (U x) (u x)⟫_ℝ ∂μ)) := by
-  simpa only [innerSL_apply_apply ℝ] using
-    φ.tendsto_integral_bilin_normed_convolution (innerSL ℝ) B hpq hW hφW hU hu hρ
+/-- A directional derivative of a test function, paired with a locally integrable field, is
+integrable. -/
+theorem integrable_inner_fderiv {w : E → V} (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, V))
+    (v : E) : Integrable (fun x => ⟪fderiv ℝ (φ : E → V) x v, w x⟫_ℝ) μ := by
+  have h := (lineDerivCLM ℝ v φ : 𝓓(Ω, V)).integrable_inner hw
+  simp only [coe_lineDerivCLM, lineDeriv_eq_fderiv] at h
+  exact h
 
 end TestFunction
 
@@ -164,7 +93,8 @@ theorem ae_eq_of_forall_integral_inner_eq {g h : E → V} (hg : LocallyIntegrabl
     fun ψ hψ hψc hψΩ => by
       set w := ∫ x, ψ x • (g - h) x ∂μ
       let ψ' : 𝓓(Ω, ℝ) := ⟨ψ, hψ, hψc, hψΩ⟩
-      let Φ : 𝓓(Ω, V) := TestFunction.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ w) ψ'
+      let Φ : 𝓓(Ω, V) := ⟨fun x => ψ x • w, hψ.smul contDiff_const, hψc.smul_right,
+        (tsupport_smul_subset_left _ _).trans hψΩ⟩
       have hΦ := H Φ
       have hint : Integrable (fun x => ψ x • (g - h) x) μ :=
         ψ'.integrable_smul hgh
@@ -173,7 +103,7 @@ theorem ae_eq_of_forall_integral_inner_eq {g h : E → V} (hg : LocallyIntegrabl
           _ = ∫ x, ⟪(Φ : E → V) x, g x⟫_ℝ ∂μ - ∫ x, ⟪(Φ : E → V) x, h x⟫_ℝ ∂μ := by
             rw [← integral_sub (Φ.integrable_inner hg) (Φ.integrable_inner hh)]
             refine integral_congr_ae (.of_forall fun x => ?_)
-            simp [Φ, ψ', inner_smul_left, inner_smul_right, inner_sub_right, mul_sub]
+            simp [Φ, inner_smul_left, inner_smul_right, inner_sub_right, mul_sub]
           _ = 0 := sub_eq_zero.2 hΦ
       exact inner_self_eq_zero.1 this
   rw [Filter.EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]

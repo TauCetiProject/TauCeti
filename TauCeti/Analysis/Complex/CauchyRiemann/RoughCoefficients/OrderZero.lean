@@ -8,13 +8,10 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace.Basic
-import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Green.HalfPlane
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
-import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
@@ -30,40 +27,34 @@ space. For coefficients `J ∈ W^{1,p}_loc(Ω; End V)` with `J² = -1` and `S �
 `∂_s ξ + J ∂_t ξ + S ξ = η`
 
 in the sense of `TauCeti.IsWeakCRSolution`. This file proves the order-zero step of interior
-regularity (McDuff–Salamon, Lemma B.4.6) and the sharpness of `J² = -1`:
+regularity (McDuff–Salamon, Lemma B.4.6): if `η ∈ Lʳ_loc` with `1 < r < ∞` and
+`1/p + 1/q ≤ 1/r`, then `ξ ∈ W^{1,r}_loc(Ω)` (`TauCeti.IsWeakCRSolution.memWkpLoc_one`). No
+derivative of `ξ` is assumed. In McDuff–Salamon's proof of interior regularity this step is
+iterated along the exponent ladder `TauCeti.exists_finite_sobolev_exponent_ladder`, with Sobolev
+embedding between the steps.
 
-* **Single-step Sobolev gain** (`TauCeti.IsWeakCRSolution.memWkpLoc_one`, Lemma B.4.6): if
-  `η ∈ Lʳ_loc` with `1 < r < ∞` and `1/p + 1/q ≤ 1/r`, then `ξ ∈ W^{1,r}_loc(Ω)`. No derivative of
-  `ξ` is assumed. The proof rewrites the first-order equation as a divergence-form Laplace equation
-  for `ξ` with locally `Lʳ` data and applies
-  `TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq`. For a real test function `φ` and a
-  vector `v`, test the weak equation against
+The proof rewrites the first-order equation as a divergence-form Laplace equation for `ξ` with
+locally `Lʳ` data and applies `TauCeti.memWkpLoc_one_of_forall_integral_laplacian_smul_eq`. For a
+real test function `φ` and a vector `v`, test the weak equation against
 
-  `ψ = ∂_s φ • v - ∂_t φ • Jᵀ v`.
+`ψ = ∂_s φ • v - ∂_t φ • Jᵀ v`.
 
-  Since `J² = -1`, the formal adjoint turns `ψ` into `-Δφ • v` plus terms with at most one
-  derivative on `φ`, and one obtains `Δξ = ∂_s f + ∂_t g` weakly, with
+Since `J² = -1`, the formal adjoint turns `ψ` into `-Δφ • v` plus terms with at most one
+derivative on `φ`, and one obtains `Δξ = ∂_s f + ∂_t g` weakly, with
 
-  * `f = η + (∂_t J) ξ - S ξ`,
-  * `g = J S ξ - J η - (∂_s J) ξ - (∂_t J) J ξ - J (∂_t J) ξ`.
+* `f = η + (∂_t J) ξ - S ξ`,
+* `g = J S ξ - J η - (∂_s J) ξ - (∂_t J) J ξ - J (∂_t J) ξ`.
 
-  These are locally `Lʳ` by Hölder's inequality, because `J` is locally bounded by Morrey's
-  embedding (`TauCeti.IsSobolevCRCoefficients.memLpLoc_top_coeff`).
+These are locally `Lʳ` by Hölder's inequality, because `J` is locally bounded by Morrey's
+embedding (`TauCeti.IsSobolevCRCoefficients.memLpLoc_top_coeff`).
 
-  The test field `ψ` is not smooth: it is only as regular as `J`. So the weak equation is first
-  extended from smooth test functions to bounded compactly supported test fields with a weak
-  derivative in `Lˢ`, `1/s + 1/q ≤ 1`
-  (`TauCeti.IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn`). The proof mollifies the test
-  field: the mollifications are smooth test functions, their derivatives are the mollifications of
-  the weak derivative, and every pairing in the weak equation converges, by the strong `Lˢ`
-  convergence of mollifications (`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`).
-* **Sharpness of `J² = -1`** (`TauCeti.exists_isWeakCRSolution_zero_not_memWkpLoc_one`): on any
-  nonempty open set `Ω`, with `J = 0` and `S = 0`, there exists a weak solution `ξ ∈ L^∞_loc(Ω)`
-  of `∂_s ξ = 0` that fails to lie in `W^{1,q}_loc(Ω)` for every `q : ℝ≥0∞`.
-
-The full order-zero bootstrap across the critical exponent (`k = 0` of Proposition B.4.9) is in
-`TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior`
-(`TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`).
+The test field `ψ` is not smooth: it is only as regular as `J`. So the weak equation is first
+extended from smooth test functions to bounded compactly supported test fields with a weak
+derivative in `Lˢ`, `1/s + 1/q ≤ 1`
+(`TauCeti.IsWeakCRSolution.integral_inner_eq_of_hasWeakFDerivOn`). The proof mollifies the test
+field: the mollifications are smooth test functions, their derivatives are the mollifications of
+the weak derivative, and every pairing in the weak equation converges, by the strong `Lˢ`
+convergence of mollifications (`ContinuousLinearMap.tendsto_integral_bilin_normed_convolution`).
 
 ## Main results
 
@@ -71,21 +62,18 @@ The full order-zero bootstrap across the critical exponent (`k = 0` of Propositi
   against bounded compactly supported Sobolev test fields.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_top_coeff`: for `p > 2` a `W^{1,p}_loc` coefficient
   `J` is locally bounded.
-* `TauCeti.IsWeakCRSolution.memWkpLoc_one`: single-step order-zero interior regularity
-  (`ξ ∈ W^{1,r}_loc` when `p⁻¹ + q⁻¹ ≤ r⁻¹`).
-* `TauCeti.exists_isWeakCRSolution_zero_not_memWkpLoc_one`: without `J² = -1`, weak solutions in
-  `L^∞_loc(Ω)` for smooth coefficients need not lie in `W^{1,q}_loc(Ω)` for any `q : ℝ≥0∞`.
+* `TauCeti.IsWeakCRSolution.memWkpLoc_one`: order-zero interior regularity.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
-  Appendix B.4, Lemma B.4.6.
+  Appendix B.4, Lemma B.4.6 and its proof.
 -/
 
 public section
 
 open MeasureTheory TopologicalSpace Complex Set Metric Filter
-open scoped InnerProductSpace ContDiff Distributions ENNReal Convolution NNReal Topology
+open scoped InnerProductSpace ContDiff Distributions ENNReal Convolution Topology
 open Laplacian LineDeriv
 
 namespace TauCeti
@@ -473,65 +461,5 @@ theorem IsWeakCRSolution.memWkpLoc_one [FiniteDimensional ℝ V]
   rw [← integral_add (hI1.const_inner (𝕜 := ℝ) v) (hI2.const_inner (𝕜 := ℝ) v),
     integral_congr_ae (hJJ.mono fun z hz => inner_crTestField_eq φ v z hz), integral_neg,
     integral_sub (hPΩ.integrable_of_forall_notMem_eq_zero hP0) hψη, hPeq, sub_self, neg_zero]
-
-/-! ### Sharpness of `J² = -1` -/
-
-section Counterexample
-
-noncomputable section
-
-/-- The indicator of the horizontal half-plane `{z : ℂ | t₀ < z.im}` solves `∂_s ξ = 0` weakly in
-`L^∞_loc(Ω)` on every open planar domain `Ω`. -/
-private theorem isWeakCRSolution_upperHalfPlaneIndicator (t₀ : ℝ) (Ω : Opens ℂ) :
-    IsWeakCRSolution ⊤ Ω 0 0 0 ({z : ℂ | t₀ < z.im}.indicator fun _ => (1 : ℝ)) 0 := by
-  set ξ : ℂ → ℝ := {z : ℂ | t₀ < z.im}.indicator fun _ => 1
-  have hmeas (a : ℝ) : MeasurableSet {z : ℂ | a < z.im} :=
-    measurableSet_lt measurable_const measurable_im
-  have hξ_top : MemLpLoc ⊤ Ω ξ := memLpLoc_iff.2 fun K _ hK => by
-    have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-    exact memLp_indicator_const ⊤ (hmeas t₀).nullMeasurableSet 1 (Or.inr (measure_ne_top _ _))
-  refine isWeakCRSolution_iff.2 ⟨hξ_top, locallyIntegrableOn_zero, fun φ => ?_⟩
-  have hint₀ : Integrable (fun z => fderiv ℝ (φ : ℂ → ℝ) z 1 * ξ z) := by
-    simpa [mul_comm] using φ.integrable_inner_fderiv
-      (hξ_top.locallyIntegrableOn le_top Ω.isOpen.isLocallyClosed) 1
-  have hadj (z : ℂ) :
-      ⟪crFormalAdjoint 0 0 0 φ z, ξ z⟫_ℝ = -(fderiv ℝ (φ : ℂ → ℝ) z 1 * ξ z) := by
-    rw [inner_crFormalAdjoint]; simp [mul_comm]
-  simp_rw [hadj]
-  refine ⟨hint₀.neg, ?_⟩
-  let c : ℂ := Complex.I * (t₀ : ℂ)
-  let g : ℂ → ℝ := (φ : ℂ → ℝ) ∘ fun z => z + c
-  have hshift (z : ℂ) :
-      ({w : ℂ | t₀ < w.im}.indicator fun w => fderiv ℝ (φ : ℂ → ℝ) w 1) (z + c) =
-        {w : ℂ | 0 < w.im}.indicator (fun w => fderiv ℝ g w 1) z := by
-    have hd := (((φ.contDiff.of_le (by simp)).differentiable one_ne_zero
-      (z + c)).hasFDerivAt.comp z ((hasFDerivAt_id z).add_const c)).fderiv
-    have hderiv : fderiv ℝ g z 1 = fderiv ℝ (φ : ℂ → ℝ) (z + c) 1 := by
-      simpa [g] using congr($hd 1)
-    simp [Set.indicator_apply, c, hderiv]
-  have hind : (fun z => fderiv ℝ (φ : ℂ → ℝ) z 1 * ξ z) =
-      {z : ℂ | t₀ < z.im}.indicator fun z => fderiv ℝ (φ : ℂ → ℝ) z 1 := by
-    ext z; by_cases hz : t₀ < z.im <;> simp [ξ, hz]
-  simp only [Pi.zero_apply, inner_zero_right, integral_zero, integral_neg, neg_eq_zero, hind]
-  rw [← integral_add_right_eq_self _ c]
-  simp_rw [hshift]
-  rw [integral_indicator (hmeas 0)]
-  exact setIntegral_im_pos_fderiv_one_eq_zero
-    ((φ.contDiff.of_le (by simp)).comp (contDiff_id.add contDiff_const))
-    (φ.hasCompactSupport.comp_homeomorph (Homeomorph.addRight c))
-
-/-- **Sharpness of `J² = -1`.** On any nonempty open planar set `Ω`, there exists a weak solution
-`ξ ∈ L^∞_loc(Ω)` of the homogeneous equation `∂_s ξ = 0` (`J = 0`, `S = 0`, smooth coefficients
-violating `J² = -1`) that fails to belong to `W^{1,q}_loc(Ω)` for every `q : ℝ≥0∞`. -/
-theorem exists_isWeakCRSolution_zero_not_memWkpLoc_one {Ω : Opens ℂ}
-    (hΩ : (Ω : Set ℂ).Nonempty) :
-    ∃ ξ : ℂ → ℝ, IsWeakCRSolution ⊤ Ω 0 0 0 ξ 0 ∧ ∀ q, ¬ MemWkpLoc q Ω 1 ξ := by
-  obtain ⟨z₀, hz₀⟩ := hΩ
-  exact ⟨_, isWeakCRSolution_upperHalfPlaneIndicator z₀.im Ω, fun _ =>
-    not_memWkpLoc_indicator_lt_im (k := 0) (by rwa [Ω.isOpen.interior_eq]) rfl⟩
-
-end
-
-end Counterexample
 
 end TauCeti
