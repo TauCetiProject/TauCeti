@@ -95,7 +95,7 @@ theorem continuous_deriv : Continuous (deriv χ) := by
   obtain ⟨u, hu, hgu⟩ := (isCompact_sphere (0 : E) 1).ultrafilter_le_nhds (g.map (deriv χ))
     (le_principal_iff.2 (Ultrafilter.mem_map.2 (Eventually.of_forall fun r ↦ by
       simp [χ.norm_deriv r])))
-  have hgu : Tendsto (deriv χ) g (𝓝 u) := hgu
+  have hgu : Tendsto (deriv χ) g (𝓝 u) := by rwa [Tendsto, ← Ultrafilter.coe_map]
   rw [mem_sphere_zero_iff_norm] at hu
   -- The limit `u` of the tangents keeps the whole table weakly to its left.
   have hleft : ∀ t, 0 ≤ o.areaForm u (χ t - χ s) := fun t ↦
