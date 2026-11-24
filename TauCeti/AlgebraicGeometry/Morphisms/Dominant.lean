@@ -44,6 +44,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   (for instance an open immersion) from a nonempty scheme into a preirreducible scheme is dominant.
 * `AlgebraicGeometry.isDominant_morphismRestrict_iff`: a morphism is dominant exactly when its
   restriction over a dense open of the target is.
+* `AlgebraicGeometry.Scheme.Hom.dense_preimage_of_isDominant`: the preimage of a nonempty open
+  under a dominant morphism from a preirreducible scheme is dense.
 * `AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_isDominant`: a dominant morphism of
   irreducible schemes sends the generic point to the generic point.
 * `AlgebraicGeometry.isDominant_iff_genericPoint_eq`: conversely, a morphism of irreducible
@@ -123,6 +125,14 @@ instance Scheme.Hom.nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X �
     [IsDominant f] (U : Y.Opens) [Nonempty U] : Nonempty (f ⁻¹ᵁ U) := by
   obtain ⟨x, hx⟩ := f.denseRange.exists_mem_open U.is_open' ⟨_, (Classical.arbitrary U).property⟩
   exact ⟨⟨x, hx⟩⟩
+
+/-- The preimage of a nonempty open under a dominant morphism from a preirreducible scheme is
+dense. -/
+theorem Scheme.Hom.dense_preimage_of_isDominant {X Y : Scheme.{u}} [PreirreducibleSpace X]
+    (f : X ⟶ Y) [IsDominant f] {U : Y.Opens} (hU : (U : Set Y).Nonempty) :
+    Dense (f ⁻¹ᵁ U : Set X) :=
+  (f ⁻¹ᵁ U).isOpen.dense <| by
+    simpa [← Set.nonempty_preimage_iff] using f.denseRange.inter_open_nonempty _ U.isOpen hU
 
 /-- An open immersion from a nonempty scheme into a preirreducible scheme is dominant. -/
 instance isDominant_of_isOpenImmersion {U X : Scheme.{u}} [PreirreducibleSpace X] [Nonempty U]
