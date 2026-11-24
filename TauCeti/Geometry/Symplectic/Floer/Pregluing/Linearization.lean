@@ -88,11 +88,9 @@ private theorem exists_pos_forall_cylCoeff_sub_lt_of_mem (ω : SymplecticForm V)
           cylCoeff ω J H t (x t) (ω.hamiltonianVectorField (H t) (x t))‖ < ε := by
   -- The coefficient fields `X_H`, `dJ` and `J dX_H` are continuous in `(t, y)`.
   have hX := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
-  have hdJ := (ContDiff.fderiv (f := fun (p : ℝ × V) (y : V) ↦ J p.1 y) (g := Prod.snd) (n := 0)
-    (hJ.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by norm_num)).continuous
-  have hJS := hJ.continuous.clm_comp (ContDiff.fderiv (f := fun (p : ℝ × V) (y : V) ↦
-    ω.hamiltonianVectorField (H p.1) y) (g := Prod.snd) (n := 0)
-    (hX.comp (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by norm_num)).continuous
+  have hdJ := continuous_fderiv_slice_right (f := fun t y ↦ J t y) hJ
+  have hJS := hJ.continuous.clm_comp
+    (continuous_fderiv_slice_right (f := fun t ↦ ω.hamiltonianVectorField (H t)) hX)
   -- `dJ` is bounded along the orbit, by `M`, and hence by `M' = |M| + 1` near it.
   obtain ⟨M, hM⟩ := (hT.image_of_continuousOn
     ((continuousOn_id' _).prodMk hx)).exists_bound_of_continuousOn hdJ.continuousOn

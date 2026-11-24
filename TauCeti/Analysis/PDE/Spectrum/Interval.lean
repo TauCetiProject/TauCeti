@@ -47,6 +47,8 @@ sine mode, and it vanishes by completeness of the sine system
 * `TauCeti.PDE.exists_lt_sq_natCast_mul_pi_div` and
   `TauCeti.PDE.exists_lt_and_energyFormH1_eq_intervalDomain`: the Dirichlet eigenvalues of `-Δ`
   on `(a, b)` are unbounded.
+* `TauCeti.PDE.eq_zero_of_forall_setIntegral_mul_sin_eq_zero`: the sine modes are complete in
+  `L²(a, b)`.
 * `TauCeti.PDE.isDirichletEigenvalue_laplacian_intervalDomain_iff`: the Dirichlet spectrum of
   `-Δ` on `(a, b)` is `{(k π / (b - a))² | k ≥ 1}`.
 * `TauCeti.PDE.isLeast_isDirichletEigenvalue_laplacian_intervalDomain` and
@@ -356,7 +358,7 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
 
 /-- The sine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal to every
 `x ↦ sin (k π (x - a) / (b - a))`, `k ≥ 1`, is zero. -/
-private theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, 0 < k → ∫ x in intervalDomain a b,
       f x * Real.sin (k * π * (x 0 - a) / (b - a)) = 0) :

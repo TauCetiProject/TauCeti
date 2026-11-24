@@ -14,44 +14,74 @@ import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
-# The `W^{1,2}` energy density of a section of the Floer cylinder
+# The `W^{1,2}` energy density of a section
 
-For a map `ξ : ℝ × ℝ → E` into a normed space, the `W^{1,2}` energy density
-`‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` is the integrand of the Sobolev norm on which the linear estimates for
-the linearized Floer operator are stated. This file records the elementary facts about it shared by
-those estimates, together with the derivatives of a section cut off by a function of `s`.
+For a map `ξ : ℝ × ℝ → V` into a normed space, the `W^{1,2}` energy density
+`‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` (`TauCeti.Floer.sobolevDensity`) is the integrand of the squared
+`W^{1,2}` norm of `ξ` in the coordinates `(s, t)`, the derivatives being taken along the coordinate
+vectors `TauCeti.stdComplexLineReal` and `TauCeti.stdComplexLineImag`. It is the energy that the
+semi-Fredholm and other linear estimates of the linearized Floer operator control. The file also
+records the derivatives of a section cut off by a function of `s`.
 
 ## Main results
 
-* `Floer.continuous_sobolev`: the density of a `C¹` map is continuous.
-* `Floer.fderiv_smul_fst_apply_stdComplexLineReal`,
-  `Floer.fderiv_smul_fst_apply_stdComplexLineImag`: the derivatives of a section cut off by a
-  function `β(s)` are `∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`.
-* `Floer.sobolev_add_le`: the density of `ξ₁ + ξ₂` is at most twice the sum of the densities of
-  `ξ₁` and `ξ₂`.
-* `Floer.setIntegral_norm_sq_le_sobolev`: the density bounds `‖ξ‖²`, so its integral over a
-  rectangle bounds the `L²` norm.
+* `TauCeti.Floer.sobolevDensity_nonneg`: the density is nonnegative.
+* `TauCeti.Floer.continuous_sobolevDensity`: the density of a `C¹` map is continuous.
+* `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
+  germ of the map at `z`.
+* `TauCeti.Floer.fderiv_smul_fst_apply_stdComplexLineReal`,
+  `TauCeti.Floer.fderiv_smul_fst_apply_stdComplexLineImag`: the derivatives of a section cut off
+  by a function `β(s)` are `∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`.
+* `TauCeti.Floer.sobolevDensity_add_le`: the density of `ξ₁ + ξ₂` is at most twice the sum of the
+  densities of `ξ₁` and `ξ₂`.
+* `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
+  its integral over a rectangle bounds the `L²` norm.
 -/
 
 public section
 
 open MeasureTheory Set ContinuousLinearMap
+open scoped Topology
 
 namespace TauCeti.Floer
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a `C¹` map `ξ : ℝ × ℝ → E` is
-continuous. -/
-theorem continuous_sobolev {ξ : ℝ × ℝ → E} (hξ : ContDiff ℝ 1 ξ) :
-    Continuous fun z ↦ ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2 := by
+/-- The `W^{1,2}` energy density `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` of a map `ξ : ℝ × ℝ → V`. -/
+noncomputable def sobolevDensity (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ℝ :=
+  ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2
+
+theorem sobolevDensity_apply (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    sobolevDensity ξ z =
+      ‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
+        ‖ξ z‖ ^ 2 :=
+  (rfl)
+
+theorem sobolevDensity_nonneg (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : 0 ≤ sobolevDensity ξ z := by
+  rw [sobolevDensity_apply]
+  positivity
+
+/-- The zero map has zero energy density. -/
+@[simp]
+theorem sobolevDensity_zero (z : ℝ × ℝ) : sobolevDensity (0 : ℝ × ℝ → V) z = 0 := by
+  simp [sobolevDensity_apply]
+
+/-- The `W^{1,2}` energy density of a `C¹` map is continuous. -/
+theorem continuous_sobolevDensity {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
+    Continuous (sobolevDensity ξ) := by
   have := hξ.continuous_fderiv one_ne_zero
   have := hξ.continuous
+  simp only [funext (sobolevDensity_apply ξ)]
   fun_prop
 
+/-- Two maps that agree near `z` have the same energy density at `z`. -/
+theorem sobolevDensity_congr_of_eventuallyEq {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (h : ξ =ᶠ[𝓝 z] η) :
+    sobolevDensity ξ z = sobolevDensity η z := by
+  rw [sobolevDensity_apply, sobolevDensity_apply, h.fderiv_eq, h.eq_of_nhds]
+
 /-- The `s`-derivative of a section cut off by a function `β(s)`: `∂s (β ξ) = β ∂s ξ + β' ξ`. -/
-theorem fderiv_smul_fst_apply_stdComplexLineReal {ξ : ℝ × ℝ → E} {β : ℝ → ℝ} {β' : ℝ}
+theorem fderiv_smul_fst_apply_stdComplexLineReal {ξ : ℝ × ℝ → V} {β : ℝ → ℝ} {β' : ℝ}
     {z : ℝ × ℝ} (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
     fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal =
       β z.1 • fderiv ℝ ξ z stdComplexLineReal + β' • ξ z := by
@@ -61,7 +91,7 @@ theorem fderiv_smul_fst_apply_stdComplexLineReal {ξ : ℝ × ℝ → E} {β : �
   simp [stdComplexLineReal_eq, add_comm]
 
 /-- The `t`-derivative of a section cut off by a function `β(s)`: `∂t (β ξ) = β ∂t ξ`. -/
-theorem fderiv_smul_fst_apply_stdComplexLineImag {ξ : ℝ × ℝ → E} {β : ℝ → ℝ} {z : ℝ × ℝ}
+theorem fderiv_smul_fst_apply_stdComplexLineImag {ξ : ℝ × ℝ → V} {β : ℝ → ℝ} {z : ℝ × ℝ}
     (hβ : DifferentiableAt ℝ β z.1) (hξ : DifferentiableAt ℝ ξ z) :
     fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag =
       β z.1 • fderiv ℝ ξ z stdComplexLineImag := by
@@ -72,29 +102,26 @@ theorem fderiv_smul_fst_apply_stdComplexLineImag {ξ : ℝ × ℝ → E} {β : �
 
 /-- The `W^{1,2}` energy density of a section splits over a sum: the density of `ξ₁ + ξ₂` is at
 most twice the sum of the densities of `ξ₁` and `ξ₂`. -/
-theorem sobolev_add_le {ξ₁ ξ₂ : ℝ × ℝ → E} {z : ℝ × ℝ} (h₁ : DifferentiableAt ℝ ξ₁ z)
+theorem sobolevDensity_add_le {ξ₁ ξ₂ : ℝ × ℝ → V} {z : ℝ × ℝ} (h₁ : DifferentiableAt ℝ ξ₁ z)
     (h₂ : DifferentiableAt ℝ ξ₂ z) :
-    ‖fderiv ℝ (ξ₁ + ξ₂) z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ (ξ₁ + ξ₂) z stdComplexLineImag‖ ^ 2 +
-        ‖(ξ₁ + ξ₂) z‖ ^ 2 ≤
-      2 * (‖fderiv ℝ ξ₁ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ₁ z stdComplexLineImag‖ ^ 2 +
-          ‖ξ₁ z‖ ^ 2) +
-        2 * (‖fderiv ℝ ξ₂ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ₂ z stdComplexLineImag‖ ^ 2 +
-          ‖ξ₂ z‖ ^ 2) := by
-  have hsq (x y : E) : ‖x + y‖ ^ 2 ≤ 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) :=
+    sobolevDensity (ξ₁ + ξ₂) z ≤ 2 * sobolevDensity ξ₁ z + 2 * sobolevDensity ξ₂ z := by
+  have hsq (x y : V) : ‖x + y‖ ^ 2 ≤ 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) :=
     (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le x y) 2).trans add_sq_le
+  simp only [sobolevDensity_apply]
   rw [fderiv_add h₁ h₂]
   simp only [add_apply, Pi.add_apply]
   linarith [hsq (fderiv ℝ ξ₁ z stdComplexLineReal) (fderiv ℝ ξ₂ z stdComplexLineReal),
     hsq (fderiv ℝ ξ₁ z stdComplexLineImag) (fderiv ℝ ξ₂ z stdComplexLineImag), hsq (ξ₁ z) (ξ₂ z)]
 
 /-- The `L²` norm of a `C¹` map over a rectangle is at most its `W^{1,2}` energy. -/
-theorem setIntegral_norm_sq_le_sobolev {ξ : ℝ × ℝ → E} (hξ : ContDiff ℝ 1 ξ) (a b : ℝ) :
+theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {ξ : ℝ × ℝ → V}
+    (hξ : ContDiff ℝ 1 ξ) (a b : ℝ) :
     ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 ≤
-      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) :=
+      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, sobolevDensity ξ z :=
   setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by have := hξ.continuous; fun_prop))
-    (continuous_sobolev hξ).integrableOn_Icc_prod_Icc (measurableSet_Icc.prod measurableSet_Icc)
-    fun z _ ↦ by
+    (continuous_sobolevDensity hξ).integrableOn_Icc_prod_Icc
+    (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
+      rw [sobolevDensity_apply]
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
       linarith
