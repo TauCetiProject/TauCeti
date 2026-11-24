@@ -143,7 +143,7 @@ The author of a pull request may also post `self-tested` to add the `self-tested
 or `-self-tested` to remove it. Comments from anyone else, and comments on issues, are
 ignored for this label. The label is a persistent declaration that the author runs local verification: leave it in
 place through fix and rebase pushes, and remove it if verification fails or is incomplete.
-Admission checks trusted-team membership and source scope directly; no separate Actions
+The label counts from any author. Admission checks source scope directly; no separate Actions
 receipt is required. Since the label skips PR CI, admission also runs PR CI's diff guards (the
 ones `lake lint` runs) on the exact head, and explains on the PR any head that fails them.
 Reviews on the current head and staging tests still run.
