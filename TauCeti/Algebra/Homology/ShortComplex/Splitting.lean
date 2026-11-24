@@ -132,24 +132,32 @@ include hc in
 private theorem id_of_inl_comp_comp_eq_id {φ : c.pt ⟶ X} {u : X ⟶ P}
     (hu : c.inl ≫ φ ≫ u = 𝟙 P) :
     c.snd ≫ (c.inr - c.inr ≫ φ ≫ u ≫ c.inl) + φ ≫ u ≫ c.inl = 𝟙 c.pt := by
-  have e : (c.fst ≫ c.inl + c.snd ≫ c.inr) ≫ φ ≫ u ≫ c.inl = φ ≫ u ≫ c.inl := by
-    rw [hc, Category.id_comp]
-  rw [Preadditive.add_comp, Category.assoc, reassoc_of% hu, Category.assoc] at e
-  conv_lhs => arg 2; rw [← e]
-  rw [← hc, Preadditive.comp_sub]
-  abel
+  have e : φ ≫ u ≫ c.inl = c.fst ≫ c.inl + c.snd ≫ c.inr ≫ φ ≫ u ≫ c.inl := by
+    calc φ ≫ u ≫ c.inl = (c.fst ≫ c.inl + c.snd ≫ c.inr) ≫ φ ≫ u ≫ c.inl := by
+          rw [hc, Category.id_comp]
+      _ = c.fst ≫ c.inl + c.snd ≫ c.inr ≫ φ ≫ u ≫ c.inl := by
+          rw [Preadditive.add_comp, Category.assoc, reassoc_of% hu, Category.assoc]
+  calc c.snd ≫ (c.inr - c.inr ≫ φ ≫ u ≫ c.inl) + φ ≫ u ≫ c.inl
+      = c.snd ≫ (c.inr - c.inr ≫ φ ≫ u ≫ c.inl) +
+          (c.fst ≫ c.inl + c.snd ≫ c.inr ≫ φ ≫ u ≫ c.inl) := by rw [← e]
+    _ = c.fst ≫ c.inl + c.snd ≫ c.inr := by rw [Preadditive.comp_sub]; abel
+    _ = 𝟙 c.pt := hc
 
 include hc in
 private theorem id_of_comp_comp_snd_eq_id {φ : X ⟶ c.pt} {u : Q ⟶ X}
     (hu : u ≫ φ ≫ c.snd = 𝟙 Q) :
     (c.snd ≫ u) ≫ φ + (c.fst - c.snd ≫ u ≫ φ ≫ c.fst) ≫ c.inl = 𝟙 c.pt := by
-  have e : c.snd ≫ u ≫ φ ≫ (c.fst ≫ c.inl + c.snd ≫ c.inr) = c.snd ≫ u ≫ φ := by
-    rw [hc, Category.comp_id]
-  rw [Preadditive.comp_add, Preadditive.comp_add, Preadditive.comp_add, reassoc_of% hu] at e
-  conv_lhs => arg 1; rw [Category.assoc, ← e]
-  rw [← hc, Preadditive.sub_comp]
-  simp only [Category.assoc]
-  abel
+  have e : c.snd ≫ u ≫ φ = c.snd ≫ u ≫ φ ≫ c.fst ≫ c.inl + c.snd ≫ c.inr := by
+    calc c.snd ≫ u ≫ φ = c.snd ≫ u ≫ φ ≫ (c.fst ≫ c.inl + c.snd ≫ c.inr) := by
+          rw [hc, Category.comp_id]
+      _ = c.snd ≫ u ≫ φ ≫ c.fst ≫ c.inl + c.snd ≫ c.inr := by
+          rw [Preadditive.comp_add, Preadditive.comp_add, Preadditive.comp_add, reassoc_of% hu]
+  calc (c.snd ≫ u) ≫ φ + (c.fst - c.snd ≫ u ≫ φ ≫ c.fst) ≫ c.inl
+      = (c.snd ≫ u ≫ φ ≫ c.fst ≫ c.inl + c.snd ≫ c.inr) +
+          (c.fst - c.snd ≫ u ≫ φ ≫ c.fst) ≫ c.inl := by rw [Category.assoc, ← e]
+    _ = c.fst ≫ c.inl + c.snd ≫ c.inr := by
+          rw [Preadditive.sub_comp]; simp only [Category.assoc]; abel
+    _ = 𝟙 c.pt := hc
 
 /-- **Gaussian elimination on the source.** Let `c` exhibit `c.pt` as a biproduct of `P` and `Q`,
 and let `φ : c.pt ⟶ X` restrict to an isomorphism `c.inl ≫ φ` on `P`. Then `φ` is a split

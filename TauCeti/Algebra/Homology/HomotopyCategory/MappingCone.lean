@@ -822,12 +822,8 @@ through the homotopy which sends the `S.X₃`-summand of the cone to its `S.X₂
 noncomputable def mappingConeGHomotopyEquiv :
     _root_.HomotopyEquiv (mappingCone S.g) (S.X₁⟦(1 : ℤ)⟧) where
   hom := (mappingCone.triangle S.g).mor₃ ≫ σ.r⟦(1 : ℤ)⟧'
-  inv := lift S.g ((Cocycle.ofHom S.f).leftShift 1 1 (zero_add 1)) 0 (by
-    have hfg (k : ℤ) : S.f.f k ≫ S.g.f k = 0 := by
-      rw [← HomologicalComplex.comp_f, S.zero, HomologicalComplex.zero_f]
-    ext p q hpq
-    simp [Cochain.comp_zero_cochain_v,
-      (Cochain.ofHom S.f).leftShift_v 1 1 (zero_add 1) p q hpq q (by lia), hfg])
+  inv := lift S.g ((Cocycle.ofHom S.f).leftShift 1 1 (zero_add 1)) 0
+    (by simp [← Cochain.leftShift_comp_zero_cochain, ← Cochain.ofHom_comp])
   homotopyInvHomId := _root_.Homotopy.ofEq (by
     have hfr (k : ℤ) : S.f.f k ≫ σ.r.f k = 𝟙 _ := by
       rw [← HomologicalComplex.comp_f, σ.f_r, HomologicalComplex.id_f]
@@ -852,6 +848,15 @@ mapping cone triangle followed by the shifted retraction. -/
 @[simp]
 theorem mappingConeGHomotopyEquiv_hom :
     (σ.mappingConeGHomotopyEquiv).hom = (mappingCone.triangle S.g).mor₃ ≫ σ.r⟦(1 : ℤ)⟧' :=
+  (rfl)
+
+/-- The homotopy inverse in `mappingConeGHomotopyEquiv` is `S.f` shifted into the first summand of
+the mapping cone. -/
+@[simp]
+theorem mappingConeGHomotopyEquiv_inv :
+    (σ.mappingConeGHomotopyEquiv).inv =
+      lift S.g ((Cocycle.ofHom S.f).leftShift 1 1 (zero_add 1)) 0
+        (by simp [← Cochain.leftShift_comp_zero_cochain, ← Cochain.ofHom_comp]) :=
   (rfl)
 
 end CategoryTheory.ShortComplex.Splitting

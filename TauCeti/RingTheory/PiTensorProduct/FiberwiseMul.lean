@@ -51,8 +51,8 @@ together gives an algebra map from `⨂_{i : σ} B` to `B` itself. It is the ind
 * `PiTensorProduct.tprod_eq_prod_singleAlgHom`: a pure tensor is the product of its factors.
 * `PiTensorProduct.fiberwiseMul_tprod_eq_tprod_prod`: for a constant family, the image of a pure
   tensor is the pure tensor of the products over the fibres.
-* `PiTensorProduct.toLinearMap_fiberwiseMul_equiv`: along a bijection it is
-  `PiTensorProduct.reindex`.
+* `PiTensorProduct.toLinearMap_fiberwiseMul_equiv`, `PiTensorProduct.fiberwiseMul_equiv_apply`:
+  along a bijection it is `PiTensorProduct.reindex`.
 * `PiTensorProduct.reindex_fiberwiseMul`: it commutes with reindexing along a commuting square of
   index maps.
 * `PiTensorProduct.fiberwiseMul_sum_map`: multiplication on a disjoint union is the tensor
@@ -226,6 +226,11 @@ theorem toLinearMap_fiberwiseMul_equiv (e : σ ≃ τ) :
   funext j
   rw [Finset.prod_eq_single (e.symm j) (fun i hij hi ↦ ?_) (by simp)]
   exact absurd (e.eq_symm_apply.mpr (Finset.mem_filter.mp hij).2) hi
+
+/-- Along a bijection, `PiTensorProduct.fiberwiseMul` sends each element to its reindexing. -/
+theorem fiberwiseMul_equiv_apply (e : σ ≃ τ) (x : ⨂[R] _ : σ, B) :
+    fiberwiseMul (R := R) (A := fun _ ↦ B) e x = reindex R (fun _ ↦ B) e x :=
+  LinearMap.congr_fun (toLinearMap_fiberwiseMul_equiv e) x
 
 /-- `PiTensorProduct.fiberwiseMul` is natural in the index map: reindexing along bijections of the
 source and target carries multiplication along `f` to multiplication along `f'` when the square
