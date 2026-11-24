@@ -13,7 +13,6 @@ public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
@@ -298,8 +297,10 @@ theorem cfcₙ_nnreal_mem_of_isClosed [PartialOrder A] [StarOrderedRing A]
 
 /-- The order of a C⋆-algebra restricted to a closed two-sided ideal `I` is the C⋆-algebra order
 of `I`. Mathlib's `Subtype.starOrderedRing` does not apply to `I` as a `TwoSidedIdeal` (which has
-no `SMulMemClass`), so it is applied to the star subalgebra `I.toNonUnitalStarSubalgebra`, which
-has the same carrier. -/
+no `SMulMemClass`), so it is applied to the star subalgebra `I.toNonUnitalStarSubalgebra`. This
+definition relies on `↥I` and `↥I.toNonUnitalStarSubalgebra` being the same subtype of `A`, with
+the same ring, star and order structures (all induced from `A`), so the instance for the
+subalgebra is one for `I` by definitional unfolding. -/
 instance instStarOrderedRingOfIsClosed [PartialOrder A] [StarOrderedRing A] : StarOrderedRing I :=
   Subtype.starOrderedRing (𝕜 := ℂ) I.toNonUnitalStarSubalgebra
 

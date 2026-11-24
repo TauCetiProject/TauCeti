@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 import TauCeti.Analysis.CStarAlgebra.State.Extension
+import TauCeti.Analysis.CStarAlgebra.State.Unitization
 
 /-!
 # Extension of tracial states from closed ideals
@@ -24,19 +25,24 @@ inclusion of `I`.
 
 ## Main declarations
 
-* `PositiveContinuousLinearMap.norm_apply_sub_apply_mul_sq_le`: for a positive functional `γ` and
-  a positive contraction `e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`, with the left and
-  two-sided variants `norm_apply_sub_apply_mul_left_sq_le` and `norm_apply_sub_apply_mul_mul_le`.
-* `PositiveContinuousLinearMap.tendsto_apply_map_mul_mul_map`: a positive functional `γ` with
-  `‖γ‖ ≤ ‖τ‖` restricting along `f` to `τ` satisfies `γ(a) = lim_e γ(f(e) a f(e))` along every
-  increasing approximate unit of `B`; `tendsto_apply_mul_mul_of_apply_coe_eq` and
-  `tendsto_apply_mul_mul_of_apply_coe_eq'` are the ideal versions, the latter written with `τ`.
-* `PositiveContinuousLinearMap.eq_of_apply_map_eq` and `eq_of_apply_coe_eq`: uniqueness of the
-  extension, when the range of `f` absorbs `f(b) a f(b)`, and for a closed ideal.
-* `PositiveContinuousLinearMap.exists_apply_map_eq` and `exists_apply_coe_eq`: a state extends
-  along an injective star homomorphism, and from a closed ideal.
+The estimates for positive contractions
+(`PositiveContinuousLinearMap.norm_apply_sub_apply_mul_sq_le` and its variants) are in
+`TauCeti.Analysis.CStarAlgebra.State.Unitization`, and the extension formula, uniqueness and
+existence along a star homomorphism (`PositiveContinuousLinearMap.tendsto_apply_map_mul_mul_map`,
+`eq_of_apply_map_eq`, `exists_apply_map_eq`) in `TauCeti.Analysis.CStarAlgebra.State.Extension`.
+This file specializes them to a closed ideal.
+
+* `PositiveContinuousLinearMap.tendsto_apply_mul_mul_of_apply_coe_eq` and
+  `tendsto_apply_mul_mul_of_apply_coe_eq'`: a positive functional `γ` with `‖γ‖ ≤ ‖τ‖`
+  restricting to `τ` on `I` satisfies `γ(a) = lim_e γ(eae) = lim_e τ(eae)` along every increasing
+  approximate unit of `I`.
+* `PositiveContinuousLinearMap.eq_of_apply_coe_eq`: uniqueness of the extension from a closed
+  ideal.
+* `PositiveContinuousLinearMap.exists_apply_coe_eq`: a state extends from a closed ideal.
 * `PositiveContinuousLinearMap.existsUnique_apply_coe_eq`: a state of `I` has exactly one
   extension to a state of `A`.
+* `PositiveContinuousLinearMap.re_apply_mul_star_le_of_apply_coe_eq`: an extension `γ` of a
+  tracial state of `I` satisfies `Re γ(a a⋆) ≤ Re γ(a⋆ a)`.
 * `PositiveContinuousLinearMap.isTracialState_of_apply_coe_eq`: the extension of a tracial state
   is tracial.
 * `PositiveContinuousLinearMap.IsTracialState.existsUnique_isTracialState_apply_coe_eq`: a
@@ -69,159 +75,6 @@ open scoped ComplexOrder
 namespace PositiveContinuousLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- From `‖z‖² ≤ c ‖y‖²` to `‖z‖ ≤ √c ‖y‖`. -/
-private theorem norm_le_sqrt_mul_of_sq_le {z : ℂ} {y : A} {c : ℝ} (h : ‖z‖ ^ 2 ≤ c * ‖y‖ ^ 2) :
-    ‖z‖ ≤ Real.sqrt c * ‖y‖ := by
-  simpa only [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (norm_nonneg y)] using
-    Real.le_sqrt_of_sq_le h
-
-/-- **The approximate unit estimate.** For a positive functional `γ` and a positive contraction
-`e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`: the Cauchy–Schwarz inequality for the extension
-of `γ` to the unitization, with `(1 - e)² ≤ 1 - e`. -/
-theorem norm_apply_sub_apply_mul_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
-    (y : A) :
-    ‖γ y - γ (y * e)‖ ^ 2 ≤
-      ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re) * ‖y‖ ^ 2 := by
-  set N := ‖(γ : A →L[ℂ] ℂ)‖
-  set u : Unitization ℂ A := star (y : Unitization ℂ A)
-  set v : Unitization ℂ A := 1 - (e : Unitization ℂ A)
-  have hkey : γ y - γ (y * e) = γ.unitization (star u * v) := by
-    simp only [u, v, star_star, mul_sub, mul_one, ← Unitization.inr_mul, map_sub,
-      unitization_apply_inr]
-  have hcs := PositiveLinearMap.norm_map_star_mul_sq_le γ.unitization u v
-  have h1 : ‖γ.unitization (star u * u)‖ ≤ N * ‖y‖ ^ 2 := by
-    simp only [u, star_star, ← Unitization.inr_star, ← Unitization.inr_mul, unitization_apply_inr]
-    calc ‖γ (y * star y)‖ ≤ N * ‖y * star y‖ := (γ : A →L[ℂ] ℂ).le_opNorm _
-      _ = N * ‖y‖ ^ 2 := by rw [CStarRing.norm_self_mul_star, sq]
-  have hval : γ.unitization (star v * v) = N - γ e - γ e + γ (e * e) := by
-    have hv : star v * v =
-        1 - (e : Unitization ℂ A) - e + ((e * e : A) : Unitization ℂ A) := by
-      simp only [v, star_sub, star_one, ← Unitization.inr_star, he.star_eq, Unitization.inr_mul]
-      noncomm_ring
-    rw [hv, map_add, map_sub, map_sub, unitization_apply_one, unitization_apply_inr,
-      unitization_apply_inr]
-  have hnn : 0 ≤ γ.unitization (star v * v) := γ.unitization.map_nonneg (star_mul_self_nonneg v)
-  have hee : (γ (e * e)).re ≤ (γ e).re :=
-    (Complex.le_def.mp (γ.mono (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he he1))).1
-  have h2 : ‖γ.unitization (star v * v)‖ ≤ N - (γ e).re := by
-    rw [← Complex.re_eq_norm.mpr hnn, hval]
-    simp only [Complex.add_re, Complex.sub_re, Complex.ofReal_re]
-    linarith
-  rw [hkey]
-  calc ‖γ.unitization (star u * v)‖ ^ 2
-      ≤ ‖γ.unitization (star u * u)‖ * ‖γ.unitization (star v * v)‖ := hcs
-    _ ≤ (N * ‖y‖ ^ 2) * (N - (γ e).re) :=
-      mul_le_mul h1 h2 (norm_nonneg _) (by positivity)
-    _ = N * (N - (γ e).re) * ‖y‖ ^ 2 := by ring
-
-/-- The left-hand version of `norm_apply_sub_apply_mul_sq_le`:
-`‖γ y - γ (e y)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²` for a positive contraction `e`. -/
-theorem norm_apply_sub_apply_mul_left_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
-    (y : A) :
-    ‖γ y - γ (e * y)‖ ^ 2 ≤
-      ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re) * ‖y‖ ^ 2 := by
-  have h := norm_apply_sub_apply_mul_sq_le γ he he1 (star y)
-  have hs : star y * e = star (e * y) := by rw [star_mul, he.star_eq]
-  rwa [hs, map_star, map_star, ← star_sub, norm_star, norm_star] at h
-
-/-- The two-sided version of `norm_apply_sub_apply_mul_sq_le`:
-`‖γ y - γ (e y e)‖ ≤ 2 √(‖γ‖ (‖γ‖ - Re γ e)) ‖y‖` for a positive contraction `e`. -/
-theorem norm_apply_sub_apply_mul_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
-    (y : A) :
-    ‖γ y - γ (e * y * e)‖ ≤
-      2 * Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ := by
-  set c := ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)
-  have h1 := norm_le_sqrt_mul_of_sq_le (norm_apply_sub_apply_mul_left_sq_le γ he he1 y)
-  have h2 := norm_le_sqrt_mul_of_sq_le (norm_apply_sub_apply_mul_sq_le γ he he1 (e * y))
-  have hey : ‖e * y‖ ≤ ‖y‖ := (norm_mul_le e y).trans (mul_le_of_le_one_left (norm_nonneg y) he1)
-  calc ‖γ y - γ (e * y * e)‖ ≤ ‖γ y - γ (e * y)‖ + ‖γ (e * y) - γ (e * y * e)‖ :=
-        norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ Real.sqrt c * ‖y‖ + Real.sqrt c * ‖y‖ :=
-        add_le_add h1 (h2.trans (mul_le_mul_of_nonneg_left hey (Real.sqrt_nonneg c)))
-    _ = 2 * Real.sqrt c * ‖y‖ := by ring
-
-section Hom
-
-variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-  [FunLike F B A] [NonUnitalAlgHomClass F ℂ B A] [StarHomClass F B A]
-
-omit [StarOrderedRing A] [StarOrderedRing B] in
-/-- A positive functional `γ` on `A` with `‖γ‖ ≤ ‖τ‖` that restricts along a star homomorphism
-`f : B → A` to a positive functional `τ` of `B` has `‖γ‖ = ‖τ‖`. -/
-theorem norm_eq_of_apply_map_eq (f : F) {τ : B →P[ℂ] ℂ} {γ : A →P[ℂ] ℂ}
-    (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h : ∀ b, γ (f b) = τ b) :
-    ‖(γ : A →L[ℂ] ℂ)‖ = ‖(τ : B →L[ℂ] ℂ)‖ := by
-  refine le_antisymm hγ (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun b ↦ ?_)
-  rw [coe_toContinuousLinearMap, ← h b]
-  exact ((γ : A →L[ℂ] ℂ).le_opNorm (f b)).trans
-    (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f b) (norm_nonneg _))
-
-/-- **The extension formula.** If a positive functional `γ` on `A` with `‖γ‖ ≤ ‖τ‖` restricts
-along a star homomorphism `f : B → A` to a positive functional `τ` of `B`, then
-`γ(a) = lim_e γ(f(e) a f(e))` along every increasing approximate unit `e` of `B`. -/
-theorem tendsto_apply_map_mul_mul_map (f : F) {τ : B →P[ℂ] ℂ} {γ : A →P[ℂ] ℂ}
-    (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h : ∀ b, γ (f b) = τ b) {l : Filter B}
-    (hl : l.IsIncreasingApproximateUnit) (a : A) :
-    Tendsto (fun e : B ↦ γ (f e * a * f e)) l (𝓝 (γ a)) := by
-  have hN := norm_eq_of_apply_map_eq f hγ h
-  set N := ‖(τ : B →L[ℂ] ℂ)‖
-  have hlim : Tendsto (fun e : B ↦ 2 * Real.sqrt (N * (N - (τ e).re)) * ‖a‖) l (𝓝 0) := by
-    have hre : Tendsto (fun e : B ↦ (τ e).re) l (𝓝 N) := by
-      simpa [Function.comp_def] using
-        (Complex.continuous_re.tendsto _).comp (τ.tendsto_nhds_opNorm hl)
-    have := ((((hre.const_sub N).const_mul N).sqrt).const_mul 2).mul_const ‖a‖
-    simpa using this
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ hlim
-  filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he he1
-  rw [norm_sub_rev, ← hN, ← h e]
-  exact norm_apply_sub_apply_mul_mul_le γ (map_nonneg f he)
-    ((NonUnitalStarAlgHom.norm_apply_le f e).trans he1) a
-
-/-- **Uniqueness of the extension.** Let `f : B → A` be a star homomorphism whose range absorbs
-`f(b) a f(b)` for all `b` and `a` (as for the inclusion of a closed ideal, or of a hereditary
-subalgebra). Two positive functionals `γ₁`, `γ₂` on `A` of norm at most `‖τ‖` that restrict along
-`f` to the same positive functional `τ` of `B` are equal. -/
-theorem eq_of_apply_map_eq (f : F) (hf : ∀ (b : B) (a : A), ∃ c, f c = f b * a * f b)
-    {τ : B →P[ℂ] ℂ} {γ₁ γ₂ : A →P[ℂ] ℂ} (hγ₁ : ‖(γ₁ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖)
-    (hγ₂ : ‖(γ₂ : A →L[ℂ] ℂ)‖ ≤ ‖(τ : B →L[ℂ] ℂ)‖) (h₁ : ∀ b, γ₁ (f b) = τ b)
-    (h₂ : ∀ b, γ₂ (f b) = τ b) : γ₁ = γ₂ := by
-  have hl := CStarAlgebra.increasingApproximateUnit (A := B)
-  have := hl.neBot
-  refine ext fun a ↦ tendsto_nhds_unique (tendsto_apply_map_mul_mul_map f hγ₁ h₁ hl a) ?_
-  refine (tendsto_apply_map_mul_mul_map f hγ₂ h₂ hl a).congr fun e ↦ ?_
-  obtain ⟨c, hc⟩ := hf e a
-  rw [← hc, h₁, h₂]
-
-/-- **Existence of the extension.** Every positive functional of norm one on `B` is the
-restriction, along an injective star homomorphism `f : B → A`, of a positive functional of norm
-one on `A`. -/
-theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) {τ : B →P[ℂ] ℂ}
-    (hτ : ‖(τ : B →L[ℂ] ℂ)‖ = 1) :
-    ∃ γ : A →P[ℂ] ℂ, ‖(γ : A →L[ℂ] ℂ)‖ = 1 ∧ ∀ b, γ (f b) = τ b := by
-  let g := Unitization.starMap (NonUnitalStarAlgHom.ofClass f)
-  have hτ' : StrongDual.toWeakDual (τ.unitization : Unitization ℂ B →L[ℂ] ℂ) ∈
-      TauCeti.stateSpace (Unitization ℂ B) := by
-    rw [toWeakDual_mem_stateSpace_iff, norm_unitization, hτ]
-  obtain ⟨φ, hφ, hφτ⟩ := TauCeti.surjOn_pullbackFunctional_stateSpace g
-    (Unitization.starMap_injective (φ := NonUnitalStarAlgHom.ofClass f) hf) hτ'
-  obtain ⟨ω, hω1, hωφ⟩ := TauCeti.mem_stateSpace_iff_exists_positiveLinearMap.mp hφ
-  let γ : A →P[ℂ] ℂ := (ofClass ω).comp (.ofClass (Unitization.inrNonUnitalStarAlgHom ℂ A))
-  have hγ : ∀ b, γ (f b) = τ b := fun b ↦ by
-    have h1 := DFunLike.congr_fun hφτ (b : Unitization ℂ B)
-    have h2 := DFunLike.congr_fun hωφ (g (b : Unitization ℂ B))
-    simp only [TauCeti.pullbackFunctional_apply, StrongDual.toWeakDual_apply] at h1 h2
-    rw [← h2] at h1
-    simpa [γ, g] using h1
-  refine ⟨γ, (norm_eq_of_apply_map_eq f ?_ hγ).trans hτ, hγ⟩
-  refine hτ ▸ ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a ↦ ?_
-  have := (ofClass ω : Unitization ℂ A →L[ℂ] ℂ).le_opNorm (a : Unitization ℂ A)
-  rw [hω1, Unitization.norm_inr] at this
-  simpa [γ] using this
-
-end Hom
 
 section Ideal
 
@@ -281,46 +134,51 @@ theorem existsUnique_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : ‖(τ : I →L[
   exact ⟨γ, ⟨hγ, h⟩, fun γ' ⟨hγ', h'⟩ ↦
     eq_of_apply_coe_eq (hγ'.trans hτ.symm).le (hγ.trans hτ.symm).le h' h⟩
 
+/-- A positive functional `γ` of norm at most one on `A` restricting to a tracial state `τ` of a
+closed ideal `I` satisfies `Re γ(a a⋆) ≤ Re γ(a⋆ a)`:
+`γ(a a⋆) = lim_e τ((ea)(ea)⋆) = lim_e τ((ea)⋆(ea)) = lim_e γ(a⋆ e² a) ≤ γ(a⋆ a)`. -/
+theorem re_apply_mul_star_le_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : τ.IsTracialState)
+    {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ 1) (h : ∀ c : I, γ c = τ c) (a : A) :
+    (γ (a * star a)).re ≤ (γ (star a * a)).re := by
+  have hl := CStarAlgebra.increasingApproximateUnit (A := I)
+  have := hl.neBot
+  have hlim := (Complex.continuous_re.tendsto _).comp
+    (tendsto_apply_mul_mul_of_apply_coe_eq (hγ.trans hτ.norm_eq_one.ge) h hl (a * star a))
+  refine le_of_tendsto hlim ?_
+  filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he he1
+  have he' : 0 ≤ (e : A) := by exact_mod_cast he
+  have he1' : ‖(e : A)‖ ≤ 1 := by exact_mod_cast he1
+  let x : I := ⟨(e : A) * a, I.mul_mem_right _ _ e.property⟩
+  have hx : γ ((e : A) * (a * star a) * e) = γ (star a * ((e : A) * e) * a) := by
+    have h1 : (e : A) * (a * star a) * e = ((x * star x : I) : A) := by
+      simp only [MulMemClass.coe_mul, TwoSidedIdeal.coe_star, x, star_mul, he'.star_eq]
+      noncomm_ring
+    have h2 : star a * ((e : A) * e) * a = ((star x * x : I) : A) := by
+      simp only [MulMemClass.coe_mul, TwoSidedIdeal.coe_star, x, star_mul, he'.star_eq]
+      noncomm_ring
+    rw [h1, h2, h, h, hτ.map_mul_comm]
+  have hee : ‖(e : A) * e‖ ≤ 1 :=
+    (norm_mul_le _ _).trans ((mul_le_mul he1' he1' (norm_nonneg _) zero_le_one).trans_eq
+      (one_mul 1))
+  have hsa : IsSelfAdjoint ((e : A) * e) := by
+    simpa [he'.star_eq] using IsSelfAdjoint.star_mul_self (e : A)
+  have hmono : (γ (star a * ((e : A) * e) * a)).re ≤ (γ (‖(e : A) * e‖ • (star a * a))).re :=
+    (Complex.le_def.mp (γ.mono (CStarAlgebra.star_left_conjugate_le_norm_smul a _ hsa))).1
+  have hnn : 0 ≤ (γ (star a * a)).re :=
+    (Complex.le_def.mp (γ.map_nonneg (star_mul_self_nonneg a))).1
+  simp only [Function.comp_apply, hx]
+  refine hmono.trans ?_
+  rw [← Complex.coe_smul, map_smul, smul_eq_mul, Complex.re_ofReal_mul]
+  exact mul_le_of_le_one_left hnn hee
+
 /-- **The extension of a tracial state is tracial.** If a positive functional `γ` of norm at most
 one on `A` restricts to a tracial state of a closed ideal `I`, then `γ` is a tracial state. Only
-the traciality of `τ` on `I` enters: `γ(a a⋆) = lim_e τ((ea)(ea)⋆) = lim_e γ(a⋆ e² a) ≤ γ(a⋆ a)`. -/
+the traciality of `τ` on `I` enters, through `re_apply_mul_star_le_of_apply_coe_eq`. -/
 theorem isTracialState_of_apply_coe_eq {τ : I →P[ℂ] ℂ} (hτ : τ.IsTracialState)
     {γ : A →P[ℂ] ℂ} (hγ : ‖(γ : A →L[ℂ] ℂ)‖ ≤ 1) (h : ∀ c : I, γ c = τ c) :
     γ.IsTracialState := by
-  have hτ1 := hτ.norm_eq_one
-  have hN := norm_eq_one_of_apply_coe_eq hτ1 hγ h
-  have hl := CStarAlgebra.increasingApproximateUnit (A := I)
-  have := hl.neBot
-  -- `Re γ(a a⋆) ≤ Re γ(a⋆ a)`
-  have hle : ∀ a : A, (γ (a * star a)).re ≤ (γ (star a * a)).re := fun a ↦ by
-    have hlim := (Complex.continuous_re.tendsto _).comp
-      (tendsto_apply_mul_mul_of_apply_coe_eq (hγ.trans hτ1.ge) h hl (a * star a))
-    refine le_of_tendsto hlim ?_
-    filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he he1
-    have he' : 0 ≤ (e : A) := he
-    have he1' : ‖(e : A)‖ ≤ 1 := he1
-    let x : I := ⟨(e : A) * a, I.mul_mem_right _ _ e.property⟩
-    have hx : γ ((e : A) * (a * star a) * e) = γ (star a * ((e : A) * e) * a) := by
-      have h1 : (e : A) * (a * star a) * e = ((x * star x : I) : A) := by
-        simp only [MulMemClass.coe_mul, TwoSidedIdeal.coe_star, x, star_mul, he'.star_eq]
-        noncomm_ring
-      have h2 : star a * ((e : A) * e) * a = ((star x * x : I) : A) := by
-        simp only [MulMemClass.coe_mul, TwoSidedIdeal.coe_star, x, star_mul, he'.star_eq]
-        noncomm_ring
-      rw [h1, h2, h, h, hτ.map_mul_comm]
-    have hee : ‖(e : A) * e‖ ≤ 1 :=
-      (norm_mul_le _ _).trans ((mul_le_mul he1' he1' (norm_nonneg _) zero_le_one).trans_eq
-        (one_mul 1))
-    have hsa : IsSelfAdjoint ((e : A) * e) := by
-      simpa [he'.star_eq] using IsSelfAdjoint.star_mul_self (e : A)
-    have hmono : (γ (star a * ((e : A) * e) * a)).re ≤ (γ (‖(e : A) * e‖ • (star a * a))).re :=
-      (Complex.le_def.mp (γ.mono (CStarAlgebra.star_left_conjugate_le_norm_smul a _ hsa))).1
-    have hnn : 0 ≤ (γ (star a * a)).re :=
-      (Complex.le_def.mp (γ.map_nonneg (star_mul_self_nonneg a))).1
-    simp only [Function.comp_apply, hx]
-    refine hmono.trans ?_
-    rw [← Complex.coe_smul, map_smul, smul_eq_mul, Complex.re_ofReal_mul]
-    exact mul_le_of_le_one_left hnn hee
+  have hN := norm_eq_one_of_apply_coe_eq hτ.norm_eq_one hγ h
+  have hle := re_apply_mul_star_le_of_apply_coe_eq hτ hγ h
   refine isTracialState_iff_map_star_mul_self.mpr ⟨hN, fun a ↦ Complex.ext ?_ ?_⟩
   · simpa using le_antisymm (by simpa using hle (star a)) (hle a)
   · rw [← (Complex.le_def.mp (γ.map_nonneg (star_mul_self_nonneg a))).2,

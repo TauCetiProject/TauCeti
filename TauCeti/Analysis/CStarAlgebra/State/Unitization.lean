@@ -9,6 +9,9 @@ public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.StarAlgebra.GNS.Basic
+import TauCeti.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
+import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 
 /-!
 # Extending positive functionals to the unitization
@@ -40,6 +43,11 @@ extension of a tracial state is again a tracial state is
 * `PositiveContinuousLinearMap.eq_zero_of_unitization_map_star_mul_self_eq_zero`: if `τ` is
   faithful, `τ (star a * a) = 0 → a = 0`, and `A` has no two-sided unit, then `τ⁺¹` is faithful
   too.
+* `PositiveContinuousLinearMap.norm_apply_sub_apply_mul_sq_le`: **the approximate unit
+  estimate**: for a positive functional `γ` and a positive contraction `e`,
+  `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`, from the Cauchy–Schwarz inequality for `γ⁺¹`,
+  with the left and two-sided variants `norm_apply_sub_apply_mul_left_sq_le` and
+  `norm_apply_sub_apply_mul_mul_le`.
 
 ## Implementation notes
 
@@ -222,5 +230,73 @@ theorem eq_zero_of_unitization_map_star_mul_self_eq_zero
     refine (hA (TauCeti.exists_right_identity_iff.mp ⟨-(x.fst⁻¹ • x.snd), fun c => ?_⟩)).elim
     have hc : c * x.snd = -(x.fst • c) := eq_neg_of_add_eq_zero_right (hl c)
     simp [mul_smul_comm, hc, h0]
+
+
+/-- **The approximate unit estimate.** For a positive functional `γ` and a positive contraction
+`e`, `‖γ y - γ (y e)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²`: the Cauchy–Schwarz inequality for the extension
+of `γ` to the unitization, with `(1 - e)² ≤ 1 - e`. -/
+theorem norm_apply_sub_apply_mul_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (y * e)‖ ^ 2 ≤
+      ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re) * ‖y‖ ^ 2 := by
+  set N := ‖(γ : A →L[ℂ] ℂ)‖
+  set u : Unitization ℂ A := star (y : Unitization ℂ A)
+  set v : Unitization ℂ A := 1 - (e : Unitization ℂ A)
+  have hkey : γ y - γ (y * e) = γ.unitization (star u * v) := by
+    simp only [u, v, star_star, mul_sub, mul_one, ← Unitization.inr_mul, map_sub,
+      unitization_apply_inr]
+  have hcs := PositiveLinearMap.norm_map_star_mul_sq_le γ.unitization u v
+  have h1 : ‖γ.unitization (star u * u)‖ ≤ N * ‖y‖ ^ 2 := by
+    simp only [u, star_star, ← Unitization.inr_star, ← Unitization.inr_mul, unitization_apply_inr]
+    calc ‖γ (y * star y)‖ ≤ N * ‖y * star y‖ := (γ : A →L[ℂ] ℂ).le_opNorm _
+      _ = N * ‖y‖ ^ 2 := by rw [CStarRing.norm_self_mul_star, sq]
+  have hval : γ.unitization (star v * v) = N - γ e - γ e + γ (e * e) := by
+    have hv : star v * v =
+        1 - (e : Unitization ℂ A) - e + ((e * e : A) : Unitization ℂ A) := by
+      simp only [v, star_sub, star_one, ← Unitization.inr_star, he.star_eq, Unitization.inr_mul]
+      noncomm_ring
+    rw [hv, map_add, map_sub, map_sub, unitization_apply_one, unitization_apply_inr,
+      unitization_apply_inr]
+  have hnn : 0 ≤ γ.unitization (star v * v) := γ.unitization.map_nonneg (star_mul_self_nonneg v)
+  have hee : (γ (e * e)).re ≤ (γ e).re :=
+    (Complex.le_def.mp (γ.mono (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he he1))).1
+  have h2 : ‖γ.unitization (star v * v)‖ ≤ N - (γ e).re := by
+    rw [← Complex.re_eq_norm.mpr hnn, hval]
+    simp only [Complex.add_re, Complex.sub_re, Complex.ofReal_re]
+    linarith
+  rw [hkey]
+  calc ‖γ.unitization (star u * v)‖ ^ 2
+      ≤ ‖γ.unitization (star u * u)‖ * ‖γ.unitization (star v * v)‖ := hcs
+    _ ≤ (N * ‖y‖ ^ 2) * (N - (γ e).re) :=
+      mul_le_mul h1 h2 (norm_nonneg _) (by positivity)
+    _ = N * (N - (γ e).re) * ‖y‖ ^ 2 := by ring
+
+/-- The left-hand version of `norm_apply_sub_apply_mul_sq_le`:
+`‖γ y - γ (e y)‖² ≤ ‖γ‖ (‖γ‖ - Re γ e) ‖y‖²` for a positive contraction `e`. -/
+theorem norm_apply_sub_apply_mul_left_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (e * y)‖ ^ 2 ≤
+      ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re) * ‖y‖ ^ 2 := by
+  have h := norm_apply_sub_apply_mul_sq_le γ he he1 (star y)
+  have hs : star y * e = star (e * y) := by rw [star_mul, he.star_eq]
+  rwa [hs, map_star, map_star, ← star_sub, norm_star, norm_star] at h
+
+/-- The two-sided version of `norm_apply_sub_apply_mul_sq_le`:
+`‖γ y - γ (e y e)‖ ≤ 2 √(‖γ‖ (‖γ‖ - Re γ e)) ‖y‖` for a positive contraction `e`. -/
+theorem norm_apply_sub_apply_mul_mul_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he1 : ‖e‖ ≤ 1)
+    (y : A) :
+    ‖γ y - γ (e * y * e)‖ ≤
+      2 * Real.sqrt (‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)) * ‖y‖ := by
+  set c := ‖(γ : A →L[ℂ] ℂ)‖ * (‖(γ : A →L[ℂ] ℂ)‖ - (γ e).re)
+  have h1 := Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg y)
+    (norm_apply_sub_apply_mul_left_sq_le γ he he1 y)
+  have h2 := Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg (e * y))
+    (norm_apply_sub_apply_mul_sq_le γ he he1 (e * y))
+  have hey : ‖e * y‖ ≤ ‖y‖ := (norm_mul_le e y).trans (mul_le_of_le_one_left (norm_nonneg y) he1)
+  calc ‖γ y - γ (e * y * e)‖ ≤ ‖γ y - γ (e * y)‖ + ‖γ (e * y) - γ (e * y * e)‖ :=
+        norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ ≤ Real.sqrt c * ‖y‖ + Real.sqrt c * ‖y‖ :=
+        add_le_add h1 (h2.trans (mul_le_mul_of_nonneg_left hey (Real.sqrt_nonneg c)))
+    _ = 2 * Real.sqrt c * ‖y‖ := by ring
 
 end PositiveContinuousLinearMap
