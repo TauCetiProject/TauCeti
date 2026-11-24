@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
+public import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
@@ -34,6 +35,8 @@ found on geometric points to an actual flag by subcomodules.
   coefficient matrix.
 * `TauCeti.Comodule.charpoly_endOfPoint_comp`: characteristic polynomials of point actions
   commute with scalar extension.
+* `TauCeti.Comodule.mem_aroots_charpoly_endOfPoint_iff`: the roots of the characteristic
+  polynomial of a rational point are the eigenvalues of the point after scalar extension.
 * `TauCeti.Comodule.coefficientMatrix_isUpperTriangular_iff_forall_toMatrix_endOfPoint`:
   pointwise detection of upper triangularity.
 * `TauCeti.Comodule.coefficientMatrix_isUpperUnitriangular_iff_forall_toMatrix_endOfPoint`:
@@ -103,6 +106,18 @@ theorem charpoly_endOfPoint_comp [Module.Free R M] [Module.Finite R M]
   apply congrArg Matrix.charpoly
   ext p q
   simp [Matrix.map_apply]
+
+/-- For a `k`-point `γ`, the roots in a field `Ω` of the characteristic polynomial of `γ` on a
+finite-dimensional comodule are the eigenvalues of the induced `Ω`-point. -/
+theorem mem_aroots_charpoly_endOfPoint_iff {k H Ω M : Type*} [Field k] [Semiring H] [Algebra k H]
+    [Coalgebra k H] [Field Ω] [Algebra k Ω] [AddCommGroup M] [Module k M] [Comodule k H M]
+    [Module.Finite k M] (γ : H →ₐ[k] k) (μ : Ω) :
+    μ ∈ (endOfPoint M γ).charpoly.aroots Ω ↔
+      Module.End.HasEigenvalue (endOfPoint M ((Algebra.ofId k Ω).comp γ)) μ := by
+  rw [Module.End.hasEigenvalue_iff_isRoot_charpoly, charpoly_endOfPoint_comp,
+    Polynomial.mem_aroots, Polynomial.IsRoot.def, Algebra.toRingHom_ofId,
+    Polynomial.eval_map_algebraMap]
+  exact and_iff_right (endOfPoint M γ).charpoly_monic.ne_zero
 
 end Charpoly
 
