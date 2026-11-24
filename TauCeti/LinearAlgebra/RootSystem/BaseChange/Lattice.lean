@@ -302,10 +302,6 @@ noncomputable def restrictAutHom : P.latticeAut X₀ Y₀ →* hXY.restrict.Aut 
   map_one' := Equiv.weightHom_injective _ <| LinearEquiv.ext fun _ ↦ rfl
   map_mul' _ _ := Equiv.weightHom_injective _ <| LinearEquiv.ext fun _ ↦ rfl
 
-/-- Coercing the restricted weight action back to `M` agrees with the ambient weight action. -/
-theorem coe_restrictAutHom_weightEquiv (g : P.latticeAut X₀ Y₀) (x : X₀) :
-    ((hXY.restrictAutHom g).weightEquiv x : M) = (g : P.Aut).weightEquiv x := (rfl)
-
 /-- Coercing the restricted weight SMul back to `M` agrees with the ambient SMul. -/
 @[simp] theorem coe_restrictAutHom_smul (g : P.latticeAut X₀ Y₀) (x : X₀) :
     ((hXY.restrictAutHom g • x : X₀) : M) = (g : P.Aut) • (x : M) := (rfl)
@@ -412,15 +408,10 @@ noncomputable def extendAutHom : hXY.restrict.Aut →* P.latticeAut X₀ Y₀ :=
 theorem coe_extendAutHom_apply (u : hXY.restrict.Aut) : (hXY.extendAutHom hX hY u : P.Aut) =
     (hXY.baseChangeEquiv hX hY).autCongr (hXY.restrict.autBaseChangeHom S u) := (rfl)
 
-/-- Extending an automorphism of `hXY.restrict` agrees with it on `X₀`. -/
-theorem extendAutHom_weightEquiv_coe (u : hXY.restrict.Aut) (x : X₀) :
-    ((hXY.extendAutHom hX hY u : P.Aut).weightEquiv (x : M)) = (u.weightEquiv x : M) :=
-  hXY.autCongr_autBaseChangeHom_weightEquiv_coe hX hY u x
-
 /-- Extending an automorphism of `hXY.restrict` acts on `(x : M)` by coercing `u • x`. -/
 @[simp] theorem extendAutHom_smul_coe (u : hXY.restrict.Aut) (x : X₀) :
     (hXY.extendAutHom hX hY u : P.Aut) • (x : M) = ((u • x : X₀) : M) :=
-  hXY.extendAutHom_weightEquiv_coe hX hY u x
+  hXY.autCongr_autBaseChangeHom_weightEquiv_coe hX hY u x
 
 /-- Extending an automorphism of `hXY.restrict` agrees with its forward coweight map on `Y₀`. -/
 @[simp] theorem extendAutHom_coweightEquiv_symm_coe (u : hXY.restrict.Aut) (y : Y₀) :
@@ -435,18 +426,15 @@ theorem extendAutHom_weightEquiv_coe (u : hXY.restrict.Aut) (x : X₀) :
 @[simp] theorem restrictAutHom_extendAutHom (u : hXY.restrict.Aut) :
     hXY.restrictAutHom (hXY.extendAutHom hX hY u) = u :=
   Equiv.weightHom_injective _ <| LinearEquiv.ext fun x ↦
-    Subtype.ext (hXY.extendAutHom_weightEquiv_coe hX hY u x)
+    Subtype.ext (hXY.extendAutHom_smul_coe hX hY u x)
 
 /-- Extending the restriction of a lattice-preserving automorphism recovers that automorphism. -/
 @[simp] theorem extendAutHom_restrictAutHom (g : P.latticeAut X₀ Y₀) :
     hXY.extendAutHom hX hY (hXY.restrictAutHom g) = g := by
-  refine Subtype.ext <| Equiv.weightHom_injective P <| LinearEquiv.toLinearMap_injective ?_
-  suffices ((hXY.extendAutHom hX hY (hXY.restrictAutHom g) : P.Aut).weightEquiv.toLinearMap) ∘ₗ
-      hX.equiv.toLinearMap = (g : P.Aut).weightEquiv.toLinearMap ∘ₗ hX.equiv.toLinearMap from
-    LinearMap.ext fun m ↦ by simpa using congr($this (hX.equiv.symm m))
-  refine AlgebraTensorModule.ext fun s x ↦ ?_
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hX.equiv_tmul, map_smul]
-  exact congrArg (s • ·) (hXY.extendAutHom_weightEquiv_coe hX hY (hXY.restrictAutHom g) x)
+  refine Subtype.ext <| Equiv.weightHom_injective P <| LinearEquiv.toLinearMap_injective <|
+    hX.algHom_ext _ _ fun x ↦ ?_
+  change (hXY.extendAutHom hX hY (hXY.restrictAutHom g) : P.Aut) • (x : M) = (g : P.Aut) • (x : M)
+  simp
 
 include hX hY in
 /-- **Scalar extension and lattice restriction give an isomorphism
@@ -601,14 +589,57 @@ noncomputable def unitTmulRootPairingEquiv :
 @[simp] theorem unitTmulRootPairingEquiv_indexEquiv :
     (D.unitTmulRootPairingEquiv S).indexEquiv = _root_.Equiv.refl ι := (rfl)
 
+private theorem isBaseChange_subtype_range_mk_one {R S M : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] [FaithfulSMul R S] [AddCommGroup M] [Module R M] [Module.Flat R M] :
+    IsBaseChange S (LinearMap.range (TensorProduct.mk R S M 1)).subtype :=
+  IsBaseChange.of_equiv ((TensorProduct.unitTmulEquiv R S M).symm.baseChange R S _ M) fun x ↦ by
+    rw [LinearEquiv.baseChange_tmul, ← TensorProduct.coe_unitTmulEquiv_apply,
+      LinearEquiv.apply_symm_apply, Submodule.coe_subtype]
+
+/-- **Scalar extension identifies `D.Aut` with the unit-tensor lattice stabilizer in
+`(D.baseChange S).Aut`.** -/
+noncomputable def autMulEquivLatticeAutBaseChange :
+    D.Aut ≃* (D.baseChange S).latticeAut (LinearMap.range (TensorProduct.mk R S X 1))
+      (LinearMap.range (TensorProduct.mk R S Y 1)) :=
+  have := D.free_weight
+  have : Module.Finite R (LinearMap.range (TensorProduct.mk R S Y 1)) :=
+    .equiv (TensorProduct.unitTmulEquiv R S Y)
+  (D.unitTmulRootPairingEquiv S).autCongr.trans
+    ((D.isDualLatticePair_range_mk_one S).autMulEquiv
+      isBaseChange_subtype_range_mk_one isBaseChange_subtype_range_mk_one)
+
+/-- Coercing `D.autMulEquivLatticeAutBaseChange S g` to `(D.baseChange S).Aut` is
+`D.autBaseChangeHom S g`. -/
+@[simp] theorem coe_autMulEquivLatticeAutBaseChange_apply (g : D.Aut) :
+    (D.autMulEquivLatticeAutBaseChange S g : (D.baseChange S).Aut) = D.autBaseChangeHom S g := by
+  have := D.free_weight
+  refine Equiv.weightHom_injective (D.baseChange S) <| LinearEquiv.toLinearMap_injective <|
+    (TensorProduct.isBaseChange R X S).algHom_ext _ _ fun x ↦ ?_
+  change (D.autMulEquivLatticeAutBaseChange S g : (D.baseChange S).Aut) • ((1 : S) ⊗ₜ[R] x) =
+    D.autBaseChangeHom S g • ((1 : S) ⊗ₜ[R] x)
+  conv_lhs => rw [← D.coe_unitTmulRootPairingEquiv_weightMap S x]
+  change (D.autMulEquivLatticeAutBaseChange S g : (D.baseChange S).Aut) •
+      ((D.unitTmulRootPairingEquiv S).weightEquiv x : S ⊗[R] X) =
+    D.autBaseChangeHom S g • ((1 : S) ⊗ₜ[R] x)
+  rw [autMulEquivLatticeAutBaseChange, MulEquiv.trans_apply,
+    IsDualLatticePair.autMulEquiv_apply, IsDualLatticePair.extendAutHom_smul_coe,
+    (D.unitTmulRootPairingEquiv S).autCongr_smul, D.autBaseChangeHom_smul_tmul S]
+  simp
+
+/-- Restriction to the unit-tensor lattices and pullback along `unitTmulRootPairingEquiv` is the
+inverse of `autMulEquivLatticeAutBaseChange`. -/
+@[simp] theorem autMulEquivLatticeAutBaseChange_symm_apply
+    (g : (D.baseChange S).latticeAut (LinearMap.range (TensorProduct.mk R S X 1))
+      (LinearMap.range (TensorProduct.mk R S Y 1))) :
+    (D.autMulEquivLatticeAutBaseChange S).symm g = (D.unitTmulRootPairingEquiv S).autCongr.symm
+      ((D.isDualLatticePair_range_mk_one S).restrictAutHom g) := (rfl)
+
 /-- Every extended automorphism `D.autBaseChangeHom S g` preserves `1 ⊗ X` and `1 ⊗ Y`. -/
 theorem autBaseChangeHom_mem_latticeAut (g : D.Aut) :
     D.autBaseChangeHom S g ∈ (D.baseChange S).latticeAut
       (LinearMap.range (TensorProduct.mk R S X 1))
       (LinearMap.range (TensorProduct.mk R S Y 1)) :=
-  mem_latticeAut_of_comp (LinearMap.coe_range _) (LinearMap.coe_range _) g.weightEquiv.surjective
-    g.coweightEquiv.symm.surjective (fun x ↦ by simp [autBaseChangeHom_apply])
-    (fun y ↦ D.autBaseChangeHom_coweightEquiv_symm_tmul S g 1 y)
+  D.coe_autMulEquivLatticeAutBaseChange_apply S g ▸ SetLike.coe_mem _
 
 /-- Extending the pullback of a restricted unit-tensor automorphism recovers the ambient
 automorphism. -/
@@ -617,17 +648,8 @@ automorphism. -/
       (LinearMap.range (TensorProduct.mk R S Y 1))) :
     D.autBaseChangeHom S ((D.unitTmulRootPairingEquiv S).autCongr.symm
       ((D.isDualLatticePair_range_mk_one S).restrictAutHom g)) = g := by
-  let u : D.Aut := (D.unitTmulRootPairingEquiv S).autCongr.symm
-    ((D.isDualLatticePair_range_mk_one S).restrictAutHom g)
-  refine Equiv.weightHom_injective (D.baseChange S) <|
-    LinearEquiv.toLinearMap_injective <| AlgebraTensorModule.ext fun s x ↦ ?_
-  have hsmul := (D.unitTmulRootPairingEquiv S).autCongr_smul u x
-  rw [MulEquiv.apply_symm_apply] at hsmul
-  have hu : (1 : S) ⊗ₜ[R] (u • x) = (g : (D.baseChange S).Aut) • ((1 : S) ⊗ₜ[R] x) := by
-    simpa using congrArg Subtype.val hsmul.symm
-  rw [← mul_one s, ← smul_eq_mul, ← smul_tmul', map_smul, map_smul]
-  -- `weightHom` evaluates `weightEquiv`, which is definitionally the `Aut` SMul action.
-  exact congrArg (s • ·) <| (D.autBaseChangeHom_smul_tmul S u 1 x).trans hu
+  rw [← D.coe_autMulEquivLatticeAutBaseChange_apply S,
+    ← D.autMulEquivLatticeAutBaseChange_symm_apply S, MulEquiv.apply_symm_apply]
 
 /-- **The exact range of `D.autBaseChangeHom S` is the subgroup of automorphisms of
 `D.baseChange S` preserving the unit-tensor lattices `1 ⊗ X` and `1 ⊗ Y`.** -/
@@ -637,31 +659,6 @@ theorem range_autBaseChangeHom :
       (LinearMap.range (TensorProduct.mk R S Y 1)) :=
   le_antisymm (by rintro _ ⟨g, rfl⟩; exact D.autBaseChangeHom_mem_latticeAut S g) fun g hg ↦
     ⟨_, D.autBaseChangeHom_autCongr_symm_restrictAutHom S ⟨g, hg⟩⟩
-
-/-- **Scalar extension identifies `D.Aut` with the unit-tensor lattice stabilizer in
-`(D.baseChange S).Aut`.** -/
-noncomputable def autMulEquivLatticeAutBaseChange :
-    D.Aut ≃* (D.baseChange S).latticeAut (LinearMap.range (TensorProduct.mk R S X 1))
-      (LinearMap.range (TensorProduct.mk R S Y 1)) :=
-  (MonoidHom.ofInjective (D.autBaseChangeHom_injective S)).trans
-    (MulEquiv.subgroupCongr (D.range_autBaseChangeHom S))
-
-/-- Coercing `D.autMulEquivLatticeAutBaseChange S g` to `(D.baseChange S).Aut` is
-`D.autBaseChangeHom S g`. -/
-@[simp] theorem coe_autMulEquivLatticeAutBaseChange_apply (g : D.Aut) :
-    (D.autMulEquivLatticeAutBaseChange S g : (D.baseChange S).Aut) = D.autBaseChangeHom S g := by
-  simp [autMulEquivLatticeAutBaseChange, MonoidHom.ofInjective_apply]
-
-/-- Restriction to the unit-tensor lattices and pullback along `unitTmulRootPairingEquiv` is the
-inverse of `autMulEquivLatticeAutBaseChange`. -/
-@[simp] theorem autMulEquivLatticeAutBaseChange_symm_apply
-    (g : (D.baseChange S).latticeAut (LinearMap.range (TensorProduct.mk R S X 1))
-      (LinearMap.range (TensorProduct.mk R S Y 1))) :
-    (D.autMulEquivLatticeAutBaseChange S).symm g = (D.unitTmulRootPairingEquiv S).autCongr.symm
-      ((D.isDualLatticePair_range_mk_one S).restrictAutHom g) := by
-  apply D.autBaseChangeHom_injective S
-  rw [← D.coe_autMulEquivLatticeAutBaseChange_apply S, MulEquiv.apply_symm_apply,
-    D.autBaseChangeHom_autCongr_symm_restrictAutHom S g]
 
 end UnitTmul
 
