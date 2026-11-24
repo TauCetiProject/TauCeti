@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Basic
 public import TauCeti.Analysis.CStarAlgebra.Hom
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 
 /-!
 # Pointwise C⋆-actions and twisted left translation on Bochner `Lᵖ` spaces
@@ -119,6 +120,22 @@ theorem actionLp_leftTranslation [MeasurableMul G] [μ.IsMulLeftInvariant] (r t 
   rw [h₁, h₂, h₃, h₄]
 
 end ActionLp
+
+section Measurability
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableSpace G]
+  [BorelSpace G] [NonUnitalCStarAlgebra A] (α : CStarAction G A) {μ : Measure G}
+  [μ.InnerRegularCompactLTTop]
+
+/-- Evaluating a point-norm continuous C⋆-action along an a.e. finitely strongly measurable
+coefficient function produces an a.e. strongly measurable function, without separability of `A` or
+σ-finiteness of `μ`. -/
+theorem aestronglyMeasurable_apply {f : G → A} (hf : AEFinStronglyMeasurable f μ) :
+    AEStronglyMeasurable (fun s => α s (f s)) μ :=
+  hf.aestronglyMeasurable_apply_continuous α.continuous_orbit
+    (fun s => (StarAlgEquiv.isometry (α s)).continuous) fun s => map_zero (α s)
+
+end Measurability
 
 section TranslateLp
 

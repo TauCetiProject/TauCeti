@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Completion
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
-public import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Normed.Group.InfiniteSum
 
 /-!

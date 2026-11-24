@@ -17,7 +17,6 @@ public import TauCeti.Topology.Algebra.UniformRing
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.WeightedOrbit
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.MeasureTheory.Group.Convolution.Support
 
 /-!
@@ -81,22 +80,6 @@ open scoped ENNReal CompactlySupported
 namespace TauCeti
 
 namespace CStarAction
-
-section Measurability
-
-variable {G A : Type*} [Group G] [TopologicalSpace G] [R1Space G] [MeasurableSpace G]
-  [BorelSpace G] [NonUnitalCStarAlgebra A] (α : CStarAction G A) {μ : Measure G}
-  [μ.InnerRegularCompactLTTop]
-
-/-- Evaluating a point-norm continuous C⋆-action along an a.e. finitely strongly measurable
-coefficient function produces an a.e. strongly measurable function, without separability of `A` or
-σ-finiteness of `μ`. -/
-theorem aestronglyMeasurable_apply {f : G → A} (hf : AEFinStronglyMeasurable f μ) :
-    AEStronglyMeasurable (fun s => α s (f s)) μ :=
-  hf.aestronglyMeasurable_apply_continuous α.continuous_orbit
-    (fun s => (StarAlgEquiv.isometry (α s)).continuous) fun s => map_zero (α s)
-
-end Measurability
 
 section TranslateToLp
 
