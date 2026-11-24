@@ -15,13 +15,16 @@ import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 # Comparisons between the Lerch series and Hurwitz / Riemann zeta functions
 
 On the convergence boundary `‖z‖ ≤ 1` with `1 < s.re`, this module relates `TauCeti.lerchSeries`
-and `TauCeti.lerchZeta` at `c = 1` to Mathlib's periodic zeta `HurwitzZeta.expZeta` and
-`riemannZeta`.
+at `z = 1` and real `0 < c ≤ 1` to Mathlib's `HurwitzZeta.hurwitzZeta`, and relates
+`TauCeti.lerchSeries` and `TauCeti.lerchZeta` at `c = 1` to Mathlib's periodic zeta
+`HurwitzZeta.expZeta` and `riemannZeta`.
 
 ## Main declarations
 
 * `TauCeti.expZeta_eq_mul_lerchZeta`:
   `HurwitzZeta.expZeta a s = Complex.exp (2 * π * I * a) * lerchZeta s a 1` for `a : ℝ`, `1 < s.re`.
+* `TauCeti.lerchSeries_one_left_eq_hurwitzZeta`:
+  `lerchSeries 1 s c = HurwitzZeta.hurwitzZeta c s` for `c ∈ Set.Ioc 0 1`, `1 < s.re`.
 * `TauCeti.lerchSeries_one_left_one_right_eq_riemannZeta`:
   `lerchSeries 1 s 1 = riemannZeta s` for `1 < s.re`.
 * `TauCeti.lerchSeries_neg_one_left_one_right_eq_mul_riemannZeta`:
@@ -58,10 +61,23 @@ theorem expZeta_eq_mul_lerchZeta (a : ℝ) {s : ℂ} (hs : 1 < s.re) :
     rw [mul_right_comm _ (a : ℂ), ← Complex.exp_two_pi_mul_I_mul_pow, pow_succ']
   rw [div_eq_mul_inv, hden, hphase, mul_assoc]
 
+/-- At `z = 1` and real `0 < c ≤ 1`, `lerchSeries 1 s c = HurwitzZeta.hurwitzZeta c s` for
+`1 < s.re`. Note `c = 0` is excluded because the `n = 0` term of `lerchSeries` is
+`exp (-s * log 0) = 1`, whereas Mathlib's `1 / 0 ^ s = 0`. -/
+theorem lerchSeries_one_left_eq_hurwitzZeta {c : ℝ} (hc : c ∈ Set.Ioc 0 1) {s : ℂ}
+    (hs : 1 < s.re) :
+    lerchSeries 1 s c = HurwitzZeta.hurwitzZeta c s := by
+  have hne : ∀ n : ℕ, (n : ℂ) + c ≠ 0 := fun n => by
+    exact_mod_cast (by linarith [Nat.cast_nonneg (α := ℝ) n, hc.1] : (0 : ℝ) < n + c).ne'
+  have hsum := HurwitzZeta.hasSum_hurwitzZeta_of_one_lt_re (Set.Ioc_subset_Icc_self hc) hs
+  rw [lerchSeries_eq_tsum_cpow 1 s hne, ← hsum.tsum_eq]
+  exact tsum_congr fun n => by rw [one_pow, one_mul, Complex.cpow_neg, one_div]
+
 /-- At `z = 1` and `c = 1`, `lerchSeries 1 s 1 = riemannZeta s` for `1 < s.re`. -/
 theorem lerchSeries_one_left_one_right_eq_riemannZeta {s : ℂ} (hs : 1 < s.re) :
     lerchSeries 1 s 1 = riemannZeta s := by
-  simpa [lerchZeta_def, HurwitzZeta.expZeta_zero] using (expZeta_eq_mul_lerchZeta 0 hs).symm
+  have h := lerchSeries_one_left_eq_hurwitzZeta (Set.right_mem_Ioc.mpr zero_lt_one) hs
+  rwa [ofReal_one, AddCircle.coe_period 1, HurwitzZeta.hurwitzZeta_zero] at h
 
 /-- At `z = -1` and `c = 1`, `lerchSeries (-1) s 1 = (1 - 2 ^ (1 - s)) * riemannZeta s` for
 `1 < s.re`. -/

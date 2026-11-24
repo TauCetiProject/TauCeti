@@ -24,9 +24,11 @@ For `Re s > 0` and `Re z > 0`,
 Mathlib's `Complex.integral_cpow_mul_exp_neg_mul_Ioi` is the case of a positive real rate. Both
 sides are holomorphic in `z` on the right half-plane: the integral by differentiation under the
 integral sign, the right side because the half-plane lies in the slit plane. They agree on the
-positive reals, so they agree on the half-plane by the identity theorem. On compact subsets of
-`{p : ℂ × ℂ | -1 < p.1.re ∧ 0 < p.2.re}`, `t^{p.1} (log t)^k e^{-p.2 t}` admits a single
-integrable real majorant on `(0, ∞)`, giving holomorphy in `s` and joint analyticity in `(s, z)`.
+positive reals, so they agree on the half-plane by the identity theorem. Joint analyticity of
+`(s, z) ↦ ∫₀^∞ t^{s-1} e^{-zt} dt` on `{0 < Re s} × {0 < Re z}` follows directly from this
+`Γ(s) z^{-s}` closed form. As a standalone integrability tool, on compact subsets of
+`{p : ℂ × ℂ | -1 < p.1.re ∧ 0 < p.2.re}` the weighted integrand `t^{p.1} (log t)^k e^{-p.2 t}`
+admits a single integrable real majorant on `(0, ∞)`.
 
 ## Main results
 
