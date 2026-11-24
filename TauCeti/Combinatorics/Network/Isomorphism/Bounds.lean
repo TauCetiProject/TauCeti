@@ -191,6 +191,13 @@ theorem replaceBounds_assignmentEquiv (e : N ≃ₙ N') (lower upper : N.Assignm
     exact replaceBoundsWith_assignmentEquiv e lower upper h _ _
       (e.assignmentEquiv_le_apply lower upper (fun _ _ b ↦ h b)) _ _ R
 
+private theorem assignmentEquiv_le_upper (e : N ≃ₙ N') (lower : N.Assignment K)
+    (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) :
+    ∀ {x y} (a : N'.Hom x y), e.assignmentEquiv K lower a ≤ N'.upper a := by
+  intro x y a
+  rw [← e.assignmentEquiv_upper]
+  exact e.assignmentEquiv_le_apply lower N.upper (fun _ _ b ↦ h b) a
+
 /-- Transport a replacement of only the lower bounds along a network isomorphism.
 
 The induced isomorphism retains the vertex and arrow equivalences of `e`. -/
@@ -214,7 +221,9 @@ def replaceLower (e : N ≃ₙ N') (lower : N.Assignment K)
 theorem replaceLower_vertexEquiv (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) :
     (e.replaceLower lower h).vertexEquiv = e.vertexEquiv :=
-  replaceBoundsWith_vertexEquiv e lower N.upper h _ N'.upper _ _ _
+  replaceBoundsWith_vertexEquiv e lower N.upper h (e.assignmentEquiv K lower) N'.upper
+    (assignmentEquiv_le_upper e lower h)
+    (e.assignmentEquiv_apply K lower) e.map_upper
 
 /-- Replacing lower bounds retains the arrow equivalences of the original isomorphism, after
 identifying their endpoints using `replaceLower_vertexEquiv`. -/
@@ -225,21 +234,27 @@ theorem replaceLower_homEquiv_apply (e : N ≃ₙ N') (lower : N.Assignment K)
       (congrArg (fun f : V ≃ W => f x) (e.replaceLower_vertexEquiv lower h))
       (congrArg (fun f : V ≃ W => f y) (e.replaceLower_vertexEquiv lower h)) =
         e.homEquiv x y a := by
-  exact replaceBoundsWith_homEquiv_apply e lower N.upper h _ N'.upper _ _ _ x y a
+  exact replaceBoundsWith_homEquiv_apply e lower N.upper h (e.assignmentEquiv K lower) N'.upper
+    (assignmentEquiv_le_upper e lower h)
+    (e.assignmentEquiv_apply K lower) e.map_upper x y a
 
 /-- Replacing lower bounds retains the prefunctor induced by the original isomorphism. -/
 @[simp]
 theorem replaceLower_toPrefunctor (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) :
     (e.replaceLower lower h).toPrefunctor = e.toPrefunctor := by
-  exact replaceBoundsWith_toPrefunctor e lower N.upper h _ N'.upper _ _ _
+  exact replaceBoundsWith_toPrefunctor e lower N.upper h (e.assignmentEquiv K lower) N'.upper
+    (assignmentEquiv_le_upper e lower h)
+    (e.assignmentEquiv_apply K lower) e.map_upper
 
 /-- Replacing lower bounds retains total arrow transport. -/
 @[simp]
 theorem replaceLower_totalHomEquiv (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) :
     (e.replaceLower lower h).totalHomEquiv = e.totalHomEquiv := by
-  exact replaceBoundsWith_totalHomEquiv e lower N.upper h _ N'.upper _ _ _
+  exact replaceBoundsWith_totalHomEquiv e lower N.upper h (e.assignmentEquiv K lower) N'.upper
+    (assignmentEquiv_le_upper e lower h)
+    (e.assignmentEquiv_apply K lower) e.map_upper
 
 /-- Replacing lower bounds retains transport of directed paths. -/
 @[simp]
@@ -247,7 +262,9 @@ theorem replaceLower_mapPath (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) {x y : V}
     (p : ArrowWalk N.Hom x y) :
     (e.replaceLower lower h).mapPath p = e.mapPath p := by
-  exact replaceBoundsWith_mapPath e lower N.upper h _ N'.upper _ _ _ p
+  exact replaceBoundsWith_mapPath e lower N.upper h (e.assignmentEquiv K lower) N'.upper
+    (assignmentEquiv_le_upper e lower h)
+    (e.assignmentEquiv_apply K lower) e.map_upper p
 
 /-- Assignment transport is unchanged after replacing lower bounds. -/
 @[simp]
@@ -255,7 +272,17 @@ theorem replaceLower_assignmentEquiv (e : N ≃ₙ N') (lower : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), lower a ≤ N.upper a) (R : Type w') :
     (e.replaceLower lower h).assignmentEquiv R = e.assignmentEquiv R :=
   by
-    exact replaceBoundsWith_assignmentEquiv e lower N.upper h _ N'.upper _ _ _ R
+    exact replaceBoundsWith_assignmentEquiv e lower N.upper h (e.assignmentEquiv K lower)
+      N'.upper
+      (assignmentEquiv_le_upper e lower h)
+      (e.assignmentEquiv_apply K lower) e.map_upper R
+
+private theorem lower_le_assignmentEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
+    (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) :
+    ∀ {x y} (a : N'.Hom x y), N'.lower a ≤ e.assignmentEquiv K upper a := by
+  intro x y a
+  rw [← e.assignmentEquiv_lower]
+  exact e.assignmentEquiv_le_apply N.lower upper (fun _ _ b ↦ h b) a
 
 /-- Transport a replacement of only the upper bounds along a network isomorphism.
 
@@ -280,7 +307,9 @@ def replaceUpper (e : N ≃ₙ N') (upper : N.Assignment K)
 theorem replaceUpper_vertexEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) :
     (e.replaceUpper upper h).vertexEquiv = e.vertexEquiv :=
-  replaceBoundsWith_vertexEquiv e N.lower upper h N'.lower _ _ _ _
+  replaceBoundsWith_vertexEquiv e N.lower upper h N'.lower (e.assignmentEquiv K upper)
+    (lower_le_assignmentEquiv e upper h)
+    e.map_lower (e.assignmentEquiv_apply K upper)
 
 /-- Replacing upper bounds retains the arrow equivalences of the original isomorphism, after
 identifying their endpoints using `replaceUpper_vertexEquiv`. -/
@@ -291,21 +320,28 @@ theorem replaceUpper_homEquiv_apply (e : N ≃ₙ N') (upper : N.Assignment K)
       (congrArg (fun f : V ≃ W => f x) (e.replaceUpper_vertexEquiv upper h))
       (congrArg (fun f : V ≃ W => f y) (e.replaceUpper_vertexEquiv upper h)) =
         e.homEquiv x y a := by
-  exact replaceBoundsWith_homEquiv_apply e N.lower upper h N'.lower _ _ _ _ x y a
+  exact replaceBoundsWith_homEquiv_apply e N.lower upper h N'.lower
+    (e.assignmentEquiv K upper)
+    (lower_le_assignmentEquiv e upper h)
+    e.map_lower (e.assignmentEquiv_apply K upper) x y a
 
 /-- Replacing upper bounds retains the prefunctor induced by the original isomorphism. -/
 @[simp]
 theorem replaceUpper_toPrefunctor (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) :
     (e.replaceUpper upper h).toPrefunctor = e.toPrefunctor := by
-  exact replaceBoundsWith_toPrefunctor e N.lower upper h N'.lower _ _ _ _
+  exact replaceBoundsWith_toPrefunctor e N.lower upper h N'.lower (e.assignmentEquiv K upper)
+    (lower_le_assignmentEquiv e upper h)
+    e.map_lower (e.assignmentEquiv_apply K upper)
 
 /-- Replacing upper bounds retains total arrow transport. -/
 @[simp]
 theorem replaceUpper_totalHomEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) :
     (e.replaceUpper upper h).totalHomEquiv = e.totalHomEquiv := by
-  exact replaceBoundsWith_totalHomEquiv e N.lower upper h N'.lower _ _ _ _
+  exact replaceBoundsWith_totalHomEquiv e N.lower upper h N'.lower (e.assignmentEquiv K upper)
+    (lower_le_assignmentEquiv e upper h)
+    e.map_lower (e.assignmentEquiv_apply K upper)
 
 /-- Replacing upper bounds retains transport of directed paths. -/
 @[simp]
@@ -313,7 +349,9 @@ theorem replaceUpper_mapPath (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) {x y : V}
     (p : ArrowWalk N.Hom x y) :
     (e.replaceUpper upper h).mapPath p = e.mapPath p := by
-  exact replaceBoundsWith_mapPath e N.lower upper h N'.lower _ _ _ _ p
+  exact replaceBoundsWith_mapPath e N.lower upper h N'.lower (e.assignmentEquiv K upper)
+    (lower_le_assignmentEquiv e upper h)
+    e.map_lower (e.assignmentEquiv_apply K upper) p
 
 /-- Assignment transport is unchanged after replacing upper bounds. -/
 @[simp]
@@ -321,6 +359,9 @@ theorem replaceUpper_assignmentEquiv (e : N ≃ₙ N') (upper : N.Assignment K)
     (h : ∀ {x y} (a : N.Hom x y), N.lower a ≤ upper a) (R : Type w') :
     (e.replaceUpper upper h).assignmentEquiv R = e.assignmentEquiv R :=
   by
-    exact replaceBoundsWith_assignmentEquiv e N.lower upper h N'.lower _ _ _ _ R
+    exact replaceBoundsWith_assignmentEquiv e N.lower upper h N'.lower
+      (e.assignmentEquiv K upper)
+      (lower_le_assignmentEquiv e upper h)
+      e.map_lower (e.assignmentEquiv_apply K upper) R
 
 end TauCeti.Network.Iso
