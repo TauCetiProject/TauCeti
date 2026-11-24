@@ -35,7 +35,8 @@ for the entrywise topology first and then used under the operator-norm instances
 
 ## Main definitions
 
-* `TauCeti.SU2.homeomorphSphere`: `SU(2)` is homeomorphic to the unit sphere of `ℝ⁴`.
+* `TauCeti.SU2.homeomorphSphere`: `SU(2)` is homeomorphic to the unit sphere of `ℝ⁴`, with
+  `coe_homeomorphSphere_apply` and `coe_homeomorphSphere_symm_apply` giving its coordinates.
 * `TauCeti.SU2.embeddedLieSubgroupData`: the Lie group structure of `SU(2)`, modelled on `𝔰𝔲(2)`.
 * `TauCeti.SU2.nativeLieEquiv`: the native Lie algebra of `SU(2)` is `𝔰𝔲(2)`.
 
@@ -66,6 +67,36 @@ def homeomorphSphere :
         Quaternion.linearIsometryEquivTuple.toHomeomorph.subtype fun q ↦ by
           simp only [mem_sphere_zero_iff_norm, LinearIsometryEquiv.coe_toHomeomorph,
             LinearIsometryEquiv.norm_map]
+
+/-- `TauCeti.SU2.homeomorphSphere` sends `g` to the coordinates of the unit quaternion with matrix
+`g`, which are the real and imaginary parts of the first row of `g`. -/
+@[simp]
+theorem coe_homeomorphSphere_apply (g : GLSpecialUnitary (Fin 2) ℂ) :
+    (homeomorphSphere g : EuclideanSpace ℝ (Fin 4)) =
+      !₂[(((g : GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) 0 0).re,
+        (((g : GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) 0 0).im,
+        (((g : GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) 0 1).re,
+        (((g : GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) 0 1).im] := by
+  have hg := Quaternion.coe_unitaryEquivSpecialUnitaryGroup_symm_apply
+    (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ g)
+  rw [GLSpecialUnitary.coe_continuousMulEquiv_apply, Quaternion.toComplexMatrix_apply] at hg
+  rw [← hg]
+  simp [homeomorphSphere]
+
+/-- The inverse of `TauCeti.SU2.homeomorphSphere` sends a point of the sphere to the matrix of the
+quaternion with those coordinates. -/
+@[simp]
+theorem coe_homeomorphSphere_symm_apply (x : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :
+    ((homeomorphSphere.symm x : GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
+      Quaternion.toComplexMatrix (Quaternion.linearIsometryEquivTuple.symm x) := by
+  change (((GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm
+    (Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup
+      (Quaternion.unitaryHomeomorphSphere.symm ⟨Quaternion.linearIsometryEquivTuple.symm x, _⟩)) :
+        GL (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) = _
+  rw [GLSpecialUnitary.coe_continuousMulEquiv_symm_apply,
+    Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup_apply,
+    Quaternion.coe_unitaryEquivSpecialUnitaryGroup_apply,
+    Quaternion.coe_unitaryHomeomorphSphere_symm_apply]
 
 /-- `SU(2)` is simply connected, as the group of unit quaternions. -/
 instance instSimplyConnectedSpace : SimplyConnectedSpace (GLSpecialUnitary (Fin 2) ℂ) :=
