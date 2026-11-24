@@ -14,6 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.NumberTheory.AbelSummation
 import Mathlib.NumberTheory.ArithmeticFunction.Misc
+import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.NumberTheory.AbelSummation
 import TauCeti.Topology.Algebra.Order.Floor
 
@@ -56,6 +58,8 @@ empty and every integrand vanishes on `[x, 1)`.
 * `TauCeti.moebiusDivSum_eq_div_add_integral`: `m(x) = M(x) / x + ∫_1^x M(t) / t² dt`.
 * `TauCeti.moebiusLogSum_eq_integral`: `ℓ(x) = ∫_1^x m(t) / t dt`.
 * `TauCeti.moebiusLogSum_eq_integral_moebiusSum`: `ℓ` through `M`.
+* `TauCeti.intervalIntegrable_moebiusSum_mul`: `M(t) f(t)` is interval integrable between any two
+  reals for `f` locally integrable on `[1, ∞)`.
 * `TauCeti.continuous_moebiusLogSum`, `TauCeti.hasDerivAt_moebiusLogSum`: `ℓ` is continuous, with
   derivative `m(x) / x` off the natural numbers.
 * `TauCeti.sum_moebius_mul_natFloor_div`: Meissel's identity `∑_{n ≤ x} μ(n) ⌊x / n⌋ = 1`.
@@ -168,13 +172,6 @@ theorem moebiusLogSum_one : moebiusLogSum 1 = 0 := by
 
 /-! ### Integrals of the step functions -/
 
-/-- An integral from `1` to `x ≤ 1` of a function vanishing on `(-∞, 1)` is zero. -/
-private theorem intervalIntegral_one_eq_zero {F : ℝ → ℝ} (hF : ∀ t < 1, F t = 0) (hx : x ≤ 1) :
-    ∫ t in (1 : ℝ)..x, F t = 0 := by
-  rw [intervalIntegral.integral_symm, intervalIntegral.integral_of_le hx,
-    integral_Ioc_eq_integral_Ioo, neg_eq_zero]
-  exact setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hF t ht.2
-
 /-! ### `ℓ` through `m`, and `m` through `M` -/
 
 /-- `ℓ(x) = m(x) log x - ∑_{n ≤ x} μ(n) log n / n`. -/
@@ -204,7 +201,7 @@ vanishing at `1`. -/
 theorem moebiusLogSum_eq_integral (x : ℝ) :
     moebiusLogSum x = ∫ t in (1 : ℝ)..x, moebiusDivSum t / t := by
   rcases lt_or_ge x 1 with hx | hx
-  · rw [moebiusLogSum_of_lt_one hx, intervalIntegral_one_eq_zero
+  · rw [moebiusLogSum_of_lt_one hx, intervalIntegral.integral_eq_zero_of_forall_lt
       (fun t ht ↦ by rw [moebiusDivSum_of_lt_one ht, zero_div]) hx.le]
   have habel := sum_mul_eq_sub_integral_mul₀ (fun n ↦ (μ n : ℝ) / n) (f := Real.log)
     (by simp) x (fun t ht ↦ Real.differentiableAt_log (by linarith [ht.1]))
@@ -224,7 +221,7 @@ theorem moebiusLogSum_eq_integral (x : ℝ) :
 
 /-- `M(t)`, weighted by a function locally integrable on `[1, ∞)`, is interval integrable between
 any two reals. -/
-private theorem intervalIntegrable_moebiusSum_mul {f : ℝ → ℝ}
+theorem intervalIntegrable_moebiusSum_mul {f : ℝ → ℝ}
     (hf : LocallyIntegrableOn f (Set.Ici 1))
     (a b : ℝ) : IntervalIntegrable (fun t ↦ moebiusSum t * f t) volume a b := by
   simpa only [moebiusSum, mul_comm] using
@@ -237,8 +234,10 @@ theorem moebiusLogSum_eq_integral_moebiusSum (x : ℝ) :
       ∫ t in (1 : ℝ)..x, moebiusSum t / t ^ 2 := by
   rcases lt_or_ge x 1 with hx | hx
   · rw [moebiusLogSum_of_lt_one hx,
-      intervalIntegral_one_eq_zero (fun t ht ↦ by rw [moebiusSum_of_lt_one ht]; ring) hx.le,
-      intervalIntegral_one_eq_zero (fun t ht ↦ by rw [moebiusSum_of_lt_one ht]; ring) hx.le,
+      intervalIntegral.integral_eq_zero_of_forall_lt
+        (fun t ht ↦ by rw [moebiusSum_of_lt_one ht]; ring) hx.le,
+      intervalIntegral.integral_eq_zero_of_forall_lt
+        (fun t ht ↦ by rw [moebiusSum_of_lt_one ht]; ring) hx.le,
       add_zero]
   have hx0 : 0 < x := by linarith
   -- the weight `log (x / t) / t`, written so that it is differentiable on `(0, ∞)`

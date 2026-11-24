@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.SpecialFunctions.LogIntegral
 
 /-!
@@ -54,8 +55,6 @@ at `k = 2`, where `log k > 0`.
 
 ## Main declarations
 
-* `TauCeti.sum_Icc_zero_eq_sum_Icc_one`: a sum over `Icc 0 N` of a sequence vanishing at `0` is
-  its sum over `Icc 1 N`.
 * `TauCeti.sum_Icc_one_natFloor_eq_zero`: `∑_{1 ≤ k ≤ t} c k = 0` for `t < 1`.
 * `TauCeti.isBigO_sum_Icc_natFloor_nhdsGT_zero`: the step function is `O(g)` as `t → 0⁺`.
 * `TauCeti.locallyIntegrableOn_sum_Icc_natFloor`: the step function is locally integrable on
@@ -89,13 +88,6 @@ open scoped Topology
 variable {t : ℝ}
 
 /-! ### The partial-sum step function -/
-
-/-- A sum over `Finset.Icc 0 N` of a sequence vanishing at `0` is its sum over
-`Finset.Icc 1 N`. -/
-theorem sum_Icc_zero_eq_sum_Icc_one {M : Type*} [AddCommMonoid M] {f : ℕ → M} (h0 : f 0 = 0)
-    (N : ℕ) : ∑ k ∈ Finset.Icc 0 N, f k = ∑ k ∈ Finset.Icc 1 N, f k := by
-  rw [Finset.Icc_eq_cons_Ioc (Nat.zero_le _), Finset.sum_cons, h0, zero_add,
-    ← Finset.Icc_add_one_left_eq_Ioc, zero_add]
 
 /-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k` vanishes below `1`. -/
 theorem sum_Icc_one_natFloor_eq_zero {M : Type*} [AddCommMonoid M] (c : ℕ → M) (ht : t < 1) :
@@ -326,7 +318,7 @@ provided the weight is read from `Icc 1 m`. -/
 private lemma sum_Icc_zero_mul_ite (g c : ℕ → ℝ) (m : ℕ) :
     ∑ k ∈ Finset.Icc 0 m, g k * (if k = 0 then 0 else c k) =
       ∑ n ∈ Finset.Icc 1 m, g n * c n := by
-  rw [sum_Icc_zero_eq_sum_Icc_one (by simp)]
+  rw [Finset.sum_Icc_zero_eq_sum_Icc_one (by simp)]
   refine Finset.sum_congr rfl fun n hn ↦ ?_
   have hn0 : n ≠ 0 := by have := (Finset.mem_Icc.mp hn).1; omega
   simp [hn0]
