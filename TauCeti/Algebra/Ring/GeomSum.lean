@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Ring.FrobeniusLift
 
 /-!
 # Two-variable geometric sums in a noncommutative semiring
@@ -162,16 +163,6 @@ theorem sq_geom_sum_dvd_geom_sum_range_mul_sub {R : Type*} [CommRing R] (x : R) 
     (∑ i ∈ range m, x ^ i) ^ 2 ∣ ∑ i ∈ range (m * n), x ^ i - n * ∑ i ∈ range m, x ^ i := by
   rw [geom_sum_range_mul, sq, mul_comm (n : R), ← mul_sub]
   exact mul_dvd_mul_left _ (geom_sum_dvd_geom_sum_pow_sub x m n)
-
-/-- If a ring endomorphism `φ` satisfies `φ(q) = q ^ p`, its iterates satisfy
-`φ^s(q) = q ^ (p ^ s)`. -/
-theorem pow_apply_of_apply_eq_pow {R : Type*} [Semiring R] {φ : R →+* R} {q : R} {p : ℕ}
-    (hq : φ q = q ^ p) (s : ℕ) : (φ ^ s) q = q ^ p ^ s := by
-  induction s with
-  | zero => simp
-  | succ s ih =>
-    rw [RingHom.coe_pow, Function.iterate_succ_apply', ← RingHom.coe_pow, ih, map_pow, hq,
-      ← pow_mul, ← pow_succ']
 
 /-- If a ring endomorphism `φ` satisfies `φ(q) = q ^ p`, then
 `[p]_q · φ([p]_q) ⋯ φ^(r - 1)([p]_q) = [p ^ r]_q`, where `[n]_q = ∑ i ∈ range n, q ^ i`. -/

@@ -16,8 +16,12 @@ the Frobenius of `R / p R`, for a prime `p`, with `c = p` and `q = p`. Then the 
 `φ` lifts the `q ^ i`-th power map modulo `c`. This is the congruence `σⁱ(a) ≡ a ^ (pⁱ)` modulo
 `p` used in integrality arguments for Hazewinkel's functional equation.
 
+Similarly, if `φ` sends a single element `q` exactly to `q ^ p`, as the Frobenius lift of the
+`q`-de Rham prism does, then `φˢ` sends `q` to `q ^ p ^ s`.
+
 ## Main results
 
+* `TauCeti.pow_apply_of_apply_eq_pow`: if `φ q = q ^ p` exactly, then `φˢ q = q ^ p ^ s`.
 * `TauCeti.dvd_pow_apply_sub_pow_pow`: if `c ∣ φ a - a ^ q` for all `a`, then
   `c ∣ φⁱ a - a ^ q ^ i`.
 -/
@@ -25,6 +29,16 @@ the Frobenius of `R / p R`, for a prime `p`, with `c = p` and `q = p`. Then the 
 public section
 
 namespace TauCeti
+
+/-- If a ring endomorphism `φ` satisfies `φ(q) = q ^ p`, its iterates satisfy
+`φ^s(q) = q ^ (p ^ s)`. -/
+theorem pow_apply_of_apply_eq_pow {R : Type*} [Semiring R] {φ : R →+* R} {q : R} {p : ℕ}
+    (hq : φ q = q ^ p) (s : ℕ) : (φ ^ s) q = q ^ p ^ s := by
+  induction s with
+  | zero => simp
+  | succ s ih =>
+    rw [RingHom.coe_pow, Function.iterate_succ_apply', ← RingHom.coe_pow, ih, map_pow, hq,
+      ← pow_mul, ← pow_succ']
 
 variable {R : Type*} [CommRing R]
 
