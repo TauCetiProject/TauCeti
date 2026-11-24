@@ -53,11 +53,11 @@ is flat.
 
 When the third height ideal `I₃` is the unit ideal at every prime, for instance for an elliptic
 curve, the full Landweber condition, in all heights, is
-`WeierstrassCurve.isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat_universalChange`
-in `TauCeti/AlgebraicGeometry/EllipticCurve/FormalGroup/Height/Landweber.lean`. The results here
-do not assume that the discriminant is a unit, so they apply over the base `R` of a flatly
-classified family of Weierstrass curves that may have nodal fibres, not over the individual
-fibres.
+`isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat_universalChange` in
+`WeierstrassCurve`, in `TauCeti/AlgebraicGeometry/EllipticCurve/FormalGroup/Height/Landweber.lean`.
+The results here do not assume that the discriminant is a unit, so they apply over the base `R` of
+a flatly classified family of Weierstrass curves that may have nodal fibres, not over the
+individual fibres.
 
 ## Main results
 
