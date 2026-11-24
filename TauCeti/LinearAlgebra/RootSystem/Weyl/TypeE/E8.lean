@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.CartanType
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Automorphism
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
@@ -23,10 +24,11 @@ The order is known on the pinned integral root datum of type `E₈`
 (`TauCeti.DynkinType.card_weylGroup_e8SimplyConnectedRootDatum`). The Weyl group is unchanged by
 the entrywise base change of that datum to any such domain `R`
 (`TauCeti.weylGroupBaseChangeEquiv`), the base change is again a root system of type `E₈` because
-the `E₈` roots already span integrally and base change keeps every Cartan integer, and the Weyl
-group is an invariant of the Cartan type (`TauCeti.nonempty_weylGroup_mulEquiv_of_hasCartanType`),
-so the order passes from that model to every root system of type `E₈` over `R`. These are the Weyl
-factors of the `E₈` components of even unimodular lattices, such as `E₈ ⊕ E₈`.
+the `E₈` roots already span integrally and base change keeps the Cartan type
+(`TauCeti.HasCartanType.rootPairingBaseChange`), and the Weyl group is an invariant of the Cartan
+type (`TauCeti.nonempty_weylGroup_mulEquiv_of_hasCartanType`), so the order passes from that model
+to every root system of type `E₈` over `R`. These are the Weyl factors of the `E₈` components of
+even unimodular lattices, such as `E₈ ⊕ E₈`.
 
 ## Main results
 
@@ -62,15 +64,6 @@ private instance : (Q).IsRootSystem where
 
 private instance : (Q).IsReduced := isReduced_rootPairingBaseChange R _ _
 
-/-- The base change of the pinned `E₈` base still has Cartan type `E₈`: base change leaves the
-support of the base and every Cartan integer alone. -/
-private theorem hasCartanType_baseChange_e8 :
-    HasCartanType Q (rootPairingBaseChangeBase R _ _ e8SimplyConnectedBase) .E8 := by
-  obtain ⟨e, he⟩ := (hasCartanType_iff _ _).1 hasCartanType_e8SimplyConnectedRootDatum
-  refine (hasCartanType_iff _ _).2 ⟨(supportEquivRootPairingBaseChangeBase R _ _ _).trans e,
-    fun i j ↦ ?_⟩
-  exact (cartanMatrix_rootPairingBaseChangeBase R _ _ _ i j).trans (he _ _)
-
 end TauCeti.DynkinType
 
 namespace RootPairing
@@ -88,7 +81,7 @@ base of Cartan type `E₈` has Weyl group of this order. -/
 theorem card_weylGroup_of_hasCartanType_E8 (h : HasCartanType P b .E8) :
     Nat.card P.weylGroup = 696729600 := by
   obtain ⟨e⟩ := nonempty_weylGroup_mulEquiv_of_hasCartanType b _ .E8 h
-    (hasCartanType_baseChange_e8 R)
+    (hasCartanType_e8SimplyConnectedRootDatum.rootPairingBaseChange R _)
   rw [Nat.card_congr e.toEquiv, ← Nat.card_congr (weylGroupBaseChangeEquiv R _ _).toEquiv,
     card_weylGroup_e8SimplyConnectedRootDatum]
 
