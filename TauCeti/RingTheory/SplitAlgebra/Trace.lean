@@ -74,7 +74,8 @@ theorem exists_splitting_algebraMap_eq_trace (f : S →ₐ[R] L) (hd : IsUnit (f
     Module.finite_of_finrank_pos (Nat.pos_of_ne_zero fun h ↦ hdK (by simp [h]))
   -- `f` lands in the integral closure of `R` in `L`, where Mathlib restricts the trace to `R`.
   let g : S →ₐ[R] integralClosure R L :=
-    f.codRestrict _ fun x ↦ (Algebra.IsIntegral.isIntegral x).map f
+    f.codRestrict _ fun x ↦
+      (mem_integralClosure_iff R L).2 ((Algebra.IsIntegral.isIntegral x).map f)
   let ρ : S →ₗ[R] R :=
     (hd.unit⁻¹ : Rˣ).val • (Algebra.intTraceAux R K L (integralClosure R L) ∘ₗ g.toLinearMap)
   have hu : algebraMap R K (hd.unit⁻¹ : Rˣ).val = (finrank K L : K)⁻¹ := by
@@ -83,11 +84,12 @@ theorem exists_splitting_algebraMap_eq_trace (f : S →ₐ[R] L) (hd : IsUnit (f
   have hρ (x : S) :
       algebraMap R K (ρ x) = (finrank K L : K)⁻¹ * Algebra.trace K L (f x) := by
     simp only [ρ, LinearMap.smul_apply, LinearMap.comp_apply, smul_eq_mul, map_mul, hu,
-      Algebra.map_intTraceAux]
-    rfl
+      Algebra.map_intTraceAux, AlgHom.toLinearMap_apply, Subalgebra.algebraMap_def,
+      Algebra.algebraMap_self, RingHom.id_apply, AlgHom.coe_codRestrict, g]
+  have h1 : Algebra.trace K L 1 = finrank K L := by
+    simpa using Algebra.trace_algebraMap (S := L) (1 : K)
   refine ⟨ρ, IsFractionRing.injective R K ?_, hρ⟩
-  rw [hρ, map_one f, map_one (algebraMap R K), ← map_one (algebraMap K L),
-    Algebra.trace_algebraMap, nsmul_eq_mul, mul_one, inv_mul_cancel₀ hdK]
+  simp [hρ, h1, hdK]
 
 /-- An integral algebra `S` over an integrally closed domain `R` is split as soon as it maps to a
 field extension `L` of the fraction field `K` of `R` whose degree `[L : K]` is a unit of `R`. -/
