@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.C2AlphaBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.CurvedBoundary
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Interior
-import TauCeti.Analysis.Calculus.GraphFlattening.Direction
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -78,35 +78,6 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- A set `Ω ⊆ ℝ^{n+1}` has **`C^{2,α}` boundary** if near each point `x` of its frontier it is the
-region `{y | γ y < ⟪y, ν⟫}` above the graph of a function `γ` over the hyperplane `ν^⊥`: there are a
-radius `r > 0`, a unit vector `ν` and a `C²` function `γ`, invariant under translation along `ν`,
-with `‖Dγ‖`, `‖D²γ‖` and the `α`-Hölder constant of `D²γ` bounded by some `G`, such that
-`Ω ∩ B(x, r) = {y | γ y < ⟪y, ν⟫} ∩ B(x, r)`. -/
-def HasC2AlphaBoundary (α : ℝ≥0) (Ω : Set E) : Prop :=
-  ∀ x ∈ frontier Ω, ∃ r > 0, ∃ ν : E, ‖ν‖ = 1 ∧ ∃ γ : E → ℝ, ∃ G : ℝ≥0,
-    ContDiff ℝ 2 γ ∧ (∀ y (t : ℝ), γ (y + t • ν) = γ y) ∧ (∀ y, ‖fderiv ℝ γ y‖ ≤ G) ∧
-    (∀ y, ‖fderiv ℝ (fderiv ℝ γ) y‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧
-    Ω ∩ ball x r = {y | γ y < ⟪y, ν⟫_ℝ} ∩ ball x r
-
-/-- Unfolding `HasC2AlphaBoundary`: the local graph description at every frontier point. -/
-theorem hasC2AlphaBoundary_iff {α : ℝ≥0} {Ω : Set E} :
-    HasC2AlphaBoundary α Ω ↔ ∀ x ∈ frontier Ω, ∃ r > 0, ∃ ν : E, ‖ν‖ = 1 ∧ ∃ γ : E → ℝ,
-      ∃ G : ℝ≥0, ContDiff ℝ 2 γ ∧ (∀ y (t : ℝ), γ (y + t • ν) = γ y) ∧
-        (∀ y, ‖fderiv ℝ γ y‖ ≤ G) ∧ (∀ y, ‖fderiv ℝ (fderiv ℝ γ) y‖ ≤ G) ∧
-        HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧ Ω ∩ ball x r = {y | γ y < ⟪y, ν⟫_ℝ} ∩ ball x r :=
-  Iff.rfl
-
-/-- **The local chart at a frontier point.** If `Ω` has `C^{2,α}` boundary, then near each point `x`
-of its frontier `Ω` is the region above the graph of a `C^{2,α}` function `γ` over `ν^⊥`. -/
-theorem HasC2AlphaBoundary.exists_chart {α : ℝ≥0} {Ω : Set E} (h : HasC2AlphaBoundary α Ω) {x : E}
-    (hx : x ∈ frontier Ω) :
-    ∃ r > 0, ∃ ν : E, ‖ν‖ = 1 ∧ ∃ γ : E → ℝ, ∃ G : ℝ≥0,
-      ContDiff ℝ 2 γ ∧ (∀ y (t : ℝ), γ (y + t • ν) = γ y) ∧ (∀ y, ‖fderiv ℝ γ y‖ ≤ G) ∧
-      (∀ y, ‖fderiv ℝ (fderiv ℝ γ) y‖ ≤ G) ∧ HolderWith G α (fderiv ℝ (fderiv ℝ γ)) ∧
-      Ω ∩ ball x r = {y | γ y < ⟪y, ν⟫_ℝ} ∩ ball x r :=
-  h x hx
-
 /-- The Schauder bound of the global estimate on a set `S` with constant `C`: for all coefficients
 `a` with ellipticity bounds `λ, Λ`, Hölder constant `L` and bound `M` on `closure Ω`, and all `u`
 as in the global estimate, the Hölder constant of `D²u` on `S` is at most `C ([L u]_{α; Ω} + N)`.
@@ -142,24 +113,12 @@ private theorem exists_schauderBoundOn_closedBall_inter_closure_of_mem_frontier
     ∃ ρ > 0, ∃ C : ℝ≥0, SchauderBoundOn α Ω lam Lam L M (closedBall x ρ ∩ closure Ω) C := by
   -- Inside `B(x, r)`, the closure of `Ω` is the region on or above the graph, and its frontier is
   -- the graph.
-  have hcl := closure_setOf_lt_real_inner hν hγ.continuous hγν
-  -- `closure Ω ∩ B(x, r) ⊆ closure (Ω ∩ B(x, r))`, the closure of the region above the graph.
-  have hle : closure Ω ∩ ball x r ⊆ {y | γ y ≤ ⟪y, ν⟫_ℝ} := by
-    intro y hy
-    have hy' := isOpen_ball.closure_inter hy
-    rw [hΩx] at hy'
-    rw [← hcl]
-    exact closure_mono inter_subset_left hy'
-  -- `closure {γ < ⟪·, ν⟫} ∩ B(x, r) ⊆ closure ({γ < ⟪·, ν⟫} ∩ B(x, r)) = closure (Ω ∩ B(x, r))`.
-  have hge : {y | γ y ≤ ⟪y, ν⟫_ℝ} ∩ ball x r ⊆ closure Ω := by
-    intro y hy
-    rw [← hcl] at hy
-    have hy' := isOpen_ball.inter_closure ⟨hy.2, hy.1⟩
-    rw [inter_comm, ← hΩx] at hy'
-    exact closure_mono inter_subset_left hy'
-  have hfr : ∀ y ∈ ball x r, ⟪y, ν⟫_ℝ = γ y → y ∈ frontier Ω := fun y hy hyν => by
-    rw [hΩo.frontier_eq]
-    exact ⟨hge ⟨hyν.ge, hy⟩, fun hyΩ => (hΩx.subset ⟨hyΩ, hy⟩).1.ne hyν.symm⟩
+  have hcl := closure_inter_eq_setOf_le_real_inner_inter isOpen_ball hν hγ.continuous hγν hΩx
+  have hle : closure Ω ∩ ball x r ⊆ {y | γ y ≤ ⟪y, ν⟫_ℝ} := fun y hy => (hcl.subset hy).1
+  have hge : {y | γ y ≤ ⟪y, ν⟫_ℝ} ∩ ball x r ⊆ closure Ω := fun y hy => (hcl.superset hy).1
+  have hfr : ∀ y ∈ ball x r, ⟪y, ν⟫_ℝ = γ y → y ∈ frontier Ω := fun y hy hyν =>
+    ((frontier_inter_eq_setOf_eq_real_inner_inter hΩo isOpen_ball hν hγ.continuous hγν
+      hΩx).superset ⟨hyν.symm, hy⟩).1
   -- The estimate near the curved boundary, on a ball `B(x, R)` with `R ≤ r / 2`.
   obtain ⟨R₀, hR₀, hest⟩ :=
     exists_holderOnWith_iteratedFDeriv_two_closedBall_inter_of_sum_smul_fderiv_fderiv_of_graph
@@ -236,7 +195,7 @@ private theorem exists_schauderBoundOn_closedBall_inter_closure
   · have hxf : x ∈ frontier Ω := by
       rw [hΩo.frontier_eq]
       exact ⟨hx, hxΩ⟩
-    obtain ⟨r, hr, ν, hν, γ, G, hγ, hγν, hG1, hG2, hG3, hΩx⟩ := hbdry.exists_chart hxf
+    obtain ⟨r, hr, ν, hν, γ, G, hγ, hγν, hG1, hG2, hG3, hΩx⟩ := hbdry x hxf
     exact exists_schauderBoundOn_closedBall_inter_closure_of_mem_frontier hα hα1 hΩo hxf hr hν hγ
       hγν hG1 hG2 hG3 hΩx Lam L M hlam
 
