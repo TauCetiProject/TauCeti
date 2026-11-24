@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Field.Shrink
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.RingTheory.Etale.Field
+public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import TauCeti.FieldTheory.PurelyInseparable.TensorProduct
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.Smooth.Regular
@@ -55,6 +56,10 @@ is a field, hence regular, but `L ⊗[k] L` is not reduced, so `L` is not geomet
   is unchanged by base change along an isomorphism of fields `k → K`.
 * `TauCeti.Excellence.GeometricallyRegular.of_isLocalization`: a localization of a field is
   geometrically regular.
+* `TauCeti.Excellence.GeometricallyRegular.localization`: geometric regularity is preserved by
+  localizing the algebra.
+* `Ideal.geometricallyRegular_fiber_iff_of_isLocalization`: geometric regularity of the fibre
+  is unchanged by localizing the base at a submonoid disjoint from the prime.
 * `TauCeti.Excellence.not_geometricallyRegular_trivSqZeroExt`: the dual numbers `k[ε]/(ε²)` are
   not geometrically regular.
 
@@ -159,6 +164,19 @@ theorem surjective_algebraMap_of_algHom [GeometricallyRegular k B] [Nontrivial B
       (TensorProduct.map_injective_of_flat_flat _ _ Function.injective_id f.toRingHom.injective)
   IsPurelyInseparable.surjective_algebraMap_of_isReduced_tensorProduct k L
 
+/-- Geometrically regular algebras remain geometrically regular after localization. -/
+theorem localization [Algebra B B'] [IsScalarTower k B B'] (h : GeometricallyRegular k B)
+    (M : Submonoid B) [IsLocalization M B'] : GeometricallyRegular k B' where
+  isNoetherianRing := IsLocalization.isNoetherianRing M B' h.isNoetherianRing
+  isRegularRing_tensorProduct L _ _ _ _ := by
+    let := h
+    let f := Algebra.TensorProduct.lTensor (S := L) L (IsScalarTower.toAlgHom k B B')
+    let : Algebra (L ⊗[k] B) (L ⊗[k] B') := f.toAlgebra
+    have : IsScalarTower L (L ⊗[k] B) (L ⊗[k] B') := .of_algebraMap_eq' f.comp_algebraMap.symm
+    have := IsLocalization.tensorProduct_tensorProduct_right k L M B' (by ext b; rfl)
+    exact IsRegularRing.of_isLocalization
+      (M.map (Algebra.TensorProduct.includeRight (R := k) (A := L))) _
+
 end GeometricallyRegular
 
 /-- A finite purely inseparable extension `L / k` is geometrically regular if and only if it is
@@ -211,6 +229,34 @@ theorem geometricallyRegular_tensorProduct_iff_of_bijective {k : Type u} {K : Ty
     have : IsPurelyInseparable k L := .trans k K L
     have := GeometricallyRegular.isRegularRing_tensorProduct' (k := k) (B := B) L
     exact .of_ringEquiv (Algebra.TensorProduct.cancelBaseChange k K K L B).symm.toRingEquiv
+
+/-- Over a localization `R'` of the base, the fibre at a prime `p'` is geometrically regular
+if and only if the fibre over its contraction to `R` is geometrically regular. -/
+theorem _root_.Ideal.geometricallyRegular_fiber_iff_of_isLocalization {R R' B : Type*}
+    [CommRing R] [CommRing R'] [CommRing B] [Algebra R R'] [Algebra R B]
+    [Algebra R' B] [IsScalarTower R R' B] (p' : Ideal R') [p'.IsPrime]
+    (M : Submonoid R) [IsLocalization M R'] :
+    GeometricallyRegular p'.ResidueField (p'.Fiber B) ↔
+      GeometricallyRegular (p'.under R).ResidueField ((p'.under R).Fiber B) := by
+  let p := p'.under R
+  let : Algebra p.ResidueField p'.ResidueField :=
+    (Ideal.ResidueField.map p p' (algebraMap R R') rfl).toAlgebra
+  have : IsScalarTower R p.ResidueField p'.ResidueField := .of_algebraMap_eq fun r ↦
+    (IsScalarTower.algebraMap_apply R R' _ r).trans
+      (Ideal.ResidueField.map_algebraMap p p' _ rfl r).symm
+  have hκ : Function.Bijective (algebraMap p.ResidueField p'.ResidueField) :=
+    (RingHom.surjectiveOnStalks_of_isLocalization M R').residueFieldMap_bijective p p' rfl
+  have : TensorProduct.CompatibleSMul R R' p'.ResidueField B :=
+    IsLocalization.tensorProduct_compatibleSMul M R' _ _
+  -- `κ(p') ⊗[κ(p)] (κ(p) ⊗[R] B) ≃ κ(p') ⊗[R] B ≃ κ(p') ⊗[R'] B`.
+  let e := (Algebra.TensorProduct.cancelBaseChange R p.ResidueField p'.ResidueField
+    p'.ResidueField B).trans (Algebra.TensorProduct.equivOfCompatibleSMul R R'
+      p'.ResidueField p'.ResidueField B).symm
+  refine ⟨fun _ ↦ ?_, fun h ↦ ?_⟩
+  · exact (geometricallyRegular_tensorProduct_iff_of_bijective hκ _).mp
+      e.symm.geometricallyRegular
+  · have := (geometricallyRegular_tensorProduct_iff_of_bijective hκ _).mpr h
+    exact e.geometricallyRegular
 
 /-- A localization of a field `k` is geometrically regular over `k`: it is either zero or `k`
 itself, and in both cases smooth over `k`. -/

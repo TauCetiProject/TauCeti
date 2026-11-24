@@ -7,8 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Polynomial.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Segre
-import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
-import Mathlib.CategoryTheory.Limits.Constructions.Over.Products
+import TauCeti.CategoryTheory.MorphismProperty.Limits
 import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 
 /-!
@@ -74,7 +73,11 @@ private theorem hasPolynomialProjectiveEmbedding_prod (X Y : Over (Spec (.of R))
     hasPolynomialProjectiveEmbedding R (X ⨯ Y) := by
   obtain ⟨σ, hσ, f, hf⟩ := hX
   obtain ⟨τ, hτ, g, hg⟩ := hY
-  have : IsClosedImmersion (prod.map f g).left := isClosedImmersion_over_prod_map f g
+  -- Instance search does not reach composition stability through `IsMultiplicative` here.
+  have : MorphismProperty.IsStableUnderComposition @IsClosedImmersion :=
+    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+  have : IsClosedImmersion (prod.map f g).left :=
+    MorphismProperty.prod_map_left (P := @IsClosedImmersion) f g hf hg
   refine ⟨σ × τ, inferInstance, prod.map f g ≫ segreOver R σ τ, ?_⟩
   -- The composition instance applies to the product embedding and Segre map as scheme maps.
   change IsClosedImmersion ((prod.map f g).left ≫ (segreOver R σ τ).left)

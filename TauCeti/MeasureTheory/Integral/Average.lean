@@ -10,12 +10,13 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.InnerProductSpace.OfNorm
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Bochner.Holder
 
 /-!
 # Norms of averages
@@ -64,7 +65,7 @@ exceeds `c`. No integrability assumption is needed, since otherwise the integral
 Hölder's inequality also bounds the average by the `Lᵖ` seminorm on the set, with the
 normalizing factor `μ s ^ (-1/p)`, and bounds its `q`-th power by `(μ s)⁻¹ ∫⁻_s ‖f‖ₑ ^ q`.
 These estimates hold for arbitrary sets, including zero or infinite measure, with only the
-exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
+exponent restrictions `1 ≤ p ≤ ∞` or `1 ≤ q`.
 
 Jensen's inequality also holds for a function that is convex and monotone on a half-line `[a, ∞)`
 applied to an integrable function that is almost everywhere at least `a`.
@@ -89,7 +90,7 @@ applied to an integrable function that is almost everywhere at least `a`.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
-  set of finite measure, `1 ≤ p < ∞`.
+  set of finite measure, `1 ≤ p ≤ ∞`.
 * `ContinuousLinearMap.average_apply`: an average of continuous linear maps, applied to a vector,
   is the average of the applications.
 * `TauCeti.setLAverage_enorm_sub_const_eq_top`, `TauCeti.setLAverage_enorm_add_const_sub` and
@@ -276,32 +277,34 @@ theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) :
   · simp [setAverage_eq, measureReal_def, hs0, ENNReal.zero_rpow_of_pos hq0]
   by_cases hs : mu s = ∞
   · simp [setAverage_eq, measureReal_def, hs, ENNReal.zero_rpow_of_pos hq0]
-  by_cases hf : IntegrableOn f s mu
-  swap
-  · simp [setAverage_eq, integral_undef hf, ENNReal.zero_rpow_of_pos hq0]
-  have h0 : ‖⨍ y in s, f y ∂mu‖ₑ ≤ (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ∂mu := by
-    simpa only [setLAverage_eq, ENNReal.div_eq_inv_mul] using
-      enorm_setAverage_le_setLAverage mu f s
-  have hholder : (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q ≤ mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
-    have := rpow_lintegral_le_measure_univ_rpow_mul (μ := mu.restrict s)
-      (u := fun y => ‖f y‖ₑ) hq
-    rwa [Measure.restrict_apply_univ] at this
+  -- Jensen's inequality for the integral over `s`, normalized by `μ s`.
+  have hJ := enorm_integral_rpow_le_measure_univ_rpow_mul (μ := mu.restrict s) f hq
+  rw [Measure.restrict_apply_univ] at hJ
+  have hnorm : ‖(mu.real s)⁻¹‖ₑ = (mu s)⁻¹ := by
+    rw [eNorm_inv (by simp [measureReal_def, ENNReal.toReal_eq_zero_iff, hs0, hs]),
+      Real.eNorm_of_nonneg measureReal_nonneg, measureReal_def, ENNReal.ofReal_toReal hs]
   have hexp : -q + (q - 1) = (-1 : ℝ) := by ring
   calc ‖⨍ y in s, f y ∂mu‖ₑ ^ q
-      ≤ ((mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q := ENNReal.rpow_le_rpow h0 hq0.le
-    _ = (mu s)⁻¹ ^ q * (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q := ENNReal.mul_rpow_of_nonneg _ _ hq0.le
-    _ ≤ (mu s)⁻¹ ^ q * (mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu) := mul_le_mul' le_rfl hholder
+      = (mu s)⁻¹ ^ q * ‖∫ y in s, f y ∂mu‖ₑ ^ q := by
+        rw [setAverage_eq, eNorm_smul, hnorm, ENNReal.mul_rpow_of_nonneg _ _ hq0.le]
+    _ ≤ (mu s)⁻¹ ^ q * (mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu) := mul_le_mul' le_rfl hJ
     _ = (mu s)⁻¹ * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
         rw [← mul_assoc, ENNReal.inv_rpow, ← ENNReal.rpow_neg, ← ENNReal.rpow_add _ _ hs0 hs,
           hexp, ENNReal.rpow_neg_one]
 
 /-- **Hölder's bound on an average**: the average of `f` over a set `s` is at most
-`μ s ^ (-1/p)` times the `Lᵖ` seminorm of `f` on `s`. At `p = 1` this is the
+`μ s ^ (-1/p)` times the `Lᵖ` seminorm of `f` on `s`, for `1 ≤ p ≤ ∞`. At `p = 1` this is the
 bound by the average of `‖f‖`, and the volume factor sharpens as `p` grows because a larger
-exponent controls the mass of `s` more efficiently. No measurability or integrability hypothesis
+exponent controls the mass of `s` more efficiently; at `p = ∞` the factor is `1` and the bound is
+the essential supremum of `‖f‖` on `s`. No measurability or integrability hypothesis
 is needed, since a function not integrable on `s` has average zero. -/
-theorem enorm_setAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) :
+theorem enorm_setAverage_le (hp : 1 ≤ p) :
     ‖⨍ y in s, f y ∂mu‖ₑ ≤ mu s ^ (-(p.toReal)⁻¹) * eLpNorm f p (mu.restrict s) := by
+  rcases eq_or_ne p ∞ with rfl | hp'
+  · rw [ENNReal.toReal_top, inv_zero, neg_zero, ENNReal.rpow_zero, one_mul]
+    exact ((enorm_setAverage_le_setLAverage mu f s).trans
+      (laverage_le_essSup (μ := mu.restrict s) fun x ↦ ‖f x‖ₑ)).trans
+        eLpNormEssSup_le_eLpNorm_top
   by_cases hf : IntegrableOn f s mu
   swap
   · simp [setAverage_eq, integral_undef hf]
@@ -349,9 +352,8 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
 
 /-- The `Lᵖ` deviation of `f` from its average over a set `s` of finite measure is at most twice
 its `Lᵖ` deviation from any constant `c`: `‖f - f_s‖_{Lᵖ(s)} ≤ 2 ‖f - c‖_{Lᵖ(s)}` for
-`1 ≤ p < ∞`. -/
-theorem eLpNorm_sub_setAverage_le (hs : μ s ≠ ∞) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (c : F) :
+`1 ≤ p ≤ ∞`. -/
+theorem eLpNorm_sub_setAverage_le (hs : μ s ≠ ∞) {p : ℝ≥0∞} (hp : 1 ≤ p) (c : F) :
     eLpNorm (fun x ↦ f x - ⨍ y in s, f y ∂μ) p (μ.restrict s) ≤
       2 * eLpNorm (fun x ↦ f x - c) p (μ.restrict s) := by
   rcases eq_or_ne (μ s) 0 with h0 | h0
@@ -381,7 +383,7 @@ theorem eLpNorm_sub_setAverage_le (hs : μ s ≠ ∞) {p : ℝ≥0∞} (hp : 1 �
           Measure.restrict_apply_univ]
     _ ≤ N + μ s ^ (-(p.toReal)⁻¹) * N * μ s ^ (1 / p.toReal) := by
         gcongr
-        exact enorm_setAverage_le hp hp'
+        exact enorm_setAverage_le hp
     _ = 2 * N := by rw [mul_comm _ N, mul_assoc, hcancel, mul_one, two_mul]
 
 omit [NormedSpace ℝ F] [CompleteSpace F] in

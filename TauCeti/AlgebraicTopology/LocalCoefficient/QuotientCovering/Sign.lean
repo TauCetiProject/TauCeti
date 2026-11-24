@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Coordinates
-public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Basic
+public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Permutation
 public import TauCeti.Topology.Covering.Quotient
 
 /-!
@@ -142,6 +142,38 @@ lemma associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk {x : Fundamental
     ← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply]
   -- The sign representation is `k` as a `k`-module, so its scalar action is multiplication.
   rfl
+
+/-- The identification of the local system of the sign representation with the sign local system
+sends the class of `a ⊗ f`, for a formal sum `f` of sheets over the point, to `a` times the
+antisymmetrization `e ↦ f e - f (σ e)` of `f` (`IsCoveringMap.permutationLocalSystemToSignApp`). -/
+-- Not a simp lemma: `simp` unfolds `Rep.coinvariantsTensorMk` on the left-hand side first.
+lemma associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk_eq_smul
+    {x : FundamentalGroupoid B} (a : k) (f : p ⁻¹' {x.as} →₀ k) :
+    ((hG.associatedLocalSystemSignIso k hσ).hom.app x).hom
+        (Rep.coinvariantsTensorMk (Rep.ofDistribMulAction k ℤˣ k)
+          (Rep.of (hG.fiberRepresentation k x.as)) a f) =
+      a • hG.isCoveringMap.permutationLocalSystemToSignApp k
+        (hG.comp_eq_of_forall_eq_neg_one_smul hσ) (involutive_of_forall_eq_neg_one_smul hσ) x
+          f := by
+  induction f using Finsupp.induction_linear with
+  | zero =>
+    rw [map_zero, map_zero, smul_zero]
+    exact map_zero _
+  | add f g hf hg =>
+    rw [map_add, map_add, smul_add, ← hf, ← hg]
+    exact map_add _ _ _
+  | single e r =>
+    -- Both sides change sign under `σ`, so they agree once they agree at the sheet `e`.
+    refine (hG.isCoveringMap.signLocalSystemObjEquiv σ _ x).injective
+      ((signFiberEquiv (hG.ne_self_of_forall_eq_neg_one_smul hσ)
+        (hG.eq_or_eq_of_forall_eq_neg_one_smul hσ) e).injective ?_)
+    have he : Function.fiberMap σ (hG.comp_eq_of_forall_eq_neg_one_smul hσ) x.as e ≠ e :=
+      fun h ↦ hG.ne_self_of_forall_eq_neg_one_smul hσ e
+        ((Function.fiberMap_apply_coe σ _ x.as e).symm.trans (congrArg Subtype.val h))
+    rw [signFiberEquiv_apply, signFiberEquiv_apply,
+      associatedLocalSystemSignIso_hom_app_coinvariantsTensorMk, map_smul, Submodule.coe_smul,
+      Pi.smul_apply, IsCoveringMap.signLocalSystemObjEquiv_permutationLocalSystemToSignApp_apply,
+      Finsupp.single_eq_same, Finsupp.single_eq_of_ne he, sub_zero, smul_eq_mul, mul_comm]
 
 /-- The inverse identification of the sign local system with the local system of the sign
 representation sends a function changing sign under `σ` to the class of `f e ⊗ [e]`, for any sheet
