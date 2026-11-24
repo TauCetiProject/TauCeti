@@ -282,8 +282,9 @@ theorem exists_bundleHomeomorph_prod_of_leftInverse [FiniteDimensional 𝕜 F₂
     refine ⟨fun a b hab ↦ ?_, fun ⟨v, w⟩ ↦ ?_⟩
     · simp only [ContinuousLinearMap.prod_apply, Prod.mk.injEq] at hab
       obtain ⟨c, hc⟩ : a - b ∈ (i x).range := (hexact x).ge (by simp [hab.2])
-      rw [ContinuousLinearMap.coe_coe] at hc
-      rw [← sub_eq_zero, ← hc, ← hti' c, hc, map_sub, hab.1, sub_self, map_zero]
+      -- Applying the left inverse `t x` to `i x c = a - b` gives `c = t x a - t x b = 0`.
+      have hc₀ : c = 0 := by simpa [hti', hab.1] using congr(t x $hc)
+      rw [← sub_eq_zero, ← hc, hc₀, map_zero]
     · obtain ⟨u, rfl⟩ := hsurj x w
       exact ⟨i x v + u - i x (t x u), by simp [hpi, hti']⟩
   obtain ⟨h, hh⟩ := exists_bundleHomeomorph_of_bijective (fun x ↦ (t x).prod (p x)) hc hbij
