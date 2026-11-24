@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.OutwardUnitNormal
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-import TauCeti.Geometry.Manifold.VectorField.Transverse
+import TauCeti.Geometry.Manifold.MFDeriv.Slice
 
 /-!
 # The second fundamental form of the boundary
@@ -164,31 +163,6 @@ theorem boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal
   rw [boundarySecondFundamentalForm_apply]
   exact inv_norm_mul_hessian_eq_neg_inner_outwardUnitNormal (mem_chart_source _ _) u w hW hWq hWt
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
-  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
-    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
-/-- A tangent vector of the boundary at `q` extends to a vector field differentiable at `q` and
-tangent to the boundary at the boundary points near `q`: the field with constant coordinates in
-the preferred chart at `q`. -/
-private theorem exists_extension_mem_boundaryTangentSpace (q : (𝓡∂ (n + 1)).boundary M)
-    (w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
-    ∃ W : (y : M) → TangentSpace (𝓡∂ (n + 1)) y, MDiffAt (T% W) (q : M) ∧
-      W q = mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w ∧
-      ∀ᶠ p in 𝓝 q, W p ∈ boundaryTangentSpace p := by
-  set v := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-    (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w
-  refine ⟨FiberBundle.extend (EuclideanSpace ℝ (Fin (n + 1))) v,
-    FiberBundle.mdifferentiableAt_extend _ _ v, FiberBundle.extend_apply_self _ _, ?_⟩
-  have hv : EuclideanSpace.proj (0 : Fin (n + 1)) v = 0 :=
-    mem_boundaryTangentSpace_iff_proj.mp (boundaryTangentSpace_def q ▸ LinearMap.mem_range_self _ w)
-  filter_upwards [((chartAt (EuclideanHalfSpace (n + 1)) (q : M)).open_source.preimage
-    continuous_subtypeVal).mem_nhds (mem_chart_source _ (q : M))] with p hp
-  rw [mem_boundaryTangentSpace_iff_tangentCoordChange (α := (q : M)) (by rwa [extChartAt_source]),
-    ← mfderiv_chartAt_eq_tangentCoordChange hp, ← (hasMFDerivAt_extChartAt hp).mfderiv]
-  exact (congrArg (fun x : EuclideanSpace ℝ (Fin (n + 1)) ↦ x 0)
-    (Manifold.mfderiv_extChartAt_extend v hp)).trans hv
-
 /-- **The second fundamental form in a chart.** For every preferred chart whose source contains
 `q`, with normal coordinate `x⁰`,
 `II_q(u, w) = -Hess x⁰(dι u, dι w) / |dx⁰_q| = Hess φ(dι u, dι w) / |grad φ(q)|` for `φ = -x⁰`. -/
@@ -203,7 +177,7 @@ theorem boundarySecondFundamentalForm_apply_of_mem_chart_source {α : M}
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w) := by
-  obtain ⟨W, hW, hWq, hWt⟩ := exists_extension_mem_boundaryTangentSpace q w
+  obtain ⟨W, hW, hWq, hWt⟩ := exists_mdifferentiableAt_extension_mem_boundaryTangentSpace q w
   rw [boundarySecondFundamentalForm_apply_eq_neg_inner_outwardUnitNormal q u w hW hWq hWt,
     inv_norm_mul_hessian_eq_neg_inner_outwardUnitNormal hq u w hW hWq hWt]
 

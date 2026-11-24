@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Slice
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -47,8 +48,6 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 
 * `TauCeti.injective_smul_add_mfderiv_iff_notMem_range`: transversality at a point is the
   injectivity of `(a, w) ↦ a Z (ι s) + dι_s w`.
-* `TauCeti.mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero`: a function vanishing on a
-  slice has differential vanishing on the tangent vectors of the slice.
 * `TauCeti.mvfderiv_eq_zero_of_comp_eventuallyEq_zero`: on a transverse slice of codimension one,
   a function vanishing on the slice and killed by `Z` has zero differential.
 * `TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`: transversality along a regular level is
@@ -128,21 +127,6 @@ theorem IsTransverseAlong.injective_smul_add {Z : (x : M) → TangentSpace I x} 
     (h : IsTransverseAlong J Z ι) {s : S} (himm : Function.Injective (mfderiv J I ι s)) :
     Function.Injective fun v : ℝ × E' ↦ v.1 • Z (ι s) + mfderiv J I ι s v.2 :=
   (injective_smul_add_mfderiv_iff_notMem_range himm).2 (h s)
-
-/-- **The differential vanishes along a slice.** If a function `h` vanishes on the image of
-`ι : S → M` near `s`, then its differential at `ι s` vanishes on the range of `dι_s`. No regularity
-is needed: where `h` or `ι` is not differentiable, the differential involved is zero. -/
-theorem mvfderiv_mfderiv_apply_eq_zero_of_comp_eventuallyEq_zero {ι : S → M} {h : M → ℝ} {s : S}
-    (h0 : h ∘ ι =ᶠ[𝓝 s] 0) (w : TangentSpace J s) :
-    mvfderiv I h (ι s) (mfderiv J I ι s w) = 0 := by
-  by_cases hh : MDifferentiableAt I 𝓘(ℝ) h (ι s)
-  · by_cases hιs : MDifferentiableAt J I ι s
-    · have hc := mvfderiv_comp_apply s hh hιs w
-      rw [h0.mvfderiv_eq, mvfderiv_zero] at hc
-      exact hc.symm
-    · rw [show mfderiv J I ι s w = 0 by simp [mfderiv_zero_of_not_mdifferentiableAt hιs],
-        map_zero]
-  · simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hh]
 
 /-- **Vanishing of the differential on a transverse slice.** Let `ι : S → M` have injective
 differential at `s`, with `Z (ι s)` outside its range, where `S` has one dimension less than `M`.
