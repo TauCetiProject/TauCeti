@@ -175,6 +175,29 @@ private theorem exists_smul_comp_smul_eq_self [CompleteSpace Eᵤ] {ε δ η l :
     hmaps hcontr (mem_closedBall_self hδ.le) (edist_ne_top _ _)
   exact ⟨y, hy, hfix⟩
 
+/-- **The glued orbit at the centre.** If `l > 0` and `y` is a fixed point of
+`y ↦ l • k (l • g y)` with `‖g y‖ = ε` and `‖y‖ ≤ l ε`, then the orbit of the entrance point
+`(g y, y)` stays in the box `‖x‖ ≤ ε, ‖y‖ ≤ ε` up to time `-log l`, at which it reaches the point
+`(l • g y, k (l • g y))` of the graph of `k`. -/
+theorem splitQuadraticFlow_neg_log_of_smul_comp_smul_eq_self {ε l : ℝ} {g : Eᵤ → Eₛ}
+    {k : Eₛ → Eᵤ} {y : Eᵤ} (hl : 0 < l) (hgy : ‖g y‖ = ε) (hy : ‖y‖ ≤ l * ε)
+    (hfix : l • k (l • g y) = y) :
+    (∀ s ∈ Icc 0 (-Real.log l), ‖(splitQuadraticFlow s (WithLp.toLp 2 (g y, y))).fst‖ ≤ ε ∧
+      ‖(splitQuadraticFlow s (WithLp.toLp 2 (g y, y))).snd‖ ≤ ε) ∧
+      splitQuadraticFlow (-Real.log l) (WithLp.toLp 2 (g y, y)) =
+        WithLp.toLp 2 (l • g y, k (l • g y)) := by
+  have hε : 0 ≤ ε := hgy ▸ norm_nonneg _
+  refine ⟨fun s hs ↦ ⟨?_, ?_⟩, ?_⟩
+  · rw [norm_fst_splitQuadraticFlow, WithLp.toLp_fst, hgy]
+    exact mul_le_of_le_one_left hε (Real.exp_le_one_iff.2 (by linarith [hs.1]))
+  · rw [norm_snd_splitQuadraticFlow, WithLp.toLp_snd]
+    calc Real.exp s * ‖y‖ ≤ Real.exp (-Real.log l) * (l * ε) :=
+          mul_le_mul (Real.exp_le_exp.2 hs.2) hy (norm_nonneg _) (Real.exp_pos _).le
+      _ = ε := by rw [Real.exp_neg, Real.exp_log hl, ← mul_assoc, inv_mul_cancel₀ hl.ne', one_mul]
+  · have hky : k (l • g y) = l⁻¹ • y := by rw [eq_inv_smul_iff₀ hl.ne', hfix]
+    rw [splitQuadraticFlow_apply, WithLp.toLp_fst, WithLp.toLp_snd, neg_neg, Real.exp_log hl,
+      Real.exp_neg, Real.exp_log hl, hky]
+
 /-- **Gluing at the centre of the split hyperbolic box.** Let `y ↦ (g y, y)` be a `Kg`-Lipschitz
 graph in the entrance face `‖x‖ = ε` over the closed ball of radius `δ > 0` of the expanding
 factor, and `x ↦ (x, k x)` a `Kk`-Lipschitz graph through the centre over the closed ball of
@@ -211,29 +234,20 @@ theorem eventually_exists_splitQuadraticFlow_snd_eq [CompleteSpace Eᵤ] {ε δ 
   set l := Real.exp (-T) with hldef
   have hl : 0 < l := Real.exp_pos _
   have hl₁ : l ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
-  have hexp : Real.exp T * l = 1 := by rw [hldef, ← Real.exp_add, add_neg_cancel, Real.exp_zero]
   -- The orbit through `(g y, y)` meets the graph of `k` at time `T` when `y` is a fixed point of
   -- `y ↦ e^{-T} k (e^{-T} g y)`.
   obtain ⟨y, hy, hyF⟩ :=
     exists_smul_comp_smul_eq_self hδ hη hg hgε hk hk₀ hl hl₁ h₁ h₂ (by linarith)
   obtain ⟨hgη, hkg⟩ := smul_mem_closedBall_and_norm_le hη hgε hk hk₀ hl.le h₁.le hy
-  have hky : Real.exp T • y = k (l • g y) := by
-    calc Real.exp T • y = Real.exp T • (l • k (l • g y)) := by rw [hyF]
-      _ = k (l • g y) := by rw [smul_smul, hexp, one_smul]
-  -- At time `T` the orbit is at `(e^{-T} g y, k (e^{-T} g y))`.
-  have hT' : splitQuadraticFlow T (WithLp.toLp 2 (g y, y)) =
-      WithLp.toLp 2 (l • g y, k (l • g y)) := by
-    rw [splitQuadraticFlow_apply, WithLp.toLp_fst, WithLp.toLp_snd, hky]
-  have hny : Real.exp T * ‖y‖ ≤ Kk * (l * ε) := by
-    rw [← Real.norm_of_nonneg (Real.exp_pos T).le, ← norm_smul, hky]
-    exact hkg
-  refine ⟨y, hy, fun s hs ↦ ⟨?_, ?_⟩, ?_, ?_, ?_⟩
-  · rw [norm_fst_splitQuadraticFlow, WithLp.toLp_fst, hgε y hy]
-    exact mul_le_of_le_one_left hε (Real.exp_le_one_iff.2 (by linarith [hs.1]))
-  · rw [norm_snd_splitQuadraticFlow, WithLp.toLp_snd]
-    calc Real.exp s * ‖y‖ ≤ Real.exp T * ‖y‖ := by gcongr; exact hs.2
-      _ ≤ Kk * (l * ε) := hny
-      _ ≤ ε := by nlinarith [mul_nonneg (Kk.coe_nonneg) hε]
+  have hny : ‖y‖ ≤ l * ε := by
+    rw [← hyF, norm_smul, Real.norm_of_nonneg hl.le]
+    have : (Kk : ℝ) * (l * ε) ≤ ε := by nlinarith [mul_nonneg Kk.coe_nonneg hε]
+    exact mul_le_mul_of_nonneg_left (hkg.trans this) hl.le
+  -- At time `T = -log l` the orbit is at `(e^{-T} g y, k (e^{-T} g y))`.
+  obtain ⟨hb, hT'⟩ := splitQuadraticFlow_neg_log_of_smul_comp_smul_eq_self hl (hgε y hy) hny hyF
+  have hTl : -Real.log l = T := by rw [hldef, Real.log_exp, neg_neg]
+  rw [hTl] at hb hT'
+  refine ⟨y, hy, hb, ?_, ?_, ?_⟩
   · rw [hT']
     refine hW' _ _ ?_ ?_
     · rw [norm_smul, Real.norm_of_nonneg hl.le, hgε y hy]
@@ -355,28 +369,5 @@ theorem exists_continuousOn_smul_comp_smul_eq_self [CompleteSpace Eᵤ] {ε δ �
   · have h := hest hl hl hy' hfix'
     rw [sub_self, abs_zero, mul_zero] at h
     exact (sub_eq_zero.1 (norm_le_zero_iff.1 h)).symm
-
-/-- **The glued orbit at the centre.** If `l > 0` and `y` is a fixed point of
-`y ↦ l • k (l • g y)` with `‖g y‖ = ε` and `‖y‖ ≤ l ε`, then the orbit of the entrance point
-`(g y, y)` stays in the box `‖x‖ ≤ ε, ‖y‖ ≤ ε` up to time `-log l`, at which it reaches the point
-`(l • g y, k (l • g y))` of the graph of `k`. -/
-theorem splitQuadraticFlow_neg_log_of_smul_comp_smul_eq_self {ε l : ℝ} {g : Eᵤ → Eₛ}
-    {k : Eₛ → Eᵤ} {y : Eᵤ} (hl : 0 < l) (hgy : ‖g y‖ = ε) (hy : ‖y‖ ≤ l * ε)
-    (hfix : l • k (l • g y) = y) :
-    (∀ s ∈ Icc 0 (-Real.log l), ‖(splitQuadraticFlow s (WithLp.toLp 2 (g y, y))).fst‖ ≤ ε ∧
-      ‖(splitQuadraticFlow s (WithLp.toLp 2 (g y, y))).snd‖ ≤ ε) ∧
-      splitQuadraticFlow (-Real.log l) (WithLp.toLp 2 (g y, y)) =
-        WithLp.toLp 2 (l • g y, k (l • g y)) := by
-  have hε : 0 ≤ ε := hgy ▸ norm_nonneg _
-  refine ⟨fun s hs ↦ ⟨?_, ?_⟩, ?_⟩
-  · rw [norm_fst_splitQuadraticFlow, WithLp.toLp_fst, hgy]
-    exact mul_le_of_le_one_left hε (Real.exp_le_one_iff.2 (by linarith [hs.1]))
-  · rw [norm_snd_splitQuadraticFlow, WithLp.toLp_snd]
-    calc Real.exp s * ‖y‖ ≤ Real.exp (-Real.log l) * (l * ε) :=
-          mul_le_mul (Real.exp_le_exp.2 hs.2) hy (norm_nonneg _) (Real.exp_pos _).le
-      _ = ε := by rw [Real.exp_neg, Real.exp_log hl, ← mul_assoc, inv_mul_cancel₀ hl.ne', one_mul]
-  · have hky : k (l • g y) = l⁻¹ • y := by rw [eq_inv_smul_iff₀ hl.ne', hfix]
-    rw [splitQuadraticFlow_apply, WithLp.toLp_fst, WithLp.toLp_snd, neg_neg, Real.exp_log hl,
-      Real.exp_neg, Real.exp_log hl, hky]
 
 end TauCeti

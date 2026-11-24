@@ -357,6 +357,39 @@ theorem splitCoordL_symm_apply
     φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
   (rfl)
 
+/-- The split coordinates of the points of `M` through a Morse chart are continuous at the points
+of the chart. -/
+theorem continuousAt_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    ContinuousAt (fun w ↦ φ.splitCoord (φ.coord (φ.toChart w))) y :=
+  (φ.splitCoordL.continuous.continuousAt.comp (φ.toChart.continuousAt hy)).congr
+    (.of_forall fun _ ↦ φ.splitCoordL_apply _)
+
+/-- The norm of the contracting split coordinate of the points of `M` through a Morse chart is
+continuous at the points of the chart. -/
+theorem tendsto_norm_fst_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    Filter.Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).fst‖) (𝓝 y)
+      (𝓝 ‖(φ.splitCoord (φ.coord (φ.toChart y))).fst‖) :=
+  ((WithLp.continuous_fst 2 _ _).norm.continuousAt.comp
+    (φ.continuousAt_splitCoord_coord_toChart hy)).tendsto
+
+/-- The norm of the expanding split coordinate of the points of `M` through a Morse chart is
+continuous at the points of the chart. -/
+theorem tendsto_norm_snd_splitCoord_coord_toChart {y : M} (hy : y ∈ φ.toChart.source) :
+    Filter.Tendsto (fun w ↦ ‖(φ.splitCoord (φ.coord (φ.toChart w))).snd‖) (𝓝 y)
+      (𝓝 ‖(φ.splitCoord (φ.coord (φ.toChart y))).snd‖) :=
+  ((WithLp.continuous_snd 2 _ _).norm.continuousAt.comp
+    (φ.continuousAt_splitCoord_coord_toChart hy)).tendsto
+
+/-- Reading split coordinates back on `M` through a Morse chart is continuous at the coordinates of
+points of the chart. -/
+theorem continuousAt_toChart_symm_coord_symm_splitCoord_symm
+    {z : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))}
+    (hz : φ.coord.symm (φ.splitCoord.symm z) ∈ φ.toChart.target) :
+    ContinuousAt (fun z ↦ φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z))) z :=
+  (φ.toChart.continuousAt_symm hz).comp (f := fun z ↦ φ.coord.symm (φ.splitCoord.symm z))
+    ((φ.splitCoordL.symm.continuous.continuousAt (x := z)).congr
+      (.of_forall fun _ ↦ φ.splitCoordL_symm_apply _))
+
 end MorseChart
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
