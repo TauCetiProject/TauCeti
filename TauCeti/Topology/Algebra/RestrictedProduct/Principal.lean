@@ -36,9 +36,10 @@ declaration has an additive counterpart via `@[to_additive]`.
 * `TauCeti.image_levelMonoidHom_pi_prod_univ`, `TauCeti.preimage_levelMonoidHom_box`: image and
   box-preimage formulas for `levelMonoidHom`.
 * `TauCeti.levelOpenSubgroup`, `TauCeti.coe_levelOpenSubgroup_eq_box`,
+  `TauCeti.levelOpenSubgroup_mono`, `TauCeti.exists_superset_mem_levelOpenSubgroup`,
   `TauCeti.levelOpenSubgroupEquiv`, `TauCeti.val_comp_levelOpenSubgroupEquiv`: level open
-  subgroup of elements integral outside `S`, its coordinate-box form, its topological group chart,
-  and inclusion formulas.
+  subgroup of elements integral outside `S`, its coordinate-box form, monotonicity and exhaustion,
+  its topological group chart, and inclusion formulas.
 
 ## References
 
@@ -293,13 +294,16 @@ theorem coe_levelOpenSubgroup_eq_box (B : ∀ i, K i) (S : Finset ι) [Decidable
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
     (levelOpenSubgroup B S hB : Set (Πʳ i, [G i, B i])) =
       box (fun i ↦ if i ∈ S then univ else (B i : Set (G i))) := by
-  ext x
-  simp only [SetLike.mem_coe, mem_levelOpenSubgroup, mem_box]
-  refine ⟨fun h i ↦ ?_, fun h i hi ↦ ?_⟩
-  · split_ifs with hi
-    · exact mem_univ _
-    · exact h i hi
-  · simpa [hi] using h i
+  have hrange : (levelOpenSubgroup B S hB : Set (Πʳ i, [G i, B i])) =
+      range (inclusion G (fun i ↦ (B i : Set (G i)))
+        (le_principal_iff.mpr S.finite_toSet.compl_mem_cofinite)) := by
+    rw [← OpenSubgroup.coe_toSubgroup, toSubgroup_levelOpenSubgroup, MonoidHom.coe_range]
+    exact (prodContinuousMulEquivPrincipal B S).surjective.range_comp
+      (inclusion G (fun i ↦ (B i : Set (G i)))
+        (le_principal_iff.mpr S.finite_toSet.compl_mem_cofinite))
+  rw [hrange, range_inclusion_principal_eq_box (S : Set ι)ᶜ
+    (le_principal_iff.mpr S.finite_toSet.compl_mem_cofinite)]
+  simp [Set.mem_compl_iff, ite_not]
 
 /-- Enlarging the finite set `S` enlarges the level open subgroup. -/
 @[to_additive /-- Enlarging the finite set `S` enlarges the level open additive subgroup. -/]
@@ -309,6 +313,20 @@ theorem levelOpenSubgroup_mono (B : ∀ i, K i) {S T : Finset ι} (hST : S ⊆ T
     levelOpenSubgroup B S hBS ≤ levelOpenSubgroup B T hBT :=
   fun x hx ↦ (mem_levelOpenSubgroup B T hBT x).mpr fun i hi ↦
     (mem_levelOpenSubgroup B S hBS x).mp hx i fun h ↦ hi (hST h)
+
+/-- Any element `x : Πʳ i, [G i, B i]` belongs to `levelOpenSubgroup B T _` for some finite
+superset `T ⊇ S` of a given finite stage `S`. -/
+@[to_additive /-- Any element `x : Πʳ i, [G i, B i]` belongs to `levelOpenAddSubgroup B T _` for
+some finite superset `T ⊇ S` of a given finite stage `S`. -/]
+theorem exists_superset_mem_levelOpenSubgroup (B : ∀ i, K i) (S : Finset ι)
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (x : Πʳ i, [G i, B i]) :
+    ∃ T : Finset ι, ∃ hST : S ⊆ T,
+      x ∈ levelOpenSubgroup B T (fun i hi ↦ hB i fun h ↦ hi (hST h)) := by
+  classical
+  refine ⟨S ∪ (mem_cofinite.mp x.eventually).toFinset, Finset.subset_union_left,
+    (mem_levelOpenSubgroup B _ _ x).mpr fun i hi ↦ ?_⟩
+  by_contra hnot
+  exact hi (Finset.subset_union_right ((Set.Finite.mem_toFinset _).mpr hnot))
 
 /-- The topological group isomorphism identifying the product
 `(Π i : S, G i) × (Π j : {i // i ∉ S}, B j.val)` with the level open subgroup
