@@ -97,7 +97,7 @@ theorem rankSteinitz_of (P : (finiteProjectiveModules A).FullSubcategory) :
   SplitK0.lift_of _ _
 
 /-- The class of the regular module goes to rank one and the trivial class. -/
-theorem rankSteinitz_regular :
+theorem rankSteinitz_of_finiteProjectiveModulesRegular :
     rankSteinitz A (SplitK0.of.{u} (finiteProjectiveModulesRegular A)) = (1, 0) := by
   simp [finiteProjectiveModulesRegular]
 
@@ -127,7 +127,7 @@ noncomputable def rankSteinitzEquiv :
       finiteProjectiveModulesRegular])
   right_inv p := by
     simp only [rankSteinitzInv, AddMonoidHom.coprod_apply, zmultiplesHom_apply, map_add,
-      map_zsmul, rankSteinitz_regular, rankSteinitz_idealClassHom]
+      map_zsmul, rankSteinitz_of_finiteProjectiveModulesRegular, rankSteinitz_idealClassHom]
     ext <;> simp
   map_add' := map_add _
 
