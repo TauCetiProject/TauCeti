@@ -15,12 +15,12 @@ import TauCeti.Algebra.BigOperators.Intervals
 
 The Baire step of Henkel's open mapping theorem produces a point of `closure (f '' U)`, not of
 `f '' U`, and every step after it inherits that closure. This file removes it: over a complete
-uniform additive group `M`, the approximating sequence of
+uniform commutative additive group `M`, the approximating sequence of
 `TauCeti/Topology/Algebra/OpenMapping/Sequence.lean` sums to a preimage in `M`.
 
 Two settings are handled here.
 
-* **General complete uniform additive groups**
+* **General complete uniform commutative additive groups**
   (`TauCeti.mem_image_of_mem_closure_image_of_add_subset` and
   `TauCeti.isOpenMap_of_closure_image_mem_nhds`): for an additive map into a `T₀` topological
   additive group `N`, along a sequence of sets `V : ℕ → Set M` with `V 0` closed, `0 ∈ V n`,
@@ -32,9 +32,10 @@ Two settings are handled here.
   sequence exists inside any neighbourhood of zero, so `f` is open once the closure of the image
   of every neighbourhood of zero is a neighbourhood of zero. No nonarchimedean, locally convex, or
   normed structure is needed.
-* **Subgroup bases** (`TauCeti.mem_image_of_mem_closure_image`): when the basis consists of
-  subgroups `V n`, `V 0 + V 0 ⊆ V 0` keeps the limit in the *same* subgroup `V 0` rather than a
-  strictly larger neighbourhood, giving the sharper inclusion `closure (f '' V 0) ⊆ f '' V 0`.
+* **Subgroup bases** (`TauCeti.mem_image_of_mem_closure_image`): the general lemma passes from `V 1`
+  to `V 0` (without requiring `V 0` to be strictly larger than `V 1`). When the basis consists of
+  subgroups `V n`, `V 0 + V 0 ⊆ V 0` holds, so applying the general lemma to the shifted sequence
+  `V 0, V 0, V 1, …` yields `closure (f '' V 0) ⊆ f '' V 0`.
 
 ## Main results
 
@@ -46,8 +47,8 @@ Two settings are handled here.
   `closure (f '' V 0) ⊆ f '' V 0` into a `T₀` topological additive group for an antitone basis of
   subgroups when `f` is continuous at zero and `closure (f '' V (n + 1)) ∈ 𝓝 0` for all `n`.
 * `TauCeti.isOpenMap_of_closure_image_mem_nhds`: an additive map from a complete first-countable
-  uniform additive group to a `T₀` topological additive group is open once the closures of the
-  images of neighbourhoods of zero are neighbourhoods of zero.
+  uniform commutative additive group to a `T₀` topological additive group is open once the closures
+  of the images of neighbourhoods of zero are neighbourhoods of zero.
 
 ## References
 
@@ -68,7 +69,7 @@ variable {M N : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [
   [AddGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N] [T0Space N]
 
 /-- **Banach–Schauder / Henkel closure removal.** Let `V : ℕ → Set M` be a shrinking sequence of
-sets containing `0` in a complete uniform additive group `M` such that `V 0` is closed,
+sets containing `0` in a complete uniform commutative additive group `M` such that `V 0` is closed,
 `V (n + 1) + V (n + 1) ⊆ V n` for all `n`, and every neighbourhood of `0` contains some `V n`.
 If `f : M → N` is an additive map into a `T₀` topological additive group `N`, continuous at zero,
 and each `closure (f '' V (n + 2))` is a neighbourhood of zero, then every point of
@@ -117,10 +118,11 @@ theorem mem_image_of_mem_closure_image_of_add_subset {F : Type*} [FunLike F M N]
   simpa [s] using hres.neg.add_const y
 
 /-- **Henkel's approximation converges (subgroup form).** Let `V` be an antitone basis of subgroups
-at zero in a complete group `M`, let `f : M → N` be an additive map into a `T₀` topological
-additive group `N` continuous at zero, and suppose each `closure (f '' V (n + 1))` is a
-neighbourhood of zero — which is what the Baire step of Henkel's theorem provides. Then every point
-of `closure (f '' V 0)` is already the image of a point of `V 0`.
+at zero in a complete uniform commutative additive group `M`, let `f : M → N` be an additive map
+into a `T₀` topological additive group `N` continuous at zero, and suppose each
+`closure (f '' V (n + 1))` is a neighbourhood of zero — which is what the Baire step of Henkel's
+theorem provides. Then every point of `closure (f '' V 0)` is already the image of a point of
+`V 0`.
 
 `M` is not assumed nonarchimedean: this follows directly from
 `TauCeti.mem_image_of_mem_closure_image_of_add_subset` applied to the shifted sequence
@@ -133,23 +135,60 @@ theorem mem_image_of_mem_closure_image {F : Type*} [FunLike F M N] [AddMonoidHom
     {y : N} (hy : y ∈ closure ((f : M → N) '' (V 0 : Set M))) :
     y ∈ (f : M → N) '' (V 0 : Set M) := by
   let W : ℕ → Set M := fun n ↦ (V (n - 1) : Set M)
-  have hW0 : IsClosed (W 0) :=
-    (V 0).isClosed_of_isOpen ((V 0).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial))
+  have hW0_eq : W 0 = (V 0 : Set M) := rfl
+  have hW1_eq : W 1 = (V 0 : Set M) := rfl
+  have hW_succ : ∀ n, W (n + 1) = (V n : Set M) := fun _ ↦ rfl
+  have hW0 : IsClosed (W 0) := by
+    rw [hW0_eq]
+    exact (V 0).isClosed_of_isOpen ((V 0).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial))
+  have h0 : ∀ n, (0 : M) ∈ W n := fun n ↦ (V (n - 1)).zero_mem
   have hadd : ∀ n, W (n + 1) + W (n + 1) ⊆ W n := by
-    rintro (_ | n) <;> refine Set.add_subset_iff.mpr fun a ha b hb ↦ ?_
-    · exact (V 0).add_mem ha hb
-    · exact (V n).add_mem (hV.antitone (Nat.le_succ n) ha) (hV.antitone (Nat.le_succ n) hb)
+    rintro (_ | n)
+    · exact Set.add_subset_iff.mpr fun a ha b hb ↦ (V 0).add_mem ha hb
+    · simpa [W] using Set.add_subset_iff.mpr fun a ha b hb ↦
+        (V n).add_mem (hV.antitone (Nat.le_succ n) ha) (hV.antitone (Nat.le_succ n) hb)
   have hbasis : ∀ U ∈ 𝓝 (0 : M), ∃ n, W n ⊆ U := by
     intro U hU
     obtain ⟨n, -, hn⟩ := hV.toHasBasis.mem_iff.mp hU
-    exact ⟨n + 1, hn⟩
-  exact mem_image_of_mem_closure_image_of_add_subset f hf hW0 (fun n ↦ (V (n - 1)).zero_mem)
-    hadd hbasis hVN hy
+    exact ⟨n + 1, by rw [hW_succ]; exact hn⟩
+  have hWN : ∀ n, closure ((f : M → N) '' W (n + 2)) ∈ 𝓝 (0 : N) := fun n ↦ by
+    rw [hW_succ]
+    exact hVN n
+  have hyW : y ∈ closure ((f : M → N) '' W 1) := by
+    rw [hW1_eq]
+    exact hy
+  have hmem := mem_image_of_mem_closure_image_of_add_subset f hf hW0 h0 hadd hbasis hWN hyW
+  rwa [hW0_eq] at hmem
+
+omit [CompleteSpace M] in
+/-- Inside any neighbourhood `U` of `0` in a first-countable topological additive group, there is a
+sequence `V : ℕ → Set M` of neighbourhoods of `0` with `V 0` closed, `V 0 ⊆ U`,
+`V (n + 1) + V (n + 1) ⊆ V n` for all `n`, and every neighbourhood of `0` containing some `V n`. -/
+private theorem exists_closed_nhds_zero_add_subset [(𝓝 (0 : M)).IsCountablyGenerated]
+    {U : Set M} (hU : U ∈ 𝓝 (0 : M)) :
+    ∃ V : ℕ → Set M, IsClosed (V 0) ∧ V 0 ⊆ U ∧ (∀ n, V n ∈ 𝓝 (0 : M)) ∧
+      (∀ n, V (n + 1) + V (n + 1) ⊆ V n) ∧ (∀ S ∈ 𝓝 (0 : M), ∃ n, V n ⊆ S) := by
+  obtain ⟨W, hW⟩ := Filter.exists_antitone_basis (𝓝 (0 : M))
+  obtain ⟨φ, hφ_basis, hφ⟩ := hW.exists_subbasis_add_closure_subset
+  let B : ℕ → Set M := W ∘ φ
+  obtain ⟨k, -, hk⟩ := hφ_basis.toHasBasis.mem_iff.mp hU
+  let V : ℕ → Set M := fun n ↦ match n with
+    | 0 => closure (B (k + 1))
+    | n + 1 => B (k + n + 2)
+  refine ⟨V, isClosed_closure, (hφ k).2.trans hk, fun n ↦ ?_, fun n ↦ ?_, fun S hS ↦ ?_⟩
+  · cases n with
+    | zero => exact Filter.mem_of_superset (hφ_basis.toHasBasis.mem_of_mem trivial) subset_closure
+    | succ n => exact hφ_basis.toHasBasis.mem_of_mem trivial
+  · cases n with
+    | zero => exact (hφ (k + 1)).1.trans subset_closure
+    | succ n => exact (hφ (k + n + 2)).1
+  · obtain ⟨m, -, hm⟩ := hφ_basis.toHasBasis.mem_iff.mp hS
+    exact ⟨m + 1, (hφ_basis.antitone (by omega)).trans hm⟩
 
 /-- **Openness from the closure step.** Let `f : M → N` be an additive map, continuous at zero,
-from a complete first-countable uniform additive group `M` into a `T₀` topological additive group
-`N`. If the closure of the image of every neighbourhood of zero is a neighbourhood of zero, then `f`
-is open.
+from a complete first-countable uniform commutative additive group `M` into a `T₀` topological
+additive group `N`. If the closure of the image of every neighbourhood of zero is a neighbourhood
+of zero, then `f` is open.
 
 The hypothesis is what the Baire step of Henkel's theorem provides, and it can also be checked
 directly by approximating a dense subset of a neighbourhood of zero in `N` with control. No
@@ -161,25 +200,10 @@ theorem isOpenMap_of_closure_image_mem_nhds [(𝓝 (0 : M)).IsCountablyGenerated
     IsOpenMap (f : M → N) := by
   refine IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mpr fun S hS ↦ ?_
   rw [Filter.mem_map] at hS
-  obtain ⟨W, hW⟩ := Filter.exists_antitone_basis (𝓝 (0 : M))
-  obtain ⟨φ, hφ_basis, hφ⟩ := hW.exists_subbasis_add_closure_subset
-  let B : ℕ → Set M := W ∘ φ
-  obtain ⟨k, -, hk⟩ := hφ_basis.toHasBasis.mem_iff.mp hS
-  let V : ℕ → Set M := fun n ↦ match n with
-    | 0 => closure (B (k + 1))
-    | n + 1 => B (k + n + 2)
-  have hV0_sub : V 0 ⊆ (f : M → N) ⁻¹' S := (hφ k).2.trans hk
-  have hV_nhds : ∀ n, V n ∈ 𝓝 (0 : M) := fun n ↦ match n with
-    | 0 => Filter.mem_of_superset (hφ_basis.toHasBasis.mem_of_mem trivial) subset_closure
-    | n + 1 => hφ_basis.toHasBasis.mem_of_mem trivial
-  have hV_add : ∀ n, V (n + 1) + V (n + 1) ⊆ V n := fun n ↦ match n with
-    | 0 => (hφ (k + 1)).1.trans subset_closure
-    | n + 1 => (hφ (k + n + 2)).1
-  have hV_basis : ∀ U ∈ 𝓝 (0 : M), ∃ n, V n ⊆ U := fun U hU ↦ by
-    obtain ⟨m, -, hm⟩ := hφ_basis.toHasBasis.mem_iff.mp hU
-    exact ⟨m + 1, (hφ_basis.antitone (by omega)).trans hm⟩
+  obtain ⟨V, hV0_closed, hV0_sub, hV_nhds, hV_add, hV_basis⟩ :=
+    exists_closed_nhds_zero_add_subset hS
   refine Filter.mem_of_superset (h _ (hV_nhds 1)) fun y hy ↦ ?_
-  obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image_of_add_subset f hfc isClosed_closure
+  obtain ⟨x, hx, rfl⟩ := mem_image_of_mem_closure_image_of_add_subset f hfc hV0_closed
     (fun n ↦ mem_of_mem_nhds (hV_nhds n)) hV_add hV_basis
     (fun n ↦ h _ (hV_nhds (n + 2))) hy
   exact hV0_sub hx

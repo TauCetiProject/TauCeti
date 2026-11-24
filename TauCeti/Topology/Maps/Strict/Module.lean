@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Maps.Strict.Module
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Range
 
 /-!
 # Strict continuous linear maps
@@ -32,7 +31,10 @@ noncomputable def equivRangeOfIsStrictMap (f : E →L[R] F)
   .ofIsHomeomorph (LinearEquiv.ofInjective f.toLinearMap hinj) <|
     isHomeomorph_iff_isQuotientMap_injective.mpr
       ⟨by
-        rw [coe_linearEquiv_ofInjective_eq_rangeRestrict]
+        have hcoe : ⇑(LinearEquiv.ofInjective f.toLinearMap hinj) = f.rangeRestrict := by
+          ext x
+          rw [LinearEquiv.ofInjective_apply, coe_codRestrict_apply, coe_coe]
+        rw [hcoe, coe_rangeRestrict]
         exact Topology.isStrictMap_iff_isQuotientMap_rangeFactorization.mp hstrict,
       (LinearEquiv.ofInjective f.toLinearMap hinj).injective⟩
 
@@ -46,8 +48,10 @@ theorem toLinearEquiv_equivRangeOfIsStrictMap (f : E →L[R] F)
 @[simp]
 theorem coeFn_equivRangeOfIsStrictMap (f : E →L[R] F)
     (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) :
-    ⇑(f.equivRangeOfIsStrictMap hinj hstrict) = f.rangeRestrict :=
-  coe_linearEquiv_ofInjective_eq_rangeRestrict f hinj
+    ⇑(f.equivRangeOfIsStrictMap hinj hstrict) = f.rangeRestrict := by
+  rw [equivRangeOfIsStrictMap, ContinuousLinearEquiv.coe_ofIsHomeomorph, coe_rangeRestrict]
+  ext x
+  exact LinearEquiv.ofInjective_apply f.toLinearMap x
 
 @[simp]
 theorem equivRangeOfIsStrictMap_apply (f : E →L[R] F)
@@ -60,20 +64,6 @@ theorem coe_equivRangeOfIsStrictMap (f : E →L[R] F)
     (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) :
     (f.equivRangeOfIsStrictMap hinj hstrict : E →L[R] f.range) = f.rangeRestrict :=
   ContinuousLinearMap.ext (equivRangeOfIsStrictMap_apply f hinj hstrict)
-
-@[simp]
-theorem equivRangeOfIsStrictMap_symm_apply_rangeFactorization (f : E →L[R] F)
-    (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) (x : E) :
-    (f.equivRangeOfIsStrictMap hinj hstrict).symm (Set.rangeFactorization f x) = x := by
-  rw [← coe_rangeRestrict, ← equivRangeOfIsStrictMap_apply f hinj hstrict x,
-    ContinuousLinearEquiv.symm_apply_apply]
-
-@[simp]
-theorem rangeFactorization_equivRangeOfIsStrictMap_symm_apply (f : E →L[R] F)
-    (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) (y : f.range) :
-    Set.rangeFactorization f ((f.equivRangeOfIsStrictMap hinj hstrict).symm y) = y := by
-  rw [← coe_rangeRestrict, ← equivRangeOfIsStrictMap_apply f hinj hstrict,
-    ContinuousLinearEquiv.apply_symm_apply]
 
 end ContinuousLinearMap
 

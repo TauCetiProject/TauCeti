@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.RowCompact
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Topology.Baire.CompleteMetrizable
 import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
 
 /-!

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
+import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
 # Bounds on maps from finite Banach modules

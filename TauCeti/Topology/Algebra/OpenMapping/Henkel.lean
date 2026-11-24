@@ -8,16 +8,17 @@ module
 public import TauCeti.Topology.Algebra.OpenMapping.Complete
 public import Mathlib.Topology.Maps.Strict.Module
 public import Mathlib.Topology.Metrizable.CompletelyMetrizable
+public import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
 import Mathlib.Topology.Baire.CompleteMetrizable
-import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Henkel's open mapping theorem
 
 A surjective equivariant additive map, continuous at zero, from a complete first-countable uniform
-additive group (with scalar action continuous in the scalar at zero) to a `T₀` Baire topological
-additive group with continuous constant scalar actions is open, provided the scalars carry a zero
-sequence of units. This file assembles that statement from the pieces built around it.
+commutative additive group (with scalar action continuous in the scalar at zero) to a `T₀` Baire
+topological additive group (not assumed commutative) with continuous constant scalar actions is
+open, provided the scalars carry a zero sequence of units. This file assembles that statement from
+the pieces built around it.
 
 Each hypothesis pays for one step and no other.
 
@@ -78,8 +79,8 @@ variable {A M N : Type*} [MonoidWithZero A] [TopologicalSpace A] [HasZeroSequenc
   [MulAction A N] [ContinuousConstSMul A N]
 
 /-- **Henkel's open mapping theorem.** A surjective `A`-equivariant additive map from a complete
-first-countable uniform additive group `M` to a `T₀` Baire topological additive group `N` is open,
-when `A` has a zero sequence of units.
+first-countable uniform commutative additive group `M` to a `T₀` Baire topological additive group
+`N` (not assumed commutative) is open, when `A` has a zero sequence of units.
 
 The continuity assumptions are asymmetric between source and target: only continuity at zero is
 asked of `f` (`hfc`), only continuity at zero in the scalar variable is asked on the source `M`
@@ -93,9 +94,9 @@ theorem HasZeroSequenceOfUnits.isOpenMap {F : Type*} [FunLike F M N] [MulActionH
     HasZeroSequenceOfUnits.closure_image_mem_nhds_zero f hf hc hU
 
 /-- **Henkel's theorem in quotient form.** Under exactly the hypotheses of
-`TauCeti.HasZeroSequenceOfUnits.isOpenMap`, the map does not merely carry open sets to open sets:
-the topology of `N` is the one coinduced from `M`, so a map out of `N` is continuous exactly when
-its composite with `f` is.
+`TauCeti.HasZeroSequenceOfUnits.isOpenMap` (`M` commutative, `N` not assumed commutative), the map
+does not merely carry open sets to open sets: the topology of `N` is the one coinduced from `M`, so
+a map out of `N` is continuous exactly when its composite with `f` is.
 
 The quotient conclusion needs `f` continuous everywhere, but that is not an extra hypothesis: an
 additive homomorphism out of a topological group is continuous as soon as it is continuous at `0`
@@ -135,15 +136,18 @@ theorem isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits (f : E →ₗ[
     [BaireSpace f.range] [T0Space f.range]
     (hfc : ContinuousAt (f : E → F) 0)
     (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) : Topology.IsStrictMap (f : E → F) := by
-  let : AddGroup f.range := inferInstanceAs (AddGroup f.toAddMonoidHom.range)
+  let _ : AddCommGroup f.range := f.rangeAddCommGroup
   have : IsTopologicalAddGroup f.range :=
-    inferInstanceAs (IsTopologicalAddGroup f.toAddMonoidHom.range)
+    Submodule.isTopologicalAddGroupOfNegMem f.range f.range_neg_mem
   have hcont : Continuous (f.rangeRestrict : E → f.range) :=
     (continuous_of_continuousAt_zero f hfc).subtype_mk _
   have hq : IsQuotientMap (f.rangeRestrict : E → f.range) :=
     TauCeti.HasZeroSequenceOfUnits.isQuotientMap f.rangeRestrict f.surjective_rangeRestrict
       hcont.continuousAt hc
-  exact Topology.isStrictMap_iff_isQuotientMap_rangeFactorization.mpr hq
+  have hcoe : (f.rangeRestrict : E → f.range) = Set.rangeFactorization f :=
+    funext fun _ ↦ Subtype.ext rfl
+  rw [Topology.isStrictMap_iff_isQuotientMap_rangeFactorization, ← hcoe]
+  exact hq
 
 /-- A linear map with closed range over a semiring with a zero sequence of units is strict when
 the source is complete and first countable and the target is completely metrisable. On the source,

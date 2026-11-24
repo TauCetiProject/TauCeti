@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.OpenMapping.Henkel
-import Mathlib.Algebra.Group.Graph
 import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.Sequences
+import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.Algebra.Group.FirstCountable
 
 /-!
@@ -19,12 +19,12 @@ additive modules over any topological semiring or ring carrying a zero sequence 
 (`TauCeti.HasZeroSequenceOfUnits`). Throughout, the standing scalar-action compatibility is
 jointly continuous scalar multiplication on the source (`ContinuousSMul R E`) and continuous
 fixed scalar actions on the target (`ContinuousConstSMul R F`), except that the closed-graph
-theorems assume jointly continuous scalar multiplication on both `E` and `F` (`ContinuousSMul R E`
-and `ContinuousSMul R F`). This covers Fréchet spaces, F-spaces, and Banach spaces over any
-nontrivially normed field (`ℝ`, `ℂ`, `ℚ_[p]`, …; normed-field users can import
-`TauCeti.Analysis.Normed.Ring.ZeroSequenceOfUnits` for the `HasZeroSequenceOfUnits` instance),
-as well as complete first-countable modules over Tate rings, without assuming local convexity,
-normability, or separability.
+theorems assume only scalar-orbit continuity at zero on both `E` and `F` and continuous fixed
+scalar actions on `E` (`ContinuousConstSMul R E`). This covers Fréchet spaces, F-spaces, and
+Banach spaces over any nontrivially normed field (`ℝ`, `ℂ`, `ℚ_[p]`, …; normed-field users can
+import `TauCeti.Analysis.Normed.Ring.ZeroSequenceOfUnits` for the `HasZeroSequenceOfUnits`
+instance), as well as complete first-countable modules over Tate rings, without assuming local
+convexity, normability, or separability.
 
 ## Main results
 
@@ -54,12 +54,12 @@ normability, or separability.
   `LinearMap.continuous_of_seq_closed_graph_of_complete`,
   `ContinuousLinearMap.ofIsClosedGraphOfComplete`,
   `ContinuousLinearMap.ofSeqClosedGraphOfComplete`.
-  Assuming jointly continuous scalar multiplication on both modules (`ContinuousSMul R E` and
-  `ContinuousSMul R F`) over a topological semiring with a zero sequence of units, a linear map
-  with closed (or sequentially closed) graph into a complete first-countable uniform module from a
-  `T₀` complete first-countable uniform module is continuous. First-countability of the product
-  comes directly from countable generation of `𝓝 0`
-  (`TauCeti.ContinuousConstVAdd.toFirstCountableTopology`), with no metric required.
+  Assuming scalar-orbit continuity at zero on both modules and `ContinuousConstSMul R E` on the
+  domain over a topological semiring with a zero sequence of units, a linear map with closed (or
+  sequentially closed) graph into a complete first-countable uniform module from a `T₀` complete
+  first-countable uniform module is continuous. First-countability of the product comes directly
+  from countable generation of `𝓝 0` (`TauCeti.ContinuousConstVAdd.toFirstCountableTopology`), with
+  no metric required.
 * **Closed-range strictness**:
   `ContinuousLinearMap.isStrictMap_of_isClosed_range_of_complete`.
   Under `ContinuousSMul R E` on the source and `ContinuousConstSMul R F` on the `T₀` target, a
@@ -120,8 +120,10 @@ theorem isOpenMap_of_complete (f : E →ₗ[R] F) (hf : Surjective f)
 `LinearMap.isOpenMap_of_complete` (including `ContinuousSMul R E` and `ContinuousConstSMul R F`),
 the topology of `F` is coinduced by `f`. -/
 theorem isQuotientMap_of_complete (f : E →ₗ[R] F) (hf : Surjective f)
-    (hfc : ContinuousAt (f : E → F) 0) : IsQuotientMap (f : E → F) :=
-  (f.isOpenMap_of_complete hf hfc).isQuotientMap (continuous_of_continuousAt_zero f hfc) hf
+    (hfc : ContinuousAt (f : E → F) 0) : IsQuotientMap (f : E → F) := by
+  have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
+  exact TauCeti.HasZeroSequenceOfUnits.isQuotientMap f hf hfc
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
 end LinearMap
 
@@ -229,16 +231,6 @@ theorem coe_ofBijectiveOfComplete (f : E →L[R] F) (hf : Bijective f) :
     (ofBijectiveOfComplete f hf : E →L[R] F) = f :=
   ContinuousLinearMap.ext (ofBijectiveOfComplete_apply f hf)
 
-@[simp]
-theorem ofBijectiveOfComplete_symm_apply_apply (f : E →L[R] F) (hf : Bijective f) (x : E) :
-    (ofBijectiveOfComplete f hf).symm (f x) = x := by
-  rw [← ofBijectiveOfComplete_apply f hf x, ContinuousLinearEquiv.symm_apply_apply]
-
-@[simp]
-theorem ofBijectiveOfComplete_apply_symm_apply (f : E →L[R] F) (hf : Bijective f) (y : F) :
-    f ((ofBijectiveOfComplete f hf).symm y) = y := by
-  rw [← ofBijectiveOfComplete_apply f hf, ContinuousLinearEquiv.apply_symm_apply]
-
 end ContinuousLinearEquiv
 
 namespace ContinuousLinearMap
@@ -284,20 +276,16 @@ theorem eq_of_toTopologicalSpace_le_of_complete (R : Type*) {E : Type*} [Semirin
     (hsmul₂ : @ContinuousConstSMul R E u₂.toTopologicalSpace _)
     (hle : u₁.toTopologicalSpace ≤ u₂.toTopologicalSpace) :
     u₁ = u₂ := by
-  have hopen_lin : @IsOpenMap E E u₁.toTopologicalSpace u₂.toTopologicalSpace
-      (LinearMap.id : E →ₗ[R] E) :=
-    @LinearMap.isOpenMap_of_complete R E E _ _ _ _ u₁ hu₁ hc₁ hcg₁ _ hsmul₁
-      _ u₂ hu₂ hc₂ hcg₂ ht0 _ hsmul₂ LinearMap.id surjective_id
-      (@Continuous.continuousAt E E u₁.toTopologicalSpace u₂.toTopologicalSpace id 0
-        (continuous_id_of_le hle))
-  have hopen : @IsOpenMap E E u₁.toTopologicalSpace u₂.toTopologicalSpace id := by
-    simpa only [LinearMap.id_coe] using hopen_lin
-  have hle' : u₂.toTopologicalSpace ≤ u₁.toTopologicalSpace :=
-    continuous_id_iff_le.mp <|
-      (@continuous_def E E u₂.toTopologicalSpace u₁.toTopologicalSpace id).mpr fun s hs ↦ by
-        simpa only [Set.preimage_id, Set.image_id] using hopen s hs
-  have htop : u₁.toTopologicalSpace = u₂.toTopologicalSpace := le_antisymm hle hle'
-  exact hu₁.ext hu₂ (by rw [htop])
+  have hq : @IsQuotientMap E E u₁.toTopologicalSpace u₂.toTopologicalSpace id := by
+    simpa only [LinearMap.id_coe] using
+      @LinearMap.isQuotientMap_of_complete R E E _ _ _ _ u₁ hu₁ hc₁ hcg₁ _ hsmul₁
+        _ u₂ hu₂ hc₂ hcg₂ ht0 _ hsmul₂ LinearMap.id surjective_id
+        (@Continuous.continuousAt E E u₁.toTopologicalSpace u₂.toTopologicalSpace id 0
+          (continuous_id_of_le hle))
+  have htop' : u₂.toTopologicalSpace = u₁.toTopologicalSpace.coinduced id :=
+    @Topology.IsCoinducing.eq_coinduced E E u₁.toTopologicalSpace u₂.toTopologicalSpace id
+      (@Topology.IsQuotientMap.isCoinducing E E u₁.toTopologicalSpace u₂.toTopologicalSpace id hq)
+  exact hu₁.ext hu₂ (by rw [htop'.trans (@coinduced_id E u₁.toTopologicalSpace)])
 
 end IsUniformAddGroup
 
@@ -307,71 +295,62 @@ section ClosedGraph
 
 variable {R E F : Type*} [Semiring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
   [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
-  [(𝓝 (0 : E)).IsCountablyGenerated] [T0Space E] [Module R E] [ContinuousSMul R E]
+  [(𝓝 (0 : E)).IsCountablyGenerated] [T0Space E] [Module R E] [ContinuousConstSMul R E]
   [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [CompleteSpace F]
-  [(𝓝 (0 : F)).IsCountablyGenerated] [Module R F] [ContinuousSMul R F]
+  [(𝓝 (0 : F)).IsCountablyGenerated] [Module R F]
 
 namespace LinearMap
 
 /-- **Banach–Schauder closed graph theorem.** A linear map between complete first-countable
-uniform modules (with `T₀` domain, `ContinuousSMul R E`, and `ContinuousSMul R F`) over a
-topological semiring with a zero sequence of units is continuous if its graph is closed in
-`E × F`.
+uniform modules (with `T₀` domain, `ContinuousConstSMul R E`, and scalar-orbit continuity at zero
+on both `E` and `F`) over a topological semiring with a zero sequence of units is continuous if its
+graph is closed in `E × F`.
 
-Only the domain `E` needs to be `T₀`, because the continuous inverse theorem is applied to the
-first projection `f.graph → E`. -/
+Only the domain `E` needs to be `T₀` and `ContinuousConstSMul`, because Henkel's open mapping
+theorem is applied to the first projection `f.graph → E`. -/
 theorem continuous_of_isClosed_graph_of_complete (f : E →ₗ[R] F)
+    (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
     (hg : IsClosed (f.graph : Set (E × F))) : Continuous f := by
   have : CompleteSpace f.graph := hg.completeSpace_coe
   have : FirstCountableTopology f.graph :=
     inferInstanceAs (FirstCountableTopology (f.graph : Set (E × F)))
-  let : Neg f.graph := ⟨fun p ↦ ⟨-p.val, (LinearMap.mem_graph_iff f (-p.val)).mpr <|
-    ((f.toAddMonoidHom.mem_graph).mp <|
-      f.toAddMonoidHom.graph.neg_mem
-        ((f.toAddMonoidHom.mem_graph).mpr
-          ((LinearMap.mem_graph_iff f p.val).mp p.property).symm)).symm⟩⟩
-  let : Sub f.graph := ⟨fun p q ↦ ⟨p.val - q.val, (LinearMap.mem_graph_iff f (p.val - q.val)).mpr <|
-    ((f.toAddMonoidHom.mem_graph).mp <|
-      f.toAddMonoidHom.graph.sub_mem
-        ((f.toAddMonoidHom.mem_graph).mpr ((LinearMap.mem_graph_iff f p.val).mp p.property).symm)
-        ((f.toAddMonoidHom.mem_graph).mpr
-          ((LinearMap.mem_graph_iff f q.val).mp q.property).symm)).symm⟩⟩
-  let : AddCommGroup f.graph :=
-    { (inferInstance : AddCommMonoid f.graph) with
-      neg_add_cancel := fun p ↦ Subtype.ext (neg_add_cancel p.val)
-      sub_eq_add_neg := fun p q ↦ Subtype.ext (sub_eq_add_neg p.val q.val)
-      zsmul := zsmulRec }
+  let _ : AddCommGroup f.graph := f.graphAddCommGroup
   have : IsUniformAddGroup f.graph :=
-    IsUniformAddGroup.comap f.graph.subtype.toAddMonoidHom
-  let φ : E ≃ₗ[R] f.graph :=
-    { toFun := fun x ↦ ⟨(x, f x), (LinearMap.mem_graph_iff f (x, f x)).mpr rfl⟩
-      map_add' := fun x y ↦ Subtype.ext (by simp)
-      map_smul' := fun r x ↦ Subtype.ext (by simp)
-      invFun := fun p ↦ p.val.fst
-      left_inv := fun _ ↦ rfl
-      right_inv := fun ⟨p, hp⟩ ↦
-        Subtype.ext (Prod.ext rfl ((LinearMap.mem_graph_iff f p).mp hp).symm) }
-  have hφ_inv : (φ.symm : f.graph → E) = Prod.fst ∘ Subtype.val := rfl
-  have hφ_snd : (fun x ↦ (φ x : E × F).snd) = f := rfl
-  have hφ_symm_cont : Continuous φ.symm := by
-    rw [hφ_inv]
+    Submodule.isUniformAddGroupOfNegMem f.graph f.graph_neg_mem
+  have : (𝓤 E).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
+  have hcg : ∀ p : f.graph, ContinuousAt (fun a : R ↦ a • p) 0 := fun p ↦
+    Topology.IsInducing.subtypeVal.continuousAt_iff.mpr
+      ((hcE (p : E × F).1).prodMk (hcF (p : E × F).2))
+  have hsymm_cont : Continuous (f.graphEquiv.symm : f.graph → E) := by
+    rw [show (f.graphEquiv.symm : f.graph → E) = Prod.fst ∘ Subtype.val from
+      funext f.graphEquiv_symm_apply]
     exact continuous_fst.comp continuous_subtypeVal
-  have hφ_cont : Continuous φ := φ.symm.continuous_symm_of_complete hφ_symm_cont
-  rw [← hφ_snd]
-  exact continuous_snd.comp (continuous_subtypeVal.comp hφ_cont)
+  have hopen : IsOpenMap (f.graphEquiv.symm : f.graph → E) :=
+    TauCeti.HasZeroSequenceOfUnits.isOpenMap f.graphEquiv.symm.toLinearMap
+      f.graphEquiv.symm.surjective hsymm_cont.continuousAt hcg
+  have hcont : Continuous (f.graphEquiv : E → f.graph) :=
+    f.graphEquiv.symm.toEquiv.continuous_symm_iff.mpr hopen
+  have hfn : (fun x ↦ (f.graphEquiv x : E × F).snd) = f := by
+    ext x
+    simp
+  rw [← hfn]
+  exact continuous_snd.comp (continuous_subtypeVal.comp hcont)
 
 /-- **Sequential closed graph theorem.** A linear map between complete first-countable uniform
-modules (with `T₀` domain, `ContinuousSMul R E`, and `ContinuousSMul R F`) over a topological
-semiring with a zero sequence of units is continuous if its graph is sequentially closed: whenever
-`u n → x` and `f (u n) → y`, one has `y = f x`.
+modules (with `T₀` domain, `ContinuousConstSMul R E`, and scalar-orbit continuity at zero on both
+`E` and `F`) over a topological semiring with a zero sequence of units is continuous if its graph
+is sequentially closed: whenever `u n → x` and `f (u n) → y`, one has `y = f x`.
 
 First-countability of `E × F` follows from countable generation of `𝓝 (0 : E)` and `𝓝 (0 : F)`
 without introducing a metric. -/
 theorem continuous_of_seq_closed_graph_of_complete (f : E →ₗ[R] F)
+    (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
     (hg : ∀ (u : ℕ → E) (x : E) (y : F),
       Tendsto u atTop (𝓝 x) → Tendsto (f ∘ u) atTop (𝓝 y) → y = f x) :
     Continuous f := by
-  refine f.continuous_of_isClosed_graph_of_complete (IsSeqClosed.isClosed ?_)
+  refine f.continuous_of_isClosed_graph_of_complete hcE hcF (IsSeqClosed.isClosed ?_)
   rintro φ ⟨x, y⟩ hφg hφ
   refine hg (Prod.fst ∘ φ) x y ((continuous_fst.tendsto _).comp hφ) ?_
   have hcomp : f ∘ Prod.fst ∘ φ = Prod.snd ∘ φ := by
@@ -387,56 +366,69 @@ namespace ContinuousLinearMap
 variable {f : E →ₗ[R] F}
 
 /-- Bundle a linear map with closed graph between complete first-countable uniform modules (with
-`T₀` domain, `ContinuousSMul R E`, and `ContinuousSMul R F`) over a topological semiring with a
-zero sequence of units as a `ContinuousLinearMap`. -/
-def ofIsClosedGraphOfComplete (hg : IsClosed (f.graph : Set (E × F))) : E →L[R] F where
+`T₀` domain, `ContinuousConstSMul R E`, and scalar-orbit continuity at zero on both `E` and `F`)
+over a topological semiring with a zero sequence of units as a `ContinuousLinearMap`. -/
+def ofIsClosedGraphOfComplete (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
+    (hg : IsClosed (f.graph : Set (E × F))) : E →L[R] F where
   toLinearMap := f
-  cont := f.continuous_of_isClosed_graph_of_complete hg
+  cont := f.continuous_of_isClosed_graph_of_complete hcE hcF hg
 
 @[simp]
-theorem coeFn_ofIsClosedGraphOfComplete (hg : IsClosed (f.graph : Set (E × F))) :
-    ⇑(ofIsClosedGraphOfComplete hg) = f :=
+theorem coeFn_ofIsClosedGraphOfComplete (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
+    (hg : IsClosed (f.graph : Set (E × F))) :
+    ⇑(ofIsClosedGraphOfComplete hcE hcF hg) = f :=
   (rfl)
 
 @[simp]
-theorem coe_ofIsClosedGraphOfComplete (hg : IsClosed (f.graph : Set (E × F))) :
-    (ofIsClosedGraphOfComplete hg : E →ₗ[R] F) = f :=
+theorem coe_ofIsClosedGraphOfComplete (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
+    (hg : IsClosed (f.graph : Set (E × F))) :
+    (ofIsClosedGraphOfComplete hcE hcF hg : E →ₗ[R] F) = f :=
   (rfl)
 
 @[simp]
-theorem ofIsClosedGraphOfComplete_apply (hg : IsClosed (f.graph : Set (E × F))) (x : E) :
-    ofIsClosedGraphOfComplete hg x = f x :=
+theorem ofIsClosedGraphOfComplete_apply (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
+    (hg : IsClosed (f.graph : Set (E × F))) (x : E) :
+    ofIsClosedGraphOfComplete hcE hcF hg x = f x :=
   (rfl)
 
 /-- Bundle a linear map with sequentially closed graph between complete first-countable uniform
-modules (with `T₀` domain, `ContinuousSMul R E`, and `ContinuousSMul R F`) over a topological
-semiring with a zero sequence of units as a `ContinuousLinearMap`. -/
-def ofSeqClosedGraphOfComplete
+modules (with `T₀` domain, `ContinuousConstSMul R E`, and scalar-orbit continuity at zero on both
+`E` and `F`) over a topological semiring with a zero sequence of units as a
+`ContinuousLinearMap`. -/
+def ofSeqClosedGraphOfComplete (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
     (hg : ∀ (u : ℕ → E) (x : E) (y : F),
       Tendsto u atTop (𝓝 x) → Tendsto (f ∘ u) atTop (𝓝 y) → y = f x) :
     E →L[R] F where
   toLinearMap := f
-  cont := f.continuous_of_seq_closed_graph_of_complete hg
+  cont := f.continuous_of_seq_closed_graph_of_complete hcE hcF hg
 
 @[simp]
-theorem coeFn_ofSeqClosedGraphOfComplete
+theorem coeFn_ofSeqClosedGraphOfComplete (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
     (hg : ∀ (u : ℕ → E) (x : E) (y : F),
       Tendsto u atTop (𝓝 x) → Tendsto (f ∘ u) atTop (𝓝 y) → y = f x) :
-    ⇑(ofSeqClosedGraphOfComplete hg) = f :=
+    ⇑(ofSeqClosedGraphOfComplete hcE hcF hg) = f :=
   (rfl)
 
 @[simp]
-theorem coe_ofSeqClosedGraphOfComplete
+theorem coe_ofSeqClosedGraphOfComplete (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
     (hg : ∀ (u : ℕ → E) (x : E) (y : F),
       Tendsto u atTop (𝓝 x) → Tendsto (f ∘ u) atTop (𝓝 y) → y = f x) :
-    (ofSeqClosedGraphOfComplete hg : E →ₗ[R] F) = f :=
+    (ofSeqClosedGraphOfComplete hcE hcF hg : E →ₗ[R] F) = f :=
   (rfl)
 
 @[simp]
-theorem ofSeqClosedGraphOfComplete_apply
+theorem ofSeqClosedGraphOfComplete_apply (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
+    (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
     (hg : ∀ (u : ℕ → E) (x : E) (y : F),
       Tendsto u atTop (𝓝 x) → Tendsto (f ∘ u) atTop (𝓝 y) → y = f x) (x : E) :
-    ofSeqClosedGraphOfComplete hg x = f x :=
+    ofSeqClosedGraphOfComplete hcE hcF hg x = f x :=
   (rfl)
 
 end ContinuousLinearMap

@@ -7,16 +7,17 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm
 public import TauCeti.Topology.MetricSpace.Algebra
-import TauCeti.Topology.Algebra.OpenMapping.BanachSchauder
+import Mathlib.Topology.Baire.CompleteMetrizable
+import TauCeti.Topology.Algebra.OpenMapping.Henkel
 
 /-!
 # Quantitative mapping theorems over Tate rings
 
 `TauCeti.HasZeroSequenceOfUnits.isOpenMap` proves Henkel's topological open mapping theorem for
-surjective equivariant additive maps out of a complete first-countable uniform additive group into
-a `T₀` Baire topological additive group over any scalar monoid admitting a zero sequence of units,
-assuming continuity of the map at zero, continuity at zero in the scalar variable on the source, and
-continuity of each fixed scalar action on the target.
+surjective equivariant additive maps out of a complete first-countable uniform commutative additive
+group into a `T₀` Baire topological additive group (not assumed commutative) over any scalar monoid
+admitting a zero sequence of units, assuming continuity of the map at zero, continuity at zero in
+the scalar variable on the source, and continuity of each fixed scalar action on the target.
 `TauCeti.Topology.Algebra.OpenMapping.BanachSchauder` packages the qualitative Banach–Schauder
 theorems (open mapping, continuous inverse, closed graph, and closed-range strictness) for
 complete first-countable uniform modules, while `ContinuousLinearMap.equivRangeOfIsStrictMap` in
@@ -37,7 +38,7 @@ Tate seminormed ring `R` (no commutativity or ultrametric hypothesis is needed):
   any open linear map into a normed module over a Tate ring is surjective with a linear preimage
   bound (`LinearMap.exists_preimage_norm_le_of_isOpenMap`).
 * **Quantitative Banach open mapping**: a surjective continuous linear map `f : M →L[R] N` from a
-  complete seminormed module to a complete normed module over a Tate ring admits a constant `C > 0`
+  complete seminormed module to a Baire normed module over a Tate ring admits a constant `C > 0`
   such that every `y : N` lifts to `x : M` with `‖x‖ ≤ C * ‖y‖`
   (`ContinuousLinearMap.exists_preimage_norm_le_of_isTate`).
 * **Closed-range preimage bounds and antilipschitz criteria**: a continuous linear map with closed
@@ -45,12 +46,12 @@ Tate seminormed ring `R` (no commutativity or ultrametric hypothesis is needed):
   preimage bounds on its range
   (`ContinuousLinearMap.exists_preimage_norm_le_of_isClosed_range_of_isTate`); if it is also
   injective, it is antilipschitz
-  (`ContinuousLinearMap.antilipschitz_of_injective_of_isClosed_range_of_isTate`). When the source
-  is a complete *normed* module, closedness of the range is equivalent to being antilipschitz
+  (`ContinuousLinearMap.antilipschitz_of_injective_of_isClosed_range_of_isTate`), and closedness of
+  the range is equivalent to being antilipschitz
   (`ContinuousLinearMap.isClosed_range_iff_antilipschitz_of_injective_of_isTate`).
 * **Quantitative finite spanning**: any finite family `v : ι → N` satisfying
-  `Submodule.span R (Set.range v) = ⊤` in a complete normed module over a complete Tate ring admits
-  a constant `C > 0` representing every `y : N` as `∑ i, c i • v i` with `‖c‖ ≤ C * ‖y‖`
+  `Submodule.span R (Set.range v) = ⊤` in a Baire normed module over a complete Tate ring admits a
+  constant `C > 0` representing every `y : N` as `∑ i, c i • v i` with `‖c‖ ≤ C * ‖y‖`
   (`TauCeti.exists_linearCombination_eq_and_norm_le`).
 
 The antilipschitz closed-range characterization is adapted from
@@ -143,15 +144,17 @@ section CompleteSource
 variable {R M N : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [SeminormedAddCommGroup M] [CompleteSpace M]
   [Module R M] [IsBoundedSMul R M]
-  [NormedAddCommGroup N] [CompleteSpace N] [Module R N] [IsBoundedSMul R N]
+  [NormedAddCommGroup N] [BaireSpace N] [Module R N] [IsBoundedSMul R N]
 
 /-- **Quantitative Open Mapping Theorem** for linear maps over a Tate ring: every surjective
-continuous linear map from a complete seminormed module to a complete normed module admits a
+continuous linear map from a complete seminormed module to a Baire normed module admits a
 constant `C > 0` such that every `y : N` lifts to `x : M` with `‖x‖ ≤ C * ‖y‖`. -/
 theorem exists_preimage_norm_le_of_surjective (f : M →ₗ[R] N) (hf : Continuous f)
     (hsurj : Surjective f) :
     ∃ C > 0, ∀ y : N, ∃ x : M, f x = y ∧ ‖x‖ ≤ C * ‖y‖ :=
-  f.exists_preimage_norm_le_of_isOpenMap (f.isOpenMap_of_complete hsurj hf.continuousAt)
+  f.exists_preimage_norm_le_of_isOpenMap <|
+    TauCeti.HasZeroSequenceOfUnits.isOpenMap f hsurj hf.continuousAt
+      fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
 end CompleteSource
 
@@ -159,17 +162,28 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
+section BaireTarget
+
 variable {R M N : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [SeminormedAddCommGroup M] [CompleteSpace M]
   [Module R M] [IsBoundedSMul R M]
-  [NormedAddCommGroup N] [CompleteSpace N] [Module R N] [IsBoundedSMul R N]
+  [NormedAddCommGroup N] [BaireSpace N] [Module R N] [IsBoundedSMul R N]
 
 /-- **Quantitative Open Mapping Theorem**: for a surjective continuous linear map `f : M →L[R] N`
-from a complete seminormed module to a complete normed module over a Tate ring, there exists `C > 0`
+from a complete seminormed module to a Baire normed module over a Tate ring, there exists `C > 0`
 such that every `y : N` lifts to `x : M` with `‖x‖ ≤ C * ‖y‖`. -/
 theorem exists_preimage_norm_le_of_isTate (f : M →L[R] N) (hsurj : Surjective f) :
     ∃ C > 0, ∀ y : N, ∃ x : M, f x = y ∧ ‖x‖ ≤ C * ‖y‖ :=
   f.toLinearMap.exists_preimage_norm_le_of_surjective f.continuous hsurj
+
+end BaireTarget
+
+section CompleteTarget
+
+variable {R M N : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
+  [SeminormedAddCommGroup M] [CompleteSpace M]
+  [Module R M] [IsBoundedSMul R M]
+  [NormedAddCommGroup N] [CompleteSpace N] [Module R N] [IsBoundedSMul R N]
 
 /-- **Quantitative preimage bound for closed-range operators**: if `f : M →L[R] N` from a complete
 seminormed module to a complete normed module over a Tate ring has closed range, there exists
@@ -204,17 +218,19 @@ theorem antilipschitz_of_injective_of_isClosed_range_of_isTate (f : M →L[R] N)
   refine ⟨⟨C, hC.le⟩, NNReal.coe_ne_zero.mp hC.ne', ?_⟩
   exact AddMonoidHomClass.antilipschitz_of_bound f hbound
 
-/-- For an injective continuous linear map `f : M' →L[R] N` from a complete normed module to a
+/-- For an injective continuous linear map `f : M' →L[R] N` from a complete seminormed module to a
 complete normed module over a Tate ring, the range of `f` is closed if and only if `f` is
 antilipschitz. -/
 theorem isClosed_range_iff_antilipschitz_of_injective_of_isTate
-    {M' : Type*} [NormedAddCommGroup M'] [CompleteSpace M']
+    {M' : Type*} [SeminormedAddCommGroup M'] [CompleteSpace M']
     [Module R M'] [IsBoundedSMul R M'] (f : M' →L[R] N) (hinj : Injective f) :
     IsClosed (Set.range f) ↔ ∃ K : ℝ≥0, AntilipschitzWith K f :=
   ⟨fun hclosed ↦
     let ⟨K, _, hK⟩ := f.antilipschitz_of_injective_of_isClosed_range_of_isTate hinj hclosed
     ⟨K, hK⟩,
     fun ⟨_, hK⟩ ↦ hK.isClosed_range f.uniformContinuous⟩
+
+end CompleteTarget
 
 end ContinuousLinearMap
 
@@ -224,10 +240,10 @@ namespace TauCeti
 
 variable {R N ι : Type*} [Fintype ι] [SeminormedRing R]
   [CompleteSpace R] [TauCeti.NormedRing.IsTate R]
-  [NormedAddCommGroup N] [CompleteSpace N] [Module R N] [IsBoundedSMul R N]
+  [NormedAddCommGroup N] [BaireSpace N] [Module R N] [IsBoundedSMul R N]
 
 /-- **Quantitative finite spanning over a complete Tate ring.**
-If a finite family `v : ι → N` spans a complete normed module `N` over a complete Tate ring `R`,
+If a finite family `v : ι → N` spans a Baire normed module `N` over a complete Tate ring `R`,
 then there exists `C > 0` such that every `y : N` can be written as `∑ i, c i • v i` with
 `‖c‖ ≤ C * ‖y‖` (and hence `‖c i‖ ≤ C * ‖y‖` for every `i`). -/
 theorem exists_linearCombination_eq_and_norm_le (v : ι → N)

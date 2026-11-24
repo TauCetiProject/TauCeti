@@ -22,7 +22,8 @@ import TauCeti.LinearAlgebra.Multilinear.Basis
 # Finite-dimensional topological vector spaces
 
 A compatible star operation on a finite-dimensional Hausdorff topological vector space over a
-complete trivially starred field is continuous (`FiniteDimensional.continuousStar`).
+complete trivially starred field is continuous (`FiniteDimensional.continuousStar`), and any such
+space is first countable (`FiniteDimensional.firstCountableTopology`).
 
 The linear-map conversion API preserves composition and recovers a continuous linear map after
 forgetting continuity. `LinearMap.toContinuousLinearMap_coe` only needs finite dimension on the
@@ -101,6 +102,14 @@ theorem FiniteDimensional.continuousStar (𝕜 E : Type*) [NontriviallyNormedFie
     [FiniteDimensional 𝕜 E] [StarAddMonoid E] [StarModule 𝕜 E] : ContinuousStar E :=
   ⟨LinearMap.continuous_of_finiteDimensional (𝕜 := 𝕜)
     { starLinearEquiv 𝕜 (A := E) with map_smul' := fun r x ↦ by simp }⟩
+
+/-- Every finite-dimensional Hausdorff topological vector space over a complete nontrivially
+normed field is first countable. -/
+theorem FiniteDimensional.firstCountableTopology (𝕜 E : Type*) [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E] : FirstCountableTopology E :=
+  (Module.finBasis 𝕜 E).equivFun.toContinuousLinearEquiv.toHomeomorph.isInducing
+    |>.firstCountableTopology
 
 namespace LinearMap
 

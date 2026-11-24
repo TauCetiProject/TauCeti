@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.Algebra.Module.Submodule.AddSubgroup
 
 /-!
 # Product linear maps
@@ -40,6 +41,10 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
+* `LinearMap.graphAddSubgroup`, `LinearMap.graphAddCommGroup`, and `LinearMap.graphEquiv`:
+  the `AddSubgroup` and `AddCommGroup` structure on the graph of a semiring-linear map between
+  additive commutative groups, and the linear equivalence `M ≃ₗ[R] f.graph` with simp lemmas
+  `LinearMap.coe_graphEquiv_apply` and `LinearMap.graphEquiv_symm_apply`.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
   `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
 * `LinearMap.surjective_coprod_iff`, `LinearMap.surjective_coprod_neg_iff`: `f.coprod g` and
@@ -227,6 +232,58 @@ theorem finrank_graph {R M M₂ : Type*} [Semiring R] [AddCommMonoid M] [Module 
   rw [graph_eq_range_prod, finrank_range_of_inj]
   intro x y h
   exact congr(($h).1)
+
+/-- The graph of a semiring-linear map between additive commutative groups is closed under
+negation. -/
+theorem graph_neg_mem {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
+    [AddCommGroup F] [Module R F] (f : E →ₗ[R] F) :
+    ∀ p ∈ f.graph, -p ∈ f.graph := fun p hp ↦
+  (mem_graph_iff f (-p)).mpr <| by
+    rw [Prod.snd_neg, Prod.fst_neg, map_neg, (mem_graph_iff f p).mp hp]
+
+/-- The graph of a semiring-linear map between additive commutative groups as an `AddSubgroup`. -/
+@[expose]
+def graphAddSubgroup {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
+    [AddCommGroup F] [Module R F] (f : E →ₗ[R] F) : AddSubgroup (E × F) :=
+  f.graph.toAddSubgroupOfNegMem f.graph_neg_mem
+
+@[simp]
+theorem coe_graphAddSubgroup {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
+    [AddCommGroup F] [Module R F] (f : E →ₗ[R] F) :
+    (f.graphAddSubgroup : Set (E × F)) = f.graph :=
+  rfl
+
+@[simp]
+theorem mem_graphAddSubgroup {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
+    [AddCommGroup F] [Module R F] (f : E →ₗ[R] F) {p : E × F} :
+    p ∈ f.graphAddSubgroup ↔ p ∈ f.graph :=
+  Iff.rfl
+
+/-- The graph of a semiring-linear map between additive commutative groups inherits an
+`AddCommGroup` structure. -/
+@[expose, instance_reducible]
+def graphAddCommGroup {R E F : Type*} [Semiring R] [AddCommGroup E] [Module R E]
+    [AddCommGroup F] [Module R F] (f : E →ₗ[R] F) : AddCommGroup f.graph :=
+  f.graph.addCommGroupOfNegMem f.graph_neg_mem
+
+/-- A linear map over a semiring induces a linear equivalence between its domain and its graph. -/
+@[expose]
+def graphEquiv {R E F : Type*} [Semiring R] [AddCommMonoid E] [Module R E]
+    [AddCommMonoid F] [Module R F] (f : E →ₗ[R] F) : E ≃ₗ[R] f.graph :=
+  (LinearEquiv.ofLeftInverse (f := LinearMap.id.prod f) (g := Prod.fst) fun _ ↦ rfl).trans
+    (LinearEquiv.ofEq _ _ f.graph_eq_range_prod.symm)
+
+@[simp]
+theorem coe_graphEquiv_apply {R E F : Type*} [Semiring R] [AddCommMonoid E] [Module R E]
+    [AddCommMonoid F] [Module R F] (f : E →ₗ[R] F) (x : E) :
+    (f.graphEquiv x : E × F) = (x, f x) :=
+  rfl
+
+@[simp]
+theorem graphEquiv_symm_apply {R E F : Type*} [Semiring R] [AddCommMonoid E] [Module R E]
+    [AddCommMonoid F] [Module R F] (f : E →ₗ[R] F) (p : f.graph) :
+    f.graphEquiv.symm p = (p : E × F).1 :=
+  rfl
 
 section Semiring
 

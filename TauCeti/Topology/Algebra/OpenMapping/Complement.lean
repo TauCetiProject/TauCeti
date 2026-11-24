@@ -92,38 +92,6 @@ theorem coe_equivProdOfSurjectiveOfIsComplOfComplete {G : Type*}
     simp only [ContinuousLinearEquiv.coe_coe, equivProdOfSurjectiveOfIsComplOfComplete_apply,
       prod_apply]
 
-@[simp]
-theorem equivProdOfSurjectiveOfIsComplOfComplete_symm_apply_pair {G : Type*}
-    [AddCommGroup G] [UniformSpace G] [IsUniformAddGroup G] [CompleteSpace G]
-    [(𝓝 (0 : G)).IsCountablyGenerated] [T0Space G] [Module R G] [ContinuousConstSMul R G]
-    (f : E →L[R] F) (g : E →L[R] G) (hf : f.range = ⊤) (hg : g.range = ⊤)
-    (hfg : IsCompl f.ker g.ker) (x : E) :
-    (f.equivProdOfSurjectiveOfIsComplOfComplete g hf hg hfg).symm (f x, g x) = x := by
-  rw [← equivProdOfSurjectiveOfIsComplOfComplete_apply f g hf hg hfg x,
-    ContinuousLinearEquiv.symm_apply_apply]
-
-@[simp]
-theorem apply_equivProdOfSurjectiveOfIsComplOfComplete_symm_fst {G : Type*}
-    [AddCommGroup G] [UniformSpace G] [IsUniformAddGroup G] [CompleteSpace G]
-    [(𝓝 (0 : G)).IsCountablyGenerated] [T0Space G] [Module R G] [ContinuousConstSMul R G]
-    (f : E →L[R] F) (g : E →L[R] G) (hf : f.range = ⊤) (hg : g.range = ⊤)
-    (hfg : IsCompl f.ker g.ker) (y : F × G) :
-    f ((f.equivProdOfSurjectiveOfIsComplOfComplete g hf hg hfg).symm y) = y.1 := by
-  have h := (f.equivProdOfSurjectiveOfIsComplOfComplete g hf hg hfg).apply_symm_apply y
-  rw [equivProdOfSurjectiveOfIsComplOfComplete_apply] at h
-  exact congrArg Prod.fst h
-
-@[simp]
-theorem apply_equivProdOfSurjectiveOfIsComplOfComplete_symm_snd {G : Type*}
-    [AddCommGroup G] [UniformSpace G] [IsUniformAddGroup G] [CompleteSpace G]
-    [(𝓝 (0 : G)).IsCountablyGenerated] [T0Space G] [Module R G] [ContinuousConstSMul R G]
-    (f : E →L[R] F) (g : E →L[R] G) (hf : f.range = ⊤) (hg : g.range = ⊤)
-    (hfg : IsCompl f.ker g.ker) (y : F × G) :
-    g ((f.equivProdOfSurjectiveOfIsComplOfComplete g hf hg hfg).symm y) = y.2 := by
-  have h := (f.equivProdOfSurjectiveOfIsComplOfComplete g hf hg hfg).apply_symm_apply y
-  rw [equivProdOfSurjectiveOfIsComplOfComplete_apply] at h
-  exact congrArg Prod.snd h
-
 end ContinuousLinearMap
 
 namespace Submodule

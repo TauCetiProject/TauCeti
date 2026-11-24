@@ -8,8 +8,8 @@ module
 public import TauCeti.Topology.Algebra.OpenMapping.ClosedRange
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Ring.ZeroSequenceOfUnits
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Closed range from a finite-dimensional cokernel
@@ -65,8 +65,7 @@ theorem isClosed_range_of_finite_coker {𝕜 E F : Type*}
   let : UniformSpace G := IsTopologicalAddGroup.rightUniformSpace G
   have : IsUniformAddGroup G := isUniformAddGroup_of_addCommGroup
   have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
-  have : FirstCountableTopology G := (Module.finBasis 𝕜 G).equivFun
-    |>.toContinuousLinearEquiv.toHomeomorph.isInducing.firstCountableTopology
+  have : FirstCountableTopology G := FiniteDimensional.firstCountableTopology 𝕜 G
   exact f.isClosed_range_of_isCompl_of_completeSpace_right G hG
     (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
     (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 public import TauCeti.RingTheory.Huber.LocalizationTopology.PolynomialEvaluation
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic

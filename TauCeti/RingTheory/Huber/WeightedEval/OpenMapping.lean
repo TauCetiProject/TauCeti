@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
