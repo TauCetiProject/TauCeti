@@ -419,10 +419,14 @@ theorem reducedPart_koszulTwist (ε : 𝒜.Augmentation) (q : ℤ) (x : A) :
 theorem reducedPart_m_one (ε : 𝒜.Augmentation) (x : A) :
     ε.reducedPart (𝒜.m 1 ![x]) = ε.reducedOperation 1 ![ε.reducedPart x] := by
   have hm : 𝒜.m 1 ![x] = (ε.reducedOperation 1 ![ε.reducedPart x] : A) := by
-    conv_lhs =>
-      rw [← ε.coe_reducedPart_add_smul_unit x, ← differential_apply, map_add, map_smul,
-        ε.isStrictUnit.differential_eq_zero, smul_zero, add_zero, differential_apply]
-    rw [coe_reducedOperation]
+    have hm1 : 𝒜.m 1 ![x] = 𝒜.m 1 ![(ε.reducedPart x : A)] := by
+      calc 𝒜.m 1 ![x]
+          = 𝒜.differential ((ε.reducedPart x : A) + ε x • ε.unit) := by
+            rw [ε.coe_reducedPart_add_smul_unit, differential_apply]
+        _ = 𝒜.differential (ε.reducedPart x : A) := by
+            simp only [map_add, map_smul, ε.isStrictUnit.differential_eq_zero, smul_zero, add_zero]
+        _ = 𝒜.m 1 ![(ε.reducedPart x : A)] := 𝒜.differential_apply _
+    rw [hm1, coe_reducedOperation]
     congr 1
     exact funext <| Fin.forall_fin_one.2 (by simp)
   rw [hm, ε.reducedPart_coe]
