@@ -30,8 +30,9 @@ still over a field of characteristic zero, `coxeterHom` is injective and the Wey
 simple reflections, is a Coxeter system for the matrix `mᵢⱼ`
 (`TauCeti.CartanRealization.weylCoxeterSystem`). Its length function is the length of the Weyl
 group in the simple reflections, and the sign criterion reads `ℓ(w sᵢ) < ℓ(w)` exactly when
-`w αᵢ ∈ -Q₊`. Nothing here needs the matrix to be symmetrizable, nonsingular or of finite type,
-and the Weyl group may be infinite, as in affine type `A₁⁽¹⁾`.
+`w αᵢ ∈ -Q₊`, and `ℓ(w sᵢ) > ℓ(w)` exactly when `w αᵢ ∈ Q₊`. Nothing here needs the matrix to
+be symmetrizable, nonsingular or of finite type, and the Weyl group may be infinite, as in affine
+type `A₁⁽¹⁾`.
 
 The proof is Tits' argument for the geometric representation of a Coxeter group, transported to
 the action on `H*`, which is not the geometric representation when `A` is not symmetric or has a
@@ -62,7 +63,8 @@ nondecreasing (`cₙ ≤ cₙ₊₂`), hence nonnegative.
   simple reflections (`TauCeti.CartanRealization.coe_weylCoxeterSystem_simple`), whose length
   function is that of the Coxeter group
   (`TauCeti.CartanRealization.length_weylCoxeterSystem_mulEquiv_symm_apply`), with the descent
-  criterion `TauCeti.CartanRealization.weylCoxeterSystem_isRightDescent_iff`.
+  criterion `TauCeti.CartanRealization.weylCoxeterSystem_isRightDescent_iff` and
+  `TauCeti.CartanRealization.weylCoxeterSystem_not_isRightDescent_iff`.
 
 ## References
 
@@ -373,6 +375,15 @@ theorem weylCoxeterSystem_isRightDescent_iff (w : R.weylGroup hA) (i : I) :
   rw [CoxeterSystem.IsRightDescent, CoxeterSystem.IsRightDescent,
     ← CoxeterSystem.mulEquiv_symm_simple, ← map_mul, length_weylCoxeterSystem_mulEquiv_symm_apply,
     length_weylCoxeterSystem_mulEquiv_symm_apply, CoxeterMatrix.toCoxeterSystem_simple]
+
+/-- **The descent criterion**: `ℓ(w sᵢ) > ℓ(w)` in the Weyl group exactly when `w αᵢ ∈ Q₊`. -/
+theorem weylCoxeterSystem_not_isRightDescent_iff (w : R.weylGroup hA) (i : I) :
+    ¬(R.weylCoxeterSystem hA hzero hneg).IsRightDescent w i ↔
+      (w : Dual K H ≃ₗ[K] Dual K H) (R.root i) ∈ R.posRootCone := by
+  obtain ⟨g, rfl⟩ := (R.weylCoxeterSystem hA hzero hneg).mulEquiv.symm.surjective w
+  rw [weylCoxeterSystem_isRightDescent_iff, coe_weylCoxeterSystem_mulEquiv_symm_apply,
+    R.neg_coxeterHom_apply_root_mem_posRootCone_iff hA hzero hneg,
+    R.coxeterHom_apply_root_mem_posRootCone_iff hA hzero hneg]
 
 end CharZero
 
