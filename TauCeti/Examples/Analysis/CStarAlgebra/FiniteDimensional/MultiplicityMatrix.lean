@@ -87,10 +87,8 @@ theorem isEmpty_starAlgHom_two_three_and_exists_injective_nonUnitalStarAlgHom :
     (n := fun _ : Unit ↦ Fin 2) (m := fun _ : Unit ↦ Fin 3) 1).mpr fun ⟨⟩ ↦ by simp
   have hinj : Function.Injective φ :=
     φ.injective_iff_forall_exists_multiplicityMatrix_ne_zero.mpr fun ⟨⟩ ↦ ⟨(), by simp [hφ]⟩
-  let e₂ := StarAlgEquiv.funUnique ℂ Unit (CStarMatrix (Fin 2) (Fin 2) ℂ)
-  let e₃ := StarAlgEquiv.funUnique ℂ Unit (CStarMatrix (Fin 3) (Fin 3) ℂ)
-  exact ⟨e₃.toNonUnitalStarAlgHom.comp (φ.comp e₂.symm.toNonUnitalStarAlgHom),
-    e₃.injective.comp (hinj.comp e₂.symm.injective)⟩
+  exact ⟨NonUnitalStarAlgHom.funUniqueEquiv ℂ Unit Unit _ _ φ,
+    (NonUnitalStarAlgHom.funUniqueEquiv_injective_iff φ).mpr hinj⟩
 
 private def cornerIndexEmbedding (c : Fin 2) :
     (Σ _ : Unit, Fin 1 × Fin ((Matrix.of fun _ _ : Unit ↦ 1) () ())) ↪ Fin 2 :=

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.FiniteDimensional.MultiplicityMatrix
 import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Algebra.GroupWithZero.Pi
 import TauCeti.Algebra.Star.Pi
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix.EuclideanLin
 import TauCeti.Analysis.Matrix.EuclideanLin
@@ -106,6 +107,17 @@ private def partialBasisVec [DecidableEq ι]
     evalEuclideanHom φ j (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p h.some 1)))
       (minimalRangeBasis φ j i h t)
 
+private theorem partialBasisVec_mk [DecidableEq ι]
+    [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
+    [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
+    (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
+    (j : κ) (i : ι) (p : n i) (t : Fin (φ.multiplicityMatrix j i)) :
+    partialBasisVec φ j ⟨i, p, t⟩ =
+      evalEuclideanHom φ j
+        (Pi.single i (CStarMatrix.ofMatrix (Matrix.single p (⟨p⟩ : Nonempty (n i)).some 1)))
+        (minimalRangeBasis φ j i ⟨p⟩ t) :=
+  rfl
+
 private theorem evalEuclideanHom_single_partialBasisVec [DecidableEq ι]
     [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     [∀ j, Fintype (m j)] [∀ j, DecidableEq (m j)]
@@ -117,13 +129,12 @@ private theorem evalEuclideanHom_single_partialBasisVec [DecidableEq ι]
         if h ▸ q = a.2.1 then partialBasisVec φ j ⟨i, p, h ▸ a.2.2⟩ else 0
       else 0 := by
   rcases a with ⟨i', q', t'⟩
-  dsimp only [partialBasisVec]
-  rw [← mul_apply_eq_comp, ← map_mul]
+  rw [partialBasisVec_mk, ← mul_apply_eq_comp, ← map_mul]
   by_cases hi : i = i'
   · subst hi
     simp only [↓reduceDIte]
     by_cases hq : q = q'
-    · subst hq; simp
+    · subst hq; simp [partialBasisVec_mk]
     · rw [CStarMatrix.piSingle_ofMatrix_single_mul_of_ne i p hq]; simp [hq]
   · rw [Pi.single_mul_single_of_ne hi]; simp [hi]
 
@@ -134,17 +145,13 @@ private theorem orthonormal_partialBasisVec [DecidableEq ι]
     Orthonormal ℂ (partialBasisVec φ j) := by
   rw [orthonormal_iff_ite]
   rintro ⟨i₁, p₁, t₁⟩ ⟨i₂, p₂, t₂⟩
-  have hL : partialBasisVec φ j ⟨i₁, p₁, t₁⟩ =
-      evalEuclideanHom φ j
-        (Pi.single i₁ (CStarMatrix.ofMatrix (Matrix.single p₁ (⟨p₁⟩ : Nonempty (n i₁)).some 1)))
-        (minimalRangeBasis φ j i₁ ⟨p₁⟩ t₁) := rfl
-  rw [hL, ← ContinuousLinearMap.adjoint_inner_right, ← ContinuousLinearMap.star_eq_adjoint,
-    ← map_star, CStarMatrix.star_piSingle_ofMatrix_single, star_one,
-    evalEuclideanHom_single_partialBasisVec]
+  rw [partialBasisVec_mk φ j i₁ p₁ t₁, ← ContinuousLinearMap.adjoint_inner_right,
+    ← ContinuousLinearMap.star_eq_adjoint, ← map_star, CStarMatrix.star_piSingle_ofMatrix_single,
+    star_one, evalEuclideanHom_single_partialBasisVec]
   by_cases hi : i₁ = i₂
   · subst hi; simp only [↓reduceDIte]
     by_cases hp : p₁ = p₂
-    · subst hp; simp only [↓reduceIte, partialBasisVec]
+    · subst hp; simp only [↓reduceIte, partialBasisVec_mk]
       set h : Nonempty (n i₁) := ⟨p₁⟩
       set w := minimalRangeBasis φ j i₁ h t₂
       obtain ⟨u, hu⟩ := w.prop
@@ -169,7 +176,7 @@ private theorem span_range_partialBasisVec_eq_range_one [Finite ι] [DecidableEq
   · refine Submodule.span_le.mpr ?_
     rintro _ ⟨⟨i, p, t⟩, rfl⟩
     refine ⟨partialBasisVec φ j ⟨i, p, t⟩, ?_⟩
-    simp only [ContinuousLinearMap.coe_coe, partialBasisVec, ← mul_apply_eq_comp,
+    simp only [ContinuousLinearMap.coe_coe, partialBasisVec_mk, ← mul_apply_eq_comp,
       ← map_mul, one_mul]
   · rw [finrank_span_eq_card (orthonormal_partialBasisVec φ j).linearIndependent,
       evalEuclideanHom_apply, CStarMatrix.finrank_range_toEuclideanCLM,
@@ -348,14 +355,9 @@ theorem multiplicityMatrix_conjStarAlgAut_comp [∀ i, Fintype (n i)]
     apply Nat.cast_injective (R := ℂ)
     rw [natCast_multiplicityMatrix_apply_eq_trace_single _ j i p,
       natCast_multiplicityMatrix_apply_eq_trace_single φ j i p]
-    simp only [comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply,
-      Pi.mul_apply, Pi.star_apply, CStarMatrix.ofMatrix_symm_mul, CStarMatrix.ofMatrix_symm_star]
-    have huj := Pi.mem_unitary_iff.mp u.prop j
-    have hmul : (CStarMatrix.ofMatrix.symm ((u : ∀ j', CStarMatrix (m j') (m j') ℂ) j))ᴴ *
-        CStarMatrix.ofMatrix.symm ((u : ∀ j', CStarMatrix (m j') (m j') ℂ) j) = 1 := by
-      rw [← CStarMatrix.ofMatrix_symm_star, ← CStarMatrix.ofMatrix_symm_mul,
-        Unitary.star_mul_self_of_mem huj, CStarMatrix.ofMatrix_symm_one]
-    rw [Matrix.trace_mul_cycle, hmul, Matrix.one_mul]
+    simpa only [comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply,
+      Pi.mul_apply, Pi.star_apply] using
+      CStarMatrix.trace_ofMatrix_symm_unitary_conj (Pi.mem_unitary_iff.mp u.prop j) _
 
 /-- Unitary conjugation in the source leaves `multiplicityMatrix` invariant. -/
 @[simp high]
@@ -458,36 +460,22 @@ theorem approximatelyUnitarilyEquivalent_iff_multiplicityMatrix_eq
     rcases isEmpty_or_nonempty (n i) with hE | hne
     · simp
     · obtain ⟨p⟩ := hne
+      let B := ∀ j', CStarMatrix (m j') (m j') ℂ
       let e : ∀ i', CStarMatrix (n i') (n i') ℂ :=
         Pi.single i (CStarMatrix.ofMatrix (Matrix.single p p 1))
-      let τ : (∀ j', CStarMatrix (m j') (m j') ℂ) → ℂ :=
-        fun y ↦ Matrix.trace (CStarMatrix.ofMatrixL.symm (y j))
+      let τ : B → ℂ := fun y ↦ Matrix.trace (CStarMatrix.ofMatrix.symm (y j))
       have hcont : Continuous τ :=
-        (CStarMatrix.ofMatrixL.symm.continuous.comp (continuous_apply j)).matrix_trace
-      obtain ⟨δ, hδ, hlt⟩ := Metric.continuousAt_iff.mp hcont.continuousAt 1 zero_lt_one
-      let B := ∀ j', CStarMatrix (m j') (m j') ℂ
+        CStarMatrix.continuous_trace_ofMatrix_symm.comp (continuous_apply j)
+      obtain ⟨δ, hδ, hlt⟩ :=
+        Metric.continuousAt_iff.mp (hcont.continuousAt (x := ψ e)) 1 zero_lt_one
       obtain ⟨u, hu⟩ := (TauCeti.approximatelyUnitarilyEquivalent_def φ ψ).mp h {e} δ hδ
-      have hdist : dist ((u : B) * φ e * star (u : B) - ψ e) 0 < δ := by
-        simpa [dist_zero_right] using hu e (Finset.mem_singleton_self e)
-      have hnorm : ‖τ ((u : B) * φ e * star (u : B) - ψ e)‖ < 1 := by
-        simpa [τ, dist_zero_right] using hlt hdist
-      have hτ_diff : τ ((u : B) * φ e * star (u : B) - ψ e) =
-          (φ.multiplicityMatrix j i : ℂ) - (ψ.multiplicityMatrix j i : ℂ) := by
-        have hφ' := ((Unitary.conjStarAlgAut ℂ B u).toNonUnitalStarAlgHom.comp φ
-          |>.natCast_multiplicityMatrix_apply_eq_trace_single j i p).symm
-        rw [φ.multiplicityMatrix_conjStarAlgAut_comp u, comp_apply,
-          StarAlgEquiv.toNonUnitalStarAlgHom_apply, Unitary.conjStarAlgAut_apply] at hφ'
-        dsimp only [τ]
-        rw [Pi.sub_apply, map_sub, Matrix.trace_sub, CStarMatrix.ofMatrixL_symm_apply,
-          CStarMatrix.ofMatrixL_symm_apply]
-        exact congrArg₂ (· - ·) hφ' (ψ.natCast_multiplicityMatrix_apply_eq_trace_single j i p).symm
-      rw [hτ_diff, ← Int.cast_natCast (φ.multiplicityMatrix j i),
-        ← Int.cast_natCast (ψ.multiplicityMatrix j i), ← Int.cast_sub,
-        Complex.norm_intCast] at hnorm
-      have habs : |(φ.multiplicityMatrix j i : ℤ) - (ψ.multiplicityMatrix j i : ℤ)| < 1 := by
-        exact_mod_cast hnorm
-      obtain ⟨_, _⟩ := abs_lt.mp habs
-      omega
+      have hdist : dist (τ ((u : B) * φ e * star (u : B))) (τ (ψ e)) < 1 :=
+        hlt <| by simpa only [dist_eq_norm] using hu e (Finset.mem_singleton_self e)
+      simp only [τ, e, Pi.mul_apply, Pi.star_apply,
+        CStarMatrix.trace_ofMatrix_symm_unitary_conj (Pi.mem_unitary_iff.mp u.prop j),
+        ← φ.natCast_multiplicityMatrix_apply_eq_trace_single j i p,
+        ← ψ.natCast_multiplicityMatrix_apply_eq_trace_single j i p] at hdist
+      exact Nat.cast_injective (R := ℤ) (TauCeti.eq_of_dist_intCast_lt_one (by simpa using hdist))
   · obtain ⟨u, hu⟩ := (φ.exists_unitary_conj_iff_multiplicityMatrix_eq ψ).mpr hEq
     exact TauCeti.ApproximatelyUnitarilyEquivalent.of_unitary u hu
 
@@ -546,9 +534,7 @@ theorem multiplicityMatrix_comp [Fintype κ]
     (ψ.comp φ).multiplicityMatrix = ψ.multiplicityMatrix * φ.multiplicityMatrix := by
   classical
   ext k i
-  let ιHom : (Unit → CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ i', CStarMatrix (n i') (n i') ℂ) :=
-    (NonUnitalStarAlgHom.single ℂ _ i).comp
-      (StarAlgEquiv.funUnique ℂ Unit (CStarMatrix (n i) (n i) ℂ)).toNonUnitalStarAlgHom
+  let ιHom := NonUnitalStarAlgHom.singleFunUnique ℂ Unit (fun i' ↦ CStarMatrix (n i') (n i') ℂ) i
   have hι : ιHom (Pi.single () 1) = Pi.single i 1 := by simp [ιHom]
   have hunit := congrFun (congrFun (multiplicityMatrix_comp_of_finite ψ (φ.comp ιHom)) k) ()
   rw [(ψ.comp φ).multiplicityMatrix_apply k i, ← hι, ← comp_apply,
@@ -621,14 +607,11 @@ namespace TauCeti
 theorem nonempty_starAlgHom_cstarMatrix_iff {n m : Type*} [Fintype n] [DecidableEq n]
     [Fintype m] [DecidableEq m] :
     Nonempty (CStarMatrix n n ℂ →⋆ₐ[ℂ] CStarMatrix m m ℂ) ↔ Fintype.card n ∣ Fintype.card m := by
-  let eₙ := StarAlgEquiv.funUnique ℂ Unit (CStarMatrix n n ℂ)
-  let eₘ := StarAlgEquiv.funUnique ℂ Unit (CStarMatrix m m ℂ)
+  let e := StarAlgHom.funUniqueEquiv ℂ Unit Unit (CStarMatrix n n ℂ) (CStarMatrix m m ℂ)
   refine ⟨fun ⟨φ⟩ ↦ ?_, fun ⟨k, hk⟩ ↦ ?_⟩
-  · let φ' : (Unit → CStarMatrix n n ℂ) →⋆ₐ[ℂ] (Unit → CStarMatrix m m ℂ) :=
-      eₘ.symm.toStarAlgHom.comp (φ.comp eₙ.toStarAlgHom)
-    have hsum := φ'.sum_multiplicityMatrix_mul_card_eq ()
+  · have hsum := (e.symm φ).sum_multiplicityMatrix_mul_card_eq ()
     rw [Fintype.sum_unique] at hsum
-    exact ⟨φ'.toNonUnitalStarAlgHom.multiplicityMatrix () (), by rw [mul_comm, hsum]⟩
+    exact ⟨(e.symm φ).toNonUnitalStarAlgHom.multiplicityMatrix () (), by rw [mul_comm, hsum]⟩
   · classical
     let entry : ℕ := if Nonempty n then k else 0
     obtain ⟨φ', _⟩ := (exists_starAlgHom_multiplicityMatrix_eq_iff
@@ -637,7 +620,7 @@ theorem nonempty_starAlgHom_cstarMatrix_iff {n m : Type*} [Fintype n] [Decidable
         rcases isEmpty_or_nonempty n with hE | hne
         · simp [Fintype.card_eq_zero, hk]
         · simp [entry, hne, hk, mul_comm]⟩
-    exact ⟨eₘ.toStarAlgHom.comp (φ'.comp eₙ.symm.toStarAlgHom)⟩
+    exact ⟨e φ'⟩
 
 end TauCeti
 
@@ -650,24 +633,16 @@ theorem exists_unitary_conj_cstarMatrix {n m : Type*} [Fintype n] [DecidableEq n
     [Fintype m] [DecidableEq m] (φ ψ : CStarMatrix n n ℂ →⋆ₐ[ℂ] CStarMatrix m m ℂ) :
     ∃ u : unitary (CStarMatrix m m ℂ), ∀ x,
       (u : CStarMatrix m m ℂ) * φ x * star (u : CStarMatrix m m ℂ) = ψ x := by
-  let eₙ := StarAlgEquiv.funUnique ℂ Unit (CStarMatrix n n ℂ)
-  let eₘ := StarAlgEquiv.funUnique ℂ Unit (CStarMatrix m m ℂ)
-  let φ' := eₘ.symm.toStarAlgHom.comp (φ.comp eₙ.toStarAlgHom)
-  let ψ' := eₘ.symm.toStarAlgHom.comp (ψ.comp eₙ.toStarAlgHom)
-  have hEq : φ'.toNonUnitalStarAlgHom.multiplicityMatrix =
-      ψ'.toNonUnitalStarAlgHom.multiplicityMatrix := by
-    ext ⟨⟩ ⟨⟩
-    rcases isEmpty_or_nonempty n with hE | hne
-    · simp
-    · have h₁ := φ'.sum_multiplicityMatrix_mul_card_eq ()
-      have h₂ := ψ'.sum_multiplicityMatrix_mul_card_eq ()
-      rw [Fintype.sum_unique] at h₁ h₂
-      exact Nat.mul_right_cancel Fintype.card_pos (h₁.trans h₂.symm)
-  obtain ⟨u, hu⟩ := (φ'.exists_unitary_conj_iff_multiplicityMatrix_eq ψ').mpr hEq
-  refine ⟨⟨eₘ u, Unitary.map_mem eₘ u.prop⟩, fun x ↦ ?_⟩
-  have hx := congrArg eₘ (hu (eₙ.symm x))
-  simpa only [φ', ψ', map_mul, map_star, StarAlgHom.comp_apply,
-    StarAlgEquiv.toStarAlgHom_apply, StarAlgEquiv.apply_symm_apply] using hx
+  let e := StarAlgHom.funUniqueEquiv ℂ Unit Unit (CStarMatrix n n ℂ) (CStarMatrix m m ℂ)
+  rw [← StarAlgHom.exists_unitary_conj_funUniqueEquiv_symm_iff (R := ℂ) (ι := Unit) (κ := Unit),
+    exists_unitary_conj_iff_multiplicityMatrix_eq]
+  ext ⟨⟩ ⟨⟩
+  rcases isEmpty_or_nonempty n with hE | hne
+  · simp
+  · have h₁ := (e.symm φ).sum_multiplicityMatrix_mul_card_eq ()
+    have h₂ := (e.symm ψ).sum_multiplicityMatrix_mul_card_eq ()
+    rw [Fintype.sum_unique] at h₁ h₂
+    exact Nat.mul_right_cancel Fintype.card_pos (h₁.trans h₂.symm)
 
 end StarAlgHom
 

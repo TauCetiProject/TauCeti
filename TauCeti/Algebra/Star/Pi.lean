@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.GroupWithZero.Pi
 public import Mathlib.Algebra.Star.Pi
 public import Mathlib.Algebra.Star.StarAlgHom
+public import Mathlib.Algebra.Star.Unitary
+import TauCeti.Algebra.Star.StarAlgHom
 
 /-!
 # `⋆`-algebra homomorphisms and equivalences on `Pi` types
@@ -17,8 +20,14 @@ equivalences for products indexed by a `Unique` type:
 
 * `NonUnitalStarAlgHom.single`: the single-coordinate inclusion `A i →⋆ₙₐ[R] ∀ j, A j` sending `x`
   to `Pi.single i x`.
-* `StarAlgEquiv.piUnique` and `StarAlgEquiv.funUnique`: the `⋆`-algebra equivalences
-  `(∀ i, A i) ≃⋆ₐ[R] A default` and `(ι → A) ≃⋆ₐ[R] A` for `[Unique ι]`.
+* `StarAlgEquiv.funUnique`: the `⋆`-algebra equivalence `(ι → A) ≃⋆ₐ[R] A` for `[Unique ι]`, built
+  from `AlgEquiv.funUnique`.
+* `NonUnitalStarAlgHom.singleFunUnique`: the single-coordinate inclusion
+  `(ι' → A i) →⋆ₙₐ[R] ∀ j, A j` from a `Unique`-indexed copy of factor `A i`.
+* `NonUnitalStarAlgHom.funUniqueEquiv` and `StarAlgHom.funUniqueEquiv`: the equivalences
+  `((ι → A) →⋆ₙₐ[R] (κ → B)) ≃ (A →⋆ₙₐ[R] B)` and `((ι → A) →⋆ₐ[R] (κ → B)) ≃ (A →⋆ₐ[R] B)` for
+  `[Unique ι] [Unique κ]`, together with application, composition, injectivity, and unitary
+  conjugacy transport lemmas.
 -/
 
 public section
@@ -70,52 +79,224 @@ namespace StarAlgEquiv
 
 section Unique
 
-variable (R : Type*) {ι : Type*} [Unique ι]
-
-/-- Dependent functions on a `Unique` index type are `⋆`-algebra equivalent to the fiber at
-`default`. -/
-def piUnique (A : ι → Type*) [∀ i, Add (A i)] [∀ i, Mul (A i)] [∀ i, SMul R (A i)]
-    [∀ i, Star (A i)] : (∀ i, A i) ≃⋆ₐ[R] A default where
-  __ := Equiv.piUnique A
-  map_mul' _ _ := Pi.mul_apply _ _ _
-  map_add' _ _ := Pi.add_apply _ _ _
-  map_star' _ := Pi.star_apply _ _
-  map_smul' _ _ := Pi.smul_apply _ _ _
-
-/-- Applying `StarAlgEquiv.piUnique` evaluates at `default`. -/
-@[simp low]
-theorem piUnique_apply {R : Type*} {ι : Type*} [Unique ι] {A : ι → Type*}
-    [∀ i, Add (A i)] [∀ i, Mul (A i)] [∀ i, SMul R (A i)] [∀ i, Star (A i)] (f : ∀ i, A i) :
-    piUnique R A f = f default :=
-  (rfl)
-
-/-- Applying `(StarAlgEquiv.piUnique R A).symm` gives `uniqueElim`. -/
-@[simp low]
-theorem piUnique_symm_apply {R : Type*} {ι : Type*} [Unique ι] {A : ι → Type*}
-    [∀ i, Add (A i)] [∀ i, Mul (A i)] [∀ i, SMul R (A i)] [∀ i, Star (A i)] (a : A default) :
-    (piUnique R A).symm a = uniqueElim a :=
-  (rfl)
-
 /-- Functions from a `Unique` type `ι` to `A` are `⋆`-algebra equivalent to `A`. -/
-def funUnique (ι A : Type*) [Unique ι] [Add A] [Mul A] [SMul R A] [Star A] :
+def funUnique (R ι A : Type*) [Unique ι] [CommSemiring R] [Semiring A] [Algebra R A] [Star A] :
     (ι → A) ≃⋆ₐ[R] A :=
-  piUnique R (fun _ : ι ↦ A)
+  StarAlgEquiv.ofAlgEquiv (AlgEquiv.funUnique R ι A) fun _ ↦ rfl
 
 /-- Applying `StarAlgEquiv.funUnique` evaluates at `default`. -/
 @[simp low]
-theorem funUnique_apply {R ι A : Type*} [Unique ι] [Add A] [Mul A] [SMul R A] [Star A]
-    (f : ι → A) :
-    funUnique R ι A f = f default :=
-  (rfl)
+theorem funUnique_apply {R ι A : Type*} [Unique ι] [CommSemiring R] [Semiring A] [Algebra R A]
+    [Star A] (f : ι → A) :
+    funUnique R ι A f = f default := by
+  change AlgEquiv.funUnique R ι A f = f default
+  rw [AlgEquiv.funUnique_apply, Equiv.funUnique_apply]
 
 /-- Applying `(StarAlgEquiv.funUnique R ι A).symm a` at any index returns `a`. -/
 @[simp low]
-theorem funUnique_symm_apply {R ι A : Type*} [Unique ι] [Add A] [Mul A] [SMul R A] [Star A]
-    (a : A) (i : ι) :
+theorem funUnique_symm_apply {R ι A : Type*} [Unique ι] [CommSemiring R] [Semiring A]
+    [Algebra R A] [Star A] (a : A) (i : ι) :
     (funUnique R ι A).symm a i = a := by
+  change (AlgEquiv.funUnique R ι A).symm a i = a
+  rw [AlgEquiv.funUnique_symm_apply, Equiv.funUnique_symm_apply]
   cases Unique.eq_default i
   rfl
 
 end Unique
 
 end StarAlgEquiv
+
+namespace NonUnitalStarAlgHom
+
+section FunUnique
+
+/-- The single-coordinate inclusion `(ι' → A i) →⋆ₙₐ[R] ∀ j, A j` from a `Unique`-indexed copy of
+factor `A i` into the dependent product `∀ j, A j`. -/
+def singleFunUnique (R : Type*) {ι : Type*} (ι' : Type*) [DecidableEq ι] [Unique ι']
+    (A : ι → Type*) [CommSemiring R] [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    [∀ i, StarAddMonoid (A i)] (i : ι) :
+    (ι' → A i) →⋆ₙₐ[R] ∀ j, A j :=
+  (single R A i).comp (StarAlgEquiv.funUnique R ι' (A i)).toNonUnitalStarAlgHom
+
+/-- Applying `NonUnitalStarAlgHom.singleFunUnique` embeds `f default` at coordinate `i`. -/
+@[simp]
+theorem singleFunUnique_apply {R ι ι' : Type*} [DecidableEq ι] [Unique ι'] {A : ι → Type*}
+    [CommSemiring R] [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] [∀ i, StarAddMonoid (A i)]
+    (i : ι) (f : ι' → A i) :
+    singleFunUnique R ι' A i f = Pi.single i (f default) := by
+  simp [singleFunUnique]
+
+/-- Equivalence between non-unital `⋆`-algebra homomorphisms `(ι → A) →⋆ₙₐ[R] (κ → B)` on
+`Unique`-indexed products and single-factor homomorphisms `A →⋆ₙₐ[R] B`. -/
+def funUniqueEquiv (R ι κ A B : Type*) [Unique ι] [Unique κ] [CommSemiring R]
+    [Semiring A] [Algebra R A] [Star A] [Semiring B] [Algebra R B] [Star B] :
+    ((ι → A) →⋆ₙₐ[R] (κ → B)) ≃ (A →⋆ₙₐ[R] B) :=
+  StarAlgEquiv.arrowCongr' (StarAlgEquiv.funUnique R ι A) (StarAlgEquiv.funUnique R κ B)
+
+variable {R ι κ μ A B C : Type*} [Unique ι] [Unique κ] [Unique μ] [CommSemiring R]
+  [Semiring A] [Algebra R A] [Star A] [Semiring B] [Algebra R B] [Star B]
+  [Semiring C] [Algebra R C] [Star C]
+
+/-- Applying `NonUnitalStarAlgHom.funUniqueEquiv` evaluates on constant functions at `default`. -/
+@[simp]
+theorem funUniqueEquiv_apply (φ : (ι → A) →⋆ₙₐ[R] (κ → B)) (a : A) :
+    funUniqueEquiv R ι κ A B φ a = φ (fun _ ↦ a) default := by
+  rw [funUniqueEquiv, StarAlgEquiv.arrowCongr'_apply, comp_apply, comp_apply,
+    StarAlgEquiv.toNonUnitalStarAlgHom_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+    StarAlgEquiv.funUnique_apply]
+  exact congrArg (fun x ↦ φ x default) (funext fun i ↦ StarAlgEquiv.funUnique_symm_apply a i)
+
+/-- Applying `(NonUnitalStarAlgHom.funUniqueEquiv R ι κ A B).symm` evaluates `φ` at `default`. -/
+@[simp]
+theorem funUniqueEquiv_symm_apply (φ : A →⋆ₙₐ[R] B) (x : ι → A) (j : κ) :
+    (funUniqueEquiv R ι κ A B).symm φ x j = φ (x default) := by
+  rw [funUniqueEquiv, StarAlgEquiv.symm_arrowCongr', StarAlgEquiv.arrowCongr'_apply, comp_apply,
+    comp_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply, StarAlgEquiv.toNonUnitalStarAlgHom_apply,
+    StarAlgEquiv.symm_symm, StarAlgEquiv.funUnique_symm_apply, StarAlgEquiv.funUnique_apply]
+
+/-- `NonUnitalStarAlgHom.funUniqueEquiv` preserves composition. -/
+theorem funUniqueEquiv_comp (ψ : (κ → B) →⋆ₙₐ[R] (μ → C)) (φ : (ι → A) →⋆ₙₐ[R] (κ → B)) :
+    funUniqueEquiv R ι μ A C (ψ.comp φ) =
+      (funUniqueEquiv R κ μ B C ψ).comp (funUniqueEquiv R ι κ A B φ) := by
+  simp only [funUniqueEquiv]
+  exact StarAlgEquiv.arrowCongr'_comp _ (StarAlgEquiv.funUnique R κ B) _ φ ψ
+
+/-- `(NonUnitalStarAlgHom.funUniqueEquiv).symm` preserves composition. -/
+theorem funUniqueEquiv_symm_comp (ψ : B →⋆ₙₐ[R] C) (φ : A →⋆ₙₐ[R] B) :
+    (funUniqueEquiv R ι μ A C).symm (ψ.comp φ) =
+      ((funUniqueEquiv R κ μ B C).symm ψ).comp ((funUniqueEquiv R ι κ A B).symm φ) := by
+  simp only [funUniqueEquiv, StarAlgEquiv.symm_arrowCongr']
+  exact StarAlgEquiv.arrowCongr'_comp _ (StarAlgEquiv.funUnique R κ B).symm _ φ ψ
+
+/-- `NonUnitalStarAlgHom.funUniqueEquiv` preserves injectivity. -/
+@[simp]
+theorem funUniqueEquiv_injective_iff (φ : (ι → A) →⋆ₙₐ[R] (κ → B)) :
+    Function.Injective (funUniqueEquiv R ι κ A B φ) ↔ Function.Injective φ := by
+  rw [funUniqueEquiv]
+  exact StarAlgEquiv.arrowCongr'_injective_iff _ _ φ
+
+/-- `(NonUnitalStarAlgHom.funUniqueEquiv).symm` preserves injectivity. -/
+@[simp]
+theorem funUniqueEquiv_symm_injective_iff (φ : A →⋆ₙₐ[R] B) :
+    Function.Injective ((funUniqueEquiv R ι κ A B).symm φ) ↔ Function.Injective φ := by
+  rw [funUniqueEquiv, StarAlgEquiv.symm_arrowCongr']
+  exact StarAlgEquiv.arrowCongr'_injective_iff _ _ φ
+
+/-- `NonUnitalStarAlgHom.funUniqueEquiv` preserves unitary conjugacy in the target. -/
+theorem exists_unitary_conj_funUniqueEquiv_iff {B : Type*} [Semiring B] [Algebra R B]
+    [StarMul B] (φ ψ : (ι → A) →⋆ₙₐ[R] (κ → B)) :
+    (∃ u : unitary B, ∀ x, (u : B) * funUniqueEquiv R ι κ A B φ x * star (u : B) =
+        funUniqueEquiv R ι κ A B ψ x) ↔
+      ∃ u : unitary (κ → B), ∀ x, (u : κ → B) * φ x * star (u : κ → B) = ψ x := by
+  rw [funUniqueEquiv]
+  exact StarAlgEquiv.exists_unitary_conj_arrowCongr'_iff _ _ φ ψ
+
+/-- `(NonUnitalStarAlgHom.funUniqueEquiv).symm` preserves unitary conjugacy in the target. -/
+theorem exists_unitary_conj_funUniqueEquiv_symm_iff {B : Type*} [Semiring B] [Algebra R B]
+    [StarMul B] (φ ψ : A →⋆ₙₐ[R] B) :
+    (∃ u : unitary (κ → B), ∀ x, (u : κ → B) * (funUniqueEquiv R ι κ A B).symm φ x *
+        star (u : κ → B) = (funUniqueEquiv R ι κ A B).symm ψ x) ↔
+      ∃ u : unitary B, ∀ x, (u : B) * φ x * star (u : B) = ψ x := by
+  rw [funUniqueEquiv, StarAlgEquiv.symm_arrowCongr']
+  exact StarAlgEquiv.exists_unitary_conj_arrowCongr'_iff _ _ φ ψ
+
+end FunUnique
+
+end NonUnitalStarAlgHom
+
+namespace StarAlgHom
+
+section FunUnique
+
+/-- Equivalence between unital `⋆`-algebra homomorphisms `(ι → A) →⋆ₐ[R] (κ → B)` on
+`Unique`-indexed products and single-factor homomorphisms `A →⋆ₐ[R] B`. -/
+def funUniqueEquiv (R ι κ A B : Type*) [Unique ι] [Unique κ] [CommSemiring R]
+    [Semiring A] [Algebra R A] [Star A] [Semiring B] [Algebra R B] [Star B] :
+    ((ι → A) →⋆ₐ[R] (κ → B)) ≃ (A →⋆ₐ[R] B) :=
+  StarAlgEquiv.arrowCongr (StarAlgEquiv.funUnique R ι A) (StarAlgEquiv.funUnique R κ B)
+
+variable {R ι κ μ A B C : Type*} [Unique ι] [Unique κ] [Unique μ] [CommSemiring R]
+  [Semiring A] [Algebra R A] [Star A] [Semiring B] [Algebra R B] [Star B]
+  [Semiring C] [Algebra R C] [Star C]
+
+/-- Forgetting unitality intertwines `StarAlgHom.funUniqueEquiv` with
+`NonUnitalStarAlgHom.funUniqueEquiv`. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_funUniqueEquiv (φ : (ι → A) →⋆ₐ[R] (κ → B)) :
+    (funUniqueEquiv R ι κ A B φ).toNonUnitalStarAlgHom =
+      NonUnitalStarAlgHom.funUniqueEquiv R ι κ A B φ.toNonUnitalStarAlgHom := by
+  rw [funUniqueEquiv, NonUnitalStarAlgHom.funUniqueEquiv,
+    StarAlgEquiv.toNonUnitalStarAlgHom_arrowCongr]
+
+/-- Forgetting unitality intertwines `(StarAlgHom.funUniqueEquiv).symm` with
+`(NonUnitalStarAlgHom.funUniqueEquiv).symm`. -/
+@[simp]
+theorem toNonUnitalStarAlgHom_funUniqueEquiv_symm (φ : A →⋆ₐ[R] B) :
+    ((funUniqueEquiv R ι κ A B).symm φ).toNonUnitalStarAlgHom =
+      (NonUnitalStarAlgHom.funUniqueEquiv R ι κ A B).symm φ.toNonUnitalStarAlgHom := by
+  rw [funUniqueEquiv, NonUnitalStarAlgHom.funUniqueEquiv, StarAlgEquiv.symm_arrowCongr,
+    StarAlgEquiv.symm_arrowCongr', StarAlgEquiv.toNonUnitalStarAlgHom_arrowCongr]
+
+/-- Applying `StarAlgHom.funUniqueEquiv` evaluates on constant functions at `default`. -/
+@[simp]
+theorem funUniqueEquiv_apply (φ : (ι → A) →⋆ₐ[R] (κ → B)) (a : A) :
+    funUniqueEquiv R ι κ A B φ a = φ (fun _ ↦ a) default := by
+  rw [← coe_toNonUnitalStarAlgHom, toNonUnitalStarAlgHom_funUniqueEquiv,
+    NonUnitalStarAlgHom.funUniqueEquiv_apply, coe_toNonUnitalStarAlgHom]
+
+/-- Applying `(StarAlgHom.funUniqueEquiv R ι κ A B).symm` evaluates `φ` at `default`. -/
+@[simp]
+theorem funUniqueEquiv_symm_apply (φ : A →⋆ₐ[R] B) (x : ι → A) (j : κ) :
+    (funUniqueEquiv R ι κ A B).symm φ x j = φ (x default) := by
+  rw [← coe_toNonUnitalStarAlgHom, toNonUnitalStarAlgHom_funUniqueEquiv_symm,
+    NonUnitalStarAlgHom.funUniqueEquiv_symm_apply, coe_toNonUnitalStarAlgHom]
+
+/-- `StarAlgHom.funUniqueEquiv` preserves composition. -/
+theorem funUniqueEquiv_comp (ψ : (κ → B) →⋆ₐ[R] (μ → C)) (φ : (ι → A) →⋆ₐ[R] (κ → B)) :
+    funUniqueEquiv R ι μ A C (ψ.comp φ) =
+      (funUniqueEquiv R κ μ B C ψ).comp (funUniqueEquiv R ι κ A B φ) := by
+  simp only [funUniqueEquiv]
+  exact StarAlgEquiv.arrowCongr_comp _ (StarAlgEquiv.funUnique R κ B) _ φ ψ
+
+/-- `(StarAlgHom.funUniqueEquiv).symm` preserves composition. -/
+theorem funUniqueEquiv_symm_comp (ψ : B →⋆ₐ[R] C) (φ : A →⋆ₐ[R] B) :
+    (funUniqueEquiv R ι μ A C).symm (ψ.comp φ) =
+      ((funUniqueEquiv R κ μ B C).symm ψ).comp ((funUniqueEquiv R ι κ A B).symm φ) := by
+  simp only [funUniqueEquiv, StarAlgEquiv.symm_arrowCongr]
+  exact StarAlgEquiv.arrowCongr_comp _ (StarAlgEquiv.funUnique R κ B).symm _ φ ψ
+
+/-- `StarAlgHom.funUniqueEquiv` preserves injectivity. -/
+@[simp]
+theorem funUniqueEquiv_injective_iff (φ : (ι → A) →⋆ₐ[R] (κ → B)) :
+    Function.Injective (funUniqueEquiv R ι κ A B φ) ↔ Function.Injective φ := by
+  rw [funUniqueEquiv]
+  exact StarAlgEquiv.arrowCongr_injective_iff _ _ φ
+
+/-- `(StarAlgHom.funUniqueEquiv).symm` preserves injectivity. -/
+@[simp]
+theorem funUniqueEquiv_symm_injective_iff (φ : A →⋆ₐ[R] B) :
+    Function.Injective ((funUniqueEquiv R ι κ A B).symm φ) ↔ Function.Injective φ := by
+  rw [funUniqueEquiv, StarAlgEquiv.symm_arrowCongr]
+  exact StarAlgEquiv.arrowCongr_injective_iff _ _ φ
+
+/-- `StarAlgHom.funUniqueEquiv` preserves unitary conjugacy in the target. -/
+theorem exists_unitary_conj_funUniqueEquiv_iff {B : Type*} [Semiring B] [Algebra R B]
+    [StarMul B] (φ ψ : (ι → A) →⋆ₐ[R] (κ → B)) :
+    (∃ u : unitary B, ∀ x, (u : B) * funUniqueEquiv R ι κ A B φ x * star (u : B) =
+        funUniqueEquiv R ι κ A B ψ x) ↔
+      ∃ u : unitary (κ → B), ∀ x, (u : κ → B) * φ x * star (u : κ → B) = ψ x := by
+  rw [funUniqueEquiv]
+  exact StarAlgEquiv.exists_unitary_conj_arrowCongr_iff _ _ φ ψ
+
+/-- `(StarAlgHom.funUniqueEquiv).symm` preserves unitary conjugacy in the target. -/
+theorem exists_unitary_conj_funUniqueEquiv_symm_iff {B : Type*} [Semiring B] [Algebra R B]
+    [StarMul B] (φ ψ : A →⋆ₐ[R] B) :
+    (∃ u : unitary (κ → B), ∀ x, (u : κ → B) * (funUniqueEquiv R ι κ A B).symm φ x *
+        star (u : κ → B) = (funUniqueEquiv R ι κ A B).symm ψ x) ↔
+      ∃ u : unitary B, ∀ x, (u : B) * φ x * star (u : B) = ψ x := by
+  rw [funUniqueEquiv, StarAlgEquiv.symm_arrowCongr]
+  exact StarAlgEquiv.exists_unitary_conj_arrowCongr_iff _ _ φ ψ
+
+end FunUnique
+
+end StarAlgHom

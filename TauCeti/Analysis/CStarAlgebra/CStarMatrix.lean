@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Algebra.GroupWithZero.Pi
 import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+import Mathlib.Topology.Instances.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
@@ -48,9 +50,10 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an ordinary matrix preserves
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
-  `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_symm_sum`, and
-  `CStarMatrix.ofMatrixL_symm_apply` do the same for the other algebraic operations and
-  `CStarMatrix.ofMatrixL.symm`.
+  `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_symm_sum`,
+  `CStarMatrix.ofMatrixL_symm_apply`, `CStarMatrix.trace_ofMatrix_symm_unitary_conj`, and
+  `CStarMatrix.continuous_trace_ofMatrix_symm` do the same for the other algebraic operations,
+  `CStarMatrix.ofMatrixL.symm`, and unitary invariance and continuity of the matrix trace.
 * `CStarMatrix.ofMatrix_single_mul_ofMatrix_single_same`,
   `CStarMatrix.ofMatrix_single_mul_ofMatrix_single_of_ne`,
   `CStarMatrix.ofMatrix_single_mul_mul_ofMatrix_single`,
@@ -661,5 +664,20 @@ end Compression
 lemma ofMatrixL_symm_apply {m n A : Type*} [NonUnitalCStarAlgebra A] (M : CStarMatrix m n A) :
     ofMatrixL.symm M = ofMatrix.symm M :=
   ofMatrixL.symm_apply_eq.mpr <| by rw [← ofMatrix_eq_ofMatrixL, Equiv.apply_symm_apply]
+
+/-- The matrix trace on `CStarMatrix n n A` is invariant under unitary conjugation. -/
+theorem trace_ofMatrix_symm_unitary_conj {n A : Type*} [Fintype n] [DecidableEq n]
+    [CommSemiring A] [StarRing A] {u : CStarMatrix n n A}
+    (hu : u ∈ unitary (CStarMatrix n n A)) (x : CStarMatrix n n A) :
+    Matrix.trace (ofMatrix.symm (u * x * star u)) = Matrix.trace (ofMatrix.symm x) := by
+  rw [ofMatrix_symm_mul, ofMatrix_symm_mul, ofMatrix_symm_star, Matrix.trace_mul_cycle,
+    ← ofMatrix_symm_star, ← ofMatrix_symm_mul, Unitary.star_mul_self_of_mem hu,
+    ofMatrix_symm_one, Matrix.one_mul]
+
+/-- The matrix trace `x ↦ Matrix.trace (ofMatrix.symm x)` on `CStarMatrix n n A` is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_trace_ofMatrix_symm {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] :
+    Continuous fun x : CStarMatrix n n A ↦ Matrix.trace (ofMatrix.symm x) := by
+  simpa only [← ofMatrixL_symm_apply] using ofMatrixL.symm.continuous.matrix_trace
 
 end CStarMatrix
