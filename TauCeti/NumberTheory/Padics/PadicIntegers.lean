@@ -96,6 +96,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   when `q = 0` or `N ≤ v_p(q)`.
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `Padic.norm_le_one_of_isIntegral`: a `p`-adic number integral over `ℤ` has norm at most one.
+* `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
+  `p`-adic numbers into `ℤ_[p]`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
 
@@ -494,5 +496,17 @@ theorem zpow_neg_le_norm_natCast_iff {m k : ℕ} :
 theorem norm_le_one_of_isIntegral {x : ℚ_[p]} (hx : IsIntegral ℤ x) : ‖x‖ ≤ 1 := by
   obtain ⟨y, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp (hx.tower_top (A := ℤ_[p]))
   exact PadicInt.norm_le_one y
+
+/-- **Clearing `p`-adic denominators.** A single power `p ^ k` carries every member of a finite
+family of `p`-adic numbers into the unit ball, that is, into `ℤ_[p]`. -/
+theorem exists_forall_norm_pow_mul_le_one {ι : Type*} [Finite ι] (x : ι → ℚ_[p]) :
+    ∃ k : ℕ, ∀ i, ‖(p : ℚ_[p]) ^ k * x i‖ ≤ 1 := by
+  have := Fintype.ofFinite ι
+  obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (∑ i, ‖x i‖)
+    (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt : (1 : ℝ) < p)
+  refine ⟨k, fun i ↦ ?_⟩
+  rw [norm_mul, norm_pow, Padic.norm_p, inv_pow,
+    inv_mul_le_iff₀ (pow_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) k), mul_one]
+  exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (x j)) (Finset.mem_univ i)).trans hk.le
 
 end Padic
