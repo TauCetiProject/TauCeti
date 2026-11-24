@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.YOne.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TateNormalForm
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.FieldPoints
 
 /-!
 # The points of `Y₁(N)` with values in a field
@@ -67,19 +66,15 @@ namespace TauCeti.AlgebraicGeometry.UniversalTate
 
 variable {F : Type u} [Field F] [DecidableEq F]
 
--- Along `Spec φ`, for `φ : ℤ[A, B][Δ⁻¹] →+* F`, the multiple `n • (0, 0)` of the universal point is
--- the zero section, or meets it at a point of `Spec F`, exactly when `n • (0, 0) = 0` on the Tate
--- normal form `W` with coefficients `φ A` and `φ B`.
-private theorem pointHom_pow_left_eq_zero_iff (φ : ULift.{u} UniversalTate.Ring →+* F)
+-- Read exact order on the pulled-back universal section through the existing naive-order API.
+private theorem pointHom_exactOrder_iff (φ : ULift.{u} UniversalTate.Ring →+* F)
     {W : WeierstrassCurve F} (hW : curveULift.map φ = W) (h : W.toAffine.Nonsingular 0 0)
-    (n : ℕ) :
-    (Spec.map (CommRingCat.ofHom φ) ≫ (pointHom ^ n).left =
-        Spec.map (CommRingCat.ofHom φ) ≫ curveGeom.zero ↔ n • Affine.Point.some 0 0 h = 0) ∧
-      ∀ s, ((pointHom ^ n).left (Spec.map (CommRingCat.ofHom φ) s) =
-        curveGeom.zero (Spec.map (CommRingCat.ofHom φ) s) ↔ n • Affine.Point.some 0 0 h = 0) := by
+    (N : ℕ) [NeZero N] :
+    (Spec.map (CommRingCat.ofHom φ) ≫ (pointHom ^ N).left =
+      Spec.map (CommRingCat.ofHom φ) ≫ curveGeom.zero ∧
+      ∀ s, Spec.map (CommRingCat.ofHom φ) s ∈ exactOrderOpens N) ↔
+      addOrderOf (Affine.Point.some 0 0 h) = N := by
   subst hW
-  -- the point `(0, 0)` of the elliptic curve of `W` over `Spec F`, which is the pullback of the
-  -- universal Tate normal form along `Spec φ`
   let P := (curveULift.map φ).toEllipticCurveGeomPointsMulEquiv.symm (.ofAdd (.some 0 0 h))
   have hg := isPullback_toEllipticCurveGeomIso_hom_projModelBaseChange curveULift φ
   have h₀ := zero_toEllipticCurveGeomIso_hom_projModelBaseChange curveULift φ
@@ -89,19 +84,31 @@ private theorem pointHom_pow_left_eq_zero_iff (φ : ULift.{u} UniversalTate.Ring
     have key : ((curveULift.map φ).projModelPointsEquiv.symm (.some 0 0 h)).val ≫
         curveULift.projModelBaseChange φ = Spec.map (CommRingCat.ofHom φ) ≫ point := by
       rw [projModelPointsEquiv_symm_some_projModelBaseChange, point_def,
-        ← projModelAffinePoint_projModelBaseChange, projModelAffinePoint_def,
-        projModelPoint_projModelBaseChange]
-      refine (projModelPoint_eq_projModelPoint_iff_of_apply_eq ?_).mpr
-        ⟨(RingHom.id_comp φ).symm, ?_⟩
-      · rfl
-      · simp
+        SpecMap_projModelAffinePoint]
+      simp only [map_zero]
     simp [P, reassoc_of% key]
-  have hPn : P ^ n = 1 ↔ n • Affine.Point.some 0 0 h = 0 := by
-    rw [← map_pow, MulEquiv.map_eq_one_iff, ← ofAdd_nsmul, ofAdd_eq_one]
-  refine ⟨(EllipticCurveGeom.pow_eq_one_iff_of_isPullback hg h₀ hP n).symm.trans hPn,
-    fun s ↦ ?_⟩
-  rw [← EllipticCurveGeom.pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hP n s,
-    ← EllipticCurveGeom.eq_one_iff_left_apply_eq_zero, hPn]
+  have hnaive :
+      (Spec.map (CommRingCat.ofHom φ) ≫ (pointHom ^ N).left =
+        Spec.map (CommRingCat.ofHom φ) ≫ curveGeom.zero ∧
+        ∀ s, Spec.map (CommRingCat.ofHom φ) s ∈ exactOrderOpens N) ↔
+      (curveULift.map φ).toEllipticCurveGeom.IsOfNaiveExactOrder P N := by
+    rw [EllipticCurveGeom.isOfNaiveExactOrder_iff_forall_lt]
+    simp only [EllipticCurveGeom.isEmpty_equalizer_one_iff, mem_exactOrderOpens_iff]
+    constructor
+    · rintro ⟨hN, hk⟩
+      refine ⟨(EllipticCurveGeom.pow_eq_one_iff_of_isPullback hg h₀ hP N).mpr hN,
+        fun k hk₀ hkN s hs ↦ ?_⟩
+      exact hk s k hk₀ hkN
+        ((EllipticCurveGeom.pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hP k s).mp hs)
+    · rintro ⟨hN, hk⟩
+      refine ⟨(EllipticCurveGeom.pow_eq_one_iff_of_isPullback hg h₀ hP N).mp hN,
+        fun s k hk₀ hkN hs ↦ ?_⟩
+      exact hk k hk₀ hkN s
+        ((EllipticCurveGeom.pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hP k s).mpr hs)
+  rw [hnaive, EllipticCurveGeom.isOfNaiveExactOrder_iff_orderOf_eq]
+  have hord : orderOf P = addOrderOf (Affine.Point.some 0 0 h) :=
+    (curveULift.map φ).toEllipticCurveGeomPointsMulEquiv.symm.orderOf_eq _
+  exact hord ▸ Iff.rfl
 
 /-- **The `F`-points of `Y₁(N)`.** For a field `F` and `N ≥ 1`, the morphism
 `Spec φ : Spec F ⟶ Spec ℤ[A, B][Δ⁻¹]` of a ring homomorphism `φ` factors through `Y₁(N)` exactly
@@ -117,24 +124,15 @@ theorem exists_comp_yOneι_eq_SpecMap_iff (φ : ULift.{u} UniversalTate.Ring →
   have hW : (WeierstrassCurve.tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).IsElliptic := by
     rw [← map_curveULift]
     infer_instance
-  have hP := pointHom_pow_left_eq_zero_iff φ (map_curveULift φ)
-    (nonsingular_tateNormalForm_zero (φ curveULift.a₁) hb)
-  simp only [exists_comp_yOneι_eq_iff, mem_exactOrderOpens_iff, ne_eq, (hP _).1, (hP _).2,
-    forall_const, PointedWeierstrassCurve.mem_tateNormalFormExactOrder_iff,
+  rw [exists_comp_yOneι_eq_iff, pointHom_exactOrder_iff φ (map_curveULift φ)
+    (nonsingular_tateNormalForm_zero (φ curveULift.a₁) hb) N]
+  simp only [PointedWeierstrassCurve.mem_tateNormalFormExactOrder_iff,
     PointedWeierstrassCurve.tateNormalForm_def, PointedWeierstrassCurve.mem_exactOrder_iff]
-  refine ⟨fun h ↦ ⟨hb, hW, ?_⟩, fun ⟨_, _, h⟩ ↦ ?_⟩
-  · exact (addOrderOf_eq_iff (NeZero.pos N)).mpr ⟨h.1, fun k hk hk₀ ↦ h.2 k hk₀ hk⟩
-  · obtain ⟨hN, hk⟩ := (addOrderOf_eq_iff (NeZero.pos N)).mp h
-    exact ⟨hN, fun k hk₀ hkN ↦ hk k hkN hk₀⟩
-
--- The classifying homomorphism of the Tate normal form with coefficients `(a, b)`, read on
--- `ULift.{u} ℤ[A, B][Δ⁻¹]`, sends `A` to `a` and `B` to `b`.
-omit [DecidableEq F] in
-private theorem lift_comp_ringEquiv_apply {a b : F} (hΔ : IsUnit (tateNormalForm a b).Δ) :
-    ((lift hΔ).comp (ULift.ringEquiv : ULift.{u} UniversalTate.Ring ≃+* _).toRingHom
-      curveULift.a₁, (lift hΔ).comp (ULift.ringEquiv : ULift.{u} UniversalTate.Ring ≃+* _).toRingHom
-      curveULift.a₃) = (a, b) := by
-  simp [ULift.ringEquiv]
+  constructor
+  · intro hn
+    exact ⟨hb, hW, hn⟩
+  · rintro ⟨_, _, hn⟩
+    exact hn
 
 variable {N : ℕ} [NeZero N]
 
@@ -154,17 +152,21 @@ private theorem yOnePointsFun_injective :
   have := ringHom_ext_uLift h.1 h.2
   rwa [← CommRingCat.hom_ext_iff, Spec.preimage_inj, cancel_mono] at this
 
--- The classifying homomorphism of `(a, b)` factors through `Y₁(N)`.
-private theorem yOnePointsFun_surjective :
-    Function.Surjective (yOnePointsFun (F := F) (N := N)) := by
-  intro p
-  obtain ⟨hb, hX⟩ := PointedWeierstrassCurve.mem_tateNormalFormExactOrder_iff.mp p.property
-  have hΔ : IsUnit (tateNormalForm p.val.1 p.val.2).Δ := by
-    simpa using ((PointedWeierstrassCurve.mem_exactOrder_iff _).mp hX).1.isUnit
-  have hφ : _ = p.val := lift_comp_ringEquiv_apply hΔ
-  obtain ⟨f, hf⟩ := (exists_comp_yOneι_eq_SpecMap_iff _ N).mpr (hφ ▸ p.property)
-  refine ⟨f, Subtype.ext ?_⟩
-  simpa only [yOnePointsFun, hf, Spec.preimage_map, CommRingCat.hom_ofHom] using hφ
+-- Retain the classifying factorization when choosing the inverse point.
+private theorem exists_yOnePointsFun_preimage
+    (p : PointedWeierstrassCurve.tateNormalFormExactOrder F N) :
+    ∃ f : Spec (.of F) ⟶ yOne.{u} N, f ≫ yOneι N =
+      Spec.map (CommRingCat.ofHom
+        (liftULift (PointedWeierstrassCurve.isUnit_Δ_of_mem_tateNormalFormExactOrder p))) := by
+  apply (exists_comp_yOneι_eq_SpecMap_iff _ N).mpr
+  simp
+
+-- The chosen factorization has the prescribed coefficients.
+private theorem yOnePointsFun_choose_preimage
+    (p : PointedWeierstrassCurve.tateNormalFormExactOrder F N) :
+    yOnePointsFun (exists_yOnePointsFun_preimage p).choose = p := by
+  apply Subtype.ext
+  simp [yOnePointsFun, (exists_yOnePointsFun_preimage p).choose_spec]
 
 variable (F N) in
 /-- **The `F`-points of `Y₁(N)` are the Tate normal forms of level `N`.** For a field `F` and
@@ -174,7 +176,10 @@ variable (F N) in
 (`coe_yOnePointsEquiv_apply`). -/
 noncomputable def yOnePointsEquiv :
     (Spec (.of F) ⟶ yOne.{u} N) ≃ PointedWeierstrassCurve.tateNormalFormExactOrder F N :=
-  Equiv.ofBijective yOnePointsFun ⟨yOnePointsFun_injective, yOnePointsFun_surjective⟩
+  { toFun := yOnePointsFun
+    invFun := fun p ↦ (exists_yOnePointsFun_preimage p).choose
+    left_inv := fun _ ↦ yOnePointsFun_injective (yOnePointsFun_choose_preimage _)
+    right_inv := yOnePointsFun_choose_preimage }
 
 /-- The pair `(a, b)` of an `F`-point `f` of `Y₁(N)` is the image of `(A, B)` under the ring
 homomorphism `ℤ[A, B][Δ⁻¹] →+* F` of `f ≫ yOneι N : Spec F ⟶ Spec ℤ[A, B][Δ⁻¹]`. -/
@@ -186,16 +191,10 @@ theorem coe_yOnePointsEquiv_apply (f : Spec (.of F) ⟶ yOne.{u} N) :
 
 /-- The `F`-point of `Y₁(N)` with coefficients `(a, b)` lies over the point of
 `Spec ℤ[A, B][Δ⁻¹]` of the classifying homomorphism `A ↦ a`, `B ↦ b`. -/
-theorem yOnePointsEquiv_symm_comp_yOneι (p : PointedWeierstrassCurve.tateNormalFormExactOrder F N)
-    (hΔ : IsUnit (tateNormalForm p.val.1 p.val.2).Δ) :
+theorem yOnePointsEquiv_symm_comp_yOneι
+    (p : PointedWeierstrassCurve.tateNormalFormExactOrder F N) :
     (yOnePointsEquiv F N).symm p ≫ yOneι N = Spec.map (CommRingCat.ofHom
-      ((lift hΔ).comp (ULift.ringEquiv : ULift.{u} UniversalTate.Ring ≃+* _).toRingHom)) := by
-  have h := (congrArg Subtype.val ((yOnePointsEquiv F N).apply_symm_apply p)).trans
-    (lift_comp_ringEquiv_apply hΔ).symm
-  rw [coe_yOnePointsEquiv_apply, Prod.mk.injEq] at h
-  rw [← Spec.map_preimage ((yOnePointsEquiv F N).symm p ≫ yOneι N)]
-  congr 1
-  ext1
-  exact ringHom_ext_uLift h.1 h.2
+      (liftULift (PointedWeierstrassCurve.isUnit_Δ_of_mem_tateNormalFormExactOrder p))) :=
+  (exists_yOnePointsFun_preimage p).choose_spec
 
 end TauCeti.AlgebraicGeometry.UniversalTate

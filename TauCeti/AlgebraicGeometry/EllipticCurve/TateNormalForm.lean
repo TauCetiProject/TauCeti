@@ -484,6 +484,31 @@ theorem map_curveULift {S : Type*} [CommRing S] (φ : ULift.{u} Ring →+* S) :
     curveULift.map φ = tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃) := by
   simp [curveULift]
 
+/-- The classifying homomorphism of an elliptic Tate normal form, on the universe-lifted
+universal coefficient ring. -/
+noncomputable def liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
+    ULift.{u} Ring →+* R :=
+  (lift h).comp ULift.ringEquiv.toRingHom
+
+/-- Specializing the universe-lifted universal curve gives the classified Tate normal form. -/
+theorem map_liftULift {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
+    curveULift.map (liftULift h) = tateNormalForm a b := by
+  simp [liftULift, ULift.ringEquiv]
+
+/-- The lifted classifying homomorphism sends the first coefficient to `a`. -/
+@[simp]
+theorem liftULift_algebraMap_X_zero {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
+    liftULift h (ULift.up (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 0)) : ULift.{u} Ring) = a :=
+  congrArg WeierstrassCurve.a₁ (show curveULift.{u}.map (liftULift h) =
+    tateNormalForm a b from map_liftULift h)
+
+/-- The lifted classifying homomorphism sends the third coefficient to `b`. -/
+@[simp]
+theorem liftULift_algebraMap_X_one {a b : R} (h : IsUnit (tateNormalForm a b).Δ) :
+    liftULift h (ULift.up (algebraMap (MvPolynomial (Fin 2) ℤ) Ring (X 1)) : ULift.{u} Ring) = b :=
+  congrArg WeierstrassCurve.a₃ (show curveULift.{u}.map (liftULift h) =
+    tateNormalForm a b from map_liftULift h)
+
 /-- Two ring homomorphisms out of `ULift.{u} ℤ[A, B][Δ⁻¹]` are equal as soon as they agree on the
 coefficients `a₁ = A` and `a₃ = B` of the universal Tate normal form. -/
 theorem ringHom_ext_uLift {S : Type*} [Semiring S] {f g : ULift.{u} Ring →+* S}

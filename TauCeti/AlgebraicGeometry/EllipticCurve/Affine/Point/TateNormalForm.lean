@@ -243,6 +243,13 @@ theorem mem_tateNormalFormExactOrder_iff {N : ℕ} {p : F × F} :
     p ∈ tateNormalFormExactOrder F N ↔ ∃ hb : p.2 ≠ 0, tateNormalForm p.1 hb ∈ exactOrder F N :=
   Iff.rfl
 
+/-- A Tate normal form of exact order `N` has invertible discriminant. -/
+theorem isUnit_Δ_of_mem_tateNormalFormExactOrder {N : ℕ}
+    (p : tateNormalFormExactOrder F N) :
+    IsUnit (WeierstrassCurve.tateNormalForm p.val.1 p.val.2).Δ := by
+  obtain ⟨_, hX⟩ := mem_tateNormalFormExactOrder_iff.mp p.property
+  exact ((mem_exactOrder_iff _).mp hX).1.isUnit
+
 /-- For `N ≥ 4`, a point of exact order `N` is killed neither by `2` nor by `3`. -/
 private theorem nsmul_point_ne_zero_of_mem_exactOrder {N : ℕ} (hN : 4 ≤ N)
     {X : PointedWeierstrassCurve F} (hX : X ∈ exactOrder F N) {n : ℕ} (hn₀ : n ≠ 0)

@@ -140,10 +140,6 @@ condition is a condition at the points of `S`.
 * `TauCeti.AlgebraicGeometry.UniversalTate.exists_comp_yOneι_eq_iff`: the morphisms to the base
   factoring through `Y₁(N)` are those along which `N • (0, 0)` vanishes and no `k • (0, 0)`,
   `0 < k < N`, meets the zero section.
-* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pow_eq_one_iff_of_isPullback`,
-  `TauCeti.AlgebraicGeometry.EllipticCurveGeom.pow_left_apply_eq_zero_iff_of_isPullback`: along a
-  morphism to the base exhibiting `(E, P)` as a pullback of `(0, 0)`, the conditions on `n • P`
-  are those on `n • (0, 0)`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.existsUnique_yOne`: for `N ≥ 4`, `Y₁(N)` is a fine
   moduli scheme for points of exact order `N` in every fibre.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.exists_yOne_iff`: the pullback of `(0, 0)` along a
@@ -305,37 +301,6 @@ open WeierstrassCurve UniversalTate
 variable {S : Scheme.{u}} {E : EllipticCurveGeom S} {P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap}
 
 /-! ### Classifying pairs -/
-
-variable {t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))}
-  {g : E.carrier ⟶ curveGeom.{u}.carrier}
-  (hg : IsPullback g E.structureMap curveGeom.structureMap t) (h₀ : E.zero ≫ g = t ≫ curveGeom.zero)
-  (hP : P.left ≫ g = t ≫ pointHom.left)
-
-include hg h₀ hP in
--- Along a classifying pair, `P` is the pullback of the universal point.
-private theorem eq_pointsPullback_pointHom : P = pointsPullback hg h₀ pointHom :=
-  (eq_pointsPullback_iff hg h₀).mpr hP
-
-include hg h₀ hP in
-/-- Let `g` exhibit `E` as the pullback of the universal Tate normal form along
-`t : S ⟶ Spec ℤ[A, B][Δ⁻¹]`, carrying the zero section to the zero section and `P` to `(0, 0)`.
-Then `n • P = 0` exactly when the pullback of `n • (0, 0)` along `t` is the pullback of the zero
-section. -/
-theorem pow_eq_one_iff_of_isPullback (n : ℕ) :
-    P ^ n = 1 ↔ t ≫ (pointHom ^ n).left = t ≫ curveGeom.zero := by
-  rw [eq_pointsPullback_pointHom hg h₀ hP, ← map_pow]
-  simpa [Over.OverMorphism.ext_iff, hom_one_left] using
-    comp_pointsPullback_left_eq_comp_zero_iff hg h₀ (pointHom ^ n) (𝟙 S)
-
-include hg h₀ hP in
-/-- Let `g` exhibit `E` as the pullback of the universal Tate normal form along
-`t : S ⟶ Spec ℤ[A, B][Δ⁻¹]`, carrying the zero section to the zero section and `P` to `(0, 0)`.
-Then `n • P` meets the zero section at a point `s` of `S` exactly when `n • (0, 0)` meets it at
-`t s`. -/
-theorem pow_left_apply_eq_zero_iff_of_isPullback (n : ℕ) (s : S) :
-    (P ^ n).left s = E.zero s ↔ (pointHom ^ n).left (t s) = curveGeom.zero (t s) := by
-  rw [eq_pointsPullback_pointHom hg h₀ hP, ← map_pow]
-  exact pointsPullback_left_apply_eq_zero_iff hg h₀ (pointHom ^ n) s
 
 /-! ### The moduli property of `Y₁(N)` -/
 
