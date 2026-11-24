@@ -20,8 +20,9 @@ with their simple-graph versions and evaluated on explicit examples. It also rec
 deletion is antitone in the deleted set, `Graph.deleteEdges_anti_right`, complementing Mathlib's
 `Graph.deleteEdges_mono_left`, and that it gives a spanning subgraph,
 `Graph.deleteEdges_isSpanningSubgraph`. Vertex deletion commutes with simplification up to the
-canonical isomorphism `Graph.toSimpleGraphDeleteVertsIso`; its vertex map retains the original
-point.
+canonical isomorphism `Graph.toSimpleGraphDeleteVertsIso`; more generally,
+`Graph.toSimpleGraphInduceIso` identifies simplification after induction with induction after
+simplification. Both vertex maps retain the original point.
 -/
 
 public section
@@ -61,6 +62,35 @@ theorem deleteVerts_eq_induce (G : Graph α β) (X : Set α) :
   simp only [deleteVerts_isLink, induce_isLink, mem_sdiff, and_congr_right_iff]
   intro h
   simp only [h.left_mem, h.right_mem, true_and]
+
+/-- Simplifying a multigraph induced on actual vertices gives the simple graph induced on the
+corresponding vertices. The isomorphism retains the underlying ambient vertex. -/
+def toSimpleGraphInduceIso (G : Graph α β) (X : Set α) (hX : X ⊆ V(G)) :
+    (G.induce X).toSimpleGraph ≃g G.toSimpleGraph.induce {v : V(G) | (v : α) ∈ X} := by
+  let e : V(G.induce X) ≃ {v : V(G) // (v : α) ∈ X} :=
+    (Equiv.subtypeEquivRight fun _ ↦ by
+      simp only [vertexSet_induce, mem_ofPred_eq]
+      exact ⟨fun hx ↦ ⟨hX hx, hx⟩, And.right⟩).trans
+        (Equiv.Set.sep V(G) (fun v ↦ v ∈ X))
+  have he (v : V(G.induce X)) : ((e v).val : α) = v := rfl
+  refine { toEquiv := e, map_rel_iff' := ?_ }
+  intro u v
+  have hu := u.property
+  have hv := v.property
+  simp only [vertexSet_induce] at hu hv
+  simp [toSimpleGraph_adj, Graph.Adj, induce_isLink, Subtype.ext_iff, he, hu, hv]
+
+/-- The induced-simplification isomorphism keeps the underlying ambient vertex. -/
+@[simp]
+theorem coe_toSimpleGraphInduceIso_apply (G : Graph α β) (X : Set α) (hX : X ⊆ V(G))
+    (v : V(G.induce X)) :
+    (((G.toSimpleGraphInduceIso X hX) v).val : α) = v := (rfl)
+
+/-- The inverse induced-simplification isomorphism keeps the underlying ambient vertex. -/
+@[simp]
+theorem coe_toSimpleGraphInduceIso_symm_apply (G : Graph α β) (X : Set α)
+    (hX : X ⊆ V(G)) (v : {v : V(G) // (v : α) ∈ X}) :
+    (((G.toSimpleGraphInduceIso X hX).symm v) : α) = v.val := (rfl)
 
 /-- Simplifying after vertex deletion is the same as inducing the simplification on the
 remaining actual vertices. -/
