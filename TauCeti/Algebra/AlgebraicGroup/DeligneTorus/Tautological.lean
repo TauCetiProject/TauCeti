@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Hodge
 public import TauCeti.Algebra.Coalgebra.Comodule.RestrictScalars
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
+import TauCeti.RingTheory.TensorProduct.Basic
 
 /-!
 # The tautological representation of the Deligne torus
@@ -25,7 +26,7 @@ one-dimensional `ℂ ⊗[ℝ] S`-comodule `ℂ` with coaction `v ↦ v ⊗ u` re
 `ℝ` (`TauCeti.Comodule.restrictScalars`).
 
 Its complexification `ℂ ⊗[ℝ] ℂ ≃ ℂ × ℂ`, `a ⊗ v ↦ (a * v, a * conj v)`
-(`TauCeti.DeligneTorus.tautologicalSplit`), is the sum of two lines: a point with coordinates
+(`TauCeti.DeligneTorus.tautologicalSplitting`), is the sum of two lines: a point with coordinates
 `(z₁, z₂)` acts on the first by `z₁` and on the second by `z₂`. In the homology convention of
 `TauCeti.DeligneTorus.hodgeComponent` the first line is `V^{-1,0}`, the second is `V^{0,-1}`, and
 these are the only Hodge types. So the tautological representation is the real Hodge structure of
@@ -37,7 +38,7 @@ components with exponents `1` and `0`.
 * `TauCeti.DeligneTorus.universalGroupLike`: the universal point of `S`, as a group-like element
   of the `ℂ`-coalgebra `ℂ ⊗[ℝ] S`.
 * `TauCeti.DeligneTorus.tautologicalComodule`: the `S`-comodule structure on `ℂ`.
-* `TauCeti.DeligneTorus.tautologicalSplit`: the splitting `ℂ ⊗[ℝ] ℂ ≃ ℂ × ℂ` of its
+* `TauCeti.DeligneTorus.tautologicalSplitting`: the splitting `ℂ ⊗[ℝ] ℂ ≃ ℂ × ℂ` of its
   complexification.
 
 ## Main results
@@ -86,6 +87,23 @@ group-like element of the `ℂ`-coalgebra `ℂ ⊗[ℝ] S`. -/
 noncomputable def universalGroupLike : GroupLike ℂ (ℂ ⊗[ℝ] S) :=
   ⟨pointsMulEquiv S (toConv (AlgHom.id ℝ S)), isGroupLikeElem_pointsMulEquiv_id⟩
 
+/-- The element underlying the universal group-like element is the unit of the identity point. -/
+@[simp]
+theorem val_universalGroupLike :
+    (universalGroupLike : ℂ ⊗[ℝ] S) = pointsMulEquiv S (toConv (AlgHom.id ℝ S)) :=
+  (rfl)
+
+/-- **The universal property of the universal point**: the unit attached to a point `g` of `S`
+with values in `R` is the image of the universal point under `ℂ ⊗ g`. -/
+theorem lTensor_universalGroupLike {R : Type*} [CommRing R] [Algebra ℝ R]
+    (g : WithConv (S →ₐ[ℝ] R)) :
+    Algebra.TensorProduct.lTensor (S := ℂ) ℂ g.ofConv (universalGroupLike : ℂ ⊗[ℝ] S) =
+      pointsMulEquiv R g := by
+  -- `g` is the image of the identity point of `S` under post-composition with `g`
+  have h := pointsMulEquiv_mapValue g.ofConv (toConv (AlgHom.id ℝ S))
+  rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id, toConv_ofConv] at h
+  rw [h, Units.coe_map, MonoidHom.coe_ofClass, val_universalGroupLike]
+
 /-- **The tautological representation of the Deligne torus** on `ℂ`, as an `S`-comodule: the
 restriction to `ℝ` of the `ℂ ⊗[ℝ] S`-comodule `ℂ` with coaction `v ↦ v ⊗ u`, for the universal
 point `u` of `S`. A point of `S` acts by multiplication by its unit
@@ -127,17 +145,12 @@ theorem comm_endOfPoint_tautologicalComodule {R : Type*} [CommRing R] [Algebra �
     Algebra.TensorProduct.comm ℝ R ℂ (Comodule.endOfPoint ℂ g.ofConv y) =
       pointsMulEquiv R g * Algebra.TensorProduct.comm ℝ R ℂ y := by
   let _ := tautologicalComodule
-  have hg : (pointsMulEquiv R g : ℂ ⊗[ℝ] R) =
-      Algebra.TensorProduct.lTensor (S := ℂ) ℂ g.ofConv (universalGroupLike : ℂ ⊗[ℝ] S) := by
-    have h := pointsMulEquiv_mapValue g.ofConv (toConv (AlgHom.id ℝ S))
-    rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_id, toConv_ofConv] at h
-    rw [h, Units.coe_map, MonoidHom.coe_ofClass]
-    rfl
   induction y using TensorProduct.inductionOn with
   | add y y' hy hy' => simp only [map_add, mul_add, hy, hy']
   | tmul a v =>
     rw [Comodule.endOfPoint_tmul, tautologicalComodule_coact_apply,
-      comm_smul_comm_lTensor_cancelBaseChange, hg, Algebra.TensorProduct.comm_tmul]
+      comm_smul_comm_lTensor_cancelBaseChange, lTensor_universalGroupLike,
+      Algebra.TensorProduct.comm_tmul]
 
 /-- **A real point `z ∈ S(ℝ) = ℂˣ` acts on `ℂ` by multiplication by `z`.** -/
 theorem endOfPoint_real_tautologicalComodule (f : WithConv (S →ₐ[ℝ] ℝ)) (v : ℂ) :
@@ -155,13 +168,13 @@ theorem endOfPoint_real_tautologicalComodule (f : WithConv (S →ₐ[ℝ] ℝ)) 
 `ℂ ⊗[ℝ] ℂ ≃ ℂ × ℂ`, `a ⊗ v ↦ (a * v, a * conj v)`, where `a` is the coefficient and `v` the
 vector. Its first component is `V^{-1,0}` and its second `V^{0,-1}`
 (`mem_hodgeComponent_tautologicalComodule_iff`). -/
-noncomputable def tautologicalSplit : ℂ ⊗[ℝ] ℂ ≃ₐ[ℝ] ℂ × ℂ :=
+noncomputable def tautologicalSplitting : ℂ ⊗[ℝ] ℂ ≃ₐ[ℝ] ℂ × ℂ :=
   (Algebra.TensorProduct.comm ℝ ℂ ℂ).trans (complexTensorProductEquivProd ℂ)
 
 @[simp]
-theorem tautologicalSplit_tmul (a v : ℂ) :
-    tautologicalSplit (a ⊗ₜ[ℝ] v) = (a * v, a * starRingEnd ℂ v) := by
-  simp [tautologicalSplit, mul_comm]
+theorem tautologicalSplitting_tmul (a v : ℂ) :
+    tautologicalSplitting (a ⊗ₜ[ℝ] v) = (a * v, a * starRingEnd ℂ v) := by
+  simp [tautologicalSplitting, mul_comm]
 
 section Complex
 
@@ -174,30 +187,13 @@ variable {R : Type*} [CommRing R] [Algebra ℂ R]
 private theorem complexTensorProductEquivProd_comm_rTensor (v : ℂ ⊗[ℝ] ℂ) :
     complexTensorProductEquivProd R (Algebra.TensorProduct.comm ℝ R ℂ
         (LinearMap.rTensor ℂ (IsScalarTower.toAlgHom ℝ ℂ R).toLinearMap v)) =
-      (algebraMap ℂ R (tautologicalSplit v).1, algebraMap ℂ R (tautologicalSplit v).2) := by
+      (algebraMap ℂ R (tautologicalSplitting v).1,
+        algebraMap ℂ R (tautologicalSplitting v).2) := by
   induction v using TensorProduct.inductionOn with
   | add v v' hv hv' => simp only [map_add, hv, hv', Prod.fst_add, Prod.snd_add, Prod.mk_add_mk]
   | tmul a b => simp [Algebra.smul_def, mul_comm]
 
-/-- Scalar multiplication on the coefficients of `R ⊗[ℝ] ℂ` is multiplication by `1 ⊗ c` after
-commuting the factors. -/
-private theorem comm_smul (c : R) (y : R ⊗[ℝ] ℂ) :
-    Algebra.TensorProduct.comm ℝ R ℂ (c • y) =
-      (1 ⊗ₜ[ℝ] c) * Algebra.TensorProduct.comm ℝ R ℂ y := by
-  induction y using TensorProduct.inductionOn with
-  | add y y' hy hy' => simp only [smul_add, map_add, mul_add, hy, hy']
-  | tmul a b => simp [TensorProduct.smul_tmul', Algebra.TensorProduct.tmul_mul_tmul]
-
 end Complex
-
-/-- Two monomials with the same coefficient agree when the coefficient vanishes or the exponents
-agree. -/
-private theorem single_eq_single_iff {g h : Multiplicative (ℤ × ℤ)} {s : ℂ} :
-    MonoidAlgebra.single g s = MonoidAlgebra.single h s ↔ s = 0 ∨ g = h := by
-  by_cases hs : s = 0
-  · simp [hs]
-  · rw [MonoidAlgebra.single_left_inj hs]
-    simp [hs]
 
 private theorem algebraMap_monoidAlgebra (s : ℂ) :
     algebraMap ℂ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) s = MonoidAlgebra.single 1 s := by
@@ -209,8 +205,8 @@ in `V^{p,q}` exactly when the first component of its splitting vanishes unless
 theorem mem_hodgeComponent_tautologicalComodule_iff {p q : ℤ} {v : ℂ ⊗[ℝ] ℂ} :
     letI := tautologicalComodule
     v ∈ hodgeComponent ℂ p q ↔
-      ((p, q) ≠ (-1, 0) → (tautologicalSplit v).1 = 0) ∧
-        ((p, q) ≠ (0, -1) → (tautologicalSplit v).2 = 0) := by
+      ((p, q) ≠ (-1, 0) → (tautologicalSplitting v).1 = 0) ∧
+        ((p, q) ≠ (0, -1) → (tautologicalSplitting v).2 = 0) := by
   let _ := tautologicalComodule
   let Φ := (Algebra.TensorProduct.comm ℝ (MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) ℂ).trans
     (complexTensorProductEquivProd _)
@@ -222,22 +218,23 @@ theorem mem_hodgeComponent_tautologicalComodule_iff {p q : ℤ} {v : ℂ ⊗[ℝ
     rw [complexSplitting_splittingPoint] at h₁ h₂
     exact Prod.ext (h₁.symm.trans (by simp)) (h₂.symm.trans (by simp))
   rw [mem_hodgeComponent_iff, ← Φ.injective.eq_iff]
-  simp only [Φ, AlgEquiv.trans_apply, comm_endOfPoint_tautologicalComodule, comm_smul, map_mul]
+  simp only [Φ, AlgEquiv.trans_apply, comm_endOfPoint_tautologicalComodule,
+    Algebra.TensorProduct.comm_smul_left, map_mul]
   rw [complexTensorProductEquivProd_comm_rTensor, hsp, complexTensorProductEquivProd_tmul]
   simp only [Prod.mk_mul_mk, Prod.mk.injEq, map_one, one_smul, algebraMap_monoidAlgebra,
-    MonoidAlgebra.single_mul_single, one_mul, mul_one, single_eq_single_iff,
-    EmbeddingLike.apply_eq_iff_eq, ne_eq]
+    MonoidAlgebra.single_mul_single, one_mul, mul_one, MonoidAlgebra.single_inj, and_true,
+    and_self, EmbeddingLike.apply_eq_iff_eq, ne_eq]
   constructor
   · rintro ⟨h₁, h₂⟩
-    exact ⟨fun hpq ↦ h₁.resolve_right (by omega), fun hpq ↦ h₂.resolve_right (by omega)⟩
+    exact ⟨fun hpq ↦ h₁.resolve_left (by omega), fun hpq ↦ h₂.resolve_left (by omega)⟩
   · rintro ⟨h₁, h₂⟩
     refine ⟨?_, ?_⟩
     · by_cases hpq : p = -1 ∧ q = 0
-      · exact Or.inr (by omega)
-      · exact Or.inl (h₁ (by omega))
+      · exact Or.inl (by omega)
+      · exact Or.inr (h₁ (by omega))
     · by_cases hpq : p = 0 ∧ q = -1
-      · exact Or.inr (by omega)
-      · exact Or.inl (h₂ (by omega))
+      · exact Or.inl (by omega)
+      · exact Or.inr (h₂ (by omega))
 
 section Types
 
@@ -252,19 +249,19 @@ theorem hodgeComponent_tautologicalComodule_ne_bot_iff (p q : ℤ) :
   · rintro ⟨v, hv, hv0⟩
     rw [mem_hodgeComponent_tautologicalComodule_iff] at hv
     by_contra h
-    refine hv0 (tautologicalSplit.injective ?_)
+    refine hv0 (tautologicalSplitting.injective ?_)
     rw [map_zero]
     exact Prod.ext (hv.1 fun e ↦ h (Or.inl (Prod.mk.inj e)))
       (hv.2 fun e ↦ h (Or.inr (Prod.mk.inj e)))
   · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
-    · refine ⟨tautologicalSplit.symm (1, 0), ?_, fun h ↦ ?_⟩
+    · refine ⟨tautologicalSplitting.symm (1, 0), ?_, fun h ↦ ?_⟩
       · rw [mem_hodgeComponent_tautologicalComodule_iff]
         simp
-      · simpa using congrArg tautologicalSplit h
-    · refine ⟨tautologicalSplit.symm (0, 1), ?_, fun h ↦ ?_⟩
+      · simpa using congrArg tautologicalSplitting h
+    · refine ⟨tautologicalSplitting.symm (0, 1), ?_, fun h ↦ ?_⟩
       · rw [mem_hodgeComponent_tautologicalComodule_iff]
         simp
-      · simpa using congrArg tautologicalSplit h
+      · simpa using congrArg tautologicalSplitting h
 
 /-- **The tautological representation is pure of weight `-1`**: the components
 `p ↦ V^{p, -1 - p}` form a Hodge decomposition of weight `-1` of `ℂ ⊗[ℝ] ℂ`. -/
