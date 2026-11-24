@@ -205,6 +205,23 @@ period `L`. -/
 theorem apply_eq_apply_iff {s t : ℝ} : χ s = χ t ↔ (s : AddCircle χ.period) = t :=
   (χ.periodic.lift_injective χ.period_pos χ.injOn).eq_iff (a := s) (b := t)
 
+/-- The derivative of the boundary parametrization agrees at parameters with the same boundary
+point. -/
+theorem deriv_eq_deriv_of_apply_eq {s t : ℝ} (h : χ s = χ t) : deriv χ s = deriv χ t := by
+  obtain ⟨k, hk⟩ := (QuotientAddGroup.eq (s := AddSubgroup.zmultiples χ.period)).1
+    (χ.apply_eq_apply_iff.1 h)
+  have hper : Periodic (deriv χ) χ.period := χ.deriv_add_period
+  have ht : t = s + k * χ.period := by
+    simp only [zsmul_eq_mul] at hk
+    linarith
+  rw [ht, hper.int_mul k s]
+
+/-- States with the same base point and the same tangential component have the same outgoing
+velocity. -/
+theorem outgoingDir_eq_outgoingDir_of_apply_eq {s t : ℝ} (h : χ s = χ t) (v : ℝ) :
+    χ.outgoingDir s v = χ.outgoingDir t v := by
+  rw [outgoingDir_def, outgoingDir_def, χ.deriv_eq_deriv_of_apply_eq h]
+
 /-- A collision state and its image under the billiard map have distinct base points. -/
 theorem fst_billiardMap_ne (x : AddCircle χ.period × Ioo (-1 : ℝ) 1) :
     (χ.billiardMap x).1 ≠ x.1 := by

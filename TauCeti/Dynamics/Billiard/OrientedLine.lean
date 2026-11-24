@@ -115,17 +115,11 @@ theorem orientedLine_nextParam_neg_nextTangential {s v : ℝ} (hv : v ∈ Ioo (-
   rw [orientedLine_def, χ.outgoingDir_nextParam_neg_nextTangential hv, map_neg,
     LinearMap.neg_apply, h, Prod.neg_mk, orientedLine_def]
 
-/-- The derivative of the boundary parametrization agrees at parameters with the same boundary
-point. -/
-private theorem deriv_eq_deriv_of_apply_eq {s s' : ℝ} (h : χ s = χ s') :
-    deriv χ s = deriv χ s' := by
-  obtain ⟨k, hk⟩ := (QuotientAddGroup.eq (s := AddSubgroup.zmultiples χ.period)).1
-    (χ.apply_eq_apply_iff.1 h)
-  have hper : Periodic (deriv χ) χ.period := χ.deriv_add_period
-  have hs' : s' = s + k * χ.period := by
-    simp only [zsmul_eq_mul] at hk
-    linarith
-  rw [hs', hper.int_mul k s]
+/-- States with the same base point and the same tangential component have the same oriented
+line. -/
+theorem orientedLine_eq_orientedLine_of_apply_eq {s s' : ℝ} (h : χ s = χ s') (v : ℝ) :
+    χ.orientedLine s v = χ.orientedLine s' v := by
+  rw [orientedLine_def, orientedLine_def, χ.outgoingDir_eq_outgoingDir_of_apply_eq h, h]
 
 /-- **The oriented line determines the state.** A state `(s, v)` of the strip and any state
 `(s', v')` have the same oriented line exactly when they have the same base point and the same
@@ -141,9 +135,9 @@ theorem orientedLine_eq_orientedLine_iff {s v s' v' : ℝ} (hv : v ∈ Ioo (-1) 
     have hss : χ s = χ s' := by
       by_contra hne
       -- The representative `t ∈ [s, s + L)` of `s'` is the next collision parameter.
-      set t := toIcoMod χ.period_pos s s'
+      set t := toIcoMod χ.period_pos s s' with ht_def
       have hts : χ t = χ s' := by
-        rw [show t = s' - toIcoDiv χ.period_pos s s' • χ.period from rfl]
+        rw [ht_def, ← self_sub_toIcoDiv_zsmul]
         exact χ.periodic.sub_zsmul_eq _
       have htI : t ∈ Ioo s (s + χ.period) :=
         ⟨(toIcoMod_mem_Ico χ.period_pos s s').1.lt_of_ne
@@ -157,8 +151,7 @@ theorem orientedLine_eq_orientedLine_iff {s v s' v' : ℝ} (hv : v ∈ Ioo (-1) 
     refine ⟨hss, ?_⟩
     rw [← χ.inner_deriv_outgoingDir s v, he, χ.deriv_eq_deriv_of_apply_eq hss,
       inner_deriv_outgoingDir]
-  · rw [orientedLine_def, orientedLine_def, outgoingDir_def, outgoingDir_def,
-      χ.deriv_eq_deriv_of_apply_eq hs, hs, hvv]
+  · rw [χ.orientedLine_eq_orientedLine_of_apply_eq hs, hvv]
 
 end StrictConvexBilliardTable
 
