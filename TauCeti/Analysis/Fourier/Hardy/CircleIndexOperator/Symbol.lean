@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Fourier.Hardy.CircleIndexOperator
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.Analysis.Fredholm.FiniteRank
-import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 
 /-!
 # Classical symbols for the circle Fourier index operator
@@ -19,9 +19,10 @@ In period-one coordinates the Fourier mode of index `n` has angular frequency `2
 axis and the identity on the negative axis. Its full symbol is periodic in position and its
 principal symbol is elliptic.
 
-The samples of the full projection symbol give the orthogonal projection onto the strictly
-positive modes. The operator `circleFourierIndexSymbolOperator` realizes the full circle index
-symbol on every Fourier mode. Its difference from the original operator is supported on the
+The samples of the full Hardy symbol at `2πn` are the indicator of the positive integers.
+The corresponding multiplier is the projection onto the strictly positive Fourier modes.
+The operator `circleFourierIndexSymbolOperator` realizes the full circle index symbol on every
+Fourier mode. Its difference from the original operator is supported on the
 constant input mode, and the finite-rank perturbation preserves the index `-1`.
 
 The circle projection and operator come from Atiyah–Singer, *The Index of Elliptic Operators: I*,
@@ -43,6 +44,15 @@ namespace TauCeti
 
 local notation "ι" => OrthonormalBasis.repr (OrthonormalBasis.singleton (Fin 1) ℝ)
 local notation "L²" => Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))
+local notation "Q" => HilbertBasis.projection (fourierBasis (T := 1)) (Set.Ioi (0 : ℤ))
+
+private theorem coefficient_circlePositiveBranch (g : CoordinateSpace 1 → ℂ →L[ℂ] ℂ)
+    (hg : ContDiff ℝ ∞ g) (x ξ : CoordinateSpace 1) :
+    ((HomogeneousSymbol.ofPositiveBranch g hg).compProdMap (ContinuousLinearMap.id ℝ _)
+      (ι).symm.toContinuousLinearEquiv).coefficient (x, ξ) = if 0 < (ι).symm ξ then g x else 0 := by
+  simp only [HomogeneousSymbol.coefficient_compProdMap,
+    HomogeneousSymbol.coefficient_ofPositiveBranch, ContinuousLinearMap.id_apply,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 /-- The classical order-zero Hardy projection symbol obtained by cutting off the positive branch. -/
 def circleHardyProjectionSymbol (ρ : FrequencyCutoff (CoordinateSpace 1)) :
@@ -82,8 +92,7 @@ theorem coefficient_toSymbol_circleHardyProjectionSymbol (ρ : FrequencyCutoff (
     (x ξ : CoordinateSpace 1) : (circleHardyProjectionSymbol ρ).toSymbol.coefficient (x, ξ) =
       (if 0 < (ι).symm ξ then (ρ ξ : ℂ) else 0) • ContinuousLinearMap.id ℂ ℂ := by
   simp only [circleHardyProjectionSymbol, ClassicalSymbol.toSymbol_ofHomogeneous,
-    HomogeneousSymbol.coefficient_cutoffSymbol, HomogeneousSymbol.coefficient_compProdMap,
-    HomogeneousSymbol.coefficient_ofPositiveBranch, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    HomogeneousSymbol.coefficient_cutoffSymbol, coefficient_circlePositiveBranch]
   ext1
   split_ifs <;> simp [Complex.real_smul]
 
@@ -96,8 +105,7 @@ theorem coefficient_toSymbol_circleFourierIndexSymbol (ρ : FrequencyCutoff (Coo
   simp only [circleFourierIndexSymbol, ClassicalSymbol.toSymbol_add, Symbol.coefficient_add,
     Pi.add_apply, ClassicalSymbol.toSymbol_ofSpatial, Symbol.coefficient_ofSpatial,
     ClassicalSymbol.toSymbol_ofHomogeneous, HomogeneousSymbol.coefficient_cutoffSymbol,
-    HomogeneousSymbol.coefficient_compProdMap, HomogeneousSymbol.coefficient_ofPositiveBranch,
-    ContinuousLinearMap.id_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    coefficient_circlePositiveBranch]
   ext1
   split_ifs
   · simp [Complex.real_smul]
@@ -128,8 +136,7 @@ theorem coefficient_principal_circleHardyProjectionSymbol
     (circleHardyProjectionSymbol ρ).principal.coefficient (x, ξ) =
       (if 0 < (ι).symm ξ then ContinuousLinearMap.id ℂ ℂ else 0) := by
   simp only [circleHardyProjectionSymbol, ClassicalSymbol.principal_ofHomogeneous,
-    HomogeneousSymbol.coefficient_compProdMap, HomogeneousSymbol.coefficient_ofPositiveBranch,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+    coefficient_circlePositiveBranch]
 
 /-- The principal circle index symbol multiplies by `z` on the positive axis and by one on the
 negative axis. Its value at the zero covector is zero. -/
@@ -144,9 +151,7 @@ theorem coefficient_principal_circleFourierIndexSymbol
   · simp
   simp only [hξ, ite_false, circleFourierIndexSymbol, ClassicalSymbol.principal_add,
     HomogeneousSymbol.coefficient_add, Pi.add_apply, ClassicalSymbol.coefficient_principal_ofSpatial
-      _ _ hξ, ClassicalSymbol.principal_ofHomogeneous, HomogeneousSymbol.coefficient_compProdMap,
-    HomogeneousSymbol.coefficient_ofPositiveBranch, ContinuousLinearMap.id_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+      _ _ hξ, ClassicalSymbol.principal_ofHomogeneous, coefficient_circlePositiveBranch]
   ext1
   split_ifs <;> simp
 
@@ -200,43 +205,40 @@ theorem circleHardyProjectionSample_eq (ρ : FrequencyCutoff (CoordinateSpace 1)
     have hω := mul_nonpos_of_nonneg_of_nonpos (by positivity : 0 ≤ 2 * Real.pi) hn₀
     simp [hn, not_lt_of_ge hω]
 
-/-- The bounded Fourier multiplier obtained from the sampled Hardy projection symbol. -/
-def circleHardySampledProjection (ρ : FrequencyCutoff (CoordinateSpace 1)) : L² →L[ℂ] L² :=
-  (fourierBasis (T := 1)).diagonal ⟨circleHardyProjectionSample ρ, by
-    refine memℓp_infty ⟨1, ?_⟩
-    rintro _ ⟨n, rfl⟩
-    by_cases hn : 0 < n <;> simp [circleHardyProjectionSample_eq, hn]⟩
+/-- The lattice samples form the indicator of the strictly positive Fourier modes. -/
+theorem circleHardyProjectionSample_eq_indicator (ρ : FrequencyCutoff (CoordinateSpace 1)) :
+    circleHardyProjectionSample ρ = (Set.Ioi (0 : ℤ)).indicator 1 := by
+  funext n
+  simp [Set.indicator_apply]
 
--- Evaluate the coefficient before simplification expands the projection on a mode.
-/-- The sampled Hardy projection multiplies Fourier coefficients by the symbol samples. -/
-@[simp↓]
-theorem fourierCoeff_circleHardySampledProjection (ρ : FrequencyCutoff (CoordinateSpace 1))
-    (f : L²) (n : ℤ) :
-    fourierCoeff (circleHardySampledProjection ρ f) n =
-      circleHardyProjectionSample ρ n * fourierCoeff f n := by
-  rw [← fourierBasis_repr, ← fourierBasis_repr, circleHardySampledProjection,
-    HilbertBasis.repr_diagonal]
+/-- The full Hardy symbol samples form a bounded sequence. -/
+theorem memℓp_circleHardyProjectionSample (ρ : FrequencyCutoff (CoordinateSpace 1)) :
+    Memℓp (circleHardyProjectionSample ρ) ∞ := by
+  rw [circleHardyProjectionSample_eq_indicator]
+  exact one_memℓp_infty.mono fun n ↦ by
+    simpa using norm_indicator_le_norm_self (s := Set.Ioi (0 : ℤ)) (1 : ℤ → ℂ) n
 
-/-- The sampled Hardy projection acts diagonally on the Fourier basis. -/
-@[simp]
-theorem circleHardySampledProjection_fourierLp (ρ : FrequencyCutoff (CoordinateSpace 1))
-    (n : ℤ) : circleHardySampledProjection ρ (fourierLp (T := 1) 2 n) =
-      circleHardyProjectionSample ρ n • fourierLp (T := 1) 2 n := by
-  rw [circleHardySampledProjection, ← coe_fourierBasis, HilbertBasis.diagonal_apply_self]
+/-- The positive Fourier projection is the diagonal multiplier with the full symbol samples. -/
+theorem projection_Ioi_eq_diagonal_circleHardyProjectionSample
+    (ρ : FrequencyCutoff (CoordinateSpace 1)) :
+    Q = (fourierBasis (T := 1)).diagonal
+      ⟨circleHardyProjectionSample ρ, memℓp_circleHardyProjectionSample ρ⟩ := by
+  have h := memℓp_circleHardyProjectionSample ρ
+  rw [circleHardyProjectionSample_eq_indicator] at h
+  rw [HilbertBasis.projection_eq_diagonal _ _ h]
+  exact congrArg _ (Subtype.ext (circleHardyProjectionSample_eq_indicator ρ).symm)
 
-/-- The bounded operator associated to the cutoff circle index symbol on the Fourier lattice. -/
+/-- The bounded circle index operator built from the support of the sampled full Hardy symbol. -/
 def circleFourierIndexSymbolOperator (ρ : FrequencyCutoff (CoordinateSpace 1)) : L² →L[ℂ] L² :=
-  (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ 1) ∘L
-    circleHardySampledProjection ρ) +
-  (ContinuousLinearMap.id ℂ _ - circleHardySampledProjection ρ)
+  let Qρ := (fourierBasis (T := 1)).projection (Function.support (circleHardyProjectionSample ρ))
+  (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ 1) ∘L Qρ) +
+    (ContinuousLinearMap.id ℂ _ - Qρ)
 
-/-- Apply the cutoff circle index operator using multiplication and the sampled projection. -/
+/-- The lattice support selects exactly the positive modes for multiplication by the first mode. -/
 theorem circleFourierIndexSymbolOperator_apply (ρ : FrequencyCutoff (CoordinateSpace 1))
-    (f : L²) : circleFourierIndexSymbolOperator ρ f =
-      fourierLp (T := 1) ∞ 1 • circleHardySampledProjection ρ f +
-        (f - circleHardySampledProjection ρ f) := by
-  simp only [circleFourierIndexSymbolOperator, add_apply, ContinuousLinearMap.comp_apply,
-    sub_apply, ContinuousLinearMap.id_apply, Lp.multiplicationOperator_apply]
+    (f : L²) : circleFourierIndexSymbolOperator ρ f = fourierLp (T := 1) ∞ 1 • Q f + (f - Q f) := by
+  simp [circleFourierIndexSymbolOperator, circleHardyProjectionSample_eq_indicator,
+    Lp.multiplicationOperator_apply]
 
 /-- The continuous representative of the symbol action on the Fourier mode of index `n`. -/
 def circleFourierIndexSymbolMode (ρ : FrequencyCutoff (CoordinateSpace 1)) (n : ℤ) :
@@ -279,26 +281,24 @@ theorem toLp_circleFourierIndexSymbolMode (ρ : FrequencyCutoff (CoordinateSpace
 theorem circleFourierIndexSymbolOperator_fourierLp (ρ : FrequencyCutoff (CoordinateSpace 1))
     (n : ℤ) : circleFourierIndexSymbolOperator ρ (fourierLp (T := 1) 2 n) =
       ContinuousMap.toLp 2 AddCircle.haarAddCircle ℂ (circleFourierIndexSymbolMode ρ n) := by
-  rw [circleFourierIndexSymbolOperator_apply, circleHardySampledProjection_fourierLp,
-    ← Lp.multiplicationOperator_apply, map_smul, Lp.multiplicationOperator_apply,
-    fourierLp_smul_fourierLp, add_comm 1 n]
-  simp only [circleFourierIndexSymbolMode, map_add, map_smul, fourierLp, sub_smul, one_smul]
-  exact add_comm _ _
+  rw [circleFourierIndexSymbolOperator_apply, fourierBasis_projection_fourierLp,
+    toLp_circleFourierIndexSymbolMode]
+  by_cases hn : 0 < n <;> simp [hn, fourierLp_smul_fourierLp, add_comm 1 n]
 
-/-- The exact and sampled Hardy projections differ by the projection onto constants. -/
-theorem hardySubmodule_starProjection_sub_circleHardySampledProjection
-    (ρ : FrequencyCutoff (CoordinateSpace 1)) :
-    hardySubmodule.starProjection - circleHardySampledProjection ρ =
+/-- The Hardy projection and the strictly positive projection differ by the constant mode. -/
+theorem hardySubmodule_starProjection_sub_projection_Ioi :
+    hardySubmodule.starProjection - Q =
       InnerProductSpace.rankOne ℂ (fourierBasis (T := 1) 0) (fourierBasis (T := 1) 0) := by
   ext1 f
-  apply (fourierBasis (T := 1)).repr.injective
-  apply lp.ext
-  funext n
-  rw [sub_apply, map_sub, InnerProductSpace.rankOne_apply, inner_fourierBasis_left, map_smul,
-    HilbertBasis.repr_self]
-  simp only [lp.coeFn_sub, Pi.sub_apply, lp.coeFn_smul, Pi.smul_apply, fourierBasis_repr,
-    fourierCoeff_hardySubmodule_starProjection, fourierCoeff_circleHardySampledProjection,
-    circleHardyProjectionSample_eq, lp.coeFn_single]
+  apply Lp.ext
+  apply Integrable.ae_eq_of_forall_fourierCoeff_eq
+    ((Lp.memLp _).integrable (by norm_num)) ((Lp.memLp _).integrable (by norm_num))
+  intro n
+  rw [← inner_fourierBasis_left _ n, ← inner_fourierBasis_left _ n, sub_apply,
+    InnerProductSpace.rankOne_apply, inner_sub_right, inner_smul_right]
+  simp only [inner_fourierBasis_left, fourierCoeff_hardySubmodule_starProjection,
+    fourierCoeff_fourierBasis_projection, Set.indicator_apply, Set.mem_Ioi]
+  rw [coe_fourierBasis, fourierCoeff_fourierLp]
   rcases lt_trichotomy n 0 with hn | rfl | hn
   · simp [hn.ne, not_le.mpr hn, not_lt.mpr hn.le]
   · simp
@@ -313,7 +313,7 @@ theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator
   let M := Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ 1) (p := 2)
   calc
     _ = (M - ContinuousLinearMap.id ℂ _) ∘L
-        (hardySubmodule.starProjection - circleHardySampledProjection ρ) := by
+        (hardySubmodule.starProjection - Q) := by
       rw [ContinuousLinearMap.comp_sub]
       ext1 f
       simp only [sub_apply, circleFourierIndexOperator_apply,
@@ -321,7 +321,7 @@ theorem circleFourierIndexOperator_sub_circleFourierIndexSymbolOperator
         ContinuousLinearMap.id_apply, M, Lp.multiplicationOperator_apply]
       abel
     _ = _ := by
-      rw [hardySubmodule_starProjection_sub_circleHardySampledProjection,
+      rw [hardySubmodule_starProjection_sub_projection_Ioi,
         InnerProductSpace.comp_rankOne]
       simp only [sub_apply, M, Lp.multiplicationOperator_apply, fourierLp_smul_fourierBasis,
         add_zero, ContinuousLinearMap.id_apply]
