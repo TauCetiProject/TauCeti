@@ -23,14 +23,14 @@ structure.
 Since `MT(h)` is cut out by the Hopf-ideal contraction of the largest Hopf ideal contained in the
 kernel of the coordinate map of `h`, this is the case of a single homomorphism
 from the geometrically connected group `S` of
-`TauCeti.CommHopfAlgCat.geometricallyConnected_quotient_contractHopfIdeal_commonKernelHopfIdeal`,
-which descends the identity component of `MT(h)_{ℚ^alg}` to `ℚ` and shows by minimality that it
-is all of `MT(h)`.
+`geometricallyConnectedCommHopfAlgProperty_quotient_contractHopfIdeal_commonKernelHopfIdeal`
+(in `TauCeti.CommHopfAlgCat`), which descends the identity component of `MT(h)_{ℚ^alg}` to `ℚ`
+and shows by minimality that it is all of `MT(h)`.
 
 ## Main declarations
 
-* `TauCeti.DeligneTorus.geometricallyConnected_quotient_mumfordTateHopfIdeal`: the Mumford–Tate
-  group is geometrically connected, when it is of finite type.
+* `TauCeti.DeligneTorus.geometricallyConnectedCommHopfAlgProperty_quotient_mumfordTateHopfIdeal`:
+  the Mumford–Tate group is geometrically connected, when it is of finite type.
 
 ## References
 
@@ -50,13 +50,14 @@ namespace TauCeti.DeligneTorus
 /-- **The Mumford–Tate group is geometrically connected.** For an affine group `G` over `ℚ` and a
 homomorphism `h : S → G_ℝ` from the Deligne torus whose Mumford–Tate group `MT(h)` is of finite
 type, `MT(h)` is geometrically connected. No polarization is needed. -/
-theorem geometricallyConnected_quotient_mumfordTateHopfIdeal
+theorem geometricallyConnectedCommHopfAlgProperty_quotient_mumfordTateHopfIdeal
     {H : _root_.CommHopfAlgCat.{0} ℚ} (h : baseChange (K := ℝ) H ⟶ _root_.CommHopfAlgCat.of ℝ S)
     [Algebra.FiniteType ℚ (quotient H (mumfordTateHopfIdeal h))] :
     geometricallyConnectedCommHopfAlgProperty ℚ (quotient H (mumfordTateHopfIdeal h)) := by
   rw [mumfordTateHopfIdeal_def] at *
-  exact geometricallyConnected_quotient_contractHopfIdeal_commonKernelHopfIdeal (fun _ : Unit ↦ h)
-    fun _ ↦ Algebra.WeilRestriction.geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup
-      (k := ℝ) (B := ℂ)
+  exact geometricallyConnectedCommHopfAlgProperty_quotient_contractHopfIdeal_commonKernelHopfIdeal
+    (fun _ : Unit ↦ h) fun _ ↦
+      Algebra.WeilRestriction.geometricallyConnectedCommHopfAlgProperty_multiplicativeGroup
+        (k := ℝ) (B := ℂ)
 
 end TauCeti.DeligneTorus

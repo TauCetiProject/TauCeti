@@ -43,7 +43,7 @@ geometrically connected, provided this subgroup is of finite type.
   extensions belong to the ideal cutting out the geometric identity component.
 * `TauCeti.CommHopfAlgCat.existsUnique_baseChangeHopfIdeal_eq_identityComponentHopfIdeal`: over a
   perfect field, the identity component of the geometric fibre descends to a unique Hopf ideal.
-* `TauCeti.CommHopfAlgCat.geometricallyConnected_quotient_contractHopfIdeal_commonKernelHopfIdeal`:
+* `geometricallyConnectedCommHopfAlgProperty_quotient_contractHopfIdeal_commonKernelHopfIdeal`:
   the smallest closed subgroup over a perfect field through whose base change a family of
   homomorphisms from geometrically connected groups factors is geometrically connected, when it is
   of finite type.
@@ -78,21 +78,19 @@ theorem map_mem_identityComponentHopfIdeal_baseChange_iff (σ : L ≃ₐ[k] L) {
       x ∈ HopfAlgebra.identityComponentHopfIdeal (k := L) (H := baseChange (K := L) A) := by
   let _ : IsNoetherianRing (baseChange (K := L) A) := Algebra.FiniteType.isNoetherianRing L _
   let τ : (L ⊗[k] A) ≃+* (L ⊗[k] A) := (ScalarAut.toAlgAut (A := (A : Type v)) σ).toRingEquiv
-  have hτ : τ x = TensorProduct.map σ.toLinearMap LinearMap.id x := rfl
-  have hε (y : baseChange (K := L) A) :
-      Bialgebra.counitAlgHom L (baseChange (K := L) A) (τ y) =
-        σ (Bialgebra.counitAlgHom L (baseChange (K := L) A) y) :=
-    ScalarAut.counit_smul σ y
+  -- `ScalarAut.toAlgAut σ` is defined as the congruence that `ScalarAut.smul_def` names.
+  have hτ (y : L ⊗[k] A) : τ y = σ • y := (ScalarAut.smul_def σ y).symm
+  have hτmap : τ x = TensorProduct.map σ.toLinearMap LinearMap.id x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul a y => simp [τ]
+    | add a b ha hb => simp only [map_add, ha, hb]
   have hz : PrimeSpectrum.comap (τ : (L ⊗[k] A) →+* (L ⊗[k] A))
       (Bialgebra.augmentationPoint L (baseChange (K := L) A)) =
-        Bialgebra.augmentationPoint L (baseChange (K := L) A) := by
-    ext y
-    -- `augmentationPoint` is a point of `Spec`, whose underlying type is `PrimeSpectrum`, so the
-    -- lemmas about `PrimeSpectrum.comap` do not match it syntactically; unfold membership.
-    change τ y ∈ (Bialgebra.augmentationPoint L (baseChange (K := L) A)).asIdeal ↔ _
-    rw [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker, RingHom.mem_ker]
-    exact (Eq.congr_left (hε y)).trans (map_eq_zero_iff σ σ.injective)
-  rw [HopfAlgebra.mem_identityComponentHopfIdeal, HopfAlgebra.mem_identityComponentHopfIdeal, ← hτ]
+        Bialgebra.augmentationPoint L (baseChange (K := L) A) :=
+    AlgHom.comap_kernelPoint_of_apply_eq _ _ _ (σ : L →+* L) σ.injective fun y ↦ by
+      simpa only [Bialgebra.counitAlgHom_apply, RingHom.coe_coe, hτ] using ScalarAut.counit_smul σ y
+  rw [HopfAlgebra.mem_identityComponentHopfIdeal, HopfAlgebra.mem_identityComponentHopfIdeal,
+    ← hτmap]
   exact PrimeSpectrum.apply_mem_connectedComponentIdeal_iff_of_comap_eq_self τ _ hz
 
 end GaloisStable
@@ -129,13 +127,8 @@ theorem apply_one_tmul_eq_zero_of_mem_identityComponentHopfIdeal
   -- `φ` pulls the augmentation point back to the augmentation point, since it commutes with the
   -- counits up to the injection `d.right`.
   have hz : PrimeSpectrum.comap φ (Bialgebra.augmentationPoint d.Ω (d.Ω ⊗[K] T)) =
-      Bialgebra.augmentationPoint L (baseChange (K := L) A) := by
-    ext y
-    -- `augmentationPoint` is a point of `Spec`, whose underlying type is `PrimeSpectrum`, so the
-    -- lemmas about `PrimeSpectrum.comap` do not match it syntactically; unfold membership.
-    change φ y ∈ (Bialgebra.augmentationPoint d.Ω (d.Ω ⊗[K] T)).asIdeal ↔ _
-    rw [AlgHom.kernelPoint_asIdeal, AlgHom.kernelPoint_asIdeal, RingHom.mem_ker, RingHom.mem_ker]
-    exact (Eq.congr_left (hψφ y)).trans (map_eq_zero_iff d.right d.right.injective)
+      Bialgebra.augmentationPoint L (baseChange (K := L) A) :=
+    AlgHom.comap_kernelPoint_of_apply_eq _ _ φ (d.right : L →+* d.Ω) d.right.injective hψφ
   rw [HopfAlgebra.mem_identityComponentHopfIdeal, ← hz] at hx
   have h₁ : φ (1 ⊗ₜ x) = (1 : d.Ω) ⊗ₜ[K] g.hom (1 ⊗ₜ x) := by
     simp [φ]
@@ -162,7 +155,7 @@ a field extension, `G` an affine group over `k` with coordinate Hopf algebra `H`
 The smallest closed `k`-subgroup of `G` through whose base change to `K` every `f i` factors, cut
 out by `contractHopfIdeal (commonKernelHopfIdeal f)`, is geometrically connected when it is of
 finite type. -/
-theorem geometricallyConnected_quotient_contractHopfIdeal_commonKernelHopfIdeal
+theorem geometricallyConnectedCommHopfAlgProperty_quotient_contractHopfIdeal_commonKernelHopfIdeal
     {k : Type u} {K : Type u'} [Field k] [PerfectField k] [Field K] [Algebra k K]
     {H : _root_.CommHopfAlgCat.{v} k} {ι : Type*} {T : ι → _root_.CommHopfAlgCat.{max u' v} K}
     (f : ∀ i, baseChange (K := K) H ⟶ T i)
@@ -174,9 +167,8 @@ theorem geometricallyConnected_quotient_contractHopfIdeal_commonKernelHopfIdeal
   let L := AlgebraicClosure k
   let E : HopfIdeal L (baseChange (K := L) (quotient H J)) :=
     HopfAlgebra.identityComponentHopfIdeal
-  obtain ⟨I, hI, -⟩ :=
-    existsUnique_baseChangeHopfIdeal_eq_identityComponentHopfIdeal (A := quotient H J)
-  change baseChangeHopfIdeal (K := L) I = E at hI
+  obtain ⟨I, hI, -⟩ : ∃! I : HopfIdeal k (quotient H J), baseChangeHopfIdeal (K := L) I = E :=
+    existsUnique_baseChangeHopfIdeal_eq_identityComponentHopfIdeal
   have hf (i : ι) :
       (baseChangeHopfIdeal (K := K) J).toIdeal ≤ RingHom.ker (f i).hom.toAlgHom.toRingHom :=
     (le_contractHopfIdeal_commonKernelHopfIdeal_iff f J).mp le_rfl i

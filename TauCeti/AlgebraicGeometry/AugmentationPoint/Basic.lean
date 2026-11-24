@@ -33,6 +33,8 @@ file records that point and its underlying prime ideal.
 * `AlgHom.kernelPoint`: the point cut out by the kernel of an augmentation.
 * `AlgHom.comap_kernelPoint`: contraction of a kernel point is the kernel point of the
   composite algebra homomorphism.
+* `AlgHom.comap_kernelPoint_of_apply_eq`: contraction of a kernel point along a ring homomorphism
+  compatible with the augmentations up to an injection of the base rings.
 -/
 
 public section
@@ -93,5 +95,19 @@ composite algebra homomorphism. -/
 theorem comap_kernelPoint {A : Type w} [CommRing A] [Algebra k A] (g : A →ₐ[k] H) :
     PrimeSpectrum.comap (g : A →+* H) (kernelPoint f) = kernelPoint (f.comp g) :=
   PrimeSpectrum.comap_comp_apply (g : A →+* H) (f : H →+* k) ⊥
+
+/-- Contracting a kernel point along a ring homomorphism `φ` gives the kernel point of `f`, when
+`φ` carries `f` to the given augmentation up to an injective homomorphism `ι` of the base rings. -/
+theorem comap_kernelPoint_of_apply_eq {k' : Type*} [CommRing k'] [IsDomain k'] {S : Type*}
+    [CommRing S] [Algebra k' S] (g : S →ₐ[k'] k') (φ : H →+* S) (ι : k →+* k')
+    (hι : Function.Injective ι) (h : ∀ y, g (φ y) = ι (f y)) :
+    PrimeSpectrum.comap φ (kernelPoint g) = kernelPoint f := by
+  ext y
+  -- `kernelPoint g` is a point of `Spec`, whose underlying type is `PrimeSpectrum`, so the lemmas
+  -- about `PrimeSpectrum.comap` do not match it syntactically; unfold membership.
+  change φ y ∈ (kernelPoint g).asIdeal ↔ _
+  rw [kernelPoint_asIdeal, kernelPoint_asIdeal, RingHom.mem_ker, RingHom.mem_ker,
+    AlgHom.coe_toRingHom, AlgHom.coe_toRingHom, h]
+  exact map_eq_zero_iff ι hι
 
 end AlgHom
