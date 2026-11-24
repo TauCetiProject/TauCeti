@@ -79,8 +79,7 @@ example : IsEmpty (AlgebraicClosure (ZMod p) ≃+* AlgebraicClosure (RatFunc (ZM
       (algebraMap (RatFunc (ZMod p)) (AlgebraicClosure (RatFunc (ZMod p))) RatFunc.X) :=
     (transcendental_algebraMap_iff (FaithfulSMul.algebraMap_injective _ _)).mpr
       RatFunc.transcendental_X
-  refine ht ?_
-  simpa using (Algebra.IsAlgebraic.isAlgebraic (f.symm
-    (algebraMap (RatFunc (ZMod p)) _ RatFunc.X))).algHom f.toAlgHom
+  have := f.isAlgebraic
+  exact ht (Algebra.IsAlgebraic.isAlgebraic _)
 
 end TauCeti.FiniteEtaleScheme
