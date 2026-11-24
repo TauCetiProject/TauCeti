@@ -12,6 +12,7 @@ import TauCeti.KnotTheory.Grid.Differential.Square.Uniqueness
 import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Kernel
+import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
@@ -80,11 +81,9 @@ private theorem polar_gridForm {n : ℕ} (v w : Fin n → ℚ) :
   ring
 
 private theorem gridForm_nondegenerate (n : ℕ) : (gridForm n).Nondegenerate := by
-  refine QuadraticMap.nondegenerate_of_ker_polarBilin_eq_bot
-    (LinearMap.ker_eq_bot'.mpr fun v hv => funext fun i => ?_)
-  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.zero_apply, Pi.zero_apply,
-    polar_gridForm, Pi.single_apply, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq',
-    Finset.mem_univ, ↓reduceIte, neg_eq_zero] using congrArg (fun f => f (Pi.single i 1)) hv
+  unfold gridForm
+  exact QuadraticMap.nondegenerate_weightedSumSquares fun _ =>
+    isRegular_iff_ne_zero.mpr (by norm_num)
 
 /-- Coordinate permutation embeds `Equiv.Perm (Fin n)` into the orthogonal group of `gridForm n`. -/
 private noncomputable def permToOrthogonal (n : ℕ) :

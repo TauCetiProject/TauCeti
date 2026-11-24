@@ -80,9 +80,6 @@ private theorem units_eq_of_mul_eq_one {a b : ℤˣ} (h : a * b = 1) : b = a :=
 private theorem units_eq_neg_of_mul_eq_neg_one {a b : ℤˣ} (h : a * b = -1) : b = -a := by
   simpa only [← mul_assoc, Int.units_mul_self, one_mul, mul_neg, mul_one] using congrArg (a * ·) h
 
-private theorem units_ne_neg_self (a : ℤˣ) : a ≠ -a := by
-  rcases Int.units_eq_one_or a with rfl | rfl <;> decide
-
 /-- The pointwise product of two sign assignments on an empty rectangle, equal to `1` exactly where
 the two sign assignments agree. -/
 private def ratio (S T : GridSignAssignment n) {x y : GridState n}
