@@ -54,8 +54,8 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   `d` and order of vanishing `a` at zero has `d - a` finite slopes.
 * `Polynomial.newtonSlopes_eq_replicate_of_forall_eq`: a polynomial of degree `d` with nonzero
   constant coefficient and a single finite slope `m` has slope multiset `d` copies of `m`.
-* `Polynomial.sum_newtonSlopes`: their sum is the difference between the valuations of the
-  leading and trailing coefficients.
+* `Polynomial.sum_newtonSlopes`: the sum of the finite slopes is the difference between the
+  valuations of the leading and trailing coefficients.
 * `Polynomial.den_dvd_card_newtonSlopes`: for a valuation taking integer values on nonzero
   elements, if every finite slope equals the rational `q`, then the denominator of `q` divides
   the number of finite slopes.

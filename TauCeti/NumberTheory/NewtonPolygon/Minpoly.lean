@@ -78,16 +78,6 @@ public section
 
 namespace Polynomial
 
-/-- An irreducible polynomial over a field vanishing at zero is a scalar multiple of `X`, so it has
-no finite slopes. -/
-theorem newtonSlopes_eq_zero_of_irreducible_of_coeff_zero_eq_zero {F : Type*} [Field F]
-    (u : AddValuation F (WithTop ℝ)) {f : F[X]} (hf : Irreducible f) (hc : f.coeff 0 = 0) :
-    f.newtonSlopes u = 0 := by
-  obtain ⟨q, rfl⟩ := X_dvd_iff.mpr hc
-  obtain ⟨c, -, rfl⟩ :=
-    Polynomial.isUnit_iff.mp ((hf.isUnit_or_isUnit rfl).resolve_left not_isUnit_X)
-  rw [X_mul_C, C_mul_X_eq_monomial, newtonSlopes_monomial]
-
 variable {K : Type*} [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
   {v : AddValuation K (WithTop ℝ)} {b : ℝ}
 
@@ -217,9 +207,10 @@ theorem card_filter_normalizedFactors_mul_den_le_count_newtonSlopes
     (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (f : K[X]) (q : ℚ) :
     ((normalizedFactors f).filter ((q : ℝ) ∈ ·.newtonSlopes v)).card * q.den ≤
       (f.newtonSlopes v).count (q : ℝ) := by
-  rw [count_newtonSlopes_eq_sum_natDegree_filter_normalizedFactors hb hv, ← smul_eq_mul,
-    ← Multiset.sum_replicate, ← Multiset.map_const']
-  refine Multiset.sum_map_le_sum_map _ _ fun p hp => ?_
+  rw [count_newtonSlopes_eq_sum_natDegree_filter_normalizedFactors hb hv,
+    ← Multiset.card_map natDegree, ← smul_eq_mul]
+  refine Multiset.card_nsmul_le_sum fun d hd => ?_
+  obtain ⟨p, hp, rfl⟩ := Multiset.mem_map.mp hd
   obtain ⟨hpf, hqp⟩ := Multiset.mem_filter.mp hp
   have hirr := irreducible_of_normalized_factor p hpf
   exact Nat.le_of_dvd hirr.natDegree_pos (den_dvd_natDegree_of_irreducible hint hb hv hirr hqp)
