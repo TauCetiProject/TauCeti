@@ -13,14 +13,13 @@ public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 
 The scalar matrices `t ↦ t • 1` form a homomorphism `𝔾ₘ → GLₙ` of affine groups. This file
 records it as a morphism of coordinate Hopf algebras `k[GLₙ] ⟶ k[T, T⁻¹]`, recovered from its
-natural action on points, and its kernel as the Hopf ideal cutting out the scalar subgroup of
-`GLₙ`, the scheme-theoretic image of `𝔾ₘ`. For `0 < n` this image is a copy of `𝔾ₘ`; for `n = 0`
-it is trivial.
+natural action on points. Its kernel cuts out the scheme-theoretic image of `𝔾ₘ`, the scalar
+subgroup of `GLₙ`: a copy of `𝔾ₘ` for `0 < n`, trivial for `n = 0`.
 
-Over a field the scalar subgroup is the center: its Hopf ideal is
-`TauCeti.CommHopfAlgCat.centerDefiningIdeal`. One inequality is centrality of scalar points, read
-at the universal point of `𝔾ₘ`; the other is that the universally central quotient point of the
-center is a scalar point
+Over a field the scalar subgroup is the center: a coordinate function lies in
+`TauCeti.CommHopfAlgCat.centerDefiningIdeal` exactly when it vanishes on scalar matrices. One
+inclusion is centrality of scalar points, read at the universal point of `𝔾ₘ`; the other is that
+the universally central quotient point of the center is a scalar point
 (`TauCeti.GeneralLinear.mem_centerPointsSubgroup_iff_exists_scalarTorusPoints`).
 
 ## Main declarations
@@ -29,16 +28,13 @@ center is a scalar point
   coordinate rings.
 * `TauCeti.GeneralLinear.mapPointsFunctor_scalarTorusCoordinateMap_app`: on points it is
   `TauCeti.GeneralLinear.scalarTorusPoints`.
-* `TauCeti.GeneralLinear.scalarHopfIdeal`: the Hopf ideal of the scalar subgroup of `GLₙ`, a copy
-  of `𝔾ₘ` when `0 < n`.
-* `TauCeti.GeneralLinear.scalarHopfIdeal_eq_centerDefiningIdeal`: the scalar subgroup is the
-  center.
+* `TauCeti.GeneralLinear.mem_centerDefiningIdeal_iff`: the center ideal of `GLₙ` is the kernel of
+  the scalar homomorphism, so the center is the scalar subgroup.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Example 2.4 and §21.
 -/
-
 public section
 
 open CategoryTheory WithConv
@@ -60,6 +56,14 @@ noncomputable def scalarTorusPointsMap :
     ext f
     exact (mapValue_scalarTorusPoints n φ.hom f).symm
 
+/-- The components of `scalarTorusPointsMap` are the scalar-matrix maps. -/
+@[simp]
+theorem scalarTorusPointsMap_app_apply (A : CommAlgCat.{u} R)
+    (f : HopfAlgebra.points (R := R) (H := R[T;T⁻¹]) A) :
+    (scalarTorusPointsMap n).app A f = scalarTorusPoints n f := by
+  rw [scalarTorusPointsMap]
+  rfl
+
 /-- **The scalar homomorphism `𝔾ₘ → GLₙ`** on coordinate rings, `k[GLₙ] ⟶ k[T, T⁻¹]`,
 recovered from its natural action on points. Its direction is opposite to that of the group
 homomorphism. -/
@@ -75,8 +79,8 @@ theorem mapPointsFunctor_scalarTorusCoordinateMap_app (A : CommAlgCat.{u} R)
     (f : HopfAlgebra.points (R := R) (H := R[T;T⁻¹]) A) :
     (CommHopfAlgCat.Hom.mapPointsFunctor (scalarTorusCoordinateMap (R := R) n)).app A f =
       scalarTorusPoints n f := by
-  rw [scalarTorusCoordinateMap, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap]
-  rfl
+  rw [scalarTorusCoordinateMap, CommHopfAlgCat.mapPointsFunctor_homOfPointsMap,
+    scalarTorusPointsMap_app_apply]
 
 /-- Precomposing a point of `𝔾ₘ` with `scalarTorusCoordinateMap` gives its scalar matrix. -/
 theorem toConv_comp_scalarTorusCoordinateMap {A : Type u} [CommRing A] [Algebra R A]
@@ -93,41 +97,22 @@ section Field
 
 variable (k : Type u) [Field k]
 
-/-- **The scalar subgroup of `GLₙ`**, as the Hopf ideal of `k[GLₙ]` cutting it out: the kernel of
-the scalar homomorphism `scalarTorusCoordinateMap`, which cuts out its scheme-theoretic image. For
-`0 < n` this is a copy of `𝔾ₘ`; for `n = 0` it is trivial. -/
-noncomputable def scalarHopfIdeal : HopfIdeal k (coordinateHopfAlgebra k n) :=
-  HopfIdeal.ker (scalarTorusCoordinateMap (R := k) n).hom
-
-/-- A coordinate function lies in the scalar ideal exactly when it vanishes on scalar matrices. -/
-@[simp]
-theorem mem_scalarHopfIdeal {x : coordinateHopfAlgebra k n} :
-    x ∈ scalarHopfIdeal n k ↔ (scalarTorusCoordinateMap (R := k) n).hom x = 0 :=
-  HopfIdeal.mem_ker _
-
-/-- The underlying ideal of the scalar subgroup is the kernel of the scalar homomorphism. -/
-theorem scalarHopfIdeal_toIdeal :
-    (scalarHopfIdeal n k).toIdeal =
-      RingHom.ker (scalarTorusCoordinateMap (R := k) n).hom.toAlgHom.toRingHom :=
-  HopfIdeal.ker_toIdeal _
-
-/-- **The scalar subgroup is central**: the center ideal lies below the scalar ideal. This is
-centrality of the universal scalar point, the scalar homomorphism itself. -/
-theorem centerDefiningIdeal_le_scalarHopfIdeal :
-    CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) ≤ scalarHopfIdeal n k := by
-  intro x hx
+/-- Scalar matrices are central: a coordinate function in the center ideal vanishes on scalar
+matrices. -/
+private theorem centerDefiningIdeal_le_ker {x : coordinateHopfAlgebra k n}
+    (hx : x ∈ CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n)) :
+    (scalarTorusCoordinateMap (R := k) n).hom x = 0 := by
   let p : WithConv (k[T;T⁻¹] →ₐ[k] k[T;T⁻¹]) := toConv (AlgHom.id k k[T;T⁻¹])
   have hp := scalarTorusPoints_mem_centerPointsSubgroup n p
   rw [← toConv_comp_scalarTorusCoordinateMap, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
     at hp
-  exact (mem_scalarHopfIdeal n k).mpr (hp x hx)
+  exact hp x hx
 
-/-- **The center of `GLₙ` consists of scalars**: the scalar ideal lies below the center ideal.
-The quotient point of the center is universally central, hence a scalar point, so it factors
-through the scalar homomorphism and kills its kernel. -/
-theorem scalarHopfIdeal_le_centerDefiningIdeal :
-    scalarHopfIdeal n k ≤ CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
-  intro x hx
+/-- The center of `GLₙ` consists of scalars: a coordinate function vanishing on scalar matrices
+lies in the center ideal. -/
+private theorem mem_centerDefiningIdeal_of_ker {x : coordinateHopfAlgebra k n}
+    (hx : (scalarTorusCoordinateMap (R := k) n).hom x = 0) :
+    x ∈ CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
   let I := CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n)
   let A : CommAlgCat.{u} k := CommAlgCat.of k (coordinateHopfAlgebra k n ⧸ I.toIdeal)
   let q : WithConv (coordinateHopfAlgebra k n →ₐ[k] A) :=
@@ -140,14 +125,15 @@ theorem scalarHopfIdeal_le_centerDefiningIdeal :
   rw [← toConv_comp_scalarTorusCoordinateMap] at hf
   have hqx : q.ofConv x = 0 := by
     rw [← hf, ofConv_toConv, AlgHom.comp_apply]
-    exact (congrArg f.ofConv ((mem_scalarHopfIdeal n k).mp hx)).trans (map_zero _)
+    exact (congrArg f.ofConv hx).trans (map_zero _)
   exact HopfIdeal.mem_toIdeal.mp (Ideal.Quotient.eq_zero_iff_mem.mp hqx)
 
-/-- **The scalar subgroup of `GLₙ` is its center.** -/
-theorem scalarHopfIdeal_eq_centerDefiningIdeal :
-    scalarHopfIdeal n k = CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) :=
-  le_antisymm (scalarHopfIdeal_le_centerDefiningIdeal n k)
-    (centerDefiningIdeal_le_scalarHopfIdeal n k)
+/-- **The center of `GLₙ` is its scalar subgroup**: a coordinate function lies in the center
+ideal exactly when it vanishes on scalar matrices. -/
+theorem mem_centerDefiningIdeal_iff {x : coordinateHopfAlgebra k n} :
+    x ∈ CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) ↔
+      (scalarTorusCoordinateMap (R := k) n).hom x = 0 :=
+  ⟨centerDefiningIdeal_le_ker n k, mem_centerDefiningIdeal_of_ker n k⟩
 
 end Field
 
