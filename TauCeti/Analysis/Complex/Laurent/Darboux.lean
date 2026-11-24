@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.Analysis.Complex.Laurent.Basic
+import Mathlib.Analysis.Polynomial.Basic
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 import TauCeti.Analysis.Fourier.RiemannLebesgue
 
@@ -22,7 +23,8 @@ continuously to the closed punctured disc `0 < |z - c| ≤ r`, then `f_n = g_n +
 `|z - c| = r`, and the theorem says that they alone determine the coefficients of `f` up to an
 error that is `o(r^{-n})`.
 More generally (DLMF 2.10.31), if the `m`-th derivative `f⁽ᵐ⁾ - g⁽ᵐ⁾` extends continuously to
-`0 < |z - c| ≤ r`, then `f_n = g_n + o(r^{-n} |n|^{-m})`.
+`0 < |z - c| ≤ r`, then `f_n = g_n + o(r^{-n} |n|^{-m})`; this form only needs `f` and `g`
+holomorphic on an annulus `a < |z - c| < r` containing the extraction circle.
 
 The proof moves the integration circle out to the boundary circle `|z - c| = r`, which
 `TauCeti.circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable` allows because the
@@ -32,7 +34,7 @@ the annulus and holomorphic inside it, are `o(r^{-n})`. On a circle of radius `R
 `R ^ n` times the `n`-th Laurent coefficient of any function is the `n`-th Fourier coefficient of
 `θ ↦ f(c + R e^{iθ})` on `[0, 2π]`, and these tend to `0` by the Riemann--Lebesgue lemma.
 For the derivative form, the coefficients of `f⁽ᵐ⁾` are those of `f` multiplied by falling
-factorials (`TauCeti.circleLaurentCoeff_iteratedDeriv`), which grow like `|n|ᵐ`.
+factorials (`TauCeti.circleLaurentCoeff_iteratedDeriv`), which are asymptotic to `nᵐ`.
 
 ## Main results
 
@@ -60,7 +62,7 @@ Worked examples with explicit simple poles are in
 
 public section
 
-open Complex Set Metric Filter Polynomial
+open Complex Set Metric Filter Polynomial Asymptotics
 open scoped Real Topology
 
 namespace TauCeti
@@ -142,69 +144,63 @@ theorem tendsto_zpow_smul_circleLaurentCoeff_sub {f g h : ℂ → E} {c : ℂ} {
       circleLaurentCoeff_congr (f := fun z ↦ f z - g z) (g := h) hρ.le
         (fun z hz ↦ hfgh (hsph hz))]
 
-/-- The falling factorial `n (n - 1) ⋯ (n - m + 1)` is at least `|n|ᵐ / 2ᵐ` once `|n| ≥ 2m`. -/
-private theorem abs_pow_le_two_pow_mul_norm_descPochhammer_eval {m : ℕ} {n : ℤ}
-    (hn : 2 * (m : ℝ) ≤ |(n : ℝ)|) :
-    |(n : ℝ)| ^ m ≤ 2 ^ m * ‖(descPochhammer ℂ m).eval (n : ℂ)‖ := by
-  calc |(n : ℝ)| ^ m = ∏ _j ∈ Finset.range m, |(n : ℝ)| := by simp
-    _ ≤ ∏ j ∈ Finset.range m, 2 * ‖(n : ℂ) - j‖ := by
-      refine Finset.prod_le_prod₀ (fun _ _ ↦ abs_nonneg _) fun j hj ↦ ?_
-      have hj : (j : ℝ) + 1 ≤ m := by exact_mod_cast Finset.mem_range.1 hj
-      have h := norm_sub_norm_le (n : ℂ) (j : ℂ)
-      rw [norm_intCast, Complex.norm_natCast] at h
-      linarith
-    _ = 2 ^ m * ‖(descPochhammer ℂ m).eval (n : ℂ)‖ := by
-      rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_range,
-        descPochhammer_eval_eq_prod_range, norm_prod]
-
 /-- **Darboux's method with derivatives** (DLMF 2.10.31). Let `f` and `g` be holomorphic on the
-punctured disc `0 < |z - c| < r`, and let `f⁽ᵐ⁾ - g⁽ᵐ⁾` agree there with a function `h` continuous
-on the closed punctured disc `0 < |z - c| ≤ r`. Then the Laurent coefficients, extracted on any
-circle of radius `ρ ∈ (0, r)`, satisfy `f_n = g_n + o(r ^ (-n) |n| ^ (-m))` as `n → ±∞`. For
-`m = 0` this is `tendsto_zpow_smul_circleLaurentCoeff_sub`. -/
+annulus `a < |z - c| < r` (`0 ≤ a`), and let `f⁽ᵐ⁾ - g⁽ᵐ⁾` agree there with a function `h`
+continuous on the closed annulus `ρ ≤ |z - c| ≤ r` for some `ρ ∈ (a, r)`. Then the Laurent
+coefficients extracted on the circle of radius `ρ` satisfy `f_n = g_n + o(r ^ (-n) |n| ^ (-m))` as
+`n → ±∞`. The punctured-disc form of DLMF is the case `a = 0`. -/
 theorem tendsto_pow_mul_zpow_smul_circleLaurentCoeff_sub_of_iteratedDeriv [CompleteSpace E]
-    {f g h : ℂ → E} {c : ℂ} {r ρ : ℝ} (m : ℕ) (hρ : 0 < ρ) (hρr : ρ < r)
-    (hf : DifferentiableOn ℂ f (ball c r \ {c})) (hg : DifferentiableOn ℂ g (ball c r \ {c}))
-    (hh : ContinuousOn h (closedBall c r \ {c}))
-    (hfgh : EqOn (iteratedDeriv m f - iteratedDeriv m g) h (ball c r \ {c})) :
+    {f g h : ℂ → E} {c : ℂ} {a r ρ : ℝ} (m : ℕ) (ha : 0 ≤ a) (haρ : a < ρ) (hρr : ρ < r)
+    (hf : DifferentiableOn ℂ f (ball c r \ closedBall c a))
+    (hg : DifferentiableOn ℂ g (ball c r \ closedBall c a))
+    (hh : ContinuousOn h (closedBall c r \ ball c ρ))
+    (hfgh : EqOn (iteratedDeriv m f - iteratedDeriv m g) h (ball c r \ closedBall c a)) :
     Tendsto (fun n : ℤ ↦ ((n : ℝ) ^ m * r ^ n) •
       (circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n)) cofinite (𝓝 0) := by
+  have hρ : 0 < ρ := ha.trans_lt haρ
   have hr : 0 < r := hρ.trans hρr
-  have hopen : IsOpen (ball c r \ {c}) := isOpen_ball.sdiff isClosed_singleton
-  have hD {φ : ℂ → E} (hφ : DifferentiableOn ℂ φ (ball c r \ {c})) :
-      DifferentiableOn ℂ (iteratedDeriv m φ) (ball c r \ {c}) := by
+  have hU : IsOpen (ball c r \ closedBall c a) := isOpen_ball.sdiff isClosed_closedBall
+  have hsph : sphere c ρ ⊆ ball c r \ closedBall c a := fun z hz ↦
+    ⟨sphere_subset_ball hρr hz, fun hz' ↦ by linarith [mem_sphere.1 hz, mem_closedBall.1 hz']⟩
+  have hann : ball c r \ closedBall c ρ ⊆ ball c r \ closedBall c a :=
+    sdiff_subset_sdiff_right (closedBall_subset_closedBall haρ.le)
+  have hD {φ : ℂ → E} (hφ : DifferentiableOn ℂ φ (ball c r \ closedBall c a)) :
+      DifferentiableOn ℂ (iteratedDeriv m φ) (ball c r \ closedBall c a) := by
     simpa only [iteratedDeriv_eq_iterate] using
-      ((hφ.analyticOnNhd hopen).iterated_deriv m).differentiableOn
-  have hdom : ball c r \ {c} = eball c (ENNReal.ofReal r) \ closedBall c 0 := by
-    rw [eball_ofReal, closedBall_zero]
-  have hρR : ENNReal.ofReal ρ < ENNReal.ofReal r := (ENNReal.ofReal_lt_ofReal_iff hr).2 hρr
-  -- Darboux's theorem for the `m`-th derivatives, read at the shifted degree `n - m`.
-  have hT := ((tendsto_zpow_smul_circleLaurentCoeff_sub hρ hρr (hD hf) (hD hg) hh hfgh).comp
-    (sub_left_injective (b := (m : ℤ))).tendsto_cofinite).norm.const_mul ((2 * r) ^ m)
-  rw [norm_zero, mul_zero] at hT
-  refine squeeze_zero_norm' ?_ hT
-  have hfin : ∀ᶠ n : ℤ in cofinite, 2 * (m : ℝ) ≤ |(n : ℝ)| := by
-    refine eventually_cofinite.2 ((Set.finite_Ioo (-(2 * (m : ℤ))) (2 * m)).subset fun n hn ↦ ?_)
-    have hn := abs_lt.1 (not_le.1 hn)
-    refine ⟨?_, ?_⟩
-    · have : ((-(2 * (m : ℤ)) : ℤ) : ℝ) < n := by push_cast; linarith
-      exact_mod_cast this
-    · have : (n : ℝ) < ((2 * (m : ℤ) : ℤ) : ℝ) := by push_cast; linarith
-      exact_mod_cast this
-  -- For `|n| ≥ 2m`, the coefficients of the derivatives are the falling factorial, of size at
-  -- least `|n|ᵐ / 2ᵐ`, times those of `f - g`.
-  filter_upwards [hfin] with n hn
-  rw [hdom] at hf hg
-  simp only [Function.comp_apply, circleLaurentCoeff_iteratedDeriv hf le_rfl hρ hρR,
-    circleLaurentCoeff_iteratedDeriv hg le_rfl hρ hρR, ← smul_sub, norm_smul, Real.norm_eq_abs,
-    abs_mul, abs_pow, abs_of_pos (zpow_pos hr _)]
-  have hpow : r ^ n = r ^ (n - m) * r ^ m := by
-    rw [← zpow_natCast, ← zpow_add₀ hr.ne', sub_add_cancel]
+      ((hφ.analyticOnNhd hU).iterated_deriv m).differentiableOn
+  -- Riemann--Lebesgue on the annulus `ρ ≤ |z - c| ≤ r` for `h`, read at the degree `n - m`.
+  have hT := ((tendsto_zpow_smul_circleLaurentCoeff_of_differentiable_on_annulus_off_countable
+    hρ hρr.le countable_empty hh fun z hz ↦
+      (((hD hf).sub (hD hg)).differentiableAt (hU.mem_nhds (hann hz.1))).congr_of_eventuallyEq
+        (eventuallyEq_of_mem (hU.mem_nhds (hann hz.1)) hfgh).symm).comp
+    (sub_left_injective (b := (m : ℤ))).tendsto_cofinite).const_smul (r ^ m)
+  rw [smul_zero] at hT
+  -- The coefficients of `h` are the falling factorial times those of `f - g`.
+  have hcoeff (n : ℤ) : circleLaurentCoeff h c ρ (n - m) = (descPochhammer ℂ m).eval (n : ℂ) •
+      (circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n) := by
+    rw [← circleLaurentCoeff_congr (f := fun z ↦ iteratedDeriv m f z - iteratedDeriv m g z)
+        hρ.le (fun z hz ↦ hfgh (hsph hz)),
+      circleLaurentCoeff_sub (((hD hf).continuousOn.mono hsph).circleIntegrable hρ.le)
+        (((hD hg).continuousOn.mono hsph).circleIntegrable hρ.le),
+      circleLaurentCoeff_iteratedDeriv hU hf hρ hsph,
+      circleLaurentCoeff_iteratedDeriv hU hg hρ hsph,
+      smul_sub]
+  -- The falling factorial is asymptotic to its leading monomial `n ^ m`.
+  have hcast : Tendsto (fun n : ℤ ↦ (n : ℂ)) cofinite (Bornology.cobounded ℂ) := by
+    rw [← tendsto_norm_atTop_iff_cobounded]
+    simpa [Function.comp_def] using
+      tendsto_norm_comp_cofinite_atTop_of_isClosedEmbedding Int.isClosedEmbedding_coe_real
+  obtain ⟨C, hC⟩ := ((isEquivalent_cobounded_leading_monomial (P := descPochhammer ℂ m)).symm
+    |>.isBigO.comp_tendsto hcast).bound
+  refine IsBigO.trans_tendsto (IsBigO.of_bound C (hC.mono fun n hn ↦ ?_)) hT
+  have hpow : r ^ m * r ^ (n - m) = r ^ n := by
+    rw [← zpow_natCast, ← zpow_add₀ hr.ne', add_sub_cancel]
+  simp only [Function.comp_apply, hcoeff, (monic_descPochhammer ℂ m).leadingCoeff,
+    descPochhammer_natDegree, one_mul, norm_smul, norm_mul, norm_pow, norm_zpow,
+    norm_intCast, Real.norm_eq_abs, abs_of_pos hr] at hn ⊢
   calc |(n : ℝ)| ^ m * r ^ n * ‖circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n‖
-      ≤ 2 ^ m * ‖(descPochhammer ℂ m).eval (n : ℂ)‖ * r ^ n *
-          ‖circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n‖ := by
-        gcongr
-        exact abs_pow_le_two_pow_mul_norm_descPochhammer_eval hn
-    _ = _ := by rw [hpow, mul_pow]; ring
+      ≤ C * ‖(descPochhammer ℂ m).eval (n : ℂ)‖ * r ^ n *
+          ‖circleLaurentCoeff f c ρ n - circleLaurentCoeff g c ρ n‖ := by gcongr
+    _ = _ := by rw [← hpow]; ring
 
 end TauCeti

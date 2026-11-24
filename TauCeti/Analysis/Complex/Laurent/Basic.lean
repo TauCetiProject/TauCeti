@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.RingTheory.Polynomial.Pochhammer
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!
@@ -266,23 +265,25 @@ theorem circleLaurentCoeff_deriv {f : ℂ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ
     (fun z hz => (hf z (hsphere hz)).differentiableAt (hopen.mem_nhds (hsphere hz)))
     ((hdf.continuousOn.mono hsphere).circleIntegrable hρ_pos.le) n
 
-/-- For `f` complex-differentiable on an open concentric annulus
-`Metric.eball c R \ Metric.closedBall c r` and any interior circle radius `ρ ∈ (r, R)`, the
-coefficient of degree `n - m` of the `m`-th derivative of `f` is the falling factorial
-`n (n - 1) ⋯ (n - m + 1)` times the coefficient of degree `n` of `f`. -/
-theorem circleLaurentCoeff_iteratedDeriv {f : ℂ → E} {c : ℂ} {r ρ : ℝ} {R : ℝ≥0∞}
-    (hf : DifferentiableOn ℂ f (eball c R \ closedBall c r))
-    (hr : 0 ≤ r) (hrρ : r < ρ) (hρR : ENNReal.ofReal ρ < R) (m : ℕ) (n : ℤ) :
+/-- For `f` complex-differentiable on an open set `U` containing the circle `|z - c| = ρ`
+(`0 < ρ`), the coefficient of degree `n - m` of the `m`-th derivative of `f` is the falling
+factorial `n (n - 1) ⋯ (n - m + 1)` times the coefficient of degree `n` of `f`. -/
+theorem circleLaurentCoeff_iteratedDeriv {f : ℂ → E} {c : ℂ} {ρ : ℝ} {U : Set ℂ}
+    (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hρ : 0 < ρ) (hsph : sphere c ρ ⊆ U) (m : ℕ)
+    (n : ℤ) :
     circleLaurentCoeff (iteratedDeriv m f) c ρ (n - m) =
       (descPochhammer ℂ m).eval (n : ℂ) • circleLaurentCoeff f c ρ n := by
   induction m generalizing f n with
   | zero => simp
   | succ m ih =>
-    have hopen : IsOpen (eball c R \ closedBall c r) := isOpen_eball.sdiff isClosed_closedBall
-    rw [iteratedDeriv_succ', show n - ((m + 1 : ℕ) : ℤ) = (n - 1) - m by push_cast; ring,
-      ih (hf.deriv hopen), circleLaurentCoeff_deriv hf hr hrρ hρR, sub_add_cancel, smul_smul,
-      descPochhammer_succ_left, Polynomial.eval_mul, Polynomial.eval_X,
-      Polynomial.eval_comp, Polynomial.eval_sub, Polynomial.eval_X, Polynomial.eval_one, mul_comm,
-      Int.cast_sub, Int.cast_one]
+    have hdeg : n - ((m + 1 : ℕ) : ℤ) = (n - 1) - m := by omega
+    have hdf : DifferentiableOn ℂ (deriv f) U := hf.deriv hU
+    rw [iteratedDeriv_succ', hdeg, ih hdf, circleLaurentCoeff_deriv_of_differentiableAt hρ
+        (fun z hz ↦ hf.differentiableAt (hU.mem_nhds (hsph hz)))
+        ((hdf.continuousOn.mono hsph).circleIntegrable hρ.le),
+      sub_add_cancel, smul_smul]
+    -- What remains is the recurrence `n · (n - 1)_m = n_{m + 1}` for the falling factorial.
+    congr 1
+    simp [descPochhammer_succ_left, mul_comm]
 
 end TauCeti
