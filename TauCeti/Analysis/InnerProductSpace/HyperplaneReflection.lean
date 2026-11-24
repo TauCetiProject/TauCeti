@@ -54,12 +54,19 @@ normal vector and an offset.
   lies in the closed half-space `{x | c ≤ ⟪x, ν⟫}`, and
   (`TauCeti.closure_thickening_inter_setOf_lt_inner_subset`) the closure of the part of an open
   `R`-thickening in it lies in the part of the closed `R`-thickening in the closed half-space.
+* `TauCeti.mem_closure_setOf_lt_inner_inter`: conversely, a point of the closed half-space in an
+  open set `V` lies in the closure of the part of `V` in the open half-space.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
   `{y | c ≤ ⟪y, ν⟫}` is at least as close to another such point as to its mirror image, and so
   (`TauCeti.mem_thickening_of_hyperplaneReflection_mem_thickening`) a point of that half-space
   whose mirror image lies in a thickening of a set in the half-space lies in it too.
+* `TauCeti.lipschitzWith_one_ite_hyperplaneReflection`: folding across the hyperplane, the map
+  that fixes the closed half-space `{y | c ≤ ⟪y, ν⟫}` and reflects the other side onto it, is
+  `1`-Lipschitz. It lands in that half-space (`TauCeti.le_inner_ite_hyperplaneReflection`) and maps
+  every ball centred on the hyperplane into itself
+  (`TauCeti.mapsTo_ite_hyperplaneReflection_ball`).
 * `TauCeti.exists_opens_mapsTo_hyperplaneReflection`: a bounded reflection-invariant open set
   around a thickening of a bounded set of the closed half-space, whose points in the open
   half-space lie in that thickening.
@@ -176,6 +183,20 @@ theorem closure_setOf_lt_inner_subset (ν : F) (c : ℝ) :
     closure {x : F | c < ⟪x, ν⟫_ℝ} ⊆ {x | c ≤ ⟪x, ν⟫_ℝ} :=
   closure_lt_subset_le continuous_const (continuous_id.inner continuous_const)
 
+/-- A point of the closed half-space `{x | c ≤ ⟪x, ν⟫}` lying in an open set `V` is a limit of
+points of the open half-space `{x | c < ⟪x, ν⟫}` in `V`. -/
+theorem mem_closure_setOf_lt_inner_inter {ν y : F} (hν : ν ≠ 0) {c : ℝ} (hy : c ≤ ⟪y, ν⟫_ℝ)
+    {V : Set F} (hV : IsOpen V) (hyV : y ∈ V) : y ∈ closure ({x | c < ⟪x, ν⟫_ℝ} ∩ V) := by
+  have hT : Filter.Tendsto (fun t : ℝ => y + t • ν) (nhdsWithin 0 (Set.Ioi 0)) (nhds y) := by
+    have hc : Continuous fun t : ℝ => y + t • ν := by fun_prop
+    simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  refine mem_closure_of_tendsto hT ?_
+  filter_upwards [self_mem_nhdsWithin, hT.eventually (hV.mem_nhds hyV)] with t (ht : 0 < t) htV
+  refine ⟨?_, htV⟩
+  have hν2 : 0 < ‖ν‖ ^ 2 := by positivity
+  simp only [Set.mem_ofPred_eq, inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
+  nlinarith
+
 /-- The closure of the part in the open half-space `{x | c < ⟪x, ν⟫}` of the open `R`-thickening of
 a set `S` lies in the part in the closed half-space `{x | c ≤ ⟪x, ν⟫}` of the closed
 `R`-thickening. -/
@@ -264,6 +285,25 @@ theorem lipschitzWith_one_ite_hyperplaneReflection (ν : F) (c : ℝ) :
   · rw [dist_comm, dist_comm x]
     exact hmix hy hx
   · exact ((hyperplaneReflection ν c).dist_map x y).le
+
+/-- Folding across the hyperplane `{y | ⟪y, ν⟫ = c}` lands in the closed half-space
+`{y | c ≤ ⟪y, ν⟫}`. -/
+theorem le_inner_ite_hyperplaneReflection {ν : F} (hν : ν ≠ 0) (c : ℝ) (x : F) :
+    c ≤ ⟪if c ≤ ⟪x, ν⟫_ℝ then x else hyperplaneReflection ν c x, ν⟫_ℝ := by
+  split_ifs with hx
+  · exact hx
+  · rw [inner_hyperplaneReflection hν]
+    linarith [not_le.1 hx]
+
+/-- Folding across the hyperplane `{y | ⟪y, ν⟫ = c}` maps every ball centred on the hyperplane
+into itself. -/
+theorem mapsTo_ite_hyperplaneReflection_ball {ν z : F} {c : ℝ} (hz : ⟪z, ν⟫_ℝ = c) (r : ℝ) :
+    Set.MapsTo (fun x => if c ≤ ⟪x, ν⟫_ℝ then x else hyperplaneReflection ν c x)
+      (Metric.ball z r) (Metric.ball z r) := fun x hx => by
+  dsimp only
+  split_ifs
+  · exact hx
+  · exact mapsTo_hyperplaneReflection_ball hz r hx
 
 /-- **Reflection does not bring a point closer to a set on its side.** If `S` lies in the closed
 half-space `{y | c ≤ ⟪y, ν⟫}` and `x` lies in that half-space with its mirror image in the open
