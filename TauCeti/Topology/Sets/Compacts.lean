@@ -35,6 +35,8 @@ In a Hausdorff space, viewing a compact set as a closed set is monotone, and so 
 locally compact space, a closed set disjoint from a compact set `K` misses some compact
 neighbourhood of `K` (`TopologicalSpace.Compacts.exists_mem_compactNhds_disjoint`); local homology
 along `K` is the colimit over the compact neighbourhoods of `K`.
+A compact open set is nonempty exactly when it is not `⊥`
+(`TopologicalSpace.CompactOpens.coe_nonempty`), as Mathlib records for compact sets.
 Finally, inducing maps pull back compact sets contained in their range
 (`IsInducing.preimageCompacts`).
 -/
@@ -181,6 +183,17 @@ lemma exists_mem_compactNhds_disjoint (K : Compacts α) {T : Set α} (hT : IsClo
 end CompactNhds
 
 end TopologicalSpace.Compacts
+
+namespace TopologicalSpace.CompactOpens
+
+variable {α : Type*} [TopologicalSpace α]
+
+/-- A compact open set is nonempty exactly when it is not `⊥`. -/
+@[simp]
+theorem coe_nonempty {K : CompactOpens α} : (K : Set α).Nonempty ↔ K ≠ ⊥ := by
+  rw [← ne_empty_iff_nonempty, ← coe_bot, Ne, Ne, SetLike.coe_set_eq]
+
+end TopologicalSpace.CompactOpens
 
 namespace Topology.IsInducing
 
