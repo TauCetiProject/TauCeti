@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Abelian
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Stalk
+import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
+import Mathlib.CategoryTheory.Abelian.Exact
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Stalk
 
 /-!
