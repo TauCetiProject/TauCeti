@@ -30,8 +30,8 @@ both defined through Tricomi's entire function `γ*` of
 * `Complex.differentiableAt_lowerIncompleteGamma_left`: `γ(·, z)` is holomorphic off `−ℕ`;
 * `Complex.differentiableAt_lowerIncompleteGamma_right`,
   `Complex.analyticOnNhd_lowerIncompleteGamma`: `γ(a, ·)` is holomorphic on the slit plane;
-* `Complex.lowerIncompleteGamma_ofReal_eq_partialGamma`: on the real axis `γ(a, x)` is Mathlib's
-  `Complex.partialGamma a x`, for `0 < Re a`;
+* `Complex.lowerIncompleteGamma_ofReal_eq_partialGamma`: on the nonnegative real axis `γ(a, x)` is
+  Mathlib's `Complex.partialGamma a x`, for `0 < Re a`;
 * `Complex.lowerIncompleteGamma_neg_natCast`: `γ(−n, ·)` is identically `0`, Mathlib's junk value;
 * `Complex.regularizedGamma_one_left`, `Complex.regularizedGamma_neg_natCast`,
   `Complex.regularizedGammaQ_neg_natCast`: `P(1, z) = 1 − e^{−z}`, and `P(−n, z) = 1`,
@@ -137,30 +137,6 @@ theorem analyticOnNhd_lowerIncompleteGamma (a : ℂ) :
     (fun _ hz => (differentiableAt_lowerIncompleteGamma_right a hz).differentiableWithinAt)
     isOpen_slitPlane
 
-/-- On the real axis, `γ(a, x)` is Mathlib's `Complex.partialGamma a x` when `0 < Re a`. -/
-theorem lowerIncompleteGamma_ofReal_eq_partialGamma (a : ℂ) (ha : 0 < a.re) (x : ℝ) :
-    lowerIncompleteGamma a x = partialGamma a x := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [partialGamma]
-  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx
-  -- the substitution `t = x s` in `Complex.partialGamma`
-  have hsub := intervalIntegral.smul_integral_comp_mul_left
-    (fun t : ℝ => (Real.exp (-t) : ℂ) * (t : ℂ) ^ (a - 1)) (a := 0) (b := 1) x
-  simp only [mul_zero, mul_one] at hsub
-  have hscale : ∫ s in (0 : ℝ)..1, (Real.exp (-(x * s)) : ℂ) * ((x * s : ℝ) : ℂ) ^ (a - 1) =
-      (x : ℂ) ^ (a - 1) * ∫ s in (0 : ℝ)..1, (s : ℂ) ^ (a - 1) * cexp (-(x * s)) := by
-    rw [← intervalIntegral.integral_const_mul]
-    refine intervalIntegral.integral_congr fun s hs => ?_
-    have hs0 : 0 ≤ s := by
-      rw [uIcc_of_le zero_le_one] at hs
-      exact hs.1
-    simp only [ofReal_mul, mul_comm (x : ℂ), TauCeti.ofReal_mul_cpow hs0, ofReal_exp, ofReal_neg]
-    ring
-  -- the remaining scalar identity `x ^ a = x • x ^ (a - 1)`
-  rw [lowerIncompleteGamma_eq_integral ha, partialGamma, ← hsub, hscale, real_smul,
-    cpow_sub _ _ hx0, cpow_one]
-  field_simp
-
 /-- At `a = −n` the lower incomplete Gamma function is identically Mathlib's junk value `0`,
 since `Γ(−n) = 0`. -/
 @[simp]
@@ -230,3 +206,19 @@ theorem intervalIntegral_cpow_mul_exp_neg_mul {a r : ℂ} (ha : 0 < a.re) (hr : 
   field_simp
 
 end TauCeti
+
+namespace Complex
+
+/-- On the nonnegative real axis, `γ(a, x)` is Mathlib's `Complex.partialGamma a x` when
+`0 < Re a`. -/
+theorem lowerIncompleteGamma_ofReal_eq_partialGamma (a : ℂ) (ha : 0 < a.re) {x : ℝ}
+    (hx : 0 ≤ x) : lowerIncompleteGamma a x = partialGamma a x := by
+  -- the rescaled integral at `r = 1`
+  have h := TauCeti.intervalIntegral_cpow_mul_exp_neg_mul ha one_ne_zero hx
+  simp only [one_cpow, one_mul] at h
+  rw [← h, partialGamma]
+  refine intervalIntegral.integral_congr fun t _ => ?_
+  push_cast
+  ring
+
+end Complex

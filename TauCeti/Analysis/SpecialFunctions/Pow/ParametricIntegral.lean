@@ -11,8 +11,6 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-import Mathlib.MeasureTheory.Integral.ExpDecay
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -54,8 +52,6 @@ holomorphy and partial-derivative formulas for Carlson's symmetric elliptic inte
 * `TauCeti.differentiableOn_integral_mul_ofReal_add_cpow`,
   `TauCeti.analyticOnNhd_integral_mul_ofReal_add_cpow` — complex differentiability and holomorphy
   on `slitPlane`.
-* `TauCeti.integrableOn_norm_ofReal_add_rpow_mul_exp_neg` — integrability of the exponentially
-  weighted powers `t ↦ ‖(t : ℂ) + z‖ ^ p e^{-t}` on `(0, ∞)`.
 -/
 
 public section
@@ -219,29 +215,6 @@ theorem analyticOnNhd_integral_mul_ofReal_add_cpow {μ : Measure ℝ} {g : ℝ �
     (hg : IntegrableOn (fun t : ℝ => g t * ((t : ℂ) + z₀) ^ s) (Ioi 0) μ) :
     AnalyticOnNhd ℂ (fun w : ℂ => ∫ t in Ioi (0 : ℝ), g t * ((t : ℂ) + w) ^ s ∂μ) slitPlane :=
   (differentiableOn_integral_mul_ofReal_add_cpow hz₀ hg).analyticOnNhd isOpen_slitPlane
-
-/-- For `z ∈ slitPlane` and every real `p`, the weight `t ↦ ‖(t : ℂ) + z‖ ^ p e^{-t}` is
-integrable on `(0, ∞)`. -/
-theorem integrableOn_norm_ofReal_add_rpow_mul_exp_neg {z : ℂ} (hz : z ∈ slitPlane) (p : ℝ) :
-    IntegrableOn (fun t : ℝ => ‖(t : ℂ) + z‖ ^ p * Real.exp (-t)) (Ioi 0) := by
-  -- the comparison weight `e^{-t} (1 + t) ^ p` decays exponentially
-  have hi : IntegrableOn (fun t : ℝ => Real.exp (-t) * t ^ p) (Ioi 1) :=
-    integrable_of_isBigO_exp_neg one_half_pos
-      (continuousOn_id.neg.rexp.mul (continuousOn_id.rpow_const (by grind)))
-      (Real.Gamma_integrand_isLittleO _).isBigO
-  have hs := ((measurePreserving_add_left volume (1 : ℝ)).integrableOn_comp_preimage
-    (MeasurableEquiv.addLeft (1 : ℝ)).measurableEmbedding).mpr hi
-  have hw : IntegrableOn (fun t : ℝ => Real.exp (-t) * (1 + t) ^ p) (Ioi 0) := by
-    simpa [IntegrableOn, preimage_const_add_Ioi, Function.comp_def, neg_add, Real.exp_add,
-      Real.exp_neg, mul_comm, mul_left_comm, mul_assoc] using hs.const_mul (Real.exp 1)
-  -- the shifted-power comparison turns it into integrability of `e^{-t} ((t : ℂ) + z) ^ p`
-  have h := (integrableOn_mul_ofReal_add_cpow_iff_norm_mul_one_add_rpow (g := fun t : ℝ =>
-    cexp (-(t : ℂ))) hz (p : ℂ)).mpr
-    ⟨(by fun_prop : Continuous fun t : ℝ => cexp (-(t : ℂ))).aestronglyMeasurable,
-      hw.congr_fun (fun t _ => by rw [ofReal_re, ← ofReal_neg, norm_exp_ofReal])
-        measurableSet_Ioi⟩
-  refine IntegrableOn.congr_fun h.norm (fun t _ => ?_) measurableSet_Ioi
-  rw [norm_mul, norm_cpow_real, ← ofReal_neg, norm_exp_ofReal, mul_comm]
 
 end TauCeti
 

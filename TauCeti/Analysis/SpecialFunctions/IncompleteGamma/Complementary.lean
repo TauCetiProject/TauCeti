@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Upper
 import TauCeti.Analysis.Complex.RealIdentity
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The complementary relation of the incomplete Gamma functions
@@ -66,7 +65,7 @@ theorem regularizedGammaQ_eq_upperIncompleteGamma_div (a : ℂ) {z : ℂ} (hz : 
     refine ((analyticOnNhd_upperIncompleteGamma b).add
       (analyticOnNhd_lowerIncompleteGamma b)).eqOn_slitPlane_of_ofReal_pos_eq analyticOnNhd_const
         (fun x hx => ?_) hz
-    rw [Pi.add_apply, lowerIncompleteGamma_ofReal_eq_partialGamma b hb, add_comm,
+    rw [Pi.add_apply, lowerIncompleteGamma_ofReal_eq_partialGamma b hb hx.le, add_comm,
       partialGamma_add_upperIncompleteGamma hb hx.le]
   -- both sides are entire in `a` and agree on `0 < Re a`
   have hz0 : z ≠ 0 := slitPlane_ne_zero hz

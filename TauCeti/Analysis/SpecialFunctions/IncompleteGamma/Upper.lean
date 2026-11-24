@@ -234,8 +234,15 @@ theorem differentiable_upperIncompleteGamma_left {z : ℂ} (hz : z ∈ slitPlane
   set K := Real.exp (Real.pi * (|(a₀ - 1).im| + 1))
   set p₁ := (a₀ - 1).re - 1
   set p₂ := (a₀ - 1).re + 1
-  have hB := ((TauCeti.integrableOn_norm_ofReal_add_rpow_mul_exp_neg hz p₁).add
-    (TauCeti.integrableOn_norm_ofReal_add_rpow_mul_exp_neg hz p₂)).const_mul K
+  -- the weights `‖t + z‖ ^ p e^{−t}` are the norms of the ray integrands at `a = p + 1`
+  have hnorm (p : ℝ) : IntegrableOn (fun t : ℝ => ‖(t : ℂ) + z‖ ^ p * Real.exp (-t)) (Ioi 0) := by
+    have h : IntegrableOn (fun t : ℝ => ‖(z + t) ^ ((p : ℂ) + 1 - 1) * cexp (-(t : ℂ))‖)
+        (Ioi 0) := (integrableOn_upperIncompleteGamma_integrand ((p : ℂ) + 1) hz).norm
+    refine h.congr_fun (fun t _ => ?_) measurableSet_Ioi
+    dsimp only
+    rw [norm_mul, add_sub_cancel_right, norm_cpow_real, add_comm z, ← ofReal_neg,
+      norm_exp_ofReal]
+  have hB := ((hnorm p₁).add (hnorm p₂)).const_mul K
   have key := TauCeti.hasDerivAt_integral_of_dominated_of_differentiableOn
     (μ := volume.restrict (Ioi 0))
     (F := fun (b : ℂ) (t : ℝ) => (z + t) ^ (b - 1) * cexp (-(t : ℂ))) (U := Metric.ball a₀ 1)
