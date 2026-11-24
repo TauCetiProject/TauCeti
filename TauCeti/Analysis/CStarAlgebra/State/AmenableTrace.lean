@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.State.TraceKernel
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 
 /-!
@@ -33,6 +34,8 @@ tracial state would qualify.
 The sets `TauCeti.amenableTraces A`, `TauCeti.quasidiagonalTraces A` and
 `TauCeti.uniformAmenableTraces A` of tracial states with these properties are subsets of the
 tracial state space `TauCeti.tracialStates A` in the weak-* dual.
+`TauCeti.AdmitsFaithfulAmenableTrace A` says that some amenable tracial state of `A` is faithful
+(`PositiveContinuousLinearMap.IsFaithfulTrace`).
 
 ## Main results
 
@@ -52,6 +55,8 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
   `CStarMatrix.isAmenableTrace_normalizedTraceMap`: the normalized trace of a matrix algebra has
   all three properties, witnessed by the identity map; composing with `IsAmenableTrace.comp`, so
   does `tr_k ∘ π` for every star homomorphism `π : A → M_k`.
+* `CStarMatrix.admitsFaithfulAmenableTrace`: a nonempty matrix algebra admits a faithful amenable
+  trace, its normalized trace.
 * `TauCeti.pullbackFunctional_mem_amenableTraces` and its siblings: the restriction of an element
   of each of the three sets along a star homomorphism lies in the corresponding set as soon as it
   is a state. Hence `TauCeti.mapsTo_pullbackFunctional_amenableTraces_of_surjective` and its
@@ -66,6 +71,8 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
   Theorem 3.1.6 (2), Definitions 3.2.1 and 3.3.1, Section 3.5.
 * A. Tikuisis, S. White, W. Winter, *Quasidiagonality of nuclear C⋆-algebras*, Ann. of Math.
   185 (2017), Definition 1.2 and Remark 1.5.
+* C. Schafhauser, *Subalgebras of simple AF-algebras*, Ann. of Math. 192 (2020), no. 2,
+  Theorem A.
 -/
 
 public section
@@ -314,6 +321,27 @@ end Pullback
 
 end PositiveContinuousLinearMap
 
+namespace TauCeti
+
+open PositiveContinuousLinearMap
+
+variable (A : Type*) [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- `A` **admits a faithful amenable trace**: some tracial state of `A` is both faithful and
+amenable. This is the trace hypothesis of Schafhauser's embedding theorem into simple AF
+algebras (Schafhauser 2020, Theorem A). -/
+def AdmitsFaithfulAmenableTrace : Prop :=
+  ∃ τ : A →P[ℂ] ℂ, τ.IsTracialState ∧ τ.IsFaithfulTrace ∧ τ.IsAmenableTrace
+
+variable {A}
+
+/-- Unfolding lemma for `TauCeti.AdmitsFaithfulAmenableTrace`. -/
+theorem admitsFaithfulAmenableTrace_iff : AdmitsFaithfulAmenableTrace A ↔
+    ∃ τ : A →P[ℂ] ℂ, τ.IsTracialState ∧ τ.IsFaithfulTrace ∧ τ.IsAmenableTrace :=
+  Iff.rfl
+
+end TauCeti
+
 namespace CStarMatrix
 
 open PositiveContinuousLinearMap
@@ -357,6 +385,16 @@ theorem isUniformAmenableTrace_normalizedTraceMap :
 /-- The normalized trace of a matrix algebra is an amenable trace. -/
 theorem isAmenableTrace_normalizedTraceMap : (normalizedTraceMap n).IsAmenableTrace :=
   isQuasidiagonalTrace_normalizedTraceMap.isAmenableTrace
+
+/-- The normalized trace of a matrix algebra is faithful. -/
+theorem isFaithfulTrace_normalizedTraceMap : (normalizedTraceMap n).IsFaithfulTrace :=
+  isFaithfulTrace_iff.2 fun _ h => normalizedTrace_star_mul_self_eq_zero_iff.1 (by simpa using h)
+
+/-- A nonempty matrix algebra admits a faithful amenable trace: its normalized trace. -/
+theorem admitsFaithfulAmenableTrace [Nonempty n] :
+    TauCeti.AdmitsFaithfulAmenableTrace (CStarMatrix n n ℂ) :=
+  ⟨_, isTracialState_normalizedTraceMap, isFaithfulTrace_normalizedTraceMap,
+    isAmenableTrace_normalizedTraceMap⟩
 
 end CStarMatrix
 
