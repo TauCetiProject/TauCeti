@@ -43,6 +43,15 @@ On spaces this is the fibre product of two closed polydiscs over `Spa A`.
 * `TauCeti.Huber.CompletedTensor.isHomeomorph_polydiscEquiv`: it is a homeomorphism.
 * `TauCeti.Huber.CompletedTensor.polydiscEquiv_inl_polydiscVar` and
   `…_inr_polydiscVar`: the coordinates of the two factors go to the two blocks of coordinates.
+* `TauCeti.Huber.CompletedTensor.polydiscEquiv_comp_algebraMap`: the isomorphism lies over `A`.
+
+## References
+
+* R. Huber, *A generalization of formal schemes and rigid analytic varieties*, Math. Z. 217
+  (1994), §3, Lemma 3.5(i) and the proof of Proposition 3.7.
+* R. Huber, *Étale cohomology of rigid analytic varieties and adic spaces*, §1.2, proof of
+  Proposition 1.2.2.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 5.50.
 -/
 
 public section
@@ -54,12 +63,6 @@ namespace TauCeti.Huber.CompletedTensor
 variable (A : Type*) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   (m n : ℕ)
 
-/-- Every coordinate of `A⟨T₁, …, Tₙ⟩` is power-bounded. -/
-private theorem isPowerBounded_polydiscVar {n : ℕ} (i : Fin n) :
-    IsPowerBounded (Pair.polydiscVar n A i) :=
-  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mp
-    (isWeightBounded_completion_weightedX isWeightFamily_one_weight) i
-
 /-- Evaluation of `A⟨T₁, …, Tₖ⟩` at the coordinates `T_{e i}` of `A⟨T₁, …, Tₗ⟩`. -/
 private noncomputable def polydiscBlock {k l : ℕ} (e : Fin k → Fin l) :
     restrictedMvPowerSeriesCompletion k A →+* restrictedMvPowerSeriesCompletion l A :=
@@ -67,7 +70,7 @@ private noncomputable def polydiscBlock {k l : ℕ} (e : Fin k → Fin l) :
     (continuous_algebraMap_completion_weightedRestrictedSubring l A
       isWeightFamily_one_weight).continuousAt
     ((isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr
-      fun i ↦ isPowerBounded_polydiscVar A (e i))
+      fun i ↦ Pair.isPowerBounded_polydiscVar _ A (e i))
 
 private theorem continuous_polydiscBlock {k l : ℕ} (e : Fin k → Fin l) :
     Continuous (polydiscBlock A e) :=
@@ -108,10 +111,10 @@ private theorem isPowerBounded_tensorVar (i : Fin (m + n)) :
   induction i using Fin.addCases with
   | left i =>
     simpa [tensorVar] using (isAdicHom_inl A _ _).isPowerBounded_map
-      (isPowerBounded_polydiscVar A i)
+      (Pair.isPowerBounded_polydiscVar _ A i)
   | right j =>
     simpa [tensorVar] using (isAdicHom_inr A _ _).isPowerBounded_map
-      (isPowerBounded_polydiscVar A j)
+      (Pair.isPowerBounded_polydiscVar _ A j)
 
 /-- The inverse map `A⟨T, S⟩ → A⟨T⟩ ⊗̂_A A⟨S⟩`. -/
 private noncomputable def ofPolydisc :
@@ -150,48 +153,34 @@ private theorem toPolydisc_inr (f : restrictedMvPowerSeriesCompletion n A) :
 
 private theorem toPolydisc_comp_ofPolydisc :
     (toPolydisc A m n).comp (ofPolydisc A m n) = RingHom.id _ := by
-  refine completion_weightedRestrictedSubring_ringHom_ext_of_continuous _
+  refine restrictedMvPowerSeriesCompletion_ringHom_ext
     ((continuous_toPolydisc A m n).comp (continuous_ofPolydisc A m n)) continuous_id
     (fun a ↦ ?_) fun i ↦ ?_
-  · have h := ofPolydisc_algebraMap A m n a
-    rw [algebraMap_completion_weightedRestrictedSubring_apply] at h
-    rw [RingHom.comp_apply, h, algebraMap_eq_inl, RingHom.comp_apply, toPolydisc_inl,
-      polydiscBlock_algebraMap, algebraMap_completion_weightedRestrictedSubring_apply,
-      RingHom.id_apply]
-  · rw [RingHom.comp_apply, RingHom.id_apply]
-    change toPolydisc A m n (ofPolydisc A m n (Pair.polydiscVar (m + n) A i)) =
-      Pair.polydiscVar (m + n) A i
-    rw [ofPolydisc_polydiscVar]
+  · rw [RingHom.comp_apply, ofPolydisc_algebraMap, algebraMap_eq_inl, RingHom.comp_apply,
+      toPolydisc_inl, polydiscBlock_algebraMap, RingHom.id_apply]
+  · rw [RingHom.comp_apply, RingHom.id_apply, ofPolydisc_polydiscVar]
     induction i using Fin.addCases with
     | left i => simp [tensorVar, toPolydisc_inl, polydiscBlock_polydiscVar]
     | right j => simp [tensorVar, toPolydisc_inr, polydiscBlock_polydiscVar]
 
 private theorem ofPolydisc_comp_polydiscBlock_castAdd :
     (ofPolydisc A m n).comp (polydiscBlock A (Fin.castAdd n)) = inl A _ _ := by
-  refine completion_weightedRestrictedSubring_ringHom_ext_of_continuous _
+  refine restrictedMvPowerSeriesCompletion_ringHom_ext
     ((continuous_ofPolydisc A m n).comp (continuous_polydiscBlock _ _)) (continuous_inl _ _ _)
     (fun a ↦ ?_) fun i ↦ ?_
-  · rw [RingHom.comp_apply, ← algebraMap_completion_weightedRestrictedSubring_apply,
-      polydiscBlock_algebraMap, ofPolydisc_algebraMap, algebraMap_eq_inl, RingHom.comp_apply,
-      algebraMap_completion_weightedRestrictedSubring_apply]
-  · rw [RingHom.comp_apply]
-    change ofPolydisc A m n (polydiscBlock A (Fin.castAdd n) (Pair.polydiscVar m A i)) =
-      inl A _ _ (Pair.polydiscVar m A i)
-    rw [polydiscBlock_polydiscVar, ofPolydisc_polydiscVar]
+  · rw [RingHom.comp_apply, polydiscBlock_algebraMap, ofPolydisc_algebraMap, algebraMap_eq_inl,
+      RingHom.comp_apply]
+  · rw [RingHom.comp_apply, polydiscBlock_polydiscVar, ofPolydisc_polydiscVar]
     simp [tensorVar]
 
 private theorem ofPolydisc_comp_polydiscBlock_natAdd :
     (ofPolydisc A m n).comp (polydiscBlock A (Fin.natAdd m)) = inr A _ _ := by
-  refine completion_weightedRestrictedSubring_ringHom_ext_of_continuous _
+  refine restrictedMvPowerSeriesCompletion_ringHom_ext
     ((continuous_ofPolydisc A m n).comp (continuous_polydiscBlock _ _)) (continuous_inr _ _ _)
     (fun a ↦ ?_) fun i ↦ ?_
-  · rw [RingHom.comp_apply, ← algebraMap_completion_weightedRestrictedSubring_apply,
-      polydiscBlock_algebraMap, ofPolydisc_algebraMap, algebraMap_eq_inl, inl_comp_algebraMap,
-      RingHom.comp_apply, algebraMap_completion_weightedRestrictedSubring_apply]
-  · rw [RingHom.comp_apply]
-    change ofPolydisc A m n (polydiscBlock A (Fin.natAdd m) (Pair.polydiscVar n A i)) =
-      inr A _ _ (Pair.polydiscVar n A i)
-    rw [polydiscBlock_polydiscVar, ofPolydisc_polydiscVar]
+  · rw [RingHom.comp_apply, polydiscBlock_algebraMap, ofPolydisc_algebraMap, algebraMap_eq_inl,
+      inl_comp_algebraMap, RingHom.comp_apply]
+  · rw [RingHom.comp_apply, polydiscBlock_polydiscVar, ofPolydisc_polydiscVar]
     simp [tensorVar]
 
 private theorem ofPolydisc_comp_toPolydisc :
@@ -215,26 +204,47 @@ noncomputable def polydiscEquiv :
   RingEquiv.ofRingHom (toPolydisc A m n) (ofPolydisc A m n) (toPolydisc_comp_ofPolydisc A m n)
     (ofPolydisc_comp_toPolydisc A m n)
 
+/-- `polydiscEquiv` is `toPolydisc` by definition of `RingEquiv.ofRingHom`. -/
+private theorem polydiscEquiv_apply
+    (x : CompletedTensor A (restrictedMvPowerSeriesCompletion m A)
+      (restrictedMvPowerSeriesCompletion n A)) :
+    polydiscEquiv A m n x = toPolydisc A m n x :=
+  rfl
+
 /-- The coordinate `Tᵢ ⊗ 1` goes to the coordinate `T_{castAdd i}`. -/
 @[simp] theorem polydiscEquiv_inl_polydiscVar (i : Fin m) :
     polydiscEquiv A m n (inl A _ _ (Pair.polydiscVar m A i)) =
       Pair.polydiscVar (m + n) A (Fin.castAdd n i) := by
-  change toPolydisc A m n _ = _
-  rw [toPolydisc_inl, polydiscBlock_polydiscVar]
+  rw [polydiscEquiv_apply, toPolydisc_inl, polydiscBlock_polydiscVar]
 
 /-- The coordinate `1 ⊗ Sⱼ` goes to the coordinate `T_{natAdd j}`. -/
 @[simp] theorem polydiscEquiv_inr_polydiscVar (j : Fin n) :
     polydiscEquiv A m n (inr A _ _ (Pair.polydiscVar n A j)) =
       Pair.polydiscVar (m + n) A (Fin.natAdd m j) := by
-  change toPolydisc A m n _ = _
-  rw [toPolydisc_inr, polydiscBlock_polydiscVar]
+  rw [polydiscEquiv_apply, toPolydisc_inr, polydiscBlock_polydiscVar]
 
 /-- The isomorphism is the identity on the base ring. -/
 @[simp] theorem polydiscEquiv_algebraMap (a : A) :
     polydiscEquiv A m n (algebraMap A _ a) =
       algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) a := by
-  change toPolydisc A m n _ = _
-  rw [algebraMap_eq_inl, RingHom.comp_apply, toPolydisc_inl, polydiscBlock_algebraMap]
+  rw [polydiscEquiv_apply, algebraMap_eq_inl, RingHom.comp_apply, toPolydisc_inl,
+    polydiscBlock_algebraMap]
+
+/-- The isomorphism lies over `A`. -/
+theorem polydiscEquiv_comp_algebraMap :
+    (polydiscEquiv A m n : CompletedTensor A (restrictedMvPowerSeriesCompletion m A)
+        (restrictedMvPowerSeriesCompletion n A) →+*
+          restrictedMvPowerSeriesCompletion (m + n) A).comp (algebraMap A _) =
+      algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) := by
+  ext a
+  rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, polydiscEquiv_algebraMap]
+
+/-- The inverse isomorphism is the identity on the base ring. Not `@[simp]`: the simp normal form
+of `algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) a` is a coerced `weightedC`. -/
+theorem polydiscEquiv_symm_algebraMap (a : A) :
+    (polydiscEquiv A m n).symm (algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) a) =
+      algebraMap A _ a := by
+  rw [RingEquiv.symm_apply_eq, polydiscEquiv_algebraMap]
 
 /-- The inverse sends the first `m` coordinates to the left factor. -/
 @[simp] theorem polydiscEquiv_symm_polydiscVar_castAdd (i : Fin m) :

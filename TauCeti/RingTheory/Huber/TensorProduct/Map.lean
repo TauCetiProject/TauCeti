@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.Pair
+public import Mathlib.Topology.Homeomorph.Defs
+
+import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Functoriality of completed tensor products
@@ -22,12 +25,17 @@ morphism of completed tensor products of Huber pairs `(B, B⁺) ⊗̂_A (C, C⁺
 (C', C'⁺)`, again functorially. Both constructions are instances of the universal property of the
 completed tensor product, applied to the composites of `φ` and `ψ` with the target coprojections.
 
+Homeomorphic ring isomorphisms `B ≃+* B'` and `C ≃+* C'` over `A` induce a ring isomorphism
+`B ⊗̂_A C ≃+* B' ⊗̂_A C'` of completed tensor rings, again a homeomorphism.
+
 ## Main definitions
 
 * `TauCeti.Huber.CompletedTensor.map`: the continuous ring homomorphism of completed tensor rings
   induced by compatible continuous ring homomorphisms of the factors.
 * `TauCeti.Huber.Pair.completedTensor.map`: the induced morphism of completed tensor products of
   Huber pairs.
+* `TauCeti.Huber.CompletedTensor.congr`: the ring isomorphism of completed tensor rings induced by
+  homeomorphic ring isomorphisms of the factors over `A`.
 
 ## Main results
 
@@ -37,6 +45,7 @@ completed tensor product, applied to the composites of `φ` and `ψ` with the ta
 * `TauCeti.Huber.CompletedTensor.map_id`, `TauCeti.Huber.CompletedTensor.map_comp`,
   `TauCeti.Huber.Pair.completedTensor.map_id`, `TauCeti.Huber.Pair.completedTensor.map_comp`:
   functoriality.
+* `TauCeti.Huber.CompletedTensor.isHomeomorph_congr`: `congr` is a homeomorphism.
 
 ## References
 
@@ -180,11 +189,11 @@ private theorem symm_comp_algebraMap_of_comp_algebraMap {R S : Type*} [CommRing 
 homeomorphic ring isomorphisms `B ≃+* B'` and `C ≃+* C'` over `A`. -/
 noncomputable def congr : CompletedTensor A B C ≃+* CompletedTensor A B' C' :=
   RingEquiv.ofRingHom
-    (map (RingHom.id A) e f (by rw [he]; rfl) (by rw [hf]; rfl)
+    (map (RingHom.id A) e f (by rw [he, RingHom.comp_id]) (by rw [hf, RingHom.comp_id])
       (show Continuous (e : B →+* B') from hec) (show Continuous (f : C →+* C') from hfc))
     (map (RingHom.id A) e.symm f.symm
-      (by rw [symm_comp_algebraMap_of_comp_algebraMap e he]; rfl)
-      (by rw [symm_comp_algebraMap_of_comp_algebraMap f hf]; rfl)
+      (by rw [symm_comp_algebraMap_of_comp_algebraMap e he, RingHom.comp_id])
+      (by rw [symm_comp_algebraMap_of_comp_algebraMap f hf, RingHom.comp_id])
       (show Continuous (e.symm : B' →+* B) from hes) (show Continuous (f.symm : C' →+* C) from hfs))
     (hom_ext ((continuous_map ..).comp (continuous_map ..)) continuous_id
       (by ext; simp) (by ext; simp))
@@ -220,6 +229,11 @@ noncomputable def congr : CompletedTensor A B C ≃+* CompletedTensor A B' C' :=
 /-- The inverse of the induced isomorphism is continuous. -/
 @[fun_prop] theorem continuous_congr_symm : Continuous (congr e f he hf hec hes hfc hfs).symm :=
   continuous_map ..
+
+/-- The induced isomorphism is a homeomorphism. -/
+theorem isHomeomorph_congr : IsHomeomorph (congr e f he hf hec hes hfc hfs) :=
+  (congr e f he hf hec hes hfc hfs).toEquiv.isHomeomorph_iff.mpr
+    ⟨continuous_congr e f he hf hec hes hfc hfs, continuous_congr_symm e f he hf hec hes hfc hfs⟩
 
 end Congr
 

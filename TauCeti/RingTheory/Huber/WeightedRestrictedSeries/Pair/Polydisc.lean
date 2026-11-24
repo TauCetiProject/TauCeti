@@ -61,6 +61,8 @@ of `(Pair.powerBounded K).polydisc n` over a nontrivially normed ultrametric fie
 
 ## Main results
 
+* `TauCeti.Huber.restrictedMvPowerSeriesCompletion_ringHom_ext`: continuous ring homomorphisms out
+  of `A⟨T₁, …, Tₙ⟩` are determined by their values on constants and coordinates.
 * `TauCeti.Huber.Pair.polydiscPlus_eq_topologicalClosure`: `S.polydiscPlus n` is the topological
   closure of `A⁺[T₁, …, Tₙ]` in `A⟨T₁, …, Tₙ⟩`.
 * `TauCeti.Huber.Pair.map_polydiscPlus_equiv`: `restrictedMvPowerSeriesCompletionEquiv` maps
@@ -95,6 +97,23 @@ noncomputable abbrev Pair.polydiscVar (n : ℕ) (A : Type*) [CommRing A] [Topolo
   ((weightedX (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight i :
     weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight) :
       restrictedMvPowerSeriesCompletion n A)
+
+/-- Two continuous ring homomorphisms out of `A⟨T₁, …, Tₙ⟩` into a Hausdorff ring are equal as
+soon as they agree on the constants and on every coordinate variable `Tᵢ`. -/
+theorem restrictedMvPowerSeriesCompletion_ringHom_ext {A : Type*} [CommRing A] [TopologicalSpace A]
+    [NonarchimedeanRing A] {n : ℕ} {B : Type*} [Semiring B] [TopologicalSpace B] [T2Space B]
+    {f g : restrictedMvPowerSeriesCompletion n A →+* B} (hf : Continuous f) (hg : Continuous g)
+    (hC : ∀ a, f (algebraMap A _ a) = g (algebraMap A _ a))
+    (hX : ∀ i, f (Pair.polydiscVar n A i) = g (Pair.polydiscVar n A i)) : f = g :=
+  completion_weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight hf hg
+    (fun a ↦ by simpa only [algebraMap_completion_weightedRestrictedSubring_apply] using hC a) hX
+
+/-- Every coordinate variable `Tᵢ` of `A⟨T₁, …, Tₙ⟩` is power-bounded. -/
+theorem Pair.isPowerBounded_polydiscVar (n : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsHuberRing A] (i : Fin n) :
+    IsPowerBounded (Pair.polydiscVar n A i) :=
+  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mp
+    (isWeightBounded_completion_weightedX isWeightFamily_one_weight) i
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
 
