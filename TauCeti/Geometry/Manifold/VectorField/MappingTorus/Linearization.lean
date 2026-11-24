@@ -118,7 +118,8 @@ theorem mfderiv_uncurry_mk_add_intCast (t : ℝ) (k : ℤ) (x : M) (b : ℝ) (v 
         ((Manifold.tangentSpaceProdEquiv (t + k, x)).symm (b, v)) =
       mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t, (φ ^ k) x)
         ((Manifold.tangentSpaceProdEquiv (t, (φ ^ k) x)).symm (b, mfderiv I I (φ ^ k) x v)) := by
-  rw [mfderiv_uncurry_mk_apply, mfderiv_uncurry_mk_apply, mfderiv_mk_add_intCast, mk_add_intCast]
+  rw [mfderiv_uncurry_mk_apply, mfderiv_uncurry_mk_apply, mfderiv_mk_add_intCast φ (by simp),
+    mk_add_intCast]
 
 /-! ### The linearized flow -/
 
@@ -172,7 +173,7 @@ theorem mfderiv_flow_intCast_mfderiv_mk (k : ℤ) (t : ℝ) (x : M) (v : Tangent
     mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ k) (mk φ t x)
         (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x v) =
       mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((φ ^ k) x) (mfderiv I I (φ ^ k) x v) := by
-  rw [mfderiv_flow_mfderiv_mk, mfderiv_mk_add_intCast]
+  rw [mfderiv_flow_mfderiv_mk, mfderiv_mk_add_intCast φ (by simp)]
 
 /-- The linearized suspension flow preserves the differential of the projection to the circle:
 `dp (dΦ_s w) = dp w`. -/
@@ -213,7 +214,7 @@ theorem isNondegenerateFixedPt_iterate_iff_mfderiv_flow (t : ℝ) {d : ℕ} {x :
       mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ d) (mk φ t x)
           (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x v) =
         mfderiv I (𝓘(ℝ).prod I) (mk φ t) x (mfderiv I I (⇑φ)^[d] x v) := by
-    rw [mfderiv_flow_mfderiv_mk, mfderiv_mk_add_natCast, hx.eq]
+    rw [mfderiv_flow_mfderiv_mk, mfderiv_mk_add_natCast φ (by simp), hx.eq]
   have hinj := injective_mfderiv_mk φ (n := ∞) (by simp) t x
   have hdiff : MDifferentiableAt I I (⇑φ)^[d] x := by
     rw [← Diffeomorph.coe_pow]

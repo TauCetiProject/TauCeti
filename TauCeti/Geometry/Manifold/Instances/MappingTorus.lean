@@ -721,6 +721,35 @@ theorem injective_mfderiv_mk (hn : n ≠ 0) (t : ℝ) (x : M) :
   exact congrArg Prod.snd ((Manifold.tangentSpaceProdEquiv (t, x)).symm.injective
     (((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv hn (t, x)).injective hvw))
 
+/-- The seam identity `[t + k, x] = [t, φ^k x]` for the differentials of the fibre inclusions:
+`d(ι_(t + k))_x = d(ι_t)_(φ^k x) ∘ dφ^k_x`. -/
+@[simp]
+theorem mfderiv_mk_add_intCast (hn : n ≠ 0) (t : ℝ) (k : ℤ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + k)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((φ ^ k) x) (mfderiv I I (φ ^ k) x v) := by
+  have h : mk φ (t + k) = mk φ t ∘ (φ ^ k) := funext fun y ↦ mk_add_intCast φ t k y
+  rw [h]
+  exact mfderiv_comp_apply_of_eq x ((contMDiff_mk φ t _).mdifferentiableAt hn)
+    ((φ ^ k).mdifferentiable hn x) rfl v
+
+/-- The seam identity `[t + j, x] = [t, φ^[j] x]` for the differentials of the fibre inclusions,
+for a natural number `j`. -/
+@[simp]
+theorem mfderiv_mk_add_natCast (hn : n ≠ 0) (t : ℝ) (j : ℕ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + j)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((⇑φ)^[j] x) (mfderiv I I (⇑φ)^[j] x v) := by
+  have h := mfderiv_mk_add_intCast φ hn t j x v
+  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
+
+/-- The seam identity `[t + 1, x] = [t, φ x]` for the differentials of the fibre inclusions:
+`d(ι_(t + 1))_x = d(ι_t)_(φ x) ∘ dφ_x`. -/
+@[simp]
+theorem mfderiv_mk_add_one (hn : n ≠ 0) (t : ℝ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + 1)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) (φ x) (mfderiv I I φ x v) := by
+  have h := mfderiv_mk_add_natCast φ hn t 1 x v
+  rwa [Nat.cast_one, Function.iterate_one] at h
+
 end
 
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I ∞ M] (φ : M ≃ₘ⟮I, I⟯ M)
@@ -771,35 +800,6 @@ theorem range_mfderiv_mk (t : ℝ) (x : M) :
   · intro hw
     obtain rfl : b = 0 := hb.symm.trans (LinearMap.mem_ker.1 hw)
     exact ⟨v, mfderiv_mk_apply φ (by simp) t x v⟩
-
-/-- The seam identity `[t + k, x] = [t, φ^k x]` for the differentials of the fibre inclusions:
-`d(ι_(t + k))_x = d(ι_t)_(φ^k x) ∘ dφ^k_x`. -/
-@[simp]
-theorem mfderiv_mk_add_intCast (t : ℝ) (k : ℤ) (x : M) (v : TangentSpace I x) :
-    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + k)) x v =
-      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((φ ^ k) x) (mfderiv I I (φ ^ k) x v) := by
-  have h : mk φ (t + k) = mk φ t ∘ (φ ^ k) := funext fun y ↦ mk_add_intCast φ t k y
-  rw [h]
-  exact mfderiv_comp_apply_of_eq x ((contMDiff_mk φ t _).mdifferentiableAt (by simp))
-    ((φ ^ k).mdifferentiable (by simp) x) rfl v
-
-/-- The seam identity `[t + j, x] = [t, φ^[j] x]` for the differentials of the fibre inclusions,
-for a natural number `j`. -/
-@[simp]
-theorem mfderiv_mk_add_natCast (t : ℝ) (j : ℕ) (x : M) (v : TangentSpace I x) :
-    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + j)) x v =
-      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((⇑φ)^[j] x) (mfderiv I I (⇑φ)^[j] x v) := by
-  have h := mfderiv_mk_add_intCast φ t j x v
-  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
-
-/-- The seam identity `[t + 1, x] = [t, φ x]` for the differentials of the fibre inclusions:
-`d(ι_(t + 1))_x = d(ι_t)_(φ x) ∘ dφ_x`. -/
-@[simp]
-theorem mfderiv_mk_add_one (t : ℝ) (x : M) (v : TangentSpace I x) :
-    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + 1)) x v =
-      mfderiv I (𝓘(ℝ).prod I) (mk φ t) (φ x) (mfderiv I I φ x v) := by
-  have h := mfderiv_mk_add_natCast φ t 1 x v
-  rwa [Nat.cast_one, Function.iterate_one] at h
 
 end SmoothMappingTorus
 
