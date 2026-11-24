@@ -50,13 +50,10 @@ theorem contDiff_parametrization (a : ℝ) {n : ℕ∞ω} : ContDiff ℝ n (para
   exact (SurfaceOfRevolution.contDiff_parametrization contDiff_id contDiff_const).add
     ((contDiff_const.mul contDiff_fst).smul contDiff_const)
 
-/-- The differential in the angular and signed radial parameter. -/
-theorem fderiv_parametrization (a : ℝ) (p w : P) :
+/-- The helicoid differential is the planar polar differential plus the height differential. -/
+theorem fderiv_parametrization_apply_eq_add (a : ℝ) (p w : P) :
     fderiv ℝ (parametrization a) p w =
-      (w.2 * Real.cos p.1 - p.2 * Real.sin p.1 * w.1) •
-        EuclideanSpace.basisFun (Fin 3) ℝ 0 +
-      (w.2 * Real.sin p.1 + p.2 * Real.cos p.1 * w.1) •
-        EuclideanSpace.basisFun (Fin 3) ℝ 1 +
+      fderiv ℝ (SurfaceOfRevolution.parametrization id (fun _ ↦ 0)) p w +
       (a * w.1) • EuclideanSpace.basisFun (Fin 3) ℝ 2 := by
   have hb := SurfaceOfRevolution.differentiableAt_parametrization
     (p := p) differentiableAt_id (differentiableAt_const 0)
@@ -70,21 +67,26 @@ theorem fderiv_parametrization (a : ℝ) (p w : P) :
     exact hb.hasFDerivAt.add hh
   rw [h.fderiv]
   simp only [add_apply, ContinuousLinearMap.smulRight_apply, smul_apply,
-    ContinuousLinearMap.coe_fst', smul_eq_mul,
-    SurfaceOfRevolution.fderiv_parametrization differentiableAt_id (differentiableAt_const 0),
+    ContinuousLinearMap.coe_fst', smul_eq_mul]
+
+/-- The differential in the angular and signed radial parameter. -/
+theorem fderiv_parametrization (a : ℝ) (p w : P) :
+    fderiv ℝ (parametrization a) p w =
+      (w.2 * Real.cos p.1 - p.2 * Real.sin p.1 * w.1) •
+        EuclideanSpace.basisFun (Fin 3) ℝ 0 +
+      (w.2 * Real.sin p.1 + p.2 * Real.cos p.1 * w.1) •
+        EuclideanSpace.basisFun (Fin 3) ℝ 1 +
+      (a * w.1) • EuclideanSpace.basisFun (Fin 3) ℝ 2 := by
+  rw [fderiv_parametrization_apply_eq_add]
+  simp only [SurfaceOfRevolution.fderiv_parametrization differentiableAt_id
+    (differentiableAt_const 0),
     deriv_id, deriv_const, id_eq, zero_mul, zero_smul, add_zero, one_mul]
 
 /-- The first fundamental form of the helicoid is diagonal with coefficients `a²+v²,1`. -/
 @[simp] theorem inner_fderiv_parametrization (a : ℝ) (p w z : P) :
     inner ℝ (fderiv ℝ (parametrization a) p w) (fderiv ℝ (parametrization a) p z) =
       (a ^ 2 + p.2 ^ 2) * w.1 * z.1 + w.2 * z.2 := by
-  have hd (v : P) : fderiv ℝ (parametrization a) p v =
-      fderiv ℝ (SurfaceOfRevolution.parametrization id (fun _ ↦ 0)) p v +
-        (a * v.1) • EuclideanSpace.basisFun (Fin 3) ℝ 2 := by
-    rw [fderiv_parametrization, SurfaceOfRevolution.fderiv_parametrization
-      differentiableAt_id (differentiableAt_const 0)]
-    simp
-  rw [hd, hd]
+  rw [fderiv_parametrization_apply_eq_add, fderiv_parametrization_apply_eq_add]
   simp only [inner_add_left, inner_add_right,
     SurfaceOfRevolution.inner_fderiv_parametrization
       differentiableAt_id (differentiableAt_const 0)]
@@ -96,9 +98,11 @@ theorem fderiv_parametrization (a : ℝ) (p w : P) :
 
 /-- The metric is positive on a tangent vector exactly when its radial component is nonzero
 or its angular component is nonzero at a regular parameter point. -/
-theorem firstFundamentalForm_pos_iff (a : ℝ) (p w : P) :
-    0 < (a ^ 2 + p.2 ^ 2) * w.1 ^ 2 + w.2 ^ 2 ↔
+theorem inner_fderiv_parametrization_self_pos_iff (a : ℝ) (p w : P) :
+    0 < inner ℝ (fderiv ℝ (parametrization a) p w)
+        (fderiv ℝ (parametrization a) p w) ↔
       ((a ≠ 0 ∨ p.2 ≠ 0) ∧ w.1 ≠ 0) ∨ w.2 ≠ 0 := by
+  simp only [inner_fderiv_parametrization, mul_assoc, ← sq]
   have h : 0 ≤ (a ^ 2 + p.2 ^ 2) * w.1 ^ 2 := by positivity
   rw [(add_nonneg h (sq_nonneg _)).lt_iff_ne, ne_comm]
   simp only [ne_eq, add_eq_zero_iff_of_nonneg h (sq_nonneg _), mul_eq_zero,
@@ -116,12 +120,11 @@ theorem firstFundamentalForm_pos_iff (a : ℝ) (p w : P) :
     simpa using congrArg Prod.fst he
   · intro h w hw
     by_contra hn
-    have hpos := (firstFundamentalForm_pos_iff a p w).2 (by
+    have hpos := (inner_fderiv_parametrization_self_pos_iff a p w).2 (by
       by_cases h₂ : w.2 = 0
       · exact Or.inl ⟨h, fun h₁ ↦ hn (Prod.ext h₁ h₂)⟩
       · exact Or.inr h₂)
-    have hm := inner_fderiv_parametrization a p w w
-    rw [hw, inner_zero_left] at hm
-    nlinarith
+    rw [hw, inner_zero_left] at hpos
+    exact (lt_irrefl 0) hpos
 
 end TauCeti.Helicoid
