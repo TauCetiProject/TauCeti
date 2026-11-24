@@ -218,8 +218,10 @@ theorem finrank_range_fderiv_keplerFirstIntegrals_eq_three (hm : m ≠ 0) {x : V
     rw [Submodule.span_le, range_subset_iff]
     intro i
     fin_cases i
-    · exact hmem (ContinuousLinearMap.proj 0) (funext fun y ↦ rfl)
-    · exact hmem (ContinuousLinearMap.proj 1) (funext fun y ↦ rfl)
+    · exact hmem (ContinuousLinearMap.proj 0)
+        (funext fun y ↦ (keplerFirstIntegrals_zero b m κ y).symm)
+    · exact hmem (ContinuousLinearMap.proj 1)
+        (funext fun y ↦ (keplerFirstIntegrals_one b m κ y).symm)
     · -- `⟪A, e⟫ = ⟪b 0, e⟫ A₁ + ⟪b 1, e⟫ A₂`.
       refine hmem (⟪b 0, e⟫_ℝ • ContinuousLinearMap.proj 2 +
         ⟪b 1, e⟫_ℝ • ContinuousLinearMap.proj 3) (funext fun y ↦ ?_)
@@ -279,7 +281,9 @@ theorem stdSymplecticForm_poissonBracket_keplerFirstIntegrals (hm : m ≠ 0) {x 
     (hq : x.1 ≠ 0) (i : Fin 4) :
     (stdSymplecticForm (V := V)).poissonBracket (fun y ↦ keplerFirstIntegrals b m κ y i)
       (centralForceHamiltonian m fun r ↦ -κ / r) x = 0 := by
-  fin_cases i
+  fin_cases i <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, keplerFirstIntegrals_zero,
+      keplerFirstIntegrals_one, keplerFirstIntegrals_two, keplerFirstIntegrals_three]
   · exact SymplecticForm.poissonBracket_self _ _ _
   · have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
       (m := m) (U := fun r ↦ -κ / r) (x := x) (b 0) (b 1)
