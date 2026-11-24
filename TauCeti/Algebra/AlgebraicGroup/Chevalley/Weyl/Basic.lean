@@ -161,6 +161,23 @@ theorem coe_simpleWeylLift (A : Type v) [CommRing A] (i : Fin t.rank) :
     (D.simpleWeylLift A i : D.points A) = D.weylElement (t.simpleIndex ht i) A 1 :=
   (rfl)
 
+/-- Any subtype element of `D.weylSubgroup A` backed by the pinned simple Weyl representative
+`D.weylElement (t.simpleIndex ht i) A 1` equals `D.simpleWeylLift A i`. -/
+theorem mk_weylElement_eq_simpleWeylLift (A : Type v) [CommRing A] (i : Fin t.rank)
+    {h : D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A} :
+    (⟨D.weylElement (t.simpleIndex ht i) A 1, h⟩ : D.weylSubgroup A) =
+      D.simpleWeylLift A i :=
+  (rfl)
+
+/-- The product of a list of `D.simpleWeylLift A` values in `D.weylSubgroup A` equals the
+subtype element backed by the product of the corresponding pinned simple Weyl representatives. -/
+theorem list_prod_map_simpleWeylLift (A : Type v) [CommRing A] (l : List (Fin t.rank)) :
+    (l.map (D.simpleWeylLift A)).prod =
+      ⟨(l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod,
+        D.list_prod_map_weylElement_mem_weylSubgroup A l⟩ := by
+  apply Subtype.ext
+  simp only [Subgroup.val_list_prod, List.map_map, Function.comp_def, D.coe_simpleWeylLift]
+
 private theorem isSl2Triple_representation (i : Fin t.rank) :
     IsSl2Triple
       (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))

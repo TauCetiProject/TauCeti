@@ -77,11 +77,6 @@ private theorem isLiftable_weylQuotient (A : Type v) [CommRing A] :
       (QuotientGroup.mk (D.simpleWeylLift A i) :
         D.weylSubgroup A ⧸ (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A)))) := by
   let q := QuotientGroup.mk' (((D.torusPoints A).range).subgroupOf (D.weylSubgroup A))
-  have hcoe (l : List (Fin t.rank)) :
-      ((l.map (D.simpleWeylLift A)).prod : D.points A) =
-        (l.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod := by
-    simpa only [Subgroup.coe_subtype, List.map_map, Function.comp_def, D.coe_simpleWeylLift] using
-      (D.weylSubgroup A).subtype.map_list_prod (l.map (D.simpleWeylLift A))
   apply t.coxeterMatrix.isLiftable_of_mul_self_of_braidWord (f := fun i => q (D.simpleWeylLift A i))
   · intro i
     rw [← map_mul, QuotientGroup.mk'_apply, D.mk_eq_one_iff_mem_range_torusPoints,
@@ -90,9 +85,9 @@ private theorem isLiftable_weylQuotient (A : Type v) [CommRing A] :
     exact ⟨_, rfl⟩
   · intro i j
     have hsub : ((CoxeterSystem.braidWord t.coxeterMatrix i j).map (D.simpleWeylLift A)).prod =
-        ((CoxeterSystem.braidWord t.coxeterMatrix j i).map (D.simpleWeylLift A)).prod :=
-      Subtype.ext <| (hcoe _).trans <|
-        (D.weylWord_braidWord_eq i j A).trans (hcoe _).symm
+        ((CoxeterSystem.braidWord t.coxeterMatrix j i).map (D.simpleWeylLift A)).prod := by
+      rw [D.list_prod_map_simpleWeylLift, D.list_prod_map_simpleWeylLift]
+      exact Subtype.ext (D.weylWord_braidWord_eq i j A)
     simpa only [map_list_prod, List.map_map, Function.comp_def] using congrArg q hsub
 
 /-- **The Coxeter lift from the Weyl group to the Weyl-subgroup quotient.** Over every
@@ -178,8 +173,7 @@ theorem weylQuotientLift_ofIdx (A : Type v) [CommRing A] (γ : Fin t.numRoots) :
   induction γ using (t.rationalBase ht).induction_simple_reflect with
   | h₁ γ hγ =>
     obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hγ
-    rw [D.weylQuotientLift_ofIdx_simpleIndex A i]
-    exact congrArg QuotientGroup.mk (Subtype.ext (D.coe_simpleWeylLift A i))
+    rw [D.weylQuotientLift_ofIdx_simpleIndex A i, D.mk_weylElement_eq_simpleWeylLift]
   | h₂ γ j ih hj =>
     obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hj
     rw [t.reflectionPerm_rationalRootSystem ht]
@@ -214,9 +208,7 @@ theorem weylQuotientLift_simplyConnectedWeylWordProd (A : Type v) [CommRing A]
     List.map_map]
   simp only [Function.comp_def, t.simplyConnectedWeylCoxeterSystem_simple ht,
     D.weylQuotientLift_ofIdx_simpleIndex A]
-  rw [hqprod]
-  exact congrArg QuotientGroup.mk <| Subtype.ext <| by
-    simp only [Subgroup.val_list_prod, List.map_map, Function.comp_def, D.coe_simpleWeylLift]
+  rw [hqprod, D.list_prod_map_simpleWeylLift]
 
 /-- `weylQuotientLift` is surjective over every commutative ring `A`. -/
 theorem weylQuotientLift_surjective (A : Type v) [CommRing A] :

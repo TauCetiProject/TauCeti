@@ -177,17 +177,9 @@ theorem weylQuotientEquiv_mk_weylSubgroupMap (A : Type*) [CommRing A] [Nontrivia
   rintro ⟨x, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
   · simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply,
       D.weylSubgroupMap_torusPoints, D.mk_torusPoints_eq_one, map_one]
-  · have hB :
-        (⟨D.weylElement (t.simpleIndex ht i) B 1,
-          D.weylElement_mem_weylSubgroup B i⟩ : D.weylSubgroup B) =
-          D.simpleWeylLift B i :=
-      Subtype.ext (D.coe_simpleWeylLift B i).symm
-    have hA :
-        (⟨D.weylElement (t.simpleIndex ht i) A 1, hx⟩ : D.weylSubgroup A) =
-          D.simpleWeylLift A i :=
-      Subtype.ext (D.coe_simpleWeylLift A i).symm
-    simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, QuotientGroup.mk'_apply]
-    rw [D.weylSubgroupMap_weylElement, hB, hA, D.weylQuotientEquiv_mk_simpleWeylLift,
+  · simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, QuotientGroup.mk'_apply]
+    rw [D.weylSubgroupMap_weylElement, D.mk_weylElement_eq_simpleWeylLift,
+      D.mk_weylElement_eq_simpleWeylLift, D.weylQuotientEquiv_mk_simpleWeylLift,
       D.weylQuotientEquiv_mk_simpleWeylLift]
 
 /-! ## Comparison with `weylProjection` over a field -/
