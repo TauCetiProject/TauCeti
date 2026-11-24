@@ -18,8 +18,8 @@ be a forcing functional. The **quadratic energy**
 
 `E(u) = re (a u u) - 2 re (ℓ u)`
 
-(`ContinuousLinearMap.quadraticEnergy`) is a real-valued function whose minimizers are the weak
-solutions of `a u v = ℓ v`. This file proves:
+(`ContinuousLinearMap.quadraticEnergy`) is a real-valued function whose minimizers solve the weak
+equation `a u v = ℓ v` (and conversely when `re (a w w) ≥ 0`). This file proves:
 
 * the exact expansion `E(u + h) = E(u) + 2 re (a u h - ℓ h) + re (a h h)`, and along a real line
   `E(u + t v) = E(u) + 2 t re (a u v - ℓ v) + t² re (a v v)`
@@ -43,7 +43,10 @@ solutions of `a u v = ℓ v`. This file proves:
   forcing;
 * on a Hilbert space, the minimizer is the Lax–Milgram solution
   `InnerProductSpace.solutionOfFunctional` (and `InnerProductSpace.formSolutionMap` for the
-  forcing `v ↦ ⟪h, j v⟫`), and over `ℝ` it is `IsCoercive.solutionOfFunctional`.
+  forcing `v ↦ ⟪h, j v⟫`), and over `ℝ` it is `IsCoercive.solutionOfFunctional`
+  (`IsCoercive.isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional`). The identification with
+  `IsCoercive.formSolutionMap` is `IsCoercive.isMinOn_quadraticEnergy_iff_eq_formSolutionMap`,
+  in `TauCeti.Analysis.InnerProductSpace.Variational.Spectrum`, where that map is defined.
 
 These are the first-variation facts needed to derive Euler–Lagrange equations of quadratic
 energies on constraint sets, and to identify their minima with eigenvectors.
@@ -65,8 +68,8 @@ section Seminormed
 variable {𝕜 V : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
 
 /-- The **quadratic energy** `E(u) = re (a u u) - 2 re (ℓ u)` of a bounded sesquilinear form `a`
-with forcing functional `ℓ`. When `a` is Hermitian, its minimizers on an affine subspace are the
-weak solutions of `a u v = ℓ v`. -/
+with forcing functional `ℓ`. When `a` is Hermitian, its minimizers on `u + W` solve the weak
+equation `a u v = ℓ v` on `W`; the converse holds when `re (a w w) ≥ 0` on `W`. -/
 def quadraticEnergy (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (ℓ : StrongDual 𝕜 V) (u : V) : ℝ :=
   re (a u u) - 2 * re (ℓ u)
 
@@ -202,21 +205,23 @@ theorem tendsto_of_tendsto_quadraticEnergy (ha : ∀ u v, a u v = star (a v u))
   rw [le_div_iff₀ hc0, mul_comm]
   exact mul_norm_sub_sq_le_quadraticEnergy_sub ℓ ha hc hu (hx i)
 
-/-- **Lipschitz dependence on the forcing.** For a coercive form (`c ‖w‖² ≤ re (a w w)`), the
-solutions of `a u = ℓ` and `a u' = ℓ'` satisfy `c ‖u - u'‖ ≤ ‖ℓ - ℓ'‖`. -/
-theorem mul_norm_sub_le_norm_sub_of_coercive {c : ℝ} (hc : ∀ w, c * ‖w‖ ^ 2 ≤ re (a w w))
-    {u u' : V} {ℓ' : StrongDual 𝕜 V} (hu : a u = ℓ) (hu' : a u' = ℓ') :
+/-- **Lipschitz dependence on the forcing.** If the energy of `a` dominates `c ‖w‖²` on `W`, then
+solutions of the weak equations `a u v = ℓ v` and `a u' v = ℓ' v` on `W` that differ by an element
+of `W` satisfy `c ‖u - u'‖ ≤ ‖ℓ - ℓ'‖`. -/
+theorem mul_norm_sub_le_norm_sub_of_coercive {W : Submodule 𝕜 V} {c : ℝ}
+    (hc : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ re (a w w)) {u u' : V} {ℓ' : StrongDual 𝕜 V}
+    (hu : ∀ v ∈ W, a u v = ℓ v) (hu' : ∀ v ∈ W, a u' v = ℓ' v) (h : u - u' ∈ W) :
     c * ‖u - u'‖ ≤ ‖ℓ - ℓ'‖ := by
   rcases (norm_nonneg (u - u')).eq_or_lt with h0 | hpos
   · rw [← h0, mul_zero]
     exact norm_nonneg _
-  have h : c * ‖u - u'‖ ^ 2 ≤ ‖ℓ - ℓ'‖ * ‖u - u'‖ := by
-    calc c * ‖u - u'‖ ^ 2 ≤ re (a (u - u') (u - u')) := hc _
-      _ = re ((ℓ - ℓ') (u - u')) := by rw [map_sub a, sub_apply, hu, hu', sub_apply]
+  have h' : c * ‖u - u'‖ ^ 2 ≤ ‖ℓ - ℓ'‖ * ‖u - u'‖ := by
+    calc c * ‖u - u'‖ ^ 2 ≤ re (a (u - u') (u - u')) := hc _ h
+      _ = re ((ℓ - ℓ') (u - u')) := by rw [map_sub a, sub_apply, hu _ h, hu' _ h, sub_apply]
       _ ≤ ‖(ℓ - ℓ') (u - u')‖ := re_le_norm _
       _ ≤ ‖ℓ - ℓ'‖ * ‖u - u'‖ := le_opNorm _ _
-  rw [sq, ← mul_assoc] at h
-  exact le_of_mul_le_mul_right h hpos
+  rw [sq, ← mul_assoc] at h'
+  exact le_of_mul_le_mul_right h' hpos
 
 end Seminormed
 
@@ -294,8 +299,8 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteS
 
 /-- Over `ℝ`, the global minimizer of the quadratic energy `B u u - 2 ℓ u` of a symmetric
 coercive bilinear form is the Lax–Milgram solution `IsCoercive.solutionOfFunctional`. -/
-theorem isMinOn_quadraticEnergy_iff (hB : IsCoercive B) (hsymm : ∀ u v, B u v = B v u)
-    (ℓ : StrongDual ℝ V) {u : V} :
+theorem isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional (hB : IsCoercive B)
+    (hsymm : ∀ u v, B u v = B v u) (ℓ : StrongDual ℝ V) {u : V} :
     IsMinOn (B.quadraticEnergy ℓ) univ u ↔ u = hB.solutionOfFunctional ℓ := by
   rw [hB.solutionOfFunctional_eq]
   exact ContinuousLinearMap.isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional
