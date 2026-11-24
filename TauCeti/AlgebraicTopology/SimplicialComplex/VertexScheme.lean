@@ -88,8 +88,9 @@ noncomputable def vertexSchemeFaceEquiv : Face K.vertexScheme ≃ K.faces :=
 /-- The face of `K` corresponding to a face of the vertex scheme is its set of points. -/
 @[simp]
 theorem vertexSchemeFaceEquiv_apply_coe (σ : Face K.vertexScheme) :
-    (K.vertexSchemeFaceEquiv σ : Finset E) = σ.val.map (Embedding.subtype (· ∈ K.vertices)) :=
-  (rfl)
+    (K.vertexSchemeFaceEquiv σ : Finset E) = σ.val.map (Embedding.subtype (· ∈ K.vertices)) := by
+  ext x
+  simp [vertexSchemeFaceEquiv, Equiv.finsetSubtypeComm]
 
 /-- The face of the vertex scheme corresponding to a face of `K` has the points of that face. -/
 @[simp]
