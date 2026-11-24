@@ -95,17 +95,41 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 section Couple
 
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {s₀ s₁ : ℝ}
+section Exponents
 
-/-- A Schwartz function has the same class in the sum space `H^{s₀,p} + H^{s₁,p}` whether it is
-read in `H^{s₀,p}` or in `H^{s₁,p}`. -/
+variable {s₀ s₁ : ℝ} {p₀ p₁ : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)]
+
+/-- A Schwartz function has the same class in the sum space `H^{s₀,p₀} + H^{s₁,p₁}` whether it
+is read in `H^{s₀,p₀}` or in `H^{s₁,p₁}`. -/
 theorem besselPotentialSpace_fstToSum_toBesselPotentialSpaceCLM (f : 𝓢(E, F)) :
-    (besselPotentialSpace E F s₀ p s₁ p).fstToSum
-        (SchwartzMap.toBesselPotentialSpaceCLM s₀ p f) =
-      (besselPotentialSpace E F s₀ p s₁ p).sndToSum
-        (SchwartzMap.toBesselPotentialSpaceCLM s₁ p f) :=
-  (besselPotentialSpace E F s₀ p s₁ p).sumSpace_ext <| by
+    (besselPotentialSpace E F s₀ p₀ s₁ p₁).fstToSum
+        (SchwartzMap.toBesselPotentialSpaceCLM s₀ p₀ f) =
+      (besselPotentialSpace E F s₀ p₀ s₁ p₁).sndToSum
+        (SchwartzMap.toBesselPotentialSpaceCLM s₁ p₁ f) :=
+  (besselPotentialSpace E F s₀ p₀ s₁ p₁).sumSpace_ext <| by
     simp [SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+
+/-- A pair `(u₀, u₁)` lies in the intersection of `(H^{s₀,p₀}, H^{s₁,p₁})` if and only if `u₀`
+and `u₁` represent the same tempered distribution. -/
+theorem mem_besselPotentialSpace_inter_iff {x : H^{s₀, p₀}(E, F) × H^{s₁, p₁}(E, F)} :
+    x ∈ (besselPotentialSpace E F s₀ p₀ s₁ p₁).inter ↔ x.1.toDistr = x.2.toDistr := by
+  simp [mem_inter_iff]
+
+/-- Two decompositions in `H^{s₀,p₀} + H^{s₁,p₁}` agree if and only if their sums agree in
+`𝓢'(E, F)`. -/
+theorem besselPotentialSpace_fstToSum_add_sndToSum_eq_iff
+    {u₀ v₀ : H^{s₀, p₀}(E, F)} {u₁ v₁ : H^{s₁, p₁}(E, F)} :
+    (besselPotentialSpace E F s₀ p₀ s₁ p₁).fstToSum u₀ +
+          (besselPotentialSpace E F s₀ p₀ s₁ p₁).sndToSum u₁ =
+        (besselPotentialSpace E F s₀ p₀ s₁ p₁).fstToSum v₀ +
+          (besselPotentialSpace E F s₀ p₀ s₁ p₁).sndToSum v₁ ↔
+      u₀.toDistr + u₁.toDistr = v₀.toDistr + v₁.toDistr := by
+  rw [← (besselPotentialSpace E F s₀ p₀ s₁ p₁).sumSpaceEmbed_injective.eq_iff]
+  simp
+
+end Exponents
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {s₀ s₁ : ℝ}
 
 variable (E F p s₀ s₁) in
 /-- The sum space `H^{s₀,p} + H^{s₁,p}` lies in `H^{min s₀ s₁, p}`: the map induced by the
@@ -135,24 +159,6 @@ theorem toDistr_besselPotentialSpaceSumToMin (w : (besselPotentialSpace E F s₀
       (besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed w := by
   obtain ⟨x₀, x₁, rfl⟩ := (besselPotentialSpace E F s₀ p s₁ p).exists_fstToSum_add_sndToSum_eq w
   simp [toDistr_inclusion]
-
-/-- A pair `(u₀, u₁)` lies in the intersection of `(H^{s₀,p}, H^{s₁,p})` if and only if `u₀` and
-`u₁` represent the same tempered distribution. -/
-theorem mem_besselPotentialSpace_inter_iff {x : H^{s₀, p}(E, F) × H^{s₁, p}(E, F)} :
-    x ∈ (besselPotentialSpace E F s₀ p s₁ p).inter ↔ x.1.toDistr = x.2.toDistr := by
-  simp [mem_inter_iff]
-
-/-- Two decompositions in `H^{s₀,p} + H^{s₁,p}` agree if and only if their sums agree in
-`𝓢'(E, F)`. -/
-theorem besselPotentialSpace_fstToSum_add_sndToSum_eq_iff
-    {u₀ v₀ : H^{s₀, p}(E, F)} {u₁ v₁ : H^{s₁, p}(E, F)} :
-    (besselPotentialSpace E F s₀ p s₁ p).fstToSum u₀ +
-          (besselPotentialSpace E F s₀ p s₁ p).sndToSum u₁ =
-        (besselPotentialSpace E F s₀ p s₁ p).fstToSum v₀ +
-          (besselPotentialSpace E F s₀ p s₁ p).sndToSum v₁ ↔
-      u₀.toDistr + u₁.toDistr = v₀.toDistr + v₁.toDistr := by
-  rw [← (besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed_injective.eq_iff]
-  simp
 
 private theorem besovOneToBesselPotentialSpaceSum_compat {φ : ContDiffBump (0 : E)}
     (x : (besov F φ s₀ s₁ p 1 1).inter) :

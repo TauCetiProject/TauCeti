@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Topology.Grassmannian.Orthonormal
 public import TauCeti.Topology.VectorBundle.IdempotentRange
 
@@ -128,7 +129,7 @@ theorem continuous_starProjection_toEuclidean :
 /-- The range of the complementary projection is the orthogonal complement. -/
 theorem range_one_sub_starProjection_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
     (1 - V.toEuclidean.starProjection).range = V.toEuclideanᗮ := by
-  rw [← Submodule.starProjection_orthogonal', Submodule.range_starProjection]
+  simp
 
 /-- The complementary projections `1 - p` depend continuously on the point of the Grassmannian. -/
 theorem continuous_one_sub_starProjection_toEuclidean :

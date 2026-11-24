@@ -104,8 +104,7 @@ theorem _root_.QuadraticForm.even_polarBilin_self (Q : _root_.QuadraticForm ℤ 
 /-- Taking the half-norm of the polar form recovers the quadratic form. -/
 @[simp]
 theorem _root_.QuadraticForm.halfNormQuadratic_polarBilin (Q : _root_.QuadraticForm ℤ M) :
-    LinearMap.BilinForm.halfNormQuadratic Q.polarBilin
-      (by constructor; intro x y; exact QuadraticMap.polar_comm Q x y)
+    LinearMap.BilinForm.halfNormQuadratic Q.polarBilin Q.isSymm_polarBilin
       (Q.even_polarBilin_self) = Q := by
   apply QuadraticMap.ext
   intro x
@@ -126,12 +125,8 @@ theorem _root_.QuadraticForm.eq_of_polarBilin_eq (Q₁ Q₂ : _root_.QuadraticFo
 /-- The polar form of an integer quadratic form is symmetric with even diagonal. -/
 theorem _root_.QuadraticForm.isSymm_polarBilin_and_even_polarBilin_self
     (Q : _root_.QuadraticForm ℤ M) :
-    Q.polarBilin.IsSymm ∧ ∀ x, Even (Q.polarBilin x x) := by
-  constructor
-  · constructor
-    intro x y
-    exact QuadraticMap.polar_comm Q x y
-  · exact Q.even_polarBilin_self
+    Q.polarBilin.IsSymm ∧ ∀ x, Even (Q.polarBilin x x) :=
+  ⟨LinearMap.BilinForm.isSymm_iff.mp Q.isSymm_polarBilin, Q.even_polarBilin_self⟩
 
 /-- An even symmetric integer bilinear form is the polar form of a unique quadratic form. -/
 theorem _root_.LinearMap.BilinForm.existsUnique_polarBilin

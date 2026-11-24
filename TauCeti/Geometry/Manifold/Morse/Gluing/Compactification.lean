@@ -96,12 +96,6 @@ theorem exists_mem_unstableSet_inter_stableSet_forall_flow_mem {k : ℕ} {x : Fi
       (N := fun j ↦ interior (N j.succ)) (fun j ↦ by simpa using hxne j.succ)
       (fun j ↦ by simpa using hz j.succ) fun j ↦ interior_mem_nhds.2 (hN j.succ)
     simp only [Fin.succ_zero_eq_one, Fin.succ_last] at hu'
-    -- The values of `f` decrease strictly along the chain, so `x 1 ≠ x (k + 2)`.
-    have hanti : StrictAnti fun j ↦ f (x j) := Fin.strictAnti_iff_succ_lt.2 fun j ↦
-      (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)).1.trans
-        (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet (hxne j) (hz j)).2
-    have h1 : x 1 ≠ x (Fin.last (k + 2)) := fun he ↦ (hanti (show (1 : Fin (k + 3)) <
-      Fin.last (k + 2) from Fin.one_lt_last)).ne' (congrArg f he)
     -- Trajectories through a small neighbourhood `O` of `u'` pass through the same neighbourhoods
     -- at the same times.
     set O := ⋂ j, (hX.flow (s' j)) ⁻¹' interior (N j.succ)
@@ -109,7 +103,7 @@ theorem exists_mem_unstableSet_inter_stableSet_forall_flow_mem {k : ℕ} {x : Fi
       (hX.flow.continuous_toFun (s' j))).mem_nhds (mem_iInter.2 hs')
     -- Glue the first component `z 0` to `u'` at `x 1`.
     obtain ⟨v, hv, σ₁, σ₂, hv₁, hv₂⟩ := h.exists_mem_unstableSet_inter_stableSet_flow_mem hf
-      (by simpa using hxne 0) h1 (by simpa using hz 0) hu' (hN 0) hO
+      (by simpa using hxne 0) (by simpa using hz 0) hu' (hN 0) hO
     refine ⟨v, hv, Fin.cases σ₁ fun j ↦ s' j + σ₂, fun j ↦ ?_⟩
     induction j using Fin.cases with
     | zero => simpa using hv₁

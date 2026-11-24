@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.Laurent.Units
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Clopen
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Laurent units over connected rings
@@ -48,22 +49,19 @@ theorem existsUnique_coeff_notMem_prime_of_isUnit (f : R[T;T⁻¹]) (hf : IsUnit
 /-- The nonvanishing locus of any coefficient of a Laurent unit is clopen. -/
 theorem isClopen_basicOpen_coeff_of_isUnit (f : R[T;T⁻¹]) (hf : IsUnit f) (n : ℤ) :
     IsClopen (PrimeSpectrum.basicOpen (f.coeff n) : Set (PrimeSpectrum R)) := by
-  let U (i : ℤ) : Set (PrimeSpectrum R) := PrimeSpectrum.basicOpen (f.coeff i)
-  have hopen (i : ℤ) : IsOpen (U i) := PrimeSpectrum.isOpen_basicOpen
-  apply isClopen_of_disjoint_cover_open (b := ⋃ i : {i : ℤ // i ≠ n}, U i)
-  · intro p _
+  apply TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
+    (fun i : ℤ ↦ PrimeSpectrum.basicOpen (f.coeff i)) ?_ ?_ n
+  · apply top_unique
+    intro p _
     obtain ⟨i, hi, -⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
-    by_cases h : i = n
-    · exact Or.inl ((PrimeSpectrum.mem_basicOpen _ _).mpr (h ▸ hi))
-    · exact Or.inr (Set.mem_iUnion.mpr ⟨⟨i, h⟩, (PrimeSpectrum.mem_basicOpen _ _).mpr hi⟩)
-  · exact hopen n
-  · exact isOpen_iUnion fun i ↦ hopen i
-  · rw [Set.disjoint_left]
-    intro p hn hp
-    obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hp
-    obtain ⟨j, _, huniq⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
-    exact i.property ((huniq i ((PrimeSpectrum.mem_basicOpen _ _).mp hi)).trans
-      (huniq n ((PrimeSpectrum.mem_basicOpen _ _).mp hn)).symm)
+    exact TopologicalSpace.Opens.mem_iSup.mpr ⟨i, (PrimeSpectrum.mem_basicOpen _ _).mpr hi⟩
+  · intro i j hij
+    apply disjoint_iff.mpr
+    apply bot_unique
+    intro p hp
+    obtain ⟨_, _, huniq⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
+    exact (hij ((huniq i ((PrimeSpectrum.mem_basicOpen _ _).mp hp.1)).trans
+      (huniq _ ((PrimeSpectrum.mem_basicOpen _ _).mp hp.2)).symm)).elim
 
 /-- Over a ring with preconnected spectrum, a Laurent unit has a unit coefficient and all
 other coefficients are nilpotent. No nontriviality or reducedness assumption is needed. -/

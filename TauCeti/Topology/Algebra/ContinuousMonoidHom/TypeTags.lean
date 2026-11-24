@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Constructions
+public import TauCeti.Algebra.GroupAction.TypeTags
 
 /-!
 # Transport of continuous additive homomorphisms and subgroups to `Multiplicative`
@@ -102,6 +103,14 @@ theorem denseRange_toMultiplicative_iff (f : M →ₜ+ N) :
     fun h =>
       (ofAdd.surjective.denseRange.comp
         (h.comp toAdd.surjective.denseRange f.continuous) continuous_ofAdd)⟩
+
+/-- A continuous additive homomorphism compatible with a map of acting monoids `ψ` stays
+compatible with `ψ` on the multiplicative type tags. This is
+`AddMonoidHom.toMultiplicative_map_smul` for `f.toMultiplicative`. -/
+theorem toMultiplicative_map_smul {G H : Type*} [Monoid G] [Monoid H] [DistribMulAction G M]
+    [DistribMulAction H N] (f : M →ₜ+ N) (ψ : H → G) (h : ∀ (g : H) (m : M), f (ψ g • m) = g • f m)
+    (g : H) (x : Multiplicative M) : f.toMultiplicative (ψ g • x) = g • f.toMultiplicative x :=
+  f.toAddMonoidHom.toMultiplicative_map_smul ψ h g x
 
 end ContinuousAddMonoidHom
 

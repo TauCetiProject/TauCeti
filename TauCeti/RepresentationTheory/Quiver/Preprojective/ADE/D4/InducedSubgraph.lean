@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
+import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.GraphGrading
 
 /-!
 # Characteristic-two cyclic classes from induced `D₄` subdiagrams
@@ -49,7 +50,7 @@ theorem exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule_of
         z ∉ commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   obtain ⟨z, hz, hfz⟩ :=
     exists_mem_signlessPreprojectiveGrade_signlessPreprojectiveEmbeddingHom_eq k f
-      (signlessWord_D4_cyclicWord_mem_grade_four k)
+      (signlessWord_mem_grade k zigzagD4Graph [1, 2, 1, 0, 1])
   refine ⟨z, hz, fun h => signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule k h2 ?_⟩
   rw [← hfz]
   exact map_mem_commutatorSubmodule (signlessPreprojectiveEmbeddingHom k f) h

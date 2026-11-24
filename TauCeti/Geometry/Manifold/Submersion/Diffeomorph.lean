@@ -16,7 +16,9 @@ A bijection commuting with two `C^n` submersions out of a common boundaryless ma
 of which is surjective, is a `C^n` diffeomorphism (`Equiv.diffeomorphOfSubmersions`). Unlike the
 immersion counterpart `Homeomorph.diffeomorphOfImmersions`, no continuity hypothesis on the
 bijection is required: local `C^n` sections of each submersion descend smoothness of both
-directions directly (`Manifold.IsSubmersion.contMDiff_comp_iff`). In particular, two atlases on the
+directions directly (`Manifold.IsSubmersion.contMDiff_comp_iff`). Hence two surjective submersions
+out of a common boundaryless manifold with the same fibres have diffeomorphic bases
+(`Manifold.IsSubmersion.exists_diffeomorph_comp_eq`). In particular, two atlases on the
 same space making a common surjective map out of a boundaryless manifold a `C^n` submersion are
 `C^n`-diffeomorphic by the identity
 (`ChartedSpace.exists_diffeomorph_apply_eq_self_of_isSubmersion`).
@@ -89,6 +91,27 @@ theorem diffeomorphOfSubmersions_symm_apply (e : M ≃ N)
   (rfl)
 
 end Equiv
+
+namespace Manifold.IsSubmersion
+
+/-- **Surjective submersions with the same fibres.** Two surjective `C^n` submersions `p : P → M`
+and `q : P → N` out of a common boundaryless manifold whose fibres agree, `q x = q y ↔ p x = p y`,
+induce a `C^n` diffeomorphism `e : M → N` with `e ∘ p = q`. So the base of a surjective submersion
+is determined up to diffeomorphism by its fibres. -/
+theorem exists_diffeomorph_comp_eq (hp : IsSubmersion K I n p) (hp_surj : Surjective p)
+    (hq : IsSubmersion K J n q) (hq_surj : Surjective q) (hfib : ∀ x y, q x = q y ↔ p x = p y) :
+    ∃ e : M ≃ₘ^n⟮I, J⟯ N, ⇑e ∘ p = q := by
+  let f : M → N := fun m ↦ q (surjInv hp_surj m)
+  have hf : f ∘ p = q := funext fun x ↦ (hfib _ x).2 (surjInv_eq hp_surj (p x))
+  have hbij : Bijective f := by
+    refine ⟨fun m m' hmm' ↦ ?_, fun y ↦ ?_⟩
+    · rw [← surjInv_eq hp_surj m, ← surjInv_eq hp_surj m']
+      exact (hfib _ _).1 hmm'
+    · obtain ⟨x, rfl⟩ := hq_surj y
+      exact ⟨p x, congrFun hf x⟩
+  exact ⟨(Equiv.ofBijective f hbij).diffeomorphOfSubmersions hp hp_surj hq hf, hf⟩
+
+end Manifold.IsSubmersion
 
 namespace ChartedSpace
 
