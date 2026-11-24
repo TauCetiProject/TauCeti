@@ -28,7 +28,8 @@ actions is then stable under the whole convolution algebra of `K ⊗[k] C`.
 ## Main results
 
 * `TauCeti.Comodule.baseChangeDual`: the base change of a functional on `C`, in the convolution
-  algebra of `K ⊗[k] C`.
+  algebra of `K ⊗[k] C`; its underlying functional is `Module.Dual.baseChange`
+  (`TauCeti.Comodule.ofConv_baseChangeDual`).
 * `TauCeti.Comodule.convolutionAction_baseChangeDual`: the base change of a functional acts on
   `K ⊗[k] M` as the base change of its action on `M`.
 * `TauCeti.Comodule.convolutionAction_mem_of_forall_baseChangeDual`: a subspace of `K ⊗[k] M`
@@ -56,11 +57,16 @@ noncomputable def baseChangeDual (f : WithConv (C →ₗ[k] k)) :
     WithConv (K ⊗[k] C →ₗ[K] K) :=
   WithConv.toConv (Module.Dual.baseChange K f.ofConv)
 
-/-- The base change of a functional evaluates on a pure tensor `a ⊗ c` to `f c • a`. -/
+/-- The underlying functional of `baseChangeDual K f` is `Module.Dual.baseChange K f`. -/
 @[simp]
+theorem ofConv_baseChangeDual (f : WithConv (C →ₗ[k] k)) :
+    (baseChangeDual K f).ofConv = Module.Dual.baseChange K f.ofConv :=
+  (rfl)
+
+/-- The base change of a functional evaluates on a pure tensor `a ⊗ c` to `f c • a`. -/
 theorem baseChangeDual_tmul (f : WithConv (C →ₗ[k] k)) (a : K) (c : C) :
     (baseChangeDual K f).ofConv (a ⊗ₜ[k] c) = f.ofConv c • a := by
-  simp [baseChangeDual]
+  simp
 
 variable [Coalgebra k C] [AddCommMonoid M] [Module k M] [Comodule k C M]
 
@@ -105,7 +111,7 @@ theorem convolutionAction_mem_of_forall_baseChangeDual (P : Submodule K (K ⊗[k
     rw [← LinearMap.le_ker_iff_map] at hφP
     exact hφP (hP f v hv)
   have hc : matrixCoefficient (R := K) (C := K ⊗[k] C) φ v = 0 :=
-    Module.Dual.eq_of_baseChange_eq fun f ↦ by simpa [baseChangeDual] using hf (.toConv f)
+    Module.Dual.eq_of_baseChange_eq fun f ↦ by simpa using hf (.toConv f)
   have := LinearMap.apply_matrixCoefficient (R := K) (C := K ⊗[k] C) g.ofConv φ v
   rw [hc, map_zero, coactComponent_apply, ← convolutionAction_apply] at this
   exact this.symm

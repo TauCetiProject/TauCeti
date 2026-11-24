@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
 public import TauCeti.RingTheory.Jacobson.BaseChange
+public import TauCeti.RingTheory.SimpleModule.Subalgebra
 import TauCeti.Algebra.Coalgebra.Comodule.Convolution.BaseChange
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
@@ -23,13 +24,14 @@ A completely reducible comodule is the sum of its simple subcomodules, which are
 finite-dimensional, so it suffices to treat finite-dimensional `M`. Then the convolution algebra
 `C^∨` acts on `M` through a finite-dimensional subalgebra `B` of `End_k(M)`. Complete
 reducibility makes `M` a semisimple `B`-module, and `B` embeds in a finite power of `M`, so `B`
-is a semisimple algebra. In characteristic zero `K ⊗[k] B` is again semisimple
-(`TauCeti.isSemisimpleRing_tensorProduct`), so `K ⊗[k] M` is a semisimple `K ⊗[k] B`-module. Its
-`K ⊗[k] B`-submodules are exactly its subcomodules: a subcomodule is stable under the base
-changes of the `C^∨`-action, and conversely a subspace stable under them is stable under every
-`K`-linear functional on `K ⊗[k] C`, because the base changes of the `k`-linear functionals on
-`C` separate the points of `K ⊗[k] C` and a functional acts through the matrix coefficients
-(`TauCeti.Comodule.convolutionAction_mem_of_forall_baseChangeDual`).
+is a semisimple algebra (`Subalgebra.isSemisimpleRing_of_isSemisimpleModule`). In characteristic
+zero `K ⊗[k] B` is again semisimple (`TauCeti.isSemisimpleRing_tensorProduct`), so `K ⊗[k] M` is a
+semisimple `K ⊗[k] B`-module. Its `K ⊗[k] B`-submodules are exactly its subcomodules: a
+subcomodule is stable under the base changes of the `C^∨`-action, and conversely a subspace stable
+under them is stable under every `K`-linear functional on `K ⊗[k] C`, because the base changes of
+the `k`-linear functionals on `C` separate the points of `K ⊗[k] C` and a functional acts through
+the matrix coefficients (`TauCeti.Comodule.convolutionAction_mem_of_forall_baseChangeDual`). The
+two lattices of submodules are therefore order isomorphic, and complements transfer.
 
 Characteristic zero is used only for the semisimplicity of `K ⊗[k] B`. Over an imperfect field
 the statement fails: a purely inseparable extension field `B` of `k`, as a comodule over the dual
@@ -85,17 +87,6 @@ private theorem isSemisimpleModule_actionRange (h : IsCompletelyReducible k C M)
       map_smul' := fun _ _ ↦ rfl }
   exact (l.isSemisimpleModule_iff_of_bijective Function.bijective_id).1 hD
 
-/-- The image of the convolution algebra of a finite-dimensional completely reducible comodule is
-a semisimple algebra: it embeds in a finite power of the comodule. -/
-private theorem isSemisimpleRing_actionRange [Module.Finite k M]
-    (h : IsCompletelyReducible k C M) : IsSemisimpleRing (actionRange k C M) := by
-  have := isSemisimpleModule_actionRange h
-  let b := Module.finBasis k M
-  let e : actionRange k C M →ₗ[actionRange k C M] (Fin (Module.finrank k M) → M) :=
-    LinearMap.pi fun i ↦ LinearMap.toSpanSingleton _ M (b i)
-  refine IsSemisimpleModule.of_injective e fun s t hst ↦ Subtype.ext (b.ext fun i ↦ ?_)
-  exact congr_fun hst i
-
 variable (k C M) in
 /-- The action of `K ⊗[k] B` on `K ⊗[k] M`, for `B` the image of the convolution algebra. -/
 private noncomputable def baseChangeAction :
@@ -107,8 +98,38 @@ private noncomputable def baseChangeAction :
 /-- The pure tensor `a ⊗ s` acts as `a` times the base change of `s`. -/
 private theorem baseChangeAction_tmul (a : K) (s : actionRange k C M) :
     baseChangeAction k C M K (a ⊗ₜ[k] s) = a • (s : Module.End k M).baseChange K := by
-  rw [baseChangeAction, Algebra.TensorProduct.lift_tmul, Algebra.smul_def]
+  rw [baseChangeAction, Algebra.TensorProduct.lift_tmul, Algebra.ofId_apply, ← Algebra.smul_def]
+  -- `Module.End.baseChangeHom` is `LinearMap.baseChange` bundled as an algebra map, and Mathlib has
+  -- no application lemma for it in those terms (its `simps` lemma unfolds to
+  -- `TensorProduct.liftAux`), so `baseChangeHom s = s.baseChange K` is used by definition.
   rfl
+
+/-- An additive submonoid of `K ⊗[k] M` is stable under the convolution algebra of
+`K ⊗[k] C`, that is, it is a subcomodule, if and only if it is stable under the action of
+`K ⊗[k] B`. -/
+private theorem forall_convolutionAction_mem_iff (P : AddSubmonoid (K ⊗[k] M)) :
+    letI := Comodule.baseChange (R := k) (H := C) (M := M) K
+    (∀ (g : WithConv (K ⊗[k] C →ₗ[K] K)) {v}, v ∈ P →
+        convolutionAction (R := K) (C := K ⊗[k] C) (M := K ⊗[k] M) g v ∈ P) ↔
+      ∀ (r : K ⊗[k] actionRange k C M) {v}, v ∈ P → baseChangeAction k C M K r v ∈ P := by
+  let _ := Comodule.baseChange (R := k) (H := C) (M := M) K
+  refine ⟨fun hP r v hv ↦ ?_, fun hP g v hv ↦ ?_⟩
+  · induction r with
+    | add r s hr hs => rw [map_add, LinearMap.add_apply]; exact P.add_mem hr hs
+    | tmul a s =>
+      obtain ⟨_, f, rfl⟩ := s
+      rw [baseChangeAction_tmul]
+      simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+      rw [← convolutionAction_baseChangeDual, ← map_smul]
+      exact hP _ hv
+  · -- `P` is a `K`-subspace, stable under the base changes of the `C^∨`-action.
+    let PK : Submodule K (K ⊗[k] M) :=
+      { P with
+        smul_mem' := fun a v hv ↦ by
+          simpa [baseChangeAction_tmul] using hP (a ⊗ₜ[k] 1) hv }
+    refine convolutionAction_mem_of_forall_baseChangeDual K PK (fun f v hv ↦ ?_) g hv
+    have := hP (1 ⊗ₜ[k] ⟨_, AlgHom.mem_range_self _ f⟩) hv
+    rwa [baseChangeAction_tmul, one_smul] at this
 
 variable [CharZero k]
 
@@ -120,53 +141,28 @@ private theorem IsCompletelyReducible.baseChange_of_finite [Module.Finite k M]
   let _ := Comodule.baseChange (R := k) (H := C) (M := M) K
   let _ := convolutionModule (R := K) (C := K ⊗[k] C) (M := K ⊗[k] M)
   let B := actionRange k C M
-  have := isSemisimpleRing_actionRange h
+  have := isSemisimpleModule_actionRange h
+  have := B.isSemisimpleRing_of_isSemisimpleModule
   let _ : Module (K ⊗[k] B) (K ⊗[k] M) :=
     Module.compHom _ (baseChangeAction k C M K).toRingHom
-  have hsmul (r : K ⊗[k] B) (v : K ⊗[k] M) : r • v = baseChangeAction k C M K r v := rfl
-  -- A subspace stable under `K ⊗[k] B` is stable under the base changes of the `C^∨`-action.
-  have hB (P : Submodule (K ⊗[k] B) (K ⊗[k] M)) (f : WithConv (C →ₗ[k] k)) (v) (hv : v ∈ P) :
-      (convolutionAction (R := k) (C := C) (M := M) f).baseChange K v ∈ P := by
-    have := P.smul_mem ((1 : K) ⊗ₜ[k] ⟨_, AlgHom.mem_range_self _ f⟩) hv
-    rwa [hsmul, baseChangeAction_tmul, one_smul] at this
-  -- Every `K ⊗[k] B`-submodule is a submodule for the convolution algebra of `K ⊗[k] C`.
-  let toConv (P : Submodule (K ⊗[k] B) (K ⊗[k] M)) :
+  -- Both scalar actions are `Module.compHom` actions, evaluating `convolutionAction` and
+  -- `baseChangeAction` respectively, so their `smul_mem'` conditions are those of
+  -- `forall_convolutionAction_mem_iff`.
+  let e : Submodule (K ⊗[k] B) (K ⊗[k] M) ≃o
       Submodule (WithConv (K ⊗[k] C →ₗ[K] K)) (K ⊗[k] M) :=
-    { carrier := P
-      add_mem' := P.add_mem
-      zero_mem' := P.zero_mem
-      smul_mem' := fun g v hv ↦ by
-        let PK : Submodule K (K ⊗[k] M) :=
-          { carrier := P
-            add_mem' := P.add_mem
-            zero_mem' := P.zero_mem
-            smul_mem' := fun a v hv ↦ by
-              have := P.smul_mem (a ⊗ₜ[k] 1) hv
-              rw [hsmul, baseChangeAction_tmul] at this
-              simpa using this }
-        exact convolutionAction_mem_of_forall_baseChangeDual K PK (hB P) g hv }
+    { toFun P :=
+        { P.toAddSubmonoid with
+          smul_mem' :=
+            (forall_convolutionAction_mem_iff K P.toAddSubmonoid).2 fun r _ ↦ P.smul_mem r }
+      invFun W :=
+        { W.toAddSubmonoid with
+          smul_mem' :=
+            (forall_convolutionAction_mem_iff K W.toAddSubmonoid).1 fun g _ ↦ W.smul_mem g }
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_rel_iff' := Iff.rfl }
   rw [isCompletelyReducible_iff_isSemisimpleModule, isSemisimpleModule_iff]
-  refine ⟨fun W ↦ ?_⟩
-  -- Regard `W` as a `K ⊗[k] B`-submodule and take a complement there.
-  let W' : Submodule (K ⊗[k] B) (K ⊗[k] M) :=
-    { carrier := W
-      add_mem' := W.add_mem
-      zero_mem' := W.zero_mem
-      smul_mem' := fun r v hv ↦ by
-        rw [hsmul]
-        induction r with
-        | add r s hr hs => rw [map_add, LinearMap.add_apply]; exact W.add_mem hr hs
-        | tmul a s =>
-          obtain ⟨_, f, rfl⟩ := s
-          rw [baseChangeAction_tmul, LinearMap.smul_apply]
-          simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-          rw [← convolutionAction_baseChangeDual]
-          exact (W.restrictScalars K).smul_mem a (W.smul_mem (baseChangeDual K f) hv) }
-  obtain ⟨Q', hQ'⟩ := ComplementedLattice.exists_isCompl W'
-  refine ⟨toConv Q', ?_⟩
-  -- `W'` and `W`, and `Q'` and `toConv Q'`, have the same carriers.
-  rw [← Submodule.isCompl_restrictScalars_iff ℤ] at hQ' ⊢
-  exact hQ'
+  exact e.complementedLattice
 
 /-- **Complete reducibility of a comodule ascends along field extensions in characteristic
 zero.** If `M` is a completely reducible comodule over a coalgebra `C` over a field `k` of
