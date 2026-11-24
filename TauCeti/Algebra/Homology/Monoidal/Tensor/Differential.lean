@@ -85,8 +85,11 @@ lemma ι_tensorObj_d (X Y : CochainComplex (ModuleCat.{v} R) ℤ) (p q j : ℤ)
         ιTensorObj X Y (p + 1) q (j + 1) (by omega) +
       p.negOnePow •
         ((curriedTensor (ModuleCat.{v} R)).obj (X.X p)).map (Y.d q (q + 1)) ≫
-          ιTensorObj X Y p (q + 1) (j + 1) (by omega) :=
-  CochainComplex.ιTensorObj_d X Y hpq rfl rfl rfl
+          ιTensorObj X Y p (q + 1) (j + 1) (by omega) := by
+  rw [curriedTensor_map_app, curriedTensor_obj_map]
+  -- `X ⊗ Y` is `HomologicalComplex.tensorObj X Y` by definition: Mathlib's
+  -- `HomologicalComplex.monoidalCategoryStruct` sets its `tensorObj` field to it.
+  exact CochainComplex.ιTensorObj_d X Y hpq rfl rfl rfl
 
 /-- `CochainComplex.ιTensorObj_d` for cochain complexes of modules, stated for the monoidal
 product `X ⊗ Y`, in whiskered form. -/
@@ -96,6 +99,9 @@ lemma ι_tensorObj_d' (X Y : CochainComplex (ModuleCat.{v} R) ℤ) {p q j p' q' 
     ιTensorObj X Y p q j hpq ≫ (X ⊗ Y).d j j' =
       (X.d p p' ▷ Y.X q) ≫ ιTensorObj X Y p' q j' (by omega) +
         p.negOnePow • ((X.X p ◁ Y.d q q') ≫ ιTensorObj X Y p q' j' (by omega)) :=
+  -- `X ⊗ Y` is `HomologicalComplex.tensorObj X Y` by definition: Mathlib's
+  -- `HomologicalComplex.monoidalCategoryStruct` sets its `tensorObj` field to it. The whiskerings
+  -- `▷` and `◁` are those of `ModuleCat R` on both sides.
   CochainComplex.ιTensorObj_d X Y hpq hp hq hj
 
 end HomologicalComplex
