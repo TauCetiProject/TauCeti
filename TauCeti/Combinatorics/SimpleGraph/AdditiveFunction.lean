@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Copy
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
+public import TauCeti.Combinatorics.SimpleGraph.Copy
 
 /-!
 # The Cartan matrix of a graph carrying a positive additive function
@@ -482,15 +482,6 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
     ∃ e : G ≃g H, ⇑e = f := by
   have hpos : ∀ x, 0 < a x :=
     hH.pos_of_sum_le_smul (c := (2 : R)) ha0 ha fun x ↦ by rw [smul_eq_mul]; exact hle x
-  -- The neighbours of `v` map to neighbours of `f v`.
-  have hsub (v : V) : (G.neighborFinset v).map f.toEmbedding ⊆ H.neighborFinset (f v) := by
-    intro x hx
-    obtain ⟨u, hu, rfl⟩ := mem_map.1 hx
-    rw [mem_neighborFinset] at hu ⊢
-    exact f.toHom.map_adj hu
-  have hle₁ (v : V) : ∑ u ∈ G.neighborFinset v, a (f u) ≤ ∑ y ∈ H.neighborFinset (f v), a y := by
-    have h := sum_le_sum_of_subset_of_nonneg (hsub v) fun y _ _ ↦ ha0 y
-    rwa [sum_map] at h
   -- Paired with `δ`, the sums over the edges of `G` reproduce `2 * a (f v)`, as `δ` is additive.
   have hswap : ∑ v, δ v * ∑ u ∈ G.neighborFinset v, a (f u) = ∑ v, δ v * (2 * a (f v)) := by
     have swap : ∑ v, ∑ u ∈ G.neighborFinset v, δ v * a (f u) =
@@ -507,11 +498,14 @@ theorem Copy.exists_iso_of_sum_le_two_mul [Nonempty V] (f : Copy G H) (hH : H.Pr
   have hnbr (v : V) : H.neighborFinset (f v) ⊆ (G.neighborFinset v).map f.toEmbedding := by
     intro y hy
     by_contra hy'
-    have hlt := sum_lt_sum_of_subset (hsub v) hy hy' (hpos y) fun z _ _ ↦ ha0 z
+    have hlt := sum_lt_sum_of_subset (f.map_neighborFinset_subset v) hy hy' (hpos y)
+      fun z _ _ ↦ ha0 z
     rw [sum_map] at hlt
     have h₁ : ∑ w, δ w * ∑ u ∈ G.neighborFinset w, a (f u) <
         ∑ w, δ w * ∑ y ∈ H.neighborFinset (f w), a y :=
-      sum_lt_sum (fun w _ ↦ mul_le_mul_of_nonneg_left (hle₁ w) (hδpos w).le)
+      sum_lt_sum
+        (fun w _ ↦ mul_le_mul_of_nonneg_left (f.sum_neighborFinset_comp_le fun z _ _ ↦ ha0 z)
+          (hδpos w).le)
         ⟨v, mem_univ v, mul_lt_mul_of_pos_left hlt (hδpos v)⟩
     have h₂ : ∑ w, δ w * ∑ y ∈ H.neighborFinset (f w), a y ≤ ∑ w, δ w * (2 * a (f w)) :=
       sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_left (hle (f w)) (hδpos w).le
