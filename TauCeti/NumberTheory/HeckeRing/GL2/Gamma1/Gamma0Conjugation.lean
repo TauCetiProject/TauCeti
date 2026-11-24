@@ -280,12 +280,16 @@ theorem conj_natDiagGL_mem_doubleCoset_of_dvd (hp : 0 < p) {g : SL(2, ℤ)} (hg 
   have hσ : g 0 0 * f * (p : ℤ) - g 0 1 * c' * (N : ℤ) = 1 := by
     linear_combination g.fin_two_mul_sub_mul_eq_one - g 0 0 * hf + g 0 1 * hc'
   -- the last right coset's twisted representative, with bottom row `(N, p)`
-  let σ : SL(2, ℤ) := ⟨!![g 0 0 * f, g 0 1 * c'; N, p], (Matrix.det_fin_two_of _ _ _ _).trans hσ⟩
-  obtain ⟨γ, hγ, hγeq⟩ := exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (σ := σ) hp rfl rfl
+  let σ : SL(2, ℤ) := .mk !![g 0 0 * f, g 0 1 * c'; N, p] ((Matrix.det_fin_two_of _ _ _ _).trans hσ)
+  obtain ⟨γ, hγ, hγeq⟩ := exists_mem_Gamma1_natDiagGL_mul_eq_primeRep_none (N := N) (σ := σ) hp
+    (by simp [σ]) (by simp [σ])
   obtain ⟨τ, hτ, hτeq⟩ := exists_mem_Gamma1_mul_twistedRep_eq_conjDiag_of_bezout hσ
   refine mem_doubleCoset.mpr ⟨_, Subgroup.mem_map_of_mem _ hτ, _, Subgroup.mem_map_of_mem _ hγ, ?_⟩
   rw [mul_assoc (mapGL ℚ τ), hγeq]
-  exact (eq_mapGL_mul_mul_mapGL_of_intMatrix_eq 2 τ 1 _ _ _ _ (coe_primeRep_none_eq_map hp σ)
+  have hA := coe_primeRep_none_eq_map hp σ
+  simp only [σ, Matrix.SpecialLinearGroup.coe_mk, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one] at hA
+  exact (eq_mapGL_mul_mul_mapGL_of_intMatrix_eq 2 τ 1 _ _ _ _ hA
     (coe_conj_natDiagGL hp g) (by rwa [hc', hf, coe_one, mul_one])).trans (by rw [map_one, mul_one])
 
 /-- **The `Γ₁(N)` double coset of `diag(1, p)` is stable under conjugation by `Γ₀(N)`**, for `p`

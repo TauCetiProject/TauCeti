@@ -55,7 +55,7 @@ theorem map_of_surjective (hP : IsProPSylow p P) (f : G →* H) (hf : Continuous
   · rw [Subgroup.coe_map]
     exact (hP.isClosed.isCompact.image hf).isClosed
   · exact hP.isProP.of_surjective (f.subgroupMap P)
-      (continuous_induced_rng.mpr (hf.comp continuous_subtype_val))
+      (continuous_induced_rng.mpr (hf.comp continuous_subtypeVal))
       (f.subgroupMap_surjective P)
   · let V := OpenNormalSubgroup.comap U f hf
     let _ : V.toSubgroup.Normal := V.isNormal'

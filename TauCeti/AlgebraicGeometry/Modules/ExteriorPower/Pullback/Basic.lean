@@ -16,7 +16,9 @@ public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 For a morphism of schemes `f : X ⟶ Y`, `Scheme.Modules.pullbackExteriorPowerComparison f n` is the
 canonical natural map `f^* (⋀ⁿ M) ⟶ ⋀ⁿ (f^* M)`, the scheme case of
 `SheafOfModules.pullbackExteriorPowerComparison`. It is characterized by its transpose
-under the pullback--pushforward adjunction, and it is an isomorphism in degree one.
+under the pullback--pushforward adjunction, and it is an isomorphism in degree one. In degree zero
+it is the identification `f^* 𝒪_Y ≅ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`, so it is an
+isomorphism at every module, quasi-coherent or not.
 
 For a ring map `φ : R ⟶ S`, pullback along `Spec φ` commutes with exterior powers of the
 sheaf associated with any `R`-module. The comparison is natural in the module and does not
@@ -171,6 +173,26 @@ theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerOneIso (M : Y.Modu
 instance isIso_pullbackExteriorPowerComparison_one :
     IsIso (pullbackExteriorPowerComparison f 1) :=
   SheafOfModules.isIso_pullbackExteriorPowerComparison_one (pullbackPushforwardAdjunction f)
+
+/-- In degree zero, the pullback comparison for modules on schemes is the identification
+`f^* 𝒪_Y ⟶ 𝒪_X` of `SheafOfModules.pullbackObjUnitToUnit`, read through the identifications
+`⋀⁰ M ≅ 𝒪`. -/
+@[reassoc]
+theorem pullbackExteriorPowerComparison_app_comp_exteriorPowerZeroIso (M : Y.Modules) :
+    (pullbackExteriorPowerComparison f 0).app M ≫
+        (SheafOfModules.exteriorPowerZeroIso X.sheaf).hom.app ((pullback f).obj M) =
+      (pullback f).map ((SheafOfModules.exteriorPowerZeroIso Y.sheaf).hom.app M) ≫
+        SheafOfModules.pullbackObjUnitToUnit f.toRingCatSheafHom :=
+  SheafOfModules.pullbackExteriorPowerComparison_app_comp_exteriorPowerZeroIso
+    (pullbackPushforwardAdjunction f) M
+
+/-- The pullback comparison for modules on schemes is an isomorphism in degree zero, at every
+module and not only at quasi-coherent ones. -/
+instance isIso_pullbackExteriorPowerComparison_zero :
+    IsIso (pullbackExteriorPowerComparison f 0) :=
+  -- Instance search does not find Mathlib's `IsIso` instance for `pullbackObjUnitToUnit`.
+  SheafOfModules.isIso_pullbackExteriorPowerComparison_zero (pullbackPushforwardAdjunction f)
+    (SheafOfModules.instIsIsoPullbackObjUnitToUnitOfFinal _)
 
 end
 

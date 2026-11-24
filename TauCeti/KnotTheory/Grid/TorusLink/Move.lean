@@ -14,10 +14,14 @@ public import TauCeti.KnotTheory.Grid.TorusLink.Basic
 The standard grid of the `(p + 1, q + 1)` torus link reflects to the standard grid of the
 `(q + 1, p + 1)` torus link (`GridDiagram.transpose_torusLink`), so the diagonal reflection of
 grid links (`GridLink.transpose`) exchanges the grid links the two grids present. In particular
-every standard `(1, q + 1)` torus link grid presents the unknot.
+every standard `(1, q + 1)` torus link grid presents the unknot, and when `p + 1` and `q + 1` are
+coprime the standard `(p + 1, q + 1)` torus link grid presents a grid knot
+(`GridLink.isKnot_toGridLink_torusLink`).
 
 ## Main results
 
+* `TauCeti.GridLink.isKnot_toGridLink_torusLink`: for coprime `p + 1` and `q + 1`, the standard
+  `(p + 1, q + 1)` torus link grid presents a grid knot.
 * `TauCeti.GridLink.toGridLink_transpose_torusLink`: the reflection exchanges the grid links of
   the standard `(p + 1, q + 1)` and `(q + 1, p + 1)` torus link grids.
 * `TauCeti.GridDiagram.toGridLink_torusLink_zero_left`: the standard `(1, q + 1)` torus link grid
@@ -34,6 +38,12 @@ public section
 namespace TauCeti
 
 namespace GridLink
+
+/-- When `p + 1` and `q + 1` are coprime, the standard `(p + 1, q + 1)` torus link grid presents a
+grid knot. -/
+theorem isKnot_toGridLink_torusLink {p q : ℕ} (h : (p + 1).Coprime (q + 1)) :
+    (GridDiagram.torusLink p q).toGridLink.IsKnot :=
+  (isKnot_toGridLink _).mpr ((GridDiagram.isKnot_torusLink_iff p q).mpr h)
 
 /-- The diagonal reflection exchanges the grid links of the standard `(p + 1, q + 1)` and
 `(q + 1, p + 1)` torus link grids. -/

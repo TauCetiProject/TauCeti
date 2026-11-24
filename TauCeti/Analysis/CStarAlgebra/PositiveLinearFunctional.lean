@@ -22,6 +22,13 @@ surjective star-algebra homomorphism carries increasing approximate units to inc
 approximate units, so pulling a positive functional back along it does not change the norm,
 `PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective`. In particular states pull back
 to states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
+For the same reason the norm is additive on positive functionals,
+`PositiveContinuousLinearMap.opNorm_add`.
+
+The bound `‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖` of Mathlib's
+`PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul` shows that a positive functional vanishes
+at every `a` with `ω (star a * a) = 0`
+(`PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`).
 
 ## Positive functionals in the weak-* dual
 
@@ -60,6 +67,20 @@ theorem opNorm_comp_ofClass_of_surjective (ω : B →P[ℂ] ℂ) (f : F) (hf : F
   exact Complex.ofReal_injective <| tendsto_nhds_unique
     ((ω.comp (.ofClass f)).tendsto_nhds_opNorm hl)
     (Filter.tendsto_map'_iff.mp (ω.tendsto_nhds_opNorm (hl.map f hf)))
+
+/-- The norm of a sum of positive functionals on a C⋆-algebra is the sum of their norms. -/
+theorem opNorm_add (τ σ : A →P[ℂ] ℂ) :
+    ‖((τ + σ : A →P[ℂ] ℂ) : A →L[ℂ] ℂ)‖ = ‖(τ : A →L[ℂ] ℂ)‖ + ‖(σ : A →L[ℂ] ℂ)‖ := by
+  have hl := CStarAlgebra.increasingApproximateUnit A
+  refine Complex.ofReal_injective <| tendsto_nhds_unique ((τ + σ).tendsto_nhds_opNorm hl) ?_
+  push_cast
+  exact (τ.tendsto_nhds_opNorm hl).add (σ.tendsto_nhds_opNorm hl)
+
+/-- A positive functional vanishes at every element `a` with `ω (star a * a) = 0`, since
+`‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖`. -/
+theorem map_eq_zero_of_map_star_mul_self_eq_zero (ω : A →P[ℂ] ℂ) {a : A}
+    (ha : ω (star a * a) = 0) : ω a = 0 := by
+  simpa [ha] using ω.norm_map_sq_le_opNorm_mul a
 
 end PositiveContinuousLinearMap
 

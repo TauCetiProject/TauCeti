@@ -6,18 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Comass
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!
 # Alternating forms on orthonormal frames
 
 The operator norm of an alternating map on a real inner product space
 can be tested on orthonormal frames. For real-valued forms this identifies the native norm
-with comass, the supremum of the absolute values on those frames; in positive degree, a one-sided
-upper bound on orthonormal frames suffices
-(`ContinuousAlternatingMap.opNorm_le_iff_apply_le_orthonormal`).
-The formula includes degree zero. On a finite-dimensional space, degrees greater than the dimension
-give an empty set, its real supremum is zero, and every alternating form vanishes.
+with comass, the supremum of the absolute values on those frames. The formula includes
+degree zero. On a finite-dimensional space, degrees greater than the dimension give an
+empty set, its real supremum is zero, and every alternating form vanishes.
 
 The bound criterion works for maps into any real normed space. Restriction to the span of
 an independent frame reduces it to the top-degree norm formula in an orthonormal basis;
@@ -96,18 +93,5 @@ the supremum of its absolute values on orthonormal frames, in every degree. -/
 theorem norm_eq_sSup_abs_orthonormal (ω : E [⋀^Fin k]→L[ℝ] ℝ) :
     ‖ω‖ = sSup {r | ∃ v : Fin k → E, Orthonormal ℝ v ∧ r = |ω v|} := by
   simpa only [Real.norm_eq_abs] using ω.norm_eq_sSup_norm_orthonormal
-
-/-- In positive degree, a nonnegative comass bound `‖φ‖ ≤ C` on a real alternating `k`-form is
-equivalent to the one-sided bound `φ v ≤ C` on all orthonormal frames `v`, since negating the
-first vector of an orthonormal frame preserves orthonormality and negates `φ v`. -/
-theorem opNorm_le_iff_apply_le_orthonormal {φ : E [⋀^Fin k]→L[ℝ] ℝ} (hk : 1 ≤ k) {C : ℝ}
-    (hC : 0 ≤ C) : ‖φ‖ ≤ C ↔ ∀ v : Fin k → E, Orthonormal ℝ v → φ v ≤ C := by
-  rw [φ.opNorm_le_iff_le_orthonormal hC]
-  refine ⟨fun h v hv ↦ (le_abs_self _).trans (by simpa only [Real.norm_eq_abs] using h v hv),
-    fun h v hv ↦ (Real.norm_eq_abs _).trans_le (abs_le.2 ⟨?_, h v hv⟩)⟩
-  let i₀ : Fin k := ⟨0, hk⟩
-  have hneg : φ (Function.update v i₀ (-v i₀)) = -φ v := by
-    simpa [neg_one_smul] using φ.map_update_smul v i₀ (-1 : ℝ) (v i₀)
-  linarith [h _ (hv.update_neg i₀)]
 
 end ContinuousAlternatingMap

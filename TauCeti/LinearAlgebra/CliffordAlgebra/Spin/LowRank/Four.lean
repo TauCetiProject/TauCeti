@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
--- Private: the Clifford-group characterization of the Lipschitz group and the reversal calculus
--- on odd elements are used only inside the proofs.
+-- Private: the Clifford-group characterization of the Lipschitz group, the reversal calculus
+-- on odd elements and conjugation by homogeneous units are used only inside the proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Four
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # The Spin group in dimension at most four
@@ -70,8 +71,9 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_le_four (Q : QuadraticForm
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_
   rw [involute_eq_of_mem_even (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)]
   exact mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four Q hV
-    (evenUnitaryGroup.mul_ι_mul_inv_mem_evenOdd_one Q hx m)
-    (evenUnitaryGroup.reverse_mul_ι_mul_inv Q ⟨x, hx⟩ m)
+    (Units.val_mul_mul_inv_mem_graded _ (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)
+      (ι_mem_evenOdd_one Q m))
+    (reverse_mul_mul_inv_eq_self (evenUnitaryGroup.reverse_mul_self Q ⟨x, hx⟩) (reverse_ι m))
 
 /-- For a nondegenerate quadratic space of positive dimension at most four, the Spin group fills
 the even unitary carrier inside Clifford units. -/
@@ -93,7 +95,7 @@ noncomputable def spinGroupEquivEvenUnitaryOfFinrankLeFour
       have hx : (x : (CliffordAlgebra Q)ˣ) ∈
           (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
         rw [range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_le_four Q hQ hV0 hV]
-        exact x.2
+        exact x.property
       obtain ⟨s, hs⟩ := hx
       refine ⟨s, Subtype.ext ?_⟩
       simpa only [coe_spinGroupToEvenUnitary_apply] using hs⟩

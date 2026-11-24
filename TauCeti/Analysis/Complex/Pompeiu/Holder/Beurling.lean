@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Holder.Higher
-public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Cauchy
+public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.IteratedFDeriv
+import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
 import TauCeti.Analysis.Complex.Wirtinger.Holder
 
 /-!
@@ -35,8 +36,8 @@ the Beurling operator is at most that of the Cauchy transform on the same discs.
   is at most that of `TauCeti.cauchyTransformCkCLM`.
 * `TauCeti.continuous_beurlingCkCLM_comp`: continuity in parameters for families of data with
   common support.
-* `TauCeti.beurlingCkCLM_apply_fst_zero_ae_eq_beurlingLp`: for smooth data the value field agrees
-  almost everywhere on the output disc with the Beurling operator on `Lᵖ(ℂ)`, `1 < p < ∞`.
+* `TauCeti.beurlingCkCLM_apply_fst_zero_ae_eq_beurlingLp`: the value field agrees almost
+  everywhere on the output disc with the Beurling operator on `Lᵖ(ℂ)`, `1 < p < ∞`.
 * `TauCeti.holderOnWith_wirtingerDeriv_cauchyTransform_norm_rpow_mul`: the cone-point check, in
   derivative form: for the source `‖z‖ ^ α χ(z)` the function `B f` is `α`-Hölder on every
   closed disc about `0`.
@@ -59,13 +60,6 @@ section Operator
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace ℝ F]
   [IsScalarTower ℝ ℂ F] {k : ℕ} {α : ℝ≥0} {c : ℂ} {r R : ℝ}
-
-omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] in
-private theorem hasCompactSupport_source
-    (f : supportedCkHolderSubmodule (E := ℂ) (F := F) k α (closedBall c r)) :
-    HasCompactSupport (f : CkHolderSpace k α ℂ F) :=
-  HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r)
-    (support_subset_of_mem_supportedCkHolderSubmodule f.property)
 
 /-- The Beurling transform `B f = ∂ (T f)` of compactly supported `C^{k,α}` data is globally
 `C^k`, for `0 < α < 1`. -/
@@ -160,9 +154,8 @@ theorem beurlingCkCLM_apply_fst (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0
     (beurlingCkCLM k hα hα1 hr hR f).1 i x =
       iteratedFDeriv ℝ i
         (fun w ↦ wirtingerDeriv (cauchyTransform (f : CkHolderSpace k α ℂ F)) w 1) x := by
-  have hT := (hasCompactSupport_source f).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv
-    hα hα1 (f : CkHolderSpace k α ℂ F).contDiff
-    (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
+  have hT := contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1
+    (isCompact_closedBall c r) f.property
   have hi : (i : ℕ) + 1 ≤ k + 1 := by omega
   rw [iteratedFDeriv_wirtingerDeriv_one (hT.of_le (by exact_mod_cast hi)), beurlingCkCLM,
     ContinuousLinearMap.comp_apply, beurlingPost_apply_fst]
@@ -178,9 +171,8 @@ theorem beurlingCkCLM_apply_snd (k : ℕ) (hα : 0 < α) (hα1 : α < 1) (hr : 0
     (beurlingCkCLM k hα hα1 hr hR f).2 x =
       iteratedFDeriv ℝ k
         (fun w ↦ wirtingerDeriv (cauchyTransform (f : CkHolderSpace k α ℂ F)) w 1) x := by
-  have hT := (hasCompactSupport_source f).contDiff_cauchyTransform_of_holderWith_iteratedFDeriv
-    hα hα1 (f : CkHolderSpace k α ℂ F).contDiff
-    (f : CkHolderSpace k α ℂ F).memHolder_iteratedFDeriv.holderWith
+  have hT := contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1
+    (isCompact_closedBall c r) f.property
   rw [iteratedFDeriv_wirtingerDeriv_one hT, beurlingCkCLM, ContinuousLinearMap.comp_apply,
     beurlingPost_apply_snd]
   exact congrArg (wirtingerOneCurryRight k) (cauchyTransformCkCLM_apply_snd k hα hα1 hr hR f x)
@@ -216,27 +208,31 @@ end Operator
 section Lp
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [NormedSpace ℝ G]
-  [IsScalarTower ℝ ℂ G] [FiniteDimensional ℂ G] [CompleteSpace G] {k : ℕ} {α : ℝ≥0} {c : ℂ}
-  {r R : ℝ}
+  [IsScalarTower ℝ ℂ G] [FiniteDimensional ℂ G] {k : ℕ} {α : ℝ≥0} {c : ℂ} {r R : ℝ}
 
-/-- **Agreement with the `Lᵖ` Beurling operator.** For smooth data in the supported `C^{k,α}`
-space and `1 < p < ∞`, the value field of `TauCeti.beurlingCkCLM` agrees almost everywhere on
-the output disc with the Beurling operator on `Lᵖ(ℂ)` applied to the data. -/
+/-- **Agreement with the `Lᵖ` Beurling operator.** For data in the supported `C^{k,α}` space and
+`1 < p < ∞`, the value field of `TauCeti.beurlingCkCLM` agrees almost everywhere on the output
+disc with the Beurling operator on `Lᵖ(ℂ)` applied to the data. The data lie in `Lᵖ(ℂ)` because
+they are continuous with compact support. Completeness of `G`, needed by `TauCeti.beurlingLp`, is
+not an extra hypothesis: the finite-dimensional space `G` is complete. -/
 theorem beurlingCkCLM_apply_fst_zero_ae_eq_beurlingLp (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
     (hR : 0 ≤ R) (f : supportedCkHolderSubmodule (E := ℂ) (F := G) k α (closedBall c r))
-    (hf : ContDiff ℝ ∞ (f : CkHolderSpace k α ℂ G)) {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
-    (hp_top : p ≠ (∞ : ℝ≥0∞)) (hfp : MemLp (f : CkHolderSpace k α ℂ G) p volume) :
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) :
+    haveI : CompleteSpace G := FiniteDimensional.completeSpace ℂ G
     ∀ᵐ x ∂volume, ∀ hx : x ∈ closedBall c R,
       (beurlingCkCLM k hα hα1 hr hR f).1 0 ⟨x, hx⟩ (0 : Fin 0 → ℂ) =
-        beurlingLp p hp hp_top (hfp.toLp _) x := by
+        beurlingLp p hp hp_top (((f : CkHolderSpace k α ℂ G).contDiff.continuous
+          |>.memLp_of_hasCompactSupport (.of_support_subset_isCompact (isCompact_closedBall c r)
+            (support_subset_of_mem_supportedCkHolderSubmodule f.property))).toLp _) x := by
   -- The real action is uniquely determined by the compatible complex action.
   cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := G)
-  have hc := hasCompactSupport_source f
-  have h := hc.wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp hf hp hp_top
-  have hL : (hf.continuous.memLp_of_hasCompactSupport (p := p) (μ := volume) hc).toLp _ =
-      hfp.toLp _ := rfl
-  rw [hL] at h
-  filter_upwards [h] with x hx hxR
+  have : CompleteSpace G := FiniteDimensional.completeSpace ℂ G
+  let u : CkHolderSpace k α ℂ G := f
+  have hT : ContDiff ℝ 1 (cauchyTransform u) :=
+    (contDiff_cauchyTransform_of_mem_supportedCkHolderSubmodule hα hα1 (isCompact_closedBall c r)
+      f.property).of_le (by norm_cast; omega)
+  filter_upwards [wirtingerDeriv_cauchyTransform_ae_eq_beurlingLp_of_memLp hp hp_top _
+    (support_subset_of_mem_supportedCkHolderSubmodule f.property) hT] with x hx hxR
   rw [beurlingCkCLM_apply_fst_zero]
   exact hx
 

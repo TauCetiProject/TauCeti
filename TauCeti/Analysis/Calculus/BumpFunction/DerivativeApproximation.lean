@@ -84,9 +84,7 @@ theorem ContDiff.exists_contDiff_hasCompactSupport_tendstoUniformly_iteratedFDer
   · intro n
     refine ⟨(ρ n).hasCompactSupport_normed.contDiff_convolution_left _
       (ρ n).contDiff_normed hf.continuous.locallyIntegrable, ?_⟩
-    have hρδ : (ρ n).rOut ≤ δ := by
-      simpa only [ρ, ContDiffBump.rOut_shrinking] using
-        (div_le_self hδ.le (by simp : (1 : ℝ) ≤ n + 1))
+    have hρδ : (ρ n).rOut ≤ δ := ContDiffBump.rOut_shrinking_le hδ n
     exact (ρ n).tsupport_normed_convolution_subset.trans
       (add_subset_add (closedBall_subset_closedBall hρδ) Subset.rfl)
   · intro k hk
