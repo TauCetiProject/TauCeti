@@ -88,25 +88,6 @@ theorem upperHalfPlanePoissonIntegralFun_def (h : ℝ → ℂ) (z : ℂ) :
     upperHalfPlanePoissonIntegralFun h z = ∫ x, upperHalfPlanePoissonKernel z x • h x := by
   rw [upperHalfPlanePoissonIntegralFun]
 
-/-- A function is integrable for the Poisson measure `dx / (1 + x ^ 2)` exactly when
-`h(x) / (1 + x ^ 2)` is Lebesgue integrable. -/
-theorem integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {h : ℝ → E} :
-    Integrable h upperHalfPlanePoissonMeasure ↔ Integrable (fun x ↦ (1 + x ^ 2)⁻¹ • h x) := by
-  rw [upperHalfPlanePoissonMeasure_eq_withDensity,
-    integrable_withDensity_iff_integrable_smul' (by fun_prop) (.of_forall fun _ ↦ by simp)]
-  simp_rw [ENNReal.toReal_ofReal (inv_nonneg.2 (by positivity : (0 : ℝ) ≤ 1 + _ ^ 2))]
-
-/-- A function integrable for the Poisson measure is Lebesgue a.e. strongly measurable: it is
-`(1 + x ^ 2) • ((1 + x ^ 2)⁻¹ • h x)`. -/
-theorem aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {h : ℝ → E}
-    (hh : Integrable h upperHalfPlanePoissonMeasure) : AEStronglyMeasurable h :=
-  ((by fun_prop : Continuous fun x : ℝ ↦ 1 + x ^ 2).aestronglyMeasurable.smul
-    (integrable_upperHalfPlanePoissonMeasure_iff_integrable_smul.1 hh).aestronglyMeasurable).congr
-      (.of_forall fun x ↦ by rw [Pi.smul_apply', smul_smul, mul_inv_cancel₀ (by positivity),
-        one_smul])
-
 /-- For `h` integrable for the Poisson measure, the measure `|h(x)| dx` is Poisson-finite. -/
 theorem isPoissonFinite_withDensity_enorm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {h : ℝ → E} (hh : Integrable h upperHalfPlanePoissonMeasure) :
