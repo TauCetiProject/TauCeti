@@ -13,31 +13,20 @@ public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.TorusQuotient
 # The unipotent radical of a solvable group over a perfect field
 
 Let `G` be a smooth geometrically connected affine group of finite type over a perfect field `k`
-whose geometric points form a solvable group. This file proves the perfect-field part of the
-structure theorem for `G` (Milne, Theorem 16.33(a)–(c)):
+whose geometric points form a solvable group. This file proves that the formation of the
+`k`-unipotent radical `R_u(G)` commutes with every field extension `K / k`, not only the separable
+algebraic ones of
+`TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal`
+(Milne, Theorem 16.33).
 
-* the affine quotient `G ⧸ R_u(G)` by the `k`-unipotent radical is a torus;
-* `R_u(G)` is the only connected normal smooth unipotent subgroup with torus quotient;
-* the formation of `R_u(G)` commutes with every field extension `K / k`, not only the separable
-  algebraic ones of
-  `TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal`.
-
-Over a perfect field the quotient `G ⧸ R_u(G)` is reductive
-(`TauCeti.FiniteTypeCommHopfAlgCat.reductive_coinvariants_unipotentRadical`) with solvable
-geometric points, so it is a torus by
-`TauCeti.reductiveCommHopfAlgProperty.torus_of_geometricallySolvable`.
-
-The base-change statement holds over any field once `G ⧸ R_u(G)` is a torus. A torus stays a torus
-after extension of scalars, and the points of a torus are semisimple; the image in a group with
-semisimple geometric points of the smooth unipotent radical of `G_K` is trivial. Hence the
-base change of `R_u(G)`, which is the kernel of `G_K → (G ⧸ R_u(G))_K`, is the unipotent radical
-of `G_K` by `TauCeti.FiniteTypeCommHopfAlgCat.
-unipotentRadicalDefiningIdeal_eq_kernelHopfIdeal_of_geometricallySemisimple`.
-
-The field-independent steps are in
-`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.TorusQuotient`, and the torus theorem
-`TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical_of_perfectField` is in
-`TauCeti.Algebra.AlgebraicGroup.Solvable.UnipotentRadical.Basic`.
+It combines two results from other files. The quotient `G ⧸ R_u(G)` is a torus by
+`TauCeti.FiniteTypeCommHopfAlgCat.torus_coinvariants_unipotentRadical_of_perfectField` in
+`TauCeti.Algebra.AlgebraicGroup.Solvable.UnipotentRadical.Basic`. Over any field, once
+`G ⧸ R_u(G)` is a torus, the formation of `R_u(G)` commutes with field extension by
+`TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_torus` in
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.TorusQuotient`, which rests on the uniqueness
+lemma `TauCeti.FiniteTypeCommHopfAlgCat.
+unipotentRadicalDefiningIdeal_eq_of_multiplicativeType_coinvariants` there.
 
 ## Main declarations
 
@@ -54,7 +43,7 @@ equality.
 
 ## References
 
-* J. S. Milne, *Algebraic Groups* (2017), Theorem 16.33(a)–(c), pp. 335–336.
+* J. S. Milne, *Algebraic Groups* (2017), Theorem 16.33, pp. 335–336.
 -/
 
 public section
