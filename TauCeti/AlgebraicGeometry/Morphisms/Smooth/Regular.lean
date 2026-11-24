@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.Smooth.Regular
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+import TauCeti.RingTheory.RegularLocalRing.Locus
 import TauCeti.RingTheory.RegularLocalRing.Smooth
 import TauCeti.RingTheory.Smooth.Field
 
@@ -102,8 +103,9 @@ theorem mem_smoothLocus_of_isRegularLocalRing_stalk {k : Type u} [Field k] [Perf
   -- the local ring of `X` at `x` is the localization of `Γ(X, U)` at `q`
   let := TopCat.Presheaf.algebra_section_stalk X.presheaf ⟨x, hxU⟩
   have := hU.isLocalization_stalk ⟨x, hxU⟩
-  have : IsRegularLocalRing (Localization.AtPrime q) := .of_ringEquiv
-    (IsLocalization.algEquiv q.primeCompl (X.presheaf.stalk x) _).toRingEquiv
+  have : IsRegularLocalRing (Localization.AtPrime q) := Excellence.mem_regularLocus.mp
+    ((Excellence.mem_regularLocus_iff_of_isLocalization (p := hU.primeIdealOf ⟨x, hxU⟩)
+      (X.presheaf.stalk x)).mpr ‹_›)
   exact formallySmooth_of_isRegularLocalRing
 
 /-- **A regular scheme locally of finite type over a perfect field is smooth**: if `k` is perfect,

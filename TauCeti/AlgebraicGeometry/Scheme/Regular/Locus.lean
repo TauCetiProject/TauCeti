@@ -38,6 +38,8 @@ for general locally Noetherian schemes (Stacks, Section 15.48).
 
 * `AlgebraicGeometry.Scheme.regularLocus`: the points of `X` with regular local ring.
 * `AlgebraicGeometry.Scheme.regularLocus_Spec`: on `Spec R` it is the regular locus of `R`.
+* `AlgebraicGeometry.Scheme.Hom.formallySmooth_stalkMap_toAlgebra`: at a smooth point, the stalk
+  map is formally smooth.
 * `AlgebraicGeometry.Scheme.Hom.mem_regularLocus_of_mem_smoothLocus`: a point at which a morphism
   is smooth and whose image is regular is regular.
 * `AlgebraicGeometry.Scheme.Hom.preimage_regularLocus`: flat, formally unramified morphisms locally
@@ -94,6 +96,16 @@ theorem Hom.preimage_regularLocus {Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] [Forma
   ext x
   exact f.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified x
 
+/-- At a point `x` where `f` is smooth, the stalk map at `x`, as an algebra, is formally
+smooth. -/
+theorem Hom.formallySmooth_stalkMap_toAlgebra {Y : Scheme.{u}} (f : X ⟶ Y)
+    [LocallyOfFinitePresentation f] {x : X} (hx : x ∈ f.smoothLocus) :
+    letI := (f.stalkMap x).hom.toAlgebra
+    Algebra.FormallySmooth (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  rw [← RingHom.formallySmooth_algebraMap, RingHom.algebraMap_toAlgebra]
+  exact f.mem_smoothLocus.mp hx
+
 /-- **Smooth points over regular points are regular.** Let `f : X ⟶ Y` be locally of finite
 presentation and smooth at `x`. If the local ring of `Y` at `f x` is regular, then so is the local
 ring of `X` at `x`: it is essentially of finite type and formally smooth over the local ring of
@@ -103,7 +115,7 @@ theorem Hom.mem_regularLocus_of_mem_smoothLocus {Y : Scheme.{u}} (f : X ⟶ Y)
     (hfx : f x ∈ Y.regularLocus) : x ∈ X.regularLocus := by
   let := (f.stalkMap x).hom.toAlgebra
   have := f.essFiniteType_stalkMap_toAlgebra x
-  have : Algebra.FormallySmooth (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := hx
+  have := f.formallySmooth_stalkMap_toAlgebra hx
   have : IsRegularLocalRing (Y.presheaf.stalk (f x)) := hfx
   exact IsRegularLocalRing.of_formallySmooth (R := Y.presheaf.stalk (f x))
 
