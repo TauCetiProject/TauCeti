@@ -22,7 +22,8 @@ principal-value existence argument at the crossing:
 
 * chord quotients `(γ b - s) / (γ a - s)` for `a, b` on a common side lie in
   `Complex.slitPlane` — the hypothesis under which the logarithmic fundamental theorem of
-  calculus (`Contour.integral_inv_sub_mul_deriv_eq_log`) applies on the excised pieces;
+  calculus (`AbsolutelyContinuousOnInterval.integral_inv_sub_mul_deriv_eq_log`) applies on the
+  excised pieces;
 * the arguments of the annular quotients converge as the excision endpoint tends to the
   crossing, which pins the angle contribution of each branch at the pole.
 

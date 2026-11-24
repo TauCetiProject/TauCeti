@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Contour.Argument.Rectangle.Divisor
 import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Contour.Argument.Lift
 import TauCeti.Analysis.Contour.Argument.Variation
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
 # The argument principle on a rectangle as a variation of the argument
@@ -73,8 +74,9 @@ theorem sub_eq_two_pi_mul_divisorCount_of_rectBoundary (hre : z.re ≤ w.re) (hi
       f (rectBoundary z w t) = ‖f (rectBoundary z w t)‖ * exp (I * θ t)) :
     θ 4 - θ 0 = 2 * π * divisorCount f U (Rectangle z w) := by
   have hu : uIcc (0 : ℝ) 4 = Icc 0 4 := uIcc_of_le (by norm_num)
-  have hint := integral_deriv_smul_logDeriv_eq_log_norm_add_I_mul_sub
-    (isPiecewiseC1On_rectBoundary z w) (fun t _ ↦ hreg _ (rectBoundary_mem_frontier t))
+  have hint := AbsolutelyContinuousOnInterval.integral_deriv_smul_logDeriv_eq_log_norm_add_I_mul_sub
+    (isPiecewiseC1On_rectBoundary z w).absolutelyContinuousOnInterval
+    (fun t _ ↦ hreg _ (rectBoundary_mem_frontier t))
     (fun t _ ↦ hne _ (rectBoundary_mem_frontier t)) (hu ▸ hθ) (hu ▸ hlift)
   rw [argumentPrinciple_rectBoundary_divisor hre him hRU hf
     fun x hx ↦ (hreg x hx).meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr (hne x hx),
