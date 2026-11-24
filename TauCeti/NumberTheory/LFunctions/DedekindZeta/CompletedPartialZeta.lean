@@ -40,8 +40,8 @@ From `mellinKernelFEPair` and the trace-dual kernel identity `mellinKernel_mixed
 we deduce meromorphic continuation to `ℂ`, analyticity away from simple poles at `s = 0` and
 `s = 1` with residues `-2 a₀ = -2 ^ (r₁ + r₂) R / w` and `2 a₀ = 2 ^ (r₁ + r₂) R / w`
 (`a₀ = mellinConstant K`), and Hecke's functional equation
-`completedPartialZetaClass c (1 - s) = completedPartialZetaClass ([𝔡] * c⁻¹) s`, where
-`[𝔡] = ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K), _⟩`
+`completedPartialZetaClass c (1 - s) = completedPartialZetaClass (differentClass K * c⁻¹) s`,
+where `TauCeti.LFunctions.differentClass K`
 (`= (ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ 1))⁻¹`) is the class of the different ideal.
 
 ## Main definitions
@@ -49,9 +49,14 @@ we deduce meromorphic continuation to `ℂ`, analyticity away from simple poles 
 * `TauCeti.LFunctions.completedPartialZetaClass`: the completed partial zeta function of an ideal
   class `c : ClassGroup (𝓞 K)` in meromorphic normal form on `ℂ`, continuing the ideal series
   `|d_K| ^ (s / 2) Γ_ℝ(s) ^ r₁ Γ_ℂ(s) ^ r₂ ∑_{𝔟 ∈ c} N(𝔟) ^ (-s)` from `Re s > 1`.
+* `TauCeti.LFunctions.differentClass`: the ideal class of `differentIdeal ℤ (𝓞 K)` in
+  `ClassGroup (𝓞 K)`.
 
 ## Main results
 
+* `TauCeti.LFunctions.differentClass_def`,
+  `TauCeti.LFunctions.differentClass_eq_inv_mk_dualEquiv_one`: defining formula and
+  inverse-different identity for `differentClass K`.
 * `TauCeti.LFunctions.completedPartialZetaClass_eq_toMeromorphicNFOn`: identification of
   `completedPartialZetaClass (ClassGroup.mk K I)⁻¹` with the normal form of
   `s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)`.
@@ -127,6 +132,32 @@ theorem meromorphic_completedPartialZetaClass (c : ClassGroup (𝓞 K)) :
     Meromorphic (completedPartialZetaClass c) :=
   meromorphicOn_univ.mp (meromorphicNFOn_completedPartialZetaClass c).meromorphicOn
 
+variable (K) in
+/-- **The ideal class of the different ideal** `differentIdeal ℤ (𝓞 K)` in `ClassGroup (𝓞 K)`. -/
+def differentClass : ClassGroup (𝓞 K) :=
+  ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K), mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩
+
+variable (K) in
+/-- Defining equation of `TauCeti.LFunctions.differentClass`. -/
+theorem differentClass_def :
+    differentClass K =
+      ClassGroup.mk0
+        ⟨differentIdeal ℤ (𝓞 K), mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩ :=
+  (rfl)
+
+variable (K) in
+/-- The ideal class of the different ideal equals the inverse of the class of the inverse
+different `FractionalIdeal.dualEquiv ℤ ℚ 1`. -/
+theorem differentClass_eq_inv_mk_dualEquiv_one :
+    differentClass K =
+      (ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ (1 : (FractionalIdeal (𝓞 K)⁰ K)ˣ)))⁻¹ := by
+  rw [differentClass_def, ClassGroup.mk0_differentIdeal ℤ ℚ (L := K)]
+
+private theorem exists_inv_classGroupMk (c : ClassGroup (𝓞 K)) :
+    ∃ I : (FractionalIdeal (𝓞 K)⁰ K)ˣ, (ClassGroup.mk K I)⁻¹ = c := by
+  obtain ⟨I, hI⟩ := ClassGroup.mk_surjective (𝓞 K) K c⁻¹
+  exact ⟨I, by rw [hI, inv_inv]⟩
+
 /-! ### Identification with the Mellin functional-equation pair -/
 
 /-- `s ↦ (mellinKernelFEPair hD (idealLattice K I)).Λ (s / 2)` is meromorphic on `ℂ`. -/
@@ -200,8 +231,7 @@ theorem completedPartialZetaClass_eq_tsum (c : ClassGroup (𝓞 K)) {s : ℂ} (h
         Gammaℂ s ^ nrComplexPlaces K *
         ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = c},
           (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) := by
-  obtain ⟨I, rfl⟩ := (inv_involutive.surjective.comp (ClassGroup.mk_surjective (𝓞 K) K)) c
-  dsimp only [Function.comp_apply]
+  obtain ⟨I, rfl⟩ := exists_inv_classGroupMk c
   let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
   rw [completedPartialZetaClass_eq_toMeromorphicNFOn hD I,
     toMeromorphicNFOn_apply_of_analyticAt (meromorphic_mellinKernelFEPair_Λ_div_two hD I)
@@ -308,8 +338,7 @@ theorem completedPartialZetaClass_eq_integral_unitCone {D : Set (realSpace K)}
 theorem analyticAt_completedPartialZetaClass (c : ClassGroup (𝓞 K)) {s : ℂ}
     (h0 : s ≠ 0) (h1 : s ≠ 1) :
     AnalyticAt ℂ (completedPartialZetaClass c) s := by
-  obtain ⟨I, rfl⟩ := (inv_involutive.surjective.comp (ClassGroup.mk_surjective (𝓞 K) K)) c
-  dsimp only [Function.comp_apply]
+  obtain ⟨I, rfl⟩ := exists_inv_classGroupMk c
   let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
   rw [completedPartialZetaClass_eq_toMeromorphicNFOn hD I,
     ← (meromorphicNFOn_toMeromorphicNFOn _ univ
@@ -324,8 +353,7 @@ theorem tendsto_sub_one_mul_completedPartialZetaClass (c : ClassGroup (𝓞 K)) 
     Tendsto (fun s : ℂ ↦ (s - 1) * completedPartialZetaClass c s) (𝓝[≠] 1)
       (𝓝 ((2 ^ (nrRealPlaces K + nrComplexPlaces K) * Units.regulator K /
         Units.torsionOrder K : ℝ) : ℂ)) := by
-  obtain ⟨I, rfl⟩ := (inv_involutive.surjective.comp (ClassGroup.mk_surjective (𝓞 K) K)) c
-  dsimp only [Function.comp_apply]
+  obtain ⟨I, rfl⟩ := exists_inv_classGroupMk c
   let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
   let P := mellinKernelFEPair hD (idealLattice K I)
   have hhalf : Tendsto (fun s : ℂ ↦ s / 2) (𝓝[≠] 1) (𝓝[≠] ((1 / 2 : ℝ) : ℂ)) := by
@@ -366,21 +394,15 @@ theorem completedPartialZetaClass_one (c : ClassGroup (𝓞 K)) :
 private theorem completedPartialZetaClass_one_sub_of_ne (c : ClassGroup (𝓞 K))
     {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1) :
     completedPartialZetaClass c (1 - s) =
-      completedPartialZetaClass
-        (ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K),
-          mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩ * c⁻¹) s := by
-  obtain ⟨I, rfl⟩ := (inv_involutive.surjective.comp (ClassGroup.mk_surjective (𝓞 K) K)) c
-  dsimp only [Function.comp_apply]
+      completedPartialZetaClass (differentClass K * c⁻¹) s := by
+  obtain ⟨I, rfl⟩ := exists_inv_classGroupMk c
   have h1s0 : 1 - s ≠ 0 := sub_ne_zero.mpr (Ne.symm h1)
   have h1s1 : 1 - s ≠ 1 := fun h ↦ h0 (sub_eq_self.mp h)
   let hD := isUnitFundamentalDomain_unitFundamentalDomain (K := K)
   let hD' := hD.inv.mul (traceShift_mem_normOneSurface (K := K))
   have hd : (ClassGroup.mk K (FractionalIdeal.dualEquiv ℤ ℚ I))⁻¹ =
-      ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K),
-        mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩ *
-        ((ClassGroup.mk K I)⁻¹)⁻¹ := by
-    rw [FractionalIdeal.classGroupMk_dualEquiv, mul_inv,
-      ClassGroup.mk0_differentIdeal ℤ ℚ (L := K)]
+      differentClass K * ((ClassGroup.mk K I)⁻¹)⁻¹ := by
+    rw [ClassGroup.mk_dualEquiv, mul_inv, differentClass_eq_inv_mk_dualEquiv_one]
   rw [completedPartialZetaClass_eq_mellinKernelFEPair_Λ hD I h1s0 h1s1, ← hd,
     completedPartialZetaClass_eq_mellinKernelFEPair_Λ hD' (FractionalIdeal.dualEquiv ℤ ℚ I) h0 h1]
   have hs0 : (1 - s) / 2 ≠ 0 := div_ne_zero h1s0 two_ne_zero
@@ -402,17 +424,16 @@ theorem tendsto_mul_completedPartialZetaClass_zero (c : ClassGroup (𝓞 K)) :
     Tendsto (fun s : ℂ ↦ s * completedPartialZetaClass c s) (𝓝[≠] 0)
       (𝓝 (-((2 ^ (nrRealPlaces K + nrComplexPlaces K) * Units.regulator K /
         Units.torsionOrder K : ℝ) : ℂ))) := by
-  let d : ClassGroup (𝓞 K) :=
-    ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K), mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩
   have hsub : Tendsto (fun s : ℂ ↦ 1 - s) (𝓝[≠] (0 : ℂ)) (𝓝[≠] 1) := by
     simpa only [sub_zero] using
       ((continuous_sub_left (1 : ℂ)).continuousAt (x := (0 : ℂ))).tendsto_nhdsNE
         fun _ _ h ↦ sub_right_injective h
-  have hlim := ((tendsto_sub_one_mul_completedPartialZetaClass (d * c⁻¹)).comp hsub).neg
+  have hlim :=
+    ((tendsto_sub_one_mul_completedPartialZetaClass (differentClass K * c⁻¹)).comp hsub).neg
   refine hlim.congr' ?_
   filter_upwards [self_mem_nhdsWithin,
     nhdsWithin_le_nhds (eventually_ne_nhds (zero_ne_one : (0 : ℂ) ≠ 1))] with s hs0 hs1
-  have hfe := completedPartialZetaClass_one_sub_of_ne (d * c⁻¹) hs0 hs1
+  have hfe := completedPartialZetaClass_one_sub_of_ne (differentClass K * c⁻¹) hs0 hs1
   rw [mul_inv, mul_inv_cancel_left, inv_inv] at hfe
   simp only [Function.comp_apply, hfe]
   ring
@@ -453,13 +474,11 @@ theorem completedPartialZetaClass_zero (c : ClassGroup (𝓞 K)) :
 /-! ### Functional equation -/
 
 /-- **Hecke's functional equation on ideal classes**, Neukirch VII (5.9):
-`completedPartialZetaClass c (1 - s) = completedPartialZetaClass ([𝔡] * c⁻¹) s`, where
-`[𝔡] = ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K), _⟩` is the class of the different ideal. -/
+`completedPartialZetaClass c (1 - s) = completedPartialZetaClass (differentClass K * c⁻¹) s`,
+where `differentClass K` is the ideal class of `differentIdeal ℤ (𝓞 K)`. -/
 theorem completedPartialZetaClass_one_sub (c : ClassGroup (𝓞 K)) (s : ℂ) :
     completedPartialZetaClass c (1 - s) =
-      completedPartialZetaClass
-        (ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K),
-          mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩ * c⁻¹) s := by
+      completedPartialZetaClass (differentClass K * c⁻¹) s := by
   by_cases h0 : s = 0
   · subst h0
     simp

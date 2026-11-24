@@ -123,9 +123,8 @@ private theorem analyticAt_sum_completedPartialZetaClass {s : ℂ} (h0 : s ≠ 0
 private theorem sum_completedPartialZetaClass_one_sub (s : ℂ) :
     (∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c (1 - s)) =
       ∑ c : ClassGroup (𝓞 K), completedPartialZetaClass c s := by
-  let d : ClassGroup (𝓞 K) :=
-    ClassGroup.mk0 ⟨differentIdeal ℤ (𝓞 K), mem_nonZeroDivisors_of_ne_zero differentIdeal_ne_bot⟩
-  let e : ClassGroup (𝓞 K) ≃ ClassGroup (𝓞 K) := (Equiv.inv _).trans (Equiv.mulLeft d)
+  let e : ClassGroup (𝓞 K) ≃ ClassGroup (𝓞 K) :=
+    (Equiv.inv _).trans (Equiv.mulLeft (differentClass K))
   simp_rw [fun c ↦ completedPartialZetaClass_one_sub c s]
   exact Equiv.sum_comp e (fun c ↦ completedPartialZetaClass c s)
 

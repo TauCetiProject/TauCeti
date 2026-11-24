@@ -49,7 +49,7 @@ rank is positive, whereas in unit rank `0` (`ℚ` and imaginary quadratic fields
   number formula at `s = 1` in `𝓝[≠] 1`.
 * `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_zero`,
   `TauCeti.LFunctions.analyticOrderAt_dedekindZetaC_zero`,
-  `TauCeti.LFunctions.tendsto_dedekindZetaC_div_pow_rank_nhdsNE_zero`,
+  `TauCeti.LFunctions.tendsto_dedekindZetaC_div_pow_rank_zero`,
   `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_eq_zero`,
   `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_pos`: vanishing order `r₁ + r₂ - 1`, leading
   coefficient `-h R / w`, and value at `s = 0`.
@@ -246,7 +246,7 @@ private theorem uncompletedProduct_div_pow_rank_eq (K : Type*) [Field K] [Number
 variable (K) in
 /-- **Leading coefficient of the Dedekind zeta function at `s = 0`**, Neukirch VII Corollary 5.11:
 `dedekindZetaC K s / s ^ rank K → -h R / w` as `s → 0`. -/
-theorem tendsto_dedekindZetaC_div_pow_rank_nhdsNE_zero :
+theorem tendsto_dedekindZetaC_div_pow_rank_zero :
     Tendsto (fun s : ℂ ↦ dedekindZetaC K s / s ^ NumberField.Units.rank K) (𝓝[≠] 0)
       (𝓝 (-(((classNumber K : ℝ) * regulator K / torsionOrder K : ℝ) : ℂ))) := by
   have hdiscr : Tendsto (fun s : ℂ ↦ ((|discr K| : ℤ) : ℂ) ^ (-s / 2)) (𝓝[≠] 0) (𝓝 1) := by
@@ -278,7 +278,7 @@ theorem dedekindZetaC_zero_of_rank_eq_zero (hr : NumberField.Units.rank K = 0) :
   have hcont : Tendsto (dedekindZetaC K) (𝓝[≠] 0) (𝓝 (dedekindZetaC K 0)) :=
     (analyticAt_dedekindZetaC (K := K) zero_ne_one).continuousAt.tendsto.mono_left
       nhdsWithin_le_nhds
-  have hlim := tendsto_dedekindZetaC_div_pow_rank_nhdsNE_zero K
+  have hlim := tendsto_dedekindZetaC_div_pow_rank_zero K
   simp only [hr, pow_zero, div_one] at hlim
   exact tendsto_nhds_unique hcont hlim
 
@@ -345,7 +345,7 @@ theorem tendsto_sub_one_mul_dedekindZetaC :
       (𝓝 (meromorphicTrailingCoeffAt (dedekindZetaC K) 1)) := by
     have h := (meromorphic_dedekindZetaC K 1).tendsto_nhds_meromorphicTrailingCoeffAt
     rw [meromorphicOrderAt_dedekindZetaC_one K] at h
-    simpa [Pi.mul_def] using h
+    simpa only [WithTop.untop₀_coe, neg_neg, zpow_one, smul_eq_mul, Pi.mul_def] using h
   have hreal : Tendsto (fun x : ℝ ↦ (x - 1 : ℂ) * dedekindZetaC K x) (𝓝[>] (1 : ℝ))
       (𝓝 (meromorphicTrailingCoeffAt (dedekindZetaC K) 1)) := by
     refine hlim.comp (tendsto_nhdsWithin_iff.mpr ⟨?_, ?_⟩)

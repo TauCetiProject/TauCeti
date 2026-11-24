@@ -17,7 +17,7 @@ adding a `Mathlib.RingTheory.ClassGroup.Basic` dependency to
 
 ## Main results
 
-* `FractionalIdeal.classGroupMk_dualEquiv`: the ideal class of `dualEquiv R K I` is
+* `ClassGroup.mk_dualEquiv`: the ideal class of `dualEquiv R K I` is
   `[dualEquiv R K 1] * [I]⁻¹`.
 * `ClassGroup.mk0_differentIdeal`: the ideal class of `differentIdeal R S` is
   `[dualEquiv R K 1]⁻¹`.
@@ -39,7 +39,7 @@ variable [IsFractionRing S L] [IsIntegralClosure S R L]
 
 /-- The ideal class of the trace dual `FractionalIdeal.dualEquiv R K I` is the class of the inverse
 different `dualEquiv R K 1` times `[I]⁻¹`. -/
-theorem FractionalIdeal.classGroupMk_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
+theorem ClassGroup.mk_dualEquiv (I : (FractionalIdeal S⁰ L)ˣ) :
     ClassGroup.mk L (FractionalIdeal.dualEquiv R K I) =
       ClassGroup.mk L (FractionalIdeal.dualEquiv R K 1) * (ClassGroup.mk L I)⁻¹ := by
   rw [FractionalIdeal.dualEquiv_eq_mul_inv, map_mul, map_inv]
