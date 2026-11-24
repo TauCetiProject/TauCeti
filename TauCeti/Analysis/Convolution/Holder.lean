@@ -34,7 +34,7 @@ namespace TauCeti
 section
 
 variable {E 𝕜 F : Type*} [Sub E] [MeasurableSpace E] {μ : Measure E}
-  [SeminormedAddCommGroup 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [SMulZeroClass 𝕜 F] [IsBoundedSMul 𝕜 F]
   {K : E → 𝕜} {f : E → F} {M : ℝ}
 
@@ -43,12 +43,8 @@ its `L¹` norm. -/
 theorem norm_integral_kernel_smul_sub_le (hK : Integrable K μ) {w : E}
     (hM : ∀ᵐ z ∂μ, ‖f (w - z)‖ ≤ M) :
     ‖∫ z, K z • f (w - z) ∂μ‖ ≤ (∫ z, ‖K z‖ ∂μ) * M := by
-  have hKn : Integrable (fun z ↦ ‖K z‖) μ :=
-    ⟨hK.aestronglyMeasurable.norm, by
-      simpa only [HasFiniteIntegral, Real.eNorm_eq_ofReal (norm_nonneg _),
-        ofReal_norm] using hK.hasFiniteIntegral⟩
   calc
-    _ ≤ ∫ z : E, ‖K z‖ * M ∂μ := norm_integral_le_of_norm_le (hKn.mul_const M)
+    _ ≤ ∫ z : E, ‖K z‖ * M ∂μ := norm_integral_le_of_norm_le (hK.norm.mul_const M)
       (hM.mono fun z hz ↦ (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hz (norm_nonneg _)))
     _ = _ := integral_mul_const _ _
 

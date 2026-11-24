@@ -273,7 +273,8 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le {p 
           (preciseRepresentative μ (W1p.value u) y) ≤ M * (ρ / 2) := fun y hy =>
       ((hlip x hx).dist_le_mul x (mem_ball_self (by positivity)) y hy).trans
         (mul_le_mul_of_nonneg_left (mem_ball'.1 hy).le M.coe_nonneg)
-    have hle := norm_le_of_forall_dist_le measurableSet_ball.nullMeasurableSet
+    have hle := norm_le_add_toReal_eLpNorm_div_of_forall_dist_le
+      measurableSet_ball.nullMeasurableSet
       (measure_ball_pos μ x (by positivity)).ne' hosc
       (ae_restrict_of_ae_restrict_of_subset hxΩ (W1p.ae_eq_preciseRepresentative u))
       (zero_lt_one.trans_le Fact.out).ne' (W1p.eLpNorm_value_restrict_ne_top u hxΩ)

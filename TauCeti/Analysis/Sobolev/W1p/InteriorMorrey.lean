@@ -300,7 +300,8 @@ theorem W1p.exists_norm_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
       (Real.rpow_le_rpow dist_nonneg hxy (NNReal.coe_nonneg _)) (by positivity)
       (by positivity))
   -- Average the oscillation bound over `B`.
-  have havg := norm_le_of_forall_dist_le measurableSet_ball.nullMeasurableSet
+  have havg := norm_le_add_toReal_eLpNorm_div_of_forall_dist_le
+    measurableSet_ball.nullMeasurableSet
     (measure_ball_pos mu x hr).ne' hosc
     (ae_restrict_of_ae_restrict_of_subset hBΩ (W1p.ae_eq_preciseRepresentative u))
     (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
