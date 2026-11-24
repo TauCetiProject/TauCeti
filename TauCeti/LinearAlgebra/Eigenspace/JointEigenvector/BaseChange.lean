@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Artinian.Socle
 public import TauCeti.RingTheory.Support.BaseChange
 public import Mathlib.RingTheory.Support
 public import Mathlib.RingTheory.TensorProduct.Maps
+import TauCeti.RingTheory.TensorProduct.CentralBaseChange
 
 /-!
 # Joint eigenvectors of a finite algebra after scalar extension to a field
@@ -72,6 +73,12 @@ theorem annihilator_le_ker_of_baseChange_eq_smul (φ : A →ₐ[O] k) {v : k ⊗
   rw [h0, LinearMap.baseChange_zero, LinearMap.zero_apply, eq_comm, smul_eq_zero] at this
   exact this.resolve_right hv
 
+section CentralBaseChange
+
+open TauCeti.CentralBaseChange
+
+attribute [local instance low] TauCeti.CentralBaseChange.module
+
 /-- A character `φ` of a finite `O`-algebra `A` which acts on `k ⊗[O] L`, through some nonzero
 `k`-linear map, by multiplication by `φ` has a nonzero joint eigenvector in `k ⊗[O] L`. -/
 private theorem exists_ne_zero_forall_baseChange_eq_smul_of_linearMap [Module.Finite O A]
@@ -79,35 +86,26 @@ private theorem exists_ne_zero_forall_baseChange_eq_smul_of_linearMap [Module.Fi
     (hπ : π ≠ 0) (hπφ : ∀ (a : A) (v : k ⊗[O] L),
       π ((Algebra.lsmul O O L a).baseChange k v) = φ a • π v) :
     ∃ v : k ⊗[O] L, v ≠ 0 ∧ ∀ a : A, (Algebra.lsmul O O L a).baseChange k v = φ a • v := by
-  -- `k ⊗[O] A` acts on `k ⊗[O] L` through `Φ`, and `χ` is the extension of `φ` to it.
-  let Φ : k ⊗[O] A →ₐ[k] Module.End k (k ⊗[O] L) :=
-    Algebra.TensorProduct.lift (Algebra.ofId k _)
-      ((Module.End.baseChangeHom O k L).comp (Algebra.lsmul O O L))
-      fun x _ ↦ Algebra.commute_algebraMap_left x _
-  have hΦ (c : k) (a : A) :
-      Φ (c ⊗ₜ a) = algebraMap k _ c * (Algebra.lsmul O O L a).baseChange k :=
-    Algebra.TensorProduct.lift_tmul _ _ _ _ _
+  -- `k ⊗[O] A` acts on `k ⊗[O] L`, and `χ` is the extension of `φ` to it.
   let χ : k ⊗[O] A →ₐ[k] k :=
     Algebra.TensorProduct.lift (Algebra.ofId k k) φ fun _ _ ↦ Commute.all _ _
-  let _ : Module (k ⊗[O] A) (k ⊗[O] L) := Module.compHom _ Φ.toRingHom
-  -- this is the definition of the module structure just introduced
-  have hsmul (b : k ⊗[O] A) (v : k ⊗[O] L) : b • v = Φ b v := rfl
   have : IsArtinianRing (k ⊗[O] A) := IsArtinianRing.of_finite k _
   -- `π` turns the action of `b` into multiplication by `χ b`.
-  have hπχ (b : k ⊗[O] A) (v : k ⊗[O] L) : π (Φ b v) = χ b • π v := by
+  have hπχ (b : k ⊗[O] A) (v : k ⊗[O] L) : π (b • v) = χ b • π v := by
     induction b using TensorProduct.inductionOn with
-    | tmul c a => simp [hΦ, χ, hπφ, mul_smul]
+    | tmul c a => simp [smul_def, lsmul_tmul, χ, hπφ, mul_smul]
     | add x y hx hy => simp [add_smul, hx, hy]
   -- Hence `χ` vanishes on the annihilator of `k ⊗[O] L`, and the socle provides the eigenvector.
   have hann : Module.annihilator (k ⊗[O] A) (k ⊗[O] L) ≤ RingHom.ker χ := by
     intro b hb
     obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hπ
     have := hπχ b v
-    rw [← hsmul, Module.mem_annihilator.1 hb, map_zero, eq_comm, smul_eq_zero] at this
+    rw [Module.mem_annihilator.1 hb, map_zero, eq_comm, smul_eq_zero] at this
     exact this.resolve_right hv
-  have : IsScalarTower k (k ⊗[O] A) (k ⊗[O] L) := ⟨fun c b v ↦ by simp [hsmul, map_smul]⟩
   obtain ⟨v, hv0, hv⟩ := χ.exists_ne_zero_forall_smul_eq_smul_of_annihilator_le hann
-  exact ⟨v, hv0, fun a ↦ by simpa [hsmul, hΦ, χ] using hv (1 ⊗ₜ a)⟩
+  exact ⟨v, hv0, fun a ↦ by simpa [smul_def, lsmul_tmul, χ] using hv (1 ⊗ₜ a)⟩
+
+end CentralBaseChange
 
 variable [Module.Finite O A] [Module.Finite A L]
 
