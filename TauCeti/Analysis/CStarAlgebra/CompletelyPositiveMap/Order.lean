@@ -199,6 +199,9 @@ def conj (b : A₁) : A₁ →CP A₁ where
 
 @[simp] theorem conj_apply (b a : A₁) : conj b a = star b * a * b := (rfl)
 
+@[simp] theorem toLinearMap_conj (b : A₁) :
+    (conj b).toLinearMap = LinearMap.mulLeftRight ℂ (star b, b) := (rfl)
+
 end General
 
 section UnitalDomain

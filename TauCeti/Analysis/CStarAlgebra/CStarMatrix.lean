@@ -310,7 +310,7 @@ theorem sum_star_mul_mul_eq_dotProduct_mulVec [Fintype n] [NonUnitalSemiring A] 
     (M : CStarMatrix n n A) (x : n → A) :
     ∑ i, ∑ j, star (x i) * M i j * x j = star x ⬝ᵥ (ofMatrix.symm M *ᵥ x) := by
   rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]
-  rfl
+  simp [ofMatrix_symm_apply]
 
 /-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
 self-adjoint is self-adjoint. -/
@@ -459,11 +459,14 @@ theorem map_fromBlocks_inl_nonneg {k m : Type*} [Fintype k] [Fintype m]
   rw [← map_le_map_iff e₂, map_zero]
   convert extend_nonneg hf hM₁ using 1
   ext ⟨i, p⟩ ⟨j, q⟩
-  rcases p with p | p <;> rcases q with q | q <;> simp [e₂, e₁]
-  · simp only [show (i, Sum.inl p) = Prod.map id Sum.inl (i, p) from rfl, hf.extend_apply,
-      show (j, Sum.inl q) = Prod.map id Sum.inl (j, q) from rfl]
-    rfl
-  · simp only [show (i, Sum.inl p) = Prod.map id Sum.inl (i, p) from rfl, hf.extend_apply]
+  have h_ext (g : k × n → A) (e' : k × (n ⊕ m) → A) (i : k) (p : n) :
+      Function.extend (Prod.map id Sum.inl) g e' (i, Sum.inl p) = g (i, p) :=
+    hf.extend_apply g e' (i, p)
+  rcases p with p | p <;> rcases q with q | q
+  · simp [e₂, e₁, h_ext, ofMatrix_symm_apply]
+  · simp [e₂, e₁, h_ext]
+  · simp [e₂, e₁]
+  · simp [e₂, e₁]
 
 /-- Extracting the bottom-right block of each entry of a positive block matrix
 `M : CStarMatrix k k (CStarMatrix (n ⊕ m) (n ⊕ m) A)` preserves positivity. -/
