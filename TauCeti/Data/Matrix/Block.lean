@@ -34,7 +34,8 @@ with `h'` shifted above every value of `h`. When the nonzero entries of square m
 The four blocks of a product `B * C` of rectangular block matrices are computed directly in terms
 of the blocks of `B` and `C` via `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`,
 `Matrix.toBlocks₂₁_mul`, and `Matrix.toBlocks₂₂_mul`, over any type with
-`[AddCommMonoid α] [Mul α]`.
+`[AddCommMonoid α] [Mul α]`. The blocks also commute with entrywise maps
+(`Matrix.toBlocks₁₁_map` and its three companions).
 
 For an upper two-block matrix, the diagonal blocks of its powers are the powers of the diagonal
 blocks. Its off-diagonal block is the finite convolution of the powers of the two diagonal
@@ -45,6 +46,8 @@ and empty blocks.
 
 * `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
+* `Matrix.toBlocks₁₁_map`, `Matrix.toBlocks₁₂_map`, `Matrix.toBlocks₂₁_map`,
+  `Matrix.toBlocks₂₂_map`: the four blocks of an entrywise image.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
 * `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
@@ -100,6 +103,36 @@ public theorem toBlocks₂₂_mul (B : Matrix (n ⊕ o) (l ⊕ m) α) (C : Matri
     Fintype.sum_sum_type]
 
 end ToBlocksMul
+
+section ToBlocksMap
+
+variable {n o l m α β : Type*}
+
+/-- The upper-left block commutes with entrywise maps. -/
+@[simp]
+public theorem toBlocks₁₁_map (M : Matrix (n ⊕ o) (l ⊕ m) α) (f : α → β) :
+    (M.map f).toBlocks₁₁ = M.toBlocks₁₁.map f :=
+  (rfl)
+
+/-- The upper-right block commutes with entrywise maps. -/
+@[simp]
+public theorem toBlocks₁₂_map (M : Matrix (n ⊕ o) (l ⊕ m) α) (f : α → β) :
+    (M.map f).toBlocks₁₂ = M.toBlocks₁₂.map f :=
+  (rfl)
+
+/-- The lower-left block commutes with entrywise maps. -/
+@[simp]
+public theorem toBlocks₂₁_map (M : Matrix (n ⊕ o) (l ⊕ m) α) (f : α → β) :
+    (M.map f).toBlocks₂₁ = M.toBlocks₂₁.map f :=
+  (rfl)
+
+/-- The lower-right block commutes with entrywise maps. -/
+@[simp]
+public theorem toBlocks₂₂_map (M : Matrix (n ⊕ o) (l ⊕ m) α) (f : α → β) :
+    (M.map f).toBlocks₂₂ = M.toBlocks₂₂.map f :=
+  (rfl)
+
+end ToBlocksMap
 
 /-- The power of an upper two-block matrix, with its off-diagonal block given by the finite
 convolution of the two diagonal-block powers. -/
