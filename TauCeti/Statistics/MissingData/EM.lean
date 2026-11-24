@@ -5,10 +5,14 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Order.Filter.Extr
+import TauCeti.InformationTheory.KullbackLeibler.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
@@ -65,14 +69,33 @@ quantities. They have their statistical meaning only under side conditions:
   `Q(θ | θ') = L(θ')⁻¹ ∫ f θ' log f θ dρ` when `f θ'` is almost everywhere nonnegative.
 * `MeasureTheory.Measure.isEMStep_iff_isMaxOn`: an EM step is a maximizer of the totalized
   criterion `Q(· | θ')` on `Θ`.
+* `MeasureTheory.Measure.llr_missingLaw_ae_eq`: when `f θ` is integrable and almost everywhere
+  positive, the log-likelihood ratio of the conditional laws at `θ'` and `θ` is
+  `log f θ' - log f θ + log L(θ) - log L(θ')`.
+* `MeasureTheory.Measure.emQ_sub_le_obsLogLikelihood_sub`: the EM identity
+  `log L(θ) - log L(θ') = Q(θ | θ') - Q(θ' | θ') + KL(k_θ' ‖ k_θ)` and the resulting inequality,
+  where `k_θ` is the conditional law at `θ`.
+* `MeasureTheory.Measure.obsLogLikelihood_le_of_isEMStep`: an EM step does not decrease the
+  observed-data log-likelihood, and at equality the conditional laws and the criteria agree.
+* `MeasureTheory.Measure.IsEMStep.hasGradientAt_obsLogLikelihood_zero`: an interior fixed point
+  of EM at which Fisher's identity holds is a stationary point of the observed-data
+  log-likelihood.
 
 A closing example on a two-point missing part exhibits an EM step and rejects a competing
 candidate.
 
+## Implementation notes
+
+The Kullback–Leibler step of the EM identity follows `CKSD/Bayes/Evidence/Bounds.lean` of the
+lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>): the log-likelihood ratio of the two
+conditional laws is computed from their densities (`llr_withDensity_ofReal_ae_eq`) and integrated
+against the first, which turns Mathlib's `toReal_klDiv_of_measure_eq` into the identity. No
+σ-finiteness of `ρ` is assumed.
+
 ## References
 
 * R. J. A. Little and D. B. Rubin, *Statistical Analysis with Missing Data*, 3rd ed., Wiley
-  (2019), Section 8.4.1, (8.13)–(8.15), pp. 193–194.
+  (2019), Section 8.4.1, (8.13)–(8.18), pp. 193–194, and Theorems 8.1–8.2, pp. 194–195.
 -/
 
 public section
@@ -81,7 +104,7 @@ noncomputable section
 
 open MeasureTheory
 
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace MeasureTheory.Measure
 
@@ -267,6 +290,137 @@ theorem isMaxOn (h : ρ.IsEMStep Θ f θ' θ'') : IsMaxOn (fun θ ↦ ρ.emQ f �
   isMaxOn_iff.2 h.2
 
 end IsEMStep
+
+/-! ### Monotonicity of EM -/
+
+/-- The conditional law of the missing part is always a finite measure: when `f θ` is integrable
+its density `f θ / L(θ)` is integrable, and otherwise it is the junk value `0`. -/
+instance isFiniteMeasure_missingLaw : IsFiniteMeasure (ρ.missingLaw f θ) := by
+  by_cases hi : Integrable (f θ) ρ
+  · exact isFiniteMeasure_withDensity_ofReal (hi.div_const _).2
+  · rw [missingLaw_of_obsLikelihood_eq_zero (integral_undef hi)]
+    infer_instance
+
+/-- Every conditional law of the missing part is absolutely continuous with respect to the one at
+a parameter `θ` where the complete-data density is integrable and almost everywhere positive. -/
+theorem absolutelyContinuous_missingLaw (hi : Integrable (f θ) ρ)
+    (hpos : ∀ᵐ z ∂ρ, 0 < f θ z) (θ' : E) : ρ.missingLaw f θ' ≪ ρ.missingLaw f θ := by
+  rcases eq_zero_or_neZero ρ with rfl | _
+  · simp
+  have hL := obsLikelihood_pos hi hpos
+  refine (missingLaw_absolutelyContinuous θ').trans (withDensity_absolutelyContinuous'
+    (hi.aemeasurable.div_const _).ennreal_ofReal ?_)
+  filter_upwards [hpos] with z hz
+  simpa using div_pos hz hL
+
+/-- The log-likelihood ratio of the conditional laws `k_θ'`, `k_θ` of the missing part is,
+`k_θ'`-almost surely, the difference of the complete-data log-likelihoods minus that of the
+observed-data log-likelihoods: `log (dk_θ' / dk_θ) = log f θ' - log f θ + log L(θ) - log L(θ')`.
+Only `f θ` needs to be integrable and almost everywhere positive. -/
+theorem llr_missingLaw_ae_eq (hi : Integrable (f θ) ρ) (hpos : ∀ᵐ z ∂ρ, 0 < f θ z) (θ' : E) :
+    llr (ρ.missingLaw f θ') (ρ.missingLaw f θ) =ᵐ[ρ.missingLaw f θ'] fun z ↦
+      Real.log (f θ' z) - Real.log (f θ z) +
+        (ρ.obsLogLikelihood f θ - ρ.obsLogLikelihood f θ') := by
+  by_cases hi' : Integrable (f θ') ρ
+  swap
+  · simp [missingLaw_of_obsLikelihood_eq_zero (integral_undef hi'), Filter.EventuallyEq]
+  rcases eq_zero_or_neZero ρ with rfl | _
+  · simp [Filter.EventuallyEq]
+  have hL := obsLikelihood_pos hi hpos
+  have hfθ := (missingLaw_absolutelyContinuous (f := f) θ').ae_le hpos
+  have : SigmaFinite (ρ.withDensity fun z ↦ ENNReal.ofReal (f θ z / ρ.obsLikelihood f θ)) :=
+    inferInstanceAs (SigmaFinite (ρ.missingLaw f θ))
+  simp only [missingLaw_def] at hfθ ⊢
+  have hfθ' : ∀ᵐ z ∂ρ.withDensity fun z ↦ ENNReal.ofReal (f θ' z / ρ.obsLikelihood f θ'),
+      0 < f θ' z / ρ.obsLikelihood f θ' := by
+    rw [ae_withDensity_iff' (hi'.aemeasurable.div_const _).ennreal_ofReal]
+    exact .of_forall fun z hz ↦ ENNReal.ofReal_pos.1 (pos_iff_ne_zero.2 hz)
+  filter_upwards [llr_withDensity_ofReal_ae_eq (hi'.aemeasurable.div_const _)
+    (hi.aemeasurable.div_const _) (hpos.mono fun z hz ↦ div_pos hz hL), hfθ, hfθ']
+    with z hz hfz hfz'
+  obtain ⟨hf', hL'⟩ := div_ne_zero_iff.1 hfz'.ne'
+  rw [hz, obsLogLikelihood_def, obsLogLikelihood_def, Real.log_div hf' hL',
+    Real.log_div hfz.ne' hL.ne']
+  ring
+
+/-- The Kullback–Leibler divergence between two conditional laws `k_θ'`, `k_θ` of the missing
+part is finite when `f θ` is integrable and almost everywhere positive and the complete-data
+log-likelihoods at `θ` and `θ'` are integrable under `k_θ'`. -/
+theorem klDiv_missingLaw_ne_top (hi : Integrable (f θ) ρ) (hpos : ∀ᵐ z ∂ρ, 0 < f θ z)
+    (hQ : Integrable (fun z ↦ Real.log (f θ z)) (ρ.missingLaw f θ'))
+    (hQ' : Integrable (fun z ↦ Real.log (f θ' z)) (ρ.missingLaw f θ')) :
+    InformationTheory.klDiv (ρ.missingLaw f θ') (ρ.missingLaw f θ) ≠ ∞ :=
+  InformationTheory.klDiv_ne_top (absolutelyContinuous_missingLaw hi hpos θ')
+    (((hQ'.sub hQ).add (integrable_const _)).congr (llr_missingLaw_ae_eq hi hpos θ').symm)
+
+/-- **The EM identity and inequality**: the gain in observed-data log-likelihood is the gain in
+the EM criterion plus a Kullback–Leibler divergence,
+`log L(θ) - log L(θ') = Q(θ | θ') - Q(θ' | θ') + KL(k_θ' ‖ k_θ)` with `k_θ = missingLaw ρ f θ`,
+so the gain in `Q` bounds it (Little–Rubin, (8.17)–(8.18), p. 194). -/
+theorem emQ_sub_le_obsLogLikelihood_sub (hpos : ∀ᵐ z ∂ρ, 0 < f θ z)
+    (hpos' : ∀ᵐ z ∂ρ, 0 < f θ' z) (hi : Integrable (f θ) ρ) (hi' : Integrable (f θ') ρ)
+    (hQ : Integrable (fun z ↦ Real.log (f θ z)) (ρ.missingLaw f θ'))
+    (hQ' : Integrable (fun z ↦ Real.log (f θ' z)) (ρ.missingLaw f θ')) :
+    ρ.obsLogLikelihood f θ - ρ.obsLogLikelihood f θ' =
+        ρ.emQ f θ θ' - ρ.emQ f θ' θ' +
+          (InformationTheory.klDiv (ρ.missingLaw f θ') (ρ.missingLaw f θ)).toReal ∧
+      ρ.emQ f θ θ' - ρ.emQ f θ' θ' ≤ ρ.obsLogLikelihood f θ - ρ.obsLogLikelihood f θ' := by
+  rcases eq_zero_or_neZero ρ with rfl | _
+  · simp
+  have := isProbabilityMeasure_missingLaw_of_pos hi hpos
+  have := isProbabilityMeasure_missingLaw_of_pos hi' hpos'
+  have hKL : (InformationTheory.klDiv (ρ.missingLaw f θ') (ρ.missingLaw f θ)).toReal =
+      ρ.emQ f θ' θ' - ρ.emQ f θ θ' + (ρ.obsLogLikelihood f θ - ρ.obsLogLikelihood f θ') := by
+    rw [InformationTheory.toReal_klDiv_of_measure_eq
+        (absolutelyContinuous_missingLaw hi hpos θ') (by simp),
+      integral_congr_ae (llr_missingLaw_ae_eq hi hpos θ'),
+      integral_add (f := fun z ↦ Real.log (f θ' z) - Real.log (f θ z)) (hQ'.sub hQ)
+        (integrable_const _), integral_sub hQ' hQ, integral_const,
+      probReal_univ, one_smul, emQ_def, emQ_def]
+  constructor <;> linarith [ENNReal.toReal_nonneg (a := InformationTheory.klDiv
+    (ρ.missingLaw f θ') (ρ.missingLaw f θ))]
+
+/-- **Monotonicity of EM** (Little–Rubin, Theorem 8.1, p. 194): an EM step does not decrease the
+observed-data log-likelihood, and at equality the conditional laws of the missing part and the
+values of the EM criterion agree. -/
+theorem obsLogLikelihood_le_of_isEMStep (hθ' : θ' ∈ Θ) (h : ρ.IsEMStep Θ f θ' θ'')
+    (hpos : ∀ θ ∈ Θ, ∀ᵐ z ∂ρ, 0 < f θ z) (hi : ∀ θ ∈ Θ, Integrable (f θ) ρ)
+    (hQ : ∀ θ ∈ Θ, Integrable (fun z ↦ Real.log (f θ z)) (ρ.missingLaw f θ')) :
+    ρ.obsLogLikelihood f θ' ≤ ρ.obsLogLikelihood f θ'' ∧
+      (ρ.obsLogLikelihood f θ' = ρ.obsLogLikelihood f θ'' →
+        ρ.missingLaw f θ'' = ρ.missingLaw f θ' ∧ ρ.emQ f θ'' θ' = ρ.emQ f θ' θ') := by
+  have hθ'' := h.mem
+  have hid := (emQ_sub_le_obsLogLikelihood_sub (hpos _ hθ'') (hpos _ hθ') (hi _ hθ'')
+    (hi _ hθ') (hQ _ hθ'') (hQ _ hθ')).1
+  have hle := h.le hθ'
+  have hK := ENNReal.toReal_nonneg
+    (a := InformationTheory.klDiv (ρ.missingLaw f θ') (ρ.missingLaw f θ''))
+  refine ⟨by linarith, fun heq ↦ ⟨?_, by linarith⟩⟩
+  have hK0 : (InformationTheory.klDiv (ρ.missingLaw f θ') (ρ.missingLaw f θ'')).toReal = 0 := by
+    linarith
+  have hne := klDiv_missingLaw_ne_top (hi _ hθ'') (hpos _ hθ'') (hQ _ hθ'') (hQ _ hθ')
+  exact (InformationTheory.klDiv_eq_zero_iff.1
+    (((ENNReal.toReal_eq_zero_iff _).1 hK0).resolve_right hne)).symm
+
+/-! ### Stationarity -/
+
+section Stationarity
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- **Stationarity of EM** (Little–Rubin, Theorem 8.2, p. 195, by the same argument): at an
+interior fixed point `θ` of EM, if `Q(· | θ)` has a gradient at `θ` and the observed-data
+log-likelihood has the same gradient there (Fisher's identity `∇L(θ) = ∇Q(θ | θ)`, assumed),
+then `θ` is a stationary point of `L`: `∇L(θ) = 0`. -/
+theorem IsEMStep.hasGradientAt_obsLogLikelihood_zero (h : ρ.IsEMStep Θ f θ θ) (hΘ : Θ ∈ 𝓝 θ)
+    {g : E} (hQ : HasGradientAt (fun θ'' ↦ ρ.emQ f θ'' θ) g θ)
+    (hL : HasGradientAt (ρ.obsLogLikelihood f) g θ) :
+    HasGradientAt (ρ.obsLogLikelihood f) 0 θ := by
+  have hg := (h.isMaxOn.isLocalMax hΘ).hasFDerivAt_eq_zero hQ.hasFDerivAt
+  rw [LinearIsometryEquiv.map_eq_zero_iff] at hg
+  rwa [hg] at hL
+
+end Stationarity
 
 /-! ### Example: a two-point missing part
 
