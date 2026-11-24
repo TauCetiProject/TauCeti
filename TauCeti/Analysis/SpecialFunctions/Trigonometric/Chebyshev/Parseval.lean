@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Parseval
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.HilbertBasis
 
 /-!
@@ -62,14 +61,14 @@ theorem tsum_norm_sq_integral_normalizedChebyshevT_mul_measureT (f : Lp 𝕜 2 m
     ∑' n : ℕ, ‖∫ x : ℝ, (algebraMap ℝ 𝕜) (normalizedChebyshevT n x) * f x ∂measureT‖ ^ 2 =
       ‖f‖ ^ 2 := by
   simpa only [← HilbertBasis.repr_apply_apply, chebyshevTHilbertBasis_repr_apply] using
-    (chebyshevTHilbertBasis 𝕜).tsum_norm_sq_inner f
+    (chebyshevTHilbertBasis 𝕜).tsum_norm_inner_sq f
 
 /-- The squared norms of the Chebyshev integral coefficients of an `L²` function are summable. -/
 theorem summable_norm_sq_integral_normalizedChebyshevT_mul_measureT (f : Lp 𝕜 2 measureT) :
     Summable fun n : ℕ =>
       ‖∫ x : ℝ, (algebraMap ℝ 𝕜) (normalizedChebyshevT n x) * f x ∂measureT‖ ^ 2 := by
   simpa only [← HilbertBasis.repr_apply_apply, chebyshevTHilbertBasis_repr_apply] using
-    (chebyshevTHilbertBasis 𝕜).summable_norm_sq_inner f
+    (chebyshevTHilbertBasis 𝕜).summable_norm_inner_sq f
 
 /-- **The Chebyshev expansion.** Every `f ∈ L²(measureT)` is the sum of its normalized
 Chebyshev-polynomial series. -/

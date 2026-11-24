@@ -131,8 +131,8 @@ theorem _root_.UpperHalfPlane.dirichletDomain_eq_iInter_of_inter_eq
       exact ⟨hSC w.property, hw⟩
     exact hwD.1
   have hclopen : IsClopen (((↑) : S → ℍ) ⁻¹' dirichletDomain G p) :=
-    ⟨(isClosed_dirichletDomain G p).preimage continuous_subtype_val,
-      hpre ▸ hU.preimage continuous_subtype_val⟩
+    ⟨(isClosed_dirichletDomain G p).preimage continuous_subtypeVal,
+      hpre ▸ hU.preimage continuous_subtypeVal⟩
   have hall := hclopen.eq_univ
     ⟨⟨p, left_mem_geodesicSegment p z⟩, self_mem_dirichletDomain p⟩
   exact (Set.eq_univ_iff_forall.mp hall) ⟨z, right_mem_geodesicSegment p z⟩

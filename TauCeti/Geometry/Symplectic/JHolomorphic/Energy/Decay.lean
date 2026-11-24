@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.PuncturedDisc
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Radial
 import TauCeti.Analysis.Calculus.PowerGrowth
-import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -34,55 +33,6 @@ open Complex MeasureTheory Metric Set
 open scoped Real RealInnerProductSpace
 
 namespace TauCeti.SymplecticForm
-
-section Angular
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {u : ℂ → V} {J : V → V →L[ℝ] V} {z₀ : ℂ} {M : ℝ}
-
-/-- The angular square energy is bounded by the radial boundary density, using the
-Cauchy--Riemann equation and an operator-norm bound on the target structure. -/
-private theorem angular_energy_le {r : ℝ} (hr : 0 < r)
-    (hu : ∀ θ, ContDiffAt ℝ 1 u (circleMap z₀ r θ))
-    (hCR : ∀ θ, fderiv ℝ u (circleMap z₀ r θ) I =
-      J (u (circleMap z₀ r θ)) (fderiv ℝ u (circleMap z₀ r θ) 1))
-    (hJ : ∀ θ, ‖J (u (circleMap z₀ r θ))‖ ≤ M) :
-    (∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2) ≤
-      (1 + M) ^ 2 * r ^ 2 *
-        ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2 := by
-  have hdu : Continuous (fun θ ↦ fderiv ℝ u (circleMap z₀ r θ)) :=
-    continuous_iff_continuousAt.mpr fun θ ↦
-      (hu θ).continuousAt_fderiv (by norm_num) |>.comp
-        (continuous_circleMap z₀ r).continuousAt
-  have hd (θ : ℝ) := ((hu θ).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
-    (hasDerivAt_circleMap z₀ r θ)
-  have heq (θ : ℝ) : deriv (fun θ ↦ u (circleMap z₀ r θ)) θ =
-      fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := hd θ |>.deriv
-  have hcont : Continuous (fun θ ↦ ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2) := by
-    simp_rw [heq]
-    exact (hdu.clm_apply ((continuous_circleMap 0 r).mul continuous_const)).norm.pow 2
-  have hbcont : Continuous (fun θ ↦ ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2) :=
-    (hdu.clm_apply continuous_const).norm.pow 2
-  rw [← intervalIntegral.integral_const_mul]
-  apply intervalIntegral.integral_mono_on (by linarith [Real.pi_pos])
-    (hcont.intervalIntegrable _ _) ((hbcont.const_mul _).intervalIntegrable _ _)
-  intro θ _
-  have hs : ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ≤
-      (1 + M) * r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ := by
-    rw [heq]
-    calc _ ≤ ‖fderiv ℝ u (circleMap z₀ r θ)‖ * ‖circleMap 0 r θ * I‖ :=
-          (fderiv ℝ u (circleMap z₀ r θ)).le_opNorm _
-      _ ≤ ((1 + M) * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) * r := by
-          rw [norm_mul, norm_I, mul_one, norm_circleMap_zero, abs_of_pos hr]
-          gcongr
-          exact (fderiv ℝ u (circleMap z₀ r θ)).norm_le_of_apply_I_eq (hCR θ) (hJ θ) le_rfl
-      _ = _ := by ring
-  calc
-    _ ≤ ((1 + M) * r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖) ^ 2 := by
-      gcongr
-    _ = _ := by ring
-
-end Angular
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
@@ -125,8 +75,9 @@ theorem mul_integral_norm_fderiv_one_sq_ball_le_mul_deriv
   have hmem (θ : ℝ) : circleMap z₀ r θ ∈ D := by
     simpa only [D, mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
       abs_of_pos hr.1] using And.intro hr.1 (le_refl r)
-  have ha := angular_energy_le hr.1 (fun θ ↦ (hsmooth _ (hmem θ)).of_le one_le_two)
-    (fun θ ↦ hCR _ (hsub (hmem θ))) (fun θ ↦ hJ _ (hsub (hmem θ)))
+  have ha := integral_norm_deriv_comp_circleMap_sq_le hr.1.le
+    (fun θ ↦ (hsmooth _ (hmem θ)).of_le one_le_two) (fun θ ↦ hCR _ (hsub (hmem θ)))
+    (fun θ ↦ hJ _ (hsub (hmem θ)))
   rw [(hasDerivAt_integral_norm_fderiv_one_sq_ball (hu.of_le one_le_two) henergy hr).deriv]
   nlinarith
 

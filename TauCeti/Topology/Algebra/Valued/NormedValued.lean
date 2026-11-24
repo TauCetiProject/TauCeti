@@ -27,6 +27,8 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
 
 ## Main results
 
+* `TauCeti.NormedField.v_eq_valuation`: `Valued.v x = NormedField.valuation x` for any ultrametric
+  normed field `K`, without requiring the norm to be nontrivial.
 * `Valuation.Integers.mem_span_singleton_pow_iff_norm_le`: `x ∈ (ϖ) ^ n` exactly when
   `‖x‖ ≤ ‖ϖ‖ ^ n`.
 * `Valuation.Integers.radical_span_singleton_eq_of_norm_lt_one`: any two pseudouniformisers,
@@ -38,6 +40,20 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
 public section
 
 open Filter
+
+section NormedField
+
+open scoped NormedField
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+
+/-- On an ultrametric normed field `K` equipped with `NormedField.toValued`, `Valued.v` agrees with
+`NormedField.valuation`, without requiring the norm to be nontrivial (generalizing Mathlib's
+`NormedField.v_eq_valuation`). -/
+@[simp]
+theorem TauCeti.NormedField.v_eq_valuation (x : K) : Valued.v x = NormedField.valuation x := rfl
+
+end NormedField
 
 namespace Valuation.Integers
 

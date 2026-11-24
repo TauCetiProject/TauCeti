@@ -69,7 +69,7 @@ theorem explicitH2AddEquivGroupCohomology_explicitCoeff2 (x : H2 G M) :
   | H z =>
     let c : cocycles₂ B := ⟨fun h ↦ ψ ((z : G × G → M) (φ.symm h.1, φ.symm h.2)), by
       refine (mem_cocycles₂_iff _).mpr fun a b d ↦ ?_
-      have hz := (mem_Z2_iff.mp z.2).2 (φ.symm a) (φ.symm b) (φ.symm d)
+      have hz := (mem_Z2_iff.mp z.property).2 (φ.symm a) (φ.symm b) (φ.symm d)
       have ha := hψ (φ.symm a) ((z : G × G → M) (φ.symm b, φ.symm d))
       simpa only [map_mul, map_add, φ.apply_symm_apply, ha] using congrArg ψ hz⟩
     rw [explicitCoeff2_mk,

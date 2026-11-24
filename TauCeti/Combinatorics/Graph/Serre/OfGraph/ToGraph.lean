@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Isomorphism
+public import TauCeti.Combinatorics.Graph.Isomorphism.Basic
 public import TauCeti.Combinatorics.Graph.Serre.Multigraph
 public import TauCeti.Combinatorics.Graph.Serre.OfGraph.Basic
 
@@ -85,13 +85,14 @@ theorem toSerreGraph_edgeEnds_edge (d : G.toSerreGraph.E) :
 /-- The reversal orbit of a dart links two vertices in the multigraph underlying the Serre graph
 exactly when the edge the dart lies over links them in the original multigraph. -/
 theorem toSerreGraph_toGraph_isLink_edge (d : G.toSerreGraph.E) (x y : G.vertexSet) :
-    G.toSerreGraph.toGraph.IsLink (G.toSerreGraph.edge d) x y ↔ G.IsLink d.1.1 x.1 y.1 := by
+    G.toSerreGraph.toGraph.IsLink (G.toSerreGraph.edge d) x y ↔ G.IsLink d.1.val x.val y.val := by
   rw [SerreGraph.toGraph_isLink, toSerreGraph_edgeEnds_edge, edgeEnds_eq_iff_isLink]
 
 /-- The multigraph underlying the Serre graph of a multigraph has the incidence of the original
 multigraph, under the identification of reversal orbits with edges. -/
 theorem toSerreGraph_toGraph_isLink (q : G.toSerreGraph.Edge) (x y : G.vertexSet) :
-    G.toSerreGraph.toGraph.IsLink q x y ↔ G.IsLink (G.toSerreGraphEdgeEquiv.symm q).1 x.1 y.1 := by
+    G.toSerreGraph.toGraph.IsLink q x y ↔ G.IsLink (G.toSerreGraphEdgeEquiv.symm q).val x.val y.val
+        := by
   induction q using SerreGraph.Edge.ind with
   | h d => rw [toSerreGraph_toGraph_isLink_edge, toSerreGraphEdgeEquiv_symm_edge]
 
@@ -104,30 +105,30 @@ noncomputable def toSerreGraphToGraphIso : G.toSerreGraph.toGraph.Iso G where
   edgeEquiv :=
     ((Set.equivOfEq G.toSerreGraph.edgeSet_toGraph).trans
       (Equiv.Set.univ G.toSerreGraph.Edge)).trans G.toSerreGraphEdgeEquiv.symm
-  map_isLink_iff q x y := (G.toSerreGraph_toGraph_isLink q.1 x.1 y.1).symm
+  map_isLink_iff q x y := (G.toSerreGraph_toGraph_isLink q.val x.val y.val).symm
 
 @[simp] theorem toSerreGraphToGraphIso_vertexEquiv_apply (x : G.toSerreGraph.toGraph.vertexSet) :
-    G.toSerreGraphToGraphIso.vertexEquiv x = x.1 := (rfl)
+    G.toSerreGraphToGraphIso.vertexEquiv x = x.val := (rfl)
 
 @[simp] theorem toSerreGraphToGraphIso_edgeEquiv_apply (q : G.toSerreGraph.toGraph.edgeSet) :
-    G.toSerreGraphToGraphIso.edgeEquiv q = G.toSerreGraphEdgeEquiv.symm q.1 := (rfl)
+    G.toSerreGraphToGraphIso.edgeEquiv q = G.toSerreGraphEdgeEquiv.symm q.val := (rfl)
 
 @[simp] theorem coe_toSerreGraphToGraphIso_vertexEquiv_symm_apply (x : G.vertexSet) :
-    (G.toSerreGraphToGraphIso.vertexEquiv.symm x).1 = x := (rfl)
+    (G.toSerreGraphToGraphIso.vertexEquiv.symm x).val = x := (rfl)
 
 @[simp] theorem coe_toSerreGraphToGraphIso_edgeEquiv_symm_apply (e : G.edgeSet) :
-    (G.toSerreGraphToGraphIso.edgeEquiv.symm e).1 = G.toSerreGraph.edge (e, true) := (rfl)
+    (G.toSerreGraphToGraphIso.edgeEquiv.symm e).val = G.toSerreGraph.edge (e, true) := (rfl)
 
 /-- A loop of a multigraph is a single loop of the multigraph underlying its Serre graph, although
 it carries two darts. -/
 theorem toSerreGraph_toGraph_isLoopAt_iff (e : G.edgeSet) (x : G.vertexSet) :
-    G.toSerreGraph.toGraph.IsLoopAt (G.toSerreGraphEdgeEquiv e) x ↔ G.IsLoopAt e.1 x.1 :=
+    G.toSerreGraph.toGraph.IsLoopAt (G.toSerreGraphEdgeEquiv e) x ↔ G.IsLoopAt e.val x.val :=
   G.toSerreGraph_toGraph_isLink_edge (e, true) x x
 
 /-- Reachability in the multigraph underlying the Serre graph of a multigraph is reachability in
 the original multigraph. -/
 theorem reachable_toGraph_toSerreGraph_iff (x y : G.vertexSet) :
-    G.toSerreGraph.toGraph.Reachable x y ↔ G.Reachable x.1 y.1 := by
+    G.toSerreGraph.toGraph.Reachable x y ↔ G.Reachable x.val y.val := by
   rw [SerreGraph.reachable_toGraph_iff, nonempty_serrePath_iff_reachable]
 
 /-- The multigraph underlying the Serre graph of a multigraph is connected exactly when the

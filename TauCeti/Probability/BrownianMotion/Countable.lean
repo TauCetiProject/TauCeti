@@ -12,7 +12,7 @@ public import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Def
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 
 import TauCeti.MeasureTheory.Measure.ProjectiveLimit.Countable
-import TauCeti.Probability.Process.Kolmogorov
+import TauCeti.Probability.Process.Kolmogorov.Basic
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 
 /-!
@@ -45,40 +45,40 @@ section Laws
 variable {S : Set ℝ≥0} {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {X : S → Ω → ℝ}
   (hX : ∀ (I : Finset ℝ≥0) (hI : (I : Set ℝ≥0) ⊆ S),
-    HasLaw (fun ω (i : I) ↦ X ⟨i.1, hI i.2⟩ ω) (BrownianReal.projectiveFamily I) P)
+    HasLaw (fun ω (i : I) ↦ X ⟨i.val, hI i.property⟩ ω) (BrownianReal.projectiveFamily I) P)
 
 include hX
 
 /-- A process with the Brownian finite-dimensional laws has centered Gaussian marginals
 with variance equal to the time. -/
 theorem hasLaw_gaussianReal_of_hasLaw_brownianRealProjectiveFamily (s : S) :
-    HasLaw (X s) (gaussianReal 0 s.1) P := by
+    HasLaw (X s) (gaussianReal 0 s.val) P := by
   classical
-  let I : Finset ℝ≥0 := {s.1}
+  let I : Finset ℝ≥0 := {s.val}
   have hI : (I : Set ℝ≥0) ⊆ S := by simp [I]
   exact (BrownianReal.measurePreserving_eval_projectiveFamily
-    (⟨s.1, by simp [I]⟩ : I)).comp_hasLaw (hX I hI)
+    (⟨s.val, by simp [I]⟩ : I)).comp_hasLaw (hX I hI)
 
 /-- A process with the Brownian finite-dimensional laws has centered Gaussian increments,
 including increments of zero length. No assumption on its sample space is needed. -/
 theorem hasLaw_sub_gaussianReal_of_hasLaw_brownianRealProjectiveFamily (s t : S) :
-    HasLaw (fun ω ↦ X s ω - X t ω) (gaussianReal 0 (nndist s.1 t.1)) P := by
+    HasLaw (fun ω ↦ X s ω - X t ω) (gaussianReal 0 (nndist s.val t.val)) P := by
   classical
-  let I : Finset ℝ≥0 := {s.1, t.1}
+  let I : Finset ℝ≥0 := {s.val, t.val}
   have hI : (I : Set ℝ≥0) ⊆ S := by
     simp [I, Set.insert_subset_iff, Set.singleton_subset_iff]
   exact (BrownianReal.measurePreserving_eval_sub_eval_projectiveFamily I
-    ⟨s.1, by simp [I]⟩ ⟨t.1, by simp [I]⟩).comp_hasLaw (hX I hI)
+    ⟨s.val, by simp [I]⟩ ⟨t.val, by simp [I]⟩).comp_hasLaw (hX I hI)
 
 /-- Brownian finite-dimensional laws give covariance `min s t`, not independent marginals. -/
 theorem covariance_eq_min_of_hasLaw_brownianRealProjectiveFamily (s t : S) :
-    cov[X s, X t; P] = min (s.1 : ℝ) (t.1 : ℝ) := by
+    cov[X s, X t; P] = min (s.val : ℝ) (t.val : ℝ) := by
   classical
-  let I : Finset ℝ≥0 := {s.1, t.1}
+  let I : Finset ℝ≥0 := {s.val, t.val}
   have hI : (I : Set ℝ≥0) ⊆ S := by
     simp [I, Set.insert_subset_iff, Set.singleton_subset_iff]
   have h := (hX I hI).covariance_comp
-    (f := fun x ↦ x ⟨s.1, by simp [I]⟩) (g := fun x ↦ x ⟨t.1, by simp [I]⟩)
+    (f := fun x ↦ x ⟨s.val, by simp [I]⟩) (g := fun x ↦ x ⟨t.val, by simp [I]⟩)
     (measurable_pi_apply _).aemeasurable (measurable_pi_apply _).aemeasurable
   exact h.trans (BrownianReal.covariance_eval_projectiveFamily I _ _)
 
@@ -104,7 +104,7 @@ theorem exists_measurePreserving_brownianRealProjectiveFamily_isKolmogorovProces
     (S : Set ℝ≥0) [Countable S] :
     ∃ P : Measure (S → ℝ), IsProbabilityMeasure P ∧
       (∀ (I : Finset ℝ≥0) (hI : (I : Set ℝ≥0) ⊆ S),
-        MeasurePreserving (fun (x : S → ℝ) (i : I) ↦ x ⟨i.1, hI i.2⟩) P
+        MeasurePreserving (fun (x : S → ℝ) (i : I) ↦ x ⟨i.val, hI i.property⟩) P
           (BrownianReal.projectiveFamily I)) ∧
       ∀ ⦃n : ℕ⦄, n ≠ 0 →
         IsKolmogorovProcess (fun (t : S) (x : S → ℝ) ↦ x t) P (2 * n : ℕ) n (2 * n - 1)‼ := by

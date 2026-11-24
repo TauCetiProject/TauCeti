@@ -46,6 +46,7 @@ morphisms `Spec (ChartAlgebra R x) ⟶ Spec R` of the charts glue to the structu
 * `Module.Grassmannian.scheme R M k`: the scheme glued from the standard charts.
 * `Module.Grassmannian.toSpec R M k`: its structure morphism to `Spec R`.
 * `Module.Grassmannian.chartι R x`: the open immersion of the chart at `x`.
+* `Module.Grassmannian.chartOpenCover R M k`: the open cover of `G(k, M)` by its standard charts.
 
 ## Main results
 
@@ -206,6 +207,16 @@ theorem chartι_toSpec (x : Fin k → M) :
 theorem chartι_jointly_surjective (z : scheme R M k) :
     ∃ (x : Fin k → M) (y : Spec (.of (ChartAlgebra R x))), chartι R x y = z :=
   (glueData R M k).ι_jointly_surjective z
+
+variable (R M k) in
+/-- **The standard affine open cover of the Grassmannian.** -/
+noncomputable abbrev chartOpenCover : (scheme R M k).OpenCover where
+  I₀ := Fin k → M
+  X x := Spec (.of (ChartAlgebra R x))
+  f := chartι R
+  mem₀ := by
+    rw [Scheme.presieve₀_mem_precoverage_iff]
+    exact ⟨chartι_jointly_surjective, inferInstance⟩
 
 /-- **The charts at `x` and at `y` intersect in their overlap.** The square formed by the inclusions
 of `Spec (OverlapAlgebra R x y)` into the chart at `x` and, through the transition isomorphism, into

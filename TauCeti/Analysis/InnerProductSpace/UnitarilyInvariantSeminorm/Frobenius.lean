@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Chebyshev
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.InnerProductSpace.Trace
+public import TauCeti.Analysis.InnerProductSpace.Trace.Free
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.KyFan
 
 /-!
@@ -31,8 +32,6 @@ calculations: in orthonormal eigenbases, for instance, it turns the coordinate f
 
 ## Main declarations
 
-* `LinearMap.trace_adjoint_comp_self_eq_sum_norm_apply_sq`: `tr (A† A) = ∑ᵢ ‖A bᵢ‖²` for every
-  orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_adjoint_comp_self_eq_sum_sq_singularValues`: `tr (A† A) = ∑ᵢ σᵢ(A)²`.
 * `LinearMap.frobenius_norm_toMatrix`: the Frobenius norm of the matrix in orthonormal
   bases equals the operator Frobenius seminorm.
@@ -67,14 +66,6 @@ variable {𝕜 E F ι ι' : Type*} [RCLike 𝕜]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [Fintype ι] [Fintype ι']
 
 namespace LinearMap
-
-/-- The trace of `A† A` is `∑ᵢ ‖A bᵢ‖²` for every orthonormal basis `(bᵢ)` of the source. -/
-theorem trace_adjoint_comp_self_eq_sum_norm_apply_sq [FiniteDimensional 𝕜 F] (A : E →ₗ[𝕜] F)
-    (b : OrthonormalBasis ι 𝕜 E) :
-    trace 𝕜 E (adjoint A ∘ₗ A) = ((∑ i, ‖A (b i)‖ ^ 2 : ℝ) : 𝕜) := by
-  rw [trace_eq_sum_inner _ b, RCLike.ofReal_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [comp_apply, adjoint_inner_right, inner_self_eq_norm_sq_to_K, RCLike.ofReal_pow]
 
 omit [FiniteDimensional 𝕜 E] in
 /-- **Basis independence of the Frobenius sum**: `∑ᵢ ‖A bᵢ‖²` takes the same value on any two

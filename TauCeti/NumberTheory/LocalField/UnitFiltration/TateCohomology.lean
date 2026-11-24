@@ -70,7 +70,7 @@ private def mulDistribMulAction : MulDistribMulAction (L ≃ₐ[K] L) (hA.filtra
   letI : SMul (L ≃ₐ[K] L) (hA.filtration 0) :=
     ⟨fun σ x ↦ ⟨σ • (x : Lˣ), by
       simpa only [AlgEquiv.smul_units_def] using
-        hA.unitsMap_mem_filtration σ (fun _ ha ↦ hσ σ ha) x.2⟩⟩
+        hA.unitsMap_mem_filtration σ (fun _ ha ↦ hσ σ ha) x.property⟩⟩
   Subtype.coe_injective.mulDistribMulAction (hA.filtration 0).subtype fun _ _ ↦ rfl
 
 /-- The Galois action on step zero `1 + A` is the restriction of the Galois action on `Lˣ`. -/
@@ -90,7 +90,7 @@ private def toUnits (x : hA.rep hσ) : Lˣ :=
   (Additive.toMul x : hA.filtration 0)
 
 private theorem toUnits_mem (x : hA.rep hσ) : hA.toUnits hσ x ∈ hA.filtration 0 :=
-  (Additive.toMul x).2
+  (Additive.toMul x).property
 
 private theorem toUnits_injective : Function.Injective (hA.toUnits hσ) := fun _ _ h ↦
   Additive.toMul.injective (Subtype.ext h)
@@ -154,13 +154,13 @@ private abbrev latticeRep : Representation 𝒪[K] (L ≃ₐ[K] L) A :=
 private def gradedMap (n : ℕ) : hA.step hσ n →+ QuotSMulTop ϖ A :=
   (hA.filtrationToQuotient n).toAdditive.comp
     (AddMonoidHom.mk'
-      (fun x ↦ Additive.ofMul (⟨hA.toUnits hσ x, (hA.mem_step hσ).1 x.2⟩ : hA.filtration n))
+      (fun x ↦ Additive.ofMul (⟨hA.toUnits hσ x, (hA.mem_step hσ).1 x.property⟩ : hA.filtration n))
       fun _ _ ↦ rfl)
 
 /-- `gradedMap` is `filtrationToQuotient` applied to the underlying unit of `1 + ϖ ^ n • A`. -/
 private theorem gradedMap_eq_toAdd_filtrationToQuotient {n : ℕ} (x : hA.step hσ n) :
     hA.gradedMap hσ n x = Multiplicative.toAdd
-      (hA.filtrationToQuotient n ⟨hA.toUnits hσ x, (hA.mem_step hσ).1 x.2⟩) :=
+      (hA.filtrationToQuotient n ⟨hA.toUnits hσ x, (hA.mem_step hσ).1 x.property⟩) :=
   rfl
 
 private theorem gradedMap_apply {n : ℕ} (x : hA.step hσ n) {a : 𝒪[L]} (ha : a ∈ A)
@@ -170,9 +170,9 @@ private theorem gradedMap_apply {n : ℕ} (x : hA.step hσ n) {a : 𝒪[L]} (ha 
     (congrArg Multiplicative.toAdd (hA.filtrationToQuotient_apply _ ha hx))
 
 private theorem gradedMap_ρ {n : ℕ} (σ : L ≃ₐ[K] L) (x : hA.step hσ n) :
-    hA.gradedMap hσ n ⟨(hA.rep hσ).ρ σ x, hA.step_le_comap hσ n σ x.2⟩ =
+    hA.gradedMap hσ n ⟨(hA.rep hσ).ρ σ x, hA.step_le_comap hσ n σ x.property⟩ =
       ((latticeRep hσ).quotSMulTop ϖ).restrictScalars ℤ σ (hA.gradedMap hσ n x) := by
-  obtain ⟨a, ha, hx⟩ := hA.mem_filtration_iff.1 ((hA.mem_step hσ).1 x.2)
+  obtain ⟨a, ha, hx⟩ := hA.mem_filtration_iff.1 ((hA.mem_step hσ).1 x.property)
   have hσx : (hA.toUnits hσ ((hA.rep hσ).ρ σ x) : L) = ((1 + ϖ ^ n • (σ • a) : 𝒪[L]) : L) := by
     rw [toUnits_ρ, AlgEquiv.smul_units_def, Units.coe_map, MonoidHom.coe_ofClass, hx,
       ← AlgEquiv.coe_smul_integerRing, smul_add, smul_one, smul_comm]
@@ -198,7 +198,7 @@ private theorem gradedHom_hom_apply (n : ℕ) (x : hA.step hσ n) :
 private theorem gradedHom_surjective (n : ℕ) : Function.Surjective (hA.gradedHom hσ n).hom := by
   intro q
   obtain ⟨y, hy⟩ := hA.filtrationToQuotient_surjective n (Multiplicative.ofAdd q)
-  exact ⟨⟨Additive.ofMul ⟨y, hA.filtration_antitone (Nat.zero_le n) y.2⟩, y.2⟩,
+  exact ⟨⟨Additive.ofMul ⟨y, hA.filtration_antitone (Nat.zero_le n) y.property⟩, y.property⟩,
     congrArg Multiplicative.toAdd hy⟩
 
 private theorem mem_step_succ_of_gradedHom_eq_zero (n : ℕ) (x : hA.step hσ n)

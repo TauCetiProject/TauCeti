@@ -40,7 +40,7 @@ the cohomology class. -/
 @[simp]
 theorem cohomFpZeroLinearEquiv_apply (x : cohomFp p G 0) :
     cohomFpZeroLinearEquiv p G x = trivialFpEquiv p G
-      ((_root_.ContinuousCohomology.zeroIso (trivialFp p G)).hom x).1 :=
+      ((_root_.ContinuousCohomology.zeroIso (trivialFp p G)).hom x).val :=
   (rfl)
 
 /-- Zeroth continuous cohomology with trivial coefficients is finite as a `ZMod p`-module. -/

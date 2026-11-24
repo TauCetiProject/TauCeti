@@ -159,7 +159,7 @@ theorem jointMomentSeries_eq_of_jointRSeries_eq [Monoid B] {φ : A → R} {ψ : 
       apply_prod_ofFn_eq_sum_prod_freeCumulant φ hw,
       apply_prod_ofFn_eq_sum_prod_freeCumulant ψ hw]
     exact sum_congr rfl fun π _ => prod_congr rfl fun C hC =>
-      hc (π.1.nonempty_of_mem_parts hC)
+      hc (π.val.nonempty_of_mem_parts hC)
 
 end Cumulant
 

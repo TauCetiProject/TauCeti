@@ -35,6 +35,8 @@ potential of `g` and the Duhamel potential of `f`.
 
 ## Main declarations
 
+* `TauCeti.slabHeatCauchyPotential`: the Cauchy potential of a bounded continuous field,
+  restricted to a slab, as a bounded continuous function.
 * `TauCeti.heatCauchyPotentialL`: the Cauchy potential as a continuous linear map
   `C_b^{2,α}(E) → C_b^{2+α,1+α/2}(E × [a, b])`.
 * `TauCeti.heatCauchyPotentialL_apply` and its companions: the four fields of the potential.
@@ -72,44 +74,50 @@ variable {h : E → G} {M : ℝ} {K : ℝ≥0}
 
 /-- The Cauchy potential of a bounded continuous field, restricted to the slab `E × [a, b]`, as a
 bounded continuous function. -/
-private def slabPotential (h : E → G) (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M) :
+def slabHeatCauchyPotential (h : E → G) (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M) :
     slab (E := E) a b →ᵇ G :=
   BoundedContinuousFunction.ofNormedAddCommGroup
     (fun p ↦ heatCauchyPotential h (p : ParabolicSpaceTime E).time
       (p : ParabolicSpaceTime E).space)
     ((continuous_heatCauchyPotential hc hM).comp
-      ((continuous_time.comp continuous_subtype_val).prodMk
-        (continuous_space.comp continuous_subtype_val)))
+      ((continuous_time.comp continuous_subtypeVal).prodMk
+        (continuous_space.comp continuous_subtypeVal)))
     M fun _ ↦ norm_heatCauchyPotential_le hM _ _
 
-private theorem slabPotential_apply (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)
+/-- The value of `TauCeti.slabHeatCauchyPotential` at a point of the slab. -/
+@[simp]
+theorem slabHeatCauchyPotential_apply (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)
     (p : slab (E := E) a b) :
-    slabPotential h hc hM p =
+    slabHeatCauchyPotential h hc hM p =
       heatCauchyPotential h (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space :=
   (rfl)
 
-private theorem norm_slabPotential_le (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M) :
-    ‖slabPotential (a := a) (b := b) h hc hM‖ ≤ M :=
+/-- The supremum norm of `TauCeti.slabHeatCauchyPotential` is at most the bound of the field. -/
+theorem norm_slabHeatCauchyPotential_le (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M) :
+    ‖slabHeatCauchyPotential (a := a) (b := b) h hc hM‖ ≤ M :=
   BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ ((norm_nonneg _).trans (hM 0)) _
 
-private theorem holderWith_slabPotential (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)
+/-- `TauCeti.slabHeatCauchyPotential` of an `α`-Hölder field of constant `K` is parabolically
+`α`-Hölder with constant `K (1 + M_α)`, where `M_α` is `TauCeti.heatKernelMoment`. -/
+theorem holderWith_slabHeatCauchyPotential (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)
     (hK : HolderWith K α h) :
     HolderWith (K * (1 + heatKernelMoment E α)) α
-      (slabPotential (a := a) (b := b) h hc hM : slab (E := E) a b → G) :=
+      (slabHeatCauchyPotential (a := a) (b := b) h hc hM : slab (E := E) a b → G) :=
   ((holderWith_heatCauchyPotential hK hc).holderOnWith _).holderWith
 
 /-- The Cauchy potential of a bounded continuous Hölder field, restricted to the slab
 `E × [a, b]`, as an element of the bounded Hölder space. -/
 private def slabPotentialHolder (h : E → G) (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)
     (hK : HolderWith K α h) : HolderSpace α (slab (E := E) a b) G :=
-  HolderSpace.ofBoundedContinuousFunction (slabPotential h hc hM)
-    (holderWith_slabPotential hc hM hK).memHolder
+  HolderSpace.ofBoundedContinuousFunction (slabHeatCauchyPotential h hc hM)
+    (holderWith_slabHeatCauchyPotential hc hM hK).memHolder
 
 private theorem slabPotentialHolder_apply (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)
     (hK : HolderWith K α h) (p : slab (E := E) a b) :
     slabPotentialHolder h hc hM hK p =
       heatCauchyPotential h (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space := by
-  rw [slabPotentialHolder, HolderSpace.ofBoundedContinuousFunction_apply, slabPotential_apply]
+  rw [slabPotentialHolder, HolderSpace.ofBoundedContinuousFunction_apply,
+    slabHeatCauchyPotential_apply]
 
 private theorem norm_slabPotentialHolder_le (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)
     (hK : HolderWith K α h) :
@@ -118,8 +126,8 @@ private theorem norm_slabPotentialHolder_le (hc : Continuous h) (hM : ∀ y, ‖
   rw [HolderSpace.norm_def, slabPotentialHolder,
     HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction]
   gcongr
-  · exact norm_slabPotential_le hc hM
-  · exact_mod_cast (holderWith_slabPotential hc hM hK).nnholderNorm_le
+  · exact norm_slabHeatCauchyPotential_le hc hM
+  · exact_mod_cast (holderWith_slabHeatCauchyPotential hc hM hK).nnholderNorm_le
 
 end SlabPotential
 
@@ -131,8 +139,8 @@ variable (hab : a < b) (ha : 0 ≤ a)
 space on `E × [a, b]`. -/
 private def potential (g : CkHolderSpace 2 α E F) : ParabolicC2HolderSpace α E F hab :=
   ParabolicC2HolderSpace.mk
-    (slabPotential g g.contDiff.continuous g.norm_apply_le_iteratedFDeriv_zero)
-    (slabPotential (fderiv ℝ g) (g.contDiff.continuous_fderiv two_ne_zero)
+    (slabHeatCauchyPotential g g.contDiff.continuous g.norm_apply_le_iteratedFDeriv_zero)
+    (slabHeatCauchyPotential (fderiv ℝ g) (g.contDiff.continuous_fderiv two_ne_zero)
       g.norm_fderiv_le_iteratedFDeriv_one)
     (slabPotentialHolder (fderiv ℝ (fderiv ℝ g))
       (g.contDiff_fderiv.continuous_fderiv one_ne_zero)
@@ -140,12 +148,13 @@ private def potential (g : CkHolderSpace 2 α E F) : ParabolicC2HolderSpace α E
     (slabPotentialHolder (Δ (g : E → F)) g.contDiff.continuous_laplacian
       g.norm_laplacian_le_iteratedFDeriv_two g.holderWith_laplacian)
     (fun t x ↦ by
-      simp only [slabPotential_apply, space_slabMk, time_slabMk]
+      simp only [slabHeatCauchyPotential_apply, space_slabMk, time_slabMk]
       exact hasFDerivAt_heatCauchyPotential
         (fun y ↦ (g.contDiff.differentiable two_ne_zero y).hasFDerivAt)
         (g.contDiff.continuous_fderiv two_ne_zero) g.norm_fderiv_le_iteratedFDeriv_one t x)
     (fun t x ↦ by
-      simp only [slabPotential_apply, slabPotentialHolder_apply, space_slabMk, time_slabMk]
+      simp only [slabHeatCauchyPotential_apply, slabPotentialHolder_apply, space_slabMk,
+        time_slabMk]
       exact hasFDerivAt_heatCauchyPotential
         (fun y ↦ (g.contDiff_fderiv.differentiable one_ne_zero y).hasFDerivAt)
         (g.contDiff_fderiv.continuous_fderiv one_ne_zero)
@@ -154,14 +163,14 @@ private def potential (g : CkHolderSpace 2 α E F) : ParabolicC2HolderSpace α E
       rw [slabPotentialHolder_apply, space_slabMk, time_slabMk]
       refine ((hasDerivWithinAt_heatCauchyPotential g.contDiff
         g.norm_apply_le_iteratedFDeriv_zero g.norm_fderiv_le_iteratedFDeriv_one
-        g.norm_fderiv_fderiv_le_iteratedFDeriv_two (ha.trans t.2.1) x).mono
-          (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem (fun s hs ↦ ?_) t.2
-      simp [timeExtension_def, projIcc_of_mem hab.le hs, slabPotential_apply])
+        g.norm_fderiv_fderiv_le_iteratedFDeriv_two (ha.trans t.property.1) x).mono
+          (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem (fun s hs ↦ ?_) t.property
+      simp [timeExtension_def, projIcc_of_mem hab.le hs, slabHeatCauchyPotential_apply])
 
 private theorem potential_apply (g : CkHolderSpace 2 α E F) (p : slab (E := E) a b) :
     potential hab ha g p =
       heatCauchyPotential g (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space := by
-  rw [potential, ParabolicC2HolderSpace.mk_apply, slabPotential_apply]
+  rw [potential, ParabolicC2HolderSpace.mk_apply, slabHeatCauchyPotential_apply]
 
 private theorem norm_potential_le (g : CkHolderSpace 2 α E F) :
     ‖potential hab ha g‖ ≤
@@ -172,9 +181,10 @@ private theorem norm_potential_le (g : CkHolderSpace 2 α E F) :
   have hd : 0 ≤ d := Nat.cast_nonneg _
   have hm : 0 ≤ m := NNReal.coe_nonneg _
   have hH : 0 ≤ H := NNReal.coe_nonneg _
-  have h₀ := norm_slabPotential_le (a := a) (b := b) g.contDiff.continuous
+  have h₀ := norm_slabHeatCauchyPotential_le (a := a) (b := b) g.contDiff.continuous
     g.norm_apply_le_iteratedFDeriv_zero
-  have h₁ := norm_slabPotential_le (a := a) (b := b) (g.contDiff.continuous_fderiv two_ne_zero)
+  have h₁ := norm_slabHeatCauchyPotential_le (a := a) (b := b)
+    (g.contDiff.continuous_fderiv two_ne_zero)
     g.norm_fderiv_le_iteratedFDeriv_one
   have h₂ := norm_slabPotentialHolder_le (a := a) (b := b)
     (g.contDiff_fderiv.continuous_fderiv one_ne_zero)
@@ -232,7 +242,8 @@ theorem spatialFDerivL_heatCauchyPotentialL (g : CkHolderSpace 2 α E F)
     (p : slab (E := E) a b) :
     spatialFDerivL (heatCauchyPotentialL hab ha g) p = heatCauchyPotential (fderiv ℝ g)
       (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space := by
-  rw [heatCauchyPotentialL_eq_potential, potential, spatialFDerivL_mk, slabPotential_apply]
+  rw [heatCauchyPotentialL_eq_potential, potential, spatialFDerivL_mk,
+    slabHeatCauchyPotential_apply]
 
 /-- The spatial Hessian of the potential is the Cauchy potential of `D²g`. -/
 @[simp]

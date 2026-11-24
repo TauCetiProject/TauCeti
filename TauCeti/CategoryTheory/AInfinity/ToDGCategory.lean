@@ -83,7 +83,7 @@ private noncomputable abbrev homComplexι (X Y : C) (n : ℤ) :
 
 private theorem homComplexι_mem (X Y : C) (n : ℤ) (f : (𝒞.homComplex X Y).X n) :
     𝒞.homComplexι X Y n f ∈ (grading (R := R) X Y).piece n :=
-  (𝒞.homComplexXEquiv X Y n f).2
+  (𝒞.homComplexXEquiv X Y n f).property
 
 private theorem homComplexι_injective (X Y : C) (n : ℤ) :
     Function.Injective (𝒞.homComplexι X Y n) :=
@@ -96,7 +96,7 @@ private noncomputable def kellerComp {X Y Z : C} (q p n : ℤ) (hn : q + p = n) 
   LinearMap.codRestrict₂ ((𝒞.comp X Y Z).compl₁₂ (𝒞.homComplexι Y Z q) (𝒞.homComplexι X Y p))
     (𝒞.homComplexι X Z n) (𝒞.homComplexι_injective X Z n) fun g f ↦
       ⟨(𝒞.homComplexXEquiv X Z n).symm ⟨_, hn ▸ 𝒞.comp_mem_piece
-        (𝒞.homComplexXEquiv Y Z q g).2 (𝒞.homComplexXEquiv X Y p f).2⟩, by simp⟩
+        (𝒞.homComplexXEquiv Y Z q g).property (𝒞.homComplexXEquiv X Y p f).property⟩, by simp⟩
 
 private theorem homComplexι_kellerComp {X Y Z : C} (q p n : ℤ) (hn : q + p = n)
     (g : (𝒞.homComplex Y Z).X q) (f : (𝒞.homComplex X Y).X p) :

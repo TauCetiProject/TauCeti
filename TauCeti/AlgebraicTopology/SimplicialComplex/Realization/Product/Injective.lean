@@ -40,12 +40,12 @@ theorem orderedProdRealizationMap_injective (K : AbstractSimplicialComplex α)
     (L : AbstractSimplicialComplex β) : Function.Injective (K.orderedProdRealizationMap L) := by
   intro x y h
   apply Subtype.ext
-  apply Finsupp.eq_of_mapDomain_eq_of_isChain_support x.1 y.1
+  apply Finsupp.eq_of_mapDomain_eq_of_isChain_support x.val y.val
     (Realization.nonneg _ x) (Realization.nonneg _ y)
     (isChain_of_mem_orderedProd (support_mem _ x))
     (isChain_of_mem_orderedProd (support_mem _ y))
-  · simpa only [orderedProdRealizationMap_fst_val] using congrArg (fun p => p.1.1) h
-  · simpa only [orderedProdRealizationMap_snd_val] using congrArg (fun p => p.2.1) h
+  · simpa only [orderedProdRealizationMap_fst_val] using congrArg (fun p => p.1.val) h
+  · simpa only [orderedProdRealizationMap_snd_val] using congrArg (fun p => p.2.val) h
 
 /-- With finitely many faces the projection identifies the realized staircase triangulation
 with a closed subspace of the product of realizations. -/

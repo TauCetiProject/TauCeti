@@ -57,19 +57,19 @@ noncomputable def relativeTensorProductHomeomorph :
     refine continuous_of_continuous_tmul _ fun a b ↦ ?_
     simpa only [Equiv.invFun_as_coe, relativeTensorProductEquiv_symm_apply,
       AlgHom.tensorProductLift_tmul, Function.comp_apply] using
-      ((continuous_eval a).comp (continuous_fst.comp continuous_subtype_val)).fun_mul
-        ((continuous_eval b).comp (continuous_snd.comp continuous_subtype_val))
+      ((continuous_eval a).comp (continuous_fst.comp continuous_subtypeVal)).fun_mul
+        ((continuous_eval b).comp (continuous_snd.comp continuous_subtypeVal))
 
 /-- The fibre-product comparison restricts a point to the left tensor factor. -/
 @[simp]
 theorem relativeTensorProductHomeomorph_apply_fst (x : A ⊗[C] B →ₐ[k] R) (a : A) :
-    (relativeTensorProductHomeomorph k C A B R x).1.1 a = x (a ⊗ₜ[C] 1) := by
+    (relativeTensorProductHomeomorph k C A B R x).val.1 a = x (a ⊗ₜ[C] 1) := by
   simp [relativeTensorProductHomeomorph]
 
 /-- The fibre-product comparison restricts a point to the right tensor factor. -/
 @[simp]
 theorem relativeTensorProductHomeomorph_apply_snd (x : A ⊗[C] B →ₐ[k] R) (b : B) :
-    (relativeTensorProductHomeomorph k C A B R x).1.2 b = x (1 ⊗ₜ[C] b) := by
+    (relativeTensorProductHomeomorph k C A B R x).val.2 b = x (1 ⊗ₜ[C] b) := by
   simp [relativeTensorProductHomeomorph]
 
 /-- The inverse fibre-product comparison multiplies coordinate values on pure tensors. -/
@@ -79,7 +79,7 @@ theorem relativeTensorProductHomeomorph_symm_apply_tmul
       p.1.comp (IsScalarTower.toAlgHom k C A) =
         p.2.comp (IsScalarTower.toAlgHom k C B)}) (a : A) (b : B) :
     (relativeTensorProductHomeomorph k C A B R).symm p (a ⊗ₜ[C] b) =
-      p.1.1 a * p.1.2 b := by
+      p.val.1 a * p.val.2 b := by
   simp [relativeTensorProductHomeomorph]
 
 /-- Restricting to the tensor factors embeds points in the product of the two point spaces. -/

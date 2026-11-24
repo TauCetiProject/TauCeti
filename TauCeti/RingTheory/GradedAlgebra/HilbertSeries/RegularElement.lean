@@ -63,7 +63,7 @@ when `f` is homogeneous. -/
 theorem exact_mulLeft_submoduleMap_span_singleton (hf : f ∈ 𝒜 d) (n : ℕ) :
     Function.Exact
       (((LinearMap.mulLeft k f).domRestrict (𝒜 n)).codRestrict (𝒜 (d + n))
-        (fun x ↦ SetLike.mul_mem_graded hf x.2))
+        (fun x ↦ SetLike.mul_mem_graded hf x.property))
       ((Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.submoduleMap (𝒜 (d + n))) := by
   intro x
   constructor
@@ -74,7 +74,7 @@ theorem exact_mulLeft_submoduleMap_span_singleton (hf : f ∈ 𝒜 d) (n : ℕ) 
     refine ⟨⟨DirectSum.decompose 𝒜 a n, SetLike.coe_mem _⟩, Subtype.ext ?_⟩
     have h := DirectSum.coe_decompose_mul_of_left_mem_of_le 𝒜 hf (b := a) (n := d + n)
       (Nat.le_add_right d n)
-    rw [Nat.add_sub_cancel_left, ← ha, DirectSum.decompose_of_mem_same 𝒜 x.2] at h
+    rw [Nat.add_sub_cancel_left, ← ha, DirectSum.decompose_of_mem_same 𝒜 x.property] at h
     exact h.symm
   · rintro ⟨a, rfl⟩
     apply Subtype.ext
@@ -98,7 +98,7 @@ theorem finrank_quotientPiece_span_singleton_add (hf : f ∈ 𝒜 d)
   rw [quotientPiece_def]
   let μ : 𝒜 n →ₗ[k] 𝒜 (d + n) :=
     ((LinearMap.mulLeft k f).domRestrict (𝒜 n)).codRestrict (𝒜 (d + n))
-      (fun x ↦ SetLike.mul_mem_graded hf x.2)
+      (fun x ↦ SetLike.mul_mem_graded hf x.property)
   let q := (Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.submoduleMap (𝒜 (d + n))
   have hμ : Function.Injective μ := fun x y h ↦
     Subtype.ext (hreg (congrArg Subtype.val h))
@@ -128,8 +128,8 @@ theorem bijective_submoduleMap_span_singleton_of_lt (hf : f ∈ 𝒜 d) {n : ℕ
   have hproj := DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 (b := a) hf
     (Nat.not_le_of_lt hn)
   rw [← GradedAlgebra.proj_apply, ← ha, map_sub] at hproj
-  simpa only [GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_same 𝒜 x.2,
-    DirectSum.decompose_of_mem_same 𝒜 y.2] using hproj
+  simpa only [GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_same 𝒜 x.property,
+    DirectSum.decompose_of_mem_same 𝒜 y.property] using hproj
 
 /-- Quotienting by a homogeneous element of degree `d` does not change the dimension
 of any graded piece of degree less than `d`. Regularity is not needed here. -/

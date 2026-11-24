@@ -41,31 +41,30 @@ variable {α β : Type*} [DecidableEq β]
 
 /-- Relabeling of polyhedra extends the ambient coordinate vector by zero. -/
 theorem relabelingHomeomorph_coe_eq_extendByZero
-    (x : {x : Realization K // x.1.support ∈ P}) :
-    ((P.relabelingHomeomorph e hK hL x).1.1 : β → ℝ) =
-      Function.ExtendByZero.continuousLinearMap ℝ ℝ e (x.1.1 : α → ℝ) := by
+    (x : {x : Realization K // x.val.support ∈ P}) :
+    ((P.relabelingHomeomorph e hK hL x).val.val : β → ℝ) =
+      Function.ExtendByZero.continuousLinearMap ℝ ℝ e (x.val.val : α → ℝ) := by
   rw [relabelingHomeomorph_val, Function.ExtendByZero.continuousLinearMap_apply]
   exact Finsupp.coe_mapDomain_eq_extend e.injective _
 
 /-- Inverse relabeling of polyhedra restricts the ambient coordinate vector along the
 vertex embedding. -/
-theorem relabelingHomeomorph_symm_coe_eq_restriction
-    (y : {y : Realization L // y.1.support ∈ P.map e}) :
-    (((P.relabelingHomeomorph e hK hL).symm y).1.1 : α → ℝ) =
-      Function.ExtendByZero.restriction ℝ e (y.1.1 : β → ℝ) := by
+theorem relabelingHomeomorph_symm_coe_eq_compRightL
+    (y : {y : Realization L // y.val.support ∈ P.map e}) :
+    (((P.relabelingHomeomorph e hK hL).symm y).val.val : α → ℝ) =
+      Pi.compRightL ℝ (fun _ : β ↦ ℝ) e (y.val.val : β → ℝ) := by
   ext i
-  simp only [relabelingHomeomorph_symm_val, Finsupp.comapDomain_apply,
-    Function.ExtendByZero.restriction_apply, Function.comp_apply]
+  simp only [relabelingHomeomorph_symm_val, Finsupp.comapDomain_apply, Pi.compRightL_apply]
 
 include hK hL in
 /-- The coordinate range of a relabeled polyhedron is the extension by zero of the
 original coordinate range. This includes precomplexes with unused ambient vertices. -/
 theorem range_coe_map_eq_image_extendByZero :
-    range (fun y : {y : Realization L // y.1.support ∈ P.map e} => (y.1.1 : β → ℝ)) =
+    range (fun y : {y : Realization L // y.val.support ∈ P.map e} => (y.val.val : β → ℝ)) =
       (Function.ExtendByZero.continuousLinearMap ℝ ℝ e) ''
-        range (fun x : {x : Realization K // x.1.support ∈ P} => (x.1.1 : α → ℝ)) := by
+        range (fun x : {x : Realization K // x.val.support ∈ P} => (x.val.val : α → ℝ)) := by
   rw [← (P.relabelingHomeomorph e hK hL).surjective.range_comp
-    (fun y => (y.1.1 : β → ℝ))]
+    (fun y => (y.val.val : β → ℝ))]
   simp only [Function.comp_def, relabelingHomeomorph_coe_eq_extendByZero]
   exact Set.range_comp' _ _
 

@@ -149,7 +149,8 @@ theorem IsProper.symm {e : Isometry L M} (he : e.IsProper) : e.symm.IsProper :=
 theorem coe_det_toLinearEquiv (e : Isometry L L) :
     (LinearEquiv.det (e : V ≃ₗ[ℚ] V) : ℚ) = ((det L e : ℤ) : ℚ) := by
   rw [LinearEquiv.coe_det, coe_det]
-  exact LinearMap.det_eq_algebraMap_det_of_isLattice _ _ fun x ↦ (coe_carrierEquiv_apply e x).symm
+  exact LinearMap.det_eq_algebraMap_det_of_isFullLattice _ _ fun x ↦
+    (coe_carrierEquiv_apply e x).symm
 
 /-- A self-isometry is proper exactly when it lies in `SO(L)`, that is, has determinant one. -/
 theorem isProper_iff_det_eq_one (e : Isometry L L) : e.IsProper ↔ det L e = 1 := by

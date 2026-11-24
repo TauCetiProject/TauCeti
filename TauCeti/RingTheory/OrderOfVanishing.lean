@@ -30,6 +30,8 @@ point".
 * `TauCeti.Ring.ord_ringEquiv`, `TauCeti.Ring.ordMonoidWithZeroHom_ringEquiv` and
   `TauCeti.Ring.ordFrac_map_of_ringEquiv`: the order of vanishing is invariant under ring
   isomorphisms, also as a homomorphism to `ℤᵐ⁰` and on fraction fields;
+* `TauCeti.Ring.ord_algebraMap_isLocalization`: the order of the image of an element is the same
+  in any two localizations at the same submonoid;
 * `TauCeti.Ring.ord_eq_zero_iff`: `Ring.ord R x = 0` exactly when `x` is a unit;
 * `TauCeti.Ring.ord_prod`: the order of a finite product of non-zero-divisors is the sum of the
   orders;
@@ -89,6 +91,15 @@ theorem ordFrac_map_of_ringEquiv (σ : R ≃+* R') (τ : K →+* K')
   simp [h, Ring.ordFrac_eq_ord]
 
 end RingEquiv
+
+/-- The order of vanishing of the image of `b` does not depend on the chosen localization of `B`
+at `M`: the canonical isomorphism between two such localizations transports one to the other. -/
+theorem ord_algebraMap_isLocalization {B : Type*} [CommRing B] (M : Submonoid B)
+    (S S' : Type*) [CommRing S] [CommRing S'] [Algebra B S] [Algebra B S']
+    [IsLocalization M S] [IsLocalization M S'] (b : B) :
+    Ring.ord S' (algebraMap B S' b) = Ring.ord S (algebraMap B S b) := by
+  rw [← (IsLocalization.algEquiv M S S').commutes]
+  exact ord_ringEquiv (IsLocalization.algEquiv M S S').toRingEquiv _
 
 variable {R : Type*} [CommRing R]
 
@@ -223,15 +234,12 @@ Krull dimension at most one. -/
 theorem ordFrac_algebraMap_eq_ofAdd_ord (m : MaximalSpectrum B) {b : B} (hb : b ≠ 0) :
     Ring.ordFrac (R m) (algebraMap B L b) = Multiplicative.ofAdd
       ((Ring.ord (Localization.AtPrime m.asIdeal) (algebraMap B _ b)).toNat : ℤ) := by
-  let e : Localization.AtPrime m.asIdeal ≃ₐ[B] R m :=
-    IsLocalization.algEquiv m.asIdeal.primeCompl _ _
   have hy : algebraMap B (R m) b ≠ 0 := fun h ↦ hb <| IsFractionRing.injective B L <| by
     rw [IsScalarTower.algebraMap_apply B (R m) L, h, map_zero, map_zero]
   have hy' := mem_nonZeroDivisors_of_ne_zero hy
   have he : Ring.ord (R m) (algebraMap B (R m) b) =
-      Ring.ord (Localization.AtPrime m.asIdeal) (algebraMap B _ b) := by
-    rw [← e.commutes]
-    exact Ring.ord_ringEquiv e.toRingEquiv _
+      Ring.ord (Localization.AtPrime m.asIdeal) (algebraMap B _ b) :=
+    Ring.ord_algebraMap_isLocalization m.asIdeal.primeCompl _ _ b
   have hn : Ring.ord (R m) (algebraMap B (R m) b) =
       ((Ring.ord (Localization.AtPrime m.asIdeal) (algebraMap B _ b)).toNat : ℕ∞) := by
     rw [← he, ENat.natCast_toNat (Ring.ord_ne_top hy')]
