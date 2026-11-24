@@ -57,7 +57,7 @@ vertical velocity. -/
   simp [profileFlux_def, hr, ne_of_gt (Real.sqrt_pos.mpr hs)]
 
 /-- The absolute vertical flux at a point of nonnegative radius. -/
-@[simp] theorem abs_profileFlux {f g : ℝ → ℝ} {v : ℝ} (hr : 0 ≤ f v) :
+theorem abs_profileFlux {f g : ℝ → ℝ} {v : ℝ} (hr : 0 ≤ f v) :
     |profileFlux f g v| = f v * |deriv g v| / Real.sqrt (profileSpeedSq f g v) := by
   rw [profileFlux_def, abs_div, abs_mul, abs_of_nonneg hr,
     abs_of_nonneg (Real.sqrt_nonneg _)]
