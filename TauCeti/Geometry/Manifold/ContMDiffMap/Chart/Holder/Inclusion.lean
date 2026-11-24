@@ -91,18 +91,15 @@ theorem locallyLipschitz_chartIteratedFDeriv [IsManifold I (k + 1 : ℕ) M]
   have hg : ContDiffOn 𝕜 1 g T := fun z hz ↦
     (hf' z hz).iteratedFDerivWithin_right hT (by rw [add_comm]; norm_cast) hz
   intro z
-  obtain ⟨ε, ε0, hε⟩ := Metric.mem_nhdsWithin_iff.1
-    (extChartAt_target_mem_nhdsWithin_of_mem (I := I) z.property)
-  have hs : Convex ℝ (Metric.ball (z : E) ε ∩ range I) := (convex_ball _ _).inter I.convex_range
-  obtain ⟨L, t, ht, hL⟩ := ((hg.mono hε).restrict_scalars ℝ).locallyLipschitzOn hs
-    ⟨Metric.mem_ball_self ε0, extChartAt_target_subset_range x z.property⟩
-  refine ⟨L, Subtype.val ⁻¹' t, preimage_coe_mem_nhds_subtype.2 (nhdsWithin_le_of_mem ?_ ht),
+  obtain ⟨s, hsT, hs, hsn⟩ :=
+    TauCeti.exists_convex_subset_mem_nhdsWithin_extChartAt_target z.property
+  obtain ⟨L, t, ht, hL⟩ := ((hg.mono hsT).restrict_scalars ℝ).locallyLipschitzOn hs
+    (mem_of_mem_nhdsWithin z.property hsn)
+  refine ⟨L, Subtype.val ⁻¹' t, preimage_coe_mem_nhds_subtype.2 (nhdsWithin_le_of_mem hsn ht),
     fun a ha b hb ↦ ?_⟩
-  · exact mem_of_superset (inter_mem_nhdsWithin T (Metric.ball_mem_nhds _ ε0))
-      fun y ⟨hyT, hyb⟩ ↦ ⟨hyb, extChartAt_target_subset_range x hyT⟩
-  · rw [chartIteratedFDeriv_self_target_apply, chartIteratedFDeriv_self_target_apply,
-      Subtype.edist_eq]
-    exact hL ha hb
+  rw [chartIteratedFDeriv_self_target_apply, chartIteratedFDeriv_self_target_apply,
+    Subtype.edist_eq]
+  exact hL ha hb
 
 /-- **Hölder bounds from one more derivative.** Over `ℝ` or `ℂ` and for `β ≤ 1`, the
 `k`th coordinate derivative of a `C^{k+1}` map is `β`-Hölder on every compact subset of a chart
