@@ -335,6 +335,11 @@ noncomputable def cocharacterLatticeLinearEquivDual (T : MultiplicativeTypeCommH
       Module.Dual ℤ (CommHopfAlgCat.additiveCharacterGroup T.obj.obj) :=
   (cocharacterLatticeEquivDual T).addEquiv.toIntLinearEquiv
 
+/-- The geometric cocharacter lattice is torsion-free, as the integral dual of the characters. -/
+instance instCocharacterLatticeIsTorsionFree (T : MultiplicativeTypeCommHopfAlgCat k) :
+    Module.IsTorsionFree ℤ (cocharacterLattice T) :=
+  (cocharacterLatticeLinearEquivDual T).injective.moduleIsTorsionFree _ (map_zsmul _)
+
 /-- Two geometric cocharacters are equal when their functionals agree on every character. -/
 theorem cocharacterLattice_ext {T : MultiplicativeTypeCommHopfAlgCat k}
     {f g : cocharacterLattice T}

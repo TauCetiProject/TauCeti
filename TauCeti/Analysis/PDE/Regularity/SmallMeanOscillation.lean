@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.MeanOscillation
 import TauCeti.Analysis.PDE.Regularity.SharpFunctionMethod
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.SmallMeanOscillation
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff

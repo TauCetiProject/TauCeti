@@ -28,6 +28,8 @@ reverses every arrow while preserving its edge identity.
 * `Graph.Orientation.reverse`: reversal of every chosen edge direction.
 * `Graph.Orientation.reverseOn`: reversal on a selected set of actual edges.
 * `Graph.Orientation.Hom`: the associated explicit arrow family.
+* `Graph.Orientation.nonempty_hom_or_nonempty_hom_iff_adj`: adjacency is witnessed by an
+  oriented arrow in one of the two directions.
 * `Graph.Orientation.totalHomEquiv`: the total arrows are equivalent to the actual edges.
 -/
 
@@ -269,6 +271,20 @@ structure Hom (o : Orientation G) (x y : G.vertexSet) where
 theorem Hom.isLink {o : Orientation G} {x y : G.vertexSet} (a : o.Hom x y) :
     G.IsLink a.edge.val x.val y.val := by
   simpa only [a.tail_eq, a.head_eq] using o.isLink a.edge
+
+/-- Two vertices are adjacent exactly when the orientation has an arrow between them in one of
+the two directions. This includes loops, for which both endpoints coincide. -/
+theorem nonempty_hom_or_nonempty_hom_iff_adj (o : Orientation G) (x y : G.vertexSet) :
+    Nonempty (o.Hom x y) ∨ Nonempty (o.Hom y x) ↔ G.Adj x y := by
+  constructor
+  · rintro (ha | ha)
+    · exact ha.elim fun a ↦ a.isLink.adj
+    · exact ha.elim fun a ↦ a.isLink.symm.adj
+  · rintro ⟨e, he⟩
+    let e' : G.edgeSet := ⟨e, he.edge_mem⟩
+    rcases (o.isLink e').eq_and_eq_or_eq_and_eq he with h | h
+    · exact .inl ⟨⟨e', Subtype.ext h.1, Subtype.ext h.2⟩⟩
+    · exact .inr ⟨⟨e', Subtype.ext h.1, Subtype.ext h.2⟩⟩
 
 /-- Regard an actual edge as the arrow from its chosen tail to its chosen head. -/
 def arrow (o : Orientation G) (e : G.edgeSet) : o.Hom (o.tail e) (o.head e) :=

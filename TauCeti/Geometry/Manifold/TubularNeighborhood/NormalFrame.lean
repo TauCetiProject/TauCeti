@@ -94,6 +94,17 @@ theorem contDiffAt_normalSubspace_starProjection_comp {q : V}
     ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) q :=
   contMDiffAt_iff_contDiffAt.mp ((contMDiffAt_normalSubspace_starProjection hf himm).comp q hr)
 
+/-- The orthogonal projection onto the tangent space of an immersion `f` at `r q`, the orthogonal
+complement of its normal space, is `C^n` in `q` at a point where `r` is `C^n`, when `f` is
+`C^(n + 1)` at `r q`. -/
+theorem contDiffAt_normalSubspace_orthogonal_starProjection_comp {q : V}
+    (hf : ContMDiffAt I 𝓘(ℝ, V) (n + 1) f (r q))
+    (himm : Injective (mfderiv I 𝓘(ℝ, V) f (r q))) (hr : ContMDiffAt 𝓘(ℝ, V) I n r q) :
+    ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q))ᗮ.starProjection) q :=
+  ((contDiffAt_const (c := (1 : V →L[ℝ] V))).sub
+    (contDiffAt_normalSubspace_starProjection_comp hf himm hr)).congr_of_eventuallyEq
+    (Eventually.of_forall fun _ ↦ Submodule.starProjection_orthogonal' _)
+
 /-- At a point `f x` whose base point `x` is fixed by the retraction `r`, the orthogonal projection
 onto the normal space of an immersion `f` at `r q` is `C^n` in `q` at `f x`, when `f` is `C^(n + 1)`
 at `x` and `r` is `C^n` at `f x`. -/
