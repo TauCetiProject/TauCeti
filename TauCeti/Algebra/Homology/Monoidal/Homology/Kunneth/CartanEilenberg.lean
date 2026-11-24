@@ -26,7 +26,12 @@ gives the first-quadrant bicomplex `HomologicalComplex.kunnethBicomplex K L` who
 (`HomologicalComplex.kunnethBicomplexAugmentation`). A chain map `f : K ⟶ K'` induces a morphism
 of Künneth bicomplexes `HomologicalComplex.kunnethBicomplexMapLeft f L`, `f ▷ Q.X p` on column
 `p`, compatible with the augmentations
-(`HomologicalComplex.total_map_kunnethBicomplexMapLeft_kunnethBicomplexAugmentation`).
+(`HomologicalComplex.total_map_kunnethBicomplexMapLeft_kunnethBicomplexAugmentation`). A chain map
+`g : L₁ ⟶ L₂` induces a morphism of Künneth bicomplexes
+`HomologicalComplex.kunnethBicomplexMapRight K g`, `K ◁ Q(g).f p` on column `p` for the lift
+`Q(g) = ChainComplex.cartanEilenbergResolutionMap g` of `g` to the Cartan–Eilenberg resolutions,
+which depends on choices; it is compatible with the augmentations
+(`HomologicalComplex.total_map_kunnethBicomplexMapRight_kunnethBicomplexAugmentation`).
 
 When every term of `K` is flat, this augmentation is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_kunnethBicomplexAugmentation`). Indeed, the row `n` of the bicomplex,

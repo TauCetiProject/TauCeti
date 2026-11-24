@@ -394,8 +394,7 @@ lemma singularKunnethTotalHomologyIso_naturality_right (n : ℕ) :
 
 /-- **Naturality on the abutment in the second space.** Through
 `TopCat.singularKunnethAbutmentIso`, the morphism of spectral objects over `k : Y ⟶ Y'` is, on
-the abutment in degree `n`, the map `(𝟙 × k)_* : Hₙ(X × Y; R) ⟶ Hₙ(X × Y'; R)`, whatever lift
-to the Cartan–Eilenberg resolutions it is built from. -/
+the abutment in degree `n`, the map `(𝟙 × k)_* : Hₙ(X × Y; R) ⟶ Hₙ(X × Y'; R)`. -/
 @[reassoc]
 lemma singularKunnethAbutmentIso_naturality_right (n : ℕ) :
     ((singularKunnethSpectralObjectMapRight X R k).hom (-n)).app

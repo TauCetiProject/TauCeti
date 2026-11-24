@@ -49,6 +49,20 @@ on the kernels gives `Q`, whose differentials are the composites
 short exact sequences, which makes them resolutions
 (`CategoryTheory.ProjectiveResolution.splice`).
 
+## Lifting chain maps
+
+A chain map `g : K ⟶ K'` lifts to a morphism of Cartan–Eilenberg resolutions
+`ChainComplex.cartanEilenbergResolutionMap g` lying over `g`
+(`ChainComplex.cartanEilenbergResolutionMap_π`). On the covers it is built from lifts through the
+projective covers: of the terms, for the disk parts
+(`ChainComplex.cartanEilenbergResolution.diskMap`, a map of mapping cones), and of the cycles, for
+the sphere parts
+(`ChainComplex.cartanEilenbergResolution.sphereMap`). These give the lift
+`ChainComplex.cartanEilenbergResolution.coverMap` to the covers and, by induction, the maps
+`ChainComplex.cartanEilenbergResolution.kernelsMap` of the successive kernels. The lift depends on
+these choices, so it is not functorial on the nose, and no identity or composition lemmas are
+stated for it.
+
 ## References
 
 * C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge University Press, 1994,
@@ -389,6 +403,14 @@ def sphereMap : sphere M ⟶ sphere M' :=
   HomologicalComplex.gradedMap _ fun q =>
     Projective.factorThru (Projective.π (M.cycles q) ≫ HomologicalComplex.cyclesMap h q)
       (Projective.π (M'.cycles q))
+
+/-- The lift of `h` to the sphere parts of the covers lifts the map induced on cycles. -/
+@[reassoc (attr := simp)]
+lemma sphereMap_f_π (q : ℕ) :
+    (sphereMap h).f q ≫ Projective.π (M'.cycles q) =
+      Projective.π (M.cycles q) ≫ HomologicalComplex.cyclesMap h q := by
+  rw [sphereMap, HomologicalComplex.gradedMap_f]
+  exact Projective.factorThru_comp _ _
 
 /-- The lift of `h` to the sphere parts of the covers lies over `h`. -/
 @[reassoc (attr := simp)]
