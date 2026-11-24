@@ -67,7 +67,7 @@ theorem fpCompactificationProperty_iff (C : Compactification f) :
 instance : (fpCompactificationProperty f).IsClosedUnderIsomorphisms where
   of_iso {C D} e hC := by
     rw [fpCompactificationProperty_iff] at hC ⊢
-    rw [← show e.inv.hom.h ≫ C.p = D.p from e.inv.hom.h_π]
+    rw [Compactification.p, ← e.inv.hom.h_π]
     infer_instance
 
 /-- The full subcategory of compactifications whose proper map is locally of finite
@@ -106,8 +106,9 @@ theorem fpCompactificationProperty_identity_quotient_iff {A : CommRingCat.{u}} (
   refine ⟨fun h ↦ ?_, fun h ↦ .of_surjective _ Ideal.Quotient.mk_surjective (by
     rwa [Ideal.mk_ker])⟩
   rw [← Ideal.Quotient.algebraMap_eq, RingHom.finitePresentation_algebraMap] at h
-  simpa using Algebra.FinitePresentation.ker_fG_of_surjective (Algebra.ofId A (A ⧸ J))
-    Ideal.Quotient.mk_surjective
+  have := Algebra.FinitePresentation.ker_fG_of_surjective (Ideal.Quotient.mkₐ A J)
+    (Ideal.Quotient.mkₐ_surjective A J)
+  rwa [AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_ker] at this
 
 end Compactification
 

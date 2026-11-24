@@ -26,7 +26,7 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ChartEquality
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 import TauCeti.RingTheory.Spectrum.Prime.Polynomial
-import Mathlib.RingTheory.PolynomialAlgebra
+import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 
 /-!
 # The projective line over a commutative ring
@@ -111,10 +111,9 @@ function `X₁ / X₀` on that chart going to `X`.
   (`TauCeti.AlgebraicGeometry.projectiveLine.smooth`) and locally of finite presentation.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isPullback_baseChangeProjection`: `ℙ¹_S` is the base
   change of `ℙ¹_R` along `Spec S ⟶ Spec R`.
-* `TauCeti.AlgebraicGeometry.isPullback_SpecMap_polynomial` and
-  `TauCeti.AlgebraicGeometry.projectiveLine.isPullback_polynomialChartι_baseChangeProjection`:
-  `Spec S[X]` is the base change of `Spec R[X]` along `Spec S ⟶ Spec R`, and its embedding as a
-  chart of `ℙ¹_S` is the base change of the corresponding chart of `ℙ¹_R`.
+* `TauCeti.AlgebraicGeometry.projectiveLine.isPullback_polynomialChartι_baseChangeProjection`:
+  the embedding of `Spec S[X]` as a chart of `ℙ¹_S` is the base change of the corresponding chart
+  of `ℙ¹_R`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_germToFunctionField`: on the chart
   `D₊(X₀)`, the identification of the function field with `R(X)` is `chartSectionsEquiv`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.functionFieldEquiv_symm_X`: that identification sends
@@ -1237,26 +1236,6 @@ noncomputable abbrev toOver : Over (Spec (.of R)) :=
 lemma toOver_hom : (toOver R).hom = (projectiveLine R ↘ Spec (.of R)) := (rfl)
 
 end TauCeti.AlgebraicGeometry.projectiveLine
-
-namespace TauCeti.AlgebraicGeometry
-
-variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
-
-/-- **Base change of the affine line**: for an `R`-algebra `S`, the square formed by extension of
-coefficients `Spec S[X] ⟶ Spec R[X]`, the structure morphisms and `Spec S ⟶ Spec R` is a
-pullback, that is, `Spec S[X] = Spec R[X] ×_{Spec R} Spec S`. -/
-lemma isPullback_SpecMap_polynomial :
-    IsPullback (Spec.map (CommRingCat.ofHom (Polynomial.mapRingHom (algebraMap R S))))
-      (Spec.map (CommRingCat.ofHom (algebraMap S S[X])))
-      (Spec.map (CommRingCat.ofHom (algebraMap R R[X])))
-      (Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
-  -- `R[X] → S[X]` is the algebra map of the non-instance `Polynomial.algebra`, which makes
-  -- `R[X] ⊗[R] S = S[X]` a pushout of commutative rings.
-  let := Polynomial.algebra R S
-  exact isPullback_SpecMap_of_isPushout _ _ _ _
-    (CommRingCat.isPushout_of_isPushout R S R[X] S[X]).flip
-
-end TauCeti.AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry.projectiveLine
 

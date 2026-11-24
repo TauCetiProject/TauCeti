@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Compactification.FinitePresentation
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
+public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 
 /-!
 # The projective compactification of the affine line
