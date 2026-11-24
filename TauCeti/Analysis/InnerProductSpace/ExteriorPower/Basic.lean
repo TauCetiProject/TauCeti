@@ -671,13 +671,20 @@ noncomputable def twoVectorBracket : ⋀[ℝ]^2 V →ₗ[ℝ] ⋀[ℝ]^2 V →�
   (LieAlgebra.ad ℝ (⋀[ℝ]^2 V)).toLinearMap
 
 omit [FiniteDimensional ℝ V] in
+private theorem twoVectorBracket_eq_lie (F G : ⋀[ℝ]^2 V) :
+    letI := bivectorLieRing (negHalfInnerQ V)
+    twoVectorBracket F G = ⁅F, G⁆ := by
+  let _ := bivectorLieRing (negHalfInnerQ V)
+  let _ := bivectorLieAlgebra (negHalfInnerQ V)
+  simp only [twoVectorBracket, LieHom.coe_toLinearMap, LieAlgebra.ad_apply]
+
+omit [FiniteDimensional ℝ V] in
 private theorem bivectorExterior_twoVectorBracket (F G : ⋀[ℝ]^2 V) :
     bivectorExterior (negHalfInnerQ V) (twoVectorBracket F G) =
       ⁅bivectorExterior (negHalfInnerQ V) F, bivectorExterior (negHalfInnerQ V) G⁆ := by
   let _ := bivectorLieRing (negHalfInnerQ V)
   let _ := bivectorLieAlgebra (negHalfInnerQ V)
-  have hbracket : twoVectorBracket F G = ⁅F, G⁆ := rfl
-  rw [hbracket]
+  rw [twoVectorBracket_eq_lie]
   calc
     bivectorExterior (negHalfInnerQ V) ⁅F, G⁆
         = ((bivectorLieEquiv (negHalfInnerQ V) ⁅F, G⁆ :
@@ -899,10 +906,7 @@ private noncomputable def negHalfInnerIsometry {E F : Type*} [NormedAddCommGroup
     TauCeti.negHalfInnerQ E →qᵢ TauCeti.negHalfInnerQ F where
   toLinearMap := f.toLinearMap
   map_app' x := by
-    rw [TauCeti.negHalfInnerQ, TauCeti.negHalfInnerQ, smul_apply, smul_apply,
-      LinearMap.BilinMap.toQuadraticMap_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-      innerₗ_apply_apply, innerₗ_apply_apply, LinearMap.toFun_eq_coe,
-      LinearIsometry.coe_toLinearMap, f.inner_map_map]
+    simp [TauCeti.negHalfInnerQ]
 
 /-- Exterior-square functoriality of a linear isometry preserves `twoVectorBracket`. -/
 theorem exteriorPower_map_twoVectorBracket {E F : Type*} [NormedAddCommGroup E]
