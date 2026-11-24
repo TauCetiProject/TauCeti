@@ -26,7 +26,9 @@ is needed.
 
 In particular, for a rescaling `z ↦ f (a • z)` the `i`-th derivative at `x` is `a ^ i` times that
 of `f` at `a • x`, again without any differentiability of `f`
-(`TauCeti.iteratedFDeriv_comp_const_smul_apply`). A Hölder bound on a set `t` for the `i`-th
+(`TauCeti.iteratedFDeriv_comp_const_smul_apply`); for a dilation `z ↦ f (x + a • z)` about `x`
+its norm is `‖a‖ ^ i` times that of the `i`-th derivative of `f` at `x + a • z`
+(`TauCeti.norm_iteratedFDeriv_comp_add_const_smul`). A Hölder bound on a set `t` for the `i`-th
 derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
 (`HolderOnWith.iteratedFDeriv_comp_const_smul`).
 -/
@@ -158,6 +160,14 @@ theorem iteratedFDeriv_comp_const_smul_apply (f : E → F) (a : 𝕜) (x : E) (i
 theorem norm_iteratedFDeriv_comp_const_smul (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
     ‖iteratedFDeriv 𝕜 i (fun z ↦ f (a • z)) x‖ = ‖a‖ ^ i * ‖iteratedFDeriv 𝕜 i f (a • x)‖ := by
   rw [iteratedFDeriv_comp_const_smul_apply, norm_smul, norm_pow]
+
+/-- The norm of the `i`-th derivative of the dilation `z ↦ f (x + a • z)` about `x` at `z` is
+`‖a‖ ^ i` times that of the `i`-th derivative of `f` at `x + a • z`. No differentiability of `f`
+is needed. -/
+theorem norm_iteratedFDeriv_comp_add_const_smul (f : E → F) (x : E) (a : 𝕜) (z : E) (i : ℕ) :
+    ‖iteratedFDeriv 𝕜 i (fun y ↦ f (x + a • y)) z‖ =
+      ‖a‖ ^ i * ‖iteratedFDeriv 𝕜 i f (x + a • z)‖ := by
+  rw [norm_iteratedFDeriv_comp_const_smul (fun y ↦ f (x + y)) a z i, iteratedFDeriv_comp_add_left]
 
 end TauCeti
 

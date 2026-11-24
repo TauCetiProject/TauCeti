@@ -37,6 +37,8 @@ restrict to open subsets and are compared along homeomorphisms.
 ## Main results
 
 * `TauCeti.isIso_localHomologyMap`: excision along an open embedding.
+* `TauCeti.isZero_localHomology_iff_of_isOpenEmbedding`: excision along an open embedding
+  preserves and reflects vanishing of local homology.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap`: the map induced by an
   open embedding undoes the inverse of this isomorphism.
 * `TauCeti.localHomologyMap_comp_localHomologyRestriction_singleton`: these isomorphisms are
@@ -95,6 +97,15 @@ theorem isIso_localHomologyMap (hj : IsOpenEmbedding j) {S : Set M} {T : Set N}
       rw [TopPair.ofSubsetMap_fst]
       exact subset_rfl
 
+/-- **Vanishing of local homology is invariant under excision along an open embedding.** Under
+the hypotheses of `TauCeti.isIso_localHomologyMap`, `Hₖ(M, M ∖ S)` vanishes if and only if
+`Hₖ(N, N ∖ T)` does. -/
+theorem isZero_localHomology_iff_of_isOpenEmbedding (hj : IsOpenEmbedding j) {S : Set M}
+    {T : Set N} (h : j ⁻¹' T = S) (hT : IsClosed T) (hTj : T ⊆ range j) (k : ℕ) :
+    IsZero (localHomology R S k) ↔ IsZero (localHomology R T k) :=
+  have := isIso_localHomologyMap R j hj h hT hTj k
+  (asIso (localHomologyMap R j h.subset k)).isZero_iff
+
 /-- An open embedding `j : M → N` into a `T₁` space identifies the local homology of `M` at `x`
 with the local homology of `N` at `j x`. -/
 def localHomologyIsoOfIsOpenEmbedding [T1Space N] {j : M → N} (hj : IsOpenEmbedding j) (x : M)
@@ -124,7 +135,7 @@ lemma localHomologyIsoOfIsOpenEmbedding_inv_comp_localHomologyMap [T1Space N] {j
 /-- **Naturality of the local isomorphisms of an open embedding.** For `j ⁻¹' T ⊆ S` and a point
 `x` with `j x ∈ T`, the map `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j` followed by restriction
 to `j x` is restriction to `x` followed by `localHomologyIsoOfIsOpenEmbedding`. -/
-@[reassoc]
+@[reassoc, elementwise nosimp]
 lemma localHomologyMap_comp_localHomologyRestriction_singleton [T1Space N] {j : M → N}
     (hj : IsOpenEmbedding j) {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) {x : M} (hxT : j x ∈ T)
     (k : ℕ) :

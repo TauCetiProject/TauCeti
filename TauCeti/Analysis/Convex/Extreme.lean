@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Extreme
+public import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # Extreme subsets and convex combinations
@@ -22,9 +23,15 @@ strictly positive weights that it meets, as long as the convex hull of the point
 (`IsExtreme.convexHull_inter_subset`). This is how a triangulation of a convex set restricts to
 each of its faces.
 
+An extreme subset meeting the intrinsic interior of its ambient set is the whole set
+(`IsExtreme.eq_of_mem_intrinsicInterior`); hence proper extreme subsets lie in the intrinsic
+frontier, without convexity or finite dimension.
+
 Every subfamily of an affinely independent family spans an extreme subset of its convex hull
 (`AffineIndependent.isExtreme_convexHull`). Thus the faces of a simplex are extreme, without
-any topological or finite-dimensional assumption.
+any topological or finite-dimensional assumption. A point of `A` that strictly maximizes a linear
+functional on `A` is an extreme point of `convexHull 𝕜 A`
+(`TauCeti.mem_extremePoints_convexHull_of_strict_max`).
 -/
 
 public section
@@ -61,6 +68,45 @@ theorem mem_extremePoints_iff_linearMap_mem_extremePoints
     apply hf
     apply h (f x₁) ((hmem x₁).2 hx₁) (f x₂) ((hmem x₂).2 hx₂)
     exact ⟨a, b, ha, hb, hab, by simpa only [map_add, map_smul] using congrArg f hmix⟩
+
+/-- A point of `A` at which a linear functional takes a strict maximum on `A` is an extreme point
+of `convexHull 𝕜 A`, without any topological or finite-dimensional assumption. -/
+theorem mem_extremePoints_convexHull_of_strict_max
+    {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommMonoid E] [Module 𝕜 E] {A : Set E} {p : E} (hp : p ∈ A)
+    (f : E →ₗ[𝕜] 𝕜) (hf : ∀ q ∈ A, q ≠ p → f q < f p) :
+    p ∈ (convexHull 𝕜 A).extremePoints 𝕜 := by
+  let C : Set E := {q | f q < f p ∨ q = p}
+  have hcomb {u v : 𝕜} (hu : u < f p) (hv : v ≤ f p) {a b : 𝕜}
+      (ha : 0 < a) (hb : 0 ≤ b) (hab : a + b = 1) : a * u + b * v < f p :=
+    calc a * u + b * v
+      _ < a * f p + b * f p :=
+          add_lt_add_of_lt_of_le (mul_lt_mul_of_pos_left hu ha) (mul_le_mul_of_nonneg_left hv hb)
+      _ = (a + b) * f p := (add_mul a b (f p)).symm
+      _ = f p := by rw [hab, one_mul]
+  have hC_conv : Convex 𝕜 C := by
+    rintro x (hx | rfl) y (hy | rfl) a b ha hb hab
+    · rcases eq_or_lt_of_le ha with rfl | ha'
+      · have hb1 : b = 1 := by simpa using hab
+        exact Or.inl (by simpa [hb1] using hy)
+      · exact Or.inl (by simpa using hcomb hx hy.le ha' hb hab)
+    · rcases eq_or_lt_of_le ha with rfl | ha'
+      · have hb1 : b = 1 := by simpa using hab
+        exact Or.inr (by simp [hb1])
+      · exact Or.inl (by simpa using hcomb hx le_rfl ha' hb hab)
+    · rcases eq_or_lt_of_le hb with rfl | hb'
+      · have ha1 : a = 1 := by simpa using hab
+        exact Or.inr (by simp [ha1])
+      · exact Or.inl (by simpa [add_comm] using hcomb hy le_rfl hb' ha (add_comm a b ▸ hab))
+    · exact Or.inr (by rw [← add_smul, hab, one_smul])
+  have hHC : convexHull 𝕜 A ⊆ C :=
+    convexHull_min (fun q hq ↦ (eq_or_ne q p).symm.imp_left (hf q hq)) hC_conv
+  rw [mem_extremePoints_iff_left]
+  refine ⟨subset_convexHull 𝕜 A hp, fun x₁ hx₁ x₂ hx₂ ⟨a, b, ha, hb, hab, hmix⟩ ↦ ?_⟩
+  rcases hHC hx₁ with hx₁' | hx₁'
+  · have hx₂' : f x₂ ≤ f p := (hHC hx₂).elim le_of_lt (fun h ↦ le_of_eq (congrArg f h))
+    exact False.elim ((hcomb hx₁' hx₂' ha hb.le hab).ne (by simpa using congrArg f hmix))
+  · exact hx₁'
 
 end TauCeti
 
@@ -163,3 +209,27 @@ theorem AffineIndependent.isExtreme_convexHull (hp : AffineIndependent 𝕜 p) (
     (fun i hi => Set.mem_image_of_mem p (Finset.mem_filter.mp hi).2)
 
 end Simplex
+
+section IntrinsicInterior
+
+open Filter Topology
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [ContinuousAdd V]
+  [ContinuousSMul ℝ V] {P F : Set V}
+
+/-- An extreme subset meeting the intrinsic interior of its ambient set is that entire set.
+Neither convexity nor finite dimension is required. -/
+theorem IsExtreme.eq_of_mem_intrinsicInterior (hF : IsExtreme ℝ P F) {x : V} (hxF : x ∈ F)
+    (hx : x ∈ intrinsicInterior ℝ P) : F = P := by
+  refine hF.subset.antisymm fun y hy => ?_
+  obtain ⟨z, hz, hseg⟩ := TauCeti.exists_mem_and_mem_openSegment_of_mem_intrinsicInterior hx hy
+  exact hF.left_mem_of_mem_openSegment hy hz hxF hseg
+
+/-- Every proper extreme subset lies in the intrinsic frontier of its ambient set. -/
+theorem IsExtreme.subset_intrinsicFrontier (hF : IsExtreme ℝ P F) (hne : F ≠ P) :
+    F ⊆ intrinsicFrontier ℝ P := by
+  rw [← intrinsicClosure_sdiff_intrinsicInterior]
+  exact fun _ hx => ⟨subset_intrinsicClosure (hF.subset hx),
+    fun hi => hne (hF.eq_of_mem_intrinsicInterior hx hi)⟩
+
+end IntrinsicInterior

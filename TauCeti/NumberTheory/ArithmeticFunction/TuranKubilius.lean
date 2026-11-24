@@ -592,7 +592,7 @@ theorem apply_eq_sum_primesLE_Icc_log {R : Type*} [AddCommMonoid R] {f : Arithme
     exact (sum_eq_zero fun _ _ ↦ sum_eq_zero fun k hk ↦
       ite_eq_right (by have := (mem_Icc.mp hk).1; lia)).symm
   have hn_pos : 0 < n := Nat.pos_of_ne_zero hn0
-  rw [hf.sum_primeFactors_pow_factorization n]
+  rw [hf.apply_eq_sum_primeFactors_pow n]
   have hsub : n.primeFactors ⊆ Nat.primesLE N := fun p hp ↦
     Nat.mem_primesLE.mpr ⟨(Nat.le_of_dvd hn_pos (Nat.dvd_of_mem_primeFactors hp)).trans hn,
       Nat.prime_of_mem_primeFactors hp⟩

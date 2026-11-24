@@ -31,10 +31,15 @@ equivalence relation is Mathlib's internal `CategoryTheory.IsEquivalenceRelation
   equivalence relation.
 * `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.of_isKernelPair`: the kernel pair of an étale
   morphism is an étale equivalence relation.
+* `TauCeti.AlgebraicGeometry.Spaces.EtaleEquivRel.restrict`: the restriction
+  `R ×_{U × U} (U' × U')` of an étale equivalence relation on `U` along an étale morphism
+  `U' ⟶ U` is an étale equivalence relation on `U'`.
 
 ## References
 
 * [Stacks Project, Definition 39.3.1](https://stacks.math.columbia.edu/tag/022P)
+* [Stacks Project, Lemma 39.3.2](https://stacks.math.columbia.edu/tag/02V8)
+* [Stacks Project, Definition 39.3.3](https://stacks.math.columbia.edu/tag/02V9)
 * [Stacks Project, Definition 65.9.2](https://stacks.math.columbia.edu/tag/02WS)
 -/
 
@@ -44,7 +49,7 @@ open CategoryTheory Limits
 
 namespace TauCeti.AlgebraicGeometry.Spaces
 
-open _root_.AlgebraicGeometry
+open _root_.AlgebraicGeometry TauCeti.CategoryTheory
 
 universe u
 
@@ -198,6 +203,26 @@ theorem id_refl (h : EtaleEquivRel (𝟙 U) (𝟙 U)) : h.refl = 𝟙 U :=
 @[simp]
 theorem id_symm (h : EtaleEquivRel (𝟙 U) (𝟙 U)) : h.symm = 𝟙 U :=
   h.isEquivalenceRelation.id_symm
+
+/-- The restriction of an étale equivalence relation `s, t : R ⟶ U` along an étale morphism
+`g : U' ⟶ U`, the relation `R' = R ×_{U × U} (U' × U')` on `U'` with projections
+`TauCeti.CategoryTheory.restrictRel.fst g t s` and `TauCeti.CategoryTheory.restrictRel.snd g t s`,
+is an étale equivalence relation on `U'` (Stacks, Definition 39.3.3 (02V9) and Lemma 39.3.2
+(02V8)). Étaleness of `g` is used only for the étaleness of the
+projections: the restriction along any morphism is an equivalence relation
+(`CategoryTheory.IsEquivalenceRelation.restrictRel`). -/
+theorem restrict (h : EtaleEquivRel s t) {U' : Scheme.{u}} (g : U' ⟶ U) [Etale g] :
+    EtaleEquivRel (restrictRel.snd g t s) (restrictRel.fst g t s) := by
+  have := h.isEquivalenceRelation
+  have := h.etale_s
+  have := h.etale_t
+  -- `snd` is the base change along `g` of `pullback.snd g t ≫ s` (a base change of `g` followed
+  -- by `s`), and `fst` is a base change of `g` followed by one of `t`.
+  refine ⟨inferInstance, ?_, ?_⟩
+  · rw [restrictRel.snd_def]
+    infer_instance
+  · rw [restrictRel.fst_def]
+    infer_instance
 
 end EtaleEquivRel
 

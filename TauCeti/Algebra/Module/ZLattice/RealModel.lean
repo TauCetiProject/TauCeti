@@ -59,6 +59,8 @@ isometry classes of rational lattices, such as non-isometry, transfer to the rea
 
 * `TauCeti.IntegralLattice.inner_realModelMap`: the inner product extends the rational form.
 * `TauCeti.IntegralLattice.isIntegral_realModel`: the real model is an integral lattice.
+* `TauCeti.IntegralLattice.linearIndependent_realModelMap_iff`: lattice vectors are independent
+  over `ℤ` exactly when their images in the real model space are independent over `ℝ`.
 * `TauCeti.IntegralLattice.isEven_realModel_iff` and
   `TauCeti.IntegralLattice.isUnimodular_realModel_iff`: the real model is even, resp. unimodular,
   exactly when `M` is.
@@ -197,6 +199,16 @@ theorem realModelMap_mem_realModel_iff {x : V} :
     M.realModelMap hM x ∈ M.realModel hM ↔ x ∈ M.carrier := by
   rw [← SetLike.mem_coe, realModel, Submodule.map_coe]
   exact (M.realModelMap_injective hM).mem_set_image
+
+/-- Vectors of the carrier are linearly independent over `ℤ` exactly when their images `1 ⊗ x`
+in the real model space are linearly independent over `ℝ`. -/
+theorem linearIndependent_realModelMap_iff {ι : Type*} {x : ι → M} :
+    LinearIndependent ℝ (fun j ↦ M.realModelMap hM (x j)) ↔ LinearIndependent ℤ x := by
+  refine ⟨fun hx ↦ .of_comp (((M.realModelMap hM).restrictScalars ℤ).comp M.carrier.subtype)
+    (hx.restrict_scalars' ℤ), fun hx ↦ ?_⟩
+  have hV : LinearIndependent ℚ fun j ↦ (x j : V) :=
+    (LinearIndependent.iff_fractionRing ℤ ℚ).mp (hx.map' M.carrier.subtype M.carrier.ker_subtype)
+  exact Module.Flat.linearIndependent_one_tmul hV
 
 /-- The `ℝ`-basis of the real model space obtained from a `ℤ`-basis of the carrier. -/
 private noncomputable def realModelBasis :

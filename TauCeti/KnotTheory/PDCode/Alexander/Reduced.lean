@@ -67,7 +67,7 @@ theorem coe_alexanderReduction (x : D.AlexanderModule) :
 theorem alexanderReduction_coe (x : D.ReducedAlexanderModule) :
     D.alexanderReduction g₀ x = x := by
   apply Subtype.ext
-  simp [LinearMap.mem_ker.mp x.2]
+  simp [LinearMap.mem_ker.mp x.property]
 
 /-- Projection onto the reduced Alexander module is surjective. -/
 theorem alexanderReduction_surjective : Function.Surjective (D.alexanderReduction g₀) :=
@@ -158,7 +158,7 @@ def alexanderSplitting : D.AlexanderModule ≃ₗ[ℤ[T;T⁻¹]]
   ((LinearMap.exact_subtype_ker_map D.alexanderAugmentation).splitSurjectiveEquiv
     (Submodule.injective_subtype _)
     ⟨LinearMap.toSpanSingleton ℤ[T;T⁻¹] D.AlexanderModule (D.alexanderGenerator g₀),
-      by ext; simp⟩).1
+      by ext; simp⟩).val
 
 /-- The scalar component of the splitting is the augmentation. -/
 @[simp]
@@ -168,7 +168,7 @@ theorem alexanderSplitting_snd (x : D.AlexanderModule) :
     ((LinearMap.exact_subtype_ker_map D.alexanderAugmentation).splitSurjectiveEquiv
       (Submodule.injective_subtype _)
       ⟨LinearMap.toSpanSingleton ℤ[T;T⁻¹] D.AlexanderModule (D.alexanderGenerator g₀),
-        by ext; simp⟩).2.2 x).symm
+        by ext; simp⟩).property.2 x).symm
 
 /-- The inverse splitting adds the reduced component to the chosen free component. -/
 @[simp]
@@ -180,7 +180,7 @@ theorem alexanderSplitting_symm_apply (x : D.ReducedAlexanderModule) (r : ℤ[T;
   let s := LinearMap.toSpanSingleton ℤ[T;T⁻¹] D.AlexanderModule (D.alexanderGenerator g₀)
   have hs : D.alexanderAugmentation.comp s = LinearMap.id := by ext; simp [s]
   have hi : (D.alexanderSplitting g₀).symm (x, 0) = (x : D.AlexanderModule) :=
-    (LinearMap.congr_fun (S ⟨s, hs⟩).2.1 x).symm
+    (LinearMap.congr_fun (S ⟨s, hs⟩).property.1 x).symm
   have hr : (D.alexanderSplitting g₀).symm (0, r) = r • D.alexanderGenerator g₀ :=
     LinearMap.congr_fun (congrArg Subtype.val (S.left_inv ⟨s, hs⟩)) r
   calc
