@@ -41,9 +41,8 @@ and the eigenfunctions on `X ⧸ H` are identified with the `H`-invariant eigenf
 Given these facts, the algebraic result shows that `X ⧸ H` and `X ⧸ K` have the same eigenvalues
 with the same multiplicities.
 
-The coefficient field, the group and the representation share one universe, as the categorical
-constructions behind `TauCeti.quotientHomEquivInvariants` (`Rep.indResHomEquiv` and
-`Rep.trivialHomEquivInvariants`) require.
+The coefficient field, the group and the representation share one universe, as the category
+`Rep k G` in which `TauCeti.quotientHomEquivInvariants` is stated requires.
 
 ## Main statements
 

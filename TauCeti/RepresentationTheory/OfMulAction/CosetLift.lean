@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.RepresentationTheory.Intertwining
+public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Stabilizer
 import TauCeti.Algebra.MonoidAlgebra.Basis
 import TauCeti.RepresentationTheory.Stabilizer
@@ -24,6 +25,9 @@ a vector `v` of a representation `ρ` fixed by `U`, there is a unique intertwini
 * `Representation.cosetLift ρ U v hU`: for `U` fixing `v`, the intertwining map
   `A[G ⧸ U] → V`, `g U ↦ ρ g v`. It is the linear extension of the orbit map
   `Representation.orbitMap` composed with `G ⧸ U → G ⧸ ρ.stabilizer v`.
+* `Representation.ofMulActionQuotientMapEquiv ρ U`: over a commutative ring, the linear
+  equivalence between intertwining maps `A[G ⧸ U] → V` and the `U`-invariant vectors of `V`,
+  given by evaluation at the coset `U` and inverted by `Representation.cosetLift`.
 
 ## Main results
 
@@ -93,5 +97,43 @@ theorem IntertwiningMap.eq_cosetLift
   simp
 
 end Semiring
+
+section CommRing
+
+variable {A G V : Type*} [CommRing A] [Group G] [AddCommGroup V] [Module A V]
+
+variable (ρ : Representation A G V) (U : Subgroup G)
+
+/-- **The universal property of `A[G ⧸ U]`** (Frobenius reciprocity for a permutation
+representation on cosets): intertwining maps `A[G ⧸ U] → V` correspond to the `U`-invariant
+vectors of `V`. A map corresponds to its value at the basis vector of the coset `U`, and an
+invariant vector `v` to the coset lift `g U ↦ ρ g v`. -/
+noncomputable def ofMulActionQuotientMapEquiv :
+    IntertwiningMap (ofMulAction A G (G ⧸ U)) ρ ≃ₗ[A] invariants (ρ.comp U.subtype) where
+  toFun f := ⟨f (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1),
+    fun u ↦ f.le_stabilizer_apply_single_one u.property⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun v := ρ.cosetLift U v fun u hu ↦ v.property ⟨u, hu⟩
+  left_inv f := f.eq_cosetLift.symm
+  right_inv v := Subtype.ext <| (cosetLift_single ..).trans <| by simp
+
+/-- `Representation.ofMulActionQuotientMapEquiv` evaluates a map at the basis vector of the coset
+`U`. -/
+@[simp]
+theorem coe_ofMulActionQuotientMapEquiv_apply (f : IntertwiningMap (ofMulAction A G (G ⧸ U)) ρ) :
+    (ρ.ofMulActionQuotientMapEquiv U f : V) = f (MonoidAlgebra.single ((1 : G) : G ⧸ U) 1) :=
+  (rfl)
+
+/-- The intertwining map attached to a `U`-invariant vector `v` sends the coset `g U` to
+`ρ g v`. -/
+@[simp]
+theorem ofMulActionQuotientMapEquiv_symm_apply_single (v : invariants (ρ.comp U.subtype)) (g : G)
+    (c : A) :
+    (ρ.ofMulActionQuotientMapEquiv U).symm v (MonoidAlgebra.single (g : G ⧸ U) c) =
+      c • ρ g v :=
+  cosetLift_single ..
+
+end CommRing
 
 end Representation
