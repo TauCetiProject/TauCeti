@@ -37,6 +37,10 @@ leave it:
   of `G` on `G ×_K Z` is `Z ⧸ K`
   (`TauCeti.BalancedProduct.orbitRelQuotientEquivRightTranslation`).
 
+For a point `z₀` of `Z` fixed by `K`, the zero section `g K ↦ [g, z₀]`
+(`TauCeti.BalancedProduct.zeroSectionRightTranslation`) is a `G`-equivariant section of the
+projection onto `G ⧸ K`, whose image is the `G`-orbit of `[1, z₀]`.
+
 For a topological group `G`, right translation by `K` is continuous, and it is proper when `K` is
 closed: it is the restriction of Mathlib's proper action of `Gᵐᵒᵖ` on `G` along the closed
 embedding `h ↦ op h⁻¹`. The action of `G` on `G ×_K Z` is continuous when `K` acts on `Z` by
@@ -49,6 +53,8 @@ Lie group `G` is in `TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
 
 * `Subgroup.RightTranslation K`: the group `G` as a `K`-space under `h • g = g h⁻¹`.
 * `TauCeti.BalancedProduct.liftRightTranslation`: the map `[g, z] ↦ g • ι z`.
+* `TauCeti.BalancedProduct.zeroSectionRightTranslation`: the zero section `g K ↦ [g, z₀]` at a
+  `K`-fixed point `z₀`.
 * `TauCeti.BalancedProduct.liftProjRightTranslation`: the map `[g, z] ↦ (g • ι z, g K)` to
   `M × G ⧸ K`.
 
@@ -59,6 +65,9 @@ Lie group `G` is in `TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
 * `TauCeti.BalancedProduct.orbitProj_eq_orbitProj_iff`,
   `TauCeti.BalancedProduct.orbitRelQuotientEquivRightTranslation`: the fibres of the projection
   onto `Z ⧸ K` are the `G`-orbits.
+* `TauCeti.BalancedProduct.proj_zeroSectionRightTranslation`,
+  `TauCeti.BalancedProduct.range_zeroSectionRightTranslation`: the zero section is a section of
+  the projection onto `G ⧸ K`, with image the `G`-orbit of `[1, z₀]`.
 * `TauCeti.BalancedProduct.eq_liftRightTranslation`,
   `TauCeti.BalancedProduct.liftEquivRightTranslation`: `G`-equivariant maps out of `G ×_K Z`
   correspond to `K`-equivariant maps out of `Z`.
@@ -260,6 +269,49 @@ theorem proj_smul_rightTranslation (k : G) (y : BalancedProduct K K.RightTransla
     proj Z Subgroup.RightTranslation.quotientMk_smul (k • y) =
       k • proj Z Subgroup.RightTranslation.quotientMk_smul y :=
   y.induction_on_toRightTranslation fun g z ↦ by simp [proj_mk]
+
+/-! ### The zero section -/
+
+section ZeroSection
+
+variable {z₀ : Z} (hz₀ : z₀ ∈ MulAction.fixedPoints K Z)
+
+/-- The zero section `g K ↦ [g, z₀]` of the projection of `G ×_K Z` onto `G ⧸ K`, for a point
+`z₀` of `Z` fixed by `K`. It is the orbit map `g ↦ g • [1, z₀]`, which descends to `G ⧸ K` because
+`K` stabilizes `[1, z₀]`: `h • [1, z₀] = [1, h • z₀] = [1, z₀]` for `h ∈ K`. -/
+def zeroSectionRightTranslation : G ⧸ K → BalancedProduct K K.RightTranslation Z :=
+  MulAction.ofQuotientStabilizer G (mk K (K.toRightTranslation 1) z₀) ∘
+    Subgroup.quotientMapOfLE fun h hh ↦ by
+      simpa [hz₀ ⟨h, hh⟩] using (mk_toRightTranslation_one_smul ⟨h, hh⟩ z₀).symm
+
+/-- The zero section sends `g K` to `[g, z₀]`. -/
+@[simp]
+theorem zeroSectionRightTranslation_mk (g : G) :
+    zeroSectionRightTranslation hz₀ (g : G ⧸ K) = mk K (K.toRightTranslation g) z₀ := by
+  simp [zeroSectionRightTranslation]
+
+/-- The zero section is a section of the projection onto `G ⧸ K`. -/
+@[simp]
+theorem proj_zeroSectionRightTranslation (x : G ⧸ K) :
+    proj Z Subgroup.RightTranslation.quotientMk_smul (zeroSectionRightTranslation hz₀ x) = x := by
+  induction x using QuotientGroup.induction_on with
+  | H g => simp [proj_mk]
+
+/-- The zero section is `G`-equivariant. -/
+@[simp]
+theorem zeroSectionRightTranslation_smul (k : G) (x : G ⧸ K) :
+    zeroSectionRightTranslation hz₀ (k • x) = k • zeroSectionRightTranslation hz₀ x := by
+  induction x using QuotientGroup.induction_on with
+  | H g => simp
+
+/-- **The image of the zero section is the `G`-orbit of `[1, z₀]`.** -/
+theorem range_zeroSectionRightTranslation :
+    Set.range (zeroSectionRightTranslation hz₀) =
+      MulAction.orbit G (mk K (K.toRightTranslation 1) z₀) := by
+  rw [← QuotientGroup.mk_surjective.range_comp]
+  exact congrArg Set.range (funext fun g ↦ by simp)
+
+end ZeroSection
 
 /-! ### The action map to a `G`-space -/
 
