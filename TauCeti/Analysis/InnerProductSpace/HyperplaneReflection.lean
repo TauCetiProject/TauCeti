@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Affine
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.InnerProductSpace.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
@@ -44,8 +45,24 @@ normal vector and an offset.
 * `TauCeti.hyperplaneReflection_hyperplaneReflection`: it is an involution.
 * `TauCeti.inner_hyperplaneReflection`: it reverses the signed height `⟪x, ν⟫ - c`.
 * `TauCeti.hyperplaneReflection_eq_self_iff`: its fixed points are the points of the hyperplane.
+* `TauCeti.mapsTo_hyperplaneReflection_ball`: it maps every ball centred on the hyperplane into
+  itself.
+* `TauCeti.hyperplaneReflection_mem_ball_iff` and
+  `TauCeti.hyperplaneReflection_mem_closedBall_iff`: open and closed balls centred on the
+  hyperplane are invariant.
+* `TauCeti.closure_setOf_lt_inner_subset`: the closure of the open half-space `{x | c < ⟪x, ν⟫}`
+  lies in the closed half-space `{x | c ≤ ⟪x, ν⟫}`, and
+  (`TauCeti.closure_thickening_inter_setOf_lt_inner_subset`) the closure of the part of an open
+  `R`-thickening in it lies in the part of the closed `R`-thickening in the closed half-space.
 * `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
   open half-space `{x | c < ⟪x, ν⟫}` outside it.
+* `TauCeti.dist_le_dist_hyperplaneReflection`: a point of the closed half-space
+  `{y | c ≤ ⟪y, ν⟫}` is at least as close to another such point as to its mirror image, and so
+  (`TauCeti.mem_thickening_of_hyperplaneReflection_mem_thickening`) a point of that half-space
+  whose mirror image lies in a thickening of a set in the half-space lies in it too.
+* `TauCeti.exists_opens_mapsTo_hyperplaneReflection`: a bounded reflection-invariant open set
+  around a thickening of a bounded set of the closed half-space, whose points in the open
+  half-space lie in that thickening.
 * `TauCeti.fderiv_hyperplaneReflection` and `TauCeti.abs_det_fderiv_hyperplaneReflection`: its
   derivative is the linear reflection, of determinant `±1`.
 * `TauCeti.measurePreserving_hyperplaneReflection`: it preserves every additive Haar measure, and
@@ -71,6 +88,16 @@ namespace TauCeti
 open InnerProductSpace MeasureTheory
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-! ### The height above a hyperplane through the origin -/
+
+/-- The height `⟪x, v⟫` above the hyperplane `⟪·, v⟫ = 0` is `1`-Lipschitz. -/
+theorem abs_inner_sub_inner_le {v : F} (hv : ‖v‖ = 1) (x y : F) :
+    |⟪x, v⟫_ℝ - ⟪y, v⟫_ℝ| ≤ dist x y := by
+  rw [← inner_sub_left, dist_eq_norm]
+  simpa [hv] using abs_real_inner_le_norm (x - y) v
+
+/-! ### The reflection -/
 
 /-- The **reflection in the affine hyperplane** `{x | ⟪x, ν⟫ = c}`: the affine isometry
 `x ↦ x - (2 (⟪x, ν⟫ - c) / ‖ν‖²) ν`, whose linear part is the reflection `(ℝ ∙ ν)ᗮ.reflection` in
@@ -137,6 +164,27 @@ theorem hyperplaneReflection_eq_self_iff {ν : F} (hν : ν ≠ 0) (c : ℝ) {x 
   rw [hyperplaneReflection_apply, sub_eq_self, smul_eq_zero, or_iff_left hν, mul_eq_zero,
     or_iff_right two_ne_zero, div_eq_zero_iff, or_iff_left hν2, sub_eq_zero]
 
+/-- A ball centred on the hyperplane `{x | ⟪x, ν⟫ = c}` is mapped into itself by the reflection. -/
+theorem mapsTo_hyperplaneReflection_ball {ν z : F} {c : ℝ} (hz : ⟪z, ν⟫_ℝ = c) (r : ℝ) :
+    Set.MapsTo (hyperplaneReflection ν c) (Metric.ball z r) (Metric.ball z r) := fun y hy => by
+  rw [Metric.mem_ball] at hy ⊢
+  rwa [← hyperplaneReflection_eq_self_of_inner_eq hz, AffineIsometryEquiv.dist_map]
+
+/-- The closure of the open half-space `{x | c < ⟪x, ν⟫}` lies in the closed half-space
+`{x | c ≤ ⟪x, ν⟫}`. -/
+theorem closure_setOf_lt_inner_subset (ν : F) (c : ℝ) :
+    closure {x : F | c < ⟪x, ν⟫_ℝ} ⊆ {x | c ≤ ⟪x, ν⟫_ℝ} :=
+  closure_lt_subset_le continuous_const (continuous_id.inner continuous_const)
+
+/-- The closure of the part in the open half-space `{x | c < ⟪x, ν⟫}` of the open `R`-thickening of
+a set `S` lies in the part in the closed half-space `{x | c ≤ ⟪x, ν⟫}` of the closed
+`R`-thickening. -/
+theorem closure_thickening_inter_setOf_lt_inner_subset (R : ℝ) (S : Set F) (ν : F) (c : ℝ) :
+    closure (Metric.thickening R S ∩ {x | c < ⟪x, ν⟫_ℝ}) ⊆
+      Metric.cthickening R S ∩ {x | c ≤ ⟪x, ν⟫_ℝ} :=
+  (closure_inter_subset_inter_closure _ _).trans (Set.inter_subset_inter
+    (Metric.closure_thickening_subset_cthickening R S) (closure_setOf_lt_inner_subset ν c))
+
 /-- Points of the closure of an open half-space `H = {x | c < ⟪x, ν⟫}` outside `H` lie on the
 hyperplane, where the reflection is the identity. -/
 theorem hyperplaneReflection_eq_self_of_mem_closure {ν : F} {c : ℝ} {H : Set F}
@@ -145,9 +193,23 @@ theorem hyperplaneReflection_eq_self_of_mem_closure {ν : F} {c : ℝ} {H : Set 
   have hset : H = {x | c < ⟪x, ν⟫_ℝ} := Set.ext hH
   have hle : c ≤ ⟪x, ν⟫_ℝ := by
     rw [hset] at hxc
-    exact closure_lt_subset_le continuous_const (continuous_id.inner continuous_const) hxc
+    exact closure_setOf_lt_inner_subset ν c hxc
   exact hyperplaneReflection_eq_self_of_inner_eq
     (le_antisymm (not_lt.1 fun h => hxH ((hH x).2 h)) hle)
+
+/-- A ball centred on the hyperplane `{x | ⟪x, ν⟫ = c}` is invariant under the reflection. -/
+theorem hyperplaneReflection_mem_ball_iff {ν : F} {c : ℝ} {x : F} (hx : ⟪x, ν⟫_ℝ = c) {y : F}
+    {r : ℝ} : hyperplaneReflection ν c y ∈ Metric.ball x r ↔ y ∈ Metric.ball x r := by
+  rw [Metric.mem_ball, Metric.mem_ball, ← hyperplaneReflection_eq_self_of_inner_eq hx,
+    (hyperplaneReflection ν c).dist_map, hyperplaneReflection_eq_self_of_inner_eq hx]
+
+/-- A closed ball centred on the hyperplane `{x | ⟪x, ν⟫ = c}` is invariant under the
+reflection. -/
+theorem hyperplaneReflection_mem_closedBall_iff {ν : F} {c : ℝ} {x : F} (hx : ⟪x, ν⟫_ℝ = c)
+    {y : F} {r : ℝ} :
+    hyperplaneReflection ν c y ∈ Metric.closedBall x r ↔ y ∈ Metric.closedBall x r := by
+  rw [Metric.mem_closedBall, Metric.mem_closedBall, ← hyperplaneReflection_eq_self_of_inner_eq hx,
+    (hyperplaneReflection ν c).dist_map, hyperplaneReflection_eq_self_of_inner_eq hx]
 
 /-- The hyperplane reflection maps the open half-space `{x | c < ⟪x, ν⟫}` onto the opposite
 open half-space `{x | ⟪x, ν⟫ < c}`, and conversely. -/
@@ -155,6 +217,62 @@ theorem inner_hyperplaneReflection_lt_iff {ν : F} (hν : ν ≠ 0) (c : ℝ) {x
     ⟪hyperplaneReflection ν c x, ν⟫_ℝ < c ↔ c < ⟪x, ν⟫_ℝ := by
   rw [inner_hyperplaneReflection hν]
   constructor <;> intro h <;> linarith
+
+/-- **Points on one side are closer than their mirror images.** If `x` and `z` both lie in the
+closed half-space `{y | c ≤ ⟪y, ν⟫}`, then `x` is at least as close to `z` as to the reflection of
+`z` in the hyperplane `{y | ⟪y, ν⟫ = c}`: indeed
+`‖x - ρ z‖² = ‖x - z‖² + 4 (⟪z, ν⟫ - c) (⟪x, ν⟫ - c) / ‖ν‖²`. -/
+theorem dist_le_dist_hyperplaneReflection {ν : F} {c : ℝ} {x z : F} (hx : c ≤ ⟪x, ν⟫_ℝ)
+    (hz : c ≤ ⟪z, ν⟫_ℝ) : dist x z ≤ dist x (hyperplaneReflection ν c z) := by
+  rcases eq_or_ne ν 0 with rfl | hν
+  · simp [hyperplaneReflection_apply]
+  have hid : ‖x - hyperplaneReflection ν c z‖ ^ 2 =
+      ‖x - z‖ ^ 2 + 4 * (⟪z, ν⟫_ℝ - c) * (⟪x, ν⟫_ℝ - c) / ‖ν‖ ^ 2 := by
+    -- Expand both squares.
+    simp only [hyperplaneReflection_apply, norm_sub_sq_real, inner_sub_right, inner_smul_right,
+      norm_smul, real_inner_comm ν, Real.norm_eq_abs, mul_pow, sq_abs]
+    field_simp
+    ring
+  have h0 : 0 ≤ 4 * (⟪z, ν⟫_ℝ - c) * (⟪x, ν⟫_ℝ - c) / ‖ν‖ ^ 2 := by
+    have := sub_nonneg.2 hx
+    have := sub_nonneg.2 hz
+    positivity
+  rw [dist_eq_norm, dist_eq_norm, ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), hid]
+  linarith
+
+/-- **Reflection does not bring a point closer to a set on its side.** If `S` lies in the closed
+half-space `{y | c ≤ ⟪y, ν⟫}` and `x` lies in that half-space with its mirror image in the open
+`r`-thickening of `S`, then `x` lies in the `r`-thickening of `S` too. -/
+theorem mem_thickening_of_hyperplaneReflection_mem_thickening {ν x : F} {c r : ℝ} {S : Set F}
+    (hS : ∀ y ∈ S, c ≤ ⟪y, ν⟫_ℝ) (hx : c ≤ ⟪x, ν⟫_ℝ)
+    (hρx : hyperplaneReflection ν c x ∈ Metric.thickening r S) : x ∈ Metric.thickening r S := by
+  obtain ⟨s, hs, hxs⟩ := Metric.mem_thickening_iff.1 hρx
+  refine Metric.mem_thickening_iff.2 ⟨s, hs, ?_⟩
+  calc dist x s = dist s x := dist_comm _ _
+    _ ≤ dist s (hyperplaneReflection ν c x) := dist_le_dist_hyperplaneReflection (hS s hs) hx
+    _ = dist (hyperplaneReflection ν c x) s := dist_comm _ _
+    _ < r := hxs
+
+/-- **A reflection-invariant open set around a thickening.** Let `S` be a bounded set of the
+closed half-space `{x | c ≤ ⟪x, ν⟫}`, let `ρ` be the reflection in its boundary hyperplane and `T`
+the open `r`-thickening of `S`. The open set `T ∪ ρ⁻¹ T` is mapped into itself by `ρ`, contains
+`T`, is bounded, and its points in the open half-space `{x | c < ⟪x, ν⟫}` lie in `T`. -/
+theorem exists_opens_mapsTo_hyperplaneReflection {ν : F} {c r : ℝ} {S : Set F}
+    (hS : Bornology.IsBounded S) (hSc : ∀ x ∈ S, c ≤ ⟪x, ν⟫_ℝ) :
+    ∃ U : TopologicalSpace.Opens F, Set.MapsTo (hyperplaneReflection ν c) U U ∧
+      Metric.thickening r S ⊆ U ∧ (U : Set F) ∩ {x | c < ⟪x, ν⟫_ℝ} ⊆ Metric.thickening r S ∧
+      Bornology.IsBounded (U : Set F) := by
+  set ρ := hyperplaneReflection ν c
+  refine ⟨⟨Metric.thickening r S ∪ ρ ⁻¹' Metric.thickening r S,
+    Metric.isOpen_thickening.union (Metric.isOpen_thickening.preimage ρ.continuous)⟩, ?_,
+    fun x hx => Or.inl hx, ?_,
+    hS.thickening.union (ρ.isometry.antilipschitzWith.isBounded_preimage hS.thickening)⟩
+  · rintro x (hx | hx)
+    · exact Or.inr (by simpa [ρ, hyperplaneReflection_hyperplaneReflection] using hx)
+    · exact Or.inl hx
+  · rintro x ⟨hx | hx, hxH⟩
+    · exact hx
+    · exact mem_thickening_of_hyperplaneReflection_mem_thickening hSc (le_of_lt hxH) hx
 
 /-- The derivative of the hyperplane reflection at every point is its linear part
 `(ℝ ∙ ν)ᗮ.reflection`. -/
@@ -314,6 +432,29 @@ theorem setIntegral_inner_reflection_comp_hyperplaneReflection (hUm : Measurable
   simp only [hyperplaneReflection_hyperplaneReflection] at h
   rw [← h]
   simp only [LinearIsometryEquiv.inner_map_eq_flip, Submodule.reflection_symm]
+
+/-- **Averages of fields odd under the reflection are normal.** Let `ρ` be the reflection in the
+hyperplane `{x | ⟪x, ν⟫ = c}` and `R` its linear part, and let `V` be a measurable set mapped into
+itself by `ρ`. If a field `G` satisfies `G ∘ ρ = -R ∘ G` almost everywhere on `V`, as the gradient
+of a function odd under `ρ` does, then its average over `V` is a multiple of `ν`. -/
+theorem setAverage_eq_inner_div_smul_of_ae_comp_hyperplaneReflection [CompleteSpace F]
+    {V : Set F} (hV : Set.MapsTo (hyperplaneReflection ν c) V V) (hVm : MeasurableSet V) {G : F → F}
+    (hG : ∀ᵐ x ∂μ.restrict V, G (hyperplaneReflection ν c x) = -(ℝ ∙ ν)ᗮ.reflection (G x)) :
+    ⨍ x in V, G x ∂μ = (⟪⨍ x in V, G x ∂μ, ν⟫_ℝ / ‖ν‖ ^ 2) • ν := by
+  set m := ⨍ x in V, G x ∂μ
+  -- Changing variables by `ρ`, which preserves `μ` on `V`, gives `R m = -m`.
+  have hcv := (measurePreserving_restrict_hyperplaneReflection (μ := μ) hV hVm).integral_comp
+    (hyperplaneReflection ν c).toHomeomorph.measurableEmbedding G
+  have hR := (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry.integral_comp_comm (μ := μ.restrict V) G
+  simp only [LinearIsometryEquiv.coe_toLinearIsometry] at hR
+  rw [integral_congr_ae hG, integral_neg, hR] at hcv
+  have hRm : (ℝ ∙ ν)ᗮ.reflection m = -m := by
+    simp only [m, setAverage_eq, map_smul, neg_eq_iff_eq_neg.1 hcv, smul_neg]
+  -- Writing `R m = m - 2 p` with `p` the projection of `m` onto `ν`, this says `2 m = 2 p`.
+  have h2 : (2 : ℝ) • m = (2 : ℝ) • ((⟪m, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) := by
+    rw [reflection_orthogonal_singleton_apply_div_norm_sq, real_inner_comm m ν] at hRm
+    linear_combination (norm := module) hRm
+  exact smul_right_injective F (two_ne_zero' ℝ) h2
 
 end OddReflection
 

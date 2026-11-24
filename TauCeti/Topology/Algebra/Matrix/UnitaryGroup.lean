@@ -45,16 +45,16 @@ def unitaryReindexContinuousMulEquiv (e : m ≃ n) :
     unitary (Matrix m m α) ≃ₜ* unitary (Matrix n n α) where
   __ := (Unitary.mapEquiv (.ofClass (reindexStarAlgEquiv ℕ α e))).toMulEquiv
   continuous_toFun := continuous_induced_rng.2 <|
-    (continuous_subtype_val.matrix_reindex e e).congr fun _ ↦ by
+    (continuous_subtypeVal.matrix_reindex e e).congr fun _ ↦ by
       simp
   continuous_invFun := continuous_induced_rng.2 <|
-    (continuous_subtype_val.matrix_reindex e.symm e.symm).congr fun _ ↦ by
+    (continuous_subtypeVal.matrix_reindex e.symm e.symm).congr fun _ ↦ by
       simp [← StarMulEquiv.toMulEquiv_symm]
 
 variable {α} in
 @[simp]
 theorem coe_unitaryReindexContinuousMulEquiv_apply (e : m ≃ n) (A : unitary (Matrix m m α)) :
-    (unitaryReindexContinuousMulEquiv α e A : Matrix n n α) = reindex e e A.1 := by
+    (unitaryReindexContinuousMulEquiv α e A : Matrix n n α) = reindex e e A.val := by
   simp [unitaryReindexContinuousMulEquiv]
 
 variable {α} in
@@ -89,18 +89,18 @@ topological groups. -/
 def unitaryUniqueContinuousMulEquiv : unitary (Matrix m m α) ≃ₜ* unitary α where
   __ := (Unitary.mapEquiv (.ofClass (uniqueStarRingEquiv (m := m) (A := α)))).toMulEquiv
   continuous_toFun := continuous_induced_rng.2 <| by
-    have h : Continuous fun A : unitary (Matrix m m α) ↦ A.1 default default :=
-      (continuous_apply default).comp ((continuous_apply default).comp continuous_subtype_val)
+    have h : Continuous fun A : unitary (Matrix m m α) ↦ A.val default default :=
+      (continuous_apply default).comp ((continuous_apply default).comp continuous_subtypeVal)
     exact h.congr fun _ ↦ by simp
   continuous_invFun := continuous_induced_rng.2 <| by
     have h : Continuous fun u : unitary α ↦ Matrix.of fun _ _ : m ↦ (u : α) :=
-      continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_subtype_val
+      continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_subtypeVal
     exact h.congr fun _ ↦ by simp [← StarMulEquiv.toMulEquiv_symm]
 
 variable {m α} in
 @[simp]
 theorem coe_unitaryUniqueContinuousMulEquiv_apply (A : unitary (Matrix m m α)) :
-    (unitaryUniqueContinuousMulEquiv m α A : α) = A.1 default default := by
+    (unitaryUniqueContinuousMulEquiv m α A : α) = A.val default default := by
   simp [unitaryUniqueContinuousMulEquiv]
 
 variable {m α} in

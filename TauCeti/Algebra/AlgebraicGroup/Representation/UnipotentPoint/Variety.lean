@@ -28,11 +28,6 @@ finite-dimensional representation `ρ`, it may be computed with the unipotent po
 algebraically closed extension of `k`, and its points with values in a field are exactly
 the unipotent points.
 
-The unipotence ideal of every finite-dimensional representation, faithful or not, is contained in
-`I_U`. By the Cayley–Hamilton theorem, every point `g` of the unipotent variety with values in any
-commutative `k`-algebra therefore satisfies the uniform bound `(g - 1) ^ dim M = 0` on every
-finite-dimensional representation `M`, in particular the universal point valued in `H ⧸ I_U`.
-
 The unipotent variety contains the identity, is stable under inversion, and every homomorphism of
 affine groups maps it into the unipotent variety of the target. On coordinate rings, these are the
 containments `I_U ≤ ker ε`, `S⁻¹(I_U) = I_U` for the antipode `S`, and `I_U ≤ f⁻¹(I_U')` for a
@@ -50,11 +45,11 @@ of the unipotent variety and the morphisms between unipotent varieties on coordi
   unipotent points valued in any algebraically closed extension.
 * `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_ker_iff`: its points with values in a field
   are the unipotent points.
-* `TauCeti.HopfAlgebra.unipotenceIdeal_le_unipotentVarietyIdeal`: it contains the unipotence
-  ideal of every finite-dimensional representation.
-* `TauCeti.HopfAlgebra.pow_endOfPoint_sub_one_eq_zero_of_unipotentVarietyIdeal_le_ker` and
-  `TauCeti.HopfAlgebra.pow_endOfPoint_mkₐ_unipotentVarietyIdeal_sub_one_eq_zero`: the uniform
-  bound `(g - 1) ^ dim M = 0` at the points of the unipotent variety and at its universal point.
+* `TauCeti.HopfAlgebra.unipotenceIdeal_le_unipotentVarietyIdeal`: it contains the unipotence ideal
+  of every finite-dimensional representation.
+* `TauCeti.HopfAlgebra.endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotentVarietyIdeal_le_ker`: its
+  points with values in any commutative algebra satisfy `(ρ(g) - 1) ^ dim M = 0` in every
+  finite-dimensional representation `ρ` on `M`.
 * `TauCeti.HopfAlgebra.comap_antipodeAlgHom_unipotentVarietyIdeal`: stability under inversion.
 * `TauCeti.HopfAlgebra.unipotentVarietyIdeal_le_comap`: functoriality along homomorphisms of
   affine groups.
@@ -172,42 +167,24 @@ theorem comap_unipotentVarietyIdeal_bialgEquiv {H' : Type w} [CommRing H']
   rw [BialgHom.mapDomain_apply_apply]
   exact hx g' ((isUnipotentPoint_mapDomain_iff e g').mp hg)
 
-section Bound
-
-attribute [local instance 1100] Module.Free.of_divisionRing
-
-/-- The unipotent variety lies in the locus cut out by the unipotence ideal of every
-finite-dimensional representation, faithful or not: geometric unipotent points act with
-characteristic polynomial `(X - 1) ^ dim M`. -/
+/-- The unipotence ideal of every finite-dimensional representation is contained in the ideal of
+the unipotent variety: unipotent points act unipotently on every representation. Unlike
+`radical_unipotenceIdeal_eq_unipotentVarietyIdeal`, the representation need not be faithful. -/
 theorem unipotenceIdeal_le_unipotentVarietyIdeal (M : FGComoduleCat.{u, v, u} k H) :
-    Comodule.unipotenceIdeal k H M ≤ unipotentVarietyIdeal k H := by
-  intro x hx
-  rw [mem_unipotentVarietyIdeal_iff]
-  intro g hg
-  exact (Comodule.unipotenceIdeal_le_ker_iff_isUnipotent g).mpr
-    ((isUnipotentPoint_def g).mp hg M) hx
+    Comodule.unipotenceIdeal k H M ≤ unipotentVarietyIdeal k H := fun x hx ↦
+  (mem_unipotentVarietyIdeal_iff x).mpr fun g hg ↦
+    (Comodule.unipotenceIdeal_le_ker_iff_isUnipotent g).mpr ((isUnipotentPoint_def g).mp hg M) hx
 
-/-- **The uniform unipotency bound on the unipotent variety.** Every point of the unipotent variety
-with values in a commutative `k`-algebra `B` acts on the scalar extension `B ⊗ M` of a
-finite-dimensional representation `M` with `(g - 1) ^ dim M = 0`. -/
-theorem pow_endOfPoint_sub_one_eq_zero_of_unipotentVarietyIdeal_le_ker
-    (M : FGComoduleCat.{u, v, u} k H) {B : Type*} [CommRing B] [Algebra k B] (g : H →ₐ[k] B)
+/-- **Points of the unipotent variety act unipotently, with a uniform bound.** Let `g` be a point
+of the unipotent variety with values in any commutative `k`-algebra `B`, possibly nonreduced: an
+algebra homomorphism `H → B` killing its ideal. Then `(ρ(g) - 1) ^ dim M = 0` for every
+finite-dimensional representation `ρ` on `M`. -/
+theorem endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotentVarietyIdeal_le_ker
+    (M : FGComoduleCat.{u, v, u} k H) {B : Type w} [CommRing B] [Algebra k B] (g : H →ₐ[k] B)
     (hg : unipotentVarietyIdeal k H ≤ RingHom.ker g) :
     (Comodule.endOfPoint M g - 1) ^ Module.finrank k M = 0 :=
-  Comodule.pow_endOfPoint_sub_one_eq_zero_of_unipotenceIdeal_le_ker g
+  g.endOfPoint_sub_one_pow_finrank_eq_zero_of_unipotenceIdeal_le_ker
     ((unipotenceIdeal_le_unipotentVarietyIdeal M).trans hg)
-
-/-- **The universal unipotency bound on the unipotent variety.** The universal point of the
-unipotent variety, the quotient map onto its coordinate ring, acts on the scalar extension of a
-finite-dimensional representation `M` with `(g - 1) ^ dim M = 0`. -/
-theorem pow_endOfPoint_mkₐ_unipotentVarietyIdeal_sub_one_eq_zero
-    (M : FGComoduleCat.{u, v, u} k H) :
-    (Comodule.endOfPoint M (Ideal.Quotient.mkₐ k (unipotentVarietyIdeal k H)) - 1) ^
-      Module.finrank k M = 0 :=
-  pow_endOfPoint_sub_one_eq_zero_of_unipotentVarietyIdeal_le_ker M _
-    (Ideal.Quotient.mkₐ_ker k _).ge
-
-end Bound
 
 end Field
 

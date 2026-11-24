@@ -345,7 +345,7 @@ theorem range_le_iff_range_homEquiv_le {g : WeilRestriction A B C →ₐ[A] T} {
     have hg : S.val.comp ((homEquiv A B C S).symm v) = g :=
       (homEquiv A B C T).injective <| by rw [homEquiv_comp, Equiv.apply_symm_apply, hv]
     rw [← hg, AlgHom.range_comp]
-    exact Subalgebra.map_le.2 fun x _ ↦ x.2
+    exact Subalgebra.map_le.2 fun x _ ↦ x.property
 
 section Map
 

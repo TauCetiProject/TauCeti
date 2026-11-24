@@ -121,12 +121,12 @@ structure Grossencharacter (K : Type*) [Field K] [NumberField K] (𝔪 : Modulus
     toHeckeCharacter.infinityType.realParity w =
       (AlgebraicInfinityType.toContinuous infinityType).realParity w
   /-- The weight vanishes at the ideals not prime to `𝔪`. -/
-  unitaryWeight_eq_zero : ∀ I : Ideal (𝓞 K), ¬ 𝔪.IsCoprimeTo I → unitaryWeight.1 I = 0
+  unitaryWeight_eq_zero : ∀ I : Ideal (𝓞 K), ¬ 𝔪.IsCoprimeTo I → unitaryWeight.val I = 0
   /-- At a prime `v ∤ 𝔪`, the weight is the local component of the unitary part at a
   uniformizer. -/
   unitaryWeight_apply : ∀ v : HeightOneSpectrum (𝓞 K), ¬ v.asIdeal ∣ 𝔪.finitePart →
     ∀ u : (v.adicCompletion K)ˣ, Valued.v (u : v.adicCompletion K) = WithZero.exp (-1) →
-      unitaryWeight.1 v.asIdeal = toHeckeCharacter.unitaryPart.finiteComponent v u
+      unitaryWeight.val v.asIdeal = toHeckeCharacter.unitaryPart.finiteComponent v u
 
 namespace Grossencharacter
 
@@ -161,7 +161,7 @@ theorem infinityType_unitaryPart (χ : Grossencharacter K 𝔪) :
 
 /-- The weight of a presentation vanishes at the primes dividing the modulus. -/
 theorem unitaryWeight_apply_of_dvd (χ : Grossencharacter K 𝔪) {v : HeightOneSpectrum (𝓞 K)}
-    (hv : v.asIdeal ∣ 𝔪.finitePart) : χ.unitaryWeight.1 v.asIdeal = 0 :=
+    (hv : v.asIdeal ∣ 𝔪.finitePart) : χ.unitaryWeight.val v.asIdeal = 0 :=
   χ.unitaryWeight_eq_zero _ fun h ↦
     (Modulus.isCoprimeTo_iff.mp h).2 v ((𝔪.mem_support_iff v).mpr hv) dvd_rfl
 
@@ -280,7 +280,7 @@ theorem toHeckeCharacter_primeIdele (χ : Grossencharacter K 𝔪) (v : HeightOn
     (hv : ¬ v.asIdeal ∣ 𝔪.finitePart) (u : (v.adicCompletion K)ˣ)
     (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
     ((χ.toHeckeCharacter.finiteComponent v u : ℂˣ) : ℂ) =
-      χ.unitaryWeight.1 v.asIdeal * (v.asIdeal.absNorm : ℂ) ^ (χ.idealShift : ℂ) := by
+      χ.unitaryWeight.val v.asIdeal * (v.asIdeal.absNorm : ℂ) ^ (χ.idealShift : ℂ) := by
   -- Split `χ = χ_u ‖·‖ ^ shift`; a uniformizer idele has norm `N(v)⁻¹`.
   rw [← χ.toHeckeCharacter.unitaryPart_mul_normPow_shift, HeckeCharacter.finiteComponent_mul,
     ContinuousMonoidHom.mul_apply, Units.val_mul, ← χ.unitaryWeight_apply v hv u hu]

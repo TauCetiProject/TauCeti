@@ -56,7 +56,7 @@ def goeMatrix (n : ℕ) :
     (Fin n × Fin n → ℝ) →L[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ) :=
   LinearMap.toContinuousLinearMap
     { toFun g := (symmetricCoordinates n).symm fun ij ↦
-        (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * g ij.1)
+        (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * g ij.val)
       map_add' g₁ g₂ := by
         rw [← map_add]; refine congrArg _ (funext fun ij ↦ ?_); simp [mul_add]
       map_smul' c g := by
@@ -66,12 +66,12 @@ def goeMatrix (n : ℕ) :
 /-- Defining formula for `TauCeti.Probability.goeMatrix`. -/
 theorem goeMatrix_def (n : ℕ) (g : Fin n × Fin n → ℝ) :
     goeMatrix n g = (symmetricCoordinates n).symm fun ij ↦
-      (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * g ij.1) := (rfl)
+      (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * g ij.val) := (rfl)
 
 /-- Upper-triangular coordinates of `TauCeti.Probability.goeMatrix`. -/
 theorem symmetricCoordinates_goeMatrix (n : ℕ) (g : Fin n × Fin n → ℝ) (ij : upperTriangle n) :
     symmetricCoordinates n (goeMatrix n g) ij =
-      (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * g ij.1) := by
+      (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * g ij.val) := by
   rw [goeMatrix_def, ContinuousLinearEquiv.apply_symm_apply]
 
 /-- Diagonal entries of `TauCeti.Probability.goeMatrix`. -/
@@ -153,19 +153,19 @@ theorem hermitianCoordinates_gueMatrix (n : ℕ) (g : Fin n × Fin n → ℝ) (i
 /-- `goeMatrix` expands in `symmetricOrthonormalBasis` with global scale `√2 / √n`. -/
 theorem goeMatrix_eq_smul_sum_orthonormalBasis (n : ℕ) (g : Fin n × Fin n → ℝ) :
     goeMatrix n g = (Real.sqrt 2 / Real.sqrt n) •
-      ∑ ij : upperTriangle n, g ij.1 • symmetricOrthonormalBasis n ij := by
+      ∑ ij : upperTriangle n, g ij.val • symmetricOrthonormalBasis n ij := by
   refine (symmetricCoordinates n).injective (funext fun kl ↦ ?_)
   rw [symmetricCoordinates_goeMatrix, map_smul, map_sum]
   simp only [Pi.smul_apply, Finset.sum_apply, smul_eq_mul, symmetricOrthonormalBasis_apply,
     map_smul, symmetricBasis_apply, ContinuousLinearEquiv.apply_symm_apply, Pi.single_apply,
     mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
-  by_cases hd : kl.1.1 = kl.1.2
+  by_cases hd : kl.val.1 = kl.val.2
   · simp only [hd, ↓reduceIte]; ring
   · simp only [hd, ↓reduceIte, one_mul, div_eq_mul_inv]
-    calc (Real.sqrt n)⁻¹ * g kl.1
-        = (Real.sqrt 2 * (Real.sqrt 2)⁻¹) * ((Real.sqrt n)⁻¹ * g kl.1) := by
+    calc (Real.sqrt n)⁻¹ * g kl.val
+        = (Real.sqrt 2 * (Real.sqrt 2)⁻¹) * ((Real.sqrt n)⁻¹ * g kl.val) := by
           rw [mul_inv_cancel₀ (by positivity), one_mul]
-      _ = Real.sqrt 2 * (Real.sqrt n)⁻¹ * (g kl.1 * (Real.sqrt 2)⁻¹) := by ring
+      _ = Real.sqrt 2 * (Real.sqrt n)⁻¹ * (g kl.val * (Real.sqrt 2)⁻¹) := by ring
 
 /-- `gueMatrix` expands in `hermitianOrthonormalBasis` with global scale `(√n)⁻¹`. -/
 theorem gueMatrix_eq_smul_sum_orthonormalBasis (n : ℕ) (g : Fin n × Fin n → ℝ) :
@@ -234,7 +234,7 @@ theorem gaussianEnsembleLaw_one_eq_map_goeMeasure (n : ℕ) :
 theorem gaussianEnsembleLaw_eq_map_gueMeasure {β : ℕ} (hβ : β ≠ 1) (n : ℕ) :
     gaussianEnsembleLaw β n = (gueMeasure n).map Subtype.val := by
   rw [gaussianEnsembleLaw_def, gueMeasure_def,
-    Measure.map_map measurable_subtype_coe (measurable_gueMatrix n)]
+    Measure.map_map measurable_subtypeVal (measurable_gueMatrix n)]
   exact congrArg (Measure.map · _) (funext (gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one hβ))
 
 /-- The ambient `β = 2` law is the subtype-coercion pushforward of `gueMeasure`. -/
@@ -247,7 +247,7 @@ theorem goeMeasure_eq_map_pi_upperTriangle (n : ℕ) :
     goeMeasure n =
       (Measure.pi fun _ : upperTriangle n ↦ gaussianReal 0 1).map fun x ↦
         (symmetricCoordinates n).symm fun ij ↦
-          (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * x ij) := by
+          (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * x ij) := by
   have hproj := measurePreserving_pi_comp_embedding (fun _ : Fin n × Fin n ↦ gaussianReal 0 1)
     (Function.Embedding.subtype fun ij : Fin n × Fin n ↦ ij.1 ≤ ij.2)
   rw [← hproj.map_eq, Measure.map_map (by fun_prop) hproj.measurable, goeMeasure_def]
@@ -255,14 +255,14 @@ theorem goeMeasure_eq_map_pi_upperTriangle (n : ℕ) :
 
 /-- Independent standard Gaussian upper-triangular entries give `goeMeasure n`. -/
 theorem hasLaw_goeMatrix_of_upperTriangle {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {n : ℕ}
-    (g : Fin n × Fin n → Ω → ℝ) (hindep : iIndepFun (fun (ij : upperTriangle n) ω ↦ g ij.1 ω) P)
-    (hlaw : ∀ ij : upperTriangle n, HasLaw (g ij.1) (gaussianReal 0 1) P) :
+    (g : Fin n × Fin n → Ω → ℝ) (hindep : iIndepFun (fun (ij : upperTriangle n) ω ↦ g ij.val ω) P)
+    (hlaw : ∀ ij : upperTriangle n, HasLaw (g ij.val) (gaussianReal 0 1) P) :
     HasLaw (fun ω ↦ goeMatrix n (fun p ↦ g p ω)) (goeMeasure n) P := by
   let f : (upperTriangle n → ℝ) → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ) :=
     fun x ↦ (symmetricCoordinates n).symm fun ij ↦
-      (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * x ij)
+      (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * x ij)
   have hf : Measurable f := by unfold f; fun_prop
-  have hfun : (fun ω ↦ goeMatrix n (fun p ↦ g p ω)) = fun ω ↦ f (fun ij ↦ g ij.1 ω) :=
+  have hfun : (fun ω ↦ goeMatrix n (fun p ↦ g p ω)) = fun ω ↦ f (fun ij ↦ g ij.val ω) :=
     funext fun ω ↦ goeMatrix_def n _
   rw [goeMeasure_eq_map_pi_upperTriangle, hfun]
   exact (hasLaw_map hf.aemeasurable).fun_comp (hindep.hasLaw_pi hlaw)
@@ -287,7 +287,7 @@ theorem goeMeasure_eq_map_stdGaussian (n : ℕ) :
       (stdGaussian (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ))).map
         ((Real.sqrt 2 / Real.sqrt n) • ·) := by
   have hx (x : upperTriangle n → ℝ) (ij : upperTriangle n) :
-      (if h : ij.1.1 ≤ ij.1.2 then x ⟨ij.1, h⟩ else 0) = x ij := dite_eq_left ij.2
+      (if h : ij.val.1 ≤ ij.val.2 then x ⟨ij.val, h⟩ else 0) = x ij := dite_eq_left ij.property
   rw [goeMeasure_eq_map_pi_upperTriangle,
     stdGaussian_eq_map_pi_orthonormalBasis (symmetricOrthonormalBasis n),
     Measure.map_map (by fun_prop) (by fun_prop)]
@@ -489,10 +489,10 @@ theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_two {n : ℕ}
   have hconj : Measurable fun H : Matrix (Fin n) (Fin n) ℂ ↦
       (U : Matrix (Fin n) (Fin n) ℂ) * H * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ :=
     ((continuous_const.mul continuous_id).mul continuous_const).measurable
-  rw [gaussianEnsembleLaw_two_eq_map_gueMeasure, Measure.map_map hconj measurable_subtype_coe]
+  rw [gaussianEnsembleLaw_two_eq_map_gueMeasure, Measure.map_map hconj measurable_subtypeVal]
   simp_rw [Function.comp_def, ← Matrix.UnitaryGroup.coe_hermitianConj_apply]
   rw [← Function.comp_def Subtype.val (Matrix.UnitaryGroup.hermitianConj U),
-    ← Measure.map_map measurable_subtype_coe
+    ← Measure.map_map measurable_subtypeVal
       (Matrix.UnitaryGroup.hermitianConj U).continuous.measurable, map_hermitianConj_gueMeasure]
 
 /-- Under `goeMeasure n`, the upper-triangular coordinates are independent Gaussians:
@@ -500,11 +500,11 @@ theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_two {n : ℕ}
 theorem map_symmetricCoordinates_goeMeasure (n : ℕ) :
     (goeMeasure n).map (symmetricCoordinates n) =
       Measure.pi fun ij : upperTriangle n ↦
-        if ij.1.1 = ij.1.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n) := by
+        if ij.val.1 = ij.val.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n) := by
   let scale : upperTriangle n → ℝ → ℝ := fun ij t ↦
-    (Real.sqrt n)⁻¹ * ((if ij.1.1 = ij.1.2 then Real.sqrt 2 else 1) * t)
+    (Real.sqrt n)⁻¹ * ((if ij.val.1 = ij.val.2 then Real.sqrt 2 else 1) * t)
   have hfactor (ij : upperTriangle n) : (gaussianReal 0 1).map (scale ij) =
-      if ij.1.1 = ij.1.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n) := by
+      if ij.val.1 = ij.val.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n) := by
     simp only [scale, ← mul_assoc]
     split_ifs with hd <;> refine gaussianReal_zero_one_map_const_mul _ ?_
     · simp [mul_pow, div_eq_inv_mul]
@@ -546,25 +546,25 @@ theorem hasLaw_goeMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {H : Ω → selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℝ)} :
     HasLaw H (goeMeasure n) P ↔
       iIndepFun (fun (ij : upperTriangle n) ω ↦
-          (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) P ∧
+          (H ω : Matrix (Fin n) (Fin n) ℝ) ij.val.1 ij.val.2) P ∧
         (∀ i : Fin n, HasLaw (fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) i i)
           (gaussianReal 0 (2 / n)) P) ∧
         (∀ ⦃i j : Fin n⦄, i < j →
           HasLaw (fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) i j)
             (gaussianReal 0 (1 / n)) P) := by
   let μ : upperTriangle n → Measure ℝ := fun ij ↦
-    if ij.1.1 = ij.1.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n)
+    if ij.val.1 = ij.val.2 then gaussianReal 0 (2 / n) else gaussianReal 0 (1 / n)
   have hm :
       MeasurePreserving (symmetricCoordinatesMeasurableEquiv n) (goeMeasure n) (Measure.pi μ) :=
     ⟨(symmetricCoordinatesMeasurableEquiv n).measurable,
       symmetricCoordinatesMeasurableEquiv_coe n ▸ map_symmetricCoordinates_goeMeasure n⟩
-  have hsc : (fun ω (ij : upperTriangle n) ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) =
+  have hsc : (fun ω (ij : upperTriangle n) ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) ij.val.1 ij.val.2) =
       fun ω ↦ symmetricCoordinates n (H ω) :=
     funext fun ω ↦ funext fun ij ↦ (symmetricCoordinates_apply n (H ω) ij).symm
   constructor
   · intro hH; let _ := hH.isProbabilityMeasure
     have hcoord : HasLaw (fun ω (ij : upperTriangle n) ↦
-        (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) (Measure.pi μ) P :=
+        (H ω : Matrix (Fin n) (Fin n) ℝ) ij.val.1 ij.val.2) (Measure.pi μ) P :=
       hsc ▸ by simpa using hm.fun_comp_hasLaw hH
     have heach (ij : upperTriangle n) := (measurePreserving_eval μ ij).fun_comp_hasLaw hcoord
     exact ⟨(iIndepFun_iff_hasLaw_pi_pi heach).2 hcoord,
@@ -572,8 +572,8 @@ theorem hasLaw_goeMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
       fun i j hij ↦ by simpa [μ, hij.ne] using heach ⟨(i, j), hij.le⟩⟩
   · rintro ⟨hindep, hdiag, hoff⟩
     have heach (ij : upperTriangle n) :
-        HasLaw (fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) ij.1.1 ij.1.2) (μ ij) P := by
-      rcases ij.2.eq_or_lt with h | hlt
+        HasLaw (fun ω ↦ (H ω : Matrix (Fin n) (Fin n) ℝ) ij.val.1 ij.val.2) (μ ij) P := by
+      rcases ij.property.eq_or_lt with h | hlt
       · obtain ⟨⟨i, j⟩, _⟩ := ij; cases h; simpa [μ] using hdiag i
       · simpa [μ, hlt.ne] using hoff hlt
     have hcoord : HasLaw (fun ω ↦ symmetricCoordinates n (H ω)) (Measure.pi μ) P :=

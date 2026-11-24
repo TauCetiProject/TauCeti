@@ -39,6 +39,11 @@ and `‖F‖ = √2` (`TauCeti.exists_almostComplexStructure_inner_eq_iff_of_pos
 pointwise statement of the characterization of the metrics compatible with a symplectic form on
 a four-manifold.
 
+## Main definitions
+
+* `TauCeti.AlmostComplexStructure.ofSelfDual`: for `⋆F = ±F` and `‖F‖² = 2`, the almost complex
+  structure `u ↦ u ⌟ F`.
+
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.norm_sq_eq_two_of_inner_eq` and
@@ -51,6 +56,11 @@ a four-manifold.
   `⟪u, v⟫ = ⟪F, u ∧ J v⟫` exists if and only if `⋆F = ±F` and `‖F‖² = 2`.
 * `TauCeti.exists_almostComplexStructure_inner_eq_iff_of_pos`: for the symplectic orientation,
   `0 < vol (F ∧ F)`, it exists if and only if `⋆F = F` and `‖F‖² = 2`.
+* `TauCeti.AlmostComplexStructure.existsUnique_inner_eq_inner_ιMulti_apply`: for `⋆F = ±F` and
+  `‖F‖² = 2`, `ofSelfDual` is the unique `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫`, and `F` is its Kähler
+  two-vector (`TauCeti.AlmostComplexStructure.kahlerForm_ofSelfDual`).
+* `TauCeti.AlmostComplexStructure.exists_orthonormalBasis_of_inner_eq`: for the symplectic
+  orientation, a `J` with `⟪u, v⟫ = ⟪F, u ∧ J v⟫` has a positively oriented unitary frame.
 
 ## References
 
@@ -171,19 +181,93 @@ theorem inner_eq_inner_ιMulti_twoVectorContraction
     inner_twoVectorContraction_apply_twoVectorContraction_apply o hkl hF, hF₂]
   ring
 
+end Four
+
+/-! ### The compatible complex structure of a self-dual two-vector -/
+
+namespace AlmostComplexStructure
+
+variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} (hkl : 2 + 2 = finrank ℝ V)
+  {F : ⋀[ℝ]^2 V}
+
+/-- The **almost complex structure of a self-dual two-vector** `F` with `‖F‖² = 2` in an oriented
+four-dimensional inner product space: the contraction `u ↦ u ⌟ F`, which squares to `-1` by
+`TauCeti.twoVectorContraction_comp_self`. An anti-self-dual `F`, with `⋆F = -F`, is self-dual for
+the opposite orientation, and is allowed too. It is the unique almost complex structure with
+`⟪u, v⟫ = ⟪F, u ∧ J v⟫` (`TauCeti.inner_eq_inner_ιMulti_twoVectorContraction`,
+`TauCeti.AlmostComplexStructure.eq_ofSelfDual`). -/
+def ofSelfDual (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) (hF₂ : ‖F‖ ^ 2 = 2) :
+    AlmostComplexStructure V where
+  toLinearMap := twoVectorContraction F
+  square_neg := by
+    rw [twoVectorContraction_comp_self o hkl hF, hF₂]
+    ext u
+    simp
+
+variable {hkl}
+
+/-- `ofSelfDual` is the contraction by `F`. -/
+theorem ofSelfDual_apply (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) (hF₂ : ‖F‖ ^ 2 = 2)
+    (u : V) : ofSelfDual hkl hF hF₂ u = twoVectorContraction F u :=
+  (rfl)
+
+/-- The underlying linear map of `ofSelfDual` is the contraction by `F`. -/
+@[simp]
+theorem toLinearMap_ofSelfDual (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F)
+    (hF₂ : ‖F‖ ^ 2 = 2) : (ofSelfDual hkl hF hF₂).toLinearMap = twoVectorContraction F :=
+  (rfl)
+
+/-- **`ofSelfDual` is compatible with `F`**: `⟪u, v⟫ = ⟪F, u ∧ J v⟫`. -/
+theorem inner_eq_inner_ιMulti_ofSelfDual_apply
+    (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) (hF₂ : ‖F‖ ^ 2 = 2) (u v : V) :
+    ⟪u, v⟫ = ⟪F, ιMulti ℝ 2 ![u, ofSelfDual hkl hF hF₂ v]⟫ :=
+  inner_eq_inner_ιMulti_twoVectorContraction o hkl hF hF₂ u v
+
+/-- `ofSelfDual` is orthogonal. -/
+theorem inner_ofSelfDual_apply_ofSelfDual_apply
+    (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) (hF₂ : ‖F‖ ^ 2 = 2) (u v : V) :
+    ⟪ofSelfDual hkl hF hF₂ u, ofSelfDual hkl hF hF₂ v⟫ = ⟪u, v⟫ :=
+  inner_apply_apply_of_inner_eq (inner_eq_inner_ιMulti_ofSelfDual_apply hF hF₂) u v
+
+/-- `F` is the Kähler two-vector of `ofSelfDual`. -/
+@[simp]
+theorem kahlerForm_ofSelfDual (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F)
+    (hF₂ : ‖F‖ ^ 2 = 2) : (ofSelfDual hkl hF hF₂).kahlerForm = F :=
+  kahlerForm_eq_of_inner_eq (inner_eq_inner_ιMulti_ofSelfDual_apply hF hF₂)
+
+/-- **Uniqueness of the compatible complex structure**: an almost complex structure `J` with
+`⟪u, v⟫ = ⟪F, u ∧ J v⟫` is `ofSelfDual`. -/
+theorem eq_ofSelfDual (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) (hF₂ : ‖F‖ ^ 2 = 2)
+    {J : AlmostComplexStructure V} (hJ : ∀ u v, ⟪u, v⟫ = ⟪F, ιMulti ℝ 2 ![u, J v]⟫) :
+    J = ofSelfDual hkl hF hF₂ :=
+  toLinearMap_injective (toLinearMap_eq_twoVectorContraction hJ)
+
+/-- **The compatible complex structure of a self-dual two-vector of norm `√2` is unique.** -/
+theorem existsUnique_inner_eq_inner_ιMulti_apply
+    (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) (hF₂ : ‖F‖ ^ 2 = 2) :
+    ∃! J : AlmostComplexStructure V, ∀ u v, ⟪u, v⟫ = ⟪F, ιMulti ℝ 2 ![u, J v]⟫ :=
+  ⟨ofSelfDual hkl hF hF₂, inner_eq_inner_ιMulti_ofSelfDual_apply hF hF₂,
+    fun _ hJ ↦ eq_ofSelfDual hF hF₂ hJ⟩
+
+end AlmostComplexStructure
+
+/-! ### Existence of compatible complex structures in dimension four -/
+
+section Four
+
+variable [Fact (finrank ℝ V = 4)] (o : Orientation ℝ V (Fin 4)) (hkl : 2 + 2 = finrank ℝ V)
+  {F : ⋀[ℝ]^2 V}
+
 /-- **Two-vectors with a compatible complex structure.** In dimension four, there is an almost
 complex structure `J` with `g(u, v) = ω(u, J v)`, where `ω(u, w) = ⟪F, u ∧ w⟫`, if and only if
 `F` is self-dual or anti-self-dual and `‖F‖² = 2`. Such a `J` is unique
 (`TauCeti.AlmostComplexStructure.toLinearMap_eq_twoVectorContraction`). -/
 theorem exists_almostComplexStructure_inner_eq_iff :
     (∃ J : AlmostComplexStructure V, ∀ u v, ⟪u, v⟫ = ⟪F, ιMulti ℝ 2 ![u, J v]⟫) ↔
-      (o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) ∧ ‖F‖ ^ 2 = 2 := by
-  refine ⟨fun ⟨J, hJ⟩ ↦ ⟨AlmostComplexStructure.hodgeStar_eq_or_eq_neg_of_inner_eq hJ o hkl,
-    AlmostComplexStructure.norm_sq_eq_two_of_inner_eq hJ⟩, fun ⟨hF, hF₂⟩ ↦ ?_⟩
-  refine ⟨⟨twoVectorContraction F, ?_⟩, inner_eq_inner_ιMulti_twoVectorContraction o hkl hF hF₂⟩
-  rw [twoVectorContraction_comp_self o hkl hF, hF₂]
-  ext u
-  simp
+      (o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) ∧ ‖F‖ ^ 2 = 2 :=
+  ⟨fun ⟨_, hJ⟩ ↦ ⟨AlmostComplexStructure.hodgeStar_eq_or_eq_neg_of_inner_eq hJ o hkl,
+    AlmostComplexStructure.norm_sq_eq_two_of_inner_eq hJ⟩, fun ⟨hF, hF₂⟩ ↦ ⟨.ofSelfDual hkl hF hF₂,
+      AlmostComplexStructure.inner_eq_inner_ιMulti_ofSelfDual_apply hF hF₂⟩⟩
 
 /-- **Compatible complex structures for the symplectic orientation.** In dimension four, let the
 orientation be that of the two-form `ω(u, w) = ⟪F, u ∧ w⟫`, in the sense that
@@ -199,5 +283,51 @@ theorem exists_almostComplexStructure_inner_eq_iff_of_pos (ho : 0 < ⟪o.hodgeSt
   linarith
 
 end Four
+
+namespace AlmostComplexStructure
+
+variable [Fact (finrank ℝ V = 4)] {o : Orientation ℝ V (Fin 4)} {hkl : 2 + 2 = finrank ℝ V}
+  {F : ⋀[ℝ]^2 V}
+
+/-- **A two-vector with a compatible complex structure is self-dual** for its symplectic
+orientation: if `⟪u, v⟫ = ⟪F, u ∧ J v⟫` and `⟪⋆F, F⟫ > 0`, then `⋆F = F`. -/
+theorem hodgeStar_eq_self_of_inner_eq {J : AlmostComplexStructure V}
+    (hJ : ∀ u v, ⟪u, v⟫ = ⟪F, ιMulti ℝ 2 ![u, J v]⟫) (hpos : 0 < ⟪o.hodgeStar hkl F, F⟫) :
+    o.hodgeStar hkl F = F :=
+  ((exists_almostComplexStructure_inner_eq_iff_of_pos o hkl hpos).1 ⟨J, hJ⟩).1
+
+/-- **A compatible complex structure has a positively oriented unitary frame** for the symplectic
+orientation: if `⟪u, v⟫ = ⟪F, u ∧ J v⟫` and `⟪⋆F, F⟫ > 0`, then some positively oriented
+orthonormal basis `e` has `J e₀ = e₁` and `J e₂ = e₃`. So the complex orientation of `J` is the
+symplectic orientation of `F`. -/
+theorem exists_orthonormalBasis_of_inner_eq {J : AlmostComplexStructure V}
+    (hJ : ∀ u v, ⟪u, v⟫ = ⟪F, ιMulti ℝ 2 ![u, J v]⟫) (hpos : 0 < ⟪o.hodgeStar hkl F, F⟫) :
+    ∃ e : OrthonormalBasis (Fin 4) ℝ V,
+      e.toBasis.orientation = o ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  set b := o.finOrthonormalBasis (by norm_num) (Fact.out : finrank ℝ V = 4)
+  obtain ⟨e, -, h₀, h₂⟩ :=
+    exists_unitary_orthonormalBasis_of_norm_eq_one (inner_apply_apply_of_inner_eq hJ)
+      (b.orthonormal.1 0)
+  refine ⟨e, ?_, h₀, h₂⟩
+  -- For the opposite orientation `F` would be both self-dual and anti-self-dual, so `F = 0`.
+  rcases Orientation.eq_or_eq_neg e.toBasis.orientation o
+      ((Nat.card_fin 4).trans (Fact.out : finrank ℝ V = 4).symm) with he | he
+  · exact he
+  · have h := hodgeStar_kahlerForm h₀ h₂ hkl he
+    rw [kahlerForm_eq_of_inner_eq hJ, Orientation.hodgeStar_neg_orientation,
+      hodgeStar_eq_self_of_inner_eq hJ hpos] at h
+    have hF : F = 0 := by linear_combination (norm := module) (-2⁻¹ : ℝ) • h
+    have := norm_sq_eq_two_of_inner_eq hJ
+    simp [hF] at this
+
+/-- `ofSelfDual` has a positively oriented unitary frame: its complex orientation is the given
+one. -/
+theorem exists_orthonormalBasis_ofSelfDual (hF : o.hodgeStar hkl F = F) (hF₂ : ‖F‖ ^ 2 = 2) :
+    ∃ e : OrthonormalBasis (Fin 4) ℝ V, e.toBasis.orientation = o ∧
+      ofSelfDual hkl (.inl hF) hF₂ (e 0) = e 1 ∧ ofSelfDual hkl (.inl hF) hF₂ (e 2) = e 3 :=
+  exists_orthonormalBasis_of_inner_eq (inner_eq_inner_ιMulti_ofSelfDual_apply (.inl hF) hF₂)
+    (by rw [hF, real_inner_self_eq_norm_sq, hF₂]; norm_num)
+
+end AlmostComplexStructure
 
 end TauCeti

@@ -124,7 +124,7 @@ def cohomologyMap (f : AInfinityBimoduleHom MM NN) : MM.Cohomology →ₗ[R] NN.
 theorem cohomologyMap_mk (f : AInfinityBimoduleHom MM NN) (x : LinearMap.ker MM.differential) :
     f.cohomologyMap (Submodule.Quotient.mk x) = Submodule.Quotient.mk
       ⟨f.linearPart x, LinearMap.map_mem_ker_of_comp_eq f.linearPart
-        f.linearPart_comp_differential x.2⟩ :=
+        f.linearPart_comp_differential x.property⟩ :=
   LinearMap.homologyMap_mk _ _ _ _ _
 
 /-- The identity induces the identity on cohomology. -/

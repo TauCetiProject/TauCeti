@@ -80,7 +80,7 @@ theorem setLIntegral_preimage_singleton_eq_lintegral_ker (L : E →ₗ[ℝ] F)
     [FiniteDimensional ℝ (ker L)] (w : E) (g : E → ℝ≥0∞) :
     ∫⁻ x in L ⁻¹' {L w}, g x ∂μHE[finrank ℝ (ker L)] = ∫⁻ a : ker L, g (w + a) := by
   let φ : ker L → E := fun a ↦ w + a
-  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtype_coe
+  have hφ : Isometry φ := (isometry_add_left w).comp isometry_subtypeVal
   have hrange : Set.range φ = L ⁻¹' {L w} := by
     ext x
     refine ⟨?_, fun hx ↦ ⟨⟨x - w, by simp_all⟩, by simp [φ]⟩⟩
@@ -111,7 +111,7 @@ private theorem exists_orthogonal_ker_equiv (L : E →ₗ[ℝ] F) (hL : Function
   have hMinj : Function.Injective M := by
     refine (injective_iff_map_eq_zero M).2 fun w hw ↦ Subtype.ext ?_
     have hk : (w : E) ∈ ker L := by simpa [M] using hw
-    exact inner_self_eq_zero.1 (Submodule.inner_right_of_mem_orthogonal hk w.2)
+    exact inner_self_eq_zero.1 (Submodule.inner_right_of_mem_orthogonal hk w.property)
   have hMbij : Function.Bijective M :=
     ⟨hMinj, (injective_iff_surjective_of_finrank_eq_finrank hdim).mp hMinj⟩
   let e : W ≃L[ℝ] F := (LinearEquiv.ofBijective M hMbij).toContinuousLinearEquiv
@@ -140,7 +140,7 @@ theorem measurable_setLIntegral_preimage_singleton (L : E →ₗ[ℝ] F) (hL : F
   obtain ⟨e, -, hfib⟩ := L.exists_orthogonal_ker_equiv hL
   simp_rw [hfib]
   exact (Measurable.lintegral_prod_right' (f := fun q : (ker L)ᗮ × ker L ↦ g (q.1 + q.2))
-    (hg.comp (measurable_fst.subtype_coe.add measurable_snd.subtype_coe))).comp
+    (hg.comp (measurable_fst.subtypeVal.add measurable_snd.subtypeVal))).comp
     e.symm.continuous.measurable
 
 /-- **The coarea formula for linear maps.** Integrating over the fibres of `L`, each with the

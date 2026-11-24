@@ -94,7 +94,7 @@ private lemma isLocalizedModule_higherDirectImagePresheaf_map_basicOpen_top [Com
     exact isLocalizedModule_cohomologyOnResLinear_inf_basicOpen M _
       (by simpa using isCompact_univ) (by simpa using isQuasiSeparated_univ) _ hW n
   -- Identify the restriction map with restriction in cohomology, semilinearly along `f^*`.
-  refine IsLocalizedModule.of_bijective_semilinearMap (.powers g) _
+  refine Iff.mpr (IsLocalizedModule.iff_of_bijective_semilinearMap (.powers g) _
     (cohomologyOnResLinear M n (f.preimage_mono (Y.basicOpen_le g)))
     { toFun := e.hom.app (.op ⊤)
       map_add' := map_add _
@@ -104,7 +104,8 @@ private lemma isLocalizedModule_higherDirectImagePresheaf_map_basicOpen_top [Com
       map_smul' := fun r x ↦
         f.higherDirectImagePresheafToPresheafIso_hom_app_smul M n r (Y.basicOpen g) x }
     (ConcreteCategory.bijective_of_isIso (e.hom.app (.op ⊤)))
-    (ConcreteCategory.bijective_of_isIso (e.hom.app (.op (Y.basicOpen g)))) fun x ↦ ?_
+    (ConcreteCategory.bijective_of_isIso (e.hom.app (.op (Y.basicOpen g)))) fun x ↦ ?_)
+    inferInstance
   · refine (congrArg _ ?_).trans (f.higherDirectImagePresheafToPresheafIso_hom_app_smul M n r ⊤ x)
     -- the inclusion of `⊤` into itself is the identity, as morphisms of a preorder are unique
     rw [show (⊤ : Y.Opens).leTop = 𝟙 _ from rfl, op_id, CategoryTheory.Functor.map_id]
@@ -204,9 +205,10 @@ instance isQuasicoherent_higherDirectImage :
   (SheafOfModules.isQuasicoherent Y.ringCatSheaf).prop_of_iso
     ((f.higherDirectImagePresheafSheafificationIso n).app M)
     (Scheme.Modules.isQuasicoherent_sheafification_of_isLocalizedModule _
-      (fun V : Y.affineOpens ↦ V.1) (fun V ↦ V.2) (iSup_affineOpens_eq_top Y) fun V s ↦
+      (fun V : Y.affineOpens ↦ V.val) (fun V ↦ V.property) (iSup_affineOpens_eq_top Y) fun V s ↦
         f.isLocalizedModule_higherDirectImagePresheaf_map_basicOpen M n
-          (f.isCompact_preimage V.2.isCompact) (f.isQuasiSeparated_preimage V.2.isQuasiSeparated)
+          (f.isCompact_preimage V.property.isCompact)
+              (f.isQuasiSeparated_preimage V.property.isQuasiSeparated)
           s)
 
 end QuasiCompactQuasiSeparated

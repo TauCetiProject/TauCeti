@@ -56,7 +56,7 @@ lemma orbitQuotientToBase_mk (e : E) :
 /-- If deck orbits are exactly fibres of `p`, the deck-orbit relation is the kernel relation
 of `p`. -/
 private lemma orbitRel_eq_ker_of_exists_apply_eq
-    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.1 e = e') :
+    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.val e = e') :
     MulAction.orbitRel (deck p) E = Setoid.ker p := by
   ext e e'
   constructor
@@ -64,7 +64,7 @@ private lemma orbitRel_eq_ker_of_exists_apply_eq
   · intro heq
     rcases hpoint heq with ⟨φ, hφ⟩
     exact ⟨φ⁻¹, by
-      have hinv : φ.1.symm e' = e := by
+      have hinv : φ.val.symm e' = e := by
         rw [← hφ, Homeomorph.symm_apply_apply]
       simpa [deck.smul_eq_apply] using hinv⟩
 
@@ -73,7 +73,7 @@ then two points of the total space have the same projection exactly when they li
 orbit of the deck transformation group. The reverse direction holds because deck
 transformations preserve the projection. -/
 lemma apply_eq_iff_mem_orbit_of_exists_apply_eq
-    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.1 e = e') {e₁ e₂ : E} :
+    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.val e = e') {e₁ e₂ : E} :
     p e₁ = p e₂ ↔ e₁ ∈ MulAction.orbit (deck p) e₂ := by
   rw [← MulAction.orbitRel_apply, orbitRel_eq_ker_of_exists_apply_eq hpoint, Setoid.ker_def]
 
@@ -86,23 +86,23 @@ lemma orbitRel_homeomorph_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e e
     rw [MulAction.orbitRel_apply] at hee' ⊢
     rcases hee' with ⟨φ, hφ⟩
     refine ⟨conjMulEquiv h hpq φ, ?_⟩
-    have hφ_apply : φ.1 e' = e := by
+    have hφ_apply : φ.val e' = e := by
       simpa only [deck.smul_eq_apply] using hφ
     calc
-      (conjMulEquiv h hpq φ) • h e' = (conjMulEquiv h hpq φ).1 (h e') :=
+      (conjMulEquiv h hpq φ) • h e' = (conjMulEquiv h hpq φ).val (h e') :=
         deck.smul_eq_apply _ _
-      _ = h (φ.1 e') := by rw [conjMulEquiv_apply_coe, h.symm_apply_apply]
+      _ = h (φ.val e') := by rw [conjMulEquiv_apply_coe, h.symm_apply_apply]
       _ = h e := by rw [hφ_apply]
   · intro hff'
     rw [MulAction.orbitRel_apply] at hff' ⊢
     rcases hff' with ⟨ψ, hψ⟩
     refine ⟨(conjMulEquiv h hpq).symm ψ, ?_⟩
-    have hψ_apply : ψ.1 (h e') = h e := by
+    have hψ_apply : ψ.val (h e') = h e := by
       simpa only [deck.smul_eq_apply] using hψ
     calc
       ((conjMulEquiv h hpq).symm ψ) • e' =
-          ((conjMulEquiv h hpq).symm ψ).1 e' := deck.smul_eq_apply _ _
-      _ = h.symm (ψ.1 (h e')) := conjMulEquiv_symm_apply_coe h hpq ψ e'
+          ((conjMulEquiv h hpq).symm ψ).val e' := deck.smul_eq_apply _ _
+      _ = h.symm (ψ.val (h e')) := conjMulEquiv_symm_apply_coe h hpq ψ e'
       _ = e := by rw [hψ_apply, h.symm_apply_apply]
 
 /-- An over-base homeomorphism identifies the corresponding deck-orbit quotients. -/
@@ -130,7 +130,7 @@ lemma orbitQuotientEquiv_symm_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (
 /-- If deck transformations act transitively on each fibre of `p`, the map from the
 deck-orbit quotient to the base is injective. -/
 lemma orbitQuotientToBase_injective_of_exists_apply_eq
-    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.1 e = e') :
+    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.val e = e') :
     Function.Injective (orbitQuotientToBase p) := by
   exact (Setoid.lift_injective_iff_ker_eq_of_le
     (r := MulAction.orbitRel (deck p) E) (f := p)
@@ -140,7 +140,7 @@ lemma orbitQuotientToBase_injective_of_exists_apply_eq
 /-- If deck transformations act transitively on each fibre of `p`, two points have the same
 deck-orbit quotient class exactly when they have the same projection. -/
 lemma orbitQuotient_mk_eq_mk_iff_of_exists_apply_eq
-    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.1 e = e') (e e' : E) :
+    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : deck p, φ.val e = e') (e e' : E) :
     (Quotient.mk'' e : MulAction.orbitRel.Quotient (deck p) E) = Quotient.mk'' e' ↔
       p e = p e' := by
   constructor

@@ -66,8 +66,8 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y) [QuasiCompact f]
 /-- The factorization through the scheme-theoretic image is scheme-theoretically dominant. -/
 instance isSchemeTheoreticallyDominant_toImage : IsSchemeTheoreticallyDominant f.toImage := by
   let U : Y.affineOpens → f.image.affineOpens := fun U ↦
-    ⟨f.imageι ⁻¹ᵁ U, U.2.preimage _⟩
-  have hU : ⨆ V, (U V).1 = ⊤ := by
+    ⟨f.imageι ⁻¹ᵁ U, U.property.preimage _⟩
+  have hU : ⨆ V, (U V).val = ⊤ := by
     simp only [U]
     rw [← Scheme.Hom.preimage_iSup, iSup_affineOpens_eq_top, Scheme.Hom.preimage_top]
   constructor

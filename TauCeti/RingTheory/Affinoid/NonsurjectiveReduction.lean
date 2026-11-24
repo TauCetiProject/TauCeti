@@ -392,7 +392,7 @@ theorem not_isReduced_map_restrictedSquareSubst_unitClosedBall_quotient (hϖ0 : 
     simp only [s, w, φ, Subring.coe_mul, restrictedSquareSubst_X_one,
       Algebra.algebraMap_eq_smul_one, mul_smul_one] at h
     exact smul_right_injective _ hϖ0 h
-  exact X_notMem_map_restrictedSquareSubst_unitClosedBall ϖ hϖ (hbU ▸ b.2)
+  exact X_notMem_map_restrictedSquareSubst_unitClosedBall ϖ hϖ (hbU ▸ b.property)
 
 end PresentationRing
 

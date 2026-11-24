@@ -109,8 +109,9 @@ theorem isBounded_dirichletDomain_inter_thickPart (hs : IsFundamentalDomain G s 
     rw [smul_set_iUnion]
     exact disjoint_iUnion_left.2 fun m ↦ disjoint_iUnion_right.2 fun n ↦ hdisj g m n (.inl hg)
   -- The union of the balls embeds in the quotient, so its measure is at most that of `s`.
-  have hle : μ t ≤ μ s := hs.measure_le_of_disjoint_smul
-    (MeasurableSet.iUnion fun _ ↦ measurableSet_ball).nullMeasurableSet fun _ ↦ ht
+  have hle : μ t ≤ μ s := hs.measure_le_of_aedisjoint_smul
+    (MeasurableSet.iUnion fun _ ↦ measurableSet_ball).nullMeasurableSet
+    fun _ hg ↦ (ht hg).aedisjoint
   -- But the balls are pairwise disjoint and each has measure at least `c ≠ 0`.
   have htop : μ t = ∞ := by
     rw [measure_iUnion (fun m n hmn ↦ by simpa using hdisj 1 m n (.inr hmn))

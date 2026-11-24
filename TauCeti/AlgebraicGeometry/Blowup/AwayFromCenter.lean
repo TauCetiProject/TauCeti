@@ -87,11 +87,11 @@ private theorem preimage_basicOpen_le_basicOpen_monomialDegreeOne (ha : a ∈ I)
   -- A point over `D(a)` is a homogeneous prime not containing `a`.
   rw [toSpecZero_reesAlgebra_preimage_basicOpen] at hx
   -- It also avoids some `b t` with `b ∈ I`, since these generate the irrelevant ideal.
-  have hcover := Proj.iSup_basicOpen_eq_top (grade I) (fun b : I ↦ monomialDegreeOne b.2)
+  have hcover := Proj.iSup_basicOpen_eq_top (grade I) (fun b : I ↦ monomialDegreeOne b.property)
     (irrelevant_eq_span_monomialDegreeOne (s := fun b : I ↦ (b : R)) (by simp)).le
   obtain ⟨b, hxb⟩ := TopologicalSpace.Opens.mem_iSup.mp (hcover.ge (by trivial : x ∈ ⊤))
   -- Then `x` avoids `a · (b t) = b · (a t)`, hence `a t`.
-  have hab : ((gradeZeroEquiv I a : grade I 0) : reesAlgebra I) * monomialDegreeOne b.2 =
+  have hab : ((gradeZeroEquiv I a : grade I 0) : reesAlgebra I) * monomialDegreeOne b.property =
       ((gradeZeroEquiv I b : grade I 0) : reesAlgebra I) * monomialDegreeOne ha := by
     ext1
     simp [Polynomial.C_mul_monomial, mul_comm]
@@ -159,7 +159,7 @@ theorem isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus
   have hV : ⨆ b, V b = ⊤ := by
     refine top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ?_
     -- a point of `U` is a prime not containing `I`
-    have hx : ¬(I : Set R) ⊆ (x.1 : PrimeSpectrum R).asIdeal := Set.disjoint_left.mp hU x.2
+    have hx : ¬(I : Set R) ⊆ (x.val : PrimeSpectrum R).asIdeal := Set.disjoint_left.mp hU x.property
     obtain ⟨b, hb, hbx⟩ := Set.not_subset.mp hx
     exact ⟨⟨b, hb⟩, hbx⟩
   rw [← MorphismProperty.isomorphisms.iff,
@@ -168,7 +168,7 @@ theorem isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus
   refine ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
     (morphismRestrictRestrict f U (V b))).mpr ?_
   exact (MorphismProperty.isomorphisms.iff _).mpr
-    (isIso_morphismRestrict_of_le_basicOpen b.2 (U.ι.image_preimage_le _))
+    (isIso_morphismRestrict_of_le_basicOpen b.property (U.ι.image_preimage_le _))
 
 /-- **The blowup along a finitely generated ideal is proper.** If `I` is finitely generated, the
 blowup `Proj R[It] ⟶ Spec R` of `Spec R` along `V(I)` is proper. -/

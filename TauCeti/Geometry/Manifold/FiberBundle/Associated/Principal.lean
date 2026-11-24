@@ -133,7 +133,7 @@ variable [ChartedSpace HG G] [ChartedSpace HH H]
   (hφ : ∀ b (p : P b) (g : G), φ b (op g • p) = op (ρ g) • φ b p)
   (hφc : ContMDiff (IB.prod IG) (IB.prod IH) n
     (fun x : ManifoldTotalSpace G P ↦ homeomorph H Q
-      ⟨((homeomorph G P).symm x).proj, φ _ ((homeomorph G P).symm x).2⟩))
+      ⟨((homeomorph G P).symm x).proj, φ _ ((homeomorph G P).symm x).snd⟩))
   (hF : ∀ (g : G) (v : F), g • v = ρ g • v)
 
 /-- **Smooth comparison of associated bundles along an equivariant map.** If `φ : ∀ b, P b → Q b` is
@@ -193,23 +193,23 @@ def diffeomorphOfEquivariant :
 
 @[simp] theorem diffeomorphOfEquivariant_apply (z : TotalSpace F (AssociatedBundle G P F)) :
     diffeomorphOfEquivariant (IF := IF) ρ φ hφ hφc hF (homeomorph F _ z) =
-      homeomorph F _ ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.2⟩ :=
+      homeomorph F _ ⟨z.proj, equivOfEquivariant ρ φ hφ hF z.proj z.snd⟩ :=
   fiberwiseMap_homeomorph _ z
 @[simp] theorem diffeomorphOfEquivariant_symm_apply (z : TotalSpace F (AssociatedBundle H Q F)) :
     (diffeomorphOfEquivariant (IF := IF) ρ φ hφ hφc hF).symm (homeomorph F _ z) =
-      homeomorph F _ ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.2⟩ :=
+      homeomorph F _ ⟨z.proj, (equivOfEquivariant ρ φ hφ hF z.proj).symm z.snd⟩ :=
   fiberwiseMap_homeomorph _ z
 @[simp] theorem homeomorph_symm_diffeomorphOfEquivariant_apply
     (x : ManifoldTotalSpace F (AssociatedBundle G P F)) :
     (homeomorph F _).symm (diffeomorphOfEquivariant (IF := IF) ρ φ hφ hφc hF x) =
       ⟨((homeomorph F _).symm x).proj,
-        equivOfEquivariant ρ φ hφ hF _ ((homeomorph F _).symm x).2⟩ :=
+        equivOfEquivariant ρ φ hφ hF _ ((homeomorph F _).symm x).snd⟩ :=
   homeomorph_symm_fiberwiseMap _ x
 @[simp] theorem homeomorph_symm_diffeomorphOfEquivariant_symm_apply
     (x : ManifoldTotalSpace F (AssociatedBundle H Q F)) :
     (homeomorph F _).symm ((diffeomorphOfEquivariant (IF := IF) ρ φ hφ hφc hF).symm x) =
       ⟨((homeomorph F _).symm x).proj,
-        (equivOfEquivariant ρ φ hφ hF _).symm ((homeomorph F _).symm x).2⟩ :=
+        (equivOfEquivariant ρ φ hφ hF _).symm ((homeomorph F _).symm x).snd⟩ :=
   homeomorph_symm_fiberwiseMap _ x
 theorem diffeomorphOfEquivariant_mk {b : B} (p : P b) (v : F) :
     diffeomorphOfEquivariant (IF := IF) ρ φ hφ hφc hF (homeomorph F _ ⟨b, mk G p v⟩) =

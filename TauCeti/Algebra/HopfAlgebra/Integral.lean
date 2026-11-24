@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: pi
+Authors: pi, The Tau Ceti contributors
 -/
 module
 
@@ -9,17 +9,21 @@ public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import TauCeti.Algebra.Coalgebra.Basic
+public import TauCeti.Algebra.HopfAlgebra.Cointegral.Basic
 public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
 import TauCeti.Algebra.HopfAlgebra.Antipode
 
 /-!
 # Invariant integrals on Hopf algebras
 
-An invariant integral is a linear functional satisfying a Haar slice identity. On any bialgebra, a
-left invariant integral `φ` and a right invariant integral `ψ` satisfy `φ a * ψ 1 = ψ a * φ 1`, so
-any normalized left invariant integral agrees with any normalized right invariant integral. On a
-Hopf algebra, precomposing with the antipode swaps left and right invariance, whence every
-normalized one-sided invariant integral is antipode-invariant and two-sided invariant.
+An invariant integral is a linear functional satisfying a Haar slice identity, agreeing over any
+bialgebra with `TauCeti.IsRightCointegral` and `TauCeti.IsLeftCointegral`
+(`LinearMap.isRightInvariantIntegral_iff_isRightCointegral`,
+`LinearMap.isLeftInvariantIntegral_iff_isLeftCointegral`). On any bialgebra, a left invariant
+integral `φ` and a right invariant integral `ψ` satisfy `φ a * ψ 1 = ψ a * φ 1`, so any normalized
+left invariant integral agrees with any normalized right invariant integral. On a Hopf algebra,
+precomposing with the antipode swaps left and right invariance, whence every normalized one-sided
+invariant integral is antipode-invariant and two-sided invariant.
 
 Over a field, a nonzero right invariant integral has a nondegenerate multiplication pairing in its
 first argument; a nonzero left invariant integral has a nondegenerate pairing in its second
@@ -64,6 +68,16 @@ theorem isRightInvariantIntegral_iff : h.IsRightInvariantIntegral ↔
 theorem isLeftInvariantIntegral_iff : h.IsLeftInvariantIntegral ↔
     ∀ a, TensorProduct.rid R H (h.lTensor H (Coalgebra.comul a)) = h a • (1 : H) :=
   Iff.rfl
+
+/-- `LinearMap.IsRightInvariantIntegral` agrees with `TauCeti.IsRightCointegral`. -/
+theorem isRightInvariantIntegral_iff_isRightCointegral :
+    h.IsRightInvariantIntegral ↔ TauCeti.IsRightCointegral h := by
+  rw [isRightInvariantIntegral_iff, TauCeti.isRightCointegral_def]
+
+/-- `LinearMap.IsLeftInvariantIntegral` agrees with `TauCeti.IsLeftCointegral`. -/
+theorem isLeftInvariantIntegral_iff_isLeftCointegral :
+    h.IsLeftInvariantIntegral ↔ TauCeti.IsLeftCointegral h := by
+  rw [isLeftInvariantIntegral_iff, TauCeti.isLeftCointegral_def]
 
 /-- Right invariance in any finite representation of the coproduct. -/
 theorem IsRightInvariantIntegral.sum_smul {a : H} {ι : Type*}
@@ -172,6 +186,19 @@ theorem IsLeftInvariantIntegral.strong_invariance (hh : h.IsLeftInvariantIntegra
     rw [← hfg, ← mul_assoc, LinearMap.antipode_mul_id, one_mul]
   have := congrArg (fun u : WithConv (H →ₗ[R] H) ↦ u.ofConv b) hf
   simpa [f, g, rb.convMul_apply, Algebra.algebraMap_eq_smul_one] using this
+
+open HopfAlgebra TauCeti in
+/-- Reconstruction from the coproduct of a normalized right integral. The coproduct
+representation is arbitrary; no basis or inverse antipode is chosen. -/
+theorem IsLeftInvariantIntegral.sum_apply_mul_smul_antipode {φ : H →ₗ[R] R}
+    (hφ : φ.IsLeftInvariantIntegral) {t : H} (ht : t ∈ rightIntegral R H)
+    (htφ : φ t = 1) {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
+    ∑ i ∈ r.index, φ (r.right i * x) • antipode R (r.left i) = x := by
+  classical
+  have htx (y : H) : φ (t * y) = counit (R := R) y := by
+    simp [(mem_rightIntegral_iff.mp ht) y, htφ]
+  rw [← hφ.strong_invariance (ℛ R x) r]
+  simpa only [htx] using sum_smul_counit (ℛ R x)
 
 private def scalarConv (φ : H →ₗ[R] R) : WithConv (H →ₗ[R] H) :=
   toConv (Algebra.linearMap R H ∘ₗ φ)

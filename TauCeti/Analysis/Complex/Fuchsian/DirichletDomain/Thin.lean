@@ -94,7 +94,8 @@ private theorem IsCofinite.exists_finset_pos_isBounded_dirichletDomain_diff_iUni
     (Finset.single_le_sum (fun C _ ↦ hnonneg C) (Finset.mem_univ C)).trans
       (le_add_of_nonneg_left zero_le_one)
   -- the translates of these horodiscs are the horodiscs of the transported cusp data
-  have hconj (γ : Γ) : ConjAct.toConjAct (γ : PSL(2, ℝ)) • Γ = Γ := conj_smul_eq_self_of_mem γ.2
+  have hconj (γ : Γ) : ConjAct.toConjAct (γ : PSL(2, ℝ)) • Γ = Γ
+      := conj_smul_eq_self_of_mem γ.property
   refine ⟨Finset.univ.biUnion fun C ↦ (t C).image fun γ ↦ C.cuspDatum.conj (hconj γ), A₀,
     add_pos_of_pos_of_nonneg one_pos (Finset.sum_nonneg fun C _ ↦ hnonneg C),
     ((hΓ.isBounded_dirichletDomain_inter_thickPart p hε').union
@@ -107,8 +108,8 @@ private theorem IsCofinite.exists_finset_pos_isBounded_dirichletDomain_diff_iUni
   obtain ⟨g, hg1, hgz⟩ : ∃ g : Γ, g ≠ 1 ∧ dist (g • z) z < min ε δ := by
     simpa only [mem_thickPart, not_forall, not_le, exists_prop] using hthick
   have hg1' : (g : PSL(2, ℝ)) ≠ 1 := fun h ↦ hg1 (Subtype.ext h)
-  obtain ⟨w, hw⟩ | hpar := hshort g g.2 z (hgz.trans_le (min_le_right ε δ))
-  · exact absurd ⟨g, g.2, hg1', ⟨w, hw⟩, hgz.trans_le (min_le_left ε δ)⟩ hzE
+  obtain ⟨w, hw⟩ | hpar := hshort g g.property z (hgz.trans_le (min_le_right ε δ))
+  · exact absurd ⟨g, g.property, hg1', ⟨w, hw⟩, hgz.trans_le (min_le_left ε δ)⟩ hzE
   -- its fixed point is `Γ`-equivalent to the cusp of the chosen datum of its cusp orbit
   have hξ := isCuspPoint_iff_exists_parabolicFixedPoint_eq.mpr ⟨g, hpar, rfl⟩
   obtain ⟨D, hD⟩ := hξ.exists_cuspDatum_cusp_eq

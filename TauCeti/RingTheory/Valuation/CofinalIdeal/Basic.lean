@@ -112,7 +112,7 @@ theorem cofinalValueFor_of_eq_zero {v : Valuation A Γ₀}
   intro h _
   refine ⟨1, ?_⟩
   rw [pow_one, v.restrict_eq_zero_iff.mpr ha]
-  exact zero_lt_iff.mpr WithZero.coe_ne_zero
+  exact pos_iff_ne_zero.mpr WithZero.coe_ne_zero
 
 /-- Zero has cofinal value. -/
 @[simp]

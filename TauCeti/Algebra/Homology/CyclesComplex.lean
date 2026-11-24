@@ -49,8 +49,9 @@ tensor products of homology, which is how it enters the Künneth formula.
   homology.
 * `HomologicalComplex.isZero_homology_cyclesComplexShortComplex_X₃_of_d_eq_zero`: the homology of
   `K / Z(K)` vanishes in a degree where the differential out of `K` does; for a chain complex
-  indexed by `ℕ` this is degree zero
-  (`HomologicalComplex.isZero_homology_cyclesComplexShortComplex_X₃_zero`).
+  this holds in every degree `q` which is not of the form `q' + 1`, such as degree zero for chain
+  complexes indexed by `ℕ`
+  (`HomologicalComplex.isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne`).
 
 ## Implementation notes
 
@@ -273,11 +274,13 @@ lemma isZero_homology_cyclesComplexShortComplex_X₃_of_d_eq_zero (i : ι)
   exact (K.cyclesCokernelComplex.sc i).isZero_homology_of_isZero_X₂
     (isZero_cokernel_of_epi (K.iCycles i))
 
-/-- For a chain complex indexed by `ℕ`, all of `K₀` consists of cycles, so the third term
-`K / Z(K)` of the cycle sequence has zero homology in degree zero. -/
-lemma isZero_homology_cyclesComplexShortComplex_X₃_zero (K : ChainComplex C ℕ) :
-    IsZero (K.cyclesComplexShortComplex.X₃.homology 0) :=
-  K.isZero_homology_cyclesComplexShortComplex_X₃_of_d_eq_zero 0 (K.shape _ _ (by simp))
+/-- For a chain complex, all of `K_q` consists of cycles when `q` is not of the form `q' + 1`, for
+instance for `q = 0` and chain complexes indexed by `ℕ`, so the third term `K / Z(K)` of the cycle
+sequence has zero homology in degree `q`. -/
+lemma isZero_homology_cyclesComplexShortComplex_X₃_of_forall_add_one_ne {α : Type*}
+    [AddRightCancelSemigroup α] [One α] (K : ChainComplex C α) {q : α} (hq : ∀ q', q' + 1 ≠ q) :
+    IsZero (K.cyclesComplexShortComplex.X₃.homology q) :=
+  K.isZero_homology_cyclesComplexShortComplex_X₃_of_d_eq_zero q (K.shape _ _ (hq _))
 
 end
 

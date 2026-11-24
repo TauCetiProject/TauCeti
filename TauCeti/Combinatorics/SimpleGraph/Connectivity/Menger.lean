@@ -215,14 +215,14 @@ theorem card_le_card_add_one_of_not_reachable_induce_deleteEdges {ι : Type*} [F
   -- The members avoiding the edge `s(s, t)` are walks after its deletion.
   have h₁ : Fintype.card {i // q i} ≤ #X :=
     card_le_card_of_not_reachable_induce (G := G.deleteEdges {s(s, t)})
-      (P := fun i ↦ (P i.1).toDeleteEdges {s(s, t)} fun e he hes ↦ i.2 (by simp_all))
+      (P := fun i ↦ (P i.val).toDeleteEdges {s(s, t)} fun e he hes ↦ i.property (by simp_all))
       (fun i j hij ↦ by
         simpa [Walk.internallyDisjoint_def] using hdisj (Subtype.coe_ne_coe.2 hij)) hs ht hX
   -- A member traversing the edge `s(s, t)` is the path consisting of that edge.
   have h₂ : Fintype.card {i // ¬q i} ≤ 1 :=
     Fintype.card_le_one_iff.2 fun i j ↦ Subtype.ext <| hinj <|
-      ((hP i).eq_adj_toWalk_of_mem_edges (not_not.1 i.2)).trans
-        ((hP j).eq_adj_toWalk_of_mem_edges (not_not.1 j.2)).symm
+      ((hP i).eq_adj_toWalk_of_mem_edges (not_not.1 i.property)).trans
+        ((hP j).eq_adj_toWalk_of_mem_edges (not_not.1 j.property)).symm
   rw [Fintype.card_congr (Equiv.sumCompl q).symm, Fintype.card_sum]
   omega
 

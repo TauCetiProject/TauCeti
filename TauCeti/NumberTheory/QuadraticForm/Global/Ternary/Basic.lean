@@ -94,7 +94,7 @@ theorem not_anisotropic_atRealPlace_weightedSumSquares_one_neg_neg_iff_hilbertSy
   rw [(Equivalent.anisotropic_iff
     ⟨atRealPlaceWeightedSumSquares w ![1, -(a : K), -(b : K)]⟩)]
   have hcoeff : (fun i : Fin 3 =>
-      embedding_of_isReal w.2 (![1, -(a : K), -(b : K)] i)) =
+      embedding_of_isReal w.property (![1, -(a : K), -(b : K)] i)) =
       ![1, -((TauCeti.unitAtRealPlace w a : ℝˣ) : ℝ),
         -((TauCeti.unitAtRealPlace w b : ℝˣ) : ℝ)] := by
     funext i

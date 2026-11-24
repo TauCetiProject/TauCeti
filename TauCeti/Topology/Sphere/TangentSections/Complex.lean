@@ -119,7 +119,7 @@ theorem coe_tangentSectionsExtendEquiv_tmul (φ : R →ₐ[ℝ] S) (hφ : Contin
       (BalancedExtension.tmul
         ((φ : R →+* S).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1) hφ) c v) :
       ι → C(sphere (0 : EuclideanSpace ℝ ι) 1, S)) =
-      fun i ↦ c * (φ : R →+* S).compLeftContinuous _ hφ (v.1 i) := by
+      fun i ↦ c * (φ : R →+* S).compLeftContinuous _ hφ (v.val i) := by
   simp only [tangentSectionsExtendEquiv, LinearEquiv.trans_apply, BalancedExtension.congr_tmul,
     LinearEquiv.coe_ofEq_apply, BalancedExtension.coe_rangeVecMulLinearEquiv_tmul]
 
@@ -131,7 +131,7 @@ theorem tangentSectionsExtendEquiv_symm_apply [inst : DecidableEq ι] (φ : R �
     (tangentSectionsExtendEquiv φ hφ).symm w =
       ∑ i : ι, BalancedExtension.tmul
         ((φ : R →+* S).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1) hφ)
-        (w.1 i)
+        (w.val i)
         ⟨sphereTangentProjMatrix ι R i, by
           rw [← range_vecMulLinear_sphereTangentProjMatrix]
           exact Matrix.row_mem_range_vecMulLinear _ i⟩ := by
@@ -163,7 +163,7 @@ theorem coe_tangentSectionsComplexifyEquiv_tmul
         ((algebraMap ℝ ℂ).compLeftContinuous (sphere (0 : EuclideanSpace ℝ ι) 1)
           Complex.continuous_ofReal) c v) :
       ι → C(sphere (0 : EuclideanSpace ℝ ι) 1, ℂ)) =
-      fun i ↦ c * (algebraMap ℝ ℂ).compLeftContinuous _ Complex.continuous_ofReal (v.1 i) :=
+      fun i ↦ c * (algebraMap ℝ ℂ).compLeftContinuous _ Complex.continuous_ofReal (v.val i) :=
   coe_tangentSectionsExtendEquiv_tmul (Algebra.ofId ℝ ℂ) Complex.continuous_ofReal c v
 
 end ScalarExtension
@@ -232,7 +232,7 @@ def sphereComplexNormInv : C(sphere (0 : EuclideanSpace ℝ (Fin 3)) 1, ℝ) whe
     refine Continuous.inv₀ ?_ fun x ↦ (Real.sqrt_pos.mpr (by positivity)).ne'
     exact Real.continuous_sqrt.comp <|
       continuous_const.add (((EuclideanSpace.proj (2 : Fin 3)).continuous.comp
-        continuous_subtype_val).pow 2)
+        continuous_subtypeVal).pow 2)
 
 @[simp]
 theorem sphereComplexNormInv_apply (x : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
@@ -453,7 +453,7 @@ def tangentSectionsSphereTwoComplexEquiv :
       Submodule.add_mem _
         (Submodule.smul_mem _ (c 0) sphereComplexFrameFst_mem_tangentSections)
         (Submodule.smul_mem _ (c 1) sphereComplexFrameSnd_mem_tangentSections)⟩
-  invFun z := ![star sphereComplexFrameFst ⬝ᵥ z.1, star sphereComplexFrameSnd ⬝ᵥ z.1]
+  invFun z := ![star sphereComplexFrameFst ⬝ᵥ z.val, star sphereComplexFrameSnd ⬝ᵥ z.val]
   map_add' c d := by
     refine Subtype.ext (funext fun i ↦ ?_)
     simp only [Submodule.coe_add, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
@@ -466,7 +466,7 @@ def tangentSectionsSphereTwoComplexEquiv :
     ext j
     fin_cases j <;> simp
   right_inv z :=
-    Subtype.ext (sphereComplexFrame_reconstruct_of_mem_tangentSections z.2)
+    Subtype.ext (sphereComplexFrame_reconstruct_of_mem_tangentSections z.property)
 
 @[simp]
 theorem coe_tangentSectionsSphereTwoComplexEquiv_apply
@@ -480,7 +480,7 @@ theorem coe_tangentSectionsSphereTwoComplexEquiv_apply
 theorem tangentSectionsSphereTwoComplexEquiv_symm_apply
     (z : tangentSections (Fin 3) ℂ) :
     tangentSectionsSphereTwoComplexEquiv.symm z =
-      ![star sphereComplexFrameFst ⬝ᵥ z.1, star sphereComplexFrameSnd ⬝ᵥ z.1] :=
+      ![star sphereComplexFrameFst ⬝ᵥ z.val, star sphereComplexFrameSnd ⬝ᵥ z.val] :=
   (rfl)
 
 /-- `tangentSectionsSphereTwoComplexEquiv` is unitary with respect to the `C(S², ℂ)`-valued

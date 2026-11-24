@@ -81,37 +81,41 @@ variable {Sinf : Finset (InfinitePlace K)} {Sfin : Finset (FinitePlace K)}
 
 /-- At a place of `Sinf`, the truncated local factor of `β - β'`, with exponent `mult v`, is at
 most `2 ^ mult v` times the larger of the local approximation factors of `β` and `β'`. -/
-private theorem min_one_apply_sub_pow_le_inl (v : Sinf) [(w v.1.1).LiesOver v.1.1] (β β' : K) :
-    min 1 (v.1 (β - β')) ^ v.1.mult ≤ 2 ^ v.1.mult *
+private theorem min_one_apply_sub_pow_le_inl (v : Sinf) [(w v.val.val).LiesOver v.val.val]
+    (β β' : K) :
+    min 1 (v.val (β - β')) ^ v.val.mult ≤ 2 ^ v.val.mult *
       max (approxFactor Sinf Sfin w α β (.inl v)) (approxFactor Sinf Sfin w α β' (.inl v)) := by
-  set u := algebraMap K F β - α v.1.1
-  set u' := algebraMap K F β' - α v.1.1
-  have hsub : v.1 (β - β') ≤ w v.1.1 u + w v.1.1 u' := by
-    rw [InfinitePlace.coe_apply, ← AbsoluteValue.LiesOver.apply_algebraMap (w := w v.1.1) v.1.1,
+  set u := algebraMap K F β - α v.val.val
+  set u' := algebraMap K F β' - α v.val.val
+  have hsub : v.val (β - β') ≤ w v.val.val u + w v.val.val u' := by
+    rw [InfinitePlace.coe_apply, ← AbsoluteValue.LiesOver.apply_algebraMap (w
+        := w v.val.val) v.val.val,
       show algebraMap K F (β - β') = u - u' by simp [u, u']]
-    exact (w v.1.1).sub_le_add u u'
+    exact (w v.val.val).sub_le_add u u'
   -- `min 1 (s + s') ≤ min 1 s + min 1 s'` for nonnegative `s` and `s'`.
-  have hmin : min 1 (v.1 (β - β')) ≤ 2 * max (min 1 (w v.1.1 u)) (min 1 (w v.1.1 u')) := by
-    have := (w v.1.1).nonneg u
-    have := (w v.1.1).nonneg u'
+  have hmin : min 1 (v.val (β - β')) ≤ 2 * max (min 1 (w v.val.val u)) (min 1 (w v.val.val u'))
+      := by
+    have := (w v.val.val).nonneg u
+    have := (w v.val.val).nonneg u'
     grind
-  have h₀ : 0 ≤ min 1 (w v.1.1 u) := le_min zero_le_one (apply_nonneg _ _)
-  have h₀' : 0 ≤ min 1 (w v.1.1 u') := le_min zero_le_one (apply_nonneg _ _)
+  have h₀ : 0 ≤ min 1 (w v.val.val u) := le_min zero_le_one (apply_nonneg _ _)
+  have h₀' : 0 ≤ min 1 (w v.val.val u') := le_min zero_le_one (apply_nonneg _ _)
   rw [approxFactor_inl, approxFactor_inl, ← max_pow_of_nonneg h₀ h₀', ← mul_pow]
   exact pow_le_pow_left₀ (le_min zero_le_one (apply_nonneg _ _)) hmin _
 
 /-- At a place of `Sfin`, the truncated local factor of `β - β'` is at most the larger of the
 local approximation factors of `β` and `β'`, since an absolute value over a finite place is
 nonarchimedean. -/
-private theorem min_one_apply_sub_le_inr (v : Sfin) [(w v.1.1).LiesOver v.1.1] (β β' : K) :
-    min 1 (v.1 (β - β')) ≤
+private theorem min_one_apply_sub_le_inr (v : Sfin) [(w v.val.val).LiesOver v.val.val] (β β' : K) :
+    min 1 (v.val (β - β')) ≤
       max (approxFactor Sinf Sfin w α β (.inr v)) (approxFactor Sinf Sfin w α β' (.inr v)) := by
-  set u := algebraMap K F β - α v.1.1
-  set u' := algebraMap K F β' - α v.1.1
-  have hna : IsNonarchimedean (w v.1.1) :=
-    AbsoluteValue.isNonarchimedean_of_liesOver (u := v.1.1) v.1.add_le
-  have hsub : v.1 (β - β') ≤ max (w v.1.1 u) (w v.1.1 u') := by
-    rw [FinitePlace.coe_apply, ← AbsoluteValue.LiesOver.apply_algebraMap (w := w v.1.1) v.1.1,
+  set u := algebraMap K F β - α v.val.val
+  set u' := algebraMap K F β' - α v.val.val
+  have hna : IsNonarchimedean (w v.val.val) :=
+    AbsoluteValue.isNonarchimedean_of_liesOver (u := v.val.val) v.val.add_le
+  have hsub : v.val (β - β') ≤ max (w v.val.val u) (w v.val.val u') := by
+    rw [FinitePlace.coe_apply, ← AbsoluteValue.LiesOver.apply_algebraMap (w
+        := w v.val.val) v.val.val,
       show algebraMap K F (β - β') = u + -u' by simp [u, u', sub_eq_add_neg]]
     simpa only [AbsoluteValue.map_neg] using hna u (-u')
   simp only [approxFactor_inr, ← min_max_distrib_left]
@@ -164,7 +168,7 @@ private theorem prod_rpow_approxClass_le {N : ℕ} (hN : 0 < N) {κ : ℝ} (hκ 
 local factors of `β - β'` at the places of `Sinf` and `Sfin` are bounded by those of `β` and
 `β'`, which one class pins to powers of `H(β)`. -/
 private theorem inv_mulHeight₁_sub_le
-    (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1) (hwFin : ∀ v ∈ Sfin, (w v.1).LiesOver v.1)
+    (hwInf : ∀ v ∈ Sinf, (w v.val).LiesOver v.val) (hwFin : ∀ v ∈ Sfin, (w v.val).LiesOver v.val)
     {N : ℕ} (hN : 0 < N) {κ : ℝ} (hκ : 0 ≤ κ) {β β' : K} (hne : β ≠ β')
     (hβ : ∏ a, approxFactor Sinf Sfin w α β a ≤ mulHeight₁ β ^ (-κ))
     (hβ' : ∏ a, approxFactor Sinf Sfin w α β' a ≤ mulHeight₁ β' ^ (-κ))
@@ -179,14 +183,14 @@ private theorem inv_mulHeight₁_sub_le
   have hinf : ∏ v ∈ Sinf, min 1 (v (β - β')) ^ v.mult ≤
       2 ^ finrank ℚ K * ∏ v : Sinf, B (.inl v) := by
     rw [← Finset.prod_coe_sort Sinf]
-    calc ∏ v : Sinf, min 1 (v.1 (β - β')) ^ v.1.mult
-        ≤ ∏ v : Sinf, 2 ^ v.1.mult * B (.inl v) := by
+    calc ∏ v : Sinf, min 1 (v.val (β - β')) ^ v.val.mult
+        ≤ ∏ v : Sinf, 2 ^ v.val.mult * B (.inl v) := by
           refine Finset.prod_le_prod₀ (fun v _ ↦ pow_nonneg (le_min zero_le_one
             (apply_nonneg _ _)) _) fun v _ ↦ ?_
-          have := hwInf v.1 v.2
+          have := hwInf v.val v.property
           exact (min_one_apply_sub_pow_le_inl w α v β β').trans
             (mul_le_mul_of_nonneg_left (hmax _) (by positivity))
-      _ = 2 ^ (∑ v : Sinf, v.1.mult) * ∏ v : Sinf, B (.inl v) := by
+      _ = 2 ^ (∑ v : Sinf, v.val.mult) * ∏ v : Sinf, B (.inl v) := by
           rw [prod_mul_distrib, prod_pow_eq_pow_sum]
       _ ≤ 2 ^ finrank ℚ K * ∏ v : Sinf, B (.inl v) := by
           refine mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two ?_)
@@ -196,7 +200,7 @@ private theorem inv_mulHeight₁_sub_le
   have hfin : ∏ v ∈ Sfin, min 1 (v (β - β')) ≤ ∏ v : Sfin, B (.inr v) := by
     rw [← Finset.prod_coe_sort Sfin]
     refine Finset.prod_le_prod₀ (fun v _ ↦ le_min zero_le_one (apply_nonneg _ _)) fun v _ ↦ ?_
-    have := hwFin v.1 v.2
+    have := hwFin v.val v.property
     exact (min_one_apply_sub_le_inr w α v β β').trans (hmax _)
   refine (inv_mulHeight₁_le_prod_min_one_apply Sinf Sfin (sub_ne_zero.mpr hne)).trans ?_
   calc (∏ v ∈ Sinf, min 1 (v (β - β')) ^ v.mult) * ∏ v ∈ Sfin, min 1 (v (β - β'))
@@ -212,7 +216,7 @@ inequality with exponent `κ` in one approximation class of side `1 / N`, with
 `H(β) ≤ H(β')`. Then `H(β) ^ ((1 - |S| / N) κ - 1) ≤ 4 ^ [K : ℚ] H(β')`, where `|S|` is the number
 of places of `Sinf` and `Sfin` and `H` is the relative height. -/
 theorem mulHeight₁_rpow_le_four_pow_mul_mulHeight₁_of_approxClass_eq
-    (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1) (hwFin : ∀ v ∈ Sfin, (w v.1).LiesOver v.1)
+    (hwInf : ∀ v ∈ Sinf, (w v.val).LiesOver v.val) (hwFin : ∀ v ∈ Sfin, (w v.val).LiesOver v.val)
     {N : ℕ} (hN : 0 < N) {κ : ℝ} (hκ : 0 ≤ κ) {β β' : K} (hne : β ≠ β')
     (hβ : ∏ a, approxFactor Sinf Sfin w α β a ≤ mulHeight₁ β ^ (-κ))
     (hβ' : ∏ a, approxFactor Sinf Sfin w α β' a ≤ mulHeight₁ β' ^ (-κ))
@@ -247,7 +251,7 @@ inequality with exponent `κ` in one approximation class of side `1 / N`, with `
 absolute logarithmic heights. Then `h(β') ≥ ((1 - |S| / N) κ - 1) h(β) - log 4`, where `|S|` is
 the number of places of `Sinf` and `Sfin`. -/
 theorem mul_absLogHeight₁_sub_le_of_approxClass_eq
-    (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1) (hwFin : ∀ v ∈ Sfin, (w v.1).LiesOver v.1)
+    (hwInf : ∀ v ∈ Sinf, (w v.val).LiesOver v.val) (hwFin : ∀ v ∈ Sfin, (w v.val).LiesOver v.val)
     {N : ℕ} (hN : 0 < N) {κ : ℝ} (hκ : 0 ≤ κ) {β β' : K} (hne : β ≠ β')
     (hβ : ∏ a, approxFactor Sinf Sfin w α β a ≤ mulHeight₁ β ^ (-κ))
     (hβ' : ∏ a, approxFactor Sinf Sfin w α β' a ≤ mulHeight₁ β' ^ (-κ))
@@ -273,7 +277,7 @@ logarithmic height lies in `(X, A X]` form a set whose `Set.ncard` is at most
 `⌈log A / log ((c + 1) / 2)⌉` times `(N + |S|).choose |S|`. Since `Set.ncard` is `0` on infinite
 sets, the statement does not say that this set is finite. -/
 theorem ncard_setOf_absLogHeight₁_mem_Ioc_le
-    (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1) (hwFin : ∀ v ∈ Sfin, (w v.1).LiesOver v.1)
+    (hwInf : ∀ v ∈ Sinf, (w v.val).LiesOver v.val) (hwFin : ∀ v ∈ Sfin, (w v.val).LiesOver v.val)
     {N : ℕ} (hN : 0 < N) {κ : ℝ} (hκ : 0 ≤ κ) (hc : 2 < (1 - (#Sinf + #Sfin : ℝ) / N) * κ)
     {X A : ℝ} (hX : log 16 / ((1 - (#Sinf + #Sfin : ℝ) / N) * κ - 2) ≤ X) :
     {β : K | ∏ a, approxFactor Sinf Sfin w α β a ≤ mulHeight₁ β ^ (-κ) ∧

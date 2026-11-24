@@ -440,13 +440,13 @@ Gauss reduced forms of discriminant `D`. Its cycles are the cycles of reduced fo
 noncomputable def reductionPerm (D : ℤ) [Fact (¬ IsSquare D)] :
     Equiv.Perm (gaussReducedForms D) :=
   Equiv.ofBijective
-    (fun f ↦ ⟨f.1.reductionStep, by
-      obtain ⟨hD, hf⟩ := mem_gaussReducedForms.mp f.2
+    (fun f ↦ ⟨f.val.reductionStep, by
+      obtain ⟨hD, hf⟩ := mem_gaussReducedForms.mp f.property
       exact mem_gaussReducedForms.mpr ⟨by rw [discrim_reductionStep, hD],
         hf.reductionStep (by rw [hD]; exact Fact.out)⟩⟩)
     (Finite.injective_iff_bijective.mp fun f g h ↦ by
-      obtain ⟨hDf, hf⟩ := mem_gaussReducedForms.mp f.2
-      obtain ⟨hDg, hg⟩ := mem_gaussReducedForms.mp g.2
+      obtain ⟨hDf, hf⟩ := mem_gaussReducedForms.mp f.property
+      obtain ⟨hDg, hg⟩ := mem_gaussReducedForms.mp g.property
       exact Subtype.ext <| reductionStep_injOn ⟨hf, by rw [hDf]; exact Fact.out⟩
         ⟨hg, by rw [hDg]; exact Fact.out⟩ (congrArg Subtype.val h))
 

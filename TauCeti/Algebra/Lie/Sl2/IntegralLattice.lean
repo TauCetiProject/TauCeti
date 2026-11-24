@@ -391,6 +391,6 @@ theorem kostantForm_apply_mem_integralLattice
     {v : Sl2Std ℚ n} (hv : v ∈ integralLattice n) :
     repEnveloping ℚ n u v ∈ integralLattice n := by
   rw [← coe_kostantFormRep_apply n ⟨u, hu⟩ ⟨v, hv⟩]
-  exact (((kostantFormRep n) ⟨u, hu⟩) ⟨v, hv⟩).2
+  exact (((kostantFormRep n) ⟨u, hu⟩) ⟨v, hv⟩).property
 
 end TauCeti.Sl2Std

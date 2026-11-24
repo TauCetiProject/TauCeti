@@ -123,7 +123,7 @@ structure that `ProbabilityMeasure` inherits as a subtype of `Measure`. -/
 theorem measurable_probabilityMeasure_map {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     {f : α → β} (hf : Measurable f) :
     Measurable fun P : ProbabilityMeasure α => P.map f :=
-  ((Measure.measurable_map f hf).comp measurable_subtype_coe).subtype_mk
+  ((Measure.measurable_map f hf).comp measurable_subtypeVal).subtype_mk
 
 /-- Pushing a fixed s-finite measure forward along a jointly measurable family of maps `f a` is
 measurable in the parameter `a`. -/
@@ -162,7 +162,7 @@ theorem measurable_probabilityMeasure_map_of_measurable_uncurry
     {f : γ → α → β} (hf : Measurable (Function.uncurry f)) :
     Measurable fun p : ProbabilityMeasure α × γ => p.1.map (f p.2) := by
   have htoFinite : Measurable fun μ : ProbabilityMeasure α => μ.toFiniteMeasure :=
-    measurable_subtype_coe.subtype_mk
+    measurable_subtypeVal.subtype_mk
   exact ((measurable_map_finiteMeasure_of_measurable_uncurry hf).comp
     (htoFinite.comp measurable_fst |>.prodMk measurable_snd)).subtype_mk
 

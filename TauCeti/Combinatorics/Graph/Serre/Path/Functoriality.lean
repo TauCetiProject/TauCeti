@@ -422,7 +422,7 @@ restricted tree to the tree loops of the tree. -/
 @[simp] theorem map_restrictInclusion_loop (hTS : T.darts ⊆ S) {w : Γ.V}
     (h : (Γ.restrictInclusion S hS).mapV v = w) (e : (Γ.restrict S hS).E) :
     PathGroup.map (Γ.restrictInclusion S hS) h ((T.restrict S hS hTS).loop v e) =
-      T.loop w e.1 := by
+      T.loop w e.val := by
   simpa using (T.restrict S hS hTS).map_loop v (Γ.restrictInclusion S hS) T
     (fun _ he => (T.mem_restrict_darts S hS hTS).mp he) h e
 

@@ -46,19 +46,8 @@ include hι
 
 /-- The injective hull of the residue field of a Noetherian local ring is Artinian.
 The ring need not be complete. -/
-theorem isArtinian : IsArtinian R E := by
-  let := AdicCompletion.torsionModule hι.mem_primaryComponent
-  have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  let f := LinearMap.toSpanSingleton (_root_.AdicCompletion (maximalIdeal R) R)
-    (Module.End R E) LinearMap.id
-  have hf : Function.Surjective f := by
-    intro φ
-    refine ⟨hι.adicCompletionEquivEnd.symm φ, LinearMap.ext fun x ↦ ?_⟩
-    simpa [f] using
-      (hι.adicCompletionEquivEnd_apply hι.mem_primaryComponent
-        (hι.adicCompletionEquivEnd.symm φ) x).symm
-  have := Module.Finite.of_surjective f hf
-  exact hι.isArtinian_of_finite_adicCompletion_linearMap inferInstance
+theorem isArtinian : IsArtinian R E :=
+  hι.isArtinian_of_finite_adicCompletion_linearMap hι.finite_adicCompletion_end
 
 /-- The Matlis dual of a finitely generated module over a Noetherian local ring is Artinian.
 Completeness and finiteness of the residue field are unnecessary. -/

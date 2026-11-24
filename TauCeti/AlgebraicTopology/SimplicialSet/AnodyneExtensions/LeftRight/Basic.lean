@@ -335,7 +335,7 @@ variable {X : SSet.{u}} {A : X.Subcomplex} (P : A.Pairing) [P.IsRegular]
 /-- The inclusion of a subcomplex admitting a regular pairing in which no type (II) simplex is the
 last face of the corresponding type (I) simplex is a left anodyne extension. -/
 lemma leftAnodyneExtensions
-    (hP : ∀ (x : P.II) {d : ℕ} (hd : x.1.dim = d),
+    (hP : ∀ (x : P.II) {d : ℕ} (hd : x.val.dim = d),
       (P.isUniquelyCodimOneFace x).index hd ≠ Fin.last _) :
     SSet.leftAnodyneExtensions A.ι :=
   transfiniteCompositionsOfShape_le _ _ _
@@ -349,7 +349,7 @@ lemma leftAnodyneExtensions
 /-- The inclusion of a subcomplex admitting a regular pairing in which no type (II) simplex is the
 first face of the corresponding type (I) simplex is a right anodyne extension. -/
 lemma rightAnodyneExtensions
-    (hP : ∀ (x : P.II) {d : ℕ} (hd : x.1.dim = d), (P.isUniquelyCodimOneFace x).index hd ≠ 0) :
+    (hP : ∀ (x : P.II) {d : ℕ} (hd : x.val.dim = d), (P.isUniquelyCodimOneFace x).index hd ≠ 0) :
     SSet.rightAnodyneExtensions A.ι :=
   transfiniteCompositionsOfShape_le _ _ _
     ⟨P.rankFunction.relativeCellComplex.toTransfiniteCompositionOfShape, fun j hj ↦ by

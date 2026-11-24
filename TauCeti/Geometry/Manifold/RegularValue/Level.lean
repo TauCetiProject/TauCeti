@@ -111,11 +111,11 @@ private noncomputable def zeroHomeomorph :
     rw [mem_ofPred_eq, sec, sub_eq_zero]
 
 private theorem coe_zeroHomeomorph (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
-    (zeroHomeomorph I f c z : M) = (BoundarylessModel.homeomorph I M).symm z.1 :=
+    (zeroHomeomorph I f c z : M) = (BoundarylessModel.homeomorph I M).symm z.val :=
   (rfl)
 
 private theorem coe_zeroHomeomorph_symm (x : {x : M // f x = c}) :
-    ((zeroHomeomorph I f c).symm x).1 = BoundarylessModel.homeomorph I M x.1 :=
+    ((zeroHomeomorph I f c).symm x).val = BoundarylessModel.homeomorph I M x.val :=
   (rfl)
 
 variable [I.Boundaryless] [ChartedSpace H M]
@@ -123,20 +123,20 @@ variable [I.Boundaryless] [ChartedSpace H M]
 /-- A zero lies in the preferred chart source of the copy at `z` exactly when the corresponding
 point of the level lies in the preferred chart source of `M`. -/
 private theorem mem_chartAt_source_iff (z w : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
-    w.1 ∈ (chartAt E z.1).source ↔
+    w.val ∈ (chartAt E z.val).source ↔
       (zeroHomeomorph I f c w : M) ∈ (chartAt H (zeroHomeomorph I f c z : M)).source := by
   rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_source, mem_preimage,
     coe_zeroHomeomorph, coe_zeroHomeomorph]
 
 private theorem chartAt_self (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
-    chartAt E z.1 z.1 = extChartAt I (zeroHomeomorph I f c z : M) (zeroHomeomorph I f c z) := by
+    chartAt E z.val z.val = extChartAt I (zeroHomeomorph I f c z : M) (zeroHomeomorph I f c z) := by
   rw [BoundarylessModel.chartAt_apply, coe_zeroHomeomorph]
 
 /-- The trivialization coordinate of `f - c` in the preferred chart is `f - c` read in the
 preferred extended chart of `M`. -/
 private theorem coord_eq (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
-    (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.1))
-      ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2) =
+    (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.val))
+      ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.val).symm y), sec I f c ((chartAt E z.val).symm y)⟩).2) =
       fun y ↦ f ((extChartAt I (zeroHomeomorph I f c z : M)).symm y) - c := by
   funext y
   rw [coe_zeroHomeomorph]
@@ -155,16 +155,17 @@ private noncomputable abbrev linearization (z : ↥{y : BoundarylessModel I M | 
 private theorem hasStrictFDerivAt_coord (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x)
     (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     HasStrictFDerivAt
-      (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.1))
-        ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2)
-      (linearization z) (chartAt E z.1 z.1) := by
+      (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.val))
+        ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.val).symm y), sec I f c ((chartAt E z.val).symm y)⟩).2)
+      (linearization z) (chartAt E z.val z.val) := by
   rw [coord_eq, chartAt_self]
-  exact ((hf _ (zeroHomeomorph I f c z).2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
+  exact ((hf _
+      (zeroHomeomorph I f c z).property).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
     one_ne_zero).sub_const c
 
 private theorem surjective_linearization (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
     (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) : Surjective (linearization z) :=
-  (hreg.isRegularPoint (zeroHomeomorph I f c z).2).surjective_fderiv_comp_extChartAt_symm
+  (hreg.isRegularPoint (zeroHomeomorph I f c z).property).surjective_fderiv_comp_extChartAt_symm
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] {n : ℕ}
 
@@ -184,7 +185,7 @@ private noncomputable abbrev kerEquiv (hreg : IsRegularValue I 𝓘(𝕜, F) f c
     (hn : finrank 𝕜 E - finrank 𝕜 F = n) (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     (linearization z).ker ≃L[𝕜] (Fin n → 𝕜) :=
   (linearization z).kerModelEquiv (isFredholm_linearization z).finite_ker
-    ((Nat.eq_sub_of_add_eq ((hreg.isRegularPoint (zeroHomeomorph I f c z).2)
+    ((Nat.eq_sub_of_add_eq ((hreg.isRegularPoint (zeroHomeomorph I f c z).property)
       |>.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank)).trans hn)
 
 /-- The implicit-function chart and regular neighbourhood of the section-zero chart at a zero are
@@ -194,7 +195,8 @@ private theorem implicit_coord_eq (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(�
     let x := (zeroHomeomorph I f c z : M)
     let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - c) (linearization z)
         (extChartAt I x x) :=
-      ((hf x (zeroHomeomorph I f c z).2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
+      ((hf x (zeroHomeomorph I f c
+          z).property).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
         one_ne_zero).sub_const c
     let hD' := LinearMap.range_eq_top.2 (surjective_linearization hreg z)
     let hker := (isFredholm_linearization z).closedComplemented_ker
@@ -282,7 +284,8 @@ theorem regularLevelChartAt_apply (x w : {x : M // f x = c}) :
       let D := fderiv 𝕜 (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         ((Nat.eq_sub_of_add_eq
-          (hreg.isRegularPoint x.2).finrank_ker_fderiv_comp_extChartAt_symm_add_finrank).trans hn)
+          (hreg.isRegularPoint
+              x.property).finrank_ker_fderiv_comp_extChartAt_symm_add_finrank).trans hn)
         (Classical.choose D.isFredholm_of_finiteDimensional.closedComplemented_ker
           (extChartAt I (x : M) w - extChartAt I (x : M) x)) := by
   obtain ⟨z, rfl⟩ := (zeroHomeomorph I f c).surjective x
@@ -318,10 +321,10 @@ theorem regularLevelChartAt_source (x : {x : M // f x = c}) :
       let D := fderiv 𝕜 (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
-        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
+        ((hf x x.property).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
           one_ne_zero).sub_const c
       let hD' := LinearMap.range_eq_top.2
-        (hreg.isRegularPoint x.2).surjective_fderiv_comp_extChartAt_symm
+        (hreg.isRegularPoint x.property).surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       {w : {x : M // f x = c} | (w : M) ∈ (chartAt H (x : M)).source ∧
         extChartAt I (x : M) w ∈
@@ -348,14 +351,15 @@ theorem mem_regularLevelChartAt_target_iff (x : {x : M // f x = c}) (k : Fin n �
       let D := fderiv 𝕜 (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
-        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
+        ((hf x x.property).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
           one_ne_zero).sub_const c
       let hD' := LinearMap.range_eq_top.2
-        (hreg.isRegularPoint x.2).surjective_fderiv_comp_extChartAt_symm
+        (hreg.isRegularPoint x.property).surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       let K := D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         ((Nat.eq_sub_of_add_eq
-          (hreg.isRegularPoint x.2).finrank_ker_fderiv_comp_extChartAt_symm_add_finrank).trans hn)
+          (hreg.isRegularPoint
+              x.property).finrank_ker_fderiv_comp_extChartAt_symm_add_finrank).trans hn)
       let Φ := hD.implicitToOpenPartialHomeomorphOfComplemented _ D hD' hker
       (0, K.symm k) ∈ Φ.target ∧ Φ.symm (0, K.symm k) ∈ hD.implicitCoordSource hD' hker ∧
         Φ.symm (0, K.symm k) ∈ (extChartAt I (x : M)).target := by
@@ -379,14 +383,15 @@ theorem coe_regularLevelChartAt_symm_apply (x : {x : M // f x = c}) {k : Fin n �
       let D := fderiv 𝕜 (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
-        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
+        ((hf x x.property).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
           one_ne_zero).sub_const c
       let hD' := LinearMap.range_eq_top.2
-        (hreg.isRegularPoint x.2).surjective_fderiv_comp_extChartAt_symm
+        (hreg.isRegularPoint x.property).surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       let K := D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         ((Nat.eq_sub_of_add_eq
-          (hreg.isRegularPoint x.2).finrank_ker_fderiv_comp_extChartAt_symm_add_finrank).trans hn)
+          (hreg.isRegularPoint
+              x.property).finrank_ker_fderiv_comp_extChartAt_symm_add_finrank).trans hn)
       (extChartAt I (x : M)).symm
         ((hD.implicitToOpenPartialHomeomorphOfComplemented _ D hD' hker).symm (0, K.symm k)) := by
   obtain ⟨z, rfl⟩ := (zeroHomeomorph I f c).surjective x
@@ -406,22 +411,22 @@ the self-modelled copy at every zero of its chart domain. -/
 private theorem contDiffAt_coord {m : ℕ∞ω} [IsManifold I m M]
     (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) m f x) :
     m ≠ 0 → ∀ z w : ↥{y : BoundarylessModel I M | sec I f c y = 0},
-      w.1 ∈ (chartAt E z.1).source →
-      (fun _ ↦ (0 : 𝕜)) w.1 ∈
-        (trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.1)).baseSet →
-      chartAt E z.1 w.1 ∈ (hasStrictFDerivAt_coord hf z).implicitCoordSource
+      w.val ∈ (chartAt E z.val).source →
+      (fun _ ↦ (0 : 𝕜)) w.val ∈
+        (trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.val)).baseSet →
+      chartAt E z.val w.val ∈ (hasStrictFDerivAt_coord hf z).implicitCoordSource
         (LinearMap.range_eq_top.2 (surjective_linearization hreg z))
         (isFredholm_linearization z).closedComplemented_ker →
       ContDiffAt 𝕜 m
-        (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.1))
-          ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2)
-        (chartAt E z.1 w.1) := by
+        (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.val))
+          ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.val).symm y), sec I f c ((chartAt E z.val).symm y)⟩).2)
+        (chartAt E z.val w.val) := by
   intro _ z w hw _ _
   have hw' := (mem_chartAt_source_iff z w).1 hw
   rw [coord_eq, BoundarylessModel.chartAt_apply, ← coe_zeroHomeomorph, ← coe_zeroHomeomorph]
   exact ContDiffAt.sub ((contMDiffAt_iff_contDiffAt_comp_extend_symm
     (IsManifold.chart_mem_maximalAtlas (I := I) (n := m) _) hw').1
-    (hfm _ (zeroHomeomorph I f c w).2)) contDiffAt_const
+    (hfm _ (zeroHomeomorph I f c w).property)) contDiffAt_const
 
 /-! ### The level as a submanifold -/
 
@@ -524,10 +529,10 @@ theorem range_mfderiv_coe_regularLevel [IsManifold I 1 M] (x : {x : M // f x = c
     (mfderiv 𝓘(𝕜, Fin n → 𝕜) I (Subtype.val : {x : M // f x = c} → M) x).range =
       (mfderiv I 𝓘(𝕜, F) f x).ker := by
   let := regularLevelChartedSpace hf hreg hn
-  have hx := hreg.isRegularPoint x.2
+  have hx := hreg.isRegularPoint x.property
   -- At a point of the level, regularity gives `dim F ≤ dim E`, so `n + dim F = dim E`.
   have hdim := hx.finrank_ker_mfderiv_add_finrank
-  refine hx.range_mfderiv_eq_ker_mfderiv (g := Subtype.val) (.of_forall fun y ↦ y.2)
+  refine hx.range_mfderiv_eq_ker_mfderiv (g := Subtype.val) (.of_forall fun y ↦ y.property)
     ((isImmersionOfComplement_coe_regularLevel le_rfl hf hreg hn x).mfderiv_injective
       one_ne_zero) ?_
   rw [finrank_fin_fun]
@@ -548,7 +553,7 @@ theorem ker_mfderiv_eq_of_forall_eq_imp [IsManifold I 1 M]
   have hle : (mfderiv I 𝓘(𝕜, F) f x).ker ≤ (mfderiv I 𝓘(𝕜, F) g x).ker := by
     rw [← range_mfderiv_coe_regularLevel hf hreg rfl (⟨x, hx⟩ : {x : M // f x = c})]
     exact range_mfderiv_le_ker_mfderiv_of_eventually_eq
-      (.of_forall fun y : {x : M // f x = c} ↦ hfg y y.2)
+      (.of_forall fun y : {x : M // f x = c} ↦ hfg y y.property)
   refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
   have hf' := (hreg.isRegularPoint hx).finrank_ker_mfderiv_add_finrank
   have hg' := hgx.finrank_ker_mfderiv_add_finrank

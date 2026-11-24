@@ -120,7 +120,7 @@ def padicCompletionUnitsNormResidue (m : ℕ) :
 /-- The completed norm residue map at level `m` only depends on the level-`m` coordinate: if that
 coordinate is the class of `u ∈ Kˣ`, the value is the norm residue symbol of `u`. -/
 theorem padicCompletionUnitsNormResidue_eq {m : ℕ} {x : Additive ↑(padicCompletionUnits p K)}
-    {u : Kˣ} (hu : x.toMul.1 m = QuotientGroup.mk u) :
+    {u : Kˣ} (hu : x.toMul.val m = QuotientGroup.mk u) :
     padicCompletionUnitsNormResidue p K L m x =
       Additive.ofMul (QuotientGroup.mk (normResidue K L (QuotientGroup.mk u)) :
         powerClassQuotient (Group.Abelianization Gal(L/K)) (p ^ m)) := by
@@ -160,7 +160,7 @@ norm is the class of a norm, whose norm residue symbol is trivial. -/
 theorem padicCompletionUnitsNormResidue_padicCompletionUnitsNorm [Fact p.Prime] (m : ℕ)
     (y : Additive ↑(padicCompletionUnits p L)) :
     padicCompletionUnitsNormResidue p K L m (padicCompletionUnitsNorm p K L y) = 0 := by
-  obtain ⟨v, hv⟩ := QuotientGroup.mk_surjective (y.toMul.1 m)
+  obtain ⟨v, hv⟩ := QuotientGroup.mk_surjective (y.toMul.val m)
   rw [padicCompletionUnitsNormResidue_eq p K L (u := Algebra.normUnits K v)
     (by rw [padicCompletionUnitsNorm_apply, ← hv, padicCompletionPowerClassNorm_mk]),
     (normResidue_mk_eq_one_iff K L _).2 (normUnits_mem_normGroup K L v), QuotientGroup.mk_one,

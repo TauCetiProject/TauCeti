@@ -128,18 +128,20 @@ theorem monomialDegreeOne_mem_gradedRing {f : B} (hf : f ∈ F) :
 variable (F) in
 /-- `R(J)` is generated over its degree zero part by the elements `f T` with `f ∈ F`. -/
 theorem adjoin_monomialDegreeOne_eq_top :
-    Algebra.adjoin (gradedRing C F 0) (Set.range fun f : F ↦ monomialDegreeOne C f.2) = ⊤ := by
+    Algebra.adjoin (gradedRing C F 0) (Set.range fun f : F ↦ monomialDegreeOne C f.property) = ⊤
+        := by
   -- The degree zero part acts through multiplication in `R(J)`, compatibly with `C`.
   have : IsScalarTower C (gradedRing C F 0) (coeffSubalgebra fun n ↦ Submodule.span C F ^ n) :=
     ⟨fun c a x ↦ smul_mul_assoc c (a : coeffSubalgebra fun n ↦ Submodule.span C F ^ n) x⟩
-  have h : Algebra.adjoin C (Set.range fun f : F ↦ monomialDegreeOne C f.2) = ⊤ :=
+  have h : Algebra.adjoin C (Set.range fun f : F ↦ monomialDegreeOne C f.property) = ⊤ :=
     coeffSubalgebra.adjoin_monomial_one_eq_top F
   refine eq_top_iff.mpr fun x _ ↦ ?_
-  have hx : x ∈ Algebra.adjoin C (Set.range fun f : F ↦ monomialDegreeOne C f.2) := by
+  have hx : x ∈ Algebra.adjoin C (Set.range fun f : F ↦ monomialDegreeOne C f.property) := by
     rw [h]
     exact Algebra.mem_top
   exact Algebra.adjoin_le (S := (Algebra.adjoin (gradedRing C F 0)
-    (Set.range fun f : F ↦ monomialDegreeOne C f.2)).restrictScalars C) Algebra.subset_adjoin hx
+    (Set.range fun f : F ↦ monomialDegreeOne C f.property)).restrictScalars C) Algebra.subset_adjoin
+        hx
 
 variable (F) in
 /-- The graded presentation of `R(J)` by the symmetric algebra on the free module with basis
@@ -149,13 +151,13 @@ noncomputable def presentation :
     TauCeti.SymmetricAlgebra.homogeneousSubmodule C (F →₀ C) →+*ᵍ gradedRing C F :=
   _root_.SymmetricAlgebra.gradedLift C (gradedRing C F)
     (Finsupp.linearCombination C fun f : F ↦
-      ⟨monomialDegreeOne C f.2, monomialDegreeOne_mem_gradedRing C f.2⟩)
+      ⟨monomialDegreeOne C f.property, monomialDegreeOne_mem_gradedRing C f.property⟩)
 
 /-- Each free coordinate maps to the corresponding degree-one monomial. -/
 @[simp]
 theorem presentation_ι_single (f : F) (c : C) :
     presentation C F (_root_.SymmetricAlgebra.ι C (F →₀ C) (Finsupp.single f c)) =
-      c • monomialDegreeOne C f.2 := by
+      c • monomialDegreeOne C f.property := by
   simp [presentation, Finsupp.linearCombination_single]
 
 /-- The graded presentation preserves the coefficient ring in degree zero. -/
@@ -450,7 +452,7 @@ private theorem range_awayToLocalization (hS : (S : Set B) ⊆ F) :
     obtain ⟨w, rfl⟩ := (AlgHom.mem_range _).mp hy
     obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective _ (monomialProd_mem_gradedRing C hS) w
     obtain ⟨z, hz, hzx⟩ := exists_mem_prod_pow_mul_eq (L := L)
-      (by simpa using mem_coeffSubalgebra_iff.mp x.2 (n • #S))
+      (by simpa using mem_coeffSubalgebra_iff.mp x.property (n • #S))
     rwa [(awayToLocalization_mk_eq_iff hS hx).mpr (by rwa [smul_eq_mul])]
   · exact ⟨_, awayToLocalization_mk_monomialDegreeOne_mul hS hf hf' hz⟩
 
@@ -492,7 +494,7 @@ theorem mem_fractionSubalgebra_iff (hS : (S : Set B) ⊆ F) {z : L} :
   constructor
   · rintro ⟨w, rfl⟩
     obtain ⟨n, x, hx, rfl⟩ := Away.mk_surjective _ (monomialProd_mem_gradedRing C hS) w
-    exact ⟨n, _, smul_eq_mul n #S ▸ mem_coeffSubalgebra_iff.mp x.2 (n • #S),
+    exact ⟨n, _, smul_eq_mul n #S ▸ mem_coeffSubalgebra_iff.mp x.property (n • #S),
       pow_mul_awayToLocalization_mk hS hx⟩
   · rintro ⟨n, y, hy, hz⟩
     have hx : coeffSubalgebra.monomial _ (n • #S) y (by rwa [smul_eq_mul]) ∈

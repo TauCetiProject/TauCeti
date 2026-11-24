@@ -81,7 +81,7 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ := S.isBasis_affineOpens.exists_subset_of_mem_open
     (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hUV : V ≤ f ⁻¹ᵁ U⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).2
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).is_open'
   replace hU : IsAffineOpen U := hU
   replace hV : IsAffineOpen V := hV
   have : (f.appLE U V hUV).hom.FiniteType := f.finiteType_appLE hU hV hUV

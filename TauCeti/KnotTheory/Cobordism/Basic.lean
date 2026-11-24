@@ -629,16 +629,16 @@ private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) := by
   have heq : glueFun C S hc ∘ (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier) =
       rescale C hc ∘ (collarParam S ∘ Subtype.val) :=
-    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.2)
+    funext fun y ↦ glueFun_of_le_snd C hc hS (le_of_lt y.property)
   have hP : Continuous (collarParam S ∘
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) :=
     continuous_iff_continuousAt.2 fun y ↦
-      (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
+      (contMDiffAt_collarParam hS y.property).continuousAt.comp continuous_subtypeVal.continuousAt
   have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
     K₁.isEmbedding.continuous.prodMap continuous_id
   have hPK : Prod.map K₁ id ∘ (collarParam S ∘
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) = S.toFun ∘ Subtype.val :=
-    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.2))
+    funext fun y ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt y.property))
   rw [heq]
   refine (rescale C hc).isEmbedding.comp (IsEmbedding.of_comp hP hK ?_)
   rw [hPK]
@@ -667,7 +667,7 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
   let W : Bool → Set S.carrier := fun b ↦ bif b
     then {y | 1 - 2 * c < (S.toFun y).2} else {y | (S.toFun y).2 < 1 - c}
   refine isEmbedding_of_iSup_eq_top_of_preimage_subset_range (glueFun C S hc) hglue U ?_
-    (fun b ↦ W b) (fun b ↦ Subtype.val) (fun b ↦ continuous_subtype_val) ?_ ?_
+    (fun b ↦ W b) (fun b ↦ Subtype.val) (fun b ↦ continuous_subtypeVal) ?_ ?_
   -- The two slabs cover the image.
   · rintro _ ⟨y, rfl⟩
     rw [SetLike.mem_coe, TopologicalSpace.Opens.mem_iSup]
@@ -686,13 +686,13 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
   · rintro (_ | _)
     · have heq : glueFun C S hc ∘ (Subtype.val : W false → S.carrier) =
           S.toFun ∘ Subtype.val :=
-        funext fun y ↦ glueFun_of_le C hc (le_of_lt y.2)
+        funext fun y ↦ glueFun_of_le C hc (le_of_lt y.property)
       rw [heq]
       exact S.isSmoothEmbedding.isEmbedding.comp IsEmbedding.subtypeVal
     · exact isEmbedding_glueFun_comp_subtypeVal_upper C hc hS
 
 /-- The part of the glued surface over the slab `Sⁿ × [0, 1]` is compact. -/
-private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
+private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsCompact {x | (glueFun C S hc x).2 ∈ Icc (0 : ℝ) 1} := by
   -- Gluing in `C` only changes the points of `S` above height `1 - c`, and keeps their heights
@@ -773,7 +773,7 @@ private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
   toFun := glueFun C S hc
   isSmoothEmbedding := ⟨isImmersion_iff_forall_isImmersionAt.2 (isImmersionAt_glueFun C hc hS),
     isEmbedding_glueFun C hc hS⟩
-  isCompact_preimage_Icc := isCompact_preimage_Icc_glueFun C hc hc₂ hS
+  isCompact_preimage_Icc := isCompact_preimage_Icc_glueFun C hc (hc₂.trans (by norm_num)) hS
   exists_pos_range_inter_snd_le := exists_pos_range_glueFun_inter_snd_le C hc hc₂
   exists_pos_range_inter_le_snd := exists_pos_range_glueFun_inter_le_snd C hc hS
 

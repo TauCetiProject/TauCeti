@@ -77,6 +77,8 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   a unit in `A`.
 * `Nat.Prime.exists_not_dvd_choose`: if `n ≠ 0` is not a power of the prime `p`, then `p` does not
   divide some `n.choose i` with `0 < i < n`.
+* `Nat.Prime.exists_not_sq_dvd_choose`: if `n ≥ 2`, then `p ^ 2` does not divide some
+  `n.choose i` with `0 < i < n`.
 * `TauCeti.lazardGcd_dvd_pow_succ_sub`: `d_(n+1)` divides `k^(n + 1) - k`.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
   have greatest common divisor `1`.
@@ -145,11 +147,11 @@ theorem smul (r : R) (hf : f.IsAddCocycle₂) : (r • f).IsAddCocycle₂ := by
 
 /-- Additive 2-cocycles are preserved by a change of coefficients. -/
 theorem map (hf : f.IsAddCocycle₂) (φ : R →+* S) : (MvPolynomial.map φ f).IsAddCocycle₂ := by
-  -- `map φ (aeval g f) = aeval (map φ ∘ g) (map φ f)`, by `aeval_eq_bind₁` and `map_bind₁`.
+  -- `map φ (aeval g f) = aeval (map φ ∘ g) (map φ f)`, by `map_aeval_eq_aeval_map_map`.
   have hmap (a b : MvPolynomial (Fin 3) R) :
       MvPolynomial.map φ (aeval ![a, b] f) =
         aeval ![MvPolynomial.map φ a, MvPolynomial.map φ b] (MvPolynomial.map φ f) := by
-    rw [aeval_eq_bind₁, aeval_eq_bind₁, map_bind₁]
+    rw [map_aeval_eq_aeval_map_map]
     congr 2
     funext i
     fin_cases i <;> simp
@@ -165,8 +167,7 @@ theorem coeff_eq (hf : f.IsAddCocycle₂) (i j k : ℕ) :
         if i = 0 then f.coeff (Finsupp.single 0 j + Finsupp.single 1 k) else 0 := by
   have h := congrArg (fun p : MvPolynomial (Fin 3) R =>
     p.coeff (Finsupp.single 0 i + Finsupp.single 1 j + Finsupp.single 2 k)) (isAddCocycle₂_iff.1 hf)
-  -- `aeval_eq_bind₁` would turn the four substitutions into `bind₁` before they are computed.
-  simpa [-aeval_eq_bind₁, coeff_aeval_X_add_X_X, coeff_aeval_X_X_add_X, coeff_aeval_X_zero_X_one,
+  simpa [coeff_aeval_X_add_X_X, coeff_aeval_X_X_add_X, coeff_aeval_X_zero_X_one,
     coeff_aeval_X_one_X_two, Finsupp.single_apply] using h
 
 /-- The coefficient of `Yⁿ` in an additive 2-cocycle vanishes for `n ≠ 0`. -/
@@ -257,6 +258,22 @@ theorem _root_.Nat.Prime.exists_not_dvd_choose {p n : ℕ} (hp : p.Prime) (hn0 :
   by_contra! H
   obtain ⟨k, hk⟩ := (prime_dvd_lazardGcd_iff hp hn0).1 (dvd_lazardGcd_iff.2 H)
   exact hn k hk
+
+/-- For `n ≥ 2` and a prime `p`, some binomial coefficient `n.choose i` with `0 < i < n` is not
+divisible by `p ^ 2`: their greatest common divisor `d_n` is `1` or a prime. -/
+theorem _root_.Nat.Prime.exists_not_sq_dvd_choose {p n : ℕ} (hp : p.Prime) (hn : 2 ≤ n) :
+    ∃ i, 0 < i ∧ i < n ∧ ¬p ^ 2 ∣ n.choose i := by
+  by_contra! H
+  have h := dvd_lazardGcd_iff.2 H
+  have hp1 : p ^ 2 ≠ 1 := by simp [hp.ne_one]
+  by_cases hpp : IsPrimePow n
+  · rw [lazardGcd_eq_minFac_of_isPrimePow hpp] at h
+    have hq := Nat.minFac_prime (by omega : n ≠ 1)
+    rcases hq.eq_one_or_self_of_dvd _ h with h1 | h1
+    · exact hp1 h1
+    · exact Nat.Prime.not_prime_pow' (by decide) (h1 ▸ hq)
+  · rw [lazardGcd_eq_one_of_not_isPrimePow (by omega) hpp, Nat.dvd_one] at h
+    exact hp1 h
 
 /-- `d_n` divides `n.choose i` for `0 < i < n`. -/
 theorem lazardGcd_dvd_choose {n i : ℕ} (hi : 0 < i) (hin : i < n) : lazardGcd n ∣ n.choose i :=
@@ -366,8 +383,8 @@ theorem lazardGcd_nsmul_lazardCocycle {n : ℕ} (hn : n ≠ 0) :
     simpa using single_add_single_eq_iff (i := n) (j := 0) (d := d)
   have h1 : Finsupp.single 1 n = d ↔ d 0 = 0 ∧ d 1 = n := by
     simpa using single_add_single_eq_iff (i := 0) (j := n) (d := d)
-  rw [coeff_smul, coeff_lazardCocycle, coeff_sub, coeff_sub, coeff_add_pow, coeff_X_pow,
-    coeff_X_pow]
+  rw [AddMonoidAlgebra.coeff_smul_apply, coeff_lazardCocycle, AddMonoidAlgebra.coeff_sub_apply,
+    AddMonoidAlgebra.coeff_sub_apply, coeff_add_pow, coeff_X_pow, coeff_X_pow]
   simp only [h0, h1, mem_antidiagonal]
   by_cases h : d 0 + d 1 = n ∧ d 0 ≠ 0 ∧ d 1 ≠ 0
   · -- At `XⁱYʲ` with `i + j = n` and `i, j ≠ 0`, both sides are `n.choose i`, as `d_n` divides it.

@@ -639,8 +639,8 @@ noncomputable def IsEntire.mkAdjoinRoot (hp : p.Monic) : IsEntire.subring R →+
     rw [Subring.coe_one, ← Polynomial.coe_one, modByMonic_coe _ hp, AdjoinRoot.mk_modByMonic,
       map_one]
   map_mul' F G := by
-    have hF := IsEntire.mem_subring.mp F.2
-    have hG := IsEntire.mem_subring.mp G.2
+    have hF := IsEntire.mem_subring.mp F.property
+    have hG := IsEntire.mem_subring.mp G.property
     -- Write `F = r + p * q` and `G = r' + p * q'`; then `F * G = r * r' + p * Q` with `Q` entire.
     have hdivF := hF.modByMonic_add_divByMonic hp
     have hdivG := hG.modByMonic_add_divByMonic hp
@@ -659,8 +659,8 @@ noncomputable def IsEntire.mkAdjoinRoot (hp : p.Monic) : IsEntire.subring R →+
     rw [hFG, hQ.modByMonic_coe_add_coe_mul hp, AdjoinRoot.mk_modByMonic, map_mul]
   map_zero' := by simp
   map_add' F G := by
-    rw [Subring.coe_add, (IsEntire.mem_subring.mp F.2).add_modByMonic
-      (IsEntire.mem_subring.mp G.2), map_add]
+    rw [Subring.coe_add, (IsEntire.mem_subring.mp F.property).add_modByMonic
+      (IsEntire.mem_subring.mp G.property), map_add]
 
 /-- Reduction modulo `p` sends an entire series to the class of its remainder. -/
 @[simp]
@@ -687,7 +687,7 @@ theorem IsEntire.mkAdjoinRoot_eq_zero_iff (hp : p.Monic) {F : IsEntire.subring R
   rw [IsEntire.mkAdjoinRoot_apply, AdjoinRoot.mk_eq_zero,
     ← Polynomial.modByMonic_eq_zero_iff_dvd hp,
     (Polynomial.modByMonic_eq_self_iff hp).mpr (degree_modByMonic_lt _ hp.ne_zero),
-    (IsEntire.mem_subring.mp F.2).modByMonic_eq_zero_iff hp]
+    (IsEntire.mem_subring.mp F.property).modByMonic_eq_zero_iff hp]
 
 end Ultrametric
 

@@ -158,7 +158,7 @@ theorem exists_contMDiffRiemannianMetric_inner_eq_and_inner_mem_of_locallyFinite
           (hAf.comp_injective Subtype.coe_injective).isClosed_iUnion fun j ↦ hA j
         have hx₀c : x₀ ∉ ⋃ j : {j // j ≠ i}, A j := fun h ↦ by
           obtain ⟨j, hj⟩ := mem_iUnion.1 h
-          exact (hAd j.2.symm).le_bot ⟨hi, hj⟩
+          exact (hAd j.property.symm).le_bot ⟨hi, hj⟩
         refine ⟨U i ∩ (⋃ j : {j // j ≠ i}, A j)ᶜ,
           ((hU i).inter hcl.isOpen_compl).mem_nhds ⟨hAU i hi, hx₀c⟩, β i,
           (hβ i).mono inter_subset_left, fun y hy ↦

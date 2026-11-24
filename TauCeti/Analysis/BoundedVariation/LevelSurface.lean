@@ -11,7 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Truncation
 import TauCeti.Analysis.Calculus.FDeriv.Clamp
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Function.Coarea.Measurability
-import TauCeti.Topology.MetricSpace.ProperSpace
+import TauCeti.Topology.Compactness.SigmaCompact
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 
 /-!

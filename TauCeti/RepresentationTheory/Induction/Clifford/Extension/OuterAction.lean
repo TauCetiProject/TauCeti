@@ -71,7 +71,7 @@ theorem cliffordOuterAction_rightHom (c : Carrier A) :
 /-- The action on an inertia class is represented by conjugation by any implementing operator. -/
 @[simp]
 theorem cliffordOuterAction_mk (p : implementers A) :
-    cliffordOuterAction A (QuotientGroup.mk p.1.1) = QuotientGroup.mk (implementerConj p) := by
+    cliffordOuterAction A (QuotientGroup.mk p.val.1) = QuotientGroup.mk (implementerConj p) := by
   simpa only [rightHom_mk, commutantAction_mk] using
     cliffordOuterAction_rightHom A (QuotientGroup.mk p : Carrier A)
 

@@ -210,16 +210,16 @@ variable {n : ℕ} [NeZero n]
 /-- For a positive definite form `f ∈ posDef n`, the second ideal generator embeds to
 `f.a · root f`. -/
 theorem complexEmbedding_idealGenerator_posDef (f : posDef n) (ha : ((-(n : ℤ) : ℤ) : ℚ) ≤ 0) :
-    complexEmbedding ha (f.1.idealGenerator (-n)) = (f.1.a : ℂ) * (root f : ℂ) := by
-  have hfa : (f.1.a : ℂ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne'
+    complexEmbedding ha (f.val.idealGenerator (-n)) = (f.val.a : ℂ) * (root f : ℂ) := by
+  have hfa : (f.val.a : ℂ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.property).2.ne'
   rw [complexEmbedding_idealGenerator, coe_root]
   simp only [Int.cast_neg, Int.cast_natCast, neg_neg]
   field_simp
 
 /-- For `f ∈ posDef n`, `f.a · root f` belongs to `f.1.complexOrderIdeal (-n)`. -/
 @[simp] theorem a_mul_root_mem_complexOrderIdeal (f : posDef n) :
-    (f.1.a : ℂ) * (root f : ℂ) ∈ f.1.complexOrderIdeal (-n)
-      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) (mem_posDef.mp f.2).1 := by
+    (f.val.a : ℂ) * (root f : ℂ) ∈ f.val.complexOrderIdeal (-n)
+      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) (mem_posDef.mp f.property).1 := by
   have hgen := complexEmbedding_idealGenerator_posDef f
     (Int.cast_nonpos.mpr (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)))
   rw [complexEmbedding_idealGenerator] at hgen
@@ -229,9 +229,9 @@ theorem complexEmbedding_idealGenerator_posDef (f : posDef n) (ha : ((-(n : ℤ)
 equals `(a • (root f).periodPair).lattice = ℤ · (a · root f) + ℤ · a`, hence is homothetic to
 `ℤ · root f + ℤ`. -/
 theorem complexOrderIdeal_eq_lattice_smul_periodPair_root (f : posDef n) :
-    f.1.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-        (mem_posDef.mp f.2).1 =
-      (Units.mk0 (f.1.a : ℂ) (Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne') •
+    f.val.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+        (mem_posDef.mp f.property).1 =
+      (Units.mk0 (f.val.a : ℂ) (Int.cast_ne_zero.mpr (mem_posDef.mp f.property).2.ne') •
         (root f).periodPair).lattice := by
   have hgen := complexEmbedding_idealGenerator_posDef f
     (Int.cast_nonpos.mpr (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)))
@@ -246,53 +246,53 @@ theorem complexOrderIdeal_eq_lattice_smul_periodPair_root (f : posDef n) :
 /-- For `f ∈ posDef n`, the multiplier order of `f.1.complexOrderIdeal (-n)` equals the multiplier
 order of `(root f).periodPair.lattice = ℤ · root f + ℤ`. -/
 theorem leftOrder_complexOrderIdeal_posDef (f : posDef n) :
-    (f.1.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-        (mem_posDef.mp f.2).1).leftOrder = (root f).periodPair.lattice.leftOrder := by
+    (f.val.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+        (mem_posDef.mp f.property).1).leftOrder = (root f).periodPair.lattice.leftOrder := by
   rw [complexOrderIdeal_eq_lattice_smul_periodPair_root, PeriodPair.leftOrder_lattice_smul]
 
 /-- For `f ∈ posDef n`, `QuadraticOrder.complexOrder (-n)` is contained in the multiplier order of
 `ℤ · root f + ℤ`. -/
 theorem complexOrder_le_leftOrder_lattice_periodPair_root (f : posDef n) :
     QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-        ((mem_posDef.mp f.2).1 ▸ f.1.discrim_emod_four_eq_zero_or_one) ≤
+        ((mem_posDef.mp f.property).1 ▸ f.val.discrim_emod_four_eq_zero_or_one) ≤
       (root f).periodPair.lattice.leftOrder := by
   rw [← leftOrder_complexOrderIdeal_posDef]
-  exact complexOrder_le_leftOrder_complexOrderIdeal f.1 (-n)
-    (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) (mem_posDef.mp f.2).1
+  exact complexOrder_le_leftOrder_complexOrderIdeal f.val (-n)
+    (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) (mem_posDef.mp f.property).1
 
 /-- **Exact multiplier order for a primitive positive definite form**: if `f ∈ posDef n` is
 primitive, the left order of `ℤ · root f + ℤ` is `QuadraticOrder.complexOrder (-n)`. -/
 theorem leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive (f : posDef n)
-    (hfprim : f.1.IsPrimitive) :
+    (hfprim : f.val.IsPrimitive) :
     (root f).periodPair.lattice.leftOrder =
       QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-        ((mem_posDef.mp f.2).1 ▸ f.1.discrim_emod_four_eq_zero_or_one) := by
+        ((mem_posDef.mp f.property).1 ▸ f.val.discrim_emod_four_eq_zero_or_one) := by
   refine le_antisymm (fun x hx ↦ ?_) (complexOrder_le_leftOrder_lattice_periodPair_root f)
   obtain ⟨m, k, rfl⟩ :=
     (UpperHalfPlane.mem_leftOrder_lattice_periodPair_iff_of_quadratic_of_linearCombination_eq_one
       ((eq_root_iff f (root f)).mp rfl) hfprim.exists_linearCombination_eq_one).mp hx
   set O := QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-    ((mem_posDef.mp f.2).1 ▸ f.1.discrim_emod_four_eq_zero_or_one)
+    ((mem_posDef.mp f.property).1 ▸ f.val.discrim_emod_four_eq_zero_or_one)
   exact add_mem (O.intCast_mem m) (mul_mem (O.intCast_mem k)
-    (complexOrderIdeal_le_complexOrder f.1 (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-      (mem_posDef.mp f.2).1 (a_mul_root_mem_complexOrderIdeal f)))
+    (complexOrderIdeal_le_complexOrder f.val (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+      (mem_posDef.mp f.property).1 (a_mul_root_mem_complexOrderIdeal f)))
 
 /-- **Exact multiplier order of any positive definite form**: for `f ∈ posDef n` (not necessarily
 primitive), `(root f).periodPair.lattice.leftOrder` is `complexOrder f.1.primPart.discrim`. -/
 theorem leftOrder_lattice_periodPair_root_eq_complexOrder_discrim_primPart (f : posDef n) :
     (root f).periodPair.lattice.leftOrder =
-      QuadraticOrder.complexOrder f.1.primPart.discrim (discrim_primPart_neg_of_posDef f).le
-        f.1.primPart.discrim_emod_four_eq_zero_or_one := by
-  obtain ⟨_, hfa⟩ := mem_posDef.mp f.2
-  have hf0 : f.1 ≠ 0 := fun h ↦ by simp [h] at hfa
+      QuadraticOrder.complexOrder f.val.primPart.discrim (discrim_primPart_neg_of_posDef f).le
+        f.val.primPart.discrim_emod_four_eq_zero_or_one := by
+  obtain ⟨_, hfa⟩ := mem_posDef.mp f.property
+  have hf0 : f.val ≠ 0 := fun h ↦ by simp [h] at hfa
   have hdneg := discrim_primPart_neg_of_posDef f
-  set m : ℕ := (-f.1.primPart.discrim).toNat
+  set m : ℕ := (-f.val.primPart.discrim).toNat
   have : NeZero m := ⟨by omega⟩
-  have hg_disc : f.1.primPart.discrim = -m := by omega
-  let g : posDef m := ⟨f.1.primPart, mem_posDef.mpr ⟨hg_disc, (a_primPart_pos_iff f.1).mpr hfa⟩⟩
+  have hg_disc : f.val.primPart.discrim = -m := by omega
+  let g : posDef m := ⟨f.val.primPart, mem_posDef.mpr ⟨hg_disc, (a_primPart_pos_iff f.val).mpr hfa⟩⟩
   rw [← root_eq_root_of_eq_primPart (f := f) (g := g) rfl,
     leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive g
-      (f.1.isPrimitive_primPart hf0)]
+      (f.val.isPrimitive_primPart hf0)]
   exact QuadraticOrder.complexOrder_eq_iff.mpr hg_disc.symm
 
 end PosDef
@@ -375,11 +375,11 @@ variable {n : ℕ} [NeZero n]
 theorem leftOrder_lattice_periodPair_root_eq_complexOrder_iff_isPrimitive (f : posDef n) :
     (root f).periodPair.lattice.leftOrder =
         QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-          ((mem_posDef.mp f.2).1 ▸ f.1.discrim_emod_four_eq_zero_or_one) ↔
-      f.1.IsPrimitive := by
+          ((mem_posDef.mp f.property).1 ▸ f.val.discrim_emod_four_eq_zero_or_one) ↔
+      f.val.IsPrimitive := by
   rw [← leftOrder_complexOrderIdeal_posDef]
-  exact leftOrder_complexOrderIdeal_eq_complexOrder_iff_isPrimitive f.1 (-n)
-    (Int.neg_neg_of_pos (Nat.cast_pos.mpr (NeZero.pos n))) (mem_posDef.mp f.2).1
+  exact leftOrder_complexOrderIdeal_eq_complexOrder_iff_isPrimitive f.val (-n)
+    (Int.neg_neg_of_pos (Nat.cast_pos.mpr (NeZero.pos n))) (mem_posDef.mp f.property).1
 
 /-- **Analytic-algebraic characterization of CM upper-half-plane points**: for `n > 0` with
 `-n ≡ 0, 1 mod 4`, the multiplier order of `ℤ τ + ℤ` is `complexOrder (-n)` if and only if
@@ -389,7 +389,7 @@ theorem leftOrder_lattice_periodPair_eq_complexOrder_iff
     τ.periodPair.lattice.leftOrder =
         QuadraticOrder.complexOrder (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn ↔
       ∃ f : ↥(posDef n ⊓ primitiveForms (-n)),
-        root ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩ = τ := by
+        root ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩ = τ := by
   constructor
   · intro hleft
     -- Since `complexOrder (-n) ≠ ⊥`, `τ` satisfies an integral quadratic `a τ² + b τ + c = 0`.
@@ -413,16 +413,16 @@ theorem leftOrder_lattice_periodPair_eq_complexOrder_iff
       (root_eq_root_of_eq_primPart (f := fp) rfl).trans hroot₀.symm⟩
   · rintro ⟨f, rfl⟩
     exact leftOrder_lattice_periodPair_root_eq_complexOrder_of_isPrimitive
-      ⟨f, inf_le_left (b := primitiveForms (-n)) f.2⟩
-      ((mem_posDef_inf_primitiveForms n).mp f.2).2.2
+      ⟨f, inf_le_left (b := primitiveForms (-n)) f.property⟩
+      ((mem_posDef_inf_primitiveForms n).mp f.property).2.2
 
 /-- **Embedded proper-change factor as conjugate automorphy factor**: for `f ∈ posDef n` and
 `γ ∈ SL(2, ℤ)`, `f.1.idealChangeFactor (-n) γ` maps under `QuadraticAlgebra.complexEmbedding` to
 `conj (denom γ (root f))`. -/
 theorem complexEmbedding_idealChangeFactor_posDef (f : posDef n) (γ : SL(2, ℤ))
     (ha : ((-(n : ℤ) : ℤ) : ℚ) ≤ 0) :
-    complexEmbedding ha (f.1.idealChangeFactor (-n) γ) = conj (denom γ (root f)) := by
-  have hfa : (f.1.a : ℂ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.2).2.ne'
+    complexEmbedding ha (f.val.idealChangeFactor (-n) γ) = conj (denom γ (root f)) := by
+  have hfa : (f.val.a : ℂ) ≠ 0 := Int.cast_ne_zero.mpr (mem_posDef.mp f.property).2.ne'
   simp only [idealChangeFactor_def, Rat.smul_def, Rat.cast_inv, Rat.cast_intCast,
     complexEmbedding_star, map_inv₀, map_add, map_intCast,
     complexEmbedding_idealGenerator_posDef, map_mul, zsmul_eq_mul, ModularGroup.denom_apply]
@@ -431,12 +431,12 @@ theorem complexEmbedding_idealChangeFactor_posDef (f : posDef n) (γ : SL(2, ℤ
 /-- **Proper `SL(2, ℤ)`-equivariance of `complexOrderIdeal` on `posDef n`**: acting by
 `γ ∈ SL(2, ℤ)` scales `f.1.complexOrderIdeal (-n)` by `conj (denom γ (root f))`. -/
 theorem complexOrderIdeal_smul_posDef (f : posDef n) (γ : SL(2, ℤ)) :
-    (γ • f).1.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-        (mem_posDef.mp (γ • f).2).1 =
-      (f.1.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-        (mem_posDef.mp f.2).1).map (LinearMap.mulLeft ℤ (conj (denom γ (root f)))) := by
-  have h := complexOrderIdeal_smul f.1 (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
-    (mem_posDef.mp f.2).1 (mem_posDef.mp f.2).2.ne' γ
+    (γ • f).val.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+        (mem_posDef.mp (γ • f).property).1 =
+      (f.val.complexOrderIdeal (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+        (mem_posDef.mp f.property).1).map (LinearMap.mulLeft ℤ (conj (denom γ (root f)))) := by
+  have h := complexOrderIdeal_smul f.val (-n) (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n))
+    (mem_posDef.mp f.property).1 (mem_posDef.mp f.property).2.ne' γ
   rwa [complexEmbedding_idealChangeFactor_posDef] at h
 
 end PosDef

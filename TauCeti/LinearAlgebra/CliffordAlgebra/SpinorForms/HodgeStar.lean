@@ -194,7 +194,7 @@ theorem map_cliffordReverseDual_complexVolume_cliffordFormsEquivTensor
         ρ.cliffordFormsEquivTensor (involute.toLinearMap.baseChange ℂ x) := by
   rw [AlgHom.cliffordReverseDual_complexVolume, AlgEquiv.toAlgHom_apply,
     TensorProduct.map_smul_right, LinearMap.smul_apply,
-    ρ.cliffordFormsEquivTensor_involute o hQ (even_of_algEquiv_end ρ)]
+    ρ.cliffordFormsEquivTensor_involute o hQ]
 
 end Tensor
 

@@ -117,8 +117,8 @@ is a point. -/
 instance subsingleton_dualSemigroup_top (hi : IsIntegralLattice i) :
     Subsingleton (dualSemigroup hi (⊤ : PointedCone ℝ V)) :=
   ⟨fun a b ↦ Subtype.ext <| by
-    have ha : (a : N →+ ℤ) = 0 := by simpa using a.2
-    have hb : (b : N →+ ℤ) = 0 := by simpa using b.2
+    have ha : (a : N →+ ℤ) = 0 := by simpa using a.property
+    have hb : (b : N →+ ℤ) = 0 := by simpa using b.property
     rw [ha, hb]⟩
 
 /-- The dual semigroup of a join is the intersection of the two dual semigroups. -/

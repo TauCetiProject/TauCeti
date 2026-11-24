@@ -105,17 +105,18 @@ def maximalMultiplication (p : ℝ≥0∞) (μ : Measure α) (f : α → 𝕜) :
         filter_upwards [Lp.coeFn_smul c u] with x hx
         rw [Pi.smul_apply, hx, Pi.smul_apply, smul_comm (f x) c] }
   toFun :=
-    { toFun u := u.2.toLp (fun x ↦ f x • (u : Lp E p μ) x)
+    { toFun u := u.property.toLp (fun x ↦ f x • (u : Lp E p μ) x)
       map_add' u v := by
         refine Lp.ext ?_
-        filter_upwards [(u + v).2.coeFn_toLp, Lp.coeFn_add (u.2.toLp _) (v.2.toLp _),
-          u.2.coeFn_toLp, v.2.coeFn_toLp, Lp.coeFn_add (u : Lp E p μ) v]
+        filter_upwards [(u + v).property.coeFn_toLp, Lp.coeFn_add (u.property.toLp _)
+            (v.property.toLp _),
+          u.property.coeFn_toLp, v.property.coeFn_toLp, Lp.coeFn_add (u : Lp E p μ) v]
           with x huv hadd hu hv hcoe
         rw [huv, hadd, Pi.add_apply, hu, hv, AddMemClass.coe_add, hcoe, Pi.add_apply, smul_add]
       map_smul' c u := by
         refine Lp.ext ?_
-        filter_upwards [(c • u).2.coeFn_toLp, Lp.coeFn_smul c (u.2.toLp _),
-          u.2.coeFn_toLp, Lp.coeFn_smul c (u : Lp E p μ)] with x hcu hsmul hu hcoe
+        filter_upwards [(c • u).property.coeFn_toLp, Lp.coeFn_smul c (u.property.toLp _),
+          u.property.coeFn_toLp, Lp.coeFn_smul c (u : Lp E p μ)] with x hcu hsmul hu hcoe
         rw [RingHom.id_apply, hcu, hsmul, Pi.smul_apply, hu, SetLike.val_smul, hcoe,
           Pi.smul_apply, smul_comm (f x) c] }
 
@@ -141,7 +142,7 @@ domain. -/
 theorem coeFn_maximalMultiplication {f : α → 𝕜}
     (u : (maximalMultiplication (E := E) p μ f).domain) :
     maximalMultiplication p μ f u =ᵐ[μ] fun x ↦ f x • (u : Lp E p μ) x :=
-  u.2.coeFn_toLp
+  u.property.coeFn_toLp
 
 /-- The value of `maximalMultiplication p μ f` at `u` equals `v` if and only if
 `x ↦ f x • u x` agrees with `v` almost everywhere. -/
@@ -244,7 +245,7 @@ theorem maximalMultiplication_sub_const (f : α → 𝕜) (c : 𝕜) :
     simp only [Pi.add_apply, Pi.smul_apply, sub_add_cancel]
   · rw [LinearPMap.subScalar_apply]
     let u' : (maximalMultiplication (E := E) p μ f).domain :=
-      ⟨u, (LinearPMap.subScalar_domain (maximalMultiplication (E := E) p μ f) c) ▸ u.2⟩
+      ⟨u, (LinearPMap.subScalar_domain (maximalMultiplication (E := E) p μ f) c) ▸ u.property⟩
     filter_upwards [Lp.coeFn_sub (maximalMultiplication (E := E) p μ f u') (c • (u : Lp E p μ)),
       coeFn_maximalMultiplication u', Lp.coeFn_smul c (u : Lp E p μ)] with x hsub hf hsmul
     rw [hsub, Pi.sub_apply, hf, hsmul, Pi.smul_apply, sub_smul]
@@ -259,7 +260,7 @@ theorem le_maximalMultiplication_add (f g : α → 𝕜) :
     (maximalMultiplication p μ f + maximalMultiplication p μ g).mem_graph_iff.1 hw
   have hu : (u : Lp E p μ) ∈ (maximalMultiplication (E := E) p μ f).domain ⊓
       (maximalMultiplication (E := E) p μ g).domain := by
-    simpa only [LinearPMap.add_domain] using u.2
+    simpa only [LinearPMap.add_domain] using u.property
   obtain ⟨huf, hug⟩ := Submodule.mem_inf.1 hu
   rw [mem_graph_maximalMultiplication_iff, LinearPMap.add_apply]
   filter_upwards [Lp.coeFn_add (maximalMultiplication (E := E) p μ f ⟨(u : Lp E p μ), huf⟩)
@@ -674,10 +675,10 @@ vector of their common domain. -/
 theorem norm_maximalMultiplication_star_apply (f : α → 𝕜)
     (u : (maximalMultiplication (E := E) p μ f).domain) :
     ‖maximalMultiplication (E := E) p μ (star f)
-        ⟨(u : Lp E p μ), by rw [domain_maximalMultiplication_star f]; exact u.2⟩‖ =
+        ⟨(u : Lp E p μ), by rw [domain_maximalMultiplication_star f]; exact u.property⟩‖ =
       ‖maximalMultiplication (E := E) p μ f u‖ := by
   let u' : (maximalMultiplication (E := E) p μ (star f)).domain :=
-    ⟨(u : Lp E p μ), by rw [domain_maximalMultiplication_star f]; exact u.2⟩
+    ⟨(u : Lp E p μ), by rw [domain_maximalMultiplication_star f]; exact u.property⟩
   rw [Lp.norm_def, Lp.norm_def]
   refine congrArg ENNReal.toReal
     (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_)
@@ -780,10 +781,10 @@ their common domain (`domain_adjoint_maximalMultiplication`). -/
 theorem norm_adjoint_maximalMultiplication_apply {f : α → 𝕜} (hf : AEStronglyMeasurable f μ)
     (u : (maximalMultiplication (E := E) 2 μ f).domain) :
     ‖(maximalMultiplication (E := E) 2 μ f).adjoint
-        ⟨(u : Lp E 2 μ), by rw [domain_adjoint_maximalMultiplication hf]; exact u.2⟩‖ =
+        ⟨(u : Lp E 2 μ), by rw [domain_adjoint_maximalMultiplication hf]; exact u.property⟩‖ =
       ‖maximalMultiplication (E := E) 2 μ f u‖ := by
   rw [LinearPMap.congr_fun (adjoint_maximalMultiplication hf) _
-    (by rw [domain_maximalMultiplication_star f]; exact u.2)]
+    (by rw [domain_maximalMultiplication_star f]; exact u.property)]
   exact norm_maximalMultiplication_star_apply f u
 
 /-- An almost-everywhere strongly measurable symbol satisfying `star (f t) = f t` almost everywhere

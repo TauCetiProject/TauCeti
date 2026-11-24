@@ -72,7 +72,7 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 private def calculusValue (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
     (f : holomorphicFunctions U) : A :=
   (2 * π * I)⁻¹ • Cycle.integral (fun z => extend f z • resolvent a z)
-    ((spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha).choose
+    ((spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha).choose
 
 private theorem calculusValue_eq_integral (a : A) (U : Opens ℂ)
     (ha : spectrum ℂ a ⊆ U) (f : holomorphicFunctions U) (Γ : Cycle)
@@ -81,7 +81,7 @@ private theorem calculusValue_eq_integral (a : A) (U : Opens ℂ)
     calculusValue a U ha f =
       (2 * π * I)⁻¹ • Cycle.integral (fun z => extend f z • resolvent a z) Γ := by
   obtain ⟨hΓ', hn', hw'⟩ :=
-    ((spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha).choose_spec
+    ((spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha).choose_spec
   exact congrArg ((2 * π * I)⁻¹ • ·)
     (Cycle.integral_smul_resolvent_eq_of_windingNumber_eq U.isOpen
       (differentiableOn_extend f) hΓ' hΓ hn' hn fun z hz => (hw' z hz).trans (hw z hz).symm)
@@ -91,7 +91,7 @@ private theorem calculusValue_congr (a : A) {U V : Opens ℂ}
     (f : holomorphicFunctions U) (g : holomorphicFunctions V) (hVU : V ≤ U)
     (hfg : ∀ z : V, f.val (Set.inclusion hVU z) = g.val z) :
     calculusValue a U hU f = calculusValue a V hV g := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one V.isOpen hV
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one V.isOpen hV
   rw [calculusValue_eq_integral a V hV g Γ hΓ hn hw,
     calculusValue_eq_integral a U hU f Γ
       (Cycle.isIn_iff.mpr fun z hz => ⟨hVU (Cycle.isIn_iff.mp hΓ hz).1,
@@ -118,7 +118,7 @@ private theorem continuousOn_calculusIntegrand {a : A} {U : Opens ℂ}
 private theorem calculusValue_add (a : A) (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U)
     (f g : holomorphicFunctions U) :
     calculusValue a U ha (f + g) = calculusValue a U ha f + calculusValue a U ha g := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   rw [calculusValue_eq_integral a U ha (f + g) Γ hΓ hn hw,
     calculusValue_eq_integral a U ha f Γ hΓ hn hw,
     calculusValue_eq_integral a U ha g Γ hΓ hn hw]
@@ -133,7 +133,7 @@ private theorem calculusValue_mul (a : A) (U : Opens ℂ) (ha : spectrum ℂ a �
     (f g : holomorphicFunctions U) :
     calculusValue a U ha (f * g) = calculusValue a U ha f * calculusValue a U ha g := by
   obtain ⟨Γ₁, Γ₂, h₁, h₂, hn₁, hn₂, hw₁, hw₂, hd, hw₁₂, hw₂₁⟩ :=
-    (spectrum.isCompact a).exists_nested_cycles_windingNumber_eq_one U.isOpen ha
+    (spectrum.isCompact ℂ a).exists_nested_cycles_windingNumber_eq_one U.isOpen ha
   rw [calculusValue_eq_integral a U ha (f * g) Γ₁ h₁ hn₁ hw₁,
     calculusValue_eq_integral a U ha f Γ₁ h₁ hn₁ hw₁,
     calculusValue_eq_integral a U ha g Γ₂ h₂ hn₂ hw₂, smul_mul_smul_comm,
@@ -153,7 +153,7 @@ private theorem calculusValue_polynomial (a : A) (U : Opens ℂ) (ha : spectrum 
     (p : Polynomial ℂ) :
     calculusValue a U ha (of U (fun z => p.eval z) p.differentiable.differentiableOn) =
       Polynomial.aeval a p := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   rw [calculusValue_eq_integral a U ha _ Γ hΓ hn hw,
     Cycle.integral_congr (g := fun z => p.eval z • resolvent a z) (fun z hz => by
       rw [extend_apply _ ⟨z, (Cycle.isIn_iff.mp hΓ hz).1⟩, of_apply]),
@@ -213,7 +213,7 @@ theorem norm_holomorphicCalculusOn_le (a : A) (U : Opens ℂ) (ha : spectrum ℂ
     {M R : ℝ} (hM : ∀ z ∈ Cycle.trace Γ, ‖extend f z‖ ≤ M)
     (hR : ∀ z ∈ Cycle.trace Γ, ‖resolvent a z‖ ≤ R) :
     ‖holomorphicCalculusOn a U ha f‖ ≤ ‖(2 * π * I)⁻¹‖ *
-      ((∑ γ ∈ FreeAbelianGroup.support Γ, |(FreeAbelianGroup.coeff γ Γ : ℝ)| *
+      ((∑ γ ∈ FreeAddCommGroup.support Γ, |(FreeAddCommGroup.coeff γ Γ : ℝ)| *
         ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * (M * R)) := by
   rw [holomorphicCalculusOn_eq_integral a U ha f Γ hΓ hn hw, norm_smul]
   gcongr
@@ -228,21 +228,21 @@ for uniform convergence on compact subsets. -/
 @[continuity]
 theorem continuous_holomorphicCalculusOn (a : A) (U : Opens ℂ)
     (ha : spectrum ℂ a ⊆ U) : Continuous (holomorphicCalculusOn a U ha) := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   let := isCompact_iff_compactSpace.mp (Cycle.isCompact_trace Γ)
   let j : C(Cycle.trace Γ, U) :=
     ⟨fun z => ⟨z, (Cycle.isIn_iff.mp hΓ z.property).1⟩,
-      continuous_subtype_val.subtype_mk _⟩
+      continuous_subtypeVal.subtype_mk _⟩
   let ρ : holomorphicFunctions U →ₐ[ℂ] C(Cycle.trace Γ, ℂ) :=
     (ContinuousMap.compRightAlgHom ℂ ℂ j).comp (holomorphicFunctions U).val
   have hρ : Continuous ρ :=
-    (ContinuousMap.compRightAlgHom_continuous ℂ ℂ j).comp continuous_subtype_val
+    (ContinuousMap.compRightAlgHom_continuous ℂ ℂ j).comp continuous_subtypeVal
   have hρ_apply (f : holomorphicFunctions U) (z : Cycle.trace Γ) :
       ρ f z = f.val ⟨z, (Cycle.isIn_iff.mp hΓ z.property).1⟩ := rfl
   have hres := Cycle.continuousOn_resolvent (isIn_resolventSet hΓ)
   obtain ⟨R, hR⟩ := (Cycle.isCompact_trace Γ).exists_bound_of_continuousOn hres
   let C := ‖(2 * π * I)⁻¹‖ *
-    (∑ γ ∈ FreeAbelianGroup.support Γ, |(FreeAbelianGroup.coeff γ Γ : ℝ)| *
+    (∑ γ ∈ FreeAddCommGroup.support Γ, |(FreeAddCommGroup.coeff γ Γ : ℝ)| *
       ∫ t in Ι γ.a γ.b, ‖deriv γ t‖) * R
   let : IsTopologicalAddGroup (holomorphicFunctions U) :=
     IsInducing.subtypeVal.isTopologicalAddGroup
@@ -325,7 +325,7 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 theorem Commute.holomorphicCalculusOn_right {a b : A} (hb : Commute b a) (U : Opens ℂ)
     (ha : spectrum ℂ a ⊆ U) (f : holomorphicFunctions U) :
     Commute b (holomorphicCalculusOn a U ha f) := by
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   rw [holomorphicCalculusOn_eq_integral a U ha f Γ hΓ hn hw]
   exact (hb.integral_smul_resolvent_right
     ((differentiableOn_extend f).continuousOn.mono fun _ hz ↦ (Cycle.isIn_iff.mp hΓ hz).1)
@@ -361,7 +361,7 @@ theorem map_holomorphicCalculusOn {F A B : Type*} [NormedRing A] [NormedAlgebra 
   let L : A →L[ℂ] B := { (AlgHom.ofClass φ).toLinearMap with cont := hφ }
   have hL : ∀ x, L x = φ x := fun _ ↦ rfl
   have hsub : spectrum ℂ (φ a) ⊆ spectrum ℂ a := AlgHom.spectrum_apply_subset φ a
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ a).exists_cycle_windingNumber_eq_one U.isOpen ha
   have hΓB : Γ.IsIn (U \ spectrum ℂ (φ a)) := Cycle.isIn_iff.mpr fun z hz ↦
     ⟨(Cycle.isIn_iff.mp hΓ hz).1, fun hzB ↦ (Cycle.isIn_iff.mp hΓ hz).2 (hsub hzB)⟩
   have hR : Γ.IsIn (resolventSet ℂ a) :=
@@ -562,7 +562,7 @@ theorem holomorphicCalculusOn_complex (c : ℂ) (U : Opens ℂ) (hc : spectrum �
     (f : holomorphicFunctions U) :
     holomorphicCalculusOn c U hc f = f.val ⟨c, hc (by simp [spectrum.mem_iff])⟩ := by
   have hc_mem : c ∈ spectrum ℂ c := by simp [spectrum.mem_iff]
-  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact c).exists_cycle_windingNumber_eq_one U.isOpen hc
+  obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact ℂ c).exists_cycle_windingNumber_eq_one U.isOpen hc
   have hΓU : Γ.IsIn U := Cycle.isIn_iff.mpr fun _ hz ↦ (Cycle.isIn_iff.mp hΓ hz).1
   have hoff : c ∉ Cycle.trace Γ := fun hcΓ ↦ (Cycle.isIn_iff.mp hΓ hcΓ).2 hc_mem
   rw [holomorphicCalculusOn_eq_integral c U hc f Γ hΓ hn hw,

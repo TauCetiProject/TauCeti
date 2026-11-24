@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Conditional measures and the law of total probability
@@ -49,6 +50,11 @@ For any probability law, conditioning on a positive-mass measurable event has to
 distance twice the excluded mass. Conditioning on events whose masses tend to one therefore
 recovers the law.
 
+Passing from conditioning on `s` to conditioning on `s ∩ E` changes the mass of any event by at
+most the mass of `Eᶜ` under conditioning on `s`, in either direction; for a decrease this needs no
+hypothesis at all, for an increase only that `μ s` is finite. These are the two halves of the
+elementary coupling bound between a law and its conditioning.
+
 ## Main results
 
 * `ProbabilityTheory.sum_meas_smul_cond_fiber_of_countable`
@@ -61,6 +67,8 @@ recovers the law.
 * `MeasurableEmbedding.map_cond_preimage` and `MeasurableEmbedding.map_cond`
 * `ProbabilityTheory.map_cond_preimage`
 * `ProbabilityTheory.cond_univ_restrict`
+* `MeasureTheory.Measure.cond_inter_le_add_compl`,
+  `MeasureTheory.Measure.cond_le_inter_add_compl` — comparing conditioning on `s` and on `s ∩ E`
 * `ProbabilityTheory.cond_compl_singleton_real`,
   `ProbabilityTheory.cond_compl_singleton_real_singleton`,
   `ProbabilityTheory.integrable_cond_compl_singleton_iff`,
@@ -85,7 +93,7 @@ theorem MeasureTheory.Measure.support_cond {X : Type*} [TopologicalSpace X]
   rw [ProbabilityTheory.cond,
     Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr hμs)]
   ext x
-  simp only [Measure.mem_support_iff_measure_singleton_pos, Set.mem_inter_iff,
+  simp only [Measure.mem_support_iff_measure_singleton_pos, isOpen_discrete, Set.mem_inter_iff,
     Measure.restrict_apply (measurableSet_singleton x)]
   by_cases hx : x ∈ s <;> simp [hx]
 
@@ -404,6 +412,73 @@ namespace MeasureTheory.Measure
 
 open Filter ProbabilityTheory
 open scoped ENNReal Topology
+
+section ConditioningOnSmallerEvent
+
+variable {Ω : Type*} [MeasurableSpace Ω]
+
+/-! ### Conditioning on a smaller event -/
+
+/-- For every event `A`, conditioning `μ` on `s ∩ E` gives `A` at most the mass that conditioning
+on `s` gives `A`, plus the mass it gives `Eᶜ`, provided `μ s ≠ ∞`. That hypothesis cannot be
+dropped, since otherwise `μ[|s]` is the zero measure while `μ[|s ∩ E]` need not be: for the
+counting measure on `ℕ` with `s = univ` and `E = A = {0}`, the left side is `1` and the right side
+`0`. When `μ (s ∩ E) = 0`, Mathlib's `μ[|s ∩ E]` is the zero measure and the inequality remains
+valid under that convention.
+
+When `s` and `E` are measurable, `μ[|s ∩ E]` is `μ[|s]` conditioned on `E`
+(`cond_cond_eq_cond_inter'`), so conditioning on `E` can increase the probability of `A` by at
+most the probability of `Eᶜ`: the upper half of the elementary coupling bound between a law and
+its conditioning. Otherwise the inequality still holds for Mathlib's `cond`, in which a
+non-measurable set has its outer measure, but need not have this reading. -/
+theorem cond_inter_le_add_compl (μ : Measure Ω) (s E A : Set Ω) (hs : μ s ≠ ∞) :
+    μ[A|s ∩ E] ≤ μ[A|s] + μ[Eᶜ|s] := by
+  have happly (t B : Set Ω) : μ[B|t] = (μ t)⁻¹ * μ.restrict t B := by
+    rw [ProbabilityTheory.cond, _root_.smul_apply, smul_eq_mul]
+  rcases eq_or_ne (μ (s ∩ E)) 0 with h0 | h0
+  · simp [cond_eq_zero_of_meas_eq_zero h0]
+  have hs0 : μ s ≠ 0 := fun h ↦ h0 (measure_mono_null Set.inter_subset_left h)
+  have hsE : μ (s ∩ E) ≠ ∞ := ne_top_of_le_ne_top hs (measure_mono Set.inter_subset_left)
+  -- `s` is covered by `s ∩ E` and by its part outside `E`.
+  have hcover : μ s ≤ μ (s ∩ E) + μ.restrict s Eᶜ := by
+    simpa only [Measure.restrict_apply_univ] using
+      restrict_apply_le_restrict_inter_add_compl μ s E univ
+  have hmul : μ[A|s ∩ E] * μ (s ∩ E) = μ.restrict (s ∩ E) A := by
+    rw [happly, mul_right_comm, ENNReal.inv_mul_cancel h0 hsE, one_mul]
+  calc μ[A|s ∩ E]
+      = μ[A|s ∩ E] * ((μ s)⁻¹ * μ s) := by rw [ENNReal.inv_mul_cancel hs0 hs, mul_one]
+    _ ≤ μ[A|s ∩ E] * ((μ s)⁻¹ * (μ (s ∩ E) + μ.restrict s Eᶜ)) := by gcongr
+    _ = (μ s)⁻¹ * (μ[A|s ∩ E] * μ (s ∩ E)) + μ[A|s ∩ E] * ((μ s)⁻¹ * μ.restrict s Eᶜ) := by
+        ring
+    _ ≤ (μ s)⁻¹ * μ.restrict s A + 1 * ((μ s)⁻¹ * μ.restrict s Eᶜ) := by
+        rw [hmul]
+        gcongr
+        · exact Set.inter_subset_left
+        · exact prob_le_one
+    _ = μ[A|s] + μ[Eᶜ|s] := by rw [one_mul, happly, happly]
+
+/-- For every event `A`, conditioning `μ` on `s` gives `A` at most the mass that conditioning on
+`s ∩ E` gives `A`, plus the mass that conditioning on `s` gives `Eᶜ`. This holds for every
+measure, every set `s` and all events, measurable or not; in the degenerate cases, where Mathlib's
+`μ[|s]` or `μ[|s ∩ E]` is the zero measure (the conditioning event has measure zero or infinity),
+it holds under that convention.
+
+When `s` and `E` are measurable and `μ s ≠ ∞`, `μ[|s ∩ E]` is `μ[|s]` conditioned on `E`
+(`cond_cond_eq_cond_inter'`), so conditioning on `E` can decrease the probability of `A` by at
+most the probability of `Eᶜ`: the lower half of the elementary coupling bound between a law and
+its conditioning. -/
+theorem cond_le_inter_add_compl (μ : Measure Ω) (s E A : Set Ω) :
+    μ[A|s] ≤ μ[A|s ∩ E] + μ[Eᶜ|s] := by
+  simp only [ProbabilityTheory.cond, _root_.smul_apply, smul_eq_mul]
+  have hsplit := restrict_apply_le_restrict_inter_add_compl μ s E A
+  calc (μ s)⁻¹ * μ.restrict s A
+      ≤ (μ s)⁻¹ * (μ.restrict (s ∩ E) A + μ.restrict s Eᶜ) := by gcongr
+    _ ≤ (μ (s ∩ E))⁻¹ * μ.restrict (s ∩ E) A + (μ s)⁻¹ * μ.restrict s Eᶜ := by
+      rw [mul_add]
+      gcongr
+      exact Set.inter_subset_left
+
+end ConditioningOnSmallerEvent
 
 /-- Removing zero increments and dividing by a nonzero spacing rescales the extended mean by
 the reciprocal spacing and reciprocal retained mass. No normalization hypothesis is needed. -/

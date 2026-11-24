@@ -265,7 +265,7 @@ namespace TauCeti
 open unit ball around `0`. -/
 theorem isOpen_maximalIdeal_integer {K : Type*} [Field K] {Γ₀ : Type*}
     [LinearOrderedCommGroupWithZero Γ₀] [Valued K Γ₀] : IsOpen (𝓂[K] : Set 𝒪[K]) := by
-  convert (Valued.isOpen_ball K 1).preimage (continuous_subtype_val : Continuous ((↑) : 𝒪[K] → K))
+  convert (Valued.isOpen_ball K 1).preimage (continuous_subtypeVal : Continuous ((↑) : 𝒪[K] → K))
   ext x
   simp [Valued.maximalIdeal, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff,
     Valuation.Integer.not_isUnit_iff_valuation_lt_one]

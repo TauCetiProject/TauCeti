@@ -268,6 +268,56 @@ def binary : ExchangePolynomial K where
   intro i _hi
   by_cases hi : i ≤ 1 <;> simp [hi]
 
+/-- The binomial `1 + y T` with unit linear coefficient `y`. -/
+def binomial (y : Kˣ) : ExchangePolynomial K where
+  degree := 1
+  degree_pos := Nat.one_pos
+  coeff i := if i = 0 then 1 else if i = 1 then (y : K) else 0
+  coeff_eq_zero i hi := by simp [show i ≠ 0 by omega, show i ≠ 1 by omega]
+  isUnit_coeff_zero := by simp
+  isUnit_coeff_degree := by simp
+
+@[simp] theorem degree_binomial (y : Kˣ) : (binomial y).degree = 1 := (rfl)
+
+@[simp] theorem coeff_binomial (y : Kˣ) (i : ℕ) :
+    (binomial y).coeff i = if i = 0 then 1 else if i = 1 then (y : K) else 0 := (rfl)
+
+theorem coeff_binomial_zero (y : Kˣ) : (binomial y).coeff 0 = 1 := (rfl)
+
+theorem coeff_binomial_one (y : Kˣ) : (binomial y).coeff 1 = y := (rfl)
+
+@[simp] theorem binomial_one : binomial (1 : Kˣ) = binary := by
+  apply ext (by simp)
+  intro i hi
+  obtain _ | _ | i := i <;> simp_all
+
+@[simp] theorem binomial_inj {y z : Kˣ} : binomial y = binomial z ↔ y = z := by
+  constructor
+  · intro h
+    exact Units.ext (by simpa using congrArg (fun F : ExchangePolynomial K => F.coeff 1) h)
+  · exact congrArg binomial
+
+theorem binomial_injective : Function.Injective (binomial : Kˣ → ExchangePolynomial K) :=
+  fun _ _ ↦ binomial_inj.mp
+
+/-- Reversing `1 + y T` gives `y + T = y (1 + y⁻¹ T)`. -/
+theorem reverse_binomial (y : Kˣ) : (binomial y).reverse = (binomial y⁻¹).scale y := by
+  apply ext (by simp)
+  intro i hi
+  obtain _ | _ | i := i <;> simp_all
+
+/-- Dilating `1 + y T` by `κ` gives `1 + κ y T`. -/
+@[simp] theorem dilate_binomial (y κ : Kˣ) : (binomial y).dilate κ = binomial (κ * y) := by
+  apply ext (by simp)
+  intro i hi
+  obtain _ | _ | i := i <;> simp_all
+
+@[simp] theorem map_binomial (y : Kˣ) (f : K →*₀ L) :
+    (binomial y).map f = binomial (Units.map f.toMonoidHom y) := by
+  apply ext (by simp)
+  intro i hi
+  obtain _ | _ | i := i <;> simp_all
+
 /-- The unit represented by the constant coefficient. -/
 noncomputable def constantUnit (H : ExchangePolynomial K) : Kˣ := H.isUnit_coeff_zero.unit
 
@@ -346,6 +396,26 @@ noncomputable def leadingUnit (H : ExchangePolynomial K) : Kˣ := H.isUnit_coeff
   ext
   simp
 
+@[simp] theorem constantUnit_binomial (y : Kˣ) : (binomial y).constantUnit = 1 := by
+  ext
+  simp
+
+@[simp] theorem leadingUnit_binomial (y : Kˣ) : (binomial y).leadingUnit = y := by
+  ext
+  simp
+
+/-- An exchange polynomial of degree one is the binomial `1 + (h₁ / h₀) T` scaled by its
+constant coefficient `h₀`. -/
+theorem eq_scale_binomial_of_degree_eq_one {H : ExchangePolynomial K} (hH : H.degree = 1) :
+    H = (binomial (H.leadingUnit / H.constantUnit)).scale H.constantUnit := by
+  apply ext (by simp [hH])
+  intro i hi
+  rw [hH] at hi
+  obtain _ | _ | i := i
+  · simp
+  · rw [coeff_scale, coeff_binomial_one, ← Units.val_mul, mul_div_cancel, coe_leadingUnit, hH]
+  · omega
+
 @[simp] theorem leadingUnit_map (H : ExchangePolynomial K) (f : K →*₀ L) :
     (H.map f).leadingUnit = Units.map f.toMonoidHom H.leadingUnit := by
   ext
@@ -412,6 +482,11 @@ theorem dilationFactor_eq_one (H : ExchangePolynomial K)
 @[simp] theorem dilationFactor_binary (b : ℤ) :
     (binary : ExchangePolynomial K).dilationFactor b = 1 := by
   apply dilationFactor_eq_one <;> simp
+
+/-- Only the linear coefficient of `1 + y T` contributes to propagation. -/
+@[simp] theorem dilationFactor_binomial (y : Kˣ) (b : ℤ) :
+    (binomial y).dilationFactor b = y ^ (b⁺ : ℤ) := by
+  simp [dilationFactor]
 
 end ExchangePolynomial
 

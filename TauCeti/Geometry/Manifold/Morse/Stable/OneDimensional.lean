@@ -38,6 +38,9 @@ the image of `-v`. The unstable side is the stable side for `-X`, adapted to `-f
   index `n - 1`, the stable manifold is the critical point together with two disjoint orbits.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_eq_insert_union_orbit`: at a critical point
   of index `1`, the unstable manifold is the critical point together with two disjoint orbits.
+* `TauCeti.IsAdaptedPseudoGradient.unstableSet_inter_stableSet_eq_orbit`: at a critical point of
+  index `n - 1`, the trajectories from `p` form a single orbit when one of the two trajectories
+  into the critical point comes from `p` and the other does not.
 * `TauCeti.IsAdaptedPseudoGradient.eventually_unstableSet_eq_insert_union_orbit`: at a critical
   point of index `1` at which `X` is linear in a Morse chart, the two orbits are those of the
   points `y_c` and `y_{-c}` of the chart with coordinates `c` and `-c` in the direction of negative
@@ -129,6 +132,51 @@ theorem exists_unstableSet_eq_insert_union_orbit (hf : IsMorse 𝓘(ℝ, E) f)
   rw [hX.neg_flow hf, Flow.orbit_reverse, Flow.orbit_reverse] at hdisj
   exact ⟨y₁, y₂, h₁, h₂, hdisj, hW⟩
 
+/-- **A single trajectory into a critical point of index `n - 1`.** Let `x` be a critical point of
+index `n - 1`, so that `W^s(x) - {x}` consists of two trajectories. If a point `y` of `W^s(x)`
+lies in the unstable manifold of `p` and a point `z ≠ x` of `W^s(x)` does not, then the
+trajectories from `p` to `x` form the single orbit of `y`: membership in `W^u(p)` is constant along
+each of the two trajectories, and `z` lies on the other one. When `y = x`, the point `p` is `x`
+and both sides are `{x}`. -/
+theorem unstableSet_inter_stableSet_eq_orbit (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x + 1 = finrank ℝ E) {p y z : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet x) (hz : z ∈ hX.flow.stableSet x)
+    (hzx : z ≠ x) (hzp : z ∉ hX.flow.unstableSet p) :
+    hX.flow.unstableSet p ∩ hX.flow.stableSet x = hX.flow.orbit y := by
+  obtain ⟨y₁, y₂, -, -, -, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hx hind
+  have horbit {a b : M} (ha : a ∈ hX.flow.orbit b) :
+      a ∈ hX.flow.unstableSet p ↔ b ∈ hX.flow.unstableSet p := by
+    obtain ⟨s, rfl⟩ := ha
+    exact Flow.apply_mem_unstableSet_iff _ s
+  have hside {a : M} (ha : a ∈ hX.flow.stableSet x) (hax : a ≠ x) :
+      a ∈ hX.flow.orbit y₁ ∨ a ∈ hX.flow.orbit y₂ := by
+    rw [hW] at ha
+    exact (mem_insert_iff.1 ha).resolve_left hax
+  -- Not both trajectories come from `p`, since the one through `z` does not.
+  have hboth (h₁ : y₁ ∈ hX.flow.unstableSet p) (h₂ : y₂ ∈ hX.flow.unstableSet p) : False := by
+    rcases hside hz hzx with h | h
+    · exact hzp ((horbit h).2 h₁)
+    · exact hzp ((horbit h).2 h₂)
+  refine Subset.antisymm (fun w hw ↦ ?_) fun w ⟨s, hs⟩ ↦
+    hs ▸ Flow.isInvariant_unstableSet_inter_stableSet _ p x s hy
+  -- If `y = x`, then `p = x` and `w ∈ W^u(x) ∩ W^s(x)` is `x`.
+  rcases eq_or_ne y x with rfl | hyx
+  · obtain rfl := hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero hx hy.1
+    rw [hX.eq_of_mem_unstableSet_inter_stableSet hw]
+    exact Flow.mem_orbit_self _ _
+  -- Otherwise `x ∉ W^u(p)`, since `y ∈ W^u(x) ∩ W^s(x)` would be `x`.
+  have hwx : w ≠ x := by
+    rintro rfl
+    obtain rfl := hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero hx hw.1
+    exact hyx (hX.eq_of_mem_unstableSet_inter_stableSet hy)
+  obtain ⟨b, hwb, hyb⟩ : ∃ b, w ∈ hX.flow.orbit b ∧ y ∈ hX.flow.orbit b := by
+    rcases hside hw.2 hwx with hw' | hw' <;> rcases hside hy.2 hyx with hy' | hy'
+    · exact ⟨y₁, hw', hy'⟩
+    · exact (hboth ((horbit hw').1 hw.1) ((horbit hy').1 hy.1)).elim
+    · exact (hboth ((horbit hy').1 hy.1) ((horbit hw').1 hw.1)).elim
+    · exact ⟨y₂, hw', hy'⟩
+  rwa [(Flow.orbit_eq_iff _).2 hyb]
+
 section UnstableAxis
 
 variable {hX} {φ : MorseChart E f x} (hφ : ∀ y ∈ φ.toChart.source,
@@ -168,10 +216,8 @@ private theorem notMem_orbit_toChart_symm_negativeExtend_neg (hf : IsMorse 𝓘(
   -- So `y₂` is a rest point on the unstable manifold of `x`, hence `x` itself, which is not on
   -- the axis away from `0`.
   have hcrit := hX.eq_zero_iff.1 hX0
-  refine φ.toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) h₂.1 ?_
-  have hlim := Flow.mem_unstableSet.1 h₂.2.1
-  simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
-  exact tendsto_nhds_unique tendsto_const_nhds hlim
+  exact φ.toChart_symm_negativeExtend_ne (neg_ne_zero.2 hc) h₂.1
+    (hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero hcrit h₂.2.1)
 
 /-- **The two trajectories leaving a critical point of index one.** Let `X` be linear in the Morse
 chart `φ` at a critical point `x` of index `1`. For every small `c ≠ 0` in the space of coordinates

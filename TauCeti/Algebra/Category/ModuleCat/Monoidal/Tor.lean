@@ -273,7 +273,7 @@ theorem isZero_Tor_succ_quotient_iSup {X : ModuleCat.{u} A} {ι : Type*} [Nonemp
     rw [LinearMap.lTensor_rTensor_comm, ← ht]
     have h0 : (N i).mkQ ∘ₗ K.subtype ∘ₗ Submodule.inclusion hle = 0 := by
       ext x
-      exact (Submodule.Quotient.mk_eq_zero _).2 (hi x.2)
+      exact (Submodule.Quotient.mk_eq_zero _).2 (hi x.property)
     simp only [← LinearMap.rTensor_comp_apply, h0, LinearMap.rTensor_zero, LinearMap.zero_apply])
   refine ⟨(Submodule.factor (le_iSup N i)).rTensor _ z, ?_⟩
   rw [LinearMap.lTensor_rTensor_comm, hz, ← LinearMap.rTensor_comp_apply, Submodule.factor_comp_mk]

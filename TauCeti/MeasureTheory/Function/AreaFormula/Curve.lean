@@ -134,7 +134,7 @@ theorem map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict
   have hAeq : A = ((↑) : Icc a b → ℝ) '' ((Icc a b).domRestrict γ ⁻¹' S) := by
     ext t
     exact ⟨fun ⟨ht, hS'⟩ => ⟨⟨t, ht⟩, hS', rfl⟩, by rintro ⟨⟨x, hx⟩, hxS, rfl⟩; exact ⟨hx, hxS⟩⟩
-  have hAm : MeasurableSet A := hAeq ▸ (MeasurableEmbedding.subtype_coe measurableSet_Icc
+  have hAm : MeasurableSet A := hAeq ▸ (MeasurableEmbedding.subtypeVal measurableSet_Icc
     |>.measurableSet_image.2 ((continuousOn_iff_continuous_domRestrict.1 hγ.continuousOn).measurable
       hS))
   have harea := hγ.lintegral_enorm_deriv_mul_eq_lintegral_tsum
@@ -208,9 +208,9 @@ theorem map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict
     (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self).aemeasurable measurableSet_Ioo
   have hmap : Measure.map ((Ioo a b).domRestrict γ) (volume.comap ((↑) : Ioo a b → ℝ)) =
       (volume.restrict (Ioo a b)).map γ := by
-    rw [← map_comap_subtype_coe measurableSet_Ioo] at haem ⊢
+    rw [← map_comap_subtypeVal measurableSet_Ioo] at haem ⊢
     rw [domRestrict_eq,
-      AEMeasurable.map_map_of_aemeasurable haem measurable_subtype_coe.aemeasurable]
+      AEMeasurable.map_map_of_aemeasurable haem measurable_subtypeVal.aemeasurable]
   rw [hmap, Measure.restrict_congr_set Ioo_ae_eq_Icc,
     hγ.map_restrict_Icc_eq_euclideanHausdorffMeasure_restrict hinj]
 
@@ -222,10 +222,10 @@ theorem setLIntegral_euclideanHausdorffMeasure_image_eq
     ∫⁻ y in γ '' Icc a b, f y ∂μHE[1] = ∫⁻ t in Icc a b, f (γ t) := by
   have he := ContinuousOn.measurableEmbedding measurableSet_Ioo
     (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self) hinj
-  have hc := MeasurableEmbedding.subtype_coe (measurableSet_Ioo (a := a) (b := b))
+  have hc := MeasurableEmbedding.subtypeVal (measurableSet_Ioo (a := a) (b := b))
   rw [← hγ.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict hinj, he.lintegral_map]
   simp only [domRestrict_apply, ← Function.comp_apply (f := f)]
-  rw [← hc.lintegral_map, map_comap_subtype_coe measurableSet_Ioo,
+  rw [← hc.lintegral_map, map_comap_subtypeVal measurableSet_Ioo,
     Measure.restrict_congr_set Ioo_ae_eq_Icc]
 
 /-- **Bochner line-integrability along a unit-speed curve.** For a unit-speed curve on `[a, b]`
@@ -236,11 +236,11 @@ theorem integrableOn_image_euclideanHausdorffMeasure_iff
     IntegrableOn f (γ '' Icc a b) μHE[1] ↔ IntegrableOn (fun t => f (γ t)) (Icc a b) := by
   have he := ContinuousOn.measurableEmbedding measurableSet_Ioo
     (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self) hinj
-  have hc := MeasurableEmbedding.subtype_coe (measurableSet_Ioo (a := a) (b := b))
+  have hc := MeasurableEmbedding.subtypeVal (measurableSet_Ioo (a := a) (b := b))
   rw [IntegrableOn, ← hγ.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict hinj,
     he.integrable_map_iff]
   simp only [domRestrict_eq, ← Function.comp_assoc]
-  rw [← hc.integrable_map_iff, map_comap_subtype_coe measurableSet_Ioo,
+  rw [← hc.integrable_map_iff, map_comap_subtypeVal measurableSet_Ioo,
     Measure.restrict_congr_set Ioo_ae_eq_Icc]
   rfl
 
@@ -252,10 +252,10 @@ theorem setIntegral_euclideanHausdorffMeasure_image_eq [NormedSpace ℝ F]
     ∫ y in γ '' Icc a b, f y ∂μHE[1] = ∫ t in Icc a b, f (γ t) := by
   have he := ContinuousOn.measurableEmbedding measurableSet_Ioo
     (hγ.lipschitzOnWith.continuousOn.mono Ioo_subset_Icc_self) hinj
-  have hc := MeasurableEmbedding.subtype_coe (measurableSet_Ioo (a := a) (b := b))
+  have hc := MeasurableEmbedding.subtypeVal (measurableSet_Ioo (a := a) (b := b))
   rw [← hγ.map_domRestrict_Ioo_eq_euclideanHausdorffMeasure_restrict hinj, he.integral_map]
   simp only [domRestrict_apply, ← Function.comp_apply (f := f)]
-  rw [← hc.integral_map, map_comap_subtype_coe measurableSet_Ioo,
+  rw [← hc.integral_map, map_comap_subtypeVal measurableSet_Ioo,
     integral_Icc_eq_integral_Ioo]
 
 end HasUnitSpeedOn

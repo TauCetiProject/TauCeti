@@ -274,7 +274,7 @@ its transport along `e`. -/
 @[simp]
 theorem quotientIsoSetoidModelsOfTheoryEquiv_mk {T : L.Theory} (c : modelsOfTheory (V := V) T) :
     e.quotientIsoSetoidModelsOfTheoryEquiv V T ⟦c⟧ =
-      ⟦⟨e.onConfiguration c, (e.mem_modelsOfTheory_onConfiguration_iff c.1 T).2 c.2⟩⟧ :=
+      ⟦⟨e.onConfiguration c, (e.mem_modelsOfTheory_onConfiguration_iff c.val T).2 c.property⟩⟧ :=
   (rfl)
 
 end LEquiv

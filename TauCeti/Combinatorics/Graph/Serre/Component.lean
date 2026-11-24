@@ -99,11 +99,11 @@ def componentBase : (Γ.component v).V := ⟨v, Γ.self_mem_componentVertices v�
 /-- The inclusion morphism from `Γ.component v` into `Γ`. -/
 abbrev componentInclusion : (Γ.component v).Hom Γ := Γ.subgraphInclusion _ _ _ _
 
-@[simp] theorem componentBase_val : (Γ.componentBase v).1 = v := (rfl)
+@[simp] theorem componentBase_val : (Γ.componentBase v).val = v := (rfl)
 
 instance : Nonempty (Γ.component v).V := ⟨Γ.componentBase v⟩
 
-instance [IsEmpty Γ.E] : IsEmpty (Γ.component v).E := ⟨fun e => isEmptyElim e.1⟩
+instance [IsEmpty Γ.E] : IsEmpty (Γ.component v).E := ⟨fun e => isEmptyElim e.val⟩
 
 /-- Every path in `Γ` starting at a vertex in the component of `v` lifts to `Γ.component v`. -/
 theorem exists_component_path {a b : Γ.V} (p : Γ.Path a b) (ha : a ∈ Γ.componentVertices v) :
@@ -144,16 +144,16 @@ def componentIsoOfPreconnected (hΓ : Γ.Preconnected) : (Γ.component v).Iso Γ
   map_rev _ := rfl
 
 @[simp] theorem componentIsoOfPreconnected_equivV_apply (hΓ : Γ.Preconnected)
-    (a : (Γ.component v).V) : (Γ.componentIsoOfPreconnected hΓ).equivV a = a.1 := (rfl)
+    (a : (Γ.component v).V) : (Γ.componentIsoOfPreconnected hΓ).equivV a = a.val := (rfl)
 
 @[simp] theorem componentIsoOfPreconnected_equivE_apply (hΓ : Γ.Preconnected)
-    (e : (Γ.component v).E) : (Γ.componentIsoOfPreconnected hΓ).equivE e = e.1 := (rfl)
+    (e : (Γ.component v).E) : (Γ.componentIsoOfPreconnected hΓ).equivE e = e.val := (rfl)
 
 @[simp] theorem componentIsoOfPreconnected_equivV_symm_apply_val (hΓ : Γ.Preconnected)
-    (a : Γ.V) : ((Γ.componentIsoOfPreconnected (v := v) hΓ).equivV.symm a).1 = a := (rfl)
+    (a : Γ.V) : ((Γ.componentIsoOfPreconnected (v := v) hΓ).equivV.symm a).val = a := (rfl)
 
 @[simp] theorem componentIsoOfPreconnected_equivE_symm_apply_val (hΓ : Γ.Preconnected)
-    (e : Γ.E) : ((Γ.componentIsoOfPreconnected (v := v) hΓ).equivE.symm e).1 = e := (rfl)
+    (e : Γ.E) : ((Γ.componentIsoOfPreconnected (v := v) hΓ).equivE.symm e).val = e := (rfl)
 
 @[simp] theorem componentIsoOfPreconnected_equivV_symm_self (hΓ : Γ.Preconnected) :
     (Γ.componentIsoOfPreconnected hΓ).equivV.symm v = Γ.componentBase v := (rfl)

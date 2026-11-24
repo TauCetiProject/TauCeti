@@ -136,12 +136,12 @@ instance isIso_pullback_δ_of_isQuasicoherent (f : X ⟶ Y) (M N : Y.Modules)
   -- `pullback_comp_δ`, the pullback of the comparison for `f` to `f⁻¹ V` is invertible.
   refine (isIso_iff_of_isOpenCover
     (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr fun V ↦ ?_
-  have : IsAffine V.1 := V.2
+  have : IsAffine V.val := V.property
   -- Over the affine open `V`, the comparison for `f ∣_ V ≫ V.ι = (f⁻¹ V).ι ≫ f` is invertible.
-  have hg : IsIso (δ (pullback (f ∣_ V.1 ≫ V.1.ι)) M N) := by
+  have hg : IsIso (δ (pullback (f ∣_ V.val ≫ V.val.ι)) M N) := by
     rw [pullback_comp_δ]
-    have := isIso_pullback_δ_of_isAffine (f ∣_ V.1) ((pullback V.1.ι).obj M)
-      ((pullback V.1.ι).obj N)
+    have := isIso_pullback_δ_of_isAffine (f ∣_ V.val) ((pullback V.val.ι).obj M)
+      ((pullback V.val.ι).obj N)
     infer_instance
   rw [morphismRestrict_ι, pullback_comp_δ, isIso_comp_left_iff, isIso_comp_right_iff] at hg
   exact hg

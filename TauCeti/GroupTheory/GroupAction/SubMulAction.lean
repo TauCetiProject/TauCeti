@@ -36,7 +36,8 @@ instance ofStabilizer.faithfulSMul {G α : Type*} [Group G] [MulAction G α] [Fa
   eq_of_smul_eq_smul {g h} hgh := by
     refine Subtype.ext (eq_of_smul_eq_smul (α := α) fun x ↦ ?_)
     by_cases hx : x = a
-    · rw [hx, MulAction.mem_stabilizer_iff.mp g.2, MulAction.mem_stabilizer_iff.mp h.2]
+    · rw [hx, MulAction.mem_stabilizer_iff.mp g.property, MulAction.mem_stabilizer_iff.mp
+        h.property]
     · simpa only [val_smul, MulAction.subgroup_smul_def] using
         congrArg Subtype.val (hgh ⟨x, (mem_ofStabilizer_iff G a).mpr hx⟩)
 

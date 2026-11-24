@@ -60,21 +60,21 @@ theorem globalFunctional_mul
     ⟨N, Subcomodule.mem_finiteSubcomodules.mpr hNfinite⟩
   let P' : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H) :=
     ⟨P, Subcomodule.mem_finiteSubcomodules.mpr hPfinite⟩
-  let _ : Module.Finite k N'.1.toSubmodule :=
-    Subcomodule.mem_finiteSubcomodules.mp N'.2
-  let _ : Module.Finite k P'.1.toSubmodule :=
-    Subcomodule.mem_finiteSubcomodules.mp P'.2
+  let _ : Module.Finite k N'.val.toSubmodule :=
+    Subcomodule.mem_finiteSubcomodules.mp N'.property
+  let _ : Module.Finite k P'.val.toSubmodule :=
+    Subcomodule.mem_finiteSubcomodules.mp P'.property
   obtain ⟨Q, hQfinite, hmul⟩ :=
-    Subcomodule.exists_finite_mul_le N'.1.toSubmodule P'.1.toSubmodule
+    Subcomodule.exists_finite_mul_le N'.val.toSubmodule P'.val.toSubmodule
   let Q' : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H) :=
     ⟨Q, Subcomodule.mem_finiteSubcomodules.mpr hQfinite⟩
-  let xn : N'.1 := ⟨x, hx⟩
-  let yp : P'.1 := ⟨y, hy⟩
-  have hxy : x * y ∈ Q'.1 := hmul xn yp
+  let xn : N'.val := ⟨x, hx⟩
+  let yp : P'.val := ⟨y, hy⟩
+  have hxy : x * y ∈ Q'.val := hmul xn yp
   have hlocal := localFunctional_mul k H A η N' P' Q' hmul xn yp
   calc
     globalFunctional k H A η (x * y) =
-        globalFunctional k H A η (⟨x * y, hxy⟩ : Q'.1) :=
+        globalFunctional k H A η (⟨x * y, hxy⟩ : Q'.val) :=
       congrArg (globalFunctional k H A η) (Subtype.coe_mk (x * y) hxy).symm
     _ = localFunctional k H A η Q' ⟨x * y, hxy⟩ :=
       globalFunctional_apply k H A η Q' ⟨x * y, hxy⟩

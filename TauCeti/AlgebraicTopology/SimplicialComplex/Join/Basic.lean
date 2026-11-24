@@ -61,14 +61,14 @@ public def join (K : PreAbstractSimplicialComplex α) (L : PreAbstractSimplicial
       · by_cases hτl : τ.toLeft = ∅
         · exact Or.inl hτl
         · exact Or.inr <| (K.isRelLowerSet_faces hK).2 (toLeft_subset_toLeft hτσ)
-            (Finset.nonempty_iff_ne_empty.mpr hτl)
+            (Finset.ne_empty_iff_nonempty.mp hτl)
     · rcases hL with hL | hL
       · left
         exact subset_empty.mp ((toRight_subset_toRight hτσ).trans (subset_of_eq hL))
       · by_cases hτr : τ.toRight = ∅
         · exact Or.inl hτr
         · exact Or.inr <| (L.isRelLowerSet_faces hL).2 (toRight_subset_toRight hτσ)
-            (Finset.nonempty_iff_ne_empty.mpr hτr)
+            (Finset.ne_empty_iff_nonempty.mp hτr)
 
 variable {K K' : PreAbstractSimplicialComplex α} {L L' : PreAbstractSimplicialComplex β}
 
@@ -86,7 +86,7 @@ theorem disjSum_mem_join_iff {s : Finset α} {t : Finset β} :
     s.disjSum t ∈ join K L ↔
       (s.Nonempty ∨ t.Nonempty) ∧ (s = ∅ ∨ s ∈ K) ∧ (t = ∅ ∨ t ∈ L) := by
   simp only [mem_join_iff, toLeft_disjSum, toRight_disjSum]
-  simp only [Finset.nonempty_iff_ne_empty, ne_eq, Finset.disjSum_eq_empty, not_and_or]
+  simp only [← Finset.ne_empty_iff_nonempty, ne_eq, Finset.disjSum_eq_empty, not_and_or]
 
 /-- A left face, tagged into the sum type, is a face of the join. -/
 theorem map_inl_mem_join {s : Finset α} (hs : s ∈ K) :
@@ -142,7 +142,7 @@ theorem map_join {γ δ : Type*} [DecidableEq γ] [DecidableEq δ] (f : α → �
     refine mem_map_iff.mpr ⟨s.disjSum t, ?_, heq⟩
     refine disjSum_mem_join_iff.mpr ⟨?_, hs, ht⟩
     have : (s.disjSum t).Nonempty := Finset.Nonempty.of_image (heq.symm ▸ hne)
-    simpa only [Finset.nonempty_iff_ne_empty, ne_eq, Finset.disjSum_eq_empty,
+    simpa only [← Finset.ne_empty_iff_nonempty, ne_eq, Finset.disjSum_eq_empty,
       not_and_or] using this
 
 /-- Exchanging the tagged vertex sets exchanges the factors of a join. -/

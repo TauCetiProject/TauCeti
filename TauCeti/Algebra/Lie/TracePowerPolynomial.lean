@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import TauCeti.LinearAlgebra.Trace.Nilpotent
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
@@ -72,6 +73,9 @@ restriction theorem and of the Harish-Chandra isomorphism.
   `tr (ρ_M(x) ^ m)`.
 * `TauCeti.tracePowerPolynomial_mem_homogeneousSubmodule`: it is homogeneous of degree `m`.
 * `TauCeti.tracePowerPolynomial_mem_lieInvariants`: it is invariant under the coadjoint action.
+* `TauCeti.map_genericActionMatrix_pow_card_eq_zero`: a ring homomorphism into a commutative ring
+  without additive torsion that kills the trace-power polynomials of degrees `1, …, d = rank M`
+  sends the generic action matrix to a matrix whose `d`-th power vanishes.
 * `TauCeti.isNilpotent_toEnd_of_forall_lift_eval_eq_zero`: over a field of characteristic zero, if
   every invariant polynomial function with zero constant term vanishes at `x`, then `x` acts
   nilpotently on every finite-dimensional module, by the trace criterion.
@@ -203,7 +207,7 @@ coefficients of the characteristic polynomial of `ρ_M(x)`. -/
 theorem charpoly_coeff_genericActionMatrix_mem_lieInvariants (c : Basis κ R M) (i : ℕ) :
     (genericActionMatrix R L c).charpoly.coeff i ∈ lieInvariants R L (Dual R L) := by
   refine mem_lieInvariants.mpr fun y ↦ ?_
-  refine Derivation.charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul _
+  refine Derivation.map_charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul _
     (B := -(LinearMap.toMatrix c c (LieModule.toEnd R L M y)).map (algebraMap R S)) ?_ i
   rw [map_lieModuleDerivation_genericActionMatrix]
   simp only [Matrix.neg_mul, Matrix.mul_neg]
@@ -292,6 +296,20 @@ theorem tracePowerPolynomial_mem_lieInvariants (m : ℕ) :
     (B := -(LinearMap.toMatrix c c (LieModule.toEnd R L M y)).map (algebraMap R S)) ?_ m
   rw [map_lieModuleDerivation_genericActionMatrix, neg_mul, mul_neg, sub_neg_eq_add,
     neg_add_eq_sub]
+
+/-- **The generic action matrix is nilpotent where the trace-power polynomials vanish.** Let `c` be
+a basis of `M` of size `d`, with generic action matrix `A`, and let `φ : S(L*) → B` be a ring
+homomorphism into a commutative ring without additive torsion which kills the trace-power
+polynomials of degrees `1, …, d`. Then `(φ A) ^ d = 0`. -/
+theorem map_genericActionMatrix_pow_card_eq_zero {κ : Type*} [Fintype κ] [DecidableEq κ]
+    {B F : Type*} [CommRing B] [IsAddTorsionFree B] [FunLike F S B] [RingHomClass F S B] (φ : F)
+    (c : Basis κ R M)
+    (hφ : ∀ j, 0 < j → j ≤ Fintype.card κ → φ (tracePowerPolynomial R L M j) = 0) :
+    (genericActionMatrix R L c).map φ ^ Fintype.card κ = 0 := by
+  refine Matrix.pow_card_eq_zero_of_trace_pow_eq_zero fun j hj hjκ ↦ ?_
+  rw [← RingHom.coe_coe φ, ← Matrix.map_pow, ← AddMonoidHom.map_trace,
+    ← tracePowerPolynomial_eq_trace_pow_genericActionMatrix c]
+  exact hφ j hj hjκ
 
 end TracePowerPolynomial
 

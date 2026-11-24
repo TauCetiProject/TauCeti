@@ -139,7 +139,7 @@ theorem idealOfSet_ofIdeal_eq_closure_of_compact {X 𝕜 : Type*} [TopologicalSp
   let q : C(X, Y) := ⟨Set.rangeFactorization ev, ev.continuous.subtype_mk _⟩
   let pull : C(Y, 𝕜) →ₐ[𝕜] C(X, 𝕜) := compRightAlgHom 𝕜 𝕜 q
   let toY (f : C(X, 𝕜)) : C(Y, 𝕜) :=
-    ⟨fun y ↦ y.1 f, (continuous_apply f).comp continuous_subtype_val⟩
+    ⟨fun y ↦ y.val f, (continuous_apply f).comp continuous_subtypeVal⟩
   have hpull_eq (f : C(X, 𝕜)) : pull (toY f) = f := by
     ext x
     simp [pull, toY, q, ev]

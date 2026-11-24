@@ -112,7 +112,7 @@ private theorem top_le_span_monomial :
   | zero => exact zero_mem _
   | add f g hf hg => exact add_mem hf hg
   | @homogeneous n f =>
-    obtain ⟨b, hb, hf⟩ := mem_grade_iff.mp f.2
+    obtain ⟨b, hb, hf⟩ := mem_grade_iff.mp f.property
     have hbf := hgrade n hb
     simp only [Submodule.mem_comap, Submodule.mem_map, Submodule.restrictScalars_mem,
       AlgHom.toLinearMap_apply, Subalgebra.coe_val, LinearMap.coe_restrictScalars] at hbf

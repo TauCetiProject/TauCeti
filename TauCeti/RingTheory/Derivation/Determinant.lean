@@ -23,7 +23,7 @@ Sylvester differential equation `M.map D = M * P - Q * M`, substituting into Jac
 yields the **Abel–Jacobi–Liouville formula** `D (det M) = det M * (tr P - tr Q)`
 (`Derivation.leibniz_det_of_map_eq_mul_sub_mul`). Applied to the characteristic matrix, it shows
 that a derivation acting on `M` as a commutator kills every coefficient of the characteristic
-polynomial of `M` (`Derivation.charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul`).
+polynomial of `M` (`Derivation.map_charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul`).
 
 Let `S` be an algebra over a commutative ring `A`, and let `D'` be a derivation of `S` extending a
 derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`. Then `D`
@@ -89,7 +89,7 @@ open Polynomial in
 /-- If a derivation `D` acts on a square matrix `M` as the commutator with a matrix `B`, then it
 kills every coefficient of the characteristic polynomial of `M`. This is the infinitesimal form of
 the invariance of the characteristic polynomial under conjugation. -/
-theorem charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul {n : Type*} [Fintype n] [DecidableEq n]
+theorem map_charpoly_coeff_eq_zero_of_map_eq_mul_sub_mul {n : Type*} [Fintype n] [DecidableEq n]
     {M B : Matrix n n A} (h : M.map D = B * M - M * B) (i : ℕ) : D (M.charpoly.coeff i) = 0 := by
   -- Applying `D` to every coefficient is the derivation `Differential.mapCoeffs` of `A[X]`.
   let : Differential A := ⟨D.restrictScalars ℤ⟩

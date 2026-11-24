@@ -105,7 +105,7 @@ theorem cohomologyIso_inv_mk (p : ℤ) (F : cycles 𝒜 p) :
           -- The forgetful functor evaluates the same underlying module differential.
           change (complex 𝒜).d p (p + 1) F.val = 0
           rw [complex_d]
-          exact F.2)) := by
+          exact F.property)) := by
   let e : (complex 𝒜).sc' (p - 1) p (p + 1) ≅ shortComplex 𝒜 p :=
     ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
       (by
@@ -114,7 +114,7 @@ theorem cohomologyIso_inv_mk (p : ℤ) (F : cycles 𝒜 p) :
       (by
         simp only [Iso.refl_hom]
         exact (complex_d 𝒜 p (p + 1) rfl).symm)
-  let F' : (shortComplex 𝒜 p).moduleCatLeftHomologyData.K := ⟨F.val, F.2⟩
+  let F' : (shortComplex 𝒜 p).moduleCatLeftHomologyData.K := ⟨F.val, F.property⟩
   -- Express the representative using the explicit homology data so naturality applies
   -- without unfolding the chosen categorical kernels or quotient maps.
   change ((shortComplex 𝒜 p).moduleCatLeftHomologyData.π ≫
@@ -147,7 +147,7 @@ theorem bracket_mem_cycles {p q n : ℤ} (h : p + q = n)
     bracket 𝒜 h F G ∈ cycles 𝒜 n := by
   rw [mem_cycles, coe_bracket, ← h]
   rw [𝒜.hochschildDifferential_gerstenhaberBracket
-    ((mem_cochains 𝒜).mp F.2) ((mem_cochains 𝒜).mp G.2),
+    ((mem_cochains 𝒜).mp F.property) ((mem_cochains 𝒜).mp G.property),
     (mem_cycles 𝒜).mp hF, (mem_cycles 𝒜).mp hG]
   simp
 
@@ -155,7 +155,7 @@ theorem bracket_mem_cycles {p q n : ℤ} (h : p + q = n)
 def cyclesBracket {p q n : ℤ} (h : p + q = n) :
     cycles 𝒜 p →ₗ[R] cycles 𝒜 q →ₗ[R] cycles 𝒜 n :=
   LinearMap.mk₂ R
-    (fun F G ↦ ⟨bracket 𝒜 h F.val G.val, bracket_mem_cycles 𝒜 h F.2 G.2⟩)
+    (fun F G ↦ ⟨bracket 𝒜 h F.val G.val, bracket_mem_cycles 𝒜 h F.property G.property⟩)
     (fun _ _ _ ↦ Subtype.ext ((bracket 𝒜 h).map_add₂ _ _ _))
     (fun _ _ _ ↦ Subtype.ext ((bracket 𝒜 h).map_smul₂ _ _ _))
     (fun _ _ _ ↦ Subtype.ext (map_add (bracket 𝒜 h _) _ _))
@@ -176,8 +176,8 @@ theorem cyclesBracket_mem_range_left {p q n : ℤ} (h : p + q = n)
   refine ⟨bracket 𝒜 (show p - 1 + q = n - 1 by omega) U G.val, ?_⟩
   simp only [coe_bracket, coe_cyclesBracket]
   have hder := 𝒜.hochschildDifferential_gerstenhaberBracket
-    ((mem_cochains 𝒜).mp U.2) ((mem_cochains 𝒜).mp G.val.2)
-  rw [(mem_cycles 𝒜).mp G.2, gerstenhaberBracket_zero_right, smul_zero, add_zero,
+    ((mem_cochains 𝒜).mp U.property) ((mem_cochains 𝒜).mp G.val.property)
+  rw [(mem_cycles 𝒜).mp G.property, gerstenhaberBracket_zero_right, smul_zero, add_zero,
     hU, show 1 + (p - 1) = p by omega] at hder
   simpa only [show p - 1 + q = n - 1 by omega] using hder
 

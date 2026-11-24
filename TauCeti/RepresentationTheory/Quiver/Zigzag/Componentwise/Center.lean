@@ -93,12 +93,10 @@ theorem zigzagComponentCenterBasis_some (C : G.ConnectedComponent) (i : C) :
     have hz : (default : Fin 1) = 0 := Subsingleton.elim _ _
     rw [hz]
     exact congrArg ULift.up (Module.Basis.finTwoProd_one k)
-  · let hns : ∀ i : C, ∃ j, C.toSimpleGraph.Adj i j := fun i =>
-      SimpleGraph.exists_adj_iff_not_isIsolated.mpr
-        (C.connected_toSimpleGraph.preconnected.not_isIsolated i)
-    apply (zigzagComponentAlgebraEquivNonisolated k G C).injective
+  · apply (zigzagComponentAlgebraEquivNonisolated k G C).injective
     simp [zigzagComponentCenterBasis, hC,
-      zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C hns,
+      zigzagComponentAlgebraEquivNonisolated_zigzagComponentBasis k G C
+        C.exists_adj_toSimpleGraph,
       zigzagCenterFun_some, zigzagBasisFun_inr_inr]
 
 omit [Finite V] in

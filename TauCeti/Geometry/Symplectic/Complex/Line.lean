@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
@@ -45,11 +46,17 @@ conjugating the coordinates exchanges them.
   is Lagrangian for the standard area form.
 * `TauCeti.stdComplexSymplecticForm_apply_ofComplexModule`: area paired with multiplication
   by `I` is the norm square.
+* `TauCeti.stdComplexSymplecticForm_apply_ofComplexModule_eq_inner`: the metric `ω(·, I ·)` of
+  the standard triple is the real inner product.
 * `TauCeti.stdComplexSymplecticForm_smul_sub_smul`: a real-linear map `v ↦ α v - β ⟪z, v⟫ z`
   scales the area form by its determinant.
+* `TauCeti.stdComplexSymplecticForm_mul_mul`: multiplication by `u` scales the area form by
+  `‖u‖²`, so rotations preserve it.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
+* `TauCeti.AlmostComplexStructure.transport_conjCLE_apply`: transporting a structure along
+  complex conjugation conjugates it.
 * `TauCeti.exists_frame_of_tame_of_finrank_eq_two`: a complex structure on a real plane, tamed by
   an antisymmetric form, is identified with the complex line by a complex-linear isomorphism
   pulling the form back to `⟪i x, y⟫_ℝ`.
@@ -64,6 +71,7 @@ public section
 namespace TauCeti
 
 open Complex Module
+open scoped InnerProductSpace
 
 /-- The standard symplectic area form on `ℂ`, transported from the standard form on `ℝ × ℝ`. -/
 noncomputable def stdComplexSymplecticForm : SymplecticForm ℂ :=
@@ -170,7 +178,12 @@ theorem stdComplexSymplecticForm_apply_ofComplexModule (z : ℂ) :
   simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply,
     Complex.normSq_apply]
 
-open scoped InnerProductSpace in
+/-- The metric `ω(·, I ·)` of the standard compatible triple on `ℂ` is the real inner product. -/
+theorem stdComplexSymplecticForm_apply_ofComplexModule_eq_inner (v w : ℂ) :
+    stdComplexSymplecticForm v (AlmostComplexStructure.ofComplexModule ℂ w) = ⟪v, w⟫_ℝ := by
+  simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply, Complex.inner]
+  ring
+
 /-- A real-linear map `v ↦ α v - β ⟪z, v⟫ z` of `ℂ` scales the area form by its determinant
 `α (α - β |z|²)`. -/
 theorem stdComplexSymplecticForm_smul_sub_smul (α β : ℝ) (z v w : ℂ) :
@@ -179,6 +192,14 @@ theorem stdComplexSymplecticForm_smul_sub_smul (α β : ℝ) (z v w : ℂ) :
   simp only [stdComplexSymplecticForm_apply, Complex.inner, Complex.sub_re, Complex.sub_im,
     Complex.real_smul, Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
     Complex.conj_re, Complex.conj_im, Complex.sq_norm, Complex.normSq_apply]
+  ring
+
+/-- Multiplication by `u` scales the area form by `‖u‖²`, the determinant of `v ↦ u v`. In
+particular rotations, multiplications by complex numbers of norm one, preserve it. -/
+theorem stdComplexSymplecticForm_mul_mul (u v w : ℂ) :
+    stdComplexSymplecticForm (u * v) (u * w) = ‖u‖ ^ 2 * stdComplexSymplecticForm v w := by
+  simp only [stdComplexSymplecticForm_apply, Complex.mul_re, Complex.mul_im, Complex.sq_norm,
+    Complex.normSq_apply]
   ring
 
 private noncomputable def planeBasis (J : AlmostComplexStructure ℂ) : Basis (Fin 2) ℝ ℂ :=
@@ -246,6 +267,13 @@ theorem stdComplexSymplecticForm_tames_or_tames_transport_conj (J : AlmostComple
       stdComplexSymplecticForm.Tames (J.transport Complex.conjCLE.toLinearEquiv) := by
   rw [stdComplexSymplecticForm_tames_iff_im_pos, stdComplexSymplecticForm_tames_transport_conj_iff]
   exact (lt_or_gt_of_ne (AlmostComplexStructure.im_apply_one_ne_zero J)).symm
+
+open scoped ComplexConjugate in
+/-- Transporting a structure along complex conjugation conjugates it: `v ↦ conj (J (conj v))`. -/
+theorem AlmostComplexStructure.transport_conjCLE_apply (J : AlmostComplexStructure ℂ) (v : ℂ) :
+    J.transport conjCLE.toLinearEquiv v = conj (J (conj v)) := by
+  rw [AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    conjCLE_symm, ContinuousLinearEquiv.coe_toLinearEquiv, conjCLE_apply, conjCLE_apply]
 
 open ContinuousLinearMap in
 open scoped RealInnerProductSpace in

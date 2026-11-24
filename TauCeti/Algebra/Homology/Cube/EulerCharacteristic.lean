@@ -83,7 +83,7 @@ variable {ι : Type w} [Fintype ι] [LinearOrder ι] {R : Type u} [Ring R]
 of height `r`: an element is determined by its projections to these vertices, and a family of
 elements of the vertices is the sum of their inclusions. -/
 def cubeComplexXLinearEquiv (r : ℤ) :
-    F.cubeComplex.X r ≃ₗ[R] ∀ S : {S : Finset ι // (#S : ℤ) = r}, F.obj S.1 where
+    F.cubeComplex.X r ≃ₗ[R] ∀ S : {S : Finset ι // (#S : ℤ) = r}, F.obj S.val where
   toFun x S := (F.cubeComplexπ S).hom x
   map_add' x y := by
     ext S
@@ -115,7 +115,7 @@ theorem cubeComplexXLinearEquiv_apply {r : ℤ} (x : F.cubeComplex.X r)
 into the term of degree `r` of the cube complex. -/
 @[simp]
 theorem cubeComplexXLinearEquiv_symm_apply {r : ℤ}
-    (f : ∀ S : {S : Finset ι // (#S : ℤ) = r}, F.obj S.1) :
+    (f : ∀ S : {S : Finset ι // (#S : ℤ) = r}, F.obj S.val) :
     (F.cubeComplexXLinearEquiv r).symm f = ∑ S, (F.cubeComplexι S).hom (f S) :=
   (rfl)
 

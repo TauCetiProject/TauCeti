@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Analysis.Normed.Operator.Banach
+public import TauCeti.Analysis.InnerProductSpace.Complexification
 
 /-!
 # The Laplacian of two composable operators
@@ -39,7 +40,11 @@ statement says that a complex is elliptic, that is its symbol sequence is exact 
 covector, exactly when its Laplacians are elliptic.
 
 The Laplacian of the adjoint complex `W → V → U` is the same operator
-(`ContinuousLinearMap.hodgeLaplacian_adjoint_adjoint`).
+(`ContinuousLinearMap.hodgeLaplacian_adjoint_adjoint`). The Laplacian of `c A`, `c B` is
+`‖c‖²` times that of `A`, `B` (`ContinuousLinearMap.hodgeLaplacian_smul_smul`), so it is unchanged
+by a unimodular scalar such as the factor `i` between geometric and Fourier symbols. For real
+operators, the Laplacian of the complexifications is the complexification of the Laplacian
+(`ContinuousLinearMap.hodgeLaplacian_complexifyL2`).
 
 ## References
 
@@ -77,6 +82,15 @@ theorem hodgeLaplacian_apply (v : V) :
 theorem hodgeLaplacian_adjoint_adjoint :
     (adjoint B).hodgeLaplacian (adjoint A) = A.hodgeLaplacian B := by
   rw [hodgeLaplacian_def, hodgeLaplacian_def, adjoint_adjoint, adjoint_adjoint, add_comm]
+
+/-- Multiplying both operators by a scalar `c` multiplies the Laplacian by `‖c‖²`; in particular a
+unimodular scalar, such as the factor `i` relating geometric and Fourier symbols, does not change
+it. -/
+theorem hodgeLaplacian_smul_smul (c : 𝕜) :
+    (c • A).hodgeLaplacian (c • B) = ((‖c‖ ^ 2 : ℝ) : 𝕜) • A.hodgeLaplacian B := by
+  ext v
+  simp only [hodgeLaplacian_apply, adjoint.map_smulₛₗ, smul_apply, map_smul, smul_smul,
+    RCLike.mul_conj, RCLike.conj_mul, RCLike.ofReal_pow, smul_add]
 
 /-- The Laplacian is a positive operator. -/
 theorem isPositive_hodgeLaplacian : (A.hodgeLaplacian B).IsPositive :=
@@ -159,5 +173,20 @@ theorem exact_iff_isInvertible_hodgeLaplacian [FiniteDimensional 𝕜 V] (hBA : 
   rw [A.exact_iff_injective_hodgeLaplacian B hBA (Submodule.isClosed_of_finiteDimensional _),
     isInvertible_iff_bijective, Function.Bijective, ← coe_coe,
     ← LinearMap.injective_iff_surjective, and_self]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {U V W : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [CompleteSpace U]
+  [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℝ W] [CompleteSpace W]
+
+/-- The Laplacian of the complexifications of two real operators is the complexification of their
+Laplacian. -/
+theorem hodgeLaplacian_complexifyL2 (A : U →L[ℝ] V) (B : V →L[ℝ] W) :
+    A.complexifyL2.hodgeLaplacian B.complexifyL2 = (A.hodgeLaplacian B).complexifyL2 := by
+  rw [hodgeLaplacian_def, hodgeLaplacian_def, complexifyL2_add, complexifyL2_comp,
+    complexifyL2_comp, adjoint_complexifyL2, adjoint_complexifyL2]
 
 end ContinuousLinearMap

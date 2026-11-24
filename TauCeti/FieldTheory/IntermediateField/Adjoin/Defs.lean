@@ -45,6 +45,7 @@ theorem AdjoinSimple.isRoot_map_gen_iff (α : E) {p : F[X]} :
 
 /-- The generator `AdjoinSimple.gen F α` of `F⟮α⟯` has `n`-th power `algebraMap R F⟮α⟯ r` if and
 only if `α` has `n`-th power `algebraMap R E r` in `E`. -/
+@[simp]
 theorem AdjoinSimple.gen_pow_eq_algebraMap_iff {R : Type*} [CommSemiring R] [Algebra R F]
     [Algebra R E] [IsScalarTower R F E] {α : E} {n : ℕ} {r : R} :
     AdjoinSimple.gen F α ^ n = algebraMap R F⟮α⟯ r ↔ α ^ n = algebraMap R E r :=

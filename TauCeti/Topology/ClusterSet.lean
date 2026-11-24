@@ -87,8 +87,11 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   is a continuum** once the approach regions `U ∩ t` are preconnected along a neighbourhood basis
   of `w`; `TauCeti.isCompact_clusterSetOn_of_isBounded` and
   `TauCeti.isConnected_clusterSetOn_of_isBounded` are again the proper-metric forms.
-* `TauCeti.isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset` — the
-  metric-space criterion for preconnected approach regions.
+* `TauCeti.isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset`,
+  `TauCeti.isPreconnectedApproachAt_of_notMem_closure`,
+  `TauCeti.IsPreconnectedApproachAt.congr`, and
+  `TauCeti.isPreconnectedApproachAt_inter_of_mem_nhds` — metric-space, exterior, and set-germ
+  properties of preconnected approach regions.
 
 ## References
 
@@ -583,6 +586,47 @@ theorem IsPreconnectedApproachAt.image {Y : Type*} [TopologicalSpace Y] {U : Set
   rw [heq]
   exact htU.image _ (hφU.mono inter_subset_left)
 
+/-- Off the closure of `U`, a neighbourhood disjoint from `U` witnesses preconnected approach
+regions trivially. -/
+theorem isPreconnectedApproachAt_of_notMem_closure {U : Set X} {a : X} (ha : a ∉ closure U) :
+    IsPreconnectedApproachAt U a := by
+  refine fun s hs =>
+    ⟨s ∩ (closure U)ᶜ, inter_mem hs (isClosed_closure.isOpen_compl.mem_nhds ha),
+      inter_subset_left, ?_⟩
+  have heq : U ∩ (s ∩ (closure U)ᶜ) = ∅ :=
+    eq_empty_iff_forall_notMem.mpr fun x ⟨hxU, _, hxc⟩ => hxc (subset_closure hxU)
+  rw [heq]
+  exact isPreconnected_empty
+
+/-- Preconnected approach regions depend only on the set germ at the approach point. -/
+theorem IsPreconnectedApproachAt.congr {U V : Set X} {a : X}
+    (h : IsPreconnectedApproachAt U a) (hUV : U =ᶠ[𝓝 a] V) :
+    IsPreconnectedApproachAt V a := by
+  have hW : {x | x ∈ U ↔ x ∈ V} ∈ 𝓝 a := eventuallyEqSet_iff.mp hUV
+  intro s hs
+  obtain ⟨t, ht, hts, htp⟩ := h (s ∩ {x | x ∈ U ↔ x ∈ V}) (inter_mem hs hW)
+  refine ⟨t, ht, hts.trans inter_subset_left, ?_⟩
+  have heq : V ∩ t = U ∩ t := by
+    ext x
+    exact ⟨fun ⟨hxV, hxt⟩ => ⟨(hts hxt).2.mpr hxV, hxt⟩,
+      fun ⟨hxU, hxt⟩ => ⟨(hts hxt).2.mp hxU, hxt⟩⟩
+  rwa [heq]
+
+/-- Germ-equivalent sets at `a` have the same preconnected-approach property at `a`. -/
+theorem isPreconnectedApproachAt_congr {U V : Set X} {a : X} (hUV : U =ᶠ[𝓝 a] V) :
+    IsPreconnectedApproachAt U a ↔ IsPreconnectedApproachAt V a :=
+  ⟨fun h => h.congr hUV, fun h => h.congr hUV.symm⟩
+
+/-- Cutting the set down by a neighbourhood of `a` leaves `IsPreconnectedApproachAt` unchanged,
+parallel to `TauCeti.clusterSetOn_inter_of_mem_nhds`. -/
+@[simp]
+theorem isPreconnectedApproachAt_inter_of_mem_nhds {U V : Set X} {a : X} (hV : V ∈ 𝓝 a) :
+    IsPreconnectedApproachAt (U ∩ V) a ↔ IsPreconnectedApproachAt U a :=
+  isPreconnectedApproachAt_congr <|
+    eventuallyEqSet_iff.mpr <| by
+      filter_upwards [hV] with x hxV
+      exact ⟨fun h => h.1, fun hxU => ⟨hxU, hxV⟩⟩
+
 end ApproachRegions
 
 /-! ## The cluster set as a continuum -/
@@ -617,7 +661,7 @@ theorem isPreconnected_clusterSetOn (hK : IsCompact K) (hfK : MapsTo f U K)
   have hbasis : (𝓝 w).HasBasis (fun t => t ∈ 𝓝 w ∧ IsPreconnected (t ∩ U)) (fun t => t) :=
     ⟨fun s => ⟨hp s, fun ⟨t, ht, hts⟩ => mem_of_superset ht.1 hts⟩⟩
   have hEq : clusterSetOn f U w =
-      ⋂ t : {t : Set X // t ∈ 𝓝 w ∧ IsPreconnected (t ∩ U)}, closure (f '' (t.1 ∩ U)) := by
+      ⋂ t : {t : Set X // t ∈ 𝓝 w ∧ IsPreconnected (t ∩ U)}, closure (f '' (t.val ∩ U)) := by
     rw [clusterSetOn_eq_iInter, (nhdsWithin_hasBasis hbasis U).biInter_mem
       (fun _ _ hst => closure_mono (image_mono hst)), iInter_subtype]
   have : Nonempty {t : Set X // t ∈ 𝓝 w ∧ IsPreconnected (t ∩ U)} := by
@@ -625,13 +669,13 @@ theorem isPreconnected_clusterSetOn (hK : IsCompact K) (hfK : MapsTo f U K)
     exact ⟨⟨t, ht⟩⟩
   rw [hEq]
   refine isPreconnected_iInter_of_directed (fun t₁ t₂ => ?_) (fun t => ?_) (fun t => ?_)
-  · obtain ⟨t₃, ht₃, hsub⟩ := hp (t₁.1 ∩ t₂.1) (inter_mem t₁.2.1 t₂.2.1)
+  · obtain ⟨t₃, ht₃, hsub⟩ := hp (t₁.val ∩ t₂.val) (inter_mem t₁.property.1 t₂.property.1)
     exact ⟨⟨t₃, ht₃⟩,
       closure_mono (image_mono (inter_subset_inter_left U (hsub.trans inter_subset_left))),
       closure_mono (image_mono (inter_subset_inter_left U (hsub.trans inter_subset_right)))⟩
   · exact hK.of_isClosed_subset isClosed_closure
       (closure_minimal ((image_mono inter_subset_right).trans hfK.image_subset) hK.isClosed)
-  · exact (t.2.2.image f (hfc.mono inter_subset_right)).closure
+  · exact (t.property.2.image f (hfc.mono inter_subset_right)).closure
 
 /-- **The cluster set is a continuum**: nonempty, compact and connected. This is the classical
 statement of Collingwood–Lohwater, under the hypotheses of

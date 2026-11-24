@@ -57,13 +57,13 @@ theorem exists_snoc_of_isExtensionPair (h : SameAtomicType (L := L) a b)
     ∃ y : N, SameAtomicType (L := L) (snoc a x) (snoc b y) := by
   obtain ⟨f, a', ha, hb, -⟩ := h.exists_fgEquiv
   obtain ⟨g, hx, hfg⟩ := hMN f x
-  let c : Fin (n + 1) → g.1.dom :=
+  let c : Fin (n + 1) → g.val.dom :=
     snoc (Substructure.inclusion (PartialEquiv.dom_le_dom hfg) ∘ a') ⟨x, hx⟩
   have hgb (i : Fin n) :
-      g.1.toEmbedding (Substructure.inclusion (PartialEquiv.dom_le_dom hfg) (a' i)) = b i :=
+      g.val.toEmbedding (Substructure.inclusion (PartialEquiv.dom_le_dom hfg) (a' i)) = b i :=
     (congrArg Subtype.val (PartialEquiv.toEquiv_inclusion_apply hfg (a' i))).trans (hb i)
-  refine ⟨g.1.toEmbedding ⟨x, hx⟩, ?_⟩
-  convert g.1.sameAtomicType c using 1 <;> funext i <;> refine lastCases ?_ (fun j => ?_) i
+  refine ⟨g.val.toEmbedding ⟨x, hx⟩, ?_⟩
+  convert g.val.sameAtomicType c using 1 <;> funext i <;> refine lastCases ?_ (fun j => ?_) i
   · simp [c]
   · simpa [c] using (ha j).symm
   · simp [c]
@@ -80,11 +80,11 @@ theorem isExtensionPair_iff_forall_exists_snoc :
         SameAtomicType (L := L) (snoc a x) (snoc b y) := by
   refine ⟨fun hMN _ _ _ h x => h.exists_snoc_of_isExtensionPair hMN x, fun h f x => ?_⟩
   -- Enumerate the finite domain of `f` and extend the enumeration by `x`.
-  obtain ⟨n, s, hs⟩ := Substructure.fg_iff_exists_fin_generating_family.mp f.2
-  have hd : (f.1.dom : Set M) = Set.range s := by
+  obtain ⟨n, s, hs⟩ := Substructure.fg_iff_exists_fin_generating_family.mp f.property
+  have hd : (f.val.dom : Set M) = Set.range s := by
     rw [← hs, Substructure.closure_eq_of_isRelational]
-  let a' : Fin n → f.1.dom := fun i => ⟨s i, by rw [← SetLike.mem_coe, hd]; exact ⟨i, rfl⟩⟩
-  obtain ⟨y, hy⟩ := h (f.1.sameAtomicType a') x
+  let a' : Fin n → f.val.dom := fun i => ⟨s i, by rw [← SetLike.mem_coe, hd]; exact ⟨i, rfl⟩⟩
+  obtain ⟨y, hy⟩ := h (f.val.sameAtomicType a') x
   obtain ⟨g, c, hc, he, -⟩ := hy.exists_fgEquiv
   refine ⟨g, (by simpa only [snoc_last] using hc (last n)) ▸ (c (last n)).property, ?_⟩
   exact PartialEquiv.le_of_dom_eq_range a' (fun _ => rfl) (fun _ => rfl) hd

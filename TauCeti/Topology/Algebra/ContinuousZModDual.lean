@@ -129,6 +129,14 @@ theorem _root_.ContinuousMonoidHom.continuousZModDualMap_comp (g : H →ₜ* K) 
       f.continuousZModDualMap.comp g.continuousZModDualMap :=
   LinearMap.ext fun _ ↦ Additive.toMul.injective (ContinuousMonoidHom.ext fun _ ↦ rfl)
 
+/-- **The transpose of a surjective continuous homomorphism is injective**: a character of `H` is
+determined by its values on the image of `f`. -/
+theorem _root_.ContinuousMonoidHom.continuousZModDualMap_injective_of_surjective {f : G →ₜ* H}
+    (hf : Function.Surjective f) : Function.Injective (f.continuousZModDualMap (n := n)) :=
+  fun _ _ h ↦ Additive.toMul.injective <| ContinuousMonoidHom.ext fun x ↦ by
+    obtain ⟨g, rfl⟩ := hf x
+    exact DFunLike.congr_fun (congrArg Additive.toMul h) g
+
 /-- **The transpose of a topological group isomorphism is bijective**: its inverse is the
 transpose of the inverse isomorphism. -/
 theorem _root_.ContinuousMulEquiv.continuousZModDualMap_bijective (e : G ≃ₜ* H) :

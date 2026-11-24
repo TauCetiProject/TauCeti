@@ -170,7 +170,7 @@ theorem exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id
     simp [h₁, h₂, Submonoid.smul_def, smul'_mk]
   obtain ⟨u, hu⟩ := Module.Finite.exists_smul_of_comp_eq_of_isLocalizedModule S
     (mkLinearMap S N) _ _ key
-  refine ⟨u * s, mul_mem u.2 s.2, (u : R) • φ, ?_⟩
+  refine ⟨u * s, mul_mem u.property s.property, (u : R) • φ, ?_⟩
   ext n
   simpa [Submonoid.smul_def, mul_smul] using congr($hu n)
 

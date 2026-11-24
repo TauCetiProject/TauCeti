@@ -68,7 +68,7 @@ The domain records the local-unit condition at every prime of `S`. -/
 noncomputable def principalIdealAway (S : Finset (HeightOneSpectrum R)) :
     (S : Set (HeightOneSpectrum R))ᶜ.unit K →* idealsAway K S :=
   ((toPrincipalIdeal R K).comp ((S : Set (HeightOneSpectrum R))ᶜ.unit K).subtype).codRestrict _
-    fun x ↦ toPrincipalIdeal_mem_idealsAway_iff.mpr x.2
+    fun x ↦ toPrincipalIdeal_mem_idealsAway_iff.mpr x.property
 
 /-- The restricted principal-ideal map does not change the underlying principal ideal. -/
 @[simp]
@@ -98,7 +98,7 @@ theorem range_principalIdealAway (S : Finset (HeightOneSpectrum R)) :
   · rintro ⟨x, rfl⟩
     exact ⟨x, coe_principalIdealAway S x⟩
   · rintro ⟨x, hx⟩
-    refine ⟨⟨x, toPrincipalIdeal_mem_idealsAway_iff.mp (hx ▸ I.2)⟩, ?_⟩
+    refine ⟨⟨x, toPrincipalIdeal_mem_idealsAway_iff.mp (hx ▸ I.property)⟩, ?_⟩
     exact Subtype.ext ((coe_principalIdealAway S _).trans hx)
 
 end TauCeti.NumberFieldArithmetic
@@ -120,7 +120,7 @@ theorem isPrimeTo_span_singleton_iff {S : Set (HeightOneSpectrum R)} {a : R} :
       (not_lt.mp ((valuation_lt_one_iff_dvd v a).not.mpr (h.not_dvd (not_not.mp hv))))
   · rw [Ne, span_singleton_eq_bot]
     rintro rfl
-    exact x.1.ne_zero (by rw [hx, map_zero])
+    exact x.val.ne_zero (by rw [hx, map_zero])
   · exact ((valuation_lt_one_iff_dvd (K := K) v a).mpr hdvd).ne
       ((congrArg (v.valuation K) hx).symm.trans (Sᶜ.unit_valuation_eq_one K x (not_not.mpr hv)))
 

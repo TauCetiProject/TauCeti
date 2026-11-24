@@ -192,7 +192,7 @@ private theorem exists_continuousMulEquiv_apply_of_mul_padicPow_sq_eq_ite (hn1 :
       dsimp only [ω]
       rw [e, map_pow]
   refine ⟨basisModificationEquiv le_rfl ω, fun j ↦ ?_, fun x ↦
-    ⟨basisModificationEquiv_symm_mem_pLowerCentralSeries le_rfl ω x.2,
+    ⟨basisModificationEquiv_symm_mem_pLowerCentralSeries le_rfl ω x.property,
       gradedMk_basisModificationEquiv_symm le_rfl ω x⟩⟩
   rw [basisModificationEquiv_apply, basisModification_of, map_mul, hχω, hs]
 

@@ -59,6 +59,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   from `[0, 1]` does not change its image, in a linear ordered field.
 * `TauCeti.lineMap_div_mem_segment` and `TauCeti.lineMap_div_mem_uIcc` — for `0 ≤ x ≤ y`, the
   affine point `AffineMap.lineMap a b (x / y)` lies in `segment 𝕜 a b` and `uIcc a b`.
+* `TauCeti.segment_zero_left_eq_image`: `[0 -[𝕜] y]` is the image of `[0, 1]` under
+  `t ↦ t • y`.
 * `TauCeti.mem_segment_zero_left_iff_sameRay_and_norm_le` —
   `m ∈ [0 -[ℝ] w] ↔ SameRay ℝ m w ∧ ‖m‖ ≤ ‖w‖`. Both conjuncts are needed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
@@ -177,6 +179,12 @@ theorem lineMap_div_mem_uIcc {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsS
     {a b x y : 𝕜} (hx : 0 ≤ x) (hxy : x ≤ y) :
     AffineMap.lineMap a b (x / y) ∈ uIcc a b := by
   simpa only [segment_eq_uIcc] using lineMap_div_mem_segment (𝕜 := 𝕜) (a := a) (b := b) hx hxy
+
+/-- The segment from the origin to `y` is the image of `[0, 1]` under `t ↦ t • y`. -/
+theorem segment_zero_left_eq_image (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder 𝕜]
+    [AddRightMono 𝕜] [AddCommGroup E] [Module 𝕜 E] (y : E) :
+    [0 -[𝕜] y] = (fun t : 𝕜 ↦ t • y) '' Icc 0 1 := by
+  simp [segment_eq_image']
 
 /-! ### Segments and rays -/
 

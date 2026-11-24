@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Support
+public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Derivation
 public import TauCeti.RingTheory.Derivation.Coordinates
 import TauCeti.Algebra.BigOperators.Pi
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Localized
 
 /-!
 # Differential operators on a finite-dimensional space in coordinates
@@ -31,6 +34,11 @@ vanish, if and only if it is a finite coordinate expression
 
 with smooth coefficients `c_α`; the coefficients are unique. No continuity of `D` is assumed.
 
+In these coordinates the principal symbol of `D` (`TauCeti.smoothPrincipalSymbol`, defined by
+iterated commutators) is the polynomial `ξ ↦ ∑_{|α| = m} c_α(x) ξ^α` in its top-order
+coefficients, and the monomial `∂^α` is an iterated Fréchet derivative. These identify the
+algebraic operators with the classical differential operators of analysis.
+
 ## Main results
 
 * `Module.Basis.eq_coordinateOperator_coordinateCoeff`: a differential operator of order at most
@@ -40,8 +48,18 @@ with smooth coefficients `c_α`; the coefficients are unique. No continuity of `
 * `Module.Basis.coordinateOperator_eq_zero_iff`: the coefficients of a coordinate expression of
   order `m` are unique.
 * `TauCeti.tsupport_coordinateOperator_apply_subset`: coordinate expressions do not enlarge
-  supports. For general differential operators on a boundaryless manifold this is
+  supports. For general differential operators on a manifold this is
   `TauCeti.tsupport_differentialOperators_apply_subset`.
+* `TauCeti.multiIndexDeriv_apply_eq_iteratedFDeriv`: `∂^α f (x)` is the Fréchet derivative
+  `D^{|α|} f (x)` evaluated on a word of directions in which each `vᵢ` occurs `αᵢ` times; for
+  coordinates indexed by `Fin n`, `TauCeti.multiIndexDeriv_apply_eq_iteratedFDeriv_multiIndexWord`
+  uses the word `TauCeti.multiIndexWord α` listing each index `i` exactly `αᵢ` times.
+* `TauCeti.smoothPrincipalSymbol_coordinateOperator`: the principal symbol of the coordinate
+  expression `∑_{|α| ≤ m} c_α ∂^α` of order `m` at `x` is `ξ ↦ ∑_{|α| = m} c_α(x) ξ^α`, where
+  `ξ^α = ∏ᵢ ξ(vᵢ) ^ αᵢ`; only the top-order coefficients enter.
+* `Module.Basis.smoothPrincipalSymbol_eq_sum_coordinateCoeff`: hence the principal symbol of a
+  differential operator of order at most `m` on `C^∞(E)` is the polynomial
+  `ξ ↦ ∑_{|α| = m} c_α(x) ξ^α` in its top-order coordinate coefficients.
 
 ## References
 
@@ -148,3 +166,150 @@ theorem tsupport_coordinateOperator_apply_subset [DecidableEq ι] (m : ℕ)
   exact (tsupport_mulLeft_apply_subset _ _).trans (tsupport_multiIndexDeriv_apply_subset v α g)
 
 end TauCeti
+
+/-! ### Principal symbols of coordinate expressions -/
+
+namespace TauCeti
+
+open Function
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {ι : Type*} [Fintype ι] (v : ι → E)
+
+/-- The principal symbol of the monomial `∂^α = ∏ᵢ ∂_{vᵢ} ^ αᵢ` in directional derivatives, as an
+operator of order at most `|α|`, is `ξ ↦ ∏ᵢ ξ(vᵢ) ^ αᵢ`. -/
+theorem smoothPrincipalSymbol_multiIndexDeriv (α : ι → ℕ) (x : E)
+    (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint
+      ⟨multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
+          (fun i j ↦ commute_lineDerivation (v i) (v j)) α,
+        multiIndexDeriv_mem_differentialOperators _ _ α⟩ ξ = ∏ i, ξ (v i) ^ α i := by
+  classical
+  induction α using multiIndex_induction_add_single with
+  | zero =>
+    refine (smoothPrincipalSymbol_congr _ (by simp) (D' := ⟨1, SetLike.one_mem_graded _⟩)
+      (by simp) ξ).trans ?_
+    rw [smoothPrincipalSymbol_eq_apply_one]
+    simp
+  | add_single α i ih =>
+    -- `∂^(α + eᵢ) = ∂^α ∘ ∂ᵢ`, and principal symbols multiply under composition.
+    refine (smoothPrincipalSymbol_congr _ (by simp [Finset.sum_add_distrib])
+      (D' := ⟨_, comp_mem_differentialOperators
+        (multiIndexDeriv_mem_differentialOperators (fun i ↦ lineDerivation ℝ (v i))
+          (fun i j ↦ commute_lineDerivation (v i) (v j)) α)
+        (lineDerivation ℝ (v i)).mem_differentialOperators_one⟩)
+      (by simp only [multiIndexDeriv_add_single, Module.End.mul_eq_comp]) ξ).trans ?_
+    rw [smoothPrincipalSymbol_comp _ ⟨_, multiIndexDeriv_mem_differentialOperators _ _ α⟩
+      ⟨_, (lineDerivation ℝ (v i)).mem_differentialOperators_one⟩, ih,
+      smoothPrincipalSymbol_lineDerivation]
+    simp only [Pi.add_apply, pow_add, Finset.prod_mul_distrib, Pi.single_apply, pow_ite, pow_one,
+      pow_zero, Finset.prod_ite_eq', Finset.mem_univ, ite_true]
+
+variable [DecidableEq ι]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Monomials in directional derivatives are iterated derivatives.** For a word `r` of length
+`k` in the indices, the monomial `∂^α` in the directional derivatives along the vectors `vᵢ`, where
+`αᵢ` counts the occurrences of `i` in `r`, sends `f` to the `k`-th Fréchet derivative of `f`
+evaluated on the directions `v_{r₁}, …, v_{r_k}`. -/
+theorem multiIndexDeriv_apply_eq_iteratedFDeriv {k : ℕ} (r : Fin k → ι)
+    (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (x : E) :
+    multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
+        (fun i j ↦ commute_lineDerivation (v i) (v j)) (fun i ↦ #{j | r j = i}) f x =
+      iteratedFDeriv ℝ k f x (v ∘ r) := by
+  induction k generalizing f with
+  | zero =>
+    have h0 : (fun i ↦ #{j | r j = i}) = 0 := funext fun i ↦ by simp
+    rw [h0]
+    simp
+  | succ k ih =>
+    -- Peel off the last letter `r (last k)`, whose derivative is the innermost one.
+    have hcount : (fun i ↦ #{j | r j = i}) =
+        (fun i ↦ #{j | r (Fin.castSucc j) = i}) + Pi.single (r (Fin.last k)) 1 := by
+      funext i
+      simp only [Finset.card_filter, Fin.sum_univ_castSucc, Pi.add_apply, Pi.single_apply,
+        eq_comm]
+    have hderiv : ⇑(lineDerivation ℝ (v (r (Fin.last k))) f) =
+        ContinuousLinearMap.apply ℝ ℝ (v (r (Fin.last k))) ∘ fderiv ℝ f :=
+      funext fun y ↦ lineDerivation_apply_apply _ f y
+    have hf : ContDiff ℝ ∞ (fderiv ℝ f) := f.contMDiff.contDiff.fderiv_right (m := ∞) (by simp)
+    rw [hcount, multiIndexDeriv_add_single, mul_apply_eq_comp, Derivation.coeFn_coe,
+      ih (fun j ↦ r (Fin.castSucc j)), iteratedFDeriv_succ_apply_right, hderiv,
+      ContinuousLinearMap.iteratedFDeriv_comp_left _ hf.contDiffAt (by exact_mod_cast le_top)]
+    simp only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_def,
+      ContinuousLinearMap.apply_apply, Fin.init_def]
+
+/-- **The principal symbol of a coordinate expression.** The principal symbol at `x` of the
+coordinate expression `∑_{|α| ≤ m} c_α ∂^α` of order `m` in the directional derivatives along the
+vectors `vᵢ` is `ξ ↦ ∑_{|α| = m} c_α(x) ∏ᵢ ξ(vᵢ) ^ αᵢ`: only the top-order coefficients enter. -/
+theorem smoothPrincipalSymbol_coordinateOperator (m : ℕ) (c : (ι → ℕ) → C^∞⟮𝓘(ℝ, E), E; ℝ⟯)
+    (x : E) (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    smoothPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint
+      ⟨coordinateOperator (fun i ↦ lineDerivation ℝ (v i))
+          (fun i j ↦ commute_lineDerivation (v i) (v j)) m c,
+        coordinateOperator_mem_differentialOperators _ _ m c⟩ ξ =
+      ∑ α ∈ Finset.piAntidiag Finset.univ m, c α x * ∏ i, ξ (v i) ^ α i := by
+  -- Each summand `c_α ∂^α` has order at most `|α|`.
+  have hmem (α : ι → ℕ) := comp_mem_differentialOperators
+    (LinearMap.mulLeft_mem_differentialOperators_zero (c α))
+    (multiIndexDeriv_mem_differentialOperators (fun i ↦ lineDerivation ℝ (v i))
+      (fun i j ↦ commute_lineDerivation (v i) (v j)) α)
+  obtain ⟨f, -, rfl⟩ := exists_contMDiffMap_mvfderiv_eq (I := 𝓘(ℝ, E)) x (0 : ℝ) ξ
+  rw [smoothPrincipalSymbol_mvfderiv]
+  dsimp only
+  rw [coordinateOperator_eq_sum_mulLeft]
+  simp only [map_sum, LinearMap.sum_apply, ContMDiffMap.coe_sum, Finset.sum_apply, Finset.mul_sum]
+  rw [Finset.sum_range_succ, Finset.sum_eq_zero, zero_add]
+  · -- The summands of order exactly `m`.
+    refine Finset.sum_congr rfl fun α hα ↦ ?_
+    have hαm : 0 + ∑ i, α i = m := by simpa using (Finset.mem_piAntidiag.1 hα).1
+    rw [← smoothPrincipalSymbol_mvfderiv BoundarylessManifold.isInteriorPoint ⟨_, hαm ▸ hmem α⟩,
+      smoothPrincipalSymbol_congr _ hαm.symm (D' := ⟨_, hmem α⟩) rfl,
+      smoothPrincipalSymbol_comp _ ⟨_, LinearMap.mulLeft_mem_differentialOperators_zero (c α)⟩
+        ⟨_, multiIndexDeriv_mem_differentialOperators _ _ α⟩,
+      smoothPrincipalSymbol_multiIndexDeriv, smoothPrincipalSymbol_eq_apply_one]
+    simp
+  · -- The summands of order less than `m` have vanishing `m`-fold commutators.
+    intro k hk
+    refine Finset.sum_eq_zero fun α hα ↦ ?_
+    have hαk : 0 + ∑ i, α i = k := by simpa using (Finset.mem_piAntidiag.1 hα).1
+    rw [smulCommutator_pow_eq_zero (hαk ▸ hmem α) (Finset.mem_range.1 hk)]
+    simp
+
+variable {n : ℕ}
+
+omit [FiniteDimensional ℝ E] in
+/-- **Monomials in directional derivatives are iterated derivatives.** For directions
+`v : Fin n → E`, the monomial `∂^α` sends `f` to the `|α|`-th Fréchet derivative of `f`
+evaluated on the word `TauCeti.multiIndexWord α` of directions, in which each `vᵢ` occurs `αᵢ`
+times. -/
+theorem multiIndexDeriv_apply_eq_iteratedFDeriv_multiIndexWord (v : Fin n → E) (α : Fin n → ℕ)
+    (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯) (x : E) :
+    multiIndexDeriv (fun i ↦ lineDerivation ℝ (v i))
+        (fun i j ↦ commute_lineDerivation (v i) (v j)) α f x =
+      iteratedFDeriv ℝ (∑ i, α i) f x (v ∘ multiIndexWord α) := by
+  simpa using multiIndexDeriv_apply_eq_iteratedFDeriv v (multiIndexWord α) f x
+
+end TauCeti
+
+namespace Module.Basis
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ E)
+
+/-- **The principal symbol in coordinates.** The principal symbol at `x` of a differential
+operator `D` of order at most `m` on `C^∞(E)` is the polynomial `ξ ↦ ∑_{|α| = m} c_α(x) ξ^α`,
+`ξ^α = ∏ᵢ ξ(bᵢ) ^ αᵢ`, in the top-order coefficients `c = TauCeti.coordinateCoeff b.smoothCoord D`
+of its coordinate expression along the basis `b`. -/
+theorem smoothPrincipalSymbol_eq_sum_coordinateCoeff {m : ℕ}
+    (D : TauCeti.differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+      C^∞⟮𝓘(ℝ, E), E; ℝ⟯ m) (x : E) (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ) :
+    TauCeti.smoothPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint D ξ =
+      ∑ α ∈ Finset.piAntidiag Finset.univ m,
+        TauCeti.coordinateCoeff b.smoothCoord
+          (D : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯) α x * ∏ i, ξ (b i) ^ α i := by
+  rw [← TauCeti.smoothPrincipalSymbol_coordinateOperator]
+  exact TauCeti.smoothPrincipalSymbol_congr _ rfl
+    (b.eq_coordinateOperator_coordinateCoeff D.property) ξ
+
+end Module.Basis

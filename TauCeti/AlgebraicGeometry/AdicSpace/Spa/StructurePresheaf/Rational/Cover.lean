@@ -112,7 +112,7 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (hC : Lauren
     have hspa : spa Aplus = ∅ := by
       simpa using spa_eq_biUnion_rationalSubset_of_span_eq_top Aplus hS
     obtain ⟨i⟩ := ‹Nonempty ι›
-    have hle : ⊤ ≤ U i := fun v _ ↦ absurd v.2 (by simp [hspa])
+    have hle : ⊤ ≤ U i := fun v _ ↦ absurd v.property (by simp [hspa])
     rw [Presieve.isSheafFor_iff_generate, (Sieve.id_mem_iff_eq_top (S := Sieve.generate _)).mp
       ⟨_, homOfLE hle, _, Presieve.ofArrows.mk i, rfl⟩]
     exact Presieve.isSheafFor_top _
@@ -128,7 +128,7 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (hC : Lauren
     (isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_laurentGluing P hC hA
       hP hAplus hSne hS (top_mem_spaRationalOpens Aplus)) (fun V g hg ↦ ?_) fun i Z g hg ↦ ?_
   · obtain ⟨f⟩ := hg
-    obtain ⟨i, hi⟩ := hSU f f.2
+    obtain ⟨i, hi⟩ := hSU f f.property
     exact ⟨U i, homOfLE fun v hv ↦ hi (mem_spaBasicOpen.mp hv.2), homOfLE le_top,
       Presieve.ofArrows.mk i, rfl⟩
   · obtain ⟨f⟩ := hg
@@ -181,7 +181,8 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing
     refine isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top (completionLocalization P T s _ hden)
       hC hB
       (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden)
-      (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden)
+      (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.property) hAplus T s _
+          hden)
       (locOpensComap_spaBasicOpen_self P Aplus T s _ hden)
       (fun i ↦ locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)) ?_
     rw [← hcov]
@@ -207,27 +208,27 @@ theorem isSheaf_rational_comp_of_isSheafFor_ofArrows
   intro W S hS
   obtain ⟨ι, U, π, rfl⟩ := S.exists_eq_ofArrows
   rw [Functor.mem_restrictedTopology_iff, Sieve.functorPushforward_ofArrows] at hS
-  have hcov : ⨆ i, (U i).1 = W.1 := by
+  have hcov : ⨆ i, (U i).val = W.val := by
     apply le_antisymm (iSup_le fun i ↦ (π i).hom.le)
     intro x hx
     obtain ⟨V, f, hf, hxV⟩ := hS x hx
     obtain ⟨V', g, f', hf', rfl⟩ := hf
     obtain ⟨i⟩ := hf'
     exact Opens.mem_iSup.mpr ⟨i, g.le hxV⟩
-  have hrat := hrat W.2 (fun i ↦ (U i).2) hcov
+  have hrat := hrat W.property (fun i ↦ (U i).property) hcov
   have hπ (i : ι) : (rationalOpensFunctor Aplus).map (π i) =
-      homOfLE ((le_iSup (fun i ↦ (U i).1) i).trans_eq hcov) := Subsingleton.elim _ _
+      homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov) := Subsingleton.elim _ _
   rw [← Presieve.isSheafFor_iff_generate, Presieve.isSheafFor_arrows_iff]
   rw [Presieve.isSheafFor_arrows_iff] at hrat
   intro x hx
   -- Intersections of rational opens are rational, so compatibility on the basis supplies the
   -- pairwise-intersection compatibility required in the ambient category of opens.
   have hcompat : Presieve.Arrows.Compatible (presentationLimitPresheaf P Aplus ⋙ G)
-      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).1) i).trans_eq hcov)) x := by
+      (fun i ↦ homOfLE ((le_iSup (fun i ↦ (U i).val) i).trans_eq hcov)) x := by
     apply (Presieve.Arrows.compatible_homOfLE_iff _ _).mpr
     intro i j
     let V : spaRationalOpens Aplus :=
-      ⟨(U i).1 ⊓ (U j).1, inf_mem_spaRationalOpens (U i).2 (U j).2⟩
+      ⟨(U i).val ⊓ (U j).val, inf_mem_spaRationalOpens (U i).property (U j).property⟩
     exact hx i j V (InducedCategory.homMk (homOfLE inf_le_left))
       (InducedCategory.homMk (homOfLE inf_le_right)) (Subsingleton.elim _ _)
   obtain ⟨a, ha, hu⟩ := hrat x hcompat

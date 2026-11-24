@@ -246,10 +246,10 @@ noncomputable def surfaceInv : normOneSurface K ≃ₜ normOneSurface K where
   left_inv _ := Subtype.ext (inv_inv _)
   right_inv _ := Subtype.ext (inv_inv _)
   continuous_toFun := (continuous_pi fun w ↦
-    ((continuous_apply w).comp continuous_subtype_val).inv₀
+    ((continuous_apply w).comp continuous_subtypeVal).inv₀
       fun x ↦ ((mem_normOneSurface.mp x.property).1 w).ne').subtype_mk _
   continuous_invFun := (continuous_pi fun w ↦
-    ((continuous_apply w).comp continuous_subtype_val).inv₀
+    ((continuous_apply w).comp continuous_subtypeVal).inv₀
       fun x ↦ ((mem_normOneSurface.mp x.property).1 w).ne').subtype_mk _
 
 @[simp]
@@ -275,8 +275,8 @@ noncomputable def surfaceMul (c : normOneSurface K) :
   right_inv x := Subtype.ext (by
     ext w
     simp [((mem_normOneSurface.mp c.property).1 w).ne'])
-  continuous_toFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
+  continuous_toFun := (continuous_const.mul continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_const.mul continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem surfaceMul_apply (c x : normOneSurface K) :

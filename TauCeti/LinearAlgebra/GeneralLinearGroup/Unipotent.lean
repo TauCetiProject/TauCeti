@@ -84,8 +84,10 @@ theorem isUnipotent_of_charpoly_eq
     {F : Type u} {W : Type v} [CommRing F] [AddCommGroup W] [Module F W]
     [Module.Free F W] [Module.Finite F W] (g : GeneralLinearGroup F W) {n : ℕ}
     (h : (g : End F W).charpoly = (Polynomial.X - 1) ^ n) :
-    IsUnipotent g :=
-  ⟨n, LinearMap.pow_sub_one_eq_zero_of_charpoly_eq h⟩
+    IsUnipotent g := by
+  refine ⟨n, ?_⟩
+  simpa using LinearMap.sub_smul_pow_eq_zero_of_charpoly_eq (f := (g : End F W)) (μ := 1)
+    (by simpa using h)
 
 /-- Over a reduced commutative ring, an automorphism of a finite free module is unipotent exactly
 when its characteristic polynomial is a power of `X - 1`. -/

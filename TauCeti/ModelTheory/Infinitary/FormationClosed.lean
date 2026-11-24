@@ -271,7 +271,7 @@ open Cardinal in
 members are distinct because each formula is tagged with its arity. -/
 theorem aleph0_le_mk : ℵ₀ ≤ #A := by
   have h : Function.Injective fun n : ℕ => (⟨⟨n, ⊥⟩, hA.bot_mem n⟩ : A) := fun m n h => by
-    simpa using congrArg (fun p : A => p.1.1) h
+    simpa using congrArg (fun p : A => p.val.1) h
   simpa using lift_mk_le_lift_mk_of_injective h
 
 open Cardinal in

@@ -69,8 +69,8 @@ theorem preimage_image_quotientMk_eq_relPreimage {α : Type*} (r : Setoid α) (s
 second projection of the inverse image of `s` under the first projection of the graph of `r`. -/
 theorem preimage_image_quotientMk {α : Type*} (r : Setoid α) (s : Set α) :
     Quotient.mk r ⁻¹' (Quotient.mk r '' s) =
-      (fun q : {q : α × α // r q.1 q.2} ↦ q.1.2) ''
-        ((fun q : {q : α × α // r q.1 q.2} ↦ q.1.1) ⁻¹' s) := by
+      (fun q : {q : α × α // r q.1 q.2} ↦ q.val.2) ''
+        ((fun q : {q : α × α // r q.1 q.2} ↦ q.val.1) ⁻¹' s) := by
   ext x
   constructor
   · rintro ⟨y, hys, hyx⟩

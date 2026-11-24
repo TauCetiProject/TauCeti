@@ -264,8 +264,8 @@ theorem specialLinearDiagonalCartanBasis_apply (i : Fin r) :
 instance : IsLieAbelian (specialLinearDiagonalCartan r A) where
   trivial X Y := Subtype.ext <| Subtype.ext <| by
     simpa using lie_eq_zero_of_isDiag
-      ((mem_specialLinearDiagonalCartan_iff r A X).mp X.2)
-      ((mem_specialLinearDiagonalCartan_iff r A Y).mp Y.2)
+      ((mem_specialLinearDiagonalCartan_iff r A X).mp X.property)
+      ((mem_specialLinearDiagonalCartan_iff r A Y).mp Y.property)
 
 /-- The diagonal Cartan subalgebra of `sl` is self-normalizing outside rank one, and in rank one
 once multiplication by `2` is injective. Bracketing a normalizing matrix with `E_aa - E_cc` scales

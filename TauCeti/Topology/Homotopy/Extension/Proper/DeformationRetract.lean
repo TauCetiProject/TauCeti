@@ -130,7 +130,7 @@ theorem properStrongDeformationRetract_of_inverse
     ext x
     simp
   have hg : IsProperMap g :=
-    isProperMap_of_comp_of_inj g.continuous continuous_subtype_val
+    isProperMap_of_comp_of_inj g.continuous continuous_subtypeVal
       (hcomp ▸ K.isProperMap_left hK) Subtype.val_injective
   obtain ⟨r, hrp, hr, G, hGp⟩ := hA.exists_proper_retraction_homotopic g hg H hH
   let K₁ : ((subtypeVal A).comp r).Homotopy ((subtypeVal A).comp g) :=
