@@ -633,7 +633,7 @@ theorem mem_closure_image_of_iff [DecidableEq α] {s : Set α} {g : FreeGroup α
       exact (List.mem_append.1 (reduce.red.sublist.subset hl)).elim (hx l) (hy l)
     | inv x _ hx =>
       intro l hl
-      rw [toWord_inv, mem_invRev_iff] at hl
+      rw [toWord_inv, TauCeti.FreeGroup.mem_invRev_iff] at hl
       exact hx (l.1, !l.2) hl
   · simpa only [mk_toWord, lift_of_apply] using lift_mk_mem_closure_image of h
 

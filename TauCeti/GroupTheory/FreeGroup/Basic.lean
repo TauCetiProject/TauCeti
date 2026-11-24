@@ -25,7 +25,7 @@ rank, and a retraction of `FreeGroup ι` onto `FreeGroup β` fixes them.
 ## Main results
 
 * `MonoidHom.apply_freeGroup_mk`: a homomorphism evaluates a signed word letter by letter.
-* `FreeGroup.mem_invRev_iff`, `TauCeti.FreeGroup.head?_invRev`,
+* `TauCeti.FreeGroup.mem_invRev_iff`, `TauCeti.FreeGroup.head?_invRev`,
   `TauCeti.FreeGroup.getLast?_invRev`: membership in, and the first and last letters of, the formal
   inverse of a signed word.
 * `FreeGroup.lift_mk_singleton`: the value of a lift on a one-letter word.
@@ -64,7 +64,7 @@ namespace FreeGroup
 /-- A signed letter belongs to the formal inverse of `u` if and only if the letter with opposite
 sign belongs to `u`. -/
 @[simp]
-theorem mem_invRev_iff {α : Type*} {c : α × Bool} {u : List (α × Bool)} :
+theorem _root_.TauCeti.FreeGroup.mem_invRev_iff {α : Type*} {c : α × Bool} {u : List (α × Bool)} :
     c ∈ invRev u ↔ (c.1, !c.2) ∈ u := by
   obtain ⟨a, e⟩ := c
   simp [invRev]
