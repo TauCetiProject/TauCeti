@@ -30,8 +30,8 @@ For a basis `b` of `M`, the coordinates of a tensor in the product basis `b ⊗ 
 by words `w : Fin n → κ`, and a tensor is symmetric exactly when its coordinates are invariant under
 reindexing the words (`TensorPower.mem_symmetricTensors_iff_repr`). This rests on
 `Basis.piTensorProduct_repr_reindex`: reindexing the factors of a tensor reindexes its coordinates.
-In particular the pure tensor `b (w 0) ⊗ ⋯ ⊗ b (w (n - 1))` is symmetric only when the word `w` is
-constant, so over a nontrivial ring `e₀ ⊗ e₁` is not symmetric.
+In particular, over a nontrivial ring, the pure tensor `b (w 0) ⊗ ⋯ ⊗ b (w (n - 1))` is symmetric
+only when the word `w` is constant, so `e₀ ⊗ e₁` is not symmetric.
 
 In degrees zero and one there is no nontrivial permutation, so every tensor is symmetric, and the
 symmetric tensors are identified with the scalars and with `M` respectively.
@@ -48,8 +48,8 @@ zero map induces zero.
 * `TensorPower.tprod_const_mem_symmetricTensors`: the tensor `m ⊗ ⋯ ⊗ m` is symmetric.
 * `TensorPower.mem_symmetricTensors_iff_repr`: symmetric tensors are those whose coordinates in a
   product basis are invariant under permutations of the words.
-* `TensorPower.tprod_basis_mem_symmetricTensors_iff`: a pure tensor of basis vectors is symmetric
-  exactly when all its letters agree.
+* `TensorPower.tprod_basis_mem_symmetricTensors_iff`: over a nontrivial ring, a pure tensor of
+  basis vectors is symmetric exactly when all its letters agree.
 * `TensorPower.symmetricTensors_eq_top_of_le_one`, `TensorPower.symmetricTensorsZeroEquiv`,
   `TensorPower.symmetricTensorsOneEquiv`: the symmetric tensors of degree zero and one.
 * `TensorPower.mapSymmetricTensors f n`: the map induced by a linear map `f`, with
@@ -101,7 +101,8 @@ theorem mem_symmetricTensors_iff_repr {κ : Type*} (b : Basis κ R M) {t : ⨂[R
   · ext w
     rw [Basis.piTensorProduct_repr_reindex, h]
 
-/-- A pure tensor of basis vectors is symmetric exactly when all of its letters agree. -/
+/-- Over a nontrivial ring, a pure tensor of basis vectors is symmetric exactly when all of its
+letters agree. -/
 theorem tprod_basis_mem_symmetricTensors_iff [Nontrivial R] {κ : Type*} (b : Basis κ R M)
     (w : Fin n → κ) :
     (tprod R fun i ↦ b (w i)) ∈ symmetricTensors R M n ↔ ∀ i j, w i = w j := by
