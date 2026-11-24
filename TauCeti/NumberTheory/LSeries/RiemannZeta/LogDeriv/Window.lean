@@ -86,7 +86,7 @@ theorem exists_finsum_analyticOrderAt_riemannZeta_le (σ₀ r : ℝ) :
   have hR : 0 < R := by positivity
   obtain ⟨D, hD⟩ := exists_norm_LFunctionTrivChar₁_one_le_rpow_mul one_lt_two (R + 1)
   refine ⟨D / Real.log ((R + 1) / R), fun s₀ hs₀ ↦ ?_⟩
-  set c : ℂ := 2 + s₀.im * I
+  set c : ℂ := 2 + s₀.im * I with hcdef
   have hc : c.re = 2 := by simp [c]
   have hcim : c.im = s₀.im := by simp [c]
   have ht : 0 < |s₀.im| + 2 := by positivity
@@ -97,7 +97,7 @@ theorem exists_finsum_analyticOrderAt_riemannZeta_le (σ₀ r : ℝ) :
     fun w hw ↦ hD c w hc (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le)
   rw [Real.log_rpow (by rwa [hcim]), hcim] at hJ
   have hsub (z : ℂ) (hz : ‖z - s₀‖ ≤ r) : ‖z - c‖ ≤ R := by
-    have hsc : ‖s₀ - c‖ = |σ₀ - 2| := (norm_sub_two_add_im_mul_I s₀).trans (by rw [hs₀])
+    have hsc : ‖s₀ - c‖ = |σ₀ - 2| := by rw [hcdef, norm_sub_two_add_im_mul_I, hs₀]
     calc ‖z - c‖ = ‖(z - s₀) + (s₀ - c)‖ := by rw [sub_add_sub_cancel]
       _ ≤ ‖z - s₀‖ + ‖s₀ - c‖ := norm_add_le _ _
       _ ≤ R := by rw [hsc]; linarith [le_abs_self r]
@@ -167,11 +167,11 @@ theorem riemannZeta_logDeriv_window :
     (by norm_num) (by norm_num)
   obtain ⟨C₂, hC₂⟩ := exists_finsum_analyticOrderAt_riemannZeta_le 2 4
   refine ⟨C₁ + C₂, fun s hs₁ hs₂ hs1 hζ ↦ ?_⟩
-  set s₀ : ℂ := 2 + s.im * I
+  set s₀ : ℂ := 2 + s.im * I with hs₀def
   have hs₀ : s₀.re = 2 := by simp [s₀]
   have hs₀im : s₀.im = s.im := by simp [s₀]
   have hss₀ : ‖s - s₀‖ ≤ 3 := by
-    rw [show ‖s - s₀‖ = |s.re - 2| from norm_sub_two_add_im_mul_I s, abs_le]
+    rw [hs₀def, norm_sub_two_add_im_mul_I, abs_le]
     constructor <;> linarith
   -- the zeros of `ζ` in the disc of radius `4` about `s₀`
   set Z := riemannZetaZerosClosedBall s₀ 4
