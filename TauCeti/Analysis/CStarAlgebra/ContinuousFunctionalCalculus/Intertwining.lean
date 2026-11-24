@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 
 /-!
@@ -28,6 +30,10 @@ more generally it suffices that `a` is a coisometry and `b` an isometry.
 For normal operators it is the content of the Fuglede–Putnam–Rosenblum theorem, which Mathlib
 proves as `SemiconjBy.star_right` for elements of a single C⋆-algebra.
 
+Within a single C⋆-algebra, a unitary `u` that anticommutes with a self-adjoint `a` conjugates
+`a` to `-a`, so it anticommutes with `f(a)` for every odd real function `f`. This is how a grading
+passes through the functional calculus of an odd operator.
+
 ## Main results
 
 * `ContinuousLinearMap.comp_cfc_eq_cfc_comp`: an operator intertwining `a, b` and their adjoints
@@ -35,6 +41,8 @@ proves as `SemiconjBy.star_right` for elements of a single C⋆-algebra.
 * `ContinuousLinearMap.comp_star_eq_star_comp_of_mul_star_self_of_star_mul_self`: an operator
   intertwining a coisometry and an isometry, in particular two unitaries, intertwines their
   adjoints.
+* `Unitary.mul_cfc_eq_neg_cfc_mul`: a unitary anticommuting with a self-adjoint `a` anticommutes
+  with `cfc f a` for every odd `f`.
 
 ## References
 
@@ -120,3 +128,42 @@ theorem comp_star_eq_star_comp_of_mul_star_self_of_star_mul_self (X : E →L[�
     _ = star v ∘L X := by rw [hu, one_def, comp_id]
 
 end ContinuousLinearMap
+
+section Unitary
+
+variable {A : Type*} [CStarAlgebra A]
+
+namespace Unitary
+
+/-- **A unitary anticommuting with `a` anticommutes with odd functions of `a`.** If `u` is a
+unitary that anticommutes with a self-adjoint `a`, then `u` anticommutes with `f(a)` for every odd
+real function `f`. -/
+theorem mul_cfc_eq_neg_cfc_mul {u a : A} (hu : u ∈ unitary A) (ha : IsSelfAdjoint a)
+    (hua : u * a = -(a * u)) {f : ℝ → ℝ} (hf : ∀ x, f (-x) = -f x) :
+    u * cfc f a = -(cfc f a * u) := by
+  set φ := Unitary.conjStarAlgAut ℂ A ⟨u, hu⟩
+  have hφ (x : A) : φ x = u * x * star u := by simp [φ]
+  have hφa : φ a = -a := by
+    rw [hφ, hua, neg_mul, mul_assoc, Unitary.mul_star_self_of_mem hu, mul_one]
+  have hφc : Continuous φ := by
+    rw [show (φ : A → A) = fun x => u * x * star u from funext hφ]
+    fun_prop
+  have h : φ (cfc f a) = -cfc f a := by
+    by_cases hfc : ContinuousOn f (spectrum ℝ a)
+    · have hfc' : ContinuousOn f ((-·) '' spectrum ℝ a) := by
+        refine ((hfc.comp continuous_neg.continuousOn ?_).neg).congr fun y _ => ?_
+        · rintro _ ⟨x, hx, rfl⟩
+          simpa using hx
+        · simp [hf]
+      rw [StarAlgHomClass.map_cfc (S := ℂ) φ f a hfc hφc ha (hφa ▸ ha.neg), hφa,
+        ← cfc_comp_neg f a hfc', ← cfc_neg ..]
+      exact cfc_congr fun x _ => hf x
+    · rw [cfc_apply_of_not_continuousOn a hfc, map_zero, neg_zero]
+  rw [hφ] at h
+  calc u * cfc f a = u * cfc f a * star u * u := by
+        rw [mul_assoc _ (star u), Unitary.star_mul_self_of_mem hu, mul_one]
+    _ = -(cfc f a * u) := by rw [h, neg_mul]
+
+end Unitary
+
+end Unitary

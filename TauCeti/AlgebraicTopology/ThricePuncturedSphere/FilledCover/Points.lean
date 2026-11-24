@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoodComponents
 public import TauCeti.Combinatorics.PermutationTriple.CycleData
 
-import TauCeti.Topology.Covering.Finite
+import TauCeti.Topology.Covering.Finite.Basic
 
 /-!
 # Points of the filled cover
