@@ -34,6 +34,11 @@ a homeomorphism mapping a horizontal line into itself maps it onto itself, incre
 
 * `TauCeti.apply_add_int_mul_of_apply_add`: a map commuting with the deck translation commutes
   with all of its integer powers.
+* `TauCeti.trans_apply_add_of_apply_add`, `Homeomorph.annulusHomeomorphOfLift_trans`,
+  `Homeomorph.annulusHomeomorphOfLift_symm`, `Homeomorph.annulusHomeomorphOfLift_refl`: the
+  induced homeomorphism respects composition, inverses and the identity.
+* `Homeomorph.eq_annulusHomeomorphOfLift`: the induced homeomorphism is the only map of the strip
+  quotient sending the class of `(x, y)` to the class of `F (x, y)`.
 * `TauCeti.trans_stripDeck_apply_add_of_apply_add`,
   `Homeomorph.annulusHomeomorphOfLift_trans_stripDeck`: composing with a deck translation preserves
   commuting with the deck translation and does not change the induced homeomorphism.
@@ -135,6 +140,14 @@ theorem stripDeck_trans_stripDeck (m m' : ℤ) :
     (stripDeck ℓ m Y).trans (stripDeck ℓ m' Y) = stripDeck ℓ (m + m') Y :=
   Homeomorph.ext fun p ↦ by simp [add_mul, add_assoc]
 
+/-- The composition of two maps of the strip commuting with the deck translation commutes with it
+too. -/
+theorem trans_apply_add_of_apply_add {F G : ℝ × Y ≃ₜ ℝ × Y}
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2))
+    (hG : ∀ p : ℝ × Y, G (p.1 + ℓ, p.2) = ((G p).1 + ℓ, (G p).2)) (p : ℝ × Y) :
+    F.trans G (p.1 + ℓ, p.2) = ((F.trans G p).1 + ℓ, (F.trans G p).2) := by
+  simp only [Homeomorph.trans_apply, hF p, hG]
+
 /-- Composing a homeomorphism of the strip commuting with the deck translation with a deck
 translation gives a homeomorphism commuting with it too. -/
 theorem trans_stripDeck_apply_add_of_apply_add {F : ℝ × Y ≃ₜ ℝ × Y}
@@ -225,13 +238,52 @@ theorem annulusHomeomorphOfLift_coe
   (rfl)
 
 /-- The inverse of the induced homeomorphism of the strip quotient is induced by the inverse of
-`F`. -/
-@[simp]
+`F`. Simp normalizes the inverse with `Homeomorph.annulusHomeomorphOfLift_symm` instead. -/
 theorem annulusHomeomorphOfLift_symm_coe
     (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (x : ℝ) (y : Y) :
     (F.annulusHomeomorphOfLift hF).symm ((x : AddCircle ℓ), y) =
       (((F.symm (x, y)).1 : AddCircle ℓ), (F.symm (x, y)).2) :=
   (rfl)
+
+/-- The induced homeomorphism of the strip quotient is the unique map `H` sending the class of
+`(x, y)` to the class of `F (x, y)`. -/
+theorem eq_annulusHomeomorphOfLift
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2))
+    {H : AddCircle ℓ × Y ≃ₜ AddCircle ℓ × Y}
+    (hHF : ∀ (x : ℝ) (y : Y), H ((x : AddCircle ℓ), y) =
+      (((F (x, y)).1 : AddCircle ℓ), (F (x, y)).2)) :
+    H = F.annulusHomeomorphOfLift hF := by
+  ext ⟨θ, y⟩
+  all_goals
+    induction θ using QuotientAddGroup.induction_on with | H x => ?_
+    simp [hHF]
+
+/-- The inverse of the induced homeomorphism of the strip quotient is induced by the inverse of
+`F`. -/
+@[simp]
+theorem annulusHomeomorphOfLift_symm
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) :
+    (F.annulusHomeomorphOfLift hF).symm =
+      F.symm.annulusHomeomorphOfLift (symm_apply_add_of_apply_add hF) :=
+  (rfl)
+
+/-- The identity of the strip induces the identity of the strip quotient. -/
+@[simp]
+theorem annulusHomeomorphOfLift_refl
+    (hF : ∀ p : ℝ × Y, Homeomorph.refl (ℝ × Y) (p.1 + ℓ, p.2) =
+      ((Homeomorph.refl (ℝ × Y) p).1 + ℓ, (Homeomorph.refl (ℝ × Y) p).2)) :
+    (Homeomorph.refl (ℝ × Y)).annulusHomeomorphOfLift hF = Homeomorph.refl _ :=
+  (eq_annulusHomeomorphOfLift hF fun _ _ ↦ rfl).symm
+
+/-- The homeomorphism of the strip quotient induced by `F.trans G` is the composition of those
+induced by `F` and `G`. -/
+@[simp]
+theorem annulusHomeomorphOfLift_trans {G : ℝ × Y ≃ₜ ℝ × Y}
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2))
+    (hG : ∀ p : ℝ × Y, G (p.1 + ℓ, p.2) = ((G p).1 + ℓ, (G p).2)) :
+    (F.trans G).annulusHomeomorphOfLift (trans_apply_add_of_apply_add hF hG) =
+      (F.annulusHomeomorphOfLift hF).trans (G.annulusHomeomorphOfLift hG) :=
+  (eq_annulusHomeomorphOfLift _ fun _ _ ↦ by simp).symm
 
 /-- Composing `F` with a deck translation does not change the induced homeomorphism of the strip
 quotient. -/
