@@ -235,6 +235,14 @@ private lemma pos_of_support_inter_Ioi_subset_Icc {a b : ℝ}
     (not_lt.mp hb).not_gt ((hx : 0 < x).trans_le (hνs ⟨h, hx⟩).2)
   rw [hνx, zero_div]
 
+/-- In logarithmic coordinates the spike keeps the `dx/x`-mass of `ν`. -/
+private lemma integral_deltaSpike_exp_neg (ν : ℝ → ℝ) (hε : 0 < ε) :
+    ∫ v, deltaSpike ν ε (Real.exp (-v)) = ∫ x in Ioi 0, ν x / x := by
+  have h := mellin_eq_integral_exp_smul (fun x ↦ (deltaSpike ν ε x : ℂ)) 0
+  rw [mellin_deltaSpike ν hε, mul_zero, mellin_ofReal_zero] at h
+  simp only [neg_zero, zero_mul, Complex.exp_zero, one_smul, integral_complex_ofReal] at h
+  exact_mod_cast h.symm
+
 /-- If `ν ≥ 0` on `(0, ∞)` vanishes there off `[a, b]` (`0 ≤ a`) and has `dx/x`-mass `1`, `ε > 0`,
 `x > 0`, `f` is a.e. strongly measurable on `(0, ∞)`, and `‖f (x / y) - f x‖ ≤ M` for every `y`
 in the support interval `[a^ε, b^ε]` of the spike, then the Mellin convolution of the spike with
@@ -244,24 +252,21 @@ theorem norm_mellinConv_deltaSpike_sub_le {a b : ℝ} (ha : 0 ≤ a) (hν0 : ∀
     (hf : AEStronglyMeasurable f (volume.restrict (Ioi 0))) {M : ℝ} (hε : 0 < ε) (hx : 0 < x)
     (hbd : ∀ y ∈ Icc (a ^ ε) (b ^ ε), ‖f (x / y) - f x‖ ≤ M) :
     ‖mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x - f x‖ ≤ M := by
-  -- In logarithmic coordinates `x = e^{-u}` the convolution is an ordinary convolution with the
-  -- spike `φ`, a probability density supported where `e^{-v} ∈ [a^ε, b^ε]`.
+  -- In coordinates `x = e^{-u}` this is a convolution with the probability density `φ`.
   set u := -Real.log x
   have hxu : Real.exp (-u) = x := by rw [neg_neg, Real.exp_log hx]
   set φ : ℝ → ℂ := fun v ↦ (deltaSpike ν ε (Real.exp (-v)) : ℂ)
   set g : ℝ → ℂ := fun v ↦ f (Real.exp (-v))
   set S : Set ℝ := (fun v ↦ Real.exp (-v)) ⁻¹' Icc (a ^ ε) (b ^ ε)
-  have hφ1 : ∫ v, φ v = 1 := by
-    have h := mellin_eq_integral_exp_smul (fun x ↦ (deltaSpike ν ε x : ℂ)) 0
-    rw [mellin_deltaSpike ν hε, mul_zero, mellin_ofReal_zero, hνm, ofReal_one] at h
-    simpa [φ] using h.symm
+  have hm : ∫ v, deltaSpike ν ε (Real.exp (-v)) = 1 :=
+    (integral_deltaSpike_exp_neg ν hε).trans hνm
+  have hφ1 : ∫ v, φ v = 1 := by rw [integral_complex_ofReal, hm, ofReal_one]
   have hφi : Integrable φ := Integrable.of_integral_ne_zero (hφ1 ▸ one_ne_zero)
   have hφS : Function.support φ ⊆ S := fun v hv ↦
     support_deltaSpike_subset ha hνs hε (by simpa [φ] using hv)
   have hgm : AEStronglyMeasurable g volume :=
     (hf.comp_quasiMeasurePreserving quasiMeasurePreserving_exp).comp_quasiMeasurePreserving
       (Measure.measurePreserving_neg volume).quasiMeasurePreserving
-  -- On `S`, `g (u - v) = f (x / e^{-v})`.
   have hgS {v : ℝ} : g (u - v) = f (x / Real.exp (-v)) := by
     simp only [g, ← hxu, ← Real.exp_sub]
     ring_nf
@@ -273,7 +278,7 @@ theorem norm_mellinConv_deltaSpike_sub_le {a b : ℝ} (ha : 0 ≤ a) (hν0 : ∀
     have h := hbd (Real.exp (-(u - w))) hw
     rw [← hgS, sub_sub_cancel] at h
     exact norm_le_norm_add_const_of_dist_le (by rwa [dist_eq_norm])
-  -- Subtract `f x = ∫ φ v • f x` and bound the integrand pointwise by `‖φ v‖ * M`.
+  -- Subtract `f x = ∫ φ v * f x` and bound the integrand pointwise by `‖φ v‖ * M`.
   have hsub : mellinConv (fun y ↦ (deltaSpike ν ε y : ℂ)) f x - f x =
       ∫ v, φ v * (g (u - v) - f x) := by
     rw [← hxu, mellinConv_exp_neg_eq_convolution, hxu, convolution_def]
@@ -283,11 +288,8 @@ theorem norm_mellinConv_deltaSpike_sub_le {a b : ℝ} (ha : 0 ≤ a) (hν0 : ∀
   have hnorm : ∫ v, ‖φ v‖ = 1 := by
     have hφr : ∀ v, ‖φ v‖ = deltaSpike ν ε (Real.exp (-v)) := fun v ↦ by
       simp [φ, abs_of_nonneg (deltaSpike_nonneg hν0 hε.le _)]
-    have h : ((∫ v, deltaSpike ν ε (Real.exp (-v)) : ℝ) : ℂ) = 1 := by
-      rw [← integral_complex_ofReal]
-      exact hφ1
     simp_rw [hφr]
-    exact_mod_cast h
+    exact hm
   rw [hsub]
   calc ‖∫ v, φ v * (g (u - v) - f x)‖ ≤ ∫ v, ‖φ v‖ * M := by
         refine norm_integral_le_of_norm_le (hφi.norm.mul_const M)
