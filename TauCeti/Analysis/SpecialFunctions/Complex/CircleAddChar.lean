@@ -26,6 +26,8 @@ estimate, after summing over nonzero frequencies.
 
 * `ZMod.coe_toCircle_natCast_self`: `ZMod.toCircle (n : ZMod (2n)) = -1`.
 * `ZMod.le_norm_stdAddChar_sub_one`: a lower bound for the distance to `1`.
+* `ZMod.map_stdAddChar_of_map_stdAddChar_one`: a multiplicative map of `ℂ` sending `ζ_N` to
+  `ζ_N^d` sends every character value `stdAddChar j` to `stdAddChar (d * j)`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
 * `ZMod.norm_sum_range_stdAddChar_mul_add_le`: a geometric-sum bound at nonzero frequency.
 * `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le_harmonic`: the summed geometric-sum bound,
@@ -83,6 +85,15 @@ theorem le_norm_stdAddChar_sub_one {N : ℕ} [NeZero N] (k : ZMod N) :
     _ ≤ _ := mul_le_mul_of_nonneg_left (Real.mul_abs_le_abs_sin hhalf) (by norm_num)
 
 variable {N : ℕ} [NeZero N]
+
+/-- A multiplicative map of `ℂ` sending the generator `ζ_N = stdAddChar 1` to
+`stdAddChar d = ζ_N^d` sends every value `stdAddChar j` to `stdAddChar (d * j)`. -/
+theorem map_stdAddChar_of_map_stdAddChar_one {F : Type*} [FunLike F ℂ ℂ]
+    [MonoidHomClass F ℂ ℂ] {σ : F} {d : ZMod N} (hσ : σ (stdAddChar (1 : ZMod N)) = stdAddChar d)
+    (j : ZMod N) : σ (stdAddChar j) = stdAddChar (d * j) := by
+  have hj : stdAddChar j = stdAddChar (1 : ZMod N) ^ j.val := by
+    rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one, natCast_zmod_val]
+  rw [hj, map_pow, hσ, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_zmod_val, mul_comm]
 
 /-- The reciprocal chord bound in terms of the least nonnegative representatives of a
 nonzero residue and its negative. -/
