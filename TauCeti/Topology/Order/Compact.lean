@@ -70,8 +70,8 @@ theorem IsCompact.exists_mem_frontier_isMaxOn_of_le_frontier {X β : Type*} [Top
 `Ioo a b` maps it into a closed subinterval `Icc a' b'` with `a < a' ≤ b' < b`: take for `a'` and
 `b'` the minimum and the maximum of the function on `s`. -/
 theorem IsCompact.exists_mapsTo_Icc_of_mapsTo_Ioo {X β : Type*} [TopologicalSpace X]
-    [TopologicalSpace β] [LinearOrder β] [OrderClosedTopology β] {s : Set X} (hs : IsCompact s)
-    (hne : s.Nonempty) {g : X → β} (hg : ContinuousOn g s) {a b : β}
+    [TopologicalSpace β] [LinearOrder β] [ClosedIicTopology β] [ClosedIciTopology β] {s : Set X}
+    (hs : IsCompact s) (hne : s.Nonempty) {g : X → β} (hg : ContinuousOn g s) {a b : β}
     (h : MapsTo g s (Ioo a b)) :
     ∃ a' b', a < a' ∧ a' ≤ b' ∧ b' < b ∧ MapsTo g s (Icc a' b') := by
   obtain ⟨p, hp, hpmin⟩ := hs.exists_isMinOn hne hg
