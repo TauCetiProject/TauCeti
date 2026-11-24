@@ -365,8 +365,8 @@ closed Reeb orbit `γ` whose loop `ι ∘ γ` on the boundary of `W`, run at ano
 contractible in `M`.
 
 This is the step of the proof of Corollary E of Barraud–Damian–Humilière–Oancea that brings a
-closed characteristic of the graph `Σ_α` back to a closed Reeb orbit of the contact form `α` on
-`Σ`. -/
+closed characteristic of the graph `Σ_α` back to a closed Reeb orbit of the contact form
+`f ι^* α` on `Σ`. -/
 theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic
     (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
     (hc : IsCompleteVectorField Z) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιi : Injective ι)
