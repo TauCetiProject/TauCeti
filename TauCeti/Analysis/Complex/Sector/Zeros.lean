@@ -40,7 +40,8 @@ Whenever a function `f : ℂ → ℂ` has only finitely many sector zeros
   `sectorZero θ₁ θ₂ f k` attains its defining predicate (`TauCeti.sectorZero_spec_of_le_encard`),
   is strictly `Complex.polarLt`-monotone and bijective onto `sectorZeros θ₁ θ₂ f` on such
   indices (`TauCeti.polarLt_sectorZero_of_lt_of_le_encard`, `TauCeti.injOn_sectorZero`,
-  `TauCeti.bijOn_sectorZero`), and has nondecreasing norms
+  `TauCeti.bijOn_sectorZero`), gives a unique index in that range for each sector zero
+  (`TauCeti.existsUnique_sectorZero_eq`), and has nondecreasing norms
   (`TauCeti.norm_sectorZero_le_norm_sectorZero_of_le_encard`);
 * when `sectorZeros θ₁ θ₂ f` is additionally infinite, these properties hold for all `k ≥ 1`, every
   sector zero appears at a unique positive index (`TauCeti.existsUnique_sectorZero_eq_of_infinite`),
@@ -237,18 +238,24 @@ theorem polarLt_sectorZero_of_lt_of_le_encard
     (sectorZero θ₁ θ₂ f j).polarLt (sectorZero θ₁ θ₂ f k) := by
   have hspec_j := sectorZero_spec_of_le_encard hfin hj ((Nat.cast_le.mpr hjk.le).trans hle)
   have hspec_k := sectorZero_spec_of_le_encard hfin (hj.trans hjk.le) hle
-  rcases lt_trichotomy (toLex (‖sectorZero θ₁ θ₂ f j‖, (sectorZero θ₁ θ₂ f j).arg))
-      (toLex (‖sectorZero θ₁ θ₂ f k‖, (sectorZero θ₁ θ₂ f k).arg)) with hlt | heq | hgt
-  · exact hlt
-  · have hEq := Complex.toLex_norm_arg_injective heq
-    have hcard := hspec_j.2
-    rw [hEq, hspec_k.2] at hcard
-    omega
-  · have hcard := Set.ncard_sep_lt_lt_ncard_sep_lt (f := fun w : ℂ => toLex (‖w‖, w.arg))
-      hspec_k.1 hgt (finite_sectorZeroInit hfin _)
-    change {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (sectorZero θ₁ θ₂ f k)}.ncard <
-      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (sectorZero θ₁ θ₂ f j)}.ncard at hcard
-    omega
+  let key : sectorZeros θ₁ θ₂ f → ℝ ×ₗ ℝ := fun z => toLex (‖z.val‖, z.val.arg)
+  have hkey : Function.Injective key := fun _ _ h =>
+    Subtype.ext (Complex.toLex_norm_arg_injective h)
+  let : LinearOrder (sectorZeros θ₁ θ₂ f) := LinearOrder.lift' key hkey
+  let r := ncardIioOrderEmbedding fun z : sectorZeros θ₁ θ₂ f =>
+    ((finite_sectorZeroInit hfin z.val).preimage Subtype.val_injective.injOn).subset
+      fun w hw => ⟨w.property, hw⟩
+  have hr_eq (z : sectorZeros θ₁ θ₂ f) :
+      r z = {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z.val}.ncard := by
+    rw [ncardIioOrderEmbedding_apply,
+      ← Set.ncard_image_of_injective (Set.Iio z) Subtype.val_injective]
+    congr 1
+    ext w
+    exact ⟨fun ⟨⟨_, hwS⟩, hlt, rfl⟩ => ⟨hwS, hlt⟩, fun ⟨hwS, hlt⟩ => ⟨⟨w, hwS⟩, hlt, rfl⟩⟩
+  change (⟨sectorZero θ₁ θ₂ f j, hspec_j.1⟩ : sectorZeros θ₁ θ₂ f) <
+    ⟨sectorZero θ₁ θ₂ f k, hspec_k.1⟩
+  rw [← r.lt_iff_lt, hr_eq, hr_eq, hspec_j.2, hspec_k.2]
+  omega
 
 /-- Under local norm-finiteness, `sectorZero θ₁ θ₂ f` is injective on positive indices at most the
 extended cardinality of the sector zero set. -/
@@ -256,11 +263,10 @@ theorem injOn_sectorZero
     (hfin : ∀ R : ℝ, {z ∈ sectorZeros θ₁ θ₂ f | ‖z‖ ≤ R}.Finite) :
     Set.InjOn (sectorZero θ₁ θ₂ f)
       {k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard} := by
-  rintro j ⟨hj₁, hj₂⟩ k ⟨hk₁, hk₂⟩ hEq
-  have hj_card := (sectorZero_spec_of_le_encard hfin hj₁ hj₂).2
-  have hk_card := (sectorZero_spec_of_le_encard hfin hk₁ hk₂).2
-  rw [hEq, hk_card] at hj_card
-  omega
+  have hmono : StrictMonoOn (fun k => toLex (‖sectorZero θ₁ θ₂ f k‖, (sectorZero θ₁ θ₂ f k).arg))
+      {k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard} :=
+    fun _ hj _ hk hjk => polarLt_sectorZero_of_lt_of_le_encard hfin hj.1 hjk hk.2
+  exact fun _ hj _ hk hEq => hmono.injOn hj hk (congrArg (fun z => toLex (‖z‖, z.arg)) hEq)
 
 /-- Under local norm-finiteness, `sectorZero θ₁ θ₂ f` restricts to a bijection from
 `{k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard}` onto `sectorZeros θ₁ θ₂ f`. -/
@@ -286,6 +292,17 @@ theorem bijOn_sectorZero
     _ = (insert z {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}).encard :=
           (Set.encard_insert_of_notMem hz_not).symm
     _ ≤ (sectorZeros θ₁ θ₂ f).encard := Set.encard_le_encard hsub
+
+/-- Under local norm-finiteness, every `z ∈ sectorZeros θ₁ θ₂ f` appears at a *unique* positive
+index `k` with `1 ≤ k` and `(k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard`. -/
+theorem existsUnique_sectorZero_eq
+    (hfin : ∀ R : ℝ, {z ∈ sectorZeros θ₁ θ₂ f | ‖z‖ ≤ R}.Finite)
+    {z : ℂ} (hz : z ∈ sectorZeros θ₁ θ₂ f) :
+    ∃! k : ℕ, 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard ∧
+      sectorZero θ₁ θ₂ f k = z := by
+  obtain ⟨k, hk, hk_eq⟩ := (bijOn_sectorZero hfin).surjOn hz
+  exact ⟨k, ⟨hk.1, hk.2, hk_eq⟩, fun m ⟨hm₁, hm₂, hm_eq⟩ =>
+    (bijOn_sectorZero hfin).injOn ⟨hm₁, hm₂⟩ hk (hm_eq.trans hk_eq.symm)⟩
 
 /-- Under local norm-finiteness, the norms `‖sectorZero θ₁ θ₂ f ·‖` are nondecreasing for
 `1 ≤ j ≤ k` whenever `(k : ℕ∞)` is at most the sector zero cardinality. -/
@@ -334,9 +351,7 @@ theorem existsUnique_sectorZero_eq_of_infinite
     (hinf : (sectorZeros θ₁ θ₂ f).Infinite)
     {z : ℂ} (hz : z ∈ sectorZeros θ₁ θ₂ f) :
     ∃! k : ℕ, 1 ≤ k ∧ sectorZero θ₁ θ₂ f k = z := by
-  obtain ⟨k, hk, hk_eq⟩ := exists_sectorZero_eq hfin hz
-  exact ⟨k, ⟨hk, hk_eq⟩, fun m ⟨hm, hm_eq⟩ =>
-    injOn_sectorZero_Ici hfin hinf hm hk (hm_eq.trans hk_eq.symm)⟩
+  simpa [hinf.encard_eq] using existsUnique_sectorZero_eq hfin hz
 
 /-- Under local norm-finiteness and `Infinite`, the norms `‖sectorZero θ₁ θ₂ f k‖` are
 nondecreasing for `k ≥ 1`. -/
@@ -346,15 +361,6 @@ theorem norm_sectorZero_le_norm_sectorZero
     {j k : ℕ} (hj : 1 ≤ j) (hjk : j ≤ k) :
     ‖sectorZero θ₁ θ₂ f j‖ ≤ ‖sectorZero θ₁ θ₂ f k‖ :=
   norm_sectorZero_le_norm_sectorZero_of_le_encard hfin hj hjk (by simp [hinf.encard_eq])
-
-/-- Under local norm-finiteness and `Infinite`, stepwise norm monotonicity
-`‖sectorZero θ₁ θ₂ f k‖ ≤ ‖sectorZero θ₁ θ₂ f (k + 1)‖` holds for `k ≥ 1`. -/
-theorem norm_sectorZero_le_succ
-    (hfin : ∀ R : ℝ, {z ∈ sectorZeros θ₁ θ₂ f | ‖z‖ ≤ R}.Finite)
-    (hinf : (sectorZeros θ₁ θ₂ f).Infinite)
-    {k : ℕ} (hk : 1 ≤ k) :
-    ‖sectorZero θ₁ θ₂ f k‖ ≤ ‖sectorZero θ₁ θ₂ f (k + 1)‖ :=
-  norm_sectorZero_le_norm_sectorZero hfin hinf hk (Nat.le_succ k)
 
 /-- Under local norm-finiteness and `Infinite`, `‖sectorZero θ₁ θ₂ f k‖ → ∞` as `k → ∞`. -/
 theorem tendsto_norm_sectorZero_atTop
@@ -382,34 +388,10 @@ private theorem sectorZero_add_eq_of_tail
     (hexh : ∀ w ∈ sectorZeros θ₁ θ₂ f, w ∈ A ∨ ∃ m, w = zSeq m)
     (n : ℕ) :
     sectorZero θ₁ θ₂ f (A.ncard + 1 + n) = zSeq n := by
-  have hIio : {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (zSeq n)} =
-      A ∪ zSeq '' (Finset.range n : Set ℕ) := by
-    ext w
-    constructor
-    · rintro ⟨hwS, hw_lt⟩
-      rcases hexh w hwS with hwA | ⟨m, rfl⟩
-      · exact .inl hwA
-      · refine .inr ⟨m, Finset.mem_coe.mpr (Finset.mem_range.mpr ?_), rfl⟩
-        by_contra! hnm
-        rcases hnm.eq_or_lt with rfl | hlt
-        · exact irrefl_of Complex.polarLt _ hw_lt
-        · exact irrefl_of Complex.polarLt _ (trans_of Complex.polarLt (hstrict hlt) hw_lt)
-    · rintro (hwA | ⟨m, hm, rfl⟩)
-      · exact ⟨hA_sub hwA, hA_lt w hwA n⟩
-      · exact ⟨hzS m, hstrict (Finset.mem_range.mp (Finset.mem_coe.mp hm))⟩
-  have hdisj : Disjoint A (zSeq '' (Finset.range n : Set ℕ)) :=
-    Set.disjoint_left.mpr fun w hwA ⟨m, _, hwm⟩ =>
-      irrefl_of Complex.polarLt _ (hwm ▸ hA_lt w hwA m)
-  have hinj : Function.Injective zSeq := fun i j hij => by
-    by_contra hne
-    rcases lt_or_gt_of_ne hne with hlt | hlt
-    · exact irrefl_of Complex.polarLt _ (hij ▸ hstrict hlt)
-    · exact irrefl_of Complex.polarLt _ (hij ▸ hstrict hlt)
-  have hcard : {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (zSeq n)}.ncard = A.ncard + 1 + n - 1 := by
-    rw [hIio, Set.ncard_union_eq hdisj hA_fin ((Finset.range n).finite_toSet.image zSeq),
-      Set.ncard_image_of_injective _ hinj, Set.ncard_coe_finset, Finset.card_range]
-    omega
-  exact sectorZero_eq_of_ncard hfin (hzS n) hcard
+  have hcard := Set.ncard_sep_lt_eq_ncard_add (f := fun w : ℂ => toLex (‖w‖, w.arg))
+    hA_fin hA_sub hzS (fun _ _ h => hstrict h) (fun w hw => hA_lt w hw 0) hexh n
+  change {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (zSeq n)}.ncard = A.ncard + n at hcard
+  exact sectorZero_eq_of_ncard hfin (hzS n) (by omega)
 
 /-- A sequence of annularly separated discs inside the open sector `z ≠ 0`, `θ₁ < arg z < θ₂`, each
 containing a zero of `f`, forces `sectorZeros θ₁ θ₂ f` to be infinite. -/

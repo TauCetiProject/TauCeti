@@ -110,12 +110,6 @@ theorem hasSum_airyBi_gamma (z : ℂ) :
 theorem airyAi_zero : airyAi 0 = (3 : ℂ) ^ (-2 / 3 : ℂ) / Gamma (2 / 3) := by
   simp [airyAi, div_eq_mul_inv]
 
-/-- `Ai` does not vanish at the origin. -/
-theorem airyAi_zero_ne_zero : airyAi 0 ≠ 0 := by
-  rw [airyAi_zero]
-  exact div_ne_zero (cpow_ne_zero_iff.mpr (Or.inl (by norm_num)))
-    (Gamma_ne_zero_of_re_pos (by norm_num))
-
 /-- DLMF 9.2.5: the value of `Bi` at the origin. -/
 @[simp]
 theorem airyBi_zero : airyBi 0 = (3 : ℂ) ^ (-1 / 6 : ℂ) / Gamma (2 / 3) := by
@@ -168,12 +162,6 @@ theorem deriv_airyAi_zero : deriv airyAi 0 = -(3 : ℂ) ^ (-1 / 3 : ℂ) / Gamma
   convert congrArg Neg.neg (airy_derivative_coefficient (-4 / 3)) using 1 <;>
     norm_num [div_eq_mul_inv]
 
-/-- `Ai′` does not vanish at the origin. -/
-theorem deriv_airyAi_zero_ne_zero : deriv airyAi 0 ≠ 0 := by
-  rw [deriv_airyAi_zero]
-  exact div_ne_zero (neg_ne_zero.mpr (cpow_ne_zero_iff.mpr (Or.inl (by norm_num))))
-    (Gamma_ne_zero_of_re_pos (by norm_num))
-
 /-- DLMF 9.2.6: the first derivative of `Bi` at the origin. -/
 @[simp]
 theorem deriv_airyBi_zero : deriv airyBi 0 = (3 : ℂ) ^ (1 / 6 : ℂ) / Gamma (1 / 3) := by
@@ -196,6 +184,10 @@ theorem airyBi_zero_eq_cpow_mul_airyAi_zero : airyBi 0 = (3 : ℂ) ^ (1 / 2 : �
   rw [airyAi_zero, airyBi_zero, ← mul_div_assoc, ← cpow_add _ _ (by norm_num)]
   norm_num
 
+/-- `Ai` does not vanish at the origin. -/
+theorem airyAi_zero_ne_zero : airyAi 0 ≠ 0 :=
+  right_ne_zero_of_mul (airyBi_zero_eq_cpow_mul_airyAi_zero ▸ airyBi_zero_ne_zero)
+
 /-- `Bi′(0) = −√3 Ai′(0)`. -/
 theorem deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero :
     deriv airyBi 0 = -(3 : ℂ) ^ (1 / 2 : ℂ) * deriv airyAi 0 := by
@@ -204,5 +196,10 @@ theorem deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero :
   have h : (1 / 6 : ℂ) = 1 / 2 + -1 / 3 := by norm_num
   rw [deriv_airyAi_zero, deriv_airyBi_zero, h, cpow_add _ _ (by norm_num)]
   ring
+
+/-- `Ai′` does not vanish at the origin. -/
+theorem deriv_airyAi_zero_ne_zero : deriv airyAi 0 ≠ 0 :=
+  right_ne_zero_of_mul
+    (deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero ▸ deriv_airyBi_zero_ne_zero)
 
 end TauCeti

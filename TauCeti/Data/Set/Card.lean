@@ -49,9 +49,10 @@ is `k` (`Set.ncard_setOf_lt_of_strictMono`).
 The same count works for a set `s`, provided only finitely many of its points lie below each one.
 For `f` injective on `s`, the number of points of `s` below `f a` determines `a ∈ s`
 (`Set.InjOn.injOn_ncard_sep_lt`), and every natural number `n` strictly below `s.encard` is such
-a count (`Set.exists_mem_ncard_sep_lt_eq`, and for infinite `s`,
-`Set.Infinite.exists_mem_ncard_sep_lt_eq`). This lists `s` in increasing order of `f`, as a
-sequence indexed by `ℕ`, such as the zeros of an analytic function ordered by modulus.
+a count (`Set.exists_mem_ncard_sep_lt_eq`). When `s` is partitioned into a finite prefix `a` and
+a strictly increasing tail `z : ℕ → ι` above `a`, the rank of `z n` is `a.ncard + n`
+(`Set.ncard_sep_lt_eq_ncard_add`). This lists `s` in increasing order of `f`, as a sequence
+indexed by `ℕ`, such as the zeros of an analytic function ordered by modulus.
 
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
 (`Set.finite_and_ncard_le_sum_of_subset_biUnion`). Over a finite index type, the triples
@@ -281,14 +282,34 @@ theorem exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → 
   obtain ⟨a, ha, hra⟩ := heq.symm.subset (show n ∈ Iio (r b) from h)
   exact ⟨a, ha.1, hra⟩
 
-/-- For a map `f` into a linear order that is injective on the infinite set `s`, if only finitely
-many points of `s` have value below each point of `s`, then every natural number `n` is the number
-of points of `s` whose value lies below `f a`, for some `a ∈ s`. Together with
-`Set.InjOn.injOn_ncard_sep_lt`, this lists `s` in increasing order of `f`, indexed by `ℕ`. -/
-theorem Infinite.exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → α}
-    {s : Set ι} (hs : s.Infinite) (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite)
-    (n : ℕ) : ∃ a ∈ s, {i ∈ s | f i < f a}.ncard = n :=
-  Set.exists_mem_ncard_sep_lt_eq hf hfin (by simp [hs.encard_eq])
+/-- For a set `s` partitioned into a finite prefix `a ⊆ s` and a strictly `f`-increasing tail
+`z : ℕ → ι` lying above `a`, the number of points of `s` whose value under `f` lies below
+`f (z n)` is `a.ncard + n`. -/
+theorem ncard_sep_lt_eq_ncard_add {ι α : Type*} [Preorder α] {f : ι → α}
+    {s a : Set ι} (ha_fin : a.Finite) (ha_sub : a ⊆ s)
+    {z : ℕ → ι} (hz_mem : ∀ m, z m ∈ s) (hz_strict : StrictMono (f ∘ z))
+    (ha_lt : ∀ x ∈ a, f x < f (z 0)) (hexh : ∀ x ∈ s, x ∈ a ∨ ∃ m, x = z m)
+    (n : ℕ) :
+    {x ∈ s | f x < f (z n)}.ncard = a.ncard + n := by
+  have ha_lt_all : ∀ x ∈ a, ∀ m, f x < f (z m) := fun x hx m ↦
+    lt_of_lt_of_le (ha_lt x hx) (hz_strict.monotone (Nat.zero_le m))
+  have hsep : {x ∈ s | f x < f (z n)} = a ∪ z '' (Finset.range n : Set ℕ) := by
+    ext x
+    constructor
+    · rintro ⟨hxs, hxlt⟩
+      rcases hexh x hxs with hxa | ⟨m, rfl⟩
+      · exact .inl hxa
+      · refine .inr ⟨m, Finset.mem_coe.mpr (Finset.mem_range.mpr ?_), rfl⟩
+        by_contra! hnm
+        exact (hz_strict.monotone hnm).not_gt hxlt
+    · rintro (hxa | ⟨m, hm, rfl⟩)
+      · exact ⟨ha_sub hxa, ha_lt_all x hxa n⟩
+      · exact ⟨hz_mem m, hz_strict (Finset.mem_range.mp (Finset.mem_coe.mp hm))⟩
+  have hdisj : Disjoint a (z '' (Finset.range n : Set ℕ)) :=
+    disjoint_left.mpr fun x hxa ⟨m, _, hxm⟩ ↦
+      lt_irrefl (f x) (hxm ▸ ha_lt_all x hxa m)
+  rw [hsep, ncard_union_eq hdisj ha_fin ((Finset.range n).finite_toSet.image z),
+    ncard_image_of_injective _ hz_strict.injective.of_comp, ncard_coe_finset, Finset.card_range]
 
 /-- For an injective map `f` from a finite type into a linear order, the number of indices whose
 value lies below `f a` determines `a`. -/
