@@ -51,18 +51,25 @@ parameters.
 ## Main results
 
 * `Complex.mellinBarnesRegularizedGaussHGFun`, `Complex.mellinBarnesRegularizedGaussHGFun_def`,
+  `Complex.mellinBarnesRegularizedGaussHGFun_neg_natCast_left`,
+  `Complex.mellinBarnesRegularizedGaussHGFun_neg_natCast_right`,
   `Complex.mellinBarnesRegularizedGaussHGFun_symm`,
   `Complex.mellinBarnesRegularizedGaussHGFun_eq_mellinBarnesSeparatingIntegral`,
   `Complex.analyticOnNhd_mellinBarnesRegularizedGaussHGFun`,
-  `AnalyticAt.mellinBarnesRegularizedGaussHGFun`: normalized regularized Mellin–Barnes continuation
-  and joint cut-plane holomorphy for `a, b ∉ -ℕ`, arbitrary `c : ℂ`, `-z ∈ Complex.slitPlane`.
+  `AnalyticAt.mellinBarnesRegularizedGaussHGFun`: normalized regularized Mellin–Barnes continuation,
+  totalized values at excluded upper parameters, and joint cut-plane holomorphy for `a, b ∉ -ℕ`,
+  arbitrary `c : ℂ`, `-z ∈ Complex.slitPlane`.
 * `Complex.mellinBarnesOrdinaryHypergeometric`, `Complex.mellinBarnesOrdinaryHypergeometric_def`,
+  `Complex.mellinBarnesOrdinaryHypergeometric_neg_natCast_left`,
+  `Complex.mellinBarnesOrdinaryHypergeometric_neg_natCast_right`,
+  `Complex.mellinBarnesOrdinaryHypergeometric_neg_natCast_lower`,
   `Complex.mellinBarnesOrdinaryHypergeometric_eq_Gamma_mul`,
   `Complex.mellinBarnesOrdinaryHypergeometric_symm`,
   `Complex.mellinBarnesOrdinaryHypergeometric_eq_mellinBarnesSeparatingIntegral`,
   `Complex.analyticOnNhd_mellinBarnesOrdinaryHypergeometric`,
-  `AnalyticAt.mellinBarnesOrdinaryHypergeometric`: ordinary Mellin–Barnes continuation and joint
-  cut-plane holomorphy for `a, b, c ∉ -ℕ`, `-z ∈ Complex.slitPlane`.
+  `AnalyticAt.mellinBarnesOrdinaryHypergeometric`: ordinary Mellin–Barnes continuation, totalized
+  values at excluded parameters, and joint cut-plane holomorphy for `a, b, c ∉ -ℕ`,
+  `-z ∈ Complex.slitPlane`.
 * `Complex.eulerIntegral_eq_mellinBarnesRegularizedGaussHGFun`,
   `Complex.eulerIntegral_eq_mellinBarnesSeparatingIntegral`: overlap with Euler's integral for
   `0 < Re b < Re c`, `a ∉ -ℕ`, and `-z ∈ Complex.slitPlane`.
@@ -239,12 +246,6 @@ private theorem analyticAt_regularizedGaussHGFun_comp {f : ℂ → ℂ × ℂ ×
     AnalyticAt ℂ (fun x => regularizedGaussHGFun (f x).1 (f x).2.1 (f x).2.2.1 (f x).2.2.2) w :=
   (analyticAt_uncurry_regularizedGaussHGFun hz).comp_of_eq (hf.analyticAt w) rfl
 
-private theorem analyticAt_mellinBarnesIntegral_comp {f : ℂ → ℂ × ℂ × ℂ × ℂ}
-    (hf : Differentiable ℂ f) {w : ℂ} (ha : ∀ k : ℕ, (f w).1 ≠ -k)
-    (hb : ∀ k : ℕ, (f w).2.1 ≠ -k) (hz : -(f w).2.2.2 ∈ slitPlane) :
-    AnalyticAt ℂ (fun x => mellinBarnesIntegral (f x).1 (f x).2.1 (f x).2.2.1 (f x).2.2.2) w :=
-  (analyticOnNhd_mellinBarnesIntegral (f w) ⟨ha, hb, hz⟩).comp_of_eq (hf.analyticAt w) rfl
-
 private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -k) (hb : 0 < b.re) (hbc : b.re < c.re) (hz : -z ∈ slitPlane) :
     Gamma a * Gamma b * eulerIntegral a b c z = mellinBarnesIntegral a b c z := by
@@ -258,8 +259,8 @@ private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
           TauCeti.ofReal_add_mem_slitPlane hu zero_le_one)).comp_of_eq
         ((by fun_prop : Differentiable ℂ fun x : ℂ => (a', -x)).analyticAt u) rfl)
     have hg : AnalyticOnNhd ℂ (fun u => mellinBarnesIntegral a' b c (-u)) slitPlane :=
-      fun u hu => analyticAt_mellinBarnesIntegral_comp (f := fun x => (a', b, c, -x)) (by fun_prop)
-        (ne_neg_natCast_of_re_pos ha') hb_ne (by simpa using hu)
+      fun u hu => analyticAt_const.mellinBarnesIntegral analyticAt_const analyticAt_const
+        analyticAt_id.neg (ne_neg_natCast_of_re_pos ha') hb_ne (by simpa using hu)
     simpa only [neg_neg] using hf.eqOn_slitPlane_of_ofReal_pos_eq hg
       (fun x hx => eulerIntegral_neg_ofReal_eq_mellinBarnesIntegral ha' hb hbc hx) hz'
   refine AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos ?_ ?_ (fun hw => hstep1 hw hz) ha
@@ -268,8 +269,8 @@ private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
         (by simpa [sub_eq_add_neg] using
           TauCeti.ofReal_add_mem_slitPlane hz zero_le_one)).comp_of_eq
         ((by fun_prop : Differentiable ℂ fun x : ℂ => (x, z)).analyticAt w) rfl)
-  · exact fun w hw => analyticAt_mellinBarnesIntegral_comp (f := fun x => (x, b, c, z))
-      (by fun_prop) hw hb_ne hz
+  · exact fun w hw => analyticAt_id.mellinBarnesIntegral analyticAt_const analyticAt_const
+      analyticAt_const hw hb_ne hz
 
 /-! ### Section 1: Normalized cut-plane continuations and holomorphy -/
 
@@ -286,6 +287,34 @@ def mellinBarnesRegularizedGaussHGFun (a b c z : ℂ) : ℂ :=
 theorem mellinBarnesRegularizedGaussHGFun_def (a b c z : ℂ) :
     mellinBarnesRegularizedGaussHGFun a b c z =
       (Gamma a * Gamma b)⁻¹ * mellinBarnesIntegral a b c z := (rfl)
+
+/-- Totalized value of `mellinBarnesRegularizedGaussHGFun` when the first upper parameter is a
+nonpositive integer `-n` (so `(Γ(-n))⁻¹ = 0`). -/
+@[simp]
+theorem mellinBarnesRegularizedGaussHGFun_neg_natCast_left (n : ℕ) (b c z : ℂ) :
+    mellinBarnesRegularizedGaussHGFun (-n) b c z = 0 := by
+  simp [mellinBarnesRegularizedGaussHGFun_def, Gamma_neg_nat_eq_zero]
+
+/-- Totalized value of `mellinBarnesRegularizedGaussHGFun` when the first upper parameter is `0`
+(so `(Γ(0))⁻¹ = 0`). -/
+@[simp]
+theorem mellinBarnesRegularizedGaussHGFun_zero_left (b c z : ℂ) :
+    mellinBarnesRegularizedGaussHGFun 0 b c z = 0 := by
+  simp [mellinBarnesRegularizedGaussHGFun_def]
+
+/-- Totalized value of `mellinBarnesRegularizedGaussHGFun` when the second upper parameter is a
+nonpositive integer `-n` (so `(Γ(-n))⁻¹ = 0`). -/
+@[simp]
+theorem mellinBarnesRegularizedGaussHGFun_neg_natCast_right (a : ℂ) (n : ℕ) (c z : ℂ) :
+    mellinBarnesRegularizedGaussHGFun a (-n) c z = 0 := by
+  simp [mellinBarnesRegularizedGaussHGFun_def, Gamma_neg_nat_eq_zero]
+
+/-- Totalized value of `mellinBarnesRegularizedGaussHGFun` when the second upper parameter is `0`
+(so `(Γ(0))⁻¹ = 0`). -/
+@[simp]
+theorem mellinBarnesRegularizedGaussHGFun_zero_right (a c z : ℂ) :
+    mellinBarnesRegularizedGaussHGFun a 0 c z = 0 := by
+  simp [mellinBarnesRegularizedGaussHGFun_def]
 
 /-- Symmetry of `mellinBarnesRegularizedGaussHGFun` in the upper parameters `a` and `b`. -/
 theorem mellinBarnesRegularizedGaussHGFun_symm (a b c z : ℂ) :
@@ -354,6 +383,48 @@ def mellinBarnesOrdinaryHypergeometric (a b c z : ℂ) : ℂ :=
 theorem mellinBarnesOrdinaryHypergeometric_def (a b c z : ℂ) :
     mellinBarnesOrdinaryHypergeometric a b c z =
       Gamma c / (Gamma a * Gamma b) * mellinBarnesIntegral a b c z := (rfl)
+
+/-- Totalized value of `mellinBarnesOrdinaryHypergeometric` when the first upper parameter is a
+nonpositive integer `-n` (so `(Γ(-n))⁻¹ = 0`). -/
+@[simp]
+theorem mellinBarnesOrdinaryHypergeometric_neg_natCast_left (n : ℕ) (b c z : ℂ) :
+    mellinBarnesOrdinaryHypergeometric (-n) b c z = 0 := by
+  simp [mellinBarnesOrdinaryHypergeometric_def, Gamma_neg_nat_eq_zero]
+
+/-- Totalized value of `mellinBarnesOrdinaryHypergeometric` when the first upper parameter is `0`
+(so `(Γ(0))⁻¹ = 0`). -/
+@[simp]
+theorem mellinBarnesOrdinaryHypergeometric_zero_left (b c z : ℂ) :
+    mellinBarnesOrdinaryHypergeometric 0 b c z = 0 := by
+  simp [mellinBarnesOrdinaryHypergeometric_def]
+
+/-- Totalized value of `mellinBarnesOrdinaryHypergeometric` when the second upper parameter is a
+nonpositive integer `-n` (so `(Γ(-n))⁻¹ = 0`). -/
+@[simp]
+theorem mellinBarnesOrdinaryHypergeometric_neg_natCast_right (a : ℂ) (n : ℕ) (c z : ℂ) :
+    mellinBarnesOrdinaryHypergeometric a (-n) c z = 0 := by
+  simp [mellinBarnesOrdinaryHypergeometric_def, Gamma_neg_nat_eq_zero]
+
+/-- Totalized value of `mellinBarnesOrdinaryHypergeometric` when the second upper parameter is `0`
+(so `(Γ(0))⁻¹ = 0`). -/
+@[simp]
+theorem mellinBarnesOrdinaryHypergeometric_zero_right (a c z : ℂ) :
+    mellinBarnesOrdinaryHypergeometric a 0 c z = 0 := by
+  simp [mellinBarnesOrdinaryHypergeometric_def]
+
+/-- Totalized value of `mellinBarnesOrdinaryHypergeometric` when the lower parameter is a
+nonpositive integer `-n` (so `Γ(-n) = 0`). -/
+@[simp]
+theorem mellinBarnesOrdinaryHypergeometric_neg_natCast_lower (a b : ℂ) (n : ℕ) (z : ℂ) :
+    mellinBarnesOrdinaryHypergeometric a b (-n) z = 0 := by
+  simp [mellinBarnesOrdinaryHypergeometric_def, Gamma_neg_nat_eq_zero]
+
+/-- Totalized value of `mellinBarnesOrdinaryHypergeometric` when the lower parameter is `0`
+(so `Γ(0) = 0`). -/
+@[simp]
+theorem mellinBarnesOrdinaryHypergeometric_zero_lower (a b z : ℂ) :
+    mellinBarnesOrdinaryHypergeometric a b 0 z = 0 := by
+  simp [mellinBarnesOrdinaryHypergeometric_def]
 
 /-- Relation between `mellinBarnesOrdinaryHypergeometric` and
 `mellinBarnesRegularizedGaussHGFun`. -/
@@ -446,7 +517,7 @@ private theorem regularizedGaussHGFun_mul_Gamma_eq_mellinBarnesIntegral {a b : �
         univ := fun w _ => analyticAt_const.mul
       (analyticAt_regularizedGaussHGFun_comp (f := fun x => (a, b', x, z)) (by fun_prop) hz_norm)
     have hgc : AnalyticOnNhd ℂ (fun w => mellinBarnesIntegral a b' w z) univ := fun w _ =>
-      analyticAt_mellinBarnesIntegral_comp (f := fun x => (a, b', x, z)) (by fun_prop)
+      analyticAt_const.mellinBarnesIntegral analyticAt_const analyticAt_id analyticAt_const
         ha (ne_neg_natCast_of_re_pos hb') hz_slit
     have hevc : (fun w => Gamma a * Gamma b' * regularizedGaussHGFun a b' w z) =ᶠ[𝓝 (b' + 1)]
         (fun w => mellinBarnesIntegral a b' w z) := by
@@ -458,8 +529,8 @@ private theorem regularizedGaussHGFun_mul_Gamma_eq_mellinBarnesIntegral {a b : �
   refine AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos ?_ ?_ hstep_c hb
   · exact fun w hw => (analyticAt_const.mul (analyticAt_Gamma hw)).mul
       (analyticAt_regularizedGaussHGFun_comp (f := fun x => (a, x, c, z)) (by fun_prop) hz_norm)
-  · exact fun w hw => analyticAt_mellinBarnesIntegral_comp (f := fun x => (a, x, c, z))
-      (by fun_prop) ha hw hz_slit
+  · exact fun w hw => analyticAt_const.mellinBarnesIntegral analyticAt_id analyticAt_const
+      analyticAt_const ha hw hz_slit
 
 /-- **Overlap with the regularized Gauss hypergeometric series (DLMF 15.6.6).** For all
 `a, b ∉ -ℕ`, arbitrary `c : ℂ`, `‖z‖ < 1`, and `-z ∈ slitPlane`, `regularizedGaussHGFun a b c z`

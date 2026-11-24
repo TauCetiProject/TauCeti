@@ -47,8 +47,9 @@ circle integrals around isolating circles.
 * `Complex.analyticOnNhd_integral_mellinBarnesIntegrand`: joint four-variable holomorphy of the
   vertical-line integral along any fixed `Re t = σ` (`σ ∉ ℕ`).
 * `Complex.analyticOnNhd_mellinBarnesSeparatingIntegral`,
-  `Complex.analyticOnNhd_mellinBarnesIntegral`: joint four-variable holomorphy of
-  `mellinBarnesSeparatingIntegral` (for fixed `σ < 0`) and `mellinBarnesIntegral` in `(a, b, c, z)`.
+  `Complex.analyticOnNhd_mellinBarnesIntegral`, `AnalyticAt.mellinBarnesIntegral`: joint
+  four-variable holomorphy and analytic composition of `mellinBarnesSeparatingIntegral` (for fixed
+  `σ < 0`) and `mellinBarnesIntegral` in `(a, b, c, z)`.
 
 ## References
 
@@ -478,5 +479,17 @@ theorem analyticOnNhd_mellinBarnesIntegral :
   filter_upwards [hU_nhds] with p hp
   exact (mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral p.2.2.1 hσ
     (hav₀ p.1 hp.1).1 (hav₁ p.2.1 hp.2.1).1 hp.2.2.2).symm
+
+/-- `Complex.mellinBarnesIntegral` composed with four analytic functions is analytic wherever
+`fa x, fb x ∉ -ℕ` and `-fz x ∈ slitPlane`. -/
+theorem _root_.AnalyticAt.mellinBarnesIntegral {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {fa fb fc fz : E → ℂ} {x : E}
+    (hfa : AnalyticAt ℂ fa x) (hfb : AnalyticAt ℂ fb x) (hfc : AnalyticAt ℂ fc x)
+    (hfz : AnalyticAt ℂ fz x) (ha : ∀ k : ℕ, fa x ≠ -k) (hb : ∀ k : ℕ, fb x ≠ -k)
+    (hz : -fz x ∈ Complex.slitPlane) :
+    AnalyticAt ℂ
+      (fun w => Complex.mellinBarnesIntegral (fa w) (fb w) (fc w) (fz w)) x :=
+  (Complex.analyticOnNhd_mellinBarnesIntegral (fa x, fb x, fc x, fz x)
+    ⟨ha, hb, hz⟩).comp_of_eq (hfa.prod (hfb.prod (hfc.prod hfz))) rfl
 
 end Complex

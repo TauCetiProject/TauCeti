@@ -399,6 +399,23 @@ theorem verticalIntegrable_mellinBarnesIntegrand {a b : ℂ} (c : ℂ) {z : ℂ}
   rw [VerticalIntegrable, ← integrableOn_univ, ← union_compl_self (Icc (-Y₀) Y₀)]
   exact hcont.integrableOn_Icc.union hout
 
+private theorem eventually_norm_mellinBarnesIntegrand_horizontal_le {B Y₀ δ : ℝ}
+    (hY₀ : 1 ≤ Y₀) {a b c z : ℂ} {σ₁ σ₂ : ℝ}
+    (htail : ∀ x ∈ Icc σ₁ σ₂, ∀ y : ℝ, Y₀ ≤ |y| →
+      ‖mellinBarnesIntegrand a b c z (x + y * I)‖ ≤ B * Real.exp (-δ * |y|)) :
+    ∀ᶠ T : ℝ in atTop, ∀ x ∈ Icc σ₁ σ₂,
+      ‖mellinBarnesIntegrand a b c z (x + T * I)‖ ≤ B * Real.exp (-δ * T) ∧
+        ‖mellinBarnesIntegrand a b c z (x - T * I)‖ ≤ B * Real.exp (-δ * T) := by
+  filter_upwards [eventually_ge_atTop Y₀] with T hT x hx
+  have hT0 : 0 ≤ T := (zero_lt_one.trans_le hY₀).le.trans hT
+  have hpos : ‖mellinBarnesIntegrand a b c z (x + T * I)‖ ≤ B * Real.exp (-δ * T) := by
+    simpa only [abs_of_nonneg hT0] using htail x hx T (by rwa [abs_of_nonneg hT0])
+  have hneg : ‖mellinBarnesIntegrand a b c z (x - T * I)‖ ≤ B * Real.exp (-δ * T) := by
+    have hsub : (x : ℂ) - T * I = (x : ℂ) + ((-T : ℝ) : ℂ) * I := by push_cast; ring
+    simpa only [hsub, abs_neg, abs_of_nonneg hT0] using
+      htail x hx (-T) (by rwa [abs_neg, abs_of_nonneg hT0])
+  exact ⟨hpos, hneg⟩
+
 private theorem mellinBarnesSeparatingIntegral_eq_of_lt_of_lt_zero {a b : ℂ} (c : ℂ) {z : ℂ}
     {σ₁ σ₂ : ℝ} (h12 : σ₁ < σ₂) (hσ₂ : σ₂ < 0)
     (ha₁ : ∀ k : ℕ, a.re + σ₁ ≠ -k) (hb₁ : ∀ k : ℕ, b.re + σ₁ ≠ -k)
@@ -441,16 +458,7 @@ private theorem mellinBarnesSeparatingIntegral_eq_of_lt_of_lt_zero {a b : ℂ} (
     (by
       simpa using (Real.tendsto_exp_atBot.comp
         (tendsto_id.const_mul_atTop_of_neg (neg_lt_zero.2 hδ))).const_mul B₀)
-    (by
-      filter_upwards [eventually_ge_atTop Y₀] with T hT x hx
-      have hT0 : 0 ≤ T := (zero_lt_one.trans_le hY₀).le.trans hT
-      have hpos : ‖g (x + T * I)‖ ≤ B₀ * Real.exp (-δ * T) := by
-        simpa only [abs_of_nonneg hT0] using htail x hx T (by rwa [abs_of_nonneg hT0])
-      have hneg : ‖g (x - T * I)‖ ≤ B₀ * Real.exp (-δ * T) := by
-        have hsub : (x : ℂ) - T * I = (x : ℂ) + ((-T : ℝ) : ℂ) * I := by push_cast; ring
-        simpa only [hsub, abs_neg, abs_of_nonneg hT0] using
-          htail x hx (-T) (by rwa [abs_neg, abs_of_nonneg hT0])
-      exact ⟨hpos, hneg⟩)
+    (eventually_norm_mellinBarnesIntegrand_horizontal_le hY₀ htail)
   have h2pi : (2 * (π : ℂ)) ≠ 0 := mul_ne_zero two_ne_zero (ofReal_ne_zero.2 Real.pi_ne_zero)
   have hdiv := congrArg ((2 * π : ℂ)⁻¹ * ·) hshift
   dsimp only [S] at hdiv
