@@ -131,21 +131,19 @@ theorem exists_contMDiffMonoidMorphism_realSpinThree_not_nullhomotopic
         (1 : spinGroup (realCliffordForm 3 0))),
       (realSpinLieEquivSo 3).toLinearEquiv.finrank_eq, finrank_so_three]
   · -- The differential of `φ` at the identity is `lieMap φ`, read through `eS` and `eG`.
-    have hd : eG.symm (φ.toMonoidHom.groupLieAlgebraMap _ I (eS ⁅y, z⁆)) = lieMap φ ⁅y, z⁆ := by
-      rw [LieEquiv.symm_apply_eq, leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
-        MonoidHom.groupLieAlgebraMap_apply]
-      rfl
+    have hd : eG.symm (φ.toMonoidHom.groupLieAlgebraMap _ I (eS ⁅y, z⁆)) = lieMap φ ⁅y, z⁆ :=
+      leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap φ ⁅y, z⁆
     simp only [LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, hd]
     rw [ne_eq, LeftInvariantDerivation.killingForm_self_eq_zero_iff]
     intro hc
     -- `dφ ⁅y, z⁆` is central and in the derived algebra, hence zero.
-    have hd : lieMap φ ⁅y, z⁆ ∈ derivedSeries ℝ (LeftInvariantDerivation I G) 1 := by
+    have hder : lieMap φ ⁅y, z⁆ ∈ derivedSeries ℝ (LeftInvariantDerivation I G) 1 := by
       rw [LieHom.map_lie]
       exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top _) (LieSubmodule.mem_top _)
     have h0 := (isCompl_center_derivedSeries_one_of_compactSpace (I := I) (G := G)).inf_eq_bot
     have : lieMap φ ⁅y, z⁆ = 0 := by
       rw [← LieSubmodule.mem_bot (R := ℝ) (L := LeftInvariantDerivation I G), ← h0]
-      exact ⟨hc, hd⟩
+      exact ⟨hc, hder⟩
     exact hyz (hφ (this.trans (map_zero _).symm))
 
 /-- **A compact Lie group with non-abelian Lie algebra has nontrivial third homotopy group**, at
