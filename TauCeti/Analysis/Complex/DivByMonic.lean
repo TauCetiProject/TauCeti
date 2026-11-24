@@ -100,7 +100,7 @@ theorem partialModByMonic_one (i : ι) (f : (ι → ℂ) → E) : partialModByMo
   simp [partialModByMonic_apply]
 
 @[simp]
-theorem partialDivByMonic_zero (i : ι) (P : ℂ[X]) :
+theorem partialDivByMonic_zero_fun (i : ι) (P : ℂ[X]) :
     partialDivByMonic i (0 : (ι → ℂ) → E) P = 0 := by
   unfold partialDivByMonic
   induction P.roots.toList with
@@ -112,7 +112,7 @@ theorem partialDivByMonic_zero (i : ι) (P : ℂ[X]) :
     rw [List.foldl_cons, h0, ih]
 
 @[simp]
-theorem partialModByMonic_zero (i : ι) (P : ℂ[X]) :
+theorem partialModByMonic_zero_fun (i : ι) (P : ℂ[X]) :
     partialModByMonic i (0 : (ι → ℂ) → E) P = 0 := by
   ext z
   simp [partialModByMonic_apply]
@@ -143,6 +143,11 @@ private noncomputable def listQuot (i : ι) (f : (ι → ℂ) → E) (l : List �
 private noncomputable def listRem (i : ι) (f : (ι → ℂ) → E) (l : List ℂ) : (ι → ℂ) → E :=
   fun z ↦ f z - ((l.map fun ζ ↦ X - C ζ).prod).eval (z i) • listQuot i f l z
 
+/-- The quotient by `P(zᵢ)` is the iterated divided difference along the roots of `P`, listed with
+multiplicity. -/
+private theorem partialDivByMonic_eq_listQuot (i : ι) (f : (ι → ℂ) → E) (P : ℂ[X]) :
+    partialDivByMonic i f P = listQuot i f P.roots.toList := rfl
+
 variable {i : ι} {f : (ι → ℂ) → E}
 
 /-- Newton's recursion for the remainder: dividing first by `zᵢ - ζ`,
@@ -165,9 +170,7 @@ private theorem prod_map_roots_toList {P : ℂ[X]} (hP : P.Monic) :
 private theorem partialModByMonic_eq_listRem {P : ℂ[X]} (hP : P.Monic) :
     partialModByMonic i f P = listRem i f P.roots.toList := by
   ext z
-  rw [partialModByMonic_apply, listRem, prod_map_roots_toList hP]
-  -- `partialDivByMonic i f P` is `listQuot i f P.roots.toList` by definition.
-  rfl
+  rw [partialModByMonic_apply, listRem, prod_map_roots_toList hP, partialDivByMonic_eq_listQuot]
 
 section Entire
 
@@ -413,8 +416,9 @@ variable [Finite ι] [CompleteSpace E] {i : ι} {f : (ι → ℂ) → E} {P : �
 
 /-- The quotient of an entire function by `P(zᵢ)` is entire. -/
 theorem differentiable_partialDivByMonic (hf : Differentiable ℂ f) (i : ι) (P : ℂ[X]) :
-    Differentiable ℂ (partialDivByMonic i f P) :=
-  differentiable_listQuot hf _
+    Differentiable ℂ (partialDivByMonic i f P) := by
+  rw [partialDivByMonic_eq_listQuot]
+  exact differentiable_listQuot hf _
 
 /-- The remainder of an entire function modulo `P(zᵢ)` is entire. -/
 theorem differentiable_partialModByMonic (hf : Differentiable ℂ f) (i : ι) (P : ℂ[X]) :
@@ -436,6 +440,7 @@ theorem iterate_partialDeriv_partialModByMonic_eq_zero (hP : P.Monic) (hf : Diff
 theorem eq_partialDivByMonic {f₀ g : (ι → ℂ) → E} (hP : P.Monic) (hf₀ : Differentiable ℂ f₀)
     (hg : Differentiable ℂ g) (hdeg : (partialDeriv i)^[P.natDegree] f₀ = 0)
     (h : ∀ z, f z = f₀ z + P.eval (z i) • g z) : g = partialDivByMonic i f P := by
+  rw [partialDivByMonic_eq_listQuot]
   refine eq_listQuot hf₀ hg P.roots.toList ?_ ?_
   · rwa [Multiset.length_toList, IsAlgClosed.card_roots_eq_natDegree]
   · rwa [prod_map_roots_toList hP]
@@ -451,8 +456,9 @@ theorem eq_partialModByMonic {f₀ g : (ι → ℂ) → E} (hP : P.Monic) (hf₀
 /-- The quotient by `P(zᵢ)` is additive on entire functions. -/
 theorem partialDivByMonic_add {g : (ι → ℂ) → E} (hf : Differentiable ℂ f)
     (hg : Differentiable ℂ g) (i : ι) (P : ℂ[X]) :
-    partialDivByMonic i (f + g) P = partialDivByMonic i f P + partialDivByMonic i g P :=
-  listQuot_add hf hg _
+    partialDivByMonic i (f + g) P = partialDivByMonic i f P + partialDivByMonic i g P := by
+  simp only [partialDivByMonic_eq_listQuot]
+  exact listQuot_add hf hg _
 
 /-- The remainder modulo `P(zᵢ)` is additive on entire functions. -/
 theorem partialModByMonic_add {g : (ι → ℂ) → E} (hf : Differentiable ℂ f)
@@ -465,8 +471,9 @@ theorem partialModByMonic_add {g : (ι → ℂ) → E} (hf : Differentiable ℂ 
 /-- The quotient of an entire function by `P(zᵢ)` commutes with scalar multiplication by a
 constant. -/
 theorem partialDivByMonic_const_smul (hf : Differentiable ℂ f) (c : ℂ) (i : ι) (P : ℂ[X]) :
-    partialDivByMonic i (c • f) P = c • partialDivByMonic i f P :=
-  listQuot_const_smul hf c _
+    partialDivByMonic i (c • f) P = c • partialDivByMonic i f P := by
+  simp only [partialDivByMonic_eq_listQuot]
+  exact listQuot_const_smul hf c _
 
 /-- The remainder of an entire function modulo `P(zᵢ)` commutes with scalar multiplication by a
 constant. -/
@@ -482,8 +489,9 @@ by `P(zᵢ)`. In particular, if `f` is a polynomial of degree at most `e` in `z�
 theorem iterate_partialDeriv_partialDivByMonic_of_ne (hf : Differentiable ℂ f) {j : ι}
     (hji : j ≠ i) (P : ℂ[X]) (m : ℕ) :
     (partialDeriv j)^[m] (partialDivByMonic i f P) =
-      partialDivByMonic i ((partialDeriv j)^[m] f) P :=
-  iterate_partialDeriv_listQuot_of_ne hf hji _ m
+      partialDivByMonic i ((partialDeriv j)^[m] f) P := by
+  simp only [partialDivByMonic_eq_listQuot]
+  exact iterate_partialDeriv_listQuot_of_ne hf hji _ m
 
 /-- The iterated partial derivatives `∂ⱼ^m` in another variable `j ≠ i` commute with the remainder
 modulo `P(zᵢ)`. In particular, if `f` is a polynomial of degree at most `e` in `zⱼ`, in the sense
@@ -528,7 +536,8 @@ bounded by `(2 / (R - r)) ^ p M` there, where `p = natDegree P`. -/
 theorem norm_partialDivByMonic_le (hf : Differentiable ℂ f) (hroots : ∀ ζ ∈ P.roots, ‖ζ‖ ≤ r)
     (hrR : r < R) (hM : ∀ w : ι → ℂ, ‖w‖ ≤ R → ‖f w‖ ≤ M) (hz : ‖z‖ ≤ R) :
     ‖partialDivByMonic i f P z‖ ≤ (2 / (R - r)) ^ P.natDegree * M := by
-  rw [← IsAlgClosed.card_roots_eq_natDegree, ← Multiset.length_toList]
+  rw [partialDivByMonic_eq_listQuot, ← IsAlgClosed.card_roots_eq_natDegree,
+    ← Multiset.length_toList]
   exact norm_listQuot_le hf (fun ζ hζ ↦ hroots ζ (Multiset.mem_toList.1 hζ)) hrR hM hz
 
 /-- **Size of the remainder.** If `P` is monic, `f` is entire, the roots of `P` lie in the closed
