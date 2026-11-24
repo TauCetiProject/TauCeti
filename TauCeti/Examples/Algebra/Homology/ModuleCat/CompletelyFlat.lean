@@ -25,11 +25,11 @@ variable (p : ℤ) [HasDerivedCategory.{w} (ModuleCat.{0} ℤ)]
 
 -- `ℤ[0]` is `p`-completely flat in `D(ℤ)`.
 example : IsCompletelyFlat (Ideal.span {p}) ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ ℤ)) :=
-  isCompletelyFlat_singleFunctor_of_flat _
+  ModuleCat.isCompletelyFlat_single _
 
 -- `ℤ[0]` has `p`-complete Tor-amplitude `[0, 0]`.
 example : HasCompleteTorAmplitude (Ideal.span {p}) 0 0
     ((singleFunctor (ModuleCat ℤ) 0).obj (.of ℤ ℤ)) :=
-  (isCompletelyFlat_singleFunctor_of_flat _).hasCompleteTorAmplitude
+  (ModuleCat.isCompletelyFlat_single _).hasCompleteTorAmplitude
 
 end TauCeti.Examples

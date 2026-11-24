@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Homology.ModuleCat.KFlat.DerivabilityStructure
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.LeftDerivedTensor
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
+import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+import TauCeti.Algebra.Homology.Bifunctor.Single
 import TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic
 
 /-!
@@ -39,14 +41,18 @@ degree zero.
 
 ## Main results
 
-* `TauCeti.DerivedDeRham.derivedReductionSingleIso`: the derived reduction of a flat module in
-  degree zero is its ordinary reduction in degree zero.
+* `TauCeti.DerivedDeRham.isCompletelyFlat_iff`,
+  `TauCeti.DerivedDeRham.isCompletelyFaithfullyFlat_iff` and
+  `TauCeti.DerivedDeRham.hasCompleteTorAmplitude_iff`: the defining conditions.
 * `TauCeti.DerivedDeRham.IsCompletelyFlat.hasCompleteTorAmplitude`: completely flat objects have
   complete Tor-amplitude `[0, 0]`.
-* `TauCeti.DerivedDeRham.isCompletelyFlat_singleFunctor_of_flat`: flat modules are `I`-completely
-  flat.
-* `TauCeti.DerivedDeRham.isCompletelyFaithfullyFlat_singleFunctor_of_faithfullyFlat`: faithfully
-  flat modules are `I`-completely faithfully flat.
+* `ModuleCat.isCompletelyFlat_single`: flat modules are `I`-completely flat.
+* `ModuleCat.isCompletelyFaithfullyFlat_single`: faithfully flat modules are `I`-completely
+  faithfully flat.
+
+The derived reduction of a flat module in degree zero is computed by
+`TauCeti.derivedExtendScalarsSingleIso`, and its flatness over `A/I` by
+`ModuleCat.flat_extendScalars` and `ModuleCat.faithfullyFlat_extendScalars`.
 
 ## References
 
@@ -100,6 +106,26 @@ def HasCompleteTorAmplitude (a b : ℤ) (M : DerivedCategory (ModuleCat.{u} A)) 
 
 variable {I}
 
+/-- The defining condition of `I`-complete flatness. -/
+theorem isCompletelyFlat_iff {M : DerivedCategory (ModuleCat.{u} A)} :
+    IsCompletelyFlat I M ↔ ∃ F : ModuleCat.{u} (A ⧸ I), Module.Flat (A ⧸ I) F ∧
+      Nonempty ((derivedReduction I).obj M ≅ (singleFunctor _ 0).obj F) :=
+  Iff.rfl
+
+/-- The defining condition of `I`-complete faithful flatness. -/
+theorem isCompletelyFaithfullyFlat_iff {M : DerivedCategory (ModuleCat.{u} A)} :
+    IsCompletelyFaithfullyFlat I M ↔ ∃ F : ModuleCat.{u} (A ⧸ I), Module.FaithfullyFlat (A ⧸ I) F ∧
+      Nonempty ((derivedReduction I).obj M ≅ (singleFunctor _ 0).obj F) :=
+  Iff.rfl
+
+/-- The defining condition of `I`-complete Tor-amplitude in `[a, b]`. -/
+theorem hasCompleteTorAmplitude_iff {a b : ℤ} {M : DerivedCategory (ModuleCat.{u} A)} :
+    HasCompleteTorAmplitude I a b M ↔ ∀ (N : ModuleCat.{u} (A ⧸ I)) (n : ℤ), n < a ∨ b < n →
+      IsZero ((homologyFunctor (ModuleCat.{u} (A ⧸ I)) n).obj
+        (((derivedTensor (ModuleCat.{u} (A ⧸ I))).obj ((derivedReduction I).obj M)).obj
+          ((singleFunctor _ 0).obj N))) :=
+  Iff.rfl
+
 /-- A completely faithfully flat object is completely flat. -/
 theorem IsCompletelyFaithfullyFlat.isCompletelyFlat {M : DerivedCategory (ModuleCat.{u} A)}
     (h : IsCompletelyFaithfullyFlat I M) : IsCompletelyFlat I M := by
@@ -132,23 +158,6 @@ theorem HasCompleteTorAmplitude.mono {a b a' b' : ℤ} {M : DerivedCategory (Mod
     HasCompleteTorAmplitude I a' b' M := fun N n hn ↦
   h N n (hn.imp (fun h' ↦ h'.trans_le ha) (fun h' ↦ hb.trans_lt h'))
 
-/-- The tensor product of two complexes concentrated in degree zero vanishes in every degree
-`n ≠ 0`. -/
-private theorem isZero_tensorObj_single_X {R : Type u} [CommRing R] (F N : ModuleCat.{u} R) {n : ℤ}
-    (hn : n ≠ 0) :
-    IsZero ((MonoidalCategory.tensorObj
-      ((HomologicalComplex.single (ModuleCat.{u} R) (.up ℤ) 0).obj F)
-      ((HomologicalComplex.single (ModuleCat.{u} R) (.up ℤ) 0).obj N)).X n) := by
-  rw [IsZero.iff_id_eq_zero]
-  refine HomologicalComplex.mapBifunctor.hom_ext (fun p q h ↦ ?_)
-  replace h : p + q = n := h
-  by_cases hp : p = 0
-  · have hq : q ≠ 0 := by omega
-    exact ((MonoidalCategory.tensorLeft _).map_isZero
-      (HomologicalComplex.isZero_single_obj_X _ _ _ _ hq)).eq_of_src _ _
-  · exact ((MonoidalCategory.tensorRight _).map_isZero
-      (HomologicalComplex.isZero_single_obj_X _ _ _ _ hp)).eq_of_src _ _
-
 /-- **Completely flat objects have complete Tor-amplitude `[0, 0]`.** If the derived reduction
 of `M` is a flat `A/I`-module `F` in degree zero, then for every `A/I`-module `N` the derived
 tensor product `F ⊗^L_{A/I} N` is computed by the K-flat complex `F[0]`, and is concentrated in
@@ -166,48 +175,30 @@ theorem IsCompletelyFlat.hasCompleteTorAmplitude {M : DerivedCategory (ModuleCat
       CochainComplex.derivedTensorKFlatLeftIso (S.obj F) (S.obj N)) ≪≫
     (homologyFunctorFactors _ n).app _
   refine IsZero.of_iso ?_ e'
-  exact ShortComplex.isZero_homology_of_isZero_X₂ _ (isZero_tensorObj_single_X F N hn')
+  exact ShortComplex.isZero_homology_of_isZero_X₂ _
+    (HomologicalComplex.isZero_mapBifunctor_single_single_X _ _ 0 0 F N (by simpa using hn'.symm))
+
+end TauCeti.DerivedDeRham
 
 /-! ### Flat modules -/
 
-variable (I) in
-/-- **The derived reduction of a flat module.** For a flat `A`-module `M`, placed in degree zero,
-the derived reduction `M ⊗^L_A A/I` is the ordinary scalar extension `A/I ⊗_A M` placed in degree
-zero. -/
-def derivedReductionSingleIso (M : ModuleCat.{u} A) [Module.Flat A M] :
-    (derivedReduction I).obj ((singleFunctor _ 0).obj M) ≅
-      (singleFunctor _ 0).obj ((ModuleCat.extendScalars (Ideal.Quotient.mk I)).obj M) :=
-  (derivedReduction I).mapIso ((singleFunctorIsoCompQ _ 0).app M) ≪≫
-    derivedExtendScalarsKFlatIso _ _ ≪≫
-    Q.mapIso ((HomologicalComplex.singleMapHomologicalComplex
-      (ModuleCat.extendScalars (Ideal.Quotient.mk I)) (.up ℤ) 0).app M) ≪≫
-    ((singleFunctorIsoCompQ _ 0).app _).symm
+namespace ModuleCat
 
-omit [HasDerivedCategory (ModuleCat A)] [HasDerivedCategory (ModuleCat (A ⧸ I))] in
-/-- Scalar extension of a flat module along `A → A/I` is flat over `A/I`. -/
-theorem flat_extendScalars_quotient (M : ModuleCat.{u} A) [Module.Flat A M] :
-    Module.Flat (A ⧸ I) ((ModuleCat.extendScalars (Ideal.Quotient.mk I)).obj M) := by
-  let := (Ideal.Quotient.mk I).toAlgebra
-  exact Module.Flat.baseChange A (A ⧸ I) M
+open TauCeti TauCeti.DerivedDeRham
 
-omit [HasDerivedCategory (ModuleCat A)] [HasDerivedCategory (ModuleCat (A ⧸ I))] in
-/-- Scalar extension of a faithfully flat module along `A → A/I` is faithfully flat over `A/I`. -/
-theorem faithfullyFlat_extendScalars_quotient (M : ModuleCat.{u} A) [Module.FaithfullyFlat A M] :
-    Module.FaithfullyFlat (A ⧸ I) ((ModuleCat.extendScalars (Ideal.Quotient.mk I)).obj M) := by
-  let := (Ideal.Quotient.mk I).toAlgebra
-  exact Module.FaithfullyFlat.instTensorProduct A M (A ⧸ I)
+variable {A : Type u} [CommRing A] {I : Ideal A}
+  [HasDerivedCategory.{w} (ModuleCat.{u} A)] [HasDerivedCategory.{w'} (ModuleCat.{u} (A ⧸ I))]
 
 /-- **Flat modules are completely flat.** A flat `A`-module placed in degree zero is
 `I`-completely flat for every ideal `I`. -/
-theorem isCompletelyFlat_singleFunctor_of_flat (M : ModuleCat.{u} A) [Module.Flat A M] :
+theorem isCompletelyFlat_single (M : ModuleCat.{u} A) [Module.Flat A M] :
     IsCompletelyFlat I ((singleFunctor _ 0).obj M) :=
-  ⟨_, flat_extendScalars_quotient M, ⟨derivedReductionSingleIso I M⟩⟩
+  ⟨_, inferInstance, ⟨derivedExtendScalarsSingleIso _ M⟩⟩
 
 /-- **Faithfully flat modules are completely faithfully flat.** A faithfully flat `A`-module
 placed in degree zero is `I`-completely faithfully flat for every ideal `I`. -/
-theorem isCompletelyFaithfullyFlat_singleFunctor_of_faithfullyFlat (M : ModuleCat.{u} A)
-    [Module.FaithfullyFlat A M] :
+theorem isCompletelyFaithfullyFlat_single (M : ModuleCat.{u} A) [Module.FaithfullyFlat A M] :
     IsCompletelyFaithfullyFlat I ((singleFunctor _ 0).obj M) :=
-  ⟨_, faithfullyFlat_extendScalars_quotient M, ⟨derivedReductionSingleIso I M⟩⟩
+  ⟨_, inferInstance, ⟨derivedExtendScalarsSingleIso _ M⟩⟩
 
-end TauCeti.DerivedDeRham
+end ModuleCat
