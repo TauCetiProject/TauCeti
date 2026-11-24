@@ -269,27 +269,38 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
           (K.fromSingle₀Equiv F _).property, Functor.map_zero]) s
   have hA := ConcreteCategory.congr_hom
     (toRightDerivedZero_app_comp_rightDerivedΓIsoGodement_hom_app F) s
-  erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hA
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hA
   simp only [moduleCohomologyForgetComparison, godementHomologyIso, Iso.trans_hom,
     NatTrans.comp_app, Functor.isoWhiskerRight_hom, Functor.whiskerRight_app,
     Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.symm_hom, Functor.comp_obj,
     ConcreteCategory.comp_apply, ModuleCat.forget₂_map]
   -- the objects of the composite agree only up to unfolding, so its factors are matched with `erw`
   erw [hA]
-  -- forgetting the module structure commutes with the class map
+  -- forgetting the module structure commutes with the class map; `erw` matches the class map
+  -- `(ΓK.sc 0).homologyπ` of the `let` cycle `c`, seen through `forget₂`, with the composite
+  -- `ΓK.liftCycles _ ≫ ΓK.homologyπ 0` applied to `s`, by unfolding `c`, the composite and
+  -- `HomologicalComplex.homologyπ`
   rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_inv_app]
   erw [(ΓK.sc 0).map_homologyπ_comp_mapHomologyIso_inv_apply
     (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) c]
-  -- the maps of complexes act on classes through their maps on cycles
-  erw [← ConcreteCategory.comp_apply (HomologicalComplex.homologyπ _ 0),
-    HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyπ_naturality,
+  -- the maps of complexes act on classes through their maps on cycles; `erw` reads the class map
+  -- of the mapped short complex `(ΓK.sc 0).map _` as `homologyπ _ 0` of the mapped complex, by
+  -- unfolding `HomologicalComplex.sc` and `HomologicalComplex.homologyπ`
+  erw [← ConcreteCategory.comp_apply (HomologicalComplex.homologyπ _ 0)]
+  rw [HomologicalComplex.homologyFunctor_map, HomologicalComplex.homologyπ_naturality,
     ConcreteCategory.comp_apply]
-  -- evaluation at `⊤` commutes with the class map
+  -- evaluation at `⊤` commutes with the class map; `erw` reads `homologyπ _ 0` of the evaluated
+  -- complex as the class map of the evaluated short complex `(P.sc 0).map _`, by unfolding
+  -- `HomologicalComplex.homologyπ` and `HomologicalComplex.sc`
   let P := ((sheafToPresheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}).mapHomologicalComplex
     (ComplexShape.up ℕ)).obj (godementForget F)
   rw [Functor.mapHomologicalComplexCompHomologyFunctorIso_hom_app]
   erw [ShortComplex.homologyπ_comp_mapHomologyIso_hom_apply]
   simp only [evaluation_obj_map]
+  -- `erw`: the component of `NatIso.ofComponents` at the Godement resolution unfolds to
+  -- `homologyIsoCohomologyPresheaf` and `(P.sc 0).homologyπ` to `P.homologyπ 0`; the component
+  -- of `cohomologyPresheafEvaluationIsoFunctorH` is the abbreviation `cohomologyPresheafObjIsoH`,
+  -- whose source `H' _ 0 ⊤` is the object of the composite `cohomologyPresheafFunctor ⋙ evaluation`
   erw [Sheaf.H'.homologyIsoCohomologyPresheaf_hom_app_homologyπ_apply,
     Sheaf.H.equiv₀_cohomologyPresheafObjIsoH_hom_apply]
   -- the class of the image of a section under the augmentation is that section
@@ -299,11 +310,11 @@ theorem equiv₀_moduleCohomologyForgetComparison_hom_app_toRightDerivedZero
   have hJ : ΓK.iCycles 0 c = (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
       (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app F)).val s :=
     ConcreteCategory.congr_hom (ΓK.liftCycles_i _ _ _ _) s
-  erw [hJ]
+  rw [hJ]
   simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplexCompIso_hom_app_f,
     Functor.mapHomologicalComplexCompIso_inv_app_f, Iso.refl_inv, NatTrans.id_app,
     ConcreteCategory.comp_apply]
-  erw [sectionsIso_hom_app_apply]
+  rw [sectionsIso_hom_app_apply]
   refine Eq.trans ?_ (ConcreteCategory.congr_hom ((Sheaf.ΓNatIsoSheafSections
     (Opens.grothendieckTopology X) (ModuleCat.{u} R) isTerminalTop).hom.naturality
       (K.fromSingle₀Equiv F ((toGodementResolution (ModuleCat.{u} R) X).app F)).val) s).symm
