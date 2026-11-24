@@ -138,7 +138,7 @@ theorem ofReal_sqrt_two_sq : (Real.sqrt 2 : ℂ) ^ 2 = 2 := by
 
 /-- The inverse of the real square root `√2`, cast to `ℂ`, times itself is `2⁻¹`. -/
 theorem ofReal_sqrt_two_inv_mul_self : (Real.sqrt 2 : ℂ)⁻¹ * (Real.sqrt 2 : ℂ)⁻¹ = 2⁻¹ := by
-  rw [← mul_inv, mul_self_ofReal_sqrt zero_le_two]
+  rw [← mul_inv, mul_self_ofReal_sqrt zero_le_two, ofReal_ofNat]
 
 /-- The complex number `1 + i` is nonzero. -/
 theorem one_add_I_ne_zero : 1 + I ≠ 0 := fun h ↦ by
