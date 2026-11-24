@@ -140,7 +140,7 @@ theorem exists_enorm_le_mul_eLpNorm_jet [CompleteSpace V] {p : ℝ≥0} (hp : 2 
   obtain ⟨c₁, hmean, hc₁⟩ : ∃ c₁ : ℝ≥0∞, (∀ (ξ : ℝ × ℝ → V) z,
       ‖⨍ y in ball z 1, ξ y‖ₑ ≤ c₁ * eLpNorm ξ p (volume.restrict (ball z 1))) ∧ c₁ ≠ ∞ :=
     ⟨_, fun ξ z ↦ (TauCeti.enorm_setAverage_le (mu := volume) (s := ball z 1) (f := ξ) (p := p)
-      (by exact_mod_cast hp1) ENNReal.coe_ne_top).trans_eq (by rw [hm, ENNReal.coe_toReal]),
+      (by exact_mod_cast hp1)).trans_eq (by rw [hm, ENNReal.coe_toReal]),
       ENNReal.rpow_ne_top_of_ne_zero hm0 hmtop⟩
   refine ⟨((2 * c₀ + c₁) * 2).toNNReal, fun {ξ} hξ hper z ↦ ?_⟩
   rw [ENNReal.coe_toNNReal (by finiteness)]

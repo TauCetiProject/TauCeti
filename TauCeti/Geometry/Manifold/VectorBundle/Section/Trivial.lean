@@ -11,7 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Map
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Map.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 

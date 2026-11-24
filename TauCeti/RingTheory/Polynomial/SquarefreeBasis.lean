@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Polynomial.Content
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 
-import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.RingTheory.PrincipalIdealDomain
-import TauCeti.RingTheory.Polynomial.GaussLemma
+import TauCeti.Algebra.Squarefree
+import TauCeti.RingTheory.Polynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
@@ -30,9 +30,12 @@ single polynomial `f` into primitive, squarefree, pairwise relatively prime `s�
 squarefree basis of `{f}`. McCallum's family lifting theorem only uses
 the properties recorded here.
 
-Over the fraction field the product of a squarefree basis stays squarefree and its members stay
-pairwise coprime, by Gauss's lemma. Hence the resultants of distinct members are nonzero, and in
-characteristic zero the discriminant of the product of any subfamily is nonzero.
+When the polynomials over `D` form a decomposition monoid, as over a GCD domain by Gauss's
+lemma, the product of a squarefree basis is squarefree and stays squarefree over every
+localization of `D`. When in addition `D` is cancellative (`IsCancelMulZero`), distinct members
+stay pairwise coprime over the fraction field and therefore have nonzero resultant. When `D` is a
+domain whose polynomials form a decomposition monoid and whose fraction field is perfect (for
+instance, in characteristic zero), the discriminant of the product of any subfamily is nonzero.
 
 The factorization of each member also reconstructs its roots and their multiplicities after any
 specialization into a domain that does not nullify the member: the multiplicity of a root is a
@@ -48,13 +51,15 @@ following the convention of `Polynomial.rootMultiplicity`.
 * `Finset.IsSquarefreeBasis.exists_eq_C_content_mul_unit_mul_prod`: every member of the family
   is its content times a unit times a product of powers of the basis.
 * `Finset.IsSquarefreeBasis.squarefree_prod`, `Finset.IsSquarefreeBasis.squarefree_prod_map`:
-  the product of the basis is squarefree, also over the fraction field.
+  when `D[X]` is a decomposition monoid, the product of the basis is squarefree, also over every
+  localization of `D`.
 * `Finset.IsSquarefreeBasis.isCoprime_map`, `Finset.IsSquarefreeBasis.resultant_ne_zero`:
-  distinct members of the basis are coprime over the fraction field, so their resultant is
-  nonzero.
-* `Finset.IsSquarefreeBasis.discr_prod_ne_zero`, `Finset.IsSquarefreeBasis.discr_ne_zero`: in
-  characteristic zero, the product of any subfamily of the basis, in particular each member, has
-  nonzero discriminant.
+  when `D` is cancellative (`IsCancelMulZero`) and `D[X]` is a decomposition monoid, distinct
+  members of the basis are coprime over the fraction field, so their resultant is nonzero.
+* `Finset.IsSquarefreeBasis.discr_prod_ne_zero`, `Finset.IsSquarefreeBasis.discr_ne_zero`: over a
+  domain `D` whose polynomials form a decomposition monoid and whose fraction field is perfect (in
+  particular, in characteristic zero), the product of any subfamily of the basis, in particular
+  each member, has nonzero discriminant.
 * `Finset.IsSquarefreeBasis.isRoot_map_iff`: after a specialization `φ : D →+* A` into a
   domain under which a member `f` of the family does not vanish, the roots of the specialized
   `f` are exactly the roots of the specialized basis members dividing `f`.
@@ -192,43 +197,56 @@ theorem rootMultiplicity_map_eq (hB : F.IsSquarefreeBasis B) (hf : f ∈ F)
 
 end Multiplicity
 
-variable [IsGCDMonoid D]
+/-- If polynomials over `D` form a decomposition monoid, as over a GCD domain, the product of the
+members of a squarefree basis is squarefree. -/
+theorem squarefree_prod [DecompositionMonoid D[X]] (hB : F.IsSquarefreeBasis B) :
+    Squarefree (∏ b ∈ B, b) :=
+  Finset.squarefree_prod_iff.2 ⟨hB.isRelPrime, hB.squarefree⟩
 
-/-- The product of the members of a squarefree basis is squarefree. -/
-theorem squarefree_prod (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, b) :=
-  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
-  Finset.squarefree_prod_of_pairwise_isCoprime
-    (fun b hb b' hb' hne ↦ hB.isRelPrime b hb b' hb' hne) hB.squarefree
-
-/-- The product of the members of a squarefree basis is squarefree over the fraction field. -/
-theorem squarefree_prod_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
-    (hB : F.IsSquarefreeBasis B) : Squarefree (∏ b ∈ B, b.map (algebraMap D K)) := by
+/-- If polynomials over `D` form a decomposition monoid, as over a GCD domain, the product of the
+members of a squarefree basis is squarefree over every localization of `D`, in particular over the
+fraction field. -/
+theorem squarefree_prod_map [DecompositionMonoid D[X]] {S : Type*} [CommSemiring S] [Algebra D S]
+    (hB : F.IsSquarefreeBasis B) (M : Submonoid D) [IsLocalization M S] :
+    Squarefree (∏ b ∈ B, b.map (algebraMap D S)) := by
   rw [← Polynomial.map_prod]
-  exact hB.squarefree_prod.map_fraction_map
+  exact hB.squarefree_prod.map_localization_map M
 
-/-- In characteristic zero, the product of any subfamily of a squarefree basis has
-nonzero discriminant. This includes the empty subfamily, whose product is `1`. -/
-theorem discr_prod_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B)
-    {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 :=
-  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
-  have : IsDomain D := ⟨⟩
+/-- Over a domain whose polynomials form a decomposition monoid and whose fraction field is perfect
+(such as a GCD domain of characteristic zero), the product of any subfamily of a squarefree basis
+has nonzero discriminant. This includes the empty subfamily, whose product is `1`. -/
+theorem discr_prod_ne_zero [IsDomain D] [DecompositionMonoid D[X]] [PerfectField (FractionRing D)]
+    (hB : F.IsSquarefreeBasis B) {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 :=
   (hB.squarefree_prod.squarefree_of_dvd (Finset.prod_dvd_prod_of_subset A B _ hA)).discr_ne_zero
 
-/-- In characteristic zero, the discriminant of a member of a squarefree basis is nonzero. -/
-theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 :=
-  have : IsCancelMulZero D := IsGCDMonoid.isCancelMulZero D
-  have : IsDomain D := ⟨⟩
+/-- Over a domain whose polynomials form a decomposition monoid and whose fraction field is perfect
+(such as a GCD domain of characteristic zero), the discriminant of a member of a squarefree basis
+is nonzero. -/
+theorem discr_ne_zero [IsDomain D] [DecompositionMonoid D[X]] [PerfectField (FractionRing D)]
+    (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 :=
   (hB.squarefree b hb).discr_ne_zero
 
-/-- Distinct members of a squarefree basis are coprime over the fraction field. -/
-theorem isCoprime_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
-    (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
-    IsCoprime (b.map (algebraMap D K)) (b'.map (algebraMap D K)) :=
-  (hB.isRelPrime b hb b' hb' hne).map_fraction_map.isCoprime
+/-- If `D` is cancellative and polynomials over `D` form a decomposition monoid, as over a GCD
+domain, distinct members of a squarefree basis are coprime over the fraction field. -/
+theorem isCoprime_map [IsCancelMulZero D] [DecompositionMonoid D[X]]
+    (hB : F.IsSquarefreeBasis B) (K : Type*) [CommSemiring K] [Algebra D K] [IsFractionRing D K]
+    (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
+    IsCoprime (b.map (algebraMap D K)) (b'.map (algebraMap D K)) := by
+  have : Nontrivial D := Polynomial.Nontrivial.of_polynomial_ne hne
+  have : IsDomain D := ⟨⟩
+  let L := FractionRing D
+  have h : IsCoprime (b.map (algebraMap D L)) (b'.map (algebraMap D L)) :=
+    ((hB.isRelPrime b hb b' hb' hne).map_localization_map (nonZeroDivisors D)).isCoprime
+  have e : L →ₐ[D] K := (IsLocalization.algEquiv (nonZeroDivisors D) L K).toAlgHom
+  simpa [Polynomial.map_map, e.comp_algebraMap] using h.map (mapRingHom (e : L →+* K))
 
-/-- The resultant of two distinct members of a squarefree basis is nonzero. -/
-theorem resultant_ne_zero [IsDomain D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B)
-    (hne : b ≠ b') : resultant b b' ≠ 0 := by
+/-- If `D` is cancellative and polynomials over `D` form a decomposition monoid, as over a GCD
+domain, the resultant of two distinct members of a squarefree basis is nonzero. -/
+theorem resultant_ne_zero [IsCancelMulZero D] [DecompositionMonoid D[X]]
+    (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
+    resultant b b' ≠ 0 := by
+  have : Nontrivial D := Polynomial.Nontrivial.of_polynomial_ne hne
+  have : IsDomain D := ⟨⟩
   have hinj := IsFractionRing.injective D (FractionRing D)
   have h := Polynomial.resultant_ne_zero _ _ (hB.isCoprime_map (FractionRing D) hb hb' hne)
   rwa [resultant_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _)

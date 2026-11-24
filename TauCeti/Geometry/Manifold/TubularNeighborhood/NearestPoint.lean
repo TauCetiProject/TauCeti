@@ -87,7 +87,7 @@ theorem sub_mem_normalSubspace_of_isLocalMin {x : M} {q : V}
   -- So `x` is a critical point of it, which says that `f x - q` is normal at `x`.
   rw [← neg_sub]
   exact neg_mem ((mem_criticalPoints_norm_sq_sub_comp_iff (a := q) hf).mp
-    (hsq.mem_criticalPoints (I := I)))
+    (hsq.mem_criticalPoints (I := I) BoundarylessManifold.isInteriorPoint))
 
 section Tube
 

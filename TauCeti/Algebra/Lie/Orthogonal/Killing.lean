@@ -13,6 +13,7 @@ import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.Algebra.Lie.BaseChange.Radical
 import TauCeti.Algebra.Lie.Orthogonal.Basic
 import TauCeti.Algebra.Lie.SkewAdjoint.BaseChange
+import TauCeti.Algebra.Lie.SkewAdjoint.Killing
 import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
@@ -47,6 +48,12 @@ Otherwise `N` lies in `x^⊥`, so for every `y ∈ N` the hyperplane `y^⊥ ⊆ 
 is a multiple of `y`. With a third index, `x^⊥` contains two vectors that are not proportional,
 and `x ≠ 0` cannot be a multiple of both.
 
+The Killing form itself is explicit: on `so(n)` it is `κ(X, Y) = (n - 2) trace (X * Y)`, and on
+`so(p, q)` it is `(p + q - 2) trace (X * Y)`, over every field of characteristic other than two.
+Both are the case `ε = 1` of the Killing form `(n - 2 ε) trace (X * Y)` of the Lie algebra of
+matrices skew-adjoint for an invertible `J` with `Jᵀ = ε • J`
+(`TauCeti.killingForm_skewAdjointMatricesLieSubalgebra_apply`).
+
 ## Main results
 
 * `TauCeti.isIrreducible_skewAdjointMatricesLieSubalgebra_standard`: the standard module of the
@@ -58,6 +65,8 @@ and `x ≠ 0` cannot be a multiple of both.
 * `TauCeti.isIrreducible_so_standard`, `TauCeti.hasTrivialRadical_so`: the definite case.
 * `TauCeti.isIrreducible_so'_standard`, `TauCeti.hasTrivialRadical_so'`: the indefinite case,
   in particular the semisimplicity of `so(p, q)` for `p + q ≥ 3`.
+* `TauCeti.killingForm_so_apply`, `TauCeti.killingForm_so'_apply`: `κ(X, Y) = (n - 2) trace (X * Y)`
+  on `so(n)`, and `(p + q - 2) trace (X * Y)` on `so(p, q)`.
 
 ## References
 
@@ -233,5 +242,32 @@ theorem hasTrivialRadical_so' (hpq : 3 ≤ Fintype.card p + Fintype.card q) :
     Orthogonal.isUnit_indefiniteDiagonal (by rwa [Fintype.card_sum])
 
 end Indefinite
+
+section KillingForm
+
+variable {K : Type*} [Field K] [NeZero (2 : K)]
+
+/-- **The Killing form of `so(n)`**: `κ(X, Y) = (n - 2) trace (X * Y)` on
+`LieAlgebra.Orthogonal.so l K`, over every field of characteristic other than two. -/
+theorem killingForm_so_apply {l : Type*} [DecidableEq l] [Fintype l] (X Y : Orthogonal.so l K) :
+    killingForm K (Orthogonal.so l K) X Y =
+      (Fintype.card l - 2) * ((X : Matrix l l K) * Y).trace := by
+  have := killingForm_skewAdjointMatricesLieSubalgebra_apply (J := (1 : Matrix l l K)) (ε := 1)
+    (by rw [transpose_one, one_smul]) isUnit_one X Y
+  rwa [mul_one] at this
+
+/-- **The Killing form of `so(p, q)`**: `κ(X, Y) = (p + q - 2) trace (X * Y)` on
+`LieAlgebra.Orthogonal.so' p q K`, over every field of characteristic other than two. -/
+theorem killingForm_so'_apply {p q : Type*} [DecidableEq p] [DecidableEq q] [Fintype p]
+    [Fintype q] (X Y : Orthogonal.so' p q K) :
+    killingForm K (Orthogonal.so' p q K) X Y =
+      (Fintype.card p + Fintype.card q - 2) * ((X : Matrix (p ⊕ q) (p ⊕ q) K) * Y).trace := by
+  have := killingForm_skewAdjointMatricesLieSubalgebra_apply
+    (J := Orthogonal.indefiniteDiagonal p q K) (ε := 1)
+    (by rw [one_smul]; exact (isSymm_diagonal _).eq)
+    (Orthogonal.isUnit_indefiniteDiagonal (p := p) (q := q) (R := K)) X Y
+  rwa [Fintype.card_sum, Nat.cast_add, mul_one] at this
+
+end KillingForm
 
 end TauCeti

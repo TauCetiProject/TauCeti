@@ -179,7 +179,7 @@ theorem exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_di
       ENNReal.toReal_mono hF.eLpNorm_ne_top (eLpNorm_mono_measure F hle)
     have hpow : (ρ / R) ^ β ≤ (ρ / R) ^ min β 1 :=
       Real.rpow_le_rpow_of_exponent_ge (by positivity) ((div_le_one hR).2 hρR) (min_le_left _ _)
-    filter_upwards [hdecay h ha (hF.mono_measure hle) hu0 hu hR
+    filter_upwards [hdecay h ha (hF.mono_measure hle) hu0 (fun v _ => hu v) hR
       (ae_restrict_of_ae_restrict_of_subset inter_subset_left hbound) (hext z hz) hρ hρR]
       with x hx
     rw [Real.coe_toNNReal _ hN0, hN, mul_right_comm]
@@ -288,20 +288,14 @@ omit [DecidableEq ι] in
 /-- For `u, g ∈ H¹(Ω)` and a function `G` agreeing with `g` almost everywhere on `Ω`, the value of
 `u` agrees almost everywhere on `Ω` with the precise representative of the extension of `u - g` by
 zero plus `G`. -/
-private theorem value_ae_eq_preciseRepresentative_indicator_sub_add
+theorem value_ae_eq_preciseRepresentative_indicator_sub_add
     {Omega : Opens (EuclideanSpace ℝ ι)} (u g : W1p mu Omega 2) {G : EuclideanSpace ℝ ι → ℝ}
     (hgG : W1p.value g =ᵐ[mu.restrict Omega] G) :
     W1p.value u =ᵐ[mu.restrict Omega] preciseRepresentative mu
       ((Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.value (u - g))) + G := by
-  have hΩ : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  have hli : LocallyIntegrable ((Omega : Set (EuclideanSpace ℝ ι)).indicator
-      (W1p.value (u - g))) mu :=
-    ((memLp_indicator_iff_restrict hΩ.nullMeasurableSet).2
-      (Lp.memLp (W1p.value (u - g)))).locallyIntegrable (by norm_num)
-  filter_upwards [ae_restrict_of_ae (ae_eq_preciseRepresentative hli), W1p.value_sub_ae u g,
-    hgG, ae_restrict_mem hΩ] with x h₁ h₂ h₃ hx
-  rw [indicator_of_mem hx, h₂] at h₁
-  simp only [Pi.add_apply, Pi.sub_apply, ← h₁, ← h₃, sub_add_cancel]
+  filter_upwards [W1p.ae_eq_preciseRepresentative_indicator (u - g), W1p.value_sub_ae u g,
+    hgG] with x h₁ h₂ h₃
+  simp only [Pi.add_apply, ← h₁, h₂, Pi.sub_apply, ← h₃, sub_add_cancel]
 
 /-- **The global Hölder estimate for the Dirichlet problem with Lipschitz boundary values and a
 divergence datum, under an exterior density condition.** Let `n ≥ 1` be the dimension, let `q > 2`
