@@ -260,14 +260,16 @@ def diffeotopyOfLift : TauCeti.Diffeotopy 𝓘(ℝ) n (AddCircle T) where
   fst_apply := fst_prodDiffeomorphOfLift _ _ _ _ _ _
   snd_apply_zero' θ := by
     induction θ using QuotientAddGroup.induction_on with
-    | H x => simp [interpolate, sinSqWeight]
+    | H x => simp [interpolate]
 
 /-- At time `t` the diffeotopy `diffeotopyOfLift` is the circle map with lift
 `x ↦ x + sin (π t / 2) ^ 2 (F x - x)`. -/
 @[simp]
 theorem diffeotopyOfLift_apply_coe (t : I) (x : ℝ) :
     diffeotopyOfLift hF hn hper hpos (t, (x : AddCircle T)) =
-      ((x + Real.sin (Real.pi * t / 2) ^ 2 * (F x - x) : ℝ) : AddCircle T) := (rfl)
+      ((x + Real.sin (Real.pi * t / 2) ^ 2 * (F x - x) : ℝ) : AddCircle T) := by
+  rw [← sinSqWeight_def]
+  rfl
 
 /-- The diffeotopy `diffeotopyOfLift` ends at the circle diffeomorphism with lift `F`. -/
 theorem diffeotopyOfLift_final_apply_coe (x : ℝ) :

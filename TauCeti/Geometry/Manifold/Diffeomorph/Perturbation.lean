@@ -190,6 +190,12 @@ def idAddSmulHomeomorph (hlip : LipschitzWith K u) (hK : K < 1) (a : 𝕜) (ha :
     E ≃ₜ E :=
   (hlip.const_smul_of_norm_le_one ha).idAddHomeomorph 𝕜 hK
 
+/-- `LipschitzWith.idAddSmulHomeomorph` is `LipschitzWith.idAddHomeomorph` for the perturbation
+`a • u`, so the API of the latter applies to it. -/
+theorem idAddSmulHomeomorph_def (hlip : LipschitzWith K u) (hK : K < 1) (a : 𝕜) (ha : ‖a‖ ≤ 1) :
+    hlip.idAddSmulHomeomorph hK a ha = (hlip.const_smul_of_norm_le_one ha).idAddHomeomorph 𝕜 hK :=
+  (rfl)
+
 @[simp]
 theorem coe_idAddSmulHomeomorph (hlip : LipschitzWith K u) (hK : K < 1) (a : 𝕜)
     (ha : ‖a‖ ≤ 1) : ⇑(hlip.idAddSmulHomeomorph hK a ha) = fun x ↦ x + a • u x :=

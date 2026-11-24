@@ -127,16 +127,6 @@ section Sphere
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
-/-- The cone over the displacement `x ↦ f x - x` of a `C^k` self-map of the sphere is `C^k` away
-from the origin. -/
-private theorem contDiffAt_sphereCone_sub {f : sphere (0 : E) 1 → sphere (0 : E) 1}
-    (hf : ContMDiff (𝓡 n) (𝓡 n) k f) {y : E} (hy : y ≠ 0) :
-    ContDiffAt ℝ k (sphereCone fun x ↦ (f x : E) - x) y := by
-  have hg : ContMDiff (𝓡 n) 𝓘(ℝ, E) k fun x : sphere (0 : E) 1 ↦ (f x : E) - x :=
-    (contMDiff_coe_sphere.comp hf).sub contMDiff_coe_sphere
-  exact ((contDiffAt_norm ℝ hy).smul (contDiffAt_sphereExtend hy (hg _))).congr_of_eventuallyEq
-    (.of_forall fun z ↦ sphereCone_eq_norm_smul_sphereExtend _ z)
-
 /-- The pair `(s, x) ↦ (s, x)` of a parameter and a point of the sphere, read in `ℝ × E`. -/
 private theorem contMDiff_prodMk_coe_sphere :
     ContMDiff (𝓘(ℝ).prod (𝓡 n)) 𝓘(ℝ, ℝ × E) k fun p : ℝ × sphere (0 : E) 1 ↦ (p.1, (p.2 : E)) :=
@@ -213,7 +203,8 @@ private theorem contMDiff_sphereSlice (hf : ContMDiff (𝓡 n) (𝓡 n) k f)
     simp only [slice_apply]
     exact (contDiffAt_normalize hne).comp (p.1, (p.2 : E)) (contDiffAt_snd.add
       ((contDiff_sinSqWeight.contDiffAt.comp _ contDiffAt_fst).smul
-        ((contDiffAt_sphereCone_sub hf (ne_zero_of_mem_unit_sphere p.2)).comp (p.1, (p.2 : E))
+        ((contDiffAt_sphereCone (ne_zero_of_mem_unit_sphere p.2)
+          ((contMDiff_coe_sphere.comp hf).sub contMDiff_coe_sphere _)).comp (p.1, (p.2 : E))
           (contDiffAt_snd (p := (p.1, (p.2 : E)))))))
   exact hF.contMDiffAt.comp p (contMDiff_prodMk_coe_sphere (n := n) p)
 
@@ -227,7 +218,8 @@ private theorem contMDiff_sphereSliceSymm (hk : 1 ≤ k) (hf : ContMDiff (𝓡 n
   -- The inverses of the slices are jointly `C^k` away from the origin, where the cone is `C^k`.
   have h₁ : ContDiffAt ℝ k (fun q : ℝ × E ↦ (slice hu hL q.1).symm q.2) (p.1, (p.2 : E)) :=
     hu.contDiffAt_idAddSmulHomeomorph_symm hL contDiff_sinSqWeight norm_sinSqWeight_le_one
-      isOpen_compl_singleton (fun _ hy ↦ (contDiffAt_sphereCone_sub hf hy).contDiffWithinAt) hk
+      isOpen_compl_singleton (fun _ hy ↦ (contDiffAt_sphereCone hy
+        ((contMDiff_coe_sphere.comp hf).sub contMDiff_coe_sphere _)).contDiffWithinAt) hk
       (q := (p.1, (p.2 : E))) hne
   have hF : ContDiffAt ℝ k (NormedSpace.normalize ∘ fun q : ℝ × E ↦ (slice hu hL q.1).symm q.2)
       (p.1, (p.2 : E)) :=
@@ -265,14 +257,13 @@ private theorem sphereInterpolationDiffeotopy_apply_eq (p : I × sphere (0 : E) 
 
 omit [CompleteSpace E] in
 /-- At time `t`, the interpolation diffeotopy sends `x` to the normalization of
-`x + sin (π t / 2) ^ 2 • (f x - x)`. -/
+`x + sinSqWeight t • (f x - x)`, where `sinSqWeight t = sin (π t / 2) ^ 2`. -/
 @[simp]
 theorem coe_sphereInterpolationDiffeotopy_apply (p : I × sphere (0 : E) 1) :
     (sphereInterpolationDiffeotopy f hL hlip hk p : E) =
-      normalize ((p.2 : E) + Real.sin (Real.pi * p.1 / 2) ^ 2 • ((f p.2 : E) - p.2)) := by
+      normalize ((p.2 : E) + sinSqWeight p.1 • ((f p.2 : E) - p.2)) := by
   let := completeSpace_of_fact (E := E) n
-  rw [sphereInterpolationDiffeotopy_apply_eq, coe_sphereSlice, slice_apply, sphereCone_coe,
-    sinSqWeight_def]
+  rw [sphereInterpolationDiffeotopy_apply_eq, coe_sphereSlice, slice_apply, sphereCone_coe]
 
 /-- At time `t`, the inverse of the interpolation diffeotopy is the inverse slice of the sphere. -/
 private theorem sphereInterpolationDiffeotopy_symm_apply_eq (p : I × sphere (0 : E) 1) :
@@ -282,7 +273,7 @@ private theorem sphereInterpolationDiffeotopy_symm_apply_eq (p : I × sphere (0 
   rfl
 
 /-- At time `t`, the inverse of the interpolation diffeotopy sends `y` to the normalization of the
-solution `x` of `x + sin (π t / 2) ^ 2 • u x = y`, where `u` is the cone over the displacement
+solution `x` of `x + sinSqWeight t • u x = y`, where `u` is the cone over the displacement
 `x ↦ f x - x` (`LipschitzWith.idAddSmulHomeomorph`). -/
 theorem coe_sphereInterpolationDiffeotopy_symm_apply (p : I × sphere (0 : E) 1) :
     ((sphereInterpolationDiffeotopy f hL hlip hk).symm p : E) =

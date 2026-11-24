@@ -33,7 +33,7 @@ open scoped ContDiff
 namespace TauCeti
 
 /-- The weight `sin (π t / 2) ^ 2`, rising analytically from `0` at `t = 0` to `1` at `t = 1`. -/
-@[expose] def sinSqWeight (t : ℝ) : ℝ := Real.sin (Real.pi * t / 2) ^ 2
+def sinSqWeight (t : ℝ) : ℝ := Real.sin (Real.pi * t / 2) ^ 2
 
 /-- The defining formula of `TauCeti.sinSqWeight`. -/
 theorem sinSqWeight_def (t : ℝ) : sinSqWeight t = Real.sin (Real.pi * t / 2) ^ 2 :=
@@ -41,11 +41,11 @@ theorem sinSqWeight_def (t : ℝ) : sinSqWeight t = Real.sin (Real.pi * t / 2) ^
 
 /-- The weight vanishes at `0`. -/
 @[simp]
-theorem sinSqWeight_zero : sinSqWeight 0 = 0 := by simp [sinSqWeight]
+theorem sinSqWeight_zero : sinSqWeight 0 = 0 := by simp [sinSqWeight_def]
 
 /-- The weight is `1` at `1`. -/
 @[simp]
-theorem sinSqWeight_one : sinSqWeight 1 = 1 := by simp [sinSqWeight]
+theorem sinSqWeight_one : sinSqWeight 1 = 1 := by simp [sinSqWeight_def]
 
 /-- The weight takes its values in `[0, 1]`. -/
 theorem sinSqWeight_mem (t : ℝ) : sinSqWeight t ∈ Icc 0 1 :=

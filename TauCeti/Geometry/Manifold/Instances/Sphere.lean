@@ -152,7 +152,8 @@ allowing the entire path or loop to be read in one stereographic chart.
   of the unit sphere into the punctured space `E \ {0}` and the radial projection
   `x ↦ x / ‖x‖` back onto the sphere are smooth; `TauCeti.contMDiff_normalize_compl_zero` is the
   radial projection read in `E`, and `TauCeti.contDiffAt_sphereExtend` pulls back `C^m` regularity
-  along the radial projection to the `0`-homogeneous radial extension.
+  along the radial projection to the `0`-homogeneous radial extension, and
+  `TauCeti.contDiffAt_sphereCone` to the cone over a map on the sphere.
 * `TauCeti.norm_sub_le_of_norm_fderiv_sphereExtend_le`: a bound on the derivative of the radial
   extension on the annulus `1 / 2 ≤ ‖y‖ ≤ 1` bounds the differences of a map on short chords.
 * `TauCeti.coeSphereMap`, `TauCeti.normalizeSphereMap`: the inclusion of the sphere into `E` and
@@ -1061,6 +1062,16 @@ theorem contDiffAt_sphereExtend {G : Type*} [NormedAddCommGroup G] [NormedSpace 
     refine (hf.comp xU (contMDiff_normalize_sphere xU)).congr_of_eventuallyEq ?_
     exact .of_forall fun y ↦ sphereExtend_of_ne_zero f y.property
   exact contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 hcomp)
+
+/-- Away from the origin, the cone `sphereCone f` over a map `f` on the sphere inherits `C^m`
+regularity from `f` at `x / ‖x‖`. -/
+theorem contDiffAt_sphereCone {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : sphere (0 : E) 1 → G} {x : E} (hx : x ≠ 0)
+    (hf : ContMDiffAt (𝓡 n) 𝓘(ℝ, G) m f
+      ⟨NormedSpace.normalize x, mem_sphere_zero_iff_norm.2 (NormedSpace.norm_normalize hx)⟩) :
+    ContDiffAt ℝ m (sphereCone f) x :=
+  ((contDiffAt_norm ℝ hx).smul (contDiffAt_sphereExtend hx hf)).congr_of_eventuallyEq
+    (.of_forall fun z ↦ sphereCone_eq_norm_smul_sphereExtend f z)
 
 /-- **The mean value theorem on short chords of the sphere.** If the derivative of the
 `0`-homogeneous extension of a `C^m` map `g` on the sphere, `1 ≤ m`, is bounded by `c` on the
