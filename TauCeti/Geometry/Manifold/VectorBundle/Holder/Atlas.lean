@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Holder.Basic
-import TauCeti.Analysis.Holder.OpenSetComp
+import TauCeti.Analysis.Holder.OpenSet.Comp
 import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.VectorBundle.Trivialization
 
