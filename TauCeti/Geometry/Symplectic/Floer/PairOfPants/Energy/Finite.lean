@@ -145,15 +145,8 @@ theorem monotoneOn_hamiltonianAction_endChart (ω : SymplecticForm V)
     rw [mem_ofPred_eq] at hc hd
     rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at hc hd ⊢ <;> linarith [hs.1, hs.2]
   -- The energy over the rectangle is the change of action, and it is nonnegative.
-  have h := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub (hHs q)
-    (hU.preimage (contDiff_endChart q 0).continuous)
-    (hu.comp (contDiff_endChart q 2).contDiffOn fun _ hw ↦ hw) hcd
-    (fun ζ hζ ↦ hUq ζ (hmem hζ.1)) fun s _ ↦ by
-      -- The end loops close up: `φ_q(s + i) = φ_q(s)`.
-      simp only [comp_apply, endChart_mk]
-      simpa using congrArg (fun w ↦ u (Complex.equivRealProdCLM w))
-        (q.periodic_cylindricalEndLift s 0)
-  simp only [comp_apply] at h
+  have h := ω.integral_floerEnergyDensity_endChart_eq_hamiltonianAction_sub (hHs q) hU hu q hcd
+    fun ζ hζ ↦ hUq ζ (hmem hζ.1)
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
     fun ζ (hζ : ζ ∈ Icc c d ×ˢ Icc 0 1) ↦ floerEnergyDensity_endChart_nonneg ω hH hHs
       ((hu.contDiffAt (hU.mem_nhds (hUq ζ (hmem hζ.1)))).differentiableAt two_ne_zero) (hmem hζ.1)

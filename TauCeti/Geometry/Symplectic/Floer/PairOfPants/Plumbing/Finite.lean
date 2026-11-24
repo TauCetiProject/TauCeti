@@ -329,6 +329,29 @@ private theorem lintegral_floerEnergyDensity_plumbedTruncation_eq (ω : Symplect
     setIntegral_hamiltonianCurvature_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL
       (by linarith) u]
 
+omit [FiniteDimensional ℝ V] in
+/-- If the end actions converge, to `b r` on the receiving ends and to `a r` on the inserted ends,
+then the signed sum of the actions of the four boundary loops of `Σ_R`, minus a constant `c`, tends
+to `∑_{r ≠ q} ±b_r + ∑_{r ≠ ∞} a_r - c` as `R → ∞`. -/
+private theorem tendsto_sum_add_sum_hamiltonianAction_sub (ω : SymplecticForm V) {c : ℝ}
+    {a b : Puncture → ℝ}
+    (hb : ∀ r ≠ q, Tendsto (fun R ↦ ω.hamiltonianAction (Hb r) (fun t ↦ u
+      (Complex.equivRealProdCLM (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I)))))
+      atTop (𝓝 (b r)))
+    (ha : ∀ r ≠ inf, Tendsto (fun R : ℝ ↦ ω.hamiltonianAction (Ha r) (fun t ↦ u
+      (Complex.equivRealProdCLM (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))))
+      atTop (𝓝 (a r))) :
+    Tendsto (fun R ↦ (∑ r ∈ Finset.univ.erase q, r.endSign * ω.hamiltonianAction (Hb r)
+          (fun t ↦ u (Complex.equivRealProdCLM
+            (r.cylindricalEndLift (↑(r.endSign * R) + ↑t * Complex.I))))) +
+        (∑ r ∈ Finset.univ.erase inf, ω.hamiltonianAction (Ha r)
+          (fun t ↦ u (Complex.equivRealProdCLM
+            (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I)))))) - c) atTop
+      (𝓝 ((∑ r ∈ Finset.univ.erase q, r.endSign * b r) + (∑ r ∈ Finset.univ.erase inf, a r) -
+        c)) :=
+  ((tendsto_finsetSum _ fun r hr ↦ (hb r (Finset.ne_of_mem_erase hr)).const_mul r.endSign).add
+    (tendsto_finsetSum _ fun r hr ↦ ha r (Finset.ne_of_mem_erase hr))).sub_const c
+
 /-- **The energy identity on the plumbed four-punctured sphere.** Let `u` be `C²` on the plumbed
 four-punctured sphere `Σ = ℂ ∖ {0, 1, ψ(1)}` and solve the Floer equation `(du - X_K)^{0,1} = 0`
 there for the plumbed perturbation `K` and almost complex structures `J(z)` tamed by `ω`. If the
@@ -382,18 +405,9 @@ theorem lintegral_floerEnergyDensity_plumbedPerturbation_eq (ω : SymplecticForm
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z)) := by
   -- The energies over the truncations `Σ_R` tend both to the energy and to the right-hand side.
-  have hP := ((tendsto_finsetSum (Finset.univ.erase q) fun r hr ↦
-    (hb r (Finset.ne_of_mem_erase hr)).const_mul r.endSign).add
-      (tendsto_finsetSum (Finset.univ.erase inf) fun r hr ↦
-        ha r (Finset.ne_of_mem_erase hr))).sub_const
-      (∫ z in {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-          Complex.equivRealProdCLM.symm z ≠ 1) ∧
-          Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}, ω.hamiltonianCurvature
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z))
   refine tendsto_nhds_unique (tendsto_setLIntegral_plumbedTruncation hq (by linarith) volume _)
-    (((ENNReal.continuous_ofReal.tendsto _).comp hP).congr' ?_)
+    (((ENNReal.continuous_ofReal.tendsto _).comp
+      (tendsto_sum_add_sum_hamiltonianAction_sub ω hb ha)).congr' ?_)
   filter_upwards [eventually_ge_atTop (L / 2)] with R hR
   exact (lintegral_floerEnergyDensity_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL hu hJ
     hfloer hR).symm
@@ -437,9 +451,7 @@ theorem sum_add_sum_sub_integral_hamiltonianCurvature_nonneg_of_plumbedPerturbat
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z) := by
   -- The right-hand side is the limit of the real energies over the truncations `Σ_R`.
-  refine ge_of_tendsto (((tendsto_finsetSum _ fun r hr ↦
-    (hb r (Finset.ne_of_mem_erase hr)).const_mul r.endSign).add
-      (tendsto_finsetSum _ fun r hr ↦ ha r (Finset.ne_of_mem_erase hr))).sub_const _) ?_
+  refine ge_of_tendsto (tendsto_sum_add_sum_hamiltonianAction_sub ω hb ha) ?_
   filter_upwards [eventually_ge_atTop (L / 2)] with R hR
   rw [← setIntegral_hamiltonianCurvature_plumbedTruncation_eq ω hq hHa hHb hHas hHbs hab hL
       (by linarith) u,
