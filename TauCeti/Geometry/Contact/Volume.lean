@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
+import TauCeti.Geometry.Contact.Transition
+import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Symplectic.Volume
 import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Covector
 
@@ -39,6 +41,23 @@ that is, when this restriction is nondegenerate (`ContinuousAlternatingMap.wedge
 Consequently a contact form `α` makes `M` orientable: `α ∧ (dα)ⁿ` is a volume form, and
 `TauCeti.SmoothForm.IsContactForm.volumeOrientation` is the orientation on which it is positive.
 
+The volume form changes by a power of the multiplier when the contact form is rescaled. For a
+function `f` differentiable at `x`,
+
+`((f α) ∧ (d(f α))ⁿ)ₓ = f(x)ⁿ⁺¹ (α ∧ (dα)ⁿ)ₓ`
+
+(`TauCeti.SmoothForm.wedge_wedgePow_apply_of_eq_smul`). Indeed `d(f α) = df ∧ α + f dα`, whose
+first term vanishes on `ker αₓ`, and a covector `a` wedged with a form of degree `2 n` only sees
+the restriction of that form to `ker a`
+(`ContinuousAlternatingMap.pairedWedge_congr_right_of_compContinuousLinearMap_subtypeL_eq`). For a
+constant multiplier the law holds in every dimension
+(`TauCeti.SmoothForm.wedge_smul_wedgePow_mextDerivₗ_smul`); in particular
+`(-α) ∧ (d(-α))ⁿ = (-1)ⁿ⁺¹ α ∧ (dα)ⁿ`. So a contact form `β = f α` defines the orientation of `α`
+where `fⁿ⁺¹ > 0` and the opposite one where `fⁿ⁺¹ < 0`. For odd `n` all contact forms with the same
+kernel define the same orientation, so the contact structure orients `M` by itself
+(`TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_of_kerDistribution_eq`); for even `n` the
+orientation changes with the coorientation, `α ↦ -α`.
+
 ## Main results
 
 * `ContinuousAlternatingMap.pairedWedge_wedgePow_ne_zero_iff`: a covector `a` and a two-form `B` on
@@ -50,11 +69,26 @@ Consequently a contact form `α` makes `M` orientable: `α ∧ (dα)ⁿ` is a vo
   contact form exactly when `α ∧ (dα)ⁿ` vanishes nowhere.
 * `TauCeti.SmoothForm.IsContactForm.volumeOrientation`: the orientation of a manifold defined by a
   contact form.
+* `TauCeti.SmoothForm.wedge_wedgePow_apply_of_eq_smul`: the scaling law
+  `(f α) ∧ (d(f α))ⁿ = fⁿ⁺¹ α ∧ (dα)ⁿ` in dimension `2 n + 1`.
+* `TauCeti.SmoothForm.wedge_smul_wedgePow_mextDerivₗ_smul`,
+  `TauCeti.SmoothForm.wedge_neg_wedgePow_mextDerivₗ_neg`: the scaling law for constants, in every
+  dimension.
+* `TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_of_eq_smul`,
+  `TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_neg_of_eq_smul`: rescaling a contact form
+  keeps or reverses its orientation according to the sign of `fⁿ⁺¹`.
+* `TauCeti.SmoothForm.IsContactForm.volumeOrientation_neg_eq_of_odd`,
+  `TauCeti.SmoothForm.IsContactForm.volumeOrientation_neg_eq_neg_of_even`: reversing the
+  coorientation keeps the orientation for odd `n` and reverses it for even `n`.
+* `TauCeti.SmoothForm.IsContactForm.volumeOrientation_eq_of_kerDistribution_eq`: for odd `n` the
+  orientation depends only on the contact distribution.
 
 ## References
 
 * H. Geiges, *An Introduction to Contact Topology*, Cambridge University Press, 2008,
   Section 1.1 (the condition `α ∧ (dα)ⁿ ≠ 0` and Lemma 1.1.3) and Section 2.1.
+* H. Geiges, *Contact geometry*, in Handbook of Differential Geometry, vol. 2, North-Holland,
+  2006, 315–382, arXiv:math/0307242, Remark 2.2 (the scaling law).
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017, Section 3.5.
 -/
 
@@ -63,6 +97,7 @@ public section
 noncomputable section
 
 open Module
+open scoped ContDiff Manifold
 
 namespace ContinuousAlternatingMap
 
@@ -111,6 +146,35 @@ theorem pairedWedge_wedgePow_ne_zero_iff (hn : finrank ℝ E = 2 * n + 1)
     exact congrArg Subtype.val (h ⟨v, (hN v).2 hv⟩ fun w ↦ hvw w ((hN w).1 w.property))
   · intro h v hv
     exact Subtype.ext (h v ((hN v).1 v.property) fun w hw ↦ hv ⟨w, (hN w).2 hw⟩)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The linear scaling law for `a ∧ Bⁿ`.** On a real vector space of dimension `2 n + 1`, let `a`
+be a covector and `B`, `B'` two-forms with `B' = c B` on the hyperplane `ker a`. Then
+`(c a) ∧ B'ⁿ = cⁿ⁺¹ (a ∧ Bⁿ)`. -/
+theorem pairedWedge_smul_wedgePow_of_eq_smul (hn : finrank ℝ E = 2 * n + 1)
+    (a : E [⋀^Fin 1]→L[ℝ] ℝ) {B B' : E [⋀^Fin 2]→L[ℝ] ℝ} {c : ℝ}
+    (hB : ∀ v w, a ![v] = 0 → a ![w] = 0 → B' ![v, w] = c * B ![v, w]) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (c • a)
+        (B'.wedgePow n) =
+      c ^ (n + 1) • pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
+        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a (B.wedgePow n) := by
+  set N := LinearMap.ker ((ofSubsingleton ℝ E ℝ (0 : Fin 1)).symm a).toLinearMap
+  have hN (u : E) : u ∈ N ↔ a ![u] = 0 := by
+    simp [N, Matrix.vec_single_eq_const]
+  -- On `ker a` the two-form `B'` is `c B`, so `a ∧ B'ⁿ = a ∧ (c B)ⁿ`.
+  have hres : B'.compContinuousLinearMap N.subtypeL =
+      (c • B).compContinuousLinearMap N.subtypeL := by
+    ext w
+    have hw : (Subtype.val ∘ w : Fin 2 → E) = ![(w 0 : E), w 1] := by
+      ext i
+      fin_cases i <;> rfl
+    simp only [compContinuousLinearMap_apply, Submodule.coe_subtypeL, Submodule.coe_subtype,
+      smul_apply, smul_eq_mul, hw]
+    exact hB _ _ ((hN _).1 (w 0).property) ((hN _).1 (w 1).property)
+  rw [pairedWedge_smul_left, pairedWedge_congr_right_of_compContinuousLinearMap_subtypeL_eq hn a hN
+      (ψ' := (c • B).wedgePow n) (by rw [wedgePow_compContinuousLinearMap,
+        wedgePow_compContinuousLinearMap, hres]),
+    wedgePow_smul, pairedWedge_smul_right, smul_smul, pow_succ']
 
 end ContinuousAlternatingMap
 
@@ -166,6 +230,108 @@ theorem IsContactForm.orientation_eq_orientationAt_volumeOrientation_iff
     b.orientation = Manifold.Orientation.orientationAt (hα.volumeOrientation hn) x ↔
       0 < (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x b :=
   Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff _ _ _ b
+
+/-! ### The scaling law -/
+
+omit [FiniteDimensional ℝ E] in
+/-- **The scaling law for constant multiples.** Multiplying a one-form `α` by a constant `c`
+multiplies `α ∧ (dα)ⁿ` by `cⁿ⁺¹`. This holds in every dimension. -/
+theorem wedge_smul_wedgePow_mextDerivₗ_smul (c : ℝ) (α : SmoothForm I M ℝ 1) :
+    wedge (c • α) ((mextDerivₗ I 1 (c • α)).wedgePow n) =
+      c ^ (n + 1) • wedge α ((mextDerivₗ I 1 α).wedgePow n) := by
+  ext x v
+  simp only [map_smul, LinearMap.smul_apply, Submodule.coe_smul, Pi.smul_apply, coe_wedge,
+    RoughForm.wedge_def, RoughForm.wedgeWith_apply', wedgePow_apply,
+    ContinuousAlternatingMap.wedgePow_smul, ContinuousAlternatingMap.pairedWedge_smul_right,
+    smul_smul, pow_succ']
+
+omit [FiniteDimensional ℝ E] in
+/-- Reversing the coorientation, `α ↦ -α`, multiplies `α ∧ (dα)ⁿ` by `(-1)ⁿ⁺¹`. This holds in every
+dimension. -/
+theorem wedge_neg_wedgePow_mextDerivₗ_neg (α : SmoothForm I M ℝ 1) :
+    wedge (-α) ((mextDerivₗ I 1 (-α)).wedgePow n) =
+      (-1 : ℝ) ^ (n + 1) • wedge α ((mextDerivₗ I 1 α).wedgePow n) := by
+  simpa only [neg_one_smul ℝ α] using wedge_smul_wedgePow_mextDerivₗ_smul (n := n) (-1) α
+
+omit [FiniteDimensional ℝ E] in
+/-- **The contact volume scaling law at a point.** On a manifold of dimension `2 n + 1`, let
+`β = f α` for a one-form `α` and a function `f` differentiable at `x`. Then
+`(β ∧ (dβ)ⁿ)ₓ = f(x)ⁿ⁺¹ (α ∧ (dα)ⁿ)ₓ`. -/
+theorem wedge_wedgePow_apply_of_eq_smul (hn : finrank ℝ E = 2 * n + 1)
+    {α β : SmoothForm I M ℝ 1} {f : M → ℝ} {x : M} (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x)
+    (hβ : ∀ y, β.val y = f y • α.val y) :
+    (wedge β ((mextDerivₗ I 1 β).wedgePow n)).val x =
+      f x ^ (n + 1) • (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val x := by
+  have hβ' : β.val = fun y ↦ f y • α.val y := funext hβ
+  simp only [coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply', wedgePow_apply,
+    mextDerivₗ_apply, hβ']
+  refine ContinuousAlternatingMap.pairedWedge_smul_wedgePow_of_eq_smul (E := TangentSpace I x) hn
+    (α.val x) fun v w hv hw ↦ ?_
+  -- Restate `hv` and `hw` with the tangent-space instances that the Leibniz rule uses.
+  have hv' : α.val x ![v] = 0 := hv
+  have hw' : α.val x ![w] = 0 := hw
+  have h := mextDeriv_fun_smul_apply hf (α.mdifferentiableAt x) v w
+  rw [hv', hw', mul_zero, mul_zero, sub_zero, zero_add] at h
+  exact h
+
+/-- Rescaling a contact form by a function `f` with `fⁿ⁺¹ > 0` keeps its orientation: if `α` and
+`β = f α` are contact forms on a manifold of dimension `2 n + 1`, they define the same
+orientation. This applies when `f > 0`, and for odd `n` whenever `f` vanishes nowhere. -/
+theorem IsContactForm.volumeOrientation_eq_of_eq_smul {α β : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) (hβ : β.IsContactForm) (hn : finrank ℝ E = 2 * n + 1) {f : M → ℝ}
+    (hf : ∀ x, MDifferentiableAt I 𝓘(ℝ, ℝ) f x) (hβα : ∀ x, β.val x = f x • α.val x)
+    (hpos : ∀ x, 0 < f x ^ (n + 1)) :
+    hβ.volumeOrientation hn = hα.volumeOrientation hn :=
+  Manifold.Orientation.ofTopForm_eq_of_eq_smul _ _ _ _ _ hpos fun x ↦
+    wedge_wedgePow_apply_of_eq_smul hn (hf x) hβα
+
+/-- Rescaling a contact form by a function `f` with `fⁿ⁺¹ < 0` reverses its orientation: if `α`
+and `β = f α` are contact forms on a manifold of dimension `2 n + 1`, they define opposite
+orientations. This applies for even `n` when `f < 0`. -/
+theorem IsContactForm.volumeOrientation_eq_neg_of_eq_smul {α β : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) (hβ : β.IsContactForm) (hn : finrank ℝ E = 2 * n + 1) {f : M → ℝ}
+    (hf : ∀ x, MDifferentiableAt I 𝓘(ℝ, ℝ) f x) (hβα : ∀ x, β.val x = f x • α.val x)
+    (hneg : ∀ x, f x ^ (n + 1) < 0) :
+    hβ.volumeOrientation hn = -hα.volumeOrientation hn :=
+  Manifold.Orientation.ofTopForm_eq_neg_of_eq_smul _ _ _ _ _ hneg fun x ↦
+    wedge_wedgePow_apply_of_eq_smul hn (hf x) hβα
+
+/-- For odd `n`, reversing the coorientation, `α ↦ -α`, keeps the orientation of a contact form
+on a manifold of dimension `2 n + 1`. -/
+theorem IsContactForm.volumeOrientation_neg_eq_of_odd {α : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) (hn : finrank ℝ E = 2 * n + 1) (hodd : Odd n) :
+    (isContactForm_neg_iff.2 hα).volumeOrientation hn = hα.volumeOrientation hn :=
+  hα.volumeOrientation_eq_of_eq_smul _ hn (f := fun _ ↦ -1) (fun _ ↦ mdifferentiableAt_const)
+    (fun x ↦ by rw [Submodule.coe_neg, Pi.neg_apply, neg_one_smul])
+    fun _ ↦ by rw [(hodd.add_one).neg_one_pow]; exact one_pos
+
+/-- For even `n`, reversing the coorientation, `α ↦ -α`, reverses the orientation of a contact
+form on a manifold of dimension `2 n + 1`. -/
+theorem IsContactForm.volumeOrientation_neg_eq_neg_of_even {α : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) (hn : finrank ℝ E = 2 * n + 1) (heven : Even n) :
+    (isContactForm_neg_iff.2 hα).volumeOrientation hn = -hα.volumeOrientation hn :=
+  hα.volumeOrientation_eq_neg_of_eq_smul _ hn (f := fun _ ↦ -1) (fun _ ↦ mdifferentiableAt_const)
+    (fun x ↦ by rw [Submodule.coe_neg, Pi.neg_apply, neg_one_smul])
+    fun _ ↦ by rw [(heven.add_one).neg_one_pow]; exact neg_one_lt_zero
+
+end SmoothForm
+
+namespace SmoothForm
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] {n : ℕ}
+
+/-- **For odd `n`, a contact structure orients the manifold.** On a manifold of dimension `2 n + 1`
+with `n` odd, two contact forms with the same kernel define the same orientation. -/
+theorem IsContactForm.volumeOrientation_eq_of_kerDistribution_eq {α β : SmoothForm I M ℝ 1}
+    (hα : α.IsContactForm) (hβ : β.IsContactForm) (hn : finrank ℝ E = 2 * n + 1) (hodd : Odd n)
+    (h : β.kerDistribution = α.kerDistribution) :
+    hβ.volumeOrientation hn = hα.volumeOrientation hn := by
+  obtain ⟨f, ⟨hf, hf₀, hβα⟩, -⟩ :=
+    (kerDistribution_eq_iff_existsUnique_fun_smul hα.apply_ne_zero).1 h
+  exact hα.volumeOrientation_eq_of_eq_smul hβ hn (fun x ↦ hf.mdifferentiableAt (by simp)) hβα
+    fun x ↦ hodd.add_one.pow_pos (hf₀ x)
 
 end SmoothForm
 

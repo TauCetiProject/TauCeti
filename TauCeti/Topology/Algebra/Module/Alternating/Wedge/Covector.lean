@@ -23,6 +23,8 @@ because `a` vanishes on `N`. A top-degree form is determined by this restriction
 (`AlternatingMap.curryLeft_compLinearMap_subtype_eq_zero_iff`), so `a ∧ ψ` vanishes exactly when
 `ψ` vanishes on `N`
 (`ContinuousAlternatingMap.pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero`).
+Consequently `a ∧ ψ` depends only on the restriction of `ψ` to `N`
+(`ContinuousAlternatingMap.pairedWedge_congr_right_of_compContinuousLinearMap_subtypeL_eq`).
 
 This is the step from the contact volume form `α ∧ (dα)ⁿ` to the top power of `dα` on the
 hyperplane `ker α`.
@@ -77,5 +79,34 @@ theorem pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero
     ← AlternatingMap.domDomCongr_eq_zero_iff (finCongr (Nat.add_comm 1 l)),
     ← AlternatingMap.curryLeft_compLinearMap_subtype_eq_zero_iff hn _ ((hf r).trans hr), hι,
     ← toAlternatingMap_zero, toAlternatingMap_injective.eq_iff]
+
+/-- **A wedge with a covector only sees its kernel.** On a real vector space of dimension `l + 1`,
+let `N` be the kernel of a covector `a`. Two `l`-forms `ψ` and `ψ'` which agree on `N` have the same
+wedge with `a`: `a ∧ ψ = a ∧ ψ'`. -/
+theorem pairedWedge_congr_right_of_compContinuousLinearMap_subtypeL_eq
+    (hn : finrank ℝ E = l + 1) (a : E [⋀^Fin 1]→L[ℝ] ℝ) {ψ ψ' : E [⋀^Fin l]→L[ℝ] ℝ}
+    {N : Submodule ℝ E} (hN : ∀ u, u ∈ N ↔ a ![u] = 0)
+    (h : ψ.compContinuousLinearMap N.subtypeL = ψ'.compContinuousLinearMap N.subtypeL) :
+    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a ψ =
+      pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ a ψ' := by
+  by_cases ha : a = 0
+  · simp only [ha, pairedWedge_zero_left]
+  -- A vector `r` with `a(r) = 1`, obtained by rescaling a vector on which `a` does not vanish.
+  obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 ha
+  have hv₀ : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
+  set f : Dual ℝ E := ((ofSubsingleton ℝ E ℝ (0 : Fin 1)).symm a).toLinearMap
+  have hf (u : E) : f u = a ![u] := by
+    simp [f, Matrix.vec_single_eq_const]
+  have hfv : f (v 0) ≠ 0 := by rwa [hf, ← hv₀]
+  have hr : a ![(f (v 0))⁻¹ • v 0] = 1 := by
+    rw [← hf, map_smul, smul_eq_mul, inv_mul_cancel₀ hfv]
+  -- The difference `ψ' - ψ` vanishes on `N`, hence so does its wedge with `a`.
+  have hdiff : pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+      a (ψ' - ψ) = 0 := by
+    refine (pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero hn a _ hN hr).2 ?_
+    ext w
+    simpa only [compContinuousLinearMap_apply, sub_apply, coe_zero, Pi.zero_apply,
+      sub_eq_zero] using (congrArg (fun φ : N [⋀^Fin l]→L[ℝ] ℝ ↦ φ w) h).symm
+  rw [← add_sub_cancel ψ ψ', pairedWedge_add_right, hdiff, add_zero]
 
 end ContinuousAlternatingMap
