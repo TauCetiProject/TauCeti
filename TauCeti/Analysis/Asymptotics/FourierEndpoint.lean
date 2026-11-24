@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
@@ -76,6 +75,11 @@ private theorem continuous_cexp_mul_I (x : ℝ) :
 private theorem norm_I_div_pow {x : ℝ} (hx : 0 < x) (n : ℕ) :
     ‖(I / (x : ℂ)) ^ n‖ = (x ^ n)⁻¹ := by
   simp [abs_of_pos hx]
+
+private theorem norm_integral_cexp_smul_le {f : ℝ → E} {a b x : ℝ} (hab : a ≤ b) :
+    ‖∫ t in a..b, cexp (((x * t : ℝ) : ℂ) * I) • f t‖ ≤ ∫ t in a..b, ‖f t‖ := by
+  refine (intervalIntegral.norm_integral_le_integral_norm hab).trans_eq ?_
+  simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
 
 section Compact
 
@@ -161,9 +165,7 @@ theorem norm_integral_cexp_smul_sub_sum_le {q : ℝ → E} {a b x : ℝ} (hab : 
       (x ^ n)⁻¹ * ∫ t in a..b, ‖iteratedDerivWithin n q (Icc a b) t‖ := by
   rw [integral_cexp_smul_eq_sum_add hab hx.ne' hq, add_sub_cancel_left, norm_smul,
     norm_I_div_pow hx]
-  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-  refine (intervalIntegral.norm_integral_le_integral_norm hab).trans_eq ?_
-  simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
+  exact mul_le_mul_of_nonneg_left (norm_integral_cexp_smul_le hab) (by positivity)
 
 /-- **DLMF 2.3.4.** For `q` of class `C^{N+1}` on `[a, b]`, the remainder after the first `N`
 terms of the endpoint expansion of `∫_a^b e^{ixt} q(t) dt` is `O(x^{-N-1})` as `x → +∞`. -/
@@ -288,9 +290,8 @@ private theorem exists_forall_norm_le_of_tendsto {r : ℝ → E} {a x₀ : ℝ}
   filter_upwards [eventually_ge_atTop d] with T hT
   rw [← integral_add_adjacent_intervals (intervalIntegrable_cexp_smul hr x le_rfl had)
     (intervalIntegrable_cexp_smul hr x had (had.trans hT))]
-  refine (norm_add_le _ _).trans (add_le_add ?_ (hc x hx d (le_max_left c a) T hT))
-  refine (intervalIntegral.norm_integral_le_integral_norm had).trans_eq ?_
-  simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
+  exact (norm_add_le _ _).trans
+    (add_le_add (norm_integral_cexp_smul_le had) (hc x hx d (le_max_left c a) T hT))
 
 /-- If the Fourier integrals of `g₀` and of its derivative `g₁` converge at infinity at two
 different nonzero frequencies, the boundary term `e^{ixT} g₀(T)` tends to `0`. -/
@@ -454,8 +455,7 @@ theorem norm_sub_sum_le_of_tendsto_integral_cexp_smul {q : ℝ → E} {a : ℝ} 
   rw [hEq F hF, add_sub_cancel_left, norm_smul, norm_I_div_pow hx]
   refine mul_le_mul_of_nonneg_left (le_of_tendsto hG.norm ?_) (by positivity)
   filter_upwards [eventually_ge_atTop a] with T hT
-  refine (intervalIntegral.norm_integral_le_integral_norm hT).trans ?_
-  simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
+  refine (norm_integral_cexp_smul_le hT).trans ?_
   rw [integral_of_le hT]
   exact setIntegral_mono_set hn.norm (Eventually.of_forall fun _ => norm_nonneg _)
     (Ioc_subset_Ioi_self.eventuallySubset)
@@ -474,13 +474,12 @@ theorem norm_integral_cexp_smul_le_of_hasDerivAt {r r' : ℝ → E} {a x T T' : 
   rw [integral_cexp_smul_eq_of_hasDerivAt hTT' hx.ne'
     (hr.mono fun t ht => hT.trans ht.1) (fun t ht => hr' t (lt_of_le_of_lt hT ht.1)) hint',
     ← smul_add, norm_smul]
-  have hnorm : ‖I / (x : ℂ)‖ = x⁻¹ := by simp [abs_of_pos hx]
+  have hnorm : ‖I / (x : ℂ)‖ = x⁻¹ := by simpa using norm_I_div_pow hx 1
   rw [hnorm]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   refine (norm_add_le _ _).trans (add_le_add ((norm_sub_le _ _).trans_eq ?_) ?_)
   · simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
-  · refine (intervalIntegral.norm_integral_le_integral_norm hTT').trans ?_
-    simp only [norm_smul, norm_exp_ofReal_mul_I, one_mul]
+  · refine (norm_integral_cexp_smul_le hTT').trans ?_
     rw [integral_of_le hTT']
     exact setIntegral_mono_set (hint.mono_set hsub).norm
       (Eventually.of_forall fun _ => norm_nonneg _) Ioc_subset_Ioi_self.eventuallySubset

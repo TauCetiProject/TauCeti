@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
@@ -69,12 +68,10 @@ theorem not_integrableOn_Ioi_cos_div {a : ℝ} (ha : 0 < a) :
           rw [div_mul_eq_mul_div, div_le_div_iff₀ two_pos (by positivity)]
           nlinarith
         linarith
-      rw [Real.cos_add_pi_div_two, Real.norm_eq_abs, Real.norm_eq_abs, abs_div, abs_div, abs_neg,
-        abs_abs, abs_of_pos ht0, abs_of_pos htp, ← mul_div_assoc, mul_comm (1 + π / (2 * a)),
-        mul_div_assoc]
-      refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
-      rw [inv_eq_one_div, div_le_div_iff₀ ht0 htp]
-      linarith
+      simp only [Real.cos_add_pi_div_two, norm_div, norm_neg, Real.norm_eq_abs, abs_abs,
+        abs_of_pos ht0, abs_of_pos htp]
+      rw [mul_div_assoc', div_le_div_iff₀ ht0 htp]
+      nlinarith [abs_nonneg (Real.sin t)]
   refine not_integrableOn_Ioi_inv (a := a) ?_
   refine Integrable.mono' (hcos.norm.add hsin) ?_ ?_
   · refine ContinuousOn.aestronglyMeasurable (fun t ht => ?_) measurableSet_Ioi
@@ -126,9 +123,8 @@ theorem not_integrableOn_iteratedDerivWithin_one_sinc {a : ℝ} (ha : 0 < a) :
         (pow_ne_zero 2 ht0)).continuousWithinAt
     · refine (ae_restrict_iff' measurableSet_Ioi).2 (Eventually.of_forall fun t ht => ?_)
       have ht0 : 0 < t := ha.trans ht
-      rw [Real.norm_eq_abs, abs_div, abs_of_pos (by positivity : 0 < t ^ 2),
-        Real.rpow_neg ht0.le, Real.rpow_two, div_eq_mul_inv]
-      exact mul_le_of_le_one_left (by positivity) (Real.abs_sin_le_one t)
+      simpa [abs_div, Real.rpow_neg ht0.le, div_eq_mul_inv] using
+        mul_le_of_le_one_left (by positivity : (0 : ℝ) ≤ (t ^ 2)⁻¹) (Real.abs_sin_le_one t)
   refine not_integrableOn_Ioi_cos_div ha ((hre.add hsq).congr_fun (fun t _ => ?_)
     measurableSet_Ioi)
   simp

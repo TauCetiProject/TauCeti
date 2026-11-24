@@ -35,10 +35,12 @@ public section
 namespace Real
 
 /-- The function `sinc` is real analytic at every point, including the origin. -/
+@[fun_prop]
 theorem analyticAt_sinc (x : ℝ) : AnalyticAt ℝ sinc x := by
   simpa only [sinc_eq_dslope] using (analyticAt_sin (x := x)).dslope 0
 
 /-- The function `sinc` is smooth, indeed analytic. -/
+@[fun_prop]
 theorem contDiff_sinc {n : WithTop ℕ∞} : ContDiff ℝ n sinc :=
   AnalyticOnNhd.contDiff fun x _ => analyticAt_sinc x
 
