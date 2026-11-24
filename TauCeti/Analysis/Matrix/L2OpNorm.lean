@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
+import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Matrix.Frobenius
 
 /-!
@@ -67,9 +68,8 @@ theorem norm_trace_le_card_mul_l2_opNorm (M : Matrix n n 𝕜) :
     ‖M.trace‖ ≤ (Fintype.card n : ℝ) * ‖M‖ := by
   have h := ContinuousLinearMap.norm_traceCLM_le
     (Matrix.toEuclideanCLM (n := n) (𝕜 := 𝕜) M)
-  simpa only [TauCeti.traceCLM_apply, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
-    Matrix.toEuclideanLin_eq_toLin_orthonormal, LinearEquiv.coe_coe,
-    Matrix.trace_toLin_eq, finrank_euclideanSpace, Matrix.l2_opNorm_toEuclideanCLM] using h
+  simpa only [TauCeti.traceCLM_apply, trace_toEuclideanCLM, finrank_euclideanSpace,
+    l2_opNorm_toEuclideanCLM] using h
 
 /-- The Euclidean operator norm of `A * Aᴴ` is `‖A‖ * ‖A‖`, for a possibly rectangular `A`.
 Mathlib's `Matrix.l2_opNorm_conjTranspose_mul_self` is the form for `Aᴴ * A`. -/
