@@ -37,8 +37,8 @@ Clifford multiplication of a complex covector on `β₀` sees only its `∂`-com
 `∑ₖ y_k c(e_k) β₀ = (y₀ - i y₁) c(e₂) u₀ - (y₂ - i y₃) c(e₀) u₀`,
 
 while on `u₀` it sees only the `∂bar`-components
-(`sum_smul_ι_apply_of_bivectorExterior_apply`). The polarization `q'` of the quadratic
-map pairs with a two-form `x` as `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2`
+(`AlmostComplexStructure.sum_smul_ι_apply_of_bivectorExterior_apply`). The polarization `q'` of
+the quadratic map pairs with a two-form `x` as `⟪q'(ψ, φ), x⟫ = Re⟪φ, C(i x) ψ⟫ / 2`
 (`inner_quadraticTwoFormPolar_eq_re_inner`), and on the two lines its coordinates along
 `e₀ ∧ e₁`, `e₀ ∧ e₂`, `e₀ ∧ e₃` are `Re(conj α f) / 2`, `Im(α conj g) / 2` and `Re(α conj g) / 2`
 for `ψ = α u₀`, `φ = f u₀ + g β₀` (`inner_quadraticTwoFormPolar_ιMulti_zero_one` and its
@@ -913,7 +913,7 @@ theorem flatDeformationDirac_familyNormalModel
       (normalCoord e y) (normalCoord e (e k)) + I * normalModelConnection e x 0 y (fun _ ↦ e k) *
       Vortex.sectionValue (fun z ↦ Η (baseCoord e y, z)) (normalCoord e y) with hY
   rw [flatDeformationDirac_familyNormalModel_eq_sum x hΞ hΗ,
-    sum_smul_ι_apply_of_bivectorExterior_apply hQ h₀ h₂
+    AlmostComplexStructure.sum_smul_ι_apply_of_bivectorExterior_apply hQ h₀ h₂
       (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀),
     sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀]
   have hΞw := hΞ.hasFDerivAt_slice_fst.differentiableAt

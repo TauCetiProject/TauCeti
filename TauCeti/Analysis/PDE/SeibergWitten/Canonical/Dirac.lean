@@ -142,8 +142,10 @@ theorem bivectorExterior_apply_eq_of_cliffordProjection_apply_eq_self
           ((⟪x, ιMulti ℝ 2 ![e 0, e 3]⟫ + ⟪x, ιMulti ℝ 2 ![e 1, e 2]⟫ : ℝ) : ℂ) *
             Complex.I) • ρ (ι Q (e 0)) (ρ (ι Q (e 2)) u₀) := by
   have hu₀' := bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀
-  obtain ⟨h₁, h₃⟩ := ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂ hu₀'
-  obtain ⟨p12, -⟩ := ι_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hu₀'
+  obtain ⟨h₁, h₃⟩ :=
+    AlmostComplexStructure.ι_one_apply_and_ι_three_apply_of_bivectorExterior_apply hQ h₀ h₂ hu₀'
+  obtain ⟨p12, -⟩ :=
+    AlmostComplexStructure.ι_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂ hu₀'
   have hsq := e.map_ι_apply_map_ι_apply hQ ρ
   -- The six products `c(eᵢ) c(eⱼ) u₀`.
   have p01 : ρ (ι Q (e 0)) (ρ (ι Q (e 1)) u₀) = (-Complex.I) • (u₀ : W) := by
@@ -195,8 +197,9 @@ theorem sum_ι_apply_eq_of_cliffordProjection_apply_eq_zero
               twoVectorAlternatingSum θ (e 0) (e 2) (e 3) * Complex.I) • ρ (ι Q (e 0)) u₀ +
           ((twoVectorAlternatingSum θ (e 0) (e 1) (e 3) : ℂ) -
               twoVectorAlternatingSum θ (e 0) (e 1) (e 2) * Complex.I) • ρ (ι Q (e 2)) u₀) := by
-  obtain ⟨q1, q3⟩ := ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂
-    (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
+  obtain ⟨q1, q3⟩ :=
+    AlmostComplexStructure.ι_apply_ι_zero_apply_ι_two_apply_of_bivectorExterior_apply hQ h₀ h₂
+      (bivectorExterior_apply_of_cliffordProjection_apply_eq_self o ρ hu₀)
   have q0 := e.map_ι_apply_map_ι_apply hQ ρ 0 (ρ (ι Q (e 2)) (u₀ : W))
   have q2 : ρ (ι Q (e 2)) (ρ (ι Q (e 0)) (ρ (ι Q (e 2)) (u₀ : W))) = ρ (ι Q (e 0)) u₀ := by
     rw [e.map_ι_apply_map_ι_apply_comm hQ ρ (by decide), e.map_ι_apply_map_ι_apply hQ ρ, map_neg,

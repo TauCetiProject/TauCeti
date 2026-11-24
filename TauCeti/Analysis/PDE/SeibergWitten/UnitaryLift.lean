@@ -79,8 +79,8 @@ negative half-spinors with determinant its determinant character
 On the positive half-spinors, the canonical lift sends `c(v) c(w) u` to `c(A v) c(A w) u`
 (`TauCeti.SeibergWitten.coe_spinCGroupHalfSpinRep_unitaryLift_apply_of_coe_eq`). With the formula
 for `c(v) c(w) u` in `TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line`
-(`TauCeti.SeibergWitten.ι_apply_ι_apply_of_bivectorExterior_apply`), this gives the Clifford
-algebra behind the splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` of the canonical `Spinᶜ` structure.
+(`TauCeti.AlmostComplexStructure.ι_apply_ι_apply_of_bivectorExterior_apply`), this gives the
+Clifford algebra behind the splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` of the canonical `Spinᶜ` structure.
 
 ## Main definitions
 
@@ -559,7 +559,7 @@ private theorem halfSpinCliffordMul_smul_add_smul_apply {u : eigenspace (ρ (chi
     halfSpinCliffordMul o ρ 1 (a • v + b • J v) u =
       ((a : ℂ) + b * Complex.I) • halfSpinCliffordMul o ρ 1 v u := by
   have hJ := halfSpinCliffordMul_apply_eq_smul (ψ := u)
-    (ι_apply_apply_of_bivectorExterior_apply hQ h₀ h₂ hu v)
+    (AlmostComplexStructure.ι_apply_apply_of_bivectorExterior_apply hQ h₀ h₂ hu v)
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hJ]
   module
 
