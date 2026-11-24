@@ -34,7 +34,7 @@ variable {A B C : Type*} [CommRing A] [CommRing B] [CommRing C]
 
 omit hp in
 /-- The coordinates of the lift `x.out` beyond the truncation length vanish. -/
-theorem coeff_out_of_le {n : ℕ} (x : TruncatedWittVector p n A) {i : ℕ} (hi : n ≤ i) :
+theorem coeff_out_eq_zero_of_le {n : ℕ} (x : TruncatedWittVector p n A) {i : ℕ} (hi : n ≤ i) :
     x.out.coeff i = 0 := by
   rw [out, WittVector.coeff_mk, dite_eq_right (Nat.not_lt.mpr hi)]
 

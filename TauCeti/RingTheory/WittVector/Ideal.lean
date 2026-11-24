@@ -336,14 +336,12 @@ theorem map_wittVector_truncate_ideal (n : ℕ) (I : Ideal A) :
   refine le_antisymm (Ideal.map_le_iff_le_comap.mpr fun x hx ↦ ?_) fun y hy ↦ ?_
   · simp only [Ideal.mem_comap, mem_ideal_iff, WittVector.coeff_truncate]
     exact fun i ↦ WittVector.mem_ideal_iff.mp hx i
-  · have hy' : WittVector.truncate n y.out = y := by
-      ext i
-      rw [WittVector.coeff_truncate, coeff_out]
+  · have hy' : WittVector.truncate n y.out = y := truncateFun_out y
     rw [← hy']
     refine Ideal.mem_map_of_mem _ (WittVector.mem_ideal_iff.mpr fun k ↦ ?_)
     rcases lt_or_ge k n with hk | hk
     · exact coeff_out y ⟨k, hk⟩ ▸ mem_ideal_iff.mp hy ⟨k, hk⟩
-    · rw [coeff_out_of_le y hk]
+    · rw [coeff_out_eq_zero_of_le y hk]
       exact I.zero_mem
 
 /-- For `m ≤ n`, truncation `W_n(A) → W_m(A)` maps `W_n(I)` onto `W_m(I)`. -/
