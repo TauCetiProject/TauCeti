@@ -174,7 +174,7 @@ theorem mem_weightSpace_ofWeights_iff (b : Module.Basis η R M) (wt : η → G) 
     m ∈ weightSpace R G M g ↔ ∀ x ∈ (b.repr m).support, wt x = g := by
   let _ : Comodule R (MonoidAlgebra R G) M := ofWeights b wt
   rw [b.comoduleWeightSpace_eq_span wt (basis_mem_weightSpace_ofWeights b wt) g, b.mem_span_image]
-  rfl
+  simp only [Set.subset_def, Finset.mem_coe, Set.mem_ofPred_eq]
 
 /-- In a basis with pairwise distinct weights, projection to the weight of a basis vector
 extracts exactly that basis coordinate. -/

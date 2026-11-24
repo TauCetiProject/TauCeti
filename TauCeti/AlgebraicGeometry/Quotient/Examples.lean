@@ -21,7 +21,7 @@ This file checks the invariant quotients `X // G = Spec O(X)^G` on three small e
 
 * **`𝔾ₘ` on `𝔸²` with weights `1` and `-1`.** The invariants are the polynomials in `x y`, so the
   quotient `𝔸² // 𝔾ₘ` is the line with coordinate `x y`
-  (`TauCeti.QuotientExamples.coinvariants_gm_one_neg_one`).
+  (`TauCeti.QuotientExamples.coinvariants_gm_one_neg_one_eq_adjoin`).
 * **`C₂` on `𝔸¹` by `x ↦ -x`.** Over a ring without additive torsion, such as the `2`-adic
   integers `ℤ_[2]`, the invariants of `R[x]` are `R[x²]`
   (`TauCeti.QuotientExamples.fixedPoints_negX_eq_adjoin`). Over a ring of characteristic two,
@@ -33,9 +33,10 @@ This file checks the invariant quotients `X // G = Spec O(X)^G` on three small e
   invariants does not commute with this non-flat base change. The group `C₂` is not linearly
   reductive over `ℤ_[2]`, and this example does not treat it as reductive.
 * **`𝔾ₐ` acting on itself by conjugation.** `𝔾ₐ` is commutative, so conjugation is trivial and
-  every function on `𝔾ₐ` is invariant (`TauCeti.QuotientExamples.conjugationInvariants_ga`): the
-  conjugation quotient `𝔾ₐ // 𝔾ₐ` is `𝔸¹` itself. Every conjugacy class `{x}` is a closed orbit,
-  although `𝔾ₐ` is not reductive.
+  every function on `𝔾ₐ` is invariant
+  (`TauCeti.QuotientExamples.conjugationInvariants_ga_eq_top`): the conjugation quotient
+  `𝔾ₐ // 𝔾ₐ` is `𝔸¹` itself. Every conjugacy class `{x}` is a closed orbit, although `𝔾ₐ` is not
+  reductive.
 -/
 
 public section
@@ -52,7 +53,7 @@ variable (R : Type*) [CommSemiring R]
 
 /-- **`𝔾ₘ` acting on `𝔸²` with weights `1` and `-1`** has invariants the polynomials in `x y`:
 the affine quotient `𝔸² // 𝔾ₘ` is the line with coordinate `x y`. -/
-theorem coinvariants_gm_one_neg_one :
+theorem coinvariants_gm_one_neg_one_eq_adjoin :
     letI := mvPolynomialWeight (R := R)
       (![Multiplicative.ofAdd 1, Multiplicative.ofAdd (-1)] : Fin 2 → Multiplicative ℤ)
     coinvariants R (MonoidAlgebra R (Multiplicative ℤ)) (MvPolynomial (Fin 2) R) =
@@ -188,7 +189,7 @@ variable (R : Type*) [CommRing R]
 
 /-- **Conjugation on `𝔾ₐ` is trivial**: every function on `𝔾ₐ = Spec R[X]` is conjugation
 invariant, so the conjugation quotient `𝔾ₐ // 𝔾ₐ` is `𝔸¹`, although `𝔾ₐ` is not reductive. -/
-theorem conjugationInvariants_ga :
+theorem conjugationInvariants_ga_eq_top :
     HopfAlgebra.conjugationInvariants R (SymmetricAlgebra R R) = ⊤ :=
   (HopfAlgebra.conjugationInvariants_eq_classFunctions R _).trans HopfAlgebra.classFunctions_eq_top
 
