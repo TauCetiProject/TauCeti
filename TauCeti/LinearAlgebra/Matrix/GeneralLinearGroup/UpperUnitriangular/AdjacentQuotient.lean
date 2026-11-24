@@ -60,9 +60,10 @@ of the entries of the factors. -/
 private theorem mul_apply_castSucc_succ (g h : upperUnitriangularGroup (Fin (n + 1)) R)
     (i : Fin n) :
     ((g * h : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) i.castSucc i.succ =
-      (g : GL (Fin (n + 1)) R) i.castSucc i.succ + (h : GL (Fin (n + 1)) R) i.castSucc i.succ :=
-  (isUpperUnitriangular g).mul_apply_of_covBy (isUpperUnitriangular h)
-    (Fin.covBy_iff.2 (by simp))
+      (g : GL (Fin (n + 1)) R) i.castSucc i.succ + (h : GL (Fin (n + 1)) R) i.castSucc i.succ := by
+  have hIoo : Finset.Ioo i.castSucc i.succ = ∅ :=
+    Finset.coe_eq_empty.1 (by rw [Finset.coe_Ioo]; exact (Fin.covBy_iff.2 (by simp)).Ioo_eq)
+  rw [mul_apply_of_lt g h Fin.castSucc_lt_succ, hIoo, Finset.sum_empty, add_zero]
 
 variable (R n) in
 /-- The homomorphism `Uₙ₊₁(R) → (Rⁿ, +)` sending an upper-unitriangular matrix to its entries

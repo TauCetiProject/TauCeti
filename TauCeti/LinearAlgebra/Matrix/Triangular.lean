@@ -525,21 +525,6 @@ theorem IsUpperUnitriangular.mul {T p : Type*} [NonAssocSemiring T] [Fintype p]
   refine ⟨hM.1.mul hN.1, fun i ↦ ?_⟩
   rw [mul_apply_diag_of_isUpperTriangular hM.1 hN.1, hM.2 i, hN.2 i, one_mul]
 
-/-- One step above the diagonal, an entry of a product of upper-unitriangular matrices is the sum
-of the corresponding entries of the factors: `(M * N) i j = M i j + N i j` when `i ⋖ j`. -/
-theorem IsUpperUnitriangular.mul_apply_of_covBy {T p : Type*} [NonAssocSemiring T] [Fintype p]
-    [LinearOrder p] {M N : Matrix p p T} (hM : M.IsUpperUnitriangular)
-    (hN : N.IsUpperUnitriangular) {i j : p} (hij : i ⋖ j) :
-    (M * N) i j = M i j + N i j := by
-  rw [Matrix.mul_apply, Fintype.sum_eq_add i j hij.lt.ne, hM.apply_diag, hN.apply_diag, one_mul,
-    mul_one, add_comm]
-  rintro k ⟨hki, hkj⟩
-  rcases lt_or_gt_of_ne hki with hki | hik
-  · rw [hM.isUpperTriangular hki, zero_mul]
-  · have hjk : j < k :=
-      lt_of_le_of_ne (le_of_not_gt fun hkj' ↦ (hij.le_of_lt hkj').not_gt hik) (Ne.symm hkj)
-    rw [hN.isUpperTriangular hjk, mul_zero]
-
 /-- An entry strictly above the diagonal of a product of upper-unitriangular matrices is the sum
 of the two entries and of the products through the intermediate indices:
 `(M * N) i j = M i j + N i j + ∑_{i < k < j} M i k * N k j`. -/

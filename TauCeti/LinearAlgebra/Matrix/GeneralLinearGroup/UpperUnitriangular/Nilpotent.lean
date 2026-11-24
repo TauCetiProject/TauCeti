@@ -277,13 +277,11 @@ theorem commutator_superdiagonalSubgroup_le (r s : ℕ) :
 
 /-- Every term of the superdiagonal filtration is a normal subgroup of `Uₙ(R)`. -/
 instance superdiagonalSubgroup_normal (r : ℕ) :
-    (superdiagonalSubgroup (R := R) (n := n) r).Normal where
-  conj_mem h hh g := by
-    have hc : ⁅g, h⁆ ∈ superdiagonalSubgroup (R := R) (n := n) r :=
-      superdiagonalSubgroup_antitone (Nat.le_add_left r 1) <|
-        commutator_superdiagonalSubgroup_le 1 r <|
-          Subgroup.commutator_mem_commutator (by simp) hh
-    simpa [commutatorElement_def] using mul_mem hc hh
+    (superdiagonalSubgroup (R := R) (n := n) r).Normal :=
+  Subgroup.commutator_top_left_le_iff.mp <| by
+    rw [← superdiagonalSubgroup_one (R := R) (n := n)]
+    exact (commutator_superdiagonalSubgroup_le 1 r).trans
+      (superdiagonalSubgroup_antitone (Nat.le_add_left r 1))
 
 /-- The `r`-th lower central subgroup has zero entries on the first `r` superdiagonals.
 Mathlib numbers the lower central series starting with the whole group at `r = 0`. -/
