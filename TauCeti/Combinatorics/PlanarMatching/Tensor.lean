@@ -701,6 +701,7 @@ theorem zero_add_insertBlock (x : PlanarMatching (0 + b)) (y : PlanarMatching l)
   · rw [insFn_add _ _ hj, Nat.zero_add (pv y j), Nat.zero_add j, appendFn_of_lt _ _ hj]
 
 /-- Block insertion determines both the outer and the inserted matching. -/
+@[simp]
 theorem insertBlock_eq_insertBlock_iff {x₁ x₂ : PlanarMatching (a + b)}
     {y₁ y₂ : PlanarMatching l} :
     x₁.insertBlock y₁ = x₂.insertBlock y₂ ↔ x₁ = x₂ ∧ y₁ = y₂ := by
@@ -877,6 +878,7 @@ theorem matching_tensor_eq_iff {f₁ f₂ : TLDiagram n m} {g₁ g₂ : TLDiagra
     insertBlock_eq_insertBlock_iff]
 
 /-- Tensoring with a fixed diagram on the right is injective. -/
+@[simp]
 theorem tensor_left_inj (g : TLDiagram n' m') {f₁ f₂ : TLDiagram n m} :
     f₁.tensor g = f₂.tensor g ↔ f₁ = f₂ := by
   refine ⟨fun h => ?_, by rintro rfl; rfl⟩
@@ -885,6 +887,7 @@ theorem tensor_left_inj (g : TLDiagram n' m') {f₁ f₂ : TLDiagram n m} :
   exact TLDiagram.ext (matching_tensor_eq_iff.mp (congrArg matching h)).1 (by omega)
 
 /-- Tensoring with a fixed diagram on the left is injective. -/
+@[simp]
 theorem tensor_right_inj (f : TLDiagram n m) {g₁ g₂ : TLDiagram n' m'} :
     f.tensor g₁ = f.tensor g₂ ↔ g₁ = g₂ := by
   refine ⟨fun h => ?_, by rintro rfl; rfl⟩
