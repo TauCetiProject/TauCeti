@@ -23,8 +23,8 @@ constant does not change it, a sum is smooth with the sum of the constants, and 
 * `LipschitzSmoothWith.weaken`: monotonicity in the constant.
 * `LipschitzSmoothWith.const`, `ContinuousLinearMap.lipschitzSmoothWith`: constants and continuous
   linear maps are `0`-smooth.
-* `LipschitzSmoothWith.const_add`, `LipschitzSmoothWith.add`, `LipschitzSmoothWith.const_smul`:
-  translates, sums and scalar multiples.
+* `LipschitzSmoothWith.const_add`, `LipschitzSmoothWith.add_const`, `LipschitzSmoothWith.add`,
+  `LipschitzSmoothWith.const_smul`: translates, sums and scalar multiples.
 -/
 
 public section
@@ -50,6 +50,12 @@ theorem const_add (hf : LipschitzSmoothWith 𝕜 K f) (c : F) :
     LipschitzSmoothWith 𝕜 K fun x ↦ c + f x :=
   .of_hasFDerivAt (fun x ↦ (hf.differentiable x).hasFDerivAt.const_add c) fun x y ↦ by
     simpa only [add_sub_add_left_eq_sub] using hf.fderiv_norm_le x y
+
+/-- Adding a constant on the right to a `K`-smooth function gives a `K`-smooth function. -/
+theorem add_const (hf : LipschitzSmoothWith 𝕜 K f) (c : F) :
+    LipschitzSmoothWith 𝕜 K fun x ↦ f x + c :=
+  .of_hasFDerivAt (fun x ↦ (hf.differentiable x).hasFDerivAt.add_const c) fun x y ↦ by
+    simpa only [add_sub_add_right_eq_sub] using hf.fderiv_norm_le x y
 
 /-- The sum of a `K`-smooth and a `K'`-smooth function is `(K + K')`-smooth. -/
 theorem add (hf : LipschitzSmoothWith 𝕜 K f) (hg : LipschitzSmoothWith 𝕜 K' g) :

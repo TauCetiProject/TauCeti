@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Symmetric
-public import TauCeti.Analysis.Calculus.LipschitzSmooth.Basic
+public import TauCeti.Analysis.Calculus.LipschitzSmooth.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.InnerProductSpace.Rayleigh
 
 /-!
 # Smooth functions on a Hilbert space: gradient inequalities
@@ -25,8 +23,8 @@ decreases `f` when `0 < η < 2 / K`. If `f` is bounded below by `m`, then
 `‖∇ f x‖ ^ 2 ≤ 2 * K * (f x - m)`.
 
 The model example is a quadratic form. For every continuous linear map `A` on a real inner product
-space the function `x ↦ ⟪A x, x⟫ / 2` is `‖A‖₊`-smooth, and when `A` is symmetric its gradient
-is `A x`.
+space the function `x ↦ ⟪A x, x⟫ / 2` is `‖A‖₊`-smooth, with no symmetry assumption, and the
+quadratic `y ↦ a / 2 * ‖y‖ ^ 2 + c` is `‖a‖₊`-smooth.
 
 ## Main results
 
@@ -35,7 +33,7 @@ is `A x`.
 * `LipschitzSmoothWith.apply_sub_smul_gradient_le`: sufficient decrease along the gradient.
 * `LipschitzSmoothWith.norm_gradient_sq_le`: the gradient bound for a function bounded below.
 * `ContinuousLinearMap.lipschitzSmoothWith_inner_div_two`,
-  `LinearMap.IsSymmetric.gradient_inner_div_two`: quadratic forms.
+  `TauCeti.lipschitzSmoothWith_mul_norm_sq_add`: quadratic forms.
 
 ## References
 
@@ -124,27 +122,24 @@ theorem ContinuousLinearMap.lipschitzSmoothWith_inner_div_two (A : E →L[ℝ] E
         exact (abs_real_inner_le_norm _ _).trans (by gcongr; exact A.le_opNorm _)
     _ = ‖A‖ / 2 * ‖y - x‖ ^ 2 := by ring
 
+/-- Over `ℝ`, the quadratic `y ↦ a / 2 * ‖y‖ ^ 2 + c` is `‖a‖₊`-smooth. -/
+theorem TauCeti.lipschitzSmoothWith_mul_norm_sq_add (a c : ℝ) :
+    LipschitzSmoothWith ℝ ‖a‖₊ fun y : E ↦ a / 2 * ‖y‖ ^ 2 + c := by
+  have hfun : (fun y : E ↦ a / 2 * ‖y‖ ^ 2 + c) =
+      fun y ↦ ⟪(a • ContinuousLinearMap.id ℝ E) y, y⟫ / 2 + c := by
+    funext y
+    simp only [smul_apply, ContinuousLinearMap.id_apply, real_inner_smul_left,
+      real_inner_self_eq_norm_sq]
+    ring
+  rw [hfun]
+  refine ((a • ContinuousLinearMap.id ℝ E).lipschitzSmoothWith_inner_div_two.weaken
+    (NNReal.coe_le_coe.1 ?_)).add_const c
+  rw [coe_nnNorm, coe_nnNorm]
+  calc ‖a • ContinuousLinearMap.id ℝ E‖
+      ≤ ‖a‖ * ‖ContinuousLinearMap.id ℝ E‖ := ContinuousLinearMap.opNorm_smul_le _ _
+    _ ≤ ‖a‖ * 1 := by
+        gcongr
+        exact ContinuousLinearMap.norm_id_le
+    _ = ‖a‖ := mul_one _
+
 end Quadratic
-
-namespace LinearMap.IsSymmetric
-
-variable {A : E →L[ℝ] E}
-
-/-- The quadratic form `x ↦ ⟪A x, x⟫ / 2` of a symmetric continuous linear map `A` has gradient
-`A x` at `x`. -/
-theorem hasGradientAt_inner_div_two (hA : (A : E →ₗ[ℝ] E).IsSymmetric) (x : E) :
-    HasGradientAt (fun x ↦ ⟪A x, x⟫ / 2) (A x) x := by
-  rw [hasGradientAt_iff_hasFDerivAt]
-  convert (hA.hasStrictFDerivAt_reApplyInnerSelf x).hasFDerivAt.mul_const (2⁻¹ : ℝ) using 1
-  · ext y
-    simp [ContinuousLinearMap.reApplyInnerSelf_apply, div_eq_mul_inv]
-  · ext h
-    simp
-
-/-- The gradient of the quadratic form `x ↦ ⟪A x, x⟫ / 2` of a symmetric continuous linear map
-`A` is `A`. -/
-theorem gradient_inner_div_two (hA : (A : E →ₗ[ℝ] E).IsSymmetric) (x : E) :
-    ∇ (fun x ↦ ⟪A x, x⟫ / 2) x = A x :=
-  (hA.hasGradientAt_inner_div_two x).gradient
-
-end LinearMap.IsSymmetric
