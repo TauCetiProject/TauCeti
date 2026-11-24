@@ -10,9 +10,8 @@ public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
 public import TauCeti.Analysis.Pseudodifferential.SmoothKernel
 import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Extension
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Analysis.Pseudodifferential.Symbol.ClassicalSmulLeft
 import TauCeti.Topology.Algebra.Support
 
 /-!
@@ -41,15 +40,17 @@ sets, with no condition on its averaged derivatives.
 * Near every point of its source, `κ` agrees with a diffeomorphism of the whole space whose
   derivative stays within `‖Dκ(x₀)⁻¹‖⁻¹ / 2` of `Dκ(x₀)`
   (`ContDiffOn.exists_homeomorph_eventuallyEq_nnNorm_fderiv_sub_le`), so all its derivatives and
-  averaged derivatives are invertible (`norm_hadamardFactor_sub_le`).
+  averaged derivatives are invertible
+  (`OpenPartialHomeomorph.exists_eqOn_homeomorph_isUnit_hadamardFactor`).
 * A partition of unity splits `ψ` into pieces `ψ ρᵢ` supported in such neighbourhoods `Nᵢ`, and
   `v = (ψ u) ∘ κ⁻¹` accordingly.
 * For one piece, a cutoff `χ` equal to `1` near the support of `ψ ρᵢ` and supported in `Nᵢ` splits
   the output cutoff as `φ = φ χ + φ (1 - χ)`. On the support of `φ χ` the map `κ` is the global
   diffeomorphism, so the theorem for diffeomorphisms of the whole space applies, after cutting the
-  symbol off in space. On the support of `φ (1 - χ)`, `κ x` stays away from the support of the
-  input, where `Op(a)` is the integral operator with its off-diagonal kernel
-  (`TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`), which is smooth there.
+  symbol off in space (`TauCeti.ClassicalSymbol.smulLeft`). On the support of `φ (1 - χ)`, `κ x`
+  stays away from the support of the input, where `Op(a)` is the integral operator with its
+  off-diagonal kernel (`TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`),
+  which is smooth there.
 * Such an integral operator, read through `κ`, has the smooth compactly supported kernel
   `φ(x) ψ(y) |det Dκ(y)| K(κ x, κ y)`, so it is the quantization of a smoothing symbol
   (`TauCeti.exists_isSmoothing_smul_integral_comp_eq`).
@@ -84,33 +85,6 @@ namespace TauCeti
 
 variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W]
-
-/-- The symbol `θ(x) a(x, ξ)` of `θ Op(a)`, for a smooth real function `θ` of the position. -/
-private def ClassicalSymbol.cutoffSmul (θ : CoordinateSpace n → ℝ) (hθ : ContDiff ℝ ∞ θ)
-    (a : ClassicalSymbol n V W m) : ClassicalSymbol n V W m :=
-  ClassicalSymbol.inclusion 0 (by simp) ((ClassicalSymbol.ofSpatial
-    (fun x ↦ (θ x : ℂ) • ContinuousLinearMap.id ℂ W)
-    (show ContDiff ℝ ∞ fun x ↦ (θ x : ℂ) • ContinuousLinearMap.id ℂ W from
-      (Complex.ofRealCLM.contDiff.comp hθ).smul contDiff_const)).comp a)
-
-private theorem ClassicalSymbol.coefficient_cutoffSmul (θ : CoordinateSpace n → ℝ)
-    (hθ : ContDiff ℝ ∞ θ) (a : ClassicalSymbol n V W m)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.cutoffSmul θ hθ).toSymbol.coefficient p = θ p.1 • a.toSymbol.coefficient p := by
-  ext v
-  simp [cutoffSmul, ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_comp,
-    Symbol.coefficient_ofSpatial]
-
-private theorem ClassicalSymbol.coefficient_principal_cutoffSmul (θ : CoordinateSpace n → ℝ)
-    (hθ : ContDiff ℝ ∞ θ) (a : ClassicalSymbol n V W m) (x ξ : CoordinateSpace n) :
-    (a.cutoffSmul θ hθ).principal.coefficient (x, ξ) = θ x • a.principal.coefficient (x, ξ) := by
-  rcases eq_or_ne ξ 0 with rfl | hξ
-  · simp [HomogeneousSymbol.zero_covector]
-  rw [cutoffSmul, coefficient_principal, term_inclusion_zero,
-    HomogeneousSymbol.coefficient_castDegree, ← coefficient_principal, principal_comp,
-    HomogeneousSymbol.coefficient_comp, coefficient_principal_ofSpatial _ _ hξ]
-  ext v
-  simp
 
 /-- A function `v` equal to `(ψ u) ∘ κ⁻¹` on the target of `κ` and to `0` off it is supported in
 the image of the support of `ψ`. -/
@@ -203,16 +177,6 @@ private theorem exists_sum_eq
 
 variable [CompleteSpace V] [CompleteSpace W]
 
-omit [CompleteSpace V] in
-private theorem ClassicalSymbol.quantizeSchwartzValue_cutoffSmul (θ : CoordinateSpace n → ℝ)
-    (hθ : ContDiff ℝ ∞ θ) (a : ClassicalSymbol n V W m) (u : 𝓢(CoordinateSpace n, V))
-    (x : CoordinateSpace n) :
-    quantizeSchwartzValue (a.cutoffSmul θ hθ).toSymbol.coefficient u x =
-      θ x • quantizeSchwartzValue a.toSymbol.coefficient u x := by
-  rw [cutoffSmul, toSymbol_inclusion, Symbol.coefficient_inclusion, toSymbol_comp,
-    toSymbol_ofSpatial, Symbol.quantizeSchwartzValue_ofSpatial_comp]
-  simp
-
 /-- **Integral operators under a change of variables.** Let `κ` be a diffeomorphism from an open
 set of `ℝⁿ` onto another, and let `K(z, w)` be smooth on an open set `O`. If `φ` and `ψ` are cutoffs
 with compact supports in the source of `κ` such that `(κ x, κ y) ∈ O` for `x` in the support of `φ`
@@ -303,7 +267,7 @@ theorem Symbol.exists_isSmoothing_smul_quantizeSchwartzValue_comp_eq (a : Symbol
   exact hφψ.ne_of_mem (subset_tsupport _ hx) hy
     (κ.injOn (hφs (subset_tsupport _ hx)) (hψs hy) hxy.symm)
 
-omit [CompleteSpace V] in
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- **Changes of coordinates near a point.** The change of coordinates theorem for an open partial
 homeomorphism `κ`, when the cutoffs `φ` and `ψ` are supported in an open set `N` on which `κ` agrees
 with a global diffeomorphism `κ'` whose derivatives and Hadamard factors are all invertible. -/
@@ -329,23 +293,27 @@ private theorem ClassicalSymbol.exists_smul_quantizeSchwartzValue_comp_eq_of_eqO
     isOpen_univ (subset_univ _)
   have hθφ : ∀ x, φ x ≠ 0 → θ (κ' x) = 1 := fun x hx ↦
     interior_subset (hθ1 ⟨x, subset_tsupport _ hx, rfl⟩)
-  obtain ⟨b, hb, hop⟩ := (a.cutoffSmul θ hθ).exists_quantizeSchwartzValue_comp_eq
-    hθc.isCompact (fun z hz η ↦ by
-      simp [coefficient_cutoffSmul, image_eq_zero_of_notMem_tsupport hz])
+  obtain ⟨b, hb, hop⟩ :=
+    (a.smulLeft (Complex.ofRealCLM.contDiff.comp hθ)).exists_quantizeSchwartzValue_comp_eq
+    hθc.isCompact (fun z hz η ↦ by simp [image_eq_zero_of_notMem_tsupport hz])
     κ' hκ'c hψ hψc (fun y _ ↦ hκ'd y) fun x _ y _ ↦ hκ'Φ x y
-  refine ⟨b.cutoffSmul φ hφ, fun x ξ ↦ ?_, fun u v hv hv0 x ↦ ?_⟩
-  · rw [coefficient_principal_cutoffSmul, hb, coefficient_principal_cutoffSmul]
+  refine ⟨b.smulLeft (Complex.ofRealCLM.contDiff.comp hφ), fun x ξ ↦ ?_, fun u v hv hv0 x ↦ ?_⟩
+  · rw [coefficient_principal_smulLeft, hb, coefficient_principal_smulLeft]
     by_cases hx : φ x * ψ x = 0
     · rcases mul_eq_zero.1 hx with h | h <;> simp [h]
     obtain ⟨hφx, hψx⟩ := mul_ne_zero_iff.1 hx
     have hxN : x ∈ N := hψN (subset_tsupport _ hψx)
+    simp only [Function.comp_apply]
     rw [hθφ x hφx, (hNκ.eventuallyEq_of_mem (hN.mem_nhds hxN)).fderiv_eq, hNκ hxN]
-    simp [smul_smul]
-  · rw [quantizeSchwartzValue_cutoffSmul, ← hop u v
-      (apply_eq_smul_of_eqOn κ'.injective hNs hNκ hψN hv hv0), quantizeSchwartzValue_cutoffSmul]
+    simp [smul_smul, Complex.coe_smul]
+  · rw [toSymbol_smulLeft, Symbol.quantizeSchwartzValue_smulLeft, ← hop u v
+      (apply_eq_smul_of_eqOn κ'.injective hNs hNκ hψN hv hv0), toSymbol_smulLeft,
+      Symbol.quantizeSchwartzValue_smulLeft]
     by_cases hx : φ x = 0
     · simp [hx]
-    rw [hθφ x hx, one_smul, hNκ (hφN (subset_tsupport _ hx))]
+    simp only [Function.comp_apply]
+    rw [hθφ x hx, hNκ (hφN (subset_tsupport _ hx))]
+    simp
 
 /-- **Changes of coordinates for an input cutoff near a point.** The change of coordinates theorem
 for an open partial homeomorphism `κ`, when the cutoff `ψ` is supported in an open set `N` on which
@@ -387,36 +355,12 @@ private theorem ClassicalSymbol.exists_smul_quantizeSchwartzValue_comp_eq_of_tsu
       filter_upwards [hχ1 x hxψ] with z hz
       simp [hz]
   refine ⟨b₁ + ofIsSmoothing r hr, fun x ξ ↦ ?_, fun u v hv hv0 x ↦ ?_⟩
-  · rw [principal_add, HomogeneousSymbol.coefficient_add, Pi.add_apply,
-      coefficient_principal (ofIsSmoothing r hr), term_ofIsSmoothing,
-      HomogeneousSymbol.coefficient_zero, Pi.zero_apply, add_zero, hb₁, mul_assoc, hχψ]
-  · rw [toSymbol_add, Symbol.coefficient_add, Symbol.quantizeSchwartzValue_coefficient_add,
-      toSymbol_ofIsSmoothing, ← hop₁ u v hv hv0 x, ← hop₂ u v hv hv0 x, ← add_smul]
+  · simpa [mul_assoc, hχψ] using hb₁ x ξ
+  · simp only [toSymbol_add, Symbol.coefficient_add, Symbol.quantizeSchwartzValue_coefficient_add,
+      toSymbol_ofIsSmoothing]
+    rw [← hop₁ u v hv hv0 x, ← hop₂ u v hv hv0 x, ← add_smul]
     congr 1
     ring
-
-/-- Near each point of its source, a diffeomorphism `κ` between open sets of `ℝⁿ` agrees with a
-global diffeomorphism all of whose derivatives and Hadamard factors are invertible. -/
-private theorem exists_eqOn_homeomorph_isUnit_hadamardFactor
-    (κ : OpenPartialHomeomorph (CoordinateSpace n) (CoordinateSpace n))
-    (hκ : ContDiffOn ℝ ∞ κ κ.source) (hκ' : ContDiffOn ℝ ∞ κ.symm κ.target) {x₀ : CoordinateSpace n}
-    (hx₀ : x₀ ∈ κ.source) :
-    ∃ N : Set (CoordinateSpace n), IsOpen N ∧ x₀ ∈ N ∧ N ⊆ κ.source ∧
-      ∃ κ' : CoordinateSpace n ≃ₜ CoordinateSpace n, ContDiff ℝ ∞ κ' ∧
-        (∀ y, IsUnit (fderiv ℝ κ' y)) ∧ (∀ x y, IsUnit (hadamardFactor κ' y x)) ∧ EqOn κ' κ N := by
-  obtain ⟨A, hA⟩ := κ.isInvertible_fderiv_of_contDiffOn hκ hκ' (by simp) hx₀
-  obtain ⟨κ', hκ'c, hκ'κ, hκ'd⟩ := hκ.exists_homeomorph_eventuallyEq_nnNorm_fderiv_sub_le
-    κ.open_source le_top hx₀ hA.symm
-  obtain ⟨N, hN, hNo, hx₀N⟩ := eventually_nhds_iff.1 (hκ'κ.and (κ.open_source.mem_nhds hx₀))
-  refine ⟨N, hNo, hx₀N, fun y hy ↦ (hN y hy).2, κ', hκ'c, fun y ↦ ?_, fun x y ↦ ?_,
-    fun y hy ↦ (hN y hy).1⟩
-  · exact ContinuousLinearMap.isInvertible_iff_isUnit.1
-      (ContinuousLinearMap.isInvertible_of_norm_sub_le_half A (hκ'd y))
-  · refine ContinuousLinearMap.isInvertible_iff_isUnit.1
-      (ContinuousLinearMap.isInvertible_of_norm_sub_le_half A ?_)
-    rw [← NNReal.coe_le_coe, coe_nnNorm]
-    exact norm_hadamardFactor_sub_le (hκ'c.continuous_fderiv (by simp)).continuousOn
-      fun z _ ↦ by exact_mod_cast hκ'd z
 
 /-- **Changes of coordinates for classical symbols.** Let `κ` be a diffeomorphism from an open set
 of `ℝⁿ` onto another, such as a transition map between two charts of a manifold, `a` a classical
@@ -443,7 +387,7 @@ theorem ClassicalSymbol.exists_smul_quantizeSchwartzValue_comp_eq (a : Classical
   -- Cover the support of `ψ` by open sets on which `κ` is a global diffeomorphism, and split `ψ`
   -- by a subordinate partition of unity `ρ`.
   choose N hN hxN hNs κ' hκ'c hκ'd hκ'Φ hNκ using
-    fun x : κ.source ↦ exists_eqOn_homeomorph_isUnit_hadamardFactor κ hκ hκ' x.property
+    fun x : κ.source ↦ κ.exists_eqOn_homeomorph_isUnit_hadamardFactor hκ hκ' le_top x.property
   obtain ⟨t, ρ, hρ, -, -, hρ1⟩ := hψc.isCompact.exists_contDiff_tsupport_subset_finset_sum_eq_one
     hN fun x hx ↦ mem_iUnion.2 ⟨⟨x, hψs hx⟩, hxN _⟩
   choose b hb hop using fun i ↦ a.exists_smul_quantizeSchwartzValue_comp_eq_of_tsupport_subset

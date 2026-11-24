@@ -8,7 +8,11 @@ module
 public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Analysis.Calculus.Hadamard
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Extending local diffeomorphisms to global ones
@@ -24,13 +28,15 @@ both terms of the derivative of the product are at most a multiple of `δ`, what
 
 When `f'(x₀)` is invertible and the derivative of `g` stays within `‖f'(x₀)⁻¹‖⁻¹ / 2` of it, `g`
 approximates the linear equivalence `f'(x₀)` on the whole space, so it is a homeomorphism
-(`ContDiffOn.exists_homeomorph_eventuallyEq_nnNorm_fderiv_sub_le`). This replaces a local
-diffeomorphism near a point by a global diffeomorphism all of whose derivatives are invertible,
-for instance to apply a change of variables stated for diffeomorphisms of the whole space to
-the transition maps of the charts of a manifold. Mathlib's
-`ApproximatesLinearOn.exists_homeomorph_extension` extends a map approximating a linear
-equivalence to a homeomorphism by a Lipschitz extension; the cutoff construction here keeps the
-extension `C^k`.
+(`ContDiffOn.exists_homeomorph_eventuallyEq_nnNorm_fderiv_sub_le`). Its derivatives and its averaged
+derivatives `hadamardFactor` are then all invertible, so an open partial homeomorphism that is `C^k`
+with `C^k` inverse agrees near each point of its source with such a global homeomorphism
+(`OpenPartialHomeomorph.exists_eqOn_homeomorph_isUnit_hadamardFactor`). This replaces a local
+diffeomorphism near a point by a global diffeomorphism all of whose derivatives are invertible, for
+instance to apply a change of variables stated for diffeomorphisms of the whole space to the
+transition maps of the charts of a manifold. Mathlib's
+`ApproximatesLinearOn.exists_homeomorph_extension` extends a map approximating a linear equivalence
+to a homeomorphism by a Lipschitz extension; the cutoff construction here keeps the extension `C^k`.
 -/
 
 public section
@@ -127,27 +133,54 @@ theorem ContDiffOn.exists_contDiff_eventuallyEq_norm_fderiv_sub_le {f : E → F}
   simp only [δ]
   field_simp
 
-/-- **A local diffeomorphism agrees near a point with a global homeomorphism.** A map `f : E → E`
+/-- **A local diffeomorphism agrees near a point with a global homeomorphism.** A map `f : E → F`
 that is `C^k` (`k ≥ 1`) on an open set `U`, with invertible derivative `A` at `x₀ ∈ U`, agrees near
-`x₀` with a homeomorphism `g` of `E` that is `C^k` and whose derivative stays within
+`x₀` with a homeomorphism `g : E ≃ₜ F` that is `C^k` and whose derivative stays within
 `‖A⁻¹‖⁻¹ / 2` of `A` everywhere. In particular every derivative of `g` is invertible
 (`ContinuousLinearMap.isInvertible_of_norm_sub_le_half`). -/
-theorem ContDiffOn.exists_homeomorph_eventuallyEq_nnNorm_fderiv_sub_le {f : E → E} {U : Set E}
+theorem ContDiffOn.exists_homeomorph_eventuallyEq_nnNorm_fderiv_sub_le {f : E → F} {U : Set E}
     {k : ℕ∞} (hf : ContDiffOn ℝ k f U) (hU : IsOpen U) (hk : 1 ≤ k) {x₀ : E} (hx₀ : x₀ ∈ U)
-    {A : E ≃L[ℝ] E} (hA : fderiv ℝ f x₀ = A) :
-    ∃ g : E ≃ₜ E, ContDiff ℝ k g ∧ ⇑g =ᶠ[𝓝 x₀] f ∧
-      ∀ x, ‖fderiv ℝ g x - A‖₊ ≤ ‖(A.symm : E →L[ℝ] E)‖₊⁻¹ / 2 := by
+    {A : E ≃L[ℝ] F} (hA : fderiv ℝ f x₀ = A) :
+    ∃ g : E ≃ₜ F, ContDiff ℝ k g ∧ ⇑g =ᶠ[𝓝 x₀] f ∧
+      ∀ x, ‖fderiv ℝ g x - A‖₊ ≤ ‖(A.symm : F →L[ℝ] E)‖₊⁻¹ / 2 := by
   rcases A.subsingleton_or_nnNorm_symm_pos with hE | hpos
-  · refine ⟨A.toHomeomorph, A.contDiff, .of_forall fun x ↦ Subsingleton.elim _ _, fun x ↦ ?_⟩
+  · have : Subsingleton F := A.toEquiv.symm.subsingleton
+    refine ⟨A.toHomeomorph, A.contDiff, .of_forall fun x ↦ Subsingleton.elim _ _, fun x ↦ ?_⟩
     rw [Subsingleton.elim (fderiv ℝ _ x - _) 0, nnNorm_zero]
     exact zero_le
-  set c : ℝ≥0 := ‖(A.symm : E →L[ℝ] E)‖₊⁻¹ / 2
+  set c : ℝ≥0 := ‖(A.symm : F →L[ℝ] E)‖₊⁻¹ / 2
   obtain ⟨g, hg, hgf, hgd⟩ := hf.exists_contDiff_eventuallyEq_norm_fderiv_sub_le hU hk hx₀
     (ε := c) (NNReal.coe_pos.2 (half_pos (inv_pos.2 hpos)))
   rw [hA] at hgd
   have hk' : (k : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hk).ne'
-  have happrox : ApproximatesLinearOn g (A : E →L[ℝ] E) univ c :=
+  have happrox : ApproximatesLinearOn g (A : E →L[ℝ] F) univ c :=
     convex_univ.approximatesLinearOn_of_nnnorm_fderiv_sub_le
       (fun x _ ↦ hg.differentiable hk' x) fun x _ ↦ by exact_mod_cast hgd x
   exact ⟨happrox.toHomeomorph g (.inr (NNReal.half_lt_self (inv_pos.2 hpos).ne')), hg, hgf,
     fun x ↦ by exact_mod_cast hgd x⟩
+
+/-- **A local diffeomorphism agrees near each point with a global diffeomorphism with invertible
+averaged derivatives.** Near each point `x₀` of its source, an open partial homeomorphism `κ` of a
+finite-dimensional real normed space that is `C^k` (`k ≥ 1`) with `C^k` inverse agrees, on an open
+neighbourhood `N` of `x₀` in its source, with a `C^k` homeomorphism `κ'` of the whole space all of
+whose derivatives and Hadamard factors `∫₀¹ Dκ'(y + t (x - y)) dt` are invertible. -/
+theorem OpenPartialHomeomorph.exists_eqOn_homeomorph_isUnit_hadamardFactor
+    (κ : OpenPartialHomeomorph E E) {k : ℕ∞} (hκ : ContDiffOn ℝ k κ κ.source)
+    (hκ' : ContDiffOn ℝ k κ.symm κ.target) (hk : 1 ≤ k) {x₀ : E} (hx₀ : x₀ ∈ κ.source) :
+    ∃ N : Set E, IsOpen N ∧ x₀ ∈ N ∧ N ⊆ κ.source ∧
+      ∃ κ' : E ≃ₜ E, ContDiff ℝ k κ' ∧ (∀ y, IsUnit (fderiv ℝ κ' y)) ∧
+        (∀ x y, IsUnit (hadamardFactor κ' y x)) ∧ EqOn κ' κ N := by
+  have hk' : (k : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (zero_lt_one.trans_le hk).ne'
+  obtain ⟨A, hA⟩ := κ.isInvertible_fderiv_of_contDiffOn hκ hκ' hk' hx₀
+  obtain ⟨κ', hκ'c, hκ'κ, hκ'd⟩ := hκ.exists_homeomorph_eventuallyEq_nnNorm_fderiv_sub_le
+    κ.open_source hk hx₀ hA.symm
+  obtain ⟨N, hN, hNo, hx₀N⟩ := _root_.eventually_nhds_iff.1 (hκ'κ.and (κ.open_source.mem_nhds hx₀))
+  refine ⟨N, hNo, hx₀N, fun y hy ↦ (hN y hy).2, κ', hκ'c, fun y ↦ ?_, fun x y ↦ ?_,
+    fun y hy ↦ (hN y hy).1⟩
+  · exact ContinuousLinearMap.isInvertible_iff_isUnit.1
+      (ContinuousLinearMap.isInvertible_of_norm_sub_le_half A (hκ'd y))
+  · refine ContinuousLinearMap.isInvertible_iff_isUnit.1
+      (ContinuousLinearMap.isInvertible_of_norm_sub_le_half A ?_)
+    rw [← NNReal.coe_le_coe, coe_nnNorm]
+    exact norm_hadamardFactor_sub_le (hκ'c.continuous_fderiv (by exact_mod_cast hk')).continuousOn
+      fun z _ ↦ by exact_mod_cast hκ'd z
