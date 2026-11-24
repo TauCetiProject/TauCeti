@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
-import TauCeti.Algebra.Order.Group.Subgroup
+import TauCeti.Algebra.Order.Group.ZMultiples
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 
