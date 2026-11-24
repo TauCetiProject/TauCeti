@@ -45,6 +45,8 @@ Scalar absorption is supplied by `exists_mul_pow_mem_of_isTopologicallyNilpotent
 * `Ideal.isOpen_comap_subtype_iff`: an ideal is open exactly when its trace on an open subring is.
 * `Subring.isLocalizationAway_of_isOpen`: an open subring containing a topologically nilpotent
   unit recovers the ambient ring by inverting that element.
+* `Subring.isLocalization_of_isOpen`: such a subring recovers the ambient ring by inverting all
+  of its elements which are ambient units.
 * `Subring.exists_dvd_pow_of_isTopologicallyNilpotent`: in an open subring, an ambient unit divides
   a power of every ambient topologically nilpotent element.
 * `Subring.isNoetherianRing_of_isOpen`: a ring with a topologically nilpotent unit and a
@@ -132,6 +134,22 @@ theorem exists_dvd_pow_of_isTopologicallyNilpotent (S : Subring A) (hS : IsOpen 
   obtain ⟨u, hu⟩ := ha
   obtain ⟨n, hn⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hb hS (↑u⁻¹ : A)
   exact ⟨n, ⟨_, hn⟩, Subtype.ext <| by simp [← hu]⟩
+
+/-- **The ambient ring is the localisation of an open subring at its ambient units.** If an open
+subring `S` contains a topologically nilpotent element which is a unit of `A`, then `A` is the
+localisation of `S` at the elements of `S` which are units of `A`. Unlike
+`Subring.isLocalizationAway_of_isOpen`, the submonoid inverted involves no choice of element. -/
+theorem isLocalization_of_isOpen (S : Subring A) (hS : IsOpen (S : Set A)) (s : S)
+    (hs : IsTopologicallyNilpotent (s : A)) (hu : IsUnit (s : A)) :
+    IsLocalization ((IsUnit.submonoid A).comap S.subtype) A := by
+  have := S.isLocalizationAway_of_isOpen hS s hs hu
+  refine (IsLocalization.iff_of_le_of_exists_dvd (M := Submonoid.powers s)
+    (N := (IsUnit.submonoid A).comap S.subtype) ?_ ?_).mp this
+  · exact Submonoid.powers_le.mpr hu
+  · intro a ha
+    obtain ⟨n, hn⟩ := S.exists_dvd_pow_of_isTopologicallyNilpotent hS
+      ((IsUnit.mem_submonoid_iff _).mp (Submonoid.mem_comap.mp ha)) hs
+    exact ⟨_, ⟨n, rfl⟩, hn⟩
 
 /-- A ring with a topologically nilpotent unit and a noetherian open subring is noetherian.
 Only separate continuity of multiplication is needed; the unit need not lie in the subring. -/

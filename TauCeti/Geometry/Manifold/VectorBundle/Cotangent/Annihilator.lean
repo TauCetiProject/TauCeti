@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.Polar
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
 import TauCeti.Analysis.LocallyConvex.Polar
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.QuotientRange
@@ -46,7 +47,16 @@ dimension `k + r` form a `C^n` vector subbundle of rank `r` of the cotangent bun
   `TauCeti.IsContMDiffDistribution.annihilatorVectorBundle`,
   `TauCeti.IsContMDiffDistribution.annihilatorContMDiffVectorBundle`), and their inclusion
   `TauCeti.CotangentBundle.annihilatorInclusion` into `T*M` is a `C^n` smooth embedding
-  (`TauCeti.IsContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion`).
+  (`TauCeti.IsContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion`). In particular a
+  covector field with values in the annihilators is a continuous section of `D⁰` exactly when it
+  is a continuous section of `T*M`
+  (`TauCeti.CotangentBundle.continuous_totalSpaceMk_annihilatorSpace_iff`).
+
+Along the zero section, the differential of the inclusion is the identity in the splitting of
+tangent spaces at zero vectors into base and fibre (`TauCeti.Bundle.zeroSectionTangentEquiv`): a
+tangent vector of `D⁰` with horizontal part `v` and vertical part `a ∈ D⁰_x` goes to the tangent
+vector of `T*M` with coordinates `(v, a)` in the preferred chart at the zero covector
+(`TauCeti.CotangentBundle.mfderiv_annihilatorInclusion_zeroSection`).
 
 Pointwise, `D x` and `D⁰_x` have complementary dimensions
 (`TauCeti.CotangentBundle.finrank_add_finrank_annihilatorSpace`), `D x` is recovered as the common
@@ -181,6 +191,15 @@ theorem annihilatorInclusion_injective : Injective (annihilatorInclusion I D P) 
   injective_totalSpace_subbundle (E →L[𝕜] 𝕜) P (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜)
     (annihilatorSpace I D)
 
+variable {I D P} in
+/-- Two covectors annihilating `D` are equal if they have the same base point and take the same
+values. -/
+theorem totalSpace_annihilatorSpace_ext {z w : TotalSpace P fun x ↦ annihilatorSpace I D x}
+    (hproj : z.proj = w.proj)
+    (h : ∀ v : TangentSpace I z.proj, (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) v =
+      (w.snd : TangentSpace I w.proj →L[𝕜] 𝕜) v) : z = w :=
+  annihilatorInclusion_injective I D P (CotangentBundle.ext hproj h)
+
 variable [IsManifold I 1 M]
 
 /-- The total space of the annihilators of `D` carries the subspace topology
@@ -194,6 +213,16 @@ instance instTopologicalSpaceTotalSpaceAnnihilatorSpace :
 theorem isEmbedding_annihilatorInclusion : IsEmbedding (annihilatorInclusion I D P) :=
   isEmbedding_totalSpace_subbundle (E →L[𝕜] 𝕜) P
     (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (annihilatorSpace I D)
+
+variable {I D P} in
+/-- A covector field with values in the annihilators of `D` is a continuous section of the
+annihilator bundle `D⁰` exactly when it is a continuous section of `T*M`. -/
+theorem continuous_totalSpaceMk_annihilatorSpace_iff {σ : Π x : M, annihilatorSpace I D x} :
+    Continuous (fun x ↦ TotalSpace.mk' P (E := fun x ↦ annihilatorSpace I D x) x (σ x)) ↔
+      Continuous fun x ↦ TotalSpace.mk' (E →L[𝕜] 𝕜)
+        (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x (σ x : TangentSpace I x →L[𝕜] 𝕜) := by
+  rw [(isEmbedding_annihilatorInclusion I D P).continuous_iff]
+  simp only [comp_def, annihilatorInclusion_mk']
 
 end Inclusion
 
@@ -359,5 +388,87 @@ end VectorBundle
 
 
 end IsContMDiffDistribution
+
+namespace CotangentBundle
+
+/-! ### The annihilator inclusion along the zero section -/
+
+section ZeroSection
+
+variable [IsManifold I 1 M] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [FiberBundle F fun x ↦ annihilatorSpace I D x] [VectorBundle 𝕜 F fun x ↦ annihilatorSpace I D x]
+
+/-- **The differential of the annihilator inclusion along the zero section.** At the zero
+covector over `q`, a tangent vector of `T*M` is read in the preferred chart there as a pair of a
+tangent vector of `M` and a covector at `q`. For any vector bundle structure on the annihilators
+of `D` for which the inclusion into `T*M` is differentiable at the zero covector, the inclusion
+sends the tangent vector with horizontal part `v` and vertical part `a ∈ D⁰_q`
+(`TauCeti.Bundle.zeroSectionTangentEquiv`) to `(v, a)`. -/
+theorem mfderiv_annihilatorInclusion_zeroSection (q : M)
+    (hι : MDifferentiableAt (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))
+      (annihilatorInclusion I D F) (zeroSection F (fun x ↦ annihilatorSpace I D x) q))
+    (u : TangentSpace (I.prod 𝓘(𝕜, F)) (zeroSection F (fun x ↦ annihilatorSpace I D x) q)) :
+    (mfderiv (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (annihilatorInclusion I D F)
+        (zeroSection F (fun x ↦ annihilatorSpace I D x) q) u : E × (E →L[𝕜] 𝕜)) =
+      ((TauCeti.Bundle.zeroSectionTangentEquiv (I := I) q u).1,
+        ((TauCeti.Bundle.zeroSectionTangentEquiv (I := I) q u).2 : TangentSpace I q →L[𝕜] 𝕜)) := by
+  set S := TauCeti.Bundle.zeroSectionTangentEquiv (I := I) (F := F)
+    (V := fun x ↦ annihilatorSpace I D x) q
+  -- Split `u` into its horizontal and vertical parts.
+  obtain ⟨⟨v, a⟩, rfl⟩ := S.symm.surjective u
+  rw [S.apply_symm_apply, TauCeti.Bundle.zeroSectionTangentEquiv_symm_eq, map_add]
+  -- The inclusion maps the zero section to the zero section, whose differential is `v ↦ (v, 0)`.
+  have h₁ : (mfderiv (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (annihilatorInclusion I D F)
+      (zeroSection F (fun x ↦ annihilatorSpace I D x) q)
+      (mfderiv I (I.prod 𝓘(𝕜, F)) (zeroSection F fun x ↦ annihilatorSpace I D x) q v) :
+        E × (E →L[𝕜] 𝕜)) = (v, 0) := by
+    refine (mfderiv_comp_apply (f := zeroSection F fun x ↦ annihilatorSpace I D x) (x := q) hι
+      (((contMDiff_zeroSection (n := 1) 𝕜 fun x ↦ annihilatorSpace I D x) q).mdifferentiableAt
+        one_ne_zero) v).symm.trans ?_
+    rw [show annihilatorInclusion I D F ∘ (zeroSection F fun x ↦ annihilatorSpace I D x) =
+        zeroSection (E →L[𝕜] 𝕜) fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜 from
+      funext fun x ↦ annihilatorInclusion_zeroSection I D F x, TauCeti.Bundle.mfderiv_zeroSection]
+    -- The target tangent space is only definitionally `E × (E →L[𝕜] 𝕜)`, so
+    -- `ContinuousLinearMap.inl_apply` does not rewrite here and is applied as a term.
+    exact ContinuousLinearMap.inl_apply v
+  -- The inclusion maps the line through `a` in the fibre to the line through `a` in `T*_q M`,
+  -- whose velocity is `(0, a)`.
+  have h₂ : (mfderiv (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (annihilatorInclusion I D F)
+      (zeroSection F (fun x ↦ annihilatorSpace I D x) q) (S.symm (0, a)) : E × (E →L[𝕜] 𝕜)) =
+      (0, (a : TangentSpace I q →L[𝕜] 𝕜)) := by
+    have hcurve : MDifferentiableAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F))
+        (fun t : 𝕜 ↦ (⟨q, t • a⟩ : TotalSpace F fun x ↦ annihilatorSpace I D x)) 0 := by
+      simpa only [id] using (Bundle.TotalSpace.hasMFDerivAt_smul_curve
+        (⟨q, a⟩ : TotalSpace F fun x ↦ annihilatorSpace I D x)
+        (hasDerivAt_id' (0 : 𝕜))).mdifferentiableAt
+    rw [TauCeti.Bundle.zeroSectionTangentEquiv_symm_inr]
+    refine (mfderiv_comp_apply_of_eq
+      (f := fun t : 𝕜 ↦ (⟨q, t • a⟩ : TotalSpace F fun x ↦ annihilatorSpace I D x))
+      (x := (0 : 𝕜)) hι hcurve (by simp [zeroSection]) (1 : 𝕜)).symm.trans ?_
+    rw [show annihilatorInclusion I D F ∘
+          (fun t : 𝕜 ↦ (⟨q, t • a⟩ : TotalSpace F fun x ↦ annihilatorSpace I D x)) =
+        fun t : 𝕜 ↦ (⟨q, t • (a : TangentSpace I q →L[𝕜] 𝕜)⟩ : CotangentBundle I M) from
+      funext fun t ↦ annihilatorInclusion_mk' I D F q (t • a),
+      (Bundle.TotalSpace.hasMFDerivAt_smul_curve
+        (⟨q, (a : TangentSpace I q →L[𝕜] 𝕜)⟩ : CotangentBundle I M)
+        (hasDerivAt_id' (0 : 𝕜))).mfderiv]
+    -- The preferred trivialization of `T*M` at `q` gives `a` itself as its fibre coordinate.
+    have ha : (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q
+        ⟨q, (a : TangentSpace I q →L[𝕜] 𝕜)⟩).2 = (a : TangentSpace I q →L[𝕜] 𝕜) := by
+      rw [← Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _
+        (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
+          (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q),
+        continuousLinearMapAt_trivializationAt_self]
+    -- The velocity is `((1 : 𝕜 →L[𝕜] 𝕜).smulRight (0, 1 • ξ)) 1`, with `ξ` the fibre coordinate.
+    -- Applying `smulRight` is `ContinuousLinearMap.smulRight_apply`, which holds by `rfl`; it
+    -- cannot be rewritten because the tangent space is only definitionally a product, so the two
+    -- `one_smul` steps are applied to the unfolded application.
+    exact (one_smul 𝕜 _).trans (Prod.ext rfl ((one_smul 𝕜 _).trans ha))
+  refine (congrArg₂ (· + ·) h₁ h₂).trans ?_
+  exact Prod.ext (add_zero v) (zero_add _)
+
+end ZeroSection
+
+end CotangentBundle
 
 end TauCeti

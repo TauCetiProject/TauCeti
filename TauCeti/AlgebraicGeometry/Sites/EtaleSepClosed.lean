@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Sites.LocalSite
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import TauCeti.Algebra.Category.Grp.Projective
 public import TauCeti.Algebra.Category.ModuleCat.ForgetCorepresentable
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 
 /-!
 # Étale sheaves on a separably closed field

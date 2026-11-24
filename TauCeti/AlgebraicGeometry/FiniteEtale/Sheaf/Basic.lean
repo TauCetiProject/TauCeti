@@ -10,7 +10,7 @@ public import Mathlib.CategoryTheory.Functor.ReflectsIso.Limits
 public import Mathlib.CategoryTheory.Sites.Point.Skyscraper
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Exactness
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Point.Representable

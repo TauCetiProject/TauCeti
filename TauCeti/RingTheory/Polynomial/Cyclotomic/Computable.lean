@@ -193,7 +193,7 @@ left-hand side that is no longer in simp normal form, which the `simpNF` linter 
 theorem cyclotomicCoeffs_eq_coeffList (n : ℕ) :
     cyclotomicCoeffs n = (cyclotomic n ℤ).coeffList := by
   rw [← ofCoeffList_reverse_cyclotomicCoeffs n,
-    coeffList_ofCoeffList_reverse (Or.inr (headD_cyclotomicCoeffs_ne_zero n))]
+    coeffList_ofCoeffList_reverse fun h => headD_cyclotomicCoeffs_ne_zero n (by simp [h])]
 
 /-- **Reduction modulo `Φ_e`**, on coefficient lists: the residue of the polynomial with
 coefficient list `l`, returned as its `φ e` coordinates on the power basis

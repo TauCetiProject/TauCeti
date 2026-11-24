@@ -8,7 +8,9 @@ module
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.MeasureTheory.Measure.HasOuterApproxClosed
 import Mathlib.MeasureTheory.Measure.WithDensity
 
@@ -20,6 +22,11 @@ For monotone substitutions, the derivative-weighted pushforward of interval volu
 volume on the image, giving change of variables and transformed integrability for arbitrary
 integrable normed-space-valued integrands. This accommodates constant pieces and unbounded
 parameter speeds.
+
+Substituting the primitive `G u = ∫ v in c..u, g v` of an interval integrable `g` gives
+`|∫ u in c..d, g u * exp |G u|| = exp |G d| - 1`
+(`IntervalIntegrable.abs_integral_mul_exp_abs_integral`), the exponential bound for linear
+equations with integrable coefficients.
 -/
 
 public section
@@ -154,3 +161,40 @@ theorem integral_deriv_smul_comp_of_monotoneOn
   simp [ENNReal.toReal_ofReal ht]
 
 end AbsolutelyContinuousOnInterval
+
+/-- For `g` interval integrable on `c..d`, with primitive `G u = ∫ v in c..u, g v`,
+`|∫ u in c..d, g u * exp |G u|| = exp |G d| - 1`, whatever the order of `c` and `d` and the sign
+of `g`. This gives the exponential bound for linear equations with integrable coefficients. -/
+theorem IntervalIntegrable.abs_integral_mul_exp_abs_integral {g : ℝ → ℝ} {c d : ℝ}
+    (hg : IntervalIntegrable g volume c d) :
+    |∫ u in c..d, g u * Real.exp (|∫ v in c..u, g v|)| = Real.exp |∫ v in c..d, g v| - 1 := by
+  -- Substitute `G` in `∫ exp |y|`, using `deriv G = g` almost everywhere.
+  have hc : Continuous fun y : ℝ ↦ Real.exp |y| := by fun_prop
+  have h := (hg.absolutelyContinuousOnInterval_intervalIntegral
+    left_mem_uIcc).integral_comp_mul_deriv_of_continuous hc
+  have hderiv : ∀ᵐ s, s ∈ uIoc c d →
+      Real.exp |∫ v in c..s, g v| * deriv (fun s ↦ ∫ v in c..s, g v) s =
+        g s * Real.exp |∫ v in c..s, g v| := by
+    filter_upwards [hg.ae_hasDerivAt_integral] with s hs hsI
+    rw [(hs (uIoc_subset_uIcc hsI) c left_mem_uIcc).deriv, mul_comm]
+  rw [intervalIntegral.integral_congr_ae hderiv, intervalIntegral.integral_same] at h
+  rw [h]
+  -- `|∫ y in 0..x, exp |y|| = exp |x| - 1`, computing the integral on each side of `0`.
+  rcases le_total 0 (∫ v in c..d, g v) with hx | hx
+  · have : ∫ y in 0..∫ v in c..d, g v, Real.exp |y| = Real.exp (∫ v in c..d, g v) - 1 := by
+      rw [← Real.exp_zero]
+      refine intervalIntegral.integral_eq_sub_of_hasDerivAt (fun y hy ↦ ?_)
+        (hc.intervalIntegrable _ _)
+      rw [uIcc_of_le hx] at hy
+      simpa [abs_of_nonneg hy.1] using Real.hasDerivAt_exp y
+    rw [this, abs_of_nonneg hx, abs_of_nonneg (sub_nonneg.2 (Real.one_le_exp hx))]
+  · have : ∫ y in 0..∫ v in c..d, g v, Real.exp |y| =
+        -(Real.exp (-∫ v in c..d, g v) - 1) := by
+      have := intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun y ↦ -Real.exp (-y))
+        (a := 0) (b := ∫ v in c..d, g v) (fun y hy ↦ ?_) (hc.intervalIntegrable _ _)
+      · simp only [this, neg_zero, Real.exp_zero]
+        ring
+      · rw [uIcc_of_ge hx] at hy
+        simpa [abs_of_nonpos hy.2] using (hasDerivAt_neg y).exp.fun_neg
+    rw [this, abs_neg, abs_of_nonpos hx,
+      abs_of_nonneg (sub_nonneg.2 (Real.one_le_exp (neg_nonneg.2 hx)))]

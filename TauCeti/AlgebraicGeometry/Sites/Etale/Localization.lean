@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Sites.Etale
 public import Mathlib.CategoryTheory.Sites.Equivalence
 public import Mathlib.CategoryTheory.Sites.LocalProperties
-import TauCeti.AlgebraicGeometry.Sites.Etale.Over
+import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 
 /-!
 # Localization of the small étale site

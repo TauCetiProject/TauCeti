@@ -57,8 +57,8 @@ Noetherian torsion-free module over a domain of characteristic zero.
   `dim ker e = dim M(0) + dim M(1)`.
 * `IsSl2Triple.ker_toEnd_h_inf_ker_toEnd_e_le_ker_toEnd_f`: a vector killed by `h` and `e` is
   killed by `f`.
-* `IsSl2Triple.ker_toEnd_e_eq_sup`: the kernel of `e` is the sum of the invariants of the triple
-  and of its part of positive weight.
+* `IsSl2Triple.ker_toEnd_e_eq_sup` and `IsSl2Triple.finrank_ker_toEnd_e_eq_add`: the kernel of
+  `e` is the direct sum of the invariants of the triple and of its part of positive weight.
 * `IsSl2Triple.finrank_range_ad_e_add_finrank_eigenspace_zero_add_finrank_eigenspace_one`:
   `dim [𝔤, e] + dim 𝔤(0) + dim 𝔤(1) = dim 𝔤`.
 
@@ -205,6 +205,26 @@ theorem ker_toEnd_e_eq_sup (t : IsSl2Triple h e f) :
     have hmh' : m ∈ LinearMap.ker (toEnd K L M h) := by simpa using hmh
     exact ⟨⟨hmh', hme⟩, t.ker_toEnd_h_inf_ker_toEnd_e_le_ker_toEnd_f ⟨hmh', hme⟩⟩
   · exact inf_le_inf_left _ (le_iSup (fun n : ℕ ↦ (toEnd K L M h).eigenspace ((n + 1 : ℕ) : K)) n)
+
+/-- **The dimension of the kernel of `e`, split by weight.** The invariants of the triple and the
+part of positive weight of the kernel of the raising operator meet trivially, so their dimensions
+add up to `dim ker e`. -/
+theorem finrank_ker_toEnd_e_eq_add (t : IsSl2Triple h e f) :
+    finrank K (LinearMap.ker (toEnd K L M e)) =
+      finrank K ↥(LinearMap.ker (toEnd K L M h) ⊓ LinearMap.ker (toEnd K L M e) ⊓
+          LinearMap.ker (toEnd K L M f)) +
+        finrank K ↥(LinearMap.ker (toEnd K L M e) ⊓
+          ⨆ n : ℕ, (toEnd K L M h).eigenspace ((n + 1 : ℕ) : K)) := by
+  -- The invariants have weight `0`, which is independent of the positive weights.
+  have hdisj : Disjoint (LinearMap.ker (toEnd K L M h) ⊓ LinearMap.ker (toEnd K L M e) ⊓
+      LinearMap.ker (toEnd K L M f)) (LinearMap.ker (toEnd K L M e) ⊓
+        ⨆ n : ℕ, (toEnd K L M h).eigenspace ((n + 1 : ℕ) : K)) := by
+    refine Disjoint.mono (inf_le_left.trans inf_le_left) inf_le_right ?_
+    rw [← Module.End.eigenspace_zero]
+    refine (Module.End.eigenspaces_iSupIndep (toEnd K L M h) 0).mono_right (iSup_le fun n ↦ ?_)
+    exact le_iSup₂_of_le ((n + 1 : ℕ) : K) (Nat.cast_ne_zero.mpr n.succ_ne_zero) le_rfl
+  rw [← Submodule.finrank_sup_add_finrank_inf_eq, hdisj.eq_bot, finrank_bot, add_zero,
+    ← t.ker_toEnd_e_eq_sup]
 
 /-! ### The adjoint action -/
 

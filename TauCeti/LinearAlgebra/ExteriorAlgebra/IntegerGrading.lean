@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # The integer grading of an exterior algebra
@@ -36,6 +37,8 @@ contraction lowers the degree by one, and left multiplication by a generator rai
   degree one.
 * `TauCeti.ExteriorAlgebra.mul_self_eq_zero_of_mem_integerGrading_one`: degree-one elements square
   to zero.
+* `TauCeti.ExteriorAlgebra.map_mem_integerGrading`: the map of exterior algebras induced by a
+  linear map has degree zero.
 -/
 
 public section
@@ -116,6 +119,18 @@ theorem ι_mul_mem_integerGrading (m : M) {p : ℤ} {x : ExteriorAlgebra R M}
     ExteriorAlgebra.ι R m * x ∈ integerGrading R M (p + 1) := by
   rw [add_comm]
   exact SetLike.mul_mem_graded (ι_mem_integerGrading_one m) hx
+
+/-- **The map induced by a linear map has degree zero.** -/
+theorem map_mem_integerGrading {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) {p : ℤ}
+    {x : ExteriorAlgebra R M} (hx : x ∈ integerGrading R M p) :
+    ExteriorAlgebra.map f x ∈ integerGrading R N p := by
+  rcases lt_or_ge p 0 with hp | hp
+  · rw [integerGrading_of_neg hp, Submodule.mem_bot] at hx
+    rw [hx, map_zero]
+    exact zero_mem _
+  obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
+  rw [integerGrading_natCast] at hx ⊢
+  exact f.exteriorAlgebra_map_mem_exteriorPower hx
 
 end TauCeti.ExteriorAlgebra
 

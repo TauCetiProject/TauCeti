@@ -82,7 +82,7 @@ theorem isBoundedlyComplete_iff : b.IsBoundedlyComplete ↔
   constructor
   · intro h a ha
     obtain ⟨x, hx⟩ := h a ha
-    exact ⟨x, fun i ↦ b.coord_eq_of_hasSum hx i⟩
+    exact ⟨x, fun i ↦ b.coord_eq_of_hasSum hx i (by simp)⟩
   · intro h a ha
     obtain ⟨x, hx⟩ := h a ha
     exact ⟨x, by simpa only [hx] using b.expansion x⟩

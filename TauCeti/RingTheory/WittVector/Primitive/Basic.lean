@@ -7,8 +7,10 @@ module
 
 public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.WittVector.Complete
-public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 public import TauCeti.RingTheory.WittVector.Units
+
+import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
 # Primitive and distinguished Witt vectors
@@ -59,7 +61,10 @@ properties used to construct the untilt `𝕎 R⁺ ⧸ (ξ)`.
 * `WittVector.isPrimitive_p`: `p` is primitive, and
   `WittVector.not_isDistinguished_of_mem_span_p_sq`, `WittVector.not_isDistinguished_teichmuller`:
   over a nonzero ring no element of `(p ^ 2)` and no Teichmüller representative is.
-* `WittVector.IsPrimitive.map`, `WittVector.IsPrimitive.frobenius`: functoriality and Frobenius.
+* `WittVector.isDistinguished_sum_teichmuller_pow_of_pow_eq_one`: a Teichmüller geometric sum
+  for a `p`-th root of one is distinguished.
+* `WittVector.IsPrimitive.map`, `WittVector.IsPrimitive.frobenius`: functoriality and Frobenius;
+  `WittVector.isDistinguished_frobenius_iff`: Frobenius preserves and reflects distinguishedness.
 * `WittVector.isPrimitive_p_add_teichmuller_mul`,
   `WittVector.isPrimitive_p_add_teichmuller_mul_of_isAdic`,
   `WittVector.isDistinguished_p_add_teichmuller_mul_of_isAdicComplete`: `p + [ϖ] α` is primitive
@@ -107,6 +112,40 @@ Remark 3.11). -/
 def IsDistinguished (ξ : 𝕎 S) : Prop := IsUnit (ξ.coeff 1)
 
 theorem isDistinguished_iff {ξ : 𝕎 S} : ξ.IsDistinguished ↔ IsUnit (ξ.coeff 1) := .rfl
+
+/-- If `a ^ p = 1` in characteristic `p`, its Teichmüller geometric sum is distinguished. -/
+theorem isDistinguished_sum_teichmuller_pow_of_pow_eq_one
+    {p : ℕ} [Fact p.Prime] {S : Type*} [CommRing S] [CharP S p]
+    (a : S) (ha : a ^ p = 1) :
+    (∑ j ∈ Finset.range p, teichmuller p a ^ j : WittVector p S).IsDistinguished := by
+  let : Nontrivial S := CharP.nontrivial_of_char_ne_one (R := S) (Fact.out : p.Prime).ne_one
+  let I : Ideal S := Ideal.span {a - 1}
+  have hI : IsNilpotent I := by
+    refine ⟨p, ?_⟩
+    dsimp only [I]
+    rw [Ideal.zero_eq_bot, Ideal.span_singleton_pow, Ideal.span_singleton_eq_bot,
+      sub_pow_char, ha, one_pow, sub_self]
+  have haI : Ideal.Quotient.mk I a = 1 := by
+    rw [← map_one (Ideal.Quotient.mk I), Ideal.Quotient.eq]
+    exact Ideal.mem_span_singleton_self _
+  have hproper : I ≠ ⊤ := by
+    intro h
+    obtain ⟨n, hn⟩ := hI
+    rw [h, ← Ideal.one_eq_top, one_pow] at hn
+    exact one_ne_zero hn
+  let : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hproper
+  let : CharP (S ⧸ I) p := (CharP.charP_iff_prime_eq_zero (Fact.out : p.Prime)).mpr
+    (by simpa only [map_natCast, map_zero] using
+      congrArg (Ideal.Quotient.mk I) (CharP.cast_eq_zero S p))
+  have hmap : WittVector.map (Ideal.Quotient.mk I)
+      (∑ j ∈ Finset.range p, teichmuller p a ^ j) = (p : WittVector p (S ⧸ I)) := by
+    simp [map_sum, map_pow, map_teichmuller, haI]
+  rw [WittVector.isDistinguished_iff]
+  apply hI.isUnit_quotient_mk_iff.mp
+  have hcoeff := congrArg (fun x : WittVector p (S ⧸ I) ↦ x.coeff 1) hmap
+  rw [WittVector.map_coeff, WittVector.coeff_p_one] at hcoeff
+  rw [hcoeff]
+  exact isUnit_one
 
 /-- A Witt vector `ξ` over a topological ring is *primitive of degree one* if its zeroth Witt
 coordinate is topologically nilpotent and its first Witt coordinate is a unit (Kedlaya–Liu,
@@ -179,12 +218,20 @@ theorem not_isDistinguished_of_mem_span_p_sq [Nontrivial S] {ξ : 𝕎 S}
   rw [isDistinguished_iff, mul_comm, mul_pow_charP_coeff_zero y one_lt_two]
   exact not_isUnit_zero
 
+/-- In characteristic `p`, the Witt vector Frobenius of `ξ` is distinguished exactly when `ξ` is:
+it raises the first Witt coordinate to the `p`-th power. -/
+@[simp]
+theorem isDistinguished_frobenius_iff {ξ : 𝕎 S} :
+    (frobenius ξ).IsDistinguished ↔ ξ.IsDistinguished := by
+  rw [isDistinguished_iff, isDistinguished_iff, coeff_frobenius_charP,
+    isUnit_pow_iff hp.out.ne_zero]
+
 /-- In characteristic `p`, the Witt vector Frobenius carries primitive elements to primitive
 elements: it raises every Witt coordinate to the `p`-th power. -/
 theorem IsPrimitive.frobenius [TopologicalSpace S] {ξ : 𝕎 S} (h : ξ.IsPrimitive) :
     (frobenius ξ).IsPrimitive :=
-  ⟨by rw [coeff_frobenius_charP]; exact h.isTopologicallyNilpotent_coeff_zero.pow hp.out.ne_zero, by
-    rw [isDistinguished_iff, coeff_frobenius_charP]; exact h.isDistinguished.pow p⟩
+  ⟨by rw [coeff_frobenius_charP]; exact h.isTopologicallyNilpotent_coeff_zero.pow hp.out.ne_zero,
+    isDistinguished_frobenius_iff.mpr h.isDistinguished⟩
 
 /-- **Distinguishedness of a product.** In characteristic `p`, if the zeroth Witt coordinate of
 `ξ` lies in the Jacobson radical, then `y ξ` is distinguished exactly when `y` is a unit and `ξ` is

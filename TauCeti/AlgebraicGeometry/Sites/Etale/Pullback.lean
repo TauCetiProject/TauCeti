@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.AlgebraicGeometry.Sites.AffineEtale
 public import Mathlib.AlgebraicGeometry.Sites.EtalePoint
 public import Mathlib.CategoryTheory.Limits.MorphismProperty
-public import TauCeti.AlgebraicGeometry.Sites.Etale.Over
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.CategoryTheory.Sites.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Point.Comap

@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.InnerProductSpace.ProdL2
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import TauCeti.Topology.ContinuousMap.Ascoli
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # The bubble at a bubbling point of Floer solutions
@@ -354,13 +355,13 @@ theorem exists_tendstoLocallyUniformly_rescale_of_tendsto_norm_fderiv (ω : Symp
   have htr' : TendstoLocallyUniformly (fun n ↦ ru (φ n)) g atTop := htr
   have hRφ : Tendsto (fun n ↦ R (φ n)) atTop atTop := hR.comp hφ.tendsto_atTop
   have hptw (w : ℝ × ℝ) : Tendsto (fun n ↦ ru (φ n) w) atTop (𝓝 (g w)) :=
-    htr'.tendstoLocallyUniformlyOn.tendsto_at (mem_univ w)
+    htr'.tendsto_at w
   -- The derivatives converge too, and the limit is a `J(z₀, ·)`-holomorphic plane.
   obtain ⟨hgc, hderiv, hhol⟩ := contDiff_and_tendstoLocallyUniformly_fderiv_rescale ω hU hz₀ hKs
     hKt hJ (fun n ↦ hu _) (fun n ↦ hsol _) (hc.comp hφ.tendsto_atTop)
     (hε0.comp hφ.tendsto_atTop) hRφ (Eventually.of_forall fun n ↦ (hN _ (hφN n)).2) hptw
   have hnorm (w : ℝ × ℝ) := (continuous_norm.tendsto _).comp
-    (hderiv.tendstoLocallyUniformlyOn.tendsto_at (mem_univ w))
+    (hderiv.tendsto_at w)
   refine ⟨φ, c ∘ φ, ε ∘ φ, g, hφ, fun n ↦ hε _, hc.comp hφ.tendsto_atTop,
     hε0.comp hφ.tendsto_atTop, htr', hderiv, hgc, fun w ↦ hK.isClosed.mem_of_tendsto (hptw w)
       ((hRφ.eventually_ge_atTop ‖w‖).mono fun n hn ↦ huK _ ((hN _ (hφN n)).2 w hn).1), hhol,
@@ -370,6 +371,6 @@ theorem exists_tendstoLocallyUniformly_rescale_of_tendsto_norm_fderiv (ω : Symp
     fun δ hδ ↦ ω.lintegral_symplecticForm_le_liminf_of_tendsto_rescale hU hz₀
       (fun n ↦ (hu _).of_le (by simp)) (hKs.of_le (by norm_num)) (hKt.of_le (by norm_num))
       (hc.comp hφ.tendsto_atTop) (hε0.comp hφ.tendsto_atTop) hptw
-      (fun w ↦ hderiv.tendstoLocallyUniformlyOn.tendsto_at (mem_univ w)) hδ⟩
+      (fun w ↦ hderiv.tendsto_at w) hδ⟩
 
 end TauCeti.SymplecticForm

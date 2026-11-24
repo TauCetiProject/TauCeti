@@ -53,6 +53,8 @@ so `1 + I` is an iterated extension of additive groups.
   is the kernel of the induced map on units.
 * `Ideal.unitsMap_quotientMk_surjective`: reduction of units modulo an ideal in the Jacobson
   radical is surjective.
+* `Ideal.unitsMap_quotientMk_surjective_of_ne_top`: over a local ring, reduction of units modulo a
+  proper ideal is surjective.
 * `Ideal.principalUnitGroup_pow_antitone`: the subgroups `1 + I ^ n` decrease with `n`.
 
 ## References
@@ -131,6 +133,13 @@ theorem unitsMap_quotientMk_surjective {I : Ideal R} (hI : I ≤ jacobson ⊥) :
     Function.Surjective (Units.map (Quotient.mk I).toMonoidHom) :=
   IsLocalRing.surjective_units_map_of_local_ringHom _ Quotient.mk_surjective
     (_root_.isLocalHom_of_le_jacobson (by simpa only [Ideal.jacobson_bot] using hI))
+
+/-- Over a local ring, reduction of units modulo a proper ideal is surjective: a proper ideal lies
+in the maximal ideal, which is the Jacobson radical. -/
+theorem unitsMap_quotientMk_surjective_of_ne_top [IsLocalRing R] {I : Ideal R} (hI : I ≠ ⊤) :
+    Function.Surjective (Units.map (Quotient.mk I).toMonoidHom) :=
+  unitsMap_quotientMk_surjective ((IsLocalRing.le_maximalIdeal hI).trans_eq
+    (IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top).symm)
 
 /-- For an ideal `I` contained in the Jacobson radical, the units of `R` modulo the principal
 unit group of `I` are the units of `R ⧸ I`. -/
