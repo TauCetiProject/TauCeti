@@ -41,6 +41,8 @@ classes of maps `X → Ω Y y`.
 * `ContinuousMap.Homotopy.Homotopic.trans_symm_trans`, `symm_trans_trans`: appending and taking
   differences are inverse up to homotopy.
 * `ContinuousMap.Homotopy.evalAtEquiv`: homotopies between constant maps are families of paths.
+* `ContinuousMap.pathTrans`, `ContinuousMap.pathSymm`: pointwise concatenation and reversal of
+  families of paths, which `evalAtEquiv` matches with `Homotopy.trans` and `Homotopy.symm`.
 
 ## References
 
@@ -118,6 +120,15 @@ theorem homotopic_iff_exists {F G : Homotopy f₀ f₁} :
   · rintro ⟨H, h₀, h₁⟩
     exact Homotopic.of_continuous (fun p ↦ H p) H.continuous (fun s x ↦ H.apply_zero (s, x))
       (fun s x ↦ H.apply_one (s, x)) h₀ h₁
+
+/-- The value of Mathlib's `Path.Homotopy.reflTransSymm p` at `(s, t)`: the path `p` at time
+`Path.Homotopy.reflTransSymmAux (s, t)`. Mathlib defines `reflTransSymm` as a plain `def` with no
+`simps` lemmas, so this unfolds its body, once, for the continuity argument in
+`Homotopic.trans_symm`. -/
+private theorem reflTransSymm_apply {y₀ y₁ : Y} (p : Path y₀ y₁) (x : I × I) :
+    Path.Homotopy.reflTransSymm p x =
+      p ⟨Path.Homotopy.reflTransSymmAux x, Path.Homotopy.reflTransSymmAux_mem_I x⟩ :=
+  (rfl)
 
 namespace Homotopic
 
@@ -198,13 +209,12 @@ theorem refl_trans (F : Homotopy f₀ f₁) : ((Homotopy.refl f₀).trans F).Hom
 homotopy. -/
 theorem trans_symm (F : Homotopy f₀ f₁) : (F.trans F.symm).Homotopic (Homotopy.refl f₀) := by
   refine (of_continuous (F := Homotopy.refl f₀)
-    (fun p ↦ F (⟨Path.Homotopy.reflTransSymmAux (p.2.1, p.1),
-      Path.Homotopy.reflTransSymmAux_mem_I _⟩, p.2.2)) (by fun_prop)
+    (fun p ↦ Path.Homotopy.reflTransSymm (F.evalAt p.2.2) (p.2.1, p.1)) ?_
     (fun s x ↦ (Path.Homotopy.reflTransSymm (F.evalAt x)).source s)
     (fun s x ↦ (Path.Homotopy.reflTransSymm (F.evalAt x)).target s)
-    (fun t x ↦ (Path.Homotopy.reflTransSymm (F.evalAt x)).apply_zero t)
-    (fun t x ↦ ((Path.Homotopy.reflTransSymm (F.evalAt x)).apply_one t).trans
-      (by rw [← evalAt_symm, ← evalAt_trans]; rfl))).symm
+    (fun t x ↦ by simp) (fun t x ↦ by simp [← evalAt_symm, ← evalAt_trans])).symm
+  simp only [reflTransSymm_apply, evalAt_apply]
+  fun_prop
 
 /-- The reversal of a homotopy followed by the homotopy is homotopic, relative to the ends, to the
 constant homotopy. -/
@@ -266,6 +276,55 @@ theorem evalAtEquiv_symm_apply {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (t : 
 theorem evalAtEquiv_refl (y : Y) :
     evalAtEquiv (Homotopy.refl (const X y)) = const X (Path.refl y) := by
   ext
+  simp
+
+/-- The pointwise concatenation of continuous families of paths. -/
+noncomputable def _root_.ContinuousMap.pathTrans {y₀ y₁ y₂ : Y} (α : C(X, Path y₀ y₁))
+    (β : C(X, Path y₁ y₂)) : C(X, Path y₀ y₂) where
+  toFun x := (α x).trans (β x)
+  continuous_toFun := α.continuous.path_trans β.continuous
+
+@[simp]
+theorem _root_.ContinuousMap.pathTrans_apply {y₀ y₁ y₂ : Y} (α : C(X, Path y₀ y₁))
+    (β : C(X, Path y₁ y₂)) (x : X) : α.pathTrans β x = (α x).trans (β x) :=
+  (rfl)
+
+/-- The pointwise reversal of a continuous family of paths. -/
+def _root_.ContinuousMap.pathSymm {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) : C(X, Path y₁ y₀) where
+  toFun x := (α x).symm
+  continuous_toFun := Path.continuous_symm.comp α.continuous
+
+@[simp]
+theorem _root_.ContinuousMap.pathSymm_apply {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) (x : X) :
+    α.pathSymm x = (α x).symm :=
+  (rfl)
+
+/-- Concatenating homotopies between constant maps concatenates their families of paths. -/
+@[simp]
+theorem evalAtEquiv_trans {y₀ y₁ y₂ : Y} (F : Homotopy (const X y₀) (const X y₁))
+    (G : Homotopy (const X y₁) (const X y₂)) :
+    evalAtEquiv (F.trans G) = (evalAtEquiv F).pathTrans (evalAtEquiv G) := by
+  ext x : 1
+  simp
+
+/-- Reversing a homotopy between constant maps reverses its family of paths. -/
+@[simp]
+theorem evalAtEquiv_symm {y₀ y₁ : Y} (F : Homotopy (const X y₀) (const X y₁)) :
+    evalAtEquiv F.symm = (evalAtEquiv F).pathSymm := by
+  ext x : 1
+  simp
+
+@[simp]
+theorem evalAtEquiv_symm_pathTrans {y₀ y₁ y₂ : Y} (α : C(X, Path y₀ y₁))
+    (β : C(X, Path y₁ y₂)) :
+    evalAtEquiv.symm (α.pathTrans β) = (evalAtEquiv.symm α).trans (evalAtEquiv.symm β) := by
+  rw [Equiv.symm_apply_eq]
+  simp
+
+@[simp]
+theorem evalAtEquiv_symm_pathSymm {y₀ y₁ : Y} (α : C(X, Path y₀ y₁)) :
+    evalAtEquiv.symm α.pathSymm = (evalAtEquiv.symm α).symm := by
+  rw [Equiv.symm_apply_eq]
   simp
 
 /-- Homotopies between constant maps are homotopic relative to their ends exactly when their

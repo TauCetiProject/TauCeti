@@ -28,7 +28,7 @@ every lift `l₀`, taking differences from `l₀` identifies the homotopy classe
 with the homotopy classes of maps `X → Ω K k` (`TauCeti.MappingPathFiber.Lift.classEquiv`), and
 the inverse appends a family of loops to `l₀`. Up to homotopy, appending loops is unital and
 associative, and differences vanish on the diagonal and satisfy the cocycle law
-(`TauCeti.MappingPathFiber.Lift.homotopic_difference_trans_difference`). Differences are
+(`TauCeti.MappingPathFiber.Lift.homotopic_difference_pathTrans_difference`). Differences are
 natural under restriction along maps `X' → X` (`TauCeti.MappingPathFiber.Lift.difference_comp`).
 
 This is the classification of lifts through a homotopy fibre. When `K` is an Eilenberg–MacLane
@@ -255,8 +255,7 @@ theorem homotopic_appendLoops_const_refl (l : Lift f k c) :
 /-- Appending two families of loops in turn is homotopic over `c` to appending their pointwise
 concatenation. -/
 theorem homotopic_appendLoops_appendLoops (l : Lift f k c) (α β : C(X, Ω K k)) :
-    ((l.appendLoops α).appendLoops β).Homotopic (l.appendLoops (Homotopy.evalAtEquiv
-      ((Homotopy.evalAtEquiv.symm α).trans (Homotopy.evalAtEquiv.symm β)))) :=
+    ((l.appendLoops α).appendLoops β).Homotopic (l.appendLoops (α.pathTrans β)) :=
   homotopic_iff.2 <| by simpa using Homotopy.Homotopic.trans_assoc _ _ _
 
 /-- The difference from a lift to itself is homotopic to the constant family of constant
@@ -266,13 +265,12 @@ theorem homotopic_difference_self (l : Lift f k c) :
   rw [difference_def, ← Homotopy.evalAtEquiv_refl]
   exact Homotopy.homotopic_iff_evalAtEquiv.1 (Homotopy.Homotopic.symm_trans _)
 
-/-- The cocycle law: the difference from `l₀` to `l₁` followed by the difference from `l₁` to
-`l₂` is homotopic, relative to the ends, to the difference from `l₀` to `l₂`. -/
-theorem homotopic_difference_trans_difference (l₀ l₁ l₂ : Lift f k c) :
-    ((Homotopy.evalAtEquiv.symm (difference l₀ l₁)).trans
-      (Homotopy.evalAtEquiv.symm (difference l₁ l₂))).Homotopic
-      (Homotopy.evalAtEquiv.symm (difference l₀ l₂)) := by
-  simpa using Homotopy.Homotopic.symm_trans_trans_symm_trans _ _ _
+/-- The cocycle law: the pointwise concatenation of the difference from `l₀` to `l₁` and the
+difference from `l₁` to `l₂` is homotopic to the difference from `l₀` to `l₂`. -/
+theorem homotopic_difference_pathTrans_difference (l₀ l₁ l₂ : Lift f k c) :
+    ((difference l₀ l₁).pathTrans (difference l₁ l₂)).Homotopic (difference l₀ l₂) := by
+  simp only [difference_def, ← Homotopy.evalAtEquiv_trans]
+  exact Homotopy.homotopic_iff_evalAtEquiv.1 (Homotopy.Homotopic.symm_trans_trans_symm_trans _ _ _)
 
 /-- Taking differences from a lift `l₀` identifies the homotopy classes of lifts of `c` over `c`
 with the homotopy classes of maps `X → Ω K k`; the inverse appends a family of loops to `l₀`. -/
