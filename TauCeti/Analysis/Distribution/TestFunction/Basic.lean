@@ -70,10 +70,13 @@ theorem exists_monoCLM_eq_of_tsupport_subset {Ω' : Opens E} (h : Ω' ≤ Ω) {�
 
 /-- **A test function times a function `C^n` on `Ω` is a test function.** If `g` is `C^n` on
 `Ω`, with no condition off `Ω`, and `φ ∈ 𝓓^{n}(Ω, F)`, then `x ↦ g x • φ x` is again a `C^n` test
-function on `Ω`: it is `C^n` on `Ω`, which contains the support of `φ`. -/
-theorem exists_coe_eq_smul_of_contDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ n g Ω)
-    (φ : 𝓓^{n}(Ω, F)) : ∃ ψ : 𝓓^{n}(Ω, F), ⇑ψ = fun x => g x • φ x :=
-  ⟨⟨fun x => g x • φ x, (lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).contDiff_of_tsupport_subset_right hg
+function on `Ω`: it is `C^n` on `Ω`, which contains the support of `φ`. The multiplier may take
+values in any nontrivially normed field `𝕜` that is a normed `ℝ`-algebra acting on `F`, such as
+`ℂ` acting on a complex test function. -/
+theorem exists_coe_eq_smul_of_contDiffOn {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] {g : E → 𝕜}
+    (hg : ContDiffOn ℝ n g Ω) (φ : 𝓓^{n}(Ω, F)) : ∃ ψ : 𝓓^{n}(Ω, F), ⇑ψ = fun x => g x • φ x :=
+  ⟨⟨fun x => g x • φ x, (lsmul ℝ 𝕜 : 𝕜 →L[ℝ] F →L[ℝ] F).contDiff_of_tsupport_subset_right hg
       φ.contDiff.contDiffOn Ω.isOpen φ.tsupport_subset, φ.hasCompactSupport.smul_left,
     (tsupport_smul_subset_right _ _).trans φ.tsupport_subset⟩, rfl⟩
 

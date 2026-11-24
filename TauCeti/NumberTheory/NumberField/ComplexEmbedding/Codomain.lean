@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import Mathlib.RingTheory.Flat.Basic
 
 import Mathlib.RingTheory.DedekindDomain.Basic
 import Mathlib.RingTheory.Flat.Stability
@@ -57,8 +58,17 @@ instance : IsScalarTower (𝓞 K) K (Codomain σ) := .of_algebraMap_eq fun _ ↦
 instance : SMulCommClass (𝓞 K) ℂ (Codomain σ) where
   smul_comm a c z := mul_left_comm (G := ℂ) (σ (algebraMap (𝓞 K) K a)) c z
 
+instance : FaithfulSMul (𝓞 K) (Codomain σ) :=
+  (faithfulSMul_iff_algebraMap_injective _ _).mpr
+    (σ.injective.comp (FaithfulSMul.algebraMap_injective (𝓞 K) K))
+
 /-- The identification of `Codomain σ` with `ℂ`, as `ℂ`-algebras. -/
 def equiv : Codomain σ ≃ₐ[ℂ] ℂ := AlgEquiv.refl
+
+instance : Module.Finite ℂ (Codomain σ) := .equiv (equiv σ).symm.toLinearEquiv
+
+@[simp]
+theorem algebraMap_equiv (c : Codomain σ) : algebraMap ℂ (Codomain σ) (equiv σ c) = c := (rfl)
 
 @[simp]
 theorem equiv_algebraMap (x : K) : equiv σ (algebraMap K (Codomain σ) x) = σ x := (rfl)
@@ -104,6 +114,18 @@ theorem baseChange_injective [NumberField K] {E F : Type*} [AddCommGroup E] [Mod
   have : Module.Flat (𝓞 K) (Codomain σ) := Module.Flat.trans (𝓞 K) K (Codomain σ)
   rw [LinearMap.baseChange_eq_lTensor]
   exact Module.Flat.lTensor_preserves_injective_linearMap f hf
+
+/-- A nonzero element of a flat `𝓞 K`-module stays nonzero in the complex fibre at `σ`, since
+`𝓞 K → ℂ` is injective. -/
+theorem one_tmul_ne_zero {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Module.Flat (𝓞 K) E]
+    {x : E} (hx : x ≠ 0) : (1 : Codomain σ) ⊗ₜ[𝓞 K] x ≠ 0 := fun h =>
+  hx (Module.Flat.tensorProduct_mk_injective (𝓞 K) E (Codomain σ) (by simpa using h))
+
+/-- `1 ⊗ (a • x) = σ(a) (1 ⊗ x)` in the complex fibre at `σ`. -/
+theorem one_tmul_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (a : 𝓞 K) (x : E) :
+    (1 : Codomain σ) ⊗ₜ[𝓞 K] (a • x) = σ a • (1 ⊗ₜ[𝓞 K] x) := by
+  rw [← TensorProduct.smul_tmul, tmul_eq_smul, Algebra.smul_def, mul_one,
+    equiv_algebraMap_ringOfIntegers]
 
 end Codomain
 

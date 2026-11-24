@@ -13,7 +13,8 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 This file supplies the characteristic membership equation for the subgroup equality locus, the
 invariance of the range of a group homomorphism under precomposition with a surjection, the
 compatibility of ranges and kernels with a commutative square, and the range and kernel of the
-pointwise inverse of a homomorphism into a commutative group.
+pointwise inverse of a homomorphism into a commutative group, and the kernel of a pointwise
+product of homomorphisms.
 
 ## Main results
 
@@ -31,6 +32,7 @@ pointwise inverse of a homomorphism into a commutative group.
 * `MonoidHom.mem_ker_compl₂_subtype_iff`, `AddMonoidHom.mem_ker_compl₂_subtype_iff`:
   membership in the kernel of a pairing restricted on its second slot to a subgroup is pointwise
   triviality against that subgroup.
+* `MonoidHom.ker_inf_ker_le_ker_mul`: the kernel of `f * g` contains the kernels' intersection.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -112,6 +114,13 @@ theorem mem_ker_compl₂_subtype_iff {A B C : Type*} [Group A] [Group B] [CommMo
     a ∈ (f.compl₂ H.subtype).ker ↔ ∀ b ∈ H, f a b = 1 := by
   simp only [mem_ker, DFunLike.ext_iff, compl₂_apply, one_apply, Subtype.forall,
     Subgroup.subtype_apply]
+
+/-- An element in the kernels of both `f` and `g` is in the kernel of their pointwise product. -/
+@[to_additive /-- An element in the kernels of both `f` and `g` is in the kernel of their
+pointwise sum. -/]
+theorem ker_inf_ker_le_ker_mul {H : Type*} [CommMonoid H] (f g : G →* H) :
+    f.ker ⊓ g.ker ≤ (f * g).ker :=
+  fun x hx ↦ by simp [mem_ker.mp hx.1, mem_ker.mp hx.2]
 
 end MonoidHom
 
