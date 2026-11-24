@@ -60,6 +60,7 @@ of all pairs `(x, h) ∈ H × H` for which some `u : V` satisfies `j u = x` and
   maximal-symmetry uniqueness for Hermitian forms, and semibounded lower bounds.
 * `ContinuousLinearMap.shiftedForm`: the shifted sesquilinear form `q + α ⟪j ·, j ·⟫_𝕜`, with
   `ContinuousLinearMap.shiftedForm_zero`, `ContinuousLinearMap.shiftedForm_shiftedForm`,
+  `ContinuousLinearMap.shiftedForm_sub_shiftedForm`,
   `ContinuousLinearMap.mul_norm_sq_le_re_shiftedForm_self`,
   `ContinuousLinearMap.shiftedForm_eq_star`,
   `ContinuousLinearMap.closedFormDomain_shiftedForm`, and
@@ -323,6 +324,15 @@ theorem shiftedForm_shiftedForm (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L
     shiftedForm j (shiftedForm j q α) β = shiftedForm j q (α + β) := by
   ext u v
   simp [add_mul, add_assoc]
+
+/-- **Comparison of two shifts.** The shifts by `α` and `β` differ by `(α - β) ⟪j ·, j ·⟫_𝕜`. -/
+theorem shiftedForm_sub_shiftedForm (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (α β : ℝ) :
+    shiftedForm j q α - shiftedForm j q β =
+      ((α - β : ℝ) : 𝕜) • (innerSL 𝕜).bilinearComp j j := by
+  ext u v
+  simp only [sub_apply, shiftedForm_apply, smul_apply, bilinearComp_apply, innerSL_apply_apply,
+    smul_eq_mul, RCLike.ofReal_sub]
+  ring
 
 /-- Diagonal real part of `shiftedForm`: `re (q_α u u) = re (q u u) + α * ‖j u‖ ^ 2`. -/
 theorem re_shiftedForm_self (j : V →L[𝕜] H) (q : V →L⋆[𝕜] V →L[𝕜] 𝕜) (α : ℝ) (u : V) :
