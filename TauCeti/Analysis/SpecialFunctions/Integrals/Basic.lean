@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+import Mathlib.MeasureTheory.Integral.IntervalAverage
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -394,15 +396,10 @@ theorem norm_intervalIntegral_cexp_mul_I_le (u a b : ℝ) :
 modulus at most `1`, for every real frequency `u` and every `T : ℝ`. -/
 theorem norm_inv_mul_intervalIntegral_cexp_mul_I_le_one (u T : ℝ) :
     ‖(T⁻¹ : ℂ) * ∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ 1 := by
-  by_cases hT : T = 0
-  · simp [hT]
-  have hint : ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖ ≤ |T| := by
-    simpa only [sub_zero] using norm_intervalIntegral_cexp_mul_I_le u 0 T
-  rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_eq_abs]
-  calc
-    |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, Complex.exp (t * u * Complex.I)‖
-        ≤ |T|⁻¹ * |T| := by gcongr
-    _ = 1 := inv_mul_cancel₀ (abs_ne_zero.mpr hT)
+  simpa only [interval_average_eq, sub_zero, Complex.real_smul, Complex.ofReal_inv] using
+    TauCeti.norm_setAverage_le_of_norm_le_const (μ := MeasureTheory.volume) (s := Set.uIoc 0 T)
+      (f := fun t : ℝ => Complex.exp (t * u * Complex.I)) zero_le_one fun t _ => by
+        rw [← Complex.ofReal_mul, Complex.norm_exp_ofReal_mul_I]
 
 /-- Quantitative `O(|u|⁻¹ |T|⁻¹)` decay of the time average `T⁻¹ * ∫ t in 0..T, exp (t * u * I)`
 for any nonzero real frequency `u` and every `T : ℝ`. -/

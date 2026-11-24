@@ -12,11 +12,13 @@ public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import TauCeti.Analysis.Semigroups.Group.PhaseShift
 import Mathlib.Analysis.InnerProductSpace.MeanErgodic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Integral.IntervalAverage
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.RepresentationTheory.Continuous.Basic
 import TauCeti.Analysis.Bochner.CharFun.Bochner
 import TauCeti.Analysis.InnerProductSpace.Projection.RestrictScalars
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.InnerProduct
 import TauCeti.RepresentationTheory.Continuous.Invariants
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
@@ -105,6 +107,11 @@ private def toRealContRep (U : StronglyContinuousGroup X) :
       map_one' := U.map_zero
       map_mul' g h := U.map_add (Multiplicative.toAdd g) (Multiplicative.toAdd h) }
 
+private theorem toRealContRep_apply (U : StronglyContinuousGroup X)
+    (g : Multiplicative ℝ) (x : X) :
+    U.toRealContRep g x = U (Multiplicative.toAdd g) x :=
+  rfl
+
 /-- The real submodule of vectors fixed by every operator of a C₀-group. -/
 def fixedSpace (U : StronglyContinuousGroup X) : Submodule ℝ X :=
   U.toRealContRep.invariants
@@ -114,6 +121,7 @@ def fixedSpace (U : StronglyContinuousGroup X) : Submodule ℝ X :=
 theorem mem_fixedSpace_iff (U : StronglyContinuousGroup X) (x : X) :
     x ∈ U.fixedSpace ↔ ∀ t : ℝ, U t x = x := by
   rw [fixedSpace, ContRepresentation.mem_invariants]
+  simp only [toRealContRep_apply]
   exact ⟨fun h t => h (Multiplicative.ofAdd t), fun h g => h (Multiplicative.toAdd g)⟩
 
 /-- The common fixed space of a C₀-group is closed. -/
@@ -169,16 +177,10 @@ theorem norm_intervalIntegral_orbit_le (U : StronglyContinuousGroup X)
 theorem norm_average_orbit_le (U : StronglyContinuousGroup X)
     (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) (T : ℝ) (v : X) :
     ‖T⁻¹ • ∫ t in (0 : ℝ)..T, U t v‖ ≤ ‖v‖ := by
-  by_cases hT : T = 0
-  · simp [hT]
-  have hint : ‖∫ t in (0 : ℝ)..T, U t v‖ ≤ ‖v‖ * |T| := by
-    simpa only [sub_zero] using U.norm_intervalIntegral_orbit_le hnorm 0 T v
-  rw [norm_smul, Real.norm_eq_abs, abs_inv]
-  calc
-    |T|⁻¹ * ‖∫ t in (0 : ℝ)..T, U t v‖
-        ≤ |T|⁻¹ * (‖v‖ * |T|) := by gcongr
-    _ = ‖v‖ := by
-      rw [mul_left_comm, inv_mul_cancel₀ (abs_ne_zero.mpr hT), mul_one]
+  simpa only [interval_average_eq, sub_zero] using
+    TauCeti.norm_setAverage_le_of_norm_le_const (μ := volume) (s := Set.uIoc 0 T)
+      (f := fun t : ℝ => U t v) (norm_nonneg v) fun t _ => by
+        rw [U.norm_map_apply_eq_of_norm_le_one t (hnorm t) (hnorm (-t))]
 
 /-- Quantitative decay of the time average on a coboundary `U s v - v`, for every `T : ℝ`. -/
 theorem norm_average_orbit_apply_sub_le (U : StronglyContinuousGroup X)
@@ -259,8 +261,8 @@ section RealInnerProduct
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
 
-private theorem tendsto_average_orbit_birkhoff (U : StronglyContinuousGroup H)
-    (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) (v : H) :
+private theorem tendsto_average_orbit_orthogonalProjectionOnto_eqLocus_one
+    (U : StronglyContinuousGroup H) (hnorm : ∀ t : ℝ, ‖U t‖ ≤ 1) (v : H) :
     Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop
       (𝓝 (((U 1).eqLocus (1 : H →L[ℝ] H)).orthogonalProjectionOnto
         (∫ t in (0 : ℝ)..1, U t v) : H)) := by
@@ -335,7 +337,7 @@ theorem tendsto_average_orbit_starProjection_fixedSpace (U : StronglyContinuousG
   let w : H := ((U 1).eqLocus (1 : H →L[ℝ] H)).orthogonalProjectionOnto
     (∫ t in (0 : ℝ)..1, U t v)
   have htend : Tendsto (fun T : ℝ => T⁻¹ • ∫ t in (0 : ℝ)..T, U t v) atTop (𝓝 w) :=
-    U.tendsto_average_orbit_birkhoff hnorm v
+    U.tendsto_average_orbit_orthogonalProjectionOnto_eqLocus_one hnorm v
   have hw_fixed : w ∈ U.fixedSpace := by
     rw [mem_fixedSpace_iff]
     intro s
@@ -467,8 +469,8 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 
 private theorem isUnitary_toComplexContRep {U : StronglyContinuousGroup H} (hU : U.IsUnitary) :
     (U.toComplexContRep hU.isComplexLinear).IsUnitary :=
-  (ContRepresentation.isUnitary_iff_norm_map _).mpr fun g x =>
-    hU.norm_map (Multiplicative.toAdd g) x
+  (ContRepresentation.isUnitary_iff_norm_map _).mpr fun g x => by
+    simpa only [toComplexContRep_apply] using hU.norm_map (Multiplicative.toAdd g) x
 
 /-- The correlation function `t ↦ ⟪v, U t v⟫_ℂ` of a vector under a unitary C₀-group is positive
 definite. -/
