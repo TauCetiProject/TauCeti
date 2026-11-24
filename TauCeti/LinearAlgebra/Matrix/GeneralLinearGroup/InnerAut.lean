@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Ring.Action.ConjAct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
+-- Non-public: `forall_conj_eq_iff_exists_scalar_mul_eq` is used only in a proof.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 
 /-!
@@ -16,12 +18,13 @@ An invertible matrix `g ∈ GL n R` over a commutative semiring acts on the matr
 `Matrix n n R` by the algebra automorphism `x ↦ g x g⁻¹`. This file packages that action as a
 group homomorphism `GL n R →* (Matrix n n R ≃ₐ[R] Matrix n n R)` and proves:
 
-* over a commutative ring, its kernel is the center of `GL n R`, the invertible scalar matrices;
-* every algebra automorphism `σ` of `Matrix n n R` is Zariski-locally inner: there are finitely
+* over a commutative ring, its kernel is the center of `GL n R`, the invertible scalar matrices, so
+  the conjugating matrix is unique up to an invertible scalar;
+* every algebra endomorphism `σ` of `Matrix n n R` is Zariski-locally inner: there are finitely
   many elements of the commutative semiring `R` generating the unit ideal such that, after mapping
   to a commutative semiring in which one of them is invertible, `σ` becomes inner;
-* hence over a local semiring, in particular over a field, every automorphism of a matrix algebra is
-  inner (Skolem–Noether);
+* hence over a local semiring, in particular over a field, every algebra endomorphism of a matrix
+  algebra is inner, hence an automorphism (Skolem–Noether);
 * hence it induces an injective homomorphism from Mathlib's projective general linear group
   `PGL(n, R) = GL n R / Z(GL n R)`, which is bijective over a local ring.
 
@@ -33,17 +36,23 @@ fppf quotient of `GLₙ` by its center.
 
 * `Matrix.GeneralLinearGroup.innerAut`: conjugation as algebra automorphisms.
 * `Matrix.GeneralLinearGroup.ker_innerAut`: its kernel is the center.
-* `AlgEquiv.exists_span_eq_top_forall_map_eq_innerAut`: automorphisms are Zariski-locally inner.
+* `Matrix.GeneralLinearGroup.innerAut_eq_innerAut_iff`: the conjugating matrix is unique up to an
+  invertible scalar.
+* `AlgHom.exists_span_eq_top_forall_map_eq_innerAut`: endomorphisms are Zariski-locally inner.
+* `AlgHom.exists_innerAut_eq_of_isLocalRing`: every algebra endomorphism of a matrix algebra over
+  a local semiring is inner, and in particular bijective
+  (`AlgHom.bijective_of_isLocalRing_of_matrix`).
 * `Matrix.GeneralLinearGroup.innerAut_surjective`: surjectivity over a local ring.
 * `Matrix.ProjGenLinGroup.innerAut`: the induced homomorphism on `PGL(n, R)`, with
   `Matrix.ProjGenLinGroup.innerAut_injective` and `Matrix.ProjGenLinGroup.innerAut_bijective`.
 
 ## Implementation notes
 
-Write `Eᵢⱼ` for the matrix units and fix an index `a`. For each `b`, the matrices
-`Gᵦ = ∑ⱼ σ(Eⱼₐ) Eᵦⱼ` and `Hᵦ = ∑ⱼ Eⱼᵦ σ(Eₐⱼ)` satisfy `σ(x) Gᵦ = Gᵦ x` and `x Hᵦ = Hᵦ σ(x)`.
-Hence `Gᵦ Hᵦ` commutes with every matrix, so it is a scalar `cᵦ`, and `∑ᵦ Gᵦ Hᵦ = 1` gives
-`∑ᵦ cᵦ = 1`. Wherever `cᵦ` is invertible, `Gᵦ` is invertible and conjugates `x` to `σ(x)`.
+Write `Eᵢⱼ` for the matrix units and fix an index `b`. For each `a`, the matrices
+`Gₐ = ∑ⱼ σ(Eⱼₐ) Eᵦⱼ` and `Hₐ = ∑ⱼ Eⱼᵦ σ(Eₐⱼ)` satisfy `σ(x) Gₐ = Gₐ x` and `Hₐ Gₐ = σ(Eₐₐ)ᵦᵦ`, a
+scalar. Since the `Eₐₐ` sum to `1`, these scalars sum to `1` over `a`, so they generate the unit
+ideal. Wherever `σ(Eₐₐ)ᵦᵦ` is invertible, `Gₐ` is invertible and conjugates `x` to `σ(x)`. Over a
+local semiring one of these scalars is already a unit.
 
 ## References
 
@@ -97,20 +106,32 @@ theorem innerAut_eq_one_iff (g : GL n R) :
 theorem ker_innerAut : (innerAut (n := n) (R := R)).ker = Subgroup.center (GL n R) :=
   Subgroup.ext fun g => MonoidHom.mem_ker.trans (innerAut_eq_one_iff g)
 
+/-- **The conjugating matrix is unique up to a unit**: two invertible matrices induce the same
+inner automorphism exactly when they differ by an invertible scalar. -/
+theorem innerAut_eq_innerAut_iff {g g' : GL n R} :
+    innerAut g = innerAut g' ↔ ∃ u : Rˣ, g' = g * scalar n u := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · -- Equal inner automorphisms conjugate every element of `GL n R` in the same way.
+    obtain ⟨u, hu⟩ := (forall_conj_eq_iff_exists_scalar_mul_eq (g := g') (h := g)).1
+      fun x ↦ Units.ext (by simpa using (DFunLike.congr_fun h (x : Matrix n n R)).symm)
+    exact ⟨u, by rw [← hu, scalar_commute]⟩
+  · rintro ⟨u, rfl⟩
+    rw [map_mul, innerAut_scalar, mul_one]
+
 section LocallyInner
 
 variable {A : Type*} [CommSemiring A]
 
-/-- The matrix `∑ⱼ σ(Eⱼₐ) Eᵦⱼ`, which intertwines an automorphism `σ` of `Mₙ(A)` with the
+/-- The matrix `∑ⱼ σ(Eⱼₐ) Eᵦⱼ`, which intertwines an endomorphism `σ` of `Mₙ(A)` with the
 identity: `σ x * G = G * x`. -/
-private def intertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A) (a b : n) : Matrix n n A :=
+private def intertwiner (σ : Matrix n n A →ₐ[A] Matrix n n A) (a b : n) : Matrix n n A :=
   ∑ j, σ (single j a 1) * single b j 1
 
-/-- The matrix `∑ⱼ Eⱼᵦ σ(Eₐⱼ)`, which intertwines the identity with `σ`: `x * H = H * σ x`. -/
-private def coIntertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A) (a b : n) : Matrix n n A :=
+/-- The matrix `∑ⱼ Eⱼᵦ σ(Eₐⱼ)`, a left inverse of the intertwiner up to the scalar `σ(Eₐₐ)ᵦᵦ`. -/
+private def coIntertwiner (σ : Matrix n n A →ₐ[A] Matrix n n A) (a b : n) : Matrix n n A :=
   ∑ j, single j b 1 * σ (single a j 1)
 
-private theorem apply_mul_intertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A) (a b : n)
+private theorem apply_mul_intertwiner (σ : Matrix n n A →ₐ[A] Matrix n n A) (a b : n)
     (x : Matrix n n A) : σ x * intertwiner σ a b = intertwiner σ a b * x := by
   induction x using Matrix.induction_on' with
   | h_zero => simp
@@ -123,91 +144,95 @@ private theorem apply_mul_intertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A)
       Finset.sum_eq_single k (fun j _ hj => by simp [mul_assoc, hj]) (by simp)]
     simp [mul_assoc]
 
-private theorem mul_coIntertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A) (a b : n)
-    (x : Matrix n n A) : x * coIntertwiner σ a b = coIntertwiner σ a b * σ x := by
-  -- `Hᵦ` is the image under `σ` of the intertwiner `∑ⱼ σ⁻¹(Eⱼᵦ) Eₐⱼ` of `σ⁻¹`.
-  have h : coIntertwiner σ a b = σ (intertwiner σ.symm b a) := by
-    simp [coIntertwiner, intertwiner]
-  simpa [h] using congrArg σ (apply_mul_intertwiner σ.symm b a x)
-
-private theorem sum_intertwiner_mul_coIntertwiner (σ : Matrix n n A ≃ₐ[A] Matrix n n A) (a : n) :
-    ∑ b, intertwiner σ a b * coIntertwiner σ a b = 1 := by
-  have key (j l : n) : ∑ b, single b j (1 : A) * single l b 1 = if j = l then 1 else 0 := by
-    split_ifs with h
-    · simp [h, sum_single_one]
-    · simp [h]
-  calc ∑ b, intertwiner σ a b * coIntertwiner σ a b
-      = ∑ l, ∑ j, σ (single j a 1) * (∑ b, single b j 1 * single l b 1) * σ (single a l 1) := by
-        simp only [intertwiner, coIntertwiner, Finset.sum_mul, Finset.mul_sum, mul_assoc]
-        conv_lhs => rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun l _ => ?_
-        conv_lhs => rw [Finset.sum_comm]
-    _ = σ (∑ j, single j j 1) := by
-        simp only [key, mul_ite, ite_mul, mul_one, mul_zero, zero_mul,
-          Finset.sum_ite_eq', Finset.mem_univ, ite_true, map_sum, ← map_mul, single_mul_single_same]
-    _ = 1 := by rw [sum_single_one, map_one]
+/-- `Hₐ Gₐ` is the scalar matrix `σ(Eₐₐ)ᵦᵦ`. -/
+private theorem coIntertwiner_mul_intertwiner (σ : Matrix n n A →ₐ[A] Matrix n n A) (a b : n) :
+    coIntertwiner σ a b * intertwiner σ a b = Matrix.scalar n (σ (single a a 1) b b) := by
+  -- `σ(Eₐⱼ) σ(Eₖₐ) = σ(Eₐⱼ Eₖₐ)` vanishes unless `j = k`, when it is `σ(Eₐₐ)`.
+  have h (j k : n) (X : Matrix n n A) : σ (single a j 1) * (σ (single k a 1) * X) =
+      if j = k then σ (single a a 1) * X else 0 := by
+    rw [← mul_assoc, ← map_mul]
+    split_ifs with hjk
+    · rw [hjk, single_mul_single_same, mul_one]
+    · rw [single_mul_single_of_ne (h := hjk), map_zero, zero_mul]
+  simp only [coIntertwiner, intertwiner, Finset.sum_mul, Finset.mul_sum, mul_assoc, h, mul_ite,
+    mul_zero]
+  simp only [← mul_assoc, single_mul_mul_single, one_mul, mul_one, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true]
+  exact sum_single_eq_diagonal _
 
 end LocallyInner
 
 end Matrix.GeneralLinearGroup
 
-namespace AlgEquiv
+namespace AlgHom
 
 universe w
 
 variable {n A : Type*} [Fintype n] [DecidableEq n] [CommSemiring A]
 
-open Matrix.GeneralLinearGroup in
-/-- **Automorphisms of a matrix algebra are Zariski-locally inner.** For an algebra automorphism
+open Matrix Matrix.GeneralLinearGroup in
+/-- **Endomorphisms of a matrix algebra are Zariski-locally inner.** For an algebra endomorphism
 `σ` of `Mₙ(A)` over a commutative semiring `A`, there are finitely many elements of `A` generating
 the unit ideal such that, along any homomorphism `φ : A →+* B` to a commutative semiring
 inverting one of them, `σ` becomes conjugation by an invertible matrix over `B`:
 `(σ x).map φ = g (x.map φ) g⁻¹` for every `x`.
 
 Over a local semiring one of the elements is already a unit, which gives
-`Matrix.GeneralLinearGroup.innerAut_surjective`. -/
-theorem exists_span_eq_top_forall_map_eq_innerAut (σ : Matrix n n A ≃ₐ[A] Matrix n n A) :
+`AlgHom.exists_innerAut_eq_of_isLocalRing`. -/
+theorem exists_span_eq_top_forall_map_eq_innerAut (σ : Matrix n n A →ₐ[A] Matrix n n A) :
     ∃ s : Finset A, Ideal.span (s : Set A) = ⊤ ∧ ∀ c ∈ s, ∀ {B : Type w} [CommSemiring B]
       (φ : A →+* B), IsUnit (φ c) →
         ∃ g : GL n B, ∀ x : Matrix n n A, (σ x).map φ = innerAut g (x.map φ) := by
   classical
   cases isEmpty_or_nonempty n
   · exact ⟨{1}, by simp, fun _ _ _ _ _ _ => ⟨1, fun _ => Subsingleton.elim _ _⟩⟩
-  obtain ⟨a⟩ := ‹Nonempty n›
-  have hscalar (b : n) : intertwiner σ a b * coIntertwiner σ a b =
-      scalar n ((intertwiner σ a b * coIntertwiner σ a b) a a) := by
-    obtain ⟨r, hr⟩ := mem_range_scalar_of_commute_single
-      (M := intertwiner σ a b * coIntertwiner σ a b) fun i j _ => by
-        obtain ⟨x, hx⟩ := σ.surjective (single i j 1)
-        rw [← hx]
-        -- `G` semiconjugates `x` to `σ x` and `H` semiconjugates `σ x` back to `x`.
-        exact Commute.symm <| SemiconjBy.mul_left (apply_mul_intertwiner σ a b x).symm
-          (mul_coIntertwiner σ a b x).symm
-    rw [← hr]
-    simp
-  have hsum : ∑ b, (intertwiner σ a b * coIntertwiner σ a b) a a = 1 := by
-    rw [← Matrix.sum_apply, sum_intertwiner_mul_coIntertwiner, one_apply_eq]
-  refine ⟨Finset.univ.image fun b => (intertwiner σ a b * coIntertwiner σ a b) a a, ?_, ?_⟩
-  · rw [Ideal.eq_top_iff_one, ← hsum]
-    exact Ideal.sum_mem _ fun b _ => Ideal.subset_span (by simp)
+  obtain ⟨b⟩ := ‹Nonempty n›
+  have hsum : ∑ a, σ (single a a 1) b b = 1 := by
+    rw [← Matrix.sum_apply, ← map_sum, sum_single_one, map_one, one_apply_eq]
+  refine ⟨Finset.univ.image fun a => σ (single a a 1) b b, ?_, ?_⟩
+  · have h := Ideal.sum_mem (Ideal.span (Finset.univ.image fun a => σ (single a a 1) b b : Set A))
+      (t := Finset.univ) (f := fun a => σ (single a a 1) b b) fun a _ => Ideal.subset_span (by simp)
+    rwa [hsum, ← Ideal.eq_top_iff_one] at h
   · intro c hc B _ φ hu
-    obtain ⟨b, -, rfl⟩ := Finset.mem_image.1 hc
+    obtain ⟨a, -, rfl⟩ := Finset.mem_image.1 hc
     obtain ⟨u, hu⟩ := hu
     let G := (intertwiner σ a b).map φ
     let K := ((u⁻¹ : Bˣ) : B) • (coIntertwiner σ a b).map φ
-    have h₁ : G * K = 1 := by
-      rw [mul_smul_comm, ← Matrix.map_mul, hscalar b]
+    have h₁ : K * G = 1 := by
+      rw [smul_mul_assoc, ← Matrix.map_mul, coIntertwiner_mul_intertwiner]
       ext i j
       by_cases hij : i = j <;> simp [Matrix.one_apply, ← hu, hij]
-    have h₂ : K * G = 1 := mul_eq_one_comm.1 h₁
-    refine ⟨⟨G, K, h₁, h₂⟩, fun x => ?_⟩
+    have h₂ : G * K = 1 := mul_eq_one_comm.1 h₁
+    refine ⟨⟨G, K, h₂, h₁⟩, fun x => ?_⟩
     have hx := congrArg (·.map φ) (apply_mul_intertwiner σ a b x)
     simp only [Matrix.map_mul] at hx
     rw [innerAut_apply]
-    calc (σ x).map φ = (σ x).map φ * (G * K) := by rw [h₁, Matrix.mul_one]
+    calc (σ x).map φ = (σ x).map φ * (G * K) := by rw [h₂, Matrix.mul_one]
       _ = G * x.map φ * K := by rw [← Matrix.mul_assoc, hx]
 
-end AlgEquiv
+open Matrix.GeneralLinearGroup in
+/-- **Endomorphisms of a matrix algebra over a local semiring are inner**: every unital algebra
+endomorphism `σ` of `Mₙ(K)`, for `K` a commutative local semiring, is conjugation by an invertible
+matrix. -/
+theorem exists_innerAut_eq_of_isLocalRing {K : Type*} [CommSemiring K] [IsLocalRing K]
+    (σ : Matrix n n K →ₐ[K] Matrix n n K) :
+    ∃ g : GL n K, (innerAut g : Matrix n n K →ₐ[K] Matrix n n K) = σ := by
+  obtain ⟨s, hs, h⟩ := σ.exists_span_eq_top_forall_map_eq_innerAut
+  obtain ⟨c, hc, hu⟩ : ∃ c ∈ s, IsUnit c := by
+    by_contra! hne
+    refine (IsLocalRing.maximalIdeal.isMaximal K).ne_top (top_le_iff.1 (hs ▸ ?_))
+    exact Ideal.span_le.2 fun c hc => (IsLocalRing.mem_maximalIdeal c).2 (hne c hc)
+  obtain ⟨g, hg⟩ := h c hc (RingHom.id K) hu
+  exact ⟨g, AlgHom.ext fun x => by simpa using (hg x).symm⟩
+
+/-- An endomorphism of a matrix algebra over a local semiring is bijective. -/
+theorem bijective_of_isLocalRing_of_matrix {K : Type*} [CommSemiring K] [IsLocalRing K]
+    (σ : Matrix n n K →ₐ[K] Matrix n n K) : Function.Bijective σ := by
+  obtain ⟨g, hg⟩ := σ.exists_innerAut_eq_of_isLocalRing
+  rw [← hg]
+  exact (Matrix.GeneralLinearGroup.innerAut g).bijective
+
+end AlgHom
 
 namespace Matrix.GeneralLinearGroup
 
@@ -216,15 +241,9 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- **Skolem–Noether for matrix algebras over a local semiring**: every algebra automorphism of a
 matrix algebra over a commutative local semiring, in particular over a field, is inner. -/
 theorem innerAut_surjective (K : Type*) [CommSemiring K] [IsLocalRing K] :
-    Function.Surjective (innerAut (n := n) (R := K)) := by
-  intro σ
-  obtain ⟨s, hs, h⟩ := σ.exists_span_eq_top_forall_map_eq_innerAut
-  obtain ⟨c, hc, hu⟩ : ∃ c ∈ s, IsUnit c := by
-    by_contra! hne
-    refine (IsLocalRing.maximalIdeal.isMaximal K).ne_top (top_le_iff.1 (hs ▸ ?_))
-    exact Ideal.span_le.2 fun c hc => (IsLocalRing.mem_maximalIdeal c).2 (hne c hc)
-  obtain ⟨g, hg⟩ := h c hc (RingHom.id K) hu
-  exact ⟨g, AlgEquiv.ext fun x => by simpa using (hg x).symm⟩
+    Function.Surjective (innerAut (n := n) (R := K)) := fun σ =>
+  let ⟨g, hg⟩ := σ.toAlgHom.exists_innerAut_eq_of_isLocalRing
+  ⟨g, AlgEquiv.ext fun x => DFunLike.congr_fun hg x⟩
 
 end Matrix.GeneralLinearGroup
 

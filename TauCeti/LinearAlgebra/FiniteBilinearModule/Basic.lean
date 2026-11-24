@@ -39,6 +39,8 @@ restriction to a subgroup can be degenerate.
 * `TauCeti.FiniteBilinearModule.neg`: the module with the negated pairing.
 * `TauCeti.FiniteBilinearModule.prod`: the orthogonal direct sum of two modules.
 * `TauCeti.FiniteBilinearModule.radical`: the kernel of the adjoint pairing.
+* `TauCeti.FiniteBilinearModule.Isometry.restrict`: an isometry carrying one subgroup onto another
+  restricts to an isometry of the restrictions.
 * `TauCeti.FiniteBilinearModule.Isometry.prod`: the orthogonal direct sum of two isometries.
 * `TauCeti.FiniteBilinearModule.orthogonalComplement`: the orthogonal complement of a subgroup.
 * `TauCeti.FiniteBilinearModule.IsIsotropicElem`: vanishing of the self-pairing on an element.
@@ -525,6 +527,27 @@ def restrictHom (H : AddSubgroup A) : Hom (restrict A H) A where
 /-- The inclusion of a restricted module sends an element of the subgroup to itself. -/
 @[simp]
 theorem restrictHom_apply (H : AddSubgroup A) (x : H) : A.restrictHom H x = x := (rfl)
+
+variable {A} in
+/-- **Restriction of an isometry.** An isometry `f : A ≃ B` carrying the subgroup `H` onto the
+subgroup `K`, in the sense that `f x ∈ K ↔ x ∈ H`, restricts to an isometry of the restrictions to
+`H` and `K`. -/
+def Isometry.restrict {B : FiniteBilinearModule.{v}} (f : Isometry A B) {H : AddSubgroup A}
+    {K : AddSubgroup B} (h : ∀ x, f x ∈ K ↔ x ∈ H) : Isometry (A.restrict H) (B.restrict K) where
+  toAddEquiv :=
+    -- `f` maps `H` onto `K`: every `y ∈ K` is the image of `f.symm y ∈ H`.
+    have hHK : H.map f.toAddEquiv.toAddMonoidHom = K := AddSubgroup.ext fun y ↦ by
+      rw [AddSubgroup.mem_map_equiv, ← h]
+      exact Iff.of_eq (congrArg (· ∈ K) (f.toAddEquiv.apply_symm_apply y))
+    (f.toAddEquiv.addSubgroupMap H).trans (AddEquiv.addSubgroupCongr hHK)
+  map_pairing' x y := f.map_pairing x.val y.val
+
+variable {A} in
+/-- The restriction of an isometry acts as the isometry on the underlying elements. -/
+@[simp]
+theorem Isometry.restrictHom_restrict_apply {B : FiniteBilinearModule.{v}} (f : Isometry A B)
+    {H : AddSubgroup A} {K : AddSubgroup B} (h : ∀ x, f x ∈ K ↔ x ∈ H) (x : A.restrict H) :
+    B.restrictHom K (f.restrict h x) = f (A.restrictHom H x) := (rfl)
 
 /-- Negate the pairing of a finite bilinear module. -/
 abbrev neg : FiniteBilinearModule where

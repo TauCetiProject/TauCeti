@@ -9,12 +9,13 @@ public import TauCeti.Probability.Distributions.MarchenkoPastur.Stability
 public import TauCeti.Probability.RandomMatrix.QuadraticForm
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.ZeroMass
 import TauCeti.Analysis.Matrix.SampleCovariance.SelfConsistency
+import TauCeti.Probability.RandomMatrix.SampleCovariance.Approximation
 import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectralMeasure
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Probability.ProductMeasure
 
 /-!
-# The Marchenko–Pastur law for sub-Gaussian entries
+# The Marchenko–Pastur law
 
 Sample covariance matrices with independent, unit second moment entries and a uniform
 directional sub-Gaussian bound have almost surely convergent empirical spectral measures
@@ -23,10 +24,18 @@ dimension and position. For varying sample spaces, bounded continuous spectral s
 converge in mean absolute error and in probability. The proof uses uniform leave-one-column-out
 concentration, the rank-one resolvent estimate and stability of the Marchenko–Pastur equation.
 
+For the corners of one infinite array of i.i.d. complex entries with mean zero and unit second
+absolute moment, `marchenkoPastur_ae` removes the sub-Gaussian assumption.
+`ae_tendsto_spectralMeasure_sampleCovariance_of_bounded` gives the bounded case, and
+the bounded-entry reduction `ae_tendsto_spectralMeasure_sampleCovariance_of_bounded_entries`
+transfers it to finite variance. Real entries are the case of an entry law supported on `ℝ`.
+
 ## References
 
 * Z. D. Bai, *Methodologies in spectral analysis of large dimensional random matrices, a review*,
   Statistica Sinica 9 (1999), §2.2.
+* Z. D. Bai, J. W. Silverstein, *Spectral Analysis of Large Dimensional Random Matrices*, 2nd ed.,
+  Springer, 2010, §3.3.
 -/
 
 public section
@@ -168,6 +177,47 @@ theorem ae_tendsto_spectralMeasure_sampleCovariance_of_bounded_real
     exact hEq.trans (spectralMeasure_map_ofReal _ hA)
   simpa only [hL] using
     ae_tendsto_spectralMeasure_sampleCovariance_of_bounded hindY hmY hbY hmeanY hunitY hy hy₀
+
+/-- **Marchenko–Pastur law, almost surely.** Let `x` be an array, indexed by `ℕ × ℕ`, of independent
+complex entries with common law `ν` of mean zero and unit second absolute moment, let `p(n) ≥ 1`
+with `p(n) / n → y > 0`, and let `Xₙ` be the top-left `p(n) × n` corner of the array. Then almost
+surely the empirical spectral measures of the sample covariances `Xₙ Xₙᴴ / n` converge weakly to
+the Marchenko–Pastur law `MP_y`. -/
+theorem marchenkoPastur_ae {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ}
+    (hx : ∀ ij, HasLaw (x ij) ν P) (hindep : iIndepFun x P)
+    (hmean : ∫ z, z ∂ν = 0) (hvar : ∫ z, ‖z‖ ^ 2 ∂ν = 1) (hy : 0 < y)
+    (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 y)) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦
+      (sampleCovariance (Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω)).spectralMeasure
+        (isHermitian_sampleCovariance _)) atTop (𝓝 (marchenkoPastur y).toProbabilityMeasure) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have : IsProbabilityMeasure ν := (hx (0, 0)).isProbabilityMeasure_iff.1 ‹_›
+  -- Work with the corners of size `p (m + 1) × (m + 1)`, which have a nonempty column type.
+  have hp' : Tendsto (fun m : ℕ ↦ (p (m + 1) : ℝ) / (m + 1)) atTop (𝓝 y) := by
+    simpa only [Nat.cast_add, Nat.cast_one] using (tendsto_add_atTop_iff_nat 1).2 hp
+  have hdim : ∀ᶠ m : ℕ in atTop, (y / 2 : ℝ) * m ≤ Fintype.card (Fin (p (m + 1))) := by
+    filter_upwards [hp'.eventually (lt_mem_nhds (half_lt_self (by exact_mod_cast hy)))] with m hm
+    rw [Fintype.card_fin]
+    have := (lt_div_iff₀ (by positivity)).1 hm
+    nlinarith [NNReal.coe_nonneg y]
+  have hind (m : ℕ) : iIndepFun (fun ij : Fin (p (m + 1)) × Fin (m + 1) ↦
+      fun ω ↦ x (ij.1, ij.2) ω) P :=
+    hindep.precomp (Fin.val_injective.prodMap Fin.val_injective)
+  have h := ae_tendsto_spectralMeasure_sampleCovariance_of_bounded_entries
+    (X := fun m ω ↦ Matrix.of fun (i : Fin (p (m + 1))) (j : Fin (m + 1)) ↦ x (i, j) ω)
+    (μ := (marchenkoPastur y).toProbabilityMeasure) hind (fun _ _ _ ↦ hx _) hmean hvar
+    (by positivity) hdim ?_
+  · filter_upwards [h] with ω hω
+    exact (tendsto_add_atTop_iff_nat 1).1 hω
+  intro Y hY ρ hYind hYlaw ⟨B, hB⟩ hρmean hρunit
+  apply tendsto_expectedCovarianceSpectralMeasure_of_ae_tendsto hY
+  refine ae_tendsto_spectralMeasure_sampleCovariance_of_bounded hYind hY (b := B.toNNReal)
+    (fun m i j ↦ ?_) (fun m i j ↦ (hYlaw m i j).integral_eq.trans hρmean)
+    (fun m i j ↦ ((hYlaw m i j).integral_comp (by fun_prop)).trans hρunit)
+    (NNReal.tendsto_coe.1 (by simpa using hp')) hy.ne'
+  exact ((hYlaw m i j).ae_iff (p := fun x ↦ ‖x‖ ≤ B.toNNReal)
+    (measurableSet_setOfPred.1 (measurableSet_le measurable_norm measurable_const))).2
+    (hB.mono fun _ h ↦ h.trans (Real.le_coe_toNNReal B))
 
 section VaryingSpaces
 

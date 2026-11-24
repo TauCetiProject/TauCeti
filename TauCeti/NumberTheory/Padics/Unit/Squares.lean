@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.Henselian.SquareClasses
+import TauCeti.NumberTheory.Padics.Squares
 
 /-!
 # Square classes of odd-prime `p`-adic units via the Legendre symbol
@@ -34,14 +34,8 @@ theorem isSquare_iff_legendreSym_eq_one {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
     IsSquare u ↔ legendreSym p t = 1 := by
   have htoZMod : toZMod (u : ℤ_[p]) = (t : ZMod p) := toZMod_eq_intCast_of_dvd ht
   have ht0 : (t : ZMod p) ≠ 0 := htoZMod ▸ (u.isUnit.map toZMod).ne_zero
-  have hres : IsSquare (IsLocalRing.residue ℤ_[p] (u : ℤ_[p])) ↔
-      IsSquare (toZMod (u : ℤ_[p])) := by
-    simp only [toZMod_eq_residueField_comp_residue, RingHom.comp_apply,
-      RingEquiv.toRingHom_eq_coe, RingHom.coe_coe]
-    exact ⟨fun h ↦ h.map residueField, fun h ↦ by simpa using h.map residueField.symm⟩
-  rw [← Units.isSquare_coe_iff,
-    TauCeti.HenselianLocalRing.isSquare_iff_residue_isSquare (isUnit_two hp) u.isUnit,
-    hres, htoZMod, ← legendreSym.eq_one_iff p ht0]
+  rw [← Units.isSquare_coe_iff, isSquare_iff_isSquare_toZMod hp u.isUnit, htoZMod,
+    ← legendreSym.eq_one_iff p ht0]
 
 /-- Over `ℤ_[p]` for an odd prime `p`, two finite products of units agree modulo squares if and
 only if the Legendre symbols of any integer representatives modulo `p` have equal products. -/

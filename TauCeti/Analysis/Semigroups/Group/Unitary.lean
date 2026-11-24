@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearPMap
-public import TauCeti.Analysis.Semigroups.Group.Generator
+public import TauCeti.Analysis.Semigroups.Group.ComplexLinear
 public import TauCeti.Analysis.Semigroups.Group.InverseSemigroups
-public import TauCeti.Analysis.Semigroups.Generator.ComplexLinear
 -- Non-public: differentiation of the inner product turns preservation by the group into
 -- skew-symmetry of the generator.
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -175,22 +174,12 @@ end IsUnitary
 at negative times follows from that at nonnegative times through the group law. -/
 theorem isUnitary_of_isComplexLinear_of_opNorm_le_one (U : StronglyContinuousGroup H)
     (hlin : U.toSemigroup.IsComplexLinear) (h : ∀ t : ℝ, ‖U t‖ ≤ 1) : U.IsUnitary := by
-  have hsmul : ∀ (t : ℝ) (z : ℂ) (x : H), U t (z • x) = z • U t x := by
-    intro t z x
-    rcases le_or_gt 0 t with ht | ht
-    · rw [← U.toSemigroup_realOperator_of_nonneg ht]
-      exact hlin.realOperator_map_smul t z x
-    · have hs : 0 ≤ -t := neg_nonneg.mpr ht.le
-      calc U t (z • x) = U t (z • U (-t) (U t x)) := by rw [U.map_neg_apply_map_apply]
-        _ = U t (U (-t) (z • U t x)) := by
-          rw [← U.toSemigroup_realOperator_of_nonneg hs, hlin.realOperator_map_smul]
-        _ = z • U t x := U.map_apply_map_neg_apply t _
   refine IsUnitary.intro fun t x y => ?_
   let L : H →ₗᵢ[ℂ] H :=
     { toLinearMap :=
         { toFun := U t
           map_add' := (U t).map_add
-          map_smul' := hsmul t }
+          map_smul' := U.map_smul_of_isComplexLinear hlin t }
       norm_map' := U.norm_map_apply_eq_of_norm_le_one t (h t) (h (-t)) }
   exact L.inner_map_map x y
 
