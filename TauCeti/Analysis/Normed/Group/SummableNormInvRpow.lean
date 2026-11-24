@@ -59,4 +59,20 @@ theorem card_le_rpow_mul_tsum (ha : Summable fun i ↦ ‖a i‖⁻¹ ^ τ) (hτ
       exact mul_le_mul_of_nonneg_left (ha.sum_le_tsum s fun i _ ↦ by positivity)
         (Real.rpow_nonneg hR τ)
 
+/-- If `∑' i, m i * ‖a i‖⁻¹ ^ τ` converges for natural weights `m` and `0 ≤ τ`, then so does
+`∑' i, m i * ‖a i‖⁻¹ ^ σ` for every `σ ≥ τ`. -/
+theorem natCast_mul_inv_rpow_of_le {m : ι → ℕ} (ha : Summable fun i ↦ (m i : ℝ) * ‖a i‖⁻¹ ^ τ)
+    (hτ : 0 ≤ τ) {σ : ℝ} (hτσ : τ ≤ σ) : Summable fun i ↦ (m i : ℝ) * ‖a i‖⁻¹ ^ σ := by
+  refine ha.of_norm_bounded_eventually ?_
+  filter_upwards [ha.tendsto_cofinite_zero.eventually (gt_mem_nhds one_pos)] with i hi
+  rw [Real.norm_of_nonneg (by positivity)]
+  rcases Nat.eq_zero_or_pos (m i) with hm | hm
+  · simp [hm]
+  have hm1 : (1 : ℝ) ≤ m i := by exact_mod_cast hm
+  have hx1 : ‖a i‖⁻¹ ≤ 1 := by
+    by_contra! hx
+    nlinarith [Real.one_le_rpow hx.le hτ]
+  exact mul_le_mul_of_nonneg_left
+    (Real.rpow_le_rpow_of_exponent_ge' (by positivity) hx1 hτ hτσ) (Nat.cast_nonneg _)
+
 end Summable
