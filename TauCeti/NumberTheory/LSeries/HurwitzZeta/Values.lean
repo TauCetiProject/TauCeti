@@ -11,7 +11,7 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Log.UnitCircle
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.Basic
 
 /-!
-# Values of Hurwitz zeta functions at `s = 0`
+# Values of Hurwitz zeta functions at `s = 0`, and periodic L-functions at nonpositive integers
 
 Mathlib's `HurwitzZeta.hurwitzZeta_neg_nat` evaluates `ζ(-k, x)` for `k ≥ 1` and `x ∈ [0, 1]` as
 `-Bₖ₊₁(x) / (k + 1)`. This file supplies the missing value at `s = 0`:
@@ -26,6 +26,10 @@ odd part is `sinZeta x 1 / π` by the functional equation, and
 series `Real.tendsto_sum_Icc_sin_mul_div`. The ordered limit is identified with the continued
 value by `TauCeti.LSeries.eq_of_tendsto_sum_Icc_div`.
 
+Summing over residue classes, the L-function of any `ZMod N`-periodic function `Φ` at `-k` is
+`-Nᵏ / (k + 1) ∑ⱼ Φ(j) Bₖ₊₁(r(j) / N)` for every `k ≥ 0`, where the representative `r(j)` of `j`
+is taken in `{1, …, N}`, so that `r(0) = N`.
+
 ## Main results
 
 * `HurwitzZeta.sinZeta_one_of_mem_Ioo`: `sinZeta x 1 = π (1 / 2 - x)` for `x ∈ (0, 1)`.
@@ -35,6 +39,8 @@ value by `TauCeti.LSeries.eq_of_tendsto_sum_Icc_div`.
   `x ∈ (0, 1]`.
 * `HurwitzZeta.hurwitzZeta_neg_nat_of_mem_Ioc`: `ζ(-k, x) = -Bₖ₊₁(x) / (k + 1)` for every
   natural `k` and `x ∈ (0, 1]`.
+* `ZMod.LFunction_neg_nat`: `L(Φ, -k) = -Nᵏ / (k + 1) ∑ⱼ Φ(j) Bₖ₊₁(r(j) / N)` for every
+  `Φ : ZMod N → ℂ` and natural `k`, with representatives `r(j) ∈ {1, …, N}`.
 -/
 
 public section
