@@ -28,8 +28,8 @@ A symmetry `σ` of the Cartan matrix induces the automorphism
 diagram automorphism `TauCeti.TypeDStd.diagramAut` conjugated by the quadratic equivalence. It is
 also the transport of `TauCeti.serreDiagramAut` along the Serre presentation, and it permutes the
 numbered Clifford representatives along `σ`. It preserves the Cartan subalgebra spanned by the
-coroot representatives and the Borel subalgebra spanned by these and the positive root
-representatives. For `D₄` the triality permutation gives the automorphism
+coroot representatives and the Borel subalgebra generated as a Lie subalgebra by these and the
+simple positive root representatives. For `D₄` the triality permutation gives the automorphism
 `TauCeti.SpinPolarizationData.typeDTrialityAut`, of order dividing three.
 
 ## Main definitions
@@ -238,8 +238,8 @@ theorem map_typeDDiagramAut_cartan :
   LieSubalgebra.map_lieSpan_range_of_surjective _ σ.surjective fun i =>
     P.typeDDiagramAut_simpleCorootBivector b hn hline hσ i
 
-/-- The diagram automorphism maps the Borel subalgebra spanned by the numbered Clifford coroot
-and positive root representatives onto itself. -/
+/-- The diagram automorphism maps the Borel subalgebra, generated as a Lie subalgebra by the
+numbered Clifford coroot and simple positive root representatives, onto itself. -/
 theorem map_typeDDiagramAut_borel :
     (LieSubalgebra.lieSpan K (quadraticLieSubalgebra Q)
         ((Set.range fun i => (⟨P.typeDSimpleCorootBivector b (by omega) i,
@@ -273,19 +273,20 @@ section Triality
 variable (b : Module.Basis (Fin 4) K P.W) (hline : P.line = ⊥)
 
 /-- **The triality automorphism of the quadratic Clifford Lie algebra of an even polarization of
-rank four**: the matrix triality automorphism `TauCeti.TypeDStd.trialityAut`, cycling the three
-outer nodes `0 → 2 → 3 → 0` of `D₄` and fixing the central node `1`, conjugated by the quadratic
-equivalence. -/
+rank four**: the diagram automorphism `TauCeti.SpinPolarizationData.typeDDiagramAut` of the
+triality permutation `TauCeti.trialityPermD4`, cycling the three outer nodes `0 → 2 → 3 → 0` of
+`D₄` and fixing the central node `1`. -/
 noncomputable def typeDTrialityAut : quadraticLieSubalgebra Q ≃ₗ⁅K⁆ quadraticLieSubalgebra Q :=
-  ((P.typeDQuadraticEquiv b hline).symm.trans TypeDStd.trialityAut).trans
-    (P.typeDQuadraticEquiv b hline)
+  P.typeDDiagramAut b le_rfl hline (by
+    ext i j
+    simpa only [Matrix.submatrix_apply, DynkinType.cartanMatrix_D] using
+      cartanMatrix_D4_trialityPermD4 i j)
 
 /-- Triality is the diagram automorphism of the triality permutation. -/
 theorem typeDTrialityAut_eq_typeDDiagramAut
     (h : (CartanMatrix.D 4).submatrix trialityPermD4 trialityPermD4 = CartanMatrix.D 4) :
     P.typeDTrialityAut b hline = P.typeDDiagramAut b le_rfl hline h :=
-  LieEquiv.ext fun _ => by
-    simp only [typeDTrialityAut, typeDDiagramAut, TypeDStd.trialityAut_eq_diagramAut h]
+  (rfl)
 
 /-- Triality permutes the numbered Clifford coroot representatives along `trialityPermD4`. -/
 theorem typeDTrialityAut_simpleCorootBivector (i : Fin 4) :
@@ -294,10 +295,8 @@ theorem typeDTrialityAut_simpleCorootBivector (i : Fin 4) :
           P.typeDSimpleCorootBivector_mem_quadraticLieSubalgebra b (by omega) i⟩ =
       ⟨P.typeDSimpleCorootBivector b (by omega) (trialityPermD4 i),
         P.typeDSimpleCorootBivector_mem_quadraticLieSubalgebra b (by omega)
-          (trialityPermD4 i)⟩ := by
-  rw [← typeDQuadraticEquiv_cartanGenerator_eq P b le_rfl hline,
-    ← typeDQuadraticEquiv_cartanGenerator_eq P b le_rfl hline]
-  simp [typeDTrialityAut]
+          (trialityPermD4 i)⟩ :=
+  P.typeDDiagramAut_simpleCorootBivector b le_rfl hline _ i
 
 /-- Triality permutes the numbered positive Clifford root representatives along
 `trialityPermD4`. -/
@@ -308,10 +307,8 @@ theorem typeDTrialityAut_simpleRootBivector (i : Fin 4) :
           P.typeDSimpleRootBivector_mem_quadraticLieSubalgebra b (by omega) i⟩ =
       ⟨P.typeDSimpleRootBivector b (by omega) (trialityPermD4 i),
         P.typeDSimpleRootBivector_mem_quadraticLieSubalgebra b (by omega)
-          (trialityPermD4 i)⟩ := by
-  rw [← typeDQuadraticEquiv_rootGenerator_inl_eq P b le_rfl hline,
-    ← typeDQuadraticEquiv_rootGenerator_inl_eq P b le_rfl hline]
-  simp [typeDTrialityAut]
+          (trialityPermD4 i)⟩ :=
+  P.typeDDiagramAut_simpleRootBivector b le_rfl hline _ i
 
 /-- Triality permutes the numbered negative Clifford root representatives along
 `trialityPermD4`. -/
@@ -322,16 +319,14 @@ theorem typeDTrialityAut_simpleNegativeRootBivector (i : Fin 4) :
           P.typeDSimpleNegativeRootBivector_mem_quadraticLieSubalgebra b (by omega) i⟩ =
       ⟨P.typeDSimpleNegativeRootBivector b (by omega) (trialityPermD4 i),
         P.typeDSimpleNegativeRootBivector_mem_quadraticLieSubalgebra b (by omega)
-          (trialityPermD4 i)⟩ := by
-  rw [← typeDQuadraticEquiv_rootGenerator_inr_eq P b le_rfl hline,
-    ← typeDQuadraticEquiv_rootGenerator_inr_eq P b le_rfl hline]
-  simp [typeDTrialityAut]
+          (trialityPermD4 i)⟩ :=
+  P.typeDDiagramAut_simpleNegativeRootBivector b le_rfl hline _ i
 
 /-- **Triality of the quadratic Clifford Lie algebra has order dividing three.** -/
 @[simp]
 theorem typeDTrialityAut_typeDTrialityAut_typeDTrialityAut (x : quadraticLieSubalgebra Q) :
     P.typeDTrialityAut b hline (P.typeDTrialityAut b hline (P.typeDTrialityAut b hline x)) = x := by
-  simp [typeDTrialityAut]
+  simp [typeDTrialityAut, typeDDiagramAut, ← TypeDStd.trialityAut_eq_diagramAut _]
 
 end Triality
 

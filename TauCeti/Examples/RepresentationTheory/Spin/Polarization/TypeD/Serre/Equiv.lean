@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Spin.Polarization.Hyperbolic
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Serre.Equiv
-public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Split
 
 /-!
 # The type-D₄ Serre presentation: worked examples
@@ -43,11 +43,15 @@ theorem spinAction_typeDSerreQuadraticEquiv_lie_serreE_serreF_three_one :
     spinAction_typeDSimpleCorootBivector_basis]
   simp [DynkinType.typeDSpinWeight_apply]
 
-/-- The Lie algebra presented by Serre's relations for `CartanMatrix.D 4` has dimension `28`. -/
+/-- The Lie algebra presented by Serre's relations for `CartanMatrix.D 4` over a field of
+characteristic zero has dimension `28`, computed through the hyperbolic polarization of `K⁴`. -/
 theorem finrank_toLieAlgebra_D_four :
-    Module.finrank ℚ (Matrix.ToLieAlgebra ℚ (CartanMatrix.D 4)) = 28 := by
+    Module.finrank K (Matrix.ToLieAlgebra K (CartanMatrix.D 4)) = 28 := by
+  have hM := Module.eval_apply_injective K (V := Fin 4 → K)
   rw [(TypeDStd.serreEquiv 4 le_rfl).toLinearEquiv.finrank_eq,
-    (typeDSplitPolarization 4).finrank_typeD (typeDSplitBasis 4) (typeDSplitPolarization_line 4)]
+    (hyperbolic hM).finrank_typeD
+      ((hyperbolicBasis (Pi.basisFun K (Fin 4))).map (LinearEquiv.ofEq _ _ (hyperbolic_W hM).symm))
+      (hyperbolic_line hM), Fintype.card_fin]
   rfl
 
 end TauCeti.Examples
