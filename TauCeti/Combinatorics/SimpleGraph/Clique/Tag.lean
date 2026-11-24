@@ -138,8 +138,9 @@ theorem cliqueTag_adj_inl_and_isRight_iff {w : V ⊕ Σ x : V, Fin (κ x + 3)} :
   refine ⟨fun ⟨h, hw⟩ ↦ ?_, by rintro rfl; simp⟩
   rcases w with u | ⟨x, i⟩
   · simp at hw
-  · obtain ⟨rfl, hi : i = 0⟩ := h
-    simp [hi]
+  · rw [cliqueTag_adj_inl_inr] at h
+    obtain ⟨rfl, hi⟩ := h
+    simp_all
 
 /-- The tag vertex `⟨v, 0⟩` has exactly `κ v + 2` neighbours among the tag vertices: the rest of
 the clique attached to `v`. -/
