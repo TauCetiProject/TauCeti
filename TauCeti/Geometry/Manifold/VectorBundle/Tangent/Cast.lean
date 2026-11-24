@@ -16,7 +16,7 @@ identifying the preferred tangent-bundle trivialization at a point `x` with
 
 ## Main results
 
-* `TauCeti.Manifold.tangentSpaceCast_self`, `TauCeti.Manifold.tangentSpaceCast_symm`,
+* `TauCeti.Manifold.tangentSpaceCast_symm`,
   `TauCeti.Manifold.tangentSpaceCastModel_tangentSpaceCast`,
   `TauCeti.Manifold.tangentSpaceCastModel_apply`, and
   `TauCeti.Manifold.tangentSpaceCastModel_symm_apply`: basic identities for the foundational
@@ -41,15 +41,6 @@ variable
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
 section Casts
-
-/-- Between the same base point and itself, `tangentSpaceCast` is the identity equivalence of the
-tangent space. -/
-@[simp]
-theorem tangentSpaceCast_self (I : ModelWithCorners 𝕜 E H) (x : M) :
-    tangentSpaceCast I x x = ContinuousLinearEquiv.refl 𝕜 (TangentSpace I x) := by
-  -- At this foundational bridge, `tangentSpaceCast` is the identity on the model space `E`.
-  ext v
-  rfl
 
 /-- Inverting `tangentSpaceCast I x y` reverses the source and target base points. -/
 @[simp]

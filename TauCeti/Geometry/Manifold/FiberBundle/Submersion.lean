@@ -28,10 +28,9 @@ Smooth descent along the projection, which needs no submersion theory, is in
 
 ## Main results
 
-* `TauCeti.ManifoldTotalSpace.hasMFDerivAt_proj`, `tangentSpaceCastModel_mfderiv_proj`, and
-  `mfderiv_proj_surjective`: at every point of the total space (with no manifold smoothness
-  needed), the differential of `ManifoldTotalSpace.proj` reads in model coordinates as `Prod.fst`
-  and is surjective.
+* `TauCeti.ManifoldTotalSpace.hasMFDerivAt_proj` and `tangentSpaceCastModel_mfderiv_proj`: at every
+  point of the total space (with no manifold smoothness needed), the differential of
+  `ManifoldTotalSpace.proj` reads in model coordinates as `Prod.fst`.
 * `TauCeti.ManifoldTotalSpace.fst_comp_tangentCoordChange`,
   `fst_continuousLinearMapAt_tangent`, and `mfderiv_proj_symmL`: compatibility of `mfderiv proj`
   with preferred tangent trivializations and tangent coordinate changes on `ManifoldTotalSpace F E`
@@ -102,14 +101,6 @@ theorem tangentSpaceCastModel_mfderiv_proj (z : ManifoldTotalSpace F E)
       (tangentSpaceCastModel (IB.prod IF) z v).1 := by
   rw [(hasMFDerivAt_proj IB IF z).mfderiv]
   simp
-
-/-- The differential of `ManifoldTotalSpace.proj` is surjective at every point of the total
-space. -/
-theorem mfderiv_proj_surjective (z : ManifoldTotalSpace F E) :
-    Function.Surjective (mfderiv (IB.prod IF) IB (proj : ManifoldTotalSpace F E → B) z) :=
-  fun u ↦ ⟨(tangentSpaceCastModel (IB.prod IF) z).symm (tangentSpaceCastModel IB z.proj u, 0),
-    (tangentSpaceCastModel IB z.proj).injective <| by
-      rw [tangentSpaceCastModel_mfderiv_proj, ContinuousLinearEquiv.apply_symm_apply]⟩
 
 section TangentCoordChange
 
