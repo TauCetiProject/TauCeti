@@ -189,7 +189,7 @@ theorem strictAnti_fst_symm_apply (hℓ : ℓ ≠ 0) (x : ℝ) :
 
 /-- Composing a twist lift with a deck translation gives a twist lift. -/
 theorem trans_stripDeck (m : ℤ) : IsTwistLift ℓ (F.trans (stripDeck ℓ m (Icc a b))) where
-  apply_add_period p := by simp [hF.apply_add_period p, add_right_comm]
+  apply_add_period := trans_stripDeck_apply_add_of_apply_add hF.apply_add_period m
   snd_apply_of_eq_left p hp := by simpa using hF.snd_apply_of_eq_left p hp
   snd_apply_of_eq_right p hp := by simpa using hF.snd_apply_of_eq_right p hp
   strictMono_fst_apply x := by

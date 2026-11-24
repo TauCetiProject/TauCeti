@@ -34,6 +34,9 @@ a homeomorphism mapping a horizontal line into itself maps it onto itself, incre
 
 * `TauCeti.apply_add_int_mul_of_apply_add`: a map commuting with the deck translation commutes
   with all of its integer powers.
+* `TauCeti.trans_stripDeck_apply_add_of_apply_add`,
+  `Homeomorph.annulusHomeomorphOfLift_trans_stripDeck`: composing with a deck translation preserves
+  commuting with the deck translation and does not change the induced homeomorphism.
 * `TauCeti.surjective_fst_apply_of_apply_add`, `TauCeti.strictMono_fst_of_mapsTo_line`,
   `TauCeti.snd_symm_apply_of_mapsTo_line`: for `ℓ ≠ 0`, a homeomorphism of the strip commuting
   with the deck translation and mapping a horizontal line into itself restricts to an increasing
@@ -132,6 +135,14 @@ theorem stripDeck_trans_stripDeck (m m' : ℤ) :
     (stripDeck ℓ m Y).trans (stripDeck ℓ m' Y) = stripDeck ℓ (m + m') Y :=
   Homeomorph.ext fun p ↦ by simp [add_mul, add_assoc]
 
+/-- Composing a homeomorphism of the strip commuting with the deck translation with a deck
+translation gives a homeomorphism commuting with it too. -/
+theorem trans_stripDeck_apply_add_of_apply_add {F : ℝ × Y ≃ₜ ℝ × Y}
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (m : ℤ) (p : ℝ × Y) :
+    F.trans (stripDeck ℓ m Y) (p.1 + ℓ, p.2) =
+      ((F.trans (stripDeck ℓ m Y) p).1 + ℓ, (F.trans (stripDeck ℓ m Y) p).2) := by
+  simp [hF p, add_right_comm]
+
 /-- For a nonzero period, a homeomorphism of the strip commuting with the deck translation and
 mapping the horizontal line at height `y` into itself is strictly increasing along that line. -/
 theorem strictMono_fst_of_mapsTo_line {F : ℝ × Y ≃ₜ ℝ × Y} (hℓ : ℓ ≠ 0)
@@ -221,6 +232,19 @@ theorem annulusHomeomorphOfLift_symm_coe
     (F.annulusHomeomorphOfLift hF).symm ((x : AddCircle ℓ), y) =
       (((F.symm (x, y)).1 : AddCircle ℓ), (F.symm (x, y)).2) :=
   (rfl)
+
+/-- Composing `F` with a deck translation does not change the induced homeomorphism of the strip
+quotient. -/
+@[simp]
+theorem annulusHomeomorphOfLift_trans_stripDeck
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (m : ℤ) :
+    (F.trans (stripDeck ℓ m Y)).annulusHomeomorphOfLift
+        (trans_stripDeck_apply_add_of_apply_add hF m) =
+      F.annulusHomeomorphOfLift hF := by
+  ext ⟨θ, y⟩
+  all_goals
+    induction θ using QuotientAddGroup.induction_on with | H x => ?_
+    simp
 
 /-- For a nonzero period, if `F` maps the horizontal line at height `y` into itself, the induced
 homeomorphism of the strip quotient maps the image `{z | z.2 = y}` of that line onto itself. -/
