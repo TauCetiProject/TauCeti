@@ -7,8 +7,8 @@ module
 
 public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
-import Mathlib.Analysis.PSeriesComplex
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
 # The Hurwitz series with a complex parameter
@@ -158,28 +158,9 @@ theorem complexHurwitzSeries_one {s : ℂ} (hs : 1 < s.re) :
 theorem complexHurwitzSeries_one_half {s : ℂ} (hs : 1 < s.re) :
     complexHurwitzSeries s (1 / 2) = (2 ^ s - 1) * riemannZeta s := by
   have h2 : (2 : ℂ) ^ s ≠ 0 := by simp
-  -- `ζ(s) = ∑ (m + 1) ^ (-s)`, split into odd and even `m + 1`.
-  have hζ : HasSum (fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s)) (riemannZeta s) := by
-    have hsum : Summable fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s) := by
-      simpa [cpow_neg] using
-        (summable_nat_add_iff 1).mpr (Complex.summable_one_div_nat_cpow.mpr hs)
-    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
-    simpa [cpow_neg] using hsum.hasSum
-  have hodd : HasSum (fun k : ℕ ↦ (((2 * k + 1 : ℕ) : ℂ) + 1) ^ (-s))
-      ((2 : ℂ) ^ (-s) * riemannZeta s) := by
-    refine (hζ.mul_left _).congr_fun fun k ↦ ?_
-    have : (((2 * k + 1 : ℕ) : ℂ) + 1) = ((2 : ℝ) : ℂ) * ((k + 1 : ℝ) : ℂ) := by
-      push_cast; ring
-    rw [this, mul_cpow_ofReal_nonneg (by norm_num) (by positivity)]
-    norm_num
-  have heven : HasSum (fun k : ℕ ↦ (((2 * k : ℕ) : ℂ) + 1) ^ (-s))
-      (∑' k : ℕ, (((2 * k : ℕ) : ℂ) + 1) ^ (-s)) :=
-    (hζ.summable.comp_injective (mul_right_injective₀ two_ne_zero)).hasSum
-  have hE : ∑' k : ℕ, (((2 * k : ℕ) : ℂ) + 1) ^ (-s) = (1 - 2 ^ (-s)) * riemannZeta s := by
-    linear_combination (heven.even_add_odd hodd).unique hζ
   rw [complexHurwitzSeries_eq_tsum_cpow_of_re_pos s (c := 1 / 2) (by norm_num)]
   calc ∑' n : ℕ, ((n : ℂ) + 1 / 2) ^ (-s)
-        = ∑' k : ℕ, 2 ^ s * (((2 * k : ℕ) : ℂ) + 1) ^ (-s) := by
+        = ∑' k : ℕ, 2 ^ s * (2 * (k : ℂ) + 1) ^ (-s) := by
           refine tsum_congr fun k ↦ ?_
           have : (k : ℂ) + 1 / 2 = ((2 * k + 1 : ℝ) : ℂ) * ((2⁻¹ : ℝ) : ℂ) := by
             push_cast; ring
@@ -190,7 +171,7 @@ theorem complexHurwitzSeries_one_half {s : ℂ} (hs : 1 < s.re) :
             rw [← ofReal_ofNat, arg_ofReal_of_nonneg zero_le_two]; exact Real.pi_pos.ne
           rw [inv_cpow _ _ harg, cpow_neg, inv_inv]
       _ = (2 ^ s - 1) * riemannZeta s := by
-          rw [tsum_mul_left, hE, cpow_neg]
+          rw [tsum_mul_left, (hasSum_two_mul_add_one_cpow_neg_riemannZeta hs).tsum_eq, cpow_neg]
           field_simp
 
 /-- The Gamma integral of the Hurwitz series: for `1 < re s` and `0 < re c`,
