@@ -112,14 +112,9 @@ theorem norm_propagatorDysonTerm_le_of_norm_le {m : ℝ → ℝ} (hP : Integrabl
     (hs : s ∈ Icc a b) (n : ℕ) (ht : t ∈ Icc a b) :
     ‖propagatorDysonTerm P s n t‖ ≤ |∫ r in s..t, m r| ^ n / n ! := by
   refine (norm_propagatorDysonTerm_le hP hs n ht).trans ?_
-  have hPi : IntervalIntegrable (fun r ↦ ‖P r‖) volume s t :=
-    IntegrableOn.intervalIntegrable (hP.mono_set (uIcc_subset_Icc hs ht)).norm
-  rw [abs_integral_eq_abs_integral_uIoc, abs_integral_eq_abs_integral_uIoc,
-    abs_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
-  gcongr
-  refine (MeasureTheory.integral_mono_ae hPi.def' hm.def' ?_).trans (le_abs_self _)
-  rw [Filter.EventuallyLE, ae_restrict_iff' measurableSet_uIoc]
-  exact hPm
+  gcongr ?_ ^ _ / _
+  simpa only [Real.norm_eq_abs] using norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖P r‖)
+    ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hPm)) hm
 
 /-- **The Dyson expansion of the propagator.** For `s, t ∈ [a, b]`, the Dyson terms sum to
 `N_P(t, s)`. -/

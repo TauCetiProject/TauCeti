@@ -304,12 +304,8 @@ theorem norm_propagator_le_of_norm_le {m : ℝ → ℝ} (hP : IntervalIntegrable
   refine (norm_propagator_le hP'
     ⟨min_le_left _ _, le_max_left _ _⟩ ⟨min_le_right _ _, le_max_right _ _⟩).trans
     (exp_le_exp.2 ?_)
-  have hPi : IntervalIntegrable (fun r ↦ ‖P r‖) volume s t := hP.norm
-  rw [abs_integral_eq_abs_integral_uIoc, abs_integral_eq_abs_integral_uIoc,
-    abs_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)]
-  refine (MeasureTheory.integral_mono_ae hPi.def' hm.def' ?_).trans (le_abs_self _)
-  rw [Filter.EventuallyLE, ae_restrict_iff' measurableSet_uIoc]
-  exact hPm
+  simpa only [Real.norm_eq_abs] using norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖P r‖)
+    ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hPm)) hm
 
 /-- The propagator `N_P(t, s)` is continuous in `s ∈ [a, b]` in the operator norm. -/
 theorem continuousOn_propagator_right (hP : IntegrableOn P (Icc a b)) (ht : t ∈ Icc a b) :
