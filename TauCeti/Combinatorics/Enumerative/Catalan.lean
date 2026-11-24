@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Combinatorics.Enumerative.Catalan.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.BigOperators.Ring.Finset
+import Mathlib.Order.Monotone.Basic
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -30,6 +32,11 @@ the Möbius function `μ(0̂, 1̂)` of the lattice of noncrossing partitions.
 
 * `Nat.catalan_le_four_pow` — the exponential bound `Cₙ ≤ 4ⁿ`.
 * `Nat.add_two_mul_catalan_succ` — the first-order recurrence `(n + 2) Cₙ₊₁ = 2 (2n + 1) Cₙ`.
+* `Nat.catalan_pos`, `Nat.catalan_lt_catalan_succ`, `Nat.catalan_succ_lt_four_mul`,
+  `Nat.monotone_catalan`, `Nat.self_le_catalan` — growth of the Catalan numbers read off from
+  the first-order recurrence: `0 < Cₙ`, `Cₙ < Cₙ₊₁ < 4 Cₙ` for `0 < n`, and `n ≤ Cₙ`.
+* `Nat.catalan_four` — the value `C₄ = 14`.
+* `Nat.mul_add_one_le_centralBinom_iff` — `n (r + 1) ≤ (2r choose r) ↔ n ≤ Cᵣ`.
 * `TauCeti.sum_range_neg_one_pow_mul_catalan` — the convolution of the signed Catalan numbers.
 -/
 
@@ -56,6 +63,51 @@ theorem add_two_mul_catalan_succ (n : ℕ) :
     _ = (n + 1) * (2 * (2 * n + 1) * catalan n) := by
       rw [← succ_mul_catalan_eq_centralBinom]
       ring
+
+/-- The fourth Catalan number: `C₄ = 14`. -/
+theorem catalan_four : catalan 4 = 14 := by
+  have h : 5 * catalan 4 = 70 := by simpa [catalan_three] using add_two_mul_catalan_succ 3
+  omega
+
+/-- The Catalan numbers are positive. -/
+theorem catalan_pos (n : ℕ) : 0 < catalan n :=
+  Nat.pos_of_ne_zero fun h => centralBinom_ne_zero n <| by
+    rw [← succ_mul_catalan_eq_centralBinom, h, mul_zero]
+
+/-- From index one on, the Catalan numbers increase strictly: `Cₙ < Cₙ₊₁` for `0 < n`. -/
+theorem catalan_lt_catalan_succ {n : ℕ} (hn : 0 < n) : catalan n < catalan (n + 1) := by
+  have h := add_two_mul_catalan_succ n
+  have hc := catalan_pos n
+  nlinarith
+
+/-- Consecutive Catalan numbers grow by a factor less than four: `Cₙ₊₁ < 4 Cₙ`. -/
+theorem catalan_succ_lt_four_mul (n : ℕ) : catalan (n + 1) < 4 * catalan n := by
+  have h := add_two_mul_catalan_succ n
+  have hc := catalan_pos n
+  nlinarith
+
+/-- The Catalan numbers are monotone; `C₀ = C₁ = 1` is the only repetition. -/
+theorem monotone_catalan : Monotone catalan := by
+  refine monotone_nat_of_le_succ fun n => ?_
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [catalan_zero, catalan_one]
+  · exact (catalan_lt_catalan_succ hn).le
+
+/-- The Catalan numbers dominate their index: `n ≤ Cₙ`. -/
+theorem self_le_catalan (n : ℕ) : n ≤ catalan n := by
+  induction n with
+  | zero => exact Nat.zero_le _
+  | succ n ih =>
+    rcases n.eq_zero_or_pos with rfl | hn
+    · simp [catalan_one]
+    · exact ih.trans_lt (catalan_lt_catalan_succ hn)
+
+/-- The inequality `n (r + 1) ≤ (2r choose r)` says exactly that `n ≤ Cᵣ`, by
+`(r + 1) Cᵣ = (2r choose r)`. -/
+theorem mul_add_one_le_centralBinom_iff {n r : ℕ} :
+    n * (r + 1) ≤ r.centralBinom ↔ n ≤ catalan r := by
+  rw [← succ_mul_catalan_eq_centralBinom, mul_comm (r + 1)]
+  exact Nat.mul_le_mul_right_iff r.succ_pos
 
 end Nat
 

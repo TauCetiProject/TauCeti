@@ -283,6 +283,13 @@ theorem liftRightTranslation_mk_one (z : Z) :
     liftRightTranslation ι (mk K (K.toRightTranslation 1) z) = ι z := by
   simp
 
+/-- On representatives `(g, z)` of `G ×_K Z`, the action map is `(g, z) ↦ g • ι z`. -/
+theorem liftRightTranslation_comp_quotientMk :
+    liftRightTranslation ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
+      fun x ↦ K.toRightTranslation.symm x.1 • ι x.2 :=
+  funext fun x ↦ by
+    rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
+
 /-- The action map is `G`-equivariant. -/
 @[simp]
 theorem liftRightTranslation_smul (k : G) (y : BalancedProduct K K.RightTranslation Z) :
