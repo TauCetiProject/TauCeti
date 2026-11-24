@@ -163,7 +163,7 @@ theorem ncard_coefficientBox [Fintype ι] [Fintype σ] (d C : ℕ) :
     Nat.card_prod, Finsupp.card_degree_le_eq_choose, Nat.card_eq_fintype_card (α := ι),
     Nat.card_eq_fintype_card (α := Set.Icc _ _)]
   congr 1
-  simp only [Fintype.card_ofFinset, Int.card_Icc]
+  simp only [Fintype.card_Icc, Int.card_Icc]
   omega
 
 end TauCeti.MvPolynomial
