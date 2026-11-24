@@ -11,6 +11,7 @@ public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
+import TauCeti.Topology.Compactification.OnePoint.Nhds
 
 /-!
 # The Siegel domain and the Cayley transform of the ball
@@ -183,7 +184,8 @@ noncomputable def siegelCayley : OpenPartialHomeomorph (WithLp 2 (E × ℂ)) (E 
   invFun p := toLp 2 ((2 * I / (p.2 + I)) • p.1, (p.2 - I) / (p.2 + I))
   source := {w | w.snd ≠ 1}
   target := {p | p.2 ≠ -I}
-  map_source' w hw := fun h ↦ (sub_I_div_add_I_inverse hw).1 (eq_neg_iff_add_eq_zero.mp h)
+  map_source' w hw := fun h ↦
+    I_mul_one_add_div_one_sub_add_I_ne_zero hw (eq_neg_iff_add_eq_zero.mp h)
   map_target' p hp := by
     have h1 := add_I_ne_zero_of_ne_neg_I hp
     simp only [mem_ofPred_eq, toLp_snd]
@@ -191,7 +193,7 @@ noncomputable def siegelCayley : OpenPartialHomeomorph (WithLp 2 (E × ℂ)) (E 
     exact div_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) h1
   left_inv' w hw := by
     have h1 : 1 - w.snd ≠ 0 := sub_ne_zero_of_ne (Ne.symm hw)
-    refine (WithLp.ext_iff 2).2 (Prod.ext ?_ (sub_I_div_add_I_inverse hw).2)
+    refine (WithLp.ext_iff 2).2 (Prod.ext ?_ (sub_I_div_add_I_I_mul_one_add_div_one_sub hw))
     simp only [ofLp_fst, I_mul_one_add_div_one_sub_add_I hw, smul_smul]
     rw [show 2 * I / (2 * I / (1 - w.snd)) * (1 - w.snd)⁻¹ = 1 by field_simp, one_smul]
   right_inv' p hp := by
@@ -483,8 +485,8 @@ theorem continuousOn_siegelCayleyOnePoint :
       fun x hx ↦ (mem_siegelCayley_source_iff_ne (mem_closedBall_zero_iff.mp hx.1)).2 hx.2
     have hlim := (tendsto_siegelCayley_nhdsWithin_source (E := E)).mono_left
       (nhdsWithin_mono _ hsub)
-    refine (OnePoint.tendsto_coe_infty.comp ((hlim.mono_right cobounded_le_cocompact).mono_right
-      cocompact_le_coclosedCompact)).congr' (eventually_nhdsWithin_of_forall fun x hx ↦ ?_)
+    refine (tendsto_coe_infty_of_tendsto_cobounded hlim).congr'
+      (eventually_nhdsWithin_of_forall fun x hx ↦ ?_)
     exact (siegelCayleyOnePoint_of_ne hx.2).symm
   · -- Away from `b₀`, it agrees near `w` with the continuous map `C`.
     have hsrc := (mem_siegelCayley_source_iff_ne (mem_closedBall_zero_iff.mp hw)).2 hne
@@ -521,8 +523,6 @@ theorem siegelCayleyOnePoint_image_ball :
 
 private theorem isCompact_closedBall_withLp [FiniteDimensional ℂ E] :
     IsCompact (closedBall (0 : WithLp 2 (E × ℂ)) 1) := by
-  have : FiniteDimensional ℂ (WithLp 2 (E × ℂ)) :=
-    Module.Finite.equiv (WithLp.linearEquiv 2 ℂ (E × ℂ)).symm
   have := FiniteDimensional.proper ℂ (WithLp 2 (E × ℂ))
   exact isCompact_closedBall 0 1
 
