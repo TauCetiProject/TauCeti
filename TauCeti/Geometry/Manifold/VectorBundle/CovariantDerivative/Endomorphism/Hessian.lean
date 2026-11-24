@@ -93,8 +93,9 @@ theorem hessian_trace_endomorphism
     (FiberBundle.extend E u) Y (hY.mdifferentiable (by simp) x)
   simpa only [FiberBundle.extend_apply_self, trivial_apply] using hh
 
-/-- The Hessian of a trace square is the sum of the derivative pairing and second-derivative
-pairing. This is an ordinary trace identity, with no inner product on endomorphisms. -/
+/-- The Hessian of a trace square is twice the derivative pairing plus twice the pairing of
+`A` with its second covariant derivative. This is an ordinary trace identity, with no inner
+product on endomorphisms. -/
 theorem hessian_trace_comp_self
     (hA : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
       (fun y ↦ TotalSpace.mk' (F →L[ℝ] F) (E := fun z ↦ V z →L[ℝ] V z) y (A y)))

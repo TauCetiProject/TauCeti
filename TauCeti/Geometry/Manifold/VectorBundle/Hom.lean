@@ -972,7 +972,8 @@ theorem MDifferentiableAt.trace_clm_bundle
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F)
         (E := fun z ↦ V z →L[𝕜] V z) (b y) (A y)) x) :
     MDifferentiableAt I 𝓘(𝕜)
-      (fun y ↦ LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap) x :=
-  MDifferentiableWithinAt.trace_clm_bundle hA
+      (fun y ↦ LinearMap.trace 𝕜 (V (b y)) (A y).toLinearMap) x := by
+  rw [← mdifferentiableWithinAt_univ] at hA ⊢
+  exact hA.trace_clm_bundle
 
 end Trace
