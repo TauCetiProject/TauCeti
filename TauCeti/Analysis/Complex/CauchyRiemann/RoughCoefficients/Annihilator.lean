@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Adjoint
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
 public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
+import TauCeti.Data.ENNReal.Holder
 
 /-!
 # Sobolev regularity of the annihilator of a real Cauchy–Riemann operator
@@ -162,23 +163,18 @@ theorem memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero {V : Type*
   have hrP : r ≤ P := by
     rw [← ENNReal.coe_toNNReal hr_top]
     exact ENNReal.coe_le_coe.2 (le_max_left _ _)
-  have hPinv : (P : ℝ≥0∞)⁻¹ + (P : ℝ≥0∞)⁻¹ < 1 := by
-    have h4 : (P : ℝ≥0∞)⁻¹ ≤ 4⁻¹ := ENNReal.inv_le_inv.2 (by exact_mod_cast hP4)
-    calc (P : ℝ≥0∞)⁻¹ + (P : ℝ≥0∞)⁻¹ ≤ 4⁻¹ + 4⁻¹ := add_le_add h4 h4
-      _ < 1 := by
-        rw [← two_mul, ← div_eq_mul_inv, ENNReal.div_lt_iff (by simp) (by simp)]
-        norm_num
+  have hP2 : (2 : ℝ≥0∞) < P := lt_of_lt_of_le (by norm_num) (ENNReal.coe_le_coe.2 hP4)
   -- Continuous coefficients are Sobolev coefficients for the exponent `∞`, so at order one `v`
   -- is in `W^{1,P}_loc`, hence locally `L^P`.
   have hvP : MemLpLoc P Ω v :=
     ((IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn ⊤)
       |>.memWkpLoc_one_of_forall_integral_inner_eq_zero (by simp) hJ2'
       (by simpa using ENNReal.inv_lt_one.2 hq) hv h
-      (lt_of_lt_of_le (by norm_num) (ENNReal.coe_le_coe.2 hP4)) ENNReal.coe_ne_top le_top).memLpLoc
+      (ENNReal.one_lt_two.trans hP2) ENNReal.coe_ne_top le_top).memLpLoc
   -- Smooth coefficients are Sobolev coefficients of every finite exponent and every order.
   have hW := (IsSobolevCRCoefficients.of_contDiffOn hJ1 hS.continuousOn P)
     |>.memWkpLoc_succ_of_forall_integral_inner_eq_zero
-      (lt_of_lt_of_le (by norm_num) hP4) hJ2' hPinv le_rfl
+      (by exact_mod_cast hP2) hJ2' (ENNReal.inv_add_inv_lt_one_of_two_lt hP2) le_rfl
       (hJ.memWkpLoc (by exact_mod_cast le_rfl)) (hS.memWkpLoc le_rfl) hvP h
   exact hW.mono_exponent hrP
 
