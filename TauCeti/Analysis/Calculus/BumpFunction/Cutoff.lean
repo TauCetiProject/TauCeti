@@ -20,6 +20,7 @@ import TauCeti.Analysis.Calculus.Deriv.AffineProfile
 import TauCeti.Analysis.Calculus.FDeriv.RadialField
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
@@ -1081,23 +1082,14 @@ theorem norm_cutoff_fderiv_le (χ : ContDiffBump (0 : E)) {φ : ℝ × E → ℝ
     (hB : ‖φ q‖ ≤ B) (hs : ‖s‖ ≤ 1) (w : E) :
     ‖χ (s • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s • q.2) (s • w)‖ ≤
       (C + B * D) * (1 + ‖w‖) := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans hC
-  have hD0 : 0 ≤ D := (norm_nonneg _).trans hD
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
-  have h₁ : ‖χ (s • q.2) * fderiv ℝ φ q (1, w)‖ ≤ C * (1 + ‖w‖) := by
-    rw [norm_mul, Real.norm_of_nonneg χ.nonneg]
-    exact (mul_le_of_le_one_left (norm_nonneg _) χ.le_one).trans <|
-      ((fderiv ℝ φ q).le_opNorm _).trans (mul_le_mul hC
-        (norm_prod_le_iff.2 ⟨by simp, by simp⟩) (norm_nonneg _) hC0)
   have hsw : ‖s • w‖ ≤ 1 + ‖w‖ := by
     rw [norm_smul]
     nlinarith [norm_nonneg w, norm_nonneg s]
-  have h₂ : ‖φ q * fderiv ℝ χ (s • q.2) (s • w)‖ ≤ B * D * (1 + ‖w‖) := by
-    rw [norm_mul, mul_assoc]
-    exact mul_le_mul hB (((fderiv ℝ χ _).le_opNorm _).trans
-      (mul_le_mul hD hsw (norm_nonneg _) hD0)) (norm_nonneg _) hB0
-  linarith [norm_add_le (χ (s • q.2) * fderiv ℝ φ q (1, w))
-    (φ q * fderiv ℝ χ (s • q.2) (s • w))]
+  simpa only [smul_eq_mul, one_mul, ← add_mul] using
+    (fderiv ℝ φ q).norm_smul_apply_add_smul_apply_le (fderiv ℝ χ (s • q.2))
+      (a := χ (s • q.2)) (b := φ q) (v := (1, w)) (w := s • w) (A := 1) (R := 1 + ‖w‖)
+      (by simpa only [Real.norm_of_nonneg χ.nonneg] using χ.le_one) hB hC hD
+      (norm_prod_le_iff.2 ⟨by simp, by simp⟩) hsw
 
 /-- As the scale `s i` tends to `0` along a filter `l`, the cut-off factor `χ (s i • x)` tends to
 `1` and the derivative term `fderiv ℝ χ (s i • x) (s i • w)` to `0`. -/
