@@ -43,12 +43,11 @@ instance IsPositiveGrading.submodule [IsPositiveGrading d G.piece] :
 theorem PositiveDegrees.degreeSubmodule_submodule (d : PositiveDegrees ι) (k : ℕ) :
     d.degreeSubmodule (G.submodule U hU).piece k =
       (d.degreeSubmodule G.piece k).comap (U.subtype.restrictScalars R) := by
-  simpa only [degreeSubmodule_def, DirectSum.degreeTail_def, iSup_subtype, Nat.cast_succ,
-    Int.add_one_le_iff] using
-    (LinearMap.comap_degreeTail_eq_of_injective (U.subtype.restrictScalars R)
-      (G.submodule U hU).piece G.piece Subtype.val_injective (fun _ _ hx => by
-        simpa only [LinearMap.restrictScalars_apply, Submodule.subtype_apply] using
-          (G.mem_submodule_piece U hU).mp hx) d.degree (k + 1)).symm
+  simp only [degreeSubmodule_eq_degreeTail]
+  exact (LinearMap.comap_degreeTail_eq_of_injective (U.subtype.restrictScalars R)
+    (G.submodule U hU).piece G.piece Subtype.val_injective (fun _ _ hx => by
+      simpa only [LinearMap.restrictScalars_apply, Submodule.subtype_apply] using
+        (G.mem_submodule_piece U hU).mp hx) d.degree (k + 1)).symm
 
 end Submodule
 

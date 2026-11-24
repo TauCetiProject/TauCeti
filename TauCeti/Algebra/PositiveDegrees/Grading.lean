@@ -71,10 +71,15 @@ variable (d : PositiveDegrees N) (ℒ : N → Submodule R M)
 def degreeSubmodule (k : ℕ) : Submodule R M :=
   DirectSum.degreeTail ℒ d.degree (k + 1)
 
+/-- The degree submodule is the degree tail starting at the successor cutoff. -/
+theorem degreeSubmodule_eq_degreeTail (k : ℕ) :
+    d.degreeSubmodule ℒ k = DirectSum.degreeTail ℒ d.degree (k + 1) :=
+  (rfl)
+
 /-- The defining sum for the degree submodule. -/
 theorem degreeSubmodule_def (k : ℕ) :
     d.degreeSubmodule ℒ k = ⨆ n : {n : N // (k : ℤ) < d.degree n}, ℒ n := by
-  rw [degreeSubmodule, DirectSum.degreeTail_def, iSup_subtype]
+  rw [degreeSubmodule_eq_degreeTail, DirectSum.degreeTail_def, iSup_subtype]
   congr 1
 
 /-- Taking linear images of the pieces commutes with forming a degree submodule. -/
