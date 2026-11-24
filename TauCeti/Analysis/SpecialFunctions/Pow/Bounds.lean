@@ -109,6 +109,8 @@ dyadic intervals.
   `TauCeti.le_rpow_mul_rpow_mul_of_forall_pos`: `a ^ (1 - x) * b ^ x ≤ max a b` on `[0, 1]`, its
   product-seminorm corollary `‖p.1‖ ^ (1 - x) * ‖p.2‖ ^ x ≤ ‖p‖`, and right-continuity at `ε = 0`
   of `(M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * C` for `θ ∈ [0, 1]`.
+* `TauCeti.rpow_neg_one_add_div_le`: `(1 + u / q) ^ (-q) ≤ (1 + u / p) ^ (-p)` for `0 ≤ u` and
+  `0 < p ≤ q`.
 -/
 
 public section

@@ -64,6 +64,11 @@ exponent dominates every constant multiple of a larger one.
 For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
 power `r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
 proof of the Gelfond–Schneider theorem.
+
+## Exponential limits of rescaled powers
+
+For all reals `a` and `γ`, `(1 + a / t) ^ (-(γ * t))` converges to `Real.exp (-(γ * a))` as
+`t : ℕ` tends to infinity (`Real.tendsto_one_add_div_rpow_neg_mul`).
 -/
 
 public section

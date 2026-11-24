@@ -953,15 +953,6 @@ theorem addHaar_inv_measureReal_rpow_smul_eq_one [MeasurableSpace E] [BorelSpace
     ← ofReal_measureReal (ENNReal.toReal_pos_iff.1 hs).2.ne, ← ENNReal.ofReal_mul (by positivity),
     inv_pow, Real.rpow_inv_natCast_pow hs.le hn, inv_mul_cancel₀ hs.ne', ENNReal.ofReal_one]
 
-/-- Precomposing an almost everywhere strongly measurable function with nonzero scalar dilation
-preserves almost everywhere strong measurability under an additive Haar measure. -/
-theorem _root_.MeasureTheory.AEStronglyMeasurable.comp_addHaar_smul
-    {H : Type*} [TopologicalSpace H] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
-    {μ : Measure E} [μ.IsAddHaarMeasure] {f : E → H} (hf : AEStronglyMeasurable f μ)
-    {r : ℝ} (hr : r ≠ 0) :
-    AEStronglyMeasurable (fun w : E ↦ f (r • w)) μ :=
-  hf.comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_smul μ hr)
-
 end Rescale
 
 end TauCeti

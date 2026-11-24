@@ -717,14 +717,3 @@ theorem isSquare_mul_det_mul_det_of_eq_span [Nontrivial R] (hB : B.IsRefl) {c u 
 end GramFamily
 
 end LinearMap.BilinForm
-
-/-- Expansion of a bilinear map at `b.equivFun.symm x` and `b.equivFun.symm y` as a double sum
-over the basis `b`. -/
-theorem LinearMap.apply_equivFun_symm_eq_sum {R E A ι : Type*} [Fintype ι] [CommSemiring R]
-    [AddCommMonoid E] [Module R E] [AddCommMonoid A] [Module R A]
-    (B : E →ₗ[R] E →ₗ[R] A) (b : Module.Basis ι R E) (x y : ι → R) :
-    B (b.equivFun.symm x) (b.equivFun.symm y) = ∑ i, ∑ j, (x i * y j) • B (b i) (b j) := by
-  simp only [Module.Basis.equivFun_symm_apply, map_sum, LinearMap.sum_apply, map_smul,
-    LinearMap.smul_apply, smul_smul, Finset.smul_sum]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by rw [mul_comm (y j)]

@@ -137,21 +137,3 @@ theorem Module.Dual.apply_prod_eq_dotProduct_add_mul {ι R : Type*} [Fintype ι]
   congr 3
   ext l
   simp [Pi.single_apply, eq_comm]
-
-/-- Double-sum expansion of `x ⬝ᵥ M *ᵥ y`. -/
-theorem Matrix.dotProduct_mulVec_eq_sum {m n R : Type*} [Fintype m] [Fintype n]
-    [Semiring R] (M : Matrix m n R) (x : m → R) (y : n → R) :
-    x ⬝ᵥ (M *ᵥ y) = ∑ i, ∑ j, x i * M i j * y j := by
-  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc]
-
-/-- Quadratic-form pullback identity for matrix multiplication:
-`(P *ᵥ y) ⬝ᵥ A *ᵥ (P *ᵥ y) = y ⬝ᵥ (Pᵀ * A * P) *ᵥ y`. -/
-theorem Matrix.dotProduct_mulVec_conj {m n R : Type*} [Fintype m] [Fintype n]
-    [CommSemiring R] (A : Matrix m m R) (P : Matrix m n R) (y : n → R) :
-    (P *ᵥ y) ⬝ᵥ (A *ᵥ (P *ᵥ y)) = y ⬝ᵥ ((Pᵀ * A * P) *ᵥ y) := by
-  calc (P *ᵥ y) ⬝ᵥ (A *ᵥ (P *ᵥ y))
-      = (y ᵥ* Pᵀ) ⬝ᵥ (A *ᵥ (P *ᵥ y)) := by rw [← Matrix.vecMul_transpose]
-    _ = ((y ᵥ* Pᵀ) ᵥ* A) ⬝ᵥ (P *ᵥ y) := Matrix.dotProduct_mulVec _ _ _
-    _ = (y ᵥ* (Pᵀ * A)) ⬝ᵥ (P *ᵥ y) := by rw [Matrix.vecMul_vecMul]
-    _ = y ⬝ᵥ ((Pᵀ * A) *ᵥ (P *ᵥ y)) := (Matrix.dotProduct_mulVec _ _ _).symm
-    _ = y ⬝ᵥ ((Pᵀ * A * P) *ᵥ y) := by rw [Matrix.mulVec_mulVec]

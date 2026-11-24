@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.IntegrableOn
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -133,6 +134,7 @@ theorem integrable_rpow_neg_one_add_mul_norm_sq {E : Type*} [NormedAddCommGroup 
   have hbase := integrable_rpow_neg_one_add_norm_sq (μ := μ) hr
   have hsqrt : Real.sqrt c ≠ 0 := (Real.sqrt_pos.mpr hc).ne'
   refine (hbase.comp_smul hsqrt).congr (.of_forall fun v ↦ ?_)
-  simp [norm_smul, mul_pow, Real.sq_sqrt hc.le]
+  dsimp only
+  rw [TauCeti.norm_sqrt_smul_sq hc.le v]
 
 end TauCeti

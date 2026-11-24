@@ -12,8 +12,8 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
+import TauCeti.Analysis.Matrix.DotProduct
 import TauCeti.Analysis.Matrix.Spectrum
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -24,17 +24,16 @@ Let `E` be a finite-dimensional real normed space equipped with an additive Haar
 let `B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ` be a real-bilinear form whose real part is strictly positive on
 nonzero vectors (`∀ v ≠ 0, 0 < (B v v).re`). Then:
 
-* `v ↦ (B v v).re` is bounded below by a positive multiple of `‖·‖ ^ 2`
-  (`TauCeti.exists_pos_mul_norm_sq_le_re_bilinear`);
-* `v ↦ Complex.exp (-B v v)` is `μ`-integrable (`TauCeti.integrable_cexp_neg_bilinear`);
 * the Gaussian integral `∫ v, Complex.exp (-B v v) ∂μ` does not vanish
-  (`TauCeti.integral_cexp_neg_bilinear_ne_zero`).
+  (`TauCeti.integral_cexp_neg_bilinear_ne_zero`);
+* `v ↦ Complex.exp (-B v v)` is `μ`-integrable (`TauCeti.integrable_cexp_neg_bilinear`).
 
-The integrability proof uses `TauCeti.integrable_rpow_neg_one_add_mul_norm_sq`. Nonvanishing is
-proved by choosing a basis of `E`, simultaneously diagonalizing the symmetrized real and imaginary
-matrices of `B` via `Matrix.PosDef.exists_simultaneous_diagonal_real`, transporting `μ` to
-Lebesgue measure on `Fin n → ℝ` up to a positive Haar factor, and evaluating the factored complex
-Gaussian integral using `GaussianFourier.integral_cexp_neg_sum_mul_add`.
+Nonvanishing is proved by choosing a basis of `E`, simultaneously diagonalizing the symmetrized real
+and imaginary matrices of `B` via `Matrix.PosDef.exists_simultaneous_diagonal_real`, transporting
+`μ` to Lebesgue measure on `Fin n → ℝ` up to a positive Haar factor, and evaluating the factored
+complex Gaussian integral using `GaussianFourier.integral_cexp_neg_sum_mul_add`. Integrability
+follows from nonvanishing via `MeasureTheory.Integrable.of_integral_ne_zero` and continuity via
+`TauCeti.continuous_bilinear_diag`.
 
 ## References
 
@@ -53,32 +52,7 @@ namespace TauCeti
 private theorem continuous_cexp_neg_bilinear {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) :
     Continuous fun v : E ↦ Complex.exp (-B v v) :=
-  ((B.toContinuousBilinearMap.continuous₂).comp (continuous_id.prodMk continuous_id)).neg.cexp
-
-/-- If a real-bilinear form `B` on a finite-dimensional real normed space has strictly positive
-real part on the diagonal away from zero, then `v ↦ Complex.exp (-B v v)` is `μ`-integrable. -/
-theorem integrable_cexp_neg_bilinear {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
-    [μ.IsAddHaarMeasure] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) (hB : ∀ v : E, v ≠ 0 → 0 < (B v v).re) :
-    Integrable (fun v : E ↦ Complex.exp (-B v v)) μ := by
-  obtain ⟨m, hm, hle⟩ := exists_pos_mul_norm_sq_le_re_bilinear B hB
-  set p : ℝ := (finrank ℝ E : ℝ) / 2 + 1
-  have hp : 0 < p := by positivity
-  have hmaj : Integrable (fun v : E ↦ (1 + (m / p) * ‖v‖ ^ 2) ^ (-(2 * p) / 2)) μ :=
-    integrable_rpow_neg_one_add_mul_norm_sq μ (div_pos hm hp) (by simp only [p]; linarith)
-  refine hmaj.mono' (continuous_cexp_neg_bilinear B).aestronglyMeasurable (.of_forall fun v ↦ ?_)
-  have hexp : 1 + (m / p) * ‖v‖ ^ 2 ≤ Real.exp ((m / p) * ‖v‖ ^ 2) := by
-    linarith [Real.add_one_le_exp ((m / p) * ‖v‖ ^ 2)]
-  have hrpow : (Real.exp ((m / p) * ‖v‖ ^ 2)) ^ (-p) ≤ (1 + (m / p) * ‖v‖ ^ 2) ^ (-p) :=
-    Real.rpow_le_rpow_of_nonpos (by positivity) hexp (neg_nonpos.mpr hp.le)
-  have hscale : Real.exp (-m * ‖v‖ ^ 2) = (Real.exp ((m / p) * ‖v‖ ^ 2)) ^ (-p) := by
-    rw [← Real.exp_mul]; congr 1; field_simp [hp.ne']
-  rw [Complex.norm_exp, Complex.neg_re]
-  calc Real.exp (-(B v v).re) ≤ Real.exp (-m * ‖v‖ ^ 2) :=
-        Real.exp_le_exp.mpr (by linarith [hle v])
-    _ = (Real.exp ((m / p) * ‖v‖ ^ 2)) ^ (-p) := hscale
-    _ ≤ (1 + (m / p) * ‖v‖ ^ 2) ^ (-p) := hrpow
-    _ = (1 + (m / p) * ‖v‖ ^ 2) ^ (-(2 * p) / 2) := by ring_nf
+  (continuous_bilinear_diag B).neg.cexp
 
 private noncomputable def symmMatrix {E : Type*} [AddCommGroup E] [Module ℝ E] {n : ℕ}
     (β : LinearMap.BilinForm ℝ E) (b : Basis (Fin n) ℝ E) : Matrix (Fin n) (Fin n) ℝ :=
@@ -126,13 +100,18 @@ private theorem diagonalized_bilinear_apply {E : Type*} [AddCommGroup E] [Module
   have hre_dot :
       dotProduct (P *ᵥ y) (symmMatrix (B.compr₂ Complex.reCLM.toLinearMap) b *ᵥ (P *ᵥ y)) =
         ∑ i, y i ^ 2 := by
-    rw [Matrix.dotProduct_mulVec_conj, hPA, Matrix.one_mulVec, dotProduct]
-    exact Finset.sum_congr rfl fun i _ ↦ (sq (y i)).symm
+    conv_lhs => lhs; rw [← star_trivial (P *ᵥ y)]
+    rw [← Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec,
+      Matrix.conjTranspose_eq_transpose_of_trivial, hPA, ← Matrix.diagonal_one,
+      Matrix.star_dotProduct_diagonal_mulVec]
+    simp
   have him_dot :
       dotProduct (P *ᵥ y) (symmMatrix (B.compr₂ Complex.imCLM.toLinearMap) b *ᵥ (P *ᵥ y)) =
         ∑ i, lam i * y i ^ 2 := by
-    rw [Matrix.dotProduct_mulVec_conj, hPC, dotProduct]
-    exact Finset.sum_congr rfl fun i _ ↦ by simp [Matrix.mulVec_diagonal]; ring
+    conv_lhs => lhs; rw [← star_trivial (P *ᵥ y)]
+    rw [← Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec,
+      Matrix.conjTranspose_eq_transpose_of_trivial, hPC, Matrix.star_dotProduct_diagonal_mulVec]
+    simp
   rw [bilinear_basis_equivFun_symm B b (P *ᵥ y), hre_dot, him_dot]
   simp only [Complex.ofReal_sum, Complex.ofReal_mul, Complex.ofReal_pow, Finset.sum_mul]
   rw [← Finset.sum_add_distrib]
@@ -146,17 +125,15 @@ theorem integral_cexp_neg_bilinear_ne_zero {E : Type*} [NormedAddCommGroup E] [N
     [μ.IsAddHaarMeasure] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) (hB : ∀ v : E, v ≠ 0 → 0 < (B v v).re) :
     ∫ v : E, Complex.exp (-B v v) ∂μ ≠ 0 := by
   set b := Module.finBasis ℝ E
-  obtain ⟨P, Q, lam, hPQ, hQP, hPA, hPC⟩ :=
+  obtain ⟨P, lam, hPA, hPC⟩ :=
     (symmMatrix_re_posDef B hB b).exists_simultaneous_diagonal_real
       (symmMatrix_isHermitian (B.compr₂ Complex.imCLM.toLinearMap) b)
-  let invP : Invertible P := ⟨Q, hQP, hPQ⟩
   let e : (Fin (finrank ℝ E) → ℝ) ≃L[ℝ] E :=
-    ((P.toLinearEquiv' invP).trans b.equivFun.symm).toContinuousLinearEquiv
-  have he_apply (y : Fin (finrank ℝ E) → ℝ) : e y = b.equivFun.symm (P *ᵥ y) := by
+    (((P : Matrix _ _ ℝ).toLinearEquiv' P.invertible).trans b.equivFun.symm).toContinuousLinearEquiv
+  have he_apply (y : Fin (finrank ℝ E) → ℝ) :
+      e y = b.equivFun.symm ((P : Matrix _ _ ℝ) *ᵥ y) := by
     rw [LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.trans_apply]
-    exact congrArg b.equivFun.symm <|
-      show (P.toLinearEquiv' invP : Module.End ℝ _) y = P *ᵥ y by
-        rw [Matrix.toLinearEquiv'_apply, Matrix.toLin'_apply]
+    rfl
   let ν : Measure E := (volume : Measure (Fin (finrank ℝ E) → ℝ)).map e
   have hν : ν.IsAddHaarMeasure := e.isAddHaarMeasure_map volume
   set c : ℝ≥0 := Measure.addHaarScalarFactor μ ν
@@ -187,5 +164,13 @@ theorem integral_cexp_neg_bilinear_ne_zero {E : Type*} [NormedAddCommGroup E] [N
     simp at hre
   exact mt (fun h ↦ (Complex.cpow_eq_zero_iff _ _).mp h |>.1)
     (div_ne_zero (Complex.ofReal_ne_zero.mpr Real.pi_ne_zero) hbi)
+
+/-- If a real-bilinear form `B` on a finite-dimensional real normed space has strictly positive
+real part on the diagonal away from zero, then `v ↦ Complex.exp (-B v v)` is `μ`-integrable. -/
+theorem integrable_cexp_neg_bilinear {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) (hB : ∀ v : E, v ≠ 0 → 0 < (B v v).re) :
+    Integrable (fun v : E ↦ Complex.exp (-B v v)) μ :=
+  Integrable.of_integral_ne_zero (integral_cexp_neg_bilinear_ne_zero μ B hB)
 
 end TauCeti

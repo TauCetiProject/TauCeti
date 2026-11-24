@@ -15,12 +15,13 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Bilinear
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Laplace's method in several variables
@@ -33,7 +34,7 @@ that `f t ((Real.sqrt t)⁻¹ • v) → Complex.exp (-B v v)` for `μ`-almost e
 
 This file proves the four conclusions of multivariate Laplace's method:
 
-* `TauCeti.mul_norm_sq_le_re_of_laplaceMethod` and `TauCeti.pos_re_of_laplaceMethod`: for a
+* `TauCeti.mul_norm_sq_le_re_of_laplaceMethod` and `TauCeti.re_pos_of_laplaceMethod`: for a
   single vector `v`, convergence `f t ((Real.sqrt t)⁻¹ • v) → Complex.exp (-z)` under the rescaled
   majorant gives `γ * c * ‖v‖ ^ 2 ≤ z.re`; applied to `z = B v v` with `c, γ > 0` and `v ≠ 0`,
   this yields `0 < (B v v).re` (without finite-dimensionality or a measure);
@@ -64,14 +65,8 @@ open Complex Filter MeasureTheory Module Topology
 
 namespace TauCeti
 
-private theorem norm_inv_sqrt_smul_sq {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] (t : ℕ) (v : E) :
-    ‖(Real.sqrt t)⁻¹ • v‖ ^ 2 = ‖v‖ ^ 2 / t := by
-  rcases Nat.eq_zero_or_pos t with rfl | ht
-  · simp
-  have htpos : (0 : ℝ) < t := Nat.cast_pos.mpr ht
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_nonneg (Real.sqrt_nonneg _), mul_pow,
-    inv_pow, Real.sq_sqrt htpos.le, div_eq_inv_mul]
+private theorem inv_sqrt_natCast_ne_zero {t : ℕ} (ht : 1 ≤ t) : (Real.sqrt t)⁻¹ ≠ 0 :=
+  inv_ne_zero (Real.sqrt_pos.mpr (Nat.cast_pos.mpr ht)).ne'
 
 private theorem tendsto_rescaled_norm_sq_majorant {E : Type*} [SeminormedAddCommGroup E]
     [NormedSpace ℝ E] (c γ : ℝ) (v : E) :
@@ -82,7 +77,7 @@ private theorem tendsto_rescaled_norm_sq_majorant {E : Type*} [SeminormedAddComm
   rw [hlim] at h1
   refine h1.congr' ?_
   filter_upwards [eventually_ge_atTop 1] with t _
-  rw [norm_inv_sqrt_smul_sq t v, mul_div_assoc]
+  rw [TauCeti.norm_inv_sqrt_smul_sq (Nat.cast_nonneg t) v, mul_div_assoc]
 
 /-- **Pointwise lower bound via Laplace's method**: if `f t ((Real.sqrt t)⁻¹ • v)` converges to
 `Complex.exp (-z)` and is eventually bounded by
@@ -104,7 +99,7 @@ theorem mul_norm_sq_le_re_of_laplaceMethod {E : Type*} [SeminormedAddCommGroup E
 `f t ((Real.sqrt t)⁻¹ • v) → Complex.exp (-z)` with
 `‖f t ((Real.sqrt t)⁻¹ • v)‖ ≤ (1 + c * ‖(Real.sqrt t)⁻¹ • v‖ ^ 2) ^ (-(γ * t))` eventually
 for `v ≠ 0`, then `0 < z.re`. -/
-theorem pos_re_of_laplaceMethod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem re_pos_of_laplaceMethod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {c γ : ℝ} (hc : 0 < c) (hγ : 0 < γ) {f : ℕ → E → ℂ} {v : E} {z : ℂ} (hv : v ≠ 0)
     (hlim : Tendsto (fun t : ℕ ↦ f t ((Real.sqrt t)⁻¹ • v)) atTop (𝓝 (Complex.exp (-z))))
     (hmaj : ∀ᶠ t in atTop,
@@ -169,27 +164,27 @@ theorem tendsto_rpow_mul_integral_of_laplaceMethod {E : Type*} [NormedAddCommGro
   have hmeas : ∀ᶠ t : ℕ in atTop,
       AEStronglyMeasurable (fun w : E ↦ f t ((Real.sqrt t)⁻¹ • w)) μ := by
     filter_upwards [hf, eventually_ge_atTop 1] with t hft ht
-    have hne : (Real.sqrt t)⁻¹ ≠ 0 := inv_ne_zero (Real.sqrt_pos.mpr (Nat.cast_pos.mpr ht)).ne'
-    exact hft.comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_smul μ hne)
+    exact hft.comp_quasiMeasurePreserving
+      (Measure.quasiMeasurePreserving_smul μ (inv_sqrt_natCast_ne_zero ht))
   have hp_ev : ∀ᶠ t : ℕ in atTop, p ≤ γ * (t : ℝ) :=
     (tendsto_natCast_atTop_atTop.const_mul_atTop hγ).eventually_ge_atTop p
   have hdom : ∀ᶠ t : ℕ in atTop, ∀ᵐ w : E ∂μ,
       ‖f t ((Real.sqrt t)⁻¹ • w)‖ ≤ (1 + (γ * c / p) * ‖w‖ ^ 2) ^ (-p) := by
     filter_upwards [hmaj, eventually_ge_atTop 1, hp_ev] with t ht ht1 htp
     have htpos : (0 : ℝ) < t := Nat.cast_pos.mpr ht1
-    have hne : (Real.sqrt t)⁻¹ ≠ 0 := inv_ne_zero (Real.sqrt_pos.mpr htpos).ne'
-    filter_upwards [(Measure.quasiMeasurePreserving_smul μ hne).ae ht] with w hw
+    filter_upwards
+      [(Measure.quasiMeasurePreserving_smul μ (inv_sqrt_natCast_ne_zero ht1)).ae ht] with w hw
     have hmul : c * (‖w‖ ^ 2 / t) = (γ * c * ‖w‖ ^ 2) / (γ * t) := by
       field_simp [hγ.ne', htpos.ne']
     have hcoef : (γ * c / p) * ‖w‖ ^ 2 = (γ * c * ‖w‖ ^ 2) / p := by ring
     refine hw.trans ?_
-    rw [norm_inv_sqrt_smul_sq t w, hmul, hcoef]
+    rw [TauCeti.norm_inv_sqrt_smul_sq (Nat.cast_nonneg t) w, hmul, hcoef]
     exact rpow_neg_one_add_div_le (by positivity) hp htp
   have hconv := tendsto_integral_filter_of_dominated_convergence
     (fun w : E ↦ (1 + (γ * c / p) * ‖w‖ ^ 2) ^ (-p)) hmeas hdom hbound_int hlim
   simpa only [rescaled_integral_eq] using hconv
 
-private theorem pos_re_of_laplaceMethod_ae {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+private theorem re_pos_of_laplaceMethod_ae {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
     [μ.IsAddHaarMeasure] (B : E →ₗ[ℝ] E →ₗ[ℝ] ℂ) {c γ : ℝ} (hc : 0 < c) (hγ : 0 < γ)
     {f : ℕ → E → ℂ}
@@ -202,9 +197,8 @@ private theorem pos_re_of_laplaceMethod_ae {E : Type*} [NormedAddCommGroup E] [N
       ‖f t ((Real.sqrt t)⁻¹ • v)‖ ≤ (1 + c * ‖(Real.sqrt t)⁻¹ • v‖ ^ 2) ^ (-(γ * t)) := by
     intro t
     by_cases ht : T ≤ t
-    · have hne : (Real.sqrt t)⁻¹ ≠ 0 :=
-        inv_ne_zero (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (hT t ht).2)).ne'
-      exact ((Measure.quasiMeasurePreserving_smul μ hne).ae (hT t ht).1).mono fun _ hv _ ↦ hv
+    · exact ((Measure.quasiMeasurePreserving_smul μ
+        (inv_sqrt_natCast_ne_zero (hT t ht).2)).ae (hT t ht).1).mono fun _ hv _ ↦ hv
     · exact .of_forall fun _ hle ↦ (ht hle).elim
   have hae : ∀ᵐ v ∂μ, γ * c * ‖v‖ ^ 2 ≤ (B v v).re := by
     filter_upwards [hlim, ae_all_iff.mpr hmaj_all] with v hv_lim hv_maj
@@ -212,8 +206,7 @@ private theorem pos_re_of_laplaceMethod_ae {E : Type*} [NormedAddCommGroup E] [N
   have hcont_l : Continuous fun v : E ↦ γ * c * ‖v‖ ^ 2 :=
     continuous_const.mul (continuous_norm.pow 2)
   have hcont_r : Continuous fun v : E ↦ (B v v).re :=
-    Complex.continuous_re.comp
-      ((B.toContinuousBilinearMap.continuous₂).comp (continuous_id.prodMk continuous_id))
+    Complex.continuous_re.comp (continuous_bilinear_diag B)
   have hle : ∀ v : E, γ * c * ‖v‖ ^ 2 ≤ (B v v).re :=
     (Continuous.ae_le_iff_le μ hcont_l hcont_r).mp hae
   intro v hv
@@ -231,7 +224,7 @@ theorem eventually_integral_ne_zero_of_laplaceMethod {E : Type*} [NormedAddCommG
       Tendsto (fun t : ℕ ↦ f t ((Real.sqrt t)⁻¹ • v)) atTop (𝓝 (Complex.exp (-B v v))))
     (hmaj : ∀ᶠ t in atTop, ∀ᵐ v ∂μ, ‖f t v‖ ≤ (1 + c * ‖v‖ ^ 2) ^ (-(γ * t))) :
     ∀ᶠ t in atTop, ∫ v, f t v ∂μ ≠ 0 := by
-  have hpos := pos_re_of_laplaceMethod_ae μ B hc hγ hlim hmaj
+  have hpos := re_pos_of_laplaceMethod_ae μ B hc hγ hlim hmaj
   have hne : ∫ v : E, Complex.exp (-B v v) ∂μ ≠ 0 := integral_cexp_neg_bilinear_ne_zero μ B hpos
   have hlim_int := tendsto_rpow_mul_integral_of_laplaceMethod μ hc hγ hf hlim hmaj
   exact (hlim_int.eventually_ne hne).mono fun t ht hzero ↦ ht (by simp [hzero])
@@ -254,7 +247,7 @@ theorem tendsto_integral_of_laplaceMethod {E : Type*} [NormedAddCommGroup E] [No
       Tendsto (fun t : ℕ ↦ (((t : ℝ) ^ ((finrank ℝ E : ℝ) / 2) : ℝ) : ℂ) * ∫ v, f t v ∂μ)
         atTop (𝓝 (∫ v, Complex.exp (-B v v) ∂μ)) ∧
       ∀ᶠ t in atTop, ∫ v, f t v ∂μ ≠ 0 :=
-  ⟨pos_re_of_laplaceMethod_ae μ B hc hγ hlim hmaj,
+  ⟨re_pos_of_laplaceMethod_ae μ B hc hγ hlim hmaj,
     eventually_integrable_of_laplaceMethod μ hc hγ hf hmaj,
     tendsto_rpow_mul_integral_of_laplaceMethod μ hc hγ hf hlim hmaj,
     eventually_integral_ne_zero_of_laplaceMethod μ B hc hγ hf hlim hmaj⟩
