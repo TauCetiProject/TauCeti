@@ -35,9 +35,9 @@ determinant: `γᵀ J γ = det(γ) • J` (`Matrix.transpose_mul_J_mul_eq_det_sm
 
 The multiplier condition can be written as `γ J γᵀ = c • J` or as `γᵀ J γ = c • J`
 (`TauCeti.GSp.mem_iff'`); the inverse of a similitude is `-c⁻¹ • J γᵀ J`
-(`TauCeti.GSp.coe_inv`). A ring morphism `f : R →+* S` induces `TauCeti.GSp.map l f`, the
-restriction of `Matrix.GeneralLinearGroup.map`, and the multiplier commutes with it; this is the
-reduction map used to define congruence level subgroups.
+(`TauCeti.GSp.coe_inv_eq_neg_smul_J_mul_transpose_mul_J`). A ring morphism `f : R →+* S` induces
+`TauCeti.GSp.map l f`, the restriction of `Matrix.GeneralLinearGroup.map`, and the multiplier
+commutes with it; this is the reduction map used to define congruence level subgroups.
 
 ## Main definitions
 
@@ -173,7 +173,7 @@ theorem multiplier_eq_iff {M : GSp l R} {c : Rˣ} :
   exact eq_of_mul_J_mul_transpose_eq (mul_J_mul_transpose M) h
 
 /-- **The inverse of a similitude**: `γ⁻¹ = -c(γ)⁻¹ • J γᵀ J`. -/
-theorem coe_inv (M : GSp l R) :
+theorem coe_inv_eq_neg_smul_J_mul_transpose_mul_J (M : GSp l R) :
     ((M⁻¹ : GSp l R) : GL (l ⊕ l) R).val =
       -(((multiplier l R M)⁻¹ : Rˣ) : R) •
         (J l R * ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)ᵀ * J l R) := by
@@ -200,12 +200,6 @@ end Multiplier
 /-! ### The Siegel cocharacter -/
 
 section SiegelCocharacter
-
-/-- The block matrix `diag(1, c)` scales `J` by `c`. -/
-private theorem fromBlocks_one_smul_one_mul_J_mul_transpose (c : R) :
-    fromBlocks (1 : Matrix l l R) 0 0 (c • 1) * J l R *
-        (fromBlocks (1 : Matrix l l R) 0 0 (c • 1))ᵀ = c • J l R := by
-  simp [Matrix.J, fromBlocks_transpose, fromBlocks_multiply, fromBlocks_smul]
 
 variable (l R) in
 /-- The **Siegel cocharacter** `μ(c) = diag(1, c)`, the block-diagonal matrix with blocks `1` and

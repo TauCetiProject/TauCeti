@@ -91,10 +91,12 @@ def siegelParabolic : Subgroup (GSp l R) where
     exact toBlocks₂₁_one
   inv_mem' {M} hM := by
     simp only [Set.mem_ofPred_eq] at hM ⊢
-    rw [coe_inv, ← fromBlocks_toBlocks ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R), hM]
+    rw [coe_inv_eq_neg_smul_J_mul_transpose_mul_J,
+      ← fromBlocks_toBlocks ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R), hM]
     simp [Matrix.J, fromBlocks_transpose, fromBlocks_multiply, fromBlocks_smul, fromBlocks_neg]
 
 /-- Membership in the Siegel parabolic: the lower-left block vanishes. -/
+@[simp]
 theorem mem_siegelParabolic_iff {M : GSp l R} :
     M ∈ siegelParabolic l R ↔ ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).toBlocks₂₁ = 0 :=
   Iff.rfl

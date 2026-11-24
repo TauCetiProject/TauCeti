@@ -67,6 +67,8 @@ whole group.
   congruence conditions.
 * `TauCeti.GSp.Gamma_le_Gamma1`, `TauCeti.GSp.Gamma1_le_Gamma0`: `Γ(f) ⊆ Γ₁(f) ⊆ Γ₀(f)`.
 * `TauCeti.GSp.Gamma.normal`, `TauCeti.GSp.Gamma0.normal_Gamma1`: the two normalities.
+* `TauCeti.GSp.Gamma0.mem_ker_upperLeftHom_iff`: the kernel of the upper-left block on `Γ₀(f)`
+  consists of the elements whose reduction has upper-left block `1`.
 * `TauCeti.GSp.Gamma0.ker_upperLeftHom`: the kernel of the upper-left block on `Γ₀(f)` is `Γ₁(f)`.
 * `TauCeti.GSp.map_multiplier_Gamma`, `TauCeti.GSp.map_multiplier_Gamma1`,
   `TauCeti.GSp.map_multiplier_Gamma0`: the multiplier images.
@@ -103,10 +105,10 @@ def Gamma (f : R →+* S) : Subgroup (GSp l R) :=
 variable {l}
 
 /-- Membership in `Γ(f)`: the reduction is the identity matrix. -/
+@[simp]
 theorem mem_Gamma_iff {f : R →+* S} {M : GSp l R} :
     M ∈ Gamma l f ↔ ((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f = 1 := by
-  rw [Gamma, MonoidHom.mem_ker, ← Subtype.coe_inj, coe_map, OneMemClass.coe_one, Units.ext_iff,
-    Matrix.GeneralLinearGroup.val_map_apply, Units.val_one]
+  simp [Gamma, ← Subtype.coe_inj, Units.ext_iff]
 
 /-- `Γ(f)` is normal, as a kernel. -/
 instance Gamma.normal (f : R →+* S) : (Gamma l f).Normal :=
@@ -138,13 +140,12 @@ noncomputable def Gamma0 (f : R →+* S) : Subgroup (GSp l R) :=
 
 /-- Membership in `Γ₀(f)`: the reduction has vanishing lower-left block and the multiplier
 reduces to `1`. -/
+@[simp]
 theorem mem_Gamma0_iff {f : R →+* S} {M : GSp l R} :
     M ∈ Gamma0 l f ↔
       (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₂₁ = 0 ∧
         f (multiplier l R M : R) = 1 := by
-  rw [Gamma0, Subgroup.mem_inf, Subgroup.mem_comap, mem_siegelParabolic_iff, MonoidHom.mem_ker,
-    coe_map, MonoidHom.comp_apply, Units.ext_iff, Units.coe_map, MonoidHom.coe_ofClass,
-    Units.val_one, Matrix.GeneralLinearGroup.val_map_apply]
+  simp [Gamma0, Units.ext_iff]
 
 /-- The reduction of an element of `Γ₀(f)` lies in the Siegel parabolic over `S`. -/
 private theorem map_mem_siegelParabolic {f : R →+* S} {M : GSp l R} (hM : M ∈ Gamma0 l f) :
@@ -168,6 +169,13 @@ theorem coe_upperLeftHom (f : R →+* S) (M : Gamma0 l f) :
       (((M : GSp l R) : GL (l ⊕ l) R).val.map f).toBlocks₁₁ := by
   simp [upperLeftHom]
 
+/-- `γ ∈ Γ₀(f)` lies in the kernel of the upper-left block of the reduction exactly when that
+block is the identity. -/
+theorem mem_ker_upperLeftHom_iff {f : R →+* S} {M : Gamma0 l f} :
+    M ∈ (upperLeftHom l f).ker ↔
+      (((M : GSp l R) : GL (l ⊕ l) R).val.map f).toBlocks₁₁ = 1 := by
+  rw [MonoidHom.mem_ker, Units.ext_iff, coe_upperLeftHom, Units.val_one]
+
 end Gamma0
 
 variable (l) in
@@ -184,6 +192,7 @@ theorem Gamma1_le_Gamma0 (f : R →+* S) : Gamma1 l f ≤ Gamma0 l f := by
   exact M.property
 
 /-- **Membership in `Γ₁(f)`**: the reduction is `(1 ∗; 0 1)`. -/
+@[simp]
 theorem mem_Gamma1_iff {f : R →+* S} {M : GSp l R} :
     M ∈ Gamma1 l f ↔
       (((M : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₁₁ = 1 ∧
@@ -194,30 +203,22 @@ theorem mem_Gamma1_iff {f : R →+* S} {M : GSp l R} :
       (((N : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₁₁ *
           (((N : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R).map f).toBlocks₂₂ᵀ =
         f (multiplier l R N : R) • 1 := by
-    have := toBlocks₁₁_mul_transpose_toBlocks₂₂_of_toBlocks₂₁_eq_zero (M := map l f N)
-    simp only [coe_map, Matrix.GeneralLinearGroup.val_map_apply, multiplier_map,
-      Units.coe_map, MonoidHom.coe_ofClass] at this
-    exact this h
+    simpa using toBlocks₁₁_mul_transpose_toBlocks₂₂_of_toBlocks₂₁_eq_zero (M := map l f N)
+      (by simpa using h)
   constructor
   · rintro ⟨M, hM, rfl⟩
-    rw [SetLike.mem_coe, MonoidHom.mem_ker, Units.ext_iff, Gamma0.coe_upperLeftHom,
-      Units.val_one] at hM
+    have h₁₁ := Gamma0.mem_ker_upperLeftHom_iff.1 hM
     obtain ⟨h₂₁, hc⟩ := mem_Gamma0_iff.1 M.property
-    refine ⟨hM, h₂₁, ?_⟩
+    refine ⟨h₁₁, h₂₁, ?_⟩
     have := hAD M h₂₁
-    rw [hM, Matrix.one_mul, hc, one_smul] at this
+    rw [h₁₁, Matrix.one_mul, hc, one_smul] at this
     simpa using congrArg Matrix.transpose this
   · rintro ⟨h₁₁, h₂₁, h₂₂⟩
     have hc : f (multiplier l R M : R) = 1 := by
       have := hAD M h₂₁
       rw [h₁₁, h₂₂, transpose_one, Matrix.one_mul] at this
-      have h := congrFun (congrFun this (Classical.arbitrary l)) (Classical.arbitrary l)
-      simpa using h.symm
-    have hM : M ∈ Gamma0 l f := mem_Gamma0_iff.2 ⟨h₂₁, hc⟩
-    exact ⟨⟨M, hM⟩, by
-      rw [SetLike.mem_coe, MonoidHom.mem_ker, Units.ext_iff, Gamma0.coe_upperLeftHom,
-        Units.val_one]
-      exact h₁₁, rfl⟩
+      exact scalar_inj.1 (by simpa [smul_one_eq_diagonal] using this.symm)
+    exact ⟨⟨M, mem_Gamma0_iff.2 ⟨h₂₁, hc⟩⟩, Gamma0.mem_ker_upperLeftHom_iff.2 h₁₁, rfl⟩
 
 /-- `Γ(f) ⊆ Γ₁(f)`. -/
 theorem Gamma_le_Gamma1 (f : R →+* S) : Gamma l f ≤ Gamma1 l f := by

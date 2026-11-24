@@ -10,12 +10,13 @@ public import Mathlib.LinearAlgebra.SymplecticGroup
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
-# The determinant of a rank-two matrix from its symplectic multiplier
+# Matrices scaling the symplectic form: similitude factors and the rank-two determinant
 
 `Matrix.J l R` is the standard symplectic form on `l ⊕ l`, and `Matrix.symplecticGroup` collects
 the matrices preserving it, `Aᵀ * J * A = J`. This file records what happens one step out, when
-`A` merely *scales* the form: in the rank-two case — `l` a singleton — the scaling factor is
-forced to be the determinant.
+`A` merely *scales* the form. In every rank it collects the basic facts about the scaling factor
+(the similitude factor); in the rank-two case — `l` a singleton — the scaling factor is forced to
+be the determinant.
 
     Aᵀ * J l R * A = A.det • J l R,     and hence     Aᵀ * J l R * A = d • J l R ↔ A.det = d.
 
@@ -26,17 +27,20 @@ without computing it — and, since only the one endomorphism appears, without a
 For larger `l` the corresponding conclusion is `A.det = d ^ Fintype.card l`, whose usual proof
 goes through the Pfaffian; there is none in this Mathlib, and the cheap determinant argument
 yields only `A.det ^ 2 = (d ^ Fintype.card l) ^ 2`, which is strictly weaker over a general
-commutative ring. Only the rank-two case is proved here, that being the case in hand.
+commutative ring. The determinant identity is proved here only in the rank-two case, that being
+the case in hand.
 
 In every rank, the factor `c` in `M J Mᵀ = c • J` is unique when `l` is nonempty, multiplies
-under products, and for invertible `M` is also the factor in `Mᵀ J M = c • J`. These are the facts
-behind the multiplier of the symplectic similitude group.
+under products, and for invertible `M` is also the factor in `Mᵀ J M = c • J`; the block-diagonal
+matrix `diag(1, c • 1)` scales `J` by `c`. These are the facts behind the multiplier of the
+symplectic similitude group.
 
 ## Main results
 
 * `Matrix.smul_J_injective` and `Matrix.eq_of_mul_J_mul_transpose_eq`: for nonempty `l`, the
   factor by which a matrix scales `J` is unique.
 * `Matrix.mul_mul_J_mul_transpose_eq_mul_smul`: the scaling factors multiply under products.
+* `Matrix.fromBlocks_one_smul_one_mul_J_mul_transpose`: `diag(1, c • 1)` scales `J` by `c`.
 * `Matrix.transpose_mul_J_mul_of_mul_J_mul_transpose` and
   `Matrix.GeneralLinearGroup.mul_J_mul_transpose_eq_smul_iff`: for an invertible matrix,
   `M J Mᵀ = c • J` and `Mᵀ J M = c • J` are equivalent.
@@ -93,6 +97,12 @@ theorem mul_mul_J_mul_transpose_eq_mul_smul {M N : Matrix (l ⊕ l) (l ⊕ l) R}
         simp only [transpose_mul, Matrix.mul_assoc]
     _ = (a * b) • J l R := by
         rw [hN, Matrix.mul_smul, Matrix.smul_mul, hM, smul_smul, mul_comm]
+
+/-- The block-diagonal matrix `diag(1, c • 1)` scales `J` by `c`. -/
+theorem fromBlocks_one_smul_one_mul_J_mul_transpose (c : R) :
+    fromBlocks (1 : Matrix l l R) 0 0 (c • 1) * J l R *
+        (fromBlocks (1 : Matrix l l R) 0 0 (c • 1))ᵀ = c • J l R := by
+  simp [Matrix.J, fromBlocks_transpose, fromBlocks_multiply, fromBlocks_smul]
 
 /-- If `N` is a left inverse of `M` and `M J Mᵀ = c • J`, then also `Mᵀ J M = c • J`. -/
 theorem transpose_mul_J_mul_of_mul_J_mul_transpose {M N : Matrix (l ⊕ l) (l ⊕ l) R}
