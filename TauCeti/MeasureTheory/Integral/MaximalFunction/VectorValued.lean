@@ -184,7 +184,7 @@ private theorem maximalFunction_indicator_biUnion_le {x : ι → ℝ}
       2 ^ Fintype.card ι * maximalFunction volume (cubeAverage T g) x := by
   have hU : MeasurableSet (⋃ q ∈ T, dyadicCube q.1 q.2) :=
     MeasurableSet.biUnion T.to_countable fun q _ => measurableSet_dyadicCube _ _
-  refine maximalFunction_le fun ρ hρ => ?_
+  refine maximalFunction_le fun ρ _ => ?_
   have h2B : volume (ball x (2 * ρ)) = 2 ^ Fintype.card ι * volume (ball x ρ) := by
     rw [volume.addHaar_ball_mul_of_pos x two_pos, ENNReal.ofReal_pow zero_le_two,
       ENNReal.ofReal_ofNat, Module.finrank_fintype_fun_eq_card, volume.addHaar_ball_center x]
@@ -209,7 +209,7 @@ private theorem maximalFunction_indicator_biUnion_le {x : ι → ℝ}
     _ = ∫⁻ y in ball x (2 * ρ), cubeAverage T g y := (setLIntegral_cubeAverage _).symm
     _ ≤ volume (ball x (2 * ρ)) * maximalFunction volume (cubeAverage T g) x := by
         simpa only [eNorm_eq_self] using setLIntegral_ball_le_measure_mul_maximalFunction
-          (μ := volume) (f := cubeAverage T g) (x := x) (by positivity) measure_ball_lt_top.ne
+          (μ := volume) (f := cubeAverage T g) (x := x) measure_ball_lt_top.ne
     _ = 2 ^ Fintype.card ι * maximalFunction volume (cubeAverage T g) x * volume (ball x ρ) := by
         rw [h2B]
         ring
