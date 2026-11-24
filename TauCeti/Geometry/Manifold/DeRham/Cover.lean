@@ -209,6 +209,9 @@ abbrev proj : PeriodCover θ x → M :=
   UniversalCover.subgroupQuotientProj x
     ((periodHom (θ : RoughForm I M ℝ 1) x).toMultiplicativeRight.ker)
 
+section
+omit [FiniteDimensional ℝ E] [T2Space M]
+
 /-- The period-kernel projection is a covering map. -/
 theorem isCoveringMap_proj : IsCoveringMap (proj θ x) := by
   let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
@@ -228,11 +231,21 @@ instance : IsManifold I ∞ (PeriodCover θ x) := by
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   exact inferInstanceAs (IsManifold I ∞ (UniversalCover.SubgroupQuotient x _))
 
+end
+
+section
+omit [FiniteDimensional ℝ E]
+
 /-- Covering spaces of Hausdorff manifolds are Hausdorff. -/
 instance : T2Space (PeriodCover θ x) := by
   let : LocallyPathConnectedSpace M := I.locallyPathConnectedSpace_of_chartedSpace M
   let : SemilocallySimplyConnectedSpace M := I.semilocallySimplyConnectedSpace M
   exact inferInstanceAs (T2Space (UniversalCover.SubgroupQuotient x _))
+
+end
+
+section
+omit [FiniteDimensional ℝ E] [T2Space M]
 
 /-- The projection is a smooth local diffeomorphism for the lifted atlas. -/
 theorem isLocalDiffeomorph_proj : IsLocalDiffeomorph I I ∞ (proj θ x) := by
@@ -296,6 +309,8 @@ theorem deckEquiv_symm_period_apply [PreconnectedSpace M]
       MonoidHom.coe_rangeRestrict, map_inv]
   rw [deckEquiv, MulEquiv.symm_trans_apply, hd]
   exact UniversalCover.deckSubgroupQuotientProjKerEquivRange_symm_rangeRestrict_apply_mk x _ g⁻¹ e
+
+end
 
 /-- Pullback of a closed smooth real one-form to its period-kernel cover is exact. -/
 theorem mpullback_mem_exactForms (hθ : θ ∈ closedForms I M 1) :

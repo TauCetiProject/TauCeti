@@ -23,7 +23,7 @@ conservative functions (`Complex.IsConservativeOn.isExactOn_of_isSimplyConnected
 
 The real `1`-form `v ↦ v • f z` on each connected component has local primitives on discs by
 `DifferentiableOn.isExactOn_ball`
-(`TauCeti.forall_exists_isPrimitiveOn_toSpanSingleton_iff_differentiableOn`). A `1`-form with local
+(`TauCeti.hasLocalPrimitivesOn_toSpanSingleton_iff_differentiableOn`). A `1`-form with local
 primitives on a simply connected manifold has a global primitive
 (`TauCeti.exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn`), which gives a complex
 primitive of `f` on `Ω`.
@@ -59,7 +59,7 @@ theorem DifferentiableOn.isExactOn_of_isSimplyConnected_connectedComponentIn [Co
     (hsc : ∀ z ∈ s, IsSimplyConnected (connectedComponentIn s z)) :
     Complex.IsExactOn f s := by
   have hloc :=
-    (TauCeti.forall_exists_isPrimitiveOn_toSpanSingleton_iff_differentiableOn hs).mpr hf
+    (TauCeti.hasLocalPrimitivesOn_toSpanSingleton_iff_differentiableOn hs).mpr hf
   obtain ⟨g, hg⟩ :=
     TauCeti.exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn hs hsc hloc
   exact ⟨g, (TauCeti.isPrimitiveOn_toSpanSingleton_iff.mp hg).2⟩

@@ -39,8 +39,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 and complete coefficients `F`, the continuous path integral along a path `γ` following a `C¹` curve
 `c` agrees with `TauCeti.pathIntegral φ c 0 1`. -/
 theorem continuousPathIntegral_eq_pathIntegral [IsManifold I 1 M] [CompleteSpace F]
-    {φ : RoughForm I M F 1}
-    (hφ : ∀ p : M, ∃ (g : M → F) (U : Set M), p ∈ U ∧ IsPrimitiveOn φ g U)
+    {φ : RoughForm I M F 1} (hφ : HasLocalPrimitives φ)
     (hφ₀ : IsSmoothForm I 0 φ) {c : ℝ → M} (hc : ContMDiff 𝓘(ℝ, ℝ) I 1 c)
     {x y : M} {γ : Path x y} (hγ : ∀ t : unitInterval, γ t = c t) :
     continuousPathIntegral φ γ = pathIntegral φ c 0 1 := by

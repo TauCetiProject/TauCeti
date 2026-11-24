@@ -21,6 +21,8 @@ continuous maps into `PrimitiveSpace φ` run locally along translates of `C^r` l
 ## Main declarations
 
 * `TauCeti.exists_contMDiff_isPrimitiveOn`: local `C^r` primitives for closed `C^r` `1`-forms.
+* `TauCeti.IsSmoothForm.hasLocalPrimitives`: closed `C^r` `1`-forms (`1 ≤ r`) have local
+  primitives.
 * `TauCeti.PrimitiveSpace.isCoveringMap_proj`: `PrimitiveSpace φ` is a covering space when `φ` is
   closed.
 * `TauCeti.PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq`: near each parameter, a
@@ -61,15 +63,19 @@ theorem exists_contMDiff_isPrimitiveOn {r : ℕ∞} (hr : 1 ≤ r)
     (hg.mdifferentiable (by simpa using (zero_lt_one.trans_le hr).ne')).mdifferentiableOn,
     fun y hy ↦ hdψ y (interior_subset hy)⟩
 
+/-- By the Poincaré lemma, a closed `C^r` `1`-form (`1 ≤ r`) has local primitives. -/
+theorem IsSmoothForm.hasLocalPrimitives {r : ℕ∞} (hr : 1 ≤ r)
+    (hφ : IsSmoothForm I r φ) (hclosed : mextDeriv φ = 0) : HasLocalPrimitives φ := fun x ↦
+  let ⟨g, _, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
+  ⟨g, U, hxU, hgU⟩
+
 namespace PrimitiveSpace
 
 /-- Projecting `PrimitiveSpace φ` to the point is a covering map when `φ` is closed. Over an open
 set `U` carrying a primitive `g`, the sheets are the graphs of the translates `g + c`. -/
 theorem isCoveringMap_proj {r : ℕ∞} (hr : 1 ≤ r) (hφ : IsSmoothForm I r φ)
     (hclosed : mextDeriv φ = 0) : IsCoveringMap (proj φ) :=
-  isCoveringMap_proj_of_forall_exists_isPrimitiveOn fun x ↦
-    let ⟨g, _, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
-    ⟨g, U, hxU, hgU⟩
+  (hφ.hasLocalPrimitives hr hclosed).isCoveringMap_proj
 
 /-- **Lifts run along local primitives.** Near each parameter `t`, a continuous map `Γ` into
 `PrimitiveSpace φ`, for a closed `C^r` form `φ` (`1 ≤ r`), runs along the graph of a translate

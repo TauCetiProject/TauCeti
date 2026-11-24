@@ -35,8 +35,6 @@ invertible derivative given by its linear part; for instance, the automorphism `
 * `DifferentiableAt.range_fderiv_restrictScalars`: the range of the derivative does not depend
   on the field of scalars.
 * `DifferentiableAt.injective_fderiv_restrictScalars_iff`: neither does its injectivity.
-* `TauCeti.hasDerivAt_iff_hasFDerivAt_restrictScalars`: equivalence between `HasDerivAt` over
-  `𝕜'` and `HasFDerivAt` over `𝕜` with the scalar-restricted multiplication map.
 * `TauCeti.hasFDerivAtFilter_restrictScalars_iff`: a `𝕜'`-linear map is a derivative exactly when
   its scalar restriction to `𝕜` is, assuming only `LinearMap.CompatibleSMul`.
 * `AffineEquiv.hasFDerivAt_restrictScalars`: the derivative over `𝕜` of an affine automorphism over
@@ -87,15 +85,6 @@ theorem _root_.DifferentiableAt.injective_fderiv_restrictScalars_iff
     (hi : DifferentiableAt 𝕜' i x) :
     Function.Injective (fderiv 𝕜 i x) ↔ Function.Injective (fderiv 𝕜' i x) := by
   rw [hi.fderiv_restrictScalars 𝕜, ContinuousLinearMap.coe_restrictScalars']
-
-/-- On a normed algebra `𝕜'` over `𝕜`, a function `g : 𝕜' → E` has `𝕜'`-derivative `f'` at `z`
-if and only if its `𝕜`-Fréchet derivative is the restriction of scalars of `v ↦ v • f'`. -/
-theorem hasDerivAt_iff_hasFDerivAt_restrictScalars {g : 𝕜' → E} {z : 𝕜'} {f' : E} :
-    HasDerivAt g f' z ↔
-      HasFDerivAt g ((ContinuousLinearMap.toSpanSingleton 𝕜' f').restrictScalars 𝕜) z :=
-  ⟨fun h ↦ h.hasFDerivAt.restrictScalars 𝕜, fun h ↦
-    hasDerivAt_iff_isLittleO.mpr (by simpa [ContinuousLinearMap.toSpanSingleton_apply] using
-      h.isLittleO)⟩
 
 /-- An affine automorphism `f` of a finite-dimensional space over `𝕜'` has, over `𝕜`, the
 invertible derivative given by its linear part. For instance, an affine automorphism of `ℂ` has an

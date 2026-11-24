@@ -33,6 +33,9 @@ lives in `TauCeti.Geometry.Manifold.DeRham.SimplyConnected`.
 * `TauCeti.exists_isPrimitiveOn_of_isSimplyConnected` and
   `TauCeti.exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn`: global primitives on
   simply connected open subsets and on open subsets with simply connected components.
+* `TauCeti.HasLocalPotentials.exists_hasFDerivAt_of_simplyConnected` and
+  `TauCeti.HasLocalPotentials.exists_hasFDerivAt_of_isSimplyConnected_connectedComponentIn`:
+  normed-space specializations for covector fields with `TauCeti.HasLocalPotentials`.
 
 ## References
 
@@ -60,33 +63,18 @@ point lies in an open set carrying a primitive of `φ` is the differential of a 
 differentiable on the whole manifold. Nothing else is assumed of `φ`, and neither finite
 dimensionality, the Hausdorff property nor completeness of the coefficients is needed. -/
 theorem exists_isPrimitiveOn_univ_of_simplyConnectedSpace [IsManifold I 1 M]
-    [SimplyConnectedSpace M] {φ : RoughForm I M F 1}
-    (hφ : ∀ x, ∃ g : M → F, ∃ U, x ∈ U ∧ IsPrimitiveOn φ g U) :
-    ∃ g : M → F, IsPrimitiveOn φ g univ := by
-  have := I.locallyPathConnectedSpace
-  have := ChartedSpace.locallyPathConnectedSpace H M
-  obtain ⟨x₀⟩ := (inferInstance : Nonempty M)
-  -- lift the identity of `M` through the covering space of local primitives
-  obtain ⟨s, ⟨-, hs⟩, -⟩ :=
-    (PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn
-      hφ).existsUnique_continuousMap_lifts (ContinuousMap.id M) x₀ (PrimitiveSpace.graph φ 0 x₀)
-      (PrimitiveSpace.proj_graph x₀)
-  have hps (y : M) : PrimitiveSpace.proj φ (s y) = y := congrFun hs y
-  -- Near each point `x`, the value of `s` differs by a constant from a local primitive of `φ`.
-  refine ⟨fun y ↦ PrimitiveSpace.value φ (s y),
-    isPrimitiveOn_of_forall_eventuallyEq_add_const isOpen_univ fun x _ ↦ ?_⟩
-  obtain ⟨g, U, hxU, hgU⟩ := hφ x
-  refine ⟨g, U, hxU, hgU, PrimitiveSpace.value φ (s x) - g x, ?_⟩
-  filter_upwards [PrimitiveSpace.eventually_value_eq_add_const (s.continuous.continuousAt (x := x))
-    hgU ((hps x).symm ▸ hxU)] with y hy
-  rw [hy.2, hps, hps]
+    [SimplyConnectedSpace M] {φ : RoughForm I M F 1} (hφ : HasLocalPrimitives φ) :
+    ∃ g : M → F, IsPrimitiveOn φ g univ :=
+  (exists_isPrimitiveOn_univ_iff_forall_continuousPathIntegral_loop_eq_zero hφ).mpr fun x γ ↦ by
+    rw [continuousPathIntegral_eq_of_homotopic
+      (SimplyConnectedSpace.paths_homotopic γ (Path.refl x)), continuousPathIntegral_refl]
 
 /-- On a simply connected `C¹` manifold, a `1`-form with local primitives has a global primitive
 vanishing at a chosen basepoint `x₀`, given at every point `x` by the continuous path integral
 along any path from `x₀` to `x`. -/
 theorem exists_isPrimitiveOn_univ_and_eq_continuousPathIntegral_of_simplyConnectedSpace
     [IsManifold I 1 M] [SimplyConnectedSpace M] {φ : RoughForm I M F 1}
-    (hφ : ∀ x : M, ∃ (g : M → F) (U : Set M), x ∈ U ∧ IsPrimitiveOn φ g U) (x₀ : M) :
+    (hφ : HasLocalPrimitives φ) (x₀ : M) :
     ∃ g : M → F, IsPrimitiveOn φ g univ ∧ g x₀ = 0 ∧
       ∀ (x : M) (γ : Path x₀ x), g x = continuousPathIntegral φ γ := by
   obtain ⟨g, hg⟩ := exists_isPrimitiveOn_univ_of_simplyConnectedSpace hφ
@@ -98,12 +86,12 @@ theorem exists_isPrimitiveOn_univ_and_eq_continuousPathIntegral_of_simplyConnect
 theorem exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn [IsManifold I 1 M]
     {φ : RoughForm I M F 1} {U : Set M} (hU : IsOpen U)
     (hUsc : ∀ x ∈ U, IsSimplyConnected (connectedComponentIn U x))
-    (hφ : ∀ x ∈ U, ∃ (g : M → F) (V : Set M), x ∈ V ∧ IsPrimitiveOn φ g V) :
+    (hφ : HasLocalPrimitivesOn φ U) :
     ∃ g : M → F, IsPrimitiveOn φ g U := by
   let U' : TopologicalSpace.Opens M := ⟨U, hU⟩
   let φ' : RoughForm I U' F 1 := mpullback I I (Subtype.val : U' → M) φ
-  have hloc : ∀ x : U', ∃ (g : U' → F) (V : Set U'), x ∈ V ∧ IsPrimitiveOn φ' g V :=
-    (forall_exists_isPrimitiveOn_mpullback_subtypeVal_iff (U := U') φ).mpr hφ
+  have hloc : HasLocalPrimitives φ' :=
+    (hasLocalPrimitives_mpullback_subtypeVal_iff (U := U') φ).mpr hφ
   have hloop : ∀ (x : U') (γ : Path x x), continuousPathIntegral φ' γ = 0 := by
     intro x γ
     let C : Set M := connectedComponentIn U x
@@ -138,11 +126,30 @@ theorem exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn [IsManifo
 a primitive on `U`. -/
 theorem exists_isPrimitiveOn_of_isSimplyConnected [IsManifold I 1 M]
     {φ : RoughForm I M F 1} {U : Set M} (hU : IsOpen U) (hUsc : IsSimplyConnected U)
-    (hφ : ∀ x ∈ U, ∃ (g : M → F) (V : Set M), x ∈ V ∧ IsPrimitiveOn φ g V) :
+    (hφ : HasLocalPrimitivesOn φ U) :
     ∃ g : M → F, IsPrimitiveOn φ g U :=
   exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn hU
     (fun _ hx ↦
       (hUsc.isPathConnected.isConnected.isPreconnected.connectedComponentIn hx).symm ▸ hUsc)
     hφ
+
+/-- A covector field with local `C¹` potentials (`TauCeti.HasLocalPotentials`) on an open subset
+`s ⊆ E` whose connected components are all simply connected has a global Fréchet primitive on `s`.
+-/
+theorem HasLocalPotentials.exists_hasFDerivAt_of_isSimplyConnected_connectedComponentIn
+    {s : Set E} {α : E → E →L[ℝ] F} (hα : HasLocalPotentials s α)
+    (hsc : ∀ x ∈ s, IsSimplyConnected (connectedComponentIn s x)) :
+    ∃ g : E → F, ∀ x ∈ s, HasFDerivAt g (α x) x := by
+  obtain ⟨g, hg⟩ := exists_isPrimitiveOn_of_isSimplyConnected_connectedComponentIn hα.isOpen hsc
+    hα.hasLocalPrimitivesOn
+  exact ⟨g, (isPrimitiveOn_ofSubsingleton_iff.mp hg).2⟩
+
+/-- A covector field with local `C¹` potentials (`TauCeti.HasLocalPotentials`) on a simply
+connected open subset `s ⊆ E` has a global Fréchet primitive on `s`. -/
+theorem HasLocalPotentials.exists_hasFDerivAt_of_simplyConnected
+    {s : Set E} {α : E → E →L[ℝ] F} (hα : HasLocalPotentials s α) (hsc : IsSimplyConnected s) :
+    ∃ g : E → F, ∀ x ∈ s, HasFDerivAt g (α x) x := by
+  obtain ⟨g, hg⟩ := exists_isPrimitiveOn_of_isSimplyConnected hα.isOpen hsc hα.hasLocalPrimitivesOn
+  exact ⟨g, (isPrimitiveOn_ofSubsingleton_iff.mp hg).2⟩
 
 end TauCeti

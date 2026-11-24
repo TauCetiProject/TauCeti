@@ -38,7 +38,7 @@ circle has nontrivial first de Rham cohomology, unlike the normed spaces of
 `TauCeti.subsingleton_deRhamCohomology_normedSpace`.
 
 By the Poincaré lemma, `dθ` admits local primitives everywhere on `Circle`
-(`TauCeti.forall_exists_isPrimitiveOn_circleAngularForm`). Its continuous path integral around
+(`TauCeti.hasLocalPrimitives_circleAngularForm`). Its continuous path integral around
 `Circle.expLoop` is `2π` (`TauCeti.continuousPathIntegral_circleAngularForm_expLoop`), showing
 that `dθ` has no global differentiable primitive on `Circle`
 (`TauCeti.not_exists_isPrimitiveOn_circleAngularForm`).
@@ -78,8 +78,8 @@ In particular the time form of the unit-period circle is `dθ / 2π`. Since the 
 * `TauCeti.pathIntegral_circleAngularForm_circleExp`: `∫_{exp (· i)} dθ = b − a` over `a..b`.
 * `TauCeti.circleAngularClosedForm_notMem_exactForms`: `dθ` is not exact.
 * `TauCeti.deRhamCohomology.mk_circleAngularClosedForm_ne_zero`: `[dθ] ≠ 0` in `H¹_dR(S¹)`.
-* `TauCeti.forall_exists_isPrimitiveOn_circleAngularForm`: `dθ` admits local primitives near every
-  point of `Circle`.
+* `TauCeti.hasLocalPrimitives_circleAngularForm`: `dθ` admits local primitives near every point
+  of `Circle`.
 * `TauCeti.continuousPathIntegral_circleAngularForm_expLoop`: the continuous path integral of `dθ`
   around `Circle.expLoop` is `2π`.
 * `TauCeti.not_exists_isPrimitiveOn_circleAngularForm`: `dθ` has no global primitive on `Circle`.
@@ -240,14 +240,11 @@ instance nontrivial_deRhamCohomology_circle_one : Nontrivial (deRhamCohomology (
 /-! ### Local primitives and continuous path integral -/
 
 /-- The angular form `circleAngularForm` has local primitives on `Circle`. -/
-theorem forall_exists_isPrimitiveOn_circleAngularForm (z : Circle) :
-    ∃ (g : Circle → ℝ) (U : Set Circle), z ∈ U ∧ IsPrimitiveOn circleAngularForm g U := by
+theorem hasLocalPrimitives_circleAngularForm : HasLocalPrimitives circleAngularForm := by
   have hclosed : mextDeriv circleAngularForm = 0 := by
     rw [← coe_circleAngularClosedForm]
     exact (mem_closedForms (𝓡 1) circleAngularClosedForm.val).mp circleAngularClosedForm.property
-  obtain ⟨g, -, U, hzU, hgU⟩ := exists_contMDiff_isPrimitiveOn (r := 1) le_rfl
-    (isSmoothForm_circleAngularForm.of_le (by simp)) hclosed z
-  exact ⟨g, U, hzU, hgU⟩
+  exact (isSmoothForm_circleAngularForm.of_le (by simp)).hasLocalPrimitives le_rfl hclosed
 
 /-- The continuous path integral of `circleAngularForm` around `Circle.expLoop` is `2π`. -/
 theorem continuousPathIntegral_circleAngularForm_expLoop :
@@ -256,7 +253,7 @@ theorem continuousPathIntegral_circleAngularForm_expLoop :
   have hc : ContMDiff 𝓘(ℝ, ℝ) (𝓡 1) 1 c :=
     (contMDiff_circleExp (m := 1)).comp
       ((contDiff_const.mul contDiff_id).add contDiff_const).contMDiff
-  rw [continuousPathIntegral_eq_pathIntegral forall_exists_isPrimitiveOn_circleAngularForm
+  rw [continuousPathIntegral_eq_pathIntegral hasLocalPrimitives_circleAngularForm
     (isSmoothForm_circleAngularForm.of_le (by simp)) hc (fun t ↦ by simp [c]),
     pathIntegral_comp_mul_add (isSmoothForm_circleAngularForm.of_le (by simp))
       (contMDiff_circleExp (m := 1)) (2 * Real.pi) 0 0 1,

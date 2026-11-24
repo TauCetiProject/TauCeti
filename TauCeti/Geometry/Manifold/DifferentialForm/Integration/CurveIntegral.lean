@@ -67,40 +67,53 @@ theorem pathIntegral_ofSubsingleton_eq_curveIntegral (α : E → E →L[ℝ] F) 
   exact ContinuousAlternatingMap.ofSubsingleton_apply_apply (f := α (c t)) (i := (0 : Fin 1))
     (x := fun _ : Fin 1 ↦ deriv γ.extend t)
 
+private theorem continuousPathIntegral_eq_potentialIntegral_of_lift
+    {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
+    {θ : RoughForm 𝓘(ℝ, E) M F 1} (hθ : HasLocalPrimitives θ)
+    {f : M → E} (hf : Continuous f) {α : E → E →L[ℝ] F} {a b : M} (γ : Path a b)
+    (hloc : ∀ {g : M → F} {V : Set M} {x : M}, x ∈ V → IsPrimitiveOn θ g V →
+      ∃ (g' : E → F), (∀ᶠ y in 𝓝 (f x), HasFDerivAt g' (α y) y) ∧
+        ∀ᶠ y in 𝓝 x, g' (f y) = g y) :
+    continuousPathIntegral θ γ = potentialIntegral α (γ.map hf) := by
+  have hp := hθ.isCoveringMap_proj
+  let Γ := hp.liftPath γ.toContinuousMap (PrimitiveSpace.graph θ 0 a)
+    (by rw [Path.coe_toContinuousMap, γ.source, PrimitiveSpace.proj_graph])
+  have hΓγ (t : unitInterval) : PrimitiveSpace.proj θ (Γ t) = γ t :=
+    congrFun (hp.liftPath_lifts _ _ _) t
+  have hprim : IsPrimitiveAlong α (γ.map hf) (fun t ↦ PrimitiveSpace.value θ (Γ t)) := by
+    rw [isPrimitiveAlong_iff]
+    intro t₀
+    rw [isPrimitiveAlongAt_iff]
+    obtain ⟨g, V, hxV, hgV, c, hc⟩ :=
+      hθ.exists_isPrimitiveOn_eventually_value_eq (Γ.continuous.continuousAt (x := t₀))
+    obtain ⟨g', hd', hfg'⟩ := hloc (hΓγ t₀ ▸ hxV) hgV
+    refine ⟨g', hd', ?_⟩
+    have h0 := hc.self_of_nhds
+    have hfg_t : ∀ᶠ s in 𝓝 t₀, g' (f (γ s)) = g (γ s) :=
+      (γ.continuous.continuousAt (x := t₀)).eventually hfg'
+    have hfg0 := hfg_t.self_of_nhds
+    filter_upwards [hc, hfg_t] with s hs hfg_s
+    simp only [Path.map_coe, Function.comp_apply]
+    rw [hfg_s, hfg0, hs.2, h0.2, hΓγ, hΓγ]
+    abel
+  rw [continuousPathIntegral_eq_sub_of_lift hθ Γ.continuous hΓγ, hprim.potentialIntegral_eq]
+
 /-- On a real normed space `E`, `continuousPathIntegral` of the `1`-form associated to a covector
 field `α : E → E →L[ℝ] F` with local primitives agrees with `TauCeti.potentialIntegral α γ`. -/
 theorem continuousPathIntegral_ofSubsingleton_eq_potentialIntegral {α : E → E →L[ℝ] F}
-    (hφ : ∀ p : E, ∃ (g : E → F) (U : Set E), p ∈ U ∧
-      IsPrimitiveOn (I := 𝓘(ℝ, E))
-        ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
-          RoughForm 𝓘(ℝ, E) E F 1) g U)
+    (hφ : HasLocalPrimitives (I := 𝓘(ℝ, E))
+      ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
+        RoughForm 𝓘(ℝ, E) E F 1))
     {a b : E} (γ : Path a b) :
     continuousPathIntegral (I := 𝓘(ℝ, E))
         ((fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)) :
           RoughForm 𝓘(ℝ, E) E F 1) γ =
       potentialIntegral α γ := by
-  let ψ : RoughForm 𝓘(ℝ, E) E F 1 :=
-    fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)
-  have hφψ : ∀ p : E, ∃ (g : E → F) (U : Set E), p ∈ U ∧ IsPrimitiveOn ψ g U := hφ
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφψ
-  let Γ := hp.liftPath γ.toContinuousMap (PrimitiveSpace.graph ψ 0 a)
-    (by rw [Path.coe_toContinuousMap, γ.source, PrimitiveSpace.proj_graph])
-  have hΓγ (t : unitInterval) : PrimitiveSpace.proj ψ (Γ t) = γ t :=
-    congrFun (hp.liftPath_lifts _ _ _) t
-  have hprim : IsPrimitiveAlong α γ (fun t ↦ PrimitiveSpace.value ψ (Γ t)) := by
-    rw [isPrimitiveAlong_iff]
-    intro t₀
-    rw [isPrimitiveAlongAt_iff]
-    obtain ⟨g, U, hxU, hgU, c, hc⟩ :=
-      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq_of_forall_exists_isPrimitiveOn
-        hφψ (Γ.continuous.continuousAt (x := t₀))
-    obtain ⟨hU, hd⟩ := isPrimitiveOn_ofSubsingleton_iff.mp hgU
-    refine ⟨g, eventually_of_mem (hU.mem_nhds (hΓγ t₀ ▸ hxU)) hd, ?_⟩
-    filter_upwards [hc] with s hs
-    have h0 := hc.self_of_nhds
-    rw [hs.2, h0.2, hΓγ, hΓγ]
-    abel
-  rw [continuousPathIntegral_eq_sub_of_lift hφψ Γ.continuous hΓγ, hprim.potentialIntegral_eq]
+  have h := continuousPathIntegral_eq_potentialIntegral_of_lift hφ continuous_id γ
+    (α := α) fun hxV hgV ↦
+      let ⟨hV, hd⟩ := isPrimitiveOn_ofSubsingleton_iff.mp hgV
+      ⟨_, eventually_of_mem (hV.mem_nhds hxV) hd, Eventually.of_forall fun _ ↦ rfl⟩
+  simpa using h
 
 /-- For a covector field `α : E → E →L[ℝ] F` with `HasLocalPotentials univ α`,
 `continuousPathIntegral` agrees with `TauCeti.potentialIntegral α γ`. -/
@@ -110,52 +123,29 @@ theorem HasLocalPotentials.continuousPathIntegral_ofSubsingleton_eq_potentialInt
         ((fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)) :
           RoughForm 𝓘(ℝ, E) E F 1) γ =
       potentialIntegral α γ :=
-  TauCeti.continuousPathIntegral_ofSubsingleton_eq_potentialIntegral
-    (fun p ↦ hα.forall_exists_isPrimitiveOn p (mem_univ p)) γ
+  TauCeti.continuousPathIntegral_ofSubsingleton_eq_potentialIntegral hα.hasLocalPrimitives γ
 
 /-- On an open submanifold `U : TopologicalSpace.Opens E` of a real normed space,
 `continuousPathIntegral` of the restriction of `α : E → E →L[ℝ] F` along a path `γ` in `U`
 agrees with `TauCeti.potentialIntegral α (γ.map continuous_subtypeVal)`. -/
 theorem continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_potentialIntegral
     {U : TopologicalSpace.Opens E} {α : E → E →L[ℝ] F}
-    (hφ : ∀ p : U, ∃ (g : U → F) (V : Set U), p ∈ V ∧
-      IsPrimitiveOn
-        (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U → E)
-          ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
-            RoughForm 𝓘(ℝ, E) E F 1)) g V)
+    (hφ : HasLocalPrimitives
+      (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U → E)
+        ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
+          RoughForm 𝓘(ℝ, E) E F 1)))
     {a b : U} (γ : Path a b) :
     continuousPathIntegral
         (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U → E)
           ((fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)) :
             RoughForm 𝓘(ℝ, E) E F 1)) γ =
-      potentialIntegral α (γ.map continuous_subtypeVal) := by
-  let ψ : RoughForm 𝓘(ℝ, E) E F 1 :=
-    fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)
-  let ψU := mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U → E) ψ
-  have hφψ : ∀ p : U, ∃ (g : U → F) (V : Set U), p ∈ V ∧ IsPrimitiveOn ψU g V := hφ
-  have hp := PrimitiveSpace.isCoveringMap_proj_of_forall_exists_isPrimitiveOn hφψ
-  let Γ := hp.liftPath γ.toContinuousMap (PrimitiveSpace.graph ψU 0 a)
-    (by rw [Path.coe_toContinuousMap, γ.source, PrimitiveSpace.proj_graph])
-  have hΓγ (t : unitInterval) : PrimitiveSpace.proj ψU (Γ t) = γ t :=
-    congrFun (hp.liftPath_lifts _ _ _) t
-  have hprim : IsPrimitiveAlong α (γ.map continuous_subtypeVal)
-      (fun t ↦ PrimitiveSpace.value ψU (Γ t)) := by
-    rw [isPrimitiveAlong_iff]
-    intro t₀
-    rw [isPrimitiveAlongAt_iff]
-    obtain ⟨g, V, hxV, hgV, c, hc⟩ :=
-      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq_of_forall_exists_isPrimitiveOn
-        hφψ (Γ.continuous.continuousAt (x := t₀))
-    have hV_ext := isPrimitiveOn_ofSubsingleton_iff.mp hgV.of_mpullback_subtypeVal
-    have hmem : ((γ t₀ : U) : E) ∈ Subtype.val '' V := ⟨γ t₀, hΓγ t₀ ▸ hxV, rfl⟩
-    refine ⟨Function.extend Subtype.val g 0,
-      eventually_of_mem (hV_ext.1.mem_nhds hmem) hV_ext.2, ?_⟩
-    filter_upwards [hc] with s hs
-    have h0 := hc.self_of_nhds
-    simp only [Path.map_coe, Function.comp_apply, Subtype.val_injective.extend_apply]
-    rw [hs.2, h0.2, hΓγ, hΓγ]
-    abel
-  rw [continuousPathIntegral_eq_sub_of_lift hφψ Γ.continuous hΓγ, hprim.potentialIntegral_eq]
+      potentialIntegral α (γ.map continuous_subtypeVal) :=
+  continuousPathIntegral_eq_potentialIntegral_of_lift hφ continuous_subtypeVal γ fun {g _ x} hxV
+      hgV ↦
+    let hV_ext := isPrimitiveOn_ofSubsingleton_iff.mp hgV.of_mpullback_subtypeVal
+    ⟨Function.extend Subtype.val g 0,
+      eventually_of_mem (hV_ext.1.mem_nhds ⟨x, hxV, rfl⟩) hV_ext.2,
+      Eventually.of_forall fun y ↦ Subtype.val_injective.extend_apply g 0 y⟩
 
 namespace HasLocalPotentials
 
@@ -171,8 +161,7 @@ theorem continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_potentialI
             RoughForm 𝓘(ℝ, E) E F 1)) γ =
       potentialIntegral α (γ.map continuous_subtypeVal) :=
   TauCeti.continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_potentialIntegral
-    ((forall_exists_isPrimitiveOn_mpullback_subtypeVal_iff (U := U) _).mpr
-      hα.forall_exists_isPrimitiveOn) γ
+    ((hasLocalPrimitives_mpullback_subtypeVal_iff (U := U) _).mpr hα.hasLocalPrimitivesOn) γ
 
 end HasLocalPotentials
 
@@ -181,10 +170,9 @@ primitives on `U` and complete coefficients, `TauCeti.potentialIntegral` along a
 a `C¹` curve `c` in `U` agrees with Mathlib's `curveIntegral α γ`. -/
 theorem potentialIntegral_eq_curveIntegral [CompleteSpace F]
     {U : Set E} (hU : IsOpen U) {α : E → E →L[ℝ] F} (hα : ContinuousOn α U)
-    (hφ : ∀ p ∈ U, ∃ (g : E → F) (V : Set E), p ∈ V ∧
-      IsPrimitiveOn (I := 𝓘(ℝ, E))
-        ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
-          RoughForm 𝓘(ℝ, E) E F 1) g V)
+    (hφ : HasLocalPrimitivesOn (I := 𝓘(ℝ, E))
+      ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
+        RoughForm 𝓘(ℝ, E) E F 1) U)
     {c : ℝ → E} (hc : ContDiff ℝ 1 c) (hcU : ∀ t, c t ∈ U)
     {a b : E} {γ : Path a b} (hγ : ∀ t : unitInterval, γ t = c t) :
     potentialIntegral α γ = curveIntegral α γ := by
@@ -202,9 +190,8 @@ theorem potentialIntegral_eq_curveIntegral [CompleteSpace F]
       source' := Subtype.ext γ.source
       target' := Subtype.ext γ.target }
   have hγU_eq : γU.map continuous_subtypeVal = γ := Path.ext rfl
-  have hφ' : ∀ p : U', ∃ (g : U' → F) (V : Set U'), p ∈ V ∧
-      IsPrimitiveOn (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U' → E) ψ) g V :=
-    (forall_exists_isPrimitiveOn_mpullback_subtypeVal_iff (U := U') ψ).mpr hφ
+  have hφ' : HasLocalPrimitives (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U' → E) ψ) :=
+    (hasLocalPrimitives_mpullback_subtypeVal_iff (U := U') ψ).mpr hφ
   have hsmooth : IsSmoothForm 𝓘(ℝ, E) 0
       (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U' → E) ψ) := by
     rw [isSmoothForm_def]
@@ -237,17 +224,16 @@ theorem HasLocalPotentials.potentialIntegral_eq_curveIntegral [CompleteSpace F]
     {a b : E} {γ : Path a b} (hγ : ∀ t : unitInterval, γ t = c t) :
     potentialIntegral α γ = curveIntegral α γ :=
   TauCeti.potentialIntegral_eq_curveIntegral hα.isOpen hα.continuousOn
-    hα.forall_exists_isPrimitiveOn hc hcU hγ
+    hα.hasLocalPrimitivesOn hc hcU hγ
 
 /-- On a real normed space `E`, for a continuous covector field `α : E → E →L[ℝ] F` with local
 primitives and complete coefficients, `continuousPathIntegral` along a path following a `C¹` curve
 agrees with Mathlib's `curveIntegral α γ`. -/
 theorem continuousPathIntegral_ofSubsingleton_eq_curveIntegral [CompleteSpace F]
     {α : E → E →L[ℝ] F} (hα : Continuous α)
-    (hφ : ∀ p : E, ∃ (g : E → F) (U : Set E), p ∈ U ∧
-      IsPrimitiveOn (I := 𝓘(ℝ, E))
-        ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
-          RoughForm 𝓘(ℝ, E) E F 1) g U)
+    (hφ : HasLocalPrimitives (I := 𝓘(ℝ, E))
+      ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
+        RoughForm 𝓘(ℝ, E) E F 1))
     {c : ℝ → E} (hc : ContDiff ℝ 1 c) {a b : E} {γ : Path a b}
     (hγ : ∀ t : unitInterval, γ t = c t) :
     continuousPathIntegral (I := 𝓘(ℝ, E))
@@ -255,8 +241,8 @@ theorem continuousPathIntegral_ofSubsingleton_eq_curveIntegral [CompleteSpace F]
           RoughForm 𝓘(ℝ, E) E F 1) γ =
       curveIntegral α γ := by
   rw [continuousPathIntegral_ofSubsingleton_eq_potentialIntegral hφ γ]
-  exact potentialIntegral_eq_curveIntegral isOpen_univ hα.continuousOn (fun p _ ↦ hφ p) hc
-    (fun _ ↦ mem_univ _) hγ
+  exact potentialIntegral_eq_curveIntegral isOpen_univ hα.continuousOn
+    (hφ.hasLocalPrimitivesOn univ) hc (fun _ ↦ mem_univ _) hγ
 
 /-- On an open submanifold `U : TopologicalSpace.Opens E` of a real normed space, for a covector
 field `α : E → E →L[ℝ] F` continuous on `U` with local primitives on `U` and complete coefficients,
@@ -265,11 +251,10 @@ field `α : E → E →L[ℝ] F` continuous on `U` with local primitives on `U` 
 theorem continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_curveIntegral
     [CompleteSpace F] {U : TopologicalSpace.Opens E} {α : E → E →L[ℝ] F}
     (hα : ContinuousOn α U)
-    (hφ : ∀ p : U, ∃ (g : U → F) (V : Set U), p ∈ V ∧
-      IsPrimitiveOn
-        (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U → E)
-          ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
-            RoughForm 𝓘(ℝ, E) E F 1)) g V)
+    (hφ : HasLocalPrimitives
+      (mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) (Subtype.val : U → E)
+        ((fun q ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α q)) :
+          RoughForm 𝓘(ℝ, E) E F 1)))
     {c : ℝ → U} (hc : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, E) 1 c) {a b : U} {γ : Path a b}
     (hγ : ∀ t : unitInterval, γ t = c t) :
     continuousPathIntegral
@@ -279,7 +264,7 @@ theorem continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_curveInteg
       curveIntegral α (γ.map continuous_subtypeVal) := by
   rw [continuousPathIntegral_mpullback_subtypeVal_ofSubsingleton_eq_potentialIntegral hφ γ]
   exact potentialIntegral_eq_curveIntegral U.isOpen hα
-    ((forall_exists_isPrimitiveOn_mpullback_subtypeVal_iff (U := U) _).mp hφ)
+    ((hasLocalPrimitives_mpullback_subtypeVal_iff (U := U) _).mp hφ)
     (contMDiff_iff_contDiff.mp (contMDiff_subtypeVal.comp hc))
     (fun t ↦ (c t).property) (fun t ↦ congrArg Subtype.val (hγ t))
 
