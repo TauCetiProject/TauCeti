@@ -13,7 +13,7 @@ import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence.Manifold
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.Separation.InvFunOn
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Global Gromov–Floer compactness on a manifold
@@ -231,7 +231,7 @@ theorem exists_pos_forall_tendsto_subseq_off_finset_of_isCompact
     hω.exists_opens_smoothEmbedding_norm_fderiv_sq_le hW hJ.continuousOn hXsM.continuousOn
       hXtM.continuousOn hC hD hK hCDKW hJt
   refine ⟨δ, hδ, fun Ω p u E₀ hΩ hΩD hpC hu hfl huK hint hE ↦ ?_⟩
-  rcases K.eq_empty_or_nonempty with rfl | ⟨x_def, -⟩
+  rcases K.eq_empty_or_nonempty with rfl | -
   · obtain ⟨p₀, hp₀, φ, hφ, hplim⟩ := hC.tendsto_subseq hpC
     rcases eq_empty_iff_forall_notMem.2 (fun z hz ↦ huK 0 hz) with rfl
     have hE₀ : 0 ≤ E₀ := by simpa using hE 0
@@ -288,12 +288,12 @@ theorem exists_pos_forall_tendsto_subseq_off_finset_of_isCompact
   have hφ : StrictMono φ := hψ₁.comp hχ₂
   -- Step 3: Pull `G` back to `v` via `IsCompact.exists_tendsto_of_tendsto_comp` and deduce
   -- compact-open convergence in `C(U₀, M)`.
-  have : Nonempty M := ⟨x_def⟩
   have heM_inj : InjOn eM K := fun x hx y hy hxy ↦
     congrArg Subtype.val (emb.isEmbedding.injective
       (by simpa only [heM_eq x (hKW hx), heM_eq y (hKW hy)] using hxy))
-  obtain ⟨v, hvc, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp he_cont_K heM_inj
-    (fun n ↦ (huK (φ n)).mono_left sdiff_subset) hGc fun z hz ↦ hconvG.tendsto_at hz
+  obtain ⟨v, hvc, hvK, hev, hpt⟩ := hK.exists_tendsto_of_tendsto_comp (Ω := U₀) he_cont_K heM_inj
+    (fun z hz ↦ Eventually.of_forall fun n ↦ huK (φ n) hz.1) hGc
+    fun z hz ↦ hconvG.tendsto_at hz
   let eM_u : ℕ → C(U₀, EuclideanSpace ℝ (Fin N)) := fun n ↦
     ⟨U₀.domRestrict (eM ∘ u (φ n)), (hequi.continuousOn (χ₂ n)).domRestrict⟩
   let eM_v : C(U₀, EuclideanSpace ℝ (Fin N)) :=
