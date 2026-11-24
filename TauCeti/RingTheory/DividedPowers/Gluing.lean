@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.DividedPowers.DPMorphism
 import TauCeti.RingTheory.DividedPowers.FromGens
+import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # Gluing divided power structures on sums of ideals
@@ -254,10 +255,6 @@ private lemma supDpow_add_eq (hI : DividedPowers I) (hJ : DividedPowers J)
   have hspec2 := hspec.2.choose_spec
   exact hI.dpowConv_eq_of_add_eq hJ h hspec.1 hx hspec2.1 hy hspec2.2
 
-private lemma sup_eq_span_union (I J : Ideal A) :
-    I ⊔ J = Ideal.span ((I : Set A) ∪ (J : Set A)) := by
-  rw [Ideal.span_union, Ideal.span_eq, Ideal.span_eq]
-
 private noncomputable def supAdditive (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
     TauCeti.AdditiveDividedPowers (I ⊔ J) where
@@ -318,7 +315,7 @@ noncomputable def sup (hI : DividedPowers I) (hJ : DividedPowers J)
     (h : ∀ n, ∀ w ∈ I ⊓ J, hI.dpow n w = hJ.dpow n w) :
     DividedPowers (I ⊔ J) :=
   (supAdditive hI hJ h).toDividedPowers
-    (sup_eq_span_union I J)
+    (Ideal.sup_eq_span_union I J)
     (by
       rintro s (hsI | hsJ) m n
       · simp only [supAdditive_dpow_left hI hJ h _ hsI, hI.mul_dpow hsI]
@@ -388,26 +385,23 @@ theorem sup_dpow_of_le_right (hI : DividedPowers I) (hJ : DividedPowers J) (hIJ 
 
 /-- Gluing a divided power structure with itself recovers the original operations on all of `A`. -/
 @[simp]
-theorem sup_dpow_self (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ I ⊓ I, hI.dpow n w = hI.dpow n w) (n : ℕ) (z : A) :
-    (hI.sup hI h).dpow n z = hI.dpow n z :=
-  hI.sup_dpow_of_le_left hI le_rfl h n z
+theorem sup_dpow_self (hI : DividedPowers I) (n : ℕ) (z : A) :
+    (hI.sup hI fun _ _ _ ↦ rfl).dpow n z = hI.dpow n z :=
+  hI.sup_dpow_of_le_left hI le_rfl (fun _ _ _ ↦ rfl) n z
 
 /-- Gluing `hI` with `dividedPowersBot A` recovers the original operations of `hI` on all of `A`. -/
 @[simp]
-theorem sup_dpow_bot (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ I ⊓ (⊥ : Ideal A), hI.dpow n w = (dividedPowersBot A).dpow n w)
-    (n : ℕ) (z : A) :
-    (hI.sup (dividedPowersBot A) h).dpow n z = hI.dpow n z :=
-  hI.sup_dpow_of_le_left (dividedPowersBot A) bot_le h n z
+theorem sup_dpow_bot (hI : DividedPowers I) (n : ℕ) (z : A) :
+    (hI.sup (dividedPowersBot A) (hI.coincide_on_inf_of_inf_eq_mul (dividedPowersBot A)
+      ((inf_bot_eq I).trans (Ideal.mul_bot I).symm))).dpow n z = hI.dpow n z :=
+  hI.sup_dpow_of_le_left (dividedPowersBot A) bot_le _ n z
 
 /-- Gluing `dividedPowersBot A` with `hI` recovers the original operations of `hI` on all of `A`. -/
 @[simp]
-theorem bot_sup_dpow (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ (⊥ : Ideal A) ⊓ I, (dividedPowersBot A).dpow n w = hI.dpow n w)
-    (n : ℕ) (z : A) :
-    ((dividedPowersBot A).sup hI h).dpow n z = hI.dpow n z :=
-  (dividedPowersBot A).sup_dpow_of_le_right hI bot_le h n z
+theorem bot_sup_dpow (hI : DividedPowers I) (n : ℕ) (z : A) :
+    ((dividedPowersBot A).sup hI ((dividedPowersBot A).coincide_on_inf_of_inf_eq_mul hI
+      ((bot_inf_eq I).trans (Ideal.bot_mul I).symm))).dpow n z = hI.dpow n z :=
+  (dividedPowersBot A).sup_dpow_of_le_right hI bot_le _ n z
 
 private lemma eqRec_dpow {I₁ I₂ : Ideal A} (e : I₁ = I₂) (h₁ : DividedPowers I₁) (n : ℕ) (z : A) :
     (e ▸ h₁).dpow n z = h₁.dpow n z := by
@@ -441,27 +435,26 @@ protected theorem sup_of_le_right (hI : DividedPowers I) (hJ : DividedPowers J) 
 
 /-- Gluing a divided power structure with itself recovers `hI` as a bundled `DividedPowers`
 structure up to transport along `sup_idem`. -/
-theorem sup_self (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ I ⊓ I, hI.dpow n w = hI.dpow n w) :
-    (sup_idem I ▸ hI.sup hI h) = hI := by
+theorem sup_self (hI : DividedPowers I) :
+    (sup_idem I ▸ hI.sup hI fun _ _ _ ↦ rfl) = hI := by
   rw [Subsingleton.elim (sup_idem I) (_root_.sup_of_le_left (le_refl I)),
-    hI.sup_of_le_left hI le_rfl h]
+    hI.sup_of_le_left hI le_rfl fun _ _ _ ↦ rfl]
 
 /-- Gluing `hI` with `dividedPowersBot A` recovers `hI` as a bundled `DividedPowers` structure up
 to transport along `sup_bot_eq`. -/
-theorem sup_bot (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ I ⊓ (⊥ : Ideal A), hI.dpow n w = (dividedPowersBot A).dpow n w) :
-    (sup_bot_eq I ▸ hI.sup (dividedPowersBot A) h) = hI := by
+theorem sup_bot (hI : DividedPowers I) :
+    (sup_bot_eq I ▸ hI.sup (dividedPowersBot A) (hI.coincide_on_inf_of_inf_eq_mul
+      (dividedPowersBot A) ((inf_bot_eq I).trans (Ideal.mul_bot I).symm))) = hI := by
   rw [Subsingleton.elim (sup_bot_eq I) (_root_.sup_of_le_left (bot_le : (⊥ : Ideal A) ≤ I)),
-    hI.sup_of_le_left (dividedPowersBot A) bot_le h]
+    hI.sup_of_le_left (dividedPowersBot A) bot_le _]
 
 /-- Gluing `dividedPowersBot A` with `hI` recovers `hI` as a bundled `DividedPowers` structure up
 to transport along `bot_sup_eq`. -/
-theorem bot_sup (hI : DividedPowers I)
-    (h : ∀ n, ∀ w ∈ (⊥ : Ideal A) ⊓ I, (dividedPowersBot A).dpow n w = hI.dpow n w) :
-    (bot_sup_eq I ▸ (dividedPowersBot A).sup hI h) = hI := by
+theorem bot_sup (hI : DividedPowers I) :
+    (bot_sup_eq I ▸ (dividedPowersBot A).sup hI ((dividedPowersBot A).coincide_on_inf_of_inf_eq_mul
+      hI ((bot_inf_eq I).trans (Ideal.bot_mul I).symm))) = hI := by
   rw [Subsingleton.elim (bot_sup_eq I) (_root_.sup_of_le_right (bot_le : (⊥ : Ideal A) ≤ I)),
-    (dividedPowersBot A).sup_of_le_right hI bot_le h]
+    (dividedPowersBot A).sup_of_le_right hI bot_le _]
 
 /-- The identity ring homomorphism is a divided power morphism from `(I, hI)` to
 `(I ⊔ J, hI.sup hJ h)`. -/
@@ -494,7 +487,7 @@ theorem isDPMorphism_sup_iff (hI : DividedPowers I) (hJ : DividedPowers J)
     exact ⟨hg.comp hK (hI.isDPMorphism_id_sup_left hJ h),
       hg.comp hK (hI.isDPMorphism_id_sup_right hJ h)⟩
   · rintro ⟨hgI, hgJ⟩
-    refine IsDPMorphism.on_span (hI.sup hJ h) hK (sup_eq_span_union I J) ?_ ?_
+    refine IsDPMorphism.on_span (hI.sup hJ h) hK (Ideal.sup_eq_span_union I J) ?_ ?_
     · rintro s (hsI | hsJ)
       · exact hgI.ideal_comp (Ideal.mem_map_of_mem g hsI)
       · exact hgJ.ideal_comp (Ideal.mem_map_of_mem g hsJ)
@@ -513,7 +506,7 @@ theorem eq_sup_iff (hI : DividedPowers I) (hJ : DividedPowers J)
   · rintro rfl
     exact ⟨fun n _ hx ↦ hI.sup_dpow_left hJ h n hx, fun n _ hy ↦ hI.sup_dpow_right hJ h n hy⟩
   · rintro ⟨hθI, hθJ⟩
-    refine (hI.sup hJ h).dpow_eq_from_gens θ (sup_eq_span_union I J) ?_
+    refine (hI.sup hJ h).dpow_eq_from_gens θ (Ideal.sup_eq_span_union I J) ?_
     rintro n s (hsI | hsJ)
     · rw [hI.sup_dpow_left hJ h n hsI, hθI n s hsI]
     · rw [hI.sup_dpow_right hJ h n hsJ, hθJ n s hsJ]

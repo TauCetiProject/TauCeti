@@ -534,10 +534,10 @@ theorem dpow_comp_add {x y : A} (hx : x ∈ I) (hy : y ∈ I)
     rw [iterTotalCoeff_eq_uniformBell m hn (Nat.lt_succ_iff.mp (mem_range.mp ha))]
   rw [hcongr, ← Finset.mul_sum, ← hI.dpow_add' hx hy]
 
-/-- If `mul_dpow` holds on `I` and `dpow_comp` holds on a generating set `S` of `I`, then
-`dpow_comp` holds on all of `I`. -/
+/-- If `mul_dpow` and `dpow_comp` hold on a generating set `S` of `I`, then `dpow_comp` holds on
+all of `I`. -/
 theorem dpow_comp_of_span {S : Set A} (hS : I = Ideal.span S)
-    (hmul : ∀ x ∈ I, ∀ m n, hI.dpow m x * hI.dpow n x = ((m + n).choose m : A) * hI.dpow (m + n) x)
+    (hmul : ∀ s ∈ S, ∀ m n, hI.dpow m s * hI.dpow n s = ((m + n).choose m : A) * hI.dpow (m + n) s)
     (hcomp : ∀ s ∈ S, ∀ m n, n ≠ 0 →
       hI.dpow m (hI.dpow n s) = (Nat.uniformBell m n : A) * hI.dpow (m * n) s)
     {m n : ℕ} (hn : n ≠ 0) {x : A} (hx : x ∈ I) :
@@ -551,7 +551,8 @@ theorem dpow_comp_of_span {S : Set A} (hS : I = Ideal.span S)
   | zero => exact fun k l hl ↦ hI.dpow_comp_zero k hl
   | add x y hxS hyS ihx ihy =>
     exact fun k l hl ↦ hI.dpow_comp_add (hS ▸ hxS) (hS ▸ hyS)
-      (hmul x (hS ▸ hxS)) (hmul y (hS ▸ hyS)) ihx ihy k hl
+      (fun _ _ ↦ hI.mul_dpow_of_span hS hmul (hS ▸ hxS))
+      (fun _ _ ↦ hI.mul_dpow_of_span hS hmul (hS ▸ hyS)) ihx ihy k hl
   | smul a x hxS ihx =>
     exact fun k l hl ↦ hI.dpow_comp_mul (hS ▸ hxS) a hl (ihx k l hl)
 
@@ -573,8 +574,7 @@ def toDividedPowers {S : Set A} (hS : I = Ideal.span S)
   dpow_add := hI.dpow_add
   dpow_mul := hI.dpow_mul
   mul_dpow hx := hI.mul_dpow_of_span hS hmul hx
-  dpow_comp hn hx :=
-    hI.dpow_comp_of_span hS (fun _ hx _ _ ↦ hI.mul_dpow_of_span hS hmul hx) hcomp hn hx
+  dpow_comp hn hx := hI.dpow_comp_of_span hS hmul hcomp hn hx
 
 /-- `toDividedPowers` preserves the underlying divided power operations identically. -/
 @[simp]
@@ -744,7 +744,9 @@ theorem exists_not_dividedPowers :
       hI.dpow (1 + 2) (TrivSqZeroExt.inr 1) = TrivSqZeroExt.inr 1 := by
     simp only [hI, counterexampleAdditiveDividedPowers, counterexampleDpow, hε, ↓reduceIte]
     have h3 : (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) = 1 := by
-      ext <;> decide
+      simp only [TrivSqZeroExt.ext_iff, TrivSqZeroExt.fst_natCast, TrivSqZeroExt.snd_natCast,
+        TrivSqZeroExt.fst_one, TrivSqZeroExt.snd_one, Nat.choose_one_right, and_true]
+      decide
     rw [h3, one_mul]
   have hne : hI.dpow 1 (TrivSqZeroExt.inr 1) * hI.dpow 2 (TrivSqZeroExt.inr 1) ≠
       (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
