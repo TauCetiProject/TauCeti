@@ -12,6 +12,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
+
 /-!
 # Pseudoholomorphic maps from compact surfaces onto a torus
 
@@ -276,18 +278,14 @@ theorem injective_iff_degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_in
     (hinj : ∀ c, Function.Injective (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c)) :
     Function.Injective v ↔
       degree o ((AddCircle.orientation p).prod (AddCircle.orientation q)) v = 1 := by
+  refine ⟨degree_eq_one_of_isPseudoholomorphicAt_addCircleProd_of_injective ho hv hhol
+    (mfderiv_ne_zero_of_injective (hinj (Classical.arbitrary C))), fun hdeg a b hab ↦ ?_⟩
   have hcard :=
     degree_eq_ncard_of_isPseudoholomorphicAt_addCircleProd_of_injective_mfderiv ho hv hhol hinj
-  constructor
-  · intro hvinj
-    obtain ⟨c⟩ := ‹Nonempty C›
-    rw [hcard (v c), Set.ncard_eq_one.2 ⟨c, Set.ext fun c' ↦ ⟨fun h ↦ hvinj h, fun h ↦ h ▸ rfl⟩⟩,
-      Nat.cast_one]
-  · intro hdeg a b hab
-    obtain ⟨c, hc⟩ := Set.ncard_eq_one.1 (by exact_mod_cast (hcard (v b)).symm.trans hdeg)
-    have ha : a ∈ v ⁻¹' {v b} := hab
-    have hb : b ∈ v ⁻¹' {v b} := rfl
-    rw [hc] at ha hb
-    exact ha.trans hb.symm
+  obtain ⟨c, hc⟩ := Set.ncard_eq_one.1 (by exact_mod_cast (hcard (v b)).symm.trans hdeg)
+  have ha : a ∈ v ⁻¹' {v b} := hab
+  have hb : b ∈ v ⁻¹' {v b} := rfl
+  rw [hc] at ha hb
+  exact ha.trans hb.symm
 
 end TauCeti

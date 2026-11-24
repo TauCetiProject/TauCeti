@@ -29,7 +29,8 @@ how they are related.
 Take `C` modelled on `ℝ × ℝ`, like the torus, compact and boundaryless, and orient `C` so that the
 frames `(e, j e)` are positive and the torus as the product of the positive orientations of its two
 circles. The **covering multiplicity** of `u` is the mapping degree `m = deg v` (`TauCeti.degree`).
-The degree formula along `v` computes every integral over `C` of a two-form pulled back from `X_φ`:
+The degree formula along `v` (`TauCeti.integralTopForm_mpullback_comp_eq_degree_mul`) computes every
+integral over `C` of a two-form pulled back from `X_φ`:
 
 `∫_C u^* β = m ∫_{(ℝ / ℤ) × (ℝ / dℤ)} τ^* β`
 
@@ -100,10 +101,8 @@ theorem integralTopForm_mpullback_eq_degree_mul_of_orbitTorus_comp_eq
         integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
           (SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) β).val := by
   subst hτv
-  rw [← SmoothForm.mpullback_mpullback _ _ hv (contMDiff_orbitTorus h), SmoothForm.coe_mpullback]
-  exact integralTopForm_mpullback_eq_degree_mul _ _ hv hv.continuous.isProperMap
-    (SmoothForm.isSmoothForm _)
-    (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _))
+  exact integralTopForm_mpullback_comp_eq_degree_mul o _ hv hv.continuous.isProperMap
+    (contMDiff_orbitTorus h) β
 
 variable [I'.Boundaryless] [I.Boundaryless] [FiniteDimensional ℝ E] [PreconnectedSpace C]
   {J : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
