@@ -5,53 +5,54 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.Action
-public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Symplectic.TwoStrands
+-- Non-public: `Fintype.equivFin` transports finite coordinate index sets to `Fin n`, and
+-- `Matrix.reindex_sumCongr_J` transports `Matrix.J` along that equivalence.
+import Mathlib.Data.Fintype.EquivFin
+import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
-# The symplectic Brauer algebra acts by intertwiners of the symplectic group
+# The Brauer algebra acts by intertwiners of the symplectic group
 
 The action `TauCeti.brauerActionSymp` of the Brauer algebra `B_k(-2n)` on the tensor power
-`⨂[R]^k ((Fin n ⊕ Fin n) → R)` commutes with the diagonal action `A ↦ A^{⊗k}` of every matrix `A`
-preserving the standard alternating form, that is, with `Aᵀ * J * A = J`. Equivalently, the image
-of the Brauer algebra lies in the commutant of the symplectic group acting on the tensor power
-(`TauCeti.range_brauerActionSymp_le_centralizer`).
+`((Fin n ⊕ Fin n) → R)^{⊗k}` commutes with the diagonal action `g ↦ g^{⊗k}` of every matrix `g`
+preserving the standard alternating form `Matrix.J (Fin n) R`, that is, satisfying
+`gᵀ * J * g = J`. Equivalently, the image of `B_k(-2n)` lies in the commutant of the symplectic
+group acting on the tensor power (`TauCeti.range_brauerActionSymp_le_centralizer`); on two strands
+`TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/TwoStrands.lean` upgrades
+this inclusion to an equality (`TauCeti.range_brauerActionSymp_two_eq_centralizer`).
 
-The equivariance proof works one diagram at a time in the monomial basis, without appealing to
-generators of the Brauer algebra. For a matrix `A` with `Aᵀ * J * A = J`, one also has
-`A * J * Aᵀ = J`, so `A.kroneckerPower (Fin k)` leaves the symplectic boundary matrix
-`TauCeti.BrauerDiagram.symplecticBoundaryMatrix` invariant under congruence
-(`TauCeti.BrauerDiagram.kroneckerPower_mul_symplecticBoundaryMatrix_mul_transpose`). Since the
-action matrix is the boundary matrix right-multiplied by `(Matrix.J ι R).kroneckerPower (Fin k)`
-and `Kᵀ * K_J * K = K_J`, the action matrix commutes with `K = A.kroneckerPower (Fin k)`
+By `TauCeti.range_brauerActionSymp_eq_adjoin_union`, the image of `B_k(-2n)` is generated as an
+`R`-algebra by the sign-twisted permutations `TauCeti.symplecticPermTensorAction` and the
+distinct-strand cap-cup operators `TauCeti.symplecticCupCapAt`. Both families already commute with
+`PiTensorProduct.map fun _ => A.mulVecLin`
+(`PiTensorProduct.commute_signReindexRepresentation_map` and
+`TauCeti.commute_symplecticCupCapAt_piTensorProductMap`), so the whole image lies in the
+centralizer of `A^{⊗k}` (`TauCeti.commute_brauerActionSymp_piTensorProductMap`). Passing to
+matrices in the monomial basis via `LinearMap.toMatrixAlgEquiv` and reindexing along
+`Fintype.equivFin ι` via `Matrix.reindexAlgEquiv` then yields matrix-level equivariance for
+`TauCeti.BrauerDiagram.symplecticActionMatrix` over any finite index type `ι`
 (`TauCeti.BrauerDiagram.commute_symplecticActionMatrix_kroneckerPower`).
-
-On two strands, combining `TauCeti.range_brauerActionSymp_two_eq_adjoin` with the two-strand
-commutant characterization of
-`TauCeti/RepresentationTheory/ClassicalGroups/BrauerGenerators/Symplectic/TwoStrands.lean` shows
-that the image of `B₂(-2n)` equals the full commutant of `Sp_{2n}` on `V ⊗ V` over any integral
-domain containing a unit `t` with `t ^ m ≠ 1` for `0 < m ≤ 4`
-(`TauCeti.range_brauerActionSymp_two_eq_centralizer`), and in particular over any field of
-characteristic zero (`TauCeti.range_brauerActionSymp_two_eq_centralizer_of_charZero`).
 
 ## Main results
 
-* `TauCeti.BrauerDiagram.commute_symplecticActionMatrix_kroneckerPower`: the symplectic action
-  matrix of a Brauer diagram commutes with the Kronecker power of every matrix with
-  `Aᵀ * J * A = J`.
 * `TauCeti.commute_brauerActionSymp_piTensorProductMap`: every element of `B_k(-2n)` acts by an
   operator commuting with `A^{⊗k}` when `Aᵀ * J * A = J`.
 * `TauCeti.commute_brauerActionSymp_tensorPower` and
-  `TauCeti.range_brauerActionSymp_le_centralizer`: the image of `B_k(-2n)` lies in the commutant
-  of the symplectic group acting diagonally on the `k`-th tensor power.
-* `TauCeti.range_brauerActionSymp_two_eq_centralizer` and
-  `TauCeti.range_brauerActionSymp_two_eq_centralizer_of_charZero`: on two strands, the image of
-  `B₂(-2n)` equals the full commutant of the symplectic group.
+  `TauCeti.range_brauerActionSymp_le_centralizer`: equivariance under the tensor power of
+  `TauCeti.stdSymplecticRep`, packaged as an inclusion into the commutant.
+* `TauCeti.BrauerDiagram.commute_symplecticActionMatrix_permToBrauer_kroneckerPower`: the matrix of
+  a permutation diagram commutes with the Kronecker power of any matrix.
+* `TauCeti.BrauerDiagram.commute_symplecticActionMatrix_kroneckerPower`: the symplectic matrix of
+  any Brauer diagram commutes with the Kronecker power of a matrix satisfying `Aᵀ * J * A = J`.
 
 ## References
 
 * [R. Brauer, *On algebras which are connected with the semisimple continuous groups*][brauer1937],
   Annals of Mathematics 38 (1937), 857-872.
+* R. Dipper, S. Doty, and J. Hu, *Brauer algebras, symplectic Schur algebras and Schur-Weyl
+  duality*, Transactions of the American Mathematical Society 360 (2008), 189-213, §1.
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants*, Springer GTM 255
   (2009), §10.1.
 -/
@@ -65,71 +66,45 @@ namespace TauCeti
 
 universe u
 
-namespace BrauerDiagram
-
-variable {k : ℕ} {R : Type u} [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- **The symplectic action matrix of a Brauer diagram commutes with symplectic matrices.** For any
-matrix `A` with `Aᵀ * J * A = J`, the action matrix `TauCeti.BrauerDiagram.symplecticActionMatrix`
-of `D` commutes with `A.kroneckerPower (Fin k)`. -/
-theorem commute_symplecticActionMatrix_kroneckerPower (D : BrauerDiagram k)
-    {A : Matrix (ι ⊕ ι) (ι ⊕ ι) R} (hA : Aᵀ * Matrix.J ι R * A = Matrix.J ι R) :
-    Commute (D.symplecticActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
-  have hA' : A * Matrix.J ι R * Aᵀ = Matrix.J ι R :=
-    SymplecticGroup.mem_iff.mp (SymplecticGroup.mem_iff'.mpr hA)
-  set K := A.kroneckerPower (Fin k)
-  set K_J := (Matrix.J ι R).kroneckerPower (Fin k)
-  set B := D.symplecticBoundaryMatrix R ι
-  have hB : K * B * Kᵀ = B :=
-    D.kroneckerPower_mul_symplecticBoundaryMatrix_mul_transpose R ι hA'
-  have hKJ : Kᵀ * K_J * K = K_J := by
-    simp only [K, K_J, Matrix.transpose_kroneckerPower, ← Matrix.kroneckerPower_mul, hA]
-  change D.symplecticActionMatrix R ι * K = K * D.symplecticActionMatrix R ι
-  calc
-    D.symplecticActionMatrix R ι * K = B * K_J * K := by rw [symplecticActionMatrix_def]
-    _ = K * B * Kᵀ * K_J * K := by rw [hB]
-    _ = K * B * (Kᵀ * K_J * K) := by simp only [Matrix.mul_assoc]
-    _ = K * B * K_J := by rw [hKJ]
-    _ = K * D.symplecticActionMatrix R ι := by rw [symplecticActionMatrix_def, Matrix.mul_assoc]
-
-end BrauerDiagram
-
 section CommRing
 
 variable (R : Type u) [CommRing R] (n k : ℕ)
 
-/-- **The symplectic Brauer algebra commutes with symplectic matrices.** Every element of
-`B_k(-2n)` acts on `⨂[R]^k ((Fin n ⊕ Fin n) → R)` by an operator commuting with the diagonal action
-of each matrix `A` satisfying `Aᵀ * J * A = J`. -/
+/-- **The symplectic Brauer action commutes with symplectic matrices.** Every element of `B_k(-2n)`
+acts on `((Fin n ⊕ Fin n) → R)^{⊗k}` by an operator commuting with the diagonal action of each
+matrix `A` preserving `Matrix.J (Fin n) R`. -/
 theorem commute_brauerActionSymp_piTensorProductMap (x : BrauerAlgebra R (-(2 * n : R)) k)
     {A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) R}
     (hA : Aᵀ * Matrix.J (Fin n) R * A = Matrix.J (Fin n) R) :
-    Commute (brauerActionSymp R n k x) (PiTensorProduct.map fun _ : Fin k => A.mulVecLin) := by
-  let b := Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n)
-  set T := PiTensorProduct.map fun _ : Fin k => A.mulVecLin
-  have hT : T = Matrix.toLin b b (A.kroneckerPower (Fin k)) := by
-    rw [← A.toMatrix_piTensorProductMap_mulVecLin (κ := Fin k), Matrix.toLin_toMatrix]
-  have hlin : (LinearMap.mulRight R T).comp (brauerActionSymp R n k).toLinearMap =
-      (LinearMap.mulLeft R T).comp (brauerActionSymp R n k).toLinearMap :=
-    (BrauerAlgebra.basis R (-(2 * n : R)) k).ext fun D => by
-      simp only [LinearMap.comp_apply, BrauerAlgebra.basis_apply, AlgHom.toLinearMap_apply,
-        LinearMap.mulRight_apply, LinearMap.mulLeft_apply, brauerActionSymp_of, hT]
-      rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← Matrix.toLin_mul, ← Matrix.toLin_mul,
-        (D.commute_symplecticActionMatrix_kroneckerPower hA).eq]
-  exact LinearMap.congr_fun hlin x
+    Commute (brauerActionSymp R n k x)
+      (PiTensorProduct.map fun _ : Fin k => A.mulVecLin) := by
+  set T : Module.End R (⨂[R]^k ((Fin n ⊕ Fin n) → R)) :=
+    PiTensorProduct.map fun _ : Fin k => A.mulVecLin
+  have hle : (brauerActionSymp R n k).range ≤ Subalgebra.centralizer R {T} := by
+    rw [range_brauerActionSymp_eq_adjoin_union]
+    refine Algebra.adjoin_le ?_
+    rintro _ (⟨σ, rfl⟩ | ⟨⟨⟨a, b⟩, hab⟩, rfl⟩)
+    · rw [SetLike.mem_coe, Subalgebra.mem_centralizer_iff, Set.forall_mem_singleton,
+        symplecticPermTensorAction_def]
+      exact (PiTensorProduct.commute_signReindexRepresentation_map σ A.mulVecLin).symm.eq
+    · rw [SetLike.mem_coe, Subalgebra.mem_centralizer_iff, Set.forall_mem_singleton]
+      exact (commute_symplecticCupCapAt_piTensorProductMap hA hab).symm.eq
+  exact Commute.symm
+    ((Subalgebra.mem_centralizer_iff R).mp (hle ⟨x, rfl⟩) T (Set.mem_singleton T))
 
-/-- **The symplectic Brauer algebra acts by intertwiners of the symplectic group.** Every element
-of `B_k(-2n)` acts on `⨂[R]^k ((Fin n ⊕ Fin n) → R)` by an operator commuting with the tensor power
-of the standard symplectic representation. -/
+/-- **The Brauer algebra acts by intertwiners of the symplectic group.** Every element of `B_k(-2n)`
+acts on `((Fin n ⊕ Fin n) → R)^{⊗k}` by an operator commuting with the tensor power of the standard
+symplectic representation `TauCeti.stdSymplecticRep`. -/
 theorem commute_brauerActionSymp_tensorPower (x : BrauerAlgebra R (-(2 * n : R)) k)
     (g : Matrix.symplecticGroup (Fin n) R) :
     Commute (brauerActionSymp R n k x) ((stdSymplecticRep R n).tensorPower k g) := by
   rw [Representation.tensorPower_apply]
   simpa only [stdSymplecticRep_apply] using
-    commute_brauerActionSymp_piTensorProductMap R n k x (SymplecticGroup.mem_iff'.mp g.prop)
+    commute_brauerActionSymp_piTensorProductMap R n k x
+      ((SymplecticGroup.mem_iff' (l := Fin n) (R := R)).mp g.prop)
 
-/-- **The image of the symplectic Brauer algebra lies in the commutant of the symplectic group**
-acting diagonally on `⨂[R]^k ((Fin n ⊕ Fin n) → R)`. -/
+/-- **The image of `B_k(-2n)` lies in the commutant of the symplectic group** acting on
+`((Fin n ⊕ Fin n) → R)^{⊗k}`. -/
 theorem range_brauerActionSymp_le_centralizer :
     (brauerActionSymp R n k).range ≤
       Subalgebra.centralizer R (Set.range ((stdSymplecticRep R n).tensorPower k)) := by
@@ -140,28 +115,58 @@ theorem range_brauerActionSymp_le_centralizer :
 
 end CommRing
 
-section TwoStrands
+namespace BrauerDiagram
 
-/-- **Brauer duality for the symplectic group on two strands.** Over an integral domain containing
-a unit `t` with `t ^ m ≠ 1` for `0 < m ≤ 4`, the image of `brauerActionSymp K n 2` equals the full
-commutant of the symplectic group on `⨂[K]^2 ((Fin n ⊕ Fin n) → K)`. -/
-theorem range_brauerActionSymp_two_eq_centralizer {K : Type u} [CommRing K] [IsDomain K] {n : ℕ}
-    (ht : ∃ t : Kˣ, ∀ m : ℕ, 0 < m → m ≤ 4 → t ^ m ≠ 1) :
-    (brauerActionSymp K n 2).range =
-      Subalgebra.centralizer K (Set.range ((stdSymplecticRep K n).tensorPower 2)) := by
-  rw [range_brauerActionSymp_two_eq_adjoin,
-    adjoin_symplecticCrossing_symplecticCupCap_eq_centralizer ht]
+variable {k : ℕ} {R : Type u} [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- **Brauer duality for the symplectic group on two strands in characteristic zero**, for instance
-over `ℂ`: the image of `brauerActionSymp K n 2` equals the full commutant of the symplectic group
-on `⨂[K]^2 ((Fin n ⊕ Fin n) → K)`. -/
-theorem range_brauerActionSymp_two_eq_centralizer_of_charZero {K : Type u} [Field K] [CharZero K]
-    {n : ℕ} :
-    (brauerActionSymp K n 2).range =
-      Subalgebra.centralizer K (Set.range ((stdSymplecticRep K n).tensorPower 2)) := by
-  rw [range_brauerActionSymp_two_eq_adjoin,
-    adjoin_symplecticCrossing_symplecticCupCap_eq_centralizer_of_charZero]
+/-- Transport operator-level commutation with `brauerActionSymp` on `Fin n` to matrix-level
+commutation between `D.symplecticActionMatrix R ι` and `A.kroneckerPower (Fin k)` along an
+equivalence `e : Fin n ≃ ι`. -/
+private theorem commute_symplecticActionMatrix_kroneckerPower_of_brauerActionSymp
+    {n : ℕ} (e : Fin n ≃ ι) (D : BrauerDiagram k) (A : Matrix (ι ⊕ ι) (ι ⊕ ι) R)
+    (hop : Commute (brauerActionSymp R n k (BrauerAlgebra.of D))
+      (PiTensorProduct.map fun _ : Fin k =>
+        (Matrix.reindex (Equiv.sumCongr e.symm e.symm)
+          (Equiv.sumCongr e.symm e.symm) A).mulVecLin)) :
+    Commute (D.symplecticActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
+  let eSum : Fin n ⊕ Fin n ≃ ι ⊕ ι := Equiv.sumCongr e e
+  let eFun : (Fin k → Fin n ⊕ Fin n) ≃ (Fin k → ι ⊕ ι) := Equiv.piCongrRight fun _ => eSum
+  let A₀ : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) R :=
+    Matrix.reindex (Equiv.sumCongr e.symm e.symm) (Equiv.sumCongr e.symm e.symm) A
+  let B := Basis.piTensorProduct fun _ : Fin k => Pi.basisFun R (Fin n ⊕ Fin n)
+  have hmat : Commute (D.symplecticActionMatrix R (Fin n)) (A₀.kroneckerPower (Fin k)) := by
+    simpa only [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
+      toMatrix_brauerActionSymp_of, Matrix.toMatrix_piTensorProductMap_mulVecLin, B] using
+      hop.map (LinearMap.toMatrixAlgEquiv B)
+  have hA₀ : Matrix.reindex eSum eSum A₀ = A := by
+    simp [A₀, eSum, ← Equiv.sumCongr_symm]
+  simpa only [Matrix.coe_reindexAlgEquiv, eFun, eSum, reindex_symplecticActionMatrix R e,
+    Matrix.reindex_kroneckerPower, hA₀] using
+    hmat.map (Matrix.reindexAlgEquiv R R eFun)
 
-end TwoStrands
+/-- **The matrix of a permutation diagram commutes with every Kronecker power**, since reindexing
+the factors of `∏ i, A (v i) (u i)` along `σ` leaves the product unchanged. -/
+theorem commute_symplecticActionMatrix_permToBrauer_kroneckerPower
+    (σ : Equiv.Perm (Fin k)) (A : Matrix (ι ⊕ ι) (ι ⊕ ι) R) :
+    Commute ((permToBrauer σ).symplecticActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
+  refine commute_symplecticActionMatrix_kroneckerPower_of_brauerActionSymp
+    (Fintype.equivFin ι).symm (permToBrauer σ) A ?_
+  rw [brauerActionSymp_of_permToBrauer, symplecticPermTensorAction_def]
+  exact PiTensorProduct.commute_signReindexRepresentation_map σ _
+
+/-- **The symplectic matrix of a Brauer diagram commutes with symplectic matrices.** For any matrix
+`A` with `Aᵀ * Matrix.J ι R * A = Matrix.J ι R`, `TauCeti.BrauerDiagram.symplecticActionMatrix`
+commutes with the Kronecker power `A.kroneckerPower (Fin k)`. -/
+theorem commute_symplecticActionMatrix_kroneckerPower (D : BrauerDiagram k)
+    {A : Matrix (ι ⊕ ι) (ι ⊕ ι) R} (hA : Aᵀ * Matrix.J ι R * A = Matrix.J ι R) :
+    Commute (D.symplecticActionMatrix R ι) (A.kroneckerPower (Fin k)) := by
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  refine commute_symplecticActionMatrix_kroneckerPower_of_brauerActionSymp e D A ?_
+  refine commute_brauerActionSymp_piTensorProductMap R (Fintype.card ι) k (BrauerAlgebra.of D) ?_
+  have h := congrArg (Matrix.reindexAlgEquiv R R (Equiv.sumCongr e.symm e.symm)) hA
+  simpa only [map_mul, Matrix.coe_reindexAlgEquiv, ← Matrix.transpose_reindex,
+    Matrix.reindex_sumCongr_J] using h
+
+end BrauerDiagram
 
 end TauCeti

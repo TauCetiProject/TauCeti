@@ -121,7 +121,8 @@ theorem orthogonalActionMatrix_mul [Fintype ι] (D₁ D₂ : BrauerDiagram k) :
   split_ifs with hC
   · rw [natCard_middleLabelling hC, Nat.card_eq_fintype_card, mul_one, Nat.cast_pow]
   · have : IsEmpty {m : Fin k → ι // D₁.IsConstantOnArcs (Sum.elim m v) ∧
-        D₂.IsConstantOnArcs (Sum.elim u m)} := ⟨fun m => hC (m.2.1.composeDiagram m.2.2)⟩
+        D₂.IsConstantOnArcs (Sum.elim u m)} := ⟨fun m => hC
+            (m.property.1.composeDiagram m.property.2)⟩
     rw [Nat.card_of_isEmpty, Nat.cast_zero, mul_zero]
 
 /-- **Reflecting a diagram transposes its matrix**: the reflection `D.flip` exchanges the bottom
