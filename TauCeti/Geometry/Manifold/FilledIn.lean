@@ -35,7 +35,7 @@ a filled compact set `K ⊆ Ω` by a function holomorphic on `Ω`, one applies R
 * `TauCeti.IsFilledIn.union_of_isDiscrete`: adjoining a closed discrete set to `K` (when `Ω \ K` is
   open) preserves filledness in `Ω`, in dimension greater than one.
 * `TauCeti.IsFilledIn.union_of_finite`: the special case of adjoining a finite set to `K`.
-* `TauCeti.IsFilledIn.insert_of_chartedSpace`: adjoining a single point to `K` preserves filledness
+* `TauCeti.IsFilledIn.insert`: adjoining a single point to `K` preserves filledness
   in `Ω` on a manifold of dimension greater than one.
 
 ## References
@@ -104,7 +104,7 @@ theorem IsFilledIn.union_of_finite {K Ω s : Set X} (hfill : IsFilledIn K Ω)
 
 /-- **Adjoining a point preserves filledness**, when `Ω \ K` is open on a manifold modelled on a
 real normed space of dimension greater than one. -/
-theorem IsFilledIn.insert_of_chartedSpace {K Ω : Set X} (hfill : IsFilledIn K Ω)
+protected theorem IsFilledIn.insert {K Ω : Set X} (hfill : IsFilledIn K Ω)
     (h : 1 < Module.rank ℝ E) (hΩK : IsOpen (Ω \ K)) (a : X) : IsFilledIn (insert a K) Ω := by
   rw [insert_eq, union_comm]
   exact hfill.union_of_finite h hΩK (finite_singleton a)

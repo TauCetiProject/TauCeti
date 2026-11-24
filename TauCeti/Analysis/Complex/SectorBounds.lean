@@ -24,7 +24,9 @@ constant `(1 - cos δ) / 2 = sin (δ / 2) ^ 2` for `t ≥ 0`
 `(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`, and in multiplicative form
 `(1 - max c (-1)) / 2 * (1 + ‖z‖ t) ≤ ‖1 - z t‖` (`Complex.mul_one_add_le_norm_one_sub_mul`).
 These inequalities control reciprocal kernels in sectorial and Stieltjes integrals and resolvent
-symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, and every
+symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, as does every
+point of an exterior sector `{z : ℂ | r < ‖z‖ ∧ |arg z| < θ}` with `0 ≤ r` and `θ ≤ π`
+(`Complex.setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane`), and every
 sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
 (`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
 -/
@@ -186,6 +188,13 @@ slit plane. -/
 theorem mem_slitPlane_of_abs_arg_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (hs : |s.arg| ≤ Real.pi - δ)
     (hs0 : s ≠ 0) : s ∈ slitPlane :=
   mem_slitPlane_of_abs_arg_lt (by linarith) hs0
+
+/-- For `0 ≤ r` and `θ ≤ π`, the open exterior sector `{z : ℂ | r < ‖z‖ ∧ |arg z| < θ}` lies in
+the slit exterior `{z | r < ‖z‖} ∩ slitPlane`. -/
+theorem setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane {r θ : ℝ} (hr : 0 ≤ r)
+    (hθ : θ ≤ Real.pi) : {z : ℂ | r < ‖z‖ ∧ |z.arg| < θ} ⊆ {z | r < ‖z‖} ∩ slitPlane :=
+  fun _ hz ↦ ⟨hz.1, mem_slitPlane_of_abs_arg_lt (hz.2.trans_le hθ)
+    (norm_pos_iff.1 (hr.trans_lt hz.1))⟩
 
 /-- Every sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected. -/
 theorem isPreconnected_setOf_abs_arg_lt_and_lt_norm {α r : ℝ} :

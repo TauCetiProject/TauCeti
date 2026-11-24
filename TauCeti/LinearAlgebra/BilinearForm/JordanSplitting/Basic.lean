@@ -775,7 +775,7 @@ theorem IsJordanSplitting.equivalent_restrict_of_forall_unimodular [IsDomain R] 
     (fun x y ↦ by simpa using hsub (k := 1) (hf _ _ (hdvd x) (hdvd y)))
     fun hprev hnext x ↦ hsub (k := 2) (hf₂ hprev hnext _ (hdvd x))
   rw [← hC, ← hC']
-  exact (equivalent_smul_iff hπj).mpr ⟨u⟩
+  exact (equivalent_smul_iff (IsRegular.of_ne_zero (pow_ne_zero j hπ))).mpr ⟨u⟩
 
 /-- The sums of the constituents of a Jordan splitting of index at most `j` and at least `j + 1`
 are complementary. -/
