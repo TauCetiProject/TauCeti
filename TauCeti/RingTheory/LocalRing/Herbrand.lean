@@ -21,11 +21,12 @@ acting trivially on `S ⧸ 𝔪 ^ (⌈t⌉ + 1)`. The **Herbrand function** of t
 
 `φ(u) = ∫_0^u #G_t / #G_0 dt`,
 
-its **inverse Herbrand function** `ψ(v)` is the least `u` with `v ≤ φ(u)`, and the **upper
-numbering** of the ramification groups is `G^v = G_{ψ(v)}`. For a finite Galois extension `L/K`
-of fields complete for a discrete valuation, with `G = Gal(L/K)` acting on the integer ring of
-`L`, these are the classical `φ_{L/K}`, `ψ_{L/K}` and `Gal(L/K)^v`; nothing here uses
-completeness, a discrete valuation, or finiteness of the residue field.
+its **inverse Herbrand function** `ψ(v)` is the infimum of the `u` with `v ≤ φ(u)` (the least
+such `u` when `G` is finite), and the **upper numbering** of the ramification groups is
+`G^v = G_{ψ(v)}`. For a finite Galois extension `L/K` of fields complete for a discrete
+valuation, with `G = Gal(L/K)` acting on the integer ring of `L`, these are the classical
+`φ_{L/K}`, `ψ_{L/K}` and `Gal(L/K)^v`; nothing here uses completeness, a discrete valuation, or
+finiteness of the residue field.
 
 For finite `G` the integrand is an antitone step function, constant on each interval `(i - 1, i]`
 with `i : ℤ`, equal to `#G / #G_0` on `(-∞, -1]` and to `1` on `(-1, 0]`, and bounded below by
@@ -103,8 +104,9 @@ theorem herbrandFun_def (u : ℝ) :
       (Nat.card (ramificationGroupReal G S t) : ℝ) / Nat.card (ramificationGroup G S 0) :=
   (rfl)
 
-/-- The **inverse Herbrand function** `ψ(v)`, the least `u` with `v ≤ φ(u)`. For finite `G` it
-is the inverse of the Herbrand function (`herbrandOrderIso_symm_apply`). -/
+/-- The **inverse Herbrand function** `ψ(v)`, the infimum of the `u` with `v ≤ φ(u)`. For finite
+`G` this infimum is attained and `ψ` is the inverse of the Herbrand function
+(`herbrandOrderIso_symm_apply`). -/
 def inverseHerbrandFun (v : ℝ) : ℝ :=
   sInf {u : ℝ | v ≤ herbrandFun G S u}
 
@@ -364,6 +366,12 @@ theorem lt_inverseHerbrandFun_iff {u v : ℝ} :
     u < inverseHerbrandFun G S v ↔ herbrandFun G S u < v := by
   rw [← herbrandOrderIso_symm_apply, OrderIso.lt_symm_apply, herbrandOrderIso_apply]
 
+variable {G S} in
+/-- `ψ(v) < u` exactly when `v < φ(u)`. -/
+theorem inverseHerbrandFun_lt_iff {u v : ℝ} :
+    inverseHerbrandFun G S v < u ↔ v < herbrandFun G S u := by
+  rw [← herbrandOrderIso_symm_apply, OrderIso.symm_apply_lt, herbrandOrderIso_apply]
+
 /-- The inverse Herbrand function of a finite group is strictly increasing. -/
 theorem inverseHerbrandFun_strictMono : StrictMono (inverseHerbrandFun G S) :=
   coe_herbrandOrderIso_symm G S ▸ (herbrandOrderIso G S).symm.strictMono
@@ -383,6 +391,11 @@ theorem inverseHerbrandFun_eq_self_of_mem_Icc {v : ℝ} (hv : v ∈ Icc (-1 : �
 @[simp]
 theorem inverseHerbrandFun_neg_one : inverseHerbrandFun G S (-1) = -1 :=
   inverseHerbrandFun_eq_self_of_mem_Icc G S ⟨le_rfl, by norm_num⟩
+
+/-- The inverse Herbrand function vanishes at `0`. -/
+@[simp]
+theorem inverseHerbrandFun_zero : inverseHerbrandFun G S 0 = 0 :=
+  inverseHerbrandFun_eq_self_of_mem_Icc G S ⟨by norm_num, le_rfl⟩
 
 variable {G S} in
 /-- The Herbrand function preserves the half-line `[-1, ∞)`: `-1 ≤ φ(u) ↔ -1 ≤ u`. -/
@@ -415,7 +428,7 @@ theorem exists_inverseHerbrandFun_natCast_eq_natCast (n : ℕ) :
     ∃ m : ℕ, inverseHerbrandFun G S n = m := by
   set u : ℝ := inverseHerbrandFun G S n
   have hu : 0 ≤ u := by
-    rw [← inverseHerbrandFun_eq_self_of_mem_Icc G S (v := 0) ⟨by norm_num, le_rfl⟩]
+    rw [← inverseHerbrandFun_zero G S]
     exact (inverseHerbrandFun_strictMono G S).monotone (Nat.cast_nonneg n)
   set m := ⌊u⌋₊
   have hm₁ : (m : ℝ) ≤ u := Nat.floor_le hu
