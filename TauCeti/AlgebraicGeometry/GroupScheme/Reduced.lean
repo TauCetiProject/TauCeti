@@ -68,11 +68,16 @@ its nilradical, as a scheme over `k`. -/
   Over.mk (G.X.left.nilradical.subschemeι ≫ G.X.hom)
 
 /-- The inclusion of the reduction `G_red` into `G`, over `k`. -/
-@[expose] noncomputable def reducedOverι : reducedOver G ⟶ G.X :=
+noncomputable def reducedOverι : reducedOver G ⟶ G.X :=
   Over.homMk G.X.left.nilradical.subschemeι
 
 @[simp]
 theorem reducedOver_left : (reducedOver G).left = G.X.left.nilradical.subscheme :=
+  (rfl)
+
+@[simp]
+theorem reducedOver_hom :
+    (reducedOver G).hom = G.X.left.nilradical.subschemeι ≫ G.X.hom :=
   (rfl)
 
 @[simp]
@@ -117,7 +122,7 @@ theorem reduced_X : (reduced G).X = reducedOver G :=
 
 /-- The inclusion `G_red ⟶ G` of the reduced subgroup scheme, a homomorphism of group
 schemes. -/
-@[expose] noncomputable def reducedι : reduced G ⟶ G :=
+noncomputable def reducedι : reduced G ⟶ G :=
   Grp.ofHom (reducedOverι G)
 
 @[simp]
@@ -137,8 +142,10 @@ instance isThickening_reducedι : IsThickening (reducedι G).hom.hom.left :=
 
 /-- If `G` is locally of finite type over `k`, so is `G_red`. -/
 instance locallyOfFiniteType_reduced [LocallyOfFiniteType G.X.hom] :
-    LocallyOfFiniteType (reduced G).X.hom :=
-  inferInstanceAs (LocallyOfFiniteType (G.X.left.nilradical.subschemeι ≫ G.X.hom))
+    LocallyOfFiniteType (reduced G).X.hom := by
+  rw [reduced_X, reducedOver_hom]
+  -- The goal still names its source `(reducedOver G).left`, which instance search does not unfold.
+  exact inferInstanceAs (LocallyOfFiniteType (G.X.left.nilradical.subschemeι ≫ G.X.hom))
 
 /-- A reduced group scheme locally of finite type over a perfect field is smooth (SGA 3,
 Exp. VI_A, 1.3.1): over a perfect field it is geometrically reduced. -/
