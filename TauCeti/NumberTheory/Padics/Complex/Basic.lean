@@ -35,6 +35,9 @@ nilpotence of `ζ - 1` for `p`-th roots of unity.
 ## Main results
 
 * `PadicComplex.valuation_coe`: the real value of the valuation is the norm.
+* `PadicComplexInt.mem_iff_norm_le_one`: `𝓞_ℂ_[p]` is the closed unit ball of the norm.
+* `PadicComplexInt.integers_normedFieldValuation`: `𝓞_ℂ_[p]` is the ring of integers of `ℂ_[p]`
+  for the norm-induced valuation `NormedField.valuation`.
 * `PadicComplex.residueFieldCharP`: the residue field of `𝓞_ℂ_[p]` has characteristic `p`.
 * `PadicComplex.instIsLinearTopologyInt`, `PadicComplex.instCompleteSpaceInt`: the integers
   of `ℂ_p` are complete and linearly topologized.
@@ -68,6 +71,23 @@ theorem valuation_coe (x : ℂ_[p]) : ((Valued.v x : NNReal) : ℝ) = ‖x‖ :=
   rw [PadicComplex.norm_eq_norm]
   simp [Valuation.norm_def, RankOne.hom_eq_embedding, Valuation.embedding_restrict]
 
+variable {p} in
+/-- An element of `ℂ_[p]` lies in `𝓞_ℂ_[p]` exactly when its norm is at most `1`. -/
+@[simp]
+theorem _root_.PadicComplexInt.mem_iff_norm_le_one {x : ℂ_[p]} : x ∈ 𝓞_ℂ_[p] ↔ ‖x‖ ≤ 1 := by
+  rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe, valuation_coe,
+    NNReal.coe_one]
+
+/-- `𝓞_ℂ_[p]` is the ring of integers of `ℂ_[p]` for the valuation induced by its norm. -/
+theorem _root_.PadicComplexInt.integers_normedFieldValuation :
+    (NormedField.valuation (K := ℂ_[p])).Integers 𝓞_ℂ_[p] :=
+  have hmem (x : ℂ_[p]) : x ∈ 𝓞_ℂ_[p] ↔ NormedField.valuation x ≤ 1 :=
+    PadicComplexInt.mem_iff_norm_le_one.trans
+      (Valued.integer.mem_iff.symm.trans (Valuation.mem_integer_iff _ _))
+  { hom_inj := Subtype.val_injective
+    map_le_one x := (hmem x).1 x.property
+    exists_of_le_one {x} hx := ⟨⟨x, (hmem x).2 hx⟩, rfl⟩ }
+
 /-- The norm of `p` in `ℂ_[p]` is `p⁻¹`. -/
 @[simp]
 theorem norm_p : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
@@ -98,9 +118,8 @@ instance residueFieldCharP : CharP (IsLocalRing.ResidueField 𝓞_ℂ_[p]) p := 
 
 /-- The coefficient inclusion from the p-adic integers into the integers of `ℂ_p`. -/
 noncomputable def integralCoefficientMap : ℤ_[p] →+* 𝓞_ℂ_[p] :=
-  ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom).codRestrict _ fun x ↦ by
-    rw [PadicComplexInt, Valuation.mem_valuationSubring_iff, ← NNReal.coe_le_coe, valuation_coe]
-    simpa using x.norm_le_one
+  ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom).codRestrict _ fun x ↦
+    PadicComplexInt.mem_iff_norm_le_one.2 (by simpa using x.norm_le_one)
 
 @[simp]
 theorem integralCoefficientMap_coe (x : ℤ_[p]) :
