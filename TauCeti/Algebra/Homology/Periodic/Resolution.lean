@@ -275,7 +275,7 @@ theorem resolutionComplexXZeroIso_eq (hj : (j : ZMod n) = i') :
 
 /-- The term in degree `1` of `TauCeti.PeriodicComplex.resolutionComplex Q j` is `Q^i`, for the
 residue `i' = i + 1` of `j`. -/
-private def resolutionComplexXOneIso (hj : (j : ZMod n) = i') (hi : i + 1 = i') :
+def resolutionComplexXOneIso (hj : (j : ZMod n) = i') (hi : i + 1 = i') :
     (resolutionComplex Q j).X 1 ≅ Q.X i :=
   Q.XIsoOfEq (show ((j - (1 : ℕ) : ℤ) : ZMod n) = i by
     push_cast; rw [hj, ← hi, add_sub_cancel_right])
@@ -283,7 +283,7 @@ private def resolutionComplexXOneIso (hj : (j : ZMod n) = i') (hi : i + 1 = i') 
 /-- The differential into degree `0` of `TauCeti.PeriodicComplex.resolutionComplex Q j` is the
 cyclic differential `Q^i ⟶ Q^i'`, for the residue `i' = i + 1` of `j`. -/
 @[reassoc]
-private theorem resolutionComplex_d_one_zero_comp_xZeroIso_hom (hj : (j : ZMod n) = i')
+theorem resolutionComplex_d_one_zero_comp_xZeroIso_hom (hj : (j : ZMod n) = i')
     (hi : i + 1 = i') :
     (resolutionComplex Q j).d 1 0 ≫ (resolutionComplexXZeroIso Q hj).hom =
       (resolutionComplexXOneIso Q hj hi).hom ≫ Q.d i i' := by

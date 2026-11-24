@@ -334,20 +334,6 @@ private theorem exists_isMinimal_quotientCokernel_iso_of_degOne_iso
         rw [← hsq, ← Category.assoc, e.hom.comm 1 0, Category.assoc])).symm⟩⟩
 
 omit [_root_.IsRegularLocalRing S] [IsLocalRing (S ⧸ Ideal.span {w})] in
-private def periodicComplex_resolutionComplex_step_iso
-    (Q : HomologicalComplex (ModuleCat.{u} (S ⧸ Ideal.span {w})) (ComplexShape.up (ZMod 2)))
-    (j : ℤ) {a b : ZMod 2}
-    (ha : ((j - 1 : ℤ) : ZMod 2) = a) (hb : (j : ZMod 2) = b) :
-    {α : (PeriodicComplex.resolutionComplex Q j).X 1 ≅ Q.X a //
-      ∃ β : (PeriodicComplex.resolutionComplex Q j).X 0 ≅ Q.X b,
-        (PeriodicComplex.resolutionComplex Q j).d 1 0 ≫ β.hom = α.hom ≫ Q.d a b} := by
-  let α : (PeriodicComplex.resolutionComplex Q j).X 1 ≅ Q.X a := Q.XIsoOfEq (by simpa using ha)
-  let β : (PeriodicComplex.resolutionComplex Q j).X 0 ≅ Q.X b := Q.XIsoOfEq (by simpa using hb)
-  exact ⟨α, β, by
-    rw [PeriodicComplex.resolutionComplex_d]
-    exact (Q.d_comp_XIsoOfEq_hom _ _).trans (Q.XIsoOfEq_hom_comp_d _ _).symm⟩
-
-omit [_root_.IsRegularLocalRing S] [IsLocalRing (S ⧸ Ideal.span {w})] in
 private theorem exists_isMinimal_quotientCokernel_iso_of_parity_zero
     {M : ModuleCat.{u} (S ⧸ Ideal.span {w})} (P : ProjectiveResolution M)
     (X : MatrixFactorization S w) (hX : X.IsMinimal) {j : ℤ}
@@ -357,8 +343,11 @@ private theorem exists_isMinimal_quotientCokernel_iso_of_parity_zero
       Nonempty ((cokernelFunctor.obj
         ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)).obj ≅ M) := by
   let Q := quotientPeriodicComplex.obj X
-  have hj1 : ((j - 1 : ℤ) : ZMod 2) = 1 := by push_cast; rw [hj]; decide
-  obtain ⟨α, β, hd⟩ := periodicComplex_resolutionComplex_step_iso Q j hj1 hj
+  have hi : (1 : ZMod 2) + 1 = 0 := by decide
+  let α := PeriodicComplex.resolutionComplexXOneIso Q hj hi
+  let β := PeriodicComplex.resolutionComplexXZeroIso Q hj
+  have hd : (PeriodicComplex.resolutionComplex Q j).d 1 0 ≫ β.hom = α.hom ≫ Q.d 1 0 :=
+    PeriodicComplex.resolutionComplex_d_one_zero_comp_xZeroIso_hom Q hj hi
   let Y := parityShift.obj X
   have hY₀ : Q.X 1 =
       ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y).obj.X₀.obj := by
@@ -373,6 +362,10 @@ private theorem exists_isMinimal_quotientCokernel_iso_of_parity_zero
       (comp_eqToHom_heq (-Q.d 1 0) hY₁).symm))
     rw [baseChangeFunctor_obj_d₀, parityShift_obj_d₀, Functor.map_neg, Functor.map_neg,
       quotientPeriodicComplex_obj_d_one_zero]
+    -- Both sides are now `-((ModuleCat.extendScalars _).map ((forget₂ _ _).map X.obj.d₁))`,
+    -- whose endpoints agree definitionally with `((baseChangeFunctor _).obj Y).obj.X₀/X₁.obj`
+    -- and `Q.X 1 / Q.X 0` (`baseChangeFunctor_obj_X₀/X₁`, `parityShift_obj_X₀/X₁`,
+    -- `quotientPeriodicComplex_obj_X_one/zero`).
     rfl
   let negIso : Q.X 1 ≅ Q.X 1 :=
     { hom := -𝟙 _, inv := -𝟙 _, hom_inv_id := by simp, inv_hom_id := by simp }
@@ -394,8 +387,11 @@ private theorem exists_isMinimal_quotientCokernel_iso_of_iso_resolutionComplex
         ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)).obj ≅ M) := by
   let Q := quotientPeriodicComplex.obj X
   rcases (by decide : ∀ z : ZMod 2, z = 1 ∨ z = 0) (j : ZMod 2) with hj | hj
-  · have hj1 : ((j - 1 : ℤ) : ZMod 2) = 0 := by push_cast; rw [hj, sub_self]
-    obtain ⟨α, β, hd⟩ := periodicComplex_resolutionComplex_step_iso Q j hj1 hj
+  · have hi : (0 : ZMod 2) + 1 = 1 := by decide
+    let α := PeriodicComplex.resolutionComplexXOneIso Q hj hi
+    let β := PeriodicComplex.resolutionComplexXZeroIso Q hj
+    have hd : (PeriodicComplex.resolutionComplex Q j).d 1 0 ≫ β.hom = α.hom ≫ Q.d 0 1 :=
+      PeriodicComplex.resolutionComplex_d_one_zero_comp_xZeroIso_hom Q hj hi
     have hdX :
         ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X).obj.d₀.hom = Q.d 0 1 :=
       (baseChangeFunctor_obj_d₀ _ X).trans (quotientPeriodicComplex_obj_d_zero_one X).symm

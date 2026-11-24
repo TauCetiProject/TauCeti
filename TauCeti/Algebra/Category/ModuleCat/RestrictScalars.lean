@@ -374,7 +374,7 @@ theorem not_projective_restrictScalars_quotient_span_singleton
         (by rw [Ideal.Quotient.mk_singleton_self]; exact zero_smul (R ⧸ Ideal.span {w}) m)
     rw [h0, smul_zero]
   exact hm (Module.Flat.isSMulRegular_of_nonZeroDivisors (M := M')
-    (mem_nonZeroDivisors_iff_left.2 fun _ hx ↦ hw (by simpa [smul_eq_mul] using hx)) hw_smul)
+    (nonZeroDivisorsLeft_eq_nonZeroDivisors (M₀ := R) ▸ hw.mem_nonZeroSMulDivisors) hw_smul)
 
 end Quotient
 

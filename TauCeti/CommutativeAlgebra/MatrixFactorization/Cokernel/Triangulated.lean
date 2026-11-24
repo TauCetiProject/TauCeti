@@ -160,6 +160,8 @@ theorem stableToHomotopyInverseCompStableFunctorIso_def (hw : w ∈ nonZeroDivis
     stableToHomotopyInverseCompStableFunctorIso hw =
       Iso.inverseCompIso
         (eqToIso (stableToHomotopy_comp_quotientGorensteinProjectiveStableCokernel hw).symm) := by
+  -- `stableToHomotopyInverseCompStableFunctorIso` is intentionally opaque outside this module;
+  -- unfold it here to expose its defining formula.
   unfold stableToHomotopyInverseCompStableFunctorIso; rfl
 
 /-- The Gorenstein-projective stable cokernel functor commutes with the shifts by `ℤ`: the parity

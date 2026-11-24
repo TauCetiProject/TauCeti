@@ -91,11 +91,6 @@ theorem IsMaximalCohenMacaulay.depth_restrictScalars_add_one_eq_ringKrullDim
   rw [ModuleCat.depth_restrictScalars_of_surjective _ Ideal.Quotient.mk_surjective, hM.depth_eq]
   exact ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim hw hwm
 
-omit [Small.{v} S] [IsLocalRing S] [IsNoetherianRing S] [IsLocalRing (S ⧸ Ideal.span {w})] in
-private theorem mem_nonZeroDivisors_of_isSMulRegular (hw : IsSMulRegular S w) :
-    w ∈ nonZeroDivisors S :=
-  mem_nonZeroDivisors_iff_left.2 fun _ hx ↦ hw (by simpa [smul_eq_mul] using hx)
-
 omit [IsLocalRing S] [IsNoetherianRing S] [IsLocalRing (S ⧸ Ideal.span {w})] in
 private theorem projectiveDimension_restrictScalars_ne_zero
     (hw : IsSMulRegular S w) (M : ModuleCat.{v} (S ⧸ Ideal.span {w})) [Nontrivial M]
@@ -143,7 +138,8 @@ theorem IsMaximalCohenMacaulay.hasProjectiveDimensionLE_restrictScalars
       isCohenMacaulay_iff_depth_eq.2 <| le_antisymm depth_le_supportDim
         ((supportDim_self_eq_ringKrullDim (R := S)).symm ▸ hdim_le)
     exact TauCeti.hasProjectiveDimensionLE_restrictScalars_quotient_of_ringKrullDim_le_depth hS
-      (mem_nonZeroDivisors_of_isSMulRegular hw) M hpd hM.ringKrullDim_le_depth
+      (nonZeroDivisorsLeft_eq_nonZeroDivisors (M₀ := S) ▸ hw.mem_nonZeroSMulDivisors)
+      M hpd hM.ringKrullDim_le_depth
 
 /-- A nonzero finite maximal Cohen–Macaulay module over `S ⧸ (w)` (`w` regular) of finite
 projective dimension over `S` has projective dimension `1` over `S`. -/
@@ -182,7 +178,8 @@ theorem isMaximalCohenMacaulay_of_hasProjectiveDimensionLE_restrictScalars
   have : Small.{v} (S ⧸ Ideal.span {w}) := small_of_surjective Ideal.Quotient.mk_surjective
   isMaximalCohenMacaulay_iff_ringKrullDim_le_depth.2 <|
     TauCeti.ringKrullDim_le_depth_of_hasProjectiveDimensionLE_restrictScalars_quotient hS
-      (mem_nonZeroDivisors_of_isSMulRegular hw) M inferInstance
+      (nonZeroDivisorsLeft_eq_nonZeroDivisors (M₀ := S) ▸ hw.mem_nonZeroSMulDivisors)
+      M inferInstance
 
 end NoetherianLocal
 
