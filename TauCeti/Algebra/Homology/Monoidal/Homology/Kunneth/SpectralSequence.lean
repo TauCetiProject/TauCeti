@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.CartanEilenberg
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.FirstDifferential
+public import TauCeti.CategoryTheory.Monoidal.Tor
 
 /-!
 # The Künneth spectral sequence
@@ -493,21 +494,6 @@ attribute [local instance] Abelian.hasFiniteBiproducts
 
 variable {R : Type u} [CommRing R]
 
-/-- **`Tor` computed by a projective resolution, naturally in the first variable.** For a
-projective resolution `P` of `Y` and a morphism `u : A ⟶ A'`, the map `Torₚ(u, Y)` is, through the
-identifications `ProjectiveResolution.isoLeftDerivedObj`, the map induced on homology by
-`u ▷ P`. -/
-@[reassoc]
-lemma homologyMap_tensoringLeft_map_comp_isoLeftDerivedObj_inv {A A' Y : ModuleCat.{u} R}
-    (u : A ⟶ A') (P : ProjectiveResolution Y) (p : ℕ) :
-    homologyMap ((NatTrans.mapHomologicalComplex ((tensoringLeft _).map u) _).app P.complex) p ≫
-        (P.isoLeftDerivedObj ((tensoringLeft _).obj A') p).inv =
-      (P.isoLeftDerivedObj ((tensoringLeft _).obj A) p).inv ≫
-        ((Tor (ModuleCat.{u} R) p).map u).app Y := by
-  rw [Tor_map, ProjectiveResolution.leftDerived_app_eq _ P]
-  -- `homologyMap` is the action of the homology functor on morphisms by definition
-  exact (Iso.inv_hom_id_assoc _ _).symm
-
 variable {K K' K'' : ChainComplex (ModuleCat.{u} R) ℕ} (L : ChainComplex (ModuleCat.{u} R) ℕ)
 
 /-- The morphism of complexes `kunnethTorComplex K L i j ⟶ kunnethTorComplex K' L i j` induced by
@@ -555,8 +541,12 @@ lemma kunnethTorComplexHomologyIso_hom_naturality {i : ℕ} (u : K.homology i �
     homologyMap (kunnethTorComplexMap L u j) p ≫ (kunnethTorComplexHomologyIso K' L i j p).hom =
       (kunnethTorComplexHomologyIso K L i j p).hom ≫
         ((Tor (ModuleCat.{u} R) p).map u).app (L.homology j) := by
+  have h := ProjectiveResolution.Tor_map_app_comp_isoLeftDerivedObj_hom u
+    (homologyResolution L j) p
   rw [kunnethTorComplexHomologyIso_hom, kunnethTorComplexHomologyIso_hom, kunnethTorComplexMap]
-  exact homologyMap_tensoringLeft_map_comp_isoLeftDerivedObj_inv u (homologyResolution L j) p
+  -- the objects `Torₚ(A, Y)` and `Lₚ(A ⊗ -)(Y)`, and `homology` and the homology functor, agree by
+  -- definition, so the square is inverted as a term rather than by rewriting
+  exact (Iso.eq_inv_comp _).2 ((Category.assoc _ _ _).symm.trans ((Iso.comp_inv_eq _).2 h.symm))
 
 /-- The morphism of complexes `kunnethTorSumComplex K L q ⟶ kunnethTorSumComplex K' L q` induced by
 a morphism `u` of graded coefficient objects `(Hᵢ(K))ᵢ ⟶ (Hᵢ(K'))ᵢ`: the direct sum of the
