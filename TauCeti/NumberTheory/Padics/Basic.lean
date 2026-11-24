@@ -35,7 +35,8 @@ For a normed `ℚ_[p]`-algebra `K`, the composite structure map
 `TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is continuous. When `‖1‖ = 1` in `K` it is an
 isometry, so it maps `ℤ_[p]` into the closed unit ball of `K`, and it is injective when `K` is
 nontrivial. When `‖1‖ = 1` in `K`, the norm of a natural number in `K` is also its `p`-adic norm
-(`TauCeti.norm_natCast_eq_norm_padic`), and a nonzero integer `n` has norm at least `1 / |n|` in
+(`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
+(`TauCeti.norm_natCast_prime_eq_inv`), and a nonzero integer `n` has norm at least `1 / |n|` in
 `K` (`TauCeti.inv_abs_le_norm_intCast`). A continuous ring homomorphism between normed
 `ℚ_[p]`-algebras is automatically `ℚ_[p]`-linear (`RingHom.map_algebraMap_padic_of_continuous`),
 since it fixes the dense subfield `ℚ`; for instance a continuous Frobenius lift on a `p`-adic
@@ -124,6 +125,10 @@ theorem norm_padicIntAlgebraMap_le_one [NormOneClass K] (a : ℤ_[p]) :
 /-- The norm of a natural number in a normed `ℚ_p`-algebra with `‖1‖ = 1` is its `p`-adic norm. -/
 theorem norm_natCast_eq_norm_padic [NormOneClass K] (m : ℕ) : ‖(m : K)‖ = ‖(m : ℚ_[p])‖ := by
   rw [← map_natCast (algebraMap ℚ_[p] K), norm_algebraMap']
+
+/-- In a normed `ℚ_p`-algebra with `‖1‖ = 1`, the prime `p` has norm `p⁻¹`. -/
+theorem norm_natCast_prime_eq_inv [NormOneClass K] : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
+  rw [norm_natCast_eq_norm_padic (p := p), Padic.norm_p]
 
 /-- In a normed `ℚ_p`-algebra with `‖1‖ = 1`, an integer `n` has norm at least `1 / |n|`, because
 the `p`-part of `n` divides `n`. For `n = 0` both sides are `0` by the convention `0⁻¹ = 0`. -/

@@ -15,6 +15,7 @@ import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Normed.Group.NullFamily
 import TauCeti.NumberTheory.Padics.Basic
+import TauCeti.NumberTheory.Padics.NormedAlgebra
 
 /-!
 # Evaluating the annular coefficient ring on the annulus `p⁻¹ < |t| < 1`
@@ -224,9 +225,6 @@ private theorem exists_exponent_lt (x : AnnularRing p) (hx : x ≠ 0) :
 
 variable [NormedAlgebra ℚ_[p] K]
 
-private theorem norm_natCast_p : ‖(p : K)‖ = (p : ℝ)⁻¹ := by
-  rw [norm_natCast_eq_norm_padic (p := p), Padic.norm_p]
-
 /-! ### Convergence on the annulus -/
 
 section Annulus
@@ -271,18 +269,12 @@ private theorem norm_evalTerm_pow {k N : ℕ} (h : ‖t‖ ^ N = (p : ℝ)⁻¹ 
   congr 1
   ring
 
-/-- A point with `‖t‖ ^ N = p ^ (-k)`. -/
-private theorem exists_norm_pow_eq [IsAlgClosed K] {k N : ℕ} (hN : 0 < N) :
-    ∃ t : K, ‖t‖ ^ N = (p : ℝ)⁻¹ ^ k := by
-  obtain ⟨t, ht⟩ := IsAlgClosed.exists_pow_nat_eq ((p : K) ^ k) hN
-  exact ⟨t, by rw [← norm_pow, ht, norm_pow, norm_natCast_p]⟩
-
 /-- The monomial value `a t ^ i (p / t) ^ j` has norm at most `‖t‖ ^ i (p ‖t‖)⁻¹ ^ j`. -/
 private theorem norm_mul_pow_mul_div_pow_le (a : ℤ_[p]) (n : Fin 2 →₀ ℕ) :
     ‖padicIntAlgebraMap p K a * t ^ n 0 * ((p : K) / t) ^ n 1‖ ≤
       ‖t‖ ^ n 0 * ((p : ℝ) * ‖t‖)⁻¹ ^ n 1 := by
-  rw [norm_mul, norm_mul, norm_pow, norm_pow, norm_div, norm_natCast_p, norm_padicIntAlgebraMap,
-    mul_inv, div_eq_mul_inv, mul_assoc]
+  rw [norm_mul, norm_mul, norm_pow, norm_pow, norm_div, norm_natCast_prime_eq_inv,
+    norm_padicIntAlgebraMap, mul_inv, div_eq_mul_inv, mul_assoc]
   exact mul_le_of_le_one_left (by positivity) (PadicInt.norm_le_one a)
 
 /-- The term `a_n (T ^ n₀ U ^ n₁)_m t ^ m` of the double series computing the value of the image of
@@ -418,7 +410,7 @@ theorem eq_zero_of_forall_eval_eq_zero [IsAlgClosed K] {x : AnnularRing p}
   by_contra hx
   have : IsUltrametricDist K := IsUltrametricDist.of_normedAlgebra ℚ_[p]
   obtain ⟨k, hk, m₀, hm₀, hdom⟩ := exists_exponent_lt x hx
-  obtain ⟨t, ht⟩ := exists_norm_pow_eq (K := K) (p := p) (k := k) (N := 2 * k + 1) (by omega)
+  obtain ⟨t, ht⟩ := exists_norm_pow_eq_inv_pow (K := K) p k (N := 2 * k + 1) (by omega)
   have h₀ := lt_norm_of_norm_pow_eq (by omega) ht
   have h₁ := norm_lt_one_of_norm_pow_eq hk ht
   -- At `t`, the term of index `m₀` strictly dominates, so the value has its nonzero norm.
