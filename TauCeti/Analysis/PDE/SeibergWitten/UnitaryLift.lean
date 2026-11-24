@@ -8,12 +8,11 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
 public import TauCeti.Geometry.Symplectic.AlmostComplex.UnitaryGroup
 public import TauCeti.Geometry.Symplectic.Complex.Module.Hom
+public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HalfSpin
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
-import TauCeti.Analysis.Matrix.EuclideanLin
-import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Surjectivity
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
@@ -99,7 +98,7 @@ Clifford algebra behind the splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` of the can
 (`OrthonormalBasis.complexCoords`), which are the coordinates of the complex basis `(e₀, e₂)` of
 `(V, J)` (`TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply`), a
 rotation in `U(V, J)` is a unitary matrix, and this identifies `U(V, J)` with `U(2)`
-(`TauCeti.SeibergWitten.unitaryGroupFrameEquiv`). Through it the
+(`TauCeti.AlmostComplexStructure.unitaryGroupFrameEquiv`). Through it the
 canonical lift is the explicit quaternionic lift `OrthonormalBasis.spinCUnitary` of `U(2)`
 (`TauCeti.SeibergWitten.unitaryLift_eq_spinCUnitary`). Both lift
 `g ↦ (g, det g)` along `Spinᶜ(4) → SO(4) × U(1)`, and such a lift is unique because every element
@@ -116,8 +115,6 @@ of `U(2)` is a square (`OrthonormalBasis.eq_spinCUnitary`).
   homomorphism, as an isomorphism of topological groups from that subgroup onto `U(V, J)`.
 * `TauCeti.SeibergWitten.unitaryLiftContinuousMonoidHom`: the canonical lift as a continuous
   homomorphism.
-* `TauCeti.SeibergWitten.unitaryGroupFrameEquiv`: the isomorphism `U(2) ≃* U(V, J)` given by the
-  complex coordinates of the unitary frame.
 
 ## Main results
 
@@ -785,109 +782,7 @@ end ComplexDeterminant
 section FrameModel
 
 open scoped Matrix
-
-omit [Fact (finrank ℝ V = 4)] in
-include h₀ h₂ in
-/-- The rotations of the frame model `e.spinCUnitary` commute with `J`. -/
-theorem toSpecialOrthogonal_spinCUnitary_mem_unitaryGroup (hQ₀ : Q ≠ 0)
-    (g : Matrix.unitaryGroup (Fin 2) ℂ) :
-    spinCGroup.toSpecialOrthogonal Q hQ₀ (e.spinCUnitary hQ hQ₀ g) ∈ J.unitaryGroup Q := by
-  refine AlmostComplexStructure.mem_unitaryGroup_iff.2 fun v ↦ (e.complexCoords 2).injective ?_
-  rw [e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply,
-    e.complexCoords_two_almostComplexStructure_apply h₀ h₂,
-    e.complexCoords_two_almostComplexStructure_apply h₀ h₂,
-    e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply, Matrix.mulVec_smul]
-
-omit [Fact (finrank ℝ V = 4)] in
-include hQ h₀ h₂ in
-/-- Every rotation in `U(V, J)` acts as a unitary matrix in the complex coordinates of the unitary
-frame `e`: these coordinates are `ℂ`-linear for `J` and carry `V` isometrically onto `ℂ²`. -/
-private theorem exists_complexCoords_apply_eq_mulVec (A : J.unitaryGroup Q) :
-    ∃ g : Matrix.unitaryGroup (Fin 2) ℂ, ∀ v, e.complexCoords 2
-        (((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v) =
-      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v := by
-  let := J.complexModule
-  have := J.complexModule_isScalarTower
-  -- The complex coordinates of `e` are `ℂ`-linear for the complex structure `J` on `V`.
-  let C := (AlmostComplexStructure.basisOfOrthonormalBasisFinFour h₀ h₂).equivFun
-  have hCv (v : V) : C v = e.complexCoords 2 v :=
-    AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply h₀ h₂ v
-  have hC (z : Fin 2 → ℂ) : ‖C.symm z‖ = ‖WithLp.toLp 2 z‖ := by
-    rw [← OrthonormalBasis.norm_toLp_complexCoords (n := 2) e, ← hCv, LinearEquiv.apply_symm_apply]
-  have hA (v : V) : ‖((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v‖ = ‖v‖ := by
-    have h := QuadraticMap.map_app_of_mem_orthogonalGroup
-      (QuadraticMap.specialOrthogonalGroup_le_orthogonalGroup Q
-        (A : QuadraticMap.specialOrthogonalGroup Q).property) v
-    rw [hQ, hQ, neg_inj] at h
-    exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h
-  -- The matrix `g` is `A` read in the complex coordinates, a `ℂ`-linear isometry of `ℂ²`.
-  let L : EuclideanSpace ℂ (Fin 2) →ₗᵢ[ℂ] EuclideanSpace ℂ (Fin 2) :=
-    { toLinearMap := (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).symm.toLinearMap ∘ₗ
-        C.toLinearMap ∘ₗ
-        (AlmostComplexStructure.isComplexLinearMap_of_mem_unitaryGroup
-          A.property).toComplexLinearMap ∘ₗ C.symm.toLinearMap ∘ₗ
-        (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).toLinearMap
-      norm_map' x := by
-        obtain ⟨z, rfl⟩ := (WithLp.linearEquiv 2 ℂ (Fin 2 → ℂ)).symm.surjective x
-        simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
-          IsComplexLinearMap.toComplexLinearMap_apply, WithLp.coe_symm_linearEquiv,
-          WithLp.coe_linearEquiv, hCv]
-        rw [OrthonormalBasis.norm_toLp_complexCoords (n := 2), hA, hC] }
-  refine ⟨Matrix.UnitaryGroup.toLinearIsometryEquiv.symm (L.toLinearIsometryEquiv rfl),
-    fun v ↦ ?_⟩
-  have h := congrArg WithLp.ofLp (Matrix.UnitaryGroup.toLinearIsometryEquiv_apply
-    (Matrix.UnitaryGroup.toLinearIsometryEquiv.symm (L.toLinearIsometryEquiv rfl))
-    (WithLp.toLp 2 (e.complexCoords 2 v)))
-  rw [MulEquiv.apply_symm_apply, LinearIsometry.toLinearIsometryEquiv_apply] at h
-  dsimp only at h
-  rw [← h]
-  simp only [L, LinearIsometry.coe_mk, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    IsComplexLinearMap.toComplexLinearMap_apply, WithLp.coe_linearEquiv,
-    WithLp.coe_symm_linearEquiv, WithLp.ofLp_toLp, hCv]
-  rw [← hCv v, LinearEquiv.symm_apply_apply]
-
-include hQ h₀ h₂ in
-/-- **The unitary group in a unitary frame.** For a unitary frame `e`, `J e₀ = e₁` and
-`J e₂ = e₃`, the isomorphism `U(2) ≃* U(V, J)` sending a unitary matrix `g` to the rotation
-acting as `g` in the complex coordinates `e.complexCoords 2`
-(`complexCoords_unitaryGroupFrameEquiv_apply`, `complexCoords_unitaryGroupFrameEquiv_symm_apply`).
-It is the rotation of the frame model `e.spinCUnitary g`. -/
-def unitaryGroupFrameEquiv : Matrix.unitaryGroup (Fin 2) ℂ ≃* J.unitaryGroup Q :=
-  have hQ₀ : Q ≠ 0 := fun h ↦ by simpa [h] using hQ (e 0)
-  MulEquiv.ofBijective
-    (((spinCGroup.toSpecialOrthogonal Q hQ₀).comp (e.spinCUnitary hQ hQ₀)).codRestrict _
-      (toSpecialOrthogonal_spinCUnitary_mem_unitaryGroup hQ h₀ h₂ hQ₀))
-    ⟨fun g g' h ↦ Subtype.ext <| Matrix.toLin'.injective <| LinearMap.ext fun z ↦ by
-        obtain ⟨v, rfl⟩ := (e.complexCoords 2).surjective z
-        have h' := congrArg (fun A : J.unitaryGroup Q ↦ e.complexCoords 2
-          (((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v)) h
-        simpa only [MonoidHom.codRestrict_apply, MonoidHom.comp_apply,
-          e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply, Matrix.toLin'_apply] using h',
-      fun A ↦ by
-        obtain ⟨g, hg⟩ := exists_complexCoords_apply_eq_mulVec hQ h₀ h₂ A
-        refine ⟨g, Subtype.ext (Subtype.ext (LinearEquiv.ext fun v ↦
-          (e.complexCoords 2).injective ?_))⟩
-        rw [hg]
-        exact e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply hQ hQ₀ g v⟩
-
-omit [Fact (finrank ℝ V = 4)] in
-/-- The rotation `unitaryGroupFrameEquiv g` acts as `g` in the complex coordinates of the frame. -/
-theorem complexCoords_unitaryGroupFrameEquiv_apply (g : Matrix.unitaryGroup (Fin 2) ℂ) (v : V) :
-    e.complexCoords 2
-        (((unitaryGroupFrameEquiv hQ h₀ h₂ g : QuadraticMap.specialOrthogonalGroup Q) :
-          V ≃ₗ[ℝ] V) v) =
-      (g : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ e.complexCoords 2 v :=
-  e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply hQ _ g v
-
-omit [Fact (finrank ℝ V = 4)] in
-/-- A rotation `A` in `U(V, J)` acts as the unitary matrix `(unitaryGroupFrameEquiv).symm A` in the
-complex coordinates of the frame. -/
-theorem complexCoords_unitaryGroupFrameEquiv_symm_apply (A : J.unitaryGroup Q) (v : V) :
-    e.complexCoords 2 (((A : QuadraticMap.specialOrthogonalGroup Q) : V ≃ₗ[ℝ] V) v) =
-      ((unitaryGroupFrameEquiv hQ h₀ h₂).symm A : Matrix (Fin 2) (Fin 2) ℂ) *ᵥ
-        e.complexCoords 2 v := by
-  conv_lhs => rw [← (unitaryGroupFrameEquiv hQ h₀ h₂).apply_symm_apply A]
-  exact complexCoords_unitaryGroupFrameEquiv_apply hQ h₀ h₂ _ v
+open AlmostComplexStructure (unitaryGroupFrameEquiv complexCoords_unitaryGroupFrameEquiv_apply)
 
 variable (hQ₀ : Q ≠ 0) (hW : finrank ℂ (positiveHalfSpinors o ρ) = 2)
   (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
