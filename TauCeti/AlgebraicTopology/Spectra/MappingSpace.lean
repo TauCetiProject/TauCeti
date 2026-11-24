@@ -190,40 +190,38 @@ private lemma freeι_comp_freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}
       freeι n K ▷ L ≫ tensorFreeZeroι ((free n).obj K) L n :=
   freeι_comp_homEquiv_symm n _
 
-/-- Level `m` of `G_m (K ∧ L)` is isomorphic to `((G_m K)_m) ∧ L`, since `tensorRight L`
+/-- Level `m` of `G_n (K ∧ L)` is isomorphic to `(G_n K)_m ∧ L`, since `tensorRight L`
 preserves the defining coproduct. -/
-private noncomputable def freeTensorLevelSelfIso (m : ℕ) (K L : PointedSSet.{0}) :
-    ((free m).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m) ≅
-      ((free m).obj K).functor.obj (FiniteBijection.mk m) ⊗ L :=
-  freeLevelIso m m (K ⊗ L) ≪≫
+private noncomputable def freeTensorLevelIso (n m : ℕ) (K L : PointedSSet.{0}) :
+    ((free n).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m) ≅
+      ((free n).obj K).functor.obj (FiniteBijection.mk m) ⊗ L :=
+  freeLevelIso n m (K ⊗ L) ≪≫
     (Limits.PreservesCoproduct.iso (tensorRight L)
-      (fun _ : FiniteBijection.mk m ⟶ FiniteBijection.mk m ↦ K)).symm ≪≫
-    (tensorRight L).mapIso (freeLevelIso m m K).symm
+      (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K)).symm ≪≫
+    (tensorRight L).mapIso (freeLevelIso n m K).symm
 
-private lemma freeι_comp_map_comp_freeTensorLevelSelfIso_hom (m : ℕ) (K L : PointedSSet.{0})
-    (σ : FiniteBijection.mk m ⟶ FiniteBijection.mk m) :
-    freeι m (K ⊗ L) ≫ ((free m).obj (K ⊗ L)).functor.map σ ≫
-        (freeTensorLevelSelfIso m K L).hom =
-      (freeι m K ≫ ((free m).obj K).functor.map σ) ▷ L := by
-  simp only [freeTensorLevelSelfIso, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom,
+private lemma freeι_comp_map_comp_freeTensorLevelIso_hom (n m : ℕ) (K L : PointedSSet.{0})
+    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
+    freeι n (K ⊗ L) ≫ ((free n).obj (K ⊗ L)).functor.map σ ≫
+        (freeTensorLevelIso n m K L).hom =
+      (freeι n K ≫ ((free n).obj K).functor.map σ) ▷ L := by
+  simp only [freeTensorLevelIso, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom,
     PreservesCoproduct.iso_inv]
   slice_lhs 1 3 => rw [freeι_comp_map_comp_freeLevelIso_hom]
   have hσ := Limits.ι_comp_sigmaComparison (tensorRight L)
-    (fun _ : FiniteBijection.mk m ⟶ FiniteBijection.mk m ↦ K) σ
+    (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ
   dsimp only [Functor.flip_obj_obj, curriedTensor_obj_obj,
     Functor.flip_obj_map, curriedTensor_map_app] at hσ ⊢
-  rw [hσ, ← comp_whiskerRight, ← freeι_comp_map_comp_freeLevelIso_hom_assoc, Iso.hom_inv_id,
-    Category.comp_id]
-  rfl
+  rw [hσ, ← comp_whiskerRight, ι_comp_freeLevelIso_inv]
 
-private lemma isIso_freeTensorFreeZeroHom_app_self (m : ℕ) (K L : PointedSSet.{0}) :
-    IsIso ((freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m)) := by
-  have heq : (freeTensorFreeZeroHom m K L).natTrans.app (FiniteBijection.mk m) =
-      (freeTensorLevelSelfIso m K L).hom ≫ tensorFreeZeroι ((free m).obj K) L m := by
+private lemma isIso_freeTensorFreeZeroHom_app (n m : ℕ) (K L : PointedSSet.{0}) :
+    IsIso ((freeTensorFreeZeroHom n K L).natTrans.app (FiniteBijection.mk m)) := by
+  have heq : (freeTensorFreeZeroHom n K L).natTrans.app (FiniteBijection.mk m) =
+      (freeTensorLevelIso n m K L).hom ≫ tensorFreeZeroι ((free n).obj K) L m := by
     refine free_level_hom_ext fun σ ↦ ?_
-    have hnat := map_whiskerRight_comp_tensorFreeZeroι ((free m).obj K) L σ
-    have hstep := freeι_comp_map_comp_freeTensorLevelSelfIso_hom m K L σ
-    rw [(freeTensorFreeZeroHom m K L).natTrans.naturality σ,
+    have hnat := map_whiskerRight_comp_tensorFreeZeroι ((free n).obj K) L σ
+    have hstep := freeι_comp_map_comp_freeTensorLevelIso_hom n m K L σ
+    rw [(freeTensorFreeZeroHom n K L).natTrans.naturality σ,
       freeι_comp_freeTensorFreeZeroHom_assoc]
     dsimp only [free, Functor.comp_obj] at hnat hstep ⊢
     rw [← hnat, ← comp_whiskerRight_assoc, ← hstep, Category.assoc, Category.assoc]
@@ -232,22 +230,17 @@ private lemma isIso_freeTensorFreeZeroHom_app_self (m : ℕ) (K L : PointedSSet.
 
 private lemma isIso_freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}) :
     IsIso (freeTensorFreeZeroHom n K L) := by
-  have hn : ∀ c : FiniteBijection, IsIso ((freeTensorFreeZeroHom n K L).natTrans.app c) := by
+  have : ∀ c : FiniteBijection,
+      IsIso (((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
+        (freeTensorFreeZeroHom n K L)).app c) := by
     rintro ⟨m⟩
-    by_cases h : m = n
-    · subst h
-      exact isIso_freeTensorFreeZeroHom_app_self m K L
-    · have hI₁ : Limits.IsInitial (((free n).obj (K ⊗ L)).functor.obj (FiniteBijection.mk m)) :=
-        isInitialFreeObj (K ⊗ L) h
-      have hI₂ : Limits.IsInitial
-          (((free n).obj K ⊗ (free 0).obj L).functor.obj (FiniteBijection.mk m)) :=
-        (Limits.IsInitial.isInitialObj (tensorRight L) _ (isInitialFreeObj K h)).ofIso
-          (asIso (tensorFreeZeroι ((free n).obj K) L m))
-      exact Limits.isIso_of_isInitial hI₁ hI₂ _
-  have : IsIso ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-      (freeTensorFreeZeroHom n K L)) := by
     rw [DayFunctor.equiv_functor_map]
-    exact @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ hn
+    exact isIso_freeTensorFreeZeroHom_app n m K L
+  have : IsIso ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
+      (freeTensorFreeZeroHom n K L)) :=
+    NatIso.isIso_of_isIso_app
+      ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
+        (freeTensorFreeZeroHom n K L))
   exact isIso_of_reflects_iso _ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor
 
 private lemma freeTensorFreeZeroHom_naturality (n : ℕ) (K : PointedSSet.{0})

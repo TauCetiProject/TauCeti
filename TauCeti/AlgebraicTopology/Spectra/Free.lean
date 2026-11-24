@@ -77,17 +77,6 @@ lemma freeι_naturality (n : ℕ) {K L : PointedSSet.{0}} (f : K ⟶ L) :
         ((free n).map f).natTrans.app (FiniteBijection.mk n) :=
   (Limits.Sigma.ι_comp_desc (fun h ↦ f ≫ Limits.Sigma.ι (fun _ ↦ L) h) (𝟙 _)).symm
 
-/-- Precomposing the universal generator of `G_n K` with the action of `σ : mk n ⟶ mk m` yields
-the `σ`-summand inclusion into `(G_n K)_m`. -/
-@[reassoc]
-lemma freeι_comp_map (n : ℕ) (K : PointedSSet.{0}) {m : ℕ}
-    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
-    freeι n K ≫ ((free n).obj K).functor.map σ =
-      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ := by
-  dsimp only [free, Functor.comp_obj, DayFunctor.equiv]
-  rw [freeι, evaluationLeftAdjoint_obj_map]
-  exact (Limits.Sigma.ι_comp_desc _ _).trans (by rw [Category.id_comp])
-
 /-- Level `m` of `G_n K` is the coproduct of copies of `K` indexed by bijections `Fin n ≃ Fin m`. -/
 noncomputable def freeLevelIso (n m : ℕ) (K : PointedSSet.{0}) :
     ((free n).obj K).functor.obj (FiniteBijection.mk m) ≅
@@ -95,14 +84,31 @@ noncomputable def freeLevelIso (n m : ℕ) (K : PointedSSet.{0}) :
   -- `free n` evaluates at `mk m` to this coproduct by definition of `evaluationLeftAdjoint`.
   Iso.refl _
 
-/-- Under `freeLevelIso`, the action of `σ : mk n ⟶ mk m` on the universal generator `freeι n K`
-is the `σ`-summand inclusion into the coproduct. -/
+/-- Under `freeLevelIso`, postcomposing the universal generator `freeι n K` with the action of
+`σ : mk n ⟶ mk m` yields the `σ`-summand inclusion into the coproduct. -/
 @[reassoc]
 lemma freeι_comp_map_comp_freeLevelIso_hom (n m : ℕ) (K : PointedSSet.{0})
     (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
     freeι n K ≫ ((free n).obj K).functor.map σ ≫ (freeLevelIso n m K).hom =
-      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ :=
-  freeι_comp_map n K σ
+      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ := by
+  have h : freeι n K ≫ ((free n).obj K).functor.map σ =
+      Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ := by
+    dsimp only [free, Functor.comp_obj, DayFunctor.equiv]
+    rw [freeι, evaluationLeftAdjoint_obj_map]
+    exact (Limits.Sigma.ι_comp_desc _ _).trans (by rw [Category.id_comp])
+  dsimp only [freeLevelIso]
+  exact h
+
+/-- Under `(freeLevelIso n m K).inv`, the `σ`-summand inclusion maps to the action of `σ` on the
+universal generator `freeι n K`. -/
+@[reassoc (attr := simp)]
+lemma ι_comp_freeLevelIso_inv (n m : ℕ) (K : PointedSSet.{0})
+    (σ : FiniteBijection.mk n ⟶ FiniteBijection.mk m) :
+    Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk m ↦ K) σ ≫
+        (freeLevelIso n m K).inv =
+      freeι n K ≫ ((free n).obj K).functor.map σ := by
+  rw [← freeι_comp_map_comp_freeLevelIso_hom_assoc, Iso.hom_inv_id, Category.comp_id]
+  dsimp only [free, Functor.comp_obj]
 
 /-- A morphism out of `(G_n K)_m` is determined on the summands `freeι n K ≫ (G_n K).map σ`. -/
 @[ext]
@@ -114,8 +120,7 @@ lemma free_level_hom_ext {n m : ℕ} {K Y : PointedSSet.{0}}
     f = g := by
   rw [← cancel_epi (freeLevelIso n m K).inv]
   refine Limits.Sigma.hom_ext _ _ fun σ ↦ ?_
-  rw [← freeι_comp_map_comp_freeLevelIso_hom_assoc, Iso.hom_inv_id_assoc,
-    ← freeι_comp_map_comp_freeLevelIso_hom_assoc, Iso.hom_inv_id_assoc]
+  rw [ι_comp_freeLevelIso_inv_assoc, ι_comp_freeLevelIso_inv_assoc]
   exact h σ
 
 /-- The unit of the free symmetric sequence adjunction is the universal generator. -/
