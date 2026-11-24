@@ -45,6 +45,8 @@ product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧
 * `TauCeti.alternatingFormEquiv_wedgeLeft_apply`: it carries exterior multiplication by `u` to
   the wedge with the covector `⟪u, ·⟫`.
 * `LinearIsometry.alternatingFormEquiv_map`: musical identification commutes with isometries.
+* `ContinuousAlternatingMap.abs_alternatingFormInner_le_sqrt_mul_sqrt`: the Cauchy–Schwarz
+  inequality `|⟨α, β⟩| ≤ √⟨α, α⟩ √⟨β, β⟩` for the inner product of forms.
 * `TauCeti.alternatingFormInner_eq_sum`: the inner product of forms in an orthonormal basis.
 * `Module.Basis.alternatingFormEquiv_symm_eq_sum`: the element of `⋀ᵏ V` representing a form, in
   an arbitrary basis.
@@ -227,6 +229,15 @@ theorem _root_.ContinuousAlternatingMap.sqrt_alternatingFormInner_self {k : ℕ}
     (α : V [⋀^Fin k]→L[ℝ] ℝ) :
     √(alternatingFormInner V k α α) = ‖(alternatingFormEquiv V k).symm α‖ := by
   rw [alternatingFormInner_apply, real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)]
+
+/-- **Cauchy–Schwarz for forms**: `|⟨α, β⟩| ≤ √⟨α, α⟩ √⟨β, β⟩`. -/
+theorem _root_.ContinuousAlternatingMap.abs_alternatingFormInner_le_sqrt_mul_sqrt {k : ℕ}
+    (α β : V [⋀^Fin k]→L[ℝ] ℝ) :
+    |alternatingFormInner V k α β| ≤
+      √(alternatingFormInner V k α α) * √(alternatingFormInner V k β β) := by
+  rw [alternatingFormInner_apply, ContinuousAlternatingMap.sqrt_alternatingFormInner_self,
+    ContinuousAlternatingMap.sqrt_alternatingFormInner_self]
+  exact abs_real_inner_le_norm _ _
 
 /-- **The inner product of forms in an orthonormal basis**: if `(eᵢ)` is an orthonormal basis of
 `V` indexed by a linear order, then `⟨α, β⟩ = ∑ α(e_{i₁}, …, e_{iₖ}) β(e_{i₁}, …, e_{iₖ})`, the sum
