@@ -29,9 +29,9 @@ along `W.ι` sends the class of a section of `P` to the class of its pullback
 on classes of sections by multiplication
 (`AlgebraicGeometry.Scheme.Modules.cohomologyOnMap_globalSectionsSmul_resolutionClass`).
 
-Module pullback along an open immersion is restriction, so it is exact and preserves injective
-modules (`AlgebraicGeometry.Scheme.Modules.preservesFiniteLimits_pullback_of_isOpenImmersion` and
-`AlgebraicGeometry.Scheme.Modules.injective_pullback_obj_of_isOpenImmersion`).
+Module pullback along an open immersion is restriction, so it is exact
+(`AlgebraicGeometry.Scheme.Hom.preservesLimits_pullback_of_isOpenImmersion`) and preserves
+injective modules (`AlgebraicGeometry.Scheme.Modules.injective_pullback_obj_of_isOpenImmersion`).
 -/
 
 public section
@@ -46,11 +46,6 @@ noncomputable section
 namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X Y : Scheme.{u}} (f : Y ⟶ X) [IsOpenImmersion f]
-
-/-- Module pullback along an open immersion is exact: it is restriction, a right adjoint. -/
-instance preservesFiniteLimits_pullback_of_isOpenImmersion :
-    PreservesFiniteLimits (Scheme.Modules.pullback f) :=
-  preservesFiniteLimits_of_natIso (Scheme.Modules.restrictFunctorIsoPullback f)
 
 /-- Module pullback along an open immersion preserves injective modules, since restriction does. -/
 instance injective_pullback_obj_of_isOpenImmersion (I : X.Modules) [Injective I] :
