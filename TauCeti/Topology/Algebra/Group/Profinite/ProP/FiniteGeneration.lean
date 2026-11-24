@@ -47,15 +47,15 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_proPFrattini
   have := hG.finite_openSubgroup_index_eq p
   have : Finite {U : OpenNormalSubgroup G // U.toSubgroup.index = p} :=
     Finite.of_injective
-      (fun U ↦ (⟨U.1.toOpenSubgroup, U.2⟩ :
+      (fun U ↦ (⟨U.val.toOpenSubgroup, U.property⟩ :
         {U : OpenSubgroup G // (U : Subgroup G).index = p})) (by
       intro U V h
       apply Subtype.ext
       apply OpenNormalSubgroup.toSubgroup_injective
       exact congrArg (fun U : {U : OpenSubgroup G // (U : Subgroup G).index = p} ↦
-        U.1.toSubgroup) h)
+        U.val.toSubgroup) h)
   rw [proPFrattini_def, Subgroup.coe_iInf]
-  exact isOpen_iInter_of_finite fun U ↦ U.1.isOpen
+  exact isOpen_iInter_of_finite fun U ↦ U.val.isOpen
 
 /-- In a topologically finitely generated compact group, the topologically characteristic open
 normal subgroups contained in the pro-`p` Frattini subgroup are cofinal among the open subgroups:
@@ -76,7 +76,7 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_map_subtype_proPFrattini
     IsOpen ((proPFrattini p U.toSubgroup).map U.toSubgroup.subtype : Set G) := by
   have : CompactSpace U.toSubgroup := isCompact_iff_compactSpace.mp U.isClosed.isCompact
   rw [Subgroup.coe_map, Subgroup.coe_subtype]
-  exact U.isOpen.isOpenMap_subtype_val _ ((hG.of_openSubgroup U).isOpen_proPFrattini p)
+  exact U.isOpen.isOpenMap_subtypeVal _ ((hG.of_openSubgroup U).isOpen_proPFrattini p)
 
 /-- The pro-`p` Frattini quotient of a compact topologically finitely generated group is finite.
 Neither primality of `p` nor the pro-`p` condition on the group is needed in this direction. -/

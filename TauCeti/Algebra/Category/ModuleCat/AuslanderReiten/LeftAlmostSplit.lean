@@ -47,10 +47,10 @@ variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A]
 short exact sequence with finitely generated middle term and a left almost-split first
 map. The presentation need not be minimal, and the field need not be algebraically closed. -/
 theorem exists_isLeftAlmostSplit_translate (f : P₁ →ₗ[A] P₀)
-    [IsLocalRing (End (ModuleCat.of A (AuslanderReitenTranslate k f)))]
-    (hi : ¬ Injective (ModuleCat.of A (AuslanderReitenTranslate k f))) :
+    [IsLocalRing (End (ModuleCat.of A (AuslanderReitenTranslate k k f)))]
+    (hi : ¬ Injective (ModuleCat.of A (AuslanderReitenTranslate k k f))) :
     ∃ (E : ModuleCat.{max u v w} A)
-      (i : ModuleCat.of A (AuslanderReitenTranslate k f) ⟶ E)
+      (i : ModuleCat.of A (AuslanderReitenTranslate k k f) ⟶ E)
       (p : E ⟶ ModuleCat.of A (P₀ ⧸ range f)) (h : i ≫ p = 0),
       (ShortComplex.mk i p h).ShortExact ∧ Module.Finite A E ∧ IsLeftAlmostSplit i := by
   obtain ⟨α, hα, hkill⟩ := exists_auslanderReitenExt_ne_zero (k := k) f hi

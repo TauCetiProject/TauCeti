@@ -52,7 +52,7 @@ instance : PartialOrder (Index p) where
 @[simp]
 theorem le_iff_dvd {n m : Index p} : n ≤ m ↔ (n.order : ℕ) ∣ m.order := Iff.rfl
 
-instance (n : Index p) : NeZero (n.order : ℕ) := ⟨n.order.2.1⟩
+instance (n : Index p) : NeZero (n.order : ℕ) := ⟨n.order.property.1⟩
 
 end Index
 

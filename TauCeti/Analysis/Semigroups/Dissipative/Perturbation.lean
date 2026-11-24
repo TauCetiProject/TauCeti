@@ -55,7 +55,7 @@ theorem IsDissipative.subScalar_vadd (hA : IsDissipative A) (B : X →L[ℝ] X) 
     rw [LinearPMap.vadd_apply, LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply]
     module
   have hdis : (mu + ‖B‖) * ‖(x : X)‖ ≤ ‖(mu + ‖B‖) • (x : X) - A x‖ :=
-    hA (mu + ‖B‖) (by linarith [norm_nonneg B]) ⟨(x : X), x.2⟩
+    hA (mu + ‖B‖) (by linarith [norm_nonneg B]) ⟨(x : X), x.property⟩
   rw [add_mul] at hdis
   have hBx : ‖B (x : X)‖ ≤ ‖B‖ * ‖(x : X)‖ := B.le_opNorm _
   rw [hstep]
