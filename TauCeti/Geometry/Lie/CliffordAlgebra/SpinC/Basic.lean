@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Manifold
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 /-!

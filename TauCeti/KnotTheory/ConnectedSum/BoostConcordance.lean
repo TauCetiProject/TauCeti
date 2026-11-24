@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.ConnectedSum.Position
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Arc.Straightening
+import TauCeti.Analysis.Complex.Inner
 
 /-!
 # Boosting concordances into connected-sum position

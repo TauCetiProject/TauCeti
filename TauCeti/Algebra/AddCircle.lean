@@ -49,6 +49,7 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.coe_eq_coe_iff_exists_zsmul`: two elements have the same class in `AddCircle p`
   exactly when they differ by an integer multiple of `p`, and
   `AddCircle.eq_of_coe_eq_of_abs_sub_lt`: two such elements closer than `p` are equal.
+* `AddCircle.exists_pi_coe_eq`: every point of a torus `(𝕜 / pℤ)^ι` lifts to `𝕜^ι`.
 * `AddCircle.intCast_floor_equivIco_add`: the floor of the sum of two representatives in
   `[0, 1)` is their defect of additivity.
 * `AddCircle.natCard_torsionBy_le` and `AddCircle.natCard_torsionBy_pi_le`: when
@@ -68,6 +69,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 * `AddCircle.eq_torsionBy_of_natCard_eq`: a subgroup of `AddCircle p` with `n` elements is the
   `n`-torsion; equivalently, `AddCircle.exists_eq_torsionBy` writes every finite subgroup as a
   torsion subgroup, and `AddCircle.isAddCyclic_of_finite` shows that it is cyclic.
+* `AddCircle.exists_isCoprime_zsmul_eq_of_addOrderOf_eq`: two points of the same positive
+  additive order are multiples of each other by an integer prime to that order.
 * `AddCircle.isCyclic_of_finite_multiplicative`: a finite subgroup of the multiplicative copy of a
   circle `𝕜 ⧸ p ℤ` over a characteristic-zero division ring is cyclic.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
@@ -166,6 +169,19 @@ theorem eq_of_coe_eq_of_abs_sub_lt {𝕜 : Type*} [AddCommGroup 𝕜] [LinearOrd
     exact hd
   exact injOn_coe_Ico p (min a b) ⟨min_le_left a b, (le_max_left a b).trans_lt hd'⟩
     ⟨min_le_right a b, (le_max_right a b).trans_lt hd'⟩ hab
+
+/-- Every point of a torus `(𝕜 / pℤ)^ι` is the class of a family of representatives in `𝕜^ι`.
+This is `Function.Surjective.comp_left` for the quotient map, stated with the coordinatewise
+coercion so that `obtain ⟨t, rfl⟩` leaves terms that lemmas about coerced angles rewrite. -/
+theorem exists_pi_coe_eq {𝕜 ι : Type*} [AddCommGroup 𝕜] {p : 𝕜} (θ : ι → AddCircle p) :
+    ∃ t : ι → 𝕜, (fun j ↦ (t j : AddCircle p)) = θ :=
+  QuotientAddGroup.mk_surjective.comp_left θ
+
+/-- An integer reduces to zero in `AddCircle (1 : 𝕜)`. -/
+@[simp]
+theorem coe_intCast_eq_zero {𝕜 : Type*} [Ring 𝕜] (n : ℤ) :
+    ((n : 𝕜) : AddCircle (1 : 𝕜)) = 0 :=
+  (coe_eq_zero_iff (1 : 𝕜)).mpr ⟨n, by simp⟩
 
 /-- The floor of the sum of the representatives in `[0, 1)` of two points of `AddCircle (1 : 𝕜)`
 is the defect of additivity of the representatives. -/
@@ -331,6 +347,18 @@ theorem isAddCyclic_of_finite (H : AddSubgroup (AddCircle p)) [Finite H] : IsAdd
   obtain ⟨n, hn, hH⟩ := exists_eq_torsionBy p (H := H)
   rw [hH]
   exact isAddCyclic_torsionBy p (Nat.cast_ne_zero.mpr hn.ne')
+
+/-- Two points of `AddCircle p` of the same positive additive order `n` are unit multiples of
+each other: both generate the `n`-torsion, the only subgroup of order `n`. -/
+theorem exists_isCoprime_zsmul_eq_of_addOrderOf_eq {u v : AddCircle p} (hu : 0 < addOrderOf u)
+    (h : addOrderOf u = addOrderOf v) : ∃ k : ℤ, IsCoprime k (addOrderOf u) ∧ k • u = v := by
+  have hn : ((addOrderOf u : ℕ) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr hu.ne'
+  have huv : zmultiples u = zmultiples v := by
+    rw [eq_torsionBy_of_natCard_eq p hn (Nat.card_zmultiples u),
+      eq_torsionBy_of_natCard_eq p hn (H := zmultiples v) (by rw [Nat.card_zmultiples, h])]
+  obtain ⟨k, rfl⟩ := mem_zmultiples_iff.mp (huv ▸ mem_zmultiples v)
+  exact ⟨k, Int.isCoprime_iff_gcd_eq_one.mpr
+    (mem_zmultiples_zsmul_iff.mp (huv.symm ▸ mem_zmultiples u)), rfl⟩
 
 end FiniteSubgroups
 

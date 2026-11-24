@@ -23,6 +23,11 @@ finite-dimensional unitary matrix corepresentations (`TauCeti.unitaryCoefficient
 
 ## Main declarations
 
+* `TauCeti.AlgebraicHaar.sSup_simpleCoefficientSubmodules_eq_top` and
+  `TauCeti.AlgebraicHaar.induction_simpleCoefficientSubmodules`: if `A` admits an `AlgebraicHaar`
+  functional, then its simple coefficient spaces span `A`.
+* `TauCeti.AlgebraicHaar.map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules`: Haar
+  orthogonality of distinct simple coefficient spaces.
 * `TauCeti.AlgebraicHaar.span_unitaryCoefficientSet_eq_top`: if `A` admits an `AlgebraicHaar`
   functional, then `unitaryCoefficientSet A` spans `A` over `ℂ`.
 * `TauCeti.nonempty_algebraicHaar_of_span_unitaryCoefficientSet_eq_top`: if
@@ -92,13 +97,55 @@ private theorem map_star_mul_self_nonneg_of_conj_unitary {M N ι κ : Type*}
             Matrix.mul_one, hGf]
   exact hr.map_star_mul_self_nonneg_of_conjTranspose_map_star_mul_mul_eq h1 b hu hG hGinv hx
 
+namespace AlgebraicHaar
+
+variable (h : AlgebraicHaar A)
+
+include h in
+/-- The simple coefficient spaces of a Hopf star algebra with an algebraic Haar functional span
+it. -/
+theorem sSup_simpleCoefficientSubmodules_eq_top :
+    sSup (simpleCoefficientSubmodules ℂ A) = ⊤ :=
+  (h.isRightInvariantIntegral.isLinearlyReductive h.toLinearMap_ne_zero
+    h.map_star_mul_self_nonneg).sSup_simpleCoefficientSubmodules_eq_top
+
+include h in
+/-- Induction over the simple coefficient spaces of a Hopf star algebra with an algebraic Haar
+functional: a property preserved by addition and holding on every simple coefficient space holds
+on `A`. -/
+@[elab_as_elim]
+theorem induction_simpleCoefficientSubmodules {motive : A → Prop} (x : A)
+    (mem : ∀ P ∈ simpleCoefficientSubmodules ℂ A, ∀ x ∈ P, motive x) (zero : motive 0)
+    (add : ∀ x y, motive x → motive y → motive (x + y)) : motive x := by
+  have hx : x ∈ ⨆ P : simpleCoefficientSubmodules ℂ A, P.val := by
+    rw [← sSup_eq_iSup', h.sSup_simpleCoefficientSubmodules_eq_top]
+    exact Submodule.mem_top
+  exact Submodule.iSup_induction (motive := motive) _ hx (fun P x hx ↦ mem P.val P.property x hx)
+      zero add
+
+/-- **Haar orthogonality of simple coefficient spaces.** If `P` and `Q` are distinct coefficient
+spaces of simple comodules, then `h (star x * y) = 0` for `x ∈ P` and `y ∈ Q`. -/
+theorem map_star_mul_eq_zero_of_mem_simpleCoefficientSubmodules {P Q : Submodule ℂ A}
+    (hP : P ∈ simpleCoefficientSubmodules ℂ A) (hQ : Q ∈ simpleCoefficientSubmodules ℂ A)
+    (hPQ : P ≠ Q) {x y : A} (hx : x ∈ P) (hy : y ∈ Q) : h (star x * y) = 0 := by
+  obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
+  obtain ⟨N, hN, rfl⟩ := mem_simpleCoefficientSubmodules.mp hQ
+  have := hM
+  have := hN
+  have : Module.Finite ℂ M := finite_of_isSimpleOrder (C := A)
+  have : Module.Finite ℂ N := finite_of_isSimpleOrder (C := A)
+  obtain ⟨b, hb⟩ := exists_basis_coefficientMatrix_mem_unitary h.isRightInvariantIntegral
+    h.toLinearMap_ne_zero h.map_star_mul_self_nonneg (Module.finBasis ℂ M)
+  exact h.isRightInvariantIntegral.map_star_mul_eq_zero_of_mem_matrixCoefficientSubmodule b
+    (Module.finBasis ℂ N) (Matrix.mem_unitary_iff_conjTranspose.mp hb).2
+    (fun g ↦ by_contra fun hg ↦ hPQ (matrixCoefficientSubmodule_eq_of_ne_zero hg).symm) hx hy
+
+include h in
 /-- If a complex Hopf star algebra admits an `AlgebraicHaar` functional, then the matrix entries of
 its finite-dimensional unitary comodules span `A`. -/
-theorem AlgebraicHaar.span_unitaryCoefficientSet_eq_top (h : AlgebraicHaar A) :
+theorem span_unitaryCoefficientSet_eq_top :
     Submodule.span ℂ (unitaryCoefficientSet A) = ⊤ := by
-  have hLR : Coalgebra.IsLinearlyReductive.{0, u, 0} ℂ A :=
-    h.isRightInvariantIntegral.isLinearlyReductive h.toLinearMap_ne_zero h.map_star_mul_self_nonneg
-  rw [eq_top_iff, ← hLR.sSup_simpleCoefficientSubmodules_eq_top]
+  rw [eq_top_iff, ← h.sSup_simpleCoefficientSubmodules_eq_top]
   refine sSup_le fun P hP ↦ ?_
   obtain ⟨M, hM, rfl⟩ := mem_simpleCoefficientSubmodules.mp hP
   let _ := hM
@@ -107,6 +154,8 @@ theorem AlgebraicHaar.span_unitaryCoefficientSet_eq_top (h : AlgebraicHaar A) :
     h.toLinearMap_ne_zero h.map_star_mul_self_nonneg (Module.finBasis ℂ M)
   exact b.matrixCoefficientSubmodule_le_of_coefficientMatrix_mem fun i j ↦
     Submodule.subset_span (b.coefficientMatrix_mem_unitaryCoefficientSet hb i j)
+
+end AlgebraicHaar
 
 private def simpleUnitaryCoefficientSubmodules (A : Type u) [Ring A] [StarRing A] [Bialgebra ℂ A] :
     Set (Submodule ℂ A) :=
@@ -121,9 +170,7 @@ private theorem isAtom_matrixCoefficientSubmodule_mem_simpleUnitary
     [Comodule ℂ A H] (hH : IsUnitary ℂ A H) {W : Subcomodule ℂ A H} (hW : IsAtom W) :
     matrixCoefficientSubmodule (R := ℂ) (C := A) (M := W) ∈
       simpleUnitaryCoefficientSubmodules A := by
-  let _ := convolutionModule (R := ℂ) (C := A) (M := H)
-  let _ := convolutionModule (R := ℂ) (C := A) (M := W)
-  have := isSimpleModule_convolution_iff.mp (W.isSimpleModule_convolution_iff_isAtom.mpr hW)
+  have := Subcomodule.isSimpleOrder_of_isAtom hW
   let bW := stdOrthonormalBasis ℂ W
   let _ : Comodule ℂ A (Fin (Module.finrank ℂ W) → ℂ) := Transport bW.toBasis.equivFun
   have : IsSimpleOrder (Subcomodule ℂ A (Fin (Module.finrank ℂ W) → ℂ)) :=

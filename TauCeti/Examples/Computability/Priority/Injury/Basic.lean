@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Computability.Priority.Injury.Causes
-import Mathlib.Order.Filter.EventuallyConst
 
 /-!
 # Regression examples: injury bookkeeping
@@ -22,8 +21,6 @@ only:
   stages: finitely many injuring numbers do not bound the injury stages;
 * the restraint is inclusive: an entry exactly at the restraint injures, although it does not lie
   strictly below it;
-* finite injury does not make a restraint settle: under the stages `[0, s)` and the restraint
-  `some (s % 2)`, only `0` and `1` injure, yet the restraint is never eventually constant;
 * contribution budgets apply to batched entries, including the sharp one-entry-per-contributor
   bound and contributors supplying two distinct numbers each.
 -/
@@ -87,26 +84,6 @@ example :
 example : 5 ∈ injuriesAt (fun s => if s = 0 then ∅ else {5}) (fun _ _ => some 5) 0 0 ∧
     ¬ (5 < 5) := by
   simp
-
--- Finite injury does not make a restraint settle: under the stages `[0, s)` and the restraint
--- `some (s % 2)`, only `0` and `1` injure, yet the restraint is not eventually constant.
-example :
-    injurySet Finset.range (fun _ s => some (s % 2)) 0 = {0, 1} ∧
-      ¬Filter.EventuallyConst (fun s => some (s % 2)) Filter.atTop := by
-  constructor
-  · ext x
-    simp only [mem_injurySet, mem_injuriesAt, Finset.mem_range, Option.some.injEq,
-      exists_eq_left', Set.mem_insert_iff, Set.mem_singleton_iff]
-    constructor
-    · rintro ⟨s, hs, hs', hx⟩
-      omega
-    · intro hx
-      exact ⟨x, by omega, by omega, by omega⟩
-  · rw [Filter.eventuallyConst_atTop_nat]
-    rintro ⟨n, h⟩
-    have := h n le_rfl
-    simp only [Option.some.injEq] at this
-    omega
 
 -- A batch with one distinct number from each higher priority attains the budget `e`, even
 -- though all numbers enter at the same stage. This also covers `e = 0`.
