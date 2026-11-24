@@ -51,7 +51,9 @@ root system is irreducible exactly when its graph is connected.
   different component spaces are orthogonal under every invariant form.
 * `RootPairing.Equiv.map_componentSpace`, `RootPairing.Equiv.map_corootComponentSpace`: an
   equivalence carries component spaces to component spaces, and likewise for coroots.
-* `RootPairing.Equiv.componentEquiv_pow`: automorphisms permute the components by a group action.
+* `RootPairing.Equiv.componentEquiv_one`, `RootPairing.Equiv.componentEquiv_mul`: automorphisms
+  permute the components by a group action, and `RootPairing.Equiv.componentEquiv_pow`: the
+  permutation induced by a power is the corresponding power.
 * `RootPairing.isIrreducible_iff_connected_nonorthogonalGraph`: irreducibility is connectedness of
   the graph.
 
@@ -452,7 +454,8 @@ theorem Equiv.componentEquiv_mul (σ τ : P.Aut) :
   _root_.Equiv.ext fun C ↦ C.ind fun i ↦ by
     simp [componentEquiv_componentOf]
 
-/-- **Automorphisms permute the irreducible components by a group action.** -/
+/-- The permutation of the components induced by a power of an automorphism is the corresponding
+power of the induced permutation. -/
 @[simp]
 theorem Equiv.componentEquiv_pow (σ : P.Aut) (n : ℕ) :
     (σ ^ n).componentEquiv = σ.componentEquiv ^ n := by
