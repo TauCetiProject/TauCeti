@@ -46,8 +46,8 @@ unfolded by hand.
 * `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
   `SL(2, ℝ)`- and `SL(2, R)`-actions on `ℍ` agree with the `GL(2, ℝ)`-action of the underlying
   matrix, generalizing Mathlib's `ModularGroup.sl_moeb`.
-* `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
-  `SL(2, R)`-action.
+* `Matrix.SpecialLinearGroup.denom_mapGL`, `Matrix.SpecialLinearGroup.denom_mapGL_mul`: entrywise
+  formula and cocycle law for the automorphy factor of the `SL(2, R)`-action.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
   `SL(2, ℝ)` for which a function satisfies the weight-`k` transformation law on all of `ℍ` form a
   subgroup, so that the law need only be checked on generators.
@@ -110,6 +110,14 @@ theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul {R : Type*} [CommRing R] [Al
     (g : SL(2, R)) (τ : ℍ) :
     Matrix.SpecialLinearGroup.mapGL ℝ g • τ = g • τ :=
   (MulAction.compHom_smul_def _ _ _).symm
+
+/-- The automorphy factor of `Matrix.SpecialLinearGroup.mapGL ℝ g` at `τ : ℂ` is
+`g 1 0 * τ + g 1 1` (after mapping entries into `ℝ` and `ℂ`). -/
+theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL {R : Type*} [CommRing R] [Algebra R ℝ]
+    (g : SL(2, R)) (τ : ℂ) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ =
+      (algebraMap R ℝ (g 1 0) : ℂ) * τ + algebraMap R ℝ (g 1 1) := by
+  simp [denom]
 
 /-- The automorphy factor is a cocycle for the `SL(2, R)`-action on `ℍ`:
 `denom (a * b) τ = denom a (b • τ) * denom b τ`. -/

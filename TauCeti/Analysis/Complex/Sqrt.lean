@@ -72,30 +72,22 @@ theorem sqrt_neg_I_mul {τ : ℂ} (hτ : 0 < τ.im) : sqrt (-I * τ) = (sqrt I)�
 negative real number, and by `i` otherwise. -/
 theorem sqrt_neg (z : ℂ) :
     sqrt (-z) = if 0 < z.im ∨ (z.im = 0 ∧ z.re < 0) then -I * sqrt z else I * sqrt z := by
-  rcases lt_trichotomy z.im 0 with hz | hz | hz
-  · have hneg : 0 ≤ (-z).im := by simp [hz.le]
-    rw [ite_eq_right (by rintro (h | ⟨h, _⟩) <;> linarith), sqrt_eq_real_add_ite,
-      sqrt_eq_real_add_ite, ite_eq_right hz.not_ge, ite_eq_left hneg]
-    simp only [norm_neg, neg_re, sub_neg_eq_add, ← sub_eq_add_neg, one_mul, neg_one_mul]
-    ring_nf
-    rw [I_sq]
-    ring
+  by_cases him : z.im = 0
   · rcases lt_or_ge z.re 0 with hre | hre
-    · rw [ite_eq_left (Or.inr ⟨hz, hre⟩)]
+    · rw [ite_eq_left (Or.inr ⟨him, hre⟩)]
       have h := sqrt_neg_of_nonneg (a := -z)
-        (by rw [nonneg_iff]; exact ⟨by simp [hre.le], by simp [hz]⟩)
+        (by rw [nonneg_iff]; exact ⟨by simp [hre.le], by simp [him]⟩)
       rw [neg_neg] at h
       rw [h, ← mul_assoc]
       simp
     · rw [ite_eq_right (by rintro (h | ⟨_, h⟩) <;> linarith)]
-      exact sqrt_neg_of_nonneg (by rw [nonneg_iff]; exact ⟨hre, hz.symm⟩)
-  · have hneg : ¬ 0 ≤ (-z).im := by simp [hz]
-    rw [ite_eq_left (Or.inl hz), sqrt_eq_real_add_ite, sqrt_eq_real_add_ite,
-      ite_eq_left hz.le, ite_eq_right hneg]
-    simp only [norm_neg, neg_re, sub_neg_eq_add, ← sub_eq_add_neg, one_mul, neg_one_mul]
-    ring_nf
-    rw [I_sq]
-    ring
+      exact sqrt_neg_of_nonneg (by rw [nonneg_iff]; exact ⟨hre, him.symm⟩)
+  · have hpos : 0 ≤ z.im ↔ 0 < z.im := ⟨fun h ↦ lt_of_le_of_ne h (Ne.symm him), le_of_lt⟩
+    have hneg : 0 ≤ (-z).im ↔ ¬ 0 < z.im := by simp [not_lt]
+    have hcond : (0 < z.im ∨ z.im = 0 ∧ z.re < 0) ↔ 0 < z.im := by simp [him]
+    simp_rw [hcond, sqrt_eq_real_add_ite, hpos, hneg]
+    simp only [norm_neg, neg_re, sub_neg_eq_add, ← sub_eq_add_neg]
+    split_ifs <;> linear_combination (√((‖z‖ - z.re) / 2) : ℂ) * I_sq
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]

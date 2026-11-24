@@ -426,15 +426,8 @@ theorem etaMultiplier_neg (γ : SL(2, ℤ)) :
   have hcond : (0 < z.im ∨ (z.im = 0 ∧ z.re < 0)) ↔ 0 < γ 1 0 ∨ (γ 1 0 = 0 ∧ γ 1 1 < 0) := by
     simp [z]
   rw [ModularGroup.SL_neg_smul, eta_smul, hdenom, Complex.sqrt_neg z]
-  by_cases h : 0 < γ 1 0 ∨ (γ 1 0 = 0 ∧ γ 1 1 < 0)
-  · rw [ite_eq_left h, ite_eq_left (hcond.mpr h)]
-    ring_nf
-    rw [I_sq]
-    ring
-  · rw [ite_eq_right h, ite_eq_right (hcond.not.mpr h)]
-    ring_nf
-    rw [I_sq]
-    ring
+  simp_rw [hcond]
+  split_ifs <;> linear_combination (etaMultiplier γ * Complex.sqrt z * η UpperHalfPlane.I) * I_sq
 
 /-- When `c = γ 1 0 > 0`, negating `γ` multiplies the eta multiplier by `i`. -/
 theorem etaMultiplier_neg_of_c_pos (γ : SL(2, ℤ)) (hc : 0 < γ 1 0) :
@@ -464,11 +457,10 @@ theorem etaMultiplier_mul_S_of_c_pos_of_d_neg (γ : SL(2, ℤ)) (hc : 0 < γ 1 0
 theorem etaMultiplier_of_c_eq_zero (γ : SL(2, ℤ)) (hc : γ 1 0 = 0) :
     etaMultiplier γ =
       if 0 < γ 1 1 then cexp (π * I * γ 0 1 / 12) else -I * cexp (-(π * I * γ 0 1 / 12)) := by
-  obtain ⟨b, hb⟩ : ∃ b, b = γ 0 1 := ⟨_, rfl⟩
   rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with hγ | hγ <;>
-    rw [← hb] at hγ <;> subst hγ
+    generalize γ 0 1 = b at hγ ⊢ <;> subst hγ
   · simp [etaMultiplier_T_zpow, coe_T_zpow]
-  · rw [ite_eq_right (by simp [coe_T_zpow]), ← hb, neg_eq_neg_one_mul (T ^ (-b) : SL(2, ℤ)),
+  · rw [ite_eq_right (by simp [coe_T_zpow]), neg_eq_neg_one_mul (T ^ (-b) : SL(2, ℤ)),
       etaMultiplier_mul_T_zpow, etaMultiplier_neg_one, Int.cast_neg, mul_comm]
     congr 2
     ring
@@ -491,39 +483,44 @@ automorphy factor `-1` sits on the negative real branch cut and `ε(γ⁻¹) = -
 theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
     etaMultiplier γ⁻¹ =
       if γ 1 0 = 0 ∧ γ 1 1 < 0 then -(etaMultiplier γ)⁻¹ else (etaMultiplier γ)⁻¹ := by
+  -- Compare `η(i) = η(γ (γ⁻¹ i))` with `η(γ⁻¹ i)` using the automorphy cocycle `w * z = 1`,
+  -- determine the branch of `√w * √z` (which is `-1` only when `z = -1`), and cancel `η(i)`.
   have h1 := eta_smul γ (γ⁻¹ • UpperHalfPlane.I)
   rw [smul_inv_smul] at h1
   have h2 := eta_smul γ⁻¹ UpperHalfPlane.I
   set z : ℂ := ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℂ) * UpperHalfPlane.I + (γ⁻¹ : SL(2, ℤ)) 1 1
   set w : ℂ := (γ 1 0 : ℂ) * (γ⁻¹ • UpperHalfPlane.I : ℍ) + γ 1 1
-  have hdenom (g : SL(2, ℤ)) (τ : ℂ) :
-      UpperHalfPlane.denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ = (g 1 0 : ℂ) * τ + g 1 1 := by
-    simp [UpperHalfPlane.denom]
   have hw : w = z⁻¹ := by
     have hcoc := Matrix.SpecialLinearGroup.denom_mapGL_mul γ γ⁻¹ UpperHalfPlane.I
-    rw [mul_inv_cancel, map_one, UpperHalfPlane.denom_one, hdenom, hdenom] at hcoc
+    rw [mul_inv_cancel, map_one, UpperHalfPlane.denom_one,
+      Matrix.SpecialLinearGroup.denom_mapGL, Matrix.SpecialLinearGroup.denom_mapGL] at hcoc
+    simp only [algebraMap_int_eq, eq_intCast] at hcoc
     exact eq_inv_of_mul_eq_one_left hcoc.symm
-  have hdiag (hc : γ 1 0 = 0) : γ 0 0 = γ 1 1 ∧ (γ 1 1 = 1 ∨ γ 1 1 = -1) := by
-    have hdet := γ.fin_two_mul_sub_mul_eq_one
-    rw [hc, mul_zero, sub_zero] at hdet
-    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨ha, hd⟩ | ⟨ha, hd⟩ <;> omega
+  -- An upper-triangular matrix in `SL(2, ℤ)` is `±T ^ n`, so its diagonal entries agree (`±1`).
+  have hdiag (hc : γ 1 0 = 0) :
+      (γ 0 0 = 1 ∧ γ 1 1 = 1) ∨ (γ 0 0 = -1 ∧ γ 1 1 = -1) := by
+    rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with hγ | hγ <;>
+      [left; right] <;>
+      exact ⟨by rw [hγ]; simp [coe_T_zpow], by rw [hγ]; simp [coe_T_zpow]⟩
   have harg : z.arg = π ↔ γ 1 0 = 0 ∧ γ 1 1 < 0 := by
     have hz_re : z.re = (γ 0 0 : ℝ) := by simp [z]
     have hz_im : z.im = -(γ 1 0 : ℝ) := by simp [z]
     rw [Complex.arg_eq_pi_iff, hz_re, hz_im, neg_eq_zero, Int.cast_eq_zero, Int.cast_lt_zero,
       and_comm]
-    exact and_congr_right fun hc ↦ by rw [(hdiag hc).1]
+    exact and_congr_right fun hc ↦ by rcases hdiag hc with ⟨h0, h1⟩ | ⟨h0, h1⟩ <;> simp [h0, h1]
   have hroot : Complex.sqrt w * Complex.sqrt z =
       if γ 1 0 = 0 ∧ γ 1 1 < 0 then -1 else 1 := by
     by_cases h : γ 1 0 = 0 ∧ γ 1 1 < 0
-    · have ha : γ 0 0 = -1 := by obtain ⟨_, _ | _⟩ := hdiag h.1 <;> omega
+    · have ha : γ 0 0 = -1 := by rcases hdiag h.1 with ⟨_, h1⟩ | ⟨h0, _⟩ <;> omega
       have hz : z = -1 := by simp [z, h.1, ha]
       rw [ite_eq_left h, hw, hz, inv_neg, inv_one, Complex.sqrt_neg_one, I_mul_I]
     · have hz_ne : z ≠ 0 := by
-        dsimp only [z]
-        rw [← hdenom γ⁻¹ UpperHalfPlane.I]
-        exact UpperHalfPlane.denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ γ⁻¹) UpperHalfPlane.I
-      rw [ite_eq_right h, hw, Complex.sqrt, Complex.sqrt, Complex.inv_cpow z _ (harg.not.mpr h)]
+        have hne := UpperHalfPlane.denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ γ⁻¹)
+          UpperHalfPlane.I
+        rw [Matrix.SpecialLinearGroup.denom_mapGL] at hne
+        simpa [z] using hne
+      rw [ite_eq_right h, hw, Complex.sqrt, Complex.sqrt, Complex.inv_cpow z _ (harg.not.mpr h),
+        ← Complex.sqrt]
       exact inv_mul_cancel₀ (Complex.sqrt_eq_zero_iff.not.mpr hz_ne)
   have hprod : etaMultiplier γ * etaMultiplier γ⁻¹ *
       (if γ 1 0 = 0 ∧ γ 1 1 < 0 then -1 else 1) = 1 := by
