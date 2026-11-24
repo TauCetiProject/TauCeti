@@ -5,18 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.Algebra.Ring.Invertible
 import Mathlib.Algebra.GroupWithZero.Commute
 import Mathlib.Algebra.Ring.Commute
+import Mathlib.Data.Nat.Cast.Basic
 
 /-!
 # Invertible elements and `Ring.inverse`
 
-This file collects elementary lemmas on units in semirings and `Ring.inverse` in monoids with zero
-and distributive negation:
+This file collects elementary lemmas on units in semirings, numeric literal invertibility, and
+`Ring.inverse` in monoids with zero and distributive negation:
 
 * `IsUnit.eq_zero_of_add_self_eq_zero`: if `2` is a unit in a semiring, zero is the only element
   that doubles to zero.
+* `TauCeti.invertibleMapOfNat`: ring homomorphisms preserve `Invertible` instances on numeric
+  literals `n ≥ 2`.
+* `TauCeti.map_invOf_ofNat`: ring homomorphisms send `⅟(ofNat(n))` to `⅟(ofNat(n))` independently
+  of the chosen `Invertible` instances.
 * `TauCeti.ringInverse_neg`: `Ring.inverse` commutes with negation.
 * `TauCeti.ringInverse_neg_one_pow_mul`: multiplying on the left by `(-1) ^ k` commutes with
   `Ring.inverse`.
@@ -32,6 +38,20 @@ theorem IsUnit.eq_zero_of_add_self_eq_zero {R : Type*} [Semiring R] (h2 : IsUnit
   exact h2.mul_right_eq_zero.mp (by rwa [two_mul])
 
 namespace TauCeti
+
+/-- Ring homomorphisms preserve invertibility of numeric literals `n ≥ 2`. -/
+abbrev invertibleMapOfNat {R S F : Type*} [NonAssocSemiring R] [NonAssocSemiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (n : ℕ) [n.AtLeastTwo] [Invertible (ofNat(n) : R)] :
+    Invertible (ofNat(n) : S) :=
+  (Invertible.map f (ofNat(n) : R)).copy ofNat(n) (by exact (map_ofNat f n).symm)
+
+/-- Ring homomorphisms send the inverse of a numeric literal `n ≥ 2` to the inverse of `n`,
+independently of the choice of `Invertible` instances. -/
+theorem map_invOf_ofNat {R S F : Type*} [NonAssocSemiring R] [Semiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (n : ℕ) [n.AtLeastTwo]
+    [Invertible (ofNat(n) : R)] [Invertible (ofNat(n) : S)] :
+    f ⅟(ofNat(n) : R) = ⅟(ofNat(n) : S) :=
+  (invOf_eq_right_inv (by rw [← map_ofNat f n, ← map_mul, mul_invOf_self, map_one])).symm
 
 variable {R : Type*} [MonoidWithZero R] [HasDistribNeg R]
 
