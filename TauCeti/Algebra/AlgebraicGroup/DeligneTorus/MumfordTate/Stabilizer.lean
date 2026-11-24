@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.Hodge
-public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.MumfordTate
+public import TauCeti.Algebra.AlgebraicGroup.DeligneTorus.MumfordTate.Basic
 
 /-!
 # The subspaces stable under the Mumford–Tate group
