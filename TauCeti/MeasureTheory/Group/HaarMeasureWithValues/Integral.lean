@@ -22,9 +22,11 @@ The integral is defined through the expansion of `f` by its nonzero fibres. The 
 depend on the expansion: for any finite family of pairwise disjoint compact open sets `K i` on which
 `f` takes the values `v i`, and off whose union `f` vanishes, `∫ f dμ = ∑ μ(K i) • v i`
 (`TauCeti.HaarMeasureWithValues.integral_eq_sum`). Two such families are compared through their
-common refinement `K i ∩ L j`, using finite additivity of `μ`. Linearity follows by applying this to
-the family of joint fibres of two test functions, and then the formula holds for every expansion
-by indicators, with overlaps allowed (`TauCeti.HaarMeasureWithValues.integral_eq_sum_indicator`).
+common refinement `K i ∩ L j`, using finite additivity of `μ`; on the support of the first family
+`K i ∩ L j` is compact, so no separation hypothesis on `G` is needed. Linearity follows by applying
+this to the nonzero fibres of the pair `x ↦ (f x, g x)` of two test functions, and then the formula
+holds for every expansion by indicators, with overlaps allowed
+(`TauCeti.HaarMeasureWithValues.integral_eq_sum_smul_of_eq_sum_compactOpenIndicator`).
 
 ## Main definitions
 
@@ -35,10 +37,12 @@ by indicators, with overlaps allowed (`TauCeti.HaarMeasureWithValues.integral_eq
 * `TauCeti.HaarMeasureWithValues.integral_eq_sum`: the integral computed from any finite family of
   pairwise disjoint compact open sets adapted to `f`.
 * `TauCeti.HaarMeasureWithValues.integral_compactOpenIndicator`: `∫ 1_K • m dμ = μ(K) • m`.
-* `TauCeti.HaarMeasureWithValues.integral_eq_sum_indicator`: the integral of a finite sum of
-  indicators `∑ 1_{K_i} • m_i`, with overlaps allowed, is `∑ μ(K_i) • m_i`.
-* `TauCeti.HaarMeasureWithValues.integral_locallyConstant_map`: naturality under `A`-linear maps
-  `M → N`.
+* `TauCeti.HaarMeasureWithValues.integral_eq_sum_smul_of_eq_sum_compactOpenIndicator`: the
+  integral of a finite sum of indicators `∑ 1_{K_i} • m_i`, with overlaps allowed, is
+  `∑ μ(K_i) • m_i`.
+* `TauCeti.HaarMeasureWithValues.eq_integral_of_apply_compactOpenIndicator`: uniqueness; a linear
+  map with these values on indicators is the integral.
+* `TauCeti.HaarMeasureWithValues.integral_comp_comm`: naturality under `A`-linear maps `M → N`.
 * `TauCeti.HaarMeasureWithValues.integral_eq_smul_sum_of_discrete`: on a finite discrete group,
   `∫ f dμ = μ({1}) • ∑_g f(g)`.
 * `TauCeti.HaarMeasureWithValues.integral_eq_smul_sum`: for a compact open subgroup `U` and a
@@ -57,98 +61,105 @@ open scoped Pointwise
 
 namespace TauCeti.HaarMeasureWithValues
 
-section JointFiber
-
-variable {G M : Type*} [TopologicalSpace G] [AddCommMonoid M]
-
-/-- The compact open set where `f` and `g` take the values `m` and `n` and are not both zero. -/
-private def jointFiber {f g : LocallyConstant G M} (hf : HasCompactSupport f)
-    (hg : HasCompactSupport g) (m n : M) : CompactOpens G where
-  carrier := f ⁻¹' {m} ∩ g ⁻¹' {n} ∩ (Function.support f ∪ Function.support g)
-  isCompact' := by
-    refine ((hasCompactSupport_iff_isCompact_support.1 hf).union
-      (hasCompactSupport_iff_isCompact_support.1 hg)).of_isClosed_subset ?_ inter_subset_right
-    exact ((f.isLocallyConstant.isClopen_fiber m).isClosed.inter
-      (g.isLocallyConstant.isClopen_fiber n).isClosed).inter
-      (f.isClopen_support.isClosed.union g.isClopen_support.isClosed)
-  isOpen' := ((f.isLocallyConstant.isClopen_fiber m).isOpen.inter
-    (g.isLocallyConstant.isClopen_fiber n).isOpen).inter
-    (f.isClopen_support.isOpen.union g.isClopen_support.isOpen)
-
-private theorem mem_jointFiber {f g : LocallyConstant G M} {hf : HasCompactSupport f}
-    {hg : HasCompactSupport g} {m n : M} {x : G} :
-    x ∈ jointFiber hf hg m n ↔ f x = m ∧ g x = n ∧ (f x ≠ 0 ∨ g x ≠ 0) := by
-  change x ∈ f ⁻¹' {m} ∩ g ⁻¹' {n} ∩ (Function.support f ∪ Function.support g) ↔ _
-  simp [and_assoc]
-
-/-- The joint fibres of two test functions, indexed by pairs of values, form a family of pairwise
-disjoint compact open sets on which both functions are constant, covering both supports. -/
-private theorem jointFiber_spec {f g : LocallyConstant G M} (hf : HasCompactSupport f)
-    (hg : HasCompactSupport g) :
-    ((((finite_range_of_hasCompactSupport hf).toFinset ×ˢ
-        (finite_range_of_hasCompactSupport hg).toFinset : Finset (M × M)) : Set (M × M)
-      ).PairwiseDisjoint fun p ↦ (jointFiber hf hg p.1 p.2 : Set G)) ∧
-      (∀ p : M × M, ∀ x ∈ jointFiber hf hg p.1 p.2, f x = p.1 ∧ g x = p.2) ∧
-      ∀ x, (f x ≠ 0 ∨ g x ≠ 0) → ∃ p ∈ (finite_range_of_hasCompactSupport hf).toFinset ×ˢ
-        (finite_range_of_hasCompactSupport hg).toFinset, x ∈ jointFiber hf hg p.1 p.2 := by
-  refine ⟨fun p _ q _ hpq ↦ Set.disjoint_left.2 fun x hxp hxq ↦ hpq ?_,
-    fun p x hx ↦ ⟨(mem_jointFiber.1 hx).1, (mem_jointFiber.1 hx).2.1⟩, fun x hx ↦
-      ⟨(f x, g x), by simp, mem_jointFiber.2 ⟨rfl, rfl, hx⟩⟩⟩
-  obtain ⟨h1, h2, -⟩ := mem_jointFiber.1 hxp
-  obtain ⟨h1', h2', -⟩ := mem_jointFiber.1 hxq
-  exact Prod.ext (h1.symm.trans h1') (h2.symm.trans h2')
-
-end JointFiber
-
 variable {A G M : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul G G]
+
+omit [Group G] [ContinuousConstSMul G G] in
+/-- The nonzero fibres in an expansion `F = ∑ 1_{K p} • p` of a test function are adapted to `F`:
+`F` takes the value `p` on `K p`, and every point where `F` is nonzero lies in some `K p`. -/
+private theorem adapted_of_sum_indicator {N : Type*} [AddCommMonoid N] {F : LocallyConstant G N}
+    {s : Finset N} {K : N → CompactOpens G} (hfib : ∀ p ∈ s, (K p : Set G) = F ⁻¹' {p})
+    (hsum : ⇑F = ∑ p ∈ s, (K p : Set G).indicator fun _ ↦ p) :
+    (∀ p ∈ s, ∀ x ∈ K p, F x = p) ∧ ∀ x, F x ≠ 0 → ∃ p ∈ s, x ∈ K p := by
+  refine ⟨fun p hp x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · rwa [← SetLike.mem_coe, hfib p hp] at hx
+  · -- A point outside every fibre contributes nothing to the expansion of `F`.
+    by_contra! h
+    refine hx ?_
+    rw [hsum, Finset.sum_apply]
+    exact Finset.sum_eq_zero fun p hp ↦ indicator_of_notMem (h p hp) _
 
 section Semiring
 
 variable [Semiring A] [AddCommMonoid M] [Module A M] (μ : HaarMeasureWithValues A G)
 
+open Classical in
+/-- The volume of a set that is compact and open, and `0` for any other set. -/
+private noncomputable def volume (S : Set G) : A :=
+  if h : IsCompact S ∧ IsOpen S then μ ⟨⟨S, h.1⟩, h.2⟩ else 0
+
+private theorem volume_coe (K : CompactOpens G) : volume μ (K : Set G) = μ K := by
+  rw [volume, dite_eq_left ⟨K.isCompact, K.isOpen⟩]
+  exact congrArg μ (CompactOpens.ext rfl)
+
+private theorem volume_empty : volume μ (∅ : Set G) = 0 := by
+  rw [← CompactOpens.coe_bot, volume_coe, apply_bot]
+
 /-- Refining an expansion: if `f` takes the value `v i` on `K i`, and the pairwise disjoint compact
 open sets `L j` cover the support of `f`, then `∑ μ(K i) • v i = ∑ μ(K i ∩ L j) • v i`. -/
-private theorem sum_eq_sum_sum_inf [QuasiSeparatedSpace G] {f : G → M} {ι κ : Type*}
-    {s : Finset ι} {K : ι → CompactOpens G} {v : ι → M} (hv : ∀ i ∈ s, ∀ x ∈ K i, f x = v i)
-    {t : Finset κ} {L : κ → CompactOpens G}
-    (hL : (t : Set κ).PairwiseDisjoint fun j ↦ (L j : Set G))
+private theorem sum_eq_sum_sum_inter {f : G → M} {ι κ : Type*} {s : Finset ι}
+    {K : ι → CompactOpens G} {v : ι → M} (hv : ∀ i ∈ s, ∀ x ∈ K i, f x = v i) {t : Finset κ}
+    {L : κ → CompactOpens G} (hL : (t : Set κ).PairwiseDisjoint fun j ↦ (L j : Set G))
     (hLf : ∀ x, f x ≠ 0 → ∃ j ∈ t, x ∈ L j) :
-    ∑ i ∈ s, μ (K i) • v i = ∑ i ∈ s, ∑ j ∈ t, μ (K i ⊓ L j) • v i := by
+    ∑ i ∈ s, μ (K i) • v i = ∑ i ∈ s, ∑ j ∈ t, volume μ ((K i : Set G) ∩ L j) • v i := by
+  classical
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   by_cases h0 : v i = 0
   · simp [h0]
-  have hdisj : (t : Set κ).PairwiseDisjoint fun j ↦ ((K i ⊓ L j : CompactOpens G) : Set G) :=
-    fun j hj j' hj' hjj' ↦ (hL hj hj' hjj').mono inter_subset_right inter_subset_right
-  rw [← Finset.sum_smul, ← μ.apply_finsetSup hdisj]
-  congr 2
-  refine CompactOpens.ext (Set.ext fun x ↦ ⟨fun hx ↦ ?_, ?_⟩)
-  · obtain ⟨j, hj, hxj⟩ := hLf x (by rwa [hv i hi x hx])
-    rw [CompactOpens.coe_finsetSup]
-    exact mem_biUnion hj (by rw [CompactOpens.coe_inf]; exact ⟨hx, hxj⟩)
-  · rw [CompactOpens.coe_finsetSup]
-    simp only [mem_iUnion, CompactOpens.coe_inf, mem_inter_iff]
-    exact fun ⟨_, _, hx, _⟩ ↦ hx
+  -- Since `f = v i ≠ 0` on `K i`, the sets `L j` cover `K i`, so `K i ∩ L j` is `K i` minus the
+  -- other `L j'`: a compact set.
+  have hcov (x : G) (hx : x ∈ K i) : ∃ j ∈ t, x ∈ L j := hLf x (by rwa [hv i hi x hx])
+  have hc (j : κ) (hj : j ∈ t) : IsCompact ((K i : Set G) ∩ L j) := by
+    have h : (K i : Set G) ∩ L j = (K i : Set G) \ ⋃ j' ∈ t.erase j, (L j' : Set G) := by
+      ext x
+      simp only [mem_inter_iff, mem_sdiff, mem_iUnion, Finset.mem_erase, SetLike.mem_coe,
+        not_exists]
+      refine ⟨fun ⟨hxK, hxL⟩ ↦ ⟨hxK, fun j' ⟨hj', hj't⟩ hxL' ↦
+        Set.disjoint_left.1 (hL hj't hj hj') hxL' hxL⟩, fun ⟨hxK, hx⟩ ↦ ⟨hxK, ?_⟩⟩
+      obtain ⟨j', hj't, hxL'⟩ := hcov x hxK
+      by_cases hjj : j' = j
+      · exact hjj ▸ hxL'
+      · exact absurd hxL' (hx j' ⟨hjj, hj't⟩)
+    rw [h]
+    exact (K i).isCompact.diff (isOpen_biUnion fun j' _ ↦ (L j').isOpen)
+  let P : κ → CompactOpens G := fun j ↦
+    if hj : j ∈ t then ⟨⟨(K i : Set G) ∩ L j, hc j hj⟩, (K i).isOpen.inter (L j).isOpen⟩ else ⊥
+  have hP (j : κ) (hj : j ∈ t) : (P j : Set G) = (K i : Set G) ∩ L j := by
+    simp only [P, dite_eq_left hj]
+    rfl
+  have hdisj : (t : Set κ).PairwiseDisjoint fun j ↦ (P j : Set G) := fun j hj j' hj' hjj' ↦ by
+    rw [Function.onFun, hP j hj, hP j' hj']
+    exact (hL hj hj' hjj').mono inter_subset_right inter_subset_right
+  have hsup : t.sup P = K i := by
+    refine CompactOpens.ext (Set.ext fun x ↦ ?_)
+    simp only [CompactOpens.coe_finsetSup, mem_iUnion, exists_prop]
+    refine ⟨fun ⟨j, hj, hx⟩ ↦ ?_, fun hx ↦ ?_⟩
+    · rw [hP j hj] at hx
+      exact hx.1
+    · obtain ⟨j, hj, hxL⟩ := hcov x hx
+      exact ⟨j, hj, by rw [hP j hj]; exact ⟨hx, hxL⟩⟩
+  have hμ : μ (K i) = ∑ j ∈ t, μ (P j) := by rw [← μ.apply_finsetSup hdisj, hsup]
+  rw [← Finset.sum_smul, hμ]
+  exact congrArg (· • v i) (Finset.sum_congr rfl fun j hj ↦ by rw [← volume_coe, hP j hj])
 
 /-- **Independence of the expansion.** Two finite families of pairwise disjoint compact open sets
 adapted to the same function, each covering its support, give the same sum. -/
-private theorem sum_eq_sum_of_adapted [QuasiSeparatedSpace G] {f : G → M} {ι κ : Type*}
+private theorem sum_eq_sum_of_adapted {f : G → M} {ι κ : Type*}
     {s : Finset ι} {K : ι → CompactOpens G} {v : ι → M}
     (hK : (s : Set ι).PairwiseDisjoint fun i ↦ (K i : Set G)) (hv : ∀ i ∈ s, ∀ x ∈ K i, f x = v i)
     (hKf : ∀ x, f x ≠ 0 → ∃ i ∈ s, x ∈ K i) {t : Finset κ} {L : κ → CompactOpens G} {w : κ → M}
     (hL : (t : Set κ).PairwiseDisjoint fun j ↦ (L j : Set G)) (hw : ∀ j ∈ t, ∀ x ∈ L j, f x = w j)
     (hLf : ∀ x, f x ≠ 0 → ∃ j ∈ t, x ∈ L j) :
     ∑ i ∈ s, μ (K i) • v i = ∑ j ∈ t, μ (L j) • w j := by
-  rw [sum_eq_sum_sum_inf μ hv hL hLf, sum_eq_sum_sum_inf μ hw hK hKf, Finset.sum_comm]
+  rw [sum_eq_sum_sum_inter μ hv hL hLf, sum_eq_sum_sum_inter μ hw hK hKf, Finset.sum_comm]
   refine Finset.sum_congr rfl fun j hj ↦ Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [inf_comm]
+  rw [inter_comm]
   -- On a nonempty overlap both values are the value of `f`; an empty overlap has volume `0`.
   by_cases h : ∃ x, x ∈ K i ∧ x ∈ L j
   · obtain ⟨x, hxK, hxL⟩ := h
     rw [← hv i hi x hxK, ← hw j hj x hxL]
-  · have hbot : L j ⊓ K i = ⊥ := CompactOpens.ext (Set.eq_empty_of_forall_notMem fun x hx ↦ by
-      rw [CompactOpens.coe_inf] at hx
-      exact h ⟨x, hx.2, hx.1⟩)
-    rw [hbot, apply_bot, zero_smul, zero_smul]
+  · have hempty : (L j : Set G) ∩ K i = ∅ :=
+      Set.eq_empty_of_forall_notMem fun x hx ↦ h ⟨x, hx.2, hx.1⟩
+    rw [hempty, volume_empty, zero_smul, zero_smul]
 
 /-- The integral of a test function through its expansion by nonzero fibres; see
 `TauCeti.HaarMeasureWithValues.integralAux_eq_sum` for its value on any adapted family. -/
@@ -156,20 +167,28 @@ private noncomputable def integralAux (f : LocallyConstant G M) (hf : HasCompact
   ∑ m ∈ (exists_pairwiseDisjoint_sum_indicator hf).choose,
     μ ((exists_pairwiseDisjoint_sum_indicator hf).choose_spec.choose m) • m
 
-private theorem integralAux_eq_sum [QuasiSeparatedSpace G] {f : LocallyConstant G M}
+private theorem integralAux_eq_sum {f : LocallyConstant G M}
     (hf : HasCompactSupport f) {ι : Type*} {s : Finset ι} {K : ι → CompactOpens G} {v : ι → M}
     (hK : (s : Set ι).PairwiseDisjoint fun i ↦ (K i : Set G)) (hv : ∀ i ∈ s, ∀ x ∈ K i, f x = v i)
     (hKf : ∀ x, f x ≠ 0 → ∃ i ∈ s, x ∈ K i) :
     integralAux μ f hf = ∑ i ∈ s, μ (K i) • v i := by
   obtain ⟨-, hfib, hdisj, hsum⟩ :=
     (exists_pairwiseDisjoint_sum_indicator hf).choose_spec.choose_spec
-  refine sum_eq_sum_of_adapted μ hdisj (fun m hm x hx ↦ ?_) (fun x hx ↦ ?_) hK hv hKf
-  · rwa [← SetLike.mem_coe, hfib m hm] at hx
-  · -- A point outside every fibre contributes nothing to the expansion of `f`.
-    by_contra! h
-    refine hx ?_
-    rw [hsum, Finset.sum_apply]
-    exact Finset.sum_eq_zero fun m hm ↦ indicator_of_notMem (h m hm) _
+  obtain ⟨hv', hcov⟩ := adapted_of_sum_indicator hfib hsum
+  exact sum_eq_sum_of_adapted μ hdisj hv' hcov hK hv hKf
+
+/-- **Naturality of the auxiliary integral.** If `g = φ ∘ f` for an `A`-linear map `φ`, then the
+integral of `g` is `φ` applied to the integral of `f`. -/
+private theorem integralAux_comp_left {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
+    {f : LocallyConstant G M} (hf : HasCompactSupport f) {g : LocallyConstant G N}
+    (hg : HasCompactSupport g) (hfg : ∀ x, g x = φ (f x)) :
+    integralAux μ g hg = φ (integralAux μ f hf) := by
+  obtain ⟨s, K, -, hfib, hd, hsum⟩ := exists_pairwiseDisjoint_sum_indicator hf
+  obtain ⟨hv, hcov⟩ := adapted_of_sum_indicator hfib hsum
+  rw [integralAux_eq_sum μ hf hd hv hcov,
+    integralAux_eq_sum μ hg hd (v := φ) (fun m hm x hx ↦ by rw [hfg, hv m hm x hx])
+      fun x hx ↦ hcov x fun h ↦ hx (by rw [hfg, h, map_zero]), map_sum]
+  simp only [map_smul]
 
 end Semiring
 
@@ -177,37 +196,39 @@ section CommSemiring
 
 variable [CommSemiring A] [AddCommMonoid M] [Module A M] (μ : HaarMeasureWithValues A G)
 
-variable [QuasiSeparatedSpace G]
-
 private theorem integralAux_add {f g : LocallyConstant G M} (hf : HasCompactSupport f)
     (hg : HasCompactSupport g) :
     integralAux μ (f + g) (hf.add hg) = integralAux μ f hf + integralAux μ g hg := by
-  obtain ⟨hd, hv, hcov⟩ := jointFiber_spec hf hg
-  rw [integralAux_eq_sum μ hf hd (v := Prod.fst) (fun p _ x hx ↦ (hv p x hx).1)
-      fun x hx ↦ hcov x (.inl hx),
-    integralAux_eq_sum μ hg hd (v := Prod.snd) (fun p _ x hx ↦ (hv p x hx).2)
-      fun x hx ↦ hcov x (.inr hx),
+  -- Expand the pair `x ↦ (f x, g x)` by its nonzero fibres: both functions are constant on them.
+  let F : LocallyConstant G (M × M) :=
+    ⟨fun x ↦ (f x, g x), f.isLocallyConstant.prodMk g.isLocallyConstant⟩
+  have hF : HasCompactSupport F := hf.comp₂_left hg (m := Prod.mk) rfl
+  have hFx (x : G) : F x = (f x, g x) := rfl
+  obtain ⟨s, K, -, hfib, hd, hsum⟩ := exists_pairwiseDisjoint_sum_indicator hF
+  obtain ⟨hv, hcov⟩ := adapted_of_sum_indicator hfib hsum
+  have hv₁ (p : M × M) (hp : p ∈ s) (x : G) (hx : x ∈ K p) : f x = p.1 := by
+    rw [← hv p hp x hx, hFx]
+  have hv₂ (p : M × M) (hp : p ∈ s) (x : G) (hx : x ∈ K p) : g x = p.2 := by
+    rw [← hv p hp x hx, hFx]
+  have hF0 (x : G) (h : F x = 0) : f x = 0 ∧ g x = 0 := by rwa [hFx, Prod.mk_eq_zero] at h
+  rw [integralAux_eq_sum μ hf hd hv₁ fun x hx ↦ hcov x fun h ↦ hx (hF0 x h).1,
+    integralAux_eq_sum μ hg hd hv₂ fun x hx ↦ hcov x fun h ↦ hx (hF0 x h).2,
     integralAux_eq_sum μ (hf.add hg) hd (v := fun p ↦ p.1 + p.2)
-      (fun p _ x hx ↦ by simp [(hv p x hx).1, (hv p x hx).2]) fun x hx ↦ hcov x <| by
-        by_contra! h
-        exact hx (by simp [h.1, h.2])]
+      (fun p hp x hx ↦ by simp [hv₁ p hp x hx, hv₂ p hp x hx]) fun x hx ↦ hcov x fun h ↦ hx <| by
+        simp [(hF0 x h).1, (hF0 x h).2]]
   simp only [smul_add, Finset.sum_add_distrib]
 
 private theorem integralAux_smul (c : A) {f : LocallyConstant G M} (hf : HasCompactSupport f) :
     integralAux μ (c • f) (hf.smul_left (f := fun _ ↦ c)) = c • integralAux μ f hf := by
-  obtain ⟨hd, hv, hcov⟩ := jointFiber_spec hf hf
-  rw [integralAux_eq_sum μ hf hd (v := Prod.fst) (fun p _ x hx ↦ (hv p x hx).1)
-      fun x hx ↦ hcov x (.inl hx),
-    integralAux_eq_sum μ (hf.smul_left (f := fun _ ↦ c)) hd (v := fun p ↦ c • p.1)
-      (fun p _ x hx ↦ by simp [(hv p x hx).1]) fun x hx ↦ hcov x <| .inl fun h ↦ hx (by simp [h]),
-    Finset.smul_sum]
-  simp only [smul_comm c]
+  rw [integralAux_comp_left μ (c • LinearMap.id) hf (hf.smul_left (f := fun _ ↦ c))
+    fun x ↦ by simp]
+  simp
 
 /-- **The integral** `∫ f dμ` of a locally constant function `f : G → M` with compact support
 against an `A`-valued Haar measure `μ`: the sum `∑ μ(K_i) • m_i` over any finite expansion
 `f = ∑ 1_{K_i} • m_i` by indicators of compact open sets
-(`TauCeti.HaarMeasureWithValues.integral_eq_sum_indicator`). For `M = A` this is the scalar
-integral on `C_c^∞(G, A)`. -/
+(`TauCeti.HaarMeasureWithValues.integral_eq_sum_smul_of_eq_sum_compactOpenIndicator`). For
+`M = A` this is the scalar integral on `C_c^∞(G, A)`. -/
 noncomputable def integral : compactlySupported A G M →ₗ[A] M where
   toFun f := integralAux μ f (mem_compactlySupported.1 f.property)
   map_add' _ _ := integralAux_add μ _ _
@@ -243,9 +264,9 @@ theorem integral_compactOpenIndicator [T2Space G] (K : CompactOpens G) (m : M) :
 
 /-- **Expansions with overlaps.** If `f = ∑ 1_{K_i} • m_i` is a finite sum of indicators of compact
 open sets, possibly overlapping, then `∫ f dμ = ∑ μ(K_i) • m_i`. -/
-theorem integral_eq_sum_indicator [T2Space G] (f : compactlySupported A G M) {ι : Type*}
-    (s : Finset ι) (K : ι → CompactOpens G) (m : ι → M)
-    (hf : (f : LocallyConstant G M) = ∑ i ∈ s, compactOpenIndicator (K i) (m i)) :
+theorem integral_eq_sum_smul_of_eq_sum_compactOpenIndicator [T2Space G]
+    (f : compactlySupported A G M) {ι : Type*} (s : Finset ι) (K : ι → CompactOpens G)
+    (m : ι → M) (hf : (f : LocallyConstant G M) = ∑ i ∈ s, compactOpenIndicator (K i) (m i)) :
     μ.integral f = ∑ i ∈ s, μ (K i) • m i := by
   have : f = ∑ i ∈ s, ⟨compactOpenIndicator (K i) (m i),
       compactOpenIndicator_mem_compactlySupported (K i) (m i)⟩ :=
@@ -253,18 +274,36 @@ theorem integral_eq_sum_indicator [T2Space G] (f : compactlySupported A G M) {ι
   rw [this, map_sum]
   exact Finset.sum_congr rfl fun i _ ↦ integral_compactOpenIndicator μ (K i) (m i)
 
+/-- **Uniqueness.** An `A`-linear map on `C_c^∞(G, M)` sending each indicator `1_K • m` of a
+compact open set to `μ(K) • m` is the integral against `μ`. -/
+theorem eq_integral_of_apply_compactOpenIndicator [T2Space G]
+    (L : compactlySupported A G M →ₗ[A] M)
+    (hL : ∀ (K : CompactOpens G) (m : M),
+      L ⟨compactOpenIndicator K m, compactOpenIndicator_mem_compactlySupported K m⟩ = μ K • m) :
+    L = μ.integral := by
+  ext f
+  obtain ⟨s, K, -, -, -, hsum⟩ :=
+    exists_pairwiseDisjoint_sum_indicator (mem_compactlySupported.1 f.property)
+  have hf : (f : LocallyConstant G M) = ∑ m ∈ s, compactOpenIndicator (K m) m :=
+    coe_injective (by
+      simp_rw [hsum, ← coe_compactOpenIndicator]
+      -- `coeFnAddMonoidHom` is the coercion to functions, as an additive monoid hom.
+      exact (map_sum (coeFnAddMonoidHom (X := G) (Y := M))
+        (fun m ↦ compactOpenIndicator (K m) m) s).symm)
+  have : f = ∑ m ∈ s, ⟨compactOpenIndicator (K m) m,
+      compactOpenIndicator_mem_compactlySupported (K m) m⟩ :=
+    Subtype.ext (by rw [hf, Submodule.coe_sum])
+  rw [integral_eq_sum_smul_of_eq_sum_compactOpenIndicator μ f s K id hf, this, map_sum]
+  exact Finset.sum_congr rfl fun m _ ↦ hL (K m) m
+
 /-- **Naturality.** Integration commutes with `A`-linear maps `φ : M → N`. -/
-theorem integral_locallyConstant_map {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
+@[simp]
+theorem integral_comp_comm {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
     (f : compactlySupported A G M) :
     μ.integral ⟨(f : LocallyConstant G M).map φ, mem_compactlySupported.2
-      ((mem_compactlySupported.1 f.property).comp_left (map_zero φ))⟩ = φ (μ.integral f) := by
-  obtain ⟨hd, hv, hcov⟩ := jointFiber_spec (mem_compactlySupported.1 f.property)
-    (mem_compactlySupported.1 f.property)
-  rw [integral_eq_sum μ f hd (v := Prod.fst) (fun p _ x hx ↦ (hv p x hx).1)
-      fun x hx ↦ hcov x (.inl hx),
-    integral_eq_sum μ _ hd (v := fun p ↦ φ p.1) (fun p _ x hx ↦ by simp [(hv p x hx).1])
-      fun x hx ↦ hcov x (.inl fun h ↦ hx (by simp [h])), map_sum]
-  simp
+      ((mem_compactlySupported.1 f.property).comp_left (map_zero φ))⟩ = φ (μ.integral f) :=
+  integralAux_comp_left μ φ (mem_compactlySupported.1 f.property)
+    ((mem_compactlySupported.1 f.property).comp_left (map_zero φ)) fun _ ↦ rfl
 
 /-- **Coset sums.** For a compact open subgroup `U` and a test function `f` invariant under right
 translation by `U`, the integral is the sum over the cosets `gU` of `μ(U) • f(g)`, written through
@@ -276,16 +315,10 @@ theorem integral_eq_smul_sum [IsTopologicalGroup G] (U : OpenSubgroup G)
         (compactlySupportedRightInvariantEquiv U hU f).sum fun _ m ↦ m := by
   classical
   set φ := compactlySupportedRightInvariantEquiv U hU f
-  -- `x ∈ q.out • U` exactly when `x` lies in the coset `q`.
-  have hmem (q : G ⧸ (U : Subgroup G)) (x : G) :
-      x ∈ q.out • U.toCompactOpens hU ↔ (x : G ⧸ (U : Subgroup G)) = q := by
-    rw [CompactOpens.mem_smul_iff_inv_smul_mem, OpenSubgroup.mem_toCompactOpens, smul_eq_mul,
-      ← OpenSubgroup.mem_toSubgroup, ← QuotientGroup.eq, QuotientGroup.out_eq', eq_comm]
   rw [integral_eq_sum μ _ (s := φ.support) (K := fun q ↦ q.out • U.toCompactOpens hU)
-      (v := fun q ↦ φ q) (fun q _ q' _ hqq' ↦ Set.disjoint_left.2 fun x hx hx' ↦
-        hqq' (((hmem q x).1 hx).symm.trans ((hmem q' x).1 hx')))
-      (fun q _ x hx ↦ by simp [φ, ← (hmem q x).1 hx])
-      fun x hx ↦ ⟨x, by simpa [φ] using hx, (hmem _ x).2 rfl⟩,
+      (v := fun q ↦ φ q) (U.pairwiseDisjoint_out_smul_toCompactOpens hU _)
+      (fun q _ x hx ↦ by simp [φ, ← (U.mem_out_smul_toCompactOpens_iff hU q x).1 hx])
+      fun x hx ↦ ⟨x, by simpa [φ] using hx, (U.mem_out_smul_toCompactOpens_iff hU _ x).2 rfl⟩,
     Finsupp.sum, Finset.smul_sum]
   simp
 
@@ -297,15 +330,19 @@ theorem integral_eq_smul_sum_of_discrete [DiscreteTopology G] [Fintype G]
       ∑ g, (f : LocallyConstant G M) g := by
   classical
   let K : G → CompactOpens G := fun g ↦ ⟨⟨{g}, isCompact_singleton⟩, isOpen_discrete _⟩
+  have hKcoe (g : G) : (K g : Set G) = {g} := rfl
+  have hKmem (g x : G) : x ∈ K g ↔ x = g := by
+    rw [← SetLike.mem_coe, hKcoe, mem_singleton_iff]
   -- Each point is a translate of the identity, so all points have the same volume.
   have hK (g : G) : μ (K g) = μ (K 1) := by
     rw [← μ.apply_smul g (K 1)]
     congr 1
-    exact CompactOpens.ext (by simp [K, CompactOpens.coe_smul])
+    exact CompactOpens.ext (by simp [hKcoe, CompactOpens.coe_smul])
   rw [integral_eq_sum μ f (s := Finset.univ) (K := K) (v := fun g ↦ (f : LocallyConstant G M) g)
-      (fun g _ g' _ hgg' ↦ Set.disjoint_singleton.2 hgg')
-      -- Membership in the compact open set `K g` is membership in `{g}`.
-      (fun g _ x hx ↦ by rw [show x = g from hx]) fun x _ ↦ ⟨x, Finset.mem_univ x, rfl⟩,
+      (fun g _ g' _ hgg' ↦ by
+        rw [Function.onFun, hKcoe, hKcoe]
+        exact Set.disjoint_singleton.2 hgg')
+      (fun g _ x hx ↦ by rw [(hKmem g x).1 hx]) fun x _ ↦ ⟨x, Finset.mem_univ x, (hKmem x x).2 rfl⟩,
     Finset.smul_sum]
   exact Finset.sum_congr rfl fun g _ ↦ by rw [hK]
 
