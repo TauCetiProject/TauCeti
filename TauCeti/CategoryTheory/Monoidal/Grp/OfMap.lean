@@ -87,12 +87,9 @@ abbrev monObjObjOfMap (h_one_mul : F.map (one ▷ X ≫ mul) = F.map (λ_ X).hom
   one := ε F ≫ F.map one
   mul := LaxMonoidal.μ F X X ≫ F.map mul
   one_mul := by
-    rw [comp_whiskerRight, Category.assoc, μ_natural_left_assoc, ← F.map_comp, h_one_mul]
-    simp
+    simp [← F.map_comp, h_one_mul]
   mul_one := by
-    rw [MonoidalCategory.whiskerLeft_comp, Category.assoc, μ_natural_right_assoc, ← F.map_comp,
-      h_mul_one]
-    simp
+    simp [← F.map_comp, h_mul_one]
   mul_assoc := by
     simp_rw [comp_whiskerRight, Category.assoc, μ_natural_left_assoc,
       MonoidalCategory.whiskerLeft_comp, Category.assoc, μ_natural_right_assoc]
@@ -140,11 +137,11 @@ abbrev grpObjObjOfMap (h_one_mul : F.map (one ▷ X ≫ mul) = F.map (λ_ X).hom
   __ := F.monObjObjOfMap one mul h_one_mul h_mul_one h_mul_assoc
   inv := F.map inv
   left_inv := by
-    rw [monObjObjOfMap_mul, monObjObjOfMap_one, ← F.map_id, Functor.Monoidal.lift_μ_assoc,
-      ← F.map_comp, h_left_inv, F.map_comp, Functor.Monoidal.toUnit_ε_assoc]
+    simp [← Functor.map_id, Functor.Monoidal.lift_μ_assoc,
+      Functor.Monoidal.toUnit_ε_assoc, ← Functor.map_comp, h_left_inv]
   right_inv := by
-    rw [monObjObjOfMap_mul, monObjObjOfMap_one, ← F.map_id, Functor.Monoidal.lift_μ_assoc,
-      ← F.map_comp, h_right_inv, F.map_comp, Functor.Monoidal.toUnit_ε_assoc]
+    simp [← Functor.map_id, Functor.Monoidal.lift_μ_assoc,
+      Functor.Monoidal.toUnit_ε_assoc, ← Functor.map_comp, h_right_inv]
 
 end Cartesian
 

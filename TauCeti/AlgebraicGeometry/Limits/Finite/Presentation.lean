@@ -58,6 +58,45 @@ open CategoryTheory Limits AlgebraicGeometry
 
 namespace CategoryTheory.Limits.IsLimit
 
+variable {I : Type u} [Category.{u} I] {D : I ⥤ Scheme.{u}} {c : Cone D}
+
+section Eventually
+
+variable (c) in
+/-- The morphism `u` between base changes to the cone point lifts to a morphism between the base
+changes to `D.obj k` along `g : k ⟶ i`. -/
+def LiftsAlong {i : I} {A B : Over (D.obj i)}
+    (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) {k : I}
+    (g : k ⟶ i) : Prop :=
+  ∃ v : (Over.pullback (D.map g)).obj A ⟶ (Over.pullback (D.map g)).obj B,
+    (Over.pullback (c.π.app k)).map v ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app B =
+      (Over.pullbackCompIsoOfEq (c.w g)).hom.app A ≫ u
+
+/-- A lift is a morphism whose base change agrees with the given arrow under the canonical
+comparison isomorphisms. -/
+theorem liftsAlong_iff {i : I} {A B : Over (D.obj i)}
+    (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) {k : I}
+    (g : k ⟶ i) : LiftsAlong c u g ↔
+      ∃ v : (Over.pullback (D.map g)).obj A ⟶ (Over.pullback (D.map g)).obj B,
+        (Over.pullback (c.π.app k)).map v ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app B =
+          (Over.pullbackCompIsoOfEq (c.w g)).hom.app A ≫ u := Iff.rfl
+
+/-- A lift along `g` base changes to a lift along `h ≫ g`. -/
+theorem LiftsAlong.comp {i : I} {A B : Over (D.obj i)}
+    {u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B} {k l : I}
+    {g : k ⟶ i} (h : l ⟶ k) (hg : LiftsAlong c u g) : LiftsAlong c u (h ≫ g) := by
+  obtain ⟨v, hv⟩ := hg
+  let C := Over.pullbackCompIsoOfEq (D.map_comp h g).symm
+  refine ⟨C.inv.app A ≫ (Over.pullback (D.map h)).map v ≫ C.hom.app B, ?_⟩
+  have hcoh (Z : Over (D.obj i)) := Over.pullbackCompIsoOfEq_hom_app_eq (c.w h)
+    (D.map_comp h g).symm (c.w g) (c.w (h ≫ g)) Z
+  have hnat := (Over.pullbackCompIsoOfEq (c.w h)).hom.naturality v
+  dsimp only [Functor.comp_map] at hnat
+  rw [hcoh, hcoh]
+  simp [C, reassoc_of% hnat, hv]
+
+end Eventually
+
 variable {I : Type u} [Category.{u} I] [IsCofiltered I] {D : I ⥤ Scheme.{u}}
   [∀ {i j} (f : i ⟶ j), IsAffineHom (D.map f)] {c : Cone D} (hc : IsLimit c)
 
@@ -335,10 +374,7 @@ theorem exists_overPullback_map_comp_eq [∀ i, CompactSpace (D.obj i)]
     [∀ i, QuasiSeparatedSpace (D.obj i)] {i : I} {A B : Over (D.obj i)} [QuasiCompact A.hom]
     [QuasiSeparated A.hom] [LocallyOfFinitePresentation B.hom]
     (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) :
-    ∃ (j : I) (f : j ⟶ i)
-      (v : (Over.pullback (D.map f)).obj A ⟶ (Over.pullback (D.map f)).obj B),
-      (Over.pullback (c.π.app j)).map v ≫ (Over.pullbackCompIsoOfEq (c.w f)).hom.app B =
-        (Over.pullbackCompIsoOfEq (c.w f)).hom.app A ≫ u := by
+    ∃ (j : I) (f : j ⟶ i), LiftsAlong c u f := by
   have hu : u.left ≫ pullback.snd B.hom (c.π.app i) = pullback.snd A.hom (c.π.app i) := Over.w u
   -- Descend `u`, written with the base as the first factor of the pullbacks.
   obtain ⟨j, f, b, hb₁, hb₂⟩ := hc.exists_pullbackMap_comp_eq (p := A.hom) (q := B.hom)
@@ -378,22 +414,14 @@ theorem exists_overPullback_map_eq_map [∀ i, CompactSpace (D.obj i)] {j : I}
   let t : D.pullbackOver A.hom ⟶ (Functor.const (Over j)).obj (D.obj j) :=
     { app k := pullback.snd _ _ ≫ A.hom
       naturality k l f := by simp [D.pullbackOver_map_snd_assoc A.hom f] }
-  -- Over any `s : T ⟶ Dⱼ`, the base changes agree once they agree after the projection to `A`.
-  have key {T : Scheme.{u}} (s : T ⟶ D.obj j)
-      (h : pullback.snd s A.hom ≫ u.left = pullback.snd s A.hom ≫ v.left) :
-      (Over.pullback s).map u = (Over.pullback s).map v := by
-    ext1
-    apply pullback.hom_ext
-    · simpa using congrArg ((pullbackSymmetry A.hom s).hom ≫ ·) h
-    · simp
-  have hlim : pullback.snd (c.π.app j) A.hom ≫ u.left =
-      pullback.snd (c.π.app j) A.hom ≫ v.left := by
-    simpa using congrArg
-      (fun w ↦ (pullbackSymmetry (c.π.app j) A.hom).hom ≫ w.left ≫ pullback.fst _ _) huv
+  have hlim := (Over.pullback_map_eq_map_iff _ u v).mp huv
   obtain ⟨k, _, e⟩ := AlgebraicGeometry.Scheme.exists_hom_comp_eq_comp_of_locallyOfFiniteType
     (D.pullbackOver A.hom) t B.hom _ (hc.pullbackOver A.hom) (i := Over.mk (𝟙 j))
     (pullback.snd _ _ ≫ u.left) (pullback.snd _ _ ≫ v.left) (by simp [t]) (by simp [t])
-    (by simpa [Cone.pullbackOver_π_app_snd_assoc] using hlim)
-  exact ⟨k.left, k.hom, key _ (by simpa [D.pullbackOver_map_snd_assoc] using e)⟩
+    (by simpa [Cone.pullbackOver_π_app_snd_assoc] using
+      congrArg ((pullbackSymmetry (c.π.app j) A.hom).hom ≫ ·) hlim)
+  refine ⟨k.left, k.hom, (Over.pullback_map_eq_map_iff _ u v).mpr ?_⟩
+  simpa [D.pullbackOver_map_snd_assoc] using
+    congrArg ((pullbackSymmetry A.hom (D.map k.hom)).hom ≫ ·) e
 
 end CategoryTheory.Limits.IsLimit

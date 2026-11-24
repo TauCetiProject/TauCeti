@@ -22,7 +22,7 @@ equalities `f ≫ 𝟙 Y = f`, `𝟙 X ≫ f = f` and `f ≫ g ≫ h = (f ≫ g)
   change along `f` of `pullbackId`;
 * `CategoryTheory.Over.pullbackComp_id_left_hom_app_comp_pullbackId`: `pullbackComp (𝟙 X) f`
   followed by `pullbackId` is the identity of base change along `f`;
-* `CategoryTheory.Over.pullbackComp_comp_inv_app_comp_eqToHom`: the two identifications of base
+* `CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`: the two identifications of base
   change along `f ≫ g ≫ h` with the composite of the three base changes agree;
 * `CategoryTheory.Over.pullback_iso_triangle`: for an isomorphism `e : X ≅ Y`, the unit and
   counit built from `pullbackId` and `pullbackComp` satisfy the triangle identity for
@@ -102,20 +102,6 @@ theorem pullbackComp_id_left_hom_app_comp_pullbackId {X Y : C} (f : X ⟶ Y) [Ha
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_fst A.hom (Category.id_comp f)]
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_snd A.hom (Category.id_comp f)]
 
-/-- The two ways of identifying base change along `f ≫ g ≫ h` with the composite of the base
-changes along `h`, `g` and `f` agree, up to the equality `f ≫ g ≫ h = (f ≫ g) ≫ h`. -/
-@[reassoc]
-theorem pullbackComp_comp_inv_app_comp_eqToHom {W X Y Z : C} (f : W ⟶ X) (g : X ⟶ Y)
-    (h : Y ⟶ Z) [HasPullbacksAlong f] [HasPullbacksAlong g] [HasPullbacksAlong h] (A : Over Z) :
-    (pullbackComp f (g ≫ h)).inv.app A ≫ eqToHom (by simp) =
-      (pullback f).map ((pullbackComp g h).hom.app A) ≫
-        (pullbackComp f g).inv.app ((pullback h).obj A) ≫ (pullbackComp (f ≫ g) h).inv.app A := by
-  -- As above, the identity is checked on the two projections out of `A ×_Z W`.
-  ext1
-  apply pullback.hom_ext
-  · simp [pullbackComp, eqToHom_comp_pullback_fst A.hom (Category.assoc f g h).symm]
-  · simp [pullbackComp, eqToHom_comp_pullback_snd A.hom (Category.assoc f g h).symm]
-
 /-- For an isomorphism `e : X ≅ Y`, the unit and counit built from `pullbackId` and `pullbackComp`
 for `pullback e.hom` and `pullback e.inv` satisfy the triangle identity on every object `A` of
 `Over Y`. -/
@@ -192,6 +178,19 @@ the equality `a ≫ b = d`. -/
 noncomputable def pullbackCompIsoOfEq (h : a ≫ b = d) : pullback b ⋙ pullback a ≅ pullback d :=
   (pullbackComp a b).symm ≪≫ eqToIso (by subst h; rfl)
 
+/-- For a reflexive triangle, the comparison is the inverse of `pullbackComp`. -/
+@[simp]
+theorem pullbackCompIsoOfEq_rfl :
+    pullbackCompIsoOfEq (a := a) (b := b) rfl = (pullbackComp a b).symm := by
+  simp [pullbackCompIsoOfEq]
+
+/-- The component of the triangle comparison is `pullbackComp` inverted, followed by transport
+along the triangle equality. -/
+theorem pullbackCompIsoOfEq_hom_app (h : a ≫ b = d) (A : Over Z) :
+    (pullbackCompIsoOfEq h).hom.app A =
+      (pullbackComp a b).inv.app A ≫ eqToHom (by subst h; rfl) := by
+  simp [pullbackCompIsoOfEq, eqToHom_app]
+
 /-- `pullbackCompIsoOfEq` commutes with the projections to `A`. -/
 @[reassoc (attr := simp)]
 theorem pullbackCompIsoOfEq_hom_app_left_fst (h : a ≫ b = d) (A : Over Z) :
@@ -252,6 +251,21 @@ theorem pullback_map_eq_map_of_comp_eq (h : a ≫ b = d) {A B : Over Z} {u v : A
   simp [huv]
 
 end Triangle
+
+/-- Two arrows agree after base change precisely when their underlying arrows agree after
+precomposition with the projection from the base-changed source. -/
+theorem pullback_map_eq_map_iff {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
+    {A B : Over Y} (u v : A ⟶ B) :
+    (pullback f).map u = (pullback f).map v ↔
+      pullback.fst A.hom f ≫ u.left = pullback.fst A.hom f ≫ v.left := by
+  constructor
+  · intro h
+    simpa using congrArg (fun w ↦ w.left ≫ pullback.fst B.hom f) h
+  · intro h
+    ext1
+    apply pullback.hom_ext
+    · simpa using h
+    · simp
 
 /-- Base change `Over.pullback f : Over Y ⥤ Over X` preserves epimorphisms whenever `Over.forget Y`
 does and epimorphisms in `C` are stable under base change. -/

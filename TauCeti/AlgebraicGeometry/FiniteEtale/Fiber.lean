@@ -163,7 +163,15 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
       (pullback x).map ((pullbackComp f g).hom.app X) ≫
         (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X :=
   -- As above, the identity is checked in `Over V`.
-  ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
+  ObjectProperty.hom_ext _ (by
+    change (Over.pullbackComp x (f ≫ g)).inv.app X.obj ≫
+      eqToHom (congrArg (fun f ↦ (Over.pullback f).obj X.obj) (Category.assoc x f g).symm) =
+      (Over.pullback x).map ((Over.pullbackComp f g).hom.app X.obj) ≫
+        (Over.pullbackComp x f).inv.app ((Over.pullback g).obj X.obj) ≫
+          (Over.pullbackComp (x ≫ f) g).inv.app X.obj
+    simpa [Over.pullbackCompIsoOfEq_hom_app] using
+      Over.pullbackCompIsoOfEq_hom_app_eq (a := f) (b := g) (x := x)
+        rfl rfl rfl (Category.assoc x f g).symm X.obj)
 
 private lemma eqToIso_congrArg_pullback_hom_app_hom {f g : T ⟶ S} (h : f = g)
     (X : FiniteEtaleScheme S) :

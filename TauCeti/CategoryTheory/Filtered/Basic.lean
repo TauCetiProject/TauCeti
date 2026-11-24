@@ -23,7 +23,7 @@ public section
 
 namespace CategoryTheory.IsCofiltered
 
-variable {I : Type*} [Category* I] [IsCofiltered I]
+variable {I : Type*} [Category* I] [IsCofilteredOrEmpty I]
 
 /-- In a cofiltered category, two properties of morphisms to `i` which are stable under
 precomposition and each hold for some morphism to `i` hold together for some morphism to `i`. -/
@@ -36,5 +36,24 @@ theorem exists_and_of_stable {i : I} {R₁ R₂ : ∀ {k : I}, (k ⟶ i) → Pro
   obtain ⟨k₂, g₂, r₂⟩ := h₂
   obtain ⟨l, a₁, a₂, ha⟩ := cospan g₁ g₂
   exact ⟨l, a₁ ≫ g₁, hR₁ a₁ r₁, ha ▸ hR₂ a₂ r₂⟩
+
+/-- A finite family of precomposition-stable properties of arrows to `i`, each realised along
+some arrow, is realised along a single arrow. -/
+theorem exists_forall_of_stable {α : Type*} [Finite α] {i : I}
+    {R : α → ∀ {k : I}, (k ⟶ i) → Prop}
+    (hR : ∀ a, ∀ {k l : I} {g : k ⟶ i} (h : l ⟶ k), R a g → R a (h ≫ g))
+    (h : ∀ a, ∃ (k : I) (g : k ⟶ i), R a g) :
+    ∃ (k : I) (g : k ⟶ i), ∀ a, R a g := by
+  classical
+  let := Fintype.ofFinite α
+  have aux (s : Finset α) : ∃ (k : I) (g : k ⟶ i), ∀ a ∈ s, R a g := by
+    induction s using Finset.induction_on with
+    | empty => exact ⟨i, 𝟙 i, by simp⟩
+    | @insert a s _ ih =>
+      obtain ⟨k, g, ha, hs⟩ := exists_and_of_stable (hR a)
+        (fun f hs b hb ↦ hR b f (hs b hb)) (h a) ih
+      exact ⟨k, g, by simpa only [Finset.mem_insert, forall_eq_or_imp] using And.intro ha hs⟩
+  obtain ⟨k, g, hg⟩ := aux Finset.univ
+  exact ⟨k, g, fun a ↦ hg a (Finset.mem_univ a)⟩
 
 end CategoryTheory.IsCofiltered
