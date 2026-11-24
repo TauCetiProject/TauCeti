@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
-public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Length.Norm.Basic
 
 /-!
@@ -34,8 +34,6 @@ so Fulton's formula is the displayed one.
 
 ## Main results
 
-* `TauCeti.Place.ordFrac_integers`: Mathlib's order of vanishing `Ring.ordFrac` along the valuation
-  ring of a place is the inverse of the valuation of the place.
 * `TauCeti.Place.ord_norm_of_moduleFinite`: the order-of-a-norm formula whenever `𝒪'_P` is a finite
   `𝒪_P`-module, in particular for a separable extension.
 * `TauCeti.Place.ord_norm_of_isFunctionField`: the order-of-a-norm formula for any finite extension
@@ -63,25 +61,6 @@ variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
-omit [Field k'] [Field F'] [Algebra k k'] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F'] in
-/-- The centre of a place on its own valuation ring is the maximal ideal. -/
-private theorem center_integers (P : Place k F)
-    (hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers) :
-    P.center hR = IsDiscreteValuationRing.maximalIdeal P.integers := by
-  ext r
-  rw [mem_center_asIdeal]
-  exact P.mem_maximalIdeal_iff_valuation_lt_one.symm
-
-omit [Field k'] [Field F'] [Algebra k k'] [Algebra k' F'] [Algebra F F'] [Algebra k F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F'] in
-/-- The order of vanishing along the valuation ring of a place, Mathlib's `Ring.ordFrac`, is the
-inverse of the valuation of the place. -/
-theorem ordFrac_integers (P : Place k F) (x : F) :
-    Ring.ordFrac P.integers x = (P.valuation x)⁻¹ := by
-  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
-  rw [Ring.ordFrac_eq_valuation_inv, ← center_integers P hR, valuation_center]
-
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
 variable [FiniteDimensional F F']
@@ -99,22 +78,12 @@ variable (P : Place k F) [Module.Finite P.integers (integralClosure P.integers F
   [IsDedekindDomain (integralClosure P.integers F')] [Algebra k' (integralClosure P.integers F')]
   [IsScalarTower k' (integralClosure P.integers F') F']
 
-omit [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F']
-  [Module.Finite P.integers (integralClosure P.integers F')]
-  [IsDedekindDomain (integralClosure P.integers F')] [Algebra k' (integralClosure P.integers F')]
-  [IsScalarTower k' (integralClosure P.integers F') F'] in
-/-- Every maximal ideal of the local model lies over the maximal ideal of `𝒪_P`. -/
-private theorem liesOver_maximalIdeal (m : Ideal (integralClosure P.integers F')) [m.IsMaximal] :
-    m.LiesOver (IsLocalRing.maximalIdeal P.integers) :=
-  ⟨(IsLocalRing.eq_maximalIdeal
-    (Ideal.isMaximal_under_of_isIntegral_of_isMaximal (R := P.integers) m)).symm⟩
-
 /-- The `𝒪_P`-length of the residue ring of a height one prime `𝔓` of the local model is the
 relative degree of the place of `𝔓`. -/
 private theorem length_quotient_toNat (𝔓 : HeightOneSpectrum (integralClosure P.integers F')) :
     (Module.length P.integers (integralClosure P.integers F' ⧸ 𝔓.asIdeal)).toNat =
       relativeDegree k F (ofPrime k' F' 𝔓) := by
-  have := liesOver_maximalIdeal P 𝔓.asIdeal
+  have := Ideal.liesOver_maximalIdeal_of_isIntegral (R := P.integers) 𝔓.asIdeal
   let _ : Field (P.integers ⧸ IsLocalRing.maximalIdeal P.integers) := Ideal.Quotient.field _
   have : Module.Finite (P.integers ⧸ IsLocalRing.maximalIdeal P.integers)
       (integralClosure P.integers F' ⧸ 𝔓.asIdeal) :=
@@ -124,30 +93,14 @@ private theorem length_quotient_toNat (𝔓 : HeightOneSpectrum (integralClosure
     Module.length_eq_of_surjective (R := P.integers ⧸ IsLocalRing.maximalIdeal P.integers)
       Ideal.Quotient.mk_surjective, Module.length_eq_finrank, ENat.toNat_natCast]
 
-/-- The places of the height one primes of the local model are exactly the places above `P`. -/
-private theorem exists_ofPrime_eq_iff (P' : Place k' F') :
-    (∃ 𝔓 : HeightOneSpectrum (integralClosure P.integers F'), ofPrime k' F' 𝔓 = P') ↔
-      P'.restrict k F = P := by
-  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
-  have hmax : (P.center hR).asIdeal = IsLocalRing.maximalIdeal P.integers := by
-    rw [center_integers P hR]
-    rfl
-  constructor
-  · rintro ⟨𝔓, rfl⟩
-    have : 𝔓.asIdeal.LiesOver (P.center hR).asIdeal := hmax ▸ liesOver_maximalIdeal P 𝔓.asIdeal
-    rw [restrict_ofPrime k F (P.center hR) 𝔓, ofPrime_center]
-  · intro h
-    have hS := algebraMap_mem_integers_of_restrict_eq_ofPrime (S := integralClosure P.integers F')
-      k F (P.center hR) (h.trans (ofPrime_center k F P hR).symm)
-    exact ⟨P'.center hS, ofPrime_center k' F' P' hS⟩
-
 /-- **The order of a norm on the local model**, in multiplicative form. -/
 private theorem valuation_norm_inv {s : Finset (Place k' F')}
     (hs : ∀ P' : Place k' F', P' ∈ s ↔ P'.restrict k F = P) {x : F'} (hx : x ≠ 0) :
     (P.valuation (Algebra.norm F x))⁻¹ =
       ∏ P' ∈ s, ((P'.valuation x)⁻¹) ^ relativeDegree k F P' := by
+  have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ r.property
   have hne (m : MaximalSpectrum (integralClosure P.integers F')) : m.asIdeal ≠ ⊥ :=
-    have := liesOver_maximalIdeal P m.asIdeal
+    have := Ideal.liesOver_maximalIdeal_of_isIntegral (R := P.integers) m.asIdeal
     Ideal.ne_bot_of_liesOver_of_ne_bot (IsDiscreteValuationRing.not_a_field P.integers) m.asIdeal
   -- An opaque name for the height one prime of a maximal ideal, so that the instances on its
   -- place are found syntactically.
@@ -167,17 +120,26 @@ private theorem valuation_norm_inv {s : Finset (Place k' F')}
     fun _ ↦ inferInstance
   have key := ordFrac_norm_eq_finprod (A := P.integers) (K := F)
     (B := integralClosure P.integers F') (L := F') (fun m ↦ (ofPrime k' F' (toH m)).integers) hx
-  -- Reindex the maximal ideals of the local model by their places, the places above `P`.
-  have hinj : Function.Injective fun m ↦ ofPrime k' F' (toH m) := fun m m' h ↦
-    MaximalSpectrum.ext (by rw [← htoH m, ← htoH m', ofPrime_injective k' F' h])
-  have hrange : Set.range (fun m ↦ ofPrime k' F' (toH m)) = (s : Set (Place k' F')) := by
-    ext P'
-    rw [Finset.mem_coe, hs, ← exists_ofPrime_eq_iff P]
-    refine ⟨fun ⟨m, hm⟩ ↦ ⟨toH m, hm⟩, fun ⟨𝔓, h𝔓⟩ ↦ ⟨⟨𝔓.asIdeal, 𝔓.isMaximal⟩, ?_⟩⟩
-    simpa only [show toH ⟨𝔓.asIdeal, 𝔓.isMaximal⟩ = 𝔓 from HeightOneSpectrum.ext (htoH _)]
-  rw [← ordFrac_integers, key, ← finprod_mem_coe_finset, ← hrange, finprod_mem_range hinj]
-  refine finprod_congr fun m ↦ ?_
-  rw [ordFrac_integers, ← length_quotient_toNat P (toH m), htoH]
+  -- Reindex the maximal ideals of the local model by the places above `P`: these are the primes
+  -- of the local model over the centre of `P`, the maximal ideal of `𝒪_P`.
+  have hs' (P' : Place k' F') : P' ∈ s ↔ P'.restrict k F = ofPrime k F (P.center hR) := by
+    rw [hs, ofPrime_center]
+  let e : {P' // P' ∈ s} ≃ MaximalSpectrum (integralClosure P.integers F') :=
+    ((Equiv.subtypeEquivRight hs').trans (restrictOfPrimeEquivPrimesOver k F (P.center hR))).trans
+      { toFun 𝔓 := ⟨𝔓.val, 𝔓.property.1.isMaximal (Ideal.ne_bot_of_mem_primesOver
+          (P.center hR).ne_bot 𝔓.property)⟩
+        invFun m := ⟨m.asIdeal, m.isMaximal.isPrime, P.center_integers_asIdeal hR ▸
+          Ideal.liesOver_maximalIdeal_of_isIntegral m.asIdeal⟩
+        left_inv _ := rfl
+        right_inv _ := rfl }
+  have he (P' : {P' // P' ∈ s}) : ofPrime k' F' (toH (e P')) = P' :=
+    (congrArg _ (HeightOneSpectrum.ext ((htoH _).trans
+      (restrictOfPrimeEquivPrimesOver_apply_coe k F (P.center hR) _)))).trans
+      (ofPrime_center k' F' P'.val _)
+  rw [← ordFrac_integers, key, ← finprod_comp_equiv e,
+    finprod_eq_prod_of_fintype, ← Finset.prod_coe_sort s]
+  refine Finset.prod_congr rfl fun P' _ ↦ ?_
+  rw [ordFrac_integers, ← he P', ← length_quotient_toNat P (toH (e P')), htoH]
 
 end LocalModel
 
