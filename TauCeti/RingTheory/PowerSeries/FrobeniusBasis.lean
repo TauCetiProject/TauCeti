@@ -65,7 +65,8 @@ and Hausdorffness for the same ideal.
   `p`-adically Hausdorff and `p` is a nonzerodivisor.
 * `PowerSeries.frobeniusAssembly_frobeniusBasis_repr`: the coordinates of `f` in the Frobenius
   basis assemble to `f`.
-* `PowerSeries.frobeniusBasis_repr_mul`: the coordinates of `φ a * f` are `a` times those of `f`.
+* `PowerSeries.frobeniusBasis_repr_frobeniusSubst_mul`: the coordinates of `φ a * f` are `a`
+  times those of `f`.
 * `PowerSeries.finrank_frobeniusAlgebra`: `R⟦X⟧` has rank `p` over itself through `φ`.
 
 ## References
@@ -414,7 +415,7 @@ theorem frobeniusBasis_repr_frobeniusAssembly (a : Fin p → R⟦X⟧) (i : Fin 
 /-- The Frobenius coordinates are linear over the Frobenius scalars: the coordinates of
 `φ a * f` are `a` times the coordinates of `f`. -/
 @[simp]
-theorem frobeniusBasis_repr_mul (a f : R⟦X⟧) (i : Fin p) :
+theorem frobeniusBasis_repr_frobeniusSubst_mul (a f : R⟦X⟧) (i : Fin p) :
     @Module.Basis.repr _ _ _ _ _ (frobeniusAlgebra R p).toModule (frobeniusBasis R p hp)
         (frobeniusSubst R p a * f) i =
       a * @Module.Basis.repr _ _ _ _ _ (frobeniusAlgebra R p).toModule
