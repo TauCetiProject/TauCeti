@@ -105,6 +105,8 @@ property of an open subset that its duality map is bijective.
   if capping is bijective along cofinally many compact sets.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iff_of_range_eq`: bijectivity of the
   duality map of an open subset depends only on the subset.
+* `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_comap_iff`: in particular, on an open
+  subset `U ⊆ W` it is the same whether the orientation is restricted from `M` or from `W`.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_of_disjoint`,
   `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_sup_of_disjoint`: duality for the
   union of two disjoint open sets.
@@ -490,19 +492,18 @@ theorem bijective_dualityMap_comap_iff_of_range_eq {U U' : Type} [TopologicalSpa
   have key := (o.comap hj').compactSupportCohomologyExtend_dualityMap hn L (j := f)
     e.isOpenEmbedding p q h
   rw [o.comap_comap_of_comp_eq hj' e.isOpenEmbedding hj he] at key
-  have : IsIso (TopCat.ofHom f) := (TopCat.isIso_iff_isHomeomorph _).2 e.isHomeomorph
-  have := TopCat.isIso_compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ))
-    (k := ℤ) (M := L) (f := TopCat.ofHom f) e.isOpenEmbedding p
   have hext := ConcreteCategory.bijective_of_isIso
-    (TopCat.compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L)
-      (f := TopCat.ofHom f) e.isOpenEmbedding p)
+    (TopCat.compactSupportCohomologyIsoOfHomeomorph (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L
+      (U := TopCat.of U) (X := TopCat.of U') e p).hom
   have hmap := ConcreteCategory.bijective_of_isIso
-    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map (TopCat.ofHom f))
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).mapIso
+      (TopCat.isoOfHomeo (X := TopCat.of U) (Y := TopCat.of U') e)).hom
   refine (Function.Bijective.of_comp_iff' hmap _).symm.trans ?_
   rw [← Function.Bijective.of_comp_iff _ hext]
   refine iff_of_eq (congrArg _ (funext fun x ↦ ?_))
-  simpa only [ConcreteCategory.comp_apply, Function.comp_apply] using
-    (ConcreteCategory.congr_hom key x).symm
+  simpa only [ConcreteCategory.comp_apply, Function.comp_apply,
+    TopCat.compactSupportCohomologyIsoOfHomeomorph_hom, Functor.mapIso_hom,
+    TopCat.isoOfHomeo_hom] using (ConcreteCategory.congr_hom key x).symm
 
 /-- The duality maps of open subsets `U ≤ V` of `M` commute with the extension
 `Hᵖ_c(U; L) ⟶ Hᵖ_c(V; L)` and the pushforward `H_q(U; L) ⟶ H_q(V; L)`. -/
@@ -544,10 +545,7 @@ theorem bijective_dualityMap_of_disjoint {U V : Opens M} (hUV : U ⊔ V = ⊤) (
   have hFh : IsIso Fh := TopCat.isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint
     (X := TopCat.of M) L U.isOpen V.isOpen (by rw [← Opens.coe_sup, hUV, Opens.coe_top])
     (Opens.coe_disjoint.2 hd) q
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hU
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hV
-  have := isIso_of_mono_of_epi (biprod.map ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)
-    ((o.comap V.isOpenEmbedding').dualityMap hn L p q h))
+  have := (ConcreteCategory.isIso_iff_bijective _).2 (ModuleCat.bijective_biprod_map _ _ hU hV)
   -- The duality maps commute with them, by naturality along the inclusions.
   have hsq : Fc ≫ o.dualityMap hn L p q h =
       biprod.map ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)
@@ -620,7 +618,7 @@ theorem bijective_dualityMap_of_iSup_eq_top {ι : Type} [Preorder ι] [IsDirecte
 /-- The duality map of an open subset `U ≤ W` of `M`, with the orientation pulled back from `M`,
 is bijective exactly when that of `U`, read as an open subset of `W`, with the orientation pulled
 back from `W`, is. -/
-private theorem bijective_dualityMap_comap_comap_iff {U W : Opens M} (hUW : U ≤ W) :
+theorem bijective_dualityMap_comap_comap_iff {U W : Opens M} (hUW : U ≤ W) :
     Function.Bijective (((o.comap W.isOpenEmbedding').comap
         (Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ U :
           Opens W).isOpenEmbedding').dualityMap hn L p q h) ↔
