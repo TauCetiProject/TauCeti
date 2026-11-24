@@ -157,22 +157,26 @@ an integer, namely `bₙ₊₁`. -/
 theorem two_le_of_partDen_of_terminatedAt_succ {b : K} (hb : (of v).partDens.get? n = some b)
     (ht : (of v).TerminatedAt (n + 1)) : 2 ≤ b := by
   obtain ⟨gp, hs, rfl⟩ := exists_s_b_of_partDen hb
-  obtain ⟨ifp, hstream, hb⟩ := IntFractPair.exists_succ_get?_stream_of_gcf_of_get?_eq_some hs
+  obtain ⟨ifp, hstream, hbfloor⟩ :=
+    IntFractPair.exists_succ_get?_stream_of_gcf_of_get?_eq_some hs
   obtain ⟨ifp', hstream', hfr', rfl⟩ := IntFractPair.succ_nth_stream_eq_some_iff.1 hstream
+  -- Mathlib has no projection lemmas for `IntFractPair.of`; by definition it is the pair
+  -- `(⌊x⌋, Int.fract x)`.
+  have hofb : (IntFractPair.of ifp'.fr⁻¹).b = ⌊ifp'.fr⁻¹⌋ := rfl
+  have hoffr : (IntFractPair.of ifp'.fr⁻¹).fr = Int.fract ifp'.fr⁻¹ := rfl
   -- Termination at `n + 1` says that the fractional part of `ξₙ₊₁ = ifp'.fr⁻¹` vanishes.
   have hfract : Int.fract ifp'.fr⁻¹ = 0 := by
     obtain h | ⟨ifp'', h, h0⟩ := IntFractPair.succ_nth_stream_eq_none_iff.1
       (of_terminatedAt_n_iff_succ_nth_intFractPair_stream_eq_none.1 ht)
     · simp [hstream] at h
     · rw [hstream, Option.some_inj] at h
-      simpa [← h, IntFractPair.of] using h0
+      rwa [← h, hoffr] at h0
   have hlt : 1 < ifp'.fr⁻¹ := (one_lt_inv₀ ((IntFractPair.nth_stream_fr_nonneg hstream').lt_of_ne'
     hfr')).2 (IntFractPair.nth_stream_fr_lt_one hstream')
   -- So `ξₙ₊₁ = ⌊ξₙ₊₁⌋ = bₙ₊₁` is an integer greater than `1`.
   rw [Int.fract, sub_eq_zero] at hfract
   rw [hfract] at hlt
-  rw [← hb]
-  simp only [IntFractPair.of]
+  rw [← hbfloor, hofb]
   have h1 : (1 : ℤ) < ⌊ifp'.fr⁻¹⌋ := by exact_mod_cast hlt
   exact_mod_cast h1
 
