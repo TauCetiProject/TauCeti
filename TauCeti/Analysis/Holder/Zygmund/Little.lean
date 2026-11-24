@@ -97,13 +97,6 @@ open scoped ENNReal NNReal SchwartzMap Topology
 
 namespace TauCeti
 
-private theorem memLittleHolder_iteratedFDeriv_zero_iff {E F : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {α : ℝ≥0} {f : E → F} :
-    MemLittleHolder α (_root_.iteratedFDeriv ℝ 0 f) ↔ MemLittleHolder α f := by
-  simp only [memLittleHolder_iff, iteratedFDeriv_zero_eq_comp, Function.comp_apply,
-    LinearIsometryEquiv.dist_map]
-
 /-! ### Little Hölder regularity implies high-frequency block decay -/
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
