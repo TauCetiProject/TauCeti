@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
-import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Portmanteau
 
 /-!
@@ -41,13 +41,14 @@ second countability or Borel-space assumptions.
 
 ## Source
 
-* `MeasureTheory.TendstoInDistribution.congr_of_tendstoInMeasure_dist` (and its helper
-  `abs_integral_map_sub_le_of_lipschitz`) is adapted from Mathlib's proof of
+* `MeasureTheory.TendstoInDistribution.congr_of_tendstoInMeasure_dist` (with
+  `MeasureTheory.abs_integral_map_sub_le_of_lipschitz` in
+  `TauCeti.MeasureTheory.Integral.Bochner.Basic`) is adapted from Mathlib's proof of
   `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub`
   (`Mathlib/MeasureTheory/Function/ConvergenceInDistribution.lean`), splitting the integral on a
   null-measurable Lipschitz deviation event instead of `{δ ≤ ‖Y - X‖}` and replacing Mathlib's
   countably generated Lipschitz portmanteau theorem with
-  `MeasureTheory.ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto`.
+  `MeasureTheory.ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto_of_filter`.
 
 ## References
 
@@ -162,57 +163,6 @@ theorem tendstoInDistribution_id_iff {l : Filter ι} {X : (i : ι) → Ω i → 
         aemeasurable_limit := measurable_id.aemeasurable
         tendsto := hlim.symm ▸ ht }
 
-/-- For a bounded `L`-Lipschitz `F : E → ℝ`, the integral difference between the pushforwards of `Y`
-and `X` is bounded without assuming measurability of `dist (Y ·) (X ·)`: we split on the
-null-measurable set where `L * δ < |F (Y ω) - F (X ω)|`, which lies inside `{δ ≤ dist (Y ω) (X ω)}`
-whenever `0 < L`. -/
-private theorem abs_integral_map_sub_le_of_lipschitz
-    {E Ω'' : Type*} [PseudoMetricSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
-    [MeasurableSpace Ω''] {μ'' : Measure Ω''} [IsProbabilityMeasure μ'']
-    {X Y : Ω'' → E} (hX : AEMeasurable X μ'') (hY : AEMeasurable Y μ'')
-    {F : E → ℝ} {M : ℝ} (hF_bd : ∀ x y, dist (F x) (F y) ≤ M)
-    {L : NNReal} (hL : 0 < L) (hF_lip : LipschitzWith L F) {δ : ℝ} (hδ : 0 < δ) :
-    |∫ x, F x ∂(μ''.map Y) - ∫ x, F x ∂(μ''.map X)| ≤
-      (L : ℝ) * δ + M * μ''.real {ω | δ ≤ dist (Y ω) (X ω)} := by
-  let F' : BoundedContinuousFunction E ℝ := ⟨⟨F, hF_lip.continuous⟩, M, hF_bd⟩
-  have hF_meas : Measurable F := F'.continuous.measurable
-  have ⟨ω₀⟩ := nonempty_of_isProbabilityMeasure μ''
-  have hM_nonneg : 0 ≤ M := dist_nonneg.trans (hF_bd (X ω₀) (X ω₀))
-  have := Measure.isFiniteMeasure_map μ'' Y
-  have := Measure.isFiniteMeasure_map μ'' X
-  have h_int_Y : Integrable (fun ω ↦ F (Y ω)) μ'' :=
-    (F'.integrable (μ''.map Y)).comp_aemeasurable hY
-  have h_int_X : Integrable (fun ω ↦ F (X ω)) μ'' :=
-    (F'.integrable (μ''.map X)).comp_aemeasurable hX
-  let S : Set Ω'' := {ω | (L : ℝ) * δ < ‖F (Y ω) - F (X ω)‖}
-  have hS : NullMeasurableSet S μ'' :=
-    nullMeasurableSet_lt aemeasurable_const
-      (h_int_Y.sub h_int_X).aestronglyMeasurable.norm.aemeasurable
-  have hS_sub : S ⊆ {ω | δ ≤ dist (Y ω) (X ω)} := by
-    intro ω hω
-    have hlip := hF_lip.dist_le_mul (Y ω) (X ω)
-    rw [Real.dist_eq, ← Real.norm_eq_abs] at hlip
-    exact ((mul_lt_mul_iff_right₀ (NNReal.coe_pos.2 hL)).1
-      ((Set.mem_ofPred_eq.mp hω).trans_le hlip)).le
-  rw [integral_map hY hF_meas.stronglyMeasurable.aestronglyMeasurable,
-    integral_map hX hF_meas.stronglyMeasurable.aestronglyMeasurable,
-    ← integral_sub h_int_Y h_int_X, ← Real.norm_eq_abs]
-  calc ‖∫ ω, F (Y ω) - F (X ω) ∂μ''‖
-      = ‖∫ ω in S, F (Y ω) - F (X ω) ∂μ'' + ∫ ω in Sᶜ, F (Y ω) - F (X ω) ∂μ''‖ :=
-        congrArg norm (integral_add_compl₀ (f := fun ω ↦ F (Y ω) - F (X ω))
-          hS (h_int_Y.sub h_int_X)).symm
-    _ ≤ ‖∫ ω in S, F (Y ω) - F (X ω) ∂μ''‖ + ‖∫ ω in Sᶜ, F (Y ω) - F (X ω) ∂μ''‖ :=
-        norm_add_le _ _
-    _ ≤ M * μ''.real S + (L : ℝ) * δ * μ''.real Sᶜ :=
-        add_le_add
-          (norm_setIntegral_le_of_norm_le_const (measure_lt_top _ _) fun ω _ ↦ by
-            simpa only [Real.norm_eq_abs, ← Real.dist_eq] using hF_bd (Y ω) (X ω))
-          (norm_setIntegral_le_of_norm_le_const (measure_lt_top _ _) fun ω hω ↦ not_lt.1 hω)
-    _ ≤ M * μ''.real {ω | δ ≤ dist (Y ω) (X ω)} + (L : ℝ) * δ * 1 :=
-        add_le_add (mul_le_mul_of_nonneg_left (measureReal_mono hS_sub) hM_nonneg)
-          (mul_le_mul_of_nonneg_left measureReal_le_one (by positivity))
-    _ = (L : ℝ) * δ + M * μ''.real {ω | δ ≤ dist (Y ω) (X ω)} := by ring
-
 /-- **Slutsky's convergence-in-distribution replacement lemma without separability**, for a general
 pseudometric space and arbitrary filter `l`. If `X i → Z` in distribution and
 `dist (Y i) (X i) → 0` in probability, with `Y i` almost-everywhere measurable, then `Y i → Z` in
@@ -229,14 +179,14 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
   forall_aemeasurable := hY
   aemeasurable_limit := hXZ.aemeasurable_limit
   tendsto := by
-    apply ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto.2
+    apply ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto_of_filter.2
     rintro F ⟨M, hF_bd⟩ ⟨L, hF_lip⟩
     let L' : NNReal := max L 1
     have hL' : 0 < L' := lt_of_lt_of_le zero_lt_one (le_max_right L 1)
     have hF_lip' : LipschitzWith L' F := hF_lip.weaken (le_max_left L 1)
     have hX_lim : Tendsto (fun i ↦ ∫ x, F x ∂(μ''.map (X i))) l (𝓝 (∫ x, F x ∂(μ'.map Z))) := by
-      simpa using ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto.1 hXZ.tendsto
-        F ⟨M, hF_bd⟩ ⟨L', hF_lip'⟩
+      simpa using ProbabilityMeasure.tendsto_iff_forall_lipschitz_integral_tendsto_of_filter.1
+        hXZ.tendsto F ⟨M, hF_bd⟩ ⟨L', hF_lip'⟩
     refine hX_lim.congr_dist ?_
     rw [Metric.tendsto_nhds]
     intro ε hε
@@ -256,9 +206,11 @@ protected theorem TendstoInDistribution.congr_of_tendstoInMeasure_dist
     simp only [Real.dist_eq, sub_zero, abs_abs, ProbabilityMeasure.coe_mk]
     rw [abs_sub_comm]
     calc |∫ x, F x ∂(μ''.map (Y i)) - ∫ x, F x ∂(μ''.map (X i))|
-        ≤ (L' : ℝ) * δ + M * μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)} :=
+        ≤ (L' : ℝ) * δ * μ''.real Set.univ + M * μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)} :=
           abs_integral_map_sub_le_of_lipschitz (hXZ.forall_aemeasurable i) (hY i)
-            hF_bd hL' hF_lip' hδ
+            hF_bd hF_lip' hδ
+      _ = (L' : ℝ) * δ + M * μ''.real {ω | δ ≤ dist (Y i ω) (X i ω)} := by
+          rw [probReal_univ, mul_one]
       _ < ε := by linarith
 
 /-- **Slutsky's convergence-in-distribution replacement lemma without separability.** If `X i → Z`

@@ -26,7 +26,8 @@ algebraic closure properties.
 
 ## Main statements
 
-* `TauCeti.isBoundedInProbability_iff` — definitional unfolding of `IsBoundedInProbability`.
+* `TauCeti.isBoundedInProbability_iff` and `TauCeti.isBoundedInProbability_of_measure_le` —
+  definitional unfolding of `IsBoundedInProbability` and sufficient `ℝ≥0∞`-valued tail criterion.
 * `TauCeti.IsBoundedInProbability.mono_norm_ae`, `TauCeti.IsBoundedInProbability.add`,
   `TauCeti.IsBoundedInProbability.sub`, `TauCeti.IsBoundedInProbability.const_smul`,
   `TauCeti.IsBoundedInProbability.smul` — closure of
@@ -39,8 +40,11 @@ algebraic closure properties.
   Borel σ-algebra, boundedness in probability is equivalent to tightness of the sequence of laws
   `fun n ↦ μ.map (X n)`.
 * `TauCeti.tendstoInMeasure_smul_zero_of_isBoundedInProbability`,
-  `TauCeti.tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero` — the stochastic order algebra
-  identities `O_P(1) • o_P(1) = o_P(1)` and `o_P(1) • O_P(1) = o_P(1)`.
+  `TauCeti.tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero`,
+  `TauCeti.tendstoInMeasure_mul_zero_of_isBoundedInProbability`, and
+  `TauCeti.tendstoInMeasure_mul_zero_of_tendstoInMeasure_zero` — the stochastic order algebra
+  identities `O_P(1) • o_P(1) = o_P(1)`, `o_P(1) • O_P(1) = o_P(1)`, `O_P(1) * o_P(1) = o_P(1)`,
+  and `o_P(1) * O_P(1) = o_P(1)`.
 
 ## References
 
@@ -72,6 +76,17 @@ theorem isBoundedInProbability_iff {μ : Measure Ω} {X : ℕ → Ω → E} :
     IsBoundedInProbability μ X ↔
       ∀ ε > 0, ∃ C > 0, ∀ᶠ n in atTop, μ.real {ω | C < ‖X n ω‖} ≤ ε :=
   Iff.rfl
+
+/-- Boundedness in probability follows from the corresponding `ℝ≥0∞`-valued tail bound, for any
+measure. -/
+theorem isBoundedInProbability_of_measure_le {μ : Measure Ω} {X : ℕ → Ω → E}
+    (h : ∀ ε > 0, ∃ C > 0, ∀ᶠ n in atTop, μ {ω | C < ‖X n ω‖} ≤ ENNReal.ofReal ε) :
+    IsBoundedInProbability μ X := by
+  intro ε hε
+  obtain ⟨C, hC, h_ev⟩ := h ε hε
+  refine ⟨C, hC, h_ev.mono fun n hn ↦ ?_⟩
+  rw [measureReal_def]
+  exact ENNReal.toReal_le_of_le_ofReal hε.le hn
 
 /-- A deterministic constant sequence is bounded in probability for any measure. -/
 theorem isBoundedInProbability_const (μ : Measure Ω) (c : E) :
@@ -172,22 +187,20 @@ theorem isBoundedInProbability_of_aemeasurable_norm {μ : Measure Ω} [IsFiniteM
     {Z : Ω → E} (hZ : AEMeasurable (fun ω ↦ ‖Z ω‖) μ) :
     IsBoundedInProbability μ (fun _ ↦ Z) := by
   have hlim := MeasureTheory.tendsto_measure_dist_ge_atTop hZ.aestronglyMeasurable 0
-  intro ε hε
+  refine isBoundedInProbability_of_measure_le fun ε hε ↦ ?_
   obtain ⟨r, hr, hr1⟩ :=
     ((hlim.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).and (eventually_ge_atTop 1)).exists
   refine ⟨r, by linarith, Eventually.of_forall fun _ ↦ ?_⟩
   have hsub : {ω | r < ‖Z ω‖} ⊆ {ω | r ≤ dist ‖Z ω‖ 0} := fun ω hω ↦ by
     simpa only [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _), Set.mem_ofPred_eq] using
       le_of_lt (Set.mem_ofPred_eq.mp hω)
-  have hle : μ {ω | r < ‖Z ω‖} ≤ ENNReal.ofReal ε := (measure_mono hsub).trans hr.le
-  rw [measureReal_def]
-  exact ENNReal.toReal_le_of_le_ofReal hε.le hle
+  exact (measure_mono hsub).trans hr.le
 
 /-- A sequence converging in measure to a constant is bounded in probability, for any measure and
 with no measurability assumptions. -/
 theorem isBoundedInProbability_of_tendstoInMeasure_const {μ : Measure Ω} {X : ℕ → Ω → E} {c : E}
     (h : TendstoInMeasure μ X atTop (fun _ ↦ c)) : IsBoundedInProbability μ X := by
-  intro ε hε
+  refine isBoundedInProbability_of_measure_le fun ε hε ↦ ?_
   refine ⟨‖c‖ + 1, by positivity, ?_⟩
   have h1 := (tendstoInMeasure_iff_dist.1 h 1 one_pos).eventually
     (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))
@@ -197,9 +210,7 @@ theorem isBoundedInProbability_of_tendstoInMeasure_const {μ : Measure Ω} {X : 
     have htri : ‖X n ω‖ ≤ dist (X n ω) c + ‖c‖ := by
       simpa only [dist_zero_right] using dist_triangle (X n ω) c 0
     exact Set.mem_ofPred_eq.mpr (by linarith [Set.mem_ofPred_eq.mp hω])
-  have hle : μ {ω | ‖c‖ + 1 < ‖X n ω‖} ≤ ENNReal.ofReal ε := (measure_mono hsub).trans hn.le
-  rw [measureReal_def]
-  exact ENNReal.toReal_le_of_le_ofReal hε.le hle
+  exact (measure_mono hsub).trans hn.le
 
 /-- A sequence converging in measure to a limit whose norm is almost-everywhere measurable is
 bounded in probability, under a finite measure. -/
@@ -220,7 +231,7 @@ theorem isBoundedInProbability_of_tendstoInDistribution {Ω' : Type*} [Measurabl
     {μ' : Measure Ω'} [IsProbabilityMeasure μ'] {X : ℕ → Ω → E} {Z : Ω' → E}
     (h : TendstoInDistribution X atTop Z (fun _ ↦ μ) μ') :
     IsBoundedInProbability μ X := by
-  intro ε hε
+  refine isBoundedInProbability_of_measure_le fun ε hε ↦ ?_
   obtain ⟨R, hR⟩ := ProbabilityMeasure.exists_measure_nndist_ge_le_of_tendsto h.tendsto (0 : E)
     (ENNReal.ofReal_pos.2 hε)
   refine ⟨(R : ℝ) + 1, by positivity, ?_⟩
@@ -233,14 +244,11 @@ theorem isBoundedInProbability_of_tendstoInDistribution {Ω' : Type*} [Measurabl
       rw [coe_nndist, dist_zero_left]
       linarith [Set.mem_ofPred_eq.mp hy]
     exact_mod_cast hnorm
-  have hle : μ {ω | (R : ℝ) + 1 < ‖X n ω‖} ≤ ENNReal.ofReal ε := by
-    calc μ {ω | (R : ℝ) + 1 < ‖X n ω‖}
-        = (μ.map (X n)) {y : E | (R : ℝ) + 1 < ‖y‖} :=
-            (Measure.map_apply_of_aemeasurable (h.forall_aemeasurable n) hopen).symm
-      _ ≤ (μ.map (X n)) {y : E | R ≤ nndist (0 : E) y} := measure_mono hsub
-      _ ≤ ENNReal.ofReal ε := hn
-  rw [measureReal_def]
-  exact ENNReal.toReal_le_of_le_ofReal hε.le hle
+  calc μ {ω | (R : ℝ) + 1 < ‖X n ω‖}
+      = (μ.map (X n)) {y : E | (R : ℝ) + 1 < ‖y‖} :=
+          (Measure.map_apply_of_aemeasurable (h.forall_aemeasurable n) hopen).symm
+    _ ≤ (μ.map (X n)) {y : E | R ≤ nndist (0 : E) y} := measure_mono hsub
+    _ ≤ ENNReal.ofReal ε := hn
 
 end Basic
 
@@ -254,21 +262,18 @@ theorem isBoundedInProbability_of_isTightMeasureSet_range [OpensMeasurableSpace 
     {μ : Measure Ω} {X : ℕ → Ω → E} (hX : ∀ n, AEMeasurable (X n) μ)
     (htight : IsTightMeasureSet (Set.range fun n ↦ μ.map (X n))) :
     IsBoundedInProbability μ X := by
-  intro ε hε
+  refine isBoundedInProbability_of_measure_le fun ε hε ↦ ?_
   have hlim := tendsto_measure_norm_gt_of_isTightMeasureSet htight
   obtain ⟨r, hr⟩ := (hlim.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).exists_forall_of_atTop
   refine ⟨max r 1, by positivity, Eventually.of_forall fun n ↦ ?_⟩
   have hopen : MeasurableSet {x : E | max r 1 < ‖x‖} :=
     (isOpen_lt continuous_const continuous_norm).measurableSet
-  have hle : μ {ω | max r 1 < ‖X n ω‖} ≤ ENNReal.ofReal ε := by
-    calc μ {ω | max r 1 < ‖X n ω‖}
-        = (μ.map (X n)) {x : E | max r 1 < ‖x‖} :=
-            (Measure.map_apply_of_aemeasurable (hX n) hopen).symm
-      _ ≤ ⨆ ν ∈ Set.range (fun k ↦ μ.map (X k)), ν {x : E | max r 1 < ‖x‖} :=
-            le_biSup (fun ν : Measure E ↦ ν {x : E | max r 1 < ‖x‖}) ⟨n, rfl⟩
-      _ ≤ ENNReal.ofReal ε := (hr (max r 1) (le_max_left r 1)).le
-  rw [measureReal_def]
-  exact ENNReal.toReal_le_of_le_ofReal hε.le hle
+  calc μ {ω | max r 1 < ‖X n ω‖}
+      = (μ.map (X n)) {x : E | max r 1 < ‖x‖} :=
+          (Measure.map_apply_of_aemeasurable (hX n) hopen).symm
+    _ ≤ ⨆ ν ∈ Set.range (fun k ↦ μ.map (X k)), ν {x : E | max r 1 < ‖x‖} :=
+          le_biSup (fun ν : Measure E ↦ ν {x : E | max r 1 < ‖x‖}) ⟨n, rfl⟩
+    _ ≤ ENNReal.ofReal ε := (hr (max r 1) (le_max_left r 1)).le
 
 /-- In a proper normed group with its Borel σ-algebra, the laws of a bounded-in-probability
 sequence of almost-everywhere measurable maps under a finite measure form a tight set. -/
@@ -365,6 +370,26 @@ theorem tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero
     TendstoInMeasure μ (fun n ω ↦ U n ω • V n ω) atTop (fun _ ↦ 0) :=
   tendstoInMeasure_zero_of_norm_le_mul hV hU fun n ω ↦
     (norm_smul_le (U n ω) (V n ω)).trans_eq (mul_comm _ _)
+
+/-- **Stochastic order algebra `O_P(1) * o_P(1) = o_P(1)`.** Multiplying a sequence bounded in
+probability by a sequence tending to `0` in measure yields a sequence tending to `0` in measure,
+under any finite measure. -/
+theorem tendstoInMeasure_mul_zero_of_isBoundedInProbability
+    {R : Type*} [NonUnitalSeminormedRing R] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {U V : ℕ → Ω → R}
+    (hU : IsBoundedInProbability μ U) (hV : TendstoInMeasure μ V atTop (fun _ ↦ 0)) :
+    TendstoInMeasure μ (fun n ω ↦ U n ω * V n ω) atTop (fun _ ↦ 0) := by
+  simpa only [smul_eq_mul] using tendstoInMeasure_smul_zero_of_isBoundedInProbability hU hV
+
+/-- **Stochastic order algebra `o_P(1) * O_P(1) = o_P(1)`.** Multiplying a sequence tending to `0`
+in measure by a sequence bounded in probability yields a sequence tending to `0` in measure, under
+any finite measure. -/
+theorem tendstoInMeasure_mul_zero_of_tendstoInMeasure_zero
+    {R : Type*} [NonUnitalSeminormedRing R] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {U V : ℕ → Ω → R}
+    (hU : TendstoInMeasure μ U atTop (fun _ ↦ 0)) (hV : IsBoundedInProbability μ V) :
+    TendstoInMeasure μ (fun n ω ↦ U n ω * V n ω) atTop (fun _ ↦ 0) := by
+  simpa only [smul_eq_mul] using tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero hU hV
 
 end StochasticOrder
 

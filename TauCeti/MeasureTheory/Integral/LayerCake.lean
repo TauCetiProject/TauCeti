@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Integral.Layercake
 public import Mathlib.Data.Set.SymmDiff
 -- Proof-only: integrability of a real power on a bounded interval.
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+-- Proof-only: Riemann sum comparisons for antitone functions.
+import Mathlib.Analysis.SumIntegralComparisons
 -- Proof-only: the layer-cake formula for a power and the power integral on `(0, a)`.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: the integrability of indicators of bounded intervals.
@@ -106,7 +108,9 @@ therefore makes every shifted tail integrable.
   its integrand;
 * `TauCeti.integrable_rpow_iff_integrableOn_weighted_tail` and
   `TauCeti.integrable_rpow_iff_integrableAtFilter_weighted_tail` — the weighted-tail
-  integrability criteria for positive real-power moments.
+  integrability criteria for positive real-power moments;
+* `MeasureTheory.integral_bounds_mul_sum_measureReal_gt` — two-sided Riemann-sum bounds for
+  the integral of a nonnegative bounded integrable function in terms of superlevel-set measures.
 -/
 
 public section
@@ -831,3 +835,49 @@ theorem integrableOn_Ioi_measureReal_tail_add (F : Measure ℝ≥0) (x : ℝ≥0
     (lintegral_mono fun u => ENNReal.coe_le_coe.mpr (tsub_le_self : u - x ≤ u))
 
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- Finite layer-cake approximation of the integral of a nonnegative almost-everywhere bounded
+integrable function on a finite measure space by a Riemann sum of strict superlevel-set measures. -/
+theorem integral_bounds_mul_sum_measureReal_gt
+    {X : Type*} [MeasurableSpace X] (ν : Measure X) [IsFiniteMeasure ν] {f : X → ℝ}
+    (hf_int : Integrable f ν) (hf : 0 ≤ᵐ[ν] f) {k : ℕ} {a : ℝ} (ha : 0 < a)
+    (hka : ∀ᵐ x ∂ν, f x ≤ k * a) :
+    ∫ x, f x ∂ν ≤ a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} ∧
+      a * ∑ j ∈ Finset.range k, ν.real {x | (j : ℝ) * a < f x} ≤
+        (∫ x, f x ∂ν) + a * ν.real Set.univ := by
+  let g : ℝ → ℝ := fun t ↦ ν.real {x | t < f x / a}
+  have hg_anti : AntitoneOn g (Set.Icc 0 (0 + k)) :=
+    fun _ _ _ _ hst ↦ measureReal_mono fun _ hx ↦ hst.trans_lt hx
+  have hint : (∫ x, f x ∂ν) / a = ∫ t in (0 : ℝ)..0 + k, g t := by
+    rw [← integral_div, (hf_int.div_const a).integral_eq_integral_Ioc_meas_le
+      (hf.mono fun x hx ↦ div_nonneg hx ha.le) (hka.mono fun x hx ↦ (div_le_iff₀ ha).2 hx)]
+    rw [zero_add, intervalIntegral.integral_of_le (Nat.cast_nonneg k)]
+    refine integral_congr_ae ?_
+    filter_upwards [meas_le_ae_eq_meas_lt ν (volume.restrict (Set.Ioc (0 : ℝ) k))
+      (fun x ↦ f x / a)] with t ht
+    simpa only [measureReal_def, g] using congrArg ENNReal.toReal ht
+  have hle_sum : (∫ x, f x ∂ν) / a ≤ ∑ j ∈ Finset.range k, g j := by
+    simpa only [zero_add] using hint.trans_le hg_anti.integral_le_sum
+  have hsum_le : ∑ j ∈ Finset.range k, g j ≤ ν.real Set.univ + (∫ x, f x ∂ν) / a := by
+    have hsub : (∑ j ∈ Finset.range k, g j) - ∑ j ∈ Finset.range k, g (j + 1 : ℕ) = g 0 - g k := by
+      rw [← Finset.sum_sub_distrib]
+      simpa only [Nat.cast_zero] using Finset.sum_range_sub' (fun j : ℕ ↦ g j) k
+    have hgk : g k = 0 := by
+      have hnull : ν {x | (k : ℝ) < f x / a} = 0 :=
+        measure_mono_null (fun x hx ↦ not_le.2 ((lt_div_iff₀ ha).1 (Set.mem_ofPred_eq.mp hx)))
+          (ae_iff.1 hka)
+      simp [g, measureReal_def, hnull]
+    have hg0 : g 0 ≤ ν.real Set.univ := measureReal_mono (Set.subset_univ _)
+    have hsum_int : ∑ j ∈ Finset.range k, g (j + 1 : ℕ) ≤ (∫ x, f x ∂ν) / a := by
+      simpa only [zero_add, hint] using hg_anti.sum_le_integral
+    linarith
+  have hgj (j : ℕ) : g j = ν.real {x | (j : ℝ) * a < f x} := by
+    simp only [g, lt_div_iff₀ ha]
+  simp only [hgj] at hle_sum hsum_le
+  refine ⟨(div_le_iff₀' ha).1 hle_sum, (le_div_iff₀' ha).1 ?_⟩
+  rw [add_div, mul_div_cancel_left₀ _ ha.ne']
+  linarith [hsum_le]
+
+end MeasureTheory
