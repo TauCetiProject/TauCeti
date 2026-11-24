@@ -56,8 +56,8 @@ variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing) {Γ : S
 private noncomputable def idealVertexCuspOrbit (hmap : ∀ i, σ.map i ∈ Γ)
     (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier)
     (j : {i : Fin n // (P.vertex i).isRight}) : Γ.CuspOrbit :=
-  Γ.cuspOrbitMk ⟨(P.vertex j).getRight j.2, Subgroup.mem_cuspPoints.mpr <|
-    σ.isCuspPoint_of_vertex_eq_inr (Sum.inr_getRight _ j.2).symm (σ.cycleMap_mem hmap _) hlf⟩
+  Γ.cuspOrbitMk ⟨(P.vertex j).getRight j.property, Subgroup.mem_cuspPoints.mpr <|
+    σ.isCuspPoint_of_vertex_eq_inr (Sum.inr_getRight _ j.property).symm (σ.cycleMap_mem hmap _) hlf⟩
 
 /-- Two ideal vertices have the same cusp orbit exactly when they lie in the same cycle. -/
 private theorem idealVertexCuspOrbit_eq_iff_sameCycle (hmap : ∀ i, σ.map i ∈ Γ)
@@ -67,9 +67,9 @@ private theorem idealVertexCuspOrbit_eq_iff_sameCycle (hmap : ∀ i, σ.map i �
     (j k : {i : Fin n // (P.vertex i).isRight}) :
     σ.idealVertexCuspOrbit hmap hlf j = σ.idealVertexCuspOrbit hmap hlf k ↔
       σ.next.SameCycle j k := by
-  have hk := (Sum.inr_getRight _ k.2).symm
+  have hk := (Sum.inr_getRight _ k.property).symm
   rw [idealVertexCuspOrbit, idealVertexCuspOrbit, Subgroup.cuspOrbitMk_eq_iff,
-    σ.mem_orbit_iff_mem_cycle_of_vertex_eq_inr hk (Sum.inr_getRight _ j.2).symm hmap
+    σ.mem_orbit_iff_mem_cycle_of_vertex_eq_inr hk (Sum.inr_getRight _ j.property).symm hmap
       (σ.isParabolic_cycleMap_of_locallyFinite hk (σ.cycleMap_mem hmap _) hlf) hdisj,
     σ.mem_cycle_iff_sameCycle, Equiv.Perm.sameCycle_comm]
 
@@ -106,7 +106,7 @@ theorem coe_idealVertexCycleEquiv_mk (hmap : ∀ i, σ.map i ∈ Γ)
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
     (j : {i : Fin n // (P.vertex i).isRight}) :
     (σ.idealVertexCycleEquiv hmap hlf hdisj (Quotient.mk'' j) : Γ.BoundaryOrbit) =
-      Quotient.mk'' ((P.vertex j).getRight j.2) := by
+      Quotient.mk'' ((P.vertex j).getRight j.property) := by
   -- Mathlib has no `apply_mk` lemmas for `Quotient.congrRight` and
   -- `Setoid.quotientKerEquivOfSurjective`; both compute on representatives.
   have h : σ.idealVertexCycleEquiv hmap hlf hdisj (Quotient.mk'' j) =

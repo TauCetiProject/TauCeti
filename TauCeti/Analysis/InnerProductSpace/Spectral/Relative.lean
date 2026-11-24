@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.LinearAlgebra.BilinearForm.RelativeEigenspace
 public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+public import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
@@ -29,10 +31,18 @@ semidefinite, and by Sylvester's law of inertia the dimension of the negative sp
 the negative index of inertia of `q`, whatever positive definite `g` is used. When `q` is
 nondegenerate the negative and positive spectral subspaces are complementary.
 
+Applied to the symmetrization `s = g + g.flip` and the form `(v, w) ↦ s (f v) w`, this gives the
+spectral theorem for an endomorphism `f` self-adjoint for a positive definite, not necessarily
+symmetric, form `g`: its eigenspaces span `V`. This is how operators such as `ad X`, for `X` in
+the `-1`-eigenspace of a Cartan involution, are diagonalized without choosing an inner product
+space structure.
+
 ## Main declarations
 
 * `LinearMap.BilinForm.exists_linearEquiv_euclideanSpace_apply_apply`: `g` is the pullback of the
   Euclidean inner product along a linear equivalence.
+* `LinearMap.BilinForm.exists_continuousLinearEquiv_euclideanSpace_apply_self`: on a
+  finite-dimensional Hausdorff topological vector space, that linear equivalence is continuous.
 * `LinearMap.BilinForm.relativeEigenspace_innerₗ`: relative to an inner product, the relative
   eigenspaces are the eigenspaces of the operator representing `q`.
 * `LinearMap.BilinForm.relativeSpectralSubspace_univ`: the relative eigenvectors span.
@@ -48,6 +58,10 @@ nondegenerate the negative and positive spectral subspaces are complementary.
   and positive indices of inertia of `q`.
 * `LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi`: for nondegenerate `q`, the
   negative and positive spectral subspaces are complementary.
+* `LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top`: an endomorphism self-adjoint for a positive
+  definite form is diagonalizable.
+* `ContinuousLinearEquiv.map_relativeSpectralSubspace_bilinearComp`: pulling continuous forms back
+  along a continuous linear equivalence pulls back their relative spectral subspaces.
 
 The Euclidean isometry is built from a `g`-orthogonal basis
 (`LinearMap.BilinForm.exists_orthogonal_basis`), and the spectral input is the point-spectral
@@ -100,6 +114,17 @@ theorem exists_linearEquiv_euclideanSpace_apply_apply (hg : g.IsSymm)
     field_simp
     simp [Real.sq_sqrt (hbpos i).le]
   · simp [hb hij, hij]
+
+/-- A positive definite symmetric bilinear form on a finite-dimensional Hausdorff topological
+vector space is the squared norm of a continuous linear identification with Euclidean space. -/
+theorem exists_continuousLinearEquiv_euclideanSpace_apply_self [TopologicalSpace V]
+    [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V] (hg : g.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < g v v) :
+    ∃ e : EuclideanSpace ℝ (Fin (finrank ℝ V)) ≃L[ℝ] V, ∀ v, g v v = ‖e.symm v‖ ^ 2 := by
+  obtain ⟨e, he⟩ := exists_linearEquiv_euclideanSpace_apply_apply hg hpos
+  refine ⟨e.toContinuousLinearEquiv, fun v ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := e.surjective v
+  simp [he]
 
 /-- Over a Euclidean space, the eigenspaces of `q` relative to the inner product are the
 eigenspaces of an operator `T` representing `q`. -/
@@ -263,3 +288,69 @@ theorem isCompl_relativeSpectralSubspace_Iio_Ioi (hker : LinearMap.ker q = ⊥) 
 end Real
 
 end LinearMap.BilinForm
+
+namespace LinearMap.IsSelfAdjoint
+
+open LinearMap.BilinForm
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {g : LinearMap.BilinForm ℝ V} {f : Module.End ℝ V}
+
+/-- **Self-adjoint endomorphisms are diagonalizable.** On a finite-dimensional real space, the
+eigenspaces of an endomorphism self-adjoint for a positive definite bilinear form span the space.
+The form need not be symmetric. -/
+theorem iSup_eigenspace_eq_top (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hf : g.IsSelfAdjoint f) :
+    ⨆ μ : ℝ, f.eigenspace μ = ⊤ := by
+  -- Pass to the symmetrization `s`, for which `f` is still self-adjoint.
+  set s := g + g.flip
+  have hs : s.IsSymm := ⟨fun v w ↦ by simp [s, add_comm]⟩
+  have hspos (v) (hv : v ≠ 0) : 0 < s v v := by
+    simpa [s] using add_pos (hpos v hv) (hpos v hv)
+  have hfs (v w : V) : s (f v) w = s v (f w) := by
+    simp [s, hf v w, hf w v]
+  have hsep : s.SeparatingLeft :=
+    separatingLeft_of_anisotropic (QuadraticMap.PosDef.anisotropic hspos)
+  have hq : (s.compLeft f).IsSymm := ⟨fun v w ↦ by
+    simp only [LinearMap.BilinForm.compLeft_apply, hfs, hs.eq v]⟩
+  simpa [relativeSpectralSubspace_def, relativeEigenspace_compLeft hsep] using
+    relativeSpectralSubspace_univ hs hspos hq
+
+end LinearMap.IsSelfAdjoint
+
+/-! ### Pullbacks along continuous linear equivalences -/
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+
+/-- Pulling a form and a metric back along a linear equivalence `e` pulls back their relative
+spectral subspaces: these are carried by `e` to the relative spectral subspaces of the original
+pair. -/
+@[simp]
+theorem map_relativeSpectralSubspace_bilinearComp (e : W ≃L[𝕜] V) (q h : V →L[𝕜] V →L[𝕜] 𝕜)
+    (Ω : Set 𝕜) :
+    ((h.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm.relativeSpectralSubspace
+      (q.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm Ω).map
+        (e.toLinearEquiv : W →ₗ[𝕜] V) =
+      h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
+  have hc (B : V →L[𝕜] V →L[𝕜] 𝕜) : (B.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm =
+      B.toBilinForm.compl₁₂ (e.toLinearEquiv : W →ₗ[𝕜] V) (e.toLinearEquiv : W →ₗ[𝕜] V) := by
+    ext u v
+    simp
+  rw [hc, hc]
+  exact LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ e.toLinearEquiv
+
+/-- A vector lies in a relative spectral subspace of a pulled-back pair exactly when its image
+lies in the corresponding relative spectral subspace of the original pair. -/
+@[simp]
+theorem mem_relativeSpectralSubspace_bilinearComp_iff (e : W ≃L[𝕜] V) {q h : V →L[𝕜] V →L[𝕜] 𝕜}
+    {Ω : Set 𝕜} {u : W} :
+    u ∈ (h.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm.relativeSpectralSubspace
+        (q.bilinearComp (e : W →L[𝕜] V) (e : W →L[𝕜] V)).toBilinForm Ω ↔
+      e u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
+  rw [← e.map_relativeSpectralSubspace_bilinearComp q h Ω, Submodule.mem_map]
+  refine ⟨fun hu ↦ ⟨u, hu, rfl⟩, fun ⟨w, hw, hwu⟩ ↦ ?_⟩
+  rwa [← e.injective hwu]
+
+end ContinuousLinearEquiv

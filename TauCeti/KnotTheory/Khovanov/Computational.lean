@@ -46,34 +46,34 @@ variable {n : ℕ} (D : OrientedPDCode n)
 `false` labels a circle by `1`, and `true` labels it by `X`. -/
 abbrev EnhancedStateAt (i j : ℤ) :=
   Σ S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount},
-    {l : D.toPDCode.ResolvedCircle (PDCode.cubeState S.1) → Bool //
-      Khovanov.labelingQuantumDegree _ l = j - D.stateQuantumShift (PDCode.cubeState S.1)}
+    {l : D.toPDCode.ResolvedCircle (PDCode.cubeState S.val) → Bool //
+      Khovanov.labelingQuantumDegree _ l = j - D.stateQuantumShift (PDCode.cubeState S.val)}
 
 /-- Forgetting the degree constraints gives an enhanced state on the native circle sets. -/
 def EnhancedStateAt.toEnhancedState {i j : ℤ} (e : D.EnhancedStateAt i j) :
     D.toPDCode.EnhancedState :=
-  ⟨PDCode.cubeState e.1.1, e.2.1⟩
+  ⟨PDCode.cubeState e.1.val, e.2.val⟩
 
 /-- Forgetting the constraints retains both the smoothing and its dependent circle labels. -/
 theorem EnhancedStateAt.toEnhancedState_def {i j : ℤ} (e : D.EnhancedStateAt i j) :
-    e.toEnhancedState D = ⟨PDCode.cubeState e.1.1, e.2.1⟩ := (rfl)
+    e.toEnhancedState D = ⟨PDCode.cubeState e.1.val, e.2.val⟩ := (rfl)
 
 /-- Forgetting the constraints preserves the smoothing state. -/
 @[simp]
 theorem EnhancedStateAt.toEnhancedState_fst {i j : ℤ} (e : D.EnhancedStateAt i j) :
-    (e.toEnhancedState D).1 = PDCode.cubeState e.1.1 := (rfl)
+    (e.toEnhancedState D).1 = PDCode.cubeState e.1.val := (rfl)
 
 /-- Forgetting the constraints preserves the circle labels on the corresponding smoothing. -/
 @[simp]
 theorem EnhancedStateAt.toEnhancedState_snd {i j : ℤ} (e : D.EnhancedStateAt i j) :
-    HEq (e.toEnhancedState D).2 e.2.1 := (HEq.rfl)
+    HEq (e.toEnhancedState D).2 e.2.val := (HEq.rfl)
 
 /-- The underlying enhanced state has the specified cochain degree. -/
 -- Simplify before the state projection erases the enhanced-state degree constraint.
 @[simp↓]
 theorem EnhancedStateAt.stateCochainDegree_toEnhancedState {i j : ℤ} (e : D.EnhancedStateAt i j) :
     D.stateCochainDegree (e.toEnhancedState D).1 = i := by
-  simp only [EnhancedStateAt.toEnhancedState_fst, stateCochainDegree_cubeState, e.1.2]
+  simp only [EnhancedStateAt.toEnhancedState_fst, stateCochainDegree_cubeState, e.1.property]
   omega
 
 /-- The underlying enhanced state has the specified quantum degree. -/
@@ -81,7 +81,7 @@ theorem EnhancedStateAt.stateCochainDegree_toEnhancedState {i j : ℤ} (e : D.En
 theorem EnhancedStateAt.enhancedQuantumDegree_toEnhancedState {i j : ℤ}
     (e : D.EnhancedStateAt i j) :
     D.enhancedQuantumDegree (e.toEnhancedState D) = j := by
-  simp only [EnhancedStateAt.toEnhancedState_def, enhancedQuantumDegree_def, e.2.2]
+  simp only [EnhancedStateAt.toEnhancedState_def, enhancedQuantumDegree_def, e.2.property]
   omega
 
 /-- Cube-subset indexing gives exactly the native enhanced states of bidegree `(i,j)`. -/
@@ -95,7 +95,7 @@ def enhancedStateAtEquiv (i j : ℤ) :
     ⟨by
       rintro ⟨S, l⟩ ⟨T, k⟩ h
       have hST : S = T := Subtype.ext
-        (PDCode.cubeState_injective (congrArg (fun e ↦ e.1.1) h))
+        (PDCode.cubeState_injective (congrArg (fun e ↦ e.val.1) h))
       subst T
       congr 1
       apply Subtype.ext
@@ -113,7 +113,7 @@ def enhancedStateAtEquiv (i j : ℤ) :
 /-- The enhanced-state equivalence forgets only the two degree constraints. -/
 @[simp]
 theorem enhancedStateAtEquiv_apply_val {i j : ℤ} (e : D.EnhancedStateAt i j) :
-    (D.enhancedStateAtEquiv i j e).1 = e.toEnhancedState D := (rfl)
+    (D.enhancedStateAtEquiv i j e).val = e.toEnhancedState D := (rfl)
 
 variable (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R] (j : ℤ)
 
@@ -122,8 +122,8 @@ circle-piece bases of the state summands. -/
 def khovanovEnhancedBasis (i : ℤ) :
     Module.Basis (D.EnhancedStateAt i j) R ((D.khovanovComplex hD R j).X i) :=
   (Pi.basis fun S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount} ↦
-    Khovanov.circlePieceBasis R (D.toPDCode.ResolvedCircle (PDCode.cubeState S.1))
-      (j - D.stateQuantumShift (PDCode.cubeState S.1))).map
+    Khovanov.circlePieceBasis R (D.toPDCode.ResolvedCircle (PDCode.cubeState S.val))
+      (j - D.stateQuantumShift (PDCode.cubeState S.val))).map
     ((D.khovanovComplexXIso hD R j i).toLinearEquiv.trans
       (ModuleCat.biproductIsoPi _).toLinearEquiv).symm
 
@@ -134,8 +134,8 @@ theorem khovanovEnhancedBasis_repr (i : ℤ) (x : (D.khovanovComplex hD R j).X i
     (e : D.EnhancedStateAt i j) :
     (D.khovanovEnhancedBasis hD R j i).repr x e =
       (Khovanov.circleBasis R _).repr
-        ((eqToHom (D.resolutionCube_obj_normalized hD R j e.1.1)).hom
-          ((D.khovanovComplexπ hD R j e.1).hom x) : Khovanov.CircleTensor R _) e.2.1 := by
+        ((eqToHom (D.resolutionCube_obj_normalized hD R j e.1.val)).hom
+          ((D.khovanovComplexπ hD R j e.1).hom x) : Khovanov.CircleTensor R _) e.2.val := by
   simp only [khovanovEnhancedBasis, Module.Basis.map_repr, LinearEquiv.symm_symm,
     LinearEquiv.trans_apply, Pi.basis_repr, Khovanov.circlePieceBasis_repr_apply]
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
@@ -146,10 +146,10 @@ theorem khovanovEnhancedBasis_repr (i : ℤ) (x : (D.khovanovComplex hD R j).X i
 theorem khovanovEnhancedBasis_apply (i : ℤ) (e : D.EnhancedStateAt i j) :
     D.khovanovEnhancedBasis hD R j i e =
       (D.khovanovComplexι hD R j e.1).hom
-        ((eqToHom (D.resolutionCube_obj_normalized hD R j e.1.1).symm).hom
+        ((eqToHom (D.resolutionCube_obj_normalized hD R j e.1.val).symm).hom
           (Khovanov.circlePieceBasis R
-            (D.toPDCode.ResolvedCircle (PDCode.cubeState e.1.1))
-            (j - D.stateQuantumShift (PDCode.cubeState e.1.1)) e.2)) := by
+            (D.toPDCode.ResolvedCircle (PDCode.cubeState e.1.val))
+            (j - D.stateQuantumShift (PDCode.cubeState e.1.val)) e.2)) := by
   classical
   apply ((D.khovanovComplexXIso hD R j i).toLinearEquiv.trans
     (ModuleCat.biproductIsoPi _).toLinearEquiv).injective
@@ -164,7 +164,7 @@ theorem khovanovEnhancedBasis_apply (i : ℤ) (e : D.EnhancedStateAt i j) :
     simp only [Pi.single_eq_same, ← ModuleCat.comp_apply,
       khovanovComplexι_π_self, ModuleCat.id_apply]
     exact (ModuleCat.hom_inv_apply
-      (eqToIso (D.resolutionCube_obj_normalized hD R j e.1.1)) _).symm
+      (eqToIso (D.resolutionCube_obj_normalized hD R j e.1.val)) _).symm
   · rw [← LinearMap.comp_apply (D.khovanovComplexπ hD R j T).hom
       (D.khovanovComplexι hD R j e.1).hom, ← ModuleCat.hom_comp,
       khovanovComplexι_π_of_ne _ _ _ _ h]
@@ -240,18 +240,18 @@ is the actual merge or split by `resolutionCube_map_homOfLE_insert_comp_resoluti
 theorem khovanovEnhancedComplex_d_repr_ι {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount})
     (x : (D.toPDCode.resolutionCube hD R
-      (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.1) :
+      (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj S.val) :
     ((D.khovanovEnhancedComplex hD R j).d i (i + 1)).hom
         ((D.khovanovEnhancedBasis hD R j i).repr
           ((D.khovanovComplexι hD R j S).hom x)) =
-      ∑ a : (S.1ᶜ : Finset (Fin n)), ((-1 : ℤ) ^ #{b ∈ S.1 | b < a.1}) •
+      ∑ a : (S.valᶜ : Finset (Fin n)), ((-1 : ℤ) ^ #{b ∈ S.val | b < a.val}) •
         (D.khovanovEnhancedBasis hD R j (i + 1)).repr
-          ((D.khovanovComplexι hD R j ⟨insert a.1 S.1, by
-            rw [card_insert_of_notMem (mem_compl.1 a.2), Nat.cast_succ, S.2]
+          ((D.khovanovComplexι hD R j ⟨insert a.val S.val, by
+            rw [card_insert_of_notMem (mem_compl.1 a.property), Nat.cast_succ, S.property]
             omega⟩).hom
               (((D.toPDCode.resolutionCube hD R
                 (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).map
-                  (homOfLE (S.1.subset_insert a.1))).hom x)) := by
+                  (homOfLE (S.val.subset_insert a.val))).hom x)) := by
   rw [khovanovEnhancedComplex_d_apply, LinearEquiv.symm_apply_apply,
     ← LinearMap.comp_apply, ← ModuleCat.hom_comp, ι_khovanovComplex_d]
   simp only [ModuleCat.hom_sum, ModuleCat.hom_zsmul, ModuleCat.hom_comp,

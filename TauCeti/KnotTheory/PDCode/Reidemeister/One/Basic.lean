@@ -107,89 +107,36 @@ private theorem kinkPerm_inl_of_ne {x : α} (hx : x ≠ h) (hx' : x ≠ e h) :
   have h₁ : e x ≠ e h := fun hxh => hx (e.injective hxh)
   simp [kinkPerm, swap_apply_of_ne_of_ne, hx', h₁]
 
-/-- The `A`-type smoothing `slotSmoothing true` at the new crossing, after the arcs of the kink,
-is the old traversal `T * e` with slot `1` spliced in after `h`, slot `0` after `e h`, and slots
-`2` and `3` left as fixed points: the loop has been cut off. -/
-private theorem sumCongr_slotSmoothing_true_mul_kinkPerm (he : e (e h) = h) (hne : e h ≠ h)
-    (T : Perm α) :
-    Perm.sumCongr T (slotSmoothing true) * kinkPerm e h =
-      Perm.sumCongr (T * e) 1 * swap (.inl h) (.inr 1) * swap (.inl (e h)) (.inr 0) := by
-  ext x
-  rcases x with x | t
-  · by_cases hx : x = h
-    · subst hx
-      simp [kinkPerm_inl_self hne, swap_apply_of_ne_of_ne, Ne.symm hne]
-    by_cases hx' : x = e h
-    · subst hx'
-      simp [kinkPerm_inl_apply_self, swap_apply_of_ne_of_ne]
-    simp [kinkPerm_inl_of_ne hx hx', swap_apply_of_ne_of_ne, hx, hx']
-  · fin_cases t
-    · simp [kinkPerm_inr_zero he hne, swap_apply_of_ne_of_ne, hne, he]
-    · simp [kinkPerm_inr_one, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne]
+/-- For any permutation `r` of the four slots, `Perm.sumCongr T r * kinkPerm e h` is
+`Perm.sumCongr (T * e) (r * slotSmoothing true)` (that is, `slotSmoothing true` followed by `r` on
+the slots), multiplied on the right by `swap (.inl h) (.inr 1)` and `swap (.inl (e h)) (.inr 0)`. -/
+private theorem sumCongr_mul_kinkPerm (T : Perm α) (r : Perm (Fin 4)) :
+    Perm.sumCongr T r * kinkPerm e h =
+      Perm.sumCongr (T * e) (r * slotSmoothing true) * swap (.inl h) (.inr 1) *
+        swap (.inl (e h)) (.inr 0) := by
+  have key : swap (.inl (e h)) (.inr 0) * Perm.sumCongr e (slotSmoothing true) =
+      Perm.sumCongr e (slotSmoothing true) * swap (.inl h) (.inr 1) := by
+    rw [Equiv.swap_mul_eq_mul_swap]
+    simp [swap_apply_of_ne_of_ne]
+  have hk : kinkPerm e h = Perm.sumCongr e (slotSmoothing true) * swap (.inl h) (.inr 1) *
+      swap (.inl (e h)) (.inr 0) := by rw [kinkPerm, key]
+  rw [hk, ← mul_assoc, ← mul_assoc, ← Perm.sumCongr_mul]
 
-/-- The other smoothing `slotSmoothing false` at the new crossing, after the arcs of the kink, is
-the old traversal `T * e` with all four slots spliced in along it. -/
-private theorem sumCongr_slotSmoothing_false_mul_kinkPerm (he : e (e h) = h) (hne : e h ≠ h)
-    (T : Perm α) :
-    Perm.sumCongr T (slotSmoothing false) * kinkPerm e h =
-      Perm.sumCongr (T * e) 1 * swap (.inl h) (.inr 1) * swap (.inl h) (.inr 3) *
-        swap (.inl (e h)) (.inr 0) * swap (.inl (e h)) (.inr 2) := by
-  ext x
-  rcases x with x | t
-  · by_cases hx : x = h
-    · subst hx
-      simp [kinkPerm_inl_self hne, swap_apply_of_ne_of_ne, Ne.symm hne]
-    by_cases hx' : x = e h
-    · subst hx'
-      simp [kinkPerm_inl_apply_self, swap_apply_of_ne_of_ne]
-    simp [kinkPerm_inl_of_ne hx hx', swap_apply_of_ne_of_ne, hx, hx']
-  · fin_cases t
-    · simp [kinkPerm_inr_zero he hne, swap_apply_of_ne_of_ne, hne, he]
-    · simp [kinkPerm_inr_one, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne]
-
-/-- Following the strands through the new crossing, after the arcs of the kink, is the old
-component traversal `T * e` with all four slots spliced in along it. -/
-private theorem sumCongr_oppositeCrossingSlot_mul_kinkPerm (he : e (e h) = h) (hne : e h ≠ h)
-    (T : Perm α) :
-    Perm.sumCongr T oppositeCrossingSlot * kinkPerm e h =
-      Perm.sumCongr (T * e) 1 * swap (.inl h) (.inr 1) * swap (.inl h) (.inr 2) *
-        swap (.inl (e h)) (.inr 0) * swap (.inl (e h)) (.inr 3) := by
-  ext x
-  rcases x with x | t
-  · by_cases hx : x = h
-    · subst hx
-      simp [kinkPerm_inl_self hne, swap_apply_of_ne_of_ne, Ne.symm hne, Fin.ext_iff]
-    by_cases hx' : x = e h
-    · subst hx'
-      simp [kinkPerm_inl_apply_self, swap_apply_of_ne_of_ne, Fin.ext_iff]
-    simp [kinkPerm_inl_of_ne hx hx', swap_apply_of_ne_of_ne, hx, hx']
-  · fin_cases t
-    · simp [kinkPerm_inr_zero he hne, swap_apply_of_ne_of_ne, hne, he]
-    · simp [kinkPerm_inr_one, swap_apply_of_ne_of_ne]
-    · simp [kinkPerm_inr_two, swap_apply_of_ne_of_ne, Fin.ext_iff]
-    · simp [kinkPerm_inr_three, swap_apply_of_ne_of_ne, Fin.ext_iff]
-
-omit [DecidableEq α] in
-private theorem orbitCount_sumCongr_one [Finite α] (σ : Perm α) :
-    orbitCount (Perm.sumCongr σ (1 : Perm (Fin 4))) = orbitCount σ + 4 := by
-  rw [Perm.orbitCount_sumCongr, orbitCount_one, Nat.card_eq_fintype_card, Fintype.card_fin]
-
-/-- Splicing two of four adjoined fixed points into the orbits of `σ` leaves two orbits more
-than `σ` has. -/
-private theorem orbitCount_splice_two [Finite α] (σ : Perm α) (x y : α) :
-    orbitCount (Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x) (.inr 1) *
-      swap (.inl y) (.inr 0)) = orbitCount σ + 2 := by
-  have h₁ := orbitCount_mul_swap_add_one (τ := Perm.sumCongr σ (1 : Perm (Fin 4)))
-    (p := .inr 1) (a := .inl x) (by simp) (by simp)
-  have h₂ := orbitCount_mul_swap_add_one
-    (τ := Perm.sumCongr σ (1 : Perm (Fin 4)) * swap (.inl x) (.inr 1))
-    (p := .inr 0) (a := .inl y) (by simp [swap_apply_of_ne_of_ne]) (by simp)
-  have h₀ := orbitCount_sumCongr_one σ
-  omega
+/-- Closing the new crossing by a perfect matching `τ` of its four slots, after the arcs of the
+kink, leaves the orbits of the old traversal `T * e`, plus two more exactly when `τ` is the
+`true` smoothing `slotSmoothing true`, which pairs slots `0`-`1` and `2`-`3`. -/
+private theorem orbitCount_sumCongr_mul_kinkPerm [Finite α] (T : Perm α) {τ : Perm (Fin 4)}
+    (hτ : IsPerfectMatching τ) :
+    orbitCount (Perm.sumCongr T τ * kinkPerm e h) =
+      orbitCount (T * e) + if τ = slotSmoothing true then 2 else 0 := by
+  have hq := isPerfectMatching_slotSmoothing true
+  have h₁ := Perm.orbitCount_sumCongr_mul_swap_mul_swap_add_two (T * e) (τ * slotSmoothing true)
+    h (e h) (b := 1) (d := 0) (by
+      have := hτ.not_sameCycle_self_apply hq 1
+      rwa [show slotSmoothing true 1 = 0 by rw [slotSmoothing_true]; decide] at this)
+  have h₂ := hτ.orbitCount_mul_fin_four hq
+  rw [sumCongr_mul_kinkPerm]
+  split_ifs at h₂ ⊢ <;> omega
 
 end Kink
 
@@ -326,22 +273,13 @@ namely the loop of the kink, exactly when the state cuts that loop off. -/
 private theorem orbitCount_statePerm_reidemeisterOne (s : Fin (n + 1) → Bool) :
     orbitCount ((D.reidemeisterOne h b).statePerm s) =
       orbitCount (D.statePerm (Fin.init s)) + if s (Fin.last n) = b then 2 else 0 := by
-  have he := D.edgePair.apply_apply h
-  have hne := D.edgePair.apply_ne h
   rw [statePerm_def, statePerm_def,
     smoothingTurn_eq_permCongr_sumCongr (reidemeisterOne_halfEdge D h b),
     init_smoothingChoice_of_overPair_eq (reidemeisterOne_overPair D h b),
     smoothingChoice_last_of_overPair_eq (reidemeisterOne_overPair D h b),
-    reidemeisterOne_edgePair_val, ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr]
-  by_cases hs : s (Fin.last n) = b
-  · simp only [hs, ↓reduceIte, beq_self_eq_true]
-    rw [sumCongr_slotSmoothing_true_mul_kinkPerm he hne, orbitCount_splice_two]
-  · have hbne : (s (Fin.last n) == b) = false := by simpa using hs
-    rw [hbne]
-    simp only [hs, ↓reduceIte, add_zero]
-    rw [sumCongr_slotSmoothing_false_mul_kinkPerm he hne,
-      Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)
-        (by decide) (by decide) (by decide) (by decide) (by decide)]
+    reidemeisterOne_edgePair_val, ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
+    orbitCount_sumCongr_mul_kinkPerm _ (isPerfectMatching_slotSmoothing _)]
+  simp only [slotSmoothing_inj, beq_iff_eq]
 
 /-- **Circles after the first Reidemeister move.** A state of the new code leaves one circle more
 than its restriction to the old crossings when its choice at the new crossing is `b`, the
@@ -356,15 +294,11 @@ smoothing that cuts off the loop of the kink, and the same number of circles oth
 /-- **The first Reidemeister move keeps the number of components.** -/
 @[simp] theorem crossingComponentCount_reidemeisterOne :
     (D.reidemeisterOne h b).crossingComponentCount = D.crossingComponentCount := by
-  have he := D.edgePair.apply_apply h
-  have hne := D.edgePair.apply_ne h
   rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_def,
     componentPerm_def, crossingTurn_eq_permCongr_sumCongr (reidemeisterOne_halfEdge D h b),
-    reidemeisterOne_edgePair_val,
-    ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
-    sumCongr_oppositeCrossingSlot_mul_kinkPerm he hne,
-    Perm.orbitCount_sumCongr_one_mul_swap_mul_swap_mul_swap_mul_swap _ _ _ _ _ (by decide)
-      (by decide) (by decide) (by decide) (by decide) (by decide)]
+    reidemeisterOne_edgePair_val, ← Equiv.permCongr_mul, Equiv.orbitCount_permCongr,
+    orbitCount_sumCongr_mul_kinkPerm _ isPerfectMatching_oppositeCrossingSlot]
+  simp only [oppositeCrossingSlot_ne_slotSmoothing, ite_false, add_zero]
 
 /-- **The Kauffman bracket under the first Reidemeister move.** Adding a kink with over-pair
 indicator `b` multiplies the bracket by `-a ^ 3` if `b = true` and by `-a⁻¹ ^ 3` if `b = false`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # A set converging along the cofinite filter is a one-point compactification
@@ -42,13 +43,12 @@ variable {X : Type*} [TopologicalSpace X] [T2Space X] {s : Set X} {a : X}
 /-- A set whose inclusion tends to `a` along the cofinite filter is discrete once `a` is
 removed. -/
 theorem discreteTopology_diff_singleton
-    (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) : DiscreteTopology ↥(s \ {a}) := by
-  refine discreteTopology_iff_isOpen_singleton.mpr fun x ↦ ?_
-  obtain ⟨U, V, hU, hV, haU, hxV, hUV⟩ := t2_separation (Ne.symm x.2.2)
-  -- Only finitely many points of `s` lie outside `U`, and `V` is disjoint from `U`.
-  exact isOpen_singleton_of_finite_mem_nhds x ((hV.preimage continuous_subtype_val).mem_nhds hxV)
-    (((eventually_cofinite.mp (h (hU.mem_nhds haU))).preimage
-      (inclusion_injective sdiff_subset).injOn).subset fun _ hy hyU ↦ disjoint_left.mp hUV hyU hy)
+    (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) : DiscreteTopology ↥(s \ {a}) :=
+  discreteTopology_iff_isOpen_singleton.mpr fun x ↦ by
+    -- The inclusion of `s \ {a}` into `X` factors through `s`, so it also tends to `a`.
+    have h' := h.comp (inclusion_injective (sdiff_subset (t := {a}))).tendsto_cofinite
+    rw [val_comp_inclusion] at h'
+    exact h'.isOpen_singleton_of_cofinite continuous_subtypeVal.continuousAt x.property.2
 
 /-- **A set converging to `a` along the cofinite filter, with `a` added, is the one-point
 compactification of its complement of `a`**: the homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` that is
@@ -67,7 +67,7 @@ noncomputable def onePointHomeomorphInsert
 @[simp]
 theorem onePointHomeomorphInsert_apply_coe
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) (x : ↥(s \ {a})) :
-    h.onePointHomeomorphInsert x = ⟨x, mem_insert_of_mem a x.2.1⟩ :=
+    h.onePointHomeomorphInsert x = ⟨x, mem_insert_of_mem a x.property.1⟩ :=
   (rfl)
 
 /-- The homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` sends the point at infinity to `a`. -/
@@ -91,7 +91,7 @@ other than `a`. -/
 theorem onePointHomeomorphInsert_symm_apply_of_ne
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) (y : ↥(insert a s)) (hy : (y : X) ≠ a) :
     h.onePointHomeomorphInsert.symm y =
-      ((⟨y, y.2.resolve_left hy, hy⟩ : ↥(s \ {a})) : OnePoint ↥(s \ {a})) := by
+      ((⟨y, y.property.resolve_left hy, hy⟩ : ↥(s \ {a})) : OnePoint ↥(s \ {a})) := by
   rw [Homeomorph.symm_apply_eq, h.onePointHomeomorphInsert_apply_coe]
 
 end Filter.Tendsto

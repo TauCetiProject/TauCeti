@@ -60,7 +60,7 @@ lemma normalizerEquivMap_symm_apply_coe (H : Subgroup G) (e : G ≃* K)
 on underlying representatives. -/
 lemma normalizerEquivMap_refl (H : Subgroup G) (g : normalizer (H : Set G)) :
     H.normalizerEquivMap (MulEquiv.refl G) g =
-      ⟨(g : G), by simp [g.2]⟩ := by
+      ⟨(g : G), by simp [g.property]⟩ := by
   ext
   rfl
 
@@ -132,7 +132,7 @@ lemma normalizerQuotientEquivMap_refl_mk (H : Subgroup G)
     (g : normalizer (H : Set G)) :
     H.normalizerQuotientEquivMap (MulEquiv.refl G) (H.normalizerQuotientMk g) =
       (H.map ((MulEquiv.refl G : G ≃* G) : G →* G)).normalizerQuotientMk
-        ⟨(g : G), by simp [g.2]⟩ := by
+        ⟨(g : G), by simp [g.property]⟩ := by
   rw [normalizerQuotientEquivMap_mk]
   rfl
 
@@ -191,7 +191,7 @@ lemma normalizerQuotientEquivMap_mk_coe (H : Subgroup G) (e : G ≃* K)
       (H.map (e : G →* K)).normalizerQuotientMk
         ⟨e (g : G), by
           rw [← H.normalizerEquivMap_apply_coe e g]
-          exact (H.normalizerEquivMap e g).2⟩ := by
+          exact (H.normalizerEquivMap e g).property⟩ := by
   rw [normalizerQuotientEquivMap_mk]
   rfl
 

@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
+public import TauCeti.RepresentationTheory.LinearCharacter.Eigenspace
 public import TauCeti.RingTheory.Idempotents.Module
 public import TauCeti.RingTheory.Idempotents.SquareRootOne
 
@@ -69,14 +70,22 @@ algebraic closure, only a domain, because the characters here are one-dimensiona
   component `e_χ M`.
 * `TauCeti.isInternal_charIdempotent_smul_top`: the isotypic decomposition `M = ⨁_χ e_χ M`.
 * `Representation.asAlgebraHom_charIdempotent`: the character projector
-  `ρ(e_χ) = (#H)⁻¹ ∑ χ(a)⁻¹ ρ(a)`.
+  `ρ(e_χ) = (#H)⁻¹ ∑ χ(a)⁻¹ ρ(a)`, which is `(#H)⁻¹` times the character sum
+  `Representation.charSum ρ χ` (`Representation.asAlgebraHom_charIdempotent_eq_smul_charSum`).
 * `Representation.range_asAlgebraHom_charIdempotent`: when `#H` is a unit, the character
-  projector has image the joint eigenspace `⨅ a, Eig(ρ(a), χ(a))`, which it fixes
+  projector has image the joint eigenspace `Representation.charEigenspace ρ χ`, the intersection
+  `⨅ a, Eig(ρ(a), χ(a))`, which it fixes
   (`Representation.asAlgebraHom_charIdempotent_apply_of_mem`).
 * `Representation.asAlgebraHom_charIdempotent_apply_of_mem_of_ne`: over a domain it kills the
   joint eigenspace of every other character.
+<<<<<<< HEAD
 * `Representation.isInternal_eigenspace`: for a finite commutative group with enough roots of
   unity and `#H` a unit, `V` is the internal direct sum of its joint eigenspaces.
+=======
+* `Representation.isInternal_charEigenspace`: for a finite commutative group and a domain with
+  enough roots of unity in which `#H` is a unit, a representation is the internal direct sum of
+  its character eigensubmodules.
+>>>>>>> origin/main
 
 ## References
 
@@ -252,20 +261,6 @@ theorem isInternal_charIdempotent_smul_top {S M : Type*} [Semiring S] [AddCommMo
     DirectSum.IsInternal fun χ : H →* Oˣ ↦ charIdempotent χ • (⊤ : Submodule S M) :=
   isInternal_smul_top (completeOrthogonalIdempotents_charIdempotent hH)
 
-omit [Fintype H] [HasEnoughRootsOfUnity O (Monoid.exponent H)] in
-/-- When `c * c = 1` in `H` and `O` is a domain, every character sends `c` to `1` or `-1`. -/
-private theorem char_eq_one_or_neg_one {c : H} (hc : c * c = 1) (χ : H →* Oˣ) :
-    χ c = 1 ∨ χ c = -1 :=
-  (sq_eq_one_iff.mp <| by
-    rw [← Units.val_pow_eq_pow_val, ← map_pow, sq, hc, map_one, Units.val_one]).imp
-    Units.ext Units.ext
-
-private theorem one_ne_neg_one_units [Invertible (2 : O)] : (1 : Oˣ) ≠ -1 := fun h ↦
-  one_ne_zero (α := O) <| by
-    have h1 : (1 : O) = -1 := by simpa using congrArg Units.val h
-    have h2 : (2 : O) = 0 := by rw [← one_add_one_eq_two]; nth_rw 2 [h1]; exact add_neg_cancel 1
-    simpa [h2] using invOf_mul_self (2 : O)
-
 /-- **Plus idempotent as the sum of even character idempotents.** When `2` is invertible in `O`
 and `c ∈ H` satisfies `c * c = 1`, the idempotent `½ (1 + c)` in `O[H]` equals the sum of the
 character idempotents `e_χ` over all characters `χ` with `χ c = 1`. -/
@@ -279,9 +274,10 @@ theorem halfOneAdd_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUnit (N
     _ = ∑ χ : H →* Oˣ, if χ c = 1 then charIdempotent χ else 0 := by
         refine Finset.sum_congr rfl fun χ _ ↦ ?_
         rw [halfOneAdd_def, smul_mul_assoc, add_mul, one_mul, of_apply, single_mul_charIdempotent]
-        rcases char_eq_one_or_neg_one hc χ with h1 | hm1
+        have hc2 : (χ c) ^ 2 = 1 ^ 2 := by rw [sq, ← map_mul, hc, map_one, one_pow]
+        rcases (χ c).eq_or_eq_neg_of_sq_eq_sq 1 hc2 with h1 | hm1
         · simp [h1, ← two_smul O]
-        · simp [hm1, (one_ne_neg_one_units (O := O)).symm]
+        · simp [hm1, ((isUnit_of_invertible (2 : O)).units_ne_neg_self 1).symm]
     _ = ∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ := by rw [Finset.sum_filter]
 
 /-- **Minus idempotent as the sum of odd character idempotents.** When `2` is invertible in `O`
@@ -298,9 +294,10 @@ theorem halfOneAdd_neg_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUni
       ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun χ : H →* Oˣ ↦ χ c = 1)]
     congr 1
     refine Finset.sum_congr (Finset.filter_congr fun χ _ ↦ ?_) fun _ _ ↦ rfl
-    rcases char_eq_one_or_neg_one hc χ with h1 | hm1
-    · simp [h1, one_ne_neg_one_units (O := O)]
-    · simp [hm1, (one_ne_neg_one_units (O := O)).symm]
+    have hc2 : (χ c) ^ 2 = 1 ^ 2 := by rw [sq, ← map_mul, hc, map_one, one_pow]
+    rcases (χ c).eq_or_eq_neg_of_sq_eq_sq 1 hc2 with h1 | hm1
+    · simp [h1, (isUnit_of_invertible (2 : O)).units_ne_neg_self 1]
+    · simp [hm1, ((isUnit_of_invertible (2 : O)).units_ne_neg_self 1).symm]
   have hsum : halfOneAdd O (of O H c) + halfOneAdd O (-of O H c) = 1 :=
     halfOneAdd_add_halfOneAdd_neg O (of O H c)
   rw [halfOneAdd_of_eq_sum_charIdempotent hH hc] at hsum
@@ -328,20 +325,24 @@ theorem asAlgebraHom_charIdempotent (χ : H →* kˣ) :
       Ring.inverse (Nat.card H : k) • ∑ a : H, (((χ a)⁻¹ : kˣ) : k) • ρ a := by
   simp [charIdempotent_eq_sum, map_sum]
 
+/-- The character projector is `(#H)⁻¹` times the character sum `∑_a χ(a)⁻¹ ρ(a)`. -/
+theorem asAlgebraHom_charIdempotent_eq_smul_charSum (χ : H →* kˣ) :
+    ρ.asAlgebraHom (charIdempotent χ) = Ring.inverse (Nat.card H : k) • ρ.charSum χ := by
+  rw [asAlgebraHom_charIdempotent, charSum_eq_sum]
+
 /-- The character projector of `χ` takes values in the joint eigenspace of `χ`: every `ρ(a)` acts
 on its image by the scalar `χ(a)`. -/
 theorem asAlgebraHom_charIdempotent_apply_mem (χ : H →* kˣ) (v : V) :
-    ρ.asAlgebraHom (charIdempotent χ) v ∈ ⨅ a, End.eigenspace (ρ a) (χ a : k) := by
-  refine Submodule.mem_iInf _ |>.2 fun a ↦ End.mem_eigenspace_iff.2 ?_
+    ρ.asAlgebraHom (charIdempotent χ) v ∈ ρ.charEigenspace χ := by
+  refine (ρ.mem_charEigenspace_iff χ).2 fun a ↦ ?_
   simpa only [map_mul, mul_apply_eq_comp, asAlgebraHom_single_one, map_smul, LinearMap.smul_apply]
     using congr(ρ.asAlgebraHom $(single_mul_charIdempotent χ a) v)
 
 /-- When `#H` is a unit, the character projector of `χ` fixes the joint eigenspace of `χ`. -/
 theorem asAlgebraHom_charIdempotent_apply_of_mem (hH : IsUnit (Nat.card H : k))
-    {χ : H →* kˣ} {v : V} (hv : v ∈ ⨅ a, End.eigenspace (ρ a) (χ a : k)) :
+    {χ : H →* kˣ} {v : V} (hv : v ∈ ρ.charEigenspace χ) :
     ρ.asAlgebraHom (charIdempotent χ) v = v := by
-  have hv' (a : H) : ρ a v = (χ a : k) • v :=
-    End.mem_eigenspace_iff.1 (Submodule.mem_iInf _ |>.1 hv a)
+  have hv' := (ρ.mem_charEigenspace_iff χ).1 hv
   simp only [asAlgebraHom_charIdempotent, LinearMap.smul_apply, LinearMap.coe_sum,
     Finset.sum_apply, LinearMap.smul_apply, hv', smul_smul, Units.inv_mul, one_smul,
     Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, ← Nat.cast_smul_eq_nsmul k,
@@ -351,10 +352,9 @@ theorem asAlgebraHom_charIdempotent_apply_of_mem (hH : IsUnit (Nat.card H : k))
 domain, the character projector of `χ` kills the joint eigenspace of every character `ψ ≠ χ`.
 This needs no assumption on the order of `H`. -/
 theorem asAlgebraHom_charIdempotent_apply_of_mem_of_ne [IsDomain k] {χ ψ : H →* kˣ}
-    (hχψ : χ ≠ ψ) {v : V} (hv : v ∈ ⨅ a, End.eigenspace (ρ a) (ψ a : k)) :
+    (hχψ : χ ≠ ψ) {v : V} (hv : v ∈ ρ.charEigenspace ψ) :
     ρ.asAlgebraHom (charIdempotent χ) v = 0 := by
-  have hv' (a : H) : ρ a v = (ψ a : k) • v :=
-    End.mem_eigenspace_iff.1 (Submodule.mem_iInf _ |>.1 hv a)
+  have hv' := (ρ.mem_charEigenspace_iff ψ).1 hv
   have hsum : ∑ a : H, (((χ a)⁻¹ : kˣ) : k) * (ψ a : k) = 0 := by
     have hne : (Units.coeHom k).comp (χ⁻¹ * ψ) ≠ 1 := fun h ↦ hχψ <| (inv_mul_eq_one.mp <|
       MonoidHom.ext fun a ↦ Units.ext <| by simpa using DFunLike.congr_fun h a)
@@ -365,7 +365,7 @@ theorem asAlgebraHom_charIdempotent_apply_of_mem_of_ne [IsDomain k] {χ ψ : H �
 /-- When `#H` is a unit, the image of the character projector of `χ` is the joint eigenspace of
 `χ`, the `χ`-isotypic component of `ρ`. -/
 theorem range_asAlgebraHom_charIdempotent (hH : IsUnit (Nat.card H : k)) (χ : H →* kˣ) :
-    LinearMap.range (ρ.asAlgebraHom (charIdempotent χ)) = ⨅ a, End.eigenspace (ρ a) (χ a : k) :=
+    LinearMap.range (ρ.asAlgebraHom (charIdempotent χ)) = ρ.charEigenspace χ :=
   le_antisymm (LinearMap.range_le_iff_comap.2 <| Submodule.eq_top_iff'.2 fun v ↦
       asAlgebraHom_charIdempotent_apply_mem ρ χ v)
     fun v hv ↦ ⟨v, asAlgebraHom_charIdempotent_apply_of_mem ρ hH hv⟩
@@ -374,22 +374,28 @@ end Group
 
 section CommGroup
 
-variable {k H V : Type*} [CommRing k] [IsDomain k] [CommGroup H]
+variable {k H V : Type*} [CommRing k] [IsDomain k] [CommGroup H] [Finite H]
   [HasEnoughRootsOfUnity k (Monoid.exponent H)] [AddCommGroup V] [Module k V]
   (ρ : Representation k H V)
 
-/-- **The character projectors of a representation form a complete orthogonal family of
-idempotents** in `End_k(V)`, when `H` is a finite commutative group, `k` is a domain with enough
-roots of unity, and `#H` is a unit in `k`. -/
-theorem completeOrthogonalIdempotents_asAlgebraHom_charIdempotent [Fintype H]
-    (hH : IsUnit (Nat.card H : k)) :
-    CompleteOrthogonalIdempotents (fun χ : H →* kˣ ↦ ρ.asAlgebraHom (charIdempotent χ)) :=
-  ⟨⟨fun χ ↦ (isIdempotentElem_charIdempotent χ).map ρ.asAlgebraHom,
-    fun _ _ hne ↦ by dsimp only; rw [← map_mul, charIdempotent_mul_charIdempotent_of_ne hne,
-      map_zero]⟩,
-   by rw [← map_sum, sum_charIdempotent hH, map_one]⟩
+/-- **The character decomposition of a representation**: for a finite commutative group `H` and a
+domain `k` with enough roots of unity in which `#H` is a unit, `V` is the internal direct sum of
+the eigensubmodules `V^χ` over the characters `χ : H →* kˣ`. The character projectors form a
+complete orthogonal family of idempotents of `End V`, whose images are the `V^χ`. -/
+theorem isInternal_charEigenspace [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.card H : k)) :
+    DirectSum.IsInternal ρ.charEigenspace := by
+  have : Fintype H := Fintype.ofFinite H
+  have he := (completeOrthogonalIdempotents_charIdempotent hH).map ρ.asAlgebraHom.toRingHom
+  have hrange (χ : H →* kˣ) :
+      (ρ.asAlgebraHom (charIdempotent χ)) • (⊤ : Submodule k V) = ρ.charEigenspace χ :=
+    (Module.End.smul_top_eq_range _).trans (ρ.range_asAlgebraHom_charIdempotent hH χ)
+  simpa only [Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hrange] using
+    isInternal_smul_top (S := k) (M := V) he
 
-/-- **The eigenspace decomposition of a representation of a finite commutative group**: when `k` is
+end CommGroup
+
+end Representation
+ion of a representation of a finite commutative group**: when `k` is
 a domain with enough roots of unity and `#H` is a unit in `k`, `V` is the internal direct sum of
 its joint eigenspaces `⨅ a, Eig(ρ(a), χ(a))`. -/
 theorem isInternal_eigenspace [Finite H] [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.card H : k)) :
@@ -403,6 +409,25 @@ theorem isInternal_eigenspace [Finite H] [DecidableEq (H →* kˣ)] (hH : IsUnit
     rfl
   rw [heq]
   exact isInternal_smul_top (completeOrthogonalIdempotents_asAlgebraHom_charIdempotent ρ hH)
+=======
+variable {k H V : Type*} [CommRing k] [IsDomain k] [CommGroup H] [Finite H]
+  [HasEnoughRootsOfUnity k (Monoid.exponent H)] [AddCommGroup V] [Module k V]
+  (ρ : Representation k H V)
+
+/-- **The character decomposition of a representation**: for a finite commutative group `H` and a
+domain `k` with enough roots of unity in which `#H` is a unit, `V` is the internal direct sum of
+the eigensubmodules `V^χ` over the characters `χ : H →* kˣ`. The character projectors form a
+complete orthogonal family of idempotents of `End V`, whose images are the `V^χ`. -/
+theorem isInternal_charEigenspace [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.card H : k)) :
+    DirectSum.IsInternal ρ.charEigenspace := by
+  have : Fintype H := Fintype.ofFinite H
+  have he := (completeOrthogonalIdempotents_charIdempotent hH).map ρ.asAlgebraHom.toRingHom
+  have hrange (χ : H →* kˣ) :
+      (ρ.asAlgebraHom (charIdempotent χ)) • (⊤ : Submodule k V) = ρ.charEigenspace χ :=
+    (Module.End.smul_top_eq_range _).trans (ρ.range_asAlgebraHom_charIdempotent hH χ)
+  simpa only [Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hrange] using
+    isInternal_smul_top (S := k) (M := V) he
+>>>>>>> origin/main
 
 end CommGroup
 

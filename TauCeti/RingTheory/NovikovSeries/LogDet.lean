@@ -125,7 +125,7 @@ theorem exp_tsum_trace_mul_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈
       ((A ^ (k + 1)).trace • (a : NovikovSeries K H N) ^ (k + 1)))
       (-NormedSpace.log u : nonnegSubring K N) := by
     convert (hasSum_log_aeval_charpolyRev ha A).neg.map (nonnegSubring K N).subtype
-      continuous_subtype_val using 1
+      continuous_subtypeVal using 1
     · funext k
       simp
     · simp [u]

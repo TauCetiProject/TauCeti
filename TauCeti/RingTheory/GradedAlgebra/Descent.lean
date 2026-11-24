@@ -153,7 +153,7 @@ instance isGraded_baseChange {A : Type*} [Semiring A] [Algebra R A] (𝒜 : ι �
     | tmul s a =>
       simpa using Submodule.tmul_mem_baseChange_of_mem (R := R)
         (p := ((𝒜 i).baseChange S).restrictScalars R) s
-        (Submodule.tmul_mem_baseChange_of_mem (R := R) (1 : S) a.2)
+        (Submodule.tmul_mem_baseChange_of_mem (R := R) (1 : S) a.property)
     | add x y hx hy => simpa using add_mem hx hy
 
 end Semiring

@@ -455,7 +455,7 @@ theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
 choosing one point over each element of `s` gives an identity diagram with coefficient `1`. -/
 theorem matchedIdem_ne_zero [Nontrivial R] {M : α → β} {s : Finset β}
     (hs : (s : Set β) ⊆ Set.range M) : matchedIdem R M s ≠ 0 := by
-  choose f hf using fun b : s ↦ hs b.2
+  choose f hf using fun b : s ↦ hs b.property
   have hf' : Function.Injective f := fun b c h ↦ Subtype.ext (by simpa [hf] using congrArg M h)
   have hS : (s.attach.image f).image M = s := by
     ext b
@@ -1382,8 +1382,8 @@ theorem coe_matchedSubalgebra_one :
 /-- The matched subalgebra is a unital algebra, with unit `TauCeti.StrandsAlgebra.matchedOne`. -/
 instance : Semiring (matchedSubalgebra R M) where
   __ := (matchedSubalgebra R M).toNonUnitalSemiring
-  one_mul x := Subtype.ext (matchedOne_mul_of_mem_matchedSubalgebra x.2)
-  mul_one x := Subtype.ext (mul_matchedOne_of_mem_matchedSubalgebra x.2)
+  one_mul x := Subtype.ext (matchedOne_mul_of_mem_matchedSubalgebra x.property)
+  mul_one x := Subtype.ext (mul_matchedOne_of_mem_matchedSubalgebra x.property)
 
 instance {R : Type*} [CommRing R] : Ring (matchedSubalgebra R M) where
   __ := (inferInstance : Semiring (matchedSubalgebra R M))
