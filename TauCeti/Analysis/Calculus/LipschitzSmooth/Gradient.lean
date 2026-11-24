@@ -18,9 +18,9 @@ Let `f` be a `K`-smooth real function on a real Hilbert space `E`, in the sense 
 `f x + ⟪∇ f x, y - x⟫ - K / 2 * ‖y - x‖ ^ 2 ≤ f y ≤ f x + ⟪∇ f x, y - x⟫ + K / 2 * ‖y - x‖ ^ 2`,
 
 and derives the two estimates on which the analysis of gradient descent rests. A gradient step of
-any size `η` satisfies `f (x - η • ∇ f x) ≤ f x - η * (1 - K * η / 2) * ‖∇ f x‖ ^ 2`, so it
-decreases `f` when `0 < η < 2 / K`. If `f` is bounded below by `m`, then
-`‖∇ f x‖ ^ 2 ≤ 2 * K * (f x - m)`.
+any size `η` satisfies `f (x - η • ∇ f x) ≤ f x - η * (1 - K * η / 2) * ‖∇ f x‖ ^ 2`. So when
+`0 < η` and `K * η < 2` the step does not increase `f`, and it strictly decreases `f` if
+`∇ f x ≠ 0`. If `f` is bounded below by `m`, then `‖∇ f x‖ ^ 2 ≤ 2 * K * (f x - m)`.
 
 The model example is a quadratic form. For every continuous linear map `A` on a real inner product
 space the function `x ↦ ⟪A x, x⟫ / 2` is `‖A‖₊`-smooth, with no symmetry assumption, and the

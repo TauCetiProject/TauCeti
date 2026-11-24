@@ -15,8 +15,8 @@ Two families test the constants in the gradient inequalities of a `K`-smooth fun
 
 * The quadratic `y ↦ K / 2 * ‖y‖ ^ 2 + c` is `K`-smooth with gradient `K • y` and is bounded below
   by `c`. For it the quadratic upper bound, the sufficient decrease inequality and the gradient
-  bound are all equalities, so none of their constants can be improved. The quadratic lower bound
-  misses by exactly `K * ‖y - x‖ ^ 2`, the full width between the two bounds.
+  bound are all equalities, so these three bounds are attained. The quadratic lower bound misses
+  by exactly `K * ‖y - x‖ ^ 2`, the full width between the two bounds.
 * An affine function `x ↦ c + ⟪a, x⟫` is `0`-smooth with gradient `a`, and both quadratic bounds
   are equalities. A `0`-smooth function that is bounded below has gradient `0` everywhere.
 -/

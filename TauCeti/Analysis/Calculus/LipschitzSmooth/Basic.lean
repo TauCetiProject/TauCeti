@@ -45,7 +45,8 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
 variable (𝕜) in
 /-- A function `f : E → F` is **`K`-smooth** if it is Fréchet differentiable and its
 first-order Taylor remainder is bounded by `K / 2 * dist x y ^ 2` for all `x` and `y`. The factor
-`1 / 2` makes a function with `K`-Lipschitz derivative `K`-smooth. -/
+`1 / 2` is the normalization of the real case: for a function between real normed spaces, a
+`K`-Lipschitz derivative gives a remainder of at most `K / 2 * dist x y ^ 2`. -/
 structure LipschitzSmoothWith (K : NNReal) (f : E → F) : Prop where
   differentiable : Differentiable 𝕜 f
   fderiv_norm_le : ∀ x y,

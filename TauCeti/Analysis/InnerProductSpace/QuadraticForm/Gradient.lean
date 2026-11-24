@@ -15,7 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Rayleigh
 
 For a symmetric continuous linear map `A` on a real Hilbert space, the quadratic form
 `x ↦ ⟪A x, x⟫ / 2` has gradient `A x` at `x`. Symmetry is needed: for a quarter turn `A` of the
-plane the form vanishes identically, so its gradient is `0` and not `A x`.
+plane the form vanishes identically, so its gradient is `0`, while `A x ≠ 0` for `x ≠ 0`.
 
 The derivative itself is Mathlib's `LinearMap.IsSymmetric.hasStrictFDerivAt_reApplyInnerSelf`;
 this file restates it for the gradient and the normalization with the factor `1 / 2`, in which
