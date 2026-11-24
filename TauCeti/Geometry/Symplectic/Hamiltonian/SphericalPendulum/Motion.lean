@@ -231,12 +231,11 @@ theorem sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn (hs : IsPreconn
       fun y ↦ sphericalPendulumHamiltonian y) s) {t₀ : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     sphericalPendulumEnergyMomentum (γ t) = sphericalPendulumEnergyMomentum (γ t₀) := by
   have hI := isIntegrableSystem_sphericalPendulumEnergyMomentumVec
-  have hσ := isSymplectic_sphericalPendulumSymplecticForm.isNondegenerate
   have hH : (fun x ↦ sphericalPendulumEnergyMomentumVec x 0) =
       fun y : sphericalPendulumPhaseSpace ↦ sphericalPendulumHamiltonian y :=
     funext sphericalPendulumEnergyMomentumVec_apply_zero
   -- Each component of `F` is a first integral of the energy, and is smooth.
-  have h (i : Fin 2) := (hH ▸ hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hσ hs hγ
+  have h (i : Fin 2) := (hH ▸ hI.isFirstIntegral 0 i).apply_eq_of_isMIntegralCurveOn hs hγ
     (fun u _ ↦ ((contMDiff_pi_module_iff.1 hI.contMDiff i) (γ u)).mdifferentiableAt (by simp))
     ht₀ ht
   exact Prod.ext (by simpa using h 0) (by simpa using h 1)

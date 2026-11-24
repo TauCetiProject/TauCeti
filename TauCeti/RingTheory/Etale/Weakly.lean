@@ -75,7 +75,15 @@ theorem of_isColimit {R : Type u} [CommRing R] {J : Type u} [SmallCategory J]
   apply (AlgHom.flat_iff_forall_exists_eq_mul_of_surjective _
     (Algebra.TensorProduct.lmul'_surjective R c.pt)).mpr
   intro x hx
-  obtain ⟨i, y, rfl⟩ := CommAlgCat.isColimit_exists_tensor_rep hc hc x
+  -- The tensor-product lemmas are stated in `AlgCat R`: view `c` there. The legs of `c'` are
+  -- those of `c`, seen as algebra maps (`forget₂_algCat_map`, `hom_ofHom`).
+  let c' := (forget₂ (CommAlgCat.{u} R) (AlgCat.{u} R)).mapCocone c
+  have hc' : IsColimit c' := isColimitOfPreserves _ hc
+  obtain ⟨i, y, rfl⟩ : ∃ i, ∃ y : F.obj i ⊗[R] F.obj i,
+      Algebra.TensorProduct.map (c.ι.app i).hom (c.ι.app i).hom y = x := by
+    simpa only [c', Functor.mapCocone_ι_app, Functor.comp_obj, CommAlgCat.forget₂_algCat_obj,
+      CommAlgCat.forget₂_algCat_map, AlgCat.coe_of, AlgCat.hom_ofHom]
+      using AlgCat.isColimit_exists_tensor_rep hc' hc' x
   have hy : c.ι.app i (Algebra.TensorProduct.lmul' R y) = c.ι.app i 0 := by
     simpa only [Algebra.TensorProduct.lmul'_map_self, map_zero] using hx
   obtain ⟨j, f, _, hf⟩ := Concrete.isColimit_exists_of_rep_eq F hc _ _ hy
@@ -86,8 +94,9 @@ theorem of_isColimit {R : Type u} [CommRing R] {J : Type u} [SmallCategory J]
     (AlgHom.flat_iff_forall_exists_eq_mul_of_surjective _
       (Algebra.TensorProduct.lmul'_surjective R (F.obj j))).mp (flat_lmul' R (F.obj j)) z hz
   let m := Algebra.TensorProduct.map (c.ι.app j).hom (c.ι.app j).hom
-  have hm : m z = Algebra.TensorProduct.map (c.ι.app i).hom (c.ι.app i).hom y :=
-    CommAlgCat.tensorProduct_map_ι_app_map c c f y
+  have hm : m z = Algebra.TensorProduct.map (c.ι.app i).hom (c.ι.app i).hom y := by
+    simpa only [c', Functor.mapCocone_ι_app, Functor.comp_map, CommAlgCat.forget₂_algCat_map,
+      AlgCat.hom_ofHom] using AlgCat.tensorProduct_map_ι_app_map c' c' f y
   refine ⟨m w, ?_, ?_⟩
   · simpa only [m, Algebra.TensorProduct.lmul'_map_self, map_zero] using
       congrArg (c.ι.app j).hom hw

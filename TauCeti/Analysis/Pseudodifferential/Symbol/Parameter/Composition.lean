@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.ProperSupport
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Evaluation
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.OperatorParametrix
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.TruncatedParametrix
+import TauCeti.Algebra.BigOperators.NatAntidiagonal
 
 /-!
 # Composition of parameter-dependent symbols at a spectral parameter
@@ -30,11 +31,11 @@ order `m' + m` (`TauCeti.ParameterSymbol.sharp_toSymbol_eq_toSymbol_sum_sharpTer
 parameter, with `z` counting as two frequency orders, and no remainder of the expansion has to be
 estimated.
 
-For `a` elliptic with parameter and polynomial in the frequency, the first `J + 1` terms
-`bⱼ = a.rightInverseTerms ha j` of its formal right parametrix therefore give an exact right
-parametrix up to order `-(J + 1)`: `a(z) ∘ (∑_{j ≤ J} bⱼ(z)) = 1 + R(z)` for one
-parameter-dependent symbol `R` of order `-(J + 1)`
-(`TauCeti.ParameterSymbol.IsElliptic.exists_properSharp_sum_rightInverseTerms_eq_id_add`). This
+For `a` elliptic with parameter and polynomial in the frequency, the sum of the first `J + 1`
+terms `bⱼ = a.rightInverseTerms ha j` of its formal right parametrix
+(`TauCeti.ParameterSymbol.rightParametrix`) therefore gives an exact right parametrix up to order
+`-(J + 1)`: `a(z) ∘ (∑_{j ≤ J} bⱼ(z)) = 1 + R(z)` for one parameter-dependent symbol `R` of order
+`-(J + 1)` (`TauCeti.ParameterSymbol.IsElliptic.exists_properSharp_rightParametrix_eq_id_add`). This
 is the symbol identity behind the comparison of the resolvent `(P - z)⁻¹` of a second-order
 elliptic differential operator `P` with the quantized parametrix, the first step of the contour
 construction of the complex powers of `P`.
@@ -122,8 +123,7 @@ private theorem sum_sum_eq_add_sum_sum {X : Type*} [AddCommGroup X] (T : ℕ →
         refine sum_congr rfl fun k _ ↦ ?_
         split_ifs <;> first | omega | simp
     _ = e + ∑ j ∈ range (J + 1), ∑ k ∈ range N, if J < j + k then T j k else 0 := by
-        rw [sum_congr rfl hlow, ← sum_range_diag_flip, sum_congr rfl fun M _ ↦ hA M]
-        simp
+        rw [sum_congr rfl hlow, Nat.sum_range_sum_range_sub_eq hA J.succ_ne_zero]
 
 variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
 
@@ -131,8 +131,9 @@ variable [CompleteSpace V] {a : ParameterSymbol n Λ V W m}
 `a(z)` a polynomial of degree less than `N` in the frequency at every spectral parameter `z ∈ Λ`,
 as for the symbol of `P - z` with `P` a second-order differential operator and `N = 3`: since `z`
 counts as two frequency orders, `P - z` is elliptic with parameter only for `P` of order `2`. Let
-`Q_J = ∑_{j ≤ J} bⱼ` be the sum of the first `J + 1` terms `bⱼ = a.rightInverseTerms ha j` of its
-right parametrix. Then there is a parameter-dependent symbol `R` of order `-(J + 1)` with
+`Q_J = ∑_{j ≤ J} bⱼ = a.rightParametrix ha (J + 1)` be the sum of the first `J + 1` terms
+`bⱼ = a.rightInverseTerms ha j` of its right parametrix. Then there is a parameter-dependent
+symbol `R` of order `-(J + 1)` with
 
 `a(z) ∘ Q_J(z) = 1 + R(z)`
 
@@ -140,14 +141,13 @@ exactly, as composition symbols at every `z ∈ Λ` at which `a(z)` has finite p
 estimates of `R` are uniform in the spectral parameter: as a symbol of order `0`, `R(z)` has
 seminorms `O((1 + ‖z‖ ^ (1 / 2)) ^ (-(J + 1)))` on `Λ`
 (`TauCeti.ParameterSymbol.exists_seminorm_inclusion_toSymbol_le`). -/
-theorem IsElliptic.exists_properSharp_sum_rightInverseTerms_eq_id_add
+theorem IsElliptic.exists_properSharp_rightParametrix_eq_id_add
     (ha : a.IsElliptic) (hpoly : ∀ z ∈ Λ, ∀ β : List (Fin n), β.length = N → ∀ x ξ,
       mixedDeriv [] β (a.toSymbol z).coefficient x ξ = 0) (J : ℕ) :
     ∃ R : ParameterSymbol n Λ W W (-(J + 1 : ℕ)), ∀ z ∈ Λ, ∀ {ε : ℝ}
       (hprop : (a.toSymbol z).HasPropagationLE ε) (x ξ : CoordinateSpace n),
-      ((a.toSymbol z).properSharp hprop ((∑ j ∈ range (J + 1),
-          inclusion (sub_le_self (-m) (Nat.cast_nonneg j))
-            (a.rightInverseTerms ha j)).toSymbol z)).coefficient (x, ξ) =
+      ((a.toSymbol z).properSharp hprop ((a.rightParametrix ha (J + 1)).toSymbol z)).coefficient
+          (x, ξ) =
         ContinuousLinearMap.id ℂ W + R.coefficient ((x, ξ), z) := by
   -- `R` collects the terms `sharpTerm a bⱼ k`, of order `-(j + k)`, with `j + k > J`.
   have hord {j k : ℕ} (h : J < j + k) :
@@ -161,13 +161,9 @@ theorem IsElliptic.exists_properSharp_sum_rightInverseTerms_eq_id_add
   set T : ℕ → ℕ → W →L[ℂ] W := fun j k ↦
     (a.sharpTerm (a.rightInverseTerms ha j) k).coefficient ((x, ξ), z) with hT
   -- The composition symbol at `z` is the exact finite expansion, linear in the right factor.
-  have hlin (k : ℕ) : ((a.toSymbol z).sharpTerm ((∑ j ∈ range (J + 1),
-      inclusion (sub_le_self (-m) (Nat.cast_nonneg j))
-        (a.rightInverseTerms ha j)).toSymbol z) k).coefficient (x, ξ) =
-      ∑ j ∈ range (J + 1), T j k := by
-    rw [Symbol.coefficient_sharpTerm_eq_sum_right (range (J + 1)) (fun _ ↦ 1)
-      (fun j ↦ (a.rightInverseTerms ha j).toSymbol z) (by ext1; simp) (a.toSymbol z) k]
-    simp only [hT, one_smul, Finset.sum_apply, ← toSymbol_sharpTerm, coefficient_toSymbol]
+  have hlin (k : ℕ) : ((a.toSymbol z).sharpTerm ((a.rightParametrix ha (J + 1)).toSymbol z)
+      k).coefficient (x, ξ) = ∑ j ∈ range (J + 1), T j k := by
+    rw [← toSymbol_sharpTerm, coefficient_toSymbol, coefficient_sharpTerm_rightParametrix]
   have hB (j k : ℕ) (hk : N ≤ k) : T j k = 0 := by
     simp [hT, ← coefficient_toSymbol, toSymbol_sharpTerm,
       Symbol.sharpTerm_eq_zero_of_mixedDeriv_nil_eq_zero (hpoly z hz) _ hk]

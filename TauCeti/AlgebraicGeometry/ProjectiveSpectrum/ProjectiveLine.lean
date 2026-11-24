@@ -21,6 +21,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicGeometry.Geometrically.Integral
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.CoordinateMap
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ChartEquality
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
@@ -680,21 +681,8 @@ the constant polynomials. -/
 theorem chartSectionsEquiv_appLE (i : Fin 2) (a : Γ(Spec (.of R), ⊤)) :
     chartSectionsEquiv R i ((projectiveLine R ↘ Spec (.of R)).appLE ⊤ _ le_top a) =
       C ((Scheme.ΓSpecIso (.of R)).hom a) := by
-  suffices h : (projectiveLine R ↘ Spec (.of R)).appLE ⊤ _ le_top ≫
-        ((awayι R i).appIso ⊤).hom ≫ (Scheme.ΓSpecIso _).hom =
-      (Scheme.ΓSpecIso (.of R)).hom ≫ CommRingCat.ofHom (algebraMap R (Away 𝒜 (coord R i))) by
-    rw [chartSectionsEquiv_apply, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply, h]
-    simp
-  rw [← cancel_epi (Scheme.ΓSpecIso (.of R)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
-    reassoc_of% Scheme.Hom.appLE_comp_appLE (awayι R i)
-    (projectiveLine R ↘ Spec (.of R)) ⊤ (awayι R i ''ᵁ ⊤) ⊤ le_top
-    (Scheme.Hom.preimage_image_eq _ _).ge]
-  -- The `show` reads `appLE ⊤ ⊤` as `appTop` through `appLE_eq_app`, relying on the
-  -- definitional equalities `f ⁻¹ᵁ ⊤ = ⊤` (`Scheme.Hom.preimage_top`, proved by `rfl`) and
-  -- `f.app ⊤ = f.appTop` (`appTop` is an abbreviation); a plain `rw` cannot match the preimage.
-  -- Then the composite of the chart with the structure morphism is `Spec` of the inclusion of `R`.
-  rw [show Scheme.Hom.appLE _ ⊤ ⊤ _ = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
-    awayι_over, Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+  rw [chartSectionsEquiv_apply, Scheme.ΓSpecIso_appIso_hom_appLE _ _ _ (awayι_over R i)]
+  simp
 
 /-- The chart `D₊(Xᵢ)`, as the image of `awayι`, is the basic open set of `Xᵢ`. -/
 theorem image_awayι_top (i : Fin 2) : awayι R i ''ᵁ ⊤ = Proj.basicOpen 𝒜 (coord R i) := by

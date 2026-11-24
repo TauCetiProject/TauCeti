@@ -22,10 +22,13 @@ The element `-1` squares to `1`. A multiplicative map into a ring without zero d
 therefore sends it to `1` or `-1`. This applies to ordinary ring-valued maps as well as to
 unit-valued characters after composing with the coercion homomorphism.
 
-A multiplicative map `f` from a monoid to a ring need not send `1` to `1`, but `f 1` is then an
-idempotent, and `a ↦ f a + (1 - f 1)` is a monoid homomorphism: it acts as `f` on the range of
-`f 1` and as the identity on the range of `1 - f 1`. This is how a nonunital representation of a
-unital algebra still lets its invertible elements act by invertible operators.
+Any multiplicative map `f` from a unital magma into a (possibly non-associative) ring sends `1` to
+an idempotent `f 1`, and the complementary idempotent `1 - f 1` annihilates every image `f a` on
+both sides (`TauCeti.one_sub_map_one_mul_apply` and `TauCeti.apply_mul_one_sub_map_one`).
+In a monoid-to-ring map, `a ↦ f a + (1 - f 1)` is a monoid homomorphism (`MulHom.unitize`): it
+acts as `f` on the range of `f 1` and as the identity on the range of `1 - f 1`. This is how a
+nonunital representation of a unital algebra still lets its invertible elements act by invertible
+operators.
 
 A ring homomorphism fixes natural number casts, so it preserves membership statements of the form
 `n ^ k * x ∈ A`: if it maps `A` into `B`, then `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`. This
@@ -40,6 +43,8 @@ along field and completion isomorphisms.
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
+* `TauCeti.one_sub_map_one_mul_apply` and `TauCeti.apply_mul_one_sub_map_one`: `1 - f 1`
+  annihilates `f a` on the left and right for any multiplicative map `f`.
 * `TauCeti.exists_add_neg_one_pow_mul_apply_eq`: showing from a trace-one element for
   `t ↦ t + σ t` that every element `s` with `σ s = (-1) ^ k * s` has a preimage under
   `t ↦ t + (-1) ^ k * σ t`.
@@ -68,6 +73,22 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
     [NonAssocRing R] [NoZeroDivisors R] [FunLike F M R] [MonoidHomClass F M R] (f : F) :
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
+
+/-- For any multiplicative map `f` from a unital magma into a (possibly non-associative) ring,
+the complementary idempotent `1 - f 1` annihilates `f a` on the left. -/
+@[simp]
+theorem one_sub_map_one_mul_apply {F M R : Type*} [MulOneClass M] [NonAssocRing R]
+    [FunLike F M R] [MulHomClass F M R] (f : F) (a : M) :
+    (1 - f 1) * f a = 0 := by
+  rw [sub_mul, one_mul, ← map_mul, one_mul, sub_self]
+
+/-- For any multiplicative map `f` from a unital magma into a (possibly non-associative) ring,
+the complementary idempotent `1 - f 1` annihilates `f a` on the right. -/
+@[simp]
+theorem apply_mul_one_sub_map_one {F M R : Type*} [MulOneClass M] [NonAssocRing R]
+    [FunLike F M R] [MulHomClass F M R] (f : F) (a : M) :
+    f a * (1 - f 1) = 0 := by
+  rw [mul_sub, mul_one, ← map_mul, mul_one, sub_self]
 
 /-- Existence of a trace-one element `b + σ b = 1` implies that every element `s` with
 `σ s = (-1) ^ k * s` has a preimage under the signed trace `t ↦ t + (-1) ^ k * σ t` for every

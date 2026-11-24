@@ -7,15 +7,18 @@ module
 
 public import TauCeti.Analysis.Matrix.DeterminantBound
 public import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+public import TauCeti.Analysis.Matrix.ConfluentVandermonde
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 
 /-!
 # Worked determinant-size bounds
 
 These examples compare factorial entry bounds with sharp Euclidean-row Hadamard bounds,
-including empty matrices, row and column orientations, and dependent Gram families.
+including empty matrices, row and column orientations, and dependent Gram families. For a
+confluent Vandermonde matrix, the row bounds come from evaluated Hasse derivative bounds.
 -/
 
 public section
@@ -166,3 +169,59 @@ example :
     re_det_gram_nonneg (𝕜 := ℝ) v, det_gram_le_prod_norm_sq (𝕜 := ℝ) v,
     (re_det_gram_le_pow (𝕜 := ℝ) (v := v) (D := 1) (by simp [v])).trans_eq (by simp),
     by simp [hg]⟩
+
+/-- The confluent Vandermonde matrix for the nodes `0, 1` with multiplicities `2, 1` over `ℂ`.
+The row bounds of `Matrix.norm_confluentVandermonde_le` give the bound `1` on every row from the
+node bounds `(0, 1)`, and the bound `k + 1` on the row of the jet `⟨i, k⟩` from the common node
+bound `1`, that is `(1, 2, 1)`. The factorial bound then gives `1 ≤ 6` and `1 ≤ 12`, while the
+Euclidean row norms `1, 1, Real.sqrt 3` give the sharper Hadamard bound `1 ≤ Real.sqrt 3`. -/
+example :
+    confluentVandermonde ![(0 : ℂ), 1] ![2, 1] = !![1, 0, 0; 0, 1, 0; 1, 1, 1] ∧
+      ‖(confluentVandermonde ![(0 : ℂ), 1] ![2, 1]).det‖ = 1 ∧
+      (∀ ρ j, ‖confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ j‖ ≤ 1) ∧
+      ‖(confluentVandermonde ![(0 : ℂ), 1] ![2, 1]).det‖ ≤ 6 ∧
+      (∀ i k j, ‖confluentVandermonde ![(0 : ℂ), 1] ![2, 1] (finSigmaFinEquiv ⟨i, k⟩) j‖ ≤
+        (k : ℕ) + 1) ∧
+      ‖(confluentVandermonde ![(0 : ℂ), 1] ![2, 1]).det‖ ≤ 12 ∧
+      (∏ ρ, ‖WithLp.toLp 2 (confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ)‖) = Real.sqrt 3 ∧
+      ‖(confluentVandermonde ![(0 : ℂ), 1] ![2, 1]).det‖ ≤ Real.sqrt 3 := by
+  have hA : confluentVandermonde ![(0 : ℂ), 1] ![2, 1] = !![1, 0, 0; 0, 1, 0; 1, 1, 1] := by
+    ext ρ j
+    obtain ⟨⟨i, k⟩, rfl⟩ := finSigmaFinEquiv.surjective ρ
+    rw [confluentVandermonde_finSigmaFinEquiv]
+    -- The statement itself reads the row index `finSigmaFinEquiv ⟨i, k⟩ : Fin (∑ i, ![2, 1] i)`
+    -- as an index of `!![…] : Matrix (Fin 3) (Fin 3) ℂ`, so `simp` cannot select the entry;
+    -- `rfl` computes the index and the entry.
+    fin_cases i <;> fin_cases k <;> fin_cases j <;> simp <;> rfl
+  have hM : ∑ i, ![2, 1] i = 3 := by simp
+  have hB₁ := norm_confluentVandermonde_le (a := ![(0 : ℂ), 1]) (m := ![2, 1]) (N := ![0, 1])
+    (B := fun _ ↦ 1) (by simp [Fin.forall_fin_two]) <| by
+    intro i k j hj
+    rw [hM] at hj
+    fin_cases i <;> fin_cases k <;> interval_cases j <;> simp
+  have hB₂ := norm_confluentVandermonde_le (a := ![(0 : ℂ), 1]) (m := ![2, 1]) (N := fun _ ↦ 1)
+    (B := fun ρ ↦ ((finSigmaFinEquiv.symm ρ).2 : ℕ) + 1) (by simp [Fin.forall_fin_two]) <| by
+    intro i k j hj
+    rw [Equiv.symm_apply_apply]
+    rw [hM] at hj
+    fin_cases i <;> fin_cases k <;> interval_cases j <;> norm_num
+  -- Reindex products over the rows by the jets `⟨i, k⟩`, with `k : Fin 2` and `k : Fin 1`.
+  have h₀ : 2 = ![2, 1] 0 := by simp
+  have h₁ : 1 = ![2, 1] 1 := by simp
+  have hnorm :
+      (∏ ρ, ‖WithLp.toLp 2 (confluentVandermonde ![(0 : ℂ), 1] ![2, 1] ρ)‖) = Real.sqrt 3 := by
+    rw [Fintype.prod_equiv finSigmaFinEquiv.symm _
+      (fun x ↦ ‖WithLp.toLp 2 (confluentVandermonde ![(0 : ℂ), 1] ![2, 1] (finSigmaFinEquiv x))‖)
+      (by simp), Fintype.prod_sigma, Fin.prod_univ_two, ← (finCongr h₀).prod_comp,
+      ← (finCongr h₁).prod_comp]
+    simp only [Fin.prod_univ_two, Finset.univ_unique, Finset.prod_singleton, finCongr_apply]
+    simp [EuclideanSpace.norm_eq, ← (finCongr hM.symm).sum_comp, Fin.sum_univ_three]
+  refine ⟨hA, by simp [det_confluentVandermonde, Fin.prod_univ_two], hB₁, ?_,
+    fun i k j ↦ (hB₂ _ j).trans_eq (by rw [Equiv.symm_apply_apply]), ?_, hnorm,
+    (norm_det_le_prod_norm_toLp _).trans_eq hnorm⟩
+  · refine (norm_det_le_factorial_prod _ hB₁).trans_eq ?_
+    simp [hM, Nat.factorial]
+  · refine (norm_det_le_factorial_prod _ hB₂).trans_eq ?_
+    rw [Fintype.prod_equiv finSigmaFinEquiv.symm _ (fun x ↦ ((x.2 : ℕ) : ℝ) + 1) fun _ ↦ rfl,
+      Fintype.prod_sigma, Fin.prod_univ_two, ← (finCongr h₀).prod_comp, ← (finCongr h₁).prod_comp]
+    norm_num [hM, Nat.factorial, Fin.prod_univ_two]
