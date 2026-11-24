@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.Complex.HolomorphicFunctions.NormalFamilies
 import TauCeti.Analysis.Complex.Sector.Bounds
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Cauchy's estimate in a sector

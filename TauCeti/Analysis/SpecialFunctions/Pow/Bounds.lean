@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Elementary bounds on real powers
@@ -98,8 +97,6 @@ dyadic intervals.
   for `α ≤ 0`.
 * `Real.add_rpow_le_max_two_rpow_mul`: `(x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β` for `0 ≤ t ≤ x`
   and every real `β`.
-* `TauCeti.rpow_le_two_rpow_abs_mul`: `y ^ p ≤ 2 ^ |p| x ^ p` for `x / 2 ≤ y ≤ 2 x` and every
-  real `p`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -350,21 +347,6 @@ theorem add_rpow_le_max_two_rpow_mul (β : ℝ) {x t : ℝ} (ht₀ : 0 ≤ t) (h
 end Real
 
 namespace TauCeti
-
-/-- If `x / 2 ≤ y ≤ 2 x`, then `y ^ p ≤ 2 ^ |p| x ^ p`, for positive and negative exponents
-alike: the case `a = 1 / 2`, `b = 2` of `Real.rpow_le_max_mul_rpow`. -/
-theorem rpow_le_two_rpow_abs_mul {x y p : ℝ} (hxy : x / 2 ≤ y) (hyx : y ≤ 2 * x) :
-    y ^ p ≤ 2 ^ |p| * x ^ p := by
-  rcases (by linarith : (0 : ℝ) ≤ x).eq_or_lt with rfl | hx
-  · have hy : y = 0 := by linarith
-    rw [hy]
-    exact le_mul_of_one_le_left (Real.rpow_nonneg le_rfl p)
-      (Real.one_le_rpow (by norm_num) (abs_nonneg p))
-  refine (Real.rpow_le_max_mul_rpow (a := 1 / 2) (b := 2) (by norm_num) hx.le (by linarith)
-    hyx p).trans (mul_le_mul_of_nonneg_right (max_le ?_ ?_) (Real.rpow_nonneg hx.le p))
-  · rw [one_div, Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num)]
-    exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (neg_le_abs p)
-  · exact Real.rpow_le_rpow_of_exponent_le (by norm_num) (le_abs_self p)
 
 /-- The weight `(1 + ‖x‖) ^ s` is subadditive up to a constant: for `s ≥ 0`,
 `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`. -/
