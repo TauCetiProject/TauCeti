@@ -176,10 +176,9 @@ theorem restrictionXIso_hom_regradeLinearDualIso_hom_f_apply (k : ℤ)
         rfl).hom.hom (((K.regradeLinearDualIso n).hom.f k).hom g) x =
       (k * n).negOnePow • CochainComplex.linearDualXEquiv _ (neg_add_cancel k) g
         ((K.restrictionXIso _ (show n - -k = -(-n - k) by omega)).inv.hom x) := by
-  rw [← LinearMap.comp_apply (ModuleCat.Hom.hom _), ← ModuleCat.hom_comp,
-    regradeLinearDualIso_hom_f, Linear.units_smul_comp, Category.assoc, Iso.inv_hom_id,
-    Category.comp_id, Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply,
-    LinearMap.smul_apply, regradeLinearDualXIso_hom_apply, Units.smul_def]
+  simp only [regradeLinearDualIso_hom_f, Units.smul_def, ModuleCat.hom_zsmul, ModuleCat.hom_comp,
+    LinearMap.smul_apply, LinearMap.comp_apply, map_zsmul, Iso.inv_hom_id_apply]
+  rw [regradeLinearDualXIso_hom_apply]
 
 /-- **The inverse comparison on forms.** The inverse of `regradeLinearDualIso` sends a form `f` on
 `K_(-(-n - k))` to the same form, read on `K_(n + k)`, twisted by the sign `(-1)^(k n)`. It is not
@@ -192,9 +191,9 @@ theorem linearDualXEquiv_regradeLinearDualIso_inv_f_apply (k : ℤ)
       (k * n).negOnePow • ((linearDual K).restrictionXIso (embeddingUpIntDownIntSub (-n)) (i := k)
         (i' := -n - k) rfl).hom.hom f
           ((K.restrictionXIso _ (show n - -k = -(-n - k) by omega)).hom.hom y) := by
-  rw [regradeLinearDualIso_inv_f, Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply,
-    map_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
-    linearDualXEquiv_regradeLinearDualXIso_inv_apply, Units.smul_def]
+  simp only [regradeLinearDualIso_inv_f, Units.smul_def, ModuleCat.hom_zsmul, ModuleCat.hom_comp,
+    LinearMap.smul_apply, LinearMap.comp_apply, map_zsmul]
+  rw [linearDualXEquiv_regradeLinearDualXIso_inv_apply]
 
 variable {K} in
 /-- The identifications `regradeLinearDualXIso` intertwine the transposes of a morphism
