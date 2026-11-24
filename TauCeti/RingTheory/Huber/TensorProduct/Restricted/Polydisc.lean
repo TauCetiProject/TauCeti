@@ -9,9 +9,7 @@ public import TauCeti.RingTheory.Huber.TensorProduct.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Adic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
-public import Mathlib.Topology.Homeomorph.Defs
-
-import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Topology.Algebra.Algebra.Equiv
 
 /-!
 # Completed tensor products of closed polydiscs
@@ -35,15 +33,13 @@ On spaces this is the fibre product of two closed polydiscs over `Spa A`.
 
 ## Main definitions
 
-* `TauCeti.Huber.CompletedTensor.polydiscEquiv`: the ring isomorphism
-  `A⟨T⟩ ⊗̂_A A⟨S⟩ ≃+* A⟨T, S⟩`.
+* `TauCeti.Huber.CompletedTensor.polydiscEquiv`: the isomorphism of topological `A`-algebras
+  `A⟨T⟩ ⊗̂_A A⟨S⟩ ≃A[A] A⟨T, S⟩`.
 
 ## Main results
 
-* `TauCeti.Huber.CompletedTensor.isHomeomorph_polydiscEquiv`: it is a homeomorphism.
 * `TauCeti.Huber.CompletedTensor.polydiscEquiv_inl_polydiscVar` and
   `…_inr_polydiscVar`: the coordinates of the two factors go to the two blocks of coordinates.
-* `TauCeti.Huber.CompletedTensor.polydiscEquiv_comp_algebraMap`: the isomorphism lies over `A`.
 
 ## References
 
@@ -192,19 +188,27 @@ private theorem ofPolydisc_comp_toPolydisc :
   · rw [RingHom.comp_assoc, toPolydisc, lift_comp_inr, ofPolydisc_comp_polydiscBlock_natAdd,
       RingHom.id_comp]
 
+private theorem toPolydisc_algebraMap (a : A) :
+    toPolydisc A m n (algebraMap A _ a) =
+      algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) a := by
+  rw [algebraMap_eq_inl, RingHom.comp_apply, toPolydisc_inl, polydiscBlock_algebraMap]
+
 /-- **The completed tensor product of two closed polydiscs is a closed polydisc.** For a Huber
-ring `A`, `A⟨T₁, …, Tₘ⟩ ⊗̂_A A⟨S₁, …, Sₙ⟩` is isomorphic to `A⟨T₁, …, Tₘ, S₁, …, Sₙ⟩`, the
-coordinates of the left factor going to the first `m` coordinates and those of the right factor
-to the last `n`. It is a homeomorphism
-(`TauCeti.Huber.CompletedTensor.isHomeomorph_polydiscEquiv`). -/
+ring `A`, `A⟨T₁, …, Tₘ⟩ ⊗̂_A A⟨S₁, …, Sₙ⟩` is isomorphic as a topological `A`-algebra to
+`A⟨T₁, …, Tₘ, S₁, …, Sₙ⟩`, the coordinates of the left factor going to the first `m` coordinates
+and those of the right factor to the last `n`. -/
 noncomputable def polydiscEquiv :
     CompletedTensor A (restrictedMvPowerSeriesCompletion m A)
-        (restrictedMvPowerSeriesCompletion n A) ≃+*
-      restrictedMvPowerSeriesCompletion (m + n) A :=
-  RingEquiv.ofRingHom (toPolydisc A m n) (ofPolydisc A m n) (toPolydisc_comp_ofPolydisc A m n)
-    (ofPolydisc_comp_toPolydisc A m n)
+        (restrictedMvPowerSeriesCompletion n A) ≃A[A]
+      restrictedMvPowerSeriesCompletion (m + n) A where
+  toAlgEquiv := AlgEquiv.ofRingEquiv (f := RingEquiv.ofRingHom (toPolydisc A m n)
+    (ofPolydisc A m n) (toPolydisc_comp_ofPolydisc A m n) (ofPolydisc_comp_toPolydisc A m n))
+    (toPolydisc_algebraMap A m n)
+  continuous_toFun := continuous_toPolydisc A m n
+  continuous_invFun := continuous_ofPolydisc A m n
 
-/-- `polydiscEquiv` is `toPolydisc` by definition of `RingEquiv.ofRingHom`. -/
+/-- `polydiscEquiv` is `toPolydisc` by definition of `AlgEquiv.ofRingEquiv` and
+`RingEquiv.ofRingHom`. -/
 private theorem polydiscEquiv_apply
     (x : CompletedTensor A (restrictedMvPowerSeriesCompletion m A)
       (restrictedMvPowerSeriesCompletion n A)) :
@@ -226,50 +230,26 @@ private theorem polydiscEquiv_apply
 /-- The isomorphism is the identity on the base ring. -/
 @[simp] theorem polydiscEquiv_algebraMap (a : A) :
     polydiscEquiv A m n (algebraMap A _ a) =
-      algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) a := by
-  rw [polydiscEquiv_apply, algebraMap_eq_inl, RingHom.comp_apply, toPolydisc_inl,
-    polydiscBlock_algebraMap]
-
-/-- The isomorphism lies over `A`. -/
-theorem polydiscEquiv_comp_algebraMap :
-    (polydiscEquiv A m n : CompletedTensor A (restrictedMvPowerSeriesCompletion m A)
-        (restrictedMvPowerSeriesCompletion n A) →+*
-          restrictedMvPowerSeriesCompletion (m + n) A).comp (algebraMap A _) =
-      algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) := by
-  ext a
-  rw [RingHom.comp_apply, RingEquiv.coe_toRingHom, polydiscEquiv_algebraMap]
+      algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) a :=
+  AlgHomClass.commutes _ a
 
 /-- The inverse isomorphism is the identity on the base ring. Not `@[simp]`: the simp normal form
 of `algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) a` is a coerced `weightedC`. -/
 theorem polydiscEquiv_symm_algebraMap (a : A) :
     (polydiscEquiv A m n).symm (algebraMap A (restrictedMvPowerSeriesCompletion (m + n) A) a) =
-      algebraMap A _ a := by
-  rw [RingEquiv.symm_apply_eq, polydiscEquiv_algebraMap]
+      algebraMap A _ a :=
+  AlgHomClass.commutes _ a
 
 /-- The inverse sends the first `m` coordinates to the left factor. -/
 @[simp] theorem polydiscEquiv_symm_polydiscVar_castAdd (i : Fin m) :
     (polydiscEquiv A m n).symm (Pair.polydiscVar (m + n) A (Fin.castAdd n i)) =
       inl A _ _ (Pair.polydiscVar m A i) := by
-  rw [RingEquiv.symm_apply_eq, polydiscEquiv_inl_polydiscVar]
+  rw [ContinuousAlgEquiv.symm_apply_eq, polydiscEquiv_inl_polydiscVar]
 
 /-- The inverse sends the last `n` coordinates to the right factor. -/
 @[simp] theorem polydiscEquiv_symm_polydiscVar_natAdd (j : Fin n) :
     (polydiscEquiv A m n).symm (Pair.polydiscVar (m + n) A (Fin.natAdd m j)) =
       inr A _ _ (Pair.polydiscVar n A j) := by
-  rw [RingEquiv.symm_apply_eq, polydiscEquiv_inr_polydiscVar]
-
-/-- The isomorphism is continuous. -/
-@[fun_prop] theorem continuous_polydiscEquiv : Continuous (polydiscEquiv A m n) :=
-  continuous_toPolydisc A m n
-
-/-- The inverse isomorphism is continuous. -/
-@[fun_prop] theorem continuous_polydiscEquiv_symm : Continuous (polydiscEquiv A m n).symm :=
-  continuous_ofPolydisc A m n
-
-/-- **The completed tensor product of two closed polydiscs is a closed polydisc as a topological
-ring.** -/
-theorem isHomeomorph_polydiscEquiv : IsHomeomorph (polydiscEquiv A m n) :=
-  (polydiscEquiv A m n).toEquiv.isHomeomorph_iff.mpr
-    ⟨continuous_polydiscEquiv A m n, continuous_polydiscEquiv_symm A m n⟩
+  rw [ContinuousAlgEquiv.symm_apply_eq, polydiscEquiv_inr_polydiscVar]
 
 end TauCeti.Huber.CompletedTensor

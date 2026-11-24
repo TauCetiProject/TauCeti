@@ -49,134 +49,97 @@ example :
 
 -- The comparison is a homeomorphism.
 example (m n : ℕ) : IsHomeomorph (CompletedTensor.polydiscEquiv A m n) :=
-  CompletedTensor.isHomeomorph_polydiscEquiv A m n
+  (CompletedTensor.polydiscEquiv A m n).toHomeomorph.isHomeomorph
 
 /-- The identification `(A⟨T⟩ ⊗̂_A A⟨S⟩) ⊗̂_A A⟨R⟩ ≃ A⟨T, S, R⟩`. -/
 noncomputable def leftDiscs :
-    CompletedTensor A (CompletedTensor A (D 1) (D 1)) (D 1) ≃+* D 3 :=
-  (CompletedTensor.congr (A := A) (CompletedTensor.polydiscEquiv A 1 1) (RingEquiv.refl (D 1))
-    (CompletedTensor.polydiscEquiv_comp_algebraMap A 1 1)
-    (by rw [RingEquiv.toRingHom_refl, RingHom.id_comp])
-    (CompletedTensor.continuous_polydiscEquiv A 1 1)
-    (CompletedTensor.continuous_polydiscEquiv_symm A 1 1)
-    (by rw [RingEquiv.coe_refl]; exact continuous_id)
-    (by rw [RingEquiv.symm_refl, RingEquiv.coe_refl]; exact continuous_id)).trans
+    CompletedTensor A (CompletedTensor A (D 1) (D 1)) (D 1) ≃A[A] D 3 :=
+  (CompletedTensor.congr (CompletedTensor.polydiscEquiv A 1 1)
+    (ContinuousAlgEquiv.refl A (D 1))).trans
     (CompletedTensor.polydiscEquiv A (1 + 1) 1)
 
 /-- The identification `A⟨T⟩ ⊗̂_A (A⟨S⟩ ⊗̂_A A⟨R⟩) ≃ A⟨T, S, R⟩`. -/
 noncomputable def rightDiscs :
-    CompletedTensor A (D 1) (CompletedTensor A (D 1) (D 1)) ≃+* D 3 :=
-  (CompletedTensor.congr (A := A) (RingEquiv.refl (D 1)) (CompletedTensor.polydiscEquiv A 1 1)
-    (by rw [RingEquiv.toRingHom_refl, RingHom.id_comp])
-    (CompletedTensor.polydiscEquiv_comp_algebraMap A 1 1)
-    (by rw [RingEquiv.coe_refl]; exact continuous_id)
-    (by rw [RingEquiv.symm_refl, RingEquiv.coe_refl]; exact continuous_id)
-    (CompletedTensor.continuous_polydiscEquiv A 1 1)
-    (CompletedTensor.continuous_polydiscEquiv_symm A 1 1)).trans
+    CompletedTensor A (D 1) (CompletedTensor A (D 1) (D 1)) ≃A[A] D 3 :=
+  (CompletedTensor.congr (ContinuousAlgEquiv.refl A (D 1))
+    (CompletedTensor.polydiscEquiv A 1 1)).trans
     (CompletedTensor.polydiscEquiv A 1 (1 + 1))
 
 /-! In the next lemmas the last step is a `polydiscEquiv` lemma for `A⟨T₁, …, T_{1+1+1}⟩`,
 applied to a goal about `A⟨T₁, T₂, T₃⟩`: the ranks `1 + 1 + 1` and `3` agree by evaluation, and
 so do the indices, e.g. `Fin.castAdd 1 (Fin.castAdd 1 0)` and `0 : Fin 3`. -/
 
-/-- `leftDiscs` fixes the coefficients. -/
-theorem leftDiscs_algebraMap (a : A) :
-    leftDiscs A (algebraMap A _ a) = algebraMap A (D 3) a := by
-  rw [leftDiscs, RingEquiv.trans_apply, ← CompletedTensor.inl_algebraMap,
-    CompletedTensor.congr_inl, CompletedTensor.polydiscEquiv_algebraMap,
-    CompletedTensor.inl_algebraMap]
-  exact CompletedTensor.polydiscEquiv_algebraMap A (1 + 1) 1 a
-
-/-- `rightDiscs` fixes the coefficients. -/
-theorem rightDiscs_algebraMap (a : A) :
-    rightDiscs A (algebraMap A _ a) = algebraMap A (D 3) a := by
-  rw [rightDiscs, RingEquiv.trans_apply, ← CompletedTensor.inl_algebraMap,
-    CompletedTensor.congr_inl, RingEquiv.refl_apply, CompletedTensor.inl_algebraMap]
-  exact CompletedTensor.polydiscEquiv_algebraMap A 1 (1 + 1) a
-
 /-- `leftDiscs` sends `T` to the first coordinate. -/
 theorem leftDiscs_inl_inl_polydiscVar :
     leftDiscs A (CompletedTensor.inl A _ _ (CompletedTensor.inl A _ _ ((V 1) 0))) = (V 3) 0 := by
-  rw [leftDiscs, RingEquiv.trans_apply, CompletedTensor.congr_inl,
+  rw [leftDiscs, ContinuousAlgEquiv.trans_apply, CompletedTensor.congr_inl,
     CompletedTensor.polydiscEquiv_inl_polydiscVar]
   exact CompletedTensor.polydiscEquiv_inl_polydiscVar A (1 + 1) 1 _
 
 /-- `leftDiscs` sends `S` to the second coordinate. -/
 theorem leftDiscs_inl_inr_polydiscVar :
     leftDiscs A (CompletedTensor.inl A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) = (V 3) 1 := by
-  rw [leftDiscs, RingEquiv.trans_apply, CompletedTensor.congr_inl,
+  rw [leftDiscs, ContinuousAlgEquiv.trans_apply, CompletedTensor.congr_inl,
     CompletedTensor.polydiscEquiv_inr_polydiscVar]
   exact CompletedTensor.polydiscEquiv_inl_polydiscVar A (1 + 1) 1 _
 
 /-- `leftDiscs` sends `R` to the third coordinate. -/
 theorem leftDiscs_inr_polydiscVar :
     leftDiscs A (CompletedTensor.inr A _ _ ((V 1) 0)) = (V 3) 2 := by
-  rw [leftDiscs, RingEquiv.trans_apply, CompletedTensor.congr_inr, RingEquiv.refl_apply]
+  rw [leftDiscs, ContinuousAlgEquiv.trans_apply, CompletedTensor.congr_inr,
+    ContinuousAlgEquiv.refl_apply]
   exact CompletedTensor.polydiscEquiv_inr_polydiscVar A (1 + 1) 1 _
 
 /-- `rightDiscs` sends `T` to the first coordinate. -/
 theorem rightDiscs_inl_polydiscVar :
     rightDiscs A (CompletedTensor.inl A _ _ ((V 1) 0)) = (V 3) 0 := by
-  rw [rightDiscs, RingEquiv.trans_apply, CompletedTensor.congr_inl, RingEquiv.refl_apply]
+  rw [rightDiscs, ContinuousAlgEquiv.trans_apply, CompletedTensor.congr_inl,
+    ContinuousAlgEquiv.refl_apply]
   exact CompletedTensor.polydiscEquiv_inl_polydiscVar A 1 (1 + 1) _
 
 /-- `rightDiscs` sends `S` to the second coordinate. -/
 theorem rightDiscs_inr_inl_polydiscVar :
     rightDiscs A (CompletedTensor.inr A _ _ (CompletedTensor.inl A _ _ ((V 1) 0))) = (V 3) 1 := by
-  rw [rightDiscs, RingEquiv.trans_apply, CompletedTensor.congr_inr,
+  rw [rightDiscs, ContinuousAlgEquiv.trans_apply, CompletedTensor.congr_inr,
     CompletedTensor.polydiscEquiv_inl_polydiscVar]
   exact CompletedTensor.polydiscEquiv_inr_polydiscVar A 1 (1 + 1) _
 
 /-- `rightDiscs` sends `R` to the third coordinate. -/
 theorem rightDiscs_inr_inr_polydiscVar :
     rightDiscs A (CompletedTensor.inr A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) = (V 3) 2 := by
-  rw [rightDiscs, RingEquiv.trans_apply, CompletedTensor.congr_inr,
+  rw [rightDiscs, ContinuousAlgEquiv.trans_apply, CompletedTensor.congr_inr,
     CompletedTensor.polydiscEquiv_inr_polydiscVar]
   exact CompletedTensor.polydiscEquiv_inr_polydiscVar A 1 (1 + 1) _
 
-/-- `leftDiscs` is a homeomorphism. -/
-theorem isHomeomorph_leftDiscs : IsHomeomorph (leftDiscs A) :=
-  (CompletedTensor.isHomeomorph_polydiscEquiv A (1 + 1) 1).comp
-    (CompletedTensor.isHomeomorph_congr ..)
-
-/-- `rightDiscs` is a homeomorphism. -/
-theorem isHomeomorph_rightDiscs : IsHomeomorph (rightDiscs A) :=
-  (CompletedTensor.isHomeomorph_polydiscEquiv A 1 (1 + 1)).comp
-    (CompletedTensor.isHomeomorph_congr ..)
-
-/-- Both iterated completed tensor products of three closed discs are `A⟨T, S, R⟩` by
-homeomorphic ring isomorphisms fixing the coefficients and sending the three coordinates to
-`T, S, R` in this order, and under them the associator is the identity. -/
+/-- Both iterated completed tensor products of three closed discs are `A⟨T, S, R⟩` by continuous
+`A`-algebra isomorphisms sending the three coordinates to `T, S, R` in this order, and under them
+the associator is the identity. -/
 theorem three_discs_associator_field :
-    ∃ (eL : CompletedTensor A (CompletedTensor A (D 1) (D 1)) (D 1) ≃+* D 3)
-      (eR : CompletedTensor A (D 1) (CompletedTensor A (D 1) (D 1)) ≃+* D 3),
-      IsHomeomorph eL ∧ IsHomeomorph eR ∧
-      (∀ a : A, eL (algebraMap A _ a) = algebraMap A (D 3) a) ∧
+    ∃ (eL : CompletedTensor A (CompletedTensor A (D 1) (D 1)) (D 1) ≃A[A] D 3)
+      (eR : CompletedTensor A (D 1) (CompletedTensor A (D 1) (D 1)) ≃A[A] D 3),
       eL (CompletedTensor.inl A _ _ (CompletedTensor.inl A _ _ ((V 1) 0))) = (V 3) 0 ∧
       eL (CompletedTensor.inl A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) = (V 3) 1 ∧
       eL (CompletedTensor.inr A _ _ ((V 1) 0)) = (V 3) 2 ∧
-      (∀ a : A, eR (algebraMap A _ a) = algebraMap A (D 3) a) ∧
       eR (CompletedTensor.inl A _ _ ((V 1) 0)) = (V 3) 0 ∧
       eR (CompletedTensor.inr A _ _ (CompletedTensor.inl A _ _ ((V 1) 0))) = (V 3) 1 ∧
       eR (CompletedTensor.inr A _ _ (CompletedTensor.inr A _ _ ((V 1) 0))) = (V 3) 2 ∧
-      (eL.symm.trans (CompletedTensor.assoc A (D 1) (D 1) (D 1))).trans eR =
-        RingEquiv.refl (D 3) := by
-  refine ⟨leftDiscs A, rightDiscs A, isHomeomorph_leftDiscs A, isHomeomorph_rightDiscs A,
-    leftDiscs_algebraMap A, leftDiscs_inl_inl_polydiscVar A, leftDiscs_inl_inr_polydiscVar A,
-    leftDiscs_inr_polydiscVar A, rightDiscs_algebraMap A, rightDiscs_inl_polydiscVar A,
+      (eL.symm.toRingEquiv.trans (CompletedTensor.assoc A (D 1) (D 1) (D 1))).trans
+        eR.toRingEquiv = RingEquiv.refl (D 3) := by
+  refine ⟨leftDiscs A, rightDiscs A, leftDiscs_inl_inl_polydiscVar A,
+    leftDiscs_inl_inr_polydiscVar A, leftDiscs_inr_polydiscVar A, rightDiscs_inl_polydiscVar A,
     rightDiscs_inr_inl_polydiscVar A, rightDiscs_inr_inr_polydiscVar A, ?_⟩
   -- Both sides are continuous and agree on constants and on the three coordinates.
   have hL {x y} (h : leftDiscs A y = x) : (leftDiscs A).symm x = y :=
-    (RingEquiv.symm_apply_eq _).mpr h.symm
+    (ContinuousAlgEquiv.symm_apply_eq _).mpr h.symm
   apply RingEquiv.toRingHom_injective
   refine restrictedMvPowerSeriesCompletion_ringHom_ext ?_ continuous_id (fun a ↦ ?_) fun i ↦ ?_
-  · exact ((isHomeomorph_rightDiscs A).continuous.comp
-      (CompletedTensor.continuous_assoc A _ _ _)).comp
-      ((CompletedTensor.continuous_congr_symm ..).comp
-        (CompletedTensor.continuous_polydiscEquiv_symm A (1 + 1) 1))
+  · exact ((rightDiscs A).continuous.comp (CompletedTensor.continuous_assoc A _ _ _)).comp
+      (leftDiscs A).symm.continuous
   all_goals simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    RingEquiv.trans_apply, RingEquiv.refl_apply]
-  · rw [hL (leftDiscs_algebraMap A a), CompletedTensor.assoc_algebraMap, rightDiscs_algebraMap]
+    RingEquiv.trans_apply, RingEquiv.refl_apply, AlgEquiv.coe_toRingEquiv,
+    ContinuousAlgEquiv.coe_toAlgEquiv]
+  · rw [AlgHomClass.commutes (leftDiscs A).symm, CompletedTensor.assoc_algebraMap,
+      AlgHomClass.commutes]
   · fin_cases i
     · rw [Fin.zero_eta, hL (leftDiscs_inl_inl_polydiscVar A), CompletedTensor.assoc_inl_inl,
         rightDiscs_inl_polydiscVar]
@@ -188,36 +151,43 @@ theorem three_discs_associator_field :
 
 /-- Under `A⟨T⟩ ⊗̂_A A⟨T⟩ ≃ A⟨T, S⟩`, the symmetry of the completed tensor product. -/
 noncomputable def discSwap : (D 2) ≃+* (D 2) :=
-  (CompletedTensor.polydiscEquiv A 1 1).symm.trans
-    ((CompletedTensor.comm A (D 1) (D 1)).trans (CompletedTensor.polydiscEquiv A 1 1))
+  (CompletedTensor.polydiscEquiv A 1 1).symm.toRingEquiv.trans
+    ((CompletedTensor.comm A (D 1) (D 1)).trans (CompletedTensor.polydiscEquiv A 1 1).toRingEquiv)
+
+/-- `discSwap` is the composite of the inverse of `polydiscEquiv`, the symmetry and
+`polydiscEquiv`. -/
+theorem discSwap_apply (x : D 2) :
+    discSwap A x = CompletedTensor.polydiscEquiv A 1 1
+      (CompletedTensor.comm A _ _ ((CompletedTensor.polydiscEquiv A 1 1).symm x)) := by
+  simp only [discSwap, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv,
+    ContinuousAlgEquiv.coe_toAlgEquiv]
 
 /-- The symmetry of `A⟨T, S⟩` is continuous. -/
 theorem continuous_discSwap : Continuous (discSwap A) :=
-  (CompletedTensor.continuous_polydiscEquiv A 1 1).comp
+  (CompletedTensor.polydiscEquiv A 1 1).continuous.comp
     ((CompletedTensor.continuous_comm A _ _).comp
-      (CompletedTensor.continuous_polydiscEquiv_symm A 1 1))
+      (CompletedTensor.polydiscEquiv A 1 1).symm.continuous)
 
 /-- The symmetry sends `T` to `S`. -/
 theorem discSwap_polydiscVar_zero : discSwap A ((V 2) 0) = (V 2) 1 := by
   have h0 : (Fin.castAdd 1 0 : Fin 2) = 0 := by simp
   have h1 : (Fin.natAdd 1 (0 : Fin 1) : Fin 2) = 1 := by simp
-  rw [discSwap, RingEquiv.trans_apply, RingEquiv.trans_apply, ← h0, ← h1,
-    CompletedTensor.polydiscEquiv_symm_polydiscVar_castAdd, CompletedTensor.comm_inl,
+  rw [discSwap_apply, ← h0, ← h1, CompletedTensor.polydiscEquiv_symm_polydiscVar_castAdd,
+    CompletedTensor.comm_inl,
     CompletedTensor.polydiscEquiv_inr_polydiscVar]
 
 /-- The symmetry sends `S` to `T`. -/
 theorem discSwap_polydiscVar_one : discSwap A ((V 2) 1) = (V 2) 0 := by
   have h0 : (Fin.castAdd 1 0 : Fin 2) = 0 := by simp
   have h1 : (Fin.natAdd 1 (0 : Fin 1) : Fin 2) = 1 := by simp
-  rw [discSwap, RingEquiv.trans_apply, RingEquiv.trans_apply, ← h0, ← h1,
-    CompletedTensor.polydiscEquiv_symm_polydiscVar_natAdd, CompletedTensor.comm_inr,
+  rw [discSwap_apply, ← h0, ← h1, CompletedTensor.polydiscEquiv_symm_polydiscVar_natAdd,
+    CompletedTensor.comm_inr,
     CompletedTensor.polydiscEquiv_inl_polydiscVar]
 
 /-- The symmetry fixes the coefficients. -/
 theorem discSwap_algebraMap (a : A) : discSwap A (algebraMap A (D 2) a) = algebraMap A (D 2) a := by
-  rw [discSwap, RingEquiv.trans_apply, RingEquiv.trans_apply,
-    CompletedTensor.polydiscEquiv_symm_algebraMap, CompletedTensor.comm_algebraMap,
-    CompletedTensor.polydiscEquiv_algebraMap]
+  rw [discSwap_apply, CompletedTensor.polydiscEquiv_symm_algebraMap,
+    CompletedTensor.comm_algebraMap, CompletedTensor.polydiscEquiv_algebraMap]
 
 /-- The symmetry is an involution. -/
 theorem discSwap_trans_discSwap : (discSwap A).trans (discSwap A) = RingEquiv.refl (D 2) := by
@@ -241,13 +211,12 @@ variable (p : ℕ) [Fact p.Prime]
 example :
     ∃ (eL : CompletedTensor ℚ_[p] (CompletedTensor ℚ_[p]
         (restrictedMvPowerSeriesCompletion 1 ℚ_[p]) (restrictedMvPowerSeriesCompletion 1 ℚ_[p]))
-        (restrictedMvPowerSeriesCompletion 1 ℚ_[p]) ≃+* restrictedMvPowerSeriesCompletion 3 ℚ_[p])
+        (restrictedMvPowerSeriesCompletion 1 ℚ_[p]) ≃A[ℚ_[p]]
+          restrictedMvPowerSeriesCompletion 3 ℚ_[p])
       (eR : CompletedTensor ℚ_[p] (restrictedMvPowerSeriesCompletion 1 ℚ_[p])
         (CompletedTensor ℚ_[p] (restrictedMvPowerSeriesCompletion 1 ℚ_[p])
-          (restrictedMvPowerSeriesCompletion 1 ℚ_[p])) ≃+*
+          (restrictedMvPowerSeriesCompletion 1 ℚ_[p])) ≃A[ℚ_[p]]
         restrictedMvPowerSeriesCompletion 3 ℚ_[p]),
-      IsHomeomorph eL ∧ IsHomeomorph eR ∧
-      (∀ a : ℚ_[p], eL (algebraMap ℚ_[p] _ a) = algebraMap ℚ_[p] _ a) ∧
       eL (CompletedTensor.inl ℚ_[p] _ _
         (CompletedTensor.inl ℚ_[p] _ _ (Pair.polydiscVar 1 ℚ_[p] 0))) =
         Pair.polydiscVar 3 ℚ_[p] 0 ∧
@@ -256,7 +225,6 @@ example :
         Pair.polydiscVar 3 ℚ_[p] 1 ∧
       eL (CompletedTensor.inr ℚ_[p] _ _ (Pair.polydiscVar 1 ℚ_[p] 0)) =
         Pair.polydiscVar 3 ℚ_[p] 2 ∧
-      (∀ a : ℚ_[p], eR (algebraMap ℚ_[p] _ a) = algebraMap ℚ_[p] _ a) ∧
       eR (CompletedTensor.inl ℚ_[p] _ _ (Pair.polydiscVar 1 ℚ_[p] 0)) =
         Pair.polydiscVar 3 ℚ_[p] 0 ∧
       eR (CompletedTensor.inr ℚ_[p] _ _
@@ -265,7 +233,8 @@ example :
       eR (CompletedTensor.inr ℚ_[p] _ _
         (CompletedTensor.inr ℚ_[p] _ _ (Pair.polydiscVar 1 ℚ_[p] 0))) =
         Pair.polydiscVar 3 ℚ_[p] 2 ∧
-      (eL.symm.trans (CompletedTensor.assoc ℚ_[p] _ _ _)).trans eR = RingEquiv.refl _ :=
+      (eL.symm.toRingEquiv.trans (CompletedTensor.assoc ℚ_[p] _ _ _)).trans eR.toRingEquiv =
+        RingEquiv.refl _ :=
   three_discs_associator_field ℚ_[p]
 
 /-- Evaluation of `ℚ_p⟨T, S⟩` at a point `(x, y)` of the closed unit polydisc. -/
