@@ -33,26 +33,26 @@ isomorphism `M ≅ M^∨∨`, the isomorphism `M^∨ ⊗ N ≅ Hom_A(M, N)` (Mat
 `dualTensorHomEquiv`, which is equivariant by `Representation.dualTensorHom_comm`), and the
 identification of the twist `M(χ)` with the tensor product `M ⊗ A(χ)`. Twisting by `1` does
 nothing and twisting twice multiplies the characters. The invariants of the Hom representation are
-the morphisms of continuous representations, and evaluation `M^∨ ⊗ M → A` and coevaluation
-`A → Hom_A(M, M)` are morphisms to and from the trivial representation. Restriction is
-functorial and commutes with products, tensor products, Hom, the contragredient, twists and
-character lines.
+the morphisms of continuous representations, and evaluation `M^∨ ⊗ M → A` and the scalar map
+`A → Hom_A(M, M)`, `a ↦ a • id`, are morphisms to and from the trivial representation.
+Restriction is functorial and commutes with products, tensor products, Hom, the contragredient,
+twists and character lines.
 
 ## Main definitions
 
 * `TauCeti.ContinuousRep.res`: restriction along a continuous monoid homomorphism `Γ' →ₜ* Γ`.
-* `TauCeti.ContinuousRep.tensor`: the tensor product `ρ ⊗ σ` on `M ⊗[A] N`.
-* `TauCeti.ContinuousRep.hom`: the Hom representation on `M →ₗ[A] N`, using
+* `TauCeti.ContinuousRep.tprod`: the tensor product `ρ ⊗ σ` on `M ⊗[A] N`.
+* `TauCeti.ContinuousRep.linHom`: the Hom representation on `M →ₗ[A] N`, using
   `Representation.linHom`.
 * `TauCeti.ContinuousRep.twist`: the twist `M(χ)` by a continuous character, using
   `Representation.charTwist`.
 * `TauCeti.ContinuousRep.dualDualIso`: `M ≅ M^∨∨` for finite projective `M`.
 * `TauCeti.ContinuousRep.dualTensorIsoHom`: `M^∨ ⊗ N ≅ Hom_A(M, N)` for finite projective `M`.
-* `TauCeti.ContinuousRep.tensorOfCharacterIsoTwist`: `M ⊗ A(χ) ≅ M(χ)`.
-* `TauCeti.ContinuousRep.invariantsHomEquiv`: the invariants of `Hom_A(M, N)` are the morphisms
+* `TauCeti.ContinuousRep.tprodOfCharacterIsoTwist`: `M ⊗ A(χ) ≅ M(χ)`.
+* `TauCeti.ContinuousRep.invariantsLinHomEquiv`: the invariants of `Hom_A(M, N)` are the morphisms
   `ρ ⟶ σ` of continuous representations.
-* `TauCeti.ContinuousRep.evaluation` and `TauCeti.ContinuousRep.coevaluation`: the evaluation
-  morphism `M^∨ ⊗ M → A` and the coevaluation morphism `A → Hom_A(M, M)`.
+* `TauCeti.ContinuousRep.evaluation` and `TauCeti.ContinuousRep.scalarToLinHom`: the evaluation
+  morphism `M^∨ ⊗ M → A` and the scalar morphism `A → Hom_A(M, M)`, `a ↦ a • id`.
 
 ## Main results
 
@@ -60,8 +60,8 @@ character lines.
   identity is the identity, and restriction composes.
 * `TauCeti.ContinuousRep.twist_one` and `TauCeti.ContinuousRep.twist_twist`: `M(1) = M` and
   `M(ψ)(χ) = M(χψ)`.
-* `TauCeti.ContinuousRep.res_prod`, `TauCeti.ContinuousRep.res_tensor`,
-  `TauCeti.ContinuousRep.res_hom`, `TauCeti.ContinuousRep.res_dual`,
+* `TauCeti.ContinuousRep.res_prod`, `TauCeti.ContinuousRep.res_tprod`,
+  `TauCeti.ContinuousRep.res_linHom`, `TauCeti.ContinuousRep.res_dual`,
   `TauCeti.ContinuousRep.res_twist` and `TauCeti.ContinuousRep.res_ofCharacter`: restriction
   commutes with the operations.
 
@@ -159,7 +159,7 @@ variable {Γ A M N : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [Topo
 
 /-- The diagonal action on the tensor product of two finite modules is jointly continuous for the
 module topology on `M ⊗[A] N`. -/
-private theorem continuous_tensor_action (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+private theorem continuous_tprod_action (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
     Continuous fun p : Γ × (M ⊗[A] N) =>
       ρ.toRepresentation.tprod σ.toRepresentation p.1 p.2 := by
   obtain ⟨a, m, hm⟩ := Module.Finite.exists_fin (R := A) (M := M)
@@ -179,31 +179,31 @@ private theorem continuous_tensor_action (ρ : ContinuousRep Γ A M) (σ : Conti
 /-- **The tensor product of two continuous representations** on finite modules: `Γ` acts on
 `M ⊗[A] N` diagonally, `g • (x ⊗ y) = ρ g x ⊗ σ g y`, jointly continuously for the module
 topology on `M ⊗[A] N`. -/
-noncomputable def tensor (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+noncomputable def tprod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
     ContinuousRep Γ A (M ⊗[A] N) where
   toRepresentation := ρ.toRepresentation.tprod σ.toRepresentation
-  continuous_action := continuous_tensor_action ρ σ
+  continuous_action := continuous_tprod_action ρ σ
 
 @[simp]
-theorem toRepresentation_tensor (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
-    (ρ.tensor σ).toRepresentation = ρ.toRepresentation.tprod σ.toRepresentation :=
+theorem toRepresentation_tprod (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (ρ.tprod σ).toRepresentation = ρ.toRepresentation.tprod σ.toRepresentation :=
   (rfl)
 
-theorem tensor_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) :
-    ρ.tensor σ g = TensorProduct.map (ρ g) (σ g) :=
+theorem tprod_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) :
+    ρ.tprod σ g = TensorProduct.map (ρ g) (σ g) :=
   (rfl)
 
 /-- The diagonal action on a pure tensor. -/
 @[simp]
-theorem tensor_apply_tmul (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (x : M)
-    (y : N) : ρ.tensor σ g (x ⊗ₜ y) = ρ g x ⊗ₜ σ g y :=
+theorem tprod_apply_tmul (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (x : M)
+    (y : N) : ρ.tprod σ g (x ⊗ₜ y) = ρ g x ⊗ₜ σ g y :=
   (rfl)
 
 /-- Restriction commutes with tensor products. -/
 @[simp]
-theorem res_tensor {Γ' : Type*} [Monoid Γ'] [TopologicalSpace Γ'] (ρ : ContinuousRep Γ A M)
+theorem res_tprod {Γ' : Type*} [Monoid Γ'] [TopologicalSpace Γ'] (ρ : ContinuousRep Γ A M)
     (σ : ContinuousRep Γ A N) (φ : Γ' →ₜ* Γ) :
-    (ρ.tensor σ).res φ = (ρ.res φ).tensor (σ.res φ) :=
+    (ρ.tprod σ).res φ = (ρ.res φ).tprod (σ.res φ) :=
   (rfl)
 
 end Tensor
@@ -215,7 +215,7 @@ variable {Γ A M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [To
 
 /-- **The twist `M(χ)` of a continuous representation by a continuous character** `χ : Γ →ₜ* Aˣ`:
 the same carrier, with `g` acting by `χ g • ρ g`. It is the tensor product with the line of `χ`
-(`TauCeti.ContinuousRep.tensorOfCharacterIsoTwist`), realised on `M` itself by
+(`TauCeti.ContinuousRep.tprodOfCharacterIsoTwist`), realised on `M` itself by
 `Representation.charTwist`. -/
 def twist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) : ContinuousRep Γ A M where
   toRepresentation := Representation.charTwist (χ : Γ →* Aˣ) ρ.toRepresentation
@@ -272,21 +272,26 @@ variable {Γ A M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [Topolo
 /-- **The twist is the tensor product with the line of the character**: `M ⊗ A(χ) ≅ M(χ)`, along
 `TensorProduct.rid`. This is `Representation.tprodOfLinearCharacterEquivCharTwist` as an
 isomorphism of continuous representations. -/
-noncomputable def tensorOfCharacterIsoTwist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) :
+noncomputable def tprodOfCharacterIsoTwist (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) :
     haveI := IsModuleTopology.toContinuousSMul A M
-    Iso (ρ.tensor (ofCharacter χ)) (ρ.twist χ) :=
+    Iso (ρ.tprod (ofCharacter χ)) (ρ.twist χ) :=
   haveI := IsModuleTopology.toContinuousSMul A M
   -- `toRepresentation_ofCharacter` is `rfl` only inside its own module, so the equivalence of
   -- the underlying representations is transported along the `toRepresentation_*` lemmas.
   let e := Representation.tprodOfLinearCharacterEquivCharTwist (χ : Γ →* Aˣ) ρ.toRepresentation
   Iso.ofEquiv <| .mk e.toLinearEquiv fun g => by
-    rw [toRepresentation_tensor, toRepresentation_ofCharacter, toRepresentation_twist]
+    rw [toRepresentation_tprod, toRepresentation_ofCharacter, toRepresentation_twist]
     exact e.toIntertwiningMap.isIntertwining' g
 
 @[simp]
-theorem tensorOfCharacterIsoTwist_tmul (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (x : M) (a : A) :
-    tensorOfCharacterIsoTwist ρ χ (x ⊗ₜ a) = a • x := by
-  simp [tensorOfCharacterIsoTwist]
+theorem tprodOfCharacterIsoTwist_tmul (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (x : M) (a : A) :
+    tprodOfCharacterIsoTwist ρ χ (x ⊗ₜ a) = a • x := by
+  simp [tprodOfCharacterIsoTwist]
+
+@[simp]
+theorem tprodOfCharacterIsoTwist_symm_apply (ρ : ContinuousRep Γ A M) (χ : Γ →ₜ* Aˣ) (x : M) :
+    (tprodOfCharacterIsoTwist ρ χ).symm x = x ⊗ₜ 1 :=
+  (tprodOfCharacterIsoTwist ρ χ).injective <| by simp
 
 end TwistTensor
 
@@ -301,7 +306,7 @@ variable {Γ A M N : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
 
 /-- The conjugation action on `Hom_A(M, N)` for a finite projective `M` is jointly continuous for
 the module topology on `M →ₗ[A] N`. -/
-private theorem continuous_hom_action (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+private theorem continuous_linHom_action (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
     Continuous fun p : Γ × (M →ₗ[A] N) =>
       ρ.toRepresentation.linHom σ.toRepresentation p.1 p.2 := by
   -- A finite dual basis `x = ∑ j, φ j x • b j` writes `σ g ∘ f ∘ ρ g⁻¹` as
@@ -330,36 +335,36 @@ private theorem continuous_hom_action (ρ : ContinuousRep Γ A M) (σ : Continuo
 /-- **The Hom representation** of two continuous representations, for a finite projective
 source: `Γ` acts on `Hom_A(M, N)` by `g • f = σ g ∘ f ∘ ρ g⁻¹` (Mathlib's
 `Representation.linHom`), jointly continuously for the module topology on `M →ₗ[A] N`. -/
-def hom (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) : ContinuousRep Γ A (M →ₗ[A] N) where
+def linHom (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) : ContinuousRep Γ A (M →ₗ[A] N) where
   toRepresentation := ρ.toRepresentation.linHom σ.toRepresentation
-  continuous_action := continuous_hom_action ρ σ
+  continuous_action := continuous_linHom_action ρ σ
 
 @[simp]
-theorem toRepresentation_hom (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
-    (ρ.hom σ).toRepresentation = ρ.toRepresentation.linHom σ.toRepresentation :=
+theorem toRepresentation_linHom (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (ρ.linHom σ).toRepresentation = ρ.toRepresentation.linHom σ.toRepresentation :=
   (rfl)
 
-theorem hom_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (f : M →ₗ[A] N) :
-    ρ.hom σ g f = σ g ∘ₗ f ∘ₗ ρ g⁻¹ :=
+theorem linHom_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ) (f : M →ₗ[A] N) :
+    ρ.linHom σ g f = σ g ∘ₗ f ∘ₗ ρ g⁻¹ :=
   (rfl)
 
 @[simp]
-theorem hom_apply_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ)
-    (f : M →ₗ[A] N) (x : M) : ρ.hom σ g f x = σ g (f (ρ g⁻¹ x)) :=
+theorem linHom_apply_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (g : Γ)
+    (f : M →ₗ[A] N) (x : M) : ρ.linHom σ g f x = σ g (f (ρ g⁻¹ x)) :=
   (rfl)
 
 /-- Restriction commutes with the Hom representation. -/
 @[simp]
-theorem res_hom {Γ' : Type*} [Group Γ'] [TopologicalSpace Γ'] [ContinuousInv Γ']
+theorem res_linHom {Γ' : Type*} [Group Γ'] [TopologicalSpace Γ'] [ContinuousInv Γ']
     (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) (φ : Γ' →ₜ* Γ) :
-    (ρ.hom σ).res φ = (ρ.res φ).hom (σ.res φ) :=
+    (ρ.linHom σ).res φ = (ρ.res φ).linHom (σ.res φ) :=
   ext fun g f => LinearMap.ext fun x => by simp
 
 /-- **The invariants of the Hom representation are the morphisms of continuous representations**:
 `Hom_A(M, N)^Γ = Hom_Γ(M, N)`, from Mathlib's `Representation.invariantsEquivIntertwiningMap`.
 Every intertwining map is continuous for the module topologies. -/
-noncomputable def invariantsHomEquiv (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
-    (ρ.hom σ).toRepresentation.invariants ≃ Hom ρ σ :=
+noncomputable def invariantsLinHomEquiv (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (ρ.linHom σ).toRepresentation.invariants ≃ Hom ρ σ :=
   haveI := IsModuleTopology.toContinuousAdd A N
   haveI := IsModuleTopology.toContinuousSMul A N
   (ρ.toRepresentation.invariantsEquivIntertwiningMap σ.toRepresentation).toEquiv.trans
@@ -369,16 +374,16 @@ noncomputable def invariantsHomEquiv (ρ : ContinuousRep Γ A M) (σ : Continuou
       right_inv := Hom.ofIntertwiningMap_toIntertwiningMap }
 
 @[simp]
-theorem invariantsHomEquiv_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N)
-    (f : (ρ.hom σ).toRepresentation.invariants) (x : M) :
-    invariantsHomEquiv ρ σ f x = (f : M →ₗ[A] N) x :=
+theorem invariantsLinHomEquiv_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N)
+    (f : (ρ.linHom σ).toRepresentation.invariants) (x : M) :
+    invariantsLinHomEquiv ρ σ f x = (f : M →ₗ[A] N) x :=
   haveI := IsModuleTopology.toContinuousAdd A N
   haveI := IsModuleTopology.toContinuousSMul A N
   Hom.ofIntertwiningMap_apply _ x
 
 @[simp]
-theorem coe_invariantsHomEquiv_symm_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N)
-    (f : Hom ρ σ) (x : M) : ((invariantsHomEquiv ρ σ).symm f : M →ₗ[A] N) x = f x :=
+theorem coe_invariantsLinHomEquiv_symm_apply (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N)
+    (f : Hom ρ σ) (x : M) : ((invariantsLinHomEquiv ρ σ).symm f : M →ₗ[A] N) x = f x :=
   congr($(Hom.coe_toIntertwiningMap f) x)
 
 end Hom
@@ -423,9 +428,9 @@ variable {N : Type*} [AddCommGroup N] [Module A N] [TopologicalSpace N] [IsModul
 /-- **`M^∨ ⊗ N ≅ Hom_A(M, N)`** for a finite projective `M`: Mathlib's `dualTensorHomEquiv`,
 `ψ ⊗ y ↦ (x ↦ ψ x • y)`, is an isomorphism of continuous representations. -/
 noncomputable def dualTensorIsoHom (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
-    Iso (ρ.dual.tensor σ) (ρ.hom σ) :=
+    Iso (ρ.dual.tprod σ) (ρ.linHom σ) :=
   Iso.ofEquiv <| .mk (dualTensorHomEquiv A M N) fun g => by
-    rw [toRepresentation_tensor, toRepresentation_dual, toRepresentation_hom,
+    rw [toRepresentation_tprod, toRepresentation_dual, toRepresentation_linHom,
       toLinearMap_dualTensorHomEquiv]
     exact Representation.dualTensorHom_comm ρ.toRepresentation σ.toRepresentation g
 
@@ -446,7 +451,7 @@ variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
   [TopologicalSpace (Module.Dual A M ⊗[A] M)] [IsModuleTopology A (Module.Dual A M ⊗[A] M)]
 
 /-- **The evaluation morphism** `M^∨ ⊗ M → A`, `ψ ⊗ x ↦ ψ x`, to the trivial representation. -/
-noncomputable def evaluation (ρ : ContinuousRep Γ A M) : Hom (ρ.dual.tensor ρ) (trivial Γ A A) :=
+noncomputable def evaluation (ρ : ContinuousRep Γ A M) : Hom (ρ.dual.tprod ρ) (trivial Γ A A) :=
   Hom.ofIntertwiningMap
     { toLinearMap := contractLeft A M
       isIntertwining' g := TensorProduct.ext' fun ψ x => by
@@ -459,7 +464,7 @@ theorem evaluation_tmul (ρ : ContinuousRep Γ A M) (ψ : Module.Dual A M) (x : 
 
 end Evaluation
 
-section Coevaluation
+section ScalarToLinHom
 
 variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
   [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
@@ -467,10 +472,10 @@ variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ]
   [Module.Finite A M] [Module.Projective A M]
   [TopologicalSpace (M →ₗ[A] M)] [IsModuleTopology A (M →ₗ[A] M)]
 
-/-- **The coevaluation morphism** `A → Hom_A(M, M)`, `a ↦ a • id`, from the trivial
+/-- **The scalar morphism** `A → Hom_A(M, M)`, `a ↦ a • id`, from the trivial
 representation. Composed with the inverse of `TauCeti.ContinuousRep.dualTensorIsoHom` it is the
 coevaluation `A → M^∨ ⊗ M`. -/
-noncomputable def coevaluation (ρ : ContinuousRep Γ A M) : Hom (trivial Γ A A) (ρ.hom ρ) :=
+noncomputable def scalarToLinHom (ρ : ContinuousRep Γ A M) : Hom (trivial Γ A A) (ρ.linHom ρ) :=
   haveI := IsModuleTopology.toContinuousAdd A (M →ₗ[A] M)
   haveI := IsModuleTopology.toContinuousSMul A (M →ₗ[A] M)
   Hom.ofIntertwiningMap
@@ -479,11 +484,11 @@ noncomputable def coevaluation (ρ : ContinuousRep Γ A M) : Hom (trivial Γ A A
         simp [← mul_apply_eq_comp, ← map_mul] }
 
 @[simp]
-theorem coevaluation_apply (ρ : ContinuousRep Γ A M) (a : A) :
-    coevaluation ρ a = a • LinearMap.id := by
-  simp [coevaluation]
+theorem scalarToLinHom_apply (ρ : ContinuousRep Γ A M) (a : A) :
+    scalarToLinHom ρ a = a • LinearMap.id := by
+  simp [scalarToLinHom]
 
-end Coevaluation
+end ScalarToLinHom
 
 end ContinuousRep
 
