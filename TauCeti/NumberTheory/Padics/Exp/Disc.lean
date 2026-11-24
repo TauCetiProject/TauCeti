@@ -67,6 +67,8 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
 * `TauCeti.log_exp_of_norm_lt`, `TauCeti.exp_log_of_norm_sub_one_lt`: the exponential and the
   logarithm are inverse.
 * `TauCeti.injOn_exp_ball`: the exponential is injective on the disc.
+* `TauCeti.exp_intCast_mul_sum_intCast_mul_log`: for units `αⱼ` in the disc about `1` and
+  integers `lⱼ`, `b`, `exp (b ∑ⱼ lⱼ log αⱼ) = ∏ⱼ αⱼ ^ (lⱼ b)`.
 
 ## References
 
@@ -327,6 +329,28 @@ theorem exp_log_of_norm_sub_one_lt {y : L} (hy : ‖y - 1‖ < amiceRadius p 0) 
   exact sub_left_injective <| PowerSeries.eq_of_hasSum_of_subst_eq_X (by simp) hfg
     norm_coeff_exp_sub_one_mul_le norm_coeff_log_mul_le hy (hasSum_coeff_log_mul_pow hy)
     (hasSum_coeff_exp_sub_one_mul_pow hl)
+
+/-- **Integer combinations of logarithms of units near `1`.** If `‖αⱼ - 1‖ < r₀` for every
+`j ∈ s`, then for integers `lⱼ` and `b`, `exp (b ∑ⱼ lⱼ log αⱼ) = ∏ⱼ αⱼ ^ (lⱼ b)`. Thus the
+exponential sums `∑ₗ aₗ exp (z ∑ⱼ lⱼ log αⱼ)` take the values `∑ₗ aₗ ∏ⱼ αⱼ ^ (lⱼ b)` at
+integers `b`. -/
+theorem exp_intCast_mul_sum_intCast_mul_log {ι : Type*} (s : Finset ι) {α : ι → L}
+    (hα : ∀ j ∈ s, ‖α j - 1‖ < amiceRadius p 0) (l : ι → ℤ) (b : ℤ) :
+    exp ((b : L) * ∑ j ∈ s, (l j : L) * log (α j)) = ∏ j ∈ s, α j ^ (l j * b) := by
+  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
+  have hlog (j : ι) (hj : j ∈ s) : ‖log (α j)‖ < amiceRadius p 0 :=
+    (norm_log_of_norm_sub_one_lt (hα j hj)).trans_lt (hα j hj)
+  have hterm (j : ι) (_ : j ∈ s) :
+      (b : L) * ((l j : L) * log (α j)) = (l j * b) • log (α j) := by
+    rw [zsmul_eq_mul]
+    push_cast
+    ring
+  rw [Finset.mul_sum, Finset.sum_congr rfl hterm, exp_sum_of_norm_lt (p := p) s fun j hj ↦ ?_]
+  · refine Finset.prod_congr rfl fun j hj ↦ ?_
+    rw [exp_zsmul_of_norm_lt _ (hlog j hj), exp_log_of_norm_sub_one_lt (hα j hj)]
+  · rw [zsmul_eq_mul, norm_mul]
+    exact (mul_le_of_le_one_left (norm_nonneg _)
+      (IsUltrametricDist.norm_intCast_le_one L _)).trans_lt (hlog j hj)
 
 /-- **The `p`-adic exponential is injective on its disc** `‖x‖ < r₀`: the logarithm is a left
 inverse there. -/

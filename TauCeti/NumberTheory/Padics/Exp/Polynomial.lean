@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import TauCeti.NumberTheory.Padics.IntegerGrid
 public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Interpolation
+import Mathlib.Analysis.Normed.Algebra.Ultra
+import TauCeti.NumberTheory.Padics.Exp.Disc
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -42,12 +45,27 @@ prime to `p`, the norm `‖∏_{b} (z - b)‖` of the grid product in the numera
 analytic upper bounds that the extrapolation steps of the method compare with Liouville-type lower
 bounds for nonzero algebraic values.
 
+For units `αⱼ` with `‖αⱼ - 1‖ c < p ^ (-1 / (p - 1))` and `c ≥ 1`, every frequency
+`x_l = ∑ⱼ lⱼ log αⱼ` with integer exponents `lⱼ` satisfies the radius condition, and
+`exp(b x_l) = ∏ⱼ αⱼ ^ (lⱼ b)` at integers `b`. The interpolation bounds therefore apply to the
+sums of products of integer powers
+
+```text
+Φ(z) = ∑_l a_l ∏ⱼ αⱼ ^ (lⱼ z),    Φ⁽ᵏ⁾(z) / k! = ∑_l a_l (x_l ^ k / k!) ∏ⱼ αⱼ ^ (lⱼ z)
+```
+
+at integers `z`, with vanishing hypotheses and conclusions stated through the units alone.
+
 ## Main results
 
 * `TauCeti.norm_sum_mul_exp_le_mul_norm_prod`: the interpolation bound on a finite set of
   `p`-adic integers.
 * `TauCeti.norm_sum_mul_exp_le_mul_norm_factorial_pow`: its explicit form on the integers
   `0 ≤ j < N` not divisible by `q`.
+* `TauCeti.norm_sum_mul_prod_zpow_le_mul_norm_prod`,
+  `TauCeti.norm_sum_mul_prod_zpow_le_mul_norm_factorial_pow`: the same bounds for sums of
+  products of integer powers of units close to `1`, on a finite set of integers and on the
+  integers `0 ≤ j < N` not divisible by `q`.
 
 The evaluation of the Hasse derivatives of `∑ᵢ aᵢ exp(xᵢX)` is
 `TauCeti.evalAt_hasseDeriv_sum_smul_rescale_exp`, and the bound on a general closed disc, with
@@ -140,5 +158,117 @@ theorem norm_sum_mul_exp_le_mul_norm_factorial_pow (hc : 1 ≤ c)
   refine h.trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
   gcongr
   exact PadicInt.norm_prod_filter_not_dvd_sub_le z hq N
+
+
+section UnitPowers
+
+variable {κ : Type*} {t : Finset κ} {α : κ → K}
+
+omit [Fact p.Prime] [NormedAlgebra ℚ_[p] K] [CompleteSpace K] in
+/-- A unit with `‖y - 1‖ c < p ^ (-1 / (p - 1))` for a radius `c ≥ 1` lies in the disc about `1`
+on which the logarithm inverts the exponential. -/
+private theorem norm_sub_one_lt_amiceRadius_zero (hc : 1 ≤ c) {y : K}
+    (hy : ‖y - 1‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) : ‖y - 1‖ < amiceRadius p 0 := by
+  rw [amiceRadius_def]
+  simpa using (le_mul_of_one_le_right (norm_nonneg _) hc).trans_lt hy
+
+/-- The frequency `∑ⱼ lⱼ log αⱼ` of units with `‖αⱼ - 1‖ c < p ^ (-1 / (p - 1))` and `c ≥ 1`
+satisfies the same radius condition. -/
+private theorem norm_sum_intCast_mul_log_mul_lt (hc : 1 ≤ c)
+    (hα : ∀ j ∈ t, ‖α j - 1‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (l : κ → ℤ) :
+    ‖∑ j ∈ t, (l j : K) * NormedSpace.log (α j)‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹) := by
+  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := K)
+  rcases t.eq_empty_or_nonempty with rfl | hne
+  · simpa using Real.rpow_pos_of_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) _
+  obtain ⟨j, hj, hle⟩ := IsUltrametricDist.exists_norm_finsetSum_le_of_nonempty hne
+    fun j ↦ (l j : K) * NormedSpace.log (α j)
+  have hα1 := norm_sub_one_lt_amiceRadius_zero hc (hα j hj)
+  refine (mul_le_mul_of_nonneg_right (hle.trans ?_) (zero_le_one.trans hc)).trans_lt (hα j hj)
+  rw [norm_mul, ← norm_log_of_norm_sub_one_lt hα1]
+  exact mul_le_of_le_one_left (norm_nonneg _) (IsUltrametricDist.norm_intCast_le_one K _)
+
+/-- At an integer `b`, the exponential of `b` times the frequency `∑ⱼ lⱼ log αⱼ` is the
+product of integer powers `∏ⱼ αⱼ ^ (lⱼ b)`. -/
+private theorem exp_mul_sum_intCast_mul_log_eq_prod_zpow (hc : 1 ≤ c)
+    (hα : ∀ j ∈ t, ‖α j - 1‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) (l : κ → ℤ) (b : ℤ) :
+    NormedSpace.exp ((b : K) * ∑ j ∈ t, (l j : K) * NormedSpace.log (α j)) =
+      ∏ j ∈ t, α j ^ (l j * b) :=
+  exp_intCast_mul_sum_intCast_mul_log t
+    (fun j hj ↦ norm_sub_one_lt_amiceRadius_zero hc (hα j hj)) l b
+
+/-- **Interpolation of sums of products of unit powers on a finite set of integers.** Let `K` be
+a complete normed field extension of `ℚ_p`, `c ≥ 1` a radius and `αⱼ` (`j ∈ t`) units with
+`‖αⱼ - 1‖ c < p ^ (-1 / (p - 1))`. For a finite set `Λ` of integer exponent vectors and
+coefficients with `‖a_l‖ ≤ A`, put `x_l = ∑ⱼ lⱼ log αⱼ`. If
+
+```text
+∑_l a_l x_l ^ τ ∏ⱼ αⱼ ^ (lⱼ b) = 0
+```
+
+for every `τ < T` and every `b` in a finite set `g` of integers, then for every `k` and every
+integer `z`
+
+```text
+‖∑_l a_l (x_l ^ k / k!) ∏ⱼ αⱼ ^ (lⱼ z)‖ ≤ c⁻ᵏ * A * (‖∏_{b ∈ g} (z - b)‖ / c ^ #g) ^ (T - k),
+```
+
+where `‖∏_{b ∈ g} (z - b)‖` is the `p`-adic norm of the integer product and `T - k` is
+natural-number subtraction, truncated at zero. -/
+theorem norm_sum_mul_prod_zpow_le_mul_norm_prod (hc : 1 ≤ c)
+    (hα : ∀ j ∈ t, ‖α j - 1‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {Λ : Finset (κ → ℤ)}
+    {a : (κ → ℤ) → K} {A : ℝ} (hA : 0 ≤ A) (ha : ∀ l ∈ Λ, ‖a l‖ ≤ A) {g : Finset ℤ} {T : ℕ}
+    (hzero : ∀ b ∈ g, ∀ τ < T, ∑ l ∈ Λ,
+      a l * (∑ j ∈ t, (l j : K) * NormedSpace.log (α j)) ^ τ * ∏ j ∈ t, α j ^ (l j * b) = 0)
+    (k : ℕ) (z : ℤ) :
+    ‖∑ l ∈ Λ, a l * ((∑ j ∈ t, (l j : K) * NormedSpace.log (α j)) ^ k / k !) *
+        ∏ j ∈ t, α j ^ (l j * z)‖ ≤
+      c⁻¹ ^ k * A * (‖((∏ b ∈ g, (z - b) : ℤ) : ℤ_[p])‖ / c ^ g.card) ^ (T - k) := by
+  classical
+  have hcast (b : ℤ) : algebraMap ℚ_[p] K ((b : ℤ_[p]) : ℚ_[p]) = (b : K) := by simp
+  have hinj : Function.Injective (Int.cast : ℤ → ℤ_[p]) := Int.cast_injective
+  have h := norm_sum_mul_exp_le_mul_norm_prod hc
+    (fun l _ ↦ norm_sum_intCast_mul_log_mul_lt hc hα l) hA ha
+    (g := g.image (Int.cast : ℤ → ℤ_[p])) (T := T)
+    (forall_mem_image.mpr fun b hb τ hτ ↦ by
+      simpa only [hcast, exp_mul_sum_intCast_mul_log_eq_prod_zpow hc hα] using hzero b hb τ hτ)
+    k z
+  simp only [hcast, exp_mul_sum_intCast_mul_log_eq_prod_zpow hc hα] at h
+  rw [prod_image hinj.injOn, card_image_of_injective _ hinj] at h
+  push_cast
+  exact h
+
+/-- **Interpolation of sums of products of unit powers on the integers not divisible by `q`.**
+Let `K` be a complete normed field extension of `ℚ_p`, `c ≥ 1` a radius and `αⱼ` (`j ∈ t`)
+units with `‖αⱼ - 1‖ c < p ^ (-1 / (p - 1))`. For a finite set `Λ` of integer exponent vectors
+and coefficients with `‖a_l‖ ≤ A`, put `x_l = ∑ⱼ lⱼ log αⱼ`, and let `q` be a positive integer
+prime to `p`. If `∑_l a_l x_l ^ τ ∏ⱼ αⱼ ^ (lⱼ b) = 0` for every `τ < T` and every integer
+`0 ≤ b < N` not divisible by `q`, a grid of `S` points, then for every `k` and every integer `z`
+
+```text
+‖∑_l a_l (x_l ^ k / k!) ∏ⱼ αⱼ ^ (lⱼ z)‖ ≤ c⁻ᵏ * A * (‖⌊N / q⌋!‖ ^ (q - 1) / c ^ S) ^ (T - k).
+```
+
+Here `T - k` is natural-number subtraction, truncated at zero. -/
+theorem norm_sum_mul_prod_zpow_le_mul_norm_factorial_pow (hc : 1 ≤ c)
+    (hα : ∀ j ∈ t, ‖α j - 1‖ * c < (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {Λ : Finset (κ → ℤ)}
+    {a : (κ → ℤ) → K} {A : ℝ} (hA : 0 ≤ A) (ha : ∀ l ∈ Λ, ‖a l‖ ≤ A) {q : ℕ}
+    (hq : p.Coprime q) {N T : ℕ}
+    (hzero : ∀ b < N, ¬q ∣ b → ∀ τ < T, ∑ l ∈ Λ,
+      a l * (∑ j ∈ t, (l j : K) * NormedSpace.log (α j)) ^ τ * ∏ j ∈ t, α j ^ (l j * b) = 0)
+    (k : ℕ) (z : ℤ) :
+    ‖∑ l ∈ Λ, a l * ((∑ j ∈ t, (l j : K) * NormedSpace.log (α j)) ^ k / k !) *
+        ∏ j ∈ t, α j ^ (l j * z)‖ ≤
+      c⁻¹ ^ k * A *
+        (‖((N / q)! : ℤ_[p])‖ ^ (q - 1) / c ^ ((range N).filter (¬q ∣ ·)).card) ^ (T - k) := by
+  have hcast : algebraMap ℚ_[p] K ((z : ℤ_[p]) : ℚ_[p]) = (z : K) := by simp
+  have h := norm_sum_mul_exp_le_mul_norm_factorial_pow hc
+    (fun l _ ↦ norm_sum_intCast_mul_log_mul_lt hc hα l) hA ha hq (N := N) (T := T)
+    (fun b hb hqb τ hτ ↦ by
+      simpa only [← Int.cast_natCast (R := K) b, exp_mul_sum_intCast_mul_log_eq_prod_zpow hc hα]
+        using hzero b hb hqb τ hτ)
+    k z
+  simpa only [hcast, exp_mul_sum_intCast_mul_log_eq_prod_zpow hc hα] using h
+
+end UnitPowers
 
 end TauCeti
