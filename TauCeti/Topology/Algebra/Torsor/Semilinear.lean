@@ -117,6 +117,15 @@ instance : EquivLike (TorsorEquiv G A P Q) P Q where
     obtain ⟨⟨⟨_, _, _, _⟩, _, _⟩, _, _⟩ := e'
     congr
 
+instance : HomeomorphClass (TorsorEquiv G A P Q) P Q where
+  map_continuous e := e.continuous_toFun
+  inv_continuous e := e.continuous_invFun
+
+/-- An isomorphism of torsors is continuous. -/
+@[fun_prop]
+protected theorem continuous (e : TorsorEquiv G A P Q) : Continuous e :=
+  map_continuous e
+
 @[ext]
 theorem ext {e e' : TorsorEquiv G A P Q} (h : ∀ p, e p = e' p) : e = e' :=
   DFunLike.ext _ _ h
@@ -160,6 +169,11 @@ def symm (e : TorsorEquiv G A P Q) : TorsorEquiv G A Q P where
   map_smul' g q := e.toHomeomorph.symm_apply_eq.mpr <| by
     rw [coe_toHomeomorph, map_smul]
     exact (congrArg (g • ·) (e.toHomeomorph.apply_symm_apply q)).symm
+
+/-- The inverse of an isomorphism of torsors is continuous. -/
+@[fun_prop]
+theorem continuous_symm (e : TorsorEquiv G A P Q) : Continuous e.symm :=
+  e.symm.continuous
 
 @[simp]
 theorem apply_symm_apply (e : TorsorEquiv G A P Q) (q : Q) : e (e.symm q) = q :=
