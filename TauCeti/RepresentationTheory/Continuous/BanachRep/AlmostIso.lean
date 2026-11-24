@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.RepresentationTheory.Continuous.BanachRep.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
-import TauCeti.LinearAlgebra.Quotient.Map
 
 /-!
 # Almost isomorphisms of Banach representations
@@ -133,7 +132,7 @@ instance (e : AlmostIso X Y) : FiniteDimensional 𝕜 (LinearMap.ker e.proj.hom.
 /-! ### Constructions -/
 
 /-- **The identity almost isomorphism**, dividing out the zero subspace on both sides. -/
-noncomputable def refl (X : BanachRep.{w} 𝕜 G) : AlmostIso X X where
+@[expose] noncomputable def refl (X : BanachRep.{w} 𝕜 G) : AlmostIso X X where
   left := ⊥
   right := ⊥
   left_invariant := bot_invariant X
@@ -149,11 +148,15 @@ theorem refl_right (X : BanachRep.{w} 𝕜 G) : (refl X).right = ⊥ :=
   (rfl)
 
 @[simp]
+theorem refl_iso (X : BanachRep.{w} 𝕜 G) : (refl X).iso = Iso.refl _ :=
+  (rfl)
+
+@[simp]
 theorem height_refl (X : BanachRep.{w} 𝕜 G) : (refl X).height = 0 := by
   rw [height_def, refl_left, refl_right, sub_self]
 
 /-- **The inverse almost isomorphism**, exchanging the two sides. -/
-noncomputable def symm (e : AlmostIso X Y) : AlmostIso Y X where
+@[expose] noncomputable def symm (e : AlmostIso X Y) : AlmostIso Y X where
   left := e.right
   right := e.left
   left_invariant := e.right_invariant
@@ -169,6 +172,10 @@ theorem symm_right (e : AlmostIso X Y) : e.symm.right = e.left :=
   (rfl)
 
 @[simp]
+theorem symm_iso (e : AlmostIso X Y) : e.symm.iso = e.iso.symm :=
+  (rfl)
+
+@[simp]
 theorem height_symm (e : AlmostIso X Y) : e.symm.height = -e.height := by
   rw [height_def, height_def, symm_left, symm_right, neg_sub]
 
@@ -178,7 +185,7 @@ theorem symm_symm (e : AlmostIso X Y) : e.symm.symm = e :=
 
 /-- **A surjective morphism `X ⟶ Y ⧸ B` with finite-dimensional kernel is an almost
 isomorphism**, dividing out its kernel on the left and `B` on the right. -/
-noncomputable def ofSurjective (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
+@[expose] noncomputable def ofSurjective (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
     (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B)
     (f : X ⟶ quotient Y B hB B.isClosed_of_finiteDimensional) (hf : Function.Surjective f.hom)
     [FiniteDimensional 𝕜 (LinearMap.ker f.hom.toLinearMap)] : AlmostIso X Y where
@@ -206,6 +213,14 @@ theorem ofSurjective_right (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
     [FiniteDimensional 𝕜 (LinearMap.ker f.hom.toLinearMap)] : (ofSurjective B hB f hf).right = B :=
   (rfl)
 
+/-- The morphism underlying the almost isomorphism built from a surjective morphism `f` is `f`. -/
+@[simp]
+theorem ofSurjective_proj (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
+    (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B)
+    (f : X ⟶ quotient Y B hB B.isClosed_of_finiteDimensional) (hf : Function.Surjective f.hom)
+    [FiniteDimensional 𝕜 (LinearMap.ker f.hom.toLinearMap)] : (ofSurjective B hB f hf).proj = f :=
+  quotientπ_comp_quotientDesc X _ _ _ f _
+
 @[simp]
 theorem height_ofSurjective (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
     (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B)
@@ -216,7 +231,7 @@ theorem height_ofSurjective (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
   (rfl)
 
 /-- **An isomorphism is an almost isomorphism**, dividing out the zero subspace on both sides. -/
-noncomputable def ofIso (f : X ≅ Y) : AlmostIso X Y where
+@[expose] noncomputable def ofIso (f : X ≅ Y) : AlmostIso X Y where
   left := ⊥
   right := ⊥
   left_invariant := bot_invariant X
@@ -233,14 +248,22 @@ theorem ofIso_left (f : X ≅ Y) : (ofIso f).left = ⊥ :=
 theorem ofIso_right (f : X ≅ Y) : (ofIso f).right = ⊥ :=
   (rfl)
 
+/-- The morphism underlying the almost isomorphism built from an isomorphism `f` is `f` followed
+by the projection onto the quotient by the zero subspace. -/
+@[simp]
+theorem ofIso_proj (f : X ≅ Y) :
+    (ofIso f).proj =
+      f.hom ≫ quotientπ Y ⊥ (bot_invariant Y) (Submodule.isClosed_of_finiteDimensional _) := by
+  simp [proj, ofIso]
+
 @[simp]
 theorem height_ofIso (f : X ≅ Y) : (ofIso f).height = 0 := by
   rw [height_def, ofIso_left, ofIso_right, finrank_bot, finrank_bot, sub_self]
 
 /-- **A representation is almost isomorphic to its quotient by a finite-dimensional invariant
 subspace** `A`, dividing out `A` on the left and the zero subspace on the right. -/
-noncomputable def toQuotient (X : BanachRep.{w} 𝕜 G) (A : Submodule 𝕜 X) [FiniteDimensional 𝕜 A]
-    (hA : ∀ (g : G), ∀ x ∈ A, X.ρ g x ∈ A) :
+@[expose] noncomputable def toQuotient (X : BanachRep.{w} 𝕜 G) (A : Submodule 𝕜 X)
+    [FiniteDimensional 𝕜 A] (hA : ∀ (g : G), ∀ x ∈ A, X.ρ g x ∈ A) :
     AlmostIso X (quotient X A hA A.isClosed_of_finiteDimensional) where
   left := A
   right := ⊥
@@ -261,6 +284,15 @@ theorem toQuotient_left (X : BanachRep.{w} 𝕜 G) (A : Submodule 𝕜 X) [Finit
 @[simp]
 theorem toQuotient_right (X : BanachRep.{w} 𝕜 G) (A : Submodule 𝕜 X) [FiniteDimensional 𝕜 A]
     (hA : ∀ (g : G), ∀ x ∈ A, X.ρ g x ∈ A) : (toQuotient X A hA).right = ⊥ :=
+  (rfl)
+
+/-- The morphism underlying the almost isomorphism onto a quotient is the projection onto that
+quotient, followed by the projection onto its quotient by the zero subspace. -/
+@[simp]
+theorem toQuotient_proj (X : BanachRep.{w} 𝕜 G) (A : Submodule 𝕜 X) [FiniteDimensional 𝕜 A]
+    (hA : ∀ (g : G), ∀ x ∈ A, X.ρ g x ∈ A) :
+    (toQuotient X A hA).proj = quotientπ X A hA A.isClosed_of_finiteDimensional ≫
+      quotientπ _ ⊥ (bot_invariant _) (Submodule.isClosed_of_finiteDimensional _) :=
   (rfl)
 
 @[simp]
@@ -301,58 +333,41 @@ section Refine
 variable (e : AlmostIso X Y) (B : Submodule 𝕜 Y) [FiniteDimensional 𝕜 B]
   (hB : ∀ (g : G), ∀ y ∈ B, Y.ρ g y ∈ B) (h : e.right ≤ B)
 
-/-- The projection `Y ⧸ right ⟶ Y ⧸ B` for an invariant subspace `B` containing `right`. -/
-private noncomputable def factor :
-    quotient Y e.right e.right_invariant e.right.isClosed_of_finiteDimensional ⟶
-      quotient Y B hB B.isClosed_of_finiteDimensional :=
-  quotientDesc Y _ _ _ (quotientπ Y B hB _) fun y hy =>
-    (quotientπ_hom_apply_eq_zero_iff Y B hB _ y).mpr (h hy)
-
-private theorem factor_quotientπ (y : Y) :
-    (factor e B hB h).hom ((quotientπ Y e.right e.right_invariant
-      e.right.isClosed_of_finiteDimensional).hom y) =
-      (quotientπ Y B hB B.isClosed_of_finiteDimensional).hom y :=
-  quotientDesc_hom_quotientπ_hom Y _ _ _ _ _ y
-
-private theorem factor_surjective : Function.Surjective (factor e B hB h).hom := fun z => by
-  obtain ⟨y, rfl⟩ := quotientπ_surjective Y B hB _ z
-  exact ⟨_, factor_quotientπ e B hB h y⟩
-
-private theorem ker_factor :
-    LinearMap.ker (factor e B hB h).hom.toLinearMap = B.map e.right.mkQ := by
-  ext z
-  obtain ⟨y, rfl⟩ := quotientπ_surjective Y e.right e.right_invariant _ z
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, factor_quotientπ,
-    quotientπ_hom_apply_eq_zero_iff, quotientπ_hom_apply]
-  exact (Submodule.Quotient.mk_mem_map_mkQ_iff h y).symm
-
-private theorem ker_proj_comp_factor :
-    LinearMap.ker (e.proj ≫ factor e B hB h).hom.toLinearMap =
+private theorem ker_proj_comp_quotientFactor :
+    LinearMap.ker
+        (e.proj ≫ quotientFactor Y _ _ hB B.isClosed_of_finiteDimensional h).hom.toLinearMap =
       (B.map e.right.mkQ).comap e.proj.hom.toLinearMap := by
-  rw [hom_comp, ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp, ker_factor]
-
-private instance :
-    FiniteDimensional 𝕜 (LinearMap.ker (e.proj ≫ factor e B hB h).hom.toLinearMap) := by
-  rw [ker_proj_comp_factor]
-  infer_instance
+  rw [hom_comp, ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp, ker_quotientFactor]
 
 /-- **Refining an almost isomorphism**: an almost isomorphism `X ⧸ A ≅ Y ⧸ right` induces one
 dividing out any larger finite-dimensional invariant subspace `B ⊇ right` of `Y`, with the
 preimage of `B ⧸ right` divided out of `X`. -/
-noncomputable def refineRight : AlmostIso X Y :=
-  ofSurjective B hB (e.proj ≫ factor e B hB h) (by
+@[expose] noncomputable def refineRight : AlmostIso X Y :=
+  have : FiniteDimensional 𝕜 (LinearMap.ker
+      (e.proj ≫ quotientFactor Y _ _ hB B.isClosed_of_finiteDimensional h).hom.toLinearMap) := by
+    rw [ker_proj_comp_quotientFactor]
+    infer_instance
+  ofSurjective B hB (e.proj ≫ quotientFactor Y _ _ hB B.isClosed_of_finiteDimensional h) (by
     rw [hom_comp, ContinuousLinearMap.coe_comp]
-    exact (factor_surjective e B hB h).comp e.proj_surjective)
+    exact (quotientFactor_surjective Y _ _ hB _ h).comp e.proj_surjective)
 
 /-- Refining an almost isomorphism divides out of `X` the preimage of `B ⧸ right`. -/
 @[simp]
 theorem refineRight_left :
     (e.refineRight B hB h).left = (B.map e.right.mkQ).comap e.proj.hom.toLinearMap :=
-  ker_proj_comp_factor e B hB h
+  ker_proj_comp_quotientFactor e B hB h
 
 @[simp]
 theorem refineRight_right : (e.refineRight B hB h).right = B :=
   (rfl)
+
+/-- The morphism underlying a refined almost isomorphism is the original one followed by the
+projection `Y ⧸ right ⟶ Y ⧸ B`. -/
+@[simp]
+theorem refineRight_proj :
+    (e.refineRight B hB h).proj =
+      e.proj ≫ quotientFactor Y _ _ hB B.isClosed_of_finiteDimensional h :=
+  quotientπ_comp_quotientDesc X _ _ _ _ _
 
 /-- Refining an almost isomorphism does not change its height: the subspaces divided out on
 both sides grow by the dimension of `B ⧸ right`. -/
@@ -365,7 +380,7 @@ theorem height_refineRight : (e.refineRight B hB h).height = e.height := by
   have hY := LinearMap.finrank_comap_of_surjective e.right.mkQ_surjective (B.map e.right.mkQ)
   rw [Submodule.comap_map_mkQ, sup_eq_right.mpr h, Submodule.ker_mkQ] at hY
   rw [ker_proj] at hX
-  rw [refineRight, height_ofSurjective, ker_proj_comp_factor, hX, hY, height_def]
+  rw [refineRight, height_ofSurjective, ker_proj_comp_quotientFactor, hX, hY, height_def]
   push_cast
   ring
 
@@ -374,7 +389,7 @@ end Refine
 /-- **Composition of almost isomorphisms**: if `X ⧸ A ≅ Y ⧸ B` and `Y ⧸ B' ≅ Z ⧸ C`, both are
 refined to almost isomorphisms dividing out `B ⊔ B'` from `Y` (`refineRight`), and composed
 there. -/
-noncomputable def trans (e : AlmostIso X Y) (f : AlmostIso Y Z) : AlmostIso X Z where
+@[expose] noncomputable def trans (e : AlmostIso X Y) (f : AlmostIso Y Z) : AlmostIso X Z where
   left := (e.refineRight _ (sup_invariant e.right_invariant f.left_invariant) le_sup_left).left
   right := (f.symm.refineRight _ (sup_invariant e.right_invariant f.left_invariant)
     le_sup_right).left
@@ -395,6 +410,15 @@ theorem trans_right (e : AlmostIso X Y) (f : AlmostIso Y Z) :
     (e.trans f).right =
       ((e.right ⊔ f.left).map f.symm.right.mkQ).comap f.symm.proj.hom.toLinearMap :=
   refineRight_left f.symm _ (sup_invariant e.right_invariant f.left_invariant) le_sup_right
+
+/-- A composite almost isomorphism is the composite of the two refinements of its factors
+dividing out `B ⊔ B'` from `Y`. -/
+theorem trans_iso (e : AlmostIso X Y) (f : AlmostIso Y Z) :
+    (e.trans f).iso =
+      (e.refineRight _ (sup_invariant e.right_invariant f.left_invariant) le_sup_left).iso ≪≫
+        (f.symm.refineRight _ (sup_invariant e.right_invariant f.left_invariant)
+          le_sup_right).iso.symm :=
+  (rfl)
 
 /-- **The height is additive under composition of almost isomorphisms.** -/
 @[simp]

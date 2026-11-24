@@ -44,6 +44,8 @@ representations.
 * `TauCeti.BanachRep.quotient`, `TauCeti.BanachRep.quotientπ`, `TauCeti.BanachRep.quotientDesc`:
   the quotient by a closed invariant subspace, its projection, and the factorization of a
   morphism killing the subspace.
+* `TauCeti.BanachRep.quotientFactor`: the projection `X ⧸ W ⟶ X ⧸ W'` between quotients by
+  closed invariant subspaces `W ≤ W'`.
 
 ## Main results
 
@@ -529,6 +531,47 @@ theorem isIso_quotientDesc_ker {T : BanachRep.{w} 𝕜 G} (k : X ⟶ T)
     simp [hxy]
   · obtain ⟨x, rfl⟩ := hk t
     exact ⟨_, quotientDesc_hom_quotientπ_hom X _ (ker_invariant k) hkc k (fun _ hx => hx) x⟩
+
+/-! ### Projections between quotients -/
+
+section QuotientFactor
+
+variable (X) {W W' : Submodule 𝕜 X} (hW : ∀ (g : G), ∀ x ∈ W, X.ρ g x ∈ W)
+  (hWc : IsClosed (W : Set X)) (hW' : ∀ (g : G), ∀ x ∈ W', X.ρ g x ∈ W')
+  (hWc' : IsClosed (W' : Set X)) (h : W ≤ W')
+
+/-- **The projection between quotients** `X ⧸ W ⟶ X ⧸ W'` by closed invariant subspaces
+`W ≤ W'`: the morphism induced by `Submodule.factor`. -/
+noncomputable def quotientFactor : quotient X W hW hWc ⟶ quotient X W' hW' hWc' :=
+  quotientDesc X W hW hWc (quotientπ X W' hW' hWc') fun x hx =>
+    (quotientπ_hom_apply_eq_zero_iff X W' hW' hWc' x).mpr (h hx)
+
+/-- The projection between quotients is `Submodule.factor`. -/
+@[simp]
+theorem quotientFactor_hom_toLinearMap :
+    (quotientFactor X hW hWc hW' hWc' h).hom.toLinearMap = Submodule.factor h :=
+  Submodule.linearMap_qext _ rfl
+
+theorem quotientFactor_hom_quotientπ_hom (x : X) :
+    (quotientFactor X hW hWc hW' hWc' h).hom ((quotientπ X W hW hWc).hom x) =
+      (quotientπ X W' hW' hWc').hom x :=
+  (rfl)
+
+@[reassoc (attr := simp)]
+theorem quotientπ_comp_quotientFactor :
+    quotientπ X W hW hWc ≫ quotientFactor X hW hWc hW' hWc' h = quotientπ X W' hW' hWc' :=
+  quotientπ_comp_quotientDesc X W hW hWc _ _
+
+theorem quotientFactor_surjective :
+    Function.Surjective (quotientFactor X hW hWc hW' hWc' h).hom :=
+  Submodule.factor_surjective h
+
+/-- The kernel of the projection `X ⧸ W ⟶ X ⧸ W'` is the image of `W'` in `X ⧸ W`. -/
+theorem ker_quotientFactor :
+    LinearMap.ker (quotientFactor X hW hWc hW' hWc' h).hom.toLinearMap = W'.map W.mkQ := by
+  rw [quotientFactor_hom_toLinearMap, Submodule.ker_mapQ, Submodule.comap_id]
+
+end QuotientFactor
 
 end BanachRep
 
