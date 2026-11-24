@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
-public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct
+public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
+public import TauCeti.Topology.Algebra.RestrictedProduct.Units
 
 /-!
 # The Haar character of units of a restricted product of rings
@@ -17,16 +18,22 @@ subrings `B i`, compact at almost every index, so that the restricted product
 scales additive Haar measure on it by the finitary product of the Haar characters of its
 coordinates:
 
-`distribHaarChar (Πʳ i, [R i, B i]) x = ∏ᶠ i, distribHaarChar (R i) (x i)`.
+`distribHaarChar (Πʳ i, [R i, B i]) x = ∏ᶠ i, distribHaarChar (R i) (x i)`,
+
+with the convention `μ (x • s) = distribHaarChar _ x * μ s` for regular additive Haar measures `μ`.
 
 Only finitely many factors differ from `1`, because at almost every index both `x i` and its
-inverse lie in `B i`, so that `x i • B i = B i`. The proof evaluates the restricted Haar product
-`TauCeti.restrictedAddHaar` on the box `Π i, B i` and its translate by `x`. Applied to the finite
-adeles of a number field, this computes the Haar character of a finite idele.
+inverse lie in `B i`, so that `x i • B i = B i`. The proof chooses compact sets `K₀ i` with nonempty
+interior, equal to `B i` at the cofinitely many indices where `B i` is compact, and evaluates the
+restricted Haar product `TauCeti.restrictedAddHaar` on the box with factors `K₀ i` and on its image
+under multiplication by `x`, the box with factors `x i • K₀ i`
+(`RestrictedProduct.units_smul_box`). Mathlib's criterion
+`MeasureTheory.distribHaarChar_eq_of_measure_smul_eq_mul` turns the resulting box formula
+(`TauCeti.restrictedAddHaar_box_eq_finprod`) into the identity of characters. Applied to the
+finite adeles of a number field, this computes the Haar character of a finite idele.
 
 ## Main results
 
-* `RestrictedProduct.units_smul_box`: a unit acts on a box coordinatewise.
 * `RestrictedProduct.distribHaarChar_eq_finprod`: the Haar character of a unit of a restricted
   product of rings.
 
@@ -34,6 +41,10 @@ adeles of a number field, this computes the Haar character of a finite idele.
 
 * V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. I,
   2nd ed., §3.5, pp. 186–189 (the modulus of an automorphism, and restricted Haar products).
+* The FLT project (`ImperialCollegeLondon/FLT`, Apache 2.0) proves the corresponding formula
+  `ringHaarChar_restrictedProduct` in `FLT/HaarMeasure/HaarChar/Ring.lean` (by Kevin Buzzard),
+  through Haar characters of continuous multiplicative equivalences of restricted products; the
+  proof here goes through `TauCeti.restrictedAddHaar` instead.
 -/
 
 public section
@@ -44,16 +55,6 @@ open scoped ENNReal NNReal Pointwise RestrictedProduct
 namespace RestrictedProduct
 
 variable {ι : Type*} {R : ι → Type*} {A : ι → Type*} [∀ i, SetLike (A i) (R i)] {B : ∀ i, A i}
-
-/-- A unit `x` of a restricted product of monoids acts on a box coordinatewise: `x • box C` is the
-box with factors `x i • C i`. -/
-theorem units_smul_box [∀ i, Monoid (R i)] [∀ i, SubmonoidClass (A i) (R i)]
-    (x : (Πʳ i, [R i, B i])ˣ) (C : ∀ i, Set (R i)) :
-    x • (box C : Set (Πʳ i, [R i, B i])) =
-      (box fun i ↦ Units.map (evalMonoidHom R i) x • C i : Set (Πʳ i, [R i, B i])) := by
-  ext y
-  simp only [Set.mem_smul_set_iff_inv_smul_mem, mem_box]
-  simp [Units.smul_def]
 
 variable [∀ i, Ring (R i)] [∀ i, SubringClass (A i) (R i)] [Countable ι]
   [∀ i, TopologicalSpace (R i)] [∀ i, IsTopologicalRing (R i)]

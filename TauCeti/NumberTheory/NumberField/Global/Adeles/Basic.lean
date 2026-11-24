@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.AdeleRing
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 /-!
@@ -31,7 +32,10 @@ adele ring is determined by its values on `K` and on that idempotent
 
 It also upgrades Mathlib's ring equivalence between the infinite adele ring and the Minkowski
 mixed space to a homeomorphism.  Each local factor is isometric to `ℝ` or `ℂ`, so the product
-equivalence and its inverse are continuous, and the norm of the mixed space
+equivalence and its inverse are continuous (`NumberField.InfiniteAdeleRing.homeomorphMixedSpace`,
+and `NumberField.InfiniteAdeleRing.continuousAddEquivMixedSpace` as an isomorphism of topological
+additive groups); in particular the infinite adele ring of a number field is second countable
+(`NumberField.InfiniteAdeleRing.instSecondCountableTopology`). The norm of the mixed space
 (`NumberField.mixedEmbedding.norm`) is carried to the norm of the infinite adele ring.
 -/
 
@@ -127,6 +131,36 @@ theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
     Continuous (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm :=
   (InfiniteAdeleRing.homeomorphMixedSpace K).symm.continuous.congr fun x ↦
     InfiniteAdeleRing.homeomorphMixedSpace_symm_apply K x
+
+/-- The infinite adele ring of a number field is second countable, being homeomorphic to the
+Minkowski mixed space. -/
+instance InfiniteAdeleRing.instSecondCountableTopology [NumberField K] :
+    SecondCountableTopology (InfiniteAdeleRing K) :=
+  (InfiniteAdeleRing.homeomorphMixedSpace K).secondCountableTopology
+
+/-- The ring isomorphism of the infinite adele ring with the Minkowski mixed space, as an
+isomorphism of topological additive groups. -/
+noncomputable def InfiniteAdeleRing.continuousAddEquivMixedSpace :
+    InfiniteAdeleRing K ≃ₜ+ mixedEmbedding.mixedSpace K where
+  toAddEquiv := (InfiniteAdeleRing.ringEquiv_mixedSpace K).toAddEquiv
+  continuous_toFun := InfiniteAdeleRing.continuous_ringEquiv_mixedSpace K
+  continuous_invFun := InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm K
+
+@[simp]
+theorem InfiniteAdeleRing.coe_continuousAddEquivMixedSpace :
+    ⇑(InfiniteAdeleRing.continuousAddEquivMixedSpace K) =
+      ⇑(InfiniteAdeleRing.ringEquiv_mixedSpace K) :=
+  by
+    rw [InfiniteAdeleRing.continuousAddEquivMixedSpace]
+    rfl
+
+@[simp]
+theorem InfiniteAdeleRing.coe_continuousAddEquivMixedSpace_symm :
+    ⇑(InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm =
+      ⇑(InfiniteAdeleRing.ringEquiv_mixedSpace K).symm :=
+  by
+    rw [InfiniteAdeleRing.continuousAddEquivMixedSpace]
+    rfl
 
 /-- Every infinite adele can be translated by the image of an algebraic integer into the closed
 fundamental parallelepiped of the Minkowski lattice. -/

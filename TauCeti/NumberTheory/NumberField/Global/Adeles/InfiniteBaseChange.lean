@@ -205,8 +205,6 @@ def infiniteAdeleBaseChangeEquiv :
   -- sigma-compact infinite adele rings. The additive open mapping theorem then gives the inverse.
   letI := IsModuleTopology.isTopologicalAddGroup (InfiniteAdeleRing K)
     (InfiniteAdeleRing K ⊗[K] L)
-  letI : SecondCountableTopology (InfiniteAdeleRing K) :=
-    (InfiniteAdeleRing.homeomorphMixedSpace K).secondCountableTopology
   let b := (Module.finBasis K L).baseChange (InfiniteAdeleRing K)
   have hs := isSigmaCompact_range
     (IsModuleTopology.continuous_of_linearMap b.equivFun.symm.toLinearMap)

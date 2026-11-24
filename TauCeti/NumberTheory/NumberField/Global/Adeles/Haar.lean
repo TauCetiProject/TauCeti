@@ -8,27 +8,29 @@ module
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
-public import TauCeti.MeasureTheory.Measure.Haar.DistribCharProd
-public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProductDistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Prod
+public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.DistribChar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Borel
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.LocallyCompact
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.HaarCharacter
-public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
 # Normalized Haar measures on the adeles and the idele norm as a Haar character
 
 Let `K` be a number field with `r₂` complex places. This file fixes the normalized additive Haar
-measures of the adelic rings of `K` and computes how multiplication by an idele scales them.
+measures of the adelic rings of `K` and computes how multiplication by an idele scales them. A
+unit `x` scales images by its Haar character, `μ (x • s) = distribHaarChar _ x * μ s`, and so
+pushes `μ` forward to `(distribHaarChar _ x)⁻¹ • μ`.
 
 * **The finite adeles.** `μ_f` is the additive Haar measure on `𝔸_{K,f}` giving the integral
   adeles `∏_v 𝒪_v` mass `1`. It is the restricted product of the local Haar measures `μ_v` with
-  `μ_v(𝒪_v) = 1` (`NumberField.finiteAdeleHaar_eq_restrictedAddHaar`). A finite idele `a` scales
-  it by `∏ᶠ_v ‖a_v‖`, so multiplication by `a` pushes `μ_f` forward to `(∏ᶠ_v ‖a_v‖)⁻¹ • μ_f`.
+  `μ_v(𝒪_v) = 1` (`TauCeti.GlobalNumberFields.finiteAdeleHaar_eq_restrictedAddHaar`). A finite
+  idele `a` has Haar character `∏ᶠ_v ‖a_v‖`, so multiplication by `a` pushes `μ_f` forward to
+  `(∏ᶠ_v ‖a_v‖)⁻¹ • μ_f`.
 * **The infinite adeles.** `μ_∞` on `K_∞ = ∏_{w | ∞} K_w` is `2^{r₂}` times the transport of the
   volume of the Minkowski space `ℝ^{r₁} × ℂ^{r₂}`; it is Lebesgue measure at the real places and
-  twice Lebesgue measure at the complex places. A unit `x` of `K_∞` scales it by
+  twice Lebesgue measure at the complex places. A unit `x` of `K_∞` has Haar character
   `∏_w ‖x_w‖^{m_w}`, the multiplicity `m_w` being `2` at complex places.
 * **The adeles.** `μ_𝔸 = μ_∞ × μ_f` on `𝔸_K = K_∞ × 𝔸_{K,f}`.
 * **The idele norm is the Haar character.** For an idele `x`, the Haar character of `x` on the
@@ -41,22 +43,35 @@ The Haar characters do not depend on the normalizations; those enter only in the
 
 ## Main definitions
 
-* `NumberField.finiteAdeleHaar`, `NumberField.infiniteAdeleHaar`, `NumberField.adeleHaar`.
+* `TauCeti.GlobalNumberFields.finiteAdeleHaar`, `TauCeti.GlobalNumberFields.infiniteAdeleHaar`,
+  `TauCeti.GlobalNumberFields.adeleHaar`.
 
 ## Main results
 
-* `NumberField.finiteAdeleHaar_integralAdeles`, `NumberField.finiteAdeleHaar_eq_restrictedAddHaar`.
-* `NumberField.distribHaarChar_finiteAdeleRing`, `NumberField.map_finiteAdeleHaar_mul`.
-* `NumberField.distribHaarChar_completion`, `NumberField.distribHaarChar_infiniteAdeleRing`.
-* `NumberField.distribHaarChar_adeleRing`: the idele norm is the Haar character of `𝔸_K`.
-* `NumberField.map_adeleHaar_mul`, `NumberField.distribHaarChar_adeleRing_eq_one_iff`,
-  `NumberField.map_adeleHaar_mul_eq_self_iff`, `NumberField.map_adeleHaar_mul_unitEmbedding`.
+* `TauCeti.GlobalNumberFields.finiteAdeleHaar_integralAdeles`,
+  `TauCeti.GlobalNumberFields.finiteAdeleHaar_eq_restrictedAddHaar`.
+* `TauCeti.GlobalNumberFields.infiniteAdeleHaar_apply`, `TauCeti.GlobalNumberFields.adeleHaar_prod`:
+  evaluation of the infinite and full adelic measures.
+* `TauCeti.GlobalNumberFields.distribHaarChar_finiteAdeleRing`,
+  `TauCeti.GlobalNumberFields.map_finiteAdeleHaar_mul`.
+* `TauCeti.GlobalNumberFields.distribHaarChar_infiniteAdeleRing`, from the local characters
+  `NumberField.InfinitePlace.distribHaarChar_completion`.
+* `TauCeti.GlobalNumberFields.distribHaarChar_adeleRing`: the idele norm is the Haar character of
+  `𝔸_K`.
+* `TauCeti.GlobalNumberFields.map_adeleHaar_mul`,
+  `TauCeti.GlobalNumberFields.distribHaarChar_adeleRing_eq_one_iff`,
+  `TauCeti.GlobalNumberFields.map_adeleHaar_mul_eq_self_iff`,
+  `TauCeti.GlobalNumberFields.map_adeleHaar_mul_unitEmbedding`.
 
 ## References
 
 * V. Platonov, A. Rapinchuk and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. I,
   2nd ed., §3.5, pp. 186–189 (the modulus of an automorphism, and restricted Haar products).
 * A. V. Sutherland, *Number Theory I*, MIT 18.785 lecture notes, Lecture 23, §23.3, p. 6.
+* The FLT project (`ImperialCollegeLondon/FLT`, Apache 2.0) computes Haar characters on adele
+  rings in `FLT/HaarMeasure/HaarChar/FiniteAdeleRing.lean` (by Kevin Buzzard, Bryan Wang Peng Jun
+  and Pietro Monticone) and `FLT/HaarMeasure/HaarChar/AdeleRing.lean` (by Kevin Buzzard, Bryan Wang
+  Peng Jun, Salvatore Mercuri, Pietro Monticone and Ruben Van de Velde).
 -/
 
 public section
@@ -64,10 +79,10 @@ public section
 noncomputable section
 
 open IsDedekindDomain MeasureTheory Measure NumberField RestrictedProduct TauCeti
-  TauCeti.GlobalNumberFields TopologicalSpace
+  TopologicalSpace
 open scoped NNReal ENNReal
 
-namespace NumberField
+namespace TauCeti.GlobalNumberFields
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -93,12 +108,16 @@ giving the integral adeles `∏_v 𝒪_v` mass `1`. -/
 def finiteAdeleHaar : Measure (FiniteAdeleRing (𝓞 K) K) :=
   addHaarMeasure (integralAdelesPositiveCompacts K)
 
+theorem finiteAdeleHaar_def :
+    finiteAdeleHaar K = addHaarMeasure (integralAdelesPositiveCompacts K) :=
+  (rfl)
+
 instance isAddHaarMeasure_finiteAdeleHaar : (finiteAdeleHaar K).IsAddHaarMeasure := by
-  unfold finiteAdeleHaar
+  rw [finiteAdeleHaar_def]
   infer_instance
 
 instance regular_finiteAdeleHaar : (finiteAdeleHaar K).Regular := by
-  unfold finiteAdeleHaar
+  rw [finiteAdeleHaar_def]
   infer_instance
 
 /-- The integral adeles have mass `1` for `finiteAdeleHaar`. -/
@@ -113,23 +132,6 @@ theorem eq_finiteAdeleHaar {μ : Measure (FiniteAdeleRing (𝓞 K) K)} [μ.IsAdd
     (hμ : μ (FiniteAdeleRing.integralAdeles (𝓞 K) K) = 1) : μ = finiteAdeleHaar K :=
   ((addHaarMeasure_eq_iff (integralAdelesPositiveCompacts K) μ).2 hμ).symm
 
-/-- The normalized local Haar measure `μ_v = addHaarMeasure (integerPositiveCompacts K_v)` of the
-local field `K_v` gives `𝒪_v` mass `1`. -/
-theorem addHaarMeasure_adicCompletionIntegers (v : HeightOneSpectrum (𝓞 K)) :
-    addHaarMeasure (integerPositiveCompacts (v.adicCompletion K)) (v.adicCompletionIntegers K) =
-      1 := by
-  have h : ((v.adicCompletionIntegers K : Set (v.adicCompletion K))) =
-      (integerPositiveCompacts (v.adicCompletion K) : Set (v.adicCompletion K)) := by
-    rw [coe_integerPositiveCompacts, v.integer_eq_adicCompletionIntegers]
-    rfl
-  rw [h]
-  exact addHaarMeasure_self
-
-/-- The local integer rings `𝒪_v` are open in the completions `K_v`. -/
-instance instFactIsOpenAdicCompletionIntegers : Fact (∀ v : HeightOneSpectrum (𝓞 K),
-    IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K))) :=
-  ⟨fun _ ↦ Valued.isOpen_valuationSubring _⟩
-
 /-- **`finiteAdeleHaar` is a restricted product of local Haar measures**: it is the restricted
 product of the normalized additive Haar measures `μ_v` on the local fields `K_v`, those with
 `μ_v(𝒪_v) = 1` (`TauCeti.existsUnique_isAddHaarMeasure_measure_integer_eq_one`). -/
@@ -138,18 +140,18 @@ theorem finiteAdeleHaar_eq_restrictedAddHaar :
       restrictedAddHaar (G := fun v : HeightOneSpectrum (𝓞 K) ↦ v.adicCompletion K)
         (fun v ↦ v.adicCompletionIntegers K)
         (fun v ↦ addHaarMeasure (integerPositiveCompacts (v.adicCompletion K)))
-        (.of_forall (addHaarMeasure_adicCompletionIntegers K)) := by
+        (.of_forall HeightOneSpectrum.addHaarMeasure_adicCompletionIntegers) := by
   set ν : Measure (FiniteAdeleRing (𝓞 K) K) :=
     restrictedAddHaar (G := fun v : HeightOneSpectrum (𝓞 K) ↦ v.adicCompletion K)
       (fun v ↦ v.adicCompletionIntegers K)
       (fun v ↦ addHaarMeasure (integerPositiveCompacts (v.adicCompletion K)))
-      (.of_forall (addHaarMeasure_adicCompletionIntegers K)) with hν
+      (.of_forall HeightOneSpectrum.addHaarMeasure_adicCompletionIntegers) with hν
   have _ : ν.IsAddHaarMeasure := isAddHaarMeasure_restrictedAddHaar _ _ _
   have h := restrictedAddHaar_box_self (G := fun v : HeightOneSpectrum (𝓞 K) ↦ v.adicCompletion K)
     (fun v ↦ v.adicCompletionIntegers K)
     (fun v ↦ addHaarMeasure (integerPositiveCompacts (v.adicCompletion K)))
-    (.of_forall (addHaarMeasure_adicCompletionIntegers K))
-  simp only [addHaarMeasure_adicCompletionIntegers, finprod_one, ← hν] at h
+    (.of_forall HeightOneSpectrum.addHaarMeasure_adicCompletionIntegers)
+  simp only [HeightOneSpectrum.addHaarMeasure_adicCompletionIntegers, finprod_one, ← hν] at h
   have h' : ν (FiniteAdeleRing.integralAdeles (𝓞 K) K) = 1 := by
     rw [← h]
     congr 1
@@ -159,7 +161,8 @@ theorem finiteAdeleHaar_eq_restrictedAddHaar :
   exact (eq_finiteAdeleHaar K h').symm
 
 /-- **The Haar character of a finite idele.** Multiplication by a finite idele `a` scales Haar
-measure on `𝔸_{K,f}` by `∏ᶠ_v ‖a_v‖`. -/
+measure on `𝔸_{K,f}` by `∏ᶠ_v ‖a_v‖`: `μ (a • s) = (∏ᶠ_v ‖a_v‖) * μ s` for regular additive Haar
+measures `μ`. -/
 theorem distribHaarChar_finiteAdeleRing (a : (FiniteAdeleRing (𝓞 K) K)ˣ) :
     distribHaarChar (FiniteAdeleRing (𝓞 K) K) a =
       ∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(a : FiniteAdeleRing (𝓞 K) K) v‖₊ := by
@@ -175,34 +178,11 @@ theorem map_finiteAdeleHaar_mul (a : (FiniteAdeleRing (𝓞 K) K)ˣ) :
     (finiteAdeleHaar K).map ((a : FiniteAdeleRing (𝓞 K) K) * ·) =
       (∏ᶠ v : HeightOneSpectrum (𝓞 K), ‖(a : FiniteAdeleRing (𝓞 K) K) v‖₊)⁻¹ •
         finiteAdeleHaar K := by
-  rw [← distribHaarChar_finiteAdeleRing, ← map_smul_eq_inv_distribHaarChar_smul]
-  rfl
+  have h : ((a : FiniteAdeleRing (𝓞 K) K) * ·) = (a • ·) :=
+    funext fun y ↦ by rw [Units.smul_def, smul_eq_mul]
+  rw [h, map_smul_eq_inv_distribHaarChar_smul, distribHaarChar_finiteAdeleRing]
 
 /-! ### The infinite adeles -/
-
-omit [NumberField K] in
-/-- **The Haar character at an infinite place.** Multiplication by `x ∈ K_wˣ` scales Haar measure
-on `K_w` by `‖x‖ ^ m_w`, where `m_w` is `1` at a real place and `2` at a complex place. -/
-theorem distribHaarChar_completion (w : InfinitePlace K) (x : w.Completionˣ) :
-    distribHaarChar w.Completion x = ‖(x : w.Completion)‖₊ ^ w.mult := by
-  by_cases hw : w.IsReal
-  · have h := distribHaarChar_map_ringEquiv (InfinitePlace.Completion.ringEquivRealOfIsReal hw)
-      (InfinitePlace.Completion.isometryEquivRealOfIsReal hw).continuous
-      (InfinitePlace.Completion.isometryEquivRealOfIsReal hw).symm.continuous x
-    rw [← h, distribHaarChar_real, show w.mult = 1 by simp [InfinitePlace.mult, hw], pow_one]
-    ext
-    exact (InfinitePlace.Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero
-      (map_zero _) _
-  · have hc : w.IsComplex := InfinitePlace.not_isReal_iff_isComplex.mp hw
-    have h := distribHaarChar_map_ringEquiv
-      (InfinitePlace.Completion.ringEquivComplexOfIsComplex hc)
-      (InfinitePlace.Completion.isometryEquivComplexOfIsComplex hc).continuous
-      (InfinitePlace.Completion.isometryEquivComplexOfIsComplex hc).symm.continuous x
-    rw [← h, distribHaarChar_complex, show w.mult = 2 by simp [InfinitePlace.mult, hw]]
-    congr 1
-    ext
-    exact (InfinitePlace.Completion.isometry_extensionEmbedding w).norm_map_of_map_zero
-      (map_zero _) _
 
 /-- **The Haar character of the infinite adeles.** A unit `x` of `K_∞` scales Haar measure by
 `∏_w ‖x_w‖ ^ m_w`. -/
@@ -216,40 +196,50 @@ theorem distribHaarChar_infiniteAdeleRing (x : (InfiniteAdeleRing K)ˣ) :
     · exact (InfinitePlace.Completion.isometryEquivComplexOfIsComplex
         (InfinitePlace.not_isReal_iff_isComplex.mp hw)).toHomeomorph.secondCountableTopology
   exact (distribHaarChar_pi (T := fun w : InfinitePlace K ↦ w.Completion) x).trans
-    (Finset.prod_congr rfl fun w _ ↦ distribHaarChar_completion K w _)
+    (Finset.prod_congr rfl fun w _ ↦ InfinitePlace.distribHaarChar_completion w _)
 
 open scoped Classical in
 /-- **The normalized Haar measure on the infinite adeles**: `2 ^ r₂` times the transport of the
 volume of the Minkowski space `ℝ^{r₁} × ℂ^{r₂}`, that is, Lebesgue measure at the real places and
-twice Lebesgue measure at the complex places. -/
+twice Lebesgue measure at the complex places. The transport along
+`NumberField.InfiniteAdeleRing.continuousAddEquivMixedSpace` is an additive Haar measure by
+Mathlib's `ContinuousAddEquiv.isAddHaarMeasure_map`. -/
 def infiniteAdeleHaar : Measure (InfiniteAdeleRing K) :=
   (2 : ℝ≥0∞) ^ InfinitePlace.nrComplexPlaces K •
     (volume : Measure (mixedEmbedding.mixedSpace K)).map
-      (InfiniteAdeleRing.homeomorphMixedSpace K).symm
+      (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm
 
-/-- The ring isomorphism of `K_∞` with the Minkowski space, as an isomorphism of topological
-additive groups. -/
-private def infiniteAdeleContinuousAddEquiv :
-    mixedEmbedding.mixedSpace K ≃ₜ+ InfiniteAdeleRing K where
-  toAddEquiv := (InfiniteAdeleRing.ringEquiv_mixedSpace K).symm.toAddEquiv
-  continuous_toFun := by
-    simpa using (InfiniteAdeleRing.homeomorphMixedSpace K).symm.continuous
-  continuous_invFun := by
-    simpa using (InfiniteAdeleRing.homeomorphMixedSpace K).continuous
+open scoped Classical in
+theorem infiniteAdeleHaar_def :
+    infiniteAdeleHaar K = (2 : ℝ≥0∞) ^ InfinitePlace.nrComplexPlaces K •
+      (volume : Measure (mixedEmbedding.mixedSpace K)).map
+        (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm :=
+  (rfl)
 
+open scoped Classical in
+/-- `infiniteAdeleHaar` evaluated on a set: `2 ^ r₂` times the volume of its image in the
+Minkowski space. -/
+theorem infiniteAdeleHaar_apply (s : Set (InfiniteAdeleRing K)) :
+    infiniteAdeleHaar K s = 2 ^ InfinitePlace.nrComplexPlaces K *
+      volume (InfiniteAdeleRing.homeomorphMixedSpace K '' s) := by
+  have he : ⇑(InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm =
+      ⇑(InfiniteAdeleRing.homeomorphMixedSpace K).symm := by
+    rw [InfiniteAdeleRing.coe_continuousAddEquivMixedSpace_symm,
+      InfiniteAdeleRing.coe_homeomorphMixedSpace_symm]
+  rw [infiniteAdeleHaar_def, he, ← Homeomorph.preimage_symm,
+    ← (InfiniteAdeleRing.homeomorphMixedSpace K).symm.measurableEmbedding.map_apply]
+  simp
+
+open scoped Classical in
 instance isAddHaarMeasure_infiniteAdeleHaar : (infiniteAdeleHaar K).IsAddHaarMeasure := by
-  classical
-  have h : (volume : Measure (mixedEmbedding.mixedSpace K)).map
-      (InfiniteAdeleRing.homeomorphMixedSpace K).symm =
-      (volume : Measure (mixedEmbedding.mixedSpace K)).map (infiniteAdeleContinuousAddEquiv K) := by
-    rw [InfiniteAdeleRing.coe_homeomorphMixedSpace_symm]
-    rfl
   have : ((volume : Measure (mixedEmbedding.mixedSpace K)).map
-      (infiniteAdeleContinuousAddEquiv K)).IsAddHaarMeasure :=
-    (infiniteAdeleContinuousAddEquiv K).isAddHaarMeasure_map _
-  unfold infiniteAdeleHaar
-  rw [h]
+      (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm).IsAddHaarMeasure :=
+    (InfiniteAdeleRing.continuousAddEquivMixedSpace K).symm.isAddHaarMeasure_map _
+  rw [infiniteAdeleHaar_def]
   exact IsAddHaarMeasure.smul _ (by simp) (by simp)
+
+instance regular_infiniteAdeleHaar : (infiniteAdeleHaar K).Regular :=
+  inferInstance
 
 /-! ### The adeles and the ideles -/
 
@@ -257,6 +247,16 @@ instance isAddHaarMeasure_infiniteAdeleHaar : (infiniteAdeleHaar K).IsAddHaarMea
 `infiniteAdeleHaar` and `finiteAdeleHaar` on `𝔸_K = K_∞ × 𝔸_{K,f}`. -/
 def adeleHaar : Measure (AdeleRing (𝓞 K) K) :=
   (infiniteAdeleHaar K).prod (finiteAdeleHaar K)
+
+theorem adeleHaar_def : adeleHaar K = (infiniteAdeleHaar K).prod (finiteAdeleHaar K) :=
+  (rfl)
+
+/-- `adeleHaar` on a box `s × t` is the product of the masses of its two factors. -/
+@[simp]
+theorem adeleHaar_prod (s : Set (InfiniteAdeleRing K)) (t : Set (FiniteAdeleRing (𝓞 K) K)) :
+    adeleHaar K (s ×ˢ t) = infiniteAdeleHaar K s * finiteAdeleHaar K t := by
+  rw [adeleHaar_def]
+  exact prod_prod s t
 
 instance isAddHaarMeasure_adeleHaar : (adeleHaar K).IsAddHaarMeasure :=
   inferInstanceAs <|
@@ -266,7 +266,8 @@ instance regular_adeleHaar : (adeleHaar K).Regular := by
   infer_instance
 
 /-- **The idele norm is the Haar character of the adeles.** Multiplication by an idele `x`
-scales additive Haar measure on `𝔸_K` by the idele norm `‖x‖`. -/
+scales additive Haar measure on `𝔸_K` by the idele norm `‖x‖`: `μ (x • s) = ‖x‖ * μ s` for
+regular additive Haar measures `μ`. -/
 theorem distribHaarChar_adeleRing (x : IdeleGroup (𝓞 K) K) :
     distribHaarChar (AdeleRing (𝓞 K) K) x = ideleNorm x := by
   have h := distribHaarChar_prod (R := InfiniteAdeleRing K) (S := FiniteAdeleRing (𝓞 K) K) x
@@ -281,12 +282,16 @@ theorem distribHaarChar_adeleRing (x : IdeleGroup (𝓞 K) K) :
       (finprod_congr fun v ↦ ?_)
     simp [HeightOneSpectrum.coe_ideleFiniteCoord]
 
+/-- Multiplication by an idele is its action on the adeles. -/
+private theorem ideleMul_eq_smul (x : IdeleGroup (𝓞 K) K) :
+    ((x : AdeleRing (𝓞 K) K) * ·) = (x • ·) :=
+  funext fun y ↦ by rw [Units.smul_def, smul_eq_mul]
+
 /-- **Pushforward of the adelic Haar measure.** Multiplication by an idele `x` pushes `adeleHaar`
 forward to `‖x‖⁻¹ • adeleHaar`. -/
 theorem map_adeleHaar_mul (x : IdeleGroup (𝓞 K) K) :
     (adeleHaar K).map ((x : AdeleRing (𝓞 K) K) * ·) = (ideleNorm x : ℝ≥0)⁻¹ • adeleHaar K := by
-  rw [← distribHaarChar_adeleRing, ← map_smul_eq_inv_distribHaarChar_smul]
-  rfl
+  rw [ideleMul_eq_smul, map_smul_eq_inv_distribHaarChar_smul, distribHaarChar_adeleRing]
 
 /-- The kernel of the Haar character of the adeles is the norm-one subgroup of the ideles. -/
 theorem distribHaarChar_adeleRing_eq_one_iff (x : IdeleGroup (𝓞 K) K) :
@@ -296,13 +301,8 @@ theorem distribHaarChar_adeleRing_eq_one_iff (x : IdeleGroup (𝓞 K) K) :
 /-- An idele preserves `adeleHaar` under multiplication exactly when its idele norm is `1`. -/
 theorem map_adeleHaar_mul_eq_self_iff (x : IdeleGroup (𝓞 K) K) :
     (adeleHaar K).map ((x : AdeleRing (𝓞 K) K) * ·) = adeleHaar K ↔ ideleNorm x = 1 := by
-  rw [map_adeleHaar_mul, ← Units.val_eq_one]
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, inv_one, one_smul]⟩
-  have h1 : addHaarScalarFactor ((ideleNorm x : ℝ≥0)⁻¹ • adeleHaar K) (adeleHaar K) =
-      addHaarScalarFactor (adeleHaar K) (adeleHaar K) := by
-    simp only [h]
-  rw [addHaarScalarFactor_smul, addHaarScalarFactor_self, smul_eq_mul, mul_one] at h1
-  exact inv_eq_one.mp h1
+  rw [ideleMul_eq_smul, map_smul_eq_self_iff_distribHaarChar_eq_one,
+    distribHaarChar_adeleRing_eq_one_iff]
 
 /-- **The product formula, measure-theoretically.** Multiplication by a principal idele preserves
 `adeleHaar`. -/
@@ -311,4 +311,4 @@ theorem map_adeleHaar_mul_unitEmbedding (a : Kˣ) :
       adeleHaar K := by
   rw [map_adeleHaar_mul, ideleNorm_unitEmbedding, Units.val_one, inv_one, one_smul]
 
-end NumberField
+end TauCeti.GlobalNumberFields

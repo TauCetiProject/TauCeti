@@ -23,6 +23,8 @@ valid.
 
 ## Main results
 
+* `IsDedekindDomain.FiniteAdeleRing.instFactIsOpenAdicCompletionIntegers`: the local integer rings
+  are open.
 * `IsDedekindDomain.FiniteAdeleRing.instLocallyCompactSpace`: the finite adele ring is locally
   compact when all residue fields are finite.
 * `IsDedekindDomain.FiniteAdeleRing.instSigmaCompactSpace`: the finite adele ring is σ-compact
@@ -43,14 +45,17 @@ namespace IsDedekindDomain.FiniteAdeleRing
 variable (R : Type*) [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
+/-- The local integer rings `𝒪_v` are open in the completions `K_v`. This is the openness
+hypothesis of the restricted-product topology on `FiniteAdeleRing R K`. -/
+instance instFactIsOpenAdicCompletionIntegers : Fact (∀ v : HeightOneSpectrum R,
+    IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K))) :=
+  ⟨fun _ ↦ Valued.isOpen_valuationSubring _⟩
+
 /-- The finite adele ring of a Dedekind domain with finite residue fields is locally compact. -/
 instance instLocallyCompactSpace [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
     LocallyCompactSpace (FiniteAdeleRing R K) := by
   let _ (v : HeightOneSpectrum R) : IsNonarchimedeanLocalField (v.adicCompletion K) :=
     inferInstance
-  let _ : Fact (∀ v : HeightOneSpectrum R,
-      IsOpen (v.adicCompletionIntegers K : Set (v.adicCompletion K))) :=
-    ⟨fun _ ↦ Valued.isOpen_valuationSubring _⟩
   exact inferInstanceAs <| LocallyCompactSpace <|
     RestrictedProduct (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
       (fun v ↦ v.adicCompletionIntegers K) Filter.cofinite

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
 public import Mathlib.Topology.Algebra.RestrictedProduct.Units
+public import TauCeti.Topology.Algebra.RestrictedProduct.Box
 
 import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 
@@ -37,6 +38,8 @@ groups `K_vˣ` with respect to the local integral units `𝒪_vˣ`.
   indices and arbitrary submonoids `B i`.
 * `ContinuousMulEquiv.restrictedProductUnits`: the resulting isomorphism of topological groups
   `(Πʳ i, [R i, B i])ˣ ≃ₜ* Πʳ i, [(R i)ˣ, (B i)ˣ]` (cofinite filter, every `B i` open).
+* `RestrictedProduct.units_smul_box`: a unit of a restricted product of monoids acts on a box
+  coordinatewise.
 
 ## References
 
@@ -148,3 +151,21 @@ theorem restrictedProductUnits_symm_apply_apply (hB : ∀ i, IsOpen (B i : Set (
   (rfl)
 
 end ContinuousMulEquiv
+
+namespace RestrictedProduct
+
+variable {ι : Type*} {R : ι → Type*} [∀ i, Monoid (R i)]
+variable {S : ι → Type*} [∀ i, SetLike (S i) (R i)] [∀ i, SubmonoidClass (S i) (R i)]
+variable {B : ∀ i, S i} {𝓕 : Filter ι}
+
+open scoped Pointwise in
+/-- A unit `x` of a restricted product of monoids acts on a box coordinatewise: `x • box C` is the
+box with factors `x i • C i`. -/
+theorem units_smul_box (x : (Πʳ i, [R i, B i]_[𝓕])ˣ) (C : ∀ i, Set (R i)) :
+    x • (box C : Set (Πʳ i, [R i, B i]_[𝓕])) =
+      (box fun i ↦ Units.map (evalMonoidHom R i) x • C i : Set (Πʳ i, [R i, B i]_[𝓕])) := by
+  ext y
+  simp only [Set.mem_smul_set_iff_inv_smul_mem, mem_box]
+  simp [Units.smul_def]
+
+end RestrictedProduct

@@ -45,7 +45,6 @@ instance AdeleRing.instLocallyCompactSpace : LocallyCompactSpace (AdeleRing R K)
 /-- The infinite adele ring of a number field is σ-compact, since it is homeomorphic to the
 finite-dimensional mixed space. -/
 instance InfiniteAdeleRing.instSigmaCompactSpace : SigmaCompactSpace (InfiniteAdeleRing K) :=
-  letI := (InfiniteAdeleRing.homeomorphMixedSpace K).secondCountableTopology
   inferInstance
 
 /-- The adele ring of a number field is σ-compact when its Dedekind domain is countable. -/
