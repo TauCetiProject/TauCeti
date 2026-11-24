@@ -185,6 +185,47 @@ theorem matchingNumber_le_card (q : Multisegment) : matchingNumber q ≤ q.card 
   rw [← matchingNumber_add_antichainWidth q]
   exact Nat.le_add_right _ _
 
+/-- The empty multisegment has antichain width zero. -/
+@[simp]
+theorem antichainWidth_zero : antichainWidth 0 = 0 :=
+  Nat.le_zero.1 (antichainWidth_le_card 0)
+
+/-- The empty multisegment has matching number zero. -/
+@[simp]
+theorem matchingNumber_zero : matchingNumber 0 = 0 :=
+  Nat.le_zero.1 (matchingNumber_le_card 0)
+
+/-! ### Invariance under relabeling -/
+
+/-- Relabeling the occurrences by a permutation `σ` does not change the antichain width: the
+antichains of the endpoint order of the relabeled family `occurrenceInterval q ∘ σ` have the same
+upper bounds as those of `endpointBefore q`. -/
+theorem antichainWidth_le_iff_perm (σ : Equiv.Perm (Fin q.card)) {k : ℕ} :
+    antichainWidth q ≤ k ↔
+      ∀ A : Finset (Fin q.card),
+        IsAntichain (fun i j => endpointBefore q (σ i) (σ j)) (A : Set (Fin q.card)) →
+          #A ≤ k := by
+  rw [antichainWidth_le_iff]
+  refine ⟨fun h A hA => ?_, fun h A hA => ?_⟩
+  · rw [← card_map σ.toEmbedding]
+    exact h _ (by simpa using hA.image σ fun _ _ => id)
+  · rw [← card_map σ.symm.toEmbedding]
+    exact h _ (by simpa using hA.image σ.symm fun _ _ => by simp)
+
+/-- Relabeling the occurrences by a permutation `σ` does not change the matching number: the
+split-graph matchings of the endpoint order of the relabeled family `occurrenceInterval q ∘ σ` have
+the same upper bounds as those of `endpointBefore q`. -/
+theorem matchingNumber_le_iff_perm (σ : Equiv.Perm (Fin q.card)) {k : ℕ} :
+    matchingNumber q ≤ k ↔
+      ∀ E : Finset (Fin q.card × Fin q.card),
+        IsSplitMatching (fun i j => endpointBefore q (σ i) (σ j)) univ E → #E ≤ k := by
+  rw [matchingNumber_le_iff]
+  refine ⟨fun h E hE => ?_, fun h E hE => ?_⟩
+  · rw [← card_map (σ.toEmbedding.prodMap σ.toEmbedding)]
+    exact h _ (hE.map σ.toEmbedding (fun _ _ => id) (subset_univ _))
+  · rw [← card_map (σ.symm.toEmbedding.prodMap σ.symm.toEmbedding)]
+    exact h _ (hE.map σ.symm.toEmbedding (fun _ _ => by simp) (subset_univ _))
+
 /-! ### Endpoint antichains and inclusion chains -/
 
 /-- The labels carrying an interval of a finite set `B` are as many as the occurrences of the

@@ -327,13 +327,36 @@ variable {r : α → α → Prop} {s A : Finset α} {E : Finset (α × α)}
 theorem empty (r : α → α → Prop) (s : Finset α) : IsSplitMatching r s ∅ :=
   ⟨empty_subset _, by simp, by simp, by simp⟩
 
+/-- The first coordinates of the edges of a split-graph matching on `s` lie in `s`. -/
+theorem image_fst_subset [DecidableEq α] (hE : IsSplitMatching r s E) : E.image Prod.fst ⊆ s :=
+  fun x hx => by
+    obtain ⟨e, he, rfl⟩ := mem_image.1 hx
+    exact (mem_product.1 (hE.subset he)).1
+
 /-- A split-graph matching on `s` has at most `#s` edges. -/
 theorem card_le_card (hE : IsSplitMatching r s E) : #E ≤ #s := by
   classical
-  rw [← card_image_of_injOn hE.injOn_fst]
-  exact Finset.card_le_card fun x hx => by
-    obtain ⟨e, he, rfl⟩ := mem_image.1 hx
-    exact (mem_product.1 (hE.subset he)).1
+  exact card_image_of_injOn hE.injOn_fst ▸ Finset.card_le_card hE.image_fst_subset
+
+/-- Mapping a split-graph matching along an embedding `f` which sends related points to related
+points gives a split-graph matching on any finite set containing the image of `s`. -/
+theorem map {β : Type*} {r' : β → β → Prop} {t : Finset β} (hE : IsSplitMatching r s E)
+    (f : α ↪ β) (hf : ∀ ⦃x y⦄, r x y → r' (f x) (f y)) (hst : s.map f ⊆ t) :
+    IsSplitMatching r' t (E.map (f.prodMap f)) := by
+  refine ⟨fun e he => ?_, fun e he => ?_, ?_, ?_⟩
+  · obtain ⟨⟨x, y⟩, hxy, rfl⟩ := mem_map.1 he
+    obtain ⟨hx, hy⟩ := mem_product.1 (hE.subset hxy)
+    exact mem_product.2 ⟨hst (mem_map_of_mem f hx), hst (mem_map_of_mem f hy)⟩
+  · obtain ⟨⟨x, y⟩, hxy, rfl⟩ := mem_map.1 he
+    exact hf (hE.rel _ hxy)
+  · rintro _ he _ he' h
+    obtain ⟨e, hmem, rfl⟩ := mem_map.1 he
+    obtain ⟨e', hmem', rfl⟩ := mem_map.1 he'
+    exact congrArg _ (hE.injOn_fst hmem hmem' (f.injective h))
+  · rintro _ he _ he' h
+    obtain ⟨e, hmem, rfl⟩ := mem_map.1 he
+    obtain ⟨e', hmem', rfl⟩ := mem_map.1 he'
+    exact congrArg _ (hE.injOn_snd hmem hmem' (f.injective h))
 
 /-- Following the edges of a split-graph matching of a transitive relation only moves up along
 the relation. -/
@@ -377,10 +400,7 @@ theorem card_add_card_le_card [IsStrictOrder α r] (hE : IsSplitMatching r s E)
       rcases hxz.swap.total_of_right_unique hU hyz.swap with h | h
       · exact (hE.eq_or_rel_of_reflTransGen h.swap).elim Eq.symm fun h => (hA.eq hy hx h).symm
       · exact (hE.eq_or_rel_of_reflTransGen h.swap).elim id fun h => hA.eq hx hy h
-  have himage : E.image Prod.fst ⊆ s := fun x hx => by
-    obtain ⟨e, he, rfl⟩ := mem_image.1 hx
-    exact (mem_product.1 (hE.subset he)).1
-  rw [card_sdiff_of_subset himage, card_image_of_injOn hE.injOn_fst] at hcard
+  rw [card_sdiff_of_subset hE.image_fst_subset, card_image_of_injOn hE.injOn_fst] at hcard
   have := hE.card_le_card
   omega
 
