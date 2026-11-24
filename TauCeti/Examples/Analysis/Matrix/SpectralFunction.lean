@@ -192,8 +192,9 @@ theorem concaveOn_minPair_eigenvalues₀ :
   simpa using Matrix.concaveOn_spectralFunction (𝕜 := 𝕜) (ι := Fin 2) (Γ := Set.univ)
     (fun _ _ _ ↦ Set.mem_univ _) (f := minPair)
     (fun σ μ _ ↦ σ.apply_comp_fin_two (fun a b ↦ by simp [minPair, min_comm]) μ)
-    (((LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 0).concaveOn convex_univ).inf
-      ((LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 1).concaveOn convex_univ))
+    ((((LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 0).concaveOn convex_univ).inf
+      ((LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 1).concaveOn convex_univ)).congr
+        fun μ _ ↦ by simp [minPair])
 
 /-- **Concavity of `f` is used.** The convex symmetric function `max` has spectral function `λ₁`,
 which is `1` at `diag(1, 0)` and `diag(0, 1)` but `1/2` at their midpoint `diag(1/2, 1/2)`, while
