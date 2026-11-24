@@ -71,9 +71,7 @@ theorem isCoherentRing_iff_of_surjective (hsurj : Function.Surjective (algebraMa
       IsCoherentRing R ∧ Module.IsCoherent S (RingHom.ker (algebraMap S R)) := by
   refine ⟨fun _ ↦ ⟨?_, Module.IsCoherent.of_fg_submodule hI⟩,
     fun ⟨_, _⟩ ↦ .of_isCoherent_ker hsurj⟩
-  have := Module.finitePresentation_of_surjective (Algebra.linearMap S R) hsurj hI
-  rw [isCoherentRing_iff, Module.isCoherent_iff_of_surjective hsurj]
-  exact IsCoherentRing.isCoherent_of_finitePresentation
+  exact (RingHom.quotientKerEquivOfSurjective hsurj).isCoherentRing_iff.mp (.quotient hI)
 
 end Surjective
 

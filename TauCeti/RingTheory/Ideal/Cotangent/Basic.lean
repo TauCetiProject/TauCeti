@@ -96,6 +96,11 @@ theorem toCotangentEquivOfSqEqBot_apply (hI : I ^ 2 = ⊥) (x : I) :
     I.toCotangentEquivOfSqEqBot hI x = I.toCotangent x :=
   LinearEquiv.ofBijective_apply _ _
 
+@[simp]
+theorem toCotangentEquivOfSqEqBot_symm_apply (hI : I ^ 2 = ⊥) (x : I) :
+    (I.toCotangentEquivOfSqEqBot hI).symm (I.toCotangent x) = x :=
+  (LinearEquiv.symm_apply_eq _).mpr (by simp)
+
 end SqEqBot
 
 end Ideal
