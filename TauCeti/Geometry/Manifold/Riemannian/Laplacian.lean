@@ -32,8 +32,9 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 # Divergence, Hessian, and Laplace–Beltrami operators
 
 This file introduces the pointwise Riemannian divergence as the trace of the Levi–Civita
-covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient,
-and the Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
+covariant derivative, the scalar Hessian obtained by pairing that derivative of the gradient
+(also packaged as a continuous bilinear form, `ModelWithCorners.hessianForm`), and the
+Laplace–Beltrami operator with the convention `Δ = div ∘ grad`.  The orthonormal-basis
 trace formula makes the relationship between the Laplacian and the Hessian explicit. The operator
 laws include the Leibniz rule and the chain rule `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²` for a
 real function `h`, with its special case `Δ (log f) = Δ f / f - |grad f|² / f²`. On a
@@ -173,6 +174,26 @@ theorem hessian_def (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace
     hessian I f x v w =
       inner ℝ (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x v) w := by
   rw [hessian]
+
+/-- The scalar Hessian of `f` at `x` as a continuous bilinear form on the tangent space,
+`(v, w) ↦ ⟪∇_v grad f, w⟫`. -/
+noncomputable def _root_.ModelWithCorners.hessianForm (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
+  (innerSL ℝ : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ).comp
+    (CovariantDerivative.leviCivitaConnection I M (mgradient I f) x)
+
+/-- `ModelWithCorners.hessianForm` evaluates to the scalar Hessian. -/
+@[simp]
+theorem _root_.ModelWithCorners.hessianForm_apply (I : ModelWithCorners ℝ E H) {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) (v w : TangentSpace I x) :
+    I.hessianForm f x v w = hessian I f x v w := by
+  simp [ModelWithCorners.hessianForm, hessian_def]
 
 section HessianGradient
 
