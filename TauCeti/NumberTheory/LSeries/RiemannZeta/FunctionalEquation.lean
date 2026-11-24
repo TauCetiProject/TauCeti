@@ -11,7 +11,7 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 
 /-!
-# The symmetric functional equation for the logarithmic derivative of zeta
+# Uncompleted forms of the zeta functional equation
 
 Off the zeros and poles of both zeta factors, the completed functional equation gives
 
@@ -21,6 +21,18 @@ Unlike the asymmetric tangent formula, this identity applies at integers as well
 neither side meets a zero or pole. The digamma form makes its gamma contribution explicit.
 We also record the reflection identity for the logarithmic derivative of the completion;
 this holds everywhere, including at its totalized pole values.
+
+Without logarithmic derivatives, the functional equation also reads
+`ζ(s) = ζ(1 - s) Γℝ(1 - s) / Γℝ(s)` for `s ≠ 0` with `Γℝ(1 - s) ≠ 0`, the form used to reflect
+bounds for `ζ` from a right half-plane to the left one.
+
+## Main results
+
+* `TauCeti.riemannZeta_eq_riemannZeta_one_sub_mul_Gammaℝ_div`: the uncompleted functional
+  equation `ζ(s) = ζ(1 - s) Γℝ(1 - s) / Γℝ(s)`.
+* `TauCeti.logDeriv_riemannZeta_add_one_sub` and
+  `TauCeti.logDeriv_riemannZeta_add_one_sub_eq_digamma`: the symmetric functional equation for
+  `ζ'/ζ`, with gamma or digamma terms.
 
 ## References
 
@@ -42,6 +54,16 @@ theorem logDeriv_completedRiemannZeta_one_sub (s : ℂ) :
     (funext completedRiemannZeta_one_sub)
   rw [logDeriv_comp_const_sub] at h
   exact neg_eq_iff_eq_neg.mp h
+
+/-- **The uncompleted functional equation in quotient form.** For `s ≠ 0` with
+`Γℝ(1 - s) ≠ 0`, that is `s` not one of `1, 3, 5, …`,
+`ζ(s) = ζ(1 - s) Γℝ(1 - s) / Γℝ(s)`. At the trivial zeros `s = -2, -4, …` both sides are `0`. -/
+theorem riemannZeta_eq_riemannZeta_one_sub_mul_Gammaℝ_div {s : ℂ} (hs : s ≠ 0)
+    (hΓ : Gammaℝ (1 - s) ≠ 0) :
+    riemannZeta s = riemannZeta (1 - s) * (Gammaℝ (1 - s) / Gammaℝ s) := by
+  have hs₁ : 1 - s ≠ 0 := fun h ↦ hΓ (Gammaℝ_eq_zero_iff.mpr ⟨0, by simp [h]⟩)
+  rw [riemannZeta_def_of_ne_zero hs, riemannZeta_def_of_ne_zero hs₁, completedRiemannZeta_one_sub,
+    div_mul_div_cancel₀ hΓ]
 
 /-- Away from the origin, a nonzero zeta value excludes a zero of the real-place gamma factor. -/
 theorem Gammaℝ_ne_zero_of_riemannZeta_ne_zero {s : ℂ} (hs : s ≠ 0)
