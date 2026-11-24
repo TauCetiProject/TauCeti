@@ -125,17 +125,14 @@ theorem exists_ne_zero_forall_baseChange_eq_smul_of_annihilator_le (φ : A →�
       (Ideal.map_eq_bot_iff_le_ker (algebraMap A k)).2 h]
     exact bot_ne_top
   -- The canonical map `k ⊗[O] L → k ⊗[A] L` is onto, and `a` acts on its target by `φ a`.
-  let π : k ⊗[O] L →ₗ[k] k ⊗[A] L :=
-    AlgebraTensorModule.lift <| (AlgebraTensorModule.mk A k k L).restrictScalars₁₂ k O
-  have hπ (c : k) (l : L) : π (c ⊗ₜ l) = c ⊗ₜ l := by simp [π]
+  let π := mapOfCompatibleSMul A O k k L
   refine exists_ne_zero_forall_baseChange_eq_smul_of_linearMap φ π ?_ fun a v ↦ ?_
   · obtain ⟨w, hw⟩ := exists_ne (0 : k ⊗[A] L)
-    intro h0
-    refine hw (w.inductionOn (fun c l ↦ ?_) fun x y hx hy ↦ by rw [hx, hy, add_zero])
-    rw [← hπ, h0, LinearMap.zero_apply]
+    obtain ⟨v, rfl⟩ := mapOfCompatibleSMul_surjective A O k k L w
+    exact ne_of_apply_ne (· v) hw
   · induction v using TensorProduct.inductionOn with
     | tmul c l =>
-      simp [hπ, TensorProduct.tmul_smul, TensorProduct.smul_tmul', Algebra.smul_def,
+      simp [π, TensorProduct.tmul_smul, TensorProduct.smul_tmul', Algebra.smul_def,
         RingHom.algebraMap_toAlgebra]
     | add x y hx hy => simp only [map_add, hx, hy, smul_add]
 
