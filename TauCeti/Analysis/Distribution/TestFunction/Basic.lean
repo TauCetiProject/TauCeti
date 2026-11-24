@@ -27,6 +27,8 @@ infinite-dimensional space every test function is zero (Riesz).
 
 ## Main declarations
 
+* `TestFunction.coe_monoCLM_of_le`: the inclusion `monoCLM` to a lower regularity and a larger
+  open set does not change the underlying function.
 * `TestFunction.exists_monoCLM_eq_of_tsupport_subset`: a test function supported in a smaller
   open set is the extension by zero of a test function on that set.
 * `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a `C^n` test function on `Ω`
@@ -61,6 +63,12 @@ theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
     (φ : E →ᵇ F) = 0 ↔ φ = 0 := by
   simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
     ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
+
+/-- For `n₂ ≤ n₁` and `Ω₁ ≤ Ω₂`, the inclusion `monoCLM` of test functions of class `C^{n₁}` on
+`Ω₁` into those of class `C^{n₂}` on `Ω₂` does not change the underlying function. -/
+theorem coe_monoCLM_of_le {n₁ n₂ : ℕ∞} {Ω₁ Ω₂ : Opens E} (hn : n₂ ≤ n₁) (hΩ : Ω₁ ≤ Ω₂)
+    (f : 𝓓^{n₁}(Ω₁, F)) : ⇑(monoCLM ℝ f : 𝓓^{n₂}(Ω₂, F)) = f := by
+  simp [monoCLM_apply, hn, hΩ]
 
 /-- A test function on `Ω` supported in an open set `Ω' ≤ Ω` is the extension by zero of a test
 function on `Ω'`. -/
