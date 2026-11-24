@@ -46,9 +46,9 @@ open scoped Classical in
 /-- Over a point `x` of the base, the shared root set of the images in `ℝ` of the family members
 is the set of roots of the delineation. -/
 private lemma Delineation.biUnion_image_map_roots_toFinset_eq
-    (D : Delineation fun (p : F) (x : C) ↦ p.1.map (eval₂Hom φ x.1)) (x : C) :
+    (D : Delineation fun (p : F) (x : C) ↦ p.val.map (eval₂Hom φ x.val)) (x : C) :
     (F.image fun p ↦ p.map (MvPolynomial.map φ)).biUnion
-        (fun p ↦ (p.map (MvPolynomial.eval x.1)).roots.toFinset) =
+        (fun p ↦ (p.map (MvPolynomial.eval x.val)).roots.toFinset) =
       Finset.univ.image (fun i ↦ D.root i x) := by
   have hmap (p : (MvPolynomial (Fin n) A)[X]) (x : Fin n → ℝ) :
       (p.map (MvPolynomial.map φ)).map (MvPolynomial.eval x) = p.map (eval₂Hom φ x) := by
@@ -62,13 +62,13 @@ private lemma Delineation.biUnion_image_map_roots_toFinset_eq
 /-- A delineation of a finite polynomial family over a semialgebraic base is a semialgebraic
 stack. The family need not be closed under differentiation. Nullified members are allowed. -/
 theorem Delineation.isSemialgebraicStack (hC : IsSemialgebraic C)
-    (D : Delineation fun (p : F) (x : C) ↦ p.1.map (eval₂Hom φ x.1)) :
+    (D : Delineation fun (p : F) (x : C) ↦ p.val.map (eval₂Hom φ x.val)) :
     IsSemialgebraicStack C D.root := by
   classical
   -- Pass the coefficients to ℝ; the homomorphism may identify different family members.
   let G := F.image fun p ↦ p.map (MvPolynomial.map φ)
   have hroots (x : C) :
-      G.biUnion (fun p ↦ (p.map (MvPolynomial.eval x.1)).roots.toFinset) =
+      G.biUnion (fun p ↦ (p.map (MvPolynomial.eval x.val)).roots.toFinset) =
         Finset.univ.image (fun i ↦ D.root i x) := D.biUnion_image_map_roots_toFinset_eq x
   -- Identify the ambient cells with the shared-root rank formulas on the base.
   have hsection (i : Fin D.count) : cylinder C '' sectionSet D.root i =

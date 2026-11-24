@@ -5,59 +5,42 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
+public import TauCeti.Geometry.RealAlgebraic.Stack.Bounded
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.NormalDecomposition.Basic
-public import TauCeti.Geometry.RealAnalytic.Semianalytic.Stack
 
-import Mathlib.Topology.TietzeExtension
 import TauCeti.Analysis.Analytic.Submanifold.Dimension
-import TauCeti.Analysis.Polynomial.Division
-import TauCeti.Topology.Algebra.Polynomial.Basic
+import TauCeti.Geometry.RealAlgebraic.Stack.Analytic
+import TauCeti.Geometry.RealAlgebraic.Stack.Frontier.Lifting
+import TauCeti.Geometry.RealAnalytic.Semianalytic.Stack
 import TauCeti.Topology.Algebra.Polynomial.Root.Extension
-import TauCeti.Topology.Connected.FiniteFamily
-import TauCeti.Topology.Order.RegionBetween
 
 /-!
 # Cylindrical lifting of normal decompositions along monic polynomial delineations
 
 Let `𝒟` be a normal decomposition of `B ⊆ ℝⁿ`, let `B₀` be an open neighborhood of `closure B`,
 and let `P : ι → ℝⁿ → ℝ[X]` be a finite family of monic polynomials of constant degrees `d k` on
-`B₀` with analytic coefficients on `B₀`, whose real roots over `B` lie in `[a', b'] ⊂ (a, b)`. If
-over each base piece `S ∈ 𝒟` the family `P` admits a delineation `D S hS`, then clipping the stack
-cells of `D S hS` to the open height interval `(a, b)` yields a normal decomposition of the cylinder
-`{v : ℝⁿ⁺¹ | Fin.tail v ∈ B ∧ v 0 ∈ Ioo a b}` on every piece of which all evaluations
-`v ↦ (P k (Fin.tail v)).eval (v 0)` are sign-invariant (`TauCeti.IsNormalDecomposition.lift`).
+`B₀` with analytic coefficients on `B₀`, whose real roots over `B` lie in `(a, b)`. If over each
+base piece `S ∈ 𝒟` the family `P` admits a delineation `D S hS`, then clipping the stack cells of
+`D S hS` to the open height interval `(a, b)` yields a normal decomposition of the cylinder
+`{v : ℝⁿ⁺¹ | Fin.tail v ∈ B ∧ v 0 ∈ Ioo a b}` (`TauCeti.IsNormalDecomposition.lift`), on every piece
+of which all evaluations `v ↦ (P k (Fin.tail v)).eval (v 0)` are sign-invariant via
+`TauCeti.Delineation.signInvariant_eval_of_mem_boundedStackCells`.
 
-Unlike simple-root stratification, distinct real roots on a base piece `S₁` may coalesce on a
-frontier piece `S₀ ⊆ closure S₁`, and complex conjugate roots over `S₁` may collide at `S₀` to
-create new real roots on `S₀` that are not limits of real roots on `S₁`. Both phenomena are
-accommodated without refining the projection family:
-
-* Because `S₁` has preconnected approach regions and `P k x ≠ 0` on `closure S₁ ⊆ B₀`, every
-  bounded root function `(D S₁ hS₁).root i` extends continuously to `closure S₁`
-  (`TauCeti.continuousOn_extendFrom_of_polynomial_root`) and remains a root of the same `P k x`
-  there (`TauCeti.eval_extendFrom_eq_zero`).
-* Over a connected piece `S₀ ⊆ closure S₁`, the extended root takes values in the finite distinct
-  family `(D S₀ hS₀).root`, so by `TauCeti.eq_of_continuous_mem_range` it agrees with a single
-  section of `D S₀ hS₀` throughout `S₀`.
-* Augmenting each stack by the constant lower and upper bounds `a` and `b` turns every clipped
-  sector into an open band between globally continuous endpoints, whose closure is the closed band
-  over `closure S₁` (`TauCeti.closure_regionBetween`). Monotonicity of the induced map of augmented
-  indices from `S₁` to `S₀` then yields both containment and strict dimension drop in the frontier
-  condition.
+Because each base piece `S₁ ∈ 𝒟` has preconnected approach regions at every ambient point and each
+`P k` is monic of constant degree on `B₀ ⊇ closure S₁`, every root section `(D S₁ hS₁).root i`
+converges along `S₁` at every point of `closure S₁` (`TauCeti.exists_tendsto_nhdsWithin_of_isRoot`).
+Over a boundary piece `S₀ ⊆ closure S₁` in `𝒟`,
+`TauCeti.Delineation.exists_root_tendsto_of_subset_closure` matches these boundary limits
+monotonically to sections of `D S₀ hS₀`. Combining the ambient-stack frontier and dimension-drop
+lifting theorems (`TauCeti.subset_closure_of_mem_biUnion_stackCells`,
+`TauCeti.dim_lt_of_mem_biUnion_stackCells`) with openness of `{v | v 0 ∈ Ioo a b}` and clipped-stack
+approach-region lifting (`TauCeti.isPreconnectedApproachAt_of_mem_boundedStackCells`) propagates
+both parts of the frontier condition and preconnected approach regions at every point of `ℝⁿ⁺¹`.
 
 ## Main declarations
 
-* `TauCeti.boundedStackCells`: stack cells clipped to an open height interval, with unfolding
-  equation `TauCeti.boundedStackCells_def`, membership characterization
-  `TauCeti.mem_boundedStackCells`, clipping introduction `TauCeti.inter_mem_boundedStackCells`,
-  finiteness `TauCeti.finite_boundedStackCells`, covering `TauCeti.sUnion_boundedStackCells`,
-  disjointness `TauCeti.pairwiseDisjoint_boundedStackCells`, and base projection
-  `TauCeti.image_tail_of_mem_boundedStackCells`.
-* `TauCeti.signInvariant_eval_of_mem_boundedStackCells`: sign-invariance of polynomial evaluations
-  on clipped stack cells.
-* `TauCeti.IsNormalDecomposition.lift`: lifting a normal decomposition by delineations of a monic
-  analytic-coefficient polynomial family with bounded roots.
+* `TauCeti.IsNormalDecomposition.lift`: lifting a normal decomposition to a bounded open cylinder
+  along delineations of a monic analytic-coefficient polynomial family with roots in `Ioo a b`.
 
 ## References
 
@@ -74,364 +57,6 @@ open Filter Function Polynomial Set Topology
 
 namespace TauCeti
 
-/-! ### Coordinate identification with `(Fin n → ℝ) × ℝ` -/
-
-private def consHomeomorph (n : ℕ) : ((Fin n → ℝ) × ℝ) ≃ₜ (Fin (n + 1) → ℝ) :=
-  ((ContinuousLinearEquiv.prodComm ℝ (Fin n → ℝ) ℝ).trans
-    (Fin.consEquivL ℝ fun _ : Fin (n + 1) ↦ ℝ)).toHomeomorph
-
-private theorem consHomeomorph_apply {n : ℕ} (p : (Fin n → ℝ) × ℝ) :
-    consHomeomorph n p = Fin.cons p.2 p.1 :=
-  rfl
-
-private theorem consHomeomorph_symm_apply {n : ℕ} (v : Fin (n + 1) → ℝ) :
-    (consHomeomorph n).symm v = (Fin.tail v, v 0) :=
-  (consHomeomorph n).injective (by simp [consHomeomorph_apply, Fin.cons_self_tail])
-
-private theorem mem_image_consHomeomorph {n : ℕ} {A : Set ((Fin n → ℝ) × ℝ)}
-    {v : Fin (n + 1) → ℝ} :
-    v ∈ consHomeomorph n '' A ↔ (Fin.tail v, v 0) ∈ A := by
-  constructor
-  · rintro ⟨⟨x, t⟩, hp, rfl⟩
-    simpa [consHomeomorph_apply] using hp
-  · intro hv
-    exact ⟨(Fin.tail v, v 0), hv, Fin.cons_self_tail v⟩
-
-/-! ### Augmented stacks and clipped stack cells -/
-
-/-- The cells of a stack `θ` over `S ⊆ ℝⁿ` clipped to the height interval `Ioo a b`. When all
-values of `θ` lie in `Ioo a b`, sections are unchanged and sectors become bounded open bands. -/
-noncomputable def boundedStackCells {n m : ℕ} (a b : ℝ) (S : Set (Fin n → ℝ)) (θ : Fin m → S → ℝ) :
-    Set (Set (Fin (n + 1) → ℝ)) :=
-  (· ∩ {v | v 0 ∈ Ioo a b}) '' stackCells S θ
-
-/-- Defining equation of `TauCeti.boundedStackCells`, expressing it as the image of
-`TauCeti.stackCells` under clipping to the open height interval `Ioo a b`. -/
-theorem boundedStackCells_def {n m : ℕ} (a b : ℝ) (S : Set (Fin n → ℝ)) (θ : Fin m → S → ℝ) :
-    boundedStackCells a b S θ = (· ∩ {v | v 0 ∈ Ioo a b}) '' stackCells S θ :=
-  (rfl)
-
-/-- Unconditional membership characterization of `TauCeti.boundedStackCells`: a set lies in
-`boundedStackCells a b S θ` iff it is obtained by clipping some cell of `stackCells S θ` to
-`v 0 ∈ Ioo a b`.
-
-Left untagged for `@[simp]` because `TauCeti.mem_stackCells` simplifies `T ∈ stackCells S θ`
-further. -/
-theorem mem_boundedStackCells {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)} {θ : Fin m → S → ℝ}
-    {E : Set (Fin (n + 1) → ℝ)} :
-    E ∈ boundedStackCells a b S θ ↔ ∃ T ∈ stackCells S θ, T ∩ {v | v 0 ∈ Ioo a b} = E :=
-  (Iff.rfl)
-
-/-- Clipping any cell of `stackCells S θ` to `Ioo a b` produces a member of
-`boundedStackCells a b S θ`. -/
-theorem inter_mem_boundedStackCells {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)}
-    {θ : Fin m → S → ℝ} {T : Set (Fin (n + 1) → ℝ)} (hT : T ∈ stackCells S θ) :
-    T ∩ {v | v 0 ∈ Ioo a b} ∈ boundedStackCells a b S θ :=
-  mem_boundedStackCells.2 ⟨T, hT, rfl⟩
-
-/-- A clipped stack has finitely many cells. -/
-theorem finite_boundedStackCells {n m : ℕ} (a b : ℝ) (S : Set (Fin n → ℝ)) (θ : Fin m → S → ℝ) :
-    (boundedStackCells a b S θ).Finite :=
-  (finite_stackCells S θ).image _
-
-/-- For a monotone stack `θ` over `S`, the clipped stack cells cover the bounded cylinder
-`{v | Fin.tail v ∈ S ∧ v 0 ∈ Ioo a b}`. -/
-theorem sUnion_boundedStackCells {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)} {θ : Fin m → S → ℝ}
-    (hθ : ∀ x, Monotone fun i ↦ θ i x) :
-    ⋃₀ boundedStackCells a b S θ = {v : Fin (n + 1) → ℝ | Fin.tail v ∈ S ∧ v 0 ∈ Ioo a b} := by
-  ext v
-  simp only [mem_sUnion, mem_boundedStackCells, mem_ofPred_eq]
-  constructor
-  · rintro ⟨_, ⟨T, hT, rfl⟩, hvT, hvI⟩
-    have hvS : v ∈ Fin.tail ⁻¹' S := by
-      rw [← sUnion_stackCells hθ]
-      exact ⟨T, hT, hvT⟩
-    exact ⟨hvS, hvI⟩
-  · rintro ⟨hvS, hvI⟩
-    have hv : v ∈ ⋃₀ stackCells S θ := by
-      rw [sUnion_stackCells hθ]
-      exact hvS
-    obtain ⟨T, hT, hvT⟩ := hv
-    exact ⟨_, ⟨T, hT, rfl⟩, hvT, hvI⟩
-
-/-- The clipped cells of a stack with pairwise distinct functions on each fibre are pairwise
-disjoint. -/
-theorem pairwiseDisjoint_boundedStackCells {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)}
-    {θ : Fin m → S → ℝ} (hθ : ∀ x, Injective fun i ↦ θ i x) :
-    (boundedStackCells a b S θ).PairwiseDisjoint id := by
-  rintro _ ⟨A, hA, rfl⟩ _ ⟨B, hB, rfl⟩ hAB
-  exact (pairwiseDisjoint_stackCells hθ hA hB fun h ↦ hAB (h ▸ rfl)).mono
-    inter_subset_left inter_subset_left
-
-/-- Polynomial evaluations of a delineation remain sign-invariant on every clipped stack cell. -/
-theorem signInvariant_eval_of_mem_boundedStackCells {n : ℕ} {ι : Type*} {a b : ℝ}
-    {S : Set (Fin n → ℝ)} {P : ι → (Fin n → ℝ) → ℝ[X]}
-    (D : Delineation fun k (x : S) ↦ P k x) (k : ι) {E : Set (Fin (n + 1) → ℝ)}
-    (hE : E ∈ boundedStackCells a b S D.root) :
-    SignInvariant (fun v ↦ (P k (Fin.tail v)).eval (v 0)) E := by
-  obtain ⟨T, hT, rfl⟩ := mem_boundedStackCells.1 hE
-  refine SignInvariant.mono ?_ inter_subset_left
-  rcases mem_stackCells.1 hT with ⟨i, rfl⟩ | ⟨j, rfl⟩
-  · rw [signInvariant_image]
-    exact (D.signInvariant_sectionSet k i).congr fun z _ ↦ by simp
-  · rw [signInvariant_image]
-    exact (D.signInvariant_sectorSet k j).congr fun z _ ↦ by simp
-
-private def augmentedStack {X : Type*} (a b : ℝ) {m : ℕ} (θ : Fin m → X → ℝ) :
-    Fin (m + 2) → X → ℝ :=
-  Fin.cons (fun _ ↦ a) (Fin.snoc θ (fun _ ↦ b))
-
-private theorem augmentedStack_zero {X : Type*} (a b : ℝ) {m : ℕ} (θ : Fin m → X → ℝ) (x : X) :
-    augmentedStack a b θ 0 x = a :=
-  rfl
-
-private theorem augmentedStack_inner {X : Type*} (a b : ℝ) {m : ℕ} (θ : Fin m → X → ℝ)
-    (i : Fin m) (x : X) :
-    augmentedStack a b θ i.castSucc.succ x = θ i x := by
-  simp [augmentedStack]
-
-private theorem augmentedStack_last {X : Type*} (a b : ℝ) {m : ℕ} (θ : Fin m → X → ℝ) (x : X) :
-    augmentedStack a b θ (Fin.last (m + 1)) x = b := by
-  rw [← Fin.succ_last m]
-  simp [augmentedStack]
-
-private theorem augmentedStack_congr {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)}
-    {θ : Fin m → S → ℝ} {G : Fin m → (Fin n → ℝ) → ℝ} (hG : ∀ i (x : S), G i x = θ i x)
-    (r : Fin (m + 2)) (x : S) :
-    augmentedStack a b G r x = augmentedStack a b θ r x := by
-  refine r.cases rfl fun s ↦ s.lastCases ?_ fun i ↦ ?_
-  · simp [Fin.succ_last, augmentedStack_last]
-  · simp [augmentedStack_inner, hG i x]
-
-private theorem continuous_augmentedStack {X : Type*} [TopologicalSpace X] {a b : ℝ} {m : ℕ}
-    {θ : Fin m → X → ℝ} (hc : ∀ i, Continuous (θ i)) (r : Fin (m + 2)) :
-    Continuous (augmentedStack a b θ r) := by
-  induction r using Fin.cases with
-  | zero => exact continuous_const
-  | succ s =>
-    induction s using Fin.lastCases with
-    | last =>
-      rw [Fin.succ_last, funext (augmentedStack_last a b θ)]
-      exact continuous_const
-    | cast i => simpa [augmentedStack] using hc i
-
-private theorem strictMono_augmentedStack {X : Type*} {a b : ℝ} {m : ℕ} {θ : Fin m → X → ℝ}
-    (hab : a < b) (hθ : ∀ x, StrictMono fun i ↦ θ i x) (hbnd : ∀ i x, θ i x ∈ Ioo a b) (x : X) :
-    StrictMono fun r ↦ augmentedStack a b θ r x := by
-  intro r₁ r₂ hlt
-  induction r₁ using Fin.cases with
-  | zero =>
-    induction r₂ using Fin.cases with
-    | zero => exact absurd hlt (lt_irrefl _)
-    | succ s₂ =>
-      induction s₂ using Fin.lastCases with
-      | last => simpa [augmentedStack_zero, Fin.succ_last, augmentedStack_last] using hab
-      | cast i₂ => simpa [augmentedStack_zero, augmentedStack_inner] using (hbnd i₂ x).1
-  | succ s₁ =>
-    induction r₂ using Fin.cases with
-    | zero => exact absurd hlt (Fin.not_lt_zero _)
-    | succ s₂ =>
-      have hs : s₁ < s₂ := Fin.succ_lt_succ_iff.1 hlt
-      induction s₁ using Fin.lastCases with
-      | last => exact absurd hs (not_lt_of_ge (Fin.le_last _))
-      | cast i₁ =>
-        induction s₂ using Fin.lastCases with
-        | last =>
-          simpa [augmentedStack_inner, Fin.succ_last, augmentedStack_last] using (hbnd i₁ x).2
-        | cast i₂ =>
-          simpa [augmentedStack_inner] using hθ x (Fin.castSucc_lt_castSucc_iff.1 hs)
-
-private theorem sectionSet_inter_Ioo_eq {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)}
-    {θ : Fin m → S → ℝ} (hbnd : ∀ i x, θ i x ∈ Ioo a b) (i : Fin m) :
-    cylinder S '' sectionSet θ i ∩ {v | v 0 ∈ Ioo a b} = cylinder S '' sectionSet θ i :=
-  inter_eq_left.2 fun v hv ↦ by
-    obtain ⟨hx, hv0⟩ := mem_image_cylinder.1 hv
-    rw [mem_sectionSet] at hv0
-    dsimp only at hv0
-    rw [mem_ofPred_eq, ← hv0]
-    exact hbnd i ⟨Fin.tail v, hx⟩
-
-private theorem sectorLower_iff {X : Type*} {a b : ℝ} {m : ℕ} {θ : Fin m → X → ℝ}
-    (hbnd : ∀ i x, θ i x ∈ Ioo a b) (j : Fin (m + 1)) (x : X) (t : ℝ) :
-    ((∀ i : Fin m, i.succ = j → θ i x < t) ∧ a < t) ↔
-      augmentedStack a b θ j.castSucc x < t := by
-  refine j.cases ?_ fun i₀ ↦ ?_
-  · simp [augmentedStack_zero]
-  · simp only [Fin.succ_inj, forall_eq, ← Fin.succ_castSucc, augmentedStack_inner]
-    exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, (hbnd i₀ x).1.trans h⟩⟩
-
-private theorem sectorUpper_iff {X : Type*} {a b : ℝ} {m : ℕ} {θ : Fin m → X → ℝ}
-    (hbnd : ∀ i x, θ i x ∈ Ioo a b) (j : Fin (m + 1)) (x : X) (t : ℝ) :
-    ((∀ i : Fin m, i.castSucc = j → t < θ i x) ∧ t < b) ↔
-      t < augmentedStack a b θ j.succ x := by
-  refine j.lastCases ?_ fun i₀ ↦ ?_
-  · simp [Fin.succ_last, augmentedStack_last, Fin.castSucc_ne_last]
-  · simp only [Fin.castSucc_inj, forall_eq, augmentedStack_inner]
-    exact ⟨fun h ↦ h.1, fun h ↦ ⟨h, h.trans (hbnd i₀ x).2⟩⟩
-
-private theorem sectorSet_inter_Ioo_eq {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)}
-    {θ : Fin m → S → ℝ} (hab : a < b) (hθ : ∀ x, StrictMono fun i ↦ θ i x)
-    (hbnd : ∀ i x, θ i x ∈ Ioo a b) (j : Fin (m + 1)) :
-    cylinder S '' sectorSet θ j ∩ {v | v 0 ∈ Ioo a b} =
-      cylinder S '' sectorSet (augmentedStack a b θ) j.castSucc.succ := by
-  have hmono : ∀ x, Monotone fun r ↦ augmentedStack a b θ r x :=
-    fun x ↦ (strictMono_augmentedStack hab hθ hbnd x).monotone
-  ext v
-  simp only [mem_inter_iff, mem_image_cylinder, mem_ofPred_eq, mem_Ioo,
-    sectorSet_castSucc_succ hmono, mem_sectorSet_iff_of_monotone fun x ↦ (hθ x).monotone]
-  refine ⟨fun ⟨⟨hx, hl, hu⟩, ha, hb⟩ ↦ ⟨hx, (sectorLower_iff hbnd j ⟨_, hx⟩ _).1 ⟨hl, ha⟩,
-    (sectorUpper_iff hbnd j ⟨_, hx⟩ _).1 ⟨hu, hb⟩⟩, fun ⟨hx, hl, hu⟩ ↦ ?_⟩
-  obtain ⟨hl', ha⟩ := (sectorLower_iff hbnd j ⟨_, hx⟩ _).2 hl
-  obtain ⟨hu', hb⟩ := (sectorUpper_iff hbnd j ⟨_, hx⟩ _).2 hu
-  exact ⟨⟨hx, hl', hu'⟩, ha, hb⟩
-
-private theorem mem_boundedStackCells_augmented_iff {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)}
-    {θ : Fin m → S → ℝ} (hab : a < b) (hθ : ∀ x, StrictMono fun i ↦ θ i x)
-    (hbnd : ∀ i x, θ i x ∈ Ioo a b) {E : Set (Fin (n + 1) → ℝ)} :
-    E ∈ boundedStackCells a b S θ ↔
-      (∃ i : Fin m, cylinder S '' sectionSet θ i = E) ∨
-        ∃ j : Fin (m + 1),
-          cylinder S '' sectorSet (augmentedStack a b θ) j.castSucc.succ = E := by
-  simp only [mem_boundedStackCells, mem_stackCells]
-  constructor
-  · rintro ⟨T, (⟨i, rfl⟩ | ⟨j, rfl⟩), rfl⟩
-    · exact Or.inl ⟨i, (sectionSet_inter_Ioo_eq hbnd i).symm⟩
-    · exact Or.inr ⟨j, (sectorSet_inter_Ioo_eq hab hθ hbnd j).symm⟩
-  · rintro (⟨i, rfl⟩ | ⟨j, rfl⟩)
-    · exact ⟨_, Or.inl ⟨i, rfl⟩, sectionSet_inter_Ioo_eq hbnd i⟩
-    · exact ⟨_, Or.inr ⟨j, rfl⟩, sectorSet_inter_Ioo_eq hab hθ hbnd j⟩
-
-/-- Every clipped cell of a strictly increasing stack whose values lie in `Ioo a b` projects onto
-the base `S` under `Fin.tail`. -/
-theorem image_tail_of_mem_boundedStackCells {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)}
-    {θ : Fin m → S → ℝ} (hab : a < b) (hθ : ∀ x, StrictMono fun i ↦ θ i x)
-    (hbnd : ∀ i x, θ i x ∈ Ioo a b) {E : Set (Fin (n + 1) → ℝ)}
-    (hE : E ∈ boundedStackCells a b S θ) : Fin.tail '' E = S := by
-  rcases (mem_boundedStackCells_augmented_iff hab hθ hbnd).1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-  · exact image_tail_of_mem_stackCells hθ (image_cylinder_sectionSet_mem_stackCells i)
-  · exact image_tail_of_mem_stackCells (strictMono_augmentedStack hab hθ hbnd)
-      (image_cylinder_sectorSet_mem_stackCells j.castSucc.succ)
-
-/-! ### Continuous extension and frontier comparison of delineation roots -/
-
-private theorem exists_continuous_root_extension {n : ℕ} {ι : Type*} {a a' b' b : ℝ}
-    {B₀ S : Set (Fin n → ℝ)} {d : ι → ℕ} {P : ι → (Fin n → ℝ) → ℝ[X]}
-    (hB₀ : IsOpen B₀) (hScl : closure S ⊆ B₀) (hab' : a < a') (hb'b : b' < b)
-    (hmonic : ∀ k, ∀ x ∈ B₀, (P k x).Monic)
-    (hdeg : ∀ k, ∀ x ∈ B₀, (P k x).natDegree = d k)
-    (hcoeff : ∀ k j, j ≤ d k → ContinuousOn (fun x ↦ (P k x).coeff j) B₀)
-    (hroots : ∀ k, ∀ x ∈ S, ∀ t, (P k x).IsRoot t → t ∈ Icc a' b')
-    (happ : ∀ x, IsPreconnectedApproachAt S x)
-    (D : Delineation fun k (x : S) ↦ P k x) :
-    ∃ G : Fin D.count → (Fin n → ℝ) → ℝ,
-      (∀ i, Continuous (G i)) ∧
-      (∀ i (x : S), G i x = D.root i x) ∧
-      (∀ i, ∀ x ∈ closure S, G i x ∈ Ioo a b) ∧
-      ∀ i, ∀ x ∈ closure S, ∃ k, (P k x).IsRoot (G i x) := by
-  classical
-  have hsingle (i : Fin D.count) : ∃ g : (Fin n → ℝ) → ℝ,
-      Continuous g ∧ (∀ x : S, g x = D.root i x) ∧
-      (∀ x ∈ closure S, g x ∈ Ioo a b) ∧ ∀ x ∈ closure S, ∃ k, (P k x).IsRoot (g x) := by
-    obtain ⟨k₀, hk₀⟩ := D.exists_multiplicity_pos i
-    let f₀ : (Fin n → ℝ) → ℝ := Function.extend Subtype.val (D.root i) fun _ ↦ 0
-    have hf₀ (x : S) : f₀ x = D.root i x := Subtype.val_injective.extend_apply _ _ x
-    have hf₀c : ContinuousOn f₀ S :=
-      continuousOn_iff_continuous_domRestrict.2 ((D.continuous_root i).congr fun x ↦ (hf₀ x).symm)
-    have hrt (y : Fin n → ℝ) (hy : y ∈ S) : (P k₀ y).IsRoot (f₀ y) := by
-      rw [hf₀ ⟨y, hy⟩]
-      exact (rootMultiplicity_pos'.1 (D.rootMultiplicity_root k₀ i ⟨y, hy⟩ ▸ hk₀)).2
-    have himg : f₀ '' S ⊆ Icc a' b' := by
-      rintro _ ⟨y, hy, rfl⟩
-      exact hroots k₀ y hy _ (hrt y hy)
-    have hp : ContinuousOn (fun z : (Fin n → ℝ) × ℝ ↦ (P k₀ z.1).eval z.2)
-        (closure S ×ˢ univ) := fun z hz ↦
-      (Polynomial.continuousAt_eval
-        (fun j hj ↦ ((hcoeff k₀ j hj).continuousAt (hB₀.mem_nhds (hScl hz.1))).comp_of_eq
-          continuous_fst.continuousAt rfl)
-        (continuous_fst.continuousAt.eventually
-          (Filter.mem_of_superset (hB₀.mem_nhds (hScl hz.1)) fun y hy ↦ (hdeg k₀ y hy).le))
-        continuous_snd.continuousAt).continuousWithinAt
-    have hExt : ContinuousOn (extendFrom S f₀) (closure S) :=
-      continuousOn_extendFrom_of_polynomial_root hp hf₀c hrt (isCompact_Icc.isBounded.subset himg)
-        (fun x hx ↦ (hmonic k₀ x (hScl hx)).ne_zero) fun x _ ↦ happ x
-    have hextEq : EqOn (extendFrom S f₀) f₀ S := extendFrom_extends hf₀c
-    obtain ⟨g, hg⟩ := (⟨_, hExt.domRestrict⟩ : C(closure S, ℝ)).exists_restrict_eq isClosed_closure
-    have hgEq : EqOn g (extendFrom S f₀) (closure S) := fun x hx ↦ congr($hg ⟨x, hx⟩)
-    refine ⟨g, g.continuous, fun x ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ⟨k₀, ?_⟩⟩
-    · rw [hgEq (subset_closure x.2), hextEq x.2, hf₀ x]
-    · have hmem : extendFrom S f₀ x ∈ Icc a' b' :=
-        closure_minimal ((hextEq.image_eq ▸ himg : extendFrom S f₀ '' S ⊆ Icc a' b')) isClosed_Icc
-          (hExt.image_closure (mem_image_of_mem _ hx))
-      rw [hgEq hx]
-      exact ⟨hab'.trans_le hmem.1, hmem.2.trans_lt hb'b⟩
-    · rw [hgEq hx]
-      exact eval_extendFrom_eq_zero hp hf₀c hrt hExt hx
-  choose G hGc hGeq hGbnd hGroot using hsingle
-  exact ⟨G, hGc, hGeq, hGbnd, hGroot⟩
-
-private theorem exists_monotone_index_map {n m₁ : ℕ} {ι : Type*} {a b : ℝ}
-    {B₀ S₀ S₁ : Set (Fin n → ℝ)} {P : ι → (Fin n → ℝ) → ℝ[X]}
-    (D₀ : Delineation fun k (x : S₀) ↦ P k x) {G₁ : Fin m₁ → (Fin n → ℝ) → ℝ}
-    (hab : a < b) (hS₀ : IsConnected S₀) (hS₀B₀ : S₀ ⊆ B₀) (hS₀₁ : S₀ ⊆ closure S₁)
-    (hmonic : ∀ k, ∀ x ∈ B₀, (P k x).Monic)
-    (hbnd₀ : ∀ i x, D₀.root i x ∈ Ioo a b)
-    (hG₁c : ∀ i, Continuous (G₁ i))
-    (hG₁root : ∀ i, ∀ x ∈ closure S₁, ∃ k, (P k x).IsRoot (G₁ i x))
-    (hG₁mono : ∀ r₁ r₂ : Fin (m₁ + 2), r₁ ≤ r₂ →
-      ∀ x ∈ closure S₁, augmentedStack a b G₁ r₁ x ≤ augmentedStack a b G₁ r₂ x) :
-    ∃ ρ : Fin (m₁ + 2) → Fin (D₀.count + 2),
-      Monotone ρ ∧
-      (∀ i : Fin m₁, ∃ l : Fin D₀.count, ρ i.castSucc.succ = l.castSucc.succ) ∧
-      ∀ r (x : S₀), augmentedStack a b G₁ r x = augmentedStack a b D₀.root (ρ r) x := by
-  classical
-  let := isPreconnected_iff_preconnectedSpace.1 hS₀.isPreconnected
-  obtain ⟨x₀⟩ := hS₀.nonempty.to_subtype
-  have hinterior (i : Fin m₁) : ∃ l : Fin D₀.count, ∀ x : S₀, D₀.root l x = G₁ i x := by
-    have hmem (x : S₀) : G₁ i x ∈ range fun l ↦ D₀.root l x := by
-      obtain ⟨k, hk⟩ := hG₁root i x (hS₀₁ x.2)
-      exact D₀.exists_root_eq k x (hmonic k x (hS₀B₀ x.2)).ne_zero _ hk
-    obtain ⟨l₀, hl₀⟩ := hmem x₀
-    refine ⟨l₀, fun x ↦ congrFun (eq_of_continuous_mem_range D₀.continuous_root
-      ((hG₁c i).comp continuous_subtype_val)
-      (fun y j hj ↦ (D₀.strictMono_root y).injective hj) hmem hl₀) x⟩
-  choose l hl using hinterior
-  let ρ : Fin (m₁ + 2) → Fin (D₀.count + 2) :=
-    Fin.cons 0 (Fin.snoc (fun i ↦ (l i).castSucc.succ) (Fin.last (D₀.count + 1)))
-  have hρeq (r : Fin (m₁ + 2)) (x : S₀) :
-      augmentedStack a b G₁ r x = augmentedStack a b D₀.root (ρ r) x := by
-    refine r.cases rfl fun s ↦ s.lastCases ?_ fun i ↦ ?_
-    · simp [ρ, Fin.succ_last, augmentedStack_last]
-    · simp [ρ, augmentedStack_inner, hl i x]
-  refine ⟨ρ, fun r₁ r₂ hr ↦ ?_, fun i ↦ ⟨l i, by simp [ρ]⟩, hρeq⟩
-  have hle := hG₁mono r₁ r₂ hr x₀ (hS₀₁ x₀.2)
-  rw [hρeq r₁ x₀, hρeq r₂ x₀] at hle
-  exact (strictMono_augmentedStack hab D₀.strictMono_root hbnd₀ x₀).le_iff_le.1 hle
-
-private theorem section_eq_cons_graphOn {n m : ℕ} {S : Set (Fin n → ℝ)} {θ : Fin m → S → ℝ}
-    {G : Fin m → (Fin n → ℝ) → ℝ} (hG : ∀ i (x : S), G i x = θ i x) (i : Fin m) :
-    cylinder S '' sectionSet θ i = consHomeomorph n '' S.graphOn (G i) := by
-  ext v
-  simp only [mem_image_cylinder, mem_sectionSet, mem_image_consHomeomorph, mem_graphOn]
-  exact ⟨fun ⟨hx, hv⟩ ↦ ⟨hx, (hG i ⟨_, hx⟩).trans hv⟩,
-    fun ⟨hx, hv⟩ ↦ ⟨hx, (hG i ⟨_, hx⟩).symm.trans hv⟩⟩
-
-private theorem sector_eq_cons_regionBetween {n m : ℕ} {a b : ℝ} {S : Set (Fin n → ℝ)}
-    {θ : Fin m → S → ℝ} {G : Fin m → (Fin n → ℝ) → ℝ} (hab : a < b)
-    (hθ : ∀ x, StrictMono fun i ↦ θ i x) (hbnd : ∀ i x, θ i x ∈ Ioo a b)
-    (hG : ∀ i (x : S), G i x = θ i x) (j : Fin (m + 1)) :
-    cylinder S '' sectorSet (augmentedStack a b θ) j.castSucc.succ =
-      consHomeomorph n ''
-        regionBetween (augmentedStack a b G j.castSucc) (augmentedStack a b G j.succ) S := by
-  have hmono : ∀ x, Monotone fun r ↦ augmentedStack a b θ r x :=
-    fun x ↦ (strictMono_augmentedStack hab hθ hbnd x).monotone
-  ext v
-  simp only [mem_image_cylinder, sectorSet_castSucc_succ hmono, mem_image_consHomeomorph,
-    regionBetween, mem_ofPred_eq, mem_Ioo]
-  exact ⟨fun ⟨hx, hl, hu⟩ ↦ ⟨hx, by rwa [augmentedStack_congr hG _ ⟨_, hx⟩],
-      by rwa [augmentedStack_congr hG _ ⟨_, hx⟩]⟩,
-    fun ⟨hx, hl, hu⟩ ↦ ⟨hx, by rwa [← augmentedStack_congr hG _ ⟨_, hx⟩],
-      by rwa [← augmentedStack_congr hG _ ⟨_, hx⟩]⟩⟩
-
 private theorem isSemianalytic_height_mem_Ioo {n : ℕ} (a b : ℝ) :
     IsSemianalytic {v : Fin (n + 1) → ℝ | v 0 ∈ Ioo a b} := by
   have h0 : AnalyticOnNhd ℝ (fun v : Fin (n + 1) → ℝ ↦ v 0) univ :=
@@ -441,207 +66,6 @@ private theorem isSemianalytic_height_mem_Ioo {n : ℕ} (a b : ℝ) :
   convert h1.inter h2 using 1
   ext v
   simp only [mem_ofPred_eq, mem_Ioo, mem_inter_iff, Pi.sub_apply, sub_pos]
-
-private theorem frontier_containment_section {n m₀ m₁ : ℕ} {a b : ℝ} {S₀ S₁ : Set (Fin n → ℝ)}
-    {θ₀ : Fin m₀ → S₀ → ℝ} {θ₁ : Fin m₁ → S₁ → ℝ} {G₁ : Fin m₁ → (Fin n → ℝ) → ℝ}
-    {ρ : Fin (m₁ + 2) → Fin (m₀ + 2)} (hab : a < b)
-    (hθ₀ : ∀ x, StrictMono fun i ↦ θ₀ i x) (hbnd₀ : ∀ i x, θ₀ i x ∈ Ioo a b)
-    (hG₁c : ∀ i, Continuous (G₁ i)) (hG₁ : ∀ i (x : S₁), G₁ i x = θ₁ i x)
-    (hS₀₁ : S₀ ⊆ closure S₁) (i₁ : Fin m₁) {l₀ : Fin m₀}
-    (hl₀ : ρ i₁.castSucc.succ = l₀.castSucc.succ)
-    (hρeq : ∀ r (x : S₀), augmentedStack a b G₁ r x = augmentedStack a b θ₀ (ρ r) x)
-    {E₀ : Set (Fin (n + 1) → ℝ)} (hE₀ : E₀ ∈ boundedStackCells a b S₀ θ₀)
-    (hne : (E₀ ∩ closure (cylinder S₁ '' sectionSet θ₁ i₁)).Nonempty) :
-    E₀ ⊆ closure (cylinder S₁ '' sectionSet θ₁ i₁) := by
-  obtain ⟨v₀, hv₀E₀, hv₀cl⟩ := hne
-  rw [section_eq_cons_graphOn hG₁ i₁, ← (consHomeomorph n).image_closure,
-    (hG₁c i₁).continuousOn.closure_graphOn] at hv₀cl ⊢
-  rw [mem_image_consHomeomorph, mem_graphOn] at hv₀cl
-  have hv₀sec : v₀ ∈ cylinder S₀ '' sectionSet θ₀ l₀ := by
-    have hx₀ : Fin.tail v₀ ∈ S₀ := by
-      rw [← image_tail_of_mem_boundedStackCells hab hθ₀ hbnd₀ hE₀]
-      exact mem_image_of_mem _ hv₀E₀
-    refine mem_image_cylinder.2 ⟨hx₀, ?_⟩
-    rw [mem_sectionSet]
-    dsimp only
-    rw [← augmentedStack_inner a b θ₀ l₀, ← hl₀, ← hρeq _ ⟨_, hx₀⟩, augmentedStack_inner]
-    exact hv₀cl.2
-  have hdisj := pairwiseDisjoint_boundedStackCells (a := a) (b := b) (S := S₀) (θ := θ₀)
-    (fun x ↦ (hθ₀ x).injective)
-  have hsec : E₀ = cylinder S₀ '' sectionSet θ₀ l₀ :=
-    hdisj.eq hE₀ ((mem_boundedStackCells_augmented_iff hab hθ₀ hbnd₀).2 (Or.inl ⟨l₀, rfl⟩))
-      (not_disjoint_iff.2 ⟨v₀, hv₀E₀, hv₀sec⟩)
-  rw [hsec]
-  intro v hv
-  obtain ⟨hx, hv0⟩ := mem_image_cylinder.1 hv
-  rw [mem_sectionSet] at hv0
-  dsimp only at hv0
-  rw [mem_image_consHomeomorph, mem_graphOn]
-  refine ⟨hS₀₁ hx, ?_⟩
-  rw [← hv0, ← augmentedStack_inner a b θ₀ l₀ ⟨_, hx⟩, ← hl₀, ← hρeq _ ⟨_, hx⟩,
-    augmentedStack_inner]
-
-private theorem frontier_containment_sector_of_section {n m₀ m₁ : ℕ} {a b : ℝ}
-    {S₀ S₁ : Set (Fin n → ℝ)} {θ₀ : Fin m₀ → S₀ → ℝ} {G₁ : Fin m₁ → (Fin n → ℝ) → ℝ}
-    {ρ : Fin (m₁ + 2) → Fin (m₀ + 2)} {v₀ : Fin (n + 1) → ℝ}
-    (hstrict₀ : ∀ x : S₀, StrictMono fun r ↦ augmentedStack a b θ₀ r x) (hS₀₁ : S₀ ⊆ closure S₁)
-    (j₁ : Fin (m₁ + 1)) (i₀ : Fin m₀)
-    (hρeq : ∀ r (x : S₀), augmentedStack a b G₁ r x = augmentedStack a b θ₀ (ρ r) x)
-    (hv₀E₀ : v₀ ∈ cylinder S₀ '' sectionSet θ₀ i₀)
-    (hv₀cl₁ : augmentedStack a b G₁ j₁.castSucc (Fin.tail v₀) ≤ v₀ 0)
-    (hv₀cl₂ : v₀ 0 ≤ augmentedStack a b G₁ j₁.succ (Fin.tail v₀)) :
-    cylinder S₀ '' sectionSet θ₀ i₀ ⊆ consHomeomorph n ''
-      closedRegionBetween (augmentedStack a b G₁ j₁.castSucc)
-        (augmentedStack a b G₁ j₁.succ) (closure S₁) := by
-  obtain ⟨hx₀, hv₀0⟩ := mem_image_cylinder.1 hv₀E₀
-  rw [mem_sectionSet] at hv₀0
-  dsimp only at hv₀0
-  have hle₁ : ρ j₁.castSucc ≤ i₀.castSucc.succ := (hstrict₀ ⟨_, hx₀⟩).le_iff_le.1 <| by
-    rw [← hρeq _ ⟨_, hx₀⟩, augmentedStack_inner, hv₀0]; exact hv₀cl₁
-  have hle₂ : i₀.castSucc.succ ≤ ρ j₁.succ := (hstrict₀ ⟨_, hx₀⟩).le_iff_le.1 <| by
-    rw [← hρeq _ ⟨_, hx₀⟩, augmentedStack_inner, hv₀0]; exact hv₀cl₂
-  intro v hv
-  obtain ⟨hx, hv0⟩ := mem_image_cylinder.1 hv
-  rw [mem_sectionSet] at hv0
-  dsimp only at hv0
-  rw [mem_image_consHomeomorph, mem_closedRegionBetween]
-  refine ⟨hS₀₁ hx, ?_, ?_⟩
-  · rw [hρeq _ ⟨_, hx⟩, ← hv0, ← augmentedStack_inner a b θ₀ i₀]
-    exact (hstrict₀ ⟨_, hx⟩).monotone hle₁
-  · rw [hρeq _ ⟨_, hx⟩, ← hv0, ← augmentedStack_inner a b θ₀ i₀]
-    exact (hstrict₀ ⟨_, hx⟩).monotone hle₂
-
-private theorem frontier_containment_sector_of_sector {n m₀ m₁ : ℕ} {a b : ℝ}
-    {S₀ S₁ : Set (Fin n → ℝ)} {θ₀ : Fin m₀ → S₀ → ℝ} {G₁ : Fin m₁ → (Fin n → ℝ) → ℝ}
-    {ρ : Fin (m₁ + 2) → Fin (m₀ + 2)} {v₀ : Fin (n + 1) → ℝ}
-    (hstrict₀ : ∀ x : S₀, StrictMono fun r ↦ augmentedStack a b θ₀ r x) (hS₀₁ : S₀ ⊆ closure S₁)
-    (j₁ : Fin (m₁ + 1)) (j₀ : Fin (m₀ + 1))
-    (hρeq : ∀ r (x : S₀), augmentedStack a b G₁ r x = augmentedStack a b θ₀ (ρ r) x)
-    (hv₀E₀ : v₀ ∈ cylinder S₀ '' sectorSet (augmentedStack a b θ₀) j₀.castSucc.succ)
-    (hv₀cl₁ : augmentedStack a b G₁ j₁.castSucc (Fin.tail v₀) ≤ v₀ 0)
-    (hv₀cl₂ : v₀ 0 ≤ augmentedStack a b G₁ j₁.succ (Fin.tail v₀)) :
-    cylinder S₀ '' sectorSet (augmentedStack a b θ₀) j₀.castSucc.succ ⊆
-      consHomeomorph n ''
-        closedRegionBetween (augmentedStack a b G₁ j₁.castSucc)
-          (augmentedStack a b G₁ j₁.succ) (closure S₁) := by
-  obtain ⟨hx₀, hsec₀⟩ := mem_image_cylinder.1 hv₀E₀
-  rw [sectorSet_castSucc_succ fun x ↦ (hstrict₀ x).monotone] at hsec₀
-  obtain ⟨hl₀, hu₀⟩ := hsec₀
-  dsimp only [mem_ofPred_eq] at hl₀ hu₀
-  have hlt₁ : (ρ j₁.castSucc).val < j₀.val + 1 := Fin.lt_def.1 <|
-    (hstrict₀ ⟨_, hx₀⟩).lt_iff_lt.1 <| by
-      calc augmentedStack a b θ₀ (ρ j₁.castSucc) ⟨Fin.tail v₀, hx₀⟩
-          = augmentedStack a b G₁ j₁.castSucc (Fin.tail v₀) :=
-            (hρeq j₁.castSucc ⟨Fin.tail v₀, hx₀⟩).symm
-        _ ≤ v₀ 0 := hv₀cl₁
-        _ < augmentedStack a b θ₀ j₀.succ ⟨Fin.tail v₀, hx₀⟩ := hu₀
-  have hlt₂ : j₀.val < (ρ j₁.succ).val := Fin.lt_def.1 <|
-    (hstrict₀ ⟨_, hx₀⟩).lt_iff_lt.1 <| by
-      calc augmentedStack a b θ₀ j₀.castSucc ⟨Fin.tail v₀, hx₀⟩
-          < v₀ 0 := hl₀
-        _ ≤ augmentedStack a b G₁ j₁.succ (Fin.tail v₀) := hv₀cl₂
-        _ = augmentedStack a b θ₀ (ρ j₁.succ) ⟨Fin.tail v₀, hx₀⟩ :=
-            hρeq j₁.succ ⟨Fin.tail v₀, hx₀⟩
-  intro v hv
-  obtain ⟨hx, hsec⟩ := mem_image_cylinder.1 hv
-  rw [sectorSet_castSucc_succ fun x ↦ (hstrict₀ x).monotone] at hsec
-  obtain ⟨hl, hu⟩ := hsec
-  dsimp only [mem_ofPred_eq] at hl hu
-  rw [mem_image_consHomeomorph, mem_closedRegionBetween]
-  refine ⟨hS₀₁ hx, ?_, ?_⟩
-  · rw [hρeq j₁.castSucc ⟨_, hx⟩]
-    exact ((hstrict₀ ⟨_, hx⟩).monotone
-      (Fin.le_def.2 (by simp only [Fin.val_castSucc]; omega))).trans hl.le
-  · rw [hρeq j₁.succ ⟨_, hx⟩]
-    exact hu.le.trans ((hstrict₀ ⟨_, hx⟩).monotone
-      (Fin.le_def.2 (by simp only [Fin.val_succ]; omega)))
-
-private theorem frontier_containment_sector {n m₀ m₁ : ℕ} {a b : ℝ} {S₀ S₁ : Set (Fin n → ℝ)}
-    {θ₀ : Fin m₀ → S₀ → ℝ} {θ₁ : Fin m₁ → S₁ → ℝ} {G₁ : Fin m₁ → (Fin n → ℝ) → ℝ}
-    {ρ : Fin (m₁ + 2) → Fin (m₀ + 2)} (hab : a < b)
-    (hθ₀ : ∀ x, StrictMono fun i ↦ θ₀ i x) (hbnd₀ : ∀ i x, θ₀ i x ∈ Ioo a b)
-    (hθ₁ : ∀ x, StrictMono fun i ↦ θ₁ i x) (hbnd₁ : ∀ i x, θ₁ i x ∈ Ioo a b)
-    (hG₁c : ∀ i, Continuous (G₁ i)) (hG₁ : ∀ i (x : S₁), G₁ i x = θ₁ i x)
-    (hS₀₁ : S₀ ⊆ closure S₁) (j₁ : Fin (m₁ + 1))
-    (hρeq : ∀ r (x : S₀), augmentedStack a b G₁ r x = augmentedStack a b θ₀ (ρ r) x)
-    {E₀ : Set (Fin (n + 1) → ℝ)} (hE₀ : E₀ ∈ boundedStackCells a b S₀ θ₀)
-    (hne : (E₀ ∩
-      closure (cylinder S₁ '' sectorSet (augmentedStack a b θ₁) j₁.castSucc.succ)).Nonempty) :
-    E₀ ⊆ closure (cylinder S₁ '' sectorSet (augmentedStack a b θ₁) j₁.castSucc.succ) := by
-  have hstrict₀ := strictMono_augmentedStack hab hθ₀ hbnd₀
-  have hstrict₁ := strictMono_augmentedStack hab hθ₁ hbnd₁
-  have hGaugC := continuous_augmentedStack (a := a) (b := b) hG₁c
-  have hGaugLt : ∀ x ∈ S₁,
-      augmentedStack a b G₁ j₁.castSucc x < augmentedStack a b G₁ j₁.succ x := fun x hx ↦ by
-    rw [augmentedStack_congr hG₁ _ ⟨x, hx⟩, augmentedStack_congr hG₁ _ ⟨x, hx⟩]
-    exact hstrict₁ ⟨x, hx⟩ j₁.castSucc_lt_succ
-  obtain ⟨v₀, hv₀E₀, hv₀cl⟩ := hne
-  rw [sector_eq_cons_regionBetween hab hθ₁ hbnd₁ hG₁ j₁,
-    ← (consHomeomorph n).image_closure,
-    closure_regionBetween (hGaugC _).continuousOn (hGaugC _).continuousOn hGaugLt] at hv₀cl ⊢
-  rw [mem_image_consHomeomorph, mem_closedRegionBetween] at hv₀cl
-  obtain ⟨_, hv₀cl₁, hv₀cl₂⟩ := hv₀cl
-  rcases (mem_boundedStackCells_augmented_iff hab hθ₀ hbnd₀).1 hE₀ with ⟨i₀, rfl⟩ | ⟨j₀, rfl⟩
-  · exact frontier_containment_sector_of_section hstrict₀ hS₀₁ j₁ i₀ hρeq hv₀E₀ hv₀cl₁ hv₀cl₂
-  · exact frontier_containment_sector_of_sector hstrict₀ hS₀₁ j₁ j₀ hρeq hv₀E₀ hv₀cl₁ hv₀cl₂
-
-private theorem not_sector_subset_cons_graph {n m₀ : ℕ} {a b : ℝ} {S₀ : Set (Fin n → ℝ)}
-    {θ₀ : Fin m₀ → S₀ → ℝ} {C : Set (Fin n → ℝ)} {g : (Fin n → ℝ) → ℝ} (hab : a < b)
-    (hS₀ne : S₀.Nonempty) (hθ₀ : ∀ x, StrictMono fun i ↦ θ₀ i x)
-    (hbnd₀ : ∀ i x, θ₀ i x ∈ Ioo a b) (j₀ : Fin (m₀ + 1)) :
-    ¬ cylinder S₀ '' sectorSet (augmentedStack a b θ₀) j₀.castSucc.succ ⊆
-      consHomeomorph n '' C.graphOn g := by
-  intro hsub
-  obtain ⟨x₀, hx₀⟩ := hS₀ne
-  have hstrict : ∀ x : S₀, StrictMono fun r ↦ augmentedStack a b θ₀ r x :=
-    strictMono_augmentedStack hab hθ₀ hbnd₀
-  have hlt := hstrict ⟨x₀, hx₀⟩ j₀.castSucc_lt_succ
-  set α₀ := augmentedStack a b θ₀ j₀.castSucc ⟨x₀, hx₀⟩
-  set β₀ := augmentedStack a b θ₀ j₀.succ ⟨x₀, hx₀⟩
-  have hmem {t : ℝ} (hα : α₀ < t) (hβ : t < β₀) :
-      Fin.cons t x₀ ∈ cylinder S₀ '' sectorSet (augmentedStack a b θ₀) j₀.castSucc.succ := by
-    rw [mem_image_cylinder, sectorSet_castSucc_succ fun x ↦ (hstrict x).monotone]
-    exact ⟨by simpa using hx₀, by simpa [α₀] using hα, by simpa [β₀] using hβ⟩
-  have hval {t : ℝ} (hα : α₀ < t) (hβ : t < β₀) : g x₀ = t := by
-    simpa using (mem_graphOn.1 (mem_image_consHomeomorph.1 (hsub (hmem hα hβ)))).2
-  have h1 : g x₀ = (2 * α₀ + β₀) / 3 := hval (by linarith) (by linarith)
-  have h2 : g x₀ = (α₀ + 2 * β₀) / 3 := hval (by linarith) (by linarith)
-  linarith [h1.symm.trans h2]
-
-private theorem sector_eq_of_subset_closure_same_base {n m₀ : ℕ} {a b : ℝ} {S₀ : Set (Fin n → ℝ)}
-    {θ₀ : Fin m₀ → S₀ → ℝ} {G₀ : Fin m₀ → (Fin n → ℝ) → ℝ} (hab : a < b) (hS₀ne : S₀.Nonempty)
-    (hθ₀ : ∀ x, StrictMono fun i ↦ θ₀ i x) (hbnd₀ : ∀ i x, θ₀ i x ∈ Ioo a b)
-    (hG₀c : ∀ i, Continuous (G₀ i)) (hG₀ : ∀ i (x : S₀), G₀ i x = θ₀ i x)
-    {j₀ j₁ : Fin (m₀ + 1)}
-    (hsub : cylinder S₀ '' sectorSet (augmentedStack a b θ₀) j₀.castSucc.succ ⊆
-      closure (cylinder S₀ '' sectorSet (augmentedStack a b θ₀) j₁.castSucc.succ)) :
-    j₀ = j₁ := by
-  have hstrict : ∀ x : S₀, StrictMono fun r ↦ augmentedStack a b θ₀ r x :=
-    strictMono_augmentedStack hab hθ₀ hbnd₀
-  rw [sector_eq_cons_regionBetween hab hθ₀ hbnd₀ hG₀ j₁,
-    ← (consHomeomorph n).image_closure,
-    closure_regionBetween (continuous_augmentedStack hG₀c _).continuousOn
-      (continuous_augmentedStack hG₀c _).continuousOn (fun x hx ↦ by
-        rw [augmentedStack_congr hG₀ _ ⟨x, hx⟩, augmentedStack_congr hG₀ _ ⟨x, hx⟩]
-        exact hstrict ⟨x, hx⟩ j₁.castSucc_lt_succ)] at hsub
-  have := hS₀ne.to_subtype
-  obtain ⟨v, hv⟩ := (sectorSet_nonempty hstrict j₀.castSucc.succ).image (cylinder S₀)
-  obtain ⟨hx, hsec⟩ := mem_image_cylinder.1 hv
-  rw [sectorSet_castSucc_succ fun x ↦ (hstrict x).monotone] at hsec
-  obtain ⟨hl, hu⟩ := hsec
-  have hcl := mem_closedRegionBetween.1 (mem_image_consHomeomorph.1 (hsub hv))
-  dsimp only [mem_ofPred_eq] at hl hu
-  have hcl₁ : augmentedStack a b θ₀ j₁.castSucc ⟨Fin.tail v, hx⟩ ≤ v 0 := by
-    rw [← augmentedStack_congr hG₀ _ ⟨Fin.tail v, hx⟩]
-    exact hcl.2.1
-  have hcl₂ : v 0 ≤ augmentedStack a b θ₀ j₁.succ ⟨Fin.tail v, hx⟩ := by
-    rw [← augmentedStack_congr hG₀ _ ⟨Fin.tail v, hx⟩]
-    exact hcl.2.2
-  have hj₁ : j₁.val < j₀.val + 1 :=
-    Fin.lt_def.1 ((hstrict ⟨_, hx⟩).lt_iff_lt.1 (hcl₁.trans_lt hu))
-  have hj₂ : j₀.val < j₁.val + 1 :=
-    Fin.lt_def.1 ((hstrict ⟨_, hx⟩).lt_iff_lt.1 (hl.trans_le hcl₂))
-  exact Fin.ext (by omega)
 
 private theorem lift_sUnion_eq {n : ℕ} {ι : Type*} {a b : ℝ} {B : Set (Fin n → ℝ)}
     {𝒟 : Set (Set (Fin n → ℝ))} {P : ι → (Fin n → ℝ) → ℝ[X]} (hB : IsNormalDecomposition B 𝒟)
@@ -654,7 +78,7 @@ private theorem lift_sUnion_eq {n : ℕ} {ι : Type*} {a b : ℝ} {B : Set (Fin 
   · rintro ⟨E, ⟨S, hS, hES⟩, hvE⟩
     have hv : v ∈ ⋃₀ boundedStackCells a b S (D S hS).root := ⟨E, hES, hvE⟩
     rw [sUnion_boundedStackCells fun x ↦ ((D S hS).strictMono_root x).monotone] at hv
-    exact ⟨hB.subset_of_mem hS hv.1, hv.2⟩
+    exact ⟨hB.subset_of_mem hS hv.left, hv.right⟩
   · rintro ⟨hvB, hvI⟩
     obtain ⟨S, hS, hvS⟩ := hB.exists_mem_of_mem hvB
     have hv : v ∈ ⋃₀ boundedStackCells a b S (D S hS).root := by
@@ -663,240 +87,251 @@ private theorem lift_sUnion_eq {n : ℕ} {ι : Type*} {a b : ℝ} {B : Set (Fin 
     obtain ⟨E, hES, hvE⟩ := hv
     exact ⟨E, ⟨S, hS, hES⟩, hvE⟩
 
-private theorem base_subset_closure_of_nonempty_inter {n : ℕ} {ι : Type*} {a b : ℝ}
-    {B : Set (Fin n → ℝ)} {𝒟 : Set (Set (Fin n → ℝ))} {P : ι → (Fin n → ℝ) → ℝ[X]} (hab : a < b)
-    (hB : IsNormalDecomposition B 𝒟) (D : ∀ S ∈ 𝒟, Delineation fun k (x : S) ↦ P k x)
-    (hbnd : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i x, (D S hS).root i x ∈ Ioo a b)
-    {S₀ S₁ : Set (Fin n → ℝ)} {E₀ E₁ : Set (Fin (n + 1) → ℝ)} (hS₀ : S₀ ∈ 𝒟) (hS₁ : S₁ ∈ 𝒟)
-    (hE₀S : E₀ ∈ boundedStackCells a b S₀ (D S₀ hS₀).root)
-    (hE₁S : E₁ ∈ boundedStackCells a b S₁ (D S₁ hS₁).root) (hne : (E₀ ∩ closure E₁).Nonempty) :
-    S₀ ⊆ closure S₁ := by
-  obtain ⟨v, hv₀, hv₁⟩ := hne
-  refine hB.subset_closure_of_nonempty_inter hS₀ hS₁ ⟨Fin.tail v, ?_, ?_⟩
-  · rw [← image_tail_of_mem_boundedStackCells hab (D S₀ hS₀).strictMono_root (hbnd S₀ hS₀) hE₀S]
-    exact mem_image_of_mem _ hv₀
-  · rw [← image_tail_of_mem_boundedStackCells hab (D S₁ hS₁).strictMono_root (hbnd S₁ hS₁) hE₁S]
-    exact ((by fun_prop : Continuous (Fin.tail : (Fin (n + 1) → ℝ) → _)).continuousOn
-      |>.image_closure (mem_image_of_mem _ hv₁))
-
-private theorem lift_submanifold_cases {n : ℕ} {ι : Type*} {a b : ℝ} {B B₀ : Set (Fin n → ℝ)}
-    {𝒟 : Set (Set (Fin n → ℝ))} {P : ι → (Fin n → ℝ) → ℝ[X]} (hab : a < b)
-    (hB : IsNormalDecomposition B 𝒟) (hBB₀ : closure B ⊆ B₀)
-    (hcoeffAll : ∀ k j, AnalyticOnNhd ℝ (fun x ↦ (P k x).coeff j) B₀)
-    (D : ∀ S ∈ 𝒟, Delineation fun k (x : S) ↦ P k x)
-    (hbnd : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i x, (D S hS).root i x ∈ Ioo a b)
-    {S : Set (Fin n → ℝ)} {dS : ℕ} {E : Set (Fin (n + 1) → ℝ)} (hS : S ∈ 𝒟)
-    (hdS : IsAnalyticSubmanifold dS S) (hES : E ∈ boundedStackCells a b S (D S hS).root) :
-    (∃ i : Fin (D S hS).count, cylinder S '' sectionSet (D S hS).root i = E ∧
-      IsAnalyticSubmanifold dS E) ∨
-      ∃ j : Fin ((D S hS).count + 1),
-        cylinder S '' sectorSet (augmentedStack a b (D S hS).root) j.castSucc.succ = E ∧
-        IsAnalyticSubmanifold (dS + 1) E := by
-  have hSB₀ : S ⊆ B₀ := (hB.subset_of_mem hS).trans (subset_closure.trans hBB₀)
-  rcases (mem_boundedStackCells_augmented_iff hab (D S hS).strictMono_root (hbnd S hS)).1 hES with
-    ⟨i, rfl⟩ | ⟨j, rfl⟩
-  · exact Or.inl ⟨i, rfl, (D S hS).isAnalyticSubmanifold_sectionSet hdS
-      (fun k j ↦ ((hcoeffAll k j).mono hSB₀).analyticOnSubmanifold hdS) i⟩
-  · exact Or.inr ⟨j, rfl, isAnalyticSubmanifold_image_cylinder_sectorSet hdS
-      (continuous_augmentedStack (D S hS).continuous_root)
-      (strictMono_augmentedStack hab (D S hS).strictMono_root (hbnd S hS)) j.castSucc.succ⟩
-
-private theorem lift_pairwiseDisjoint_step {n : ℕ} {ι : Type*} {a b : ℝ} {B : Set (Fin n → ℝ)}
+private theorem lift_pairwiseDisjoint {n : ℕ} {ι : Type*} {a b : ℝ} {B : Set (Fin n → ℝ)}
     {𝒟 : Set (Set (Fin n → ℝ))} {P : ι → (Fin n → ℝ) → ℝ[X]} (hab : a < b)
     (hB : IsNormalDecomposition B 𝒟) (D : ∀ S ∈ 𝒟, Delineation fun k (x : S) ↦ P k x)
     (hbnd : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i x, (D S hS).root i x ∈ Ioo a b) :
     PairwiseDisjoint
       (⋃ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), boundedStackCells a b S (D S hS).root) id := by
   intro E₀ hE₀ E₁ hE₁ hne
-  obtain ⟨S₀, hS₀, hE₀S⟩ := mem_iUnion₂.1 hE₀
-  obtain ⟨S₁, hS₁, hE₁S⟩ := mem_iUnion₂.1 hE₁
+  obtain ⟨S₀, hS₀, hE₀S⟩ := mem_iUnion₂.mp hE₀
+  obtain ⟨S₁, hS₁, hE₁S⟩ := mem_iUnion₂.mp hE₁
   by_cases hSS : S₀ = S₁
   · subst hSS
     exact pairwiseDisjoint_boundedStackCells (fun x ↦ ((D S₀ hS₀).strictMono_root x).injective)
       hE₀S hE₁S hne
-  · refine disjoint_left.2 fun v hv₀ hv₁ ↦ ?_
+  · refine disjoint_left.mpr fun v hv₀ hv₁ ↦ ?_
     have hx₀ : Fin.tail v ∈ S₀ := by
       rw [← image_tail_of_mem_boundedStackCells hab (D S₀ hS₀).strictMono_root (hbnd S₀ hS₀) hE₀S]
       exact mem_image_of_mem _ hv₀
     have hx₁ : Fin.tail v ∈ S₁ := by
       rw [← image_tail_of_mem_boundedStackCells hab (D S₁ hS₁).strictMono_root (hbnd S₁ hS₁) hE₁S]
       exact mem_image_of_mem _ hv₁
-    exact disjoint_left.1 (hB.pairwiseDisjoint hS₀ hS₁ hSS) hx₀ hx₁
+    exact disjoint_left.mp (hB.pairwiseDisjoint hS₀ hS₁ hSS) hx₀ hx₁
 
-private theorem lift_subset_closure_step {n : ℕ} {ι : Type*} {a b : ℝ}
-    {B B₀ : Set (Fin n → ℝ)} {𝒟 : Set (Set (Fin n → ℝ))} {P : ι → (Fin n → ℝ) → ℝ[X]}
-    (hab : a < b) (hB : IsNormalDecomposition B 𝒟) (hBB₀ : closure B ⊆ B₀)
-    (hmonic : ∀ k, ∀ x ∈ B₀, (P k x).Monic)
-    (D : ∀ S ∈ 𝒟, Delineation fun k (x : S) ↦ P k x)
-    (hbnd : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i x, (D S hS).root i x ∈ Ioo a b)
-    (G : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), Fin (D S hS).count → (Fin n → ℝ) → ℝ)
-    (hGc : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i, Continuous (G S hS i))
-    (hGeq : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i (x : S), G S hS i x = (D S hS).root i x)
-    (hGroot : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i,
-      ∀ x ∈ closure S, ∃ k, (P k x).IsRoot (G S hS i x))
-    {E₀ E₁ : Set (Fin (n + 1) → ℝ)}
-    (hE₀ : E₀ ∈ ⋃ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), boundedStackCells a b S (D S hS).root)
-    (hE₁ : E₁ ∈ ⋃ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), boundedStackCells a b S (D S hS).root)
-    (hne : (E₀ ∩ closure E₁).Nonempty) :
-    E₀ ⊆ closure E₁ := by
-  obtain ⟨S₀, hS₀, hE₀S⟩ := mem_iUnion₂.1 hE₀
-  obtain ⟨S₁, hS₁, hE₁S⟩ := mem_iUnion₂.1 hE₁
-  have hS₀₁ := base_subset_closure_of_nonempty_inter hab hB D hbnd hS₀ hS₁ hE₀S hE₁S hne
-  have hG₁mono (r₁ r₂) (hr : r₁ ≤ r₂) :
-      ∀ x ∈ closure S₁, augmentedStack a b (G S₁ hS₁) r₁ x ≤
-        augmentedStack a b (G S₁ hS₁) r₂ x :=
-    closure_minimal (fun x hx ↦ by
-      simpa [augmentedStack_congr (hGeq S₁ hS₁) _ ⟨x, hx⟩] using
-        (strictMono_augmentedStack hab (D S₁ hS₁).strictMono_root (hbnd S₁ hS₁) ⟨x, hx⟩).monotone
-          hr)
-      (isClosed_le (continuous_augmentedStack (hGc S₁ hS₁) r₁)
-        (continuous_augmentedStack (hGc S₁ hS₁) r₂))
-  obtain ⟨ρ, -, hρinner, hρeq⟩ := exists_monotone_index_map (D S₀ hS₀) hab
-    (hB.isConnected hS₀) ((hB.subset_of_mem hS₀).trans (subset_closure.trans hBB₀)) hS₀₁
-    hmonic (hbnd S₀ hS₀) (hGc S₁ hS₁) (hGroot S₁ hS₁) hG₁mono
-  rcases (mem_boundedStackCells_augmented_iff hab (D S₁ hS₁).strictMono_root
-      (hbnd S₁ hS₁)).1 hE₁S with
-    ⟨i₁, rfl⟩ | ⟨j₁, rfl⟩
-  · obtain ⟨l₀, hl₀⟩ := hρinner i₁
-    exact frontier_containment_section hab (D S₀ hS₀).strictMono_root (hbnd S₀ hS₀) (hGc S₁ hS₁)
-      (hGeq S₁ hS₁) hS₀₁ i₁ hl₀ hρeq hE₀S hne
-  · exact frontier_containment_sector hab (D S₀ hS₀).strictMono_root (hbnd S₀ hS₀)
-      (D S₁ hS₁).strictMono_root (hbnd S₁ hS₁) (hGc S₁ hS₁) (hGeq S₁ hS₁) hS₀₁ j₁ hρeq hE₀S hne
+private theorem exists_root_tendsto_comap {n : ℕ} {ι : Type*} {B₀ S : Set (Fin n → ℝ)}
+    {d : ι → ℕ} {P : ι → (Fin n → ℝ) → ℝ[X]} (hB₀ : IsOpen B₀) (hScl : closure S ⊆ B₀)
+    (hmonic : ∀ k, ∀ x ∈ B₀, (P k x).Monic) (hdeg : ∀ k, ∀ x ∈ B₀, (P k x).natDegree = d k)
+    (hcoeff : ∀ k j, j ≤ d k → AnalyticOnNhd ℝ (fun x ↦ (P k x).coeff j) B₀)
+    (happ : ∀ x, IsPreconnectedApproachAt S x) (D : Delineation fun k (x : S) ↦ P k x)
+    (x₀ : Fin n → ℝ) (i : Fin D.count) :
+    ∃ L, Tendsto (D.root i) (comap Subtype.val (𝓝 x₀)) (𝓝 L) := by
+  by_cases hx₀ : x₀ ∈ closure S
+  · have hx₀B₀ : x₀ ∈ B₀ := hScl hx₀
+    obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
+    let f : (Fin n → ℝ) → ℝ := Function.extend Subtype.val (D.root i) fun _ ↦ 0
+    have hf_apply (x : S) : f x = D.root i x := Subtype.val_injective.extend_apply _ _ x
+    have hf_cont : ContinuousOn f S :=
+      continuousOn_iff_continuous_domRestrict.mpr ((D.continuous_root i).congr fun x ↦
+        (hf_apply x).symm)
+    have hf_root : ∀ᶠ y in 𝓝[S] x₀, (P k y).eval (f y) = 0 :=
+      eventually_nhdsWithin_of_forall fun y hy ↦ by
+        rw [hf_apply ⟨y, hy⟩]
+        exact ((D.multiplicity_pos_iff ⟨y, hy⟩).mp hk).right
+    obtain ⟨L, -, hL⟩ := exists_tendsto_nhdsWithin_of_isRoot hx₀ (happ x₀) hf_cont hf_root
+      (fun j hj ↦ ((hcoeff k j ((hdeg k x₀ hx₀B₀) ▸ hj)) x₀ hx₀B₀).continuousAt.tendsto.mono_left
+        nhdsWithin_le_nhds)
+      (nhdsWithin_le_nhds (eventually_of_mem (hB₀.mem_nhds hx₀B₀) fun y hy ↦ by
+        rw [hdeg k y hy, hdeg k x₀ hx₀B₀]))
+      (hmonic k x₀ hx₀B₀).ne_zero
+    have hmap : map (Subtype.val : S → Fin n → ℝ) (comap Subtype.val (𝓝 x₀)) = 𝓝[S] x₀ := by
+      rw [nhdsWithin, Filter.map_comap_setCoe_val]
+    have hsub : Tendsto (f ∘ Subtype.val) (comap Subtype.val (𝓝 x₀)) (𝓝 L) :=
+      tendsto_map'_iff.mp (hmap.symm ▸ hL)
+    exact ⟨L, (funext hf_apply : f ∘ Subtype.val = D.root i) ▸ hsub⟩
+  · have hbot : comap (Subtype.val : S → Fin n → ℝ) (𝓝 x₀) = ⊥ := by
+      rw [← Filter.map_eq_bot_iff, Filter.map_comap_setCoe_val, ← nhdsWithin,
+        ← notMem_closure_iff_nhdsWithin_eq_bot]
+      exact hx₀
+    exact ⟨0, hbot ▸ tendsto_bot⟩
 
-private theorem lift_dim_lt_step {n : ℕ} {ι : Type*} {a b : ℝ} {B B₀ : Set (Fin n → ℝ)}
-    {𝒟 : Set (Set (Fin n → ℝ))} {P : ι → (Fin n → ℝ) → ℝ[X]} (hab : a < b)
-    (hB : IsNormalDecomposition B 𝒟) (hBB₀ : closure B ⊆ B₀)
+private theorem exists_monotone_root_tendsto_of_monic {n : ℕ} {ι : Type*}
+    {B₀ S₀ S₁ : Set (Fin n → ℝ)} {d : ι → ℕ} {P : ι → (Fin n → ℝ) → ℝ[X]} (hB₀ : IsOpen B₀)
+    (hS₀B₀ : S₀ ⊆ B₀) (hS₀₁ : S₀ ⊆ closure S₁) (hS₀ : IsConnected S₀)
+    (happ₁ : ∀ x, IsPreconnectedApproachAt S₁ x) (hmonic : ∀ k, ∀ x ∈ B₀, (P k x).Monic)
+    (hdeg : ∀ k, ∀ x ∈ B₀, (P k x).natDegree = d k)
+    (hcoeff : ∀ k j, j ≤ d k → AnalyticOnNhd ℝ (fun x ↦ (P k x).coeff j) B₀)
+    (D₁ : Delineation fun k (x : S₁) ↦ P k x) (D₀ : Delineation fun k (x : S₀) ↦ P k x) :
+    ∃ σ : Fin D₁.count → Fin D₀.count,
+      ∀ i (x : S₀), Tendsto (D₁.root i) (comap Subtype.val (𝓝 x.val)) (𝓝 (D₀.root (σ i) x)) := by
+  obtain ⟨σ, -, hσ⟩ := D₁.exists_root_tendsto_of_subset_closure D₀ hS₀₁ hS₀
+    (fun x _ ↦ happ₁ x) fun i ↦ by
+      obtain ⟨k, hk⟩ := D₁.exists_multiplicity_pos i
+      refine ⟨k, hk, fun x hx ↦ (hmonic k x (hS₀B₀ hx)).ne_zero, fun x hx j hj ↦ ?_,
+        fun x hx ↦ ?_⟩
+      · exact ((hcoeff k j (hdeg k x (hS₀B₀ hx) ▸ hj)) x (hS₀B₀ hx)).continuousAt.tendsto.mono_left
+          nhdsWithin_le_nhds
+      · exact nhdsWithin_le_nhds (eventually_of_mem (hB₀.mem_nhds (hS₀B₀ hx)) fun y hy ↦ by
+          rw [hdeg k y hy, hdeg k x (hS₀B₀ hx)])
+  exact ⟨σ, hσ⟩
+
+private theorem unclipped_subset_closure_and_dim_lt {n : ℕ} {ι : Type*}
+    {B B₀ : Set (Fin n → ℝ)} {𝒟 : Set (Set (Fin n → ℝ))} {d : ι → ℕ}
+    {P : ι → (Fin n → ℝ) → ℝ[X]} (hB : IsNormalDecomposition B 𝒟) (hB₀ : IsOpen B₀)
+    (hBB₀ : closure B ⊆ B₀) (hmonic : ∀ k, ∀ x ∈ B₀, (P k x).Monic)
+    (hdeg : ∀ k, ∀ x ∈ B₀, (P k x).natDegree = d k)
+    (hcoeffAll : ∀ k j, AnalyticOnNhd ℝ (fun x ↦ (P k x).coeff j) B₀)
+    (D : ∀ S ∈ 𝒟, Delineation fun k (x : S) ↦ P k x) :
+    (∀ {S₀ S₁} (hS₀ : S₀ ∈ 𝒟) (hS₁ : S₁ ∈ 𝒟) {T₀ T₁},
+      T₀ ∈ stackCells S₀ (D S₀ hS₀).root → T₁ ∈ stackCells S₁ (D S₁ hS₁).root →
+      (T₀ ∩ closure T₁).Nonempty → T₀ ⊆ closure T₁) ∧
+    (∀ {S₀ S₁} (hS₀ : S₀ ∈ 𝒟) (hS₁ : S₁ ∈ 𝒟) {T₀ T₁ dT₀ dT₁},
+      T₀ ∈ stackCells S₀ (D S₀ hS₀).root → T₁ ∈ stackCells S₁ (D S₁ hS₁).root →
+      IsAnalyticSubmanifold dT₀ T₀ → IsAnalyticSubmanifold dT₁ T₁ →
+      T₀ ⊆ closure T₁ → T₀ ≠ T₁ → dT₀ < dT₁) := by
+  classical
+  let Θ : ∀ S : Set (Fin n → ℝ), Σ m, Fin m → S → ℝ :=
+    fun S ↦ if hS : S ∈ 𝒟 then ⟨(D S hS).count, (D S hS).root⟩ else ⟨0, Fin.elim0⟩
+  have hΘ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) : Θ S = ⟨(D S hS).count, (D S hS).root⟩ :=
+    by simp [Θ, hS]
+  have hSB₀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) : S ⊆ B₀ :=
+    (hB.subset_of_mem hS).trans (subset_closure.trans hBB₀)
+  have hmatch : ∀ S₀ ∈ 𝒟, ∀ S₁ ∈ 𝒟, S₀ ⊆ closure S₁ → S₀ ≠ S₁ →
+      ∃ σ : Fin (Θ S₁).fst → Fin (Θ S₀).fst,
+        ∀ i (x : S₀), Tendsto ((Θ S₁).snd i) (comap Subtype.val (𝓝 x.val))
+          (𝓝 ((Θ S₀).snd (σ i) x)) := fun S₀ hS₀ S₁ hS₁ hS₀₁ _ ↦ by
+    rw [hΘ S₀ hS₀, hΘ S₁ hS₁]
+    exact exists_monotone_root_tendsto_of_monic hB₀ (hSB₀ S₀ hS₀) hS₀₁ (hB.isConnected hS₀)
+      (hB.isPreconnectedApproachAt hS₁) hmonic hdeg (fun k j _ ↦ hcoeffAll k j)
+      (D S₁ hS₁) (D S₀ hS₀)
+  choose dim hdim using fun S : Set (Fin n → ℝ) ↦ (em (S ∈ 𝒟)).elim
+    (fun hS ↦ (hB.exists_isAnalyticSubmanifold hS).imp fun _ hd _ ↦ hd)
+    fun hS ↦ ⟨0, fun h ↦ (hS h).elim⟩
+  have hroot (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) :
+      ∀ i, ∃ r, (∀ y : S, r y = (Θ S).snd i y) ∧ AnalyticOnSubmanifold (dim S) r S := by
+    rw [hΘ S hS]; intro i
+    let r : (Fin n → ℝ) → ℝ := Function.extend Subtype.val ((D S hS).root i) fun _ ↦ 0
+    have hr (y : S) : r y = (D S hS).root i y := Subtype.val_injective.extend_apply _ _ y
+    exact ⟨r, hr, (D S hS).analyticOnSubmanifold_root (hdim S hS)
+      (fun k j ↦ ((hcoeffAll k j).mono (hSB₀ S hS)).analyticOnSubmanifold (hdim S hS)) i hr⟩
+  have hmem {S : Set (Fin n → ℝ)} (hS : S ∈ 𝒟) {T} (hT : T ∈ stackCells S (D S hS).root) :
+      T ∈ ⋃ C ∈ 𝒟, stackCells C (Θ C).snd := mem_iUnion₂.mpr ⟨S, hS, by rwa [hΘ S hS]⟩
+  refine ⟨fun {_ _} hS₀ hS₁ {_ _} hT₀ hT₁ hne ↦
+      subset_closure_of_mem_biUnion_stackCells (k := fun C ↦ (Θ C).fst) (θ := fun C ↦ (Θ C).snd)
+        (fun A hA C hC ↦ hB.subset_closure_of_nonempty_inter hA hC)
+        (fun S hS ↦ by rw [hΘ S hS]; exact (D S hS).continuous_root)
+        (fun S hS ↦ by rw [hΘ S hS]; exact (D S hS).strictMono_root) hmatch
+        (hmem hS₀ hT₀) (hmem hS₁ hT₁) hne,
+    fun {_ _} hS₀ hS₁ {_ _ _ _} hT₀ hT₁ hdT₀ hdT₁ hsub hne ↦
+      dim_lt_of_mem_biUnion_stackCells (k := fun C ↦ (Θ C).fst) (θ := fun C ↦ (Θ C).snd)
+        (d := dim) hdim (fun A hA C hC ↦ hB.subset_closure_of_nonempty_inter hA hC)
+        (fun A hA C hC hAC hAC' ↦
+          hB.dim_lt_of_subset_closure hA hC hAC hAC' (hdim A hA) (hdim C hC))
+        hroot (fun S hS ↦ by rw [hΘ S hS]; exact (D S hS).strictMono_root) hmatch
+        (hmem hS₀ hT₀) (hmem hS₁ hT₁) hdT₀ hdT₁ hsub hne⟩
+
+private theorem lift_frontier_and_dim {n : ℕ} {ι : Type*} {a b : ℝ} {B B₀ : Set (Fin n → ℝ)}
+    {𝒟 : Set (Set (Fin n → ℝ))} {d : ι → ℕ} {P : ι → (Fin n → ℝ) → ℝ[X]}
+    (hB : IsNormalDecomposition B 𝒟) (hB₀ : IsOpen B₀) (hBB₀ : closure B ⊆ B₀) (hab : a < b)
+    (hmonic : ∀ k, ∀ x ∈ B₀, (P k x).Monic) (hdeg : ∀ k, ∀ x ∈ B₀, (P k x).natDegree = d k)
     (hcoeffAll : ∀ k j, AnalyticOnNhd ℝ (fun x ↦ (P k x).coeff j) B₀)
     (D : ∀ S ∈ 𝒟, Delineation fun k (x : S) ↦ P k x)
-    (hbnd : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i x, (D S hS).root i x ∈ Ioo a b)
-    (G : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), Fin (D S hS).count → (Fin n → ℝ) → ℝ)
-    (hGc : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i, Continuous (G S hS i))
-    (hGeq : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i (x : S), G S hS i x = (D S hS).root i x)
-    {E₀ E₁ : Set (Fin (n + 1) → ℝ)}
-    (hE₀ : E₀ ∈ ⋃ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), boundedStackCells a b S (D S hS).root)
-    (hE₁ : E₁ ∈ ⋃ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), boundedStackCells a b S (D S hS).root)
-    (hsub : E₀ ⊆ closure E₁) (hne : E₀ ≠ E₁) {dE₀ dE₁ : ℕ}
-    (hdE₀ : IsAnalyticSubmanifold dE₀ E₀) (hdE₁ : IsAnalyticSubmanifold dE₁ E₁) :
-    dE₀ < dE₁ := by
-  obtain ⟨S₀, hS₀, hE₀S⟩ := mem_iUnion₂.1 hE₀
-  obtain ⟨S₁, hS₁, hE₁S⟩ := mem_iUnion₂.1 hE₁
-  obtain ⟨d₀, hd₀⟩ := hB.exists_isAnalyticSubmanifold hS₀
-  obtain ⟨d₁, hd₁⟩ := hB.exists_isAnalyticSubmanifold hS₁
-  have hS₀₁ := base_subset_closure_of_nonempty_inter hab hB D hbnd hS₀ hS₁ hE₀S hE₁S
-    (hdE₀.nonempty.mono (subset_inter Subset.rfl hsub))
-  have hcases₀ := lift_submanifold_cases hab hB hBB₀ hcoeffAll D hbnd hS₀ hd₀ hE₀S
-  rcases lift_submanifold_cases hab hB hBB₀ hcoeffAll D hbnd hS₁ hd₁ hE₁S with
-    ⟨i₁, rfl, hsubm₁⟩ | ⟨j₁, rfl, hsubm₁⟩
-  · obtain rfl := hdE₁.dim_eq hsubm₁
-    rw [section_eq_cons_graphOn (hGeq S₁ hS₁) i₁, ← (consHomeomorph n).image_closure,
-      (hGc S₁ hS₁ i₁).continuousOn.closure_graphOn] at hsub
-    rcases hcases₀ with ⟨i₀, rfl, hsubm₀⟩ | ⟨j₀, rfl, -⟩
-    · obtain rfl := hdE₀.dim_eq hsubm₀
-      refine hB.dim_lt_of_subset_closure hS₀ hS₁ hS₀₁ (fun hSS ↦ hne ?_) hd₀ hd₁
-      subst hSS
-      obtain ⟨v, hv⟩ := hdE₀.nonempty
-      obtain ⟨hx, hv0⟩ := mem_image_cylinder.1 hv
-      have heqi : i₀ = i₁ := ((D S₀ hS₀).strictMono_root ⟨_, hx⟩).injective <| by
-        have hcl := (mem_graphOn.1 (mem_image_consHomeomorph.1 (hsub hv))).2
-        rw [hGeq S₀ hS₀ i₁ ⟨_, hx⟩] at hcl
-        exact (mem_sectionSet.1 hv0).trans hcl.symm
-      rw [heqi]
-    · exact False.elim (not_sector_subset_cons_graph hab (hB.nonempty_of_mem hS₀)
-        (D S₀ hS₀).strictMono_root (hbnd S₀ hS₀) j₀ hsub)
-  · obtain rfl := hdE₁.dim_eq hsubm₁
-    by_cases hSS : S₀ = S₁
-    · subst hSS
-      obtain rfl : d₀ = d₁ := hd₀.dim_eq hd₁
-      rcases hcases₀ with ⟨i₀, rfl, hsubm₀⟩ | ⟨j₀, rfl, -⟩
-      · have := hdE₀.dim_eq hsubm₀; omega
-      · exact False.elim (hne (by
-          rw [sector_eq_of_subset_closure_same_base hab (hB.nonempty_of_mem hS₀)
-            (D S₀ hS₀).strictMono_root (hbnd S₀ hS₀) (hGc S₀ hS₀) (hGeq S₀ hS₀) hsub]))
-    · have hlt := hB.dim_lt_of_subset_closure hS₀ hS₁ hS₀₁ hSS hd₀ hd₁
-      rcases hcases₀ with ⟨_, rfl, hsubm₀⟩ | ⟨_, rfl, hsubm₀⟩ <;>
-        (have := hdE₀.dim_eq hsubm₀; omega)
+    (hbnd : ∀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) i x, (D S hS).root i x ∈ Ioo a b) :
+    let 𝒞 := ⋃ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), boundedStackCells a b S (D S hS).root
+    (∀ {E₀}, E₀ ∈ 𝒞 → ∀ {E₁}, E₁ ∈ 𝒞 → (E₀ ∩ closure E₁).Nonempty → E₀ ⊆ closure E₁) ∧
+    (∀ {E₀}, E₀ ∈ 𝒞 → ∀ {E₁}, E₁ ∈ 𝒞 → E₀ ⊆ closure E₁ → E₀ ≠ E₁ →
+      ∀ {dE₀ dE₁}, IsAnalyticSubmanifold dE₀ E₀ → IsAnalyticSubmanifold dE₁ E₁ → dE₀ < dE₁) := by
+  intro 𝒞
+  let H : Set (Fin (n + 1) → ℝ) := {v | v 0 ∈ Ioo a b}
+  have hHo : IsOpen H := isOpen_Ioo.preimage (continuous_apply 0)
+  have hSB₀ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) : S ⊆ B₀ :=
+    (hB.subset_of_mem hS).trans (subset_closure.trans hBB₀)
+  obtain ⟨hfront_unclipped, hdim_unclipped⟩ :=
+    unclipped_subset_closure_and_dim_lt hB hB₀ hBB₀ hmonic hdeg hcoeffAll D
+  refine ⟨fun {E₀} hE₀ {E₁} hE₁ hne ↦ ?_,
+    fun {E₀} hE₀ {E₁} hE₁ hsub hne {dE₀ dE₁} hdE₀ hdE₁ ↦ ?_⟩
+  · obtain ⟨S₀, hS₀, hE₀S⟩ := mem_iUnion₂.mp hE₀
+    obtain ⟨S₁, hS₁, hE₁S⟩ := mem_iUnion₂.mp hE₁
+    obtain ⟨T₀, hT₀, rfl⟩ := mem_boundedStackCells.mp hE₀S
+    obtain ⟨T₁, hT₁, rfl⟩ := mem_boundedStackCells.mp hE₁S
+    have hT₀₁ : T₀ ⊆ closure T₁ := hfront_unclipped hS₀ hS₁ hT₀ hT₁
+      (hne.mono (inter_subset_inter inter_subset_left (closure_mono inter_subset_left)))
+    intro w ⟨hwT₀, hwH⟩
+    rw [inter_comm T₁ H]
+    exact hHo.inter_closure ⟨hwH, hT₀₁ hwT₀⟩
+  · obtain ⟨S₀, hS₀, hE₀S⟩ := mem_iUnion₂.mp hE₀
+    obtain ⟨S₁, hS₁, hE₁S⟩ := mem_iUnion₂.mp hE₁
+    obtain ⟨T₀, hT₀, rfl⟩ := mem_boundedStackCells.mp hE₀S
+    obtain ⟨T₁, hT₁, rfl⟩ := mem_boundedStackCells.mp hE₁S
+    obtain ⟨d₀, hd₀⟩ := hB.exists_isAnalyticSubmanifold hS₀
+    obtain ⟨d₁, hd₁⟩ := hB.exists_isAnalyticSubmanifold hS₁
+    have hT₀₁ : T₀ ⊆ closure T₁ := hfront_unclipped hS₀ hS₁ hT₀ hT₁
+      (hdE₀.nonempty.mono fun w hw ↦
+        ⟨inter_subset_left hw, closure_mono inter_subset_left (hsub hw)⟩)
+    obtain ⟨dT₀, -, hdT₀⟩ := (D S₀ hS₀).exists_isAnalyticSubmanifold_of_mem_stackCells hd₀
+      (fun k j ↦ ((hcoeffAll k j).mono (hSB₀ S₀ hS₀)).analyticOnSubmanifold hd₀) hT₀
+    obtain ⟨dT₁, -, hdT₁⟩ := (D S₁ hS₁).exists_isAnalyticSubmanifold_of_mem_stackCells hd₁
+      (fun k j ↦ ((hcoeffAll k j).mono (hSB₀ S₁ hS₁)).analyticOnSubmanifold hd₁) hT₁
+    have hconn₁ := isConnected_of_mem_boundedStackCells (hB.isConnected hS₁)
+      (D S₁ hS₁).continuous_root (D S₁ hS₁).strictMono_root hab (hbnd S₁ hS₁) hE₁S
+    obtain rfl : dE₀ = dT₀ := hdE₀.dim_eq (hdT₀.inter hHo hdE₀.nonempty)
+    obtain rfl : dE₁ = dT₁ := hdE₁.dim_eq (hdT₁.inter hHo hconn₁.nonempty)
+    exact hdim_unclipped hS₀ hS₁ hT₀ hT₁ hdT₀ hdT₁ hT₀₁ fun hTT ↦ hne (hTT ▸ rfl)
 
 /-- **Cylindrical lifting of a normal decomposition.** Given a normal decomposition `𝒟` of `B ⊆ ℝⁿ`,
 an open neighborhood `B₀` of `closure B`, and a finite family `P` of monic polynomials of constant
-degrees `d k` and analytic coefficients on `B₀` whose real roots on `B` lie in `[a', b'] ⊂ (a, b)`,
-choosing a delineation `D S hS` on each `S ∈ 𝒟` lifts `𝒟` to a normal decomposition of the cylinder
+degrees `d k` and analytic coefficients on `B₀` whose real roots on `B` lie in `Ioo a b`, choosing a
+delineation `D S hS` on each `S ∈ 𝒟` lifts `𝒟` to a normal decomposition of the cylinder
 `{v | Fin.tail v ∈ B ∧ v 0 ∈ Ioo a b}`. -/
-theorem IsNormalDecomposition.lift {n : ℕ} {ι : Type*} [Finite ι] {a a' b' b : ℝ}
+theorem IsNormalDecomposition.lift {n : ℕ} {ι : Type*} [Finite ι] {a b : ℝ}
     {B B₀ : Set (Fin n → ℝ)} {𝒟 : Set (Set (Fin n → ℝ))} {d : ι → ℕ}
     {P : ι → (Fin n → ℝ) → ℝ[X]} (hB : IsNormalDecomposition B 𝒟) (hB₀ : IsOpen B₀)
-    (hBB₀ : closure B ⊆ B₀) (hab' : a < a') (ha'b' : a' ≤ b') (hb'b : b' < b)
+    (hBB₀ : closure B ⊆ B₀) (hab : a < b)
     (hmonic : ∀ k, ∀ x ∈ B₀, (P k x).Monic) (hdeg : ∀ k, ∀ x ∈ B₀, (P k x).natDegree = d k)
     (hcoeff : ∀ k j, j ≤ d k → AnalyticOnNhd ℝ (fun x ↦ (P k x).coeff j) B₀)
-    (hroots : ∀ k, ∀ x ∈ B, ∀ t, (P k x).IsRoot t → t ∈ Icc a' b')
+    (hroots : ∀ k, ∀ x ∈ B, ∀ t, (P k x).IsRoot t → t ∈ Ioo a b)
     (D : ∀ S ∈ 𝒟, Delineation fun k (x : S) ↦ P k x) :
     IsNormalDecomposition {v : Fin (n + 1) → ℝ | Fin.tail v ∈ B ∧ v 0 ∈ Ioo a b}
       (⋃ (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟), boundedStackCells a b S (D S hS).root) := by
   classical
-  have hab : a < b := hab'.trans_le (ha'b'.trans hb'b.le)
   have hbnd (S : Set (Fin n → ℝ)) (hS : S ∈ 𝒟) (i : Fin (D S hS).count) (x : S) :
       (D S hS).root i x ∈ Ioo a b := by
     obtain ⟨k, hk⟩ := (D S hS).exists_multiplicity_pos i
-    have hrt := (rootMultiplicity_pos'.1 ((D S hS).rootMultiplicity_root k i x ▸ hk)).2
-    have hIcc := hroots k x.1 (hB.subset_of_mem hS x.2) _ hrt
-    exact ⟨hab'.trans_le hIcc.1, hIcc.2.trans_lt hb'b⟩
-  choose G hGc hGeq _ hGroot using fun S (hS : S ∈ 𝒟) ↦
-    exists_continuous_root_extension hB₀ ((closure_mono (hB.subset_of_mem hS)).trans hBB₀)
-      hab' hb'b hmonic hdeg (fun k j hj ↦ (hcoeff k j hj).continuousOn)
-      (fun k x hx ↦ hroots k x (hB.subset_of_mem hS hx)) (hB.isPreconnectedApproachAt hS)
-      (D S hS)
-  have hcoeffAll (k : ι) (j : ℕ) : AnalyticOnNhd ℝ (fun x ↦ (P k x).coeff j) B₀ :=
-    fun x hx ↦ analyticAt_coeff_of_eventually_natDegree_le
-      (fun i hi ↦ hcoeff k i hi x hx)
-      (Filter.mem_of_superset (hB₀.mem_nhds hx) fun z hz ↦ (hdeg k z hz).le) j
+    exact hroots k x.val (hB.subset_of_mem hS x.property) _
+      (((D S hS).multiplicity_pos_iff x).mp hk).right
+  have hcoeffAll (k : ι) (j : ℕ) : AnalyticOnNhd ℝ (fun x ↦ (P k x).coeff j) B₀ := by
+    by_cases hj : j ≤ d k
+    · exact hcoeff k j hj
+    · intro x hx
+      exact (analyticAt_const (v := (0 : ℝ))).congr (eventuallyEq_of_mem (hB₀.mem_nhds hx)
+        fun z hz ↦ (coeff_eq_zero_of_natDegree_lt ((hdeg k z hz).trans_lt (lt_of_not_ge hj))).symm)
+  obtain ⟨hfront, hdim⟩ := lift_frontier_and_dim hB hB₀ hBB₀ hab hmonic hdeg hcoeffAll D hbnd
+  have hHo : IsOpen {v : Fin (n + 1) → ℝ | v 0 ∈ Ioo a b} :=
+    isOpen_Ioo.preimage (continuous_apply 0)
   refine
     { finite := hB.finite.biUnion' fun S hS ↦ finite_boundedStackCells a b S (D S hS).root
       sUnion_eq := lift_sUnion_eq hB D
-      pairwiseDisjoint := lift_pairwiseDisjoint_step hab hB D hbnd
+      pairwiseDisjoint := lift_pairwiseDisjoint hab hB D hbnd
       isConnected := fun hE ↦ ?_
       isSemianalytic := fun hE ↦ ?_
       exists_isAnalyticSubmanifold := fun hE ↦ ?_
       isPreconnectedApproachAt := fun hE y ↦ ?_
-      subset_closure_of_nonempty_inter := fun {_} hE₀ {_} hE₁ hne ↦
-        lift_subset_closure_step hab hB hBB₀ hmonic D hbnd G hGc hGeq hGroot hE₀ hE₁ hne
-      dim_lt_of_subset_closure := fun {_} hE₀ {_} hE₁ hsub hne {_ _} hdE₀ hdE₁ ↦
-        lift_dim_lt_step hab hB hBB₀ hcoeffAll D hbnd G hGc hGeq hE₀ hE₁ hsub hne hdE₀ hdE₁ }
-  · obtain ⟨S, hS, hES⟩ := mem_iUnion₂.1 hE
-    rcases (mem_boundedStackCells_augmented_iff hab (D S hS).strictMono_root
-        (hbnd S hS)).1 hES with
-      ⟨i, rfl⟩ | ⟨j, rfl⟩
-    · exact isConnected_of_mem_stackCells (hB.isConnected hS) (D S hS).continuous_root
-        (D S hS).strictMono_root (image_cylinder_sectionSet_mem_stackCells i)
-    · exact isConnected_of_mem_stackCells (hB.isConnected hS)
-        (continuous_augmentedStack (D S hS).continuous_root)
-        (strictMono_augmentedStack hab (D S hS).strictMono_root (hbnd S hS))
-        (image_cylinder_sectorSet_mem_stackCells j.castSucc.succ)
-  · obtain ⟨S, hS, hES⟩ := mem_iUnion₂.1 hE
-    obtain ⟨T, hT, rfl⟩ := mem_boundedStackCells.1 hES
+      subset_closure_of_nonempty_inter := hfront
+      dim_lt_of_subset_closure := hdim }
+  · obtain ⟨S, hS, hES⟩ := mem_iUnion₂.mp hE
+    exact isConnected_of_mem_boundedStackCells (hB.isConnected hS) (D S hS).continuous_root
+      (D S hS).strictMono_root hab (hbnd S hS) hES
+  · obtain ⟨S, hS, hES⟩ := mem_iUnion₂.mp hE
+    obtain ⟨T, hT, rfl⟩ := mem_boundedStackCells.mp hES
     have hScl : closure S ⊆ B₀ := (closure_mono (hB.subset_of_mem hS)).trans hBB₀
     exact ((D S hS).isSemianalytic_of_mem_stackCells (hB.isSemianalytic hS) (fun x hx ↦
       ⟨d, fun k j hj ↦ hcoeff k j hj x (hScl hx), fun k ↦
         Filter.mem_of_superset (hB₀.mem_nhds (hScl hx)) fun z hz ↦ (hdeg k z hz).le⟩) hT).inter
       (isSemianalytic_height_mem_Ioo a b)
-  · obtain ⟨S, hS, hES⟩ := mem_iUnion₂.1 hE
+  · obtain ⟨S, hS, hES⟩ := mem_iUnion₂.mp hE
     obtain ⟨dS, hdS⟩ := hB.exists_isAnalyticSubmanifold hS
-    rcases lift_submanifold_cases hab hB hBB₀ hcoeffAll D hbnd hS hdS hES with
-      ⟨_, _, hsubm⟩ | ⟨_, _, hsubm⟩
-    · exact ⟨dS, hsubm⟩
-    · exact ⟨dS + 1, hsubm⟩
-  · obtain ⟨S, hS, hES⟩ := mem_iUnion₂.1 hE
-    rcases (mem_boundedStackCells_augmented_iff hab (D S hS).strictMono_root
-        (hbnd S hS)).1 hES with
-      ⟨i, rfl⟩ | ⟨j, rfl⟩
-    · rw [section_eq_cons_graphOn (hGeq S hS) i,
-        isPreconnectedApproachAt_image_homeomorph_iff, consHomeomorph_symm_apply]
-      exact (hB.isPreconnectedApproachAt hS (Fin.tail y)).graphOn (hGc S hS i).continuousOn
-    · rw [sector_eq_cons_regionBetween hab (D S hS).strictMono_root (hbnd S hS) (hGeq S hS) j,
-        isPreconnectedApproachAt_image_homeomorph_iff, consHomeomorph_symm_apply]
-      exact (hB.isPreconnectedApproachAt hS (Fin.tail y)).regionBetween
-        (continuous_augmentedStack (hGc S hS) _).continuousOn
-        (continuous_augmentedStack (hGc S hS) _).continuousOn fun x hx ↦ by
-          simpa [augmentedStack_congr (hGeq S hS) _ ⟨x, hx⟩] using
-            strictMono_augmentedStack hab (D S hS).strictMono_root (hbnd S hS) ⟨x, hx⟩
-              j.castSucc_lt_succ
+    have hSB₀ : S ⊆ B₀ := (hB.subset_of_mem hS).trans (subset_closure.trans hBB₀)
+    have hconn := isConnected_of_mem_boundedStackCells (hB.isConnected hS)
+      (D S hS).continuous_root (D S hS).strictMono_root hab (hbnd S hS) hES
+    obtain ⟨T, hT, rfl⟩ := mem_boundedStackCells.mp hES
+    obtain ⟨dE, -, hdT⟩ := (D S hS).exists_isAnalyticSubmanifold_of_mem_stackCells hdS
+      (fun k j ↦ ((hcoeffAll k j).mono hSB₀).analyticOnSubmanifold hdS) hT
+    exact ⟨dE, hdT.inter hHo hconn.nonempty⟩
+  · obtain ⟨S, hS, hES⟩ := mem_iUnion₂.mp hE
+    have hScl : closure S ⊆ B₀ := (closure_mono (hB.subset_of_mem hS)).trans hBB₀
+    exact isPreconnectedApproachAt_of_mem_boundedStackCells (D S hS).continuous_root hab
+      (D S hS).strictMono_root (hbnd S hS) hES (hB.isPreconnectedApproachAt hS (Fin.tail y))
+      (exists_root_tendsto_comap hB₀ hScl hmonic hdeg hcoeff (hB.isPreconnectedApproachAt hS)
+        (D S hS) (Fin.tail y))
 
 end TauCeti

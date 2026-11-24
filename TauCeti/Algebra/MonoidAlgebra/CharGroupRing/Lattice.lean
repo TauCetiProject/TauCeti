@@ -42,7 +42,7 @@ theorem card_smul_mem (y : Ψ → O) :
   let := Fintype.ofFinite G
   let := Fintype.ofFinite Ψ
   refine mem_iff.mpr ⟨∑ χ : Ψ, y χ •
-    TauCeti.subgroupCharSum ((Units.coeHom O).comp χ.1⁻¹) ⊤, ?_⟩
+    TauCeti.subgroupCharSum ((Units.coeHom O).comp χ.val⁻¹) ⊤, ?_⟩
   intro ψ
   simp [map_sum, MonoidHom.charEval_subgroupCharSum_inv_top, Subtype.coe_inj, mul_comm]
 

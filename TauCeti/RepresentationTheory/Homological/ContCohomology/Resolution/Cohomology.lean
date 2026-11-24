@@ -236,7 +236,7 @@ In degree zero a cocycle `z` of the contracted complex is `ι (proj z)`, so its 
 theorem cohomologyClass_eq_degreeZeroClass (z : (J.X 0).ρ.invariants)
     (hz : (J.d 0 (0 + 1)).hom (z : (J.X 0).V) = 0) :
     c.cohomologyClass z hz = TauCeti.ContinuousCohomology.degreeZeroClass X (c.proj z)
-      (c.ρ_proj_of_d_eq_zero hz ((ContRepresentation.mem_invariants _).1 z.2)) := by
+      (c.ρ_proj_of_d_eq_zero hz ((ContRepresentation.mem_invariants _).1 z.property)) := by
   rw [cohomologyClass_def]
   apply cochainClass_eq_degreeZeroClass
   rw [ContIntertwiningMap.mapInvariants_apply, comparison_f_zero_apply_apply]

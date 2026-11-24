@@ -35,6 +35,7 @@ Darboux basis this is the classical normalization of the symplectic volume form 
 
 ## Main results
 
+* `ContinuousAlternatingMap.wedgePow_one_apply`: the first power of a form is the form itself.
 * `ContinuousAlternatingMap.wedgePow_compContinuousLinearMap`: wedge powers commute with
   pullback along continuous linear maps.
 * `ContinuousAlternatingMap.wedgePow_smul`: `(c φ) ^ m = c ^ m φ ^ m`.
@@ -83,6 +84,14 @@ theorem wedgePow_zero_apply (φ : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin 0 → E) 
 theorem wedgePow_succ (φ : E [⋀^Fin k]→L[ℝ] ℝ) (m : ℕ) :
     wedgePow φ (m + 1) = pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
       (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (wedgePow φ m) φ := (rfl)
+
+/-- The first wedge power of a form `φ` of degree `k` evaluates as `φ` itself, once the input
+family is reindexed along `k * 1 = k`. -/
+@[simp]
+theorem wedgePow_one_apply (φ : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin (k * 1) → E) :
+    wedgePow φ 1 v = φ (v ∘ Fin.cast (Nat.mul_one k).symm) := by
+  rw [wedgePow_succ, pairedWedge_apply_zero_left, wedgePow_zero_apply,
+    ContinuousLinearMap.mul_apply', one_mul]
 
 /-- Wedge powers commute with pullback along continuous linear maps. -/
 @[simp]

@@ -209,14 +209,14 @@ private theorem map_lie_eq_of_mem_rootSpace (hn : hx.IsChevalleyNormalized) (ω 
     · have hzero' : (h : L) = 0 := by
         have hmem' : (h : L) ∈ rootSpace H (0 : H → K) := by
           rw [rootSpace_zero_eq K L H]
-          exact h.2
+          exact h.property
         rw [hbot] at hmem'
         simpa using hmem'
       rw [hzero', map_zero, neg_zero]
     · have hχ0 : (⟨(0 : H → K), hbot⟩ : Weight K H L).IsZero := rfl
       refine hzero _ hχ0 _ ?_
       have := toSubmodule_rootSpace_eq_of_isZero (K := K) (L := L) (H := H) hχ0
-      exact (SetLike.ext_iff.mp this _).mpr h.2
+      exact (SetLike.ext_iff.mp this _).mpr h.property
   by_cases hχ₁ : χ₁.IsNonZero
   · by_cases hχ₂ : χ₂.IsNonZero
     · -- Both are roots: rescale to the chosen root vectors and use the sign symmetry.

@@ -118,7 +118,7 @@ theorem LocallyOfFiniteType.of_iSup_eq_top {f : X ⟶ Y} {ι : Type*} (U : ι �
 of an open `W` of `X` has an open neighbourhood `V ≤ W` on which `f` is locally of finite type,
 then so is the restriction `W → Y` of `f`. -/
 theorem LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le {f : X ⟶ Y} (W : Opens X)
-    (h : ∀ x : W, ∃ V : Opens X, x.1 ∈ V ∧ V ≤ W ∧
+    (h : ∀ x : W, ∃ V : Opens X, x.val ∈ V ∧ V ≤ W ∧
       LocallyOfFiniteType (X.ofRestrict V.isOpenEmbedding ≫ f)) :
     LocallyOfFiniteType (X.ofRestrict W.isOpenEmbedding ≫ f) := by
   -- the opens `V`, read as opens of the restriction to `W`, cover it

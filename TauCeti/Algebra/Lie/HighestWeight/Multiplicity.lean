@@ -173,7 +173,7 @@ private theorem lie_mem_iSup_hwPiece_of_mem_negativeNilradical {x : L}
     rw [add_sub_cancel_left]
     exact hwPiece_le_genWeightSpace chi hw
   exact le_iSup (fun psi : H → K => hwPiece M b v psi) _
-    (loweredWeightSpace_le_hwPiece _ (lie_mem_loweredWeightSpace gamma.2 hy hw'))
+    (loweredWeightSpace_le_hwPiece _ (lie_mem_loweredWeightSpace gamma.property hy hw'))
 
 /-- The candidate family spans a highest weight module: it contains the generator and is stable
 under the negative nilradical. -/

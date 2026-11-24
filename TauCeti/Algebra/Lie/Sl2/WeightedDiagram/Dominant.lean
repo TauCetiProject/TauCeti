@@ -124,8 +124,8 @@ theorem exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed
   -- then an inner automorphism `g₂` normalizing `H` makes it dominant
   obtain ⟨g₂, hg₂, h', hh', -, hg₂h, t₂⟩ :=
     exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements b (h := ⟨_, hg₁h⟩)
-      (t.smul_of_mem_intLieAlgebra g₁.2)
-  exact ⟨g₂ * g₁, mul_mem hg₂ g₁.2, h', hh', by rwa [mul_smul],
+      (t.smul_of_mem_intLieAlgebra g₁.property)
+  exact ⟨g₂ * g₁, mul_mem hg₂ g₁.property, h', hh', by rwa [mul_smul],
     by simpa only [mul_smul] using t₂⟩
 
 end IsSl2Triple

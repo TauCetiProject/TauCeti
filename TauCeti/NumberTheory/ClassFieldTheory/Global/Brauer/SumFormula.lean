@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.Brauer.LocalizationKernel
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
-public import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Splitting
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Compositum
+import TauCeti.NumberTheory.ClassFieldTheory.Global.Cyclotomic.Splitting
 import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.SecondInequality
 import TauCeti.NumberTheory.Cyclotomic.Adjoin
-import TauCeti.RepresentationTheory.Homological.ContCohomology.Torsion
 
 /-!
 # The sum of the local invariants of a Brauer class
@@ -48,6 +47,8 @@ the product formula for the local Artin symbols on cyclotomic extensions
   with trivial localizations at all places is zero.
 * `TauCeti.ClassFieldTheory.sumLocalInv_brLocalization_eq_zero`: the local invariants of every
   Brauer class of `K` sum to zero.
+* `TauCeti.ClassFieldTheory.finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero`: the same, written
+  as a `finsum` over the finite places plus a sum over the infinite places.
 
 ## References
 
@@ -80,7 +81,7 @@ private theorem sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero
   obtain ⟨r, hr⟩ := (eventually_exists_isCyclic_brLocalization_eq_zero K hℓ x hx).exists
   have : NeZero (ℓ ^ r) := ⟨pow_ne_zero r hℓ.ne_zero⟩
   -- The cyclotomic field `C = K(μ_{ℓ^r})` inside `Kˢ`.
-  set C : IntermediateField K (SeparableClosure K) := adjoin K {b | b ^ (ℓ ^ r) = 1}
+  let C : IntermediateField K (SeparableClosure K) := adjoin K {b | b ^ (ℓ ^ r) = 1}
   have : IsCyclotomicExtension {ℓ ^ r} K C :=
     (HasEnoughRootsOfUnity.prim (M := SeparableClosure K) (n := ℓ ^ r)).choose_spec
       |>.isCyclotomicExtension_adjoin_nth_roots
@@ -89,7 +90,7 @@ private theorem sumLocalInv_brLocalization_eq_zero_of_pow_nsmul_eq_zero
   obtain ⟨E, _, _, hE⟩ := hr C
   -- By the Hasse principle over `E`, the class `x` dies in `E`, hence in its copy `E'` in `Kˢ`.
   have hxE : brBaseChange K E x = 0 := brLocalization_injective E (hE.trans (map_zero _).symm)
-  set E' : IntermediateField K (SeparableClosure K) := lift E
+  let E' : IntermediateField K (SeparableClosure K) := lift E
   let e : E ≃ₐ[K] E' := liftAlgEquiv E
   have : FiniteDimensional K E' := e.toLinearEquiv.finiteDimensional
   have : IsGalois K E' := IsGalois.of_algEquiv e
@@ -131,5 +132,14 @@ theorem sumLocalInv_brLocalization_eq_zero (x : Br K) :
         hx', zsmul_zero]
     rw [show x = (u * a) • x + (v * b) • x by rw [← add_zsmul, huv, one_zsmul], map_add, map_add,
       ihb (by omega) _ hxb, iha (by omega) _ hxa, add_zero]
+
+/-- **The sum formula over all places.** The finite-place local invariants of a Brauer class of
+the number field `K` have finite support (`hasFiniteSupport_finiteInvAt`), so their `finsum` is
+an honest finite sum; together with the archimedean invariants it is zero. -/
+theorem finsum_finiteInvAt_add_sum_infiniteInvAt_eq_zero (x : Br K) :
+    ∑ᶠ v, finiteInvAt K v x + ∑ w, infiniteInvAt K w x = 0 := by
+  rw [finsum_eq_sum_of_support_subset _ (s := brauerSupport K x)
+      fun v hv ↦ (mem_brauerSupport K).2 hv,
+    ← sumLocalInv_brLocalization K x subset_rfl, sumLocalInv_brLocalization_eq_zero]
 
 end TauCeti.ClassFieldTheory

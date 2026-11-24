@@ -133,7 +133,7 @@ theorem range_frobeniusFixedInclusion :
   constructor
   · rintro ⟨g, rfl⟩ h
     simpa only [frobeniusFixedInclusion_apply_apply] using
-      mem_frobeniusFixedSubring.mp (g.ofConv h).2
+      mem_frobeniusFixedSubring.mp (g.ofConv h).property
   · intro hf
     -- Over `ℤ`, the subalgebra and subring have definitionally equal subtype algebra
     -- structures, so `codRestrict` is valued in the fixed subring with its usual algebra.

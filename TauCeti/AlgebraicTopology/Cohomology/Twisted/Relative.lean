@@ -44,6 +44,15 @@ Poincaré--Lefschetz duality, so the twisted theory, and not only the untwisted 
   `TopPair.twistedCohomology_exact_space` and `TopPair.twistedCohomology_exact_subspace`, and its
   naturality `TopPair.twistedCohomologyδ_naturality` in maps of pairs and
   `TopPair.twistedCohomologyδ_naturality_coefficient` in morphisms of local coefficient systems.
+* `TopPair.isZero_twistedCohomology_of_isZero_twistedHomology`: for a system with projective
+  fibres, relative twisted cohomology vanishes up to the degree where relative twisted homology
+  does, since the relative twisted chains are then projective.
+* `TopPair.homologyMap_twistedSubspaceCochainComplexMap`,
+  `TopPair.homologyMap_twistedCochainComplexShortComplexMap_τ₂`,
+  `TopPair.homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem`: on cohomology, the components
+  of the morphism of cochain sequences induced by a map of pairs are the maps induced by its ambient
+  and subspace components, up to the coefficient comparison on the subspaces, as needed for the
+  five lemma.
 * `TopPair.twistedCohomologyConstantIso`: for a constant system, relative twisted cohomology is
   ordinary relative singular cohomology.
 
@@ -138,6 +147,18 @@ lemma twistedCohomologyCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) (n : �
     (CategoryTheory.Functor.map_comp _ _ _)
 
 end Coefficients
+
+variable {k} in
+/-- **Relative cohomology with local coefficients vanishes up to the degree where relative homology
+does**: if the fibres of `L` are projective and `Hⱼ(X, A; L) = 0` for `j ≤ n`, then
+`Hⁿ(X, A; L, M) = 0` for every module `M`. The relative twisted chains are then projective
+(`TopPair.projective_twistedChainComplex_X`), so their dual `Hom(C(X, A; L), M)` is exact wherever
+they are (`ChainComplex.exactAt_linearYonedaObj_of_projective`). -/
+theorem isZero_twistedCohomology_of_isZero_twistedHomology [∀ x, Projective (L.obj x)] (n : ℕ)
+    (h : ∀ j ≤ n, IsZero (P.twistedHomology L j)) : IsZero (P.twistedCohomology L k M n) := by
+  rw [← HomologicalComplex.exactAt_iff_isZero_homology]
+  exact ChainComplex.exactAt_linearYonedaObj_of_projective k _ M (fun _ _ ↦ inferInstance)
+    (fun j hj ↦ (HomologicalComplex.exactAt_iff_isZero_homology _ _).2 (h j hj)) le_rfl
 
 section LongExactSequence
 
@@ -324,10 +345,8 @@ lemma twistedCochainComplexMap_naturality
       twistedCochainComplexMap k M f K ≫
         P.twistedCochainComplexCoefficientMap k M
           ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) :=
-  ((ChainComplex.linearYonedaFunctor k M).map_comp _ _).symm.trans
-    ((congrArg (fun φ ↦ (ChainComplex.linearYonedaFunctor k M).map (Opposite.op φ))
-      (twistedChainComplexMap_naturality f L η)).trans
-      ((ChainComplex.linearYonedaFunctor k M).map_comp _ _))
+  ((CommSq.mk (twistedChainComplexMap_naturality f L η)).op.map
+    (ChainComplex.linearYonedaFunctor k M)).w.symm
 
 /-- The cohomology form of `TopPair.twistedCochainComplexMap_naturality`. -/
 @[reassoc]
@@ -337,10 +356,8 @@ lemma twistedCohomologyMap_naturality
       twistedCohomologyMap k M f K n ≫
         P.twistedCohomologyCoefficientMap k M
           ((LocalCoefficientSystem.pullback (Hom.fst f).hom).map η) n :=
-  ((HomologicalComplex.homologyFunctor _ _ n).map_comp _ _).symm.trans
-    ((congrArg (fun φ ↦ (HomologicalComplex.homologyFunctor _ _ n).map φ)
-      (twistedCochainComplexMap_naturality k M f L η)).trans
-      ((HomologicalComplex.homologyFunctor _ _ n).map_comp _ _))
+  ((CommSq.mk (twistedCochainComplexMap_naturality k M f L η)).map
+    (HomologicalComplex.homologyFunctor _ _ n)).w
 
 /-- The identity map of a pair induces on relative twisted cochains the coefficient-change map
 coming from the canonical identification of a system with its pullback along the identity. -/
@@ -437,6 +454,39 @@ lemma twistedCochainComplexShortComplexMap_τ₂ :
 lemma twistedCochainComplexShortComplexMap_τ₃ :
     (twistedCochainComplexShortComplexMap k M f L).τ₃ =
       twistedSubspaceCochainComplexMap k M f L := (rfl)
+
+/-- The cohomology map induced by the map on subspace cochains is the map induced by the subspace
+component, followed by the coefficient comparison. -/
+lemma homologyMap_twistedSubspaceCochainComplexMap (n : ℕ) :
+    HomologicalComplex.homologyMap (twistedSubspaceCochainComplexMap k M f L) n =
+      LocalCoefficientSystem.twistedCohomologyMap k M (Hom.snd f) (Q.subspaceSystem L) n ≫
+        LocalCoefficientSystem.twistedCohomologyCoefficientMap k M
+          (subspaceSystemPullbackIso f L).hom n := by
+  rw [twistedSubspaceCochainComplexMap, twistedSubspaceChainComplexMap_def, op_comp]
+  exact (congrArg (HomologicalComplex.homologyMap · n)
+    ((ChainComplex.linearYonedaFunctor k M).map_comp _ _)).trans
+      (HomologicalComplex.homologyMap_comp _ _ n)
+
+/-- On cohomology, the ambient component of the morphism of twisted cochain sequences induced by
+a map of pairs `f` is the twisted cohomology map of `Hom.fst f`. -/
+lemma homologyMap_twistedCochainComplexShortComplexMap_τ₂ (n : ℕ) :
+    HomologicalComplex.homologyMap (twistedCochainComplexShortComplexMap k M f L).τ₂ n =
+      LocalCoefficientSystem.twistedCohomologyMap k M (Hom.fst f) L n :=
+  (rfl)
+
+/-- A property of morphisms of modules that respects isomorphisms holds for the map induced by a
+map of pairs on the twisted cohomology of the subspaces as soon as it holds for the map induced by
+the subspace component. -/
+lemma homologyMap_twistedCochainComplexShortComplexMap_τ₃_mem
+    (Pr : MorphismProperty (ModuleCat.{max v w} k)) [Pr.RespectsIso] (n : ℕ)
+    (h : Pr (LocalCoefficientSystem.twistedCohomologyMap k M (Hom.snd f) (Q.subspaceSystem L) n)) :
+    Pr (HomologicalComplex.homologyMap (twistedCochainComplexShortComplexMap k M f L).τ₃ n) := by
+  -- Rewriting `τ₃` away first leaves a goal whose motive is not type-correct at instance
+  -- transparency, so the equation is restated for the `τ₃` component.
+  have e : HomologicalComplex.homologyMap (twistedCochainComplexShortComplexMap k M f L).τ₃ n = _ :=
+    homologyMap_twistedSubspaceCochainComplexMap k M f L n
+  rw [e]
+  exact MorphismProperty.RespectsIso.postcomp _ _ _ h
 
 /-- The map from relative to absolute twisted cohomology is natural in the pair. -/
 @[reassoc]

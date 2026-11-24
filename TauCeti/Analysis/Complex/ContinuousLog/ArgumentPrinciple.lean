@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ContinuousLog.Circle
-import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Algebra.BigOperators.Field
+import TauCeti.Analysis.Normed.Field.AtInfinity
 import Mathlib.Analysis.Complex.BranchLogRoot
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
@@ -35,7 +36,8 @@ This file proves the topological argument principle for such functions:
   `TauCeti.not_hasContinuousLogOn_zpow_sub_sphere`).
 
 In particular the end framing of such a section determines its total number of zeros, counted
-with multiplicity, and that number is the degree of the framing.
+with multiplicity, and that number is the degree of the framing. A continuous function framed in
+positive degree therefore has a zero (`TauCeti.exists_eq_zero_of_tendsto_mul_inv_pow`).
 -/
 
 public section
@@ -182,7 +184,7 @@ theorem natCast_sum_eq_of_eq_exp_mul_prod_pow (s : Finset ℂ) {L : ℂ → ℂ}
     exact hf.continuousAt.mul ((hu.zpow₀ m (Or.inl (div_ne_zero hw hw'))).inv₀
       (zpow_ne_zero _ (div_ne_zero hw hw')))
   obtain ⟨R₂, hR₂⟩ := exists_forall_hasContinuousLogOn_sphere (F := q)
-      (tendsto_prod_one_sub_mul_inv_pow s n) fun w hw ↦ by
+      (cobounded_eq_cocompact (α := ℂ) ▸ s.tendsto_prod_one_sub_mul_inv_pow n) fun w hw ↦ by
     rw [hqdef]
     fun_prop (disch := assumption)
   set ρ := max (max R₁ R₂) 1
@@ -201,7 +203,7 @@ theorem natCast_sum_eq_of_eq_exp_mul_prod_pow (s : Finset ℂ) {L : ℂ → ℂ}
       linarith
     have hq0 : q w ≠ 0 := (hR₂ ρ (le_max_of_le_left (le_max_right _ _))).ne_zero hw
     have hprod : ∏ z ∈ s, (w - z) ^ n z = w ^ N * q w := by
-      rw [hNdef, hqdef, prod_sub_pow_eq_pow_sum_mul_prod_one_sub_mul_inv_pow s n hw0]
+      rw [hNdef, hqdef, Finset.prod_sub_pow_eq_pow_sum_mul_prod_one_sub_mul_inv_pow s n hw0]
     simp only [hL w, hprod, hwρ, sub_zero, div_zpow, zpow_sub₀ hw0, zpow_natCast]
     field_simp [exp_ne_zero (L w), hq0, hρm, zpow_ne_zero m hw0]
   by_contra hNm
@@ -240,5 +242,16 @@ theorem finsum_eq_of_tendsto_mul_inv_pow
     {m : ℕ} (hm : Tendsto (fun z ↦ f z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     ∑ᶠ z, n z = m := by
   exact_mod_cast natCast_finsum_eq_of_tendsto_mul_inv_zpow hn (m := m) (by simpa using hm)
+
+/-- **A continuous function of positive degree at infinity has a zero.** If `f` is continuous and
+`f z * ((z / |z|) ^ m)⁻¹ → 1` at infinity with `m ≠ 0`, then `f` vanishes somewhere. -/
+theorem exists_eq_zero_of_tendsto_mul_inv_pow (hf : Continuous f) {m : ℕ} (hm₀ : m ≠ 0)
+    (hm : Tendsto (fun z ↦ f z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
+    ∃ z, f z = 0 := by
+  by_contra! h
+  refine hm₀ ?_
+  rw [← finsum_eq_of_tendsto_mul_inv_pow (n := 0)
+    (fun z ↦ ⟨f, hf.continuousAt, h z, by simp⟩) hm]
+  simp
 
 end TauCeti

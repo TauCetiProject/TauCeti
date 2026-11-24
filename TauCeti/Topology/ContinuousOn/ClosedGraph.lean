@@ -14,10 +14,8 @@ A function whose graph over a set `s` is closed and whose values on `s` lie in a
 continuous on `s`. This is the relative form of Mathlib's `continuous_of_isClosed_graph`; it
 identifies a bounded single-valued closure of a graph with a continuous function.
 Conversely, `ContinuousOn.closure_graphOn_inter` recovers a continuous function's graph from
-its restriction to a relatively dense subset, and `ContinuousOn.closure_graphOn` identifies the
-closure of `t.graphOn f` with `(closure t).graphOn f` when `f` is continuous on `closure t`. This
-permits extending a description of a graph across an exceptional locus without making any choices
-of values there.
+its restriction to a relatively dense subset. This permits extending a description of a graph
+across an exceptional locus without making any choices of values there.
 -/
 
 public section
@@ -34,14 +32,14 @@ theorem continuousOn_of_isClosed_graphOn {f : X → Y} {s : Set X} {K : Set Y}
     (hf : IsClosed (s.graphOn f)) (hK : IsCompact K) (hfK : MapsTo f s K) :
     ContinuousOn f s := by
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let F : s → K := fun x ↦ ⟨f x, hfK x.2⟩
+  let F : s → K := fun x ↦ ⟨f x, hfK x.property⟩
   have hgraph : F.graph = Prod.map Subtype.val Subtype.val ⁻¹' s.graphOn f := by
     ext ⟨x, y⟩
     simp [F, Function.graph, Subtype.ext_iff]
   have hF : Continuous F := continuous_of_isClosed_graph <| by
     rw [hgraph]
-    exact hf.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
-  exact continuousOn_iff_continuous_domRestrict.mpr (continuous_subtype_val.comp hF)
+    exact hf.preimage (continuous_subtypeVal.prodMap continuous_subtypeVal)
+  exact continuousOn_iff_continuous_domRestrict.mpr (continuous_subtypeVal.comp hF)
 
 end TauCeti
 
@@ -79,14 +77,3 @@ theorem ContinuousOn.closure_graphOn_inter [T2Space Y] {f : X → Y} {s t : Set 
     refine ⟨?_, hx, mem_univ _⟩
     simpa only [graphOn, id_eq] using
       (continuousWithinAt_id.prodMk ((hf x hx).mono hts)).mem_closure_image (hst hx)
-
-/-- The closure of the graph of a function continuous on `closure t` is its graph over
-`closure t`. -/
-theorem ContinuousOn.closure_graphOn [T2Space Y] {f : X → Y} {t : Set X}
-    (hf : ContinuousOn f (closure t)) :
-    closure (t.graphOn f) = (closure t).graphOn f := by
-  have hsub : closure (t.graphOn f) ⊆ closure t ×ˢ univ :=
-    closure_minimal (fun _ hp ↦ ⟨subset_closure (mem_graphOn.mp hp).1, trivial⟩)
-      (isClosed_closure.prod isClosed_univ)
-  rw [← inter_eq_left.mpr hsub]
-  exact hf.closure_graphOn_inter subset_closure subset_rfl

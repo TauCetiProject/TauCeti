@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ClassGroup.ElementaryTwoQuotient
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Finite
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.TotallyComplex
+public import TauCeti.RingTheory.ClassGroup.ElementaryTwoQuotient
 
 /-!
 # The elementary-2 quotient of the narrow class group
@@ -25,7 +25,7 @@ elementary-2 quotients are linearly equivalent and their 2-ranks agree.
 
 The underlying construction is the general `TauCeti.ElementaryTwoQuotient`. This file specializes
 it to the finite group `NarrowClassGroup K`, records its induced map to
-`TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K)`, and exposes the rank statements used in genus
+`ClassGroup.ElementaryTwoQuotient (𝓞 K)`, and exposes the rank statements used in genus
 theory.
 
 ## Main definitions and results
@@ -70,7 +70,7 @@ abbrev ElementaryTwoQuotient : Type _ :=
 /-- Forgetting positivity induces a `ZMod 2`-linear map
 `Cl⁺(K) / Cl⁺(K)² → Cl(K) / Cl(K)²`. -/
 noncomputable def toClassGroupElementaryTwoQuotient :
-    ElementaryTwoQuotient K →ₗ[ZMod 2] TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K) :=
+    ElementaryTwoQuotient K →ₗ[ZMod 2] ClassGroup.ElementaryTwoQuotient (𝓞 K) :=
   TauCeti.elementaryTwoQuotientMap (toClassGroup (K := K))
 
 /-- The map on elementary-2 quotients induced by forgetting positivity sends the class of `C` to
@@ -127,15 +127,15 @@ theorem card_eq_two_pow_twoRank_of_classNumber_eq_one
 /-- The ordinary class-group 2-rank is at most the narrow class-group 2-rank. The inequality can
 be strict for real fields because forgetting positivity is only a surjection. -/
 theorem classGroupTwoRank_le_twoRank :
-    TauCeti.ClassGroup.twoRank (𝓞 K) ≤ twoRank K := by
-  rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
+    ClassGroup.twoRank (𝓞 K) ≤ twoRank K := by
+  rw [ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
   exact TauCeti.twoRank_le_twoRank_of_surjective
     (toClassGroup (K := K)) toClassGroup_surjective
 
 /-- For a totally complex field, the elementary-2 quotients of the narrow and ordinary class
 groups are linearly equivalent over `ZMod 2`. -/
 noncomputable def toClassGroupElementaryTwoQuotientEquiv [IsTotallyComplex K] :
-    ElementaryTwoQuotient K ≃ₗ[ZMod 2] TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K) :=
+    ElementaryTwoQuotient K ≃ₗ[ZMod 2] ClassGroup.ElementaryTwoQuotient (𝓞 K) :=
   TauCeti.elementaryTwoQuotientCongr (toClassGroupEquiv (K := K))
 
 /-- For a totally complex field, the elementary-2 quotient equivalence is the linear map induced
@@ -153,15 +153,15 @@ forgetting positivity is always surjective, injectivity makes it an isomorphism 
 and isomorphic groups have the same 2-rank. -/
 theorem twoRank_eq_classGroupTwoRank_of_injective
     (h : Function.Injective (toClassGroup (K := K))) :
-    twoRank K = TauCeti.ClassGroup.twoRank (𝓞 K) := by
-  rw [TauCeti.ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
+    twoRank K = ClassGroup.twoRank (𝓞 K) := by
+  rw [ClassGroup.twoRank_def, ← TauCeti.twoRank_def]
   exact TauCeti.twoRank_eq_of_mulEquiv
     (MulEquiv.ofBijective (toClassGroup (K := K)) ⟨h, toClassGroup_surjective⟩)
 
 /-- **For a totally complex field, the narrow and ordinary class-group 2-ranks agree.** The
 totally complex case of `twoRank_eq_classGroupTwoRank_of_injective`, where positivity is vacuous. -/
 theorem twoRank_eq_classGroupTwoRank [IsTotallyComplex K] :
-    twoRank K = TauCeti.ClassGroup.twoRank (𝓞 K) :=
+    twoRank K = ClassGroup.twoRank (𝓞 K) :=
   twoRank_eq_classGroupTwoRank_of_injective K toClassGroup_injective
 
 end NumberField.NarrowClassGroup

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.Normed.Ring.Lemmas
-public import TauCeti.Topology.ClusterSet
 public import TauCeti.Topology.ContinuousOn.ClosedGraph
 public import TauCeti.Topology.UnitInterval.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
@@ -41,12 +40,6 @@ elementary endpoint calculus which glues the cell maps of that construction.
 * `OpenPartialHomeomorph.regionBetween`: when the base map is an open partial homeomorphism and
   the continuous endpoints are strictly ordered, interpolation is an open partial homeomorphism
   between the open bands. Its inverse uses the inverse base map with the endpoint pairs exchanged.
-* `TauCeti.regionBetween_const` and `TauCeti.image_regionBetweenMap_prod_Ioo`: an open band
-  between constant endpoints is a prism `s ×ˢ Ioo y₁ y₂`, and affine interpolation maps
-  `s ×ˢ Ioo y₁ y₂` onto any open band `regionBetween φ φ' s`.
-* `TauCeti.IsPreconnectedApproachAt.regionBetween`: preconnected approach regions lift from the
-  base `s` to the open band `regionBetween φ ψ s` whenever `φ < ψ` on `s` and both endpoints are
-  continuous on `closure s`, including at frontier points where the endpoints coalesce.
 
 ## References
 
@@ -92,14 +85,6 @@ theorem closedRegionBetween_const (s : Set α) (y₁ y₂ : ℝ) :
     closedRegionBetween (Function.const α y₁) (Function.const α y₂) s = s ×ˢ Icc y₁ y₂ := by
   ext ⟨x, t⟩
   simp
-
-/-- The open region between two constant functions over a set `s` is the prism
-`s ×ˢ Ioo y₁ y₂`. -/
-@[simp]
-theorem regionBetween_const (s : Set α) (y₁ y₂ : ℝ) :
-    regionBetween (Function.const α y₁) (Function.const α y₂) s = s ×ˢ Ioo y₁ y₂ := by
-  ext ⟨x, t⟩
-  simp [regionBetween]
 
 /-- The region between two functions only depends on their values on the base set. -/
 theorem regionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : EqOn f f' s)
@@ -442,66 +427,6 @@ theorem isOpen_regionBetween {X : Type*} [TopologicalSpace X] {s : Set X}
   exact hpair.isOpen_inter_preimage hopen
     ((isOpen_lt continuous_fst (continuous_fst.comp continuous_snd)).inter
       (isOpen_lt (continuous_fst.comp continuous_snd) (continuous_snd.comp continuous_snd)))
-
-/-- Affine interpolation from `(y₁, y₂)` maps `s ×ˢ Ioo y₁ y₂` onto the open band
-`regionBetween φ φ' s`. -/
-theorem image_regionBetweenMap_prod_Ioo {X : Type*} {φ φ' : X → ℝ} {s : Set X} {y₁ y₂ : ℝ}
-    (hy : y₁ < y₂) (hφφ' : ∀ x ∈ s, φ x < φ' x) :
-    regionBetweenMap id (Function.const X y₁) (Function.const X y₂) φ φ' '' (s ×ˢ Ioo y₁ y₂) =
-      regionBetween φ φ' s := by
-  rw [← regionBetween_const]
-  exact (bijOn_regionBetweenMap_regionBetween (invOn_id s) (mapsTo_id s) (mapsTo_id s)
-    (fun _ _ ↦ hy) hφφ').image_eq
-
-/-- If `s` has preconnected approach regions at `p.1`, `φ < ψ` on `s`, and `φ, ψ` are continuous
-on `closure s`, then the open band `regionBetween φ ψ s` has preconnected approach regions at `p`,
-including at frontier points where `φ` and `ψ` coalesce. -/
-theorem IsPreconnectedApproachAt.regionBetween {X : Type*} [TopologicalSpace X] {s : Set X}
-    {φ ψ : X → ℝ} {p : X × ℝ} (hs : IsPreconnectedApproachAt s p.1)
-    (hφ : ContinuousOn φ (closure s)) (hψ : ContinuousOn ψ (closure s))
-    (hφψ : ∀ x ∈ s, φ x < ψ x) :
-    IsPreconnectedApproachAt (_root_.regionBetween φ ψ s) p := by
-  by_cases hp : p ∈ closure (_root_.regionBetween φ ψ s)
-  · rw [closure_regionBetween hφ hψ hφψ] at hp
-    obtain ⟨hp1, hpφ, hpψ⟩ := hp
-    rw [isPreconnectedApproachAt_def]
-    intro W hW
-    obtain ⟨U₀, hU₀, J, hJ, hUJ⟩ := mem_nhds_prod_iff.1 hW
-    obtain ⟨ε, hε, hεJ⟩ := Metric.mem_nhds_iff.1 hJ
-    rw [Real.ball_eq_Ioo] at hεJ
-    have hU₁' : φ ⁻¹' Iio (p.2 + ε) ∈ 𝓝[closure s] p.1 :=
-      hφ p.1 hp1 (Iio_mem_nhds (hpφ.trans_lt (lt_add_of_pos_right p.2 hε)))
-    have hU₂' : ψ ⁻¹' Ioi (p.2 - ε) ∈ 𝓝[closure s] p.1 :=
-      hψ p.1 hp1 (Ioi_mem_nhds ((sub_lt_self p.2 hε).trans_le hpψ))
-    obtain ⟨U₁, hU₁, hU₁sub⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hU₁'
-    obtain ⟨U₂, hU₂, hU₂sub⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hU₂'
-    obtain ⟨T, hT, hTU, hsT⟩ := isPreconnectedApproachAt_def.1 hs (U₀ ∩ (U₁ ∩ U₂))
-      (inter_mem hU₀ (inter_mem hU₁ hU₂))
-    refine ⟨T ×ˢ Ioo (p.2 - ε) (p.2 + ε),
-      prod_mem_nhds hT (Ioo_mem_nhds (sub_lt_self p.2 hε) (lt_add_of_pos_right p.2 hε)),
-      (prod_mono (hTU.trans inter_subset_left) hεJ).trans hUJ, ?_⟩
-    let α : X → ℝ := fun x ↦ max (φ x) (p.2 - ε)
-    let β : X → ℝ := fun x ↦ min (ψ x) (p.2 + ε)
-    have hαβ : ∀ x ∈ s ∩ T, α x < β x := fun x ⟨hxs, hxT⟩ ↦
-      lt_min (max_lt (hφψ x hxs) (hU₂sub ⟨(hTU hxT).2.2, subset_closure hxs⟩))
-        (max_lt (hU₁sub ⟨(hTU hxT).2.1, subset_closure hxs⟩) (by linarith))
-    have heq : _root_.regionBetween φ ψ s ∩ (T ×ˢ Ioo (p.2 - ε) (p.2 + ε)) =
-        _root_.regionBetween α β (s ∩ T) := by
-      ext ⟨x, t⟩
-      simp only [mem_inter_iff, _root_.regionBetween, mem_ofPred_eq, mem_prod, mem_Ioo,
-        α, β, max_lt_iff, lt_min_iff]
-      tauto
-    rw [heq, ← image_regionBetweenMap_prod_Ioo zero_lt_one hαβ]
-    have hsT_sub : s ∩ T ⊆ closure s := inter_subset_left.trans subset_closure
-    have hα : ContinuousOn α (s ∩ T) := ContinuousOn.sup (hφ.mono hsT_sub) continuousOn_const
-    have hβ : ContinuousOn β (s ∩ T) := ContinuousOn.inf (hψ.mono hsT_sub) continuousOn_const
-    have hmap : ContinuousOn (regionBetweenMap id (Function.const X 0) (Function.const X 1) α β)
-        ((s ∩ T) ×ˢ Ioo 0 1) :=
-      (continuousOn_regionBetweenMap continuousOn_id continuousOn_const continuousOn_const
-        hα hβ (mapsTo_id _) (fun _ _ h ↦ absurd h zero_ne_one)).mono
-        (fun _ ⟨hx, h⟩ ↦ ⟨hx, Ioo_subset_Icc_self h⟩)
-    exact (hsT.prod isPreconnected_Ioo).image _ hmap
-  · exact isPreconnectedApproachAt_of_notMem_closure hp
 
 end TauCeti
 

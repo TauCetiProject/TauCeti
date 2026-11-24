@@ -27,8 +27,9 @@ satisfying Łojasiewicz's frontier condition:
 * **Dimension drop:** if `S, T ∈ 𝒞`, `S ⊆ closure T`, and `S ≠ T`, then `dim S < dim T`.
 
 Every piece is locally closed (`TauCeti.IsNormalDecomposition.isLocallyClosed`) because it is an
-analytic submanifold. Inside `U`, the closure and strict frontier of each piece are unions of
-pieces (`TauCeti.IsNormalDecomposition.inter_closure_eq_sUnion`,
+analytic submanifold, and the decomposed set `U` itself is globally semianalytic
+(`TauCeti.isSemianalytic_of_isNormalDecomposition`). Inside `U`, the closure and strict frontier of
+each piece are unions of pieces (`TauCeti.IsNormalDecomposition.inter_closure_eq_sUnion`,
 `TauCeti.IsNormalDecomposition.inter_closure_sdiff_eq_sUnion`). When `U` is open and a set `s` is
 compatible with `𝒞` (`∀ S ∈ 𝒞, S ⊆ s ∨ Disjoint S s`), both `U ∩ closure s` and
 `U ∩ (closure s \ s)` are likewise unions of pieces of `𝒞`, with every piece of
@@ -42,7 +43,9 @@ place a finite analytic family in general position before applying Weierstrass p
 ## Main declarations
 
 * `TauCeti.IsNormalDecomposition`: finite connected semianalytic submanifold partition with
-  preconnected approach regions and the two-part frontier condition.
+  preconnected approach regions at every ambient point and the two-part frontier condition.
+* `TauCeti.isSemianalytic_of_isNormalDecomposition`: a set admitting a normal decomposition is
+  globally semianalytic.
 * `TauCeti.IsNormalDecomposition.inter_closure_eq_sUnion`,
   `TauCeti.IsNormalDecomposition.inter_closure_sdiff_eq_sUnion`: closure and strict frontier of a
   piece inside `U` are unions of pieces.
@@ -101,6 +104,13 @@ structure IsNormalDecomposition {n : ℕ} (U : Set (Fin n → ℝ))
     ∀ {S}, S ∈ 𝒞 → ∀ {T}, T ∈ 𝒞 → S ⊆ closure T → S ≠ T →
       ∀ {dS dT}, IsAnalyticSubmanifold dS S → IsAnalyticSubmanifold dT T → dS < dT
 
+/-- A set admitting a normal decomposition is globally semianalytic, being a finite union of
+semianalytic pieces. -/
+theorem isSemianalytic_of_isNormalDecomposition {n : ℕ} {U : Set (Fin n → ℝ)}
+    {𝒞 : Set (Set (Fin n → ℝ))} (h : IsNormalDecomposition U 𝒞) : IsSemianalytic U := by
+  rw [← h.sUnion_eq, sUnion_eq_biUnion]
+  exact .biUnion h.finite fun _ hS ↦ h.isSemianalytic hS
+
 namespace IsNormalDecomposition
 
 variable {n n' : ℕ} {U : Set (Fin n → ℝ)} {𝒞 : Set (Set (Fin n → ℝ))}
@@ -113,7 +123,7 @@ theorem subset_of_mem (h : IsNormalDecomposition U 𝒞) (hS : S ∈ 𝒞) : S �
 /-- Every point of `U` belongs to some piece of the decomposition. -/
 theorem exists_mem_of_mem (h : IsNormalDecomposition U 𝒞) {x : Fin n → ℝ} (hx : x ∈ U) :
     ∃ S ∈ 𝒞, x ∈ S :=
-  mem_sUnion.1 (h.sUnion_eq.symm ▸ hx)
+  mem_sUnion.mp (h.sUnion_eq.symm ▸ hx)
 
 /-- Every piece of a normal decomposition is nonempty. -/
 theorem nonempty_of_mem (h : IsNormalDecomposition U 𝒞) (hS : S ∈ 𝒞) : S.Nonempty :=
@@ -127,6 +137,13 @@ theorem empty_notMem (h : IsNormalDecomposition U 𝒞) : ∅ ∉ 𝒞 :=
 theorem isPreconnected (h : IsNormalDecomposition U 𝒞) (hS : S ∈ 𝒞) : IsPreconnected S :=
   (h.isConnected hS).isPreconnected
 
+/-- Every piece of a normal decomposition in `ℝⁿ` is an analytic submanifold of dimension at most
+`n`. -/
+theorem exists_isAnalyticSubmanifold_le (h : IsNormalDecomposition U 𝒞) (hS : S ∈ 𝒞) :
+    ∃ d ≤ n, IsAnalyticSubmanifold d S :=
+  let ⟨d, hd⟩ := h.exists_isAnalyticSubmanifold hS
+  ⟨d, hd.le, hd⟩
+
 /-- Every piece of a normal decomposition is locally closed in `ℝⁿ`. -/
 theorem isLocallyClosed (h : IsNormalDecomposition U 𝒞) (hS : S ∈ 𝒞) : IsLocallyClosed S :=
   let ⟨_, hd⟩ := h.exists_isAnalyticSubmanifold hS
@@ -135,7 +152,7 @@ theorem isLocallyClosed (h : IsNormalDecomposition U 𝒞) (hS : S ∈ 𝒞) : I
 /-- Two pieces of a normal decomposition containing a common point are equal. -/
 theorem eq_of_mem_of_mem (h : IsNormalDecomposition U 𝒞) (hS : S ∈ 𝒞) (hT : T ∈ 𝒞)
     {x : Fin n → ℝ} (hxS : x ∈ S) (hxT : x ∈ T) : S = T :=
-  h.pairwiseDisjoint.elim hS hT (not_disjoint_iff.2 ⟨x, hxS, hxT⟩)
+  h.pairwiseDisjoint.elim hS hT (not_disjoint_iff.mpr ⟨x, hxS, hxT⟩)
 
 /-- Two pieces of a normal decomposition with nonempty intersection are equal. -/
 theorem eq_of_nonempty_inter (h : IsNormalDecomposition U 𝒞) (hS : S ∈ 𝒞) (hT : T ∈ 𝒞)
@@ -150,7 +167,7 @@ theorem isPartition_preimage (h : IsNormalDecomposition U 𝒞) :
   refine PairwiseDisjoint.isPartition_of_exists_of_ne_empty ?_ (fun x ↦ ?_) ?_
   · rintro _ ⟨S, hS, rfl⟩ _ ⟨T, hT, rfl⟩ hne
     exact (h.pairwiseDisjoint hS hT (fun hST ↦ hne (hST ▸ rfl))).preimage _
-  · obtain ⟨S, hS, hxS⟩ := h.exists_mem_of_mem x.2
+  · obtain ⟨S, hS, hxS⟩ := h.exists_mem_of_mem x.property
     exact ⟨_, mem_image_of_mem _ hS, hxS⟩
   · rintro ⟨S, hS, h0⟩
     obtain ⟨x, hxS⟩ := h.nonempty_of_mem hS
@@ -178,7 +195,7 @@ theorem inter_closure_eq_sUnion (h : IsNormalDecomposition U 𝒞) (hT : T ∈ �
   refine Subset.antisymm (fun x ⟨hxU, hxcl⟩ ↦ ?_) (sUnion_subset fun S ⟨hS, hST⟩ ↦
     subset_inter (h.subset_of_mem hS) hST)
   obtain ⟨S, hS, hxS⟩ := h.exists_mem_of_mem hxU
-  exact mem_sUnion.2 ⟨S, ⟨hS, h.subset_closure_of_nonempty_inter hS hT ⟨x, hxS, hxcl⟩⟩, hxS⟩
+  exact mem_sUnion.mpr ⟨S, ⟨hS, h.subset_closure_of_nonempty_inter hS hT ⟨x, hxS, hxcl⟩⟩, hxS⟩
 
 /-- Inside `U`, `closure T \ T` is the union of the pieces strictly contained in `closure T`, each
 of which has dimension strictly smaller than `dim T`. -/
@@ -186,7 +203,7 @@ theorem inter_closure_sdiff_eq_sUnion (h : IsNormalDecomposition U 𝒞) (hT : T
     U ∩ (closure T \ T) = ⋃₀ {S ∈ 𝒞 | S ⊆ closure T ∧ S ≠ T} := by
   refine Subset.antisymm (fun x ⟨hxU, hxcl, hxT⟩ ↦ ?_) (sUnion_subset fun S ⟨hS, hST, hne⟩ ↦ ?_)
   · obtain ⟨S, hS, hxS⟩ := h.exists_mem_of_mem hxU
-    refine mem_sUnion.2 ⟨S, ⟨hS, h.subset_closure_of_nonempty_inter hS hT ⟨x, hxS, hxcl⟩,
+    refine mem_sUnion.mpr ⟨S, ⟨hS, h.subset_closure_of_nonempty_inter hS hT ⟨x, hxS, hxcl⟩,
       ?_⟩, hxS⟩
     rintro rfl
     exact hxT hxS
@@ -201,8 +218,8 @@ theorem inter_eq_sUnion_sep (h : IsNormalDecomposition U 𝒞) {s : Set (Fin n �
   refine Subset.antisymm (fun x ⟨hxs, hxU⟩ ↦ ?_) (sUnion_subset fun S ⟨hS, hSs⟩ ↦
     subset_inter hSs (h.subset_of_mem hS))
   obtain ⟨S, hS, hxS⟩ := h.exists_mem_of_mem hxU
-  refine mem_sUnion.2 ⟨S, ⟨hS, (hs S hS).resolve_right ?_⟩, hxS⟩
-  exact not_disjoint_iff.2 ⟨x, hxS, hxs⟩
+  refine mem_sUnion.mpr ⟨S, ⟨hS, (hs S hS).resolve_right ?_⟩, hxS⟩
+  exact not_disjoint_iff.mpr ⟨x, hxS, hxs⟩
 
 /-- If `U` is open and `s` is compatible with `𝒞`, then `U ∩ closure s` is the union of the pieces
 of `𝒞` contained in the closure of some piece of `𝒞` lying in `s`. -/
@@ -220,7 +237,7 @@ theorem inter_closure_eq_sUnion_of_isOpen (h : IsNormalDecomposition U 𝒞) (hU
   simp only [mem_iUnion, exists_prop, mem_sUnion, mem_sep_iff]
   constructor
   · rintro ⟨T, ⟨hT, hTs⟩, hx⟩
-    obtain ⟨S, ⟨hS, hST⟩, hxS⟩ := mem_sUnion.1 ((h.inter_closure_eq_sUnion hT) ▸ hx)
+    obtain ⟨S, ⟨hS, hST⟩, hxS⟩ := mem_sUnion.mp ((h.inter_closure_eq_sUnion hT) ▸ hx)
     exact ⟨S, ⟨hS, T, hT, hTs, hST⟩, hxS⟩
   · rintro ⟨S, ⟨hS, T, hT, hTs, hST⟩, hxS⟩
     exact ⟨T, ⟨hT, hTs⟩, h.subset_of_mem hS hxS, hST hxS⟩
@@ -244,7 +261,7 @@ theorem inter_closure_sdiff_eq_sUnion_of_isOpen (h : IsNormalDecomposition U �
     have hdisj : Disjoint S s := (hs S hS).resolve_left fun hSs ↦ hxs (hSs hxS)
     exact ⟨S, ⟨hS, hdisj, T, hT, hTs, hST⟩, hxS⟩
   · rintro ⟨S, ⟨hS, hdisj, T, hT, hTs, hST⟩, hxS⟩
-    exact ⟨⟨S, ⟨hS, T, hT, hTs, hST⟩, hxS⟩, disjoint_left.1 hdisj hxS⟩
+    exact ⟨⟨S, ⟨hS, T, hT, hTs, hST⟩, hxS⟩, disjoint_left.mp hdisj hxS⟩
 
 end IsNormalDecomposition
 
@@ -267,7 +284,7 @@ theorem isNormalDecomposition_empty {n : ℕ} :
 @[simp]
 theorem isNormalDecomposition_empty_iff {n : ℕ} {𝒞 : Set (Set (Fin n → ℝ))} :
     IsNormalDecomposition ∅ 𝒞 ↔ 𝒞 = ∅ := by
-  refine ⟨fun h ↦ eq_empty_iff_forall_notMem.2 fun S hS ↦ ?_,
+  refine ⟨fun h ↦ eq_empty_iff_forall_notMem.mpr fun S hS ↦ ?_,
     fun h ↦ h ▸ isNormalDecomposition_empty⟩
   obtain ⟨x, hx⟩ := h.nonempty_of_mem hS
   exact notMem_empty x (h.subset_of_mem hS hx)
@@ -331,12 +348,12 @@ theorem image_continuousLinearEquiv (h : IsNormalDecomposition U 𝒞)
     exact (h.isConnected hS).image e e.continuous.continuousOn
   · rintro _ ⟨S, hS, rfl⟩
     exact (e.toEquiv.isSemianalytic_image_iff (fun x _ ↦ e.analyticAt x)
-      (fun y _ ↦ e.symm.analyticAt y)).2 (h.isSemianalytic hS)
+      (fun y _ ↦ e.symm.analyticAt y)).mpr (h.isSemianalytic hS)
   · rintro _ ⟨S, hS, rfl⟩
     obtain ⟨d, hd⟩ := h.exists_isAnalyticSubmanifold hS
     exact ⟨d, hd.image_continuousLinearEquiv e⟩
   · rintro _ ⟨S, hS, rfl⟩ y
-    exact (isPreconnectedApproachAt_image_homeomorph_iff e.toHomeomorph).2
+    exact (isPreconnectedApproachAt_image_homeomorph_iff e.toHomeomorph).mpr
       (h.isPreconnectedApproachAt hS _)
   · rintro _ ⟨S, hS, rfl⟩ _ ⟨T, hT, rfl⟩ ⟨_, ⟨x, hxS, rfl⟩, hycl⟩
     rw [hcl] at hycl ⊢

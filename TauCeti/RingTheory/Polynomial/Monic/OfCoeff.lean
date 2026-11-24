@@ -26,8 +26,7 @@ a *free* tuple rather than as the data of a polynomial subtype.
 ## Main declarations
 
 * `TauCeti.Polynomial.monicOfCoeff`: the monic polynomial `X ^ n + ∑ i, c i * X ^ i` of degree `n`
-  whose `n` lower coefficients are `c`, with unfolding equation
-  `TauCeti.Polynomial.monicOfCoeff_def`.
+  whose `n` lower coefficients are `c`.
 * `TauCeti.Polynomial.monic_monicOfCoeff`, `TauCeti.Polynomial.natDegree_monicOfCoeff`,
   `TauCeti.Polynomial.eval_monicOfCoeff`: its monicity, its degree and its values.
 * `TauCeti.Polynomial.star_eval_monicOfCoeff`: over a commutative star ring, conjugating its value
@@ -69,11 +68,6 @@ inverse chart as its root multiset. -/
 noncomputable def monicOfCoeff (c : Fin n → R) : R[X] :=
   X ^ n + ∑ i : Fin n, monomial (i : ℕ) (c i)
 
-/-- Defining equation of `TauCeti.Polynomial.monicOfCoeff`, allowing downstream modules to rewrite
-without exposing the body of the definition. -/
-theorem monicOfCoeff_def (c : Fin n → R) :
-    monicOfCoeff c = X ^ n + ∑ i : Fin n, monomial (i : ℕ) (c i) := (rfl)
-
 /-- The lower part of `TauCeti.Polynomial.monicOfCoeff` has degree less than `n`, which is where its
 monicity and its degree come from. -/
 private theorem degree_sum_monomial_lt (c : Fin n → R) :
@@ -90,14 +84,14 @@ theorem monic_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).Monic :=
 `TauCeti.Polynomial.monicOfCoeff`. -/
 @[simp]
 theorem coeff_monicOfCoeff (c : Fin n → R) (i : Fin n) : (monicOfCoeff c).coeff (i : ℕ) = c i := by
-  have hne : (i : ℕ) ≠ n := i.2.ne
+  have hne : (i : ℕ) ≠ n := i.isLt.ne
   simp [monicOfCoeff, coeff_X_pow, Finsupp.single_apply, hne, Fin.val_eq_val]
 
 /-- The coefficient of `X ^ n` in `TauCeti.Polynomial.monicOfCoeff c` is its leading coefficient
 `1`. -/
 @[simp]
 theorem coeff_monicOfCoeff_self (c : Fin n → R) : (monicOfCoeff c).coeff n = 1 := by
-  simp [monicOfCoeff, coeff_monomial, fun i : Fin n ↦ i.2.ne]
+  simp [monicOfCoeff, coeff_monomial, fun i : Fin n ↦ i.isLt.ne]
 
 /-- Monic polynomials with prescribed lower coefficients agree exactly when their
 coefficient tuples agree. -/
@@ -146,11 +140,14 @@ theorem natDegree_monicOfCoeff (c : Fin n → R) : (monicOfCoeff c).natDegree = 
     exact degree_sum_monomial_lt c
   rw [monicOfCoeff, natDegree_add_eq_left_of_degree_lt hlt, natDegree_X_pow]
 
+omit [Nontrivial R] in
 /-- Every monic polynomial of degree `n` is the monic polynomial attached to its own lower
 coefficients: together with `TauCeti.Polynomial.coeff_monicOfCoeff` this identifies the monic
 polynomials of degree `n` with the coefficient tuples. -/
 theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
     monicOfCoeff (fun i : Fin n => p.coeff (i : ℕ)) = p := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact Subsingleton.elim _ _
   ext k
   rcases lt_trichotomy k n with hk | hk | hk
   · exact coeff_monicOfCoeff _ ⟨k, hk⟩

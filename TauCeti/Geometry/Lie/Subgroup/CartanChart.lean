@@ -162,7 +162,7 @@ theorem isOpen_subgroupOf_of_lieSubalgebraOfSubgroup_le [T2Space G] {T K : Subgr
   refine Subgroup.isOpen_of_mem_nhds _ (g := 1) ?_
   rw [nhds_subtype_eq_comap]
   refine ⟨U, hU, fun k hk => ?_⟩
-  obtain ⟨X, hX, hXk⟩ := (hUK k hk).mp k.2
+  obtain ⟨X, hX, hXk⟩ := (hUK k hk).mp k.property
   rw [SetLike.mem_coe, Subgroup.mem_subgroupOf, ← hXk]
   exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hT (h hX)
 

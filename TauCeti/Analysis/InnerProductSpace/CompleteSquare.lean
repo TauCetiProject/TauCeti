@@ -38,6 +38,8 @@ whenever `‖q - q₀‖ ≥ δ > 0`.
 * `TauCeti.norm_sq_div_two_add_norm_sub_sq_div`: its case `a = 1 / 2`, `b = 1 / (2τ)`. For
   `τ > 0` this objective is minimized exactly at `x / (1 + τ)`, the proximal point of
   `‖·‖² / 2` at `x`.
+* `TauCeti.norm_smul_add_smul_sq_of_add_eq_one`: for weights `a + b = 1`, the squared norm of
+  `a • x + b • y` is `a ‖x‖² + b ‖y‖² - a b ‖x - y‖²`.
 * `TauCeti.edist_smul_add_smul_sq_add`: the convex-combination form of the identity, for extended
   distances.
 * `TauCeti.norm_sq_norm_smul_sub_inv_norm_smul`: the squared norm of the normalized reflection
@@ -107,6 +109,15 @@ theorem norm_sq_div_two_add_norm_sub_sq_div {τ : ℝ} (hτ : τ ≠ 0) (hτ' : 
   rw [h₀, h₁] at h
   field_simp at h ⊢
   linear_combination h
+
+/-- For weights `a` and `b` summing to `1`, the squared norm of the affine combination
+`a • x + b • y` is `a * ‖x‖ ^ 2 + b * ‖y‖ ^ 2 - a * b * ‖x - y‖ ^ 2`. -/
+theorem norm_smul_add_smul_sq_of_add_eq_one {a b : ℝ} (hab : a + b = 1) (x y : F) :
+    ‖a • x + b • y‖ ^ 2 = a * ‖x‖ ^ 2 + b * ‖y‖ ^ 2 - a * b * ‖x - y‖ ^ 2 := by
+  rw [norm_add_sq_real, norm_sub_sq_real, norm_smul, norm_smul,
+    real_inner_smul_left, real_inner_smul_right]
+  simp only [Real.norm_eq_abs, mul_pow, sq_abs]
+  linear_combination (a * ‖x‖ ^ 2 + b * ‖y‖ ^ 2) * hab
 
 /-- The completed square at the weights `1 - t` and `t`, for extended distances: for `t ∈ [0, 1]`,
 `d(x, (1 - t) a + t b) ^ 2 + t (1 - t) d(a, b) ^ 2 = (1 - t) d(x, a) ^ 2 + t d(x, b) ^ 2`. -/

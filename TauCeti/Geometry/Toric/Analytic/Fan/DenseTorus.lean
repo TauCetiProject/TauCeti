@@ -45,12 +45,12 @@ variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
 /-- The analytic dense torus of a nonempty regular fan is the orbit indexed by its zero cone. -/
 noncomputable def analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
     Set (Phi.analyticRealization hPhi) :=
-  Phi.analyticConeOrbit hPhi ⟨⊥, Phi.bot_mem hPhi0.some.2⟩
+  Phi.analyticConeOrbit hPhi ⟨⊥, Phi.bot_mem hPhi0.some.property⟩
 
 /-- The analytic dense torus is the orbit indexed by the selected zero cone. -/
 theorem analyticDenseTorus_def (hPhi0 : Nonempty Phi.cones) :
     Phi.analyticDenseTorus hPhi hPhi0 =
-      Phi.analyticConeOrbit hPhi ⟨⊥, Phi.bot_mem hPhi0.some.2⟩ := by
+      Phi.analyticConeOrbit hPhi ⟨⊥, Phi.bot_mem hPhi0.some.property⟩ := by
   apply congrArg (Phi.analyticConeOrbit hPhi)
   apply Subtype.ext
   rfl
@@ -66,7 +66,7 @@ theorem analyticDenseTorus_eq (hPhi0 hPhi1 : Nonempty Phi.cones) :
 zero cone obtained as a face of that cone. -/
 theorem analyticDenseTorus_eq_analyticConeOrbit_bot (sigma : Phi.cones) :
     Phi.analyticDenseTorus hPhi (Nonempty.intro sigma) =
-      Phi.analyticConeOrbit hPhi ⟨⊥, Phi.bot_mem sigma.2⟩ := by
+      Phi.analyticConeOrbit hPhi ⟨⊥, Phi.bot_mem sigma.property⟩ := by
   apply congrArg (Phi.analyticConeOrbit hPhi)
   apply Subtype.ext
   rfl
@@ -75,13 +75,13 @@ theorem analyticDenseTorus_eq_analyticConeOrbit_bot (sigma : Phi.cones) :
 theorem dense_analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
     Dense (Phi.analyticDenseTorus hPhi hPhi0) := by
   rw [dense_iff_closure_eq, analyticDenseTorus_def,
-    Phi.closure_analyticConeOrbit hPhi ⟨⊥, Phi.bot_mem hPhi0.some.2⟩]
+    Phi.closure_analyticConeOrbit hPhi ⟨⊥, Phi.bot_mem hPhi0.some.property⟩]
   ext x
   simp only [Set.mem_iUnion, Set.mem_Ici, Set.mem_univ, iff_true]
   obtain ⟨sigma, hx⟩ := Phi.exists_mem_analyticConeOrbit hPhi x
   refine ⟨sigma, ?_, hx⟩
   -- Unwrap the inherited order on the fan's subtype of cones.
-  change (⊥ : PointedCone ℝ V) ≤ sigma.1
+  change (⊥ : PointedCone ℝ V) ≤ sigma.val
   exact bot_le
 
 /-- The analytic dense torus is open in the fan realization. -/
@@ -89,12 +89,12 @@ theorem isOpen_analyticDenseTorus (hPhi0 : Nonempty Phi.cones) :
     IsOpen (Phi.analyticDenseTorus hPhi hPhi0) := by
   rw [Phi.isOpen_iff_forall_preimage_analyticAffineChartι hPhi]
   intro sigma
-  have hbot : (⟨⊥, Phi.bot_mem hPhi0.some.2⟩ : Phi.cones) ≤ sigma := by
-    exact Subtype.coe_le_coe.1 (bot_le : (⊥ : PointedCone ℝ V) ≤ sigma.1)
+  have hbot : (⟨⊥, Phi.bot_mem hPhi0.some.property⟩ : Phi.cones) ≤ sigma := by
+    exact Subtype.coe_le_coe.1 (bot_le : (⊥ : PointedCone ℝ V) ≤ sigma.val)
   rw [analyticDenseTorus_def,
     Phi.preimage_analyticAffineChartι_analyticConeOrbit hPhi hbot]
-  let hσ := (isRegular_iff.mp hPhi) sigma.1 sigma.2
-  let F : sigma.1.Face := Phi.orbitFace hbot
+  let hσ := (isRegular_iff.mp hPhi) sigma.val sigma.property
+  let F : sigma.val.Face := Phi.orbitFace hbot
   have hF : F = ⊥ := by
     dsimp only [F]
     apply le_antisymm
@@ -117,12 +117,12 @@ nonempty regular fan, obtained by translating the distinguished point of the zer
 By proof irrelevance, different nonemptiness witnesses give definitionally equal inclusions. -/
 noncomputable def analyticTorusι (hPhi0 : Nonempty Phi.cones) (t : ComplexTorus N) :
     Phi.analyticRealization hPhi :=
-  t • Phi.analyticDistinguishedPoint hPhi ⟨⊥, Phi.bot_mem hPhi0.some.2⟩
+  t • Phi.analyticDistinguishedPoint hPhi ⟨⊥, Phi.bot_mem hPhi0.some.property⟩
 
 /-- The torus inclusion is translation of the distinguished point of the zero cone. -/
 theorem analyticTorusι_def (hPhi0 : Nonempty Phi.cones) (t : ComplexTorus N) :
     Phi.analyticTorusι hPhi hPhi0 t =
-      t • Phi.analyticDistinguishedPoint hPhi ⟨⊥, Phi.bot_mem hPhi0.some.2⟩ :=
+      t • Phi.analyticDistinguishedPoint hPhi ⟨⊥, Phi.bot_mem hPhi0.some.property⟩ :=
   (rfl)
 
 /-- In every affine chart the torus inclusion is translation of the point whose monomial values
@@ -130,10 +130,10 @@ are all one. In particular this formula does not choose coordinates on the latti
 theorem analyticTorusι_eq_analyticAffineChartι (hPhi0 : Nonempty Phi.cones)
     (sigma : Phi.cones) (t : ComplexTorus N) :
     Phi.analyticTorusι hPhi hPhi0 t = Phi.analyticAffineChartι hPhi sigma
-      (t • (default : AffineSemigroupComplexPoint (dualSemigroup Phi.lattice sigma.1))) := by
-  let tau : Phi.cones := ⟨⊥, Phi.bot_mem hPhi0.some.2⟩
+      (t • (default : AffineSemigroupComplexPoint (dualSemigroup Phi.lattice sigma.val))) := by
+  let tau : Phi.cones := ⟨⊥, Phi.bot_mem hPhi0.some.property⟩
   have hle : tau ≤ sigma := Subtype.coe_le_coe.1 bot_le
-  have hface : Phi.orbitFace hle = (⊥ : sigma.1.Face) := by
+  have hface : Phi.orbitFace hle = (⊥ : sigma.val.Face) := by
     apply le_antisymm
     · rw [← PointedCone.Face.toPointedCone_le_toPointedCone, Phi.coe_orbitFace]
       exact bot_le
@@ -148,13 +148,13 @@ theorem analyticTorusι_mul (hPhi0 : Nonempty Phi.cones) (s t : ComplexTorus N) 
     Phi.analyticTorusι hPhi hPhi0 (s * t) = s • Phi.analyticTorusι hPhi hPhi0 t := by
   simp only [analyticTorusι_def]
   exact @mul_smul (ComplexTorus N) (Phi.analyticRealization hPhi) inferInstance inferInstance
-    s t (Phi.analyticDistinguishedPoint hPhi ⟨⊥, Phi.bot_mem hPhi0.some.2⟩)
+    s t (Phi.analyticDistinguishedPoint hPhi ⟨⊥, Phi.bot_mem hPhi0.some.property⟩)
 
 /-- The canonical torus parametrization is injective. -/
 theorem analyticTorusι_injective (hPhi0 : Nonempty Phi.cones) :
     Function.Injective (Phi.analyticTorusι hPhi hPhi0) := by
   let sigma := hPhi0.some
-  have hreg := (isRegular_iff.mp hPhi) sigma.1 sigma.2
+  have hreg := (isRegular_iff.mp hPhi) sigma.val sigma.property
   obtain ⟨l, b, hb⟩ := hreg.exists_basis_sum
   intro s t h
   rw [Phi.analyticTorusι_eq_analyticAffineChartι hPhi hPhi0 sigma,
@@ -179,7 +179,7 @@ theorem continuous_analyticTorusι (hPhi0 : Nonempty Phi.cones) :
 /-- The canonical torus inclusion is an open embedding. -/
 theorem isOpenEmbedding_analyticTorusι (hPhi0 : Nonempty Phi.cones) :
     IsOpenEmbedding (Phi.analyticTorusι hPhi hPhi0) := by
-  let tau : Phi.cones := ⟨⊥, Phi.bot_mem hPhi0.some.2⟩
+  let tau : Phi.cones := ⟨⊥, Phi.bot_mem hPhi0.some.property⟩
   obtain ⟨l, B, hB⟩ := (isRegularCone_bot Phi.lattice).exists_basis_sum
   let h : ComplexTorus N ≃ₜ Phi.analyticAffineChartDiagram.obj tau :=
     zeroConeChartHomeomorphOfBasis Phi.lattice hB (Phi.analyticChartGenerators tau).2

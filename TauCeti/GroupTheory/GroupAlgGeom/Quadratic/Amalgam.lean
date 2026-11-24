@@ -110,13 +110,13 @@ theorem boundarySystem_conj (j : Fin m) :
       ((inl (inl (c j)) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _) *
         ((inr (FreeGroup.of j) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _) =
       ((inl (inr (p j.castSucc)) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _) := by
-  simpa using (mem_V_boundarySystem_iff.1 (SystemGroup.homEquiv _ _ (GHom.id _)).2).1 j
+  simpa using (mem_V_boundarySystem_iff.1 (SystemGroup.homEquiv _ _ (GHom.id _)).property).1 j
 
 /-- In the group of the boundary system, the constant `d` is the last distinguished element. -/
 theorem boundarySystem_constant :
     ((inl (inl d) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ (boundarySystem c d p)) =
       ((inl (inr (p (Fin.last m))) : GX (Monoid.Coprod G L) (Fin m)) : SystemGroup _ _) := by
-  simpa using (mem_V_boundarySystem_iff.1 (SystemGroup.homEquiv _ _ (GHom.id _)).2).2
+  simpa using (mem_V_boundarySystem_iff.1 (SystemGroup.homEquiv _ _ (GHom.id _)).property).2
 
 -- In the group of the boundary system, the conjugates `zⱼ⁻¹ cⱼ zⱼ` followed by `d` are the
 -- distinguished elements `p`.
@@ -199,7 +199,8 @@ private theorem orientableCoeffOfBoundary_mem_V :
     (fun j ↦ ((inr (FreeGroup.of (z j)) : GX G X) :
         SystemGroup G {(orientableCoeff n m hnm x y z inj c hc d hd).toWord})) ∈
       V (Monoid.Coprod.lift (SystemGroup.coeff _)
-        (surfaceHomOrientableCoeff (SystemGroup.homEquiv _ _ (GHom.id (SystemGroup.coeff _))).2))
+        (surfaceHomOrientableCoeff (SystemGroup.homEquiv _ _ (GHom.id
+            (SystemGroup.coeff _))).property))
         (boundarySystem c d (Orientable.peripheral n (m + 1))) :=
   mem_V_boundarySystem_iff.2 <| by simp
 
@@ -383,7 +384,8 @@ private theorem nonorientableCoeffOfBoundary_mem_V :
     (fun j ↦ ((inr (FreeGroup.of (z j)) : GX G X) :
         SystemGroup G {(nonorientableCoeff n m hn x z inj c hc d hd).toWord})) ∈
       V (Monoid.Coprod.lift (SystemGroup.coeff _)
-        (surfaceHomNonorientableCoeff (SystemGroup.homEquiv _ _ (GHom.id (SystemGroup.coeff _))).2))
+        (surfaceHomNonorientableCoeff (SystemGroup.homEquiv _ _ (GHom.id
+            (SystemGroup.coeff _))).property))
         (boundarySystem c d (Nonorientable.peripheral n (m + 1))) :=
   mem_V_boundarySystem_iff.2 <| by simp
 

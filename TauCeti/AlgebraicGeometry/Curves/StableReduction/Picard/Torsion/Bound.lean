@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Torsion.Basic
 import Mathlib.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Bounding prime torsion by the topological genus
@@ -97,7 +98,7 @@ private abbrev intersectionMod (T : NumericalType.{u}) (ℓ : ℕ) :
 private lemma intCast_vecMul (y : T.Component → ℤ) (j : T.Component) :
     (((y ᵥ* T.intersection) j : ℤ) : ZMod ℓ) =
       ((fun i ↦ (y i : ZMod ℓ)) ᵥ* intersectionMod T ℓ) j :=
-  RingHom.map_vecMul (Int.castRingHom (ZMod ℓ)) T.intersection y j
+  (congrFun (map_intCast_vecMul y T.intersection) j).symm
 
 private lemma dvd_intLift_vecMul {x : T.Component → ZMod ℓ}
     (hx : x ∈ LinearMap.ker (intersectionMod T ℓ).vecMulLinear) (j : T.Component) :
@@ -129,16 +130,16 @@ variable (T ℓ) in
 matrix modulo `ℓ`, where `y` is any integral lift of that vector. -/
 private noncomputable def kerToCokerTorsion (hℓ : ℓ ≠ 0) :
     LinearMap.ker (intersectionMod T ℓ).vecMulLinear →+ T.cokerTorsion ℓ where
-  toFun x := ⟨Submodule.Quotient.mk (liftQuot x.1),
-    mem_cokerTorsion_mk_iff.2 ⟨_, (smul_liftQuot x.2).symm⟩⟩
+  toFun x := ⟨Submodule.Quotient.mk (liftQuot x.val),
+    mem_cokerTorsion_mk_iff.2 ⟨_, (smul_liftQuot x.property).symm⟩⟩
   map_zero' := by
     refine Subtype.ext (mk_eq_mk_of_intCast_eq hℓ (smul_liftQuot (zero_mem _))
       (y' := 0) (q' := 0) (by simp) fun i ↦ ?_)
     simp [intCast_intLift]
   map_add' x y := by
-    refine Subtype.ext (mk_eq_mk_of_intCast_eq hℓ (smul_liftQuot (add_mem x.2 y.2))
-      (y' := intLift x.1 + intLift y.1) (q' := liftQuot x.1 + liftQuot y.1)
-      (by rw [smul_add, smul_liftQuot x.2, smul_liftQuot y.2, add_vecMul]) fun i ↦ ?_)
+    refine Subtype.ext (mk_eq_mk_of_intCast_eq hℓ (smul_liftQuot (add_mem x.property y.property))
+      (y' := intLift x.val + intLift y.val) (q' := liftQuot x.val + liftQuot y.val)
+      (by rw [smul_add, smul_liftQuot x.property, smul_liftQuot y.property, add_vecMul]) fun i ↦ ?_)
     simp [intCast_intLift]
 
 private lemma kerToCokerTorsion_surjective (hℓ : ℓ ≠ 0) :
@@ -215,7 +216,7 @@ private abbrev OrientedEdge : Type u :=
 
 /-- A sum over oriented edges, as a sum over all ordered pairs of components. -/
 private lemma sum_orientedEdge {M : Type*} [AddCommMonoid M] (f : T.Component → T.Component → M) :
-    ∑ p : OrientedEdge T, f p.1.1 p.1.2 =
+    ∑ p : OrientedEdge T, f p.val.1 p.val.2 =
       ∑ a, ∑ b, if IsOriented T a b then f a b else 0 := by
   rw [← Fintype.sum_prod_type', ← Finset.sum_filter]
   exact (Finset.sum_subtype _ (by simp) fun p : T.Component × T.Component ↦ f p.1 p.2).symm
@@ -276,12 +277,12 @@ variable (T ℓ) in
 /-- The oriented incidence matrix of the intersection graph, with entries in `ZMod ℓ`: the row of
 the edge from `a` to `b` is `eₐ - eᵦ`. -/
 private def incidence : Matrix (OrientedEdge T) T.Component (ZMod ℓ) :=
-  .of fun p i ↦ (if i = p.1.1 then 1 else 0) - if i = p.1.2 then 1 else 0
+  .of fun p i ↦ (if i = p.val.1 then 1 else 0) - if i = p.val.2 then 1 else 0
 
 variable (T ℓ) in
 /-- The diagonal matrix of the negated edge weights `-mₐ aₐᵦ mᵦ`. -/
 private def edgeWeightDiagonal : Matrix (OrientedEdge T) (OrientedEdge T) (ZMod ℓ) :=
-  diagonal fun p ↦ -edgeWeight T ℓ p.1.1 p.1.2
+  diagonal fun p ↦ -edgeWeight T ℓ p.val.1 p.val.2
 
 variable (T ℓ) in
 /-- The diagonal matrix of the multiplicities modulo `ℓ`. -/
@@ -332,7 +333,7 @@ private lemma multiplicityDiagonal_mul_mul :
 /-- A vector killed by the oriented incidence matrix takes equal values at adjacent components. -/
 private lemma eq_of_incidence_mulVec_eq_zero {x : T.Component → ZMod ℓ}
     (hx : incidence T ℓ *ᵥ x = 0) {a b : T.Component} (hab : T.Adj a b) : x a = x b := by
-  have key (p : OrientedEdge T) : x p.1.1 = x p.1.2 := by
+  have key (p : OrientedEdge T) : x p.val.1 = x p.val.2 := by
     have := congrFun hx p
     simp only [mulVec, dotProduct, incidence, of_apply, sub_mul, ite_mul, one_mul, zero_mul,
       Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
@@ -365,15 +366,15 @@ private lemma finrank_ker_incidence_le_one [Fact ℓ.Prime] :
 private lemma card_orientedEdge :
     Fintype.card (OrientedEdge T) = T.intersectionGraph.edgeSet.ncard := by
   let f : OrientedEdge T → T.intersectionGraph.edgeSet := fun p ↦
-    ⟨s(p.1.1, p.1.2), by simpa [SimpleGraph.mem_edgeSet] using p.2.2⟩
+    ⟨s(p.val.1, p.val.2), by simpa [SimpleGraph.mem_edgeSet] using p.property.2⟩
   have hf : Function.Bijective f := by
     refine ⟨fun p q hpq ↦ ?_, fun ⟨e, he⟩ ↦ ?_⟩
     · have h := congrArg Subtype.val hpq
       simp only [f, Sym2.eq_iff] at h
       rcases h with ⟨h1, h2⟩ | ⟨h1, h2⟩
       · exact Subtype.ext (Prod.ext h1 h2)
-      · have hp := p.2.1
-        have hq := q.2.1
+      · have hp := p.property.1
+        have hq := q.property.1
         rw [h1, h2] at hp
         exact absurd (hp.trans hq) (lt_irrefl _)
     · induction e using Sym2.ind with
@@ -403,7 +404,7 @@ private lemma finrank_ker_intersectionMod_add_card_le [Fact ℓ.Prime]
     rw [neg_ne_zero, edgeWeight, Int.cast_mul, Int.cast_mul]
     refine mul_ne_zero (mul_ne_zero (hmult _) ?_) (hmult _)
     rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
-    exact ha _ _ p.2.2
+    exact ha _ _ p.property.2
   have hrank : (intersectionMod T ℓ).rank =
       ((incidence T ℓ)ᵀ * edgeWeightDiagonal T ℓ * incidence T ℓ).rank := by
     rw [← multiplicityDiagonal_mul_mul, rank_mul_eq_left_of_isUnit_det _ _ hD,
@@ -416,7 +417,7 @@ private lemma finrank_ker_intersectionMod_add_card_le [Fact ℓ.Prime]
   have hB := (incidence T ℓ).mulVecLin.finrank_range_add_finrank_ker
   have hA := (intersectionMod T ℓ).mulVecLin.finrank_range_add_finrank_ker
   rw [Module.finrank_fintype_fun_eq_card] at hA hB
-  rw [rank, rank] at hsyl
+  rw [← finrank_range_mulVecLin, ← finrank_range_mulVecLin] at hsyl
   rw [hsymm]
   have := finrank_ker_incidence_le_one (T := T) (ℓ := ℓ)
   omega
@@ -442,7 +443,7 @@ variable (T) in
 private def torsionToCokerTorsion (ℓ : ℕ) : T.torsion ℓ →+ T.cokerTorsion ℓ :=
   (T.picToCoker.toAddMonoidHom.comp (T.torsion ℓ).subtype).codRestrict _ fun x ↦ by
     rw [AddSubgroup.torsionBy.nsmul_iff]
-    simp [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 x.2]
+    simp [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 x.property]
 
 variable (T) in
 /-- **The `ℓ`-torsion of `Pic(T)` is bounded by the topological genus.** If the prime `ℓ` divides

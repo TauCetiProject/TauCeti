@@ -131,7 +131,7 @@ theorem cechCohomologyPullback_naturality {P' : Y.Presheaf A} {Q' : X.Presheaf A
     HomologicalComplex.homologyMap_comp_assoc]
   exact (congrArg (HomologicalComplex.homologyMap (cechComplexPullback f U.opens α) n ≫ ·)
     ((TauCeti.Topology.toCechCohomology A n (fun i ↦ (Opens.map f).obj (U.opens i))
-      (U.isOpenCover.comap f.hom)).naturality γ)).trans (Category.assoc _ _ _).symm
+      (U.isOpenCover.comap f.hom)).naturality γ))
 
 /-- **Pullback along an inducing surjection is onto.** If `f` is inducing and surjective, for
 instance a homeomorphism, and the coefficient morphism `P ⟶ f_* Q` is an isomorphism, then the

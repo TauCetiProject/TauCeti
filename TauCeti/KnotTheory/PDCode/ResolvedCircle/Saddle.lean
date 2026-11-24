@@ -46,7 +46,7 @@ theorem saddleCircleMap_mem_circlesAt_iff (C : D.CrossingCircle s) :
   · intro h
     by_contra hC
     rw [D.saddleCircleMap_of_notMem hst ht hC] at h
-    exact (D.unchangedCircleEquiv hst ⟨C, hC⟩).2 h
+    exact (D.unchangedCircleEquiv hst ⟨C, hC⟩).property h
   · intro hC
     rw [← D.image_saddleCircleMap_circlesAt hst ht]
     exact mem_image_of_mem _ hC

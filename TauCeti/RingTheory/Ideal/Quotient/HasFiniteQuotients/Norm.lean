@@ -34,6 +34,6 @@ instance instNorthcottAbsNormNonZeroDivisors {R : Type*} [CommRing R] [IsDedekin
       Subtype.val_injective.injOn
   refine hfinite.subset fun I hI ↦ ?_
   simpa only [Set.mem_ofPred_eq,
-    Ideal.absNorm_of_ne_bot (mem_nonZeroDivisors_iff_ne_zero.mp I.2)] using hI
+    Ideal.absNorm_of_ne_bot (mem_nonZeroDivisors_iff_ne_zero.mp I.property)] using hI
 
 end TauCeti

@@ -102,7 +102,7 @@ supremums of valuations, in which an infinite index contributes `0`, so no compa
 theorem _root_.Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup (H : Subgroup G)
     (ℓ : Nat.Primes) :
     Subgroup.profiniteIndex H ℓ = ⨆ U : {U : OpenSubgroup G // H ≤ U.toSubgroup},
-      (padicValNat ℓ U.1.toSubgroup.index : ℕ∞) := by
+      (padicValNat ℓ U.val.toSubgroup.index : ℕ∞) := by
   have : Fact ℓ.val.Prime := ⟨ℓ.prop⟩
   rw [Subgroup.profiniteIndex_apply]
   apply le_antisymm
@@ -113,14 +113,15 @@ theorem _root_.Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup (H : Subgroup 
     rw [H.index_map_mk'_eq_index_sup N.toSubgroup]
     exact le_iSup_of_le (⟨V, le_sup_left⟩ : {U : OpenSubgroup G // H ≤ U.toSubgroup}) le_rfl
   · refine iSup_le fun U ↦ ?_
-    by_cases hU : U.1.toSubgroup.index = 0
+    by_cases hU : U.val.toSubgroup.index = 0
     · rw [hU]
       simp [Nat.padicValNat_def]
-    have : U.1.toSubgroup.FiniteIndex := ⟨hU⟩
-    obtain ⟨N, hNU, hN⟩ := U.1.exists_openNormalSubgroup_le
+    have : U.val.toSubgroup.FiniteIndex := ⟨hU⟩
+    obtain ⟨N, hNU, hN⟩ := U.val.exists_openNormalSubgroup_le
     have hsup : (H ⊔ N.toSubgroup).index ≠ 0 :=
       ne_zero_of_dvd_ne_zero hN.index_ne_zero (Subgroup.index_dvd_of_le le_sup_right)
-    refine (Nat.cast_le.mpr (Subgroup.padicValNat_index_le_of_le (sup_le U.2 hNU) hsup ℓ)).trans ?_
+    refine (Nat.cast_le.mpr (Subgroup.padicValNat_index_le_of_le
+        (sup_le U.property hNU) hsup ℓ)).trans ?_
     rw [← H.index_map_mk'_eq_index_sup N.toSubgroup]
     exact le_iSup (fun M : OpenNormalSubgroup G ↦
       (padicValNat ℓ (H.map (QuotientGroup.mk' M.toSubgroup)).index : ℕ∞)) N
@@ -138,7 +139,8 @@ theorem _root_.Subgroup.profiniteIndex_anti {H K : Subgroup G} (h : H ≤ K) :
     Subgroup.profiniteIndex K ≤ Subgroup.profiniteIndex H := by
   refine Supernatural.le_iff.mpr fun ℓ ↦ ?_
   rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup K]
-  exact iSup_le fun U ↦ OpenSubgroup.padicValNat_index_le_profiniteIndex_apply U.1 (h.trans U.2) ℓ
+  exact iSup_le fun U ↦ OpenSubgroup.padicValNat_index_le_profiniteIndex_apply U.val
+      (h.trans U.property) ℓ
 
 /-- Primewise, the profinite index of an open subgroup of nonzero index is the valuation of its
 ordinary index. -/
@@ -148,7 +150,7 @@ theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgrou
   have : Fact ℓ.val.Prime := ⟨ℓ.prop⟩
   rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup]
   exact le_antisymm (iSup_le fun V ↦ Nat.cast_le.mpr
-      (Subgroup.padicValNat_index_le_of_le V.2 Subgroup.FiniteIndex.index_ne_zero ℓ))
+      (Subgroup.padicValNat_index_le_of_le V.property Subgroup.FiniteIndex.index_ne_zero ℓ))
     (le_iSup_of_le (⟨U, le_rfl⟩ : {V : OpenSubgroup G // U.toSubgroup ≤ V.toSubgroup}) le_rfl)
 
 /-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
@@ -200,14 +202,14 @@ an open subgroup contains `H` exactly when it contains its closure. -/
 theorem _root_.Subgroup.profiniteIndex_eq_iSup_openSubgroup (H : Subgroup G) :
     Subgroup.profiniteIndex H = ⨆ U : {U : OpenSubgroup G // H ≤ U.toSubgroup},
       Supernatural.ofNat
-        (⟨U.1.toSubgroup.index,
+        (⟨U.val.toSubgroup.index,
           Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) := by
   ext ℓ
   rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup, Supernatural.iSup_apply]
   congr 1
   funext U
   exact (Supernatural.ofNat_apply
-    ⟨U.1.toSubgroup.index, Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ ℓ).symm
+    ⟨U.val.toSubgroup.index, Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ ℓ).symm
 
 /-- For an open subgroup, the supernatural index is the prime factorization of its ordinary
 index. -/
@@ -360,7 +362,7 @@ theorem _root_.Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex (H : Su
       rw [hm, Subgroup.profiniteIndex_eq_iSup_openSubgroup]
       exact le_iSup (fun V : {V : OpenSubgroup G // H ≤ V.toSubgroup} ↦
           Supernatural.ofNat
-            (⟨V.1.toSubgroup.index,
+            (⟨V.val.toSubgroup.index,
               Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+))
         ⟨⟨H ⊔ N.toSubgroup, hUopen⟩, le_sup_left⟩
     exact Nat.le_of_dvd m.pos <| PNat.dvd_iff.mp <| Supernatural.ofNat_le_ofNat_iff.mp hle
