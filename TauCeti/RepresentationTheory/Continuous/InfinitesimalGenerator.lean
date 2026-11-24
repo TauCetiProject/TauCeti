@@ -45,8 +45,9 @@ need not be comparable.
 * `ContRepresentation.hasDerivAt_lieGenerator`,
   `ContRepresentation.mem_domain_lieGenerator_of_hasDerivAt` and
   `ContRepresentation.lieGenerator_eq_of_hasDerivAt`: the domain of `A_X` consists of the vectors
-  whose orbit along `X` is differentiable at `0`, and `A_X` is the derivative there; in the
-  form of an equivalence, `ContRepresentation.mem_domain_lieGenerator_iff`.
+  whose orbit along `X` is differentiable at `0`, and `A_X` is the derivative there (the
+  first for complete `V`); in the form of an equivalence, for complete `V`,
+  `ContRepresentation.mem_domain_lieGenerator_iff`.
 * `ContRepresentation.lieGenerator_apply`: on its domain, `A_X` is the derived action
   `ContRepresentation.lieDerivative π X`.
 * `ContRepresentation.IsLieSmoothVector.lieGenerator_apply`: on a smooth vector, `A_X` is the
@@ -125,7 +126,8 @@ theorem lieOneParameterGroup_neg (X : LeftInvariantDerivation I G) :
 
 /-- The **infinitesimal generator** `A_X` of a strongly continuous representation `π` along a
 left-invariant derivation `X`: the generator of the C₀-group `t ↦ π (lieExp (t • X))`, a real
-linear operator defined on the vectors whose orbit along `X` is differentiable at `0`
+linear operator defined on the generator domain of that group. When `V` is complete, this domain
+consists of the vectors whose orbit along `X` is differentiable at `0`
 (`ContRepresentation.mem_domain_lieGenerator_iff`). -/
 def lieGenerator (X : LeftInvariantDerivation I G) : V →ₗ.[ℝ] V :=
   (π.lieOneParameterGroup hπ X).generator
@@ -133,6 +135,12 @@ def lieGenerator (X : LeftInvariantDerivation I G) : V →ₗ.[ℝ] V :=
 theorem lieGenerator_def (X : LeftInvariantDerivation I G) :
     π.lieGenerator hπ X = (π.lieOneParameterGroup hπ X).generator := by
   rw [lieGenerator]
+
+/-- The domain of `A_X` is the generator domain of the C₀-group `t ↦ π (lieExp (t • X))`. -/
+@[simp]
+theorem lieGenerator_domain (X : LeftInvariantDerivation I G) :
+    (π.lieGenerator hπ X).domain = (π.lieOneParameterGroup hπ X).domain := by
+  rw [lieGenerator_def, StronglyContinuousGroup.generator_domain]
 
 /-- Pointwise form of `ContRepresentation.lieGenerator_def`, for any proofs of membership in the
 two domains. -/
@@ -151,7 +159,7 @@ variable {π hπ}
 theorem mem_domain_lieGenerator_of_hasDerivAt {X : LeftInvariantDerivation I G} {v w : V}
     (h : HasDerivAt (fun t : ℝ ↦ π (lieExp (t • X)) v) w 0) :
     v ∈ (π.lieGenerator hπ X).domain := by
-  rw [lieGenerator_def, StronglyContinuousGroup.generator_domain]
+  rw [lieGenerator_domain]
   exact (π.lieOneParameterGroup hπ X).mem_domain_of_hasDerivAt_zero
     (by simpa only [lieOneParameterGroup_apply] using h)
 
@@ -182,10 +190,8 @@ variable [CompleteSpace V]
 theorem hasDerivAt_lieGenerator {X : LeftInvariantDerivation I G}
     (v : (π.lieGenerator hπ X).domain) :
     HasDerivAt (fun t : ℝ ↦ π (lieExp (t • X)) v) (π.lieGenerator hπ X v) 0 := by
-  have hv : (v : V) ∈ (π.lieOneParameterGroup hπ X).domain := by
-    rw [← StronglyContinuousGroup.generator_domain, ← lieGenerator_def]
-    exact v.property
-  have h := (π.lieOneParameterGroup hπ X).hasDerivAt_zero ⟨v, hv⟩
+  have h := (π.lieOneParameterGroup hπ X).hasDerivAt_zero
+    ⟨v, (lieGenerator_domain π hπ X).le v.property⟩
   simp only [lieOneParameterGroup_apply] at h
   rwa [lieGenerator_apply_eq_generator_apply]
 
@@ -249,7 +255,7 @@ private theorem exists_generator_lieOneParameterGroup_map_smul (X : LeftInvarian
 the coefficient field. -/
 theorem smul_mem_domain_lieGenerator (X : LeftInvariantDerivation I G) (c : 𝕜) {v : V}
     (hv : v ∈ (π.lieGenerator hπ X).domain) : c • v ∈ (π.lieGenerator hπ X).domain := by
-  rw [lieGenerator_def, StronglyContinuousGroup.generator_domain] at hv ⊢
+  rw [lieGenerator_domain] at hv ⊢
   exact (exists_generator_lieOneParameterGroup_map_smul π hπ X c ⟨v, hv⟩).1
 
 /-- The infinitesimal generator `A_X` is linear over the coefficient field of the
@@ -258,9 +264,7 @@ theorem lieGenerator_map_smul (X : LeftInvariantDerivation I G) (c : 𝕜)
     (v : (π.lieGenerator hπ X).domain) :
     π.lieGenerator hπ X ⟨c • (v : V), smul_mem_domain_lieGenerator π hπ X c v.property⟩ =
       c • π.lieGenerator hπ X v := by
-  have hv : (v : V) ∈ (π.lieOneParameterGroup hπ X).domain := by
-    rw [← StronglyContinuousGroup.generator_domain, ← lieGenerator_def]
-    exact v.property
+  have hv := (lieGenerator_domain π hπ X).le v.property
   obtain ⟨hmem, h⟩ := exists_generator_lieOneParameterGroup_map_smul π hπ X c ⟨v, hv⟩
   rw [lieGenerator_apply_eq_generator_apply π hπ X _
       (by rw [StronglyContinuousGroup.generator_domain]; exact hmem),

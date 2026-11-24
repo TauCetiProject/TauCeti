@@ -41,7 +41,8 @@ its Lie algebra: the one-parameter group of `s • X` is the one-parameter group
   change the generator domain.
 * `TauCeti.Semigroups.StronglyContinuousGroup.rescale_generator`: for `s ≠ 0`, the generator of
   `t ↦ U (s * t)` is `s • A`.
-* `TauCeti.Semigroups.StronglyContinuousGroup.rescale_zero_generator`: the generator of the
+* `TauCeti.Semigroups.StronglyContinuousGroup.rescale_zero_generator` and
+  `TauCeti.Semigroups.StronglyContinuousGroup.rescale_zero_domain`: the generator of the
   constant group `U.rescale 0` is `0`, defined on the whole space.
 
 ## References
@@ -92,6 +93,7 @@ theorem rescale_neg_one (U : StronglyContinuousGroup X) : U.rescale (-1) = U.ref
 
 /-- The generator of the constant group `U.rescale 0` is the zero operator, defined on the whole
 space. -/
+@[simp]
 theorem rescale_zero_generator (U : StronglyContinuousGroup X) : (U.rescale 0).generator = 0 := by
   -- Every orbit of `U.rescale 0` is constant, hence differentiable with derivative `0`.
   have hderiv (x : X) : HasDerivAt (fun t : ℝ => U.rescale 0 t x) 0 0 := by
@@ -101,6 +103,11 @@ theorem rescale_zero_generator (U : StronglyContinuousGroup X) : (U.rescale 0).g
     exact fun x _ => (U.rescale 0).mem_domain_of_hasDerivAt_zero (hderiv x)
   · rw [LinearPMap.zero_apply]
     exact (U.rescale 0).generator_eq_of_hasDerivAt_zero (hderiv x)
+
+/-- The generator domain of the constant group `U.rescale 0` is the whole space. -/
+@[simp]
+theorem rescale_zero_domain (U : StronglyContinuousGroup X) : (U.rescale 0).domain = ⊤ := by
+  rw [← generator_domain, rescale_zero_generator, LinearPMap.zero_domain]
 
 variable [CompleteSpace X]
 
@@ -120,6 +127,7 @@ private theorem domain_le_rescale_domain (U : StronglyContinuousGroup X) (s : �
   fun x hx => (U.rescale s).mem_domain_of_hasDerivAt_zero (U.hasDerivAt_rescale_zero s ⟨x, hx⟩)
 
 /-- **Rescaling by a nonzero speed does not change the generator domain.** -/
+@[simp]
 theorem rescale_domain (U : StronglyContinuousGroup X) {s : ℝ} (hs : s ≠ 0) :
     (U.rescale s).domain = U.domain := by
   refine le_antisymm ?_ (U.domain_le_rescale_domain s)
@@ -128,6 +136,7 @@ theorem rescale_domain (U : StronglyContinuousGroup X) {s : ℝ} (hs : s ≠ 0) 
 
 /-- **The generator of a rescaled group.** For `s ≠ 0` the generator of `t ↦ U (s * t)` is
 `s • A`, on the domain of the generator `A` of `U`. -/
+@[simp]
 theorem rescale_generator (U : StronglyContinuousGroup X) {s : ℝ} (hs : s ≠ 0) :
     (U.rescale s).generator = s • U.generator := by
   refine LinearPMap.ext ?_ fun x _ hx => ?_
