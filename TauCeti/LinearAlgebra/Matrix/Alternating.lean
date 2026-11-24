@@ -12,6 +12,8 @@ public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.Ring.Invertible
+-- Non-public: `Fintype.natCard_subtype_lt` counts the pairs above the diagonal.
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Matrices equal to the negative of their transpose
@@ -278,8 +280,7 @@ theorem natCard_transpose_eq_neg [Fintype n] [AddCommGroup S] (I : AddSubgroup S
       Nat.card I ^ (Fintype.card n).choose 2 := by
   classical
   let : LinearOrder n := LinearOrder.lift' (Fintype.equivFin n) (Fintype.equivFin n).injective
-  have hpairs : Nat.card {q : n × n // q.1 < q.2} = (Fintype.card n).choose 2 := by
-    rw [Nat.card_eq_fintype_card, Fintype.card_subtype, Fintype.card_product_filter_lt]
+  have hpairs := Fintype.natCard_subtype_lt (α := n)
   have h2I : ∀ x : I, x + x = 0 → x = 0 := by
     intro x hx
     apply Subtype.ext

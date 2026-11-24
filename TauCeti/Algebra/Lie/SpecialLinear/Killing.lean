@@ -34,6 +34,7 @@ where the trace-squared term vanishes on trace-free matrices.
 
 ## References
 
+* J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§1.2 and 5.
 * A. W. Knapp, *Lie Groups Beyond an Introduction*, second edition, Progress in Mathematics
   140, Birkhäuser, 2002, Chapter I (the Killing forms of the classical Lie algebras).
 -/

@@ -38,8 +38,10 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
   integrability hypothesis.
 - `lintegral_ofReal_posPart_condExp_sub_le`: the positive part of `μ[f | m] - a` integrates to at
   most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
-- `integral_mul_le_of_condExp_le`: if `Z ≥ 0` is a.e. `m`-measurable and the conditional mean of
-  `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`.
+- `condExp_smul_eq_zero_of_condExp_eq_zero`: if `μ[g | m] = 0` and `f` is `m`-measurable, then
+  `μ[f • g | m] = 0`.
+- `integral_mul_le_of_condExp_le`: if `Z` is a.e. `m`-measurable and `Z * μ[W | m] ≤ K * Z`
+  almost everywhere, then `∫ Z * W ≤ K * ∫ Z`.
 - `integral_mul_eq_of_forall_setIntegral_eq`: if `g` is `m`-measurable with the same set integrals
   as `f` over `m`-measurable sets, then `∫ h f = ∫ h g` for every `m`-measurable `h` with `h f`
   integrable.
@@ -326,23 +328,30 @@ theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : Measurabl
     _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
         grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
 
-/-- Pulling out an a.e. `m`-measurable factor: if `Z ≥ 0` almost everywhere and the
-conditional mean of `W` is at most `K`, then `∫ Z * W ≤ K * ∫ Z`. -/
+/-- If `μ[g | m] = 0` and `f` is `m`-measurable, then `μ[f • g | m] = 0`: a measurable factor
+times a martingale difference is again a martingale difference. -/
+theorem condExp_smul_eq_zero_of_condExp_eq_zero {Ω E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {m m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → ℝ}
+    {g : Ω → E} (hf : AEStronglyMeasurable[m] f μ) (hfg : Integrable (f • g) μ)
+    (hg : Integrable g μ) (hcg : μ[g | m] =ᵐ[μ] 0) : μ[f • g | m] =ᵐ[μ] 0 := by
+  filter_upwards [condExp_smul_of_aestronglyMeasurable_left hf hfg hg, hcg] with ω h₁ h₂
+  simp [h₁, h₂]
+
+/-- Pulling out an a.e. `m`-measurable factor: if `Z * μ[W | m] ≤ K * Z` almost everywhere,
+then `∫ Z * W ≤ K * ∫ Z`. This holds in particular when `Z ≥ 0` and the conditional mean of `W`
+is at most `K`, but the bound on `μ[W | m]` is only needed where `Z ≠ 0`. -/
 theorem integral_mul_le_of_condExp_le {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
     {m : MeasurableSpace Ω} (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] {Z W : Ω → ℝ} {K : ℝ}
-    (hZ : AEStronglyMeasurable[m] Z μ) (hZ0 : 0 ≤ᵐ[μ] Z)
+    (hZ : AEStronglyMeasurable[m] Z μ)
     (hZint : Integrable Z μ) (hWint : Integrable W μ) (hZW : Integrable (fun ω ↦ Z ω * W ω) μ)
-    (hW : μ[W | m] ≤ᵐ[μ] fun _ ↦ K) :
+    (hW : ∀ᵐ ω ∂μ, Z ω * μ[W | m] ω ≤ K * Z ω) :
     ∫ ω, Z ω * W ω ∂μ ≤ K * ∫ ω, Z ω ∂μ := by
   have hpull : μ[Z * W | m] =ᵐ[μ] Z * μ[W | m] :=
     condExp_mul_of_aestronglyMeasurable_left hZ hZW hWint
   have hint : Integrable (Z * μ[W | m]) μ := integrable_condExp.congr hpull
   calc ∫ ω, Z ω * W ω ∂μ = ∫ ω, μ[Z * W | m] ω ∂μ := (integral_condExp hm).symm
     _ = ∫ ω, (Z * μ[W | m]) ω ∂μ := integral_congr_ae hpull
-    _ ≤ ∫ ω, K * Z ω ∂μ := by
-      refine integral_mono_ae hint (hZint.const_mul K) ?_
-      filter_upwards [hW, hZ0] with ω hω hω0
-      simpa [mul_comm] using mul_le_mul_of_nonneg_left hω hω0
+    _ ≤ ∫ ω, K * Z ω ∂μ := integral_mono_ae hint (hZint.const_mul K) hW
     _ = K * ∫ ω, Z ω ∂μ := integral_const_mul _ _
 
 /-- If `g` is `m`-measurable and has the same integral as `f` over every `m`-measurable set,

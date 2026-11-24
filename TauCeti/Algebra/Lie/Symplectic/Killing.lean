@@ -11,14 +11,12 @@ public import Mathlib.Algebra.Lie.Semisimple.Lemmas
 public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Symplectic.Cartan
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import Mathlib.Tactic.NoncommRing
-import TauCeti.Algebra.Lie.GeneralLinear.Killing
-import TauCeti.Algebra.Lie.OfAssociative
-import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 import TauCeti.LinearAlgebra.Matrix.Trace.Positive
 import TauCeti.Algebra.Lie.BaseChange.Radical
 import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Algebra.Lie.SkewAdjoint.BaseChange
+import TauCeti.Algebra.Lie.SkewAdjoint.Killing
+import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -44,12 +42,9 @@ The Killing form itself is explicit. For `n = card l`, so that `sp l K ⊆ gl (2
 
 `κ(X, Y) = (2 n + 2) trace (X * Y)`
 
-over every field of characteristic other than two. The matrices `Z` with `J Zᵀ J = Z` are exactly
-those of `sp l K`, and `Z ↦ Z + J Zᵀ J` maps `gl (2 n) K` onto `sp l K`, acting on it as
-multiplication by two. The operator `ad X ∘ ad Y` of `gl (2 n) K` preserves `sp l K`, so twice
-its trace on `sp l K` is its trace on `gl (2 n) K`, which is `4 n trace (X * Y)` by the Killing
-form of `gl (2 n) K` (`Matrix.killingForm_apply`), plus the trace of its composite with
-`Z ↦ J Zᵀ J`, which is `4 trace (X * Y)`.
+over every field of characteristic other than two. Since `Jᵀ = -J`, this is the case `ε = -1` of
+the Killing form `(m - 2 ε) trace (X * Y)` of the Lie algebra of `m × m` matrices skew-adjoint for
+an invertible `J` with `Jᵀ = ε • J` (`TauCeti.killingForm_skewAdjointMatricesLieSubalgebra_apply`).
 
 Composed with the involution `θ X = -Xᵀ` (`LieAlgebra.Symplectic.cartanInvolution`), this gives
 `-κ(X, θ X) = (2 n + 2) trace (X * Xᵀ)`, the sum of the squares of the entries of `X` times
@@ -206,89 +201,22 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {l : Type*} [DecidableEq l] [Fintype l]
 
-section CommRing
-
-variable {R : Type*} [CommRing R]
-
-/-- The trace of `Z ↦ J (A Z B)ᵀ J` on the matrices. -/
-private theorem trace_jConj_comp (A B : Matrix (l ⊕ l) (l ⊕ l) R) :
-    LinearMap.trace R _ (jConj ∘ₗ LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) =
-      -(J l R * Bᵀ * J l R * A).trace := by
-  have h : jConj ∘ₗ LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B =
-      LinearMap.mulLeft R (J l R * Bᵀ) ∘ₗ LinearMap.mulRight R (Aᵀ * J l R) ∘ₗ
-        (transposeLinearEquiv (l ⊕ l) (l ⊕ l) R R).toLinearMap := by
-    ext1 Z
-    simp [jConj_apply, transpose_mul, mul_assoc]
-  rw [h, trace_mulLeft_comp_mulRight_comp_transpose]
-  simp [transpose_mul, J_transpose, mul_assoc]
-
-/-- For `A, B ∈ sp l R`, the operator `Z ↦ J (⁅A, ⁅B, Z⁆⁆)ᵀ J` of the matrices has trace
-`4 trace (A * B)`. -/
-private theorem trace_jConj_comp_ad_comp_ad {A B : Matrix (l ⊕ l) (l ⊕ l) R} (hA : A ∈ sp l R)
-    (hB : B ∈ sp l R) :
-    LinearMap.trace R _ (jConj ∘ₗ ad R _ A ∘ₗ ad R _ B) = 4 * (A * B).trace := by
-  have hA' := (mem_sp_iff_J_mul_transpose_mul_J_eq A).mp hA
-  have hB' := (mem_sp_iff_J_mul_transpose_mul_J_eq B).mp hB
-  have hBA : J l R * (B * A)ᵀ * J l R = -(A * B) := by
-    rw [← jConj_apply, jConj_mul, jConj_apply, jConj_apply, hA', hB']
-  have hl : jConj ∘ₗ LinearMap.mulLeft R (A * B) =
-      jConj ∘ₗ LinearMap.mulLeft R (A * B) ∘ₗ LinearMap.mulRight R 1 := by
-    ext1 Z; simp
-  have hr : jConj ∘ₗ LinearMap.mulRight R (B * A) =
-      jConj ∘ₗ LinearMap.mulLeft R 1 ∘ₗ LinearMap.mulRight R (B * A) := by
-    ext1 Z; simp
-  rw [ad_comp_ad]
-  simp only [LinearMap.comp_add, LinearMap.comp_sub, map_add, map_sub]
-  rw [hl, hr]
-  simp only [trace_jConj_comp, transpose_one, mul_one, hA', hB', hBA, J_squared, neg_mul, one_mul,
-    trace_neg, neg_neg, trace_mul_comm B A]
-  ring
-
-end CommRing
-
 section Field
 
-variable {K : Type*} [Field K]
-
-/-- Twice the Killing form of `sp l K` is twice `(2 n + 2) trace (X * Y)`, over every field. -/
-private theorem two_mul_killingForm_apply (X Y : sp l K) :
-    2 * killingForm K (sp l K) X Y =
-      2 * ((2 * Fintype.card l + 2) * ((X : Matrix (l ⊕ l) (l ⊕ l) K) * Y).trace) := by
-  set L := ad K (Matrix (l ⊕ l) (l ⊕ l) K) X ∘ₗ ad K (Matrix (l ⊕ l) (l ⊕ l) K) Y with hL
-  -- `symmetrize` turns the action of `L` on the matrices into twice its action on `sp l K`.
-  have h1 : symmetrize ∘ₗ L ∘ₗ (sp l K).incl.toLinearMap =
-      (2 : K) • (ad K (sp l K) X ∘ₗ ad K (sp l K) Y) := by
-    ext1 W
-    have hW : jConj (L W) = L W :=
-      (mem_sp_iff_jConj_eq _).mp ((sp l K).lie_mem X.property
-          ((sp l K).lie_mem Y.property W.property))
-    apply Subtype.ext
-    simp only [LinearMap.comp_apply, coe_symmetrize_apply, LinearMap.smul_apply,
-      LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, hW]
-    simp [hL, two_smul]
-  have h2 : (sp l K).incl.toLinearMap ∘ₗ symmetrize = LinearMap.id + jConj := by
-    ext1 Z; simp
-  -- Cycling the trace moves the computation to the matrices.
-  have htrace : LinearMap.trace K _ (symmetrize ∘ₗ L ∘ₗ (sp l K).incl.toLinearMap) =
-      LinearMap.trace K _ L + LinearMap.trace K _ (jConj ∘ₗ L) := by
-    rw [← LinearMap.comp_assoc, ← LinearMap.trace_comp_comm', ← LinearMap.comp_assoc, h2,
-      LinearMap.add_comp, map_add, LinearMap.id_comp]
-  rw [h1, map_smul, smul_eq_mul, ← killingForm_apply_apply] at htrace
-  rw [htrace, hL, ← killingForm_apply_apply, Matrix.killingForm_apply,
-    trace_eq_zero_of_mem_sp X.property, Fintype.card_sum, trace_jConj_comp_ad_comp_ad X.property
-        Y.property]
-  push_cast
-  ring
-
-variable [NeZero (2 : K)]
+variable {K : Type*} [Field K] [NeZero (2 : K)]
 
 /-- **The Killing form of the symplectic Lie algebra**: for `n = card l`, so that
 `sp l K ⊆ gl (2 n) K`, it is `κ(X, Y) = (2 n + 2) trace (X * Y)`, over every field of
 characteristic other than two. -/
 theorem killingForm_apply (X Y : sp l K) :
     killingForm K (sp l K) X Y =
-      (2 * Fintype.card l + 2) * ((X : Matrix (l ⊕ l) (l ⊕ l) K) * Y).trace :=
-  mul_left_cancel₀ two_ne_zero (two_mul_killingForm_apply X Y)
+      (2 * Fintype.card l + 2) * ((X : Matrix (l ⊕ l) (l ⊕ l) K) * Y).trace := by
+  have := TauCeti.killingForm_skewAdjointMatricesLieSubalgebra_apply (J := J l K) (ε := -1)
+    (by rw [J_transpose, neg_one_smul]) (isUnit_of_mul_self_eq_neg_one (J_squared l K)) X Y
+  refine this.trans ?_
+  rw [Fintype.card_sum]
+  push_cast
+  ring
 
 /-- The Killing form of `sp l K` twisted by the involution `θ Y = -Yᵀ`:
 `κ(X, θ Y) = -((2 n + 2) trace (X * Yᵀ))`. -/

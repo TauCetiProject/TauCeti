@@ -35,6 +35,9 @@ Borel measurable structure on the scalar field.
 
 ## Additional results
 
+* `TauCeti.hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc`: a function on real Euclidean
+  space vanishing wherever some coordinate leaves its interval, so outside a coordinate box, has
+  compact support.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
@@ -44,6 +47,7 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
+* `EuclideanSpace.norm_fin_one`: the norm on `ℝ¹` is the absolute value of the coordinate.
 * `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
   of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
@@ -71,6 +75,10 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
+  linear automorphism of `ι → 𝕜`.
+* `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
+  norm, as a linear isometric automorphism of `EuclideanSpace 𝕜 ι`.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
   extracts the `i`-th coordinate inner product.
 * `LinearIsometryEquiv.submodulePiLp_orthogonalProjectionOnto`,
@@ -127,6 +135,10 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
     WithLp.toLp 2 v ∈ Metric.sphere (0 : EuclideanSpace ℝ ι) 1 ↔ v ⬝ᵥ v = 1 := by
   rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
     ← real_inner_self_eq_norm_sq, inner_toLp_toLp, star_trivial]
+
+/-- The Euclidean norm on `ℝ¹` is the absolute value of the coordinate. -/
+theorem norm_fin_one (x : EuclideanSpace ℝ (Fin 1)) : ‖x‖ = |x 0| := by
+  rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, Real.sqrt_sq_eq_abs, abs_abs]
 
 /-- The coordinates of a point of the unit sphere of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`. -/
 theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}
@@ -582,6 +594,19 @@ end EuclideanSpace
 
 namespace TauCeti
 
+/-- A function on real Euclidean space that vanishes at every point with some coordinate `x i`
+outside `[a i, b i]`, that is, outside the coordinate box `∏ i, [a i, b i]`, has compact
+support. -/
+theorem hasCompactSupport_of_eq_zero_of_notMem_coordinate_Icc {ι α : Type*}
+    [Zero α] {f : EuclideanSpace ℝ ι → α} (a b : ι → ℝ)
+    (hf : ∀ x i, x i ∉ Set.Icc (a i) (b i) → f x = 0) :
+    HasCompactSupport f :=
+  HasCompactSupport.intro ((EuclideanSpace.equiv ι ℝ).toHomeomorph.isCompact_preimage.2
+    (isCompact_univ_pi fun i ↦ isCompact_Icc (a := a i) (b := b i))) fun x hx ↦ by
+    simp only [Set.mem_preimage, Set.mem_univ_pi, not_forall] at hx
+    obtain ⟨i, hi⟩ := hx
+    exact hf x i hi
+
 variable {𝕜 : Type*} [RCLike 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
 
 /-- Sum the coordinates of a Euclidean vector over each fibre of `f`.
@@ -635,7 +660,44 @@ theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : T
     fun x y h ↦ by ext j; rw [Subsingleton.elim j i]; exact h
   exact hg.comp hinj.injOn (Set.mapsTo_preimage _ _)
 
+variable (𝕜 ι) in
+/-- A unitary transformation of `EuclideanSpace 𝕜 ι`, as a linear automorphism of `ι → 𝕜`. -/
+def euclideanLinearEquivHom :
+    unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) →* (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜) where
+  toFun g := (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).symm.trans
+    ((Unitary.linearIsometryEquiv g).toLinearEquiv.trans (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)))
+  map_one' := by ext; simp
+  map_mul' _ _ := by ext; simp
+
+@[simp]
+theorem euclideanLinearEquivHom_apply
+    (g : unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) (v : ι → 𝕜) :
+    euclideanLinearEquivHom 𝕜 ι g v =
+      WithLp.ofLp ((g : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (WithLp.toLp 2 v)) :=
+  (rfl)
+
 end TauCeti
+
+namespace LinearEquiv
+
+variable {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
+
+/-- A linear automorphism of `ι → 𝕜` preserving the Euclidean norm, as a linear isometric
+automorphism of `EuclideanSpace 𝕜 ι`. -/
+def toEuclideanIsometry (A : (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜))
+    (hA : ∀ v, ‖WithLp.toLp 2 (A v)‖ = ‖WithLp.toLp 2 v‖) :
+    EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι where
+  toLinearEquiv := A.withLpCongr 2
+  norm_map' w := hA w.ofLp
+
+/-- `LinearEquiv.toEuclideanIsometry A hA` acts on coordinates by `A`. -/
+@[simp]
+theorem toEuclideanIsometry_toLp (A : (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜))
+    (hA : ∀ v, ‖WithLp.toLp 2 (A v)‖ = ‖WithLp.toLp 2 v‖) (v : ι → 𝕜) :
+    A.toEuclideanIsometry hA (WithLp.toLp 2 v) = WithLp.toLp 2 (A v) :=
+  (rfl)
+
+end LinearEquiv
 
 namespace PiLp
 

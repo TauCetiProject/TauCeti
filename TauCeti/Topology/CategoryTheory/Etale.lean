@@ -13,7 +13,7 @@ public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.Topology.CategoryTheory.QuiverTotal
 public import TauCeti.Topology.ContinuousOn.Invariant
-public import TauCeti.Topology.IsLocalHomeomorph
+public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
