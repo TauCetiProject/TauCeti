@@ -203,6 +203,13 @@ private theorem curvatureOperatorEvalL_apply (ω : ⋀[ℝ]^2 V) (r : algebraicC
     curvatureOperatorEvalL ω r = ⟪curvatureEndomorphism r.val ω, ω⟫ := by
   simp [curvatureOperatorEvalL, real_inner_comm]
 
+private theorem curvatureOperatorEvalL_smul (c : ℝ) (ω : ⋀[ℝ]^2 V) :
+    curvatureOperatorEvalL (c • ω) = c ^ 2 • curvatureOperatorEvalL ω := by
+  ext r
+  simp only [curvatureOperatorEvalL_apply, map_smul, inner_smul_left, inner_smul_right,
+    conj_trivial, smul_apply, smul_eq_mul]
+  ring
+
 /-! ### The cones -/
 
 variable (V) in
@@ -375,12 +382,9 @@ theorem salient_nonnegCurvatureOperatorCone :
       (nonnegCurvatureOperatorCone V : ConvexCone ℝ _) :=
   fun _ hr hr₀ hr' ↦ hr₀ (eq_zero_of_mem_nonnegCurvatureOperatorCone_of_neg_mem hr hr')
 
-/-- Outside dimension two, the 2-nonnegative cone contains no line through the origin. In
-dimension at least three, if `r` and `-r` are both 2-nonnegative, the values `aᵢ = ⟪R ωᵢ, ωᵢ⟫` on
-an orthonormal triple of bivectors satisfy `aᵢ + aⱼ = 0` for `i ≠ j`, so they vanish; every unit
-bivector lies in such a triple, so the quadratic form of `R` vanishes. In dimension at most one the
-only algebraic curvature tensor is zero. In dimension two, where `⋀[ℝ]^2 V` is a line, every
-tensor is 2-nonnegative and the cone is the whole space. -/
+/-- Outside dimension two, the 2-nonnegative cone contains no line through the origin: if `r` and
+`-r` are both 2-nonnegative, then `r = 0`. The hypothesis is needed: in dimension two, where
+`⋀[ℝ]^2 V` is a line, every tensor is 2-nonnegative and the cone is the whole space. -/
 theorem eq_zero_of_mem_twoNonnegCurvatureOperatorCone_of_neg_mem (hn : Module.finrank ℝ V ≠ 2)
     {r : algebraicCurvatureSubmodule V} (hr : r ∈ twoNonnegCurvatureOperatorCone V)
     (hr' : -r ∈ twoNonnegCurvatureOperatorCone V) : r = 0 := by
@@ -395,8 +399,12 @@ theorem eq_zero_of_mem_twoNonnegCurvatureOperatorCone_of_neg_mem (hn : Module.fi
   have hdim : 2 < Module.finrank ℝ (⋀[ℝ]^2 V) := by
     rw [exteriorPower.finrank_eq]
     exact (by decide : 2 < Nat.choose 3 2).trans_le (Nat.choose_le_choose 2 hn)
-  -- The quadratic form of `R` vanishes on unit bivectors, by an orthonormal triple `ω, ω₂, ω₃`.
-  have hunit (ω : ⋀[ℝ]^2 V) (hω : ‖ω‖ = 1) : ⟪curvatureEndomorphism r.val ω, ω⟫ = 0 := by
+  -- In dimension at least three, the values `aᵢ = ⟪R ωᵢ, ωᵢ⟫` on an orthonormal triple of
+  -- bivectors satisfy `aᵢ + aⱼ = 0` for `i ≠ j`, so they vanish. Every unit bivector `ω` lies in
+  -- such a triple `ω, ω₂, ω₃`, so the quadratic form of `R` vanishes on unit bivectors.
+  have hunit (ω : ⋀[ℝ]^2 V) (hω : ω ∈ Metric.sphere 0 1) : curvatureOperatorEvalL ω r = 0 := by
+    rw [mem_sphere_zero_iff_norm] at hω
+    rw [curvatureOperatorEvalL_apply]
     obtain ⟨ω₂, hω₂, hω₂o⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
       ({ω} : Finset _) (by rw [Finset.card_singleton]; omega)
     obtain ⟨ω₃, hω₃, hω₃o⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
@@ -409,15 +417,19 @@ theorem eq_zero_of_mem_twoNonnegCurvatureOperatorCone_of_neg_mem (hn : Module.fi
       simp [orthonormal_vecCons_iff, ha, hb, hab]
     linarith [h₁ _ _ (hpair hω hω₂ h₁₂), h₂ _ _ (hpair hω hω₂ h₁₂), h₁ _ _ (hpair hω hω₃ h₁₃),
       h₂ _ _ (hpair hω hω₃ h₁₃), h₁ _ _ (hpair hω₂ hω₃ h₂₃), h₂ _ _ (hpair hω₂ hω₃ h₂₃)]
-  -- By homogeneity it vanishes everywhere, so `r` and `-r` have nonnegative curvature operator.
-  have hzero (ω : ⋀[ℝ]^2 V) : ⟪curvatureEndomorphism r.val ω, ω⟫ = 0 := by
-    rcases eq_or_ne ω 0 with rfl | hω
-    · simp
-    simpa [inner_smul_left, inner_smul_right, hω] using hunit _ (norm_smul_inv_norm (𝕜 := ℝ) hω)
-  refine eq_zero_of_mem_nonnegCurvatureOperatorCone_of_neg_mem
-    (mem_nonnegCurvatureOperatorCone.mpr fun ω ↦ (hzero ω).ge)
-    (mem_nonnegCurvatureOperatorCone.mpr fun ω ↦ ?_)
-  simp [hzero]
+  -- By homogeneity, `r` and `-r` then have nonnegative curvature operator.
+  have hmem (s : algebraicCurvatureSubmodule V)
+      (hs : ∀ ω ∈ Metric.sphere (0 : ⋀[ℝ]^2 V) 1, 0 ≤ curvatureOperatorEvalL ω s) :
+      s ∈ nonnegCurvatureOperatorCone V :=
+    mem_nonnegCurvatureOperatorCone.mpr fun ω ↦ by
+      simpa only [curvatureOperatorEvalL_apply] using (Set.ext_iff.mp
+        (setOf_forall_mem_sphere_nonneg_apply (φ := curvatureOperatorEvalL (V := V))
+          curvatureOperatorEvalL_smul) s).mp hs ω
+  exact eq_zero_of_mem_nonnegCurvatureOperatorCone_of_neg_mem
+    (hmem r fun ω hω ↦ (hunit ω hω).ge) (hmem (-r) fun ω hω ↦ by
+      have := (curvatureOperatorEvalL ω).map_neg r
+      rw [hunit ω hω, neg_zero] at this
+      exact this.ge)
 
 /-- Outside dimension two, the 2-nonnegative cone is salient. -/
 theorem salient_twoNonnegCurvatureOperatorCone (hn : Module.finrank ℝ V ≠ 2) :
@@ -503,34 +515,18 @@ exactly when its curvature operator is positive definite. -/
 theorem mem_interior_nonnegCurvatureOperatorCone {r : algebraicCurvatureSubmodule V} :
     r ∈ interior (nonnegCurvatureOperatorCone V : Set (algebraicCurvatureSubmodule V)) ↔
       ∀ ω, ω ≠ 0 → 0 < ⟪curvatureEndomorphism r.val ω, ω⟫ := by
-  have hsmul (q : algebraicCurvatureSubmodule V) (c : ℝ) (ω : ⋀[ℝ]^2 V) :
-      ⟪curvatureEndomorphism q.val (c • ω), c • ω⟫ =
-        c ^ 2 * ⟪curvatureEndomorphism q.val ω, ω⟫ := by
-    simp only [map_smul, inner_smul_left, inner_smul_right, conj_trivial]; ring
   have hset : (nonnegCurvatureOperatorCone V : Set (algebraicCurvatureSubmodule V)) =
-      {q | ∀ ω ∈ Metric.sphere (0 : ⋀[ℝ]^2 V) 1, 0 ≤ curvatureOperatorEvalL ω q} := by
+      {q | ∀ ω, 0 ≤ curvatureOperatorEvalL ω q} := by
     ext q
     simp only [SetLike.mem_coe, mem_nonnegCurvatureOperatorCone, Set.mem_ofPred_eq,
       curvatureOperatorEvalL_apply]
-    refine ⟨fun h ω _ ↦ h ω, fun h ω ↦ ?_⟩
-    rcases eq_or_ne ω 0 with rfl | hω
-    · simp
-    have := h _ (mem_sphere_zero_iff_norm.mpr (norm_smul_inv_norm (𝕜 := ℝ) hω))
-    rw [hsmul] at this
-    exact nonneg_of_mul_nonneg_right this (pow_pos (by simpa using hω) 2)
-  rw [hset, interior_setOf_forall_mem_nonneg_apply (E := algebraicCurvatureSubmodule V)
-    (isCompact_sphere 0 1)
-    (continuousOn_clm_apply.mpr fun q ↦ by
+  rw [hset, interior_setOf_forall_nonneg_apply (E := algebraicCurvatureSubmodule V)
+    (continuous_clm_apply.mpr fun q ↦ by
       simp only [curvatureOperatorEvalL_apply]
-      exact ((LinearMap.continuous_of_finiteDimensional _).inner continuous_id).continuousOn)
-    fun ω hω h ↦ by
-      simpa [curvatureOperatorEvalL_apply, mem_sphere_zero_iff_norm.mp hω] using
-        congr($h roundTensor)]
+      exact (LinearMap.continuous_of_finiteDimensional _).inner continuous_id)
+    curvatureOperatorEvalL_smul
+    fun ω hω h ↦ hω (by simpa [curvatureOperatorEvalL_apply] using congr($h roundTensor))]
   simp only [Set.mem_ofPred_eq, curvatureOperatorEvalL_apply]
-  refine ⟨fun h ω hω ↦ ?_, fun h ω hω ↦ h ω (ne_zero_of_mem_unit_sphere ⟨ω, hω⟩)⟩
-  have := h _ (mem_sphere_zero_iff_norm.mpr (norm_smul_inv_norm (𝕜 := ℝ) hω))
-  rw [hsmul] at this
-  exact pos_of_mul_pos_right this (by positivity)
 
 /-- An algebraic curvature tensor lies in the interior of the 2-nonnegative cone exactly when its
 curvature operator is 2-positive: `⟪R ω₁, ω₁⟫ + ⟪R ω₂, ω₂⟫ > 0` for every orthonormal pair of
@@ -627,35 +623,25 @@ theorem mem_interior_nonnegRicciCone (hn : Module.finrank ℝ V ≠ 1)
       (algebraicCurvatureSubmodule V).subtypeL
   have hφ_apply (u : V) (q : algebraicCurvatureSubmodule V) : φ u q = ricci q.val u u := by
     simp [φ]
-  have hsmul (q : algebraicCurvatureSubmodule V) (c : ℝ) (u : V) :
-      ricci q.val (c • u) (c • u) = c ^ 2 * ricci q.val u u := by
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]; ring
   have hset : (nonnegRicciCone V : Set (algebraicCurvatureSubmodule V)) =
-      {q | ∀ u ∈ Metric.sphere (0 : V) 1, 0 ≤ φ u q} := by
+      {q | ∀ u, 0 ≤ φ u q} := by
     ext q
     simp only [SetLike.mem_coe, mem_nonnegRicciCone, Set.mem_ofPred_eq, hφ_apply]
-    refine ⟨fun h u _ ↦ h u, fun h u ↦ ?_⟩
-    rcases eq_or_ne u 0 with rfl | hu
-    · simp
-    have := h _ (mem_sphere_zero_iff_norm.mpr (norm_smul_inv_norm (𝕜 := ℝ) hu))
-    rw [hsmul] at this
-    exact nonneg_of_mul_nonneg_right this (pow_pos (by simpa using hu) 2)
-  rw [hset, interior_setOf_forall_mem_nonneg_apply (E := algebraicCurvatureSubmodule V)
-    (isCompact_sphere 0 1)
-    (continuousOn_clm_apply.mpr fun q ↦ by
+  rw [hset, interior_setOf_forall_nonneg_apply (E := algebraicCurvatureSubmodule V)
+    (continuous_clm_apply.mpr fun q ↦ by
       simp only [hφ_apply, ricci_apply_orthonormalBasis (stdOrthonormalBasis ℝ V)]
-      exact (continuous_finsetSum _ fun i _ ↦ q.val.cont.comp (by fun_prop)).continuousOn)
+      exact continuous_finsetSum _ fun i _ ↦ q.val.cont.comp (by fun_prop))
+    (fun c u ↦ by
+      ext q
+      simp only [hφ_apply, map_smul, LinearMap.smul_apply, smul_apply, smul_eq_mul]
+      ring)
     fun u hu h ↦ by
       have := congr($h roundTensor)
       simp only [hφ_apply, ricci_constantCurvature, LinearMap.smul_apply, innerₗ_apply_apply,
-        real_inner_self_eq_norm_sq, mem_sphere_zero_iff_norm.mp hu, smul_eq_mul,
-        zero_apply] at this
-      exact hn (by exact_mod_cast (by linarith : (Module.finrank ℝ V : ℝ) = 1))]
+        real_inner_self_eq_norm_sq, smul_eq_mul, zero_apply, mul_eq_zero, sub_eq_zero,
+        pow_eq_zero_iff two_ne_zero, norm_eq_zero] at this
+      exact this.elim (fun h1 ↦ hn (by exact_mod_cast h1)) hu]
   simp only [Set.mem_ofPred_eq, hφ_apply]
-  refine ⟨fun h u hu ↦ ?_, fun h u hu ↦ h u (ne_zero_of_mem_unit_sphere ⟨u, hu⟩)⟩
-  have := h _ (mem_sphere_zero_iff_norm.mpr (norm_smul_inv_norm (𝕜 := ℝ) hu))
-  rw [hsmul] at this
-  exact pos_of_mul_pos_right this (by positivity)
 
 /-- In dimension at least two, an algebraic curvature tensor lies in the interior of the
 nonnegative-scalar cone exactly when its scalar contraction is positive. In dimension at most one

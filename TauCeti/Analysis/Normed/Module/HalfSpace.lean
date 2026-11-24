@@ -35,6 +35,9 @@ cone of curvature tensors, with its strict counterpart.
   functionals, the intersection of the open half-spaces is open.
 * `TauCeti.interior_setOf_forall_mem_nonneg_apply` — the interior of the intersection of the
   closed half-spaces is the intersection of the open ones.
+* `TauCeti.interior_setOf_forall_nonneg_apply` — the same for a continuous family indexed by a
+  proper space that scales quadratically, `φ (c • v) = c ^ 2 • φ v`: the conditions on the unit
+  sphere, which is compact, are those at every vector, respectively every nonzero vector.
 -/
 
 public section
@@ -127,5 +130,48 @@ theorem interior_setOf_forall_mem_nonneg_apply (hS : IsCompact S) (hφ : Continu
   nlinarith [mem_Ioi.mp ht₀]
 
 end Compact
+
+/-! ### Quadratically homogeneous families -/
+
+section Homogeneous
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : F → StrongDual ℝ E}
+
+/-- For a family of functionals scaling as `φ (c • v) = c ^ 2 • φ v`, nonnegativity on the unit
+sphere is nonnegativity everywhere. -/
+theorem setOf_forall_mem_sphere_nonneg_apply (hφ : ∀ (c : ℝ) v, φ (c • v) = c ^ 2 • φ v) :
+    {x | ∀ v ∈ Metric.sphere (0 : F) 1, 0 ≤ φ v x} = {x | ∀ v, 0 ≤ φ v x} := by
+  refine Subset.antisymm (fun x hx v ↦ ?_) fun x hx v _ ↦ hx v
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [show φ 0 = 0 by simpa using hφ 0 0]
+  have h := hx (‖v‖⁻¹ • v) (by
+    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
+      inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv)])
+  rw [hφ, smul_apply, smul_eq_mul] at h
+  exact nonneg_of_mul_nonneg_right h (pow_pos (inv_pos.mpr (norm_pos_iff.mpr hv)) 2)
+
+/-- For a family of functionals scaling as `φ (c • v) = c ^ 2 • φ v`, positivity on the unit sphere
+is positivity at every nonzero vector. -/
+theorem setOf_forall_mem_sphere_pos_apply (hφ : ∀ (c : ℝ) v, φ (c • v) = c ^ 2 • φ v) :
+    {x | ∀ v ∈ Metric.sphere (0 : F) 1, 0 < φ v x} = {x | ∀ v ≠ 0, 0 < φ v x} := by
+  refine Subset.antisymm (fun x hx v hv ↦ ?_) fun x hx v hv ↦ hx v (by rintro rfl; simp at hv)
+  have h := hx (‖v‖⁻¹ • v) (by
+    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
+      inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv)])
+  rw [hφ, smul_apply, smul_eq_mul] at h
+  exact pos_of_mul_pos_right h (by positivity)
+
+/-- **The interior of the cone cut out by a quadratically homogeneous family.** If `φ` is
+continuous on a proper space (for instance a finite-dimensional one), scales as
+`φ (c • v) = c ^ 2 • φ v`, and `φ v ≠ 0` for `v ≠ 0`, then the interior of
+`{x | ∀ v, 0 ≤ φ v x}` is `{x | ∀ v ≠ 0, 0 < φ v x}`. -/
+theorem interior_setOf_forall_nonneg_apply [ProperSpace F] (hcont : Continuous φ)
+    (hφ : ∀ (c : ℝ) v, φ (c • v) = c ^ 2 • φ v) (hφ₀ : ∀ v ≠ 0, φ v ≠ 0) :
+    interior {x | ∀ v, 0 ≤ φ v x} = {x | ∀ v ≠ 0, 0 < φ v x} := by
+  rw [← setOf_forall_mem_sphere_nonneg_apply hφ, ← setOf_forall_mem_sphere_pos_apply hφ]
+  exact interior_setOf_forall_mem_nonneg_apply (isCompact_sphere 0 1) hcont.continuousOn
+    fun v hv ↦ hφ₀ v (by rintro rfl; simp at hv)
+
+end Homogeneous
 
 end TauCeti
