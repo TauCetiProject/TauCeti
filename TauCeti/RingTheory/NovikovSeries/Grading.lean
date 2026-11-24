@@ -23,11 +23,11 @@ pieces: a series whose support meets infinitely many fibres is not a finite sum 
 series. The homogeneous pieces span exactly the series whose support meets finitely many fibres,
 so the Novikov series are their internal direct sum exactly when every support does. Over a
 nontrivial ring and for an additive degree `δ`, this happens exactly when the period vanishes or
-`δ` takes finitely many values. For a degree with values in a torsion-free group, such as twice the
-first Chern class on the second homology of a symplectic manifold with its area period, it happens
-exactly when the period or the degree vanishes. The homogeneous pieces span exactly the finitely
-supported series as soon as the period `N` is bounded above on every fibre of `f`, for instance
-when `f` is injective. In that case the
+`δ` takes finitely many values. For a degree with values in a torsion-free cancellative monoid,
+such as twice the first Chern class on the second homology of a symplectic manifold with its area
+period, it happens exactly when the period or the degree vanishes. The homogeneous pieces span
+exactly the finitely supported series as soon as the period `N` is bounded above on every fibre of
+`f`, for instance when `f` is injective. In that case the
 graded ring spanned by homogeneous series is the group ring `R[H]`, and the Novikov ring is its
 period completion. This is the situation of the coefficient ring of capped Hamiltonian Floer
 theory on a spherically monotone symplectic manifold, graded by twice the first Chern number.
@@ -62,9 +62,9 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
 * `TauCeti.NovikovSeries.isInternal_gradeBy_iff_eq_zero_or_finite_range`: for an additive degree
   `δ` over a nontrivial ring, this happens exactly when the period vanishes or `δ` has finite range.
 * `TauCeti.NovikovSeries.isInternal_gradeBy_iff_eq_zero_or_eq_zero`: for an additive degree with
-  values in a torsion-free group and nontrivial coefficients, this happens exactly when the period
-  or the degree vanishes, since a nonzero degree `δ` takes the infinitely many values `n δ(C)` for
-  a class `C` with `δ(C) ≠ 0`.
+  values in a torsion-free cancellative monoid and nontrivial coefficients, this happens exactly
+  when the period or the degree vanishes, since a nonzero degree `δ` takes the infinitely many
+  values `n δ(C)` for a class `C` with `δ(C) ≠ 0`.
 
 ## References
 
@@ -442,10 +442,10 @@ end Internal
 
 section Additive
 
-variable [Nontrivial R] [AddGroup H] {N : H →+ ℝ} [AddGroup ι] (δ : H →+ ι)
+variable [Nontrivial R] [AddGroup H] {N : H →+ ℝ} [AddCancelMonoid ι] (δ : H →+ ι)
 
-/-- For an additive degree with values in a torsion-free group, every Novikov series meets only
-finitely many degrees exactly when the period or the degree vanishes. -/
+/-- For an additive degree with values in a torsion-free cancellative monoid, every Novikov series
+meets only finitely many degrees exactly when the period or the degree vanishes. -/
 theorem forall_finite_image_support_iff [IsAddTorsionFree ι] :
     (∀ a : NovikovSeries R H N, (δ '' a.support).Finite) ↔ N = 0 ∨ δ = 0 := by
   rw [forall_finite_image_support_iff_eq_zero_or_finite_range]
@@ -460,8 +460,8 @@ theorem forall_finite_image_support_iff [IsAddTorsionFree ι] :
     exact (finite_singleton 0).subset (by simp [subset_def])
 
 /-- **Criterion for an internally graded Novikov ring.** For an additive degree with values in a
-torsion-free group and nontrivial coefficients, the Novikov series form the internal direct sum of
-their homogeneous pieces exactly when the period or the degree vanishes. -/
+torsion-free cancellative monoid and nontrivial coefficients, the Novikov series form the internal
+direct sum of their homogeneous pieces exactly when the period or the degree vanishes. -/
 theorem isInternal_gradeBy_iff_eq_zero_or_eq_zero [IsAddTorsionFree ι] [DecidableEq ι] :
     DirectSum.IsInternal (gradeBy R N δ) ↔ N = 0 ∨ δ = 0 := by
   rw [isInternal_gradeBy_iff, forall_finite_image_support_iff]
