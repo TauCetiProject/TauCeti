@@ -24,9 +24,7 @@ where `Q(n)` is the greatest prime factor `Nat.maxPrimeFac n` (with `Q(1) = 1`).
 representation is *locally good-dihedral* if such a prime exists. Since `t ∣ q + 1` and `t > 2`,
 `t` does not divide `q - 1`, so `ψ` has niveau two and `ψ^q ≠ ψ`. Khare and Wintenberger
 (Lemma 6.3) show that a locally good-dihedral residual Galois representation has non-solvable
-image with projective image other than `A₅`, and that the property passes to the residual
-representations of characteristic at most `max(Q(N/q²), p)` met along a compatible system
-lifting it; that lemma is not proved here.
+image with projective image other than `A₅`; that lemma is not proved here.
 
 The predicates here are algebraic: they take a matrix representation `ρ : G →* GL (Fin 2) K` of
 an arbitrary group, a family `ι q : I q →* G` of inertia homomorphisms, the characteristic `p`
@@ -86,7 +84,7 @@ structure IsGoodDihedralAt (ρ : G →* GL (Fin 2) K) (ι : ∀ q, I q →* G) (
     ∃ B : GL (Fin 2) K, ∀ x, ((B⁻¹ * ρ (ι q x) * B : GL (Fin 2) K) : Matrix (Fin 2) (Fin 2) K) =
       diagonal ![(ψ x : K), (ψ x : K) ^ q]
   /-- A good-dihedral prime is congruent to `1` modulo `8`. -/
-  mod_eight : q % 8 = 1
+  mod_eight_eq_one : q % 8 = 1
   /-- A good-dihedral prime is congruent to `1` modulo every prime `s ≤ max(Q(N/q²), p)`. -/
   mod_eq_one_of_prime_le : ∀ s : ℕ, s.Prime → s ≤ max (N / q ^ 2).maxPrimeFac p → q % s = 1
 
@@ -135,17 +133,9 @@ theorem exists_pow_ne_self (h : ρ.IsGoodDihedralAt ι p N q) :
   refine ⟨ψ, fun hψq => ?_, hB⟩
   have hq := h.prime.one_le
   have h5 : 5 < t := lt_of_le_of_lt ((le_max_right _ _).trans (le_max_left _ _)) hlt
-  -- `ψ ^ (q - 1) = 1`, so `t ∣ t ^ a ∣ q - 1`; with `t ∣ q + 1` this gives `t ∣ 2`.
-  have hpow : ψ ^ (q - 1) = 1 := by
-    -- The power instance on `I q →* Kˣ` is reached only up to instance unfolding, so the
-    -- power laws are applied as terms rather than by rewriting.
-    have h1 : ψ ^ (q - 1) * ψ = 1 * ψ :=
-      calc ψ ^ (q - 1) * ψ = ψ ^ (q - 1 + 1) := (pow_succ ψ _).symm
-        _ = ψ := by rw [Nat.sub_add_cancel hq, hψq]
-        _ = 1 * ψ := (one_mul ψ).symm
-    exact mul_right_cancel h1
-  have hdvd : t ∣ q - 1 :=
-    (dvd_pow_self t ha.ne').trans (hψ ▸ orderOf_dvd_of_pow_eq_one hpow)
+  -- `ψ ^ q = ψ ^ 1`, so `t ∣ t ^ a ∣ q - 1`; with `t ∣ q + 1` this gives `t ∣ 2`.
+  have hdvd : t ∣ q - 1 := (dvd_pow_self t ha.ne').trans <| hψ ▸ (Nat.modEq_iff_dvd' hq).mp
+    ((pow_eq_pow_iff_modEq (x := ψ) (m := 1)).mp (by rwa [pow_one])).symm
   have h2 : t ∣ 2 := by
     have := Nat.dvd_sub htq hdvd
     rwa [show q + 1 - (q - 1) = 2 by omega] at this

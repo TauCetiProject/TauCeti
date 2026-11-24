@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Finite.GaloisField
 public import Mathlib.GroupTheory.SpecificGroups.Dihedral
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 import Mathlib.Tactic.NormNum.Prime
+import TauCeti.Data.ZMod.Pow
 
 /-!
 # Examples of good-dihedral primes
@@ -41,25 +42,28 @@ variable {K : Type*} [CommSemiring K]
 section Dihedral
 
 /-- The rotation subgroup of the dihedral group `D₇`, as the inclusion `i ↦ r i` of `ℤ/7`. -/
-@[expose] def rotation : Multiplicative (ZMod 7) →* DihedralGroup 7 where
+def rotation : Multiplicative (ZMod 7) →* DihedralGroup 7 where
   toFun i := r (Multiplicative.toAdd i)
   map_one' := r_zero
   map_mul' _ _ := (r_mul_r _ _).symm
 
+/-- `rotation` sends `i` to the rotation `r i`. -/
+theorem rotation_apply (i : Multiplicative (ZMod 7)) : rotation i = r (Multiplicative.toAdd i) :=
+  (rfl)
+
 /-- The matrices of the representation of `D₇` induced from the character `i ↦ uⁱ` of its
 rotation subgroup (`AddChar.zmodChar`): `r i ↦ diag(uⁱ, u⁻ⁱ)` and `sr i ↦ (0, u⁻ⁱ; uⁱ, 0)`. -/
-@[expose] def dihedralMatrix (u : Kˣ) (hu : u ^ 7 = 1) :
+def dihedralMatrix (u : Kˣ) (hu : u ^ 7 = 1) :
     DihedralGroup 7 → Matrix (Fin 2) (Fin 2) K
   | r i => !![(zmodChar 7 hu i : K), 0; 0, (zmodChar 7 hu (-i) : K)]
   | sr i => !![0, (zmodChar 7 hu (-i) : K); (zmodChar 7 hu i : K), 0]
 
 /-- The two-dimensional representation of the dihedral group `D₇` induced from the character
 `i ↦ uⁱ` of its rotation subgroup. -/
-@[expose] def dihedralRep (u : Kˣ) (hu : u ^ 7 = 1) : DihedralGroup 7 →* GL (Fin 2) K :=
+def dihedralRep (u : Kˣ) (hu : u ^ 7 = 1) : DihedralGroup 7 →* GL (Fin 2) K :=
   MonoidHom.toHomUnits
     { toFun := dihedralMatrix u hu
-      map_one' := by
-        rw [one_def, dihedralMatrix, neg_zero, map_zero_eq_one, Units.val_one, one_fin_two]
+      map_one' := by rw [one_def]; simp [dihedralMatrix, one_fin_two]
       map_mul' := by
         rintro (i | i) (j | j) <;>
           simp only [r_mul_r, r_mul_sr, sr_mul_r, sr_mul_sr, dihedralMatrix, mul_fin_two,
@@ -71,7 +75,28 @@ rotation subgroup (`AddChar.zmodChar`): `r i ↦ diag(uⁱ, u⁻ⁱ)` and `sr i 
 theorem coe_dihedralRep_r (u : Kˣ) (hu : u ^ 7 = 1) (i : ZMod 7) :
     (dihedralRep u hu (r i) : Matrix (Fin 2) (Fin 2) K) =
       !![(zmodChar 7 hu i : K), 0; 0, (zmodChar 7 hu (-i) : K)] :=
-  rfl
+  (rfl)
+
+/-- `dihedralRep u hu` sends the reflection `sr i` to `(0, u⁻ⁱ; uⁱ, 0)`. -/
+theorem coe_dihedralRep_sr (u : Kˣ) (hu : u ^ 7 = 1) (i : ZMod 7) :
+    (dihedralRep u hu (sr i) : Matrix (Fin 2) (Fin 2) K) =
+      !![0, (zmodChar 7 hu (-i) : K); (zmodChar 7 hu i : K), 0] :=
+  (rfl)
+
+/-- The character `i ↦ uⁱ` of `ℤ/n` has the same order as `u`. -/
+private theorem orderOf_toMonoidHom_zmodChar {n : ℕ} [NeZero n] {u : Kˣ} (hu : u ^ n = 1) :
+    orderOf (zmodChar n hu).toMonoidHom = orderOf u := by
+  refine orderOf_eq_orderOf_iff.mpr fun m ↦ ⟨fun h ↦ ?_, fun h ↦ MonoidHom.ext fun x ↦ ?_⟩
+  · have := congr($h (Multiplicative.ofAdd 1))
+    simpa [zmodChar_apply, pow_val_one hu, ← pow_mul] using this
+  · simp only [MonoidHom.pow_apply, toMonoidHom_apply, zmodChar_apply, MonoidHom.one_apply]
+    rw [← pow_mul, pow_mul', h, one_pow]
+
+/-- If `u ^ n = 1` and `k ≡ -1 (mod n)`, then `u^(-i) = (uⁱ)^k` for every `i : ℤ/n`. -/
+private theorem pow_neg_val_eq_pow_val_pow {n k : ℕ} {u : Kˣ} (hu : u ^ n = 1)
+    (hk : (k : ZMod n) = -1) (i : ZMod n) : u ^ (-i).val = (u ^ i.val) ^ k := by
+  have hx : (u ^ i.val) ^ n = 1 := by rw [pow_right_comm, hu, one_pow]
+  rw [← mul_neg_one, ← hk, pow_val_mul hu, pow_val_natCast hx]
 
 /-- For a unit `u` of order `7`, the prime `41` is good-dihedral for the dihedral
 representation `dihedralRep`, with inertia the rotation subgroup, characteristic `2` and
@@ -81,26 +106,13 @@ theorem isGoodDihedralAt_dihedralRep (u : Kˣ) (hu : orderOf u = 7) :
       41 := by
   have hu7 : u ^ 7 = 1 := hu ▸ pow_orderOf_eq_one u
   -- `ψ⁴¹ = ψ⁻¹` pointwise, since `41 ≡ -1 (mod 7)`.
-  have hpow (i : ZMod 7) : u ^ (-i).val = (u ^ i.val) ^ 41 := by
-    rw [← pow_mul, pow_eq_pow_iff_modEq, hu, ← ZMod.natCast_eq_natCast_iff, Nat.cast_mul,
-      ZMod.natCast_zmod_val, ZMod.natCast_zmod_val, show ((41 : ℕ) : ZMod 7) = -1 by decide,
-      mul_neg_one]
+  have hpow := pow_neg_val_eq_pow_val_pow (k := 41) hu7 (by decide)
   refine ⟨by norm_num, by norm_num, ⟨7, 1, (zmodChar 7 hu7).toMonoidHom, by norm_num, by norm_num,
     ?_, one_pos, ?_, 1, fun x ↦ ?_⟩, by norm_num, fun s hs hs2 ↦ ?_⟩
   · norm_num
-  · have : Fact (Nat.Prime 7) := ⟨Nat.prime_seven⟩
-    rw [pow_one]
-    refine orderOf_eq_prime (MonoidHom.ext fun x ↦ ?_) ?_
-    · rw [MonoidHom.pow_apply, MonoidHom.one_apply, toMonoidHom_apply, zmodChar_apply, ← pow_mul,
-        mul_comm, pow_mul, hu7, one_pow]
-    · intro h
-      have := congr($h (Multiplicative.ofAdd 1))
-      rw [toMonoidHom_apply, toAdd_ofAdd, zmodChar_apply, MonoidHom.one_apply, ZMod.val_one,
-        pow_one] at this
-      exact absurd (hu ▸ orderOf_eq_one_iff.mpr this) (by norm_num)
+  · rw [pow_one, orderOf_toMonoidHom_zmodChar, hu]
   · rw [inv_one, one_mul, mul_one, diagonal_fin_two]
-    simp only [rotation, MonoidHom.coe_mk, OneHom.coe_mk, coe_dihedralRep_r, toMonoidHom_apply,
-      zmodChar_apply, hpow]
+    simp only [rotation_apply, coe_dihedralRep_r, toMonoidHom_apply, zmodChar_apply, hpow]
     simp
   · norm_num at hs2
     obtain rfl : s = 2 := le_antisymm hs2 hs.two_le
@@ -124,7 +136,7 @@ variable {G : Type*} [Group G] {I : ℕ → Type*} [∀ q, Group (I q)] {ρ : G 
 
 /-- `13` is never a good-dihedral prime, since `13 ≢ 1 (mod 8)`. -/
 theorem not_isGoodDihedralAt_thirteen : ¬ ρ.IsGoodDihedralAt ι p N 13 :=
-  fun h ↦ absurd h.mod_eight (by norm_num)
+  fun h ↦ absurd h.mod_eight_eq_one (by norm_num)
 
 /-- For `p = 7` and `N = 9 · 241²`, the prime `241` satisfies the congruences modulo `8`, `2`,
 `3` and `5` but is not good-dihedral, because `241 ≢ 1 (mod 7)`. -/
