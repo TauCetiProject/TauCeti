@@ -32,8 +32,8 @@ of soluble extensions with prescribed completions and in Moret-Bailly's theorem.
   primes outside `B` meeting every Frobenius fibre.
 * `NumberField.Chebotarev.exists_finset_closure_isArithFrobAt_eq_top`: a finite set of unramified
   primes outside `B` whose Frobenius elements generate `Gal(L/K)`.
-* `IntermediateField.exists_finset_forall_linearDisjoint`: a finite set of primes outside `B` at
-  which complete splitting forces linear disjointness from `D`.
+* `IntermediateField.exists_finset_forall_linearDisjoint`: a finite set of primes outside `B`,
+  unramified in `D`, at which complete splitting forces linear disjointness from `D`.
 
 ## References
 
@@ -93,15 +93,19 @@ variable {K Ω : Type*} [Field K] [NumberField K] [Field Ω] [Algebra K Ω]
 
 /-- **Complete splitting at finitely many primes forces linear disjointness.** Let `D / K` be a
 finite Galois extension inside `Ω` and `B` a finite set of primes of `𝓞 K`. There is a finite set
-`T` of primes of `𝓞 K`, disjoint from `B`, such that every finite extension `E / K` inside `Ω` in
-which every prime of `T` splits completely is linearly disjoint from `D` over `K`. -/
+`T` of primes of `𝓞 K`, disjoint from `B` and unramified in `D`, such that every finite extension
+`E / K` inside `Ω` in which every prime of `T` splits completely is linearly disjoint from `D` over
+`K`. -/
 theorem exists_finset_forall_linearDisjoint (D : IntermediateField K Ω) [FiniteDimensional K D]
     [IsGalois K D] {B : Set (HeightOneSpectrum (𝓞 K))} (hB : B.Finite) :
     ∃ T : Finset (HeightOneSpectrum (𝓞 K)), Disjoint (T : Set (HeightOneSpectrum (𝓞 K))) B ∧
-      ∀ (E : IntermediateField K Ω) [FiniteDimensional K E],
-        (∀ v ∈ T, (v.asIdeal.primesOver (𝓞 E)).ncard = finrank K E) → E.LinearDisjoint D := by
+      (∀ v ∈ T, ∀ (Q : Ideal (𝓞 D)) [Q.IsPrime] [Q.LiesOver v.asIdeal],
+        Algebra.IsUnramifiedAt (𝓞 K) Q) ∧
+        ∀ (E : IntermediateField K Ω) [FiniteDimensional K E],
+          (∀ v ∈ T, (v.asIdeal.primesOver (𝓞 E)).ncard = finrank K E) → E.LinearDisjoint D := by
   have : NumberField D := .of_module_finite K D
-  obtain ⟨T, hTB, -, hT⟩ := Chebotarev.exists_finset_closure_isArithFrobAt_eq_top K D hB
-  exact ⟨T, hTB, fun E _ hE ↦ linearDisjoint_of_closure_isArithFrobAt_eq_top hT hE⟩
+  obtain ⟨T, hTB, hTram, hT⟩ := Chebotarev.exists_finset_closure_isArithFrobAt_eq_top K D hB
+  refine ⟨T, hTB, fun v hv ↦ ?_, fun E _ hE ↦ linearDisjoint_of_closure_isArithFrobAt_eq_top hT hE⟩
+  exact not_not.mp ((Chebotarev.mem_ramifiedPrimes_iff v).not.mp (hTram v hv))
 
 end IntermediateField
