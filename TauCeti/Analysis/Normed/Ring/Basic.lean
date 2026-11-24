@@ -19,14 +19,29 @@ shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer pow
 with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
 `a * ‖u⁻¹‖ < b`.
 
+The affine estimate `TauCeti.sub_mul_mem_closedBall_of_norm_le` bounds the distance of
+`w₀ - w₁ * u` from `w₀` using a bound on the norm of `u`.
+
 Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + ‖e * b - c‖`
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
-(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`.
+(`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
+the nonvanishing `1 - x ≠ 0` for `‖x‖ < 1` (`TauCeti.one_sub_ne_zero_of_norm_lt_one`),
+the lower bound `1 - ‖q‖ ≤ ‖1 - qⁿ‖` for `‖q‖ ≤ 1` and `n ≠ 0`
+(`TauCeti.one_sub_norm_le_norm_one_sub_pow`),
+and `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ` for `‖b‖ ≤ 1` and `‖c‖ ≤ 1`
+(`TauCeti.enorm_mul_sub_mul_le`), which bounds the change of a product of two factors.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- If `‖u‖ ≤ ρ`, then `w₀ - w₁ * u` lies in the closed ball of radius `‖w₁‖ * ρ` about `w₀`. -/
+theorem sub_mul_mem_closedBall_of_norm_le {R : Type*} [NonUnitalSeminormedRing R]
+    (w₀ w₁ : R) {u : R} {ρ : ℝ} (hu : ‖u‖ ≤ ρ) :
+    w₀ - w₁ * u ∈ Metric.closedBall w₀ (‖w₁‖ * ρ) := by
+  rw [mem_closedBall_iff_norm, sub_sub_cancel_left, norm_neg]
+  exact norm_mul_le_of_le le_rfl hu
 
 /-- A product of two elements in the open unit ball again belongs to the open unit ball. -/
 theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : ‖u‖ < 1)
@@ -51,6 +66,19 @@ theorem norm_mul_sub_le_right {R : Type*} [NonUnitalSeminormedRing R] (e a b c :
     ‖a * e - c‖ ≤ ‖a - b‖ * ‖e‖ + ‖b * e - c‖ := by
   rw [← sub_add_sub_cancel (a * e) (b * e) c, ← sub_mul]
   exact (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) le_rfl)
+
+/-- Replacing the factors `b` and `d` of `b * d` by `a` and `c` changes the product by at most the
+sum of the two changes, `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ`, when `‖b‖ ≤ 1` and `‖c‖ ≤ 1`.
+This is the normed counterpart of `TauCeti.abs_mul_sub_mul_le`. -/
+theorem enorm_mul_sub_mul_le {R : Type*} [NonUnitalSeminormedRing R] {a b c d : R}
+    (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) : ‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ := by
+  have h : ‖a * c - b * d‖ ≤ ‖a - b‖ + ‖c - d‖ := by
+    rw [← sub_add_sub_cancel (a * c) (b * c) (b * d), ← sub_mul, ← mul_sub]
+    exact norm_add_le_of_le ((norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) hc))
+      ((norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) hb))
+  rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _)
+    (norm_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal h
 
 /-- Consecutive powers stay in the open unit ball when the first factor is strictly inside
 and the second factor is in the closed unit ball. -/
@@ -251,6 +279,26 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- An element of norm less than `1` is not `1`, that is, `1 - x ≠ 0`. -/
+theorem one_sub_ne_zero_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass R] {x : R}
+    (hx : ‖x‖ < 1) : 1 - x ≠ 0 :=
+  sub_ne_zero.2 fun h ↦ by simp [← h] at hx
+
+/-- For `‖q‖ ≤ 1` and `n ≠ 0`, `1 - qⁿ` has norm at least `1 - ‖q‖`. -/
+theorem one_sub_norm_le_norm_one_sub_pow {R : Type*} [SeminormedRing R] [NormOneClass R] {q : R}
+    (hq : ‖q‖ ≤ 1) {n : ℕ} (hn : n ≠ 0) : 1 - ‖q‖ ≤ ‖1 - q ^ n‖ := by
+  have h := norm_sub_norm_le (1 : R) (q ^ n)
+  have h' : ‖q ^ n‖ ≤ ‖q‖ :=
+    (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans (pow_le_of_le_one (norm_nonneg q) hq hn)
+  rw [norm_one] at h
+  linarith
+
+/-- For `‖q‖ < 1` and `n ≠ 0`, `qⁿ ≠ 1`, that is, `1 - qⁿ ≠ 0`. For integer powers in a normed
+division ring with `‖q‖ ≠ 1`, see `TauCeti.one_sub_zpow_ne_zero`. -/
+theorem one_sub_pow_ne_zero {R : Type*} [SeminormedRing R] [NormOneClass R] {q : R}
+    (hq : ‖q‖ < 1) {n : ℕ} (hn : n ≠ 0) : 1 - q ^ n ≠ 0 :=
+  one_sub_ne_zero_of_norm_lt_one (norm_pow_lt_one hq hn)
 
 /-- If `f` tends to `0` along the cofinite filter in a seminormed commutative ring, then so do its
 finite partial products `s ↦ ∏ i ∈ s, f i`. -/

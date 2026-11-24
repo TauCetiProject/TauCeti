@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LowDegree
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.TypeTags
 public import TauCeti.Topology.Algebra.GroupAction.TypeTags
 
 /-!
@@ -23,6 +25,12 @@ The convention in `Cocycle.twist` is `a⁻¹ * c(g) * g • a`. Its additive for
 `c(g) + (g • a - a)`, so this twist adds the differential `ContCohomology.d0`.
 These comparisons allow abelian cohomology to be used in nonabelian lifting problems.
 
+The comparison is natural: `NonabelianH1.additiveEquiv_map` intertwines the map induced by a
+compatible pair on nonabelian `H¹` with the explicit pullback `ContCohomology.explicitMap1`. For a
+general commutative coefficient group `A`, the ordered cocycle identity is Mathlib's commutative
+`groupCohomology.IsMulCocycle₁` (`Cocycle.isMulCocycle₁`, `Cocycle.ofIsMulCocycle₁`), the order of
+the two factors being immaterial.
+
 ## References
 
 * J.-P. Serre, *Galois Cohomology*, Springer, 1997, I.5.1–I.5.2.
@@ -33,6 +41,31 @@ public section
 namespace TauCeti.NonabelianH1
 
 open Multiplicative
+
+section CommGroup
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [CommGroup A] [TopologicalSpace A]
+  [MulDistribMulAction G A]
+
+/-- For commutative coefficients a cocycle satisfies Mathlib's `groupCohomology.IsMulCocycle₁`,
+`f (g * h) = g • f h * f g`: the ordered cocycle identity with its two factors exchanged. -/
+theorem Cocycle.isMulCocycle₁ (f : Cocycle G A) : groupCohomology.IsMulCocycle₁ f :=
+  fun g h ↦ by rw [f.apply_mul, mul_comm]
+
+/-- For commutative coefficients, the cocycle given by a continuous map satisfying Mathlib's
+`groupCohomology.IsMulCocycle₁`. -/
+def Cocycle.ofIsMulCocycle₁ (f : G → A) (hf : Continuous f)
+    (hcocycle : groupCohomology.IsMulCocycle₁ f) : Cocycle G A where
+  toFun := f
+  continuous_toFun := hf
+  map_mul' g h := by rw [hcocycle, mul_comm]
+
+@[simp]
+theorem Cocycle.coe_ofIsMulCocycle₁ (f : G → A) (hf : Continuous f)
+    (hcocycle : groupCohomology.IsMulCocycle₁ f) : ⇑(Cocycle.ofIsMulCocycle₁ f hf hcocycle) = f :=
+  (rfl)
+
+end CommGroup
 
 section Cocycles
 
@@ -142,6 +175,32 @@ theorem additiveEquiv_one [ContinuousSMul G M] :
 theorem additiveEquiv_symm_zero [ContinuousSMul G M] :
     (additiveEquiv G M).symm 0 = 1 :=
   (additiveEquiv G M).symm_apply_eq.mpr additiveEquiv_one.symm
+
+/-- A class is the base point exactly when its image in the additive `H¹` is `0`. -/
+@[simp]
+theorem additiveEquiv_eq_zero_iff [ContinuousSMul G M] {c : NonabelianH1 G (Multiplicative M)} :
+    additiveEquiv G M c = 0 ↔ c = 1 := by
+  rw [← additiveEquiv_one, (additiveEquiv G M).apply_eq_iff_eq]
+
+section Map
+
+variable {G' N : Type*} [Group G'] [TopologicalSpace G'] [AddCommGroup N] [TopologicalSpace N]
+  [IsTopologicalAddGroup N] [DistribMulAction G' N] [ContinuousSMul G' N]
+
+/-- **Naturality of the comparison**: it intertwines the map induced by a compatible pair on
+nonabelian `H¹` with the explicit pullback `ContCohomology.explicitMap1` on additive `H¹`. -/
+theorem additiveEquiv_map [ContinuousSMul G M] (ψ : G' →ₜ* G) (φ : M →ₜ+ N)
+    (h : ∀ (g : G') (m : M), φ (ψ g • m) = g • φ m) (c : NonabelianH1 G (Multiplicative M)) :
+    additiveEquiv G' N (map ψ φ.toMultiplicative (φ.toMultiplicative_map_smul ψ h) c) =
+      ContCohomology.explicitMap1 G M G' N ψ φ φ.continuous h (additiveEquiv G M c) := by
+  induction c using induction_on with | mk f =>
+  simp only [map_mk, additiveEquiv_mk, ContCohomology.H1pi, QuotientAddGroup.mk'_apply,
+    ContCohomology.explicitMap1_mk]
+  congr 1
+  ext g
+  simp [ContCohomology.cocyclesMap1_apply]
+
+end Map
 
 end Cocycles
 

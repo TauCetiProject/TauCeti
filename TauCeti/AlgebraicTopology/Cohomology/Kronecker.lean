@@ -121,6 +121,18 @@ lemma singularKronecker_singularCohomologyChainCoefficientMap (X : TopCat.{w}) (
   TauCeti.ChainComplex.kronecker_naturality
     (((SSet.chainComplexFunctor C).map f).app (toSSet.obj X)) n α
 
+variable (R M) in
+/-- The Kronecker map of singular cohomology does not depend on how the `k`-linear structure of `C`
+is presented: it commutes with the identification `eqToHom` of the two cohomology modules along an
+equality `L₁ = L₂` of `k`-linear structures. -/
+lemma singularKronecker_eqToHom {k : Type*} [Ring k] (L₁ L₂ : Linear k C) (h : L₁ = L₂)
+    (X : TopCat.{w}) (n : ℕ) (a : @TopCat.singularCohomology _ _ _ _ R k _ L₁ M X n) :
+    @TopCat.singularKronecker _ _ _ _ R M X k _ L₂ n (eqToHom (congrArg (fun L : Linear k C ↦
+        @TopCat.singularCohomology _ _ _ _ R k _ L M X n) h) a) =
+      @TopCat.singularKronecker _ _ _ _ R M X k _ L₁ n a := by
+  subst h
+  simp
+
 /-- **The universal coefficient theorem for injective coefficients**: for an injective object
 `M`, the Kronecker map `Hⁿ(X; R, M) →ₗ[k] (Hₙ(X; R) ⟶ M)` of singular cohomology is bijective. -/
 theorem singularKronecker_bijective (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]

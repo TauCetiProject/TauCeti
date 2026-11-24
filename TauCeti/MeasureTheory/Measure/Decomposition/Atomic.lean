@@ -159,48 +159,35 @@ theorem atomicPart_apply_singleton (μ : Measure X) (x : X) :
   · exact le_antisymm (restrict_apply_le _ _) (by simp [hx])
   · exact restrict_eq_self μ (singleton_subset_iff.2 hx)
 
+open Function in
 /-- The atomic part is the sum of the point masses at its supporting points. -/
 theorem atomicPart_eq_sum_dirac (μ : Measure X) :
     atomicPart μ = Measure.sum fun x : positiveSingletons μ ↦
       μ {(x : X)} • Measure.dirac (x : X) := by
   ext s hs
-  rw [atomicPart, restrict_apply hs, Measure.sum_apply _ hs]
-  set A := s ∩ positiveSingletons μ with hA
-  have hsum : ∑' x : positiveSingletons μ, (μ {(x : X)} • Measure.dirac (x : X)) s =
-      ∑' x : X, A.indicator (fun y ↦ μ {y}) x := by
-    simp only [smul_apply, Measure.dirac_apply' _ hs, smul_eq_mul]
-    rw [tsum_subtype (positiveSingletons μ) fun x ↦ μ {x} * s.indicator 1 x]
+  set A := s ∩ positiveSingletons μ
+  -- both sides are the sum of the singleton masses over `A`
+  have hsum : (Measure.sum fun x : positiveSingletons μ ↦ μ {(x : X)} • dirac (x : X)) s =
+      ∑' x : A, μ {(x : X)} := by
+    rw [Measure.sum_apply _ hs, tsum_subtype (positiveSingletons μ) fun x ↦ (μ {x} • dirac x) s,
+      tsum_subtype A fun x ↦ μ {x}]
     congr 1
     ext x
     by_cases hxs : x ∈ s <;> by_cases hxP : x ∈ positiveSingletons μ <;>
-      simp [Set.indicator, hA, hxs, hxP]
-  rw [hsum]
-  by_cases hc : A.Countable
-  · have := hc.to_subtype
-    rw [← tsum_subtype A fun y ↦ μ {y}, ← measure_iUnion
-      (fun x y hxy ↦ disjoint_singleton.2 (fun h ↦ hxy (Subtype.ext h)))
-      (fun x ↦ measurableSet_singleton (x : X))]
-    congr 1
-    ext y
-    simp
-  · have htop : ∑' x : X, A.indicator (fun y ↦ μ {y}) x = ⊤ := by
-      by_contra h
-      refine hc ((Summable.countable_support_ennreal h).mono fun y hy ↦ ?_)
-      simp only [Function.mem_support, Set.indicator_apply_ne_zero]
-      exact ⟨hy, hy.2⟩
-    have hμ : μ A = ⊤ := by
-      by_contra h
-      have hU : (⋃ x : A, ({(x : X)} : Set X)) = A := by
-        ext y
-        simp
-      refine hc (Set.countable_coe_iff.1 (Set.countable_univ_iff.1 ?_))
-      refine (countable_meas_pos_of_disjoint_of_meas_iUnion_ne_top μ
-        (As := fun x : A ↦ ({(x : X)} : Set X)) (fun x ↦ measurableSet_singleton (x : X))
-        (fun x y hxy ↦ disjoint_singleton.2 (fun h ↦ hxy (Subtype.ext h)))
-        (by rw [hU]; exact h)).mono ?_
-      intro x _
-      exact pos_iff_ne_zero.2 x.property.2
-    rw [htop, hμ]
+      simp [A, indicator, hs, hxs, hxP]
+  have hdisj : Pairwise (Disjoint on fun x : A ↦ ({(x : X)} : Set X)) :=
+    fun x y hxy ↦ disjoint_singleton.2 fun h ↦ hxy (Subtype.ext h)
+  have hU : μ A = μ (⋃ x : A, ({(x : X)} : Set X)) := by rw [iUnion_of_singleton_coe]
+  rw [atomicPart_apply μ s hs, hsum, hU]
+  refine le_antisymm ?_
+    (tsum_meas_le_meas_iUnion_of_disjoint μ (fun x ↦ measurableSet_singleton _) hdisj)
+  rcases eq_or_ne (∑' x : A, μ {(x : X)}) ⊤ with htop | htop
+  · exact htop ▸ le_top
+  · -- a finite sum of positive masses has only countably many terms
+    have : Countable A := countable_univ_iff.1 <|
+      (Summable.countable_support_ennreal htop).mono fun x _ ↦
+        (mem_positiveSingletons_iff μ x).1 x.property.2
+    rw [measure_iUnion hdisj fun x ↦ measurableSet_singleton _]
 
 /-- The diffuse part gives zero mass to every singleton. -/
 theorem diffusePart_apply_singleton (μ : Measure X) (x : X) :
@@ -246,16 +233,11 @@ theorem eq_atomicPart_and_eq_diffusePart_of_eq_add {μ ν₁ ν₂ : Measure X} 
     by_contra hxS
     exact hx ((hsing x).trans (measure_mono_null (singleton_subset_iff.2 hxS) hν₁))
   have h₁ : ν₁ (positiveSingletons μ)ᶜ = 0 := by
-    have hdiff : ν₁ (S \ positiveSingletons μ) = 0 := by
-      rw [← biUnion_of_singleton (S \ positiveSingletons μ),
-        measure_biUnion_null_iff (hS.mono sdiff_subset)]
-      intro x hx
-      rw [← hsing]
-      simpa using hx.2
-    refine measure_mono_null (fun x hx ↦ ?_) (measure_union_null hν₁ hdiff)
-    by_cases hxS : x ∈ S
-    · exact Or.inr ⟨hxS, hx⟩
-    · exact Or.inl hxS
+    -- inside `S`, the complement consists of countably many `ν₁`-null points
+    rw [← inter_union_sdiff (positiveSingletons μ)ᶜ S]
+    refine measure_union_null ((measure_null_iff_singleton (hS.mono inter_subset_right)).2
+      fun x hx ↦ ?_) (measure_mono_null (sdiff_subset_compl _ _) hν₁)
+    simpa [hsing] using hx.1
   have h₂ : ν₂ (positiveSingletons μ) = 0 := (hS.mono hsub).measure_zero ν₂
   have hres (A : Set X) : μ.restrict A = ν₁.restrict A + ν₂.restrict A := by
     rw [h, restrict_add]

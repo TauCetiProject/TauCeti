@@ -163,7 +163,7 @@ theorem dTopology_subtype_of_isOpen {U : Set X} (hU : IsOpen[_root_.Diffeology.d
   have hp' : EqOn p (Subtype.val ∘ p') (p ⁻¹' U) := fun y hy ↦ by
     simp [p', show p y ∈ U from hy]
   have hplot : IsPlotOn (p ⁻¹' U) p' :=
-    isPlotOn_subtype_iff.mpr ((isPlotOn_of_isPlot hp _).congr hp')
+    isPlotOn_subtype_iff.mpr ((hp.isPlotOn _).congr hp')
   have hzU : p z ∈ U := hx ▸ x.property
   let : TopologicalSpace U := _root_.Diffeology.dTopology
   refine ⟨p ⁻¹' U ∩ p' ⁻¹' W, fun y ⟨hyU, hyW⟩ ↦ ⟨p' y, hyW, (hp' hyU).symm⟩,

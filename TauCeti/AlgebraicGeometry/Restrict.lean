@@ -35,6 +35,8 @@ global functions of the base change.
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackFst_morphismRestrict`: being an isomorphism over an
+  open is preserved by base change.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
   attached to a ring-hom property `Q` holds for `f.resLE U V` iff `Q` holds for `f.appLE U V`.
 * `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
@@ -104,6 +106,15 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z
   -- `(ι ≫ f) ⁻¹ᵁ V` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ V`, which instance search does not unfold.
   exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι ∣_ f ⁻¹ᵁ V) (f ∣_ V) _ h
 
+/-- If `φ : S' ⟶ Y` is an isomorphism over `U`, then the projection `X ×_Y S' ⟶ X` is an
+isomorphism over `f⁻¹(U)`: it is the base change of `φ⁻¹(U) ≅ U` along `f⁻¹(U) ⟶ U`. -/
+theorem Scheme.Hom.isIso_pullbackFst_morphismRestrict {S' : Scheme.{u}} (φ : S' ⟶ Y)
+    {U : Y.Opens} (hU : IsIso (φ ∣_ U)) : IsIso (Limits.pullback.fst f φ ∣_ (f ⁻¹ᵁ U)) := by
+  have s := (isPullback_morphismRestrict (Limits.pullback.fst f φ) (f ⁻¹ᵁ U)).flip.paste_horiz
+    (IsPullback.of_hasPullback f φ).flip
+  rw [← morphismRestrict_ι] at s
+  exact (s.of_right' (isPullback_morphismRestrict φ U).flip).isIso_snd_of_isIso
+
 /-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
 ring-hom property `Q`. Then `P` holds for the restriction `V ⟶ U` of `f` iff `Q` holds for
 `f.appLE U V : Γ(Y, U) ⟶ Γ(X, V)`. -/
@@ -123,6 +134,44 @@ theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Op
     f.appLE U V hf = g.appLE U V hg := by
   subst e
   rfl
+
+
+/-- A square of open immersions identifying the source with the full inverse image
+of the target open identifies its top arrow with the restriction of the bottom arrow. -/
+noncomputable def Scheme.Hom.morphismRestrictArrowIso {X Y U V : Scheme.{u}}
+    (f : X ⟶ Y) {i : U ⟶ X} {j : V ⟶ Y} (g : U ⟶ V)
+    [IsOpenImmersion i] [IsOpenImmersion j]
+    (h : i ≫ f = g ≫ j) (he : f ⁻¹ᵁ j.opensRange = i.opensRange) :
+    Arrow.mk (f ∣_ j.opensRange) ≅ Arrow.mk g := by
+  have hi : Set.range (f ⁻¹ᵁ j.opensRange).ι = Set.range i := by
+    rw [Scheme.Opens.range_ι, he]
+    rfl
+  have hj : Set.range j.opensRange.ι = Set.range j := by
+    rw [Scheme.Opens.range_ι]
+    rfl
+  refine Arrow.isoMk' (f ∣_ j.opensRange) g
+    (IsOpenImmersion.isoOfRangeEq (f ⁻¹ᵁ j.opensRange).ι i hi)
+    (IsOpenImmersion.isoOfRangeEq j.opensRange.ι j hj) ?_
+  rw [← cancel_mono j, Category.assoc, Category.assoc, ← h,
+    IsOpenImmersion.isoOfRangeEq_hom_fac_assoc,
+    IsOpenImmersion.isoOfRangeEq_hom_fac, morphismRestrict_ι]
+
+
+/-- The source isomorphism identifying a restriction with an open square respects its inclusion. -/
+@[reassoc (attr := simp)]
+theorem Scheme.Hom.morphismRestrictArrowIso_hom_left_comp {U V : Scheme.{u}}
+    {i : U ⟶ X} {j : V ⟶ Y} (g : U ⟶ V) [IsOpenImmersion i] [IsOpenImmersion j]
+    (h : i ≫ f = g ≫ j) (he : f ⁻¹ᵁ j.opensRange = i.opensRange) :
+    (f.morphismRestrictArrowIso g h he).hom.left ≫ i = (f ⁻¹ᵁ j.opensRange).ι := by
+  simp [morphismRestrictArrowIso, Arrow.isoMk']
+
+/-- The target isomorphism identifying a restriction with an open square respects its inclusion. -/
+@[reassoc (attr := simp)]
+theorem Scheme.Hom.morphismRestrictArrowIso_hom_right_comp {U V : Scheme.{u}}
+    {i : U ⟶ X} {j : V ⟶ Y} (g : U ⟶ V) [IsOpenImmersion i] [IsOpenImmersion j]
+    (h : i ≫ f = g ≫ j) (he : f ⁻¹ᵁ j.opensRange = i.opensRange) :
+    (f.morphismRestrictArrowIso g h he).hom.right ≫ j = j.opensRange.ι := by
+  simp [morphismRestrictArrowIso, Arrow.isoMk']
 
 end AlgebraicGeometry
 

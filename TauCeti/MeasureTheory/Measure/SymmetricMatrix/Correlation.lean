@@ -287,8 +287,9 @@ theorem map_correlationMatrix_withDensity
     ((volume : Measure (strictLowerTriangle p → ℝ)).withDensity fun x ↦
         g (correlationMatrix p x)).map (correlationMatrix p) =
       (correlationLebesgue p).withDensity g :=
-  Measure.map_withDensity_eq_withDensity (jac := 1) (correlationMatrix p).continuous.measurable
-    measurable_const hg (by rw [withDensity_one]; rfl) (ae_of_all _ fun _ ↦ one_mul _)
+  Measure.map_withDensity_eq_withDensity (jac := 1)
+    (correlationMatrix p).continuous.measurable.aemeasurable aemeasurable_const hg.aemeasurable
+    (by rw [withDensity_one]; rfl) (ae_of_all _ fun _ ↦ one_mul _)
 
 variable (p) in
 /-- `TauCeti.correlationLebesgue p`-almost every symmetric matrix has unit diagonal. -/

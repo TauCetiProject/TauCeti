@@ -11,9 +11,7 @@ import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 import TauCeti.LinearAlgebra.Matrix.Symmetric
-import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import TauCeti.LinearAlgebra.Matrix.ZMatrix
-import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # The norm-two shell of a simply laced Gram matrix
@@ -250,11 +248,8 @@ theorem neg_one_le_dotProduct_mulVec (hB : B.PosDef)
   omega
 
 /-- **The norm-two shell of a positive definite integer matrix is finite.** -/
-theorem finite_normTwoShell (hB : B.PosDef) : B.normTwoShell.Finite := by
-  classical
-  refine (hB.toQuadraticForm'.finite_setOf_apply_eq 2).subset fun a ha ↦ ?_
-  rw [Set.mem_ofPred_eq, toQuadraticForm'_apply]
-  exact ha
+theorem finite_normTwoShell (hB : B.PosDef) : B.normTwoShell.Finite :=
+  (hB.finite_setOfPred_dotProduct_mulVec_le 2).subset fun _ ha ↦ ha.out.le
 
 /-! ### Even diagonal and nonpositive off-diagonal entries -/
 
