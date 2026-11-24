@@ -486,57 +486,65 @@ theorem dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient {r : R} (hr : IsRegular r
     refine ih f (hsat1 _ ?_)
     rwa [pow_succ', map_mul, mul_assoc] at hf
 
+private theorem exists_map_eq_C_pow_mul_of_isLocalization_away (S : Type*) [CommRing S]
+    [Algebra R S] {r : R} [IsLocalization.Away r S] (q : MvPolynomial σ S) :
+    ∃ k : ℕ, ∃ q₀ : MvPolynomial σ R,
+      map (algebraMap R S) q₀ = C (algebraMap R S (r ^ k)) * q := by
+  classical
+  let deg : (σ →₀ ℕ) → ℕ := fun d ↦ (IsLocalization.Away.sec r (q.coeff d)).2
+  let k : ℕ := q.support.sup deg
+  refine ⟨k, ∑ d ∈ q.support,
+      monomial d ((IsLocalization.Away.sec r (q.coeff d)).1 * r ^ (k - deg d)), ?_⟩
+  rw [map_sum]
+  conv_rhs => rw [as_sum q, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun d hd ↦ ?_
+  have hle : (IsLocalization.Away.sec r (q.coeff d)).2 ≤ k := Finset.le_sup (f := deg) hd
+  rw [map_monomial, C_mul_monomial, map_mul, map_pow,
+    ← IsLocalization.Away.sec_spec (x := r) (s := q.coeff d),
+    mul_comm (algebraMap R S (r ^ k)), mul_assoc, ← map_pow, ← map_mul, ← pow_add,
+    Nat.add_sub_of_le hle, map_pow]
+
+private theorem exists_C_pow_mul_eq_of_map_eq_of_isLocalization_away (S : Type*) [CommRing S]
+    [Algebra R S] {r : R} [IsLocalization.Away r S] {p₁ p₂ : MvPolynomial σ R}
+    (hp : map (algebraMap R S) p₁ = map (algebraMap R S) p₂) :
+    ∃ l : ℕ, C (r ^ l) * p₁ = C (r ^ l) * p₂ := by
+  classical
+  have hex : ∀ d : σ →₀ ℕ, ∃ n : ℕ, r ^ n * p₁.coeff d = r ^ n * p₂.coeff d := by
+    intro d
+    have hcoeff : algebraMap R S (p₁.coeff d) = algebraMap R S (p₂.coeff d) := by
+      simpa only [coeff_map] using congrArg (fun p : MvPolynomial σ S ↦ p.coeff d) hp
+    obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsLocalization.exists_of_eq (M := Submonoid.powers r) hcoeff
+    exact ⟨n, hn⟩
+  choose exp hexp using hex
+  let supp := p₁.support ∪ p₂.support
+  let l : ℕ := supp.sup exp
+  refine ⟨l, ?_⟩
+  ext d
+  simp only [coeff_C_mul]
+  by_cases hd : d ∈ supp
+  · have hle : exp d ≤ l := Finset.le_sup (f := exp) hd
+    have hpow : r ^ l = r ^ (l - exp d) * r ^ exp d := by
+      rw [← pow_add, Nat.sub_add_cancel hle]
+    rw [hpow, mul_assoc, mul_assoc, hexp d]
+  · have h1 : p₁.coeff d = 0 := notMem_support_iff.mp (fun h ↦ hd (Finset.mem_union_left _ h))
+    have h2 : p₂.coeff d = 0 := notMem_support_iff.mp (fun h ↦ hd (Finset.mem_union_right _ h))
+    rw [h1, h2, mul_zero]
+
 /-- If `S` is a localization away from `r` and divisibility by `D` is `r`-saturated, then
 divisibility by `D` after base change to `S` descends back to `R`. -/
 theorem dvd_of_map_isLocalization_away_dvd (S : Type*) [CommRing S] [Algebra R S] {r : R}
     [IsLocalization.Away r S] {D f : MvPolynomial σ R}
     (hsat : ∀ k : ℕ, ∀ g : MvPolynomial σ R, D ∣ C (r ^ k) * g → D ∣ g)
     (hdvd : map (algebraMap R S) D ∣ map (algebraMap R S) f) : D ∣ f := by
-  classical
+  -- Step 1: Clear denominators in the localized quotient `q`.
   obtain ⟨q, hq⟩ := hdvd
-  let deg : (σ →₀ ℕ) → ℕ := fun d ↦ (IsLocalization.Away.sec r (q.coeff d)).2
-  let k : ℕ := q.support.sup deg
-  let q₀ : MvPolynomial σ R :=
-    ∑ d ∈ q.support, monomial d ((IsLocalization.Away.sec r (q.coeff d)).1 * r ^ (k - deg d))
-  have hq₀ : map (algebraMap R S) q₀ = C (algebraMap R S (r ^ k)) * q := by
-    rw [map_sum]
-    conv_rhs => rw [as_sum q, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun d hd ↦ ?_
-    have hle : (IsLocalization.Away.sec r (q.coeff d)).2 ≤ k := Finset.le_sup (f := deg) hd
-    rw [map_monomial, C_mul_monomial, map_mul, map_pow,
-      ← IsLocalization.Away.sec_spec (x := r) (s := q.coeff d),
-      mul_comm (algebraMap R S (r ^ k)), mul_assoc, ← map_pow, ← map_mul, ← pow_add,
-      Nat.add_sub_of_le hle, map_pow]
+  obtain ⟨k, q₀, hq₀⟩ := exists_map_eq_C_pow_mul_of_isLocalization_away S (r := r) q
   have hmulp : map (algebraMap R S) (C (r ^ k) * f) = map (algebraMap R S) (D * q₀) := by
     rw [map_mul, map_C, hq, map_mul, hq₀]
     ring
-  have hex : ∀ d : σ →₀ ℕ, ∃ n : ℕ,
-      r ^ n * (C (r ^ k) * f).coeff d = r ^ n * (D * q₀).coeff d := by
-    intro d
-    have hcoeff : algebraMap R S ((C (r ^ k) * f).coeff d) =
-        algebraMap R S ((D * q₀).coeff d) := by
-      simpa only [coeff_map] using congrArg (fun p : MvPolynomial σ S ↦ p.coeff d) hmulp
-    obtain ⟨⟨_, n, rfl⟩, hn⟩ := IsLocalization.exists_of_eq (M := Submonoid.powers r) hcoeff
-    exact ⟨n, hn⟩
-  choose exp hexp using hex
-  let supp := (C (r ^ k) * f).support ∪ (D * q₀).support
-  let l : ℕ := supp.sup exp
-  have hl_coeff : ∀ d : σ →₀ ℕ,
-      r ^ l * (C (r ^ k) * f).coeff d = r ^ l * (D * q₀).coeff d := by
-    intro d
-    by_cases hd : d ∈ supp
-    · have hle : exp d ≤ l := Finset.le_sup (f := exp) hd
-      have hpow : r ^ l = r ^ (l - exp d) * r ^ exp d := by
-        rw [← pow_add, Nat.sub_add_cancel hle]
-      rw [hpow, mul_assoc, mul_assoc, hexp d]
-    · have h1 : (C (r ^ k) * f).coeff d = 0 :=
-        notMem_support_iff.mp (fun h ↦ hd (Finset.mem_union_left _ h))
-      have h2 : (D * q₀).coeff d = 0 :=
-        notMem_support_iff.mp (fun h ↦ hd (Finset.mem_union_right _ h))
-      rw [h1, h2]
-  have hl : C (r ^ l) * (C (r ^ k) * f) = C (r ^ l) * (D * q₀) := by
-    ext d
-    simpa only [coeff_C_mul] using hl_coeff d
+  -- Step 2: Lift the equality `map (C (r ^ k) * f) = map (D * q₀)` up to a common power of `r`.
+  obtain ⟨l, hl⟩ := exists_C_pow_mul_eq_of_map_eq_of_isLocalization_away S (r := r) hmulp
+  -- Step 3: Descend divisibility using `r`-saturation at `l + k`.
   refine hsat (l + k) f ⟨C (r ^ l) * q₀, ?_⟩
   rw [pow_add, map_mul, mul_assoc, hl]
   ring

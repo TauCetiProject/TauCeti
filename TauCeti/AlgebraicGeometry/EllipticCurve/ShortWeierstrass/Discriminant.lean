@@ -59,7 +59,7 @@ theorem weierstrassDiscrFactor_eq_neg_depressedDiscr_three (R : Type*) [CommRing
 theorem isWeightedHomogeneous_weierstrassDiscrFactor (R : Type*) [CommRing R] :
     (weierstrassDiscrFactor R).IsWeightedHomogeneous ![(4 : ℤ), 6] 12 := by
   have hw : (![(4 : ℤ), 6] : Fin 2 → ℤ) = fun i : Fin 2 ↦ ((i : ℕ) + 2) • (2 : ℤ) :=
-    funext (Fin.forall_fin_two.mpr ⟨rfl, rfl⟩)
+    funext (Fin.forall_fin_two.mpr ⟨by decide, by decide⟩)
   rw [weierstrassDiscrFactor_eq_neg_depressedDiscr_three, hw,
     ← MvPolynomial.mem_weightedHomogeneousSubmodule]
   exact Submodule.neg_mem _ (depressedDiscr_mem_smul R 3 (2 : ℤ))

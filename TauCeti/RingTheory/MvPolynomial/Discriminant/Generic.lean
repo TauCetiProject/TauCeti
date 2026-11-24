@@ -147,10 +147,9 @@ private theorem discr_freeMonic_dvd_of_X_sub_X_dvd {R : Type*} [CommRing R] [IsD
   -- Step 3: Permutations leave `h` associated to itself, so `δ ∣ h` and `δ ^ 2` divides `f`.
   have hass_h : ∀ e : Equiv.Perm (Fin m), Associated (rename (R := R) e h) h := by
     intro e
-    refine ⟨e.sign⁻¹.map (Int.castRingHom (MvPolynomial (Fin m) R)), ?_⟩
-    rw [hanti e, Units.smul_def, zsmul_eq_mul, Units.coe_map, MonoidHom.coe_ofClass,
-      Int.coe_castRingHom, mul_comm _ h, mul_assoc, ← Int.cast_mul, ← Units.val_mul,
-      mul_inv_cancel, Units.val_one, Int.cast_one, mul_one]
+    rcases Int.units_eq_one_or e.sign with hs | hs
+    · simp [hanti e, hs]
+    · simp [hanti e, hs, (Associated.refl h).neg_left]
   obtain ⟨k, hk⟩ := TauCeti.alternant_fin_val_dvd_of_associated_rename hass_h h01.symm hdvdh
   have hfk : vietaAlgHom R m f = δ ^ 2 * k := by
     rw [hh, hk, sq]; ring

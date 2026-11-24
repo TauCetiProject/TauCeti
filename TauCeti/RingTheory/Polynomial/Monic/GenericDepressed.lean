@@ -393,16 +393,12 @@ private theorem map_tschirnhausFromDepressed_comp_C_genericDepressed {R : Type*}
     rw [hP₀_eq, natDegree_taylor, natDegree_freeMonic]
   have hP₀_next : (tschirnhausCentered hmu).nextCoeff = 0 := by
     have hfpos : 0 < (freeMonic R m).natDegree := by rw [natDegree_freeMonic]; omega
-    rw [hP₀_eq, nextCoeff_taylor, nextCoeff_of_natDegree_pos hfpos, natDegree_freeMonic,
-      (monic_freeMonic R m).leadingCoeff, mul_one, coeff_freeMonic, dite_eq_left hm,
-      tschirnhausNegBarycenter, dite_eq_left hm, Algebra.smul_def, MvPolynomial.algebraMap_eq]
-    calc MvPolynomial.X ⟨m - 1, hm⟩ +
-          (m : MvPolynomial (Fin m) R) * -(MvPolynomial.C (↑hmu.unit⁻¹ : R) *
-            MvPolynomial.X ⟨m - 1, hm⟩)
-      _ = (1 - MvPolynomial.C ((m : R) * (↑hmu.unit⁻¹ : R))) * MvPolynomial.X ⟨m - 1, hm⟩ := by
-          simp only [map_mul, map_natCast]
-          ring
-      _ = 0 := by simp [hmu.mul_val_inv]
+    rw [hP₀_eq, nextCoeff_taylor, nextCoeff_of_natDegree_pos hfpos]
+    simp only [natDegree_freeMonic, (monic_freeMonic R m).leadingCoeff, mul_one, coeff_freeMonic,
+      dite_eq_left hm, tschirnhausNegBarycenter, Algebra.smul_def, MvPolynomial.algebraMap_eq]
+    have hmul : (m : MvPolynomial (Fin m) R) * MvPolynomial.C (↑hmu.unit⁻¹ : R) = 1 := by
+      rw [← map_natCast MvPolynomial.C m, ← map_mul, hmu.mul_val_inv, map_one]
+    linear_combination -MvPolynomial.X ⟨m - 1, hm⟩ * hmul
   have hbase : (tschirnhausFromDepressed hmu).toRingHom.comp Polynomial.C =
       (MvPolynomial.aeval (R := R) fun i : Fin (m - 1) ↦
         (tschirnhausCentered hmu).coeff (m - 2 - (i : ℕ))).toRingHom :=

@@ -147,25 +147,11 @@ polynomial `(-1) ^ (m - i) * esymm (Fin m) R (m - i)`. -/
 theorem vietaAlgHom_X {R : Type*} [CommRing R] {m : ℕ} (i : Fin m) :
     vietaAlgHom R m (X i) =
       (-1) ^ (m - (i : ℕ)) * esymm (Fin m) R (m - (i : ℕ)) := by
-  have hrev : (i.rev : ℕ) + 1 = m - (i : ℕ) := by
-    rw [Fin.val_rev]
+  have hrev : m - ((i : ℕ) + 1) + 1 = m - (i : ℕ) := by
     have := i.isLt
     omega
-  calc vietaAlgHom R m (X i)
-    _ = ((esymmAlgEquiv (Fin m) R (Fintype.card_fin m))
-          ((rescaleEquiv (fun j : Fin m ↦ (-1 : Rˣ) ^ ((j : ℕ) + 1)))
-            (renameEquiv R Fin.revPerm (X i))) : MvPolynomial (Fin m) R) := by
-          rw [vietaAlgHom_apply, vietaAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply]
-    _ = ((esymmAlgEquiv (Fin m) R (Fintype.card_fin m))
-          (C ((-1 : R) ^ ((i.rev : ℕ) + 1)) * X i.rev) : MvPolynomial (Fin m) R) := by
-          rw [renameEquiv_apply, rename_X, Fin.revPerm_apply, rescaleEquiv_apply, rescale_X,
-            Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
-    _ = ((-1 : R) ^ ((i.rev : ℕ) + 1)) •
-          ((esymmAlgEquiv (Fin m) R (Fintype.card_fin m)) (X i.rev) : MvPolynomial (Fin m) R) := by
-          rw [C_eq_algebraMap, ← Algebra.smul_def, map_smul, SetLike.val_smul]
-    _ = (-1) ^ (m - (i : ℕ)) * esymm (Fin m) R (m - (i : ℕ)) := by
-          rw [esymmAlgEquiv_apply, esymmAlgHom_apply, aeval_X, hrev, Algebra.smul_def,
-            map_pow, map_neg, map_one]
+  simp [vietaAlgHom_apply, vietaAlgEquiv, rescale_X, esymmAlgEquiv_apply, esymmAlgHom_apply,
+    ← algebraMap_eq, hrev]
 
 /-- On variables, `MvPolynomial.vietaAlgEquiv` sends `X i` to the signed elementary symmetric
 polynomial `(-1) ^ (m - i) * esymm (Fin m) R (m - i)` in `symmetricSubalgebra (Fin m) R`. -/

@@ -81,11 +81,9 @@ private theorem mem_nonZeroDivisors_fin_of_coeff_mem :
   | 0, q, d, hd => by
     let e := isEmptyAlgEquiv R (Fin 0)
     have hcoeff : e q = q.coeff d := by
-      rw [Subsingleton.elim d 0]
-      rfl
-    have he : e q ∈ R⁰ := hcoeff ▸ hd
-    exact mem_nonZeroDivisors_iff_right.mpr fun y hy ↦ e.injective <|
-      mem_nonZeroDivisors_iff_right.mp he (e y) (by rw [← map_mul, hy, map_zero])
+      conv_lhs => rw [q.eq_C_of_isEmpty, ← algebraMap_eq, AlgEquiv.commutes]
+      simp [Subsingleton.elim d 0]
+    exact mem_nonZeroDivisors_of_injective e.injective (hcoeff ▸ hd)
   | n + 1, q, d, hd => by
     let e := finSuccEquiv R n
     let d' : Fin n →₀ ℕ := Finsupp.equivFunOnFinite.symm fun j ↦ d j.succ
@@ -99,8 +97,7 @@ private theorem mem_nonZeroDivisors_fin_of_coeff_mem :
       mem_nonZeroDivisors_fin_of_coeff_mem d' (hcoeff ▸ hd)
     have heq : e q ∈ (MvPolynomial (Fin n) R)[X]⁰ :=
       Polynomial.mem_nonZeroDivisors_of_coeff_mem (d 0) hq'
-    exact mem_nonZeroDivisors_iff_right.mpr fun y hy ↦ e.injective <|
-      mem_nonZeroDivisors_iff_right.mp heq (e y) (by rw [← map_mul, hy, map_zero])
+    exact mem_nonZeroDivisors_of_injective e.injective heq
 
 /-- A multivariate polynomial over a commutative semiring having a nonzerodivisor coefficient is
 itself a nonzerodivisor (the multivariate counterpart of
