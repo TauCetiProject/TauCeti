@@ -56,7 +56,7 @@ coefficients of divisors with colliding zeros
 (`TauCeti.Vortex.exists_norm_orthogonalKerProjection_sobolevGaugeFixedOperator_le_of_isCompact`,
 `TauCeti.Vortex.exists_norm_orthogonalRightInverse_sobolevGaugeFixedOperator_le_of_isCompact`).
 No bound uniform over all of `Sym^m ℂ`, which is not compact, is asserted. Smooth dependence on
-the coefficients is not treated here.
+the coefficients is proved in `TauCeti.Analysis.PDE.Vortex.Divisor.Smooth`.
 
 ## Main definitions
 

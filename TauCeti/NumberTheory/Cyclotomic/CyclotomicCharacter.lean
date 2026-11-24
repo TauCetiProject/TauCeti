@@ -37,6 +37,8 @@ such as a Frobenius lift, an element of inertia or a complex conjugation, is com
   order.
 * `TauCeti.cyclotomicCharacter_eq_of_forall_pow_eq_one`: two automorphisms that agree on the roots
   of unity of `p`-power order have the same cyclotomic character.
+* `TauCeti.cyclotomicCharacter_autCongr`: transporting an automorphism along an isomorphism
+  preserves its cyclotomic character.
 * `TauCeti.cyclotomicCharacter_eq_one_iff`: an automorphism has trivial cyclotomic character
   exactly when it fixes the roots of unity of `p`-power order.
 * `TauCeti.mem_fixingSubgroup_adjoin_iff_cyclotomicCharacter_eq_one`: the automorphisms of `L/K`
@@ -103,6 +105,15 @@ theorem cyclotomicCharacter_eq_of_forall_pow_eq_one {g h : A ≃+* A}
   -- This is naturality along the identity of `A`.
   cyclotomicCharacter_eq_of_injective p (f := RingHom.id A) injective_id
     (fun n t ht ↦ by simpa only [RingHom.id_apply] using hgh n t ht) id
+
+/-- **The cyclotomic character is invariant under transport of automorphisms.** An isomorphism
+`e : A ≃ₐ[R] B` of domains carries an automorphism `σ` of `A` to the automorphism `e ∘ σ ∘ e⁻¹`
+of `B`, which has the same cyclotomic character. -/
+theorem cyclotomicCharacter_autCongr {R : Type*} [CommSemiring R] [Algebra R A] [Algebra R B]
+    (e : A ≃ₐ[R] B) (σ : A ≃ₐ[R] A) :
+    cyclotomicCharacter B p (e.autCongr σ).toRingEquiv = cyclotomicCharacter A p σ.toRingEquiv :=
+  cyclotomicCharacter_eq_of_injective p (f := (e : A →+* B)) e.injective (fun _ _ _ ↦ by simp)
+    fun hB i ↦ let ⟨ζ, hζ⟩ := hB i; ⟨e.symm ζ, hζ.map_of_injective e.symm.injective⟩
 
 /-- **An automorphism has trivial cyclotomic character exactly when it fixes the roots of unity of
 `p`-power order**, for a domain `A` containing all of them. -/
