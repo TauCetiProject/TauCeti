@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.CStarAlgebra.GNS.Basic
+public import TauCeti.Analysis.InnerProductSpace.QuaternionicStructure
 
 /-!
 # The modular conjugation of a tracial functional
@@ -102,15 +103,8 @@ theorem gnsConj_symm : (gnsConj f hf).symm = gnsConj f hf :=
 /-- The modular conjugation is antiunitary: `⟪J x, J y⟫ = ⟪y, x⟫`. -/
 @[simp]
 theorem inner_gnsConj_gnsConj (x y : f.GNS) :
-    inner ℂ (gnsConj f hf x) (gnsConj f hf y) = inner ℂ y x := by
-  induction x, y using Completion.induction_on₂ with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih x y =>
-    have hx : (x : f.GNS) = f.toGNS (f.ofPreGNS x) := by simp
-    have hy : (y : f.GNS) = f.toGNS (f.ofPreGNS y) := by simp
-    rw [hx, hy, gnsConj_toGNS, gnsConj_toGNS]
-    simp only [toGNS_apply, Completion.inner_coe, preGNS_inner_def, ofPreGNS_toPreGNS, star_star]
-    exact hf _ _
+    inner ℂ (gnsConj f hf x) (gnsConj f hf y) = inner ℂ y x :=
+  ((gnsConj f hf).toLinearIsometry.inner_map_map_eq_conj x y).trans (inner_conj_symm y x)
 
 /-- Conjugating the GNS representation by the modular conjugation gives right multiplication by
 the adjoint: `J π(a) J [b] = [b a⋆]`. -/
