@@ -666,27 +666,13 @@ theorem novikovTrilinearOfMatrix_coefficientComparison_mem_map_cochain_gradeBy {
     novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
         (fun i j k l => coefficientComparison q hq (K i j k l)) x₁ x₂ x₃ ∈
       gradeBy R F₀ (fun p => f (n - μ₀ p)) (e₁ + e₂ + e₃ + f (-1)) := by
-  rw [NovikovModule.mem_gradeBy_iff]
-  rintro ⟨l, D₀⟩ hD₀
-  rw [← vsub_vadd D₀ (r₀ l), ← coordinates_coeff hF₀ r₀, coordinates_novikovTrilinearOfMatrix,
-    coeff_sum] at hD₀
-  obtain ⟨i, -, hD₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero hD₀
-  rw [coeff_sum] at hD₀
-  obtain ⟨j, -, hD₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero hD₀
-  rw [coeff_sum] at hD₀
-  obtain ⟨k, -, hD₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero hD₀
-  obtain ⟨γ₁₂₃, γK, hγ₀, h₁₂₃, hγK⟩ := exists_add_eq_of_coeff_mul_ne_zero hD₀
-  obtain ⟨γ₁₂, γ₃, rfl, h₁₂, h₃⟩ := exists_add_eq_of_coeff_mul_ne_zero h₁₂₃
-  obtain ⟨γ₁, γ₂, rfl, h₁, h₂⟩ := exists_add_eq_of_coeff_mul_ne_zero h₁₂
-  rw [coordinates_coeff] at h₁ h₂ h₃
-  obtain ⟨A, hA, rfl⟩ := support_coefficientComparison_subset q hq _ (mem_support.2 hγK)
-  have e₀ := hμ₀ l (D₀ -ᵥ r₀ l) (r₀ l)
-  rw [vsub_vadd, ← hγ₀, map_add, map_add, map_add, AddMonoidHom.neg_apply, map_neg] at e₀
-  have hd : n - μ₀ ⟨l, D₀⟩ =
-      (n - μ₁ ⟨i, γ₁ +ᵥ r₁ i⟩) + (n - μ₂ ⟨j, γ₂ +ᵥ r₂ j⟩) + (n - μ₃ ⟨k, γ₃ +ᵥ r₃ k⟩) + -1 := by
-    linarith [hK i j k l A hA, hμ₁ i γ₁ (r₁ i), hμ₂ j γ₂ (r₂ j), hμ₃ k γ₃ (r₃ k)]
-  rw [hd, map_add, map_add, map_add, mem_gradeBy_iff.1 ha _ h₁, mem_gradeBy_iff.1 hb _ h₂,
-    mem_gradeBy_iff.1 hc _ h₃]
+  refine novikovTrilinearOfMatrix_mem_gradeBy_of_support hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ _
+    (fun i j k l γ₁ γ₂ γ₃ γK hγK => ?_) ha hb hc
+  obtain ⟨A, hA, rfl⟩ := support_coefficientComparison_subset q hq _ hγK
+  rw [← map_add, ← map_add, ← map_add]
+  congr 1
+  rw [hμ₀, hμ₁, hμ₂, hμ₃, map_add, map_add, map_add, AddMonoidHom.neg_apply, map_neg]
+  linarith [hK i j k l A hA]
 
 /-- The trilinear map of rigid homotopy counts has degree `-1` on capped generators regraded by
 the cochain degree `n - μ`. -/
