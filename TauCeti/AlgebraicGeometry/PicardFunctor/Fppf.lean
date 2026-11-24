@@ -252,6 +252,16 @@ def relativePicardToFppfSheafOfMul :
       relativePicardToFppfSheafOfMulApp_mk, ← relativePicardAddPresheaf_map_mk]
     exact ConcreteCategory.congr_hom ((relativePicardToFppfSheaf f).naturality φ) _
 
+/-- The canonical map from the multiplicative relative Picard presheaf at `T`, read on the group
+`Pic(X_T) / Pic(T)`, is the bundled additive map applied to `Additive.ofMul`. -/
+private lemma relativePicardToFppfSheafOfMul_app_eq_addHom {T : (Over S)ᵒᵖ}
+    (c : (relativePicardPresheaf f).obj T) :
+    ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
+        (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
+        ((relativePicardToFppfSheafOfMul f).app T) c =
+      relativePicardToFppfSheafOfMulAddHom f T (Additive.ofMul c) :=
+  rfl
+
 /-- The canonical map from the multiplicative relative Picard presheaf sends the class of a line
 bundle to the sheafification image of the additive section it represents. -/
 @[simp]
@@ -269,9 +279,8 @@ zero. -/
 lemma relativePicardToFppfSheafOfMul_app_one {T : (Over S)ᵒᵖ} :
     ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
         (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
-        ((relativePicardToFppfSheafOfMul f).app T) 1 = 0 :=
-  -- `Additive.ofMul` is the identity, so this is `map_zero` of the bundled additive map.
-  map_zero (relativePicardToFppfSheafOfMulAddHom f T)
+        ((relativePicardToFppfSheafOfMul f).app T) 1 = 0 := by
+  rw [relativePicardToFppfSheafOfMul_app_eq_addHom, ofMul_one, map_zero]
 
 /-- The canonical map from the multiplicative relative Picard presheaf turns products into
 sums. -/
@@ -281,9 +290,10 @@ lemma relativePicardToFppfSheafOfMul_app_mul {T : (Over S)ᵒᵖ}
     ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
         (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
         ((relativePicardToFppfSheafOfMul f).app T) (c * d) =
-      (relativePicardToFppfSheafOfMul f).app T c + (relativePicardToFppfSheafOfMul f).app T d :=
-  -- `Additive.ofMul` is the identity, so this is `map_add` of the bundled additive map.
-  map_add (relativePicardToFppfSheafOfMulAddHom f T) (Additive.ofMul c) (Additive.ofMul d)
+      (relativePicardToFppfSheafOfMul f).app T c + (relativePicardToFppfSheafOfMul f).app T d := by
+  rw [relativePicardToFppfSheafOfMul_app_eq_addHom, ofMul_mul, map_add]
+  exact congrArg₂ (· + ·) (relativePicardToFppfSheafOfMul_app_eq_addHom f c).symm
+    (relativePicardToFppfSheafOfMul_app_eq_addHom f d).symm
 
 /-- The canonical map from the multiplicative relative Picard presheaf turns inverses into
 negatives. -/
@@ -293,9 +303,9 @@ lemma relativePicardToFppfSheafOfMul_app_inv {T : (Over S)ᵒᵖ}
     ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
         (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
         ((relativePicardToFppfSheafOfMul f).app T) c⁻¹ =
-      -(relativePicardToFppfSheafOfMul f).app T c :=
-  -- `Additive.ofMul` is the identity, so this is `map_neg` of the bundled additive map.
-  map_neg (relativePicardToFppfSheafOfMulAddHom f T) (Additive.ofMul c)
+      -(relativePicardToFppfSheafOfMul f).app T c := by
+  rw [relativePicardToFppfSheafOfMul_app_eq_addHom, ofMul_inv, map_neg]
+  exact congrArg (-·) (relativePicardToFppfSheafOfMul_app_eq_addHom f c).symm
 
 /-- The canonical map from the multiplicative relative Picard presheaf turns quotients into
 differences. -/
@@ -305,9 +315,10 @@ lemma relativePicardToFppfSheafOfMul_app_div {T : (Over S)ᵒᵖ}
     ConcreteCategory.hom (C := Type (u + 1)) (X := ToType ((relativePicardPresheaf f).obj T))
         (Y := ToType ((relativePicardFppfSheaf f).obj.obj T))
         ((relativePicardToFppfSheafOfMul f).app T) (c / d) =
-      (relativePicardToFppfSheafOfMul f).app T c - (relativePicardToFppfSheafOfMul f).app T d :=
-  -- `Additive.ofMul` is the identity, so this is `map_sub` of the bundled additive map.
-  map_sub (relativePicardToFppfSheafOfMulAddHom f T) (Additive.ofMul c) (Additive.ofMul d)
+      (relativePicardToFppfSheafOfMul f).app T c - (relativePicardToFppfSheafOfMul f).app T d := by
+  rw [relativePicardToFppfSheafOfMul_app_eq_addHom, ofMul_div, map_sub]
+  exact congrArg₂ (· - ·) (relativePicardToFppfSheafOfMul_app_eq_addHom f c).symm
+    (relativePicardToFppfSheafOfMul_app_eq_addHom f d).symm
 
 /-- Two sections of `T ↦ Pic(X_T) / Pic(T)` with the same image in the relative Picard fppf sheaf
 agree fppf-locally. -/
