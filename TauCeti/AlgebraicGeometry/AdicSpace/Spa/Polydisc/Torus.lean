@@ -184,7 +184,7 @@ theorem Pair.spaComap_mem_torusLocus_of_forall_exists_unit {C : Type*} [CommRing
     (hu : ∀ i, ∃ u : Cˣ, (u : C) = h.toRingHom (Pair.polydiscVar n A i) ∧
       ((u⁻¹ : Cˣ) : C) ∈ U.plus)
     (v : spa U.plus) :
-    (h.spaComap v).1 ∈ S.torusLocus n := by
+    (h.spaComap v).val ∈ S.torusLocus n := by
   choose u hu_eq hu_inv using hu
   let c : C := ∏ i : Fin n, ((u i)⁻¹ : Cˣ)
   have hc_plus : c ∈ U.plus := prod_mem fun i _ ↦ hu_inv i
@@ -197,7 +197,7 @@ theorem Pair.spaComap_mem_torusLocus_of_forall_exists_unit {C : Type*} [CommRing
     (∏ i, Pair.polydiscVar n A i) hmul
     (fun t ht ↦ by
       obtain rfl : t = 1 := Finset.mem_singleton.mp ht
-      simpa only [map_one, one_mul] using hc_plus) v.2
+      simpa only [map_one, one_mul] using hc_plus) v.property
 
 section CompleteTarget
 
@@ -209,7 +209,7 @@ variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopo
 if each `h(Tᵢ)` is a unit of `C` whose inverse lies in `U.plus`. -/
 theorem Pair.mem_torusLocus_iff
     (S : Pair A) {U : Pair C} (n : ℕ) (h : Pair.Hom (Pair.polydisc S n) U) :
-    (∀ v : spa U.plus, (h.spaComap v).1 ∈ Pair.torusLocus S n) ↔
+    (∀ v : spa U.plus, (h.spaComap v).val ∈ Pair.torusLocus S n) ↔
       ∀ i, ∃ u : Cˣ, (u : C) = h.toRingHom (Pair.polydiscVar n A i) ∧
         ((u⁻¹ : Cˣ) : C) ∈ U.plus := by
   refine ⟨fun hfac i ↦ ?_, S.spaComap_mem_torusLocus_of_forall_exists_unit n h⟩
@@ -252,13 +252,13 @@ noncomputable def Pair.polydisc.torusHomEquiv {S : Pair A}
     {U : Pair C} (z : Pair.Hom S U) (n : ℕ) :
     {h : Pair.Hom (S.polydisc n) U //
       h.comp (S.weightedCompletionHom isWeightFamily_one_weight) = z ∧
-        ∀ v : spa U.plus, (h.spaComap v).1 ∈ S.torusLocus n} ≃
+        ∀ v : spa U.plus, (h.spaComap v).val ∈ S.torusLocus n} ≃
       (Fin n → (U.plus)ˣ) where
   toFun h i :=
-    let hex := (S.mem_torusLocus_iff n h.1).mp h.2.2 i
+    let hex := (S.mem_torusLocus_iff n h.val).mp h.property.2 i
     let u := hex.choose
-    { val := ⟨h.1.toRingHom (Pair.polydiscVar n A i),
-        h.1.map_mem_plus _ (S.polydiscVar_mem_polydiscPlus n i)⟩
+    { val := ⟨h.val.toRingHom (Pair.polydiscVar n A i),
+        h.val.map_mem_plus _ (S.polydiscVar_mem_polydiscPlus n i)⟩
       inv := ⟨((u⁻¹ : Cˣ) : C), hex.choose_spec.2⟩
       val_inv := Subtype.ext <|
         (congrArg (· * ((u⁻¹ : Cˣ) : C)) hex.choose_spec.1.symm).trans u.mul_inv
@@ -269,9 +269,9 @@ noncomputable def Pair.polydisc.torusHomEquiv {S : Pair A}
       property := ⟨Pair.polydisc.evalHom_comp_weightedCompletionHom z _,
         (S.mem_torusLocus_iff n _).mpr fun i ↦
           ⟨Units.map U.plus.subtype.toMonoidHom (u i),
-            by simp, (u i)⁻¹.1.2⟩⟩ }
+            by simp, (u i)⁻¹.val.property⟩⟩ }
   left_inv h := Subtype.ext <| Pair.polydisc.hom_ext
-    ((Pair.polydisc.evalHom_comp_weightedCompletionHom z _).trans h.2.1.symm)
+    ((Pair.polydisc.evalHom_comp_weightedCompletionHom z _).trans h.property.1.symm)
     fun i ↦ Pair.polydisc.toRingHom_evalHom_polydiscVar z _ i
   right_inv u := funext fun i ↦ Units.ext <| Subtype.ext <|
     Pair.polydisc.toRingHom_evalHom_polydiscVar z (fun j ↦ (u j : U.plus)) i
@@ -281,16 +281,16 @@ theorem Pair.polydisc.torusHomEquiv_apply_coe {S : Pair A}
     {U : Pair C} (z : Pair.Hom S U) (n : ℕ)
     (h : {h : Pair.Hom (S.polydisc n) U //
       h.comp (S.weightedCompletionHom isWeightFamily_one_weight) = z ∧
-        ∀ v : spa U.plus, (h.spaComap v).1 ∈ S.torusLocus n})
+        ∀ v : spa U.plus, (h.spaComap v).val ∈ S.torusLocus n})
     (i : Fin n) :
     (((Pair.polydisc.torusHomEquiv z n h i : (U.plus)ˣ) : U.plus) : C) =
-      h.1.toRingHom (Pair.polydiscVar n A i) :=
+      h.val.toRingHom (Pair.polydiscVar n A i) :=
   (rfl)
 
 @[simp]
 theorem Pair.polydisc.torusHomEquiv_symm_apply_val {S : Pair A}
     {U : Pair C} (z : Pair.Hom S U) (n : ℕ) (u : Fin n → (U.plus)ˣ) :
-    ((Pair.polydisc.torusHomEquiv z n).symm u).1 =
+    ((Pair.polydisc.torusHomEquiv z n).symm u).val =
       Pair.polydisc.evalHom z (fun i ↦ (u i : U.plus)) :=
   (rfl)
 

@@ -75,6 +75,10 @@ so it intertwines the two calculi (`ContinuousLinearMap.restrictScalars_cfc`).
 * `LinearIsometryEquiv.cfcₙ_conjStarAlgEquiv`, `LinearIsometryEquiv.posPart_conjStarAlgEquiv`,
   `LinearIsometryEquiv.negPart_conjStarAlgEquiv`: isometric conjugation commutes with the
   non-unital continuous functional calculus and with positive and negative parts.
+* `LinearIsometryEquiv.cfc_conjStarAlgEquiv`, `LinearIsometryEquiv.spectrum_conjStarAlgEquiv`,
+  `LinearIsometryEquiv.finrank_range_conjStarAlgEquiv`: isometric conjugation commutes with the
+  continuous functional calculus and preserves spectra and ranks, so it preserves the ranks of
+  spectral projections.
 
 ## Acknowledgements
 
@@ -159,7 +163,7 @@ instance instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint :
     · rw [hsp] at hx
       simpa [hgf ⟨x, hx⟩] using f.norm_coe_le_norm ⟨x, hx⟩
     · rw [← hgf x]
-      exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.2) (hsp ▸ hg)
+      exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.property) (hsp ▸ hg)
         (by simpa using hT)
 
 section RCLike
@@ -345,7 +349,7 @@ theorem nonneg_add_star_sub_smul_of_spectrum_re
     (hspec : ∀ z ∈ spectrum ℂ W, a ≤ z.re) :
     0 ≤ W + star W - ((2 * a : ℝ) : ℂ) • 1 := by
   have hreal : algebraMap ℝ (E →L[ℂ] E) a ≤ (ℜ W : E →L[ℂ] E) := by
-    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).2)).2
+    apply (algebraMap_le_iff_le_spectrum (ha := (ℜ W).property)).2
     rw [spectrum_realPart' W]
     rintro _ ⟨z, hz, rfl⟩
     exact hspec z hz
@@ -366,6 +370,28 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 theorem continuous_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) : Continuous e.conjStarAlgEquiv :=
   e.toContinuousLinearEquiv.conjContinuousAlgEquiv.continuous.congr fun _ ↦ rfl
 
+/-- The range of the conjugate `e ∘ A ∘ e⁻¹` of an operator `A` is the image of its range
+under `e`. -/
+theorem range_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    (e.conjStarAlgEquiv A).range = A.range.map (e.toLinearEquiv : E →ₗ[𝕜] F) := by
+  ext y
+  simp [e.symm.surjective.exists, ← e.eq_symm_apply]
+
+/-- Conjugation by a linear isometric equivalence preserves the rank of an operator. -/
+@[simp]
+theorem finrank_range_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    Module.finrank 𝕜 (e.conjStarAlgEquiv A).range = Module.finrank 𝕜 A.range := by
+  rw [range_conjStarAlgEquiv, LinearEquiv.finrank_map_eq]
+
+/-- Conjugation by a linear isometric equivalence preserves finiteness of the rank of an
+operator. -/
+@[simp]
+theorem finiteDimensional_range_conjStarAlgEquiv_iff (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    FiniteDimensional 𝕜 (e.conjStarAlgEquiv A).range ↔ FiniteDimensional 𝕜 A.range := by
+  rw [range_conjStarAlgEquiv]
+  exact ⟨fun _ ↦ (Submodule.equivMapOfInjective _ e.injective A.range).symm.finiteDimensional,
+    fun _ ↦ (Submodule.equivMapOfInjective _ e.injective A.range).finiteDimensional⟩
+
 variable [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
   [Algebra ℝ (F →L[𝕜] F)] [IsScalarTower ℝ 𝕜 (F →L[𝕜] F)]
 
@@ -375,10 +401,26 @@ theorem cfcₙ_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (f : ℝ → ℝ) (A :
     cfcₙ f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfcₙ f A) :=
   (cfcₙ_eq_cfcₙ_transfer (p := IsSelfAdjoint) (q := IsSelfAdjoint)
     (e.conjStarAlgEquiv.restrictScalars ℝ) e.continuous_conjStarAlgEquiv
-    (fun x ↦ ⟨fun hx ↦ hx.map e.conjStarAlgEquiv,
-      fun hx ↦ e.conjStarAlgEquiv.symm_apply_apply x ▸ hx.map e.conjStarAlgEquiv.symm⟩)
+    (fun _ ↦ (e.conjStarAlgEquiv.injective.isSelfAdjoint_apply_iff e.conjStarAlgEquiv).symm)
     f (e.conjStarAlgEquiv A)).trans
     (congrArg (fun X ↦ e.conjStarAlgEquiv (cfcₙ f X)) (e.conjStarAlgEquiv.symm_apply_apply A))
+
+/-- Conjugation by a linear isometric equivalence preserves the real spectrum of an operator. -/
+@[simp]
+theorem spectrum_conjStarAlgEquiv (e : E ≃ₗᵢ[𝕜] F) (A : E →L[𝕜] E) :
+    spectrum ℝ (e.conjStarAlgEquiv A) = spectrum ℝ A :=
+  AlgEquiv.spectrum_eq (e.conjStarAlgEquiv.restrictScalars ℝ) A
+
+/-- Conjugation by a linear isometric equivalence commutes with the continuous functional calculus
+for self-adjoint operators, for any such calculi on the two operator algebras. -/
+theorem cfc_conjStarAlgEquiv [ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
+    [ContinuousFunctionalCalculus ℝ (F →L[𝕜] F) IsSelfAdjoint] (e : E ≃ₗᵢ[𝕜] F) (f : ℝ → ℝ)
+    (A : E →L[𝕜] E) : cfc f (e.conjStarAlgEquiv A) = e.conjStarAlgEquiv (cfc f A) :=
+  (cfc_eq_cfc_transfer (p := IsSelfAdjoint) (q := IsSelfAdjoint)
+    (e.conjStarAlgEquiv.restrictScalars ℝ) e.continuous_conjStarAlgEquiv
+    (fun _ ↦ (e.conjStarAlgEquiv.injective.isSelfAdjoint_apply_iff e.conjStarAlgEquiv).symm)
+    f (e.conjStarAlgEquiv A)).trans
+    (congrArg (fun X ↦ e.conjStarAlgEquiv (cfc f X)) (e.conjStarAlgEquiv.symm_apply_apply A))
 
 /-- Conjugation by a linear isometric equivalence commutes with the positive part of a bounded
 operator. -/

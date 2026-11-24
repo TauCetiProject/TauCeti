@@ -20,9 +20,14 @@ sheaf of `R`-modules sectionwise is additive, so it acts on complexes of sheaves
 On a site with a terminal object, applying any functor `F` to global sections agrees with taking
 global sections of the sheaf `sheafCompose J F` (`CategoryTheory.Sheaf.ΓCompIsoSheafComposeCompΓ`),
 since both are the sections over the terminal object.
+
+Applying a functor to types sectionwise turns a sheaf into a sheaf of types
+(`CategoryTheory.Sheaf.isSheaf_obj_comp`).
 -/
 
 public section
+
+universe w
 
 open CategoryTheory Limits Opposite
 
@@ -41,6 +46,14 @@ instance additive_sheafCompose : (sheafCompose J F).Additive := by
   infer_instance
 
 end Additive
+
+variable {J} in
+/-- A sheaf with values in `A` becomes a sheaf of types, in the sense of `Presieve.IsSheaf`, after
+applying sectionwise a functor `s : A ⥤ Type w` along which sheaves compose, such as the forgetful
+functor of abelian groups. -/
+theorem isSheaf_obj_comp (P : Sheaf J A) (s : A ⥤ Type w) [J.HasSheafCompose s] :
+    Presieve.IsSheaf J (P.obj ⋙ s) :=
+  (isSheaf_iff_isSheaf_of_type J _).1 ((sheafCompose J s).obj P).property
 
 variable (F : A ⥤ B) [J.HasSheafCompose F] [HasWeakSheafify J A] [HasWeakSheafify J B]
   [HasTerminal C] {T : C} (hT : IsTerminal T)

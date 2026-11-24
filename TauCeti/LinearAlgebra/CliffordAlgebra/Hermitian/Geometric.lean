@@ -119,7 +119,7 @@ theorem isGeometricClifford_iff {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End �
     ρ.IsGeometricClifford ↔
       (∀ v : V, Q v = -‖v‖ ^ 2) ∧
         ∀ (v : V) (s t : S), ⟪ρ (ι Q v) s, t⟫_ℂ = -⟪s, ρ (ι Q v) t⟫_ℂ :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+  ⟨fun h ↦ ⟨h.apply_eq_neg_norm_sq, h.inner_map_ι_apply_left⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 namespace IsGeometricClifford
 
@@ -224,13 +224,13 @@ theorem map_ι_apply_map_ι_apply_add_swap (v w : V) (ψ : S) :
 /-- Clifford multiplications by orthogonal vectors anticommute. -/
 theorem map_ι_mul_map_ι_comm_of_inner_eq_zero {v w : V} (h : ⟪v, w⟫_ℝ = 0) :
     ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) :=
-  map_ι_mul_map_ι_of_isOrtho ρ
+  map_ι_mul_map_ι_comm_of_isOrtho ρ
     ((QuadraticMap.isOrtho_iff_inner_eq_zero hρ.apply_eq_neg_norm_sq).2 h)
 
 /-- Pointwise anticommutation of orthogonal vectors: `c(v) (c(w) ψ) = -c(w) (c(v) ψ)`. -/
 theorem map_ι_apply_map_ι_apply_comm_of_inner_eq_zero {v w : V} (h : ⟪v, w⟫_ℝ = 0) (ψ : S) :
     ρ (ι Q v) (ρ (ι Q w) ψ) = -ρ (ι Q w) (ρ (ι Q v) ψ) :=
-  map_ι_apply_map_ι_apply_of_isOrtho ρ
+  map_ι_apply_map_ι_apply_comm_of_isOrtho ρ
     ((QuadraticMap.isOrtho_iff_inner_eq_zero hρ.apply_eq_neg_norm_sq).2 h) ψ
 
 /-- **Polarized inner-product identity**: `Re ⟪c(v) ψ, c(w) ψ⟫_ℂ = ⟪v, w⟫_ℝ ‖ψ‖²`. -/

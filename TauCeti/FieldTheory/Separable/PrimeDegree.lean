@@ -11,11 +11,11 @@ import TauCeti.FieldTheory.PurelyInseparable.Exponent
 /-!
 # Separability of extensions of prime degree
 
-An extension of fields of prime degree `p` is separable unless `p = 0` in the base field. Indeed
-the separable degree divides the degree, so it is `1` or `p`; the value `p` is separability
-itself, while the value `1` makes the extension purely inseparable, hence of degree a power of the
-exponential characteristic — and the prime `p` is such a power only in characteristic `p`. In
-particular a quadratic extension away from characteristic two is separable.
+An extension of fields of degree `d` is separable as soon as `d ≠ 0` in the base field. Indeed the
+inseparable degree divides `d` and is a power of the exponential characteristic `q`, so it is `1`
+unless `q` is a prime dividing `d`. In particular an extension of prime degree `p` is separable
+unless the characteristic is `p`, and a quadratic extension away from characteristic two is
+separable.
 
 The characteristic-`p` exception is genuine: over `K = 𝔽_p(t)` the extension `K(t ^ (1 / p)) / K`
 has degree `p` and is purely inseparable.
@@ -26,7 +26,7 @@ elements in the base field. Consequently, if `L` is separable over some simple s
 
 ## Main results
 
-* `TauCeti.Algebra.isSeparable_of_finrank_prime`
+* `TauCeti.Algebra.isSeparable_of_cast_finrank_ne_zero`
 * `TauCeti.Algebra.isSeparable_of_finrank_eq_two`
 * `TauCeti.Algebra.isPurelyInseparable_iff_not_isSeparable`
 * `TauCeti.Algebra.pow_finrank_mem_range_algebraMap_of_not_isSeparable`
@@ -63,28 +63,33 @@ theorem finrank_eq_two_of_not_isSeparable [FiniteDimensional K L] (h : finrank K
   have hpos : 0 < Field.finSepDegree K L := Nat.pos_of_ne_zero (NeZero.ne _)
   omega
 
-/-- **A field extension of prime degree `p` with `p ≠ 0` in the base field is separable.**
+/-- **A field extension whose degree is nonzero in the base field is separable**: the inseparable
+degree divides the degree and is a power of the exponential characteristic.
 
-The hypothesis is the nonvanishing of `p` in the base field rather than a `CharP` assumption, so
-that it transfers along any field extension by injectivity of the structure map. -/
-theorem isSeparable_of_finrank_prime (hp : (finrank K L).Prime) (hpK : (finrank K L : K) ≠ 0) :
+The hypothesis is the nonvanishing of the degree in the base field rather than a `CharP`
+assumption, so that it transfers along any field extension by injectivity of the structure map.
+It also forces the degree to be nonzero, so the extension is finite. -/
+theorem isSeparable_of_cast_finrank_ne_zero (h : (finrank K L : K) ≠ 0) :
     Algebra.IsSeparable K L := by
-  have : FiniteDimensional K L := Module.finite_of_finrank_pos hp.pos
-  -- Otherwise the separable degree is one: the extension is purely inseparable, so `p` is a power
-  -- of the exponential characteristic, which forces characteristic `p`.
-  by_contra hs
-  have : IsPurelyInseparable K L := (isPurelyInseparable_iff_not_isSeparable hp).2 hs
+  have : FiniteDimensional K L :=
+    Module.finite_of_finrank_pos (Nat.pos_of_ne_zero fun h0 ↦ h (by rw [h0, Nat.cast_zero]))
   obtain ⟨q, hq⟩ := ExpChar.exists K
-  obtain ⟨n, hn⟩ := IsPurelyInseparable.finrank_eq_pow K L q
-  obtain ⟨hqp, -⟩ := hp.pow_eq_iff.mp hn.symm
+  obtain ⟨m, hm⟩ := finInsepDegree_eq_pow K L q
+  have hdvd : q ^ m ∣ finrank K L :=
+    hm ▸ Dvd.intro_left _ (Field.finSepDegree_mul_finInsepDegree K L)
+  rw [isSeparable_iff_finInsepDegree_eq_one, hm]
   cases hq with
-  | zero => exact Nat.not_prime_one (hqp ▸ hp)
-  | prime => exact hpK (hqp ▸ CharP.cast_eq_zero K q)
+  | zero => exact one_pow m
+  | prime hp =>
+    -- In characteristic `q`, a positive power of `q` dividing the degree would make it vanish.
+    rcases m with _ | m
+    · exact pow_zero q
+    · exact absurd ((CharP.cast_eq_zero_iff K q _).2 ((dvd_pow_self q m.succ_ne_zero).trans hdvd)) h
 
 /-- **A field extension of degree two with `2 ≠ 0` in the base field is separable.** -/
 theorem isSeparable_of_finrank_eq_two (h2 : (2 : K) ≠ 0) (h : finrank K L = 2) :
     Algebra.IsSeparable K L :=
-  isSeparable_of_finrank_prime (h ▸ Nat.prime_two) (by rwa [h, Nat.cast_ofNat])
+  isSeparable_of_cast_finrank_ne_zero (by rwa [h, Nat.cast_ofNat])
 
 /-- **A field extension of prime degree `p` that is not separable contains the `p`-th power of each
 of its elements in the base field**: it is purely inseparable of exponent one. -/
@@ -118,10 +123,10 @@ theorem eq_of_finrank_eq_of_not_isSeparable {K L : Type*} [Field K] [Field L] [A
       Algebra.pow_finrank_mem_range_algebraMap_of_not_isSeparable (h₁ ▸ hp) hs₁ a
     obtain ⟨c₂, hc₂⟩ :=
       Algebra.pow_finrank_mem_range_algebraMap_of_not_isSeparable (h₂ ▸ hp) hs₂ a
-    exact ⟨h₁ ▸ hc₁ ▸ c₁.2, h₂ ▸ hc₂ ▸ c₂.2⟩
+    exact ⟨h₁ ▸ hc₁ ▸ c₁.property, h₂ ▸ hc₂ ▸ c₂.property⟩
   -- `L` has characteristic `p`, as an inseparable extension of degree `p` of `E₁`.
   have hpL : (p : L) = 0 := by
-    have := not_not.mp (mt (Algebra.isSeparable_of_finrank_prime (h₁ ▸ hp)) hs₁)
+    have := not_not.mp (mt Algebra.isSeparable_of_cast_finrank_ne_zero hs₁)
     simpa [h₁] using congrArg (algebraMap E₁ L) this
   -- `L = M(t)`: it is separable over `M(t) ⊇ K(t)`, and purely inseparable over it.
   set E : IntermediateField M L := IntermediateField.adjoin M {t}
@@ -139,7 +144,7 @@ theorem eq_of_finrank_eq_of_not_isSeparable {K L : Type*} [Field K] [Field L] [A
   have hE : E = ⊤ := by
     refine IntermediateField.restrictScalars_injective K (eq_top_iff.mpr fun a _ ↦ ?_)
     obtain ⟨b, rfl⟩ := IsPurelyInseparable.surjective_algebraMap_of_isSeparable E' L a
-    exact b.2
+    exact b.property
   -- So `[L : M] ≤ p`, which forces `M = E₁` and `M = E₂`.
   have hpoly : (X ^ p - C (⟨t ^ p, hpow t⟩ : M)).Monic := monic_X_pow_sub_C _ hp.ne_zero
   have hroot : aeval t (X ^ p - C (⟨t ^ p, hpow t⟩ : M)) = 0 := by simp

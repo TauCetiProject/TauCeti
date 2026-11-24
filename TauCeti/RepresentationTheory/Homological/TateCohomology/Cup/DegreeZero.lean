@@ -116,7 +116,7 @@ invariant `x ⊗ y`. -/
 theorem cupH0_H0π_H0π (x : M.ρ.invariants) (y : N.ρ.invariants) :
     (dsimp% only (cupH0 M N 0 (H0π M x) (H0π N y))) =
       H0π (M ⊗ N) ⟨(x : M.V) ⊗ₜ[k] (y : N.V), fun g ↦ by
-        simp [Representation.tprod_apply, x.2 g, y.2 g]⟩ := by
+        simp [Representation.tprod_apply, x.property g, y.property g]⟩ := by
   rw [cupH0_H0π, H0π_comp_tateCohomologyFunctor_map_apply]
   congr 1
   apply Subtype.ext

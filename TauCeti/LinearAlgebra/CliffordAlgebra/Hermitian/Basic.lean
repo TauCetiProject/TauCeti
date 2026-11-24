@@ -30,6 +30,9 @@ by `‖v‖`.
   `c(v) c(v) = Q v`, as operators and pointwise, and `CliffordAlgebra.map_ι_mul_map_ι_add_swap`,
   `CliffordAlgebra.map_ι_apply_map_ι_apply_add_swap`: the polarized relation
   `c(v) c(w) + c(w) c(v) = polar Q v w`.
+* `CliffordAlgebra.map_ι_mul_map_ι_comm_of_isOrtho`,
+  `CliffordAlgebra.map_ι_apply_map_ι_apply_comm_of_isOrtho`: `c(a) c(b) = -c(b) c(a)` as operators
+  and pointwise for `Q`-orthogonal `a` and `b`.
 * `CliffordAlgebra.map_ι_injective`: `c(v)` is injective when `Q v ≠ 0`.
 * `CliffordAlgebra.map_ι_apply_left_injective`: `v ↦ c(v) ψ` is injective for `ψ ≠ 0` and an
   anisotropic `Q`.
@@ -73,6 +76,13 @@ theorem map_ι_apply_map_ι_apply (v : M) (ψ : W) :
     ρ (ι Q v) (ρ (ι Q v) ψ) = ((Q v : ℝ) : ℂ) • ψ := by
   rw [← mul_apply_eq_comp, map_ι_mul_map_ι, LinearMap.smul_apply, one_apply_eq_self]
 
+/-- Clifford multiplications by `Q`-orthogonal vectors anticommute:
+`c(a) (c(b) ψ) = -c(b) (c(a) ψ)`. -/
+theorem map_ι_apply_map_ι_apply_comm_of_isOrtho {a b : M} (h : Q.IsOrtho a b) (ψ : W) :
+    ρ (ι Q a) (ρ (ι Q b) ψ) = -ρ (ι Q b) (ρ (ι Q a) ψ) := by
+  rw [← mul_apply_eq_comp, ← map_mul, ι_mul_ι_comm_of_isOrtho h, map_neg, map_mul,
+    LinearMap.neg_apply, mul_apply_eq_comp]
+
 /-- Clifford multiplication by a vector `v` with `Q v ≠ 0` is injective. -/
 theorem map_ι_injective {v : M} (hv : Q v ≠ 0) : Function.Injective (ρ (ι Q v)) := by
   refine (injective_iff_map_eq_zero _).2 fun ψ hψ ↦ ?_
@@ -107,15 +117,9 @@ theorem map_ι_apply_map_ι_apply_add_swap (v w : M) (ψ : W) :
     LinearMap.smul_apply, one_apply_eq_self]
 
 /-- Orthogonal vectors anticommute in a Clifford module: `c(v) c(w) = -c(w) c(v)`. -/
-theorem map_ι_mul_map_ι_of_isOrtho {v w : M} (h : Q.IsOrtho v w) :
+theorem map_ι_mul_map_ι_comm_of_isOrtho {v w : M} (h : Q.IsOrtho v w) :
     ρ (ι Q v) * ρ (ι Q w) = -(ρ (ι Q w) * ρ (ι Q v)) := by
   rw [← map_mul, ι_mul_ι_comm_of_isOrtho h, map_neg, map_mul]
-
-/-- Pointwise anticommutation of orthogonal vectors in a Clifford module:
-`c(v) (c(w) ψ) = -c(w) (c(v) ψ)`. -/
-theorem map_ι_apply_map_ι_apply_of_isOrtho {v w : M} (h : Q.IsOrtho v w) (ψ : W) :
-    ρ (ι Q v) (ρ (ι Q w) ψ) = -ρ (ι Q w) (ρ (ι Q v) ψ) := by
-  rw [← mul_apply_eq_comp, map_ι_mul_map_ι_of_isOrtho ρ h, LinearMap.neg_apply, mul_apply_eq_comp]
 
 /-- A sesquilinear form for which the generators act skew-adjointly satisfies
 `H (ρ a x) y = H x (ρ (star a) y)` for every Clifford element `a`. Neither positivity of `H` nor

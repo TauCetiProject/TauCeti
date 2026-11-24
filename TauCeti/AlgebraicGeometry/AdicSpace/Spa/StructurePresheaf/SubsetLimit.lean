@@ -128,7 +128,7 @@ theorem RationalSubsetIndex.presentationToRationalSubsetIndex_obj_presentationIn
 @[simp]
 theorem RationalSubsetIndex.spaBasicOpen_presentationIndex (U : RationalSubsetIndex Aplus V) :
     spaBasicOpen Aplus (U.presentationIndex (P := P)).pres.num
-        (U.presentationIndex (P := P)).pres.den = (OrderDual.ofDual U).1 := by
+        (U.presentationIndex (P := P)).pres.den = (OrderDual.ofDual U).val := by
   rw [← presentationToRationalSubsetIndex_obj_open Aplus V (U.presentationIndex (P := P)),
     RationalSubsetIndex.presentationToRationalSubsetIndex_obj_presentationIndex]
 
@@ -150,7 +150,7 @@ comparison morphisms of Wedhorn's Proposition 8.2(1) run between their coordinat
 directions. -/
 theorem rationalSubset_presentationIndex_eq (U : RationalSubsetIndex Aplus V)
     {i : PresentationIndex (P := P) Aplus V}
-    (hi : spaBasicOpen Aplus i.pres.num i.pres.den = (OrderDual.ofDual U).1) :
+    (hi : spaBasicOpen Aplus i.pres.num i.pres.den = (OrderDual.ofDual U).val) :
     rationalSubset Aplus (U.presentationIndex (P := P)).pres.num
         (U.presentationIndex (P := P)).pres.den =
       rationalSubset Aplus i.pres.num i.pres.den :=
@@ -445,7 +445,8 @@ omit [IsTopologicalRing A] in
 @[simp]
 theorem rationalSubsetIndexRestrict_obj_open {V W : Opens ↥(spa Aplus)} (h : W ≤ V)
     (U : RationalSubsetIndex Aplus W) :
-    (OrderDual.ofDual ((rationalSubsetIndexRestrict h).obj U)).1 = (OrderDual.ofDual U).1 := (rfl)
+    (OrderDual.ofDual ((rationalSubsetIndexRestrict h).obj U)).val = (OrderDual.ofDual U).val :=
+        (rfl)
 
 omit [IsTopologicalRing A] in
 /-- Including a rational subset of `U` among those of `W`, and then among those of `V`, is including

@@ -200,7 +200,7 @@ theorem HasContinuousLogOn.pow (h : HasContinuousLogOn g S) (k : ℕ) :
     HasContinuousLogOn (fun x => g x ^ k) S := by
   obtain ⟨u, hc, hu⟩ := h
   exact ⟨fun x => k * u x, continuousOn_const.mul hc, fun x hx => by
-    simp only [Complex.exp_nat_mul, hu hx]⟩
+    simp only [Complex.exp_natCast_mul, hu hx]⟩
 
 /-- **A function landing in the slit plane has the principal logarithm.** This is the only source
 of logarithms that does not come from another logarithm, and everything below is built on it. -/
