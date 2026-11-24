@@ -44,9 +44,9 @@ theorem permMatrixHom_mul_apply {n k R : Type*} [Fintype n] [DecidableEq n] [Non
 theorem orderOf_permMatrixHom {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R]
     [Nontrivial R] (σ : Perm n) : orderOf (Matrix.permMatrixHom (R := R) σ) = orderOf σ := by
   refine orderOf_injective (Matrix.permMatrixHom : Perm n →* Matrix n n R) (fun σ τ h => ?_) σ
-  have h' : (σ⁻¹.toPEquiv.toMatrix : Matrix n n R) = τ⁻¹.toPEquiv.toMatrix := h
-  exact inv_injective <| Equiv.ext fun x => by
-    simpa using PEquiv.ext_iff.1 (PEquiv.toMatrix_injective h') x
+  simp only [Matrix.permMatrixHom_apply, Equiv.Perm.permMatrix] at h
+  refine inv_injective <| Equiv.ext fun x => Option.some_injective _ ?_
+  rw [← Equiv.toPEquiv_apply, ← Equiv.toPEquiv_apply, PEquiv.toMatrix_injective h]
 
 end Equiv.Perm
 

@@ -202,11 +202,9 @@ theorem epsD_mul_coxeterElement :
 `negaShift ℤ (n - 1)`. -/
 theorem orderOf_negaD : orderOf (negaD m) = 2 * (m + 2) := by
   have hS := orderOf_negaShift (R := ℤ) (n := m + 2) (by omega) (by decide)
-  -- `negaD m` is the image of the block matrix under the ring isomorphism `reindex`
   have h : orderOf (negaD m) =
-      orderOf (fromBlocks (negaShift ℤ (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) :=
-    orderOf_injective (reindexAlgEquiv ℤ ℤ finSumFinEquiv).toRingEquiv.toMonoidHom
-      (reindexAlgEquiv ℤ ℤ finSumFinEquiv).injective _
+      orderOf (fromBlocks (negaShift ℤ (m + 2)) 0 0 (-1 : Matrix (Fin 1) (Fin 1) ℤ)) := by
+    rw [negaD, ← coe_reindexRingEquiv, ← RingEquiv.coe_toMulEquiv, MulEquiv.orderOf_eq]
   rw [h, orderOf_fromBlocks_zero_zero_neg_one (hS ▸ dvd_mul_right 2 _), hS]
 
 /-- Right multiplication by `epsD m`: column `k` is the difference of columns `k` and `k + 1`
