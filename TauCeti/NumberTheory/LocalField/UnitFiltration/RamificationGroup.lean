@@ -13,7 +13,7 @@ import Mathlib.Algebra.Ring.Pi
 import Mathlib.Algebra.Ring.Subring.Units
 import Mathlib.FieldTheory.Perfect
 import Mathlib.RingTheory.LocalRing.Pullback
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.Valuation.ValuativeRel.Action
 
 /-!

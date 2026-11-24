@@ -42,6 +42,8 @@ act strictly on `F` by `f · ω = Φ (f, ω)(end)`, and transport is strictly eq
   `b`.
 * `TauCeti.MooreReplacement.Fiber.map h hh`: the equivariant map of fibres induced by a map `h`
   over `B`.
+* `TauCeti.MooreReplacement.Fiber.squareMap h g hsq hg`: the map of fibres induced by a map `h`
+  covering a map `g` of the bases, which intertwines the actions through `Ω g`.
 * `TauCeti.MooreLiftingFunction.transport`: transport `F' → F` along a lifting function.
 
 ## Main results
@@ -295,6 +297,15 @@ theorem ext {x y : Fiber p b} (h : x.val = y.val) : x = y :=
 theorem continuous_val : Continuous (val : Fiber p b → MooreReplacement p) :=
   continuous_subtypeVal
 
+variable (p b) in
+/-- The projection of the Moore fibre to `E`, `(e, γ) ↦ e`. -/
+def proj : C(Fiber p b, E) :=
+  ⟨fun x ↦ x.val.point, continuous_point.comp continuous_val⟩
+
+@[simp]
+theorem proj_apply (x : Fiber p b) : proj p b x = x.val.point :=
+  (rfl)
+
 /-- The point `(e, γ)` of the fibre, for a pair whose path ends at `b`. -/
 def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
   ⟨x, h⟩
@@ -302,6 +313,12 @@ def mk' (x : MooreReplacement p) (h : x.path.target = b) : Fiber p b :=
 @[simp]
 theorem val_mk' (x : MooreReplacement p) (h : x.path.target = b) : (mk' x h).val = x :=
   (rfl)
+
+/-- A family of points of the fibre is continuous when the family of underlying pairs is. -/
+@[fun_prop]
+theorem continuous_mk' {Y : Type*} [TopologicalSpace Y] {f : Y → MooreReplacement p}
+    (hf : Continuous f) (h : ∀ y, (f y).path.target = b) : Continuous fun y ↦ mk' (f y) (h y) :=
+  hf.subtype_mk _
 
 /-- The fibre `F'` is the fibre of the endpoint map `p'` over `b`: a point of `F'` is sent to its
 underlying pair. -/
@@ -419,6 +436,14 @@ abbrev IsTransitive.mulAction {p : C(E, B)} {Φ : MooreLiftingFunction p} (hΦ :
   smul ω f := Φ.fiberAct b f ω.unop
   one_smul := Φ.fiberAct_one b
   mul_smul ω ω' f := hΦ.fiberAct_mul b f ω'.unop ω.unop
+
+/-- A Moore loop `ω` acts on the fibre, through a transitive lifting function, by `fiberAct`. -/
+@[simp]
+theorem IsTransitive.op_smul_eq_fiberAct {p : C(E, B)} {Φ : MooreLiftingFunction p}
+    (hΦ : Φ.IsTransitive) (b : B) (f : {e // p e = b}) (ω : MooreLoopSpace B b) :
+    letI := hΦ.mulAction b
+    op ω • f = Φ.fiberAct b f ω :=
+  (rfl)
 
 /-- The action through a transitive lifting function is continuous. -/
 theorem IsTransitive.continuousSMul {p : C(E, B)} {Φ : MooreLiftingFunction p}
@@ -605,6 +630,78 @@ theorem coe_transport_map_incl (x : Fiber p b) :
   rw [MooreLiftingFunction.coe_transport, endpointLiftingFunction_lift, MoorePath.target_def]
   refine MooreReplacement.ext (by simp) ?_
   simp [MoorePath.truncate_length, MoorePath.refl_trans]
+
+end MooreReplacement.Fiber
+
+/-! ### Maps of fibres covering a map of the bases -/
+
+namespace MooreReplacement.Fiber
+
+variable {E E' E'' B B' B'' : Type*} [TopologicalSpace E] [TopologicalSpace E']
+  [TopologicalSpace E''] [TopologicalSpace B] [TopologicalSpace B'] [TopologicalSpace B'']
+  {p : C(E, B)} {p' : C(E', B')} {p'' : C(E'', B'')} {b : B} {b' : B'} {b'' : B''}
+
+/-- The map of fibres of the Moore-path replacements induced by a commutative square: a map
+`h : E → E'` covering `g : B → B'`, that is with `p' ∘ h = g ∘ p`, sends `(e, γ)` in the fibre over
+`b` to `(h e, g ∘ γ)` in the fibre over `b' = g b`. -/
+def squareMap (h : C(E, E')) (g : C(B, B')) (hsq : p'.comp h = g.comp p) (hg : g b = b') :
+    C(Fiber p b, Fiber p' b') :=
+  ⟨fun x ↦ ⟨MooreReplacement.mk (h x.val.point) (x.val.path.map g)
+      (((MoorePath.source_map g _).trans (congrArg g (source_path _))).trans
+        (DFunLike.congr_fun hsq _).symm),
+      (congrArg MoorePath.target (path_mk _ _ _)).trans
+        (((MoorePath.target_map g _).trans (congrArg g (target_path_val x))).trans hg)⟩,
+    (continuous_mk (h.continuous.comp (continuous_point.comp continuous_val))
+      ((MoorePath.continuous_map g).comp (continuous_path.comp continuous_val)) _).subtype_mk _⟩
+
+@[simp]
+theorem point_squareMap (h : C(E, E')) (g : C(B, B')) (hsq : p'.comp h = g.comp p)
+    (hg : g b = b') (x : Fiber p b) :
+    (squareMap h g hsq hg x).val.point = h x.val.point := by
+  rw [val_eq_subtypeVal]
+  exact point_mk _ _ _
+
+@[simp]
+theorem path_squareMap (h : C(E, E')) (g : C(B, B')) (hsq : p'.comp h = g.comp p)
+    (hg : g b = b') (x : Fiber p b) :
+    (squareMap h g hsq hg x).val.path = x.val.path.map g := by
+  rw [val_eq_subtypeVal]
+  exact path_mk _ _ _
+
+/-- The induced map of fibres intertwines the actions of the Moore loops through the map
+`Ω g : Ω_b B → Ω_{b'} B'`. -/
+theorem squareMap_act (h : C(E, E')) (g : C(B, B')) (hsq : p'.comp h = g.comp p)
+    (hg : g b = b') (x : Fiber p b) (ω : MooreLoopSpace B b) :
+    squareMap h g hsq hg (x.act ω) = (squareMap h g hsq hg x).act (MooreLoopSpace.map g hg ω) :=
+  ext (MooreReplacement.ext (by simp) (by simp [MoorePath.map_trans]))
+
+/-- Over the identity of `B`, the induced map of fibres is the map `Fiber.map h` over `B`. -/
+theorem squareMap_id (h : C(E, E')) {q : C(E', B)} (hh : q.comp h = p) :
+    squareMap (b := b) h (.id B) (by rw [ContinuousMap.id_comp, hh]) (ContinuousMap.id_apply b) =
+      map h hh :=
+  ContinuousMap.ext fun _ ↦ ext (MooreReplacement.ext (by simp) (by simp [MoorePath.map_id]))
+
+/-- Pasting two commutative squares induces the composite of the maps of fibres. -/
+theorem squareMap_comp (h : C(E, E')) (g : C(B, B')) (h' : C(E', E'')) (g' : C(B', B''))
+    (hsq : p'.comp h = g.comp p) (hsq' : p''.comp h' = g'.comp p') (hg : g b = b')
+    (hg' : g' b' = b'') :
+    squareMap (h'.comp h) (g'.comp g)
+        (by rw [← ContinuousMap.comp_assoc, hsq', ContinuousMap.comp_assoc, hsq,
+          ContinuousMap.comp_assoc])
+        (by rw [ContinuousMap.comp_apply, hg, hg']) =
+      (squareMap h' g' hsq' hg').comp (squareMap h g hsq hg) :=
+  ContinuousMap.ext fun _ ↦ ext (MooreReplacement.ext (by simp) (by simp [MoorePath.map_map]))
+
+/-- On the paths of length zero, the induced map of fibres is the map of the fibres of `p` and
+`p'` induced by `h`: it sends `(e, const)` to `(h e, const)`. -/
+theorem squareMap_fiberIncl (h : C(E, E')) (g : C(B, B')) (hsq : p'.comp h = g.comp p)
+    (hg : g b = b') (f : {e // p e = b}) :
+    squareMap h g hsq hg (MooreLiftingFunction.fiberIncl p b f) =
+      MooreLiftingFunction.fiberIncl p' b' ⟨h f, by
+        rw [← ContinuousMap.comp_apply p' h, hsq, ContinuousMap.comp_apply, f.property, hg]⟩ :=
+  ext (MooreReplacement.ext (by simp) (by
+    simp only [path_squareMap, MooreLiftingFunction.val_fiberIncl, path_incl, MoorePath.map_refl]
+    exact congrArg MoorePath.refl (DFunLike.congr_fun hsq f.val).symm))
 
 end MooreReplacement.Fiber
 

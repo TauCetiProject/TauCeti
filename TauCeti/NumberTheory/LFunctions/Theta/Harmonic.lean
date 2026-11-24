@@ -558,7 +558,6 @@ theorem mixedFourier_harmonicFactor_mul_archGaussian (t : ContinuousInfinityType
       exact_mod_cast Real.mul_self_sqrt (hy' w).le
   have hc : mixedEmbedding.norm c = √(archNorm y) :=
     norm_mixedSpaceOfRealSpace_sqrt fun w ↦ (hy w).le
-  have hc0 : mixedEmbedding.norm c ≠ 0 := hc ▸ (Real.sqrt_pos.mpr (archNorm_pos hy)).ne'
   have hint (x : mixedSpace K) :
       𝐞 (-mixedInner K x ξ) • (t.harmonicFactor x * archGaussian y x) =
         t.harmonicFactor c' * (𝐞 (-mixedInner K (c * x) (c' * ξ)) •
@@ -572,7 +571,7 @@ theorem mixedFourier_harmonicFactor_mul_archGaussian (t : ContinuousInfinityType
   simp_rw [hint]
   rw [MeasureTheory.integral_const_mul,
     integral_comp_mul_left
-      (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • (t.harmonicFactor z * archGaussian 1 z)) hc0,
+      (fun z ↦ 𝐞 (-mixedInner K z (c' * ξ)) • (t.harmonicFactor z * archGaussian 1 z)) c,
     ← mixedFourier_apply, mixedFourier_harmonicFactor_mul_archGaussian_one,
     t.harmonicFactor_mul c' ξ, ← archGaussianDilation_apply y⁻¹ hy',
     archGaussian_one_archGaussianDilation, hc, Complex.real_smul]

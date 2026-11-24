@@ -45,6 +45,22 @@ section
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
   [CategoryWithHomology C] (P : TopPair.{w}) (R : C)
 
+/-- A map of topological pairs carries the relative class of a point to the class of its image. -/
+@[reassoc]
+lemma singularHomology₀Section_singularHomologyMap {Q : TopPair.{w}} (f : P ⟶ Q)
+    (x : P.fst) (y : Q.fst) (hxy : Hom.fst f x = y) :
+    (singularHomology₀Section R x ≫ P.singularHomologyπ R 0) ≫
+        TopPair.singularHomologyMap f R 0 =
+      singularHomology₀Section R y ≫ Q.singularHomologyπ R 0 := by
+  -- The singular-functor and simplicial homology objects are only definitionally equal after
+  -- unfolding. Rewriting `Category.assoc` at implicit transparency cannot type-check these
+  -- composites; the following terms elaborate with the required common homology object.
+  have h := singularHomology₀Section_naturality R (Hom.fst f) x =≫ Q.singularHomologyπ R 0
+  exact (Category.assoc _ _ _).trans
+    ((singularHomology₀Section R x ≫= (singularHomologyπ_naturality f R 0).symm).trans
+      ((Category.assoc _ _ _).symm.trans (h.trans
+        (congrArg (fun y ↦ singularHomology₀Section R y ≫ Q.singularHomologyπ R 0) hxy))))
+
 /-- The class of a point of the subspace vanishes in relative homology, since it comes from
 zeroth homology of the subspace. -/
 @[simp, reassoc]
@@ -154,6 +170,17 @@ theorem isZero_singularHomology_zero [PathConnectedSpace P.fst] [Nonempty P.snd]
   rw [h0] at hπ
   exact IsZero.of_epi_zero ((toSSetPair.obj P).right.homology R 0) _
 
+/-- **The connecting morphism vanishes when the subspace has no reduced homology**: if the reduced
+homology of `A` vanishes in degree `m`, then `Hₘ(A) ⟶ Hₘ(X)` is a monomorphism, so the connecting
+morphism `Hₙ(X, A) ⟶ Hₘ(A)`, `m + 1 = n`, is zero. -/
+theorem singularHomologyδ_eq_zero_of_isZero {n m : ℕ}
+    (h₀ : IsZero ((reducedSingularHomologyFunctor R m).obj P.snd)) (h : m + 1 = n := by lia) :
+    P.singularHomologyδ R n m h = 0 :=
+  -- `TopCat.Hom.mono_singularHomologyMap_of_isZero` is stated with `singularHomologyFunctor`, whose
+  -- map is `SSet.homologyMap` of the singular simplicial sets by definition.
+  (P.map.mono_singularHomologyMap_of_isZero R h₀).right_cancellation _ _
+    ((P.singularHomologyδ_comp R n m h).trans zero_comp.symm)
+
 /-- **The quotient map to relative homology is an isomorphism when the subspace is acyclic in the
 adjacent degrees**: if the reduced homology of `A` vanishes in degrees `k` and `k + 1`, then
 `Hₖ₊₁(X) ⟶ Hₖ₊₁(X, A)` is an isomorphism.  This applies when `A` is contractible, for instance a
@@ -168,11 +195,9 @@ theorem isIso_singularHomologyπ {k : ℕ}
     h₁.of_iso ((reducedSingularHomologySuccIso R k).app P.snd).symm
   have : Mono (P.singularHomologyπ R (k + 1)) :=
     (P.singularHomology_exact_space R (k + 1)).mono_g (hA.eq_of_src _ _)
-  have hδ : P.singularHomologyδ R (k + 1) k = 0 :=
-    (P.map.mono_singularHomologyMap_of_isZero R h₀).right_cancellation _ _
-      ((P.singularHomologyδ_comp R (k + 1) k).trans zero_comp.symm)
   have : Epi (P.singularHomologyπ R (k + 1)) :=
-    (P.singularHomology_exact_relative R (k + 1) k).epi_f hδ
+    (P.singularHomology_exact_relative R (k + 1) k).epi_f
+      (P.singularHomologyδ_eq_zero_of_isZero R h₀)
   exact isIso_of_mono_of_epi _
 
 end TopPair

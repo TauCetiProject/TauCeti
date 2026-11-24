@@ -14,7 +14,7 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.NumberTheory.LocalField.Monogenic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 import TauCeti.NumberTheory.LocalField.TotallyRamified
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 
 /-!

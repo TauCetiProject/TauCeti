@@ -104,9 +104,8 @@ theorem fiberCoord_apply {U : Set M} (hUe : U ⊆ e.baseSet) (x : U) :
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
 /-- The fibre coordinate vanishes exactly where the section does. -/
 theorem fiberCoord_eq_zero_iff {U : Set M} (hUe : U ⊆ e.baseSet) (x : U) :
-    fiberCoord hs e hUe x = 0 ↔ s x.val = 0 := by
-  have := e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' F x.val (s x.val)) (hUe x.property)
-  exact not_iff_not.1 this
+    fiberCoord hs e hUe x = 0 ↔ s x.val = 0 :=
+  e.snd_apply_eq_zero_iff ℝ (v := TotalSpace.mk' F x.val (s x.val)) (hUe x.property)
 
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
 /-- On a neighbourhood containing no other zero of `s`, the fibre coordinate is a map of pairs
@@ -253,7 +252,7 @@ theorem sectionIndex_eq_localIndex_fiberCoord [FiniteDimensional ℝ F] {z : M}
     -- Restricting the fibre coordinate from `U` to `V` does not change its local index.
     have hincl : IsOpenEmbedding (fun x : V ↦ (⟨x.val, hVU x.property⟩ : U)) :=
       (IsOpenEmbedding.of_comp_iff _ U.isOpenEmbedding').1 V.isOpenEmbedding'
-    have h := HomologicalOrientation.localIndex_comap hF (oM.comap U.isOpenEmbedding') oF hincl
+    have h := (oM.comap U.isOpenEmbedding').localIndex_comap oF hF hincl
       IsOpenEmbedding.id (f := fiberCoord hs e hVe) (g := fiberCoord hs e hUe) (x := ⟨z, hzV⟩)
       (.of_forall fun _ ↦ rfl)
     rw [HomologicalOrientation.comap_comap, HomologicalOrientation.comap_id,
@@ -379,6 +378,54 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
   rw [← ω.kronecker_localCohomologyClass_zsmul hF (o.sectionIndex hF oM hs z), ← hb,
     ω.kronecker_localCohomologyClass_zsmul hF]
 
+
 end VectorBundleOrientation
 
 end TauCeti
+
+namespace TauCeti.VectorBundleOrientation
+
+section IsolatingNeighborhood
+
+variable {M F : Type*} [TopologicalSpace M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {E : M → Type*}
+  [TopologicalSpace (TotalSpace F E)] [∀ x, AddCommMonoid (E x)] [∀ x, Module ℝ (E x)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] {n : ℕ}
+  (o : VectorBundleOrientation F E (Fin (n + 1))) (hF : finrank ℝ F = n + 1)
+  {s : ∀ x, E x}
+
+include hF in
+/-- **An isolating neighbourhood of a zero in local coordinates.** Let `z` be a zero of `s`, `e` a
+trivialization of `E` at `z`, and `φ` a chart of `M` at `z` with values in `F`. If the section, read
+in these coordinates as `y ↦ (e (s (φ⁻¹ y))).2`, has at `φ z` a derivative `A` bounded below, then
+`z` has an open neighbourhood inside the base set of `e` and the source of `φ`, containing no other
+zero of `s`, on which `e` reads the orientation of every fibre as at `z`. These are the
+neighbourhood hypotheses of
+`TauCeti.VectorBundleOrientation.sectionIndex_eq_sign_det_of_hasFDerivAt`. -/
+theorem exists_isolating_nhds_of_hasFDerivAt (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] [e.IsLinear ℝ] (φ : OpenPartialHomeomorph M F) {z : M}
+    (hze : z ∈ e.baseSet) (hzφ : z ∈ φ.source) (hz : s z = 0) {A : F →L[ℝ] F}
+    (hA : HasFDerivAt (fun y ↦ (e (TotalSpace.mk' F (φ.symm y) (s (φ.symm y)))).2) A (φ z))
+    (hAC : ∃ C, AntilipschitzWith C A) :
+    ∃ U, IsOpen U ∧ z ∈ U ∧ (∀ x ∈ U, s x = 0 → x = z) ∧ ∃ hUe : U ⊆ e.baseSet,
+      U ⊆ φ.source ∧ ∀ x (hx : x ∈ U), e.mapOrientation (Fin (n + 1)) (hUe hx) (o x) =
+        e.mapOrientation (Fin (n + 1)) hze (o z) := by
+  have hf0 : (e (TotalSpace.mk' F (φ.symm (φ z)) (s (φ.symm (φ z))))).2 = 0 := by
+    rw [φ.left_inv hzφ, hz]
+    exact congrArg Prod.snd (e.zeroSection ℝ hze)
+  obtain ⟨V, hV, hVo, hzV⟩ := eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1
+    (hA.eventually_ne (c := (e (TotalSpace.mk' F (φ.symm (φ z)) (s (φ.symm (φ z))))).2) hAC))
+  obtain ⟨W, hW, hWo, hzW⟩ := eventually_nhds_iff.1
+    (o.eventually_mapOrientation_eq (by simp [hF]) e hze)
+  refine ⟨(φ.source ∩ φ ⁻¹' V) ∩ (e.baseSet ∩ W),
+    (φ.isOpen_inter_preimage hVo).inter (e.open_baseSet.inter hWo), ⟨⟨hzφ, hzV⟩, hze, hzW⟩,
+    ?_, fun x hx ↦ hx.2.1, fun x hx ↦ hx.1.1, fun x hx ↦ hW x hx.2.2 hx.2.1⟩
+  intro x hx hx0
+  by_contra hxz
+  apply hV (φ x) hx.1.2 fun h ↦ hxz (φ.injOn hx.1.1 hzφ h)
+  rw [hf0, φ.left_inv hx.1.1, hx0]
+  exact congrArg Prod.snd (e.zeroSection ℝ hx.2.1)
+
+end IsolatingNeighborhood
+
+end TauCeti.VectorBundleOrientation

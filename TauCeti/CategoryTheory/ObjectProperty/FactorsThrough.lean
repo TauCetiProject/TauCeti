@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Category.Factorisation
-public import TauCeti.CategoryTheory.ObjectProperty
+public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 
 /-!
 # Morphisms factoring through a class of objects
