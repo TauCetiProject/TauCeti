@@ -63,8 +63,7 @@ diagonal embedding `b ↦ diag(b, …, b)`.
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity, with
-  `CStarMatrix.ofMatrix_smul_nonneg` (`[pᵢⱼ b]` is positive for positive `[pᵢⱼ]` and `b`) and
-  `CStarMatrix.sum_star_mul_smul_nonneg` (scalar compressions of positive matrices are positive).
+  `CStarMatrix.ofMatrix_smul_nonneg` (`[pᵢⱼ b]` is positive for positive `[pᵢⱼ]` and `b`).
 * `CStarMatrix.diag_nonneg_of_nonneg`: the diagonal entries of a positive matrix are positive.
 * `CStarMatrix.submatrix_nonneg` and `CStarMatrix.extend_nonneg`: reindexing a positive matrix
   along any map of indices, or extending it by zero along an injective one, gives a positive
@@ -459,20 +458,6 @@ theorem ofMatrix_smul_nonneg {P : CStarMatrix n n ℂ} (hP : 0 ≤ P) {b : A} (h
         Finset.sum_congr rfl fun _ _ => by rw [mul_comm]
   rw [h]
   exact Finset.sum_nonneg fun k _ => star_left_conjugate_nonneg hb _
-
-/-- The scalar compression `∑ᵢⱼ ξᵢ⋆ ξⱼ aᵢⱼ` of a positive matrix `[aᵢⱼ]` is positive. -/
-theorem sum_star_mul_smul_nonneg {M : CStarMatrix n n A} (hM : 0 ≤ M) (ξ : n → ℂ) :
-    0 ≤ ∑ i, ∑ j, (star (ξ i) * ξ j) • M i j := by
-  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
-  have h : ∑ i, ∑ j, (star (ξ i) * ξ j) • (star R * R) i j =
-      ∑ k, star (∑ i, ξ i • R k i) * ∑ j, ξ j • R k j := by
-    simp only [mul_apply, star_apply, Finset.smul_sum, Finset.mul_sum, Finset.sum_mul, star_sum,
-      star_smul, smul_mul_assoc, mul_smul_comm, smul_smul]
-    refine (Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans <| Finset.sum_comm.trans <|
-      Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans <| Finset.sum_congr rfl fun _ _ =>
-        Finset.sum_congr rfl fun _ _ => by rw [mul_comm (ξ _)]
-  rw [h]
-  exact Finset.sum_nonneg fun k _ => star_mul_self_nonneg _
 
 section Compression
 

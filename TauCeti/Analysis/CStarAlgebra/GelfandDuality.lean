@@ -55,6 +55,8 @@ minimal C⋆-unitization `A⁺¹ = Unitization ℂ A` and the augmentation chara
   positive exactly when every character is nonnegative on it, and
   `TauCeti.characterSpace_apply_gelfandStarTransform_symm`: a character evaluates the inverse
   Gelfand transform of `f` to `f` at that character.
+* `WeakDual.CharacterSpace.instStarHomClassOfNonUnitalCommCStarAlgebra`: characters of a
+  nonunital commutative C⋆-algebra commute with `star`.
 
 ## References
 
@@ -235,6 +237,19 @@ theorem eq_of_forall_apply_eq {a b : A} (h : ∀ χ : characterSpace ℂ A, χ a
   exact hχ (by simp [map_sub, h χ])
 
 end Separation
+
+section Star
+
+variable {A : Type*} [NonUnitalCommCStarAlgebra A]
+
+/-- Characters of a nonunital commutative C⋆-algebra commute with `star`, as restrictions of
+characters of the unitization; Mathlib's `WeakDual.CharacterSpace.instStarHomClass` covers the
+unital case. -/
+instance instStarHomClassOfNonUnitalCommCStarAlgebra : StarHomClass (characterSpace ℂ A) A ℂ where
+  map_star χ a := by
+    simpa using map_star (unitizationExtend χ).val (a : A⁺¹)
+
+end Star
 
 end WeakDual.CharacterSpace
 

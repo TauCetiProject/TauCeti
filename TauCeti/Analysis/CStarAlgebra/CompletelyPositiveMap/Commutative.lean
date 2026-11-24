@@ -12,6 +12,7 @@ import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.Topology.ContinuousMap.StarOrdered
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import TauCeti.Analysis.CStarAlgebra.GelfandDuality
 
 /-!
@@ -23,9 +24,9 @@ commutative and unital, or `B` is commutative.
 *Commutative codomain* (`B` commutative, possibly nonunital). Positivity in `B` is tested by
 characters (`TauCeti.nonneg_iff_forall_characterSpace_nonneg`, in
 `TauCeti.Analysis.CStarAlgebra.GelfandDuality`). For a character `χ` of `B`, the quadratic form
-`∑ᵢⱼ zᵢ⋆ φ(aᵢⱼ) zⱼ` of `[φ(aᵢⱼ)]` maps to the value `ω(∑ᵢⱼ ξᵢ⋆ ξⱼ aᵢⱼ)` of the positive
-functional `ω = χ ∘ φ` at a scalar compression of `[aᵢⱼ]`, with `ξᵢ = χ(zᵢ)`, and scalar
-compressions of positive matrices are positive (`CStarMatrix.sum_star_mul_smul_nonneg`).
+`∑ᵢⱼ zᵢ⋆ φ(aᵢⱼ) zⱼ` of `[φ(aᵢⱼ)]` maps to the quadratic form `∑ᵢⱼ ξᵢ⋆ ω(aᵢⱼ) ξⱼ` of the
+positive functional `ω = χ ∘ φ`, with `ξᵢ = χ(zᵢ)`, and positive functionals are completely
+positive (`PositiveLinearMap.toCompletelyPositiveMap`).
 
 *Commutative domain* (`A` commutative and unital; Stinespring 1955, Theorem 4). Through the
 Gelfand transform, `A = C(X)` for the compact character space `X`. Given a positive matrix
@@ -70,16 +71,15 @@ theorem isNPositive_of_commCodomain [NonUnitalCommCStarAlgebra B] [PartialOrder 
   refine isNPositive_iff.mpr fun M hM => CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun z => ?_
   rw [nonneg_iff_forall_characterSpace_nonneg]
   intro χ
-  set ξ : Fin n → ℂ := fun i => χ (z i)
-  have hχ := nonneg_iff_forall_characterSpace_nonneg.mp
-    (hφ _ (CStarMatrix.sum_star_mul_smul_nonneg hM ξ)) χ
-  -- Characters of `B` commute with `star`, through their extensions to `B⁺¹`.
-  have hstar (b : B) : χ (star b) = star (χ b) := by
-    simpa using map_star (CharacterSpace.unitizationExtend χ).val (b : B⁺¹)
+  let ω : A →ₚ[ℂ] ℂ := PositiveLinearMap.mk₀ ((CharacterSpace.toCLM χ : B →ₗ[ℂ] ℂ) ∘ₗ φ)
+    fun a ha => nonneg_iff_forall_characterSpace_nonneg.mp (hφ a ha) χ
+  have hχ := CStarMatrix.nonneg_iff_forall_sum_nonneg.mp
+    ((ω.toCompletelyPositiveMap.isNPositive n).map_cstarMatrix_nonneg hM) fun i => χ (z i)
   convert hχ using 1
-  simp only [map_sum, map_mul, hstar, map_smul, smul_eq_mul, CStarMatrix.map_apply, ξ]
-  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  ring
+  simp only [map_sum, map_mul, map_star, CStarMatrix.map_apply,
+    CompletelyPositiveMap.coe_toLinearMap, PositiveLinearMap.toCompletelyPositiveMap_apply]
+  -- `ω a = χ (φ a)`: `PositiveLinearMap.mk₀` keeps the underlying linear map.
+  rfl
 
 end CommCodomain
 
