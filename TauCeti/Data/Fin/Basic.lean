@@ -849,22 +849,24 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
     rwa [castSucc_castPred] at this
 
 /-- Evaluating the restricted dependent left fold `Fin.dfoldl` along `Fin.castLE` at prefix index
-`0` returns the initial value `x` (`Fin.castLE _ 0` reduces definitionally to `0`). -/
+`0` returns the initial value `x`. -/
 theorem dfoldl_castLE_zero {n : ℕ} {α : Fin (n + 1) → Type*}
     (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) :
     Fin.dfoldl (0 : Fin (n + 1)).val (fun j => α (Fin.castLE (0 : Fin (n + 1)).isLt j))
       (fun j => f (Fin.castLE (Nat.le_of_lt_succ (0 : Fin (n + 1)).isLt) j)) x = x :=
+  -- `Fin.castLE _ 0` reduces definitionally to `0`.
   Fin.dfoldl_zero (α := fun j => α (Fin.castLE (0 : Fin (n + 1)).isLt j)) _ x
 
 /-- Evaluating the restricted dependent left fold `Fin.dfoldl` along `Fin.castLE` at prefix index
-`i.succ` applies `f i` to the restricted fold at `i.castSucc` (`Fin.castLE` reduces definitionally
-on `j.castSucc` to `(Fin.castLE _ j).castSucc` and on `Fin.last i.val` to `i`). -/
+`i.succ` applies `f i` to the restricted fold at `i.castSucc`. -/
 theorem dfoldl_castLE_succ {n : ℕ} {α : Fin (n + 1) → Type*}
     (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) (i : Fin n) :
     Fin.dfoldl i.succ.val (fun j => α (Fin.castLE i.succ.isLt j))
       (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x =
       f i (Fin.dfoldl i.castSucc.val (fun j => α (Fin.castLE i.castSucc.isLt j))
         (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.castSucc.isLt) j)) x) :=
+  -- `Fin.castLE` reduces definitionally on `j.castSucc` to `(Fin.castLE _ j).castSucc` and on
+  -- `Fin.last i.val` to `i`.
   Fin.dfoldl_succ_last (α := fun j => α (Fin.castLE i.succ.isLt j))
     (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x
 

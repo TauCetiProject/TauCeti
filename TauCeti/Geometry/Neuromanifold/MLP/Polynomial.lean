@@ -33,8 +33,9 @@ zero for every bias variable gives `MLPSpec.polynomialRealizeWeights A q` — eq
 `A.weightEquiv`. Thus the coefficient extraction and uniform input-degree bound of
 `TauCeti.Geometry.Neuromanifold.Polynomial.Basic`, and the faithful coefficient presentation of
 `TauCeti.Geometry.Neuromanifold.Polynomial.Presentation`, apply to these networks. The
-identity-activation and monomial specifications are the cases `q = X` (giving `polynomialChain` of
-`polynomialDense` and of `polynomialLinear`) and `q j = X ^ r j`.
+identity-activation and monomial specifications are the cases `q = fun _ => X`
+(`MLPSpec.polynomialRealization_polynomialRealize_linear`) and `q j = X ^ r j`
+(`MLPSpec.polynomialRealization_polynomialRealizeWeights_monomial`).
 
 The jointly polynomial setting follows Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,

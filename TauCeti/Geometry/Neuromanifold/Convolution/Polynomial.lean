@@ -26,9 +26,10 @@ of the bias-free convolution layers
 Thus both tuples feed the coefficient extraction and faithful bounded-degree presentation for
 jointly polynomial models.
 
-With identity hidden activations, the activation polynomials `X` give the tuples of linear
-convolutional networks (`polynomialChain` of `polynomialAffineConvolution` and of
-`polynomialConvolution`).
+With identity hidden activations, the activation polynomials `fun _ => X` realize the linear
+convolutional network and its bias-free version
+(`ConvolutionSpec.polynomialRealization_polynomialRealize_of_activation_eq_id` and
+`ConvolutionSpec.polynomialRealization_polynomialRealizeWeights_of_activation_eq_id`).
 
 All index types are finite, so `Fintype.equivFin` can number the coordinates by `Fin p`.
 Depth zero and empty filters are included. The output head remains affine, with no activation.
