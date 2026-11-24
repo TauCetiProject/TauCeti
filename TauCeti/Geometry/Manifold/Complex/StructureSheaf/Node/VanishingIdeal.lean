@@ -358,16 +358,6 @@ theorem smoothingQuotientEquivRange_mk (p : E × ℂ × ℂ)
   simp only [smoothingQuotientEquivRange, RingHom.quotientKerEquivRange, RingEquiv.trans_apply,
     Ideal.quotEquivOfEq_mk, RingHom.quotientKerEquivOfSurjective_apply_mk]
 
-/-- The class of a germ goes to its restriction to `N_s`, as a germ along `N_s`. -/
-theorem coe_smoothingQuotientEquivRange_mk (p : E × ℂ × ℂ)
-    {s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk p.1} {S : E → ℂ}
-    (hS : toFilterGerm 𝓘(ℂ, E) E p.1 (𝓝 p.1) le_rfl s = S)
-    (g : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ)).presheaf.stalk p) :
-    (smoothingQuotientEquivRange p hS (Ideal.Quotient.mk _ g) : Germ _ ℂ) =
-      toFilterGerm 𝓘(ℂ, E × ℂ × ℂ) (E × ℂ × ℂ) p
-        (𝓝[{q | q.2.1 * q.2.2 = S q.1}] p) nhdsWithin_le_nhds g := by
-  rw [smoothingQuotientEquivRange_mk, RingHom.coe_rangeRestrict]
-
 /-- The inverse isomorphism sends the restriction of a germ to `N_s` to the class of the germ. -/
 @[simp]
 theorem smoothingQuotientEquivRange_symm_rangeRestrict (p : E × ℂ × ℂ)
