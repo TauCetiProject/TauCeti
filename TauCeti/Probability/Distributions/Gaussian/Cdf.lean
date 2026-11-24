@@ -12,6 +12,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Analysis.SpecialFunctions.Erf.Inequalities
 import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.Measure.Tail
+import TauCeti.Probability.Distributions.Gaussian.PDF
 import TauCeti.Probability.Cdf.Density
 
 /-!
@@ -145,8 +146,7 @@ theorem integral_Iic_gaussianPDFReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x :
 /-- The cumulative distribution function of a Gaussian law with nonzero variance. -/
 theorem cdf_gaussianReal_eq (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     cdf (gaussianReal m v) x = (1 + Real.erf ((x - m) / √(2 * (v : ℝ)))) / 2 := by
-  rw [cdf_eq_real, measureReal_def, gaussianReal_apply_eq_integral m hv,
-    ENNReal.toReal_ofReal (integral_nonneg fun t => gaussianPDFReal_nonneg m v t)]
+  rw [cdf_eq_real, measureReal_gaussianReal_eq_setIntegral m hv]
   exact integral_Iic_gaussianPDFReal m hv x
 
 /-- The cumulative distribution function of the standard Gaussian law. -/
@@ -338,9 +338,7 @@ standard Gaussian cumulative distribution function:
 `∫ t in Ioi x, N(m, v)(t) = Φ ((m - x) / √v)`. -/
 theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
     ∫ t in Ioi x, gaussianPDFReal m v t = cdf (gaussianReal 0 1) ((m - x) / √(v : ℝ)) := by
-  rw [← measureReal_Ioi_gaussianReal_eq_cdf m hv, measureReal_def,
-    gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
-      (setIntegral_nonneg measurableSet_Ioi fun t _ => gaussianPDFReal_nonneg m v t)]
+  rw [← measureReal_Ioi_gaussianReal_eq_cdf m hv, measureReal_gaussianReal_eq_setIntegral m hv]
 
 /-- A lower bound for the upper tail of a Gaussian law: beyond a point `s` to the right of the
 mean, the interval `(s, s + t]` alone carries mass at least its length `t` times the density at
@@ -362,8 +360,7 @@ theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v
           (fun x hx => antitoneOn_gaussianPDFReal m v (hs.trans hx.1.le) (hs.trans hst) hx.2)
           (integrable_gaussianPDFReal m v).integrableOn
     _ = (gaussianReal m v).real (Ioc s (s + t)) := by
-        rw [measureReal_def, gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
-          (setIntegral_nonneg measurableSet_Ioc fun x _ => gaussianPDFReal_nonneg m v x)]
+        rw [measureReal_gaussianReal_eq_setIntegral m hv]
     _ ≤ (gaussianReal m v).real (Ioi s) := measureReal_mono Ioc_subset_Ioi_self
 
 /-- The absolute value of a standard Gaussian exceeds `s ≥ 0` with probability at least the

@@ -123,6 +123,16 @@ theorem ofLinearCharacter_one [CommSemiring k] [Monoid G] :
     ofLinearCharacter (1 : G →* kˣ) = Representation.trivial k G k :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by simp
 
+/-- The kernel of the line of a linear character is the kernel of the character. -/
+@[simp]
+theorem ker_ofLinearCharacter [CommSemiring k] [Group G] (χ : G →* kˣ) :
+    (ofLinearCharacter χ).ker = χ.ker := by
+  ext g
+  simp only [MonoidHom.mem_ker]
+  refine ⟨fun h ↦ Units.ext ?_, fun h ↦ LinearMap.ext fun a ↦ ?_⟩
+  · simpa using LinearMap.congr_fun h 1
+  · simp [h]
+
 /-- **The sign character of `ℤˣ` carries the multiplication action of `ℤˣ`.** Over a commutative
 ring `k`, the character `ℤˣ →* kˣ` induced by `ℤ → k` acts on `k` by `u • a`, so its
 one-dimensional representation is the action of `ℤˣ` on `k`. -/

@@ -297,6 +297,13 @@ theorem val_reflection (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
       1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A) :=
   (rfl)
 
+/-- The reflection in `v` sends `x` to `x - (2 ⟨v, x⟩ / ⟨v, v⟩) v`. -/
+theorem reflection_mulVec (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) (x : n → K) :
+    ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ x =
+      x - (2 / (star v ⬝ᵥ A *ᵥ v) * (star v ⬝ᵥ A *ᵥ x)) • v := by
+  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, smul_smul]
+
 /-- The reflection in `v` sends `v` to `-v`. -/
 theorem reflection_mulVec_self (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
     (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :

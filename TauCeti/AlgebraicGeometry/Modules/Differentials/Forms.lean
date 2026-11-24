@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Differentials.Pullback
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
+public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Quasicoherent
 public import TauCeti.AlgebraicGeometry.VectorBundle.Determinant.LocallyConstantRank
 public import TauCeti.AlgebraicGeometry.VectorBundle.ExteriorPower.Basic
 
@@ -26,7 +28,8 @@ In degree zero `Ωᵖ_{X/R}` is `𝒪_X` and in degree one it is `Ω_{X/R}`. If 
 relative dimension `n` over `Spec R`, then `Ωᵖ_{X/R}` is finite locally free of rank `n.choose p`;
 in particular the top-degree forms `Ωⁿ_{X/R}` are an invertible sheaf, identified with the
 determinant `det Ω_{X/R}` (the canonical sheaf of `X` over `R`), and `Ωᵖ_{X/R}` vanishes for
-`p > n`.
+`p > n`. Differential forms commute with arbitrary base change of the base ring: for a cartesian
+square `X' = X ×_{Spec R} Spec S`, the pullback of `Ωᵖ_{X/R}` is `Ωᵖ_{X'/S}`.
 
 ## Main declarations
 
@@ -39,7 +42,9 @@ determinant `det Ω_{X/R}` (the canonical sheaf of `X` over `R`), and `Ωᵖ_{X/
   finite locally free exterior power of `Ω_{X/R}`, of rank `n.choose p` in relative dimension `n`;
 * `isZero_differentialForms`: `Ωᵖ_{X/R} = 0` for `p` above the relative dimension;
 * `isInvertible_differentialForms` and `differentialFormsIsoDet`: the top-degree forms are
-  invertible and are the determinant of `Ω_{X/R}`.
+  invertible and are the determinant of `Ω_{X/R}`;
+* `differentialFormsBaseChangeIso`: `g^* Ωᵖ_{X/R} ≅ Ωᵖ_{X'/S}` for a base change
+  `X' = X ×_{Spec R} Spec S` along any ring homomorphism `R → S`.
 
 ## References
 
@@ -156,6 +161,40 @@ def differentialFormsIsoDet (n : ℕ) [SmoothOfRelativeDimension n (X ↘ Spec (
       (FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R n)).app _).symm ≪≫
     eqToIso (by
       rw [FiniteLocallyFreeSheaf.det_obj, FiniteLocallyFreeSheaf.relativeDifferentials_obj])
+
+section BaseChange
+
+variable {R} {S : Type u} [CommRing S] [Algebra R S] {X} {X' : Scheme.{u}}
+  [X'.Over (Spec (.of S))] {g : X' ⟶ X}
+  (H : IsPullback g (X' ↘ Spec (.of S)) (X ↘ Spec (.of R))
+    (Spec.map (CommRingCat.ofHom (algebraMap R S))))
+
+/-- **Differential forms commute with arbitrary base change of the affine base ring.** For a
+cartesian square `X' = X ×_{Spec R} Spec S` along any ring homomorphism `R → S`, with no flatness
+or finiteness assumption, the pullback of `Ωᵖ_{X/R}` is `Ωᵖ_{X'/S}`. -/
+def differentialFormsBaseChangeIso (p : ℕ) :
+    (Scheme.Modules.pullback g).obj (differentialForms R (X ↘ Spec (.of R)) p) ≅
+      differentialForms S (X' ↘ Spec (.of S)) p :=
+  (Scheme.Modules.pullback g).mapIso (eqToIso (differentialForms_def R X p)) ≪≫
+    asIso ((Scheme.Modules.pullbackExteriorPowerComparison g p).app
+      (X.relativeDifferentials R)) ≪≫
+    (SheafOfModules.exteriorPower X'.sheaf p).mapIso (relativeDifferentialsBaseChangeIso H) ≪≫
+    eqToIso (differentialForms_def S X' p).symm
+
+/-- The forward map of `differentialFormsBaseChangeIso` is the exterior-power pullback comparison
+`g^* (⋀ᵖ Ω_{X/R}) ⟶ ⋀ᵖ (g^* Ω_{X/R})` followed by `⋀ᵖ` of the base change map
+`g^* Ω_{X/R} ⟶ Ω_{X'/S}`. -/
+lemma differentialFormsBaseChangeIso_hom (p : ℕ) :
+    (differentialFormsBaseChangeIso H p).hom =
+      (Scheme.Modules.pullback g).map (eqToHom (differentialForms_def R X p)) ≫
+        (Scheme.Modules.pullbackExteriorPowerComparison g p).app (X.relativeDifferentials R) ≫
+        (SheafOfModules.exteriorPower X'.sheaf p).map
+          (relativeDifferentialsPullbackHom H.toCommSq) ≫
+        eqToHom (differentialForms_def S X' p).symm := by
+  rw [← relativeDifferentialsBaseChangeIso_hom H]
+  rfl
+
+end BaseChange
 
 end
 
