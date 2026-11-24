@@ -70,9 +70,9 @@ theorem natCast_dvd_coeff_nsmulSeries_formalGroup_sub_coeff_invariantDifferentia
     (IsLeftCancelMulZero.mul_left_cancel_of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero))
   -- and specializes to `W`
   have := map_dvd W.specialize h
-  rw [map_natCast, map_sub, ← PowerSeries.coeff_map, ← PowerSeries.coeff_map,
-    FormalGroup.map_nsmulSeries, FormalGroup.map_invariantDifferential, ← map_formalGroup] at this
-  simpa only [map_specialize] using this
+  rwa [map_natCast, map_sub, ← PowerSeries.coeff_map, ← PowerSeries.coeff_map,
+    FormalGroup.map_nsmulSeries, FormalGroup.map_invariantDifferential,
+    map_specialize_formalGroup] at this
 
 /-- In characteristic `p`, the coefficient of `Tᵖ` in `[p]_Ê(T)` is the coefficient of `Tᵖ⁻¹` in
 the invariant differential of `Ê`. -/

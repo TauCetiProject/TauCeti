@@ -117,8 +117,8 @@ theorem isLandweberRegular_formalGroup_of_flat (h : W.specialize.Flat) :
       := R)
   -- specialization carries the universal Hasse invariant to that of `W`
   simpa only [List.map_cons, List.map_nil, map_natCast, RingHom.algebraMap_toAlgebra,
-    ← PowerSeries.coeff_map, FormalGroup.map_invariantDifferential, ← map_formalGroup,
-    map_specialize] using this
+    ← PowerSeries.coeff_map, FormalGroup.map_invariantDifferential, map_specialize_formalGroup]
+    using this
 
 /-- **Landweber exactness for a flat classifying map to the moduli stack.** Let `W` be an elliptic
 Weierstrass curve over `R` and `S = R[u, u⁻¹, r, s, t]` the ring of changes of variables over `R`.

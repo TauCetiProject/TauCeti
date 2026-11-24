@@ -172,9 +172,8 @@ theorem not_natCast_dvd_coeff_invariantDifferential (hp : p.Prime) :
       Set.singleton_subset_iff]
     exact ⟨Ideal.mem_span_singleton_self _, Ideal.mem_span_singleton.mpr h⟩
   have h' := Ideal.map_mono (f := N.specialize) hle
-  rw [FormalGroup.map_heightIdeal, ← map_formalGroup, Ideal.map_span, Set.image_singleton,
-    map_natCast, ZMod.natCast_self, Ideal.span_singleton_eq_bot.mpr rfl] at h'
-  simp only [map_specialize] at h'
+  rw [FormalGroup.map_heightIdeal, map_specialize_formalGroup, Ideal.map_span,
+    Set.image_singleton, map_natCast, ZMod.natCast_self, Ideal.span_singleton_eq_bot.mpr rfl] at h'
   rw [hN, TauCeti.heightIdeal_formalGroup_map_tateCurve_eq_top hp.one_lt le_rfl,
     le_bot_iff] at h'
   exact top_ne_bot h'
@@ -189,8 +188,7 @@ theorem heightIdeal_formalGroup_ne_top (hp : 1 < p) (n : ℕ) :
   intro h
   let Z : WeierstrassCurve (ZMod p) := ⟨0, 0, 0, 0, 0⟩
   have h' := congrArg (Ideal.map Z.specialize) h
-  rw [Ideal.map_top, FormalGroup.map_heightIdeal, ← map_formalGroup] at h'
-  simp only [map_specialize] at h'
+  rw [Ideal.map_top, FormalGroup.map_heightIdeal, map_specialize_formalGroup] at h'
   rw [formalGroup_eq_𝔾ₐ rfl rfl rfl rfl rfl, FormalGroup.heightIdeal_𝔾ₐ hp n.succ_ne_zero,
     ZMod.natCast_self, Ideal.span_singleton_eq_bot.mpr rfl] at h'
   exact bot_ne_top h'
