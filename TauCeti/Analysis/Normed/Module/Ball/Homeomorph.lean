@@ -127,13 +127,7 @@ rescaling is needed: `ContinuousLinearEquiv.unitBallHomeomorph L` is `L` itself.
 theorem unitBallHomeomorph_apply_of_norm_map (hL : ∀ x, ‖L x‖ = ‖x‖) (x : E) :
     L.unitBallHomeomorph x = L x := by
   have himage : L '' closedBall 0 1 = closedBall 0 1 := by
-    ext y
-    refine ⟨?_, fun hy ↦ ⟨L.symm y, ?_, L.apply_symm_apply y⟩⟩
-    · rintro ⟨x, hx, rfl⟩
-      rw [mem_closedBall_zero_iff, hL]
-      exact mem_closedBall_zero_iff.1 hx
-    · rw [mem_closedBall_zero_iff, ← hL, L.apply_symm_apply]
-      exact mem_closedBall_zero_iff.1 hy
+    simpa using ({ L.toLinearEquiv with norm_map' := hL } : E ≃ₗᵢ[ℝ] F).image_closedBall 0 1
   rw [unitBallHomeomorph_apply, himage,
     gaugeRescale_self_apply (absorbent_nhds_zero (closedBall_mem_nhds 0 one_pos))
       (NormedSpace.isVonNBounded_closedBall ℝ _ 1)]
