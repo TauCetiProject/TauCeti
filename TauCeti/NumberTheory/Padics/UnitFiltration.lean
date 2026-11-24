@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 
 For `i ≥ 1`, the unit filtration `U(ℚ_p,i)` of the local field `ℚ_[p]`, whose absolute
 ramification index is one, is the closed disc `‖x - 1‖ ≤ p ^ (-i)` about `1` for Mathlib's
-`p`-adic norm. Together with the results of `TauCeti.NumberTheory.Padics.ExponentialDisc`, this is
+`p`-adic norm. Together with the results of `TauCeti.NumberTheory.Padics.Exp.Disc`, this is
 the input for the logarithm on the principal units `1 + qℤ_p`, with `q = p` for odd `p` and
 `q = 4` for `p = 2`, in `TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm`.
 
