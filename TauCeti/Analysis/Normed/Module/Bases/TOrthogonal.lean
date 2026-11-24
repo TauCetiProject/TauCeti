@@ -289,7 +289,7 @@ theorem isTOrthogonalFamily_Iio_of_mul_nnnorm_le_nnnorm_sub [NormedField K]
   suffices key : ∀ s : Finset ℕ, (∀ i ∈ s, i < N) → ∀ a : ℕ → K,
       T N * s.sup (fun i ↦ ‖a i • e i‖₊) ≤ ‖∑ i ∈ s, a i • e i‖₊ by
     intro s a
-    have hN (i : Set.Iio N) : (i : ℕ) < N := i.2
+    have hN (i : Set.Iio N) : (i : ℕ) < N := i.property
     have h := key (s.map (Function.Embedding.subtype _)) (by simp +contextual)
       fun i ↦ if h : i < N then a ⟨i, h⟩ else 0
     simpa [Finset.sup_map, Finset.sum_map, Function.comp_def, hN] using h

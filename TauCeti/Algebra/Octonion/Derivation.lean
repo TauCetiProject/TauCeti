@@ -137,8 +137,8 @@ Derivations are taken in the bundled form `D : TauCeti.derivationLieAlgebra R (O
 
 ## References
 
-The type-`G₂` Killing-simplicity of `Der 𝕆` and its identification with `LieAlgebra.g₂` are not
-proved here.
+The type-`G₂` Killing-simplicity of `Der 𝕆` is in `TauCeti/Algebra/Octonion/Simple.lean`, and its
+identification with `LieAlgebra.g₂` in `TauCeti/Algebra/Octonion/G2.lean`.
 
 * T. A. Springer and F. D. Veldkamp, *Octonions, Jordan Algebras and Exceptional Groups*, §2.
 * R. D. Schafer, *An Introduction to Nonassociative Algebras*, Ch. III, where the skewness of a
@@ -520,7 +520,7 @@ def slDerivation :
     LieAlgebra.SpecialLinear.sl (Fin 3) R →ₗ⁅R⁆ derivationLieAlgebra R (Octonion R) where
   -- `𝔰𝔩₃` is the kernel of the trace, so membership in it is exactly the hypothesis of
   -- `slDerivationEnd_mem`.
-  toFun M := ⟨slDerivationEnd M.1, slDerivationEnd_mem (LinearMap.mem_ker.mp M.2)⟩
+  toFun M := ⟨slDerivationEnd M.val, slDerivationEnd_mem (LinearMap.mem_ker.mp M.property)⟩
   map_add' M N := derivationLieAlgebra.ext fun x => by
     refine Octonion.ext (by simp) (by simp) (by simp [Matrix.add_mulVec]) ?_
     simp [Matrix.transpose_add, Matrix.add_mulVec, add_comm]
@@ -612,7 +612,7 @@ def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
     (u : Fin 3 → R) :
     ⁅slDerivation M, upperDerivation u⁆ =
       upperDerivation ((M : Matrix (Fin 3) (Fin 3) R) *ᵥ u) := by
-  have hM : (M : Matrix (Fin 3) (Fin 3) R).trace = 0 := LinearMap.mem_ker.mp M.2
+  have hM : (M : Matrix (Fin 3) (Fin 3) R).trace = 0 := LinearMap.mem_ker.mp M.property
   refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
   · simp [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
   · simp [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose]
@@ -631,7 +631,7 @@ def slOfVectors (u t : Fin 3 → R) : LieAlgebra.SpecialLinear.sl (Fin 3) R :=
       lowerDerivation (-((M : Matrix (Fin 3) (Fin 3) R)ᵀ *ᵥ t)) := by
   have hM : (M : Matrix (Fin 3) (Fin 3) R)ᵀ.trace = 0 := by
     rw [Matrix.trace_transpose]
-    exact LinearMap.mem_ker.mp M.2
+    exact LinearMap.mem_ker.mp M.property
   refine derivationLieAlgebra.ext fun x => Octonion.ext ?_ ?_ ?_ ?_
   · simp [Matrix.dotProduct_mulVec, Matrix.mulVec_transpose]
   · simp [Matrix.dotProduct_mulVec, Matrix.mulVec_transpose]

@@ -96,13 +96,13 @@ theorem Topology.IsInducing.opensMeasurableSpace_probabilityMeasure [OpensMeasur
       (ProbabilityMeasure.toFiniteMeasure_isEmbedding X).isInducing.comp hg
   have hΦm : Measurable Φ := measurable_pi_iff.2 fun f ↦ by
     simp only [Φ, ProbabilityMeasure.toWeakDualBCNN_apply]
-    exact ((Measure.measurable_lintegral (by fun_prop)).comp hgm.subtype_val).ennreal_toNNReal
+    exact ((Measure.measurable_lintegral (by fun_prop)).comp hgm.subtypeVal).ennreal_toNNReal
   refine ⟨MeasurableSpace.generateFrom_le fun U hU ↦ ?_⟩
   obtain ⟨W, hW, rfl⟩ := hΦ.isOpen_iff.1 hU
   -- Each point of `Φ ⁻¹' W` lies in the preimage of a finite-dimensional open cylinder in `W`.
   have hcyl : ∀ a : Φ ⁻¹' W, ∃ V : Set α, IsOpen V ∧ MeasurableSet V ∧ (a : α) ∈ V ∧
       V ⊆ Φ ⁻¹' W := fun a ↦ by
-    obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 hW _ a.2
+    obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 hW _ a.property
     refine ⟨Φ ⁻¹' (I : Set (X →ᵇ ℝ≥0)).pi u, ?_, ?_, fun f hf ↦ (hu f hf).2,
       preimage_mono hsub⟩
     · exact (isOpen_set_pi I.finite_toSet fun f hf ↦ (hu f hf).1).preimage hΦ.continuous
