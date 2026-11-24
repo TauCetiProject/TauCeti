@@ -337,11 +337,11 @@ theorem isFiniteLisse_iff_of_openCover (𝒰 : S.OpenCover) :
 
 /-- **Finite lisse sheaves over a base covered by one geometric point.** Let `s : Spec Ω ⟶ S` be
 a surjective étale geometric point, with `Ω` separably closed. An étale sheaf of `Λ`-modules on
-`S` whose stalk at `s` is finitely generated is finite lisse: its pullback to `Spec Ω` is the
-constant sheaf on that stalk. -/
+`S` whose stalk at `s` is finitely generated is finite lisse. -/
 theorem IsFiniteLisse.of_etale_of_surjective_of_isSepClosed {Ω : Type u} [Field Ω]
     [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) [Etale s] [Surjective s]
     [Module.Finite Λ ((etaleStalk Λ s).obj F)] : F.IsFiniteLisse := by
+  -- The pullback of `F` to `Spec Ω` is the constant sheaf on its stalk at `s`.
   rw [isFiniteLisse_iff_of_etale_of_surjective F s]
   obtain ⟨N, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage
     (F := constantSheaf (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ))

@@ -104,10 +104,10 @@ theorem forget_map_toEtale_map {X Y : FiniteEtaleScheme S} (f : X ⟶ Y) :
   (rfl)
 
 /-- A finite étale morphism `s : X ⟶ S`, bundled as a finite étale `S`-scheme and regarded in the
-small étale site of `S`, is the étale `S`-scheme `Scheme.Etale.mk s`: both have underlying
-scheme over `S` equal to `Over.mk s`. -/
+small étale site of `S`, is the étale `S`-scheme `Scheme.Etale.mk s`. -/
 noncomputable def toEtaleObjOfHomIso {X : Scheme.{u}} (s : X ⟶ S) [IsFinite s] [Etale s] :
     (toEtale S).obj (ofHom s) ≅ Scheme.Etale.mk s :=
+  -- Both have underlying scheme over `S` equal to `Over.mk s`.
   (Scheme.Etale.forgetFullyFaithful S).preimageIso (eqToIso (ofHom_obj s))
 
 /-- Finite étale `S`-schemes form a full subcategory of the small étale site of `S`. -/

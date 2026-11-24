@@ -77,10 +77,11 @@ variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [I
 
 variable {K Ω} in
 /-- A finite continuous `Gal(Ω/K)`-set is nonempty if and only if the corresponding finite étale
-`K`-scheme is nonempty: both mean that the object is not initial. -/
+`K`-scheme is nonempty. -/
 theorem nonempty_fiberFunctor_obj_iff (T : ContAction FintypeCat.{u} Gal(Ω/K)) :
     Nonempty ((ContAction.fiberFunctor Gal(Ω/K)).obj T) ↔
       Nonempty ((galoisEquivalence K Ω).inverse.obj T).obj.left := by
+  -- Both sides say that `T` is not initial.
   rw [← not_isEmpty_iff, ← not_isEmpty_iff, ← isInitial_iff_isEmpty]
   refine not_congr ((initial_iff_fiber_empty
     (forget₂ (ContAction FintypeCat.{u} Gal(Ω/K)) FintypeCat.{u}) T).symm.trans
@@ -90,11 +91,12 @@ theorem nonempty_fiberFunctor_obj_iff (T : ContAction FintypeCat.{u} Gal(Ω/K)) 
 
 /-- **Galois coverings are jointly surjective.** A covering sieve of a finite continuous
 `Gal(Ω/K)`-set for the topology transported from the small étale site of `Spec K` is jointly
-surjective on underlying sets. Every point lies in the image of a Galois object `A`; the sieve
-pulled back to `A` covers the nonempty scheme corresponding to `A`, so it contains a map from a
-nonempty Galois set to the connected `A`, which is surjective. -/
+surjective on underlying sets. -/
 theorem galoisTopology_le_jointlySurjectiveTopology :
     galoisTopology K Ω ≤ ContAction.jointlySurjectiveTopology Gal(Ω/K) := by
+  -- Every point lies in the image of a Galois object `A`; the sieve pulled back to `A` covers the
+  -- nonempty scheme corresponding to `A`, so it contains a map from a nonempty Galois set to the
+  -- connected `A`, which is surjective.
   intro X R hR
   rw [ContAction.mem_jointlySurjectiveTopology_iff]
   intro s
@@ -129,11 +131,11 @@ noncomputable def galoisModuleSheaf :
 
 /-- **Sections of the étale sheaf of a Galois representation over Galois sets.** Over the finite
 étale `K`-scheme corresponding to a finite continuous `Gal(Ω/K)`-set, the sections of
-`galoisModuleSheaf K Ω ρ` are the `Gal(Ω/K)`-maps from it into `ρ`, naturally: this is the counit
-of `galoisSheafEquiv`. -/
+`galoisModuleSheaf K Ω ρ` are the `Gal(Ω/K)`-maps from it into `ρ`, naturally. -/
 noncomputable def galoisModuleSheafInverseIso :
     (galoisEquivalence K Ω).inverse.op ⋙ (toEtale _).op ⋙ (galoisModuleSheaf K Ω ρ).obj ≅
       ContAction.modulePresheaf ρ :=
+  -- This is the counit of `galoisSheafEquiv`.
   eqToIso (galoisSheafEquiv_functor_obj_obj K _ Ω _).symm ≪≫
     (sheafToPresheaf _ _).mapIso ((galoisSheafEquiv K (ModuleCat.{u} Λ) Ω).counitIso.app
       (galoisSetModuleSheaf K Ω ρ))
@@ -191,10 +193,9 @@ instance instModuleFiniteGaloisModuleSheafObj [IsNoetherianRing Λ] [Module.Fini
     Module.Finite Λ ((galoisModuleSheaf K Ω ρ).obj.obj (op ((toEtale _).obj X))) :=
   Module.Finite.equiv (galoisModuleSheafObjIso K Ω ρ X).toLinearEquiv.symm
 
-/-- **The sheaf of a Galois representation is finite lisse when `Ω` is finite over `K`.** Then the
-geometric point `Spec Ω ⟶ Spec K` is finite étale and surjective, and the stalk there is the
-module of sections over it, finitely generated for a finitely generated module over a Noetherian
-ring. -/
+/-- **The sheaf of a Galois representation is finite lisse when `Ω` is finite over `K`.** For a
+representation `ρ` of `Gal(Ω/K)` on a finitely generated module over a Noetherian ring,
+`galoisModuleSheaf K Ω ρ` is finite lisse. -/
 theorem isFiniteLisse_galoisModuleSheaf [FiniteDimensional K Ω] [IsNoetherianRing Λ]
     [Module.Finite Λ M] : (galoisModuleSheaf K Ω ρ).IsFiniteLisse := by
   let s : Spec (.of Ω) ⟶ Spec (.of K) := Spec.map (CommRingCat.ofHom (algebraMap K Ω))
@@ -202,6 +203,7 @@ theorem isFiniteLisse_galoisModuleSheaf [FiniteDimensional K Ω] [IsNoetherianRi
   have : Etale s :=
     (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
   have : IsFinite s := (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr inferInstance)
+  -- The geometric point `s : Spec Ω ⟶ Spec K` is finite étale and surjective.
   have : Surjective s := ⟨fun _ ↦ ⟨Nonempty.some inferInstance, Subsingleton.elim _ _⟩⟩
   -- The stalk at the étale point `s` is the module of sections over `s`.
   have : Module.Finite Λ
@@ -212,11 +214,11 @@ theorem isFiniteLisse_galoisModuleSheaf [FiniteDimensional K Ω] [IsNoetherianRi
 
 variable {K Ω} in
 /-- **Sections over `Spec K` are the invariants.** The sections of `galoisModuleSheaf K Ω ρ` over
-the terminal object `Spec K` are the invariants of `ρ`: the corresponding Galois set is a point,
-and a `Gal(Ω/K)`-map from a point is its value, a fixed vector. -/
+the terminal object `Spec K` are the invariants of `ρ`. -/
 noncomputable def galoisModuleSheafObjOfHomIdEquivInvariants :
     (galoisModuleSheaf K Ω ρ).obj.obj (op ((toEtale _).obj (ofHom (𝟙 (Spec (.of K)))))) ≃ₗ[Λ]
       Representation.invariants ρ :=
+  -- The corresponding Galois set is a point, and a `Gal(Ω/K)`-map from a point is its value.
   (galoisModuleSheafObjIso K Ω ρ _).toLinearEquiv ≪≫ₗ
     ContAction.modulePresheafObjEquivInvariants ρ
       ((isTerminalOfHomId (Spec (.of K))).isTerminalObj (galoisEquivalence K Ω).functor)
@@ -243,13 +245,12 @@ theorem nontrivial_galoisModuleSheaf_obj_regular [FiniteDimensional K Ω] [Nontr
 variable {K Ω} in
 /-- **Galois representations without invariants give nonconstant étale sheaves.** Let `Ω` be
 finite over `K`, and let `ρ` be a nonzero representation of `Gal(Ω/K)` with no nonzero
-invariants. Then the étale sheaf `galoisModuleSheaf K Ω ρ` on `Spec K` is not constant: morphisms
-from a constant sheaf on `N` correspond to maps from `N` to the sections over the terminal object
-`Spec K`, which vanish, so a constant such sheaf is zero; but it has a nonzero section over the
-finite étale `K`-scheme of the regular Galois set. -/
+invariants. Then the étale sheaf `galoisModuleSheaf K Ω ρ` on `Spec K` is not constant. -/
 theorem not_isConstant_galoisModuleSheaf [FiniteDimensional K Ω] [Nontrivial M]
     (hρ : Representation.invariants ρ = ⊥) :
     ¬ (galoisModuleSheaf K Ω ρ).IsConstant (Scheme.smallEtaleTopology (Spec (.of K))) := by
+  -- A constant such sheaf is zero, since its sections over the terminal object `Spec K` vanish;
+  -- but it has a nonzero section over the finite étale `K`-scheme of the regular Galois set.
   rintro ⟨N, ⟨e⟩⟩
   let F := galoisModuleSheaf K Ω ρ
   have hT : IsTerminal ((toEtale _).obj (ofHom (𝟙 (Spec (.of K))))) :=

@@ -173,7 +173,7 @@ section Regular
 variable (G) [Finite G] [DiscreteTopology G]
 
 /-- The regular action of a finite discrete group `G` on itself by left multiplication, as a
-finite continuous `G`-set; it is continuous since `G` is discrete. -/
+finite continuous `G`-set. -/
 noncomputable def regular : ContAction FintypeCat.{u} G :=
   have : Fintype G := Fintype.ofFinite G
   ⟨Action.FintypeCat.ofMulAction G (FintypeCat.of G),

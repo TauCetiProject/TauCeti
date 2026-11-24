@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.CategoryTheory.Galois.Sheaf
+public import TauCeti.RepresentationTheory.ToAction
 
 /-!
 # Sheaves of modules on finite continuous `G`-sets from representations
@@ -26,7 +27,6 @@ nonzero section over the regular `G`-set (`ContAction.nontrivial_modulePresheaf_
 
 ## Main definitions
 
-* `Representation.toAction ρ`: the `G`-set underlying a representation.
 * `ContAction.equivariantMaps ρ S`: the `Λ`-module of `G`-maps from `S` to `M`.
 * `ContAction.modulePresheaf ρ`: the presheaf of these modules on finite continuous `G`-sets, with
   sections `ContAction.modulePresheafObjEquiv`.
@@ -44,28 +44,6 @@ public section
 open CategoryTheory Limits Opposite FintypeCatDiscrete
 
 universe u
-
-namespace Representation
-
-variable {G : Type u} [Monoid G] {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M]
-  [Module Λ M] (ρ : Representation Λ G M)
-
-/-- The `G`-set underlying a representation `ρ` of `G`: `g` acts on `M` by `ρ g`. -/
-@[expose]
-def toAction : Action (Type u) G where
-  V := M
-  ρ := (TypeCat.endEquiv M).toMonoidHom.comp (MulAction.toEndHom.comp ρ)
-
-/-- The underlying type of `ρ.toAction` is the module of `ρ`. -/
-theorem toAction_V : ρ.toAction.V = M :=
-  (rfl)
-
-/-- In `ρ.toAction`, `g` acts by `ρ g`. -/
-@[simp]
-theorem toAction_ρ_apply (g : G) (m : ρ.toAction.V) : ρ.toAction.ρ g m = ρ g m :=
-  (rfl)
-
-end Representation
 
 namespace ContAction
 
