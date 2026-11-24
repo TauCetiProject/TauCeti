@@ -83,6 +83,11 @@ theorem effectiveResistance_eq_zero_of_forall_ne {a b : V}
     N.effectiveResistance a b = 0 := by
   rw [effectiveResistance, dite_eq_right (not_exists.2 h)]
 
+/-- The effective resistance between a vertex and itself vanishes. -/
+@[simp] theorem effectiveResistance_self (a : V) : N.effectiveResistance a a = 0 := by
+  rw [effectiveResistance]
+  split_ifs <;> simp
+
 /-- Pairing a potential with the unit current from `a` to `b` gives its voltage drop. -/
 private theorem sum_mul_single_sub_single [Fintype V] (g : V → ℝ) (a b : V) :
     ∑ v, g v * (Pi.single a 1 - Pi.single b 1 : V → ℝ) v = g a - g b := by
@@ -134,10 +139,6 @@ theorem effectiveResistance_nonneg (a b : V) : 0 ≤ N.effectiveResistance a b :
     rw [N.effectiveResistance_eq_sum hf, ← N.sum_mul_laplacian_apply_self]
     exact N.sum_mul_laplacian_apply_self_nonneg f
   · rw [N.effectiveResistance_eq_zero_of_forall_ne (not_exists.1 h)]
-
-/-- The effective resistance between a vertex and itself vanishes. -/
-@[simp] theorem effectiveResistance_self (a : V) : N.effectiveResistance a a = 0 := by
-  simpa using N.effectiveResistance_eq (f := 0) (a := a) (b := a) (by simp)
 
 /-- The effective resistance is symmetric. -/
 theorem effectiveResistance_comm (a b : V) :
