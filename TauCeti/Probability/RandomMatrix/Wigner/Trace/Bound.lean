@@ -132,7 +132,7 @@ theorem norm_integral_trace_pow_wignerMatrix_le {L n : ℕ} {K σ γ : ℝ}
             obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_le'
               (two_le_card_filter_eq_of_no_singleton_fiber hw _ (mem_image_of_mem _ (mem_univ s)))
             rw [hm, Nat.add_sub_cancel]
-            exact integral_norm_wignerMatrix_apply_pow_add_two_le hξm hηm hξK hηK hξσ hησ _ _ m
+            exact integral_norm_wignerMatrix_apply_pow_add_two_le hξK hηK hξσ hησ _ _ m
         rw [Fintype.card_fin] at hword
         exact hword.trans (pow_mul_pow_sub_le_mul_pow_div_pow hb₀ (le_min (by positivity)
           (sq_nonneg _)) (min_le_right _ _) (min_le_left _ _) ((div_le_iff₀ hsqrt).mpr hK)

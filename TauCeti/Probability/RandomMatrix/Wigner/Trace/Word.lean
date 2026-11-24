@@ -298,36 +298,31 @@ theorem norm_integral_prod_wignerMatrix_apply_le_of_no_singleton_edge {ι : Type
     ‖∫ ω, ∏ s, wignerMatrix ξ η n ω (u s) (v s) ∂P‖ ≤
       c ^ #(univ.image fun s ↦ s(u s, v s)) *
         b ^ (Fintype.card ι - 2 * #(univ.image fun s ↦ s(u s, v s))) := by
-  rw [integral_prod_wignerMatrix_apply_eq_prod hξm hηm hindep u v, norm_prod]
-  set g : ι → Sym2 (Fin n) := fun s ↦ s(u s, v s)
-  -- Every position read is read at least twice.
-  have hfib := two_le_card_filter_eq_of_no_singleton_fiber (f := g) huv
-  -- The factor of a position read `d` times is bounded by the `d`th absolute moment.
-  have hbound (x : Sym2 (Fin n)) (hx : x ∈ univ.image g) :
-      ‖∫ ω, ∏ s with g s = x, wignerMatrix ξ η n ω (u s) (v s) ∂P‖ ≤
-        b ^ (#{s | g s = x} - 2) * c := by
-    obtain ⟨s₀, -, rfl⟩ := mem_image.mp hx
-    calc _ ≤ ∫ ω, ‖∏ s with g s = g s₀, wignerMatrix ξ η n ω (u s) (v s)‖ ∂P :=
-          norm_integral_le_integral_norm _
-      _ = ∫ ω, ‖wignerMatrix ξ η n ω (u s₀) (v s₀)‖ ^ #{s | g s = g s₀} ∂P := by
-          refine integral_congr_ae (.of_forall fun ω ↦ ?_)
-          dsimp only
-          rw [norm_prod, ← prod_const]
-          exact prod_congr rfl fun s hs ↦
-            norm_wignerMatrix_apply_eq_of_mk_eq ω (mem_filter.mp hs).2
-      _ ≤ _ := hmom s₀
-  -- The multiplicities of the positions read add up to the length of the word.
-  have hsum : ∑ x ∈ univ.image g, (#{s | g s = x} - 2) + 2 * #(univ.image g) =
-      Fintype.card ι := by
-    rw [← card_univ, card_eq_sum_card_image g univ, mul_comm, ← smul_eq_mul, ← sum_const,
-      ← sum_add_distrib]
-    exact sum_congr rfl fun x hx ↦ Nat.sub_add_cancel (hfib x hx)
-  calc _ ≤ ∏ x ∈ univ.image g, b ^ (#{s | g s = x} - 2) * c :=
-        prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) hbound
-    _ = c ^ #(univ.image g) * b ^ (Fintype.card ι - 2 * #(univ.image g)) := by
-        rw [prod_mul_distrib, prod_const, prod_pow_eq_pow_sum, mul_comm]
-        congr 2
-        omega
+  classical
+  -- The entry at `(u s, v s)` reads the corner coordinate `entryIndex (u s) (v s)`, and two
+  -- entries read the same coordinate exactly when they sit at the same unordered position.
+  have hfib (s : ι) : #{t | entryIndex (u t) (v t) = entryIndex (u s) (v s)} =
+      #{t | s(u t, v t) = s(u s, v s)} := by
+    simp only [entryIndex_eq_entryIndex_iff]
+  have hcard : #(univ.image fun s ↦ entryIndex (u s) (v s)) =
+      #(univ.image fun s ↦ s(u s, v s)) := by
+    rw [← card_image_of_injective _ sym2Index_injective, image_image]
+    simp [Function.comp_def, sym2Index]
+  have h := hindep.norm_integral_fun_prod_comp_le_of_no_singleton_fiber
+    (aemeasurable_cornerEntry hξm hηm) (e := fun s ↦ entryIndex (u s) (v s))
+    (fun t ↦ by simpa only [entryIndex_eq_entryIndex_iff] using huv t)
+    (φ := fun s z ↦ (Real.sqrt n : ℂ)⁻¹ * orientEntry (u s) (v s) z)
+    (fun s ↦ (measurable_const.mul (measurable_orientEntry _ _)).aestronglyMeasurable)
+    (b := b) (c := c) fun s ↦ ?_
+  · simpa only [← wignerMatrix_apply_eq_orientEntry, hcard] using h
+  -- Every factor reading the coordinate of `s` has the norm of the entry at `(u s, v s)`.
+  rw [hfib s]
+  refine (integral_congr_ae (.of_forall fun ω ↦ ?_)).trans_le (hmom s)
+  rw [← hfib s, ← prod_const]
+  refine prod_congr rfl fun t ht ↦ ?_
+  have ht := (mem_filter.mp ht).2
+  rw [← ht, ← wignerMatrix_apply_eq_orientEntry,
+    norm_wignerMatrix_apply_eq_of_mk_eq ω (entryIndex_eq_entryIndex_iff.mp ht)]
 
 end SingleEdge
 
