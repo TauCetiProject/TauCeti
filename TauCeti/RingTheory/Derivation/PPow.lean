@@ -269,10 +269,11 @@ private theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {
     (hn : 2 ≤ n) : (b • D)^[n] y = b ^ n * D^[n] y + smulIterCoeff D b n 1 * D y +
       ∑ k ∈ Finset.Ico 2 n, smulIterCoeff D b n k * D^[k] y := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
+  -- Split off the top term `k = n`, then the bottom terms `k = 0` and `k = 1`.
   rw [iterate_smul_apply_eq_sum, Finset.sum_range_succ, Finset.range_eq_Ico,
-    ← Finset.sum_Ico_consecutive _ (Nat.zero_le 2) hn, smulIterCoeff_self,
-    Finset.sum_Ico_succ_top (Nat.zero_le 1), ← Finset.range_eq_Ico, Finset.sum_range_one,
-    smulIterCoeff_succ_zero, zero_mul, Function.iterate_one]
+    Finset.sum_eq_sum_Ico_succ_bot (by omega), Finset.sum_eq_sum_Ico_succ_bot (by omega)]
+  simp only [smulIterCoeff_self, smulIterCoeff_succ_zero, zero_mul, zero_add,
+    Function.iterate_one]
   ring
 
 variable (p : ℕ) [Fact p.Prime] [CharP A p]
@@ -319,9 +320,11 @@ open Polynomial in
 theorem smulIterCoeff_eq_zero_of_mem_Ico (D : Derivation R A A) (b : A) {k : ℕ}
     (hk : k ∈ Finset.Ico 2 p) : smulIterCoeff D b p k = 0 := by
   let : Differential A := ⟨D.restrictScalars ℤ⟩
+  -- With this instance, `Differential.deriv y` is `D.restrictScalars ℤ y`, that is, `D y`.
+  have hderiv (y : A) : Differential.deriv y = D y := D.restrictScalars_apply ℤ y
   apply C_injective
   rw [map_smulIterCoeff C D (Differential.implicitDeriv 1)
-    (fun y ↦ (Differential.implicitDeriv_C 1 y).symm), map_zero]
+    (fun y ↦ by rw [Differential.implicitDeriv_C, hderiv]), map_zero]
   exact smulIterCoeff_eq_zero_of_apply_eq_one p _ (Differential.implicitDeriv_X 1) (C b) hk
 
 /-- **Hochschild's formula** (Hochschild 1955; Katz, Proposition 5.3, due to Deligne). In
@@ -335,8 +338,8 @@ theorem pPow_smul (a : A) (D : Derivation R A A) :
     rw [hq, smulIterCoeff_succ_one, Nat.add_sub_cancel]
   ext y
   rw [pPow_apply, iterate_smul_apply_eq_add_sum D a y hp.two_le,
-    Finset.sum_eq_zero fun k hk ↦ by rw [smulIterCoeff_eq_zero_of_mem_Ico p D a hk, zero_mul],
-    add_zero, h₁, add_apply, smul_apply, smul_apply, pPow_apply, smul_eq_mul, smul_eq_mul]
+    Finset.sum_eq_zero fun k hk ↦ by rw [smulIterCoeff_eq_zero_of_mem_Ico p D a hk, zero_mul], h₁]
+  simp [pPow_apply]
 
 end Hochschild
 
