@@ -73,22 +73,6 @@ open _root_.UnitAddTorus
 
 variable {d : Type*} [Fintype d]
 
--- Mathlib's Fourier basis `mFourierBasis` lives on `L²` for the product of the Haar probability
--- measures on the circle factors, given by this instance; use it here so that the multipliers act
--- on that same space.
-attribute [local instance 2000] instMeasureSpaceUnitAddCircle
-
--- The two facts about this measure that Mathlib records with file-local instances: it is a Haar
--- measure and a probability measure. They make the volume on the torus translation and negation
--- invariant, as convolution on the torus needs.
-local instance : Measure.IsAddHaarMeasure (volume : Measure UnitAddCircle) :=
-  inferInstanceAs (Measure.IsAddHaarMeasure AddCircle.haarAddCircle)
-
-local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
-  inferInstanceAs (IsProbabilityMeasure AddCircle.haarAddCircle)
-
-local notation "L²(" α ")" => Lp ℂ 2 (volume : Measure α)
-
 /-! ### The periodic kernel -/
 
 /-- A Schwartz function is absolutely summable over the integer points. -/
@@ -132,8 +116,28 @@ theorem _root_.SchwartzMap.eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace �
   simp only [← latticePoint_eq_sum, ← SchwartzMap.fourier_coe,
     FourierTransform.fourier_fourierInv_eq] at h
   rw [eLpNorm_one_eq_lintegral_eNorm σ.periodicKernel.continuous.aestronglyMeasurable,
-    ← SchwartzMap.fourierInv_coe, ofReal_integral_norm_eq_lintegral_eNorm (𝓕⁻ σ).integrable]
-  simpa only [SchwartzMap.periodicKernel_apply] using h
+    ← SchwartzMap.fourierInv_coe, ofReal_integral_norm_eq_lintegral_eNorm (𝓕⁻ σ).integrable,
+    volume_eq_pi_haarAddCircle]
+  -- `h` integrates for Mathlib's file-local volume on the torus, which is by definition the
+  -- product of the Haar probability measures `AddCircle.haarAddCircle` on the circle factors.
+  simp only [SchwartzMap.periodicKernel_apply]
+  exact h
+
+-- Mathlib's Fourier basis `mFourierBasis` lives on `L²` for the product of the Haar probability
+-- measures on the circle factors, given by this instance; use it here so that the multipliers act
+-- on that same space.
+attribute [local instance 2000] instMeasureSpaceUnitAddCircle
+
+-- The two facts about this measure that Mathlib records with file-local instances: it is a Haar
+-- measure and a probability measure. They make the volume on the torus translation and negation
+-- invariant, as convolution on the torus needs.
+local instance : Measure.IsAddHaarMeasure (volume : Measure UnitAddCircle) :=
+  inferInstanceAs (Measure.IsAddHaarMeasure AddCircle.haarAddCircle)
+
+local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
+  inferInstanceAs (IsProbabilityMeasure AddCircle.haarAddCircle)
+
+local notation "L²(" α ")" => Lp ℂ 2 (volume : Measure α)
 
 /-! ### The multiplier is a convolution -/
 
@@ -215,7 +219,10 @@ theorem eLpNorm_fourierMultiplier_le (hm : ∀ n, m n = σ (latticePoint n)) {p 
   calc ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ * eLpNorm σ.periodicKernel 1 volume * eLpNorm f p volume
       ≤ 1 * ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
         gcongr
-        exact σ.eLpNorm_periodicKernel_le
+        -- The bound is stated for the global volume, the product of the Haar probability
+        -- measures, which is by definition the volume given by the local instance here.
+        have h := σ.eLpNorm_periodicKernel_le
+        rwa [volume_eq_pi_haarAddCircle] at h
     _ = _ := by rw [one_mul]
 
 end TauCeti.UnitAddTorus

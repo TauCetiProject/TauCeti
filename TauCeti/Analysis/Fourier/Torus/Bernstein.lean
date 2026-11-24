@@ -178,9 +178,7 @@ private theorem eLpNorm_sum_box_le [DecidableEq d] {τ : EuclideanSpace ℝ d �
   have hK : ⇑S.periodicKernel = fun x ↦ ∑ n ∈ box d R, τ (R⁻¹ • latticePoint n) * mFourier n x :=
     funext fun x ↦ by rw [SchwartzMap.periodicKernel_apply, hsum]
   have h := S.eLpNorm_periodicKernel_le
-  rw [hK, hFS] at h
-  rw [volume_eq_pi_haarAddCircle]
-  exact h
+  rwa [hK, hFS] at h
 
 end Box
 
@@ -262,6 +260,25 @@ private theorem norm_cutoffKernel_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R) (x
   · rw [Finset.sum_const, nsmul_eq_mul, mul_one]
     exact card_box_le hR
 
+/-- The real-arithmetic step of the interpolation below: for `0 ≤ θ ≤ 1`,
+`A ^ (1 - θ) ((7 R) ^ k) ^ θ ≤ max 1 A 7 ^ k R ^ (k θ)`. -/
+private theorem rpow_one_sub_mul_rpow_le {A R θ : ℝ} (hA : 0 ≤ A) (hR : 0 ≤ R)
+    (hθ : θ ∈ Icc (0 : ℝ) 1) (k : ℕ) :
+    A ^ (1 - θ) * ((7 * R) ^ k) ^ θ ≤ max 1 A * 7 ^ k * R ^ ((k : ℝ) * θ) := by
+  have hAk : A ^ (1 - θ) ≤ max 1 A := by
+    calc A ^ (1 - θ) ≤ (max 1 A) ^ (1 - θ) := by
+          gcongr
+          · linarith [hθ.2]
+          · exact le_max_right _ _
+      _ ≤ max 1 A := Real.rpow_le_self_of_one_le (le_max_left _ _) (by linarith [hθ.1])
+  have h7R : ((7 * R) ^ k) ^ θ ≤ 7 ^ k * R ^ ((k : ℝ) * θ) := by
+    rw [mul_pow, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast R,
+      ← Real.rpow_mul hR]
+    gcongr
+    exact Real.rpow_le_self_of_one_le (one_le_pow₀ (by norm_num)) hθ.2
+  rw [mul_assoc]
+  exact mul_le_mul hAk h7R (by positivity) (by positivity)
+
 /-- For `1 ≤ r ≤ ∞`, the `Lʳ` norm of the reproducing kernel at scale `R ≥ 1` is
 `O(R ^ (d (1 - 1/r)))`, by interpolation between its `L¹` bound, uniform in `R`, and its supremum
 bound `(7 R) ^ d`. -/
@@ -301,26 +318,9 @@ private theorem eLpNorm_cutoffKernel_le [DecidableEq d] {R : ℝ} (hR : 1 ≤ R)
         rw [ENNReal.ofReal_rpow_of_nonneg (integral_nonneg fun _ ↦ norm_nonneg _)
             (by linarith [hθ.2]),
           ENNReal.ofReal_rpow_of_nonneg (by positivity) hθ.1, ENNReal.ofReal_mul (by positivity)]
-    _ ≤ ENNReal.ofReal (max 1 A * 7 ^ k * R ^ ((k : ℝ) * θ)) := by
-        refine ENNReal.ofReal_le_ofReal ?_
-        have hAk : A ^ (1 - θ) ≤ max 1 A := by
-          calc A ^ (1 - θ) ≤ (max 1 A) ^ (1 - θ) := by
-                gcongr
-                · linarith [hθ.2]
-                · exact le_max_right _ _
-            _ ≤ (max 1 A) ^ (1 : ℝ) := Real.rpow_le_rpow_of_exponent_le
-                (le_max_left _ _) (by linarith [hθ.1])
-            _ = max 1 A := Real.rpow_one _
-        have h7R : ((7 * R) ^ k) ^ θ ≤ 7 ^ k * R ^ ((k : ℝ) * θ) := by
-          rw [mul_pow, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast R,
-            ← Real.rpow_mul hR0.le]
-          gcongr
-          calc ((7 : ℝ) ^ k) ^ θ ≤ ((7 : ℝ) ^ k) ^ (1 : ℝ) :=
-                Real.rpow_le_rpow_of_exponent_le (one_le_pow₀ (by norm_num)) hθ.2
-            _ = 7 ^ k := Real.rpow_one _
-        calc A ^ (1 - θ) * ((7 * R) ^ k) ^ θ ≤ max 1 A * (7 ^ k * R ^ ((k : ℝ) * θ)) :=
-              mul_le_mul hAk h7R (by positivity) (by positivity)
-          _ = _ := by ring
+    _ ≤ ENNReal.ofReal (max 1 A * 7 ^ k * R ^ ((k : ℝ) * θ)) :=
+        ENNReal.ofReal_le_ofReal (rpow_one_sub_mul_rpow_le (integral_nonneg fun _ ↦ norm_nonneg _)
+          hR0.le hθ k)
 
 /-- The symbol `2πi ∑ i, n i * v i` of the derivative along `v`. -/
 private noncomputable def derivSymbol (v : d → ℝ) (n : d → ℤ) : ℂ :=
