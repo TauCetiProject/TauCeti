@@ -72,7 +72,7 @@ theorem isCoveringMapOn_setOf_isRegularValue
   refine hp.isClosedMap.isCoveringMapOn_of_isLocalHomeomorphOn
     (fun _ hy ↦ hy.finite_preimage_of_isProperMap hdim hp) ?_
   have hloc : IsLocalDiffeomorphOn I J n f (f ⁻¹' {y | IsRegularValue I J f y}) :=
-    fun x ↦ (x.2.isRegularPoint rfl).isLocalDiffeomorphAt hdim hf hn
+    fun x ↦ (x.property.isRegularPoint rfl).isLocalDiffeomorphAt hdim hf hn
       BoundarylessManifold.isInteriorPoint
   exact hloc.isLocalHomeomorphOn
 
@@ -105,7 +105,7 @@ theorem IsRegularValue.exists_trivialization_contMDiffOn_symm
     have hlabel : (t a).2 = ⟨a, rfl⟩ := h.toTrivialization_apply
     simpa only [hlabel] using t.symm_apply_mk_proj (t.mem_source.mpr hyt)
   · intro x
-    have hx : IsRegularValue I J f (f x) := (t.mem_source.mp x.2).2
+    have hx : IsRegularValue I J f (f x) := (t.mem_source.mp x.property).2
     exact (hx.isRegularPoint rfl).isLocalDiffeomorphAt hdim hf hn
       BoundarylessManifold.isInteriorPoint
 

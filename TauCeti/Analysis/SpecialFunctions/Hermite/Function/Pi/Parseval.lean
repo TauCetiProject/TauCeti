@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Parseval
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Pi.Basis
+import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # Parseval and expansions for the multi-index Hermite-function basis
@@ -29,6 +30,10 @@ of a product are the products of the one-dimensional Hermite coordinates.
 * `TauCeti.hermiteFunctionPiBasis_repr_eq_integral` — the same coordinate as an integral against
   `∏ᵢ ψ_{aᵢ}(xᵢ)`, whose integrand is integrable by
   `TauCeti.integrable_prod_hermiteFunction_mul`.
+* `TauCeti.hasSum_integral_prod_hermiteFunction_mul_mul_integral` — Parseval's identity for the
+  coefficient integrals `∫ ∏ᵢ ψ_{aᵢ}(xᵢ) f(x) dx` of real `L²` functions, and
+  `TauCeti.hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral` its form for the
+  dilated Hermite functions `∏ᵢ ψ_{aᵢ}(cᵢ xᵢ)`.
 * `TauCeti.hermiteFunctionPiBasis_repr_L2piMul` — the coordinates of a product function are the
   products of the one-dimensional coordinates.
 * `TauCeti.tsum_inner_mul_inner_L2piMul_hermiteFunctionLp` — Parseval in polarized form.
@@ -82,6 +87,66 @@ theorem hermiteFunctionPiBasis_repr_eq_integral
   rw [hx]
   simp [RCLike.algebraMap_eq_ofReal, map_prod, mul_comm]
 
+/-- **Parseval's identity for the Hermite coefficient integrals.** The products of the
+multi-index Hermite coefficients `∫ ∏ᵢ ψ_{aᵢ}(xᵢ) f(x) dx` of two real functions `f` and `g` in
+`L²(ℝ^ι)` sum to `∫ f g`. -/
+theorem hasSum_integral_prod_hermiteFunction_mul_mul_integral {f g : (ι → ℝ) → ℝ}
+    (hf : MemLp f 2 (Measure.pi fun _ : ι ↦ volume))
+    (hg : MemLp g 2 (Measure.pi fun _ : ι ↦ volume)) :
+    HasSum (fun a : ι → ℕ ↦ (∫ x, (∏ i, hermiteFunction (a i) (x i)) * f x) *
+      ∫ x, (∏ i, hermiteFunction (a i) (x i)) * g x) (∫ x, f x * g x) := by
+  set b := hermiteFunctionPiBasis ℝ ι
+  have hcoeff : ∀ (h : (ι → ℝ) → ℝ) (hh : MemLp h 2 (Measure.pi fun _ : ι ↦ volume)) (a : ι → ℕ),
+      inner ℝ (b a) (hh.toLp h) = ∫ x, (∏ i, hermiteFunction (a i) (x i)) * h x := by
+    intro h hh a
+    rw [← b.repr_apply_apply, hermiteFunctionPiBasis_repr_eq_integral]
+    refine integral_congr_ae ?_
+    filter_upwards [hh.coeFn_toLp] with x hx
+    simp [hx]
+  have key := b.hasSum_inner_mul_inner (hf.toLp f) (hg.toLp g)
+  rw [L2.inner_def] at key
+  convert key using 1
+  · funext a
+    rw [real_inner_comm, hcoeff f hf, hcoeff g hg]
+  · refine integral_congr_ae ?_
+    filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x hfx hgx
+    simp [hfx, hgx, mul_comm]
+
+/-- **Parseval's identity for the dilated Hermite functions.** For nonzero dilation factors `cᵢ`,
+the products of the coefficients `∫ ∏ᵢ ψ_{aᵢ}(cᵢ xᵢ) f(x) dx` of two real functions `f` and `g`
+in `L²(ℝ^ι)` sum to `|∏ᵢ cᵢ|⁻¹ ∫ f g`. -/
+theorem hasSum_integral_prod_hermiteFunction_comp_mul_mul_mul_integral {c : ι → ℝ}
+    (hc : ∀ i, c i ≠ 0) {f g : (ι → ℝ) → ℝ} (hf : MemLp f 2 (Measure.pi fun _ : ι ↦ volume))
+    (hg : MemLp g 2 (Measure.pi fun _ : ι ↦ volume)) :
+    HasSum (fun a : ι → ℕ ↦ (∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * f x) *
+      ∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * g x) (|∏ i, c i|⁻¹ * ∫ x, f x * g x) := by
+  -- Undo the dilation: `f = f' ∘ (x ↦ c x)` for `f' = f ∘ (y ↦ c⁻¹ y)`.
+  let d : (ι → ℝ) → ι → ℝ := fun x i ↦ (c i)⁻¹ * x i
+  have hd : ∀ x : ι → ℝ, d (fun i ↦ c i * x i) = x := fun x ↦ by
+    funext i
+    simp [d, inv_mul_cancel_left₀ (hc i)]
+  have hmemLp : ∀ {h : (ι → ℝ) → ℝ}, MemLp h 2 (Measure.pi fun _ : ι ↦ volume) →
+      MemLp (h ∘ d) 2 (Measure.pi fun _ : ι ↦ volume) := fun hh ↦ by
+    refine MemLp.comp_of_map ?_ (by fun_prop : Continuous d).aemeasurable
+    rw [Measure.map_mul_pi_addHaar_eq_smul _ fun i ↦ inv_ne_zero (hc i)]
+    exact hh.smul_measure ENNReal.ofReal_ne_top
+  have key := hasSum_integral_prod_hermiteFunction_mul_mul_integral (hmemLp hf) (hmemLp hg)
+  have hcoeff : ∀ (h : (ι → ℝ) → ℝ) (a : ι → ℕ),
+      ∫ x, (∏ i, hermiteFunction (a i) (c i * x i)) * h x =
+        |∏ i, c i|⁻¹ * ∫ y, (∏ i, hermiteFunction (a i) (y i)) * (h ∘ d) y := by
+    intro h a
+    rw [← smul_eq_mul, ← integral_comp_mul_pi c]
+    simp only [Function.comp_apply, hd]
+  have hint : ∫ x, f x * g x = |∏ i, c i|⁻¹ * ∫ y, (f ∘ d) y * (g ∘ d) y := by
+    rw [← smul_eq_mul, ← integral_comp_mul_pi c]
+    simp only [Function.comp_apply, hd]
+  convert key.mul_left (|∏ i, c i|⁻¹ * |∏ i, c i|⁻¹) using 1
+  · funext a
+    rw [hcoeff f, hcoeff g]
+    ring
+  · rw [hint]
+    ring
+
 /-- **The multi-index coordinates of a product function factor.** If `f(x) = ∏ᵢ Fᵢ(xᵢ)` then its
 `a`-th multi-index Hermite coordinate is the product of the `aᵢ`-th one-dimensional Hermite
 coordinates of the factors — the statement that makes a multidimensional Hermite expansion of a
@@ -119,13 +184,13 @@ multi-index Hermite coordinates of `f` sum to `‖f‖²`. -/
 theorem tsum_norm_sq_inner_L2piMul_hermiteFunctionLp
     (f : Lp 𝕜 2 (Measure.pi fun _ : ι => (volume : Measure ℝ))) :
     ∑' a : ι → ℕ, ‖inner 𝕜 (L2piMul fun i => hermiteFunctionLp 𝕜 (a i)) f‖ ^ 2 = ‖f‖ ^ 2 := by
-  simpa using (hermiteFunctionPiBasis 𝕜 ι).tsum_norm_sq_inner f
+  simpa using (hermiteFunctionPiBasis 𝕜 ι).tsum_norm_inner_sq f
 
 /-- The squared multi-index Hermite coordinate family of an `L²(ℝ^ι)` function is summable. -/
 theorem summable_norm_sq_inner_L2piMul_hermiteFunctionLp
     (f : Lp 𝕜 2 (Measure.pi fun _ : ι => (volume : Measure ℝ))) :
     Summable fun a : ι → ℕ => ‖inner 𝕜 (L2piMul fun i => hermiteFunctionLp 𝕜 (a i)) f‖ ^ 2 := by
-  simpa using (hermiteFunctionPiBasis 𝕜 ι).summable_norm_sq_inner f
+  simpa using (hermiteFunctionPiBasis 𝕜 ι).summable_norm_inner_sq f
 
 /-- **The multi-index Hermite expansion.** Every `f ∈ L²(ℝ^ι)` is the sum of its multi-index
 Hermite series, summed over multi-indices `a : ι → ℕ` in the unordered sense. -/

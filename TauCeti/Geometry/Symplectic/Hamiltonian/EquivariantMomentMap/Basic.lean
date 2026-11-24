@@ -76,6 +76,13 @@ of `μ` form a `G`-invariant set. Hence if `c` is a regular value, `μ` is a sub
 point of `μ⁻¹(G · c)`, the preimage of the coadjoint orbit of `c`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`).
 
+The derivative of an invariant function vanishes on every fundamental vector field, so a moment map
+is conserved along the integral curves of a Hamiltonian vector field of an invariant function
+(`TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`), and for a
+nondegenerate form every component of the moment map Poisson-commutes with the invariant function
+(`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero_of_smul_invariant`). This is
+**Noether's theorem** for Hamiltonian systems.
+
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap σ μ`: `μ` is a coadjoint-equivariant moment map
@@ -95,6 +102,12 @@ point of `μ⁻¹(G · c)`, the preimage of the coadjoint orbit of `c`
   symplectomorphisms on a preconnected manifold, equivariance can be tested at a single point.
 * `TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isEquivariantMomentMap_iff_exists_eq_add`:
   uniqueness of group-level moment maps up to coadjoint-invariant constants.
+* `TauCeti.SmoothTwoForm.IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant`: **Noether's
+  theorem**, a moment map is conserved along the integral curves of a Hamiltonian vector field of
+  an invariant function.
+* `TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_eq_zero_of_smul_invariant`: **Noether's
+  theorem**, Poisson form: for a nondegenerate form, every component of a moment map
+  Poisson-commutes with an invariant function.
 * `TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_momentDefect_one`: the derivative of the defect at
   the identity is the moment cocycle.
 * `TauCeti.SmoothTwoForm.IsMomentMap.momentDefect_eq_of_mem_connectedComponent`,
@@ -206,6 +219,38 @@ local instance lieGroupOne : LieGroup I 1 G :=
 section Complete
 
 variable [CompleteSpace E] [CompleteSpace E']
+
+/-- **Noether's theorem for Hamiltonian systems.** Let `μ` be a moment map of the action by
+fundamental vector fields and `X` a Hamiltonian vector field of a `G`-invariant function `f`.
+Then `μ` is constant along every integral curve of `X` on a preconnected set of times along which
+`f` is differentiable. -/
+theorem IsMomentMap.apply_eq_of_isMIntegralCurveOn_of_smul_invariant
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {f : M → ℝ}
+    (hfG : ∀ (g : G) x, f (g • x) = f x) {X : (x : M) → TangentSpace I' x}
+    (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M} {s : Set ℝ} (hs : IsPreconnected s)
+    (hγ : IsMIntegralCurveOn γ X s) (hf : ∀ t ∈ s, MDifferentiableAt I' 𝓘(ℝ) f (γ t))
+    {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) : μ (γ t) = μ (γ t₀) :=
+  h.apply_eq_of_isMIntegralCurveOn hX hs hγ (fun u hu ξ ↦ by
+    rw [InfinitesimalAction.fundamental_apply]
+    exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant (hf u hu)
+      ((ContMDiffSMul.contMDiff_smul_const (n := ∞) (γ u)).mdifferentiableAt (by simp))
+      (fun g ↦ hfG g (γ u)) ξ) ht₀ ht
+
+/-- **Noether's theorem for Hamiltonian systems, Poisson form.** For a nondegenerate form on a
+finite-dimensional manifold, every component `μ_ξ` of a moment map of the action by fundamental
+vector fields Poisson-commutes with a `G`-invariant function `f`: `{μ_ξ, f} = 0`. -/
+theorem IsMomentMap.poissonBracket_eq_zero_of_smul_invariant [FiniteDimensional ℝ E']
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
+    {f : M → ℝ} (hfG : ∀ (g : G) x, f (g • x) = f x) (ξ : GroupLieAlgebra I G) :
+    σ.poissonBracket (fun x ↦ μ x ξ) f = 0 := by
+  refine (h.poissonBracket_eq_zero_iff hσ f ξ).2 fun x ↦ ?_
+  rw [InfinitesimalAction.fundamental_apply]
+  by_cases hf : MDifferentiableAt I' 𝓘(ℝ) f x
+  · exact mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant hf
+      ((ContMDiffSMul.contMDiff_smul_const (n := ∞) x).mdifferentiableAt (by simp))
+      (fun g ↦ hfG g x) ξ
+  · -- Where `f` is not differentiable its derivative is zero by convention.
+    simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf]
 
 variable (σ) in
 /-- `μ : M → 𝔤*` is a **group-level moment map** of the smooth action of `G` on `(M, σ)` when it
@@ -319,6 +364,14 @@ namespace IsEquivariantMomentMap
 theorem neg (h : σ.IsEquivariantMomentMap μ) : (-σ).IsEquivariantMomentMap fun x ↦ -μ x where
   toIsMomentMap := h.toIsMomentMap.neg
   apply_smul g x := by rw [h.apply_smul, map_neg]
+
+/-- Shifting a group-level moment map by a coadjoint-invariant constant `ν ∈ 𝔤*` gives a
+group-level moment map. -/
+theorem add_const (h : σ.IsEquivariantMomentMap μ) {ν : Module.Dual ℝ (GroupLieAlgebra I G)}
+    (hν : ∀ g : G, Lie.coadjointRepresentation ℝ I G g ν = ν) :
+    σ.IsEquivariantMomentMap (fun x ↦ μ x + ν) where
+  toIsMomentMap := h.toIsMomentMap.add_const ν
+  apply_smul g x := by rw [h.apply_smul, map_add, hν]
 
 /-- **Equivariant shifts.** Shifting a group-level moment map on a nonempty manifold by a constant
 `ν ∈ 𝔤*` gives a group-level moment map exactly when `ν` is coadjoint-invariant. -/

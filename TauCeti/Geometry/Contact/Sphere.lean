@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
-public import TauCeti.Geometry.Symplectic.Liouville.Radial
+public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
@@ -17,7 +17,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 Let `ω` be a linear symplectic form on a finite-dimensional real inner product space `E`, with
 radial primitive `λₓ(v) = ω(x, v) / 2` (`TauCeti.SymplecticForm.radialPrimitive`, in
-`TauCeti.Geometry.Symplectic.Liouville.Radial`) and Liouville field `Z(x) = x / 2`. Then `Z`
+`TauCeti.Geometry.Symplectic.Liouville.Radial.Basic`) and Liouville field `Z(x) = x / 2`. Then `Z`
 points outwards along the unit sphere `S = sphere 0 1`, since `⟪x, x / 2⟫ = 1 / 2` there. So the
 unit sphere is a hypersurface of restricted contact type with primitive `λ`
 (`TauCeti.SymplecticForm.isRestrictedContactType_sphere`), and the restriction
@@ -88,7 +88,7 @@ variable [FiniteDimensional ℝ E] (ω : SymplecticForm E)
 constant form `ω` and its radial primitive `λₓ(v) = ω(x, v) / 2`, with Liouville field
 `x ↦ x / 2`. -/
 theorem isRestrictedContactType_sphere :
-    IsRestrictedContactType (𝓡 n) ω.constSmooth.1 ω.radialPrimitive.1
+    IsRestrictedContactType (𝓡 n) ω.constSmooth.val ω.radialPrimitive.val
       ((↑) : sphere (0 : E) 1 → E) :=
   isRestrictedContactType_iff.2 ⟨ω.mextDeriv_radialPrimitive,
     fun x ↦ (2⁻¹ : ℝ) • x,
@@ -105,7 +105,7 @@ def sphereContactForm : SmoothForm (𝓡 n) (sphere (0 : E) 1) ℝ 1 :=
 `v` read in `E`. -/
 @[simp]
 theorem sphereContactForm_apply (x : sphere (0 : E) 1) (v : TangentSpace (𝓡 n) x) :
-    (ω.sphereContactForm n).1 x ![v] =
+    (ω.sphereContactForm n).val x ![v] =
       2⁻¹ * ω x (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) := by
   have hv : (fun i ↦ mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x (![v] i)) =
       ![mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x v] := by
@@ -119,7 +119,7 @@ theorem sphereContactForm_apply (x : sphere (0 : E) 1) (v : TangentSpace (𝓡 n
 /-- The exterior derivative of the contact form of the sphere is the restriction of `ω`. -/
 @[simp]
 theorem mextDeriv_sphereContactForm_apply (x : sphere (0 : E) 1) (v w : TangentSpace (𝓡 n) x) :
-    mextDeriv (ω.sphereContactForm n).1 x ![v, w] =
+    mextDeriv (ω.sphereContactForm n).val x ![v, w] =
       ω (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v)
         (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x w) := by
   have hv : (fun i ↦ mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x (![v, w] i)) =
@@ -128,7 +128,7 @@ theorem mextDeriv_sphereContactForm_apply (x : sphere (0 : E) 1) (v w : TangentS
     funext i
     fin_cases i <;> rfl
   have hrad : IsSmoothBundleForm (I := 𝓘(ℝ, E)) (F := ℝ) (V := Bundle.Trivial E ℝ) 1
-      ω.radialPrimitive.1 :=
+      ω.radialPrimitive.val :=
     (isSmoothBundleForm_def 1 _).mpr (ω.radialPrimitive.contMDiff.of_le (by simp))
   rw [sphereContactForm, SmoothForm.coe_mpullback,
     ← mpullback_mextDeriv contMDiff_coe_sphere hrad, mpullback_apply,

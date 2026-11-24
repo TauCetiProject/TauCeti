@@ -60,7 +60,7 @@ theorem isPosDef_iff_posDef_gramMatrix {ι : Type*} [Finite ι] (b : Basis ι �
     L.IsPosDef ↔ (L.gramMatrix b).PosDef := by
   classical
   have _i : Fintype ι := Fintype.ofFinite ι
-  rw [IsPosDef, LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix (b.extendOfIsLattice ℚ) _
+  rw [IsPosDef, LinearMap.BilinForm.posDef_toQuadraticMap_iff_matrix (b.extendOfIsFullLattice ℚ) _
     L.isSymm, ← L.map_gramMatrix b, algebraMap_int_eq, Int.coe_castRingHom,
     Matrix.posDef_map_intCast_iff]
 

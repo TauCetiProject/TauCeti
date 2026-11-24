@@ -39,7 +39,7 @@ noncomputable instance analyticAffineChartMulAction (σ : Φ.cones) :
     MulAction (ComplexTorus N) ((Φ.analyticAffineChartDiagram).obj σ) := by
   -- The chart's carrier is definitionally the complex-point type of the dual semigroup.
   change MulAction (ComplexTorus N)
-    (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
+    (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val))
   infer_instance
 
 /-- The map between affine charts associated to a face inclusion is equivariant for the
@@ -51,9 +51,9 @@ theorem analyticAffineChartDiagram_map_smul {τ σ : Φ.cones} (f : τ ⟶ σ)
       t • (Φ.analyticAffineChartDiagram).map f x := by
   -- Use the public map equations because the face-map definitions are not exposed.
   rw [analyticAffineChartDiagram_map_apply, analyticAffineChartDiagram_map_apply,
-    ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f))]
+    ← faceAffinePointMap_def Φ.lattice (Φ.isFaceOf_of_le σ.property τ.property (leOfHom f))]
   exact faceAffinePointMap_smul Φ.lattice
-    (Φ.isFaceOf_of_le σ.2 τ.2 (leOfHom f)) t x
+    (Φ.isFaceOf_of_le σ.property τ.property (leOfHom f)) t x
 
 /-- Equal representatives in two affine charts remain equal after torus translation. -/
 private theorem analyticAffineChartι_smul_eq_of_eq {σ τ : Φ.cones}
@@ -106,7 +106,7 @@ instance (σ : Φ.cones) :
   -- The chart topology is definitionally its chosen monomial-embedding topology.
   change letI := affinePointTopology g.2
     ContinuousSMul (ComplexTorus N)
-      (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1))
+      (AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val))
   exact AffineSemigroupComplexPoint.continuousSMul_complexTorus_affinePointTopology g.2
 
 /-- The analytic realization carries the continuous action of its complex torus. -/

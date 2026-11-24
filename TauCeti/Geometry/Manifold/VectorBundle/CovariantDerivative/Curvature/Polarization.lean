@@ -16,7 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.KulkarniNomizu
 For a metric-compatible torsion-free connection on a Riemannian tangent bundle, the
 metric-lowered curvature tensor `Rm(u, v, w, z) = ⟨R(u, v)w, z⟩` is antisymmetric in each pair of
 arguments and satisfies the first Bianchi identity. By the polarization identity
-`LinearMap.six_mul_apply_eq_of_cyclic_eq_zero` it is therefore determined by the numerators
+`LinearMap.six_nsmul_apply_eq_of_cyclic_eq_zero` it is therefore determined by the numerators
 `⟨R(u, v)v, u⟩` of the sectional curvatures, and in fact by their values on linearly independent
 pairs `u, v`, which are the pairs spanning a tangent two-plane
 (`CovariantDerivative.IsMetricCompatible.riemannCurvatureTensor_eq_of_forall_linearIndependent`).
@@ -253,6 +253,17 @@ theorem curvatureTensor_eq_scalarCurvature_div_two_smul
   rw [hx] at hscal
   rw [hK, hscal]
   norm_num
+
+variable (cov) in
+/-- On a surface, the Ricci tensor of a metric-compatible connection is half the scalar
+curvature times the metric. No torsion assumption is needed. -/
+theorem ricciTensor_eq_scalarCurvature_div_two_smul
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    {x : M} (hx : Module.finrank ℝ (TangentSpace I x) = 2) :
+    cov.ricciTensor x = (cov.scalarCurvature x / 2) • innerₗ (TangentSpace I x) := by
+  rw [cov.ricciTensor_eq_of_curvatureTensor_eq_smul_inner_sub x _
+    (cov.curvatureTensor_eq_scalarCurvature_div_two_smul hcov hx)]
+  norm_num [hx]
 
 variable (cov) in
 /-- **The Gaussian curvature of a surface is half its scalar curvature.** In dimension two the

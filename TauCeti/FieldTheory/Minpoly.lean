@@ -12,7 +12,8 @@ import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 # Minimal polynomials of pure elements, quadratic elements and non-zero-divisors
 
 This file collects reusable facts about minimal polynomials of elements with a power in the base
-field, of quadratic elements, and of non-zero-divisors.
+field, of quadratic elements, and of non-zero-divisors, and the fact that a minimal polynomial over
+a field has a non-root in the field.
 
 ## Main results
 
@@ -24,6 +25,8 @@ field, of quadratic elements, and of non-zero-divisors.
   base ring.
 * `minpoly.coeff_zero_ne_zero_of_mem_nonZeroDivisors`: the minimal polynomial of an integral
   non-zero-divisor, in particular of an integral unit, has nonzero constant coefficient.
+* `minpoly.exists_eval_ne_zero`: the minimal polynomial of an integral element of a domain over a
+  field does not vanish at every point of the field.
 -/
 
 public section
@@ -79,3 +82,11 @@ theorem minpoly.coeff_zero_ne_zero_of_mem_nonZeroDivisors {A B : Type*} [CommRin
       have hmx := minpoly.aeval A x
       rwa [← h, map_mul, aeval_X] at hmx
   exact (degree_divX_lt hm.ne_zero).not_ge (minpoly.min A x hq hX)
+
+/-- The minimal polynomial of an integral element `x` of a domain over a field `K` does not vanish
+at every point of `K`: it has at most one root in `K`, namely `x` if `x` lies in `K`. -/
+theorem minpoly.exists_eval_ne_zero {K B : Type*} [Field K] [Ring B] [IsDomain B] [Algebra K B]
+    {x : B} (hx : IsIntegral K x) : ∃ c : K, (minpoly K x).eval c ≠ 0 := by
+  by_contra! h
+  have hr (c : K) : algebraMap K B c = x := minpoly.root hx (h c)
+  simpa using (hr 0).trans (hr 1).symm

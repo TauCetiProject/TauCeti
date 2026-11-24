@@ -13,9 +13,12 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 
 A map into an injective module factors through `f` exactly when it vanishes on
 `ker f`. In particular, precomposition with `f` has image the kernel of restriction
-to `ker f`. This applies to presenting maps that are not monomorphisms, as occur in
-projective presentations over non-hereditary algebras. As a further consequence, an
+to `ker f`, so restriction identifies its cokernel with `Hom(ker f, I)`
+(`LinearMap.cokernelEquivDualKer`). This applies to presenting maps that are not monomorphisms,
+as occur in projective presentations over non-hereditary algebras. As a further consequence, an
 annihilator inclusion characterizes the existence of a linear map with one prescribed value.
+The identification is natural in commutative squares of kernels
+(`LinearMap.cokernelEquivDualKer_symm_arrowCongr_comp`).
 -/
 
 public section
@@ -53,6 +56,23 @@ theorem range_lcomp_eq_ker_lcomp_ker_subtype (f : P →ₗ[R] Q) :
   simp only [mem_range, mem_ker, lcomp_apply', exists_comp_eq_iff_ker_le,
     le_ker_iff_comp_subtype_eq_zero]
 
+/-- **`Hom` into an injective module turns kernels into cokernels.** Restriction to `ker f`
+identifies the cokernel of precomposition with `f` with `Hom_R(ker f, I)`. It is surjective
+since `I` is injective, and its kernel is the image of precomposition with `f`. -/
+noncomputable def cokernelEquivDualKer {S : Type*} [Ring S] [Module S I] [SMulCommClass R S I]
+    (f : P →ₗ[R] Q) : ((P →ₗ[R] I) ⧸ range (f.lcomp S I)) ≃ₗ[S] (ker f →ₗ[R] I) :=
+  Submodule.quotEquivOfEq _ _ (range_lcomp_eq_ker_lcomp_ker_subtype f) ≪≫ₗ
+    ((ker f).subtype.lcomp S I).quotKerEquivOfSurjective fun u ↦
+      Module.Injective.extension_property R I (ker f) P (ker f).subtype
+        (ker f).injective_subtype u
+
+@[simp]
+theorem cokernelEquivDualKer_mk {S : Type*} [Ring S] [Module S I] [SMulCommClass R S I]
+    (f : P →ₗ[R] Q) (u : P →ₗ[R] I) :
+    cokernelEquivDualKer (S := S) f (Submodule.Quotient.mk u) = u.comp (ker f).subtype := by
+  simp only [cokernelEquivDualKer, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk]
+  exact quotKerEquivOfSurjective_apply_mk _ _ u
+
 variable {N : Type*} [AddCommGroup N] [Module R N]
   [Module k N] [SMulCommClass R k N] [CompatibleSMul N I k R]
 
@@ -67,6 +87,34 @@ theorem comap_range_lcomp_compRight (f : P →ₗ[R] Q) (j : N →ₗ[R] I)
   simp only [Submodule.mem_comap, mem_ker, lcomp_apply', compRight_apply]
   simpa only [comp_assoc, comp_zero] using
     (cancel_left (f := j) (g := F.comp (ker f).subtype) (g' := 0) hj)
+
+section Naturality
+
+variable {k : Type u} [CommRing k] {E : Type t} [AddCommGroup E] [Module k E] [Small.{t} k]
+  [Module.Injective k E]
+
+/-- Transport of functionals along `cokernelEquivDualKer`: if `κ₂ ∘ c = h ∘ κ₁` on the kernels
+and `v` represents the functional `χ` through `κ₂`, then `v ∘ h` represents `χ ∘ c` through `κ₁`. -/
+theorem cokernelEquivDualKer_symm_arrowCongr_comp {D₁ D₂ H₁ H₂ G₁ G₂ : Type*}
+    [AddCommGroup D₁] [Module k D₁] [AddCommGroup D₂] [Module k D₂] [AddCommGroup H₁]
+    [Module k H₁] [AddCommGroup H₂] [Module k H₂] [AddCommGroup G₁] [Module k G₁]
+    [AddCommGroup G₂] [Module k G₂] {g₁ : H₁ →ₗ[k] G₁} {g₂ : H₂ →ₗ[k] G₂}
+    (κ₁ : D₁ ≃ₗ[k] ker g₁) (κ₂ : D₂ ≃ₗ[k] ker g₂) {c : D₁ →ₗ[k] D₂} {h : H₁ →ₗ[k] H₂}
+    (hc : ∀ x, (κ₂ (c x) : H₂) = h (κ₁ x)) {χ : D₂ →ₗ[k] E} {v : H₂ →ₗ[k] E}
+    (hv : Submodule.Quotient.mk v =
+      (cokernelEquivDualKer (S := k) g₂).symm (κ₂.arrowCongr (LinearEquiv.refl k E) χ)) :
+    (cokernelEquivDualKer (S := k) g₁).symm (κ₁.arrowCongr (LinearEquiv.refl k E) (χ ∘ₗ c)) =
+      Submodule.Quotient.mk (v ∘ₗ h) := by
+  rw [LinearEquiv.symm_apply_eq, cokernelEquivDualKer_mk]
+  ext u
+  obtain ⟨x, rfl⟩ := κ₁.surjective u
+  have hv' := LinearMap.congr_fun (congrArg (cokernelEquivDualKer (S := k) g₂) hv) (κ₂ (c x))
+  rw [cokernelEquivDualKer_mk, LinearEquiv.apply_symm_apply] at hv'
+  simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.arrowCongr_apply,
+    LinearEquiv.refl_apply, LinearEquiv.symm_apply_apply] at hv' ⊢
+  rw [← hc, hv']
+
+end Naturality
 
 end LinearMap
 

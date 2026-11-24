@@ -41,6 +41,9 @@ This is the algebraic normalisation used to study residue fields and morphisms o
   `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_of_isMaximal_radical` and
   `TauCeti.Dagger.IsDaggerAlgebra.finite_quotient_pow_of_isMaximal_radical`: the same finiteness
   for dagger algebras, which are finite over a Monsky–Washnitzer algebra through a presentation.
+* `TauCeti.Dagger.washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra`: `K`-algebra homomorphisms from
+  `K⟨X⟩†` into a dagger algebra are determined by the coordinate variables, with no continuity
+  assumed.
 
 ## References
 
@@ -217,5 +220,16 @@ theorem finite_quotient_pow_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaxi
     exact finite_quotient_of_isMaximal_radical K _
 
 end IsDaggerAlgebra
+
+/-- **`K`-algebra homomorphisms from `W_σ` into a dagger algebra are determined by the
+variables**, with no continuity assumed. -/
+theorem washnitzerAlgebra.algHom_ext_of_isDaggerAlgebra {σ : Type*} [Finite σ]
+    {R : Type*} [CommRing R] [Algebra K R] [IsDaggerAlgebra K R]
+    {φ ψ : W σ →ₐ[K] R} (h : ∀ i, φ (washnitzerAlgebra.X σ K i) = ψ (washnitzerAlgebra.X σ K i)) :
+    φ = ψ := by
+  have := IsDaggerAlgebra.isNoetherianRing (K := K) (A := R)
+  refine algHom_ext_of_forall_isMaximal_isIntegral (fun m _ ↦ ?_) h
+  have := IsDaggerAlgebra.finite_quotient_of_isMaximal K m
+  exact Algebra.IsIntegral.of_finite K _
 
 end TauCeti.Dagger

@@ -11,16 +11,31 @@ public import Mathlib.Topology.MetricSpace.CoveringNumbers
 import Mathlib.Algebra.Order.Floor.Extended
 
 /-!
-# Packing numbers and separated sets
+# Packing and covering numbers via finite subsets
 
-Two metric facts about `ε`-separated sets, used to bound packing and covering numbers.
+Facts relating `ℕ∞`-valued packing and external covering numbers to finite separated sets and
+finite covers.
 
 ## Main results
 
+* `Metric.externalCoveringNumber_ne_top_iff`: finiteness of the external covering number
+  is equivalent to existence of a finite cover.
 * `TauCeti.packingNumber_le_of_forall_finset_card_le`: a finite bound on the sizes of the finite
   `ε`-separated subsets of a set bounds its packing number.
 * `Metric.IsSeparated.pairwiseDisjoint_closedBall`: the closed balls of radius `ε / 2` around
   the points of an `ε`-separated set are pairwise disjoint.
+* `Metric.externalCoveringNumber_le_natCast_iff`: `externalCoveringNumber ε A ≤ k` if and only if
+  `A` admits a finite `ε`-cover of cardinality at most `k`.
+* `Metric.div_two_le_of_externalCoveringNumber_lt_card` and `Metric.IsCover.div_two_le_of_card_lt`:
+  if `A` contains a finite subset of mutual distance at least `δ` strictly larger than an
+  `ε`-cover, then `δ / 2 ≤ ε`.
+* `Metric.IsCover.exists_finset_subset_isCover_two_mul`: a finite `ε`-cover of `A` by arbitrary
+  points gives a `2ε`-cover by points of `A` of no larger cardinality.
+
+## References
+
+* M. Rudelson and R. Vershynin, *The Littlewood–Offord problem and invertibility of random
+  matrices*, Adv. Math. 218 (2008), Lemma 5.7.
 -/
 
 public section
@@ -61,5 +76,75 @@ theorem IsSeparated.pairwiseDisjoint_closedBall {X : Type*} [PseudoMetricSpace X
   have h : (ε : ℝ≥0∞) < edist x y := hC hx hy hxy
   rw [edist_nndist, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nndist] at h
   linarith
+
+/-- The external covering number of `A` at radius `ε` is at most a natural number `k` if and only
+if `A` admits a finite `ε`-cover of cardinality at most `k`. -/
+theorem externalCoveringNumber_le_natCast_iff {X : Type*} [PseudoEMetricSpace X] {ε : ℝ≥0}
+    {A : Set X} {k : ℕ} :
+    externalCoveringNumber ε A ≤ k ↔ ∃ N : Finset X, N.card ≤ k ∧ IsCover ε A N := by
+  constructor
+  · intro h
+    have hlt : externalCoveringNumber ε A < (k : ℕ∞) + 1 :=
+      (ENat.lt_add_one_iff (ENat.natCast_ne_top k)).mpr h
+    simp only [externalCoveringNumber, iInf_lt_iff] at hlt
+    obtain ⟨C, hC, hcard⟩ := hlt
+    have hle : C.encard ≤ k := (ENat.lt_add_one_iff (ENat.natCast_ne_top k)).mp hcard
+    have hfin : C.Finite := encard_lt_top_iff.mp (hle.trans_lt (ENat.natCast_lt_top k))
+    refine ⟨hfin.toFinset, ?_, by simpa using hC⟩
+    rwa [← Nat.cast_le (α := ℕ∞), ← hfin.encard_eq_coe_toFinset_card]
+  · rintro ⟨N, hcard, hcov⟩
+    exact hcov.externalCoveringNumber_le_encard.trans (by simpa using hcard)
+
+/-- The external covering number is finite exactly when a finite cover exists. -/
+theorem externalCoveringNumber_ne_top_iff {X : Type*} [PseudoEMetricSpace X]
+    {s : Set X} {r : ℝ≥0} :
+    externalCoveringNumber r s ≠ ⊤ ↔ ∃ N : Set X, N.Finite ∧ IsCover r s N := by
+  constructor
+  · intro h
+    obtain ⟨k, hk⟩ := ENat.ne_top_iff_exists.mp h
+    obtain ⟨N, _, hN⟩ := externalCoveringNumber_le_natCast_iff.mp hk.ge
+    exact ⟨N, N.finite_toSet, hN⟩
+  · rintro ⟨N, hN, hc⟩
+    exact ne_top_of_le_ne_top (encard_ne_top_iff.mpr hN) hc.externalCoveringNumber_le_encard
+
+/-- If `A` contains a finite subset `s` of points at mutual distance at least `δ` and the external
+covering number of `A` at radius `ε` is strictly less than `s.card`, then `δ / 2 ≤ ε`. -/
+theorem div_two_le_of_externalCoveringNumber_lt_card {X : Type*} [PseudoMetricSpace X] {ε : ℝ≥0}
+    {A : Set X} {s : Finset X} {δ : ℝ} (hsA : (s : Set X) ⊆ A)
+    (hsep : (s : Set X).Pairwise (δ ≤ dist · ·)) (hlt : externalCoveringNumber ε A < s.card) :
+    δ / 2 ≤ ε := by
+  by_contra! h
+  have hsep' : IsSeparated (2 * ε : ℝ≥0) (s : Set X) := by
+    intro x hx y hy hxy
+    rw [edist_nndist, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nndist, NNReal.coe_mul,
+      NNReal.coe_ofNat]
+    linarith [hsep hx hy hxy]
+  have hle : (s.card : ℕ∞) ≤ externalCoveringNumber ε A := by
+    simpa using (hsep'.encard_le_packingNumber hsA).trans
+      (packingNumber_two_mul_le_externalCoveringNumber ε A)
+  exact hlt.not_ge hle
+
+/-- Pigeonhole principle for metric covers: if `N` is an `ε`-cover of `A` and `s ⊆ A` has
+strictly more points than `N` at mutual distance at least `δ`, then `δ / 2 ≤ ε`. -/
+theorem IsCover.div_two_le_of_card_lt {X : Type*} [PseudoMetricSpace X] {ε : ℝ≥0}
+    {A : Set X} {s N : Finset X} {δ : ℝ} (hcov : IsCover ε A N) (hsA : (s : Set X) ⊆ A)
+    (hsep : (s : Set X).Pairwise (δ ≤ dist · ·)) (hcard : N.card < s.card) :
+    δ / 2 ≤ ε :=
+  div_two_le_of_externalCoveringNumber_lt_card hsA hsep <|
+    hcov.externalCoveringNumber_le_encard.trans_lt (by simpa using hcard)
+
+/-- A finite `ε`-cover `N` of `A`, whose points need not lie in `A`, yields a `2ε`-cover by points
+of `A` with no more points than `N`. -/
+theorem IsCover.exists_finset_subset_isCover_two_mul {X : Type*} [PseudoEMetricSpace X]
+    {ε : ℝ≥0} {A : Set X} {N : Finset X} (hN : IsCover ε A N) :
+    ∃ N' : Finset X, (N' : Set X) ⊆ A ∧ IsCover (2 * ε) A N' ∧ N'.card ≤ N.card := by
+  have hle : coveringNumber (2 * ε) A ≤ N.card :=
+    (coveringNumber_two_mul_le_externalCoveringNumber ε A).trans
+      (hN.externalCoveringNumber_le_encard.trans_eq (encard_coe_eq_coe_finsetCard N))
+  obtain ⟨C, hCA, hCf, hC, hCcard⟩ :=
+    exists_set_encard_eq_coveringNumber (hle.trans_lt (ENat.natCast_lt_top _)).ne
+  refine ⟨hCf.toFinset, by simpa using hCA, by simpa using hC, ?_⟩
+  rw [← Nat.cast_le (α := ℕ∞), ← hCf.encard_eq_coe_toFinset_card, hCcard]
+  exact hle
 
 end Metric
