@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
+import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.RingTheory.Binomial
 
@@ -139,7 +140,7 @@ theorem hasSum_eulerIntegral_inv (a : ℂ) {b c z₀ z : ℂ} (hb : 0 < b.re) (h
   let v : ℝ → ℂ := fun t => (z₀ - t) / (z₀ - z)
   -- Expand `(1 - v t) ^ (-a)` in its binomial series and integrate term by term; the ratio
   -- `v t` is bounded on `[0, 1]` by `max ‖z₀‖ ‖z₀ - 1‖ / ‖z - z₀‖ < 1`.
-  have hdct := hasSum_integral_mul_multichoose_mul_pow a (w := w) (v := v)
+  have hdct := TauCeti.hasSum_integral_mul_multichoose_mul_pow a (w := w) (v := v)
     (betaIntegral_convergent hb (by simpa using sub_pos.mpr hbc)) (by fun_prop)
     ((div_lt_one hzz₀).mpr hz) fun t ht => norm_sub_ofReal_div_sub_le z₀ z (Ioc_subset_Icc_self ht)
   convert hdct.mul_left ((1 - z₀ / z) ^ (-a) * (Gamma b * Gamma (c - b))⁻¹) using 1

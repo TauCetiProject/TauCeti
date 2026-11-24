@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-public import Mathlib.RingTheory.Binomial
 public import Mathlib.Topology.Order.ProjIcc
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 public import TauCeti.Analysis.Complex.SlitPlane
@@ -47,8 +46,6 @@ value can vanish when a Gamma factor has a pole.
 * `Complex.eulerIntegral` — Euler's normalized integral representation.
 * `Complex.analyticOnNhd_eulerIntegral` — joint holomorphy in `(a, z)` on
   `{p | 1 - p.2 ∈ slitPlane}` when `0 < b.re < c.re`.
-* `Complex.hasSum_integral_mul_multichoose_mul_pow` — termwise integration over `[0, 1]` of the
-  binomial series of `(1 - v t) ^ (-a)` against an integrable weight, when `‖v t‖ ≤ q < 1`.
 * `Complex.regularizedGaussHGFun_eq_eulerIntegral` — `𝐅(a, b; c; z) = eulerIntegral a b c z` on
   `‖z‖ < 1` when `0 < b.re < c.re` (DLMF 15.6.1).
 * `Complex.regularizedGaussHGFun_neg_natCast_eq_eulerIntegral` — the same for the terminating
@@ -216,45 +213,15 @@ private theorem inv_Gamma_mul_integral_multichoose_mul_pow (a : ℂ) {b c : ℂ}
     coeff_regularizedGaussHGFunSeries, ← hpoch]
   field_simp [Gamma_ne_zero_of_re_pos hb, Gamma_ne_zero_of_re_pos hcb]
 
-/-- Termwise integration of the binomial series `(1 - v)^{-a} = ∑ₙ (a)ₙ / n! vⁿ` against a weight
-`w` integrable on `[0, 1]`, when `v` is continuous on `[0, 1]` and bounded there by `q < 1`. -/
-theorem hasSum_integral_mul_multichoose_mul_pow (a : ℂ) {w v : ℝ → ℂ}
-    (hw : IntervalIntegrable w volume 0 1) (hv : ContinuousOn v (Icc 0 1)) {q : ℝ} (hq : q < 1)
-    (hvq : ∀ t ∈ Ioc (0 : ℝ) 1, ‖v t‖ ≤ q) :
-    HasSum (fun n : ℕ => ∫ t : ℝ in 0..1, w t * (Ring.multichoose a n * v t ^ n))
-      (∫ t : ℝ in 0..1, w t * (1 - v t) ^ (-a)) := by
-  have hq0 : 0 ≤ q := (norm_nonneg _).trans (hvq 1 ⟨one_pos, le_rfl⟩)
-  have hsum : Summable fun n : ℕ => ‖Ring.multichoose a n‖ * q ^ n :=
-    (TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a) (z := (q : ℂ))
-      (by rwa [Complex.norm_of_nonneg hq0])).summable.norm.congr fun n => by
-        rw [norm_mul, norm_pow, Complex.norm_of_nonneg hq0]
-  refine intervalIntegral.hasSum_integral_of_dominated_convergence
-    (fun n t => ‖w t‖ * (‖Ring.multichoose a n‖ * q ^ n)) (fun n => ?_)
-    (fun n => ae_of_all _ fun t ht => ?_) (ae_of_all _ fun t _ => hsum.mul_left ‖w t‖) ?_
-    (ae_of_all _ fun t ht => ?_)
-  · rw [uIoc_of_le zero_le_one]
-    exact ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
-      (hw.mul_continuousOn (by rw [uIcc_of_le zero_le_one]; fun_prop))).aestronglyMeasurable
-  · rw [uIoc_of_le zero_le_one] at ht
-    rw [norm_mul (w t), norm_mul (Ring.multichoose a n), norm_pow]
-    gcongr
-    exact hvq t ht
-  · simp_rw [tsum_mul_left]
-    exact hw.norm.mul_const _
-  · rw [uIoc_of_le zero_le_one] at ht
-    have h := TauCeti.hasSum_multichoose_mul_geometric_complex_of_norm_lt_one (r := a)
-      ((hvq t ht).trans_lt hq)
-    rw [one_div, ← cpow_neg] at h
-    exact h.mul_left (w t)
-
 /-- **Euler's integral representation** (DLMF 15.6.1) on the open unit disk: when
 `0 < b.re < c.re` and `‖z‖ < 1`, `regularizedGaussHGFun a b c z` equals `eulerIntegral a b c z`. -/
 theorem regularizedGaussHGFun_eq_eulerIntegral (a : ℂ) {b c z : ℂ}
     (hb : 0 < b.re) (hbc : b.re < c.re) (hz : ‖z‖ < 1) :
     regularizedGaussHGFun a b c z = eulerIntegral a b c z := by
   -- Expand `(1 - z t) ^ (-a)` in powers of `z t` and integrate term by term.
-  have hdct := hasSum_integral_mul_multichoose_mul_pow a (betaIntegral_convergent (v := c - b) hb
-    (by simpa using sub_pos.mpr hbc)) (v := fun t : ℝ => z * t) (by fun_prop) hz fun t ht => by
+  have hdct := TauCeti.hasSum_integral_mul_multichoose_mul_pow a
+    (betaIntegral_convergent (v := c - b) hb (by simpa using sub_pos.mpr hbc))
+    (v := fun t : ℝ => z * t) (by fun_prop) hz fun t ht => by
       rw [norm_mul, Complex.norm_of_nonneg ht.1.le]
       exact mul_le_of_le_one_right (norm_nonneg z) ht.2
   have heuler := (hdct.mul_left (Gamma b * Gamma (c - b))⁻¹).congr_fun fun n =>
