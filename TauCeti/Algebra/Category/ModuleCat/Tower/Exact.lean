@@ -29,7 +29,8 @@ proves exactness at each of the six terms and the naturality of the connecting m
 of short exact sequences of towers. Each exactness statement only assumes the levelwise
 injectivity, exactness and surjectivity it uses. As a consequence, `lim B → lim C` is surjective
 whenever `lim¹ A` vanishes, for instance when the transitions of `A` are surjective
-(`ModuleTower.subsingleton_limOne_of_surjective`).
+(`ModuleTower.subsingleton_limOne_of_surjective`), and `lim¹ B` vanishes whenever `lim¹ A` and
+`lim¹ C` do.
 
 This six-term sequence is the input to Milnor sequences for towers of complexes and to the long
 exact sequences of derived limits of towers.
@@ -46,6 +47,8 @@ exact sequences of derived limits of towers.
   the short exact sequence of a tower of complexes.
 * `TauCeti.ModuleTower.limMap_surjective_of_subsingleton_limOne`: `lim B → lim C` is surjective
   when `lim¹ A = 0`.
+* `TauCeti.ModuleTower.subsingleton_limOne_of_exact`: `lim¹ B = 0` when `lim¹ A = 0` and
+  `lim¹ C = 0`.
 
 ## References
 
@@ -180,6 +183,16 @@ theorem exact_limOneMap (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (
   rintro _ ⟨-, z, rfl⟩
   obtain ⟨w, rfl⟩ := productMap_surjective hg z
   exact ⟨G.shift w, LinearMap.mem_range_self _ w, (shift_natural_apply g w).symm⟩
+
+/-- **`lim¹` of an extension.** For a levelwise exact sequence `A → B → C → 0` of towers, if
+`lim¹ A` and `lim¹ C` vanish then so does `lim¹ B`. -/
+theorem subsingleton_limOne_of_exact
+    (hfg : ∀ n, Function.Exact (f.app (op n)).hom (g.app (op n)).hom)
+    (hg : ∀ n, Function.Surjective (g.app (op n)).hom) [Subsingleton F.limOne]
+    [Subsingleton H.limOne] : Subsingleton G.limOne :=
+  subsingleton_of_forall_eq 0 fun y ↦ by
+    obtain ⟨x, rfl⟩ := (exact_limOneMap hfg hg y).1 (Subsingleton.elim _ _)
+    rw [Subsingleton.elim x 0, map_zero]
 
 end LimOne
 

@@ -306,7 +306,7 @@ theorem isLocalization_resFixedPoints {U V : X.Opens} (hU : IsAffineOpen U)
       a ∈ Set.range (algebraMap (FixedPoints.subring Γ(X, W) G) Γ(X, W)) ↔
         ∀ g : G, MulSemiringAction.toRingHom G Γ(X, W) g a = a :=
     ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.property, fun ha ↦ ⟨⟨a, ha⟩, rfl⟩⟩
-  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff _ (MulSemiringAction.toRingHom G _)
+  exact TauCeti.FixedPoints.isLocalization_of_mem_range_iff (MulSemiringAction.toRingHom G _)
     (MulSemiringAction.toRingHom G _) (fun g a ↦ (Scheme.presheaf_map_smul hUσ hVσ h g a).symm)
     Subtype.val_injective (hfix hUσ) Subtype.val_injective (hfix hVσ) fun _ ↦ rfl
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 public import TauCeti.RingTheory.Syntomic.FittingIdeal
 
 /-!

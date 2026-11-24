@@ -9,7 +9,8 @@ public import TauCeti.Combinatorics.TraceWord.Bipartite.Leading
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectralMeasure
 public import Mathlib.Probability.Independence.Integration
 import TauCeti.Probability.RandomMatrix.SampleCovariance.Moment
-import TauCeti.Probability.RandomMatrix.SampleCovariance.TraceWord
+import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Word
+import TauCeti.Probability.RandomMatrix.SampleCovariance.Trace.Integrability
 
 /-!
 # The rectangular trace-word method for sample covariance moments
@@ -181,7 +182,8 @@ theorem norm_integral_pow_expectedCovarianceSpectralMeasure_sub_leadingCovarianc
         (leadingCovarianceMoment_eq_normalized_card_leadingBipartiteWord (p := p) (n := n) hk)
   rw [Real.norm_eq_abs, ← RCLike.norm_ofReal (K := 𝕜), RCLike.ofReal_sub,
     ofReal_integral_pow_expectedCovarianceSpectralMeasure hXm
-      (integrable_trace_pow_sampleCovariance hLp'), hlead, mul_assoc, ← mul_sub]
+      (integrable_trace_pow_sampleCovariance (fun _ ↦ inferInstance) hLp'), hlead, mul_assoc,
+    ← mul_sub]
   rcases eq_or_ne k 1 with rfl | hk₁
   · rw [card_leadingBipartiteWord_one]
     simp only [pow_one, integral_trace_sampleCovariance_eq X hsecond, Nat.card_eq_fintype_card,
