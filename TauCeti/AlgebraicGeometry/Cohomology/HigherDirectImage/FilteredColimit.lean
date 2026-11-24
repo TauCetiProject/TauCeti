@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.FilteredColimit
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
-import Mathlib.Topology.Sheaves.SheafCondition.Sites
 
 /-!
 # Higher direct images commute with filtered colimits of quasi-coherent modules
@@ -20,22 +19,18 @@ direct image `Rⁿ f_*` sends `c` to a colimit cocone in `Y.Modules`
 
 Both sides are quasi-coherent, so it suffices to check that the canonical map is bijective on
 sections over every affine open `V` of `Y`
-(`AlgebraicGeometry.Scheme.Modules.isIso_of_isIso_app_affineOpens`, a morphism of sheaves of
-modules is an isomorphism once it is one on a basis of opens). Over `V` the sections of the
+(`AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_isBasis`, a morphism of sheaves of modules is an
+isomorphism once it is one on a basis of opens). Over `V` the sections of the
 colimit are the colimit of the sections, since sections over an affine open preserve colimits of
 quasi-coherent sheaves, and the sections of `Rⁿ f_* M` are `Hⁿ(f⁻¹ V, M)`, naturally in the
-quasi-coherent module `M` (`AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv_map`).
+quasi-coherent module `M`
+(`AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv_naturality`).
 As `f⁻¹ V` is quasi-compact and quasi-separated, `Hⁿ(f⁻¹ V, -)` commutes with filtered colimits
 of quasi-coherent modules
 (`TauCeti.AlgebraicGeometry.Scheme.Modules.isColimitMapCoconeCohomologyOnFunctor`).
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.isIso_of_isIso_app_affineOpens`: a morphism of sheaves of
-  modules on a scheme which is an isomorphism on sections over every affine open is an
-  isomorphism;
-* `AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv_map`: the identification of
-  the sections of `Rⁿ f_* M` over an affine open `V` with `Hⁿ(f⁻¹ V, M)` is natural in `M`;
 * `AlgebraicGeometry.Scheme.Hom.isColimitMapCoconeHigherDirectImage`: `Rⁿ f_*` preserves
   filtered colimits of quasi-coherent modules.
 
@@ -52,68 +47,11 @@ universe w w' u
 
 noncomputable section
 
-namespace AlgebraicGeometry.Scheme.Modules
-
-/-- **Isomorphisms of sheaves of modules are detected on affine opens.** A morphism of sheaves of
-modules on a scheme which is an isomorphism on sections over every affine open is an
-isomorphism, since the affine opens form a basis of the topology. -/
-theorem isIso_of_isIso_app_affineOpens {X : Scheme.{u}} {M N : X.Modules} (φ : M ⟶ N)
-    (h : ∀ U : X.affineOpens, IsIso (φ.app U)) : IsIso φ := by
-  have : IsIso ((SheafOfModules.toSheaf X.ringCatSheaf).map φ) :=
-    TopCat.Sheaf.isIso_iff_isIso_basis (B := fun U : X.affineOpens ↦ (U : X.Opens))
-      (by simpa using X.isBasis_affineOpens) h
-  exact Hom.isIso_iff_isIso_app.2 fun U ↦
-    inferInstanceAs (IsIso (((SheafOfModules.toSheaf X.ringCatSheaf).map φ).hom.app (op U)))
-
-end AlgebraicGeometry.Scheme.Modules
-
 namespace AlgebraicGeometry.Scheme.Hom
 
 open TauCeti.AlgebraicGeometry.Scheme.Modules
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) [QuasiCompact f] [QuasiSeparated f]
-
-/-- The identification `higherDirectImagePresheafSectionsLinearEquiv` of the sections of the
-presheaf `V ↦ Hⁿ(f⁻¹ V, M)` over an affine open with those of `Rⁿ f_* M` is natural in the
-quasi-coherent module `M`. -/
-lemma higherDirectImagePresheafSectionsLinearEquiv_map {M N : X.Modules} [M.IsQuasicoherent]
-    [N.IsQuasicoherent] (ψ : M ⟶ N) (n : ℕ) {V : Y.Opens} (hV : IsAffineOpen V)
-    (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op V)) :
-    f.higherDirectImagePresheafSectionsLinearEquiv N n hV
-        (((f.higherDirectImagePresheaf n).map ψ).app _ x) =
-      ((f.higherDirectImage n).map ψ).app V
-        (f.higherDirectImagePresheafSectionsLinearEquiv M n hV x) := by
-  simp only [higherDirectImagePresheafSectionsLinearEquiv_apply]
-  have h₁ := congrArg (fun g ↦ (g.app (op V)).hom x)
-    ((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.naturality
-      ((f.higherDirectImagePresheaf n).map ψ))
-  have h₂ := congrArg (fun g ↦ Scheme.Modules.Hom.app g V)
-    ((f.higherDirectImagePresheafSheafificationIso n).hom.naturality ψ)
-  simp only [PresheafOfModules.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply,
-    Scheme.Modules.Hom.comp_app] at h₁ h₂
-  erw [h₁]
-  exact ConcreteCategory.congr_hom h₂ _
-
-/-- **Naturality of the sections of higher direct images over affine opens.** The identification
-`higherDirectImageSectionsAddEquiv` of the sections of `Rⁿ f_* M` over an affine open `V` with
-`Hⁿ(f⁻¹ V, M)` is natural in the quasi-coherent module `M`. -/
-lemma higherDirectImageSectionsAddEquiv_map {M N : X.Modules} [M.IsQuasicoherent]
-    [N.IsQuasicoherent] (ψ : M ⟶ N) (n : ℕ) {V : Y.Opens} (hV : IsAffineOpen V)
-    (x : cohomologyOn M n (f ⁻¹ᵁ V)) :
-    f.higherDirectImageSectionsAddEquiv N n hV (cohomologyOnMap ψ n (f ⁻¹ᵁ V) x) =
-      ((f.higherDirectImage n).map ψ).app V (f.higherDirectImageSectionsAddEquiv M n hV x) := by
-  obtain ⟨y, rfl⟩ : ∃ y, (f.higherDirectImagePresheafToPresheafIso M n).hom.app (op V) y = x :=
-    ⟨_, Iso.inv_hom_id_apply ((f.higherDirectImagePresheafToPresheafIso M n).app _) x⟩
-  have h := congrArg (fun g ↦ (g.app (op V)).hom y)
-    (f.higherDirectImagePresheafToPresheafIso_naturality ψ n)
-  dsimp at h
-  have h' : cohomologyOnMap ψ n (f ⁻¹ᵁ V)
-      ((f.higherDirectImagePresheafToPresheafIso M n).hom.app (op V) y) =
-      (f.higherDirectImagePresheafToPresheafIso N n).hom.app (op V)
-        (((f.higherDirectImagePresheaf n).map ψ).app (op V) y) := h.symm
-  rw [h', higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app]
-  erw [higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app]
-  exact f.higherDirectImagePresheafSectionsLinearEquiv_map ψ n hV y
 
 section FilteredColimit
 
@@ -136,7 +74,7 @@ private def isColimitMapCoconeSectionsHigherDirectImage (n : ℕ) {V : Y.Opens}
       (K ⋙ f.higherDirectImage n) ⋙ sectionsFunctor V ⋙ forget₂ _ AddCommGrpCat :=
     NatIso.ofComponents (fun j ↦ e (K.obj j)) fun {i j} ψ ↦ by
       ext x
-      exact f.higherDirectImageSectionsAddEquiv_map (K.map ψ) n hV x
+      exact f.higherDirectImageSectionsAddEquiv_naturality n (K.map ψ) hV x
   refine IsColimit.equivOfNatIsoOfIso α ((cohomologyOnFunctor X n (f ⁻¹ᵁ V)).mapCocone c)
     ((sectionsFunctor V ⋙ forget₂ _ AddCommGrpCat).mapCocone ((f.higherDirectImage n).mapCocone c))
     (Cocone.ext (e c.pt) fun j ↦ ?_)
@@ -144,11 +82,13 @@ private def isColimitMapCoconeSectionsHigherDirectImage (n : ℕ) {V : Y.Opens}
       (f.isQuasiSeparated_preimage hV.isQuasiSeparated) n)
   have := hK j
   ext x
+  -- The components of `e` are the bundled `AddEquiv`s, so the component of this cocone
+  -- morphism at `x` unfolds to the naturality square of `higherDirectImageSectionsAddEquiv`.
   change f.higherDirectImageSectionsAddEquiv c.pt n hV (cohomologyOnMap (c.ι.app j) n _
       ((f.higherDirectImageSectionsAddEquiv (K.obj j) n hV).symm x)) =
     ((f.higherDirectImage n).map (c.ι.app j)).app V x
-  rw [f.higherDirectImageSectionsAddEquiv_map]
-  erw [AddEquiv.apply_symm_apply]
+  rw [f.higherDirectImageSectionsAddEquiv_naturality]
+  exact congrArg _ (AddEquiv.apply_symm_apply _ x)
 
 include hK hc in
 /-- **Higher direct images commute with filtered colimits.** For a quasi-compact quasi-separated
@@ -169,7 +109,8 @@ def isColimitMapCoconeHigherDirectImage (n : ℕ) :
   let hc' := colimit.isColimit (K' ⋙ D)
   let t := (D.mapCocone c).whisker e.functor
   suffices IsIso (hc'.desc t) from IsColimit.ofPointIso hc'
-  refine isIso_of_isIso_app_affineOpens _ fun V ↦ ?_
+  refine Hom.isIso_of_isBasis _ (B := fun V : Y.affineOpens ↦ V.val)
+    (by simpa using Y.isBasis_affineOpens) fun V ↦ ?_
   let E := sectionsFunctor V.val ⋙ forget₂ (ModuleCat Γ(Y, V.val)) AddCommGrpCat
   have h₁ : IsColimit (E.mapCocone (colimit.cocone (K' ⋙ D))) :=
     isColimitOfPreserves (forget₂ (ModuleCat Γ(Y, V.val)) AddCommGrpCat)
