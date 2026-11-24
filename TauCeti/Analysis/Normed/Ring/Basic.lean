@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Basic
+import Mathlib.Algebra.Ring.Idempotent
 
 /-!
 # Elementary inequalities in seminormed rings
 
 This file records elementary consequences of the submultiplicativity of the norm (for instance, a
-nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`), exact positive-power
-norms without `NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
-multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
+nonzero idempotent has norm at least `1`: `IsIdempotentElem.one_le_norm`, forcing an idempotent
+of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), exact positive-power norms without
+`NormOneClass`, an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is multiplicative,
+convergence to `0` of finite partial products when factors tend to `0` cofinitely
 (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
 shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
 with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
@@ -347,6 +349,19 @@ theorem one_le_norm {R : Type*} [NonUnitalNormedRing R] {p : R} (hp : IsIdempote
     (hp0 : p ≠ 0) : 1 ≤ ‖p‖ :=
   (le_mul_iff_one_le_right (norm_pos_iff.mpr hp0)).mp <| by
     simpa only [hp.eq] using norm_mul_le p p
+
+/-- An idempotent of norm strictly less than one in a nonunital normed ring is zero. -/
+theorem eq_zero_of_norm_lt_one {R : Type*} [NonUnitalNormedRing R] {e : R}
+    (he : IsIdempotentElem e) (h : ‖e‖ < 1) : e = 0 := by
+  by_contra he₀
+  exact (he.one_le_norm he₀).not_gt h
+
+/-- An idempotent within norm distance `1` of `1` in a normed ring is `1`, since `1 - e` is an
+idempotent of norm strictly less than `1`. -/
+theorem eq_one_of_norm_sub_one_lt_one {R : Type*} [NormedRing R] {e : R}
+    (he : IsIdempotentElem e) (h : ‖e - 1‖ < 1) : e = 1 :=
+  sub_eq_zero.mp <| neg_eq_zero.mp <| by
+    simpa only [neg_sub] using he.one_sub.eq_zero_of_norm_lt_one (by rwa [norm_sub_rev])
 
 end IsIdempotentElem
 
