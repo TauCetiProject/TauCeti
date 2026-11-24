@@ -43,8 +43,9 @@ The dualities of root data hold as follows:
 * `Sp₂ₙ^∨ = SO_{2n+1}` (`TauCeti.Symplectic.flip_diagonalRootDatum`): the root datum of
   `SO_{2n+1}` (`TauCeti.soOddRootDatum`) is the dual of `TauCeti.Symplectic.diagonalRootDatum`.
 
-The bases of `GSpin_{2n+1}` and `GSp₂ₙ` come from `TauCeti.Symplectic.diagonalRootBase`, those of
-`GSpin_{2n}` and `GSO₂ₙ` from `TauCeti.DynkinType.typeDClassicalBase`, which needs `4 ≤ n`.
+The bases of `GSpin_{2n+1}` and `GSp₂ₙ` come from the base `TauCeti.soOddBase` of `SO_{2n+1}`,
+the dual of `TauCeti.Symplectic.diagonalRootBase`, those of `GSpin_{2n}` and `GSO₂ₙ` from
+`TauCeti.DynkinType.typeDClassicalBase`, which needs `4 ≤ n`.
 
 ## Main declarations
 
@@ -159,8 +160,10 @@ theorem flip_gspRootDatum : (gspRootDatum.{u} n).flip = gspinOddRootDatum.{u} n 
 `ε₀`, with roots `(αᵢ, multiplierCoordinate i)` and the coroots of `Sp₂ₙ`. -/
 theorem gspRootDatum_eq_extendRoot :
     gspRootDatum.{u} n = (Symplectic.diagonalRootDatum.{u} n).extendRoot (negCharacterSum n)
-      multiplierCoordinate (two_mul_multiplierCoordinate n) :=
-  RootPairing.flip_extendCoroot _ _ _ _
+      multiplierCoordinate (two_mul_multiplierCoordinate n) := by
+  rw [gspRootDatum, gspinOddRootDatum, RootPairing.flip_extendCoroot]
+  congr 1
+  exact flip_soOddRootDatum n
 
 /-- The pairing of `GSpin_{2n+1}`: the dot product on the first factors plus the product of the
 `ε₀`-coordinates. -/
@@ -265,9 +268,9 @@ theorem gspinOddRootDatum_toLinearMap_gspinOddUpsilon_inr :
   RootPairing.extendCoroot_toLinearMap_inr _ _ _ _ _
 
 /-- **The base of `GSpin_{2n+1}`**: simple roots `εᵢ - εᵢ₊₁` and `εₙ`, with simple coroots
-`εᵢ∨ - εᵢ₊₁∨` and `2εₙ∨ - ε₀∨`, on the support of `TauCeti.Symplectic.diagonalRootBase`. -/
+`εᵢ∨ - εᵢ₊₁∨` and `2εₙ∨ - ε₀∨`: the extension of the base `TauCeti.soOddBase` of `SO_{2n+1}`. -/
 noncomputable def gspinOddBase : (gspinOddRootDatum.{u} n).Base :=
-  (Symplectic.diagonalRootBase.{u} n).flip.extendCoroot _ _ _
+  (soOddBase.{u} n).extendCoroot _ _ _
 
 /-- **The base of `GSp₂ₙ`**: simple roots `εᵢ - εᵢ₊₁` and `2εₙ - ε₀`. -/
 noncomputable def gspBase : (gspRootDatum.{u} n).Base :=
@@ -276,11 +279,8 @@ noncomputable def gspBase : (gspRootDatum.{u} n).Base :=
 /-- The simple roots of `GSpin_{2n+1}` are indexed by `TauCeti.Symplectic.diagonalSimpleRootIndex`.
 -/
 theorem mem_gspinOddBase_support (p : GLSymplecticFin.RootSubgroupIndex n) :
-    p ∈ (gspinOddBase.{u} n).support ↔ ∃ i, Symplectic.diagonalSimpleRootIndex n i = p :=
-  -- The flip of `TauCeti.Symplectic.diagonalRootBase` is a base of `soOddRootDatum` only after
-  -- unfolding it, so `RootPairing.Base.flip_support` is applied by defeq rather than by `rw`.
-  (Iff.of_eq (congrArg (p ∈ ·) (RootPairing.Base.extendCoroot_support _ _ _ _))).trans
-    (Symplectic.mem_diagonalRootBase_support p)
+    p ∈ (gspinOddBase.{u} n).support ↔ ∃ i, Symplectic.diagonalSimpleRootIndex n i = p := by
+  rw [gspinOddBase, RootPairing.Base.extendCoroot_support, mem_soOddBase_support]
 
 /-- The simple roots of `GSp₂ₙ` are indexed by `TauCeti.Symplectic.diagonalSimpleRootIndex`. -/
 theorem mem_gspBase_support (p : GLSymplecticFin.RootSubgroupIndex n) :

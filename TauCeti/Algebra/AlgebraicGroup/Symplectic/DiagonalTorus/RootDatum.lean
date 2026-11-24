@@ -683,7 +683,7 @@ variable (n : ℕ)
 
 /-- **The root datum of `SO_{2n+1}`** relative to its diagonal torus: the dual of the root datum
 of `Sp₂ₙ`, with roots `±εᵢ`, `±εᵢ ± εⱼ` and coroots `±2εᵢ∨`, `±εᵢ∨ ± εⱼ∨`. -/
-@[expose] noncomputable def soOddRootDatum :
+noncomputable def soOddRootDatum :
     RootDatum (GLSymplecticFin.RootSubgroupIndex n) (ULift.{u} (Fin n) → ℤ)
       (ULift.{u} (Fin n) →₀ ℤ) :=
   (Symplectic.diagonalRootDatum.{u} n).flip
