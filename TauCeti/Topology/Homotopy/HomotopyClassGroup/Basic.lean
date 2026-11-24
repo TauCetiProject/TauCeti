@@ -155,12 +155,14 @@ instance homotopicOneSubgroup.normal : (homotopicOneSubgroup X G).Normal :=
 free homotopy `H` is corrected to `(t, x) ↦ H (t, x) * (H (t, q))⁻¹ * f q`. -/
 theorem homotopicRel_singleton_iff_homotopic_of_apply_eq {f g : C(X, G)} {q : X}
     (hfg : f q = g q) : f.HomotopicRel g {q} ↔ f.Homotopic g := by
-  refine ⟨HomotopicRel.homotopic, fun ⟨H⟩ ↦ ⟨⟨⟨⟨fun p ↦ H p * (H (p.1, q))⁻¹ * f q, by fun_prop⟩,
-    fun x ↦ ?_, fun x ↦ ?_⟩, fun t x hx ↦ ?_⟩⟩⟩
-  · simp
-  · simp [hfg]
-  · obtain rfl := Set.mem_singleton_iff.1 hx
-    simp
+  refine ⟨HomotopicRel.homotopic, fun ⟨H⟩ ↦ ⟨
+    { toFun p := H p * (H (p.1, q))⁻¹ * f q
+      continuous_toFun := by fun_prop
+      map_zero_left x := by simp
+      map_one_left x := by simp [hfg]
+      prop' t x hx := by
+        obtain rfl := Set.mem_singleton_iff.1 hx
+        simp }⟩⟩
 
 end Group
 
@@ -284,7 +286,7 @@ theorem mem_ker_eval_iff {q : X} {a : HomotopyClassGroup X G} :
   obtain ⟨f, rfl⟩ := mk_surjective a
   rw [MonoidHom.mem_ker, eval_mk] at ha
   refine ⟨f * ContinuousMap.const X (f q)⁻¹, by simp, ?_⟩
-  rw [map_mul, ← const_mk, QuotientGroup.mk_inv, ha, inv_one, map_one, mul_one]
+  simp [← const_mk, ha]
 
 /-- **Based maps have the same class exactly when they are homotopic relative to the base
 point.** -/
@@ -310,9 +312,12 @@ noncomputable def piMulEquivOfDiscrete :
       obtain ⟨f, rfl⟩ := mk_surjective a
       have hf (q : X) : Joined (f q) 1 :=
         QuotientGroup.mk_eq_one_iff_joined_pathComponentOne.1 (congrFun ha q)
-      refine mk_eq_one_iff.2 ⟨⟨⟨fun p ↦ (hf p.2).somePath p.1,
-        continuous_prod_of_discrete_right.2 fun q ↦ (hf q).somePath.continuous⟩,
-        fun q ↦ by simp, fun q ↦ by simp⟩⟩
+      refine mk_eq_one_iff.2 ⟨
+        { toFun p := (hf p.2).somePath p.1
+          continuous_toFun :=
+            continuous_prod_of_discrete_right.2 fun q ↦ (hf q).somePath.continuous
+          map_zero_left q := by simp
+          map_one_left q := by simp }⟩
     · -- On a discrete space every choice of representatives is continuous.
       refine ⟨mk X G ⟨fun q ↦ (φ q).out, continuous_of_discreteTopology⟩, funext fun q ↦ ?_⟩
       simp

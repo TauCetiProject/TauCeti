@@ -102,14 +102,18 @@ noncomputable def ofHomotopyGroup :
         HomotopyGroup.map (y := 1) (ContinuousMap.id G) rfl a = a :=
       HomotopyGroup.map_id_apply a
     have h := HomotopyGroup.map_mul_prod (N := Fin n) (ContinuousMap.id G) (ContinuousMap.id G)
-      rfl rfl a b
+      (id_apply 1) (id_apply 1) a b
     rw [hid, hid] at h
     rw [← h]
     induction a using Quotient.inductionOn with | h p =>
     induction b using Quotient.inductionOn with | h q =>
-    exact (congrArg (fun c ↦ ofHomotopyGroupFun n (HomotopyGroup.map _ _ c))
-      (HomotopyGroup.prod_mk p q)).trans
-        ((congrArg (mk _ G) (by ext; simp)).trans (map_mul _ _ _))
+    have hpq : GenLoop.toSphere (GenLoop.map (y := 1)
+        ((ContinuousMap.id G).comp ContinuousMap.fst * (ContinuousMap.id G).comp ContinuousMap.snd)
+        (by simp) (GenLoop.prod p q)) = GenLoop.toSphere p * GenLoop.toSphere q := by
+      ext
+      simp
+    simp only [HomotopyGroup.prod_mk, HomotopyGroup.map_mk]
+    exact (congrArg (mk _ G) hpq).trans (map_mul _ _ _)
 
 @[simp]
 theorem ofHomotopyGroup_mk (p : Ω^ (Fin n) G 1) :
@@ -182,18 +186,18 @@ theorem sphereSplitting_conjAct (g : G) (a : HomotopyGroup (Fin n) G 1) :
       HomotopyGroup.map ⟨fun x ↦ g * x * g⁻¹, by fun_prop⟩ (by simp) a := by
   apply ofHomotopyGroup_injective n
   -- In the extension, the action is conjugation by the class of the constant map at `g`.
-  rw [GroupExtension.Splitting.conjAct, MonoidHom.comp_apply, ← sphereGroupExtension_inl,
-    GroupExtension.inl_conjAct_comm, MonoidHom.coe_ofClass, sphereSplitting_apply,
-    sphereGroupExtension_inl, const_mk]
+  have hconj (a : G ⧸ Subgroup.pathComponentOne G) (b : HomotopyGroup (Fin n) G 1) :
+      ofHomotopyGroup n G ((sphereSplitting n G).conjAct a b) =
+        sphereSplitting n G a * ofHomotopyGroup n G b * (sphereSplitting n G a)⁻¹ :=
+    (sphereGroupExtension n G).inl_conjAct_comm
+  rw [hconj]
   induction a using Quotient.inductionOn with | h p =>
   have h : ContinuousMap.const _ g * GenLoop.toSphere p * (ContinuousMap.const _ g)⁻¹ =
       GenLoop.toSphere (GenLoop.map (y := 1) ⟨fun x ↦ g * x * g⁻¹, by fun_prop⟩ (by simp) p) := by
     rw [GenLoop.toSphere_map]
     ext
     simp
-  have h' := congrArg (mk _ G) h
-  rw [map_mul, map_mul, map_inv] at h'
-  exact h'
+  simpa using congrArg (mk _ G) h
 
 variable (G) in
 /-- **`[Sⁿ, G]` is a semidirect product**: for `n ≥ 1`,
