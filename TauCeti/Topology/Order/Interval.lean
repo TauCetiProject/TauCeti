@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Topology.Algebra.Order.Group
@@ -61,6 +62,8 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   itself a neighbourhood of `t₀` within `[u, v]`.
 * `TauCeti.tendsto_sub_nhdsGT_nhdsWithin_Icc` — the curve `δ ↦ b - δ` tends to `b` within `[a, b]`
   as `δ → 0⁺`.
+* `TauCeti.continuous_neg_Ioo` — negation maps the symmetric open interval `(-a, a)` continuously
+  to itself.
 * `IsCompact.exists_Icc_between` — a nonempty compact subset of `Ioo a b` lies in the interior of
   a closed interval contained in `Ioo a b`.
 * `IsOpen.exists_Ioo_subset_of_uIcc_subset` — an open set containing `[[a, b]]` contains an open
@@ -378,6 +381,13 @@ theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOr
       nhdsWithin_le_nhds
   · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
     exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
+
+/-- Negation `v ↦ -v` maps the symmetric open interval `(-a, a)` continuously to itself. -/
+theorem continuous_neg_Ioo {G : Type*} [AddCommGroup G] [PartialOrder G] [IsOrderedAddMonoid G]
+    [TopologicalSpace G] [ContinuousNeg G] (a : G) :
+    Continuous fun v : Ioo (-a) a ↦
+      (⟨-v, neg_lt_neg v.property.2, neg_lt.1 v.property.1⟩ : Ioo (-a) a) :=
+  continuous_subtypeVal.neg.subtype_mk _
 
 /-- A continuous function on `[a, b]` that is injective on `[a, b)` takes different values at the
 two endpoints. -/
