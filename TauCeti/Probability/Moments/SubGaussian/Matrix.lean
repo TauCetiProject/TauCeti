@@ -233,14 +233,14 @@ theorem iIndepFun.measureReal_matrix_l2_opNorm_gt_le [DecidableEq n] [IsProbabil
         (TauCeti.net_card_mul_exp_le hNc' hMc'
           (Nat.cast_nonneg _) ht) (by norm_num)
 
-/-- For a matrix with at least as many rows as columns and independent sub-Gaussian
+/-- For a matrix with at least half as many rows as columns and independent sub-Gaussian
 entries of variance proxy `L²`, the probability that its Euclidean operator norm exceeds
-`24 L √(card m)` is at most `2 exp(-card m)`. -/
+`28 L √(card m)` is at most `2 exp(-card m)`. -/
 theorem iIndepFun.measureReal_l2_opNorm_gt_le_of_card_le [DecidableEq n]
     (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) μ)
     {L : ℝ≥0} (hA : ∀ i j, HasSubgaussianMGF (fun ω ↦ A ω i j) (L ^ 2) μ)
-    (hdim : Fintype.card n ≤ Fintype.card m) :
-    μ.real {ω | 24 * (L : ℝ) * Real.sqrt (Fintype.card m) < ‖A ω‖} ≤
+    (hdim : Fintype.card n ≤ 2 * Fintype.card m) :
+    μ.real {ω | 28 * (L : ℝ) * Real.sqrt (Fintype.card m) < ‖A ω‖} ≤
       2 * Real.exp (-(Fintype.card m : ℝ)) := by
   have : IsProbabilityMeasure μ := hind.isProbabilityMeasure
   let d : ℝ := Fintype.card m
@@ -248,10 +248,14 @@ theorem iIndepFun.measureReal_l2_opNorm_gt_le_of_card_le [DecidableEq n]
   rw [Real.sq_sqrt (by positivity)] at hnorm
   refine (measureReal_mono ?_ (measure_ne_top _ _)).trans hnorm
   intro ω hω
-  have hcard : (Fintype.card n : ℝ) ≤ d := Nat.cast_le.mpr hdim
-  have hsqrt := Real.sqrt_le_sqrt hcard
+  have hcard : (Fintype.card n : ℝ) ≤ 2 * d := by dsimp only [d]; exact_mod_cast hdim
+  -- `√(card n) ≤ √2 √(card m) ≤ (3 / 2) √(card m)`, compared through squares.
+  have hsqrt : Real.sqrt (Fintype.card n) ≤ 3 / 2 * Real.sqrt d := by
+    have hn := Real.sq_sqrt (Nat.cast_nonneg (α := ℝ) (Fintype.card n))
+    have hd := Real.sq_sqrt (show 0 ≤ d by positivity)
+    nlinarith [Real.sqrt_nonneg (Fintype.card n : ℝ), Real.sqrt_nonneg d]
   have hthreshold : 8 * (L : ℝ) * (Real.sqrt d + Real.sqrt (Fintype.card n) +
-      Real.sqrt d) ≤ 24 * (L : ℝ) * Real.sqrt d := by
+      Real.sqrt d) ≤ 28 * (L : ℝ) * Real.sqrt d := by
     have hh := mul_nonneg L.coe_nonneg (sub_nonneg.mpr hsqrt)
     nlinarith only [hh]
   exact hthreshold.trans_lt hω
