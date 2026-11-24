@@ -160,6 +160,7 @@ def dual : Submodule O (L ⊗[ℤ] ℚ) where
 
 /-- A vector of `L ⊗ ℚ` lies in `L^#` exactly when its swap into `ℚ ⊗ L` lies in the dual lattice
 of the pairing. -/
+@[simp]
 theorem mem_dual_iff {x : L ⊗[ℤ] ℚ} :
     x ∈ Λ.dual ↔ TensorProduct.comm ℤ L ℚ x ∈ Λ.form.dualLattice :=
   Iff.rfl
@@ -168,7 +169,7 @@ theorem mem_dual_iff {x : L ⊗[ℤ] ℚ} :
 theorem le_dual :
     ((TensorProduct.mk ℤ L ℚ).flip 1 : L →+ L ⊗[ℤ] ℚ).range ≤ Λ.dual.toAddSubgroup := by
   rintro _ ⟨y, rfl⟩
-  simp [mem_dual_iff]
+  simp
 
 /-- The **dual index** `[L^# : L]` of a symplectic lattice: the dual index
 `LinearMap.BilinForm.dualIndex` of its pairing. It is nonzero when `L` is finite free over `ℤ`
