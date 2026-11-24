@@ -149,8 +149,14 @@ def localChainKPresheaf.isColimitCoconeOfCompacts (K : Compacts X)
       fun T hT hTK ↦
         let ⟨L, hLK, hLT⟩ := hK T hT hTK
         ⟨op ⟨L, hLK⟩, hLT⟩)
+  -- `TopPair.singularChainComplexFunctor` is a `def`; rewriting it through `toSSetPair` exposes
+  -- the values `((SSetPair.chainComplexFunctor A).obj R).obj (toSSetPair.obj _)` of `hc`
   rw [TopPair.singularChainComplexFunctor_obj_eq_toSSetPair_comp] at hc
-  -- the diagram and the cocone of `hc` are those of the K-presheaf
+  -- the diagram and the cocone of `hc` are those of the K-presheaf: the components below are
+  -- `Iso.refl`, because `localChainComplex R S` unfolds, through the `abbrev`s
+  -- `localChainComplex`, `TopPair.singularChainComplex` and `SSetPair.chainComplex`, to
+  -- `((SSetPair.chainComplexFunctor A).obj R).obj (toSSetPair.obj (TopPair.ofSubset Sᶜ))`, already
+  -- at reducible transparency; only the maps need `localChainRestriction_def`, through `hR`
   have hR : ∀ {S T : Set M} (h : S ⊆ T), extendMap (TopPair.singularChainComplexMap
       (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) (compl_subset_compl.2 h)) R) _ =
         extendMap (localChainRestriction R h) (ComplexShape.embeddingUpIntLE p) :=
