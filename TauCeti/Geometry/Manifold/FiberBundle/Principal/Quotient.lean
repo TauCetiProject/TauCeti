@@ -520,8 +520,9 @@ theorem quotientMk_orbitFiberDiffeomorph (x : ManifoldTotalSpace G (orbitFiber G
       ((ManifoldTotalSpace.homeomorph G (orbitFiber G M)).symm x).proj := by
   let _ := orbitRelQuotientChartedSpace I G I' M
   let _ := orbitFiberBundle I G I' M
-  rw [orbitFiberDiffeomorph_apply]
-  exact ((ManifoldTotalSpace.homeomorph G (orbitFiber G M)).symm x).snd.property
+  rw [← orbitFiber.proj_equiv, orbitFiberDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply,
+    LeftToRightAction.coe_diffeomorph_symm, Equiv.apply_symm_apply]
+  exact (orbitFiberAtlas I G I' M).proj_totalSpaceDiffeomorph isContMDiff_orbitFiberAtlas x
 
 /-- The diffeomorphism `orbitFiberDiffeomorph` carries the right action of `g` on the total space
 to the left action of `g⁻¹` on `M`. -/
@@ -531,10 +532,10 @@ theorem orbitFiberDiffeomorph_op_smul (g : G) (x : ManifoldTotalSpace G (orbitFi
     orbitFiberDiffeomorph I G I' M (op g • x) = g⁻¹ • orbitFiberDiffeomorph I G I' M x := by
   let _ := orbitRelQuotientChartedSpace I G I' M
   let _ := orbitFiberBundle I G I' M
-  obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph G (orbitFiber G M)).surjective x
-  rw [ManifoldTotalSpace.smul_homeomorph, orbitFiberDiffeomorph_homeomorph,
-    orbitFiberDiffeomorph_homeomorph, MapFiber.coe_smul, LeftToRightAction.equiv_symm_smul,
-    unop_op]
+  rw [orbitFiberDiffeomorph, Diffeomorph.coe_trans, Function.comp_apply, Function.comp_apply,
+    (orbitFiberAtlas I G I' M).totalSpaceDiffeomorph_smul isContMDiff_orbitFiberAtlas
+      orbitFiber.proj_smul, LeftToRightAction.coe_diffeomorph_symm,
+    LeftToRightAction.equiv_symm_op_smul]
 
 omit [ContMDiffSMul I I' ∞ G M] [IsCancelSMul G M] in
 /-- **Free proper quotients are smooth principal bundles (existential form).** Let a
