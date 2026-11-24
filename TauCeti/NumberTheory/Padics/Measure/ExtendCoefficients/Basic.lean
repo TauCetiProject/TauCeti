@@ -453,8 +453,8 @@ theorem mem_range_extendCoefficients_iff (hje : Topology.IsEmbedding j)
   refine ⟨?_, fun hν ↦ ?_⟩
   · rintro ⟨μ, rfl⟩
     exact norm_toCLMEquiv_extendCoefficients_le j hj μ
-  · obtain ⟨μ, hμ⟩ := exists_apply_comp_eq_of_norm_le_one hj hje hjr hν
-    exact ⟨μ, (eq_extendCoefficients_of_apply_comp j μ hj hje.continuous hμ).symm⟩
+  · exact (mem_range_extendCoefficients_iff_apply_comp_mem_range j hj hje).mpr fun f ↦
+      hjr (mem_closedBall_zero_iff.mpr (norm_apply_comp_le_one hj hje.continuous hν f))
 
 end OperatorNorm
 

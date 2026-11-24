@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import Mathlib.Topology.ContinuousMap.Compact
+import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 
 /-!
 # Continuity and bounds for pushforward of abstract measures
@@ -65,10 +66,8 @@ theorem continuous_abstractMeasure_map_weak [CommRing R] [TopologicalSpace R] [I
     @Continuous _ _ (WeakTopology (X := X) (R := R) (E := E))
       (WeakTopology (X := Y) (R := R) (E := E)) (map (R := R) (E := E) f) := by
   let : TopologicalSpace (AbstractMeasure X R E) := WeakTopology
-  let : TopologicalSpace (AbstractMeasure Y R E) := WeakTopology
-  refine continuous_induced_rng.mpr <| continuous_pi fun g ↦ ?_
-  simp only [Function.comp_apply, map_apply]
-  exact (continuous_apply (g.comp f)).comp continuous_induced_dom
+  refine (continuous_weak_iff _).mpr fun g ↦ ?_
+  simpa only [map_apply] using continuous_apply_weak (g.comp f)
 
 /-- Pushforward is continuous for Mathlib's strong measure topologies, which on compact
 spaces are the continuous-dual operator-norm topologies. -/

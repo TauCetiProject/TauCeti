@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.Measure.PhiPsi
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 import TauCeti.NumberTheory.Padics.Measure.Norm
+import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 import Mathlib.Topology.UniformSpace.UniformApproximation
 
 /-!
@@ -47,14 +48,12 @@ theorem continuous_amiceTransformEquiv_weak :
     @Continuous _ _ (WeakTopology (X := ℤ_[p]) (R := ℤ_[p]) (E := ℤ_[p])) _
       (amiceTransformEquiv (p := p)) := by
   let : TopologicalSpace D(ℤ_[p], ℤ_[p]) := WeakTopology
-  have heval : Continuous (fun μ : D(ℤ_[p], ℤ_[p]) ↦ fun f : C(ℤ_[p], ℤ_[p]) ↦ μ f) :=
-    continuous_induced_dom
   apply continuous_iff_continuousAt.mpr
   intro μ
   rw [ContinuousAt, PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
   intro n
   simpa only [coeff_amiceTransformEquiv, ContinuousAt, Function.comp_def] using
-    ((continuous_apply (mahler n : C(ℤ_[p], ℤ_[p]))).comp heval).continuousAt (x := μ)
+    (continuous_apply_weak (mahler n : C(ℤ_[p], ℤ_[p]))).continuousAt (x := μ)
 
 /-- Evaluation of the inverse integral Amice transform at a fixed test function is
 continuous for the coefficientwise p-adic topology. -/
@@ -95,7 +94,7 @@ theorem isHomeomorph_amiceTransformEquiv_weak :
   let : TopologicalSpace D(ℤ_[p], ℤ_[p]) := WeakTopology
   rw [LinearEquiv.isHomeomorph_iff]
   exact ⟨continuous_amiceTransformEquiv_weak,
-    continuous_induced_rng.mpr (continuous_pi continuous_amiceTransformEquiv_symm_apply)⟩
+    (continuous_weak_iff _).mpr continuous_amiceTransformEquiv_symm_apply⟩
 
 end AbstractMeasure
 

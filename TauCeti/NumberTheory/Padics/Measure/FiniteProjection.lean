@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Padics.Measure.Topology
 public import Mathlib.LinearAlgebra.Finsupp.Pi
 public import TauCeti.Topology.ContinuousMap.FiberIndicator
+import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 
 /-!
 # Finite projections of abstract measures
@@ -222,8 +223,7 @@ theorem continuous_finiteProjection [Finite A] [DiscreteTopology A] (q : C(X, A)
     @Continuous _ _ (WeakTopology (X := X) (R := R) (E := R)) inferInstance
       (fun μ : D(X, R) ↦ fun a ↦ finiteProjection q μ a) := by
   let : TopologicalSpace D(X, R) := WeakTopology
-  exact continuous_pi fun a ↦
-    (continuous_apply (fiberIndicator (R := R) q a)).comp continuous_induced_dom
+  exact continuous_pi fun a ↦ continuous_apply_weak (fiberIndicator (R := R) q a)
 
 end Normed
 

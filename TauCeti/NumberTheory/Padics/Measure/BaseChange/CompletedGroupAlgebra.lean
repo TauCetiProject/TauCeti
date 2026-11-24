@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.Padics.Measure.BaseChange.Basic
 public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.BaseChange
 import Mathlib.Topology.Algebra.Module.Compact
+import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 import TauCeti.Topology.Algebra.Ring.Basic
 
 /-!
@@ -267,8 +268,7 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (p : ℕ) [F
         (hZp_symm.comp
           (completedGroupAlgebra.continuous_mapAddMonoidHom
             (b.coord i).continuous_of_finite_of_compactSpace))
-    refine continuous_induced_rng.mpr (continuous_pi fun f : C(Γ, O) ↦ ?_)
-    simp only [Function.comp_apply]
+    refine (continuous_weak_iff _).mpr fun f ↦ ?_
     have hfun : (fun y : completedGroupAlgebra O Γ ↦
         (completedGroupAlgebraEquivOfFreeOfFinite p O).symm y f) =
         fun y ↦ ∑ i, b i *
@@ -281,7 +281,7 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak_of_free_of_finite (p : ℕ) [F
       simp [smul_eq_mul]
     rw [hfun]
     exact continuous_finsetSum _ fun i _ ↦
-      continuous_const.mul (((continuous_apply f).comp continuous_induced_dom).comp (hcont_i i))
+      continuous_const.mul ((continuous_apply_weak f).comp (hcont_i i))
   have hO_coe : ⇑(completedGroupAlgebraEquivOfFreeOfFinite (Γ := Γ) p O).toEquiv =
       ⇑(toCompletedGroupAlgebra : D(Γ, O) →ₐ[O] completedGroupAlgebra O Γ) := by
     rw [AlgEquiv.toEquiv_eq_coe, AlgEquiv.coe_toEquiv, coe_completedGroupAlgebraEquivOfFreeOfFinite]

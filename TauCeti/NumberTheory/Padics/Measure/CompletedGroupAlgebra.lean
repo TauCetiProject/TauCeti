@@ -15,6 +15,7 @@ import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.UniformSpace.UniformApproximation
 import TauCeti.NumberTheory.Padics.Measure.Norm
+import TauCeti.NumberTheory.Padics.Measure.Topology.Basic
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.ContinuousMap.LocallyConstant
 
@@ -513,7 +514,7 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak :
   have hle : .induced toCompletedGroupAlgebra inferInstance ≤
       WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p]) := by
     let : TopologicalSpace D(Γ, ℤ_[p]) := .induced toCompletedGroupAlgebra inferInstance
-    exact continuous_iff_le_induced.mp (continuous_pi heval)
+    exact continuous_id_iff_le.mp ((continuous_weak_iff (id : D(Γ, ℤ_[p]) → D(Γ, ℤ_[p]))).mpr heval)
   let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
   have hind : IsInducing
       (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) :=

@@ -69,18 +69,26 @@ section CoefficientRestriction
 
 variable (hj : ∀ a, ‖j a‖ ≤ 1)
 
+omit [IsTopologicalRing O] in
+include hj in
+/-- A measure of operator norm at most `1` takes values of norm at most `1` on tests transported
+by a coefficient map into the closed unit ball. -/
+theorem norm_apply_comp_le_one (hjc : Continuous j) {ν : D(X, K)} (hν : ‖toCLMEquiv ν‖ ≤ 1)
+    (f : C(X, O)) : ‖ν ((⟨j, hjc⟩ : C(O, K)).comp f)‖ ≤ 1 := by
+  rw [← coe_toCLMEquiv]
+  have hf : ‖(⟨j, hjc⟩ : C(O, K)).comp f‖ ≤ 1 :=
+    (ContinuousMap.norm_le _ zero_le_one).mpr fun x ↦ hj (f x)
+  simpa only [one_mul] using (toCLMEquiv ν).le_of_opNorm_le_of_le hν hf
+
 include hj in
 /-- If `j` is a topological embedding onto the closed unit ball of `K`, a `K`-valued measure `ν` of
 norm at most `1` sends the test functions `j ∘ f` into the image of `j`, and the preimages form an
 `O`-valued measure `μ` with `ν (j ∘ f) = j (μ f)`. -/
 theorem exists_apply_comp_eq_of_norm_le_one (hje : Topology.IsEmbedding j)
     (hjr : Metric.closedBall 0 1 ⊆ Set.range j) {ν : D(X, K)} (hν : ‖toCLMEquiv ν‖ ≤ 1) :
-    ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) := by
-  let J : C(O, K) := ⟨j, hje.continuous⟩
-  refine j.exists_apply_comp_eq_of_mem_range hje ν fun f ↦ hjr ?_
-  rw [mem_closedBall_zero_iff, ← coe_toCLMEquiv]
-  have hf : ‖J.comp f‖ ≤ 1 := (ContinuousMap.norm_le _ zero_le_one).mpr fun x ↦ hj (f x)
-  exact ((toCLMEquiv ν).le_of_opNorm_le_of_le hν hf).trans_eq (one_mul 1)
+    ∃ μ : D(X, O), ∀ f : C(X, O), ν ((⟨j, hje.continuous⟩ : C(O, K)).comp f) = j (μ f) :=
+  j.exists_apply_comp_eq_of_mem_range hje ν fun f ↦
+    hjr (mem_closedBall_zero_iff.mpr (norm_apply_comp_le_one hj hje.continuous hν f))
 
 include hj in
 /-- If `j` is a topological embedding onto the closed unit ball of `K`, a `K`-valued measure `ν`
