@@ -176,8 +176,8 @@ class of its underlying homeomorphism. -/
 noncomputable def toMappingClassGroupFull : MappingClassGroup I M →* MappingClassGroupFull M :=
   lift ((MappingClassGroupFull.mk M).comp (Diffeomorph.toHomeomorphHom.comp (Subgroup.subtype _)))
     fun f hf => MappingClassGroupFull.mk_eq_one_iff.2 <| by
-      convert (Diffeomorph.isotopic_of_joined (hf.map continuous_subtypeVal)).symm using 1 <;>
-        ext <;> simp [Diffeomorph.toHomeomorphHom_apply]
+      simpa [← Diffeomorph.toHomeomorphHom_apply] using
+        (Diffeomorph.isotopic_of_joined (hf.map continuous_subtypeVal)).symm
 
 /-- The forgetful homomorphism sends the class of `f` to the class of its underlying
 homeomorphism. -/

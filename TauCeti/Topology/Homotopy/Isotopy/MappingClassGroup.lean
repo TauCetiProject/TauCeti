@@ -76,12 +76,10 @@ def isotopicToIdSubgroup : Subgroup (M ≃ₜ M) where
   one_mem' := Isotopic.refl _ IsEmbedding.id
   mul_mem' {f g} hf hg := by
     -- `F_t ∘ g` joins `f ∘ g` to `g`, and `G_t` joins `g` to the identity.
-    refine Isotopic.trans ?_ (hg : Isotopic (g : C(M, M)) _)
-    convert (hf : Isotopic (f : C(M, M)) _).precomp_homeomorph g using 1 <;> ext <;> simp
+    simpa using ((hf : Isotopic (f : C(M, M)) _).precomp_homeomorph g).trans hg
   inv_mem' {f} hf := by
     -- `f⁻¹ ∘ F_t` joins the identity to `f⁻¹`.
-    refine Isotopic.symm ?_
-    convert (hf : Isotopic (f : C(M, M)) _).postcomp_homeomorph f.symm using 1 <;> ext <;> simp
+    simpa using ((hf : Isotopic (f : C(M, M)) _).postcomp_homeomorph f.symm).symm
 
 /-- A homeomorphism lies in `isotopicToIdSubgroup M` exactly when it is isotopic to the
 identity. -/
@@ -95,7 +93,7 @@ homeomorphism isotopic to the identity: `e ∘ F_t ∘ e⁻¹` joins `e ∘ f �
 theorem homeoCongr_mem_isotopicToIdSubgroup (e : M ≃ₜ N) {f : M ≃ₜ M}
     (hf : f ∈ isotopicToIdSubgroup M) : Homeomorph.homeoCongr e f ∈ isotopicToIdSubgroup N := by
   rw [mem_isotopicToIdSubgroup] at hf ⊢
-  convert (hf.precomp_homeomorph e.symm).postcomp_homeomorph e using 1 <;> ext <;> simp
+  simpa using (hf.precomp_homeomorph e.symm).postcomp_homeomorph e
 
 /-- Conjugation by a homeomorphism `e : M ≃ₜ N` preserves isotopy to the identity. -/
 theorem homeoCongr_mem_isotopicToIdSubgroup_iff (e : M ≃ₜ N) {f : M ≃ₜ M} :
@@ -123,10 +121,7 @@ instance isotopicToIdSubgroup.normal : (isotopicToIdSubgroup M).Normal where
 /-- The final homeomorphism of an ambient isotopy is isotopic to the identity. -/
 theorem finalHomeomorph_mem_isotopicToIdSubgroup (Φ : AmbientIsotopy M) :
     Φ.finalHomeomorph ∈ isotopicToIdSubgroup M := by
-  rw [mem_isotopicToIdSubgroup]
-  convert (Φ.isotopic (f := ContinuousMap.id M) IsEmbedding.id).symm using 1
-  ext
-  simp
+  simpa using (Φ.isotopic (f := ContinuousMap.id M) IsEmbedding.id).symm
 
 variable (M) in
 /-- The **topological mapping class group** of `M`: the group of isotopy classes of
@@ -167,8 +162,8 @@ theorem mk_eq_mk_iff {f g : M ≃ₜ M} : mk M f = mk M g ↔ Isotopic (f : C(M,
   rw [← div_eq_one, ← map_div, mk_eq_one_iff, div_eq_mul_inv]
   -- Composing on the right with `g` or with `g⁻¹` moves between `f ∘ g⁻¹ ≃ id` and `f ≃ g`.
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · convert h.precomp_homeomorph g using 1 <;> ext <;> simp
-  · convert h.precomp_homeomorph g.symm using 1 <;> ext <;> simp
+  · simpa [ContinuousMap.comp_assoc] using h.precomp_homeomorph g
+  · simpa [ContinuousMap.comp_assoc] using h.precomp_homeomorph g.symm
 
 /-- The final homeomorphism of an ambient isotopy represents the trivial mapping class. -/
 @[simp]
@@ -226,7 +221,7 @@ def congr (e : M ≃ₜ N) : MappingClassGroupFull M ≃* MappingClassGroupFull 
 @[simp]
 theorem congr_mk (e : M ≃ₜ N) (f : M ≃ₜ M) :
     congr e (mk M f) = mk N (Homeomorph.homeoCongr e f) :=
-  (rfl)
+  QuotientGroup.congr_mk' _ _ _ _ _
 
 /-- The isomorphism induced by the identity homeomorphism is the identity. -/
 @[simp]
