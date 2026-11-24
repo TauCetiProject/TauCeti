@@ -196,7 +196,7 @@ vector of `M` at `x` on which `df` is positive. -/
 theorem boundaryOrientation_scalarRegularSublevel_spec :
     letI := scalarRegularSublevelChartedSpace hf hreg hn
     letI := isManifold_scalarRegularSublevel hreg hn le_rfl hf
-    letI := isManifold_boundary (n := n) {x | f x ≤ a} (one_ne_zero : (1 : ℕ∞ω) ≠ 0)
+    letI := isManifold_boundary (n := n) (k := 1) {x | f x ≤ a}
     ∀ (x : (𝓡∂ (n + 1)).boundary {x | f x ≤ a}) {v : TangentSpace I ((x : {x | f x ≤ a}) : M)},
       0 < mvfderiv I f x v →
       ∀ (e : Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x))
@@ -211,7 +211,7 @@ theorem boundaryOrientation_scalarRegularSublevel_spec :
   intro x v hv e e' he'
   obtain ⟨u, hu, hfu⟩ := exists_mfderiv_subtypeVal_eq hf
     (isInvertible_mfderiv_subtypeVal_scalarRegularSublevel hf hreg hn x) v
-  have hx : f x = a := (boundary_scalarRegularSublevel hreg hn le_rfl hf).le x.2
+  have hx : f x = a := (boundary_scalarRegularSublevel hreg hn le_rfl hf).le x.property
   -- The vector of the sublevel over `v` points outward, because `df(v) > 0`.
   refine boundaryOrientation_spec_of_isOrientationPreservingAt x
     (o.isOrientationPreservingAt_scalarRegularSublevel hf hreg hn x) ?_ e e' (by rw [he', hu])
@@ -234,7 +234,7 @@ tangent vector of `M` at `x` on which `df` is negative. -/
 theorem boundaryOrientation_scalarRegularBand_spec_of_eq_left :
     letI := scalarRegularBandChartedSpace hf hn ha hb hab
     letI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-    letI := isManifold_boundary (n := n) (f ⁻¹' Icc a b) (one_ne_zero : (1 : ℕ∞ω) ≠ 0)
+    letI := isManifold_boundary (n := n) (k := 1) (f ⁻¹' Icc a b)
     ∀ (x : (𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b)), f x = a →
       ∀ {v : TangentSpace I ((x : f ⁻¹' Icc a b) : M)}, mvfderiv I f x v < 0 →
       ∀ (e : Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x))
@@ -264,7 +264,7 @@ tangent vector of `M` at `x` on which `df` is positive. -/
 theorem boundaryOrientation_scalarRegularBand_spec_of_eq_right :
     letI := scalarRegularBandChartedSpace hf hn ha hb hab
     letI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-    letI := isManifold_boundary (n := n) (f ⁻¹' Icc a b) (one_ne_zero : (1 : ℕ∞ω) ≠ 0)
+    letI := isManifold_boundary (n := n) (k := 1) (f ⁻¹' Icc a b)
     ∀ (x : (𝓡∂ (n + 1)).boundary (f ⁻¹' Icc a b)), f x = b →
       ∀ {v : TangentSpace I ((x : f ⁻¹' Icc a b) : M)}, 0 < mvfderiv I f x v →
       ∀ (e : Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x))

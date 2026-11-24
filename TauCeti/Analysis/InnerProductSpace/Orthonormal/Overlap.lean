@@ -15,7 +15,7 @@ public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frob
 
 For finite families `u : ι → E` and `v : κ → E` in an inner product space, the *overlap operator*
 `TauCeti.overlapOperator` (defined with the frame operators in
-`TauCeti.Analysis.InnerProductSpace.Frame`) is analysis by `u` after synthesis by `v`,
+`TauCeti.Analysis.InnerProductSpace.Frame.Basic`) is analysis by `u` after synthesis by `v`,
 
 `EuclideanSpace 𝕜 κ → EuclideanSpace 𝕜 ι`, `a ↦ (⟪uᵢ, ∑ⱼ aⱼ vⱼ⟫)ᵢ`,
 

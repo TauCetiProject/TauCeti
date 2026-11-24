@@ -246,7 +246,7 @@ theorem reachable_induce_iff {S : Set V} {s t : S} :
   refine ⟨fun ⟨q⟩ ↦ ⟨q.map (Embedding.induce S).toHom, fun v hv ↦ ?_⟩,
     fun ⟨p, hp⟩ ↦ ⟨p.induce S hp⟩⟩
   obtain ⟨x, -, rfl⟩ := List.mem_map.1 (q.support_map (Embedding.induce S).toHom ▸ hv)
-  exact x.2
+  exact x.property
 
 /-- Reachability along the adjacency arrow family avoiding a set `X` of vertices is the existence
 of a walk of `G` visiting no vertex of `X`. -/

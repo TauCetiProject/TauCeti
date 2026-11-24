@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
+import TauCeti.Data.ZMod.OrderOf
 
 /-!
 # `ℤ/k` and the `k`-th roots of unity
@@ -39,6 +40,9 @@ their additive homomorphisms to `ZMod n`.
   `n`-th roots of unity.
 * `TauCeti.hasEnoughRootsOfUnity_multiplicative_zmod_exponent`: `Multiplicative (ZMod n)` has
   enough `e`-th roots of unity for the exponent `e` of any additive monoid killed by `n`.
+* `HasEnoughRootsOfUnity.two_of_two_lt`: above level two, enough roots of unity for the exponent
+  of `(ℤ/n)ˣ` include the square roots of unity.
+* `HasEnoughRootsOfUnity.neZero_two_of_two_lt`: hence `2 ≠ 0` in such a domain.
 * `IsPrimitiveRoot.natCard_rootsOfUnity_of_isCyclic`: a cyclic `μ_k` containing a primitive `k`-th
   root has `k` elements.
 * `IsPrimitiveRoot.zpowers_eq_of_isCyclic`: a primitive `k`-th root generates `μ_k` once `μ_k` is
@@ -61,8 +65,9 @@ a field to any commutative monoid whose `k`-th roots of unity form a cyclic grou
 `zpowers_eq_of_isCyclic` asks for; and the four characterising lemmas below — the equivalence and
 its inverse, each at an integer and at a natural exponent — are added, none of which the source
 has. The remaining declarations of this file — `natCard_rootsOfUnity_of_isCyclic`,
-`zpowers_eq_of_isCyclic`, the `ZMod k`-module structure on `μ_k` written additively and the roots
-of unity of `Multiplicative (ZMod n)` — have no counterpart in that source.
+`zpowers_eq_of_isCyclic`, the `ZMod k`-module structure on `μ_k` written additively, the roots
+of unity of `Multiplicative (ZMod n)` and the square roots of unity attached to `(ℤ/n)ˣ` — have no
+counterpart in that source.
 -/
 
 public section
@@ -75,7 +80,7 @@ variable {M : Type*} [CommMonoid M] (k : ℕ)
 @[simp]
 theorem nsmul_additive_rootsOfUnity_eq_zero (x : Additive (rootsOfUnity k M)) : k • x = 0 :=
   Additive.toMul.injective <| Subtype.ext <| by
-    simpa [toMul_nsmul] using (mem_rootsOfUnity k _).1 x.toMul.2
+    simpa [toMul_nsmul] using (mem_rootsOfUnity k _).1 x.toMul.property
 
 /-- `μ_k`, written additively, is a `ZMod k`-module, being killed by `k`. -/
 instance instModuleZModAdditiveRootsOfUnity : Module (ZMod k) (Additive (rootsOfUnity k M)) :=
@@ -114,6 +119,27 @@ theorem hasEnoughRootsOfUnity_multiplicative_zmod_exponent {n : ℕ} [NeZero n] 
 
 end TauCeti
 
+namespace HasEnoughRootsOfUnity
+
+variable {n : ℕ}
+
+/-- Above level two, enough roots of unity for the exponent of `(ℤ/n)ˣ` include the square roots
+of unity: `-1` has order `2` in `(ℤ/n)ˣ`, so `2` divides that exponent. -/
+theorem two_of_two_lt (M : Type*) [CommMonoid M]
+    [HasEnoughRootsOfUnity M (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) :
+    HasEnoughRootsOfUnity M 2 :=
+  .of_dvd M (ZMod.two_dvd_exponent_units (n := n) (by omega) (by omega))
+
+/-- Above level two, `2` is nonzero in a domain with enough roots of unity for the exponent of
+`(ℤ/n)ˣ`: the domain contains a primitive square root of unity. -/
+theorem neZero_two_of_two_lt (R : Type*) [CommRing R] [IsDomain R]
+    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) : NeZero (2 : R) := by
+  have := two_of_two_lt R hn
+  obtain ⟨ζ, hζ⟩ := exists_isPrimitiveRoot R 2
+  exact_mod_cast hζ.neZero'
+
+end HasEnoughRootsOfUnity
+
 namespace IsPrimitiveRoot
 
 variable {M : Type*} [CommMonoid M] {k : ℕ} [NeZero k] [IsCyclic (rootsOfUnity k M)] {ζ : Mˣ}
@@ -143,7 +169,7 @@ noncomputable def zmodEquivRootsOfUnity (h : IsPrimitiveRoot ζ k) :
     ZMod k ≃+ Additive (rootsOfUnity k M) :=
   zmodAddEquivOfGenerator (g := Additive.ofMul ⟨ζ, h.mem_rootsOfUnity⟩)
     (fun x => by
-      obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.1 (h.zpowers_eq_of_isCyclic.ge x.toMul.2)
+      obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.1 (h.zpowers_eq_of_isCyclic.ge x.toMul.property)
       refine ⟨i, Additive.toMul.injective (Subtype.ext ?_)⟩
       rwa [toMul_zsmul, Subgroup.coe_zpow, toMul_ofMul])
     ((Nat.card_congr Additive.toMul).trans h.natCard_rootsOfUnity_of_isCyclic)

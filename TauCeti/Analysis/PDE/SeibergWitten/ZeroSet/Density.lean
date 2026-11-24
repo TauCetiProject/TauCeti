@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Covering
 public import TauCeti.MeasureTheory.Measure.FiniteMeasure.LowerDensity
+public import TauCeti.MeasureTheory.Measure.Vague.LowerDensity
+import TauCeti.MeasureTheory.Covering.HausdorffDensity
 
 /-!
 # Lower density of the limit defect measure at the limit zero set
@@ -36,9 +38,20 @@ comparison for Hausdorff measure, `(c / 4) μH[2] Z ≤ ν U` for every open `U 
 the whole space, the limit zero set has two-dimensional Hausdorff measure at most `4 ν(X) / c`,
 which is finite.
 
-The statements are for an arbitrary metric space and an arbitrary nontrivial filter, so they apply
-to the manifold with a distance inducing its topology, along any subsequence. The differential
-inequality and the smallest-scale bound are hypotheses.
+On a noncompact manifold, or on the total space of a normal bundle after rescaling, the defect
+measures are only locally finite, with masses bounded on compact sets, and the constants of the
+differential inequality are only locally uniform. A subsequence of such measures converges
+vaguely, against continuous compactly supported functions, to a locally finite measure `ν`
+(`TauCeti.exists_subseq_tendsto_integral_of_iSup_measure_ne_top`). Let `Z₀` be a set of limits of
+zeros: every point of `Z₀` is a limit of points of `Zᵢ`. If near each point the differential
+inequality and the smallest-scale bound hold at the zeros of `αᵢ` with constants depending on the
+point, then near each point the limit measure has a lower density bound at the points of `Z₀`
+with uniform constants, and `Z₀` has locally finite two-dimensional Hausdorff measure
+(`exists_forall_ofReal_mul_sq_le_measure_closedBall_of_tendsto_integral_compactlySupported`).
+
+The statements are for an arbitrary metric space, proper in the locally finite case, and an
+arbitrary nontrivial filter, so they apply to the manifold with a distance inducing its topology,
+along any subsequence. The differential inequality and the smallest-scale bound are hypotheses.
 
 ## References
 
@@ -97,5 +110,49 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_tendsto [l.NeBot]
   have h2 : ((2 : ℕ) : ℝ) = 2 := by norm_num
   simpa only [h4, h2] using
     FiniteMeasure.mul_hausdorffMeasure_le_measure_of_tendsto hμ hZ hh hρ₀ hdens' hU hZU
+
+open scoped CompactlySupported in
+/-- **Lower density of a vague limit of defect measures.** Let `X` be a proper metric space, let
+`r i → ∞` along a nontrivial filter, let locally finite measures `μ i` converge vaguely to `ν`,
+and let every point of `Z₀` be a limit of points of `Z i`. Suppose that every point has a
+neighbourhood `U` and constants `C, C₁, K ≥ 0` and `c₀, c₁, σ₀ > 0` such that eventually, at
+every point `y ∈ Z i ∩ U`, the function `E(σ) = μ i (closedBall y σ)` satisfies Taubes's
+differential inequality `E(σ) ≤ (σ / 2) (1 + C σ) (1 + C₁ (r i)^(-1/2)) E'(σ) + K σ⁴` at almost
+every `σ ∈ (c₀ (r i)^(-1/2), σ₀)`, and `E(c₀ (r i)^(-1/2)) ≥ c₁ / r i`. Then every point has a
+neighbourhood `V` and constants `c, ρ₀ > 0` with `ν (closedBall y ρ) ≥ c ρ ^ 2` for every
+`y ∈ Z₀ ∩ V` and every radius `0 < ρ ≤ ρ₀`, and `Z₀` has locally finite two-dimensional
+Hausdorff measure. -/
+theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_tendsto_integral_compactlySupported
+    [ProperSpace X] [l.NeBot] {r : ι → ℝ} (hr : Tendsto r l atTop) {μ : ι → Measure X}
+    [∀ i, IsLocallyFiniteMeasure (μ i)] {ν : Measure X} [IsLocallyFiniteMeasure ν]
+    (hμ : ∀ f : C_c(X, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μ i) l (𝓝 (∫ x, f x ∂ν)))
+    {Z : ι → Set X} {Z₀ : Set X} (hZ : ∀ x ∈ Z₀, ∀ ε > 0, ∀ᶠ i in l, ∃ y ∈ Z i, dist y x < ε)
+    (hmono : ∀ x, ∃ U ∈ 𝓝 x, ∃ C C₁ K c₀ c₁ σ₀ : ℝ, 0 ≤ C ∧ 0 ≤ C₁ ∧ 0 ≤ K ∧ 0 < c₀ ∧ 0 < c₁ ∧
+      0 < σ₀ ∧ ∀ᶠ i in l, ∀ y ∈ Z i ∩ U,
+        (∀ᵐ σ, σ ∈ Ioo (c₀ / √(r i)) σ₀ →
+          (μ i (closedBall y σ)).toReal ≤ σ / 2 * (1 + C * σ) * (1 + C₁ / √(r i)) *
+            deriv (fun σ ↦ (μ i (closedBall y σ)).toReal) σ + K * σ ^ 4) ∧
+        c₁ / r i ≤ (μ i (closedBall y (c₀ / √(r i)))).toReal) :
+    (∀ x, ∃ V ∈ 𝓝 x, ∃ c > 0, ∃ ρ₀ > 0, ∀ y ∈ Z₀ ∩ V, ∀ ρ, 0 < ρ → ρ ≤ ρ₀ →
+      ENNReal.ofReal (c * ρ ^ 2) ≤ ν (closedBall y ρ)) ∧
+      IsLocallyFiniteMeasure (μH[2].restrict Z₀) := by
+  have hdens : ∀ x, ∃ V ∈ 𝓝 x, ∃ c > 0, ∃ ρ₀ > 0, ∀ y ∈ Z₀ ∩ V, ∀ ρ, 0 < ρ → ρ ≤ ρ₀ →
+      ENNReal.ofReal (c * ρ ^ 2) ≤ ν (closedBall y ρ) := by
+    intro x
+    obtain ⟨U, hU, C, C₁, K, c₀, c₁, σ₀, hC, hC₁, hK, hc₀, hc₁, hσ₀, hev⟩ := hmono x
+    obtain ⟨c, hc, ρ₀, hρ₀, hball⟩ :=
+      exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le (X := X) hC hC₁ hK hc₀ hc₁ hσ₀
+    -- The smallest admissible radius `c₀ / √(r i)` tends to zero.
+    have hh : Tendsto (fun i ↦ c₀ / √(r i)) l (𝓝 0) :=
+      tendsto_const_nhds.div_atTop (Real.tendsto_sqrt_atTop.comp hr)
+    have hev' : ∀ᶠ i in l, ∀ y ∈ Z i ∩ U, ∀ ρ, c₀ / √(r i) ≤ ρ → ρ ≤ ρ₀ →
+        ENNReal.ofReal (c * ρ ^ 2) ≤ μ i (closedBall y ρ) := by
+      filter_upwards [hev, hr.eventually_ge_atTop 1] with i hi hri y hy
+      exact hball (r i) hri (μ i) y measure_closedBall_lt_top.ne (hi y hy).1 (hi y hy).2
+    refine ⟨interior U, interior_mem_nhds.2 hU, c, hc, ρ₀, hρ₀, fun y hy ρ hρ hρρ₀ ↦ ?_⟩
+    exact Measure.le_measure_closedBall_of_tendsto_integral_compactlySupported hμ (hZ y hy.1) hh
+      (mem_interior_iff_mem_nhds.1 hy.2) hev' hρ hρρ₀
+  exact ⟨hdens, Measure.isLocallyFiniteMeasure_restrict_hausdorffMeasure_of_ofReal_mul_pow_le ν
+    hdens⟩
 
 end TauCeti.SeibergWitten

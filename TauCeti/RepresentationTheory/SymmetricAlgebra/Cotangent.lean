@@ -91,7 +91,7 @@ theorem exists_homogeneous_le_span_sup_sq :
   set T := {f : ρ.symmetricAlgebraInvariants |
     ∃ n, 0 < n ∧ (f : SymmetricAlgebra k M) ∈ homogeneousSubmodule k M n}
   have hT (f : T) : (f : ρ.symmetricAlgebraInvariants) ∈ I :=
-    have ⟨_, hn, hf⟩ := f.2
+    have ⟨_, hn, hf⟩ := f.property
     HomogeneousIdeal.mem_irrelevant_of_mem _ hn hf
   have := Algebra.FiniteType.isNoetherianRing k ρ.symmetricAlgebraInvariants
   let := Ideal.Quotient.field I
@@ -111,7 +111,7 @@ theorem exists_homogeneous_le_span_sup_sq :
   have hb' (i) : ∃ f : T, I.toCotangent ⟨f, hT f⟩ = b' i :=
     Module.Basis.ofSpan_subset hspan ⟨_, (b.reindex_apply _ i).symm⟩
   choose f hf using hb'
-  choose d hd hfd using fun i ↦ (f i).2
+  choose d hd hfd using fun i ↦ (f i).property
   refine ⟨fun i ↦ f i, d, hd, hfd, ?_⟩
   rw [← Ideal.span_quotient_range_toCotangent_eq_top_iff I _ fun i ↦ hT (f i)]
   simp_rw [hf]

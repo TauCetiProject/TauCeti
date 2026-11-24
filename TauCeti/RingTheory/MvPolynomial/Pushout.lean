@@ -32,41 +32,36 @@ variable {σ B B' R : Type*} [CommSemiring B] [CommSemiring B'] [CommSemiring R]
 def pushoutLift (f : B →+* B') :
     {p : (B' →+* R) × (MvPolynomial σ B →+* R) // p.1.comp f = p.2.comp C} ≃
       (MvPolynomial σ B' →+* R) where
-  toFun p := eval₂Hom p.1.1 (p.1.2 ∘ X)
+  toFun p := eval₂Hom p.val.1 (p.val.2 ∘ X)
   invFun k := ⟨(k.comp C, k.comp (map f)), RingHom.ext fun _ ↦ by simp⟩
   left_inv p := Subtype.ext <| Prod.ext (RingHom.ext (eval₂Hom_C _ _)) <|
-    ringHom_ext' (RingHom.ext fun b ↦ by simpa using RingHom.congr_fun p.2 b) fun _ ↦ by simp
+    ringHom_ext' (RingHom.ext fun b ↦ by simpa using RingHom.congr_fun p.property b) fun _ ↦ by simp
   right_inv _ := ringHom_ext' (RingHom.ext fun _ ↦ by simp) fun _ ↦ by simp
 
 /-- The left component classified by `k : MvPolynomial σ B' →+* R` is `k.comp C`. -/
 @[simp] theorem pushoutLift_symm_apply_fst (f : B →+* B') (k : MvPolynomial σ B' →+* R) :
-    ((pushoutLift f).symm k).1.1 = k.comp C := (rfl)
-
+    ((pushoutLift f).symm k).val.1 = k.comp C := (rfl)
 /-- The right component classified by `k : MvPolynomial σ B' →+* R` is `k.comp (map f)`. -/
 @[simp] theorem pushoutLift_symm_apply_snd (f : B →+* B') (k : MvPolynomial σ B' →+* R) :
-    ((pushoutLift f).symm k).1.2 = k.comp (map f) := (rfl)
+    ((pushoutLift f).symm k).val.2 = k.comp (map f) := (rfl)
 
 section
 variable (f : B →+* B') (p : {p : (B' →+* R) × (MvPolynomial σ B →+* R) // p.1.comp f = p.2.comp C})
 
-/-- `pushoutLift f p` restricts to `p.1.1` along `C`. -/
-@[simp] theorem pushoutLift_comp_C : (pushoutLift f p).comp C = p.1.1 :=
-  congrArg (·.1.1) ((pushoutLift f).left_inv p)
-
-/-- `pushoutLift f p` restricts to `p.1.2` along `map f`. -/
-@[simp] theorem pushoutLift_comp_map : (pushoutLift f p).comp (map f) = p.1.2 :=
-  congrArg (·.1.2) ((pushoutLift f).left_inv p)
-
-/-- `pushoutLift f p` agrees with `p.1.1` on constants from `B'`. -/
-@[simp] theorem pushoutLift_C (b : B') : pushoutLift f p (C b) = p.1.1 b :=
+/-- `pushoutLift f p` restricts to `p.val.1` along `C`. -/
+@[simp] theorem pushoutLift_comp_C : (pushoutLift f p).comp C = p.val.1 :=
+  congrArg (·.val.1) ((pushoutLift f).left_inv p)
+/-- `pushoutLift f p` restricts to `p.val.2` along `map f`. -/
+@[simp] theorem pushoutLift_comp_map : (pushoutLift f p).comp (map f) = p.val.2 :=
+  congrArg (·.val.2) ((pushoutLift f).left_inv p)
+/-- `pushoutLift f p` agrees with `p.val.1` on constants from `B'`. -/
+@[simp] theorem pushoutLift_C (b : B') : pushoutLift f p (C b) = p.val.1 b :=
   RingHom.congr_fun (pushoutLift_comp_C f p) b
-
-/-- `pushoutLift f p` agrees with `p.1.2` along `map f`. -/
-@[simp] theorem pushoutLift_map (x : MvPolynomial σ B) : pushoutLift f p (map f x) = p.1.2 x :=
+/-- `pushoutLift f p` agrees with `p.val.2` along `map f`. -/
+@[simp] theorem pushoutLift_map (x : MvPolynomial σ B) : pushoutLift f p (map f x) = p.val.2 x :=
   RingHom.congr_fun (pushoutLift_comp_map f p) x
-
-/-- `pushoutLift f p` agrees with `p.1.2` on the variables `X i`. -/
-@[simp] theorem pushoutLift_X (i : σ) : pushoutLift f p (X i) = p.1.2 (X i) := by
+/-- `pushoutLift f p` agrees with `p.val.2` on the variables `X i`. -/
+@[simp] theorem pushoutLift_X (i : σ) : pushoutLift f p (X i) = p.val.2 (X i) := by
   simpa using pushoutLift_map f p (X i)
 end
 
@@ -85,8 +80,8 @@ theorem pushoutLift_mem {M S₀ S₁ S₂ S ι : Type*} [AddCommMonoid M] [SetLi
     (h𝒯 : (∀ ⦃n⦄ ⦃x⦄, x ∈ 𝒯 n → pushoutLift f p x ∈ 𝒜 (r n)) ↔
       (∀ ⦃n⦄ ⦃b⦄, b ∈ ℬ n → pushoutLift f p (C b) ∈ 𝒜 (r n)) ∧
         ∀ i : σ, pushoutLift f p (X i) ∈ 𝒜 (r (w i)))
-    (hX : ∀ i, X i ∈ 𝒢 (w i)) (h₁ : ∀ ⦃n⦄ ⦃b⦄, b ∈ ℬ n → p.1.1 b ∈ 𝒜 (r n))
-    (h₂ : ∀ ⦃n⦄ ⦃y⦄, y ∈ 𝒢 n → p.1.2 y ∈ 𝒜 (r n)) {n : M} {x : MvPolynomial σ B'}
+    (hX : ∀ i, X i ∈ 𝒢 (w i)) (h₁ : ∀ ⦃n⦄ ⦃b⦄, b ∈ ℬ n → p.val.1 b ∈ 𝒜 (r n))
+    (h₂ : ∀ ⦃n⦄ ⦃y⦄, y ∈ 𝒢 n → p.val.2 y ∈ 𝒜 (r n)) {n : M} {x : MvPolynomial σ B'}
     (hx : x ∈ 𝒯 n) : pushoutLift f p x ∈ 𝒜 (r n) :=
   h𝒯.mpr ⟨fun _ _ hb ↦ by simpa using h₁ hb, fun i ↦ by simpa using h₂ (hX i)⟩ hx
 

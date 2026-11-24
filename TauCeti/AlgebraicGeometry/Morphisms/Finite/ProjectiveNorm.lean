@@ -5,7 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.RingTheory.Norm.Projective
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 

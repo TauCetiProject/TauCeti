@@ -97,12 +97,11 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
   have hnorm := mul_ringOfIntegersQuadraticConj_eq_one_of_isTotallyPositive hmin hgen hpos
   obtain ⟨z, hz0, hz⟩ :=
     exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen (x := (ε : 𝓞 K)) (y := 1)
-      ε.ne_zero (by simpa using hnorm)
+      (by simpa using hnorm)
   rw [one_mul] at hz
   have hσz : σ z = (ε : 𝓞 K) * z := hz.symm
   have hspanz : Ideal.span ({z} : Set (𝓞 K)) ≠ 0 := by
-    rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
-    exact hz0
+    rwa [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
   -- `(z)` is an ambiguous ideal, since `σz` and `z` differ by a unit.
   have hamb : Ideal.map σ (Ideal.span {z}) = Ideal.span {z} := by
     rw [Ideal.map_span, Set.image_singleton, hσz]
@@ -113,8 +112,7 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
     exists_eq_span_singleton_mul_prod_of_map_eq_self hmin hgen hprime hover hspanz hamb
   have hm0' : ((m : ℕ) : 𝓞 K) ≠ 0 := Nat.cast_ne_zero.mpr hm0.ne'
   have hspanm : Ideal.span ({(m : 𝓞 K)} : Set (𝓞 K)) ≠ 0 := by
-    rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
-    exact hm0'
+    rwa [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]
   -- Strip the rational factor: `z = γ m` and `∏_{p ∈ S} 𝔭_p = (γ)`.
   obtain ⟨γ, hγ⟩ : ∃ γ : 𝓞 K, γ * (m : 𝓞 K) = z := by
     have hzmem : z ∈ Ideal.span ({(m : 𝓞 K)} : Set (𝓞 K)) * ∏ p ∈ S, (Q p : Ideal (𝓞 K)) := by
@@ -123,22 +121,18 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
     exact Ideal.mem_span_singleton'.mp (Ideal.mul_le_left hzmem)
   have hγ0 : γ ≠ 0 := by
     rintro rfl
-    rw [zero_mul] at hγ
-    exact hz0 hγ.symm
+    exact hz0 (by rw [← hγ, zero_mul])
   have hprodeq : (∏ p ∈ S, (Q p : Ideal (𝓞 K))) = Ideal.span {γ} := by
     refine mul_left_cancel₀ hspanm ?_
     rw [← hzeq, Ideal.span_singleton_mul_span_singleton, ← hγ, mul_comm]
   have hσγ : σ γ = (ε : 𝓞 K) * γ := by
     have h := congrArg σ hγ
     rw [map_mul, map_natCast, hσz, ← hγ] at h
-    refine mul_right_cancel₀ hm0' ?_
-    rw [mul_assoc]
-    exact h
+    exact mul_right_cancel₀ hm0' (by rw [mul_assoc]; exact h)
   have hone : ∏ p ∈ S, NarrowClassGroup.mk0 (Q p) = 1 := by
     rw [← map_prod]
-    refine NarrowClassGroup.mk0_eq_one_of_eq_span hmin hgen hpos hγ0 hσγ ?_
-    rw [Submonoid.coe_finsetProd]
-    exact hprodeq
+    exact NarrowClassGroup.mk0_eq_one_of_eq_span hmin hgen hpos hγ0 hσγ
+      (by rw [Submonoid.coe_finsetProd]; exact hprodeq)
   refine ⟨S, ?_, hS, hone⟩
   rcases S.eq_empty_or_nonempty with rfl | hSne
   · rw [Finset.prod_empty, Ideal.one_eq_top, eq_comm, Ideal.span_singleton_eq_top] at hprodeq

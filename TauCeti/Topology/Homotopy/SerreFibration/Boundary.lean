@@ -108,7 +108,7 @@ structure IsCubeLift (γ : Ω^ (Option N) B b) (G : C(I × (I^N), E)) : Prop whe
   map_apply (y : I × (I^N)) :
     p (G y) = γ ((TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I).symm y)
   /-- A cube lift is constantly `e` on the face `{1} × I^N` and on the sides `I × ∂I^N`. -/
-  apply_eq (s : I) (t : I^N) (h : s = 1 ∨ t ∈ Cube.boundary N) : G (s, t) = e.1
+  apply_eq (s : I) (t : I^N) (h : s = 1 ∨ t ∈ Cube.boundary N) : G (s, t) = e.val
 
 variable {p e}
 
@@ -119,7 +119,7 @@ variable {γ : Ω^ (Option N) B b} {G : C(I × (I^N), E)}
 /-- The face `{0} × I^N` of a cube lift lies in the fibre. -/
 theorem apply_zero_mem (hG : p.IsCubeLift e γ G) (t : I^N) : G (0, t) ∈ p ⁻¹' {b} := by
   rw [mem_preimage, mem_singleton_iff, hG.map_apply]
-  exact γ.2 _ (TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary
+  exact γ.property _ (TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary
     (TauCeti.Cube.mk_zero_mem_prodBoundary t))
 
 /-- The free face `{0} × I^N` of a cube lift, a generalized loop of the fibre at `e`. -/
@@ -148,7 +148,7 @@ end IsCubeLift
 variable (p e) in
 /-- The constant map at `e` is a cube lift of the constant generalized loop. -/
 theorem isCubeLift_const :
-    p.IsCubeLift e (GenLoop.const : Ω^ (Option N) B b) (ContinuousMap.const _ e.1) where
+    p.IsCubeLift e (GenLoop.const : Ω^ (Option N) B b) (ContinuousMap.const _ e.val) where
   map_apply _ := p.apply_coe_fiber b e
   apply_eq _ _ _ := rfl
 
@@ -160,7 +160,7 @@ theorem face_isCubeLift_const :
 
 /-- A generalized loop of the total space at `e`, read on `I × I^N`, is a cube lift of its image
 under `p`, and its face is constant. -/
-theorem isCubeLift_genLoopMap (δ : Ω^ (Option N) E e.1) :
+theorem isCubeLift_genLoopMap (δ : Ω^ (Option N) E e.val) :
     p.IsCubeLift e (GenLoop.map p.hom (p.apply_coe_fiber b e) δ)
       ((δ : C(I^(Option N), E)).comp
         ((TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I).symm :
@@ -169,16 +169,16 @@ theorem isCubeLift_genLoopMap (δ : Ω^ (Option N) E e.1) :
     rw [ContinuousMap.comp_apply, GenLoop.map_apply]
     rfl
   apply_eq s t h :=
-    δ.2 _ (TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary
+    δ.property _ (TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary
       (TauCeti.Cube.mk_mem_prodBoundary h))
 
 /-- The face of the cube lift of the image of a generalized loop of the total space is
 constant. -/
 @[simp]
-theorem face_isCubeLift_genLoopMap (δ : Ω^ (Option N) E e.1) :
+theorem face_isCubeLift_genLoopMap (δ : Ω^ (Option N) E e.val) :
     (isCubeLift_genLoopMap (p := p) δ).face = GenLoop.const :=
   GenLoop.ext _ _ fun t ↦ Subtype.ext <|
-    δ.2 _ (TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary
+    δ.property _ (TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary
       (TauCeti.Cube.mk_zero_mem_prodBoundary t))
 
 namespace IsCubeLift
@@ -217,9 +217,9 @@ theorem exists_isCubeLift [Finite N] (hp : serreFibrations p) (e : p.fiber b)
     (γ : Ω^ (Option N) B b) : ∃ G, p.IsCubeLift e γ G := by
   set ι := piOptionEquivProdHomeomorph fun _ : Option N ↦ I
   have hbd : ∀ y ∈ Cube.prodBoundary N, γ (ι.symm y) = b :=
-    fun y hy ↦ γ.2 _ (piOptionEquivProdHomeomorph_symm_mem_boundary hy)
+    fun y hy ↦ γ.property _ (piOptionEquivProdHomeomorph_symm_mem_boundary hy)
   obtain ⟨G, hG, hGf⟩ := exists_lift_openBox_of_mem_serreFibrations hp N
-    (ContinuousMap.const _ e.1) ⟨fun y ↦ γ (ι.symm (σ y.1, y.2)), by fun_prop⟩ <| by
+    (ContinuousMap.const _ e.val) ⟨fun y ↦ γ (ι.symm (σ y.1, y.2)), by fun_prop⟩ <| by
       rintro ⟨⟨s, t⟩, hst⟩
       refine (p.apply_coe_fiber b e).trans (hbd _ (Cube.mem_prodBoundary_iff.2 ?_)).symm
       rcases mem_cylinderExtensionDomain_iff.1 hst with h | h
@@ -257,7 +257,7 @@ private theorem boxData_of_eq_one {x₀ : E} {x : I × (I^(Option N))} (hx : x.2
 
 private theorem boxData_eq (hG₀ : p.IsCubeLift e γ₀ G₀) (hG₁ : p.IsCubeLift e γ₁ G₁)
     {x : I × (I^(Option N))} (hx : x.1 = 0 ∨ (fun k ↦ x.2 (some k)) ∈ Cube.boundary N) :
-    boxData G₀ G₁ e.1 x = e.1 := by
+    boxData G₀ G₁ e.val x = e.val := by
   have h : σ x.1 = 1 ∨ (fun k ↦ x.2 (some k)) ∈ Cube.boundary N :=
     hx.imp_left fun h ↦ by rw [h, symm_zero]
   rw [boxData]
@@ -270,7 +270,7 @@ private theorem boxData_eq (hG₀ : p.IsCubeLift e γ₀ G₀) (hG₁ : p.IsCube
 with `e`, `G₀` or `G₁` on closed pieces. -/
 private theorem continuousOn_boxData [Finite N] (hG₀ : p.IsCubeLift e γ₀ G₀)
     (hG₁ : p.IsCubeLift e γ₁ G₁) :
-    ContinuousOn (boxData G₀ G₁ e.1)
+    ContinuousOn (boxData G₀ G₁ e.val)
       (TauCeti.cylinderExtensionDomain (Cube.boundary (Option N))) := by
   set A := {x : I × (I^(Option N)) | x.1 = 0 ∨ (fun k ↦ x.2 (some k)) ∈ Cube.boundary N}
   set A₀ := {x : I × (I^(Option N)) | x.2 none = 0}
@@ -301,16 +301,16 @@ private theorem exists_boxLift [Finite N] (hp : TauCeti.TopCat.serreFibrations p
     (K : (γ₀ : C(I^(Option N), B)).HomotopyRel γ₁ (Cube.boundary (Option N)))
     (hG₀ : p.IsCubeLift e γ₀ G₀) (hG₁ : p.IsCubeLift e γ₁ G₁) :
     ∃ L : C(I × (I^(Option N)), E), (∀ y, p (L (1, y)) = b) ∧
-      ∀ y ∈ Cube.boundary (Option N), L (1, y) = boxData G₀ G₁ e.1 (1, y) := by
+      ∀ y ∈ Cube.boundary (Option N), L (1, y) = boxData G₀ G₁ e.val (1, y) := by
   set ι := TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I
   have hK : ∀ r y, y ∈ TauCeti.Cube.prodBoundary N → K (r, ι.symm y) = b := fun r y hy ↦
     have hy := TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary hy
-    (K.eq_fst r hy).trans (γ₀.2 _ hy)
+    (K.eq_fst r hy).trans (γ₀.property _ hy)
   let H : C(I × (I^(Option N)), B) :=
     ⟨fun x ↦ K (x.2 none, ι.symm (σ x.1, fun k ↦ x.2 (some k))), by fun_prop⟩
   let f : C(TauCeti.cylinderExtensionDomain (Cube.boundary (Option N)), E) :=
-    ⟨fun x ↦ boxData G₀ G₁ e.1 x, (continuousOn_boxData hG₀ hG₁).domRestrict⟩
-  have hfx : ∀ x, f x = boxData G₀ G₁ e.1 x := fun _ ↦ rfl
+    ⟨fun x ↦ boxData G₀ G₁ e.val x, (continuousOn_boxData hG₀ hG₁).domRestrict⟩
+  have hfx : ∀ x, f x = boxData G₀ G₁ e.val x := fun _ ↦ rfl
   have hf : ∀ x, p (f x) = H x := by
     rintro ⟨x, hx⟩
     simp only [hfx, H, ContinuousMap.coe_mk]
@@ -342,7 +342,7 @@ theorem homotopic_face [Finite N] (hp : TauCeti.TopCat.serreFibrations p)
   obtain ⟨L, hL₁, hLg⟩ := exists_boxLift hp K hG₀ hG₁
   set ι := TauCeti.piOptionEquivProdHomeomorph fun _ : Option N ↦ I
   have hLι : ∀ r t, (r = 0 ∨ r = 1) ∨ t ∈ Cube.boundary N →
-      L (1, ι.symm (r, t)) = boxData G₀ G₁ e.1 (1, ι.symm (r, t)) := fun r t h ↦
+      L (1, ι.symm (r, t)) = boxData G₀ G₁ e.val (1, ι.symm (r, t)) := fun r t h ↦
     hLg _ (TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary
       (TauCeti.Cube.mem_prodBoundary_iff.2 h))
   refine ⟨{ toFun := fun x ↦ ⟨L (1, ι.symm x), hL₁ _⟩
@@ -371,7 +371,7 @@ theorem exists_transAt [DecidableEq N] (j : N) {γ₁ γ₂ : Ω^ (Option N) B b
   set Q := TauCeti.RelGenLoop.transAt j hG₁.toRelGenLoop hG₂.toRelGenLoop
   -- The ambient space of the pair is `E` only after unfolding `TopPair.ofSubset`, so `p` cannot be
   -- rewritten along values of `Q`; name its underlying map as a map to `E` instead.
-  obtain ⟨G, hGQ⟩ : ∃ G : C(I × (I^N), E), G = Q.1 := ⟨_, rfl⟩
+  obtain ⟨G, hGQ⟩ : ∃ G : C(I × (I^N), E), G = Q.val := ⟨_, rfl⟩
   have hQ : ∀ s t, G (s, t) = if (t j : ℝ) ≤ 1 / 2
       then G₁ (s, Function.update t j <| Set.projIcc 0 1 zero_le_one (2 * t j))
       else G₂ (s, Function.update t j <| Set.projIcc 0 1 zero_le_one (2 * t j - 1)) := by
@@ -380,7 +380,7 @@ theorem exists_transAt [DecidableEq N] (j : N) {γ₁ γ₂ : Ω^ (Option N) B b
   have hG : p.IsCubeLift e (GenLoop.transAt (some j) γ₁ γ₂) G := by
     refine ⟨fun ⟨s, t⟩ ↦ ?_, fun s t h ↦ by
       subst hGQ
-      exact (TauCeti.RelGenLoop.mem_iff.1 Q.2).2 s t h⟩
+      exact (TauCeti.RelGenLoop.mem_iff.1 Q.property).2 s t h⟩
     rw [hQ, GenLoop.transAt, GenLoop.coe_copy]
     simp only [TauCeti.piOptionEquivProdHomeomorph_symm_apply_some]
     split_ifs
@@ -424,7 +424,7 @@ theorem fibrationBoundaryAtZero_mk_const (hp : serreFibrations p) (e : p.fiber b
 boundary map is trivial. -/
 @[simp]
 theorem fibrationBoundaryAtZero_map_hom (hp : serreFibrations p) (e : p.fiber b)
-    (a : HomotopyGroup (Option N) E e.1) :
+    (a : HomotopyGroup (Option N) E e.val) :
     fibrationBoundaryAtZero hp e (HomotopyGroup.map p.hom (p.apply_coe_fiber b e) a) =
       ⟦GenLoop.const⟧ := by
   induction a using Quotient.inductionOn with

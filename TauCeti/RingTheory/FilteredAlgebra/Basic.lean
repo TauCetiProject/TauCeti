@@ -48,6 +48,26 @@ variable {A : Type*} [Semiring A] (F : AlgFiltration A)
 attribute [instance] isTwoSided
 attribute [simp] ideal_zero
 
+/-- The ideals of a filtration, regarded as submodules over the scalar ring. -/
+@[expose]
+def toSubmodule (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] : ℕ → Submodule R A :=
+  fun k => (F.ideal k).restrictScalars R
+
+@[simp]
+theorem toSubmodule_apply (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] (k : ℕ) :
+    F.toSubmodule R k = (F.ideal k).restrictScalars R := (rfl)
+
+/-- Scalar restriction preserves the decreasing order of the filtration. -/
+theorem toSubmodule_antitone (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] :
+    Antitone (F.toSubmodule R) :=
+  fun _ _ h => Submodule.restrictScalars_mono R (F.antitone h)
+
+/-- The zeroth scalar-restricted filtration term is the whole coefficient module. -/
+theorem toSubmodule_zero (R : Type*) [Semiring R] [Module R A] [IsScalarTower R A A] :
+    F.toSubmodule R 0 = ⊤ := by
+  ext
+  simp
+
 /-- Powers of the first filtration ideal lie in the corresponding filtration ideals. -/
 theorem ideal_one_pow_le (k : ℕ) : F.ideal 1 ^ k ≤ F.ideal k := by
   induction k with
@@ -56,6 +76,19 @@ theorem ideal_one_pow_le (k : ℕ) : F.ideal 1 ^ k ≤ F.ideal k := by
     rw [Ideal.IsTwoSided.pow_succ, Ideal.mul_le]
     intro x hx y hy
     simpa only [Nat.add_comm 1 k] using F.mul_mem hx (ih hy)
+
+variable {F} in
+/-- For a separated filtration, `⋂ₙ Fⁿ = 0`, every nonzero element has an exact order: it lies
+in `Fⁿ` but not in `Fⁿ⁺¹` for some `n`. -/
+theorem exists_mem_notMem_succ (hF : ∀ x, (∀ n, x ∈ F.ideal n) → x = 0) {x : A} (hx : x ≠ 0) :
+    ∃ n, x ∈ F.ideal n ∧ x ∉ F.ideal (n + 1) := by
+  classical
+  have h : ∃ k, x ∉ F.ideal k := by
+    by_contra! h
+    exact hx (hF x h)
+  obtain ⟨n, hn⟩ : ∃ n, Nat.find h = n + 1 :=
+    Nat.exists_eq_succ_of_ne_zero fun h0 => Nat.find_spec h (h0 ▸ by simp)
+  exact ⟨n, by_contra fun hxn => Nat.find_min h (by omega) hxn, hn ▸ Nat.find_spec h⟩
 
 /-- The decreasing family, viewed with increasing order-dual indices. -/
 def orderDual : ℕᵒᵈ → Ideal A := fun k => F.ideal k.ofDual

@@ -25,7 +25,11 @@ This file compares the integral Drinfeld moduli problems `[Γ₁(N)]` (`ModuliPr
    injective on every fibre (`EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective`). This
    defines an isomorphism `[Γ₁(N)] ⟶ [Γ₁(N)]_naive` (`ModuliProblem.gammaOneToGammaOneNaive`).
    Consequently `[Γ₁(N)]` inherits rigidity (`ModuliProblem.isRigid_gammaOne`) and is represented
-   by the fine curve `Y₁(N)` (`ModuliProblem.gammaOneRepresentableBy`) for `N ≥ 4`.
+   by the fine curve `Y₁(N)` (`ModuliProblem.gammaOneRepresentableBy`) for `N ≥ 4`. It also
+   inherits étaleness: the exact-order scheme of an elliptic curve `E/S` is étale over `S` when `N`
+   is invertible on `S` (`EllipticCurveGeom.etale_exactOrderScheme_hom`), so `[Γ₁(N)]` is étale
+   over `Ell/B` (`ModuliProblem.hasProperty_etale_gammaOneRelRepData`), and finite étale together
+   with `ModuliProblem.hasProperty_isFinite_gammaOneRelRepData`.
 2. **For `[Γ(N)]`**: over an arbitrary base `B`, every naive `[Γ(N)]`-structure is a Drinfeld
    basis (`EllipticCurveGeom.IsFiberwiseInjective.isDrinfeldBasis`), giving a
    `GL₂(ℤ/Nℤ)`-equivariant monomorphism `[Γ(N)]_naive ⟶ [Γ(N)]`
@@ -60,6 +64,11 @@ This file compares the integral Drinfeld moduli problems `[Γ₁(N)]` (`ModuliPr
   Drinfeld problem for `N ≥ 4` invertible on the base.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.isRigid_gammaOne`: where `N` is invertible on `B`,
   Drinfeld `[Γ₁(N)]`-structures are rigid for `N ≥ 4`.
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.etale_exactOrderScheme_hom`: where `N` is
+  invertible on `S`, the exact-order scheme of an elliptic curve over `S` is étale over `S`
+  (Katz–Mazur 3.7.1).
+* `TauCeti.AlgebraicGeometry.ModuliProblem.hasProperty_etale_gammaOneRelRepData`: where `N` is
+  invertible on `B`, `[Γ₁(N)]` is étale over `Ell/B` (Katz–Mazur 3.7.1).
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveAction_hom_comp_gammaNaiveToGamma` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.gammaAction_hom_comp_gammaToGammaNaive`: the comparison
   morphisms between `[Γ(N)]` and `[Γ(N)]_naive` are `GL₂(ℤ/Nℤ)`-equivariant.
@@ -102,11 +111,11 @@ noncomputable def gammaOneToGammaOneNaive (hN : ∀ b : B, (N : B.residueField b
     gammaOne B N ⟶ gammaOneNaive B N where
   app X := TypeCat.ofHom fun α ↦ (naiveLevelEquiv X.unop).symm
     ⟨(zmodMonoidHomEquiv N _).symm
-        ⟨(gammaOneEquiv X.unop α).1, (gammaOneEquiv X.unop α).2.pow_eq_one⟩,
+        ⟨(gammaOneEquiv X.unop α).val, (gammaOneEquiv X.unop α).property.pow_eq_one⟩,
       EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective
         (by rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
-            exact (gammaOneEquiv X.unop α).2)
-        fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+            exact (gammaOneEquiv X.unop α).property)
+        fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
   naturality X Y φ := by
     ext α
     apply (naiveLevelEquiv _).injective
@@ -124,16 +133,16 @@ variable {hN : ∀ b : B, (N : B.residueField b) ≠ 0}
 @[simp]
 theorem naiveLevelEquiv_gammaOneToGammaOneNaive_app_apply (X : EllObj B)
     (α : (gammaOne B N).obj (op X)) (a : ZMod N) :
-    (naiveLevelEquiv X ((gammaOneToGammaOneNaive B N hN).app (op X) α)).1 (.ofAdd a) =
-      (gammaOneEquiv X α).1 ^ a.val := by
+    (naiveLevelEquiv X ((gammaOneToGammaOneNaive B N hN).app (op X) α)).val (.ofAdd a) =
+      (gammaOneEquiv X α).val ^ a.val := by
   simp [gammaOneToGammaOneNaive]
 
 /-- The naive level structure associated to a Drinfeld point sends `1` to that point,
 including when `N = 1`. -/
 theorem naiveLevelEquiv_gammaOneToGammaOneNaive_app_one (X : EllObj B)
     (α : (gammaOne B N).obj (op X)) :
-    (naiveLevelEquiv X ((gammaOneToGammaOneNaive B N hN).app (op X) α)).1 (.ofAdd 1) =
-      (gammaOneEquiv X α).1 := by
+    (naiveLevelEquiv X ((gammaOneToGammaOneNaive B N hN).app (op X) α)).val (.ofAdd 1) =
+      (gammaOneEquiv X α).val := by
   simp only [gammaOneToGammaOneNaive, TypeCat.hom_ofHom, TypeCat.Fun.coe_mk,
     Equiv.apply_symm_apply]
   rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
@@ -147,16 +156,16 @@ instance isIso_gammaOneToGammaOneNaive : IsIso (gammaOneToGammaOneNaive B N hN) 
     · intro α β hαβ
       apply (gammaOneEquiv X.unop).injective
       apply Subtype.ext
-      have := congrArg (fun γ ↦ (naiveLevelEquiv X.unop γ).1 (.ofAdd 1)) hαβ
+      have := congrArg (fun γ ↦ (naiveLevelEquiv X.unop γ).val (.ofAdd 1)) hαβ
       rw [naiveLevelEquiv_gammaOneToGammaOneNaive_app_one,
         naiveLevelEquiv_gammaOneToGammaOneNaive_app_one] at this
       exact this
-    let φ := (naiveLevelEquiv X.unop α).1
-    have hφ := (naiveLevelEquiv X.unop α).2
+    let φ := (naiveLevelEquiv X.unop α).val
+    have hφ := (naiveLevelEquiv X.unop α).property
     have hP := EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp hφ
     let β := (gammaOneEquiv X.unop).symm
       ⟨φ (.ofAdd 1), hP.isOfExactOrder fun s ↦
-        X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+        X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
     refine ⟨β, ?_⟩
     apply (naiveLevelEquiv X.unop).injective
     apply Subtype.ext
@@ -173,13 +182,13 @@ structure. -/
 @[simp]
 theorem gammaOneEquiv_inv_gammaOneToGammaOneNaive_app (X : EllObj B)
     (α : (gammaOneNaive B N).obj (op X)) :
-    (gammaOneEquiv X (inv ((gammaOneToGammaOneNaive B N hN).app (op X)) α)).1 =
-      (naiveLevelEquiv X α).1 (.ofAdd 1) := by
+    (gammaOneEquiv X (inv ((gammaOneToGammaOneNaive B N hN).app (op X)) α)).val =
+      (naiveLevelEquiv X α).val (.ofAdd 1) := by
   have h : (gammaOneToGammaOneNaive B N hN).app (op X)
       ((inv (gammaOneToGammaOneNaive B N hN)).app (op X) α) = α := by
     exact congrArg (fun k : gammaOneNaive B N ⟶ gammaOneNaive B N ↦ k.app (op X) α)
       (IsIso.inv_hom_id (gammaOneToGammaOneNaive B N hN))
-  have hp := congrArg (fun β ↦ (naiveLevelEquiv X β).1 (Multiplicative.ofAdd 1)) h
+  have hp := congrArg (fun β ↦ (naiveLevelEquiv X β).val (Multiplicative.ofAdd 1)) h
   simpa only [NatIso.isIso_inv_app,
     naiveLevelEquiv_gammaOneToGammaOneNaive_app_one] using hp
 
@@ -195,7 +204,7 @@ Tate point `(0, 0)`. -/
 @[simp]
 theorem gammaOneEquiv_gammaOneRepresentableBy_homEquiv (h4 : 4 ≤ N) {X : EllObj B}
     (k : X ⟶ EllObj.yOne B N) :
-    (gammaOneEquiv X ((gammaOneRepresentableBy (hN := hN) h4).homEquiv k)).1 =
+    (gammaOneEquiv X ((gammaOneRepresentableBy (hN := hN) h4).homEquiv k)).val =
       EllipticCurveGeom.pointsPullback (k ≫ EllObj.yOneι B N).isPullback
         (k ≫ EllObj.yOneι B N).zero_total (EllObj.universalTatePoint B) := by
   -- `RepresentableBy.ofIso` composes the representing equivalence with the component
@@ -223,7 +232,7 @@ every fibre to the Drinfeld basis it defines
 needed. -/
 noncomputable def gammaNaiveToGamma : gammaNaive B N ⟶ gamma B N where
   app X := TypeCat.ofHom fun α ↦ (gammaEquiv X.unop).symm
-    ⟨(naiveLevelEquiv X.unop α).1, (naiveLevelEquiv X.unop α).2.isDrinfeldBasis⟩
+    ⟨(naiveLevelEquiv X.unop α).val, (naiveLevelEquiv X.unop α).property.isDrinfeldBasis⟩
   naturality X Y φ := by
     ext α
     apply (gammaEquiv _).injective
@@ -235,7 +244,7 @@ noncomputable def gammaNaiveToGamma : gammaNaive B N ⟶ gamma B N where
 /-- `gammaNaiveToGamma` preserves the underlying homomorphism `(ℤ/Nℤ)² →* E(S)`. -/
 @[simp]
 theorem gammaEquiv_gammaNaiveToGamma_app (X : EllObj B) (α : (gammaNaive B N).obj (op X)) :
-    (gammaEquiv X ((gammaNaiveToGamma B N).app (op X) α)).1 = (naiveLevelEquiv X α).1 := by
+    (gammaEquiv X ((gammaNaiveToGamma B N).app (op X) α)).val = (naiveLevelEquiv X α).val := by
   simp [gammaNaiveToGamma]
 
 /-- **Naive `[Γ(N)]`-structures form a subproblem of Drinfeld `[Γ(N)]`-structures** over every
@@ -245,7 +254,7 @@ instance mono_gammaNaiveToGamma : Mono (gammaNaiveToGamma B N) := by
     refine (mono_iff_injective _).mpr fun α β hαβ ↦ ?_
     apply (naiveLevelEquiv X.unop).injective
     apply Subtype.ext
-    simpa [gammaNaiveToGamma] using congrArg (fun γ ↦ (gammaEquiv X.unop γ).1) hαβ
+    simpa [gammaNaiveToGamma] using congrArg (fun γ ↦ (gammaEquiv X.unop γ).val) hαβ
   exact NatTrans.mono_of_mono_app _
 
 variable (B N) in
@@ -265,8 +274,8 @@ problems `[Γ(N)] ⟶ [Γ(N)]_naive` inverse to `gammaNaiveToGamma`. -/
 noncomputable def gammaToGammaNaive (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
     gamma B N ⟶ gammaNaive B N where
   app X := TypeCat.ofHom fun α ↦ (naiveLevelEquiv X.unop).symm
-    ⟨(gammaEquiv X.unop α).1, (gammaEquiv X.unop α).2.isFiberwiseInjective fun _ ↦
-      X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+    ⟨(gammaEquiv X.unop α).val, (gammaEquiv X.unop α).property.isFiberwiseInjective fun _ ↦
+      X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
   naturality X Y φ := by
     ext α
     apply (naiveLevelEquiv _).injective
@@ -278,7 +287,7 @@ noncomputable def gammaToGammaNaive (hN : ∀ b : B, (N : B.residueField b) ≠ 
 /-- `gammaToGammaNaive` preserves the underlying homomorphism `(ℤ/Nℤ)² →* E(S)`. -/
 @[simp]
 theorem naiveLevelEquiv_gammaToGammaNaive_app (X : EllObj B) (α : (gamma B N).obj (op X)) :
-    (naiveLevelEquiv X ((gammaToGammaNaive B N hN).app (op X) α)).1 = (gammaEquiv X α).1 := by
+    (naiveLevelEquiv X ((gammaToGammaNaive B N hN).app (op X) α)).val = (gammaEquiv X α).val := by
   simp [gammaToGammaNaive]
 
 /-- `gammaToGammaNaive` and `gammaNaiveToGamma` compose to the identity on `[Γ(N)]`. -/
@@ -362,6 +371,53 @@ theorem hasProperty_etale_gammaRelRepData (hN : ∀ b : B, (N : B.residueField b
     (gammaRelRepData B N).HasProperty @Etale := by
   exact ((gammaRelRepData B N).hasProperty_iff_of_iso gammaNaiveRelRepData
     (gammaIsoGammaNaive B N hN) @Etale).mpr hasProperty_etale_gammaNaiveRelRepData
+
+end ModuliProblem
+
+/-! ### Étaleness of `[Γ₁(N)]` where `N` is invertible -/
+
+namespace EllipticCurveGeom
+
+/-- **The exact-order scheme is étale where `N` is invertible** (Katz–Mazur, 3.7.1). If `N` is
+invertible in every residue field of `S`, the scheme `E.exactOrderScheme N` of points of exact order
+`N` of an elliptic curve `E/S` is étale over `S`: there it represents the same functor as the open
+naive locus of the étale `N`-torsion `E[N]`. Since `[Γ₁(N)]` is represented over each object of
+`Ell/B` by its exact-order scheme (`ModuliProblem.gammaOneRelRepData_rep`), this is the étaleness
+of `[Γ₁(N)]` over every object `E/S` on whose base `N` is invertible, whatever `B` is. -/
+theorem etale_exactOrderScheme_hom {S : Scheme.{u}} (E : EllipticCurveGeom S) (N : ℕ)
+    (hN : ∀ s : S, (N : S.residueField s) ≠ 0) : Etale (E.exactOrderScheme N).hom := by
+  rcases isEmpty_or_nonempty S with hS | ⟨⟨s⟩⟩
+  · -- over the empty scheme the exact-order scheme is empty, and so open in its base
+    have : IsEmpty (E.exactOrderScheme N).left := Function.isEmpty (E.exactOrderScheme N).hom
+    infer_instance
+  · have : NeZero N := ⟨fun h ↦ hN s (by simp [h])⟩
+    -- over `Ell/S`, the exact-order scheme of `E` is the representing scheme of `[Γ₁(N)]` at
+    -- the object `(E/S)`, and `[Γ₁(N)]` is isomorphic to the étale naive problem
+    have h := (ModuliProblem.RelRepData.hasProperty_iff _).mp
+      (((ModuliProblem.gammaOneRelRepData S N).hasProperty_iff_of_iso
+        ModuliProblem.gammaOneNaiveRelRepData
+        (asIso (ModuliProblem.gammaOneToGammaOneNaive S N hN)) @Etale).mpr
+        (ModuliProblem.hasProperty_etale_gammaOneNaiveRelRepData hN)) ⟨S, 𝟙 S, E⟩
+    rwa [ModuliProblem.gammaOneRelRepData_rep] at h
+
+end EllipticCurveGeom
+
+namespace ModuliProblem
+
+variable {B : Scheme.{u}}
+
+variable (B) in
+/-- **The moduli problem `[Γ₁(N)]` is étale over `Ell/B` when `N` is invertible on `B`**
+(Katz–Mazur, 3.7.1): every representing scheme, the exact-order scheme of an elliptic curve `E/S`
+over `B`, is étale over `S` (`EllipticCurveGeom.etale_exactOrderScheme_hom`). Together with
+`ModuliProblem.hasProperty_isFinite_gammaOneRelRepData`, this makes `[Γ₁(N)]` finite étale over
+`Ell/B` for `N ≠ 0`. -/
+theorem hasProperty_etale_gammaOneRelRepData (N : ℕ) (hN : ∀ b : B, (N : B.residueField b) ≠ 0) :
+    (gammaOneRelRepData B N).HasProperty @Etale :=
+  (RelRepData.hasProperty_iff _).mpr fun X ↦ by
+    rw [gammaOneRelRepData_rep]
+    exact X.curve.etale_exactOrderScheme_hom N fun _ ↦
+      X.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)
 
 end ModuliProblem
 

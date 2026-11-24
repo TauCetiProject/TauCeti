@@ -240,25 +240,25 @@ variable (S : Set Nat.Primes)
 /-- Transport away from `S` by a rational isometry commutes with the orthogonal diagonal. -/
 theorem awayAdelicOrthogonalCongr_comp_awayAdelicOrthogonalDiagonal
     (he : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
-      Set.BijOn (e.baseChange ℚ_[p.1]).orthogonalGroupCongr
-        (U.orthogonal p.1) (U'.orthogonal p.1)) :
-    (U.awayAdelicOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) he :
+      Set.BijOn (e.baseChange ℚ_[p.val]).orthogonalGroupCongr
+        (U.orthogonal p.val) (U'.orthogonal p.val)) :
+    (U.awayAdelicOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.val]) he :
         U.awayAdelicOrthogonal S →* U'.awayAdelicOrthogonal S).comp
         (U.awayAdelicOrthogonalDiagonal S) =
       (U'.awayAdelicOrthogonalDiagonal S).comp (e.orthogonalGroupCongr : _ →* _) := by
   ext g p : 2
   simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, awayAdelicOrthogonalCongr_apply,
     awayAdelicOrthogonalDiagonal_apply]
-  exact (e.orthogonalGroupBaseChange_congr (A := ℚ_[p.1]) g).symm
+  exact (e.orthogonalGroupBaseChange_congr (A := ℚ_[p.val]) g).symm
 
 /-- Transport away from `S` by a rational isometry carries the rational orthogonal diagonal
 subgroup onto the target rational diagonal subgroup. -/
 theorem map_range_awayAdelicOrthogonalDiagonal_of_isometry
     (he : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
-      Set.BijOn (e.baseChange ℚ_[p.1]).orthogonalGroupCongr
-        (U.orthogonal p.1) (U'.orthogonal p.1)) :
+      Set.BijOn (e.baseChange ℚ_[p.val]).orthogonalGroupCongr
+        (U.orthogonal p.val) (U'.orthogonal p.val)) :
     (U.awayAdelicOrthogonalDiagonal S).range.map
-        (U.awayAdelicOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) he :
+        (U.awayAdelicOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.val]) he :
           U.awayAdelicOrthogonal S →* U'.awayAdelicOrthogonal S) =
       (U'.awayAdelicOrthogonalDiagonal S).range := by
   rw [MonoidHom.map_range,
@@ -269,22 +269,22 @@ theorem map_range_awayAdelicOrthogonalDiagonal_of_isometry
 /-- Transport away from `S` by a rational isometry commutes with the Spin diagonal. -/
 theorem awayAdelicSpinCongr_comp_awayAdelicSpinDiagonal
     (hs : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
-      Set.BijOn (e.baseChange ℚ_[p.1]).spinGroupEquiv (U.spin p.1) (U'.spin p.1)) :
-    (U.awayAdelicSpinCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) hs :
+      Set.BijOn (e.baseChange ℚ_[p.val]).spinGroupEquiv (U.spin p.val) (U'.spin p.val)) :
+    (U.awayAdelicSpinCongr S U' (fun p ↦ e.baseChange ℚ_[p.val]) hs :
         U.awayAdelicSpin S →* U'.awayAdelicSpin S).comp (U.awayAdelicSpinDiagonal S) =
       (U'.awayAdelicSpinDiagonal S).comp (e.spinGroupEquiv : _ →* _) := by
   ext x p : 2
   simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, awayAdelicSpinCongr_apply,
     awayAdelicSpinDiagonal_apply]
-  exact (e.spinGroupBaseChange_spinGroupEquiv (A := ℚ_[p.1]) x).symm
+  exact (e.spinGroupBaseChange_spinGroupEquiv (A := ℚ_[p.val]) x).symm
 
 /-- Transport away from `S` by a rational isometry carries the rational Spin diagonal subgroup
 onto the target rational diagonal subgroup. -/
 theorem map_range_awayAdelicSpinDiagonal_of_isometry
     (hs : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
-      Set.BijOn (e.baseChange ℚ_[p.1]).spinGroupEquiv (U.spin p.1) (U'.spin p.1)) :
+      Set.BijOn (e.baseChange ℚ_[p.val]).spinGroupEquiv (U.spin p.val) (U'.spin p.val)) :
     (U.awayAdelicSpinDiagonal S).range.map
-        (U.awayAdelicSpinCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) hs :
+        (U.awayAdelicSpinCongr S U' (fun p ↦ e.baseChange ℚ_[p.val]) hs :
           U.awayAdelicSpin S →* U'.awayAdelicSpin S) =
       (U'.awayAdelicSpinDiagonal S).range := by
   rw [MonoidHom.map_range, U.awayAdelicSpinCongr_comp_awayAdelicSpinDiagonal U' e S hs,
@@ -297,25 +297,25 @@ variable [FiniteDimensional ℚ V] [FiniteDimensional ℚ W]
 diagonal. -/
 theorem awayAdelicSpecialOrthogonalCongr_comp_awayAdelicSpecialOrthogonalDiagonal
     (hso : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
-      Set.BijOn (e.baseChange ℚ_[p.1]).specialOrthogonalGroupCongr
-        (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1)) :
-    (U.awayAdelicSpecialOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) hso :
+      Set.BijOn (e.baseChange ℚ_[p.val]).specialOrthogonalGroupCongr
+        (U.specialOrthogonal p.val) (U'.specialOrthogonal p.val)) :
+    (U.awayAdelicSpecialOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.val]) hso :
         U.awayAdelicSpecialOrthogonal S →* U'.awayAdelicSpecialOrthogonal S).comp
         (U.awayAdelicSpecialOrthogonalDiagonal S) =
       (U'.awayAdelicSpecialOrthogonalDiagonal S).comp (e.specialOrthogonalGroupCongr : _ →* _) := by
   ext g p : 2
   simp only [MonoidHom.comp_apply, MonoidHom.coe_ofClass, awayAdelicSpecialOrthogonalCongr_apply,
     awayAdelicSpecialOrthogonalDiagonal_apply]
-  exact (e.specialOrthogonalGroupBaseChange_congr (A := ℚ_[p.1]) g).symm
+  exact (e.specialOrthogonalGroupBaseChange_congr (A := ℚ_[p.val]) g).symm
 
 /-- Transport away from `S` by a rational isometry carries the rational special orthogonal
 diagonal subgroup onto the target rational diagonal subgroup. -/
 theorem map_range_awayAdelicSpecialOrthogonalDiagonal_of_isometry
     (hso : ∀ᶠ p : {p : Nat.Primes // p ∉ S} in cofinite,
-      Set.BijOn (e.baseChange ℚ_[p.1]).specialOrthogonalGroupCongr
-        (U.specialOrthogonal p.1) (U'.specialOrthogonal p.1)) :
+      Set.BijOn (e.baseChange ℚ_[p.val]).specialOrthogonalGroupCongr
+        (U.specialOrthogonal p.val) (U'.specialOrthogonal p.val)) :
     (U.awayAdelicSpecialOrthogonalDiagonal S).range.map
-        (U.awayAdelicSpecialOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.1]) hso :
+        (U.awayAdelicSpecialOrthogonalCongr S U' (fun p ↦ e.baseChange ℚ_[p.val]) hso :
           U.awayAdelicSpecialOrthogonal S →* U'.awayAdelicSpecialOrthogonal S) =
       (U'.awayAdelicSpecialOrthogonalDiagonal S).range := by
   rw [MonoidHom.map_range,

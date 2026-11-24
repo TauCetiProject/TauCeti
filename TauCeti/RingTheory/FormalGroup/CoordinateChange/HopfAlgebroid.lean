@@ -192,18 +192,11 @@ theorem coproduct_coassoc :
       pushoutLift_comp_C, RingHom.comp_assoc, coproduct_comp_C, RingHom.comp_assoc]
   · -- Both sides are the triple composite `χ₃ * χ₂ * χ₁` of the strict coordinates of the three
     -- factors.
-    rw [map_comp_coproduct_universalStrictCoordinate (R := T₃),
-      map_comp_coproduct_universalStrictCoordinate (R := T₃),
-      pushoutLift_comp_map, pushoutLift_comp_C, pushoutLift_comp_map, pushoutLift_comp_C,
-      map_comp_coproduct_universalStrictCoordinate (R := T₃) C,
-      map_comp_coproduct_universalStrictCoordinate (R := T₃) (map (map (σ := ℕ+) rightUnit))]
-    -- Reduce the projections `p.1.1`, `p.1.2` of the explicit pairs passed to `pushoutLift`, so
-    -- that the rewrites below see the factor maps themselves.
-    dsimp only
     have h : (map (map (σ := ℕ+) rightUnit)).comp (map (σ := ℕ+) rightUnit) =
         map ((map rightUnit).comp rightUnit) :=
       RingHom.ext fun p ↦ map_map rightUnit (map rightUnit) p
-    rw [map_comp_C (map (σ := ℕ+) rightUnit), mul_assoc, h]
+    simp [map_comp_coproduct_universalStrictCoordinate, map_comp_C (map (σ := ℕ+) rightUnit),
+      mul_assoc, h]
 
 /-! ### The conjugation -/
 

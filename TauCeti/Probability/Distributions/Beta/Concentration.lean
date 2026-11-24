@@ -44,7 +44,8 @@ to the point mass at that mean. -/
 theorem tendsto_betaMeasure_concentration_atTop {p : ℝ} (hp : p ∈ Ioo 0 1) :
     Tendsto (β := ProbabilityMeasure ℝ) (fun c : Ioi (0 : ℝ) ↦
       (⟨betaMeasure ((c : ℝ) * p) ((c : ℝ) * (1 - p)),
-        isProbabilityMeasureBeta (mul_pos c.2 hp.1) (mul_pos c.2 (sub_pos.mpr hp.2))⟩ :
+        isProbabilityMeasureBeta (mul_pos c.property hp.1) (mul_pos c.property
+            (sub_pos.mpr hp.2))⟩ :
           ProbabilityMeasure ℝ)) atTop
       (𝓝 (⟨Measure.dirac p, inferInstance⟩ : ProbabilityMeasure ℝ)) := by
   let w : Convexity.StdSimplex ℝ (Fin 2) :=
@@ -55,7 +56,7 @@ theorem tendsto_betaMeasure_concentration_atTop {p : ℝ} (hp : p ∈ Ioo 0 1) :
     fin_cases i
     · simpa [w] using hp.1
     · simpa [w] using sub_pos.mpr hp.2
-  have h := tendsto_betaMeasure_of_tendsto_dirichletMeasure (fun c i ↦ mul_pos c.2 (hw i))
+  have h := tendsto_betaMeasure_of_tendsto_dirichletMeasure (fun c i ↦ mul_pos c.property (hw i))
     (tendsto_dirichletMeasure_concentration_atTop w hw)
   have hdirac :
       ProbabilityMeasure.map
@@ -74,7 +75,8 @@ Bernoulli law that gives mass `1 - p` to zero and mass `p` to one. -/
 theorem tendsto_betaMeasure_concentration_atBot {p : ℝ} (hp : p ∈ Ioo 0 1) :
     Tendsto (β := ProbabilityMeasure ℝ) (fun c : Ioi (0 : ℝ) ↦
       (⟨betaMeasure ((c : ℝ) * p) ((c : ℝ) * (1 - p)),
-        isProbabilityMeasureBeta (mul_pos c.2 hp.1) (mul_pos c.2 (sub_pos.mpr hp.2))⟩ :
+        isProbabilityMeasureBeta (mul_pos c.property hp.1) (mul_pos c.property
+            (sub_pos.mpr hp.2))⟩ :
           ProbabilityMeasure ℝ)) atBot
       (𝓝 (⟨bernoulliMeasure (1 : ℝ) 0 ⟨p, hp.1.le, hp.2.le⟩, inferInstance⟩ :
         ProbabilityMeasure ℝ)) := by
@@ -89,7 +91,7 @@ theorem tendsto_betaMeasure_concentration_atBot {p : ℝ} (hp : p ∈ Ioo 0 1) :
     · simpa [hw0] using hp.1
     · simpa [hw1] using hp.2
   have h := tendsto_betaMeasure_of_tendsto_dirichletMeasure
-    (fun c i ↦ mul_pos c.2 (NNReal.coe_pos.2 (hw i)))
+    (fun c i ↦ mul_pos c.property (NNReal.coe_pos.2 (hw i)))
     (tendsto_dirichletMeasure_concentration_atBot w hw)
   have hcat : categoricalMeasure w = bernoulliMeasure 0 1 q := by
     simp [categoricalMeasure_def, bernoulliMeasure_def, Fin.sum_univ_two, w]

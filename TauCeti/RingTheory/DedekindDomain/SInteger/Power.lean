@@ -72,7 +72,7 @@ theorem range_powMonoidHom_subgroupOf_unit (n : ℕ) :
   refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩⟩
   rcases eq_or_ne n 0 with rfl | hn
   · exact ⟨1, one_mem _, by simpa using hy⟩
-  · exact ⟨y, (pow_mem_unit_iff S K hn).mp (hy ▸ u.2), hy⟩
+  · exact ⟨y, (pow_mem_unit_iff S K hn).mp (hy ▸ u.property), hy⟩
 
 /-- The `n`-torsion of the `S`-units consists of the `n`-th roots of unity of `K` that are
 `S`-units; by `rootsOfUnity_le_unit` these are all of them when `n ≠ 0`. -/

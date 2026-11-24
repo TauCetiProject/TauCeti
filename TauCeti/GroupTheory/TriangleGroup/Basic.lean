@@ -200,7 +200,8 @@ def homEquiv :
       {g : G × G × G // g.1 ^ a = 1 ∧ g.2.1 ^ b = 1 ∧ g.2.2 ^ c = 1 ∧ g.2.2 * g.2.1 * g.1 = 1} where
   toFun f := ⟨(f (x a b c), f (y a b c), f (z a b c)), by
     simp only [← map_pow, ← map_mul, x_pow, y_pow, z_pow, z_mul_y_mul_x, map_one, and_self]⟩
-  invFun g := lift g.1.1 g.1.2.1 g.1.2.2 g.2.1 g.2.2.1 g.2.2.2.1 g.2.2.2.2
+  invFun g := lift g.val.1 g.val.2.1 g.val.2.2 g.property.1 g.property.2.1 g.property.2.2.1
+      g.property.2.2.2
   left_inv f := by ext <;> simp
   right_inv g := by ext <;> simp
 
@@ -212,7 +213,8 @@ theorem homEquiv_apply (f : TriangleGroup a b c →* G) :
 theorem homEquiv_symm_apply
     (g : {g : G × G × G // g.1 ^ a = 1 ∧ g.2.1 ^ b = 1 ∧ g.2.2 ^ c = 1 ∧
       g.2.2 * g.2.1 * g.1 = 1}) :
-    homEquiv.symm g = lift g.1.1 g.1.2.1 g.1.2.2 g.2.1 g.2.2.1 g.2.2.2.1 g.2.2.2.2 := (rfl)
+    homEquiv.symm g = lift g.val.1 g.val.2.1 g.val.2.2 g.property.1 g.property.2.1 g.property.2.2.1
+        g.property.2.2.2 := (rfl)
 
 /-- The rotation isomorphism `Δ(a, b, c) ≃* Δ(b, c, a)`, sending `x, y, z` to the generators
 `z, x, y` of `Δ(b, c, a)`. The product relator `z * y * x` of the source becomes the cyclic

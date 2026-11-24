@@ -36,6 +36,7 @@ When `f` is the constant radius `r`, the box coincides with `Metric.closedBall (
   balls of radii `f w` at the real and complex places.
 * `NumberField.mixedEmbedding.coe_convexBodyLTFactor`: the coercion of `convexBodyLTFactor K` to `ℝ`
   is `2 ^ nrRealPlaces K * π ^ nrComplexPlaces K`.
+* `NumberField.mixedEmbedding.two_le_convexBodyLTFactor`: `convexBodyLTFactor K` is at least `2`.
 * `NumberField.mixedEmbedding.volume_setOf_forall_normAtPlace_le` and
   `NumberField.mixedEmbedding.volume_real_setOf_forall_normAtPlace_le`: its `ℝ≥0∞`-valued volume
   (unconditionally, since `ENNReal.ofReal` vanishes on negative radii) and its `ℝ`-valued volume for
@@ -61,14 +62,14 @@ variable {K : Type*} [Field K]
 of the closed balls of radii `f w` at the real and complex places. -/
 theorem setOf_forall_normAtPlace_le_eq_prod (f : InfinitePlace K → ℝ) :
     {x : mixedSpace K | ∀ w : InfinitePlace K, normAtPlace w x ≤ f w} =
-      (Set.univ.pi fun w : {w : InfinitePlace K // IsReal w} ↦ closedBall 0 (f w.1)) ×ˢ
-      (Set.univ.pi fun w : {w : InfinitePlace K // IsComplex w} ↦ closedBall 0 (f w.1)) := by
+      (Set.univ.pi fun w : {w : InfinitePlace K // IsReal w} ↦ closedBall 0 (f w.val)) ×ˢ
+      (Set.univ.pi fun w : {w : InfinitePlace K // IsComplex w} ↦ closedBall 0 (f w.val)) := by
   ext x
   simp only [Set.mem_ofPred_eq, Set.mem_prod, Set.mem_pi, Set.mem_univ, forall_true_left,
     mem_closedBall_zero_iff]
   refine ⟨fun hx ↦ ⟨fun w ↦ ?_, fun w ↦ ?_⟩, fun ⟨h₁, h₂⟩ w ↦ ?_⟩
-  · simpa only [normAtPlace_apply_of_isReal w.2, Real.norm_eq_abs] using hx w.1
-  · simpa only [normAtPlace_apply_of_isComplex w.2] using hx w.1
+  · simpa only [normAtPlace_apply_of_isReal w.property, Real.norm_eq_abs] using hx w.val
+  · simpa only [normAtPlace_apply_of_isComplex w.property] using hx w.val
   · by_cases hw : IsReal w
     · simpa only [normAtPlace_apply_of_isReal hw, Real.norm_eq_abs] using h₁ ⟨w, hw⟩
     · have hwc : IsComplex w := not_isReal_iff_isComplex.mp hw
@@ -89,6 +90,20 @@ variable [NumberField K]
 theorem coe_convexBodyLTFactor :
     (convexBodyLTFactor K : ℝ) = 2 ^ nrRealPlaces K * Real.pi ^ nrComplexPlaces K := by
   simp [convexBodyLTFactor]
+
+variable (K) in
+/-- `convexBodyLTFactor K` is at least `2`, because `K` has an infinite place and `2 ≤ π`. -/
+theorem two_le_convexBodyLTFactor : 2 ≤ convexBodyLTFactor K := by
+  rw [← NNReal.coe_le_coe, coe_convexBodyLTFactor, NNReal.coe_ofNat]
+  have hcard : 1 ≤ nrRealPlaces K + nrComplexPlaces K := by
+    rw [← card_eq_nrRealPlaces_add_nrComplexPlaces]
+    exact Fintype.card_pos
+  calc (2 : ℝ) = 2 ^ 1 := (pow_one _).symm
+    _ ≤ 2 ^ (nrRealPlaces K + nrComplexPlaces K) := pow_le_pow_right₀ one_le_two hcard
+    _ = 2 ^ nrRealPlaces K * 2 ^ nrComplexPlaces K := pow_add _ _ _
+    _ ≤ 2 ^ nrRealPlaces K * Real.pi ^ nrComplexPlaces K := by
+      gcongr
+      exact Real.two_le_pi
 
 -- Adapted from `NumberField.mixedEmbedding.convexBodyLT_volume` in Mathlib.
 open scoped Classical in
