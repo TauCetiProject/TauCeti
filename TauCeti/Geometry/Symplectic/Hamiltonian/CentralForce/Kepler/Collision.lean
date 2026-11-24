@@ -29,12 +29,13 @@ square of `L = q₁p₂ - q₂p₁` (`TauCeti.sq_angularMomentum`).
 * **Nonradial Kepler motions never collide.** For `ℓ ≠ 0`, the perihelion bound
   `ℓ² ≤ ‖q‖ (m κ + ‖A‖)` (`TauCeti.sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz`), for the
   Runge–Lenz vector `A`, keeps `‖q‖` away from zero, since `ℓ²` and
-  `‖A‖² = (m κ)² + 2 m H ℓ²` are conserved. Energy conservation then bounds the momentum, so the
-  position moves at bounded speed, and over every bounded time interval the motion stays in a
-  compact subset of the punctured phase space. By the escape lemma for maximal integral curves
-  (`maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo`) the motion is defined for
-  all time. This holds at every energy, including the unbounded parabolic and hyperbolic motions
-  with `H ≥ 0`.
+  `‖A‖² = (m κ)² + 2 m H ℓ²` are conserved (`TauCeti.norm_rungeLenz_eq_of_hasDerivAt_kepler`,
+  `TauCeti.sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler`). Energy conservation then
+  bounds the momentum, so the position moves at bounded speed, and over every bounded time
+  interval the motion stays in a compact subset of the punctured phase space. By the escape lemma
+  for maximal integral curves (`maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo`)
+  the motion is defined for all time. This holds at every energy, including the unbounded
+  parabolic and hyperbolic motions with `H ≥ 0`.
 
 Together these identify the **collision domain**: the maximal integral curve of the Kepler
 Hamiltonian vector field on the punctured phase space through a state is defined for all time
@@ -105,43 +106,29 @@ private theorem contMDiff_hamiltonianVectorField_kepler :
 
 /-- **Nonradial Kepler motions stay away from the collision set with bounded momentum.** Let `η`
 be an integral curve of the Kepler Hamiltonian vector field on a preconnected set `J` of times
-containing `0`, avoiding the collision set and conserving the energy, with nonzero angular
-momentum at time `0`. Then on `J` the distance `‖q‖` to the origin is bounded below by a positive
-constant `r₀`, by the perihelion bound and the conservation of the angular momentum and of the
-length of the Runge–Lenz vector, and the momentum `‖p‖` is bounded, by energy conservation. -/
+containing `0`, avoiding the collision set, with nonzero angular momentum at time `0`. Then on `J`
+the distance `‖q‖` to the origin is bounded below by a positive constant `r₀`, by the perihelion
+bound `TauCeti.sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler`, and the momentum `‖p‖` is
+bounded, by energy conservation. -/
 private theorem exists_pos_forall_le_norm_fst_and_norm_snd_le_kepler (hm : 0 < m) (hκ : 0 < κ)
     {J : Set ℝ} (hJ : IsPreconnected J) (h0 : (0 : ℝ) ∈ J) {η : ℝ → V × V}
     (hη : ∀ t ∈ J, HasDerivAt η ((stdSymplecticForm (V := V)).hamiltonianVectorField
       (centralForceHamiltonian m (fun r ↦ -κ / r)) (η t)) t)
     (hq : ∀ t ∈ J, (η t).1 ≠ 0)
-    (hE : ∀ t ∈ J, centralForceHamiltonian m (fun r ↦ -κ / r) (η t) =
-      centralForceHamiltonian m (fun r ↦ -κ / r) (η 0))
     (hℓ : ‖(η 0).1‖ ^ 2 * ‖(η 0).2‖ ^ 2 - ⟪(η 0).1, (η 0).2⟫_ℝ ^ 2 ≠ 0) :
     ∃ r₀ > 0, ∃ P, ∀ t ∈ J, r₀ ≤ ‖(η t).1‖ ∧ ‖(η t).2‖ ≤ P := by
   set E := centralForceHamiltonian m (fun r ↦ -κ / r) (η 0)
-  set c := ‖(η 0).1‖ ^ 2 * ‖(η 0).2‖ ^ 2 - ⟪(η 0).1, (η 0).2⟫_ℝ ^ 2
-  have hc : 0 < c := by
-    refine lt_of_le_of_ne ?_ hℓ.symm
-    have h := abs_real_inner_le_norm (η 0).1 (η 0).2
-    nlinarith [sq_abs ⟪(η 0).1, (η 0).2⟫_ℝ, abs_nonneg ⟪(η 0).1, (η 0).2⟫_ℝ,
-      mul_nonneg (norm_nonneg (η 0).1) (norm_nonneg (η 0).2)]
-  -- The angular momentum and the length of the Runge–Lenz vector are conserved.
-  have hℓt (t : ℝ) (ht : t ∈ J) : ‖(η t).1‖ ^ 2 * ‖(η t).2‖ ^ 2 - ⟪(η t).1, (η t).2⟫_ℝ ^ 2 = c :=
-    sq_sub_inner_sq_eq_of_hasDerivAt hJ hη h0 ht
-  have hA (t : ℝ) (ht : t ∈ J) : ‖rungeLenz m κ (η t)‖ = ‖rungeLenz m κ (η 0)‖ :=
-    (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 (by
-      rw [norm_rungeLenz_sq hm.ne' κ (hq t ht), norm_rungeLenz_sq hm.ne' κ (hq 0 h0), hE t ht,
-        hℓt t ht])
   -- The perihelion bound keeps the distance to the origin at least `r₀`.
-  set r₀ := c / (m * κ + ‖rungeLenz m κ (η 0)‖)
-  have hr₀ : 0 < r₀ := div_pos hc (by positivity)
-  have hr (t : ℝ) (ht : t ∈ J) : r₀ ≤ ‖(η t).1‖ := by
-    rw [div_le_iff₀ (by positivity)]
-    have h := sq_sub_inner_sq_le_norm_fst_mul_add_norm_rungeLenz m κ (η t)
-    rwa [hℓt t ht, hA t ht] at h
+  set r₀ := (‖(η 0).1‖ ^ 2 * ‖(η 0).2‖ ^ 2 - ⟪(η 0).1, (η 0).2⟫_ℝ ^ 2) /
+    (m * κ + ‖rungeLenz m κ (η 0)‖)
+  have hr₀ : 0 < r₀ := div_pos ((sq_sub_inner_sq_nonneg (η 0)).lt_of_ne hℓ.symm) (by positivity)
+  have hr (t : ℝ) (ht : t ∈ J) : r₀ ≤ ‖(η t).1‖ :=
+    sq_sub_inner_sq_div_le_norm_fst_of_hasDerivAt_kepler hJ hη hq h0 ht
   -- Energy conservation then bounds the momentum.
   refine ⟨r₀, hr₀, √(2 * m * (E + κ / r₀)), fun t ht ↦ ⟨hr t ht, ?_⟩⟩
-  have hH := hE t ht
+  have hH : centralForceHamiltonian m (fun r ↦ -κ / r) (η t) = E :=
+    centralForceHamiltonian_eq_of_hasDerivAt hJ hη hq (fun u hu ↦
+      (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq u hu))).differentiableAt) h0 ht
   rw [centralForceHamiltonian_apply] at hH
   have hp2 : ‖(η t).2‖ ^ 2 = 2 * m * (E + κ / ‖(η t).1‖) := by
     rw [← hH]
@@ -161,12 +148,10 @@ private theorem exists_isCompact_forall_mem_of_hasDerivAt_kepler (hm : 0 < m) (h
     (hη : ∀ t ∈ J, HasDerivAt η ((stdSymplecticForm (V := V)).hamiltonianVectorField
       (centralForceHamiltonian m (fun r ↦ -κ / r)) (η t)) t)
     (hq : ∀ t ∈ J, (η t).1 ≠ 0)
-    (hE : ∀ t ∈ J, centralForceHamiltonian m (fun r ↦ -κ / r) (η t) =
-      centralForceHamiltonian m (fun r ↦ -κ / r) (η 0))
     (hℓ : ‖(η 0).1‖ ^ 2 * ‖(η 0).2‖ ^ 2 - ⟪(η 0).1, (η 0).2⟫_ℝ ^ 2 ≠ 0) (T : ℝ) :
     ∃ K : Set (V × V), IsCompact K ∧ (∀ y ∈ K, y.1 ≠ 0) ∧ ∀ t ∈ J ∩ Icc (-T) T, η t ∈ K := by
   obtain ⟨r₀, hr₀, P, hb⟩ :=
-    exists_pos_forall_le_norm_fst_and_norm_snd_le_kepler hm hκ hJ h0 hη hq hE hℓ
+    exists_pos_forall_le_norm_fst_and_norm_snd_le_kepler hm hκ hJ h0 hη hq hℓ
   -- The position moves at speed at most `P / m`.
   have hv (t : ℝ) (ht : t ∈ J) : HasDerivAt (fun s ↦ (η s).1) (m⁻¹ • (η t).2) t := by
     have h := hη t ht
@@ -237,28 +222,13 @@ theorem maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ (hm :
       (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
         (stdSymplecticForm (V := V)).constSmooth)
       (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x = univ := by
-  set X := SmoothTwoForm.hamiltonianVectorField
-    (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
-      (stdSymplecticForm (V := V)).constSmooth)
-    (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)
   have hv := contMDiff_hamiltonianVectorField_kepler (V := V) (m := m) (κ := κ)
   have h0 := zero_mem_maximalIntegralCurveInterval (x := x) hv.contMDiffAt
   refine maximalIntegralCurveInterval_eq_univ_of_forall_isCompact_mapsTo hv fun T ↦ ?_
-  -- The energy is a first integral of itself, so it is constant along the maximal curve.
-  have hE (t : ℝ) (ht : t ∈ maximalIntegralCurveInterval X x) :
-      centralForceHamiltonian m (fun r ↦ -κ / r)
-          ((maximalIntegralCurve X x t : puncturedPhaseSpace V) : V × V) =
-        centralForceHamiltonian m (fun r ↦ -κ / r)
-          ((maximalIntegralCurve X x 0 : puncturedPhaseSpace V) : V × V) := by
-    rw [maximalIntegralCurve_zero]
-    exact (SmoothTwoForm.isFirstIntegral_self _).apply_maximalIntegralCurve
-      isNondegenerate_puncturedPhaseSpace contMDiff_centralForceHamiltonian_kepler_comp_subtypeVal
-      ((contMDiff_centralForceHamiltonian_kepler_comp_subtypeVal (n := 1)).mdifferentiable
-        one_ne_zero) ht
   obtain ⟨K, hK, hK0, hmem⟩ := exists_isCompact_forall_mem_of_hasDerivAt_kepler hm hκ
     isPreconnected_maximalIntegralCurveInterval h0
     (fun t ht ↦ hasDerivAt_coe_maximalIntegralCurve_kepler x ht)
-    (fun t _ ↦ mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x t).property) hE
+    (fun t _ ↦ mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x t).property)
     (by rwa [maximalIntegralCurve_zero]) T
   refine ⟨Subtype.val ⁻¹' K, ?_, fun t ht ↦ hmem t ht⟩
   rwa [Subtype.isCompact_iff, image_preimage_eq_of_subset fun y hy ↦

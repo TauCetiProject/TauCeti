@@ -79,7 +79,7 @@ theorem neg_trajectory_hypotheses
     ContDiff ℝ 1 (-A) ∧ (∀ s, ((-A) s).toLinearMap.IsSymmetric) ∧
       (∀ w, α * ‖w‖ ≤ ‖(-Aminus) w‖) ∧ (∀ w, α * ‖w‖ ≤ ‖(-Aplus) w‖) ∧
       Tendsto (deriv (-A)) atBot (nhds 0) ∧ Tendsto (deriv (-A)) atTop (nhds 0) :=
-  ⟨hA.neg, fun s ↦ by simpa using LinearMap.IsSymmetric.zero.sub (hsym s),
+  ⟨hA.neg, fun s ↦ by simpa using (hsym s).neg,
     by simpa using hminus, by simpa using hplus,
     by simpa [deriv.neg'] using hdbot.neg, by simpa [deriv.neg'] using hdtop.neg⟩
 

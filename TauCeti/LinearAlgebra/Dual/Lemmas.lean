@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.Extend
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Linear functionals and hyperplanes
@@ -21,7 +22,8 @@ of `r • id` through `f` when `r` annihilates `ker f`, and the dimension count 
 of `ker f` by moving each other `X i` into `ker f` along `X j`.
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
 of a nonzero functional. Since functionals separate points, a vector space whose endomorphism
-algebra is finite-dimensional is itself finite-dimensional.
+algebra is finite-dimensional is itself finite-dimensional. In a projective module over any
+semiring, functionals also detect membership in `I • M` for a two-sided ideal `I`.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
 family of vectors. Linearly independent functionals, as many as the dimension, span the dual space
@@ -61,6 +63,8 @@ space contains such a family, which gives coordinates on the space.
   is the kernel of a nonzero functional.
 * `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
   functional vanishes on `p` and equals one at some vector.
+* `Module.forall_dual_apply_mem_iff`: in a projective module, `m ∈ I • M` for a two-sided ideal
+  `I` exactly when every linear functional takes a value in `I` at `m`.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is, and `Module.Finite.of_surjective_end`: in particular once a finite-dimensional space
   maps linearly onto its endomorphism algebra.
@@ -360,6 +364,24 @@ theorem exists_dual_apply_eq_one_of_ne_top {p : Submodule K V} (hp : p ≠ ⊤) 
   exact hxmap
 
 end Submodule
+
+namespace Module
+
+/-- In a projective module, the elements of `I • M` for a two-sided ideal `I` are those at which
+every linear functional takes a value in `I`. For `I = ⊥` this is
+`Module.forall_dual_apply_eq_zero_iff`. -/
+theorem forall_dual_apply_mem_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Module.Projective R M] (I : Ideal R) [I.IsTwoSided] (m : M) :
+    (∀ φ : Module.Dual R M, φ m ∈ I) ↔ m ∈ I • (⊤ : Submodule R M) := by
+  refine ⟨fun h ↦ ?_, fun hm φ ↦ ?_⟩
+  · -- Write `m` in a dual basis, `m = ∑ φₓ(m) • x`, with each coefficient in `I`.
+    obtain ⟨s, hs⟩ := Module.Projective.out (R := R) (P := M)
+    rw [← hs m, Finsupp.linearCombination_apply]
+    exact Submodule.sum_mem _ fun x _ ↦
+      Submodule.smul_mem_smul (h (Finsupp.lapply x ∘ₗ s)) Submodule.mem_top
+  · exact φ.apply_mem_of_mem_smul_top hm
+
+end Module
 
 namespace Module.Finite
 

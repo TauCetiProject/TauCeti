@@ -8,16 +8,22 @@ module
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
 
 /-!
-# Scalar towers from morphisms of commutative algebras
+# Basic facts about commutative algebras
 
 A morphism `f : R ⟶ S` of commutative `k`-algebras makes `S` an `R`-algebra through
 `f.hom.toRingHom.toAlgebra`. This file records the scalar tower `R → S → T` carried by these
 algebra structures for morphisms `f : R ⟶ S`, `g : S ⟶ T` and `fg : R ⟶ T` with `f ≫ g = fg`.
 The scalar tower `k → R → S` of a single morphism is Mathlib's `IsScalarTower.of_algHom f.hom`.
 
+It also records that the forgetful functor from commutative `k`-algebras in any universe to
+commutative rings reflects isomorphisms. Mathlib's `CommAlgCat.reflectsIsomorphisms_forget` covers
+only algebras in the universe of `k`.
+
 ## Main statements
 
 * `CommAlgCat.isScalarTower_toAlgebra_of_comp`: the scalar tower `R → S → T`.
+* `CommAlgCat.reflectsIsomorphisms_forget₂CommRingCat`: the forgetful functor to commutative rings
+  reflects isomorphisms.
 -/
 
 public section
@@ -44,5 +50,13 @@ lemma isScalarTower_toAlgebra_of_comp (f : R ⟶ S) (g : S ⟶ T) (fg : R ⟶ T)
     subst h
     simp only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       CommAlgCat.hom_comp, AlgHom.comp_apply]
+
+/-- The forgetful functor from commutative algebras to commutative rings reflects isomorphisms:
+a morphism of algebras whose underlying ring map is an isomorphism is an isomorphism. -/
+instance reflectsIsomorphisms_forget₂CommRingCat :
+    (forget₂ (CommAlgCat.{v} k) CommRingCat.{v}).ReflectsIsomorphisms where
+  reflects f _ :=
+    let i := asIso ((forget CommRingCat.{v}).map ((forget₂ (CommAlgCat.{v} k) _).map f))
+    (isoMk { f.hom, i.toEquiv with }).isIso_hom
 
 end CommAlgCat

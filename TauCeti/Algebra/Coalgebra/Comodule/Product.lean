@@ -27,10 +27,16 @@ The file also records that the four standard linear maps for a product, `fst`, `
   morphisms.
 * `TauCeti.ComoduleCat.prod`: the bundled product comodule, with projections, inclusions,
   `prodLift`, and `prodDesc`.
+* `TauCeti.ComoduleCat.binaryProductLimitCone`: the bundled product is a limit cone, so it is
+  the categorical binary product; `binaryProductLimitCone_cone_pt`, `_cone_fst`, `_cone_snd`
+  and `_isLimit_lift` describe its point, projections and lift.
 
 ## References
 
 The construction is the standard direct sum of comodules; see Sweedler, *Hopf Algebras*, Chapter 2.
+`binaryProductLimitCone` and its characteristic simp lemmas follow Mathlib's
+`ModuleCat.binaryProductLimitCone` and `ModuleCat.binaryProductLimitCone_cone_π_app_left`/`_right`
+for modules.
 -/
 
 public section
@@ -588,13 +594,50 @@ theorem prod_hom_ext' {M N P : ComoduleCat.{u, v, w} R C} {f g : prod R C M N �
 
 open CategoryTheory.Limits
 
+/-- The concrete product of comodules, with its two projections, is a limit cone over
+`pair M N`. This is the comodule analogue of Mathlib's `ModuleCat.binaryProductLimitCone`. -/
+def binaryProductLimitCone (M N : ComoduleCat.{u, v, w} R C) :
+    LimitCone (pair M N) where
+  cone := BinaryFan.mk (prodFst M N) (prodSnd M N)
+  isLimit := BinaryFan.IsLimit.mk _ (fun f g ↦ prodLift f g)
+    (fun f g ↦ prodLift_fst f g) (fun f g ↦ prodLift_snd f g)
+    (fun f g _ h₁ h₂ ↦ prod_hom_ext
+      (h₁.trans (prodLift_fst f g).symm) (h₂.trans (prodLift_snd f g).symm))
+
+/-- The point of `binaryProductLimitCone M N` is the bundled product comodule. -/
+@[simp]
+theorem binaryProductLimitCone_cone_pt (M N : ComoduleCat.{u, v, w} R C) :
+    (binaryProductLimitCone M N).cone.pt = prod R C M N :=
+  (rfl)
+
+/-- The first projection of `binaryProductLimitCone M N` is `prodFst M N`, transported along
+`binaryProductLimitCone_cone_pt`. -/
+@[simp]
+theorem binaryProductLimitCone_cone_fst (M N : ComoduleCat.{u, v, w} R C) :
+    BinaryFan.fst (binaryProductLimitCone M N).cone =
+      eqToHom (binaryProductLimitCone_cone_pt M N) ≫ prodFst M N :=
+  (Category.id_comp _).symm
+
+/-- The second projection of `binaryProductLimitCone M N` is `prodSnd M N`, transported along
+`binaryProductLimitCone_cone_pt`. -/
+@[simp]
+theorem binaryProductLimitCone_cone_snd (M N : ComoduleCat.{u, v, w} R C) :
+    BinaryFan.snd (binaryProductLimitCone M N).cone =
+      eqToHom (binaryProductLimitCone_cone_pt M N) ≫ prodSnd M N :=
+  (Category.id_comp _).symm
+
+/-- The universal lift into `binaryProductLimitCone M N` is `prodLift`, transported along
+`binaryProductLimitCone_cone_pt`. -/
+@[simp]
+theorem binaryProductLimitCone_isLimit_lift (M N : ComoduleCat.{u, v, w} R C)
+    (s : BinaryFan M N) :
+    (binaryProductLimitCone M N).isLimit.lift s =
+      prodLift s.fst s.snd ≫ eqToHom (binaryProductLimitCone_cone_pt M N).symm :=
+  (Category.comp_id _).symm
+
 /-- The concrete product of comodules is their categorical binary product. -/
 instance (M N : ComoduleCat.{u, v, w} R C) : HasBinaryProduct M N :=
-  HasLimit.mk ⟨BinaryFan.mk (prodFst M N) (prodSnd M N),
-    BinaryFan.IsLimit.mk _ (fun f g ↦ prodLift f g)
-      (fun f g ↦ prodLift_fst f g) (fun f g ↦ prodLift_snd f g)
-      (fun f g _ h₁ h₂ ↦ prod_hom_ext
-        (h₁.trans (prodLift_fst f g).symm) (h₂.trans (prodLift_snd f g).symm))⟩
+  HasLimit.mk (binaryProductLimitCone M N)
 
 /-- Comodules have binary products. -/
 instance : HasBinaryProducts (ComoduleCat.{u, v, w} R C) :=

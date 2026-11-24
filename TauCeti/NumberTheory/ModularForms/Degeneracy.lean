@@ -536,18 +536,18 @@ section Transport
 entries are rearranged as `(a, b; d c, e) ↦ (a, d b; c, e)`, which is again integral of
 determinant one. -/
 def conjScale (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) : SL(2, ℤ) :=
-  ⟨!![γ 0 0, (d : ℤ) * γ 0 1; c, γ 1 1], by
+  .mk !![γ 0 0, (d : ℤ) * γ 0 1; c, γ 1 1] (by
     have hdet : (γ 0 0) * (γ 1 1) - (γ 0 1) * (γ 1 0) = 1 :=
       Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
     rw [hc] at hdet
     rw [Matrix.det_fin_two_of]
-    linarith [hdet]⟩
+    linarith [hdet])
 
 @[simp]
 lemma coe_conjScale (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) :
     ((conjScale d γ c hc : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0, (d : ℤ) * γ 0 1; c, γ 1 1] := by
-  rw [conjScale]
+  rw [conjScale, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- `conjScale` leaves the lower-right entry alone. -/
 lemma conjScale_apply_one_one (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0 = d * c) :
@@ -558,15 +558,15 @@ lemma conjScale_apply_one_one (d : ℕ) (γ : SL(2, ℤ)) (c : ℤ) (hc : γ 1 0
 inverse rearrangement to `conjScale`: `(a, d b; c, e) ↦ (a, b; d c, e)`, which is again integral
 of determinant one. -/
 def conjInvScale (d : ℕ) (γ : SL(2, ℤ)) (b : ℤ) (hb : γ 0 1 = d * b) : SL(2, ℤ) :=
-  ⟨!![γ 0 0, b; d * γ 1 0, γ 1 1], by
+  .mk !![γ 0 0, b; d * γ 1 0, γ 1 1] (by
     rw [Matrix.det_fin_two_of]
-    linear_combination Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ + γ 1 0 * hb⟩
+    linear_combination Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ + γ 1 0 * hb)
 
 @[simp]
 lemma coe_conjInvScale (d : ℕ) (γ : SL(2, ℤ)) (b : ℤ) (hb : γ 0 1 = d * b) :
     ((conjInvScale d γ b hb : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
       !![γ 0 0, b; d * γ 1 0, γ 1 1] := by
-  rw [conjInvScale]
+  rw [conjInvScale, Matrix.SpecialLinearGroup.coe_mk]
 
 /-- `conjInvScale` multiplies the lower-left entry by `d`. -/
 lemma conjInvScale_apply_one_zero (d : ℕ) (γ : SL(2, ℤ)) (b : ℤ) (hb : γ 0 1 = d * b) :

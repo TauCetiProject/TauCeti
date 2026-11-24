@@ -62,6 +62,9 @@ split quadratic algebra `F × F` with the coordinate swap, where no field struct
   `LinearMap.orthogonalBilin_graph_neg_id_doubled_eq_iff`: the diagonal and the antidiagonal are
   their own orthogonals if and only if `B` is right-separating.
 * `LinearMap.doubled_antidiagDiagEquiv`: the doubled form in polarization coordinates.
+* `LinearMap.toMatrix₂_antidiagDiagEquiv_doubled`: in the polarized basis, antidiagonal vectors
+  first and diagonal vectors second, the Gram matrix of the doubled form is
+  `Matrix.fromBlocks 0 (2 • H) (2 • H) 0`.
 * `LinearMap.forall_doubled_prodMap_eq_smul_iff`: `f × g` scales the doubled forms by `c` if and
   only if `f` and `g` both scale the original forms by the same `c`; for `c = 1` this is the
   blockwise embedding of isometries.
@@ -246,6 +249,16 @@ theorem doubled_antidiagDiagEquiv (p q : M × M) :
   simp only [doubled_apply, antidiagDiagEquiv_apply, map_add, map_sub,
     LinearMap.add_apply, LinearMap.sub_apply]
   abel
+
+/-- In the polarized basis of `M × M`, antidiagonal vectors `(b i, -b i)` first and diagonal
+vectors `(b i, b i)` second, the Gram matrix of the doubled form has zero diagonal blocks and
+off-diagonal blocks twice the Gram matrix `H` of `B`. -/
+theorem toMatrix₂_antidiagDiagEquiv_doubled {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Basis ι R M) :
+    toMatrix₂ ((b.prod b).map (antidiagDiagEquiv R M)) ((b.prod b).map (antidiagDiagEquiv R M))
+        B.doubled =
+      Matrix.fromBlocks 0 (2 • toMatrix₂ b b B) (2 • toMatrix₂ b b B) 0 := by
+  ext (i | i) (j | j) <;> simp [Basis.prod_apply, two_nsmul]
 
 end Polarization
 

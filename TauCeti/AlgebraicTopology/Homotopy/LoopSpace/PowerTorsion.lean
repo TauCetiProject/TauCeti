@@ -139,14 +139,10 @@ theorem exists_smul_ne_zero_singularHomology_basedConstContractibleMoorePaths {Q
           (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x))).hom z = 0 ∧
         (d : ℤ) • z ≠ 0 := by
   obtain ⟨i, hi, w, hw⟩ := exists_smul_ne_zero_reducedSingularHomology_doubleLoopSpace x d h
-  -- The kernel of the inclusion on `Hᵢ` is `H~ᵢ(Ω²Q)`.
-  let e := (kernelBasedConstContractibleMoorePathsInclusionIso (ModuleCat.of ℤ ℤ) Q x i).inv ≫
-    kernel.ι _
-  have he : e ≫ ((singularHomologyFunctor (ModuleCat.{0} ℤ) i).obj (ModuleCat.of ℤ ℤ)).map
-      (TopCat.ofHom (basedConstContractibleMoorePathsInclusion Q x)) = 0 := by
-    simp only [e, Category.assoc, kernel.condition, comp_zero]
-  refine ⟨i, hi, e.hom w, by simpa using ConcreteCategory.congr_hom he w, fun hz ↦ hw ?_⟩
-  refine (ModuleCat.mono_iff_injective e).1 inferInstance ?_
+  -- The kernel of the inclusion on `Hᵢ` contains `H~ᵢ(Ω²Q)`.
+  obtain ⟨f, hf, hf0⟩ :=
+    exists_injective_singularHomology_basedConstContractibleMoorePaths (R := ℤ) x i
+  refine ⟨i, hi, f w, hf0 w, fun hz ↦ hw (hf ?_)⟩
   rw [map_zsmul, hz, map_zero]
 
 end TauCeti
