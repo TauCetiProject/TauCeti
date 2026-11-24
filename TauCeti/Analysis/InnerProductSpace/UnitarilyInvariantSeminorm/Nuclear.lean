@@ -230,12 +230,8 @@ theorem nuclear_add_of_twoSidedOrthogonal {A B : E →ₗ[𝕜] F}
     exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear B
   have hUV₁ : LinearMap.adjoint U ∘ₗ V = 0 :=
     LinearMap.adjoint_comp_eq_zero_of_range_le h₁ hU_rng hV_rng
-  have hUV₂ : U ∘ₗ LinearMap.adjoint V = 0 := by
-    have h₂' : LinearMap.adjoint (LinearMap.adjoint A) ∘ₗ LinearMap.adjoint B = 0 := by
-      rwa [LinearMap.adjoint_adjoint]
-    have hUV₂' : LinearMap.adjoint (LinearMap.adjoint U) ∘ₗ LinearMap.adjoint V = 0 :=
-      LinearMap.adjoint_comp_eq_zero_of_range_le h₂' hU_adj_rng hV_adj_rng
-    rwa [LinearMap.adjoint_adjoint] at hUV₂'
+  have hUV₂ : U ∘ₗ LinearMap.adjoint V = 0 :=
+    LinearMap.comp_adjoint_eq_zero_of_range_adjoint_le h₂ hU_adj_rng hV_adj_rng
   have hUB : LinearMap.adjoint U ∘ₗ B = 0 :=
     LinearMap.adjoint_comp_eq_zero_of_range_le h₁ hU_rng le_rfl
   have hVA : LinearMap.adjoint V ∘ₗ A = 0 :=
@@ -295,10 +291,14 @@ theorem nuclear_sub_starProjection_comp_le (W : Submodule 𝕜 F) (K : Submodule
 theorem nuclear_sub_normalPart_le (Θ Δ : E →ₗ[𝕜] F) :
     nuclear 𝕜 E F (Δ - Θ.normalPart Δ) ≤
       √(2 * (finrank 𝕜 (LinearMap.range Θ) : ℝ)) * frobenius 𝕜 E F Δ := by
-  rw [LinearMap.normalPart_def]
-  have h := nuclear_sub_starProjection_comp_le (LinearMap.range Θ)ᗮ (LinearMap.ker Θ) Δ
-  rwa [Submodule.orthogonal_orthogonal, LinearMap.orthogonal_ker,
-    LinearMap.finrank_range_adjoint, ← two_mul, Nat.cast_mul, Nat.cast_ofNat] at h
+  calc nuclear 𝕜 E F (Δ - Θ.normalPart Δ)
+      ≤ √(finrank 𝕜 (LinearMap.range (Δ - Θ.normalPart Δ))) *
+          frobenius 𝕜 E F (Δ - Θ.normalPart Δ) :=
+        nuclear_apply_le_sqrt_finrank_range_mul_frobenius_apply _
+    _ ≤ √(2 * (finrank 𝕜 (LinearMap.range Θ) : ℝ)) * frobenius 𝕜 E F Δ :=
+        mul_le_mul
+          (Real.sqrt_le_sqrt (by exact_mod_cast Θ.finrank_range_sub_normalPart_le Δ))
+          (frobenius_sub_normalPart_le Θ Δ) (apply_nonneg _ _) (Real.sqrt_nonneg _)
 
 /-- **Explicit nuclear-norm decomposability** for the canonical tangent–normal split around `Θ`:
 `‖Θ‖₁ + ‖Θ.normalPart Δ‖₁ - ‖Δ - Θ.normalPart Δ‖₁ ≤ ‖Θ + Δ‖₁`. -/

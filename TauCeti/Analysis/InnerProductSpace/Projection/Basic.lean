@@ -121,6 +121,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   linear map.
 * `Submodule.id_eq_sum_starProjection_toLinearMap_self_orthogonalComplement`:
   `id = P_U + P_{Uᗮ}` as linear maps.
+* `Submodule.starProjection_comp_comp_starProjection_idem`: two-sided projection compression
+  `Δ ↦ P_W Δ P_K` is idempotent.
 * `LinearMap.apply_sub_starProjection_ker`,
   `LinearMap.comp_starProjection_ker_eq_zero`,
   `LinearMap.adjoint_comp_starProjection_orthogonal_range_eq_zero`,
@@ -213,6 +215,19 @@ theorem starProjection_toLinearMap_comp_self :
 theorem id_eq_sum_starProjection_toLinearMap_self_orthogonalComplement :
     (LinearMap.id : E →ₗ[𝕜] E) = U.starProjection.toLinearMap + Uᗮ.starProjection.toLinearMap :=
   congrArg ContinuousLinearMap.toLinearMap U.id_eq_sum_starProjection_self_orthogonalComplement
+
+omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
+/-- Two-sided projection compression `Δ ↦ P_W Δ P_K` is idempotent. -/
+theorem starProjection_comp_comp_starProjection_idem {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (W : Submodule 𝕜 F) (K : Submodule 𝕜 E)
+    [W.HasOrthogonalProjection] [K.HasOrthogonalProjection] (Δ : E →ₗ[𝕜] F) :
+    W.starProjection.toLinearMap ∘ₗ
+        (W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap) ∘ₗ
+        K.starProjection.toLinearMap =
+      W.starProjection.toLinearMap ∘ₗ Δ ∘ₗ K.starProjection.toLinearMap := by
+  simp only [LinearMap.comp_assoc]
+  rw [K.starProjection_toLinearMap_comp_self, ← LinearMap.comp_assoc,
+    W.starProjection_toLinearMap_comp_self]
 
 omit [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] in
 /-- For finite-dimensional subspaces of the same dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the same
@@ -752,9 +767,8 @@ theorem normalPart_def (Θ Δ : E →ₗ[𝕜] F') [(range Θ)ᗮ.HasOrthogonalP
 theorem normalPart_normalPart (Θ Δ : E →ₗ[𝕜] F') [(range Θ)ᗮ.HasOrthogonalProjection]
     [(ker Θ).HasOrthogonalProjection] :
     Θ.normalPart (Θ.normalPart Δ) = Θ.normalPart Δ := by
-  simp only [normalPart_def, comp_assoc]
-  rw [Submodule.starProjection_toLinearMap_comp_self, ← comp_assoc,
-    Submodule.starProjection_toLinearMap_comp_self]
+  simp only [normalPart_def]
+  exact (range Θ)ᗮ.starProjection_comp_comp_starProjection_idem (ker Θ) Δ
 
 /-- The canonical normal part of `Θ` with respect to itself is `0`. -/
 @[simp]

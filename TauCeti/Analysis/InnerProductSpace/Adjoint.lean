@@ -677,16 +677,28 @@ theorem adjoint_comp_eq_zero_of_range_le {E₁ E₂ E₃ E₄ : Type*}
   rw [← range_le_ker_iff, ← orthogonal_range] at h ⊢
   exact hT.trans (h.trans (Submodule.orthogonal_le hS))
 
+/-- If `X Y† = 0` and the ranges of `S†` and `T†` sit inside those of `X†` and `Y†`, then
+`S T† = 0`. -/
+theorem comp_adjoint_eq_zero_of_range_adjoint_le {F₁ F₂ F₃ F₄ : Type*}
+    [NormedAddCommGroup F₁] [InnerProductSpace 𝕜 F₁] [FiniteDimensional 𝕜 F₁]
+    [NormedAddCommGroup F₂] [InnerProductSpace 𝕜 F₂] [FiniteDimensional 𝕜 F₂]
+    [NormedAddCommGroup F₃] [InnerProductSpace 𝕜 F₃] [FiniteDimensional 𝕜 F₃]
+    [NormedAddCommGroup F₄] [InnerProductSpace 𝕜 F₄] [FiniteDimensional 𝕜 F₄]
+    {X : E →ₗ[𝕜] F₁} {Y : E →ₗ[𝕜] F₂} {S : E →ₗ[𝕜] F₃} {T : E →ₗ[𝕜] F₄}
+    (h : X ∘ₗ adjoint Y = 0) (hS : range (adjoint S) ≤ range (adjoint X))
+    (hT : range (adjoint T) ≤ range (adjoint Y)) :
+    S ∘ₗ adjoint T = 0 := by
+  have h' : adjoint (adjoint X) ∘ₗ adjoint Y = 0 := by rwa [adjoint_adjoint]
+  have hres : adjoint (adjoint S) ∘ₗ adjoint T = 0 :=
+    adjoint_comp_eq_zero_of_range_le h' hS hT
+  rwa [adjoint_adjoint] at hres
+
 /-- `X† Y = 0` if and only if `Y† X = 0`. -/
 theorem adjoint_comp_eq_zero_comm {E' : Type*}
     [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [FiniteDimensional 𝕜 E']
     {X : E →ₗ[𝕜] F} {Y : E' →ₗ[𝕜] F} :
     adjoint X ∘ₗ Y = 0 ↔ adjoint Y ∘ₗ X = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have h' := congrArg adjoint h
-    rwa [adjoint_comp, adjoint_adjoint, map_zero] at h'
-  · have h' := congrArg adjoint h
-    rwa [adjoint_comp, adjoint_adjoint, map_zero] at h'
+  rw [← (adjoint (𝕜 := 𝕜) (E := E') (F := E)).map_eq_zero_iff, adjoint_comp, adjoint_adjoint]
 
 /-- `X Y† = 0` if and only if `Y X† = 0`. -/
 theorem comp_adjoint_eq_zero_comm {F' : Type*}
