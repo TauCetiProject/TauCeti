@@ -104,11 +104,7 @@ theorem IsSobolevCRCoefficients.memWkpLoc_one_of_forall_integral_inner_eq_zero {
 open, `V` a finite-dimensional real inner product space, `J` a `C^{k+1}` field of complex structures
 on `V` and `S` a `Cᵏ` field of endomorphisms over `Ω`. If a locally `L^q` field `v` (`q > 1`)
 satisfies `∫ ⟪∂_s φ + J ∂_t φ + S φ, v⟫ = 0` for every test function `φ` on `Ω`, then
-`v ∈ W^{k+1,r}_loc(Ω)` for every finite `r`.
-
-After the reflection `ρ(z) = -conj z`, `v ∘ ρ` solves a homogeneous real Cauchy–Riemann equation
-whose coefficients `J'` and `S'` are `C^{k+1}` and `Cᵏ`, and interior regularity of every order
-(`TauCeti.IsWeakCRSolution.memWkpLoc_succ`) applies to it. -/
+`v ∈ W^{k+1,r}_loc(Ω)` for every finite `r`. -/
 theorem memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero {V : Type*}
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ}
     {J S : ℂ → V →L[ℝ] V} {k : ℕ} (hJ : ContDiffOn ℝ (k + 1) J Ω) (hS : ContDiffOn ℝ k S Ω)
@@ -135,7 +131,8 @@ theorem memWkpLoc_succ_of_forall_integral_inner_cauchyRiemann_eq_zero {V : Type*
   have hρ : MapsTo (fun z : ℂ ↦ -conj z) Ω' Ω := fun _ hz ↦ hz
   have hweak := ((hc.forall_integral_inner_eq_zero_iff hqinv.le (Ω' := Ω') (fun _ ↦ Iff.rfl)
     hv).1 h).of_memLpLoc (h1.comp_neg_conj hρ).memLpLoc
-  -- The reflected coefficients are `C^{k+1}` and `Cᵏ`.
+  -- The reflected coefficients are `C^{k+1}` and `Cᵏ`, so interior regularity of every order
+  -- (`IsWeakCRSolution.memWkpLoc_succ`) applies.
   have hDJ : ContDiffOn ℝ k (fderiv ℝ J) Ω := hJ.fderiv_of_isOpen Ω.isOpen le_rfl
   have hJk : MemWkpLoc p Ω' k (crReflectedAdjointCoeff J) :=
     ((hJ.of_le le_self_add).crReflectedAdjointCoeff hρ).memWkpLoc subset_rfl

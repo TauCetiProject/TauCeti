@@ -63,8 +63,9 @@ continuation for the adjoint equation
 (`TauCeti.SymplecticForm.eqOn_zero_of_floerLinearizationAdjoint_eq_zero_of_eqOn_zero`) spreads the
 vanishing over `Ω`.
 
-These are statements about classical (`C¹`) cokernel elements. Weak (`Lᵖ`) cokernel elements of a
-Sobolev realization of `D_u` are regular, and vanish under the same variations, by
+These are statements about classical (`C¹`) cokernel elements. Weak (locally `L^q`, `q > 1`)
+cokernel elements of a Sobolev realization of `D_u` are regular, and vanish under the same
+variations once the data have one more derivative, by
 `TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel`; the surjectivity of the universal
 operator on Banach spaces that follows is not treated here.
 
