@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Algebra.Star.Basic
+import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
 import Mathlib.Analysis.CStarAlgebra.Hom
@@ -377,6 +378,16 @@ theorem matrixUnit_apply (i j k l : n) :
     matrixUnit i j k l = if i = k ∧ j = l then 1 else 0 := by
   simp [matrixUnit, Matrix.single_apply]
 
+/-- The `(i, j)` entry of `e_ij` is `1`. -/
+@[simp]
+theorem matrixUnit_apply_same (i j : n) : matrixUnit i j i j = 1 :=
+  Matrix.single_apply_same i j 1
+
+/-- The entries of `e_ij` away from `(i, j)` vanish. -/
+@[simp]
+theorem matrixUnit_apply_of_ne {i j k l : n} (h : ¬(i = k ∧ j = l)) : matrixUnit i j k l = 0 :=
+  Matrix.single_apply_of_ne i j 1 k l h
+
 /-- The adjoint of `e_ij` is `e_ji`. -/
 @[simp]
 theorem star_matrixUnit (i j : n) : star (matrixUnit i j) = matrixUnit j i := by
@@ -397,16 +408,20 @@ theorem matrixUnit_mul_matrixUnit (i j k : n) :
   rw [matrixUnit_eq_ofMatrixStarAlgEquiv, matrixUnit_eq_ofMatrixStarAlgEquiv,
     matrixUnit_eq_ofMatrixStarAlgEquiv, ← map_mul, single_mul_single_same, one_mul]
 
+/-- Matrix units multiply as `e_ij e_kl = 0` when `j ≠ k`. -/
+@[simp]
+theorem matrixUnit_mul_matrixUnit_of_ne (i : n) {j k : n} (l : n) (h : j ≠ k) :
+    matrixUnit i j * matrixUnit k l = 0 := by
+  rw [matrixUnit_eq_ofMatrixStarAlgEquiv, matrixUnit_eq_ofMatrixStarAlgEquiv, ← map_mul,
+    single_mul_single_of_ne _ _ _ _ h, map_zero]
+
 open scoped ComplexOrder in
 /-- A matrix unit has norm one: `e_jj` is a nonzero projection and `e_ij⋆ e_ij = e_jj`. -/
 @[simp]
 theorem norm_matrixUnit (i j : n) : ‖matrixUnit i j‖ = 1 := by
-  have hp : ‖matrixUnit j j‖ = 1 := by
-    have h := CStarRing.norm_star_mul_self (x := matrixUnit j j)
-    rw [star_matrixUnit, matrixUnit_mul_matrixUnit] at h
-    have hne : matrixUnit j j ≠ 0 := fun h0 => by
-      simpa [matrixUnit_apply] using congrFun (congrFun h0 j) j
-    exact mul_left_cancel₀ (norm_ne_zero_iff.mpr hne) (h.symm.trans (mul_one _).symm)
+  have hp : ‖matrixUnit j j‖ = 1 :=
+    IsStarProjection.norm_eq_one ⟨matrixUnit_mul_matrixUnit j j j, star_matrixUnit j j⟩
+      fun h0 => by simpa using congrFun (congrFun h0 j) j
   have h := CStarRing.norm_star_mul_self (x := matrixUnit i j)
   rw [star_matrixUnit, matrixUnit_mul_matrixUnit, hp] at h
   nlinarith [norm_nonneg (matrixUnit i j)]

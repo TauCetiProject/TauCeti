@@ -131,6 +131,7 @@ theorem normalizedTrace_one [DecidableEq n] [Nonempty n] :
   exact inv_mul_cancel₀ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
 
 /-- The normalized trace of the matrix unit `e_ij` is `1/k` if `i = j` and `0` otherwise. -/
+@[simp]
 theorem normalizedTrace_matrixUnit [DecidableEq n] (i j : n) :
     normalizedTrace (matrixUnit i j) = if i = j then (Fintype.card n : ℂ)⁻¹ else 0 := by
   rw [matrixUnit_eq_ofMatrixStarAlgEquiv, ← ofMatrix_eq_ofMatrixStarAlgEquiv, normalizedTrace_def,

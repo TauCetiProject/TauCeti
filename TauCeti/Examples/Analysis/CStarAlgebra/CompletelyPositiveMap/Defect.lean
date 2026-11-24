@@ -47,7 +47,7 @@ example : normalizedTwoNorm (diagEntryCP 0 (matrixUnit (0 : Fin 2) 1 * matrixUni
   rw [diagEntryCP_def, PositiveLinearMap.normalizedTwoNorm_toCompletelyPositiveMapOfId_mul_sub,
     PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId, star_star, star_matrixUnit,
     matrixUnit_mul_matrixUnit, norm_matrixUnit]
-  simp [matrixUnit_apply]
+  simp
 
 -- At `a = e₂₁`, `b = e₁₂` both sides of the product estimate are `0`.
 example : normalizedTwoNorm (diagEntryCP 0 (matrixUnit (1 : Fin 2) 0 * matrixUnit 0 1) -
@@ -57,7 +57,7 @@ example : normalizedTwoNorm (diagEntryCP 0 (matrixUnit (1 : Fin 2) 0 * matrixUni
   rw [diagEntryCP_def, PositiveLinearMap.normalizedTwoNorm_toCompletelyPositiveMapOfId_mul_sub,
     PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId, star_star, star_matrixUnit,
     matrixUnit_mul_matrixUnit]
-  simp [matrixUnit_apply]
+  simp
 
 /-! ### The normalized trace `tr_n : M_n → M₁` -/
 
@@ -66,7 +66,7 @@ example {i j : n} (h : i ≠ j) :
     normalizedTraceCP.twoNormDefect (matrixUnit i j) = (Fintype.card n : ℝ)⁻¹ := by
   rw [normalizedTraceCP_def, PositiveLinearMap.twoNormDefect_toCompletelyPositiveMapOfId,
     star_matrixUnit, matrixUnit_mul_matrixUnit]
-  simp [normalizedTrace_matrixUnit, h]
+  simp [h]
 
 -- At a unitary, the defect of the trace is `1 - |tr_n u|²`.
 example [Nonempty n] {u : CStarMatrix n n ℂ} (hu : u ∈ unitary (CStarMatrix n n ℂ)) :

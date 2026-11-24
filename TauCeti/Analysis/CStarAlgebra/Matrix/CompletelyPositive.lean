@@ -48,11 +48,6 @@ namespace PositiveLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- The only entry of `ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) a` is `ω a`. -/
-theorem toCompletelyPositiveMapOfId_apply_apply (ω : A →ₚ[ℂ] ℂ) (a : A) (i j : Unit) :
-    ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ) a i j = ω a := by
-  simp
-
 /-- The 2-norm defect of `a ↦ ω a • 1` is `Re ω(a⋆a) - |ω a|²`. -/
 theorem twoNormDefect_toCompletelyPositiveMapOfId (ω : A →ₚ[ℂ] ℂ) (a : A) :
     (ω.toCompletelyPositiveMapOfId (CStarMatrix Unit Unit ℂ)).twoNormDefect a =

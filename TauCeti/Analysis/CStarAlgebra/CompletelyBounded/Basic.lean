@@ -328,7 +328,7 @@ private theorem star_blockMatrixUnit [DecidableEq m] [DecidableEq n] (i j : n) :
 private theorem blockMatrixUnit_apply_apply [DecidableEq m] [DecidableEq n] (i j : n) (k l : m)
     (r s : n) : blockMatrixUnit m i j k l r s = if k = l ∧ i = r ∧ j = s then 1 else 0 := by
   rw [blockMatrixUnit_apply]
-  split_ifs <;> simp_all [matrixUnit_apply, zero_apply]
+  split_ifs <;> simp_all [zero_apply]
 
 /-- The amplification of the transpose is `x ↦ ∑ diag(E i j) * x * diag(E i j)`. -/
 private theorem map_transposeₗ_eq_sum [DecidableEq m] [DecidableEq n]
