@@ -171,9 +171,6 @@ blocks `Δⱼ u`.
   `Δⱼ` with a Lipschitz function is `O(2^{-j})` on `Lᵖ`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le_of_le`: Bernstein's inequality
   `‖Δⱼ u‖_r ≤ C 2^{j n (1/p - 1/r)} ‖Δⱼ u‖_p` for `p ≤ r`.
-* `TemperedDistribution.exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq`
-  and `exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq`: dyadic
-  and weighted dyadic reverse Bernstein bounds for `Lᵖ` block representatives.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_sum_norm_sq_le`: the blocks of an
   `L²` function are square summable in `L²`.
 * `TemperedDistribution.exists_inner_eq_zero_of_littlewoodPaleyBlock_eq`: `L²` blocks with indices
@@ -1197,59 +1194,6 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_le [CompleteSpace F] {p r 
   rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_natCast,
     ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
   ring
-
-/-- **Dyadic reverse Bernstein bound for `Lᵖ` block representatives.** Given an orthonormal basis
-`b` of `E`, there is `C ≥ 0` depending only on `φ` and `b` such that for every `1 ≤ p ≤ ∞`,
-`k, j : ℕ`, `u : 𝓢'(E, F)`, and `Lᵖ` representatives `v` of `Δ_{j+1} u` and `w i` of
-`∂^{b ∘ i} v`, `‖v‖_p ≤ (C / (2^j φ.rIn))^k ∑ᵢ ‖w i‖_p`. -/
-theorem exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq [CompleteSpace F]
-    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (k j : ℕ) (u : 𝓢'(E, F))
-      (v : Lp F p (volume : Measure E)) (w : (Fin k → ι) → Lp F p (volume : Measure E)),
-      littlewoodPaleyBlock F φ (j + 1) u = v →
-      (∀ i, ∂^{⇑b ∘ i} (v : 𝓢'(E, F)) = w i) →
-      ‖v‖ ≤ (C / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i‖ := by
-  obtain ⟨C, hC0, hB⟩ := b.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq
-    (F := F) (2 * φ.rOut / φ.rIn)
-  refine ⟨C, hC0, fun {p} _ k j u v w hv hw ↦ ?_⟩
-  have hR : 0 < (2 : ℝ) ^ j * φ.rIn := mul_pos (by positivity) φ.rIn_pos
-  have hspec : Distribution.IsVanishingOn (𝓕 (v : 𝓢'(E, F)) : 𝓢'(E, F))
-      (Metric.ball 0 ((2 : ℝ) ^ j * φ.rIn) ∪
-        (Metric.closedBall 0 (2 * φ.rOut / φ.rIn * ((2 : ℝ) ^ j * φ.rIn)))ᶜ) := by
-    rw [φ.two_mul_rOut_div_rIn_mul, ← hv]
-    simpa only [Set.compl_sdiff, Set.union_comm] using
-      isVanishingOn_fourier_littlewoodPaleyBlock_succ φ j u
-  exact hB k hR v w hspec hw
-
-/-- **Weighted dyadic reverse Bernstein bound for `Lᵖ` block representatives.** Given an
-orthonormal basis `b` of `E`, there is `c ≥ 0` depending only on `φ` and `b` such that for every
-`1 ≤ p ≤ ∞`, `k : ℕ`, real weight `s`, `j : ℕ`, `u : 𝓢'(E, F)`, and `Lᵖ` representatives `v` of
-`Δ_{j+1} u` and `w i` of `∂^{b ∘ i} v`,
-`2^{(k + s)(j + 1)} ‖v‖_p ≤ c^k ∑ᵢ 2^{s(j + 1)} ‖w i‖_p`. -/
-theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq
-    [CompleteSpace F] {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) :
-    ∃ c : ℝ, 0 ≤ c ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (k : ℕ) (s : ℝ) (j : ℕ) (u : 𝓢'(E, F))
-      (v : Lp F p (volume : Measure E)) (w : (Fin k → ι) → Lp F p (volume : Measure E)),
-      littlewoodPaleyBlock F φ (j + 1) u = v →
-      (∀ i, ∂^{⇑b ∘ i} (v : 𝓢'(E, F)) = w i) →
-      2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) * ‖v‖ ≤
-        c ^ k * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖w i‖ := by
-  obtain ⟨Cr, hCr0, hrev⟩ :=
-    exists_norm_littlewoodPaleyBlock_succ_le_sum_of_iteratedLineDerivOp_eq (F := F) φ b
-  have hIn : 0 < φ.rIn := φ.rIn_pos
-  refine ⟨2 * Cr / φ.rIn, by positivity, fun {p} _ k s j u v w hv hw ↦ ?_⟩
-  have hpow : (2 : ℝ) ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) =
-      (2 ^ (j + 1)) ^ k * 2 ^ (s * ((j + 1 : ℕ) : ℝ)) := by
-    rw [add_mul, Real.rpow_add two_pos, mul_comm (k : ℝ), Real.rpow_mul_natCast zero_le_two,
-      Real.rpow_natCast]
-  calc 2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) * ‖v‖
-      ≤ 2 ^ (((k : ℝ) + s) * ((j + 1 : ℕ) : ℝ)) *
-          ((Cr / (2 ^ j * φ.rIn)) ^ k * ∑ i, ‖w i‖) := by gcongr; exact hrev k j u v w hv hw
-    _ = (2 * Cr / φ.rIn) ^ k * ∑ i, 2 ^ (s * ((j + 1 : ℕ) : ℝ)) * ‖w i‖ := by
-        rw [hpow, ← Finset.mul_sum]
-        simp only [pow_succ, div_pow, mul_pow]
-        field_simp
-
 
 section L2
 

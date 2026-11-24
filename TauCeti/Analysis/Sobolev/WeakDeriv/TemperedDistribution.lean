@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
-public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -24,17 +22,6 @@ without a smoothness or compact-support assumption on the `Lᵖ` functions.
 This is the derivative bridge between domain Sobolev spaces and the Fourier description of
 whole-space Sobolev spaces. The measure may be any locally finite measure of temperate growth;
 the forward implication only requires temperate growth.
-
-## Main declarations
-
-* `TauCeti.hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_eq`: weak differentiation on
-  the whole space is differentiation of the associated tempered distributions.
-* `TauCeti.lineDerivOp_toTemperedDistribution_eq_of_hasLineDerivAt` and
-  `TauCeti.lineDerivOp_toTemperedDistribution_eq_of_contDiff`: classical directional derivatives
-  give distributional derivatives.
-* `BoundedContinuousFunction.lineDerivOp_toLpTop_eq` and
-  `BoundedContinuousFunction.iteratedLineDerivOp_toLpTop_eq`: distributional directional and
-  iterated directional derivatives of bounded differentiable and `C^k` functions.
 
 ## References
 
@@ -77,8 +64,6 @@ theorem HasWeakLineDerivOn.lineDerivOp_toTemperedDistribution_eq
     neg_apply, hderiv, SchwartzMap.postcompCLM_apply, Complex.ofRealCLM_apply,
     neg_smul, integral_neg, Complex.coe_smul]
   exact neg_eq_iff_eq_neg.mpr hweak
-
-section
 
 variable [IsLocallyFiniteMeasure μ]
 
@@ -148,26 +133,6 @@ theorem hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq
     · filter_upwards [hu'] with x hx
       simp [hx]
 
-end
-
-/-- **Classical line derivatives are distributional derivatives.** If a locally integrable function
-`f` has line derivative `f' x` in the direction `v` at every point, `f'` is locally integrable, and
-`u ∈ Lᵖ`, `u' ∈ L^q` agree `μ`-almost everywhere with `f` and `f'`, then `∂_v u = u'` as
-tempered distributions, for any additive Haar measure `μ`. -/
-theorem lineDerivOp_toTemperedDistribution_eq_of_hasLineDerivAt [μ.IsAddHaarMeasure]
-    {f f' : E → F} (hf : LocallyIntegrable f μ) (hf' : LocallyIntegrable f' μ)
-    {u : Lp F p μ} {u' : Lp F q μ} {v : E}
-    (huf : u =ᵐ[μ] f) (hu'f : u' =ᵐ[μ] f')
-    (hderiv : ∀ x, HasLineDerivAt ℝ f (f' x) x v) :
-    ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' := by
-  have hline : HasWeakLineDerivOn μ ⊤ f f' v :=
-    hasWeakLineDerivOn_of_hasLineDerivAt (hf.locallyIntegrableOn _) (hf'.locallyIntegrableOn _)
-      fun x _ ↦ hderiv x
-  have hline' : HasWeakLineDerivOn μ ⊤ u u' v :=
-    (hline.congr_ae (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf.symm))
-      |>.congr_ae_deriv (by simpa only [Opens.coe_top, Measure.restrict_univ] using hu'f.symm)
-  exact hline'.lineDerivOp_toTemperedDistribution_eq
-
 /-- **Classical derivatives are distributional derivatives.** If a `C¹` function `f` agrees
 `μ`-almost everywhere with `u ∈ Lᵖ`, and its classical derivative in the direction `v` agrees
 `μ`-almost everywhere with `u' ∈ L^q`, then `∂_v u = u'` as tempered distributions, for any
@@ -175,10 +140,17 @@ additive Haar measure `μ`. -/
 theorem lineDerivOp_toTemperedDistribution_eq_of_contDiff [μ.IsAddHaarMeasure]
     {f : E → F} (hf : ContDiff ℝ 1 f) {u : Lp F p μ} {u' : Lp F q μ} {v : E}
     (huf : u =ᵐ[μ] f) (hu'f : u' =ᵐ[μ] fun x ↦ fderiv ℝ f x v) :
-    ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' :=
-  lineDerivOp_toTemperedDistribution_eq_of_hasLineDerivAt hf.continuous.locallyIntegrable
-    ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).locallyIntegrable huf hu'f
-    fun x ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
+    ∂_{v} (Lp.toTemperedDistribution u) = Lp.toTemperedDistribution u' := by
+  have hcont : Continuous fun x ↦ fderiv ℝ f x v :=
+    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hline : HasWeakLineDerivOn μ ⊤ f (fun x ↦ fderiv ℝ f x v) v :=
+    hasWeakLineDerivOn_of_hasLineDerivAt (hf.continuous.locallyIntegrable.locallyIntegrableOn _)
+      (hcont.locallyIntegrable.locallyIntegrableOn _)
+      fun x _ ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
+  have hline' : HasWeakLineDerivOn μ ⊤ u u' v :=
+    (hline.congr_ae (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf.symm))
+      |>.congr_ae_deriv (by simpa only [Opens.coe_top, Measure.restrict_univ] using hu'f.symm)
+  exact (hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_eq u u' v).1 hline'
 
 /-- **Classical derivatives are distributional derivatives**, for real functions. If a real `C¹`
 function `f` agrees `μ`-almost everywhere with `u ∈ Lᵖ`, and its classical derivative in the
@@ -200,66 +172,3 @@ theorem lineDerivOp_toTemperedDistribution_ofReal_eq_of_contDiff [μ.IsAddHaarMe
       ContinuousLinearMap.comp_apply]
 
 end TauCeti
-
-namespace BoundedContinuousFunction
-
-open MeasureTheory
-open scoped SchwartzMap LineDeriv
-
-variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
-  [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℂ F]
-  [CompleteSpace F]
-
-/-- **Distributional directional derivative of a bounded differentiable function.** If `f` and `g`
-are bounded continuous with `f` differentiable and `g x = fderiv ℝ f x v`, then `∂_v f = g` in
-`𝓢'(E, F)` for any additive Haar measure `μ`. -/
-theorem lineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {f g : E →ᵇ F}
-    (hf : Differentiable ℝ f) (v : E) (hg : ∀ x, g x = fderiv ℝ f x v) :
-    ∂_{v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g : 𝓢'(E, F)) :=
-  TauCeti.lineDerivOp_toTemperedDistribution_eq_of_hasLineDerivAt f.continuous.locallyIntegrable
-    g.continuous.locallyIntegrable (coeFn_toLpTop μ f) (coeFn_toLpTop μ g)
-    fun x ↦ (hg x).symm ▸ (hf x).hasFDerivAt.hasLineDerivAt v
-
-/-- **Distributional iterated directional derivatives of bounded `C^k` functions.** If `f` is
-bounded `C^k` with bounded derivatives of order `< k` and `g` is bounded continuous with
-`g x = iteratedFDeriv ℝ k f x v`, then `∂^v f = g` in `𝓢'(E, F)` for any additive Haar
-measure `μ`. -/
-theorem iteratedLineDerivOp_toLpTop_eq {μ : Measure E} [μ.IsAddHaarMeasure] {k : ℕ} {f g : E →ᵇ F}
-    (hf : ContDiff ℝ k f) (hbdd : ∀ i < k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i f x‖ ≤ C)
-    (v : Fin k → E) (hg : ∀ x, g x = iteratedFDeriv ℝ k f x v) :
-    ∂^{v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g : 𝓢'(E, F)) := by
-  induction k generalizing g with
-  | zero =>
-    have hfg : f = g := by
-      ext x
-      simpa only [iteratedFDeriv_zero_apply] using (hg x).symm
-    rw [LineDeriv.iteratedLineDerivOp_fin_zero, hfg]
-  | succ k ih =>
-    obtain ⟨C, hC⟩ := hbdd k (Nat.lt_succ_self k)
-    have hcont : Continuous fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v) :=
-      ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).continuous).comp
-        (hf.continuous_iteratedFDeriv (by exact_mod_cast Nat.le_succ k))
-    have hbd : ∀ x, ‖iteratedFDeriv ℝ k f x (Fin.tail v)‖ ≤ C * ∏ i, ‖Fin.tail v i‖ := fun x ↦
-      (ContinuousMultilinearMap.le_opNorm _ _).trans
-        (mul_le_mul_of_nonneg_right (hC x) (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _))
-    set g' : E →ᵇ F := ofNormedAddCommGroup (fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v))
-      hcont (C * ∏ i, ‖Fin.tail v i‖) hbd
-    have hg' : ⇑g' = fun x ↦ iteratedFDeriv ℝ k f x (Fin.tail v) :=
-      coe_ofNormedAddCommGroup ..
-    have hih : ∂^{Fin.tail v} (toLpTop μ ℂ f : 𝓢'(E, F)) = (toLpTop μ ℂ g' : 𝓢'(E, F)) :=
-      ih (hf.of_le (by exact_mod_cast Nat.le_succ k))
-        (fun i hi ↦ hbdd i (hi.trans (Nat.lt_succ_self k))) (Fin.tail v)
-        fun x ↦ congrFun hg' x
-    have hdiff : ∀ x, HasFDerivAt (g' : E → F)
-        ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).comp
-          ((iteratedFDeriv ℝ (k + 1) f x).curryLeft)) x := fun x ↦ by
-      rw [hg']
-      exact (ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ E) F (Fin.tail v)).hasFDerivAt.comp
-        x (hf.hasFDerivAt_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self k) x)
-    rw [LineDeriv.iteratedLineDerivOp_succ_left, hih]
-    refine lineDerivOp_toLpTop_eq (fun x ↦ (hdiff x).differentiableAt) (v 0) fun x ↦ ?_
-    rw [hg x, (hdiff x).fderiv]
-    simp only [ContinuousLinearMap.comp_apply, ContinuousMultilinearMap.apply_apply,
-      ContinuousMultilinearMap.curryLeft_apply, Fin.cons_self_tail]
-
-end BoundedContinuousFunction
