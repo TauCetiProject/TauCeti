@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Prod
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Submodule
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.TensorProduct
 
 /-!
 # Examples of hermitian vector bundles over rings of integers
@@ -17,6 +19,8 @@ public import TauCeti.NumberTheory.NumberField.HermitianBundle.Submodule
   conjugation condition, although each form could be positive definite: it is not a hermitian
   metric.
 * In the line of a fractional ideal with weights `λ_v`, `‖x‖_v = e^{-λ_v} |x|_v`.
+* `Ō_K ⊕ Ō_K` has rank two, its basis vectors are orthogonal, and `‖e₁ + e₂‖_σ² = 2`.
+* `Ō_K ⊗ E ≅ E` isometrically, `Ō_K ⊗ Ō_K` has rank one, and `‖1 ⊗ 1‖_σ = 1`.
 * If `e₁, e₂` are orthonormal at `σ` (as for `ℤ²` with the standard metric), the quotient metric
   on `E ⧸ 𝓞 K (e₁ + e₂)` gives `‖[e₁]‖_σ = 1/√2`, not 1: the quotient metric is not the metric of
   a complement lattice such as `𝓞 K e₁`.
@@ -57,6 +61,38 @@ example (h : HermitianMetric K (𝓞 K)) (σ : K →+* ℂ)
 example {I : FractionalIdeal (𝓞 K)⁰ K} (hI : I ≠ 0) (w : InfinitePlace K → ℝ)
     (v : InfinitePlace K) (x : I) :
     (HermitianMetric.fractionalIdeal I hI w).placeNorm v x = Real.exp (-w v) * v x := by
+  simp
+
+-- `Ō_K ⊕ Ō_K` has rank two.
+example : ((HermitianBundle.trivial K).prod (HermitianBundle.trivial K)).rank = 2 := by
+  simp
+
+-- The basis vectors `e₁, e₂` of `Ō_K ⊕ Ō_K` are orthogonal.
+example (σ : K →+* ℂ) :
+    ((HermitianMetric.trivial K).prod (HermitianMetric.trivial K)).form σ
+      (1 ⊗ₜ ((1, 0) : 𝓞 K × 𝓞 K)) (1 ⊗ₜ ((0, 1) : 𝓞 K × 𝓞 K)) = 0 := by
+  simp
+
+-- In `Ō_K ⊕ Ō_K`, `‖e₁ + e₂‖_σ² = 2`.
+example (σ : K →+* ℂ) :
+    ((HermitianMetric.trivial K).prod (HermitianMetric.trivial K)).norm σ
+      (1 ⊗ₜ ((1, 1) : 𝓞 K × 𝓞 K)) ^ 2 = 2 := by
+  rw [HermitianMetric.norm_prod_tmul_sq]
+  norm_num
+
+-- `Ō_K ⊗ E ≅ E` isometrically.
+example {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (h : HermitianMetric K E) :
+    Nonempty (HermitianMetric.IsometryEquiv ((HermitianMetric.trivial K).tmul h) h) :=
+  ⟨HermitianMetric.tensorLId h⟩
+
+-- `Ō_K ⊗ Ō_K` has rank one.
+example : ((HermitianBundle.trivial K).tmul (HermitianBundle.trivial K)).rank = 1 := by
+  simp
+
+-- In `Ō_K ⊗ Ō_K`, `‖1 ⊗ 1‖_σ = 1`.
+example (σ : K →+* ℂ) :
+    ((HermitianMetric.trivial K).tmul (HermitianMetric.trivial K)).norm σ
+      (1 ⊗ₜ ((1 : 𝓞 K) ⊗ₜ (1 : 𝓞 K))) = 1 := by
   simp
 
 -- The quotient metric of `E ⧸ 𝓞 K (e₁ + e₂)` for `e₁, e₂` orthonormal at `σ` has
