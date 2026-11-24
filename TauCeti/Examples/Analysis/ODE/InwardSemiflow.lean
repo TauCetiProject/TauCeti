@@ -15,9 +15,11 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 Two explicit one-dimensional checks verifying `TauCeti.forwardSemiflowInterval` and
 `TauCeti.forwardSemiflow` against closed-form solutions on `Ici (0 : ℝ)` and `Icc (0 : ℝ) 1`:
 
-* `TauCeti.forwardSemiflowInterval_const_one_Ici`, `TauCeti.forwardSemiflow_const_one_Ici`:
+* `TauCeti.InwardSemiflowExample.forwardSemiflowInterval_const_one_Ici`,
+  `TauCeti.InwardSemiflowExample.forwardSemiflow_const_one_Ici`:
   constant inward field `X = 1` on `[0, ∞)`.
-* `TauCeti.forwardSemiflowInterval_half_sub_Icc`, `TauCeti.forwardSemiflow_half_sub_Icc`:
+* `TauCeti.InwardSemiflowExample.forwardSemiflowInterval_half_sub_Icc`,
+  `TauCeti.InwardSemiflowExample.forwardSemiflow_half_sub_Icc`:
   affine inward field `X y = 1 / 2 - y` on `[0, 1]`.
 -/
 
@@ -25,7 +27,9 @@ public section
 
 open Set
 
-namespace TauCeti
+namespace TauCeti.InwardSemiflowExample
+
+open TauCeti
 
 /-- Closed-form check on the closed half-line `Ici (0 : ℝ)`: the constant inward field `X = 1`
 has maximal forward interval `Ici 0`. -/
@@ -76,4 +80,4 @@ theorem forwardSemiflow_half_sub_Icc {t x : ℝ} (ht : 0 ≤ t) (hx : x ∈ Icc 
     (γ := fun s ↦ 1 / 2 + (x - 1 / 2) * Real.exp (-s))
     (b := t + 1) (by linarith) (by simp) h.1 h.2 ⟨ht, lt_add_one t⟩).symm
 
-end TauCeti
+end TauCeti.InwardSemiflowExample

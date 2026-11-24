@@ -74,6 +74,7 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
     ∃ γ : ℝ → E, γ 0 = x ∧ MapsTo γ (Icc 0 b) (ball x₀ (2 * r) ∩ C) ∧
       (∀ t ∈ Icc 0 b, γ t = x + ∫ s in (0 : ℝ)..t, X (γ s)) ∧
       ∀ t ∈ Icc 0 b, HasDerivWithinAt γ (X (γ t)) (Icc 0 b) t := by
+  -- Step 1: Define the closed nonempty invariant tube `S ⊆ C(Icc 0 b, E)`.
   let S : Set C(Icc 0 b, E) :=
     {γ | ∀ t : Icc 0 b, γ t ∈ closedBall (x + (t : ℝ) • X x) (ε / 2 * (t : ℝ))}
   have hS_closed : IsClosed S := by
@@ -85,6 +86,7 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
     fun t ↦ mem_closedBall_self (mul_nonneg (half_pos hε).le t.property.1)⟩⟩
   have hS_mem (γ : S) (t : Icc 0 b) :=
     mem_ball_and_norm_sub_le_of_mem_inwardTube hx hε hin hrad γ.property t
+  -- Step 2: Construct the Picard operator `P` and verify that it maps `S` into itself.
   let f : S → ℝ → E := fun γ s ↦ X (γ.val (projIcc 0 b hb.le s))
   have hf_cont (γ : S) : Continuous (f γ) :=
     hK.continuousOn.comp_continuous (γ.val.continuous.comp continuous_projIcc)
@@ -103,6 +105,7 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
     refine (hK.dist_le_mul _ (hS_mem γ _).1 x
       ⟨ball_subset_ball (by linarith) hx.1, hx.2⟩).trans ?_
     rw [dist_eq_norm]; exact (mul_le_mul_of_nonneg_left (hS_mem γ _).2 K.coe_nonneg).trans hself⟩
+  -- Step 3: Prove `P` is a `1 / 2`-contraction on `S`.
   have hP : ContractingWith (1 / 2) P := by
     refine ⟨by norm_num, lipschitzWith_iff_dist_le_mul.mpr fun γ₁ γ₂ ↦ ?_⟩
     rw [Subtype.dist_eq, ContinuousMap.dist_le (by positivity)]; intro t
@@ -118,6 +121,7 @@ private theorem exists_Icc_trajectory_of_ball_subset {C : Set E} {X : E → E} {
       calc (K : ℝ) * dist γ₁ γ₂ * (t : ℝ) = (K : ℝ) * (t : ℝ) * dist γ₁ γ₂ := by ring
         _ ≤ (K : ℝ) * b * dist γ₁ γ₂ := by gcongr; exact t.property.2
         _ ≤ (1 / 2 : ℝ) * dist γ₁ γ₂ := by gcongr
+  -- Step 4: Extract the fixed point of `P` and verify its integral and derivative equations.
   set γstar : S := hP.fixedPoint
   let γ : ℝ → E := fun t ↦ x + ∫ s in (0 : ℝ)..t, f γstar s
   have hγ_eq (t : ℝ) (ht : t ∈ Icc 0 b) : γ t = γstar.val ⟨t, ht⟩ :=
@@ -145,6 +149,7 @@ private theorem exists_Ico_and_Icc_forwardSemiflow_of_ball_subset {C U : Set E}
       ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
         forwardSemiflow X (U ∩ C) t y =
           y + ∫ s in (0 : ℝ)..t, X (forwardSemiflow X (U ∩ C) s y) := by
+  -- Step 1: Choose a uniform step size `τ > 0` from the Lipschitz constant and inward-cone bounds.
   set M : ℝ := ‖X x₀‖ + (K : ℝ) * r + ε / 2 + 1 with hM_def
   set L : ℝ := (K : ℝ) + 1 with hL_def
   have hM : 0 < M := by positivity
@@ -157,6 +162,7 @@ private theorem exists_Ico_and_Icc_forwardSemiflow_of_ball_subset {C U : Set E}
       (∀ t ∈ Icc 0 τ, forwardSemiflow X (U ∩ C) t y ∈ ball x₀ (2 * r) ∩ C) ∧
       (∀ t ∈ Icc 0 τ, forwardSemiflow X (U ∩ C) t y =
         y + ∫ s in (0 : ℝ)..t, X (forwardSemiflow X (U ∩ C) s y)) := by
+    -- Step 2: Check the velocity, inward-tube, radius, self-map, and contraction estimates at `y`.
     have hyX : ‖X y‖ + ε / 2 < M := by
       have hdist := (hKLip.dist_le_mul y ⟨ball_subset_ball (by linarith) hy.1, hy.2⟩ x₀
         ⟨mem_ball_self (by positivity), hx₀.2⟩).trans
@@ -182,6 +188,7 @@ private theorem exists_Ico_and_Icc_forwardSemiflow_of_ball_subset {C U : Set E}
       calc (K : ℝ) * (2 * τ) ≤ L * (2 * (1 / (8 * L))) := by
             gcongr; exact (min_le_right _ _).trans (min_le_right _ _)
         _ ≤ 1 / 2 := by field_simp; norm_num
+    -- Step 3: Build the Picard curve on `[0, 2 * τ]` and transfer via forward uniqueness.
     obtain ⟨γ, hγ0, hγmem, hγint, hγ'⟩ := exists_Icc_trajectory_of_ball_subset hy
       (by positivity : 0 < 2 * τ) hε hKLip hin hb_rad hb_self hb_contr
     have hγU : MapsTo γ (Ico 0 (2 * τ)) (U ∩ C) :=
@@ -350,6 +357,19 @@ open TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
+/-- Uniform positive forward existence time on a neighborhood in `U ∩ C` around each point of
+`K ⊆ U ∩ C` where `X` is strictly inward to `C`. -/
+private theorem exists_nhds_forall_mem_forwardSemiflowInterval {C U : Set E} (hC : Convex ℝ C)
+    (hU : IsOpen U) {X : E → E} (hX : LocallyLipschitzOn (U ∩ C) X) {K : Set E}
+    (hKU : K ⊆ U ∩ C) (hX_in : ∀ y ∈ K, X y ∈ strictInwardCone C y) :
+    ∀ z ∈ K, ∃ V ∈ 𝓝 z, ∃ τ > 0, ∀ y ∈ V ∩ (U ∩ C),
+      τ ∈ forwardSemiflowInterval X (U ∩ C) y := by
+  intro z hzK
+  obtain ⟨r, hr, τ, hτ, _, _, _, hsub, -⟩ :=
+    hC.exists_local_forwardSemiflow_continuousOn hU hX (hKU hzK) (hX_in z hzK)
+  exact ⟨ball z r, Metric.ball_mem_nhds z hr, τ, hτ,
+    fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩ ⟨hτ.le, by linarith⟩⟩
+
 /-- **Forward compact-escape lemma.** At a finite least upper bound `b` of
 `forwardSemiflowInterval X (U ∩ C) x`, if `X` is strictly inward to `C` on a compact subset
 `K ⊆ U ∩ C`, then the trajectory leaves `K` as `t → b⁻`. -/
@@ -358,12 +378,9 @@ theorem Convex.eventually_notMem_nhdsLT_forwardSemiflow {C U : Set E} (hC : Conv
     (h0 : (0 : ℝ) ∈ forwardSemiflowInterval X (U ∩ C) x)
     (hb : IsLUB (forwardSemiflowInterval X (U ∩ C) x) b) {K : Set E} (hK : IsCompact K)
     (hKU : K ⊆ U ∩ C) (hX_in : ∀ y ∈ K, X y ∈ strictInwardCone C y) :
-    ∀ᶠ t in 𝓝[<] b, forwardSemiflow X (U ∩ C) t x ∉ K := by
-  refine hX.eventually_notMem_nhdsLT_forwardSemiflow ⟨0, h0⟩ hb hK fun z hzK ↦ ?_
-  obtain ⟨r, hr, τ, hτ, _, _, _, hsub, -⟩ :=
-    hC.exists_local_forwardSemiflow_continuousOn hU hX (hKU hzK) (hX_in z hzK)
-  exact ⟨ball z r, Metric.ball_mem_nhds z hr, τ, hτ,
-    fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩ ⟨hτ.le, by linarith⟩⟩
+    ∀ᶠ t in 𝓝[<] b, forwardSemiflow X (U ∩ C) t x ∉ K :=
+  hX.eventually_notMem_nhdsLT_forwardSemiflow ⟨0, h0⟩ hb hK
+    (exists_nhds_forall_mem_forwardSemiflowInterval hC hU hX hKU hX_in)
 
 /-- **Global forward existence under compact trapping.** If a trajectory of `forwardSemiflow` stays
 inside a compact subset `K ⊆ U ∩ C` on which `X` is strictly inward to `C`, then it is defined on
@@ -374,12 +391,9 @@ theorem Convex.forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo {C U : Set 
     (hKU : K ⊆ U ∩ C) (hX_in : ∀ y ∈ K, X y ∈ strictInwardCone C y)
     (hmem : MapsTo (fun t ↦ forwardSemiflow X (U ∩ C) t x)
       (forwardSemiflowInterval X (U ∩ C) x) K) :
-    forwardSemiflowInterval X (U ∩ C) x = Ici 0 := by
-  refine hX.forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo ⟨0, h0⟩ hK (fun z hzK ↦ ?_) hmem
-  obtain ⟨r, hr, τ, hτ, _, _, _, hsub, -⟩ :=
-    hC.exists_local_forwardSemiflow_continuousOn hU hX (hKU hzK) (hX_in z hzK)
-  exact ⟨ball z r, Metric.ball_mem_nhds z hr, τ, hτ,
-    fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩ ⟨hτ.le, by linarith⟩⟩
+    forwardSemiflowInterval X (U ∩ C) x = Ici 0 :=
+  hX.forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo ⟨0, h0⟩ hK
+    (exists_nhds_forall_mem_forwardSemiflowInterval hC hU hX hKU hX_in) hmem
 
 /-- **Global forward completeness on a compact convex set.** Every locally Lipschitz strictly inward
 vector field on a compact convex set `C` generates a forward semiflow defined for all `t ≥ 0`. -/

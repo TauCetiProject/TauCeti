@@ -753,6 +753,8 @@ theorem norm_sub_dysonSeriesLeft_apply_le_add_mul_integral {M : ℝ → E →L[�
     ((continuousOn_const.mul hw_cont).mono hsub_t).intervalIntegrable
   have hrem_int : IntervalIntegrable (fun s ↦ ‖r s‖ + CD * ‖w s‖) MeasureTheory.volume 0 t :=
     (hr.norm.mono_set hsub_τ).add hw_int
+  -- Fold the goal into the local `let`-binding `w` (including under the integral) so `rw [hw_eq]`
+  -- applies.
   change ‖w t‖ ≤ R₀ * t + CD * ∫ s in (0 : ℝ)..t, ‖w s‖
   rw [hw_eq]
   refine (intervalIntegral.norm_integral_le_of_norm_le ht.1 ?_ hrem_int).trans ?_

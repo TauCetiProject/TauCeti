@@ -208,16 +208,20 @@ theorem eqOn_forwardSemiflow (hX : LocallyLipschitzOn S X)
     Ico_subset_forwardSemiflowInterval hb h0 hS hγ' ht
   dsimp only [forwardSemiflow]; rw [dite_eq_left ht_mem]
   obtain ⟨b₁, hb₁, ht₁, h0₁, hS₁, hγ₁'⟩ := ht_mem.choose_spec
-  exact hX.eqOn_Ico_of_hasDerivAt_Ioo ⟨le_rfl, lt_min hb hb₁⟩
+  exact hX.eqOn_of_isPreconnected_of_hasDerivAt_interior isPreconnected_Ico ⟨le_rfl, lt_min hb hb₁⟩
     (fun s hs ↦ ((hγ' s ⟨hs.1, hs.2.trans_le (min_le_left _ _)⟩).continuousWithinAt).mono
       (Ico_subset_Ico_right (min_le_left _ _)))
-    (fun s hs ↦ (hγ' s ⟨hs.1.le, hs.2.trans_le (min_le_left _ _)⟩).hasDerivAt
-      (Ico_mem_nhds hs.1 (hs.2.trans_le (min_le_left _ _))))
+    (fun s hs ↦ (hγ' s ⟨(interior_Ico (α := ℝ) ▸ hs).1.le,
+      (interior_Ico (α := ℝ) ▸ hs).2.trans_le (min_le_left _ _)⟩).hasDerivAt
+      (Ico_mem_nhds (interior_Ico (α := ℝ) ▸ hs).1
+        ((interior_Ico (α := ℝ) ▸ hs).2.trans_le (min_le_left _ _))))
     (hS.mono_left (Ico_subset_Ico_right (min_le_left _ _)))
     (fun s hs ↦ ((hγ₁' s ⟨hs.1, hs.2.trans_le (min_le_right _ _)⟩).continuousWithinAt).mono
       (Ico_subset_Ico_right (min_le_right _ _)))
-    (fun s hs ↦ (hγ₁' s ⟨hs.1.le, hs.2.trans_le (min_le_right _ _)⟩).hasDerivAt
-      (Ico_mem_nhds hs.1 (hs.2.trans_le (min_le_right _ _))))
+    (fun s hs ↦ (hγ₁' s ⟨(interior_Ico (α := ℝ) ▸ hs).1.le,
+      (interior_Ico (α := ℝ) ▸ hs).2.trans_le (min_le_right _ _)⟩).hasDerivAt
+      (Ico_mem_nhds (interior_Ico (α := ℝ) ▸ hs).1
+        ((interior_Ico (α := ℝ) ▸ hs).2.trans_le (min_le_right _ _))))
     (hS₁.mono_left (Ico_subset_Ico_right (min_le_right _ _)))
     (h0.trans h0₁.symm) ⟨ht.1, lt_min ht.2 ht₁.2⟩
 
