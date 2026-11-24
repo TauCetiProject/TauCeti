@@ -141,7 +141,7 @@ private lemma apply_basis_eq_repr_smul (g h : G) (i : ι) :
     ρ g (b (e ⟨i, h⟩)) = b.repr (ρ g (b (e ⟨i, h⟩))) (e ⟨i, g * h⟩) • b (e ⟨i, g * h⟩) := by
   obtain ⟨c, hc⟩ := hb g h i
   have hrepr : b.repr (ρ g (b (e ⟨i, h⟩))) (e ⟨i, g * h⟩) = c := by
-    rw [hc, map_smul, b.repr_self, Finsupp.smul_apply, Finsupp.single_eq_same, smul_eq_mul, mul_one]
+    rw [hc, ← b.repr_symm_single, b.repr.apply_symm_apply, Finsupp.single_eq_same]
   rw [hrepr, hc]
 
 /-- **Rescaling a monomial basis along group translates.** Given a basis `b` on which `G` acts
