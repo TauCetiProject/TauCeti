@@ -306,9 +306,8 @@ theorem infiniteAdelicPointsContinuousMulEquiv_infiniteProjection
   refine (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv _).trans ?_
   refine (pointsMulEquivOfBaseChange_mapValue (adeleBaseChangeAlgEquiv F E)
     (adeleBaseChangeAlgEquiv_one_tmul F E) _ _ pT pS (fun a b ↦ ?_) x).trans ?_
-  · simp only [← adeleBaseChangeEquiv_toAlgEquiv, ← infiniteAdeleBaseChangeEquiv_toAlgEquiv,
-      ContinuousAlgEquiv.coe_toAlgEquiv, adeleBaseChangeEquiv_tmul,
-      infiniteAdeleBaseChangeEquiv_tmul, map_mul, AlgHom.commutes]
+  · simp only [adeleBaseChangeAlgEquiv_tmul, infiniteAdeleBaseChangeAlgEquiv_tmul,
+      map_mul, AlgHom.commutes]
     exact congrArg (· * algebraMap E (InfiniteAdeleRing E) b) (adeleExtension_fst a)
   · exact congrArg (AlgHom.mapValue pS)
       (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv x).symm
@@ -342,9 +341,8 @@ theorem finiteAdelicPointsContinuousMulEquiv_finiteProjection
   refine (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv _).trans ?_
   refine (pointsMulEquivOfBaseChange_mapValue (adeleBaseChangeAlgEquiv F E)
     (adeleBaseChangeAlgEquiv_one_tmul F E) _ _ pT pS (fun a b ↦ ?_) x).trans ?_
-  · simp only [← adeleBaseChangeEquiv_toAlgEquiv, ← finiteAdeleBaseChangeEquiv_toAlgEquiv,
-      ContinuousAlgEquiv.coe_toAlgEquiv, adeleBaseChangeEquiv_tmul,
-      finiteAdeleBaseChangeEquiv_tmul, map_mul, AlgHom.commutes]
+  · simp only [adeleBaseChangeAlgEquiv_tmul, finiteAdeleBaseChangeAlgEquiv_tmul,
+      map_mul, AlgHom.commutes]
     exact congrArg (· * algebraMap E (FiniteAdeleRing (𝓞 E) E) b) (adeleExtension_snd a)
   · exact congrArg (AlgHom.mapValue pS)
       (DFunLike.congr_fun toMulEquiv_adelicPointsContinuousMulEquiv x).symm
@@ -417,8 +415,8 @@ theorem adelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
     (adeleBaseChangeAlgEquiv F L)
     (adeleBaseChangeAlgEquiv_one_tmul F L)
     (fun a z ↦ by
-      simpa only [← adeleBaseChangeEquiv_toAlgEquiv, ContinuousAlgEquiv.coe_toAlgEquiv] using
-        adeleBaseChangeEquiv_tower F E L a z) x
+      simp only [adeleBaseChangeAlgEquiv_tmul, map_one, mul_one]
+      rw [← adeleExtension_comp (𝓞 F) F (𝓞 E) E (𝓞 L) L, RingHom.comp_apply]) x
 
 /-- **Tower compatibility on finite adeles.** -/
 theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
@@ -443,8 +441,8 @@ theorem finiteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
     (finiteAdeleBaseChangeAlgEquiv F L)
     (finiteAdeleBaseChangeAlgEquiv_one_tmul F L)
     (fun a z ↦ by
-      simpa only [← finiteAdeleBaseChangeEquiv_toAlgEquiv, ContinuousAlgEquiv.coe_toAlgEquiv] using
-        finiteAdeleBaseChangeEquiv_tower F E L a z) x
+      simp only [finiteAdeleBaseChangeAlgEquiv_tmul, map_one, mul_one]
+      rw [← finiteAdeleExtension_comp (𝓞 F) F (𝓞 E) E (𝓞 L) L, RingHom.comp_apply]) x
 
 /-- **Tower compatibility on infinite adeles.** -/
 theorem infiniteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
@@ -469,9 +467,8 @@ theorem infiniteAdelicPointsContinuousMulEquiv_mapDomain_compBialgEquiv
     (infiniteAdeleBaseChangeAlgEquiv F L)
     (infiniteAdeleBaseChangeAlgEquiv_one_tmul F L)
     (fun a z ↦ by
-      simpa only [← infiniteAdeleBaseChangeEquiv_toAlgEquiv,
-        ContinuousAlgEquiv.coe_toAlgEquiv] using
-        infiniteAdeleBaseChangeEquiv_tower F E L a z) x
+      simp only [infiniteAdeleBaseChangeAlgEquiv_tmul, map_one, mul_one]
+      rw [← infiniteAdeleExtension_comp F E L, RingHom.comp_apply]) x
 
 end NaturalityAndTower
 
@@ -591,10 +588,16 @@ theorem adicCompletionPointsContinuousMulEquiv_finiteLocalProjection (v : Height
     refine (pointsMulEquivOfBaseChange_mapValue (finiteAdeleBaseChangeAlgEquiv F E)
       (finiteAdeleBaseChangeAlgEquiv_one_tmul F E)
       _ _ pT pS (fun a b ↦ funext fun w' ↦ by
-        have h := finiteAdeleBaseChangeEquiv_proj_tmul F E v a b w'
-        simp only [← ContinuousAlgEquiv.coe_toAlgEquiv,
-          finiteAdeleBaseChangeEquiv_toAlgEquiv] at h
-        exact h) x).trans ?_
+        simp only [pS, pT, AlgHom.pi_apply, ContinuousAlgHom.coe_coe,
+          finiteAdeleBaseChangeAlgEquiv_tmul, map_mul, ContinuousAlgEquiv.coe_toAlgEquiv,
+          TauCeti.semilocalContinuousEquiv_tmul, FiniteAdeleRing.proj_apply,
+          finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply]
+        clear pT pS hx hy w
+        rcases w' with ⟨w', hw'⟩
+        have hv : v = w'.under (𝓞 F) := HeightOneSpectrum.asIdeal_injective hw'.over
+        subst v
+        rw [HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra]
+        rfl) x).trans ?_
     exact congrArg (AlgHom.mapValue pS)
       (DFunLike.congr_fun toMulEquiv_finiteAdelicPointsContinuousMulEquiv x).symm
   rw [hx, hy, adicCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,
@@ -651,10 +654,15 @@ theorem infiniteCompletionPointsContinuousMulEquiv_infiniteLocalProjection (v : 
     refine (pointsMulEquivOfBaseChange_mapValue (infiniteAdeleBaseChangeAlgEquiv F E)
       (infiniteAdeleBaseChangeAlgEquiv_one_tmul F E)
       _ _ pT pS (fun a b ↦ funext fun w' ↦ by
-        have h := infiniteAdeleBaseChangeEquiv_eval_tmul F E v a b w'
-        simp only [← ContinuousAlgEquiv.coe_toAlgEquiv,
-          infiniteAdeleBaseChangeEquiv_toAlgEquiv] at h
-        exact h) x).trans ?_
+        obtain ⟨w', hw'⟩ := w'
+        obtain rfl : w'.comap (algebraMap F E) = v := InfinitePlace.LiesOver.comap_eq w' v
+        simp only [pS, pT, AlgHom.pi_apply, infiniteAdeleBaseChangeAlgEquiv_tmul, map_mul,
+          ContinuousAlgEquiv.coe_toAlgEquiv, infiniteSemilocalContinuousEquiv_tmul]
+        change (infiniteAdeleExtension F E a) w' * (algebraMap E (InfiniteAdeleRing E) b) w' = _
+        rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply,
+          NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe,
+          AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
+        rfl) x).trans ?_
     exact congrArg (AlgHom.mapValue pS)
       (DFunLike.congr_fun toMulEquiv_infiniteAdelicPointsContinuousMulEquiv x).symm
   rw [hx, hy, infiniteCompletionPointsContinuousMulEquiv, ContinuousMulEquiv.trans_apply,

@@ -178,19 +178,26 @@ theorem infiniteAdeleBaseChangeAlgEquiv_toAlgHom :
     (infiniteAdeleBaseChangeAlgEquiv K L).toAlgHom = infiniteAdeleBaseChangeHom K L :=
   (rfl)
 
+/-- The algebraic comparison sends a pure tensor to the extended adele times the diagonal
+field element. -/
+@[simp]
+theorem infiniteAdeleBaseChangeAlgEquiv_tmul (a : InfiniteAdeleRing K) (x : L) :
+    infiniteAdeleBaseChangeAlgEquiv K L (a ⊗ₜ x) =
+      infiniteAdeleExtension K L a * algebraMap L (InfiniteAdeleRing L) x :=
+  infiniteAdeleBaseChangeHom_tmul K L a x
+
 /-- The algebraic inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
 theorem infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
     (infiniteAdeleBaseChangeAlgEquiv K L).symm
       (algebraMap L (InfiniteAdeleRing L) x) = 1 ⊗ₜ[K] x := by
   apply (infiniteAdeleBaseChangeAlgEquiv K L).injective
-  simp [infiniteAdeleBaseChangeAlgEquiv]
+  simp
 
 /-- The algebraic comparison sends `1 ⊗ x` to the diagonal field element. -/
 theorem infiniteAdeleBaseChangeAlgEquiv_one_tmul (x : L) :
     infiniteAdeleBaseChangeAlgEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (InfiniteAdeleRing L) x := by
-  rw [← AlgEquiv.coe_toAlgHom, infiniteAdeleBaseChangeAlgEquiv_toAlgHom,
-    infiniteAdeleBaseChangeHom_tmul, map_one, one_mul]
+  simp
 
 end
 
@@ -236,11 +243,8 @@ field element. -/
 @[simp]
 theorem infiniteAdeleBaseChangeEquiv_tmul (a : InfiniteAdeleRing K) (x : L) :
     infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ x) =
-      infiniteAdeleExtension K L a * algebraMap L (InfiniteAdeleRing L) x := by
-  have h : (infiniteAdeleBaseChangeEquiv K L).toAlgHom =
-      infiniteAdeleBaseChangeHom K L := by simp
-  exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans
-    (infiniteAdeleBaseChangeHom_tmul K L a x)
+      infiniteAdeleExtension K L a * algebraMap L (InfiniteAdeleRing L) x :=
+  infiniteAdeleBaseChangeAlgEquiv_tmul K L a x
 
 /-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
 theorem infiniteAdeleBaseChangeEquiv_one_tmul (x : L) :

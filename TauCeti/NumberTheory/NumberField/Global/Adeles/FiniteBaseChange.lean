@@ -256,20 +256,28 @@ theorem finiteAdeleBaseChangeAlgEquiv_toAlgHom :
     (finiteAdeleBaseChangeAlgEquiv K L).toAlgHom = finiteAdeleBaseChangeHom K L :=
   (rfl)
 
+/-- The algebraic comparison sends a pure tensor to the extended adele times the diagonal
+field element. -/
+@[simp]
+theorem finiteAdeleBaseChangeAlgEquiv_tmul (a : FiniteAdeleRing (𝓞 K) K) (x : L) :
+    finiteAdeleBaseChangeAlgEquiv K L (a ⊗ₜ x) =
+      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a *
+        algebraMap L (FiniteAdeleRing (𝓞 L) L) x :=
+  finiteAdeleBaseChangeHom_tmul K L a x
+
 /-- The algebraic inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
 theorem finiteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
     (finiteAdeleBaseChangeAlgEquiv K L).symm
       (algebraMap L (FiniteAdeleRing (𝓞 L) L) x) = 1 ⊗ₜ[K] x := by
   apply (finiteAdeleBaseChangeAlgEquiv K L).injective
-  simp [finiteAdeleBaseChangeAlgEquiv]
+  simp
 
 /-- The algebraic comparison sends `1 ⊗ x` to the diagonal field element. -/
 theorem finiteAdeleBaseChangeAlgEquiv_one_tmul (x : L) :
     finiteAdeleBaseChangeAlgEquiv K L (1 ⊗ₜ[K] x) =
       algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
-  rw [← AlgEquiv.coe_toAlgHom, finiteAdeleBaseChangeAlgEquiv_toAlgHom,
-    finiteAdeleBaseChangeHom_tmul, map_one, one_mul]
+  simp
 
 variable [TopologicalSpace (FiniteAdeleRing (𝓞 K) K ⊗[K] L)]
   [IsModuleTopology (FiniteAdeleRing (𝓞 K) K) (FiniteAdeleRing (𝓞 K) K ⊗[K] L)]
@@ -315,9 +323,8 @@ field element. -/
 @[simp]
 theorem finiteAdeleBaseChangeEquiv_tmul (a : FiniteAdeleRing (𝓞 K) K) (x : L) :
     finiteAdeleBaseChangeEquiv K L (a ⊗ₜ x) =
-      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
-  have h : (finiteAdeleBaseChangeEquiv K L).toAlgHom = finiteAdeleBaseChangeHom K L := by simp
-  exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans (finiteAdeleBaseChangeHom_tmul K L a x)
+      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (FiniteAdeleRing (𝓞 L) L) x :=
+  finiteAdeleBaseChangeAlgEquiv_tmul K L a x
 
 /-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
 theorem finiteAdeleBaseChangeEquiv_one_tmul (x : L) :
