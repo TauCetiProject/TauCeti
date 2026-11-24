@@ -89,8 +89,8 @@ theorem comap_form_apply [NumberField K] (f : F →ₗ[𝓞 K] E) (hf : Function
 /-- The pullback metric agrees with `h` on vectors of `F`. -/
 theorem comap_form_tmul [NumberField K] (f : F →ₗ[𝓞 K] E) (hf : Function.Injective f)
     (σ : K →+* ℂ) (x y : F) :
-    (h.comap f hf).form σ (1 ⊗ₜ x) (1 ⊗ₜ y) = h.form σ (1 ⊗ₜ f x) (1 ⊗ₜ f y) :=
-  (rfl)
+    (h.comap f hf).form σ (1 ⊗ₜ x) (1 ⊗ₜ y) = h.form σ (1 ⊗ₜ f x) (1 ⊗ₜ f y) := by
+  rw [comap_form_apply, LinearMap.baseChange_tmul, LinearMap.baseChange_tmul]
 
 /-- The norms of the pullback metric are those of `h`. -/
 @[simp]

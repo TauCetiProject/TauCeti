@@ -257,7 +257,7 @@ def fiberConj (σ : K →+* ℂ) :
 @[simp]
 theorem fiberConj_tmul (σ : K →+* ℂ) (c : Codomain σ) (x : E) :
     fiberConj E σ (c ⊗ₜ x) = Codomain.conj σ c ⊗ₜ x :=
-  (rfl)
+  LinearMap.rTensor_tmul _ _ _ _
 
 theorem fiberConj_one_tmul (σ : K →+* ℂ) (x : E) :
     fiberConj E σ ((1 : Codomain σ) ⊗ₜ x) = 1 ⊗ₜ x := by
