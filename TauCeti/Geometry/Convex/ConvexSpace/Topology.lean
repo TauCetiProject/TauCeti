@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Maps and homeomorphisms between standard simplices
@@ -23,22 +26,51 @@ with no finiteness assumption on the vertex types; `Convexity.StdSimplex.continu
 bundles it as a continuous map. This makes affine simplices, such as the simplices of a
 barycentric subdivision, available as continuous maps between topological standard simplices.
 
+The facet of the standard simplex `Δⁿ⁺¹` opposite the vertex `j` is included by
+`Convexity.StdSimplex.faceInclusion j : C(Δⁿ, Δⁿ⁺¹)`, the vertex map `j.succAbove`, and composites
+of facet inclusions agree when the composites of their vertex maps do
+(`Convexity.StdSimplex.faceInclusion_comp_faceInclusion`).
+
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuously on a point `x`
 of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
 
+The unconditional series sum of the weights of a point of `StdSimplex R α` equals `1`
+(`Convexity.StdSimplex.tsum_weights`). Over finitely many vertices, the weight vectors of the
+points of a standard simplex form a closed set whenever the coefficients carry an order-closed
+topology with continuous addition (`Convexity.StdSimplex.isClosed_range_toFun_comp_weights`); no
+ring structure is needed, so this also covers `ℝ≥0`.
+
 A standard simplex over a Hausdorff ring is Hausdorff (`Convexity.StdSimplex.t2Space`), so
-continuous surjections onto it from compact spaces are quotient maps. When the vertex type is
-finite and the ring is first-countable, the standard simplex is also first-countable
-(`Convexity.StdSimplex.firstCountableTopology`).
+continuous surjections onto it from compact spaces are quotient maps. Over a finite vertex type, a
+standard simplex over a (pseudo)metrizable ring is (pseudo)metrizable
+(`Convexity.StdSimplex.pseudoMetrizableSpace`).
 -/
 
 public section
 
 namespace Convexity.StdSimplex
 
+/-- The weights of a point of a standard simplex have series sum `1`. -/
+@[simp]
+theorem tsum_weights {R α : Type*} [LE R] [AddCommMonoid R] [One R] [TopologicalSpace R]
+    (s : StdSimplex R α) : ∑' a, s.weights a = 1 :=
+  (tsum_eq_sum fun _ ha ↦ Finsupp.notMem_support_iff.mp ha).trans s.total
+
 variable {R : Type*} [PartialOrder R] {M N : Type*}
 
 section Semiring
+
+/-- Over finitely many vertices, the weight vectors of the points of a standard simplex form a
+closed set of functions. The argument is the closed-range part of Mathlib's
+`Convexity.StdSimplex.isClosedEmbedding_toFun_comp_weights`, which assumes a topological ring;
+it needs only an order-closed topology and continuous addition. -/
+theorem isClosed_range_toFun_comp_weights [Semiring R] [TopologicalSpace R]
+    [OrderClosedTopology R] [ContinuousAdd R] [Finite M] :
+    IsClosed (Set.range (fun t ↦ t.weights : StdSimplex R M → M → R)) := by
+  have := Fintype.ofFinite M
+  rw [range_toFun_comp_weights]
+  refine IsClosed.inter (isClosed_iInter fun _ ↦ isClosed_le ?_ ?_) (isClosed_eq ?_ ?_)
+  all_goals fun_prop
 
 variable [Semiring R] [IsStrictOrderedRing R]
 
@@ -125,10 +157,38 @@ instance t2Space [T2Space R] : T2Space (StdSimplex R N) :=
   .of_injective_continuous (f := fun t : StdSimplex R N ↦ ⇑t.weights)
     (fun _ _ h ↦ ext (DFunLike.coe_injective h)) (continuous_pi (continuous_weights_apply R))
 
-/-- A finite-dimensional standard simplex over a first-countable ring is first-countable, since its
-topology is induced by the coordinate embedding into `N → R`. -/
-instance firstCountableTopology [FirstCountableTopology R] [Finite N] :
-    FirstCountableTopology (StdSimplex R N) :=
-  (isEmbedding_toFun_comp_weights R N).isInducing.firstCountableTopology
+/-- A standard simplex on a finite type over a pseudometrizable ring is pseudometrizable (and hence
+metrizable via `t2Space` whenever `R` is metrizable). -/
+instance pseudoMetrizableSpace [Finite M] [TopologicalSpace.PseudoMetrizableSpace R] :
+    TopologicalSpace.PseudoMetrizableSpace (StdSimplex R M) :=
+  (isEmbedding_toFun_comp_weights R M).isInducing.pseudoMetrizableSpace
+
+section Facets
+
+/-- The inclusion of the facet of the standard simplex opposite the vertex `j`. -/
+noncomputable def faceInclusion {n : ℕ} (j : Fin (n + 2)) :
+    C(StdSimplex R (Fin (n + 1)), StdSimplex R (Fin (n + 2))) :=
+  ⟨map j.succAbove, continuous_map R _⟩
+
+/-- The facet inclusion is the simplex vertex map. -/
+@[simp]
+lemma faceInclusion_apply {n : ℕ} (j : Fin (n + 2)) (z : StdSimplex R (Fin (n + 1))) :
+    faceInclusion j z = z.map j.succAbove :=
+  (rfl)
+
+/-- The facet inclusion sends the vertex `k` to the vertex `j.succAbove k`. -/
+lemma faceInclusion_single {n : ℕ} (j : Fin (n + 2)) (k : Fin (n + 1)) :
+    faceInclusion j (single (R := R) k) = single (j.succAbove k) :=
+  map_single _ _
+
+/-- Two composites of facet inclusions agree when the composites of the vertex maps do. -/
+lemma faceInclusion_comp_faceInclusion {n : ℕ} {i j' : Fin (n + 2)} {j i' : Fin (n + 3)}
+    (h : j.succAbove ∘ i.succAbove = i'.succAbove ∘ j'.succAbove) :
+    (faceInclusion (R := R) j).comp (faceInclusion i) =
+      (faceInclusion i').comp (faceInclusion j') := by
+  ext1 z
+  simp only [ContinuousMap.comp_apply, faceInclusion_apply, ← map_comp, h]
+
+end Facets
 
 end Convexity.StdSimplex

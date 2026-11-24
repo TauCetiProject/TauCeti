@@ -103,7 +103,7 @@ theorem exists_negativeDisc_homotopy (ψ₀ ψ₁ : OpenPartialHomeomorph M (E �
     ψ₀.continuousOn_symm.comp_continuous H.continuous fun p ↦ (hHb p.1 p.2).1⟩,
     fun w ↦ ?_, fun w ↦ ?_, fun t w ↦ ?_⟩
   · simp only [ContinuousMap.coe_mk, hH0]
-    exact ψ₀.left_inv (hdisc w w.2).2
+    exact ψ₀.left_inv (hdisc w w.property).2
   · simp only [ContinuousMap.coe_mk, hH1]
   · obtain ⟨hz, hq⟩ := hHb t w
     simp only [ContinuousMap.coe_mk]
@@ -116,7 +116,7 @@ variable {n k : ℕ}
 
 /-- In the coordinates of `ℝⁿ` split into the first `k` and the remaining ones, the normal form
 `c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` of a chart reads `c - ‖u‖² + ‖v‖²`. -/
-private theorem apply_eq_of_transHomeomorph_sumComplEquivProd
+theorem apply_eq_of_transHomeomorph_sumComplEquivProd
     (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) {f : M → ℝ} {c : ℝ}
     (hψ : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2) :
     ∀ y ∈ (ψ.transHomeomorph
@@ -191,7 +191,7 @@ theorem exists_negativeDisc_homotopy_euclidean
   obtain ⟨G, hG0, hG1, hGf⟩ := hG δ hδ
   have he (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) δ) : e w ∈ closedBall 0 δ := by
     rw [mem_closedBall_zero_iff, LinearIsometryEquiv.norm_map]
-    exact mem_closedBall_zero_iff.1 w.2
+    exact mem_closedBall_zero_iff.1 w.property
   refine ⟨⟨fun p ↦ G (p.1, ⟨e p.2, he p.2⟩), by fun_prop⟩, fun w ↦ ?_, fun w ↦ ?_,
     fun t w ↦ ?_⟩
   · simp only [ContinuousMap.coe_mk, hG0, hsymm]
@@ -257,7 +257,7 @@ theorem exists_negativeDisc_homotopy_family_of_charts {P : Type*} [TopologicalSp
       (continuous_fst.prodMk H.continuous) fun q ↦ ⟨mem_univ _, (hHb q.1 q.2.1 q.2.2).1⟩⟩,
     fun p w ↦ ?_, fun p w ↦ ?_, fun p t w ↦ ?_⟩
   · simp only [ContinuousMap.coe_mk, hH0]
-    exact (ψ₀ p).left_inv (h₁ p (hdisc w w.2)).2
+    exact (ψ₀ p).left_inv (h₁ p (hdisc w w.property)).2
   · simp only [ContinuousMap.coe_mk, hH1]
   · obtain ⟨hz, hq⟩ := hHb p t w
     simp only [ContinuousMap.coe_mk]
@@ -353,7 +353,7 @@ theorem exists_negativeDisc_homotopy_family_of_charts_euclidean {n k : ℕ} {P :
   obtain ⟨G, hG0, hG1, hGf⟩ := hG δ hδ
   have he (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) δ) : e w ∈ closedBall 0 δ := by
     rw [mem_closedBall_zero_iff, LinearIsometryEquiv.norm_map]
-    exact mem_closedBall_zero_iff.1 w.2
+    exact mem_closedBall_zero_iff.1 w.property
   refine ⟨⟨fun q ↦ G (q.1, q.2.1, ⟨e q.2.2, he q.2.2⟩), by fun_prop⟩, fun p w ↦ ?_,
     fun p w ↦ ?_, fun p t w ↦ ?_⟩
   · simp only [ContinuousMap.coe_mk, hG0, hsymm]

@@ -10,7 +10,7 @@ import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -131,6 +131,15 @@ theorem heatDuhamelPotential_smul (c : ℝ) (f : ℝ → E → F) (t : ℝ) (x :
   simp only [heatDuhamelPotential_def, Pi.smul_apply, convolution_smul]
   exact intervalIntegral.integral_smul c _
 
+/-- The Duhamel heat potential commutes with a continuous linear equivalence of the values. -/
+theorem heatDuhamelPotential_comp_continuousLinearEquiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (L : F ≃L[ℝ] G) (f : ℝ → E → F) (t : ℝ) (x : E) :
+    heatDuhamelPotential (fun s y ↦ L (f s y)) t x = L (heatDuhamelPotential f t x) := by
+  have hconv : ∀ s, (heatKernel (t - s) ⋆ fun y ↦ L (f s y)) x =
+      L ((heatKernel (t - s) ⋆ f s) x) := fun s ↦ by
+    simp only [convolution_lsmul, ← L.integral_comp_comm, map_smul]
+  simp only [heatDuhamelPotential_def, hconv, intervalIntegral, ← L.integral_comp_comm, map_sub]
+
 /-- The Duhamel heat potential vanishes at time zero. -/
 @[simp]
 theorem heatDuhamelPotential_zero (f : ℝ → E → F) : heatDuhamelPotential f 0 = 0 := by
@@ -213,7 +222,7 @@ theorem exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution
   rw [iteratedFDeriv_heatKernel_convolution (g := f s) hτ
     (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hB m x]
   refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ]
+  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ.le]
 
 /-- For jointly measurable essentially bounded `f`, the spatial derivatives
 `D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. -/
@@ -668,32 +677,44 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
       ‖∫ s in a..τ, Φ τ s‖ ≤ C₁ * H * (τ - a) ^ ((α : ℝ) / 2) :=
     hC₁ (hfM' hτt) (hH' hτt) a ha haτ x
   rw [hrep (ht'.trans htt'.le) le_rfl, hrep ht' htt'.le]
+  -- `2 ^ (α / 2) ≤ 2` since `α / 2 ≤ 1`, so in both cases the coefficient is at most `3 C₁ H`.
+  have h2 : (2 : ℝ) ^ ((α : ℝ) / 2) * (C₁ * H * h ^ ((α : ℝ) / 2)) ≤
+      2 * (C₁ * H * h ^ ((α : ℝ) / 2)) :=
+    mul_le_mul_of_nonneg_right (Real.rpow_le_self_of_one_le one_le_two (by linarith))
+      (mul_nonneg (mul_nonneg hC₁₀ H.coe_nonneg) (Real.rpow_nonneg hh.le _))
   rcases le_or_gt t' h with hsmall | hbig
   · -- For `t' ≤ h` both Hessians are already of size `O(H h^(α/2))`.
-    have hb := norm_sub_le_three_mul_rpow_of_le_sub (x := ∫ s in 0..t, Φ t s)
-      (y := ∫ s in 0..t', Φ t' s) (c := C₁ * H) (β := (α : ℝ) / 2)
-      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) ht' hsmall
+    have hb := dist_le_rpow_add_one_mul_mul_rpow_of_le_mul (x := ∫ s in 0..t, Φ t s)
+      (y := ∫ s in 0..t', Φ t' s) (z := 0) (c := C₁ * H) (β := (α : ℝ) / 2) (A := 2)
+      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) ht.le (by linarith) ht' hsmall
       (by simpa using hnear le_rfl ht.le le_rfl) (by simpa using hnear le_rfl ht' htt'.le)
+    rw [dist_eq_norm] at hb
     have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
     linarith
-  -- Otherwise split both integrals at `s₀ = 2 t' - t = t' - h`.
-  have hs₀ : 0 ≤ 2 * t' - t := by linarith
-  have hint {τ : ℝ} (hτ : 0 < τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 τ :=
-    intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf (hfM' hτt)
-      (hH' hτt) hα₀ hτ le_rfl x
+  -- Otherwise split both integrals at `s₀ = t' - h > 0`; the tails have lengths `2 h` and `h`.
+  set s₀ := t' - h with hs₀_def
+  have hs₀ : 0 < s₀ := by linarith
+  have hlen₁ : t - s₀ = 2 * h := by linarith
+  have hlen₂ : t' - s₀ = h := by linarith
+  -- For `s₀ ≤ τ ≤ t`, the slice Hessians at time `τ` are integrable on `[0, s₀]` and `[s₀, τ]`.
+  have hint {τ : ℝ} (hτ : s₀ ≤ τ) (hτt : τ ≤ t) :
+      IntervalIntegrable (Φ τ) volume 0 s₀ ∧ IntervalIntegrable (Φ τ) volume s₀ τ := by
+    have hg := intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf
+      (hfM' hτt) (hH' hτt) hα₀ (hs₀.trans_le hτ) le_rfl x
+    have hmem : s₀ ∈ [[0, τ]] := by
+      rw [uIcc_of_le (hs₀.le.trans hτ)]
+      exact ⟨hs₀.le, hτ⟩
+    exact ⟨hg.mono_set (uIcc_subset_uIcc_left hmem), hg.mono_set (uIcc_subset_uIcc_right hmem)⟩
   -- Away from the diagonal, the time Lipschitz bound integrates to `O(H h^(α/2))`.
-  have hfar : ‖∫ s in 0..2 * t' - t, (Φ t s - Φ t' s)‖ ≤
-      2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
-    simpa only [mul_assoc, ← hh_def, show 2 * t' - t = t' - h by rw [hh_def]; ring] using
+  have hfar : ‖∫ s in 0..s₀, (Φ t s - Φ t' s)‖ ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
+    simpa only [mul_assoc, ← hh_def, ← hs₀_def] using
       norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
-        (by positivity) hh hbig hα₂' (hK hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
-  have hb := norm_intervalIntegral_sub_le_of_sub_le (c := C₁ * H) (β := (α : ℝ) / 2)
-    (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) hs₀ htt'.le (hint ht le_rfl)
-    (hint (by linarith) htt'.le) hfar
-    (by simpa only [show t - (2 * t' - t) = 2 * (t - t') by ring] using
-      hnear hs₀ (by linarith) le_rfl)
-    (by simpa only [show t' - (2 * t' - t) = t - t' by ring] using
-      hnear hs₀ (by linarith) htt'.le)
+        hh hbig hα₂' (hK hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
+  obtain ⟨hg₁, hg₁'⟩ := hint (by linarith) le_rfl
+  obtain ⟨hg₂, hg₂'⟩ := hint (by linarith) htt'.le
+  have hb := norm_intervalIntegral_sub_le_of_sub_le hg₁ hg₁' hg₂ hg₂' hfar
+    (hnear hs₀.le (by linarith) le_rfl) (hnear hs₀.le (by linarith) htt'.le)
+  rw [hlen₁, hlen₂, Real.mul_rpow zero_le_two hh.le] at hb
   linarith
 
 /-- **The temporal Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 2`

@@ -69,8 +69,8 @@ theorem orderedProdRealizationHomeomorph_apply (x : Realization (K.orderedProd L
 theorem orderedProdRealizationHomeomorph_symm_fst_val
     (p : Realization K × Realization L) :
     Finsupp.mapDomain Prod.fst
-      ((K.orderedProdRealizationHomeomorph L hprod).symm p).1 = p.1.1 := by
-  have h := congrArg (fun q => q.1.1)
+      ((K.orderedProdRealizationHomeomorph L hprod).symm p).val = p.1.val := by
+  have h := congrArg (fun q => q.1.val)
     ((K.orderedProdRealizationHomeomorph L hprod).apply_symm_apply p)
   simpa only [orderedProdRealizationHomeomorph_apply,
     orderedProdRealizationMap_fst_val] using h
@@ -80,8 +80,8 @@ theorem orderedProdRealizationHomeomorph_symm_fst_val
 theorem orderedProdRealizationHomeomorph_symm_snd_val
     (p : Realization K × Realization L) :
     Finsupp.mapDomain Prod.snd
-      ((K.orderedProdRealizationHomeomorph L hprod).symm p).1 = p.2.1 := by
-  have h := congrArg (fun q => q.2.1)
+      ((K.orderedProdRealizationHomeomorph L hprod).symm p).val = p.2.val := by
+  have h := congrArg (fun q => q.2.val)
     ((K.orderedProdRealizationHomeomorph L hprod).apply_symm_apply p)
   simpa only [orderedProdRealizationHomeomorph_apply,
     orderedProdRealizationMap_snd_val] using h

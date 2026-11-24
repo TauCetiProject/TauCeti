@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Spin.OddStructure
-public import Mathlib.RepresentationTheory.Intertwining
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
@@ -147,7 +146,7 @@ noncomputable def spinRepEquivNegLineCoordinate :
     (spinRep Q P).Equiv (spinRep Q P.negLineCoordinate) :=
   .mk (involuteEquiv (Q := (0 : QuadraticForm K P.W))).toLinearEquiv fun g ↦
     LinearMap.ext fun s ↦ by
-      simp [spinAction_negLineCoordinate_apply_of_mem_even P (spinGroup.mem_even g.2)]
+      simp [spinAction_negLineCoordinate_apply_of_mem_even P (spinGroup.mem_even g.property)]
 
 @[simp]
 theorem spinRepEquivNegLineCoordinate_apply (s : ExteriorAlgebra K P.W) :

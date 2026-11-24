@@ -90,7 +90,7 @@ theorem norm_apply_coe_of_top_eq_ground (hL : L.top = L.ground) (x : F.level L.t
     (L.norm F x : F.toRep.V) = x := by
   rw [L.norm_apply_coe_of_mem_level_ground F x, L.degree_eq_one_of_top_eq_ground hL]
   · simp
-  · simpa [hL] using x.2
+  · simpa [hL] using x.property
 
 /-- The norm of a layer whose top and ground subgroups agree is surjective. -/
 theorem norm_surjective_of_top_eq_ground (hL : L.top = L.ground) :

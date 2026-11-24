@@ -26,7 +26,7 @@ tree joining vertices from different components.
 * `TauCeti.TerminalCut.exists_isCutTree_pairCutCapacity`: pair capacities admit cut trees.
 * `Graph.exists_isCutTree_edgeCutCapacity`: finite weighted multigraphs admit cut trees.
 * `Graph.exists_isUnitCutTree`: finite multigraphs admit unit-capacity cut trees.
-* `IsFlowEquivalentTree.reachable_deleteEdges_iff_edgeReachability`: threshold components of a
+* `IsFlowEquivalentTree.reachable_deleteEdges_iff_isEdgeReachable`: threshold components of a
   unit flow-equivalent tree are the local edge-connectivity classes of the multigraph.
 * `IsFlowEquivalentTree.exists_edge_edgeConnectivity_eq_weight`: the global edge connectivity is
   the minimum tree-edge weight.
@@ -99,17 +99,14 @@ theorem exists_weight_eq_edgeReachability
   rw [G.edgeReachability_eq_pairMinimumValue hst, ← hwe]
 
 /-- Deleting the tree edges of weight below `k` leaves two actual vertices connected exactly when
-they are equal or their native local edge reachability is at least `k`. -/
-theorem reachable_deleteEdges_iff_edgeReachability
+they are natively `k`-edge-reachable. -/
+theorem reachable_deleteEdges_iff_isEdgeReachable
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) (k : ℕ) {s t : V(G)} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
-      s = t ∨ (k : ℕ∞) ≤ G.edgeReachability s t := by
-  rw [hT.reachable_deleteEdges_iff]
-  by_cases hst : s = t
-  · simp [hst]
-  · simp only [hst, false_or]
-    rw [G.edgeReachability_eq_pairMinimumValue hst]
-    exact_mod_cast Iff.rfl
+      G.IsEdgeReachable k s t := by
+  rw [hT.reachable_deleteEdges_iff_le_iInf_pairMinimumValue,
+    G.isEdgeReachable_iff_le_edgeReachability,
+    G.edgeReachability_eq_iInf_pairMinimumValue]
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 
@@ -141,36 +138,20 @@ variable {α β : Type*} {G : Graph α β} [Finite V(G)] [Fintype E(G)]
 variable {T : SimpleGraph V(G)} {w : Sym2 V(G) → ℕ}
 
 /-- The global edge connectivity of a finite multigraph with at least two actual vertices is the
-minimum weight of an edge in any unit-capacity flow-equivalent tree. -/
+minimum weight of an edge in any unit-capacity flow-equivalent tree. The witness includes the
+minimum-weight certificate, so the result identifies the minimum rather than merely an edge of
+the right weight. -/
 theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
     (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
-    ∃ u v, T.Adj u v ∧ G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
-  have hTne : T ≠ ⊥ := by
-    intro h
-    rw [h] at hT
-    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
-  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
-  refine ⟨u, v, huv, le_antisymm ?_ ?_⟩
-  · calc
-      G.edgeConnectivity ≤ G.edgeReachability u v :=
-        G.edgeConnectivity_le_edgeReachability u.property v.property
-      _ = ((TauCeti.TerminalCut.pairMinimumValue
-          (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) u v : ℕ) : ℕ∞) :=
-        G.edgeReachability_eq_pairMinimumValue huv.ne
-      _ = (w s(u, v) : ℕ∞) := by rw [hT.weight_eq huv]
-  · rw [G.edgeConnectivity_eq_iInf_edgeReachability]
-    refine le_iInf fun x ↦ le_iInf fun hx ↦ le_iInf fun y ↦ le_iInf fun hy ↦ ?_
-    let sx : V(G) := ⟨x, hx⟩
-    let sy : V(G) := ⟨y, hy⟩
-    by_cases hxy : sx = sy
-    · have hxy' : x = y := congrArg Subtype.val hxy
-      subst y
-      rw [G.edgeReachability_self hx]
-      exact le_top
-    · obtain ⟨p, hp, -⟩ := hT.isTree.existsUnique_path sx sy
-      obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hxy hp
-      rw [G.edgeReachability_eq_pairMinimumValue hxy]
-      exact_mod_cast (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
+    ∃ u v, T.Adj u v ∧ (∀ e ∈ T.edgeSet, w s(u, v) ≤ w e) ∧
+      G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
+  obtain ⟨u, v, huv, hmin, hvalue⟩ := hT.exists_edge_iInf_pairMinimumValue_eq_weight
+    (Nat.castOrderEmbedding : ℕ ↪o ℕ∞).toOrderHom
+  refine ⟨u, v, huv, hmin, ?_⟩
+  rw [G.edgeConnectivity_eq_iInf_edgeReachability, ← iInf_subtype'']
+  simp_rw [← iInf_subtype'']
+  simp_rw [G.edgeReachability_eq_iInf_pairMinimumValue]
+  simpa only [OrderEmbedding.toOrderHom_coe, Nat.castOrderEmbedding_apply] using hvalue
 
 end TauCeti.TerminalCut.IsFlowEquivalentTree
 

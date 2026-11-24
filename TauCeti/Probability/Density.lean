@@ -11,18 +11,13 @@ public import Mathlib.Probability.HasLaw
 /-!
 # Densities from laws presented as `withDensity`
 
-Two bridges from a law given as `μ.withDensity f` to Mathlib's `MeasureTheory.HasPDF` and `pdf`,
-together with three bridges for a law presented by a nonnegative real-valued density:
-`integrable_withDensity_ofReal_iff` and `integral_withDensity_ofReal` reduce integrability and
-integration under such a law to the density-weighted function against the reference measure, and
-`measureReal_withDensity_ofReal` computes the real mass of a measurable set as the integral of the
-density over it.
+Two bridges from a law given as `μ.withDensity f` to Mathlib's `MeasureTheory.HasPDF` and `pdf`.
 
 Several of Mathlib's continuous scalar families can be *presented* as `withDensity` measures — some
 by definition, others only away from a degenerate parameter — and so can laws Tau Ceti builds on top
 of them, but none is connected to `HasPDF`. These theorems make that connection once, so no
 individual family has to repeat the `hasPDF_of_map_eq_withDensity hX.aemeasurable … hX.map_eq`
-plumbing, and the family files do not each re-prove the same density integral and mass identities.
+plumbing.
 
 The file is deliberately neutral: it mentions no particular distribution, so a module defining one
 family can import it without acquiring the others.
@@ -30,17 +25,11 @@ family can import it without acquiring the others.
 ## Main results
 
 * `hasPDF_of_hasLaw_withDensity` — a law presented as `μ.withDensity f` gives `HasPDF`;
-* `pdf_eq_of_hasLaw_withDensity` — and its density is `f`;
-* `integrable_withDensity_ofReal_iff` — under a law `μ.withDensity (ENNReal.ofReal ∘ f)`, a
-  function is integrable iff `f`-weighted against the reference measure it is;
-* `integrable_of_eq_withDensity` — a real density presenting a finite measure is integrable
-  against the reference measure;
-* `integral_withDensity_ofReal` — and its integral is the integral of the `f`-weighted integrand;
-* `measureReal_withDensity_ofReal` — the real mass of a measurable set on which the density `f` is
-  nonnegative and a.e. measurable is its integral over that set.
+* `pdf_eq_of_hasLaw_withDensity` — and its density is `f`.
 
 The density bridges are stated for an arbitrary codomain and codomain measure, since neither proof
-uses anything about `ℝ` or `volume`, and both ask only for `AEMeasurable f μ`.
+uses anything about `ℝ` or `volume`; both ask for `AEMeasurable f μ`, and the second also needs
+the reference measure `μ` to be σ-finite.
 -/
 
 public section
@@ -72,59 +61,6 @@ theorem pdf_eq_of_hasLaw_withDensity [SigmaFinite μ] (hf : AEMeasurable f μ)
     (hX : HasLaw X (μ.withDensity f) P) : pdf X P μ =ᵐ[μ] f := by
   have : HasPDF X P μ := hasPDF_of_hasLaw_withDensity hf hX
   exact (pdf.eq_of_map_eq_withDensity' f hf).mp hX.map_eq
-
-section RealDensity
-
-variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {μ : Measure α} {g : α → F} {ρ : α → ℝ} {s : Set α}
-
-/-- Under a law presented by a real-valued density `ρ`, a function is integrable iff its scalar
-product with `ρ` is integrable against the reference measure. The density need only be nonnegative
-a.e.; the `ℝ≥0∞`-valued density used in the presentation is its `ENNReal.ofReal` lift. -/
-theorem integrable_withDensity_ofReal_iff (hρ : AEMeasurable ρ μ) (hnn : 0 ≤ᵐ[μ] ρ) :
-    Integrable g (μ.withDensity (fun x => ENNReal.ofReal (ρ x))) ↔
-      Integrable (fun x => ρ x • g x) μ := by
-  have hlt : ∀ᵐ x ∂μ, ENNReal.ofReal (ρ x) < ⊤ :=
-    ae_of_all _ fun _ => ENNReal.ofReal_lt_top
-  rw [integrable_withDensity_iff_integrable_smul₀' hρ.ennreal_ofReal hlt]
-  refine integrable_congr ?_
-  filter_upwards [hnn] with x hx
-  rw [ENNReal.toReal_ofReal hx]
-
-/-- A nonnegative real density presenting a finite measure is integrable against the
-reference measure. -/
-theorem integrable_of_eq_withDensity {ν : Measure α} [IsFiniteMeasure ν]
-    (hν : ν = μ.withDensity fun x => ENNReal.ofReal (ρ x)) (hρ : AEMeasurable ρ μ)
-    (hnn : 0 ≤ᵐ[μ] ρ) : Integrable ρ μ := by
-  have h1 : Integrable (fun _ => (1 : ℝ)) ν := integrable_const 1
-  rw [hν, integrable_withDensity_ofReal_iff hρ hnn] at h1
-  simpa using h1
-
-/-- Under a law presented by a real-valued density `ρ`, integration is integration of the
-`ρ`-weighted integrand against the reference measure. This is the integral counterpart of
-`TauCeti.Probability.integrable_withDensity_ofReal_iff`, and it needs no integrability
-hypothesis: when the integrand is not integrable both sides are `0`.
-
-It specializes Mathlib's `integral_withDensity_eq_integral_toReal_smul₀` to densities of the form
-`ENNReal.ofReal ∘ ρ`, where the `toReal` of the density reduces to `ρ` itself. -/
-theorem integral_withDensity_ofReal (hρ : AEMeasurable ρ μ) (hnn : 0 ≤ᵐ[μ] ρ) (g : α → F) :
-    ∫ x, g x ∂(μ.withDensity fun x => ENNReal.ofReal (ρ x)) = ∫ x, ρ x • g x ∂μ := by
-  rw [integral_withDensity_eq_integral_toReal_smul₀ hρ.ennreal_ofReal
-    (ae_of_all _ fun _ => ENNReal.ofReal_lt_top)]
-  refine integral_congr_ae ?_
-  filter_upwards [hnn] with x hx
-  rw [ENNReal.toReal_ofReal hx]
-
-/-- Integrating a density that is nonnegative and measurable on `s` computes the real mass of `s`
-under the law presented by that density. The nonnegativity and measurability hypotheses are only
-local to `s`, and no integrability is needed: when the integral is infinite both sides are `0`. -/
-theorem measureReal_withDensity_ofReal (hnn : 0 ≤ᵐ[μ.restrict s] ρ)
-    (hs : MeasurableSet s) (hρ : AEMeasurable ρ (μ.restrict s)) :
-    (μ.withDensity (fun x => ENNReal.ofReal (ρ x))).real s = ∫ x in s, ρ x ∂μ := by
-  rw [measureReal_def, withDensity_apply _ hs,
-    integral_eq_lintegral_of_nonneg_ae hnn hρ.aestronglyMeasurable]
-
-end RealDensity
 
 end Probability
 
