@@ -19,9 +19,9 @@ free resolutions are moved from a ring to its localizations and to polynomial ri
 
 ## Main results
 
-* `TauCeti.Module.HasFiniteFreeResolutionLE.baseChange_of_flat`: flat base change of a finite free
+* `TauCeti.Module.HasFiniteFreeResolutionLE.baseChange`: flat base change of a finite free
   resolution of length at most `n`.
-* `TauCeti.Module.HasFiniteFreeResolution.baseChange_of_flat`: flat base change of a finite free
+* `TauCeti.Module.HasFiniteFreeResolution.baseChange`: flat base change of a finite free
   resolution.
 
 ## References
@@ -43,7 +43,7 @@ variable {R : Type u} [CommRing R] {M : Type u} [AddCommGroup M] [Module R M]
 
 /-- **Flat base change.** If `A` is a flat `R`-algebra and `M` has a finite free resolution of
 length at most `n` over `R`, then `A ⊗[R] M` has one of length at most `n` over `A`. -/
-theorem HasFiniteFreeResolutionLE.baseChange_of_flat {n : ℕ}
+theorem HasFiniteFreeResolutionLE.baseChange {n : ℕ}
     (h : HasFiniteFreeResolutionLE R n M) : HasFiniteFreeResolutionLE A n (A ⊗[R] M) := by
   induction n generalizing M with
   | zero =>
@@ -66,9 +66,9 @@ theorem HasFiniteFreeResolutionLE.baseChange_of_flat {n : ℕ}
 
 /-- **Flat base change.** If `A` is a flat `R`-algebra and `M` has a finite free resolution over
 `R`, then `A ⊗[R] M` has one over `A`. -/
-theorem HasFiniteFreeResolution.baseChange_of_flat (h : HasFiniteFreeResolution R M) :
+theorem HasFiniteFreeResolution.baseChange (h : HasFiniteFreeResolution R M) :
     HasFiniteFreeResolution A (A ⊗[R] M) :=
   let ⟨n, h⟩ := hasFiniteFreeResolution_iff.mp h
-  hasFiniteFreeResolution_iff.mpr ⟨n, h.baseChange_of_flat A⟩
+  hasFiniteFreeResolution_iff.mpr ⟨n, h.baseChange A⟩
 
 end TauCeti.Module
