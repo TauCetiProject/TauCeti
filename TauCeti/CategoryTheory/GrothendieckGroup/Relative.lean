@@ -8,7 +8,7 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Split
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.EssentiallySmall
 
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
+import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # The relative Grothendieck group of a functor
