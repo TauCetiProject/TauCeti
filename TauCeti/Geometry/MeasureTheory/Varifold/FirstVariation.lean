@@ -12,6 +12,7 @@ public import Mathlib.Topology.ContinuousMap.CompactlySupported
 public import TauCeti.Topology.Grassmannian.StarProjection
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
+import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # The first variation of a varifold on an open subset of a Euclidean space
@@ -91,12 +92,31 @@ theorem tangentialDivergence_def (X : E → E) (x : E) (P : E →L[ℝ] E) :
       LinearMap.trace ℝ E ((P ∘L fderiv ℝ X x : E →L[ℝ] E) : E →ₗ[ℝ] E) :=
   (rfl)
 
+/-- The zero vector field has tangential divergence `0`. -/
+@[simp]
+theorem tangentialDivergence_zero (x : E) (P : E →L[ℝ] E) :
+    tangentialDivergence (0 : E → E) x P = 0 := by
+  simp [tangentialDivergence_def]
+
+/-- The tangential divergence of `-X` is the negative of that of `X`. -/
+@[simp]
+theorem tangentialDivergence_neg (X : E → E) (x : E) (P : E →L[ℝ] E) :
+    tangentialDivergence (-X) x P = -tangentialDivergence X x P := by
+  simp [tangentialDivergence_def, fderiv_neg]
+
 /-- The tangential divergence is additive in the vector field, at a point where both fields are
 differentiable. -/
 theorem tangentialDivergence_add {X Y : E → E} {x : E} (hX : DifferentiableAt ℝ X x)
     (hY : DifferentiableAt ℝ Y x) (P : E →L[ℝ] E) :
     tangentialDivergence (X + Y) x P = tangentialDivergence X x P + tangentialDivergence Y x P := by
   simp [tangentialDivergence_def, fderiv_add hX hY]
+
+/-- The tangential divergence of `X - Y` is the difference of those of `X` and `Y`, at a point where
+both fields are differentiable. -/
+theorem tangentialDivergence_sub {X Y : E → E} {x : E} (hX : DifferentiableAt ℝ X x)
+    (hY : DifferentiableAt ℝ Y x) (P : E →L[ℝ] E) :
+    tangentialDivergence (X - Y) x P = tangentialDivergence X x P - tangentialDivergence Y x P := by
+  simp [tangentialDivergence_def, fderiv_sub hX hY]
 
 /-- The tangential divergence is homogeneous in the vector field. -/
 @[simp]
@@ -247,6 +267,7 @@ def firstVariation (V : Measure (W × grassmannian E k)) : 𝓓^{1}(W, E) →L[�
   else 0
 
 /-- The first variation integrates the tangential divergence against the varifold. -/
+@[simp]
 theorem firstVariation_apply [IsFiniteMeasureOnCompacts V] (X : 𝓓^{1}(W, E)) :
     firstVariation V X = ∫ p, tangentialDivergence X p.1 p.2 ∂V := by
   rw [firstVariation, dite_eq_left ‹_›]
@@ -269,8 +290,6 @@ theorem abs_firstVariation_le [IsFiniteMeasureOnCompacts V] (X : 𝓓^{1}(W, E))
 /-- The first variation is additive in the varifold. -/
 theorem firstVariation_add_measure [IsFiniteMeasureOnCompacts V₁] [IsFiniteMeasureOnCompacts V₂] :
     firstVariation (V₁ + V₂) = firstVariation V₁ + firstVariation V₂ := by
-  have : IsFiniteMeasureOnCompacts (V₁ + V₂) :=
-    ⟨fun _ hK ↦ by simp [hK.measure_lt_top]⟩
   ext X
   simp only [add_apply, firstVariation_apply]
   exact integral_add_measure (integrable_tangentialDivergence X) (integrable_tangentialDivergence X)
@@ -280,14 +299,13 @@ theorem firstVariation_smul_measure (c : ℝ≥0) (V : Measure (W × grassmannia
     firstVariation (c • V) = (c : ℝ) • firstVariation V := by
   by_cases hV : IsFiniteMeasureOnCompacts V
   · ext X
-    simp [firstVariation_apply, integral_smul_nnreal_measure, NNReal.smul_def]
+    simp [integral_smul_nnreal_measure, NNReal.smul_def]
   · obtain rfl | hc := eq_or_ne c 0
     · ext X
-      simp [firstVariation_apply]
-    refine (firstVariation_of_not_isFiniteMeasureOnCompacts fun h ↦ hV ?_).trans
-      (by rw [firstVariation_of_not_isFiniteMeasureOnCompacts hV, smul_zero])
-    have := IsFiniteMeasureOnCompacts.smul_nnreal (c • V) c⁻¹
-    rwa [smul_smul, inv_mul_cancel₀ hc, one_smul] at this
+      simp
+    rw [firstVariation_of_not_isFiniteMeasureOnCompacts
+        (by rwa [isFiniteMeasureOnCompacts_smul_nnreal_iff hc]),
+      firstVariation_of_not_isFiniteMeasureOnCompacts hV, smul_zero]
 
 /-- The zero varifold has first variation `0`. -/
 @[simp]
@@ -299,7 +317,7 @@ theorem firstVariation_zero_measure : firstVariation (0 : Measure (W × grassman
 theorem firstVariation_zero_dim (V : Measure (W × grassmannian E 0)) : firstVariation V = 0 := by
   by_cases hV : IsFiniteMeasureOnCompacts V
   · ext X
-    simp [firstVariation_apply, tangentialDivergence_eq_zero_of_mem_grassmannian_zero _]
+    simp [tangentialDivergence_eq_zero_of_mem_grassmannian_zero _]
   · exact firstVariation_of_not_isFiniteMeasureOnCompacts hV
 
 /-- For a varifold of `(dim E)`-planes, every plane is `E` itself and the first variation
