@@ -11,6 +11,7 @@ public import Mathlib.Basic.Finite.Defs
 public import Mathlib.GroupTheory.Subgroup.Simple
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Surjecting onto products of simple quotients
@@ -31,6 +32,9 @@ simple, the pair `(f, g) : G →* A × B` is surjective exactly when `ker f` is 
 
 * `MonoidHom.surjective_prod_iff_not_ker_le`: for surjections `f : G →* A` and `g : G →* B` with
   `B` simple, `f.prod g` is surjective if and only if `ker f` is not contained in `ker g`.
+* `MonoidHom.surjective_pi_insert_of_not_iInf_ker_le`: a simple factor whose kernel does not
+  contain the kernel intersection of a subfamily can be added to that subfamily, keeping `G`
+  surjecting onto the product.
 * `MonoidHom.exists_set_iInf_ker_eq_and_surjective_pi`: surjections onto a finite family of
   simple or trivial groups admit a subfamily of nontrivial targets with the same kernel
   intersection, onto whose product `G` surjects.
@@ -64,17 +68,16 @@ theorem surjective_prod_iff_not_ker_le [IsSimpleGroup B] {f : G →* A} {g : G �
 
 variable {ι : Type*} {H : ι → Type*} [∀ i, Group (H i)]
 
-/-- Adding a simple factor `H i` to a subfamily onto whose product `G` surjects keeps `G`
-surjecting, as long as `ker (f i)` does not contain the kernel intersection of the subfamily. -/
-private theorem surjective_pi_insert {f : ∀ i, G →* H i} {J : Set ι} {i : ι}
+/-- **Adding a simple factor.** Let `G` surject onto `∏ j ∈ J, H j` via the `f j`, and let
+`f i : G →* H i` be a surjection onto a simple group. If `ker (f i)` does not contain the
+intersection of the kernels of the `f j`, `j ∈ J`, then `G` also surjects onto
+`∏ j ∈ insert i J, H j`. -/
+theorem surjective_pi_insert_of_not_iInf_ker_le {f : ∀ i, G →* H i} {J : Set ι} {i : ι}
     [IsSimpleGroup (H i)] (hi : Function.Surjective (f i))
     (hJ : Function.Surjective (MonoidHom.pi fun j : J ↦ f j))
     (hle : ¬(⨅ j ∈ J, (f j).ker) ≤ (f i).ker) :
     Function.Surjective (MonoidHom.pi fun j : ↥(insert i J) ↦ f j) := by
-  have hker : (MonoidHom.pi fun j : J ↦ f j).ker = ⨅ j ∈ J, (f j).ker := by
-    ext x
-    simp [mem_ker, Subgroup.mem_iInf, funext_iff]
-  rw [← hker] at hle
+  rw [← iInf_subtype'' J fun j ↦ (f j).ker, ← ker_pi] at hle
   intro t
   obtain ⟨x, hx⟩ := (surjective_prod_iff_not_ker_le hJ hi).2 hle
     (fun j ↦ t ⟨j, Set.mem_insert_of_mem i j.property⟩, t ⟨i, Set.mem_insert i J⟩)
@@ -102,11 +105,12 @@ theorem exists_set_iInf_ker_eq_and_surjective_pi [Finite ι] (f : ∀ i, G →* 
   rcases hH i with hi | hi
   · -- A homomorphism to a trivial group has kernel `⊤`.
     exact fun x _ ↦ mem_ker.2 (Subsingleton.elim _ _)
-  · -- Otherwise `insert i J` would be a larger such set, by `surjective_pi_insert`.
+  · -- Otherwise `insert i J` would be a larger such set, by
+    -- `surjective_pi_insert_of_not_iInf_ker_le`.
     by_contra hle
     have hiJ : insert i J ∈ S :=
       ⟨Set.forall_mem_insert.2 ⟨inferInstance, hJ.prop.1⟩,
-        surjective_pi_insert (hf i) hJ.prop.2 hle⟩
+        surjective_pi_insert_of_not_iInf_ker_le (hf i) hJ.prop.2 hle⟩
     exact hle (iInf₂_le i (hJ.mem_of_prop_insert hiJ))
 
 end MonoidHom

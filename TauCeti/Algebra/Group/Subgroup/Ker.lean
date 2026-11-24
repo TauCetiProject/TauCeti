@@ -12,8 +12,9 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 
 This file supplies the characteristic membership equation for the subgroup equality locus, the
 invariance of the range of a group homomorphism under precomposition with a surjection, the
-compatibility of ranges and kernels with a commutative square, and the range and kernel of the
-pointwise inverse of a homomorphism into a commutative group.
+compatibility of ranges and kernels with a commutative square, the range and kernel of the
+pointwise inverse of a homomorphism into a commutative group, and the kernel of a homomorphism
+into a product.
 
 ## Main results
 
@@ -25,6 +26,8 @@ pointwise inverse of a homomorphism into a commutative group.
   carried into the kernel of the opposite side.
 * `MonoidHom.range_inv`, `MonoidHom.ker_inv`: the pointwise inverse `f⁻¹` has the same range and
   kernel as `f`.
+* `MonoidHom.ker_pi`: the kernel of `MonoidHom.pi f` is the intersection of the kernels of the
+  `f i`.
 * `Subgroup.sup_hom_ext`: homomorphisms out of a join are determined by their restrictions.
 -/
 
@@ -84,6 +87,15 @@ additive group has the same kernel. -/]
 theorem ker_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.ker = f.ker := by
   ext x
   simp
+
+/-- The kernel of a homomorphism into a product is the intersection of the kernels of its
+components. This is the family version of `MonoidHom.ker_prod`. -/
+@[to_additive /-- The kernel of an additive homomorphism into a product is the intersection of the
+kernels of its components. This is the family version of `AddMonoidHom.ker_prod`. -/]
+theorem ker_pi {ι : Type*} {H : ι → Type*} [∀ i, MulOneClass (H i)] (f : ∀ i, G →* H i) :
+    (MonoidHom.pi f).ker = ⨅ i, (f i).ker := by
+  ext x
+  simp [mem_ker, Subgroup.mem_iInf, funext_iff]
 
 end MonoidHom
 

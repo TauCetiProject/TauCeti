@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.LinearDisjoint
 public import TauCeti.FieldTheory.Galois.Restriction
 import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.GroupTheory.NormalSubgroup.SimpleQuotient
 
@@ -36,6 +37,8 @@ used in the proof of Qian's Lemma 2.6(2), with `Δ = PSL₂(𝔽_l)`.
 
 ## Main results
 
+* `IntermediateField.ker_restrictNormalHomBiSupPi`: the kernel of restriction to the members
+  `K j`, `j ∈ J`, is the intersection of the kernels of the restrictions to each `K j`.
 * `IntermediateField.restrictNormalHomISupPi_injective`: an automorphism of the compositum is
   determined by its restrictions to the members.
 * `IntermediateField.biSup_eq_iSup_of_injective`: Galois members `K j`, `j ∈ J`, whose
@@ -97,6 +100,14 @@ noncomputable def restrictNormalHomBiSupPi (J : Set ι) :
 theorem restrictNormalHomBiSupPi_apply (J : Set ι) (σ : Gal(↥(⨆ i, K i)/k)) (j : J) :
     restrictNormalHomBiSupPi K J σ j = restrictNormalHomISupPi K σ j :=
   (rfl)
+
+/-- The kernel of `restrictNormalHomBiSupPi K J` is the intersection of the kernels of the
+restrictions to the `K j` with `j ∈ J`. -/
+theorem ker_restrictNormalHomBiSupPi (J : Set ι) :
+    (restrictNormalHomBiSupPi K J).ker =
+      ⨅ j ∈ J, (inclusion (le_iSup K j)).restrictNormalHom.ker := by
+  rw [restrictNormalHomBiSupPi, MonoidHom.ker_pi, iInf_subtype'' J fun j ↦
+    (inclusion (le_iSup K j)).restrictNormalHom.ker]
 
 variable {K}
 
@@ -174,9 +185,9 @@ theorem exists_biSup_eq_iSup_and_bijective_restrictNormalHomBiSupPi [Finite ι]
   have hinj : Function.Injective (restrictNormalHomBiSupPi K J) := by
     rw [injective_iff_map_eq_one]
     refine fun σ hσ ↦ restrictNormalHomISupPi_injective K (funext fun i ↦ ?_)
-    have hmem : σ ∈ ⨅ j ∈ J, ((inclusion (le_iSup K j)).restrictNormalHom).ker :=
-      Subgroup.mem_iInf.2 fun j ↦ Subgroup.mem_iInf.2 fun hj ↦ congrFun hσ ⟨j, hj⟩
-    rw [hJker] at hmem
+    have hmem : σ ∈ ⨅ i, (inclusion (le_iSup K i)).restrictNormalHom.ker := by
+      rw [← hJker, ← ker_restrictNormalHomBiSupPi]
+      exact hσ
     rw [map_one, Pi.one_apply, restrictNormalHomISupPi_apply]
     exact Subgroup.mem_iInf.1 hmem i
   refine ⟨J, fun j hj h ↦ ?_, biSup_eq_iSup_of_injective hinj, hinj, hJsurj⟩
