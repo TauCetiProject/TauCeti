@@ -110,8 +110,8 @@ private theorem map_symmetricCongruenceLinearMap_lkjMeasure {M : Matrix (Fin p) 
   by_cases hη : 0 < η
   · rw [lkjMeasure_of_pos hη]
     refine Measure.map_withDensity_eq_withDensity (jac := 1)
-      (LinearMap.continuous_of_finiteDimensional _).measurable measurable_const
-      (measurable_lkjPDF p η) (by rwa [withDensity_one]) (ae_of_all _ fun R ↦ ?_)
+      (LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable aemeasurable_const
+      (measurable_lkjPDF p η).aemeasurable (by rwa [withDensity_one]) (ae_of_all _ fun R ↦ ?_)
     rw [Pi.one_apply, one_mul, lkjPDF_symmetricCongruenceLinearMap hM]
   · simp [lkjMeasure_of_nonpos (not_lt.mp hη)]
 

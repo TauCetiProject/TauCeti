@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Analysis.Calculus.QuotientRange
 import TauCeti.Geometry.Manifold.MFDeriv.Coordinates
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Topology.FiberBundle.Pullback
 
@@ -26,6 +27,16 @@ pulled-back cotangent bundle `i *ᵖ T*M`. Their total space carries the subspac
 `TauCeti.CotangentBundle.conormalInclusion` sends `(q, p)` to `(i q, p) ∈ T*M`, with image
 `TauCeti.CotangentBundle.conormal J I i`; it is a topological embedding whenever `i` is
 (`TauCeti.CotangentBundle.isEmbedding_conormalInclusion`).
+
+For a `C¹` closed embedding `i`, the conormal set `N*Q` is closed in `T*M`
+(`TauCeti.CotangentBundle.isClosed_conormal`), so `conormalInclusion` is a closed embedding
+(`TauCeti.CotangentBundle.isClosedEmbedding_conormalInclusion`). A covector `p` over a limit point
+`i q₀` of conormal covectors annihilates `di_(q₀) v` for each `v`: extending `v` to a continuous
+local vector field `V` near `q₀`, the pairing of a covector over `i q` with `di_q (V q)` depends
+continuously on both (`TauCeti.CotangentBundle.continuousAt_snd_apply_mfderiv`) and vanishes on
+`N*Q`. Conversely, the zero covectors of `N*Q` lie exactly over the image of `i`, so the image of
+any map with closed conormal set is closed; for a `C¹` embedding, `N*Q` is closed exactly when its
+image is (`TauCeti.CotangentBundle.isClosed_conormal_iff`).
 
 Over `ℝ` or `ℂ`, when `M` has dimension `finrank 𝕜 F + k`, `i` is `C^m` (`n + 1 ≤ m`), and `di_q` is
 injective at every `q : Q`, the conormal spaces admit `C^n` local frames
@@ -50,6 +61,9 @@ slice examples are in `Conormal.Basic` and `Conormal.Prod`.
   `conormal J I i`, topological embedding when `i` is.
 * `TauCeti.CotangentBundle.instTopologicalSpaceTotalSpaceConormalSpace`: subspace topology from
   `i *ᵖ T*M` on the total space of `conormalSpace J I i`.
+* `TauCeti.CotangentBundle.isClosed_conormal`, `isClosed_conormal_iff`,
+  `isClosedEmbedding_conormalInclusion`: the conormal set of a `C¹` closed embedding is closed, and
+  for a `C¹` embedding it is closed exactly when the image is.
 * `TauCeti.CotangentBundle.IsConormalFrameOn`, `exists_isConormalFrameOn`: `C^n` local frames of
   `conormalSpace J I i`, their pointwise `basis` and `trivialization`, and local existence without
   shrinking across finite orders.
@@ -190,6 +204,75 @@ theorem isEmbedding_conormalInclusion {i : Q → M} (hi : IsEmbedding i) :
     IsEmbedding (conormalInclusion P J I i) :=
   (Bundle.Pullback.isEmbedding_lift (F := E →L[𝕜] 𝕜)
     (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) hi).comp (isEmbedding_toPullback P i)
+
+/-- If the conormal set of `i` is closed in `T*M`, then so is the image of `i`: a point of `M`
+lies in the image of `i` exactly when its zero covector is conormal to `i`. -/
+theorem isClosed_range_of_isClosed_conormal {i : Q → M} (h : IsClosed (conormal J I i)) :
+    IsClosed (range i) := by
+  have : range i =
+      zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ⁻¹' conormal J I i := by
+    ext x
+    simp only [mem_range, mem_preimage, mem_conormal_iff, zeroSection_proj, zeroSection_snd]
+    exact ⟨fun ⟨q, hq⟩ ↦ ⟨q, hq, ContinuousLinearMap.ext fun _ ↦ rfl⟩, fun ⟨q, hq, _⟩ ↦ ⟨q, hq⟩⟩
+  rw [this]
+  exact h.preimage (Trivialization.continuous_zeroSection 𝕜)
+
+/-- **The conormal bundle of a closed submanifold is closed.** For a `C¹` closed embedding
+`i : Q → M`, the conormal set `N*Q` of `i` is closed in `T*M`. -/
+theorem isClosed_conormal [IsManifold J 1 Q] {i : Q → M} (hi : IsClosedEmbedding i)
+    (hic : ContMDiff J I 1 i) : IsClosed (conormal J I i) := by
+  -- Work in the closed set `T` of covectors over the image of `i`, where `i` has the continuous
+  -- inverse `g`.
+  set T := π (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ⁻¹' range i
+  have hT : IsClosed T := hi.isClosed_range.preimage (FiberBundle.continuous_proj _ _)
+  let g : T → Q := fun w ↦ hi.isEmbedding.toHomeomorph.symm ⟨w.val.proj, w.property⟩
+  have hg : Continuous g := hi.isEmbedding.toHomeomorph.symm.continuous.comp
+    (((FiberBundle.continuous_proj _ _).comp continuous_subtypeVal).subtype_mk _)
+  have hig (w : T) : i (g w) = w.val.proj :=
+    congrArg Subtype.val (hi.isEmbedding.toHomeomorph.apply_symm_apply ⟨w.val.proj, w.property⟩)
+  have hsub : conormal J I i ⊆ T := fun w hw ↦ by
+    obtain ⟨q, hq, -⟩ := mem_conormal_iff.1 hw
+    exact mem_preimage.2 ⟨q, hq⟩
+  suffices hc : IsClosed ((↑) ⁻¹' conormal J I i : Set T) by
+    simpa only [Subtype.image_preimage_coe, inter_eq_right.2 hsub] using hc.trans hT
+  refine isClosed_iff_frequently.2 fun w₀ hw₀ ↦
+    mem_preimage.2 (mem_conormal_iff.2 ⟨g w₀, hig w₀, ContinuousLinearMap.ext fun v₀ ↦ ?_⟩)
+  -- Extend `v₀` to a continuous local vector field `V` near `g w₀`, and pair each covector `w`
+  -- over `i (g w)` with `di (V (g w))`. The pairing is continuous and vanishes on `N*Q`.
+  let t := trivializationAt F (TangentSpace J) (g w₀)
+  have hV : ContinuousAt (fun q ↦ (⟨q, t.symm q v₀⟩ : TangentBundle J Q)) (g w₀) :=
+    (t.continuousOn_symm.continuousAt ((t.open_baseSet.prod isOpen_univ).mem_nhds
+      ⟨FiberBundle.mem_baseSet_trivializationAt' (g w₀), mem_univ v₀⟩)).comp
+      (f := fun q ↦ (q, v₀)) (continuous_id.prodMk continuous_const).continuousAt
+  have hpair : ContinuousAt (fun w : T ↦ w.val.snd (mfderiv J I i (g w) (t.symm (g w) v₀))) w₀ :=
+    continuousAt_snd_apply_mfderiv (v := fun w : T ↦ (⟨g w, t.symm (g w) v₀⟩ : TangentBundle J Q))
+      (fun w ↦ (hig w).symm) continuous_subtypeVal.continuousAt (hV.comp hg.continuousAt)
+      hic.contMDiffAt
+  suffices h0 : w₀.val.snd (mfderiv J I i (g w₀) (t.symm (g w₀) v₀)) = 0 by
+    have hsymm : t.symm (g w₀) v₀ = v₀ :=
+      (Trivialization.symmL_apply (R := 𝕜) t (FiberBundle.mem_baseSet_trivializationAt' _)
+        v₀).symm.trans (Manifold.symmL_trivializationAt_self _ _)
+    rwa [hsymm] at h0
+  by_contra hne
+  obtain ⟨w, hw, hw0⟩ := (hw₀.and_eventually (hpair.eventually_ne hne)).exists
+  obtain ⟨q, hq, hwq⟩ := mem_conormal_iff.1 (mem_preimage.1 hw)
+  obtain rfl : q = g w := hi.injective (hq.trans (hig w).symm)
+  exact hw0 (DFunLike.congr_fun hwq _)
+
+/-- For a `C¹` embedding `i : Q → M`, the conormal set of `i` is closed in `T*M` exactly when the
+image of `i` is closed in `M`. -/
+theorem isClosed_conormal_iff [IsManifold J 1 Q] {i : Q → M} (hi : IsEmbedding i)
+    (hic : ContMDiff J I 1 i) : IsClosed (conormal J I i) ↔ IsClosed (range i) :=
+  ⟨isClosed_range_of_isClosed_conormal, fun h ↦ isClosed_conormal ⟨hi, h⟩ hic⟩
+
+variable (P) in
+/-- Along a `C¹` closed embedding `i : Q → M`, `conormalInclusion` is a closed embedding of the
+total space of `conormalSpace J I i` into `T*M`. -/
+theorem isClosedEmbedding_conormalInclusion [IsManifold J 1 Q] {i : Q → M}
+    (hi : IsClosedEmbedding i) (hic : ContMDiff J I 1 i) :
+    IsClosedEmbedding (conormalInclusion P J I i) :=
+  ⟨isEmbedding_conormalInclusion P hi.isEmbedding,
+    (range_conormalInclusion P J I i).symm ▸ isClosed_conormal hi hic⟩
 
 end Topology
 

@@ -30,11 +30,14 @@ makes the homotopy groups of a Kan complex well defined.
   (`SSet.PtSimplex.Homotopy.relStruct₀`): restricting the homotopy to the `n + 1` nondegenerate
   `(n + 1)`-simplices `SSet.prodStdSimplex₁.ι i` of the prism `Δ[n] ⊗ Δ[1]` gives a chain of
   `RelStruct`s from `q` to `p`.
+* In any simplicial set and for `n = 0`, a homotopy from `p` to `q` restricts to an edge from `p`
+  to `q`, that is, a `RelStruct₀ q p` (`SSet.PtSimplex.Homotopy.relStruct₀Zero`).
 * Products in the sense of `MulStruct` are well defined up to `RelStruct₀`
   (`SSet.PtSimplex.MulStruct.unique`, `SSet.PtSimplex.MulStruct.unique'`), and morphisms of
   simplicial sets carry `MulStruct`s to `MulStruct`s (`SSet.PtSimplex.MulStruct.postcomp`).
 
-The case `n = 0`, where `RelStruct₀` is an edge between vertices, is not treated here.
+Apart from the last comparison, the case `n = 0`, where `RelStruct₀` is an edge between
+vertices, is not treated here.
 
 ## References
 
@@ -287,6 +290,23 @@ noncomputable def relStruct₀ [KanComplex X] : RelStruct₀ p q := by
     | zero => exact RelStruct.ofEq (face_zero h).symm 0
     | succ i hi => exact hi.trans (ρ h i).relStruct₀
   exact ((this (Fin.last _)).copy rfl (face_last h)).symm
+
+/-- A homotopy from `p` to `q` between pointed `0`-simplices restricts to an edge from `p` to `q`,
+that is, a `RelStruct₀ q p` (see `SSet.PtSimplex.RelStruct₀.equiv₀`). Unlike
+`SSet.PtSimplex.Homotopy.relStruct₀` in positive dimension, this needs no Kan condition. -/
+noncomputable def relStruct₀Zero {p q : X.PtSimplex 0 x} (h : Homotopy p q) :
+    RelStruct₀ q p where
+  map := prodStdSimplex₁.ι 0 ≫ h.h
+  δ_castSucc_map := by
+    rw [prodStdSimplex₁.δ_castSucc_ι_assoc, Fin.castSucc_zero,
+      prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_zero, h.h₁]
+  δ_succ_map := by
+    -- `(0 : Fin 1).succ` is `Fin.last 1` by computation, which `rw` cannot see.
+    rw [prodStdSimplex₁.δ_succ_ι_assoc]
+    exact (congrArg (· ≫ h.h)
+      (prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_last (p := 0))).trans h.h₀
+  δ_map_of_lt j hj := absurd hj (Fin.not_lt_zero _)
+  δ_map_of_gt j hj := absurd hj (not_lt.2 (Fin.le_last j))
 
 end Homotopy
 

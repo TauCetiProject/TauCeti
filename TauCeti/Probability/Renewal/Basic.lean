@@ -11,6 +11,7 @@ public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.InfinitePi
 public import TauCeti.Probability.Independence.ConvolutionPower
 import TauCeti.Probability.Independence.Basic
+import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Arrival times and counts of an ordinary renewal process
@@ -103,6 +104,11 @@ lemma arrival_add (m k : ℕ) (ω : Ω) :
 /-- The arrival times are nondecreasing. -/
 lemma monotone_arrival (ω : Ω) : Monotone fun n ↦ arrival T n ω :=
   monotone_nat_of_le_succ fun n ↦ by simp [arrival_succ]
+
+/-- Ordering the increments orders every arrival time on the same path. -/
+lemma arrival_mono {U : ℕ → Ω → ℝ≥0} {ω : Ω}
+    (hTU : ∀ n, T n ω ≤ U n ω) (n : ℕ) : arrival T n ω ≤ arrival U n ω := by
+  exact Finset.sum_le_sum fun i _ ↦ hTU i
 
 /-- Positive increments after the first give strictly increasing positive-index arrivals.
 The first increment may vanish. -/
@@ -286,15 +292,8 @@ theorem ae_tendsto_arrival_atTop (hindep : iIndepFun T P)
     hindep.exists_measurable_ae_eq_of_identDistrib hid
   have hzero' : P {ω | T' 0 ω = 0} < 1 :=
     ((hT'_id 0).measure_mem_eq (measurableSet_singleton 0)).trans_lt hzero
-  -- Since `T' 0` is not almost surely zero, some threshold `a > 0` has `0 < P (a ≤ T' 0)`.
-  obtain ⟨k, hpos⟩ : ∃ k : ℕ, 0 < P (T' 0 ⁻¹' Ici (1 / (k + 1))) := by
-    refine exists_measure_pos_of_not_measure_iUnion_null fun h0 ↦ hzero'.ne ?_
-    rw [← prob_compl_eq_zero_iff (measurableSet_eq_fun (hT' 0) measurable_const)]
-    refine measure_mono_null (fun ω (hω : T' 0 ω ≠ 0) ↦ ?_) h0
-    obtain ⟨k, hk⟩ := exists_nat_one_div_lt (pos_iff_ne_zero.2 hω)
-    exact mem_iUnion.2 ⟨k, hk.le⟩
-  set a : ℝ≥0 := 1 / (k + 1)
-  have ha : 0 < a := by positivity
+  obtain ⟨a, ha, hpos⟩ :=
+    P.exists_pos_measure_le_of_measure_zero_lt_one (T' 0) hzero'
   -- The events `{a ≤ T' n}` are independent with a common positive probability, so by the second
   -- Borel–Cantelli lemma almost surely infinitely many of them occur.
   have hsm : ∀ n, MeasurableSet (T' n ⁻¹' Ici a) := fun n ↦ hT' n measurableSet_Ici

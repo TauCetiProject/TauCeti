@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
-import TauCeti.AlgebraicGeometry.Curves.Cohomology
+import TauCeti.AlgebraicGeometry.Curves.Cohomology.Basic
 import TauCeti.AlgebraicGeometry.Curves.HighDegree
 import TauCeti.AlgebraicGeometry.LineBundle.PointSubtraction
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.EulerCharacteristic

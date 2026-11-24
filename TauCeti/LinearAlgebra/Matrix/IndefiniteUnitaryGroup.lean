@@ -85,6 +85,8 @@ The basic structure of these groups is recorded here.
   `g * J * star g = J`.
 * `TauCeti.Matrix.val_inv_of_mem_indefiniteUnitaryGroup`: the inverse of `g ∈ U(p, q)` is
   `J * star g * J`.
+* `TauCeti.Matrix.star_diagonal_mul_indefiniteDiagonal_mul_diagonal_eq_iff`: a diagonal matrix
+  preserves the form of `J` exactly when its diagonal entries are unitary.
 * `TauCeti.Matrix.star_mem_indefiniteUnitaryGroup_iff`: `U(p, q)` is stable under conjugate
   transposition.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff`: the image of
@@ -295,6 +297,13 @@ theorem val_reflection (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
       1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A) :=
   (rfl)
 
+/-- The reflection in `v` sends `x` to `x - (2 ⟨v, x⟩ / ⟨v, v⟩) v`. -/
+theorem reflection_mulVec (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) (x : n → K) :
+    ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ x =
+      x - (2 / (star v ⬝ᵥ A *ᵥ v) * (star v ⬝ᵥ A *ᵥ x)) • v := by
+  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, smul_smul]
+
 /-- The reflection in `v` sends `v` to `-v`. -/
 theorem reflection_mulVec_self (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
     (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
@@ -378,6 +387,16 @@ theorem star_mem_indefiniteUnitaryGroup_iff {g : GL (p ⊕ q) R} :
     star g ∈ indefiniteUnitaryGroup p q R ↔ g ∈ indefiniteUnitaryGroup p q R := by
   simpa only [inv_indefiniteDiagonal] using
     star_mem_unitaryGroupOf_inv_iff (A := indefiniteDiagonal p q R) isUnit_indefiniteDiagonal
+
+/-- A diagonal matrix `diag(d)` satisfies `star (diag d) * J * diag d = J` exactly when every
+diagonal entry is unitary. -/
+theorem star_diagonal_mul_indefiniteDiagonal_mul_diagonal_eq_iff {d : p ⊕ q → R} :
+    star (diagonal d) * indefiniteDiagonal p q R * diagonal d = indefiniteDiagonal p q R ↔
+      ∀ i, star (d i) * d i = 1 := by
+  rw [indefiniteDiagonal, star_eq_conjTranspose, diagonal_conjTranspose, diagonal_mul_diagonal,
+    diagonal_mul_diagonal, diagonal_eq_diagonal_iff]
+  refine forall_congr' fun i => ?_
+  rcases i with i | i <;> simp [neg_eq_iff_eq_neg]
 
 namespace indefiniteUnitaryGroup
 

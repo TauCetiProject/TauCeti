@@ -52,10 +52,12 @@ and field-range transport for intermediate fields and their algebra equivalences
 
 * `IntermediateField.instIsScalarTower`: `IsScalarTower k E L` for an intermediate field
   `E` of `L / K` and a semiring `k` acting compatibly on `K` and `L`.
-* `IntermediateField.le_of_isScalarTower`: an intermediate field `E` lies in an intermediate
-  field `E'` as soon as some algebra structure of `E'` over `E` is compatible with `L`.
 * `IntermediateField.pow_eq_algebraMap_iff`: an element `x` of `E` satisfies
   `x ^ n = algebraMap R E r` if and only if `(x : L) ^ n = algebraMap R L r`.
+* `IntermediateField.le_of_isScalarTower`: an intermediate field `E` lies in an intermediate
+  field `E'` as soon as some algebra structure of `E'` over `E` is compatible with `L`.
+* `IntermediateField.restrictScalars_self`: restricting the scalars of an intermediate field of
+  `L / K` to `K` itself is the identity.
 * `IntermediateField.nonempty_extendScalars_algEquiv_iff`: `extendScalars h₁` and
   `extendScalars h₂` are `U`-isomorphic precisely when some `L₁ ≃ₐ[K] L₂` fixes `U` pointwise.
 * `IntermediateField.extendScalarsAlgEquivHom_injective` and
@@ -103,6 +105,13 @@ theorem le_of_isScalarTower {K L : Type*} [Field K] [Field L] [Algebra K L]
   rwa [← algebraMap_apply, ← IsScalarTower.algebraMap_apply] at h
 
 section RestrictScalars
+
+/-- Restricting the scalars of an intermediate field of `L / K` from `K` to `K` itself is the
+identity. -/
+@[simp]
+theorem restrictScalars_self {K L : Type*} [Field K] [Field L] [Algebra K L]
+    (E : IntermediateField K L) : E.restrictScalars K = E :=
+  SetLike.coe_injective (coe_restrictScalars (K := K))
 
 variable (K : Type*) {L' L : Type*} [Field K] [Field L'] [Field L] [Algebra K L'] [Algebra K L]
   [Algebra L' L] [IsScalarTower K L' L]

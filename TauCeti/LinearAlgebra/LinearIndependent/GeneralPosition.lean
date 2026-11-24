@@ -15,8 +15,9 @@ import Mathlib.LinearAlgebra.StdBasis
 
 A family of vectors in an `n`-dimensional coordinate space is in general position when every
 subfamily of cardinality `n` is linearly independent.  This file gives equivalent finset and
-determinant formulations and records invariance under the operations used for families of linear
-forms: restriction, rescaling, extension of scalars, and invertible changes of coordinates.
+determinant formulations and shows that general position is unchanged by the operations used for
+families of linear forms: rescaling, extension of scalars, and invertible changes of coordinates.
+It is also preserved by restriction along an injection.
 
 The final result verifies that the coordinate vectors together with their sum are in general
 position.  This is the basic family of linear forms used in applications of the Subspace Theorem.
@@ -31,7 +32,7 @@ open Function Matrix
 
 namespace TauCeti
 
-variable {K K' ι κ : Type*} {n : ℕ}
+variable {K ι κ : Type*} {n : ℕ}
 
 /-- A family of vectors in `Fin n → K` is in general position if every subfamily indexed by an
 injection from `Fin n` is linearly independent.  In particular, a family with fewer than `n`
@@ -39,40 +40,20 @@ members is in general position. -/
 def InGeneralPosition [Field K] (L : ι → Fin n → K) : Prop :=
   ∀ e : Fin n → ι, Injective e → LinearIndependent K (L ∘ e)
 
-namespace InGeneralPosition
-
 variable [Field K] {L : ι → Fin n → K}
 
+namespace InGeneralPosition
+
 /-- Every subfamily of the dimension's cardinality is linearly independent. -/
-theorem linearIndependent (hL : InGeneralPosition L) (s : Finset ι) (hs : s.card = n) :
-    LinearIndependent K (fun i : s ↦ L i) := by
+theorem linearIndepOn (hL : InGeneralPosition L) (s : Finset ι) (hs : s.card = n) :
+    LinearIndepOn K L (s : Set ι) := by
   classical
-  let e : Fin n ≃ s := (s.equivFinOfCardEq hs).symm
-  exact (linearIndependent_equiv e).mp
-    (hL (Subtype.val ∘ e) (Subtype.val_injective.comp e.injective))
-
-/-- General position is equivalent to nonvanishing of every maximal minor. -/
-theorem _root_.TauCeti.inGeneralPosition_iff_det_ne_zero :
-    InGeneralPosition L ↔
-      ∀ (e : Fin n → ι), Injective e → (Matrix.of fun i j ↦ L (e i) j).det ≠ 0 := by
-  simp only [InGeneralPosition]
-  apply forall_congr'
-  intro e
-  apply forall_congr'
-  intro _
-  exact (Matrix.linearIndependent_row_iff
-    (A := Matrix.of fun i j ↦ L (e i) j)).trans Matrix.nonsingular_iff_det_ne_zero
-
-/-- For a family of exactly `n` vectors, general position is ordinary linear independence. -/
-theorem _root_.TauCeti.inGeneralPosition_iff_linearIndependent [Fintype ι]
-    (hcard : Fintype.card ι = n) :
-    InGeneralPosition L ↔ LinearIndependent K L := by
-  constructor
-  · intro hL
-    let e : Fin n ≃ ι := (Fintype.equivFinOfCardEq hcard).symm
-    exact (linearIndependent_equiv e).mp (hL e e.injective)
-  · intro hL e he
-    exact hL.comp e he
+  -- Enumerate `s` by `Fin n`.
+  let σ : Fin n → ι := Subtype.val ∘ (s.equivFinOfCardEq hs).symm
+  have hσ : Injective σ := Subtype.val_injective.comp (Equiv.injective _)
+  have hrange : Set.range σ = s := by simp [σ, Set.range_comp]
+  rw [← hrange, linearIndepOn_range_iff hσ]
+  exact hL σ hσ
 
 /-- Restricting a family in general position along an injection preserves general position. -/
 theorem comp_injective (hL : InGeneralPosition L) (f : κ → ι) (hf : Injective f) :
@@ -80,45 +61,48 @@ theorem comp_injective (hL : InGeneralPosition L) (f : κ → ι) (hf : Injectiv
   intro e he
   simpa only [Function.comp_def] using hL (f ∘ e) (hf.comp he)
 
-/-- Rescaling each vector by a nonzero scalar preserves general position. -/
-theorem smul (hL : InGeneralPosition L) (c : ι → K) (hc : ∀ i, c i ≠ 0) :
-    InGeneralPosition (fun i ↦ c i • L i) := by
-  intro e he
-  let u : Fin n → Kˣ := fun i ↦ Units.mk0 (c (e i)) (hc (e i))
-  have hu := (hL e he).units_smul u
-  convert hu using 1
-  ext i j
-  simp [Function.comp_apply, u]
+end InGeneralPosition
 
-/-- Applying a field homomorphism coefficientwise preserves general position. -/
-theorem map [Field K'] (hL : InGeneralPosition L) (σ : K →+* K') :
-    InGeneralPosition (fun i j ↦ σ (L i j)) := by
-  rw [inGeneralPosition_iff_det_ne_zero] at hL ⊢
-  intro e he
-  have hB : Matrix.of (fun i j ↦ σ (L (e i) j)) =
-      σ.mapMatrix (Matrix.of fun i j ↦ L (e i) j) := by
-    ext i j
+/-- General position is equivalent to nonvanishing of every maximal minor. -/
+theorem inGeneralPosition_iff_det_ne_zero :
+    InGeneralPosition L ↔
+      ∀ (e : Fin n → ι), Injective e → (Matrix.of fun i j ↦ L (e i) j).det ≠ 0 :=
+  forall₂_congr fun e _ ↦ by
+    rw [← nonsingular_iff_det_ne_zero, ← linearIndependent_row_iff, row_of, comp_def]
+
+/-- For a family of exactly `n` vectors, general position is ordinary linear independence. -/
+theorem inGeneralPosition_iff_linearIndependent [Fintype ι] (hcard : Fintype.card ι = n) :
+    InGeneralPosition L ↔ LinearIndependent K L :=
+  ⟨fun hL ↦ (linearIndependent_equiv (Fintype.equivFinOfCardEq hcard).symm).mp
+    (hL _ (Equiv.injective _)), fun hL e he ↦ hL.comp e he⟩
+
+/-- Rescaling each vector by a nonzero scalar does not change general position. -/
+@[simp]
+theorem inGeneralPosition_smul_iff {c : ι → K} (hc : ∀ i, c i ≠ 0) :
+    InGeneralPosition (fun i ↦ c i • L i) ↔ InGeneralPosition L := by
+  refine forall₂_congr fun e _ ↦ ?_
+  -- Rescaling by the nonzero scalars `c (e i)` is rescaling by units.
+  have hu : (fun i ↦ c i • L i) ∘ e = (fun i ↦ Units.mk0 (c (e i)) (hc (e i))) • (L ∘ e) := by
+    ext
     simp
-  rw [hB, ← σ.map_det]
-  exact (map_ne_zero σ).mpr (hL e he)
+  rw [hu, LinearIndependent.units_smul_iff]
 
-/-- An invertible linear change of coordinates preserves general position.  A row vector `L i`
-is transformed to `Aᵀ *ᵥ L i`, equivalently to right multiplication by `A`. -/
-theorem comp_matrix (hL : InGeneralPosition L) (A : Matrix (Fin n) (Fin n) K)
-    (hA : A.det ≠ 0) : InGeneralPosition (fun i ↦ Aᵀ *ᵥ L i) := by
-  rw [inGeneralPosition_iff_det_ne_zero] at hL ⊢
-  intro e he
-  let B : Matrix (Fin n) (Fin n) K := Matrix.of fun i j ↦ L (e i) j
-  have hBA : Matrix.of (fun i j ↦ (Aᵀ *ᵥ L (e i)) j) = B * A := by
+/-- An invertible linear change of coordinates does not change general position: the row vectors
+`L i` are multiplied on the right by a matrix `A` of nonzero determinant. -/
+@[simp]
+theorem inGeneralPosition_vecMul_iff {A : Matrix (Fin n) (Fin n) K} (hA : A.det ≠ 0) :
+    InGeneralPosition (fun i ↦ L i ᵥ* A) ↔ InGeneralPosition L := by
+  rw [inGeneralPosition_iff_det_ne_zero, inGeneralPosition_iff_det_ne_zero]
+  refine forall₂_congr fun e _ ↦ ?_
+  -- Each maximal minor is multiplied by `det A`.
+  have hBA : Matrix.of (fun i j ↦ (L (e i) ᵥ* A) j) = Matrix.of (fun i j ↦ L (e i) j) * A := by
     ext i j
-    simp only [Matrix.of_apply, Matrix.mul_apply, Matrix.mulVec, dotProduct, transpose_apply, B]
-    exact Finset.sum_congr rfl fun k _ ↦ by rw [mul_comm]
-  rw [hBA, Matrix.det_mul]
-  exact mul_ne_zero (hL e he) hA
+    simp [vecMul, dotProduct, Matrix.mul_apply]
+  rw [hBA, det_mul, mul_ne_zero_iff_right hA]
 
 /-- In dimension two, general position says exactly that no two distinct members of the family
 are linearly dependent. -/
-theorem _root_.TauCeti.inGeneralPosition_two_iff {L : ι → Fin 2 → K} :
+theorem inGeneralPosition_two_iff {L : ι → Fin 2 → K} :
     InGeneralPosition L ↔
       ∀ i j, i ≠ j → LinearIndependent K ![L i, L j] := by
   constructor
@@ -134,11 +118,7 @@ theorem _root_.TauCeti.inGeneralPosition_two_iff {L : ι → Fin 2 → K} :
     ext k
     fin_cases k <;> rfl
 
-end InGeneralPosition
-
 section CoordinateForms
-
-variable [Field K]
 
 /-- Omitting the `k`th coordinate vector, the remaining coordinate vectors together with the
 all-ones vector are linearly independent.  The index `none` labels the all-ones vector and
@@ -147,22 +127,17 @@ theorem linearIndependent_one_option_piSingle_ne (k : Fin n) :
     LinearIndependent K (fun o : Option {j : Fin n // j ≠ k} ↦
       o.casesOn' (fun _ ↦ (1 : K)) (fun j ↦ Pi.single j.val (1 : K))) := by
   rw [linearIndependent_option']
-  constructor
-  · have h := (Pi.basisFun K (Fin n)).linearIndependent.comp
-      (fun j : {j : Fin n // j ≠ k} ↦ j.val) Subtype.val_injective
-    convert h using 1
-    ext j i
-    simp
-  · intro hmem
-    have hspan : Submodule.span K
-        (Set.range fun j : {j : Fin n // j ≠ k} ↦
-          (Pi.single j.val (1 : K) : Fin n → K)) ≤
-        LinearMap.ker (LinearMap.proj k) := by
-      rw [Submodule.span_le]
-      rintro _ ⟨j, rfl⟩
-      simp [LinearMap.mem_ker, j.property]
-    have hone := hspan hmem
-    simp [LinearMap.mem_ker] at hone
+  refine ⟨(Pi.linearIndependent_single_one (Fin n) K).comp _ Subtype.val_injective, ?_⟩
+  intro hmem
+  -- The remaining coordinate vectors all vanish at `k`, while the all-ones vector does not.
+  have hspan : Submodule.span K
+      (Set.range fun j : {j : Fin n // j ≠ k} ↦
+        (Pi.single j.val (1 : K) : Fin n → K)) ≤
+      LinearMap.ker (LinearMap.proj k) := by
+    rw [Submodule.span_le]
+    rintro _ ⟨j, rfl⟩
+    simp [LinearMap.mem_ker, j.property]
+  simpa [LinearMap.mem_ker] using hspan hmem
 
 /-- The `n` coordinate vectors together with their sum are in general position.  The index `none`
 labels the sum and `some i` labels the `i`th coordinate vector. -/
@@ -170,52 +145,49 @@ theorem inGeneralPosition_coords_add_sum :
     InGeneralPosition (fun o : Option (Fin n) ↦
       o.casesOn' (fun _ ↦ 1 : Fin n → K) (fun i ↦ Pi.single i 1)) := by
   intro e he
-  have hns : ¬Surjective e := by
-    intro hsurj
-    have hcard := Fintype.card_le_of_surjective e hsurj
-    simp only [Fintype.card_option, Fintype.card_fin] at hcard
-    omega
-  simp only [Surjective] at hns
-  push Not at hns
-  obtain ⟨z, hz⟩ := hns
+  -- An injection from `Fin n` misses some index `z` of `Option (Fin n)`, which has `n + 1`.
+  obtain ⟨z, hz⟩ : ∃ z, z ∉ Set.range e := by
+    by_contra! h
+    simpa using Fintype.card_le_of_surjective e fun z ↦ Set.mem_range.mp (h z)
+  rw [← linearIndepOn_range_iff he]
+  refine LinearIndepOn.mono ?_ (Set.subset_compl_singleton_iff.mpr hz)
   cases z with
   | none =>
-      have hex (i : Fin n) : ∃ j : Fin n, some j = e i := by
-        cases hi : e i with
-        | none => exact (hz i hi).elim
-        | some j => exact ⟨j, rfl⟩
-      choose f hf using hex
-      have hf_inj : Injective f := by
-        intro i j hij
-        apply he
-        rw [← hf i, ← hf j, hij]
-      have hli := (Pi.basisFun K (Fin n)).linearIndependent.comp f hf_inj
-      convert hli using 1
-      ext i j
-      rw [Function.comp_apply, ← hf i]
-      simp
+      -- Without the sum, only the coordinate vectors remain.
+      rw [← Set.compl_range_some, compl_compl, linearIndepOn_range_iff (Option.some_injective _)]
+      simpa only [comp_def, Option.casesOn'_some] using Pi.linearIndependent_single_one (Fin n) K
   | some k =>
-      let emb : Option {j : Fin n // j ≠ k} → Option (Fin n) := Option.map Subtype.val
-      have hex (i : Fin n) : ∃ q, emb q = e i := by
-        cases hi : e i with
-        | none => exact ⟨none, by simp [emb]⟩
-        | some j =>
-            have hjk : j ≠ k := by
-              intro hjk
-              subst j
-              exact hz i hi
-            exact ⟨some ⟨j, hjk⟩, by simp [emb]⟩
-      choose f hf using hex
-      have hf_inj : Injective f := by
-        intro i j hij
-        apply he
-        rw [← hf i, ← hf j, hij]
-      have hli := (linearIndependent_one_option_piSingle_ne (K := K) k).comp f hf_inj
-      convert hli using 1
-      ext i j
-      rw [Function.comp_apply, ← hf i]
-      cases hfi : f i <;> simp [emb, hfi]
+      -- Without the `k`th coordinate vector, use `linearIndependent_one_option_piSingle_ne`.
+      have hrange : Set.range (Option.map (Subtype.val : {j : Fin n // j ≠ k} → Fin n)) =
+          {some k}ᶜ := by
+        ext (_ | j)
+        · simp
+        · simp only [Set.mem_range, Option.map_eq_some_iff]
+          simp [eq_comm]
+      rw [← hrange, linearIndepOn_range_iff (Option.map_injective Subtype.val_injective)]
+      convert linearIndependent_one_option_piSingle_ne (K := K) k using 1
+      ext (_ | j) <;> simp
 
 end CoordinateForms
 
 end TauCeti
+
+namespace RingHom
+
+open TauCeti
+
+variable {K K' ι : Type*} {n : ℕ} [Field K] [Field K'] {L : ι → Fin n → K}
+
+/-- Applying a field homomorphism coefficientwise does not change general position. -/
+@[simp]
+theorem inGeneralPosition_map_iff (σ : K →+* K') :
+    InGeneralPosition (fun i j ↦ σ (L i j)) ↔ InGeneralPosition L := by
+  rw [inGeneralPosition_iff_det_ne_zero, inGeneralPosition_iff_det_ne_zero]
+  refine forall₂_congr fun e _ ↦ ?_
+  have hB : Matrix.of (fun i j ↦ σ (L (e i) j)) =
+      σ.mapMatrix (Matrix.of fun i j ↦ L (e i) j) := by
+    ext i j
+    simp
+  rw [hB, ← σ.map_det, map_ne_zero]
+
+end RingHom

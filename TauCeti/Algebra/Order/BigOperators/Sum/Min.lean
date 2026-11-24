@@ -6,17 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+public import Mathlib.Algebra.Order.Field.Basic
+public import Mathlib.Algebra.Order.Group.Abs
 public import Mathlib.Algebra.Order.Sub.Basic
 public import Mathlib.Data.Finset.Lattice.Fold
 public import Mathlib.Data.Nat.Find
 import Mathlib.Logic.Equiv.Fintype
+import Mathlib.Tactic.Linarith
 
 /-!
-# Finite sums of truncations
+# Finite sums of pointwise minima and truncations
 
 In a canonically ordered additive monoid with ordered subtraction, a finite family `f` splits
 against a second family `g` into the part `min (f x) (g x)` matched by `g` and the excess
-`f x - g x` above `g`, so the sums of these two parts add up to the sum of `f`.
+`f x - g x` above `g`, so the sums of these two parts add up to the sum of `f`. In a linearly
+ordered additive commutative group, subtracting twice the matched sum `∑ x ∈ s, min (f x) (g x)`
+from `∑ x ∈ s, f x + ∑ x ∈ s, g x` gives the `L¹` distance `∑ x ∈ s, |f x - g x|`; in particular,
+when `f` and `g` have the same sum `S` over a linearly ordered field, `S - ∑ x ∈ s, min (f x) (g x)`
+equals `(∑ x ∈ s, |f x - g x|) / 2`.
 
 For a finite family `c` of natural numbers, the truncated sums `∑ l, min k (c l)` count the boxes
 in the first `k` columns of the Young diagram with rows `c l`. Their second differences count
@@ -28,6 +35,10 @@ reindexing; this is the counting step in the uniqueness of elementary divisors.
 ## Main results
 
 * `Finset.sum_min_add_sum_tsub`: the matched part and the excess add up to the total.
+* `Finset.sum_add_sum_sub_two_nsmul_sum_min`: the sum of two families minus twice the sum of their
+  pointwise minima equals their `L¹` distance.
+* `Finset.sub_sum_min_eq_sum_abs_div_two`: for two families with common sum `S`, `S` minus the sum
+  of their pointwise minima is half their `L¹` distance.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
 * `Fintype.exists_equiv_of_forall_sum_min_eq`: two finite families of positive natural numbers
   with the same truncated sums agree up to a bijection of their index types.
@@ -116,6 +127,25 @@ theorem exists_ne_forall_sum_min_lt {s : Finset ι} {t : Finset κ} {a : ι → 
   rcases le_total (a y) (a x) with hyx | hxy'
   · exact ⟨x, hx.1, y, hy.1, hxy, hyx, hint x y hx.2 hy.2⟩
   · exact ⟨y, hy.1, x, hx.1, hxy.symm, hxy', hint y x hy.2 hx.2⟩
+
+/-- In a linearly ordered additive commutative group, the sum of `f` and `g` minus twice the sum of
+their pointwise minima equals the `L¹` distance `∑ x ∈ s, |f x - g x|`. -/
+theorem sum_add_sum_sub_two_nsmul_sum_min {G : Type*} [AddCommGroup G] [LinearOrder G]
+    [IsOrderedAddMonoid G] (s : Finset ι) (f g : ι → G) :
+    ∑ x ∈ s, f x + ∑ x ∈ s, g x - 2 • ∑ x ∈ s, min (f x) (g x) = ∑ x ∈ s, |f x - g x| := by
+  rw [two_nsmul, ← sum_add_distrib, ← sum_add_distrib, ← sum_sub_distrib]
+  refine sum_congr rfl fun x _ ↦ ?_
+  rw [← min_add_max (f x) (g x), add_sub_add_left_eq_sub, max_sub_min_eq_abs']
+
+/-- For two functions on `s` with the same sum `S` in a linearly ordered field,
+`S - ∑ x ∈ s, min (f x) (g x)` is half the `L¹` distance `∑ x ∈ s, |f x - g x|`. -/
+theorem sub_sum_min_eq_sum_abs_div_two {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] {s : Finset ι} {f g : ι → 𝕜} {S : 𝕜}
+    (hf : ∑ x ∈ s, f x = S) (hg : ∑ x ∈ s, g x = S) :
+    S - ∑ x ∈ s, min (f x) (g x) = (∑ x ∈ s, |f x - g x|) / 2 := by
+  have h := sum_add_sum_sub_two_nsmul_sum_min s f g
+  rw [hf, hg, two_nsmul] at h
+  linarith
 
 end Finset
 

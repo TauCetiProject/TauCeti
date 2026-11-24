@@ -12,12 +12,14 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 # Evaluation, logarithmic derivative and splitting of factorized rational functions
 
 For a finitely supported exponent `d : 𝕜 → ℤ`, Mathlib's `Function.FactorizedRational` studies
-the function `∏ᶠ u, (· - u) ^ d u`. This file adds three facts about it:
+the function `∏ᶠ u, (· - u) ^ d u`. This file adds four facts about it:
 
 * `Function.FactorizedRational.finprod_apply_eq_prod`: its value at a point is the finite product
   `∏ u ∈ support d, (y - u) ^ d u`;
 * `Function.FactorizedRational.logDeriv_eq_finsum`: at a point `z` with `d z = 0` its logarithmic
   derivative is `∑ᶠ u, d u / (z - u)`;
+* `Function.FactorizedRational.logDeriv_sub_sum_eq`: a local factorization `f = P * g`
+  identifies the logarithmic derivative remaining after subtracting the divisor contribution;
 * `Function.FactorizedRational.finprod_eq_finprod_mul_finprod_sub`: if `d'` vanishes wherever `d`
   does, it is the product of the factorized rational functions with exponents `d'` and `d - d'`.
 -/
@@ -25,6 +27,8 @@ the function `∏ᶠ u, (· - u) ^ d u`. This file adds three facts about it:
 public section
 
 namespace Function.FactorizedRational
+
+open scoped Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {d : 𝕜 → ℤ}
 
@@ -54,6 +58,21 @@ theorem logDeriv_eq_finsum (hd : d.support.Finite) {z : 𝕜} (hz : d z = 0) :
     rw [logDeriv_fun_zpow (f := fun w ↦ w - u) (by fun_prop)]
     simp [logDeriv_apply, div_eq_mul_inv]
   · exact fun u hu ↦ hd.mem_toFinset.2 fun h ↦ hu (by simp [h])
+
+/-- A local factorization into a factorized rational function and a differentiable nonzero
+cofactor identifies the remaining logarithmic derivative, with the same integer multiplicities
+as the factorization. -/
+theorem logDeriv_sub_sum_eq {f g : 𝕜 → 𝕜} (hd : d.support.Finite) {z : 𝕜}
+    (hdz : d z = 0) (hg : DifferentiableAt 𝕜 g z) (hg₀ : g z ≠ 0)
+    (hfg : f =ᶠ[𝓝 z] (∏ᶠ u, (· - u) ^ d u) * g) :
+    logDeriv f z - ∑ u ∈ hd.toFinset, (d u : 𝕜) / (z - u) = logDeriv g z := by
+  rw [(logDeriv_congr_nhds hfg).eq_of_nhds,
+    logDeriv_mul (f := ∏ᶠ u, (· - u) ^ d u) z (ne_zero hdz) hg₀
+      (analyticAt (by simp [hdz])).differentiableAt hg,
+    logDeriv_eq_finsum hd hdz,
+    finsum_eq_sum_of_support_subset _ (s := hd.toFinset)
+      (fun u hu ↦ hd.mem_toFinset.mpr fun hzero ↦ hu (by simp [hzero]))]
+  simp
 
 /-- **Splitting a factorized rational function.** If `d` has finite support and `d'` vanishes
 wherever `d` does, then `∏ᶠ u, (· - u) ^ d u` is the product of the factorized rational functions

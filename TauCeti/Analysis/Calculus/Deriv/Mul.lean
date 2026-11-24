@@ -6,14 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Smul
 
 /-!
-# Scalar multiplication at a zero of the scalar factor
+# Derivatives of scalar multiples
 
 `HasDerivWithinAt.smul_of_eq_zero` and `HasDerivAt.smul_of_eq_zero` differentiate a scalar
 multiple at a zero of the scalar factor assuming only continuity of the vector factor. The
 scalar factor may take values in a normed algebra over the parameter field.
+
+At a point where the scalar factor `u` is nonzero and `u' = u c`, multiplication by `u` is a gauge
+transformation: `HasDerivAt.hasDerivAt_iff_hasDerivAt_smul` states that `η' = u⁻¹ w - c η`
+exactly when `(u η)' = w`.
 -/
 
 public section
@@ -36,3 +41,32 @@ theorem HasDerivAt.smul_of_eq_zero {c : 𝕜 → 𝕜'} {c' : 𝕜'} {f : 𝕜 �
     {x : 𝕜} (hc : HasDerivAt c c' x) (hf : ContinuousAt f x) (hc0 : c x = 0) :
     HasDerivAt (fun y ↦ c y • f y) (c' • f x) x := by
   simpa using (hc.hasFDerivAt.smul_of_eq_zero hf hc0).hasDerivAt
+
+section Gauge
+
+variable {𝕜 𝕜' F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  [NormedAlgebra 𝕜 𝕜'] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace 𝕜' F]
+  [IsScalarTower 𝕜 𝕜' F]
+
+/-- **The gauge identity.** For a scalar factor `u` with `u x ≠ 0` and `u' = u c` at `x`,
+`η' = u⁻¹ w - c η` at `x` exactly when `(u η)' = w` at `x`. -/
+theorem HasDerivAt.hasDerivAt_iff_hasDerivAt_smul {u : 𝕜 → 𝕜'} {c : 𝕜'} {η : 𝕜 → F} {w : F}
+    {x : 𝕜} (hu : HasDerivAt u (u x * c) x) (hu0 : u x ≠ 0) :
+    HasDerivAt η ((u x)⁻¹ • w - c • η x) x ↔ HasDerivAt (fun t ↦ u t • η t) w x := by
+  constructor
+  · intro h
+    refine (hu.smul h).congr_deriv ?_
+    rw [smul_sub, smul_smul, mul_inv_cancel₀ hu0, one_smul, smul_smul]
+    abel
+  · intro h
+    -- `η = u⁻¹ (u η)` near `x`, and `u⁻¹` has derivative `-c u⁻¹`.
+    have hinv : HasDerivAt (fun t ↦ (u t)⁻¹) (-c * (u x)⁻¹) x := by
+      refine (hu.inv hu0).congr_deriv ?_
+      field_simp
+    refine ((hinv.smul h).congr_of_eventuallyEq ?_).congr_deriv ?_
+    · filter_upwards [hu.continuousAt.eventually_ne hu0] with t ht
+      rw [Pi.smul_apply', smul_smul, inv_mul_cancel₀ ht, one_smul]
+    · rw [smul_smul, mul_assoc, inv_mul_cancel₀ hu0, mul_one, neg_smul]
+      abel
+
+end Gauge
