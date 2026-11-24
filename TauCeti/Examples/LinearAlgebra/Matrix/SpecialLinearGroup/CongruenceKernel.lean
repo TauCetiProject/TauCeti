@@ -41,8 +41,8 @@ theorem congruenceKernel_eq_top_of_field {n : Type*} [Fintype n] [DecidableEq n]
     [Field K] [Ring.HasFiniteQuotients K] : congruenceKernel n K = ⊤ := by
   refine eq_top_iff.2 fun x _ ↦ mem_congruenceKernel_iff.2 fun I hI ↦ ?_
   obtain ⟨γ, hγ⟩ := QuotientGroup.mk_surjective
-    (ProfiniteCompletion.coordinateHom _ (principalCongruenceLevel n K hI) x)
-  rw [← hγ, QuotientGroup.eq_one_iff, toSubgroup_principalCongruenceLevel,
+    (ProfiniteCompletion.coordinateHom _ (principalCongruenceSubgroup n K hI) x)
+  rw [← hγ, QuotientGroup.eq_one_iff, toSubgroup_principalCongruenceSubgroup,
     mem_ker_map_quotientMk_iff]
   simp [(Ideal.eq_bot_or_top I).resolve_left hI]
 

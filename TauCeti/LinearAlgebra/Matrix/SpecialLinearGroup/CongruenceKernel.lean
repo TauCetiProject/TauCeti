@@ -16,9 +16,9 @@ import Mathlib.RingTheory.Filtration
 Let `A` be a commutative ring with finite quotients, such as a ring of `S`-integers of a number
 field, and `Γ = SL(n, A)`. For a nonzero ideal `I` the principal congruence subgroup
 `Γ(I) = ker (Γ → SL(n, A ⧸ I))` is normal of finite index. The congruence completion
-`lim_{I ≠ 0} Γ ⧸ Γ(I)` is the completion of `Γ` relative to these levels, and the profinite
+`lim_{I ≠ 0} Γ ⧸ Γ(I)` is the completion of `Γ` relative to these subgroups, and the profinite
 completion `Γ̂` maps onto it. The **congruence kernel** `C(Γ)` is the kernel of this map: the
-elements of `Γ̂` whose coordinates at every nonzero principal congruence level are trivial,
+elements of `Γ̂` whose coordinates at every `Γ(I)` of nonzero level are trivial,
 equivalently the intersection of the closures in `Γ̂` of the `Γ(I)`. The zero ideal is not a
 level: `Γ(0)` is trivial, and it has finite index only when `Γ` is finite.
 
@@ -32,7 +32,7 @@ a field (`etaFn_mem_congruenceKernel_iff_eq_one`), by Krull's intersection theor
 
 ## Main definitions
 
-* `TauCeti.SpecialLinearGroup.principalCongruenceLevel`: the principal congruence subgroup of a
+* `TauCeti.SpecialLinearGroup.principalCongruenceSubgroup`: the principal congruence subgroup of a
   nonzero level, as a finite-index normal subgroup.
 * `TauCeti.SpecialLinearGroup.congruenceKernel`: the congruence kernel, a subgroup of the
   profinite completion of `SL(n, A)`.
@@ -46,7 +46,8 @@ a field (`etaFn_mem_congruenceKernel_iff_eq_one`), by Krull's intersection theor
 * `TauCeti.SpecialLinearGroup.etaFn_mem_congruenceKernel_iff_eq_one`: over a domain that is not a
   field, the image of `SL(n, A)` meets the congruence kernel only in `1`.
 * `TauCeti.SpecialLinearGroup.congruenceKernel_eq_bot_iff`: the congruence kernel is trivial
-  exactly when every finite-index subgroup contains a nonzero principal congruence level.
+  exactly when every finite-index subgroup contains a principal congruence subgroup of nonzero
+  level.
 
 ## References
 
@@ -69,20 +70,20 @@ variable (n : Type*) [Fintype n] [DecidableEq n] (A : Type*) [CommRing A]
 /-- The principal congruence subgroup `Γ(I) = ker (SL(n, A) → SL(n, A ⧸ I))` of a nonzero level
 `I`, as a finite-index normal subgroup: its quotient embeds in the finite group
 `SL(n, A ⧸ I)`. -/
-def principalCongruenceLevel {I : Ideal A} (hI : I ≠ ⊥) :
+def principalCongruenceSubgroup {I : Ideal A} (hI : I ≠ ⊥) :
     FiniteIndexNormalSubgroup (SpecialLinearGroup n A) :=
   haveI := Ring.HasFiniteQuotients.finiteQuotient hI
   .ofSubgroup (map (Ideal.Quotient.mk I)).ker
 
 @[simp]
-theorem toSubgroup_principalCongruenceLevel {I : Ideal A} (hI : I ≠ ⊥) :
-    (principalCongruenceLevel n A hI).toSubgroup = (map (Ideal.Quotient.mk I)).ker :=
+theorem toSubgroup_principalCongruenceSubgroup {I : Ideal A} (hI : I ≠ ⊥) :
+    (principalCongruenceSubgroup n A hI).toSubgroup = (map (Ideal.Quotient.mk I)).ker :=
   (rfl)
 
 @[simp]
-theorem mem_principalCongruenceLevel_iff {I : Ideal A} (hI : I ≠ ⊥)
+theorem mem_principalCongruenceSubgroup_iff {I : Ideal A} (hI : I ≠ ⊥)
     {γ : SpecialLinearGroup n A} :
-    γ ∈ principalCongruenceLevel n A hI ↔ γ ∈ (map (Ideal.Quotient.mk I)).ker :=
+    γ ∈ principalCongruenceSubgroup n A hI ↔ γ ∈ (map (Ideal.Quotient.mk I)).ker :=
   Iff.rfl
 
 /-- The **congruence kernel** of `SL(n, A)`: the kernel of the comparison from the profinite
@@ -93,7 +94,7 @@ def congruenceKernel :
     Subgroup (ProfiniteGrp.ProfiniteCompletion.completion
       (GrpCat.of (SpecialLinearGroup n A))) :=
   ProfiniteCompletion.familyKernel _
-    (Set.range fun I : {I : Ideal A // I ≠ ⊥} ↦ principalCongruenceLevel n A I.property)
+    (Set.range fun I : {I : Ideal A // I ≠ ⊥} ↦ principalCongruenceSubgroup n A I.property)
 
 instance congruenceKernel_normal : (congruenceKernel n A).Normal :=
   ProfiniteCompletion.familyKernel_normal _
@@ -109,14 +110,14 @@ theorem congruenceKernel_eq_iInf_topologicalClosure :
         (ProfiniteGrp.ProfiniteCompletion.eta (GrpCat.of (SpecialLinearGroup n A))).hom
         ).topologicalClosure := by
   simp only [congruenceKernel, ProfiniteCompletion.familyKernel_eq_iInf_topologicalClosure,
-    iInf_range, iInf_subtype, toSubgroup_principalCongruenceLevel]
+    iInf_range, iInf_subtype, toSubgroup_principalCongruenceSubgroup]
 
 variable {n A}
 
 theorem mem_congruenceKernel_iff {x : ProfiniteGrp.ProfiniteCompletion.completion
       (GrpCat.of (SpecialLinearGroup n A))} :
     x ∈ congruenceKernel n A ↔ ∀ (I : Ideal A) (hI : I ≠ ⊥),
-      ProfiniteCompletion.coordinateHom _ (principalCongruenceLevel n A hI) x = 1 := by
+      ProfiniteCompletion.coordinateHom _ (principalCongruenceSubgroup n A hI) x = 1 := by
   simp only [congruenceKernel, ProfiniteCompletion.mem_familyKernel_iff, Set.forall_mem_range,
     Subtype.forall]
 
@@ -127,7 +128,7 @@ theorem etaFn_mem_congruenceKernel_iff {γ : SpecialLinearGroup n A} :
     ProfiniteGrp.ProfiniteCompletion.etaFn _ γ ∈ congruenceKernel n A ↔
       ∀ I : Ideal A, I ≠ ⊥ → γ ∈ (map (Ideal.Quotient.mk I)).ker := by
   simp only [congruenceKernel, ProfiniteCompletion.etaFn_mem_familyKernel_iff,
-    Set.forall_mem_range, Subtype.forall, mem_principalCongruenceLevel_iff]
+    Set.forall_mem_range, Subtype.forall, mem_principalCongruenceSubgroup_iff]
 
 /-- Over a domain with finite quotients that is not a field, the image of `SL(n, A)` in its
 profinite completion meets the congruence kernel only in the identity. -/
