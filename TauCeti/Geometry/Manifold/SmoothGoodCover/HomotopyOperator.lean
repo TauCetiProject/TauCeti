@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.HomotopyOperator
-public import TauCeti.Geometry.Manifold.SmoothGoodCover
+public import TauCeti.Geometry.Manifold.SmoothGoodCover.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!

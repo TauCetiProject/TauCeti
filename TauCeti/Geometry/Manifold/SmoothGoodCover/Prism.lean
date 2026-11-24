@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothGoodCover
+public import TauCeti.Geometry.Manifold.SmoothGoodCover.Basic
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Topology.LocallyFinite.Basic
 
@@ -15,7 +15,7 @@ import TauCeti.Topology.LocallyFinite.Basic
 The product of two smooth good covers is a smooth good cover of the product manifold
 (`TauCeti.SmoothGoodCover.prod`): its members are the products `U × V` of members, a finite
 intersection of products is the product of the finite intersections of the factors
-(`TauCeti.SmoothGoodCover.coe_inf_prod_openSet`), and the contractions of the two factors run
+(`TauCeti.SmoothGoodCover.coe_inf_openSet_prod`), and the contractions of the two factors run
 simultaneously.
 
 A locally finite cover of a segment `[a, b]` by relatively open order-connected sets, that is, by
@@ -40,7 +40,7 @@ The requirement that the members of an interval cover be intervals is what makes
 ## Main definitions and results
 
 * `TauCeti.SmoothGoodCover.prod`: the product of two smooth good covers.
-* `TauCeti.SmoothGoodCover.coe_inf_prod_openSet`: a finite intersection of members of a product
+* `TauCeti.SmoothGoodCover.coe_inf_openSet_prod`: a finite intersection of members of a product
   cover is the product of the finite intersections of the factors.
 * `TauCeti.SmoothGoodCover.ofOrdConnected`: the smooth good cover of `[a, b]` given by a locally
   finite cover by relatively open order-connected sets.
@@ -143,7 +143,7 @@ open Classical in
 /-- The **product of two smooth good covers**: the members of the product cover of `M × N` are the
 products `C.openSet i ×ˢ D.openSet j`, indexed by `C.Index × D.Index`
 (`SmoothGoodCover.prodIndexEquiv`). A nonempty finite intersection of members is the product of
-nonempty finite intersections of `C` and of `D` (`SmoothGoodCover.coe_inf_prod_openSet`); its
+nonempty finite intersections of `C` and of `D` (`SmoothGoodCover.coe_inf_openSet_prod`); its
 center is the pair of centers, and it contracts by running the two contractions simultaneously. -/
 def prod : SmoothGoodCover (I.prod I') (M := M × N) where
   Index := C.Index × D.Index
@@ -180,7 +180,7 @@ def prodIndexEquiv : (C.prod D).Index ≃ C.Index × D.Index :=
 
 /-- The members of a product cover are the products of members. -/
 @[simp]
-theorem coe_prod_openSet (p : (C.prod D).Index) :
+theorem coe_openSet_prod (p : (C.prod D).Index) :
     ((C.prod D).openSet p : Set (M × N)) =
       (C.openSet (C.prodIndexEquiv D p).1 : Set M) ×ˢ
         (D.openSet (C.prodIndexEquiv D p).2 : Set N) :=
@@ -188,7 +188,7 @@ theorem coe_prod_openSet (p : (C.prod D).Index) :
 
 /-- A finite intersection of members of a product cover is the product of the finite
 intersections of the corresponding members of the two factors. -/
-theorem coe_inf_prod_openSet (s : Finset (C.prod D).Index) :
+theorem coe_inf_openSet_prod (s : Finset (C.prod D).Index) :
     ((s.inf (C.prod D).openSet : Opens (M × N)) : Set (M × N)) =
       ((s.inf fun p ↦ C.openSet (C.prodIndexEquiv D p).1 : Opens M) : Set M) ×ˢ
         ((s.inf fun p ↦ D.openSet (C.prodIndexEquiv D p).2 : Opens N) : Set N) :=
@@ -196,7 +196,7 @@ theorem coe_inf_prod_openSet (s : Finset (C.prod D).Index) :
 
 /-- A point lies in a finite intersection of members of a product cover exactly when its
 components lie in the finite intersections of the corresponding members of the two factors. -/
-theorem mem_inf_prod_openSet [DecidableEq C.Index] [DecidableEq D.Index]
+theorem mem_inf_openSet_prod [DecidableEq C.Index] [DecidableEq D.Index]
     {s : Finset (C.prod D).Index} {x : M × N} :
     x ∈ s.inf (C.prod D).openSet ↔
       x.1 ∈ (s.image fun p ↦ (C.prodIndexEquiv D p).1).inf C.openSet ∧
@@ -206,12 +206,12 @@ theorem mem_inf_prod_openSet [DecidableEq C.Index] [DecidableEq D.Index]
 /-- The center of a finite intersection of members of a product cover is the pair of centers of
 the corresponding finite intersections of the factors. -/
 @[simp]
-theorem coe_prod_center [DecidableEq C.Index] [DecidableEq D.Index]
+theorem coe_center_prod [DecidableEq C.Index] [DecidableEq D.Index]
     (s : Finset (C.prod D).Index) (hs : s.Nonempty)
     (hW : ((s.inf (C.prod D).openSet : Opens (M × N)) : Set (M × N)).Nonempty) :
     ((C.prod D).center s hs hW : M × N) =
-      ((C.center _ (hs.image _) ⟨_, ((C.mem_inf_prod_openSet D).1 hW.some_mem).1⟩ : M),
-        (D.center _ (hs.image _) ⟨_, ((C.mem_inf_prod_openSet D).1 hW.some_mem).2⟩ : N)) := by
+      ((C.center _ (hs.image _) ⟨_, ((C.mem_inf_openSet_prod D).1 hW.some_mem).1⟩ : M),
+        (D.center _ (hs.image _) ⟨_, ((C.mem_inf_openSet_prod D).1 hW.some_mem).2⟩ : N)) := by
   rcases Subsingleton.elim ‹DecidableEq C.Index› (Classical.decEq C.Index) with rfl
   rcases Subsingleton.elim ‹DecidableEq D.Index› (Classical.decEq D.Index) with rfl
   rfl
@@ -219,15 +219,15 @@ theorem coe_prod_center [DecidableEq C.Index] [DecidableEq D.Index]
 /-- The contraction of a finite intersection of members of a product cover runs the contractions
 of the corresponding finite intersections of the two factors simultaneously. -/
 @[simp]
-theorem coe_prod_contract [DecidableEq C.Index] [DecidableEq D.Index]
+theorem coe_contract_prod [DecidableEq C.Index] [DecidableEq D.Index]
     (s : Finset (C.prod D).Index) (hs : s.Nonempty)
     (hW : ((s.inf (C.prod D).openSet : Opens (M × N)) : Set (M × N)).Nonempty)
     (p : ℝ × ↥(s.inf (C.prod D).openSet)) :
     ((C.prod D).contract s hs hW p : M × N) =
-      ((C.contract _ (hs.image _) ⟨_, ((C.mem_inf_prod_openSet D).1 hW.some_mem).1⟩
-          (p.1, ⟨_, ((C.mem_inf_prod_openSet D).1 p.2.property).1⟩) : M),
-        (D.contract _ (hs.image _) ⟨_, ((C.mem_inf_prod_openSet D).1 hW.some_mem).2⟩
-          (p.1, ⟨_, ((C.mem_inf_prod_openSet D).1 p.2.property).2⟩) : N)) := by
+      ((C.contract _ (hs.image _) ⟨_, ((C.mem_inf_openSet_prod D).1 hW.some_mem).1⟩
+          (p.1, ⟨_, ((C.mem_inf_openSet_prod D).1 p.2.property).1⟩) : M),
+        (D.contract _ (hs.image _) ⟨_, ((C.mem_inf_openSet_prod D).1 hW.some_mem).2⟩
+          (p.1, ⟨_, ((C.mem_inf_openSet_prod D).1 p.2.property).2⟩) : N)) := by
   rcases Subsingleton.elim ‹DecidableEq C.Index› (Classical.decEq C.Index) with rfl
   rcases Subsingleton.elim ‹DecidableEq D.Index› (Classical.decEq D.Index) with rfl
   rfl
@@ -241,11 +241,11 @@ theorem coe_cylinderContract_prod [DecidableEq C.Index] [DecidableEq D.Index]
     (hW : ((s.inf (C.prod D).openSet : Opens (M × N)) : Set (M × N)).Nonempty)
     (p : ↥(s.inf (C.prod D).openSet) × Icc (0 : ℝ) 1) :
     ((C.prod D).cylinderContract s hs hW p : M × N) =
-      ((C.cylinderContract _ (hs.image _) ⟨_, ((C.mem_inf_prod_openSet D).1 hW.some_mem).1⟩
-          (⟨_, ((C.mem_inf_prod_openSet D).1 p.1.property).1⟩, p.2) : M),
-        (D.cylinderContract _ (hs.image _) ⟨_, ((C.mem_inf_prod_openSet D).1 hW.some_mem).2⟩
-          (⟨_, ((C.mem_inf_prod_openSet D).1 p.1.property).2⟩, p.2) : N)) := by
-  rw [cylinderContract_apply, coe_prod_contract]
+      ((C.cylinderContract _ (hs.image _) ⟨_, ((C.mem_inf_openSet_prod D).1 hW.some_mem).1⟩
+          (⟨_, ((C.mem_inf_openSet_prod D).1 p.1.property).1⟩, p.2) : M),
+        (D.cylinderContract _ (hs.image _) ⟨_, ((C.mem_inf_openSet_prod D).1 hW.some_mem).2⟩
+          (⟨_, ((C.mem_inf_openSet_prod D).1 p.1.property).2⟩, p.2) : N)) := by
+  rw [cylinderContract_apply, coe_contract_prod]
   exact Prod.ext (congrArg Subtype.val (C.cylinderContract_apply _ _ _ (_, p.2)).symm)
     (congrArg Subtype.val (D.cylinderContract_apply _ _ _ (_, p.2)).symm)
 
@@ -323,7 +323,7 @@ def ofOrdConnectedIndexEquiv : (ofOrdConnected J covers locallyFinite ordConnect
 
 /-- The members of an interval cover are the given intervals. -/
 @[simp]
-theorem ofOrdConnected_openSet (i : (ofOrdConnected J covers locallyFinite ordConnected).Index) :
+theorem openSet_ofOrdConnected (i : (ofOrdConnected J covers locallyFinite ordConnected).Index) :
     (ofOrdConnected J covers locallyFinite ordConnected).openSet i =
       J (ofOrdConnectedIndexEquiv J covers locallyFinite ordConnected i) :=
   (rfl)
@@ -342,7 +342,7 @@ theorem coe_center_ofOrdConnected
 contraction `(t, x) ↦ c + τ(t) (x - c)` to its center `c = hW.some`, reparametrized by
 `τ = Real.smoothTransition`. -/
 @[simp]
-theorem coe_ofOrdConnected_contract
+theorem coe_contract_ofOrdConnected
     (s : Finset (ofOrdConnected J covers locallyFinite ordConnected).Index) (hs : s.Nonempty)
     (hW : ((s.inf (ofOrdConnected J covers locallyFinite ordConnected).openSet :
       Opens (Icc a b)) : Set (Icc a b)).Nonempty)
