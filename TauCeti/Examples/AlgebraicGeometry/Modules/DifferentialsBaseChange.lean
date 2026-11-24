@@ -53,7 +53,6 @@ variable (k : Type*) [Field k]
 `ds ≠ 0`. -/
 theorem not_surjective_mapBaseChange_ratFunc :
     ¬ Function.Surjective (mapBaseChange k k (RatFunc k)) := by
-  have : Subsingleton Ω[k⁄k] := subsingleton_of_surjective k k fun x ↦ ⟨x, rfl⟩
   intro h
   obtain ⟨x, hx⟩ := h (D k (RatFunc k) RatFunc.X)
   rw [Subsingleton.elim x 0, map_zero] at hx
@@ -62,8 +61,6 @@ theorem not_surjective_mapBaseChange_ratFunc :
 /-- The map `e : Ω_{k(s)/k} → Ω_{k(s)/k(s)}` kills `ds`, as `Ω_{k(s)/k(s)} = 0`. -/
 theorem map_D_X_ratFunc_eq_zero :
     map k (RatFunc k) (RatFunc k) (RatFunc k) (D k (RatFunc k) RatFunc.X) = 0 :=
-  have : Subsingleton Ω[RatFunc k⁄RatFunc k] :=
-    subsingleton_of_surjective (RatFunc k) (RatFunc k) fun x ↦ ⟨x, rfl⟩
   Subsingleton.elim _ _
 
 /-- For `X = Spec k` and `X' = Spec k(s)`, the base-change map `b_{g'} = e ∘ c_{g'}` from
