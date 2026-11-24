@@ -25,7 +25,7 @@ every field embedding into `ℂ`, so it is `ι`-pure of weight `n` for every `ι
 that all-embeddings condition with the conditions one can test on a polynomial over a coefficient
 field.
 
-Let `E` be a field algebraic over `ℚ`, such as a number field, and `P ∈ E[X]`; think of
+Let `E` be a field algebraic over `ℚ`, such as a number field, `P ∈ E[X]` and `1 < q`; think of
 `P` as the characteristic polynomial of a Frobenius element, or as the Hecke polynomial of an
 eigenform over its coefficient field. Every root of `P` in an algebraically closed field is a Weil
 `q`-number of weight `n` if and only if, for every field embedding `σ : E → ℂ`, every complex root
@@ -51,17 +51,18 @@ root greater than `1`. These checks close the file.
   algebraic over `ℚ` is a Weil `q`-number of weight `n` if and only if `1 < q` and, for every
   embedding `σ : E → ℂ`, every complex root of `σ` applied to its minimal polynomial over `E` has
   absolute value `q ^ (n / 2)`.
-* `TauCeti.IsWeilNumber.of_aeval_eq_zero_of_forall_roots_map`: a root of a nonzero polynomial over
-  `E` whose images under all embeddings `σ : E → ℂ` have all their roots of absolute value
-  `q ^ (n / 2)` is a Weil `q`-number of weight `n`.
-* `TauCeti.forall_isWeilNumber_mem_aroots_iff`: every root of `P ∈ E[X]` in an
+* `TauCeti.IsWeilNumber.of_aeval_eq_zero_of_forall_roots_map`: for `1 < q`, a root of a nonzero
+  polynomial over `E` whose images under all embeddings `σ : E → ℂ` have all their roots of
+  absolute value `q ^ (n / 2)` is a Weil `q`-number of weight `n`.
+* `TauCeti.forall_isWeilNumber_mem_aroots_iff`: for `1 < q`, every root of `P ∈ E[X]` in an
   algebraically closed field is a Weil `q`-number of weight `n` if and only if, for every
   `σ : E → ℂ`, every complex root of `σ(P)` has absolute value `q ^ (n / 2)`.
-* `TauCeti.forall_isWeilNumber_mem_aroots_iff_of_rat`: for a rational polynomial it
+* `TauCeti.forall_isWeilNumber_mem_aroots_iff_of_rat`: for `1 < q` and a rational polynomial it
   suffices to test its complex roots.
 * `TauCeti.irreducible_X_pow_four_sub_X_pow_three_sub_X_sq_sub_X_add_one` and
   `TauCeti.not_isWeilNumber_of_aeval_X_pow_four_sub_X_pow_three_sub_X_sq_sub_X_add_one_eq_zero`:
-  the quartic above is irreducible over `ℚ`, and none of its roots, in any field, is a Weil number.
+  the quartic above is irreducible over `ℚ`, and none of its roots, in any field of
+  characteristic zero, is a Weil number.
 
 ## References
 
@@ -111,9 +112,10 @@ theorem isWeilNumber_iff_forall_mem_roots_map_minpoly {α : L} (hα : IsIntegral
   · rw [mem_roots_map (minpoly.ne_zero hα), ← hom_eval₂, ← aeval_def, AdjoinRoot.aeval_eq,
       AdjoinRoot.mk_self, map_zero]
 
-/-- Let `E` be a field algebraic over `ℚ` and `P ∈ E[X]` nonzero. If, for every field embedding
-`σ : E → ℂ`, every complex root of `σ(P)` has absolute value `q ^ (n / 2)`, then every root of `P`
-in a field over `E` is a Weil `q`-number of weight `n`. The polynomial need not be irreducible. -/
+/-- Let `E` be a field algebraic over `ℚ`, `P ∈ E[X]` nonzero and `1 < q`. If, for every field
+embedding `σ : E → ℂ`, every complex root of `σ(P)` has absolute value `q ^ (n / 2)`, then every
+root of `P` in a field over `E` is a Weil `q`-number of weight `n`. The polynomial need not be
+irreducible. -/
 theorem IsWeilNumber.of_aeval_eq_zero_of_forall_roots_map {P : E[X]} (hq : 1 < q) (hP : P ≠ 0)
     {α : L} (hα : aeval α P = 0)
     (hroots : ∀ σ : E →+* ℂ, ∀ z ∈ (P.map σ).roots, ‖z‖ = q ^ ((n : ℝ) / 2)) :
@@ -123,8 +125,8 @@ theorem IsWeilNumber.of_aeval_eq_zero_of_forall_roots_map {P : E[X]} (hq : 1 < q
   exact Multiset.mem_of_le (roots.le_of_dvd (Polynomial.map_ne_zero hP)
     (Polynomial.map_dvd σ (minpoly.dvd E α hα))) hz
 
-/-- Let `E` be a field algebraic over `ℚ`, `P ∈ E[X]` and `L` an algebraically closed field over
-`E`. Every root of `P` in `L` is a Weil `q`-number of weight `n` if and only if, for
+/-- Let `E` be a field algebraic over `ℚ`, `P ∈ E[X]`, `L` an algebraically closed field over `E`
+and `1 < q`. Every root of `P` in `L` is a Weil `q`-number of weight `n` if and only if, for
 every field embedding `σ : E → ℂ`, every complex root of `σ(P)` has absolute value
 `q ^ (n / 2)`. -/
 theorem forall_isWeilNumber_mem_aroots_iff [IsAlgClosed L] (hq : 1 < q) (P : E[X]) :
@@ -150,7 +152,7 @@ theorem forall_isWeilNumber_mem_aroots_iff [IsAlgClosed L] (hq : 1 < q) (P : E[X
   rw [← hmin]
   exact (mem_roots_map (minpoly.ne_zero hzint)).mpr (minpoly.aeval E z)
 
-/-- Every root of a rational polynomial `P` in an algebraically closed field of
+/-- Let `1 < q`. Every root of a rational polynomial `P` in an algebraically closed field of
 characteristic zero is a Weil `q`-number of weight `n` if and only if every complex root of `P`
 has absolute value `q ^ (n / 2)`: for a rational polynomial, testing one embedding suffices. -/
 theorem forall_isWeilNumber_mem_aroots_iff_of_rat [IsAlgClosed K] (hq : 1 < q) (P : ℚ[X]) :
