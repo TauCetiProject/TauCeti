@@ -57,7 +57,9 @@ so is a function vanishing outside a measurable set and dominated on it by a fun
 there (`MeasureTheory.integrable_of_forall_notMem_eq_zero_of_norm_le`).
 Scalar multiplication by a finite product of multiplicative indicators, each constant on a
 null-measurable set and equal to `1` off it, preserves integrability
-(`MeasureTheory.Integrable.prod_mulIndicator_const_smul`).
+(`MeasureTheory.Integrable.prod_mulIndicator_const_smul`). A function integrable for the measure
+`μ` weighted by `‖h‖ₑ` has an integrable scalar product with `h`
+(`MeasureTheory.integrable_smul_of_integrable_withDensity_enorm`).
 -/
 
 public section
@@ -240,6 +242,19 @@ theorem integrable_of_forall_notMem_eq_zero_of_norm_le {α E : Type*} [Measurabl
     (hf0 : ∀ x ∉ s, f x = 0) (hfg : ∀ x ∈ s, ‖f x‖ ≤ g x) : Integrable f μ :=
   IntegrableOn.integrable_of_forall_notMem_eq_zero
     (hg.mono' hf (ae_restrict_of_forall_mem hs hfg)) hf0
+
+/-- If `f` is integrable for the measure `μ` weighted by `‖h‖ₑ`, then `f • h` is integrable for
+`μ`. -/
+theorem integrable_smul_of_integrable_withDensity_enorm {α 𝕜 E : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedField 𝕜] [NormedSpace ℝ 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {f : α → 𝕜} {h : α → E} (hf : Integrable f (μ.withDensity fun x ↦ ‖h x‖ₑ))
+    (hfm : AEStronglyMeasurable f μ) (hh : AEStronglyMeasurable h μ) :
+    Integrable (fun x ↦ f x • h x) μ := by
+  simp_rw [eNorm_eq_nnNorm] at hf
+  rw [integrable_withDensity_iff_integrable_smul₀ hh.nnNorm.aemeasurable] at hf
+  refine hf.mono (hfm.smul hh) (.of_forall fun x ↦ ?_)
+  rw [norm_smul, NNReal.smul_def, norm_smul, coe_nnNorm, Real.norm_of_nonneg (norm_nonneg _),
+    mul_comm]
 
 end MeasureTheory
 
