@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Signature
 public import TauCeti.Analysis.Complex.ModularForms.CongruenceSubgroups.Degree
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Analysis.Complex.Fuchsian.Compactification.Signature
 import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Cofinite
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Count
@@ -96,12 +97,6 @@ private theorem finite_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 ∨ 
   H.isCofinite_map_sl2zToPSL2R.finite_ellipticOrbits.subset fun q hq ↦
     (H.mem_ellipticOrbits_map_sl2zToPSL2R_iff q).mpr (hq ▸ hm)
 
-/-- A finite sum of a constant over a finite set is the cardinality of the set times the
-constant. -/
-private theorem finsum_mem_const {α : Type*} {s : Set α} (hs : s.Finite) (c : ℝ) :
-    ∑ᶠ _ ∈ s, c = s.ncard * c := by
-  simp [finsum_mem_eq_finite_toFinset_sum _ hs, Set.ncard_eq_toFinset_card _ hs]
-
 /-- On the orbits of stabilizer order `m ∈ {2, 3}` the summand `1 - 1 / m` of the elliptic defect
 is constant, so its sum is `1 - 1 / m` times the number of such orbits. -/
 private theorem finsum_mem_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 ∨ m = 3) :
@@ -110,7 +105,7 @@ private theorem finsum_mem_setOf_cardStabilizerOnOrbit_eq {m : ℕ} (hm : m = 2 
       Nat.card {q : orbitRel.Quotient (H.map sl2zToPSL2R) ℍ // cardStabilizerOnOrbit q = m} *
         (1 - (m : ℝ)⁻¹) := by
   rw [finsum_mem_congr rfl fun q (hq : cardStabilizerOnOrbit q = m) ↦ by rw [hq]]
-  exact finsum_mem_const (H.finite_setOf_cardStabilizerOnOrbit_eq hm) _
+  exact ((H.finite_setOf_cardStabilizerOnOrbit_eq hm).finsum_mem_const _).trans (nsmul_eq_mul _ _)
 
 /-- **The elliptic defect of a finite-index subgroup of `SL(2, ℤ)`.** Summing `1 - 1 / m` over the
 elliptic orbits, of orders `m = 2` and `m = 3`, gives `ε₂ / 2 + 2 ε₃ / 3`. -/

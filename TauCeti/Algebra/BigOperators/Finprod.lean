@@ -80,6 +80,8 @@ element commutes with `finsum` even when the support is infinite.
 * `Set.Finite.finprod_mem_comp_eq_multiset_prod_map` and
   `Set.Finite.finsum_mem_comp_eq_multiset_sum_map`: a product or sum of `g (f x)` over a finite
   set `s` factors through the multiset `hs.toFinset.val.map f`.
+* `Set.Finite.finprod_mem_const` and `Set.Finite.finsum_mem_const`: the product of a constant
+  `c` over a finite set `s` is `c ^ s.ncard`, and the sum is `s.ncard • c`.
 * `Set.exists_finprod_mem_comp_eq_multiset_prod_map` and
   `Set.exists_finsum_mem_comp_eq_multiset_sum_map`: for any set `s`, `∏ᶠ x ∈ s, g (f x)` (or
   `∑ᶠ x ∈ s, g (f x)`) equals `(m.map g).prod` (or `(m.map g).sum`) for some multiset `m`.
@@ -428,6 +430,12 @@ theorem finprod_mem_comp_eq_multiset_prod_map {α β M : Type*} [CommMonoid M] {
     ∏ᶠ x ∈ s, g (f x) = ((hs.toFinset.val.map f).map g).prod := by
   rw [finprod_mem_eq_finite_toFinset_prod _ hs, Finset.prod_eq_multiset_prod, Multiset.map_map]
   rfl
+
+/-- The product of a constant `c` over a finite set `s` is `c ^ s.ncard`. -/
+@[to_additive /-- The sum of a constant `c` over a finite set `s` is `s.ncard • c`. -/]
+theorem finprod_mem_const {α M : Type*} [CommMonoid M] {s : Set α} (hs : s.Finite) (c : M) :
+    ∏ᶠ _ ∈ s, c = c ^ s.ncard := by
+  rw [finprod_mem_eq_finite_toFinset_prod _ hs, Finset.prod_const, Set.ncard_eq_toFinset_card _ hs]
 
 end Set.Finite
 
