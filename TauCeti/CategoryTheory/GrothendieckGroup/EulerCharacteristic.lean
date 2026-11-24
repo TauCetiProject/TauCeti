@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.Abelian.Images
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
 
+import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
+
 /-!
 # The Euler characteristic of a bounded complex in abelian and exact `K₀`
 
@@ -267,9 +269,10 @@ the alternating sum of the values on the cohomology objects. -/
 theorem sum_negOnePow_obj_X_eq_sum_negOnePow_obj_homology (a b : ℤ) [K.IsStrictlyGE a]
     [K.IsStrictlyLE b] {s : Finset ℤ} (hs : Finset.Icc a b ⊆ s) :
     ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.X n)
-      = ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.homology n) :=
-  K.sum_negOnePow_X_eq_sum_negOnePow_homology (fun _ => obj_eq_zero_of_isZero v)
-    (obj_kernel_d_add_obj_kernel_d v K) a b hs
+      = ∑ n ∈ s, ((n.negOnePow : ℤ)) • v.obj (K.homology n) := by
+  simpa only [ComplexShape.eulerCharSignsUpInt_χ] using
+    K.sum_χ_smul_obj_X_eq_sum_χ_smul_obj_homology v s
+      (fun n hn ↦ K.isZero_X_of_notMem_Icc a b fun h ↦ hn (hs h))
 
 end CochainComplex
 

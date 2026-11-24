@@ -13,15 +13,15 @@ public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.Algebra.Homology.SpectralSequence.Bidegree
-public import TauCeti.Algebra.Homology.SpectralSequence.EulerCharSigns
+public import TauCeti.Algebra.Homology.SpectralSequence.EulerCharacteristic.Signs
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
+public import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
 
 import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
 import TauCeti.Algebra.Homology.EulerCharacteristic.Finite
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 import TauCeti.Algebra.Homology.SpectralSequence.ModuleCat
 import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
-import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
 import TauCeti.CategoryTheory.ObjectProperty.Homology
 import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
@@ -79,9 +79,7 @@ theorem sum_negOnePow_page_eq_sum_negOnePow_page_add_one
     (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
     (P : ObjectProperty C) [P.ContainsZero] [P.IsClosedUnderKernels]
     [P.IsClosedUnderCokernels]
-    {G : Type*} [AddCommGroup G] (v : C → G)
-    (hv : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃ →
-      v S.X₂ = v S.X₁ + v S.X₃)
+    {G : Type*} [AddCommGroup G] (v : C → G) (hv : P.IsAdditiveOn v)
     (r : ℤ) (hr : r₀ ≤ r) (s : Finset κ)
     (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq))
     (hsP : ∀ pq ∈ s, P ((E.page r hr).X pq)) :
@@ -105,9 +103,7 @@ theorem sum_negOnePow_page_eq_sum_negOnePow_page_of_le
     (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
     (P : ObjectProperty C) [P.ContainsZero] [P.IsClosedUnderKernels]
     [P.IsClosedUnderCokernels]
-    {G : Type*} [AddCommGroup G] (v : C → G)
-    (hv : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃ →
-      v S.X₂ = v S.X₁ + v S.X₃)
+    {G : Type*} [AddCommGroup G] (v : C → G) (hv : P.IsAdditiveOn v)
     (r : ℤ) (hr : r₀ ≤ r) (s : Finset κ)
     (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq))
     (hsP : ∀ pq ∈ s, P ((E.page r hr).X pq))
@@ -130,8 +126,8 @@ theorem sum_negOnePow_obj_page_eq_sum_negOnePow_obj_page_add_one
     (hs : ∀ pq : κ, pq ∉ s → IsZero ((E.page r hr).X pq)) :
     ∑ pq ∈ s, ((A.deg pq).negOnePow : ℤ) • v.obj ((E.page r hr).X pq) =
       ∑ pq ∈ s, ((A.deg pq).negOnePow : ℤ) • v.obj ((E.page (r + 1)).X pq) :=
-  E.sum_negOnePow_page_eq_sum_negOnePow_page_add_one A ⊤ v.obj
-    (fun _ hS _ _ _ ↦ v.map_shortExact hS) r hr s hs (fun _ _ ↦ trivial)
+  E.sum_negOnePow_page_eq_sum_negOnePow_page_add_one A ⊤ v.obj (v.isAdditiveOn ⊤)
+    r hr s hs (fun _ _ ↦ trivial)
 
 /-- Specialization of `sum_negOnePow_page_eq_sum_negOnePow_page_of_le` to a
 `TauCeti.AbelianK0.AdditiveInvariant`, taking `P = ⊤`. -/
@@ -143,8 +139,8 @@ theorem sum_negOnePow_obj_page_eq_sum_negOnePow_obj_page_of_le
     (r' : ℤ) (hrr' : r ≤ r') :
     ∑ pq ∈ s, ((A.deg pq).negOnePow : ℤ) • v.obj ((E.page r hr).X pq) =
       ∑ pq ∈ s, ((A.deg pq).negOnePow : ℤ) • v.obj ((E.page r' (hr.trans hrr')).X pq) :=
-  E.sum_negOnePow_page_eq_sum_negOnePow_page_of_le A ⊤ v.obj
-    (fun _ hS _ _ _ ↦ v.map_shortExact hS) r hr s hs (fun _ _ ↦ trivial) r' hrr'
+  E.sum_negOnePow_page_eq_sum_negOnePow_page_of_le A ⊤ v.obj (v.isAdditiveOn ⊤)
+    r hr s hs (fun _ _ ↦ trivial) r' hrr'
 
 end Abelian
 

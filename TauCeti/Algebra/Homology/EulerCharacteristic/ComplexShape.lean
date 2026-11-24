@@ -10,10 +10,10 @@ public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.CategoryTheory.GrothendieckGroup.Abelian
+public import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
 
 import TauCeti.Algebra.Homology.ShortComplex.Abelian
 import TauCeti.CategoryTheory.Abelian.Images
-import TauCeti.CategoryTheory.ObjectProperty.AdditiveFunction
 import TauCeti.CategoryTheory.ObjectProperty.Kernels
 
 /-!
@@ -76,9 +76,7 @@ kernels and cokernels such that `K.X i` lies in `P` for every `i ∈ s`. Then fo
 theorem sum_χ_smul_X_eq_sum_χ_smul_homology [c.EulerCharSigns]
     (K : HomologicalComplex C c) (P : ObjectProperty C)
     [P.ContainsZero] [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
-    {G : Type*} [AddCommGroup G] (v : C → G)
-    (hv : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃ →
-      v S.X₂ = v S.X₁ + v S.X₃)
+    {G : Type*} [AddCommGroup G] (v : C → G) (hv : P.IsAdditiveOn v)
     (s : Finset ι) (hs : ∀ i : ι, i ∉ s → IsZero (K.X i)) (hsP : ∀ i ∈ s, P (K.X i)) :
     ∑ i ∈ s, (c.χ i : ℤ) • v (K.X i) =
       ∑ i ∈ s, (c.χ i : ℤ) • v (K.homology i) := by
@@ -185,8 +183,7 @@ theorem sum_χ_smul_obj_X_eq_sum_χ_smul_obj_homology [c.EulerCharSigns]
     (s : Finset ι) (hs : ∀ i : ι, i ∉ s → IsZero (K.X i)) :
     ∑ i ∈ s, (c.χ i : ℤ) • v.obj (K.X i) =
       ∑ i ∈ s, (c.χ i : ℤ) • v.obj (K.homology i) :=
-  K.sum_χ_smul_X_eq_sum_χ_smul_homology ⊤ v.obj (fun _ hS _ _ _ ↦ v.map_shortExact hS) s hs
-    (fun _ _ ↦ trivial)
+  K.sum_χ_smul_X_eq_sum_χ_smul_homology ⊤ v.obj (v.isAdditiveOn ⊤) s hs (fun _ _ ↦ trivial)
 
 end Abelian
 

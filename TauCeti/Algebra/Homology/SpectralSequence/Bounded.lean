@@ -71,12 +71,24 @@ def IsBoundedBelow (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r�
   ∀ n : ℤ, ∃ β : ℤ,
     ∀ pq : κ, A.deg pq = n → β ≤ A.fil pq → IsZero ((E.page r₀ le_rfl).X pq)
 
+/-- Characterization of `IsBoundedBelow` as a per-total-degree filtration upper bound. -/
+lemma isBoundedBelow_iff (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e) :
+    E.IsBoundedBelow A ↔
+      ∀ n : ℤ, ∃ β : ℤ,
+        ∀ pq : κ, A.deg pq = n → β ≤ A.fil pq → IsZero ((E.page r₀ le_rfl).X pq) := Iff.rfl
+
 /-- A spectral sequence `E` is **bounded above** with respect to a bidegree assignment `A` if in
 each total degree `n` there is an integer `α` such that the first page vanishes at every position
 of total degree `n` and filtration degree at most `α`. -/
 def IsBoundedAbove (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e) : Prop :=
   ∀ n : ℤ, ∃ α : ℤ,
     ∀ pq : κ, A.deg pq = n → A.fil pq ≤ α → IsZero ((E.page r₀ le_rfl).X pq)
+
+/-- Characterization of `IsBoundedAbove` as a per-total-degree filtration lower bound. -/
+lemma isBoundedAbove_iff (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e) :
+    E.IsBoundedAbove A ↔
+      ∀ n : ℤ, ∃ α : ℤ,
+        ∀ pq : κ, A.deg pq = n → A.fil pq ≤ α → IsZero ((E.page r₀ le_rfl).X pq) := Iff.rfl
 
 /-- A spectral sequence `E` is **bounded** with respect to a bidegree assignment `A` if it is both
 bounded below and bounded above. -/
@@ -90,11 +102,13 @@ lemma isBounded_iff (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r�
 
 /-- A bounded spectral sequence is bounded below. -/
 lemma IsBounded.isBoundedBelow {E : SpectralSequence C c r₀} {A : BidegreeAssignment c r₀ e}
-    (h : E.IsBounded A) : E.IsBoundedBelow A := h.1
+    (h : E.IsBounded A) : E.IsBoundedBelow A :=
+  ((E.isBounded_iff A).1 h).1
 
 /-- A bounded spectral sequence is bounded above. -/
 lemma IsBounded.isBoundedAbove {E : SpectralSequence C c r₀} {A : BidegreeAssignment c r₀ e}
-    (h : E.IsBounded A) : E.IsBoundedAbove A := h.2
+    (h : E.IsBounded A) : E.IsBoundedAbove A :=
+  ((E.isBounded_iff A).1 h).2
 
 /-- `E` is bounded below if and only if there is a function `β : ℤ → ℤ` such that the first page
 vanishes at every position `pq` with `β (A.deg pq) ≤ A.fil pq`. -/
@@ -103,6 +117,7 @@ lemma isBoundedBelow_iff_exists_fun (E : SpectralSequence C c r₀)
     E.IsBoundedBelow A ↔
       ∃ β : ℤ → ℤ,
         ∀ pq : κ, β (A.deg pq) ≤ A.fil pq → IsZero ((E.page r₀ le_rfl).X pq) := by
+  rw [isBoundedBelow_iff]
   constructor
   · intro h
     choose β hβ using h
@@ -117,6 +132,7 @@ lemma isBoundedAbove_iff_exists_fun (E : SpectralSequence C c r₀)
     E.IsBoundedAbove A ↔
       ∃ α : ℤ → ℤ,
         ∀ pq : κ, A.fil pq ≤ α (A.deg pq) → IsZero ((E.page r₀ le_rfl).X pq) := by
+  rw [isBoundedAbove_iff]
   constructor
   · intro h
     choose α hα using h
@@ -127,6 +143,7 @@ lemma isBoundedAbove_iff_exists_fun (E : SpectralSequence C c r₀)
 /-- Boundedness below is preserved under isomorphisms of spectral sequences. -/
 lemma isBoundedBelow_of_iso {E E' : SpectralSequence C c r₀} (iso : E ≅ E')
     {A : BidegreeAssignment c r₀ e} (h : E.IsBoundedBelow A) : E'.IsBoundedBelow A := by
+  rw [isBoundedBelow_iff] at h ⊢
   intro n
   obtain ⟨β, hβ⟩ := h n
   exact ⟨β, fun pq hdeg hfil ↦
@@ -141,6 +158,7 @@ lemma isBoundedBelow_iff_of_iso {E E' : SpectralSequence C c r₀} (iso : E ≅ 
 /-- Boundedness above is preserved under isomorphisms of spectral sequences. -/
 lemma isBoundedAbove_of_iso {E E' : SpectralSequence C c r₀} (iso : E ≅ E')
     {A : BidegreeAssignment c r₀ e} (h : E.IsBoundedAbove A) : E'.IsBoundedAbove A := by
+  rw [isBoundedAbove_iff] at h ⊢
   intro n
   obtain ⟨α, hα⟩ := h n
   exact ⟨α, fun pq hdeg hfil ↦
@@ -155,7 +173,8 @@ lemma isBoundedAbove_iff_of_iso {E E' : SpectralSequence C c r₀} (iso : E ≅ 
 /-- Boundedness is preserved under isomorphisms of spectral sequences. -/
 lemma isBounded_of_iso {E E' : SpectralSequence C c r₀} (iso : E ≅ E')
     {A : BidegreeAssignment c r₀ e} (h : E.IsBounded A) : E'.IsBounded A :=
-  ⟨isBoundedBelow_of_iso iso h.1, isBoundedAbove_of_iso iso h.2⟩
+  (E'.isBounded_iff A).2 ⟨isBoundedBelow_of_iso iso h.isBoundedBelow,
+    isBoundedAbove_of_iso iso h.isBoundedAbove⟩
 
 /-- Isomorphic spectral sequences are simultaneously bounded. -/
 lemma isBounded_iff_of_iso {E E' : SpectralSequence C c r₀} (iso : E ≅ E')
@@ -164,8 +183,9 @@ lemma isBounded_iff_of_iso {E E' : SpectralSequence C c r₀} (iso : E ≅ E')
 
 /-- A spectral sequence whose first page vanishes at every position is bounded. -/
 lemma isBounded_of_isZero (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀ e)
-    (h : ∀ pq : κ, IsZero ((E.page r₀ le_rfl).X pq)) : E.IsBounded A :=
-  ⟨fun _ ↦ ⟨0, fun pq _ _ ↦ h pq⟩, fun _ ↦ ⟨0, fun pq _ _ ↦ h pq⟩⟩
+    (h : ∀ pq : κ, IsZero ((E.page r₀ le_rfl).X pq)) : E.IsBounded A := by
+  rw [isBounded_iff, isBoundedBelow_iff, isBoundedAbove_iff]
+  exact ⟨fun _ ↦ ⟨0, fun pq _ _ ↦ h pq⟩, fun _ ↦ ⟨0, fun pq _ _ ↦ h pq⟩⟩
 
 /-- If total degree `n` has only finitely many nonzero first-page positions, then there is an upper
 bound `β` on their filtration degrees. -/
@@ -217,6 +237,7 @@ theorem isBounded_iff_finite_nonZero (E : SpectralSequence C c r₀)
     E.IsBounded A ↔
       ∀ n : ℤ,
         Set.Finite {pq : κ | A.deg pq = n ∧ ¬ IsZero ((E.page r₀ le_rfl).X pq)} := by
+  rw [isBounded_iff, isBoundedBelow_iff, isBoundedAbove_iff]
   constructor
   · rintro ⟨hbel, habv⟩ n
     obtain ⟨β, hβ⟩ := hbel n
@@ -298,7 +319,7 @@ theorem exists_dFrom_eq_zero_of_isBoundedBelow {E : SpectralSequence C c r₀}
     {A : BidegreeAssignment c r₀ e} (h : E.IsBoundedBelow A) (pq : κ) :
     ∃ s : ℤ, r₀ ≤ s ∧
       ∀ (r : ℤ) (hr : r₀ ≤ r), s ≤ r → (E.page r hr).dFrom pq = 0 := by
-  obtain ⟨β, hβ⟩ := h (A.deg pq + 1)
+  obtain ⟨β, hβ⟩ := (E.isBoundedBelow_iff A).1 h (A.deg pq + 1)
   refine ⟨max r₀ (β - A.fil pq + e), le_max_left _ _, fun r hr hsr ↦ ?_⟩
   exact E.dFrom_eq_zero_of_le_fil A pq β hβ r hr ((le_max_right _ _).trans hsr)
 
@@ -308,7 +329,7 @@ theorem exists_dTo_eq_zero_of_isBoundedAbove {E : SpectralSequence C c r₀}
     {A : BidegreeAssignment c r₀ e} (h : E.IsBoundedAbove A) (pq : κ) :
     ∃ s : ℤ, r₀ ≤ s ∧
       ∀ (r : ℤ) (hr : r₀ ≤ r), s ≤ r → (E.page r hr).dTo pq = 0 := by
-  obtain ⟨α, hα⟩ := h (A.deg pq - 1)
+  obtain ⟨α, hα⟩ := (E.isBoundedAbove_iff A).1 h (A.deg pq - 1)
   refine ⟨max r₀ (A.fil pq - α + e), le_max_left _ _, fun r hr hsr ↦ ?_⟩
   exact E.dTo_eq_zero_of_fil_le A pq α hα r hr ((le_max_right _ _).trans hsr)
 
@@ -448,6 +469,7 @@ theorem exists_pageXIso_of_isBounded {E : SpectralSequence C c r₀}
 lemma isBounded_of_firstQuadrant (E : CohomologicalSpectralSequence C r₀)
     (hE : ∀ p q : ℤ, p < 0 ∨ q < 0 → IsZero ((E.page r₀ le_rfl).X (p, q))) :
     E.IsBounded (BidegreeAssignment.cohomological r₀) := by
+  rw [isBounded_iff, isBoundedBelow_iff, isBoundedAbove_iff]
   refine ⟨fun n ↦ ⟨n + 1, fun ⟨p, q⟩ hdeg hfil ↦ ?_⟩,
     fun _ ↦ ⟨-1, fun ⟨p, q⟩ _ hfil ↦ ?_⟩⟩
   · simp only [BidegreeAssignment.cohomological_deg,
@@ -460,6 +482,7 @@ lemma isBounded_of_firstQuadrant (E : CohomologicalSpectralSequence C r₀)
 respect to `BidegreeAssignment.cohomologicalNat r₀`. -/
 lemma isBounded_cohomologicalNat (E : CohomologicalSpectralSequenceNat C r₀) :
     E.IsBounded (BidegreeAssignment.cohomologicalNat r₀) := by
+  rw [isBounded_iff, isBoundedBelow_iff, isBoundedAbove_iff]
   refine ⟨fun n ↦ ⟨n + 1, fun ⟨p, q⟩ hdeg hfil ↦ ?_⟩,
     fun _ ↦ ⟨-1, fun ⟨p, q⟩ _ hfil ↦ ?_⟩⟩
   · simp only [BidegreeAssignment.cohomologicalNat_deg,
@@ -472,6 +495,7 @@ lemma isBounded_cohomologicalNat (E : CohomologicalSpectralSequenceNat C r₀) :
 `BidegreeAssignment.cohomologicalFin l r₀`. -/
 lemma isBounded_cohomologicalFin {l : ℕ} (E : CohomologicalSpectralSequenceFin C l r₀) :
     E.IsBounded (BidegreeAssignment.cohomologicalFin l r₀) := by
+  rw [isBounded_iff, isBoundedBelow_iff, isBoundedAbove_iff]
   refine ⟨fun n ↦ ⟨n + 1, fun ⟨p, ⟨q, hq⟩⟩ hdeg hfil ↦ ?_⟩,
     fun n ↦ ⟨n - (l : ℤ), fun ⟨p, ⟨q, hq⟩⟩ hdeg hfil ↦ ?_⟩⟩
   · simp only [BidegreeAssignment.cohomologicalFin_deg,
@@ -486,6 +510,7 @@ to `BidegreeAssignment.homologicalNat r₀`. -/
 lemma isBounded_homologicalNat
     (E : SpectralSequence C (fun r ↦ ComplexShape.spectralSequenceNat ⟨-r, r - 1⟩) r₀) :
     E.IsBounded (BidegreeAssignment.homologicalNat r₀) := by
+  rw [isBounded_iff, isBoundedBelow_iff, isBoundedAbove_iff]
   refine ⟨fun _ ↦ ⟨1, fun ⟨p, q⟩ _ hfil ↦ ?_⟩,
     fun n ↦ ⟨n - 1, fun ⟨p, q⟩ hdeg hfil ↦ ?_⟩⟩
   · simp only [BidegreeAssignment.homologicalNat_fil] at hfil
