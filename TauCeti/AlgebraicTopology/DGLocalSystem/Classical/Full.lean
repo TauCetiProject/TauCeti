@@ -61,10 +61,10 @@ theorem classicalDGLocalSystem_hom_naturality {L L' : LocalCoefficientSystem.{u,
     (m : L.obj (FundamentalGroupoid.mk x)) :
     f (L.map g.asHom m) = L'.map g.asHom (f m) := by
   obtain ⟨γ, hγ⟩ := MooreLoopSpace.fundamentalGroupHom_surjective x g⁻¹
-  let a := loopPointChain R γ
+  let a := cubicalChainPoint (MooreLoopSpace X x) R γ
   have hL := classicalAction_lof_ofCube L (SingularCube.point γ)
   have hL' := classicalAction_lof_ofCube L' (SingularCube.point γ)
-  rw [SingularCube.point_apply, hγ, inv_inv, ← loopPointChain_def] at hL hL'
+  rw [SingularCube.point_apply, hγ, inv_inv, ← cubicalChainPoint_def] at hL hL'
   exact (congrArg f (LinearMap.congr_fun hL m).symm).trans
     ((map_smul f (op a) m).trans (LinearMap.congr_fun hL' (f m)))
 

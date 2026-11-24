@@ -71,16 +71,6 @@ theorem pathFromChain_isDGLeftModule :
 
 variable {B b H R}
 
-/-- The point chain of a Moore loop `γ` acts on the point chain of a path `p` from `b` as the point
-chain of the concatenation `γ • p`. -/
-@[simp]
-theorem loopPointChain_smul_cubicalChainModulePoint (γ : MooreLoopSpace B b)
-    (p : MoorePathFrom B b) :
-    loopPointChain R γ • cubicalChainModulePoint (MoorePathFrom B b) H R p =
-      cubicalChainModulePoint (MoorePathFrom B b) H R (γ • p) := by
-  rw [loopPointChain_def]
-  exact point_smul_cubicalChainModulePoint γ p
-
 /-- **The augmentation of the chains on the based path space is linear over the augmentation of
 the loop algebra**: `ε (a · m) = ε(a) ε(m)`. -/
 theorem pathFromChainAugmentation_smul (a : loopChainAlgebra B b R)

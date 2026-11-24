@@ -100,10 +100,15 @@ theorem _root_.MulEquiv.zpowers_eq_top_iff_isUnit_toAdd {G : Type*} [Group G] {g
   have key : (e g).toAdd ∣ 1 ↔ Multiplicative.ofAdd 1 ∈ Subgroup.zpowers (e g) := by
     rw [← Int.mem_zmultiples_iff, ← SetLike.mem_coe, ← Multiplicative.ofAdd.injective.mem_set_image,
       ofAdd_image_zmultiples_eq_zpowers_ofAdd, ofAdd_toAdd, SetLike.mem_coe]
-  rw [← (Subgroup.map_injective (f := e.toMonoidHom) e.injective).eq_iff,
-    Subgroup.map_top_of_surjective _ e.surjective, MonoidHom.map_zpowers,
-    MulEquiv.coe_toMonoidHom, isUnit_iff_dvd_one, key, ← top_le_iff,
-    ← (Subgroup.eq_top_iff' _).2 Int.mem_zpowers_ofAdd_one, Subgroup.zpowers_le]
+  calc Subgroup.zpowers g = ⊤ ↔ Subgroup.zpowers (e g) = ⊤ := by
+        rw [← (Subgroup.map_injective (f := e.toMonoidHom) e.injective).eq_iff,
+          Subgroup.map_top_of_surjective _ e.surjective, MonoidHom.map_zpowers,
+          MulEquiv.coe_toMonoidHom]
+    -- `Multiplicative.ofAdd 1` generates `Multiplicative ℤ`.
+    _ ↔ Multiplicative.ofAdd 1 ∈ Subgroup.zpowers (e g) := by
+        rw [← top_le_iff, ← (Subgroup.eq_top_iff' _).2 Int.mem_zpowers_ofAdd_one,
+          Subgroup.zpowers_le]
+    _ ↔ IsUnit (e g).toAdd := by rw [isUnit_iff_dvd_one, key]
 
 /-- An element of a group equivalent to `Multiplicative ℤ` has finite order iff it is sent to
 `0`. -/

@@ -141,9 +141,9 @@ theorem representation_apply (g : FundamentalGroup X x) :
 /-- The inverse of the class of a Moore loop `γ` acts as the point chain of `γ`. -/
 theorem representation_fundamentalGroupHom_inv_apply (γ : MooreLoopSpace X x) (m : M) :
     hM.representation (MooreLoopSpace.fundamentalGroupHom x γ)⁻¹ m =
-      op (loopPointChain R γ) • m := by
+      op (cubicalChainPoint (MooreLoopSpace X x) R γ) • m := by
   rw [representation_apply, inv_inv, MonoidAlgebra.of_apply,
-    ← groupAlgebraAction_loopChainToGroupAlgebra, loopChainToGroupAlgebra_loopPointChain]
+    ← groupAlgebraAction_loopChainToGroupAlgebra, loopChainToGroupAlgebra_cubicalChainPoint]
 
 /-- The right action of the fundamental group on the fiber of the local system of the
 representation is the action of the group ring. -/
