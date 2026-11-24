@@ -71,10 +71,8 @@ private theorem inChartAt_dC_apply (f : SmoothForm 𝓘(ℝ, E) M ℂ 0) (x : M)
   have hchain := mvfderiv_comp_mfderivWithin z hf he
     (uniqueMDiffWithinAt_univ 𝓘(ℝ, E) |>.mono (by simp))
   refine (congr($hchain (Complex.I • w))).symm.trans ?_
-  simp only [modelWithCornersSelf_coe, range_id, mvfderivWithin_univ, mvfderiv_eq_fderiv]
-  -- `NormedSpace.fromTangentSpace z` is the identity of `E`, so both sides are the derivative of
-  -- the same function applied to `i • w`; Mathlib states no evaluation lemma for it.
-  rfl
+  simp only [modelWithCornersSelf_coe, range_id, mvfderivWithin_univ]
+  exact mvfderiv_eq_fderiv_apply _ z _
 
 /-- The real-linear map `A ↦ (w ↦ A (i • w))` from real covectors to complex-valued ones, through
 which the coordinate expression of `dᶜ u` is read off from that of `du`. -/
