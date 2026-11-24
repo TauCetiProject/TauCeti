@@ -113,11 +113,9 @@ theorem isAspherical_iff_exists_continuousMulEquiv_torus (Γ : Subgroup (A × K)
   have : Subsingleton K :=
     IsAspherical.subsingleton_of_contMDiffMul (I := I') (n := ∞) (by simp) (.mk inferInstance hK)
   -- So `G` is a quotient of the commutative group `A × K`, hence a torus.
-  have : IsMulCommutative G := ⟨⟨fun g g' ↦ e.injective <| by
-    obtain ⟨x, hx⟩ := QuotientGroup.mk_surjective (e g)
-    obtain ⟨y, hy⟩ := QuotientGroup.mk_surjective (e g')
-    have hxy : x * y = y * x := Prod.ext (mul_comm _ _) (Subsingleton.elim _ _)
-    rw [map_mul, map_mul, ← hx, ← hy, ← QuotientGroup.mk_mul, hxy, QuotientGroup.mk_mul]⟩⟩
+  have : IsMulCommutative K := ⟨⟨fun _ _ ↦ Subsingleton.elim _ _⟩⟩
+  have : IsMulCommutative ((A × K) ⧸ Γ) := (QuotientGroup.mk'_surjective Γ).isMulCommutative
+  have : IsMulCommutative G := e.symm.surjective.isMulCommutative
   have := hG.pathConnectedSpace
   exact ⟨_, nonempty_continuousMulEquiv_pi_circle (I := I)⟩
 

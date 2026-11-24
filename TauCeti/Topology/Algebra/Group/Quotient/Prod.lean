@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.GroupTheory.QuotientGroup.Prod
 public import TauCeti.Topology.Covering.Quotient
+import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # Quotients of a product of topological groups by a discrete subgroup
@@ -82,20 +83,11 @@ instance discreteTopology_comap_inl [DiscreteTopology Γ] :
   isDiscrete_iff_discreteTopology.1 <| (isDiscrete_iff_discreteTopology.2 ‹_›).preimage
     (continuous_id.prodMk continuous_const).continuousOn (Prod.mk_left_injective 1)
 
-/-- **The image of a cocompact subgroup of `A × K` in `K` is cocompact.** The second projection
-induces a continuous surjection `(A × K) ⧸ Γ → K ⧸ Γ.map (MonoidHom.snd A K)`,
-`[(a, k)] ↦ [k]`, so if `(A × K) ⧸ Γ` is compact, then so is `K ⧸ Γ.map (MonoidHom.snd A K)`. -/
-theorem compactSpace_quotient_map_snd [CompactSpace ((A × K) ⧸ Γ)] :
-    CompactSpace (K ⧸ Γ.map (MonoidHom.snd A K)) := by
-  have hrel : ∀ x y : A × K, QuotientGroup.leftRel Γ x y →
-      QuotientGroup.leftRel (Γ.map (MonoidHom.snd A K)) x.2 y.2 := fun x y h ↦ by
-    rw [QuotientGroup.leftRel_apply] at h ⊢
-    exact ⟨_, h, rfl⟩
-  have hsurj : Function.Surjective
-      (Quotient.map' Prod.snd hrel : (A × K) ⧸ Γ → K ⧸ Γ.map (MonoidHom.snd A K)) := by
-    rintro ⟨k⟩
-    exact ⟨Quotient.mk'' ((1 : A), k), rfl⟩
-  exact hsurj.compactSpace (continuous_snd.quotient_map' hrel)
+/-- **The image of a cocompact subgroup of `A × K` in `K` is cocompact.** If `(A × K) ⧸ Γ` is
+compact, then so is `K ⧸ Γ.map (MonoidHom.snd A K)`, its image under the second projection. -/
+instance compactSpace_quotient_map_snd [CompactSpace ((A × K) ⧸ Γ)] :
+    CompactSpace (K ⧸ Γ.map (MonoidHom.snd A K)) :=
+  Γ.compactSpace_quotient_map continuous_snd Prod.snd_surjective
 
 variable [IsTopologicalGroup A]
 

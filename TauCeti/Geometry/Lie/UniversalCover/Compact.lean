@@ -52,10 +52,11 @@ so is `K ⧸ Δ`, as its image under the second projection
 has trivial centre (`TauCeti.Lie.discreteTopology_center_of_center_eq_bot`), so `Δ` is a discrete
 central subgroup with compact quotient, and `K` is compact
 (`Subgroup.compactSpace_of_compactSpace_quotient_prod`). Its centre is then finite, and so is `Δ`
-(`Subgroup.finite_map_snd_of_compactSpace_quotient_prod`). So the part `Λ = {a | (a, 1) ∈ Γ}` of
-`Γ` in `A` is a full lattice when `A` is a real vector space
-(`Subgroup.isZLattice_toAddSubgroup'_comap_inl`), and the covering `(A ⧸ Λ) × K → (A × K) ⧸ Γ` has
-finite fibres (`Subgroup.finite_prodQuotientMap_preimage`). For a compact connected Lie group
+(`Subgroup.finite_map_snd_of_compactSpace_quotient_prod`). If moreover `Γ` is discrete, the part
+`Λ = {a | (a, 1) ∈ Γ}` of `Γ` in `A` is a full lattice when `A` is a real vector space
+(`Subgroup.isZLattice_toAddSubgroup'_comap_inl`), and the covering `(A ⧸ Λ) × K → (A × K) ⧸ Γ`
+(`Subgroup.isCoveringMap_prodQuotientMap`) has finite fibres
+(`Subgroup.finite_prodQuotientMap_preimage`). For a compact connected Lie group
 `G = (ℝʳ × K) ⧸ Γ`, presented through its universal cover with `K` integrating the derived algebra
 `[𝔤, 𝔤]`, this is the compactness of `K`. With `A` trivial, `K = ℝ`, whose Lie algebra is abelian,
 and `Γ = ℤ` show that the hypothesis on the Lie algebra is needed, and `K = SL₂(ℝ)`, whose Lie
@@ -197,7 +198,6 @@ theorem compactSpace_of_compactSpace_quotient_prod (Γ : Subgroup (A × K))
   have : DiscreteTopology (center K) := TauCeti.Lie.discreteTopology_center_of_center_eq_bot hz
   have : DiscreteTopology (Γ.map (MonoidHom.snd A K)) := isDiscrete_iff_discreteTopology.1 <|
     (isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology (center K)›).mono hΓ
-  have := Γ.compactSpace_quotient_map_snd
   exact (Γ.map (MonoidHom.snd A K)).compactSpace_of_forall_continuous_eq_one hΓ fun F hF ↦
     F.eq_one_of_continuous_of_derivedSeries_one_eq_top_real hF h
 
