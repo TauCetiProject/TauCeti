@@ -41,6 +41,7 @@ variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} [HasPullbacks C] [F.IsPrestack J] {U : C}
   {ι : Type w} {X : ι → C} (f : ∀ i, X i ⟶ U) (hf : Sieve.ofArrows X f ∈ J U)
 
+omit [HasPullbacks C] [F.IsPrestack J] in
 /-- A descent datum along a fixed `w`-small covering family, as an object of `Obj J F U`. -/
 abbrev ofDescentData (D : F.DescentData f) : Obj.{w} J F U := ⟨ι, X, f, hf, D⟩
 
