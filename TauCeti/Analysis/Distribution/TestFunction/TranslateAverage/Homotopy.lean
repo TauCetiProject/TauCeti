@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.TestFunction.Average.Basic
+public import TauCeti.Analysis.Distribution.TestFunction.TranslateAverage.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
@@ -25,7 +25,8 @@ is the test function
 `M φ = x ↦ ∫ φ (x + v) dν(v)`
 
 on `Ω` (`TestFunction.translationMeanCLM`). For `ν` with a smooth density `ρ` this is the
-convolution of `φ` with the reflection of `ρ`; for `ν` the Dirac mass at `h` it is the translate
+convolution of `φ` with the reflection of `ρ`, and for a normalized bump on the whole space it is
+the mollification `TestFunction.mollifyCLM`; for `ν` the Dirac mass at `h` it is the translate
 `x ↦ φ (x + h)`. The mean commutes with the exterior derivative of test forms.
 
 The **averaged homotopy operator** sends a test `(k + 1)`-form `ω` on `U` to the test `k`-form
@@ -364,6 +365,13 @@ theorem mass_comp_translationMeanCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, F)
   simpa using norm_translationAverage_le (s := id)
     (ae_of_all _ fun _ ↦ ContinuousLinearMap.norm_id_le) hφ x
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
+  [IsFiniteMeasure ν] in
+/-- The product of `ν` with the Lebesgue measure on `[0, 1]` has the total mass of `ν`. -/
+private theorem measureReal_prod_Icc_univ :
+    (ν.prod (volume.restrict (Icc (0 : ℝ) 1))).real univ = ν.real univ := by
+  simp [Measure.real, ← univ_prod_univ, Measure.prod_prod]
+
 /-- **The mass of the averaged homotopy of a current**: `M(T ∘ K) ≤ r ν(E) M(T)`, for the averaged
 homotopy operator `K` of a measure `ν` concentrated on `closedBall 0 r`. -/
 theorem mass_comp_translationHomotopyCLM_le {𝓕 : Type*}
@@ -374,14 +382,9 @@ theorem mass_comp_translationHomotopyCLM_le {𝓕 : Type*}
   have hK (ω : 𝓓(U, E [⋀^Fin (k + 1)]→L[ℝ] F)) (hω : ∀ y, ‖ω y‖ ≤ 1) (x : E) :
       ‖translationHomotopyCLM (F := F) (k := k) ν hν hUΩ ω x‖ ≤ r * ν.real univ := by
     rw [translationHomotopyCLM_apply]
-    refine (norm_integral_le_of_norm_le_const (C := r)
-      ((Measure.quasiMeasurePreserving_fst.ae hν).mono fun p hp ↦ ?_)).trans_eq ?_
-    · exact (ContinuousLinearMap.le_opNorm _ _).trans <| by
-        rw [norm_curryLeft]
-        exact mul_le_mul (hω _) (mem_closedBall_zero_iff.1 hp) (norm_nonneg _) zero_le_one
-          |>.trans_eq (one_mul r)
-    · rw [Measure.real, ← univ_prod_univ, Measure.prod_prod, Measure.restrict_apply_univ,
-        Real.volume_Icc, sub_zero, ENNReal.ofReal_one, mul_one, Measure.real]
+    simpa [translationAverage_apply, measureReal_prod_Icc_univ] using
+      norm_translationAverage_le (s := fun p : E × ℝ ↦ p.2 • p.1)
+        (ae_norm_curryLeftFlipL_le (F := F) (k := k) hν) hω x
   refine (mass_comp_le_of_norm_apply_le T ((norm_nonneg _).trans (hK 0 (by simp) 0)) hK).trans_eq
     ?_
   rw [ENNReal.ofReal_mul' measureReal_nonneg, ofReal_measureReal (measure_ne_top ν univ)]

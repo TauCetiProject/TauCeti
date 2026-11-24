@@ -35,7 +35,7 @@ Two cases are the operators used to regularize currents: with `A p = id` and `s`
 measure `ν` on `E`, which for `ν` given by a smooth density is the convolution of `φ` with the
 reflected density; and with `A (v, t)` the interior product with `v` and `s (v, t) = t v`, it is the
 averaged homotopy operator between such a mean and the identity
-(`TauCeti.Analysis.Distribution.TestFunction.Average.Homotopy`).
+(`TauCeti.Analysis.Distribution.TestFunction.TranslateAverage.Homotopy`).
 
 ## Main declarations
 
@@ -110,11 +110,16 @@ theorem translationAverage_smul (c : ℝ) (φ : E → F) :
   ext x
   simp only [translationAverage_apply, Pi.smul_apply, map_smul, integral_smul]
 
+/-- Bounds `‖L‖ ≤ c` on an operator and `‖g‖ ≤ C` on its argument bound `‖L‖ ‖g‖` by `c C`. -/
+private theorem norm_mul_norm_le {H K : Type*} [SeminormedAddCommGroup H]
+    [SeminormedAddCommGroup K] {L : H} {g : K} {C : ℝ} (hL : ‖L‖ ≤ c) (hg : ‖g‖ ≤ C) :
+    ‖L‖ * ‖g‖ ≤ c * C :=
+  mul_le_mul hL hg (norm_nonneg _) ((norm_nonneg _).trans hL)
+
 /-- `‖A p v‖ ≤ c C` for almost every `p` when `‖A p‖ ≤ c` almost everywhere and `‖v‖ ≤ C`. -/
 private theorem ae_norm_apply_le (hAc : ∀ᵐ p ∂ν, ‖A p‖ ≤ c) {C : ℝ} {v : P → F}
     (hv : ∀ p, ‖v p‖ ≤ C) : ∀ᵐ p ∂ν, ‖A p (v p)‖ ≤ c * C :=
-  hAc.mono fun p hp ↦ (ContinuousLinearMap.le_opNorm _ _).trans
-    (mul_le_mul hp (hv p) (norm_nonneg _) ((norm_nonneg _).trans hp))
+  hAc.mono fun p hp ↦ (ContinuousLinearMap.le_opNorm _ _).trans (norm_mul_norm_le hp (hv p))
 
 variable [IsFiniteMeasure ν]
 
@@ -144,7 +149,7 @@ theorem integrable_comp_comp_add {H : Type*} [NormedAddCommGroup H] [NormedSpace
     ((ContinuousLinearMap.compL ℝ H F G).continuous₂.comp_aestronglyMeasurable₂ hA
       ((hg.comp (continuous_const.add continuous_id)).comp_aestronglyMeasurable hs))
     (hAc.mono fun _ hp ↦ (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_mul hp (hC _) (norm_nonneg _) ((norm_nonneg _).trans hp)))
+      (norm_mul_norm_le hp (hC _)))
 
 /-- The translation average is additive on bounded continuous functions. -/
 theorem translationAverage_add (hA : AEStronglyMeasurable A ν) (hAc : ∀ᵐ p ∂ν, ‖A p‖ ≤ c)
@@ -158,17 +163,6 @@ theorem translationAverage_add (hA : AEStronglyMeasurable A ν) (hAc : ∀ᵐ p 
     (integrable_translationAverage_integrand hA hAc hs hψ hD x)
 
 variable [NormedSpace ℝ E]
-
-omit [IsFiniteMeasure ν] in
-/-- The Taylor coefficients of the translate `x ↦ A (φ (x + c))` of a smooth function are the
-translated Taylor coefficients of `φ`, composed with `A`. -/
-private theorem iteratedFDeriv_clm_apply_comp_add (hφ : ContDiff ℝ ∞ φ) (L : F →L[ℝ] G) (a : E)
-    (i : ℕ) (x : E) :
-    iteratedFDeriv ℝ i (fun y ↦ L (φ (y + a))) x =
-      L.compContinuousMultilinearMap (iteratedFDeriv ℝ i φ (x + a)) := by
-  have hφa : ContDiff ℝ ∞ fun y ↦ φ (y + a) := hφ.comp (contDiff_id.add contDiff_const)
-  exact (L.iteratedFDeriv_comp_left hφa.contDiffAt (mod_cast le_top)).trans
-    (by rw [iteratedFDeriv_comp_add_right])
 
 omit [IsFiniteMeasure ν] in
 /-- Measurability in the parameter of `A p` applied to a continuous function of the displaced
@@ -198,11 +192,13 @@ theorem hasFTaylorSeriesUpTo_translationAverage (hφ : ContDiff ℝ ∞ φ)
         (hφ.continuous_iteratedFDeriv (mod_cast le_top)) hA hs x)
     (hAc.mono fun p hp x _ i _ ↦ ?_) (fun i _ ↦ integrable_const _) (ae_of_all _ fun p ↦ ?_)
   · exact (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans
-      (mul_le_mul hp (hC i _) (norm_nonneg _) ((norm_nonneg _).trans hp))
-  · have hg : ContDiff ℝ ∞ fun y ↦ A p (φ (y + s p)) :=
-      (A p).contDiff.comp (hφ.comp (contDiff_id.add contDiff_const))
-    refine (hg.ftaylorSeries.hasFTaylorSeriesUpToOn univ).congr_series fun i _ x _ ↦ ?_
-    exact iteratedFDeriv_clm_apply_comp_add hφ (A p) (s p) i x
+      (norm_mul_norm_le hp (hC i _))
+  · have hφs : ContDiff ℝ ∞ fun y ↦ φ (y + s p) := hφ.comp (contDiff_id.add contDiff_const)
+    refine (((A p).contDiff.comp hφs).ftaylorSeries.hasFTaylorSeriesUpToOn univ).congr_series
+      fun i _ x _ ↦ ?_
+    -- The Taylor coefficients of the translate are the translated ones, composed with `A p`.
+    exact ((A p).iteratedFDeriv_comp_left hφs.contDiffAt (mod_cast le_top)).trans
+      (by rw [iteratedFDeriv_comp_add_right])
 
 /-- **Smoothness of a translation average** of a smooth function with bounded derivatives. -/
 theorem contDiff_translationAverage (hφ : ContDiff ℝ ∞ φ)
@@ -235,7 +231,7 @@ theorem norm_iteratedFDeriv_translationAverage_le (hφ : ContDiff ℝ ∞ φ)
   rw [iteratedFDeriv_translationAverage hφ hφb hA hAc hs]
   exact norm_integral_le_of_norm_le_const (hAc.mono fun p hp ↦
     (ContinuousLinearMap.norm_compContinuousMultilinearMap_le _ _).trans
-      (mul_le_mul hp (hC _) (norm_nonneg _) ((norm_nonneg _).trans hp)))
+      (norm_mul_norm_le hp (hC _)))
 
 /-- **The derivative of a translation average** is the translation average of the derivative:
 `D (x ↦ ∫ A p (φ (x + s p)) dν) = x ↦ ∫ A p ∘ Dφ (x + s p) dν`. -/
@@ -257,7 +253,7 @@ theorem hasFDerivAt_translationAverage (hφ : ContDiff ℝ ∞ φ)
     (integrable_translationAverage_integrand hA hAc hs hφ.continuous hφ₀ x)
     (integrable_comp_comp_add hA hAc hs hφ' hφ₁ x).aestronglyMeasurable
     (hAc.mono fun p hp y _ ↦ (ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_mul hp (hφ₁ _) (norm_nonneg _) ((norm_nonneg _).trans hp)))
+      (norm_mul_norm_le hp (hφ₁ _)))
     (integrable_const _) (ae_of_all _ fun p y _ ↦ ?_)
   exact (A p).hasFDerivAt.comp y
     (((hφ.differentiable (by simp)) _).hasFDerivAt.comp y ((hasFDerivAt_id y).add_const _))
