@@ -77,17 +77,19 @@ theorem lobachevsky_def (θ : ℝ) : lobachevsky θ = -∫ t in 0..θ, log (2 * 
 @[simp] theorem lobachevsky_zero : lobachevsky 0 = 0 := by
   simp [lobachevsky_def]
 
+/-- The real sine vanishes only on a discrete set. -/
+private lemma sin_preimage_compl_zero_mem_codiscrete : sin ⁻¹' {0}ᶜ ∈ codiscrete ℝ :=
+  analyticOnNhd_sin.preimage_zero_mem_codiscrete (x := π / 2) (by simp)
+
 /-- Away from the zeros of `sin`, `log (2 sin t) = log 2 + log (sin t)`; this holds off a discrete
 set, which is enough to integrate it. -/
 private lemma log_two_mul_sin_eventuallyEq :
     (fun t ↦ log (2 * sin t)) =ᶠ[codiscrete ℝ] fun t ↦ log 2 + log (sin t) := by
-  have h : sin ⁻¹' {0}ᶜ ∈ codiscrete ℝ :=
-    analyticOnNhd_sin.preimage_zero_mem_codiscrete (x := π / 2) (by simp)
-  filter_upwards [h] with t ht
+  filter_upwards [sin_preimage_compl_zero_mem_codiscrete] with t ht
   exact log_mul two_ne_zero ht
 
 /-- Integrals of `log (2 sin t)` split as `(b - a) log 2 + ∫ₐᵇ log (sin t)`. -/
-private lemma integral_log_two_mul_sin (a b : ℝ) :
+theorem integral_log_two_mul_sin (a b : ℝ) :
     ∫ t in a..b, log (2 * sin t) = (b - a) * log 2 + ∫ t in a..b, log (sin t) := by
   rw [intervalIntegral.integral_congr_codiscreteWithin
       (log_two_mul_sin_eventuallyEq.filter_mono (codiscreteWithin_mono (subset_univ _))),
@@ -95,15 +97,23 @@ private lemma integral_log_two_mul_sin (a b : ℝ) :
       intervalIntegrable_log_sin,
     intervalIntegral.integral_const, smul_eq_mul]
 
-/-- `Λ(π) = 0`, equivalently `∫₀^π log |2 sin t| dt = 0`. -/
-@[simp] theorem lobachevsky_pi : lobachevsky π = 0 := by
-  simp [lobachevsky_def, integral_log_two_mul_sin, integral_log_sin_zero_pi]
+/-- `∫₀^π log |2 sin t| dt = 0`. -/
+theorem integral_log_two_mul_sin_zero_pi : ∫ t in 0..π, log (2 * sin t) = 0 := by
+  rw [integral_log_two_mul_sin, integral_log_sin_zero_pi]
   ring
 
-/-- `Λ(π/2) = 0`, equivalently `∫₀^{π/2} log |2 sin t| dt = 0`. -/
-@[simp] theorem lobachevsky_pi_div_two : lobachevsky (π / 2) = 0 := by
-  simp [lobachevsky_def, integral_log_two_mul_sin, integral_log_sin_zero_pi_div_two]
+/-- `∫₀^{π/2} log |2 sin t| dt = 0`. -/
+theorem integral_log_two_mul_sin_zero_pi_div_two : ∫ t in 0..π / 2, log (2 * sin t) = 0 := by
+  rw [integral_log_two_mul_sin, integral_log_sin_zero_pi_div_two]
   ring
+
+/-- `Λ(π) = 0`. -/
+@[simp] theorem lobachevsky_pi : lobachevsky π = 0 := by
+  rw [lobachevsky_def, integral_log_two_mul_sin_zero_pi, neg_zero]
+
+/-- `Λ(π/2) = 0`. -/
+@[simp] theorem lobachevsky_pi_div_two : lobachevsky (π / 2) = 0 := by
+  rw [lobachevsky_def, integral_log_two_mul_sin_zero_pi_div_two, neg_zero]
 
 /-- Lobachevsky's function is odd. -/
 @[simp] theorem lobachevsky_neg (θ : ℝ) : lobachevsky (-θ) = -lobachevsky θ := by
@@ -118,10 +128,7 @@ theorem lobachevsky_periodic : Function.Periodic lobachevsky π := by
     simp [sin_add_pi]
   rw [lobachevsky_def, lobachevsky_def, ← intervalIntegral.integral_add_adjacent_intervals
       (intervalIntegrable_log_two_mul_sin 0 θ) (intervalIntegrable_log_two_mul_sin θ (θ + π)),
-    hper.intervalIntegral_add_eq θ 0, zero_add]
-  have h := lobachevsky_pi
-  rw [lobachevsky_def, neg_eq_zero] at h
-  rw [h, add_zero]
+    hper.intervalIntegral_add_eq θ 0, zero_add, integral_log_two_mul_sin_zero_pi, add_zero]
 
 /-- The reflection formula `Λ(π - θ) = -Λ(θ)`. -/
 theorem lobachevsky_pi_sub (θ : ℝ) : lobachevsky (π - θ) = -lobachevsky θ := by
@@ -132,11 +139,9 @@ this holds off a discrete set, which is enough to integrate it. -/
 private lemma log_two_mul_sin_two_mul_eventuallyEq :
     (fun t ↦ log (2 * sin (2 * t))) =ᶠ[codiscrete ℝ]
       fun t ↦ log (2 * sin t) + log (2 * sin (t + π / 2)) := by
-  have hs : sin ⁻¹' {0}ᶜ ∈ codiscrete ℝ :=
-    analyticOnNhd_sin.preimage_zero_mem_codiscrete (x := π / 2) (by simp)
   have hc : cos ⁻¹' {0}ᶜ ∈ codiscrete ℝ :=
     analyticOnNhd_cos.preimage_zero_mem_codiscrete (x := 0) (by simp)
-  filter_upwards [hs, hc] with t hst hct
+  filter_upwards [sin_preimage_compl_zero_mem_codiscrete, hc] with t hst hct
   simp only [mem_preimage, mem_compl_iff, mem_singleton_iff] at hst hct
   rw [sin_add_pi_div_two, ← log_mul (by positivity) (by positivity), sin_two_mul]
   ring_nf
@@ -154,13 +159,11 @@ theorem lobachevsky_two_mul (θ : ℝ) :
         (intervalIntegrable_log_two_mul_sin _ _)]
   have hint : IntervalIntegrable (fun t ↦ log (2 * sin (t + π / 2))) volume 0 θ := by
     simpa using (intervalIntegrable_log_two_mul_sin (0 + π / 2) (θ + π / 2)).comp_add_right (π / 2)
-  have hhalf := lobachevsky_pi_div_two
-  rw [lobachevsky_def, neg_eq_zero] at hhalf
   rw [lobachevsky_def, lobachevsky_def, lobachevsky_def, hdil,
     intervalIntegral.integral_congr_codiscreteWithin
       (log_two_mul_sin_two_mul_eventuallyEq.filter_mono (codiscreteWithin_mono (subset_univ _))),
     intervalIntegral.integral_add (intervalIntegrable_log_two_mul_sin _ _) hint,
-    hshift, hhalf]
+    hshift, integral_log_two_mul_sin_zero_pi_div_two]
   ring
 
 /-- Lobachevsky's function is continuous. -/
@@ -178,30 +181,24 @@ theorem hasDerivAt_lobachevsky {θ : ℝ} (hθ : sin θ ≠ 0) :
 
 /-! ### The Fourier series -/
 
-/-- The chord `1 - e^{2iθ}` equals `-2i sin θ · e^{iθ}`. -/
-private lemma one_sub_exp_two_mul_I (θ : ℝ) :
-    1 - Complex.exp (2 * θ * Complex.I) =
-      -2 * sin θ * Complex.I * Complex.exp (θ * Complex.I) := by
-  rw [show (2 : ℂ) * θ * Complex.I = θ * Complex.I + θ * Complex.I by ring, Complex.exp_add,
-    Complex.exp_mul_I]
+/-- `2θi` is the real multiple `(2θ) i` of `i`. -/
+private lemma two_mul_ofReal_mul_I (θ : ℝ) :
+    (2 : ℂ) * θ * Complex.I = ((2 * θ : ℝ) : ℂ) * Complex.I := by
   push_cast
-  linear_combination (-1 : ℂ) * Complex.sin_sq_add_cos_sq (θ : ℂ) +
-    Complex.sin θ ^ 2 * Complex.I_sq
+  ring
 
-/-- The chord length `|1 - e^{2iθ}| = |2 sin θ|`. -/
-private lemma norm_one_sub_exp_two_mul_I (θ : ℝ) :
-    ‖1 - Complex.exp (2 * θ * Complex.I)‖ = |2 * sin θ| := by
-  rw [one_sub_exp_two_mul_I, norm_mul, norm_mul, norm_mul, Complex.norm_exp_ofReal_mul_I,
-    Complex.norm_I, Complex.norm_real, Real.norm_eq_abs, abs_mul]
-  norm_num
+/-- The point `e^{2iθ}` lies on the unit circle. -/
+private lemma norm_exp_two_mul_I (θ : ℝ) : ‖Complex.exp (2 * θ * Complex.I)‖ = 1 := by
+  rw [two_mul_ofReal_mul_I, Complex.norm_exp_ofReal_mul_I]
 
-/-- Away from the multiples of `π`, the chord `1 - e^{2iθ}` has positive real part `2 sin² θ`. -/
+/-- Away from the multiples of `π`, the chord `1 - e^{2iθ}` has positive real part
+`1 - cos 2θ = 2 sin² θ`. -/
 private lemma one_sub_exp_two_mul_I_mem_slitPlane {θ : ℝ} (hθ : sin θ ≠ 0) :
     1 - Complex.exp (2 * θ * Complex.I) ∈ Complex.slitPlane := by
   refine Complex.mem_slitPlane_iff.mpr (Or.inl ?_)
-  rw [one_sub_exp_two_mul_I]
-  simp [Complex.mul_re, Complex.sin_ofReal_re]
-  nlinarith [mul_self_pos.mpr hθ]
+  rw [Complex.sub_re, Complex.one_re, two_mul_ofReal_mul_I, Complex.exp_ofReal_mul_I_re,
+    cos_two_mul, cos_sq']
+  linarith [sq_pos_of_ne_zero hθ]
 
 /-- The function `θ ↦ Im Li₂(e^{2iθ}) / 2` has derivative `-log |2 sin θ|` away from the multiples
 of `π`, like Lobachevsky's function. -/
@@ -223,7 +220,9 @@ private lemma hasDerivAt_im_polylog_two_exp {θ : ℝ} (hθ : sin θ ≠ 0) :
         -Complex.log (1 - Complex.exp (2 * θ * Complex.I)) * (2 * Complex.I) := by
     rw [show ((2 : ℤ) - 1) = 1 by norm_num, polylog_one]
     field_simp
-  rw [halg, Complex.imCLM_apply, him, Complex.log_re, norm_one_sub_exp_two_mul_I, log_abs]
+  rw [halg, Complex.imCLM_apply, him, Complex.log_re, norm_sub_rev, ← neg_mul_eq_neg_mul,
+    two_mul_ofReal_mul_I, mul_comm _ Complex.I, Complex.norm_exp_I_mul_ofReal_sub_one,
+    mul_div_cancel_left₀ _ two_ne_zero, Real.norm_eq_abs, log_abs]
   ring
 
 /-- **Lobachevsky's function as a dilogarithm value**: `Λ(θ) = Im Li₂(e^{2iθ}) / 2`. -/
@@ -241,8 +240,7 @@ theorem lobachevsky_eq_im_polylog_two (θ : ℝ) :
   have hGcont : Continuous G := by
     refine Complex.continuous_im.comp ((continuousOn_polylog_closedBall le_rfl).comp_continuous
       (by fun_prop) fun x ↦ ?_) |>.div_const 2
-    rw [mem_closedBall_zero_iff, show (2 : ℂ) * x * Complex.I = ((2 * x : ℝ) : ℂ) * Complex.I by
-      push_cast; ring, Complex.norm_exp_ofReal_mul_I]
+    rw [mem_closedBall_zero_iff, norm_exp_two_mul_I]
   have hH0 : H 0 = 0 := by
     have hπ : ((π : ℂ) ^ 2).im = 0 := by rw [← Complex.ofReal_pow, Complex.ofReal_im]
     simp [H, G, polylog_two_one, hπ]
@@ -262,19 +260,33 @@ theorem lobachevsky_eq_im_polylog_two (θ : ℝ) :
   · exact hH0
   · exact hIoo y ⟨hy0, hy.2⟩
 
+/-- The `k`-th term of the series of `Im Li₂(e^{2iθ}) / 2` is `sin (2(k+1)θ) / (2(k+1)²)`. -/
+private lemma im_exp_two_mul_I_pow_div_sq (θ : ℝ) (k : ℕ) :
+    (Complex.exp (2 * θ * Complex.I) ^ (k + 1) / ((k : ℂ) + 1) ^ (2 : ℤ)).im / 2 =
+      sin (2 * (k + 1) * θ) / (2 * (k + 1) ^ 2) := by
+  have hpow : Complex.exp (2 * θ * Complex.I) ^ (k + 1) =
+      Complex.exp (((2 * (k + 1) * θ : ℝ) : ℂ) * Complex.I) := by
+    rw [← Complex.exp_natCast_mul]
+    congr 1
+    push_cast
+    ring
+  have hden : ((k : ℂ) + 1) ^ (2 : ℤ) = (((k : ℝ) + 1) ^ 2 : ℝ) := by
+    push_cast
+    exact zpow_ofNat _ 2
+  rw [hpow, hden, Complex.div_ofReal_im, Complex.exp_ofReal_mul_I_im]
+  field_simp
+
+/-- `∑ 1 / (k + 1)²` converges. -/
+private lemma summable_one_div_succ_sq : Summable fun k : ℕ ↦ 1 / ((k + 1 : ℕ) : ℝ) ^ 2 :=
+  (summable_nat_add_iff 1).mpr (summable_one_div_nat_pow.mpr one_lt_two)
+
 /-- **Fourier series of Lobachevsky's function**: `Λ(θ) = 1/2 ∑_{m ≥ 1} sin (2mθ) / m²`. -/
 theorem hasSum_lobachevsky (θ : ℝ) :
     HasSum (fun k : ℕ ↦ sin (2 * (k + 1) * θ) / (2 * (k + 1) ^ 2)) (lobachevsky θ) := by
   rw [lobachevsky_eq_im_polylog_two]
   refine ((Complex.imCLM.hasSum (hasSum_polylog_of_norm_le_one le_rfl
-    (z := Complex.exp (2 * θ * Complex.I)) ?_)).div_const 2).congr_fun fun k ↦ ?_
-  · rw [show (2 : ℂ) * θ * Complex.I = ((2 * θ : ℝ) : ℂ) * Complex.I by push_cast; ring,
-      Complex.norm_exp_ofReal_mul_I]
-  · rw [← Complex.exp_natCast_mul, show ((k + 1 : ℕ) : ℂ) * (2 * θ * Complex.I) =
-        ((2 * (k + 1) * θ : ℝ) : ℂ) * Complex.I by push_cast; ring,
-      show ((k : ℂ) + 1) ^ (2 : ℤ) = (((k + 1) ^ 2 : ℝ) : ℂ) by push_cast; rfl,
-      Complex.imCLM_apply, Complex.div_ofReal_im, Complex.exp_ofReal_mul_I_im]
-    field_simp
+    (z := Complex.exp (2 * θ * Complex.I)) (norm_exp_two_mul_I θ).le)).div_const 2).congr_fun
+    fun k ↦ (im_exp_two_mul_I_pow_div_sq θ k).symm
 
 /-- The terms of the Fourier series of Lobachevsky's function are bounded by `1 / (k + 1) ^ 2`. -/
 private lemma abs_sin_div_le (θ : ℝ) (k : ℕ) :
@@ -287,7 +299,7 @@ private lemma abs_sin_div_le (θ : ℝ) (k : ℕ) :
 /-- The Fourier series of Lobachevsky's function converges absolutely. -/
 theorem summable_abs_sin_two_mul_div_sq (θ : ℝ) :
     Summable fun k : ℕ ↦ |sin (2 * (k + 1) * θ) / (2 * (k + 1) ^ 2)| :=
-  ((summable_nat_add_iff 1).mpr (summable_one_div_nat_pow.mpr one_lt_two)).of_nonneg_of_le
+  summable_one_div_succ_sq.of_nonneg_of_le
     (fun _ ↦ abs_nonneg _) (abs_sin_div_le θ)
 
 /-- The partial sums of the Fourier series of Lobachevsky's function converge uniformly on the
@@ -295,8 +307,7 @@ real line. -/
 theorem tendstoUniformly_lobachevsky :
     TendstoUniformly (fun N θ ↦ ∑ k ∈ Finset.range N, sin (2 * (k + 1) * θ) / (2 * (k + 1) ^ 2))
       lobachevsky atTop := by
-  have h := tendstoUniformly_tsum_nat
-    ((summable_nat_add_iff 1).mpr (summable_one_div_nat_pow.mpr one_lt_two)) fun k θ ↦
+  have h := tendstoUniformly_tsum_nat summable_one_div_succ_sq fun k θ ↦
     (Real.norm_eq_abs _).trans_le (abs_sin_div_le θ k)
   rwa [show (fun θ ↦ ∑' k : ℕ, sin (2 * (k + 1) * θ) / (2 * (k + 1) ^ 2)) = lobachevsky from
     funext fun θ ↦ (hasSum_lobachevsky θ).tsum_eq] at h
