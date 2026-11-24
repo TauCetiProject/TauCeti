@@ -11,6 +11,7 @@ import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.MFDeriv.Inner
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Distortion
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Expansion
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.NormSq
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.Regularity
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -80,25 +81,21 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
     hessian_norm_sq_comp_of_eq_zero hlog h.riemannianLog_self]
   simp only [h.mvfderiv_riemannianLog_self, ContinuousLinearMap.id_apply]
 
-/-- The defect `Hess d² - 2 g` of the squared distance from `p`, paired with the images of two
-fixed vectors under `d exp_p` at `v`, is a `C¹` function of `v` near the origin. -/
-private theorem contMDiffAt_hessian_dist_sq_riemannianExp_sub (p : M) (ξ ζ : TangentSpace I p) :
+/-- The Hessian of the squared distance from `p`, paired with the images of two fixed vectors under
+`d exp_p` at `v`, is a `C¹` function of `v` near the origin. -/
+private theorem contMDiffAt_hessian_dist_sq_riemannianExp (p : M) (ξ ζ : TangentSpace I p) :
     ContMDiffAt 𝓘(ℝ, TangentSpace I p) 𝓘(ℝ) 1 (fun v ↦
       hessian I (fun x ↦ dist p x ^ 2) (riemannianExp I M p v)
-          (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v ξ)
-          (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v ζ) -
-        2 * ⟪mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v ξ,
-          mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v ζ⟫_ℝ) 0 := by
+        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v ξ)
+        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v ζ)) 0 := by
   obtain ⟨r₀, hr₀, hn⟩ := exists_isNormalDomain_ball (I := I) p
-  have hexp := contMDiffOn_riemannianExp (I := I) (M := M) p
   have hdom := (isOpen_expDomain (I := I) (M := M) p).mem_nhds (zero_mem_expDomain p)
-  have hP (ξ : TangentSpace I p) := (hexp.contMDiffOn_totalSpaceMk_mfderiv_apply (m := 1)
-    (by simp) (isOpen_expDomain p) ξ).contMDiffAt hdom
-  refine (contMDiffAt_hessian_pair (n := 1) (m := ∞) (k := ∞) (by simp) (by simp)
+  have hP (ξ : TangentSpace I p) := ((contMDiffOn_riemannianExp (I := I) (M := M)
+    p).contMDiffOn_totalSpaceMk_mfderiv_apply (m := 1) (by simp) (isOpen_expDomain p)
+      ξ).contMDiffAt hdom
+  exact contMDiffAt_hessian_pair (n := 1) (m := ∞) (k := ∞) (by simp) (by simp)
     isOpen_ball ((hn.contMDiffOn_dist_sq subset_rfl).of_le (by simp))
-    (by simpa using hr₀) (hP ξ) (hP ζ)).sub (contMDiffAt_const.mul ?_)
-  exact ((hexp.contDiffOn_inner_mfderiv (m := 1) (by simp) (isOpen_expDomain p) ξ
-    ζ).contDiffAt hdom).contMDiffAt
+    (by simpa using hr₀) (hP ξ) (hP ζ)
 
 /-- **The Hessian of the squared distance in normal coordinates.** Pulled back along `exp_p`, the
 Hessian of `q ↦ d(p, q)²` differs from twice the exponential pullback metric by `O(‖v‖)` near the
@@ -121,29 +118,34 @@ theorem exists_abs_hessian_dist_sq_riemannianExp_sub_le (p : M) :
   set L : (v : TangentSpace I p) → TangentSpace I p →L[ℝ] TangentSpace I (riemannianExp I M p v) :=
     fun v ↦ mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v
   -- The defect `S v (ξ, ζ) = Hess f (L v ξ, L v ζ) - 2 ⟪L v ξ, L v ζ⟫`, as a bilinear form on the
-  -- fixed space `T_p M`.
-  let S : TangentSpace I p → TangentSpace I p →L[ℝ] TangentSpace I p →L[ℝ] ℝ := fun v ↦
+  -- fixed space `T_p M`: the Hessian pairing `H` minus twice the exponential pullback metric.
+  let H : TangentSpace I p → TangentSpace I p →L[ℝ] TangentSpace I p →L[ℝ] ℝ := fun v ↦
     (innerSL ℝ).bilinearComp
-        ((CovariantDerivative.leviCivitaConnection I M (mgradient I f)
-          (riemannianExp I M p v)).comp (L v)) (L v) -
-      (2 : ℝ) • (innerSL ℝ).bilinearComp (L v) (L v)
-  -- `S` unfolds to the defect: the Hessian is the pairing of `∇ grad f` with the metric.
+      ((CovariantDerivative.leviCivitaConnection I M (mgradient I f)
+        (riemannianExp I M p v)).comp (L v)) (L v)
+  let S := fun v ↦ H v - (2 : ℝ) • riemannianExpPullbackMetric I M p v
+  -- `H` unfolds to the Hessian pairing: the Hessian is the pairing of `∇ grad f` with the metric.
+  have hH (v ξ ζ : TangentSpace I p) :
+      H v ξ ζ = hessian I f (riemannianExp I M p v) (L v ξ) (L v ζ) := by
+    simp only [H, hessian_def, ContinuousLinearMap.bilinearComp_apply, innerSL_apply_apply,
+      ContinuousLinearMap.comp_apply]
+  have hP (v ξ ζ : TangentSpace I p) : riemannianExpPullbackMetric I M p v ξ ζ = ⟪L v ξ, L v ζ⟫_ℝ :=
+    riemannianExpPullbackMetric_apply p v ξ ζ
   have hS (v ξ ζ : TangentSpace I p) : S v ξ ζ =
       hessian I f (riemannianExp I M p v) (L v ξ) (L v ζ) - 2 * ⟪L v ξ, L v ζ⟫_ℝ := by
-    simp only [S, hessian_def, sub_apply, smul_apply, ContinuousLinearMap.bilinearComp_apply,
-      innerSL_apply_apply, ContinuousLinearMap.comp_apply, smul_eq_mul]
+    simp only [S, sub_apply, smul_apply, hH, hP, smul_eq_mul]
   -- `S` is differentiable at the origin, where it vanishes since `Hess f_p = 2 g_p`.
   have hSd : DifferentiableAt ℝ S 0 := by
-    have : ContMDiffAt 𝓘(ℝ, TangentSpace I p)
-        𝓘(ℝ, TangentSpace I p →L[ℝ] TangentSpace I p →L[ℝ] ℝ) 1 S 0 := by
-      refine contMDiffAt_clm_apply.mpr fun ξ ↦ contMDiffAt_clm_apply.mpr fun ζ ↦ ?_
-      rw [funext fun v ↦ hS v ξ ζ]
-      exact contMDiffAt_hessian_dist_sq_riemannianExp_sub p ξ ζ
-    exact contMDiffAt_iff_contDiffAt.mp this |>.differentiableAt (by simp)
+    have hHd : ContDiffAt ℝ 1 H 0 := contMDiffAt_iff_contDiffAt.mp <|
+      contMDiffAt_clm_apply.mpr fun ξ ↦ contMDiffAt_clm_apply.mpr fun ζ ↦ by
+        rw [funext fun v ↦ hH v ξ ζ]; exact contMDiffAt_hessian_dist_sq_riemannianExp p ξ ζ
+    exact (hHd.differentiableAt (by simp)).sub
+      ((contDiffAt_riemannianExpPullbackMetric p).differentiableAt (by simp) |>.const_smul (2 : ℝ))
   have hS0 : S 0 = 0 := by
     ext ξ ζ
     have hL0 (ξ : TangentSpace I p) : L 0 ξ = ξ := mfderiv_riemannianExp_apply_zero p ξ
-    rw [hS, hL0, hL0, riemannianExp_zero]
+    simp only [S, sub_apply, smul_apply, hH, hL0, riemannianExpPullbackMetric_zero]
+    rw [riemannianExp_zero, innerSL_apply_apply]
     simp [f]
   obtain ⟨C, hC0, hC⟩ := hSd.isBigO_sub.exists_nonneg
   obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.mp hC.bound
