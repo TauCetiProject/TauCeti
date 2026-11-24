@@ -93,6 +93,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   injective.
 * `TauCeti.SmoothMappingTorus.range_mfderiv_mk`: the tangent space of the fibre through `[t, x]`
   is the kernel of the differential of the projection.
+* `TauCeti.SmoothMappingTorus.mfderiv_mk_add_intCast`: the seam identity
+  `d(ι_(t + k)) = d(ι_t) ∘ dφ^k` for the differentials of the fibre inclusions `ι_t : x ↦ [t, x]`.
 
 ## References
 
@@ -474,6 +476,16 @@ theorem proj_flow (s : ℝ) (z : SmoothMappingTorus φ) : proj φ (flow φ s z) 
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
 
+/-- In the coordinates `(t, x)`, the suspension flow lifts to the translation
+`(t, x) ↦ (t + s, x)` of `ℝ × M`. -/
+theorem flow_comp_uncurry_mk (s : ℝ) :
+    flow φ s ∘ Function.uncurry (mk φ) = Function.uncurry (mk φ) ∘ Prod.map (· + s) id :=
+  funext fun p ↦ flow_mk φ s p.1 p.2
+
+/-- The suspension flow covers the rotation of the circle by `s`. -/
+theorem proj_comp_flow (s : ℝ) : proj φ ∘ flow φ s = (· + (s : UnitAddCircle)) ∘ proj φ :=
+  funext fun z ↦ proj_flow φ s z
+
 /-- No point of the mapping torus is a rest point of the suspension flow: the time-`1 / 2` map
 moves the projection to the base circle by `1 / 2`. -/
 theorem exists_flow_ne {φ : M ≃ₘ^n⟮I, I⟯ M} (z : SmoothMappingTorus φ) : ∃ s, flow φ s z ≠ z := by
@@ -759,6 +771,35 @@ theorem range_mfderiv_mk (t : ℝ) (x : M) :
   · intro hw
     obtain rfl : b = 0 := hb.symm.trans (LinearMap.mem_ker.1 hw)
     exact ⟨v, mfderiv_mk_apply φ (by simp) t x v⟩
+
+/-- The seam identity `[t + k, x] = [t, φ^k x]` for the differentials of the fibre inclusions:
+`d(ι_(t + k))_x = d(ι_t)_(φ^k x) ∘ dφ^k_x`. -/
+@[simp]
+theorem mfderiv_mk_add_intCast (t : ℝ) (k : ℤ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + k)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((φ ^ k) x) (mfderiv I I (φ ^ k) x v) := by
+  have h : mk φ (t + k) = mk φ t ∘ (φ ^ k) := funext fun y ↦ mk_add_intCast φ t k y
+  rw [h]
+  exact mfderiv_comp_apply_of_eq x ((contMDiff_mk φ t _).mdifferentiableAt (by simp))
+    ((φ ^ k).mdifferentiable (by simp) x) rfl v
+
+/-- The seam identity `[t + j, x] = [t, φ^[j] x]` for the differentials of the fibre inclusions,
+for a natural number `j`. -/
+@[simp]
+theorem mfderiv_mk_add_natCast (t : ℝ) (j : ℕ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + j)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((⇑φ)^[j] x) (mfderiv I I (⇑φ)^[j] x v) := by
+  have h := mfderiv_mk_add_intCast φ t j x v
+  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
+
+/-- The seam identity `[t + 1, x] = [t, φ x]` for the differentials of the fibre inclusions:
+`d(ι_(t + 1))_x = d(ι_t)_(φ x) ∘ dφ_x`. -/
+@[simp]
+theorem mfderiv_mk_add_one (t : ℝ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + 1)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) (φ x) (mfderiv I I φ x v) := by
+  have h := mfderiv_mk_add_natCast φ t 1 x v
+  rwa [Nat.cast_one, Function.iterate_one] at h
 
 end SmoothMappingTorus
 

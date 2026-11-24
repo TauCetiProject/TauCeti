@@ -31,17 +31,19 @@ diagonal:
   (`TauCeti.SmoothMappingTorus.mfderiv_flow_mfderiv_mk`).
 
 The seam identity `[t + k, x] = [t, φ^k x]` differentiates to
-`d(ι_(t + k)) v = d(ι_t) (dφ^k v)` (`TauCeti.SmoothMappingTorus.mfderiv_mk_add_intCast`). So at an
-integer time `k` the vertical block of the linearized flow, read in the fibre at height `t`, is
-the differential of `φ^k`: `dΦ_k (d(ι_t) v) = d(ι_t) (dφ^k v)`
+`d(ι_(t + k)) v = d(ι_t) (dφ^k v)` (`TauCeti.SmoothMappingTorus.mfderiv_mk_add_intCast`, in
+`TauCeti.Geometry.Manifold.Instances.MappingTorus`). So at an integer time `k` the vertical block
+of the linearized flow, read in the fibre at height `t`, is the differential of `φ^k`:
+`dΦ_k (d(ι_t) v) = d(ι_t) (dφ^k v)`
 (`TauCeti.SmoothMappingTorus.mfderiv_flow_intCast_mfderiv_mk`). At a periodic point `x` of period
 `d`, the time-`d` map fixes `[t, x]`, and its linearization on `V` is the linearized return map of
 the closed orbit through `[t, x]`. It has no eigenvalue `1` exactly when `x` is a nondegenerate
-fixed point of `φ^d` (`TauCeti.SmoothMappingTorus.isNondegenerateFixedPt_iterate_iff`). The flow
-also preserves the time form and every fiber form, `Φ_s^* dt = dt` and `Φ_s^* σ_v = σ_v`
+fixed point of `φ^d` (`TauCeti.SmoothMappingTorus.isNondegenerateFixedPt_iterate_iff_mfderiv_flow`).
+The flow also preserves the time form and every fiber form, `Φ_s^* dt = dt` and `Φ_s^* σ_v = σ_v`
 (`TauCeti.SmoothMappingTorus.mpullback_flow_timeForm`,
-`TauCeti.SmoothMappingTorus.mpullback_flow_fiberForm`), so the linearized return map preserves the
-restriction of `σ_v` to `V`. No compactness of `M` is needed.
+`TauCeti.SmoothMappingTorus.mpullback_flow_fiberForm`, in
+`TauCeti.Geometry.Manifold.DifferentialForm.MappingTorus`), so the linearized return map preserves
+the restriction of `σ_v` to `V`. No compactness of `M` is needed.
 
 ## Main results
 
@@ -57,13 +59,9 @@ restriction of `σ_v` to `V`. No compactness of `M` is needed.
 * `TauCeti.SmoothMappingTorus.mfderiv_flow_mfderiv_mk`,
   `TauCeti.SmoothMappingTorus.mfderiv_flow_intCast_mfderiv_mk`: the vertical block of the
   linearized flow, and its value `dφ^k` at integer times.
-* `TauCeti.SmoothMappingTorus.isNondegenerateFixedPt_iterate_iff`: the closed orbit through a
-  periodic point `x` of period `d` has a vertical linearized return map without eigenvalue `1`
-  exactly when `x` is a nondegenerate fixed point of `φ^d`.
-* `TauCeti.SmoothMappingTorus.mpullback_flow_timeForm`,
-  `TauCeti.SmoothMappingTorus.mpullback_flow_fiberForm`,
-  `TauCeti.SmoothMappingTorus.eval₂_fiberForm_mfderiv_flow`: the flow preserves the time form and
-  every fiber form.
+* `TauCeti.SmoothMappingTorus.isNondegenerateFixedPt_iterate_iff_mfderiv_flow`: the closed orbit
+  through a periodic point `x` of period `d` has a vertical linearized return map without
+  eigenvalue `1` exactly when `x` is a nondegenerate fixed point of `φ^d`.
 
 ## References
 
@@ -86,33 +84,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
   (φ : M ≃ₘ⟮I, I⟯ M)
 
-/-! ### Seam identities for the differential of the quotient map -/
-
-/-- The seam identity `[t + k, x] = [t, φ^k x]` for the differentials of the fibre inclusions:
-`d(ι_(t + k))_x = d(ι_t)_(φ^k x) ∘ dφ^k_x`. -/
-theorem mfderiv_mk_add_intCast (t : ℝ) (k : ℤ) (x : M) (v : TangentSpace I x) :
-    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + k)) x v =
-      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((φ ^ k) x) (mfderiv I I (φ ^ k) x v) := by
-  have h : mk φ (t + k) = mk φ t ∘ (φ ^ k) := funext fun y ↦ mk_add_intCast φ t k y
-  rw [h]
-  exact mfderiv_comp_apply_of_eq x ((contMDiff_mk φ t _).mdifferentiableAt (by simp))
-    ((φ ^ k).mdifferentiable (by simp) x) rfl v
-
-/-- The seam identity `[t + j, x] = [t, φ^[j] x]` for the differentials of the fibre inclusions,
-for a natural number `j`. -/
-theorem mfderiv_mk_add_natCast (t : ℝ) (j : ℕ) (x : M) (v : TangentSpace I x) :
-    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + j)) x v =
-      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((⇑φ)^[j] x) (mfderiv I I (⇑φ)^[j] x v) := by
-  have h := mfderiv_mk_add_intCast φ t j x v
-  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
-
-/-- The seam identity `[t + 1, x] = [t, φ x]` for the differentials of the fibre inclusions:
-`d(ι_(t + 1))_x = d(ι_t)_(φ x) ∘ dφ_x`. -/
-theorem mfderiv_mk_add_one (t : ℝ) (x : M) (v : TangentSpace I x) :
-    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + 1)) x v =
-      mfderiv I (𝓘(ℝ).prod I) (mk φ t) (φ x) (mfderiv I I φ x v) := by
-  have h := mfderiv_mk_add_natCast φ t 1 x v
-  rwa [Nat.cast_one, Function.iterate_one] at h
+/-! ### The differential of the quotient map -/
 
 /-- The differential of the quotient map `q : (t, x) ↦ [t, x]` splits along `T Y_φ = ℝ T ⊕ V`:
 `dq (b, v) = b T + d(ι_t) v`, where `ι_t : x ↦ [t, x]` is the inclusion of the fibre at
@@ -135,6 +107,8 @@ theorem mfderiv_uncurry_mk_apply (t : ℝ) (x : M) (b : ℝ) (v : TangentSpace I
     exact (mul_one b).symm
   rw [timeVectorField_mk, mfderiv_mk_apply φ (by simp), ← hL, ← hL, ← hL, hsplit, map_add,
     map_smul]
+  -- `L` is a `let`-bound name for the composite, so `L a` is `dq` applied to the vector of
+  -- `T_(t, x) (ℝ × M)` with components `a`, by definition.
   rfl
 
 /-- The seam identity for the differential of the quotient map `q : (t, x) ↦ [t, x]`:
@@ -156,8 +130,6 @@ theorem mfderiv_flow_mfderiv_uncurry_mk (s t : ℝ) (x : M) (b : ℝ) (v : Tange
           ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, v))) =
       mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (uncurry (mk φ)) (t + s, x)
         ((Manifold.tangentSpaceProdEquiv (t + s, x)).symm (b, v)) := by
-  have hcomm : flow φ s ∘ uncurry (mk φ) = uncurry (mk φ) ∘ Prod.map (· + s) id :=
-    funext fun p ↦ flow_mk φ s p.1 p.2
   have hadd : MDifferentiableAt 𝓘(ℝ) 𝓘(ℝ) (· + s) t :=
     (differentiableAt_id.add_const s).mdifferentiableAt
   -- The translation of `ℝ × M` has the identity as differential.
@@ -170,7 +142,7 @@ theorem mfderiv_flow_mfderiv_uncurry_mk (s t : ℝ) (x : M) (b : ℝ) (v : Tange
     rfl
   rw [← mfderiv_comp_apply_of_eq (t, x) (y := mk φ t x)
     ((contMDiff_flow φ s _).mdifferentiableAt (by simp))
-    ((contMDiff_uncurry_mk φ _).mdifferentiableAt (by simp)) rfl, hcomm,
+    ((contMDiff_uncurry_mk φ _).mdifferentiableAt (by simp)) rfl, flow_comp_uncurry_mk,
     mfderiv_comp_apply_of_eq (t, x) (y := (t + s, x))
       ((contMDiff_uncurry_mk φ _).mdifferentiableAt (by simp))
       (hadd.prodMap mdifferentiableAt_id) rfl, htr]
@@ -186,6 +158,7 @@ theorem mfderiv_flow_timeVectorField (s : ℝ) (y : SmoothMappingTorus φ) :
 
 /-- The linearized suspension flow moves fibre vectors along the fibres:
 `dΦ_s (d(ι_t) v) = d(ι_(t + s)) v`, where `ι_t : x ↦ [t, x]`. -/
+@[simp]
 theorem mfderiv_flow_mfderiv_mk (s t : ℝ) (x : M) (v : TangentSpace I x) :
     mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ s) (mk φ t x)
         (mfderiv I (𝓘(ℝ).prod I) (mk φ t) x v) =
@@ -209,15 +182,11 @@ theorem mfderiv_proj_mfderiv_flow (s : ℝ) (y : SmoothMappingTorus φ)
     mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (flow φ s y)
         (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ s) y w) =
       mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y w := by
-  have hcomm : proj φ ∘ flow φ s = (· + (s : UnitAddCircle)) ∘ proj φ :=
-    funext fun z ↦ proj_flow φ s z
-  have hproj : MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y :=
-    (contMDiff_proj φ y).mdifferentiableAt (by simp)
   rw [← mfderiv_comp_apply_of_eq y ((contMDiff_proj φ _).mdifferentiableAt (by simp))
-    ((contMDiff_flow φ s y).mdifferentiableAt (by simp)) rfl, hcomm,
+    ((contMDiff_flow φ s y).mdifferentiableAt (by simp)) rfl, proj_comp_flow,
     mfderiv_comp_apply_of_eq y (y := proj φ y)
       ((mdifferentiable_add_right (I := 𝓘(ℝ)) (a := (s : UnitAddCircle))) _)
-      hproj rfl, AddCircle.mfderiv_add_right]
+      ((contMDiff_proj φ y).mdifferentiableAt (by simp)) rfl, AddCircle.mfderiv_add_right]
   -- The translation of the circle has the identity of `ℝ` as differential.
   rfl
 
@@ -235,7 +204,8 @@ theorem mfderiv_flow_mem_ker_mfderiv_proj_iff (s : ℝ) (y : SmoothMappingTorus 
 period `d`, so that the time-`d` map of the suspension flow fixes `[t, x]`. Its differential
 there fixes no nonzero vertical vector exactly when `x` is a nondegenerate fixed point of `φ^d`:
 the vertical block of the linearized return map of the closed orbit through `[t, x]` is `dφ^d_x`. -/
-theorem isNondegenerateFixedPt_iterate_iff (t : ℝ) {d : ℕ} {x : M} (hx : IsPeriodicPt φ d x) :
+theorem isNondegenerateFixedPt_iterate_iff_mfderiv_flow (t : ℝ) {d : ℕ} {x : M}
+    (hx : IsPeriodicPt φ d x) :
     IsNondegenerateFixedPt I (⇑φ)^[d] x ↔
       ∀ w ∈ (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (mk φ t x)).ker,
         mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ d) (mk φ t x) w = w → w = 0 := by
@@ -256,51 +226,6 @@ theorem isNondegenerateFixedPt_iterate_iff (t : ℝ) {d : ℕ} {x : M} (hx : IsP
     rw [h v (hinj hfix), map_zero]
   · refine (h _ ⟨v, rfl⟩ ?_).trans (map_zero _).symm
     rw [ContinuousLinearMap.coe_coe, hflow, hv]
-
-/-! ### Invariant forms -/
-
-/-- The suspension flow preserves the time form: `Φ_s^* dt = dt`. -/
-@[simp]
-theorem mpullback_flow_timeForm (s : ℝ) :
-    SmoothForm.mpullback (flow φ s) (contMDiff_flow φ s) (timeForm φ) = timeForm φ := by
-  have hcomm : proj φ ∘ flow φ s = (· + (s : UnitAddCircle)) ∘ proj φ :=
-    funext fun z ↦ proj_flow φ s z
-  refine Subtype.ext ?_
-  rw [SmoothForm.coe_mpullback, timeForm_def, SmoothForm.coe_mpullback,
-    ← mpullback_comp ((contMDiff_flow φ s).mdifferentiable (by simp))
-      ((contMDiff_proj φ).mdifferentiable (by simp)), hcomm,
-    mpullback_comp ((contMDiff_proj φ).mdifferentiable (by simp)) mdifferentiable_add_right,
-    AddCircle.mpullback_add_right_timeForm]
-
-/-- The suspension flow preserves every fiber form: `Φ_s^* σ_v = σ_v`. -/
-@[simp]
-theorem mpullback_flow_fiberForm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-    {σ : SmoothForm I M F k} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ} (s : ℝ) :
-    SmoothForm.mpullback (flow φ s) (contMDiff_flow φ s) (fiberForm φ σ hσ) =
-      fiberForm φ σ hσ := by
-  have hcomm : flow φ s ∘ uncurry (mk φ) = uncurry (mk φ) ∘ Prod.map (· + s) id :=
-    funext fun p ↦ flow_mk φ s p.1 p.2
-  have hadd : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (· + s) := (contDiff_id.add contDiff_const).contMDiff
-  have htr : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) ∞ (Prod.map (· + s) id : ℝ × M → ℝ × M) :=
-    hadd.prodMap contMDiff_id
-  rw [eq_fiberForm_iff, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-  simp only [hcomm]
-  rw [SmoothForm.mpullback_comp _ _ htr (contMDiff_uncurry_mk φ), LinearMap.comp_apply,
-    mpullback_uncurry_mk_fiberForm, SmoothForm.mpullback_prodMap_mpullback_snd hadd contMDiff_id,
-    SmoothForm.mpullback_id, LinearMap.id_apply]
-
-/-- The linearized suspension flow preserves the fiber form of every two-form `σ` preserved by `φ`:
-`σ_v(dΦ_s w, dΦ_s w') = σ_v(w, w')`. -/
-theorem eval₂_fiberForm_mfderiv_flow {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {σ : SmoothForm I M F 2} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ} (s : ℝ)
-    (y : SmoothMappingTorus φ) (w w' : TangentSpace (𝓘(ℝ).prod I) y) :
-    (fiberForm φ σ hσ).eval₂ (flow φ s y)
-        (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ s) y w)
-        (mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (flow φ s) y w') =
-      (fiberForm φ σ hσ).eval₂ y w w' := by
-  have h := congrArg (fun β ↦ SmoothBundleForm.eval₂ β y w w')
-    (mpullback_flow_fiberForm φ (hσ := hσ) s)
-  simpa only [SmoothForm.eval₂_mpullback] using h
 
 end SmoothMappingTorus
 
