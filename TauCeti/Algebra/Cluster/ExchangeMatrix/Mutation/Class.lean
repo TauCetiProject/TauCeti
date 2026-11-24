@@ -117,7 +117,8 @@ theorem forall_abs_matrixMutationWord_mul_le_fromBlocks_iff (bound : ℤ) (hboun
       |C ((row₁.sumMap row₂) i) j * C ((row₁.sumMap row₂) j) i| ≤ bound)]
   rw [range_matrixMutationWord_fromBlocks row₁ row₂ B₁ B₂,
     Set.forall_mem_image, Set.forall_prod_set]
-  simp_rw [forall_abs_mul_le_fromBlocks_zero₁₂_zero₂₁_iff _ _ row₁ row₂ bound hbound]
+  simp_rw [Function.Embedding.coe_sumMap,
+    forall_abs_mul_le_fromBlocks_zero₁₂_zero₂₁_iff _ _ row₁ row₂ bound hbound]
   simp only [Set.forall_mem_range, forall_and, forall_const]
 
 end TauCeti
