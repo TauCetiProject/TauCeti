@@ -81,12 +81,6 @@ theorem map_id [DecidableEq ι] : K.map id = K := by
   refine SetLike.ext fun τ => ?_
   simp [mem_map_iff]
 
-/-- An injective relabeling preserves and reflects finiteness of the face collection. -/
-theorem finite_faces_map_iff_of_injective {κ : Type*} [DecidableEq κ]
-    (f : ι → κ) (hf : Function.Injective f) : (K.map f).faces.Finite ↔ K.faces.Finite := by
-  rw [faces_map]
-  exact Set.finite_image_iff (Finset.image_injective hf).injOn
-
 /-- Every precomplex with finitely many faces is supported on a finite set of ambient vertices. -/
 theorem exists_finset_subset_of_finite_faces (hfin : K.faces.Finite) :
     ∃ V : Finset ι, ∀ σ ∈ K, σ ⊆ V := by
@@ -109,6 +103,18 @@ to say that a vertex is *unused* by a complex, as needed when a construction adj
 vertex. -/
 theorem notMem_of_singleton_notMem (hv : ({v} : Finset ι) ∉ K) (hσ : σ ∈ K) : v ∉ σ :=
   fun h => hv (singleton_mem_of_mem hσ h)
+
+/-- A relabeling injective on the vertices preserves and reflects finiteness of the face
+collection. -/
+theorem finite_faces_map_iff_of_injOn {κ : Type*} [DecidableEq κ]
+    (f : ι → κ) (hf : Set.InjOn f {v | ({v} : Finset ι) ∈ K}) :
+    (K.map f).faces.Finite ↔ K.faces.Finite := by
+  rw [faces_map]
+  refine Set.finite_image_iff fun σ hσ τ hτ hστ => ?_
+  have hsub {ρ : Finset ι} (hρ : ρ ∈ K) : (ρ : Set ι) ⊆ {v | ({v} : Finset ι) ∈ K} :=
+    fun _ hv => singleton_mem_of_mem hρ hv
+  rw [← Finset.coe_inj, ← hf.image_eq_image_iff (hsub hσ) (hsub hτ), ← Finset.coe_image,
+    ← Finset.coe_image, hστ]
 
 /-- The image of a complex depends only on the values of the vertex map at its vertices. -/
 theorem map_congr {κ : Type*} [DecidableEq κ] {f g : ι → κ}

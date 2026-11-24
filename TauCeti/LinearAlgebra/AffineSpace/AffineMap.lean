@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
+import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
@@ -73,10 +74,9 @@ theorem lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul {k V P : Type*} [Ring k] 
 
 /-- Over a division ring, an affine map which is injective on an affine subspace `S` has an affine
 left inverse on `S`. This is the affine counterpart of
-`LinearMap.exists_leftInverse_of_injective`: the inverse of the linear part on the direction of
-`S` extends to the whole target by `LinearMap.exists_extend`. No topology is involved; for a
-continuous left inverse into a finite-dimensional normed target see
-`AffineMap.exists_leftInvOn_affineSpan`. -/
+`LinearMap.exists_leftInverse_of_injective`, applied to the linear part of `f` on the direction of
+`S` and transported by translations. No topology is involved; for a continuous left inverse into
+a finite-dimensional normed target see `AffineMap.exists_leftInvOn_affineSpan`. -/
 theorem exists_leftInvOn_of_injOn {k V₁ P₁ V₂ P₂ : Type*} [DivisionRing k] [AddCommGroup V₁]
     [Module k V₁] [AddTorsor V₁ P₁] [AddCommGroup V₂] [Module k V₂] [AddTorsor V₂ P₂]
     (f : P₁ →ᵃ[k] P₂) {S : AffineSubspace k P₁} (hf : Set.InjOn f S) :
@@ -84,26 +84,16 @@ theorem exists_leftInvOn_of_injOn {k V₁ P₁ V₂ P₂ : Type*} [DivisionRing 
   obtain hS | ⟨p₀, hp₀⟩ := (S : Set P₁).eq_empty_or_nonempty
   · obtain ⟨p⟩ := ‹AddTorsor V₁ P₁›.nonempty
     exact ⟨const k P₂ p, fun x hx => absurd (hS ▸ hx) (Set.notMem_empty x)⟩
+  have : Nonempty S := ⟨⟨p₀, hp₀⟩⟩
   -- The linear part of `f` is injective on the direction of `S`.
-  have hinj : Function.Injective (f.linear.domRestrict S.direction) := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro v hv
-    rw [LinearMap.domRestrict_apply] at hv
-    have hv' : f (v.val +ᵥ p₀) = f p₀ := by rw [map_vadd, hv, zero_vadd]
-    have hv₀ := hf (S.vadd_mem_of_mem_direction v.property hp₀) hp₀ hv'
-    exact Subtype.ext (by simpa using vadd_right_cancel p₀ (hv₀.trans (zero_vadd V₁ p₀).symm))
-  obtain ⟨g, hg⟩ := LinearMap.exists_extend
-    (S.direction.subtype ∘ₗ (LinearEquiv.ofInjective _ hinj).symm.toLinearMap)
-  refine ⟨⟨fun y => g (y -ᵥ f p₀) +ᵥ p₀, g, fun y v => by
-    rw [vadd_vsub_assoc, map_add, vadd_vadd]⟩, fun x hx => ?_⟩
-  have hx : x -ᵥ p₀ ∈ S.direction := S.vsub_mem_direction hx hp₀
-  have key : g (f x -ᵥ f p₀) = x -ᵥ p₀ := by
-    have := LinearMap.congr_fun hg (LinearEquiv.ofInjective _ hinj ⟨_, hx⟩)
-    simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-      LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, LinearEquiv.ofInjective_apply,
-      LinearMap.domRestrict_apply] at this
-    rw [← linear_apply_vsub, this]
-  simp [key]
+  obtain ⟨g, hg⟩ := (f.linear.domRestrict S.direction).exists_leftInverse_of_injective
+    (LinearMap.ker_eq_bot.2 ((f.comp S.subtype).linear_injective_iff.2 hf.injective))
+  refine ⟨(AffineEquiv.vaddConst k p₀).toAffineMap.comp ((S.direction.subtype ∘ₗ g).toAffineMap.comp
+    (AffineEquiv.vaddConst k (f p₀)).symm.toAffineMap), fun x hx => ?_⟩
+  have key := LinearMap.congr_fun hg ⟨x -ᵥ p₀, S.vsub_mem_direction hx hp₀⟩
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.domRestrict_apply,
+    LinearMap.id_coe, id_eq] at key
+  simp [← linear_apply_vsub, key]
 
 end AffineMap
 
