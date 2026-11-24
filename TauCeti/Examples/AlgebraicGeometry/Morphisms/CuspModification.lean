@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.Modification.Centre
 public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+public import TauCeti.Examples.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 
 /-!
@@ -18,6 +19,9 @@ as an `A`-module) and is an isomorphism over the basic open `D(t²)`, since `t =
 and `D(t²)` and its preimage are dense, both schemes being integral. So it is a finite
 modification with witness `D(t²)`. It is not an isomorphism (`t ∉ A`), which is consistent with
 `TauCeti.AlgebraicGeometry.IsModification.isIso_of_isFinite` because the cusp is not normal.
+
+The ring `A`, the morphism and the finiteness of `k[t]` over `A` come from the cusp section of
+`TauCeti.Examples.AlgebraicGeometry.Morphisms.UniversalHomeomorphism`.
 
 ## References
 
@@ -32,39 +36,26 @@ open CategoryTheory Polynomial _root_.AlgebraicGeometry
 
 universe u
 
-namespace TauCeti.AlgebraicGeometry.CuspModification
+namespace TauCeti.AlgebraicGeometry.Cusp
 
 variable (k : Type u) [Field k]
 
-/-- The coordinate ring `k[t², t³]` of the cuspidal cubic, inside `k[t]`. -/
-abbrev cuspRing : Subalgebra k k[X] := Algebra.adjoin k {(X : k[X]) ^ 2, X ^ 3}
-
-/-- The normalization `Spec k[t] ⟶ Spec k[t², t³]` of the cuspidal cubic. -/
-noncomputable abbrev normalization : Spec (.of k[X]) ⟶ Spec (.of (cuspRing k)) :=
-  Spec.map (CommRingCat.ofHom (algebraMap (cuspRing k) k[X]))
-
-/-- `t²` as an element of `k[t², t³]`. -/
-def tSq : cuspRing k := ⟨X ^ 2, Algebra.subset_adjoin (by simp)⟩
-
-/-- `t³` as an element of `k[t², t³]`. -/
-def tCube : cuspRing k := ⟨X ^ 3, Algebra.subset_adjoin (by simp)⟩
-
 /-- `t²` is nonzero in `k[t², t³]`. -/
-theorem tSq_ne_zero : tSq k ≠ 0 := fun h ↦ pow_ne_zero 2 X_ne_zero (congrArg Subtype.val h)
+private theorem tSq_ne_zero : tSq k ≠ 0 := fun h ↦ by simpa using congrArg Subtype.val h
 
 /-- Every `t ^ n` with `n ≥ 2` lies in `k[t², t³]`. -/
-theorem X_pow_mem {n : ℕ} (hn : 2 ≤ n) : (X : k[X]) ^ n ∈ cuspRing k := by
+private theorem X_pow_mem {n : ℕ} (hn : 2 ≤ n) : (X : k[X]) ^ n ∈ coordinateRing k := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
     rcases Nat.lt_or_ge n 4 with h | h
     · obtain rfl | rfl : n = 2 ∨ n = 3 := by lia
-      exacts [(tSq k).property, (tCube k).property]
+      all_goals exact Algebra.subset_adjoin (by simp)
     · have := ih (n - 2) (by lia) (by lia)
       rw [show n = (n - 2) + 2 by lia, pow_add]
-      exact mul_mem this (tSq k).property
+      exact mul_mem this (Algebra.subset_adjoin (by simp))
 
 /-- Every multiple of `t²` lies in `k[t², t³]`. -/
-theorem mul_X_sq_mem (p : k[X]) : p * X ^ 2 ∈ cuspRing k := by
+private theorem mul_X_sq_mem (p : k[X]) : p * X ^ 2 ∈ coordinateRing k := by
   induction p using Polynomial.induction_on with
   | C a => exact mul_mem (Subalgebra.algebraMap_mem _ a) (X_pow_mem k le_rfl)
   | add p q hp hq => simpa [add_mul] using add_mem hp hq
@@ -72,23 +63,11 @@ theorem mul_X_sq_mem (p : k[X]) : p * X ^ 2 ∈ cuspRing k := by
     rw [mul_assoc, ← pow_add]
     exact mul_mem (Subalgebra.algebraMap_mem _ a) (X_pow_mem k (by lia))
 
-/-- `k[t]` is a finite `k[t², t³]`-module. -/
-instance : Module.Finite (cuspRing k) k[X] := by
-  have hX : IsIntegral (cuspRing k) (X : k[X]) :=
-    IsIntegral.of_pow two_pos (isIntegral_algebraMap (x := tSq k))
-  have htop : Algebra.adjoin (cuspRing k) {(X : k[X])} = ⊤ := by
-    refine eq_top_iff.2 fun p _ ↦ ?_
-    have : Algebra.adjoin k {(X : k[X])} ≤
-        (Algebra.adjoin (cuspRing k) {(X : k[X])}).restrictScalars k :=
-      Algebra.adjoin_le (by simp [Algebra.subset_adjoin])
-    rw [Polynomial.adjoin_X] at this
-    exact this Algebra.mem_top
-  have : Algebra.FiniteType (cuspRing k) k[X] := ⟨⟨{X}, by simpa using htop⟩⟩
-  have : Algebra.IsIntegral (cuspRing k) k[X] := ⟨fun p ↦ by
-    have : Algebra.adjoin (cuspRing k) {(X : k[X])} ≤ integralClosure (cuspRing k) k[X] :=
-      Algebra.adjoin_le (Set.singleton_subset_iff.mpr hX)
-    exact this (htop ▸ Algebra.mem_top)⟩
-  exact Algebra.IsIntegral.finite
+/-- `k[t]` embeds in its localization away from `t²`, `k[t]` being a domain. -/
+private theorem injective_algebraMap_away :
+    Function.Injective (algebraMap k[X] (Localization.Away ((X : k[X]) ^ 2))) :=
+  IsLocalization.injective _
+    (powers_le_nonZeroDivisors_of_noZeroDivisors (pow_ne_zero 2 X_ne_zero))
 
 /-- The normalization of the cusp is finite. -/
 instance : IsFinite (normalization k) := by
@@ -99,39 +78,36 @@ instance : IsFinite (normalization k) := by
 instance : IsLocalization.Away (tSq k) (Localization.Away ((X : k[X]) ^ 2)) where
   map_units := by
     rintro ⟨_, n, rfl⟩
-    have h : algebraMap (cuspRing k) k[X] (tSq k ^ n) = ((X : k[X]) ^ 2) ^ n := by simp [tSq]
-    rw [IsScalarTower.algebraMap_apply (cuspRing k) k[X], h, map_pow]
+    have h : algebraMap (coordinateRing k) k[X] (tSq k ^ n) = ((X : k[X]) ^ 2) ^ n := by simp
+    rw [IsScalarTower.algebraMap_apply (coordinateRing k) k[X], h, map_pow]
     exact (IsLocalization.Away.algebraMap_isUnit ((X : k[X]) ^ 2)).pow n
   surj z := by
     obtain ⟨⟨p, _, n, rfl⟩, hz⟩ := IsLocalization.surj (Submonoid.powers ((X : k[X]) ^ 2)) z
     refine ⟨⟨⟨p * X ^ 2, mul_X_sq_mem k p⟩, ⟨_, n + 1, rfl⟩⟩, ?_⟩
-    simp only [IsScalarTower.algebraMap_apply (cuspRing k) k[X] (Localization.Away _)] at hz ⊢
-    have h : algebraMap (cuspRing k) k[X] (tSq k ^ (n + 1)) = ((X : k[X]) ^ 2) ^ n * X ^ 2 := by
-      simp [tSq, pow_succ]
-    simp only [h, map_mul, ← mul_assoc, hz]
-    rw [← map_mul]
-    rfl
+    simp only [IsScalarTower.algebraMap_apply (coordinateRing k) k[X] (Localization.Away _)] at hz ⊢
+    have h : algebraMap (coordinateRing k) k[X] (tSq k ^ (n + 1)) =
+        ((X : k[X]) ^ 2) ^ n * X ^ 2 := by
+      simp [pow_succ]
+    simp only [h, map_mul, ← mul_assoc, hz, Subalgebra.algebraMap_apply]
   exists_of_eq {a b} h := by
-    rw [IsScalarTower.algebraMap_apply (cuspRing k) k[X],
-      IsScalarTower.algebraMap_apply (cuspRing k) k[X] _ b] at h
-    have := IsLocalization.injective (Localization.Away ((X : k[X]) ^ 2))
-      (powers_le_nonZeroDivisors_of_noZeroDivisors (pow_ne_zero 2 X_ne_zero)) h
-    exact ⟨1, by rw [Subtype.ext this]⟩
+    rw [IsScalarTower.algebraMap_apply (coordinateRing k) k[X],
+      IsScalarTower.algebraMap_apply (coordinateRing k) k[X] _ b] at h
+    exact ⟨1, by rw [Subtype.ext (injective_algebraMap_away k h)]⟩
 
 /-- `D(t²)` is a modification witness for the normalization of the cusp. -/
 theorem witness_basicOpen :
     IsModification.Witness (normalization k) (PrimeSpectrum.basicOpen (tSq k)) where
   dense := (PrimeSpectrum.basicOpen (tSq k)).isOpen.dense
     ⟨⟨⊥, Ideal.isPrime_bot⟩, by simpa using tSq_ne_zero k⟩
-  dense_preimage := (normalization k ⁻¹ᵁ PrimeSpectrum.basicOpen (tSq k)).isOpen.dense
-    ⟨⟨⊥, Ideal.isPrime_bot⟩, show tSq k ∉ Ideal.comap (algebraMap (cuspRing k) k[X]) ⊥ by
-      simpa using tSq_ne_zero k⟩
+  dense_preimage := by
+    rw [show normalization k ⁻¹ᵁ PrimeSpectrum.basicOpen (tSq k) =
+      PrimeSpectrum.basicOpen (algebraMap _ k[X] (tSq k)) from PrimeSpectrum.comap_basicOpen _ _]
+    exact (PrimeSpectrum.basicOpen _).isOpen.dense ⟨⟨⊥, Ideal.isPrime_bot⟩, by simp⟩
   isIso := isIso_SpecMap_morphismRestrict_basicOpen_of_injective
-    (S := Localization.Away ((X : k[X]) ^ 2)) (tSq k) (IsLocalization.injective _
-      (powers_le_nonZeroDivisors_of_noZeroDivisors (pow_ne_zero 2 X_ne_zero)))
+    (S := Localization.Away ((X : k[X]) ^ 2)) (tSq k) (injective_algebraMap_away k)
 
 /-- **The normalization of the cuspidal cubic is a finite modification.** -/
 instance : IsModification (normalization k) :=
   IsModification.of_witness _ (witness_basicOpen k)
 
-end TauCeti.AlgebraicGeometry.CuspModification
+end TauCeti.AlgebraicGeometry.Cusp
