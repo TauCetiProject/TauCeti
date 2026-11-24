@@ -28,7 +28,8 @@ This file shows that such a form is a standard symplectic form after a shear of 
 `μ = ∑ᵢ d(tᵢ + aᵢ(c)) ∧ dcᵢ`
 
 near `p₀` (`TauCeti.exists_apply_eq_sum_of_apply_inl_single_eq_snd`). In the coordinates
-`(t + a(c), c)` the form is `∑ᵢ dqᵢ ∧ dpᵢ` with momenta `p = c`.
+`(t + a(c), c)` the form is `∑ᵢ dqᵢ ∧ dpᵢ` with momenta `p = c`. This standard form is
+nondegenerate (`TauCeti.eq_of_forall_sum_mul_sub_mul_eq`).
 
 This is the local model behind the Carathéodory–Jacobi–Lie theorem: for Poisson-commuting
 functions `F₁, …, Fₙ` with independent differentials on a `2n`-dimensional symplectic manifold,
@@ -69,6 +70,17 @@ private theorem prod_mk_zero_eq_sum (τ : ι → ℝ) :
   ext j
   · simp [Prod.fst_sum, Finset.sum_apply, Pi.single_apply]
   · simp [Prod.snd_sum]
+
+omit [DecidableEq ι] in
+/-- The standard form `∑ᵢ dqᵢ ∧ dpᵢ` on `(ι → ℝ) × (ι → ℝ)` is nondegenerate: two vectors with
+the same pairing against every vector are equal. -/
+theorem eq_of_forall_sum_mul_sub_mul_eq {a c : (ι → ℝ) × (ι → ℝ)}
+    (h : ∀ b : (ι → ℝ) × (ι → ℝ), ∑ i, (a.1 i * b.2 i - b.1 i * a.2 i) =
+      ∑ i, (c.1 i * b.2 i - b.1 i * c.2 i)) : a = c := by
+  classical
+  refine Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_)
+  · simpa [Pi.single_apply] using h (0, Pi.single i 1)
+  · simpa [Pi.single_apply] using h (Pi.single i 1, 0)
 
 variable {μ : (ι → ℝ) × (ι → ℝ) → ((ι → ℝ) × (ι → ℝ)) [⋀^Fin 2]→L[ℝ] ℝ}
   {O : Set ((ι → ℝ) × (ι → ℝ))}

@@ -72,8 +72,8 @@ noncomputable def polarizedComplexMeasure (P : ProjValMeasure X H) (ψ ξ : H) :
 theorem polarizedComplexMeasure_apply (P : ProjValMeasure X H) (ψ ξ : H)
     (B : Set X) (hB : MeasurableSet B) :
     P.polarizedComplexMeasure ψ ξ B = ⟪ψ, P.proj B hB ξ⟫_ℂ := by
-  have hpol := ContinuousLinearMap.inner_polarization (P.proj B hB) ψ ξ
-  rw [P.inner_proj B hB (ξ + ψ), P.inner_proj B hB (ξ + Complex.I • ψ),
+  have hpol := LinearMap.inner_polarization (P.proj B hB) ψ ξ
+  rw [ContinuousLinearMap.coe_coe, P.inner_proj B hB (ξ + ψ), P.inner_proj B hB (ξ + Complex.I • ψ),
     P.inner_proj B hB (ξ - ψ), P.inner_proj B hB (ξ - Complex.I • ψ)] at hpol
   simpa only [polarizedComplexMeasure, _root_.smul_apply, _root_.add_apply,
     _root_.sub_apply,

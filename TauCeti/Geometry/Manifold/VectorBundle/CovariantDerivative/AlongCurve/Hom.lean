@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # Differentiating a bundle endomorphism applied to a field along a curve

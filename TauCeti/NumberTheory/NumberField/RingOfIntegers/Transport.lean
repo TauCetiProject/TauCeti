@@ -19,6 +19,8 @@ on nonzero ideals.
 
 ## Main results
 
+* `NumberField.RingOfIntegers.mapAlgHom_apply`, `NumberField.RingOfIntegers.mapAlgHom_injective`:
+  evaluation and injectivity of `mapAlgHom`.
 * `NumberField.RingOfIntegers.mapRingEquiv_refl_apply`,
   `NumberField.RingOfIntegers.mapRingEquiv_trans_apply`: functoriality on elements.
 * `NumberField.RingOfIntegers.mapRingEquiv_refl`, `NumberField.RingOfIntegers.mapRingEquiv_symm`,
@@ -35,6 +37,21 @@ public section
 namespace NumberField.RingOfIntegers
 
 variable {K L M : Type*} [Field K] [Field L] [Field M]
+
+/-- Restricting an algebra homomorphism `f : K →ₐ[k] L` to rings of integers acts as `f` on
+underlying field elements. -/
+@[simp]
+theorem mapAlgHom_apply {k F : Type*} [Field k] [Algebra k K] [Algebra k L]
+    [FunLike F K L] [AlgHomClass F k K L] (f : F) (x : 𝓞 K) :
+    (mapAlgHom f x : L) = f (x : K) :=
+  (rfl)
+
+/-- Restricting an algebra homomorphism of fields to rings of integers yields an injective map. -/
+theorem mapAlgHom_injective {k F : Type*} [Field k] [Algebra k K] [Algebra k L]
+    [FunLike F K L] [AlgHomClass F k K L] (f : F) :
+    Function.Injective (mapAlgHom f) :=
+  fun _ _ h ↦ RingOfIntegers.ext <| (RingHomClass.toRingHom f).injective <| by
+    simpa only [RingOfIntegers.ext_iff, mapAlgHom_apply, RingHom.coe_coe] using h
 
 /-- The identity isomorphism of fields restricts to the identity on integers. -/
 @[simp]

@@ -57,8 +57,10 @@ In particular the Robbin–Salamon index of a closed path of Lagrangians, as giv
 formula, has the sign and normalization of the native loop invariant, which counts half-turns of
 the determinant of a frame. Through the loop comparison, Souriau's index of paths whose Lagrangians
 close up inherits the invariance of the native index under free homotopies, along which the
-endpoints move (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`); for a general
-path it is only invariant under homotopies fixing the endpoints.
+endpoints move (`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_souriau_eq`). For a general
+path it is not invariant under arbitrary free homotopies, but it is invariant under homotopies
+along whose endpoints the eigenvalue `1` of the Souriau map keeps its multiplicity
+(`Matrix.UnitaryGroup.maslovIndex_eq_of_homotopy_of_rootMultiplicity_eq`).
 
 ## Main declarations
 

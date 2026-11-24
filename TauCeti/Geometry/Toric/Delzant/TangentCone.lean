@@ -50,15 +50,14 @@ namespace IsSmoothVertex
 The normalization pairs an edge with its corresponding normal to `1`. -/
 def edgeBasis (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i) :
     Module.Basis (activeSet (facetPairing i u) c x) ℝ (StrongDual ℝ V) :=
-  hi.dualBasis (Classical.choose (isSmoothVertex_def.1 hx))
+  hi.dualBasis hx.basis
 
 /-- The edge coordinates of a covector are its values on the active normals. -/
 @[simp]
 theorem edgeBasis_repr (hx : IsSmoothVertex i u c x) (hi : IsIntegralLattice i)
     (v : StrongDual ℝ V) (j : activeSet (facetPairing i u) c x) :
     (hx.edgeBasis hi).repr v j = v (i (u j)) := by
-  rw [edgeBasis, IsIntegralLattice.dualBasis_repr,
-    Classical.choose_spec (isSmoothVertex_def.1 hx) j]
+  rw [edgeBasis, IsIntegralLattice.dualBasis_repr, hx.basis_apply j]
 
 /-- The covector with prescribed edge coordinates takes the prescribed values on the active
 normals. -/

@@ -303,12 +303,8 @@ theorem exists_norm_laplacian_heatKernel_convolution_le {α : ℝ≥0} :
   have h₁ := norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hτ hM hH two_ne_zero x
   have h₂ := mul_le_mul_of_nonneg_left (hC τ hτ) H.coe_nonneg
   push_cast at h₂
-  have h₃ : ‖fderiv ℝ (fderiv ℝ (heatKernel τ ⋆ g)) x‖ =
-      ‖iteratedFDeriv ℝ 2 (heatKernel τ ⋆ g) x‖ := by
-    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-  refine (norm_laplacian_le _ x).trans ?_
+  refine (norm_laplacian_le_norm_iteratedFDeriv_two _ x).trans ?_
   calc _ ≤ (finrank ℝ E : ℝ) * (H * (C * τ ^ (((α : ℝ) - 2) / 2))) := by
-        rw [h₃]
         gcongr
         linarith
     _ = _ := by ring

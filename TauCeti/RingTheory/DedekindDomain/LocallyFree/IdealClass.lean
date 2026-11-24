@@ -187,10 +187,8 @@ theorem exists_idealClassHom_eq_classOf (M : Type u) [AddCommGroup M] [Module A 
     exact Module.Projective.of_equiv
       (FractionalIdeal.coeIdealEquiv (P := FractionRing A) (S := A⁰) (J i))
   have : ∀ i, Module.Projective A (J i) := hP
-  let Q i : (finiteProjectiveModules A).FullSubcategory :=
-    ⟨ModuleCat.of A (J i), finiteProjectiveModules_iff.mpr ⟨inferInstance, hP i⟩⟩
-  have hsum := SplitK0.of_eq_sum_of_linearEquiv_pi
-    (X := ⟨ModuleCat.of A M, finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩) Q e
+  let Q i := of A (J i)
+  have hsum := SplitK0.of_eq_sum_of_linearEquiv_pi (X := of A M) Q e
   refine ⟨∑ i, Additive.ofMul (ClassGroup.mk (FractionRing A) (I i)), ?_⟩
   rw [map_sum, classOf_def, hsum]
   simp only [idealClassHom_mk, classOf_def, Finset.sum_sub_distrib, Finset.sum_const,

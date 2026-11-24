@@ -67,6 +67,8 @@ tensor expressions in the regular cocycle identity.
 * `TauCeti.Comodule.mem_fixedSubcomodule_iff_forall_endOfPoint`: the fixed vectors are the
   vectors fixed by every point with values in every commutative algebra.
 * `TauCeti.Comodule.endOfPoint_corestrict`: compatibility with corestriction in the coalgebra.
+* `TauCeti.Comodule.baseChange_comp_endOfPoint_of_coact`: a linear map carrying one coaction to
+  another pushed forward along an algebra map intertwines the corresponding point actions.
 * `TauCeti.Comodule.endOfPoint_tensor`: point actions preserve the diagonal tensor product.
 * `TauCeti.Comodule.endOfPoint_groupLike`: on a group-like comodule a point acts by the scalar
   given by its value on the group-like element.
@@ -384,6 +386,41 @@ theorem endOfPoint_corestrict (φ : H₁ →ₐc[R] H₂) (g : H₂ →ₐ[R] A)
   simp only [LinearMap.lTensor_def, hφ]
 
 end Corestrict
+
+section Pushforward
+
+variable {R H₁ H₂ V W A : Type*} [CommSemiring R]
+variable [Semiring H₁] [Algebra R H₁] [Coalgebra R H₁]
+variable [Semiring H₂] [Algebra R H₂] [Coalgebra R H₂]
+variable [AddCommMonoid V] [Module R V] [Comodule R H₂ V]
+variable [AddCommMonoid W] [Module R W] [Comodule R H₁ W]
+variable [CommSemiring A] [Algebra R A]
+
+/-- If a linear map `f : V → W` carries the coaction of `V` to the coaction of `W` pushed forward
+along an algebra map `ψ : H₁ → H₂`, then it intertwines the action of a point `g` on `V` with the
+action of `g ∘ ψ` on `W`. For a bialgebra map `ψ` the hypothesis says that `f` is a comodule map
+to the corestriction of `W` along `ψ`. -/
+theorem baseChange_comp_endOfPoint_of_coact (f : V →ₗ[R] W) (ψ : H₁ →ₐ[R] H₂)
+    (hψ : ∀ x : V, f.rTensor H₂ (coact (R := R) (C := H₂) x) =
+      ψ.toLinearMap.lTensor W (coact (R := R) (C := H₁) (f x)))
+    (g : H₂ →ₐ[R] A) :
+    f.baseChange A ∘ₗ endOfPoint V g = endOfPoint W (g.comp ψ) ∘ₗ f.baseChange A := by
+  have hcol : (f.baseChange A).restrictScalars R ∘ₗ
+      (TensorProduct.comm R V A).toLinearMap ∘ₗ LinearMap.lTensor V g.toLinearMap =
+      (TensorProduct.comm R W A).toLinearMap ∘ₗ LinearMap.lTensor W g.toLinearMap ∘ₗ
+        f.rTensor H₂ := by
+    refine TensorProduct.ext' fun w x => ?_
+    simp
+  apply LinearMap.restrictScalars_injective R
+  refine TensorProduct.ext' fun a v => ?_
+  have hc := DFunLike.congr_fun hcol (coact (R := R) (C := H₂) v)
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
+    LinearEquiv.coe_toLinearMap] at hc
+  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
+    endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul, hc, hψ, AlgHom.comp_toLinearMap,
+    LinearMap.lTensor_comp]
+
+end Pushforward
 
 section GroupLike
 
