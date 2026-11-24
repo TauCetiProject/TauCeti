@@ -8,10 +8,10 @@ module
 public import Mathlib.Basic.Real.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.LocalCondition
 import Mathlib.Analysis.Real.Sqrt
-import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.Algebra.Group.PowMonoidHom
-import TauCeti.Analysis.Complex.Polynomial.RealQuadratic
+import TauCeti.FieldTheory.SquareClassGroup.Real
 import TauCeti.RingTheory.AdjoinRoot.Factors
+import TauCeti.RingTheory.Polynomial.RealEtale
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -43,7 +43,8 @@ image there has square norm and is positive at the smallest real root of the cub
 
 ## Main definitions
 
-* `WeierstrassCurve.Affine.evalA`: evaluation `W.A → K` at a root of `f`.
+* `WeierstrassCurve.Affine.evalA`: evaluation `W.A → R` at a root of `f`, over any commutative
+  ring `R`.
 * `WeierstrassCurve.Affine.evalM`: the value of a square class of `W.A` at a root of `f`.
 
 ## Main results
@@ -72,58 +73,57 @@ namespace WeierstrassCurve
 
 namespace Affine
 
-section Field
+section CommRing
 
-variable {K : Type*} [Field K] (W : Affine K)
+variable {R : Type*} [CommRing R] (W : Affine R)
 
-/-- **Evaluation at a root of `f`**: the ring homomorphism `W.A → K` sending `T` to a root `e` of
+/-- **Evaluation at a root of `f`**: the ring homomorphism `W.A → R` sending `T` to a root `e` of
 `f`. It is `AdjoinRoot.lift` at `e`, with the root hypothesis in the `Polynomial.eval` spelling
 that the descent constructions use. -/
-noncomputable def evalA {e : K} (he : W.f.eval e = 0) : W.A →+* K :=
-  AdjoinRoot.lift (RingHom.id K) e he
+noncomputable def evalA {e : R} (he : W.f.eval e = 0) : W.A →+* R :=
+  AdjoinRoot.lift (RingHom.id R) e he
 
 /-- The value at `e` of the class of `p` is `p.eval e`. This is the characteristic lemma for
 `evalA`, and the `simp` normal form. -/
 @[simp]
-lemma evalA_mk {e : K} (he : W.f.eval e = 0) (p : K[X]) :
+lemma evalA_mk {e : R} (he : W.f.eval e = 0) (p : R[X]) :
     W.evalA he (AdjoinRoot.mk W.f p) = p.eval e :=
   AdjoinRoot.lift_mk he p
 
 /-- Evaluation at a root of `f` fixes the constants. -/
 @[simp]
-lemma evalA_of {e : K} (he : W.f.eval e = 0) (x : K) : W.evalA he (AdjoinRoot.of W.f x) = x :=
+lemma evalA_of {e : R} (he : W.f.eval e = 0) (x : R) : W.evalA he (AdjoinRoot.of W.f x) = x :=
   AdjoinRoot.lift_of he
 
 /-- Evaluation at a root `e` of `f` sends the generator `T` to `e`. -/
 @[simp]
-lemma evalA_root {e : K} (he : W.f.eval e = 0) : W.evalA he (AdjoinRoot.root W.f) = e :=
+lemma evalA_root {e : R} (he : W.f.eval e = 0) : W.evalA he (AdjoinRoot.root W.f) = e :=
   AdjoinRoot.lift_root he
 
-/-- **The value of a square class at a root of `f`.** For a root `e ∈ K` of `f`, evaluation
-`W.A → K`, `T ↦ e`, carries squares to squares, so it induces a homomorphism from the square
-classes of `W.A` to those of `K`. -/
-noncomputable def evalM {e : K} (he : W.f.eval e = 0) :
-    W.M →* Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range :=
-  QuotientGroup.map _ _ (Units.map (W.evalA he : W.A →* K)) <| by
+/-- **The value of a square class at a root of `f`.** For a root `e ∈ R` of `f`, evaluation
+`W.A → R`, `T ↦ e`, carries squares to squares, so it induces a homomorphism from the square
+classes of `W.A` to those of `R`. -/
+noncomputable def evalM {e : R} (he : W.f.eval e = 0) :
+    W.M →* Rˣ ⧸ (powMonoidHom 2 : Rˣ →* Rˣ).range :=
+  QuotientGroup.map _ _ (Units.map (W.evalA he : W.A →* R)) <| by
     rintro _ ⟨v, rfl⟩
-    refine ⟨Units.map (W.evalA he : W.A →* K) v, ?_⟩
+    refine ⟨Units.map (W.evalA he : W.A →* R) v, ?_⟩
     simp only [powMonoidHom_apply]
     exact (map_pow _ _ _).symm
 
 /-- The value at a root `e` of `f` of the class of a unit `u` of `W.A` is the class of the value
 of `u` at `e`. This is the characteristic lemma for `evalM`, and the `simp` normal form. -/
 @[simp]
-lemma evalM_mk {e : K} (he : W.f.eval e = 0) (u : W.Aˣ) :
-    W.evalM he u = (Units.map (W.evalA he : W.A →* K) u :
-      Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) :=
+lemma evalM_mk {e : R} (he : W.f.eval e = 0) (u : W.Aˣ) :
+    W.evalM he u = (Units.map (W.evalA he : W.A →* R) u :
+      Rˣ ⧸ (powMonoidHom 2 : Rˣ →* Rˣ).range) :=
   (rfl)
 
-/-- A root `t ≠ e` of `f` is a root of the cofactor `fCofactor e`, since
-`f = fCofactor e · (X - e)`. -/
-private lemma isRoot_fCofactor_of_ne {e t : K} (he : W.f.eval e = 0) (ht : W.f.eval t = 0)
-    (hte : t ≠ e) : (W.fCofactor e).IsRoot t := by
-  rw [W.f_eq_mul_of_eval_eq_zero he, eval_mul, eval_sub, eval_X, eval_C] at ht
-  exact (mul_eq_zero.mp ht).resolve_right (sub_ne_zero.mpr hte)
+end CommRing
+
+section Field
+
+variable {K : Type*} [Field K] (W : Affine K)
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
@@ -165,21 +165,8 @@ variable (W : Affine ℝ)
 when `u` is positive at `e`. -/
 lemma evalM_mk_eq_one_iff_real {e : ℝ} (he : W.f.eval e = 0) (u : W.Aˣ) :
     W.evalM he u = 1 ↔ 0 < W.evalA he (u : W.A) := by
-  have hne : W.evalA he (u : W.A) ≠ 0 := (u.isUnit.map _).ne_zero
-  rw [evalM_mk, TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow]
+  rw [evalM_mk, TauCeti.powMonoidHom_two_range_mk_eq_one_iff_pos_real]
   simp only [Units.coe_map, MonoidHom.coe_ofClass]
-  refine ⟨fun ⟨z, hz⟩ ↦ hz ▸ lt_of_le_of_ne (sq_nonneg z) (hz ▸ hne).symm,
-    fun h ↦ ⟨_, Real.sq_sqrt h.le⟩⟩
-
-/-- A root `r` of the cofactor `fCofactor e` splits it as `(X - r) (X - r')`, where
-`r' = -(e + a₂) - r` is the other root. -/
-private lemma fCofactor_eq_mul_of_isRoot {e r : ℝ} (hr : (W.fCofactor e).IsRoot r) :
-    W.fCofactor e = (X - C r) * (X - C (-(e + W.a₂) - r)) := by
-  have hr' : e ^ 2 + W.a₂ * e + W.a₄ = -r ^ 2 - (e + W.a₂) * r := by
-    simp only [IsRoot, eval_add, eval_pow, eval_X, eval_mul, eval_C] at hr
-    linear_combination hr
-  simp only [fCofactor, hr', map_sub, map_neg, map_add, map_mul, map_pow]
-  ring
 
 /-- An element of positive norm that is positive at a root `e` of `f` and negative at another
 root is negative at every root other than `e`: the norm is the product of the values at the three
@@ -247,18 +234,16 @@ theorem evalM_μ₀_eq_one_real {e : ℝ} (he : W.f.eval e = 0) (hmin : ∀ x, W
   | .some x y h =>
     rw [μ₀_some]
     rcases eq_or_ne x e with rfl | hxe
-    · rw [evalM_μX_self, TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow]
-      have hpos := W.eval_fCofactor_pos he hmin le_rfl
-      rw [eval_fCofactor_self] at hpos
-      exact ⟨_, Real.sq_sqrt hpos.le⟩
-    · rw [evalM_μX_of_ne W he hxe, TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow]
-      have hpos : 0 < x - e := by
-        refine sub_pos.mpr (lt_of_not_ge fun hxe' ↦ ?_)
-        have hf := (W.equation_iff_eval_f_eq_sq x y).mp h.1
-        rw [W.f_eq_mul_of_eval_eq_zero he, eval_mul, eval_sub, eval_X, eval_C] at hf
-        nlinarith [W.eval_fCofactor_pos he hmin hxe', sq_nonneg y,
-          sub_neg.mpr (lt_of_le_of_ne hxe' hxe)]
-      exact ⟨_, Real.sq_sqrt hpos.le⟩
+    · rw [evalM_μX_self, TauCeti.powMonoidHom_two_range_mk_eq_one_iff_pos_real, Units.val_mk0,
+        ← eval_fCofactor_self]
+      exact W.eval_fCofactor_pos he hmin le_rfl
+    · rw [evalM_μX_of_ne W he hxe, TauCeti.powMonoidHom_two_range_mk_eq_one_iff_pos_real,
+        Units.val_mk0]
+      refine sub_pos.mpr (lt_of_not_ge fun hxe' ↦ ?_)
+      have hf := (W.equation_iff_eval_f_eq_sq x y).mp h.1
+      rw [W.f_eq_mul_of_eval_eq_zero he, eval_mul, eval_sub, eval_X, eval_C] at hf
+      nlinarith [W.eval_fCofactor_pos he hmin hxe', sq_nonneg y,
+        sub_neg.mpr (lt_of_le_of_ne hxe' hxe)]
 
 /-- **Square classes over `ℝ` are detected at the real roots of `f`.** A class in `W.M` is trivial
 exactly when its value at every real root of `f` is trivial. By the Chinese remainder theorem
@@ -289,18 +274,13 @@ theorem eq_one_iff_forall_evalM_eq_one_real (m : W.M) :
     rw [← map_pow, AdjoinRoot.mk_eq_mk, ← C_pow, Real.sq_sqrt hqt.le, hpt]
     exact dvd_sub_comm.mp (X_sub_C_dvd_sub_C_eval)
   · -- otherwise the factor is an irreducible quadratic, and its quotient is `ℂ`
-    have hle : (p : ℝ[X]).natDegree ≤ 3 :=
-      W.natDegree_f ▸ natDegree_le_of_dvd p.dvd W.f_ne_zero
-    have hroot : ∀ x, ¬(p : ℝ[X]).IsRoot x := fun x hx ↦
-      hp1 (natDegree_eq_of_degree_eq_some (degree_eq_one_of_irreducible_of_root p.irreducible hx))
-    have h3 : (p : ℝ[X]).natDegree ≠ 3 := fun h3 ↦ by
-      obtain ⟨x, hx⟩ := IsRealClosed.exists_isRoot_of_odd_natDegree (f := (p : ℝ[X])) (by
-        rw [h3]; decide)
-      exact hroot x hx
-    have h0 := p.irreducible.natDegree_pos
-    obtain ⟨w, hw⟩ := AdjoinRoot.isSquare_of_irreducible_of_natDegree_eq_two p.irreducible
-      (by omega) (AdjoinRoot.mk _ q)
-    exact ⟨w, by rw [sq, hw]⟩
+    have h2 : (p : ℝ[X]).natDegree = 2 := by
+      have := p.irreducible.natDegree_le_two
+      have := p.irreducible.natDegree_pos
+      omega
+    let φ := evalUpperEquiv p.irreducible h2
+    obtain ⟨w, hw⟩ := IsAlgClosed.isSquare (φ (AdjoinRoot.mk _ q))
+    exact ⟨φ.symm w, by rw [← map_pow, sq, ← hw, AlgEquiv.symm_apply_apply]⟩
 
 variable [DecidableEq ℝ]
 
@@ -333,12 +313,8 @@ theorem mem_range_μ_iff_real {e : ℝ} (he : W.f.eval e = 0) (hmin : ∀ x, W.f
     · exact (W.evalM_mk_eq_one_iff_real ht₀ u).mpr (hev t₀ ht₀ ▸ h)
     · exact (u.isUnit.map (W.evalA ht₀)).ne_zero (hev t₀ ht₀ ▸ h)
   have hnorm : 0 < Algebra.norm ℝ (AdjoinRoot.mk W.f p) := by
-    rw [normM_mk, TauCeti.powMonoidHom_range_mk_eq_one_iff_exists_pow] at hN
-    obtain ⟨z, hz⟩ := hN
-    have hu : Algebra.norm ℝ (u : W.A) ≠ 0 := (u.isUnit.map (Algebra.norm ℝ)).ne_zero
-    simp only [Units.coe_map] at hz
-    rw [hp, ← hz]
-    exact lt_of_le_of_ne (sq_nonneg z) (hz ▸ hu).symm
+    rw [normM_mk, TauCeti.powMonoidHom_two_range_mk_eq_one_iff_pos_real] at hN
+    simpa [hp] using hN
   set ρ := (W.isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero he).unit
   have key : (u : W.M) * ρ = 1 := by
     rw [← QuotientGroup.mk_mul, W.eq_one_iff_forall_evalM_eq_one_real]
