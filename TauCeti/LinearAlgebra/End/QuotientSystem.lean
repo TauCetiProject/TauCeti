@@ -38,8 +38,8 @@ systems have to respect them.
 * `Module.End.FiniteQuotientSystem.topology`: the inverse-limit topology on `M`, induced by the
   maps to the discrete quotients `M ⧸ J i`.
 * `Module.End.FiniteQuotientSystem.ofIsAdicComplete`: the `I`-adic filtration `I ^ n • ⊤` of an
-  `I`-adically complete module with finite quotients, and `ofModuleFinite` for a finite module
-  over a ring with `R ⧸ I` finite and `I` finitely generated.
+  `I`-adically complete module with finite quotients, and `ofModuleFinite` for an `I`-adically
+  complete finite module, when `I` is finitely generated and `R ⧸ I` is finite.
 * `Module.End.FiniteQuotientSystem.ofFinite`: the one-term system `J = ⊥` on a module that is
   finite as a set.
 
@@ -178,8 +178,8 @@ theorem toLimit_apply_coe (x : M) (i : ι) : (h.toLimit x : Π i, M ⧸ h.submod
 /-- The canonical map to the inverse limit is bijective: injective by separation and surjective by
 completeness. -/
 theorem toLimit_bijective : Function.Bijective h.toLimit := by
-  refine ⟨fun x y hxy ↦ h.eq_iff_forall_sModEq.2 fun i ↦ congr_fun (congr_arg Subtype.val hxy) i,
-    fun z ↦ ?_⟩
+  refine ⟨fun x y hxy ↦ h.eq_iff_forall_sModEq.2 fun i ↦ SModEq.def.2 ?_, fun z ↦ ?_⟩
+  · rw [← h.toLimit_apply_coe x i, ← h.toLimit_apply_coe y i, hxy]
   obtain ⟨x, hx⟩ := h.range_mk_eq_limit.superset z.property
   exact ⟨x, Subtype.ext hx⟩
 
@@ -216,9 +216,11 @@ theorem isOpen_submodule (i : ι) : IsOpen[h.topology] (h.submodule i : Set M) :
   have hJ : (h.submodule i : Set M) = Submodule.Quotient.mk ⁻¹' {(0 : M ⧸ h.submodule i)} := by
     ext x
     simp [Submodule.Quotient.mk_eq_zero]
+  let _ : TopologicalSpace (M ⧸ h.submodule i) := ⊥
+  have _ : DiscreteTopology (M ⧸ h.submodule i) := ⟨rfl⟩
+  let _ := h.topology
   rw [hJ]
-  exact TopologicalSpace.le_def.1 (iInf_le _ i) _
-    ((isOpen_induced_iff (t := ⊥)).2 ⟨_, trivial, rfl⟩)
+  exact (h.continuous_mk i).isOpen_preimage _ (isOpen_discrete _)
 
 /-- The inverse-limit topology is induced by the map `M → Π i, M ⧸ J i` to the product of the
 discrete quotients. -/
@@ -291,7 +293,7 @@ theorem isClosedEmbedding_pi :
     exact isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ isClosed_iInter fun hij ↦
       isClosed_eq (continuous_of_discreteTopology.comp (continuous_apply i)) (continuous_apply j)
   refine ⟨⟨⟨h.topology_eq_induced_pi⟩, fun x y hxy ↦
-    h.eq_iff_forall_sModEq.2 fun i ↦ congr_fun hxy i⟩, ?_⟩
+    h.eq_iff_forall_sModEq.2 fun i ↦ SModEq.def.2 (congr_fun hxy i)⟩, ?_⟩
   rw [h.range_mk_eq_limit]
   exact hclosed
 
