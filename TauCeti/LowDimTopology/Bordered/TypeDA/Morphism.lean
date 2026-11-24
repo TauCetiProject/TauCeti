@@ -55,7 +55,8 @@ increase along their nonzero coefficients (the results named `_of_lt`). Otherwis
 
 The composite `(P ⊠ F) * (P ⊠ G)` agrees with `P ⊠ (F * G)` only up to homotopy, which is the
 subject of `TauCeti.LowDimTopology.Bordered.TypeDA.Composition`. The functor `P ⊠ –` sends the
-identity morphism to the identity only for strictly unital bimodules, which is not treated here.
+identity morphism to the identity only for strictly unital bimodules, over the idempotents; see
+`TauCeti.LowDimTopology.Bordered.TypeDA.Invariance`.
 
 ## Main definitions
 

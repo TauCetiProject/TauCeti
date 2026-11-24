@@ -6,176 +6,129 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import Mathlib.Probability.Independence.Basic
-import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Probability.Independence.CharacteristicFunction
-import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Triangle
+import TauCeti.Analysis.Bochner.CharFun.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Fejer
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Esseen's concentration inequality
 
-A finite measure on `ℝ` gives every closed interval of radius `ε > 0` mass at most
-`(24 / 23)² ε ∫_{-1/ε}^{1/ε} ‖φ(θ)‖ dθ`, where `φ = charFun μ` is its characteristic function
+For a finite measure `μ` on `ℝ`, every closed ball of radius `ε > 0` has mass at most
+`2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖`
 (`MeasureTheory.measureReal_closedBall_le_integral_norm_charFun`). The bound is uniform in the
-centre of the interval, so it bounds the Lévy concentration function `sup_v μ [v - ε, v + ε]`.
+centre, so it bounds the Lévy concentration function `sup_v μ (closedBall v ε)`. The bound is
+four times the average of `‖charFun μ t‖` over `[-ε⁻¹, ε⁻¹]`, so it is small when that average
+modulus is small; then every interval of length `2 ε` has small mass. This is the analytic input
+of small-ball estimates for sums of independent random variables, whose characteristic function is
+a product.
 
-For a weighted sum `S = ∑ aᵢ Xᵢ` of independent real random variables the characteristic
-function factors, which gives the small-ball estimate
-`P(|S - v| ≤ ε) ≤ (24 / 23)² ε ∫_{-1/ε}^{1/ε} ∏ᵢ ‖φ_{Xᵢ}(aᵢ θ)‖ dθ`
-(`ProbabilityTheory.iIndepFun.measureReal_abs_sum_mul_sub_le_integral_prod_norm_charFun`).
-This is the starting point of the Fourier-analytic small-ball and Littlewood–Offord estimates
-for sums of independent random variables, which bound the probability that a random vector
-lies close to a fixed hyperplane and hence the least singular value of a random matrix.
-
-The proof bounds the indicator of `[-1, 1]` by a multiple of the Fejér kernel
-`sinc (x / 2)²`, whose cosine transform is the triangle function
-(`TauCeti.integral_one_sub_abs_mul_cos_mul`), and exchanges the two integrals.
+The proof smooths `μ` with the Fejér kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2`. Its integral
+against `μ` is the oriented interval integral from `0` to `T`, weighted by `1 - t / T`, of the
+real part of the characteristic function rotated by the phase `-t * v`
+(`MeasureTheory.integral_mul_sinc_sq_eq_integral_re_charFun`).
 
 ## References
 
 * C.-G. Esseen, *On the Kolmogorov–Rogozin inequality for the concentration function*,
   Z. Wahrscheinlichkeitstheorie verw. Gebiete 5 (1966), 210–216.
 * M. Rudelson and R. Vershynin, *The Littlewood–Offord problem and invertibility of random
-  matrices*, Advances in Mathematics 218 (2008), §4.
-* T. Tao and V. Vu, *Additive Combinatorics*, Cambridge University Press (2006), §7.
+  matrices*, Advances in Mathematics 218 (2008), §4, where the inequality bounds the small-ball
+  probability of a weighted sum through its arithmetic structure.
+* Mathlib's `MeasureTheory.integral_charFun_Icc`, whose interchange of an interval integral with
+  an integral against `μ` the Fubini step here adapts.
 -/
 
 public section
 
-open Metric Set
-open scoped Topology
+open Complex Real Set Metric intervalIntegral
 
 namespace MeasureTheory
 
-/-- The cosine moment `∫ cos ((x - v) θ) dμ` is the real part of the characteristic function
-shifted by the phase of `v`. -/
-private theorem integral_cos_sub_mul_eq_re (μ : Measure ℝ) [IsFiniteMeasure μ] (v θ : ℝ) :
-    ∫ x, Real.cos ((x - v) * θ) ∂μ =
-      (Complex.exp (((-(θ * v) : ℝ) : ℂ) * Complex.I) * charFun μ θ).re := by
-  have hint : Integrable (fun x : ℝ ↦ Complex.exp (((-(θ * v) : ℝ) : ℂ) * Complex.I) *
-      Complex.exp (θ * x * Complex.I)) μ := by
-    refine Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ ?_)
-    rw [norm_mul, Complex.norm_exp_ofReal_mul_I, ← Complex.ofReal_mul,
-      Complex.norm_exp_ofReal_mul_I, one_mul]
-  rw [charFun_apply_real, ← integral_const_mul]
-  refine Eq.trans ?_ (integral_re hint)
-  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-  simp only [RCLike.re_to_complex]
-  rw [← Complex.exp_add, show ((-(θ * v) : ℝ) : ℂ) * Complex.I + θ * x * Complex.I =
-    (((x - v) * θ : ℝ) : ℂ) * Complex.I by push_cast; ring]
-  exact (Complex.exp_ofReal_mul_I_re _).symm
+variable {μ : Measure ℝ} [IsFiniteMeasure μ]
 
-/-- For `|θ| ≤ 1`, the `μ`-average of the triangle-weighted cosine `(1 - |θ|) cos ((x - v) θ)` is
-at most `‖charFun μ θ‖`. -/
-private theorem integral_one_sub_abs_mul_cos_le_norm_charFun (μ : Measure ℝ)
-    [IsFiniteMeasure μ] (v : ℝ) {θ : ℝ} (hθ : |θ| ≤ 1) :
-    ∫ x, (1 - |θ|) * Real.cos ((x - v) * θ) ∂μ ≤ ‖charFun μ θ‖ := by
-  rw [integral_const_mul, integral_cos_sub_mul_eq_re]
-  calc (1 - |θ|) * (Complex.exp (((-(θ * v) : ℝ) : ℂ) * Complex.I) * charFun μ θ).re
-      ≤ (1 - |θ|) * ‖Complex.exp (((-(θ * v) : ℝ) : ℂ) * Complex.I) * charFun μ θ‖ :=
-        mul_le_mul_of_nonneg_left (Complex.re_le_norm _) (sub_nonneg.2 hθ)
-    _ ≤ ‖charFun μ θ‖ := by
-        rw [norm_mul, Complex.norm_exp_ofReal_mul_I, one_mul]
-        exact mul_le_of_le_one_left (norm_nonneg _) (by linarith [abs_nonneg θ])
+/-- For all real `v` and `T`, the integral of the Fejér kernel `T / 2 * sinc (T * (x - v) / 2) ^ 2`
+against a finite measure `μ` on `ℝ` equals the oriented interval integral `∫ t in 0..T`, weighted
+by `1 - t / T`, of the real part of the characteristic function of `μ` at `t` after rotation by
+the phase `-t * v`. -/
+theorem integral_mul_sinc_sq_eq_integral_re_charFun (v T : ℝ) :
+    ∫ x, T / 2 * sinc (T * (x - v) / 2) ^ 2 ∂μ =
+      ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
+  -- Fubini's theorem, swapping the interval integral with the integral against `μ` through
+  -- `intervalIntegral_integral_swap`, as in the proof of Mathlib's
+  -- `MeasureTheory.integral_charFun_Icc`.
+  have hint : Integrable (Function.uncurry fun t x : ℝ ↦ (1 - t / T) * Real.cos (t * (x - v)))
+      ((volume.restrict (uIoc 0 T)).prod μ) := by
+    have hw : Integrable (fun t : ℝ ↦ |1 - t / T|) (volume.restrict (uIoc 0 T)) :=
+      intervalIntegrable_iff.1 (Continuous.intervalIntegrable (by fun_prop) 0 T)
+    refine (hw.mul_prod (integrable_const (1 : ℝ))).mono' (by fun_prop)
+      (ae_of_all _ fun ⟨t, x⟩ ↦ ?_)
+    simp only [Function.uncurry_apply_pair, Real.norm_eq_abs, mul_one, abs_mul]
+    exact mul_le_of_le_one_right (abs_nonneg _) (Real.abs_cos_le_one _)
+  calc ∫ x, T / 2 * sinc (T * (x - v) / 2) ^ 2 ∂μ
+      = ∫ x, (∫ t in 0..T, (1 - t / T) * Real.cos (t * (x - v))) ∂μ := by
+        simp only [TauCeti.integral_one_sub_div_mul_cos_mul]
+    _ = ∫ t in 0..T, ∫ x, (1 - t / T) * Real.cos (t * (x - v)) ∂μ :=
+        (intervalIntegral_integral_swap hint).symm
+    _ = ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re := by
+        simp only [integral_const_mul, TauCeti.integral_cos_mul_sub_eq_re_exp_mul_charFun]
 
-/-- **Esseen's inequality** at unit scale: a finite measure on `ℝ` gives every closed interval
-of radius one mass at most `(24 / 23)² ∫_{-1}^{1} ‖charFun μ θ‖ dθ`. -/
-private theorem measureReal_closedBall_one_le_integral_norm_charFun (μ : Measure ℝ)
-    [IsFiniteMeasure μ] (v : ℝ) :
-    μ.real (closedBall v 1) ≤ (24 / 23) ^ 2 * ∫ θ in (-1 : ℝ)..1, ‖charFun μ θ‖ := by
-  set ν : Measure ℝ := volume.restrict (Ioc (-1) 1)
-  have hle : (-1 : ℝ) ≤ 1 := by norm_num
-  -- the kernel `(x, θ) ↦ (1 - |θ|) cos ((x - v) θ)` is integrable for `μ ⊗ ν`
-  have hF : Integrable (Function.uncurry fun (x θ : ℝ) ↦ (1 - |θ|) * Real.cos ((x - v) * θ))
-      (μ.prod ν) := by
-    have hw : Integrable (fun θ : ℝ ↦ 1 - |θ|) ν :=
-      (Continuous.intervalIntegrable (μ := volume) (by fun_prop) (-1) 1).1
-    refine (hw.comp_snd μ).mul_bdd (c := 1) (by fun_prop) (ae_of_all _ fun p ↦ ?_)
-    simpa using Real.abs_cos_le_one ((p.1 - v) * p.2)
-  calc μ.real (closedBall v 1) = ∫ x, (closedBall v 1).indicator 1 x ∂μ :=
-        (integral_indicator_one measurableSet_closedBall).symm
-    _ ≤ ∫ x, (24 / 23) ^ 2 * Real.sinc ((x - v) / 2) ^ 2 ∂μ := by
-        refine integral_mono_of_nonneg (ae_of_all _ fun x ↦ ?_)
-          (Integrable.of_bound (Continuous.aestronglyMeasurable (continuous_const.mul
-            ((Real.continuous_sinc.comp ((continuous_id.sub continuous_const).div_const 2)).pow
-              2))) ((24 / 23) ^ 2) (ae_of_all _ fun x ↦ ?_))
-          (ae_of_all _ fun x ↦ ?_)
-        · exact indicator_nonneg (fun _ _ ↦ zero_le_one) x
-        · have h1 : |Real.sinc ((x - v) / 2)| ≤ 1 := Real.abs_sinc_le_one _
-          have h2 : Real.sinc ((x - v) / 2) ^ 2 ≤ 1 := by
-            rw [← sq_abs]; exact pow_le_one₀ (abs_nonneg _) h1
-          rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-          nlinarith
-        · by_cases hx : x ∈ closedBall v 1
-          · rw [indicator_of_mem hx, Pi.one_apply]
-            have := TauCeti.sq_le_sinc_div_two_sq (x := x - v) (by rwa [← Real.dist_eq])
-            nlinarith
-          · rw [indicator_of_notMem hx]
-            positivity
-    _ = (24 / 23) ^ 2 * ∫ θ in Ioc (-1 : ℝ) 1,
-          ∫ x, (1 - |θ|) * Real.cos ((x - v) * θ) ∂μ := by
-        rw [integral_const_mul]
-        congr 1
-        simp_rw [← TauCeti.integral_one_sub_abs_mul_cos_mul, intervalIntegral.integral_of_le hle]
-        exact integral_integral_swap hF
-    _ ≤ (24 / 23) ^ 2 * ∫ θ in (-1 : ℝ)..1, ‖charFun μ θ‖ := by
-        rw [intervalIntegral.integral_of_le hle]
-        exact mul_le_mul_of_nonneg_left (setIntegral_mono_on hF.integral_prod_right
-          intervalIntegrable_charFun.norm.1 measurableSet_Ioc fun θ hθ ↦
-            integral_one_sub_abs_mul_cos_le_norm_charFun μ v (abs_le.2 ⟨hθ.1.le, hθ.2⟩))
-          (by positivity)
+omit [IsFiniteMeasure μ] in
+/-- For `T > 0`, the integral over `[0, T]`, weighted by `1 - t / T`, of the real part of the
+characteristic function of `μ` at `t` after rotation by the phase `-t * v` is at most the
+unweighted integral of `‖charFun μ t‖` over `[0, T]`. -/
+private theorem integral_one_sub_div_mul_re_le {T : ℝ} (hT : 0 < T) (v : ℝ) :
+    ∫ t in 0..T, (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re ≤
+      ∫ t in 0..T, ‖charFun μ t‖ := by
+  refine integral_mono_on hT.le (Continuous.intervalIntegrable (by fun_prop) _ _)
+    (Continuous.intervalIntegrable (by fun_prop) _ _) fun t ht ↦ ?_
+  obtain ⟨ht₀, htT⟩ := Set.mem_Icc.mp ht
+  have h₁ : 0 ≤ 1 - t / T := by
+    rw [sub_nonneg, div_le_one hT]
+    exact htT
+  have h₂ : 1 - t / T ≤ 1 := by
+    rw [sub_le_self_iff]
+    exact div_nonneg ht₀ hT.le
+  calc (1 - t / T) * (cexp (↑(-(t * v)) * I) * charFun μ t).re ≤
+        (1 - t / T) * ‖charFun μ t‖ :=
+        mul_le_mul_of_nonneg_left ((Complex.re_le_norm _).trans_eq
+          (by rw [norm_mul, norm_exp_ofReal_mul_I, one_mul])) h₁
+    _ ≤ ‖charFun μ t‖ := mul_le_of_le_one_left (norm_nonneg _) h₂
 
-/-- **Esseen's inequality**: a finite measure on `ℝ` gives every closed interval of radius
-`ε > 0` mass at most `(24 / 23)² ε ∫_{-1/ε}^{1/ε} ‖charFun μ θ‖ dθ`. The bound does not depend
-on the centre `v`, so it also bounds the Lévy concentration function of `μ`. -/
-theorem measureReal_closedBall_le_integral_norm_charFun (μ : Measure ℝ) [IsFiniteMeasure μ]
-    (v : ℝ) {ε : ℝ} (hε : 0 < ε) :
-    μ.real (closedBall v ε) ≤ (24 / 23) ^ 2 * ε * ∫ θ in -ε⁻¹..ε⁻¹, ‖charFun μ θ‖ := by
-  have hmeas : Measurable (fun x : ℝ ↦ ε⁻¹ * x) := by fun_prop
-  have hpre : (fun x : ℝ ↦ ε⁻¹ * x) ⁻¹' closedBall (ε⁻¹ * v) 1 = closedBall v ε := by
-    ext x
-    simp only [mem_preimage, mem_closedBall, Real.dist_eq, ← mul_sub, abs_mul,
-      abs_inv, abs_of_pos hε]
-    rw [inv_mul_le_iff₀ hε, mul_one]
-  have h := measureReal_closedBall_one_le_integral_norm_charFun
-    (μ.map fun x ↦ ε⁻¹ * x) (ε⁻¹ * v)
-  rw [map_measureReal_apply hmeas measurableSet_closedBall, hpre] at h
-  simp_rw [charFun_map_mul] at h
-  rw [intervalIntegral.integral_comp_mul_left (fun θ ↦ ‖charFun μ θ‖) (inv_ne_zero hε.ne'),
-    inv_inv, smul_eq_mul, mul_neg_one, mul_one] at h
-  linarith
+/-- **Esseen's concentration inequality.** For a finite measure `μ` on `ℝ`, every closed ball of
+radius `ε > 0` has mass at most `2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖`. -/
+theorem measureReal_closedBall_le_integral_norm_charFun (v : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    μ.real (closedBall v ε) ≤ 2 * ε * ∫ t in -ε⁻¹..ε⁻¹, ‖charFun μ t‖ := by
+  set T := ε⁻¹ with hT
+  have hT₀ : 0 < T := inv_pos.2 hε
+  -- The kernel is the cosine transform of the triangular weight on `[0, T]`, centred at `v`.
+  set K : ℝ → ℝ := fun x ↦ T / 2 * sinc (T * (x - v) / 2) ^ 2
+  have hK_int : Integrable K μ :=
+    Integrable.of_bound (by fun_prop) (T / 2) (ae_of_all _ fun x ↦ by
+      rw [Real.norm_of_nonneg (by positivity)]
+      exact mul_le_of_le_one_right (by positivity)
+        ((sq_le_one_iff_abs_le_one _).2 (abs_sinc_le_one _)))
+  have hsymm : ∫ t in -T..T, ‖charFun μ t‖ = 2 * ∫ t in 0..T, ‖charFun μ t‖ := by
+    rw [intervalIntegral.integral_eq_two_smul_of_even (fun t ↦ by
+      rw [charFun_neg, Complex.norm_conj]), smul_eq_mul]
+  calc μ.real (closedBall v ε) = 4 / T * ∫ x in closedBall v ε, T / 4 ∂μ := by
+        rw [setIntegral_const, smul_eq_mul]
+        field_simp
+    _ ≤ 4 / T * ∫ x in closedBall v ε, K x ∂μ := by
+        refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+        refine setIntegral_mono_on integrableOn_const hK_int.integrableOn
+          measurableSet_closedBall fun x hx ↦ TauCeti.div_four_le_mul_sinc_sq ?_
+        simpa [hT, Real.dist_eq] using Metric.mem_closedBall.mp hx
+    _ ≤ 4 / T * ∫ x, K x ∂μ := by
+        refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+        exact setIntegral_le_integral hK_int (ae_of_all _ fun x ↦ by positivity)
+    _ ≤ 4 / T * ∫ t in 0..T, ‖charFun μ t‖ := by
+        rw [integral_mul_sinc_sq_eq_integral_re_charFun v T]
+        gcongr
+        exact integral_one_sub_div_mul_re_le hT₀ v
+    _ = 2 * ε * ∫ t in -T..T, ‖charFun μ t‖ := by
+        rw [hsymm, hT]
+        field_simp
+        ring
 
 end MeasureTheory
-
-namespace ProbabilityTheory
-
-open MeasureTheory
-
-/-- **Small-ball estimate for independent sums**: for independent real random variables `Xᵢ`
-under a finite measure `P` and real weights `aᵢ`, the `P`-measure of the event that `∑ᵢ aᵢ Xᵢ`
-lies within `ε > 0` of a point `v` is at most `(24 / 23)² ε ∫_{-1/ε}^{1/ε} ∏ᵢ ‖φ_{Xᵢ}(aᵢ θ)‖ dθ`,
-where `φ_{Xᵢ}` is the characteristic function of the law of `Xᵢ`. -/
-theorem iIndepFun.measureReal_abs_sum_mul_sub_le_integral_prod_norm_charFun
-    {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
-    {X : ι → Ω → ℝ} (hX : iIndepFun X P) (mX : ∀ i, AEMeasurable (X i) P) (s : Finset ι)
-    (a : ι → ℝ) (v : ℝ) {ε : ℝ} (hε : 0 < ε) :
-    P.real {ω | |∑ i ∈ s, a i * X i ω - v| ≤ ε} ≤
-      (24 / 23) ^ 2 * ε * ∫ θ in -ε⁻¹..ε⁻¹, ∏ i ∈ s, ‖charFun (P.map (X i)) (a i * θ)‖ := by
-  have mY : ∀ i, AEMeasurable (fun ω ↦ a i * X i ω) P := fun i ↦ (mX i).const_mul (a i)
-  have hY : iIndepFun (fun i ω ↦ a i * X i ω) P :=
-    hX.comp (fun i x ↦ a i * x) fun i ↦ measurable_const_mul (a i)
-  have hS : AEMeasurable (fun ω ↦ ∑ i ∈ s, a i * X i ω) P :=
-    Finset.aemeasurable_fun_sum s fun i _ ↦ mY i
-  have h := measureReal_closedBall_le_integral_norm_charFun
-    (P.map fun ω ↦ ∑ i ∈ s, a i * X i ω) v hε
-  rw [map_measureReal_apply_of_aemeasurable hS measurableSet_closedBall,
-    (hY.restrict s).charFun_map_fun_finsetSum_eq_prod fun i _ ↦ mY i] at h
-  have hpre : (fun ω ↦ ∑ i ∈ s, a i * X i ω) ⁻¹' closedBall v ε =
-      {ω | |∑ i ∈ s, a i * X i ω - v| ≤ ε} := by
-    ext ω
-    simp [Real.dist_eq]
-  rw [hpre] at h
-  simpa [Finset.prod_apply, charFun_map_mul_comp (mX _)] using h
-
-end ProbabilityTheory

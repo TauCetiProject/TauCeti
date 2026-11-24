@@ -96,10 +96,8 @@ theorem cutoffCLM_apply (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆
 
 /-- Multiplying by a cutoff does not enlarge the support of a test function. -/
 theorem tsupport_cutoffCLM_subset (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆ U)
-    (φ : 𝓓^{n}(Ω, F)) : tsupport (cutoffCLM hχ hχU φ : E → F) ⊆ tsupport χ ∩ tsupport φ := by
-  have h : (cutoffCLM hχ hχU φ : E → F) = χ • ⇑φ := funext (cutoffCLM_apply hχ hχU φ)
-  rw [h]
-  exact subset_inter (tsupport_smul_subset_left _ _) (tsupport_smul_subset_right _ _)
+    (φ : 𝓓^{n}(Ω, F)) : tsupport (cutoffCLM hχ hχU φ : E → F) ⊆ tsupport χ ∩ tsupport φ :=
+  tsupport_subset_inter_of_apply_eq_smul (cutoffCLM_apply hχ hχU φ)
 
 end Cutoff
 
