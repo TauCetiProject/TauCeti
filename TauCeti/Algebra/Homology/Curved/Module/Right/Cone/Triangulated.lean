@@ -121,6 +121,17 @@ theorem coneTriangle_distinguished {M N : CurvedDGRightModuleCat.{u, u, u} h}
   rw [coneTriangle_rotate]
   exact Triangle.isoNegThird _ _ _
 
+/-- A closed morphism belongs to `P.trW` in the curved homotopy category if and only if its
+mapping cone satisfies `P`. -/
+theorem trW_dgClosedToHomotopy_map_iff
+    (P : ObjectProperty (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)))
+    [P.IsClosedUnderIsomorphisms]
+    {M N : CurvedDGRightModuleCat.{u, u, u} h}
+    (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
+      ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N) :
+    P.trW ((dgClosedToHomotopy R).map f) ↔ P (DGHomotopyCategory.of R (cone f)) :=
+  P.trW_iff_of_distinguished _ (coneTriangle_distinguished f)
+
 /-- Distinguished triangles are precisely those isomorphic to the concrete mapping-cone
 triangles of closed maps, with the negative cone projection as third arrow. -/
 theorem mem_distTriang_iff_nonempty_iso_coneTriangle

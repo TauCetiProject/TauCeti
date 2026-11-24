@@ -47,7 +47,7 @@ finite), the equivalence already holds by `ContraderivedCategory.isEquivalence_�
 
 * `TauCeti.CurvedDGRightModuleCat.CountableProjectiveCondition`: Positselski's countable-product
   projective-dimension bound `(**)` for graded right `A`-modules.
-* `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.gradedProjectiveEquivalenceOfCountable`:
+* `ContraderivedCategory.gradedProjectiveEquivalenceOfCountableProjectiveCondition`:
   under Positselski's countable-product projective-dimension bound `(**)`, the equivalence between
   the homotopy category of graded-projective curved right modules and the contraderived category.
 
@@ -56,7 +56,7 @@ finite), the equivalence already holds by `ContraderivedCategory.isEquivalence_�
 * `TauCeti.CurvedDGRightModuleCat.exists_gradedProjective_contraacyclic_cone`: under condition
   `(**)`, every curved right module admits a closed morphism from a graded-projective curved right
   module with contraacyclic mapping cone.
-* `TauCeti.CurvedDGRightModuleCat.ContraderivedCategory.isEquivalence_gradedProjective_ι_comp_Q`:
+* `ContraderivedCategory.isEquivalence_ι_comp_Q_of_countableProjectiveCondition`:
   Positselski's Theorem 7.9(b), asserting that `(gradedProjective R h).ι ⋙ Q` is an equivalence
   under condition `(**)`.
 
@@ -100,33 +100,33 @@ def CountableProjectiveCondition : Prop :=
     (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d
 
 variable (𝒜) in
-/-- Positselski's countable-product projective-dimension condition `(**)` holds if and only if
-there exists a uniform bound `d : ℕ` on the projective dimension of every countable product of
-projective graded right `A`-modules. -/
-theorem countableProjectiveCondition_iff :
+/-- Defining characterization of Positselski's countable-product projective-dimension condition
+`(**)`. -/
+theorem countableProjectiveCondition_def :
     CountableProjectiveCondition 𝒜 ↔
       ∃ d : ℕ, ∀ (P : ULift.{u} ℕ →
           GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
         (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d :=
   Iff.rfl
 
-private theorem exists_gradedProjective_contraacyclic_cone_of_bound (d : ℕ)
-    (hprod : ∀ (P : ULift.{u} ℕ →
-        GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece),
-      (∀ n, Projective (P n)) → HasProjectiveDimensionLE (∏ᶜ P) d)
+/-- Under Positselski's countable-product projective-dimension bound `(**)`, every curved right
+module admits a closed morphism from a graded-projective curved right module whose mapping cone
+is contraacyclic. -/
+theorem exists_gradedProjective_contraacyclic_cone (hprod : CountableProjectiveCondition 𝒜)
     (M : CurvedDGRightModuleCat.{u, u, u} h) :
     ∃ (Q : CurvedDGRightModuleCat.{u, u, u} h)
       (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
         ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M),
       Projective (toGradedModuleCat Q) ∧
         contraacyclic R h (DGHomotopyCategory.of R (cone f)) := by
+  obtain ⟨d, hd⟩ := (countableProjectiveCondition_def 𝒜).1 hprod
   let r := LeftResolution.ofGradedProjective M
   let P : ULift.{u} ℕ → GradedModuleCat.{u} (InternalGrading.ofDecomposition 𝒜).opposite.piece :=
     fun n ↦ toGradedModuleCat ((r.term n.down).shift (n.down : ℤ))
   have hP : ∀ n, Projective (P n) := fun n ↦
     have := LeftResolution.projective_ofGradedProjective_term M n.down
     inferInstance
-  have hProdDim : HasProjectiveDimensionLE (∏ᶜ P) d := hprod P hP
+  have hProdDim : HasProjectiveDimensionLE (∏ᶜ P) d := hd P hP
   have hTotDim : HasProjectiveDimensionLT
       (toGradedModuleCat (DGHomotopyCategory.of R r.prodTotal).underlying) (d + 1) :=
     hasProjectiveDimensionLT_of_iso r.prodTotalToPiIso.symm (d + 1)
@@ -146,19 +146,6 @@ private theorem exists_gradedProjective_contraacyclic_cone_of_bound (d : ℕ)
     exact MorphismProperty.comp_mem _ _ _ hgW haugW
   exact (trW_dgClosedToHomotopy_map_iff _ (g ≫ r.prodTotalAug)).1 hcompW
 
-/-- Under Positselski's countable-product projective-dimension bound `(**)`, every curved right
-module admits a closed morphism from a graded-projective curved right module whose mapping cone
-is contraacyclic. -/
-theorem exists_gradedProjective_contraacyclic_cone (hprod : CountableProjectiveCondition 𝒜)
-    (M : CurvedDGRightModuleCat.{u, u, u} h) :
-    ∃ (Q : CurvedDGRightModuleCat.{u, u, u} h)
-      (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) Q ⟶
-        ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M),
-      Projective (toGradedModuleCat Q) ∧
-        contraacyclic R h (DGHomotopyCategory.of R (cone f)) := by
-  obtain ⟨d, hd⟩ := (countableProjectiveCondition_iff 𝒜).1 hprod
-  exact exists_gradedProjective_contraacyclic_cone_of_bound d hd M
-
 /-! ### The graded-projective model of `D_ctr` -/
 
 namespace ContraderivedCategory
@@ -168,7 +155,8 @@ variable (R h) in
 If every countable product of projective graded right `A`-modules has uniformly bounded projective
 dimension, then the restriction of the contraderived localization functor to the triangulated full
 subcategory of graded-projective curved right modules is an equivalence. -/
-theorem isEquivalence_gradedProjective_ι_comp_Q (hprod : CountableProjectiveCondition 𝒜) :
+theorem isEquivalence_ι_comp_Q_of_countableProjectiveCondition
+    (hprod : CountableProjectiveCondition 𝒜) :
     ((gradedProjective R h).ι ⋙ Q R h).IsEquivalence := by
   refine ObjectProperty.isEquivalence_ι_comp_of_le_leftOrthogonal (Q R h)
     (gradedProjective_le_leftOrthogonal_contraacyclic R h) fun X ↦ ?_
@@ -181,18 +169,18 @@ variable (R h) in
 /-- Under Positselski's countable-product projective-dimension bound `(**)`, the triangulated full
 subcategory of graded-projective curved right modules is equivalent to the contraderived category
 via the localization functor. -/
-noncomputable def gradedProjectiveEquivalenceOfCountable
+noncomputable def gradedProjectiveEquivalenceOfCountableProjectiveCondition
     (hprod : CountableProjectiveCondition 𝒜) :
     (gradedProjective R h).FullSubcategory ≌ ContraderivedCategory R h :=
-  have := isEquivalence_gradedProjective_ι_comp_Q R h hprod
+  have := isEquivalence_ι_comp_Q_of_countableProjectiveCondition R h hprod
   ((gradedProjective R h).ι ⋙ Q R h).asEquivalence
 
-/-- The forward functor of `gradedProjectiveEquivalenceOfCountable` is the
+/-- The forward functor of `gradedProjectiveEquivalenceOfCountableProjectiveCondition` is the
 restriction of the contraderived localization functor. -/
 @[simp]
-theorem gradedProjectiveEquivalenceOfCountable_functor
+theorem gradedProjectiveEquivalenceOfCountableProjectiveCondition_functor
     (hprod : CountableProjectiveCondition 𝒜) :
-    (gradedProjectiveEquivalenceOfCountable R h hprod).functor =
+    (gradedProjectiveEquivalenceOfCountableProjectiveCondition R h hprod).functor =
       (gradedProjective R h).ι ⋙ Q R h :=
   (rfl)
 

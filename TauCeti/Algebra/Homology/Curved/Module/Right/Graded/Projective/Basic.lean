@@ -41,8 +41,9 @@ subcategory closed under products, so it contains the contraacyclic modules.
 
 Consequently the localization functor to the contraderived category is bijective on morphisms
 out of a graded-projective module. This is the full faithfulness in Positselski's graded-projective
-model of the contraderived category; its essential surjectivity needs a further hypothesis on
-countable products of projective graded modules and is not treated here.
+model of the contraderived category; essential surjectivity under the countable-product
+condition `(**)` is proved in `Graded.Projective.Countable`
+(`ContraderivedCategory.isEquivalence_ι_comp_Q_of_countableProjectiveCondition`).
 
 ## Main definitions
 
