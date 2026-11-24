@@ -19,8 +19,9 @@ import Mathlib.GroupTheory.IndexNormal
 On a linearly ordered ring `R`, sending negative units to `1 : ZMod 2` and positive units to `0`
 yields `orderSignHom : Additive Rˣ →+ ZMod 2` and the Steinberg pairing `orderSignPairing`. Over a
 linearly ordered commutative ring, this induces `SymbolGroup.orderSign`, the ring homomorphism
-`MilnorK.orderSignPoly : MilnorK R →+* Polynomial (ZMod 2)`, and `MilnorK.orderSignDegree R n`,
-showing `{-1, …, -1} ≠ 0` and nontriviality of `SymbolGroup R` and every `MilnorK.degree R n`.
+`MilnorK.gradedOrderSignPoly`, `MilnorK.orderSignPoly : MilnorK R →+* Polynomial (ZMod 2)`, and
+`MilnorK.orderSignDegree R n`, showing `{-1, …, -1} ≠ 0` and nontriviality of `SymbolGroup R` and
+every `MilnorK.degree R n`.
 
 ## References
 
@@ -111,6 +112,8 @@ theorem orderSign_mul (a b : Rˣ) : orderSign (a * b) = orderSign a + orderSign 
 /-- The product of order signs is a Steinberg pairing on any linearly ordered ring: two negative
 elements cannot sum to `1 ≥ 0`. -/
 theorem isSteinbergPairing_orderSignPairing : IsSteinbergPairing (orderSignPairing (R := R)) where
+  map_one_left _ := by simp [orderSignPairing_def]
+  map_one_right _ := by simp [orderSignPairing_def]
   map_mul_left _ _ _ := by simp only [orderSignPairing_def, orderSign_mul, add_mul]
   map_mul_right _ _ _ := by simp only [orderSignPairing_def, orderSign_mul, mul_add]
   steinberg a b hab := by
@@ -150,10 +153,8 @@ end SymbolGroup
 
 namespace MilnorK
 
-variable (R) in
-/-- The order-sign ring homomorphism `MilnorK R →+* Polynomial (ZMod 2)`, sending `ofUnit a` to
-`C (orderSign a) * X`. -/
-noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
+private noncomputable def orderSignPolyHom (R : Type*) [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] : MilnorK R →+* Polynomial (ZMod 2) :=
   MilnorK.lift R
     { toFun := fun u => Polynomial.C (orderSignHom R u) * Polynomial.X
       map_zero' := by simp
@@ -167,33 +168,79 @@ noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
           simp only [orderSignHom_ofMul, map_mul]; ring
         _ = 0 := by rw [h0, map_zero, zero_mul]
 
-@[simp] theorem orderSignPoly_ofUnit (a : Rˣ) :
-    orderSignPoly R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X :=
+private theorem orderSignPolyHom_ofUnit (a : Rˣ) :
+    orderSignPolyHom R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X :=
   (lift_ofUnit _ _ a).trans (by simp)
-@[simp] theorem orderSignPoly_symbol (l : List Rˣ) :
-    orderSignPoly R (symbol l) = Polynomial.C (l.map orderSign).prod * Polynomial.X ^ l.length := by
+
+private theorem orderSignPolyHom_symbol (l : List Rˣ) :
+    orderSignPolyHom R (symbol l) =
+      Polynomial.C (l.map orderSign).prod * Polynomial.X ^ l.length := by
   induction l with
   | nil => simp
   | cons a l ih =>
-    rw [symbol_cons, map_mul, orderSignPoly_ofUnit, ih, List.map_cons, List.prod_cons,
+    rw [symbol_cons, map_mul, orderSignPolyHom_ofUnit, ih, List.map_cons, List.prod_cons,
       List.length_cons, map_mul, pow_succ']; ring
 
-theorem coeff_orderSignPoly_symbol (l : List Rˣ) (n : ℕ) :
-    (orderSignPoly R (symbol l)).coeff n =
+private theorem coeff_orderSignPolyHom_symbol (l : List Rˣ) (n : ℕ) :
+    (orderSignPolyHom R (symbol l)).coeff n =
       if l.length = n then (l.map orderSign).prod else 0 := by
-  rw [orderSignPoly_symbol, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
+  rw [orderSignPolyHom_symbol, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow]
   by_cases h : l.length = n <;> simp [h, Ne.symm]
 
-/-- For every `x ∈ MilnorK.degree R n`, `orderSignPoly R x` is homogeneous of degree `n`. -/
-theorem coeff_orderSignPoly_of_mem_degree_ne {n k : ℕ} (hkn : k ≠ n) {x : MilnorK R}
-    (hx : x ∈ degree R n) : (orderSignPoly R x).coeff k = 0 := by
+private theorem coeff_orderSignPolyHom_of_mem_degree_ne {n k : ℕ} (hkn : k ≠ n) {x : MilnorK R}
+    (hx : x ∈ degree R n) : (orderSignPolyHom R x).coeff k = 0 := by
   rw [degree_eq_span] at hx
   induction hx using Submodule.span_induction with
-  | mem _ hy => obtain ⟨l, rfl, rfl⟩ := hy; rw [coeff_orderSignPoly_symbol, ite_eq_right hkn.symm]
+  | mem _ hy =>
+    obtain ⟨l, rfl, rfl⟩ := hy
+    rw [coeff_orderSignPolyHom_symbol, ite_eq_right hkn.symm]
   | zero => simp
   | add _ _ _ _ hy hz => simp [hy, hz]
   | smul _ _ _ hy =>
     rw [map_zsmul, ← Polynomial.lcoeff_apply, map_zsmul, Polynomial.lcoeff_apply, hy, smul_zero]
+
+variable (R) in
+/-- The order-sign graded ring homomorphism from `MilnorK.degree R` into polynomials over `ZMod 2`
+graded by monomial degree. -/
+noncomputable def gradedOrderSignPoly :
+    degree R →+*ᵍ fun n : ℕ =>
+      LinearMap.range (Polynomial.monomial n : ZMod 2 →ₗ[ZMod 2] Polynomial (ZMod 2)) where
+  toRingHom := orderSignPolyHom R
+  map_mem {n x} hx := by
+    refine ⟨(orderSignPolyHom R x).coeff n, AddMonoidAlgebra.ext_iff.mpr (Finsupp.ext fun k => ?_)⟩
+    simp only [Polynomial.coeff_monomial_apply]
+    split_ifs with hkn
+    · subst hkn; rfl
+    · exact (coeff_orderSignPolyHom_of_mem_degree_ne (Ne.symm hkn) hx).symm
+
+variable (R) in
+/-- The order-sign ring homomorphism `MilnorK R →+* Polynomial (ZMod 2)`, sending `ofUnit a` to
+`C (orderSign a) * X`. -/
+noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
+  (gradedOrderSignPoly R).toRingHom
+
+@[simp] theorem gradedOrderSignPoly_toRingHom :
+    (gradedOrderSignPoly R).toRingHom = orderSignPoly R := by rw [orderSignPoly]
+@[simp] theorem gradedOrderSignPoly_apply (x : MilnorK R) :
+    gradedOrderSignPoly R x = orderSignPoly R x := by
+  rw [← gradedOrderSignPoly_toRingHom]; rfl
+
+@[simp] theorem orderSignPoly_ofUnit (a : Rˣ) :
+    orderSignPoly R (ofUnit a) = Polynomial.C (orderSign a) * Polynomial.X :=
+  orderSignPolyHom_ofUnit a
+@[simp] theorem orderSignPoly_symbol (l : List Rˣ) :
+    orderSignPoly R (symbol l) = Polynomial.C (l.map orderSign).prod * Polynomial.X ^ l.length :=
+  orderSignPolyHom_symbol l
+
+theorem coeff_orderSignPoly_symbol (l : List Rˣ) (n : ℕ) :
+    (orderSignPoly R (symbol l)).coeff n =
+      if l.length = n then (l.map orderSign).prod else 0 :=
+  coeff_orderSignPolyHom_symbol l n
+
+/-- For every `x ∈ MilnorK.degree R n`, `orderSignPoly R x` is homogeneous of degree `n`. -/
+theorem coeff_orderSignPoly_of_mem_degree_ne {n k : ℕ} (hkn : k ≠ n) {x : MilnorK R}
+    (hx : x ∈ degree R n) : (orderSignPoly R x).coeff k = 0 :=
+  coeff_orderSignPolyHom_of_mem_degree_ne hkn hx
 
 variable (R) in
 /-- The degree-`n` order-sign homomorphism `MilnorK.degree R n →ₗ[ℤ] ZMod 2`, extracting the
@@ -226,11 +273,14 @@ theorem orderSignDegree_two_eq (x : degree R 2) :
     orderSignDegree R 2 x = SymbolGroup.orderSign R (degreeTwoEquiv R x) :=
   LinearMap.congr_fun (f := orderSignDegree R 2)
     (g := (SymbolGroup.orderSign R).comp (degreeTwoEquiv R).toLinearMap)
-    (degree_linearMap_ext fun l hl => match l, hl with
-      | [a, b], _ => by
-        dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
-        rw [orderSignDegree_symbol (n := 2) [a, b] rfl, degreeTwoEquiv_symbol,
-          SymbolGroup.orderSign_symbol]; simp) x
+    (degreeTwo_linearMap_ext fun a b => by
+      have hpoly : orderSignPoly R (ofUnit a * ofUnit b) =
+          Polynomial.C (orderSign a * orderSign b) * Polynomial.X ^ 2 := by
+        rw [map_mul, orderSignPoly_ofUnit, orderSignPoly_ofUnit, mul_mul_mul_comm,
+          ← Polynomial.C_mul, ← sq]
+      dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
+      rw [orderSignDegree_apply, hpoly, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow,
+        ite_eq_left rfl, mul_one, degreeTwoEquiv_ofUnit_mul, SymbolGroup.orderSign_symbol]) x
 
 /-- Over any linearly ordered commutative ring, `{-1, …, -1}` of length `n` is nonzero. -/
 theorem symbol_neg_one_replicate_ne_zero (n : ℕ) : symbol (List.replicate n (-1 : Rˣ)) ≠ 0 := by
@@ -244,7 +294,7 @@ theorem symbol_neg_one_replicate_ne_zero (n : ℕ) : symbol (List.replicate n (-
 
 /-- Over any linearly ordered commutative ring, `ofUnit (-1) * ofUnit (-1) ≠ 0`. -/
 theorem ofUnit_neg_one_mul_ne_zero : ofUnit (-1 : Rˣ) * ofUnit (-1 : Rˣ) ≠ 0 := by
-  simpa only [List.replicate_succ, List.replicate_zero, symbol_pair] using
+  simpa only [List.replicate_succ, List.replicate_zero, symbol_cons, symbol_nil, mul_one] using
     symbol_neg_one_replicate_ne_zero (R := R) 2
 
 /-- Every Milnor K-group `Kₙᴹ(R)` of a linearly ordered commutative ring is nontrivial. -/

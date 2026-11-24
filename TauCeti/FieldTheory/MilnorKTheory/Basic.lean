@@ -82,15 +82,15 @@ theorem ofUnitHom_apply (u : Additive Rˣ) : ofUnitHom R u = ofUnit (Additive.to
 @[simp] theorem quotient_ι (u : Additive Rˣ) :
     quotient R (TensorAlgebra.ι ℤ u) = ofUnit (Additive.toMul u) := by rfl
 @[simp] theorem ofUnit_one : ofUnit (1 : Rˣ) = 0 := by
-  rw [ofUnit_def, ofMul_one, map_zero, map_zero]
+  rw [← ofUnitHom_ofMul, ofMul_one, map_zero]
 theorem ofUnit_mul (a b : Rˣ) : ofUnit (a * b) = ofUnit a + ofUnit b := by
-  rw [ofUnit_def, ofMul_mul, map_add, map_add, ← ofUnit_def, ← ofUnit_def]
+  rw [← ofUnitHom_ofMul, ofMul_mul, map_add, ofUnitHom_ofMul, ofUnitHom_ofMul]
 @[simp] theorem ofUnit_inv (a : Rˣ) : ofUnit a⁻¹ = -ofUnit a := by
-  rw [ofUnit_def, ofMul_inv, map_neg, map_neg, ← ofUnit_def]
+  rw [← ofUnitHom_ofMul, ofMul_inv, map_neg, ofUnitHom_ofMul]
 theorem ofUnit_pow (a : Rˣ) (n : ℕ) : ofUnit (a ^ n) = n • ofUnit a := by
-  rw [ofUnit_def, ofMul_pow, map_nsmul, map_nsmul, ← ofUnit_def]
+  rw [← ofUnitHom_ofMul, ofMul_pow, map_nsmul, ofUnitHom_ofMul]
 theorem ofUnit_zpow (a : Rˣ) (n : ℤ) : ofUnit (a ^ n) = n • ofUnit a := by
-  rw [ofUnit_def, ofMul_zpow, map_zsmul, map_zsmul, ← ofUnit_def]
+  rw [← ofUnitHom_ofMul, ofMul_zpow, map_zsmul, ofUnitHom_ofMul]
 
 end Semiring
 
@@ -115,6 +115,8 @@ theorem ofUnit_mul_ofUnit_eq_zero {a b : Rˣ} (h : (a : R) + b = 1) : ofUnit a *
 /-- The degree-two product `(a, b) ↦ ofUnit a * ofUnit b` is a Steinberg pairing. -/
 theorem isSteinbergPairing_ofUnit_mul :
     IsSteinbergPairing (fun a b : Rˣ => ofUnit a * ofUnit b) where
+  map_one_left _ := by simp
+  map_one_right _ := by simp
   map_mul_left _ _ _ := by rw [ofUnit_mul, add_mul]
   map_mul_right _ _ _ := by rw [ofUnit_mul, mul_add]
   steinberg _ _ h := ofUnit_mul_ofUnit_eq_zero h
@@ -126,10 +128,8 @@ def symbol (l : List Rˣ) : MilnorK R := (l.map ofUnit).prod
 /-- Unfolding lemma for `TauCeti.MilnorK.symbol`. -/
 theorem symbol_def (l : List Rˣ) : symbol l = (l.map ofUnit).prod := by rfl
 @[simp] theorem symbol_nil : symbol ([] : List Rˣ) = 1 := by rfl
-theorem symbol_singleton (a : Rˣ) : symbol [a] = ofUnit a := by simp [symbol_def]
 @[simp] theorem symbol_cons (a : Rˣ) (l : List Rˣ) : symbol (a :: l) = ofUnit a * symbol l := by
   simp [symbol_def]
-theorem symbol_pair (a b : Rˣ) : symbol [a, b] = ofUnit a * ofUnit b := by simp [symbol_def]
 theorem symbol_append (l₁ l₂ : List Rˣ) : symbol (l₁ ++ l₂) = symbol l₁ * symbol l₂ := by
   simp [symbol_def]
 theorem symbol_mul_middle (l₁ : List Rˣ) (a b : Rˣ) (l₂ : List Rˣ) :
@@ -170,19 +170,22 @@ theorem induction {P : MilnorK R → Prop}
   | add _ _ h₁ h₂ => simpa only [map_add] using add _ _ h₁ h₂
 
 /-- Two ring homomorphisms out of `MilnorK R` agree when they agree on degree-one unit classes. -/
-@[ext 1200] theorem ringHom_ext {A : Type v} [Ring A] {f g : MilnorK R →+* A}
-    (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g :=
-  RingQuot.ringQuot_ext f g <| RingHom.ext fun t => DFunLike.congr_fun
-    (TensorAlgebra.hom_ext (f := f.toIntAlgHom.comp (quotient R).toIntAlgHom)
-      (g := g.toIntAlgHom.comp (quotient R).toIntAlgHom)
-      (LinearMap.ext fun u => h (Additive.toMul u))) t
+@[ext 1200] theorem ringHom_ext {A : Type v} [Semiring A] {f g : MilnorK R →+* A}
+    (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g := by
+  refine RingHom.ext fun x => ?_
+  induction x using MilnorK.induction with
+  | intCast n =>
+    simpa only [RingHom.comp_apply, eq_intCast] using
+      RingHom.congr_fun (RingHom.ext_int (f.comp (Int.castRingHom (MilnorK R)))
+        (g.comp (Int.castRingHom (MilnorK R)))) n
+  | ofUnit a => exact h a
+  | mul x y hx hy => simp only [map_mul, hx, hy]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- Two `ℤ`-algebra homomorphisms out of `MilnorK R` agree when they agree on units. -/
 @[ext 1200] theorem hom_ext {A : Type v} [Semiring A] [Algebra ℤ A] {f g : MilnorK R →ₐ[ℤ] A}
     (h : ∀ a : Rˣ, f (ofUnit a) = g (ofUnit a)) : f = g :=
-  RingQuot.ringQuot_ext' ℤ f g <| TensorAlgebra.hom_ext <| LinearMap.ext fun u => by
-    simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
-      ← AlgHom.coe_toRingHom, RingQuot.mkAlgHom_coe, quotient_ι] using h (Additive.toMul u)
+  AlgHom.toRingHom_injective (ringHom_ext h)
 
 section Lift
 
@@ -238,11 +241,24 @@ end LiftEquiv
 
 /-! ### Functoriality -/
 
+/-- The additive homomorphism `Additive Rˣ →+ MilnorK S` induced on units by `f : R →+* S`. -/
+def mapUnitHom {S : Type*} [CommSemiring S] (f : R →+* S) : Additive Rˣ →+ MilnorK S :=
+  (ofUnitHom S).comp (MonoidHom.toAdditive (Units.map f.toMonoidHom))
+
+@[simp] theorem mapUnitHom_ofMul {S : Type*} [CommSemiring S] (f : R →+* S) (a : Rˣ) :
+    mapUnitHom f (Additive.ofMul a) = ofUnit (Units.map f.toMonoidHom a) := by
+  simp [mapUnitHom]
+
+/-- The unit map induced by `f : R →+* S` satisfies the Steinberg relation in `MilnorK S`. -/
+theorem mapUnitHom_steinberg {S : Type*} [CommSemiring S] (f : R →+* S) (a b : Rˣ)
+    (hab : (a : R) + b = 1) :
+    mapUnitHom f (Additive.ofMul a) * mapUnitHom f (Additive.ofMul b) = 0 := by
+  simpa using ofUnit_mul_ofUnit_eq_zero (R := S) (a := Units.map f.toMonoidHom a)
+    (b := Units.map f.toMonoidHom b) (by simp [← map_add, hab])
+
 /-- Functorial ring homomorphism `MilnorK R →+* MilnorK S` induced by `f : R →+* S`. -/
 def map {S : Type*} [CommSemiring S] (f : R →+* S) : MilnorK R →+* MilnorK S :=
-  lift R ((ofUnitHom S).comp (MonoidHom.toAdditive (Units.map f.toMonoidHom))) fun a b hab => by
-    simpa using ofUnit_mul_ofUnit_eq_zero (R := S) (a := Units.map f.toMonoidHom a)
-      (b := Units.map f.toMonoidHom b) (by simp [← map_add, hab])
+  lift R (mapUnitHom f) (mapUnitHom_steinberg f)
 
 @[simp] theorem map_ofUnit {S : Type*} [CommSemiring S] (f : R →+* S) (a : Rˣ) :
     map f (ofUnit a) = ofUnit (Units.map f.toMonoidHom a) := lift_ofUnit _ _ a

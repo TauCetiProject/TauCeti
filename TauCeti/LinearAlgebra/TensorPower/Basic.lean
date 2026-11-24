@@ -22,6 +22,7 @@ shows that `TensorPower.mulEquiv` is natural with respect to tensor-power maps.
 
 * `TensorPower.splitAt`: split a tensor power at a specified position.
 * `TauCeti.TensorPower.oneEquiv`: identify the first tensor power with the underlying module.
+* `TauCeti.TensorPower.twoEquiv`: identify the tensor square with the second tensor power.
 
 ## Main results
 
@@ -60,6 +61,21 @@ tensor. -/
 theorem oneEquiv_symm_apply (a : M) :
     (oneEquiv R M).symm a = PiTensorProduct.tprod R (fun _ ↦ a) :=
   PiTensorProduct.subsingletonEquiv_symm_apply' 0 a
+
+/-- Identifying the tensor square `M ⊗[R] M` with `TensorPower R 2 M`. -/
+noncomputable def twoEquiv : M ⊗[R] M ≃ₗ[R] TensorPower R 2 M :=
+  (TensorProduct.congr (oneEquiv R M).symm (oneEquiv R M).symm).trans
+    (TensorPower.mulEquiv (R := R) (M := M) (n := 1) (m := 1))
+
+/-- Evaluating `twoEquiv` on a pure tensor yields the corresponding two-factor tensor power. -/
+@[simp]
+theorem twoEquiv_tmul (a b : M) :
+    twoEquiv R M (a ⊗ₜ[R] b) = PiTensorProduct.tprod R ![a, b] := by
+  rw [twoEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, oneEquiv_symm_apply,
+    oneEquiv_symm_apply, ← TensorPower.gMul_def, TensorPower.tprod_mul_tprod]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
 
 section map
 

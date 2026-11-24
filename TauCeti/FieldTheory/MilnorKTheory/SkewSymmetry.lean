@@ -40,7 +40,8 @@ theorem ofUnit_mul_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1)
   isSteinbergPairing_ofUnit_mul.map_self a
 theorem two_nsmul_ofUnit_mul_self (a : Fˣ) : 2 • (ofUnit a * ofUnit a) = 0 :=
   isSteinbergPairing_ofUnit_mul.two_nsmul_map_self a
-theorem ofUnit_mul_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) : ofUnit a * ofUnit a = 0 :=
+@[simp] theorem ofUnit_mul_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) :
+    ofUnit a * ofUnit a = 0 :=
   isSteinbergPairing_ofUnit_mul.map_self_eq_zero_of_charTwo a
 
 /-! ### Graded commutativity -/
@@ -83,19 +84,25 @@ theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F}
 
 /-! ### Skew-symmetry under entry swaps and permutations -/
 
-/-- Swapping any two separated entries of a Milnor symbol negates it. -/
-theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
-    symbol (l₁ ++ a :: (l₂ ++ b :: l₃)) = -symbol (l₁ ++ b :: (l₂ ++ a :: l₃)) := by
-  have hinner : ofUnit a * symbol l₂ * ofUnit b = -(ofUnit b * symbol l₂ * ofUnit a) := by
-    rw [ofUnit_mul_symbol a l₂, smul_mul_assoc, mul_assoc, ofUnit_mul_comm a b,
-      mul_neg (α := MilnorK F), smul_neg, ← mul_assoc, ← smul_mul_assoc, ← ofUnit_mul_symbol b l₂]
+private theorem symbol_separated (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
+    symbol (l₁ ++ a :: (l₂ ++ b :: l₃)) =
+      (-1 : ℤ) ^ l₂.length • (symbol l₁ * symbol l₂ * (ofUnit a * ofUnit b) * symbol l₃) := by
+  have hinner : ofUnit a * symbol l₂ * ofUnit b =
+      (-1 : ℤ) ^ l₂.length • (symbol l₂ * (ofUnit a * ofUnit b)) := by
+    rw [ofUnit_mul_symbol a l₂, smul_mul_assoc, mul_assoc]
   calc symbol (l₁ ++ a :: (l₂ ++ b :: l₃))
       = symbol l₁ * (ofUnit a * symbol l₂ * ofUnit b) * symbol l₃ := by
         simp only [symbol_append, symbol_cons, mul_assoc]
-    _ = symbol l₁ * -(ofUnit b * symbol l₂ * ofUnit a) * symbol l₃ := by rw [hinner]
-    _ = -symbol (l₁ ++ b :: (l₂ ++ a :: l₃)) := by
-        rw [mul_neg (α := MilnorK F), neg_mul (α := MilnorK F)]
-        simp only [symbol_append, symbol_cons, mul_assoc]
+    _ = symbol l₁ * ((-1 : ℤ) ^ l₂.length • (symbol l₂ * (ofUnit a * ofUnit b))) * symbol l₃ := by
+        rw [hinner]
+    _ = (-1 : ℤ) ^ l₂.length • (symbol l₁ * symbol l₂ * (ofUnit a * ofUnit b) * symbol l₃) := by
+        rw [mul_smul_comm, smul_mul_assoc, ← mul_assoc (symbol l₁)]
+
+/-- Swapping any two separated entries of a Milnor symbol negates it. -/
+theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
+    symbol (l₁ ++ a :: (l₂ ++ b :: l₃)) = -symbol (l₁ ++ b :: (l₂ ++ a :: l₃)) := by
+  rw [symbol_separated l₁ a l₂ b l₃, symbol_separated l₁ b l₂ a l₃, ofUnit_mul_comm a b,
+    mul_neg (α := MilnorK F), neg_mul (α := MilnorK F), smul_neg]
 
 /-- Swapping two distinct entries `i ≠ j` of a Milnor symbol negates it. -/
 theorem symbol_ofFn_comp_swap {n : ℕ} (v : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j) :
@@ -136,13 +143,7 @@ theorem symbol_self_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
 theorem symbol_neg_self_of_ne {n : ℕ} (v : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j)
     (h : v j = -v i) : symbol (List.ofFn v) = 0 := by
   have hvanish (l₁ l₂ l₃ : List Fˣ) (a : Fˣ) : symbol (l₁ ++ a :: (l₂ ++ (-a) :: l₃)) = 0 := by
-    have hinner : ofUnit a * symbol l₂ * ofUnit (-a) = 0 := by
-      rw [ofUnit_mul_symbol a l₂, smul_mul_assoc, mul_assoc, ofUnit_mul_neg_self,
-        mul_zero, smul_zero]
-    calc symbol (l₁ ++ a :: (l₂ ++ (-a) :: l₃))
-        = symbol l₁ * (ofUnit a * symbol l₂ * ofUnit (-a)) * symbol l₃ := by
-          simp only [symbol_append, symbol_cons, mul_assoc]
-      _ = 0 := by rw [hinner, mul_zero, zero_mul]
+    rw [symbol_separated, ofUnit_mul_neg_self, mul_zero, zero_mul, smul_zero]
   rcases lt_or_gt_of_ne hij with hlt | hgt
   · obtain ⟨l₁, l₂, l₃, hv, -⟩ := List.exists_split_ofFn_swap v hlt
     rw [hv, h]; exact hvanish l₁ l₂ l₃ (v i)
