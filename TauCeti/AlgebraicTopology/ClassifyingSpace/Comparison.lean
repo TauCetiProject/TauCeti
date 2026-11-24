@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.HomotopyEquiv
+import TauCeti.AlgebraicTopology.EilenbergMacLane.PointedMaps
 import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 
@@ -60,6 +61,9 @@ hypotheses of covering-space theory exactly as the existence theorem for Milnor'
   models is determined by `e` up to homotopy relative to the base point.
 * `TauCeti.exists_basedInverse_cellularHomotopyEquivClassifyingSpace`: the comparison of the two
   models admits a pointed homotopy inverse inducing `e⁻¹` with no base-point change.
+* `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: pointed homotopy
+  classes of maps out of a cellular classifying space into a space with no higher homotopy groups
+  are classified by their effect on `π₁`.
 * `TauCeti.quotient_map_eq_quotient_map_comp_cellularClassifyingSpace`: a pointed map from the
   cellular model realizing a homomorphism is pointed homotopic to the comparison of the two models
   followed by the strictly functorial map.
@@ -248,17 +252,10 @@ theorem fundamentalGroupFunctor_map_cellularHomotopyEquivClassifyingSpaceIso_inv
     PointedHomotopyCat.fundamentalGroupFunctor.map
         (cellularHomotopyEquivClassifyingSpaceIso R e).inv =
       GrpCat.ofHom ((classifyingSpaceFundamentalGroupMulEquiv G).trans
-        (e.symm.trans (cellularClassifyingSpaceFundamentalGroupMulEquiv R).symm)).toMonoidHom := by
-  let ψ := (cellularClassifyingSpaceFundamentalGroupMulEquiv R).trans
-    (e.trans (classifyingSpaceFundamentalGroupMulEquiv G).symm)
-  have hcomp := congrArg PointedHomotopyCat.fundamentalGroupFunctor.map
-    (cellularHomotopyEquivClassifyingSpaceIso R e).inv_hom_id
-  rw [CategoryTheory.Functor.map_comp,
-    fundamentalGroupFunctor_map_cellularHomotopyEquivClassifyingSpaceIso_hom,
-    CategoryTheory.Functor.map_id] at hcomp
-  refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦ ψ.injective ?_
-  have ha := congrArg (fun f ↦ f.hom a) hcomp
-  exact ha.trans (ψ.apply_symm_apply a).symm
+        (e.symm.trans (cellularClassifyingSpaceFundamentalGroupMulEquiv R).symm)).toMonoidHom :=
+  (PointedHomotopyCat.fundamentalGroupFunctor_map_inv_of_map_hom_eq
+    (fundamentalGroupFunctor_map_cellularHomotopyEquivClassifyingSpaceIso_hom R e)).trans
+    (GrpCat.hom_ext <| MonoidHom.ext fun _ ↦ rfl)
 
 /-- **The cellular classifying space is semilocally simply connected.** It is homotopy equivalent
 to Milnor's classifying space of its fundamental group, which is semilocally simply connected, and
@@ -268,6 +265,21 @@ instance instSemilocallySimplyConnectedSpaceCellularClassifyingSpace :
   (cellularHomotopyEquivClassifyingSpace R (MulEquiv.refl _)).semilocallySimplyConnectedSpace
 
 end ClassifyingSpace
+
+/-- **Pointed maps out of a cellular classifying space are classified by `π₁`.** If the homotopy
+groups of `Y` vanish from degree `2` on, at every point, then a pointed homotopy class of maps from
+the cellular classifying space `cellularClassifyingSpace R` to `Y` is determined by the homomorphism
+it induces on fundamental groups, and every homomorphism is induced by such a class. -/
+theorem fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace
+    {Y : BasedTopologicalSpace.{u}}
+    (hY : ∀ (y : Y.carrier) (n : ℕ), Subsingleton (π_ (n + 2) Y.carrier y)) :
+    Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
+      (X := PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R))
+      (Y := PointedHomotopyCat.quotient.obj Y)) :=
+  IsAspherical.fundamentalGroupFunctor_map_bijective
+    (X := cellularClassifyingSpaceBased R)
+    (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace R).isAspherical
+    (hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint R) hY
 
 open CategoryTheory in
 /-- **The map induced by a homomorphism is determined up to pointed homotopy.** Let
@@ -308,8 +320,7 @@ theorem exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace (G : Type u) 
     ∃ R : Set (FreeGroup G), LocallyPathConnectedSpace (cellularClassifyingSpace R) ∧
       SemilocallySimplyConnectedSpace (cellularClassifyingSpace R) ∧
       IsEilenbergMacLaneSpaceOne G (cellularClassifyingSpace R)
-        (cellularClassifyingSpaceBasepoint R) := by
-  obtain ⟨R, hC⟩ := exists_cellularClassifyingSpace_isEilenbergMacLaneSpaceOne G
-  exact ⟨R, inferInstance, inferInstance, hC⟩
+        (cellularClassifyingSpaceBasepoint R) :=
+  ⟨_, inferInstance, inferInstance, isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker G⟩
 
 end TauCeti

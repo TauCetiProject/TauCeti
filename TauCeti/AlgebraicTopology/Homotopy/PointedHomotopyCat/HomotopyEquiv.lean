@@ -52,6 +52,17 @@ namespace TauCeti
 
 namespace PointedHomotopyCat
 
+/-- A composite of based maps is the identity in `PointedHomotopyCat` exactly when the composite
+of their underlying continuous maps is homotopic to the identity relative to the base point. -/
+theorem quotient_map_comp_eq_id_iff {X Y : BasedTopologicalSpace.{u}} (f : X ⟶ Y) (g : Y ⟶ X) :
+    quotient.map (f ≫ g) = 𝟙 (quotient.obj X) ↔
+      (g.toContinuousMap.comp f.toContinuousMap).HomotopicRel
+        (ContinuousMap.id X.carrier) {X.basepoint} := by
+  rw [← quotient.map_id, quotient_map_eq_iff]
+  simp only [BasedTopologicalSpace.comp_eq_hom_comp,
+    BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
+    BasedTopologicalSpace.Hom.toContinuousMap_id]
+
 /-- **A based homotopy equivalence between well-pointed spaces is an isomorphism in
 `PointedHomotopyCat`.** If both base points have the homotopy extension property and
 `h : X.carrier ≃ₕ Y.carrier` preserves the base points, then `h` admits a based homotopy inverse
@@ -67,17 +78,11 @@ def isoOfHomotopyEquiv {X Y : BasedTopologicalSpace.{u}}
   { hom := quotient.map ⟨h.toFun, hh⟩
     inv := quotient.map ⟨hg.choose, hg.choose_spec.1⟩
     hom_inv_id := by
-      rw [← quotient.map_comp, ← quotient.map_id, quotient_map_eq_iff]
-      simp only [BasedTopologicalSpace.comp_eq_hom_comp,
-        BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
-        BasedTopologicalSpace.Hom.toContinuousMap_id]
-      exact hg.choose_spec.2.1
+      rw [← quotient.map_comp]
+      exact (quotient_map_comp_eq_id_iff _ _).2 hg.choose_spec.2.1
     inv_hom_id := by
-      rw [← quotient.map_comp, ← quotient.map_id, quotient_map_eq_iff]
-      simp only [BasedTopologicalSpace.comp_eq_hom_comp,
-        BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
-        BasedTopologicalSpace.Hom.toContinuousMap_id]
-      exact hg.choose_spec.2.2 }
+      rw [← quotient.map_comp]
+      exact (quotient_map_comp_eq_id_iff _ _).2 hg.choose_spec.2.2 }
 
 /-- The forward morphism of `PointedHomotopyCat.isoOfHomotopyEquiv` is the pointed homotopy class
 of the given based homotopy equivalence. -/
@@ -106,30 +111,34 @@ theorem isIso_quotient_map_of_homotopyEquiv {X Y : BasedTopologicalSpace.{u}}
   rw [← hfeq, ← isoOfHomotopyEquiv_hom hX hY h hh]
   infer_instance
 
+private theorem homotopyEquivOfIso_left_inv_homotopicRel_aux {X Y : BasedTopologicalSpace.{u}}
+    (e : quotient.obj X ≅ quotient.obj Y) :
+    ((quotient.map_surjective e.inv).choose.toContinuousMap.comp
+      (quotient.map_surjective e.hom).choose.toContinuousMap).HomotopicRel
+      (ContinuousMap.id X.carrier) {X.basepoint} :=
+  (quotient_map_comp_eq_id_iff _ _).1 <| by
+    rw [quotient.map_comp, (quotient.map_surjective e.hom).choose_spec,
+      (quotient.map_surjective e.inv).choose_spec, e.hom_inv_id]
+
+private theorem homotopyEquivOfIso_right_inv_homotopicRel_aux {X Y : BasedTopologicalSpace.{u}}
+    (e : quotient.obj X ≅ quotient.obj Y) :
+    ((quotient.map_surjective e.hom).choose.toContinuousMap.comp
+      (quotient.map_surjective e.inv).choose.toContinuousMap).HomotopicRel
+      (ContinuousMap.id Y.carrier) {Y.basepoint} :=
+  (quotient_map_comp_eq_id_iff _ _).1 <| by
+    rw [quotient.map_comp, (quotient.map_surjective e.inv).choose_spec,
+      (quotient.map_surjective e.hom).choose_spec, e.inv_hom_id]
+
 /-- **An isomorphism in `PointedHomotopyCat` gives a pointed homotopy equivalence.** Its forward
 and inverse maps are chosen based representatives of `e.hom` and `e.inv`, so both preserve base
 points and both composites are homotopic to the identities relative to the base points. -/
 def homotopyEquivOfIso {X Y : BasedTopologicalSpace.{u}}
     (e : quotient.obj X ≅ quotient.obj Y) :
     ContinuousMap.HomotopyEquiv X.carrier Y.carrier :=
-  let hf := quotient.map_surjective e.hom
-  let hg := quotient.map_surjective e.inv
-  { toFun := hf.choose.toContinuousMap
-    invFun := hg.choose.toContinuousMap
-    left_inv := by
-      have h := (quotient_map_eq_iff (hf.choose ≫ hg.choose) (𝟙 X)).1 <| by
-        rw [quotient.map_comp, hf.choose_spec, hg.choose_spec, e.hom_inv_id, quotient.map_id]
-      simp only [BasedTopologicalSpace.comp_eq_hom_comp,
-        BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
-        BasedTopologicalSpace.Hom.toContinuousMap_id] at h
-      exact h.homotopic
-    right_inv := by
-      have h := (quotient_map_eq_iff (hg.choose ≫ hf.choose) (𝟙 Y)).1 <| by
-        rw [quotient.map_comp, hg.choose_spec, hf.choose_spec, e.inv_hom_id, quotient.map_id]
-      simp only [BasedTopologicalSpace.comp_eq_hom_comp,
-        BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
-        BasedTopologicalSpace.Hom.toContinuousMap_id] at h
-      exact h.homotopic }
+  { toFun := (quotient.map_surjective e.hom).choose.toContinuousMap
+    invFun := (quotient.map_surjective e.inv).choose.toContinuousMap
+    left_inv := (homotopyEquivOfIso_left_inv_homotopicRel_aux e).homotopic
+    right_inv := (homotopyEquivOfIso_right_inv_homotopicRel_aux e).homotopic }
 
 /-- The forward map of `PointedHomotopyCat.homotopyEquivOfIso` preserves base points. -/
 @[simp]
@@ -164,30 +173,16 @@ relative to the base point. -/
 theorem homotopyEquivOfIso_left_inv_homotopicRel {X Y : BasedTopologicalSpace.{u}}
     (e : quotient.obj X ≅ quotient.obj Y) :
     ((homotopyEquivOfIso e).invFun.comp (homotopyEquivOfIso e).toFun).HomotopicRel
-      (ContinuousMap.id X.carrier) {X.basepoint} := by
-  have h := (quotient_map_eq_iff
-      (⟨(homotopyEquivOfIso e).toFun, homotopyEquivOfIso_toFun_basepoint e⟩ ≫
-        ⟨(homotopyEquivOfIso e).invFun, homotopyEquivOfIso_invFun_basepoint e⟩) (𝟙 X)).1 <| by
-    rw [quotient.map_comp, quotient_map_homotopyEquivOfIso_toFun,
-      quotient_map_homotopyEquivOfIso_invFun, e.hom_inv_id, quotient.map_id]
-  simpa only [BasedTopologicalSpace.comp_eq_hom_comp,
-    BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
-    BasedTopologicalSpace.Hom.toContinuousMap_id] using h
+      (ContinuousMap.id X.carrier) {X.basepoint} :=
+  homotopyEquivOfIso_left_inv_homotopicRel_aux e
 
 /-- The right composite of `PointedHomotopyCat.homotopyEquivOfIso` is homotopic to the identity
 relative to the base point. -/
 theorem homotopyEquivOfIso_right_inv_homotopicRel {X Y : BasedTopologicalSpace.{u}}
     (e : quotient.obj X ≅ quotient.obj Y) :
     ((homotopyEquivOfIso e).toFun.comp (homotopyEquivOfIso e).invFun).HomotopicRel
-      (ContinuousMap.id Y.carrier) {Y.basepoint} := by
-  have h := (quotient_map_eq_iff
-      (⟨(homotopyEquivOfIso e).invFun, homotopyEquivOfIso_invFun_basepoint e⟩ ≫
-        ⟨(homotopyEquivOfIso e).toFun, homotopyEquivOfIso_toFun_basepoint e⟩) (𝟙 Y)).1 <| by
-    rw [quotient.map_comp, quotient_map_homotopyEquivOfIso_invFun,
-      quotient_map_homotopyEquivOfIso_toFun, e.inv_hom_id, quotient.map_id]
-  simpa only [BasedTopologicalSpace.comp_eq_hom_comp,
-    BasedTopologicalSpace.Hom.toContinuousMap_comp, BasedTopologicalSpace.id_eq_hom_id,
-    BasedTopologicalSpace.Hom.toContinuousMap_id] using h
+      (ContinuousMap.id Y.carrier) {Y.basepoint} :=
+  homotopyEquivOfIso_right_inv_homotopicRel_aux e
 
 end PointedHomotopyCat
 

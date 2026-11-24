@@ -46,9 +46,11 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
-* `Topology.RelCWComplex.Subcomplex.ofBaseSubsetSkeletonLTOne` and
-  `Topology.RelCWComplex.Subcomplex.coe_ofBaseSubsetSkeletonLTOne`: any subset between the base
-  and the `0`-skeleton is a subcomplex.
+* `Topology.RelCWComplex.Subcomplex.ofBaseSubsetSkeletonLTOne`,
+  `Topology.RelCWComplex.Subcomplex.coe_ofBaseSubsetSkeletonLTOne`,
+  `Topology.RelCWComplex.Subcomplex.ofBaseSubsetSkeletonLTOne_I_zero`, and
+  `Topology.RelCWComplex.Subcomplex.ofBaseSubsetSkeletonLTOne_I_succ`: any subset between the
+  base and the `0`-skeleton is a subcomplex.
 * `Topology.RelCWComplex.coe_skeletonLT_skeletonLT`: the skeleta of a skeleton of `C` are skeleta
   of `C`.
 
@@ -399,6 +401,29 @@ def ofBaseSubsetSkeletonLTOne {S : Set X} (hDS : D ⊆ S) (hS : S ⊆ (skeletonL
 lemma coe_ofBaseSubsetSkeletonLTOne {S : Set X} (hDS : D ⊆ S)
     (hS : S ⊆ (skeletonLT C 1 : Set X)) :
     (ofBaseSubsetSkeletonLTOne hDS hS : Set X) = S :=
+  (rfl)
+
+/-- The `0`-cells of `ofBaseSubsetSkeletonLTOne hDS hS` are the `0`-cells of `C` lying in `S`. -/
+@[simp]
+lemma ofBaseSubsetSkeletonLTOne_I_zero {S : Set X} (hDS : D ⊆ S)
+    (hS : S ⊆ (skeletonLT C 1 : Set X)) :
+    (ofBaseSubsetSkeletonLTOne hDS hS).I 0 = {j : cell C 0 | map 0 j ![] ∈ S} :=
+  (rfl)
+
+/-- `ofBaseSubsetSkeletonLTOne hDS hS` has no cells of positive dimension. -/
+@[simp]
+lemma ofBaseSubsetSkeletonLTOne_I_succ {S : Set X} (hDS : D ⊆ S)
+    (hS : S ⊆ (skeletonLT C 1 : Set X)) (n : ℕ) :
+    (ofBaseSubsetSkeletonLTOne hDS hS).I (n + 1) = ∅ :=
+  (rfl)
+
+/-- The `n`-cells of `ofBaseSubsetSkeletonLTOne hDS hS` are the `0`-cells of `C` lying in `S` when
+`n = 0`, and empty in positive dimensions. -/
+lemma ofBaseSubsetSkeletonLTOne_I {S : Set X} (hDS : D ⊆ S)
+    (hS : S ⊆ (skeletonLT C 1 : Set X)) (n : ℕ) :
+    (ofBaseSubsetSkeletonLTOne hDS hS).I n = match n with
+      | 0 => {j : cell C 0 | map 0 j ![] ∈ S}
+      | _ + 1 => ∅ :=
   (rfl)
 
 end

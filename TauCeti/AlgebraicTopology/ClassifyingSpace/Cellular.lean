@@ -36,10 +36,10 @@ the `s`-th circle of the presentation complex.
 
 Every group `G` has the tautological presentation, whose generators are the elements of `G` and
 whose relators are the kernel of the evaluation map `FreeGroup G →* G`, so every group has a
-cellular classifying space (`TauCeti.exists_cellularClassifyingSpace_isEilenbergMacLaneSpaceOne`),
-with no finiteness, countability or presentation hypothesis. The stronger existence statement
-including semilocal simple connectivity (transported from Milnor's classifying space
-`TauCeti.classifyingSpace G`) is in `TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison`
+cellular classifying space (`TauCeti.isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker`),
+with no finiteness, countability or presentation hypothesis. The existence statement also recording
+local path-connectedness and semilocal simple connectivity (transported from Milnor's classifying
+space `TauCeti.classifyingSpace G`) is in `TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison`
 (`TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`).
 
 Maps out of this model have the expected universal property: every homomorphism from its
@@ -58,13 +58,10 @@ Hausdorff CW complex, it is delta-generated and hence locally path-connected
 `0`-cell is the base point (`TauCeti.skeletonLT_one_cellularClassifyingSpace`), making it
 well-pointed (`TauCeti.hasHomotopyExtensionProperty_cellularClassifyingSpaceBasepoint`). Hence
 pointed maps realizing a homomorphism of fundamental groups are unique up to homotopy relative to
-the base point (`TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`), so `π₁` gives a
-bijection on pointed homotopy classes
-(`TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`),
-and every isomorphism of its fundamental group with the fundamental group of an aspherical space
-`Y` of CW type is realized by a homotopy equivalence
-(`TauCeti.cellularClassifyingSpaceHomotopyEquiv`), upgrading to an isomorphism in
-`TauCeti.PointedHomotopyCat` when `Y` is well-pointed
+the base point (`TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`), and every
+isomorphism of its fundamental group with the fundamental group of an aspherical space `Y` of CW
+type is realized by a homotopy equivalence (`TauCeti.cellularClassifyingSpaceHomotopyEquiv`),
+upgrading to an isomorphism in `TauCeti.PointedHomotopyCat` when `Y` is well-pointed
 (`TauCeti.cellularClassifyingSpaceHomotopyEquivIso`).
 
 If the presentation complex is already aspherical, as it is for a presentation of a free group
@@ -95,8 +92,8 @@ Whitehead's theorem the inclusion of the presentation complex is a homotopy equi
 
 * `TauCeti.isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`: the cellular classifying space
   of `⟨S | R⟩` is a `K(PresentedGroup R, 1)`.
-* `TauCeti.exists_cellularClassifyingSpace_isEilenbergMacLaneSpaceOne`: every group `G` has a
-  presentation whose cellular classifying space is a `K(G, 1)`.
+* `TauCeti.isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker`: the cellular classifying space
+  of the tautological presentation `(FreeGroup.lift id).ker` is a `K(G, 1)`.
 * `TauCeti.exists_mapOfEq_cellularClassifyingSpace`: every homomorphism from the fundamental group
   of the cellular classifying space to that of a space with vanishing higher homotopy groups is
   induced by a pointed map.
@@ -106,9 +103,6 @@ Whitehead's theorem the inclusion of the presentation complex is a homotopy equi
 * `TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`: pointed maps from the cellular
   classifying space to a space with vanishing higher homotopy groups that induce the same
   homomorphism of fundamental groups are homotopic relative to the base point.
-* `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: pointed homotopy
-  classes of maps out of a cellular classifying space into a space with no higher homotopy groups
-  are classified by their effect on `π₁`.
 * `TauCeti.mapOfEq_cellularClassifyingSpaceHomotopyEquiv_toFun_apply`,
   `TauCeti.homotopicRel_cellularClassifyingSpaceHomotopyEquiv_toFun`,
   `TauCeti.exists_path_map_cellularClassifyingSpaceHomotopyEquiv_invFun`: fundamental-group
@@ -337,36 +331,6 @@ theorem PresentationComplex.homotopyEquivCellularClassifyingSpace_toFun
 
 end CWComplex
 
-/-- **Pointed maps out of a cellular classifying space are classified by `π₁`.** If the homotopy
-groups of `Y` vanish from degree `2` on, at every point, then a pointed homotopy class of maps from
-the cellular classifying space `cellularClassifyingSpace R` to `Y` is determined by the homomorphism
-it induces on fundamental groups, and every homomorphism is induced by such a class. -/
-theorem fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace
-    {Y : BasedTopologicalSpace.{u}}
-    (hY : ∀ (y : Y.carrier) (n : ℕ), Subsingleton (π_ (n + 2) Y.carrier y)) :
-    Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
-      (X := PointedHomotopyCat.quotient.obj (cellularClassifyingSpaceBased R))
-      (Y := PointedHomotopyCat.quotient.obj Y)) := by
-  refine ⟨fun a b hab ↦ ?_, fun ψ ↦ ?_⟩
-  · obtain ⟨f, rfl⟩ := PointedHomotopyCat.quotient.map_surjective a
-    obtain ⟨g, rfl⟩ := PointedHomotopyCat.quotient.map_surjective b
-    simp only [PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map] at hab
-    rw [PointedHomotopyCat.quotient_map_eq_iff]
-    exact homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace R hY f.map_basepoint g.map_basepoint
-      (by
-        have h' := congrArg GrpCat.Hom.hom hab
-        rw [BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
-          BasedTopologicalSpace.fundamentalGroupFunctor_map_hom] at h'
-        exact h')
-  · obtain ⟨f, hf, hfψ⟩ := exists_mapOfEq_cellularClassifyingSpace R
-      (fun k hk ↦ by
-        obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
-        exact hY _ n) ψ.hom
-    exact ⟨PointedHomotopyCat.quotient.map ⟨f, hf⟩, GrpCat.hom_ext <|
-      (congrArg GrpCat.Hom.hom
-        (PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map _)).trans
-        ((BasedTopologicalSpace.fundamentalGroupFunctor_map_hom _).trans hfψ)⟩
-
 section General
 
 variable {Y : Type u} [TopologicalSpace Y] [CWType Y] {y : Y} (hY : IsAspherical Y y)
@@ -518,28 +482,23 @@ theorem fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_inv
       FundamentalGroup Y.carrier Y.basepoint) :
     PointedHomotopyCat.fundamentalGroupFunctor.map
         (cellularClassifyingSpaceHomotopyEquivIso R hY hY_hep φ).inv =
-      GrpCat.ofHom φ.symm.toMonoidHom := by
-  have hcomp := congrArg PointedHomotopyCat.fundamentalGroupFunctor.map
-    (cellularClassifyingSpaceHomotopyEquivIso R hY hY_hep φ).inv_hom_id
-  rw [CategoryTheory.Functor.map_comp,
-    fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_hom,
-    CategoryTheory.Functor.map_id] at hcomp
-  refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦ φ.injective ?_
-  exact (congrArg (fun f ↦ f.hom a) hcomp).trans (φ.apply_symm_apply a).symm
+      GrpCat.ofHom φ.symm.toMonoidHom :=
+  PointedHomotopyCat.fundamentalGroupFunctor_map_inv_of_map_hom_eq
+    (fundamentalGroupFunctor_map_cellularClassifyingSpaceHomotopyEquivIso_hom R hY hY_hep φ)
 
 /-- **Every group has a cellular classifying space**: taking the tautological presentation on the
-elements of `G`, with relators the kernel of `FreeGroup G →* G`, gives a presentation `R` whose
-cellular classifying space is a `K(G, 1)`. For the stronger existence statement also recording
-semilocal simple connectivity via Milnor's model, see
+elements of `G`, with relators the kernel `(FreeGroup.lift id).ker` of `FreeGroup G →* G`, gives a
+cellular classifying space that is a `K(G, 1)`. For the stronger existence statement also recording
+local path-connectedness and semilocal simple connectivity via Milnor's model, see
 `TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`. -/
-theorem exists_cellularClassifyingSpace_isEilenbergMacLaneSpaceOne (G : Type u) [Group G] :
-    ∃ R : Set (FreeGroup G),
-      IsEilenbergMacLaneSpaceOne G (cellularClassifyingSpace R)
-        (cellularClassifyingSpaceBasepoint R) := by
+theorem isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker (G : Type u) [Group G] :
+    IsEilenbergMacLaneSpaceOne G
+      (cellularClassifyingSpace ((FreeGroup.lift (id : G → G)).ker : Set (FreeGroup G)))
+      (cellularClassifyingSpaceBasepoint _) := by
   let φ : FreeGroup G →* G := FreeGroup.lift id
   have hφ : Function.Surjective φ := fun g ↦ ⟨FreeGroup.of g, FreeGroup.lift_apply_of⟩
   let P := Group.Presentation.ofFreeGroupHom φ hφ φ.ker (Subgroup.normalClosure_eq_self _).symm
-  exact ⟨P.rel,
-    (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace P.rel).of_mulEquiv P.presentedGroupEquiv⟩
+  exact (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace P.rel).of_mulEquiv
+    P.presentedGroupEquiv
 
 end TauCeti

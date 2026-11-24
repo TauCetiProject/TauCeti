@@ -5,15 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.EssentialImage
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
-public import TauCeti.Topology.CWComplex.Classical.CWType
-import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.CWType
 import TauCeti.AlgebraicTopology.ClassifyingSpace.PointedMaps
-import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
-import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
-import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 
 /-!
 # The classifying space as a functor to the pointed homotopy category
@@ -36,21 +30,8 @@ From the classification of pointed maps out of Milnor's classifying space
 (`TauCeti.fundamentalGroupFunctor_map_bijective_classifyingSpace` in
 `TauCeti.AlgebraicTopology.ClassifyingSpace.PointedMaps`), it follows that
 `TauCeti.classifyingSpaceHomotopyFunctor` is **fully faithful**
-(`TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`).
-
-Using the pointed uniqueness isomorphism
-`TauCeti.IsAspherical.pointedHomotopyCatIsoClassifyingSpace` from
-`TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness`, every well-pointed aspherical space
-of CW type lies in the essential image of `classifyingSpaceHomotopyFunctor`
-(`TauCeti.IsAspherical.mem_essImage_classifyingSpaceHomotopyFunctor`). Conversely every object in
-that essential image is aspherical and of CW type
-(`TauCeti.isAspherical_of_mem_essImage_classifyingSpaceHomotopyFunctor`,
-`TauCeti.cwType_of_mem_essImage_classifyingSpaceHomotopyFunctor`). Both halves are sharp with
-respect to well-pointedness: without the homotopy extension property at the base point, an
-aspherical space of CW type need not be pointed homotopy equivalent to a classifying space (for
-example, the comb space based at a non-locally-contractible point), while an object in the
-essential image need not be well-pointed (for example, `[0, 1]^ℝ` based at `0` is pointed
-contractible, hence isomorphic to `classifyingSpace PUnit`, yet `{0}` is not `G_δ`).
+(`TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`), expressing the classification of pointed
+maps `BG ⟶ BH` in `PointedHomotopyCat` by group homomorphisms `G →* H`.
 
 ## Main definitions
 
@@ -61,17 +42,10 @@ contractible, hence isomorphic to `classifyingSpace PUnit`, yet `{0}` is not `G_
 * `TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`: full faithfulness of
   `classifyingSpaceHomotopyFunctor`, with explicit `preimage` via `π₁`.
 
-## Main results
-
-* `TauCeti.IsAspherical.mem_essImage_classifyingSpaceHomotopyFunctor`,
-  `TauCeti.isAspherical_of_mem_essImage_classifyingSpaceHomotopyFunctor`,
-  `TauCeti.cwType_of_mem_essImage_classifyingSpaceHomotopyFunctor`: characterization of the
-  essential image of `classifyingSpaceHomotopyFunctor`.
-
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Chapter 0 (Proposition 0.19)
-  and Section 1.B (Theorem 1B.8 and Proposition 1B.9).
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 1.B,
+  Proposition 1B.9.
 * J. Milnor, *Construction of universal bundles, II*, Ann. of Math. 63 (1956), 430--436.
 -/
 
@@ -191,35 +165,6 @@ theorem classifyingSpaceHomotopyFunctorFullyFaithful_preimage {G H : GrpCat.{u}}
 therefore reflects isomorphisms (`CategoryTheory.reflectsIsomorphisms_of_full_and_faithful`). -/
 instance : classifyingSpaceHomotopyFunctor.{u}.Full :=
   classifyingSpaceHomotopyFunctorFullyFaithful.full
-
-/-- **Every well-pointed aspherical space of CW type lies in the essential image of
-`classifyingSpaceHomotopyFunctor`.** Well-pointedness cannot be dropped here (e.g. the comb space
-based at a non-locally-contractible point), though the converse does not recover well-pointedness
-(e.g. `[0, 1]^ℝ` based at `0` is pointed contractible while `{0}` fails the homotopy extension
-property). -/
-theorem IsAspherical.mem_essImage_classifyingSpaceHomotopyFunctor {X : BasedTopologicalSpace.{u}}
-    [CWType X.carrier] (hX : IsAspherical X.carrier X.basepoint)
-    (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier)) :
-    classifyingSpaceHomotopyFunctor.essImage (PointedHomotopyCat.quotient.obj X) :=
-  ⟨GrpCat.of (FundamentalGroup X.carrier X.basepoint),
-    ⟨(hX.pointedHomotopyCatIsoClassifyingSpace hX_hep (MulEquiv.refl _)).symm⟩⟩
-
-/-- **Every object in the essential image of `classifyingSpaceHomotopyFunctor` is aspherical.** -/
-theorem isAspherical_of_mem_essImage_classifyingSpaceHomotopyFunctor
-    {X : BasedTopologicalSpace.{u}}
-    (hX : classifyingSpaceHomotopyFunctor.essImage (PointedHomotopyCat.quotient.obj X)) :
-    IsAspherical X.carrier X.basepoint := by
-  obtain ⟨G, ⟨e⟩⟩ := hX
-  exact (isEilenbergMacLaneSpaceOne_classifyingSpace G).isAspherical.of_homotopyEquiv
-    (PointedHomotopyCat.homotopyEquivOfIso e) X.basepoint
-
-/-- **Every object in the essential image of `classifyingSpaceHomotopyFunctor` has CW type.** -/
-theorem cwType_of_mem_essImage_classifyingSpaceHomotopyFunctor
-    {X : BasedTopologicalSpace.{u}}
-    (hX : classifyingSpaceHomotopyFunctor.essImage (PointedHomotopyCat.quotient.obj X)) :
-    CWType X.carrier := by
-  obtain ⟨G, ⟨e⟩⟩ := hX
-  exact (PointedHomotopyCat.homotopyEquivOfIso e).symm.cwType
 
 end FunctorClassification
 

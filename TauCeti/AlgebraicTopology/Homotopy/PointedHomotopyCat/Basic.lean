@@ -167,6 +167,18 @@ theorem fundamentalGroupFunctor_map_quotient_map {X Y : BasedTopologicalSpace.{u
       BasedTopologicalSpace.fundamentalGroupFunctor.map f :=
   (rfl)
 
+/-- If the forward morphism of an isomorphism `e` in `PointedHomotopyCat` induces a group
+isomorphism `φ` on fundamental groups, then its inverse `e.inv` induces `φ.symm`. -/
+theorem fundamentalGroupFunctor_map_inv_of_map_hom_eq {X Y : BasedTopologicalSpace.{u}}
+    {e : quotient.obj X ≅ quotient.obj Y}
+    {φ : FundamentalGroup X.carrier X.basepoint ≃* FundamentalGroup Y.carrier Y.basepoint}
+    (he : fundamentalGroupFunctor.map e.hom = GrpCat.ofHom φ.toMonoidHom) :
+    fundamentalGroupFunctor.map e.inv = GrpCat.ofHom φ.symm.toMonoidHom := by
+  have hcomp := congrArg fundamentalGroupFunctor.map e.inv_hom_id
+  rw [CategoryTheory.Functor.map_comp, he, CategoryTheory.Functor.map_id] at hcomp
+  refine GrpCat.hom_ext <| MonoidHom.ext fun a ↦ φ.injective ?_
+  exact (congrArg (fun f ↦ f.hom a) hcomp).trans (φ.apply_symm_apply a).symm
+
 end PointedHomotopyCat
 
 end TauCeti
