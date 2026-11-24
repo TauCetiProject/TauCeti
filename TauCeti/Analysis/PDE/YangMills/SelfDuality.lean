@@ -47,9 +47,9 @@ lemmas `Orientation.vectorFormHodgeStar_innerₗ`,
 
 ## Main results
 
-* `LinearMap.BilinForm.vectorFormInner_two_eq_sum_finFour`: the pairing of two-forms in a frame,
+* `LinearMap.BilinForm.vectorFormInner_two_eq_sum_fin_four`: the pairing of two-forms in a frame,
   `⟨F, G⟩ = ∑_{i < j} B (F_ij, G_ij)`.
-* `Orientation.vectorFormInner_vectorFormHodgeStar_finFour`: `⟨F, ⋆G⟩` in a positive frame.
+* `Orientation.vectorFormInner_vectorFormHodgeStar_fin_four`: `⟨F, ⋆G⟩` in a positive frame.
 * `Orientation.wedgeDensity_eq_sub`: `⋆⟨F ∧ F⟩ = |F⁺|² - |F⁻|²`.
 * `Orientation.abs_wedgeDensity_le`: the pointwise Bogomol'nyi inequality `|⋆⟨F ∧ F⟩| ≤ |F|²` in
   coordinates, and `Orientation.abs_wedgeDensity_eq_iff`: its equality case.
@@ -82,7 +82,7 @@ variable (B : LinearMap.BilinForm ℝ V)
 
 /-- **The pairing of two-forms in a frame**: for an orthonormal basis `e` indexed by `Fin 4`,
 `⟨F, G⟩ = ∑_{i < j} B (F (eᵢ ∧ eⱼ), G (eᵢ ∧ eⱼ))`. -/
-theorem vectorFormInner_two_eq_sum_finFour (e : OrthonormalBasis (Fin 4) ℝ E)
+theorem vectorFormInner_two_eq_sum_fin_four (e : OrthonormalBasis (Fin 4) ℝ E)
     (F G : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
     vectorFormInner B 2 F G =
       B (F (ιMulti ℝ 2 ![e 0, e 1])) (G (ιMulti ℝ 2 ![e 0, e 1])) +
@@ -147,7 +147,7 @@ include he
 /-- **The pairing with a Hodge star in a positive frame**: for a positively oriented orthonormal
 basis `e` in dimension four, with `F_ij = F (eᵢ ∧ eⱼ)`, `⟨F, ⋆G⟩` is
 `B (F₀₁, G₂₃) - B (F₀₂, G₁₃) + B (F₀₃, G₁₂) + B (F₁₂, G₀₃) - B (F₁₃, G₀₂) + B (F₂₃, G₀₁)`. -/
-theorem vectorFormInner_vectorFormHodgeStar_finFour (B : LinearMap.BilinForm ℝ V)
+theorem vectorFormInner_vectorFormHodgeStar_fin_four (B : LinearMap.BilinForm ℝ V)
     (F G : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
     vectorFormInner B 2 F (o.vectorFormHodgeStar hkl G) =
       B (F (ιMulti ℝ 2 ![e 0, e 1])) (G (ιMulti ℝ 2 ![e 2, e 3])) -
@@ -156,7 +156,7 @@ theorem vectorFormInner_vectorFormHodgeStar_finFour (B : LinearMap.BilinForm ℝ
         B (F (ιMulti ℝ 2 ![e 1, e 2])) (G (ιMulti ℝ 2 ![e 0, e 3])) -
         B (F (ιMulti ℝ 2 ![e 1, e 3])) (G (ιMulti ℝ 2 ![e 0, e 2])) +
         B (F (ιMulti ℝ 2 ![e 2, e 3])) (G (ιMulti ℝ 2 ![e 0, e 1])) := by
-  simp only [B.vectorFormInner_two_eq_sum_finFour e, o.vectorFormHodgeStar_apply_of_even even_two,
+  simp only [B.vectorFormInner_two_eq_sum_fin_four e, o.vectorFormHodgeStar_apply_of_even even_two,
     o.hodgeStar_ιMulti_zero_one hkl he, o.hodgeStar_ιMulti_zero_two hkl he,
     o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_ιMulti_one_two hkl he,
     o.hodgeStar_ιMulti_one_three hkl he, o.hodgeStar_ιMulti_two_three hkl he, map_neg]
@@ -168,7 +168,7 @@ B (F₀₃, F₁₂))` of the wedge square of `F` paired by `B` is `⟨F, ⋆F�
 theorem wedgeDensity_eq_vectorFormInner_vectorFormHodgeStar {B : LinearMap.BilinForm ℝ V}
     (hB : B.IsSymm) (F : ⋀[ℝ]^2 E →ₗ[ℝ] V) :
     B.wedgeDensity e F = vectorFormInner B 2 F (o.vectorFormHodgeStar hkl F) := by
-  rw [wedgeDensity_def, o.vectorFormInner_vectorFormHodgeStar_finFour hkl he,
+  rw [wedgeDensity_def, o.vectorFormInner_vectorFormHodgeStar_fin_four hkl he,
     hB.eq (F (ιMulti ℝ 2 ![e 1, e 2])),
     hB.eq (F (ιMulti ℝ 2 ![e 1, e 3])), hB.eq (F (ιMulti ℝ 2 ![e 2, e 3]))]
   ring
