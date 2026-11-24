@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Power
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.SectionDegree
 import TauCeti.AlgebraicGeometry.Curves.Normalization
