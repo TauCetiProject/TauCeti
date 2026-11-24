@@ -49,8 +49,10 @@ comparison of the discrete quotient `A` with the discrete interface is
 * `TauCeti.ContinuousCohomology.TopSelmerStructure.localization_comp_coeffMap`: localisation
   commutes with change of coefficients.
 * `TauCeti.ContinuousCohomology.TopSelmerStructure.map_selmerModule_le`,
-  `TauCeti.ContinuousCohomology.TopSelmerStructure.selmerModule_eq_comap`: Selmer classes map to
-  Selmer classes, and pulled-back conditions give the preimage of the Selmer module.
+  `TauCeti.ContinuousCohomology.TopSelmerStructure.selmerModule_eq_comap`,
+  `TauCeti.ContinuousCohomology.TopSelmerStructure.selmerModule_withLocalConditions_comap`:
+  Selmer classes map to Selmer classes, and pulled-back conditions give the preimage of the Selmer
+  module.
 
 ## References
 
@@ -175,6 +177,7 @@ theorem withLocalConditions_localization
   (rfl)
 
 /-- Replacing the local conditions of a Selmer structure replaces those of its Selmer data. -/
+@[simp]
 theorem toSelmerData_withLocalConditions
     (L : ∀ i, Submodule R (continuousCohomology 1 (Y i))) :
     (𝓕.withLocalConditions L).toSelmerData = 𝓕.toSelmerData.withLocalConditions L :=
@@ -232,6 +235,17 @@ theorem selmerModule_eq_comap
     𝓕.toSelmerData.selmerModule =
       𝓖.toSelmerData.selmerModule.comap (coeffMap a 1).hom.toLinearMap :=
   𝓕.toSelmerData.selmerModule_eq_comap 𝓖.toSelmerData (𝓕.localization_comp_coeffMap 𝓖 h) hL
+
+/-- **Pulled-back local conditions.** For a change of coefficients commuting with the local
+coefficient morphisms, the Selmer module of `𝓕` with its local conditions replaced
+by the preimages of those of `𝓖` is the preimage of the Selmer module of `𝓖`; for `T → V` this
+is the propagated condition on the lattice `T`. -/
+theorem selmerModule_withLocalConditions_comap
+    (h : ∀ i, (TopRep.resFunctor (φ i : H i →* G)).map a ≫ 𝓖.coeffHom i = 𝓕.coeffHom i ≫ b i) :
+    (𝓕.withLocalConditions fun i =>
+        (𝓖.localCondition i).comap (coeffMap (b i) 1).hom.toLinearMap).toSelmerData.selmerModule =
+      𝓖.toSelmerData.selmerModule.comap (coeffMap a 1).hom.toLinearMap :=
+  (𝓕.withLocalConditions _).selmerModule_eq_comap 𝓖 h fun _ => rfl
 
 end Map
 

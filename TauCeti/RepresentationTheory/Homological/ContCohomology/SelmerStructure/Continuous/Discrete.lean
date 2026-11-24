@@ -67,17 +67,17 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {ι : Type*} {H : ι → Type v} [∀ i, Group (H i)] [∀ i, TopologicalSpace (H i)]
   [∀ i, IsTopologicalGroup (H i)]
   {φ : ∀ i, H i →ₜ* G} {X : TopRep.{v} R G} {Y : ∀ i, TopRep.{v} R (H i)}
-  [DiscreteTopology X.V] [ContinuousSMul G X.V]
+  [ContinuousSMul G X.V]
   [∀ i, DiscreteTopology (Y i).V] [∀ i, ContinuousSMul (H i) (Y i).V]
   (𝓕 : TopSelmerStructure φ X Y)
 
-/-- **The discrete Selmer structure of a Selmer structure on a discrete representation**: the
-compatible pairs `(φ i, 𝓕.coeffHom i)` on the carriers, and the local conditions of `𝓕` pulled
+/-- **The discrete Selmer structure of a Selmer structure with discrete local coefficients**:
+the compatible pairs `(φ i, 𝓕.coeffHom i)` on the carriers, and the local conditions of `𝓕` pulled
 back along the explicit comparison `H¹(H i, (Y i).V) ≃ continuousCohomology 1 (Y i)`. -/
 def toSelmerStructure : SelmerStructure G X.V H fun i => (Y i).V where
   groupHom := φ
   coeffHom i := (𝓕.coeffHom i).hom.toContinuousLinearMap.toLinearMap.toAddMonoidHom
-  continuous_coeffHom _ := continuous_of_discreteTopology
+  continuous_coeffHom i := (𝓕.coeffHom i).hom.toContinuousLinearMap.continuous
   coeffHom_smul i h x := (𝓕.coeffHom i).hom.isIntertwining h x
   localCondition i := (𝓕.localCondition i).toAddSubgroup.comap
     (Y i).explicitH1AddEquivContinuousCohomologyOfDiscrete.toAddMonoidHom
@@ -124,7 +124,10 @@ theorem mem_toSelmerStructure_localCondition_iff (i : ι) {c : H1 (H i) (Y i).V}
       (Y i).explicitH1AddEquivContinuousCohomologyOfDiscrete c ∈ 𝓕.localCondition i :=
   Iff.rfl
 
+variable [DiscreteTopology X.V]
+
 /-- **The explicit comparison carries the explicit localisation to the localisation of `𝓕`.** -/
+@[simp]
 theorem explicitH1_localization (i : ι) (c : H1 G X.V) :
     (Y i).explicitH1AddEquivContinuousCohomologyOfDiscrete
         (𝓕.toSelmerStructure.localization i c) =
