@@ -70,7 +70,7 @@ has infinite order and admits no ray-class presentation at any modulus. The expl
   `TauCeti.LFunctions.unitaryWeight_angularGrossencharacter_add`: group laws in `k : ℤ`.
 * `TauCeti.LFunctions.angularGrossencharacter_injective`,
   `TauCeti.LFunctions.isFiniteOrder_toHeckeCharacter_angularGrossencharacter_iff`,
-  `TauCeti.LFunctions.not_mem_range_ofRayClassCharacter_toHeckeCharacter_angularGrossencharacter`:
+  `TauCeti.LFunctions.notMem_range_ofRayClassCharacter_toHeckeCharacter_angularGrossencharacter`:
   injectivity in `k`, infinite order for `k ≠ 0`, and absence of ray-class presentations.
 
 ## References
@@ -601,7 +601,7 @@ theorem isFiniteOrder_toHeckeCharacter_angularGrossencharacter_iff {F : Type*} [
 
 /-- For `k ≠ 0`, `angularGrossencharacter F k` does not arise from a ray class character at **any**
 modulus `𝔪 : Modulus F`. -/
-theorem not_mem_range_ofRayClassCharacter_toHeckeCharacter_angularGrossencharacter {F : Type*}
+theorem notMem_range_ofRayClassCharacter_toHeckeCharacter_angularGrossencharacter {F : Type*}
     [Field F] [NumberField F] [IsCyclotomicExtension {4} ℚ F] {k : ℤ} (hk : k ≠ 0)
     (𝔪 : Modulus F) :
     (angularGrossencharacter F k).toHeckeCharacter ∉
@@ -613,12 +613,12 @@ theorem not_mem_range_ofRayClassCharacter_toHeckeCharacter_angularGrossencharact
 
 /-- For `k ≠ 0`, `angularGrossencharacter F k` is not in the range of
 `Grossencharacter.ofRayClassCharacter` at `Modulus.one F`. -/
-theorem not_mem_range_ofRayClassCharacter_angularGrossencharacter (F : Type*) [Field F]
+theorem notMem_range_ofRayClassCharacter_angularGrossencharacter (F : Type*) [Field F]
     [NumberField F] [IsCyclotomicExtension {4} ℚ F] {k : ℤ} (hk : k ≠ 0) :
     angularGrossencharacter F k ∉
       Set.range (Grossencharacter.ofRayClassCharacter (K := F) (𝔪 := Modulus.one F)) := by
   rintro ⟨η, hη⟩
-  exact not_mem_range_ofRayClassCharacter_toHeckeCharacter_angularGrossencharacter hk
+  exact notMem_range_ofRayClassCharacter_toHeckeCharacter_angularGrossencharacter hk
     (Modulus.one F)
     ⟨η, (Grossencharacter.toHeckeCharacter_ofRayClassCharacter η).symm.trans
       (congrArg Grossencharacter.toHeckeCharacter hη)⟩
