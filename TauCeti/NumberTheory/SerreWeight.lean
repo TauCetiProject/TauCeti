@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.ModEq
+public import Mathlib.Data.Sym.Sym2
+public import Mathlib.Data.ZMod.Basic
 public import Mathlib.Logic.Function.Iterate
 public import Mathlib.Order.Interval.Set.Defs
 
-import Mathlib.Data.Sym.Sym2
-import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -42,7 +42,10 @@ and the très ramifiée flag, which may be set only when `β = α + 1`. On it th
 * `SerreWeightData.edixhovenWeight`: Edixhoven's variant, `1 + p * a + b` on all tame data and
   `1 + p * min α β + max α β`, plus `p - 1` when très ramifiée, on wild data;
 * `SerreWeightData.detExponent`: the exponent `e` with `det ρ = χ ^ e` on inertia;
-* `SerreWeightData.twist`: the renormalised data of the cyclotomic twist `ρ ⊗ χ`.
+* `SerreWeightData.twist`: the renormalised data of the cyclotomic twist `ρ ⊗ χ`;
+* `SerreWeightData.charExponents`: the exponents of the inertial characters, an injective encoding
+  for `2 ≤ p` under which `twist` becomes translation by `1` on powers of `χ` and by `p + 1` on
+  powers of `ψ` (`SerreWeightData.charExponents_twist`).
 
 Its main results are the determinant congruence `k ≡ e + 1 [MOD p - 1]`
 (`SerreWeightData.weight_modEq_detExponent`), the bound `2 ≤ k`, Serre's twist formula in niveau
@@ -130,6 +133,9 @@ lemma not_isTresRamifiee_niveauOne {a b : ℕ} {hab : a ≤ b} {hb : b ≤ p - 2
 lemma not_isTresRamifiee_niveauTwo {a b : ℕ} {hab : a < b} {hb : b ≤ p - 1} :
     ¬ (niveauTwo a b hab hb).IsTresRamifiee := not_false
 
+@[simp]
+lemma not_isTresRamifiee_unramified : ¬ (unramified p).IsTresRamifiee := not_false
+
 instance : DecidablePred (IsTresRamifiee (p := p))
   | niveauOne .. => isFalse not_isTresRamifiee_niveauOne
   | niveauTwo .. => isFalse not_isTresRamifiee_niveauTwo
@@ -203,6 +209,9 @@ lemma detExponent_niveauTwo {a b : ℕ} {hab : a < b} {hb : b ≤ p - 1} :
 lemma detExponent_wild {α β : ℕ} {hα : α ≤ p - 2} {hβ : 1 ≤ β} {hβp : β ≤ p - 1} {tres : Bool}
     {htres : tres = true → β = α + 1} : (wild α β hα hβ hβp tres htres).detExponent = α + β :=
   (rfl)
+
+@[simp]
+lemma detExponent_unramified : (unramified p).detExponent = 0 := (rfl)
 
 /-! ### Serre's weight and Edixhoven's weight -/
 
@@ -484,26 +493,12 @@ lemma isTresRamifiee_twist (d : SerreWeightData p) :
 /-- Twisting by `χ` multiplies the determinant by `χ ^ 2`. -/
 theorem detExponent_twist (hp : 2 ≤ p) (d : SerreWeightData p) :
     d.twist.detExponent ≡ d.detExponent + 2 [MOD p - 1] := by
-  cases d with
-  | niveauOne a b hab hb =>
-    simp only [twist_niveauOne, unramified_def]
-    split_ifs <;> simp only [detExponent_niveauOne]
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨0, by omega⟩
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨1, by omega⟩
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨2, by omega⟩
-  | niveauTwo a b hab hb =>
-    simp only [twist_niveauTwo]
-    split_ifs <;> simp only [detExponent_niveauTwo]
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨0, by omega⟩
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨1, by omega⟩
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨2, by omega⟩
-  | wild α β hα hβ hβp tres htres =>
-    simp only [twist_wild, detExponent_wild]
-    split_ifs
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨0, by omega⟩
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨1, by omega⟩
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨1, by omega⟩
-    · exact (Nat.modEq_iff_dvd' (by omega)).2 ⟨2, by omega⟩
+  -- In every case the exponents wrap around `k ∈ {0, 1, 2}` times modulo `p - 1`.
+  have wrap (k : ℕ) {x y : ℕ} (h : x + (p - 1) * k = y) : x ≡ y [MOD p - 1] :=
+    Nat.add_modulus_mul_modEq_iff.1 (by rw [h])
+  cases d <;> simp only [twist_niveauOne, twist_niveauTwo, twist_wild, unramified_def] <;>
+    split_ifs <;> simp only [detExponent_niveauOne, detExponent_niveauTwo, detExponent_wild] <;>
+    first | exact wrap 0 (by omega) | exact wrap 1 (by omega) | exact wrap 2 (by omega)
 
 /-- At `p = 2` the mod `2` cyclotomic character is trivial, so twisting changes nothing. -/
 @[simp]
@@ -525,21 +520,53 @@ theorem twist_eq_self_of_two (d : SerreWeightData 2) : d.twist = d := by
     subst hα0 hβ1
     rfl
 
-/-- The exponents of the inertial characters: the unordered pair of powers of `χ` on niveau one,
-the conjugate pair of powers of `ψ` on niveau two, and on wild data the powers `α` and `β - 1` of
-`χ` together with the flag. -/
-private abbrev CharExponents (p : ℕ) : Type :=
+/-- The exponents of the inertial characters of Serre's data: an unordered pair of powers of `χ`
+(niveau one), a conjugate pair of powers of `ψ` (niveau two), or two powers of `χ` together with
+the très ramifiée flag (wild). -/
+abbrev CharExponents (p : ℕ) : Type :=
   Sym2 (ZMod (p - 1)) ⊕ Sym2 (ZMod (p ^ 2 - 1)) ⊕ ZMod (p - 1) × ZMod (p - 1) × Bool
 
-private def charExponents : SerreWeightData p → CharExponents p
+/-- The exponents of the inertial characters described by the data: `{a, b}` modulo `p - 1` on
+niveau one, the conjugate pair `{a + p * b, b + p * a}` modulo `p ^ 2 - 1` on niveau two, and on
+wild data the powers `α` and `β - 1` of `χ` modulo `p - 1` together with the flag. For `2 ≤ p`
+this encoding is injective (`charExponents_injective`), and it turns `twist` into adding `1` to
+the powers of `χ` and `p + 1` to the powers of `ψ` (`charExponents_twist`). -/
+def charExponents : SerreWeightData p → CharExponents p
   | niveauOne a b _ _ => .inl s(a, b)
   | niveauTwo a b _ _ => .inr (.inl s((a + p * b : ℕ), (b + p * a : ℕ)))
   | wild α β _ _ _ tres _ => .inr (.inr (α, (β - 1 : ℕ), tres))
 
-/-- The effect of `n` twists by `χ = ψ ^ (p + 1)` on the exponents. -/
-private def twistCharExponents (p n : ℕ) : CharExponents p → CharExponents p :=
+@[simp]
+lemma charExponents_niveauOne {a b : ℕ} {hab : a ≤ b} {hb : b ≤ p - 2} :
+    (niveauOne a b hab hb).charExponents = .inl s(a, b) := (rfl)
+
+@[simp]
+lemma charExponents_niveauTwo {a b : ℕ} {hab : a < b} {hb : b ≤ p - 1} :
+    (niveauTwo a b hab hb).charExponents = .inr (.inl s((a + p * b : ℕ), (b + p * a : ℕ))) :=
+  (rfl)
+
+@[simp]
+lemma charExponents_wild {α β : ℕ} {hα : α ≤ p - 2} {hβ : 1 ≤ β} {hβp : β ≤ p - 1} {tres : Bool}
+    {htres : tres = true → β = α + 1} :
+    (wild α β hα hβ hβp tres htres).charExponents = .inr (.inr (α, (β - 1 : ℕ), tres)) := (rfl)
+
+/-- The effect of `n` twists by `χ = ψ ^ (p + 1)` on the exponents of the inertial characters:
+powers of `χ` increase by `n` and powers of `ψ` by `n * (p + 1)`. -/
+def twistCharExponents (p n : ℕ) : CharExponents p → CharExponents p :=
   Sum.map (Sym2.map (· + n)) (Sum.map (Sym2.map (· + n * (p + 1)))
     (Prod.map (· + n) (Prod.map (· + n) id)))
+
+@[simp]
+lemma twistCharExponents_inl (n : ℕ) (x : Sym2 (ZMod (p - 1))) :
+    twistCharExponents p n (.inl x) = .inl (x.map (· + n)) := (rfl)
+
+@[simp]
+lemma twistCharExponents_inr_inl (n : ℕ) (x : Sym2 (ZMod (p ^ 2 - 1))) :
+    twistCharExponents p n (.inr (.inl x)) = .inr (.inl (x.map (· + n * (p + 1)))) := (rfl)
+
+@[simp]
+lemma twistCharExponents_inr_inr (n : ℕ) (x y : ZMod (p - 1)) (t : Bool) :
+    twistCharExponents p n (.inr (.inr (x, y, t))) = .inr (.inr (x + n, y + n, t)) := (rfl)
 
 /-- The base `p` expansion `x + p * y` of a niveau-two exponent stays below `p ^ 2 - 1`. -/
 private lemma add_mul_lt (hp : 2 ≤ p) {x y : ℕ} (hx : x ≤ p - 1) (hy : y ≤ p - 1)
@@ -552,46 +579,46 @@ private lemma add_mul_lt (hp : 2 ≤ p) {x y : ℕ} (hx : x ≤ p - 1) (hy : y �
   · have := Nat.mul_le_mul_left (q + 2) hy'
     omega
 
-private lemma charExponents_injective (hp : 2 ≤ p) :
+/-- Base `p` digits are unique: `x + p * y` with `x < p` determines `x` and `y`. -/
+private lemma eq_and_eq_of_add_mul_eq {x y x' y' : ℕ} (hx : x < p) (hx' : x' < p)
+    (h : x + p * y = x' + p * y') : x = x' ∧ y = y' := by
+  have hp0 : 0 < p := by omega
+  have h₁ := (Nat.div_mod_unique (a := x + p * y) hp0).2 ⟨rfl, hx⟩
+  have h₂ := (Nat.div_mod_unique (a := x + p * y) hp0).2 ⟨h.symm, hx'⟩
+  omega
+
+/-- For `2 ≤ p`, Serre's data are determined by the exponents of their inertial characters. -/
+theorem charExponents_injective (hp : 2 ≤ p) :
     Function.Injective (charExponents (p := p)) := by
+  have inj {n x y : ℕ} (hx : x < n) (hy : y < n) (h : (x : ZMod n) = y) : x = y :=
+    CharP.natCast_injOn_Iio (ZMod n) n hx hy h
   intro d d' h
-  cases d <;> cases d' <;> simp only [charExponents, Sum.inl.injEq, Sum.inr.injEq,
-    reduceCtorEq, Prod.mk.injEq, Sym2.eq_iff, niveauOne.injEq, niveauTwo.injEq, wild.injEq] at h ⊢
-  · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;>
-      have h₁ := CharP.natCast_injOn_Iio (ZMod (p - 1)) (p - 1) (Set.mem_Iio.2 (by omega))
-        (Set.mem_Iio.2 (by omega)) h₁ <;>
-      have h₂ := CharP.natCast_injOn_Iio (ZMod (p - 1)) (p - 1) (Set.mem_Iio.2 (by omega))
-        (Set.mem_Iio.2 (by omega)) h₂ <;> omega
-  · rename_i a b hab hb a' b' hab' hb'
-    have hp0 : 0 < p := by omega
-    have digits {x y x' y' : ℕ} (hx : x < p) (hx' : x' < p) (h : x + p * y = x' + p * y') :
-        x = x' ∧ y = y' := by
-      have h₁ := (Nat.div_mod_unique (a := x + p * y) hp0).2 ⟨rfl, hx⟩
-      have h₂ := (Nat.div_mod_unique (a := x + p * y) hp0).2 ⟨h.symm, hx'⟩
-      omega
-    rcases h with ⟨h₁, -⟩ | ⟨h₁, -⟩ <;>
-      have h₁ := digits (by omega) (by omega) <|
-        CharP.natCast_injOn_Iio (ZMod (p ^ 2 - 1)) (p ^ 2 - 1)
-          (add_mul_lt hp (by omega) (by omega) (by omega))
+  cases d <;> cases d' <;> simp only [charExponents_niveauOne, charExponents_niveauTwo,
+    charExponents_wild, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, Prod.mk.injEq, Sym2.eq_iff,
+    niveauOne.injEq, niveauTwo.injEq, wild.injEq] at h ⊢
+  · rcases h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> have h₁ := inj (by omega) (by omega) h₁ <;>
+      have h₂ := inj (by omega) (by omega) h₂ <;> omega
+  · rcases h with ⟨h₁, -⟩ | ⟨h₁, -⟩ <;>
+      have h₁ := eq_and_eq_of_add_mul_eq (by omega) (by omega) <|
+        inj (add_mul_lt hp (by omega) (by omega) (by omega))
           (add_mul_lt hp (by omega) (by omega) (by omega)) h₁ <;> omega
   · obtain ⟨h₁, h₂, h₃⟩ := h
-    have h₁ := CharP.natCast_injOn_Iio (ZMod (p - 1)) (p - 1) (Set.mem_Iio.2 (by omega))
-      (Set.mem_Iio.2 (by omega)) h₁
-    have h₂ := CharP.natCast_injOn_Iio (ZMod (p - 1)) (p - 1) (Set.mem_Iio.2 (by omega))
-      (Set.mem_Iio.2 (by omega)) h₂
-    exact ⟨h₁, by omega, h₃⟩
+    have h₂ := inj (by omega) (by omega) h₂
+    exact ⟨inj (by omega) (by omega) h₁, by omega, h₃⟩
 
-private lemma charExponents_twist (hp : 2 ≤ p) (d : SerreWeightData p) :
-    charExponents d.twist = twistCharExponents p 1 (charExponents d) := by
+/-- Twisting by `χ = ψ ^ (p + 1)` adds `1` to the powers of `χ` and `p + 1` to the powers of `ψ`
+in the exponents of the inertial characters. -/
+theorem charExponents_twist (hp : 2 ≤ p) (d : SerreWeightData p) :
+    d.twist.charExponents = twistCharExponents p 1 d.charExponents := by
   have key (n : ℕ) (h : n + 1 = p - 1) : (n : ZMod (p - 1)) + 1 = 0 := by
     rw [← Nat.cast_add_one, h, ZMod.natCast_self]
   cases d with
   | niveauOne a b hab hb =>
     simp only [twist_niveauOne, unramified_def]
     split_ifs
-    · simp [charExponents, twistCharExponents]
-    · simp [charExponents, twistCharExponents, key b (by omega), Sym2.eq_swap]
-    · simp [charExponents, twistCharExponents, key a (by omega), key b (by omega)]
+    · simp
+    · simp [key b (by omega), Sym2.eq_swap]
+    · simp [key a (by omega), key b (by omega)]
   | niveauTwo a b hab hb =>
     have hsq : ((p : ZMod (p ^ 2 - 1))) ^ 2 = 1 := by
       have := ZMod.natCast_self (p ^ 2 - 1)
@@ -599,17 +626,17 @@ private lemma charExponents_twist (hp : 2 ≤ p) (d : SerreWeightData p) :
         sub_eq_zero] at this
     simp only [twist_niveauTwo]
     split_ifs
-    · simp only [charExponents, twistCharExponents, Sum.map_inr, Sum.map_inl, Sym2.map_mk]
+    · simp only [charExponents_niveauTwo, twistCharExponents_inr_inl, Sym2.map_mk]
       push_cast
       exact congrArg (Sum.inr ∘ Sum.inl) (Sym2.eq_iff.2 (.inl ⟨by ring, by ring⟩))
     · obtain rfl : p = b + 1 := by omega
-      simp only [charExponents, twistCharExponents, Sum.map_inr, Sum.map_inl, Sym2.map_mk]
+      simp only [charExponents_niveauTwo, twistCharExponents_inr_inl, Sym2.map_mk]
       push_cast at hsq ⊢
       exact congrArg (Sum.inr ∘ Sum.inl)
         (Sym2.eq_iff.2 (.inr ⟨by ring, by linear_combination -hsq⟩))
     · obtain rfl : b = a + 1 := by omega
       obtain rfl : p = a + 2 := by omega
-      simp only [charExponents, twistCharExponents, Sum.map_inr, Sum.map_inl, Sym2.map_mk]
+      simp only [charExponents_niveauTwo, twistCharExponents_inr_inl, Sym2.map_mk]
       push_cast at hsq ⊢
       exact congrArg (Sum.inr ∘ Sum.inl)
         (Sym2.eq_iff.2 (.inl ⟨by linear_combination -hsq, by linear_combination -hsq⟩))
@@ -617,22 +644,29 @@ private lemma charExponents_twist (hp : 2 ≤ p) (d : SerreWeightData p) :
     obtain ⟨c, rfl⟩ : ∃ c, β = c + 1 := ⟨β - 1, by omega⟩
     simp only [twist_wild]
     split_ifs
-    · simp [charExponents, twistCharExponents]
-    · simp [charExponents, twistCharExponents, key c (by omega)]
-    · simp [charExponents, twistCharExponents, key α (by omega)]
-    · simp [charExponents, twistCharExponents, key α (by omega), key c (by omega)]
+    · simp
+    · simp [key c (by omega)]
+    · simp [key α (by omega)]
+    · simp [key α (by omega), key c (by omega)]
 
-private lemma twistCharExponents_iterate (p n : ℕ) :
+/-- Twisting `n` times by `χ` is the same as twisting once by `χ ^ n` on the exponents. -/
+theorem twistCharExponents_iterate (p n : ℕ) :
     (twistCharExponents p 1)^[n] = twistCharExponents p n := by
   induction n with
-  | zero => ext x; rcases x with x | x | ⟨x, y, t⟩ <;> simp [twistCharExponents]
+  | zero => ext x; rcases x with x | x | ⟨x, y, t⟩ <;> simp
   | succ n ih =>
     ext x
     rw [Function.iterate_succ_apply', ih]
-    rcases x with x | x | ⟨x, y, t⟩ <;>
-      simp [twistCharExponents, Sym2.map_map, add_assoc, add_mul]
+    rcases x with x | x | ⟨x, y, t⟩ <;> simp [Sym2.map_map, add_assoc, add_mul]
 
-private lemma twistCharExponents_sub_one (p : ℕ) (x : CharExponents p) :
+/-- Twisting `n` times by `χ` acts on the exponents of the inertial characters by
+`twistCharExponents p n`. -/
+theorem charExponents_twist_iterate (hp : 2 ≤ p) (n : ℕ) (d : SerreWeightData p) :
+    (twist^[n] d).charExponents = twistCharExponents p n d.charExponents := by
+  rw [(Function.Semiconj.iterate_right (charExponents_twist hp) n).eq, twistCharExponents_iterate]
+
+/-- Twisting the exponents `p - 1` times by `χ` changes nothing, as `χ ^ (p - 1) = 1`. -/
+theorem twistCharExponents_sub_one (p : ℕ) (x : CharExponents p) :
     twistCharExponents p (p - 1) x = x := by
   have h₂ : ((p - 1 : ℕ) : ZMod (p ^ 2 - 1)) * (p + 1) = 0 := by
     have : (p - 1) * (p + 1) = p ^ 2 - 1 := by
@@ -645,15 +679,14 @@ private lemma twistCharExponents_sub_one (p : ℕ) (x : CharExponents p) :
       rw [this]
       exact ZMod.natCast_self _
     exact_mod_cast h
-  rcases x with x | x | ⟨x, y, t⟩ <;> simp [twistCharExponents, h₂]
+  rcases x with x | x | ⟨x, y, t⟩ <;> simp [h₂]
 
 /-- Twisting `p - 1` times by `χ` returns the original data, as `χ ^ (p - 1) = 1`. -/
 theorem twist_iterate_sub_one (d : SerreWeightData p) : twist^[p - 1] d = d := by
   rcases lt_or_ge p 2 with hp | hp
   · rw [show p - 1 = 0 by omega, Function.iterate_zero_apply]
   · apply charExponents_injective hp
-    rw [(Function.Semiconj.iterate_right (charExponents_twist hp) (p - 1)).eq,
-      twistCharExponents_iterate, twistCharExponents_sub_one]
+    rw [charExponents_twist_iterate hp, twistCharExponents_sub_one]
 
 /-- The exponent moved by twisting: `a` on tame data, `α` on wild data. -/
 private def firstExponent : SerreWeightData p → ℕ
