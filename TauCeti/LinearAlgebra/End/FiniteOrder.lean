@@ -17,6 +17,7 @@ public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import TauCeti.Analysis.RCLike.Sum
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
+import TauCeti.LinearAlgebra.Matrix.Trace.IsIntegral
 import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
@@ -63,6 +64,8 @@ on endomorphisms.
   invertible in the field, is semisimple.
 * `Module.End.isIntegral_trace_of_pow_eq_one`: over any field, the trace of an endomorphism of
   finite order is integral over `ℤ`.
+* `Module.End.isIntegral_trace_of_pow_eq_pow`: an endomorphism with two equal distinct powers
+  has trace integral over every ring below the field.
 * `Module.End.trace_pow_eq_sum_eigenvalue_pow`: over an algebraically closed field, the trace of
   `f ^ m` is the sum of the `m`-th powers of the eigenvalues of `f`, weighted by the dimensions of
   the eigenspaces.
@@ -149,6 +152,27 @@ theorem isIntegral_trace_of_pow_eq_one {f : End k V} {n : ℕ} (hn : n ≠ 0) (h
     (IsAlgClosed.splits _)
   rw [LinearMap.trace_baseChange] at hint
   exact hint.tower_bot (algebraMap k (AlgebraicClosure k)).injective
+
+omit [FiniteDimensional k V] in
+/-- **An endomorphism with two equal distinct powers has integral trace**: if `f ^ a = f ^ b` with
+`a ≠ b`, then the trace of `f` is integral over every ring `R` below `k`. If `V` is not
+finite-dimensional, `LinearMap.trace` is `0` by convention, so the statement holds trivially. -/
+theorem isIntegral_trace_of_pow_eq_pow {R : Type*} [CommRing R] [Algebra R k] {f : End k V}
+    {a b : ℕ} (hab : a ≠ b) (h : f ^ a = f ^ b) : IsIntegral R (LinearMap.trace k V f) := by
+  by_cases hfin : Module.Finite k V
+  swap
+  · rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, LinearMap.zero_apply]
+    exact isIntegral_zero
+  wlog hlt : a < b generalizing a b
+  · exact this hab.symm h.symm (hab.lt_or_gt.resolve_left hlt)
+  -- The matrix of `f` is killed by the monic polynomial `X ^ b - X ^ a` over `R`.
+  have : Nontrivial R := (algebraMap R k).domain_nontrivial
+  let bs := Module.Free.chooseBasis k V
+  have hM : IsIntegral R (LinearMap.toMatrixAlgEquiv bs f) := by
+    refine ⟨X ^ b - X ^ a, monic_X_pow_sub (by rw [degree_X_pow]; exact_mod_cast hlt), ?_⟩
+    simp [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, ← map_pow, h]
+  rw [LinearMap.trace_eq_matrix_trace k bs]
+  exact Matrix.isIntegral_trace hM
 
 omit [FiniteDimensional k V] in
 /-- An endomorphism `f` with `f ^ n = 1` for some `n` invertible in `k` is semisimple, because it

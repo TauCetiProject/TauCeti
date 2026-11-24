@@ -55,35 +55,6 @@ namespace Module.End
 variable {k K V : Type*} [Field k] [Field K] [Algebra k K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] {F : IntermediateField k K}
 
-/-- The trace pairing against a spanning family is injective: if `tr (bᵢ x) = 0` for every member
-`bᵢ` of a family spanning `End_K(V)`, then `x = 0`. -/
-private theorem eq_zero_of_forall_trace_mul_eq_zero {ι : Type*} {b : ι → End K V}
-    (hb : Submodule.span K (Set.range b) = ⊤) {x : End K V}
-    (hx : ∀ i, LinearMap.trace K V (b i * x) = 0) : x = 0 := by
-  refine LinearMap.forall_trace_mul_eq_zero_iff.mp fun y => ?_
-  have hy : y ∈ Submodule.span K (Set.range b) := hb ▸ Submodule.mem_top
-  rw [LinearMap.trace_mul_comm]
-  induction hy using Submodule.span_induction with
-  | mem z hz => obtain ⟨i, rfl⟩ := hz; exact hx i
-  | zero => simp
-  | add z w _ _ hz hw => simp [add_mul, hz, hw]
-  | smul a z _ hz => simp [hz]
-
-/-- The Gram matrix of the trace pairing on a basis of `End_K(V)` is invertible. -/
-private theorem det_trace_mul_ne_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Basis ι K (End K V)) :
-    (Matrix.of fun i j => LinearMap.trace K V (b i * b j)).det ≠ 0 := by
-  intro h
-  obtain ⟨v, hv, hGv⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr h
-  have hx : ∑ j, v j • b j = 0 := by
-    refine eq_zero_of_forall_trace_mul_eq_zero b.span_eq fun i => ?_
-    have := congrFun hGv i
-    simp only [Matrix.mulVec, dotProduct, Matrix.of_apply, Pi.zero_apply] at this
-    simp only [Finset.mul_sum, mul_smul_comm, map_sum, map_smul, smul_eq_mul]
-    rw [← this]
-    exact Finset.sum_congr rfl fun j _ => mul_comm _ _
-  exact hv (funext fun j => Fintype.linearIndependent_iff.mp b.linearIndependent v hx j)
-
 /-- **Coordinates descend.** Let `B` be an `F`-subalgebra of `End_K(V)` all of whose elements have
 trace in `F`, and `b` a `K`-basis of `End_K(V)` with members in `B`. Then every element of `B` is an
 `F`-linear combination of `b`. -/
@@ -96,8 +67,9 @@ private theorem mem_span_of_trace_mem {ι : Type*} [Finite ι] (B : Subalgebra F
   let G' : Matrix ι ι F := Matrix.of fun i j =>
     ⟨LinearMap.trace K V (b i * b j), htr _ (B.mul_mem (hbB i) (hbB j))⟩
   let t' : ι → F := fun j => ⟨LinearMap.trace K V (x * b j), htr _ (B.mul_mem hx (hbB j))⟩
-  have hG : G'.map (algebraMap F K) = Matrix.of fun i j => LinearMap.trace K V (b i * b j) := rfl
-  have hdetG : (G'.map (algebraMap F K)).det ≠ 0 := hG ▸ det_trace_mul_ne_zero b
+  have hG : G'.map (algebraMap F K) = Matrix.of fun i j => LinearMap.trace K V (b i * b j) :=
+    Matrix.ext fun _ _ => by simp [G']
+  have hdetG : (G'.map (algebraMap F K)).det ≠ 0 := hG ▸ LinearMap.det_trace_mul_ne_zero b
   have hdet : algebraMap F K G'.det ≠ 0 := by
     rwa [RingHom.map_det]
   have hdet' : IsUnit G'.det := isUnit_iff_ne_zero.mpr fun h => hdet (by simp [h])
@@ -117,12 +89,9 @@ private theorem mem_span_of_trace_mem {ι : Type*} [Finite ι] (B : Subalgebra F
       funext j
       rw [Function.comp_apply, ← RingHom.map_vecMul, Matrix.vecMul_vecMul,
         Matrix.nonsing_inv_mul _ hdet', Matrix.vecMul_one]
-    set G := G'.map (algebraMap F K)
-    have hunit : IsUnit G.det := isUnit_iff_ne_zero.mpr hdetG
-    calc c = Matrix.vecMul (Matrix.vecMul c G) G⁻¹ := by
-          rw [Matrix.vecMul_vecMul, Matrix.mul_nonsing_inv _ hunit, Matrix.vecMul_one]
-      _ = _ := by
-          rw [hc, ← hc', Matrix.vecMul_vecMul, Matrix.mul_nonsing_inv _ hunit, Matrix.vecMul_one]
+    have hunit : IsUnit (G'.map (algebraMap F K)) :=
+      (Matrix.isUnit_iff_isUnit_det _).mpr (isUnit_iff_ne_zero.mpr hdetG)
+    exact Matrix.vecMul_injective_iff_isUnit.mpr hunit (hc.trans hc'.symm)
   have hx' : x = ∑ i, c' i • b i := by
     conv_lhs => rw [← b.sum_repr x]
     refine Finset.sum_congr rfl fun i _ => ?_
@@ -143,8 +112,7 @@ omit [FiniteDimensional K V] in
 @[simp]
 theorem baseChangeSubalgebraAlgHom_tmul (B : Subalgebra F (End K V)) (a : K) (x : B) :
     baseChangeSubalgebraAlgHom B (a ⊗ₜ x) = a • (x : End K V) := by
-  rw [baseChangeSubalgebraAlgHom, Algebra.TensorProduct.lift_tmul, Algebra.smul_def]
-  rfl
+  simp [baseChangeSubalgebraAlgHom, Algebra.ofId_apply, Algebra.smul_def]
 
 variable (B : Subalgebra F (End K V)) (hspan : Submodule.span K (B : Set (End K V)) = ⊤)
   (htr : ∀ x ∈ B, LinearMap.trace K V x ∈ F)
@@ -180,7 +148,7 @@ theorem bijective_baseChangeSubalgebraAlgHom :
     rw [← AlgHom.range_eq_top, eq_top_iff]
     intro y _
     have hy : y ∈ Submodule.span K (B : Set (End K V)) := hspan ▸ Submodule.mem_top
-    change y ∈ Subalgebra.toSubmodule (baseChangeSubalgebraAlgHom B).range
+    rw [← Subalgebra.mem_toSubmodule]
     refine Submodule.span_le.mpr (fun z hz => ?_) hy
     exact ⟨1 ⊗ₜ ⟨z, hz⟩, by simp⟩
   obtain ⟨T, _, b, hle⟩ := exists_basis_le_span B hspan htr
@@ -221,6 +189,9 @@ theorem finrank_subalgebra_of_trace_mem : finrank F B = finrank K V ^ 2 := by
 include hspan htr in
 /-- A spanning subalgebra with traces in `F` is central over `F`. -/
 theorem isCentral_subalgebra_of_trace_mem : Algebra.IsCentral F B :=
+  -- `Algebra.IsCentral.of_algEquiv` needs both algebras in one universe, but `K ⊗[F] B` lives in
+  -- the maximum of the universes of `K` and `V` and `End K V` in that of `V`, so centrality is
+  -- moved along `e` by hand.
   have : Algebra.IsCentral K (K ⊗[F] B) := ⟨fun x hx => by
     let e := baseChangeSubalgebraAlgEquiv B hspan htr
     have hx' : e x ∈ Subalgebra.center K (End K V) :=
