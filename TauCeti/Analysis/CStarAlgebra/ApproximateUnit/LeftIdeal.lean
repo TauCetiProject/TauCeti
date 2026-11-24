@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Topology.ApproximateUnit
 
 /-!
 # Approximate identities in algebraic left ideals of C⋆-algebras
@@ -178,15 +179,6 @@ theorem tendsto_mul_resolventCutoff_sum {S : Set A} {x : A} (hx : x ∈ S) :
   exact Finset.single_le_sum (f := fun y : S ↦ star (y : A) * y)
     (fun _ _ ↦ star_mul_self_nonneg _) (hF (Finset.mem_singleton_self _))
 
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- Along a filter of eventually self-adjoint elements, `star x * e → star x` implies
-`e * x → x`. -/
-theorem tendsto_mul_right_of_tendsto_mul_left_star {l : Filter A} (hl : ∀ᶠ e in l, IsSelfAdjoint e)
-    {x : A} (h : Tendsto (star x * ·) l (𝓝 (star x))) : Tendsto (· * x) l (𝓝 x) := by
-  refine (star_star x ▸ h.star).congr' ?_
-  filter_upwards [hl] with e he
-  simp [he.star_eq]
-
 end TauCeti.CStarAlgebra
 
 namespace Submodule
@@ -216,8 +208,8 @@ theorem exists_rightApproximateUnit (L : Submodule ℂ A) (hL : ∀ a : A, ∀ x
     resolventCutoff_mem hL hp (hb p.1) (L.sum_mem fun y _ ↦ hL _ _ y.property), hpos,
     eventually_map.mpr <| hδ.mono fun p hp ↦ norm_resolventCutoff_le_one hp.le (hb p.1),
     hright, fun x _ hx' ↦ ?_⟩
-  exact tendsto_mul_right_of_tendsto_mul_left_star (hpos.mono fun _ ↦ IsSelfAdjoint.of_nonneg)
-    (hright _ hx')
+  simpa using TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x)
+    (hpos.mono fun _ ↦ IsSelfAdjoint.of_nonneg) (hright _ hx')
 
 /-- A complex right ideal `R` of a C⋆-algebra, not necessarily closed, has a left approximate
 identity of positive contractions lying in `R` itself: a proper filter along which `e * x → x`
@@ -239,7 +231,8 @@ theorem exists_leftApproximateUnit (R : Submodule ℂ A) (hR : ∀ a : A, ∀ x 
   refine ⟨l, hl, ?_, hpos, hnorm, fun x hx ↦ ?_, fun x _ hx' ↦ ?_⟩
   · filter_upwards [hmemL, hsa] with e he hsa
     simpa [hsa.star_eq] using hmem.mp he
-  · exact tendsto_mul_right_of_tendsto_mul_left_star hsa (hright _ (hmem.mpr (by simpa)))
+  · simpa using TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x) hsa
+      (hright _ (hmem.mpr (by simpa)))
   · exact hright x (hmem.mpr hx')
 
 /-- A norm-separable complex left ideal `L` of a C⋆-algebra, not necessarily closed, has a
