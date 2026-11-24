@@ -24,8 +24,8 @@ of finite type (Stacks 03RW). This file provides the stratifications, independen
 the stratification of `U` by `U` itself, the common refinement of two stratifications, the
 restriction to a smaller open, and the pullback along an arbitrary morphism of schemes. No
 Noetherian hypothesis on `X` enters. Constructibility of the images is imposed as a field, since
-the image of an immersion need not be constructible when `U` is not quasi-compact and
-quasi-separated.
+the image of an immersion need not be constructible, even when `U` is affine: a non-quasi-compact
+open of an affine scheme is the image of an open immersion but is not constructible.
 
 The images of the pieces form a finite locally closed stratification of `U`, and refinement is
 the order on `TauCeti.FiniteStratification`, so a piece with empty image plays no role in it.
@@ -124,9 +124,12 @@ lemma mem_toFiniteStratification_parts {s : Set U} :
 
 /-- A stratification `𝒯` *refines* `𝒮` if every nonempty piece of `𝒯` lies in a piece of `𝒮`,
 that is, if the stratification of `U` by the images of the pieces of `𝒯` refines that of `𝒮`. -/
-@[expose]
 def Refines (𝒯 𝒮 : ConstructibleStratification X U) : Prop :=
   𝒯.toFiniteStratification ≤ 𝒮.toFiniteStratification
+
+lemma refines_iff {𝒮 𝒯 : ConstructibleStratification X U} :
+    𝒯.Refines 𝒮 ↔ 𝒯.toFiniteStratification ≤ 𝒮.toFiniteStratification :=
+  Iff.rfl
 
 /-- Every nonempty piece of a refinement lies in a piece of the coarser stratification. -/
 lemma Refines.exists_range_subset {𝒮 𝒯 : ConstructibleStratification X U} (h : 𝒯.Refines 𝒮)
@@ -144,6 +147,17 @@ lemma Refines.exists_range_subset {𝒮 𝒯 : ConstructibleStratification X U} 
     rw [Scheme.Opens.range_ι]
     exact 𝒯.range_subset j hz
   exact hst (a := w) hz
+
+/-- `𝒯` refines `𝒮` if and only if every nonempty piece of `𝒯` lies in a piece of `𝒮`. -/
+lemma refines_iff_range_subset {𝒮 𝒯 : ConstructibleStratification X U} :
+    𝒯.Refines 𝒮 ↔ ∀ j, (Set.range (𝒯.hom j)).Nonempty →
+      ∃ i, Set.range (𝒯.hom j) ⊆ Set.range (𝒮.hom i) := by
+  refine ⟨fun h ↦ h.exists_range_subset, fun h ↦ TauCeti.FiniteStratification.le_def.2 ?_⟩
+  intro s hs
+  obtain ⟨⟨y, hy⟩, j, rfl⟩ := 𝒯.mem_toFiniteStratification_parts.1 hs
+  obtain ⟨i, hi⟩ := h j ⟨_, hy⟩
+  exact ⟨_, 𝒮.mem_toFiniteStratification_parts.2 ⟨⟨y, hi hy⟩, i, rfl⟩,
+    Set.preimage_mono hi⟩
 
 @[refl]
 lemma Refines.refl : 𝒮.Refines 𝒮 :=
@@ -231,6 +245,13 @@ lemma inf_hom_eq_snd (𝒯 : ConstructibleStratification X U) (i : 𝒮.ι × �
     (𝒮.inf 𝒯).hom i = Limits.pullback.snd _ _ ≫ 𝒯.hom i.2 :=
   Limits.pullback.condition
 
+/-- The piece of the common refinement indexed by `i` is the fibre product of the pieces `i.1`
+and `i.2` over `X`. -/
+lemma isPullback_inf_hom (𝒯 : ConstructibleStratification X U) (i : 𝒮.ι × 𝒯.ι) :
+    IsPullback (Limits.pullback.fst _ _ : (𝒮.inf 𝒯).obj i ⟶ 𝒮.obj i.1)
+      (Limits.pullback.snd _ _) (𝒮.hom i.1) (𝒯.hom i.2) :=
+  IsPullback.of_hasPullback _ _
+
 /-- The pieces of the common refinement are the intersections of the pieces. -/
 @[simp]
 lemma range_inf_hom (𝒯 : ConstructibleStratification X U) (i : 𝒮.ι × 𝒯.ι) :
@@ -296,6 +317,12 @@ lemma restrict_hom {V : X.Opens} (hVU : V ≤ U) (i : 𝒮.ι) :
 lemma restrict_hom_eq_snd {V : X.Opens} (hVU : V ≤ U) (i : 𝒮.ι) :
     (𝒮.restrict hVU).hom i = Limits.pullback.snd _ _ ≫ V.ι :=
   Limits.pullback.condition
+
+/-- The piece `(𝒮.restrict hVU).obj i` of a restriction to `V`, for any `hVU : V ≤ U`, is the
+fibre product of the piece `i` with `V` over `X`. -/
+lemma isPullback_restrict_hom (V : X.Opens) (i : 𝒮.ι) :
+    IsPullback (Limits.pullback.fst (𝒮.hom i) V.ι) (Limits.pullback.snd _ _) (𝒮.hom i) V.ι :=
+  IsPullback.of_hasPullback _ _
 
 /-- The pieces of the restriction to `V` are the intersections of the pieces with `V`. -/
 @[simp]
