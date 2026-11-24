@@ -279,6 +279,15 @@ theorem smul_mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid 
   simp only [mem_primaryComponent_span_singleton_iff, smul_smul, ← pow_succ]
   exact ⟨fun ⟨n, hn⟩ ↦ ⟨n + 1, hn⟩, fun ⟨n, hn⟩ ↦ ⟨n, by rw [pow_succ', mul_smul, hn, smul_zero]⟩⟩
 
+/-- The primary component of `(r)` is `r`-saturated: `r ^ k • x` lies in it exactly when `x`
+does. -/
+theorem pow_smul_mem_primaryComponent_span_singleton_iff {N : Type*} [AddCommMonoid N]
+    [Module R N] (r : R) (k : ℕ) {x : N} :
+    r ^ k • x ∈ (span {r}).primaryComponent N ↔ x ∈ (span {r}).primaryComponent N := by
+  induction k with
+  | zero => rw [pow_zero, one_smul]
+  | succ k ih => rw [pow_succ', mul_smul, smul_mem_primaryComponent_span_singleton_iff, ih]
+
 /-- The primary component of `(r)` vanishes exactly when `r` acts regularly. -/
 theorem primaryComponent_span_singleton_eq_bot_iff {N : Type*} [AddCommGroup N] [Module R N]
     (r : R) : (span {r}).primaryComponent N = ⊥ ↔ IsSMulRegular N r := by

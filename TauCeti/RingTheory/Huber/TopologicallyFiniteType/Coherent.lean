@@ -217,7 +217,9 @@ private theorem fg_comap_span_pow_of_surjective (hA : IsTopologicallyFinitePrese
   have : Algebra.FinitePresentation (O ⧸ Ideal.span {ϖ ^ k}) (A ⧸ IA) :=
     hA.finitePresentation_quotient_pow hϖ k
   have hcomp : IA.comap π = RingHom.ker (g.toRingHom.comp (Ideal.Quotient.mk IP)) := by
-    have hgmk (x : P) : g (Ideal.Quotient.mk IP x) = Ideal.Quotient.mk IA (π x) := rfl
+    have hgmk (x : P) : g (Ideal.Quotient.mk IP x) = Ideal.Quotient.mk IA (π x) := by
+      rw [← AlgHom.restrictScalars_apply O, AlgHom.restrictScalars_extendScalarsOfSurjective,
+        Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk]
     ext x
     simp only [Ideal.mem_comap, RingHom.mem_ker, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
       RingHom.coe_coe, hgmk, Ideal.Quotient.eq_zero_iff_mem]
@@ -261,10 +263,7 @@ theorem IsTopologicallyFinitePresentation.iff_of_surjective {n : ℕ}
       obtain ⟨y, hy⟩ := hxB
       have hy' : π x = algebraMap O A ϖ ^ k • y := by rw [← hy, smul_eq_mul, mul_comm, map_pow]
       have hyT : y ∈ T := by
-        rw [hy', Ideal.mem_primaryComponent_span_singleton_iff] at hxT
-        obtain ⟨m, hm⟩ := hxT
-        exact (Ideal.mem_primaryComponent_span_singleton_iff _).mpr
-          ⟨m + k, by rwa [pow_add, mul_smul]⟩
+        rwa [hy', Ideal.pow_smul_mem_primaryComponent_span_singleton_iff] at hxT
       rw [RingHom.mem_ker, hy', ← map_pow, algebraMap_smul, hk y hyT]
   have : Module.IsCoherent P B := (Submodule.isCoherent_iff_fg).mpr hB
   have : Module.IsCoherent P (Ideal.comap π T) := (Submodule.isCoherent_iff_fg).mpr hT
