@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import Mathlib.Algebra.Lie.IdealOperations
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.LinearAlgebra.Basis.Basic
-import TauCeti.Algebra.Lie.BaseChange.Perfect
+import TauCeti.Algebra.Lie.Perfect
 import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
@@ -34,11 +34,17 @@ This file supplies general constructions for Lie modules that are missing from M
 
 * `LieIdeal.center_eq_bot_of_isCompl_center`: an ideal complementary to the centre is
   centreless; this needs only a commutative base ring, with no finite-dimensionality assumption.
+* `TauCeti.exists_mem_center_add_mem_derivedSeries_of_sup_eq_top` and
+  `TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top`: when `L = 𝔷(L) + ⁅L, L⁆`, every
+  element splits as a central element plus a derived one, and the derived ideal is perfect.
 * `LieHom.center_eq_bot_of_range_eq_of_isCompl` and
   `LieHom.derivedSeries_one_eq_top_of_range_eq_of_isCompl`: a Lie algebra embedded onto an ideal
   complementary to the centre is centreless, and one embedded onto the derived ideal is perfect
   when `L = 𝔷(L) ⊕ ⁅L, L⁆`. These read the Lie algebra of a subgroup integrating `⁅𝔤, 𝔤⁆`.
-* `LieEquiv.map_center`: a Lie algebra isomorphism maps the centre onto the centre.
+* `LieEquiv.apply_mem_center` and `LieEquiv.map_center`: a Lie algebra isomorphism maps the centre
+  onto the centre.
+* `LieEquiv.isCompl_map`: a Lie algebra isomorphism maps complementary ideals to complementary
+  ideals.
 * `LieEquiv.isCompl_center_derivedSeries_iff`: whether the centre and the derived ideal are
   complementary is invariant under isomorphism of Lie algebras.
 * `LieModule.isIrreducible_compLieHom_of_eq_bot_or_eq_top`: an underlying-submodule dichotomy for
@@ -486,7 +492,7 @@ theorem _root_.LieEquiv.map_engel (e : L ≃ₗ⁅R⁆ L') (x : L) :
 
 section Centralizer
 
-open _root_.LieAlgebra LinearMap Module
+open LieAlgebra LinearMap Module
 
 variable {R : Type*} {L : Type u} {L' : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
   [LieRing L'] [LieAlgebra R L']
@@ -662,6 +668,40 @@ theorem center_eq_bot_of_isCompl_center {R L : Type*} [CommRing R] [LieRing L]
 
 end LieIdeal
 
+namespace TauCeti
+
+open LieAlgebra
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- Every element of a Lie algebra spanned by its centre and its derived ideal is a central element
+plus an element of the derived ideal. -/
+theorem exists_mem_center_add_mem_derivedSeries_of_sup_eq_top
+    (h : center R L ⊔ derivedSeries R L 1 = ⊤) (x : L) :
+    ∃ z ∈ center R L, ∃ d ∈ derivedSeries R L 1, z + d = x :=
+  (LieSubmodule.mem_sup _ _ x).mp (h ▸ LieSubmodule.mem_top x)
+
+/-- **The derived ideal is perfect when it spans the Lie algebra together with the centre**:
+`⁅⁅L, L⁆, ⁅L, L⁆⁆ = ⁅L, L⁆`. A central element contributes nothing to a bracket, so writing both
+arguments of a generating bracket of `⁅L, L⁆` as a central element plus an element of `⁅L, L⁆`
+leaves only the brackets of the derived ideal with itself. -/
+theorem lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top
+    (h : center R L ⊔ derivedSeries R L 1 = ⊤) :
+    ⁅derivedSeries R L 1, derivedSeries R L 1⁆ = derivedSeries R L 1 := by
+  refine le_antisymm (LieSubmodule.lie_le_right _ _) ?_
+  have hDtop : derivedSeries R L 1 = ⁅(⊤ : LieIdeal R L), (⊤ : LieIdeal R L)⁆ := rfl
+  rw [hDtop]
+  refine (LieSubmodule.lie_le_iff _ _ _).2 fun y _ z _ ↦ ?_
+  obtain ⟨zy, hzy, dy, hdy, rfl⟩ := exists_mem_center_add_mem_derivedSeries_of_sup_eq_top h y
+  obtain ⟨zz, hzz, dz, hdz, rfl⟩ := exists_mem_center_add_mem_derivedSeries_of_sup_eq_top h z
+  have hzy0 : ∀ w : L, ⁅zy, w⁆ = 0 := fun w ↦ by
+    rw [← lie_skew, (LieModule.mem_maxTrivSubmodule R L L zy).1 hzy w, neg_zero]
+  have hzz0 : ∀ w : L, ⁅w, zz⁆ = 0 := (LieModule.mem_maxTrivSubmodule R L L zz).1 hzz
+  rw [add_lie, hzy0, lie_add, hzz0, zero_add, zero_add]
+  exact LieSubmodule.lie_mem_lie hdy hdz
+
+end TauCeti
+
 namespace LieHom
 
 open LieAlgebra
@@ -681,50 +721,33 @@ theorem center_eq_bot_of_range_eq_of_isCompl (f : L' →ₗ⁅R⁆ L) (hf : Func
   have hfx : f x ∈ J := by
     rw [← LieSubmodule.mem_toSubmodule, ← hr]
     exact LinearMap.mem_range_self _ x
-  -- `f x`, read in `J`, is central there: every element of `J` is `f a`, and `⁅x, a⁆ = 0`.
+  -- `f x`, read in `J`, is central there: every element of `J` is `f a`, and `⁅a, x⁆ = 0`.
   have hcen : (⟨f x, hfx⟩ : J) ∈ center R J := by
     refine (LieModule.mem_maxTrivSubmodule R J J _).mpr fun y ↦ Subtype.ext ?_
     obtain ⟨a, ha⟩ := hJ y y.property
-    rw [← LieIdeal.incl_apply, LieHom.map_lie, LieIdeal.incl_apply, LieIdeal.incl_apply, ← ha,
-      ← map_lie, (LieModule.mem_maxTrivSubmodule R L' L' x).mp hx a, map_zero,
-      ZeroMemClass.coe_zero]
+    simpa [← ha] using congrArg f ((LieModule.mem_maxTrivSubmodule R L' L' x).mp hx a)
   rw [LieIdeal.center_eq_bot_of_isCompl_center J hc, LieSubmodule.mem_bot] at hcen
   exact hf (by simpa using congrArg Subtype.val hcen)
 
 /-- **A Lie algebra embedded onto the derived ideal is perfect when the derived ideal complements
 the centre.** If `L = 𝔷(L) ⊕ ⁅L, L⁆` and `f : L' → L` is injective with range `⁅L, L⁆`, then
-`⁅L', L'⁆ = L'`: the central parts of two elements of `L` do not contribute to their bracket, so
-`⁅L, L⁆` is spanned by brackets of elements of `⁅L, L⁆`, the images of brackets in `L'`. -/
+`⁅L', L'⁆ = L'`: the derived ideal `⁅L, L⁆` is perfect
+(`TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top`), and `f` identifies `L'` with
+it. -/
 theorem derivedSeries_one_eq_top_of_range_eq_of_isCompl (f : L' →ₗ⁅R⁆ L)
     (hf : Function.Injective f)
     (hr : LinearMap.range f.toLinearMap = (derivedSeries R L 1).toSubmodule)
     (hc : IsCompl (center R L) (derivedSeries R L 1)) : derivedSeries R L' 1 = ⊤ := by
-  -- Every element of `L` is a central element plus `f a`.
-  have hdec (y : L) : ∃ c ∈ center R L, ∃ a, c + f a = y := by
-    have hy : y ∈ center R L ⊔ derivedSeries R L 1 := by
-      rw [hc.sup_eq_top]
-      exact LieSubmodule.mem_top y
-    obtain ⟨c, hc, d, hd, rfl⟩ := (LieSubmodule.mem_sup _ _ y).mp hy
-    rw [← LieSubmodule.mem_toSubmodule, ← hr] at hd
-    obtain ⟨a, rfl⟩ := hd
-    exact ⟨c, hc, a, rfl⟩
-  have hle : Submodule.span R {⁅y, z⁆ | (y : L) (z : L)} ≤
-      (Submodule.span R {⁅a, b⁆ | (a : L') (b : L')}).map f.toLinearMap := by
-    rw [Submodule.span_le]
-    rintro _ ⟨y, z, rfl⟩
-    obtain ⟨c, hc, a, rfl⟩ := hdec y
-    obtain ⟨c', hc', b, rfl⟩ := hdec z
-    have hc0 : ⁅c, f b⁆ = 0 := by
-      rw [← lie_skew, (LieModule.mem_maxTrivSubmodule R L L c).mp hc, neg_zero]
-    refine ⟨⁅a, b⁆, Submodule.subset_span ⟨a, b, rfl⟩, ?_⟩
-    simp only [coe_toLinearMap, map_lie, add_lie, lie_add,
-      (LieModule.mem_maxTrivSubmodule R L L c').mp hc', hc0, zero_add]
-  refine TauCeti.LieAlgebra.derivedSeries_one_eq_top_of_le_span_lie fun x _ ↦ ?_
-  have hx : f x ∈ Submodule.span R {⁅y, z⁆ | (y : L) (z : L)} := by
-    rw [← coe_derivedSeries_one_eq, LieIdeal.toLieSubalgebra_toSubmodule, ← hr]
-    exact LinearMap.mem_range_self _ x
-  obtain ⟨w, hw, hwx⟩ := hle hx
-  rwa [hf hwx] at hw
+  have hD : derivedSeries R (derivedSeries R L 1) 1 = ⊤ := by
+    rw [LieIdeal.derivedSeries_eq_derivedSeriesOfIdeal_comap, derivedSeriesOfIdeal_succ,
+      derivedSeriesOfIdeal_zero,
+      TauCeti.lie_derivedSeries_derivedSeries_eq_self_of_sup_eq_top hc.sup_eq_top,
+      LieIdeal.comap_incl_self]
+  have hs : (f.range : Set L) = (derivedSeries R L 1).toLieSubalgebra :=
+    congrArg (fun p : Submodule R L ↦ (p : Set L)) (f.range_toSubmodule.trans hr)
+  let e : L' ≃ₗ⁅R⁆ (derivedSeries R L 1).toLieSubalgebra :=
+    (LieEquiv.ofInjective f hf).trans (LieEquiv.ofEq _ _ hs)
+  exact derivedSeries_eq_top_of_surjective e.symm.toLieHom e.symm.surjective hD
 
 end LieHom
 
@@ -735,31 +758,37 @@ open LieAlgebra
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
   [LieAlgebra R L']
 
+/-- A Lie algebra isomorphism maps central elements to central elements. -/
+theorem apply_mem_center (e : L' ≃ₗ⁅R⁆ L) {x : L'} (hx : x ∈ center R L') :
+    e x ∈ center R L := by
+  rw [LieModule.mem_maxTrivSubmodule] at hx ⊢
+  intro y
+  simpa [LieEquiv.map_lie] using congrArg e (hx (e.symm y))
+
 /-- A Lie algebra isomorphism maps the centre onto the centre. -/
 theorem map_center (e : L' ≃ₗ⁅R⁆ L) : (center R L').map (e : L' →ₗ⁅R⁆ L) = center R L := by
   ext x
   rw [← LieSubmodule.mem_toSubmodule, LieIdeal.coe_map_of_surjective e.surjective]
   simp only [Submodule.mem_map, LieSubmodule.mem_toSubmodule, LieHom.coe_toLinearMap,
     LieEquiv.coe_toLieHom]
-  refine ⟨?_, fun hx ↦ ⟨e.symm x, (LieModule.mem_maxTrivSubmodule R L' L' _).mpr
-    fun z ↦ e.injective ?_, e.apply_symm_apply x⟩⟩
-  · rintro ⟨y, hy, rfl⟩
-    refine (LieModule.mem_maxTrivSubmodule R L L _).mpr fun z ↦ ?_
-    rw [← e.apply_symm_apply z, ← map_lie, (LieModule.mem_maxTrivSubmodule R L' L' y).mp hy,
-      map_zero]
-  · rw [LieHom.map_lie, LieEquiv.coe_toLieHom, e.apply_symm_apply,
-      (LieModule.mem_maxTrivSubmodule R L L x).mp hx, map_zero]
+  refine ⟨?_, fun hx ↦ ⟨e.symm x, e.symm.apply_mem_center hx, e.apply_symm_apply x⟩⟩
+  rintro ⟨y, hy, rfl⟩
+  exact e.apply_mem_center hy
+
+/-- A Lie algebra isomorphism maps complementary ideals to complementary ideals. -/
+theorem isCompl_map (e : L' ≃ₗ⁅R⁆ L) {I J : LieIdeal R L'} (h : IsCompl I J) :
+    IsCompl (I.map (e : L' →ₗ⁅R⁆ L)) (J.map (e : L' →ₗ⁅R⁆ L)) := by
+  rw [← LieSubmodule.isCompl_toSubmodule, LieIdeal.coe_map_of_surjective e.surjective,
+    LieIdeal.coe_map_of_surjective e.surjective]
+  exact Submodule.isCompl_map e.toLinearEquiv (LieSubmodule.isCompl_toSubmodule.mpr h)
 
 /-- **Isomorphic Lie algebras have complementary centre and derived algebra together.** -/
 theorem isCompl_center_derivedSeries_iff (e : L' ≃ₗ⁅R⁆ L) :
     IsCompl (center R L') (derivedSeries R L' 1) ↔ IsCompl (center R L) (derivedSeries R L 1) := by
-  have he : (e.toLinearEquiv : L' →ₗ[R] L) = ((e : L' →ₗ⁅R⁆ L) : L' →ₗ[R] L) :=
-    LinearMap.ext fun _ ↦ rfl
-  rw [← LieSubmodule.isCompl_toSubmodule, ← LieSubmodule.isCompl_toSubmodule,
-    (Submodule.orderIsoMapComap e.toLinearEquiv).isCompl_iff, Submodule.orderIsoMapComap_apply,
-    Submodule.orderIsoMapComap_apply, he, ← LieIdeal.coe_map_of_surjective e.surjective,
-    ← LieIdeal.coe_map_of_surjective e.surjective, e.map_center,
-    LieIdeal.derivedSeries_map_eq 1 e.surjective]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · simpa only [e.map_center, LieIdeal.derivedSeries_map_eq 1 e.surjective] using e.isCompl_map h
+  · simpa only [e.symm.map_center, LieIdeal.derivedSeries_map_eq 1 e.symm.surjective] using
+      e.symm.isCompl_map h
 
 end LieEquiv
 
