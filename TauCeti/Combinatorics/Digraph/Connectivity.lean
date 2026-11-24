@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Digraph.ArrowWalk
-public import TauCeti.Combinatorics.Network.Connectivity.Basic
+public import TauCeti.Combinatorics.Network.Connectivity.Degree
 
 /-!
 # Directed connectivity of digraphs
@@ -20,6 +20,10 @@ Vertex deletion is expressed by the induced digraph on the complement.  This giv
 characterization of vertex-strong connectivity and its Menger path characterization.  The paths
 retain the adjacency-arrow representation, so their vertex lists are chains for the original
 digraph and distinct ordered pairs cannot be counted as parallel arrows.
+
+The degree bounds can be sharpened to count only nonloop arrows. In a digraph these are the
+distinct adjacent vertices other than the chosen vertex, so the bounds are expressed by `Set.ncard`
+and require neither decidable adjacency nor a chosen `Fintype` instance.
 
 The connectivity notions follow J. Bang-Jensen and G. Gutin, *Digraphs: Theory, Algorithms and
 Applications*, 2nd ed., Springer, 2009, Sections 5.1 and 5.4.
@@ -111,6 +115,42 @@ theorem isVertexStrong_one_iff : IsVertexStrong D.AdjHom 1 ↔
   rw [TauCeti.isVertexStrong_one, Digraph.isStronglyConnected_iff]
 
 /-! ### Degree bounds -/
+
+/-- On at least two vertices, the arc connectivity of a digraph is at most the number of nonloop
+targets adjacent from any specified vertex, when that set of targets is finite. Loops do not
+contribute to this bound. -/
+theorem arcConnectivity_le_card_nonloop_out [Nontrivial V] (v : V)
+    (hfin : {w | w ≠ v ∧ D.Adj v w}.Finite) :
+    arcConnectivity D.AdjHom ≤ {w | w ≠ v ∧ D.Adj v w}.ncard := by
+  let e : (Σ w : {w : V // w ≠ v}, PLift (D.Adj v w)) ≃ {w : V // w ≠ v ∧ D.Adj v w} :=
+    (Equiv.sigmaPLiftEquivSubtype fun w : {w : V // w ≠ v} ↦ D.Adj v w).trans
+      (Equiv.subtypeSubtypeEquivSubtypeInter _ _)
+  let _ := hfin.fintype
+  let _ : Finite (Σ w : {w : V // w ≠ v}, PLift (D.Adj v w)) :=
+    Finite.of_equiv _ e.symm
+  have hcard : Nat.card (Σ w : {w : V // w ≠ v}, PLift (D.Adj v w)) =
+      {w | w ≠ v ∧ D.Adj v w}.ncard :=
+    (Nat.card_congr e).trans
+      (Nat.card_coe_set_eq ({w | w ≠ v ∧ D.Adj v w} : Set V))
+  simpa [hcard] using TauCeti.arcConnectivity_le_card_nonloop_out (Q := D.AdjHom) v
+
+/-- On at least two vertices, the arc connectivity of a digraph is at most the number of nonloop
+sources adjacent to any specified vertex, when that set of sources is finite. Loops do not
+contribute to this bound. -/
+theorem arcConnectivity_le_card_nonloop_in [Nontrivial V] (v : V)
+    (hfin : {w | w ≠ v ∧ D.Adj w v}.Finite) :
+    arcConnectivity D.AdjHom ≤ {w | w ≠ v ∧ D.Adj w v}.ncard := by
+  let e : (Σ w : {w : V // w ≠ v}, PLift (D.Adj w v)) ≃ {w : V // w ≠ v ∧ D.Adj w v} :=
+    (Equiv.sigmaPLiftEquivSubtype fun w : {w : V // w ≠ v} ↦ D.Adj w v).trans
+      (Equiv.subtypeSubtypeEquivSubtypeInter (fun w : V ↦ w ≠ v) (fun w ↦ D.Adj w v))
+  let _ := hfin.fintype
+  let _ : Finite (Σ w : {w : V // w ≠ v}, PLift (D.Adj w v)) :=
+    Finite.of_equiv _ e.symm
+  have hcard : Nat.card (Σ w : {w : V // w ≠ v}, PLift (D.Adj w v)) =
+      {w | w ≠ v ∧ D.Adj w v}.ncard :=
+    (Nat.card_congr e).trans
+      (Nat.card_coe_set_eq ({w | w ≠ v ∧ D.Adj w v} : Set V))
+  simpa [hcard] using TauCeti.arcConnectivity_le_card_nonloop_in (Q := D.AdjHom) v
 
 /-- On at least two vertices, the arc connectivity of a finite digraph is at most the number of
 targets adjacent from any specified vertex. -/
