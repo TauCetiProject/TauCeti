@@ -192,7 +192,7 @@ theorem _root_.CategoryTheory.CommMon.isInvertible_pullback_relativeProjTwisting
         (Proj.twistingSheaf (B.gradedSectionsGrading U.toOpens) n).restrict V.ι :=
       TauCeti.SheafOfModules.LocalTrivializations.unitIsoRestrict
         (M := Proj.twistingSheaf (B.gradedSectionsGrading U.toOpens) n)
-        (TauCeti.SheafOfModules.freePUnitIsoUnit _ ≪≫ Proj.twistingSheaf.chartIso n b hb)
+        (TauCeti.SheafOfModules.freePUnitIsoUnit _ ≪≫ Proj.twistingSheaf.chartIso n b hb V le_rfl)
     let eV : SheafOfModules.unit (g ''ᵁ V).toScheme.ringCatSheaf ≅
         (B.relativeProjTwistingSheaf n).restrict (g ''ᵁ V).ι :=
       Scheme.Modules.unitIsoRestrictImage g V

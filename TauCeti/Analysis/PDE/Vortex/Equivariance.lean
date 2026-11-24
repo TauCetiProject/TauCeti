@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 public import Mathlib.Analysis.Complex.Isometry
-import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 

@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
-import TauCeti.Algebra.Group.AddChar
+import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
@@ -118,16 +118,15 @@ theorem IsJordanSplitting.equivalent_restrict_iff (h : B.IsJordanSplitting 2 N)
         PadicInt.toZModPow 3 (C w w) = PadicInt.toZModPow 3 (C' w' w') := by
   have h2 : (2 : ℤ_[2]) ^ i ∈ nonZeroDivisors ℤ_[2] :=
     mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0))
-  have hCs : C.IsSymm := IsSymm.of_smul h2 (hC ▸ hB.restrict (N i))
-  have hC's : C'.IsSymm := IsSymm.of_smul h2 (hC' ▸ hB'.restrict (N' i))
+  have h2r : IsLeftRegular ((2 : ℤ_[2]) ^ i) := (isRegular_iff_mem_nonZeroDivisors.mpr h2).left
+  have hCs : C.IsSymm := h2r.isSMulRegular.isSymm_smul_iff.mp (hC ▸ hB.restrict (N i))
+  have hC's : C'.IsSymm := h2r.isSMulRegular.isSymm_smul_iff.mp (hC' ▸ hB'.restrict (N' i))
   set d'' := d'.reindex (Fintype.equivOfCardEq hcard).symm
   rw [← hC, ← hC', equivalent_smul_iff h2,
     hCs.equivalent_iff_two_dvd_iff_and_χ₈_eq_and_eight_dvd hC's d d''
       ((h.isModular i).isUnit_det_of_smul_eq h2 hC d) ((h'.isModular i).isUnit_det_of_smul_eq h2 hC'
         d'') hw hw',
-    det_toMatrix_reindex, forall_dvd_iff_of_smul_eq (isRegular_iff_mem_nonZeroDivisors.mpr h2).left
-      hC 2,
-    forall_dvd_iff_of_smul_eq (isRegular_iff_mem_nonZeroDivisors.mpr h2).left hC' 2,
+    det_toMatrix_reindex, forall_dvd_iff_of_smul_eq h2r hC 2, forall_dvd_iff_of_smul_eq h2r hC' 2,
     Subtype.forall, Subtype.forall,
     PadicInt.eight_dvd_sub_iff_toZModPow_three_eq]
   simp only [restrict_apply, LinearMap.domRestrict_apply]
@@ -174,8 +173,9 @@ private theorem IsJordanSplitting.equivalent_restrict_of_isSquare_five_mul
   have := h''.free k
   have := h''.finite k
   obtain ⟨C'', hC'', hC''p⟩ := isModular_def.mp (h''.isModular k)
-  have hC''s : C''.IsSymm := IsSymm.of_smul (mem_nonZeroDivisors_of_ne_zero
-    (pow_ne_zero k (two_ne_zero : (2 : ℤ_[2]) ≠ 0))) (hC'' ▸ hB'.restrict (N'' k))
+  have hC''s : C''.IsSymm := (IsSMulRegular.of_ne_zero
+    (pow_ne_zero k (two_ne_zero : (2 : ℤ_[2]) ≠ 0))).isSymm_smul_iff.mp
+      (hC'' ▸ hB'.restrict (N'' k))
   obtain ⟨w'', hw''⟩ := hC''s.exists_isCharacteristic PadicInt.two_dvd_sq_sub_self
   -- Bases of `N' k` and `N'' k` of the same size `n`.
   set n := Fintype.card ι'
@@ -537,8 +537,8 @@ theorem IsJordanSplitting.equivalent_iff_of_forall_even_or_even [Module.Finite �
       choose w'' hw'' using fun i ↦ by
         have := h''.free i
         have := hC''p i
-        exact (IsSymm.of_smul (mem_nonZeroDivisors_of_ne_zero
-          (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0)))
+        exact ((IsSMulRegular.of_ne_zero
+          (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0))).isSymm_smul_iff.mp
           (hC'' i ▸ hB'.restrict (N'' i))).exists_isCharacteristic PadicInt.two_dvd_sq_sub_self
       let (i : ℕ) := h''.free i
       let (i : ℕ) := h''.finite i

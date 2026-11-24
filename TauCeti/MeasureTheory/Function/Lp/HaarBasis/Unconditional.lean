@@ -8,8 +8,11 @@ module
 public import TauCeti.Analysis.Normed.Module.Bases.Unconditional
 public import TauCeti.Analysis.SpecialFunctions.Pow.Burkholder
 public import TauCeti.MeasureTheory.Function.Lp.HaarBasis.Basic
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
+import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.MeasureTheory.Function.Lp.Duality
-import TauCeti.MeasureTheory.Function.Lp.HaarBasis.L2
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -23,14 +26,12 @@ equal to `dyadicProj 𝕜 p N`.
 
 Over `ℝ`, Burkholder's martingale-transform bound gives the constant
 `max p.toReal (p.toReal / (p.toReal - 1)) - 1` for finite signed Haar sums and finite signed
-coordinate multipliers, and `max p.toReal (p.toReal / (p.toReal - 1)) / 2` for finite coordinate
-projections and the unconditional basis constant `nnNormProjBound`. Over `[RCLike 𝕜]`, finite
-signed Haar sums and signed coordinate multipliers carry an additional factor of `2`, while finite
-coordinate projections and `nnNormProjBound` are bounded by
-`max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2`. At `p = 2`, `nnNormProjBound` equals `1`, using
-`TauCeti.unitInterval.norm_proj_haarBasis_two_le` from
-`TauCeti.MeasureTheory.Function.Lp.HaarBasis.L2` (where Parseval's identity and the `L²` isometry
-of unimodular multipliers live).
+coordinate multipliers, and hence `max p.toReal (p.toReal / (p.toReal - 1)) / 2` for finite
+coordinate projections and the unconditional basis constant `nnNormProjBound`. Over `[RCLike 𝕜]`,
+the signed bounds carry an additional factor of `2`, giving
+`max p.toReal (p.toReal / (p.toReal - 1)) - 1 / 2` for finite coordinate projections and
+`nnNormProjBound`. At `p = 2`, finite Haar sums satisfy Parseval's identity, unimodular Haar
+multipliers are `L²` isometries, and `nnNormProjBound` equals `1`.
 
 ## Main definitions
 
@@ -41,6 +42,9 @@ of unimodular multipliers live).
 
 * `TauCeti.unitInterval.integral_burkholderPhi_haarFun_nonneg`: nonnegativity of the integrated
   Burkholder function on signed Haar partial sums for `2 ≤ p`.
+* `TauCeti.unitInterval.norm_sq_sum_haarBasis_two`,
+  `TauCeti.unitInterval.norm_sum_unimodular_haarBasis_two`: Parseval's identity and `L²` isometry
+  of unimodular Haar multipliers.
 * `TauCeti.unitInterval.norm_sum_signed_haarBasis_real_le`: real `Lᵖ` sign-transform bound
   `max p.toReal (p.toReal / (p.toReal - 1)) - 1` on signed Haar sums for `1 < p < ∞`.
 * `TauCeti.unitInterval.norm_sum_signed_haarBasis_le`: `Lᵖ(I; 𝕜)` sign-transform bound on signed
@@ -65,7 +69,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter TauCeti
-open scoped ENNReal Topology unitInterval
+open scoped ENNReal InnerProductSpace Topology unitInterval
 
 namespace TauCeti.unitInterval
 
@@ -279,6 +283,21 @@ theorem integral_rpow_abs_haarFun_signed_le {p : ℝ} (hp : 2 ≤ p)
   dsimp only [haarSum, d] at hle hΦ0
   linarith
 
+private theorem coeFn_sum_haarBasis {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ∞) (c : ℕ → 𝕜) (N : ℕ) :
+    (∑ k ∈ Finset.range N, c k • haarBasis 𝕜 p hp k : Lp 𝕜 p (volume : Measure I)) =ᵐ[volume]
+      fun x => ∑ k ∈ Finset.range N, c k * (haarFun k x : 𝕜) := by
+  have hterm (k : ℕ) :
+      (c k • haarBasis 𝕜 p hp k : Lp 𝕜 p (volume : Measure I)) =ᵐ[volume]
+        fun x => c k * (haarFun k x : 𝕜) := by
+    filter_upwards [Lp.coeFn_smul (c k) (haarBasis 𝕜 p hp k),
+      coeFn_haarBasis (𝕜 := 𝕜) (p := p) hp k] with x h1 h2
+    rw [h1, Pi.smul_apply, h2, smul_eq_mul]
+  filter_upwards [Lp.coeFn_finsetSum (Finset.range N) fun k => c k • haarBasis 𝕜 p hp k,
+    ae_all_iff.2 fun k : Fin N => hterm k] with x hsum hk
+  rw [hsum, Finset.sum_apply]
+  exact Finset.sum_congr rfl fun k hk_mem => hk ⟨k, Finset.mem_range.1 hk_mem⟩
+
 /-- **`Lᵖ` sign-transform bound for the real Haar basis (`2 ≤ p < ∞`).** -/
 theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp2 : 2 ≤ p) (hp : p ≠ ∞) (c : ℕ → ℝ) {ε : ℕ → ℝ} (hε : ∀ k, |ε k| = 1) (N : ℕ) :
@@ -292,19 +311,83 @@ theorem norm_sum_signed_haarBasis_real_le_of_two_le {p : ℝ≥0∞} [Fact (1 �
   have hf_rpow : ‖f‖ ^ r = ∫ x, |∑ k ∈ Finset.range N, c k * haarFun k x| ^ r := by
     rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp f]
     refine integral_congr_ae ?_
-    filter_upwards [coeFn_sum_haarBasis hp c (Finset.range N)] with x hx
+    filter_upwards [coeFn_sum_haarBasis hp c N] with x hx
     simp only [f, r, Real.norm_eq_abs, hx, RCLike.ofReal_real_eq_id, id_eq]
   have hg_rpow : ‖g‖ ^ r = ∫ x, |∑ k ∈ Finset.range N, (ε k * c k) * haarFun k x| ^ r := by
     rw [← Lp.integral_norm_rpow_eq_norm_rpow hp0 hp g]
     refine integral_congr_ae ?_
-    filter_upwards [coeFn_sum_haarBasis hp (fun k => ε k * c k) (Finset.range N)] with x hx
+    filter_upwards [coeFn_sum_haarBasis hp (fun k => ε k * c k) N] with x hx
     simp only [g, r, Real.norm_eq_abs, hx, RCLike.ofReal_real_eq_id, id_eq]
   refine (Real.rpow_le_rpow_iff (norm_nonneg g)
     (mul_nonneg (by linarith) (norm_nonneg f)) (by linarith : 0 < r)).1 ?_
   rw [Real.mul_rpow (by linarith) (norm_nonneg f), hg_rpow, hf_rpow]
   exact integral_rpow_abs_haarFun_signed_le hr2 c hε N
 
+/-! ### `L²` orthogonality and unimodular multipliers -/
+
+/-- **Parseval's identity for finite Haar sums in `L²([0, 1]; 𝕜)`.** -/
+theorem norm_sq_sum_haarBasis_two (𝕜 : Type*) [RCLike 𝕜] (c : ℕ → 𝕜) (A : Finset ℕ) :
+    ‖∑ k ∈ A, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ ^ 2 =
+      ∑ k ∈ A, ‖c k‖ ^ 2 * ∫ x, haarFun k x ^ 2 := by
+  have horth : (A : Set ℕ).Pairwise fun j k =>
+      ⟪c j • haarBasis 𝕜 2 ENNReal.ofNat_ne_top j,
+        c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
+    intro j _ k _ hjk
+    have hjk0 :
+        ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k⟫_𝕜 = 0 := by
+      rw [L2.inner_def]
+      calc
+        ∫ x, ⟪haarBasis 𝕜 2 ENNReal.ofNat_ne_top j x, haarBasis 𝕜 2 ENNReal.ofNat_ne_top k x⟫_𝕜
+            = ∫ x, ((haarFun j x * haarFun k x : ℝ) : 𝕜) := by
+              refine integral_congr_ae ?_
+              filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top j,
+                coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hj hk
+              rw [hj, hk, RCLike.inner_apply, RCLike.conj_ofReal]
+              push_cast
+              ring
+        _ = ((∫ x, haarFun j x * haarFun k x : ℝ) : 𝕜) := integral_ofReal
+        _ = 0 := by rw [integral_haarFun_mul_of_ne hjk, RCLike.ofReal_zero]
+    rw [inner_smul_left, inner_smul_right, hjk0, mul_zero, mul_zero]
+  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero horth]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [norm_smul, mul_pow, ← Lp.integral_norm_sq_eq_norm_sq]
+  congr 1
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_haarBasis (𝕜 := 𝕜) (p := 2) ENNReal.ofNat_ne_top k] with x hx
+  rw [hx, RCLike.norm_ofReal, sq_abs]
+
+/-- Unimodular Haar multipliers (`‖u k‖ = 1` for `k ∈ A`, in particular real signs `±1`) are
+`L²` isometries. -/
+theorem norm_sum_unimodular_haarBasis_two (𝕜 : Type*) [RCLike 𝕜]
+    (c : ℕ → 𝕜) {u : ℕ → 𝕜} (A : Finset ℕ) (hu : ∀ k ∈ A, ‖u k‖ = 1) :
+    ‖∑ k ∈ A, (u k * c k) • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ =
+      ‖∑ k ∈ A, c k • haarBasis 𝕜 2 ENNReal.ofNat_ne_top k‖ := by
+  refine sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _) |>.1 ?_
+  rw [norm_sq_sum_haarBasis_two, norm_sq_sum_haarBasis_two]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  rw [norm_mul, hu k hk, one_mul]
+
 /-! ### Hölder duality for `1 < p ≤ 2` -/
+
+private theorem integral_haarFun_mul_dyadicProj {q : ℝ≥0∞} [Fact (1 ≤ q)] {k N : ℕ}
+    (hk : k < N) (g : Lp ℝ q (volume : Measure I)) :
+    ∫ x, haarFun k x * g x = ∫ x, haarFun k x * dyadicProj ℝ q N g x := by
+  have hN : N ≠ 0 := by omega
+  have hm : StronglyMeasurable[dyadicFiltration N] (haarFun k) :=
+    ((measurable_haarFun_dyadicFiltration k).mono
+      (dyadicFiltration.mono (by omega)) le_rfl).stronglyMeasurable
+  have hg_int : Integrable g (volume : Measure I) := (Lp.memLp g).integrable Fact.out
+  have hpull := condExp_stronglyMeasurable_mul_of_bound (dyadicFiltration.le N) hm hg_int 1
+    (ae_of_all _ (norm_haarFun_le k))
+  calc
+    ∫ x, haarFun k x * g x
+        = ∫ x, volume[haarFun k * ⇑g | dyadicFiltration N] x :=
+          (integral_condExp (dyadicFiltration.le N)).symm
+    _ = ∫ x, haarFun k x * volume[⇑g | dyadicFiltration N] x := integral_congr_ae hpull
+    _ = ∫ x, haarFun k x * dyadicProj ℝ q N g x := by
+          refine integral_congr_ae ?_
+          filter_upwards [dyadicProj_ae_eq hN g] with x hx
+          rw [hx]
 
 /-- Orthogonality of distinct Haar functions makes signed Haar partial sums self-transpose with
 respect to the integral pairing on `I`. -/
@@ -360,7 +443,7 @@ private theorem toDual_sum_signed_haarBasis {p q : ℝ≥0∞} [Fact (1 ≤ p)] 
     ∫ x, (∑ k ∈ Finset.range N, (ε k * c k) • haarBasis ℝ p hp k) x * g x
         = ∫ x, haarSum (fun k => ε k * c k) N x * g x := by
           refine integral_congr_ae ?_
-          filter_upwards [coeFn_sum_haarBasis hp (fun k => ε k * c k) (Finset.range N)] with x hx
+          filter_upwards [coeFn_sum_haarBasis hp (fun k => ε k * c k) N] with x hx
           simp only [haarSum, hx, RCLike.ofReal_real_eq_id, id_eq]
     _ = ∑ k ∈ Finset.range N, (ε k * c k) * ∫ x, haarFun k x * g x := by
           simp_rw [haarSum, Finset.sum_mul, hmul]
@@ -368,24 +451,22 @@ private theorem toDual_sum_signed_haarBasis {p q : ℝ≥0∞} [Fact (1 ≤ p)] 
           exact Finset.sum_congr rfl fun k _ => integral_const_mul _ _
     _ = ∑ k ∈ Finset.range N, (ε k * c k) * ∫ x, haarFun k x * gN x := by
           refine Finset.sum_congr rfl fun k hk => ?_
-          have hproj := integral_haarFun_mul_dyadicProj (Finset.mem_range.1 hk) g
-          simp only [RCLike.ofReal_real_eq_id, id_eq] at hproj
-          rw [hproj, hgN_eq]
+          rw [integral_haarFun_mul_dyadicProj (Finset.mem_range.1 hk), hgN_eq]
     _ = ∫ x, haarSum (fun k => ε k * c k) N x * gN x := by
           simp_rw [haarSum, Finset.sum_mul, hmul]
           rw [integral_finsetSum _ fun k _ => (hint_mul hgN_int k).const_mul _]
           exact Finset.sum_congr rfl fun k _ => (integral_const_mul _ _).symm
     _ = ∫ x, haarSum (fun k => ε k * c k) N x * haarSum d N x := by
           refine integral_congr_ae ?_
-          filter_upwards [coeFn_sum_haarBasis hq d (Finset.range N)] with x hx
+          filter_upwards [coeFn_sum_haarBasis hq d N] with x hx
           simp only [gN, haarSum, hx, RCLike.ofReal_real_eq_id, id_eq]
     _ = ∫ x, haarSum c N x * haarSum (fun k => ε k * d k) N x :=
           integral_haarSum_signed_mul c d ε N
     _ = ∫ x, (∑ k ∈ Finset.range N, c k • haarBasis ℝ p hp k) x *
           (∑ k ∈ Finset.range N, (ε k * d k) • haarBasis ℝ q hq k) x := by
           refine integral_congr_ae ?_
-          filter_upwards [coeFn_sum_haarBasis hp c (Finset.range N),
-            coeFn_sum_haarBasis hq (fun k => ε k * d k) (Finset.range N)] with x hfx hgx
+          filter_upwards [coeFn_sum_haarBasis hp c N,
+            coeFn_sum_haarBasis hq (fun k => ε k * d k) N] with x hfx hgx
           simp only [haarSum, hfx, hgx, RCLike.ofReal_real_eq_id, id_eq]
 
 /-- **`Lᵖ` sign-transform bound for the real Haar basis (`1 < p ≤ 2`).** -/
@@ -471,6 +552,18 @@ private theorem one_le_haarRealBound {p : ℝ≥0∞} (hp1 : 1 < p) (hp : p ≠ 
 
 /-! ### Extension to `RCLike` scalars and unconditional basis of `Lᵖ([0, 1]; 𝕜)` -/
 
+private theorem compLpL_sum_haarBasis {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ∞) (L : 𝕜 →L[ℝ] ℝ) (a : ℕ → 𝕜) (N : ℕ) :
+    L.compLpL p (volume : Measure I) (∑ k ∈ Finset.range N, a k • haarBasis 𝕜 p hp k) =
+      ∑ k ∈ Finset.range N, L (a k) • haarBasis ℝ p hp k := by
+  refine Lp.ext ?_
+  filter_upwards [L.coeFn_compLpL (∑ k ∈ Finset.range N, a k • haarBasis 𝕜 p hp k),
+    coeFn_sum_haarBasis hp a N, coeFn_sum_haarBasis hp (fun k => L (a k)) N] with x h1 h2 h3
+  rw [h1, h2, h3, map_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [mul_comm, ← Algebra.smul_def, L.map_smul, RCLike.ofReal_real_eq_id, id_eq, smul_eq_mul,
+    mul_comm]
+
 /-- **Sign-transform bound for the Haar basis of `Lᵖ([0, 1]; 𝕜)` (`1 < p < ∞`).** For `1 < p < ∞`
 and signs `|ε k| = 1`, signed Haar partial sums in `Lᵖ(I; 𝕜)` satisfy
 `‖∑_{k < N} ε_k c_k h_k‖_p ≤ 2 * (max p (p / (p - 1)) - 1) * ‖∑_{k < N} c_k h_k‖_p`. -/
@@ -509,13 +602,13 @@ theorem norm_sum_signed_haarBasis_le {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0�
     simp_rw [RCLike.reCLM_apply, ← Algebra.smul_def, RCLike.smul_re]
     exact (norm_sum_signed_haarBasis_real_le hp1 hp _ hε N).trans
       (mul_le_mul_of_nonneg_left
-        (compLpL_sum_haarBasis hp (RCLike.reCLM (K := 𝕜)) c (Finset.range N) ▸ hre_le) hC0)
+        (compLpL_sum_haarBasis hp (RCLike.reCLM (K := 𝕜)) c N ▸ hre_le) hC0)
   have him_g : ‖imLp g‖ ≤ C * ‖f‖ := by
     rw [compLpL_sum_haarBasis hp (RCLike.imCLM (K := 𝕜))]
     simp_rw [RCLike.imCLM_apply, ← Algebra.smul_def, RCLike.smul_im]
     exact (norm_sum_signed_haarBasis_real_le hp1 hp _ hε N).trans
       (mul_le_mul_of_nonneg_left
-        (compLpL_sum_haarBasis hp (RCLike.imCLM (K := 𝕜)) c (Finset.range N) ▸ him_le) hC0)
+        (compLpL_sum_haarBasis hp (RCLike.imCLM (K := 𝕜)) c N ▸ him_le) hC0)
   linarith
 
 /-- Every finite signed coordinate multiplier of the real Haar basis on `Lᵖ(I)` (`1 < p < ∞`) has
@@ -670,8 +763,14 @@ theorem nnNormProjBound_haarUnconditionalBasis_two :
   refine le_antisymm ?_ ?_
   · rw [← NNReal.coe_le_coe, NNReal.coe_one]
     refine b.coe_nnNormProjBound_le fun A => ?_
+    dsimp only [b]
     rw [haarUnconditionalBasis_proj]
-    exact norm_proj_haarBasis_two_le 𝕜 A
+    refine (haarBasis 𝕜 2 ENNReal.ofNat_ne_top).norm_proj_finset_le_of_range_signed
+      (fun N δ hδ g => ?_) A
+    simp only [smul_smul, one_mul]
+    rw [norm_sum_unimodular_haarBasis_two 𝕜 _ (Finset.range N)
+      (fun k _ => by rw [RCLike.norm_ofReal, hδ k]), ← SchauderBasis.proj_apply, haarBasis_proj]
+    simpa using (dyadicProj 𝕜 2 N).le_of_opNorm_le (norm_dyadicProj_le 𝕜 2 N) g
   · have hproj : 1 ≤ ‖b.proj (Finset.range 1)‖ := by
       have hb0 : 0 < ‖b 0‖ := norm_pos_iff.2 fun h0 => by
         have := b.ortho 0 0
