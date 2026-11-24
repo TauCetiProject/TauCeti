@@ -109,7 +109,7 @@ private theorem livesOverFundamentalClass_actionClass_iff (b : G) {k : ℕ}
     {α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)} :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north) b
-      (BasedMap.actionClass G Sphere2.north (1 : G) (o.fundamentalClass hn) α) ↔ α ≠ 0 := by
+      (BasedMap.actionClass Sphere2.north (1 : G) (o.fundamentalClass hn) α) ↔ α ≠ 0 := by
   let Ψ := mappingSpaceGroupHomeomorph (G := G) Sphere2.north
   let Φ : C(G × BasedMap Sphere2 G Sphere2.north 1, C(Sphere2, G)) :=
     BasedMap.actionMap Sphere2.north 1
@@ -168,7 +168,7 @@ theorem isAbundantWithTwoSpheres_of_homologyMap_const_ne (b : G)
         (ModuleCat.of ℤ (ULift.{0} ℤ)) 0).hom α ≠ α) :
     IsAbundantWithTwoSpheres G n b := by
   refine isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub
-    (α := BasedMap.actionClass G Sphere2.north (1 : G) (o.fundamentalClass hn) α)
+    (α := BasedMap.actionClass Sphere2.north (1 : G) (o.fundamentalClass hn) α)
     ((o.livesOverFundamentalClass_actionClass_iff hn b).2 fun h ↦ hα (by rw [h, map_zero])) ?_
   -- The self-map `f ↦ const (f(north))` sends `[G] × α` to `[G] × c_* α`, and `α - c_* α ≠ 0`.
   have h := (o.livesOverFundamentalClass_actionClass_iff hn b).2 (sub_ne_zero.2 hα.symm)
