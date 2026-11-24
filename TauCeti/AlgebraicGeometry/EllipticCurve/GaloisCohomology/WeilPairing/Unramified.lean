@@ -73,11 +73,12 @@ theorem mem_unramifiedTorsionCohomology_iff_forall_localTateWeilPairing_eq_zero
     a ∈ W.unramifiedTorsionCohomology m ↔
       ∀ b ∈ W.unramifiedTorsionCohomology m,
         W.localTateWeilPairing m
-            (have := FinitePadicExtension.charZero K p; TauCeti.isUnit_natCast_of_not_dvd hpm)
+            (have := FinitePadicExtension.charZero K p
+             TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpm)
             a b =
           0 := by
   have := FinitePadicExtension.charZero K p
-  have hm := TauCeti.isUnit_natCast_of_not_dvd (K := K) hpm
+  have hm := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpm
   have : NeZero m := hm.neZero_natCast
   simp only [unramifiedTorsionCohomology_eq_unramifiedH1]
   exact mem_unramifiedH1_iff_forall_pairing_eq_zero p hpm
@@ -93,7 +94,8 @@ extension `K` of `ℚ_p` when `p ∤ m`. -/
 theorem unramifiedTorsionCohomology_eq_ker_compl₂_localTateWeilPairing (hpm : ¬ p ∣ m) :
     W.unramifiedTorsionCohomology m =
       ((W.localTateWeilPairing m
-          (have := FinitePadicExtension.charZero K p; TauCeti.isUnit_natCast_of_not_dvd hpm)
+          (have := FinitePadicExtension.charZero K p
+           TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpm)
         ).compl₂ (W.unramifiedTorsionCohomology m).subtype).ker := by
   ext a
   rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]
@@ -125,11 +127,12 @@ theorem mem_unramifiedKerCohomology_iff_forall_localTateKerWeilPairing_eq_zero
     a ∈ φ.unramifiedKerCohomology ↔
       ∀ b ∈ φ.dual.unramifiedKerCohomology,
         φ.localTateKerWeilPairing
-            (have := FinitePadicExtension.charZero K p; TauCeti.isUnit_natCast_of_not_dvd hpn)
+            (have := FinitePadicExtension.charZero K p
+             TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpn)
             a b =
           0 := by
   have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_not_dvd (K := K) hpn
+  have hn := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpn
   have : NeZero φ.degree := hn.neZero_natCast
   simp only [unramifiedKerCohomology_eq_unramifiedH1]
   exact mem_unramifiedH1_iff_forall_pairing_eq_zero p hpn
@@ -144,7 +147,8 @@ theorem mem_unramifiedKerCohomology_iff_forall_localTateKerWeilPairing_eq_zero
 theorem unramifiedKerCohomology_eq_ker_compl₂_localTateKerWeilPairing (hpn : ¬ p ∣ φ.degree) :
     φ.unramifiedKerCohomology =
       ((φ.localTateKerWeilPairing
-          (have := FinitePadicExtension.charZero K p; TauCeti.isUnit_natCast_of_not_dvd hpn)
+          (have := FinitePadicExtension.charZero K p
+           TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpn)
         ).compl₂ φ.dual.unramifiedKerCohomology.subtype).ker := by
   ext a
   rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]
@@ -158,11 +162,12 @@ theorem mem_unramifiedKerCohomology_dual_iff_forall_localTateKerWeilPairing_eq_z
     b ∈ φ.dual.unramifiedKerCohomology ↔
       ∀ a ∈ φ.unramifiedKerCohomology,
         φ.localTateKerWeilPairing
-            (have := FinitePadicExtension.charZero K p; TauCeti.isUnit_natCast_of_not_dvd hpn)
+            (have := FinitePadicExtension.charZero K p
+             TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpn)
             a b =
           0 := by
   have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_not_dvd (K := K) hpn
+  have hn := TauCeti.isUnit_natCast_of_not_dvd_of_charZero (K := K) hpn
   have : NeZero φ.degree := hn.neZero_natCast
   simp only [unramifiedKerCohomology_eq_unramifiedH1]
   exact mem_unramifiedH1_right_iff_forall_pairing_eq_zero p hpn
@@ -178,7 +183,8 @@ theorem unramifiedKerCohomology_dual_eq_ker_flip_compl₂_localTateKerWeilPairin
     (hpn : ¬ p ∣ φ.degree) :
     φ.dual.unramifiedKerCohomology =
       ((φ.localTateKerWeilPairing
-          (have := FinitePadicExtension.charZero K p; TauCeti.isUnit_natCast_of_not_dvd hpn)
+          (have := FinitePadicExtension.charZero K p
+           TauCeti.isUnit_natCast_of_not_dvd_of_charZero hpn)
         ).flip.compl₂ φ.unramifiedKerCohomology.subtype).ker := by
   ext b
   rw [AddMonoidHom.mem_ker_compl₂_subtype_iff]

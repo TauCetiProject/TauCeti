@@ -33,8 +33,8 @@ explicit base argument `K`, follow Mathlib's `IsUnit.natCast_factorial_of_algebr
 * `TauCeti.isUnit_natCast_of_ne_zero`, `TauCeti.isUnit_natCast_add_of_ne_zero`,
   `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : A) + k` for
   `k ≠ 0` and `(m : A) + 1`) is a unit in an algebra `A` over a characteristic-zero semifield `K`.
-* `TauCeti.isUnit_natCast_of_not_dvd`: in a characteristic-zero division semiring, any natural
-  number not divisible by a given `p` is a unit.
+* `TauCeti.isUnit_natCast_of_not_dvd_of_charZero`: in a characteristic-zero division semiring, any
+  natural number not divisible by a given `p` is a unit.
 
 The remaining results hold over any semifield `K` (the first `k + 1` cancellation even over any
 division semiring); in each, the inverse is taken in `K` and then mapped into the algebra or used
@@ -88,8 +88,8 @@ theorem isUnit_natCast_add_one (K : Type*) {A : Type*} [Semifield K] [CharZero K
 
 /-- In a division semiring of characteristic zero, any natural number not divisible by `p` casts
 to a unit. -/
-theorem isUnit_natCast_of_not_dvd {K : Type*} [DivisionSemiring K] [CharZero K] {p n : ℕ}
-    (hpn : ¬ p ∣ n) : IsUnit (n : K) :=
+theorem isUnit_natCast_of_not_dvd_of_charZero {K : Type*} [DivisionSemiring K] [CharZero K]
+    {p n : ℕ} (hpn : ¬ p ∣ n) : IsUnit (n : K) :=
   (Nat.cast_ne_zero.mpr fun (h : n = 0) ↦ hpn (h ▸ Nat.dvd_zero p)).isUnit
 
 /-- Multiplying by a natural number `m` and by the image of `m⁻¹ : K` cancel in an algebra over a
