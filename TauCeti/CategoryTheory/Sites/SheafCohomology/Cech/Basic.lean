@@ -805,9 +805,8 @@ theorem cechAugmentation_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) :
           cechAugmentation U hT Q).f 0) =≫ _)
 
 /-- The augmentation `P(T) ⟶ Č(U, P)` of the Čech complex for `U`, as a natural transformation in
-the presheaf `P` (`TauCeti.CategoryTheory.cechAugmentation_naturality`). Its body is exposed so
-that its whiskerings and opposites reduce to the augmentation downstream. -/
-@[expose] def cechAugmentationNatTrans :
+the presheaf `P` (`TauCeti.CategoryTheory.cechAugmentation_naturality`). -/
+def cechAugmentationNatTrans :
     (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A ⟶ cechComplexFunctor (A := A) U where
   app Q := cechAugmentation U hT Q
   naturality _ _ α := (cechAugmentation_naturality U hT _ α).symm

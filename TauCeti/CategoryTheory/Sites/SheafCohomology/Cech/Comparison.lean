@@ -89,11 +89,11 @@ theorem quasiIso_cechAugmentation_limit {J : Type*} [Category J] [HasLimitsOfSha
         limMap (Functor.whiskerLeft F (cechAugmentationNatTrans U hT)) := by
     refine limit.hom_ext fun j ↦ ?_
     rw [Category.assoc, Category.assoc, limit.post_π, limMap_π, limit.post_π_assoc,
-      Functor.whiskerLeft_app]
+      Functor.whiskerLeft_app, cechAugmentationNatTrans_app]
     exact cechAugmentation_naturality U hT _ (limit.π F j)
   rw [← quasiIso_iff_comp_right _ (limit.post F (cechComplexFunctor U)), h,
     quasiIso_iff_comp_left]
-  exact quasiIso_limMap _ hF
+  exact quasiIso_limMap _ fun j ↦ by simpa using hF j
 
 /-- **Products of acyclic presheaves are acyclic.** If products indexed by `J` are exact in `A`,
 a product of presheaves whose augmented Čech complexes for `U` are exact has an exact augmented
@@ -196,9 +196,9 @@ private lemma quasiIso_cechAugmentation_of_quasiIso_prod
   -- resolve `P(- × T) ≅ P` by the Čech complexes of the presheaves `P(Y × -)` for `V`
   refine quasiIso_cechAugmentation_of_resolution U hT
     (P := restrictionFunctor P ⋙ (evaluation Cᵒᵖ A).obj (op T))
-    (Functor.whiskerLeft (restrictionFunctor P) (cechAugmentationNatTrans V hT)) ?_ hVU
-    fun k ↦ ?_
-  · exact (quasiIso_cechAugmentation_iff_of_iso V hT _ (terminalRestrictionIso hT P)).2 hV
+    (Functor.whiskerLeft (restrictionFunctor P) (cechAugmentationNatTrans V hT)) ?_
+    (fun n a ↦ by simpa using hVU n a) fun k ↦ ?_
+  · simpa using (quasiIso_cechAugmentation_iff_of_iso V hT _ (terminalRestrictionIso hT P)).2 hV
   · rw [quasiIso_cechAugmentation_iff_of_iso U hT _ (cechTermIso P V k)]
     exact quasiIso_cechAugmentation_pi U hT _ fun b ↦
       (quasiIso_cechAugmentation_iff_of_iso U hT _ (restrictionBraidingIso P _)).2 (hUV k b)

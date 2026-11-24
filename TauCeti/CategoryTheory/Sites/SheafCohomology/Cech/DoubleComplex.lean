@@ -20,29 +20,29 @@ as rows and the complexes `Čᵖ(U, I⁰) ⟶ Čᵖ(U, I¹) ⟶ ⋯` as columns.
 The spectral sequences of first-quadrant bicomplexes in
 `TauCeti.Algebra.Homology.SpectralSequence.Bicomplex.Basic` are those of chain complexes. The
 double complex of cochain complexes is therefore formed in the opposite category `Aᵒᵖ`
-(`TauCeti.CategoryTheory.cechDoubleComplex`), as Mathlib's Čech complex itself is.
+(`TauCeti.CategoryTheory.presheafCechDoubleComplex`), as Mathlib's Čech complex itself is.
 
 The augmentations `Iᵠ(T) ⟶ Č(U, Iᵠ)` of the rows induce an augmentation of the total complex to
-the complex of sections `I(T)` (`TauCeti.CategoryTheory.cechTotalAugmentation`, which needs a zero
-object in `A` and the total complex). When `A` is abelian and the augmented rows are exact, it is a
-quasi-isomorphism (`TauCeti.CategoryTheory.quasiIso_cechTotalAugmentation`). When `A` is abelian
-and products of the shape of Čech degree `p` are exact, the cohomology of the column `p` is the
-object of Čech cochains of degree `p` of the cohomology presheaves of `I`
-(`TauCeti.CategoryTheory.cechColumnHomologyIso`).
+the complex of sections `I(T)` (`TauCeti.CategoryTheory.presheafCechTotalAugmentation`, which
+needs a zero object in `A` and the total complex). When `A` is abelian and the augmented rows are
+exact, it is a quasi-isomorphism (`TauCeti.CategoryTheory.quasiIso_presheafCechTotalAugmentation`).
+When `A` is abelian and products of the shape of Čech degree `p` are exact, the cohomology of the
+column `p` is the object of Čech cochains of degree `p` of the cohomology presheaves of `I`
+(`TauCeti.CategoryTheory.presheafCechColumnHomologyIso`).
 
 ## Main definitions
 
-* `TauCeti.CategoryTheory.cechDoubleComplex U I`: the Čech double complex of a cochain complex of
-  presheaves, in `Aᵒᵖ`, with the Čech degree as first index.
-* `TauCeti.CategoryTheory.cechTotalAugmentation`: the augmentation of its total complex to the
-  complex of sections `I(T)`.
+* `TauCeti.CategoryTheory.presheafCechDoubleComplex U I`: the Čech double complex of a cochain
+  complex of presheaves, in `Aᵒᵖ`, with the Čech degree as first index.
+* `TauCeti.CategoryTheory.presheafCechTotalAugmentation`: the augmentation of its total complex to
+  the complex of sections `I(T)`.
 
 ## Main results
 
-* `TauCeti.CategoryTheory.quasiIso_cechTotalAugmentation`: the augmentation of the total complex
-  is a quasi-isomorphism when the augmented rows are exact.
-* `TauCeti.CategoryTheory.cechColumnHomologyIso`: with exact products, the cohomology of a column
-  is the object of Čech cochains of the cohomology presheaf.
+* `TauCeti.CategoryTheory.quasiIso_presheafCechTotalAugmentation`: the augmentation of the total
+  complex is a quasi-isomorphism when the augmented rows are exact.
+* `TauCeti.CategoryTheory.presheafCechColumnHomologyIso`: with exact products, the cohomology of a
+  column is the object of Čech cochains of the cohomology presheaf.
 -/
 
 public section
@@ -74,35 +74,37 @@ instance instAdditiveCechOpComplexFunctor : (cechOpComplexFunctor (A := A) U).Ad
 
 /-- **The Čech double complex** of a cochain complex of presheaves `I` for the family `U`: the
 first-quadrant bicomplex whose term in bidegree `(p, q)` is the opposite of `Čᵖ(U, Iᵠ)`, the
-Čech cochains of degree `p` of the presheaf `Iᵠ` (`cechDoubleComplex_X_X`). The first index is
-the Čech degree, so that the column `p` is the opposite of the complex
+Čech cochains of degree `p` of the presheaf `Iᵠ` (`presheafCechDoubleComplex_X_X`). The first
+index is the Čech degree, so that the column `p` is the opposite of the complex
 `Čᵖ(U, I⁰) ⟶ Čᵖ(U, I¹) ⟶ ⋯`, and the row `q` is the opposite of the Čech complex `Č(U, Iᵠ)`. It
 lives in `Aᵒᵖ`, where the cochain complexes become the chain complexes to which the spectral
 sequences of first-quadrant bicomplexes apply. Its body is exposed so that its terms unfold to
 Čech cochains in statements. -/
-@[expose] def cechDoubleComplex (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
+@[expose] def presheafCechDoubleComplex (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
     HomologicalComplex₂ Aᵒᵖ (ComplexShape.down ℕ) (ComplexShape.down ℕ) :=
   HomologicalComplex₂.flip
     (((cechOpComplexFunctor (A := A) U).mapHomologicalComplex (ComplexShape.down ℕ)).obj
       (I.op : ChainComplex (Cᵒᵖ ⥤ A)ᵒᵖ ℕ))
 
 /-- The term of the Čech double complex in bidegree `(p, q)` is the opposite of `Čᵖ(U, Iᵠ)`. -/
-lemma cechDoubleComplex_X_X (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p q : ℕ) :
-    ((cechDoubleComplex U I).X p).X q = op (((cechComplexFunctor U).obj (I.X q)).X p) :=
+lemma presheafCechDoubleComplex_X_X (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p q : ℕ) :
+    ((presheafCechDoubleComplex U I).X p).X q = op (((cechComplexFunctor U).obj (I.X q)).X p) :=
   (rfl)
 
 /-- The differential of the Čech double complex in the Čech direction is the opposite of the
 Čech differential of `Č(U, Iᵠ)`. -/
 @[simp]
-lemma cechDoubleComplex_d_f (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p p' q : ℕ) :
-    ((cechDoubleComplex U I).d p p').f q = (((cechComplexFunctor U).obj (I.X q)).d p' p).op :=
+lemma presheafCechDoubleComplex_d_f (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p p' q : ℕ) :
+    ((presheafCechDoubleComplex U I).d p p').f q =
+      (((cechComplexFunctor U).obj (I.X q)).d p' p).op :=
   (rfl)
 
 /-- The differential of the Čech double complex in the direction of `I` is the opposite of the
 map of Čech cochains induced by the differential of `I`. -/
 @[simp]
-lemma cechDoubleComplex_X_d (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p q q' : ℕ) :
-    ((cechDoubleComplex U I).X p).d q q' = (((cechComplexFunctor U).map (I.d q' q)).f p).op :=
+lemma presheafCechDoubleComplex_X_d (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p q q' : ℕ) :
+    ((presheafCechDoubleComplex U I).X p).d q q' =
+      (((cechComplexFunctor U).map (I.d q' q)).f p).op :=
   (rfl)
 
 /-- The complex of sections `I⁰(T) ⟶ I¹(T) ⟶ ⋯` of a cochain complex of presheaves over `T`. -/
@@ -151,7 +153,7 @@ private abbrev cechDoubleComplexTarget (T : C) (I : CochainComplex (Cᵒᵖ ⥤ 
 /-- The map from the Čech double complex to the bicomplex with the single column `I(T)`, induced
 by the augmentations `Iᵠ(T) ⟶ Č(U, Iᵠ)` of the rows. -/
 private def cechDoubleComplexToTarget (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
-    cechDoubleComplex U I ⟶ cechDoubleComplexTarget T I :=
+    presheafCechDoubleComplex U I ⟶ cechDoubleComplexTarget T I :=
   (HomologicalComplex₂.flipFunctor _ _ _).map
     ((NatTrans.mapHomologicalComplex (cechOpAugmentation U hT) (ComplexShape.down ℕ)).app
       (I.op : ChainComplex (Cᵒᵖ ⥤ A)ᵒᵖ ℕ))
@@ -161,7 +163,7 @@ complex `Č(U, Iᵠ)`. -/
 private lemma cechDoubleComplexToTarget_row (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (q : ℕ) :
     ((HomologicalComplex.eval Aᵒᵖ (ComplexShape.down ℕ) q).mapHomologicalComplex
       (ComplexShape.down ℕ)).map (cechDoubleComplexToTarget U hT I) =
-      (opFunctor A (ComplexShape.up ℕ)).map (cechAugmentation U hT (I.X q)).op :=
+      (opFunctor A (ComplexShape.up ℕ)).map ((cechAugmentationNatTrans U hT).app (I.X q)).op :=
   (rfl)
 
 /-- The identification of the column `0` of `cechDoubleComplexTarget T I` with the opposite of the
@@ -192,73 +194,83 @@ private lemma cechDoubleComplexTarget_d_one_zero_comp (T : C) (I : CochainComple
 
 /-- The augmentation of the column `0` of the Čech double complex: in degree `q` it is the opposite
 of the augmentation `Iᵠ(T) ⟶ Č⁰(U, Iᵠ)`, restricting a section over `T` to the members of `U`
-(`cechDoubleComplexAugmentation_f`). -/
-def cechDoubleComplexAugmentation (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
-    (cechDoubleComplex U I).X 0 ⟶ ((sectionsCochainComplex T I).op : ChainComplex Aᵒᵖ ℕ) :=
+(`presheafCechDoubleComplexAugmentation_f`). -/
+def presheafCechDoubleComplexAugmentation (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
+    (presheafCechDoubleComplex U I).X 0 ⟶ ((sectionsCochainComplex T I).op : ChainComplex Aᵒᵖ ℕ) :=
   (cechDoubleComplexToTarget U hT I).f 0 ≫ (cechDoubleComplexTargetXZeroIso T I).hom
 
 /-- In degree `q`, the augmentation of the column `0` of the Čech double complex is the opposite
 of the degree `0` component of the augmentation `Iᵠ(T) ⟶ Č(U, Iᵠ)`. -/
 @[simp]
-lemma cechDoubleComplexAugmentation_f (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (q : ℕ) :
-    (cechDoubleComplexAugmentation U hT I).f q =
+lemma presheafCechDoubleComplexAugmentation_f (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (q : ℕ) :
+    (presheafCechDoubleComplexAugmentation U hT I).f q =
       ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 ((I.X q).obj (op T))).inv ≫
         (cechAugmentation U hT (I.X q)).f 0).op := by
   simp only [op_X, Functor.mapHomologicalComplex_obj_X, evaluation_obj_obj,
-    CochainComplex.single₀_obj_zero, CochainComplex.single₀ObjXSelf, Iso.refl_inv,
-    Category.id_comp]
-  exact Category.comp_id ((cechAugmentation U hT (I.X q)).f 0).op
+    presheafCechDoubleComplexAugmentation, cechDoubleComplexToTarget, cechOpAugmentation,
+    cechDoubleComplexTargetXZeroIso, CochainComplex.single₀_obj_zero,
+    CochainComplex.single₀ObjXSelf, Iso.refl_symm, Iso.op_refl, comp_f,
+    HomologicalComplex₂.flip_X_X, Functor.comp_obj, Functor.op_obj, opFunctor_obj,
+    HomologicalComplex₂.flipFunctor_map_f_f, NatTrans.mapHomologicalComplex_app_f,
+    Functor.whiskerRight_app, NatTrans.op_app, cechAugmentationNatTrans_app, opFunctor_map_f,
+    Quiver.Hom.unop_op, Hom.isoOfComponents_hom_f, Iso.refl_hom, Iso.refl_inv, Category.id_comp]
+  -- the remaining identity is that of the degree `0` term of the complex placed in degree `0`
+  exact Category.comp_id _
 
 /-- The augmentation of the column `0` vanishes on the image of the horizontal differential. -/
 @[reassoc (attr := simp)]
-lemma cechDoubleComplex_d_comp_augmentation (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
-    (cechDoubleComplex U I).d 1 0 ≫ cechDoubleComplexAugmentation U hT I = 0 := by
-  rw [cechDoubleComplexAugmentation, ← Category.assoc, ← (cechDoubleComplexToTarget U hT I).comm,
-    Category.assoc, cechDoubleComplexTarget_d_one_zero_comp, comp_zero]
+lemma presheafCechDoubleComplex_d_comp_augmentation (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :
+    (presheafCechDoubleComplex U I).d 1 0 ≫ presheafCechDoubleComplexAugmentation U hT I = 0 := by
+  rw [presheafCechDoubleComplexAugmentation, ← Category.assoc,
+    ← (cechDoubleComplexToTarget U hT I).comm, Category.assoc,
+    cechDoubleComplexTarget_d_one_zero_comp, comp_zero]
 
-variable (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) [(cechDoubleComplex U I).HasTotal (ComplexShape.down ℕ)]
+variable (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
+  [(presheafCechDoubleComplex U I).HasTotal (ComplexShape.down ℕ)]
 
 /-- **The augmentation of the total Čech complex.** The map from the total complex of the Čech
 double complex of `I` to the opposite of the complex of sections `I(T)`, induced by the
 augmentations of the Čech complexes `Č(U, Iᵠ)`: on the summand of Čech degree `0` it is the
-augmentation (`ιTotal_cechTotalAugmentation_f_zero`), and it vanishes on the other summands
-(`ιTotal_cechTotalAugmentation_f_succ`). -/
-def cechTotalAugmentation :
-    (cechDoubleComplex U I).total (ComplexShape.down ℕ) ⟶
+augmentation (`ιTotal_presheafCechTotalAugmentation_f_zero`), and it vanishes on the other summands
+(`ιTotal_presheafCechTotalAugmentation_f_succ`). -/
+def presheafCechTotalAugmentation :
+    (presheafCechDoubleComplex U I).total (ComplexShape.down ℕ) ⟶
       ((sectionsCochainComplex T I).op : ChainComplex Aᵒᵖ ℕ) :=
-  (cechDoubleComplex U I).totalAugmentation (cechDoubleComplexAugmentation U hT I)
-    (cechDoubleComplex_d_comp_augmentation U hT I)
+  (presheafCechDoubleComplex U I).totalAugmentation (presheafCechDoubleComplexAugmentation U hT I)
+    (presheafCechDoubleComplex_d_comp_augmentation U hT I)
 
 /-- On the summand `Č⁰(U, Iᵠ)` of the total complex, the augmentation of the total Čech complex
 is the opposite of the augmentation `Iᵠ(T) ⟶ Č⁰(U, Iᵠ)`. -/
 @[reassoc (attr := simp)]
-lemma ιTotal_cechTotalAugmentation_f_zero (q : ℕ) :
-    (cechDoubleComplex U I).ιTotal (ComplexShape.down ℕ) 0 q q (zero_add q) ≫
-        (cechTotalAugmentation U hT I).f q =
+lemma ιTotal_presheafCechTotalAugmentation_f_zero (q : ℕ) :
+    (presheafCechDoubleComplex U I).ιTotal (ComplexShape.down ℕ) 0 q q (zero_add q) ≫
+        (presheafCechTotalAugmentation U hT I).f q =
       ((HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0 ((I.X q).obj (op T))).inv ≫
         (cechAugmentation U hT (I.X q)).f 0).op := by
-  rw [cechTotalAugmentation, HomologicalComplex₂.ιTotal_totalAugmentation_f_zero,
-    cechDoubleComplexAugmentation_f]
+  rw [presheafCechTotalAugmentation, HomologicalComplex₂.ιTotal_totalAugmentation_f_zero,
+    presheafCechDoubleComplexAugmentation_f]
 
 /-- The augmentation of the total Čech complex vanishes on the summands of positive Čech
 degree. -/
 @[reassoc (attr := simp)]
-lemma ιTotal_cechTotalAugmentation_f_succ (p q n : ℕ)
+lemma ιTotal_presheafCechTotalAugmentation_f_succ (p q n : ℕ)
     (h : ComplexShape.π (ComplexShape.down ℕ) (ComplexShape.down ℕ) (ComplexShape.down ℕ)
       (p + 1, q) = n) :
-    (cechDoubleComplex U I).ιTotal (ComplexShape.down ℕ) (p + 1) q n h ≫
-      (cechTotalAugmentation U hT I).f n = 0 := by
-  rw [cechTotalAugmentation, HomologicalComplex₂.ιTotal_totalAugmentation_f_succ]
+    (presheafCechDoubleComplex U I).ιTotal (ComplexShape.down ℕ) (p + 1) q n h ≫
+      (presheafCechTotalAugmentation U hT I).f n = 0 := by
+  rw [presheafCechTotalAugmentation, HomologicalComplex₂.ιTotal_totalAugmentation_f_succ]
 
 /-- The augmentation of the total Čech complex factors through the total complex of the bicomplex
 with the single column `I(T)`. -/
-private lemma cechTotalAugmentation_eq
+private lemma presheafCechTotalAugmentation_eq
     [(cechDoubleComplexTarget T I).HasTotal (ComplexShape.down ℕ)] :
-    cechTotalAugmentation U hT I =
+    presheafCechTotalAugmentation U hT I =
       HomologicalComplex₂.total.map (cechDoubleComplexToTarget U hT I) (ComplexShape.down ℕ) ≫
         (cechDoubleComplexTarget T I).totalAugmentation (cechDoubleComplexTargetXZeroIso T I).hom
           (cechDoubleComplexTarget_d_one_zero_comp T I _) := by
-  rw [cechTotalAugmentation, HomologicalComplex₂.total_map_totalAugmentation]
+  rw [presheafCechTotalAugmentation, HomologicalComplex₂.total_map_totalAugmentation]
+  -- the two sides agree after unfolding `presheafCechDoubleComplexAugmentation`, which is the
+  -- composite of `(cechDoubleComplexToTarget U hT I).f 0` and `cechDoubleComplexTargetXZeroIso`
   rfl
 
 end Augmentation
@@ -270,24 +282,24 @@ variable [Abelian A] [HasProducts.{w} A]
 /-- **The total Čech complex computes the cohomology of the sections.** If the augmented Čech
 complex `0 ⟶ Iᵠ(T) ⟶ Č(U, Iᵠ)` is exact for every `q`, then the augmentation of the total
 complex of the Čech double complex is a quasi-isomorphism. -/
-theorem quasiIso_cechTotalAugmentation (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
+theorem quasiIso_presheafCechTotalAugmentation (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
     (hI : ∀ q, QuasiIso (cechAugmentation U hT (I.X q))) :
-    QuasiIso (cechTotalAugmentation U hT I) := by
+    QuasiIso (presheafCechTotalAugmentation U hT I) := by
   have : QuasiIso (HomologicalComplex₂.total.map (cechDoubleComplexToTarget U hT I)
       (ComplexShape.down ℕ)) := by
     refine HomologicalComplex₂.quasiIso_total_map_of_rows _ fun q ↦ ?_
-    rw [cechDoubleComplexToTarget_row]
+    rw [cechDoubleComplexToTarget_row, cechAugmentationNatTrans_app]
     exact (quasiIso_opFunctor_map_iff _).2 (hI q)
   have := HomologicalComplex₂.isIso_totalAugmentation_of_isZero (cechDoubleComplexTarget T I)
     (cechDoubleComplexTargetXZeroIso T I).hom (cechDoubleComplexTarget_d_one_zero_comp T I _)
     (isZero_cechDoubleComplexTarget_X_X T I)
-  rw [cechTotalAugmentation_eq]
+  rw [presheafCechTotalAugmentation_eq]
   infer_instance
 
 /-- With exact products of the shape of Čech degree `p`, the cohomology in degree `k` of the
 column `Čᵖ(U, I⁰) ⟶ Čᵖ(U, I¹) ⟶ ⋯` is the object of Čech cochains of degree `p` in `A` of the
 cohomology presheaf `Hᵏ(I)` of `I`. -/
-def cechColumnHomologyIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ)
+def presheafCechColumnHomologyIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ)
     [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A] (k : ℕ) :
     (cechColumn U I p).homology k ≅ ((cechComplexFunctor U).obj (I.homology k)).X p :=
   (I.sc k).mapHomologyIso (cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p)

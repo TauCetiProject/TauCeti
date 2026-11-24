@@ -18,9 +18,9 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 Let `(C, J)` be a site with finite products and a terminal object `T`, let `U` be a family of
 objects covering `T` (`CategoryTheory.GrothendieckTopology.CoversTop`), and let `F` be an abelian
 sheaf with an injective resolution `0 ⟶ F ⟶ I⁰ ⟶ I¹ ⟶ ⋯`. The Čech double complex `Čᵖ(U, Iᵠ)`
-(`TauCeti.CategoryTheory.cechDoubleComplex`) has two filtrations. Its rows `Č(U, Iᵠ)` are exact
-in positive degrees, since `Iᵠ` is injective, and have `Iᵠ(T)` in degree `0`, since `Iᵠ` is a
-sheaf (`TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_injective`); so its total complex
+(`TauCeti.CategoryTheory.presheafCechDoubleComplex`) has two filtrations. Its rows `Č(U, Iᵠ)` are
+exact in positive degrees, since `Iᵠ` is injective, and have `Iᵠ(T)` in degree `0`, since `Iᵠ` is
+a sheaf (`TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_injective`); so its total complex
 computes the cohomology of the sections `I(T)`, which is `Hⁿ(F)`. Its columns
 `Čᵖ(U, I⁰) ⟶ Čᵖ(U, I¹) ⟶ ⋯` are products of the complexes of sections
 `I(U (a 0) × ⋯ × U (a p))`, so their cohomology is the group `Čᵖ(U, Hᵏ(F))` of Čech cochains of
@@ -39,11 +39,11 @@ first page need nothing more; the identification of the abutment needs the augme
 
 ## Main definitions and results
 
-* `TauCeti.CategoryTheory.cechDoubleComplexSpectralSequence U I`: the spectral sequence of the
-  filtration by Čech degree of the Čech double complex, with its first page
-  (`TauCeti.CategoryTheory.cechDoubleComplexSpectralSequenceFirstPageXIso`, and
-  `TauCeti.CategoryTheory.cechColumnHomologyIso` with exact products) and its abutment
-  (`TauCeti.CategoryTheory.cechDoubleComplexAbutmentIso`).
+* `TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequence U I`: the spectral sequence of
+  the filtration by Čech degree of the Čech double complex, with its first page
+  (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequenceFirstPageXIso`, and
+  `TauCeti.CategoryTheory.presheafCechColumnHomologyIso` with exact products) and its abutment
+  (`TauCeti.CategoryTheory.presheafCechDoubleComplexAbutmentIso`).
 * `TauCeti.CategoryTheory.cechToCohomologySpectralSequence U R`: the Čech-to-cohomology spectral
   sequence of an injective resolution `R` of an abelian sheaf `F`. Its object at `(-k - 2p, p)` on
   the first page (numbered `2`) is the opposite of `Čᵖ(U, Hᵏ(F))`
@@ -51,7 +51,7 @@ first page need nothing more; the identification of the abutment needs the augme
   opposite of `Hⁿ(F)` (`TauCeti.CategoryTheory.cechToCohomologyAbutmentIso`). Each object
   stabilizes after finitely many pages to a graded piece of the filtration of the abutment, by
   `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty` for
-  `(cechDoubleComplex U I).flip`.
+  `(presheafCechDoubleComplex U I).flip`.
 
 The differential of the first page is not identified here with the Čech differential of the
 presheaf `Hᵏ(F)`, so the second page is not identified with the Čech cohomology
@@ -80,38 +80,57 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {A : Type*} [Catego
 
 /-- **The spectral sequence of the Čech double complex**, filtered by Čech degree. Its first page
 is the cohomology of the columns `Čᵖ(U, I⁰) ⟶ Čᵖ(U, I¹) ⟶ ⋯`
-(`cechDoubleComplexSpectralSequenceFirstPageXIso`), and it converges to the cohomology of the
-total complex, which is that of the sections `I(T)` when the rows are exact
-(`cechDoubleComplexAbutmentIso`). It is a spectral sequence in `Aᵒᵖ`. -/
-abbrev cechDoubleComplexSpectralSequence (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :=
-  (cechDoubleComplex U I).columnFiltrationSpectralSequence
+(`presheafCechDoubleComplexSpectralSequenceFirstPageXIso`), and it converges to the cohomology of
+the total complex, which is that of the sections `I(T)` when the rows are exact
+(`presheafCechDoubleComplexAbutmentIso`). It is a spectral sequence in `Aᵒᵖ`. -/
+abbrev presheafCechDoubleComplexSpectralSequence (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :=
+  (presheafCechDoubleComplex U I).columnFiltrationSpectralSequence
 
 /-- The spectral object of the filtration of the total Čech complex by Čech degree, whose
-abutment the spectral sequence `cechDoubleComplexSpectralSequence U I` converges to. -/
-abbrev cechDoubleComplexSpectralObject (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :=
-  (cechDoubleComplex U I).flip.rowFiltrationSpectralObject
+abutment the spectral sequence `presheafCechDoubleComplexSpectralSequence U I` converges to. -/
+abbrev presheafCechDoubleComplexSpectralObject (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) :=
+  (presheafCechDoubleComplex U I).flip.rowFiltrationSpectralObject
 
 /-- The object at `(-k - 2p, p)` on the first page (numbered `2`) of the spectral sequence of the
 Čech double complex is the opposite of the cohomology in degree `k` of the column
 `Čᵖ(U, I⁰) ⟶ Čᵖ(U, I¹) ⟶ ⋯`. -/
-def cechDoubleComplexSpectralSequenceFirstPageXIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
+def presheafCechDoubleComplexSpectralSequenceFirstPageXIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
     (p k : ℕ) :
-    ((cechDoubleComplexSpectralSequence U I).page 2).X (-(k : ℤ) - 2 * p, p) ≅
+    ((presheafCechDoubleComplexSpectralSequence U I).page 2).X (-(k : ℤ) - 2 * p, p) ≅
       op ((cechColumn U I p).homology k) :=
-  (cechDoubleComplex U I).columnFiltrationSpectralSequenceFirstPageXIso p k ≪≫
+  (presheafCechDoubleComplex U I).columnFiltrationSpectralSequenceFirstPageXIso p k ≪≫
     homologyOp (cechColumn U I p) k
+
+/-- The identification of the first page is that of the column filtration, followed by the
+identification of the homology of an opposite complex. -/
+lemma presheafCechDoubleComplexSpectralSequenceFirstPageXIso_hom
+    (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p k : ℕ) :
+    (presheafCechDoubleComplexSpectralSequenceFirstPageXIso U I p k).hom =
+      ((presheafCechDoubleComplex U I).columnFiltrationSpectralSequenceFirstPageXIso p k).hom ≫
+        (homologyOp (cechColumn U I p) k).hom :=
+  (rfl)
 
 /-- The abutment in degree `-n` of the spectral sequence of the Čech double complex is the
 opposite of the cohomology in degree `n` of the complex of sections `I(T)`, when the augmented
 rows `0 ⟶ Iᵠ(T) ⟶ Č(U, Iᵠ)` are exact. -/
-def cechDoubleComplexAbutmentIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
+def presheafCechDoubleComplexAbutmentIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
     (hI : ∀ q, QuasiIso (cechAugmentation U hT (I.X q))) (n : ℕ) :
-    (cechDoubleComplexSpectralObject U I).abutment (-n) ≅
+    (presheafCechDoubleComplexSpectralObject U I).abutment (-n) ≅
       op ((sectionsCochainComplex T I).homology n) :=
-  have := quasiIso_cechTotalAugmentation U hT I hI
-  (cechDoubleComplex U I).columnFiltrationAbutmentIso n ≪≫
-    asIso (homologyMap (cechTotalAugmentation U hT I) n) ≪≫
+  have := quasiIso_presheafCechTotalAugmentation U hT I hI
+  (presheafCechDoubleComplex U I).columnFiltrationAbutmentIso n ≪≫
+    asIso (homologyMap (presheafCechTotalAugmentation U hT I) n) ≪≫
     homologyOp (sectionsCochainComplex T I) n
+
+/-- The identification of the abutment is that of the column filtration, followed by the map
+induced on homology by the augmentation of the total Čech complex. -/
+lemma presheafCechDoubleComplexAbutmentIso_hom (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
+    (hI : ∀ q, QuasiIso (cechAugmentation U hT (I.X q))) (n : ℕ) :
+    (presheafCechDoubleComplexAbutmentIso U hT I hI n).hom =
+      ((presheafCechDoubleComplex U I).columnFiltrationAbutmentIso n).hom ≫
+        homologyMap (presheafCechTotalAugmentation U hT I) n ≫
+          (homologyOp (sectionsCochainComplex T I) n).hom :=
+  (rfl)
 
 end General
 
@@ -135,6 +154,16 @@ def sectionsCochainComplexHomologyIsoH (n : ℕ) :
     (fun j k ↦ Abelian.Ext.subsingleton_of_injective _ (R.cocomplex.X j) k)
     n).toAddCommGrpIso.symm ≪≫ F.cohomologyPresheafObjIsoH n hT
 
+/-- The identification of the cohomology of the sections over `T` with `Hⁿ(F)` goes through the
+homology of the resolution and the cohomology presheaf at `T`. -/
+lemma sectionsCochainComplexHomologyIsoH_hom (n : ℕ) :
+    (hT.sectionsCochainComplexHomologyIsoH R n).hom =
+      ((_root_.CategoryTheory.Sheaf.H'.addEquivHomologyOfResolution (R.ι.f 0)
+        R.ι_f_zero_comp_complex_d R.exact₀ R.cocomplex_exactAt_succ T
+        (fun j k ↦ Abelian.Ext.subsingleton_of_injective _ (R.cocomplex.X j) k)
+        n).toAddCommGrpIso.inv ≫ (F.cohomologyPresheafObjIsoH n hT).hom) :=
+  (rfl)
+
 end CategoryTheory.Limits.IsTerminal
 
 namespace TauCeti.CategoryTheory
@@ -150,7 +179,7 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {J : GrothendieckTo
 columns `Čᵖ(U, I⁰) ⟶ Čᵖ(U, I¹) ⟶ ⋯` of the Čech double complex of `R`, and it converges to the
 sheaf cohomology `Hⁿ(F)` (`cechToCohomologyAbutmentIso`). -/
 abbrev cechToCohomologySpectralSequence :=
-  cechDoubleComplexSpectralSequence U R.presheafComplex
+  presheafCechDoubleComplexSpectralSequence U R.presheafComplex
 
 variable [HasExt.{v} (Sheaf J AddCommGrpCat.{v})]
 
@@ -158,11 +187,21 @@ include hU in
 /-- The abutment in degree `-n` of the Čech-to-cohomology spectral sequence is the opposite of the
 sheaf cohomology `Hⁿ(F)`. -/
 def cechToCohomologyAbutmentIso (n : ℕ) :
-    (cechDoubleComplexSpectralObject U R.presheafComplex).abutment (-n) ≅
+    (presheafCechDoubleComplexSpectralObject U R.presheafComplex).abutment (-n) ≅
       op (AddCommGrpCat.of (_root_.CategoryTheory.Sheaf.H.{v} F n)) :=
-  cechDoubleComplexAbutmentIso U hT R.presheafComplex
+  presheafCechDoubleComplexAbutmentIso U hT R.presheafComplex
     (fun q ↦ quasiIso_cechAugmentation_of_injective U hT hU (R.cocomplex.X q)) n ≪≫
     (hT.sectionsCochainComplexHomologyIsoH R n).symm.op
+
+include hU in
+/-- The abutment of the Čech-to-cohomology spectral sequence is identified with `Hⁿ(F)` through
+the abutment of the Čech double complex and `sectionsCochainComplexHomologyIsoH`. -/
+lemma cechToCohomologyAbutmentIso_hom (n : ℕ) :
+    (cechToCohomologyAbutmentIso U hT hU R n).hom =
+      (presheafCechDoubleComplexAbutmentIso U hT R.presheafComplex
+        (fun q ↦ quasiIso_cechAugmentation_of_injective U hT hU (R.cocomplex.X q)) n).hom ≫
+        (hT.sectionsCochainComplexHomologyIsoH R n).inv.op :=
+  (rfl)
 
 /-- **The first page of the Čech-to-cohomology spectral sequence.** Its object at `(-k - 2p, p)`
 (the first page being numbered `2`) is the opposite of the group `Čᵖ(U, Hᵏ(F))` of Čech cochains
@@ -170,12 +209,24 @@ of degree `p` of the cohomology presheaf `V ↦ Hᵏ(V, F)`. -/
 def cechToCohomologyFirstPageXIso (p k : ℕ) :
     ((cechToCohomologySpectralSequence U R).page 2).X (-(k : ℤ) - 2 * p, p) ≅
       op (((cechComplexFunctor U).obj (F.cohomologyPresheaf k)).X p) :=
-  cechDoubleComplexSpectralSequenceFirstPageXIso U R.presheafComplex p k ≪≫
-    (cechColumnHomologyIso U R.presheafComplex p k ≪≫
+  presheafCechDoubleComplexSpectralSequenceFirstPageXIso U R.presheafComplex p k ≪≫
+    (presheafCechColumnHomologyIso U R.presheafComplex p k ≪≫
       (cechComplexFunctor U ⋙ HomologicalComplex.eval _ (ComplexShape.up ℕ) p).mapIso
         (_root_.CategoryTheory.Sheaf.H'.homologyIsoCohomologyPresheaf (R.ι.f 0)
           R.ι_f_zero_comp_complex_d R.exact₀ R.cocomplex_exactAt_succ
           (fun _ j k ↦ Abelian.Ext.subsingleton_of_injective _ (R.cocomplex.X j) k) k)).symm.op
+
+/-- The first page of the Čech-to-cohomology spectral sequence is identified with Čech cochains
+through the column homology of the Čech double complex and the cohomology presheaves. -/
+lemma cechToCohomologyFirstPageXIso_hom (p k : ℕ) :
+    (cechToCohomologyFirstPageXIso U R p k).hom =
+      (presheafCechDoubleComplexSpectralSequenceFirstPageXIso U R.presheafComplex p k).hom ≫
+        ((cechComplexFunctor U ⋙ HomologicalComplex.eval _ (ComplexShape.up ℕ) p).map
+          (_root_.CategoryTheory.Sheaf.H'.homologyIsoCohomologyPresheaf (R.ι.f 0)
+            R.ι_f_zero_comp_complex_d R.exact₀ R.cocomplex_exactAt_succ
+            (fun _ j k ↦ Abelian.Ext.subsingleton_of_injective _ (R.cocomplex.X j) k) k).inv ≫
+          (presheafCechColumnHomologyIso U R.presheafComplex p k).inv).op :=
+  (rfl)
 
 end Sheaf
 
