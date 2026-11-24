@@ -257,7 +257,7 @@ theorem toChart_symm_coord_symm_splitCoord_symm_splitCoord_coord_toChart {y : M}
     (hy : y ∈ φ.toChart.source) :
     φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (φ.splitCoord (φ.coord (φ.toChart y))))) =
       y := by
-  rw [LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
+  rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hy]
 
 variable (φ) in
 /-- The point with given split coordinates in the chart has these split coordinates. -/
