@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
-# Extending finite étale covers from a clopen subscheme
+# Composition with a finite étale morphism and extension of covers
 
 Let `g : T ⟶ S` be a finite étale morphism of schemes. Composing structure morphisms with `g`
 sends a finite étale `T`-scheme to a finite étale `S`-scheme; this is the functor
@@ -25,7 +24,8 @@ monomorphism, the base change of `X ⟶ T ⟶ S` back along `g` is `X` again: th
 The main example is the inclusion `U.ι` of a clopen subscheme, which is an open immersion with
 closed range, hence a closed immersion and so finite, and étale; for `U` with
 `Fact (IsClosed (U : Set S))` these are instances, through
-`AlgebraicGeometry.Scheme.Opens.isClosedImmersion_ι_of_fact_isClosed`. For it, `map U.ι` is the
+`AlgebraicGeometry.Scheme.Opens.isClosedImmersion_ι_of_fact_isClosed` in
+`TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic`. For it, `map U.ι` is the
 extension of a cover of `U` by the empty cover of the complement.
 
 ## Main definitions
@@ -120,11 +120,22 @@ noncomputable def mapCompFiberIso (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g]
 
 /-- The components of `(mapCompFiberIso g x).inv` are the fibres of the unit of
 `Over.map g ⊣ Over.pullback g`, followed by the comparison `pullbackCompFiberIso`. -/
+@[simp]
 theorem mapCompFiberIso_inv_app (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g]
     (x : Spec (.of Ω) ⟶ T) (X : FiniteEtaleScheme T) :
     (mapCompFiberIso g x).inv.app X =
       (fiber x).map ((mapCompPullbackIso g).inv.app X) ≫
         (pullbackCompFiberIso g x).hom.app ((map g).obj X) := by
   simp [mapCompFiberIso, -pullbackCompFiberIso_hom_app]
+
+/-- The components of `(mapCompFiberIso g x).hom` are the comparison `pullbackCompFiberIso`,
+followed by the fibres of the inverse of the unit of `Over.map g ⊣ Over.pullback g`. -/
+@[simp]
+theorem mapCompFiberIso_hom_app (g : T ⟶ S) [IsFinite g] [Etale g] [Mono g]
+    (x : Spec (.of Ω) ⟶ T) (X : FiniteEtaleScheme T) :
+    (mapCompFiberIso g x).hom.app X =
+      (pullbackCompFiberIso g x).inv.app ((map g).obj X) ≫
+        (fiber x).map ((mapCompPullbackIso g).hom.app X) := by
+  simp [mapCompFiberIso, -pullbackCompFiberIso_inv_app]
 
 end TauCeti.FiniteEtaleScheme
