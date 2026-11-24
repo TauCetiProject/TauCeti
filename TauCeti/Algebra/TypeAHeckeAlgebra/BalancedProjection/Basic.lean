@@ -70,6 +70,8 @@ no such change of generators, is not treated.
 ## Main results
 
 * `TauCeti.BalancedProjectionAlgebra.adjoin_range_e`: the generators generate the algebra.
+* `TauCeti.BalancedProjectionAlgebra.commute_map_of_commute_map_e_succ`: a representation sending
+  adjacent generators to commuting elements has commutative image.
 * `IsIdempotentElem.sub_pow_three_eq_smul`: `(p - q) ^ 3 = (1 - τ) • (p - q)` for idempotents
   satisfying the balanced relation.
 * `TauCeti.BalancedProjectionAlgebra.map_eq_character_smul_add_character_smul_of_map_e_eq`: a
@@ -296,6 +298,39 @@ theorem map_mem_adjoin_range {A F : Type*} [Semiring A] [Algebra R A]
     [AlgHomClass F R (BalancedProjectionAlgebra R τ) A] (φ : F)
     (x : BalancedProjectionAlgebra R τ) : φ x ∈ Algebra.adjoin R (Set.range fun i ↦ φ (e τ i)) :=
   range_eq_adjoin_range (AlgHom.ofClass φ) ▸ AlgHom.mem_range_self (AlgHom.ofClass φ) x
+
+section CommuteMap
+
+variable {A F : Type*} [Semiring A] [Algebra R A] [FunLike F (BalancedProjectionAlgebra R τ) A]
+  [AlgHomClass F R (BalancedProjectionAlgebra R τ) A] (φ : F)
+
+/-- If an algebra map out of the balanced projection algebra sends adjacent generators to commuting
+elements, then it sends any two generators to commuting elements: distant generators commute
+already. -/
+theorem commute_map_e_of_commute_map_e_succ (hφ : ∀ i, Commute (φ (e τ i)) (φ (e τ (i + 1))))
+    (i j : ℕ) : Commute (φ (e τ i)) (φ (e τ j)) := by
+  rcases lt_trichotomy i j with hij | rfl | hij
+  · rcases Nat.exists_eq_add_of_lt hij with ⟨k, rfl⟩
+    rcases k with _ | k
+    · exact hφ i
+    · exact (commute_e (by omega)).map φ
+  · exact Commute.refl _
+  · rcases Nat.exists_eq_add_of_lt hij with ⟨k, rfl⟩
+    rcases k with _ | k
+    · exact (hφ j).symm
+    · exact (commute_e (by omega)).map φ
+
+/-- An algebra map out of the balanced projection algebra sending adjacent generators to commuting
+elements has commutative image. -/
+theorem commute_map_of_commute_map_e_succ (hφ : ∀ i, Commute (φ (e τ i)) (φ (e τ (i + 1))))
+    (x y : BalancedProjectionAlgebra R τ) : Commute (φ x) (φ y) := by
+  refine Algebra.commute_of_mem_adjoin_of_forall_mem_commute (map_mem_adjoin_range φ y) ?_
+  rintro _ ⟨j, rfl⟩
+  refine (Algebra.commute_of_mem_adjoin_of_forall_mem_commute (map_mem_adjoin_range φ x) ?_).symm
+  rintro _ ⟨i, rfl⟩
+  exact commute_map_e_of_commute_map_e_succ φ hφ j i
+
+end CommuteMap
 
 end Generation
 

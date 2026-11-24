@@ -6,20 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Zero
-public import Mathlib.Algebra.MvPolynomial.Supported
-public import Mathlib.RingTheory.Ideal.Quotient.Operations
-import Mathlib.Algebra.MvPolynomial.Variables
-import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.MvPolynomial.Supported
+import Mathlib.Algebra.Algebra.Subalgebra.Directed
+import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.MvPolynomial.Basic
 
 /-!
 # The Bernoulli Markov trace at `τ = 0`
 
-At `τ = 0` the balanced relation `e i * e (i + 1) * e i = e (i + 1) * e i * e (i + 1)` holds for
-any two commuting idempotents. So every sequence of idempotents in a commutative algebra defines a
-representation of `TauCeti.BalancedProjectionAlgebra R 0`
-(`TauCeti.BalancedProjectionAlgebra.liftComm`). In particular each subset `s ⊆ ℕ`, that is each
-point of `{0, 1} ^ ℕ`, gives a character sending `e i` to `1` for `i ∈ s` and to `0` otherwise
+At `τ = 0` every sequence of idempotents in a commutative algebra defines a representation of
+`TauCeti.BalancedProjectionAlgebra R 0` (`TauCeti.BalancedProjectionAlgebra.liftComm`), and each
+subset `s ⊆ ℕ`, that is each point of `{0, 1} ^ ℕ`, gives an indicator character
 (`TauCeti.BalancedProjectionAlgebra.indicatorCharacter`).
 
 For every `η : R` this file constructs the Bernoulli Markov trace
@@ -29,19 +26,22 @@ the first `n + 1` strands. It is the expectation for the Bernoulli product measu
 `η` on `{0, 1} ^ ℕ`: on the stage of the first `N + 1` strands it is the average of the indicator
 characters at the subsets `s` of `{0, …, N - 1}` with weights `η ^ |s| * (1 - η) ^ (N - |s|)`
 (`TauCeti.BalancedProjectionAlgebra.bernoulliTrace_eq_sum`). For real `0 ≤ η ≤ 1` these weights
-are those of the Bernoulli product distribution.
+are those of the Bernoulli product distribution. On a product of generators it takes the value `η`
+to the number of distinct generators occurring in it
+(`TauCeti.BalancedProjectionAlgebra.bernoulliTrace_prod_map_e`).
 
-The algebraic presentation at `τ = 0` is not commutative, but its representations by projections
-in a ring with a proper star, such as a C⋆-algebra, have commutative image
-(`TauCeti.BalancedProjectionAlgebra.commute_map_of_zero`). Among functionals which do not see the
-order of two adjacent generators the Markov property determines the trace: the value on a product
-of generators is `η` to the number of distinct generators occurring in it
-(`TauCeti.BalancedProjectionAlgebra.eq_bernoulliTrace`). Consequently a normalized Markov
-functional through a representation with commuting generators, in particular through a
-representation by projections, is the Bernoulli trace
-(`TauCeti.BalancedProjectionAlgebra.comp_eq_bernoulliTrace`,
-`TauCeti.BalancedProjectionAlgebra.comp_eq_bernoulliTrace_of_isStarProjection`). The two scalar
-characters are the Bernoulli traces with `η = 1` and `η = 0`.
+Conversely, the normalization, traciality and the Markov property with parameter `η` determine
+the trace: every normalized tracial Markov functional with parameter `η` is the Bernoulli trace
+(`TauCeti.BalancedProjectionAlgebra.eq_bernoulliTrace`). The proof uses that the stage of the
+first `n + 2` strands is spanned by the stage `A` of the first `n + 1` strands and the products
+`a * e n * b` with `a, b ∈ A`. The algebraic presentation at `τ = 0` is not commutative, but its
+representations by projections in a ring with a proper star, such as a C⋆-algebra, have
+commutative image (`TauCeti.BalancedProjectionAlgebra.commute_map_of_zero`). Consequently a
+normalized Markov functional through a representation with commuting generators, in particular
+through a representation by projections, is the Bernoulli trace
+(`TauCeti.BalancedProjectionAlgebra.apply_map_eq_bernoulliTrace`,
+`TauCeti.BalancedProjectionAlgebra.apply_map_eq_bernoulliTrace_of_isStarProjection`). The two
+scalar characters are the Bernoulli traces with `η = 1` and `η = 0`.
 
 The construction passes through the commutative algebra `MvPolynomial ℕ R` modulo the relations
 `X i * X i = X i`, on which the trace is the linear functional sending a monomial to `η` to the
@@ -49,9 +49,6 @@ number of variables occurring in it.
 
 ## Main definitions
 
-* `TauCeti.BalancedProjectionAlgebra.liftComm`: the representation defined by a sequence of
-  idempotents in a commutative algebra.
-* `TauCeti.BalancedProjectionAlgebra.indicatorCharacter`: the character at a subset of `ℕ`.
 * `TauCeti.BalancedProjectionAlgebra.bernoulliTrace`: the Bernoulli Markov trace.
 
 ## Main results
@@ -61,10 +58,10 @@ number of variables occurring in it.
   `TauCeti.BalancedProjectionAlgebra.bernoulliTrace_mul_e`: the Bernoulli trace is a normalized
   Markov trace.
 * `TauCeti.BalancedProjectionAlgebra.bernoulliTrace_eq_sum`: the Bernoulli product expansion.
-* `TauCeti.BalancedProjectionAlgebra.eq_bernoulliTrace`: uniqueness among functionals insensitive
-  to the order of adjacent generators.
-* `TauCeti.BalancedProjectionAlgebra.comp_eq_bernoulliTrace_of_isStarProjection`: uniqueness of
-  the Markov functionals through representations by projections.
+* `TauCeti.BalancedProjectionAlgebra.eq_bernoulliTrace`: uniqueness among normalized tracial
+  Markov functionals.
+* `TauCeti.BalancedProjectionAlgebra.apply_map_eq_bernoulliTrace_of_isStarProjection`: uniqueness
+  of the Markov functionals through representations by projections.
 
 ## References
 
@@ -85,47 +82,6 @@ namespace BalancedProjectionAlgebra
 
 variable {R : Type*} [CommRing R]
 
-/-! ### Representations in commutative algebras -/
-
-section LiftComm
-
-variable {A : Type*} [CommRing A] [Algebra R A]
-
-/-- At `τ = 0`, a sequence of idempotents in a commutative algebra defines a representation of the
-balanced projection algebra: for commuting idempotents both sides of the balanced relation are
-`e i * e (i + 1)`. -/
-def liftComm (f : ℕ → A) (hf : ∀ i, IsIdempotentElem (f i)) :
-    BalancedProjectionAlgebra R (0 : R) →ₐ[R] A :=
-  lift f hf (fun i ↦ by
-    simp only [zero_smul, sub_zero]
-    linear_combination f (i + 1) * (hf i).eq - f i * (hf (i + 1)).eq) fun _ ↦ mul_comm _ _
-
-/-- The representation `TauCeti.BalancedProjectionAlgebra.liftComm f` sends `e i` to `f i`. -/
-@[simp]
-theorem liftComm_e (f : ℕ → A) (hf : ∀ i, IsIdempotentElem (f i)) (i : ℕ) :
-    liftComm (R := R) f hf (e 0 i) = f i :=
-  lift_e (τ := (0 : R)) _ _ _ _ i
-
-end LiftComm
-
-/-! ### Indicator characters -/
-
-section IndicatorCharacter
-
-/-- The character of `TauCeti.BalancedProjectionAlgebra R 0` at a subset `s ⊆ ℕ`, that is at a
-point of `{0, 1} ^ ℕ`: it sends `e i` to `1` for `i ∈ s` and to `0` otherwise. -/
-noncomputable def indicatorCharacter (s : Set ℕ) : BalancedProjectionAlgebra R (0 : R) →ₐ[R] R :=
-  liftComm (s.indicator 1) fun i ↦ by
-    by_cases hi : i ∈ s <;> simp [IsIdempotentElem, hi]
-
-/-- The indicator character at `s` sends `e i` to `1` for `i ∈ s` and to `0` otherwise. -/
-@[simp]
-theorem indicatorCharacter_e (s : Set ℕ) (i : ℕ) :
-    indicatorCharacter (R := R) s (e 0 i) = s.indicator 1 i :=
-  liftComm_e _ _ i
-
-end IndicatorCharacter
-
 /-! ### The Boolean polynomial algebra -/
 
 section Boolean
@@ -140,8 +96,8 @@ variable (R) in
 idempotent variables, the universal commutative one. -/
 private noncomputable def toBool :
     BalancedProjectionAlgebra R (0 : R) →ₐ[R] MvPolynomial ℕ R ⧸ boolIdeal R :=
-  liftComm (fun i ↦ Ideal.Quotient.mk _ (X i)) fun i ↦ by
-    rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.eq]
+  liftComm R (fun i ↦ Ideal.Quotient.mkₐ R (boolIdeal R) (X i)) fun i ↦ by
+    rw [IsIdempotentElem, ← map_mul, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq]
     exact Ideal.subset_span ⟨i, rfl⟩
 
 private theorem toBool_e (i : ℕ) :
@@ -155,9 +111,11 @@ private theorem exists_toBool_eq {n : ℕ} {w : BalancedProjectionAlgebra R (0 :
     ∃ p ∈ supported R (Set.Iio n), Ideal.Quotient.mkₐ R (boolIdeal R) p = toBool R w := by
   have h : stage R 0 (n + 1) ≤
       ((supported R (Set.Iio n)).map (Ideal.Quotient.mkₐ R (boolIdeal R))).comap (toBool R) :=
-    stage_le_iff.2 fun i hi ↦
-      ⟨X i, Algebra.subset_adjoin ⟨i, by simpa using hi, rfl⟩, (toBool_e i).symm⟩
-  exact h hw
+    stage_le_iff.2 fun i hi ↦ by
+      rw [Subalgebra.mem_comap, Subalgebra.mem_map, supported_eq_adjoin_X]
+      exact ⟨X i, Algebra.subset_adjoin ⟨i, Set.mem_Iio.2 (by omega), rfl⟩, (toBool_e i).symm⟩
+  have hw' := h hw
+  rwa [Subalgebra.mem_comap, Subalgebra.mem_map] at hw'
 
 /-- The Bernoulli expectation of a polynomial in idempotent variables: the linear functional
 sending a monomial to `η` to the number of variables occurring in it. -/
@@ -173,17 +131,6 @@ private theorem boolExpect_monomial (η : R) (m : ℕ →₀ ℕ) (c : R) :
 
 private theorem boolExpect_one (η : R) : boolExpect η 1 = 1 := by
   simpa using boolExpect_monomial η 0 1
-
-/-- Two linear functionals on polynomials agree on the polynomials in the variables `X i`,
-`i < n`, once they agree on the monomials in these variables. -/
-private theorem eq_of_mem_supported {f g : MvPolynomial ℕ R →ₗ[R] R} {n : ℕ}
-    (h : ∀ m : ℕ →₀ ℕ, (∀ i ∈ m.support, i < n) → f (monomial m 1) = g (monomial m 1))
-    {p : MvPolynomial ℕ R} (hp : p ∈ supported R (Set.Iio n)) : f p = g p := by
-  rw [mem_supported] at hp
-  rw [p.as_sum, map_sum, map_sum]
-  refine Finset.sum_congr rfl fun m hm ↦ ?_
-  have hm' : ∀ i ∈ m.support, i < n := fun i hi ↦ hp (support_subset_vars_of_mem_support hm hi)
-  rw [← mul_one (p.coeff m), ← smul_eq_mul, ← smul_monomial, map_smul, map_smul, h m hm']
 
 private theorem boolExpect_mul_X_mul_X (η : R) (p : MvPolynomial ℕ R) (i : ℕ) :
     boolExpect η (p * (X i * X i)) = boolExpect η (p * X i) := by
@@ -208,21 +155,21 @@ private theorem boolExpect_eq_zero (η : R) {x : MvPolynomial ℕ R} (hx : x ∈
 
 /-- The Bernoulli expectation on the quotient by the relations `X i * X i = X i`. -/
 private noncomputable def boolTrace (η : R) : (MvPolynomial ℕ R ⧸ boolIdeal R) →ₗ[R] R :=
-  ((boolIdeal R).restrictScalars R).liftQ (boolExpect η) (fun _ hx ↦ boolExpect_eq_zero η hx) ∘ₗ
+  ((boolIdeal R).restrictScalars R).liftQ (boolExpect η) (fun x hx ↦ LinearMap.mem_ker.2 <|
+      boolExpect_eq_zero η ((Submodule.restrictScalars_mem _ _ x).1 hx)) ∘ₗ
     (Submodule.Quotient.restrictScalarsEquiv R (boolIdeal R)).symm.toLinearMap
 
 private theorem boolTrace_mk (η : R) (p : MvPolynomial ℕ R) :
     boolTrace η (Ideal.Quotient.mkₐ R (boolIdeal R) p) = boolExpect η p := by
-  simp only [boolTrace, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    Ideal.Quotient.mkₐ_eq_mk]
-  exact congr_arg _ (Submodule.Quotient.restrictScalarsEquiv_symm_mk _ _ p)
+  simp [boolTrace, Ideal.Quotient.mkₐ_eq_mk, ← Ideal.Quotient.mk_eq_mk]
 
 /-- Appending a new last variable multiplies the Bernoulli expectation by `η`. -/
 private theorem boolExpect_mul_X {η : R} {n : ℕ} {p : MvPolynomial ℕ R}
     (hp : p ∈ supported R (Set.Iio n)) : boolExpect η (p * X n) = η * boolExpect η p := by
-  refine eq_of_mem_supported (f := boolExpect η ∘ₗ LinearMap.mulRight R (X n))
-    (g := η • boolExpect η) (fun m hm ↦ ?_) hp
-  have hn : n ∉ m.support := fun h ↦ (hm n h).false
+  suffices (boolExpect η ∘ₗ LinearMap.mulRight R (X n)) p = (η • boolExpect η) p by
+    simpa using this
+  refine linearMap_eqOn_supported (fun m hm ↦ ?_) hp
+  have hn : n ∉ m.support := fun h ↦ lt_irrefl n (Set.mem_Iio.1 (hm h))
   simp [X, monomial_mul_monomial, boolExpect_monomial, Finsupp.support_add_eq_union,
     Finset.union_singleton, hn, pow_succ']
 
@@ -243,8 +190,8 @@ noncomputable def bernoulliTrace : BalancedProjectionAlgebra R (0 : R) →ₗ[R]
   boolTrace η ∘ₗ (toBool R).toLinearMap
 
 private theorem bernoulliTrace_apply (x : BalancedProjectionAlgebra R (0 : R)) :
-    bernoulliTrace η x = boolTrace η (toBool R x) :=
-  rfl
+    bernoulliTrace η x = boolTrace η (toBool R x) := by
+  simp only [bernoulliTrace, LinearMap.coe_comp, Function.comp_apply, AlgHom.toLinearMap_apply]
 
 /-- The Bernoulli trace is normalized. -/
 @[simp]
@@ -252,10 +199,22 @@ theorem bernoulliTrace_one : bernoulliTrace η 1 = 1 := by
   rw [bernoulliTrace_apply, map_one, ← map_one (Ideal.Quotient.mkₐ R (boolIdeal R)), boolTrace_mk,
     boolExpect_one]
 
+/-- The Bernoulli trace restricts to the identity on the scalars. -/
+@[simp]
+theorem bernoulliTrace_algebraMap (r : R) :
+    bernoulliTrace η (algebraMap R (BalancedProjectionAlgebra R (0 : R)) r) = r := by
+  rw [Algebra.algebraMap_eq_smul_one, map_smul, bernoulliTrace_one, smul_eq_mul, mul_one]
+
 /-- The Bernoulli trace is tracial. -/
 theorem bernoulliTrace_mul_comm (x y : BalancedProjectionAlgebra R (0 : R)) :
     bernoulliTrace η (x * y) = bernoulliTrace η (y * x) := by
   rw [bernoulliTrace_apply, bernoulliTrace_apply, map_mul (toBool R), map_mul (toBool R), mul_comm]
+
+/-- The Bernoulli trace does not see the order of the last two factors of a product, since it
+factors through a commutative algebra. -/
+theorem bernoulliTrace_mul_right_comm (x y z : BalancedProjectionAlgebra R (0 : R)) :
+    bernoulliTrace η (x * y * z) = bernoulliTrace η (x * z * y) := by
+  simp only [bernoulliTrace_apply, map_mul, mul_right_comm _ (toBool R y)]
 
 /-- **The Markov property.** Appending the projection `e n` to an element of the stage of the
 first `n + 1` strands multiplies the Bernoulli trace by `η`. -/
@@ -270,16 +229,35 @@ theorem bernoulliTrace_mul_e {n : ℕ} {w : BalancedProjectionAlgebra R (0 : R)}
 theorem bernoulliTrace_e (n : ℕ) : bernoulliTrace η (e 0 n) = η := by
   simpa using bernoulliTrace_mul_e η (one_mem (stage R 0 (n + 1)))
 
+/-- A product of generators is represented by the monomial whose exponents count the occurrences
+of each generator. -/
+private theorem toBool_prod_map_e (l : List ℕ) :
+    toBool R (l.map (e 0)).prod =
+      Ideal.Quotient.mkₐ R (boolIdeal R) (monomial (Multiset.toFinsupp (l : Multiset ℕ)) 1) := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.map_cons, List.prod_cons, map_mul, ih, toBool_e, ← map_mul, ← Multiset.cons_coe,
+      ← Multiset.singleton_add, Multiset.toFinsupp_add, Multiset.toFinsupp_singleton,
+      monomial_single_add, pow_one]
+
+/-- The Bernoulli trace of a product of generators is `η` to the number of distinct generators
+occurring in it. -/
+theorem bernoulliTrace_prod_map_e (l : List ℕ) :
+    bernoulliTrace η (l.map (e 0)).prod = η ^ l.toFinset.card := by
+  rw [bernoulliTrace_apply, toBool_prod_map_e, boolTrace_mk, boolExpect_monomial, one_mul,
+    Multiset.toFinsupp_support, List.toFinset_coe]
+
 /-- The indicator characters factor through the polynomials in idempotent variables. -/
 private theorem indicatorCharacter_apply_of_eq (s : Set ℕ) {x : BalancedProjectionAlgebra R (0 : R)}
     {p : MvPolynomial ℕ R} (h : Ideal.Quotient.mkₐ R (boolIdeal R) p = toBool R x) :
-    indicatorCharacter s x = eval (s.indicator 1) p := by
+    indicatorCharacter R s x = eval (s.indicator 1) p := by
   have hI (a : MvPolynomial ℕ R) (ha : a ∈ boolIdeal R) : aeval (s.indicator (1 : ℕ → R)) a = 0 :=
     RingHom.mem_ker.1 <| (Ideal.span_le (I := RingHom.ker (aeval (s.indicator (1 : ℕ → R))))).2
       (by
         rintro _ ⟨i, rfl⟩
         by_cases hi : i ∈ s <;> simp [hi]) ha
-  have key : indicatorCharacter (R := R) s =
+  have key : indicatorCharacter R s =
       (Ideal.Quotient.liftₐ (boolIdeal R) _ hI).comp (toBool R) := by
     ext i
     simp [toBool_e]
@@ -324,18 +302,166 @@ weights `η ^ |s| * (1 - η) ^ (N - |s|)`. -/
 theorem bernoulliTrace_eq_sum {N : ℕ} {x : BalancedProjectionAlgebra R (0 : R)}
     (hx : x ∈ stage R 0 (N + 1)) :
     bernoulliTrace η x = ∑ s ∈ (Finset.range N).powerset,
-      η ^ s.card * (1 - η) ^ (N - s.card) * indicatorCharacter (s : Set ℕ) x := by
+      η ^ s.card * (1 - η) ^ (N - s.card) * indicatorCharacter R (s : Set ℕ) x := by
   obtain ⟨p, hp, hpx⟩ := exists_toBool_eq hx
   rw [bernoulliTrace_apply, ← hpx, boolTrace_mk]
   simp only [indicatorCharacter_apply_of_eq _ hpx]
-  refine (eq_of_mem_supported (f := boolExpect η) (g := ∑ s ∈ (Finset.range N).powerset,
+  refine (linearMap_eqOn_supported (f := boolExpect η) (g := ∑ s ∈ (Finset.range N).powerset,
     (η ^ s.card * (1 - η) ^ (N - s.card)) • (aeval ((s : Set ℕ).indicator (1 : ℕ → R))).toLinearMap)
     (fun m hm ↦ ?_) hp).trans ?_
-  · simpa [LinearMap.sum_apply] using
-      boolExpect_monomial_eq_sum η (Finset.range N) fun i hi ↦ Finset.mem_range.2 (hm i hi)
+  · simpa [LinearMap.sum_apply] using boolExpect_monomial_eq_sum η (Finset.range N)
+      fun i hi ↦ Finset.mem_range.2 (Set.mem_Iio.1 (hm (Finset.mem_coe.2 hi)))
   · simp [LinearMap.sum_apply]
 
 end Trace
+
+/-! ### The stage decomposition -/
+
+section Decomposition
+
+/-- An element of the stage of the first `n` strands commutes with every projection `e j` with
+`n ≤ j`. -/
+private theorem commute_e_of_mem_stage {n j : ℕ} (hj : n ≤ j)
+    {x : BalancedProjectionAlgebra R (0 : R)} (hx : x ∈ stage R 0 n) : Commute x (e 0 j) := by
+  have h : stage R 0 n ≤ Subalgebra.centralizer R {e 0 j} :=
+    stage_le_iff.2 fun i hi ↦ (Subalgebra.mem_centralizer_iff R).2 fun y hy ↦ by
+      rw [Set.mem_singleton_iff.1 hy]
+      exact (commute_e (Or.inr (by omega))).eq
+  exact ((Subalgebra.mem_centralizer_iff R).1 (h hx) _ (Set.mem_singleton _)).symm
+
+variable (R) in
+/-- The span of the stage of the first `n + 1` strands and of the products `a * e n * b` of the
+projection `e n` with two elements of this stage. -/
+private noncomputable def stageSpan (n : ℕ) : Submodule R (BalancedProjectionAlgebra R (0 : R)) :=
+  Submodule.span R ((stage R 0 (n + 1) : Set (BalancedProjectionAlgebra R (0 : R))) ∪
+    {y | ∃ a ∈ stage R 0 (n + 1), ∃ b ∈ stage R 0 (n + 1), a * e 0 n * b = y})
+
+private theorem mem_stageSpan_of_mem_stage {n : ℕ} {x : BalancedProjectionAlgebra R (0 : R)}
+    (hx : x ∈ stage R 0 (n + 1)) : x ∈ stageSpan R n :=
+  Submodule.subset_span (Or.inl hx)
+
+private theorem mul_e_mul_mem_stageSpan {n : ℕ} {a b : BalancedProjectionAlgebra R (0 : R)}
+    (ha : a ∈ stage R 0 (n + 1)) (hb : b ∈ stage R 0 (n + 1)) : a * e 0 n * b ∈ stageSpan R n :=
+  Submodule.subset_span (Or.inr ⟨a, ha, b, hb, rfl⟩)
+
+/-- The span `TauCeti.BalancedProjectionAlgebra.stageSpan R n` is a bimodule over the stage of the
+first `n + 1` strands. -/
+private theorem mul_mul_mem_stageSpan {n : ℕ} {a b x : BalancedProjectionAlgebra R (0 : R)}
+    (ha : a ∈ stage R 0 (n + 1)) (hb : b ∈ stage R 0 (n + 1)) (hx : x ∈ stageSpan R n) :
+    a * x * b ∈ stageSpan R n := by
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    rcases hx with hx | ⟨c, hc, d, hd, rfl⟩
+    · exact mem_stageSpan_of_mem_stage (mul_mem (mul_mem ha hx) hb)
+    · simpa only [mul_assoc] using mul_e_mul_mem_stageSpan (mul_mem ha hc) (mul_mem hd hb)
+  | zero => simp
+  | add x y _ _ hx hy => rw [mul_add, add_mul]; exact add_mem hx hy
+  | smul r x _ hx => rw [mul_smul_comm, smul_mul_assoc]; exact Submodule.smul_mem _ r hx
+
+/-- Sandwiching an element of the stage of the first strand between two copies of `e 0` stays in
+`TauCeti.BalancedProjectionAlgebra.stageSpan R 0`. -/
+private theorem e_mul_mul_e_mem_stageSpan_zero {c : BalancedProjectionAlgebra R (0 : R)}
+    (hc : c ∈ stage R 0 1) : e 0 0 * c * e 0 0 ∈ stageSpan R 0 := by
+  have hbot : stage R 0 1 ≤ ⊥ := stage_le_iff.2 fun i hi ↦ absurd hi (by omega)
+  obtain ⟨r, rfl⟩ := Algebra.mem_bot.1 (hbot hc)
+  have he : e (R := R) 0 0 ∈ stageSpan R 0 := by
+    simpa using mul_e_mul_mem_stageSpan (n := 0) (one_mem _) (one_mem _)
+  rw [← Algebra.commutes, mul_assoc, e_mul_self, ← Algebra.smul_def]
+  exact Submodule.smul_mem _ r he
+
+/-- If the stage of the first `k + 2` strands lies in
+`TauCeti.BalancedProjectionAlgebra.stageSpan R k`, then sandwiching one of its elements between
+two copies of `e (k + 1)` stays in `TauCeti.BalancedProjectionAlgebra.stageSpan R (k + 1)`. This
+uses the balanced relation `e (k + 1) * e k * e (k + 1) = e k * e (k + 1) * e k` at `τ = 0`. -/
+private theorem e_mul_mul_e_mem_stageSpan_succ {k : ℕ}
+    (hk : ∀ {x : BalancedProjectionAlgebra R (0 : R)}, x ∈ stage R 0 (k + 2) → x ∈ stageSpan R k)
+    {c : BalancedProjectionAlgebra R (0 : R)} (hc : c ∈ stage R 0 (k + 2)) :
+    e 0 (k + 1) * c * e 0 (k + 1) ∈ stageSpan R (k + 1) := by
+  have hle : stage R 0 (k + 1) ≤ stage R 0 (k + 2) := stage_mono (by omega)
+  have hc' := hk hc
+  clear hc
+  induction hc' using Submodule.span_induction with
+  | mem c hc =>
+    rcases hc with hc | ⟨a, ha, b, hb, rfl⟩
+    · rw [mul_assoc, (commute_e_of_mem_stage le_rfl hc).eq, ← mul_assoc, e_mul_self]
+      simpa using mul_e_mul_mem_stageSpan (one_mem _) (hle hc)
+    · have hbal : e 0 (k + 1) * e 0 k * e 0 (k + 1) = e (R := R) 0 k * e 0 (k + 1) * e 0 k := by
+        simpa using (e_balanced (R := R) (τ := 0) k).symm
+      have hae := (commute_e_of_mem_stage (n := k + 1) (j := k + 1) le_rfl ha).eq
+      have hbe := (commute_e_of_mem_stage (n := k + 1) (j := k + 1) le_rfl hb).eq
+      have h : e 0 (k + 1) * (a * e 0 k * b) * e 0 (k + 1) =
+          a * e 0 k * e 0 (k + 1) * (e 0 k * b) := by
+        calc e 0 (k + 1) * (a * e 0 k * b) * e 0 (k + 1)
+            = (e 0 (k + 1) * a) * e 0 k * (b * e 0 (k + 1)) := by simp only [mul_assoc]
+          _ = a * (e 0 (k + 1) * e 0 k * e 0 (k + 1)) * b := by
+            rw [← hae, hbe]; simp only [mul_assoc]
+          _ = a * e 0 k * e 0 (k + 1) * (e 0 k * b) := by rw [hbal]; simp only [mul_assoc]
+      rw [h]
+      exact mul_e_mul_mem_stageSpan (mul_mem (hle ha) (e_mem_stage (by omega)))
+        (mul_mem (e_mem_stage (by omega)) (hle hb))
+  | zero => simp
+  | add x y _ _ hx hy => rw [mul_add, add_mul]; exact add_mem hx hy
+  | smul r x _ hx => rw [mul_smul_comm, smul_mul_assoc]; exact Submodule.smul_mem _ r hx
+
+/-- If sandwiching elements of the stage of the first `n + 1` strands between two copies of `e n`
+stays in `TauCeti.BalancedProjectionAlgebra.stageSpan R n`, then this span contains the stage of
+the first `n + 2` strands. -/
+private theorem mem_stageSpan_of_e_mul_mul_e_mem {n : ℕ}
+    (hkey : ∀ {c : BalancedProjectionAlgebra R (0 : R)}, c ∈ stage R 0 (n + 1) →
+      e 0 n * c * e 0 n ∈ stageSpan R n)
+    {x : BalancedProjectionAlgebra R (0 : R)} (hx : x ∈ stage R 0 (n + 2)) : x ∈ stageSpan R n := by
+  have he {z : BalancedProjectionAlgebra R (0 : R)} (hz : z ∈ stageSpan R n) :
+      e 0 n * z ∈ stageSpan R n := by
+    induction hz using Submodule.span_induction with
+    | mem z hz =>
+      rcases hz with hz | ⟨c, hc, d, hd, rfl⟩
+      · simpa using mul_e_mul_mem_stageSpan (one_mem _) hz
+      · simpa only [one_mul, mul_assoc] using mul_mul_mem_stageSpan (one_mem _) hd (hkey hc)
+    | zero => simp
+    | add x y _ _ hx hy => rw [mul_add]; exact add_mem hx hy
+    | smul r x _ hx => rw [mul_smul_comm]; exact Submodule.smul_mem _ r hx
+  let T : Subalgebra R (BalancedProjectionAlgebra R (0 : R)) :=
+    (stageSpan R n).toSubalgebra (mem_stageSpan_of_mem_stage (one_mem _)) fun x y hx hy ↦ by
+      induction hx using Submodule.span_induction with
+      | mem x hx =>
+        rcases hx with hx | ⟨a, ha, b, hb, rfl⟩
+        · simpa using mul_mul_mem_stageSpan hx (one_mem _) hy
+        · have hby := he (by simpa using mul_mul_mem_stageSpan hb (one_mem _) hy)
+          simpa only [mul_assoc, mul_one] using mul_mul_mem_stageSpan ha (one_mem _) hby
+      | zero => simp
+      | add x z _ _ hx hz => rw [add_mul]; exact add_mem hx hz
+      | smul r x _ hx => rw [smul_mul_assoc]; exact Submodule.smul_mem _ r hx
+  have hT : stage R 0 (n + 2) ≤ T := stage_le_iff.2 fun i hi ↦ by
+    rw [Submodule.mem_toSubalgebra]
+    rcases Nat.lt_or_ge i n with hin | hin
+    · exact mem_stageSpan_of_mem_stage (e_mem_stage (by omega))
+    · simpa [show i = n by omega] using mul_e_mul_mem_stageSpan (n := n) (one_mem _) (one_mem _)
+  exact Submodule.mem_toSubalgebra.1 (hT hx)
+
+/-- The stage of the first `n + 2` strands is spanned by the stage `A` of the first `n + 1` strands
+and the products `a * e n * b` with `a, b ∈ A`. -/
+private theorem mem_stageSpan {n : ℕ} {x : BalancedProjectionAlgebra R (0 : R)}
+    (hx : x ∈ stage R 0 (n + 2)) : x ∈ stageSpan R n := by
+  induction n generalizing x with
+  | zero => exact mem_stageSpan_of_e_mul_mul_e_mem e_mul_mul_e_mem_stageSpan_zero hx
+  | succ k ih => exact mem_stageSpan_of_e_mul_mul_e_mem (e_mul_mul_e_mem_stageSpan_succ ih) hx
+
+/-- Every element of the balanced projection algebra lies in some stage. -/
+private theorem exists_mem_stage (x : BalancedProjectionAlgebra R (0 : R)) :
+    ∃ n, x ∈ stage R 0 (n + 1) := by
+  have hdir : Directed (· ≤ ·) fun n ↦ stage R (0 : R) (n + 1) :=
+    Monotone.directed_le fun _ _ h ↦ stage_mono (by omega)
+  have h : (⊤ : Subalgebra R (BalancedProjectionAlgebra R (0 : R))) ≤
+      ⨆ n, stage R 0 (n + 1) := by
+    rw [← adjoin_range_e, Algebra.adjoin_le_iff]
+    rintro _ ⟨i, rfl⟩
+    rw [SetLike.mem_coe, ← SetLike.mem_coe, Subalgebra.coe_iSup_of_directed hdir]
+    exact Set.mem_iUnion.2 ⟨i + 1, e_mem_stage (by omega)⟩
+  have hx := h (Algebra.mem_top (x := x))
+  rw [← SetLike.mem_coe, Subalgebra.coe_iSup_of_directed hdir] at hx
+  exact Set.mem_iUnion.1 hx
+
+end Decomposition
 
 /-! ### Uniqueness -/
 
@@ -343,142 +469,78 @@ section Uniqueness
 
 variable {η : R} {μ : BalancedProjectionAlgebra R (0 : R) →ₗ[R] R}
 
-/-- A functional which does not see the order of two adjacent generators does not see the order
-of any two generators. -/
-private theorem apply_mul_e_mul_e_mul_comm
-    (hcomm : ∀ x y i, μ (x * e 0 i * e 0 (i + 1) * y) = μ (x * e 0 (i + 1) * e 0 i * y))
-    (x y : BalancedProjectionAlgebra R (0 : R)) (i j : ℕ) :
-    μ (x * e 0 i * e 0 j * y) = μ (x * e 0 j * e 0 i * y) := by
-  by_cases h₁ : j = i + 1
-  · subst h₁
-    exact hcomm x y i
-  by_cases h₂ : i = j + 1
-  · subst h₂
-    exact (hcomm x y j).symm
-  by_cases h₃ : i = j
-  · rw [h₃]
-  rw [mul_assoc x, (commute_e (by omega)).eq, ← mul_assoc]
-
-/-- A functional which does not see the order of two adjacent generators does not see the order
-of the generators in a product. -/
-private theorem apply_mul_prod_mul_of_perm
-    (hcomm : ∀ x y i j, μ (x * e 0 i * e 0 j * y) = μ (x * e 0 j * e 0 i * y))
-    {l₁ l₂ : List ℕ} (h : l₁.Perm l₂) (x y : BalancedProjectionAlgebra R (0 : R)) :
-    μ (x * (l₁.map (e 0)).prod * y) = μ (x * (l₂.map (e 0)).prod * y) := by
-  induction h generalizing x with
-  | nil => rfl
-  | cons a _ ih =>
-    simp only [List.map_cons, List.prod_cons, ← mul_assoc]
-    exact ih (x * e 0 a)
-  | swap a b l =>
-    simp only [List.map_cons, List.prod_cons, ← mul_assoc]
-    rw [mul_assoc _ _ y, mul_assoc _ _ y]
-    exact hcomm _ _ _ _
-  | trans _ _ ih₁ ih₂ => exact (ih₁ x).trans (ih₂ x)
-
-/-- A normalized Markov functional which does not see the order of two adjacent generators takes
-the value `η ^ k` on a product of generators, where `k` is the number of distinct generators
-occurring in it. -/
-private theorem apply_prod_eq_pow (h1 : μ 1 = 1)
+/-- Two normalized tracial Markov functionals with the same parameter agree on every stage. -/
+private theorem eqOn_stage_of_markov {ν : BalancedProjectionAlgebra R (0 : R) →ₗ[R] R}
+    (h1 : μ 1 = 1) (htrace : ∀ x y, μ (x * y) = μ (y * x))
     (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → μ (w * e 0 n) = η * μ w)
-    (hcomm : ∀ x y i, μ (x * e 0 i * e 0 (i + 1) * y) = μ (x * e 0 (i + 1) * e 0 i * y))
-    (l : List ℕ) :
-    μ (l.map (e 0)).prod = η ^ l.toFinset.card := by
-  induction hl : l.length using Nat.strong_induction_on generalizing l with
-  | _ k ih =>
-  subst hl
-  by_cases hnil : l = []
-  · simpa [hnil] using h1
-  -- Move every occurrence of the largest index `a` to the end, where they collapse to `e 0 a`.
-  set a := l.toFinset.max' ((List.toFinset_nonempty_iff l).2 hnil)
-  have ha : a ∈ l := List.mem_toFinset.1 (l.toFinset.max'_mem _)
-  set l' := l.filter fun x ↦ !(x == a)
-  have hperm : l.Perm (l' ++ List.replicate (l.count a) a) := by
-    rw [← List.filter_beq]
-    exact (List.filter_append_perm _ l).symm.trans List.perm_append_comm
-  have hword : ((l' ++ List.replicate (l.count a) a).map (e (R := R) 0)).prod =
-      (l'.map (e 0)).prod * e 0 a := by
-    rw [List.map_append, List.prod_append, List.map_replicate, List.prod_replicate,
-      (isIdempotentElem_e a).pow_eq (List.count_pos_iff.2 ha).ne']
-  have hstage : (l'.map (e (R := R) 0)).prod ∈ stage R 0 (a + 1) := by
-    refine Subalgebra.list_prod_mem _ fun x hx ↦ ?_
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.1 hx
-    obtain ⟨hil, hia⟩ := List.mem_filter.1 hi
-    have : i < a := lt_of_le_of_ne (l.toFinset.le_max' i (List.mem_toFinset.2 hil))
-      (by simpa using hia)
-    exact e_mem_stage (by omega)
-  have hlen : l'.length < l.length :=
-    List.length_filter_lt_length_iff_exists.2 ⟨a, ha, by simp⟩
-  have hcard : l'.toFinset.card + 1 = l.toFinset.card := by
-    rw [List.toFinset_filter]
-    convert Finset.card_erase_add_one (List.mem_toFinset.2 ha) using 3
-    ext x
-    simp [and_comm]
-  calc μ (l.map (e 0)).prod = μ (1 * (l.map (e 0)).prod * 1) := by rw [one_mul, mul_one]
-    _ = μ ((l'.map (e 0)).prod * e 0 a) := by
-      rw [apply_mul_prod_mul_of_perm (apply_mul_e_mul_e_mul_comm hcomm) hperm, hword, one_mul,
-        mul_one]
-    _ = η ^ l.toFinset.card := by
-      rw [hmarkov hstage, ih _ hlen l' rfl, ← hcard, pow_succ']
+    (h1' : ν 1 = 1) (htrace' : ∀ x y, ν (x * y) = ν (y * x))
+    (hmarkov' : ∀ {n w}, w ∈ stage R 0 (n + 1) → ν (w * e 0 n) = η * ν w) (n : ℕ) :
+    Set.EqOn μ ν (stage R 0 (n + 1)) := by
+  induction n with
+  | zero =>
+    intro x hx
+    have hbot : stage R 0 (0 + 1) ≤ ⊥ := stage_le_iff.2 fun i hi ↦ absurd hi (by omega)
+    obtain ⟨r, rfl⟩ := Algebra.mem_bot.1 (hbot hx)
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, map_smul, h1, h1']
+  | succ n ih =>
+    intro x hx
+    have hx' := mem_stageSpan hx
+    clear hx
+    induction hx' using Submodule.span_induction with
+    | mem y hy =>
+      rcases hy with hy | ⟨a, ha, b, hb, rfl⟩
+      · exact ih hy
+      · rw [htrace, htrace', ← mul_assoc, hmarkov (mul_mem hb ha), hmarkov' (mul_mem hb ha),
+          ih (mul_mem hb ha)]
+    | zero => simp
+    | add y z _ _ hy hz => rw [map_add, map_add, hy, hz]
+    | smul r y _ hy => rw [map_smul, map_smul, hy]
 
-/-- **Uniqueness of the Bernoulli trace.** A normalized Markov functional with parameter `η` which
-does not see the order of two adjacent generators `e i` and `e (i + 1)` is the Bernoulli trace. -/
-theorem eq_bernoulliTrace (h1 : μ 1 = 1)
-    (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → μ (w * e 0 n) = η * μ w)
-    (hcomm : ∀ x y i, μ (x * e 0 i * e 0 (i + 1) * y) = μ (x * e 0 (i + 1) * e 0 i * y)) :
+/-- **Uniqueness of the Bernoulli trace.** A normalized tracial functional with the Markov property
+for the parameter `η` is the Bernoulli trace. -/
+theorem eq_bernoulliTrace (h1 : μ 1 = 1) (htrace : ∀ x y, μ (x * y) = μ (y * x))
+    (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → μ (w * e 0 n) = η * μ w) :
     μ = bernoulliTrace η := by
-  have hB (x y : BalancedProjectionAlgebra R (0 : R)) (i : ℕ) :
-      bernoulliTrace η (x * e 0 i * e 0 (i + 1) * y) =
-        bernoulliTrace η (x * e 0 (i + 1) * e 0 i * y) := by
-    simp only [bernoulliTrace_apply, map_mul, mul_right_comm _ (toBool R (e 0 i))]
   ext x
-  have hx : x ∈ Subalgebra.toSubmodule (Algebra.adjoin R (Set.range (e (R := R) 0))) := by simp
-  rw [Algebra.adjoin_eq_span] at hx
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨l, rfl⟩ : ∃ l : List ℕ, (l.map (e 0)).prod = x := by
-      induction hx using Submonoid.closure_induction with
-      | mem x hx =>
-        obtain ⟨i, rfl⟩ := hx
-        exact ⟨[i], by simp⟩
-      | one => exact ⟨[], by simp⟩
-      | mul x y _ _ hx hy =>
-        obtain ⟨l₁, rfl⟩ := hx
-        obtain ⟨l₂, rfl⟩ := hy
-        exact ⟨l₁ ++ l₂, by simp⟩
-    rw [apply_prod_eq_pow h1 hmarkov hcomm,
-      apply_prod_eq_pow (bernoulliTrace_one η) (bernoulliTrace_mul_e η) hB]
-  | zero => simp
-  | add x y _ _ hx hy => rw [map_add, map_add, hx, hy]
-  | smul c x _ hx => rw [map_smul, map_smul, hx]
+  obtain ⟨n, hn⟩ := exists_mem_stage x
+  exact eqOn_stage_of_markov h1 htrace hmarkov (bernoulliTrace_one η) (bernoulliTrace_mul_comm η)
+    (bernoulliTrace_mul_e η) n hn
+
+variable {A F M : Type*} [Semiring A] [Algebra R A]
+  [FunLike F (BalancedProjectionAlgebra R (0 : R)) A]
+  [AlgHomClass F R (BalancedProjectionAlgebra R (0 : R)) A] [FunLike M A R]
+  [LinearMapClass M R A R]
 
 /-- A normalized Markov functional through a representation in which adjacent generators commute
 is the Bernoulli trace. -/
-theorem comp_eq_bernoulliTrace {A : Type*} [Ring A] [Algebra R A]
-    (φ : BalancedProjectionAlgebra R (0 : R) →ₐ[R] A)
-    (hφ : ∀ i, Commute (φ (e 0 i)) (φ (e 0 (i + 1)))) {ν : A →ₗ[R] R} (h1 : ν 1 = 1)
-    (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → ν (φ (w * e 0 n)) = η * ν (φ w)) :
-    ν ∘ₗ φ.toLinearMap = bernoulliTrace η :=
-  eq_bernoulliTrace (by simpa using h1) hmarkov fun x y i ↦ by
-    simp only [LinearMap.coe_comp, Function.comp_apply, AlgHom.toLinearMap_apply, map_mul,
-      mul_assoc]
-    rw [← mul_assoc (φ (e 0 i)), (hφ i).eq, mul_assoc]
+theorem apply_map_eq_bernoulliTrace (φ : F) (hφ : ∀ i, Commute (φ (e 0 i)) (φ (e 0 (i + 1))))
+    {ν : M} (h1 : ν 1 = 1)
+    (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → ν (φ (w * e 0 n)) = η * ν (φ w))
+    (x : BalancedProjectionAlgebra R (0 : R)) : ν (φ x) = bernoulliTrace η x := by
+  have h := eq_bernoulliTrace (η := η) (μ := LinearMap.ofClass ν ∘ₗ (AlgHom.ofClass φ).toLinearMap)
+    (by simpa using h1)
+    (fun x y ↦ by simpa using congr_arg ν (commute_map_of_commute_map_e_succ φ hφ x y).eq)
+    (fun hw ↦ by simpa using hmarkov hw)
+  simpa using congr($h x)
 
 /-- **Uniqueness of the Markov state at `τ = 0`.** A normalized Markov functional with parameter
 `η` through a representation by projections in a ring with a proper star, for instance a
 C⋆-algebra, is the Bernoulli trace. -/
-theorem comp_eq_bernoulliTrace_of_isStarProjection {A : Type*} [Ring A] [StarRing A]
-    [IsProperStar A] [Algebra R A] (φ : BalancedProjectionAlgebra R (0 : R) →ₐ[R] A)
-    (hφ : ∀ i, IsStarProjection (φ (e 0 i))) {ν : A →ₗ[R] R} (h1 : ν 1 = 1)
-    (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → ν (φ (w * e 0 n)) = η * ν (φ w)) :
-    ν ∘ₗ φ.toLinearMap = bernoulliTrace η :=
-  comp_eq_bernoulliTrace φ (fun i ↦ commute_map_e_of_zero φ hφ i (i + 1)) h1 hmarkov
+theorem apply_map_eq_bernoulliTrace_of_isStarProjection {A F M : Type*} [Ring A] [StarRing A]
+    [IsProperStar A] [Algebra R A] [FunLike F (BalancedProjectionAlgebra R (0 : R)) A]
+    [AlgHomClass F R (BalancedProjectionAlgebra R (0 : R)) A] [FunLike M A R]
+    [LinearMapClass M R A R] (φ : F) (hφ : ∀ i, IsStarProjection (φ (e 0 i))) {ν : M}
+    (h1 : ν 1 = 1)
+    (hmarkov : ∀ {n w}, w ∈ stage R 0 (n + 1) → ν (φ (w * e 0 n)) = η * ν (φ w))
+    (x : BalancedProjectionAlgebra R (0 : R)) : ν (φ x) = bernoulliTrace η x :=
+  apply_map_eq_bernoulliTrace φ (fun i ↦ commute_map_e_of_zero φ hφ i (i + 1)) h1 hmarkov x
 
 /-- At an idempotent parameter `c`, the Bernoulli trace is the scalar character sending every
 generator to `c`. -/
 theorem bernoulliTrace_eq_character {c : R} (hc : IsIdempotentElem c) :
     bernoulliTrace c = (character (τ := (0 : R)) c hc).toLinearMap :=
-  (eq_bernoulliTrace (by simp) (fun {_ _} _ ↦ by simp [mul_comm]) fun _ _ _ ↦ by simp).symm
+  (eq_bernoulliTrace (by simp) (fun _ _ ↦ by simp [mul_comm])
+    (fun {_ _} _ ↦ by simp [mul_comm])).symm
 
 end Uniqueness
 
