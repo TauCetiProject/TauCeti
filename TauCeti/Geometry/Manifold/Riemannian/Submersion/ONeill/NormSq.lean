@@ -168,7 +168,7 @@ theorem oneillAInnerForm_self_nonneg (x : M) (u : TangentSpace I x) :
   exact Finset.sum_nonneg fun j _ ↦ real_inner_self_nonneg
 
 /-- `oneillAInnerForm` is positive semidefinite. -/
-theorem oneillAInnerForm_isPosSemidef (x : M) : (h.oneillAInnerForm x).IsPosSemidef :=
+theorem isPosSemidef_oneillAInnerForm (x : M) : (h.oneillAInnerForm x).IsPosSemidef :=
   ⟨⟨h.oneillAInnerForm_comm x⟩, ⟨h.oneillAInnerForm_self_nonneg x⟩⟩
 
 /-- `oneillAInnerForm x u u` vanishes exactly when `A_u` does. -/
