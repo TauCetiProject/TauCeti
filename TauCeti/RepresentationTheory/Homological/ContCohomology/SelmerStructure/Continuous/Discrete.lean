@@ -33,8 +33,8 @@ no second discrete carrier is introduced.
 
 ## Main results
 
-* `TauCeti.ContinuousCohomology.TopSelmerStructure.explicitH1_localization`: the explicit
-  comparison carries the explicit localisation to the localisation of `𝓕`.
+* `TopSelmerStructure.explicitH1AddEquivContinuousCohomologyOfDiscrete_localization`:
+  the explicit comparison carries the explicit localisation to the localisation of `𝓕`.
 * `TauCeti.ContinuousCohomology.TopSelmerStructure.toSelmerStructure_withLocalConditions`:
   replacing the local conditions commutes with passing to the discrete Selmer structure.
 * `TauCeti.ContinuousCohomology.TopSelmerStructure.mem_selmerGroup_toSelmerStructure_iff`: a
@@ -129,7 +129,7 @@ variable [DiscreteTopology X.V]
 
 /-- **The explicit comparison carries the explicit localisation to the localisation of `𝓕`.** -/
 @[simp]
-theorem explicitH1_localization (i : ι) (c : H1 G X.V) :
+theorem explicitH1AddEquivContinuousCohomologyOfDiscrete_localization (i : ι) (c : H1 G X.V) :
     (Y i).explicitH1AddEquivContinuousCohomologyOfDiscrete
         (𝓕.toSelmerStructure.localization i c) =
       𝓕.localization i (X.explicitH1AddEquivContinuousCohomologyOfDiscrete c) := by
@@ -144,7 +144,8 @@ theorem mem_selmerGroup_toSelmerStructure_iff {c : H1 G X.V} :
       X.explicitH1AddEquivContinuousCohomologyOfDiscrete c ∈ 𝓕.toSelmerData.selmerModule := by
   rw [SelmerStructure.mem_selmerGroup_iff, mem_selmerModule_toSelmerData_iff]
   refine forall_congr' fun i => ?_
-  rw [mem_toSelmerStructure_localCondition_iff, explicitH1_localization]
+  rw [mem_toSelmerStructure_localCondition_iff,
+    explicitH1AddEquivContinuousCohomologyOfDiscrete_localization]
 
 /-- **The explicit comparison carries the discrete Selmer group onto the Selmer module of
 `𝓕`.** -/
