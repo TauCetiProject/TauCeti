@@ -14,12 +14,12 @@ public import Mathlib.RingTheory.Kaehler.Polynomial
 The comparison map `c_f : f^* Ω_{Y/R} → Ω_{X/R}` of a morphism `f : X → Y` over `Spec R` is, on
 affine charts `Spec B → Spec A`, Mathlib's `KaehlerDifferential.mapBaseChange R A B :
 B ⊗[A] Ω[A⁄R] → Ω[B⁄R]`, `b ⊗ da ↦ b · d(f^* a)` (Tau Ceti's
-`cotangentMap_app_pullbackRelativeDifferentialsSectionsEquiv`). These are the ring forms of the
-Checks of NashBlowups §0.1.
+`cotangentMap_app_pullbackRelativeDifferentialsSectionsEquiv`). These examples test
+`mapBaseChange` on a cusp, the identity and a closed point.
 
 * **The cusp.** For `t ↦ (t², t³)`, that is `k[x, y] → k[t]`, `x ↦ t²`, `y ↦ t³`, the map sends
-  `dx` to `2t dt` and `dy` to `3t² dt`. In characteristic two it sends `dx` to `0` and `dy` to
-  `t² dt`, so it is not the formal derivative over `ℤ`.
+  `dx` to `2t dt` and `dy` to `3t² dt`, with the coefficients `2` and `3` read in `k`. In
+  characteristic two it sends `dx` to `0` and `dy` to `t² dt`.
 * **The identity.** For the identity of `k[x]`, `dx ↦ dx`, and `dx ≠ 0`, so the zero map, which is
   also linear, is excluded.
 * **A closed point.** For a closed point `x ↦ a`, `k[x] → k`, the map
@@ -36,52 +36,43 @@ variable (k : Type) [Field k]
 
 section Cusp
 
-/-- The cusp `t ↦ (t², t³)` as the algebra map `k[x, y] → k[t]`. -/
-noncomputable abbrev cusp : MvPolynomial (Fin 2) k →ₐ[k] k[X] :=
-  MvPolynomial.aeval ![X ^ 2, X ^ 3]
-
--- `k[t]` is a `k[x, y]`-algebra through the cusp.
+-- `k[t]` is a `k[x, y]`-algebra through the cusp `x ↦ t²`, `y ↦ t³`.
 variable [Algebra (MvPolynomial (Fin 2) k) k[X]] [IsScalarTower k (MvPolynomial (Fin 2) k) k[X]]
-  (hf : ∀ a, algebraMap (MvPolynomial (Fin 2) k) k[X] a = cusp k a)
+  (hf : ∀ a, algebraMap (MvPolynomial (Fin 2) k) k[X] a = MvPolynomial.aeval ![X ^ 2, X ^ 3] a)
 
 include hf
 
-/-- The comparison map of the cusp on `da`: `d(f^* a)`. -/
-theorem mapBaseChange_cusp (a : MvPolynomial (Fin 2) k) :
-    mapBaseChange k (MvPolynomial (Fin 2) k) k[X] (1 ⊗ₜ D k (MvPolynomial (Fin 2) k) a) =
-      D k k[X] (cusp k a) := by
-  rw [mapBaseChange_tmul, one_smul, map_D, hf]
+/-- The comparison map of the cusp sends `dx` and `dy` to `n tⁿ⁻¹ dt`, for `n = 2` and `n = 3`
+respectively. -/
+theorem mapBaseChange_cusp_X (i : Fin 2) :
+    mapBaseChange k (MvPolynomial (Fin 2) k) k[X]
+      (1 ⊗ₜ D k (MvPolynomial (Fin 2) k) (MvPolynomial.X i)) =
+      (((![2, 3] i : ℕ) : k[X]) * X ^ (![2, 3] i - 1)) • D k k[X] X := by
+  have hX : ![X ^ 2, X ^ 3] i = (X : k[X]) ^ ![2, 3] i := by fin_cases i <;> rfl
+  rw [mapBaseChange_tmul, one_smul, map_D, hf, MvPolynomial.aeval_X, hX, Derivation.leibniz_pow,
+    mul_smul, Nat.cast_smul_eq_nsmul]
 
 /-- **Check.** The cusp sends `dx` to `2t dt`. -/
 example : mapBaseChange k (MvPolynomial (Fin 2) k) k[X]
     (1 ⊗ₜ D k (MvPolynomial (Fin 2) k) (MvPolynomial.X 0)) = (2 * X : k[X]) • D k k[X] X := by
-  rw [mapBaseChange_cusp k hf, MvPolynomial.aeval_X]
-  simp only [Matrix.cons_val_zero]
-  rw [Derivation.leibniz_pow, mul_smul, ← ofNat_smul_eq_nsmul (R := k[X])]
-  norm_num
+  norm_num [mapBaseChange_cusp_X k hf]
 
 /-- **Check.** The cusp sends `dy` to `3t² dt`. -/
 example : mapBaseChange k (MvPolynomial (Fin 2) k) k[X]
     (1 ⊗ₜ D k (MvPolynomial (Fin 2) k) (MvPolynomial.X 1)) = (3 * X ^ 2 : k[X]) • D k k[X] X := by
-  rw [mapBaseChange_cusp k hf, MvPolynomial.aeval_X]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [Derivation.leibniz_pow, mul_smul, ← ofNat_smul_eq_nsmul (R := k[X])]
+  norm_num [mapBaseChange_cusp_X k hf]
 
 /-- **Check.** In characteristic two the cusp sends `dx` to `0`. -/
 example [CharP k 2] : mapBaseChange k (MvPolynomial (Fin 2) k) k[X]
     (1 ⊗ₜ D k (MvPolynomial (Fin 2) k) (MvPolynomial.X 0)) = 0 := by
-  rw [mapBaseChange_cusp k hf, MvPolynomial.aeval_X]
-  simp only [Matrix.cons_val_zero]
-  rw [Derivation.leibniz_pow, ← ofNat_smul_eq_nsmul (R := k), CharTwo.two_eq_zero, zero_smul]
+  simp [mapBaseChange_cusp_X k hf, CharTwo.two_eq_zero]
 
 /-- **Check.** In characteristic two the cusp sends `dy` to `t² dt`. -/
 example [CharP k 2] : mapBaseChange k (MvPolynomial (Fin 2) k) k[X]
     (1 ⊗ₜ D k (MvPolynomial (Fin 2) k) (MvPolynomial.X 1)) = (X ^ 2 : k[X]) • D k k[X] X := by
-  rw [mapBaseChange_cusp k hf, MvPolynomial.aeval_X]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [Derivation.leibniz_pow, ← ofNat_smul_eq_nsmul (R := k),
-    show (3 : k) = 1 by rw [show (3 : k) = 2 + 1 by norm_num, CharTwo.two_eq_zero, zero_add],
-    one_smul]
+  have h3 : (3 : k[X]) = 2 + 1 := by norm_num
+  simp only [CharTwo.two_eq_zero, zero_add] at h3
+  simp [mapBaseChange_cusp_X k hf, h3]
 
 end Cusp
 
