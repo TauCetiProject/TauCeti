@@ -16,7 +16,7 @@ The Fourier coefficients of a newform at the indices prime to its level determin
 at a good prime `p` the Hecke recurrence gives `χ(p) = (a_p² - a_{p²}) / p^{k-1}`
 (`TauCeti.char_prime_eq_coeff`), and by Dirichlet's theorem on primes in arithmetic progressions a
 character is determined by its values at all but finitely many primes
-(`DirichletCharacter.changeLevel_eq_changeLevel_of_eventually_apply_prime_eq`). So two newforms
+(`DirichletCharacter.changeLevel_eq_changeLevel_iff_eventually_apply_prime_eq`). So two newforms
 of levels `N` and `M` whose coefficients `a_n` agree at every `n` prime to `N M` outside a finite
 set have nebentypes inducing the same character modulo every common multiple of `N` and `M`.
 
@@ -99,7 +99,7 @@ theorem χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq {L : ℕ} [NeZe
       (qExpansion 1 f.toCuspForm).coeff (n : ℕ) = (qExpansion 1 g.toCuspForm).coeff (n : ℕ)) :
     f.χ.comp (ZMod.unitsMap hN) = g.χ.comp (ZMod.unitsMap hM) := by
   have := congrArg MulChar.toUnitHom
-    (DirichletCharacter.changeLevel_eq_changeLevel_of_eventually_apply_prime_eq hN hM
+    ((DirichletCharacter.changeLevel_eq_changeLevel_iff_eventually_apply_prime_eq hN hM).mpr
       (eventually_dirichletLift_apply_prime_eq_of_forall_notMem_qExpansion_coeff_eq f g h))
   rwa [changeLevel_dirichletLift_toUnitHom, changeLevel_dirichletLift_toUnitHom] at this
 

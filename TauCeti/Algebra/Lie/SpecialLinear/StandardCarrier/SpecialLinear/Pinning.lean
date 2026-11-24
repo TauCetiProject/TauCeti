@@ -123,7 +123,7 @@ private theorem pinning_rootVector_pair (i : Fin r) :
   let p := SpecialLinear.diagonalSimpleRootIndex r i
   have hs : (Derivation.cotangentLinearEquiv (R := ℤ)
         (A := SpecialLinear.coordinateHopfAlgebra ℤ (r + 1)) (B := ℤ)).symm
-        (derivationComp (B := ℤ) (SpecialLinear.rootSubgroupCoordinateMap p.2).hom δ) =
+        (derivationComp (B := ℤ) (SpecialLinear.rootSubgroupCoordinateMap p.property).hom δ) =
       SpecialLinear.rootVector (R := ℤ) p := by
     simpa only [δ, LinearEquiv.apply_symm_apply, one_smul] using
       SpecialLinear.cotangentLinearEquiv_symm_derivationComp_rootSubgroup p δ

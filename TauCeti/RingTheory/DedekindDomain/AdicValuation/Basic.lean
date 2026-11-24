@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.Valuation.Center
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Surjective
 -- Proof-only: the ramification comparison of adic valuations.
 import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 -- Proof-only: the normalization of a valuation, which is how a merely bounded one is brought into
@@ -131,7 +132,7 @@ theorem eq_valuation_of_forall_mem_asIdeal_iff [IsDedekindDomain R] {𝔭 : Heig
   obtain ⟨n, d, hnd | hnd⟩ := 𝔭.exists_primeCompl_mul_eq_or_mul_eq x
   · -- `x = n / d` with `d` outside `𝔭`: both valuations of `x` are those of `n`, hence `≤ 1`.
     have hd : 𝔭.valuation K (algebraMap R K (d : R)) = 1 :=
-      𝔭.valuation_eq_one_iff_notMem.mpr d.2
+      𝔭.valuation_eq_one_iff_notMem.mpr d.property
     have h₁ : 𝔭.valuation K x = 𝔭.valuation K (algebraMap R K n) := by
       rw [← hnd, map_mul, hd, mul_one]
     have h₂ : w x = w (algebraMap R K n) := by
@@ -151,7 +152,7 @@ theorem eq_valuation_of_forall_mem_asIdeal_iff [IsDedekindDomain R] {𝔭 : Heig
           _ < 1 := lt_of_le_of_ne hvn hne
       exact absurd hx hlt.ne
     have hd : 𝔭.valuation K (algebraMap R K (d : R)) = 1 :=
-      𝔭.valuation_eq_one_iff_notMem.mpr d.2
+      𝔭.valuation_eq_one_iff_notMem.mpr d.property
     rw [key _ (𝔭.valuation_le_one n) hd, key _ (hR n) ((hone (d : R)).mp hd), hone n]
 
 /-- **The adic valuation of the centre of `w` on `R` is `w` itself**: a normalized valuation of the

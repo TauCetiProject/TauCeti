@@ -234,7 +234,7 @@ theorem exists_linearMap_mul_riemannRochSpace {B D E : Divisor k F} (hDBE : D + 
     {z : F} (hz : z ∈ riemannRochSpace D) :
     ∃ f : riemannRochSpace B →ₗ[k] riemannRochSpace E, ∀ x, (f x : F) = z * x :=
   ⟨((LinearMap.mulLeft k z).domRestrict (riemannRochSpace B)).codRestrict (riemannRochSpace E)
-    fun x ↦ riemannRochSpace_mono hDBE (mul_mem_riemannRochSpace_add hz x.2), fun _ ↦ rfl⟩
+    fun x ↦ riemannRochSpace_mono hDBE (mul_mem_riemannRochSpace_add hz x.property), fun _ ↦ rfl⟩
 
 /-- The `n`-th power of a section of `L(A)` is a section of `L(n A)`. -/
 theorem pow_mem_riemannRochSpace_zsmul {A : Divisor k F} {f : F} (hf : f ∈ riemannRochSpace A)
@@ -380,7 +380,8 @@ private lemma ker_residueEval (ht : P.ord t = D.coeff P + 1) (ht0 : t ≠ 0) :
   ext x
   rw [LinearMap.mem_ker, residueEval, LinearMap.comp_apply,
     Place.filtrationResidue_eq_zero_iff _ ht0, Submodule.coe_inclusion, hidx,
-    Submodule.mem_comap, Submodule.subtype_apply, mem_riemannRochSpace_iff_mem_filtration x.2]
+    Submodule.mem_comap, Submodule.subtype_apply, mem_riemannRochSpace_iff_mem_filtration
+        x.property]
 
 /-- Stichtenoth's proof of Lemma 1.4.8 in its one-place form, carrying both conclusions the two
 public statements below project out of: `L(D + P)` stays finite-dimensional, and its dimension

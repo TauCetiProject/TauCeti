@@ -198,7 +198,7 @@ theorem exists_nat_weights_wassersteinEDist_le
         ((∑ x ∈ s, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ s, (m x : ℝ≥0∞) • Measure.dirac x) ≤ ε := by
   classical
   have ht : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  obtain ⟨x₀, hx₀⟩ : s.Nonempty := Finset.nonempty_iff_ne_empty.2 (by rintro rfl; simp at hν)
+  obtain ⟨x₀, hx₀⟩ : s.Nonempty := Finset.ne_empty_iff_nonempty.1 (by rintro rfl; simp at hν)
   set a : X → ℝ≥0∞ := fun x ↦ ν {x}
   have hν_eq : ν = ∑ x ∈ s, a x • Measure.dirac x :=
     Measure.ae_mem_finset_iff.1 (mem_ae_iff.2 hν)

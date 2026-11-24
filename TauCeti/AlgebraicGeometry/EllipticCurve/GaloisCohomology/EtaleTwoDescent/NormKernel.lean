@@ -95,7 +95,7 @@ private theorem descentRatio_add_self (g : AbsoluteGaloisGroup K) (S : W.Torsion
     descentRatio hsq g S + descentRatio hsq g S = 0 := by
   refine Additive.toMul.injective (Subtype.ext ?_)
   rw [toMul_add, toMul_zero, ← sq, Subgroup.coe_pow, OneMemClass.coe_one]
-  exact (mem_rootsOfUnity 2 _).1 (descentRatio hsq g S).toMul.2
+  exact (mem_rootsOfUnity 2 _).1 (descentRatio hsq g S).toMul.property
 
 include hsq in
 /-- The ratio at the point at infinity is trivial. -/
@@ -220,7 +220,7 @@ private theorem explicitCoeff1_torsionRes_eq_kummerMap (h2 : IsUnit ((2 : ℕ) :
   refine (hχ _).trans ?_
   rw [hg]
   refine Additive.toMul.injective (Subtype.ext ?_)
-  rw [hz _ (absoluteGaloisGroupEquivFixingSubgroup K L σ h).2, toMul_kummerCoeffMapSymm,
+  rw [hz _ (absoluteGaloisGroupEquivFixingSubgroup K L σ h).property, toMul_kummerCoeffMapSymm,
     toMul_kummerCocycle]
   ext
   simp [absoluteGaloisGroupEquivFixingSubgroup_apply, AlgEquiv.smul_units_def]

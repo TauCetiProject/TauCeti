@@ -121,7 +121,7 @@ private lemma range_subtypeVal_subset (i : ι) :
     exact base_mem_range_subtypeVal _
   | incl j a =>
     rw [subtypeVal_incl]
-    exact (incl_mem_range_subtypeVal_iff _).2 (Or.inr a.2)
+    exact (incl_mem_range_subtypeVal_iff _).2 (Or.inr a.property)
 
 /-- Two distinct open sets of the cover meet in the wedge of the neighbourhoods `V j`. -/
 private lemma range_inter_range_subset {i j : ι} (hij : i ≠ j) :
@@ -151,7 +151,8 @@ private def retraction (i : ι) :
   refine
     { toContinuousMap := liftProd
         (fun j => if hj : j = i then (incl _ j).comp ContinuousMap.snd else
-          (incl _ j).comp ⟨fun p => ⟨H j (p.1, ⟨p.2, p.2.2.resolve_left hj⟩), .inr (H j _).2⟩,
+          (incl _ j).comp ⟨fun p => ⟨H j (p.1, ⟨p.2, p.2.property.resolve_left hj⟩), .inr
+              (H j _).property⟩,
             by fun_prop⟩)
         (.const _ (base _)) fun j t => ?_
       map_zero_left := fun w => ?_

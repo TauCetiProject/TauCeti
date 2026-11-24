@@ -386,7 +386,7 @@ theorem isSheafy_spaYPreAdicSpace_restrict {U : TopCat.{u}}
   let W : Opens (spaYPreAdicSpace P hI) :=
     ⟨spaYInclusion p ϖ ⁻¹' Set.range (spaComapLocHom P ⊤ (windowNumerators p ϖ q q')
       (windowDenominator p ϖ q q') _ hden), hj.isOpenMap.isOpen_range.preimage
-        (spaYInclusion p ϖ).hom.2⟩
+        (spaYInclusion p ϖ).hom.continuous_toFun⟩
   refine PreAdicSpace.isSheafy_restrict_of_range_subset hf W.isOpenEmbedding ?_
     (ObjectProperty.prop_of_iso PreAdicSpace.isSheafy
       (PreAdicSpace.restrictRestrictIso _ (isOpenEmbedding_spaYInclusion p ϖ) W).symm
@@ -399,7 +399,7 @@ theorem isSheafy_spaYPreAdicSpace_restrict {U : TopCat.{u}}
       -- `f x` is a point of `𝒴` only after unfolding `spaYPreAdicSpace`, which `simp` and `rw`
       -- do not see through, so the inclusion is removed by an explicit congruence
       exact (congrArg (· ∈ {v | v ∈ spaY p ϖ ∧ IsRadiusLowerBound p ϖ q v ∧
-        IsRadiusUpperBound p ϖ q' v}) (spaYInclusion_apply_val ϖ (f x))).mpr ⟨(f x).2, hfW x⟩
+        IsRadiusUpperBound p ϖ q' v}) (spaYInclusion_apply_val ϖ (f x))).mpr ⟨(f x).property, hfW x⟩
     exact hx
   · rw [Opens.set_range_inclusion']
     rintro _ ⟨y, hy, rfl⟩

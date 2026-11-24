@@ -132,7 +132,7 @@ private theorem unit_indicator_eq_smul_single_sub (hU : U.index = 2) (hUo : IsOp
     unit G U M (if g ∈ U then 0 else (c : M)) =
       g • single G U M hUo 1 (c : M) - single G U M hUo 1 (c : M) := by
   have hc : ∀ g : G, g • (c : M) = (c : M) :=
-    (FixedPoints.mem_addSubgroup G M c).1 c.2
+    (FixedPoints.mem_addSubgroup G M c).1 c.property
   have hneg : -(c : M) = (c : M) := by
     have h := hM (c : M)
     rw [two_nsmul, ← eq_neg_iff_add_eq_zero] at h
@@ -157,7 +157,7 @@ noncomputable def indexTwoConnectingCocycle (hU : U.index = 2) (hUo : IsOpen (U 
   refine ⟨fun g => if g ∈ U then 0 else (c : M), mem_Z1_iff.2 ⟨?_, ?_⟩⟩
   · exact continuous_const.if
       (by simp [IsClopen.frontier_eq ⟨U.isClosed_of_isOpen hUo, hUo⟩]) continuous_const
-  · have hc := (FixedPoints.mem_addSubgroup G M c).1 c.2
+  · have hc := (FixedPoints.mem_addSubgroup G M c).1 c.property
     intro g h
     by_cases hg : g ∈ U <;> by_cases hh : h ∈ U <;>
       simp [hg, hh, Subgroup.mul_mem_iff_of_index_two hU, hc, ← two_nsmul, hc2]

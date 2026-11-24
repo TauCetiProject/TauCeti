@@ -47,7 +47,7 @@ theorem analyticMap_mem_analyticBoundaryComponent_iff (f : FanHom Phi Psi)
     (hPhi : Phi.IsRegular) (hPsi : Psi.IsRegular) {rho : Psi.Ray} {sigma : Phi.cones}
     {x : Phi.analyticRealization hPhi} (hx : x ∈ Phi.analyticConeOrbit hPhi sigma) :
     f.analyticMap hPhi hPsi x ∈ Psi.analyticBoundaryComponent hPsi rho ↔
-      rho.toCone.1 ≤ f.leastCone sigma.2 :=
+      rho.toCone.val ≤ f.leastCone sigma.property :=
   (Psi.mem_analyticBoundaryComponent_iff hPsi
     (f.mapsTo_analyticConeOrbit hPhi hPsi sigma hx)).trans Subtype.coe_le_coe.symm
 
@@ -103,7 +103,7 @@ theorem subfanAnalyticMap_mem_analyticBoundaryComponent_iff (rho : Phi.Ray)
     {x : (Phi.subfan S hS hface).analyticRealization (hPhi.subfan S hS hface)}
     (hx : x ∈ (Phi.subfan S hS hface).analyticConeOrbit (hPhi.subfan S hS hface) sigma) :
     Phi.subfanAnalyticMap hPhi S hS hface x ∈ Phi.analyticBoundaryComponent hPhi rho ↔
-      rho.toCone.1 ≤ sigma.1 := by
+      rho.toCone.val ≤ sigma.val := by
   simpa only [FanHom.analyticMap_subfanInclusion, subfanInclusion_leastCone] using
     (Phi.subfanInclusion S hS hface).analyticMap_mem_analyticBoundaryComponent_iff
       (hPhi.subfan S hS hface) hPhi hx
@@ -126,7 +126,7 @@ theorem preimage_subfanAnalyticMap_analyticBoundaryComponent
 /-- A boundary component whose ray is omitted from an open subfan has empty preimage. -/
 @[simp]
 theorem preimage_subfanAnalyticMap_analyticBoundaryComponent_of_notMem
-    (rho : Phi.Ray) (hrho : rho.toCone.1 ∉ S) :
+    (rho : Phi.Ray) (hrho : rho.toCone.val ∉ S) :
     Phi.subfanAnalyticMap hPhi S hS hface ⁻¹' Phi.analyticBoundaryComponent hPhi rho = ∅ := by
   apply eq_empty_iff_forall_notMem.mpr
   intro x hx
@@ -134,8 +134,9 @@ theorem preimage_subfanAnalyticMap_analyticBoundaryComponent_of_notMem
     (hPhi.subfan S hS hface) x
   have hle := (Phi.subfanAnalyticMap_mem_analyticBoundaryComponent_iff
     hPhi S hS hface rho hxsigma).mp hx
-  exact hrho (hface (by simpa only [subfan_cones] using sigma.2)
-    (Phi.isFaceOf_of_le (hS (by simpa only [subfan_cones] using sigma.2)) rho.toCone.2 hle))
+  exact hrho (hface (by simpa only [subfan_cones] using sigma.property)
+    (Phi.isFaceOf_of_le (hS (by simpa only [subfan_cones] using sigma.property)) rho.toCone.property
+        hle))
 
 /-- A component of an open subfan maps precisely onto the trace of the ambient component on
 the open image of the subfan realization. -/

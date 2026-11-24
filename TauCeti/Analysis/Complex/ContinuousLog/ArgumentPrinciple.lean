@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ContinuousLog.Circle
-import TauCeti.Analysis.Complex.AtInfinity
+import TauCeti.Algebra.BigOperators.Field
+import TauCeti.Analysis.Normed.Field.AtInfinity
 import Mathlib.Analysis.Complex.BranchLogRoot
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
@@ -183,7 +184,7 @@ theorem natCast_sum_eq_of_eq_exp_mul_prod_pow (s : Finset ℂ) {L : ℂ → ℂ}
     exact hf.continuousAt.mul ((hu.zpow₀ m (Or.inl (div_ne_zero hw hw'))).inv₀
       (zpow_ne_zero _ (div_ne_zero hw hw')))
   obtain ⟨R₂, hR₂⟩ := exists_forall_hasContinuousLogOn_sphere (F := q)
-      (tendsto_prod_one_sub_mul_inv_pow s n) fun w hw ↦ by
+      (cobounded_eq_cocompact (α := ℂ) ▸ s.tendsto_prod_one_sub_mul_inv_pow n) fun w hw ↦ by
     rw [hqdef]
     fun_prop (disch := assumption)
   set ρ := max (max R₁ R₂) 1
@@ -202,7 +203,7 @@ theorem natCast_sum_eq_of_eq_exp_mul_prod_pow (s : Finset ℂ) {L : ℂ → ℂ}
       linarith
     have hq0 : q w ≠ 0 := (hR₂ ρ (le_max_of_le_left (le_max_right _ _))).ne_zero hw
     have hprod : ∏ z ∈ s, (w - z) ^ n z = w ^ N * q w := by
-      rw [hNdef, hqdef, prod_sub_pow_eq_pow_sum_mul_prod_one_sub_mul_inv_pow s n hw0]
+      rw [hNdef, hqdef, Finset.prod_sub_pow_eq_pow_sum_mul_prod_one_sub_mul_inv_pow s n hw0]
     simp only [hL w, hprod, hwρ, sub_zero, div_zpow, zpow_sub₀ hw0, zpow_natCast]
     field_simp [exp_ne_zero (L w), hq0, hρm, zpow_ne_zero m hw0]
   by_contra hNm

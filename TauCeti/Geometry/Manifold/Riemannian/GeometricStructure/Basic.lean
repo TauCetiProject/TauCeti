@@ -180,7 +180,7 @@ theorem hasGeometricStructure_spherical :
   have : Finite ρ.range := (Set.finite_range ρ).to_subtype
   have : IsCancelSMul ρ.range (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) := by
     refine isCancelSMul_iff_eq_one_of_smul_eq.2 fun γ x hx ↦ Subtype.ext ?_
-    obtain ⟨a, ha⟩ := γ.2
+    obtain ⟨a, ha⟩ := γ.property
     have hfix := congrArg ψ hx
     rw [Subgroup.smul_def, ← ha, hρ] at hfix
     have h1 : lensGroupEquiv m ℓ a = 1 :=
@@ -199,7 +199,7 @@ theorem hasGeometricStructure_spherical :
       rw [Subgroup.smul_def, Subgroup.coe_mk, hρ]
       exact Subtype.ext ((LinearIsometryEquiv.coe_smul_unitSphere _ _).trans ha)
     · rintro ⟨γ, hγ⟩
-      obtain ⟨a, ha⟩ := γ.2
+      obtain ⟨a, ha⟩ := γ.property
       refine ⟨a, ?_⟩
       rw [← hγ, Subgroup.smul_def, ← ha, hρ, LinearIsometryEquiv.coe_smul_unitSphere]
 

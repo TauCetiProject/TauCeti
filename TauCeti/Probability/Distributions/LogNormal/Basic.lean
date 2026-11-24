@@ -401,7 +401,7 @@ theorem variance_id_logNormalMeasure (m : ℝ) (v : ℝ≥0) :
     ring
   have hSecondExponent : 2 * m + 2 * (v : ℝ) = (v : ℝ) + (2 * m + (v : ℝ)) := by
     ring
-  rw [h₂, h₁, ← Real.exp_nat_mul (m + (v : ℝ) / 2) 2, hMeanExponent, hSecondExponent,
+  rw [h₂, h₁, ← Real.exp_natCast_mul 2 (m + (v : ℝ) / 2), hMeanExponent, hSecondExponent,
     Real.exp_add]
   ring
 

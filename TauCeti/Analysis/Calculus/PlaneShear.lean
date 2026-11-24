@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import Mathlib.MeasureTheory.Constructions.Pi
+import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
 # Shears of the plane
@@ -178,18 +178,17 @@ theorem measurePreserving_planeShear (hg : Measurable g) :
     MeasurePreserving (planeShear g) := by
   -- In coordinates `(x, y)` the shear is the skew product of the identity with the translations
   -- `y ↦ y + g x`.
-  let e : EuclideanSpace ℝ (Fin 2) ≃ᵐ ℝ × ℝ :=
-    (MeasurableEquiv.toLp 2 (Fin 2 → ℝ)).symm.trans MeasurableEquiv.finTwoArrow
-  have he : MeasurePreserving e := (volume_preserving_finTwoArrow ℝ).comp
-    (EuclideanSpace.volume_preserving_symm_measurableEquiv_toLp (Fin 2))
   have hσ : MeasurePreserving (fun q : ℝ × ℝ ↦ (q.1, q.2 + g q.1)) :=
     (MeasurePreserving.id volume).skew_product (g := fun x y ↦ y + g x)
       (measurable_snd.add (hg.comp measurable_fst))
       (ae_of_all _ fun x ↦ map_add_right_eq_self volume (g x))
-  have h : planeShear g = e.symm ∘ (fun q : ℝ × ℝ ↦ (q.1, q.2 + g q.1)) ∘ e := by
+  have h : planeShear g =
+      euclideanPlaneEquivProd.symm ∘ (fun q : ℝ × ℝ ↦ (q.1, q.2 + g q.1)) ∘ euclideanPlaneEquivProd
+      := by
     ext p i
-    fin_cases i <;> simp [e, MeasurableEquiv.finTwoArrow, MeasurableEquiv.piFinTwo]
+    fin_cases i <;> simp
   rw [h]
-  exact he.symm.comp (hσ.comp he)
+  exact measurePreserving_euclideanPlaneEquivProd.symm.comp
+    (hσ.comp measurePreserving_euclideanPlaneEquivProd)
 
 end TauCeti

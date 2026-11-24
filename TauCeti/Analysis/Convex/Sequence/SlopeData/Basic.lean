@@ -206,9 +206,9 @@ theorem heights_injective [AddCancelCommMonoid Γ] :
   subst hs hl hy
   have hf : f = f' := by
     funext i
-    have h1 := hsum (i + 1) i.2
-    have h0 := hsum i i.2.le
-    rw [prefixSum_succ i.2, prefixSum_succ i.2, ← add_assoc, ← add_assoc, h0] at h1
+    have h1 := hsum (i + 1) i.isLt
+    have h0 := hsum i i.isLt.le
+    rw [prefixSum_succ i.isLt, prefixSum_succ i.isLt, ← add_assoc, ← add_assoc, h0] at h1
     exact add_left_cancel h1
   subst hf
   rfl
@@ -379,8 +379,8 @@ variable (d : FiniteSlopeData ℝ)
 @[simp]
 theorem unitSlope_heights (i : Fin d.length) :
     unitSlope d.heights (d.start + i) = d.slope i := by
-  rw [unitSlope_def, Nat.add_assoc, heights_start_add _ i.2, heights_start_add _ i.2.le,
-    prefixSum_succ i.2]
+  rw [unitSlope_def, Nat.add_assoc, heights_start_add _ i.isLt, heights_start_add _ i.isLt.le,
+    prefixSum_succ i.isLt]
   simp
 
 /-- Real finite slope data represents a convex height sequence. -/

@@ -143,7 +143,7 @@ theorem not_universallyInjective_node_normalization (h2 : (2 : k) ≠ 0) :
   have hA : A ≤ AlgHom.equalizer (aeval (1 : k)) (aeval (-1 : k)) :=
     Algebra.adjoin_le (by simp [Set.insert_subset_iff]; norm_num)
   have := h k (a₁ := (aeval (1 : k)).toRingHom) (a₂ := (aeval (-1 : k)).toRingHom)
-    (RingHom.ext fun a ↦ hA a.2)
+    (RingHom.ext fun a ↦ hA a.property)
   have h1 := congr($this X)
   simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, aeval_X] at h1
   exact h2 (by linear_combination h1)

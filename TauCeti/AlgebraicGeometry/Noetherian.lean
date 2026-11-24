@@ -9,13 +9,15 @@ public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
+import TauCeti.Topology.Irreducible
 
 /-!
 # Noetherianity under finite-type morphisms and fibres
 
-A scheme of finite type over a Noetherian scheme is Noetherian. In particular, proper schemes
-over a field are Noetherian, supplying the finiteness hypothesis in divisor and line-bundle
-arguments without requiring a separate instance from the caller.
+A scheme of finite type over a Noetherian scheme is Noetherian (`isNoetherian_of_finiteType`); in
+particular, open subschemes (`isNoetherian_of_isOpenImmersion`) and proper schemes over a field are
+Noetherian, supplying the finiteness hypothesis in divisor and line-bundle arguments without
+requiring a separate instance from the caller.
 
 The fibre `X ×_S Spec κ(s)` of any morphism `f : X ⟶ S` with `X` locally Noetherian is locally
 Noetherian (`AlgebraicGeometry.Scheme.Hom.isLocallyNoetherian_fiber`), with no finiteness
@@ -23,7 +25,8 @@ hypothesis on `f`: over affine opens `Spec B ⟶ Spec R` it is `Spec (κ(p) ⊗[
 `κ(p) ⊗[R] B` is a quotient of a localization of `B`.
 
 The underlying space of a locally Noetherian scheme is locally connected, since it is covered by
-the Noetherian spaces of its affine opens. In particular its connected components are open.
+the Noetherian spaces of its affine opens. In particular its connected components are open. For
+the same reason every irreducible component of a locally Noetherian scheme has nonempty interior.
 -/
 
 public section
@@ -34,11 +37,24 @@ namespace TauCeti.AlgebraicGeometry
 
 universe u
 
+/-- The terminal scheme is locally Noetherian since it is the spectrum of the integers. -/
+instance isLocallyNoetherian_terminal : IsLocallyNoetherian (Limits.terminal Scheme.{u}) := by
+  have : IsNoetherianRing (ULift.{u} ℤ) :=
+    isNoetherianRing_of_ringEquiv ℤ ULift.ringEquiv.symm
+  let t : Spec (.of (ULift.{u} ℤ)) ⟶ Limits.terminal Scheme.{u} := Limits.terminal.from _
+  have : IsIso t := Limits.isIso_of_isTerminal specULiftZIsTerminal Limits.terminalIsTerminal t
+  exact isLocallyNoetherian_of_isOpenImmersion (inv t)
+
 /-- A scheme of finite type over a Noetherian scheme is Noetherian. -/
 theorem isNoetherian_of_finiteType {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFiniteType f]
     [QuasiCompact f] [IsNoetherian Y] : IsNoetherian X where
   toIsLocallyNoetherian := LocallyOfFiniteType.isLocallyNoetherian f
   toCompactSpace := QuasiCompact.compactSpace_of_compactSpace f
+
+/-- The source of an open immersion into a Noetherian scheme is Noetherian. -/
+theorem isNoetherian_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X) [IsOpenImmersion j]
+    [IsNoetherian X] : IsNoetherian U :=
+  isNoetherian_of_finiteType j
 
 /-- The underlying space of a locally Noetherian scheme is locally connected: every point has
 arbitrarily small affine open neighbourhoods, whose underlying spaces are Noetherian and hence
@@ -53,14 +69,36 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
   have : TopologicalSpace.NoetherianSpace (W : Set X) := noetherianSpace_of_isAffineOpen W hW
   refine ⟨(↑) '' connectedComponent (⟨x, hxW⟩ : W), ?_, ?_, ?_, ?_⟩
   · rintro _ ⟨y, -, rfl⟩
-    exact interior_subset (hWU y.2)
-  · exact W.isOpen.isOpenMap_subtype_val _ isOpen_connectedComponent
+    exact interior_subset (hWU y.property)
+  · exact W.isOpen.isOpenMap_subtypeVal _ isOpen_connectedComponent
   · exact ⟨_, mem_connectedComponent, rfl⟩
-  · exact isConnected_connectedComponent.image _ continuous_subtype_val.continuousOn
+  · exact isConnected_connectedComponent.image _ continuous_subtypeVal.continuousOn
+
+/-- Every irreducible component of a locally Noetherian scheme has nonempty interior: it meets an
+affine open, which is a Noetherian space and so has finitely many irreducible components. -/
+theorem nonempty_interior_of_mem_irreducibleComponents {X : Scheme.{u}} [IsLocallyNoetherian X]
+    {C : Set X} (hC : C ∈ irreducibleComponents X) : (interior C).Nonempty := by
+  obtain ⟨x, hx⟩ := hC.1.nonempty
+  obtain ⟨W, hW, hxW, -⟩ := exists_isAffineOpen_mem_and_subset (x := x) (U := ⊤) trivial
+  have : IsNoetherianRing Γ(X, W) := IsLocallyNoetherian.component_noetherian ⟨W, hW⟩
+  have : TopologicalSpace.NoetherianSpace (W : Set X) := noetherianSpace_of_isAffineOpen W hW
+  exact W.isOpen.nonempty_interior_of_mem_irreducibleComponents
+    TopologicalSpace.NoetherianSpace.finite_irreducibleComponents hC ⟨x, hx, hxW⟩
 
 end TauCeti.AlgebraicGeometry
 
 open Limits
+
+namespace AlgebraicGeometry.Scheme
+
+universe u
+
+/-- A scheme locally of finite type over the terminal scheme is locally Noetherian. -/
+instance isLocallyNoetherian_of_locallyOfFiniteType_terminal (X : Scheme.{u})
+    [LocallyOfFiniteType (terminal.from X)] : IsLocallyNoetherian X :=
+  LocallyOfFiniteType.isLocallyNoetherian (terminal.from X)
+
+end AlgebraicGeometry.Scheme
 
 namespace AlgebraicGeometry.Scheme.Hom
 

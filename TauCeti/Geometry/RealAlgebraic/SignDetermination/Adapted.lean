@@ -85,8 +85,8 @@ theorem exists_isUnit_fullMatrix_submatrix [DecidableEq C] (columns : C → J �
       exact hspan ⟨i, Set.mem_univ i, rfl⟩
   -- Full column rank makes this row family the same size as the candidate columns.
   have hcard : Fintype.card s = Fintype.card C := by
-    rw [← hliN.rank_matrix, Matrix.rank_eq_finrank_span_row, hspanN,
-      ← Matrix.rank_eq_finrank_span_row]
+    rw [← hliN.rank_matrix, ← Matrix.finrank_span_range_row, hspanN,
+      Matrix.finrank_span_range_row]
     exact rank_fullMatrix_columns columns hinj
   let e : C ≃ s := Fintype.equivOfCardEq hcard.symm
   refine ⟨⟨Subtype.val ∘ e, Subtype.val_injective.comp e.injective⟩, ?_⟩

@@ -29,6 +29,8 @@ in every positive degree. No separation axiom is assumed. Together with the long
 
 * `TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque_moduleCat`: a flasque sheaf of modules has
   an exact augmented Čech complex for every finite open cover.
+* `TauCeti.Topology.isZero_homology_cechComplex_succ_of_isFlasque`: a flasque sheaf of modules
+  has no Čech cohomology in positive degrees for a finite open cover.
 * `TauCeti.Topology.isZero_cechCohomology_succ_of_isFlasque`: on a compact space, a flasque sheaf
   of modules has zero Čech cohomology in every positive degree.
 
@@ -72,7 +74,18 @@ end TopCat.Sheaf
 
 namespace TauCeti.Topology
 
-variable {X : TopCat.{u}} [CompactSpace X] {R : Type u} [Ring R]
+variable {X : TopCat.{u}} {R : Type u} [Ring R]
+
+/-- A flasque sheaf of modules has no Čech cohomology in positive degrees for a finite open cover
+`U` of `X`. -/
+theorem isZero_homology_cechComplex_succ_of_isFlasque {ι : Type u} [Finite ι] (U : ι → Opens X)
+    (hU : ⨆ i, U i = ⊤) (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+    [TopCat.Presheaf.IsFlasque F.obj] (n : ℕ) :
+    IsZero (((cechComplexFunctor U).obj F.obj).homology (n + 1)) :=
+  (((quasiIso_cechAugmentation_iff U isTerminalTop _).1
+    (TopCat.Sheaf.quasiIso_cechAugmentation_of_isFlasque_moduleCat F U hU)).2 n).isZero_homology
+
+variable [CompactSpace X]
 
 /-- **Flasque sheaves have no higher Čech cohomology on a compact space.** On a compact space `X`,
 the cover-colimit Čech cohomology of a flasque sheaf of modules vanishes in every positive degree.

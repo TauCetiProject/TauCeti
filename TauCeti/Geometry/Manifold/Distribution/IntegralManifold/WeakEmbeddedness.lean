@@ -79,7 +79,7 @@ private theorem locallyConstant_transverse
   intro z
   have he : ∀ᶠ y in 𝓝 z.val, Φ (f y) - Φ (f z.val) ∈ W :=
     hf.eventually_sub_mem_of_flatChart (by exact_mod_cast hm) Φ hopen hΦ W hflat z.property
-  filter_upwards [continuous_subtype_val.continuousAt.eventually he] with y hy
+  filter_upwards [continuous_subtypeVal.continuousAt.eventually he] with y hy
   exact (Submodule.Quotient.eq W).mpr hy
 
 -- A continuous map from a locally connected space into the image stays locally in one plaque.
@@ -104,7 +104,7 @@ private theorem eventually_sub_mem_of_range_subset
   let b : V → E ⧸ W := fun z ↦ Submodule.Quotient.mk (Φ (g z.val))
   have ha : IsLocallyConstant a := locallyConstant_transverse hf hm Φ hopen hΦ W hflat
   have hb : Continuous b := W.mkQL.continuous.comp <|
-    hΦ.continuousOn.comp_continuous (hg.comp continuous_subtype_val) fun z ↦ z.property
+    hΦ.continuousOn.comp_continuous (hg.comp continuous_subtypeVal) fun z ↦ z.property
   have hrab : range b ⊆ range a := by
     rintro _ ⟨z, rfl⟩
     obtain ⟨w, hw⟩ := hr (mem_range_self z.val)

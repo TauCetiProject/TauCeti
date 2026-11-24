@@ -180,6 +180,16 @@ theorem toLaurentSeries_single (hτ : 0 < τ) (γ : PeriodGroup ω c) (r : R) :
       HahnSeries.single (laurentExponent (ker_le_ker_of_area_eq_mul_chern h) hc γ) r := by
   simp [toLaurentSeries]
 
+/-- **The Laurent variable is the monomial of the negative of a generator.** If `σ` generates the
+period group and has positive first Chern number, the comparison sends the recapping monomial
+`e^(-k σ)` to `X^k`. -/
+theorem toLaurentSeries_single_neg_zsmul (hτ : 0 < τ) {σ : PeriodGroup ω c}
+    (hσ : AddSubgroup.zmultiples σ = ⊤) (hσc : 0 < chern ω c σ) (k : ℤ) (r : R) :
+    toLaurentSeries h hc hτ (single (-(k • σ)) r) = HahnSeries.single k r := by
+  rw [toLaurentSeries_single, map_neg, map_zsmul,
+    laurentExponent_eq_neg_one_of_zmultiples_eq_top _ hc hσ hσc]
+  simp
+
 /-- The finite Laurent model and its completion use the same variable and coefficients. -/
 @[simp]
 theorem toLaurentSeries_ofLaurentPolynomial (hτ : 0 < τ) (p : R[T;T⁻¹]) :
