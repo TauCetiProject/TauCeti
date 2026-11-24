@@ -42,6 +42,8 @@ map of internal homs) and, contravariantly, in `A` (precomposition with the map 
 group, with precomposition by the compatible coefficient map on the internal-hom side
 (`MonoidHom.coinvariantsTensorHomLinearEquiv_naturality`). Being a left adjoint followed by a left
 adjoint, `X ↦ (A ⊗ X)_G` preserves colimits (`Rep.preservesColimits_coinvariantsTensor_obj`).
+The associator of the tensor product gives the natural isomorphism
+`(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` (`Rep.tensorLeftCompCoinvariantsTensorObjIso`).
 
 ## Main definitions
 
@@ -49,6 +51,8 @@ adjoint, `X ↦ (A ⊗ X)_G` preserves colimits (`Rep.preservesColimits_coinvari
   and `v`.
 * `Rep.coinvariantsHomLinearEquiv`: `Hom(X_G, N) ≃ₗ[k] Hom_G(X, N)`.
 * `Rep.coinvariantsTensorHomLinearEquiv`: `Hom((A ⊗ X)_G, N) ≃ₗ[k] Hom_G(X, Homₖ(A, N))`.
+* `Rep.tensorLeftCompCoinvariantsTensorObjIso`: the natural isomorphism
+  `(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` given by the associator.
 
 ## Main results
 
@@ -170,6 +174,21 @@ theorem coinvariantsHomLinearEquiv_symm_apply_mk {X : Rep.{u} k G} (φ : X ⟶ R
   have h := coinvariantsHomLinearEquiv_apply_hom_apply N ((coinvariantsHomLinearEquiv N X).symm φ) x
   rw [LinearEquiv.apply_symm_apply] at h
   exact h.symm
+
+/-- **Tensor coinvariants of a twisted representation**: for representations `D` and `A` of `G`,
+`(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` naturally in `X`, by the associator of the tensor product
+(Mathlib's `MonoidalCategory.tensorLeftTensor`). -/
+def tensorLeftCompCoinvariantsTensorObjIso (D A : Rep.{u} k G) :
+    tensorLeft A ⋙ (coinvariantsTensor k G).obj D ≅ (coinvariantsTensor k G).obj (D ⊗ A) :=
+  Functor.isoWhiskerRight (tensorLeftTensor D A).symm (coinvariantsFunctor k G)
+
+/-- The component of `Rep.tensorLeftCompCoinvariantsTensorObjIso` at `X` is the map on
+coinvariants induced by the inverse associator. -/
+@[simp]
+theorem tensorLeftCompCoinvariantsTensorObjIso_hom_app (D A X : Rep.{u} k G) :
+    (tensorLeftCompCoinvariantsTensorObjIso D A).hom.app X =
+      (coinvariantsFunctor k G).map (α_ D A X).inv := by
+  simp [tensorLeftCompCoinvariantsTensorObjIso]
 
 end Monoid
 

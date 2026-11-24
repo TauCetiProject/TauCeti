@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.Embedding.MapExtend
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Cap
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Coordinates
 public import TauCeti.AlgebraicTopology.Singular.Twisted.QuotientCovering
+public import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 
 /-!
 # Twisted homology of a quotient pair from an equivariant cap product
@@ -51,16 +52,16 @@ sign character, `p₀` the projection, and `φ` a cocycle representing a Thom cl
 deck involution negates. The equivariant cap product with `φ` is then a quasi-isomorphism
 (`TauCeti.quasiIso_singularChainsRepCap_thomPair`), `(Q, Q₀)` is the Thom pair of `E` and `Z` is
 `B`, and the isomorphism here with `D` trivial identifies `H_{q + r}(E, E₀; k)` with the homology of
-`B` with coefficients in the local system associated to the sign representation of `ℤˣ`, which is
-the orientation local system of `E`
-(`TauCeti.VectorBundleOrientationCover.associatedLocalSystemSignIso`): the Thom isomorphism of `E`
-with orientation-twisted coefficients, over any commutative ring. Producing such a cocycle `φ` is
-not done in this file.
+`B` with coefficients in the local system associated to the representation
+`Rep.of (Representation.ofLinearCharacter sign)` of `ℤˣ`. The orientation local system of `E` is
+the local system associated to `Rep.ofDistribMulAction k ℤˣ k`
+(`TauCeti.VectorBundleOrientationCover.associatedLocalSystemSignIso`), so this becomes the Thom
+isomorphism of `E` with orientation-twisted coefficients, over any commutative ring, once these two
+sign representations are identified. Neither that identification nor the production of such a
+cocycle `φ` is done in this file.
 
 ## Main definitions
 
-* `Rep.tensorLeftCompCoinvariantsTensorObjIso`: the natural isomorphism
-  `(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G`.
 * `TopPair.twistedHomologyIsoOfQuasiIsoSingularChainsRepCap`: an equivariant cap product which is a
   quasi-isomorphism identifies `H_{q + n}(Q, Q₀; L_D)` with `H_q(Z; L_{D ⊗ k_χ})`.
 * `TopPair.singularHomologyIsoOfQuasiIsoSingularChainsRepCap`: the case of the trivial
@@ -81,33 +82,6 @@ noncomputable section
 open CategoryTheory Limits MonoidalCategory TauCeti TauCeti.LocalCoefficientSystem
 
 universe u
-
-namespace Rep
-
-variable {k : Type u} [CommRing k] {G : Type u} [Group G]
-
-/-- **Tensor coinvariants of a twisted representation**: for representations `D` and `A` of `G`,
-`(D ⊗ (A ⊗ X))_G ≅ ((D ⊗ A) ⊗ X)_G` naturally in `X`, by the associator of the tensor product. -/
-def tensorLeftCompCoinvariantsTensorObjIso (D A : Rep.{u} k G) :
-    tensorLeft A ⋙ (coinvariantsTensor k G).obj D ≅ (coinvariantsTensor k G).obj (D ⊗ A) :=
-  NatIso.ofComponents (fun X ↦ (coinvariantsFunctor k G).mapIso (α_ D A X).symm) fun f ↦ by
-    simp only [Functor.comp_obj, Functor.comp_map, Functor.mapIso_hom, Iso.symm_hom]
-    -- `((coinvariantsTensor k G).obj D).map g` is `(coinvariantsFunctor k G).map (D ◁ g)` by
-    -- definition, which `simp` does not see, so the naturality of the associator is applied in
-    -- term mode
-    exact ((coinvariantsFunctor k G).map_comp _ _).symm.trans
-      ((congrArg (coinvariantsFunctor k G).map (associator_inv_naturality_right D A f)).trans
-        ((coinvariantsFunctor k G).map_comp _ _))
-
-/-- The component of `Rep.tensorLeftCompCoinvariantsTensorObjIso` at `X` is the map on
-coinvariants induced by the inverse associator. -/
-@[simp]
-theorem tensorLeftCompCoinvariantsTensorObjIso_hom_app (D A X : Rep.{u} k G) :
-    (tensorLeftCompCoinvariantsTensorObjIso D A).hom.app X =
-      (coinvariantsFunctor k G).map (α_ D A X).inv :=
-  (rfl)
-
-end Rep
 
 namespace TopPair
 
