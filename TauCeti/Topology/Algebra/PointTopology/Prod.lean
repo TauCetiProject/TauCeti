@@ -157,6 +157,16 @@ theorem piProdContinuousMulEquiv_apply_snd (x : WithConv (H →ₐ[k] (∀ i, R 
     (piProdContinuousMulEquiv k H R B x).2.ofConv h = (x.ofConv h).2 := by
   simp [piProdContinuousMulEquiv_apply]
 
+/-- The point assembled from a family of points `p.1` and a point `p.2` takes the value
+`((p.1 i h)_i, p.2 h)` at `h`. -/
+@[simp]
+theorem piProdContinuousMulEquiv_symm_apply_apply
+    (p : (∀ i, WithConv (H →ₐ[k] R i)) × WithConv (H →ₐ[k] B)) (h : H) :
+    ((piProdContinuousMulEquiv k H R B).symm p).ofConv h =
+      (fun i ↦ (p.1 i).ofConv h, p.2.ofConv h) := by
+  obtain ⟨x, rfl⟩ := (piProdContinuousMulEquiv k H R B).surjective p
+  simp
+
 end Pi
 
 end TauCeti.PointTopology

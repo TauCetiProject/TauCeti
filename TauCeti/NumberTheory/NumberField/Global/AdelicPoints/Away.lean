@@ -197,6 +197,35 @@ theorem awayContinuousMulEquiv_apply_snd (x : AdelicPoints R K H) :
   refine WithConv.ofConv_injective (AlgHom.ext fun h ↦ ?_)
   simp [awayContinuousMulEquiv]
 
+/-- At a place `v ∈ S`, the finite adelic point assembled from local points `p.1` and a point
+`p.2` away from `S` has the local component of `p.1` at `v`. -/
+@[simp]
+theorem finiteAwayContinuousMulEquiv_symm_apply_apply_of_mem
+    (p : (∀ v : S, LocalPoints R K H v.val) × FiniteAwayPoints R K H S) (h : H)
+    (v : HeightOneSpectrum R) (hv : v ∈ S) :
+    ((finiteAwayContinuousMulEquiv R K H hS).symm p).ofConv h v = (p.1 ⟨v, hv⟩).ofConv h := by
+  simp [finiteAwayContinuousMulEquiv, hv]
+
+/-- At a place `v ∉ S`, the finite adelic point assembled from local points `p.1` and a point
+`p.2` away from `S` has the component of `p.2` at `v`. -/
+@[simp]
+theorem finiteAwayContinuousMulEquiv_symm_apply_apply_of_notMem
+    (p : (∀ v : S, LocalPoints R K H v.val) × FiniteAwayPoints R K H S) (h : H)
+    (v : HeightOneSpectrum R) (hv : v ∉ S) :
+    ((finiteAwayContinuousMulEquiv R K H hS).symm p).ofConv h v = p.2.ofConv h ⟨v, hv⟩ := by
+  simp [finiteAwayContinuousMulEquiv, hv]
+
+/-- The adelic point assembled from local points `p.1` at the places of `S` and a point `p.2`
+away from `S` has the infinite component of `p.2`, and as finite component the finite adele
+assembled from the values of `p.1` and the finite component of `p.2`. -/
+@[simp]
+theorem awayContinuousMulEquiv_symm_apply_apply
+    (p : (∀ v : S, LocalPoints R K H v.val) × AwayPoints R K H S) (h : H) :
+    ((awayContinuousMulEquiv R K H hS).symm p).ofConv h =
+      ((p.2.ofConv h).1,
+        (FiniteAdeleRing.awayEquiv R K hS).symm (fun v ↦ (p.1 v).ofConv h, (p.2.ofConv h).2)) := by
+  simp [awayContinuousMulEquiv]
+
 /-- The splitting of the finite adelic points sends the finite diagonal image of a rational point
 to the pair of its local images at the places of `S` and its diagonal image away from `S`. -/
 theorem finiteAwayContinuousMulEquiv_finiteDiagonal (g : WithConv (H →ₐ[K] K)) :

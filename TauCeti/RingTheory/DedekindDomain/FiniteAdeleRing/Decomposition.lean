@@ -87,8 +87,25 @@ theorem ext {a b : Away R K S} (h : ∀ v, a v = b v) : a = b :=
   Subtype.ext <| funext h
 
 @[simp]
+theorem one_apply (v : {v : HeightOneSpectrum R // v ∉ S}) : (1 : Away R K S) v = 1 :=
+  (rfl)
+
+@[simp]
+theorem zero_apply (v : {v : HeightOneSpectrum R // v ∉ S}) : (0 : Away R K S) v = 0 :=
+  (rfl)
+
+@[simp]
+theorem neg_apply (a : Away R K S) (v : {v : HeightOneSpectrum R // v ∉ S}) : (-a) v = -a v :=
+  (rfl)
+
+@[simp]
 theorem add_apply (a b : Away R K S) (v : {v : HeightOneSpectrum R // v ∉ S}) :
     (a + b) v = a v + b v :=
+  (rfl)
+
+@[simp]
+theorem sub_apply (a b : Away R K S) (v : {v : HeightOneSpectrum R // v ∉ S}) :
+    (a - b) v = a v - b v :=
   (rfl)
 
 @[simp]
