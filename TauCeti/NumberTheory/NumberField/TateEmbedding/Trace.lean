@@ -202,18 +202,7 @@ theorem tateEmbeddingTrace_tateEmbeddingTrace (w : tateEmbeddingSpace L k) :
     tateEmbeddingTrace F E k (tateEmbeddingTrace E L k w) = tateEmbeddingTrace F L k w := by
   classical
   ext σ
-  simp only [tateEmbeddingTrace_apply]
-  rw [← Finset.sum_fiberwise_of_maps_to (g := fun ρ : L →+* ℂ ↦ ρ.comp (algebraMap E L))
-    (t := {τ : E →+* ℂ | τ.comp (algebraMap F E) = σ}) fun ρ hρ ↦ ?_]
-  · refine Finset.sum_congr rfl fun τ hτ ↦ Finset.sum_congr ?_ fun _ _ ↦ rfl
-    ext ρ
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hτ ⊢
-    rw [IsScalarTower.algebraMap_eq F E L, ← RingHom.comp_assoc]
-    constructor
-    · exact fun h ↦ ⟨by rw [h, hτ], h⟩
-    · exact fun h ↦ h.2
-  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hρ ⊢
-    rw [RingHom.comp_assoc, ← IsScalarTower.algebraMap_eq, hρ]
+  simp [tateEmbeddingTrace_apply, ComplexEmbedding.sum_filter_comp_algebraMap_eq_tower]
 
 variable (F E L k) in
 /-- The trace in a tower `L/E/F` is the composite of the traces. -/

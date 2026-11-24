@@ -31,6 +31,9 @@ over each complex embedding of `F`. This is the fibre count behind sums over the
   `E` that is a number field, phrased with the finite set of all complex embeddings of `E`.
 * `NumberField.ComplexEmbedding.sum_filter_comp_algebraMap_eq_conjugate`: complex conjugation
   reindexes a sum over the embeddings above `σ` as a sum over those above `conj σ`.
+* `NumberField.ComplexEmbedding.sum_filter_comp_algebraMap_eq_tower`: in a tower `L/E/F`, a sum
+  over the embeddings of `L` above `σ` splits as a sum over the embeddings `τ` of `E` above `σ` of
+  the sums over the embeddings of `L` above `τ`.
 -/
 
 public noncomputable section
@@ -98,5 +101,25 @@ theorem sum_filter_comp_algebraMap_eq_conjugate {M : Type*} [AddCommMonoid M]
   refine Finset.sum_nbij' conjugate conjugate ?_ ?_ ?_ ?_ ?_
   all_goals intro τ hτ
   all_goals simp_all
+
+open scoped Classical in
+/-- In a tower `L/E/F`, the complex embeddings of `L` above `σ` are partitioned by their
+restrictions to `E`, which are the embeddings of `E` above `σ`, so a sum over the former is an
+iterated sum. -/
+theorem sum_filter_comp_algebraMap_eq_tower {L : Type*} [Field L] [Algebra E L] [Algebra F L]
+    [IsScalarTower F E L] [NumberField L] {M : Type*} [AddCommMonoid M] (w : (L →+* ℂ) → M) :
+    ∑ τ with τ.comp (algebraMap F E) = σ, ∑ ρ with ρ.comp (algebraMap E L) = τ, w ρ =
+      ∑ ρ with ρ.comp (algebraMap F L) = σ, w ρ := by
+  rw [← Finset.sum_fiberwise_of_maps_to (g := fun ρ : L →+* ℂ ↦ ρ.comp (algebraMap E L))
+    (t := {τ : E →+* ℂ | τ.comp (algebraMap F E) = σ}) fun ρ hρ ↦ ?_]
+  · refine Finset.sum_congr rfl fun τ hτ ↦ Finset.sum_congr ?_ fun _ _ ↦ rfl
+    ext ρ
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hτ ⊢
+    rw [IsScalarTower.algebraMap_eq F E L, ← RingHom.comp_assoc]
+    constructor
+    · exact fun h ↦ ⟨by rw [h, hτ], h⟩
+    · exact fun h ↦ h.2
+  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hρ ⊢
+    rw [RingHom.comp_assoc, ← IsScalarTower.algebraMap_eq, hρ]
 
 end NumberField.ComplexEmbedding
