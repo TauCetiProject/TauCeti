@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Star
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 
 /-!

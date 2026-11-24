@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.FreeGroup.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Star
 public import TauCeti.Analysis.CStarAlgebra.Completion
 import Mathlib.Analysis.CStarAlgebra.Hom
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import Mathlib.SetTheory.Cardinal.Free
 import TauCeti.Analysis.CStarAlgebra.MonoidAlgebra
 import TauCeti.Analysis.CStarAlgebra.Representation.Compression
