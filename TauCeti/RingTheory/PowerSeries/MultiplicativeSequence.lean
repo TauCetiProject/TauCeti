@@ -8,14 +8,14 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.NewtonPolynomial
 public import TauCeti.RingTheory.PowerSeries.Expand
 
 import Mathlib.Data.Multiset.Fintype
 import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.RingTheory.PowerSeries.WellKnown
-import TauCeti.RingTheory.MvPolynomial.Basic
+import TauCeti.Algebra.MvPolynomial.Coeff
 import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
-import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.NewtonPolynomial
 import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
@@ -67,6 +67,10 @@ for even series, and the explicit polynomials `K₁`, `K₂` and `K₃`.
   `Kₖ = eₖ`.
 * `PowerSeries.constantCoeff_multiplicativeSequence`: in positive degree `Kₖ` has no constant
   term.
+* `PowerSeries.natCast_mul_multiplicativeSequence`: the Newton-type recursion
+  `m Kₘ = ∑_{a + b = m} Kₐ g_b s_b` when `Q G = X Q'`, where `s_b` is the Newton polynomial.
+* `TauCeti.coeff_single_newtonMvPolynomial`: the coefficient of `eₖ` in the Newton polynomial
+  `sₖ` is `(-1)ᵏ⁻¹ k`.
 * `PowerSeries.coeff_single_multiplicativeSequence`: for `Q(0) = 1`, the coefficient of `eₖ` in
   `Kₖ` is `(-1)ᵏ⁻¹` times the coefficient of `tᵏ` in `t Q'(t) / Q(t)`.
 * `PowerSeries.multiplicativeSequence_one_right`, `PowerSeries.multiplicativeSequence_two_right`,
@@ -451,35 +455,9 @@ any commutative ring. -/
 
 variable {Q n} {G : R⟦X⟧}
 
-/-- **Logarithmic derivative of `∏ Q(x t)`**: if `Q G = X Q'`, then for a multiset `s` of roots,
-`t F' = F · ∑ₘ gₘ pₘ(s) tᵐ` for `F = ∏_{x ∈ s} Q(x t)`, where `pₘ(s)` is the `m`-th power sum. -/
-private theorem X_mul_derivative_multiset_prod_rescale {S : Type*} [CommRing S] [Algebra R S]
-    (hG : Q * G = X * d⁄dX Q) (s : Multiset S) :
-    X * d⁄dX (s.map fun x => rescale x (Q.map (algebraMap R S))).prod =
-      (s.map fun x => rescale x (Q.map (algebraMap R S))).prod *
-        mk fun m => algebraMap R S (coeff m G) * (s.map (· ^ m)).sum := by
-  induction s using Multiset.induction_on with
-  | empty => ext m; simp
-  | cons x s ih =>
-    have h₁ : X * d⁄dX (Q.map (algebraMap R S)) =
-        Q.map (algebraMap R S) * G.map (algebraMap R S) := by
-      simpa [derivative_map] using (congrArg (map (algebraMap R S)) hG).symm
-    have hx : X * d⁄dX (rescale x (Q.map (algebraMap R S))) =
-        rescale x (Q.map (algebraMap R S)) * rescale x (G.map (algebraMap R S)) := by
-      rw [derivative_rescale, ← mul_assoc, mul_comm X, ← rescale_X, ← map_mul, h₁, map_mul]
-    have hH : (mk fun m => algebraMap R S (coeff m G) * ((x ::ₘ s).map (· ^ m)).sum) =
-        rescale x (G.map (algebraMap R S)) +
-          mk fun m => algebraMap R S (coeff m G) * (s.map (· ^ m)).sum := by
-      ext m
-      simp only [Multiset.map_cons, Multiset.sum_cons, coeff_mk, map_add, coeff_rescale, coeff_map]
-      ring
-    rw [Multiset.map_cons, Multiset.prod_cons, Derivation.leibniz, smul_eq_mul, smul_eq_mul, hH]
-    linear_combination rescale x (Q.map (algebraMap R S)) * ih +
-      (s.map fun x => rescale x (Q.map (algebraMap R S))).prod * hx
-
 /-- **Newton-type identity for the multiplicative sequence**: if `Q G = X Q'`, then
 `m Kₘ = ∑_{a + b = m} Kₐ g_b s_b`, where `s_b` is the Newton polynomial. -/
-private theorem natCast_mul_multiplicativeSequence (hG : Q * G = X * d⁄dX Q) (m : ℕ) :
+theorem natCast_mul_multiplicativeSequence (hG : Q * G = X * d⁄dX Q) (m : ℕ) :
     (m : MvPolynomial (Fin n) R) * Q.multiplicativeSequence n m =
       ∑ p ∈ antidiagonal m, Q.multiplicativeSequence n p.1 *
         (MvPolynomial.C (coeff p.2 G) * TauCeti.newtonMvPolynomial R n p.2) := by
@@ -533,7 +511,7 @@ private theorem natCast_mul_coeff_single_multiplicativeSequence (hQ : constantCo
   · simp
 
 /-- The coefficient of `eₖ` in the Newton polynomial `sₖ` is `(-1)ᵏ⁻¹ k`. -/
-private theorem coeff_single_newtonMvPolynomial (i : Fin n) :
+theorem _root_.TauCeti.coeff_single_newtonMvPolynomial (i : Fin n) :
     (TauCeti.newtonMvPolynomial R n (i + 1)).coeff (Finsupp.single i 1) =
       (-1) ^ (i : ℕ) * ((i + 1 : ℕ) : R) := by
   -- `t (1 + t)' / (1 + t) = ∑_{m ≥ 1} (-1)ᵐ⁻¹ tᵐ`.
@@ -569,7 +547,7 @@ theorem coeff_single_multiplicativeSequence (hQ : constantCoeff Q = 1) (hG : Q *
   have h₀ : (Q₀.multiplicativeSequence n (i + 1)).coeff (Finsupp.single i 1) =
       (-1) ^ (i : ℕ) * coeff (i + 1) G₀ := by
     have h := natCast_mul_coeff_single_multiplicativeSequence hQ₀ hG₀ i
-    rw [coeff_single_newtonMvPolynomial] at h
+    rw [TauCeti.coeff_single_newtonMvPolynomial] at h
     refine mul_left_cancel₀ (Nat.cast_ne_zero.2 (Nat.succ_ne_zero (i : ℕ))) ?_
     rw [h]
     ring

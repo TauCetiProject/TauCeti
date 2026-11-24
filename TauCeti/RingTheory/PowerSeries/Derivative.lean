@@ -51,6 +51,8 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
 * `PowerSeries.rescale_X_mul_derivative`, `PowerSeries.evalNegHom_X_mul_derivative`: rescaling
   and negating the variable commute with the Euler operator `X * d⁄dX`.
+* `PowerSeries.X_mul_derivative_multiset_prod_rescale`: if `Q G = X Q'`, the logarithmic
+  derivative of `∏_{x ∈ s} Q(x t)` is `∑ₘ gₘ pₘ(s) tᵐ`, with `pₘ(s)` the power sums of `s`.
 * `PowerSeries.X_mul_derivative_expand`: the Euler operator `X * d⁄dX` commutes with `X ↦ Xᵖ` up to
   the factor `p`.
 * `PowerSeries.iterate_derivative_coe`: iterated derivatives of a polynomial are computed as
@@ -502,6 +504,32 @@ theorem smul_derivative_mem {S : Submodule (Polynomial R) A⟦X⟧} {p : Polynom
     module
   rw [key]
   exact S.sub_mem (S.smul_mem _ (hS _ hx)) (S.smul_mem _ hx)
+
+/-- **Logarithmic derivative of `∏ Q(x t)`**: if `Q G = X Q'`, then for a multiset `s` of roots,
+`t F' = F · ∑ₘ gₘ pₘ(s) tᵐ` for `F = ∏_{x ∈ s} Q(x t)`, where `pₘ(s)` is the `m`-th power sum. -/
+theorem X_mul_derivative_multiset_prod_rescale {Q G : R⟦X⟧}
+    (hG : Q * G = X * d⁄dX Q) (s : Multiset A) :
+    X * d⁄dX (s.map fun x => rescale x (Q.map (algebraMap R A))).prod =
+      (s.map fun x => rescale x (Q.map (algebraMap R A))).prod *
+        mk fun m => algebraMap R A (coeff m G) * (s.map (· ^ m)).sum := by
+  induction s using Multiset.induction_on with
+  | empty => ext m; simp
+  | cons x s ih =>
+    have h₁ : X * d⁄dX (Q.map (algebraMap R A)) =
+        Q.map (algebraMap R A) * G.map (algebraMap R A) := by
+      simpa [derivative_map] using (congrArg (map (algebraMap R A)) hG).symm
+    have hx : X * d⁄dX (rescale x (Q.map (algebraMap R A))) =
+        rescale x (Q.map (algebraMap R A)) * rescale x (G.map (algebraMap R A)) := by
+      rw [derivative_rescale, ← mul_assoc, mul_comm X, ← rescale_X, ← map_mul, h₁, map_mul]
+    have hH : (mk fun m => algebraMap R A (coeff m G) * ((x ::ₘ s).map (· ^ m)).sum) =
+        rescale x (G.map (algebraMap R A)) +
+          mk fun m => algebraMap R A (coeff m G) * (s.map (· ^ m)).sum := by
+      ext m
+      simp only [Multiset.map_cons, Multiset.sum_cons, coeff_mk, map_add, coeff_rescale, coeff_map]
+      ring
+    rw [Multiset.map_cons, Multiset.prod_cons, Derivation.leibniz, smul_eq_mul, smul_eq_mul, hH]
+    linear_combination rescale x (Q.map (algebraMap R A)) * ih +
+      (s.map fun x => rescale x (Q.map (algebraMap R A))).prod * hx
 
 end AlgebraCommRing
 

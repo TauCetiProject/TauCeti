@@ -30,6 +30,10 @@ In characteristic class theory the `eⱼ` are the Chern classes of a complex vec
 Chern character, `TauCeti.chernCharacterPolynomial`. Replacing a bundle by its dual changes `cⱼ`
 into `(-1)ʲ cⱼ`, and the Newton polynomial changes by the sign `(-1)ᵏ`.
 
+The coefficient `(-1)ᵏ⁻¹ k` of the monomial `eₖ` in `sₖ` is
+`TauCeti.coeff_single_newtonMvPolynomial`. It is proved with multiplicative sequences, so it lives
+in `TauCeti.RingTheory.PowerSeries.MultiplicativeSequence`.
+
 ## Main definitions
 
 * `TauCeti.newtonMvPolynomial R n k`: the polynomial `sₖ` in `n` variables over `R`, where the
