@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import Mathlib.LinearAlgebra.QuadraticForm.Dual
 import TauCeti.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
 /-!
 # Simple systems of a finite root pairing over an ordered field
@@ -316,20 +317,17 @@ theorem root_mem_hull_simpleSystem_or_neg_mem (hf : ∀ k, f (P.root k) ≠ 0) (
 theorem linearIndepOn_root_simpleSystem (hf : ∀ k, f (P.root k) ≠ 0) :
     LinearIndepOn R P.root (P.simpleSystem f) := by
   have : Fintype ι := Fintype.ofFinite ι
+  -- The simple roots, seen in the span of the roots, where `posRootForm` is positive definite.
   let v (i : P.simpleSystem f) : P.rootSpan R := P.rootSpanMem R i
-  -- `LinearIndepOn R P.root s` is by definition the linear independence of the family of roots
-  -- indexed by `s`, which factors through the span of the roots.
-  change LinearIndependent R ((P.rootSpan R).subtype ∘ v)
-  rw [LinearMap.linearIndependent_iff_of_disjoint _ (by simp)]
-  refine LinearMap.BilinForm.linearIndependent_of_pairwise_le_zero (P.posRootForm R).posForm
-    (by simpa using P.posRootForm_rootFormIn_posDef R) (f ∘ₗ (P.rootSpan R).subtype) v
-    (fun i => i.property.1) ?_
-  rintro ⟨i, hi⟩ ⟨j, hj⟩ hij
-  rw [RootPositiveForm.posForm_apply_root_root_le_zero_iff]
-  have h := P.algebraMap_pairingIn R i j
-  simp only [Algebra.algebraMap_self, RingHom.id_apply] at h
-  rw [h]
-  exact pairing_nonpos_of_mem_simpleSystem hf hj hi fun h => hij (Subtype.ext h.symm)
+  have hv : LinearIndependent R v := by
+    refine LinearMap.BilinForm.linearIndependent_of_pairwise_le_zero (P.posRootForm R).posForm
+      (by simpa using P.posRootForm_rootFormIn_posDef R) (f ∘ₗ (P.rootSpan R).subtype) v
+      (fun i => i.property.1) ?_
+    rintro ⟨i, hi⟩ ⟨j, hj⟩ hij
+    rw [RootPositiveForm.posForm_apply_root_root_le_zero_iff, pairingIn_eq_pairing]
+    exact pairing_nonpos_of_mem_simpleSystem hf hj hi fun h => hij (Subtype.ext h.symm)
+  rw [← linearIndependent_set_coe_iff]
+  simpa [v, Function.comp_def] using hv.map' (P.rootSpan R).subtype (P.rootSpan R).ker_subtype
 
 /-- The simple roots span the span of all the roots. -/
 theorem span_root_simpleSystem (hf : ∀ k, f (P.root k) ≠ 0) :

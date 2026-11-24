@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
 /-!
 # The sign of the canonical bilinear form on two roots
@@ -34,9 +35,8 @@ variable {ι R M N : Type*} [Fintype ι] [CommRing R] [LinearOrder R] [IsStrictO
 lemma zero_lt_rootForm_root_root_iff :
     0 < P.RootForm (P.root i) (P.root j) ↔ 0 < P.pairing i j := by
   have h₁ := P.algebraMap_posRootForm_posForm R (P.rootSpanMem R i) (P.rootSpanMem R j)
-  have h₂ := P.algebraMap_pairingIn R i j
-  simp only [Algebra.algebraMap_self, RingHom.id_apply] at h₁ h₂
-  rw [← h₁, ← h₂]
+  simp only [Algebra.algebraMap_self, RingHom.id_apply] at h₁
+  rw [← h₁, ← pairingIn_eq_pairing]
   exact (P.posRootForm R).zero_lt_apply_root_root_iff i j
 
 /-- The canonical bilinear form of two roots is nonpositive exactly when their pairing is. -/
