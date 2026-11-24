@@ -131,18 +131,23 @@ private theorem intervalIntegrable_comp (hP : IntegrableOn P (Icc a b)) (hab : a
   simpa [ContinuousLinearMap.mul_def] using
     (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 (hP.mul_continuousOn hN isCompact_Icc)
 
-private theorem intervalIntegrable_apply (hP : IntegrableOn P (Icc a b)) (hab : a ≤ b)
-    {x : ℝ → E} (hx : ContinuousOn x (Icc a b)) :
-    IntervalIntegrable (fun u ↦ P u (x u)) volume a b := by
-  simpa using intervalIntegrable_clm_apply_add (M := fun u ↦ (P u).restrictScalars ℝ)
-    (F := fun _ ↦ (0 : E)) hab
-    ((ContinuousLinearMap.restrictScalarsL 𝕜 E E ℝ ℝ).integrable_comp hP) integrableOn_zero hx
-
 end Propagator
 
 open Propagator
 
 variable {P : ℝ → E →L[𝕜] E} {a b r s t : ℝ}
+
+/-- For `P` integrable and `x` continuous on `[a, b]`, `u ↦ P u (x u)` is interval integrable
+between any two points of `[a, b]`: Carathéodory's `intervalIntegrable_clm_apply_add` with zero
+forcing term. -/
+theorem intervalIntegrable_clm_apply (hP : IntegrableOn P (Icc a b)) {x : ℝ → E}
+    (hx : ContinuousOn x (Icc a b)) {c d : ℝ} (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
+    IntervalIntegrable (fun u ↦ P u (x u)) volume c d := by
+  have h : IntervalIntegrable (fun u ↦ P u (x u)) volume a b := by
+    simpa using intervalIntegrable_clm_apply_add (M := fun u ↦ (P u).restrictScalars ℝ)
+      (F := fun _ ↦ (0 : E)) (hc.1.trans hc.2)
+      ((ContinuousLinearMap.restrictScalarsL 𝕜 E E ℝ ℝ).integrable_comp hP) integrableOn_zero hx
+  exact h.mono_set (uIcc_subset_uIcc (Icc_subset_uIcc hc) (Icc_subset_uIcc hd))
 
 /-- The propagator `N_P(t, t)` is the identity. -/
 @[simp]
@@ -244,14 +249,12 @@ theorem propagator_comp_propagator (hP : IntegrableOn P (Icc a b)) (hr : r ∈ I
   ext y
   have hx : ContinuousOn (fun u ↦ propagator P u s y) (Icc a b) :=
     (continuousOn_propagator_left hP hs).clm_apply continuousOn_const
-  have hI := intervalIntegrable_apply hP (hs.1.trans hs.2) hx
   -- Rebase the vector equation of `u ↦ N_P(u, s) y` from `s` to `r`.
   have h (u : ℝ) (hu : u ∈ Icc a b) : propagator P u s y =
       propagator P r s y + ∫ v in r..u, P v (propagator P v s y) := by
     rw [propagator_apply_eq_add_integral hP hs hu y, propagator_apply_eq_add_integral hP hs hr y,
-      add_assoc, integral_add_adjacent_intervals
-        (hI.mono_set (uIcc_subset_uIcc (Icc_subset_uIcc hs) (Icc_subset_uIcc hr)))
-        (hI.mono_set (uIcc_subset_uIcc (Icc_subset_uIcc hr) (Icc_subset_uIcc hu)))]
+      add_assoc, integral_add_adjacent_intervals (intervalIntegrable_clm_apply hP hx hs hr)
+        (intervalIntegrable_clm_apply hP hx hr hu)]
   exact (eq_propagator_apply hP hr ht hx h).symm
 
 /-- `N_P(s, t)` is a left inverse of `N_P(t, s)`. -/

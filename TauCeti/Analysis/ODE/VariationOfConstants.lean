@@ -105,18 +105,6 @@ private theorem integral_integral_swap (hP : IntegrableOn P (Icc a b))
   exact (integral_integral_swap_triangle (g := fun u s ↦ P u (propagator P u s (F s)))
     ((integrableOn_prod hP hF).mono_set hsub)).symm
 
-omit [CompleteSpace E] in
-/-- `u ↦ P u (x u)` is interval integrable between points of `[a, b]` for `x` continuous on
-`[a, b]`: Carathéodory's `intervalIntegrable_clm_apply_add` with zero forcing term. -/
-private theorem intervalIntegrable_apply (hP : IntegrableOn P (Icc a b)) {x : ℝ → E}
-    (hx : ContinuousOn x (Icc a b)) {c d : ℝ} (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) :
-    IntervalIntegrable (fun u ↦ P u (x u)) volume c d := by
-  have h : IntervalIntegrable (fun u ↦ P u (x u)) volume a b := by
-    simpa using intervalIntegrable_clm_apply_add (M := fun u ↦ (P u).restrictScalars ℝ)
-      (F := fun _ ↦ (0 : E)) (hc.1.trans hc.2)
-      ((ContinuousLinearMap.restrictScalarsL 𝕜 E E ℝ ℝ).integrable_comp hP) integrableOn_zero hx
-  exact h.mono_set (uIcc_subset_uIcc (Icc_subset_uIcc hc) (Icc_subset_uIcc hd))
-
 end VariationOfConstants
 
 open VariationOfConstants
@@ -174,7 +162,7 @@ theorem integral_propagator_apply_eq (hP : IntegrableOn P (Icc a b))
       ((integrableOn_propagator_apply hP hF (hsub hu)).mono_set
         (uIcc_subset_Icc h₀ (hsub hu))).intervalIntegrable
   have hw : IntervalIntegrable (fun u ↦ P u (∫ s in t₀..u, propagator P u s (F s))) volume t₀ t :=
-    intervalIntegrable_apply hP (continuousOn_integral_propagator_apply hP hF h₀) h₀ ht
+    intervalIntegrable_clm_apply hP (continuousOn_integral_propagator_apply hP hF h₀) h₀ ht
   rw [integral_congr hexp, integral_add hFi hinner, integral_integral_swap hP hF h₀ ht,
     integral_congr hpull, integral_add hw hFi, add_comm]
 
@@ -199,8 +187,8 @@ theorem propagator_apply_add_integral_eq (hP : IntegrableOn P (Icc a b))
   have hw := continuousOn_integral_propagator_apply hP hF h₀
   have hsub : uIcc t₀ t ⊆ Icc a b := uIcc_subset_Icc h₀ ht
   rw [propagator_apply_eq_add_integral hP h₀ ht y₀, integral_propagator_apply_eq hP hF h₀ ht,
-    add_assoc, ← integral_add (intervalIntegrable_apply hP hN h₀ ht)
-      ((intervalIntegrable_apply hP hw h₀ ht).add (hF.mono_set hsub).intervalIntegrable)]
+    add_assoc, ← integral_add (intervalIntegrable_clm_apply hP hN h₀ ht)
+      ((intervalIntegrable_clm_apply hP hw h₀ ht).add (hF.mono_set hsub).intervalIntegrable)]
   congr 1
   refine integral_congr fun u _ ↦ ?_
   simp only [map_add, add_assoc]
