@@ -32,6 +32,9 @@ pairwise disjoint and lie beyond `Sₙ`. Dilating by `n + 1` keeps `∫ φₙ² 
 
 ## Main results
 
+* `Continuous.integrable_sq_of_hasCompactSupport` and
+  `ContDiff.integrable_deriv_sq_of_hasCompactSupport`: the squares of a profile and of its
+  derivative are integrable.
 * `TauCeti.exists_seq_contDiff_hasCompactSupport_escaping_atTop` and
   `TauCeti.exists_seq_contDiff_hasCompactSupport_escaping_atBot`: the escaping profiles at `+∞`
   and at `-∞`.
@@ -44,6 +47,19 @@ noncomputable section
 open MeasureTheory Filter
 open scoped Topology
 
+/-- The square of a continuous compactly supported function on `ℝ`, such as an escaping profile,
+is integrable. -/
+theorem Continuous.integrable_sq_of_hasCompactSupport {φ : ℝ → ℝ} (hφ : Continuous φ)
+    (hφc : HasCompactSupport φ) : Integrable fun s ↦ φ s ^ 2 :=
+  (hφ.memLp_of_hasCompactSupport (μ := volume) (p := 2) hφc).integrable_sq
+
+/-- The square of the derivative of a `C¹` compactly supported function on `ℝ`, such as an
+escaping profile, is integrable. -/
+theorem ContDiff.integrable_deriv_sq_of_hasCompactSupport {φ : ℝ → ℝ} {n : WithTop ℕ∞}
+    (hφ : ContDiff ℝ n φ) (hφc : HasCompactSupport φ) (hn : 1 ≤ n) :
+    Integrable fun s ↦ deriv φ s ^ 2 :=
+  (hφ.continuous_deriv hn).integrable_sq_of_hasCompactSupport hφc.deriv
+
 namespace TauCeti
 
 /-- The smooth bump `ψ` on `ℝ`, equal to `1` on `[-1/2, 1/2]` and supported in `(-1, 1)`. -/
@@ -55,8 +71,7 @@ private theorem bump_ne_zero {t : ℝ} (ht : bump t ≠ 0) : |t| < 1 := by
   simpa [bump] using h
 
 private theorem integral_bump_sq_pos : 0 < ∫ t, bump t ^ 2 := by
-  have hint := (bump.continuous.memLp_of_hasCompactSupport (μ := volume) (p := 2)
-    bump.hasCompactSupport).integrable_sq
+  have hint := bump.continuous.integrable_sq_of_hasCompactSupport bump.hasCompactSupport
   rw [integral_pos_iff_support_of_nonneg (fun t ↦ sq_nonneg _) hint]
   have hsupp : Function.support (fun t ↦ bump t ^ 2) = Metric.ball 0 1 := by
     ext t

@@ -43,7 +43,8 @@ that `‖e'(s) + A(s) e(s)‖ ≤ 1 / (n + 1)` on the support of `φₙ`
 `m > 0` bounds `‖e‖` below.
 A Fredholm operator has closed range and a finite-dimensional complemented kernel, so a bounded
 sequence on which it tends to zero has a convergent subsequence
-(`ContinuousLinearMap.tendsto_subseq_of_cauchySeq_comp`). The sequence `uₙ` has none.
+(`ContinuousLinearMap.tendsto_subseq_of_cauchySeq_comp`), so its terms cannot stay a fixed distance
+apart (`ContinuousLinearMap.not_cauchySeq_comp_of_le_dist`). The terms of `uₙ` do.
 
 ## Main declarations
 
@@ -84,15 +85,6 @@ private theorem deriv_profile_smul (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (he : 
     deriv (fun s ↦ φ s • e s) s = φ s • deriv e s + deriv φ s • e s :=
   deriv_smul ((hφ.differentiable (by simp)) s) (he.differentiable one_ne_zero s)
 
-private theorem integrable_profile_sq (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hφc : HasCompactSupport φ) :
-    Integrable fun s ↦ φ s ^ 2 :=
-  (hφ.continuous.memLp_of_hasCompactSupport (μ := volume) (p := 2) hφc).integrable_sq
-
-private theorem integrable_deriv_profile_sq (hφ : ContDiff ℝ (⊤ : ℕ∞) φ)
-    (hφc : HasCompactSupport φ) : Integrable fun s ↦ deriv φ s ^ 2 :=
-  ((hφ.continuous_deriv (by simp)).memLp_of_hasCompactSupport (μ := volume) (p := 2)
-    hφc.deriv).integrable_sq
-
 /-- The square of a profile times a continuous function is integrable. -/
 private theorem integrable_profile_sq_mul {g : ℝ → ℝ} (hg : Continuous g)
     (hφ : ContDiff ℝ (⊤ : ℕ∞) φ) (hφc : HasCompactSupport φ) :
@@ -122,11 +114,12 @@ private theorem two_mul_sq_le_norm_prev_sub_sq (he : Continuous e) {m : ℝ} (hm
     rw [hs, Pi.sub_apply, hs1, hs2, ← sub_smul, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
     linear_combination (-2 * ‖e s‖ ^ 2) * hdisj s
   have hg : Continuous fun s ↦ ‖e s‖ ^ 2 := by fun_prop
+  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport hφc
+  have hintψ := hψ.continuous.integrable_sq_of_hasCompactSupport hψc
   rw [integral_congr_ae hae, Opens.coe_top, Measure.restrict_univ]
   calc 2 * m ^ 2 = ∫ s, (φ s ^ 2 * m ^ 2 + ψ s ^ 2 * m ^ 2) := by
-        rw [integral_add ((integrable_profile_sq hφ hφc).mul_const _)
-            ((integrable_profile_sq hψ hψc).mul_const _), integral_mul_const, integral_mul_const,
-          hφ1, hψ1]
+        rw [integral_add (hint.mul_const _) (hintψ.mul_const _), integral_mul_const,
+          integral_mul_const, hφ1, hψ1]
         ring
     _ ≤ _ := integral_mono_of_nonneg (.of_forall fun _ ↦ by positivity)
         ((integrable_profile_sq_mul hg hφ hφc).add (integrable_profile_sq_mul hg hψ hψc))
@@ -144,10 +137,12 @@ private theorem norm_sq_le_of_prev_ae_eq (he : ContDiff ℝ 1 e) {M : ℝ} (hup 
     ‖u‖ ^ 2 ≤ 3 * M ^ 2 + 2 * M ^ 2 * ∫ s, deriv φ s ^ 2 := by
   rw [norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, norm_prev_sq_eq_integral hu,
     norm_weakFDeriv_sq_eq_integral (contDiff_profile_smul hφ he) hu]
+  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport hφc
+  have hintd := hφ.integrable_deriv_sq_of_hasCompactSupport hφc (by simp)
   have h₁ : ∫ s, ‖φ s • e s‖ ^ 2 ≤ M ^ 2 := by
     calc _ ≤ ∫ s, M ^ 2 * φ s ^ 2 :=
           integral_mono_of_nonneg (.of_forall fun _ ↦ by positivity)
-            ((integrable_profile_sq hφ hφc).const_mul _) (.of_forall fun s ↦ by
+            (hint.const_mul _) (.of_forall fun s ↦ by
               dsimp only
               rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
               have := pow_le_pow_left₀ (norm_nonneg _) (hup s) 2
@@ -157,8 +152,7 @@ private theorem norm_sq_le_of_prev_ae_eq (he : ContDiff ℝ 1 e) {M : ℝ} (hup 
       2 * M ^ 2 + 2 * M ^ 2 * ∫ s, deriv φ s ^ 2 := by
     calc _ ≤ ∫ s, (2 * M ^ 2 * φ s ^ 2 + 2 * M ^ 2 * deriv φ s ^ 2) :=
           integral_mono_of_nonneg (.of_forall fun _ ↦ by positivity)
-            (((integrable_profile_sq hφ hφc).const_mul _).add
-              ((integrable_deriv_profile_sq hφ hφc).const_mul _)) (.of_forall fun s ↦ by
+            ((hint.const_mul _).add (hintd.const_mul _)) (.of_forall fun s ↦ by
               rw [deriv_profile_smul hφ he]
               refine ((pow_le_pow_left₀ (norm_nonneg _) (norm_add_le _ _) 2).trans
                 add_sq_le).trans ?_
@@ -167,8 +161,7 @@ private theorem norm_sq_le_of_prev_ae_eq (he : ContDiff ℝ 1 e) {M : ℝ} (hup 
               have := pow_le_pow_left₀ (norm_nonneg _) (hup s) 2
               nlinarith [sq_nonneg (φ s), sq_nonneg (deriv φ s)])
       _ = _ := by
-          rw [integral_add ((integrable_profile_sq hφ hφc).const_mul _)
-              ((integrable_deriv_profile_sq hφ hφc).const_mul _), integral_const_mul,
+          rw [integral_add (hint.const_mul _) (hintd.const_mul _), integral_const_mul,
             integral_const_mul, hφ1, mul_one]
   linarith
 
@@ -182,14 +175,14 @@ private theorem norm_trajectoryOperator_sq_le_of_prev_ae_eq (he : ContDiff ℝ 1
     (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ φ s • e s) :
     ‖trajectoryOperator AL u‖ ^ 2 ≤ 2 * M ^ 2 * (∫ s, deriv φ s ^ 2) + 2 * ε ^ 2 := by
   rw [norm_trajectoryOperator_sq_eq_integral (contDiff_profile_smul hφ he) hu AL hAL]
+  have hint := hφ.continuous.integrable_sq_of_hasCompactSupport hφc
+  have hintd := hφ.integrable_deriv_sq_of_hasCompactSupport hφc (by simp)
   calc _ ≤ ∫ s, (2 * M ^ 2 * deriv φ s ^ 2 + 2 * ε ^ 2 * φ s ^ 2) :=
         integral_mono_of_nonneg (.of_forall fun _ ↦ by positivity)
-          (((integrable_deriv_profile_sq hφ hφc).const_mul _).add
-            ((integrable_profile_sq hφ hφc).const_mul _)) (.of_forall fun s ↦ ?_)
+          ((hintd.const_mul _).add (hint.const_mul _)) (.of_forall fun s ↦ ?_)
     _ = _ := by
-        rw [integral_add ((integrable_deriv_profile_sq hφ hφc).const_mul _)
-            ((integrable_profile_sq hφ hφc).const_mul _), integral_const_mul, integral_const_mul,
-          hφ1, mul_one]
+        rw [integral_add (hintd.const_mul _) (hint.const_mul _), integral_const_mul,
+          integral_const_mul, hφ1, mul_one]
   -- The integrand is `φ' • e + φ • (e' + A e)`, and the second term vanishes off the support.
   have hsplit : deriv (fun s ↦ φ s • e s) s + A s (φ s • e s) =
       deriv φ s • e s + φ s • (deriv e s + A s (e s)) := by
@@ -246,18 +239,14 @@ private theorem not_isFredholm_trajectoryOperator_of_seq (he : ContDiff ℝ 1 e)
     simpa [Function.comp_def, Real.sqrt_sq (norm_nonneg _)] using
       (Real.continuous_sqrt.tendsto 0).comp hsq
   -- A Fredholm operator would give a convergent subsequence, but distinct terms are `√2 m` apart.
-  obtain ⟨u, σ, hσ, hlim⟩ := (trajectoryOperator AL).tendsto_subseq_of_cauchySeq_comp
-    hF.isClosed_range hF.finite_ker hF.closedComplemented_ker hbdd hTx.cauchySeq
-  have hprev := ((prevL _).continuous.tendsto u).comp hlim
-  have hdiff := (((hprev.comp (tendsto_add_atTop_nat 1)).sub hprev).norm.pow 2)
-  have hsep (n : ℕ) : 2 * m ^ 2 ≤ ‖prev _ (x (σ (n + 1))) - prev _ (x (σ n))‖ ^ 2 :=
-    two_mul_sq_le_norm_prev_sub_sq he.continuous hm.le hlow (hφ _) (hφc _) (hφ1 _) (hφ _)
-      (hφc _) (hφ1 _) (hdisj _ _ (hσ (Nat.lt_succ_self n)).ne') (hx _) (hx _)
-  simp only [Function.comp_apply, prevL_apply, sub_self, norm_zero] at hdiff
-  -- The squared distances tend to `0` but stay above `2 m² > 0`.
-  have := ge_of_tendsto' hdiff hsep
-  norm_num at this
-  nlinarith [pow_pos hm 2]
+  have hP := (prevL (ContinuousLinearMap.id ℝ
+    (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))).continuous
+  refine (trajectoryOperator AL).not_cauchySeq_comp_of_le_dist hF.isClosed_range hF.finite_ker
+    hF.closedComplemented_ker hP hbdd hm (fun i j hij ↦ ?_) hTx.cauchySeq
+  have hsep := two_mul_sq_le_norm_prev_sub_sq he.continuous hm.le hlow (hφ i) (hφc i) (hφ1 i)
+    (hφ j) (hφc j) (hφ1 j) (hdisj i j hij) (hx i) (hx j)
+  rw [prevL_apply, prevL_apply, dist_eq_norm]
+  exact (pow_le_pow_iff_left₀ hm.le (norm_nonneg _) two_ne_zero).1 (by linarith [sq_nonneg m])
 
 /-- **An approximate solution escaping to `+∞` destroys the Fredholm property.** Let `e` be a
 `C¹` path with `m ≤ ‖e s‖ ≤ M` and `‖e' s‖ ≤ M` for all `s`, where `m > 0`, which solves
