@@ -192,8 +192,9 @@ theorem exists_isMatlisGenerator_of_isSimpleModule [IsLocalRing R] [IsArtinianRi
   obtain ⟨s, hs, hs0⟩ := exists_mem_ne_zero_of_ne_bot h.1
   obtain ⟨χ, hχ⟩ := exists_character_apply_ne_zero_of_ne_zero hs0
   refine ⟨χ, fun I hI ↦ by_contra fun hI0 ↦ hχ (hI s ?_)⟩
-  have hle := h.le_iff.mp (inf_le_right : I ⊓ torsionBySet R R (maximalIdeal R) ≤ _)
-  exact ((hle.resolve_left (inf_torsionBySet_maximalIdeal_ne_bot hI0)).ge hs).1
+  have hle := h.le_iff.mp (inf_le_left : torsionBySet R R (maximalIdeal R) ⊓ I ≤ _)
+  exact ((hle.resolve_left
+    (hI0 ∘ TauCeti.isEssential_iff.mp isEssential_torsionBySet_maximalIdeal I)).ge hs).2
 
 /-- **Matlis generators of a finite local ring.** For a finite local ring `R` the following are
 equivalent: `R` has a Matlis generator; `R` is self-injective; the socle of `R` is simple, that is,

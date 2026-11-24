@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
+public import TauCeti.Algebra.Module.Submodule.Essential
 
 import TauCeti.Algebra.Module.Injective.SelfInjective
 
@@ -21,8 +22,9 @@ submodule `Submodule.torsionBySet R M m`, the **socle** of `M`. It is an `R ⧸ 
 its simple `R`-submodules are its lines.
 
 When `M` is artinian, the socle is essential: every nonzero submodule of `M` contains a nonzero
-element of the socle. Indeed a nonzero submodule contains a minimal nonzero submodule `A`, which
-is simple, so its annihilator is a maximal ideal, namely `m`, and hence `m • A = 0`.
+element of the socle (`TauCeti.IsEssential`). Indeed a nonzero submodule contains a minimal
+nonzero submodule `A`, which is simple, so its annihilator is a maximal ideal, namely `m`, and
+hence `m • A = 0`.
 
 In a self-injective local ring, every nonzero principal ideal `R x` contains the socle. Indeed, if
 `y` is in the socle, any `r` with `r x = 0` is not a unit, so `r ∈ m` and `r y = 0`; the
@@ -33,8 +35,8 @@ own Matlis dual.
 
 ## Main results
 
-* `TauCeti.IsLocalRing.inf_torsionBySet_maximalIdeal_ne_bot`: in an artinian module over a local
-  ring, every nonzero submodule meets the socle.
+* `TauCeti.IsLocalRing.isEssential_torsionBySet_maximalIdeal`: in an artinian module over a local
+  ring, the socle is essential.
 * `TauCeti.IsLocalRing.torsionBySet_maximalIdeal_ne_bot`: a nonzero artinian module has a nonzero
   socle.
 * `TauCeti.IsLocalRing.mem_span_singleton_of_mem_torsionBySet`: in a self-injective local ring,
@@ -60,25 +62,24 @@ section Module
 
 variable {M : Type*} [AddCommGroup M] [Module R M]
 
-/-- **The socle is essential.** In an artinian module over a local ring, every nonzero submodule
-contains a nonzero element killed by the maximal ideal. -/
-theorem inf_torsionBySet_maximalIdeal_ne_bot [IsArtinian R M] {N : Submodule R M} (hN : N ≠ ⊥) :
-    N ⊓ torsionBySet R M (maximalIdeal R) ≠ ⊥ := by
-  obtain ⟨A, hA, hAN⟩ := (eq_bot_or_exists_atom_le N).resolve_left hN
-  obtain ⟨a, haA, ha⟩ := exists_mem_ne_zero_of_ne_bot hA.1
-  -- the minimal submodule `A` is simple, so its annihilator is the maximal ideal
-  have : IsSimpleModule R A := isSimpleModule_iff_isAtom.mpr hA
-  have hann : Module.annihilator R A = maximalIdeal R :=
-    eq_maximalIdeal IsSimpleModule.annihilator_isMaximal
-  refine (Submodule.ne_bot_iff _).mpr ⟨a, ⟨hAN haA, ?_⟩, ha⟩
-  refine (mem_torsionBySet_iff _ _).mpr fun r ↦ ?_
-  have hr : r.val ∈ Module.annihilator R A := hann.symm ▸ r.property
-  exact congrArg Subtype.val (Module.mem_annihilator.mp hr ⟨a, haA⟩)
+/-- **The socle is essential.** In an artinian module over a local ring, the elements killed by
+the maximal ideal form an essential submodule: every simple submodule is killed by the maximal
+ideal. -/
+theorem isEssential_torsionBySet_maximalIdeal [IsArtinian R M] :
+    IsEssential (torsionBySet R M (maximalIdeal R)) :=
+  isEssential_of_forall_atom_le fun A hA a haA ↦ by
+    -- the minimal submodule `A` is simple, so its annihilator is the maximal ideal
+    have : IsSimpleModule R A := isSimpleModule_iff_isAtom.mpr hA
+    have hann : Module.annihilator R A = maximalIdeal R :=
+      eq_maximalIdeal IsSimpleModule.annihilator_isMaximal
+    refine (mem_torsionBySet_iff _ _).mpr fun r ↦ ?_
+    have hr : r.val ∈ Module.annihilator R A := hann.symm ▸ r.property
+    exact congrArg Subtype.val (Module.mem_annihilator.mp hr ⟨a, haA⟩)
 
 /-- A nonzero artinian module over a local ring has a nonzero socle. -/
 theorem torsionBySet_maximalIdeal_ne_bot [IsArtinian R M] [Nontrivial M] :
-    torsionBySet R M (maximalIdeal R) ≠ ⊥ := by
-  simpa using inf_torsionBySet_maximalIdeal_ne_bot (N := (⊤ : Submodule R M)) top_ne_bot
+    torsionBySet R M (maximalIdeal R) ≠ ⊥ :=
+  isEssential_torsionBySet_maximalIdeal.ne_bot
 
 end Module
 
