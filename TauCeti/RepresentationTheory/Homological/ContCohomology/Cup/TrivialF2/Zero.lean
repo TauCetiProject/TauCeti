@@ -44,14 +44,6 @@ theorem cohomF2ZeroLinearEquiv_apply (x : cohomF2 G 0) :
       ((_root_.ContinuousCohomology.zeroIso (trivialF2 G)).hom x).val :=
   (rfl)
 
-/-- The degree-zero class of a coefficient `u` has coefficient value `u`. -/
-@[simp]
-theorem cohomF2ZeroLinearEquiv_degreeZeroClass (u : (trivialF2 G).V)
-    (hu : ∀ g : G, (trivialF2 G).ρ g u = u) :
-    cohomF2ZeroLinearEquiv G (ContinuousCohomology.degreeZeroClass (trivialF2 G) u hu) =
-      trivialF2Equiv G u := by
-  rw [cohomF2ZeroLinearEquiv_apply, ContinuousCohomology.coe_zeroIso_hom_degreeZeroClass]
-
 /-- The cup-product unit has coefficient value one. -/
 @[simp]
 theorem cohomF2ZeroLinearEquiv_one : cohomF2ZeroLinearEquiv G 1 = 1 := by
