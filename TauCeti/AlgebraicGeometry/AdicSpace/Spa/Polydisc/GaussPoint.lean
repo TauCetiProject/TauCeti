@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.UnitGaussPoint
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.Huber.Restricted.OneVariable
 
@@ -80,6 +81,8 @@ valuations need not differ from `η_r`.
 * `TauCeti.ValuationSpectrum.gaussPoint_ne_classicalPoint`: for complete `K`, `η_r` is not a
   classical point.
 * `TauCeti.ValuationSpectrum.gaussPoint_inj`: distinct radii give distinct points.
+* `TauCeti.ValuationSpectrum.unitGaussPoint_one_eq_gaussPoint`: in dimension `1`,
+  `unitGaussPoint 1 K` agrees with `gaussPoint zero_lt_one le_rfl`.
 * `TauCeti.ValuationSpectrum.isContinuous_closedDiscGaussValuationAbove`,
   `TauCeti.ValuationSpectrum.closedDiscGaussValuationAbove_le_one_of_isPowerBounded` and their
   `Below` analogues: the conditions for membership in the closed unit disc.
@@ -642,6 +645,30 @@ theorem gaussPoint_inj {s : ℝ} (hr₀ : 0 < r) (hr₁ : r ≤ 1) (hs₀ : 0 < 
     ← NNReal.coe_le_coe, NNReal.coe_pow, coe_closedDiscGaussValuation_weightedX,
     coe_nnNorm] at key
   exact (key.mp hrm.le).not_gt hcs
+
+/-- **In dimension `1`, `unitGaussPoint 1 K` coincides with the radius-`1` Gauss point
+`gaussPoint zero_lt_one le_rfl`.** -/
+theorem unitGaussPoint_one_eq_gaussPoint :
+    unitGaussPoint 1 K = gaussPoint (K := K) zero_lt_one le_rfl := by
+  have hval : ∀ f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set K))
+      isWeightFamily_one_weight,
+      unitGaussValuation 1 K f = closedDiscGaussValuation (R := K) zero_lt_one le_rfl f := by
+    intro f
+    refine le_antisymm ?_ ?_
+    · rw [unitGaussValuation_def, weightedGaussValuation_le_iff]
+      intro ν
+      have h := norm_coeff_mul_pow_le_closedDiscGaussValuation (R := K) zero_lt_one le_rfl f (ν 0)
+      rw [one_pow, mul_one,
+        show Finsupp.single 0 (ν 0) = ν from (Finsupp.unique_single ν).symm] at h
+      rw [NormedField.valuation_apply]
+      exact_mod_cast h
+    · refine NNReal.coe_le_coe.mp ?_
+      refine closedDiscGaussValuation_le_of_forall_norm_coeff_le zero_lt_one le_rfl fun ν ↦ ?_
+      have h := coeff_le_weightedGaussValuation (NormedField.isContinuous_valuation (K := K)) f ν
+      rw [← unitGaussValuation_def, NormedField.valuation_apply] at h
+      exact_mod_cast h
+  refine Subtype.ext <| ext' fun f g ↦ ?_
+  rw [unitGaussPoint_vle_iff, gaussPoint_vle_iff, hval f, hval g]
 
 /-! ### The points just above and just below a Gauss point -/
 

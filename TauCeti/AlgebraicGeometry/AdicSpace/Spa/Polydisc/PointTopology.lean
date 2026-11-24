@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Eval
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
 public import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
@@ -44,9 +43,6 @@ Combined with injectivity (`TauCeti.ValuationSpectrum.normClassicalPoint_injecti
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.normClassicalPoint_mem_basicOpen_iff` and
-  `TauCeti.ValuationSpectrum.normClassicalPoint_mem_rationalSubset_iff`: membership of a classical
-  point in a basic open or rational subset expressed by norm inequalities on evaluations.
 * `TauCeti.ValuationSpectrum.continuous_normClassicalPoint`: the canonical classical-point map into
   `closedPolydisc k K` is continuous.
 * `TauCeti.ValuationSpectrum.preimage_normClassicalPoint_rationalSubset_closedBall` and
@@ -76,27 +72,6 @@ open scoped NNReal
 section Continuity
 
 variable {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-/-- Membership of `normClassicalPoint a ha` in a basic open `Spv(K⟨T⟩)(f/s)` is the norm
-inequality `‖f(a)‖ ≤ ‖s(a)‖` together with `s(a) ≠ 0`. -/
-theorem normClassicalPoint_mem_basicOpen_iff (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i))
-    (f s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (normClassicalPoint a ha).val ∈ basicOpen f s ↔
-      ‖evalAtHom a ha f‖ ≤ ‖evalAtHom a ha s‖ ∧ evalAtHom a ha s ≠ 0 := by
-  simp only [mem_basicOpen_iff, normClassicalPoint_vle, map_zero, norm_zero, norm_le_zero_iff]
-
-/-- Membership of `normClassicalPoint a ha` in a rational subset `R(T/s)` of `closedPolydisc k K`
-is the family of norm inequalities `‖t(a)‖ ≤ ‖s(a)‖` for `t ∈ T` together with `s(a) ≠ 0`. -/
-theorem normClassicalPoint_mem_rationalSubset_iff (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i))
-    (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
-      isWeightFamily_one_weight))
-    (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (normClassicalPoint a ha).val ∈ rationalSubset (powerBoundedSubring _) T s ↔
-      (∀ t ∈ T, ‖evalAtHom a ha t‖ ≤ ‖evalAtHom a ha s‖) ∧ evalAtHom a ha s ≠ 0 := by
-  have hmem : (normClassicalPoint a ha).val ∈ spa (powerBoundedSubring _) :=
-    closedPolydisc_def k K ▸ (normClassicalPoint a ha).property
-  simp only [mem_rationalSubset_iff, hmem, true_and, normClassicalPoint_vle, map_zero,
-    norm_zero, norm_le_zero_iff]
 
 /-- **The canonical classical-point map into the closed polydisc is continuous.** On a small metric
 ball around `a` where `‖f(b) - f(a)‖ < ‖s(a)‖` and `‖s(b) - s(a)‖ < ‖s(a)‖`, the ultrametric law

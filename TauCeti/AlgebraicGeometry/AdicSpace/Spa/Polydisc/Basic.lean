@@ -73,9 +73,13 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   over a field this kernel is a maximal ideal with residue field finite over the field.
 * `TauCeti.ValuationSpectrum.classicalPoint_vle`: the classical point compares `f` and `g` as `x`
   compares `f (a)` and `g (a)`.
-* `TauCeti.ValuationSpectrum.classicalPoint_eq_normClassicalPoint` and
+* `TauCeti.ValuationSpectrum.classicalPoint_eq_normClassicalPoint`,
+  `TauCeti.ValuationSpectrum.normClassicalPoint_mem_basicOpen_iff`,
+  `TauCeti.ValuationSpectrum.normClassicalPoint_mem_rationalSubset_iff`,
+  `TauCeti.ValuationSpectrum.normClassicalPoint_mem_classicalPoints`, and
   `TauCeti.ValuationSpectrum.range_classicalPoint_eq_classicalPoints`: every `x : Spa (K, K°)`
-  yields `normClassicalPoint` and sweeps out `classicalPoints k K`.
+  yields `normClassicalPoint`, its basic-open and rational-subset membership reduces to norm
+  inequalities on evaluations, and it sweeps out `classicalPoints k K`.
 * `TauCeti.ValuationSpectrum.subsingleton_closedPolydisc_zero`: the zero-dimensional closed
   polydisc over an ultrametric normed field is a subsingleton.
 * `TauCeti.ValuationSpectrum.classicalPoint_injective`: when `x` has trivial support, the
@@ -696,6 +700,27 @@ theorem normClassicalPoint_vle (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a 
   rw [normClassicalPoint_def, classicalPoint_vle,
     vle_iff_norm_le_of_mem_spa (normSpaPoint K).property]
 
+/-- Membership of `normClassicalPoint a ha` in a basic open `Spv(K⟨T⟩)(f/s)` is the norm
+inequality `‖f(a)‖ ≤ ‖s(a)‖` together with `s(a) ≠ 0`. -/
+theorem normClassicalPoint_mem_basicOpen_iff (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i))
+    (f s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
+    (normClassicalPoint a ha).val ∈ basicOpen f s ↔
+      ‖evalAtHom a ha f‖ ≤ ‖evalAtHom a ha s‖ ∧ evalAtHom a ha s ≠ 0 := by
+  simp only [mem_basicOpen_iff, normClassicalPoint_vle, map_zero, norm_zero, norm_le_zero_iff]
+
+/-- Membership of `normClassicalPoint a ha` in a rational subset `R(T/s)` of `closedPolydisc k K`
+is the family of norm inequalities `‖t(a)‖ ≤ ‖s(a)‖` for `t ∈ T` together with `s(a) ≠ 0`. -/
+theorem normClassicalPoint_mem_rationalSubset_iff (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i))
+    (T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+      isWeightFamily_one_weight))
+    (s : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
+    (normClassicalPoint a ha).val ∈ rationalSubset (powerBoundedSubring _) T s ↔
+      (∀ t ∈ T, ‖evalAtHom a ha t‖ ≤ ‖evalAtHom a ha s‖) ∧ evalAtHom a ha s ≠ 0 := by
+  have hmem : (normClassicalPoint a ha).val ∈ spa (powerBoundedSubring _) :=
+    closedPolydisc_def k K ▸ (normClassicalPoint a ha).property
+  simp only [mem_rationalSubset_iff, hmem, true_and, normClassicalPoint_vle, map_zero,
+    norm_zero, norm_le_zero_iff]
+
 /-- Distinct power-bounded tuples give distinct canonical classical points. -/
 theorem normClassicalPoint_injective :
     Function.Injective fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
@@ -726,12 +751,20 @@ theorem mem_classicalPoints_iff {k : ℕ} {K : Type*} [NormedField K] [IsUltrame
       ∃ (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)), normClassicalPoint a ha = v := by
   simp only [classicalPoints_def, Set.mem_range, Subtype.exists]
 
+/-- Every `normClassicalPoint a ha` lies in `classicalPoints k K`. -/
+@[simp]
+theorem normClassicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
+    (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
+    normClassicalPoint a ha ∈ classicalPoints k K :=
+  mem_classicalPoints_iff.mpr ⟨a, ha, rfl⟩
+
 /-- Every `classicalPoint x a ha` lies in `classicalPoints k K`. -/
 @[simp]
 theorem classicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    classicalPoint x a ha ∈ classicalPoints k K :=
-  mem_classicalPoints_iff.mpr ⟨a, ha, (classicalPoint_eq_normClassicalPoint x a ha).symm⟩
+    classicalPoint x a ha ∈ classicalPoints k K := by
+  rw [classicalPoint_eq_normClassicalPoint]
+  exact normClassicalPoint_mem_classicalPoints a ha
 
 /-- Every `x : Spa (K, K°)` sweeps out the same locus `classicalPoints k K`. -/
 @[simp]

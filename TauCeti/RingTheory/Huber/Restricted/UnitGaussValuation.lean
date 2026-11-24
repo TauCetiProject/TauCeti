@@ -31,8 +31,6 @@ monomials).
 * `TauCeti.Huber.unitGaussValuation_le_one_iff_mem_weightedSubring` and
   `TauCeti.Huber.unitGaussValuation_le_one_of_mem_powerBoundedSubring`: unit Gauss valuation at
   most `1` characterizes `K°⟨T₁, …, Tₙ⟩` and holds on `(K⟨T₁, …, Tₙ⟩)°`.
-* `TauCeti.Huber.one_le_unitGaussValuation_weightedX_pow_sub`: `1 ≤ unitGaussValuation` on
-  `T₀^q - T₀` for `q > 1`.
 -/
 
 public section
@@ -115,24 +113,5 @@ theorem unitGaussValuation_le_one_of_mem_powerBoundedSubring
     intro ν
     rw [NormedField.valuation_apply, ← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
     exact hnt _
-
-variable {n K} in
-/-- For `q > 1`, the polynomial `T₀^q - T₀` has degree-`1` coefficient `-1`, hence unit Gauss
-valuation at least `1`. -/
-theorem one_le_unitGaussValuation_weightedX_pow_sub [NeZero n] {q : ℕ} (hq : 1 < q) :
-    1 ≤ unitGaussValuation n K
-      (weightedX (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight 0 ^ q -
-        weightedX _ isWeightFamily_one_weight 0) := by
-  set X₀ : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight :=
-    weightedX _ isWeightFamily_one_weight 0
-  have hne : Finsupp.single (0 : Fin n) 1 ≠ Finsupp.single (0 : Fin n) q := fun heq ↦ by
-    have h1 := DFunLike.congr_fun heq 0
-    simp at h1
-    omega
-  have h := coeff_le_weightedGaussValuation (NormedField.isContinuous_valuation (K := K))
-    (X₀ ^ q - X₀) (Finsupp.single 0 1)
-  rw [← unitGaussValuation_def, NormedField.valuation_apply, AddSubgroupClass.coe_sub, map_sub,
-    Subring.coe_pow, coe_weightedX, MvPowerSeries.coeff_X_pow, MvPowerSeries.coeff_X] at h
-  simpa only [hne, ↓reduceIte, zero_sub, nnNorm_neg, nnNorm_one] using h
 
 end TauCeti.Huber

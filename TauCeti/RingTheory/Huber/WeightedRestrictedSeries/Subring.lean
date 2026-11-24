@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Kernel
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Monomial
 
 /-!
 # Unit-weight restricted power series over a subring
@@ -51,11 +52,9 @@ variable {k : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [Nonarchimedean
 theorem weightedX_mem_weightedSubring_one_weight (R : Subring A) (i : Fin k) :
     weightedX (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight i ∈
       weightedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight R := by
-  rw [mem_weightedSubring, mem_weightedNhd]
-  intro ν
-  rw [weightMul_one_weight, coe_weightedX, MvPowerSeries.coeff_X, Subring.mem_toAddSubgroup]
-  split_ifs
-  exacts [R.one_mem, R.zero_mem]
+  simpa only [map_one, one_mul] using weightedC_mul_weightedX_mem_weightedSubring
+    (T := fun _ : Fin k ↦ ({1} : Set A)) (hT := isWeightFamily_one_weight) (R := R) (i := i)
+    (t := (1 : A)) (Set.mem_singleton 1)
 
 /-- Every polynomial with coefficients in `R` maps into `R⟨X₁, …, Xₖ⟩` at unit weights. -/
 theorem weightedPolynomialHom_map_mem_weightedSubring_one_weight (R : Subring A)
@@ -69,20 +68,17 @@ theorem weightedPolynomialHom_map_mem_weightedSubring_one_weight (R : Subring A)
     MvPolynomial.coeff_map, Subring.coe_subtype, Subring.mem_toAddSubgroup]
   exact (p.coeff ν).property
 
-omit [NonarchimedeanRing A] in
-private theorem continuous_subringSubtype (R : Subring A) : Continuous R.subtype :=
-  continuous_subtypeVal
-
 private noncomputable def weightedMapToWeightedSubring (R : Subring A) :
     weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight →+*
       weightedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight R :=
-  (weightedMap (φ := R.subtype) (continuous_subringSubtype R) isWeightFamily_one_weight
-      isWeightFamily_one_weight (fun _ ↦ by simp)).codRestrict _ fun f ↦ by
-    rw [mem_weightedSubring, mem_weightedNhd]
-    intro ν
-    rw [weightMul_one_weight, coe_weightedMap, MvPowerSeries.coeff_map, Subring.coe_subtype,
-      Subring.mem_toAddSubgroup]
-    exact (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) R)).property
+  (weightedMap (φ := R.subtype) continuous_subtypeVal
+      isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp)).codRestrict _
+    fun f ↦ by
+      rw [mem_weightedSubring, mem_weightedNhd]
+      intro ν
+      rw [weightMul_one_weight, coe_weightedMap (φ := R.subtype) continuous_subtypeVal,
+        MvPowerSeries.coeff_map, Subring.coe_subtype, Subring.mem_toAddSubgroup]
+      exact (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) R)).property
 
 /-- **Unit-weight restricted series over a subring.** For a subring `R` of `A` with the subspace
 topology, the trivial-weight restricted power series ring over `R` is canonically isomorphic to the
@@ -91,8 +87,8 @@ noncomputable def weightedRestrictedSubringEquivWeightedSubring (R : Subring A) 
     weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R)) isWeightFamily_one_weight ≃+*
       weightedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight R := by
   refine RingEquiv.ofBijective (weightedMapToWeightedSubring R) ⟨fun f g h ↦
-      weightedMap_injective (φ := R.subtype) (continuous_subringSubtype R) Subtype.val_injective
-        (congrArg Subtype.val h), fun g ↦ ?_⟩
+      weightedMap_injective (φ := R.subtype) continuous_subtypeVal
+        Subtype.val_injective (congrArg Subtype.val h), fun g ↦ ?_⟩
   let f : MvPowerSeries (Fin k) R := fun ν ↦
     ⟨MvPowerSeries.coeff ν ((g.val : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
         isWeightFamily_one_weight) : MvPowerSeries (Fin k) A),
@@ -103,8 +99,8 @@ noncomputable def weightedRestrictedSubringEquivWeightedSubring (R : Subring A) 
       isWeightedRestricted_one_weight_iff.mp (mem_weightedRestrictedSubring.mp g.val.property)
   refine ⟨⟨f, mem_weightedRestrictedSubring.mpr hf⟩,
     Subtype.ext <| Subtype.ext <| MvPowerSeries.ext fun ν ↦ ?_⟩
-  simp only [weightedMapToWeightedSubring, RingHom.codRestrict_apply, coe_weightedMap,
-    MvPowerSeries.coeff_map, Subring.coe_subtype]
+  simp only [weightedMapToWeightedSubring, RingHom.codRestrict_apply]
+  rw [coe_weightedMap (φ := R.subtype) continuous_subtypeVal]
   rfl
 
 /-- `weightedRestrictedSubringEquivWeightedSubring R` acts on underlying formal power series by
@@ -116,7 +112,7 @@ theorem coe_weightedRestrictedSubringEquivWeightedSubring (R : Subring A)
         weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
         MvPowerSeries (Fin k) A) =
       MvPowerSeries.map R.subtype (f : MvPowerSeries (Fin k) R) :=
-  coe_weightedMap (continuous_subringSubtype R) (fun _ ↦ by simp) f
+  coe_weightedMap (φ := R.subtype) continuous_subtypeVal (fun _ ↦ by simp) f
 
 /-- Each coefficient of `weightedRestrictedSubringEquivWeightedSubring R f` is the coercion of the
 corresponding coefficient of `f`. -/
