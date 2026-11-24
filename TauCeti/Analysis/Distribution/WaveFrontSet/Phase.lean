@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
-import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Analysis.Fourier.NonstationaryPhase.Basic
 import TauCeti.Analysis.Normed.Module.Cone
@@ -47,7 +47,7 @@ The Fourier coefficient
 `𝓕 g (m) = ∫ ψ(x) 𝐞(-(t Φ(x) + ⟪x, m⟫)) dx` is an oscillatory integral whose phase has
 gradient `-(t ∇Φ(x) + m)`. When `‖t ∇Φ(x) + m‖ ≥ δ (t + ‖m‖)` on the support of `ψ`, it is
 `O((t + ‖m‖) ^ (-N))` by non-stationary phase
-(`TauCeti.exists_forall_abs_pow_mul_norm_integral_le_of_isCompact`), which beats the polynomial
+(`TauCeti.exists_forall_abs_pow_mul_norm_integral_mul_fourierChar_le`), which beats the polynomial
 growth of `T (χ e_(-m))`. Otherwise `-m` lies within `δ (t + ‖m‖)` of `t ∇Φ(x)` for some `x` near
 `x₀`; for small `δ` this puts `-m` in a cone around `ξ₀` where `T (χ e_(-m))` decays rapidly, and
 `‖m‖` is comparable to `t`.
@@ -190,13 +190,7 @@ private theorem fderiv_coeffPhase_ne_zero {Φ : F × E → ℝ} (hΦ : ContDiff 
   rw [← real_inner_smul_left, ← inner_add_left, real_inner_self_eq_norm_sq] at h1
   exact hq (norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 h1))
 
-/-- The gradient `∇Φ(p, ·)(x)` of the slices of a smooth `Φ` is continuous in `(p, x)`. -/
-private theorem continuous_gradient_slice {Φ : F × E → ℝ} (hΦ : ContDiff ℝ ∞ Φ) :
-    Continuous fun q : F × E ↦ gradient (fun y ↦ Φ (q.1, y)) q.2 :=
-  (InnerProductSpace.toDual ℝ E).symm.continuous.comp
-    (TauCeti.continuous_fderiv_slice_right (f := fun p y ↦ Φ (p, y)) (hΦ.of_le (by simp)))
-
-variable [FiniteDimensional ℝ F] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E]
 
 /-- **Non-stationary Fourier coefficients.** For `p` in a compact set `V`, the Fourier transform of
 `ψ 𝐞(-t Φ(p, ·))` at `m` is `O((t + ‖m‖) ^ (-N))` in the non-stationary region where
@@ -207,7 +201,8 @@ private theorem exists_forall_pow_mul_norm_fourier_le (ψ : 𝓓(Ω, ℂ)) {Φ :
       (∀ x ∈ tsupport ψ, δ * (t + ‖m‖) ≤ ‖t • gradient (fun y ↦ Φ (p, y)) x + m‖) →
       (t + ‖m‖) ^ N * ‖𝓕 (fun x ↦ ψ x * (𝐞 (-(t * Φ (p, x))) : ℂ)) m‖ ≤ C := by
   set G : F × E → E := fun q ↦ gradient (fun y ↦ Φ (q.1, y)) q.2
-  have hGc : Continuous G := continuous_gradient_slice hΦ
+  have hGc : Continuous G :=
+    TauCeti.continuous_gradient_slice_right (f := fun p y ↦ Φ (p, y)) (hΦ.of_le (by simp))
   -- The compact set of normalized parameters `(s, w, p)` of the non-stationary region.
   let Q : Set (ℝ × E × F) := Prod.fst ⁻¹' Icc 0 1 ∩ (fun q ↦ q.2.1) ⁻¹' closedBall 0 1 ∩
     (fun q ↦ q.2.2) ⁻¹' V ∩ ⋂ x ∈ tsupport ψ, {q | δ ≤ ‖q.1 • G (q.2.2, x) + q.2.1‖}
@@ -220,7 +215,7 @@ private theorem exists_forall_pow_mul_norm_fourier_le (ψ : 𝓓(Ω, ℂ)) {Φ :
       (isClosed_biInter fun x _ ↦ isClosed_le continuous_const ?_)
     exact ((continuous_fst.smul (hGc.comp (continuous_snd.snd.prodMk continuous_const))).add
       continuous_snd.fst).norm
-  obtain ⟨C, hC⟩ := TauCeti.exists_forall_abs_pow_mul_norm_integral_le_of_isCompact
+  obtain ⟨C, hC⟩ := TauCeti.exists_forall_abs_pow_mul_norm_integral_mul_fourierChar_le
     (μ := MeasureTheory.volume) ψ.contDiff ψ.hasCompactSupport (contDiff_coeffPhase hΦ) hQ
     (fun q hq x hx ↦ fderiv_coeffPhase_ne_zero hΦ (norm_pos_iff.1 (hδ.trans_le
       (mem_iInter₂.1 hq.2 x hx)))) N
@@ -256,9 +251,9 @@ end Phase
 
 section Decay
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] in
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
 /-- The bound on the terms of the Fourier series of the pairing of `T` with `ψ 𝐞(-t Φ(p, ·))`: in
 the non-stationary region by the decay `hCA` of the Fourier coefficient against the polynomial
 growth `hC₀` of `T (χ e_(-m))`, and in the stationary region, where `-m` lies in the cone `Γ`, by
@@ -364,14 +359,14 @@ private theorem exists_forall_pow_mul_norm_complexPairing_le_of_forall {T : 𝓓
     _ = B * ∑' m : ZLattice.dual L, ((1 + ‖(m : E)‖) ^ r₀)⁻¹ := tsum_mul_left
 
 /-- **Decay along a nonlinear phase.** Let `Φ(p, x)` be a smooth real phase depending on a
-parameter `p`, and suppose that `T` is microlocally smooth at `(x₀, ξ₀)`, where
-`ξ₀ = ∇Φ(p₀, ·)(x₀) ≠ 0`. Then there are neighbourhoods `V` of `p₀` and `U` of `x₀` such that for
-every test function `ψ` supported in `U`, the pairing of `T` with `ψ 𝐞(-t Φ(p, ·))` decays faster
-than every power of `t` as `t → ∞`, uniformly for `p ∈ V`. For the linear phase
-`Φ(p, x) = ⟪x, ξ₀⟫` this is the rapid decay of the localized Fourier transform of `T` along the
-ray of `ξ₀`. -/
-theorem IsMicrolocallySmoothAt.exists_nhds_forall_pow_mul_norm_complexPairing_le {T : 𝓓'(Ω, ℂ)}
-    {Φ : F × E → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {p₀ : F} {x₀ : E}
+parameter `p` in a finite-dimensional space, and suppose that `T` is microlocally smooth at
+`(x₀, ξ₀)`, where `ξ₀ = ∇Φ(p₀, ·)(x₀) ≠ 0`. Then there are neighbourhoods `V` of `p₀` and `U` of
+`x₀` such that for every test function `ψ` supported in `U`, the pairing of `T` with
+`ψ 𝐞(-t Φ(p, ·))` decays faster than every power of `t` as `t → ∞`, uniformly for `p ∈ V`. For
+the linear phase `Φ(p, x) = ⟪x, ξ₀⟫` this is the rapid decay of the localized Fourier transform of
+`T` along the ray of `ξ₀`. -/
+theorem IsMicrolocallySmoothAt.exists_nhds_forall_pow_mul_norm_complexPairing_le
+    [FiniteDimensional ℝ F] {T : 𝓓'(Ω, ℂ)} {Φ : F × E → ℝ} (hΦ : ContDiff ℝ ∞ Φ) {p₀ : F} {x₀ : E}
     (h₀ : gradient (fun x ↦ Φ (p₀, x)) x₀ ≠ 0)
     (hT : T.IsMicrolocallySmoothAt x₀ (gradient (fun x ↦ Φ (p₀, x)) x₀)) :
     ∃ V ∈ 𝓝 p₀, ∃ U ∈ 𝓝 x₀, ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U → ∀ N : ℕ, ∃ C, ∀ p ∈ V,
@@ -382,7 +377,7 @@ theorem IsMicrolocallySmoothAt.exists_nhds_forall_pow_mul_norm_complexPairing_le
   obtain ⟨Γ', hΓ'o, hξΓ', hΓ'c, c, hc, hΓ'⟩ := hΓo.exists_cone_closedBall_subset hΓc hξΓ
   -- Near `(p₀, x₀)` the gradient stays in `Γ'` and within `‖ξ₀‖ / 2` of `ξ₀`.
   have hGc : Continuous fun q : F × E ↦ gradient (fun y ↦ Φ (q.1, y)) q.2 :=
-    continuous_gradient_slice hΦ
+    TauCeti.continuous_gradient_slice_right (f := fun p y ↦ Φ (p, y)) (hΦ.of_le (by simp))
   have hW : {q : F × E | gradient (fun y ↦ Φ (q.1, y)) q.2 ∈ Γ' ∧
       dist (gradient (fun y ↦ Φ (q.1, y)) q.2) ξ₀ < ‖ξ₀‖ / 2} ∈ 𝓝 (p₀, x₀) :=
     ((hΓ'o.preimage hGc).inter (isOpen_lt (hGc.dist continuous_const) continuous_const)).mem_nhds

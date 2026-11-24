@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Prod
@@ -26,16 +27,19 @@ a real normed space of parameters. For a smooth amplitude `a : F × E → ℂ` a
 
 `I(p, t) = ∫ a(p, x) 𝐞(t θ(p, x)) dμ(x)`,
 
-where `𝐞 s = exp (2πi s)`. If the amplitudes are supported, in `x`, in a fixed compact set and the
-phase has no critical point in `x` on the support of `a`, then `I(p, t)` decays faster than every
-power of `t`, uniformly for `p` in a compact set:
+where `𝐞 s = exp (2πi s)`. Let `P` be a compact set of parameters. If the amplitudes are
+supported, in `x`, in a fixed compact set and the phase has no critical point in `x` at the points
+`(p, x)` of the support of `a` with `p ∈ P`, then `I(p, t)` decays faster than every power of `t`,
+uniformly for `p ∈ P`:
 
 `|t| ^ N ‖I(p, t)‖ ≤ C_N` for `p ∈ P` and all real `t`
 
 (`TauCeti.exists_forall_abs_pow_mul_norm_integral_le`). This is the principle of non-stationary
 phase. The proof integrates by parts in `x`. Fix a basis `b` of `E`, write `∂_k` for the partial
-derivative in the direction `b k`, and put `S = ∑ k (∂_k θ) ^ 2`, which does not vanish on the
-support of `a`. Since `∂_k 𝐞(t θ) = 2πi t (∂_k θ) 𝐞(t θ)`,
+derivative in the direction `b k`, and put `S = ∑ k (∂_k θ) ^ 2`. By compactness `S ≥ c > 0` on the
+support of `a` over `P`; multiplying `a` by a smooth function of `S` that is one where `S ≥ c` and
+zero where `S ≤ c / 2` does not change `I(p, t)` for `p ∈ P`, so we may assume that `S` does not
+vanish on the support of `a`. Since `∂_k 𝐞(t θ) = 2πi t (∂_k θ) 𝐞(t θ)`,
 
 `2πi t ∫ a 𝐞(t θ) = ∑ k ∫ (a ∂_k θ / S) ∂_k 𝐞(t θ) = -∑ k ∫ ∂_k (a ∂_k θ / S) 𝐞(t θ)`,
 
@@ -51,10 +55,10 @@ Uniformity in the parameter is what applications use: there the phase is a famil
 ## Main results
 
 * `TauCeti.exists_forall_abs_pow_mul_norm_integral_le`: rapid decay of `I(p, t)` in `t`,
-  uniformly for `p` in a compact set.
-* `TauCeti.exists_forall_abs_pow_mul_norm_integral_le_of_isCompact`: the same for an amplitude
-  `ψ(x)` independent of the parameter, when the phase is only known to have no critical points
-  over the compact parameter set; a cutoff in the parameter reduces it to the previous case.
+  uniformly for `p` in a compact set, when the phase has no critical point in `x` on the support
+  of `a` over that set.
+* `TauCeti.exists_forall_abs_pow_mul_norm_integral_mul_fourierChar_le`: the same for an amplitude
+  `ψ(x)` independent of the parameter.
 
 ## References
 
@@ -188,6 +192,41 @@ private theorem sum_flux_mul_fderiv {θ : F × E → ℝ} {a : F × E → ℂ} (
     ring
   rw [hsum, ← gradSq, div_self (ofReal_ne_zero.2 hS), one_mul]
 
+/-- **Cutting off the nearly stationary points.** If `gradSq θ` vanishes nowhere on the part of the
+support of `a` over a compact set `P`, then multiplying `a` by a smooth function of `gradSq θ` gives
+an amplitude `b`, equal to `a` over `P`, with `gradSq θ` vanishing nowhere on its support. -/
+private theorem exists_eq_and_gradSq_ne_zero {a : F × E → ℂ} {θ : F × E → ℝ}
+    (ha : ContDiff ℝ ∞ a) (hθ : ContDiff ℝ ∞ θ) {K : Set E} (hK : IsCompact K)
+    (haK : tsupport a ⊆ univ ×ˢ K) {P : Set F} (hP : IsCompact P)
+    (hθa : ∀ q ∈ tsupport a, q.1 ∈ P → gradSq θ q ≠ 0) :
+    ∃ b : F × E → ℂ, ContDiff ℝ ∞ b ∧ tsupport b ⊆ tsupport a ∧
+      (∀ q ∈ tsupport b, gradSq θ q ≠ 0) ∧ ∀ p ∈ P, ∀ x, b (p, x) = a (p, x) := by
+  have hg := contDiff_gradSq hθ
+  -- `gradSq θ` is at least some `c > 0` on the compact part of `tsupport a` over `P`.
+  have hS : IsCompact (tsupport a ∩ P ×ˢ univ) :=
+    (hP.prod hK).of_isClosed_subset ((isClosed_tsupport a).inter (hP.isClosed.prod isClosed_univ))
+      fun q hq ↦ ⟨hq.2.1, (haK hq.1).2⟩
+  obtain ⟨c, hc, hcS⟩ := hS.exists_forall_le' hg.continuous.continuousOn (a := 0) fun q hq ↦
+    (by simp only [gradSq]; positivity : 0 ≤ gradSq θ q).lt_of_ne' (hθa q hq.1 hq.2.1)
+  -- The cutoff is one where `gradSq θ ≥ c` and zero where `gradSq θ ≤ c / 2`.
+  let ρ : F × E → ℂ := fun q ↦ (Real.smoothTransition (2 * gradSq θ q / c - 1) : ℂ)
+  have hρ : tsupport ρ ⊆ {q | c / 2 ≤ gradSq θ q} := by
+    refine closure_minimal (fun q hq ↦ mem_ofPred.2 (not_lt.1 fun h ↦ hq ?_))
+      (isClosed_le continuous_const hg.continuous)
+    simp only [ρ, ofReal_eq_zero]
+    exact Real.smoothTransition.zero_of_nonpos
+      (sub_nonpos.2 ((div_le_one hc).2 (by linarith)))
+  refine ⟨fun q ↦ ρ q * a q, ?_, tsupport_mul_subset_right, fun q hq ↦ ?_, fun p hp x ↦ ?_⟩
+  · exact (ofRealCLM.contDiff.comp (Real.smoothTransition.contDiff.comp
+      (((contDiff_const.mul hg).div_const c).sub contDiff_const))).mul ha
+  · exact (lt_of_lt_of_le (half_pos hc) (hρ (tsupport_mul_subset_left hq))).ne'
+  · by_cases ha0 : a (p, x) = 0
+    · simp [ha0]
+    have h1 : 1 ≤ 2 * gradSq θ (p, x) / c - 1 := by
+      rw [le_sub_iff_add_le, le_div_iff₀ hc]
+      linarith [hcS (p, x) ⟨subset_tsupport _ ha0, hp, mem_univ _⟩]
+    simp [ρ, Real.smoothTransition.one_of_one_le h1]
+
 variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
 /-- **One integration by parts.** For `t ≠ 0`,
@@ -261,24 +300,14 @@ private theorem exists_forall_norm_integral_le {a : F × E → ℂ} (ha : Contin
           hK.measurableSet) (Filter.Eventually.of_forall hle)
     _ = M * μ.real K := by rw [integral_indicator_const _ hK.measurableSet, smul_eq_mul, mul_comm]
 
-end NonstationaryPhase
-
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
-  [μ.IsAddHaarMeasure]
-
-open NonstationaryPhase in
-/-- **Non-stationary phase, uniformly in a parameter.** Let `a : F × E → ℂ` and `θ : F × E → ℝ` be
-smooth, with the support of `a` lying over a compact set `K` in the second variable, and suppose
-that `x ↦ θ (p, x)` has no critical point at any `(p, x)` in the support of `a`. Then for every
-`N` the oscillatory integral `∫ a(p, x) 𝐞(t θ(p, x)) dμ(x)` is `O(|t| ^ (-N))`, uniformly for `p`
-in a compact set `P`. -/
-theorem exists_forall_abs_pow_mul_norm_integral_le {a : F × E → ℂ} {θ : F × E → ℝ}
-    (ha : ContDiff ℝ ∞ a) (hθ : ContDiff ℝ ∞ θ) {K : Set E} (hK : IsCompact K)
-    (haK : tsupport a ⊆ univ ×ˢ K)
-    (hθa : ∀ q ∈ tsupport a, fderiv ℝ (fun x ↦ θ (q.1, x)) q.2 ≠ 0) {P : Set F}
+/-- **Non-stationary phase where `gradSq θ` vanishes nowhere on the support of `a`.** This is
+`N` integrations by parts; `TauCeti.exists_forall_abs_pow_mul_norm_integral_le` reduces to it by a
+cutoff. -/
+private theorem exists_forall_abs_pow_mul_norm_integral_le_of_gradSq_ne_zero {a : F × E → ℂ}
+    {θ : F × E → ℝ} (ha : ContDiff ℝ ∞ a) (hθ : ContDiff ℝ ∞ θ) {K : Set E} (hK : IsCompact K)
+    (haK : tsupport a ⊆ univ ×ˢ K) (hθa : ∀ q ∈ tsupport a, gradSq θ q ≠ 0) {P : Set F}
     (hP : IsCompact P) (N : ℕ) :
     ∃ C, ∀ p ∈ P, ∀ t : ℝ, |t| ^ N * ‖∫ x, a (p, x) * 𝐞 (t * θ (p, x)) ∂μ‖ ≤ C := by
-  replace hθa : ∀ q ∈ tsupport a, gradSq θ q ≠ 0 := fun q hq ↦ gradSq_ne_zero (hθa q hq)
   induction N generalizing a with
   | zero => simpa using exists_forall_norm_integral_le ha.continuous hK haK hP θ
   | succ N ih =>
@@ -294,35 +323,42 @@ theorem exists_forall_abs_pow_mul_norm_integral_le {a : F × E → ℂ} {θ : F 
       mul_inv_cancel₀ (abs_ne_zero.2 ht), one_mul]
     exact (hC p hp t).trans (le_max_left _ _)
 
+end NonstationaryPhase
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
+  [μ.IsAddHaarMeasure]
+
+open NonstationaryPhase in
+/-- **Non-stationary phase, uniformly in a parameter.** Let `a : F × E → ℂ` and `θ : F × E → ℝ` be
+smooth, with the support of `a` lying over a compact set `K` in the second variable, and let `P` be
+a compact set of parameters. Suppose that `x ↦ θ (p, x)` has no critical point at any `(p, x)` in
+the support of `a` with `p ∈ P`. Then for every `N` the oscillatory integral
+`∫ a(p, x) 𝐞(t θ(p, x)) dμ(x)` is `O(|t| ^ (-N))`, uniformly for `p ∈ P`. -/
+theorem exists_forall_abs_pow_mul_norm_integral_le {a : F × E → ℂ} {θ : F × E → ℝ}
+    (ha : ContDiff ℝ ∞ a) (hθ : ContDiff ℝ ∞ θ) {K : Set E} (hK : IsCompact K)
+    (haK : tsupport a ⊆ univ ×ˢ K) {P : Set F} (hP : IsCompact P)
+    (hθa : ∀ q ∈ tsupport a, q.1 ∈ P → fderiv ℝ (fun x ↦ θ (q.1, x)) q.2 ≠ 0) (N : ℕ) :
+    ∃ C, ∀ p ∈ P, ∀ t : ℝ, |t| ^ N * ‖∫ x, a (p, x) * 𝐞 (t * θ (p, x)) ∂μ‖ ≤ C := by
+  -- Cut `a` off near the critical points of the phase, which all lie over parameters outside `P`.
+  obtain ⟨b, hb, hba, hθb, hab⟩ := exists_eq_and_gradSq_ne_zero ha hθ hK haK hP
+    fun q hq hqP ↦ gradSq_ne_zero (hθa q hq hqP)
+  obtain ⟨C, hC⟩ := exists_forall_abs_pow_mul_norm_integral_le_of_gradSq_ne_zero (μ := μ) hb hθ hK
+    (hba.trans haK) hθb hP N
+  exact ⟨C, fun p hp t ↦ by simpa only [hab p hp] using hC p hp t⟩
 
 /-- **Non-stationary phase for an amplitude independent of the parameter.** Let `ψ` be smooth with
-compact support and let `θ : F × E → ℝ` be smooth, with a finite-dimensional parameter space `F`.
-If `x ↦ θ (p, x)` has no critical point on the support of `ψ` for `p` in a compact set `P`, then
-`∫ ψ(x) 𝐞(t θ(p, x)) dμ(x)` is `O(|t| ^ (-N))` for every `N`, uniformly for `p ∈ P`. -/
-theorem exists_forall_abs_pow_mul_norm_integral_le_of_isCompact [FiniteDimensional ℝ F]
-    {ψ : E → ℂ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) {θ : F × E → ℝ}
-    (hθ : ContDiff ℝ ∞ θ) {P : Set F} (hP : IsCompact P)
+compact support and let `θ : F × E → ℝ` be smooth. If `x ↦ θ (p, x)` has no critical point on the
+support of `ψ` for `p` in a compact set `P`, then `∫ ψ(x) 𝐞(t θ(p, x)) dμ(x)` is `O(|t| ^ (-N))` for
+every `N`, uniformly for `p ∈ P`. -/
+theorem exists_forall_abs_pow_mul_norm_integral_mul_fourierChar_le {ψ : E → ℂ}
+    (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) {θ : F × E → ℝ} (hθ : ContDiff ℝ ∞ θ)
+    {P : Set F} (hP : IsCompact P)
     (hθP : ∀ p ∈ P, ∀ x ∈ tsupport ψ, fderiv ℝ (fun y ↦ θ (p, y)) x ≠ 0) (N : ℕ) :
     ∃ C, ∀ p ∈ P, ∀ t : ℝ, |t| ^ N * ‖∫ x, ψ x * 𝐞 (t * θ (p, x)) ∂μ‖ ≤ C := by
-  -- The critical points of `θ` in `x` form a closed set, disjoint from `P × tsupport ψ`; cut off
-  -- in the parameter to an open neighbourhood `u` of `P` that avoids them over `tsupport ψ`.
-  have ho : IsOpen {q : F × E | fderiv ℝ (fun y ↦ θ (q.1, y)) q.2 ≠ 0} :=
-    isOpen_ne_fun (continuous_fderiv_slice_right (f := fun p y ↦ θ (p, y)) (hθ.of_le (by simp)))
-      continuous_const
-  obtain ⟨u, v, hu, -, hPu, hψv, huv⟩ := generalized_tube_lemma hP hψc.isCompact ho
-    fun q hq ↦ hθP q.1 hq.1 q.2 hq.2
-  obtain ⟨ρ, hρ, -, hρ1, -, hρu⟩ := hP.exists_contDiff_cutoff hu hPu
-  let a : F × E → ℂ := fun q ↦ (ρ q.1 : ℂ) * ψ q.2
-  have hsupp : tsupport a ⊆ tsupport ρ ×ˢ tsupport ψ :=
-    closure_minimal (fun q hq ↦ ⟨subset_tsupport _ fun h ↦ hq (by simp [a, h]),
-      subset_tsupport _ fun h ↦ hq (by simp [a, h])⟩)
-      ((isClosed_tsupport _).prod (isClosed_tsupport _))
-  obtain ⟨C, hC⟩ := exists_forall_abs_pow_mul_norm_integral_le (μ := μ)
-    ((ofRealCLM.contDiff.comp (hρ.comp contDiff_fst)).mul (hψ.comp contDiff_snd)) hθ
-    hψc.isCompact (hsupp.trans (prod_mono (subset_univ _) subset_rfl))
-    (fun q hq ↦ huv ⟨hρu (hsupp hq).1, hψv (hsupp hq).2⟩) hP N
-  refine ⟨C, fun p hp t ↦ ?_⟩
-  have hρp : ρ p = 1 := interior_subset (hρ1 hp)
-  simpa [a, hρp] using hC p hp t
+  have hsupp : tsupport (fun q : F × E ↦ ψ q.2) ⊆ univ ×ˢ tsupport ψ :=
+    closure_minimal (fun q hq ↦ ⟨mem_univ _, subset_tsupport _ hq⟩)
+      (isClosed_univ.prod (isClosed_tsupport ψ))
+  exact exists_forall_abs_pow_mul_norm_integral_le (hψ.comp contDiff_snd) hθ hψc.isCompact hsupp
+    hP (fun q hq hqP ↦ hθP q.1 hqP q.2 (hsupp hq).2) N
 
 end TauCeti
