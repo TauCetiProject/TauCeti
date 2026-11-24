@@ -74,6 +74,8 @@ Borel measurable structure on the scalar field.
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
 * `EuclideanSpace.finCastLEEquiv`: the first `m` coordinates of `𝕜ⁿ`, indexed by `Fin m`, as the
   first factor of the splitting along `j < m`.
+* `TauCeti.euclideanLinearEquivHom 𝕜 ι`: a unitary transformation of `EuclideanSpace 𝕜 ι` as a
+  linear automorphism of `ι → 𝕜`.
 * `LinearEquiv.toEuclideanIsometry`: a linear automorphism of `ι → 𝕜` preserving the Euclidean
   norm, as a linear isometric automorphism of `EuclideanSpace 𝕜 ι`.
 * `PiLp.inner_single_left`, `PiLp.inner_single_right`: the inner product against `PiLp.single 2 i v`
@@ -652,6 +654,22 @@ theorem injOn_comp_euclideanSpace_proj_preimage {ι : Type*} [Unique ι] {α : T
   have hinj : Function.Injective (EuclideanSpace.proj (𝕜 := 𝕜) i : EuclideanSpace 𝕜 ι → 𝕜) :=
     fun x y h ↦ by ext j; rw [Subsingleton.elim j i]; exact h
   exact hg.comp hinj.injOn (Set.mapsTo_preimage _ _)
+
+variable (𝕜 ι) in
+/-- A unitary transformation of `EuclideanSpace 𝕜 ι`, as a linear automorphism of `ι → 𝕜`. -/
+def euclideanLinearEquivHom :
+    unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) →* (ι → 𝕜) ≃ₗ[𝕜] (ι → 𝕜) where
+  toFun g := (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).symm.trans
+    ((Unitary.linearIsometryEquiv g).toLinearEquiv.trans (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)))
+  map_one' := by ext; simp
+  map_mul' _ _ := by ext; simp
+
+@[simp]
+theorem euclideanLinearEquivHom_apply
+    (g : unitary (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) (v : ι → 𝕜) :
+    euclideanLinearEquivHom 𝕜 ι g v =
+      WithLp.ofLp ((g : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (WithLp.toLp 2 v)) :=
+  (rfl)
 
 end TauCeti
 

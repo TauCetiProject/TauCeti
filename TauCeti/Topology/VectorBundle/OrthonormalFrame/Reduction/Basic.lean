@@ -84,10 +84,14 @@ theorem SMulMemIff.exists_mem_smul_eq {p q : OrthonormalFrameBundle ℝ F E V} (
   obtain ⟨g, rfl⟩ := OrthonormalFrameBundle.exists_smul_eq_iff.2 h
   exact ⟨g, (smul_mem_iff (H := H) hp).1 hq, rfl⟩
 
-/-- The right action of `H` on `S`, by precomposition. -/
-instance : MulAction Hᵐᵒᵖ S where
+/-- The right action of `H` on `S`, by precomposition. A direct `SMul` instance, so that instance
+search finds it before the generic paths (such as `Algebra.toSMul`) through `MulAction`. -/
+instance instSMulSubtype : SMul Hᵐᵒᵖ S where
   smul g p := ⟨op (g.unop : unitary (V →L[ℝ] V)) • p.val,
     (SMulMemIff.smul_mem_iff p.property).2 g.unop.property⟩
+
+/-- The right action of `H` on `S` is an action. -/
+instance : MulAction Hᵐᵒᵖ S where
   one_smul p := Subtype.ext (one_smul _ p.val)
   mul_smul g h p := Subtype.ext (mul_smul (op (g.unop : unitary (V →L[ℝ] V)))
     (op (h.unop : unitary (V →L[ℝ] V))) p.val)
