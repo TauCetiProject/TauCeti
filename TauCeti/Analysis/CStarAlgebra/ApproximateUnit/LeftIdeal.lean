@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Topology.MetricSpace.UniformConvergence
+import TauCeti.Algebra.Algebra.Spectrum.Quasispectrum
+import TauCeti.Algebra.Star.Submodule
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 import TauCeti.Topology.ApproximateUnit
 
@@ -95,24 +97,27 @@ theorem norm_resolventCutoff_le_one {δ : ℝ} (hδ : 0 ≤ δ) {b : A} (hb : 0 
     rw [Real.norm_of_nonneg (by positivity)]
     exact div_le_one_of_le₀ (by linarith) (by positivity)
 
+/-- `δ + t` does not vanish on the quasispectrum of a positive element for `δ > 0`. -/
+private theorem add_ne_zero_of_mem_quasispectrum {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 ≤ b)
+    {t : ℝ} (ht : t ∈ σₙ ℝ b) : δ + t ≠ 0 :=
+  (add_pos_of_pos_of_nonneg hδ (quasispectrum_nonneg_of_nonneg b hb t ht)).ne'
+
 /-- The function `t ↦ t / (δ + t)` is continuous on the quasispectrum of a positive element. -/
 private theorem continuousOn_div_add {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 ≤ b) :
     ContinuousOn (fun t : ℝ ↦ t / (δ + t)) (σₙ ℝ b) :=
-  continuousOn_id.div (continuousOn_const.add continuousOn_id) fun t ht ↦
-    (add_pos_of_pos_of_nonneg hδ (quasispectrum_nonneg_of_nonneg b hb t ht)).ne'
+  continuousOn_id.div (continuousOn_const.add continuousOn_id) fun _ ↦
+    add_ne_zero_of_mem_quasispectrum hδ hb
 
 /-- The identity `e = δ⁻¹ • (b - e * b)` for `e = b (δ + b)⁻¹`, which writes `e` without the
 inverse of `δ + b`. -/
 theorem resolventCutoff_eq_inv_smul {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 ≤ b) :
     resolventCutoff δ b = δ⁻¹ • (b - resolventCutoff δ b * b) := by
-  have hpos : ∀ t ∈ σₙ ℝ b, δ + t ≠ 0 := fun t ht ↦
-    (add_pos_of_pos_of_nonneg hδ (quasispectrum_nonneg_of_nonneg b hb t ht)).ne'
   have hf := continuousOn_div_add hδ hb
   rw [resolventCutoff_def]
   calc cfcₙ (fun t : ℝ ↦ t / (δ + t)) b
       = cfcₙ (fun t : ℝ ↦ δ⁻¹ * (t - t / (δ + t) * t)) b :=
         cfcₙ_congr fun t ht ↦ by
-          have := hpos t ht
+          have := add_ne_zero_of_mem_quasispectrum hδ hb ht
           field_simp
           ring
     _ = δ⁻¹ • (b - cfcₙ (fun t : ℝ ↦ t / (δ + t)) b * b) := by
@@ -125,21 +130,10 @@ theorem resolventCutoff_eq_inv_smul {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 �
 /-- `e = b (δ + b)⁻¹` satisfies `e (δ + b) = b` in the unitization `Unitization ℂ A`. -/
 theorem resolventCutoff_mul_algebraMap_add {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 ≤ b) :
     ((resolventCutoff δ b : A) : Unitization ℂ A) * (algebraMap ℝ (Unitization ℂ A) δ + b) = b := by
-  have h := resolventCutoff_eq_inv_smul hδ hb
-  have h' : δ • resolventCutoff δ b + resolventCutoff δ b * b = b := by
-    nth_rw 1 [h]
-    rw [smul_inv_smul₀ hδ.ne']
-    abel
-  rw [mul_add, ← Algebra.commutes, Algebra.algebraMap_eq_smul_one, smul_one_mul,
-    ← Unitization.inr_mul, ← Unitization.inr_smul, ← Unitization.inr_add, h']
-
-/-- `δ + b` is invertible in the unitization `Unitization ℂ A` for `δ > 0` and positive `b`. -/
-theorem isUnit_algebraMap_add {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0 ≤ b) :
-    IsUnit (algebraMap ℝ (Unitization ℂ A) δ + b) := by
-  have hσ : -δ ∉ spectrum ℝ (b : Unitization ℂ A) := by
-    rw [← Unitization.quasispectrum_eq_spectrum_inr' ℝ ℂ]
-    exact fun h ↦ (neg_neg_of_pos hδ).not_ge (quasispectrum_nonneg_of_nonneg b hb _ h)
-  simpa [sub_eq_add_neg, add_comm] using (spectrum.notMem_iff.mp hσ).neg
+  have h : δ • resolventCutoff δ b + resolventCutoff δ b * b = b :=
+    eq_sub_iff_add_eq.mp <| (eq_inv_smul_iff₀ hδ.ne').mp (resolventCutoff_eq_inv_smul hδ hb)
+  rw [mul_add, ← Algebra.commutes, Algebra.algebraMap_eq_smul_one, smul_one_mul]
+  exact_mod_cast congrArg ((↑) : A → Unitization ℂ A) h
 
 /-- `resolventCutoff δ b` is `b (δ + b)⁻¹`, with the inverse taken in the unitization
 `Unitization ℂ A`, for `δ > 0` and positive `b`. -/
@@ -147,7 +141,7 @@ theorem resolventCutoff_eq_mul_inverse {δ : ℝ} (hδ : 0 < δ) {b : A} (hb : 0
     ((resolventCutoff δ b : A) : Unitization ℂ A) =
       b * Ring.inverse (algebraMap ℝ (Unitization ℂ A) δ + b) := by
   rw [← mul_one ((resolventCutoff δ b : A) : Unitization ℂ A),
-    ← Ring.mul_inverse_cancel _ (isUnit_algebraMap_add hδ hb), ← mul_assoc,
+    ← Ring.mul_inverse_cancel _ (Unitization.isUnit_algebraMap_add_of_nonneg hδ hb), ← mul_assoc,
     resolventCutoff_mul_algebraMap_add hδ hb]
 
 /-- `b (δ + b)⁻¹` lies in every complex left ideal that contains the positive element `b`; the
@@ -243,23 +237,16 @@ theorem exists_rightApproximateUnit (L : Submodule ℂ A) (hL : ∀ a : A, ∀ x
   have hb (F : Finset (L : Set A)) : 0 ≤ ∑ y ∈ F, star (y : A) * y :=
     Finset.sum_nonneg fun _ _ ↦ star_mul_self_nonneg _
   have hδ : ∀ᶠ p in l₀, 0 < p.2 := tendsto_snd.eventually self_mem_nhdsWithin
-  have hpos : ∀ᶠ a in Filter.map e l₀, 0 ≤ a :=
-    eventually_map.mpr <| hδ.mono fun p hp ↦ resolventCutoff_nonneg hp.le (hb p.1)
-  have hright (x : A) (hx : x ∈ L) : Tendsto (x * ·) (Filter.map e l₀) (𝓝 x) :=
-    tendsto_map'_iff.mpr (tendsto_mul_resolventCutoff_sum (S := (L : Set A)) hx)
+  have hpos : ∀ᶠ p in l₀, 0 ≤ e p := hδ.mono fun p hp ↦ resolventCutoff_nonneg hp.le (hb p.1)
+  have hright (x : A) (hx : x ∈ L) : Tendsto (fun p ↦ x * e p) l₀ (𝓝 x) :=
+    tendsto_mul_resolventCutoff_sum (S := (L : Set A)) hx
   refine ⟨Filter.map e l₀, inferInstance, eventually_map.mpr <| hδ.mono fun p hp ↦
-    resolventCutoff_mem hL hp (hb p.1) (L.sum_mem fun y _ ↦ hL _ _ y.property), hpos,
+    resolventCutoff_mem hL hp (hb p.1) (L.sum_mem fun y _ ↦ hL _ _ y.property),
+    eventually_map.mpr hpos,
     eventually_map.mpr <| hδ.mono fun p hp ↦ norm_resolventCutoff_le_one hp.le (hb p.1),
-    hright, fun x _ hx' ↦ ?_⟩
-  simpa using TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x)
+    fun x hx ↦ tendsto_map'_iff.mpr (hright x hx), fun x _ hx' ↦ tendsto_map'_iff.mpr ?_⟩
+  simpa [Function.comp_def] using TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x)
     (hpos.mono fun _ ↦ IsSelfAdjoint.of_nonneg) (hright _ hx')
-
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- The image `star R` of a complex right ideal `R` is a complex left ideal. -/
-private theorem exists_star_leftIdeal (R : Submodule ℂ A) (hR : ∀ a : A, ∀ x ∈ R, x * a ∈ R) :
-    ∃ L : Submodule ℂ A, (∀ x, x ∈ L ↔ star x ∈ R) ∧ ∀ a : A, ∀ x ∈ L, a * x ∈ L := by
-  refine ⟨R.comap (starLinearEquiv ℂ (A := A)).toLinearMap, fun x ↦ by simp, fun a x hx ↦ ?_⟩
-  simpa [star_mul] using hR (star a) _ (by simpa using hx)
 
 /-- A complex right ideal `R` of a C⋆-algebra, not necessarily closed, has a left approximate
 identity of positive contractions lying in `R` itself: a proper filter along which `e * x → x`
@@ -270,8 +257,9 @@ theorem exists_leftApproximateUnit (R : Submodule ℂ A) (hR : ∀ a : A, ∀ x 
       (∀ x ∈ R, Tendsto (· * x) l (𝓝 x)) ∧
       ∀ x ∈ R, star x ∈ R → Tendsto (x * ·) l (𝓝 x) := by
   -- Positive elements of the left ideal `star R` lie in `R`.
-  obtain ⟨L, hmem, hL⟩ := R.exists_star_leftIdeal hR
-  obtain ⟨l, hl, hmemL, hpos, hnorm, hright, -⟩ := L.exists_rightApproximateUnit hL
+  have hmem := R.mem_star_iff
+  obtain ⟨l, hl, hmemL, hpos, hnorm, hright, -⟩ :=
+    (star R).exists_rightApproximateUnit fun a _ ↦ R.mul_mem_star hR a
   have hsa : ∀ᶠ e in l, IsSelfAdjoint e := hpos.mono fun _ ↦ IsSelfAdjoint.of_nonneg
   refine ⟨l, hl, ?_, hpos, hnorm, fun x hx ↦ ?_, fun x _ hx' ↦ ?_⟩
   · filter_upwards [hmemL, hsa] with e he hsa
@@ -316,10 +304,8 @@ theorem exists_seq_rightApproximateUnit (L : Submodule ℂ A) (hL : ∀ a : A, �
   refine ⟨e, fun n ↦
     resolventCutoff_mem hL (hδ n) (hb n) (L.sum_mem fun k _ ↦ hL _ _ (u k).property),
     hpos, hnorm, hright, fun x _ hx' ↦ ?_⟩
-  simpa [Function.comp_def] using tendsto_map'_iff.mp <|
-    TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x) (l := Filter.map e atTop)
-      (eventually_map.mpr <| .of_forall fun n ↦ (hpos n).isSelfAdjoint)
-      (tendsto_map'_iff.mpr (hright _ hx'))
+  simpa using TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x)
+    (.of_forall fun n ↦ (hpos n).isSelfAdjoint) (hright _ hx')
 
 /-- A norm-separable complex right ideal `R` of a C⋆-algebra, not necessarily closed, has a
 sequential left approximate identity of positive contractions lying in `R`: `e n * x → x` for
@@ -330,19 +316,18 @@ theorem exists_seq_leftApproximateUnit (R : Submodule ℂ A) (hR : ∀ a : A, �
     ∃ e : ℕ → A, (∀ n, e n ∈ R) ∧ (∀ n, 0 ≤ e n) ∧ (∀ n, ‖e n‖ ≤ 1) ∧
       (∀ x ∈ R, Tendsto (fun n ↦ e n * x) atTop (𝓝 x)) ∧
       ∀ x ∈ R, star x ∈ R → Tendsto (fun n ↦ x * e n) atTop (𝓝 x) := by
-  obtain ⟨L, hmem, hL⟩ := R.exists_star_leftIdeal hR
+  have hmem := R.mem_star_iff
   -- The left ideal `star R` is separable, as the image of `R` under `star`.
   have hsurj : Function.Surjective fun x : R ↦
-      (⟨star (x : A), (hmem _).mpr (by simp)⟩ : L) :=
+      (⟨star (x : A), (hmem _).mpr (by simp)⟩ : ↥(star R)) :=
     fun y ↦ ⟨⟨star (y : A), (hmem _).mp y.property⟩, by ext; simp⟩
-  have : TopologicalSpace.SeparableSpace L :=
+  have : TopologicalSpace.SeparableSpace ↥(star R) :=
     hsurj.denseRange.separableSpace (continuous_subtypeVal.star.subtype_mk _)
-  obtain ⟨e, hmemL, hpos, hnorm, hright, -⟩ := L.exists_seq_rightApproximateUnit hL
+  obtain ⟨e, hmemL, hpos, hnorm, hright, -⟩ :=
+    (star R).exists_seq_rightApproximateUnit fun a _ ↦ R.mul_mem_star hR a
   refine ⟨e, fun n ↦ by simpa [(hpos n).isSelfAdjoint.star_eq] using (hmem _).mp (hmemL n), hpos,
     hnorm, fun x hx ↦ ?_, fun x _ hx' ↦ hright x ((hmem x).mpr hx')⟩
-  simpa [Function.comp_def] using tendsto_map'_iff.mp <|
-    TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x) (l := Filter.map e atTop)
-      (eventually_map.mpr <| .of_forall fun n ↦ (hpos n).isSelfAdjoint)
-      (tendsto_map'_iff.mpr (hright _ ((hmem _).mpr (by simpa))))
+  simpa using TauCeti.tendsto_mul_star_of_tendsto_mul (z := star x)
+    (.of_forall fun n ↦ (hpos n).isSelfAdjoint) (hright _ ((hmem _).mpr (by simpa)))
 
 end Submodule
