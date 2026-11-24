@@ -29,8 +29,8 @@ idempotents of the product split every `R`-module `M` with a commuting action of
 internal direct sum `M = ⨁_σ M(σ)`, where `M(σ)` is the largest submodule on which `𝓞 L` acts
 through `σ`; they act on `M` through `TauCeti.Algebra.TensorProduct.toModuleEnd R (𝓞 L) M`. The
 splitting is functorial in `R`-linear maps commuting with the `𝓞 L`-actions and commutes with
-base change: for an `R`-module `N`, with `𝓞 L` acting on `M ⊗[R] N` through the factor `M`,
-`(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
+tensoring by an `R`-module: for an `R`-module `N`, with `𝓞 L` acting on `M ⊗[R] N` through the
+factor `M`, `(M ⊗[R] N)(σ)` is the image of `M(σ) ⊗[R] N`.
 
 ## Main definitions
 
@@ -288,8 +288,8 @@ theorem isInternal_embeddingEigenspace [DecidableEq (L →+* K)] :
     toModuleEnd_embeddingIdempotent_smul_top hK hd] at h
   exact h
 
-/-- **Base change of the eigenspaces**: for an `R`-module `N`, the eigenspace `(M ⊗[R] N)(σ)`,
-with `𝓞 L` acting on the first factor, is the image of `M(σ) ⊗[R] N`. -/
+/-- **Tensoring the eigenspaces with an `R`-module**: for an `R`-module `N`, the eigenspace
+`(M ⊗[R] N)(σ)`, with `𝓞 L` acting on the first factor, is the image of `M(σ) ⊗[R] N`. -/
 theorem embeddingEigenspace_tensorProduct [SMulCommClass R (𝓞 L) M]
     (N : Type*) [AddCommMonoid N] [Module R N] (σ : L →+* K) :
     embeddingEigenspace L K R (M ⊗[R] N) σ =

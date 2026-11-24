@@ -35,7 +35,7 @@ algebras, without a coproduct.
 Conversely to the factor actions above, commuting actions of a commutative ring `R` and a ring
 `A` on `M` give an action of `R ⊗[ℤ] A` on `M` by `R`-linear endomorphisms:
 `TauCeti.Algebra.TensorProduct.toModuleEnd R A M`, extending Mathlib's `Module.toModuleEnd`.
-It commutes with base change along `M ↦ M ⊗[R] N`
+It is compatible with tensoring by an `R`-module `N`, `M ↦ M ⊗[R] N`
 (`TauCeti.Algebra.TensorProduct.toModuleEnd_rTensor`).
 -/
 
@@ -200,8 +200,8 @@ theorem toModuleEnd_tmul (r : R) (a : A) (m : M) :
     toModuleEnd R A M (r ⊗ₜ a) m = r • a • m := by
   simp [toModuleEnd]
 
-/-- **Compatibility with base change**: on `M ⊗[R] N`, with `A` acting on the first factor,
-`R ⊗[ℤ] A` acts through its action on `M`. -/
+/-- **Compatibility with tensoring by an `R`-module `N`**: on `M ⊗[R] N`, with `A` acting on the
+first factor, `R ⊗[ℤ] A` acts through its action on `M`. -/
 theorem toModuleEnd_rTensor [SMulCommClass R A M] (N : Type*) [AddCommMonoid N]
     [Module R N] (t : R ⊗[ℤ] A) :
     toModuleEnd R A (M ⊗[R] N) t = (toModuleEnd R A M t).rTensor N := by
