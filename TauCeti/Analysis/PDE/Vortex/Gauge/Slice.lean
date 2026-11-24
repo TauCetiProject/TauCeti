@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Laplacian
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.PDE.Vortex.EquationMap
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
@@ -140,7 +139,7 @@ theorem exists_gaugeAdjoint_sub_gaugeDirection_eq_zero {k : ℕ} (hk : 3 ≤ k)
       (j := n) (by omega) (by omega) (by exact_mod_cast hx) hxc hg
   have hn : (2 : ℝ) ≤ n := by exact_mod_cast (by omega : 2 ≤ n)
   obtain ⟨u, hu2, hu₀u⟩ := exists_contDiff_ae_eq_of_mem_realSobolevFunctions (k := 2)
-    (by rw [Complex.finrank_real_complex]; push_cast; linarith) hu₀
+    (finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)) hu₀
   have hu : u ∈ realSobolevFunctions ℂ (n + 2) 2 := mem_realSobolevFunctions_of_ae_eq hu₀ hu₀u
   have hw (φ : ℂ → ℝ) (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
       ∫ z, u z * gaugeAdjoint x (gaugeDirection x φ) z = ∫ z, gaugeAdjoint x y z * φ z := by
@@ -164,11 +163,9 @@ theorem existsUnique_gaugeAdjoint_sub_gaugeDirection_eq_zero {k : ℕ} (hk : 3 �
   obtain ⟨u, hu, hu2, -, hcoul⟩ := exists_gaugeAdjoint_sub_gaugeDirection_eq_zero hk hx hxc hy hyc
   refine ⟨u, ⟨⟨hu, hu2.continuous⟩, hcoul⟩, fun v ⟨⟨hv, hvc⟩, hvcoul⟩ ↦ ?_⟩
   -- A continuous phase in `H^(k+1)` is `C²` and tends to zero at infinity.
-  have hs : (Module.finrank ℝ ℂ : ℝ) + 2 * 2 < 2 * (k + 1) := by
-    rw [Complex.finrank_real_complex]
-    have hk' : (3 : ℝ) ≤ k := by exact_mod_cast hk
-    push_cast
-    linarith
+  have hk' : (3 : ℝ) ≤ k := by exact_mod_cast hk
+  have hs : (Module.finrank ℝ ℂ : ℝ) + 2 * (2 : ℕ) < 2 * (k + 1) :=
+    finrank_real_complex_add_two_mul_lt_two_mul (by push_cast; linarith)
   have hv2 : ContDiff ℝ 2 v := contDiff_of_mem_realSobolevFunctions hs hv hvc
   have hlim (w : ℂ → ℝ) (hw : w ∈ realSobolevFunctions ℂ (k + 1) 2) (hwc : Continuous w) :
       Tendsto w (cocompact ℂ) (𝓝 0) :=
@@ -294,7 +291,7 @@ coordinates are differentiable and whose section coordinates are within `ε` of 
 let `F` be a square-integrable `C²` phase with `|F| ≤ ε`. If the gauge transformation `e^{iF} y`
 has the same Coulomb defect at `x` as `y`, `d₀* (e^{iF} y) = d₀* y`, then `F = 0`. For the
 Coulomb slice `d₀* (· - x) = 0` of a `C¹` field `x`, see
-`TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_forall_eq_one_of_gaugeAdjoint_sub_eq_zero`. -/
+`TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_forall_eq_one_of_smul_mem_coulombSlice`. -/
 theorem exists_pos_forall_eq_zero_of_gaugeAdjoint_phaseGauge_eq {s : ℝ} (hs : 1 < s)
     (hx : x ∈ framedFieldSpace f m s) (hxc : Continuous x) :
     ∃ ε > 0, ∀ {y : ℂ → EuclideanSpace ℝ (Fin 4)} {F : ℂ → ℝ}, Continuous y →

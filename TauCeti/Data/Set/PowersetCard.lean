@@ -10,6 +10,7 @@ public import Mathlib.Data.Set.PowersetCard
 import Mathlib.Data.Fintype.CardEmbedding
 
 import TauCeti.Algebra.BigOperators.Finset.Powerset
+import TauCeti.Data.Fintype.Card.Embedding
 
 /-!
 # Maps, coercions and enumerations of fixed-cardinality subsets
@@ -41,9 +42,10 @@ a finite type: each element lies in `(card α - 1).choose (n - 1)` of them.
 
 When the source is `Fin r`, the embeddings `Fin r ↪ β` whose unordered image
 `Set.powersetCard.ofFinEmb r β` equals a prescribed `r`-element subset `t` correspond to the
-embeddings `Fin r ↪ t.val` (`Set.powersetCard.ofFinEmbFiberEquiv`), so there are `r!` of them
-without any finiteness assumption on `β` (`Set.powersetCard.natCard_ofFinEmb_eq`). Precomposing an
-embedding or injective `r`-tuple by a permutation of `Fin r` leaves its unordered image unchanged
+embeddings `Fin r ↪ t.val` (`Set.powersetCard.ofFinEmbFiberEquiv`), and there are `r!` of them
+without any finiteness assumption on `β` (`Set.powersetCard.natCard_ofFinEmb_eq`, the case `Fin r`
+of `TauCeti.natCard_embedding_map_univ_eq_factorial`). Precomposing an embedding or injective
+`r`-tuple by a permutation of `Fin r` leaves its unordered image unchanged
 (`Set.powersetCard.ofFinEmb_trans_perm`, `Set.powersetCard.ofFinEmb_comp_perm`), and two embeddings
 `Fin r ↪ β` have the same unordered image precisely when they differ by a permutation of `Fin r`
 (`Set.powersetCard.ofFinEmb_eq_iff_exists_perm`).
@@ -267,8 +269,9 @@ theorem ofFinEmbFiberEquiv_symm_apply_coe (t : Set.powersetCard β r)
 image. -/
 theorem natCard_ofFinEmb_eq (t : Set.powersetCard β r) :
     Nat.card {f : Fin r ↪ β // ofFinEmb r β f = t} = r.factorial := by
-  rw [Nat.card_congr (ofFinEmbFiberEquiv t), Nat.card_eq_fintype_card]
-  simp [Fintype.card_embedding_eq, Nat.descFactorial_self]
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun f ↦ by rw [Subtype.ext_iff, val_ofFinEmb]),
+    TauCeti.natCard_embedding_map_univ_eq_factorial (by rw [t.prop, Fintype.card_fin]),
+    Fintype.card_fin]
 
 /-- Precomposing an embedding `Fin r ↪ β` with a permutation of `Fin r` leaves its unordered
 image unchanged. -/

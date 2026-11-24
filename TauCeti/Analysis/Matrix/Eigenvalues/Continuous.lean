@@ -19,7 +19,10 @@ random variables, without choosing measurable eigenvectors.
 
 We use the subtype of Hermitian matrices, with its inherited topology and measurable
 structure. For a family of Hermitian matrices, continuity of the entries at a point gives
-continuity of the ordered eigenvalues there (`Matrix.continuousAt_eigenvalues₀`). Continuity
+continuity of the ordered eigenvalues there (`Matrix.continuousAt_eigenvalues₀`). Along any
+filter, if `‖A i - B i‖ → 0` in the Euclidean operator norm for Hermitian `A i` and `B i`, then
+selected ordered eigenvalues of `A i` converge to the limit of the corresponding eigenvalues of
+`B i` (`Filter.Tendsto.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero`); the sizes may vary. Continuity
 uses the usual entrywise topology: Mathlib's Euclidean operator norm induces this same topology.
 Empty index types are allowed.
 
@@ -74,6 +77,23 @@ theorem continuousAt_eigenvalues₀ {X : Type*} [TopologicalSpace X] {M : X → 
   ((continuous_apply i).comp continuous_eigenvalues₀).continuousAt.comp
     (f := fun x ↦ (⟨M x, hM x⟩ : {A : Matrix n n 𝕜 // A.IsHermitian}))
     (tendsto_subtype_rng.2 (continuousAt_pi.2 fun a ↦ continuousAt_pi.2 fun b ↦ h a b))
+
+open Filter in
+open scoped Topology in
+/-- If the selected ordered eigenvalues of `B` converge and `‖A - B‖` tends to zero in
+operator norm, the corresponding eigenvalues of `A` converge to the same limit.
+The index type may vary. -/
+theorem _root_.Filter.Tendsto.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero
+    {ι : Type*} {m : ι → Type*} [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)]
+    {A B : (i : ι) → Matrix (m i) (m i) 𝕜} {hB : ∀ i, (B i).IsHermitian}
+    {j : (i : ι) → Fin (Fintype.card (m i))} {l : Filter ι} {c : ℝ}
+    (h : Tendsto (fun i ↦ (hB i).eigenvalues₀ (j i)) l (𝓝 c))
+    (hA : ∀ i, (A i).IsHermitian) (hd : Tendsto (fun i ↦ ‖A i - B i‖) l (𝓝 0)) :
+    Tendsto (fun i ↦ (hA i).eigenvalues₀ (j i)) l (𝓝 c) := by
+  apply h.congr_dist
+  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun i ↦ ?_) hd
+  rw [dist_comm, Real.dist_eq]
+  exact (hA i).abs_eigenvalues₀_sub_le_norm (hB i) (j i)
 
 variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 
