@@ -16,9 +16,12 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 Let `φ` and `ψ` be partial diffeomorphisms from a manifold `M` into a real inner product space `F`.
 Say that they are *conformally related* at a point `x` of both sources if the pulled-back inner
-products agree up to a positive factor `ρ`:
+products agree up to a factor `ρ`:
 
 `⟪Dψ(x) u, Dψ(x) v⟫ = ρ ⟪Dφ(x) u, Dφ(x) v⟫` for all tangent vectors `u`, `v` at `x`.
+
+When `F` is nontrivial, such a factor is automatically positive
+(`PartialDiffeomorph.pos_of_inner_mfderiv`).
 
 This is the case for any two *conformal Euclidean charts* of a Riemannian metric `g`, that is,
 charts in which `g` is a positive multiple of the pulled-back inner product of `F`, as produced
@@ -35,7 +38,8 @@ linear isometry `A` of `F` and a vector `a` such that either `ψ = r • A φ + 
 `ψ = r • A (inversion b 1 φ) + a` on `W` for a point `b ∉ φ '' W`
 (`PartialDiffeomorph.exists_eq_smul_linearIsometry_add_or_inversion_of_inner_mfderiv`). For the
 conformal charts of a Riemannian metric, the conformal factors of the charts are automatically
-positive and the hypothesis is satisfied
+positive (`Bundle.ContMDiffRiemannianMetric.pos_of_inner_eq_mul_inner_mfderiv`) and the
+hypothesis is satisfied
 (`Bundle.ContMDiffRiemannianMetric.exists_eq_smul_linearIsometry_add_or_inversion_of_inner_eq`).
 
 This is the transition theorem for the conformal atlas of a locally conformally flat manifold of
@@ -47,12 +51,16 @@ possible. In dimension `2` the transitions are only holomorphic or antiholomorph
 
 * `PartialDiffeomorph.inner_fderiv_comp_symm`: the transition between conformally related partial
   diffeomorphisms scales inner products by the relating factor.
+* `PartialDiffeomorph.pos_of_inner_mfderiv`: the relating factor is positive when `F` is
+  nontrivial.
 * `PartialDiffeomorph.conformalAt_comp_symm`: such a transition is conformal.
 * `PartialDiffeomorph.exists_eq_smul_linearIsometry_add_or_inversion_of_inner_mfderiv`: in
   dimension at least `3`, on a connected open set the transition is a similarity or a similarity
   composed with an inversion.
 * `Bundle.ContMDiffRiemannianMetric.exists_eq_smul_linearIsometry_add_or_inversion_of_inner_eq`:
   the same for two conformal Euclidean charts of a Riemannian metric.
+* `Bundle.ContMDiffRiemannianMetric.pos_of_inner_eq_mul_inner_mfderiv`: the conformal factor of a
+  conformal Euclidean chart of a Riemannian metric is positive.
 
 ## References
 
@@ -98,22 +106,40 @@ theorem inner_fderiv_comp_symm (φ ψ : PartialDiffeomorph I 𝓘(ℝ, F) M F n)
   rw [hD, hD]
   exact hρ u' v'
 
-/-- **Transitions between conformally related charts are conformal.** If two partial
-diffeomorphisms `φ`, `ψ` into a real inner product space `F` satisfy
-`⟪Dψ(x) u, Dψ(x) v⟫ = ρ ⟪Dφ(x) u, Dφ(x) v⟫` at a point `x` of both sources for some `ρ > 0`,
-then the transition `z ↦ ψ (φ⁻¹ z)` is conformal at `φ x`. -/
-theorem conformalAt_comp_symm (φ ψ : PartialDiffeomorph I 𝓘(ℝ, F) M F n) (hn : n ≠ 0) {x : M}
-    (hφ : x ∈ φ.source) (hψ : x ∈ ψ.source) {ρ : ℝ} (hρ_pos : 0 < ρ)
+/-- **The factor relating two charts into a nontrivial space is positive.** If two partial
+diffeomorphisms `φ`, `ψ` into a nontrivial real inner product space `F` satisfy
+`⟪Dψ(x) u, Dψ(x) v⟫ = ρ ⟪Dφ(x) u, Dφ(x) v⟫` at a point `x` of the source of `ψ`, then `ρ > 0`. -/
+theorem pos_of_inner_mfderiv [Nontrivial F] (φ ψ : PartialDiffeomorph I 𝓘(ℝ, F) M F n)
+    (hn : n ≠ 0) {x : M} (hψ : x ∈ ψ.source) {ρ : ℝ}
     (hρ : ∀ u v : TangentSpace I x,
       ⟪mfderiv I 𝓘(ℝ, F) ψ x u, mfderiv I 𝓘(ℝ, F) ψ x v⟫_ℝ =
         ρ * ⟪mfderiv I 𝓘(ℝ, F) φ x u, mfderiv I 𝓘(ℝ, F) φ x v⟫_ℝ) :
-    ConformalAt (fun z ↦ ψ (φ.symm z)) (φ x) :=
-  conformalAt_iff'.2 ⟨ρ, hρ_pos, φ.inner_fderiv_comp_symm ψ hn hφ hψ hρ⟩
+    0 < ρ := by
+  obtain ⟨w, hw⟩ := exists_ne (0 : F)
+  obtain ⟨u, rfl⟩ := (ψ.isInvertible_mfderiv hn hψ).surjective w
+  have hg : 0 < ⟪mfderiv I 𝓘(ℝ, F) ψ x u, mfderiv I 𝓘(ℝ, F) ψ x u⟫_ℝ := real_inner_self_pos.2 hw
+  rw [hρ u u, real_inner_self_eq_norm_sq] at hg
+  exact pos_of_mul_pos_left hg (sq_nonneg _)
+
+/-- **Transitions between conformally related charts are conformal.** If two partial
+diffeomorphisms `φ`, `ψ` into a real inner product space `F` satisfy
+`⟪Dψ(x) u, Dψ(x) v⟫ = ρ ⟪Dφ(x) u, Dφ(x) v⟫` at a point `x` of both sources, then the transition
+`z ↦ ψ (φ⁻¹ z)` is conformal at `φ x`. -/
+theorem conformalAt_comp_symm (φ ψ : PartialDiffeomorph I 𝓘(ℝ, F) M F n) (hn : n ≠ 0) {x : M}
+    (hφ : x ∈ φ.source) (hψ : x ∈ ψ.source) {ρ : ℝ}
+    (hρ : ∀ u v : TangentSpace I x,
+      ⟪mfderiv I 𝓘(ℝ, F) ψ x u, mfderiv I 𝓘(ℝ, F) ψ x v⟫_ℝ =
+        ρ * ⟪mfderiv I 𝓘(ℝ, F) φ x u, mfderiv I 𝓘(ℝ, F) φ x v⟫_ℝ) :
+    ConformalAt (fun z ↦ ψ (φ.symm z)) (φ x) := by
+  cases subsingleton_or_nontrivial F
+  · exact conformalAt_iff'.2 ⟨1, one_pos, fun u v ↦ by simp [Subsingleton.elim u 0]⟩
+  · exact conformalAt_iff'.2
+      ⟨ρ, φ.pos_of_inner_mfderiv ψ hn hψ hρ, φ.inner_fderiv_comp_symm ψ hn hφ hψ hρ⟩
 
 /-- **Liouville's theorem for transitions between conformal charts.** Let `φ`, `ψ` be `C³`
 partial diffeomorphisms from `M` into a real inner product space `F` of finite dimension at
 least `3`, and let `W` be a connected open subset of both sources at each point `x` of which
-`⟪Dψ(x) u, Dψ(x) v⟫ = ρ ⟪Dφ(x) u, Dφ(x) v⟫` for some `ρ > 0`. Then `ψ` is a Möbius
+`⟪Dψ(x) u, Dψ(x) v⟫ = ρ ⟪Dφ(x) u, Dφ(x) v⟫` for some `ρ`. Then `ψ` is a Möbius
 transformation of `φ` on `W`: there are `r > 0`, a linear isometry `A` and a vector `a` such that
 either `ψ x = r • A (φ x) + a` on `W`, or `ψ x = r • A (inversion b 1 (φ x)) + a` on `W` for
 some point `b ∉ φ '' W`. -/
@@ -121,7 +147,7 @@ theorem exists_eq_smul_linearIsometry_add_or_inversion_of_inner_mfderiv [FiniteD
     (φ ψ : PartialDiffeomorph I 𝓘(ℝ, F) M F n) (hF : 3 ≤ Module.finrank ℝ F) (hn : 3 ≤ n)
     {W : Set M} (hWo : IsOpen W) (hWc : IsConnected W) (hWφ : W ⊆ φ.source)
     (hWψ : W ⊆ ψ.source)
-    (hρ : ∀ x ∈ W, ∃ ρ : ℝ, 0 < ρ ∧ ∀ u v : TangentSpace I x,
+    (hρ : ∀ x ∈ W, ∃ ρ : ℝ, ∀ u v : TangentSpace I x,
       ⟪mfderiv I 𝓘(ℝ, F) ψ x u, mfderiv I 𝓘(ℝ, F) ψ x v⟫_ℝ =
         ρ * ⟪mfderiv I 𝓘(ℝ, F) φ x u, mfderiv I 𝓘(ℝ, F) φ x v⟫_ℝ) :
     ∃ (r : ℝ) (A : F →ₗᵢ[ℝ] F) (a : F), 0 < r ∧
@@ -141,8 +167,8 @@ theorem exists_eq_smul_linearIsometry_add_or_inversion_of_inner_mfderiv [FiniteD
       hn
   have hconf : ∀ z ∈ φ '' W, ConformalAt (fun z ↦ ψ (φ.symm z)) z := by
     rintro _ ⟨x, hx, rfl⟩
-    obtain ⟨ρ, hρ_pos, hρx⟩ := hρ x hx
-    exact φ.conformalAt_comp_symm ψ hn0 (hWφ hx) (hWψ hx) hρ_pos hρx
+    obtain ⟨ρ, hρx⟩ := hρ x hx
+    exact φ.conformalAt_comp_symm ψ hn0 (hWφ hx) (hWψ hx) hρx
   obtain ⟨r, A, a, hr, h | ⟨b, hb, h⟩⟩ :=
     TauCeti.exists_eq_smul_linearIsometry_add_or_inversion_of_conformalAt hF rfl hsmooth hUo hUc
       hconf
@@ -157,6 +183,24 @@ namespace Bundle.ContMDiffRiemannianMetric
 
 variable [IsManifold I 1 M] {k : ℕ∞ω}
 
+/-- **The factor of a conformal chart is positive.** If a Riemannian metric `g` is a multiple
+`g = c ⟪Dχ ·, Dχ ·⟫` of the pulled-back inner product along a partial diffeomorphism `χ` into a
+nontrivial real inner product space at a point `x` of its source, then `c > 0`. -/
+theorem pos_of_inner_eq_mul_inner_mfderiv [Nontrivial F]
+    (g : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x))
+    (χ : PartialDiffeomorph I 𝓘(ℝ, F) M F n) (hn : n ≠ 0) {x : M} (hx : x ∈ χ.source) {c : ℝ}
+    (hχ : ∀ u v : TangentSpace I x,
+      g.inner x u v = c * ⟪mfderiv I 𝓘(ℝ, F) χ x u, mfderiv I 𝓘(ℝ, F) χ x v⟫_ℝ) :
+    0 < c := by
+  obtain ⟨w, hw⟩ := exists_ne (0 : F)
+  obtain ⟨u, rfl⟩ := (χ.isInvertible_mfderiv hn hx).surjective w
+  have hu : u ≠ 0 := by
+    rintro rfl
+    exact hw (map_zero _)
+  have hg := g.pos x u hu
+  rw [hχ u u, real_inner_self_eq_norm_sq] at hg
+  exact pos_of_mul_pos_left hg (sq_nonneg _)
+
 /-- **Liouville's theorem for the conformal charts of a Riemannian metric.** Let `g` be a
 Riemannian metric on `M`, let `φ`, `ψ` be `C³` partial diffeomorphisms from `M` into a real
 inner product space `F` of finite dimension at least `3`, and let `W` be a connected open subset
@@ -164,7 +208,7 @@ of both sources on which `g` is a multiple of the pulled-back inner product of `
 them: `g = c_φ ⟪Dφ ·, Dφ ·⟫` and `g = c_ψ ⟪Dψ ·, Dψ ·⟫` on `W`. Then there are `r > 0`, a linear
 isometry `A` and a vector `a` such that either `ψ x = r • A (φ x) + a` on `W`, or
 `ψ x = r • A (inversion b 1 (φ x)) + a` on `W` for some point `b ∉ φ '' W`. The factors `c_φ` and
-`c_ψ` are automatically positive on `W`. -/
+`c_ψ` are automatically positive on `W` (`pos_of_inner_eq_mul_inner_mfderiv`). -/
 theorem exists_eq_smul_linearIsometry_add_or_inversion_of_inner_eq [FiniteDimensional ℝ F]
     (g : ContMDiffRiemannianMetric I k E (fun x : M ↦ TangentSpace I x))
     (hF : 3 ≤ Module.finrank ℝ F) (hn : 3 ≤ n) {φ ψ : PartialDiffeomorph I 𝓘(ℝ, F) M F n}
@@ -179,23 +223,9 @@ theorem exists_eq_smul_linearIsometry_add_or_inversion_of_inner_eq [FiniteDimens
         ∃ b ∉ φ '' W, ∀ x ∈ W, ψ x = r • A (EuclideanGeometry.inversion b 1 (φ x)) + a) := by
   have hn0 : n ≠ 0 := (lt_of_lt_of_le (by norm_num) hn).ne'
   have : Nontrivial F := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  -- The factor of a conformal chart is positive, since `g` is positive definite and the
-  -- differential of the chart is onto the nontrivial space `F`.
-  have hpos (χ : PartialDiffeomorph I 𝓘(ℝ, F) M F n) (hWχ : W ⊆ χ.source) (c : M → ℝ)
-      (hχ : ∀ x ∈ W, ∀ u v : TangentSpace I x,
-        g.inner x u v = c x * ⟪mfderiv I 𝓘(ℝ, F) χ x u, mfderiv I 𝓘(ℝ, F) χ x v⟫_ℝ)
-      {x : M} (hx : x ∈ W) : 0 < c x := by
-    obtain ⟨w, hw⟩ := exists_ne (0 : F)
-    obtain ⟨u, rfl⟩ := (χ.isInvertible_mfderiv hn0 (hWχ hx)).surjective w
-    have hu : u ≠ 0 := by
-      rintro rfl
-      exact hw (map_zero _)
-    have hg := g.pos x u hu
-    rw [hχ x hx u u, real_inner_self_eq_norm_sq] at hg
-    exact pos_of_mul_pos_left hg (sq_nonneg _)
   refine PartialDiffeomorph.exists_eq_smul_linearIsometry_add_or_inversion_of_inner_mfderiv φ ψ hF
-    hn hWo hWc hWφ hWψ fun x hx ↦
-      ⟨cφ x / cψ x, div_pos (hpos φ hWφ cφ hφ hx) (hpos ψ hWψ cψ hψ hx), fun u v ↦ ?_⟩
-  rw [div_mul_eq_mul_div, ← hφ x hx, hψ x hx, mul_div_cancel_left₀ _ (hpos ψ hWψ cψ hψ hx).ne']
+    hn hWo hWc hWφ hWψ fun x hx ↦ ⟨cφ x / cψ x, fun u v ↦ ?_⟩
+  rw [div_mul_eq_mul_div, ← hφ x hx, hψ x hx,
+    mul_div_cancel_left₀ _ (g.pos_of_inner_eq_mul_inner_mfderiv ψ hn0 (hWψ hx) (hψ x hx)).ne']
 
 end Bundle.ContMDiffRiemannianMetric
