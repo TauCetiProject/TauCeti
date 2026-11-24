@@ -106,6 +106,20 @@ namespace TauCeti.Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- A map with continuous `W^{1,2}` energy density that vanishes near every point beyond some
+`N` in the first coordinate has integrable density over every half-cylinder `(a, ∞) × [0, 1]`. -/
+private theorem integrableOn_sobolevDensity_of_forall_eventuallyEq_zero {W : Type*}
+    [NormedAddCommGroup W] [NormedSpace ℝ W] {g : ℝ × ℝ → W} (hg : Continuous (sobolevDensity g))
+    {N : ℝ} (hzero : ∀ ζ : ℝ × ℝ, N < ζ.1 → g =ᶠ[𝓝 ζ] 0) (a : ℝ) :
+    IntegrableOn (sobolevDensity g) (Ioi a ×ˢ Icc 0 1) := by
+  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  refine (hg.continuousOn.integrableOn_compact hK).of_forall_sdiff_eq_zero
+    (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
+  have hζN : N < ζ.1 := by
+    by_contra! h
+    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
+  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
+
 /-- A `C¹` section with compact support in `S` has integrable `W^{1,2}` energy density in each
 positive end chart, over every half-cylinder `(a, ∞) × [0, 1]`: it vanishes far out on the end. -/
 theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V}
@@ -114,14 +128,8 @@ theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V
     IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart q)) (Ioi a ×ˢ Icc 0 1) := by
   -- Beyond some `N` in the end chart, `ξ` vanishes identically.
   obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hξc hξS q
-  have hg : ContDiff ℝ 1 (ξ ∘ positiveEndChart q) := hξ.comp (contDiff_positiveEndChart q 1)
-  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  refine (((continuous_sobolevDensity hg).continuousOn).integrableOn_compact
-    hK).of_forall_sdiff_eq_zero (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hζN : N < ζ.1 := by
-    by_contra! h
-    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  rw [sobolevDensity_congr_of_eventuallyEq (hzero ζ hζN), sobolevDensity_zero]
+  exact integrableOn_sobolevDensity_of_forall_eventuallyEq_zero
+    (continuous_sobolevDensity (hξ.comp (contDiff_positiveEndChart q 1))) hzero a
 
 /-- **Continuity of the energy density in the end chart.** If `J` is `C¹` along `u` and `u` is
 `C¹` on `S`, then the `W^{1,2}` density of the pulled-back form of a `C¹` covector field supported
@@ -133,29 +141,24 @@ private theorem continuous_sobolevDensity_covectorPullback_positiveEndChart
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
     (hη : ContDiff ℝ 1 η) (hηS : tsupport η ⊆ thricePuncturedSphereReal) (q : Puncture) :
     Continuous (sobolevDensity (covectorPullback (positiveEndChart q) J u η)) := by
-  refine continuous_iff_continuousAt.2 fun ζ ↦ ?_
   set φ := positiveEndChart q
+  refine continuous_sobolevDensity (contDiff_iff_contDiffAt.2 fun ζ ↦ ?_)
   have hφ : ContDiffAt ℝ 1 φ ζ := (contDiff_positiveEndChart q 1).contDiffAt
-  have h : ContDiffAt ℝ 1 (covectorPullback φ J u η) ζ := by
-    by_cases hζ : φ ζ ∈ tsupport η
-    · have hS := hηS hζ
-      have hdφ : ContDiffAt ℝ 1 (fun w ↦ fderiv ℝ φ w stdComplexLineReal) ζ :=
-        (((contDiff_positiveEndChart q 2).fderiv_right (m := 1) (by norm_num)).clm_apply
-          contDiff_const).contDiffAt
-      have hJu : ContDiffAt ℝ 1 (fun w ↦ J (φ w) (u (φ w))) ζ :=
-        (hJ _ hS).comp (f := fun w ↦ (φ w, u (φ w))) ζ (hφ.prodMk ((hu _ hS).comp ζ hφ))
-      rw [show covectorPullback φ J u η = _ from funext (covectorPullback_apply φ J u η)]
-      exact (hη.contDiffAt.comp ζ hφ).clm_comp (((contDiffAt_fst.comp ζ hdφ).smul
-        (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add ((contDiffAt_snd.comp ζ hdφ).smul hJu))
-    · refine contDiffAt_const (c := (0 : V →L[ℝ] ℝ)).congr_of_eventuallyEq ?_
-      filter_upwards [((isClosed_tsupport η).isOpen_compl.preimage
-        (contDiff_positiveEndChart q 1).continuous).mem_nhds hζ] with ζ' hζ'
-      have h₀ : η (φ ζ') = 0 := image_eq_zero_of_notMem_tsupport hζ'
-      simp [covectorPullback_apply, h₀]
-  have hd := h.continuousAt_fderiv one_ne_zero
-  simp only [funext (sobolevDensity_apply (covectorPullback φ J u η))]
-  exact (((hd.clm_apply continuousAt_const).norm.pow 2).add
-    ((hd.clm_apply continuousAt_const).norm.pow 2)).add (h.continuousAt.norm.pow 2)
+  by_cases hζ : φ ζ ∈ tsupport η
+  · have hS := hηS hζ
+    have hdφ : ContDiffAt ℝ 1 (fun w ↦ fderiv ℝ φ w stdComplexLineReal) ζ :=
+      (((contDiff_positiveEndChart q 2).fderiv_right (m := 1) (by norm_num)).clm_apply
+        contDiff_const).contDiffAt
+    have hJu : ContDiffAt ℝ 1 (fun w ↦ J (φ w) (u (φ w))) ζ :=
+      (hJ _ hS).comp (f := fun w ↦ (φ w, u (φ w))) ζ (hφ.prodMk ((hu _ hS).comp ζ hφ))
+    rw [show covectorPullback φ J u η = _ from funext (covectorPullback_apply φ J u η)]
+    exact (hη.contDiffAt.comp ζ hφ).clm_comp (((contDiffAt_fst.comp ζ hdφ).smul
+      (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add ((contDiffAt_snd.comp ζ hdφ).smul hJu))
+  · refine contDiffAt_const (c := (0 : V →L[ℝ] ℝ)).congr_of_eventuallyEq ?_
+    filter_upwards [((isClosed_tsupport η).isOpen_compl.preimage
+      (contDiff_positiveEndChart q 1).continuous).mem_nhds hζ] with ζ' hζ'
+    have h₀ : η (φ ζ') = 0 := image_eq_zero_of_notMem_tsupport hζ'
+    simp [covectorPullback_apply, h₀]
 
 /-- If `J` is `C¹` along `u` and `u` is `C¹` on `S`, a `C¹` covector field with compact support
 in `S` has integrable `W^{1,2}` energy density in each positive end chart, read as the pulled-back
@@ -170,17 +173,12 @@ theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart
       (Ioi a ×ˢ Icc 0 1) := by
   -- Beyond some `N` in the end chart, `η` vanishes identically.
   obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc hηS q
-  have hK : IsCompact (Icc a N ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  refine (((continuous_sobolevDensity_covectorPullback_positiveEndChart hJ hu hη hηS
-    q).continuousOn).integrableOn_compact hK).of_forall_sdiff_eq_zero
-    (measurableSet_Ioi.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hζN : N < ζ.1 := by
-    by_contra! h
-    exact hζ.2 ⟨⟨le_of_lt hζ.1.1, h⟩, hζ.1.2⟩
-  have hev : covectorPullback (positiveEndChart q) J u η =ᶠ[𝓝 ζ] 0 := by
-    filter_upwards [hzero ζ hζN] with ζ' hζ'
-    simp [covectorPullback_apply, show η (positiveEndChart q ζ') = 0 from hζ']
-  rw [sobolevDensity_congr_of_eventuallyEq hev, sobolevDensity_zero]
+  refine integrableOn_sobolevDensity_of_forall_eventuallyEq_zero
+    (continuous_sobolevDensity_covectorPullback_positiveEndChart hJ hu hη hηS q)
+    (N := N) (fun ζ hζN ↦ ?_) a
+  filter_upwards [hzero ζ hζN] with ζ' hζ'
+  have h₀ : η (positiveEndChart q ζ') = 0 := by simpa using hζ'
+  simp [covectorPullback_apply, h₀]
 
 end TauCeti.Floer
 
@@ -634,6 +632,52 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux
     mul_nonneg (mul_nonneg hS (sq_nonneg c)) hY, mul_nonneg hC₀ hX, mul_nonneg hC₀ hY,
     mul_nonneg (mul_nonneg hC₀ (sq_nonneg c)) hX, mul_nonneg (mul_nonneg hC₀ (sq_nonneg c)) hY]
 
+/-- **Patching at two heights.** Let `G q ξ` be a field `ξ` read on the end `q`, and suppose that
+for every height `R₀ ≥ 1` above the heights `R q`, the energy of `G q ξ` beyond `R₀ + 1` on the
+ends plus the energy of `ξ` on the truncation `S_{R₀}` is at most
+`C' (X ξ + ∫_{S_{R₀ + 1}} ‖ξ‖²)`. Then at the single height `T = R₀ + 1`
+the ends beyond `T` and the core `S_T` are bounded by `C (X ξ + ∫_{S_{T + 1}} ‖ξ‖²)`: the bound
+at `R₀` controls the ends and the bound at `R₀ + 1` the core. -/
+private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_one_le
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {ι : Type*} [Fintype ι] {R : ι → ℝ}
+    {G : ι → (ℝ × ℝ → W) → ℝ × ℝ → W} {X : (ℝ × ℝ → W) → ℝ}
+    (h : ∀ R₀, 1 ≤ R₀ → (∀ q, R q < R₀) → ∃ C', 0 ≤ C' ∧ ∀ ⦃ξ : ℝ × ℝ → W⦄, ContDiff ℝ 2 ξ →
+      HasCompactSupport ξ → tsupport ξ ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi (R₀ + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (G q ξ) ζ) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity ξ z ≤
+        C' * (X ξ + ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖ξ z‖ ^ 2)) :
+    ∃ C', 0 ≤ C' ∧ ∃ T, 0 ≤ T ∧ ∀ ⦃ξ : ℝ × ℝ → W⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
+      tsupport ξ ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (G q ξ) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity ξ z ≤
+        C' * (X ξ + ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ z‖ ^ 2) := by
+  -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
+  -- second the core `S_{R₀ + 1}`.
+  set R₀ := 1 + ∑ q, |R q|
+  have hsum : 0 ≤ ∑ q, |R q| := Finset.sum_nonneg fun q _ ↦ abs_nonneg _
+  have hR (q : ι) : R q < R₀ := by
+    have := (le_abs_self (R q)).trans
+      (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
+    linarith
+  obtain ⟨C₁, hC₁, h₁⟩ := h R₀ (by linarith) hR
+  obtain ⟨C₂, hC₂, h₂⟩ := h (R₀ + 1) (by linarith) fun q ↦ (hR q).trans (lt_add_one _)
+  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by positivity, fun ξ hξ hξc hξS ↦ ?_⟩
+  have e₁ := h₁ hξ hξc hξS
+  have e₂ := h₂ hξ hξc hξS
+  have hY : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖ξ z‖ ^ 2 ≤
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1 + 1), ‖ξ z‖ ^ 2 :=
+    setIntegral_mono_set ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact
+      (isCompact_preimage_truncation _)) (ae_of_all _ fun _ ↦ sq_nonneg _)
+      (.of_forall fun _ hz ↦ preimage_mono (truncation_mono (by linarith)) hz)
+  have hcore₀ : 0 ≤ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀,
+      sobolevDensity ξ z :=
+    setIntegral_nonneg (isCompact_preimage_truncation _).measurableSet fun z _ ↦
+      sobolevDensity_nonneg ξ z
+  have hends₀ : 0 ≤ ∑ q, ∫ ζ in Ioi (R₀ + 1 + 1) ×ˢ Icc (0 : ℝ) 1, sobolevDensity (G q ξ) ζ :=
+    Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
+      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
+  nlinarith [mul_le_mul_of_nonneg_left hY hC₁]
+
 /-- **Patching end estimates into the semi-Fredholm estimate on the pair of pants.** Let `J(z)` be
 compatible along `u` on `S = ℂ ∖ {0, 1}`, with `J` `C¹` and `K_s`, `K_t` `C²` at the points
 `(z, u z)`, and `u` `C¹` on `S`. Suppose that on each end `q` the linearized Floer operator `D_u`
@@ -670,40 +714,9 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
         C' * ((∫ z, ‖ω.floerLinearization
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ z‖ ^ 2) := by
-  -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
-  -- second the core `S_{R₀ + 1}`.
-  set R₀ := 1 + ∑ q, |R q|
-  have hsum : 0 ≤ ∑ q, |R q| := Finset.sum_nonneg fun q _ ↦ abs_nonneg _
-  have hR (q : Puncture) : R q < R₀ := by
-    have := (le_abs_self (R q)).trans
-      (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
-    linarith
-  obtain ⟨C₁, hC₁, h₁⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
-    hKt hu hc (C := C) (R := R) hend (by linarith) hR
-  obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
-    hKt hu hc (C := C) (R := R) hend (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
-      (lt_add_one _)
-  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by positivity, fun ξ hξ hξc hξS ↦ ?_⟩
-  have e₁ := h₁ hξ hξc hξS
-  have e₂ := h₂ hξ hξc hξS
-  have hξ2 := hξ.continuous.norm.pow 2
-  have hX : 0 ≤ ∫ z, ‖ω.floerLinearization
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 :=
-    integral_nonneg fun _ ↦ sq_nonneg _
-  have hY : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖ξ z‖ ^ 2 ≤
-      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1 + 1), ‖ξ z‖ ^ 2 :=
-    setIntegral_mono_set (hξ2.continuousOn.integrableOn_compact (isCompact_preimage_truncation _))
-      (ae_of_all _ fun _ ↦ sq_nonneg _)
-      (.of_forall fun _ hz ↦ preimage_mono (truncation_mono (by linarith)) hz)
-  have hcore₀ : 0 ≤ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀,
-      sobolevDensity ξ z :=
-    setIntegral_nonneg (isCompact_preimage_truncation _).measurableSet fun z _ ↦
-      sobolevDensity_nonneg ξ z
-  have hends₀ : 0 ≤ ∑ q, ∫ ζ in Ioi (R₀ + 1 + 1) ×ˢ Icc (0 : ℝ) 1,
-      sobolevDensity (ξ ∘ positiveEndChart q) ζ :=
-    Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
-      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
-  nlinarith [mul_le_mul_of_nonneg_left hY hC₁, mul_nonneg hC₂ hX]
+  exact exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_one_le
+    (G := fun q ξ ↦ ξ ∘ positiveEndChart q) fun _ hR₀ hR ↦
+      ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs hKt hu hc hend hR₀ hR
 
 /-- **The semi-Fredholm estimate along a Floer pair of pants.** Let `H_q` be jointly `C²`
 period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive end Hamiltonians
@@ -1196,40 +1209,11 @@ theorem
         C' * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
-  -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
-  -- second the core `S_{R₀ + 1}`.
-  set R₀ := 1 + ∑ q, |R q|
-  have hsum : 0 ≤ ∑ q, |R q| := Finset.sum_nonneg fun q _ ↦ abs_nonneg _
-  have hR (q : Puncture) : R q < R₀ := by
-    have := (le_abs_self (R q)).trans
-      (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
-    linarith
-  obtain ⟨C₁, hC₁, h₁⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint_aux
-    hJ hKs hKt hu hc (C := C) (R := R) hend (by linarith) hR
-  obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint_aux
-    hJ hKs hKt hu hc (C := C) (R := R) hend (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
-      (lt_add_one _)
-  refine ⟨C₁ + C₂, by positivity, R₀ + 1, by positivity, fun η hη hηc hηS ↦ ?_⟩
-  have e₁ := h₁ hη hηc hηS
-  have e₂ := h₂ hη hηc hηS
-  have hX : 0 ≤ ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
-    integral_nonneg fun z ↦ by have := cylindricalWeight_nonneg z; positivity
-  have hY : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖η z‖ ^ 2 ≤
-      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1 + 1), ‖η z‖ ^ 2 :=
-    setIntegral_mono_set ((hη.continuous.norm.pow 2).continuousOn.integrableOn_compact
-      (isCompact_preimage_truncation _)) (ae_of_all _ fun _ ↦ sq_nonneg _)
-      (.of_forall fun _ hz ↦ preimage_mono (truncation_mono (by linarith)) hz)
-  have hcore₀ : 0 ≤ ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀,
-      sobolevDensity η z :=
-    setIntegral_nonneg (isCompact_preimage_truncation _).measurableSet fun z _ ↦
-      sobolevDensity_nonneg η z
-  have hends₀ : 0 ≤ ∑ q, ∫ ζ in Ioi (R₀ + 1 + 1) ×ˢ Icc (0 : ℝ) 1,
-      sobolevDensity (covectorPullback (positiveEndChart q)
-        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ :=
-    Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
-      fun ζ _ ↦ sobolevDensity_nonneg _ ζ
-  nlinarith [mul_le_mul_of_nonneg_left hY hC₁, mul_nonneg hC₂ hX]
+  exact exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_one_le
+    (G := fun q η ↦ covectorPullback (positiveEndChart q)
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) fun _ hR₀ hR ↦
+      ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint_aux hJ hKs hKt hu hc
+        hend hR₀ hR
 
 /-- **The semi-Fredholm estimate of the formal adjoint along a Floer pair of pants.** Let `H_q` be
 jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive end
