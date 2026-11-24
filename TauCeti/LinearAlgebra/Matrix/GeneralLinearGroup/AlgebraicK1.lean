@@ -75,6 +75,12 @@ def mkOfFintype (ι : Type*) [Fintype ι] [DecidableEq ι] : GL ι A →* Algebr
 
 variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
 
+/-- Unfolding `TauCeti.AlgebraicK1.mkOfFintype`: the class of the reindexing along the enumeration
+`Fintype.equivFin ι`. -/
+theorem mkOfFintype_apply (u : GL ι A) :
+    mkOfFintype A ι u = mk A (Fintype.card ι) ((Fintype.equivFin ι).reindexGL A u) := by
+  rw [mkOfFintype, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom]
+
 /-- The class of an invertible matrix over a finite index type `ι` is the class of its
 reindexing along **any** enumeration `ι ≃ Fin n`. -/
 theorem mkOfFintype_eq_mk_reindexGL {n : ℕ} (e : ι ≃ Fin n) (u : GL ι A) :
@@ -85,13 +91,19 @@ theorem mkOfFintype_eq_mk_reindexGL {n : ℕ} (e : ι ≃ Fin n) (u : GL ι A) :
       ((Fintype.equivFin ι).symm.trans e).reindexGL A ((Fintype.equivFin ι).reindexGL A u) := by
     ext : 1
     simp [Function.comp_def]
-  rw [h, mk_reindexGL]
-  rfl
+  rw [h, mk_reindexGL, mkOfFintype_apply]
 
 /-- Over the index type `Fin n`, the class of an invertible matrix is `TauCeti.AlgebraicK1.mk`. -/
 @[simp]
 theorem mkOfFintype_fin (n : ℕ) : mkOfFintype A (Fin n) = mk A n :=
   MonoidHom.ext fun u ↦ by simp [mkOfFintype_eq_mk_reindexGL (Equiv.refl (Fin n))]
+
+/-- The class of the reindexing of an invertible matrix along an enumeration `ι ≃ Fin n` is its
+class over `ι`. -/
+@[simp]
+theorem mk_reindexGL_eq_mkOfFintype {n : ℕ} (e : ι ≃ Fin n) (u : GL ι A) :
+    mk A n (e.reindexGL A u) = mkOfFintype A ι u :=
+  (mkOfFintype_eq_mk_reindexGL e u).symm
 
 /-- **Relabelling invariance**: reindexing an invertible matrix along an equivalence of finite
 index types does not change its class in algebraic `K₁`. -/
@@ -125,9 +137,13 @@ theorem mkOfFintype_fromBlocksGL (u : GL ι A) (v : GL κ A) :
       blockSumGL A (e.reindexGL A u, f.reindexGL A v) := by
     ext : 1
     rw [coe_blockSumGL, Equiv.coe_reindexGL, coe_fromBlocksGL, reindex_apply]
-  rw [← mkOfFintype_reindexGL (e.sumCongr f), Equiv.reindexGL_sumCongr_fromBlocksGL,
-    mkOfFintype_eq_mk_reindexGL finSumFinEquiv, h, mk_blockSumGL,
-    ← mkOfFintype_eq_mk_reindexGL, ← mkOfFintype_eq_mk_reindexGL]
+  calc mkOfFintype A (ι ⊕ κ) (fromBlocksGL (u, v))
+      = mkOfFintype A _ ((e.sumCongr f).reindexGL A (fromBlocksGL (u, v))) :=
+        (mkOfFintype_reindexGL (e.sumCongr f) _).symm
+    _ = mk A _ (blockSumGL A (e.reindexGL A u, f.reindexGL A v)) := by
+        rw [Equiv.reindexGL_sumCongr_fromBlocksGL, mkOfFintype_eq_mk_reindexGL finSumFinEquiv, h]
+    _ = mkOfFintype A ι u * mkOfFintype A κ v := by
+        rw [mk_blockSumGL, mkOfFintype_eq_mk_reindexGL e, mkOfFintype_eq_mk_reindexGL f]
 
 /-- Applying a ring homomorphism to the entries commutes with taking classes over an arbitrary
 finite index type. -/
