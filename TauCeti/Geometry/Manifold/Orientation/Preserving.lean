@@ -51,7 +51,7 @@ precomposing with an automorphism of negative determinant exchanges preservation
 More generally, a map with negative derivative determinant reverses orientations at that point
 (`isOrientationReversingAt_of_det_fderiv_neg`), and such a map of `E`, read in a model `H` through
 `I` near interior points of the range of `I`, reverses the constant model orientation
-(`isOrientationReversingAt_symm_comp_comp`).
+(`isOrientationReversingAt_modelWithCorners_symm_comp_comp_of_det_neg`).
 
 If the derivative carries a tangent basis `b` onto a basis `b'`, then, whether `b` is positively
 or negatively oriented, preservation (reversal) means that `b` and `b'` have equal (opposite)
@@ -662,9 +662,10 @@ theorem isOrientationReversingAt_of_det_fderiv_neg (o : Manifold.Orientation �
 /-- A map `f` of `E` with derivative `R` of negative determinant at `I z`, read in the model `H`
 through `I`, reverses the constant orientation of the model at `z` when `I z` and `f (I z)` lie in
 the interior of the range of `I`. -/
-theorem isOrientationReversingAt_symm_comp_comp (μ : _root_.Orientation ℝ E ι)
-    (hι : Fintype.card ι = Module.finrank ℝ E) {f : E → E} {R : E ≃L[ℝ] E} {z : H}
-    (hf : HasFDerivAt f (R : E →L[ℝ] E) (I z)) (hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0)
+theorem isOrientationReversingAt_modelWithCorners_symm_comp_comp_of_det_neg
+    (μ : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) {f : E → E}
+    {R : E ≃L[ℝ] E} {z : H} (hf : HasFDerivAt f (R : E →L[ℝ] E) (I z))
+    (hR : LinearMap.det (R : E →ₗ[ℝ] E) < 0)
     (hz : I z ∈ interior (Set.range I)) (hfz : f (I z) ∈ interior (Set.range I)) :
     IsOrientationReversingAt (model (I := I) μ hι) (model (I := I) μ hι) (I.symm ∘ f ∘ I) z := by
   have hz' := mem_interior_iff_mem_nhds.1 hz

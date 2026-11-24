@@ -363,8 +363,8 @@ theorem exists_mem_maximalAtlas_isOrientationPreservingAt_of_isOrientationRevers
       ((hasFDerivAt_id (I (c y))).sub_const v₀)).add_const v₀
     rw [ContinuousLinearMap.comp_id] at hAd
     rw [hchart]
-    exact (isOrientationReversingAt_symm_comp_comp μ o.card_eq hAd hR hy'.1.2 hy'.2).comp
-      (hcr y hy'.1.1)
+    exact (isOrientationReversingAt_modelWithCorners_symm_comp_comp_of_det_neg μ o.card_eq hAd hR
+      hy'.1.2 hy'.2).comp (hcr y hy'.1.1)
 
 section Boundaryless
 
