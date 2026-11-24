@@ -238,10 +238,11 @@ theorem isPrimeWeilNumber_iff_mem_unit {u : Kˣ} :
   · let x : (S.integer K)ˣ := ⟨⟨u, (hint _).1 ⟨n, hn⟩⟩, ⟨_, (hint _).1 ⟨n, hn'⟩⟩,
       Subtype.ext (mul_inv_cancel₀ u.ne_zero), Subtype.ext (inv_mul_cancel₀ u.ne_zero)⟩
     convert ((S.unitEquivUnitsInteger K).symm x).property
-    ext
-    rfl
+    rw [Set.unitEquivUnitsInteger_symm_apply_coe]
+    exact Units.ext (Units.val_mk0 _).symm
   have hS {y : Kˣ} (hy : y ∈ S.unit K) : (y : K) ∈ S.integer K :=
-    (S.unitEquivUnitsInteger K ⟨y, hy⟩).val.property
+    Set.val_unitEquivUnitsInteger_apply_coe S K ⟨y, hy⟩ ▸
+      (S.unitEquivUnitsInteger K ⟨y, hy⟩).val.property
   obtain ⟨n, hn⟩ := (hint _).2 (hS hu)
   obtain ⟨m, hm⟩ := (hint _).2 (hS (inv_mem hu))
   rw [Units.val_inv_eq_inv_val] at hm
