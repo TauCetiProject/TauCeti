@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion
@@ -22,7 +22,8 @@ commutative rings, including nonreduced rings and rings of bad characteristic.
 For every datum `D`, its toral centralizer is the group of unit-valued characters of
 `Λ(D) / Q`, expressed in the chosen basis `D.weightLatticeBasis`: the denominator is the span
 of `D.coordinateRoot`, not the roots read in the full weight lattice. For the simply connected
-datum, `span_range_scChevalleyDatum_coordinateRoot_eq_rootSpan` identifies that denominator with
+datum, `TauCeti.DynkinType.span_range_scChevalleyDatum_coordinateRoot_eq_rootSpan` (in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected`) identifies that denominator with
 `rootSpan`, so `ChevalleyDatum.torusInfCentralizerRootTorusSubgroupEquiv` identifies the toral
 centralizer with characters of `P / Q` in fundamental-weight coordinates. The equivalence lands in
 actual datum points, not merely in torus parameters, and retains its evaluation equations.
@@ -149,16 +150,6 @@ theorem torusInfCentralizerRootTorusSubgroupEquiv_symm_apply_mk
   rw [← Submodule.mkQ_apply, ← torusCharacter_quotientCharTorusPoint, hcoord]
 
 end ChevalleyDatum
-
-variable (t ht)
-
-/-- In fundamental-weight coordinates, the span of the simply connected coordinate roots is the
-root lattice `rootSpan`. -/
-@[simp]
-theorem span_range_scChevalleyDatum_coordinateRoot_eq_rootSpan :
-    Submodule.span ℤ (Set.range (t.scChevalleyDatum ht).coordinateRoot) =
-      (t.simplyConnectedRootDatum ht).rootSpan ℤ := by
-  simp only [funext (t.scChevalleyDatum_coordinateRoot ht)]
 
 end
 

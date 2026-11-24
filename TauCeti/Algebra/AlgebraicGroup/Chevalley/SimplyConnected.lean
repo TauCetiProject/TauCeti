@@ -54,6 +54,8 @@ point of `G_sc(t)` (`TauCeti.DynkinType.kostantTorusMatrix_mem_chevalleyGroup`).
 * `TauCeti.DynkinType.scChevalleyDatum_coordinateWeight`: the coordinate weights are `scWeight`.
 * `TauCeti.DynkinType.scChevalleyDatum_coordinateRoot`: the coordinate roots are the roots, so
   the torus acts on the root subgroup of `γ` through the character `γ`.
+* `TauCeti.DynkinType.span_range_scChevalleyDatum_coordinateRoot_eq_rootSpan`: in
+  fundamental-weight coordinates, the span of the simply connected coordinate roots is `rootSpan`.
 * `TauCeti.DynkinType.chevalleyGroupScheme`: the simply connected Chevalley group scheme
   `G_sc(t)` over `ℤ`.
 * `TauCeti.DynkinType.chevalleyGroup`: its points with values in a commutative ring, as a
@@ -174,6 +176,14 @@ theorem scChevalleyDatum_coordinateRoot (γ : Fin t.numRoots) :
   ext i
   have h := congrFun ((t.scChevalleyDatum ht).sum_coordinateRoot_smul γ) i
   simpa [Pi.single_apply] using h
+
+/-- In fundamental-weight coordinates, the span of the simply connected coordinate roots is the
+root lattice `rootSpan`. -/
+@[simp]
+theorem span_range_scChevalleyDatum_coordinateRoot_eq_rootSpan :
+    Submodule.span ℤ (Set.range (t.scChevalleyDatum ht).coordinateRoot) =
+      (t.simplyConnectedRootDatum ht).rootSpan ℤ := by
+  simp only [funext (t.scChevalleyDatum_coordinateRoot ht)]
 
 /-! ## The simply connected Chevalley group scheme -/
 

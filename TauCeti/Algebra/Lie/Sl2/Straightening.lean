@@ -42,10 +42,6 @@ combines their Cartan coefficients without division.
   arbitrary Lie homomorphism, assuming only the three bracket relations.
 * `TauCeti.Sl2.dividedPower_ι_e_mul_dividedPower_ι_f`: its specialization to the canonical map
   into a universal enveloping algebra, stated from the corresponding Lie-bracket relations.
-* `TauCeti.Sl2.dividedPower_e_apply_dividedPower_f_apply_of_eq_zero`: on an `sl₂` highest-weight
-  vector `v` of Cartan weight `μ`, `E⁽ʲ⁾ (F⁽ʲ⁾ v) = Ring.choose μ j • v`.
-* `TauCeti.Sl2.dividedPower_e_apply_dividedPower_f_apply_eq_self_of_eq_zero`: on an `sl₂`
-  highest-weight vector `v` of natural Cartan weight `n`, `E⁽ⁿ⁾ (F⁽ⁿ⁾ v) = v`.
 
 ## References
 
@@ -350,59 +346,5 @@ theorem dividedPower_ι_e_mul_dividedPower_ι_f (hef : ⁅e, f⁆ = h) (hhe : �
   (ι ℚ).dividedPower_map_e_mul_dividedPower_map_f hef hhe hhf m n
 
 end UniversalEnveloping
-
-/-- On an `sl₂` highest-weight vector `v` (`E v = 0`) of Cartan weight `μ`
-(`H v = μ • v`), lowering by the `j`-th divided power `F⁽ʲ⁾` and raising back by `E⁽ʲ⁾`
-scales `v` by `Ring.choose μ j`. -/
-theorem dividedPower_e_apply_dividedPower_f_apply_of_eq_zero
-    {K V : Type*} [CommRing K] [Algebra ℚ K]
-    [AddCommGroup V] [Module K V] [Algebra ℚ (Module.End K V)]
-    {H E F : Module.End K V}
-    (hef : E * F - F * E = H) (hhf : H * F - F * H = -(2 • F))
-    {v : V} {μ : K} (hEv : E v = 0) (hHv : H v = μ • v) (j : ℕ) :
-    (dividedPower j E) ((dividedPower j F) v) = Ring.choose μ j • v := by
-  have nsmul_inj {n : ℕ} (hn : n ≠ 0) {x y : V} (h : n • x = n • y) : x = y := by
-    have hq : (n : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-    have hK : ((n : K) • x) = ((n : K) • y) := by simpa only [Nat.cast_smul_eq_nsmul K] using h
-    have hx := congrArg (algebraMap ℚ K (n : ℚ)⁻¹ • ·) hK
-    rw [← mul_smul, ← mul_smul, ← map_natCast (algebraMap ℚ K), ← map_mul,
-      inv_mul_cancel₀ hq, map_one, one_smul, one_smul] at hx
-    exact hx
-  induction j with
-  | zero => simp
-  | succ j ih =>
-    apply nsmul_inj (Nat.succ_ne_zero j)
-    have hstep : E ((dividedPower (j + 1) F) v) = (μ - (j : K)) • (dividedPower j F) v := by
-      have hcomm := congrArg (· v) (e_mul_dividedPower_succ_f hef hhf j)
-      simp only [mul_apply_eq_comp, LinearMap.add_apply, hEv, map_zero, zero_add] at hcomm
-      have hsub : (H - (j : Module.End K V)) v = (μ - (j : K)) • v := by
-        simp only [LinearMap.sub_apply, hHv, sub_smul]
-        congr 1
-        simp [Nat.cast_smul_eq_nsmul K]
-      rw [hcomm, hsub, map_smul]
-    have hleft :
-        (j + 1) • ((dividedPower (j + 1) E) ((dividedPower (j + 1) F) v)) =
-          (dividedPower j E) (E ((dividedPower (j + 1) F) v)) := by
-      have hrec := congrArg (· ((dividedPower (j + 1) F) v)) (dividedPower_mul_self j E)
-      simpa only [mul_apply_eq_comp, LinearMap.smul_apply] using hrec.symm
-    have hchoose : ((j + 1 : ℕ) : K) * Ring.choose μ (j + 1) = (μ - (j : K)) * Ring.choose μ j := by
-      have h := Ring.choose_smul_choose μ (n := j + 1) (k := j) (Nat.le_succ j)
-      rw [Nat.choose_succ_self_right, Nat.add_sub_cancel_left, Ring.choose_one_right,
-        ← Nat.cast_smul_eq_nsmul K, smul_eq_mul, mul_comm (Ring.choose μ j)] at h
-      exact h
-    rw [hleft, hstep, map_smul, ih, smul_smul, ← Nat.cast_smul_eq_nsmul K, smul_smul, hchoose]
-
-/-- On an `sl₂` highest-weight vector `v` (`E v = 0`) of natural Cartan weight `n`
-(`H v = (n : K) • v`), lowering by the `n`-th divided power `F⁽ⁿ⁾` and raising back by `E⁽ⁿ⁾`
-recovers `v`. -/
-theorem dividedPower_e_apply_dividedPower_f_apply_eq_self_of_eq_zero
-    {K V : Type*} [CommRing K] [Algebra ℚ K]
-    [AddCommGroup V] [Module K V] [Algebra ℚ (Module.End K V)]
-    {H E F : Module.End K V}
-    (hef : E * F - F * E = H) (hhf : H * F - F * H = -(2 • F))
-    {v : V} {n : ℕ} (hEv : E v = 0) (hHv : H v = (n : K) • v) :
-    (dividedPower n E) ((dividedPower n F) v) = v := by
-  rw [dividedPower_e_apply_dividedPower_f_apply_of_eq_zero hef hhf hEv hHv n,
-    Ring.choose_natCast, Nat.choose_self, Nat.cast_one, one_smul]
 
 end TauCeti.Sl2
