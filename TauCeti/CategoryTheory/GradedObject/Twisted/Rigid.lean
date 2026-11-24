@@ -31,8 +31,6 @@ evaluation is that of the underlying vector spaces, and the coevaluation carries
 
 ## Main definitions
 
-* `CategoryTheory.GradedObject.Monoidal.toTensorUnitOfDegreeZero`: the morphism from a graded
-  object to the tensor unit determined by its degree zero component.
 * `TauCeti.TwistedGradedObject.evaluation` and `TauCeti.TwistedGradedObject.coevaluation`: the
   evaluation `Y ⊗ X ⟶ 𝟙_` and the coevaluation `𝟙_ ⟶ X ⊗ Y`.
 * `TauCeti.TwistedGradedObject.exactPairing`: the exact pairing of a finitely supported graded
@@ -57,33 +55,6 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Category
-
-namespace CategoryTheory.GradedObject.Monoidal
-
-variable {I : Type*} [AddMonoid I] {C : Type*} [Category* C] [MonoidalCategory C]
-  [HasZeroMorphisms C] [DecidableEq I] [HasInitial C]
-
-variable (X : GradedObject I C)
-
-/-- The morphism `X ⟶ 𝟙_` of graded objects given in degree zero by `f : X 0 ⟶ 𝟙_ C`; in every
-other degree the tensor unit is a zero object. -/
-def toTensorUnitOfDegreeZero (f : X 0 ⟶ 𝟙_ C) : X ⟶ tensorUnit := fun i ↦
-  if h : i = 0 then eqToHom (congrArg X h) ≫ f ≫ (singleObjApplyIsoOfEq 0 (𝟙_ C) i h).inv
-  else 0
-
-/-- In degree zero, the morphism determined by `f` is `f`, up to the identification of the
-degree-zero part of the tensor unit with `𝟙_ C`. -/
-@[simp]
-lemma toTensorUnitOfDegreeZero_zero (f : X 0 ⟶ 𝟙_ C) :
-    toTensorUnitOfDegreeZero X f 0 = f ≫ tensorUnit₀.inv := by
-  simp [toTensorUnitOfDegreeZero, tensorUnit₀]
-
-/-- Away from degree zero, the morphism determined by `f` vanishes. -/
-lemma toTensorUnitOfDegreeZero_of_ne (f : X 0 ⟶ 𝟙_ C) {i : I} (hi : i ≠ 0) :
-    toTensorUnitOfDegreeZero X f i = 0 := by
-  simp [toTensorUnitOfDegreeZero, hi]
-
-end CategoryTheory.GradedObject.Monoidal
 
 namespace TauCeti.TwistedGradedObject
 
@@ -124,9 +95,7 @@ lemma coevaluation_zero (hX : X.HasFiniteSupport) (s : Finset I) (hs : ∀ i ∉
   refine Finset.sum_subset (fun i hi ↦ ?_) fun i _ hi ↦ ?_
   · by_contra h
     exact (by simpa using hi : ¬IsZero (X i)) (hs i h)
-  · have := (tensorRightAdjunction (X i) (Y (-i))).isRightAdjoint
-    rw [((tensorRight (Y (-i))).map_isZero (by simpa using hi)).eq_of_tgt (η_ (X i) (Y (-i))) 0,
-      zero_comp, smul_zero]
+  · rw [coevaluation_eq_zero_of_isZero_left (by simpa using hi), zero_comp, smul_zero]
 
 /-- The evaluation on a summand `Y j ⊗ X i` of degree zero. -/
 @[reassoc (attr := simp)]
@@ -176,10 +145,8 @@ private lemma whiskerLeft_ι_associator_inv_whiskerRight_evaluation_of_eq {m i :
     ιTensorObj₃'_eq Y X Y (-i) i (-i) (-i) (by simp) 0 (neg_add_cancel i)]
   simp only [Monoidal.whiskerRight, Linear.smul_comp, Linear.comp_smul, assoc,
     Monoidal.ι_tensorHom, categoryOfGradedObjects_id, tensorHom_id]
-  rw [← comp_whiskerRight_assoc, ιTensorObj_evaluation_zero, eqToHom_refl, id_whiskerRight,
-    id_comp, comp_whiskerRight, assoc, ExactPairing.coevaluation_evaluation_assoc,
-    Iso.inv_hom_id_assoc,
-    smul_smul, ← Units.val_mul, ← mul_inv, c.ω_mul_ω_neg_eq_one, inv_one, Units.val_one, one_smul]
+  rw [← comp_whiskerRight_assoc, ιTensorObj_evaluation_zero]
+  simp [smul_smul, c.inv_ω_mul_inv_ω_neg]
 
 variable [MonoidalPreadditive C]
 
@@ -230,9 +197,7 @@ private lemma whiskerRight_coevaluation_associator_whiskerLeft_evaluation
   have hn' : n ∈ (X.hasFiniteSupport_iff_finite.mp hX).toFinset := by simpa using hn
   rw [Finset.sum_eq_single_of_mem n hn' fun i _ hin ↦ by
     simp [ι_whiskerRight_associator_whiskerLeft_evaluation_of_ne X Y hin]]
-  rw [ι_whiskerRight_associator_whiskerLeft_evaluation_self, Linear.comp_smul, Linear.comp_smul,
-    smul_smul, Units.inv_mul, one_smul, ExactPairing.evaluation_coevaluation_assoc,
-    Iso.inv_hom_id_assoc]
+  simp [ι_whiskerRight_associator_whiskerLeft_evaluation_self, smul_smul]
 
 /-- The zigzag identity on `Y` for `TwistedGradedObject.exactPairing`. -/
 private lemma whiskerLeft_coevaluation_associator_inv_whiskerRight_evaluation
