@@ -51,8 +51,6 @@ remains injective.
   its values on a basis of a complement of `F₀`.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
   multiple of `d`.
-* `TauCeti.isCompl_range_ker_of_leftInverse`: if `p ∘ u = id`, the range of `u` and the kernel of
-  `p` are complementary submodules.
 
 ## Implementation notes
 
@@ -148,19 +146,6 @@ theorem injective_sub_smul {α : Type*} {f : α → M} {d : M}
         rw [sub_smul]
         abel
     _ = _ := by rw [h, sub_self, zero_add]
-
-/-- If a linear map `p : W →ₗ[A] M` is a left inverse of `u : M →ₗ[A] W` (`∀ v, p (u v) = v`), then
-`W` splits as the internal direct sum of `LinearMap.range u` and `LinearMap.ker p`. -/
-theorem isCompl_range_ker_of_leftInverse {W : Type*} [AddCommGroup W] [Module A W]
-    {u : M →ₗ[A] W} {p : W →ₗ[A] M} (h : ∀ v, p (u v) = v) :
-    IsCompl (LinearMap.range u) (LinearMap.ker p) := by
-  have hker : LinearMap.ker (u.rangeRestrict.comp p) = LinearMap.ker p := by
-    ext v
-    simp [LinearMap.map_eq_zero_iff u (Function.LeftInverse.injective h)]
-  rw [← hker]
-  refine LinearMap.isCompl_of_proj fun ⟨_, y, hy⟩ ↦ Subtype.ext ?_
-  dsimp
-  rw [← hy, h y]
 
 end TauCeti
 

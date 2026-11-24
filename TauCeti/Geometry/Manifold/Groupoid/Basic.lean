@@ -13,7 +13,7 @@ public import TauCeti.Topology.CategoryTheory.Groupoid.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
-import TauCeti.LinearAlgebra.Projection
+import TauCeti.LinearAlgebra.LinearMap.Comp
 
 /-!
 # Lie groupoids
@@ -30,8 +30,8 @@ type `Quiver.Total C` (modelled on `J`), with smooth groupoid structure maps:
 * the unit section `x ↦ ⟨x, x, 𝟙 x⟩` and inversion `a ↦ ⟨a.right, a.left, inv a.hom⟩` are smooth
   (`contMDiff_unit`, `contMDiff_inverse`);
 * composition is smooth (`contMDiff_comp`) on the composable-pair subtype
-  `{p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}` equipped with its transverse
-  fibre-product manifold structure `TauCeti.transverseFiberProductChartedSpace`;
+  `Quiver.Total.ComposablePairs C` equipped with its transverse fibre-product manifold structure
+  `TauCeti.transverseFiberProductChartedSpace`;
 * every source fibre `{a : Quiver.Total C // a.left = x}` is Hausdorff in the subspace topology
   (`t2Space_sourceFiber`).
 
@@ -141,7 +141,7 @@ class IsLieGroupoid {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fini
       (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
         isSubmersion_source p)
     ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
-      fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+      fun p : Quiver.Total.ComposablePairs C ↦
         p.val.1.comp p.val.2 p.property
   /-- Every source fibre is Hausdorff in the subspace topology. -/
   t2Space_sourceFiber (x : C) : T2Space {a : Quiver.Total C // a.left = x} := by infer_instance
@@ -165,7 +165,7 @@ theorem contMDiff_composablePairs_comp_of_eq
     (hi : ContMDiff J J ∞ fun a : Quiver.Total C ↦
       (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C))
     {Φ : Quiver.Total C × Quiver.Total C → Quiver.Total C} (hΦ : ContMDiff (J.prod J) J ∞ Φ)
-    (h : ∀ p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left},
+    (h : ∀ p : Quiver.Total.ComposablePairs C,
       p.val.1.comp p.val.2 p.property = Φ p.val) :
     letI := transverseFiberProductChartedSpace
       (f := (Quiver.Total.right : Quiver.Total C → C))
@@ -173,7 +173,7 @@ theorem contMDiff_composablePairs_comp_of_eq
       (hs.contMDiff.comp hi) hs.contMDiff
       (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
     ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
-      fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+      fun p : Quiver.Total.ComposablePairs C ↦
         p.val.1.comp p.val.2 p.property := by
   let := transverseFiberProductChartedSpace
     (f := (Quiver.Total.right : Quiver.Total C → C))
@@ -217,7 +217,7 @@ theorem of_isSubmersion_source
         (hs.contMDiff.comp hinv) hs.contMDiff
         (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
       ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
-        fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+        fun p : Quiver.Total.ComposablePairs C ↦
           p.val.1.comp p.val.2 p.property)
     (ht2_objects : T2Space C := by infer_instance)
     (hsc_arrows : SecondCountableTopology (Quiver.Total C) := by infer_instance)
@@ -226,20 +226,20 @@ theorem of_isSubmersion_source
       infer_instance) :
     IsLieGroupoid I J C := by
   have hu : ContMDiff I J ∞ fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C) := by
-    let := transverseFiberProductChartedSpace
-      (f := (Quiver.Total.right : Quiver.Total C → C))
-      (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
-      (hs.contMDiff.comp hinv) hs.contMDiff
-      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
-    have hι := isSmoothEmbedding_coe_transverseFiberProduct
-      (f := (Quiver.Total.right : Quiver.Total C → C))
-      (g := (Quiver.Total.left : Quiver.Total C → C)) (n := ∞) (by simp)
-      (hs.contMDiff.comp hinv) hs.contMDiff
-      (fun p _ ↦ transverse_of_isSubmersion_right (by simp) hs p)
+    -- The public type of `hcomp` matches `IsLieGroupoid.contMDiff_comp` directly (and cannot
+    -- reference `private` declarations under `module`); bind the smoothness and transversality
+    -- proofs once here and share them between the atlas and the inclusion embedding.
+    have hright : ContMDiff J I ∞ (Quiver.Total.right : Quiver.Total C → C) :=
+      hs.contMDiff.comp hinv
+    have htrans := fun (p : Quiver.Total C × Quiver.Total C) (_ : p.1.right = p.2.left) ↦
+      transverse_of_isSubmersion_right (IX := J)
+        (f := (Quiver.Total.right : Quiver.Total C → C)) (n := ∞) (by simp) hs p
+    let := transverseFiberProductChartedSpace (n := ∞) (by simp) hright hs.contMDiff htrans
+    have hι := isSmoothEmbedding_coe_transverseFiberProduct (n := ∞) (by simp) hright hs.contMDiff
+      htrans
     have hτ : ContMDiff J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
         (fun a : Quiver.Total C ↦
-          (⟨(a, ⟨a.right, a.left, inv a.hom⟩), rfl⟩ :
-            {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})) :=
+          (⟨(a, ⟨a.right, a.left, inv a.hom⟩), rfl⟩ : Quiver.Total.ComposablePairs C)) :=
       hι.contMDiff_iff_comp.mpr (contMDiff_id.prodMk hinv)
     exact (hs.contMDiff_comp_iff Quiver.Total.left_surjective le_rfl).mp
       ((hcomp.comp hτ).congr fun a ↦ a.comp_inv_self.symm)
@@ -402,13 +402,12 @@ theorem isLocalDiffeomorph_source_iff_target :
 
 /-! ### Composable pairs, same-source pairs, left shear, and submersion property of composition -/
 
-/-- The smooth manifold atlas on composable pairs `{p : Quiver.Total C × Quiver.Total C //
-p.1.right = p.2.left}` of a Lie groupoid, constructed as the transverse fibre product of target
-and source. -/
+/-- The smooth manifold atlas on composable pairs `Quiver.Total.ComposablePairs C` of a Lie
+groupoid, constructed as the transverse fibre product of target and source. -/
 @[expose, instance_reducible]
 def composablePairsChartedSpace :
     ChartedSpace (Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
-      {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} :=
+      (Quiver.Total.ComposablePairs C) :=
   transverseFiberProductChartedSpace (n := ∞) (by simp)
     (contMDiff_target I J C) (contMDiff_source I J C)
     (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
@@ -418,8 +417,7 @@ def composablePairsChartedSpace :
 theorem contMDiff_comp_composablePairs :
     letI := composablePairsChartedSpace I J C
     ContMDiff 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
-      (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-        p.val.1.comp p.val.2 p.property) :=
+      (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1.comp p.val.2 p.property) :=
   contMDiff_comp (I := I) (J := J) (C := C)
 
 /-- Composable pairs of a Lie groupoid form a smooth manifold of dimension
@@ -427,7 +425,7 @@ theorem contMDiff_comp_composablePairs :
 theorem isManifold_composablePairs :
     letI := composablePairsChartedSpace I J C
     IsManifold 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
-      {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} :=
+      (Quiver.Total.ComposablePairs C) :=
   isManifold_transverseFiberProduct (n := ∞) (by simp)
     (contMDiff_target I J C) (contMDiff_source I J C)
     (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
@@ -439,9 +437,7 @@ theorem isSmoothEmbedding_coe_composablePairs :
     letI := composablePairsChartedSpace I J C
     Manifold.IsSmoothEmbedding
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) (J.prod J) ∞
-      (Subtype.val :
-        {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} →
-          Quiver.Total C × Quiver.Total C) :=
+      (Subtype.val : Quiver.Total.ComposablePairs C → Quiver.Total C × Quiver.Total C) :=
   isSmoothEmbedding_coe_transverseFiberProduct (n := ∞) (by simp)
     (contMDiff_target I J C) (contMDiff_source I J C)
     (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
@@ -452,7 +448,7 @@ theorem isSubmersion_fst_composablePairs :
     letI := composablePairsChartedSpace I J C
     Manifold.IsSubmersion
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
-      (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.1) :=
+      (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1) :=
   isSubmersion_fst_transverseFiberProduct (n := ∞) (by simp)
     (contMDiff_target I J C) (contMDiff_source I J C)
     (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
@@ -464,7 +460,7 @@ theorem isSubmersion_snd_composablePairs :
     letI := composablePairsChartedSpace I J C
     Manifold.IsSubmersion
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
-      (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.2) :=
+      (fun p : Quiver.Total.ComposablePairs C ↦ p.val.2) :=
   isSubmersion_snd_transverseFiberProduct (n := ∞) (by simp)
     (contMDiff_target I J C) (contMDiff_source I J C)
     (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
@@ -475,8 +471,7 @@ theorem isSubmersion_snd_composablePairs :
 pairs is `C^n`, for `n ≤ ∞`, exactly when both of its arrows are `C^n` functions of the point. -/
 theorem contMDiff_composablePairs_iff {F G X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [TopologicalSpace G] {K : ModelWithCorners ℝ F G} [TopologicalSpace X] [ChartedSpace G X]
-    {n : ℕ∞ω} (hn : n ≤ ∞)
-    {f : X → {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}} :
+    {n : ℕ∞ω} (hn : n ≤ ∞) {f : X → Quiver.Total.ComposablePairs C} :
     letI := composablePairsChartedSpace I J C
     ContMDiff K 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) n f ↔
       ContMDiff K J n (fun x ↦ (f x).val.1) ∧ ContMDiff K J n (fun x ↦ (f x).val.2) := by
@@ -489,7 +484,7 @@ theorem contMDiff_composablePairs_iff {F G X : Type*} [NormedAddCommGroup F] [No
 include I J in
 /-- Composable pairs of a Lie groupoid form a second-countable space in the subspace topology. -/
 theorem secondCountableTopology_composablePairs :
-    SecondCountableTopology {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} := by
+    SecondCountableTopology (Quiver.Total.ComposablePairs C) := by
   have := secondCountableTopology_arrows (I := I) (J := J) (C := C)
   exact Topology.IsEmbedding.subtypeVal.secondCountableTopology
 
@@ -557,7 +552,7 @@ arrows with equal source, with smooth inverse `(a, c) ↦ (a, a⁻¹ ≫ c)`. -/
 def shearLeftDiffeomorph :
     letI := composablePairsChartedSpace I J C
     letI := sameSourcePairsChartedSpace I J C
-    {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ≃ₘ^∞⟮
+    Quiver.Total.ComposablePairs C ≃ₘ^∞⟮
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ),
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)⟯
       {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left} :=
@@ -580,7 +575,7 @@ def shearLeftDiffeomorph :
       have := isManifold_composablePairs I J C
       have := isManifold_sameSourcePairs I J C
       exact ((isSmoothEmbedding_coe_sameSourcePairs I J C).contMDiff_iff_comp
-        (f := fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+        (f := fun p : Quiver.Total.ComposablePairs C ↦
           (⟨(p.val.1, p.val.1.comp p.val.2 p.property),
               (Quiver.Total.comp_left p.val.1 p.val.2 p.property).symm⟩ :
             {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left}))).2
@@ -593,7 +588,7 @@ def shearLeftDiffeomorph :
       have hemb₂ := isSmoothEmbedding_coe_sameSourcePairs I J C
       let divMap :
           {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left} →
-            {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} :=
+            Quiver.Total.ComposablePairs C :=
         fun q ↦ ⟨(⟨q.val.1.right, q.val.1.left, inv q.val.1.hom⟩, q.val.2), q.property⟩
       have hdiv : ContMDiff
           𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
@@ -609,12 +604,11 @@ def shearLeftDiffeomorph :
             (Quiver.Total.comp_left
               (⟨q.val.1.right, q.val.1.left, inv q.val.1.hom⟩ : Quiver.Total C) q.val.2
                 q.property).symm⟩ :
-            {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}))).2
+            Quiver.Total.ComposablePairs C))).2
         (hemb₂.contMDiff.fst.prodMk ((contMDiff_comp (I := I) (J := J) (C := C)).comp hdiv)) }
 
 @[simp]
-theorem shearLeftDiffeomorph_apply
-    (p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}) :
+theorem shearLeftDiffeomorph_apply (p : Quiver.Total.ComposablePairs C) :
     letI := composablePairsChartedSpace I J C
     letI := sameSourcePairsChartedSpace I J C
     shearLeftDiffeomorph I J C p =
@@ -628,8 +622,7 @@ theorem isSubmersion_comp :
     letI := composablePairsChartedSpace I J C
     Manifold.IsSubmersion
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J ∞
-      (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-        p.val.1.comp p.val.2 p.property) := by
+      (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1.comp p.val.2 p.property) := by
   let := composablePairsChartedSpace I J C
   let := sameSourcePairsChartedSpace I J C
   have := isManifold_composablePairs I J C
@@ -678,14 +671,16 @@ private theorem mdifferentiableAt_composablePairs_sections (x : C) :
     letI := composablePairsChartedSpace I J C
     let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
     MDifferentiableAt J K
-        (fun a : Quiver.Total C ↦ (⟨(a, ⟨a.right, a.right, 𝟙 a.right⟩), rfl⟩ :
-          {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})) ⟨x, x, 𝟙 x⟩ ∧
+        (fun a : Quiver.Total C ↦
+          (⟨(a, ⟨a.right, a.right, 𝟙 a.right⟩), rfl⟩ : Quiver.Total.ComposablePairs C))
+        ⟨x, x, 𝟙 x⟩ ∧
       MDifferentiableAt J K
-        (fun b : Quiver.Total C ↦ (⟨(⟨b.left, b.left, 𝟙 b.left⟩, b), rfl⟩ :
-          {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})) ⟨x, x, 𝟙 x⟩ ∧
+        (fun b : Quiver.Total C ↦
+          (⟨(⟨b.left, b.left, 𝟙 b.left⟩, b), rfl⟩ : Quiver.Total.ComposablePairs C))
+        ⟨x, x, 𝟙 x⟩ ∧
       MDifferentiableAt I K
-        (fun y : C ↦ (⟨(⟨y, y, 𝟙 y⟩, ⟨y, y, 𝟙 y⟩), rfl⟩ :
-          {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})) x := by
+        (fun y : C ↦
+          (⟨(⟨y, y, 𝟙 y⟩, ⟨y, y, 𝟙 y⟩), rfl⟩ : Quiver.Total.ComposablePairs C)) x := by
   let := composablePairsChartedSpace I J C
   have := isManifold_composablePairs I J C
   have hemb := isSmoothEmbedding_coe_composablePairs I J C
@@ -701,34 +696,35 @@ private theorem mdifferentiableAt_composablePairs_sections (x : C) :
 private theorem eq_linear_comb_mfderiv_composablePairs_unit (x : C) :
     letI := composablePairsChartedSpace I J C
     ∀ ξ : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
-        (⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ :
-          {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}),
+        (⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ : Quiver.Total.ComposablePairs C),
       ξ =
         mfderiv J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
-            (fun a : Quiver.Total C ↦ (⟨(a, ⟨a.right, a.right, 𝟙 a.right⟩), rfl⟩ :
-              {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})) ⟨x, x, 𝟙 x⟩
+            (fun a : Quiver.Total C ↦
+              (⟨(a, ⟨a.right, a.right, 𝟙 a.right⟩), rfl⟩ : Quiver.Total.ComposablePairs C))
+            ⟨x, x, 𝟙 x⟩
             (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
-              (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.1)
+              (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1)
               ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ ξ) +
           mfderiv J 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
-            (fun b : Quiver.Total C ↦ (⟨(⟨b.left, b.left, 𝟙 b.left⟩, b), rfl⟩ :
-              {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})) ⟨x, x, 𝟙 x⟩
+            (fun b : Quiver.Total C ↦
+              (⟨(⟨b.left, b.left, 𝟙 b.left⟩, b), rfl⟩ : Quiver.Total.ComposablePairs C))
+            ⟨x, x, 𝟙 x⟩
             (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
-              (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.2)
+              (fun p : Quiver.Total.ComposablePairs C ↦ p.val.2)
               ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ ξ) -
           mfderiv I 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
-            (fun y : C ↦ (⟨(⟨y, y, 𝟙 y⟩, ⟨y, y, 𝟙 y⟩), rfl⟩ :
-              {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})) x
+            (fun y : C ↦
+              (⟨(⟨y, y, 𝟙 y⟩, ⟨y, y, 𝟙 y⟩), rfl⟩ : Quiver.Total.ComposablePairs C)) x
             (mfderiv J I (Quiver.Total.right : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩
               (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
-                (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.1)
+                (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1)
                 ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ ξ)) := by
   let := composablePairsChartedSpace I J C
   have := isManifold_composablePairs I J C
   have hemb := isSmoothEmbedding_coe_composablePairs I J C
   let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
   let e : Quiver.Total C := ⟨x, x, 𝟙 x⟩
-  let p₀ : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} := ⟨(e, e), rfl⟩
+  let p₀ : Quiver.Total.ComposablePairs C := ⟨(e, e), rfl⟩
   rcases mdifferentiableAt_composablePairs_sections I J x with ⟨hρ, hlam, hδ⟩
   have hfst := (hemb.contMDiff.fst p₀).mdifferentiableAt (by simp)
   have hsnd := (hemb.contMDiff.snd p₀).mdifferentiableAt (by simp)
@@ -739,7 +735,7 @@ private theorem eq_linear_comb_mfderiv_composablePairs_unit (x : C) :
   set u := mfderiv K J (fun p ↦ p.val.1) p₀ ξ
   set w := mfderiv K J (fun p ↦ p.val.2) p₀ ξ
   have hts : (Quiver.Total.right : Quiver.Total C → C) ∘
-      (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.1) =
+      (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1) =
       (Quiver.Total.left : Quiver.Total C → C) ∘ (fun p ↦ p.val.2) := funext fun p ↦ p.property
   have huw : mfderiv J I (Quiver.Total.right : Quiver.Total C → C) e u =
       mfderiv J I (Quiver.Total.left : Quiver.Total C → C) e w :=
@@ -773,29 +769,27 @@ private theorem eq_linear_comb_mfderiv_composablePairs_unit (x : C) :
 theorem mfderiv_comp_unit (x : C) :
     letI := composablePairsChartedSpace I J C
     ∀ ξ : TangentSpace 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
-        (⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ :
-          {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}),
+        (⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ : Quiver.Total.ComposablePairs C),
       mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
-        (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-          p.val.1.comp p.val.2 p.property)
+        (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1.comp p.val.2 p.property)
         ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ ξ =
       mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
-          (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.1)
+          (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1)
           ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ ξ +
         mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
-          (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.2)
+          (fun p : Quiver.Total.ComposablePairs C ↦ p.val.2)
           ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ ξ -
         mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x
           (mfderiv J I (Quiver.Total.right : Quiver.Total C → C) ⟨x, x, 𝟙 x⟩
             (mfderiv 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) J
-              (fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦ p.val.1)
+              (fun p : Quiver.Total.ComposablePairs C ↦ p.val.1)
               ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩ ξ)) := by
   let := composablePairsChartedSpace I J C
   have := isManifold_composablePairs I J C
   let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
   let e : Quiver.Total C := ⟨x, x, 𝟙 x⟩
-  let p₀ : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} := ⟨(e, e), rfl⟩
-  let mMap : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} → Quiver.Total C :=
+  let p₀ : Quiver.Total.ComposablePairs C := ⟨(e, e), rfl⟩
+  let mMap : Quiver.Total.ComposablePairs C → Quiver.Total C :=
     fun p ↦ p.val.1.comp p.val.2 p.property
   rcases mdifferentiableAt_composablePairs_sections I J x with ⟨hρ, hlam, hδ⟩
   have hm := ((contMDiff_comp (I := I) (J := J) (C := C)) p₀).mdifferentiableAt (by simp)
@@ -840,12 +834,12 @@ theorem mfderiv_inverse_unit (x : C)
   have hemb := isSmoothEmbedding_coe_composablePairs I J C
   let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
   let e : Quiver.Total C := ⟨x, x, 𝟙 x⟩
-  let p₀ : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} := ⟨(e, e), rfl⟩
+  let p₀ : Quiver.Total.ComposablePairs C := ⟨(e, e), rfl⟩
   let uMap : C → Quiver.Total C := fun y ↦ ⟨y, y, 𝟙 y⟩
   let invMap : Quiver.Total C → Quiver.Total C := fun a ↦ ⟨a.right, a.left, inv a.hom⟩
-  let mMap : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} → Quiver.Total C :=
+  let mMap : Quiver.Total.ComposablePairs C → Quiver.Total C :=
     fun p ↦ p.val.1.comp p.val.2 p.property
-  let ι : Quiver.Total C → {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} :=
+  let ι : Quiver.Total C → Quiver.Total.ComposablePairs C :=
     fun a ↦ ⟨(a, invMap a), rfl⟩
   have hι := (((hemb.contMDiff_iff_comp (f := ι)).2
     (contMDiff_id.prodMk (contMDiff_inverse (I := I) (J := J) (C := C))))
@@ -859,8 +853,8 @@ theorem mfderiv_inverse_unit (x : C)
     Subtype.ext (Prod.ext rfl (Quiver.Total.ext rfl rfl (by simp [ι, invMap, p₀, e])))
   have hmι : mMap ∘ ι = uMap ∘ Quiver.Total.left := funext fun a ↦ a.comp_inv_self
   let ξ₀ : Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ := mfderiv J K ι e v
-  have hchain : ∀ (g : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} →
-      Quiver.Total C), MDifferentiableAt K J g (ι e) →
+  have hchain : ∀ (g : Quiver.Total.ComposablePairs C → Quiver.Total C),
+      MDifferentiableAt K J g (ι e) →
       (mfderiv K J g p₀ ξ₀ : E') = mfderiv J J (g ∘ ι) e v := fun g hg ↦
     (DFunLike.congr_fun (mfderiv_congr_point (I := K) (I' := J) (f := g) hιe).symm ξ₀).trans
       (DFunLike.congr_fun (mfderiv_comp e hg hι) v).symm
@@ -964,7 +958,9 @@ theorem isCompl_range_mfderiv_unit_ker_mfderiv_source (x : C) :
       (LinearMap.range (mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x).toLinearMap)
       (LinearMap.ker (mfderiv J I (Quiver.Total.left : Quiver.Total C → C)
         ⟨x, x, 𝟙 x⟩).toLinearMap) :=
-  isCompl_range_ker_of_leftInverse (mfderiv_source_mfderiv_unit I J x)
+  (LinearMap.bijective_comp_iff.mp (by
+    rw [show _ ∘ₗ _ = LinearMap.id from LinearMap.ext (mfderiv_source_mfderiv_unit I J x)]
+    exact Function.bijective_id)).2.1
 
 /-- At any identity arrow `⟨x, x, 𝟙 x⟩`, the arrow tangent space also splits as the internal direct
 sum of the unit tangent image `im(d1_x)` and the target-vertical kernel `ker(dt_{1_x})`. -/
@@ -973,7 +969,9 @@ theorem isCompl_range_mfderiv_unit_ker_mfderiv_target (x : C) :
       (LinearMap.range (mfderiv I J (fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C)) x).toLinearMap)
       (LinearMap.ker (mfderiv J I (Quiver.Total.right : Quiver.Total C → C)
         ⟨x, x, 𝟙 x⟩).toLinearMap) :=
-  isCompl_range_ker_of_leftInverse (mfderiv_target_mfderiv_unit I J x)
+  (LinearMap.bijective_comp_iff.mp (by
+    rw [show _ ∘ₗ _ = LinearMap.id from LinearMap.ext (mfderiv_target_mfderiv_unit I J x)]
+    exact Function.bijective_id)).2.1
 
 end UnitDifferentials
 

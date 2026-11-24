@@ -17,32 +17,40 @@ For a Lie groupoid `C` modelled on `I` (objects) and `J` (total arrows), this fi
 smooth geometry of the degree-2 and degree-3 levels of its simplicial nerve:
 
 * **Unit degeneracies and pair inversion on composable pairs**: the left, right, and diagonal unit
-  sections `leftUnitPair` (`b ↦ (1_{s(b)}, b)`), `rightUnitPair` (`a ↦ (a, 1_{t(a)})`), and
-  `unitPair` (`x ↦ (1_x, 1_x)`) are smooth embeddings into `ComposablePairs C`, and reversing and
-  inverting a composable pair `(a, b) ↦ (b⁻¹, a⁻¹)` is an involutive `C^∞` diffeomorphism
+  sections `Quiver.Total.leftUnitPair` (`b ↦ (1_{s(b)}, b)`), `Quiver.Total.rightUnitPair`
+  (`a ↦ (a, 1_{t(a)})`), and `Quiver.Total.unitPair` (`x ↦ (1_x, 1_x)`) are smooth embeddings into
+  `Quiver.Total.ComposablePairs C`, and reversing and inverting a composable pair
+  `(a, b) ↦ (b⁻¹, a⁻¹)` is an involutive `C^∞` diffeomorphism
   (`inverseComposablePairsDiffeomorph`) compatible with groupoid composition.
 * **Iterated transverse pullbacks of composable triples and smooth associativity**: both
-  parenthesizations `ComposableTriplesLeft C` (`((a, b), c)`) and `ComposableTriplesRight C`
-  (`(a, (b, c))`) carry canonical transverse fibre-product smooth atlases with universal properties
-  and submersive factor projections, and regrouping is a `C^∞` diffeomorphism
-  (`composableTriplesAssocDiffeomorph`).
-* **Simplicial face maps**: all four simplicial face maps `triplesFace₀`..`triplesFace₃` from
-  composable triples to composable pairs are smooth, with the outer faces `triplesFace₀` and
-  `triplesFace₃` smooth submersions and the inner faces satisfying `comp ∘ d₁ = comp ∘ d₂`
-  (`comp_triplesFace₁_eq_comp_triplesFace₂`).
+  parenthesizations `Quiver.Total.ComposableTriplesLeft C` (`((a, b), c)`) and
+  `Quiver.Total.ComposableTriplesRight C` (`(a, (b, c))`) carry canonical transverse fibre-product
+  smooth atlases with universal properties, both factor projections of `ComposableTriplesLeft C` and
+  the `(b, c)` factor projection of `ComposableTriplesRight C` are smooth submersions, and
+  regrouping is a `C^∞` diffeomorphism (`composableTriplesAssocDiffeomorph`).
+* **Simplicial face maps**: all four simplicial face maps `Quiver.Total.triplesFace₀`..
+  `Quiver.Total.triplesFace₃` from composable triples to composable pairs are smooth, with the outer
+  faces `triplesFace₀` and `triplesFace₃` smooth submersions.
 
-## Main definitions
+## Main declarations
 
-* `TauCeti.IsLieGroupoid.ComposablePairs`, `TauCeti.IsLieGroupoid.leftUnitPair`,
-  `TauCeti.IsLieGroupoid.rightUnitPair`, `TauCeti.IsLieGroupoid.unitPair`.
+* `TauCeti.IsLieGroupoid.isSmoothEmbedding_leftUnitPair`,
+  `TauCeti.IsLieGroupoid.isSmoothEmbedding_rightUnitPair`,
+  `TauCeti.IsLieGroupoid.isSmoothEmbedding_unitPair`: smooth unit-pair embeddings into
+  `Quiver.Total.ComposablePairs`.
 * `TauCeti.IsLieGroupoid.inverseComposablePairsDiffeomorph`: involutive diffeomorphism
   `(a, b) ↦ (b⁻¹, a⁻¹)` of composable pairs.
-* `TauCeti.IsLieGroupoid.ComposableTriplesLeft`, `TauCeti.IsLieGroupoid.ComposableTriplesRight`,
+* `TauCeti.IsLieGroupoid.ComposableTriplesLeftModel`,
+  `TauCeti.IsLieGroupoid.ComposableTriplesRightModel`,
   `TauCeti.IsLieGroupoid.composableTriplesLeftChartedSpace`,
   `TauCeti.IsLieGroupoid.composableTriplesRightChartedSpace`,
-  `TauCeti.IsLieGroupoid.composableTriplesAssocDiffeomorph`.
-* `TauCeti.IsLieGroupoid.triplesFace₀`, `TauCeti.IsLieGroupoid.triplesFace₁`,
-  `TauCeti.IsLieGroupoid.triplesFace₂`, `TauCeti.IsLieGroupoid.triplesFace₃`.
+  `TauCeti.IsLieGroupoid.composableTriplesAssocDiffeomorph`: transverse fibre-product smooth atlases
+  on `Quiver.Total.ComposableTriplesLeft` and `Quiver.Total.ComposableTriplesRight`, and the
+  regrouping diffeomorphism.
+* `TauCeti.IsLieGroupoid.isSubmersion_triplesFace₀`,
+  `TauCeti.IsLieGroupoid.contMDiff_triplesFace₁`, `TauCeti.IsLieGroupoid.contMDiff_triplesFace₂`,
+  `TauCeti.IsLieGroupoid.isSubmersion_triplesFace₃`: smoothness and outer-face submersion properties
+  of the simplicial face maps on composable triples.
 
 ## References
 
@@ -57,71 +65,11 @@ public section
 noncomputable section
 
 open CategoryTheory Function Module
+open Quiver.Total (ComposablePairs ComposableTriplesLeft ComposableTriplesRight leftUnitPair
+  rightUnitPair unitPair triplesFace₀ triplesFace₁ triplesFace₂ triplesFace₃)
 open scoped Manifold ContDiff
 
 namespace TauCeti.IsLieGroupoid
-
-/-- Composable pairs of total arrows in categorical order: the target of the first arrow equals the
-source of the second. -/
-abbrev ComposablePairs (C : Type*) [Quiver C] : Type _ :=
-  {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}
-
-/-- Left unit degeneracy `b ↦ (1_{s(b)}, b)` into composable pairs. -/
-abbrev leftUnitPair {C : Type*} [Category C] (b : Quiver.Total C) : ComposablePairs C :=
-  ⟨(⟨b.left, b.left, 𝟙 b.left⟩, b), rfl⟩
-
-/-- Right unit degeneracy `a ↦ (a, 1_{t(a)})` into composable pairs. -/
-abbrev rightUnitPair {C : Type*} [Category C] (a : Quiver.Total C) : ComposablePairs C :=
-  ⟨(a, ⟨a.right, a.right, 𝟙 a.right⟩), rfl⟩
-
-/-- Diagonal unit degeneracy `x ↦ (1_x, 1_x)` from objects into composable pairs. -/
-abbrev unitPair {C : Type*} [Category C] (x : C) : ComposablePairs C :=
-  ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩
-
-@[simp]
-theorem leftUnitPair_fst {C : Type*} [Category C] (b : Quiver.Total C) :
-    (leftUnitPair b).val.1 = ⟨b.left, b.left, 𝟙 b.left⟩ :=
-  (rfl)
-
-@[simp]
-theorem leftUnitPair_snd {C : Type*} [Category C] (b : Quiver.Total C) :
-    (leftUnitPair b).val.2 = b :=
-  (rfl)
-
-@[simp]
-theorem rightUnitPair_fst {C : Type*} [Category C] (a : Quiver.Total C) :
-    (rightUnitPair a).val.1 = a :=
-  (rfl)
-
-@[simp]
-theorem rightUnitPair_snd {C : Type*} [Category C] (a : Quiver.Total C) :
-    (rightUnitPair a).val.2 = ⟨a.right, a.right, 𝟙 a.right⟩ :=
-  (rfl)
-
-@[simp]
-theorem unitPair_fst {C : Type*} [Category C] (x : C) :
-    (unitPair x).val.1 = ⟨x, x, 𝟙 x⟩ :=
-  (rfl)
-
-@[simp]
-theorem unitPair_snd {C : Type*} [Category C] (x : C) :
-    (unitPair x).val.2 = ⟨x, x, 𝟙 x⟩ :=
-  (rfl)
-
-/-- Composing the arrows of `leftUnitPair b` recovers `b`. -/
-theorem comp_leftUnitPair {C : Type*} [Category C] (b : Quiver.Total C) :
-    (leftUnitPair b).val.1.comp (leftUnitPair b).val.2 (leftUnitPair b).property = b :=
-  b.unit_comp
-
-/-- Composing the arrows of `rightUnitPair a` recovers `a`. -/
-theorem comp_rightUnitPair {C : Type*} [Category C] (a : Quiver.Total C) :
-    (rightUnitPair a).val.1.comp (rightUnitPair a).val.2 (rightUnitPair a).property = a :=
-  a.comp_unit
-
-/-- Composing the arrows of `unitPair x` recovers the identity arrow `1_x`. -/
-theorem comp_unitPair {C : Type*} [Category C] (x : C) :
-    (unitPair x).val.1.comp (unitPair x).val.2 (unitPair x).property = ⟨x, x, 𝟙 x⟩ :=
-  (⟨x, x, 𝟙 x⟩ : Quiver.Total C).unit_comp
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [I.Boundaryless]
@@ -250,16 +198,6 @@ theorem comp_inverseComposablePairsDiffeomorph (p : ComposablePairs C) :
 
 /-! ### Composable triples and smooth associativity -/
 
-/-- Left-parenthesized composable triples `((a, b), c)` with `a.right = b.left` and
-`b.right = c.left`. -/
-abbrev ComposableTriplesLeft (C : Type*) [Quiver C] : Type _ :=
-  {p : ComposablePairs C × Quiver.Total C // p.1.val.2.right = p.2.left}
-
-/-- Right-parenthesized composable triples `(a, (b, c))` with `b.right = c.left` and
-`a.right = b.left`. -/
-abbrev ComposableTriplesRight (C : Type*) [Quiver C] : Type _ :=
-  {p : Quiver.Total C × ComposablePairs C // p.1.right = p.2.val.1.left}
-
 /-- Euclidean model space for left-parenthesized composable triples. -/
 abbrev ComposableTriplesLeftModel (E E' : Type*) [AddCommGroup E] [Module ℝ E]
     [AddCommGroup E'] [Module ℝ E'] : Type :=
@@ -284,17 +222,49 @@ def composableTriplesLeftChartedSpace :
     (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
       (isSubmersion_source (I := I) (J := J) (C := C)) p)
 
+-- `composableTriplesLeftChartedSpace` carries `@[expose]`, so Lean's `module` visibility rules
+-- forbid referencing `private` declarations in its body; all four smooth properties below share
+-- the smoothness and transversality data bound once in this `private` bundle.
+private theorem composableTriplesLeft_bundle :
+    letI := composablePairsChartedSpace I J C
+    letI := composableTriplesLeftChartedSpace I J C
+    IsManifold 𝓘(ℝ, ComposableTriplesLeftModel E E') ∞ (ComposableTriplesLeft C) ∧
+      Manifold.IsSmoothEmbedding 𝓘(ℝ, ComposableTriplesLeftModel E E')
+        (𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ).prod J) ∞
+        (Subtype.val : ComposableTriplesLeft C → ComposablePairs C × Quiver.Total C) ∧
+      Manifold.IsSubmersion 𝓘(ℝ, ComposableTriplesLeftModel E E')
+        𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
+        (fun p : ComposableTriplesLeft C ↦ p.val.1) ∧
+      Manifold.IsSubmersion 𝓘(ℝ, ComposableTriplesLeftModel E E') J ∞
+        (fun p : ComposableTriplesLeft C ↦ p.val.2) := by
+  let := composablePairsChartedSpace I J C
+  have := isManifold_composablePairs I J C
+  let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+  have hsnd := isSubmersion_snd_composablePairs I J C
+  have hf : ContMDiff K I ∞ (fun q : ComposablePairs C ↦ q.val.2.right) :=
+    (contMDiff_target I J C).comp hsnd.contMDiff
+  have hg := contMDiff_source I J C
+  have htrans := fun (p : ComposablePairs C × Quiver.Total C) (_ : p.1.val.2.right = p.2.left) ↦
+    transverse_of_isSubmersion_right (IX := K)
+      (f := fun q : ComposablePairs C ↦ q.val.2.right) (n := ∞) (by simp)
+      (isSubmersion_source (I := I) (J := J) (C := C)) p
+  refine ⟨isManifold_transverseFiberProduct (n := ∞) (by simp) hf hg htrans,
+    isSmoothEmbedding_coe_transverseFiberProduct (n := ∞) (by simp) hf hg htrans,
+    isSubmersion_fst_transverseFiberProduct (n := ∞) (by simp) hf hg htrans
+      (isSubmersion_source (I := I) (J := J) (C := C)),
+    isSubmersion_snd_transverseFiberProduct (n := ∞) (by simp) hf hg htrans ?_⟩
+  refine (hf.isSubmersionOfComplement_of_surjective_mfderiv (by simp) fun q ↦ ?_).isSubmersion
+  rw [show (fun q : ComposablePairs C ↦ q.val.2.right) =
+      Quiver.Total.right ∘ (fun q : ComposablePairs C ↦ q.val.2) from rfl,
+    mfderiv_comp q ((contMDiff_target I J C _).mdifferentiableAt (by simp))
+      ((hsnd.contMDiff q).mdifferentiableAt (by simp))]
+  exact (surjective_mfderiv_target I J C q.val.2).comp (hsnd.surjective_mfderiv (by simp) q)
+
 /-- Left-parenthesized composable triples form a smooth manifold. -/
 theorem isManifold_composableTriplesLeft :
     letI := composableTriplesLeftChartedSpace I J C
     IsManifold 𝓘(ℝ, ComposableTriplesLeftModel E E') ∞ (ComposableTriplesLeft C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
-  isManifold_transverseFiberProduct (n := ∞) (by simp)
-    ((contMDiff_target I J C).comp (isSubmersion_snd_composablePairs I J C).contMDiff)
-    (contMDiff_source I J C)
-    (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
-      (isSubmersion_source (I := I) (J := J) (C := C)) p)
+  (composableTriplesLeft_bundle I J C).1
 
 /-- Inclusion of left-parenthesized composable triples into `ComposablePairs C × Quiver.Total C` is
 a smooth embedding. -/
@@ -304,13 +274,7 @@ theorem isSmoothEmbedding_coe_composableTriplesLeft :
     Manifold.IsSmoothEmbedding 𝓘(ℝ, ComposableTriplesLeftModel E E')
       (𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ).prod J) ∞
       (Subtype.val : ComposableTriplesLeft C → ComposablePairs C × Quiver.Total C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
-  isSmoothEmbedding_coe_transverseFiberProduct (n := ∞) (by simp)
-    ((contMDiff_target I J C).comp (isSubmersion_snd_composablePairs I J C).contMDiff)
-    (contMDiff_source I J C)
-    (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
-      (isSubmersion_source (I := I) (J := J) (C := C)) p)
+  (composableTriplesLeft_bundle I J C).2.1
 
 /-- The first factor projection `((a, b), c) ↦ (a, b)` on left-parenthesized composable triples is a
 smooth submersion. -/
@@ -320,33 +284,15 @@ theorem isSubmersion_fst_composableTriplesLeft :
     Manifold.IsSubmersion 𝓘(ℝ, ComposableTriplesLeftModel E E')
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (fun p : ComposableTriplesLeft C ↦ p.val.1) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
-  isSubmersion_fst_transverseFiberProduct (n := ∞) (by simp)
-    ((contMDiff_target I J C).comp (isSubmersion_snd_composablePairs I J C).contMDiff)
-    (contMDiff_source I J C)
-    (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
-      (isSubmersion_source (I := I) (J := J) (C := C)) p)
-    (isSubmersion_source (I := I) (J := J) (C := C))
+  (composableTriplesLeft_bundle I J C).2.2.1
 
 /-- The last-arrow projection `((a, b), c) ↦ c` on left-parenthesized composable triples is a smooth
 submersion. -/
 theorem isSubmersion_snd_composableTriplesLeft :
     letI := composableTriplesLeftChartedSpace I J C
     Manifold.IsSubmersion 𝓘(ℝ, ComposableTriplesLeftModel E E') J ∞
-      (fun p : ComposableTriplesLeft C ↦ p.val.2) := by
-  let := composablePairsChartedSpace I J C
-  have := isManifold_composablePairs I J C
-  have hsnd := isSubmersion_snd_composablePairs I J C
-  refine isSubmersion_snd_transverseFiberProduct (n := ∞) (by simp)
-    ((contMDiff_target I J C).comp hsnd.contMDiff) (contMDiff_source I J C)
-    (fun p _ ↦ transverse_of_isSubmersion_right (by simp)
-      (isSubmersion_source (I := I) (J := J) (C := C)) p) ?_
-  refine (((contMDiff_target I J C).comp hsnd.contMDiff)
-    |>.isSubmersionOfComplement_of_surjective_mfderiv (by simp) fun q ↦ ?_).isSubmersion
-  rw [mfderiv_comp q ((contMDiff_target I J C _).mdifferentiableAt (by simp))
-    ((hsnd.contMDiff q).mdifferentiableAt (by simp))]
-  exact (surjective_mfderiv_target I J C q.val.2).comp (hsnd.surjective_mfderiv (by simp) q)
+      (fun p : ComposableTriplesLeft C ↦ p.val.2) :=
+  (composableTriplesLeft_bundle I J C).2.2.2
 
 /-- **Universal property of `ComposableTriplesLeft C`.** A map into left-parenthesized composable
 triples is `C^n` (`n ≤ ∞`) if and only if all three component arrow maps are `C^n`. -/
@@ -364,8 +310,7 @@ theorem contMDiff_composableTriplesLeft_iff {F G X : Type*} [NormedAddCommGroup 
   have := isManifold_composableTriplesLeft I J C
   rw [((isSmoothEmbedding_coe_composableTriplesLeft I J C).of_le hn).contMDiff_iff_comp,
     contMDiff_prod_iff]
-  change (ContMDiff K _ n fun x ↦ (f x).val.1) ∧ (ContMDiff K J n fun x ↦ (f x).val.2) ↔ _
-  rw [contMDiff_composablePairs_iff I J C hn, and_assoc]
+  simp only [Function.comp_def, contMDiff_composablePairs_iff I J C hn, and_assoc]
 
 /-- Transverse fibre-product smooth atlas on right-parenthesized composable triples. -/
 @[expose, instance_reducible]
@@ -378,16 +323,39 @@ def composableTriplesRightChartedSpace :
     ((contMDiff_source I J C).comp (isSubmersion_fst_composablePairs I J C).contMDiff)
     (fun p _ ↦ transverse_of_isSubmersion_left (by simp) (isSubmersion_target I J C) p)
 
+-- As on the left, `composableTriplesRightChartedSpace` carries `@[expose]`, while the three smooth
+-- properties below share the smoothness and transversality data bound once in this `private`
+-- bundle.
+private theorem composableTriplesRight_bundle :
+    letI := composablePairsChartedSpace I J C
+    letI := composableTriplesRightChartedSpace I J C
+    IsManifold 𝓘(ℝ, ComposableTriplesRightModel E E') ∞ (ComposableTriplesRight C) ∧
+      Manifold.IsSmoothEmbedding 𝓘(ℝ, ComposableTriplesRightModel E E')
+        (J.prod 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)) ∞
+        (Subtype.val : ComposableTriplesRight C → Quiver.Total C × ComposablePairs C) ∧
+      Manifold.IsSubmersion 𝓘(ℝ, ComposableTriplesRightModel E E')
+        𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
+        (fun p : ComposableTriplesRight C ↦ p.val.2) := by
+  let := composablePairsChartedSpace I J C
+  have := isManifold_composablePairs I J C
+  let K := 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)
+  have hf := contMDiff_target I J C
+  have hg : ContMDiff K I ∞ (fun q : ComposablePairs C ↦ q.val.1.left) :=
+    (contMDiff_source I J C).comp (isSubmersion_fst_composablePairs I J C).contMDiff
+  have htrans := fun (p : Quiver.Total C × ComposablePairs C) (_ : p.1.right = p.2.val.1.left) ↦
+    transverse_of_isSubmersion_left (IY := K)
+      (g := fun q : ComposablePairs C ↦ q.val.1.left) (n := ∞) (by simp)
+      (isSubmersion_target I J C) p
+  exact ⟨isManifold_transverseFiberProduct (n := ∞) (by simp) hf hg htrans,
+    isSmoothEmbedding_coe_transverseFiberProduct (n := ∞) (by simp) hf hg htrans,
+    isSubmersion_snd_transverseFiberProduct (n := ∞) (by simp) hf hg htrans
+      (isSubmersion_target I J C)⟩
+
 /-- Right-parenthesized composable triples form a smooth manifold. -/
 theorem isManifold_composableTriplesRight :
     letI := composableTriplesRightChartedSpace I J C
     IsManifold 𝓘(ℝ, ComposableTriplesRightModel E E') ∞ (ComposableTriplesRight C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
-  isManifold_transverseFiberProduct (n := ∞) (by simp)
-    (contMDiff_target I J C)
-    ((contMDiff_source I J C).comp (isSubmersion_fst_composablePairs I J C).contMDiff)
-    (fun p _ ↦ transverse_of_isSubmersion_left (by simp) (isSubmersion_target I J C) p)
+  (composableTriplesRight_bundle I J C).1
 
 /-- Inclusion of right-parenthesized composable triples into `Quiver.Total C × ComposablePairs C` is
 a smooth embedding. -/
@@ -397,12 +365,7 @@ theorem isSmoothEmbedding_coe_composableTriplesRight :
     Manifold.IsSmoothEmbedding 𝓘(ℝ, ComposableTriplesRightModel E E')
       (J.prod 𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ)) ∞
       (Subtype.val : ComposableTriplesRight C → Quiver.Total C × ComposablePairs C) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
-  isSmoothEmbedding_coe_transverseFiberProduct (n := ∞) (by simp)
-    (contMDiff_target I J C)
-    ((contMDiff_source I J C).comp (isSubmersion_fst_composablePairs I J C).contMDiff)
-    (fun p _ ↦ transverse_of_isSubmersion_left (by simp) (isSubmersion_target I J C) p)
+  (composableTriplesRight_bundle I J C).2.1
 
 /-- The second factor projection `(a, (b, c)) ↦ (b, c)` on right-parenthesized composable triples is
 a smooth submersion. -/
@@ -412,13 +375,7 @@ theorem isSubmersion_snd_composableTriplesRight :
     Manifold.IsSubmersion 𝓘(ℝ, ComposableTriplesRightModel E E')
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
       (fun p : ComposableTriplesRight C ↦ p.val.2) :=
-  letI := composablePairsChartedSpace I J C
-  haveI := isManifold_composablePairs I J C
-  isSubmersion_snd_transverseFiberProduct (n := ∞) (by simp)
-    (contMDiff_target I J C)
-    ((contMDiff_source I J C).comp (isSubmersion_fst_composablePairs I J C).contMDiff)
-    (fun p _ ↦ transverse_of_isSubmersion_left (by simp) (isSubmersion_target I J C) p)
-    (isSubmersion_target I J C)
+  (composableTriplesRight_bundle I J C).2.2
 
 /-- **Universal property of `ComposableTriplesRight C`.** A map into right-parenthesized composable
 triples is `C^n` (`n ≤ ∞`) if and only if all three component arrow maps are `C^n`. -/
@@ -436,8 +393,7 @@ theorem contMDiff_composableTriplesRight_iff {F G X : Type*} [NormedAddCommGroup
   have := isManifold_composableTriplesRight I J C
   rw [((isSmoothEmbedding_coe_composableTriplesRight I J C).of_le hn).contMDiff_iff_comp,
     contMDiff_prod_iff]
-  change (ContMDiff K J n fun x ↦ (f x).val.1) ∧ (ContMDiff K _ n fun x ↦ (f x).val.2) ↔ _
-  rw [contMDiff_composablePairs_iff I J C hn]
+  simp only [Function.comp_def, contMDiff_composablePairs_iff I J C hn]
 
 /-- **Smooth associativity of composable triples.** Regrouping `((a, b), c) ↦ (a, (b, c))` is a
 `C^∞` diffeomorphism between the two iterated transverse fibre products of composable triples. -/
@@ -482,67 +438,7 @@ theorem composableTriplesAssocDiffeomorph_symm_apply (p : ComposableTriplesRight
     (isSmoothEmbedding_coe_composableTriplesLeft I J C)
     (isSmoothEmbedding_coe_composableTriplesRight I J C) p
 
-/-! ### Simplicial face maps on composable triples -/
-
-/-- Zeroth face map `((a, b), c) ↦ (b, c)` dropping the first arrow. -/
-def triplesFace₀ {C : Type*} [Quiver C] (t : ComposableTriplesLeft C) : ComposablePairs C :=
-  ⟨(t.val.1.val.2, t.val.2), t.property⟩
-
-/-- First face map `((a, b), c) ↦ (a ≫ b, c)` composing the first two arrows. -/
-def triplesFace₁ {C : Type*} [Category C] (t : ComposableTriplesLeft C) : ComposablePairs C :=
-  ⟨(t.val.1.val.1.comp t.val.1.val.2 t.val.1.property, t.val.2),
-    (t.val.1.val.1.comp_right t.val.1.val.2 t.val.1.property).trans t.property⟩
-
-/-- Second face map `((a, b), c) ↦ (a, b ≫ c)` composing the last two arrows. -/
-def triplesFace₂ {C : Type*} [Category C] (t : ComposableTriplesLeft C) : ComposablePairs C :=
-  ⟨(t.val.1.val.1, t.val.1.val.2.comp t.val.2 t.property),
-    t.val.1.property.trans (t.val.1.val.2.comp_left t.val.2 t.property).symm⟩
-
-/-- Third face map `((a, b), c) ↦ (a, b)` dropping the last arrow. -/
-def triplesFace₃ {C : Type*} [Quiver C] (t : ComposableTriplesLeft C) : ComposablePairs C :=
-  t.val.1
-
-@[simp]
-theorem triplesFace₀_fst {C : Type*} [Quiver C] (t : ComposableTriplesLeft C) :
-    (triplesFace₀ t).val.1 = t.val.1.val.2 :=
-  (rfl)
-
-@[simp]
-theorem triplesFace₀_snd {C : Type*} [Quiver C] (t : ComposableTriplesLeft C) :
-    (triplesFace₀ t).val.2 = t.val.2 :=
-  (rfl)
-
-@[simp]
-theorem triplesFace₁_fst {C : Type*} [Category C] (t : ComposableTriplesLeft C) :
-    (triplesFace₁ t).val.1 = t.val.1.val.1.comp t.val.1.val.2 t.val.1.property :=
-  (rfl)
-
-@[simp]
-theorem triplesFace₁_snd {C : Type*} [Category C] (t : ComposableTriplesLeft C) :
-    (triplesFace₁ t).val.2 = t.val.2 :=
-  (rfl)
-
-@[simp]
-theorem triplesFace₂_fst {C : Type*} [Category C] (t : ComposableTriplesLeft C) :
-    (triplesFace₂ t).val.1 = t.val.1.val.1 :=
-  (rfl)
-
-@[simp]
-theorem triplesFace₂_snd {C : Type*} [Category C] (t : ComposableTriplesLeft C) :
-    (triplesFace₂ t).val.2 = t.val.1.val.2.comp t.val.2 t.property :=
-  (rfl)
-
-@[simp]
-theorem triplesFace₃_eq {C : Type*} [Quiver C] (t : ComposableTriplesLeft C) :
-    triplesFace₃ t = t.val.1 :=
-  (rfl)
-
-/-- Simplicial associativity identity `comp ∘ d₁ = comp ∘ d₂` on composable triples. -/
-theorem comp_triplesFace₁_eq_comp_triplesFace₂ {C : Type*} [Category C]
-    (t : ComposableTriplesLeft C) :
-    (triplesFace₁ t).val.1.comp (triplesFace₁ t).val.2 (triplesFace₁ t).property =
-      (triplesFace₂ t).val.1.comp (triplesFace₂ t).val.2 (triplesFace₂ t).property :=
-  Quiver.Total.comp_assoc t.val.1.val.1 t.val.1.val.2 t.val.2 t.val.1.property t.property _ _
+/-! ### Smoothness and submersions of simplicial face maps on composable triples -/
 
 /-- The zeroth simplicial face map `((a, b), c) ↦ (b, c)` is smooth. -/
 theorem contMDiff_triplesFace₀ :
@@ -555,7 +451,8 @@ theorem contMDiff_triplesFace₀ :
   let := composableTriplesLeftChartedSpace I J C
   obtain ⟨_, hb, hc⟩ :=
     (contMDiff_composableTriplesLeft_iff I J C le_rfl (f := id)).mp contMDiff_id
-  exact (contMDiff_composablePairs_iff I J C le_rfl).mpr ⟨hb, hc⟩
+  rw [contMDiff_composablePairs_iff I J C le_rfl]
+  simpa only [Quiver.Total.triplesFace₀_fst, Quiver.Total.triplesFace₀_snd] using ⟨hb, hc⟩
 
 /-- The zeroth simplicial face map `((a, b), c) ↦ (b, c)` is a smooth submersion: under
 `composableTriplesAssocDiffeomorph` it is the second projection of `ComposableTriplesRight C`. -/
@@ -576,7 +473,8 @@ theorem isSubmersion_triplesFace₀ :
   refine ((contMDiff_triplesFace₀ I J C).isSubmersionOfComplement_of_surjective_mfderiv
     (by simp) fun t ↦ ?_).isSubmersion
   have heq : (triplesFace₀ : ComposableTriplesLeft C → ComposablePairs C) =
-      (fun q : ComposableTriplesRight C ↦ q.val.2) ∘ e := funext fun p ↦ by simp [e, triplesFace₀]
+      (fun q : ComposableTriplesRight C ↦ q.val.2) ∘ e :=
+    funext fun p ↦ Subtype.ext (Prod.ext (by simp [e]) (by simp [e]))
   rw [heq, mfderiv_comp t ((hsnd.contMDiff (e t)).mdifferentiableAt (by simp))
     ((e.contMDiff t).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp]
   exact (hsnd.surjective_mfderiv (by simp) (e t)).comp
@@ -588,8 +486,9 @@ theorem isSubmersion_triplesFace₃ :
     letI := composableTriplesLeftChartedSpace I J C
     Manifold.IsSubmersion 𝓘(ℝ, ComposableTriplesLeftModel E E')
       𝓘(ℝ, Fin (finrank ℝ E' + finrank ℝ E' - finrank ℝ E) → ℝ) ∞
-      (triplesFace₃ : ComposableTriplesLeft C → ComposablePairs C) :=
-  isSubmersion_fst_composableTriplesLeft I J C
+      (triplesFace₃ : ComposableTriplesLeft C → ComposablePairs C) := by
+  rw [funext Quiver.Total.triplesFace₃_eq]
+  exact isSubmersion_fst_composableTriplesLeft I J C
 
 /-- The third simplicial face map `((a, b), c) ↦ (a, b)` is smooth. -/
 theorem contMDiff_triplesFace₃ :
@@ -613,7 +512,8 @@ theorem contMDiff_triplesFace₁ :
   let := composableTriplesLeftChartedSpace I J C
   obtain ⟨ha, hb, hc⟩ :=
     (contMDiff_composableTriplesLeft_iff I J C le_rfl (f := id)).mp contMDiff_id
-  exact (contMDiff_composablePairs_iff I J C le_rfl).mpr
+  rw [contMDiff_composablePairs_iff I J C le_rfl]
+  simpa only [Quiver.Total.triplesFace₁_fst, Quiver.Total.triplesFace₁_snd] using
     ⟨ha.totalComp I J C le_rfl hb fun t ↦ t.val.1.property, hc⟩
 
 /-- The second simplicial face map `((a, b), c) ↦ (a, b ≫ c)` is smooth. -/
@@ -627,7 +527,8 @@ theorem contMDiff_triplesFace₂ :
   let := composableTriplesLeftChartedSpace I J C
   obtain ⟨ha, hb, hc⟩ :=
     (contMDiff_composableTriplesLeft_iff I J C le_rfl (f := id)).mp contMDiff_id
-  exact (contMDiff_composablePairs_iff I J C le_rfl).mpr
+  rw [contMDiff_composablePairs_iff I J C le_rfl]
+  simpa only [Quiver.Total.triplesFace₂_fst, Quiver.Total.triplesFace₂_snd] using
     ⟨ha, hb.totalComp I J C le_rfl hc fun t ↦ t.property⟩
 
 end TauCeti.IsLieGroupoid

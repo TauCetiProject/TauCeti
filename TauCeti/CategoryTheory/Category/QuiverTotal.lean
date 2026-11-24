@@ -34,10 +34,18 @@ function of the source over the arrows `Quiver.Costar x` with target `x`
 
 ## Main declarations
 
+* `Quiver.Total.ComposablePairs`, `Quiver.Total.ComposableTriplesLeft`,
+  `Quiver.Total.ComposableTriplesRight`: subtypes of composable pairs and left- or
+  right-parenthesized composable triples of total arrows of a quiver.
 * `Quiver.Total.comp`: the composite of two composable total arrows of a category, with its unit
   and associativity laws (`Quiver.Total.unit_comp`, `Quiver.Total.comp_unit`,
   `Quiver.Total.comp_assoc`), and surjectivity of source and target (`Quiver.Total.left_surjective`,
   `Quiver.Total.right_surjective`).
+* `Quiver.Total.leftUnitPair`, `Quiver.Total.rightUnitPair`, `Quiver.Total.unitPair`: unit
+  degeneracies into `Quiver.Total.ComposablePairs`, with their component and composition lemmas.
+* `Quiver.Total.triplesFace₀`, `Quiver.Total.triplesFace₁`, `Quiver.Total.triplesFace₂`,
+  `Quiver.Total.triplesFace₃`: simplicial face maps from `Quiver.Total.ComposableTriplesLeft` to
+  `Quiver.Total.ComposablePairs`, satisfying `Quiver.Total.comp_triplesFace₁_eq_comp_triplesFace₂`.
 * `Quiver.Total.comp_inv_self`, `Quiver.Total.inv_comp_self`, `Quiver.Total.comp_inv_comp`,
   `Quiver.Total.inv_comp_comp`, `Quiver.Total.comp_comp_inv`, `Quiver.Total.comp_inv_comp_right`,
   `Quiver.Total.inv_comp`: in a groupoid, unit-inverse, cancellation, and anti-homomorphism laws
@@ -52,7 +60,45 @@ namespace Quiver.Total
 
 section Quiver
 
+/-- Composable pairs of total arrows in categorical order: the target of the first arrow equals the
+source of the second. -/
+abbrev ComposablePairs (V : Type*) [Quiver V] : Type _ :=
+  {p : Quiver.Total V × Quiver.Total V // p.1.right = p.2.left}
+
+/-- Left-parenthesized composable triples `((a, b), c)` with `a.right = b.left` and
+`b.right = c.left`. -/
+abbrev ComposableTriplesLeft (V : Type*) [Quiver V] : Type _ :=
+  {p : ComposablePairs V × Quiver.Total V // p.1.val.2.right = p.2.left}
+
+/-- Right-parenthesized composable triples `(a, (b, c))` with `b.right = c.left` and
+`a.right = b.left`. -/
+abbrev ComposableTriplesRight (V : Type*) [Quiver V] : Type _ :=
+  {p : Quiver.Total V × ComposablePairs V // p.1.right = p.2.val.1.left}
+
 variable {V : Type*} [Quiver V]
+
+/-- Zeroth face map `((a, b), c) ↦ (b, c)` dropping the first arrow. -/
+def triplesFace₀ (t : ComposableTriplesLeft V) : ComposablePairs V :=
+  ⟨(t.val.1.val.2, t.val.2), t.property⟩
+
+/-- Third face map `((a, b), c) ↦ (a, b)` dropping the last arrow. -/
+def triplesFace₃ (t : ComposableTriplesLeft V) : ComposablePairs V :=
+  t.val.1
+
+@[simp]
+theorem triplesFace₀_fst (t : ComposableTriplesLeft V) :
+    (triplesFace₀ t).val.1 = t.val.1.val.2 :=
+  (rfl)
+
+@[simp]
+theorem triplesFace₀_snd (t : ComposableTriplesLeft V) :
+    (triplesFace₀ t).val.2 = t.val.2 :=
+  (rfl)
+
+@[simp]
+theorem triplesFace₃_eq (t : ComposableTriplesLeft V) :
+    triplesFace₃ t = t.val.1 :=
+  (rfl)
 
 /-- A total arrow, read as a morphism between objects equal to its endpoints, is again the
 same total arrow. -/
@@ -181,6 +227,99 @@ theorem left_surjective : Function.Surjective (Quiver.Total.left : Quiver.Total 
 arrows as right inverse. -/
 theorem right_surjective : Function.Surjective (Quiver.Total.right : Quiver.Total C → C) :=
   fun x ↦ ⟨⟨x, x, 𝟙 x⟩, rfl⟩
+
+/-- Left unit degeneracy `b ↦ (1_{s(b)}, b)` into composable pairs. -/
+abbrev leftUnitPair (b : Quiver.Total C) : ComposablePairs C :=
+  ⟨(⟨b.left, b.left, 𝟙 b.left⟩, b), rfl⟩
+
+/-- Right unit degeneracy `a ↦ (a, 1_{t(a)})` into composable pairs. -/
+abbrev rightUnitPair (a : Quiver.Total C) : ComposablePairs C :=
+  ⟨(a, ⟨a.right, a.right, 𝟙 a.right⟩), rfl⟩
+
+/-- Diagonal unit degeneracy `x ↦ (1_x, 1_x)` from objects into composable pairs. -/
+abbrev unitPair (x : C) : ComposablePairs C :=
+  ⟨(⟨x, x, 𝟙 x⟩, ⟨x, x, 𝟙 x⟩), rfl⟩
+
+@[simp]
+theorem leftUnitPair_fst (b : Quiver.Total C) :
+    (leftUnitPair b).val.1 = ⟨b.left, b.left, 𝟙 b.left⟩ :=
+  (rfl)
+
+@[simp]
+theorem leftUnitPair_snd (b : Quiver.Total C) :
+    (leftUnitPair b).val.2 = b :=
+  (rfl)
+
+@[simp]
+theorem rightUnitPair_fst (a : Quiver.Total C) :
+    (rightUnitPair a).val.1 = a :=
+  (rfl)
+
+@[simp]
+theorem rightUnitPair_snd (a : Quiver.Total C) :
+    (rightUnitPair a).val.2 = ⟨a.right, a.right, 𝟙 a.right⟩ :=
+  (rfl)
+
+@[simp]
+theorem unitPair_fst (x : C) :
+    (unitPair x).val.1 = ⟨x, x, 𝟙 x⟩ :=
+  (rfl)
+
+@[simp]
+theorem unitPair_snd (x : C) :
+    (unitPair x).val.2 = ⟨x, x, 𝟙 x⟩ :=
+  (rfl)
+
+/-- Composing the arrows of `leftUnitPair b` recovers `b`. -/
+theorem comp_leftUnitPair (b : Quiver.Total C) :
+    (leftUnitPair b).val.1.comp (leftUnitPair b).val.2 (leftUnitPair b).property = b :=
+  b.unit_comp
+
+/-- Composing the arrows of `rightUnitPair a` recovers `a`. -/
+theorem comp_rightUnitPair (a : Quiver.Total C) :
+    (rightUnitPair a).val.1.comp (rightUnitPair a).val.2 (rightUnitPair a).property = a :=
+  a.comp_unit
+
+/-- Composing the arrows of `unitPair x` recovers the identity arrow `1_x`. -/
+theorem comp_unitPair (x : C) :
+    (unitPair x).val.1.comp (unitPair x).val.2 (unitPair x).property = ⟨x, x, 𝟙 x⟩ :=
+  (⟨x, x, 𝟙 x⟩ : Quiver.Total C).unit_comp
+
+/-- First face map `((a, b), c) ↦ (a ≫ b, c)` composing the first two arrows. -/
+def triplesFace₁ (t : ComposableTriplesLeft C) : ComposablePairs C :=
+  ⟨(t.val.1.val.1.comp t.val.1.val.2 t.val.1.property, t.val.2),
+    (t.val.1.val.1.comp_right t.val.1.val.2 t.val.1.property).trans t.property⟩
+
+/-- Second face map `((a, b), c) ↦ (a, b ≫ c)` composing the last two arrows. -/
+def triplesFace₂ (t : ComposableTriplesLeft C) : ComposablePairs C :=
+  ⟨(t.val.1.val.1, t.val.1.val.2.comp t.val.2 t.property),
+    t.val.1.property.trans (t.val.1.val.2.comp_left t.val.2 t.property).symm⟩
+
+@[simp]
+theorem triplesFace₁_fst (t : ComposableTriplesLeft C) :
+    (triplesFace₁ t).val.1 = t.val.1.val.1.comp t.val.1.val.2 t.val.1.property :=
+  (rfl)
+
+@[simp]
+theorem triplesFace₁_snd (t : ComposableTriplesLeft C) :
+    (triplesFace₁ t).val.2 = t.val.2 :=
+  (rfl)
+
+@[simp]
+theorem triplesFace₂_fst (t : ComposableTriplesLeft C) :
+    (triplesFace₂ t).val.1 = t.val.1.val.1 :=
+  (rfl)
+
+@[simp]
+theorem triplesFace₂_snd (t : ComposableTriplesLeft C) :
+    (triplesFace₂ t).val.2 = t.val.1.val.2.comp t.val.2 t.property :=
+  (rfl)
+
+/-- Simplicial associativity identity `comp ∘ d₁ = comp ∘ d₂` on composable triples. -/
+theorem comp_triplesFace₁_eq_comp_triplesFace₂ (t : ComposableTriplesLeft C) :
+    (triplesFace₁ t).val.1.comp (triplesFace₁ t).val.2 (triplesFace₁ t).property =
+      (triplesFace₂ t).val.1.comp (triplesFace₂ t).val.2 (triplesFace₂ t).property :=
+  comp_assoc t.val.1.val.1 t.val.1.val.2 t.val.2 t.val.1.property t.property _ _
 
 section IsGroupoid
 
