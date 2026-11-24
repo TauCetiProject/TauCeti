@@ -82,6 +82,11 @@ This file develops Morita evaluation in odd dimension at two levels:
   `CliffordAlgebra.subsingleton_linearMap_of_complexVolume_smul_ne`, and
   `CliffordAlgebra.subsingleton_linearMap_oddVolumeSubmodule_of_ne`: matched intertwiners land in
   `E^μ` and cross-labelled intertwiners vanish for `μ ≠ ν`.
+* `CliffordAlgebra.exists_complexVolume_smul_eq_of_surjective_lsmul`,
+  `CliffordAlgebra.eq_zero_or_odd_of_complexVolume_smul`, and
+  `CliffordAlgebra.odd_of_complexVolume_smul_eq_self_neg`: in odd dimension `ω` acts by a scalar
+  on any module with surjective Clifford action; conversely, a scalar volume action on a nontrivial
+  module forces `n = 0` or `n` odd, and opposite-sign nontrivial factors force `n` odd.
 * `CliffordAlgebra.bijective_lsmul_even_of_surjective_lsmul` and
   `CliffordAlgebra.finrank_eq_two_pow_of_surjective_lsmul`: a spinor factor with scalar volume
   action restricts bijectively to `even (Q.baseChange ℂ)`, and every nontrivial module with
@@ -500,13 +505,28 @@ variable {S : Type*} [AddCommGroup S] [Module ℂ S]
   [Module (CliffordAlgebra (Q.baseChange ℂ)) S]
   [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S]
 
+private theorem smul_complexVolume_smul_eq_self {M : Type*} [AddCommGroup M] [Module ℂ M]
+    [Module (CliffordAlgebra (Q.baseChange ℂ)) M]
+    [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) M]
+    {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) {x : M} (hx : complexVolume Q o • x = μ • x) :
+    (μ • complexVolume Q o) • x = x := by
+  rw [smul_assoc, hx, smul_smul, mul_self_eq_one_iff.mpr hμ, one_smul]
+
 private theorem halfOneAdd_smul_complexVolume_smul_eq {M : Type*} [AddCommGroup M] [Module ℂ M]
     [Module (CliffordAlgebra (Q.baseChange ℂ)) M]
     [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) M]
     {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) {x : M} (hx : complexVolume Q o • x = μ • x) :
     halfOneAdd ℂ (μ • complexVolume Q o) • x = x := by
-  rw [halfOneAdd_def, smul_assoc, add_smul, one_smul, smul_assoc, hx, smul_smul,
-    mul_self_eq_one_iff.mpr hμ, one_smul, ← two_smul ℂ x, invOf_smul_smul]
+  rw [halfOneAdd_def, smul_assoc, add_smul, one_smul, smul_complexVolume_smul_eq_self o hμ hx,
+    ← two_smul ℂ x, invOf_smul_smul]
+
+private theorem halfOneAdd_neg_smul_complexVolume_smul_eq {M : Type*} [AddCommGroup M] [Module ℂ M]
+    [Module (CliffordAlgebra (Q.baseChange ℂ)) M]
+    [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) M]
+    {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) {x : M} (hx : complexVolume Q o • x = μ • x) :
+    halfOneAdd ℂ (-(μ • complexVolume Q o)) • x = 0 := by
+  rw [halfOneAdd_def, smul_assoc, add_smul, one_smul, neg_smul,
+    smul_complexVolume_smul_eq_self o hμ hx, add_neg_cancel, smul_zero]
 
 private theorem halfOneAdd_complexVolume_mem_center (hn : Odd n) {μ : ℂ} :
     halfOneAdd ℂ (μ • complexVolume Q o) ∈ Set.center (CliffordAlgebra (Q.baseChange ℂ)) :=
@@ -515,7 +535,10 @@ private theorem halfOneAdd_complexVolume_mem_center (hn : Odd n) {μ : ℂ} :
       ((Commute.symm
         (Subalgebra.mem_center_iff.mp (complexVolume_mem_center o hn) a)).smul_left μ)).symm
 
-private theorem exists_complexVolume_smul_eq_of_surjective_lsmul (hn : Odd n)
+/-- **Central volume acts by a scalar on a spinor factor.** In odd dimension, if
+`CliffordAlgebra (Q.baseChange ℂ)` surjects onto `Module.End ℂ S`, then `complexVolume Q o` acts
+on `S` by a scalar `μ : ℂ`. -/
+theorem exists_complexVolume_smul_eq_of_surjective_lsmul (hn : Odd n)
     (hsurj : Function.Surjective
       (Algebra.lsmul ℂ ℂ S : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)) :
     ∃ μ : ℂ, ∀ s : S, complexVolume Q o • s = μ • s := by
@@ -562,7 +585,23 @@ private theorem bijective_lsmul_of_surjective_lsmul_of_even [Nontrivial S]
   exact ⟨(Algebra.lsmul ℂ ℂ S :
     CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S).toRingHom.injective, hsurj⟩
 
-private theorem eq_zero_or_odd_of_complexVolume_smul [Nontrivial S] {μ : ℂ}
+private theorem exists_sign_complexVolume_smul_eq_of_surjective_lsmul [Nontrivial S]
+    (hodd : Odd (finrank ℝ V))
+    (hsurj : Function.Surjective
+      (Algebra.lsmul ℂ ℂ S : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S)) :
+    letI : Fact (finrank ℝ V = finrank ℝ V) := ⟨rfl⟩
+    ∃ μ : ℂ, (μ = 1 ∨ μ = -1) ∧
+      ∀ s : S, complexVolume Q (stdOrthonormalBasis ℝ V).toBasis.orientation • s = μ • s := by
+  let : Fact (finrank ℝ V = finrank ℝ V) := ⟨rfl⟩
+  obtain ⟨μ, hω⟩ := exists_complexVolume_smul_eq_of_surjective_lsmul
+    (stdOrthonormalBasis ℝ V).toBasis.orientation hodd hsurj
+  exact ⟨μ, eq_one_or_eq_neg_one_of_complexVolume_smul _ hQ hω, hω⟩
+
+/-- **A scalar volume action forces dimension zero or odd.** Under `Q v = -‖v‖²`, if
+`complexVolume Q o` acts by a scalar on a nontrivial `CliffordAlgebra (Q.baseChange ℂ)`-module `S`,
+then `n = 0` or `Odd n` (in positive even dimension, vectors anticommute with `ω` and would have to
+annihilate `S`, contradicting nondegeneracy). -/
+theorem eq_zero_or_odd_of_complexVolume_smul [Nontrivial S] {μ : ℂ}
     (hω : ∀ s : S, complexVolume Q o • s = μ • s) :
     n = 0 ∨ Odd n := by
   rcases Nat.even_or_odd n with heven | hodd
@@ -635,13 +674,11 @@ private theorem lsmul_oddSpinorSplitEquiv_fst {μ : ℂ} (hμ : μ = 1 ∨ μ = 
     Algebra.lsmul ℂ ℂ S ((oddSpinorSplitEquiv o hn hQ hμ a).1 :
         CliffordAlgebra (Q.baseChange ℂ)) =
       Algebra.lsmul ℂ ℂ S a := by
-  have he₂ (s : S) : halfOneAdd ℂ (-(μ • complexVolume Q o)) • s = 0 := by
-    rw [halfOneAdd_def, smul_assoc, add_smul, one_smul, neg_smul, smul_assoc, hω, smul_smul,
-      mul_self_eq_one_iff.mpr hμ, one_smul, add_neg_cancel, smul_zero]
   ext s
   conv_rhs => rw [eq_halfOneAdd_mul_oddSpinorSplitEquiv o hn hQ hμ a]
   simp only [Algebra.lsmul_coe, add_smul, mul_smul]
-  rw [halfOneAdd_smul_complexVolume_smul_eq o hμ (hω _), he₂, add_zero]
+  rw [halfOneAdd_smul_complexVolume_smul_eq o hμ (hω _),
+    halfOneAdd_neg_smul_complexVolume_smul_eq o hμ (hω _), add_zero]
 
 private theorem halfOneAdd_mul_oddSpinorSplitEquiv_fst {μ : ℂ}
     (hμ : μ = 1 ∨ μ = -1) (a : CliffordAlgebra (Q.baseChange ℂ)) :
@@ -688,11 +725,10 @@ theorem finrank_eq_two_pow_of_surjective_lsmul [Nontrivial S]
   rcases Nat.even_or_odd (finrank ℝ V) with heven | hodd
   · rw [finrank_eq_two_pow_of_bijective_lsmul _
       (bijective_lsmul_of_surjective_lsmul_of_even hQ heven hsurj), Module.finrank_baseChange]
-  · have : Fact (finrank ℝ V = finrank ℝ V) := ⟨rfl⟩
-    let o' : Orientation ℝ V (Fin (finrank ℝ V)) := (stdOrthonormalBasis ℝ V).toBasis.orientation
-    obtain ⟨μ, hω⟩ := exists_complexVolume_smul_eq_of_surjective_lsmul o' hodd hsurj
+  · obtain ⟨μ, -, hω⟩ := exists_sign_complexVolume_smul_eq_of_surjective_lsmul hQ hodd hsurj
+    have : Fact (finrank ℝ V = finrank ℝ V) := ⟨rfl⟩
     have := _root_.Module.Finite.of_surjective_end _ hsurj
-    have hbij := bijective_lsmul_even_of_surjective_lsmul o' hQ hsurj hω
+    have hbij := bijective_lsmul_even_of_surjective_lsmul _ hQ hsurj hω
     have heq := (AlgEquiv.ofBijective _ hbij).toLinearEquiv.finrank_eq
     rw [finrank_even, Module.finrank_baseChange, Module.finrank_linearMap] at heq
     have hpow : 2 ^ (finrank ℝ V - 1) = 2 ^ (finrank ℝ V / 2) * 2 ^ (finrank ℝ V / 2) := by
@@ -842,15 +878,23 @@ private theorem complexVolume_smul_eq_neg_one_smul {S : Type*} [AddCommGroup S] 
     complexVolume Q o • s = (-1 : ℂ) • s :=
   (hω s).trans (neg_one_smul ℂ s).symm
 
-private theorem odd_of_complexVolume_smul_eq_self_neg (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+/-- **Opposite-sign volume modules force odd dimension.** Under `Q v = -‖v‖²`, if
+`complexVolume Q o` acts as `+1` on a nontrivial module `S₁` and as `-1` on a nontrivial module
+`S₂`, then `n` is odd (dimension zero is ruled out because the zero-dimensional Clifford algebra
+is `ℂ`, where `ω` is a single scalar). -/
+theorem odd_of_complexVolume_smul_eq_self_neg (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     {S₁ S₂ : Type*}
-    [AddCommGroup S₁] [Module ℂ S₁] [Module (CliffordAlgebra (Q.baseChange ℂ)) S₁]
-    [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S₁] [Nontrivial S₁]
-    [AddCommGroup S₂] [Module ℂ S₂] [Module (CliffordAlgebra (Q.baseChange ℂ)) S₂]
-    [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S₂] [Nontrivial S₂]
+    [AddCommGroup S₁] [Module (CliffordAlgebra (Q.baseChange ℂ)) S₁] [Nontrivial S₁]
+    [AddCommGroup S₂] [Module (CliffordAlgebra (Q.baseChange ℂ)) S₂] [Nontrivial S₂]
     (hω₁ : ∀ s : S₁, complexVolume Q o • s = s)
     (hω₂ : ∀ s : S₂, complexVolume Q o • s = -s) :
     Odd n := by
+  let : Module ℂ S₁ := Module.compHom S₁ (algebraMap ℂ (CliffordAlgebra (Q.baseChange ℂ)))
+  let : IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S₁ :=
+    IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let : Module ℂ S₂ := Module.compHom S₂ (algebraMap ℂ (CliffordAlgebra (Q.baseChange ℂ)))
+  let : IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S₂ :=
+    IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   rcases eq_zero_or_odd_of_complexVolume_smul o hQ (complexVolume_smul_eq_one_smul o hω₁) with
     rfl | hn
   · have : Subsingleton V := finrank_zero_iff.mp (Fact.out (p := finrank ℝ V = 0))
@@ -1135,19 +1179,17 @@ theorem finrank_linearMap_eq_of_anticommute (hQ : ∀ v, Q v = -‖v‖ ^ 2)
         finrank_eq_finrank_mul_finrank_linearMap_of_bijective_lsmul (M := E) hbij₂
       _ = 2 ^ (finrank ℝ V / 2) * finrank ℂ (S₂ →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) := by
         rw [finrank_eq_two_pow_of_surjective_lsmul hQ hsurj₂]
-  · have : Fact (finrank ℝ V = finrank ℝ V) := ⟨rfl⟩
-    let o' : Orientation ℝ V (Fin (finrank ℝ V)) := (stdOrthonormalBasis ℝ V).toBasis.orientation
-    obtain ⟨μ₁, hω₁⟩ := exists_complexVolume_smul_eq_of_surjective_lsmul o' hodd hsurj₁
-    obtain ⟨μ₂, hω₂⟩ := exists_complexVolume_smul_eq_of_surjective_lsmul o' hodd hsurj₂
-    rw [← finrank_oddVolumeSubmodule_eq_two_pow_mul_finrank_linearMap (E := E) o' hodd hQ hsurj₁
+  · obtain ⟨μ₁, hμ₁, hω₁⟩ := exists_sign_complexVolume_smul_eq_of_surjective_lsmul hQ hodd hsurj₁
+    obtain ⟨μ₂, hμ₂, hω₂⟩ := exists_sign_complexVolume_smul_eq_of_surjective_lsmul hQ hodd hsurj₂
+    have : Fact (finrank ℝ V = finrank ℝ V) := ⟨rfl⟩
+    rw [← finrank_oddVolumeSubmodule_eq_two_pow_mul_finrank_linearMap (E := E) _ hodd hQ hsurj₁
         hω₁,
-      ← finrank_oddVolumeSubmodule_eq_two_pow_mul_finrank_linearMap (E := E) o' hodd hQ hsurj₂
+      ← finrank_oddVolumeSubmodule_eq_two_pow_mul_finrank_linearMap (E := E) _ hodd hQ hsurj₂
         hω₂]
-    rcases eq_one_or_eq_neg_one_of_complexVolume_smul o' hQ hω₁ with rfl | rfl <;>
-      rcases eq_one_or_eq_neg_one_of_complexVolume_smul o' hQ hω₂ with rfl | rfl
+    rcases hμ₁ with rfl | rfl <;> rcases hμ₂ with rfl | rfl
     · rfl
-    · exact (finrank_oddVolumeSubmodule_neg_of_anticommute o' hodd γ hγ 1).symm
-    · exact finrank_oddVolumeSubmodule_neg_of_anticommute o' hodd γ hγ 1
+    · exact (finrank_oddVolumeSubmodule_neg_of_anticommute _ hodd γ hγ 1).symm
+    · exact finrank_oddVolumeSubmodule_neg_of_anticommute _ hodd γ hγ 1
     · rfl
 
 end OddGrading
