@@ -136,7 +136,7 @@ theorem isSelfAdjoint_apply_of_mem_stateSpace (hφ : φ ∈ stateSpace A) {a : A
 theorem re_apply_realPart_of_mem_stateSpace (hφ : φ ∈ stateSpace A) (x : A) :
     (φ (ℜ x : A)).re = (φ x).re := by
   have him : (φ (ℑ x : A)).im = 0 :=
-    RCLike.conj_eq_iff_im.1 (isSelfAdjoint_apply_of_mem_stateSpace hφ (ℑ x).2).star_eq
+    RCLike.conj_eq_iff_im.1 (isSelfAdjoint_apply_of_mem_stateSpace hφ (ℑ x).property).star_eq
   conv_rhs => rw [← realPart_add_I_smul_imaginaryPart x]
   simp [him]
 

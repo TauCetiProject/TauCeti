@@ -57,7 +57,7 @@ private theorem mem_closedConvexHull_of_forall_norm_eq_iSup {S : Set (WeakDual �
     convex_closedConvexHull isClosed_closedConvexHull hφS
   obtain ⟨x, hx⟩ := WeakDual.exists_forall_apply_eq_apply l
   set b : A := (ℜ x : A)
-  have hb : IsSelfAdjoint b := (ℜ x).2
+  have hb : IsSelfAdjoint b := (ℜ x).property
   -- the positive shift `c = b + ‖b‖ • 1`, on which every state `ψ` takes the value
   -- `ψ c = re (ψ x) + ‖b‖ ≥ 0`
   set c : A := b + algebraMap ℝ A ‖b‖
@@ -78,8 +78,8 @@ private theorem mem_closedConvexHull_of_forall_norm_eq_iSup {S : Set (WeakDual �
   have hcle : ‖c‖ ≤ u + ‖b‖ := by
     rw [hnorm c (hb.add (.algebraMap A (.all _)))]
     refine ciSup_le fun σ => ?_
-    rw [hψc (hS σ.2)]
-    have := hlS σ (subset_closedConvexHull σ.2)
+    rw [hψc (hS σ.property)]
+    have := hlS σ (subset_closedConvexHull σ.property)
     rw [hx, RCLike.re_to_complex] at this
     linarith
   have hφc := norm_apply_le_of_mem_stateSpace hφ c
@@ -105,8 +105,8 @@ theorem closedConvexHull_eq_stateSpace_iff {S : Set (WeakDual ℂ A)} (hS : S �
       stateSpace_nonempty.ne_empty (subset_empty_iff.1 hempty)
     simp [Subsingleton.elim a 0]
   have hbdd : BddAbove (range fun σ : S => ‖(σ : WeakDual ℂ A) a‖) :=
-    ⟨‖a‖, forall_mem_range.2 fun σ => norm_apply_le_of_mem_stateSpace (hS σ.2) a⟩
-  refine le_antisymm ?_ (ciSup_le fun σ => norm_apply_le_of_mem_stateSpace (hS σ.2) a)
+    ⟨‖a‖, forall_mem_range.2 fun σ => norm_apply_le_of_mem_stateSpace (hS σ.property) a⟩
+  refine le_antisymm ?_ (ciSup_le fun σ => norm_apply_le_of_mem_stateSpace (hS σ.property) a)
   -- the functionals `ψ` with `‖ψ a‖ ≤ ⨆ σ : S, ‖σ a‖` form a closed convex set containing `S`
   set M := ⨆ σ : S, ‖(σ : WeakDual ℂ A) a‖
   set T : Set (WeakDual ℂ A) := (fun ψ : WeakDual ℂ A => ψ a) ⁻¹' Metric.closedBall 0 M
@@ -116,7 +116,7 @@ theorem closedConvexHull_eq_stateSpace_iff {S : Set (WeakDual ℂ A)} (hS : S �
       ((convex_closedBall (0 : ℂ) M).is_linear_preimage ⟨fun _ _ => rfl, fun _ _ => rfl⟩)
       (Metric.isClosed_closedBall.preimage (eval_continuous a))
   -- a state attaining `‖a‖` lies in `T`
-  have := nontrivial_of_mem_stateSpace (hS hS0.some.2)
+  have := nontrivial_of_mem_stateSpace (hS hS0.some.property)
   have := ha.isStarNormal
   obtain ⟨ω, -, hω, hωa⟩ := CStarAlgebra.exists_positiveContinuousLinearMap_norm_apply_eq_norm a
   simpa [T, hωa] using hT (ω.toWeakDual_mem_stateSpace_iff.2 hω)

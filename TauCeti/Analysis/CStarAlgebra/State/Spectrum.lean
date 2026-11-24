@@ -96,8 +96,8 @@ theorem exists_positiveContinuousLinearMap_apply_eq_norm {a : M} (ha : 0 ≤ a) 
 `‖ω a‖ = ‖a‖`: evaluate at a spectral value of maximal modulus. -/
 theorem exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : M) [IsStarNormal a] :
     ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ ‖ω a‖ = ‖a‖ := by
-  obtain ⟨z, hz, hza⟩ := spectrum.exists_nnNorm_eq_spectralRadius_of_nonempty (spectrum.nonempty a)
-  rw [IsStarNormal.spectralRadius_eq_nnNorm, ENNReal.coe_inj] at hza
+  obtain ⟨z, hz, hza⟩ := exists_eNorm_spectrum_eq_spectralRadius_of_nonempty (spectrum.nonempty a)
+  rw [IsStarNormal.spectralRadius_eq_nnNorm, eNorm_eq_nnNorm, ENNReal.coe_inj] at hza
   obtain ⟨ω, h1, hn, hp⟩ :=
     exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum hz
   refine ⟨ω, h1, hn, ?_⟩
