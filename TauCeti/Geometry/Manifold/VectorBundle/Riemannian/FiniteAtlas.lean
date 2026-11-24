@@ -499,7 +499,8 @@ theorem finiteAtlasTopology_eq_frameCkTopology (k : ℕ) :
     have hd := ContMDiffSection.dist_finiteAtlas k e U hU hK
       ((g₁.ofLE (m := k) (by simp)).toSymmetricSection)
       ((g₂.ofLE (m := k) (by simp)).toSymmetricSection)
-    rw [dist_finiteAtlasPseudoMetricSpace, finiteAtlasSeminorm_ofLE_sub e U hU c K k g₁ g₂] at *
+    rw [finiteAtlasSeminorm_ofLE_sub e U hU c K k g₁ g₂] at hd
+    rw [dist_finiteAtlasPseudoMetricSpace]
     exact hd.symm
   calc finiteAtlasTopology IB e U hU c K k
       = (PseudoMetricSpace.induced φ mS.toPseudoMetricSpace).toUniformSpace.toTopologicalSpace :=
@@ -511,6 +512,22 @@ theorem finiteAtlasTopology_eq_frameCkTopology (k : ℕ) :
     _ = frameCkTopology IB e U hU k := by
         rw [frameCkTopology_def, frameTopology_eq_induced_toSymmetricSection, induced_compose]
 
+omit [Fintype ι] in
+/-- When a family of compact coordinate pieces in smooth frames `(e, U)` has relative interiors
+covering `B`, `frameCkTopology` agrees with that of any other covering smooth frame system, with no
+separate local compactness assumption on the model space. -/
+theorem frameCkTopology_eq_of_extChartAt_interior_cover
+    {κ : Type*}
+    (e' : κ → Trivialization (symmetricBilinearMaps ℝ F ℝ)
+      (π (symmetricBilinearMaps ℝ F ℝ) (fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ)))
+    [∀ j, MemTrivializationAtlas (e' j)]
+    (U' : κ → Opens B) (hU' : ∀ j, (U' j : Set B) ⊆ (e' j).baseSet)
+    (hcover' : ∀ x, ∃ j, x ∈ U' j) (k : ℕ) :
+    frameCkTopology IB e U hU k = frameCkTopology IB e' U' hU' k := by
+  rw [frameCkTopology_def, frameCkTopology_def, frameTopology_eq_induced_toSymmetricSection,
+    frameTopology_eq_induced_toSymmetricSection,
+    ContMDiffSection.frameTopology_eq_of_extChartAt_interior_cover e U hU hK e' U' hU' hcover']
+
 /-- Any finite chart-frame atlas with covering relative interiors generates `frameCkTopology` for
 *any* covering smooth frame system (boundary and corner charts included). -/
 theorem finiteAtlasTopology_eq_frameCkTopology_of_cover
@@ -521,12 +538,8 @@ theorem finiteAtlasTopology_eq_frameCkTopology_of_cover
     (U' : κ → Opens B) (hU' : ∀ j, (U' j : Set B) ⊆ (e' j).baseSet)
     (hcover' : ∀ x, ∃ j, x ∈ U' j) (k : ℕ) :
     finiteAtlasTopology IB e U hU c K k = frameCkTopology IB e' U' hU' k := by
-  rw [finiteAtlasTopology_eq_frameCkTopology e U hU hK k]
-  rcases isEmpty_or_nonempty B with _ | _
-  · exact Subsingleton.elim _ _
-  · have : LocallyCompactSpace EB := IB.locallyCompactSpace_of_extChartAt_interior_cover hK
-    exact frameCkTopology_eq_of_covers e U hU k (TauCeti.cover_of_extChartAt_cover hK)
-      e' U' hU' hcover'
+  rw [finiteAtlasTopology_eq_frameCkTopology e U hU hK k,
+    frameCkTopology_eq_of_extChartAt_interior_cover e U hU hK e' U' hU' hcover' k]
 
 /-- The metric space structure on smooth Riemannian metrics for a finite chart-frame atlas with
 covering relative interiors, carrying `frameCkTopology` as its underlying topology and

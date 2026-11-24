@@ -468,6 +468,21 @@ theorem withSeminorms_finiteAtlasSeminorm_subtype :
     simpa only [LinearMap.id_apply, frameSeminormFamily_apply, Finset.sup_singleton] using
       ((e i).chartDerivativeSeminorm_le_chartCkSeminorm (hU i) x L le_rfl hm s).trans (hbound s)
 
+omit [Fintype ι] in
+/-- When a family of compact coordinate pieces in smooth frames `(e, U)` has relative interiors
+covering `M`, `ContMDiffSection.frameTopology` agrees with that of any other covering smooth frame
+system, with no separate local compactness assumption on the model space. -/
+theorem frameTopology_eq_of_extChartAt_interior_cover
+    {κ : Type*} (e' : κ → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e' j)]
+    (U' : κ → Opens M) (hU' : ∀ j, (U' j : Set M) ⊆ (e' j).baseSet)
+    (hcover' : ∀ y : M, ∃ j, y ∈ U' j) :
+    frameTopology (I := I) (n := n) e U hU = frameTopology (I := I) (n := n) e' U' hU' := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact Subsingleton.elim _ _
+  · have : LocallyCompactSpace E := I.locallyCompactSpace_of_extChartAt_interior_cover hK
+    exact frameTopology_eq_of_covers e U hU (TauCeti.cover_of_extChartAt_cover hK) e' U' hU'
+      hcover'
+
 /-- The finite-atlas `C^k` seminorms (`k ≤ n`) of any finite chart-frame atlas whose compact pieces
 have relative interiors covering `M` generate `ContMDiffSection.frameTopology` on `C^n` sections
 for *any* covering smooth frame system. -/
@@ -479,14 +494,7 @@ theorem withSeminorms_finiteAtlasSeminorm_subtype_of_cover
     WithSeminorms
       (fun k : {k : ℕ // (k : ℕ∞ω) ≤ n} ↦ finiteAtlasSeminorm (n := n) e U hU c K k.val k.property)
           := by
-  have heq : frameTopology (I := I) (n := n) e' U' hU' =
-      frameTopology (I := I) (n := n) e U hU := by
-    rcases isEmpty_or_nonempty M with _ | _
-    · exact Subsingleton.elim _ _
-    · have : LocallyCompactSpace E := I.locallyCompactSpace_of_extChartAt_interior_cover hK
-      exact frameTopology_eq_of_covers e' U' hU' hcover' e U hU
-        (TauCeti.cover_of_extChartAt_cover hK)
-  rw [heq]
+  rw [← frameTopology_eq_of_extChartAt_interior_cover e U hU hK e' U' hU' hcover']
   exact withSeminorms_finiteAtlasSeminorm_subtype e U hU hK
 
 end GeneralWithSeminorms
