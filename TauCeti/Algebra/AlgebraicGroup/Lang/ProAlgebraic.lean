@@ -93,6 +93,42 @@ private noncomputable def langFiberFunctor
       FiniteTypeCommHopfAlgCat.toBialgHom_comp, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
       types_comp_apply]
 
+/-- Object computation lemma for `langFiberFunctor`. -/
+private theorem langFiberFunctor_obj
+    {ι : Type r} [Category* ι]
+    (D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F) (n : ℕ)
+    (a : ∀ i, WithConv (D.obj i →ₐ[F] K))
+    (ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
+      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i)
+    (i : ιᵒᵖ) :
+    (langFiberFunctor D n a ha).obj i =
+      {g : WithConv (D.obj i.unop →ₐ[F] K) |
+        g⁻¹ * FiniteField.frobeniusPoints F n g = a i.unop} :=
+  rfl
+
+/-- Underlying `K`-point of an element in a fiber of `langFiberFunctor`. -/
+private noncomputable def langFiberFunctorVal
+    {ι : Type r} [Category* ι]
+    {D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F} {n : ℕ}
+    {a : ∀ i, WithConv (D.obj i →ₐ[F] K)}
+    {ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
+      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i}
+    {i : ιᵒᵖ} (g : (langFiberFunctor D n a ha).obj i) :
+    WithConv (D.obj i.unop →ₐ[F] K) :=
+  g.val
+
+/-- Every element in a fiber of `langFiberFunctor` satisfies the Lang fiber equation. -/
+private theorem langFiberFunctorVal_eq
+    {ι : Type r} [Category* ι]
+    {D : ι ⥤ FiniteTypeCommHopfAlgCat.{u, v} F} {n : ℕ}
+    {a : ∀ i, WithConv (D.obj i →ₐ[F] K)}
+    {ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
+      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i}
+    {i : ιᵒᵖ} (g : (langFiberFunctor D n a ha).obj i) :
+    (langFiberFunctorVal g)⁻¹ * FiniteField.frobeniusPoints F n (langFiberFunctorVal g) =
+      a i.unop :=
+  g.property
+
 /-- Underlying `K`-point of a transition map in `langFiberFunctor`. -/
 private theorem langFiberFunctor_map_val
     {ι : Type r} [Category* ι]
@@ -101,8 +137,9 @@ private theorem langFiberFunctor_map_val
     (ha : ∀ ⦃i j : ι⦄ (u : i ⟶ j),
       BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (a j) = a i)
     {i j : ιᵒᵖ} (f : i ⟶ j) (g : (langFiberFunctor D n a ha).obj i) :
-    ((langFiberFunctor D n a ha).map f g).val =
-      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop)) g.val :=
+    langFiberFunctorVal ((langFiberFunctor D n a ha).map f g) =
+      BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map f.unop))
+        (langFiberFunctorVal g) :=
   rfl
 
 variable [IsAlgClosed K]
@@ -124,20 +161,22 @@ theorem lang_proAlgebraic_functor_surjective
         BialgHom.mapDomain (FiniteTypeCommHopfAlgCat.toBialgHom (D.map u)) (g j) = g i) ∧
       ∀ i, (g i)⁻¹ * FiniteField.frobeniusPoints F n (g i) = a i := by
   let S := langFiberFunctor D n a ha
-  have : ∀ i : ιᵒᵖ, Finite (S.obj i) := fun i =>
-    have hfin : Finite (fixedSubgroup
+  have : ∀ i : ιᵒᵖ, Finite (S.obj i) := fun i => by
+    rw [langFiberFunctor_obj]
+    have : Finite (fixedSubgroup
         (FiniteField.frobeniusPoints F n (H := D.obj i.unop) (A := K))) :=
       FiniteField.finite_fixedSubgroup_frobeniusPoints hn
-    @MonoidHom.finite_setOf_inv_mul_eq _ _
-      (FiniteField.frobeniusPoints F n (H := D.obj i.unop) (A := K)) hfin (a i.unop)
+    exact MonoidHom.finite_setOf_inv_mul_eq _ (a i.unop)
   have : ∀ i : ιᵒᵖ, Nonempty (S.obj i) := fun i => by
+    rw [langFiberFunctor_obj]
     obtain ⟨g, hg⟩ := surjective_inv_mul_frobeniusPoints (F := F) (K := K) (H := D.obj i.unop)
       hn (hconn i.unop) (a i.unop)
     exact ⟨⟨g, hg⟩⟩
   obtain ⟨s, hs⟩ := nonempty_sections_of_finite_cofiltered_system S
-  refine ⟨fun i => (s (Opposite.op i)).val, ?_, fun i => (s (Opposite.op i)).property⟩
+  refine ⟨fun i => langFiberFunctorVal (s (Opposite.op i)), ?_,
+    fun i => langFiberFunctorVal_eq (s (Opposite.op i))⟩
   intro i j u
-  have hval := congrArg Subtype.val (hs u.op)
+  have hval := congrArg langFiberFunctorVal (hs u.op)
   rw [langFiberFunctor_map_val, Quiver.Hom.unop_op] at hval
   exact hval
 

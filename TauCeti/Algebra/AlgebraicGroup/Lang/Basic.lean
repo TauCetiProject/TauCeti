@@ -218,6 +218,56 @@ section Injectivity
 variable {K : Type u} [Field K]
 variable {H : Type v} [CommRing H] [_root_.HopfAlgebra K H]
 
+/-- Evaluating a cotangent dual functional on `Ideal.mapCotangent` of an augmentation class gives
+the corresponding derivation evaluated on the underlying element. -/
+private theorem dual_mapCotangent_toCotangent
+    (g : H →ₐ[K] H)
+    (hgI : Bialgebra.AugmentationIdeal K H ≤ (Bialgebra.AugmentationIdeal K H).comap g)
+    (f : Module.Dual K (Bialgebra.CotangentSpace K H))
+    (x : Bialgebra.AugmentationIdeal K H) :
+    f (Ideal.mapCotangent (Bialgebra.AugmentationIdeal K H)
+        (Bialgebra.AugmentationIdeal K H) g hgI
+        ((Bialgebra.AugmentationIdeal K H).toCotangent x)) =
+      Bialgebra.CounitAlgebra.algEquivSelf K H K
+        (Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f (g x.val)) := by
+  rw [Ideal.mapCotangent_toCotangent, ← Bialgebra.cotangentMap_augmentation K H,
+    Derivation.algEquivSelf_cotangentLinearEquiv_apply]
+
+/-- Evaluating a cotangent dual functional on `Bialgebra.cotangentSpaceMap` of an augmentation
+class gives the corresponding derivation evaluated on the underlying element. -/
+private theorem dual_cotangentSpaceMap_toCotangent
+    (ψ : H →ₐc[K] H)
+    (f : Module.Dual K (Bialgebra.CotangentSpace K H))
+    (x : Bialgebra.AugmentationIdeal K H) :
+    f (Bialgebra.cotangentSpaceMap ψ ((Bialgebra.AugmentationIdeal K H).toCotangent x)) =
+      Bialgebra.CounitAlgebra.algEquivSelf K H K
+        (Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f
+          ((ψ : H →ₐ[K] H) x.val)) := by
+  rw [← Bialgebra.cotangentMap_augmentation K H x, Bialgebra.cotangentSpaceMap_cotangentMap,
+    Derivation.algEquivSelf_cotangentLinearEquiv_apply]
+  rfl
+
+/-- A counit-preserving algebra endomorphism preserves the augmentation ideal. -/
+private theorem augmentationIdeal_le_comap_of_counit_comp {f : H →ₐ[K] H}
+    (hf : (_root_.Bialgebra.counitAlgHom K H).comp f = _root_.Bialgebra.counitAlgHom K H) :
+    Bialgebra.AugmentationIdeal K H ≤ (Bialgebra.AugmentationIdeal K H).comap f := by
+  intro x hx
+  simp only [Ideal.mem_comap, Bialgebra.AugmentationIdeal, RingHom.mem_ker,
+    AlgHom.coe_toRingHom] at hx ⊢
+  rw [← AlgHom.comp_apply, hf]
+  exact hx
+
+/-- A counit-preserving algebra endomorphism induces the identity on the quotient by the
+augmentation ideal. -/
+private theorem quotient_mk_augmentationIdeal_comp_of_counit_comp {f : H →ₐ[K] H}
+    (hf : (_root_.Bialgebra.counitAlgHom K H).comp f = _root_.Bialgebra.counitAlgHom K H) :
+    Ideal.Quotient.mk (Bialgebra.AugmentationIdeal K H) ∘ f =
+      Ideal.Quotient.mk (Bialgebra.AugmentationIdeal K H) := by
+  ext x
+  simp only [Function.comp_apply, Ideal.Quotient.eq, Bialgebra.AugmentationIdeal,
+    RingHom.mem_ker, AlgHom.coe_toRingHom, map_sub]
+  rw [← AlgHom.comp_apply, hf, sub_self]
+
 /-- The induced map of `twistedLangAtId φ a` on the cotangent space at the identity coincides with
 that of conjugation by `a⁻¹`. -/
 private theorem mapCotangent_twistedLangAtId (φ : H →ₐc[K] H)
@@ -227,27 +277,15 @@ private theorem mapCotangent_twistedLangAtId (φ : H →ₐc[K] H)
     Ideal.mapCotangent (Bialgebra.AugmentationIdeal K H) (Bialgebra.AugmentationIdeal K H)
         (twistedLangAtId φ a) hfI =
       Bialgebra.cotangentSpaceMap (HopfAlgebra.pointConjugationBialgEquiv a⁻¹).toBialgHom := by
-  let I : Ideal H := Bialgebra.AugmentationIdeal K H
   ext c
-  obtain ⟨x, rfl⟩ := I.toCotangent_surjective c
+  obtain ⟨x, rfl⟩ := (Bialgebra.AugmentationIdeal K H).toCotangent_surjective c
   rw [← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff K]
   intro f
-  rw [map_sub, sub_eq_zero, Ideal.mapCotangent_toCotangent,
-    ← Bialgebra.cotangentMap_augmentation K H
-      ⟨twistedLangAtId φ a x.val, Ideal.mem_comap.mp (hfI x.property)⟩,
-    ← Bialgebra.cotangentMap_augmentation K H x, Bialgebra.cotangentSpaceMap_cotangentMap]
-  let d := Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f
-  rw [← Derivation.algEquivSelf_cotangentLinearEquiv_apply f,
-    ← Derivation.algEquivSelf_cotangentLinearEquiv_apply f]
-  have he : ((HopfAlgebra.pointConjugationBialgEquiv a⁻¹).toBialgHom : H →ₐ[K] H) =
-      HopfAlgebra.pointConjugationAlgHom a⁻¹ := by
-    rw [BialgEquiv.toBialgHom_eq_coe]
-    exact HopfAlgebra.pointConjugationBialgEquiv_toAlgHom a⁻¹
-  have hex : (HopfAlgebra.pointConjugationBialgEquiv a⁻¹).toBialgHom x.val =
-      HopfAlgebra.pointConjugationAlgHom a⁻¹ x.val := AlgHom.congr_fun he x.val
-  rw [hex]
+  rw [map_sub, sub_eq_zero, dual_mapCotangent_toCotangent, dual_cotangentSpaceMap_toCotangent,
+    BialgEquiv.toBialgHom_eq_coe, HopfAlgebra.pointConjugationBialgEquiv_toAlgHom]
   exact congrArg (Bialgebra.CounitAlgebra.algEquivSelf K H K)
-    (derivation_comp_twistedLangAtId φ hφ a d x.val)
+    (derivation_comp_twistedLangAtId φ hφ a
+      (Derivation.cotangentLinearEquiv (R := K) (A := H) (B := K) f) x.val)
 
 /-- If `φ : H →ₐc[K] H` is a bialgebra endomorphism with zero differential on a Noetherian
 integral-domain Hopf algebra over a field, then every twisted Lang comorphism
@@ -259,19 +297,11 @@ theorem twistedLangAlgHom_injective [IsNoetherianRing H] [IsDomain H]
   let I : Ideal H := Bialgebra.AugmentationIdeal K H
   have hI_ne_top : I ≠ ⊤ := RingHom.ker_ne_top (_root_.Bialgebra.counitAlgHom K H : H →+* K)
   have hcounit := counit_comp_twistedLangAtId φ a
-  have hfI : I ≤ I.comap (twistedLangAtId φ a) := by
-    intro x hx
-    simp only [I, Ideal.mem_comap, Bialgebra.AugmentationIdeal, RingHom.mem_ker,
-      AlgHom.coe_toRingHom] at hx ⊢
-    rw [← AlgHom.comp_apply, hcounit]
-    exact hx
+  have hfI : I ≤ I.comap (twistedLangAtId φ a) :=
+    augmentationIdeal_le_comap_of_counit_comp hcounit
   have hquot : Function.Surjective (Ideal.Quotient.mk I ∘ twistedLangAtId φ a) := by
-    intro q
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-    refine ⟨x, ?_⟩
-    simp only [I, Function.comp_apply, Ideal.Quotient.eq, Bialgebra.AugmentationIdeal,
-      RingHom.mem_ker, AlgHom.coe_toRingHom, map_sub]
-    rw [← AlgHom.comp_apply, hcounit, sub_self]
+    rw [quotient_mk_augmentationIdeal_comp_of_counit_comp hcounit]
+    exact Ideal.Quotient.mk_surjective
   let e : H ≃ₐc[K] H := HopfAlgebra.pointConjugationBialgEquiv a⁻¹
   have hcot : Function.Surjective (Ideal.mapCotangent I I (twistedLangAtId φ a) hfI) := by
     rw [mapCotangent_twistedLangAtId φ hφ a hfI]
